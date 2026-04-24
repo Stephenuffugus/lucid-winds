@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.50';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.51';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4041,8 +4041,11 @@
     .ds-tile.ds-front:not(.shut)::before{content:'×2';position:absolute;top:2px;right:3px;font-family:DM Mono,monospace;font-size:0.44rem;color:rgba(139,106,60,0.7);font-weight:700;letter-spacing:0}
     .ds-rowlbl{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--muted);text-align:center;margin-top:4px;padding:2px 0}
     .ds-dice{display:flex;gap:clamp(10px,3vw,16px);justify-content:center;align-items:center;padding:clamp(6px,2vw,10px) 0}
-    .ds-die{width:clamp(48px,13vw,64px);height:clamp(48px,13vw,64px);border-radius:clamp(6px,2vw,10px);overflow:hidden;background:rgba(0,0,0,0.2);box-shadow:0 3px 8px rgba(0,0,0,0.4),0 0 0 1px rgba(200,168,75,0.25)}
-    .ds-die img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(1.02) contrast(1.04) saturate(0.95)}
+    /* Double Shutter uses the DARK dice set (gothic peonies / skulls / moons).
+       Container bg matches the app midnight so the art's transparent corners
+       blend; filter stays OFF so the dark mood reads as intended. */
+    .ds-die{width:clamp(58px,16vw,82px);height:clamp(58px,16vw,82px);border-radius:clamp(8px,2.5vw,12px);overflow:hidden;background:#0a0c08;box-shadow:0 4px 12px rgba(0,0,0,0.55),0 0 0 1px rgba(200,168,75,0.18)}
+    .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
     @keyframes dsDieRoll{0%{transform:translateY(-8px) rotate(-12deg) scale(0.9)}25%{transform:translateY(-14px) rotate(180deg) scale(1.05)}55%{transform:translateY(-6px) rotate(360deg) scale(1.08)}80%{transform:translateY(-2px) rotate(520deg) scale(1)}100%{transform:translateY(0) rotate(540deg) scale(1)}}
     .ds-wrap.rolling .ds-die{animation:dsDieRoll 0.76s cubic-bezier(.2,.7,.3,1) both}
     .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
@@ -49753,8 +49756,8 @@ function GDS(a){
     });
     // Dice
     dz.innerHTML='';
-    if(d1){var dd1=document.createElement('div');dd1.className='ds-die';dd1.innerHTML='<img src="assets/dice/d'+d1+'.png" alt="'+d1+'"/>';dz.appendChild(dd1);}
-    if(d2){var dd2=document.createElement('div');dd2.className='ds-die';dd2.innerHTML='<img src="assets/dice/d'+d2+'.png" alt="'+d2+'"/>';dz.appendChild(dd2);}
+    if(d1){var dd1=document.createElement('div');dd1.className='ds-die';dd1.innerHTML='<img src="assets/dice/dark/d'+d1+'.png" alt="'+d1+'"/>';dz.appendChild(dd1);}
+    if(d2){var dd2=document.createElement('div');dd2.className='ds-die';dd2.innerHTML='<img src="assets/dice/dark/d'+d2+'.png" alt="'+d2+'"/>';dz.appendChild(dd2);}
     // Info bar
     var target=(d1||0)+(d2||0);
     var ss=selSum();
@@ -49793,7 +49796,7 @@ function GDS(a){
     wrap.classList.add('rolling');
     var dieEls=dz.querySelectorAll('.ds-die');
     var vals=[d1];if(d2)vals.push(d2);
-    window._LW_tumble(dieEls,vals,{duration:760,onDone:function(){
+    window._LW_tumble(dieEls,vals,{duration:760,face:function(n){return 'assets/dice/dark/d'+n+'.png';},onDone:function(){
       wrap.classList.remove('rolling');
       phase='select';
       var target=d1+d2;
