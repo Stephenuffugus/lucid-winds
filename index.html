@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.14';
+  var LW_VERSION='2026.04.24.15';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3441,6 +3441,12 @@
        ("☀️ N · SEEDLING (N/30)") belongs on the game picker, not in
        active gameplay. Hidden for every game during body.game-active. */
     body.game-active .gp-strip{display:none!important;}
+    /* UNIVERSAL .gr (inline rules, "📖 tap cells to reveal...") hide.
+       Was already hidden for most games via the per-game allowlist;
+       making it universal so it stops sitting behind the ← GAMES
+       button on Tide Hunt and the remaining un-listed games. The ❓
+       help button in .gu-bar still surfaces rules on demand. */
+    body.game-active #fg-ag > .gr{display:none!important;}
     /* UNIVERSAL .game-wrap padding kill during gameplay. Default is
        5.5rem top (88px desktop, 72px mobile) to reserve room for the
        global nav menu — but the menu is hidden during games, leaving
