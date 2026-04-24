@@ -116,6 +116,9 @@ function GBS(a){
   var pShotsLeft,aiShotsLeft;
   // stats
   var stats;
+  // drag-to-move state for placed ships during setup
+  var _dragShip=-1,_dragOrigR=0,_dragOrigC=0,_dragOrigDir='h',_dragMoved=false;
+  var _dragMoveHandler=null,_dragEndHandler=null;
   // pending shot (for confirm-attack)
   var pendingShot=-1;
   // confirm-attack is auto-suppressed during salvo (would be too many taps)
@@ -246,6 +249,118 @@ function GBS(a){
       var el=tbl.children[idx(cr,cc)];
       if(el){el.classList.add(ok?'ghost-ok':'ghost-bad');ghostCells.push(el);}
     }
+  }
+
+  // ── drag to move placed ships during setup ──
+  // Touch/mouse press on a placed ship cell starts drag. First movement
+  // lifts the ship (removes from grid, shows ghost under finger). Release
+  // drops the ship at the current cell if legal, else snaps back.
+  // A touch that doesn't move at all falls through to the existing
+  // tap handler (which calls pickUp).
+  function _cellFromPoint(x,y){
+    var el=document.elementFromPoint(x,y);
+    if(!el||!el.closest)return null;
+    return el.closest('.th-cell[data-i]');
+  }
+  function _dragStart(ev){
+    if(phase!=='place')return;
+    var t=ev.target.closest&&ev.target.closest('.th-cell');
+    if(!t)return;
+    var i=parseInt(t.getAttribute('data-i'),10);
+    if(isNaN(i))return;
+    var cellVal=pGrid[i];
+    if(cellVal<=0)return; // not a placed ship — tap handler will deal with it
+    var si=cellVal-1;
+    var pl=placements[si];
+    if(!pl)return;
+    _dragShip=si;
+    _dragOrigR=pl.r;_dragOrigC=pl.c;_dragOrigDir=pl.dir;
+    _dragMoved=false;
+    // Attach document-level move/end so drag keeps working even when
+    // the finger leaves the original cell's bounds.
+    _dragMoveHandler=function(e){_dragMove(e);};
+    _dragEndHandler=function(e){_dragEnd(e);};
+    document.addEventListener('touchmove',_dragMoveHandler,{passive:false});
+    document.addEventListener('touchend',_dragEndHandler);
+    document.addEventListener('touchcancel',_dragEndHandler);
+    document.addEventListener('mousemove',_dragMoveHandler);
+    document.addEventListener('mouseup',_dragEndHandler);
+  }
+  function _dragMove(ev){
+    if(_dragShip<0)return;
+    var pt=ev.touches&&ev.touches[0]?ev.touches[0]:ev;
+    if(pt.clientX===undefined)return;
+    var cell=_cellFromPoint(pt.clientX,pt.clientY);
+    // First detected move: lift the ship off the grid
+    if(!_dragMoved){
+      pickUp(_dragShip);
+      selShip=_dragShip;
+      _dragMoved=true;
+      rn();
+      // After re-render, re-resolve the cell under the finger
+      cell=_cellFromPoint(pt.clientX,pt.clientY);
+    }
+    if(!cell)return;
+    var i=parseInt(cell.getAttribute('data-i'),10);
+    if(isNaN(i))return;
+    var r=Math.floor(i/SZ),c=i%SZ;
+    showGhost(_dragShip,r,c);
+    // Prevent page scroll during the drag
+    if(ev.cancelable)ev.preventDefault();
+  }
+  function _dragEnd(ev){
+    if(_dragShip<0)return;
+    // Detach document-level listeners first
+    if(_dragMoveHandler){
+      document.removeEventListener('touchmove',_dragMoveHandler);
+      document.removeEventListener('mousemove',_dragMoveHandler);
+      _dragMoveHandler=null;
+    }
+    if(_dragEndHandler){
+      document.removeEventListener('touchend',_dragEndHandler);
+      document.removeEventListener('touchcancel',_dragEndHandler);
+      document.removeEventListener('mouseup',_dragEndHandler);
+      _dragEndHandler=null;
+    }
+    if(!_dragMoved){
+      // No drag happened — let the existing tap handler do its thing.
+      // (Tap on a placed ship = pick it up. Handled by the onclick set
+      // in renderGrid.)
+      _dragShip=-1;
+      return;
+    }
+    var pt=(ev.changedTouches&&ev.changedTouches[0])||ev;
+    var cell=(pt.clientX!==undefined)?_cellFromPoint(pt.clientX,pt.clientY):null;
+    var placed=false;
+    if(cell){
+      var i=parseInt(cell.getAttribute('data-i'),10);
+      if(!isNaN(i)){
+        var r=Math.floor(i/SZ),c=i%SZ;
+        var len=SHIPS[_dragShip],dir=shipDirs[_dragShip];
+        if(canPlace(pGrid,r,c,len,dir)){
+          placeShip(pGrid,r,c,len,dir,_dragShip+1);
+          placements[_dragShip]={r:r,c:c,dir:dir};
+          _play('tap');
+          placed=true;
+        }
+      }
+    }
+    if(!placed){
+      // Snap back to origin
+      placeShip(pGrid,_dragOrigR,_dragOrigC,SHIPS[_dragShip],_dragOrigDir,_dragShip+1);
+      placements[_dragShip]={r:_dragOrigR,c:_dragOrigC,dir:_dragOrigDir};
+    }
+    clearGhost();
+    var dropped=_dragShip;
+    _dragShip=-1;
+    _dragMoved=false;
+    // Advance selection to next unplaced ship if we successfully moved
+    if(placed){
+      var nxt=-1;
+      for(var si=0;si<SHIPS.length;si++)if(!placements[si]){nxt=si;break;}
+      selShip=nxt;
+    }
+    rn();
   }
 
   // ── grid render ──
@@ -450,6 +565,10 @@ function GBS(a){
           showGhost(selShip,rr,cc);
         });
         tbl.addEventListener('mouseleave',clearGhost);
+        // Drag-to-move: press on a placed ship cell, drag to new spot.
+        // First detectable move lifts the ship; touchend drops it.
+        tbl.addEventListener('touchstart',_dragStart,{passive:false});
+        tbl.addEventListener('mousedown',_dragStart);
       }
     }else{
       // BATTLE phase
