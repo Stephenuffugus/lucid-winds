@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.13';
+  var LW_VERSION='2026.04.24.14';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3441,6 +3441,18 @@
        ("☀️ N · SEEDLING (N/30)") belongs on the game picker, not in
        active gameplay. Hidden for every game during body.game-active. */
     body.game-active .gp-strip{display:none!important;}
+    /* UNIVERSAL .game-wrap padding kill during gameplay. Default is
+       5.5rem top (88px desktop, 72px mobile) to reserve room for the
+       global nav menu — but the menu is hidden during games, leaving
+       that space as a blank dark header above the exit button.
+       Collapse to safe-area only so the game content starts right
+       below the browser chrome. */
+    body.game-active .game-wrap{
+      padding-top:env(safe-area-inset-top,0px)!important;
+      padding-bottom:env(safe-area-inset-bottom,0px)!important;
+      padding-left:0.25rem!important;
+      padding-right:0.25rem!important;
+    }
     /* Euchre / Cribbage / other trick-taking games need the vertical space — hide the sunbeam strip, attention-bar tutorial hint, and the inline 📖 rules row so the felt table gets to use the full screen. */
     body.game-active:has(#fg-ag[data-game="bowergarden"]) .gp-strip,
     body.game-active:has(#fg-ag[data-game="bowergarden"]) #ab,
