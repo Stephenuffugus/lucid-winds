@@ -527,8 +527,88 @@ function GCH(a){
     if(totalMat>2600)score+=_evalKingSafety(b,W)-_evalKingSafety(b,B);
     // Rook bonuses
     score+=_evalRooks(b,wPawns,bPawns);
+    // Magnus-flavor "taste" weights: outposts, majority endgame bias,
+    // keep-the-queen middlegame, small space bonus. Small numeric
+    // nudges that give the engine a recognizable positional voice.
+    score+=_evalTaste(b,wPawns,bPawns,wMaterial,bMaterial);
     // Tempo bonus (small bonus for side to move — helps break ties)
     return score;
+  }
+
+  // TASTE — four personality weights that give Grove a Magnus-ish voice.
+  // None of these change correctness. All are small enough (±30 max
+  // per component) that material/PST still dominate decisions.
+  function _evalTaste(b,wP,bP,wMat,bMat){
+    var s=0,i,c;
+    var totalMat=wMat+bMat;
+
+    // 1. OUTPOST KNIGHT — supported, unchallengable knight on advanced rank.
+    //   White outpost rows 2-4 (white's 5th-7th rank). Black outpost 3-5.
+    for(var r=0;r<8;r++)for(c=0;c<8;c++){
+      var p=b[r][c];if(!p||p.type!==KNIGHT)continue;
+      var isW=p.color===W;
+      var advRank=isW?(r>=2&&r<=4):(r>=3&&r<=5);
+      if(!advRank)continue;
+      // Supported by our own pawn diagonally behind?
+      var backDir=isW?1:-1; // one rank behind (closer to our back row)
+      var supported=false;
+      for(var dc=-1;dc<=1;dc+=2){
+        var sr=r+backDir,sc=c+dc;
+        if(sr>=0&&sr<8&&sc>=0&&sc<8){
+          var q=b[sr][sc];
+          if(q&&q.type===PAWN&&q.color===p.color){supported=true;break;}
+        }
+      }
+      if(!supported)continue;
+      // Can an enemy pawn ever advance to challenge this square?
+      // For white knight: any black pawn on columns c±1 at rows <r can
+      // eventually advance down to attack. Symmetric for black.
+      var challengable=false;
+      for(var dc2=-1;dc2<=1;dc2+=2){
+        var fc=c+dc2;if(fc<0||fc>7)continue;
+        if(isW){
+          for(var r2=r-1;r2>=1;r2--){
+            var q2=b[r2][fc];
+            if(q2&&q2.type===PAWN&&q2.color===B){challengable=true;break;}
+          }
+        }else{
+          for(var r3=r+1;r3<=6;r3++){
+            var q3=b[r3][fc];
+            if(q3&&q3.type===PAWN&&q3.color===W){challengable=true;break;}
+          }
+        }
+        if(challengable)break;
+      }
+      if(!challengable)s+=isW?25:-25;
+    }
+
+    // 2. PAWN MAJORITY IN LATE ENDGAME — Magnus's bread-and-butter grind.
+    if(totalMat<1800){
+      var wQs=0,wKs=0,bQs=0,bKs=0;
+      for(i=0;i<wP.length;i++){if(wP[i].c<=3)wQs++;else wKs++;}
+      for(i=0;i<bP.length;i++){if(bP[i].c<=3)bQs++;else bKs++;}
+      if(wQs>bQs)s+=30;else if(bQs>wQs)s-=30;
+      if(wKs>bKs)s+=30;else if(bKs>wKs)s-=30;
+    }
+
+    // 3. KEEP-THE-QUEEN MIDDLEGAME — in balanced positions moves 10-25,
+    // +10 for having your queen on the board. Encourages the engine to
+    // NOT initiate trades when it's positionally fine with queens.
+    if(moveCount>=10&&moveCount<=25&&Math.abs(wMat-bMat)<150){
+      var wHasQ=false,bHasQ=false;
+      for(var r4=0;r4<8;r4++)for(var c4=0;c4<8;c4++){
+        var pp=b[r4][c4];if(!pp||pp.type!==QUEEN)continue;
+        if(pp.color===W)wHasQ=true;else bHasQ=true;
+      }
+      if(wHasQ)s+=10;
+      if(bHasQ)s-=10;
+    }
+
+    // 4. SMALL SPACE BONUS — +2 per own pawn past your 4th rank.
+    for(i=0;i<wP.length;i++)if(wP[i].r<=3)s+=2; // white 5th-8th rank
+    for(i=0;i<bP.length;i++)if(bP[i].r>=4)s-=2; // black 5th-8th rank
+
+    return s;
   }
 
   function _evalPawns(wP,bP,b){
