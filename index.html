@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.37';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.38';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -45264,6 +45264,8 @@ window._accumulateHash=_accumulateHash;
 // ═══ ANTI-FARM GUARD SYSTEM ═══
 // Prevents speed-farming via: min play time, progress caps, completion cooldown
 var _afSessionProg=0;     // progress events earned this session
+var _afSessionSunbeams=0; // TOTAL sunbeams awarded this session — per-game hard cap
+var _afSessionCap=20;     // max sunbeams per single game session (any source)
 var _afLastComplete=0;    // timestamp of last game_win/game_loss reward
 var _afCompleteCd=45;     // seconds between completion rewards
 // Per-game-class limits
@@ -45320,7 +45322,7 @@ var _afGameClass={
   petalblink:'sprint'
 };
 // Reset guards on game switch (called from _sg)
-function _afReset(){_afSessionProg=0;}
+function _afReset(){_afSessionProg=0;_afSessionSunbeams=0;}
 
 // ═══ ATTENTION WEIGHT TABLE v2.0 — Anti-Farm Economy ═══
 // game_win: completion reward for winning
@@ -45469,6 +45471,17 @@ function _e(v){
     _rarityMult = window._rarityMultCache;
   } catch(e) {}
   var amt=Math.round(base*_dm*_rarityMult);
+  // ── ANTI-FARM GUARD 4: Per-session total sunbeam cap ──
+  // Stephen's Simon-says scenario: survive long enough and you could
+  // accrue 30+ sunbeams from a single game. Clamp the total to
+  // _afSessionCap (20 by default) so endurance games reward skill
+  // without breaking the plant-mint economy.
+  if(amt>0){
+    var remaining=_afSessionCap-_afSessionSunbeams;
+    if(remaining<=0){amt=0;}
+    else if(amt>remaining){amt=remaining;}
+    if(amt>0)_afSessionSunbeams+=amt;
+  }
   if(amt>0){
     var prevFilled=_hashFilled;
     var prevReady=_readyHashes.length;

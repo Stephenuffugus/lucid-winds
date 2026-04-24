@@ -4,7 +4,7 @@
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
-function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,won=false;
+function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
 
   // ── Chord definitions: semitone intervals from root ──
   var CHORDS={
@@ -90,15 +90,43 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,won=false;
 
   function fl(i,d){var e=document.getElementById('s'+i);if(!e)return;e.classList.add('lt');tn(FR[i],d);setTimeout(function(){e.classList.remove('lt')},d)}
   function ps(){pl=true;pt=false;sm('Watch...');var i=0,sp=Math.max(220,480-rd*12);var iv=setInterval(function(){if(i>=sq.length){clearInterval(iv);pl=false;pt=true;pi=0;sm('Your turn!');return}fl(sq[i],sp*.7);i++},sp)}
-  function nr(){rd++;var _sr2=document.getElementById('Sr');if(_sr2)_sr2.textContent=rd;sq.push(Math.floor(Math.random()*4));if(rd>1&&(rd-1)%5===0)_e('round_'+(rd-1));
-    // Reaching round 10 is the canonical win — fires once per game so
-    // the player gets a celebration + reward. After that, surviving
-    // each additional 5 rounds fires a milestone for incremental SB.
-    if(rd===10&&!won){won=true;_e('game_win');if(_playWin)_playWin();_sr('simon',{w:true,s:rd});}
-    else if(rd>10&&(rd-10)%5===0)_e('milestone');
-    setTimeout(ps,500)}
-  window._SP=function(i){if(!pt||pl)return;fl(i,180);if(i===sq[pi]){pi++;if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');setTimeout(nr,700)}}else{pt=false;if(rd>br){br=rd;var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br}if(!won)_e('game_loss');_play('lose');sm('🍂 Round '+rd+'! Best: '+br);if(!won)_sr('simon',{w:false,s:rd})}};
-  window._SN=function(){sq=[];pi=0;rd=0;pl=false;pt=false;won=false;var _sr3=document.getElementById('Sr');if(_sr3)_sr3.textContent='0';sm('Watch...');setTimeout(nr,600)};_SN();}
+  // Simon is memory-endurance: play until you forget. Every 5 rounds
+  // fires a milestone (caps at progCap per session via _e). No 'game_win'
+  // event mid-game — that was kicking up the play-again overlay and
+  // interrupting long runs. The game records its final score only when
+  // the player actually makes a mistake.
+  function nr(){
+    rd++;
+    var _sr2=document.getElementById('Sr');if(_sr2)_sr2.textContent=rd;
+    sq.push(Math.floor(Math.random()*4));
+    // Every 5th round completed: fire a milestone tick (capped per
+    // session). Silent — no win overlay.
+    if(rd>1&&(rd-1)%5===0)_e('milestone');
+    setTimeout(ps,500);
+  }
+  window._SP=function(i){
+    if(!pt||pl)return;
+    fl(i,180);
+    if(i===sq[pi]){
+      pi++;
+      if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');setTimeout(nr,700);}
+    } else {
+      pt=false;
+      if(rd>br){br=rd;var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br;}
+      // Record result on mistake. Any round >= 5 counts as a 'win' for
+      // stats so strong runs show up green; short busts still register
+      // so stats don't lie. Win celebration only on new personal best.
+      var strong=(rd>=5);
+      if(strong){
+        if(rd>=br)try{_playWin&&_playWin();}catch(e){}
+        _e('game_win');_sr('simon',{w:true,s:rd});
+      } else {
+        _e('game_loss');_play('lose');_sr('simon',{w:false,s:rd});
+      }
+      sm('🍂 Round '+rd+'! Best: '+br+(strong?' ✨':''));
+    }
+  };
+  window._SN=function(){sq=[];pi=0;rd=0;pl=false;pt=false;var _sr3=document.getElementById('Sr');if(_sr3)_sr3.textContent='0';sm('Watch...');setTimeout(nr,600)};_SN();}
 
 window._gameFns.simon=GS;
 })();
