@@ -22,9 +22,12 @@ if(!document.getElementById('STstyle')){
   stStyle.textContent=[
     // Frame + panel
     '#STpan{padding-top:8px;}',
-    '.st-frame{position:relative;max-width:380px;margin:8px auto;padding:18px 16px 20px;background:linear-gradient(180deg,rgba(28,34,22,0.9),rgba(16,20,12,0.96));border:3px solid transparent;border-radius:18px;box-shadow:0 14px 36px rgba(0,0,0,0.55),inset 0 2px 0 rgba(255,220,140,0.06),inset 0 -2px 6px rgba(0,0,0,0.3);background-clip:padding-box;}',
-    // Inset decorative border via pseudo
-    '.st-frame::before{content:"";position:absolute;inset:-3px;border-radius:21px;padding:3px;background:linear-gradient(135deg,#c8a84b,#7ab356 45%,#3b2a14 90%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}',
+    '.st-frame{position:relative;width:100%;max-width:min(380px,calc(100vw - 28px));box-sizing:border-box;margin:8px auto;padding:18px 16px 20px;background:linear-gradient(180deg,rgba(28,34,22,0.9),rgba(16,20,12,0.96));border:3px solid transparent;border-radius:18px;box-shadow:0 14px 36px rgba(0,0,0,0.55),inset 0 2px 0 rgba(255,220,140,0.06),inset 0 -2px 6px rgba(0,0,0,0.3);background-clip:padding-box;}',
+    // Decorative gradient border drawn INSIDE the frame footprint
+    // (inset:0 rather than -3px). Previously the pseudo stuck 3px out
+    // of the element and clipped against the viewport on narrow
+    // phones. Now the whole frame fits cleanly inside its own box.
+    '.st-frame::before{content:"";position:absolute;inset:0;border-radius:18px;padding:3px;background:linear-gradient(135deg,#c8a84b,#7ab356 45%,#3b2a14 90%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}',
     '.st-frame::after{content:"";position:absolute;inset:4px;border-radius:14px;pointer-events:none;box-shadow:inset 0 0 30px rgba(200,168,75,0.08);}',
     // Corner leaf ornaments (pure CSS — simple radial dots)
     '.st-corner{position:absolute;width:14px;height:14px;z-index:2;pointer-events:none;background:radial-gradient(circle,#c8a84b 0%,transparent 65%);opacity:0.7;}',
