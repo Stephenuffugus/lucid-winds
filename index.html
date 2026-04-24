@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.54';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.55';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4034,6 +4034,10 @@
     .ds-tile{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(4px,1.5vw,8px);font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.6rem);color:#2C1810;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 6px rgba(0,0,0,0.3);transition:transform .12s,background .15s,opacity .25s;position:relative}
     .ds-tile.shut{background:linear-gradient(180deg,#3a2818,#2a1810);border-color:#5a4530;color:#5a4530;text-shadow:0 1px 0 rgba(0,0,0,0.5);box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.4);cursor:default;opacity:0.55}
     .ds-tile.shut::after{content:'×';position:absolute;font-size:1.6em;color:rgba(200,168,75,0.35);font-weight:800;pointer-events:none}
+    /* Covered = back tile still underneath an un-shut front tile. Darkened,
+       diagonal-hatch pattern reads "in the box, not reachable yet". */
+    .ds-tile.covered{background:repeating-linear-gradient(45deg,#1c1a14,#1c1a14 6px,#14120d 6px,#14120d 12px);border-color:#3a3426;color:transparent;cursor:not-allowed;opacity:0.6;box-shadow:inset 0 2px 6px rgba(0,0,0,0.5)}
+    .ds-tile.covered::after{content:'🔒';position:absolute;font-size:0.85em;opacity:0.4;pointer-events:none}
     .ds-tile.sel{background:linear-gradient(180deg,#FFE89A,#D4A843);border-color:var(--gold);transform:translateY(-2px);box-shadow:0 0 14px rgba(200,168,75,0.5),inset 0 1px 0 rgba(255,255,255,0.5)}
     .ds-tile:active:not(.shut){transform:scale(0.94)}
     /* FRONT row: heavier ring + ×2 pip to keep the double-score warning visible */
@@ -49779,7 +49783,7 @@ function GDS(a){
   // Directions
   var dir=document.createElement('div');
   dir.style.cssText='text-align:center;padding:0.4rem 0.8rem;margin:0.2rem auto;max-width:440px;font-family:DM Sans,sans-serif;font-size:clamp(0.6rem,1.7vw,0.75rem);color:var(--cream);line-height:1.55;opacity:0.9';
-  dir.innerHTML='Roll <strong>2 dice</strong>. Shut any open tiles from <strong>either row</strong> that <strong>add up to your roll</strong>. One tile or several, your choice.<br>FRONT row reads <strong>1 → 9</strong>. BACK row reads <strong>9 → 1</strong> (mirrored). If you get stuck, open tiles become your score and <strong style="color:var(--gold)">front tiles count double</strong>, so clear them early.<br>Once every open tile is <strong>6 or less</strong>, you may roll just <strong>1 die</strong>. Shut all 18 for a perfect game.';
+  dir.innerHTML='Roll <strong>2 dice</strong>. Shut any open tiles that <strong>add up to your roll</strong>. One tile or several, your choice.<br>FRONT row reads <strong>1 → 9</strong>, BACK row reads <strong>9 → 1</strong> (mirrored). A <strong>back tile stays covered</strong> until you shut the <strong>front tile above it</strong>. Plan your knockdowns: flipping the FRONT 1 reveals the BACK 9 in that column.<br>If you get stuck, open tiles become your score and <strong style="color:var(--gold)">front tiles count double</strong>. Once every open tile is <strong>6 or less</strong>, you may roll just <strong>1 die</strong>. Shut all 18 for a perfect game.';
   a.appendChild(dir);
   var wrap=document.createElement('div');wrap.className='ds-wrap';a.appendChild(wrap);
   // BACK row renders on top (physical game orientation)
@@ -49794,14 +49798,20 @@ function GDS(a){
   mc(a).innerHTML='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px"><button class="gb" id="DSroll2" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em" onclick="_DSRoll(2)">🎲 ROLL 2</button><button class="gb" id="DSroll1" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;display:none" onclick="_DSRoll(1)">🎲 ROLL 1</button><button class="gb" id="DSshut" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:rgba(200,168,75,0.15);border-color:var(--gold);color:var(--gold);display:none" onclick="_DSShut()">✓ SHUT</button><button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="min-height:52px;min-width:90px;padding:6px 14px;font-size:0.72rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1.5px solid rgba(200,168,75,0.55);color:var(--gold);border-radius:10px">🎲 STYLE</button><button class="gb-new" onclick="_DSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   // Tile value: row 0 (BACK) at idx i → 9-i.  row 1 (FRONT) at idx i → i+1.
   function tileVal(r,i){return r===1?(i+1):(9-i);}
-  function allOpen(){var out=[];for(var r=0;r<2;r++)for(var i=0;i<9;i++)if(!rows[r][i])out.push({r:r,i:i,v:tileVal(r,i)});return out;}
+  // A BACK tile is only revealed (tappable) once the FRONT tile in the same
+  // column is shut. FRONT tiles are always reachable.
+  function isReachable(r,i){return r===1?true:rows[1][i];}
+  // "Open" now excludes back tiles that are still covered by their front.
+  function allOpen(){var out=[];for(var r=0;r<2;r++)for(var i=0;i<9;i++){if(rows[r][i])continue;if(!isReachable(r,i))continue;out.push({r:r,i:i,v:tileVal(r,i)});}return out;}
   function bothDone(){for(var r=0;r<2;r++)for(var i=0;i<9;i++)if(!rows[r][i])return false;return true;}
+  // Scoring at bust still counts every unshut tile (covered or not) since the
+  // back tiles are physically still in the box. Front ×2, back ×1.
   function scoreWeighted(){var s=0;for(var i=0;i<9;i++){if(!rows[0][i])s+=tileVal(0,i);if(!rows[1][i])s+=2*tileVal(1,i);}return s;}
   function maxOpenVal(){var o=allOpen(),m=0;for(var k=0;k<o.length;k++)if(o[k].v>m)m=o[k].v;return m;}
   function selSum(){var s=0;sel.forEach(function(t){s+=t.v;});return s;}
   function canMakeSum(target){
+    // Subset-sum over reachable open tiles only — covered backs are not in play
     var open=allOpen().map(function(o){return o.v;});
-    // Subset-sum; 18 tiles max, still tiny search
     function find(idx,rem){if(rem===0)return true;if(rem<0||idx>=open.length)return false;return find(idx+1,rem-open[idx])||find(idx+1,rem);}
     return find(0,target);
   }
@@ -49810,14 +49820,15 @@ function GDS(a){
       rowEl.innerHTML='';
       for(var i=0;i<9;i++){
         var t=document.createElement('div');t.className='ds-tile';
-        // Front tiles get a subtle "×2" aura to remind the player
         if(ri===1)t.className+=' ds-front';
+        var covered=(ri===0&&!rows[1][i]);  // back tile with its front still up
         if(rows[ri][i])t.className+=' shut';
+        else if(covered)t.className+=' covered';
         var isSel=sel.some(function(s){return s.r===ri&&s.i===i;});
         if(isSel)t.className+=' sel';
-        t.textContent=tileVal(ri,i);
+        t.textContent=covered?'':tileVal(ri,i);
         t.setAttribute('data-r',ri);t.setAttribute('data-i',i);
-        if(!rows[ri][i]&&phase==='select'&&!gameOver){
+        if(!rows[ri][i]&&!covered&&phase==='select'&&!gameOver){
           t.onclick=function(){
             var r=parseInt(this.getAttribute('data-r')),idx=parseInt(this.getAttribute('data-i'));
             var existing=-1;for(var k=0;k<sel.length;k++)if(sel[k].r===r&&sel[k].i===idx){existing=k;break;}
