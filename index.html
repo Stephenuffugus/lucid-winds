@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.49';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.50';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4041,8 +4041,10 @@
     .ds-tile.ds-front:not(.shut)::before{content:'×2';position:absolute;top:2px;right:3px;font-family:DM Mono,monospace;font-size:0.44rem;color:rgba(139,106,60,0.7);font-weight:700;letter-spacing:0}
     .ds-rowlbl{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--muted);text-align:center;margin-top:4px;padding:2px 0}
     .ds-dice{display:flex;gap:clamp(10px,3vw,16px);justify-content:center;align-items:center;padding:clamp(6px,2vw,10px) 0}
-    .ds-die{width:clamp(48px,13vw,64px);height:clamp(48px,13vw,64px);border-radius:clamp(6px,2vw,10px);overflow:hidden;background:rgba(0,0,0,0.2);box-shadow:0 3px 8px rgba(0,0,0,0.4)}
-    .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
+    .ds-die{width:clamp(48px,13vw,64px);height:clamp(48px,13vw,64px);border-radius:clamp(6px,2vw,10px);overflow:hidden;background:rgba(0,0,0,0.2);box-shadow:0 3px 8px rgba(0,0,0,0.4),0 0 0 1px rgba(200,168,75,0.25)}
+    .ds-die img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(1.02) contrast(1.04) saturate(0.95)}
+    @keyframes dsDieRoll{0%{transform:translateY(-8px) rotate(-12deg) scale(0.9)}25%{transform:translateY(-14px) rotate(180deg) scale(1.05)}55%{transform:translateY(-6px) rotate(360deg) scale(1.08)}80%{transform:translateY(-2px) rotate(520deg) scale(1)}100%{transform:translateY(0) rotate(540deg) scale(1)}}
+    .ds-wrap.rolling .ds-die{animation:dsDieRoll 0.76s cubic-bezier(.2,.7,.3,1) both}
     .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
     .bg-outer{width:min(98vw,640px);margin:0 auto;transition:all .3s ease}
@@ -48991,6 +48993,57 @@ function GT(a){
 }
 
 // ═══ 15-PUZZLE SLIDER — moved to games/slider.js ═══
+
+// ═══ SHARED DICE ROLL (Farkle / Yahtzee / Double Shutter) ═══
+// Stephen's gripe with the old animation: the face committed BEFORE the spin,
+// so you saw the outcome during the tumble and it felt rigged. This helper
+// decouples COMMIT from DISPLAY — the game logic gets its final value right
+// away (so bust detection etc. runs clean), but the player sees the <img>
+// cycle through random faces and only settle on the final face at the end.
+// Tick interval decelerates (snappy at the start, heavier at the settle)
+// which reads as a real tumble instead of a metronome flicker.
+//
+// _LW_tumble(elements, finalValues, {duration, face, onDone})
+//   elements:    array of die DOM nodes (each contains an <img>)
+//                null entries are skipped (e.g. held dice)
+//   finalValues: parallel array of committed 1-6 values
+//   opts.duration: total ms (default 720)
+//   opts.face:     url-builder: face(n) -> 'assets/dice/d'+n+'.png' by default.
+//                  games can override for themed sets per game.
+//   opts.onDone:   callback fired after the final face is locked in
+window._LW_tumble=function(elements,finalValues,opts){
+  opts=opts||{};
+  var duration=opts.duration||720;
+  var faceUrl=opts.face||function(n){return 'assets/dice/d'+n+'.png';};
+  var start=Date.now();
+  function setFace(i,val){
+    var el=elements[i];if(!el)return;
+    var img=el.querySelector('img');
+    if(img)img.src=faceUrl(val);
+  }
+  function tick(){
+    var elapsed=Date.now()-start;
+    if(elapsed>=duration){
+      for(var i=0;i<elements.length;i++)setFace(i,finalValues[i]);
+      if(opts.onDone)opts.onDone();
+      return;
+    }
+    // Each rolling die gets a fresh random face. Keep them out of sync by
+    // occasionally skipping a die so they don't flicker in lockstep.
+    for(var i=0;i<elements.length;i++){
+      if(!elements[i])continue;
+      if(Math.random()<0.12)continue;
+      setFace(i,Math.floor(Math.random()*6)+1);
+    }
+    // Ease-out: ticks start at ~55ms and push toward ~180ms as the tumble
+    // slows down. Quadratic easing so the deceleration is pronounced.
+    var frac=elapsed/duration;
+    var nextDelay=55+frac*frac*135;
+    setTimeout(tick,nextDelay);
+  }
+  tick();
+};
+
 // ═══ FARKLE ═══
 function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolling=false,busted=false;
   var numPlayers=1,curP=0,players=[{banked:0}],target=10000,gameOver=false,finalRound=false,finalStart=-1;
@@ -49003,6 +49056,8 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
       '@keyframes fDieRoll{0%{transform:rotate(0) scale(1)}30%{transform:rotate(180deg) scale(0.9)}60%{transform:rotate(360deg) scale(1.1)}82%{transform:rotate(540deg) scale(1.08)}100%{transform:rotate(540deg) scale(1)}}'+
       '.fDie.rolling{animation:fDieRoll 0.85s cubic-bezier(.18,.7,.3,1) both;}'+
       '.fDie.held{transform:translateY(-4px) scale(0.96);filter:saturate(0.85);}'+
+      /* Farkle: warm amber cast to read against the brown felt */
+      '.fDie img{filter:sepia(0.08) saturate(1.08) brightness(1.02) drop-shadow(0 2px 3px rgba(90,40,10,0.35));}'+
       '@keyframes fHotFlash{0%{transform:scale(0.3) rotate(-6deg);opacity:0}45%{transform:scale(1.22) rotate(2deg);opacity:1}72%{transform:scale(0.96);opacity:1}100%{transform:scale(1);opacity:1}}'+
       '@keyframes fFarkleShake{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px) rotate(-1deg)}38%{transform:translateX(7px) rotate(1deg)}58%{transform:translateX(-4px)}78%{transform:translateX(4px)}}'+
       '@keyframes fLineIn{0%{transform:translateX(-12px);opacity:0}100%{transform:translateX(0);opacity:1}}'+
@@ -49246,40 +49301,60 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
     var any=false;
     for(var i=0;i<6;i++)if(!kept[i]){dice[i]=Math.floor(Math.random()*6)+1;justRolled[i]=true;any=true}
     _play('dice');
+    function collectRolledEls(){
+      var els=[],vals=[];
+      for(var k=0;k<6;k++){
+        els.push(justRolled[k]?document.querySelector('.fDie[data-i="'+k+'"]'):null);
+        vals.push(dice[k]);
+      }
+      return {els:els,vals:vals};
+    }
     if(!any){
-      // HOT DICE — lock points, reset kept, roll all six
+      // HOT DICE — lock points, reset kept, roll all six. Still tumble.
       var locked=score();
       turn+=locked;kept=new Array(6).fill(false);
       for(var j=0;j<6;j++){dice[j]=Math.floor(Math.random()*6)+1;justRolled[j]=true}
-      overlay={kind:'hot',pts:locked};
-      _play('win');_e('milestone');
       rn();
-      setTimeout(function(){overlay=null;rolling=false;rn()},1500);
-      setTimeout(function(){justRolled=new Array(6).fill(false)},420);
+      var hot=collectRolledEls();
+      window._LW_tumble(hot.els,hot.vals,{duration:720,onDone:function(){
+        overlay={kind:'hot',pts:locked};
+        _play('win');_e('milestone');
+        rn();
+        setTimeout(function(){overlay=null;rolling=false;rn()},1500);
+        setTimeout(function(){justRolled=new Array(6).fill(false)},420);
+      }});
       return;
     }
-    // Bust detection — can any unheld die score on its own, or with already-kept pips?
+    // Bust detection — runs on committed dice so we decide before the tumble
+    // completes, but reveal only at settle.
     var ct=new Array(7).fill(0);for(var i2=0;i2<6;i2++)if(!kept[i2])ct[dice[i2]]++;
     var hct=new Array(7).fill(0);for(var i3=0;i3<6;i3++)if(kept[i3])hct[dice[i3]]++;
     var has=ct[1]>0||ct[5]>0;
     for(var v=1;v<=6;v++){if(ct[v]>=3)has=true;if(ct[v]>0&&hct[v]>=3)has=true;}
+    rn();
+    var rolled=collectRolledEls();
     if(!has){
-      busted=true;
-      var lost=turn;
-      overlay={kind:'farkle',lost:lost};
-      _play('lose');_e('game_loss');
-      rn();
-      setTimeout(function(){
-        overlay=null;
-        if(players.length>1)nextPlayer();
-        else{turn=0;rolling=false;rn()}
-      },1700);
-      setTimeout(function(){justRolled=new Array(6).fill(false)},420);
+      window._LW_tumble(rolled.els,rolled.vals,{duration:720,onDone:function(){
+        busted=true;
+        var lost=turn;
+        overlay={kind:'farkle',lost:lost};
+        _play('lose');_e('game_loss');
+        rn();
+        setTimeout(function(){
+          overlay=null;
+          if(players.length>1)nextPlayer();
+          else{turn=0;rolling=false;rn()}
+        },1700);
+        setTimeout(function(){justRolled=new Array(6).fill(false)},420);
+      }});
       return;
     }
-    rn();
-    rolling=false;
-    setTimeout(function(){justRolled=new Array(6).fill(false);rn()},420);
+    // Normal branch
+    window._LW_tumble(rolled.els,rolled.vals,{duration:720,onDone:function(){
+      rolling=false;
+      justRolled=new Array(6).fill(false);
+      rn();
+    }});
   };
   window._FB=function(){
     if(busted||gameOver)return;
@@ -49320,6 +49395,8 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
       '@keyframes yDieLift{0%{transform:translateY(0) scale(1)}100%{transform:translateY(-6px) scale(0.96)}}'+
       '.yDie.rolling{animation:yDieRoll 0.85s cubic-bezier(.18,.7,.3,1) both;}'+
       '.yDie.held{transform:translateY(-6px) scale(0.96);filter:saturate(0.85);}'+
+      /* Yahtzee/Seed Shaker: cool sage cast so the dice sit against the green pan */
+      '.yDie img{filter:hue-rotate(-6deg) saturate(0.9) brightness(1.05) drop-shadow(0 2px 3px rgba(0,0,0,0.4));}'+
       '@keyframes yBestPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,220,112,0.4),inset 0 1px 0 rgba(255,255,255,0.08)}50%{box-shadow:0 0 12px rgba(255,220,112,0.55),inset 0 1px 0 rgba(255,255,255,0.12)}}'+
       '.yBestPulse{animation:yBestPulse 1.4s ease-in-out infinite;}'+
       '@keyframes yYahtzeeIn{0%{opacity:0}100%{opacity:1}}'+
@@ -49548,7 +49625,16 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     if(rolls===1){kept=new Array(5).fill(false);for(var i=0;i<5;i++){dice[i]=Math.floor(Math.random()*6)+1;justRolled[i]=true}}
     else{for(var i=0;i<5;i++)if(!kept[i]){dice[i]=Math.floor(Math.random()*6)+1;justRolled[i]=true}}
     rn();
-    setTimeout(function(){justRolled=new Array(5).fill(false)},420);
+    // Tumble-through-faces so the player doesn't see the final face during the spin.
+    var els=[],vals=[];
+    for(var k=0;k<5;k++){
+      els.push(justRolled[k]?document.querySelector('.yDie[data-i="'+k+'"]'):null);
+      vals.push(dice[k]);
+    }
+    window._LW_tumble(els,vals,{duration:720,onDone:function(){
+      justRolled=new Array(5).fill(false);
+      rn();
+    }});
   };
   window._YS=function(cat){
     if(!rolls||scores[cat]!==undefined)return;
@@ -49674,6 +49760,8 @@ function GDS(a){
     var ss=selSum();
     if(phase==='roll'){
       info.innerHTML='Tap <strong>ROLL</strong> · current risk: <strong style="color:var(--gold)">'+scoreWeighted()+'</strong>';
+    } else if(phase==='rolling'){
+      info.innerHTML='<span style="opacity:0.7">rolling…</span>';
     } else if(phase==='select'){
       var remaining=target-ss;
       var tone=(ss===target&&ss>0)?'color:#7ab356':(ss>target?'color:#c47a7a':'color:var(--cream)');
@@ -49698,18 +49786,28 @@ function GDS(a){
     _play('snap');
     d1=Math.floor(Math.random()*6)+1;
     d2=n===2?Math.floor(Math.random()*6)+1:0;
-    rolls++;phase='select';sel=[];
-    var target=d1+d2;
+    rolls++;sel=[];
+    // New 'rolling' phase locks taps and ROLL while the tumble plays out.
+    phase='rolling';
     rn();
-    if(!canMakeSum(target)){
-      gameOver=true;
-      var finalScore=scoreWeighted();
-      var wasBest=false;
-      if(finalScore<_bestScore){_bestScore=finalScore;try{localStorage.setItem('lw_ds_best',String(finalScore));}catch(e){}wasBest=true;var be=document.getElementById('DSbest');if(be)be.textContent=finalScore;}
-      sm('🍂 Stuck on '+target+' · score '+finalScore+' (front ×2)'+(wasBest?' · 🌟 NEW BEST':''));
-      _play('lose');_e('game_loss');_sr('doubleshutter',{w:false,s:finalScore});
-      phase='done';rn();
-    }
+    wrap.classList.add('rolling');
+    var dieEls=dz.querySelectorAll('.ds-die');
+    var vals=[d1];if(d2)vals.push(d2);
+    window._LW_tumble(dieEls,vals,{duration:760,onDone:function(){
+      wrap.classList.remove('rolling');
+      phase='select';
+      var target=d1+d2;
+      rn();
+      if(!canMakeSum(target)){
+        gameOver=true;
+        var finalScore=scoreWeighted();
+        var wasBest=false;
+        if(finalScore<_bestScore){_bestScore=finalScore;try{localStorage.setItem('lw_ds_best',String(finalScore));}catch(e){}wasBest=true;var be=document.getElementById('DSbest');if(be)be.textContent=finalScore;}
+        sm('🍂 Stuck on '+target+' · score '+finalScore+' (front ×2)'+(wasBest?' · 🌟 NEW BEST':''));
+        _play('lose');_e('game_loss');_sr('doubleshutter',{w:false,s:finalScore});
+        phase='done';rn();
+      }
+    }});
   };
   window._DSShut=function(){
     if(phase!=='select')return;
