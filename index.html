@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.41';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.42';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3556,12 +3556,32 @@
        kills the "scroll on scroll" feel and the black box at the
        bottom (which was the empty padding reserved for a hidden nav). */
     body.game-active #fg-ag{
-      padding-top:calc(env(safe-area-inset-top,0px) + 96px)!important;
+      padding-top:calc(env(safe-area-inset-top,0px) + 120px)!important;
       padding-bottom:env(safe-area-inset-bottom,0px)!important;
       min-height:100dvh!important;
       max-height:100dvh!important;
       overscroll-behavior:contain;
     }
+    /* Belt-and-suspenders: give every common game board wrapper a
+       small extra margin-top so even games that render tight against
+       their container get breathing room below the ← GAMES button.
+       Applies during game-active only. */
+    body.game-active #fg-ag > .sb,
+    body.game-active #fg-ag > .mg,
+    body.game-active #fg-ag > .ckb,
+    body.game-active #fg-ag > .rvb,
+    body.game-active #fg-ag > .lg,
+    body.game-active #fg-ag > .chb,
+    body.game-active #fg-ag > .bsg,
+    body.game-active #fg-ag > .csw,
+    body.game-active #fg-ag > .ppg,
+    body.game-active #fg-ag > .ffg,
+    body.game-active #fg-ag > .ng,
+    body.game-active #fg-ag > .ug,
+    body.game-active #fg-ag > .wg,
+    body.game-active #fg-ag > .c4g,
+    body.game-active #fg-ag > .dg,
+    body.game-active #fg-ag > .skg{margin-top:10px}
     /* Soft fade behind the fixed ← GAMES button so any scrolled content
        underneath still reads clearly instead of fighting the button. */
     body.game-active::before{
