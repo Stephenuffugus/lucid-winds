@@ -29,10 +29,11 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
   if(document.getElementById('pw-petal-style'))return;
   var s=document.createElement('style');s.id='pw-petal-style';
   s.cssText=[
-    '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 4px 12px;max-width:520px;margin:0 auto;width:100%;box-sizing:border-box}',
-    '.pw-board{display:grid;grid-template-columns:1fr;gap:5px;padding:4px 0;width:min(320px,80vw);margin:0 auto;box-sizing:border-box}',
-    '.pw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:100%;box-sizing:border-box}',
-    '.pw-cell{aspect-ratio:1;width:100%;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,6vw,2rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:7px;line-height:1;user-select:none;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3);transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease}',
+    '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 4px 10px;max-width:540px;margin:0 auto;width:100%;box-sizing:border-box}',
+    // Board: slightly tighter so the bigger keyboard below has room
+    '.pw-board{display:grid;grid-template-columns:1fr;gap:4px;padding:2px 0;width:min(290px,76vw);margin:0 auto;box-sizing:border-box}',
+    '.pw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%;box-sizing:border-box}',
+    '.pw-cell{aspect-ratio:1;width:100%;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,5.5vw,1.7rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:6px;line-height:1;user-select:none;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3);transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform-style:preserve-3d}',
     '.pw-cell.pw-typed{border-color:rgba(200,168,75,.8);box-shadow:0 0 10px rgba(200,168,75,.25)}',
     '.pw-cell.pw-active{border-color:rgba(200,168,75,.65);box-shadow:inset 0 0 0 1px rgba(200,168,75,.25)}',
     '.pw-cell.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c}',
@@ -55,14 +56,20 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
     '.pw-share{margin-top:8px;padding:8px 16px;background:rgba(122,179,86,.2);border:1px solid rgba(122,179,86,.5);color:#c8e09b;border-radius:6px;cursor:pointer;font-family:Bebas Neue,sans-serif;font-size:.78rem;letter-spacing:.14em}',
     '.pw-share:active{background:rgba(122,179,86,.35)}',
     // ── On-screen QWERTY keyboard ─────────────────────────────────
-    '.pw-kb{display:flex;flex-direction:column;gap:5px;padding:6px 4px 4px;max-width:460px;margin:0 auto;width:100%;box-sizing:border-box}',
+    // Big keys. Mobile-first sizing with a generous min-height and
+    // room to grow on wider screens. Gap kept tight so the letters
+    // get every pixel of width they can.
+    '.pw-kb{display:flex;flex-direction:column;gap:6px;padding:8px 4px 6px;max-width:540px;margin:0 auto;width:100%;box-sizing:border-box}',
     '.pw-kb-row{display:flex;gap:4px;justify-content:center;touch-action:manipulation}',
-    '.pw-key{flex:1 1 auto;min-height:52px;max-width:44px;background:rgba(26,31,23,.88);border:1px solid rgba(74,124,53,.35);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1rem;font-weight:500;border-radius:5px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .08s ease,color .15s ease;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0;letter-spacing:.04em}',
+    '.pw-key{flex:1 1 0;min-height:64px;min-width:0;max-width:52px;background:rgba(26,31,23,.88);border:1.5px solid rgba(74,124,53,.35);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1.25rem;font-weight:500;border-radius:6px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .08s ease,color .15s ease,opacity .15s ease;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0;letter-spacing:.04em;box-shadow:0 2px 4px rgba(0,0,0,.25)}',
     '.pw-key:active{transform:scale(.93);background:rgba(74,124,53,.22)}',
-    '.pw-key.wide{flex:1.5 1 auto;max-width:68px;font-size:.68rem;letter-spacing:.08em}',
-    '.pw-key.pw-hit{background:var(--sage);border-color:var(--sage);color:#0d100c}',
-    '.pw-key.pw-near{background:var(--gold);border-color:var(--gold);color:#0d100c}',
-    '.pw-key.pw-miss{background:rgba(40,44,36,.85);border-color:rgba(60,68,54,.85);color:rgba(232,220,200,.5)}'
+    '.pw-key.wide{flex:1.7 1 0;max-width:84px;font-size:.75rem;letter-spacing:.1em;font-weight:600}',
+    // Colors chosen to read clearly against the dark theme. Miss keys
+    // go PROPER dark (near-black) with muted label — matches Wordle
+    // dark mode's used-letter contrast. Hit/near tint full opacity.
+    '.pw-key.pw-hit{background:var(--sage);border-color:var(--sage);color:#0d100c;font-weight:700}',
+    '.pw-key.pw-near{background:var(--gold);border-color:var(--gold);color:#0d100c;font-weight:700}',
+    '.pw-key.pw-miss{background:#141814;border-color:rgba(35,40,28,.55);color:rgba(140,130,110,.45);font-weight:400}'
   ].join('');
   document.head.appendChild(s);
 })();
@@ -118,6 +125,9 @@ window._gameFns.sprout=function GPW(a){
   var rowStatuses=[]; // per submitted row: array of 'hit'|'near'|'miss'
   var rowGuesses=[];  // per submitted row: the 5-letter guess
   var stats=loadStats();
+  // _animating blocks all input while the flip-reveal animation plays
+  // so the row-counter can't be mutated mid-reveal by a rapid tap.
+  var _animating=false;
 
   ms(a,'Guess: <strong id="PWg">0</strong>/6 · streak <strong id="PWstreak">'+stats.streak+'</strong>');
   mm(a,'Find the 5-letter word');
@@ -203,14 +213,14 @@ window._gameFns.sprout=function GPW(a){
   // vertically when the injected style block failed to apply).
   function buildBoard(){
     wrap.innerHTML='';grid=[];rowStatuses=[];
-    wrap.style.cssText='display:grid;grid-template-columns:1fr;gap:5px;padding:4px 0;width:min(320px,80vw);margin:0 auto;box-sizing:border-box';
+    wrap.style.cssText='display:grid;grid-template-columns:1fr;gap:4px;padding:2px 0;width:min(290px,76vw);margin:0 auto;box-sizing:border-box';
     for(var r=0;r<6;r++){
       var rowEl=document.createElement('div');rowEl.className='pw-row';
-      rowEl.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:100%;box-sizing:border-box';
+      rowEl.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%;box-sizing:border-box';
       var cells=[];
       for(var c=0;c<5;c++){
         var cell=document.createElement('div');cell.className='pw-cell';
-        cell.style.cssText='aspect-ratio:1;width:100%;box-sizing:border-box;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,6vw,2rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:7px;transition:background .28s ease,border-color .28s ease,color .28s ease;line-height:1;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3)';
+        cell.style.cssText='aspect-ratio:1;width:100%;box-sizing:border-box;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:clamp(1.2rem,5.5vw,1.7rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:6px;transition:background .28s ease,border-color .28s ease,color .28s ease;line-height:1;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3);-webkit-backface-visibility:hidden;backface-visibility:hidden';
         rowEl.appendChild(cell);cells.push(cell);
       }
       wrap.appendChild(rowEl);grid.push(cells);
@@ -243,7 +253,7 @@ window._gameFns.sprout=function GPW(a){
   }
 
   function typeLetter(ch){
-    if(done||row>=6||col>=5)return;
+    if(done||_animating||row>=6||col>=5)return;
     var cell=grid[row][col];
     cell.textContent=ch.toUpperCase();
     cell.classList.add('pw-typed');
@@ -254,7 +264,7 @@ window._gameFns.sprout=function GPW(a){
   }
 
   function deleteLetter(){
-    if(done||col<=0)return;
+    if(done||_animating||col<=0)return;
     col--;
     var cell=grid[row][col];
     cell.textContent='';
@@ -276,7 +286,7 @@ window._gameFns.sprout=function GPW(a){
   }
 
   function submitGuess(){
-    if(done)return;
+    if(done||_animating)return;
     if(col<5){showMsg('Need 5 letters');shakeRow(row);return;}
     var guess=buildGuess();
     if(!VALID_SET[guess]){showMsg('Not in word list');shakeRow(row);return;}
@@ -292,10 +302,15 @@ window._gameFns.sprout=function GPW(a){
     rowStatuses.push(status.slice());
     rowGuesses.push(guess);
     try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
+    _animating=true;
+    // Capture the row being revealed so closures can't see a mutated
+    // row counter if anything races (defensive — the guard above
+    // already prevents new input).
+    var submittedRow=row;
     for(var c=0;c<5;c++){
       (function(c){
         setTimeout(function(){
-          var cell=grid[row][c];
+          var cell=grid[submittedRow][c];
           cell.classList.add('pw-flip');
           cell.classList.remove('pw-typed','pw-active');
           setTimeout(function(){
@@ -312,6 +327,7 @@ window._gameFns.sprout=function GPW(a){
       })(c);
     }
     setTimeout(function(){
+      _animating=false;
       if(guess===answer){
         done=true;
         var bonus=6-row;
