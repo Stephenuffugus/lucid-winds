@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.40';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.41';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3731,7 +3731,12 @@
        PRIORITY 3: MEMORY
        ══════════════════════════════════════════════════════════════════════ */
 
-    .mg{display:grid;gap:clamp(6px,2vw,10px);padding:clamp(8px,2.5vw,14px);width:100%;flex:1;align-content:start;animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94)}
+    .mg{display:grid;gap:clamp(6px,2vw,10px);padding:clamp(8px,2.5vw,14px);width:100%;flex:1;align-content:start;animation:boardFadeIn .4s cubic-bezier(.25,.46,.45,.94);margin-top:12px}
+    /* Crop a tiny inset off every memory card image so any white
+       stroke baked into the PNGs (flytrap, others) doesn't show at
+       the edges. 2.5% on each side hides 3-6px of perimeter
+       without clipping the art. */
+    .mf img{clip-path:inset(2.5% round 4px);-webkit-clip-path:inset(2.5% round 4px)}
     .mw{aspect-ratio:3/4;perspective:800px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:48px}
     .mi{position:relative;width:100%;height:100%;transition:transform .45s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
     .mi.fl{transform:rotateY(180deg)}
