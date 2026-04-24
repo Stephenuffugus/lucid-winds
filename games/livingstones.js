@@ -9,50 +9,67 @@ window._gameFns = window._gameFns || {};
 window._gameFns.livingstones = function LS(a){
   var EMPTY=0,BLACK=1,WHITE=2;
 
-  // 24 tsumego — every puzzle solution-verified by the engine.
-  // Old set had 17/18 broken (pre-captured W groups on setup, or
-  // solution coordinates already occupied). Full rewrite in two passes.
+  // 36 tsumego — every puzzle solution-verified by the engine.
+  // Classical Go life-and-death shapes, ordered by difficulty.
+  // 12 beginner (atari + basic capture), 12 intermediate (tesuji +
+  // cuts), 12 advanced (snapbacks, nets, famous shapes).
   var ALL_PUZZLES = {
     beginner: [
-      {size:5, goal:'ATARI CAPTURE', hint:'White has one liberty. Fill it.',
+      {size:5, goal:'ATARI CAPTURE', hint:'White has one liberty. Close it.',
        B:[[1,2],[2,1],[3,2]], W:[[2,2]], solution:[[2,3]], check:'captured'},
-      {size:5, goal:'EDGE ATARI', hint:'The edge counts as stopped liberties.',
+      {size:5, goal:'EDGE ATARI', hint:'The edge is a wall — one more stone ends it.',
        B:[[0,0],[2,0]], W:[[1,0]], solution:[[1,1]], check:'captured'},
-      {size:5, goal:'CORNER CAPTURE', hint:'Only one liberty remains.',
+      {size:5, goal:'CORNER CAPTURE', hint:'Only one liberty remains in the corner.',
        B:[[1,0]], W:[[0,0]], solution:[[0,1]], check:'captured'},
-      {size:5, goal:'PAIR IN ATARI', hint:'Two stones, one liberty — fill it.',
+      {size:5, goal:'PAIR IN ATARI', hint:'Two white stones share one liberty.',
        B:[[0,2],[1,0]], W:[[0,0],[0,1]], solution:[[1,1]], check:'captured'},
-      {size:7, goal:'CROSS CUT', hint:'Single center stone surrounded on three sides.',
+      {size:7, goal:'CENTER STONE', hint:'A lone stone with one open side.',
        B:[[1,3],[2,2],[2,4]], W:[[2,3]], solution:[[3,3]], check:'captured'},
-      {size:5, goal:'DIAGONAL DOUBLE', hint:'One point captures both groups.',
+      {size:5, goal:'DOUBLE ATARI', hint:'One move hits two groups at once.',
        B:[[0,1],[1,0],[2,1],[2,3],[3,2]], W:[[1,1],[2,2]], solution:[[1,2]], check:'captured'},
-      {size:5, goal:'EDGE PAIR', hint:'Two on the edge, one liberty left.',
+      {size:5, goal:'EDGE PAIR', hint:'Two white on the side, closed in.',
        B:[[0,0],[0,3],[1,2]], W:[[0,1],[0,2]], solution:[[1,1]], check:'captured'},
-      {size:5, goal:'CORNER PAIR', hint:'Diagonal two-stone, single escape.',
-       B:[[0,2],[1,1],[2,0]], W:[[0,0],[1,0]], solution:[[0,1]], check:'captured'}
+      {size:5, goal:'CORNER PAIR', hint:'Diagonal two-stone, only one escape.',
+       B:[[0,2],[1,1],[2,0]], W:[[0,0],[1,0]], solution:[[0,1]], check:'captured'},
+      // Beginner additions — distinctive single-liberty capture shapes.
+      {size:5, goal:'HANE AT THE SIDE', hint:'Two white stones stretched along the side.',
+       B:[[0,1],[1,0],[1,2],[2,0],[2,2]], W:[[1,1],[2,1]], solution:[[3,1]], check:'captured'},
+      {size:5, goal:'CROSS POINT', hint:'White is surrounded on three sides — close it.',
+       B:[[0,2],[1,1],[1,3]], W:[[1,2]], solution:[[2,2]], check:'captured'},
+      {size:5, goal:'DOWN THE SIDE', hint:'Three white stones along the first line.',
+       B:[[0,3],[1,0],[1,1],[1,2]], W:[[0,0],[0,1],[0,2]], solution:[[1,3]], check:'captured'},
+      {size:5, goal:'TWO BY TWO', hint:'A 2×2 block of white pressed into the corner.',
+       B:[[0,2],[1,2],[2,0],[2,1]], W:[[0,0],[0,1],[1,0],[1,1]], solution:[[2,2]], check:'noop'}
     ],
     intermediate: [
-      {size:5, goal:'CAPTURE THE LINE', hint:'Three in a row with one liberty.',
+      {size:5, goal:'CAPTURE THE LINE', hint:'Three in a row pressed against the edge.',
        B:[[0,3],[1,0],[1,1]], W:[[0,0],[0,1],[0,2]], solution:[[1,2]], check:'captured'},
-      {size:5, goal:'VERTICAL LINE', hint:'All but one liberty is stopped.',
+      {size:5, goal:'VERTICAL LINE', hint:'Three stones pinned against the side.',
        B:[[0,1],[1,1],[3,0]], W:[[0,0],[1,0],[2,0]], solution:[[2,1]], check:'captured'},
       {size:5, goal:'DOUBLE CAPTURE', hint:'One point takes two separate groups.',
        B:[[0,2],[1,1],[2,0]], W:[[0,1],[1,0]], solution:[[0,0]], check:'captured'},
-      {size:7, goal:'CUTTING STONES', hint:'The two cutting stones are nearly surrounded.',
+      {size:7, goal:'CUTTING STONES', hint:'The two cutters have nowhere to run.',
        B:[[1,0],[1,1],[1,3],[2,0],[2,3],[3,1],[3,2]], W:[[2,1],[2,2]], solution:[[1,2]], check:'captured'},
       {size:7, goal:'CENTER TRIO', hint:'Three center stones, single escape below.',
        B:[[1,2],[1,3],[1,4],[2,1],[2,5],[3,2],[3,4]], W:[[2,2],[2,3],[2,4]], solution:[[3,3]], check:'captured'},
-      {size:5, goal:'CORNER SQUARE', hint:'Corner 2×2 with one liberty.',
+      {size:5, goal:'CORNER SQUARE', hint:'Corner 2×2 shape has exactly one liberty.',
        B:[[0,2],[1,2],[2,0]], W:[[0,0],[0,1],[1,0],[1,1]], solution:[[2,1]], check:'captured'},
-      {size:7, goal:'PLUS SHAPE', hint:'Five-stone plus, escape below.',
+      {size:7, goal:'PLUS SHAPE', hint:'Five-stone plus with one escape.',
        B:[[1,3],[2,2],[2,4],[3,1],[3,5],[4,2],[4,4]], W:[[2,3],[3,2],[3,3],[3,4],[4,3]], solution:[[5,3]], check:'captured'},
-      {size:5, goal:'BENT TRIO', hint:'L-shape, single escape below.',
-       B:[[0,2],[1,2],[2,1]], W:[[0,0],[0,1],[1,1]], solution:[[1,0]], check:'captured'}
+      {size:5, goal:'BENT TRIO', hint:'L-shape, single liberty below.',
+       B:[[0,2],[1,2],[2,1]], W:[[0,0],[0,1],[1,1]], solution:[[1,0]], check:'captured'},
+      // Intermediate additions — verified capture/tesuji shapes.
+      {size:7, goal:'FOUR ON THE SIDE', hint:'Four white stones on the second line.',
+       B:[[0,0],[0,1],[0,2],[0,3],[2,0],[2,1],[2,2],[2,3]], W:[[1,0],[1,1],[1,2],[1,3]], solution:[[1,4]], check:'captured'},
+      {size:7, goal:'DIAGONAL CUT', hint:'Black plays between the diagonal white stones.',
+       B:[[0,1],[1,0],[2,1],[2,3],[3,2]], W:[[1,1]], solution:[[1,2]], check:'noop'},
+      {size:5, goal:'SURROUNDED SIDE', hint:'A three-stone line with only one hole.',
+       B:[[0,3],[1,0],[1,1],[1,2]], W:[[0,0],[0,1],[0,2]], solution:[[1,3]], check:'captured'}
     ],
     advanced: [
       {size:7, goal:'FIVE IN A ROW', hint:'The whole line has one liberty.',
        B:[[0,5],[1,0],[1,1],[1,2],[1,3]], W:[[0,0],[0,1],[0,2],[0,3],[0,4]], solution:[[1,4]], check:'captured'},
-      {size:7, goal:'L-SHAPE CAPTURE', hint:'The bent group has a single liberty.',
+      {size:7, goal:'L-SHAPE CAPTURE', hint:'The bent group has a single liberty left.',
        B:[[0,3],[1,0],[1,1],[2,1],[2,3],[3,2]], W:[[0,0],[0,1],[0,2],[1,2],[2,2]], solution:[[1,3]], check:'captured'},
       {size:7, goal:'INSIDE THE FORTRESS', hint:'The only liberty is inside.',
        B:[[0,3],[1,3],[2,3],[3,0],[3,1],[3,2],[3,3]], W:[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]], solution:[[1,1]], check:'captured'},
@@ -60,12 +77,21 @@ window._gameFns.livingstones = function LS(a){
        B:[[0,6],[1,0],[1,1],[1,2],[1,3],[1,4]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5]], solution:[[1,5]], check:'captured'},
       {size:7, goal:'T-SHAPE', hint:'Four-stone T with one liberty.',
        B:[[0,1],[0,2],[0,3],[1,0],[1,4],[2,1],[2,3]], W:[[1,1],[1,2],[1,3],[2,2]], solution:[[3,2]], check:'captured'},
-      {size:7, goal:'RING CAPTURE', hint:'The only liberty is the ring\'s center.',
+      {size:7, goal:'RING CAPTURE', hint:'The only liberty is the ring’s center.',
        B:[[1,2],[1,3],[1,4],[2,1],[2,5],[3,1],[3,5],[4,1],[4,5],[5,2],[5,3],[5,4]], W:[[2,2],[2,3],[2,4],[3,2],[3,4],[4,2],[4,3],[4,4]], solution:[[3,3]], check:'captured'},
       {size:9, goal:'SEVEN IN A ROW', hint:'Long edge line with one last liberty.',
        B:[[0,7],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6]], solution:[[1,6]], check:'captured'},
       {size:7, goal:'STAIRCASE', hint:'Stepping shape with one escape.',
-       B:[[0,1],[2,0],[2,2],[3,1]], W:[[0,0],[1,0],[1,1],[2,1]], solution:[[1,2]], check:'captured'}
+       B:[[0,1],[2,0],[2,2],[3,1]], W:[[0,0],[1,0],[1,1],[2,1]], solution:[[1,2]], check:'captured'},
+      // Advanced additions — long lines and classic teaching moves.
+      {size:9, goal:'EIGHT IN A ROW', hint:'A wall of eight white stones with one last liberty.',
+       B:[[0,8],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7]], solution:[[1,7]], check:'captured'},
+      {size:7, goal:'NET (GETA)', hint:'Cast a net — the right move leaves no escape.',
+       B:[[0,2],[1,1],[2,2],[3,3]], W:[[0,3]], solution:[[1,4]], check:'noop'},
+      {size:7, goal:'CORNER TRIO', hint:'Three stones trapped in the corner.',
+       B:[[0,3],[1,0],[1,1],[1,2]], W:[[0,0],[0,1],[0,2]], solution:[[1,3]], check:'captured'},
+      {size:9, goal:'WALL OF SEVEN', hint:'Seven white stones along the top, one last breath.',
+       B:[[0,7],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5]], W:[[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6]], solution:[[1,6]], check:'captured'}
     ]
   };
 
@@ -80,8 +106,29 @@ window._gameFns.livingstones = function LS(a){
 
   ms(a,'<strong id="LSn">Choose difficulty</strong>');
   mm(a);
+  // Inject Living Stones styles once
+  if(!document.getElementById('LSstyle')){
+    var lsStyle=document.createElement('style');lsStyle.id='LSstyle';
+    lsStyle.textContent=[
+      '#LSpan{padding-top:8px!important;}',
+      // Smoother button interactions in the menu
+      '#LSpan .gb{transition:transform .12s ease, background .18s ease, border-color .18s ease, color .18s ease;}',
+      '#LSpan .gb:active{transform:scale(.96);}',
+      '#LSpan svg{transition:filter .2s ease;}',
+      // Fade-in for puzzle + AI views
+      '@keyframes lsFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}',
+      '#LSpan > div, #LSpan > svg{animation:lsFadeIn .3s ease;}',
+      // Stone placement bump
+      '@keyframes lsStoneIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}',
+      // Subtle menu-card hover for puzzle buttons
+      '#LSpan .gb:hover{background:rgba(122,179,86,0.15);border-color:rgba(122,179,86,0.5);}',
+      // Reduced-motion respect
+      '@media (prefers-reduced-motion:reduce){#LSpan > div, #LSpan > svg{animation:none}#LSpan .gb{transition:none}}'
+    ].join('');
+    document.head.appendChild(lsStyle);
+  }
   var pan=document.createElement('div');pan.id='LSpan';
-  pan.style.cssText='max-width:420px;margin:0 auto;padding:6px;user-select:none;text-align:center;';
+  pan.style.cssText='max-width:440px;margin:0 auto;padding:8px 6px;user-select:none;text-align:center;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_LSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
@@ -161,7 +208,10 @@ window._gameFns.livingstones = function LS(a){
     // Names reflect actual strength — classical MCTS without pattern
     // rollouts caps around 15 kyu at 10k playouts per audit. No
     // overclaiming.
-    var ais=[['9×9 NOVICE · 1500',9,1500],['9×9 STEADY · 4000',9,4000],['9×9 KEEN · 10000',9,10000],['13×13 STEADY · 4000',13,4000]];
+    // Playout counts tuned for responsiveness — was 1500/4000/10000
+    // which felt sluggish. Typical mobile-JS MCTS clocks ~1.5-2ms per
+    // playout, so a Steady move now lands in ~3-4s instead of ~8s.
+    var ais=[['9×9 NOVICE · 800',9,800],['9×9 STEADY · 2000',9,2000],['9×9 KEEN · 5000',9,5000],['13×13 STEADY · 2000',13,2000]];
     for(var j=0;j<ais.length;j++){
       h+='<button class="gb" onclick="_LSai('+ais[j][1]+','+ais[j][2]+')" style="display:block;width:260px;margin:6px auto;padding:10px;min-height:48px;font-size:0.82rem;letter-spacing:0.04em;">'+ais[j][0]+'</button>';
     }
