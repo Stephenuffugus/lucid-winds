@@ -1,11 +1,16 @@
 // ═══ LUCID WINDS — Sprout (5-letter word puzzle) ═══
 // 6 guesses to find the hidden 5-letter word.
-//   Green  = right letter, right position
-//   Gold   = right letter, wrong position
-//   Muted  = letter not in the word
+//   Green = right letter, right position
+//   Gold  = right letter, wrong position
+//   Muted = letter not in the word
 // Modes: DAILY (same word for everyone that day) and RANDOM (unlimited).
-// Streak persists across sessions. Share button copies an emoji grid.
-// On-screen QWERTY + hardware keyboard support.
+//
+// INPUT: fully on-screen QWERTY keyboard. No native mobile keyboard,
+// no autocorrect, no hidden input drama. Desktop players can still
+// type on their physical keyboard — ENTER/BACKSPACE/A–Z all wired.
+//
+// Key colors mirror cell colors after each guess (pw-hit/pw-near/pw-miss)
+// so players know which letters are exhausted.
 (function(){
 'use strict';
 var G=window._G;
@@ -19,40 +24,45 @@ var SOLUTIONS=('about above abuse actor acute admit adopt adult after again agen
 // less common but real English 5-letter words. These are NEVER the answer.
 var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash abate abaya abbey abbot abeam abets abhor abide abled abler ables abode abort abuzz abyes abyss acing acini acned acnes acorn acrid acted actin acyls adage added adder addle adepts adieu adios adits adobe adobo adore adorn adown adozen adult adzed adzes aegis aerie aeons affix afire afoot afore afoul afros after agave agazed agene agers aggie aggro aghas aging agist agita aglow agone agora agree ahead ahems ahold aided aides aides aimed aimer aioli aired airer aisle aitch aitus ajuga alack alamo alans alarm alary alate albas album alcid alder aldol alecs aleph alert alfas algal algas algid algin algum alias alibi alien align alike alist alive aliya alkyd alkyl allay allee alley allow alloy aloes aloft aloha alone along aloof aloud alpha altar alter altho altos alums alway amahs amass amaze ambit amble ambos ameba amebi amend amens amide amido amids amies amiga amigo amine amino amirs amiss amity ammon amnio amoks among amore amort amour amped ample amply ampul amuck amuse amyls anchor ancon andro anear anele anent angel anger angle angst anile anils anima anime animi anion anise ankhs ankle annal annas annex annoy annul anode anole anoles antae antas anted antes antic antis antra antre antsy anvil aorta apace apart apeak apeek apers aphid aphis apian aping apish aplomb apnea apogee apols apped apple apply apres april apron apses apsis apter aquas aquae arabs araks arbor arced arcos arcus areal areas areca areic arena arene arepa arete argal argil argle argon argosy argot argue argus arhat arias ariel arils arise aroma arose arrow arsed arsen arson artsy arums aryls asana ascot aside asked asker askew aspen aspic assai assay assed asses asset aster astir asura asway aswim atlas atman atoll atoms atomy atone atria atrip attar audio audit auger aught augur aunts aunty aurae aural auras auric aurum autos auxin avail avant avast avens avers aviso avoid avows await awake award aware awash awful awoke axels axial axile axils axing axion axles axman axmen ayahs ayins azans azide azido azine azlon azole azons azoth azuki azure baaed baals babas babes babka baboo babul babus bacon badge bads badly bagel baggy bails bairn baith baiza baize baked baker bakes balas balds baldy baled baler bales balks balky balls balmy banal bancs banco banda bands bandy banes bangs banjo banks bantu banty barbe barbs barca bards bared barer bares barfs barge baric barks barky barms barmy barns barny baron baser bases basha basic basil basin basis basks basso bassy baste bated bates bathe baths batik bats batty bawds bawdy bawls bayed bayou bazar beach beads beady beaks beaky beams beany bears beast beats beaus beaut beavy beccos becks bedel bedew bedim beech beefs beefy beers beery beets beggar begin begot begum beige being belay belch belie bells belly below belts bemix bemoan bench bends bendy benes benny bents beret berms berth beryl beset besom bests betas betel bethel betel bevel bezel bhang bialy bibbs bible bicep bided bides bidet bield biers biffs bigly bigos bijou biked biker bikes bikie bilbo biles bilge bilgy bills billy bimah bimbo binal binds binge bingo binit biome bionic biota biped birch birds birls birrs birth bison bitch biter bites bitsy bitty blabs black blade blah blame bland blank blare blase blast blats blaze bleak blear bleat blebs bleed bleep blend blent bless blest blimp blind blini blink blips bliss blitz bloat blobs block blocs blogs bloke blond blood bloom blots blown blows blued bluer blues bluey bluff blunt blurb blurs blurt blush blype boars boars boast boats bobby bocce bocci bocks bodes boded bodes boffo bogan bogey boggy bogie bogus bohea boils boing boite bolas boles bolls bolos bolts boma bombe bombo bombs bonds boned boner bones boney bongo bongs bonks bonny bonus bonzo booby booed books boomy boons boors boost booth boots booty booze boozy boppy borax bored borer bores boric boron borsh borts bosky bosns bosom boson bossa bossy bosun botch botel boths bough boules bound bourn bouse bousy bouts bovid bovine bower bowed bowel bower bowls boxer boxes boxier boxy boyar boyla boyos bozos braai brace bract brads braes brags braid brain brake brand brans brant brash brass brats brava brave bravo brawl brawn brays braze bread break bream breast breath breed brews briar bribe brick bride brief brier brigs briny brisk broad broch brock broil broke broll bronc broods brook broom broth brown brows brrrs brunch brung brunt brush brusk brute bubba bubby buchu bucko bucks buddy budge buffo buffs buffy buggy bugle bugs build built bulge bulgy bulks bulky bulls bully bumfs bumph bumps bumpy bunch bunco bundt bundy bungs bungy bunko bunks bunks bunny bunts bunya buoys burak buran buras burds burgh burgs burin burls burly burns burnt burps burqa burro burrs burry bursa burse burst bused buses bushy busks busty butch butes butle butte butts butty butyl buxom buyer buzzy byres bylaw byway').split(/\s+/);
 
+// ── Styles (injected once per session) ──
 (function injectStyle(){
   if(document.getElementById('pw-petal-style'))return;
   var s=document.createElement('style');s.id='pw-petal-style';
   s.cssText=[
-    '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 6px 14px;max-width:520px;margin:0 auto;width:100%;box-sizing:border-box;}',
-    '.pw-board{display:grid;grid-template-columns:1fr;gap:8px;padding:6px 0;width:min(380px,94vw);margin:0 auto;}',
-    '.pw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;}',
-    '.pw-cell{aspect-ratio:1;width:100%;border:2.5px solid rgba(74,124,53,0.5);background:rgba(13,16,12,0.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.9rem,8vw,2.8rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:10px;transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease;line-height:1;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 0 rgba(0,0,0,0.3);box-sizing:border-box;}',
-    '.pw-cell.pw-typed{border-color:rgba(200,168,75,0.8);box-shadow:0 0 12px rgba(200,168,75,0.25);}',
-    '.pw-cell.pw-active{border-color:rgba(200,168,75,0.65);box-shadow:inset 0 0 0 1px rgba(200,168,75,0.25);}',
-    '.pw-cell.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c;}',
-    '.pw-cell.pw-near{background:var(--gold,#c8a84b);border-color:var(--gold,#c8a84b);color:#0d100c;}',
-    '.pw-cell.pw-miss{background:rgba(40,44,36,0.85);border-color:rgba(60,68,54,0.85);color:rgba(232,220,200,0.55);}',
-    '.pw-flip{animation:pwFlip .6s ease both;}',
+    '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 4px 12px;max-width:520px;margin:0 auto;width:100%;box-sizing:border-box}',
+    '.pw-board{display:grid;grid-template-columns:1fr;gap:5px;padding:4px 0;width:min(320px,80vw);margin:0 auto;box-sizing:border-box}',
+    '.pw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:100%;box-sizing:border-box}',
+    '.pw-cell{aspect-ratio:1;width:100%;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,6vw,2rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:7px;line-height:1;user-select:none;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3);transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease}',
+    '.pw-cell.pw-typed{border-color:rgba(200,168,75,.8);box-shadow:0 0 10px rgba(200,168,75,.25)}',
+    '.pw-cell.pw-active{border-color:rgba(200,168,75,.65);box-shadow:inset 0 0 0 1px rgba(200,168,75,.25)}',
+    '.pw-cell.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c}',
+    '.pw-cell.pw-near{background:var(--gold,#c8a84b);border-color:var(--gold,#c8a84b);color:#0d100c}',
+    '.pw-cell.pw-miss{background:rgba(40,44,36,.85);border-color:rgba(60,68,54,.85);color:rgba(232,220,200,.55)}',
+    '.pw-flip{animation:pwFlip .6s ease both}',
     '@keyframes pwFlip{0%{transform:rotateX(0)}45%{transform:rotateX(90deg)}55%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}',
-    '.pw-shake{animation:pwShake .42s ease;}',
+    '.pw-shake{animation:pwShake .42s ease}',
     '@keyframes pwShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}35%{transform:translateX(6px)}55%{transform:translateX(-3px)}75%{transform:translateX(3px)}}',
-    '.pw-ctrls{display:flex;gap:10px;justify-content:center;padding:2px 0 4px;width:100%;}',
-    '.pw-ctrl{flex:1;max-width:200px;min-height:52px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(26,31,23,0.85);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.16em;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px;}',
-    '.pw-ctrl:active{transform:scale(0.96);background:rgba(122,179,86,0.2);}',
-    '.pw-ctrl.primary{background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border-color:rgba(122,179,86,0.6);color:#c8e09b;}',
-    '.pw-howto{font-family:DM Mono,monospace;font-size:0.72rem;color:var(--cream);background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.25);border-radius:8px;padding:7px 12px;margin:2px auto;max-width:420px;text-align:center;line-height:1.4;letter-spacing:0.02em;}',
-    '.pw-howto strong{color:var(--gold);}',
-    '.pw-msg{font-family:DM Mono,monospace;font-size:0.76rem;color:var(--gold,#c8a84b);text-align:center;min-height:1.4em;letter-spacing:0.06em;padding:2px 0;}',
-    '.pw-modebar{display:flex;justify-content:center;gap:6px;padding:4px 0;}',
-    '.pw-modebtn{padding:6px 14px;background:rgba(26,31,23,0.7);border:1px solid rgba(122,179,86,0.3);border-radius:6px;color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;cursor:pointer;transition:background .2s ease;}',
-    '.pw-modebtn.active{background:rgba(122,179,86,0.25);border-color:rgba(122,179,86,0.7);color:#c8e09b;}',
-    '.pw-stats{display:flex;justify-content:center;gap:14px;padding:2px 0 4px;font-family:DM Mono,monospace;font-size:0.68rem;color:rgba(232,220,200,0.75);letter-spacing:0.06em;}',
-    '.pw-stats strong{color:var(--gold);}',
-    '.pw-result{margin:8px auto;padding:10px 14px;max-width:380px;background:rgba(13,16,12,0.85);border:1.5px solid rgba(122,179,86,0.35);border-radius:9px;text-align:center;font-family:DM Mono,monospace;font-size:0.78rem;color:var(--cream);}',
-    '.pw-result strong{color:var(--gold);display:block;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.1em;margin-bottom:4px;}',
-    '.pw-share{margin-top:8px;padding:8px 16px;background:rgba(122,179,86,0.2);border:1px solid rgba(122,179,86,0.5);color:#c8e09b;border-radius:6px;cursor:pointer;font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;}',
-    '.pw-share:active{background:rgba(122,179,86,0.35);}',
-    '.pw-hidden-input{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;}'
+    // Modebar + stats + info
+    '.pw-modebar{display:flex;justify-content:center;gap:6px;padding:4px 0}',
+    '.pw-modebtn{padding:5px 14px;background:rgba(26,31,23,.7);border:1px solid rgba(122,179,86,.3);border-radius:6px;color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:.75rem;letter-spacing:.12em;cursor:pointer;transition:background .2s ease;min-height:36px}',
+    '.pw-modebtn.active{background:rgba(122,179,86,.25);border-color:rgba(122,179,86,.7);color:#c8e09b}',
+    '.pw-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:.64rem;color:rgba(232,220,200,.72);letter-spacing:.06em}',
+    '.pw-stats strong{color:var(--gold)}',
+    '.pw-msg{font-family:DM Mono,monospace;font-size:.72rem;color:var(--gold,#c8a84b);text-align:center;min-height:1.3em;letter-spacing:.06em;padding:0}',
+    // Result card
+    '.pw-result{margin:6px auto;padding:10px 14px;max-width:340px;background:rgba(13,16,12,.85);border:1.5px solid rgba(122,179,86,.35);border-radius:9px;text-align:center;font-family:DM Mono,monospace;font-size:.72rem;color:var(--cream)}',
+    '.pw-result strong{color:var(--gold);display:block;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:.1em;margin-bottom:4px}',
+    '.pw-share{margin-top:8px;padding:8px 16px;background:rgba(122,179,86,.2);border:1px solid rgba(122,179,86,.5);color:#c8e09b;border-radius:6px;cursor:pointer;font-family:Bebas Neue,sans-serif;font-size:.78rem;letter-spacing:.14em}',
+    '.pw-share:active{background:rgba(122,179,86,.35)}',
+    // ── On-screen QWERTY keyboard ─────────────────────────────────
+    '.pw-kb{display:flex;flex-direction:column;gap:5px;padding:6px 4px 4px;max-width:460px;margin:0 auto;width:100%;box-sizing:border-box}',
+    '.pw-kb-row{display:flex;gap:4px;justify-content:center;touch-action:manipulation}',
+    '.pw-key{flex:1 1 auto;min-height:52px;max-width:44px;background:rgba(26,31,23,.88);border:1px solid rgba(74,124,53,.35);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1rem;font-weight:500;border-radius:5px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .08s ease,color .15s ease;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0;letter-spacing:.04em}',
+    '.pw-key:active{transform:scale(.93);background:rgba(74,124,53,.22)}',
+    '.pw-key.wide{flex:1.5 1 auto;max-width:68px;font-size:.68rem;letter-spacing:.08em}',
+    '.pw-key.pw-hit{background:var(--sage);border-color:var(--sage);color:#0d100c}',
+    '.pw-key.pw-near{background:var(--gold);border-color:var(--gold);color:#0d100c}',
+    '.pw-key.pw-miss{background:rgba(40,44,36,.85);border-color:rgba(60,68,54,.85);color:rgba(232,220,200,.5)}'
   ].join('');
   document.head.appendChild(s);
 })();
@@ -102,10 +112,11 @@ window._gameFns=window._gameFns||{};
 window._gameFns.sprout=function GPW(a){
   buildValidSet();
   var answer='',row=0,col=0,grid=[],done=false;
-  var keyState={};
+  var keyState={}; // letter → 'hit' | 'near' | 'miss'
+  var keyButtons={}; // letter → key button element
   var mode='daily';
   var rowStatuses=[]; // per submitted row: array of 'hit'|'near'|'miss'
-  var rowGuesses=[];  // per submitted row: the 5-letter guess as lowercase string
+  var rowGuesses=[];  // per submitted row: the 5-letter guess
   var stats=loadStats();
 
   ms(a,'Guess: <strong id="PWg">0</strong>/6 · streak <strong id="PWstreak">'+stats.streak+'</strong>');
@@ -117,67 +128,49 @@ window._gameFns.sprout=function GPW(a){
   modeBar.innerHTML='<button class="pw-modebtn" data-m="daily">DAILY</button><button class="pw-modebtn" data-m="random">RANDOM</button>';
   stage.appendChild(modeBar);
 
-  var statsRow=document.createElement('div');statsRow.className='pw-stats';
-  statsRow.id='PWstats';
+  var statsRow=document.createElement('div');statsRow.className='pw-stats';statsRow.id='PWstats';
   stage.appendChild(statsRow);
 
-  var howto=document.createElement('div');howto.className='pw-howto';
-  howto.innerHTML='Type 5 letters, tap <strong>ENTER</strong>. <strong style="color:#7ab356">Green</strong> = right spot. <strong style="color:#c8a84b">Gold</strong> = wrong spot.';
-  stage.appendChild(howto);
   var wrap=document.createElement('div');wrap.className='pw-board';wrap.id='PWboard';stage.appendChild(wrap);
   var msg=document.createElement('div');msg.className='pw-msg';msg.id='PWmsg';stage.appendChild(msg);
 
-  // Hidden input drives the native device keyboard on mobile. Focusing it
-  // pops up iOS/Android keyboard; on desktop it quietly collects keystrokes
-  // via keydown below.
-  var hiddenIn=document.createElement('input');
-  hiddenIn.className='pw-hidden-input';
-  hiddenIn.setAttribute('autocomplete','off');
-  hiddenIn.setAttribute('autocorrect','off');
-  hiddenIn.setAttribute('autocapitalize','off');
-  hiddenIn.setAttribute('spellcheck','false');
-  hiddenIn.setAttribute('inputmode','text');
-  hiddenIn.setAttribute('type','text');
-  hiddenIn.setAttribute('maxlength','5');
-  hiddenIn.setAttribute('aria-label','Type your guess');
-  stage.appendChild(hiddenIn);
-
-  var ctrlRow=document.createElement('div');ctrlRow.className='pw-ctrls';
-  var delBtn=document.createElement('button');delBtn.className='pw-ctrl';delBtn.innerHTML='⌫ DELETE';delBtn.type='button';
-  var enterBtn=document.createElement('button');enterBtn.className='pw-ctrl primary';enterBtn.innerHTML='⏎ ENTER';enterBtn.type='button';
-  ctrlRow.appendChild(delBtn);ctrlRow.appendChild(enterBtn);
-  stage.appendChild(ctrlRow);
+  // ── On-screen keyboard ──
+  // Three rows, Wordle layout. ENTER and ⌫ span 1.5x wider.
+  var kb=document.createElement('div');kb.className='pw-kb';kb.id='PWkb';stage.appendChild(kb);
+  var KB_ROWS=[
+    'qwertyuiop'.split(''),
+    'asdfghjkl'.split(''),
+    ['ENTER'].concat('zxcvbnm'.split(''),['BACK'])
+  ];
 
   var resultHost=document.createElement('div');resultHost.id='PWresult';stage.appendChild(resultHost);
 
   mc(a).innerHTML='<button class="gb" onclick="window._PWNew()">🔄 NEW</button>';
 
-  function focusInput(){
-    if(done)return;
-    try{hiddenIn.focus({preventScroll:true});}catch(_){try{hiddenIn.focus();}catch(__){}}
+  function buildKeyboard(){
+    kb.innerHTML='';keyButtons={};
+    for(var r=0;r<KB_ROWS.length;r++){
+      var rowEl=document.createElement('div');rowEl.className='pw-kb-row';
+      for(var i=0;i<KB_ROWS[r].length;i++){
+        (function(k){
+          var btn=document.createElement('button');
+          btn.className='pw-key'+(k==='ENTER'||k==='BACK'?' wide':'');
+          btn.type='button';
+          btn.innerHTML=k==='BACK'?'⌫':(k==='ENTER'?'ENTER':k.toUpperCase());
+          btn.setAttribute('data-k',k);
+          btn.onclick=function(e){
+            e.preventDefault();
+            if(k==='ENTER')submitGuess();
+            else if(k==='BACK')deleteLetter();
+            else typeLetter(k);
+          };
+          rowEl.appendChild(btn);
+          if(k!=='ENTER'&&k!=='BACK')keyButtons[k]=btn;
+        })(KB_ROWS[r][i]);
+      }
+      kb.appendChild(rowEl);
+    }
   }
-  // Tapping anywhere on the stage re-focuses the input so the native
-  // keyboard comes back if it closed. Use mousedown/touchstart so the
-  // focus happens inside the user-gesture window.
-  stage.addEventListener('mousedown',function(e){
-    if(e.target===delBtn||e.target===enterBtn||e.target.closest('.pw-modebtn'))return;
-    setTimeout(focusInput,0);
-  });
-  stage.addEventListener('touchstart',function(e){
-    if(e.target===delBtn||e.target===enterBtn||e.target.closest('.pw-modebtn'))return;
-    setTimeout(focusInput,0);
-  },{passive:true});
-
-  delBtn.addEventListener('click',function(e){e.preventDefault();deleteLetter();focusInput();});
-  enterBtn.addEventListener('click',function(e){e.preventDefault();submitGuess();focusInput();});
-
-  // Normalize the hidden input on every keystroke so mobile browsers that
-  // fire 'input' instead of 'keydown' still work.
-  hiddenIn.addEventListener('input',function(){
-    var v=(hiddenIn.value||'').toLowerCase().replace(/[^a-z]/g,'');
-    // Snap the row to match what's currently in the input
-    syncFromInput(v);
-  });
 
   modeBar.addEventListener('click',function(e){
     var t=e.target;
@@ -201,26 +194,23 @@ window._gameFns.sprout=function GPW(a){
   }
 
   function pickWord(){
-    if(mode==='daily'){return SOLUTIONS[dailyIndex()];}
+    if(mode==='daily')return SOLUTIONS[dailyIndex()];
     return SOLUTIONS[Math.floor(Math.random()*SOLUTIONS.length)];
   }
 
+  // Inline-style board build so it survives CSS purges (Stephen hit
+  // this on his phone — cells rendered as plain letters stacking
+  // vertically when the injected style block failed to apply).
   function buildBoard(){
-    // Belt-and-suspenders layout: every structural rule is set inline so
-    // it survives even when the injected <style> block fails to apply
-    // (Stephen hit this on his phone — cells rendered as plain letters
-    // stacking vertically). Color state (hit/near/miss) is also set
-    // inline during submitGuess, so the game never depends on the CSS
-    // classes for any visible effect.
     wrap.innerHTML='';grid=[];rowStatuses=[];
-    wrap.style.cssText='display:grid;grid-template-columns:1fr;gap:8px;padding:6px 0;width:min(420px,96vw);margin:0 auto;box-sizing:border-box;';
+    wrap.style.cssText='display:grid;grid-template-columns:1fr;gap:5px;padding:4px 0;width:min(320px,80vw);margin:0 auto;box-sizing:border-box';
     for(var r=0;r<6;r++){
       var rowEl=document.createElement('div');rowEl.className='pw-row';
-      rowEl.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;box-sizing:border-box;';
+      rowEl.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:100%;box-sizing:border-box';
       var cells=[];
       for(var c=0;c<5;c++){
         var cell=document.createElement('div');cell.className='pw-cell';
-        cell.style.cssText='aspect-ratio:1;width:100%;box-sizing:border-box;border:2.5px solid rgba(74,124,53,0.5);background:rgba(13,16,12,0.7);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:clamp(1.8rem,7.5vw,2.6rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:10px;transition:background .28s ease,border-color .28s ease,color .28s ease;line-height:1;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 0 rgba(0,0,0,0.3);';
+        cell.style.cssText='aspect-ratio:1;width:100%;box-sizing:border-box;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:clamp(1.4rem,6vw,2rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:7px;transition:background .28s ease,border-color .28s ease,color .28s ease;line-height:1;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3)';
         rowEl.appendChild(cell);cells.push(cell);
       }
       wrap.appendChild(rowEl);grid.push(cells);
@@ -229,21 +219,25 @@ window._gameFns.sprout=function GPW(a){
 
   function showMsg(t){msg.textContent=t;}
 
-  // Apply hit/near/miss colors inline so the game is legible even when
-  // the injected stylesheet is blocked. Inline wins class specificity.
   function applyStatusStyle(cell,st){
     if(st==='hit'){cell.style.background='#7ab356';cell.style.borderColor='#7ab356';cell.style.color='#0d100c';}
     else if(st==='near'){cell.style.background='#c8a84b';cell.style.borderColor='#c8a84b';cell.style.color='#0d100c';}
-    else if(st==='miss'){cell.style.background='rgba(40,44,36,0.85)';cell.style.borderColor='rgba(60,68,54,0.85)';cell.style.color='rgba(232,220,200,0.55)';}
+    else if(st==='miss'){cell.style.background='rgba(40,44,36,.85)';cell.style.borderColor='rgba(60,68,54,.85)';cell.style.color='rgba(232,220,200,.55)';}
   }
 
-  // Mark which cell has the "active" cursor glow (just the next-empty cell
-  // in the current row).
+  function updateKeyStyles(){
+    for(var k in keyButtons){
+      var btn=keyButtons[k];
+      btn.classList.remove('pw-hit','pw-near','pw-miss');
+      if(keyState[k])btn.classList.add('pw-'+keyState[k]);
+    }
+  }
+
   function markActive(){
     if(!grid[row])return;
     for(var c=0;c<5;c++){
       var cell=grid[row][c];if(!cell)continue;
-      if(c===col) cell.classList.add('pw-active');
+      if(c===col)cell.classList.add('pw-active');
       else cell.classList.remove('pw-active');
     }
   }
@@ -251,11 +245,12 @@ window._gameFns.sprout=function GPW(a){
   function typeLetter(ch){
     if(done||row>=6||col>=5)return;
     var cell=grid[row][col];
-    cell.textContent=ch;
+    cell.textContent=ch.toUpperCase();
     cell.classList.add('pw-typed');
     col++;
     markActive();
     _play('tap');
+    try{if(navigator.vibrate)navigator.vibrate(5);}catch(e){}
   }
 
   function deleteLetter(){
@@ -265,28 +260,7 @@ window._gameFns.sprout=function GPW(a){
     cell.textContent='';
     cell.classList.remove('pw-typed');
     markActive();
-    // Also trim the hidden input so native keyboard stays in sync
-    if(hiddenIn.value.length>col)hiddenIn.value=hiddenIn.value.slice(0,col);
-  }
-
-  // Keep the visible row synced with whatever's in the hidden input.
-  // Handles paste, autocorrect interference, and the generic 'input' event.
-  function syncFromInput(v){
-    if(done)return;
-    v=(v||'').slice(0,5);
-    // Rebuild the current row from v
-    for(var c=0;c<5;c++){
-      var cell=grid[row][c];if(!cell)continue;
-      if(c<v.length){
-        cell.textContent=v[c];
-        cell.classList.add('pw-typed');
-      } else {
-        cell.textContent='';
-        cell.classList.remove('pw-typed');
-      }
-    }
-    col=v.length;
-    markActive();
+    _play('tap');
   }
 
   function shakeRow(r){
@@ -317,9 +291,7 @@ window._gameFns.sprout=function GPW(a){
     }
     rowStatuses.push(status.slice());
     rowGuesses.push(guess);
-    // Freeze the hidden input during the flip reveal so late keystrokes
-    // don't bleed into the next row.
-    hiddenIn.blur();hiddenIn.value='';
+    try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
     for(var c=0;c<5;c++){
       (function(c){
         setTimeout(function(){
@@ -329,7 +301,12 @@ window._gameFns.sprout=function GPW(a){
           setTimeout(function(){
             cell.classList.add('pw-'+status[c]);
             applyStatusStyle(cell,status[c]);
-            keyState[guess[c]]=status[c];
+            // Update keyboard letter state — upgrade only (hit > near > miss)
+            var letter=guess[c];
+            var prev=keyState[letter];
+            var newS=status[c];
+            if(!prev||prev==='miss'||(prev==='near'&&newS==='hit'))keyState[letter]=newS;
+            updateKeyStyles();
           },280);
         },c*250);
       })(c);
@@ -344,7 +321,7 @@ window._gameFns.sprout=function GPW(a){
         recordResult(true,row+1);
         showResult(true,row+1);
         _sr('sprout',{w:true,s:row+1});
-      } else {
+      }else{
         row++;col=0;
         var gEl=document.getElementById('PWg');if(gEl)gEl.textContent=row;
         if(row>=6){
@@ -352,9 +329,8 @@ window._gameFns.sprout=function GPW(a){
           recordResult(false,null);
           showResult(false,null);
           _sr('sprout',{w:false,s:answer});
-        } else {
+        }else{
           markActive();
-          focusInput();
         }
       }
     },5*250+340);
@@ -365,26 +341,23 @@ window._gameFns.sprout=function GPW(a){
     var isDaily=(mode==='daily');
     if(won){
       stats.won++;
-      if(guesses){
-        stats.winsByRow[guesses-1]=(stats.winsByRow[guesses-1]||0)+1;
-      }
+      if(guesses)stats.winsByRow[guesses-1]=(stats.winsByRow[guesses-1]||0)+1;
       if(isDaily){
         var today=todayKey();
         if(stats.lastDay){
-          // Day delta: 1 = consecutive, else reset
           var yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
           var yKey=yesterday.getFullYear()+'-'+(yesterday.getMonth()+1)+'-'+yesterday.getDate();
           if(stats.lastDay===yKey)stats.streak++;
-          else if(stats.lastDay===today){/* same day, already counted */}
+          else if(stats.lastDay===today){/* same day already counted */}
           else stats.streak=1;
-        } else {
+        }else{
           stats.streak=1;
         }
         stats.lastDay=today;
         if(stats.streak>stats.best)stats.best=stats.streak;
         saveDaily({day:today,won:true,guesses:guesses,answer:answer,rows:rowStatuses,letters:rowGuesses});
       }
-    } else {
+    }else{
       if(isDaily){
         stats.streak=0;
         saveDaily({day:todayKey(),won:false,guesses:null,answer:answer,rows:rowStatuses,letters:rowGuesses});
@@ -417,11 +390,8 @@ window._gameFns.sprout=function GPW(a){
     var share=document.createElement('button');share.className='pw-share';share.textContent='SHARE';
     share.onclick=function(){
       var text='SPROUT · '+modeLabel+' · '+(won?guesses+'/6':'X/6')+'\n\n'+emojiGrid()+'\n\nlucidwinds.com';
-      if(navigator.share){
-        navigator.share({text:text}).catch(function(){copyToClip(text);});
-      } else {
-        copyToClip(text);
-      }
+      if(navigator.share)navigator.share({text:text}).catch(function(){copyToClip(text);});
+      else copyToClip(text);
     };
     box.appendChild(share);
     host.appendChild(box);
@@ -430,7 +400,7 @@ window._gameFns.sprout=function GPW(a){
   function copyToClip(text){
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){showMsg('Copied!');}).catch(function(){fallbackCopy(text);});
-    } else {
+    }else{
       fallbackCopy(text);
     }
   }
@@ -441,23 +411,15 @@ window._gameFns.sprout=function GPW(a){
     document.body.removeChild(ta);
   }
 
-  // Desktop hardware keyboard — handles ENTER/BACKSPACE directly. Letter
-  // keys fall through to the hidden input's own input handler.
+  // Physical keyboard on desktop
   function onKey(e){
     if(done)return;
+    var ae=document.activeElement;
+    if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.isContentEditable))return;
     if(e.key==='Enter'){submitGuess();e.preventDefault();return;}
-    if(e.key==='Backspace'){
-      // If the hidden input already has focus, let its native backspace
-      // fire and the 'input' listener will sync. Otherwise delete manually.
-      if(document.activeElement!==hiddenIn){deleteLetter();e.preventDefault();}
-      return;
-    }
-    // If nothing is focused on the input, mirror letters manually so
-    // desktop users can type without clicking first.
-    if(document.activeElement!==hiddenIn){
-      var ch=(e.key||'').toLowerCase();
-      if(ch.length===1&&ch>='a'&&ch<='z'){typeLetter(ch);hiddenIn.value=buildGuess().slice(0,col);}
-    }
+    if(e.key==='Backspace'){deleteLetter();e.preventDefault();return;}
+    var ch=(e.key||'').toLowerCase();
+    if(ch.length===1&&ch>='a'&&ch<='z'){typeLetter(ch);e.preventDefault();}
   }
   document.addEventListener('keydown',onKey);
   var watcher=setInterval(function(){
@@ -471,8 +433,7 @@ window._gameFns.sprout=function GPW(a){
     answer=pickWord();row=0;col=0;done=false;keyState={};rowStatuses=[];rowGuesses=[];
     var gEl=document.getElementById('PWg');if(gEl)gEl.textContent='0';
     showMsg('');document.getElementById('PWresult').innerHTML='';
-    hiddenIn.value='';
-    buildBoard();updateModeUI();updateStatsRow();markActive();
+    buildBoard();buildKeyboard();updateModeUI();updateStatsRow();markActive();
     // If daily is already solved today, show result + locked state
     if(mode==='daily'){
       var saved=loadDaily();
@@ -480,26 +441,29 @@ window._gameFns.sprout=function GPW(a){
         answer=saved.answer;
         rowStatuses=saved.rows||[];
         rowGuesses=saved.letters||[];
-        // Replay the rows visually: write the letters AND the colors.
         for(var rr=0;rr<rowStatuses.length;rr++){
           var letters=rowGuesses[rr]||'';
           for(var cc=0;cc<5;cc++){
             var cell=grid[rr][cc];
-            if(letters[cc])cell.textContent=letters[cc];
+            if(letters[cc])cell.textContent=letters[cc].toUpperCase();
             cell.classList.add('pw-'+rowStatuses[rr][cc]);
             applyStatusStyle(cell,rowStatuses[rr][cc]);
+            // Rehydrate keyboard state from saved rows
+            var letter=letters[cc];
+            var st=rowStatuses[rr][cc];
+            if(letter){
+              var prev=keyState[letter];
+              if(!prev||prev==='miss'||(prev==='near'&&st==='hit'))keyState[letter]=st;
+            }
           }
         }
+        updateKeyStyles();
         done=true;
-        if(saved.won)showMsg('Daily done. Come back tomorrow for a new word.');
-        else showMsg('Daily complete. Try random mode or come back tomorrow.');
+        showMsg(saved.won?'Daily done. Come back tomorrow.':'Daily complete. Try random mode or come back tomorrow.');
         showResult(saved.won,saved.guesses);
       }
     }
   };
   _PWNew();
-  // Auto-focus the hidden input so mobile users see the native keyboard
-  // right away. Wrap in a short timeout to land after the DOM paints.
-  setTimeout(focusInput,60);
 };
 })();
