@@ -206,12 +206,21 @@ window._gameFns.sprout=function GPW(a){
   }
 
   function buildBoard(){
+    // Belt-and-suspenders layout: every structural rule is set inline so
+    // it survives even when the injected <style> block fails to apply
+    // (Stephen hit this on his phone — cells rendered as plain letters
+    // stacking vertically). Color state (hit/near/miss) is also set
+    // inline during submitGuess, so the game never depends on the CSS
+    // classes for any visible effect.
     wrap.innerHTML='';grid=[];rowStatuses=[];
+    wrap.style.cssText='display:grid;grid-template-columns:1fr;gap:8px;padding:6px 0;width:min(420px,96vw);margin:0 auto;box-sizing:border-box;';
     for(var r=0;r<6;r++){
       var rowEl=document.createElement('div');rowEl.className='pw-row';
+      rowEl.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;box-sizing:border-box;';
       var cells=[];
       for(var c=0;c<5;c++){
         var cell=document.createElement('div');cell.className='pw-cell';
+        cell.style.cssText='aspect-ratio:1;width:100%;box-sizing:border-box;border:2.5px solid rgba(74,124,53,0.5);background:rgba(13,16,12,0.7);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:clamp(1.8rem,7.5vw,2.6rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:10px;transition:background .28s ease,border-color .28s ease,color .28s ease;line-height:1;user-select:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 0 rgba(0,0,0,0.3);';
         rowEl.appendChild(cell);cells.push(cell);
       }
       wrap.appendChild(rowEl);grid.push(cells);
@@ -219,6 +228,14 @@ window._gameFns.sprout=function GPW(a){
   }
 
   function showMsg(t){msg.textContent=t;}
+
+  // Apply hit/near/miss colors inline so the game is legible even when
+  // the injected stylesheet is blocked. Inline wins class specificity.
+  function applyStatusStyle(cell,st){
+    if(st==='hit'){cell.style.background='#7ab356';cell.style.borderColor='#7ab356';cell.style.color='#0d100c';}
+    else if(st==='near'){cell.style.background='#c8a84b';cell.style.borderColor='#c8a84b';cell.style.color='#0d100c';}
+    else if(st==='miss'){cell.style.background='rgba(40,44,36,0.85)';cell.style.borderColor='rgba(60,68,54,0.85)';cell.style.color='rgba(232,220,200,0.55)';}
+  }
 
   // Mark which cell has the "active" cursor glow (just the next-empty cell
   // in the current row).
@@ -311,6 +328,7 @@ window._gameFns.sprout=function GPW(a){
           cell.classList.remove('pw-typed','pw-active');
           setTimeout(function(){
             cell.classList.add('pw-'+status[c]);
+            applyStatusStyle(cell,status[c]);
             keyState[guess[c]]=status[c];
           },280);
         },c*250);
@@ -469,6 +487,7 @@ window._gameFns.sprout=function GPW(a){
             var cell=grid[rr][cc];
             if(letters[cc])cell.textContent=letters[cc];
             cell.classList.add('pw-'+rowStatuses[rr][cc]);
+            applyStatusStyle(cell,rowStatuses[rr][cc]);
           }
         }
         done=true;
