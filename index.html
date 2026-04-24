@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.10';
+  var LW_VERSION='2026.04.24.11';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3564,11 +3564,17 @@
     body.sol-fs #sol-rotate-hint{display:flex;}
     @media (orientation:landscape){body.sol-fs #sol-rotate-hint{display:none!important;}}
     body.sol-fs.srh-dismissed #sol-rotate-hint{display:none!important;}
-    /* Universal EXIT button RETIRED 2026-04-24. Every game now prepends
-       .game-back-btn (sticky, inside #fg-ag) so this fixed pill is a
-       second redundant button. Keep the element and handler for code
-       paths that may still reference it, but hide it permanently. */
-    #game-exit-btn{display:none !important;}
+    /* Universal EXIT button (cream text, green-bordered pill, fixed
+       top-left). Stephen's preferred back button. Hidden by default,
+       shown during gameplay, hidden again when the picker overlay
+       is open. */
+    #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:999999;min-width:64px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.6);pointer-events:auto;}
+    body.game-active #game-exit-btn{display:flex !important;align-items:center;justify-content:center;gap:4px;}
+    body:has(#fg-ov.open) #game-exit-btn{display:none !important;}
+    #game-exit-btn:active{transform:scale(0.94);background:rgba(74,124,53,0.35);}
+    /* Sticky internal back button RETIRED 2026-04-24. The fixed pill
+       is the single source of truth. Stop rendering the sticky one. */
+    .game-back-btn{display:none !important;}
     @keyframes classPrompt{0%,100%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7))}50%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(200,168,75,0.6))}}
     #kb-compendium.class-prompt{animation:classPrompt 2.4s ease-in-out infinite;}
     /* Unread pulse — gentle gold glow when there's unread content.
