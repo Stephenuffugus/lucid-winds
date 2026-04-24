@@ -300,49 +300,181 @@ function GCH(a){
 
   // ── AI (Enhanced — positional eval, quiescence, opening book, iterative deepening) ──
 
-  // Opening book: maps move sequence to AI response (AI plays black)
-  // Coordinates: row0=rank8, col0=a-file. Move = "frfctrtc"
-  var _chBook={};
-  // Response to 1.e4
-  _chBook['6444']={fr:1,fc:2,tr:3,tc:2};           // 1...c5 (Sicilian)
-  // Response to 1.d4
-  _chBook['6343']={fr:0,fc:6,tr:2,tc:5};           // 1...Nf6 (Indian)
-  // Response to 1.c4
-  _chBook['6242']={fr:1,fc:4,tr:3,tc:4};           // 1...e5
-  // Response to 1.Nf3
-  _chBook['7655']={fr:1,fc:3,tr:3,tc:3};           // 1...d5
-  // Response to 1.b3
-  _chBook['6151']={fr:1,fc:4,tr:3,tc:4};           // 1...e5
-  // Response to 1.g3
-  _chBook['6656']={fr:1,fc:3,tr:3,tc:3};           // 1...d5
-  // Sicilian: 1.e4 c5 2.Nf3 → d6
-  _chBook['6444 1232 7655']={fr:1,fc:3,tr:2,tc:3};
-  // Sicilian: 1.e4 c5 2.Nc3 → Nc6
-  _chBook['6444 1232 7152']={fr:0,fc:1,tr:2,tc:2};
-  // Sicilian: 1.e4 c5 2.d4 → cxd4
-  _chBook['6444 1232 6343']={fr:3,fc:2,tr:4,tc:3};
-  // Sicilian Najdorf: 1.e4 c5 2.Nf3 d6 3.d4 → cxd4
-  _chBook['6444 1232 7655 1323 6343']={fr:3,fc:2,tr:4,tc:3};
-  // Open Sicilian: ...cxd4 4.Nxd4 → Nf6
-  _chBook['6444 1232 7655 1323 6343 3243 5543']={fr:0,fc:6,tr:2,tc:5};
-  // Najdorf: ...Nf6 5.Nc3 → a6
-  _chBook['6444 1232 7655 1323 6343 3243 5543 0625 7152']={fr:1,fc:0,tr:2,tc:0};
-  // Indian: 1.d4 Nf6 2.c4 → e6
-  _chBook['6343 0625 6242']={fr:1,fc:4,tr:2,tc:4};
-  // Indian: 1.d4 Nf6 2.Nf3 → d5
-  _chBook['6343 0625 7655']={fr:1,fc:3,tr:3,tc:3};
-  // Nimzo: 1.d4 Nf6 2.c4 e6 3.Nc3 → Bb4
-  _chBook['6343 0625 6242 1424 7152']={fr:0,fc:5,tr:3,tc:1};
-  // QGD: 1.d4 Nf6 2.c4 e6 3.Nf3 → d5
-  _chBook['6343 0625 6242 1424 7655']={fr:1,fc:3,tr:3,tc:3};
-  // QGD: 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.e3 → O-O
-  _chBook['6343 0625 6242 1424 7152 0531 6454']={fr:0,fc:4,tr:0,tc:6,castle:'K'};
-  // KID: 1.d4 Nf6 2.c4 g6
-  _chBook['6343 0625 6242']={fr:1,fc:4,tr:2,tc:4}; // e6 (flexible)
-  // English: 1.c4 e5 2.Nc3 → Nf6
-  _chBook['6242 1434 7152']={fr:0,fc:6,tr:2,tc:5};
-  // Ruy Lopez defense: 1.e4 e5 2.Nf3 → Nc6 (if AI played e5)
-  _chBook['6444 1434 7655']={fr:0,fc:1,tr:2,tc:2};
+  // ── OPENING BOOKS ──
+  // Three personality books keyed to difficulty tier. AI plays black, so
+  // every entry is a black response to a white move sequence.
+  // Key format: move log joined by spaces, each move = "frfctrtc" where
+  // row 0 = rank 8, col 0 = a-file. Values are {fr,fc,tr,tc[,castle,promo]}.
+  //
+  // MAGNUS  — positional grinder. Berlin, Italian response, QGD, Queen's
+  //           Indian, Catalan, Reti symmetric. The world-champ repertoire.
+  // ALIREZA — sharp/tactical. Sicilians (Najdorf, English Attack),
+  //           Grünfeld, King's Indian, rook-sac-friendly lines.
+  // WEIRD   — Easter-egg bucket for Seedling tier. Handles 1.h4 Kadas,
+  //           1.g4 Grob, 1.b4 Sokolsky, 2.Ke2 Bongcloud, etc. Still plays
+  //           principled classical chess against these novelties.
+  //
+  // All three are filtered through getLegalMoves at lookup time, so a
+  // typo never silently produces an illegal move — it just falls through
+  // to the search engine.
+
+  var _chBookMagnus={};
+  // 1.e4 → 1...e5 (gateway to Berlin / Italian, Magnus' life repertoire)
+  _chBookMagnus['6444']={fr:1,fc:4,tr:3,tc:4};
+  // 1.e4 e5 2.Nf3 → 2...Nc6
+  _chBookMagnus['6444 1434 7655']={fr:0,fc:1,tr:2,tc:2};
+  // 1.e4 e5 2.Nf3 Nc6 3.Bb5 → 3...Nf6 (Berlin Defense!)
+  _chBookMagnus['6444 1434 7655 0122 7531']={fr:0,fc:6,tr:2,tc:5};
+  // 1.e4 e5 2.Nf3 Nc6 3.Bc4 → 3...Bc5 (Italian / Giuoco Piano)
+  _chBookMagnus['6444 1434 7655 0122 7542']={fr:0,fc:5,tr:3,tc:2};
+  // 1.e4 e5 2.Nf3 Nc6 3.d4 → 3...exd4 (Scotch, snatch center)
+  _chBookMagnus['6444 1434 7655 0122 6343']={fr:3,fc:4,tr:4,tc:3};
+  // 1.e4 e5 2.Nc3 → 2...Nf6 (Vienna, aim for Petroff-like symmetry)
+  _chBookMagnus['6444 1434 7152']={fr:0,fc:6,tr:2,tc:5};
+  // 1.e4 e5 2.d4 → 2...exd4 (Center Game, grab pawn)
+  _chBookMagnus['6444 1434 6343']={fr:3,fc:4,tr:4,tc:3};
+  // 1.e4 e5 2.f4 → 2...exf4 (accept King's Gambit, Magnus did in blitz)
+  _chBookMagnus['6444 1434 6545']={fr:3,fc:4,tr:4,tc:5};
+  // 1.e4 e5 2.Bc4 → 2...Nf6 (Berlin-like, hit e4)
+  _chBookMagnus['6444 1434 7542']={fr:0,fc:6,tr:2,tc:5};
+  // 1.d4 → 1...Nf6 (Indian)
+  _chBookMagnus['6343']={fr:0,fc:6,tr:2,tc:5};
+  // 1.d4 Nf6 2.c4 → 2...e6 (QGD/Nimzo route — Magnus default)
+  _chBookMagnus['6343 0625 6242']={fr:1,fc:4,tr:2,tc:4};
+  // 1.d4 Nf6 2.Nf3 → 2...e6 (flexible Queen's Indian path)
+  _chBookMagnus['6343 0625 7655']={fr:1,fc:4,tr:2,tc:4};
+  // 1.d4 Nf6 2.Bf4 (London System) → 2...e6
+  _chBookMagnus['6343 0625 7245']={fr:1,fc:4,tr:2,tc:4};
+  // 1.d4 Nf6 2.g3 → 2...g6 (double fianchetto)
+  _chBookMagnus['6343 0625 6656']={fr:1,fc:6,tr:2,tc:6};
+  // 1.d4 Nf6 2.c4 e6 3.Nc3 → 3...Bb4 (Nimzo-Indian!)
+  _chBookMagnus['6343 0625 6242 1424 7152']={fr:0,fc:5,tr:4,tc:1};
+  // 1.d4 Nf6 2.c4 e6 3.Nf3 → 3...b6 (Queen's Indian, Magnus' baby)
+  _chBookMagnus['6343 0625 6242 1424 7655']={fr:1,fc:1,tr:2,tc:1};
+  // 1.d4 Nf6 2.c4 e6 3.g3 → 3...d5 (Catalan acceptance setup)
+  _chBookMagnus['6343 0625 6242 1424 6656']={fr:1,fc:3,tr:3,tc:3};
+  // 1.d4 d5 2.c4 → 2...e6 (QGD classical)
+  _chBookMagnus['6343 1333 6242']={fr:1,fc:4,tr:2,tc:4};
+  // 1.d4 d5 2.Nf3 → 2...Nf6
+  _chBookMagnus['6343 1333 7655']={fr:0,fc:6,tr:2,tc:5};
+  // 1.c4 → 1...e5 (reversed Sicilian)
+  _chBookMagnus['6242']={fr:1,fc:4,tr:3,tc:4};
+  // 1.c4 e5 2.Nc3 → 2...Nf6
+  _chBookMagnus['6242 1434 7152']={fr:0,fc:6,tr:2,tc:5};
+  // 1.c4 e5 2.Nf3 → 2...Nc6 (don't let e5 hang)
+  _chBookMagnus['6242 1434 7655']={fr:0,fc:1,tr:2,tc:2};
+  // 1.c4 e5 2.g3 → 2...Nf6
+  _chBookMagnus['6242 1434 6656']={fr:0,fc:6,tr:2,tc:5};
+  // 1.Nf3 → 1...Nf6 (symmetric Reti response)
+  _chBookMagnus['7655']={fr:0,fc:6,tr:2,tc:5};
+  // 1.Nf3 Nf6 2.c4 → 2...e6
+  _chBookMagnus['7655 0625 6242']={fr:1,fc:4,tr:2,tc:4};
+  // 1.Nf3 Nf6 2.g3 → 2...g6 (double fianchetto)
+  _chBookMagnus['7655 0625 6656']={fr:1,fc:6,tr:2,tc:6};
+  // 1.Nf3 Nf6 2.d4 → 2...e6 (transposes to Indian)
+  _chBookMagnus['7655 0625 6343']={fr:1,fc:4,tr:2,tc:4};
+  // 1.b3 (Larsen) → 1...e5
+  _chBookMagnus['6151']={fr:1,fc:4,tr:3,tc:4};
+  // 1.b3 e5 2.Bb2 → 2...Nc6 (central development)
+  _chBookMagnus['6151 1434 7261']={fr:0,fc:1,tr:2,tc:2};
+  // 1.g3 → 1...d5 (claim center)
+  _chBookMagnus['6656']={fr:1,fc:3,tr:3,tc:3};
+  // 1.g3 d5 2.Bg2 → 2...Nf6
+  _chBookMagnus['6656 1333 7566']={fr:0,fc:6,tr:2,tc:5};
+
+  var _chBookAlireza={};
+  // 1.e4 → 1...c5 (Sicilian — Alireza's weapon)
+  _chBookAlireza['6444']={fr:1,fc:2,tr:3,tc:2};
+  // 1.e4 c5 2.Nf3 → 2...d6 (Najdorf gateway)
+  _chBookAlireza['6444 1232 7655']={fr:1,fc:3,tr:2,tc:3};
+  // 1.e4 c5 2.Nc3 → 2...Nc6 (Closed Sicilian response)
+  _chBookAlireza['6444 1232 7152']={fr:0,fc:1,tr:2,tc:2};
+  // 1.e4 c5 2.d4 → 2...cxd4 (accept Morra/Smith-Morra pawn)
+  _chBookAlireza['6444 1232 6343']={fr:3,fc:2,tr:4,tc:3};
+  // 1.e4 c5 2.c3 (Alapin) → 2...d5 (break immediately)
+  _chBookAlireza['6444 1232 6252']={fr:1,fc:3,tr:3,tc:3};
+  // 1.e4 c5 2.Nf3 d6 3.d4 → 3...cxd4 (Open Sicilian)
+  _chBookAlireza['6444 1232 7655 1323 6343']={fr:3,fc:2,tr:4,tc:3};
+  // 4.Nxd4 → 4...Nf6
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543']={fr:0,fc:6,tr:2,tc:5};
+  // 5.Nc3 → 5...a6 (Najdorf)
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543 0625 7152']={fr:1,fc:0,tr:2,tc:0};
+  // Najdorf 6.Be3 → 6...e5 (English Attack main)
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543 0625 7152 1020 7254']={fr:1,fc:4,tr:3,tc:4};
+  // Najdorf 6.Bg5 → 6...e6 (Gelfand system)
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543 0625 7152 1020 7236']={fr:1,fc:4,tr:2,tc:4};
+  // Najdorf 6.Be2 → 6...e5 (Classical)
+  _chBookAlireza['6444 1232 7655 1323 6343 3243 5543 0625 7152 1020 7564']={fr:1,fc:4,tr:3,tc:4};
+  // 1.d4 → 1...Nf6
+  _chBookAlireza['6343']={fr:0,fc:6,tr:2,tc:5};
+  // 1.d4 Nf6 2.c4 → 2...g6 (Grünfeld/KID route, sharper than Magnus line)
+  _chBookAlireza['6343 0625 6242']={fr:1,fc:6,tr:2,tc:6};
+  // 1.d4 Nf6 2.c4 g6 3.Nc3 → 3...d5 (Grünfeld Defense!)
+  _chBookAlireza['6343 0625 6242 1626 7152']={fr:1,fc:3,tr:3,tc:3};
+  // 1.d4 Nf6 2.c4 g6 3.Nf3 → 3...Bg7 (KID setup)
+  _chBookAlireza['6343 0625 6242 1626 7655']={fr:0,fc:5,tr:1,tc:6};
+  // 1.d4 Nf6 2.c4 g6 3.g3 → 3...Bg7 (Fianchetto variation)
+  _chBookAlireza['6343 0625 6242 1626 6656']={fr:0,fc:5,tr:1,tc:6};
+  // 1.c4 → 1...Nf6 (avoids reversed Sicilian)
+  _chBookAlireza['6242']={fr:0,fc:6,tr:2,tc:5};
+  // 1.c4 Nf6 2.Nc3 → 2...e5 (reversed dragon)
+  _chBookAlireza['6242 0625 7152']={fr:1,fc:4,tr:3,tc:4};
+  // 1.c4 Nf6 2.g3 → 2...g6
+  _chBookAlireza['6242 0625 6656']={fr:1,fc:6,tr:2,tc:6};
+  // 1.Nf3 → 1...d5 (stop Reti dry)
+  _chBookAlireza['7655']={fr:1,fc:3,tr:3,tc:3};
+  // 1.b3 → 1...e5 (central)
+  _chBookAlireza['6151']={fr:1,fc:4,tr:3,tc:4};
+  // 1.g3 → 1...d5
+  _chBookAlireza['6656']={fr:1,fc:3,tr:3,tc:3};
+
+  var _chBookWeird={};
+  // 1.h4 (Kadas — Magnus used this to beat Firouzja!) → 1...e5
+  _chBookWeird['6747']={fr:1,fc:4,tr:3,tc:4};
+  // 1.a4 → 1...e5
+  _chBookWeird['6040']={fr:1,fc:4,tr:3,tc:4};
+  // 1.a3 (Anderssen) → 1...d5
+  _chBookWeird['6050']={fr:1,fc:3,tr:3,tc:3};
+  // 1.h3 → 1...e5
+  _chBookWeird['6757']={fr:1,fc:4,tr:3,tc:4};
+  // 1.f4 (Bird's) → 1...d5
+  _chBookWeird['6545']={fr:1,fc:3,tr:3,tc:3};
+  // 1.f4 d5 2.Nf3 → 2...Nf6
+  _chBookWeird['6545 1333 7655']={fr:0,fc:6,tr:2,tc:5};
+  // 1.g4 (Grob) → 1...d5 (punish weak light squares)
+  _chBookWeird['6646']={fr:1,fc:3,tr:3,tc:3};
+  // 1.g4 d5 2.Bg2 → 2...Bxg4 (take the pawn)
+  _chBookWeird['6646 1333 7566']={fr:0,fc:2,tr:4,tc:6};
+  // 1.Nh3 → 1...d5
+  _chBookWeird['7657']={fr:1,fc:3,tr:3,tc:3};
+  // 1.Na3 → 1...e5
+  _chBookWeird['7150']={fr:1,fc:4,tr:3,tc:4};
+  // 1.b4 (Sokolsky / Orangutan) → 1...e5
+  _chBookWeird['6141']={fr:1,fc:4,tr:3,tc:4};
+  // 1.b4 e5 2.Bb2 → 2...Bxb4 (accept the gambit)
+  _chBookWeird['6141 1434 7261']={fr:0,fc:5,tr:4,tc:1};
+  // 1.Nc3 (Dunst/Van Geet) → 1...d5
+  _chBookWeird['7152']={fr:1,fc:3,tr:3,tc:3};
+  // 1.e3 → 1...e5
+  _chBookWeird['6454']={fr:1,fc:4,tr:3,tc:4};
+  // 1.d3 → 1...d5
+  _chBookWeird['6353']={fr:1,fc:3,tr:3,tc:3};
+  // 1.e4 e5 2.Ke2 (Bongcloud!) → 2...Ke7 (reverse-Bongcloud salute)
+  _chBookWeird['6444 1434 7464']={fr:0,fc:4,tr:1,tc:4};
+  // 1.e4 Nf6 (Alekhine) transposition if we ever play it — fallback
+
+  // Lookup: picks a book based on difficulty tier, falls back to Magnus.
+  // Seedling (1) → Weird, Sapling (2) → Alireza, Grove+ → Magnus.
+  function _pickBookLine(key){
+    var diffVal=parseInt((document.getElementById('CHd')||{}).value,10)||2;
+    var primary,fallback;
+    if(diffVal===1){primary=_chBookWeird;fallback=_chBookMagnus;}
+    else if(diffVal===2){primary=_chBookAlireza;fallback=_chBookMagnus;}
+    else{primary=_chBookMagnus;fallback=null;}
+    if(primary&&primary[key])return primary[key];
+    if(fallback&&fallback[key])return fallback[key];
+    return null;
+  }
 
   // Endgame king PST (centralize king in endgame)
   var PST_KING_END=[-50,-40,-30,-20,-20,-30,-40,-50,-30,-20,-10,0,0,-10,-20,-30,-30,-10,20,30,30,20,-10,-30,-30,-10,30,40,40,30,-10,-30,-30,-10,30,40,40,30,-10,-30,-30,-10,20,30,30,20,-10,-30,-30,-30,0,0,0,0,-30,-30,-50,-30,-30,-30,-30,-30,-30,-50];
@@ -677,6 +809,24 @@ function GCH(a){
   }
   function _aiMoveStockfish(skill){
     if(gameOver||turn!==B)return;
+    // Personality opening: Ancient Oak (skill 8) plays the Magnus book
+    // for its first 10 moves before Stockfish takes over. Old Growth
+    // (skill 20) stays pure engine — no personality, just crush. This
+    // is what gives Grove Chess a recognizable Magnus-flavored voice
+    // at the second-highest tier without sacrificing Old Growth's edge.
+    if(skill<=10&&moveLog.length<=20){
+      var bookKey=moveLog.join(' ');
+      var bm=_chBookMagnus[bookKey];
+      if(bm){
+        var legal=getLegalMoves(board,B,castling,epSquare);
+        for(var bi=0;bi<legal.length;bi++){
+          if(legal[bi].fr===bm.fr&&legal[bi].fc===bm.fc&&legal[bi].tr===bm.tr&&legal[bi].tc===bm.tc){
+            sm('🌳 Grove opening');
+            makeMove(legal[bi]);checkGameState();render();return;
+          }
+        }
+      }
+    }
     sm('🌳 Engine thinking...');
     _loadStockfish(function(err){
       if(err==='error'||!_sfReady){
@@ -712,11 +862,13 @@ function GCH(a){
 
   function _aiMoveLocal(){
     if(gameOver||turn!==B)return;
-    // Opening book lookup
+    // Opening book lookup — flavor picked from current difficulty tier
     var bookKey=moveLog.join(' ');
-    if(_chBook[bookKey]){
-      var bm=_chBook[bookKey];
-      // Verify book move is legal
+    var bm=_pickBookLine(bookKey);
+    if(bm){
+      // Verify book move is legal before playing. Belt-and-suspenders
+      // against a typo in any of the three books — illegal book moves
+      // fall through to the search engine instead of blowing up.
       var legal=getLegalMoves(board,B,castling,epSquare);
       for(var bi=0;bi<legal.length;bi++){
         if(legal[bi].fr===bm.fr&&legal[bi].fc===bm.fc&&legal[bi].tr===bm.tr&&legal[bi].tc===bm.tc){
