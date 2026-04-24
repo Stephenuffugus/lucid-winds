@@ -527,7 +527,7 @@ Each item has: `key, name, category, rarity, art, icon, desc, lore, usage, wired
 - Seasonal hunt completion
 
 ### Art
-Each item references `assets/items/<name>.png`. Folder does NOT exist yet — emoji fallback via `onerror` handler shows icon. Art day pending.
+Each item references `assets/items/<name>.png`. ART SHIPPED 2026-04-24 — 19 PNGs in `/assets/items/` (17 catalog + lantern-path + pollen-storm extras). Emoji fallback via `onerror` handler still wired as safety net.
 
 ---
 
@@ -665,7 +665,7 @@ Each class has a companion family. Holding any plant with matching companion unl
 ## REMAINING BUILD PRIORITIES (live list — see STATE.md in memory for most current)
 
 ### Active work
-- **Items art** — all 17 item PNGs still need Midjourney generation into `assets/items/`
+- ~~Items art~~ ✅ DONE 2026-04-24 — 19 PNGs live in `/assets/items/`
 - **delegateToken** — co-op friend-hex share, needs Firestore flow
 - **Balance pass on items** — Mulch Ward auto-win vs Shellgourd 48h-lock (same tier, different power)
 - **Pi SDK integration** — ALL payments through Pi
