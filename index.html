@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.52';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.53';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -45154,7 +45154,7 @@ var G=[
 {id:'reversi',n:'Reversi',i:'\u25cf',r:'Place pieces to surround and flip your opponent. Control the most territory to win.',cat:'board',thumb:'assets/games/thumbs/reversi.png'},
 {id:'yahtzee',n:'Seed Shaker',sub:'5 Dice Classic',i:'\ud83c\udfb2',r:'Five-dice scoring game. Roll up to 3 times, hold keepers, fill 13 categories for the best total.',cat:'dice',thumb:'assets/games/thumbs/yahtzee.png'},
 {id:'farkle',n:'Farkle',i:'\ud83c\udfb2',r:'Roll 6 dice. Keep 1s, 5s, and three-of-a-kinds. Roll again or bank \u2014 zero scorers and you bust!',cat:'dice',thumb:'assets/games/thumbs/farkle.png'},
-{id:'doubleshutter',n:'Double Shutter',i:'\ud83c\udfb2',r:'Shut the box twice. Roll 2 dice, shut any open tiles that sum to your roll. Once 7, 8, 9 are down you may roll a single die. Both rows shut, perfect game.',cat:'dice',thumb:'assets/dice/d6.png'},
+{id:'doubleshutter',n:'Double Shutter',i:'\ud83c\udfb2',r:'Shut the box twice. Roll 2 dice, shut any open tiles that sum to your roll. Once 7, 8, 9 are down you may roll a single die. Both rows shut, perfect game.',cat:'dice',thumb:'assets/dice/dark/d6.png'},
 {id:'sokoban',n:'Sokoban',i:'\ud83d\udc31',r:'Push crates onto targets. Plan ahead \u2014 crates only push, never pull!',cat:'puzzle',thumb:'assets/games/thumbs/sokoban.png'},
 {id:'backgammon',n:'Backgammon',i:'\ud83c\udfb2',r:'Roll dice, move pieces around the board. Bear off all 15 first to win!',cat:'board',thumb:'assets/games/thumbs/backgammon-v2.png'},
 {id:'bloomwheel',n:'Bloom Wheel',i:'\ud83c\udf38',r:'Draw botanical mandalas on a spinning canvas synced to a generative beat.',cat:'creative',thumb:'assets/games/thumbs/bloomwheel.png'},
@@ -48999,6 +48999,63 @@ function GT(a){
 
 // ═══ 15-PUZZLE SLIDER — moved to games/slider.js ═══
 
+// ═══ DICE STYLE REGISTRY + PICKER ═══
+// Global module so Farkle, Yahtzee, Double Shutter (and future dice games)
+// share a single dice-set picker. Add a new set by appending to .sets below —
+// no game code has to change. Each set needs d1.png..d6.png at its path.
+// Selection persists in localStorage.lw_dice_style and fires the custom
+// event 'lw-dice-style-change' so live games can re-render.
+window.LW_DICE={
+  sets:{
+    parchment:{name:'Parchment Botanical',  sub:'seed · dew · clover · sun',  path:'assets/dice/d'},
+    dark:     {name:'Dark Garden',          sub:'peonies · skulls · crescent',path:'assets/dice/dark/d'}
+  },
+  get:function(){
+    try{var s=localStorage.getItem('lw_dice_style');if(s&&this.sets[s])return s;}catch(e){}
+    return 'parchment';
+  },
+  set:function(k){
+    if(!this.sets[k])return;
+    try{localStorage.setItem('lw_dice_style',k);}catch(e){}
+    window.dispatchEvent(new CustomEvent('lw-dice-style-change',{detail:{key:k}}));
+  },
+  face:function(n){return this.sets[this.get()].path+n+'.png';}
+};
+
+// Modal picker — grid of set previews (d6 face as the thumbnail), tap to select.
+window._LW_dicePicker=function(){
+  var existing=document.getElementById('LWdpOV');
+  if(existing){existing.remove();return;}
+  var cur=window.LW_DICE.get();
+  var ov=document.createElement('div');ov.id='LWdpOV';
+  ov.style.cssText='position:fixed;inset:0;z-index:200000;background:rgba(5,8,4,0.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;animation:panelFadeIn 0.25s ease;';
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+  var h='<div style="max-width:480px;width:100%;max-height:84vh;overflow-y:auto;padding:22px 20px 18px;background:linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 32px 64px rgba(0,0,0,0.7);">';
+  h+='<div style="text-align:center;margin-bottom:14px;"><div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.15rem;color:var(--cream);">Dice Style</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px;">choose a set for every dice game</div></div>';
+  var keys=Object.keys(window.LW_DICE.sets);
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">';
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i],s=window.LW_DICE.sets[k];
+    var isOn=(k===cur);
+    var ring=isOn?'2px solid var(--gold)':'1px solid rgba(200,168,75,0.18)';
+    var glow=isOn?'box-shadow:0 0 14px rgba(200,168,75,0.35),0 4px 12px rgba(0,0,0,0.5);':'';
+    h+='<div onclick="window._LW_diceSelect(\''+k+'\')" style="cursor:pointer;border:'+ring+';'+glow+'border-radius:12px;padding:10px;background:#0a0c08;display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform 0.15s ease;" onmousedown="this.style.transform=\'scale(0.97)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'">';
+    h+='<img src="'+s.path+'6.png" alt="'+s.name+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#0a0c08;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.08em;color:'+(isOn?'var(--gold)':'var(--cream)')+';text-align:center;">'+s.name+(isOn?' ✓':'')+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.05em;text-align:center;line-height:1.3;">'+s.sub+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div style="text-align:center;margin-top:16px;"><button class="gb" onclick="document.getElementById(\'LWdpOV\').remove()" style="min-height:48px;padding:10px 22px;">CLOSE</button></div>';
+  h+='</div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+};
+window._LW_diceSelect=function(k){
+  window.LW_DICE.set(k);
+  var ov=document.getElementById('LWdpOV');if(ov)ov.remove();
+};
+
 // ═══ SHARED DICE ROLL (Farkle / Yahtzee / Double Shutter) ═══
 // Stephen's gripe with the old animation: the face committed BEFORE the spin,
 // so you saw the outcome during the tumble and it felt rigged. This helper
@@ -49072,7 +49129,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
     document.head.appendChild(_fs);
   }
   function seedDie(n){
-    return '<img src="assets/dice/d'+n+'.png" alt="'+n+'" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;border-radius:clamp(6px,2vw,12px)" draggable="false"/>';
+    return '<img src="'+window.LW_DICE.face(n)+'" alt="'+n+'" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;border-radius:clamp(6px,2vw,12px)" draggable="false"/>';
   }
   ms(a,'<span style="font-family:Georgia,serif;letter-spacing:.06em;">🎲 <span id="Fp" style="color:#ffb45a;font-weight:700;">P1</span> &middot; <strong id="Fs" style="color:#ffdc70;font-size:1.2em;">0</strong> / '+target+'</span>');
   mm(a);
@@ -49184,6 +49241,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
     h+='<button class="gb" onclick="_FR()" '+(rollDisabled?'disabled':'')+' style="min-height:34px;padding:5px 12px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+(rollDisabled?'rgba(0,0,0,0.4)':'linear-gradient(180deg,rgba(255,180,90,0.3),rgba(200,130,60,0.4))')+';border:'+(rollDisabled?'1px solid rgba(232,220,200,0.25)':'2px solid #ffb45a')+';color:'+(rollDisabled?'rgba(232,220,200,0.4)':'#fff0d6')+';border-radius:6px;cursor:'+(rollDisabled?'not-allowed':'pointer')+';'+(rollDisabled?'':'box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 5px rgba(0,0,0,0.5);')+'">🎲 Roll</button>';
     h+='<button class="gb" onclick="_FB()" '+(bankDisabled?'disabled':'')+' style="min-height:34px;padding:5px 12px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+bs.bg+';border:2px solid '+bs.bdr+';color:'+bs.col+';border-radius:6px;cursor:'+(bankDisabled?'not-allowed':'pointer')+';'+bs.gl+'">💰 Bank'+(liveTurn()>0?' '+liveTurn():'')+'</button>';
     h+='<button class="gb" onclick="_FN()" title="New game" style="min-height:34px;padding:5px 10px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">↻</button>';
+    h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="min-height:34px;padding:5px 10px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">🎲 Style</button>';
     h+='</div></div>';
     // Roll area — only dice NOT yet kept
     h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.45) 100%);border:1px solid rgba(0,0,0,0.55);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.55);min-height:120px;">';
@@ -49386,6 +49444,12 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
     sm(numPlayers>1?('P1, 🎲 Roll (first to '+target+')'):'🎲 Roll!');
     rn();
   };
+  // Re-render on dice-style change. Self-unregisters once the game is gone.
+  var _fStyleListener=function(){
+    if(!document.body.contains(a)){window.removeEventListener('lw-dice-style-change',_fStyleListener);return;}
+    try{rn();}catch(e){}
+  };
+  window.addEventListener('lw-dice-style-change',_fStyleListener);
   _FN();
 }
 // ═══ YAHTZEE ═══
@@ -49410,9 +49474,10 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
       '@keyframes yLineIn{0%{transform:translateX(-12px);opacity:0}100%{transform:translateX(0);opacity:1}}';
     document.head.appendChild(_ys);
   }
-  // Botanical dice — paper-card PNGs (seed/dew/clover/sun/flower/moon)
+  // Botanical dice — paper-card PNGs (seed/dew/clover/sun/flower/moon).
+  // Routes through LW_DICE so the style picker swaps all games at once.
   function seedDie(n){
-    return '<img src="assets/dice/d'+n+'.png" alt="'+n+'" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;border-radius:clamp(6px,2vw,12px)" draggable="false"/>';
+    return '<img src="'+window.LW_DICE.face(n)+'" alt="'+n+'" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;border-radius:clamp(6px,2vw,12px)" draggable="false"/>';
   }
   var CATS=[
     {name:'Ones',sub:'Sprouts',icon:'&#x1F331;',desc:'Sum of 1s'},
@@ -49476,6 +49541,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     h+='<div style="display:flex;gap:6px;">';
     h+='<button class="gb" onclick="_YR()" '+(rolls>=3?'disabled':'')+' style="display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 14px;font-size:0.7rem;background:'+(rolls>=3?'rgba(0,0,0,0.4)':'linear-gradient(180deg,rgba(255,220,112,0.3),rgba(200,168,75,0.4))')+';border:'+(rolls>=3?'1px solid rgba(232,220,200,0.25)':'2px solid #ffdc70')+';color:'+(rolls>=3?'rgba(232,220,200,0.4)':'#f5ebd0')+';font-family:Georgia,serif;'+(rolls>=3?'cursor:not-allowed;':'cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 5px rgba(0,0,0,0.5);')+'">🎲 Roll '+(rolls<3?'('+(3-rolls)+' left)':'done')+'</button>';
     h+='<button class="gb" onclick="_YN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;">↻ New</button>';
+    h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;font-family:Georgia,serif;">🎲 Style</button>';
     h+='</div>';
     h+='</div>';
     // Roll area — dice that are NOT held. Felted pocket inset.
@@ -49690,7 +49756,14 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     }else if(turn%3===0)_e('milestone');
     rn();
   }
-  window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};_YN();
+  window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};
+  // Re-render on dice-style change. Self-unregisters once the game is gone.
+  var _yStyleListener=function(){
+    if(!document.body.contains(a)){window.removeEventListener('lw-dice-style-change',_yStyleListener);return;}
+    try{rn();}catch(e){}
+  };
+  window.addEventListener('lw-dice-style-change',_yStyleListener);
+  _YN();
 }
 // ═══ DOUBLE SHUTTER — the real rules (two rows, front counts double) ═══
 // rows[0] = BACK row, tile at index i has VALUE (9-i)  →  visually 9 8 7 6 5 4 3 2 1
@@ -49718,7 +49791,7 @@ function GDS(a){
   // Dice + info
   var dz=document.createElement('div');dz.className='ds-dice';dz.id='DSdz';wrap.appendChild(dz);
   var info=document.createElement('div');info.className='ds-info';info.id='DSinfo';wrap.appendChild(info);
-  mc(a).innerHTML='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px"><button class="gb" id="DSroll2" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em" onclick="_DSRoll(2)">🎲 ROLL 2</button><button class="gb" id="DSroll1" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;display:none" onclick="_DSRoll(1)">🎲 ROLL 1</button><button class="gb" id="DSshut" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:rgba(200,168,75,0.15);border-color:var(--gold);color:var(--gold);display:none" onclick="_DSShut()">✓ SHUT</button><button class="gb-new" onclick="_DSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
+  mc(a).innerHTML='<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px"><button class="gb" id="DSroll2" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em" onclick="_DSRoll(2)">🎲 ROLL 2</button><button class="gb" id="DSroll1" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;display:none" onclick="_DSRoll(1)">🎲 ROLL 1</button><button class="gb" id="DSshut" style="min-height:52px;min-width:120px;font-size:0.85rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:rgba(200,168,75,0.15);border-color:var(--gold);color:var(--gold);display:none" onclick="_DSShut()">✓ SHUT</button><button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="min-height:52px;min-width:90px;padding:6px 14px;font-size:0.72rem;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1.5px solid rgba(200,168,75,0.55);color:var(--gold);border-radius:10px">🎲 STYLE</button><button class="gb-new" onclick="_DSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button></div>';
   // Tile value: row 0 (BACK) at idx i → 9-i.  row 1 (FRONT) at idx i → i+1.
   function tileVal(r,i){return r===1?(i+1):(9-i);}
   function allOpen(){var out=[];for(var r=0;r<2;r++)for(var i=0;i<9;i++)if(!rows[r][i])out.push({r:r,i:i,v:tileVal(r,i)});return out;}
@@ -49758,8 +49831,8 @@ function GDS(a){
     });
     // Dice
     dz.innerHTML='';
-    if(d1){var dd1=document.createElement('div');dd1.className='ds-die';dd1.innerHTML='<img src="assets/dice/dark/d'+d1+'.png" alt="'+d1+'"/>';dz.appendChild(dd1);}
-    if(d2){var dd2=document.createElement('div');dd2.className='ds-die';dd2.innerHTML='<img src="assets/dice/dark/d'+d2+'.png" alt="'+d2+'"/>';dz.appendChild(dd2);}
+    if(d1){var dd1=document.createElement('div');dd1.className='ds-die';dd1.innerHTML='<img src="'+window.LW_DICE.face(d1)+'" alt="'+d1+'"/>';dz.appendChild(dd1);}
+    if(d2){var dd2=document.createElement('div');dd2.className='ds-die';dd2.innerHTML='<img src="'+window.LW_DICE.face(d2)+'" alt="'+d2+'"/>';dz.appendChild(dd2);}
     // Info bar
     var target=(d1||0)+(d2||0);
     var ss=selSum();
@@ -49798,7 +49871,7 @@ function GDS(a){
     wrap.classList.add('rolling');
     var dieEls=dz.querySelectorAll('.ds-die');
     var vals=[d1];if(d2)vals.push(d2);
-    window._LW_tumble(dieEls,vals,{duration:760,face:function(n){return 'assets/dice/dark/d'+n+'.png';},onDone:function(){
+    window._LW_tumble(dieEls,vals,{duration:760,face:function(n){return window.LW_DICE.face(n);},onDone:function(){
       wrap.classList.remove('rolling');
       phase='select';
       var target=d1+d2;
@@ -49838,6 +49911,12 @@ function GDS(a){
     sel=[];d1=0;d2=0;phase='roll';rolls=0;gameOver=false;
     sm('Roll and shut. Either row, any combo. Front counts double.');rn();
   };
+  // Re-render on dice-style change. Self-unregisters once the game is gone.
+  var _dsStyleListener=function(){
+    if(!document.body.contains(a)){window.removeEventListener('lw-dice-style-change',_dsStyleListener);return;}
+    try{rn();}catch(e){}
+  };
+  window.addEventListener('lw-dice-style-change',_dsStyleListener);
   _DSN();
 }
 // ═══ PICROSS — BLOOM GRID ═══
