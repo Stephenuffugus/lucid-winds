@@ -633,16 +633,82 @@ function GCH(a){
     return s;
   }
 
-  function orderMoves(b,moves){
+  // ── SEARCH UPGRADES: Zobrist hashing, transposition table, killer moves,
+  // history heuristic. Classic chess-programming triad. TT and killer
+  // tables are reset at the start of each AI turn so stale entries from
+  // prior games never haunt. History carries across turns (it's just a
+  // per-piece-per-destination score bias).
+  var _chZob={};
+  var _chZobTurn=0,_chZobCas=[0,0,0,0],_chZobEP=[0,0,0,0,0,0,0,0];
+  (function _initZob(){
+    function r32(){return (Math.random()*4294967296)>>>0;}
+    var types='PNBRQK';
+    for(var ci=0;ci<2;ci++){
+      var col=ci===0?'w':'b';
+      for(var ti=0;ti<6;ti++){
+        var k=col+types.charAt(ti);_chZob[k]=[];
+        for(var s=0;s<64;s++)_chZob[k].push(r32());
+      }
+    }
+    _chZobTurn=r32();
+    for(var i=0;i<4;i++)_chZobCas[i]=r32();
+    for(var j=0;j<8;j++)_chZobEP[j]=r32();
+  })();
+  function _zobHash(b,turn,cas,ep){
+    var h=0;
+    for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+      var p=b[r][c];if(!p)continue;
+      h^=_chZob[p.color+p.type][r*8+c];
+    }
+    if(turn===B)h^=_chZobTurn;
+    if(cas.wK)h^=_chZobCas[0];
+    if(cas.wQ)h^=_chZobCas[1];
+    if(cas.bK)h^=_chZobCas[2];
+    if(cas.bQ)h^=_chZobCas[3];
+    if(ep)h^=_chZobEP[ep[1]];
+    return h>>>0;
+  }
+  // TT entry: {depth, flag, score, bestMove}. flag: 0=exact, 1=lower, 2=upper.
+  var _TT={},_TTCount=0,_TT_MAX=200000;
+  var _killers=[];           // _killers[ply] = [move1, move2]
+  var _history={};           // indexed by (color*6 + pieceIdx)*64 + toSq
+  function _sameMove(a,b){if(!a||!b)return false;return a.fr===b.fr&&a.fc===b.fc&&a.tr===b.tr&&a.tc===b.tc;}
+  function _histKey(b,m){
+    var p=b[m.fr][m.fc];if(!p)return -1;
+    var pidx='KQRBNP'.indexOf(p.type);
+    var cidx=p.color===W?0:1;
+    return (cidx*6+pidx)*64+m.tr*8+m.tc;
+  }
+  function _ttStore(hash,depth,flag,score,bestMove){
+    // Cap TT size so a long game can't balloon memory on mobile. When
+    // the cap is hit we wipe — acceptable because TT is per-turn anyway.
+    if(_TTCount>=_TT_MAX){_TT={};_TTCount=0;}
+    if(!_TT[hash])_TTCount++;
+    _TT[hash]={depth:depth,flag:flag,score:score,bestMove:bestMove};
+  }
+
+  function orderMoves(b,moves,ply,ttMove){
+    var k1=null,k2=null;
+    if(typeof ply==='number'&&ply>=0&&_killers[ply]){
+      k1=_killers[ply][0];k2=_killers[ply][1];
+    }
     var scored=[];
     for(var i=0;i<moves.length;i++){
       var m=moves[i];
       var s=0;
+      // TT best move: absolute priority over everything else
+      if(ttMove&&_sameMove(m,ttMove))s+=100000;
       var target=b[m.tr][m.tc];
       // MVV-LVA: Most Valuable Victim - Least Valuable Attacker
       if(target)s+=10*(PIECE_VAL[target.type]||0)-(PIECE_VAL[b[m.fr][m.fc].type]||0);
       if(m.promo)s+=880;
       if(m.castle)s+=60;
+      // Quiet-move bonuses: killers + history heuristic
+      if(!target&&!m.promo){
+        if(_sameMove(m,k1))s+=900;
+        else if(_sameMove(m,k2))s+=850;
+        var hk=_histKey(b,m);if(hk>=0)s+=(_history[hk]||0);
+      }
       // Bonus for moves toward center
       var centerDist=Math.abs(m.tr-3.5)+Math.abs(m.tc-3.5);
       s-=centerDist*2;
@@ -695,42 +761,89 @@ function GCH(a){
     return isMax?alpha:beta;
   }
 
-  function minimax(b,depth,alpha,beta,isMax,cas,ep){
+  function minimax(b,depth,alpha,beta,isMax,cas,ep,ply){
+    if(typeof ply!=='number')ply=0;
+    var turnCol=isMax?W:B;
+    // TT probe — use stored score/bound if depth is sufficient, and in
+    // any case pull out the stored best move to lead the ordering.
+    var hash=_zobHash(b,turnCol,cas,ep);
+    var tt=_TT[hash];
+    var ttMove=null;
+    if(tt){
+      ttMove=tt.bestMove;
+      if(tt.depth>=depth&&Math.abs(tt.score)<90000){
+        // Mate scores excluded — their distance-from-root shifts.
+        if(tt.flag===0)return tt.score;                  // exact
+        if(tt.flag===1&&tt.score>=beta)return tt.score;  // lower bound fail-high
+        if(tt.flag===2&&tt.score<=alpha)return tt.score; // upper bound fail-low
+      }
+    }
     if(depth===0)return quiesce(b,alpha,beta,isMax,cas,ep,4);
-    var col=isMax?W:B;
-    var moves=getLegalMoves(b,col,cas,ep);
+    var moves=getLegalMoves(b,turnCol,cas,ep);
     if(!moves.length){
-      if(inCheck(b,col))return isMax?-99999+(4-depth):99999-(4-depth);
+      if(inCheck(b,turnCol))return isMax?-99999+(4-depth):99999-(4-depth);
       return 0;
     }
-    moves=orderMoves(b,moves);
-    var best,i;
+    moves=orderMoves(b,moves,ply,ttMove);
+    var origAlpha=alpha,origBeta=beta;
+    var best,i,bestMove=moves[0];
     if(isMax){
       best=-100000;
       for(i=0;i<moves.length;i++){
+        var m=moves[i];
         var nb=cloneBoard(b);var ncas={wK:cas.wK,wQ:cas.wQ,bK:cas.bK,bQ:cas.bQ};
-        var piece=nb[moves[i].fr][moves[i].fc];
-        applyMove(nb,moves[i],ncas,ep);_updateCas(moves[i],ncas);
+        var piece=nb[m.fr][m.fc];
+        applyMove(nb,m,ncas,ep);_updateCas(m,ncas);
         var nep=null;
-        if(piece.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
-        var val=minimax(nb,depth-1,alpha,beta,false,ncas,nep);
-        if(val>best)best=val;
+        if(piece.type===PAWN&&Math.abs(m.tr-m.fr)===2)nep=[(m.fr+m.tr)/2,m.fc];
+        var val=minimax(nb,depth-1,alpha,beta,false,ncas,nep,ply+1);
+        if(val>best){best=val;bestMove=m;}
         if(best>alpha)alpha=best;
-        if(beta<=alpha)break;
+        if(beta<=alpha){
+          // Beta cutoff: record killer + history for quiet moves
+          if(!b[m.tr][m.tc]&&!m.promo){
+            if(!_killers[ply])_killers[ply]=[null,null];
+            if(!_sameMove(_killers[ply][0],m)){
+              _killers[ply][1]=_killers[ply][0];
+              _killers[ply][0]=m;
+            }
+            var hk=_histKey(b,m);if(hk>=0)_history[hk]=(_history[hk]||0)+depth*depth;
+          }
+          break;
+        }
       }
     }else{
       best=100000;
       for(i=0;i<moves.length;i++){
+        var m2=moves[i];
         var nb2=cloneBoard(b);var ncas2={wK:cas.wK,wQ:cas.wQ,bK:cas.bK,bQ:cas.bQ};
-        var piece2=nb2[moves[i].fr][moves[i].fc];
-        applyMove(nb2,moves[i],ncas2,ep);_updateCas(moves[i],ncas2);
+        var piece2=nb2[m2.fr][m2.fc];
+        applyMove(nb2,m2,ncas2,ep);_updateCas(m2,ncas2);
         var nep2=null;
-        if(piece2.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep2=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
-        var val2=minimax(nb2,depth-1,alpha,beta,true,ncas2,nep2);
-        if(val2<best)best=val2;
+        if(piece2.type===PAWN&&Math.abs(m2.tr-m2.fr)===2)nep2=[(m2.fr+m2.tr)/2,m2.fc];
+        var val2=minimax(nb2,depth-1,alpha,beta,true,ncas2,nep2,ply+1);
+        if(val2<best){best=val2;bestMove=m2;}
         if(best<beta)beta=best;
-        if(beta<=alpha)break;
+        if(beta<=alpha){
+          if(!b[m2.tr][m2.tc]&&!m2.promo){
+            if(!_killers[ply])_killers[ply]=[null,null];
+            if(!_sameMove(_killers[ply][0],m2)){
+              _killers[ply][1]=_killers[ply][0];
+              _killers[ply][0]=m2;
+            }
+            var hk2=_histKey(b,m2);if(hk2>=0)_history[hk2]=(_history[hk2]||0)+depth*depth;
+          }
+          break;
+        }
       }
+    }
+    // Store to TT. Skip mate scores (distance-from-root dependent).
+    if(Math.abs(best)<90000){
+      var flag;
+      if(best<=origAlpha)flag=2;         // upper bound (fail-low)
+      else if(best>=origBeta)flag=1;     // lower bound (fail-high)
+      else flag=0;                       // exact
+      _ttStore(hash,depth,flag,best,bestMove);
     }
     return best;
   }
@@ -878,7 +991,12 @@ function GCH(a){
     }
     var moves=getLegalMoves(board,B,castling,epSquare);
     if(!moves.length)return;
-    moves=orderMoves(board,moves);
+    // Reset transposition table + killers at the start of each AI turn.
+    // History heuristic keeps its values but gets halved so old biases
+    // don't dominate new positions.
+    _TT={};_TTCount=0;_killers=[];
+    for(var hk in _history)_history[hk]=_history[hk]>>1;
+    moves=orderMoves(board,moves,0,null);
     var bestMove=moves[0];
     var bestVal=100000;
     // Iterative deepening with time limit (1.5s for mobile safety)
@@ -901,11 +1019,19 @@ function GCH(a){
         applyMove(nb,moves[i],ncas,epSquare);_updateCas(moves[i],ncas);
         var nep=null;
         if(piece.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
-        var val=minimax(nb,depth-1,-100000,100000,true,ncas,nep);
+        // Pass ply=1 — root children live at ply 1 in the killer table.
+        var val=minimax(nb,depth-1,-100000,100000,true,ncas,nep,1);
         if(val<depthVal){depthVal=val;depthBest=moves[i];}
       }
       if(!timedOut){
         bestMove=depthBest;bestVal=depthVal;
+        // Pre-seed the next iteration's ordering with best-so-far.
+        // Move depthBest to front for depth+1 to hit TT PV faster.
+        for(var pi=0;pi<moves.length;pi++){
+          if(_sameMove(moves[pi],depthBest)){
+            moves.splice(pi,1);moves.unshift(depthBest);break;
+          }
+        }
       }
       if(Date.now()-t0>maxTime)break;
     }
