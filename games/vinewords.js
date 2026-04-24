@@ -151,18 +151,15 @@ window._gameFns.vinewords=function VW(a){
   function boardRect(){return boardWrap.getBoundingClientRect();}
   function cellAt(x,y){
     var r=boardRect();
+    var pad=8; // tolerate fingers straying just outside the board edges
     var dx=x-r.left,dy=y-r.top;
-    if(dx<0||dy<0||dx>r.width||dy>r.height)return null;
+    if(dx<-pad||dy<-pad||dx>r.width+pad||dy>r.height+pad)return null;
+    dx=Math.max(0,Math.min(r.width-0.01,dx));
+    dy=Math.max(0,Math.min(r.height-0.01,dy));
     var col=Math.floor(dx/(r.width/4));
     var row=Math.floor(dy/(r.height/4));
-    if(col<0||col>3||row<0||row>3)return null;
-    // Shrink hitbox a bit so you don't snag adjacent cells when dragging fast
-    var cw=r.width/4, ch=r.height/4;
-    var localX=dx-col*cw, localY=dy-row*ch;
-    var cx=cw/2,cy=ch/2;
-    var distSq=(localX-cx)*(localX-cx)+(localY-cy)*(localY-cy);
-    var radius=Math.min(cw,ch)*0.48;
-    if(distSq>radius*radius)return null;
+    if(col<0)col=0;else if(col>3)col=3;
+    if(row<0)row=0;else if(row>3)row=3;
     return [row,col];
   }
 
@@ -310,17 +307,18 @@ window._gameFns.vinewords=function VW(a){
   function onDown(e){
     if(!playing||paused)return;
     e.preventDefault();
+    // Always enter drag mode so onMove can pick up the first cell even if
+    // the initial touch landed in a gap.
+    draggingFromCanvas=true;
     var pt=getPoint(e);
     var c=cellAt(pt.x,pt.y);
     if(!c)return;
-    draggingFromCanvas=true;
     // If this cell is already the last in path, treat as "submit"
     if(path.length>0&&path[path.length-1][0]===c[0]&&path[path.length-1][1]===c[1]){
       submitWord();draggingFromCanvas=false;return;
     }
-    // If this cell is in path (not last), reset path to start fresh at this cell
+    // If this cell is in path (not last), trim to include this cell
     if(isInPath(c[0],c[1])){
-      // Let user trim back rather than reset: slice to include this cell
       for(var i=0;i<path.length;i++){
         if(path[i][0]===c[0]&&path[i][1]===c[1]){path=path.slice(0,i+1);break;}
       }
@@ -333,11 +331,12 @@ window._gameFns.vinewords=function VW(a){
   }
   function onMove(e){
     if(!playing||paused||!draggingFromCanvas)return;
-    if(path.length===0)return;
     e.preventDefault();
     var pt=getPoint(e);
     var c=cellAt(pt.x,pt.y);
     if(!c)return;
+    // First cell pickup if onDown missed and path is still empty.
+    if(path.length===0){path=[c];render();return;}
     var last=path[path.length-1];
     if(last[0]===c[0]&&last[1]===c[1])return;
     if(addToPath(c[0],c[1]))render();

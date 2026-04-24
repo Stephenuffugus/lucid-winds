@@ -496,7 +496,7 @@ window._gameFns.juniper = function Juniper(a){
       h+='</div>';
       h+='</div>';
     }
-    pan.innerHTML=h;
+    if(pan)pan.innerHTML=h;
   }
   // ── Per-player score strip ──────────────────────────────────
   function _scoreStrip(label, score, wins, color){
