@@ -604,9 +604,13 @@ function GBS(a){
       // Enemy grid with zoom wrapper
       var enemyZoomWrap=document.createElement('div');
       enemyZoomWrap.id='BSenemyZoom';
-      enemyZoomWrap.style.cssText='display:flex;justify-content:center;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;padding:4px 0;';
+      // Wrap needs to overflow-auto so 1.5x zoom can scroll, but at
+      // zoom=1 the inner must fill the wrap's width or the enemy grid
+      // collapses to its natural content width (much smaller than the
+      // player grid). Inner explicitly width:100% + origin fixes that.
+      enemyZoomWrap.style.cssText='display:block;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;padding:4px 0;';
       var enemyZoomInner=document.createElement('div');
-      enemyZoomInner.style.cssText='transform:scale('+enemyZoom+');transform-origin:top center;transition:transform 0.2s ease;';
+      enemyZoomInner.style.cssText='display:block;width:100%;transform:scale('+enemyZoom+');transform-origin:top center;transition:transform 0.2s ease;';
       enemyZoomWrap.appendChild(enemyZoomInner);
       grids.appendChild(enemyZoomWrap);
       renderGrid(eGrid,enemyZoomInner,'enemy',(turn==='player'&&!gameOver)?function(){

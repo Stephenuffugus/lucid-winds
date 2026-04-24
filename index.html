@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.15';
+  var LW_VERSION='2026.04.24.16';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3447,6 +3447,14 @@
        button on Tide Hunt and the remaining un-listed games. The ❓
        help button in .gu-bar still surfaces rules on demand. */
     body.game-active #fg-ag > .gr{display:none!important;}
+    /* UNIVERSAL .gu-bar hide (2026-04-24). The gu-bar contains the
+       status text ('Place your fleet', 'Your turn', etc.), the ⚡
+       hash counter, a timer, and help/colorblind/shop buttons. It
+       sits at y=0 of #fg-ag which puts the status text directly
+       behind the fixed ← GAMES button. Games that need status
+       render it in their own header; games that need the timer or
+       help can be allowlisted back. */
+    body.game-active #fg-ag > .gu-bar{display:none!important;}
     /* UNIVERSAL .game-wrap padding kill during gameplay. Default is
        5.5rem top (88px desktop, 72px mobile) to reserve room for the
        global nav menu — but the menu is hidden during games, leaving
