@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.8';
+  var LW_VERSION='2026.04.24.9';
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3496,7 +3496,21 @@
     body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > .gu-bar,
     body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > #_gm{display:none!important;}
-    /* Card-game containers get a solid matching background + overscroll lock so nothing behind bleeds through during bounce-scroll. Also use the full viewport: padding-bottom normally reserves 58+safe-area for the bottom nav, but for these games the nav is hidden, so every pixel of bottom padding just buries cards under the scroll line. min-height fills the viewport so the solid container bg covers the whole screen even when pan content is short. */
+    /* UNIVERSAL game container lock (2026-04-24). Every game during
+       body.game-active gets: nav-reservation padding removed (nav is
+       hidden during games), min+max height pinned to viewport, and
+       overscroll contained so bounce-scroll doesn't bubble up. This
+       kills the "scroll on scroll" feel and the black box at the
+       bottom (which was the empty padding reserved for a hidden nav). */
+    body.game-active #fg-ag{
+      padding-bottom:env(safe-area-inset-bottom,0px)!important;
+      min-height:100dvh!important;
+      max-height:100dvh!important;
+      overscroll-behavior:contain;
+    }
+    /* Card-game containers — legacy allowlist kept for per-game bg
+       overrides below. The universal rule above already handles the
+       padding/height/overscroll for them. */
     #fg-ag[data-game="bleedinghearts"],
     #fg-ag[data-game="cribbage"],
     #fg-ag[data-game="bowergarden"],
@@ -3510,15 +3524,13 @@
       max-height:100dvh!important;
       overscroll-behavior:contain;
     }
-    /* Kill the .grove-panel top/bottom padding when a card game is active. Those paddings are 44px+safe-area at top and 5rem+safe-area at bottom — they reserve room for the global tab header + bottom nav, both of which are hidden during gameplay. They were the actual source of the black bar at the top and the un-scrollable hand at the bottom. */
-    body.game-active:has(#fg-ag[data-game="bleedinghearts"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="cribbage"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="bowergarden"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="gardenspades"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="juniper"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="yahtzee"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="farkle"]) #panel-game,
-    body.game-active:has(#fg-ag[data-game="petalfall"]) #panel-game{
+    /* UNIVERSAL .grove-panel lock during any game (2026-04-24). The
+       panel's default 44px top padding reserves room for the global tab
+       header, and the 5rem bottom padding reserves for the nav. Both
+       are hidden during gameplay — so those paddings become empty
+       black bars at the top and bottom of every game. Kill them for
+       ALL games, not just the card-game allowlist. */
+    body.game-active #panel-game{
       padding-top:0!important;
       padding-bottom:0!important;
       min-height:100dvh!important;
@@ -3552,14 +3564,11 @@
     body.sol-fs #sol-rotate-hint{display:flex;}
     @media (orientation:landscape){body.sol-fs #sol-rotate-hint{display:none!important;}}
     body.sol-fs.srh-dismissed #sol-rotate-hint{display:none!important;}
-    /* Universal EXIT button during game — returns to picker */
-    #game-exit-btn{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:999999;min-width:64px;min-height:44px;padding:8px 14px;background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:10px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 12px rgba(0,0,0,0.6);pointer-events:auto;}
-    body.game-active #game-exit-btn{display:flex !important;align-items:center;justify-content:center;gap:4px;}
-    /* Hide the back-to-games button when the picker itself is open —
-       otherwise it sits there as a button that brings you to the
-       screen you're already on. */
-    body:has(#fg-ov.open) #game-exit-btn{display:none !important;}
-    #game-exit-btn:active{transform:scale(0.94);background:rgba(74,124,53,0.35);}
+    /* Universal EXIT button RETIRED 2026-04-24. Every game now prepends
+       .game-back-btn (sticky, inside #fg-ag) so this fixed pill is a
+       second redundant button. Keep the element and handler for code
+       paths that may still reference it, but hide it permanently. */
+    #game-exit-btn{display:none !important;}
     @keyframes classPrompt{0%,100%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7))}50%{filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(200,168,75,0.6))}}
     #kb-compendium.class-prompt{animation:classPrompt 2.4s ease-in-out infinite;}
     /* Unread pulse — gentle gold glow when there's unread content.
@@ -6180,10 +6189,11 @@ window._addSwitchTabHook = function(fn){
   <div id="px"><div id="pxd" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);text-shadow:0 2px 12px rgba(200,168,75,0.4);">47m</div><div id="pxl" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--sage);">getting closer</div><div id="pxb" style="width:120px;height:4px;border-radius:2px;background:rgba(74,124,53,0.15);margin:6px auto 0;overflow:hidden;"><div id="pxf" style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--sage),var(--gold));width:0%;transition:width 0.5s;"></div></div></div>
   <!-- Step tracker -->
   <div id="stp" style="display:none;"><div class="stp-num" id="snv">0</div><div class="stp-lbl">steps</div><div class="stp-bar"><div class="stp-fill" id="sfv"></div></div><div class="stp-lbl" style="margin-top:2px;font-size:7px;">200 for gift</div></div>
-  <!-- Achievement bar — hidden. Slot-unlock progress belongs in the Book
-       (Quests) not in the always-on HUD where it overlapped the ← GAMES
-       button. ul() toasts still fire at the actual unlock moment. -->
-  <div id="ab" style="display:none !important;"><div class="abt"><span class="abv" id="abp">0/1</span> — harvest a plant to unlock slot 2</div><div class="abk"><div class="abf" id="abf" style="width:0%"></div></div></div>
+  <!-- Achievement bar REMOVED (2026-04-24). Slot-unlock progress belongs
+       in the Book (Quests). The old #ab element was hidden with inline
+       !important but uab() kept re-showing it via JS, which strips the
+       !important. Element deleted outright; uab() is now a no-op. -->
+  <div id="ab" style="display:none !important;visibility:hidden !important;"></div>
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
@@ -54861,15 +54871,10 @@ return{start:start,startSpecific:startSpecific,_tap:_tap,_close:_close};
 
 <!-- ═══ BACKPACK SYSTEM (from petal-walk-final.html demo) ═══ -->
 <script>
-// Achievement bar updater (was in demo's sim section)
-function uab(){
-  var b=document.getElementById('ab');if(!b)return;
-  if(!window.BP)return;
-  var s=BP.getState?BP.getState():{ph:0,pollen:0};
-  if(s.ph<1){b.style.display='block';var p=document.getElementById('abp');var f=document.getElementById('abf');if(p)p.textContent=s.ph+'/1';if(f)f.style.width=Math.min(100,s.ph*100)+'%';}
-  else if(s.pollen<100){b.style.display='block';var t=b.querySelector('.abt');if(t)t.innerHTML='<span class="abv">'+s.pollen+'/100</span> pollen, slot 3 at 100';var f2=document.getElementById('abf');if(f2)f2.style.width=Math.min(100,s.pollen)+'%';}
-  else{b.style.display='none';}
-}
+// Achievement bar updater — now a no-op (2026-04-24). The #ab element is
+// permanently hidden. Old callers still fire this during re-renders but
+// nothing happens.
+function uab(){}
 (function(){
 'use strict';
 var I={packC:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48"><path d="M13 17C13 13 16 10 20 10H28C32 10 35 13 35 17V35C35 38.3 32.3 41 29 41H19C15.7 41 13 38.3 13 35V17Z" fill="#2a4a20"/><path d="M14.5 17C14.5 14 16.8 12 19.5 12H28.5C31.2 12 33.5 14 33.5 17V21.5C33.5 22.3 32.8 23 32 23H16C15.2 23 14.5 22.3 14.5 21.5V17Z" fill="#3d6e2c"/><path d="M19 11C19.5 8.8 21.4 7.5 24 7.5C26.6 7.5 28.5 8.8 29 11" fill="none" stroke="#1e3418" stroke-width="2.2" stroke-linecap="round"/><path d="M16 18.5C12.5 17 10 13.8 9 9.5" fill="none" stroke="#4a8a35" stroke-width="1.8" stroke-linecap="round"/><path d="M32 18.5C35.5 17 38 13.8 39 9.5" fill="none" stroke="#4a8a35" stroke-width="1.8" stroke-linecap="round"/><path d="M35 25C37.2 25.2 39 26.8 39 29V34C39 35.8 37.5 37.2 35.8 37.2H34.5C34 37.2 33.5 36.7 33.5 36.2V26C33.5 25.3 34.3 24.9 35 25Z" fill="#2a4a20"/><path d="M34 26.2H35.8C37 26.2 38 27.2 38 28.4V29.8C38 30.3 37.6 30.7 37.1 30.7H34Z" fill="#3d6e2c"/><path d="M21.5 16.5C22.2 15 24 14.5 25.5 15.5C27 16.5 27.2 18.5 26 19.8C25 20.8 23 21 22.5 19.5C22 18 22.8 17 21.5 16.5Z" fill="#7ab356"/><path d="M24 16C24.5 17.5 24.2 19 23.5 20.2" fill="none" stroke="#4a7c35" stroke-width="0.8" stroke-linecap="round"/><path d="M17 23.5C18 24.8 19.5 25.5 21.5 25.8C23 26 25 26 26.5 25.8C28.5 25.5 30 24.8 31 23.5" fill="none" stroke="#1e3418" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/><path d="M18 31C20 30.3 22 30 24 30C26 30 28 30.3 30 31" fill="none" stroke="#1e3418" stroke-width="0.8" stroke-linecap="round" opacity="0.4"/></svg>',
