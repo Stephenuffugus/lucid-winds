@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.24.51';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.24.52';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4041,10 +4041,12 @@
     .ds-tile.ds-front:not(.shut)::before{content:'×2';position:absolute;top:2px;right:3px;font-family:DM Mono,monospace;font-size:0.44rem;color:rgba(139,106,60,0.7);font-weight:700;letter-spacing:0}
     .ds-rowlbl{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--muted);text-align:center;margin-top:4px;padding:2px 0}
     .ds-dice{display:flex;gap:clamp(10px,3vw,16px);justify-content:center;align-items:center;padding:clamp(6px,2vw,10px) 0}
-    /* Double Shutter uses the DARK dice set (gothic peonies / skulls / moons).
-       Container bg matches the app midnight so the art's transparent corners
-       blend; filter stays OFF so the dark mood reads as intended. */
-    .ds-die{width:clamp(58px,16vw,82px);height:clamp(58px,16vw,82px);border-radius:clamp(8px,2.5vw,12px);overflow:hidden;background:#0a0c08;box-shadow:0 4px 12px rgba(0,0,0,0.55),0 0 0 1px rgba(200,168,75,0.18)}
+    /* Double Shutter uses the DARK dice set — ornate gothic peonies, skulls,
+       crescent moons. Sized generously so the source resolution's detail
+       actually reads (full art is 2048×2048, no point hiding it at 80px).
+       Container bg matches the app midnight so the PNG's transparent corners
+       blend; no brightness/contrast filter — the dark mood stays intact. */
+    .ds-die{width:clamp(108px,34vw,172px);height:clamp(108px,34vw,172px);border-radius:clamp(10px,3vw,16px);overflow:hidden;background:#0a0c08;box-shadow:0 6px 18px rgba(0,0,0,0.6),0 0 0 1px rgba(200,168,75,0.18)}
     .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
     @keyframes dsDieRoll{0%{transform:translateY(-8px) rotate(-12deg) scale(0.9)}25%{transform:translateY(-14px) rotate(180deg) scale(1.05)}55%{transform:translateY(-6px) rotate(360deg) scale(1.08)}80%{transform:translateY(-2px) rotate(520deg) scale(1)}100%{transform:translateY(0) rotate(540deg) scale(1)}}
     .ds-wrap.rolling .ds-die{animation:dsDieRoll 0.76s cubic-bezier(.2,.7,.3,1) both}
