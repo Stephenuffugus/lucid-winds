@@ -664,6 +664,15 @@ window._gameFns.pollen = function PN(a){
       // ─── pass curtain feel ───────────────────────────────────────────
       +'#PNpassOV{background:radial-gradient(ellipse at center,rgba(8,10,6,0.96),rgba(3,4,2,1))!important;}'
       +'#PNpassOV:active{background:radial-gradient(ellipse at center,rgba(18,22,14,0.98),rgba(8,10,6,1))!important;}'
+      // ─── rules-modal scrollbar styling ──────────────────────────────
+      +'#PNrulesOV .pn-modal{scrollbar-width:thin;scrollbar-color:rgba(200,168,75,0.4) transparent;}'
+      +'#PNrulesOV .pn-modal::-webkit-scrollbar{width:6px}'
+      +'#PNrulesOV .pn-modal::-webkit-scrollbar-track{background:transparent}'
+      +'#PNrulesOV .pn-modal::-webkit-scrollbar-thumb{background:rgba(200,168,75,0.3);border-radius:4px}'
+      // ─── header subtle shimmer for the main panel title ──────────────
+      +'@keyframes pnHeaderShine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}'
+      // ─── subtle hover lift on pollinators ───────────────────────────
+      +'.pn-poll:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,220,140,0.06),0 6px 14px rgba(0,0,0,0.35)!important;}'
       // ─── respect reduced-motion preference ──────────────────────────
       +'@media (prefers-reduced-motion:reduce){.pn-card,.pn-tok,.pn-poll,.pn-seat{transition:none!important;animation:none!important}.pn-seat.active{animation:none!important;box-shadow:0 0 0 1px var(--gold)!important}}';
     document.head.appendChild(st);
@@ -675,7 +684,123 @@ window._gameFns.pollen = function PN(a){
   // get the tighter 440px to keep cards thumb-tappable.
   pan.style.cssText='max-width:min(760px,calc(100vw - 16px));margin:0 auto;padding:6px;user-select:none;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  mc(a).innerHTML='<button class="gb" onclick="_PNrules()" style="min-height:52px;padding:0.5rem 1rem;font-size:0.72rem;letter-spacing:.1em">📖 RULES</button>'
+    +'<button class="gb-new" onclick="_PNnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+
+  // ═══ RULES BOOK ═══
+  // Structured explainer covering objective, setup, turn actions,
+  // production vs tokens, pollinators, winning. First-time players
+  // auto-see this once; returning players can reopen anytime.
+  window._PNrules=function(){
+    var existing=document.getElementById('PNrulesOV');
+    if(existing){existing.remove();return;}
+    var ov=document.createElement('div');
+    ov.id='PNrulesOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:16px;animation:pnFadeIn 0.25s ease;';
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    // Token legend row reused across sections
+    var legend=''
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('green',16)+'<span style="font-size:0.55rem;color:var(--muted)">GREEN</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('rose',16)+'<span style="font-size:0.55rem;color:var(--muted)">ROSE</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('blue',16)+'<span style="font-size:0.55rem;color:var(--muted)">BLUE</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('amber',16)+'<span style="font-size:0.55rem;color:var(--muted)">AMBER</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('spore',16)+'<span style="font-size:0.55rem;color:var(--muted)">SPORE</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('gold',16)+'<span style="font-size:0.55rem;color:var(--gold)">GOLD · wild</span></span>';
+    // Section builder
+    function sec(title,body){
+      return '<div style="margin:14px 0 8px;font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.14em;color:var(--gold);border-bottom:1px solid rgba(200,168,75,0.2);padding-bottom:4px;">'+title+'</div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:0.68rem;line-height:1.6;color:var(--cream);">'+body+'</div>';
+    }
+    function b(text){return '<strong style="color:var(--gold);font-weight:700">'+text+'</strong>';}
+    function tip(text){return '<div style="margin-top:6px;padding:6px 10px;background:rgba(122,179,86,0.08);border-left:3px solid var(--sage);font-size:0.62rem;color:rgba(232,220,200,0.85);border-radius:4px;">💡 '+text+'</div>';}
+    var h='<div class="pn-modal" style="max-width:440px;width:100%;max-height:86vh;overflow-y:auto;padding:20px 18px;">'
+      +'<div style="text-align:center;margin-bottom:6px;">'
+      +'<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.3rem;color:var(--cream);">Master Pollinator</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">An engine-builder for 1-4 players</div>'
+      +'</div>'
+      // Tokens legend at the very top — players need this to parse everything below
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:10px;background:rgba(26,31,23,0.55);border-radius:8px;margin:10px 0 4px;">'+legend+'</div>'
+      // 1. GOAL
+      +sec('🎯 Goal',
+        'First player to <strong>15 Growth Points (GP)</strong> triggers the final round. '
+        +'When the active seat comes back around, the game ends and the highest GP wins.<br><br>'
+        +'Gain GP by <strong>buying plant cards</strong> (some have GP in the top-left badge) and '
+        +'<strong>attracting pollinators</strong> (3 GP each).'
+      )
+      // 2. SETUP
+      +sec('🌱 Setup',
+        'Three tiers of plant cards face up:<br>'
+        +'&nbsp;&nbsp;• <strong>🌱 Tier 1</strong> — Seedlings. Cheap. Mostly 0 GP, some 1 GP.<br>'
+        +'&nbsp;&nbsp;• <strong>🌿 Tier 2</strong> — Saplings. Medium cost. 1–3 GP.<br>'
+        +'&nbsp;&nbsp;• <strong>🌳 Tier 3</strong> — Ancients. Expensive. 3–5 GP.<br><br>'
+        +'A row of <strong>Pollinators</strong> (3–5 based on player count, 3 GP each).<br>'
+        +'A <strong>Supply</strong> of pollen tokens in 5 colors + gold.'
+      )
+      // 3. ON YOUR TURN
+      +sec('🎴 Your Turn — Pick ONE',
+        '<div style="margin:4px 0 2px"><strong style="color:var(--sage)">① Take 3 different tokens</strong> — one each of three different colors.</div>'
+        +'<div style="margin:2px 0"><strong style="color:var(--sage)">② Take 2 same-color tokens</strong> — both the same color (must be 4+ of that color in supply).</div>'
+        +'<div style="margin:2px 0"><strong style="color:var(--sage)">③ Reserve a card</strong> — tap any card, confirm <strong>RESERVE</strong>. Holds it for you, adds <strong>1 gold</strong> (wild) to your pile. Max 3 reserved at a time.</div>'
+        +'<div style="margin:2px 0"><strong style="color:var(--sage)">④ Buy a card</strong> — any visible or reserved card you can afford.</div>'
+        +tip('You can only do ONE of those four actions per turn.')
+      )
+      // 4. PRODUCTION vs TOKENS
+      +sec('🌾 Production vs Tokens',
+        'This is the engine-builder twist:<br><br>'
+        +b('Tokens')+' in your pile are currency — spent when you buy.<br>'
+        +b('Plants you\'ve bought')+' grant <strong>permanent production</strong> in their '
+        +'color (shown on the card\'s top-right chip). Production <strong>discounts</strong> future costs of that color.<br><br>'
+        +'Example: you own two cards producing '+tokDot('green',14)+' green. A card that costs 3 green + 1 rose '
+        +'effectively costs only <strong>1 green + 1 rose</strong> from your pile. If you own 3 greens, the '
+        +'green cost is free.'
+      )
+      // 5. GOLD
+      +sec('🟡 Gold Tokens',
+        b('Gold')+' is wild — it substitutes for any color when paying. '
+        +'You get 1 gold each time you reserve a card. Use it to buy something you couldn\'t quite afford.'
+      )
+      // 6. POLLINATORS
+      +sec('🦋 Pollinators',
+        'Pollinators are attracted <strong>automatically</strong> when your production meets their requirement.<br><br>'
+        +'Each pollinator shows production requirements at the bottom (e.g. 3 '+tokDot('green',14)+' + 3 '+tokDot('blue',14)+'). '
+        +'Tokens don\'t count — only <strong>plants you\'ve bought</strong>. At the end of any turn where '
+        +'your production meets a pollinator\'s requirement, it flies to your garden for <strong>3 GP</strong>.<br><br>'
+        +'You can\'t plan for more than one at once — the game picks the first matching pollinator if multiple qualify.'
+      )
+      // 7. TOKEN LIMIT
+      +sec('🪴 Token Limit',
+        'If you end your turn holding more than <strong>10 tokens</strong>, return extras to the supply '
+        +'until you\'re at 10. Gold counts toward the 10.'
+      )
+      // 8. END & WINNING
+      +sec('🏆 Winning',
+        'The moment any player reaches <strong>15 GP</strong>, play continues until the round finishes '
+        +'(every player gets the same number of turns). Then the highest GP total wins.<br><br>'
+        +'Ties are broken by <strong>fewest plant cards</strong> — efficient play wins.'
+      )
+      // 9. SHORT TIP SECTION
+      +sec('💡 Strategy Tips',
+        '• Buying a Tier 1 card is often better than hoarding tokens — production compounds.<br>'
+        +'• Watch the pollinators. Picking colors that match their requirements doubles your progress.<br>'
+        +'• Reserving gives you gold AND blocks an opponent\'s plan — the strongest Tier 3 cards are worth the slot.<br>'
+        +'• The token cap of 10 punishes greed. Take 2 of a color only when you\'ll spend it next turn.'
+      )
+      +'<div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">'
+      +'<button class="gb" onclick="document.getElementById(\'PNrulesOV\').remove()" style="min-height:52px;padding:12px 24px;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--cream);">CLOSE</button>'
+      +'</div>'
+      +'</div>';
+    ov.innerHTML=h;
+    document.body.appendChild(ov);
+    try{localStorage.setItem('lw_pn_rules_seen','1');}catch(e){}
+  };
+  // First-time trigger — auto-open the rules book the first time a
+  // new player opens Master Pollinator. After that, they use the
+  // RULES button whenever they want a refresher.
+  try{
+    if(!localStorage.getItem('lw_pn_rules_seen')){
+      setTimeout(function(){window._PNrules&&window._PNrules();},700);
+    }
+  }catch(e){}
 
   // Token chip — pure CSS opaque circle. Seed PNGs were too painterly
   // to read at game-time sizes (per Stephen). Vivid hex with a small
