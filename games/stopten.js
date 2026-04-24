@@ -48,9 +48,10 @@ if(!document.getElementById('STstyle')){
     '.st-btn:active{transform:translateY(1px) scale(0.97);}',
     '.st-btn.start{background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.22));border-color:var(--sage);color:var(--sage);}',
     '.st-btn.stop{background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(180,140,50,0.22));border-color:var(--gold);color:var(--gold);box-shadow:0 4px 18px rgba(200,168,75,0.35);}',
-    // Mode tabs
-    '.st-modes{display:flex;gap:4px;justify-content:center;padding:2px 0 10px;flex-wrap:wrap;}',
-    '.st-mode{padding:6px 12px;min-height:36px;font-family:DM Mono,monospace;font-size:0.65rem;letter-spacing:0.1em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;}',
+    // Mode tabs — horizontally scroll on narrow screens so all 9 fit
+    '.st-modes{display:flex;gap:4px;padding:2px 6px 10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;}',
+    '.st-modes::-webkit-scrollbar{display:none;}',
+    '.st-mode{padding:6px 12px;min-height:36px;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.08em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;flex:0 0 auto;white-space:nowrap;}',
     '.st-mode.on{background:rgba(200,168,75,0.18);border-color:var(--gold);color:var(--gold);}',
     // Result + stats
     '.st-result{min-height:58px;margin-top:14px;}',
@@ -109,10 +110,16 @@ window._gameFns.stopten=function ST(a){
   var MAX_ATTEMPTS=3,AUTO_STOP_AT=25;
   var startMs=0,elapsed=0,running=false,rafId=0,attempts=0,best=Infinity;
   var sessionDone=false;
-  var mode='classic';   // 'classic' | 'blind' | 'beat' | 'ladder'
-  try{var _m=localStorage.getItem('lw_st_mode');if(_m==='classic'||_m==='blind'||_m==='beat'||_m==='ladder')mode=_m;}catch(e){}
+  var MODES=['classic','blind','beat','ladder','heartbeat','countdown','twostop','chaos','daily'];
+  var mode='classic';
+  try{var _m=localStorage.getItem('lw_st_mode');if(MODES.indexOf(_m)>=0)mode=_m;}catch(e){}
   var target=10;        // seconds
   var audioCtx=null,beatTimer=0,beatCount=0;
+  var hapticTimer=0;      // heartbeat mode
+  var chaosTimer=0;       // chaos mode fake-flicker scheduler
+  var chaosFakeDigit='';  // currently-displayed fake value (empty = show real)
+  var twostopPhase=0;     // 0 not started, 1 awaiting second stop
+  var twostopDelta1=0;    // delta from 5s in twostop mode
   var stats=_loadStats();
 
   function _loadStats(){
@@ -140,11 +147,26 @@ window._gameFns.stopten=function ST(a){
   }
   function currentTarget(){
     if(mode==='ladder'){
-      // 5, 7, 10, 13, 17, 20 rotation
       var seq=[5,7,10,13,17,20];
       return seq[attempts%seq.length];
     }
+    // twostop shows target 5 for phase 0, 10 for phase 1
+    if(mode==='twostop')return twostopPhase===0?5:10;
     return 10;
+  }
+  function _todayKey(){
+    var d=new Date();
+    return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  }
+  function _dailyDone(){
+    try{
+      var raw=localStorage.getItem('lw_st_daily');
+      if(raw){var p=JSON.parse(raw);if(p.day===_todayKey())return p;}
+    }catch(e){}
+    return null;
+  }
+  function _dailyLock(result){
+    try{localStorage.setItem('lw_st_daily',JSON.stringify({day:_todayKey(),best:result.best,attempts:result.attempts,tier:result.tier}));}catch(e){}
   }
   function renderStats(){
     var p=stats.w+stats.l;
@@ -157,7 +179,14 @@ window._gameFns.stopten=function ST(a){
     elapsed=(Date.now()-startMs)/1000;
     var el=document.getElementById('STclock');
     if(el){
-      if(mode==='blind')el.textContent='• • •';
+      if(mode==='blind'||mode==='heartbeat')el.textContent='• • •';
+      else if(mode==='countdown'){
+        var rem=Math.max(0,10-elapsed);
+        el.textContent=rem.toFixed(2);
+      }
+      else if(mode==='chaos'&&chaosFakeDigit){
+        el.textContent=chaosFakeDigit;
+      }
       else el.textContent=elapsed.toFixed(2);
     }
     if(elapsed>=AUTO_STOP_AT){stop(true);return;}
@@ -188,22 +217,100 @@ window._gameFns.stopten=function ST(a){
       playBeat();
     },1000);
   }
+  function startHaptics(){
+    // navigator.vibrate pulse every 1s. No audio — for silent play.
+    beatCount=0;
+    if(!navigator.vibrate)return;
+    hapticTimer=setInterval(function(){
+      if(!running){clearInterval(hapticTimer);return;}
+      beatCount++;
+      try{navigator.vibrate(beatCount===10?150:40);}catch(e){}
+    },1000);
+  }
+  function startChaos(){
+    // Every 350-700ms flash a fake digit for 60-120ms, optionally a
+    // fake beep. Keeps the player's mental clock fighting the noise.
+    function sched(){
+      if(!running){chaosTimer=0;return;}
+      var wait=350+Math.random()*350;
+      chaosTimer=setTimeout(function(){
+        if(!running)return;
+        // Fake value = real elapsed ± random drift
+        var drift=(Math.random()-0.5)*4;
+        var fake=Math.max(0,elapsed+drift);
+        chaosFakeDigit=fake.toFixed(2);
+        // Fake beep 40% of the time
+        if(Math.random()<0.4){
+          var ac=ensureAudio();
+          if(ac){
+            var t=ac.currentTime;
+            var o=ac.createOscillator(),g=ac.createGain();
+            o.type='sine';o.frequency.value=220+Math.random()*440;
+            g.gain.setValueAtTime(0,t);
+            g.gain.linearRampToValueAtTime(0.12,t+0.01);
+            g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+            o.connect(g);g.connect(ac.destination);
+            o.start(t);o.stop(t+0.1);
+          }
+        }
+        // Flash clears after 60-120ms
+        setTimeout(function(){chaosFakeDigit='';},60+Math.random()*60);
+        sched();
+      },wait);
+    }
+    sched();
+  }
 
   function start(){
     if(running||sessionDone)return;
+    // Daily mode: check if today's attempt was already made
+    if(mode==='daily'){
+      var done=_dailyDone();
+      if(done){
+        sm('Daily already played. Come back tomorrow.');
+        return;
+      }
+    }
     target=currentTarget();
     startMs=Date.now();elapsed=0;running=true;
+    chaosFakeDigit='';
     if(mode==='beat')startBeats();
+    else if(mode==='heartbeat')startHaptics();
+    else if(mode==='chaos')startChaos();
     render();
     tick();
   }
 
   function stop(autoStop){
     if(!running)return;
+    // Twostop: first tap records phase-1 delta and keeps clock running.
+    if(mode==='twostop'&&twostopPhase===0&&!autoStop){
+      elapsed=(Date.now()-startMs)/1000;
+      twostopDelta1=Math.abs(elapsed-5);
+      twostopPhase=1;
+      target=10;
+      sm('First stop: '+elapsed.toFixed(2)+'s · now catch 10');
+      _play('tap');
+      // Refresh the display so the target line updates
+      render();
+      rafId=requestAnimationFrame(tick);
+      running=true;
+      return;
+    }
     running=false;cancelAnimationFrame(rafId);
     if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
+    if(hapticTimer){clearInterval(hapticTimer);hapticTimer=0;}
+    if(chaosTimer){clearTimeout(chaosTimer);chaosTimer=0;}
+    chaosFakeDigit='';
     elapsed=(Date.now()-startMs)/1000;
-    var delta=Math.abs(elapsed-target);
+    var delta;
+    if(mode==='twostop'&&twostopPhase===1){
+      var delta2=Math.abs(elapsed-10);
+      delta=twostopDelta1+delta2;
+      twostopPhase=0;twostopDelta1=0;
+    } else {
+      delta=Math.abs(elapsed-target);
+    }
     var t=tiers(delta);
     attempts++;
     if(delta<best)best=delta;
@@ -229,6 +336,11 @@ window._gameFns.stopten=function ST(a){
       if(isFinite(best)&&best>=0.005){
         _sr('stopten',{w:false,s:Math.round(best*1000),mode:mode});
       }
+      // Daily mode: lock the session for the rest of the day
+      if(mode==='daily'&&isFinite(best)){
+        var dTier=tiers(best);
+        _dailyLock({best:best,attempts:attempts,tier:dTier.lbl});
+      }
       setTimeout(function(){if(document.body.contains(pan))renderSessionSummary();},900);
     }
   }
@@ -238,19 +350,32 @@ window._gameFns.stopten=function ST(a){
     if(mode==='blind')return 'Timer hidden · count in your head to 10';
     if(mode==='beat')return 'Stop on the 10th beat';
     if(mode==='ladder')return 'Target climbs each round';
+    if(mode==='heartbeat')return 'Silent vibration pulse · stop on 10th';
+    if(mode==='countdown')return 'Counts down from 10.00 · stop at zero';
+    if(mode==='twostop')return 'Stop at 5.00, then again at 10.00';
+    if(mode==='chaos')return 'Distractions and fakes · trust your clock';
+    if(mode==='daily')return 'One session per day · shareable result';
     return '';
   }
 
   function render(){
     var face=running?'focused':'idle';
-    var clkCls='st-clock '+(mode==='blind'&&running?'blind':'')+' '+(running?'running':'idle');
+    var blindCls=((mode==='blind'||mode==='heartbeat')&&running)?'blind':'';
+    var clkCls='st-clock '+blindCls+' '+(running?'running':'idle');
     var tgt=currentTarget();
-    var tgtLine=(mode==='ladder'||mode==='classic'||mode==='beat'||mode==='blind')?
-      '<div class="st-target">Target, '+tgt+' seconds</div>' : '';
+    var tgtText;
+    if(mode==='twostop')tgtText=twostopPhase===0?'First stop at 5 seconds':'Now catch 10 seconds';
+    else if(mode==='countdown')tgtText='Stop when the clock hits zero';
+    else tgtText='Target, '+tgt+' seconds';
+    var tgtLine='<div class="st-target">'+tgtText+'</div>';
     var h='';
-    // Mode tabs
+    // Mode tabs (horizontal scroll on narrow screens so 9 fit)
     h+='<div class="st-modes">';
-    var modes=[['classic','CLASSIC'],['blind','BLIND'],['beat','BEAT'],['ladder','LADDER']];
+    var modes=[
+      ['classic','CLASSIC'],['blind','BLIND'],['beat','BEAT'],['heartbeat','HEARTBEAT'],
+      ['countdown','COUNTDOWN'],['ladder','LADDER'],['twostop','TWO-STOP'],['chaos','CHAOS'],
+      ['daily','📅 DAILY']
+    ];
     for(var m=0;m<modes.length;m++){
       var on=modes[m][0]===mode?' on':'';
       h+='<div class="st-mode'+on+'" onclick="_STM(\''+modes[m][0]+'\')">'+modes[m][1]+'</div>';
@@ -265,11 +390,23 @@ window._gameFns.stopten=function ST(a){
     h+='<div class="st-attempts">ATTEMPT '+Math.min(attempts+1,MAX_ATTEMPTS)+' / '+MAX_ATTEMPTS+'</div>';
     h+='<div id="STclock" class="'+clkCls+'">'+(mode==='blind'&&running?'• • •':elapsed.toFixed(2))+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);opacity:0.65;margin-bottom:14px;">SECONDS</div>';
+    // Daily mode: if today's attempt is locked, show the recap in place
+    // of the Start button.
+    var dailyLocked=false,dailyDone=null;
+    if(mode==='daily'){
+      dailyDone=_dailyDone();
+      dailyLocked=!!dailyDone;
+    }
     h+='<div class="st-btn-row">';
-    if(!running){
+    if(dailyLocked){
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.72rem;color:var(--gold);padding:10px 14px;border:1.5px solid rgba(200,168,75,0.35);border-radius:10px;background:rgba(200,168,75,0.06);">✅ Today\'s daily: <strong>'+dailyDone.tier+'</strong> · ±'+dailyDone.best.toFixed(2)+'s<br><span style="color:var(--muted);font-size:0.58rem;letter-spacing:0.08em;">NEXT CODE AT MIDNIGHT</span></div>';
+    } else if(!running){
       var lbl=sessionDone?'▶ NEW SESSION':'▶ START';
       var act=sessionDone?'_STN':'_STS';
       h+='<button class="st-btn start" onclick="'+act+'()">'+lbl+'</button>';
+      if(sessionDone&&mode==='daily'){
+        h+='<button class="st-btn" onclick="_STshare()" style="background:linear-gradient(180deg,rgba(200,168,75,0.2),rgba(180,140,50,0.12));border-color:var(--gold);color:var(--gold);">📤 SHARE</button>';
+      }
     }else{
       h+='<button class="st-btn stop" onclick="_STX()">■ STOP</button>';
     }
@@ -314,6 +451,24 @@ window._gameFns.stopten=function ST(a){
 
   window._STS=function(){start();};
   window._STX=function(){stop(false);};
+  window._STshare=function(){
+    var d=_dailyDone();
+    if(!d)return;
+    var text='STOP AT TEN · Daily '+_todayKey()+'\n'+d.tier+' · ±'+d.best.toFixed(2)+'s\n\nlucidwinds.com';
+    if(navigator.share)navigator.share({text:text}).catch(function(){_copyToClip(text);});
+    else _copyToClip(text);
+  };
+  function _copyToClip(t){
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){sm('Copied!');}).catch(function(){_fallbackClip(t);});
+    }else _fallbackClip(t);
+  }
+  function _fallbackClip(t){
+    var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');sm('Copied!');}catch(e){}
+    document.body.removeChild(ta);
+  }
   window._STN=function(){
     if(running){running=false;cancelAnimationFrame(rafId);}
     if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
@@ -324,9 +479,11 @@ window._gameFns.stopten=function ST(a){
   };
   window._STM=function(m){
     if(running)return;
+    if(MODES.indexOf(m)<0)return;
     mode=m;
     try{localStorage.setItem('lw_st_mode',m);}catch(e){}
     attempts=0;best=Infinity;elapsed=0;sessionDone=false;
+    twostopPhase=0;twostopDelta1=0;chaosFakeDigit='';
     renderStats();render();
   };
   window._STR=function(){
@@ -344,7 +501,12 @@ window._gameFns.stopten=function ST(a){
     h+='<p><strong style="color:var(--gold)">CLASSIC</strong> — visible clock, stop at 10.00s.</p>';
     h+='<p><strong style="color:var(--gold)">BLIND</strong> — clock hidden mid-run. Count in your head. The only feedback is your result.</p>';
     h+='<p><strong style="color:var(--gold)">BEAT</strong> — audio pulse every second. Stop on the 10th beat (the higher-pitch one).</p>';
+    h+='<p><strong style="color:var(--gold)">HEARTBEAT</strong> — silent vibration pulse every second. Play anywhere without audio. Stop on the 10th pulse (the longer one).</p>';
+    h+='<p><strong style="color:var(--gold)">COUNTDOWN</strong> — clock starts at 10.00 and counts down. Stop when it hits zero. Easier for some, harder for others.</p>';
     h+='<p><strong style="color:var(--gold)">LADDER</strong> — target climbs across attempts: 5 → 7 → 10 → 13 → 17 → 20. Tests how your rhythm scales.</p>';
+    h+='<p><strong style="color:var(--gold)">TWO-STOP</strong> — tap STOP once at 5 seconds, then again at 10. The score is the combined drift from both targets.</p>';
+    h+='<p><strong style="color:var(--gold)">CHAOS</strong> — visible clock, but the display flashes random fake values and random fake beeps interrupt. Don\'t trust what you see — trust your clock.</p>';
+    h+='<p><strong style="color:var(--gold)">📅 DAILY</strong> — one session per day (3 attempts), locked after you play. Result is shareable so you can compare with friends.</p>';
     h+='<h2>💡 Tips</h2>';
     h+='<p>• Breathe with a steady beat — many players count in "seconds Mississippi" or a mental metronome.<br>• BLIND is hardest on the first attempt. A few CLASSIC rounds first calibrate your inner clock.<br>• In BEAT, don\'t fight your reflex — listen, then let your finger fall on the 10th tick.</p>';
     h+='<div style="text-align:center;margin-top:14px;"><button class="gb" onclick="document.getElementById(\'STrulesOV\').remove()" style="min-height:48px;padding:10px 22px;">CLOSE</button></div>';
