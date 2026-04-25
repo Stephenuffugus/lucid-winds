@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.54';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.55';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -16141,9 +16141,12 @@ document.addEventListener('keydown', function(e) {
         break;
 
 
-      case 5: // Braided — two interleaving strands with cream lit edges + crossing-knot AO
+      case 5: // Braided — two interleaving strands with cream lit edges + crossing-knot AO + root flare
         var _s5Lp1x = 30+parseFloat(hw), _s5Lp2x = 38+parseFloat(hw2);
         var _s5Rp1x = 40+parseFloat(hw), _s5Rp2x = 32+parseFloat(hw2);
+        // Root flare AO — wider than single-stem since two strands diverge from a thicker base
+        s += '<ellipse cx="35" cy="78" rx="3.2" ry="0.7" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="77.7" rx="2.6" ry="0.32" fill="#f5ecd6" opacity="'+(op*0.20).toFixed(2)+'"/>';
         // Warm-shifted between-strand contact shadow (ink-pool at crossings)
         s += '<path d="M35,78 C35,'+(mid+8)+' 35,'+(mid-6)+' 35,'+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="2.4" fill="none" opacity="0.22"/>';
         // Left strand — slightly thicker at base via stacked taper
@@ -16158,9 +16161,12 @@ document.addEventListener('keydown', function(e) {
         // Cream highlight pair — right strand lit edge
         s += '<path d="M36.3,77 C'+(_s5Rp1x-0.5)+','+(mid+7)+' '+(_s5Rp2x-0.5)+','+(mid-5)+' 36.3,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
         s += '<path d="M36.3,77 C'+(_s5Rp1x-0.5)+','+(mid+7)+' '+(_s5Rp2x-0.5)+','+(mid-5)+' 36.3,'+(parseFloat(visibleTop)+1)+'" stroke="#f5ecd6" stroke-width="0.3" fill="none" stroke-linecap="round" opacity="0.5" transform="translate(-0.3,-0.1)"/>';
-        // Crossing knots — visible at the ~50% point
+        // Crossing knots — visible at the ~50% point (pulvinus where strands twist)
         s += '<ellipse cx="35" cy="'+(mid+1)+'" rx="2.2" ry="0.7" fill="rgba(40,20,5,0.3)" opacity="'+(op*0.4).toFixed(2)+'"/>';
         s += '<ellipse cx="35" cy="'+(mid+0.5)+'" rx="1.6" ry="0.4" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
+        // Tip nodes where each strand meets the canopy
+        s += '<ellipse cx="34" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="0.95" ry="0.35" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        s += '<ellipse cx="36" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="0.95" ry="0.35" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
         // Profile: alternate between the two strands so leaves attach to whichever is closer
         // Sample BOTH strands and pick the one farther from center (outer surface)
         t._stemProfile = [];
@@ -16179,8 +16185,10 @@ document.addEventListener('keydown', function(e) {
         break;
 
 
-      case 6: // Organic zigzag — Q-cornered, taper, cream highlight pair, node swell at every kink
+      case 6: // Organic zigzag — Q-cornered, taper, cream highlight pair, node swell at every kink, root flare
         var segs = 4, segH = (78 - visibleTop) / segs;
+        // Root flare AO at base
+        s += '<ellipse cx="35" cy="78" rx="2.0" ry="0.62" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         var zpArr = ['M35,78'];
         var zpKinks = [];
         for (var zi = 1; zi <= segs; zi++) {
@@ -16205,6 +16213,9 @@ document.addEventListener('keydown', function(e) {
           s += '<ellipse cx="'+zpKinks[_zk].x+'" cy="'+zpKinks[_zk].y+'" rx="1.35" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
           s += '<ellipse cx="'+zpKinks[_zk].x+'" cy="'+(zpKinks[_zk].y+0.5)+'" rx="1.1" ry="0.3" fill="rgba(40,20,5,0.3)"/>';
         }
+        // Tip node where stem meets canopy
+        var _zpFinalKink = zpKinks[zpKinks.length-1];
+        s += '<ellipse cx="'+_zpFinalKink.x+'" cy="'+_zpFinalKink.y+'" rx="1.20" ry="0.40" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
         // Store stem profile — zigzag control points
         t._stemProfile = [{x: 35, y: 78}];
         for (var _zpi = 1; _zpi <= segs; _zpi++) {
@@ -16212,10 +16223,13 @@ document.addEventListener('keydown', function(e) {
           var _zpx = (_zpi%2===1) ? 29+parseFloat(hw) : 41+parseFloat(hw2);
           t._stemProfile.push({x: _zpx, y: Math.max(parseFloat(visibleTop), _zpy)});
         }
+        t._stemHW = 1.4;
         break;
 
 
-      case 7: // Split double — taper, cream lit edges, base node swell, base AO ink-pool
+      case 7: // Split double — taper, cream lit edges, base junction swell, branch-tip nodes, root flare
+        // Root flare AO — wider since base is junction of two branches
+        s += '<ellipse cx="35" cy="78" rx="2.8" ry="0.65" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Warm contact shadow at base junction
         s += '<path d="M35,78 L35,'+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="2.0" fill="none" opacity="0.2"/>';
         // Left branch — base wider
@@ -16234,6 +16248,9 @@ document.addEventListener('keydown', function(e) {
         // Junction node swell at base (where branches diverge)
         s += '<ellipse cx="35" cy="78" rx="2.2" ry="0.6" fill="rgba(40,20,5,0.4)" opacity="'+(op*0.35).toFixed(2)+'"/>';
         s += '<ellipse cx="35" cy="77.5" rx="1.6" ry="0.4" fill="#f5ecd6" opacity="'+(op*0.2).toFixed(2)+'"/>';
+        // Branch-tip nodes
+        s += '<ellipse cx="33" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="0.95" ry="0.35" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        s += '<ellipse cx="37" cy="'+(parseFloat(visibleTop)+2.4)+'" rx="0.95" ry="0.35" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
         // Store both branch paths for leaf placement
         t._dblLeft = []; t._dblRight = [];
         for (var _d7i = 0; _d7i <= 8; _d7i++) {
@@ -16256,9 +16273,11 @@ document.addEventListener('keydown', function(e) {
         break;
 
 
-      case 8: // Cactus — barrel taper, fluted ribs (5-stop), warm core shadow, cream rim, areole nubs
+      case 8: // Cactus — barrel taper, fluted ribs, warm core shadow, cream rim, areole nubs, root flare
         var cw = 4.5; // half-width of column
         var cwTop = cw * 0.78; // ~80% as wide at top per playbook
+        // Root flare AO — wide (cactus has visible swollen base)
+        s += '<ellipse cx="35" cy="78" rx="'+(cw+0.8).toFixed(2)+'" ry="0.75" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Filled barrel silhouette with subtle taper
         s += '<path d="M'+(35-cw)+',78 C'+(35-cw+0.2)+','+(mid+4)+' '+(35-cwTop-0.2)+','+(mid-6)+' '+(35-cwTop)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-3)+' '+(35+cwTop)+','+visibleTop+' C'+(35+cwTop+0.2)+','+(mid-6)+' '+(35+cw-0.2)+','+(mid+4)+' '+(35+cw)+',78 Z" fill="#1E4020" stroke="#2E5A30" stroke-width="0.6" opacity="'+op+'"/>';
         // Warm-shifted core shadow on right inner edge
@@ -16293,13 +16312,16 @@ document.addEventListener('keydown', function(e) {
           s += '<line x1="'+nx1+'" y1="'+ny+'" x2="'+nx2+'" y2="'+ny2+'"'
              + ' stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="0.75"/>';
         });
+        t._stemHW = cw * 0.9;
         break;
 
 
 
-      case 9: // Coral — taper trunk, polyp bumps with shadow rings, cream rim, crown polyp specular
+      case 9: // Coral — taper trunk, polyp bumps with shadow rings, cream rim, crown polyp, root flare
         var corBase = 35, corY = 78, corTop = visibleTop;
         var _c9p1x = corBase-2.5, _c9p2x = corBase+1.5;
+        // Root flare AO — anchors the coral to its substrate
+        s += '<ellipse cx="35" cy="78" rx="2.6" ry="0.7" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Wider base stroke
         s += '<path d="M'+(corBase-1.5)+','+corY+' C'+_c9p1x+','+(mid+6)+' '+_c9p2x+','+(mid-4)+' '+corBase+','+corTop+'" stroke="#B85A3A" stroke-width="4.0" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         // Inner taper stroke — narrower toward tip
