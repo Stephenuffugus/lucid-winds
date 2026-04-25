@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.62';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.63';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -22638,6 +22638,12 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         // Drip-curl on top tepal (§9)
         s += '<path d="M'+fx+','+(fy-fs*1.0)+' C'+(fx+fs*0.72)+','+(fy-fs*1.22)+' '+(fx+fs*1.0)+','+(fy-fs*0.42)+' '+(fx+fs*0.42)+','+(fy-fs*0.04)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp22g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp22o = Math.min(0.85, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.05)+'" fill="none" stroke="#c8a84b" stroke-width="'+_bp22g+'" opacity="'+_bp22o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
       case 23: // King Protea — Protea cynaroides (bowl of pointed bracts around fuzzy heart, §3.K cone variant)
         // Receptacle AO base (§2 step 1)
@@ -22862,6 +22868,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx-fs*1.12)+','+(fy-fs*1.98)+' C'+(fx-fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*1.12)+','+(fy-fs*1.98)+'" fill="none" stroke="#fff8e0" stroke-width="0.55" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
         // Drip-curl pair on left rim lobe (§9)
         s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' Q'+(fx-fs*1.4)+','+(fy-fs*1.86)+' '+(fx-fs*1.28)+','+(fy-fs*1.78)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp30g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp30o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' C'+(fx-fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*1.36)+','+(fy-fs*1.96)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp30g+'" opacity="'+_bp30o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
       case 31: // Delphinium — tall spire of layered cupped florets, graduating upward
         // Central rachis
@@ -22986,6 +22998,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+fs*0.40)+','+(fy+fs*0.14)+' C'+(fx+fs*0.46)+','+(fy+fs*0.22)+' '+(fx+fs*0.48)+','+(fy+fs*0.30)+' '+(fx+fs*0.46)+','+(fy+fs*0.38)+' C'+(fx+fs*0.42)+','+(fy+fs*0.46)+' '+(fx+fs*0.36)+','+(fy+fs*0.48)+' '+(fx+fs*0.32)+','+(fy+fs*0.42)+' C'+(fx+fs*0.30)+','+(fy+fs*0.34)+' '+(fx+fs*0.32)+','+(fy+fs*0.24)+' '+(fx+fs*0.40)+','+(fy+fs*0.14)+' Z" fill="#fff8e0" opacity="'+(bloomOp*0.9)+'"/>';
         // Drip-curl on lid tip (§9)
         s += '<path d="M'+(fx-fs*0.26)+','+(fy-fs*0.2)+' Q'+(fx-fs*0.32)+','+(fy-fs*0.4)+' '+(fx-fs*0.16)+','+(fy-fs*0.46)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.4" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp34g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp34o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+fx+','+(fy+fs*0.92)+' C'+(fx-fs*0.30)+','+(fy+fs*0.84)+' '+(fx-fs*0.58)+','+(fy+fs*0.58)+' '+(fx-fs*0.68)+','+(fy+fs*0.18)+' C'+(fx-fs*0.82)+','+(fy-fs*0.34)+' '+(fx-fs*0.66)+','+(fy-fs*0.90)+' '+(fx-fs*0.22)+','+(fy-fs*1.22)+' C'+(fx+fs*0.10)+','+(fy-fs*1.46)+' '+(fx+fs*0.52)+','+(fy-fs*1.42)+' '+(fx+fs*0.82)+','+(fy-fs*1.14)+' C'+(fx+fs*1.10)+','+(fy-fs*0.90)+' '+(fx+fs*1.22)+','+(fy-fs*0.52)+' '+(fx+fs*1.12)+','+(fy-fs*0.12)+' C'+(fx+fs*1.04)+','+(fy+fs*0.26)+' '+(fx+fs*0.94)+','+(fy+fs*0.54)+' '+(fx+fs*0.74)+','+(fy+fs*0.74)+' C'+(fx+fs*0.52)+','+(fy+fs*0.94)+' '+(fx+fs*0.26)+','+(fy+fs*1.02)+' '+fx+','+(fy+fs*0.92)+' Z" fill="none" stroke="#7ab356" stroke-width="'+_bp34g+'" opacity="'+_bp34o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
       // ── set-103-8: CORPSE FLOWER BLOOMS (ChatGPT) ─────────────────
       case 35: // Dragon Arum — Dracunculus vulgaris (spiky maroon spadix + curled spathe)
