@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.60';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.61';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -19338,6 +19338,8 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_dlTipX.toFixed(1)+'" cy="'+_dlTipY.toFixed(1)+'" r="0.45" fill="rgba(40,20,5,0.75)"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.6)"/>';
+          // Tip terminator at drip-tip apex (the namesake point)
+          s += '<circle cx="'+_dlTipX.toFixed(1)+'" cy="'+_dlTipY.toFixed(1)+'" r="0.24" fill="rgba(40,20,5,0.7)"/>';
           // Glowing drips from drip-tip — Ficus drip aesthetic preserved
           var _drC = [PALETTE[t.leafColors[i%3]]||PALETTE.teal, PALETTE[t.leafColors[(i+1)%3]]||PALETTE.rose, PALETTE[t.leafColors[(i+2)%3]]||PALETTE.gold];
           for (var _dr = 0; _dr < 3; _dr++) {
@@ -21132,6 +21134,8 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+ox+','+ly+' L'+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
           // Cream specular
           s += '<ellipse cx="'+((ox+_pbTx)/2-Math.cos(_pbPa)*_pbW*0.2*side).toFixed(1)+'" cy="'+((ly+_pbTy)/2-Math.sin(_pbPa)*_pbW*0.2).toFixed(1)+'" rx="'+(_pbLen*0.15).toFixed(2)+'" ry="'+(_pbW*0.18).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'" transform="rotate('+(_pbAng*180/Math.PI).toFixed(0)+' '+((ox+_pbTx)/2).toFixed(1)+' '+((ly+_pbTy)/2).toFixed(1)+')"/>';
+          // Tip terminator at apex
+          s += '<circle cx="'+_pbTx.toFixed(1)+'" cy="'+_pbTy.toFixed(1)+'" r="0.30" fill="rgba(40,20,5,0.7)"/>';
           break;
 
         case 67: // Frost Plate — pale frosted blade with crystalline fern-like ice-vein branches.
