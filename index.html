@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.51';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.52';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -17666,13 +17666,6 @@ document.addEventListener('keydown', function(e) {
       // Underside (shaded shoulder) — concave the other way
       s += '<path d="M'+_pulvBx.toFixed(2)+','+(_pulvBy+0.25).toFixed(2)+' Q'+_pulvCx.toFixed(2)+','+(_attachY+0.45).toFixed(2)+' '+_pulvTx.toFixed(2)+','+(_pulvTy+0.30).toFixed(2)+'" fill="none" stroke="rgba(20,10,2,0.55)" stroke-width="0.30" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
 
-      // 5) PULVINUS MYTHIC GLOW — chimera gen 3+ throbs faintly at the joint.
-      if (t.chimerGen >= 3) {
-        var _pulvGlowR = 0.9 + Math.min(0.6, (t.chimerGen - 3) * 0.18);
-        var _pulvGlowOp = Math.min(0.55, 0.28 + (t.chimerGen - 3) * 0.06);
-        s += '<circle cx="'+_attachX.toFixed(2)+'" cy="'+_attachY.toFixed(2)+'" r="'+_pulvGlowR.toFixed(2)+'" fill="#c8a84b" opacity="'+(_pulvGlowOp*op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
-        s += '<circle cx="'+_attachX.toFixed(2)+'" cy="'+_attachY.toFixed(2)+'" r="'+(_pulvGlowR*0.45).toFixed(2)+'" fill="#f5ecd6" opacity="'+(_pulvGlowOp*0.85*op).toFixed(2)+'"/>';
-      }
 
       // 6) BUD-SCAR DOT — sits on top of bark swell.
       s += '<circle cx="'+_exitX.toFixed(2)+'" cy="'+_exitY.toFixed(2)+'" r="0.42" fill="rgba(40,20,5,0.85)" opacity="'+(op*0.85).toFixed(2)+'"/>';
@@ -17877,19 +17870,6 @@ document.addEventListener('keydown', function(e) {
                  + ' fill="#0d100c" opacity="0.5" transform="rotate('+(side*-20)+','+_fh2X.toFixed(1)+','+_fh2Y.toFixed(1)+')"/>';
             }
           }
-          // Chimera vein — midrib + lateral branches
-          if (t.chimerGen > 1) {
-            var _m5vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_mLen*0.2).toFixed(1)+','+(ly-_mLen*0.35).toFixed(1)+' '+_mmX.toFixed(1)+','+_mmY.toFixed(1);
-            // Lateral vein branches fanning out from midrib
-            for (var _m5v = 0; _m5v < 3; _m5v++) {
-              var _m5t = 0.25 + _m5v * 0.2;
-              var _m5bx = ox + (_mmX - ox) * _m5t;
-              var _m5by = ly + (_mmY - ly) * _m5t;
-              _m5vd += ' M'+_m5bx.toFixed(1)+','+_m5by.toFixed(1)+' Q'+(_m5bx+side*_mWid*0.4).toFixed(1)+','+(_m5by-_mLen*0.08).toFixed(1)+' '+(_m5bx+side*_mWid*0.65).toFixed(1)+','+(_m5by+_mLen*0.02).toFixed(1);
-              _m5vd += ' M'+_m5bx.toFixed(1)+','+_m5by.toFixed(1)+' Q'+(_m5bx-side*_mWid*0.2).toFixed(1)+','+(_m5by+_mLen*0.05).toFixed(1)+' '+(_m5bx-side*_mWid*0.35).toFixed(1)+','+(_m5by+_mLen*0.08).toFixed(1);
-            }
-            s += '<path d="'+_m5vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 6: // Fern — rachis with alternating pinnae pairs
           // Central rachis: curved line from attachment to frond tip
@@ -17928,12 +17908,6 @@ document.addEventListener('keydown', function(e) {
                    + ' fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
               }
             }
-          }
-          // Chimera vein — follows rachis
-          if (t.chimerGen > 1) {
-            var _f6chi = shiftedLight;
-            var _f6d = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_fCX.toFixed(1)+','+_fCY.toFixed(1)+' '+_fTX.toFixed(1)+','+_fTY.toFixed(1);
-            s += '<path d="'+_f6d+'" fill="none" stroke="'+_f6chi+'" stroke-width="'+ _vs.width +'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
           }
           break;
         case 7: // Maple — palmate lobes with radiating veins + depth
@@ -18034,22 +18008,6 @@ document.addEventListener('keydown', function(e) {
             }
             // Sharp tip glint on each needle
             s += '<circle cx="'+nx.toFixed(1)+'" cy="'+ny.toFixed(1)+'" r="0.18" fill="#fff8e0" opacity="'+(op*0.65).toFixed(2)+'"/>';
-            // ── Needle chimera vein — single central line per needle ──
-            if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
-              var _nChiColor = shiftedLight;
-              var _nChiVar = (parseInt(uid, 16) + i) % 2;
-              var _ncvD = '';
-              if (_nChiVar === 0) {
-                var _cv1x = ox + Math.sin(na) * nLen * 0.18 * side, _cv1y = ly - Math.cos(na) * nLen * 0.18;
-                var _cv2x = ox + Math.sin(na) * nLen * 0.72 * side, _cv2y = ly - Math.cos(na) * nLen * 0.72;
-                _ncvD = 'M'+_cv1x.toFixed(1)+','+_cv1y.toFixed(1)+' C'+(ox + side*nLen*0.22).toFixed(1)+','+(ly-nLen*0.30).toFixed(1)+' '+_cv2x.toFixed(1)+','+(_cv2y+nLen*0.08).toFixed(1)+' '+(nx - Math.sin(na)*nLen*0.06*side).toFixed(1)+','+(ny + Math.cos(na)*nLen*0.06).toFixed(1);
-              } else {
-                var _cv1x = ox + Math.sin(na) * nLen * 0.14 * side, _cv1y = ly - Math.cos(na) * nLen * 0.14;
-                var _cv2x = ox + Math.sin(na) * nLen * 0.68 * side, _cv2y = ly - Math.cos(na) * nLen * 0.68;
-                _ncvD = 'M'+_cv1x.toFixed(1)+','+_cv1y.toFixed(1)+' C'+(ox + side*nLen*0.20).toFixed(1)+','+(ly-nLen*0.28).toFixed(1)+' '+_cv2x.toFixed(1)+','+(_cv2y+nLen*0.07).toFixed(1)+' '+(nx - Math.sin(na)*nLen*0.05*side).toFixed(1)+','+(ny + Math.cos(na)*nLen*0.05).toFixed(1);
-              }
-              if (_ncvD) s += '<path d="'+_ncvD+'" fill="none" stroke="'+_nChiColor+'" stroke-width="0.30" opacity="0.28" stroke-linecap="round"/>';
-            }
           }
           // Basal brass sheath (pine fascicle signature)
           s += '<rect x="'+(ox-0.7).toFixed(1)+'" y="'+(ly-0.3).toFixed(1)+'" width="1.4" height="0.7" rx="0.18" fill="rgba(40,20,5,0.65)"/>';
@@ -18109,17 +18067,6 @@ document.addEventListener('keydown', function(e) {
           }
           // Tip terminator
           s += '<circle cx="'+_mvTX.toFixed(1)+'" cy="'+_mvTY.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — pinnate from midrib (matches Monstera venation)
-          if (t.chimerGen > 1) {
-            var _m10vd = _mvMidD;
-            for (var _mv = 0; _mv < 3; _mv++) {
-              var _mvT = 0.28 + _mv * 0.20;
-              var _mvBx = ox + (_mvmX - ox) * _mvT;
-              var _mvBy = ly + (_mvmY - ly) * _mvT;
-              _m10vd += ' M'+_mvBx.toFixed(1)+','+_mvBy.toFixed(1)+' Q'+(_mvBx+side*ls*0.3).toFixed(1)+','+(_mvBy-ls*0.15).toFixed(1)+' '+(_mvBx+side*ls*0.55).toFixed(1)+','+(_mvBy-ls*0.08).toFixed(1);
-            }
-            s += '<path d="'+_m10vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 11: // Maidenhair Fern — Adiantum bipinnate fan, tiny pinnules each on its own dark wiry rachis (signature).
@@ -18171,18 +18118,6 @@ document.addEventListener('keydown', function(e) {
           }
           // Tip terminator on main rachis
           s += '<circle cx="'+_mfTX.toFixed(1)+'" cy="'+_mfTY.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — every fork glows (dichotomous mapping)
-          if (t.chimerGen > 1) {
-            var _f11vd = _mfRD;
-            for (var _f11v = 0; _f11v < 4; _f11v++) {
-              var _f11t = 0.22 + _f11v * 0.2;
-              var _f11bx = (1-_f11t)*(1-_f11t)*ox + 2*(1-_f11t)*_f11t*_mfCX + _f11t*_f11t*_mfTX;
-              var _f11by = (1-_f11t)*(1-_f11t)*ly + 2*(1-_f11t)*_f11t*_mfCY + _f11t*_f11t*_mfTY;
-              _f11vd += ' M'+_f11bx.toFixed(1)+','+_f11by.toFixed(1)+' L'+(_f11bx+side*ls*0.45).toFixed(1)+','+(_f11by-ls*0.18).toFixed(1);
-              _f11vd += ' M'+_f11bx.toFixed(1)+','+_f11by.toFixed(1)+' L'+(_f11bx-side*ls*0.4).toFixed(1)+','+(_f11by-ls*0.15).toFixed(1);
-            }
-            s += '<path d="'+_f11vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 12: // Succulent Rosette — thick fleshy spatulate leaf with concave channel and tip blush.
           var _scLen = ls * 1.5;
@@ -18217,10 +18152,6 @@ document.addEventListener('keydown', function(e) {
           // Tip blush — colored apex (succulent stress color)
           s += '<ellipse cx="'+_scTX.toFixed(1)+'" cy="'+_scTY.toFixed(1)+'" rx="'+(_scWid*0.22).toFixed(2)+'" ry="'+(_scLen*0.10).toFixed(2)+'" fill="'+_hueShift(baseColor, 60, 22)+'" opacity="'+(op*0.55).toFixed(2)+'"/>';
           s += '<circle cx="'+_scTX.toFixed(1)+'" cy="'+_scTY.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — central channel ghost
-          if (t.chimerGen > 1) {
-            s += '<path d="'+_scChD+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 13: // Coral — branching coral polyps with multicolored tubes and polyp tip caps. Polished strokes + cream pickups.
           var _cor1 = PALETTE[t.leafColors[i % 3]] || PALETTE.sage;
@@ -18263,12 +18194,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(_cbTX-side*ls*0.05).toFixed(1)+'" cy="'+(_cbTY-ls*0.05).toFixed(1)+'" r="'+(ls*0.07).toFixed(2)+'" fill="#f5ecd6" opacity="0.55"/>';
           // Tip terminator (warm dark dot)
           s += '<circle cx="'+_cTipX.toFixed(1)+'" cy="'+_cTipY.toFixed(1)+'" r="0.2" fill="rgba(40,20,5,0.55)"/>';
-          // Chimera vein — follows both tubes
-          if (t.chimerGen > 1) {
-            var _c13vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+_cMidX.toFixed(1)+','+_cMidY.toFixed(1)+' '+(_cTipX-side*cLen*0.05).toFixed(1)+','+(_cTipY+cLen*0.15).toFixed(1)+' '+_cTipX.toFixed(1)+','+_cTipY.toFixed(1)
-               + ' M'+_cbX.toFixed(1)+','+_cbY.toFixed(1)+' C'+(_cbX+side*cLen*0.2).toFixed(1)+','+(_cbY-cLen*0.15).toFixed(1)+' '+(_cbTX-side*cLen*0.05).toFixed(1)+','+(_cbTY+cLen*0.1).toFixed(1)+' '+_cbTX.toFixed(1)+','+_cbTY.toFixed(1);
-            s += '<path d="'+_c13vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 14: // Cactus Pad — Opuntia paddle with areole spines, warm-shifted strokes, cream pickups.
@@ -18312,14 +18237,6 @@ document.addEventListener('keydown', function(e) {
           }
           // Tip terminator at top of pad
           s += '<circle cx="'+padX+'" cy="'+(padY-padH).toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.55)"/>';
-          // Chimera vein — central axis through pad
-          if (t.chimerGen > 1) {
-            var _c14var = (parseInt(uid, 16) + i) % 2;
-            var _c14d = (_c14var === 0)
-              ? 'M'+padX+','+(padY+padH*0.78).toFixed(1)+' Q'+(padX-padW*0.04).toFixed(1)+','+padY.toFixed(1)+' '+padX+','+(padY-padH*0.78).toFixed(1)
-              : 'M'+padX+','+(padY+padH*0.74).toFixed(1)+' Q'+(padX+padW*0.03).toFixed(1)+','+padY.toFixed(1)+' '+padX+','+(padY-padH*0.74).toFixed(1);
-            s += '<path d="'+_c14d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 15: // English Holly — Ilex aquifolium, elliptic with sharp spinose margin (4-5 thorny points), glossy waxy specular.
           tip = lx; tipY = ot;
@@ -18367,14 +18284,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+_hMidD+'" fill="none" stroke="#f5ecd6" stroke-width="0.22" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
           // Tip terminator
           s += '<circle cx="'+lx+'" cy="'+ot+'" r="0.24" fill="rgba(40,20,5,0.7)"/>';
-          // Chimera vein — pinnate from midrib to each thorn tip
-          if (t.chimerGen > 1) {
-            var _c15var = (parseInt(uid,16)+i)%2;
-            var _c15d = (_c15var === 0)
-              ? _hMidD + ' M'+(ox+side*ls*0.18)+','+(ly-ls*0.26)+' Q'+(ox+side*ls*0.30)+','+(ly-ls*0.18)+' '+(ox+side*ls*0.48)+','+(ly-ls*0.10)+' M'+(ox+side*ls*0.34)+','+(ly-ls*0.50)+' Q'+(ox+side*ls*0.48)+','+(ly-ls*0.44)+' '+(ox+side*ls*0.62)+','+(ly-ls*0.38)+' M'+(ox+side*ls*0.54)+','+(ly-ls*0.80)+' Q'+(ox+side*ls*0.66)+','+(ly-ls*0.74)+' '+(ox+side*ls*0.78)+','+(ly-ls*0.68)+' M'+(ox+side*ls*0.72)+','+(ly-ls*1.02)+' Q'+(ox+side*ls*0.84)+','+(ly-ls*0.98)+' '+(ox+side*ls*0.92)+','+(ly-ls*0.92)+' M'+(ox+side*ls*0.46)+','+(ly-ls*0.92)+' Q'+(ox+side*ls*0.34)+','+(ly-ls*0.88)+' '+(ox+side*ls*0.20)+','+(ly-ls*0.72)
-              : _hMidD + ' M'+(ox+side*ls*0.16)+','+(ly-ls*0.24)+' Q'+(ox+side*ls*0.28)+','+(ly-ls*0.16)+' '+(ox+side*ls*0.44)+','+(ly-ls*0.09)+' M'+(ox+side*ls*0.32)+','+(ly-ls*0.48)+' Q'+(ox+side*ls*0.46)+','+(ly-ls*0.42)+' '+(ox+side*ls*0.60)+','+(ly-ls*0.36)+' M'+(ox+side*ls*0.52)+','+(ly-ls*0.78)+' Q'+(ox+side*ls*0.64)+','+(ly-ls*0.72)+' '+(ox+side*ls*0.76)+','+(ly-ls*0.66)+' M'+(ox+side*ls*0.70)+','+(ly-ls*0.98)+' Q'+(ox+side*ls*0.82)+','+(ly-ls*0.94)+' '+(ox+side*ls*0.90)+','+(ly-ls*0.88)+' M'+(ox+side*ls*0.44)+','+(ly-ls*0.90)+' Q'+(ox+side*ls*0.34)+','+(ly-ls*0.86)+' '+(ox+side*ls*0.22)+','+(ly-ls*0.70);
-            s += '<path d="'+_c15d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 16: // Blackberry Cluster — 3-5 dark berries on a tiny green stem with leafy bract.
           // Cluster envelope as bodyD so chimera-vein clip works
@@ -18417,14 +18326,6 @@ document.addEventListener('keydown', function(e) {
             s += '<circle cx="'+(_b.x-_b.r*0.38).toFixed(1)+'" cy="'+(_b.y-_b.r*0.42).toFixed(1)+'" r="'+(_b.r*0.14).toFixed(2)+'" fill="#fff8e0" opacity="0.85"/>';
           }
           tip = _berries[4].x; tipY = _berries[4].y;
-          // Chimera vein — runs through hub to each berry
-          if (t.chimerGen > 1) {
-            var _c16d = 'M'+ox+','+ly+' L'+_bHub.x.toFixed(1)+','+_bHub.y.toFixed(1);
-            for (var _cb = 0; _cb < _berries.length; _cb++) {
-              _c16d += ' M'+_bHub.x.toFixed(1)+','+_bHub.y.toFixed(1)+' Q'+(((_bHub.x+_berries[_cb].x)/2)+side*ls*0.04).toFixed(1)+','+(((_bHub.y+_berries[_cb].y)/2)-ls*0.04).toFixed(1)+' '+_berries[_cb].x.toFixed(1)+','+_berries[_cb].y.toFixed(1);
-            }
-            s += '<path d="'+_c16d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 17: // Filange — severed-finger mythic. Bone stub at stem, three phalanges, fingernail at tip. KEEP weird, polish strokes.
           var _fgW = ls * 0.30;
@@ -18492,11 +18393,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+_fgSevX.toFixed(1)+','+_fgSevY.toFixed(1)+' C'+(_fgSevX+Math.cos(_fgAng)*_fgSeg1*0.3*side).toFixed(1)+','+(_fgSevY+Math.sin(_fgAng)*_fgSeg1*0.3).toFixed(1)+' '+(_fgJ1X-Math.cos(_fgAng)*_fgSeg1*0.15*side).toFixed(1)+','+(_fgJ1Y-Math.sin(_fgAng)*_fgSeg1*0.15).toFixed(1)+' '+_fgJ1X.toFixed(1)+','+_fgJ1Y.toFixed(1)+' C'+(_fgJ1X+Math.cos(_fgA2)*_fgSeg2*0.35*side).toFixed(1)+','+(_fgJ1Y+Math.sin(_fgA2)*_fgSeg2*0.35).toFixed(1)+' '+(_fgJ2X-Math.cos(_fgA2)*_fgSeg2*0.15*side).toFixed(1)+','+(_fgJ2Y-Math.sin(_fgA2)*_fgSeg2*0.15).toFixed(1)+' '+_fgJ2X.toFixed(1)+','+_fgJ2Y.toFixed(1)+' C'+(_fgJ2X+Math.cos(_fgA3)*_fgSeg3*0.4*side).toFixed(1)+','+(_fgJ2Y+Math.sin(_fgA3)*_fgSeg3*0.4).toFixed(1)+' '+(_fgTipX-Math.cos(_fgA3)*_fgSeg3*0.1*side).toFixed(1)+','+(_fgTipY-Math.sin(_fgA3)*_fgSeg3*0.1).toFixed(1)+' '+_fgTipX.toFixed(1)+','+_fgTipY.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="'+(op*0.45).toFixed(2)+'" transform="translate(-0.25,-0.2)"/>';
           // Tip terminator
           s += '<circle cx="'+_fgTipX.toFixed(1)+'" cy="'+_fgTipY.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — bone line through all three phalanges
-          if (t.chimerGen > 1) {
-            var _f17vd = 'M'+_fgStemX.toFixed(1)+','+_fgStemY.toFixed(1)+' L'+_fgSevX.toFixed(1)+','+_fgSevY.toFixed(1)+' L'+_fgJ1X.toFixed(1)+','+_fgJ1Y.toFixed(1)+' L'+_fgJ2X.toFixed(1)+','+_fgJ2Y.toFixed(1)+' L'+_fgTipX.toFixed(1)+','+_fgTipY.toFixed(1);
-            s += '<path d="'+_f17vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         // ═══ set-103: 32 NEW LEAF TYPES (cases 18-49) ═══════════════════════
         case 18: // Lady Fern — Athyrium pinnately compound, 8-10 finely cut pinnae each pinnatifid. Tall serrated frond.
@@ -18541,14 +18437,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(ox+side*ls*0.1).toFixed(1)+'" cy="'+(ly-ls*3.7).toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.65)"/>';
           // Base shadow at petiole
           s += '<path d="M'+(ox-side*ls*0.08)+','+ly+' Q'+(ox+side*ls*0.1)+','+(ly-ls*0.15)+' '+(ox+side*ls*0.25)+','+(ly-ls*0.25)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.8" opacity="'+(op*0.3).toFixed(2)+'" stroke-linecap="round"/>';
-          // Chimera vein
-          if (t.chimerGen > 1) {
-            var _c18var = (parseInt(uid,16)+i)%2;
-            var _c18d = (_c18var === 0)
-              ? 'M'+ox+','+ly+' Q'+(ox+side*ls*0.16)+','+(ly-ls*0.72)+' '+(ox+side*ls*0.18)+','+(ly-ls*1.42)+' Q'+(ox+side*ls*0.20)+','+(ly-ls*2.30)+' '+(ox+side*ls*0.18)+','+(ly-ls*3.35)+' M'+(ox+side*ls*0.08)+','+(ly-ls*0.52)+' Q'+(ox+side*ls*0.28)+','+(ly-ls*0.58)+' '+(ox+side*ls*0.46)+','+(ly-ls*0.84)+' M'+(ox+side*ls*0.16)+','+(ly-ls*1.18)+' Q'+(ox+side*ls*0.42)+','+(ly-ls*1.22)+' '+(ox+side*ls*0.70)+','+(ly-ls*1.52)+' M'+(ox+side*ls*0.18)+','+(ly-ls*1.90)+' Q'+(ox+side*ls*0.46)+','+(ly-ls*1.96)+' '+(ox+side*ls*0.78)+','+(ly-ls*2.22)+' M'+(ox+side*ls*0.18)+','+(ly-ls*2.64)+' Q'+(ox+side*ls*0.40)+','+(ly-ls*2.66)+' '+(ox+side*ls*0.60)+','+(ly-ls*2.94)+' M'+(ox+side*ls*0.14)+','+(ly-ls*3.00)+' Q'+(ox+side*ls*0.02)+','+(ly-ls*3.18)+' '+(ox-side*ls*0.06)+','+(ly-ls*3.40)
-              : 'M'+ox+','+ly+' Q'+(ox+side*ls*0.18)+','+(ly-ls*0.74)+' '+(ox+side*ls*0.22)+','+(ly-ls*1.48)+' Q'+(ox+side*ls*0.24)+','+(ly-ls*2.32)+' '+(ox+side*ls*0.20)+','+(ly-ls*3.30)+' M'+(ox+side*ls*0.10)+','+(ly-ls*0.60)+' Q'+(ox+side*ls*0.30)+','+(ly-ls*0.66)+' '+(ox+side*ls*0.50)+','+(ly-ls*0.94)+' M'+(ox+side*ls*0.18)+','+(ly-ls*1.28)+' Q'+(ox+side*ls*0.44)+','+(ly-ls*1.32)+' '+(ox+side*ls*0.72)+','+(ly-ls*1.62)+' M'+(ox+side*ls*0.20)+','+(ly-ls*2.02)+' Q'+(ox+side*ls*0.48)+','+(ly-ls*2.06)+' '+(ox+side*ls*0.82)+','+(ly-ls*2.34)+' M'+(ox+side*ls*0.20)+','+(ly-ls*2.76)+' Q'+(ox+side*ls*0.42)+','+(ly-ls*2.78)+' '+(ox+side*ls*0.64)+','+(ly-ls*3.06)+' M'+(ox+side*ls*0.16)+','+(ly-ls*3.02)+' Q'+(ox+side*ls*0.04)+','+(ly-ls*3.22)+' '+(ox-side*ls*0.04)+','+(ly-ls*3.52);
-            s += '<path d="'+_c18d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 19: // Fiddle-Leaf Fig — Ficus lyrata: violin shape (lyrate, narrow at middle), pinnate-camptodromous, BOLD raised vein pattern.
           tip = ox + side*ls*0.85; tipY = ly - ls*4.2;
@@ -18596,14 +18484,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(ox+side*ls*0.85).toFixed(1)+'" cy="'+(ly-ls*4.2).toFixed(1)+'" r="0.24" fill="rgba(40,20,5,0.7)"/>';
           // Base shadow
           s += '<path d="M'+(ox-side*ls*0.05)+','+ly+' Q'+(ox+side*ls*0.15)+','+(ly-ls*0.15)+' '+(ox+side*ls*0.35)+','+(ly-ls*0.25)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.85" opacity="'+(op*0.3).toFixed(2)+'" stroke-linecap="round"/>';
-          // Chimera vein — full venation pattern
-          if (t.chimerGen > 1) {
-            var _c19var = (parseInt(uid,16)+i)%2;
-            var _c19d = (_c19var === 0)
-              ? 'M'+ox+','+ly+' Q'+(ox+side*ls*0.18)+','+(ly-ls*0.72)+' '+(ox+side*ls*0.24)+','+(ly-ls*1.46)+' Q'+(ox+side*ls*0.28)+','+(ly-ls*2.26)+' '+(ox+side*ls*0.22)+','+(ly-ls*3.95)+' M'+(ox+side*ls*0.10)+','+(ly-ls*0.46)+' Q'+(ox+side*ls*0.42)+','+(ly-ls*0.34)+' '+(ox+side*ls*0.86)+','+(ly-ls*0.40)+' Q'+(ox+side*ls*1.10)+','+(ly-ls*0.54)+' '+(ox+side*ls*1.22)+','+(ly-ls*0.90)+' M'+(ox+side*ls*0.18)+','+(ly-ls*1.36)+' Q'+(ox+side*ls*0.42)+','+(ly-ls*1.24)+' '+(ox+side*ls*0.66)+','+(ly-ls*1.22)+' M'+(ox+side*ls*0.24)+','+(ly-ls*2.18)+' Q'+(ox+side*ls*0.48)+','+(ly-ls*2.00)+' '+(ox+side*ls*0.74)+','+(ly-ls*2.18)+' M'+(ox+side*ls*0.24)+','+(ly-ls*2.96)+' Q'+(ox+side*ls*0.46)+','+(ly-ls*3.18)+' '+(ox+side*ls*0.78)+','+(ly-ls*3.50)+' M'+(ox+side*ls*0.16)+','+(ly-ls*2.58)+' Q'+(ox+side*ls*0.02)+','+(ly-ls*2.64)+' '+(ox-side*ls*0.08)+','+(ly-ls*2.48)
-              : 'M'+ox+','+ly+' Q'+(ox+side*ls*0.20)+','+(ly-ls*0.78)+' '+(ox+side*ls*0.26)+','+(ly-ls*1.58)+' Q'+(ox+side*ls*0.30)+','+(ly-ls*2.34)+' '+(ox+side*ls*0.24)+','+(ly-ls*3.90)+' M'+(ox+side*ls*0.12)+','+(ly-ls*0.54)+' Q'+(ox+side*ls*0.46)+','+(ly-ls*0.42)+' '+(ox+side*ls*0.92)+','+(ly-ls*0.48)+' Q'+(ox+side*ls*1.16)+','+(ly-ls*0.62)+' '+(ox+side*ls*1.24)+','+(ly-ls*0.98)+' M'+(ox+side*ls*0.20)+','+(ly-ls*1.48)+' Q'+(ox+side*ls*0.46)+','+(ly-ls*1.34)+' '+(ox+side*ls*0.72)+','+(ly-ls*1.34)+' M'+(ox+side*ls*0.26)+','+(ly-ls*2.26)+' Q'+(ox+side*ls*0.50)+','+(ly-ls*2.08)+' '+(ox+side*ls*0.78)+','+(ly-ls*2.28)+' M'+(ox+side*ls*0.24)+','+(ly-ls*3.02)+' Q'+(ox+side*ls*0.48)+','+(ly-ls*3.24)+' '+(ox+side*ls*0.82)+','+(ly-ls*3.58)+' M'+(ox+side*ls*0.18)+','+(ly-ls*2.68)+' Q'+(ox+side*ls*0.04)+','+(ly-ls*2.74)+' '+(ox-side*ls*0.06)+','+(ly-ls*2.56);
-            s += '<path d="'+_c19d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 20: // Ginkgo — flabellate fan with DICHOTOMOUS forks on each finger (signature).
           // Fan extends outward at shallow angle (mostly lateral, slightly up)
@@ -18667,18 +18547,6 @@ document.addEventListener('keydown', function(e) {
             var _gkL1y = _pfBaseY + Math.sin(_pfAng + _gkSpread) * _pfFLen * 0.85;
             s += '<path d="M'+_gkForkX.toFixed(1)+','+_gkForkY.toFixed(1)+' L'+_gkL1x.toFixed(1)+','+_gkL1y.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.22" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
           }
-          // Chimera veins — one per finger
-          if (t.chimerGen > 1) {
-            var _c20vd = '';
-            for (var _pfv = 0; _pfv < _pfFingers; _pfv++) {
-              var _pfvA = _pfArcStart + (_pfv / (_pfFingers - 1)) * _pfArcSpan;
-              var _pfvL = _pfLen * (0.9 - Math.abs(_pfv - 2) * 0.08) * 0.82;
-              var _pfvTX = _pfBaseX + Math.cos(_pfvA) * _pfvL * side;
-              var _pfvTY = _pfBaseY + Math.sin(_pfvA) * _pfvL;
-              _c20vd += 'M'+_pfBaseX.toFixed(1)+','+_pfBaseY.toFixed(1)+' L'+_pfvTX.toFixed(1)+','+_pfvTY.toFixed(1)+' ';
-            }
-            s += '<path d="'+_c20vd+'" fill="none" stroke="'+shiftedLight+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 21: // Pine Fascicle — 7 pine needles fanning with brass basal sheath.
           var _n21Base = -1.26; // base angle: mostly up, ~18° lean outward
@@ -18698,16 +18566,6 @@ document.addEventListener('keydown', function(e) {
               s += '<path d="M'+ox+','+ly+' C'+(ox+Math.cos(_n21a)*_n21len*0.35*side).toFixed(1)+','+(ly+Math.sin(_n21a)*_n21len*0.35).toFixed(1)+' '+(_n21tx-Math.cos(_n21a)*_n21len*0.15*side).toFixed(1)+','+(_n21ty-Math.sin(_n21a)*_n21len*0.15).toFixed(1)+' '+_n21tx.toFixed(1)+','+_n21ty.toFixed(1)+'"'
                  + ' stroke="rgba(240,235,216,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
             }
-          }
-          // Chimera vein — center line per needle
-          if (t.chimerGen > 1) {
-            var _c21vd = '';
-            for (var _c21v = 0; _c21v < _n21Count; _c21v++) {
-              var _c21a = _n21Base + (_c21v / (_n21Count - 1) - 0.5) * _n21Span * side;
-              var _c21l = ls * (1.4 + Math.abs(_c21v - 3) * 0.08) * 0.8;
-              _c21vd += 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+(ox + Math.cos(_c21a)*_c21l*side).toFixed(1)+','+(ly + Math.sin(_c21a)*_c21l).toFixed(1)+' ';
-            }
-            s += '<path d="'+_c21vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
           }
           // Basal brass sheath (pine fascicle signature)
           s += '<rect x="'+(ox-0.85).toFixed(1)+'" y="'+(ly-0.35).toFixed(1)+'" width="1.7" height="0.85" rx="0.20" fill="rgba(40,20,5,0.65)"/>';
@@ -18787,18 +18645,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_eeTX.toFixed(1)+'" cy="'+_eeTY.toFixed(1)+'" r="0.45" fill="rgba(40,20,5,0.7)"/>';
           // Petiole pulvinus dot at attachment
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.5" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera veins — palmate spokes glow
-          if (t.chimerGen > 1) {
-            var _c22vd = _eeMidD;
-            for (var _c22v = 0; _c22v < 5; _c22v++) {
-              var _c22a = _eeSpokeAng[_c22v];
-              var _c22r = _eeSpokeR[_c22v];
-              var _c22Ex = _eeHubX + Math.cos(_c22a) * _c22r * side;
-              var _c22Ey = _eeHubY + Math.sin(_c22a) * _c22r;
-              _c22vd += ' M'+_eeHubX.toFixed(1)+','+_eeHubY.toFixed(1)+' L'+_c22Ex.toFixed(1)+','+_c22Ey.toFixed(1);
-            }
-            s += '<path d="'+_c22vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 23: // Sword Fern (Nephrolepis) — pinnately compound, ~16 narrow pinnae each entire-edged
           var _sfRLen = ls * 4.6;
@@ -18851,21 +18697,6 @@ document.addEventListener('keydown', function(e) {
           }
           // Terminal pinna at tip (fused, larger)
           s += '<circle cx="'+_sfRTx.toFixed(1)+'" cy="'+_sfRTy.toFixed(1)+'" r="0.5" fill="rgba(40,20,5,0.7)"/>';
-          // ── Case 23 chimera vein ──
-          if (t.chimerGen > 1) {
-            var _c23d = bodyD; // rachis
-            for (var _c23v = 0; _c23v < _sfN; _c23v += 2) {
-              var _c23t = 0.06 + _c23v * (0.92 / (_sfN - 1));
-              var _c23u = 1 - _c23t;
-              var _c23bx = _c23u*_c23u*ox + 2*_c23u*_c23t*_sfRMx + _c23t*_c23t*_sfRTx;
-              var _c23by = _c23u*_c23u*ly + 2*_c23u*_c23t*_sfRMy + _c23t*_c23t*_sfRTy;
-              var _c23r = ls * (0.95 - Math.abs(_c23t - 0.33) * 0.85);
-              if (_c23r < ls*0.18) _c23r = ls*0.18;
-              var _c23d1 = (_c23v % 4 === 0) ? 1 : -1;
-              _c23d += ' M'+_c23bx.toFixed(1)+','+_c23by.toFixed(1)+' L'+(_c23bx+side*_c23d1*_c23r*0.95).toFixed(1)+','+(_c23by+_c23r*0.18).toFixed(1);
-            }
-            s += '<path d="'+_c23d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 24: // White Clover (Trifolium repens) — trifoliate, 3 obovate leaflets, pale chevron mark on each
           ls = Math.min(ls, 6.5);
@@ -18935,24 +18766,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_clHubX.toFixed(1)+'" cy="'+_clHubY.toFixed(1)+'" r="0.45" fill="rgba(40,20,5,0.7)"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.6)"/>';
-          // ── Case 24 chimera vein — chevron ghosts on each leaflet ──
-          if (t.chimerGen > 1) {
-            var _c24d = '';
-            for (var _c24L = 0; _c24L < 3; _c24L++) {
-              var _c24o = _clLeaflets[_c24L];
-              var _c24a = _c24o.ang;
-              var _c24p = _c24a + Math.PI * 0.5;
-              var _c24L1 = ls * 0.55 * 0.5;
-              var _c24Ax = _c24o.cx - Math.cos(_c24p)*_c24L1 - Math.cos(_c24a)*_c24L1*0.5;
-              var _c24Ay = _c24o.cy - Math.sin(_c24p)*_c24L1 - Math.sin(_c24a)*_c24L1*0.5;
-              var _c24Bx = _c24o.cx + Math.cos(_c24p)*_c24L1 - Math.cos(_c24a)*_c24L1*0.5;
-              var _c24By = _c24o.cy + Math.sin(_c24p)*_c24L1 - Math.sin(_c24a)*_c24L1*0.5;
-              var _c24Vx = _c24o.cx + Math.cos(_c24a)*_c24L1*0.7;
-              var _c24Vy = _c24o.cy + Math.sin(_c24a)*_c24L1*0.7;
-              _c24d += (_c24d ? ' ' : '') + 'M'+_c24Ax.toFixed(1)+','+_c24Ay.toFixed(1)+' Q'+_c24Vx.toFixed(1)+','+_c24Vy.toFixed(1)+' '+_c24Bx.toFixed(1)+','+_c24By.toFixed(1);
-            }
-            s += '<path d="'+_c24d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 25: // Banana (Musa) — oblong-paddle, parallel cross-venulate ladder rungs
           var _blLen = ls * 2.3;
@@ -19021,18 +18834,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_blTipX.toFixed(1)+'" cy="'+_blTipY.toFixed(1)+'" r="0.45" fill="rgba(40,20,5,0.7)"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.45" fill="rgba(40,20,5,0.6)"/>';
-          // Chimera vein — midrib + ladder rungs
-          if (t.chimerGen > 1) {
-            var _c25vd = _blMidD;
-            for (var _c25v = 0; _c25v < 6; _c25v++) {
-              var _c25t = 0.14 + _c25v * 0.13;
-              var _c25u = 1 - _c25t;
-              var _c25bx = _c25u*_c25u*_c25u*ox + 3*_c25u*_c25u*_c25t*_blM1X + 3*_c25u*_c25t*_c25t*_blM2X + _c25t*_c25t*_c25t*_blTipX;
-              var _c25by = _c25u*_c25u*_c25u*ly + 3*_c25u*_c25u*_c25t*_blM1Y + 3*_c25u*_c25t*_c25t*_blM2Y + _c25t*_c25t*_c25t*_blTipY;
-              _c25vd += ' M'+_c25bx.toFixed(1)+','+_c25by.toFixed(1)+' L'+(_c25bx+side*_blWid*0.6).toFixed(1)+','+(_c25by+_blLen*0.012).toFixed(1);
-            }
-            s += '<path d="'+_c25vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 26: // Silver Dollar / Honesty (Lunaria annua) — orbicular translucent disc, reticulate net
           var _sdR = ls * 0.95;
@@ -19074,15 +18875,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(_sdCx-_sdR*0.55).toFixed(1)+','+(_sdCy-_sdR*0.70).toFixed(1)+' A'+_sdR.toFixed(1)+','+_sdR.toFixed(1)+' 0 0,1 '+(_sdCx+_sdR*0.65).toFixed(1)+','+(_sdCy-_sdR*0.55).toFixed(1)+'" fill="none" stroke="#fff8e0" stroke-width="0.75" opacity="0.55" stroke-linecap="round"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.6)"/>';
-          // Chimera vein — stalk + reticulate spokes
-          if (t.chimerGen > 1) {
-            var _c26vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_sdR*0.3).toFixed(1)+','+(ly-_sdR*0.4).toFixed(1)+' '+_sdCx.toFixed(1)+','+_sdCy.toFixed(1);
-            for (var _c26v = 0; _c26v < _sdN; _c26v++) {
-              var _c26a = (_c26v / _sdN) * Math.PI * 2;
-              _c26vd += ' M'+_sdCx.toFixed(1)+','+_sdCy.toFixed(1)+' L'+(_sdCx+Math.cos(_c26a)*_sdR*0.85).toFixed(1)+','+(_sdCy+Math.sin(_c26a)*_sdR*0.85).toFixed(1);
-            }
-            s += '<path d="'+_c26vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 27: // Arrowhead Vine (Syngonium) — sagittate, 2 pointed basal lobes, central midrib
           var _arLen = ls * 3.0;
@@ -19153,13 +18945,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_arLLobeX.toFixed(1)+'" cy="'+_arLLobeY.toFixed(1)+'" r="0.32" fill="rgba(40,20,5,0.6)"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.6)"/>';
-          // ── Case 27 chimera vein — midrib + lobe spokes ──
-          if (t.chimerGen > 1) {
-            var _c27d = _arMidD;
-            _c27d += ' M'+_arSinusX.toFixed(1)+','+_arSinusY.toFixed(1)+' L'+_arRLobeX.toFixed(1)+','+_arRLobeY.toFixed(1);
-            _c27d += ' M'+_arSinusX.toFixed(1)+','+_arSinusY.toFixed(1)+' L'+_arLLobeX.toFixed(1)+','+_arLLobeY.toFixed(1);
-            s += '<path d="'+_c27d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 28: // Lacecap Hydrangea — ovate, comb-like pinnate-craspedodromous secondaries
           bodyD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.45)+','+(ly-ls*0.35)+' '+(ox+side*ls*1.15)+','+(ly-ls*0.82)+' '+(ox+side*ls*1.18)+','+(ly-ls*1.95)+' C'+(ox+side*ls*0.95)+','+(ly-ls*2.15)+' '+(ox+side*ls*0.62)+','+(ly-ls*1.92)+' '+(ox+side*ls*0.42)+','+(ly-ls*2.15)+' C'+(ox+side*ls*0.18)+','+(ly-ls*2.38)+' '+(ox+side*ls*0.15)+','+(ly-ls*2.90)+' '+(ox-side*ls*0.10)+','+(ly-ls*3.05)+' C'+(ox-side*ls*0.55)+','+(ly-ls*2.60)+' '+(ox-side*ls*0.72)+','+(ly-ls*1.55)+' '+(ox-side*ls*0.32)+','+(ly-ls*0.65)+' C'+(ox-side*ls*0.08)+','+(ly-ls*0.30)+' '+(ox-side*ls*0.02)+','+(ly-ls*0.08)+' '+ox+','+ly+' Z';
@@ -19206,20 +18991,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_lcTipX.toFixed(1)+'" cy="'+_lcTipY.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.7)"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.4" fill="rgba(40,20,5,0.6)"/>';
-          // ── Case 28 chimera vein — midrib + comb teeth ghosts ──
-          if (t.chimerGen > 1) {
-            var _c28d = _lcMidD;
-            for (var _c28v = 0; _c28v < _lcN; _c28v++) {
-              var _c28T = 0.10 + _c28v * (0.85 / (_lcN - 1));
-              var _c28U = 1 - _c28T;
-              var _c28bx = _c28U*_c28U*_c28U*ox + 3*_c28U*_c28U*_c28T*(ox+side*ls*0.14) + 3*_c28U*_c28T*_c28T*(ox+side*ls*0.20) + _c28T*_c28T*_c28T*_lcTipX;
-              var _c28by = _c28U*_c28U*_c28U*ly + 3*_c28U*_c28U*_c28T*(ly-ls*0.80) + 3*_c28U*_c28T*_c28T*(ly-ls*1.70) + _c28T*_c28T*_c28T*_lcTipY;
-              var _c28r = ls * (0.92 - Math.abs(_c28T - 0.40) * 0.85);
-              if (_c28r < 0.3) _c28r = 0.3;
-              _c28d += ' M'+_c28bx.toFixed(1)+','+_c28by.toFixed(1)+' L'+(_c28bx+side*_c28r).toFixed(1)+','+(_c28by+ls*0.02).toFixed(1);
-            }
-            s += '<path d="'+_c28d+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 29: // Resurrection Plant (Selaginella lepidophylla) — dichotomous fan-rosette of curled scale-pinnules
           var _csAng = -0.3 - leafFrac * 1.1;
@@ -19293,15 +19064,6 @@ document.addEventListener('keydown', function(e) {
           s += '<ellipse cx="'+(ox+Math.cos(_csAng)*_csLen*0.25*side).toFixed(1)+'" cy="'+(ly+Math.sin(_csAng)*_csLen*0.25).toFixed(1)+'" rx="'+(ls*0.55).toFixed(1)+'" ry="'+(ls*0.30).toFixed(1)+'" fill="#f5ecd6" opacity="'+(op*0.10).toFixed(2)+'" transform="rotate('+(_csAng*180/Math.PI).toFixed(1)+' '+(ox+Math.cos(_csAng)*_csLen*0.25*side).toFixed(1)+' '+(ly+Math.sin(_csAng)*_csLen*0.25).toFixed(1)+')"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — every fork
-          if (t.chimerGen > 1) {
-            var _c29vd = '';
-            for (var _c29 = 0; _c29 < _csPaths.length; _c29++) {
-              var _c29O = _csPaths[_c29];
-              _c29vd += (_c29vd ? ' ' : '') + 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_c29O.fx.toFixed(1)+','+_c29O.fy.toFixed(1)+' L'+_c29O.p1x.toFixed(1)+','+_c29O.p1y.toFixed(1)+' M'+_c29O.fx.toFixed(1)+','+_c29O.fy.toFixed(1)+' L'+_c29O.p2x.toFixed(1)+','+_c29O.p2y.toFixed(1);
-            }
-            s += '<path d="'+_c29vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 30: // Feather Frond — bipinnate fern frond, rachis + alternating pinnae each with sub-pinnules
           var _ffAng = -0.1 - leafFrac * 0.42;
@@ -19363,21 +19125,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_ffTipX.toFixed(1)+'" cy="'+_ffTipY.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.7)"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.4" fill="rgba(40,20,5,0.6)"/>';
-          // Chimera vein — rachis + alternating pinna ribs
-          if (t.chimerGen > 1) {
-            var _c30vd = bodyD;
-            for (var _c30v = 0; _c30v < 8; _c30v += 1) {
-              var _c30T = 0.08 + _c30v * 0.115;
-              var _c30U = 1 - _c30T;
-              var _c30bx = _c30U*_c30U*ox + 2*_c30U*_c30T*_ffMidX + _c30T*_c30T*_ffTipX;
-              var _c30by = _c30U*_c30U*ly + 2*_c30U*_c30T*_ffMidY + _c30T*_c30T*_ffTipY;
-              var _c30r = ls * (0.85 - Math.abs(_c30T - 0.33) * 0.95);
-              if (_c30r < ls*0.18) _c30r = ls*0.18;
-              var _c30d1 = (_c30v % 2 === 0) ? 1 : -1;
-              _c30vd += ' M'+_c30bx.toFixed(1)+','+_c30by.toFixed(1)+' L'+(_c30bx+side*_c30d1*_c30r*0.92).toFixed(1)+','+(_c30by-_c30r*0.30).toFixed(1);
-            }
-            s += '<path d="'+_c30vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 31: // Tropical Drip-Tip (Ficus) — ovate, very long pointed drip-tip apex, bold midrib
           var _dlLen = ls * 2.0;
@@ -19434,17 +19181,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_dlTipX.toFixed(1)+'" cy="'+_dlTipY.toFixed(1)+'" r="0.45" fill="rgba(40,20,5,0.75)"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.6)"/>';
-          // Chimera vein — midrib + secondaries
-          if (t.chimerGen > 1) {
-            var _c31vd = _dlMidD;
-            for (var _c31v = 0; _c31v < 4; _c31v++) {
-              var _c31t = 0.20 + _c31v * 0.16;
-              var _c31bx = ox + (_dlBlTipX - ox) * _c31t;
-              var _c31by = ly + (_dlBlTipY - ly) * _c31t;
-              _c31vd += ' M'+_c31bx.toFixed(1)+','+_c31by.toFixed(1)+' L'+(_c31bx+side*_dlWid*0.85).toFixed(1)+','+(_c31by+_dlLen*0.02).toFixed(1);
-            }
-            s += '<path d="'+_c31vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           // Glowing drips from drip-tip — Ficus drip aesthetic preserved
           var _drC = [PALETTE[t.leafColors[i%3]]||PALETTE.teal, PALETTE[t.leafColors[(i+1)%3]]||PALETTE.rose, PALETTE[t.leafColors[(i+2)%3]]||PALETTE.gold];
           for (var _dr = 0; _dr < 3; _dr++) {
@@ -19515,21 +19251,6 @@ document.addEventListener('keydown', function(e) {
              + ' Q'+(ox+side*ls*1.0).toFixed(1)+','+(ly-ls*1.6).toFixed(1)+' '+(ox+side*ls*1.6).toFixed(1)+','+(ly-ls*0.4).toFixed(1)
              + ' Q'+(ox+side*ls*1.8).toFixed(1)+','+(ly+ls*1.4).toFixed(1)+' '+(ox+side*ls*0.6).toFixed(1)+','+(ly+ls*1.6).toFixed(1)
              + ' Q'+(ox-side*ls*0.3).toFixed(1)+','+(ly+ls*0.6).toFixed(1)+' '+(ox-side*ls*0.4).toFixed(1)+','+(ly-ls*0.2).toFixed(1)+' Z';
-          // Chimera vein — follows each strap centerline
-          if (t.chimerGen > 1) {
-            var _c32vd = '';
-            for (var _c32s = 0; _c32s < _spStraps.length; _c32s++) {
-              var _c32A = _spStraps[_c32s].ang;
-              var _c32L = _spLen * _spStraps[_c32s].len;
-              var _c32D = _spStraps[_c32s].droop;
-              var _c32Tx = ox + Math.cos(_c32A) * _c32L * side;
-              var _c32Ty = ly + Math.sin(_c32A) * _c32L + _c32L * _c32D;
-              var _c32Mx = ox + Math.cos(_c32A) * _c32L * 0.55 * side;
-              var _c32My = ly + Math.sin(_c32A) * _c32L * 0.55;
-              _c32vd += 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_c32Mx.toFixed(1)+','+_c32My.toFixed(1)+' '+_c32Tx.toFixed(1)+','+_c32Ty.toFixed(1)+' ';
-            }
-            s += '<path d="'+_c32vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 33: // Snapdragon — lanceolate leaf with serrate margin (it's a leaf despite the name)
           ls = Math.min(ls, 9);
@@ -19592,18 +19313,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.60)" stroke-width="0.32"/>';
           // Tip terminator dot
           s += '<circle cx="'+_snTipX.toFixed(1)+'" cy="'+_snTipY.toFixed(1)+'" r="0.30" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — midrib + arching secondaries
-          if (t.chimerGen > 1) {
-            var _c33vd = _snMidD;
-            for (var _c33v = 0; _c33v < 6; _c33v++) {
-              var _c33vT = 0.15 + _c33v * 0.13;
-              var _c33vMx = ox + (_snTipX - ox) * _c33vT;
-              var _c33vMy = ly + (_snTipY - ly) * _c33vT;
-              var _c33vR = _snW * (1.0 - _c33vT * 0.5);
-              _c33vd += ' M'+_c33vMx.toFixed(1)+','+_c33vMy.toFixed(1)+' Q'+(_c33vMx+_snWx*_c33vR*0.6).toFixed(1)+','+(_c33vMy+_snWy*_c33vR*0.6-1).toFixed(1)+' '+(_c33vMx+_snWx*_c33vR*0.85).toFixed(1)+','+(_c33vMy+_snWy*_c33vR*0.85).toFixed(1);
-            }
-            s += '<path d="'+_c33vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 34: // Moth Wing (mythic) — forewing + scalloped hindwing + eyespot, polished
           var _mwLen = ls * 1.6;
@@ -19664,13 +19373,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+_mwHD+'" fill="none" stroke="rgba(40,20,5,0.50)" stroke-width="0.28"/>';
           // Tip terminator dot
           s += '<circle cx="'+_mwForeTipX.toFixed(1)+'" cy="'+_mwForeTipY.toFixed(1)+'" r="0.32" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — wing veins radiating from body
-          if (t.chimerGen > 1) {
-            var _c34vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+(ox+side*_mwWid*0.35).toFixed(1)+','+(ly-_mwLen*0.6).toFixed(1)
-               + ' M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+(ox+side*_mwWid*0.7).toFixed(1)+','+(ly-_mwLen*0.2).toFixed(1)
-               + ' M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+(ox+side*_mwWid*0.45).toFixed(1)+','+(ly+_mwLen*0.25).toFixed(1);
-            s += '<path d="'+_c34vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 35: // Prism Shard (mythic) — elongated angular crystal blade with 4 facet planes
           var _psC1 = PALETTE[t.leafColors[i % 3]] || PALETTE.sage;
@@ -19715,11 +19417,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.32" stroke-linejoin="bevel"/>';
           // Tip terminator dot
           s += '<circle cx="'+_psTipX.toFixed(1)+'" cy="'+_psTipY.toFixed(1)+'" r="0.30" fill="rgba(40,20,5,0.70)"/>';
-          // Chimera vein — central axis + cross-facet edges
-          if (t.chimerGen > 1) {
-            var _c35vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_psTipX.toFixed(1)+','+_psTipY.toFixed(1)+' M'+(ox+side*_psW*0.7).toFixed(1)+','+(ly-_psH*0.10).toFixed(1)+' L'+(ox-side*_psW*0.30).toFixed(1)+','+(ly-_psH*0.72).toFixed(1)+' M'+(ox+side*_psW*0.85).toFixed(1)+','+(ly-_psH*0.40).toFixed(1)+' L'+(ox-side*_psW*0.20).toFixed(1)+','+(ly-_psH*0.35).toFixed(1);
-            s += '<path d="'+_c35vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 36: // Batwing (mythic) — spread membrane with finger bones + scalloped edge, polished
           var _bwSpan = ls * 1.8;
@@ -19784,15 +19481,6 @@ document.addEventListener('keydown', function(e) {
           }
           // Outline
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
-          // Chimera vein — finger bones
-          if (t.chimerGen > 1) {
-            var _c36vd = '';
-            for (var _c36v = 0; _c36v < _bwBones.length; _c36v++) {
-              var _c36b = _bwBones[_c36v];
-              _c36vd += 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+(ox+Math.cos(_c36b.ang)*_bwSpan*_c36b.len*side).toFixed(1)+','+(ly+Math.sin(_c36b.ang)*_bwH*_c36b.len).toFixed(1)+' ';
-            }
-            s += '<path d="'+_c36vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 37: // Thorn Crescent (mythic) — curved crescent blade with sharp thorn tip
           var _thTipX = ox - side * ls * 0.10;
@@ -19836,18 +19524,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.30"/>';
           // Sharp thorn tip terminator
           s += '<circle cx="'+_thTipX+'" cy="'+_thTipY+'" r="0.30" fill="rgba(40,20,5,0.75)"/>';
-          // ── Case 37 chimera vein ──
-          if (t.chimerGen > 1) {
-            var _c37chi = _vs.color;
-            var _c37var = (parseInt(uid,16)+i)%2;
-            var _c37d = '';
-            if (_c37var === 0) {
-              _c37d = 'M'+ox+','+ly+' C'+(ox+side*ls*0.06)+','+(ly-ls*0.58)+' '+(ox+side*ls*0.14)+','+(ly-ls*1.18)+' '+(ox+side*ls*0.22)+','+(ly-ls*2.06)+' C'+(ox+side*ls*0.24)+','+(ly-ls*2.34)+' '+(ox+side*ls*0.24)+','+(ly-ls*2.56)+' '+(ox+side*ls*0.24)+','+(ly-ls*2.74)+' M'+(ox+side*ls*0.04)+','+(ly-ls*0.12)+' C'+(ox+side*ls*0.22)+','+(ly-ls*0.26)+' '+(ox+side*ls*0.54)+','+(ly-ls*0.52)+' '+(ox+side*ls*0.82)+','+(ly-ls*0.92)+' M'+(ox+side*ls*0.10)+','+(ly-ls*0.72)+' C'+(ox+side*ls*0.34)+','+(ly-ls*0.78)+' '+(ox+side*ls*0.66)+','+(ly-ls*1.02)+' '+(ox+side*ls*0.90)+','+(ly-ls*1.40)+' M'+(ox+side*ls*0.16)+','+(ly-ls*1.34)+' C'+(ox+side*ls*0.34)+','+(ly-ls*1.32)+' '+(ox+side*ls*0.56)+','+(ly-ls*1.46)+' '+(ox+side*ls*0.68)+','+(ly-ls*1.74)+' M'+(ox+side*ls*0.22)+','+(ly-ls*1.90)+' C'+(ox+side*ls*0.34)+','+(ly-ls*1.94)+' '+(ox+side*ls*0.48)+','+(ly-ls*2.06)+' '+(ox+side*ls*0.58)+','+(ly-ls*2.26)+' M'+(ox+side*ls*0.22)+','+(ly-ls*2.38)+' C'+(ox+side*ls*0.42)+','+(ly-ls*2.44)+' '+(ox+side*ls*0.60)+','+(ly-ls*2.42)+' '+(ox+side*ls*0.72)+','+(ly-ls*2.26);
-            } else {
-              _c37d = 'M'+ox+','+ly+' C'+(ox+side*ls*0.08)+','+(ly-ls*0.54)+' '+(ox+side*ls*0.16)+','+(ly-ls*1.12)+' '+(ox+side*ls*0.24)+','+(ly-ls*2.12)+' C'+(ox+side*ls*0.26)+','+(ly-ls*2.38)+' '+(ox+side*ls*0.26)+','+(ly-ls*2.58)+' '+(ox+side*ls*0.24)+','+(ly-ls*2.74)+' M'+(ox+side*ls*0.02)+','+(ly-ls*0.14)+' C'+(ox+side*ls*0.20)+','+(ly-ls*0.24)+' '+(ox+side*ls*0.50)+','+(ly-ls*0.46)+' '+(ox+side*ls*0.80)+','+(ly-ls*0.88)+' M'+(ox+side*ls*0.08)+','+(ly-ls*0.66)+' C'+(ox+side*ls*0.30)+','+(ly-ls*0.74)+' '+(ox+side*ls*0.64)+','+(ly-ls*0.96)+' '+(ox+side*ls*0.92)+','+(ly-ls*1.36)+' M'+(ox+side*ls*0.14)+','+(ly-ls*1.28)+' C'+(ox+side*ls*0.32)+','+(ly-ls*1.26)+' '+(ox+side*ls*0.58)+','+(ly-ls*1.42)+' '+(ox+side*ls*0.70)+','+(ly-ls*1.76)+' M'+(ox+side*ls*0.22)+','+(ly-ls*1.86)+' C'+(ox+side*ls*0.34)+','+(ly-ls*1.90)+' '+(ox+side*ls*0.50)+','+(ly-ls*2.04)+' '+(ox+side*ls*0.62)+','+(ly-ls*2.26)+' M'+(ox+side*ls*0.18)+','+(ly-ls*2.32)+' C'+(ox+side*ls*0.38)+','+(ly-ls*2.40)+' '+(ox+side*ls*0.56)+','+(ly-ls*2.40)+' '+(ox+side*ls*0.70)+','+(ly-ls*2.28)+' M'+(ox+side*ls*0.40)+','+(ly-ls*2.24)+' C'+(ox+side*ls*0.48)+','+(ly-ls*2.10)+' '+(ox+side*ls*0.58)+','+(ly-ls*1.92)+' '+(ox+side*ls*0.64)+','+(ly-ls*1.72);
-            }
-            if (_c37d) s += '<path d="'+_c37d+'" fill="none" stroke="'+_c37chi+'" stroke-width="'+ _vs.width +'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 38: // Bell Petiole (mythic) — elegant hanging bell with thick stem
           var _bpLen = ls * 1.8;
@@ -19899,14 +19575,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.30"/>';
           // Tip terminator dot at lowest scallop
           s += '<circle cx="'+_bpBellX.toFixed(1)+'" cy="'+(_bpBellY+_bpBellH*0.15).toFixed(1)+'" r="0.25" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — stalk + bell seams
-          if (t.chimerGen > 1) {
-            var _c38vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_bpLen*0.25).toFixed(1)+','+(ly-_bpLen*0.45).toFixed(1)+' '+_bpStalkX.toFixed(1)+','+_bpStalkY.toFixed(1)
-               + ' M'+_bpStalkX.toFixed(1)+','+_bpStalkY.toFixed(1)+' L'+_bpBellX.toFixed(1)+','+(_bpBellY+_bpBellH*0.15).toFixed(1)
-               + ' M'+(_bpBellX-side*_bpBellW*0.5).toFixed(1)+','+(_bpStalkY+_bpBellH*0.3).toFixed(1)+' L'+(_bpBellX-side*_bpBellW*0.5).toFixed(1)+','+_bpBellY.toFixed(1)
-               + ' M'+(_bpBellX+side*_bpBellW*0.5).toFixed(1)+','+(_bpStalkY+_bpBellH*0.3).toFixed(1)+' L'+(_bpBellX+side*_bpBellW*0.5).toFixed(1)+','+_bpBellY.toFixed(1);
-            s += '<path d="'+_c38vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 39: // Ghost Willow — ethereal cascading translucent tendrils, lower opacity, glow
           var _gwCount = 3 + (i % 2);
@@ -19951,14 +19619,6 @@ document.addEventListener('keydown', function(e) {
              + ' Q'+(ox+side*ls*0.4).toFixed(1)+','+(ly+ls*1.2).toFixed(1)+' '+(ox+side*ls*0.8).toFixed(1)+','+(ly+ls*2.0).toFixed(1)
              + ' Q'+(ox+side*ls*0.2).toFixed(1)+','+(ly+ls*2.0).toFixed(1)+' '+(ox-side*ls*0.4).toFixed(1)+','+(ly+ls*1.0).toFixed(1)
              + ' Q'+(ox-side*ls*0.4).toFixed(1)+','+(ly+ls*0.2).toFixed(1)+' '+ox+','+ly+' Z';
-          // Chimera vein — follows longest tendril
-          if (t.chimerGen > 1) {
-            var _c39vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1);
-            var _c39tipX = ox + Math.cos(0.2) * _gwBaseLen * 0.4 * side;
-            var _c39tipY = ly + Math.sin(0.2) * _gwBaseLen * 0.9;
-            _c39vd += ' C'+(ox + Math.cos(0.2)*_gwBaseLen*0.2*side).toFixed(1)+','+(ly + Math.sin(0.2)*_gwBaseLen*0.45).toFixed(1)+' '+(_c39tipX+side*ls*0.1).toFixed(1)+','+(_c39tipY-_gwBaseLen*0.12).toFixed(1)+' '+_c39tipX.toFixed(1)+','+_c39tipY.toFixed(1);
-            s += '<path d="'+_c39vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 40: // Crown Laurel — laurel wreath leaf with serrate margin (Roman crown)
           var _clLLen = ls * 1.5;
@@ -20020,16 +19680,6 @@ document.addEventListener('keydown', function(e) {
              + ' Q'+(ox+Math.cos(-1.1)*_clLLen*0.95*side).toFixed(1)+','+(ly+Math.sin(-1.1)*_clLLen*0.95).toFixed(1)+' '+_clCenterTipX.toFixed(1)+','+_clCenterTipY.toFixed(1)
              + ' Q'+(ox+Math.cos(-1.6)*_clLLen*0.95*side).toFixed(1)+','+(ly+Math.sin(-1.6)*_clLLen*0.95).toFixed(1)+' '+(ox+Math.cos(_clAngles[2])*_clLLen*_clLens[2]*side).toFixed(1)+','+(ly+Math.sin(_clAngles[2])*_clLLen*_clLens[2]).toFixed(1)
              + ' Q'+(ox-side*ls*0.2).toFixed(1)+','+(ly+ls*0.2).toFixed(1)+' '+ox+','+ly+' Z';
-          // Chimera vein — all three spines
-          if (t.chimerGen > 1) {
-            var _c40vd = '';
-            for (var _c40v = 0; _c40v < 3; _c40v++) {
-              var _c40a = _clAngles[_c40v];
-              var _c40l = _clLLen * _clLens[_c40v] * 0.85;
-              _c40vd += 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+(ox+Math.cos(_c40a)*_c40l*side).toFixed(1)+','+(ly+Math.sin(_c40a)*_c40l).toFixed(1)+' ';
-            }
-            s += '<path d="'+_c40vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 41: // Coilspring (mythic) — tightly coiled spiral tendril
           var _csR = ls * 0.85;
@@ -20073,10 +19723,6 @@ document.addEventListener('keydown', function(e) {
              + ' Q'+(ox+side*_csR*1.6).toFixed(1)+','+(ly-_csR*0.4).toFixed(1)+' '+(ox+side*_csR*1.4).toFixed(1)+','+(ly-_csR*1.6).toFixed(1)
              + ' Q'+(ox+side*_csR*0.2).toFixed(1)+','+(ly-_csR*2.2).toFixed(1)+' '+(ox-side*_csR*0.6).toFixed(1)+','+(ly-_csR*1.4).toFixed(1)
              + ' Q'+(ox-side*_csR*0.6).toFixed(1)+','+(ly-_csR*0.2).toFixed(1)+' '+ox+','+ly+' Z';
-          // Chimera vein — follows spiral
-          if (t.chimerGen > 1) {
-            s += '<path d="'+_csSvg+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
-          }
           break;
         case 42: // Kraken Frond (mythic) — muscular tentacle arm with suckers + curling tip
           var _kAng = -0.15 - leafFrac * 0.38;
@@ -20147,11 +19793,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
           // Tip terminator dot
           s += '<circle cx="'+_kTipX.toFixed(1)+'" cy="'+_kTipY.toFixed(1)+'" r="0.32" fill="rgba(40,20,5,0.70)"/>';
-          // Chimera vein — tentacle spine + branch
-          if (t.chimerGen > 1) {
-            var _c42vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+_kMid1X.toFixed(1)+','+_kMid1Y.toFixed(1)+' '+_kMid2X.toFixed(1)+','+_kMid2Y.toFixed(1)+' '+_kTipX.toFixed(1)+','+_kTipY.toFixed(1)+' M'+_kMid1X.toFixed(1)+','+_kMid1Y.toFixed(1)+' L'+_kBrX.toFixed(1)+','+_kBrY.toFixed(1);
-            s += '<path d="'+_c42vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         case 43: // Lantern Pod (mythic) — hozuki paper lantern, translucent shell + visible berry
           var _lpH = ls * 2.0;
@@ -20212,16 +19853,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.30"/>';
           // Tip terminator dot at calyx point
           s += '<circle cx="'+_lpTipX.toFixed(1)+'" cy="'+_lpTipY.toFixed(1)+'" r="0.28" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — 5 ribs
-          if (t.chimerGen > 1) {
-            var _c43vd = '';
-            for (var _c43r = 0; _c43r < 5; _c43r++) {
-              var _c43a = (_c43r - 2) * 0.35;
-              var _c43b = _lpW * (0.5 - Math.abs(_c43r - 2) * 0.12);
-              _c43vd += 'M'+_lpTopX.toFixed(1)+','+_lpTopY.toFixed(1)+' Q'+(_lpCx+side*_c43b*Math.cos(_c43a)).toFixed(1)+','+_lpCy.toFixed(1)+' '+_lpTipX.toFixed(1)+','+_lpTipY.toFixed(1)+' ';
-            }
-            s += '<path d="'+_c43vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 44: // Coral Antler (mythic) — horizontal Y-branching staghorn coral
@@ -20276,15 +19907,6 @@ document.addEventListener('keydown', function(e) {
              + ' Q'+_caFkX.toFixed(1)+','+(_caFkY-_caW*1.5).toFixed(1)+' '+(_caFkX+Math.cos(_caProngs[0].ang)*_caLen*_caProngs[0].len*side).toFixed(1)+','+(_caFkY+Math.sin(_caProngs[0].ang)*_caLen*_caProngs[0].len-_caW*0.8).toFixed(1)
              + ' Q'+(_caFkX+Math.cos(_caProngs[2].ang)*_caLen*_caProngs[2].len*side).toFixed(1)+','+(_caFkY+Math.sin(_caProngs[2].ang)*_caLen*_caProngs[2].len).toFixed(1)+' '+(_caFkX+Math.cos(_caProngs[1].ang)*_caLen*_caProngs[1].len*side).toFixed(1)+','+(_caFkY+Math.sin(_caProngs[1].ang)*_caLen*_caProngs[1].len+_caW*0.8).toFixed(1)
              + ' Q'+_caFkX.toFixed(1)+','+(_caFkY+_caW*1.5).toFixed(1)+' '+ox+','+(ly+_caW*1.0).toFixed(1)+' Z';
-          // Chimera vein
-          if (t.chimerGen > 1) {
-            var _c44vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_caFkX.toFixed(1)+','+_caFkY.toFixed(1);
-            for (var _c44p = 0; _c44p < _caProngs.length; _c44p++) {
-              var _c44pg = _caProngs[_c44p];
-              _c44vd += ' M'+_caFkX.toFixed(1)+','+_caFkY.toFixed(1)+' L'+(_caFkX+Math.cos(_c44pg.ang)*_caLen*_c44pg.len*side).toFixed(1)+','+(_caFkY+Math.sin(_c44pg.ang)*_caLen*_c44pg.len).toFixed(1);
-            }
-            s += '<path d="'+_c44vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 45: // Oracle Eye (mythic) — horizontal almond eye with vivid iris + sclera
@@ -20329,12 +19951,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_oeOutX.toFixed(1)+'" cy="'+_oeOutY.toFixed(1)+'" r="0.30" fill="rgba(40,20,5,0.70)"/>';
           // Inner-corner caruncle
           s += '<circle cx="'+ox+'" cy="'+ly+'" r="0.30" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — lid lines + iris cross
-          if (t.chimerGen > 1) {
-            var _c45vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_oeOutX.toFixed(1)+','+_oeOutY.toFixed(1);
-            _c45vd += ' M'+(_oeCx-_oeH*0.4).toFixed(1)+','+_oeCy.toFixed(1)+' L'+(_oeCx+_oeH*0.4).toFixed(1)+','+_oeCy.toFixed(1);
-            s += '<path d="'+_c45vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 46: // Spiral Shell (mythic) — golden ratio nautilus with visible whorls
@@ -20389,12 +20005,6 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.30"/>';
           // Tip terminator at outer shoulder
           s += '<circle cx="'+(_ssCx+side*_ssR*0.4).toFixed(1)+'" cy="'+(_ssCy-_ssR*0.6).toFixed(1)+'" r="0.25" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — spiral path + outer arc
-          if (t.chimerGen > 1) {
-            var _c46vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(_ssCx+side*_ssR*0.5).toFixed(1)+','+(ly-_ssR*0.2).toFixed(1)+' '+_ssCx.toFixed(1)+','+_ssCy.toFixed(1);
-            _c46vd += ' M'+(_ssCx+side*_ssR*0.55).toFixed(1)+','+(_ssCy+_ssR*0.05).toFixed(1)+' A'+(_ssR*0.55).toFixed(2)+','+(_ssR*0.5).toFixed(2)+' 0 0,'+(side>0?1:0)+' '+(_ssCx-side*_ssR*0.25).toFixed(1)+','+(_ssCy-_ssR*0.35).toFixed(1);
-            s += '<path d="'+_c46vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 47: // Dagger Ivy — lance-blade with sharp spinose apex + 3 palmate primaries (master pass)
@@ -20463,14 +20073,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_diTipX.toFixed(1)+'" cy="'+_diTipY.toFixed(1)+'" r="0.45" fill="rgba(40,20,5,0.78)"/>';
           // Specular lozenge upper-third
           s += '<ellipse cx="'+(ox+Math.cos(_diAng)*_diLen*0.32*side+_diPx*_diWid*0.18*side).toFixed(1)+'" cy="'+(ly+Math.sin(_diAng)*_diLen*0.32+_diPy*_diWid*0.18).toFixed(1)+'" rx="'+(_diLen*0.18).toFixed(1)+'" ry="'+(_diWid*0.12).toFixed(1)+'" fill="#fff8e0" opacity="0.22" transform="rotate('+(_diAng*180/Math.PI).toFixed(0)+','+ox+','+ly+')"/>';
-          // Chimera ghost-twin — palmate
-          if (t.chimerGen > 1) {
-            var _c47vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_diTipX.toFixed(1)+','+_diTipY.toFixed(1);
-            for (var _c47v = 0; _c47v < _diSpikes.length; _c47v++) {
-              _c47vd += ' M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_diSpikes[_c47v].cx.toFixed(1)+','+_diSpikes[_c47v].cy.toFixed(1)+' '+_diSpikes[_c47v].sx.toFixed(1)+','+_diSpikes[_c47v].sy.toFixed(1);
-            }
-            s += '<path d="'+_c47vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 48: // Veil Fern — bipinnate translucent frond, lacy/wispy with fiddlehead curl (master pass)
@@ -20538,11 +20140,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_vfCurlX.toFixed(1)+'" cy="'+_vfCurlY.toFixed(1)+'" r="'+(ls*0.11).toFixed(2)+'" fill="none" stroke="rgba(40,20,5,0.6)" stroke-width="0.25"/>';
           // Apex terminator dot
           s += '<circle cx="'+_vfTipX.toFixed(1)+'" cy="'+_vfTipY.toFixed(1)+'" r="0.35" fill="rgba(40,20,5,0.65)"/>';
-          // Chimera vein — pinnate ghost
-          if (t.chimerGen > 1) {
-            var _c48vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+_vfMidX.toFixed(1)+','+_vfMidY.toFixed(1)+' '+(_vfTipX-Math.cos(_vfAng)*_vfLen*0.1*side).toFixed(1)+','+(_vfTipY-Math.sin(_vfAng)*_vfLen*0.1).toFixed(1)+' '+_vfTipX.toFixed(1)+','+_vfTipY.toFixed(1)+' Q'+_vfCurlX.toFixed(1)+','+_vfCurlY.toFixed(1)+' '+(_vfCurlX+Math.cos(_vfCurlAng-0.5)*_vfCurlLen*0.5*side).toFixed(1)+','+(_vfCurlY+Math.sin(_vfCurlAng-0.5)*_vfCurlLen*0.5).toFixed(1);
-            s += '<path d="'+_c48vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 49: // Jellyleaf — dome bell with hanging tentacles, mythic bioluminescence (master pass)
@@ -20600,11 +20197,6 @@ document.addEventListener('keydown', function(e) {
             s += '<circle cx="'+(_jltX+side*_jlR*0.03).toFixed(1)+'" cy="'+(_jlMarginY+_jltLen).toFixed(1)+'" r="'+(0.4-_jlt*0.03).toFixed(2)+'" fill="rgba(40,20,5,0.7)"/>';
             s += '<circle cx="'+(_jltX+side*_jlR*0.03).toFixed(1)+'" cy="'+(_jlMarginY+_jltLen).toFixed(1)+'" r="'+(0.22-_jlt*0.02).toFixed(2)+'" fill="'+_jltCol+'" opacity="'+(op*0.7).toFixed(2)+'"/>';
           }
-          // Chimera ghost
-          if (t.chimerGen > 1) {
-            var _c49vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_jlCx.toFixed(1)+','+(_jlCy-_jlR*0.3).toFixed(1)+' M'+_jlCx.toFixed(1)+','+_jlMarginY.toFixed(1)+' L'+_jlCx.toFixed(1)+','+(_jlMarginY+_jlR*1.0).toFixed(1);
-            s += '<path d="'+_c49vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
         // ── set-103-8: REBUILT LEAF TYPES 50-59 ──────
         case 50: // Watcher Frond — wide blade with one large embedded eye, mythic (master polish)
@@ -20660,12 +20252,6 @@ document.addEventListener('keydown', function(e) {
           }
           // Apex terminator
           s += '<circle cx="'+_wfTipX.toFixed(1)+'" cy="'+_wfTipY.toFixed(1)+'" r="0.4" fill="rgba(40,20,5,0.7)"/>';
-          // Chimera vein
-          if (t.chimerGen > 1) {
-            var _c50vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_wfTipX.toFixed(1)+','+_wfTipY.toFixed(1);
-            _c50vd += ' M'+(_wfEyeX-_wfEyeR*0.7).toFixed(1)+','+_wfEyeY.toFixed(1)+' A'+(_wfEyeR*0.7).toFixed(2)+','+(_wfEyeR*0.7).toFixed(2)+' 0 1,1 '+(_wfEyeX+_wfEyeR*0.7).toFixed(1)+','+_wfEyeY.toFixed(1);
-            s += '<path d="'+_c50vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 51: // Stamen Burst — radial cluster of pollen-laden anthers, mythic (master polish)
@@ -20712,16 +20298,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+ox+'" cy="'+ly+'" r="'+(ls*0.16).toFixed(2)+'" fill="'+_sbPistCol+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
           s += '<circle cx="'+ox+'" cy="'+ly+'" r="'+(ls*0.16).toFixed(2)+'" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.32"/>';
           s += '<circle cx="'+(ox-ls*0.04)+'" cy="'+(ly-ls*0.04)+'" r="'+(ls*0.07).toFixed(2)+'" fill="#fff8e0" opacity="0.6"/>';
-          // Chimera vein
-          if (t.chimerGen > 1) {
-            var _c51vd = '';
-            for (var _c51v = 0; _c51v < _sbCount; _c51v++) {
-              var _c51a = _sbArcCenter - _sbArcSpan * 0.5 + (_c51v / (_sbCount - 1)) * _sbArcSpan;
-              var _c51l = _sbLen * (0.8 + (_c51v % 3) * 0.1) * 0.8;
-              _c51vd += 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+(ox+Math.cos(_c51a)*_c51l*side).toFixed(1)+','+(ly+Math.sin(_c51a)*_c51l).toFixed(1)+' ';
-            }
-            s += '<path d="'+_c51vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 52: // Mountain Ash — pinnately compound, 11-13 narrow lanceolate leaflets, serrate (master pass)
@@ -20773,10 +20349,6 @@ document.addEventListener('keydown', function(e) {
               s += '<circle cx="'+(_cplOx+side*_cpls*_cplRx*0.7).toFixed(1)+'" cy="'+_cplOy.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.65)" transform="rotate('+_cplDeg+','+_cplOx.toFixed(1)+','+_cplOy.toFixed(1)+')"/>';
             }
           }
-          // Chimera ghost — pinnate
-          if (t.chimerGen > 1) {
-            s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_cpMidX.toFixed(1)+','+_cpMidY.toFixed(1)+' '+_cpTipX.toFixed(1)+','+_cpTipY.toFixed(1)+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 53: // Tendril Coil — spiraling vine tendril with hokusai weighted line (master pass)
@@ -20819,10 +20391,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(_tcPrevX+Math.cos(_tcHookAng)*_tcHookLen*side).toFixed(1)+'" cy="'+(_tcPrevY+Math.sin(_tcHookAng)*_tcHookLen).toFixed(1)+'" r="0.4" fill="rgba(40,20,5,0.7)"/>';
           // Base bud-scar dot
           s += '<circle cx="'+ox+'" cy="'+ly+'" r="0.45" fill="rgba(40,20,5,0.6)"/>';
-          // Chimera ghost
-          if (t.chimerGen > 1) {
-            s += '<path d="'+_tcSvg+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 54: // Water Lily — orbicular peltate-rim with V-notch toward stem (Nymphaea master polish)
@@ -20866,15 +20434,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(_lpCx2-side*_lpR2*0.22).toFixed(1)+'" cy="'+(_lpCy2-_lpR2*0.17).toFixed(1)+'" r="'+(ls*0.04).toFixed(2)+'" fill="#fff8e0" opacity="0.85"/>';
           // Specular lozenge on upper surface
           s += '<ellipse cx="'+(_lpCx2+side*_lpR2*0.15).toFixed(1)+'" cy="'+(_lpCy2-_lpR2*0.25).toFixed(1)+'" rx="'+(_lpR2*0.32).toFixed(1)+'" ry="'+(_lpR2*0.16).toFixed(1)+'" fill="#fff8e0" opacity="0.22"/>';
-          // Chimera vein
-          if (t.chimerGen > 1) {
-            var _c54vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_lpCx2.toFixed(1)+','+_lpCy2.toFixed(1);
-            for (var _c54v = 0; _c54v < 4; _c54v++) {
-              var _c54a = _lpNotchAng + 0.6 + _c54v * 1.2;
-              _c54vd += ' M'+_lpCx2.toFixed(1)+','+_lpCy2.toFixed(1)+' L'+(_lpCx2+Math.cos(_c54a)*_lpR2*0.7).toFixed(1)+','+(_lpCy2+Math.sin(_c54a)*_lpR2*0.7).toFixed(1);
-            }
-            s += '<path d="'+_c54vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 55: // Dragon Scale Frond — strap with hammered/quilted reticulate scale-cells, mythic (master polish)
@@ -20930,10 +20489,6 @@ document.addEventListener('keydown', function(e) {
              + ' fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="0.45" transform="translate(-0.25,-0.2)" stroke-linecap="round"/>';
           // Tip terminator
           s += '<circle cx="'+_slTipX.toFixed(1)+'" cy="'+_slTipY.toFixed(1)+'" r="0.4" fill="rgba(40,20,5,0.7)"/>';
-          // Chimera ghost
-          if (t.chimerGen > 1) {
-            s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_slTipX.toFixed(1)+','+_slTipY.toFixed(1)+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 56: // Tall Fescue — linear grass blade with 5 parallel veins, drip-tip (master pass)
@@ -20965,10 +20520,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_gbTipX.toFixed(1)+'" cy="'+_gbTipY.toFixed(1)+'" r="0.4" fill="rgba(40,20,5,0.7)"/>';
           // Base bud-scar
           s += '<circle cx="'+ox+'" cy="'+ly+'" r="0.4" fill="rgba(40,20,5,0.55)"/>';
-          // Chimera — parallel ghost
-          if (t.chimerGen > 1) {
-            s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_gbMidX.toFixed(1)+','+_gbMidY.toFixed(1)+' '+_gbTipX.toFixed(1)+','+_gbTipY.toFixed(1)+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 57: // Venus Flytrap — bilobed trap with cilia (master polish, anatomy preserved)
@@ -21046,11 +20597,6 @@ document.addEventListener('keydown', function(e) {
           // Hinge inner shadow (warm dark)
           s += '<line x1="'+(_vtCx-side*_vtW*0.5).toFixed(1)+'" y1="'+(_vtCy+_vtH*0.03).toFixed(1)+'" x2="'+(_vtCx+side*_vtW*0.5).toFixed(1)+'" y2="'+(_vtCy+_vtH*0.03).toFixed(1)+'"'
              + ' stroke="rgba(40,20,5,0.45)" stroke-width="0.5" stroke-linecap="round"/>';
-          // Chimera vein
-          if (t.chimerGen > 1) {
-            var _c57vd = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' L'+_vtCx.toFixed(1)+','+_vtCy.toFixed(1)+' M'+(_vtCx-side*_vtW*0.58).toFixed(1)+','+_vtCy.toFixed(1)+' L'+(_vtCx+side*_vtW*0.58).toFixed(1)+','+_vtCy.toFixed(1);
-            s += '<path d="'+_c57vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 58: // Bird's Nest Fern — linear-strap with bold dark midrib + crinkle-cut wavy edge (Asplenium master pass)
@@ -21112,10 +20658,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_stTipX.toFixed(1)+'" cy="'+_stTipY.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.7)"/>';
           // Base bud-scar
           s += '<circle cx="'+ox+'" cy="'+ly+'" r="0.45" fill="rgba(40,20,5,0.6)"/>';
-          // Chimera vein
-          if (t.chimerGen > 1) {
-            s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_stMidX.toFixed(1)+','+_stMidY.toFixed(1)+' '+_stTipX.toFixed(1)+','+_stTipY.toFixed(1)+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         case 59: // Lace Fern — tripinnate, extremely fine pinnules, translucent lacy feel (master pass)
@@ -21187,10 +20729,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_lfTipX.toFixed(1)+'" cy="'+_lfTipY.toFixed(1)+'" r="0.4" fill="rgba(40,20,5,0.7)"/>';
           // Base bud-scar
           s += '<circle cx="'+ox+'" cy="'+ly+'" r="0.45" fill="rgba(40,20,5,0.6)"/>';
-          // Chimera ghost — pinnate
-          if (t.chimerGen > 1) {
-            s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+_lfMidX.toFixed(1)+','+_lfMidY.toFixed(1)+' '+(_lfTipX-Math.cos(_lfAng)*_lfLen*0.08*side).toFixed(1)+','+(_lfTipY-Math.sin(_lfAng)*_lfLen*0.08).toFixed(1)+' '+_lfTipX.toFixed(1)+','+_lfTipY.toFixed(1)+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
-          }
           break;
 
         // ═══ RARE+ EXPANDED LEAVES (cases 60-70) ═══
@@ -22185,14 +21723,6 @@ document.addEventListener('keydown', function(e) {
         // Sepal tips peeking above cup (thin warm-dark accents)
         s += '<line x1="'+(fx-fs*0.32)+'" y1="'+(fy-fs*0.05)+'" x2="'+(fx-fs*0.42)+'" y2="'+(fy+fs*0.18)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
         s += '<line x1="'+(fx+fs*0.32)+'" y1="'+(fy-fs*0.05)+'" x2="'+(fx+fs*0.42)+'" y2="'+(fy+fs*0.18)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
-        // Chimera petal-edge glow (gen 2+)
-        if (t.chimerGen > 1) {
-          var _b0gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          s += '<path d="M'+(fx-fs*0.48)+','+(fy+fs*0.05)+' C'+(fx-fs*0.5)+','+(fy-fs*0.55)+' '+(fx-fs*0.28)+','+(fy-fs*1.2)+' '+fx+','+(fy-fs*1.3)+' C'+(fx+fs*0.28)+','+(fy-fs*1.2)+' '+(fx+fs*0.5)+','+(fy-fs*0.55)+' '+(fx+fs*0.48)+','+(fy+fs*0.05)+'" fill="none" stroke="#7ab356" stroke-width="'+_b0gw.toFixed(2)+'" opacity="0.65"/>';
-          if (t.chimerGen >= 3) {
-            s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.6)+'" r="'+(fs*0.5)+'" fill="#7ab356" opacity="0.18"/>';
-          }
-        }
         break;
       case 1: // Rose — overlapping cupped petals in two rings
         // outer ring
@@ -22378,14 +21908,6 @@ document.addEventListener('keydown', function(e) {
         // Apical bud cluster at top (unopened tips, focal warm-dark)
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*1.55)+'" r="'+(fs*0.14)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.75*bloomOp)+'"/>';
         s += '<circle cx="'+(fx-fs*0.05)+'" cy="'+(fy-fs*1.6)+'" r="'+(fs*0.05)+'" fill="#f5ecd6" opacity="'+(0.45*bloomOp)+'"/>';
-        // Chimera petal-edge glow (gen 2+) — sage halo around cylinder
-        if (t.chimerGen > 1) {
-          var _b9gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.6)+'" rx="'+(fs*0.7)+'" ry="'+(fs*0.95)+'" fill="none" stroke="#7ab356" stroke-width="'+_b9gw.toFixed(2)+'" opacity="0.55"/>';
-          if (t.chimerGen >= 3) {
-            s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.6)+'" r="'+(fs*0.85)+'" fill="#c8a84b" opacity="0.16"/>';
-          }
-        }
         break;
 
       case 10: // Orchid — complex layered petals with labellum lip
@@ -22533,14 +22055,6 @@ document.addEventListener('keydown', function(e) {
             // Pollen cap sheen
             s += '<ellipse cx="'+(stx-hW*0.22)+'" cy="'+(hY-hW*0.1)+'" rx="'+(hW*0.36)+'" ry="'+(hW*0.16)+'"'
                + ' fill="#f5ecd6" opacity="'+(0.45*bloomOp)+'"/>';
-            // Chimera petal-edge glow (gen 2+) — sage outline on pill
-            if (t.chimerGen > 1) {
-              var _b14gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-              s += '<rect x="'+(stx-hW)+'" y="'+hY+'" width="'+(hW*2)+'" height="'+hH+'" rx="'+hW+'" fill="none" stroke="#7ab356" stroke-width="'+_b14gw.toFixed(2)+'" opacity="0.6"/>';
-              if (t.chimerGen >= 3) {
-                s += '<ellipse cx="'+stx+'" cy="'+(hY+hH*0.5)+'" rx="'+(hW*1.4)+'" ry="'+(hH*0.7)+'" fill="#c8a84b" opacity="0.16"/>';
-              }
-            }
           });
         })();
         break;
@@ -22639,14 +22153,6 @@ document.addEventListener('keydown', function(e) {
             var _b16ka = (_b16k*120 + 40)*Math.PI/180;
             s += '<line x1="'+spiralCx.toFixed(1)+'" y1="'+spiralCy.toFixed(1)+'" x2="'+(spiralCx + Math.cos(_b16ka)*fs*0.13).toFixed(1)+'" y2="'+(spiralCy + Math.sin(_b16ka)*fs*0.13).toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.3" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
           }
-          // Chimera petal-edge glow (gen 2+) — sage halo around outer spiral
-          if (t.chimerGen > 1) {
-            var _b16gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-            s += '<circle cx="'+fx+'" cy="'+(fy - fs*0.55).toFixed(1)+'" r="'+(fs*0.95)+'" fill="none" stroke="#7ab356" stroke-width="'+_b16gw.toFixed(2)+'" opacity="0.55"/>';
-            if (t.chimerGen >= 3) {
-              s += '<circle cx="'+fx+'" cy="'+(fy - fs*0.55).toFixed(1)+'" r="'+(fs*1.15)+'" fill="#c8a84b" opacity="0.16"/>';
-            }
-          }
         })();
         break;
       case 12: // Carnivorous Flytrap (Dionaea) — hinged jaws with cilia teeth + trigger hairs + interior glow
@@ -22694,15 +22200,6 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="'+fx+'" y1="'+(fy-fs*0.05)+'" x2="'+fx+'" y2="'+(fy-fs*1.7)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.7" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
         // Form shadow on right lobe (shaded half)
         s += '<path d="M'+fx+','+(fy-fs*1.2)+' Q'+(fx+fs*0.85)+','+(fy-fs*1.5)+' '+(fx+fs*0.95)+','+(fy-fs*0.5)+' Q'+(fx+fs*0.5)+','+(fy-fs*0.65)+' '+fx+','+(fy-fs*1.2)+'Z" fill="rgba(40,20,5,0.18)" opacity="'+(0.65*bloomOp)+'"/>';
-        // Chimera petal-edge glow (gen 2+)
-        if (t.chimerGen > 1) {
-          var _b12gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          s += '<path d="M'+fx+','+fy+' Q'+(fx-fs)+','+(fy-fs*0.5)+' '+(fx-fs*0.8)+','+(fy-fs*1.8)+'" fill="none" stroke="#7ab356" stroke-width="'+_b12gw.toFixed(2)+'" opacity="0.7"/>';
-          s += '<path d="M'+fx+','+fy+' Q'+(fx+fs)+','+(fy-fs*0.5)+' '+(fx+fs*0.8)+','+(fy-fs*1.8)+'" fill="none" stroke="#7ab356" stroke-width="'+_b12gw.toFixed(2)+'" opacity="0.7"/>';
-          if (t.chimerGen >= 3) {
-            s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.85)+'" rx="'+(fs*0.5)+'" ry="'+(fs*0.65)+'" fill="#c8a84b" opacity="0.18"/>';
-          }
-        }
         break;
 
       // ═══ set-103: 12 NEW BLOOM TYPES (cases 17-28) ═══════════════════════
@@ -22755,14 +22252,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(fx + Math.cos(_b17sa)*fs*0.18)+'" cy="'+(fy + Math.sin(_b17sa)*fs*0.18)+'" r="'+(fs*0.04)+'" fill="'+PALETTE.gold+'" opacity="'+(0.78*bloomOp)+'"/>';
         }
         s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy-fs*0.06)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(0.78*bloomOp)+'"/>';
-        // Chimera petal-edge glow (gen 2+)
-        if (t.chimerGen > 1) {
-          var _b17gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.18)+'" fill="none" stroke="#7ab356" stroke-width="'+_b17gw.toFixed(2)+'" opacity="0.6"/>';
-          if (t.chimerGen >= 3) {
-            s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.4)+'" fill="#c8a84b" opacity="0.16"/>';
-          }
-        }
         break;
       case 18: // Moon Orchid (Phalaenopsis) — flat moth-wing dish with patterned labellum + pollinia column
         // AO halo
@@ -22811,15 +22300,6 @@ document.addEventListener('keydown', function(e) {
         // Drip-curl pair on left wing tip (shadow + highlight)
         s += '<path d="M'+(fx-fs*1.2)+','+(fy+fs*0.1)+' Q'+(fx-fs*1.32)+','+(fy+fs*0.25)+' '+(fx-fs*1.2)+','+(fy+fs*0.4)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.55" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
         s += '<path d="M'+(fx-fs*1.18)+','+(fy+fs*0.12)+' Q'+(fx-fs*1.28)+','+(fy+fs*0.25)+' '+(fx-fs*1.18)+','+(fy+fs*0.38)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.65*bloomOp)+'"/>';
-        // Chimera petal-edge glow (gen 2+)
-        if (t.chimerGen > 1) {
-          var _b18gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          s += '<path d="M'+fx+','+(fy-fs*0.2)+' C'+(fx-fs*0.95)+','+(fy-fs*1.05)+' '+(fx-fs*1.3)+','+(fy+fs*0.2)+' '+(fx-fs*0.4)+','+(fy+fs*0.55)+'" fill="none" stroke="#7ab356" stroke-width="'+_b18gw.toFixed(2)+'" opacity="0.6"/>';
-          s += '<path d="M'+fx+','+(fy-fs*0.2)+' C'+(fx+fs*0.95)+','+(fy-fs*1.05)+' '+(fx+fs*1.3)+','+(fy+fs*0.2)+' '+(fx+fs*0.4)+','+(fy+fs*0.55)+'" fill="none" stroke="#7ab356" stroke-width="'+_b18gw.toFixed(2)+'" opacity="0.6"/>';
-          if (t.chimerGen >= 3) {
-            s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.3)+'" r="'+(fs*0.5)+'" fill="#c8a84b" opacity="0.18"/>';
-          }
-        }
         break;
       case 19: // Poppy — silken 4-petal cup with dark velvet center, almost-black anther mound
         // AO halo behind cup
@@ -22884,14 +22364,6 @@ document.addEventListener('keydown', function(e) {
         // Tiny gold focal pip at very center (peeks through velvet)
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.08)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
         s += '<circle cx="'+(fx-fs*0.025)+'" cy="'+(fy-fs*0.025)+'" r="'+(fs*0.03)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
-        // Chimera petal-edge glow (gen 2+)
-        if (t.chimerGen > 1) {
-          var _b19gw = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.1)+'" fill="none" stroke="#7ab356" stroke-width="'+_b19gw.toFixed(2)+'" opacity="0.6"/>';
-          if (t.chimerGen >= 3) {
-            s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.3)+'" fill="#c8a84b" opacity="0.16"/>';
-          }
-        }
         break;
       case 20: // Dandelion Puff — spherical seed-clock head with pappus filaments (rebuilt set-104)
         (function(){
@@ -22941,10 +22413,6 @@ document.addEventListener('keydown', function(e) {
           }
           s += '<circle cx="'+_dpDx2+'" cy="'+_dpDy2+'" r="'+(fs*0.035)+'" fill="rgba(40,20,5,0.4)" opacity="'+bloomOp+'"/>';
 
-          // Chimera-edge glow — sage halo at gen 3+
-          if (t.chimerGen >= 3) {
-            s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.28)+'" fill="none" stroke="#7ab356" stroke-width="'+(0.4 + (t.chimerGen-3)*0.18)+'" opacity="'+Math.min(0.6,0.35+(t.chimerGen-3)*0.08)+'" filter="url(#gc'+uid+')" style="mix-blend-mode:screen"/>';
-          }
         })();
         break;
       case 21: // Bird of Paradise — Strelitzia reginae (orange crest + blue tongue, asymmetric §3.L)
@@ -22969,12 +22437,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx+fs*0.6)+'" cy="'+(fy-fs*0.18)+'" r="'+(fs*0.025)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.8)+'"/>';
         // Drip-curl pair on crest tip (§9)
         s += '<path d="M'+(fx+fs*1.66)+','+(fy-fs*0.18)+' Q'+(fx+fs*1.78)+','+(fy-fs*0.05)+' '+(fx+fs*1.78)+','+(fy+fs*0.04)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" opacity="'+(bloomOp*0.6)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp21g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp21o = Math.min(0.85, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp21g+'" opacity="'+_bp21o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 22: // Fire Flower — emberwheel mythic with reflexed flame-tepals (§3.C / §6 throat glow)
         // Outer back ring — dimmed 8-12% (§2 stack ordering)
@@ -23012,12 +22474,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         // Drip-curl on top tepal (§9)
         s += '<path d="M'+fx+','+(fy-fs*1.0)+' C'+(fx+fs*0.72)+','+(fy-fs*1.22)+' '+(fx+fs*1.0)+','+(fy-fs*0.42)+' '+(fx+fs*0.42)+','+(fy-fs*0.04)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp22g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp22o = Math.min(0.85, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.05)+'" fill="none" stroke="#c8a84b" stroke-width="'+_bp22g+'" opacity="'+_bp22o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 23: // King Protea — Protea cynaroides (bowl of pointed bracts around fuzzy heart, §3.K cone variant)
         // Receptacle AO base (§2 step 1)
@@ -23052,12 +22508,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.08)+'" fill="#fff8e0" opacity="'+(bloomOp*0.9)+'"/>';
         // Cup highlight on rim
         s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.85)+' C'+(fx+fs*0.3)+','+(fy-fs*0.95)+' '+(fx+fs*0.9)+','+(fy-fs*0.45)+' '+(fx+fs*0.95)+','+fy+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp23g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp23o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*1.22)+'" ry="'+(fs*1.22)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp23g+'" opacity="'+_bp23o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 24: // Anthurium — Anthurium andraeanum (lacquered heart-spathe + yellow spadix tail)
         // Spathe AO ink-pool at base (§1)
@@ -23080,12 +22530,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.36)+'" r="'+(fs*0.08)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
         // Edge highlight on spathe
         s += '<path d="M'+(fx-fs*0.02)+','+(fy-fs*1.52)+' C'+(fx+fs*0.88)+','+(fy-fs*1.22)+' '+(fx+fs*1.02)+','+(fy-fs*0.58)+' '+(fx+fs*0.4)+','+(fy-fs*0.06)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp24g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp24o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.92)+','+(fy-fs*0.35)+' '+(fx-fs*1.18)+','+(fy-fs*1.18)+' '+fx+','+(fy-fs*1.55)+' C'+(fx+fs*1.18)+','+(fy-fs*1.18)+' '+(fx+fs*0.92)+','+(fy-fs*0.35)+' '+fx+','+fy+' Z" fill="none" stroke="#7ab356" stroke-width="'+_bp24g+'" opacity="'+_bp24o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 25: // Cherry Blossom — Prunus (5 near-round petals at 72° with notched tips, §3.A textbook)
         // Receptacle AO under center (§2)
@@ -23120,12 +22564,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         // Drip-curl on top petal (§9)
         s += '<path d="M'+(fx-fs*0.22)+','+(fy-fs*0.96)+' C'+(fx-fs*0.82)+','+(fy-fs*1.08)+' '+(fx-fs*1.02)+','+(fy-fs*0.36)+' '+(fx-fs*0.52)+','+(fy+fs*0.02)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp25g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp25o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.06)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp25g+'" opacity="'+_bp25o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 26: // Coneflower — Echinacea purpurea (drooping pink rays + spiny orange cone, §3.K reflexed)
         // Cone AO base shadow (§2)
@@ -23158,12 +22596,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.42)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
         // Drip-curl on a ray (§9)
         s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.2)+' C'+(fx-fs*0.68)+','+(fy-fs*0.94)+' '+(fx-fs*1.1)+','+(fy-fs*0.7)+' '+(fx-fs*0.92)+','+fy+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
-        // Chimera stamen-glow (§7 — composite head leans gold halo)
-        if (t.chimerGen > 1) {
-          var _bp26g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp26o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.55)+'" ry="'+(fs*0.78)+'" fill="none" stroke="#c8a84b" stroke-width="'+_bp26g+'" opacity="'+_bp26o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 27: // Snapdragon — Antirrhinum (hinged dragon mouth lower lip, didynamous, §3.G/§3.L)
         // Spike-rachis shadow line
@@ -23190,12 +22622,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.12)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         // Drip-curl on top bud (§9)
         s += '<path d="M'+fx+','+(fy-fs*0.9)+' C'+(fx+fs*0.46)+','+(fy-fs*1.02)+' '+(fx+fs*0.62)+','+(fy-fs*0.42)+' '+(fx+fs*0.18)+','+(fy-fs*0.04)+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp27g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp27o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<line x1="'+fx+'" y1="'+(fy-fs*1.0)+'" x2="'+fx+'" y2="'+(fy+fs*1.4)+'" stroke="#7ab356" stroke-width="'+_bp27g+'" opacity="'+_bp27o+'" style="mix-blend-mode:screen" stroke-linecap="round"/>';
-        }
         break;
       case 28: // Bleeding Heart — Lamprocapnos spectabilis (locket hearts dangling, §3.H pendant)
         // Arching pedicel (warm shadow stroke §1)
@@ -23223,12 +22649,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.55)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         // Edge highlight on arch
         s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp28g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp28o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp28g+'" opacity="'+_bp28o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       // ── set-103-8: NEW BLOOM TYPES (ChatGPT) ──────────────────────
       case 29: // Allium — spherical cluster of tiny star-shaped florets on radiating pedicels
@@ -23278,12 +22698,6 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx-fs*1.12)+','+(fy-fs*1.98)+' C'+(fx-fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*1.12)+','+(fy-fs*1.98)+'" fill="none" stroke="#fff8e0" stroke-width="0.55" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
         // Drip-curl pair on left rim lobe (§9)
         s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' Q'+(fx-fs*1.4)+','+(fy-fs*1.86)+' '+(fx-fs*1.28)+','+(fy-fs*1.78)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp30g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp30o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' C'+(fx-fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*1.36)+','+(fy-fs*1.96)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp30g+'" opacity="'+_bp30o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 31: // Delphinium — tall spire of layered cupped florets, graduating upward
         // Central rachis
@@ -23383,12 +22797,6 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy+fs*1.78)+'" r="'+(fs*0.04)+'" fill="#e8b53a" opacity="'+(bloomOp*0.8)+'"/>';
         // Tip drip-curl (§9)
         s += '<path d="M'+(fx-fs*0.06)+','+(fy+fs*2.04)+' Q'+fx+','+(fy+fs*2.14)+' '+(fx+fs*0.06)+','+(fy+fs*2.04)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp33g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp33o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.06)+' C'+(fx-fs*0.34)+','+(fy+fs*0.58)+' '+(fx-fs*0.32)+','+(fy+fs*1.34)+' '+(fx-fs*0.16)+','+(fy+fs*1.94)+' C'+(fx-fs*0.06)+','+(fy+fs*2.1)+' '+(fx+fs*0.04)+','+(fy+fs*2.1)+' '+(fx+fs*0.14)+','+(fy+fs*1.94)+' C'+(fx+fs*0.32)+','+(fy+fs*1.34)+' '+(fx+fs*0.34)+','+(fy+fs*0.58)+' '+(fx+fs*0.28)+','+(fy+fs*0.06)+' Z" fill="none" stroke="#7ab356" stroke-width="'+_bp33g+'" opacity="'+_bp33o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 34: // Pitcher Bloom — Sarracenia (tubular trap + lid, mythic-flavored)
         // AO base under pitcher
@@ -23414,12 +22822,6 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+fs*0.40)+','+(fy+fs*0.14)+' C'+(fx+fs*0.46)+','+(fy+fs*0.22)+' '+(fx+fs*0.48)+','+(fy+fs*0.30)+' '+(fx+fs*0.46)+','+(fy+fs*0.38)+' C'+(fx+fs*0.42)+','+(fy+fs*0.46)+' '+(fx+fs*0.36)+','+(fy+fs*0.48)+' '+(fx+fs*0.32)+','+(fy+fs*0.42)+' C'+(fx+fs*0.30)+','+(fy+fs*0.34)+' '+(fx+fs*0.32)+','+(fy+fs*0.24)+' '+(fx+fs*0.40)+','+(fy+fs*0.14)+' Z" fill="#fff8e0" opacity="'+(bloomOp*0.9)+'"/>';
         // Drip-curl on lid tip (§9)
         s += '<path d="M'+(fx-fs*0.26)+','+(fy-fs*0.2)+' Q'+(fx-fs*0.32)+','+(fy-fs*0.4)+' '+(fx-fs*0.16)+','+(fy-fs*0.46)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.4" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp34g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp34o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+fx+','+(fy+fs*0.92)+' C'+(fx-fs*0.30)+','+(fy+fs*0.84)+' '+(fx-fs*0.58)+','+(fy+fs*0.58)+' '+(fx-fs*0.68)+','+(fy+fs*0.18)+' C'+(fx-fs*0.82)+','+(fy-fs*0.34)+' '+(fx-fs*0.66)+','+(fy-fs*0.90)+' '+(fx-fs*0.22)+','+(fy-fs*1.22)+' C'+(fx+fs*0.10)+','+(fy-fs*1.46)+' '+(fx+fs*0.52)+','+(fy-fs*1.42)+' '+(fx+fs*0.82)+','+(fy-fs*1.14)+' C'+(fx+fs*1.10)+','+(fy-fs*0.90)+' '+(fx+fs*1.22)+','+(fy-fs*0.52)+' '+(fx+fs*1.12)+','+(fy-fs*0.12)+' C'+(fx+fs*1.04)+','+(fy+fs*0.26)+' '+(fx+fs*0.94)+','+(fy+fs*0.54)+' '+(fx+fs*0.74)+','+(fy+fs*0.74)+' C'+(fx+fs*0.52)+','+(fy+fs*0.94)+' '+(fx+fs*0.26)+','+(fy+fs*1.02)+' '+fx+','+(fy+fs*0.92)+' Z" fill="none" stroke="#7ab356" stroke-width="'+_bp34g+'" opacity="'+_bp34o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       // ── set-103-8: CORPSE FLOWER BLOOMS (ChatGPT) ─────────────────
       case 35: // Dragon Arum — Dracunculus vulgaris (spiky maroon spadix + curled spathe)
@@ -23450,12 +22852,6 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+fs*0.54)+','+(fy-fs*2.02)+' C'+(fx+fs*0.74)+','+(fy-fs*2.00)+' '+(fx+fs*0.92)+','+(fy-fs*1.94)+' '+(fx+fs*1.08)+','+(fy-fs*1.84)+'" fill="none" stroke="#fff8e0" stroke-width="0.4" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
         // Spadix tip dot
         s += '<circle cx="'+(fx+fs*0.08)+'" cy="'+(fy-fs*2.86)+'" r="'+(fs*0.1)+'" fill="rgba(40,20,5,0.85)" opacity="'+bloomOp+'"/>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp35g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp35o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+(fx-fs*0.22)+','+(fy+fs*1.08)+' C'+(fx-fs*1.18)+','+(fy+fs*0.26)+' '+(fx-fs*0.36)+','+(fy-fs*2.18)+' '+(fx+fs*0.34)+','+(fy-fs*2.44)+' C'+(fx+fs*1.22)+','+(fy-fs*2.48)+' '+(fx+fs*1.34)+','+(fy-fs*2.18)+' '+(fx+fs*0.30)+','+(fy-fs*1.50)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp35g+'" opacity="'+_bp35o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 36: // Titan Arum — Amorphophallus titanum (massive spadix in pleated maroon spathe, §3.D/§3.E giant)
         s += '<g>';
@@ -23487,12 +22883,6 @@ document.addEventListener('keydown', function(e) {
         // Cup highlight base
         s += '<path d="M'+(fx-fs*0.08)+','+(fy+fs*1.02)+' C'+(fx+fs*0.06)+','+(fy+fs*0.86)+' '+(fx+fs*0.14)+','+(fy+fs*0.72)+' '+(fx+fs*0.16)+','+(fy+fs*0.56)+'" fill="none" stroke="'+fc+'" stroke-width="0.34" opacity="'+(bloomOp*0.32)+'" stroke-linecap="round"/>';
         s += '</g>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp36g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp36o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<path d="M'+(fx-fs*0.34)+','+(fy+fs*1.22)+' C'+(fx-fs*1.52)+','+(fy+fs*0.24)+' '+(fx-fs*0.54)+','+(fy-fs*2.76)+' '+(fx+fs*0.34)+','+(fy-fs*3.04)+' C'+(fx+fs*1.46)+','+(fy-fs*3.10)+' '+(fx+fs*1.74)+','+(fy-fs*2.78)+' '+(fx+fs*0.44)+','+(fy-fs*2.04)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp36g+'" opacity="'+_bp36o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       case 37: // Carrion Starfish — Stapelia grandiflora (5-pointed wavy fleshy star, hairy/freckled)
         s += '<g>';
@@ -23524,12 +22914,6 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx-fs*0.16)+','+(fy-fs*0.02)+' C'+(fx-fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.20)+','+(fy-fs*0.02)+'" fill="none" stroke="#fff8e0" stroke-width="0.3" stroke-linecap="round" opacity="'+(bloomOp*0.7)+'"/>';
         s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.08)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(bloomOp*0.65)+'"/>';
         s += '</g>';
-        // Chimera petal-edge glow (§7)
-        if (t.chimerGen > 1) {
-          var _bp37g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
-          var _bp37o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
-          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.5)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp37g+'" opacity="'+_bp37o+'" style="mix-blend-mode:screen"/>';
-        }
         break;
       // ── set-103-8-14: NEW BLOOM TYPES (ChatGPT Art Round) ──────────────
       case 38: // Passionflower — radial filaments with corona
@@ -23714,12 +23098,6 @@ document.addEventListener('keydown', function(e) {
           // Specular pinpoint on stigma
           s += '<circle cx="'+(fx-fs*0.02)+'" cy="'+(fy-fs*0.08)+'" r="'+(fs*0.018)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
 
-          // Chimera-edge glow + stamen-glow at gen 3+
-          if (t.chimerGen >= 3) {
-            var _ckGw = 0.5 + Math.min(0.9, (t.chimerGen-3)*0.22);
-            s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.85)+'" fill="none" stroke="#7ab356" stroke-width="'+_ckGw+'" opacity="'+Math.min(0.6,0.4+(t.chimerGen-3)*0.06)+'" filter="url(#gc'+uid+')" style="mix-blend-mode:screen"/>';
-            s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.65)+'" fill="#c8a84b" opacity="'+(0.32*bloomOp)+'" filter="url(#gc'+uid+')"/>';
-          }
         })();
         break;
       case 47: // Lantern Bloom — glowing pendant lantern, warm inner light
@@ -25413,11 +24791,6 @@ document.addEventListener('keydown', function(e) {
           s += '<ellipse cx="'+(fx - _bbDomeW*0.1)+'" cy="'+(fy - _bbDomeH*0.58)+'" rx="'+(_bbDomeW*0.32)+'" ry="'+(_bbDomeH*0.22)+'"'
              + ' fill="#fff8e0" opacity="'+(0.07*bloomOp)+'"/>';
 
-          // Chimera petal-edge glow at gen 3+ (sage halo around cloud)
-          if (t.chimerGen >= 3) {
-            var _bbGw = 0.5 + Math.min(0.9, (t.chimerGen-3)*0.22);
-            s += '<ellipse cx="'+fx+'" cy="'+(fy - _bbDomeH*0.32)+'" rx="'+(_bbDomeW*0.7)+'" ry="'+(_bbDomeH*0.55)+'" fill="none" stroke="#7ab356" stroke-width="'+_bbGw+'" opacity="'+Math.min(0.55,0.32+(t.chimerGen-3)*0.08)+'" filter="url(#gc'+uid+')" style="mix-blend-mode:screen"/>';
-          }
         })();
         break;
       case 60: // Seed Pod — dried split pod revealing seeds (Lunaria-style, post-bloom marker)
@@ -25570,11 +24943,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(fx - fs*0.025)+'" cy="'+(_spBotY - fs*0.025).toFixed(1)+'" r="'+(fs*0.04)+'"'
              + ' fill="#f5ecd6" opacity="'+(0.55*bloomOp)+'"/>';
 
-          // Chimera-edge glow at gen 3+ (sage halo around pod silhouette)
-          if (t.chimerGen >= 3) {
-            var _spGw = 0.5 + Math.min(0.9, (t.chimerGen-3)*0.22);
-            s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(_spW*1.25)+'" ry="'+(_spH*0.7)+'" fill="none" stroke="#7ab356" stroke-width="'+_spGw+'" opacity="'+Math.min(0.55,0.32+(t.chimerGen-3)*0.08)+'" filter="url(#gc'+uid+')" style="mix-blend-mode:screen"/>';
-          }
         })();
         break;
       case 59: // Angel's Trumpet — pendant trumpet on arching stem, hangs to side
