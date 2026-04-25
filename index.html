@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.53';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.54';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -15955,21 +15955,34 @@ document.addEventListener('keydown', function(e) {
     var side = (parseInt(uid.charAt(4)||'0',16) < 8) ? -1 : 1; // set-103-8: deterministic L/R for bonsai stems
     var stemCurve = (parseInt(uid.slice(6,8)||'44',16) / 255) * 6; // set-103-8: 0-6 range curve factor from hash
     switch(t.stem % 24) { // expanded from %15 → %24 (9 new stems)
-      case 0: // Organic straight — variable taper (filled), cream highlight pair, node swell
+      case 0: // Organic straight — variable taper, root flare, mid + tip node swells, bark hairlines, cream pair
         var _s0p1x = 35+parseFloat(hw), _s0p2x = 35-parseFloat(hw);
         var _s0p1y = mid+8, _s0p2y = mid-8;
         var _s0wB = 1.55, _s0wT = 1.15; // base 80% wider than tip
+        // Root flare AO (warm-shifted dark) at base — grounds the stem
+        s += '<ellipse cx="35" cy="78" rx="'+(_s0wB+0.7).toFixed(2)+'" ry="0.65" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Filled silhouette — variable taper
         s += '<path d="M'+(35-_s0wB)+',78 C'+(_s0p1x-_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05)+','+_s0p2y+' '+(35-_s0wT)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-0.5)+' '+(35+_s0wT)+','+visibleTop+' C'+(_s0p2x+_s0wT*1.05)+','+_s0p2y+' '+(_s0p1x+_s0wB*0.95)+','+_s0p1y+' '+(35+_s0wB)+',78 Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
-        // Warm-shifted dark stroke (terminator) — right edge
-        s += '<path d="M'+(35+_s0wB)+',78 C'+(_s0p1x+_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x+_s0wT*1.05)+','+_s0p2y+' '+(35+_s0wT)+','+visibleTop+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Warm-shifted dark terminator — right edge
+        s += '<path d="M'+(35+_s0wB)+',78 C'+(_s0p1x+_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x+_s0wT*1.05)+','+_s0p2y+' '+(35+_s0wT)+','+visibleTop+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'"/>';
         // Cream highlight pair — left lit edge (Hokusai)
-        s += '<path d="M'+(35-_s0wB)+',78 C'+(_s0p1x-_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05)+','+_s0p2y+' '+(35-_s0wT)+','+visibleTop+'" stroke="rgba(40,20,5,0.28)" stroke-width="0.45" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        s += '<path d="M'+(35-_s0wB+0.25)+',78 C'+(_s0p1x-_s0wB*0.95+0.25)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05+0.25)+','+_s0p2y+' '+(35-_s0wT+0.25)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'" transform="translate(-0.3,0)"/>';
-        // Node swell at midpoint (pulvinus)
-        s += '<ellipse cx="'+((_s0p1x+_s0p2x)/2).toFixed(2)+'" cy="'+((_s0p1y+_s0p2y)/2).toFixed(2)+'" rx="'+((_s0wB+_s0wT)/2+0.5).toFixed(2)+'" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
-        s += '<ellipse cx="'+((_s0p1x+_s0p2x)/2).toFixed(2)+'" cy="'+((_s0p1y+_s0p2y)/2+0.5).toFixed(2)+'" rx="'+((_s0wB+_s0wT)/2+0.4).toFixed(2)+'" ry="0.3" fill="rgba(40,20,5,0.25)"/>';
-        // Subtle S-curve profile — sample the bezier at key points
+        s += '<path d="M'+(35-_s0wB)+',78 C'+(_s0p1x-_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05)+','+_s0p2y+' '+(35-_s0wT)+','+visibleTop+'" stroke="rgba(40,20,5,0.40)" stroke-width="0.50" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M'+(35-_s0wB+0.25)+',78 C'+(_s0p1x-_s0wB*0.95+0.25)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05+0.25)+','+_s0p2y+' '+(35-_s0wT+0.25)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.40" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'" transform="translate(-0.3,0)"/>';
+        // Sharp specular pickup on lit upper-left
+        s += '<path d="M'+(35-_s0wB+0.18)+','+(78-2)+' Q'+(35-_s0wB-0.10)+','+((78+parseFloat(visibleTop))/2).toFixed(1)+' '+(35-_s0wT+0.18)+','+(parseFloat(visibleTop)+2)+'" stroke="#fff8e0" stroke-width="0.22" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Mid-node swell (pulvinus) — cream cap + warm shadow ring
+        s += '<ellipse cx="'+((_s0p1x+_s0p2x)/2).toFixed(2)+'" cy="'+((_s0p1y+_s0p2y)/2).toFixed(2)+'" rx="'+((_s0wB+_s0wT)/2+0.5).toFixed(2)+'" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.20).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+((_s0p1x+_s0p2x)/2).toFixed(2)+'" cy="'+((_s0p1y+_s0p2y)/2+0.5).toFixed(2)+'" rx="'+((_s0wB+_s0wT)/2+0.4).toFixed(2)+'" ry="0.32" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Tip node where stem meets canopy
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(_s0wT+0.3).toFixed(2)+'" ry="0.40" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)).toFixed(1)+'" rx="'+_s0wT.toFixed(2)+'" ry="0.30" fill="#f5ecd6" opacity="'+(op*0.30).toFixed(2)+'"/>';
+        // Q-jittered hairline bark grain (3 subtle cross-strokes)
+        for (var _s0bi = 0; _s0bi < 3; _s0bi++) {
+          var _s0by = 78 - (78-parseFloat(visibleTop)) * ((_s0bi+0.5)/3);
+          var _s0bx = 35 + ((parseInt(uid.charAt((_s0bi+3)%uid.length)||'0',16)/15)-0.5) * 0.4;
+          s += '<path d="M'+(_s0bx-_s0wB*0.5).toFixed(2)+','+_s0by.toFixed(2)+' Q'+_s0bx.toFixed(2)+','+(_s0by-0.3).toFixed(2)+' '+(_s0bx+_s0wB*0.5).toFixed(2)+','+_s0by.toFixed(2)+'" stroke="rgba(40,20,5,0.30)" stroke-width="0.20" fill="none" opacity="'+(op*0.32).toFixed(2)+'"/>';
+        }
+        // Stem profile sampled along bezier — 9 points
         t._stemProfile = [];
         for (var _s0i = 0; _s0i <= 8; _s0i++) {
           var _s0t = _s0i / 8, _s0u = 1 - _s0t;
@@ -15979,72 +15992,102 @@ document.addEventListener('keydown', function(e) {
         break;
 
 
-      case 1: // Deep curve left — variable taper, warm-shifted shadow, cream lit edge, node swells
-        // Main body — base stroke (acts as widest taper)
-        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Inner taper — narrower stroke gives "thicker at base" illusion
-        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(parseFloat(strokeW)*0.55).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'" transform="translate(0,-12)"/>';
-        // Warm-shifted core shadow — right inner edge
-        s += '<path d="M35.5,78 C35.5,72 '+(33.5-parseFloat(hw))+',66 '+(31.5-parseFloat(hw2))+',58 C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(33.5-parseFloat(hw))+',34 C34.3,30 34.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="0.55"/>';
-        // Cream highlight pair (Hokusai lit edge — left)
-        s += '<path d="M34.6,78 C34.6,72 '+(32.6-parseFloat(hw))+',66 '+(30.6-parseFloat(hw2))+',58 C'+(29.6-parseFloat(hw))+',50 '+(31.6-parseFloat(hw2))+',40 '+(32.6-parseFloat(hw))+',34 C33.4,30 34,27 34.5,'+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M34.6,78 C34.6,72 '+(32.6-parseFloat(hw))+',66 '+(30.6-parseFloat(hw2))+',58 C'+(29.6-parseFloat(hw))+',50 '+(31.6-parseFloat(hw2))+',40 '+(32.6-parseFloat(hw))+',34 C33.4,30 34,27 34.5,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
-        // Node swells at the two cubic joins (32-58 and 34) — pulvinus
-        s += '<ellipse cx="'+(31-parseFloat(hw2))+'" cy="58" rx="1.25" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
-        s += '<ellipse cx="'+(31-parseFloat(hw2))+'" cy="58.5" rx="1.05" ry="0.3" fill="rgba(40,20,5,0.28)"/>';
-        s += '<ellipse cx="'+(33-parseFloat(hw))+'" cy="34" rx="1.0" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.2).toFixed(2)+'"/>';
-        s += '<ellipse cx="'+(33-parseFloat(hw))+'" cy="34.5" rx="0.85" ry="0.25" fill="rgba(40,20,5,0.25)"/>';
+      case 1: // Deep curve left — variable-thickness curve, root flare, two pulvinus nodes, tip node, cream pair
+        var _s1MidX = 31-parseFloat(hw2), _s1MidY = 58;
+        var _s1UpX  = 33-parseFloat(hw),  _s1UpY  = 34;
+        var _s1wB = 1.40, _s1wT = 0.95; // half-widths; petiole code reads _stemHW
+        // Root flare AO at base
+        s += '<ellipse cx="35" cy="78" rx="'+(_s1wB+0.7).toFixed(2)+'" ry="0.62" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // BACK shadow — fattened wide stroke creates the "thicker at base" feel
+        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+_s1MidX+','+_s1MidY+' C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+_s1UpX+','+_s1UpY+' C34,30 34.5,27 35,'+visibleTop+'" stroke="rgba(40,20,5,0.50)" stroke-width="'+(_s1wB*2).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        // Main body stroke (saturated)
+        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+_s1MidX+','+_s1MidY+' C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+_s1UpX+','+_s1UpY+' C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(_s1wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Warm-shifted core shadow on convex (right) side
+        s += '<path d="M35.5,78 C35.5,72 '+(33.5-parseFloat(hw))+',66 '+(_s1MidX+0.5)+','+(_s1MidY+0.3)+' C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(_s1UpX+0.5)+','+(_s1UpY+0.3)+' C34.3,30 34.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.80" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'"/>';
+        // Cream highlight pair on concave (left) lit edge
+        s += '<path d="M34.5,78 C34.5,72 '+(32.5-parseFloat(hw))+',66 '+(_s1MidX-0.5)+','+(_s1MidY-0.3)+' C'+(29.5-parseFloat(hw))+',50 '+(31.5-parseFloat(hw2))+',40 '+(_s1UpX-0.5)+','+(_s1UpY-0.3)+' C33.7,30 34.3,27 34.8,'+visibleTop+'" stroke="rgba(40,20,5,0.40)" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M34.5,78 C34.5,72 '+(32.5-parseFloat(hw))+',66 '+(_s1MidX-0.5)+','+(_s1MidY-0.3)+' C'+(29.5-parseFloat(hw))+',50 '+(31.5-parseFloat(hw2))+',40 '+(_s1UpX-0.5)+','+(_s1UpY-0.3)+' C33.7,30 34.3,27 34.8,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.38" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'" transform="translate(-0.3,-0.1)"/>';
+        // Pulvinus at deep-bend apex (largest node)
+        s += '<ellipse cx="'+_s1MidX+'" cy="'+_s1MidY+'" rx="1.40" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.25).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_s1MidX+'" cy="'+(_s1MidY+0.5)+'" rx="1.20" ry="0.32" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Pulvinus at upper inflection
+        s += '<ellipse cx="'+_s1UpX+'" cy="'+_s1UpY+'" rx="1.05" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_s1UpX+'" cy="'+(_s1UpY+0.5)+'" rx="0.90" ry="0.28" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        // Tip node where stem meets canopy
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(_s1wT+0.3).toFixed(2)+'" ry="0.38" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
         // Approximate stem profile — key waypoints along the curve
         t._stemProfile = [
           {x: 35, y: 78}, {x: 35, y: 72},
-          {x: 33-parseFloat(hw), y: 66}, {x: 31-parseFloat(hw2), y: 58},
+          {x: 33-parseFloat(hw), y: 66}, {x: _s1MidX, y: _s1MidY},
           {x: 30-parseFloat(hw), y: 50}, {x: 32-parseFloat(hw2), y: 40},
-          {x: 33-parseFloat(hw), y: 34}, {x: 35, y: parseFloat(visibleTop)}
+          {x: _s1UpX, y: _s1UpY}, {x: 35, y: parseFloat(visibleTop)}
         ];
+        t._stemHW = _s1wB;
         break;
 
 
-      case 2: // Deep curve right — variable taper, warm-shifted shadow, cream lit edge, node swells
-        // Main body
-        s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+(39+parseFloat(hw2))+',58 C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+(37+parseFloat(hw))+',34 C36,30 35.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Warm-shifted shadow — right inner (away from light)
-        s += '<path d="M35.5,78 C35.5,72 '+(37.5+parseFloat(hw))+',66 '+(39.5+parseFloat(hw2))+',58 C'+(40.5+parseFloat(hw))+',50 '+(38.5+parseFloat(hw2))+',40 '+(37.5+parseFloat(hw))+',34 C36.3,30 35.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.34)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="0.6"/>';
-        // Cream highlight pair — left edge (light source)
-        s += '<path d="M34.3,78 C34.3,72 '+(36.1+parseFloat(hw))+',66 '+(38.1+parseFloat(hw2))+',58 C'+(39.1+parseFloat(hw))+',50 '+(37.1+parseFloat(hw2))+',40 '+(36.1+parseFloat(hw))+',34 C35.3,30 34.9,27 34.4,'+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M34.3,78 C34.3,72 '+(36.1+parseFloat(hw))+',66 '+(38.1+parseFloat(hw2))+',58 C'+(39.1+parseFloat(hw))+',50 '+(37.1+parseFloat(hw2))+',40 '+(36.1+parseFloat(hw))+',34 C35.3,30 34.9,27 34.4,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.62" transform="translate(-0.3,-0.1)"/>';
-        // Node swells (pulvinus) at cubic joins
-        s += '<ellipse cx="'+(39+parseFloat(hw2))+'" cy="58" rx="1.25" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
-        s += '<ellipse cx="'+(39+parseFloat(hw2))+'" cy="58.5" rx="1.05" ry="0.3" fill="rgba(40,20,5,0.28)"/>';
-        s += '<ellipse cx="'+(37+parseFloat(hw))+'" cy="34" rx="1.0" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.2).toFixed(2)+'"/>';
-        s += '<ellipse cx="'+(37+parseFloat(hw))+'" cy="34.5" rx="0.85" ry="0.25" fill="rgba(40,20,5,0.25)"/>';
-        // Approximate stem profile — key waypoints along the curve
+      case 2: // Deep curve right — variable-thickness curve, root flare, two pulvinus nodes, tip node, cream pair
+        var _s2MidX = 39+parseFloat(hw2), _s2MidY = 58;
+        var _s2UpX  = 37+parseFloat(hw),  _s2UpY  = 34;
+        var _s2wB = 1.40, _s2wT = 0.95;
+        // Root flare AO at base
+        s += '<ellipse cx="35" cy="78" rx="'+(_s2wB+0.7).toFixed(2)+'" ry="0.62" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // BACK shadow — wider stroke for "thicker at base"
+        s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+_s2MidX+','+_s2MidY+' C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+_s2UpX+','+_s2UpY+' C36,30 35.5,27 35,'+visibleTop+'" stroke="rgba(40,20,5,0.50)" stroke-width="'+(_s2wB*2).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        // Main body stroke
+        s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+_s2MidX+','+_s2MidY+' C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+_s2UpX+','+_s2UpY+' C36,30 35.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(_s2wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Warm shadow on convex (right, away from light) side
+        s += '<path d="M35.5,78 C35.5,72 '+(37.5+parseFloat(hw))+',66 '+(_s2MidX+0.5)+','+(_s2MidY+0.3)+' C'+(40.5+parseFloat(hw))+',50 '+(38.5+parseFloat(hw2))+',40 '+(_s2UpX+0.5)+','+(_s2UpY+0.3)+' C36.3,30 35.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.80" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'"/>';
+        // Cream highlight pair on concave (left, lit) edge
+        s += '<path d="M34.3,78 C34.3,72 '+(36.1+parseFloat(hw))+',66 '+(_s2MidX-0.9)+','+(_s2MidY-0.3)+' C'+(39.1+parseFloat(hw))+',50 '+(37.1+parseFloat(hw2))+',40 '+(_s2UpX-0.9)+','+(_s2UpY-0.3)+' C35.3,30 34.9,27 34.4,'+visibleTop+'" stroke="rgba(40,20,5,0.40)" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M34.3,78 C34.3,72 '+(36.1+parseFloat(hw))+',66 '+(_s2MidX-0.9)+','+(_s2MidY-0.3)+' C'+(39.1+parseFloat(hw))+',50 '+(37.1+parseFloat(hw2))+',40 '+(_s2UpX-0.9)+','+(_s2UpY-0.3)+' C35.3,30 34.9,27 34.4,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.38" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'" transform="translate(-0.3,-0.1)"/>';
+        // Pulvinus at deep-bend apex (largest node)
+        s += '<ellipse cx="'+_s2MidX+'" cy="'+_s2MidY+'" rx="1.40" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.25).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_s2MidX+'" cy="'+(_s2MidY+0.5)+'" rx="1.20" ry="0.32" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Pulvinus at upper inflection
+        s += '<ellipse cx="'+_s2UpX+'" cy="'+_s2UpY+'" rx="1.05" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_s2UpX+'" cy="'+(_s2UpY+0.5)+'" rx="0.90" ry="0.28" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        // Tip node
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(_s2wT+0.3).toFixed(2)+'" ry="0.38" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        // Stem profile — waypoints
         t._stemProfile = [
           {x: 35, y: 78}, {x: 35, y: 72},
-          {x: 37+parseFloat(hw), y: 66}, {x: 39+parseFloat(hw2), y: 58},
+          {x: 37+parseFloat(hw), y: 66}, {x: _s2MidX, y: _s2MidY},
           {x: 40+parseFloat(hw), y: 50}, {x: 38+parseFloat(hw2), y: 40},
-          {x: 37+parseFloat(hw), y: 34}, {x: 35, y: parseFloat(visibleTop)}
+          {x: _s2UpX, y: _s2UpY}, {x: 35, y: parseFloat(visibleTop)}
         ];
+        t._stemHW = _s2wB;
         break;
 
 
-      case 3: // Sinuous S — variable taper, warm-shifted shadow, cream lit edge pair, node swells at S-bend
+      case 3: // Sinuous S — root flare, S-curve with mid-pulvinus, tip node, cream pair
         var _s3p1x = 27+parseFloat(hw), _s3p2x = 43+parseFloat(hw2);
         var _s3p1y = mid+12, _s3p2y = mid-10, _s3p3y = parseFloat(visibleTop);
-        // Main body
-        s += '<path d="M35,78 C'+_s3p1x+','+_s3p1y+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Inner narrower stroke for taper-toward-tip
-        s += '<path d="M35,'+(78-(78-parseFloat(visibleTop))*0.45)+' C'+(_s3p2x*0.55+35*0.45)+','+(_s3p2y*0.55+_s3p1y*0.45)+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(parseFloat(strokeW)*0.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
-        // Warm-shifted core shadow — convex side
-        s += '<path d="M35.4,78 C'+(_s3p1x+0.6)+','+(_s3p1y-0.5)+' '+(_s3p2x+0.5)+','+(_s3p2y+0.5)+' 35.4,'+visibleTop+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.55"/>';
-        // Cream highlight pair — concave/lit edge
-        s += '<path d="M34.4,78 C'+(_s3p1x-0.7)+','+(_s3p1y+0.3)+' '+(_s3p2x-0.7)+','+(_s3p2y-0.3)+' 34.4,'+visibleTop+'" stroke="rgba(40,20,5,0.38)" stroke-width="0.55" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M34.4,78 C'+(_s3p1x-0.7)+','+(_s3p1y+0.3)+' '+(_s3p2x-0.7)+','+(_s3p2y-0.3)+' 34.4,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
-        // Node swell at the inflection point (~midpoint of S)
+        var _s3wB = 1.30, _s3wT = 0.85;
+        // Root flare AO at base
+        s += '<ellipse cx="35" cy="78" rx="'+(_s3wB+0.7).toFixed(2)+'" ry="0.62" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // BACK shadow — wider stroke for "thicker at base"
+        s += '<path d="M35,78 C'+_s3p1x+','+_s3p1y+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="rgba(40,20,5,0.48)" stroke-width="'+(_s3wB*2).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        // Main body stroke
+        s += '<path d="M35,78 C'+_s3p1x+','+_s3p1y+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(_s3wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Warm-shifted shadow on convex (right-then-left) side — single offset
+        s += '<path d="M35.4,78 C'+(_s3p1x+0.6)+','+(_s3p1y-0.5)+' '+(_s3p2x+0.5)+','+(_s3p2y+0.5)+' 35.4,'+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.80" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'"/>';
+        // Cream highlight pair on lit edge
+        s += '<path d="M34.4,78 C'+(_s3p1x-0.7)+','+(_s3p1y+0.3)+' '+(_s3p2x-0.7)+','+(_s3p2y-0.3)+' 34.4,'+visibleTop+'" stroke="rgba(40,20,5,0.40)" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M34.4,78 C'+(_s3p1x-0.7)+','+(_s3p1y+0.3)+' '+(_s3p2x-0.7)+','+(_s3p2y-0.3)+' 34.4,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.38" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'" transform="translate(-0.3,-0.1)"/>';
+        // Pulvinus at S-curve inflection (midpoint)
         var _s3mx = 0.125*35 + 0.375*_s3p1x + 0.375*_s3p2x + 0.125*35;
         var _s3my = 0.125*78 + 0.375*_s3p1y + 0.375*_s3p2y + 0.125*_s3p3y;
-        s += '<ellipse cx="'+_s3mx.toFixed(2)+'" cy="'+_s3my.toFixed(2)+'" rx="1.2" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
-        s += '<ellipse cx="'+_s3mx.toFixed(2)+'" cy="'+(_s3my+0.5).toFixed(2)+'" rx="1.0" ry="0.3" fill="rgba(40,20,5,0.26)"/>';
-        // Store stem profile — sample S-curve bezier at 8 points
+        s += '<ellipse cx="'+_s3mx.toFixed(2)+'" cy="'+_s3my.toFixed(2)+'" rx="1.30" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.25).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_s3mx.toFixed(2)+'" cy="'+(_s3my+0.5).toFixed(2)+'" rx="1.10" ry="0.32" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Pulvinus at upper bend (3/4 along the S)
+        var _s3uX = 0.578125*_s3p2x + 0.421875*35; // approximate t=0.75 along bezier x-end
+        var _s3uY = 0.578125*_s3p2y + 0.421875*_s3p3y;
+        s += '<ellipse cx="'+_s3uX.toFixed(2)+'" cy="'+_s3uY.toFixed(2)+'" rx="1.05" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_s3uX.toFixed(2)+'" cy="'+(_s3uY+0.5).toFixed(2)+'" rx="0.90" ry="0.28" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        // Tip node
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(_s3wT+0.3).toFixed(2)+'" ry="0.38" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        // Stem profile — sample S-curve bezier at 9 points
         t._stemProfile = [];
         for (var _s3i = 0; _s3i <= 8; _s3i++) {
           var _s3t = _s3i / 8, _s3u = 1 - _s3t;
@@ -16052,6 +16095,7 @@ document.addEventListener('keydown', function(e) {
           var _s3y = _s3u*_s3u*_s3u*78 + 3*_s3u*_s3u*_s3t*_s3p1y + 3*_s3u*_s3t*_s3t*_s3p2y + _s3t*_s3t*_s3t*_s3p3y;
           t._stemProfile.push({x: _s3x, y: _s3y});
         }
+        t._stemHW = _s3wB;
         break;
 
 
@@ -16077,19 +16121,23 @@ document.addEventListener('keydown', function(e) {
           var _t4bjit = ((parseInt(uid.charAt((_t4bi+5)%uid.length)||'0',16)/15)-0.5)*0.6;
           s += '<path d="M'+(35-twBase*0.6+_t4bjit)+','+_t4by.toFixed(1)+' Q35,'+(_t4by-0.4).toFixed(1)+' '+(35+twBase*0.6+_t4bjit)+','+_t4by.toFixed(1)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.25" fill="none" opacity="'+(op*0.28).toFixed(2)+'"/>';
         }
-        // Base node swell — pulvinus at root flare
-        s += '<ellipse cx="35" cy="78" rx="'+(twBase+0.4).toFixed(2)+'" ry="0.55" fill="rgba(40,20,5,0.4)" opacity="'+(op*0.3).toFixed(2)+'"/>';
+        // Sharp specular pickup on lit upper-left
+        s += '<path d="M'+(35-twBase*0.7)+','+(78-2)+' Q'+(35-twBase*0.5)+','+((78+parseFloat(visibleTop))/2).toFixed(1)+' '+(35-twTop*0.5)+','+(parseFloat(visibleTop)+2)+'" stroke="#fff8e0" stroke-width="0.22" fill="none" stroke-linecap="round" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        // Base flare — wider AO under root + cream highlight on swell
+        s += '<ellipse cx="35" cy="78" rx="'+(twBase+0.6).toFixed(2)+'" ry="0.65" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.40).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="77.7" rx="'+(twBase+0.2).toFixed(2)+'" ry="0.30" fill="#f5ecd6" opacity="'+(op*0.20).toFixed(2)+'"/>';
+        // Tip node
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(twTop+0.3).toFixed(2)+'" ry="0.35" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
         // Stem profile — sample the trunk center (average of left and right edges)
         t._stemProfile = [];
         for (var _t4i = 0; _t4i <= 8; _t4i++) {
           var _t4t = _t4i / 8, _t4u = 1 - _t4t;
-          // Left edge
           var _t4lx = _t4u*_t4u*_t4u*(35-twBase) + 3*_t4u*_t4u*_t4t*(33-parseFloat(hw)) + 3*_t4u*_t4t*_t4t*(34.5-twTop) + _t4t*_t4t*_t4t*35;
-          // Right edge
           var _t4rx = _t4u*_t4u*_t4u*(35+twBase) + 3*_t4u*_t4u*_t4t*(37+parseFloat(hw)) + 3*_t4u*_t4t*_t4t*(34.5+twTop) + _t4t*_t4t*_t4t*35;
           var _t4y = _t4u*_t4u*_t4u*78 + 3*_t4u*_t4u*_t4t*mid + 3*_t4u*_t4t*_t4t*parseFloat(visibleTop) + _t4t*_t4t*_t4t*parseFloat(visibleTop);
           t._stemProfile.push({x: (_t4lx + _t4rx) / 2, y: _t4y});
         }
+        t._stemHW = twBase * 0.85;
         break;
 
 
