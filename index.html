@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.68';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.69';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -23516,14 +23516,18 @@ document.addEventListener('keydown', function(e) {
 
         })();
         break;
-      case 47: // Lantern Bloom — glowing pendant lantern, warm inner light
+      case 47: // Lantern Bloom — glowing pendant lantern, warm inner light, master polish
         (function(){
           // Outer lantern shell — rounded pendant shape, semi-transparent
           var _lbW = fs * 1.2;
           var _lbH = fs * 2.2;
-          // Stem attachment — thin calyx at top
+          // AO halo (vertical pendant)
+          s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+_lbH*0.55)+'" rx="'+(_lbW*1.05)+'" ry="'+(_lbH*0.65)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
+          // Stem attachment — thin calyx at top with warm-shifted dark inset
+          s += '<path d="M'+(fx-fs*0.16)+','+fy+' L'+(fx-fs*0.09)+','+(fy+fs*0.32)+' L'+(fx+fs*0.09)+','+(fy+fs*0.32)+' L'+(fx+fs*0.16)+','+fy+' Z"'
+             + ' fill="rgba(40,20,5,0.55)" opacity="'+(0.6*bloomOp)+'"/>';
           s += '<path d="M'+(fx-fs*0.15)+','+fy+' L'+(fx-fs*0.08)+','+(fy+fs*0.3)+' L'+(fx+fs*0.08)+','+(fy+fs*0.3)+' L'+(fx+fs*0.15)+','+fy+' Z"'
-             + ' fill="#6F9562" opacity="'+(0.85*bloomOp)+'"/>';
+             + ' fill="#6F9562" opacity="'+(0.92*bloomOp)+'"/>';
           // Inner warm glow — the light inside the lantern
           s += '<ellipse cx="'+fx+'" cy="'+(fy+_lbH*0.45)+'" rx="'+(_lbW*0.35)+'" ry="'+(_lbH*0.3)+'"'
              + ' fill="#F0A030" opacity="'+(0.3*bloomOp)+'" filter="url(#gc'+uid+')"/>';
@@ -23549,11 +23553,18 @@ document.addEventListener('keydown', function(e) {
             s += '<path d="M'+ribX+','+(fy+fs*0.35)+' Q'+(ribX+bulge)+','+(fy+_lbH*0.5)+' '+fx+','+(fy+_lbH*0.95)+'"'
                + ' fill="none" stroke="'+fc+'" stroke-width="'+(fs*0.06)+'" opacity="'+(0.4*bloomOp)+'"/>';
           }
-          // Top highlight crescent on the shell
+          // Top cream highlight crescent on the shell (master pass)
           s += '<ellipse cx="'+(fx-_lbW*0.12)+'" cy="'+(fy+_lbH*0.22)+'" rx="'+(_lbW*0.2)+'" ry="'+(_lbH*0.12)+'"'
-             + ' fill="rgba(255,255,255,0.2)" opacity="'+bloomOp+'"/>';
-          // Bottom tip
-          s += '<circle cx="'+fx+'" cy="'+(fy+_lbH)+'" r="'+(fs*0.12)+'" fill="'+fc+'" opacity="'+(0.7*bloomOp)+'"/>';
+             + ' fill="#f5ecd6" opacity="'+(0.32*bloomOp)+'"/>';
+          // Sharp specular pickup
+          s += '<ellipse cx="'+(fx-_lbW*0.18)+'" cy="'+(fy+_lbH*0.18)+'" rx="'+(_lbW*0.06)+'" ry="'+(_lbH*0.05)+'"'
+             + ' fill="#fff8e0" opacity="'+(0.65*bloomOp)+'"/>';
+          // Bottom tip with warm-dark AO + cream pickup
+          s += '<circle cx="'+(fx+0.10)+'" cy="'+(fy+_lbH+0.10)+'" r="'+(fs*0.13)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
+          s += '<circle cx="'+fx+'" cy="'+(fy+_lbH)+'" r="'+(fs*0.12)+'" fill="'+fc+'" opacity="'+(0.85*bloomOp)+'"/>';
+          s += '<circle cx="'+(fx-fs*0.04)+'" cy="'+(fy+_lbH-fs*0.04)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(0.7*bloomOp)+'"/>';
+          // Tip terminator (very bottom drip-curl)
+          s += '<circle cx="'+fx+'" cy="'+(fy+_lbH+fs*0.10)+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
         })();
         break;
       case 50: // Marigold — dense golden ball, 32 petals in 4 concentric rings
