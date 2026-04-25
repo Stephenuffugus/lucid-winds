@@ -6613,7 +6613,7 @@ window._addSwitchTabHook = function(fn){
       <button class="dev-btn" onclick="PW_Dev.backdateWilds(7)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⏩ BACKDATE WILDS 1 WEEK</button>
       <button class="dev-btn" onclick="PW_Dev.backdateWilds()">⏩ BACKDATE WILDS …</button>
     </div>
-    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF & BLOOM EDITOR</button></div>
+    <div class="dev-section"><div class="dev-section-title">ART TOOLS</div><button class="dev-btn" onclick="PW_Dev.companionTester()">🎨 COMPANION & AURA TESTER</button><button class="dev-btn" onclick="try{PW_Dev.cardFrontAligner()}catch(e){alert(e.message)}">🃏 CARD FRONT ALIGNMENT</button><button class="dev-btn" onclick="try{PW_Dev.cardBackViewer()}catch(e){alert(e.message)}">🔙 CARD BACK NAMEPLATES</button><button class="dev-btn" onclick="try{PW_Dev.leafBloomEditor()}catch(e){alert(e.message)}">🌿 LEAF, BLOOM, VESSEL</button></div>
     <div class="dev-section"><div class="dev-section-title">TESTER ONBOARDING</div>
       <button class="dev-btn danger" onclick="PW_Dev.replayOnboarding()" style="border-color:rgba(255,110,199,0.5);color:#ff6ec7;">🔄 REPLAY FULL ONBOARDING (wipe)</button>
     </div>
@@ -7261,31 +7261,36 @@ window._addSwitchTabHook = function(fn){
       var dp=document.getElementById('pw-dev-admin');if(dp)dp.classList.remove('open');
       var ov=document.getElementById('lbe-tool');
       if(ov){ov.remove();return;}
-      var _mode='leaf'; // 'leaf' or 'bloom'
+      var _mode='leaf'; // 'leaf', 'bloom', or 'vessel'
       var _idx=0;
       var _bank=window.TRAIT_BANK||{};
       var _maxLeaf=(_bank.leaves&&_bank.leaves.length?_bank.leaves.length-1:70);
       var _maxBloom=(_bank.flowers&&_bank.flowers.length?_bank.flowers.length-1:70);
+      var _maxVessel=(_bank.pots&&_bank.pots.length?_bank.pots.length-1:59);
       // Base hash — we'll override specific bytes to force leaf/bloom type
       var _baseHash='5a8f3c2d1e7b4a9063d5f8c2a1b47e9053c6d8f2a4b71e8039d5c7f1a2b64e80';
 
       function _render(){
         var card=document.getElementById('lbe-card');
         if(!card)return;
-        var max=_mode==='leaf'?_maxLeaf:_maxBloom;
+        var max=_mode==='leaf'?_maxLeaf:(_mode==='bloom'?_maxBloom:_maxVessel);
         if(_idx<0)_idx=max;
         if(_idx>max)_idx=0;
-        // Build a hash that forces the desired leaf or bloom type
+        // Build a hash that forces the desired trait type
         var h=_baseHash.split('');
         if(_mode==='leaf'){
           // leafType = hb(4), hb reads 2 hex chars at position n*2
           var leafHex=(_idx).toString(16).padStart(2,'0');
           h[8]=leafHex[0];h[9]=leafHex[1];
-        } else {
+        } else if(_mode==='bloom'){
           // flower = hb(11), hasFlower = hc(10) > 4 so force hc(10)=f
           h[20]='f'; // force hasFlower
           var bloomHex=(_idx).toString(16).padStart(2,'0');
           h[22]=bloomHex[0];h[23]=bloomHex[1];
+        } else {
+          // vessel: pot = hb(0), bytes 0-1
+          var potHex=(_idx).toString(16).padStart(2,'0');
+          h[0]=potHex[0];h[1]=potHex[1];
         }
         var hash=h.join('');
         var svg='';
@@ -7303,6 +7308,8 @@ window._addSwitchTabHook = function(fn){
               nameEl.textContent=banks.leaves[_idx].name||'';
             }else if(banks&&_mode==='bloom'&&banks.flowers&&banks.flowers[_idx]){
               nameEl.textContent=banks.flowers[_idx].name||'';
+            }else if(banks&&_mode==='vessel'&&banks.pots&&banks.pots[_idx]){
+              nameEl.textContent=banks.pots[_idx].name||'';
             }else{nameEl.textContent='';}
           }catch(e){nameEl.textContent='';}
         }
@@ -7322,8 +7329,9 @@ window._addSwitchTabHook = function(fn){
         '<button id="lbe-close" style="width:48px;height:48px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:1.2rem;cursor:pointer;">&#10005;</button>'+
         '</div>'+
         '<div style="display:flex;gap:8px;margin-bottom:8px;">'+
-        '<button id="lbe-mode-leaf" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:6px 16px;border-radius:4px;border:1px solid var(--sage);background:rgba(122,179,86,0.15);color:var(--sage);cursor:pointer;min-height:36px;">LEAVES</button>'+
-        '<button id="lbe-mode-bloom" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:6px 16px;border-radius:4px;border:1px solid var(--gold);background:none;color:var(--gold);cursor:pointer;min-height:36px;">BLOOMS</button>'+
+        '<button id="lbe-mode-leaf" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:6px 14px;border-radius:4px;border:1px solid var(--sage);background:rgba(122,179,86,0.15);color:var(--sage);cursor:pointer;min-height:36px;">LEAVES</button>'+
+        '<button id="lbe-mode-bloom" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:6px 14px;border-radius:4px;border:1px solid var(--gold);background:none;color:var(--gold);cursor:pointer;min-height:36px;">BLOOMS</button>'+
+        '<button id="lbe-mode-vessel" style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;padding:6px 14px;border-radius:4px;border:1px solid #c8865a;background:none;color:#c8865a;cursor:pointer;min-height:36px;">VESSELS</button>'+
         '</div>'+
         '<div id="lbe-card" style="width:70vw;max-width:300px;height:calc(100vh - 140px);max-height:500px;position:relative;border-radius:8px;overflow:hidden;"></div>';
       document.body.appendChild(ov);
@@ -7331,18 +7339,19 @@ window._addSwitchTabHook = function(fn){
       document.getElementById('lbe-prev').onclick=function(){_idx--;_render();};
       document.getElementById('lbe-next').onclick=function(){_idx++;_render();};
       document.getElementById('lbe-close').onclick=function(){ov.remove();};
-      document.getElementById('lbe-mode-leaf').onclick=function(){
-        _mode='leaf';_idx=0;
-        document.getElementById('lbe-mode-leaf').style.background='rgba(122,179,86,0.15)';
-        document.getElementById('lbe-mode-bloom').style.background='none';
+      function _setMode(m){
+        _mode=m;_idx=0;
+        var leafBtn=document.getElementById('lbe-mode-leaf');
+        var bloomBtn=document.getElementById('lbe-mode-bloom');
+        var vesselBtn=document.getElementById('lbe-mode-vessel');
+        leafBtn.style.background=(m==='leaf'?'rgba(122,179,86,0.15)':'none');
+        bloomBtn.style.background=(m==='bloom'?'rgba(200,168,75,0.15)':'none');
+        vesselBtn.style.background=(m==='vessel'?'rgba(200,134,90,0.15)':'none');
         _render();
-      };
-      document.getElementById('lbe-mode-bloom').onclick=function(){
-        _mode='bloom';_idx=0;
-        document.getElementById('lbe-mode-bloom').style.background='rgba(200,168,75,0.15)';
-        document.getElementById('lbe-mode-leaf').style.background='none';
-        _render();
-      };
+      }
+      document.getElementById('lbe-mode-leaf').onclick=function(){_setMode('leaf');};
+      document.getElementById('lbe-mode-bloom').onclick=function(){_setMode('bloom');};
+      document.getElementById('lbe-mode-vessel').onclick=function(){_setMode('vessel');};
       _render();
       }catch(e){alert('Leaf/Bloom Editor error: '+e.message);}
     },
