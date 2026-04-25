@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.11';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12967,12 +12967,22 @@ document.addEventListener('keydown', function(e) {
     var s = '';
     // set-103-8: Per-pot soil line — matches body width exactly
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
-    // Indices 1, 2, 37, 58, 59 set to 35/35 (zero-length, invisible) — these
-    // pots have custom soil rendering and the generic soil line would conflict
-    // (skillet, egg carton have their own soil) or peek above a narrow
-    // opening (spire vase, tire, lamp).
-    var soilL = [20, 35, 35, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 35, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 35, 35];
-    var soilR = [50, 35, 35, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 35, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 35, 35];
+    // Indices muted to 35/35 (zero-length, invisible) per pot audit
+    // (project_pot_audit_apr25.md). Reasons grouped:
+    //   1 Skillet, 37 Egg Carton — own custom soil rendering
+    //   2 Spire Vase, 58 Tire, 59 Lamp — narrow opening, line peeks above
+    //   23 Book, 24 Birdhouse, 26 Mailbox — no soil cavity (already 35/35)
+    //   4 Hanging — small pot, line disproportionate
+    //   7 Terrarium — line draws across sealed glass globe
+    //   9 Top Hat — line sits ABOVE the brim
+    //   16 Gravestone — line floats over RIP text
+    //   22 Treasure Chest — line draws over chest top
+    //   35 Coconut Shell — bumpy lip conflicts with line
+    //   47 Gramophone Horn — line floats inside horn bell
+    //   48 Bonsai Dish — dish only 5px tall, line ABOVE rim
+    //   57 Philosopher's Vessel — line below cork at y=78
+    var soilL = [20, 35, 35, 15, 35, 28, 25, 35, 23, 35, 18, 25, 25, 24, 17, 20, 35, 22, 30, 22, 21, 29, 35, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 35, 18, 35, 24, 23, 24, 16, 22, 20, 24, 26, 22, 35, 35, 25, 22, 22, 20, 24, 22, 26, 28, 35, 35, 35];
+    var soilR = [50, 35, 35, 55, 35, 42, 45, 35, 47, 35, 52, 45, 41, 46, 46, 50, 35, 48, 40, 48, 49, 41, 35, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 35, 52, 35, 46, 47, 46, 54, 48, 45, 46, 44, 48, 35, 35, 45, 48, 48, 50, 46, 48, 44, 42, 35, 35, 35];
     var si = (p === 15) ? 15 : (p < 60 ? p : p % 71);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
