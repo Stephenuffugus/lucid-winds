@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12926,6 +12926,67 @@ document.addEventListener('keydown', function(e) {
       case 19: // Barrel — back rim drawn BEFORE stem; body + bands stay in renderPot AFTER stem
         s += '<ellipse cx="35" cy="78.2" rx="13.0" ry="1.7" fill="'+rim+'"/>';
         break;
+      case 47: // Gramophone Horn — full body in renderPotBack so stem overlays back of bell. Soil + front rim arc in renderPot AFTER stem.
+        // Drop shadow on ground
+        s += '<ellipse cx="35" cy="92.6" rx="14" ry="0.7" fill="rgba(0,0,0,0.45)"/>';
+        // AO contact crease at stand base (3:1 stack)
+        s += '<ellipse cx="35" cy="91.8" rx="9" ry="0.55" fill="rgba(0,0,0,0.40)"/>';
+        // STAND — wooden box base
+        s += '<rect x="28.5" y="88.5" width="13" height="3.5" rx="0.4" fill="#3d2818"/>';
+        s += '<rect x="28.5" y="88.5" width="13" height="3.5" rx="0.4" fill="none" stroke="#1a0f06" stroke-width="0.4"/>';
+        // Wood grain on stand (Q-curves, not straight, per botanical agent)
+        s += '<path d="M29.5,89.5 Q35,89.3 41,89.5" stroke="#5a3a1a" stroke-width="0.25" fill="none" opacity="0.6"/>';
+        s += '<path d="M29.5,90.5 Q35,90.7 41,90.5" stroke="#5a3a1a" stroke-width="0.25" fill="none" opacity="0.45"/>';
+        s += '<path d="M29.5,91.5 Q35,91.3 41,91.5" stroke="#5a3a1a" stroke-width="0.2" fill="none" opacity="0.35"/>';
+        // Stand top edge highlight (cream, not white)
+        s += '<line x1="29.5" y1="88.7" x2="40.5" y2="88.7" stroke="#a07050" stroke-width="0.25" opacity="0.6"/>';
+        // BRASS MOUNT FITTING (where horn attaches to stand)
+        s += '<rect x="31" y="86.5" width="8" height="2.5" rx="0.4" fill="#b8954a"/>';
+        s += '<rect x="31" y="86.5" width="8" height="2.5" rx="0.4" fill="none" stroke="#6b4f1f" stroke-width="0.3"/>';
+        // Brass mount highlight (separate cream sliver)
+        s += '<rect x="31.5" y="86.7" width="7" height="0.4" fill="#f5ecd6" opacity="0.7"/>';
+        // Brass mount core shadow at bottom
+        s += '<rect x="31" y="88.6" width="8" height="0.4" fill="#3a2a0c" opacity="0.55"/>';
+        // Decorative brass screws on mount
+        s += '<circle cx="32.5" cy="87.7" r="0.35" fill="#6b4f1f"/>';
+        s += '<circle cx="37.5" cy="87.7" r="0.35" fill="#6b4f1f"/>';
+        s += '<circle cx="32.4" cy="87.6" r="0.15" fill="#f5ecd6" opacity="0.7"/>';
+        s += '<circle cx="37.4" cy="87.6" r="0.15" fill="#f5ecd6" opacity="0.7"/>';
+        // BELL BODY — flared horn shape from throat to rim (5-stop brass gradient via stacked overlays)
+        // Base brass fill
+        s += '<path d="M31,86.5 C27,82 19,79.5 16,78.2 L54,78.2 C51,79.5 43,82 39,86.5 Z" fill="#b8954a"/>';
+        // Form shadow (left side, where light terminator falls)
+        s += '<path d="M31,86.5 C27,82 19,79.5 16,78.2 L21,78.2 C21,80.5 25,83 29,86.5 Z" fill="#6b4f1f" opacity="0.55"/>';
+        // Core shadow at left edge (terminator)
+        s += '<path d="M16,78.2 C18,80 22,82 26,85" stroke="#3a2a0c" stroke-width="1.0" fill="none" opacity="0.45"/>';
+        // Right side warm midtone band (where light wraps)
+        s += '<path d="M54,78.2 C52,80 46,82 41,85" stroke="#d4a85e" stroke-width="0.8" fill="none" opacity="0.6"/>';
+        // Big diffuse specular highlight (cream sliver, upper-right per Redoute convention)
+        s += '<path d="M44,78.5 C47,79 49,79.5 51,79.8" stroke="#f5ecd6" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.85"/>';
+        // Small sharp pickup highlight
+        s += '<ellipse cx="48" cy="79.2" rx="1.6" ry="0.35" fill="#fff8e0" opacity="0.85"/>';
+        // Secondary tiny pickup
+        s += '<circle cx="50" cy="79.5" r="0.3" fill="#ffffff" opacity="0.7"/>';
+        // Bounce light from below (rim crescent on far right)
+        s += '<path d="M50,80 Q48,82.5 44,84" stroke="#e8c878" stroke-width="0.5" fill="none" opacity="0.5"/>';
+        // Inner ribs (the horn's internal flare lines, slightly curved Q-paths)
+        s += '<path d="M21,78.4 Q24,82 27,86" stroke="#6b4f1f" stroke-width="0.3" fill="none" opacity="0.5"/>';
+        s += '<path d="M27,78.4 Q28.5,82 29.5,86.2" stroke="#6b4f1f" stroke-width="0.3" fill="none" opacity="0.5"/>';
+        s += '<path d="M43,78.4 Q41.5,82 40.5,86.2" stroke="#6b4f1f" stroke-width="0.3" fill="none" opacity="0.5"/>';
+        s += '<path d="M49,78.4 Q46,82 43,86" stroke="#6b4f1f" stroke-width="0.3" fill="none" opacity="0.5"/>';
+        // BACK ARC of bell rim (upper half ellipse, drawn BEFORE stem)
+        s += '<path d="M16,78 A19,2.5 0 0,0 54,78 Z" fill="#b8954a"/>';
+        s += '<path d="M16,78 A19,2.5 0 0,0 54,78" fill="none" stroke="#3a2a0c" stroke-width="0.45"/>';
+        // Back rim cream highlight (light from above)
+        s += '<path d="M19,77.4 Q35,75.5 51,77.4" stroke="#f5ecd6" stroke-width="0.6" fill="none" opacity="0.65"/>';
+        // Back rim terminator inset (Hollow Knight trick)
+        s += '<path d="M16.5,77.95 A18.5,2.4 0 0,0 53.5,77.95" fill="none" stroke="#3a2a0c" stroke-width="0.5" opacity="0.35"/>';
+        // Inner bell darkness (visible behind stem at the back of the bell)
+        s += '<ellipse cx="35" cy="78" rx="17" ry="1.5" fill="#1a0f06"/>';
+        s += '<ellipse cx="35" cy="78" rx="14" ry="1.0" fill="#0a0500"/>';
+        // Reflected/bounce light on the far side of the inner bell
+        s += '<path d="M21,78 Q28,79.2 35,79.5" stroke="#8a6b3a" stroke-width="0.5" fill="none" opacity="0.4"/>';
+        break;
       case 22: // Treasure Chest — inner glow + LID drawn BEFORE stem so stem overlays open lid. Body + details stay in renderPot AFTER stem.
         // Inner glow (deep behind, illuminating chest interior)
         s += '<ellipse cx="35" cy="83" rx="14" ry="6" fill="#c8a84b" opacity="0.07"/>';
@@ -13847,15 +13908,19 @@ document.addEventListener('keydown', function(e) {
         s += '<rect x="44.5" y="77" width="2" height="2.5" rx="0.3" fill="#8A8A7A" opacity="0.4"/>';
         s += '<line x1="22.8" y1="79" x2="24.2" y2="90.5" stroke="rgba(240,235,216,0.14)" stroke-width="0.5" stroke-linecap="round"/>';
         break;
-      case 47: // Gramophone Horn — vintage phonograph bell as planter
-        s += '<path d="M20,78 Q15,80 16,84 Q18,88 28,90 Q32,90.5 36,90 L42,88 Q46,86 47,83 Q47,80 44,78 Z" fill="'+g+'"/>';
-        s += '<path d="M22,79 Q18,82 20,86 Q26,89 34,89 L38,87 Q42,85 43,82 Q43,80 40,79 Z" fill="#0d100c" opacity="0.15"/>';
-        s += '<path d="M20,78 Q32,75 44,78" fill="none" stroke="'+rim+'" stroke-width="1.6" stroke-linecap="round"/>';
-        s += '<path d="M36,90 Q40,91 44,90 L48,88 L48,92 L42,92 Q38,92 36,90 Z" fill="'+PALETTE[t.potColor]+'" opacity="0.7"/>';
-        s += '<line x1="44" y1="88.5" x2="44" y2="91.5" stroke="rgba(240,235,216,0.15)" stroke-width="0.3"/>';
-        s += '<path d="M25,80 Q30,82 34,80 Q38,78.5 41,80" fill="none" stroke="rgba(240,235,216,0.08)" stroke-width="0.3" stroke-linecap="round"/>';
-        s += '<path d="M23,83 Q30,85 36,83 Q40,81.5 42,83" fill="none" stroke="rgba(240,235,216,0.06)" stroke-width="0.3" stroke-linecap="round"/>';
-        s += '<path d="M22,79.5 Q20,82 22,85" fill="none" stroke="rgba(240,235,216,0.18)" stroke-width="0.6" stroke-linecap="round"/>';
+      case 47: // Gramophone Horn — FRONT portion only. Body + back rim arc + inner bell in renderPotBack BEFORE stem. Soil + front rim arc here AFTER stem.
+        // Soil patch where plant grows (drawn first in renderPot, covers stem terminus)
+        s += '<ellipse cx="35" cy="78.0" rx="13" ry="0.8" fill="#3a2a18"/>';
+        s += '<ellipse cx="29" cy="77.85" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="41" cy="78.05" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="35.5" cy="77.7" rx="0.4" ry="0.18" fill="#4a3220"/>';
+        // FRONT ARC of bell rim (lower half, drawn AFTER soil so the brass rim wraps the front of the soil mound)
+        s += '<path d="M16,78 A19,2.5 0 0,1 54,78 Z" fill="#b8954a"/>';
+        s += '<path d="M16,78 A19,2.5 0 0,1 54,78" fill="none" stroke="#3a2a0c" stroke-width="0.45"/>';
+        // Front rim sheen (warm cream line on the bottom edge of the brass rim)
+        s += '<path d="M19,80.0 Q35,80.4 51,80.0" stroke="#f5ecd6" stroke-width="0.45" fill="none" opacity="0.55"/>';
+        // Front rim core shadow (terminator, deep bronze)
+        s += '<path d="M19,80.4 Q35,80.7 51,80.4" stroke="#3a2a0c" stroke-width="0.35" fill="none" opacity="0.45"/>';
         break;
       case 48: // Bonsai Dish — shallow rectangular ceramic tray with feet
         s += '<rect x="17" y="79" width="36" height="5" rx="1" fill="'+g+'"/>';
