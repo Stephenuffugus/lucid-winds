@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.27';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13072,8 +13072,50 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="35" cy="78" rx="13" ry="2.5" fill="'+rim+'"/>';
         s += '<ellipse cx="35" cy="78" rx="13" ry="2.5" fill="none" stroke="#2D1810" stroke-width="0.5"/>';
         break;
-      case 1: // Cast Iron Skillet — only drop shadow stays in renderPotBack. Everything else moved to renderPot so the entire pan body draws AFTER stem and the rim/back wall cover the stem from above (stem appears to descend INTO the pan).
-        s += '<ellipse cx="37" cy="82.6" rx="22" ry="0.55" fill="rgba(0,0,0,0.42)"/>';
+      case 1: // Cast Iron Skillet — full body + back arc (sweep=1) + cooking surface + brown soil all in renderPotBack BEFORE stem (stem lays OVER brown, overlays back rim). Front arc in renderPot AFTER stem (stem UNDER front rim).
+        // Drop shadow + AO 3-stack at base contact (extended right for handle)
+        s += '<ellipse cx="37" cy="82.8" rx="22" ry="0.55" fill="rgba(0,0,0,0.42)"/>';
+        s += '<ellipse cx="35" cy="82.5" rx="20" ry="0.3" fill="rgba(0,0,0,0.55)"/>';
+        // Pan side wall — flat-bottom rect (Bonsai Dish height)
+        s += '<rect x="15" y="78" width="40" height="4" rx="0.5" fill="#1a1a1a"/>';
+        // Side wall vertical ribs (cast metal hint)
+        s += '<path d="M20,79 L20,81.5 M27,79 L27,81.7 M35,79 L35,81.8 M43,79 L43,81.7 M50,79 L50,81.5" stroke="#0a0a0a" stroke-width="0.3" fill="none"/>';
+        // Cast iron hammered texture — irregular dents (NOT on a grid)
+        s += '<ellipse cx="22" cy="80" rx="0.8" ry="0.4" fill="rgba(0,0,0,0.35)"/>';
+        s += '<ellipse cx="30" cy="80.7" rx="0.7" ry="0.35" fill="rgba(0,0,0,0.30)"/>';
+        s += '<ellipse cx="38" cy="79.5" rx="0.9" ry="0.4" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="46" cy="80.5" rx="0.7" ry="0.35" fill="rgba(0,0,0,0.30)"/>';
+        // Side wall cream highlight (light wraps over the top edge of the wall)
+        s += '<line x1="16" y1="78.3" x2="54" y2="78.3" stroke="#f5ecd6" stroke-width="0.25" opacity="0.35"/>';
+        // Bottom edge shadow (terminator at base)
+        s += '<path d="M16,81.7 Q35,82.1 54,81.7" stroke="rgba(40,20,5,0.55)" stroke-width="0.45" fill="none"/>';
+        // HANDLE — short tapered bar extending RIGHT
+        s += '<rect x="54" y="79.4" width="1.5" height="2.5" fill="#262626"/>';
+        s += '<path d="M55,79.9 L62,80.2 Q64,80.4 64,80.95 Q64,81.5 62,81.7 L55,82 Z" fill="#1a1a1a"/>';
+        s += '<path d="M55,79.9 L62,80.2 Q64,80.4 64,80.95 Q64,81.5 62,81.7 L55,82" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.25"/>';
+        // Hanging hole at handle tip
+        s += '<ellipse cx="62.2" cy="80.95" rx="0.5" ry="0.4" fill="#050505"/>';
+        // Handle cream sheen (top edge highlight)
+        s += '<path d="M56,80.3 L61,80.5" stroke="#f5ecd6" stroke-width="0.3" opacity="0.45" fill="none"/>';
+        // BACK ARC of pan rim (upper half via sweep=1, drawn before stem so stem overlays back rim)
+        s += '<path d="M15,78 A20,1.5 0 0,1 55,78 Z" fill="#262626"/>';
+        s += '<path d="M15,78 A20,1.5 0 0,1 55,78" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.45"/>';
+        // Back-rim cream highlight (light from above)
+        s += '<ellipse cx="35" cy="77.4" rx="18" ry="0.4" fill="#f5ecd6" opacity="0.55"/>';
+        // Terminator inset stroke (Hollow Knight prop trick)
+        s += '<path d="M15,78 A19.5,1.45 0 0,1 55,78" fill="none" stroke="rgba(40,20,5,0.30)" stroke-width="0.4"/>';
+        // COOKING SURFACE (recessed dark inner ellipse)
+        s += '<ellipse cx="35" cy="78.1" rx="17.5" ry="1.2" fill="#0d0d0d"/>';
+        // Center deeper darkness
+        s += '<ellipse cx="35" cy="78.2" rx="14.5" ry="1.0" fill="#050505"/>';
+        // Inner reflected light (S-curve bounce on far side of cooking surface)
+        s += '<path d="M19,77.7 Q26,77.3 33,77.2" stroke="rgba(140,110,70,0.35)" stroke-width="0.4" fill="none"/>';
+        // BROWN soil — drawn BEFORE stem so stem lays OVER it
+        s += '<ellipse cx="35" cy="78.0" rx="13" ry="0.85" fill="#3a2a18"/>';
+        s += '<ellipse cx="29" cy="77.85" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="32.5" cy="78.15" rx="0.4" ry="0.18" fill="#4a3220"/>';
+        s += '<ellipse cx="38" cy="77.95" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="41" cy="78.2" rx="0.4" ry="0.18" fill="#4a3220"/>';
         break;
       case 58: // Tractor Tire — back rim + sidewall + dark cavity + BACK-DIRT all draw behind stem
         // Drop shadow on ground
@@ -13153,33 +13195,14 @@ document.addEventListener('keydown', function(e) {
         // Front rim core shadow (terminator)
         s += '<path d="M20,79.75 Q35,80.05 50,79.75" stroke="rgba(40,20,5,0.40)" stroke-width="0.35" fill="none"/>';
         break;
-      case 1: // Cast Iron Skillet — FULL pan body drawn AFTER stem so the rim/wall covers the stem from above. Stem appears to enter the pan and disappear behind it.
-        // Pan rim ellipse — covers stem at y=76.5-79.5 (back wall covering stem from above)
-        s += '<ellipse cx="35" cy="78" rx="20" ry="1.5" fill="#262626"/>';
-        s += '<ellipse cx="35" cy="78" rx="20" ry="1.5" fill="none" stroke="#080808" stroke-width="0.45"/>';
-        // Pan side wall (flat-bottom rect, Bonsai Dish style)
-        s += '<rect x="15" y="78" width="40" height="4" rx="0.5" fill="#1a1a1a"/>';
-        // Bottom edge shadow
-        s += '<line x1="15.5" y1="81.7" x2="54.5" y2="81.7" stroke="rgba(0,0,0,0.55)" stroke-width="0.5"/>';
-        // Vertical wall ribs (cast metal hint)
-        s += '<path d="M20,79 L20,81.5 M27,79 L27,81.7 M35,79 L35,81.8 M43,79 L43,81.7 M50,79 L50,81.5" stroke="#0a0a0a" stroke-width="0.3" fill="none"/>';
-        // HANDLE — short tapered bar extending RIGHT
-        s += '<rect x="54" y="79.4" width="1.5" height="2.5" fill="#262626"/>';
-        s += '<path d="M55,79.9 L62,80.2 Q64,80.4 64,80.95 Q64,81.5 62,81.7 L55,82 Z" fill="#1a1a1a"/>';
-        s += '<path d="M55,79.9 L62,80.2 Q64,80.4 64,80.95 Q64,81.5 62,81.7 L55,82" fill="none" stroke="#080808" stroke-width="0.25"/>';
-        s += '<ellipse cx="62.2" cy="80.95" rx="0.5" ry="0.4" fill="#050505"/>';
-        s += '<path d="M56,80.3 L61,80.5" stroke="rgba(140,135,125,0.32)" stroke-width="0.25" fill="none"/>';
-        // Back-rim highlight
-        s += '<ellipse cx="35" cy="77.6" rx="18" ry="0.35" fill="rgba(160,155,150,0.25)"/>';
-        // Cooking surface (recessed dark inner ellipse)
-        s += '<ellipse cx="35" cy="78.1" rx="17.5" ry="1.2" fill="#0d0d0d"/>';
-        s += '<ellipse cx="35" cy="78.2" rx="14.5" ry="1.0" fill="#050505"/>';
-        // Soil patch where plant grows — top edge brought UP to y=76.5 so the stem touches the brown (stem visible until rim covers at y=76.5; soil top now meets that exact line)
-        s += '<ellipse cx="35" cy="77.2" rx="12" ry="0.7" fill="#3a2a18"/>';
-        s += '<ellipse cx="30" cy="77.05" rx="0.5" ry="0.2" fill="#5a4028"/>';
-        s += '<ellipse cx="40" cy="77.2" rx="0.5" ry="0.2" fill="#5a4028"/>';
-        // Front-rim sheen (subtle warm metallic line on bottom of front rim)
-        s += '<path d="M18,79.2 Q35,79.5 52,79.2" stroke="rgba(80,72,64,0.35)" stroke-width="0.35" fill="none"/>';
+      case 1: // Cast Iron Skillet — FRONT portion only. Body, ribs, handle, back rim arc, cooking surface, brown soil all in renderPotBack. Front rim arc here AFTER stem.
+        // FRONT ARC of pan rim (lower half via sweep=0, covers stem cap)
+        s += '<path d="M15,78 A20,1.5 0 0,0 55,78 Z" fill="#262626"/>';
+        s += '<path d="M15,78 A20,1.5 0 0,0 55,78" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.45"/>';
+        // Front-rim cream sheen
+        s += '<path d="M18,79.2 Q35,79.5 52,79.2" stroke="#f5ecd6" stroke-width="0.4" fill="none" opacity="0.45"/>';
+        // Front-rim core shadow (terminator)
+        s += '<path d="M18,79.45 Q35,79.75 52,79.45" stroke="rgba(40,20,5,0.50)" stroke-width="0.35" fill="none"/>';
         break;
       case 2: // Spire Vase — tall slender vase with narrow neck, bulged body, tapered foot
         // Drop shadow
