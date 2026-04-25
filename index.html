@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.80';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.81';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7231,12 +7231,24 @@ window._addSwitchTabHook = function(fn){
       h+=_buildSelect('ct-comp',_compNames,_compIdx);
 
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">AURA</div>';
+      h+='<div style="display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:0.2rem;">';
+      h+='<button onclick="window._ctAuraPrev()" style="width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:rgba(122,179,86,0.08);color:#7ab356;font-size:1rem;cursor:pointer;">&#9664;</button>';
+      h+='<button onclick="window._ctAuraNext()" style="width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:rgba(122,179,86,0.08);color:#7ab356;font-size:1rem;cursor:pointer;">&#9654;</button>';
+      h+='</div>';
       h+=_buildSelect('ct-aura',_auraNames,_auraIdx);
 
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">SUBSTRATE</div>';
+      h+='<div style="display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:0.2rem;">';
+      h+='<button onclick="window._ctBasePrev()" style="width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:rgba(122,179,86,0.08);color:#7ab356;font-size:1rem;cursor:pointer;">&#9664;</button>';
+      h+='<button onclick="window._ctBaseNext()" style="width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:rgba(122,179,86,0.08);color:#7ab356;font-size:1rem;cursor:pointer;">&#9654;</button>';
+      h+='</div>';
       h+=_buildSelect('ct-base',_baseNames,_baseIdx);
 
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">STEM TYPE <span style="color:var(--cream)">(<span id="ct-stem-val">0</span>/23)</span></div>';
+      h+='<div style="display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:0.2rem;">';
+      h+='<button onclick="window._ctStemPrev()" style="width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:rgba(122,179,86,0.08);color:#7ab356;font-size:1rem;cursor:pointer;">&#9664;</button>';
+      h+='<button onclick="window._ctStemNext()" style="width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:rgba(122,179,86,0.08);color:#7ab356;font-size:1rem;cursor:pointer;">&#9654;</button>';
+      h+='</div>';
       h+='<input type="range" id="ct-stem" min="0" max="23" value="0" style="width:100%;accent-color:#7ab356;">';
 
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">LEAF COUNT <span style="color:var(--cream)">(<span id="ct-lc-val">7</span>, 5-10)</span></div>';
@@ -7342,6 +7354,37 @@ window._addSwitchTabHook = function(fn){
         _render();
       };
       window._ctFlower=function(){_hasFlower=!_hasFlower;_render();};
+      // Aura cyclers — skip None slots 0-4
+      window._ctAuraPrev=function(){
+        _auraIdx--;if(_auraIdx<5)_auraIdx=_auraNames.length-1;
+        auraSel.value=_auraIdx;_render();
+      };
+      window._ctAuraNext=function(){
+        _auraIdx++;if(_auraIdx>=_auraNames.length)_auraIdx=5;
+        auraSel.value=_auraIdx;_render();
+      };
+      // Substrate cyclers
+      window._ctBasePrev=function(){
+        _baseIdx--;if(_baseIdx<0)_baseIdx=_baseNames.length-1;
+        baseSel.value=_baseIdx;_render();
+      };
+      window._ctBaseNext=function(){
+        _baseIdx++;if(_baseIdx>=_baseNames.length)_baseIdx=0;
+        baseSel.value=_baseIdx;_render();
+      };
+      // Stem cyclers
+      window._ctStemPrev=function(){
+        _stemIdx--;if(_stemIdx<0)_stemIdx=23;
+        stemSlider.value=_stemIdx;
+        document.getElementById('ct-stem-val').textContent=_stemIdx;
+        _render();
+      };
+      window._ctStemNext=function(){
+        _stemIdx++;if(_stemIdx>23)_stemIdx=0;
+        stemSlider.value=_stemIdx;
+        document.getElementById('ct-stem-val').textContent=_stemIdx;
+        _render();
+      };
 
       // Initial render
       setTimeout(_render,100);
