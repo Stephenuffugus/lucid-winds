@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.21';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12901,7 +12901,7 @@ document.addEventListener('keydown', function(e) {
     var p = (t.pot || 0) % 60;
     var s = '';
     switch (p) {
-      case 9: // Top Hat — only the brim + crown body + satin band drawn BEFORE stem. Crown rim opening + soil drawn AFTER stem in renderPot so the front of the rim overlays the stem and it looks like the stem goes INSIDE the hat.
+      case 9: // Top Hat — back furniture + BACK ARC of crown rim drawn BEFORE stem so stem overlays back wall. Brown soil + FRONT ARC drawn in renderPot AFTER stem, brown covers stem terminus.
         s += '<ellipse cx="35" cy="93" rx="17" ry="0.7" fill="rgba(0,0,0,0.40)"/>';
         s += '<ellipse cx="35" cy="91" rx="16" ry="2.0" fill="#1a1a1a"/>';
         s += '<ellipse cx="35" cy="91" rx="16" ry="2.0" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>';
@@ -12912,7 +12912,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M32,79.2 L31.8,90.5" stroke="rgba(255,255,255,0.05)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '<rect x="26.3" y="85.5" width="17.4" height="2.2" rx="0.3" fill="#e8e0d0"/>';
         s += '<path d="M27,86.3 Q35,86.0 43,86.3" stroke="rgba(255,255,255,0.5)" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
-        // Star sparkle (decorative, on the side of the crown — doesn't overlap stem)
+        // BACK ARC of crown rim (upper half ellipse, drawn BEFORE stem so stem overlays it)
+        s += '<path d="M26.5,78.5 A8.5,1.0 0 0,0 43.5,78.5 Z" fill="#1a1a1a"/>';
+        s += '<path d="M26.5,78.5 A8.5,1.0 0 0,0 43.5,78.5" fill="none" stroke="#2a2a2a" stroke-width="0.3"/>';
+        // Dark interior visible behind the back arc (depth at the back of the opening)
+        s += '<ellipse cx="35" cy="78.3" rx="7.5" ry="0.5" fill="#0a0a0a"/>';
+        // Star sparkle (decorative)
         s += '<path d="M40,84 l0.5,-1 l0.5,1 l-1,0 Z" fill="rgba(255,255,255,0.2)"/>';
         break;
       case 17: // Woven Basket — back rim drawn BEFORE stem so stem overlays back of rim; body + crosshatch stay in renderPot AFTER stem
@@ -13175,15 +13180,17 @@ document.addEventListener('keydown', function(e) {
         s += '<rect x="23" y="78" width="24" height="14" rx="3" fill="'+g+'"/>';
         s += '<ellipse cx="35" cy="78" rx="12" ry="2" fill="'+rim+'"/>';
         break;
-      case 9: // Top Hat — full crown rim + opening + soil drawn AFTER stem so the rim overlays the stem and it looks like the stem goes INSIDE the hat
-        // Full crown rim ellipse (covers stem at y=77.5-79.5)
-        s += '<ellipse cx="35" cy="78.5" rx="8.5" ry="1.0" fill="#1a1a1a"/>';
-        s += '<ellipse cx="35" cy="78.5" rx="8.5" ry="1.0" fill="none" stroke="#2a2a2a" stroke-width="0.3"/>';
-        // Opening dark interior (smaller, inside rim — visible as the dark hole the stem descends into)
-        s += '<ellipse cx="35" cy="78.6" rx="7.5" ry="0.85" fill="#0a0a0a"/>';
-        s += '<ellipse cx="35" cy="78.8" rx="6.5" ry="0.65" fill="#000000"/>';
-        // Soil patch inside opening
-        s += '<ellipse cx="35" cy="78.55" rx="5.8" ry="0.5" fill="#3a2a18"/>';
+      case 9: // Top Hat — FRONT portion. Brown soil drawn FIRST in renderPot AFTER stem so brown covers stem terminus (Director's "sit under brown layer for depth"). Then FRONT ARC of crown rim drawn LAST to wrap the front of the soil.
+        // Brown soil patch — covers stem terminus
+        s += '<ellipse cx="35" cy="78.0" rx="6.5" ry="0.6" fill="#3a2a18"/>';
+        // Soil flecks (subtle texture)
+        s += '<ellipse cx="32.5" cy="77.85" rx="0.4" ry="0.18" fill="#5a4028"/>';
+        s += '<ellipse cx="37.5" cy="78.0" rx="0.4" ry="0.18" fill="#5a4028"/>';
+        // FRONT ARC of crown rim (lower half, drawn AFTER soil so rim wraps the front of the soil mound)
+        s += '<path d="M26.5,78.5 A8.5,1.0 0 0,1 43.5,78.5 Z" fill="#1a1a1a"/>';
+        s += '<path d="M26.5,78.5 A8.5,1.0 0 0,1 43.5,78.5" fill="none" stroke="#2a2a2a" stroke-width="0.3"/>';
+        // Front-rim sheen (subtle warm line on the bottom edge of the rim)
+        s += '<path d="M28.5,79.3 Q35,79.5 41.5,79.3" stroke="rgba(80,72,64,0.4)" stroke-width="0.25" fill="none"/>';
         break;
       case 10: // Lampshade — inverted tapered shade with decorative lines
         s += '<path d="M18,78 L30,92 L40,92 L52,78 Z" fill="'+g+'"/>';
