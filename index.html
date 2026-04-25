@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.67';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.68';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -26668,17 +26668,17 @@ document.addEventListener('keydown', function(e) {
         break;
     }
 
-    // ── UNIVERSAL BLOOM HIGHLIGHT + SHADOW ──
-    // Top-left specular highlight crescent — gives 3D depth to every bloom
+    // ── UNIVERSAL BLOOM HIGHLIGHT + SHADOW (master pass cream/warm) ──
+    // Top-left diffuse cream form-light — gives 3D depth to every bloom
     var _hlR = fs * 1.1;
     s += '<ellipse cx="'+(fx - fs*0.25)+'" cy="'+(fy - fs*0.35)+'" rx="'+(_hlR*0.6)+'" ry="'+(_hlR*0.4)+'"'
-       + ' fill="rgba(255,255,255,0.12)" opacity="'+bloomOp+'"/>';
-    // Tight bright highlight core
+       + ' fill="#f5ecd6" opacity="'+(bloomOp*0.14)+'"/>';
+    // Tight cream specular pickup (warm, never pure white)
     s += '<ellipse cx="'+(fx - fs*0.15)+'" cy="'+(fy - fs*0.25)+'" rx="'+(_hlR*0.25)+'" ry="'+(_hlR*0.18)+'"'
-       + ' fill="rgba(255,255,255,0.18)" opacity="'+bloomOp+'"/>';
-    // Bottom shadow — soft dark crescent under the bloom
+       + ' fill="#fff8e0" opacity="'+(bloomOp*0.20)+'"/>';
+    // Bottom warm-shifted dark shadow (master pass: warm, not pure black)
     s += '<ellipse cx="'+(fx + fs*0.1)+'" cy="'+(fy + fs*0.4)+'" rx="'+(_hlR*0.55)+'" ry="'+(_hlR*0.22)+'"'
-       + ' fill="rgba(0,0,0,0.15)" opacity="'+bloomOp+'"/>';
+       + ' fill="rgba(40,20,5,0.30)" opacity="'+(bloomOp*0.65)+'"/>';
 
     return s;
   }
