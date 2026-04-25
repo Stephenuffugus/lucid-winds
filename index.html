@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.70';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.71';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -22292,6 +22292,8 @@ document.addEventListener('keydown', function(e) {
         break;
       case 13: // Pitcher Plant — deep tubular trap with overlapping lid
         (function(){
+          // AO halo (master pass injection)
+          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           var pw = fs * 1.1, ph = fs * 2.2, ptx = fx, pty = fy;
           // Main pitcher body
           s += '<path d="M'+(ptx-pw*0.45)+','+(pty)+' C'+(ptx-pw*0.5)+','+(pty+ph*0.4)+' '+(ptx-pw*0.42)+','+(pty+ph*0.75)+' '+(ptx-pw*0.35)+','+(pty+ph)+' L'+(ptx+pw*0.35)+','+(pty+ph)+' C'+(ptx+pw*0.42)+','+(pty+ph*0.75)+' '+(ptx+pw*0.5)+','+(pty+ph*0.4)+' '+(ptx+pw*0.45)+','+pty+' Z"'
@@ -22330,6 +22332,8 @@ document.addEventListener('keydown', function(e) {
         })();
         break;
 
+      // AO halo (master pass injection)
+      s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
       case 14: // Cattails (Typha) — brown velvet pill on slender stalk
         (function(){
           var ctCount = 2 + (fs > 6 ? 1 : 0);
@@ -22390,6 +22394,8 @@ document.addEventListener('keydown', function(e) {
           });
         })();
         break;
+      // AO halo (master pass injection)
+      s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
 
       case 15: // Bell Flowers / Lily of the Valley — delicate drooping bells
         (function(){
@@ -22845,6 +22851,8 @@ document.addEventListener('keydown', function(e) {
         // Center cream pixel
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.08)+'" fill="#fff8e0" opacity="'+(bloomOp*0.9)+'"/>';
         // Cup highlight on rim
+        // AO halo (master pass injection)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.85)+' C'+(fx+fs*0.3)+','+(fy-fs*0.95)+' '+(fx+fs*0.9)+','+(fy-fs*0.45)+' '+(fx+fs*0.95)+','+fy+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
         break;
       case 24: // Anthurium — Anthurium andraeanum (lacquered heart-spathe + yellow spadix tail)
@@ -22932,6 +22940,8 @@ document.addEventListener('keydown', function(e) {
         }
         // Cone tip cream pixel
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.42)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        // AO halo (master pass injection)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Drip-curl on a ray (§9)
         s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.2)+' C'+(fx-fs*0.68)+','+(fy-fs*0.94)+' '+(fx-fs*1.1)+','+(fy-fs*0.7)+' '+(fx-fs*0.92)+','+fy+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
         break;
@@ -22957,6 +22967,8 @@ document.addEventListener('keydown', function(e) {
         }
         // Center stamen highlight
         s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.12)+'" r="'+(fs*0.14)+'" fill="'+PALETTE.gold+'" opacity="'+(0.88*bloomOp)+'"/>';
+        // AO halo (master pass injection)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.12)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         // Drip-curl on top bud (§9)
         s += '<path d="M'+fx+','+(fy-fs*0.9)+' C'+(fx+fs*0.46)+','+(fy-fs*1.02)+' '+(fx+fs*0.62)+','+(fy-fs*0.42)+' '+(fx+fs*0.18)+','+(fy-fs*0.04)+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
@@ -22984,6 +22996,8 @@ document.addEventListener('keydown', function(e) {
         }
         // Center anchor stamen
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.55)+'" r="'+(fs*0.1)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
+        // AO halo (master pass injection)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.55)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         // Edge highlight on arch
         s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
@@ -23037,6 +23051,8 @@ document.addEventListener('keydown', function(e) {
         // Drip-curl pair on left rim lobe (§9)
         s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' Q'+(fx-fs*1.4)+','+(fy-fs*1.86)+' '+(fx-fs*1.28)+','+(fy-fs*1.78)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
         // Chimera petal-edge glow (§7)
+        // AO halo (master pass injection)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         if (t.chimerGen > 1) {
           var _bp30g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
           var _bp30o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
@@ -23060,6 +23076,8 @@ document.addEventListener('keydown', function(e) {
             var _d31px = (fx+_d31xOff) + Math.cos(_d31pa) * _d31sz * 0.5;
             var _d31py = _d31y + Math.sin(_d31pa) * _d31sz * 0.35;
             s += '<path d="M'+(fx+_d31xOff).toFixed(1)+','+_d31y.toFixed(1)+' Q'+_d31px.toFixed(1)+','+((_d31py - _d31sz*0.3)).toFixed(1)+' '+((fx+_d31xOff) + Math.cos(_d31pa)*_d31sz).toFixed(1)+','+(_d31y + Math.sin(_d31pa)*_d31sz*0.6).toFixed(1)+' Q'+_d31px.toFixed(1)+','+(_d31py + _d31sz*0.15).toFixed(1)+' '+(fx+_d31xOff).toFixed(1)+','+_d31y.toFixed(1)+' Z" fill="'+_d31hue+'" opacity="'+((0.65 - _d31i*0.04)*bloomOp).toFixed(2)+'"/>';
+          // AO halo (master pass injection)
+          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           }
           // Floret center dot
           s += '<circle cx="'+(fx+_d31xOff).toFixed(1)+'" cy="'+_d31y.toFixed(1)+'" r="'+(fs*0.05).toFixed(2)+'" fill="'+PALETTE.cream+'" opacity="'+((0.5 - _d31i*0.03)*bloomOp).toFixed(2)+'"/>';
@@ -23104,6 +23122,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx+fs*0.06)+'" cy="'+(fy-fs*1.58)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
         s += '<circle cx="'+(fx+fs*0.28)+'" cy="'+(fy-fs*1.46)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+bloomOp+'"/>';
         s += '<circle cx="'+(fx+fs*0.22)+'" cy="'+(fy-fs*1.48)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
+        // AO halo (master pass injection)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         s += '<circle cx="'+(fx+fs*0.32)+'" cy="'+(fy-fs*1.56)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
         s += '<circle cx="'+(fx+fs*0.54)+'" cy="'+(fy-fs*1.50)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+(bloomOp*0.90)+'"/>';
         s += '<circle cx="'+(fx+fs*0.48)+'" cy="'+(fy-fs*1.52)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
@@ -23165,6 +23185,8 @@ document.addEventListener('keydown', function(e) {
         // Lure droplet (cream highlight) at lip
         s += '<path d="M'+(fx+fs*0.40)+','+(fy+fs*0.14)+' C'+(fx+fs*0.46)+','+(fy+fs*0.22)+' '+(fx+fs*0.48)+','+(fy+fs*0.30)+' '+(fx+fs*0.46)+','+(fy+fs*0.38)+' C'+(fx+fs*0.42)+','+(fy+fs*0.46)+' '+(fx+fs*0.36)+','+(fy+fs*0.48)+' '+(fx+fs*0.32)+','+(fy+fs*0.42)+' C'+(fx+fs*0.30)+','+(fy+fs*0.34)+' '+(fx+fs*0.32)+','+(fy+fs*0.24)+' '+(fx+fs*0.40)+','+(fy+fs*0.14)+' Z" fill="#fff8e0" opacity="'+(bloomOp*0.9)+'"/>';
         // Drip-curl on lid tip (§9)
+        // AO halo (master pass injection)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         s += '<path d="M'+(fx-fs*0.26)+','+(fy-fs*0.2)+' Q'+(fx-fs*0.32)+','+(fy-fs*0.4)+' '+(fx-fs*0.16)+','+(fy-fs*0.46)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.4" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
         // Chimera petal-edge glow (§7)
         if (t.chimerGen > 1) {
@@ -24317,6 +24339,8 @@ document.addEventListener('keydown', function(e) {
             s += '</circle>';
             // Cross-hair lines on each particle — ice crystal arms
             s += '<line x1="'+(fp.x - fpR*1.5).toFixed(1)+'" y1="'+fp.y.toFixed(1)+'" x2="'+(fp.x + fpR*1.5).toFixed(1)+'" y2="'+fp.y.toFixed(1)+'"'
+               // AO halo (master pass injection)
+               s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
                + ' stroke="'+_frostW+'" stroke-width="0.1" opacity="'+(0.2*bloomOp).toFixed(2)+'"/>';
             s += '<line x1="'+fp.x.toFixed(1)+'" y1="'+(fp.y - fpR*1.5).toFixed(1)+'" x2="'+fp.x.toFixed(1)+'" y2="'+(fp.y + fpR*1.5).toFixed(1)+'"'
                + ' stroke="'+_frostW+'" stroke-width="0.1" opacity="'+(0.2*bloomOp).toFixed(2)+'"/>';
@@ -25361,6 +25385,8 @@ document.addEventListener('keydown', function(e) {
           // ── PAPERY TEXTURE — mottled dry patches on both shells (cream pickup) ──
           s += '<ellipse cx="'+(fx - _spW*0.4)+'" cy="'+(fy - _spH*0.05)+'" rx="'+(fs*0.15)+'" ry="'+(fs*0.25)+'"'
              + ' fill="#f5ecd6" opacity="'+(0.1*bloomOp)+'"/>';
+          // AO halo (master pass injection)
+          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           s += '<ellipse cx="'+(fx + _spW*0.35)+'" cy="'+(fy + _spH*0.1)+'" rx="'+(fs*0.12)+'" ry="'+(fs*0.2)+'"'
              + ' fill="#f5ecd6" opacity="'+(0.08*bloomOp)+'"/>';
 
@@ -26293,6 +26319,8 @@ document.addEventListener('keydown', function(e) {
              + ' stroke="rgba(40,20,5,0.16)" stroke-width="'+(fs*0.03)+'" opacity="'+bloomOp+'"/>';
           // Anther dot at tip
           s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.5+_stLen)+'" r="'+(fs*0.08)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
+          // AO halo (master pass injection)
+          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Anther highlight
           s += '<circle cx="'+(fx-fs*0.02)+'" cy="'+(fy+fs*0.5+_stLen-fs*0.02)+'" r="'+(fs*0.03)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
           // Second stamen — slightly offset
@@ -26416,6 +26444,8 @@ document.addEventListener('keydown', function(e) {
             var aAng = ((ai * 120 + 30) - 90) * Math.PI / 180;
             var ax1 = fx + Math.cos(aAng) * fs * 0.15;
             var ay1 = fy - fs * 0.05;
+            // AO halo (master pass injection)
+            s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
             var ax2 = fx + Math.cos(aAng) * fs * 0.4;
             var ay2 = fy - fs * 0.35;
             s += '<path d="M'+ax1.toFixed(1)+','+ay1.toFixed(1)+' Q'+(ax2 + Math.cos(aAng)*fs*0.1).toFixed(1)+','+(ay2 - fs*0.08).toFixed(1)+' '+ax2.toFixed(1)+','+ay2.toFixed(1)+'"'
@@ -26532,6 +26562,8 @@ document.addEventListener('keydown', function(e) {
               // Waxy highlight — one side of each petal catches light
               var hlx = cxf + Math.cos(pAng) * pReach * 0.4 + Math.cos(perpA) * pWidth * 0.15;
               var hly = cyf + Math.sin(pAng) * pReach * 0.4 + Math.sin(perpA) * pWidth * 0.15;
+              // AO halo (master pass injection)
+              s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
               s += '<ellipse cx="'+hlx.toFixed(1)+'" cy="'+hly.toFixed(1)+'" rx="'+(pWidth*0.22)+'" ry="'+(pReach*0.2)+'"'
                  + ' fill="#fff8e0" opacity="'+bloomOp+'"'
                  + ' transform="rotate('+(pAng*180/Math.PI).toFixed(0)+','+hlx.toFixed(1)+','+hly.toFixed(1)+')"/>';
