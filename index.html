@@ -7135,6 +7135,7 @@ window._addSwitchTabHook = function(fn){
       var _hash='';for(var i=0;i<64;i++)_hash+='0123456789abcdef'[Math.floor(Math.random()*16)];
       var _compIdx=20;var _auraIdx=0;var _baseIdx=0;var _sz=200;var _hasFlower=true;
       var _stemIdx=0;
+      var _leafCount=7;var _leafSize=11;var _leafSpread=9;
 
       // Companion names from TRAIT_BANK
       var _compNames=[];
@@ -7157,6 +7158,9 @@ window._addSwitchTabHook = function(fn){
         t.base=_baseIdx;
         t.hasFlower=_hasFlower;
         t.stem=_stemIdx;
+        t.leafCount=_leafCount;
+        t.leafSize=_leafSize;
+        t.leafSpread=_leafSpread;
         // Render with overridden traits
         var svg='';
         try{svg=window._generatePlantSVG(_hash,_sz,1.0,t);}catch(e){
@@ -7205,10 +7209,19 @@ window._addSwitchTabHook = function(fn){
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">SUBSTRATE</div>';
       h+=_buildSelect('ct-base',_baseNames,_baseIdx);
 
-      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">STEM TYPE (0-23)</div>';
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">STEM TYPE <span style="color:var(--cream)">(<span id="ct-stem-val">0</span>/23)</span></div>';
       h+='<input type="range" id="ct-stem" min="0" max="23" value="0" style="width:100%;accent-color:#7ab356;">';
 
-      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">PLANT SIZE</div>';
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">LEAF COUNT <span style="color:var(--cream)">(<span id="ct-lc-val">7</span>, 5-10)</span></div>';
+      h+='<input type="range" id="ct-lc" min="5" max="10" value="7" style="width:100%;accent-color:#7ab356;">';
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">LEAF SIZE <span style="color:var(--cream)">(<span id="ct-ls-val">11</span>, 8-14)</span></div>';
+      h+='<input type="range" id="ct-ls" min="8" max="14" value="11" style="width:100%;accent-color:#7ab356;">';
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">LEAF SPREAD <span style="color:var(--cream)">(<span id="ct-lsp-val">9</span>, 7-12)</span></div>';
+      h+='<input type="range" id="ct-lsp" min="7" max="12" value="9" style="width:100%;accent-color:#7ab356;">';
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">PLANT SIZE <span style="color:var(--cream)">(<span id="ct-size-val">200</span>px)</span></div>';
       h+='<input type="range" id="ct-size" min="120" max="300" value="200" style="width:100%;accent-color:#7ab356;">';
 
       h+='<div style="display:flex;gap:6px;margin-top:0.4rem;flex-wrap:wrap;">';
@@ -7227,11 +7240,18 @@ window._addSwitchTabHook = function(fn){
       var stemSlider=document.getElementById('ct-stem');
       var sizeSlider=document.getElementById('ct-size');
 
+      var lcSlider=document.getElementById('ct-lc');
+      var lsSlider=document.getElementById('ct-ls');
+      var lspSlider=document.getElementById('ct-lsp');
+
       compSel.onchange=function(){_compIdx=parseInt(this.value);_render();};
       auraSel.onchange=function(){_auraIdx=parseInt(this.value);_render();};
       baseSel.onchange=function(){_baseIdx=parseInt(this.value);_render();};
-      stemSlider.oninput=function(){_stemIdx=parseInt(this.value);_render();};
-      sizeSlider.oninput=function(){_sz=parseInt(this.value);_render();};
+      stemSlider.oninput=function(){_stemIdx=parseInt(this.value);document.getElementById('ct-stem-val').textContent=_stemIdx;_render();};
+      sizeSlider.oninput=function(){_sz=parseInt(this.value);document.getElementById('ct-size-val').textContent=_sz;_render();};
+      lcSlider.oninput=function(){_leafCount=parseInt(this.value);document.getElementById('ct-lc-val').textContent=_leafCount;_render();};
+      lsSlider.oninput=function(){_leafSize=parseInt(this.value);document.getElementById('ct-ls-val').textContent=_leafSize;_render();};
+      lspSlider.oninput=function(){_leafSpread=parseInt(this.value);document.getElementById('ct-lsp-val').textContent=_leafSpread;_render();};
 
       window._ctPrev=function(){
         _compIdx--;if(_compIdx<0)_compIdx=_compNames.length-1;
