@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.8';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.9';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12967,11 +12967,12 @@ document.addEventListener('keydown', function(e) {
     var s = '';
     // set-103-8: Per-pot soil line — matches body width exactly
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
-    // Indices 1, 58, 59 set to 35/35 (zero-length, invisible) — these pots have
-    // custom soil rendering and the generic soil line would conflict (skillet)
-    // or peek above a narrow opening (tire/lamp).
-    var soilL = [20, 35, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 35, 35];
-    var soilR = [50, 35, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 35, 35];
+    // Indices 1, 2, 58, 59 set to 35/35 (zero-length, invisible) — these pots
+    // have custom soil rendering and the generic soil line would conflict
+    // (skillet, trencher have their own soil) or peek above a narrow opening
+    // (spire vase, tire, lamp).
+    var soilL = [20, 35, 35, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 35, 35];
+    var soilR = [50, 35, 35, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 35, 35];
     var si = (p === 15) ? 15 : (p < 60 ? p : p % 71);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
@@ -13031,13 +13032,59 @@ document.addEventListener('keydown', function(e) {
         // Front-rim sheen (subtle warm metallic line on bottom of front rim)
         s += '<path d="M18,79.2 Q35,79.5 52,79.2" stroke="rgba(80,72,64,0.35)" stroke-width="0.35" fill="none"/>';
         break;
-      case 2: // Tall
-        s += '<path d="M23,78 L20,94 L50,94 L47,78 Z" fill="'+g+'"/>';
-        s += '<rect x="23" y="76.5" width="24" height="3" rx="1.5" fill="'+rim+'"/>';
+      case 2: // Spire Vase — tall slender vase with narrow neck, bulged body, tapered foot
+        // Drop shadow
+        s += '<ellipse cx="35" cy="93.6" rx="11" ry="0.7" fill="rgba(0,0,0,0.35)"/>';
+        // Foot ring (narrow base)
+        s += '<ellipse cx="35" cy="93.0" rx="9" ry="0.9" fill="'+rim+'"/>';
+        s += '<ellipse cx="35" cy="92.6" rx="8.5" ry="0.7" fill="'+g+'"/>';
+        // Body — narrow neck flaring to bulged shoulder, gentle taper to foot
+        s += '<path d="M28,79 Q22,82 20,86 Q19,90 26,93 L44,93 Q51,90 50,86 Q48,82 42,79 Z" fill="'+g+'"/>';
+        // Body left shadow
+        s += '<path d="M28,79 Q22,82 20,86 Q19,90 26,93 Q26,90 24,86 Q26,82 30,79 Z" fill="rgba(0,0,0,0.20)"/>';
+        // Body right highlight (vertical sheen)
+        s += '<path d="M44,80 Q47,84 47,87 Q47,90 45,92.5" stroke="rgba(255,240,220,0.22)" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
+        // Three decorative bands (elegant ceramic feel)
+        s += '<path d="M23,82.6 Q35,83.4 47,82.6" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M21,86 Q35,87 49,86" stroke="rgba(0,0,0,0.30)" stroke-width="0.4" fill="none"/>';
+        s += '<path d="M21.3,85.5 Q35,86.4 48.7,85.5" stroke="rgba(255,240,220,0.18)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M22,89.5 Q35,90.3 48,89.5" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
+        // RIM — narrow flared lip
+        s += '<ellipse cx="35" cy="78" rx="8" ry="1.2" fill="'+rim+'"/>';
+        s += '<ellipse cx="35" cy="78" rx="8" ry="1.2" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.3"/>';
+        // Rim top highlight
+        s += '<ellipse cx="35" cy="77.6" rx="7" ry="0.3" fill="rgba(255,245,225,0.30)"/>';
+        // Inner shadow inside narrow opening
+        s += '<ellipse cx="35" cy="78.25" rx="6" ry="0.75" fill="rgba(0,0,0,0.42)"/>';
+        // Soil patch inside neck
+        s += '<ellipse cx="35" cy="78.2" rx="5.5" ry="0.55" fill="#3a2a18"/>';
         break;
-      case 3: // Bowl
-        s += '<path d="M15,78 Q14,86 22,90 L48,90 Q56,86 55,78 Z" fill="'+g+'"/>';
-        s += '<path d="M15,77 Q35,74 55,77 L55,79 Q35,76 15,79 Z" fill="'+rim+'"/>';
+      case 3: // Wood Trencher — shallow wide wooden basin, hand-carved feel
+        // Drop shadow
+        s += '<ellipse cx="35" cy="86.0" rx="21" ry="0.7" fill="rgba(0,0,0,0.35)"/>';
+        // Side wall (very shallow basin)
+        s += '<path d="M15,78 Q14,82 16,85 L54,85 Q56,82 55,78 Z" fill="'+g+'"/>';
+        // Bottom shadow line (where basin meets ground)
+        s += '<path d="M16,84.5 Q35,85.6 54,84.5" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" fill="none"/>';
+        // Wood grain (vertical lines on side wall)
+        s += '<path d="M19,79 L19.5,84.7 M23,79 L23.5,85 M28,79 L28,85.2 M33,79 L33.5,85.3 M38,79 L38,85.3 M42,79 L42.5,85.2 M47,79 L47,85 M51,79 L51.5,84.7" stroke="rgba(0,0,0,0.22)" stroke-width="0.3" fill="none"/>';
+        // Wood knots (two for character)
+        s += '<ellipse cx="25" cy="82" rx="0.8" ry="0.4" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="25" cy="82" rx="0.4" ry="0.2" fill="rgba(0,0,0,0.5)"/>';
+        s += '<ellipse cx="44" cy="82.6" rx="0.7" ry="0.35" fill="rgba(0,0,0,0.32)"/>';
+        // RIM — wide flared wooden edge
+        s += '<ellipse cx="35" cy="78" rx="20" ry="2.2" fill="'+rim+'"/>';
+        s += '<ellipse cx="35" cy="78" rx="20" ry="2.2" fill="none" stroke="rgba(0,0,0,0.32)" stroke-width="0.4"/>';
+        // Rim top highlight (light from above on hand-carved edge)
+        s += '<ellipse cx="35" cy="77.4" rx="18" ry="0.4" fill="rgba(255,240,220,0.25)"/>';
+        // Rim inner edge shadow (where the basin recesses)
+        s += '<ellipse cx="35" cy="78.4" rx="17.5" ry="1.5" fill="rgba(0,0,0,0.32)"/>';
+        // Soil patch (wide, since trencher has wide opening)
+        s += '<ellipse cx="35" cy="78.3" rx="15.5" ry="1.2" fill="#3a2a18"/>';
+        // Soil flecks
+        s += '<ellipse cx="29" cy="78.2" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="35" cy="78.45" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="41" cy="78.3" rx="0.5" ry="0.2" fill="#5a4028"/>';
         break;
       case 4: // Hanging
         s += '<path d="M25,78 Q24,84 28,86 L42,86 Q46,84 45,78 Z" fill="'+g+'"/>';
