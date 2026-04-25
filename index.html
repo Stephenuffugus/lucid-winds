@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.24';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.25';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12900,6 +12900,11 @@ document.addEventListener('keydown', function(e) {
   function renderPotBack(t, uid) {
     var p = (t.pot || 0) % 60;
     var s = '';
+    // Match the gradient/rim ID convention used in renderPot — pot cases reference these
+    // via 'fill="'+g+'"' and 'fill="'+rim+'"'. Without them defined here, ANY case in
+    // renderPotBack that uses g or rim throws ReferenceError ("g is not defined").
+    var g = 'url(#pg'+uid+')';
+    var rim = 'url(#pr'+uid+')';
     switch (p) {
       case 9: // Top Hat — back furniture + BACK ARC of crown rim drawn BEFORE stem so stem overlays back wall. Brown soil + FRONT ARC drawn in renderPot AFTER stem, brown covers stem terminus.
         s += '<ellipse cx="35" cy="93" rx="17" ry="0.7" fill="rgba(0,0,0,0.40)"/>';
