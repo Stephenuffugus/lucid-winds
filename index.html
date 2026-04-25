@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.56';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.57';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -16540,6 +16540,8 @@ document.addEventListener('keydown', function(e) {
 
       // ── STEM BATCH 1: COMMON (cases 15–18) ──────────────────────────
       case 15: // Vine Twist — two thin spiraling strands with cream highlight pair, twist-node pulvinus
+        // Root flare AO (master playbook — subtle ground contact)
+        s += '<ellipse cx="35" cy="78" rx="2.4" ry="0.55" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.5).toFixed(2)+'"/>';
         var _vt15amp = 2.8 + Math.abs(parseFloat(hw)) * 1.2;
         var _vt15segs = 5;
         var _vt15segH = (78 - visibleTop) / _vt15segs;
@@ -16588,6 +16590,9 @@ document.addEventListener('keydown', function(e) {
           });
         }
         t._stemHW = 2.0;
+        // Tip node where canopy attaches (master playbook)
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.3).toFixed(2)+'" rx="1.3" ry="0.38" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        s += '<ellipse cx="34.85" cy="'+(parseFloat(visibleTop)-0.05).toFixed(2)+'" rx="0.55" ry="0.22" fill="#f5ecd6" opacity="'+(op*0.30).toFixed(2)+'"/>';
         break;
 
 
@@ -16608,10 +16613,15 @@ document.addEventListener('keydown', function(e) {
         var _rimOff16 = side * -0.8;
         s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (_l16p1x + _rimOff16).toFixed(2) + ',' + _tight16y.toFixed(1) + ' ' + (_l16p2x + _rimOff16).toFixed(2) + ',' + _sweep16y.toFixed(1) + ' ' + (_l16p3x + _rimOff16).toFixed(2) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.55" fill="none" stroke-linecap="round"/>';
         s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (_l16p1x + _rimOff16).toFixed(2) + ',' + _tight16y.toFixed(1) + ' ' + (_l16p2x + _rimOff16).toFixed(2) + ',' + _sweep16y.toFixed(1) + ' ' + (_l16p3x + _rimOff16).toFixed(2) + ',' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
-        // Base node swell (root flare)
-        s += '<ellipse cx="35" cy="78" rx="1.6" ry="0.55" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.35).toFixed(2)+'"/>';
-        // Mid pulvinus
-        s += '<ellipse cx="'+_l16p1x.toFixed(2)+'" cy="'+_tight16y.toFixed(1)+'" rx="1.0" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
+        // Base root flare AO (master playbook — wider ground contact)
+        s += '<ellipse cx="35" cy="78" rx="2.6" ry="0.62" fill="rgba(40,20,5,0.42)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="77.7" rx="1.8" ry="0.45" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.30).toFixed(2)+'"/>';
+        // Mid pulvinus (curve inflection)
+        s += '<ellipse cx="'+_l16p1x.toFixed(2)+'" cy="'+(_tight16y+0.3).toFixed(1)+'" rx="1.2" ry="0.38" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.30).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_l16p1x.toFixed(2)+'" cy="'+_tight16y.toFixed(1)+'" rx="1.0" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.20).toFixed(2)+'"/>';
+        // Tip node at canopy attachment
+        s += '<ellipse cx="'+_lean16topX.toFixed(2)+'" cy="'+(parseFloat(visibleTop)+0.3).toFixed(2)+'" rx="1.4" ry="0.40" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(_lean16topX-0.15).toFixed(2)+'" cy="'+(parseFloat(visibleTop)-0.1).toFixed(2)+'" rx="0.6" ry="0.22" fill="#f5ecd6" opacity="'+(op*0.32).toFixed(2)+'"/>';
         // Store stem profile — sample the cubic bezier at 8 heights
         // Bezier: P0=(35,78), P1=(35+lean*0.3, tight16y), P2=(35+lean*0.85, sweep16y), P3=(lean16topX, visibleTop)
         t._stemProfile = [];
@@ -16628,6 +16638,9 @@ document.addEventListener('keydown', function(e) {
 
 
       case 17: // Kinked — taper through both segments, bold pulvinus at the bend, cream lit edge
+        // Root flare AO at base
+        s += '<ellipse cx="35" cy="78" rx="2.7" ry="0.62" fill="rgba(40,20,5,0.42)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="77.7" rx="1.9" ry="0.45" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.30).toFixed(2)+'"/>';
         var _kinkFrac = 0.35 + (stemCurve / 6) * 0.3;
         var _kinkY = 78 - (78 - visibleTop) * _kinkFrac;
         var _kinkX = 35 + side * (3 + Math.abs(parseFloat(hw)) * 2.5);
@@ -16648,6 +16661,9 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + (parseFloat(_kinkY)+0.3).toFixed(1) + '" rx="2.4" ry="0.55" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.4).toFixed(2)+'"/>';
         s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + _kinkY.toFixed(1) + '" rx="2.3" ry="1.35" fill="' + strokeCol + '" opacity="' + (op * 0.42).toFixed(2) + '"/>';
         s += '<ellipse cx="' + (parseFloat(_kinkX)-0.4).toFixed(1) + '" cy="' + (parseFloat(_kinkY)-0.2).toFixed(1) + '" rx="1.0" ry="0.4" fill="#f5ecd6" opacity="'+(op*0.3).toFixed(2)+'"/>';
+        // Tip node at canopy attachment
+        s += '<ellipse cx="'+_kinkTopX.toFixed(2)+'" cy="'+(parseFloat(visibleTop)+0.3).toFixed(2)+'" rx="1.3" ry="0.40" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(_kinkTopX-0.15).toFixed(2)+'" cy="'+(parseFloat(visibleTop)-0.1).toFixed(2)+'" rx="0.55" ry="0.22" fill="#f5ecd6" opacity="'+(op*0.30).toFixed(2)+'"/>';
         // Store stem profile — two segments: base→kink, kink→top
         t._stemProfile = [
           {x: 35, y: 78},
@@ -16656,10 +16672,14 @@ document.addEventListener('keydown', function(e) {
           {x: _kinkX + (_kinkTopX - _kinkX) * 0.5, y: _kinkY - (_kinkY - parseFloat(visibleTop)) * 0.5},
           {x: _kinkTopX, y: parseFloat(visibleTop)}
         ];
+        t._stemHW = 1.7;
         break;
 
 
       case 18: // Forking Y — taper trunk, fork-pulvinus collar, cream lit edges, branch tapers
+        // Root flare AO at base
+        s += '<ellipse cx="35" cy="78" rx="2.8" ry="0.65" fill="rgba(40,20,5,0.42)" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="77.7" rx="2.0" ry="0.45" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.30).toFixed(2)+'"/>';
         var _forkFrac = 0.55 + (stemCurve / 6) * 0.15;
         var _forkY = 78 - (78 - visibleTop) * _forkFrac;
         var _forkSpread = 4 + stemCurve * 0.8;
@@ -16688,6 +16708,11 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M35.5,' + _forkY.toFixed(1) + ' C' + (35.5 + _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkRx - 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkRx - 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="#f5ecd6" stroke-width="0.28" fill="none" stroke-linecap="round" opacity="0.5" transform="translate(-0.3,-0.1)"/>';
         // Trunk warm-shifted core shadow
         s += '<path d="M35.4,78 C35.4,' + (mid + 6) + ' 35.4,' + (_forkY + 6) + ' 35.4,' + _forkY.toFixed(1) + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" opacity="0.32"/>';
+        // Tip nodes at BOTH branch tips (left + right canopy attachments)
+        s += '<ellipse cx="'+_forkLx.toFixed(2)+'" cy="'+(parseFloat(visibleTop)+0.3).toFixed(2)+'" rx="1.2" ry="0.38" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(_forkLx-0.15).toFixed(2)+'" cy="'+(parseFloat(visibleTop)-0.1).toFixed(2)+'" rx="0.5" ry="0.22" fill="#f5ecd6" opacity="'+(op*0.30).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_forkRx.toFixed(2)+'" cy="'+(parseFloat(visibleTop)+0.3).toFixed(2)+'" rx="1.2" ry="0.38" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.42).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(_forkRx-0.15).toFixed(2)+'" cy="'+(parseFloat(visibleTop)-0.1).toFixed(2)+'" rx="0.5" ry="0.22" fill="#f5ecd6" opacity="'+(op*0.28).toFixed(2)+'"/>';
         // Store fork data — leaf renderer alternates branches above fork
         t._forkData = {
           forkY: _forkY,
@@ -16701,12 +16726,15 @@ document.addEventListener('keydown', function(e) {
           {x: 35, y: _forkY},
           {x: (_forkLx + _forkRx) * 0.5, y: parseFloat(visibleTop)}
         ];
+        t._stemHW = 1.8;
         break;
 
 
 
       // ── STEM BATCH 2 (cases 19–23) ──────────────────────────────────
       case 19: // Thin Wire — ultra-delicate, slight base taper, cream lit edge, terminal node beads
+        // Root flare AO at base (subtle for thin wire)
+        s += '<ellipse cx="35" cy="78" rx="1.8" ry="0.45" fill="rgba(40,20,5,0.38)" opacity="'+(op*0.50).toFixed(2)+'"/>';
         var _tw19w = isGlass ? '1.05' : '1.25';
         var _tw19wT = isGlass ? '0.65' : '0.85';
         // Wider base stroke (lower 60%)
@@ -16723,6 +16751,17 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(35 + parseFloat(hw)*0.2).toFixed(2)+'" cy="'+(mid+2.4).toFixed(1)+'" r="0.3" fill="rgba(40,20,5,0.4)"/>';
         s += '<circle cx="'+(35 - parseFloat(hw2)*0.15).toFixed(2)+'" cy="'+(mid-2).toFixed(1)+'" r="0.4" fill="#f5ecd6" opacity="'+(op*0.28).toFixed(2)+'"/>';
         s += '<circle cx="'+(35 - parseFloat(hw2)*0.15).toFixed(2)+'" cy="'+(mid-1.6).toFixed(1)+'" r="0.28" fill="rgba(40,20,5,0.4)"/>';
+        // Tip node at canopy attachment
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.3).toFixed(2)+'" rx="1.0" ry="0.34" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        s += '<ellipse cx="34.85" cy="'+(parseFloat(visibleTop)-0.05).toFixed(2)+'" rx="0.42" ry="0.18" fill="#f5ecd6" opacity="'+(op*0.32).toFixed(2)+'"/>';
+        // Stem profile — straight at x=35 with curvature offsets at quartiles (matches drawn cubic)
+        t._stemProfile = [
+          {x: 35, y: 78},
+          {x: 35 + parseFloat(hw) * 0.3, y: 78 - (78 - parseFloat(visibleTop)) * 0.33},
+          {x: 35 - parseFloat(hw2) * 0.2, y: 78 - (78 - parseFloat(visibleTop)) * 0.66},
+          {x: 35, y: parseFloat(visibleTop)}
+        ];
+        t._stemHW = 1.0;
         break;
 
 
