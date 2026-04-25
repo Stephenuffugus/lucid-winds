@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.55';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.56';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -16362,6 +16362,8 @@ document.addEventListener('keydown', function(e) {
       case 10: // Succulent trunk — flared base, glaucous waxy sheen, ring nodes (pulvinus), specular pickup
         var sw2 = 5.5;
         var sw2Top = sw2 * 0.82;
+        // Root flare AO at base — succulent has visible swollen base
+        s += '<ellipse cx="35" cy="78" rx="'+(sw2+1.2).toFixed(2)+'" ry="0.78" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Filled silhouette
         s += '<path d="M'+(35-sw2-1)+',78 C'+(35-sw2)+','+(78-4)+' '+(35-sw2Top+1)+','+mid+' '+(35-sw2Top+0.5)+','+visibleTop
            + ' Q35,'+(parseFloat(visibleTop)-2)+' '+(35+sw2Top-0.5)+','+visibleTop
@@ -16383,12 +16385,18 @@ document.addEventListener('keydown', function(e) {
         }
         // Specular pickup — small bright lozenge upper left (waxy)
         s += '<ellipse cx="'+(35-sw2Top+1.5)+'" cy="'+((parseFloat(visibleTop)+mid)/2)+'" rx="0.5" ry="2.2" fill="#f5ecd6" opacity="'+(op*0.45).toFixed(2)+'" transform="rotate(-8 '+(35-sw2Top+1.5)+' '+((parseFloat(visibleTop)+mid)/2)+')"/>';
+        // Tip node — pulvinus where succulent trunk meets canopy
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(sw2Top+0.4).toFixed(2)+'" ry="0.45" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.50).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)).toFixed(1)+'" rx="'+sw2Top.toFixed(2)+'" ry="0.32" fill="#f5ecd6" opacity="'+(op*0.28).toFixed(2)+'"/>';
+        t._stemHW = sw2 * 0.85;
         break;
 
 
       // ── set-103-8: SPECIALTY STEMS (cases 11-14) ─────────────────────
-      case 11: // Twisted Vine — double-helix wrap with cream highlight pair, crossing nodes
+      case 11: // Twisted Vine — double-helix wrap with cream highlight pair, crossing nodes, root flare
         var _tw11a = 3.5 + stemCurve * 0.3;
+        // Root flare AO — anchors the vine
+        s += '<ellipse cx="35" cy="78" rx="2.6" ry="0.65" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Store vine strand positions for leaf placement
         t._vineStrands = [[],[]];
         var _tw11Paths = ['', ''];
@@ -16430,7 +16438,7 @@ document.addEventListener('keydown', function(e) {
         break;
 
 
-      case 12: // Ancient Bark — taper, Q-jittered cross-grain bark, knot rings, vertical cracks, root-flare AO
+      case 12: // Ancient Bark — taper, Q-jittered bark, knot rings, vertical cracks, root flare, tip node
         var _ab12w = 3.2 + parseFloat(hw)*0.4;
         var _ab12wTop = _ab12w * 0.42; // 80%-of-base-via-tapering — top is 42% of base
         // Filled silhouette
@@ -16457,16 +16465,21 @@ document.addEventListener('keydown', function(e) {
         // Vertical crack lines (Q-jittered, not straight)
         s += '<path d="M'+(35-0.5)+','+(78-4)+' Q'+(35-0.8)+','+(mid+2)+' '+(35+0.3)+','+(mid-5)+' Q'+(35-0.1)+','+(mid-9)+' '+(35-0.2)+','+(parseFloat(visibleTop)+3)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.4" fill="none" opacity="0.28"/>';
         s += '<path d="M'+(35+0.6)+','+(78-7)+' Q'+(35+0.9)+','+(mid)+' '+(35+0.4)+','+(mid-7)+'" stroke="rgba(40,20,5,0.5)" stroke-width="0.3" fill="none" opacity="0.22"/>';
-        // Root-flare AO ellipse at base
-        s += '<ellipse cx="35" cy="78.3" rx="'+(_ab12w+0.5).toFixed(2)+'" ry="0.6" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.35).toFixed(2)+'"/>';
+        // Root-flare AO ellipse at base (warm dark grounds the trunk)
+        s += '<ellipse cx="35" cy="78.3" rx="'+(_ab12w+0.5).toFixed(2)+'" ry="0.6" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.40).toFixed(2)+'"/>';
+        // Tip node where ancient trunk meets canopy
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(_ab12wTop+0.4).toFixed(2)+'" ry="0.40" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        t._stemHW = _ab12w * 0.85;
         break;
 
 
-      case 13: // Bamboo Segments — taper, fluted ridges, swollen pulvinus nodes, cream lit edges
+      case 13: // Bamboo Segments — taper, fluted ridges, swollen pulvinus nodes, cream lit edges, root flare
         var _bamW = 1.8;
         var _bamWTop = 1.45; // ~80% of base
         var _bamSegs = 4;
         var _bamSegH = (78 - visibleTop) / _bamSegs;
+        // Root flare AO at base (bamboo grass-like swollen base)
+        s += '<ellipse cx="35" cy="78" rx="'+(_bamW+0.7).toFixed(2)+'" ry="0.65" fill="rgba(40,20,5,0.40)" opacity="'+(op*0.55).toFixed(2)+'"/>';
         for (var _bi=0; _bi<_bamSegs; _bi++) {
           var _bTop = 78 - (_bi+1)*_bamSegH;
           var _bBot = 78 - _bi*_bamSegH;
@@ -16492,6 +16505,9 @@ document.addEventListener('keydown', function(e) {
             s += '<ellipse cx="35" cy="'+(_bTop-0.25).toFixed(2)+'" rx="'+(_bWTop+0.6).toFixed(2)+'" ry="0.3" fill="#f5ecd6" opacity="'+(op*0.32).toFixed(2)+'"/>';
           }
         }
+        // Tip node (top apex pulvinus)
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(_bamWTop+0.4).toFixed(2)+'" ry="0.40" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        t._stemHW = _bamW;
         break;
 
 
@@ -16514,8 +16530,11 @@ document.addEventListener('keydown', function(e) {
         // Q-jittered bark crack lines (warm-shifted)
         s += '<path d="M'+(35-_htW*0.6)+','+(78-3)+' Q'+(35-_htW*0.5)+','+(mid)+' '+(35-_htW*0.45)+','+(mid-8)+' Q'+(35-_htW*0.4)+','+(mid-12)+' '+(35-_htW*0.35)+','+(parseFloat(visibleTop)+2)+'" stroke="rgba(40,20,5,0.5)" stroke-width="0.35" fill="none" opacity="0.32"/>';
         s += '<path d="M'+(35+_htW*0.55)+','+(78-5)+' Q'+(35+_htW*0.48)+','+(mid+2)+' '+(35+_htW*0.4)+','+(mid-6)+' Q'+(35+_htW*0.36)+','+(mid-10)+' '+(35+_htW*0.35)+','+(parseFloat(visibleTop)+3)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.3" fill="none" opacity="0.25"/>';
-        // Root-flare base AO
-        s += '<ellipse cx="35" cy="78.3" rx="'+(_htW+0.4).toFixed(2)+'" ry="0.55" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.32).toFixed(2)+'"/>';
+        // Root-flare base AO (warm dark grounds the trunk)
+        s += '<ellipse cx="35" cy="78.3" rx="'+(_htW+0.4).toFixed(2)+'" ry="0.55" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.40).toFixed(2)+'"/>';
+        // Tip node where hollow trunk meets canopy
+        s += '<ellipse cx="35" cy="'+(parseFloat(visibleTop)+0.4)+'" rx="'+(_htWTop+0.4).toFixed(2)+'" ry="0.40" fill="rgba(40,20,5,0.32)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+        t._stemHW = _htW * 0.85;
         break;
 
 
