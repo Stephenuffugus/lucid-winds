@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.6';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12901,7 +12901,7 @@ document.addEventListener('keydown', function(e) {
     var p = (t.pot || 0) % 60;
     var s = '';
     switch (p) {
-      case 58: // Tractor Tire — back rim + sidewall draw behind stem
+      case 58: // Tractor Tire — back rim + sidewall + dark cavity + BACK-DIRT all draw behind stem
         // Drop shadow on ground
         s += '<ellipse cx="35" cy="92.8" rx="21" ry="1.2" fill="rgba(0,0,0,0.42)"/>';
         // Back/ground edge of tire
@@ -12912,12 +12912,20 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M16,80 L16,89 M21,79 L21,90 M27,78.5 L27,90.5 M33,78 L33,91 M37,78 L37,91 M43,78.5 L43,90.5 M49,79 L49,90 M54,80 L54,89" stroke="#080808" stroke-width="0.6" fill="none"/>';
         // Bottom shadow line
         s += '<path d="M14,89.5 Q35,91 56,89.5" stroke="rgba(0,0,0,0.55)" stroke-width="0.7" fill="none"/>';
-        // Top contact surface (rim) — drawn BEHIND stem so stem overlays it
+        // Top contact surface (rim) — drawn BEHIND stem so stem overlays back rim
         s += '<ellipse cx="35" cy="78" rx="21" ry="2.3" fill="#262626"/>';
         // Tread chunks dashed perimeter
         s += '<ellipse cx="35" cy="78" rx="21" ry="2.3" fill="none" stroke="#080808" stroke-width="1.4" stroke-dasharray="2 1.5"/>';
         // Highlight band on back of rim
         s += '<ellipse cx="35" cy="77.4" rx="19" ry="0.5" fill="rgba(170,160,150,0.22)"/>';
+        // Inner-rim shadow (dark interior of the tire — behind stem)
+        s += '<ellipse cx="35" cy="78.05" rx="15.5" ry="1.95" fill="#0a0a0a"/>';
+        // Cavity void (visible at the back of the hole, around stem)
+        s += '<ellipse cx="35" cy="78" rx="13.5" ry="1.6" fill="#000000"/>';
+        // BACK-DIRT — first half of the soil mound, drawn BEHIND stem so stem
+        // appears rooted IN the dirt (front half drawn in renderPot wedges
+        // the stem between two soil layers — Director's wedge technique)
+        s += '<ellipse cx="35" cy="77.85" rx="11.5" ry="0.7" fill="#3a2a18"/>';
         break;
     }
     return s;
@@ -12950,44 +12958,36 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
         s += '<rect x="20" y="76.5" width="30" height="3" rx="1.5" fill="'+rim+'"/>';
         break;
-      case 1: // Cast Iron Skillet — shallow round pan with handle, plant grows from cooking surface
-        // Drop shadow (slightly extended right to account for handle)
-        s += '<ellipse cx="36" cy="92.0" rx="22" ry="0.9" fill="rgba(0,0,0,0.40)"/>';
-        // Pan side wall (shallow — skillet is short)
-        s += '<path d="M14,78 L14,89 Q14,91 35,91 Q56,91 56,89 L56,78 Z" fill="#1a1a1a"/>';
-        // Vertical wall texture (cast metal subtle ribbing)
-        s += '<path d="M16,80 L16,89 M21,80 L21,89.5 M27,80 L27,90 M33,80 L33,90 M37,80 L37,90 M43,80 L43,90 M49,80 L49,89.5 M54,80 L54,89" stroke="#0a0a0a" stroke-width="0.4" fill="none"/>';
+      case 1: // Cast Iron Skillet — thin shallow round pan (Bonsai Dish height), handle to right
+        // Drop shadow (extended right for handle)
+        s += '<ellipse cx="37" cy="82.6" rx="22" ry="0.55" fill="rgba(0,0,0,0.42)"/>';
+        // Pan rim (top edge ellipse) — drawn first
+        s += '<ellipse cx="35" cy="78" rx="20" ry="1.5" fill="#262626"/>';
+        s += '<ellipse cx="35" cy="78" rx="20" ry="1.5" fill="none" stroke="#080808" stroke-width="0.45"/>';
+        // Pan side wall (only ~3 units — thin like Bonsai Dish)
+        s += '<path d="M15,78 L15,80.5 Q15,82 35,82 Q55,82 55,80.5 L55,78 Z" fill="#1a1a1a"/>';
         // Bottom shadow line
-        s += '<path d="M14,89.5 Q35,90.5 56,89.5" stroke="rgba(0,0,0,0.5)" stroke-width="0.7" fill="none"/>';
-        // HANDLE — short bar extending to RIGHT
-        // Handle attachment block (where handle meets pan rim)
-        s += '<rect x="54.5" y="82.5" width="2" height="4" fill="#262626"/>';
-        // Handle main body (slight taper, rounded end)
-        s += '<path d="M55,83 L63,83.4 Q65,83.7 65,84.5 Q65,85.3 63,85.6 L55,86 Z" fill="#1a1a1a"/>';
-        // Handle outline (subtle)
-        s += '<path d="M55,83 L63,83.4 Q65,83.7 65,84.5 Q65,85.3 63,85.6 L55,86" fill="none" stroke="#080808" stroke-width="0.3"/>';
-        // Hanging hole at the end of the handle
-        s += '<ellipse cx="63.2" cy="84.5" rx="0.6" ry="0.5" fill="#050505"/>';
-        // Handle top highlight (metallic sheen)
-        s += '<path d="M56,83.6 L62,83.9" stroke="rgba(140,135,125,0.32)" stroke-width="0.3" fill="none"/>';
-        // PAN RIM — top edge of skillet
-        s += '<ellipse cx="35" cy="78" rx="21" ry="2.5" fill="#262626"/>';
-        // Rim outline
-        s += '<ellipse cx="35" cy="78" rx="21" ry="2.5" fill="none" stroke="#080808" stroke-width="0.6"/>';
+        s += '<path d="M15,81.5 Q35,82.3 55,81.5" stroke="rgba(0,0,0,0.55)" stroke-width="0.5" fill="none"/>';
+        // Subtle vertical ribs on side wall (cast metal hint)
+        s += '<path d="M20,79 L20,81.5 M27,79 L27,81.7 M35,79 L35,81.8 M43,79 L43,81.7 M50,79 L50,81.5" stroke="#0a0a0a" stroke-width="0.3" fill="none"/>';
+        // HANDLE — short tapered bar extending RIGHT
+        s += '<rect x="54" y="79.4" width="1.5" height="2.5" fill="#262626"/>';
+        s += '<path d="M55,79.9 L62,80.2 Q64,80.4 64,80.95 Q64,81.5 62,81.7 L55,82 Z" fill="#1a1a1a"/>';
+        s += '<path d="M55,79.9 L62,80.2 Q64,80.4 64,80.95 Q64,81.5 62,81.7 L55,82" fill="none" stroke="#080808" stroke-width="0.25"/>';
+        // Hanging hole at handle tip
+        s += '<ellipse cx="62.2" cy="80.95" rx="0.5" ry="0.4" fill="#050505"/>';
+        // Handle top highlight
+        s += '<path d="M56,80.3 L61,80.5" stroke="rgba(140,135,125,0.32)" stroke-width="0.25" fill="none"/>';
         // Back-rim highlight (light from above)
-        s += '<ellipse cx="35" cy="77.4" rx="19" ry="0.5" fill="rgba(160,155,150,0.25)"/>';
-        // COOKING SURFACE — recessed dark inner ellipse (seasoned cast iron)
-        s += '<ellipse cx="35" cy="78.2" rx="18.5" ry="2.0" fill="#0d0d0d"/>';
-        // Center of cooking surface — deeper black
-        s += '<ellipse cx="35" cy="78.4" rx="16" ry="1.6" fill="#050505"/>';
-        // Soil layer (where plant grows)
-        s += '<ellipse cx="35" cy="78.3" rx="14" ry="1.3" fill="#3a2a18"/>';
-        // Soil texture flecks
-        s += '<ellipse cx="30" cy="78.2" rx="0.6" ry="0.25" fill="#5a4028"/>';
-        s += '<ellipse cx="40" cy="78.5" rx="0.6" ry="0.25" fill="#5a4028"/>';
-        s += '<ellipse cx="35" cy="78.7" rx="0.5" ry="0.22" fill="#2a1c0c"/>';
-        // Front-rim sheen (warm metallic line)
-        s += '<path d="M18,80.0 Q35,80.5 52,80.0" stroke="rgba(80,72,64,0.35)" stroke-width="0.4" fill="none"/>';
+        s += '<ellipse cx="35" cy="77.6" rx="18" ry="0.35" fill="rgba(160,155,150,0.25)"/>';
+        // COOKING SURFACE — slightly recessed dark inner ellipse
+        s += '<ellipse cx="35" cy="78.1" rx="17.5" ry="1.2" fill="#0d0d0d"/>';
+        // Inner depth — even darker center
+        s += '<ellipse cx="35" cy="78.2" rx="14.5" ry="1.0" fill="#050505"/>';
+        // BACK-DIRT (visible behind stem; front-dirt below covers stem base)
+        s += '<ellipse cx="35" cy="78.0" rx="12" ry="0.55" fill="#3a2a18"/>';
+        // Front-rim sheen (subtle warm metallic line)
+        s += '<path d="M18,79.4 Q35,79.7 52,79.4" stroke="rgba(80,72,64,0.35)" stroke-width="0.35" fill="none"/>';
         break;
       case 2: // Tall
         s += '<path d="M23,78 L20,94 L50,94 L47,78 Z" fill="'+g+'"/>';
@@ -13869,16 +13869,15 @@ document.addEventListener('keydown', function(e) {
         s += '<animate attributeName="opacity" values="0.04;0.08;0.04" dur="5s" repeatCount="indefinite"/>';
         s += '</circle>';
         break;
-      case 58: // Tractor Tire — front portion only. Back rim + sidewall draw in renderPotBack BEFORE stem so stem overlays the back rim. Cavity here covers stem at the hole.
-        // Inner shadow (darker rubber where rim curves down into cavity)
-        s += '<ellipse cx="35" cy="78.05" rx="15.5" ry="1.95" fill="#0a0a0a"/>';
-        // Cavity void (the hole — stem visually descends into this)
-        s += '<ellipse cx="35" cy="78" rx="13.5" ry="1.6" fill="#000000"/>';
-        // Soil at bottom of cavity
-        s += '<ellipse cx="35" cy="78.35" rx="11" ry="1.0" fill="#2a1d10"/>';
-        // Soil texture flecks
-        s += '<ellipse cx="32" cy="78.25" rx="0.5" ry="0.2" fill="#4a3220"/>';
-        s += '<ellipse cx="38" cy="78.45" rx="0.5" ry="0.2" fill="#4a3220"/>';
+      case 58: // Tractor Tire — FRONT portion only. Back rim/sidewall/cavity/back-dirt all draw in renderPotBack BEFORE stem. Front-dirt here wedges the stem so it disappears INTO brown soil.
+        // FRONT-DIRT — second half of soil mound, drawn AFTER stem (covers stem
+        // base). Together with BACK-DIRT in renderPotBack this wedges the stem
+        // visually into the dirt instead of fading into black cavity.
+        s += '<ellipse cx="35" cy="78.2" rx="11.5" ry="0.75" fill="#2e2014"/>';
+        // Soil texture flecks (on front-dirt surface)
+        s += '<ellipse cx="30" cy="78.15" rx="0.55" ry="0.22" fill="#5a4028"/>';
+        s += '<ellipse cx="40" cy="78.35" rx="0.55" ry="0.22" fill="#5a4028"/>';
+        s += '<ellipse cx="34.5" cy="78.45" rx="0.4" ry="0.18" fill="#4a3220"/>';
         // Front-rim sheen (thin warm line on bottom-front of rim — sells the 3D ring)
         s += '<path d="M20,79.6 Q35,80.3 50,79.6" stroke="rgba(80,72,64,0.4)" stroke-width="0.5" fill="none"/>';
         break;
@@ -23696,6 +23695,12 @@ document.addEventListener('keydown', function(e) {
   window._getBaseName = function(bi) { return BASE_NAMES[bi] || ''; };
 
   function renderBase(t, uid) {
+    // Substrate visual is OFF — substrate is a data-only rarity layer.
+    // Director: "list it in the layers is enough for people. we dont need to
+    // display the substrate on most pots at all". DNA Ledger / Binder show
+    // the substrate name. Per-pot opt-in can be added later for wide-mouth pots.
+    return '';
+    // [original implementation preserved below — currently unreachable]
     var bi = t.base;
     if (bi < 7) return '';
     var s = '';
