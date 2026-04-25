@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.77';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.78';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -27886,6 +27886,8 @@ document.addEventListener('keydown', function(e) {
         // blur in flight. The bee that makes gardens possible.
         s += '<g opacity="0.78" transform="translate(12,29) scale(1.4) translate(-12,-29)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.8,-1.2;-0.3,0.4;0.5,-0.8;0,0" dur="3.5s" repeatCount="indefinite"/>';
+        // AO ground shadow — warm soft ellipse beneath hovering bee
+        s += '<ellipse cx="12" cy="33" rx="2.2" ry="0.4" fill="rgba(40,20,5,0.30)"/>';
         // Wings — translucent with venation, rapid flutter
         // Forewings (larger)
         s += '<ellipse cx="10.5" cy="27.5" rx="3" ry="1.4" fill="rgba(230,225,210,0.2)" stroke="rgba(200,195,180,0.15)" stroke-width="0.12" transform="rotate(-25,10.5,27.5)"><animate attributeName="ry" values="1.4;0.6;1.4" dur="0.15s" repeatCount="indefinite"/></ellipse>';
@@ -27901,23 +27903,29 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="11.8" cy="28.5" rx="0.8" ry="0.5" fill="rgba(220,200,120,0.15)"/>';
         // Abdomen — striped (THE bee signature)
         s += '<ellipse cx="12" cy="31" rx="1.5" ry="2.0" fill="#C8A040"/>';
-        // Black stripes — 4 bands
-        s += '<path d="M10.7,30.2 Q12,30 13.3,30.2" fill="none" stroke="#1A1A18" stroke-width="0.35"/>';
-        s += '<path d="M10.5,31 Q12,30.8 13.5,31" fill="none" stroke="#1A1A18" stroke-width="0.4"/>';
-        s += '<path d="M10.7,31.8 Q12,31.6 13.3,31.8" fill="none" stroke="#1A1A18" stroke-width="0.35"/>';
-        s += '<path d="M11,32.5 Q12,32.3 13,32.5" fill="none" stroke="#1A1A18" stroke-width="0.3"/>';
-        // Stinger — tiny point at abdomen tip
+        // Black stripes — 4 bands (warm-shifted dark)
+        s += '<path d="M10.7,30.2 Q12,30 13.3,30.2" fill="none" stroke="#1a1208" stroke-width="0.35"/>';
+        s += '<path d="M10.5,31 Q12,30.8 13.5,31" fill="none" stroke="#1a1208" stroke-width="0.4"/>';
+        s += '<path d="M10.7,31.8 Q12,31.6 13.3,31.8" fill="none" stroke="#1a1208" stroke-width="0.35"/>';
+        s += '<path d="M11,32.5 Q12,32.3 13,32.5" fill="none" stroke="#1a1208" stroke-width="0.3"/>';
+        // Stinger — tiny point at abdomen tip + tip terminator
         s += '<line x1="12" y1="33" x2="12" y2="33.5" stroke="#3A3028" stroke-width="0.15" stroke-linecap="round"/>';
+        s += '<circle cx="12" cy="33.55" r="0.1" fill="rgba(40,20,5,0.55)"/>';
         // Head — round, facing right
         s += '<circle cx="12" cy="27.8" r="1.0" fill="#2A2418"/>';
         // Compound eyes — large, oval, iridescent
         s += '<ellipse cx="11.3" cy="27.6" rx="0.45" ry="0.55" fill="#4A3A28"/>';
         s += '<ellipse cx="12.7" cy="27.6" rx="0.45" ry="0.55" fill="#4A3A28"/>';
-        // Eye highlight
+        // Eye highlight + cream catchlight
         s += '<ellipse cx="11.2" cy="27.4" rx="0.15" ry="0.2" fill="rgba(200,180,120,0.3)"/>';
+        s += '<circle cx="11.15" cy="27.4" r="0.07" fill="#fff8e0"/>';
+        s += '<circle cx="12.65" cy="27.4" r="0.07" fill="#fff8e0"/>';
         // Antennae — elbowed (bee characteristic)
         s += '<path d="M11.5,27 L11,26 L10.5,25.5" fill="none" stroke="#2A2418" stroke-width="0.12" stroke-linecap="round" stroke-linejoin="round"/>';
         s += '<path d="M12.5,27 L13,26 L13.5,25.5" fill="none" stroke="#2A2418" stroke-width="0.12" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Antennae tip terminators
+        s += '<circle cx="10.5" cy="25.5" r="0.1" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="13.5" cy="25.5" r="0.1" fill="rgba(40,20,5,0.55)"/>';
         // Legs — 3 pairs, rear pair with pollen baskets
         s += '<line x1="11.2" y1="29.8" x2="10" y2="30.5" stroke="#3A3018" stroke-width="0.12"/>';
         s += '<line x1="12.8" y1="29.8" x2="14" y2="30.5" stroke="#3A3018" stroke-width="0.12"/>';
@@ -27996,9 +28004,15 @@ document.addEventListener('keydown', function(e) {
         // Tiny antennae stubs poking out
         s += '<line x1="-1.2" y1="'+(-_pbR*0.95)+'" x2="-1.6" y2="'+(-_pbR*1.08)+'" stroke="#5A5A68" stroke-width="0.12" stroke-linecap="round" opacity="0.5"/>';
         s += '<line x1="1.2" y1="'+(-_pbR*0.95)+'" x2="1.6" y2="'+(-_pbR*1.08)+'" stroke="#5A5A68" stroke-width="0.12" stroke-linecap="round" opacity="0.5"/>';
-        // Tiny eye dots peeking out
-        s += '<circle cx="-0.6" cy="'+(-_pbR*0.92)+'" r="0.2" fill="#222"/>';
-        s += '<circle cx="0.6" cy="'+(-_pbR*0.92)+'" r="0.2" fill="#222"/>';
+        // Tiny eye dots peeking out (warm-shifted dark)
+        s += '<circle cx="-0.6" cy="'+(-_pbR*0.92)+'" r="0.2" fill="#1a1208"/>';
+        s += '<circle cx="0.6" cy="'+(-_pbR*0.92)+'" r="0.2" fill="#1a1208"/>';
+        // Eye catchlights — tiny cream pickups
+        s += '<circle cx="-0.55" cy="'+(-_pbR*0.94)+'" r="0.07" fill="#fff8e0"/>';
+        s += '<circle cx="0.65" cy="'+(-_pbR*0.94)+'" r="0.07" fill="#fff8e0"/>';
+        // Antenna tip terminators
+        s += '<circle cx="-1.6" cy="'+(-_pbR*1.08)+'" r="0.08" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="1.6" cy="'+(-_pbR*1.08)+'" r="0.08" fill="rgba(40,20,5,0.55)"/>';
         // Tail plate tucked at bottom — last segment wraps under
         s += '<path d="M-1.5,'+(_pbR*0.85)+' Q0,'+(_pbR*1.02)+' 1.5,'+(_pbR*0.85)+'" fill="#5E5E6C" stroke="rgba(80,80,90,0.25)" stroke-width="0.15"/>';
         // Tail plate inner line
@@ -28028,13 +28042,19 @@ document.addEventListener('keydown', function(e) {
         // Pronotum rim highlight
         s += '<path d="M53,23 Q54,22.4 55,23" fill="none" stroke="rgba(200,180,120,0.15)" stroke-width="0.15"/>';
         // Head — barely visible under pronotum
-        s += '<circle cx="54" cy="22.5" r="0.4" fill="#1A1810"/>';
+        s += '<circle cx="54" cy="22.5" r="0.4" fill="#1a1208"/>';
         // Eyes
         s += '<circle cx="53.7" cy="22.4" r="0.1" fill="#3A3A30"/>';
         s += '<circle cx="54.3" cy="22.4" r="0.1" fill="#3A3A30"/>';
+        // Eye catchlights
+        s += '<circle cx="53.68" cy="22.36" r="0.04" fill="#fff8e0"/>';
+        s += '<circle cx="54.28" cy="22.36" r="0.04" fill="#fff8e0"/>';
         // Antennae — thread-like
         s += '<path d="M53.8,22.3 Q53.2,21.5 52.8,21" stroke="#2A2820" stroke-width="0.08" fill="none" stroke-linecap="round"/>';
         s += '<path d="M54.2,22.3 Q54.8,21.5 55.2,21" stroke="#2A2820" stroke-width="0.08" fill="none" stroke-linecap="round"/>';
+        // Antenna tip terminators
+        s += '<circle cx="52.8" cy="21" r="0.07" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="55.2" cy="21" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // THE LANTERN — bioluminescent abdominal segments
         // Two-part: outer glow + inner hot core, FLASHING not constant
         s += '<ellipse cx="54" cy="26.5" rx="0.9" ry="0.7" fill="rgba(200,220,80,0.3)"><animate attributeName="opacity" values="0.3;0.7;0.1;0;0.5;0.8;0.2;0.3" dur="3.2s" repeatCount="indefinite"/></ellipse>';
@@ -28065,34 +28085,34 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,-1.5;-0.6,0.8;0.4,-1;0,0" dur="6s" repeatCount="indefinite"/>';
         // ── LEFT FOREWING — broad, rounded outer edge ──
         // Black base (the border)
-        s += '<path d="M59.5,21 Q56,17 52,15 Q50,14.5 50.5,16 Q51,18 53,20 Q55,22 59.5,23.5 Z" fill="#1A1A18"/>';
+        s += '<path d="M59.5,21 Q56,17 52,15 Q50,14.5 50.5,16 Q51,18 53,20 Q55,22 59.5,23.5 Z" fill="#1a1208"/>';
         // Orange fill — inset from black border
         s += '<path d="M59,21.5 Q56.5,18 53.5,16 Q52,15.5 52.5,17 Q53.5,19 55.5,21 L59,23 Z" fill="#E87830"/>';
         // ── RIGHT FOREWING ──
-        s += '<path d="M60.5,21 Q64,17 68,15 Q70,14.5 69.5,16 Q69,18 67,20 Q65,22 60.5,23.5 Z" fill="#1A1A18"/>';
+        s += '<path d="M60.5,21 Q64,17 68,15 Q70,14.5 69.5,16 Q69,18 67,20 Q65,22 60.5,23.5 Z" fill="#1a1208"/>';
         s += '<path d="M61,21.5 Q63.5,18 66.5,16 Q68,15.5 67.5,17 Q66.5,19 64.5,21 L61,23 Z" fill="#D87028"/>';
         // ── LEFT HINDWING — rounded ──
-        s += '<path d="M59.5,23.5 Q56,24.5 53.5,26 Q52,27.5 53,28 Q55,27.5 57.5,26 L59.5,24.5 Z" fill="#1A1A18"/>';
+        s += '<path d="M59.5,23.5 Q56,24.5 53.5,26 Q52,27.5 53,28 Q55,27.5 57.5,26 L59.5,24.5 Z" fill="#1a1208"/>';
         s += '<path d="M59,24 Q56.5,25 54.5,26.5 Q53.5,27 54.5,27 Q56,26.5 58,25 L59,24.5 Z" fill="#E87830"/>';
         // ── RIGHT HINDWING ──
-        s += '<path d="M60.5,23.5 Q64,24.5 66.5,26 Q68,27.5 67,28 Q65,27.5 62.5,26 L60.5,24.5 Z" fill="#1A1A18"/>';
+        s += '<path d="M60.5,23.5 Q64,24.5 66.5,26 Q68,27.5 67,28 Q65,27.5 62.5,26 L60.5,24.5 Z" fill="#1a1208"/>';
         s += '<path d="M61,24 Q63.5,25 65.5,26.5 Q66.5,27 65.5,27 Q64,26.5 62,25 L61,24.5 Z" fill="#D87028"/>';
         // ── BLACK VEINS — thick, dividing orange into cells ──
         // Forewing veins (left)
-        s += '<path d="M59,22 L54,16.5" stroke="#1A1A18" stroke-width="0.4"/>';
-        s += '<path d="M59,22 L55.5,17.5" stroke="#1A1A18" stroke-width="0.35"/>';
-        s += '<path d="M59,22 L56.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
-        s += '<path d="M59,22 L53.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
+        s += '<path d="M59,22 L54,16.5" stroke="#1a1208" stroke-width="0.4"/>';
+        s += '<path d="M59,22 L55.5,17.5" stroke="#1a1208" stroke-width="0.35"/>';
+        s += '<path d="M59,22 L56.5,19" stroke="#1a1208" stroke-width="0.3"/>';
+        s += '<path d="M59,22 L53.5,19" stroke="#1a1208" stroke-width="0.3"/>';
         // Forewing veins (right)
-        s += '<path d="M61,22 L66,16.5" stroke="#1A1A18" stroke-width="0.4"/>';
-        s += '<path d="M61,22 L64.5,17.5" stroke="#1A1A18" stroke-width="0.35"/>';
-        s += '<path d="M61,22 L63.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
-        s += '<path d="M61,22 L66.5,19" stroke="#1A1A18" stroke-width="0.3"/>';
+        s += '<path d="M61,22 L66,16.5" stroke="#1a1208" stroke-width="0.4"/>';
+        s += '<path d="M61,22 L64.5,17.5" stroke="#1a1208" stroke-width="0.35"/>';
+        s += '<path d="M61,22 L63.5,19" stroke="#1a1208" stroke-width="0.3"/>';
+        s += '<path d="M61,22 L66.5,19" stroke="#1a1208" stroke-width="0.3"/>';
         // Hindwing veins
-        s += '<path d="M59.5,24 L55.5,26" stroke="#1A1A18" stroke-width="0.25"/>';
-        s += '<path d="M59.5,24 L57,26.5" stroke="#1A1A18" stroke-width="0.25"/>';
-        s += '<path d="M60.5,24 L64.5,26" stroke="#1A1A18" stroke-width="0.25"/>';
-        s += '<path d="M60.5,24 L63,26.5" stroke="#1A1A18" stroke-width="0.25"/>';
+        s += '<path d="M59.5,24 L55.5,26" stroke="#1a1208" stroke-width="0.25"/>';
+        s += '<path d="M59.5,24 L57,26.5" stroke="#1a1208" stroke-width="0.25"/>';
+        s += '<path d="M60.5,24 L64.5,26" stroke="#1a1208" stroke-width="0.25"/>';
+        s += '<path d="M60.5,24 L63,26.5" stroke="#1a1208" stroke-width="0.25"/>';
         // ── WHITE DOTS — two rows in the black border (monarch signature) ──
         // Outer row — forewing tips
         var _mwL = [[51.5,15.5],[52,16.5],[52.5,17.5],[53,18.5],[53.5,19.5]];
@@ -28114,20 +28134,20 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="66.5" cy="27" r="0.2" fill="rgba(240,240,240,0.55)"/>';
         s += '<circle cx="65.5" cy="27.2" r="0.18" fill="rgba(240,240,240,0.5)"/>';
         // ── BODY — black, segmented ──
-        s += '<line x1="60" y1="20" x2="60" y2="25" stroke="#1A1A18" stroke-width="0.8" stroke-linecap="round"/>';
+        s += '<line x1="60" y1="20" x2="60" y2="25" stroke="#1a1208" stroke-width="0.8" stroke-linecap="round"/>';
         // White body dots (monarch has white spots on thorax)
         s += '<circle cx="60" cy="21" r="0.12" fill="rgba(240,240,240,0.4)"/>';
         s += '<circle cx="60" cy="22" r="0.12" fill="rgba(240,240,240,0.35)"/>';
         // Head
-        s += '<circle cx="60" cy="19.7" r="0.5" fill="#1A1A18"/>';
+        s += '<circle cx="60" cy="19.7" r="0.5" fill="#1a1208"/>';
         // Eyes — tiny white
         s += '<circle cx="59.7" cy="19.6" r="0.1" fill="rgba(240,240,240,0.4)"/>';
         s += '<circle cx="60.3" cy="19.6" r="0.1" fill="rgba(240,240,240,0.4)"/>';
         // Clubbed antennae — black with club tips
-        s += '<path d="M59.6,19.3 Q58.5,18 57.5,17.5" stroke="#1A1A18" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<circle cx="57.5" cy="17.5" r="0.2" fill="#1A1A18"/>';
-        s += '<path d="M60.4,19.3 Q61.5,18 62.5,17.5" stroke="#1A1A18" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<circle cx="62.5" cy="17.5" r="0.2" fill="#1A1A18"/>';
+        s += '<path d="M59.6,19.3 Q58.5,18 57.5,17.5" stroke="#1a1208" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="57.5" cy="17.5" r="0.2" fill="#1a1208"/>';
+        s += '<path d="M60.4,19.3 Q61.5,18 62.5,17.5" stroke="#1a1208" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="62.5" cy="17.5" r="0.2" fill="#1a1208"/>';
         // Wing flutter
         s += '<animateTransform attributeName="transform" type="rotate" values="-3,60,22;5,60,22;-3,60,22" dur="2s" repeatCount="indefinite" additive="sum"/>';
         // Action marks (( )) near wings
@@ -28197,10 +28217,11 @@ document.addEventListener('keydown', function(e) {
         // Round, dome-shaped, glossy. Children's first beloved insect.
         s += '<g opacity="0.80" transform="translate(56,89.5) scale(1.35) translate(-56,-89.5)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.5,0;1,0;0.5,0;0,0" dur="5.5s" repeatCount="indefinite"/>';
-        // Shadow
+        // AO ground shadow — warm soft
+        s += '<ellipse cx="56.2" cy="91.4" rx="2.6" ry="0.5" fill="rgba(40,20,5,0.30)"/>';
         s += '<ellipse cx="56.2" cy="91.2" rx="2.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
-        // Pronotum (thorax shield) — black with two white spots
-        s += '<ellipse cx="53.8" cy="89.5" rx="1.2" ry="1.0" fill="#1A1A1A"/>';
+        // Pronotum (thorax shield) — warm dark with two cream spots
+        s += '<ellipse cx="53.8" cy="89.5" rx="1.2" ry="1.0" fill="#1a1208"/>';
         s += '<circle cx="53.2" cy="89.2" r="0.2" fill="#f5ecd6"/>';
         s += '<circle cx="53.2" cy="89.8" r="0.2" fill="#f5ecd6"/>';
         // Elytra (wing covers) — bright red dome
@@ -28209,7 +28230,7 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="55.2" cy="88.8" rx="1.2" ry="0.7" fill="rgba(255,120,120,0.15)"/>';
         s += '<ellipse cx="55" cy="88.5" rx="0.5" ry="0.3" fill="rgba(255,200,200,0.2)"/>';
         // Center suture line — where elytra meet
-        s += '<line x1="56" y1="87.7" x2="56" y2="91.3" stroke="#1A1A1A" stroke-width="0.25"/>';
+        s += '<line x1="56" y1="87.7" x2="56" y2="91.3" stroke="#1a1208" stroke-width="0.25"/>';
         // THE 7 SPOTS — species-specific pattern (septempunctata = "seven-spotted")
         // Left elytra: 3 spots
         s += '<circle cx="54.8" cy="88.5" r="0.5" fill="#111"/>';
@@ -28226,15 +28247,21 @@ document.addEventListener('keydown', function(e) {
         // Eyes — tiny
         s += '<circle cx="52.5" cy="89.3" r="0.1" fill="#333"/>';
         s += '<circle cx="52.5" cy="89.7" r="0.1" fill="#333"/>';
+        // Eye catchlights
+        s += '<circle cx="52.48" cy="89.27" r="0.04" fill="#fff8e0"/>';
+        s += '<circle cx="52.48" cy="89.67" r="0.04" fill="#fff8e0"/>';
         // Antennae — short, elbowed
-        s += '<path d="M52.5,89.2 Q52,88.8 51.5,88.5" stroke="#1A1A1A" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M52.5,89.8 Q52,90.2 51.5,90.4" stroke="#1A1A1A" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M52.5,89.2 Q52,88.8 51.5,88.5" stroke="#1a1208" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M52.5,89.8 Q52,90.2 51.5,90.4" stroke="#1a1208" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
+        // Antenna tip terminators
+        s += '<circle cx="51.5" cy="88.5" r="0.07" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="51.5" cy="90.4" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // Legs — 3 pairs, tucked under dome
-        s += '<path d="M54.5,91 L54,91.8 L53.5,91.6" stroke="#1A1A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M56,91.3 L56,92 L55.5,91.8" stroke="#1A1A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M57.5,91 L58,91.8 L58.5,91.6" stroke="#1A1A1A" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M54.5,88 L54,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
-        s += '<path d="M57.5,88 L58,87.3" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M54.5,91 L54,91.8 L53.5,91.6" stroke="#1a1208" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M56,91.3 L56,92 L55.5,91.8" stroke="#1a1208" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M57.5,91 L58,91.8 L58.5,91.6" stroke="#1a1208" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M54.5,88 L54,87.3" stroke="#1a1208" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M57.5,88 L58,87.3" stroke="#1a1208" stroke-width="0.12" fill="none"/>';
         // Action marks (( near head
         s += '<path d="M51,88.5 Q50.5,89.5 51,90.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M50.3,88 Q49.5,89.5 50.3,91" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -28245,9 +28272,9 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.4,0;0.8,0;0.4,0;0,0" dur="7s" repeatCount="indefinite"/>';
         // ── SLIME TRAIL — MUCH LONGER, wavy, to the left ──
         s += '<path d="M-15,91.5 Q-12,90.5 -9,91.5 Q-6,92.5 -3,91 Q0,89.5 3,91 Q5,92 7,91 Q9,92 10,91" fill="none" stroke="rgba(200,215,190,0.22)" stroke-width="1.5" stroke-linecap="round"/>';
-        s += '<path d="M-15,91.5 Q-12,90.8 -9,91.6 Q-6,92.4 -3,91.1 Q0,89.8 3,91.1 Q5,92 7,91.1 Q9,92 10,91" fill="none" stroke="#fff8e0" stroke-width="3"/>';
-        // Shadow
-        s += '<ellipse cx="11" cy="92" rx="6" ry="0.6" fill="#0d100c" opacity="0.1"/>';
+        s += '<path d="M-15,91.5 Q-12,90.8 -9,91.6 Q-6,92.4 -3,91.1 Q0,89.8 3,91.1 Q5,92 7,91.1 Q9,92 10,91" fill="none" stroke="#fff8e0" stroke-width="3" opacity="0.15"/>';
+        // Shadow — warm-shifted AO
+        s += '<ellipse cx="11" cy="92" rx="6" ry="0.6" fill="rgba(40,20,5,0.18)"/>';
         // ── BODY — one continuous piece: foot → neck → head ──
         // The entire soft body is a single filled shape
         s += '<path d="M9,91 Q10,91.8 12,91.8 Q14,91.8 15.5,91.2 Q17,90.5 17.8,89.5 Q18.2,88.5 18,87.5 Q17.5,87 17,87.2 Q16.5,87.5 16,88 Q15,89 13,89.5 Q11,89.8 9.5,89.5 Z" fill="#8A9878"/>';
@@ -28261,9 +28288,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="7" cy="87.5" r="3.8" fill="none" stroke="#6A4A30" stroke-width="0.35"/>';
         // THE SPIRAL — classic snail shell spiral, drawn as one continuous coiling path
         s += '<path d="M10.5,88 Q10,85 7,84 Q4,84 3.5,87 Q3.5,89.5 6,90.5 Q8.5,90.5 9.5,88.5 Q10,87 8.5,86 Q7,85.5 5.5,86.5 Q4.8,87.5 5.5,88.5 Q6.5,89 7.5,88.5 Q8,88 7.5,87.5 Q7,87.2 6.5,87.5" fill="none" stroke="#5A3A20" stroke-width="0.35" opacity="0.6"/>';
-        // Shell highlight — glossy sheen
-        s += '<ellipse cx="6" cy="86" rx="1.5" ry="1.2" fill="rgba(240,230,210,0.18)"/>';
-        s += '<ellipse cx="5.5" cy="85.5" rx="0.6" ry="0.4" fill="rgba(255,250,240,0.22)"/>';
+        // Shell highlight — cream glossy sheen on dome
+        s += '<ellipse cx="6" cy="86" rx="1.5" ry="1.2" fill="#f5ecd6" opacity="0.22"/>';
+        s += '<ellipse cx="5.5" cy="85.5" rx="0.6" ry="0.4" fill="#fff8e0" opacity="0.3"/>';
         // Shell banding — subtle color variation
         s += '<path d="M4,85.5 Q7,83.5 10,86" fill="none" stroke="#B8A078" stroke-width="0.3" opacity="0.15"/>';
         s += '<path d="M3.5,88 Q5,90 8,90" fill="none" stroke="#7A5A38" stroke-width="0.25" opacity="0.12"/>';
@@ -28318,12 +28345,13 @@ document.addEventListener('keydown', function(e) {
         // Ruby gorget (throat patch) — THE hummingbird flash
         s += '<path d="M'+(_hbx+3.5)+','+(_hby-0.2)+' Q'+(_hbx+4.2)+','+(_hby+0.2)+' '+(_hbx+4.8)+','+(_hby-0.3)+'" fill="rgba(200,40,40,0.4)" stroke="none"/>';
         s += '<path d="M'+(_hbx+3.5)+','+(_hby-0.2)+' Q'+(_hbx+4.2)+','+(_hby+0.2)+' '+(_hbx+4.8)+','+(_hby-0.3)+'" fill="rgba(220,60,60,0.2)"><animate attributeName="fill" values="rgba(220,60,60,0.2);rgba(255,40,40,0.4);rgba(220,60,60,0.2)" dur="2s" repeatCount="indefinite"/></path>';
-        // Eye — dark, prominent
-        s += '<circle cx="'+(_hbx+4.5)+'" cy="'+(_hby-1)+'" r="0.35" fill="#111"/>';
-        s += '<circle cx="'+(_hbx+4.55)+'" cy="'+(_hby-1.1)+'" r="0.1" fill="#f5ecd6"/>';
-        // Beak — long, thin, precision nectar probe
+        // Eye — dark, prominent (warm-shifted)
+        s += '<circle cx="'+(_hbx+4.5)+'" cy="'+(_hby-1)+'" r="0.35" fill="#1a1208"/>';
+        s += '<circle cx="'+(_hbx+4.55)+'" cy="'+(_hby-1.1)+'" r="0.1" fill="#fff8e0"/>';
+        // Beak — long, thin, precision nectar probe + warm tip terminator
         s += '<path d="M'+(_hbx+5)+','+(_hby-0.9)+' L'+(_hbx+7.5)+','+(_hby-0.7)+'" stroke="#2E2A24" stroke-width="0.35" stroke-linecap="round"/>';
         s += '<path d="M'+(_hbx+5)+','+(_hby-0.7)+' L'+(_hbx+7.5)+','+(_hby-0.6)+'" stroke="#3E3A34" stroke-width="0.25" stroke-linecap="round" opacity="0.6"/>';
+        s += '<circle cx="'+(_hbx+7.55)+'" cy="'+(_hby-0.65)+'" r="0.1" fill="rgba(40,20,5,0.6)"/>';
         // Feet — tiny, tucked up in flight
         s += '<path d="M'+(_hbx+2.5)+','+(_hby+0.3)+' L'+(_hbx+2.5)+','+(_hby+0.8)+'" stroke="#5A5040" stroke-width="0.1"/>';
         // Action marks (( )) near beak
@@ -28334,6 +28362,8 @@ document.addEventListener('keydown', function(e) {
       case 29: // Dragonfly — upper-left corner, figure-8 hover
         s += '<g opacity="0.75" transform="translate(12,10) scale(1.4) translate(-12,-10)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.5,-1;-0.8,0.6;1,1.2;0,0" dur="4.2s" repeatCount="indefinite"/>';
+        // AO ground shadow — warm soft, beneath hovering
+        s += '<ellipse cx="12" cy="14" rx="3" ry="0.4" fill="rgba(40,20,5,0.22)"/>';
         // 4 transparent wings with rapid flutter — anchored at (12, 10)
         s += '<ellipse cx="10.5" cy="8.5" rx="4" ry="1.1" fill="#DDF7FA" opacity="0.26"><animate attributeName="opacity" values="0.14;0.34;0.14" dur="0.24s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="15" cy="8.2" rx="3.8" ry="1" fill="#EAFBFC" opacity="0.22"><animate attributeName="opacity" values="0.12;0.3;0.12" dur="0.24s" repeatCount="indefinite"/></ellipse>';
@@ -28343,9 +28373,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M7,10 Q11,9.5 19,10" fill="none" stroke="#415C69" stroke-width="0.28" stroke-linecap="round"/>';
         // Head
         s += '<circle cx="6.5" cy="10" r="0.9" fill="#4B646E"/>';
-        s += '<circle cx="6" cy="9.8" r="0.3" fill="#111"/>';
+        s += '<circle cx="6" cy="9.8" r="0.3" fill="#1a1208"/>';
+        // Eye catchlight — cream pickup at upper-left
+        s += '<circle cx="5.92" cy="9.72" r="0.1" fill="#fff8e0"/>';
         // Tail tip
         s += '<path d="M19,10 Q20.5,10.3 21.5,11" fill="none" stroke="#6A8792" stroke-width="0.12" stroke-linecap="round" opacity="0.5"/>';
+        // Tail tip terminator
+        s += '<circle cx="21.5" cy="11" r="0.13" fill="rgba(40,20,5,0.55)"/>';
         // Antennae
         s += '<path d="M6.8,9.5 L5.5,8.2 M6.6,9.6 L5.2,10" fill="none" stroke="#4B646E" stroke-width="0.08" stroke-linecap="round" opacity="0.7"/>';
         // Action marks (( near head
@@ -28386,7 +28420,7 @@ document.addEventListener('keydown', function(e) {
         // Head — slightly raised, darker
         s += '<circle cx="'+(_cBx+12.4)+'" cy="'+(_cBy-0.4)+'" r="1.15" fill="#567B46"/>';
         // Eye
-        s += '<circle cx="'+(_cBx+12.9)+'" cy="'+(_cBy-0.6)+'" r="0.28" fill="#111"/>';
+        s += '<circle cx="'+(_cBx+12.9)+'" cy="'+(_cBy-0.6)+'" r="0.28" fill="#1a1208"/>';
         s += '<circle cx="'+(_cBx+12.95)+'" cy="'+(_cBy-0.65)+'" r="0.08" fill="#f5ecd6"/>';
         // Mandible
         s += '<path d="M'+(_cBx+13.3)+','+(_cBy-0.1)+' L'+(_cBx+13.6)+','+(_cBy+0.2)+'" stroke="#3A5A30" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
@@ -28416,14 +28450,20 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 31: // Garden Spider — descending on silk, vivid brown-red
-        s += '<g opacity="0.85" transform="translate(60,19) scale(1.4) translate(-60,-19)">';
+        s += '<g opacity="0.92" transform="translate(60,19) scale(1.4) translate(-60,-19)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,1;0,2;0,1;0,0" dur="5.6s" repeatCount="indefinite"/>';
-        // Silk thread
-        s += '<line x1="60" y1="2" x2="60" y2="19" stroke="#D9E1D5" stroke-width="0.15" opacity="0.55"/>';
+        // AO drop shadow under spider body (warm)
+        s += '<ellipse cx="60" cy="26.2" rx="3.2" ry="0.6" fill="rgba(40,20,5,0.30)"/>';
+        // Silk thread (cream, not cool grey)
+        s += '<line x1="60" y1="2" x2="60" y2="19" stroke="#f5ecd6" stroke-width="0.15" opacity="0.55"/>';
         // Abdomen — rich brown-red
         s += '<ellipse cx="60" cy="22.5" rx="3.2" ry="3.8" fill="#6A2E1A"/>';
+        // Warm shadow on opposite side from light
+        s += '<ellipse cx="60.7" cy="23.3" rx="2.4" ry="3" fill="rgba(40,20,5,0.22)"/>';
         // Abdomen highlight — warm sheen
-        s += '<ellipse cx="59.5" cy="21.5" rx="1.5" ry="1.8" fill="rgba(180,100,50,0.2)"/>';
+        s += '<ellipse cx="59.5" cy="21.5" rx="1.5" ry="1.8" fill="rgba(220,140,80,0.28)"/>';
+        // Cream specular pickup (upper-left)
+        s += '<ellipse cx="59.2" cy="21" rx="0.5" ry="0.7" fill="#f5ecd6" opacity="0.55"/>';
         // Abdomen markings — vivid chevrons
         s += '<path d="M58.2,21 L60,19.8 L61.8,21" fill="none" stroke="#C87040" stroke-width="0.4" opacity="0.7"/>';
         s += '<path d="M58,22.5 L60,21.3 L62,22.5" fill="none" stroke="#B86030" stroke-width="0.35" opacity="0.6"/>';
@@ -28440,13 +28480,16 @@ document.addEventListener('keydown', function(e) {
         // Leg joints
         s += '<circle cx="55.5" cy="17" r="0.35" fill="#7A3820"/>';
         s += '<circle cx="64.5" cy="17" r="0.35" fill="#7A3820"/>';
-        // Eyes — BRIGHT, prominent, 8-eye arrangement
+        // Leg tip terminators — warm dots at every leg end
+        s += '<circle cx="54" cy="16" r="0.2" fill="#8A4020"/><circle cx="53" cy="19" r="0.2" fill="#8A4020"/><circle cx="54" cy="22" r="0.2" fill="#8A4020"/><circle cx="55" cy="24.5" r="0.2" fill="#8A4020"/>';
+        s += '<circle cx="66" cy="16" r="0.2" fill="#8A4020"/><circle cx="67" cy="19" r="0.2" fill="#8A4020"/><circle cx="66" cy="22" r="0.2" fill="#8A4020"/><circle cx="65" cy="24.5" r="0.2" fill="#8A4020"/>';
+        // Eyes — BRIGHT, prominent, 8-eye arrangement (warm-shifted)
         s += '<circle cx="59" cy="18.2" r="0.55" fill="#E8D8A0"/>';
         s += '<circle cx="61" cy="18.2" r="0.55" fill="#E8D8A0"/>';
-        s += '<circle cx="59" cy="18.2" r="0.25" fill="#111"/>';
-        s += '<circle cx="61" cy="18.2" r="0.25" fill="#111"/>';
-        s += '<circle cx="59.1" cy="18.1" r="0.08" fill="rgba(255,250,220,0.7)"/>';
-        s += '<circle cx="61.1" cy="18.1" r="0.08" fill="rgba(255,250,220,0.7)"/>';
+        s += '<circle cx="59" cy="18.2" r="0.25" fill="#1a1208"/>';
+        s += '<circle cx="61" cy="18.2" r="0.25" fill="#1a1208"/>';
+        s += '<circle cx="58.92" cy="18.08" r="0.1" fill="#fff8e0"/>';
+        s += '<circle cx="60.92" cy="18.08" r="0.1" fill="#fff8e0"/>';
         // Smaller secondary eyes
         s += '<circle cx="59.5" cy="17.7" r="0.3" fill="#D8C890" opacity="0.7"/>';
         s += '<circle cx="60.5" cy="17.7" r="0.3" fill="#D8C890" opacity="0.7"/>';
@@ -28465,8 +28508,9 @@ document.addEventListener('keydown', function(e) {
         // humans. Warty skin, parotoid poison glands, golden slit-pupil
         // eyes, wide mouth, squat heavy body. A solid presence.
         s += '<g opacity="1" transform="translate(0,10) translate(48,74) scale(1.15) translate(-48,-74)">';
-        // Shadow beneath
-        s += '<ellipse cx="48.5" cy="78" rx="5" ry="1" fill="#0d100c" opacity="0.18"/>';
+        // AO drop shadow beneath toad — warm, wider for guardian presence
+        s += '<ellipse cx="48.5" cy="78.6" rx="5.6" ry="1.1" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="48.5" cy="78" rx="5" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
         // Hind legs — thick, tucked under body
         s += '<path d="M44,75 Q42.5,77 43.5,78.5 Q44.5,79 45,78" fill="#3A5A30" opacity="0.6"/>';
         s += '<path d="M52,75 Q53.5,77 52.5,78.5 Q51.5,79 51,78" fill="#3A5A30" opacity="0.6"/>';
@@ -28475,6 +28519,11 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53,78.5 L54,79.2 M52.5,78.5 L52.5,79.5 M52,78.5 L51.5,79.3" stroke="#3A5A30" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         // Body — squat, heavy, ground-hugging
         s += '<ellipse cx="48" cy="74" rx="5.5" ry="3.8" fill="#4A6A38"/>';
+        // Body warm-shifted shadow (right side, away from upper-left light)
+        s += '<ellipse cx="49.5" cy="75" rx="4" ry="2.8" fill="rgba(40,20,5,0.18)"/>';
+        // CREAM HIGHLIGHT on dome of back (upper-left, master playbook)
+        s += '<ellipse cx="46.5" cy="72.3" rx="2.2" ry="1.0" fill="#f5ecd6" opacity="0.20"/>';
+        s += '<ellipse cx="46.2" cy="72" rx="0.9" ry="0.4" fill="#fff8e0" opacity="0.35"/>';
         // Belly — lighter
         s += '<ellipse cx="48" cy="75.5" rx="3.5" ry="2" fill="#6A8A58" opacity="0.3"/>';
         // WARTS — the toad's defining skin texture. Many small bumps.
@@ -28506,9 +28555,12 @@ document.addEventListener('keydown', function(e) {
         // Horizontal slit pupil — the toad's ancient gaze
         s += '<ellipse cx="46" cy="69" rx="0.55" ry="0.2" fill="#1A2A10"/>';
         s += '<ellipse cx="50" cy="69" rx="0.55" ry="0.2" fill="#1A2A10"/>';
-        // Eye specular
-        s += '<circle cx="45.7" cy="68.7" r="0.2" fill="#f5ecd6"/>';
-        s += '<circle cx="49.7" cy="68.7" r="0.2" fill="#f5ecd6"/>';
+        // Eye specular — sharp cream pickup (upper-left, fff8e0)
+        s += '<circle cx="45.7" cy="68.7" r="0.22" fill="#fff8e0"/>';
+        s += '<circle cx="49.7" cy="68.7" r="0.22" fill="#fff8e0"/>';
+        // Diffuse iris highlight (broader)
+        s += '<ellipse cx="45.6" cy="68.55" rx="0.45" ry="0.25" fill="#f5ecd6" opacity="0.40"/>';
+        s += '<ellipse cx="49.6" cy="68.55" rx="0.45" ry="0.25" fill="#f5ecd6" opacity="0.40"/>';
         // Brow ridge — toad eyes sit in prominent sockets
         s += '<path d="M44.5,68.5 Q46,67.8 47,68.5" fill="none" stroke="#3A5A2A" stroke-width="0.3" opacity="0.3"/>';
         s += '<path d="M49,68.5 Q50,67.8 51.5,68.5" fill="none" stroke="#3A5A2A" stroke-width="0.3" opacity="0.3"/>';
@@ -28519,8 +28571,15 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="49" cy="71" r="0.15" fill="#2A3A18" opacity="0.4"/>';
         // Throat pulse — toads breathe by pumping throat
         s += '<ellipse cx="48" cy="72.5" rx="2" ry="1" fill="#6A8A50" opacity="0.12"><animate attributeName="ry" values="1;1.3;1" dur="3s" repeatCount="indefinite"/></ellipse>';
+        // Throat fold — warm-shifted shadow under chin (master playbook)
+        s += '<path d="M45.5,72.6 Q48,73.6 50.5,72.6" fill="none" stroke="rgba(40,20,5,0.35)" stroke-width="0.35" stroke-linecap="round"/>';
+        s += '<path d="M46,73.1 Q48,73.9 50,73.1" fill="none" stroke="rgba(40,20,5,0.20)" stroke-width="0.25" stroke-linecap="round"/>';
         // Mythic glow — subtle golden aura (this is a MYTHIC creature)
-        s += '<ellipse cx="48" cy="74" rx="7" ry="5" fill="rgba(200,168,75,0.02)"><animate attributeName="opacity" values="0.02;0.05;0.02" dur="4s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="48" cy="74" rx="7" ry="5" fill="rgba(200,168,75,0.04)"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // Mythic gold flecks at warts (treasure-spotted)
+        s += '<circle cx="46.5" cy="71.8" r="0.18" fill="#C8A84B" opacity="0.45"/>';
+        s += '<circle cx="50.2" cy="72.3" r="0.16" fill="#C8A84B" opacity="0.4"/>';
+        s += '<circle cx="48" cy="73.2" r="0.14" fill="#C8A84B" opacity="0.35"/>';
         // Action marks (( )) near eyes
         s += '<path d="M43,68 Q42.5,69.5 43,71" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -28533,6 +28592,8 @@ document.addEventListener('keydown', function(e) {
         // held flat. Still SVG-only — a Midjourney reference could later
         // drive another pass, but this should read cleanly at card sizes.
         s += '<g opacity="0.95" transform="translate(0,-40)">';
+        // AO drop shadow under cicada body (warm)
+        s += '<ellipse cx="55" cy="87" rx="4.5" ry="0.7" fill="rgba(40,20,5,0.30)"/>';
         // Soft chorus halo — dusk-lit sage glow
         s += '<radialGradient id="cicGlow"><stop offset="0%" stop-color="#A8B872" stop-opacity="0.2"/><stop offset="100%" stop-color="#A8B872" stop-opacity="0"/></radialGradient>';
         s += '<ellipse cx="55" cy="82" rx="12" ry="8" fill="url(#cicGlow)"><animate attributeName="opacity" values="0.5;0.95;0.5" dur="5s" repeatCount="indefinite"/></ellipse>';
@@ -28549,12 +28610,20 @@ document.addEventListener('keydown', function(e) {
         // Forewing crisp veins — leading edge + crossvein
         s += '<path d="M53.5,79 Q52,80.5 53,83 M50.2,80.2 Q51.2,81.5 52.5,82.8" stroke="rgba(70,90,50,0.75)" stroke-width="0.18" fill="none"/>';
         s += '<path d="M56.5,79 Q58,80.5 57,83 M59.8,80.2 Q58.8,81.5 57.5,82.8" stroke="rgba(70,90,50,0.75)" stroke-width="0.18" fill="none"/>';
+        // Cream wing-vein highlights (master playbook)
+        s += '<path d="M53.5,79 Q52,80.5 53,83" stroke="#f5ecd6" stroke-width="0.08" fill="none" opacity="0.55"/>';
+        s += '<path d="M56.5,79 Q58,80.5 57,83" stroke="#f5ecd6" stroke-width="0.08" fill="none" opacity="0.55"/>';
+        // Specular sliver on each forewing leading edge
+        s += '<path d="M53.4,79 Q51.5,79.7 51,80.4" stroke="#fff8e0" stroke-width="0.12" fill="none" opacity="0.50"/>';
+        s += '<path d="M56.6,79 Q58.5,79.7 59,80.4" stroke="#fff8e0" stroke-width="0.12" fill="none" opacity="0.50"/>';
         // ── THORAX — raised shoulder plate, darker olive ──
         s += '<ellipse cx="55" cy="78.3" rx="2.1" ry="1.4" fill="#5A6A2E"/>';
         s += '<ellipse cx="55" cy="78" rx="1.5" ry="0.8" fill="#7A8A42" opacity="0.5"/>';
         // Shoulder gold flecks — the Mythic glint
         s += '<circle cx="53.8" cy="78" r="0.22" fill="#C8A84B" opacity="0.7"/>';
         s += '<circle cx="56.2" cy="78" r="0.22" fill="#C8A84B" opacity="0.7"/>';
+        // Cream specular highlight on thorax dome (upper-left, master playbook)
+        s += '<ellipse cx="54.4" cy="77.85" rx="0.7" ry="0.3" fill="#f5ecd6" opacity="0.40"/>';
         // ── ABDOMEN — tapered teardrop, 4 visible segments ──
         s += '<path d="M53,79.5 Q52.5,83 53.5,86 Q55,87 56.5,86 Q57.5,83 57,79.5 Q55,78.8 53,79.5 Z" fill="#6B7A3A"/>';
         s += '<path d="M53.5,80.5 Q53.2,83.5 54,85.5 Q55,86.3 56,85.5 Q56.8,83.5 56.5,80.5 Q55,80 53.5,80.5 Z" fill="#8A9A52" opacity="0.4"/>';
@@ -28562,14 +28631,14 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.4,81.8 Q55,82.2 56.6,81.8 M53.3,83.2 Q55,83.6 56.7,83.2 M53.3,84.5 Q55,84.9 56.7,84.5" stroke="#3A4A1E" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
         // ── HEAD — bulbous with prominent compound eyes ──
         s += '<ellipse cx="55" cy="76.5" rx="2" ry="1.5" fill="#4A5A22"/>';
-        // Compound eyes — darker, with gold inner highlight
-        s += '<circle cx="53.4" cy="76.5" r="0.85" fill="#1A1A0A"/>';
-        s += '<circle cx="56.6" cy="76.5" r="0.85" fill="#1A1A0A"/>';
+        // Compound eyes — warm-shifted dark, with gold inner highlight
+        s += '<circle cx="53.4" cy="76.5" r="0.85" fill="#1a1208"/>';
+        s += '<circle cx="56.6" cy="76.5" r="0.85" fill="#1a1208"/>';
         s += '<circle cx="53.4" cy="76.2" r="0.3" fill="#C8A84B" opacity="0.85"/>';
         s += '<circle cx="56.6" cy="76.2" r="0.3" fill="#C8A84B" opacity="0.85"/>';
-        // Eye shine
-        s += '<circle cx="53.2" cy="76.05" r="0.1" fill="#f0e6c0" opacity="0.9"/>';
-        s += '<circle cx="56.4" cy="76.05" r="0.1" fill="#f0e6c0" opacity="0.9"/>';
+        // Eye shine — sharp cream pickup (master playbook)
+        s += '<circle cx="53.2" cy="76.05" r="0.13" fill="#fff8e0"/>';
+        s += '<circle cx="56.4" cy="76.05" r="0.13" fill="#fff8e0"/>';
         // Antennae — thin, curving up and back
         s += '<path d="M54.1,75.3 Q53.2,73 51.8,72.2" stroke="#3A4A1E" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.9,75.3 Q56.8,73 58.2,72.2" stroke="#3A4A1E" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
@@ -28590,8 +28659,9 @@ document.addEventListener('keydown', function(e) {
         // big eyes, tiny tusks barely poking out, short curly trunk,
         // fluffy fur tufts, stubby legs. Adorable not fearsome.
         s += '<g opacity="0.95" transform="translate(6,0)">';
-        // Shadow
-        s += '<ellipse cx="54" cy="92" rx="8" ry="0.7" fill="#000" opacity="0.10"/>';
+        // AO drop shadow — warm, wider for legendary presence
+        s += '<ellipse cx="54" cy="93.2" rx="8.5" ry="1" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="54" cy="92.4" rx="7.5" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
         // ── HIND LEGS (behind body) ──
         s += '<rect x="57" y="88" width="3.5" height="4.5" rx="1.2" fill="#4A3428"/>';
         s += '<rect x="54" y="88.5" width="3.5" height="4" rx="1.2" fill="#5A4438"/>';
@@ -28603,9 +28673,17 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M47,77 q-0.5,1 0.2,1.8 M49,76 q-0.3,1.2 0.3,2 M51,75.5 q0,1 0.4,1.8 M53,75 q0.2,1.2 0.5,2 M55,75.2 q0.3,1 0.6,1.8 M57,75.8 q0.4,0.8 0.5,1.5 M59,77 q0.3,0.8 0.3,1.5" fill="none" stroke="#3A2418" stroke-width="0.3" opacity="0.35" stroke-linecap="round"/>';
         // Side fluff
         s += '<path d="M46,82 q-0.8,0.5 -0.3,1.5 M45.5,84.5 q-0.6,0.5 -0.2,1.3 M46,87 q-0.5,0.5 0,1.2" fill="none" stroke="#3A2418" stroke-width="0.25" opacity="0.3" stroke-linecap="round"/>';
-        // Fur texture arcs on body
-        s += '<path d="M48,79 C51,78 54,78.5 57,79.5" fill="none" stroke="#4A3020" stroke-width="0.25" opacity="0.15"/>';
-        s += '<path d="M47.5,82 C50,81.5 53,82 56,83" fill="none" stroke="#4A3020" stroke-width="0.25" opacity="0.12"/>';
+        // Fur texture arcs on body — multi-tone for real fur depth
+        s += '<path d="M48,79 C51,78 54,78.5 57,79.5" fill="none" stroke="#4A3020" stroke-width="0.25" opacity="0.20"/>';
+        s += '<path d="M47.5,82 C50,81.5 53,82 56,83" fill="none" stroke="#4A3020" stroke-width="0.25" opacity="0.18"/>';
+        s += '<path d="M48,85 C51,84.5 54,85 57,86" fill="none" stroke="#4A3020" stroke-width="0.22" opacity="0.16"/>';
+        // Hue-shifted auburn fur strokes (cinnamon highlight)
+        s += '<path d="M49,80 q0.3,0.7 0,1.4 M51,79.5 q0.2,0.8 -0.1,1.5 M53,79.2 q0.3,0.7 0,1.5 M55,79.5 q0.2,0.8 -0.1,1.5 M57,80 q0.3,0.7 0,1.4" fill="none" stroke="#9A6F4A" stroke-width="0.22" opacity="0.40" stroke-linecap="round"/>';
+        s += '<path d="M48.5,83 q0.3,0.7 0,1.4 M50.5,82.7 q0.2,0.8 -0.1,1.5 M52.5,82.5 q0.3,0.7 0,1.4 M54.5,82.7 q0.2,0.8 -0.1,1.5 M56.5,83 q0.3,0.7 0,1.4" fill="none" stroke="#8A5F40" stroke-width="0.20" opacity="0.35" stroke-linecap="round"/>';
+        // Warm cream highlight strands on dome (upper-left light direction)
+        s += '<path d="M48,77.5 q0.3,0.6 0,1.2 M50,77 q0.2,0.7 -0.1,1.3 M52,76.8 q0.3,0.6 0,1.2" fill="none" stroke="#C8A084" stroke-width="0.18" opacity="0.45" stroke-linecap="round"/>';
+        // Dark warm-brown undercoat strands for fur depth
+        s += '<path d="M47,86 q-0.5,0.5 -0.2,1.2 M49,87 q0,0.7 0.3,1.2 M55,87.5 q0,0.7 0.3,1.2 M57,87 q0.5,0.5 0.2,1.2" fill="none" stroke="#2a1808" stroke-width="0.18" opacity="0.35" stroke-linecap="round"/>';
         // ── FRONT LEGS (in front) ──
         s += '<rect x="49" y="87.5" width="3.5" height="5" rx="1.2" fill="#5A4438"/>';
         s += '<rect x="46" y="87" width="3.5" height="5.5" rx="1.2" fill="#6A5040"/>';
@@ -28637,8 +28715,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M42.5,80 Q42,80.2 41.8,80.3 M42.2,81 Q41.8,81.2 41.6,81.3" fill="none" stroke="#3A2418" stroke-width="0.15" opacity="0.25"/>';
         // Trunk tip — little nostrils
         s += '<circle cx="42.5" cy="82.3" r="0.2" fill="#2A1A10" opacity="0.5"/>';
-        // ── TINY TUSKS — barely poking out, adorable ──
-        s += '<path d="M43.5,80 Q42.5,80.8 42.5,81.2" fill="none" stroke="#F0E4C8" stroke-width="0.5" stroke-linecap="round"/>';
+        // ── TINY TUSKS — barely poking out, warm cream/ivory ──
+        s += '<path d="M43.5,80 Q42.5,80.8 42.5,81.2" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round"/>';
+        s += '<circle cx="42.5" cy="81.2" r="0.18" fill="#fff8e0"/>';
         // ── TAIL — tiny tuft ──
         s += '<path d="M63,82 Q64,81 64.5,82 Q64.5,83 63.5,83" fill="#3A2418" stroke="#2A1A10" stroke-width="0.2"/>';
         s += '<path d="M64,81.5 q0.2,0.4 0,0.8" fill="none" stroke="#2A1A10" stroke-width="0.15" opacity="0.3"/>';
@@ -28650,8 +28729,9 @@ document.addEventListener('keydown', function(e) {
         // Procyon lotor. Sitting upright, tail wrapping from body, head on shoulders.
         // Key fix: connected anatomy — body→tail as one flow, neck→head overlapping.
         s += '<g opacity="1" transform="translate(-4,0) translate(18,84) scale(1.0) translate(-18,-84)">';
-        // Shadow
-        s += '<ellipse cx="18" cy="91" rx="6" ry="0.9" fill="#0d100c" opacity="0.15"/>';
+        // AO drop shadow — warm, two-pass for legendary presence
+        s += '<ellipse cx="18" cy="92" rx="6.5" ry="1" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="18" cy="91.2" rx="5.5" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
         // Tail — thick, originating from INSIDE body mass at left hip
         s += '<path d="M15,86 Q13,87 10,86 Q7.5,84.5 6,82 Q5,79.5 5.5,77.5" fill="#7A7A72" stroke="#6A6A62" stroke-width="0.3"/>';
         // Tail rings — dark bands overlaid on filled tail
@@ -28695,16 +28775,18 @@ document.addEventListener('keydown', function(e) {
         // Forehead — lighter central stripe
         s += '<path d="M16.5,73 Q18,72.2 19.5,73" fill="none" stroke="#B0B0A8" stroke-width="0.6" opacity="0.25"/>';
         // MASK — the iconic dark raccoon eye band
-        s += '<path d="M14.2,75 Q16,73.5 18,74.5 Q20,73.5 21.8,75 Q20,76.2 18,75.5 Q16,76.2 14.2,75 Z" fill="#2A2A22" opacity="0.75"/>';
+        s += '<path d="M14.2,75 Q16,73.5 18,74.5 Q20,73.5 21.8,75 Q20,76.2 18,75.5 Q16,76.2 14.2,75 Z" fill="#1a1208" opacity="0.78"/>';
         // Mask extends to cheeks
-        s += '<path d="M14.2,75 Q13.5,75.5 13.5,76" stroke="#2A2A22" stroke-width="0.8" opacity="0.4" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M21.8,75 Q22.5,75.5 22.5,76" stroke="#2A2A22" stroke-width="0.8" opacity="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M14.2,75 Q13.5,75.5 13.5,76" stroke="#1a1208" stroke-width="0.8" opacity="0.42" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M21.8,75 Q22.5,75.5 22.5,76" stroke="#1a1208" stroke-width="0.8" opacity="0.42" fill="none" stroke-linecap="round"/>';
         // White fur borders — above and below mask
         s += '<path d="M15,73.5 Q18,72 21,73.5" fill="none" stroke="#C8C8C0" stroke-width="0.5" opacity="0.35"/>';
         s += '<path d="M15.5,76.5 Q18,77.5 20.5,76.5" fill="none" stroke="#B0B0A8" stroke-width="0.4" opacity="0.3"/>';
         // Eyes — bright, intelligent, within the mask
-        s += '<circle cx="16.2" cy="74.8" r="0.7" fill="#1A1A12"/>';
-        s += '<circle cx="19.8" cy="74.8" r="0.7" fill="#1A1A12"/>';
+        s += '<circle cx="16.2" cy="74.8" r="0.7" fill="#1a1208"/>';
+        s += '<circle cx="19.8" cy="74.8" r="0.7" fill="#1a1208"/>';
+        s += '<circle cx="16.2" cy="74.7" r="0.4" fill="#5A3A1A" opacity="0.45"/>';
+        s += '<circle cx="19.8" cy="74.7" r="0.4" fill="#5A3A1A" opacity="0.45"/>';
         // Eye shine — double specular (Beholder technique)
         s += '<circle cx="16.4" cy="74.6" r="0.2" fill="#f5ecd6"/>';
         s += '<circle cx="16.1" cy="75" r="0.08" fill="#f5ecd6"/>';
@@ -28721,8 +28803,8 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="18" cy="76.8" rx="1.6" ry="1.1" fill="#A0A098"/>';
         s += '<ellipse cx="18" cy="76.8" rx="1" ry="0.6" fill="#B0B0A8" opacity="0.15"/>';
         // Nose — small, dark, rounded
-        s += '<ellipse cx="18" cy="76.2" rx="0.55" ry="0.38" fill="#2A2A22"/>';
-        s += '<circle cx="18.1" cy="76.1" r="0.08" fill="rgba(200,200,190,0.3)"/>';
+        s += '<ellipse cx="18" cy="76.2" rx="0.55" ry="0.38" fill="#1a1208"/>';
+        s += '<circle cx="17.92" cy="76.08" r="0.10" fill="#fff8e0"/>';
         // Whiskers — longer, more visible
         s += '<line x1="16.5" y1="76.8" x2="13.5" y2="76.2" stroke="#B0B0A0" stroke-width="0.08" opacity="0.35"/>';
         s += '<line x1="16.5" y1="77" x2="13.5" y2="77.5" stroke="#B0B0A0" stroke-width="0.08" opacity="0.3"/>';
@@ -28740,12 +28822,18 @@ document.addEventListener('keydown', function(e) {
         // elegant S-curved neck, dagger bill, slate-blue plumage.
         // Standing motionless on one leg, watching.
         s += '<g opacity="1" transform="translate(60,68) scale(1.15) translate(-60,-68)">';
-        // Shadow
-        s += '<ellipse cx="60" cy="90" rx="3" ry="0.6" fill="#0d100c" opacity="0.12"/>';
+        // AO drop shadow under heron foot — warm
+        s += '<ellipse cx="60" cy="91.5" rx="3.5" ry="0.7" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="60" cy="90.7" rx="2.5" ry="0.4" fill="rgba(40,20,5,0.20)"/>';
         // Body — compact, angled slightly forward
         s += '<ellipse cx="59" cy="79" rx="4" ry="3" fill="#6A7A8A" transform="rotate(-10,59,79)"/>';
+        // Cream feather highlight on body dome (upper-left)
+        s += '<ellipse cx="57.5" cy="77.6" rx="1.6" ry="0.7" fill="#f5ecd6" opacity="0.20" transform="rotate(-10,57.5,77.6)"/>';
+        s += '<ellipse cx="57.2" cy="77.3" rx="0.6" ry="0.3" fill="#fff8e0" opacity="0.40" transform="rotate(-10,57.2,77.3)"/>';
         // Wing detail — folded along body
         s += '<path d="M56,78 Q58,80 62,81 Q64,80 63,78" fill="#5A6A7A" opacity="0.5"/>';
+        // Cream feather edge highlights along wing
+        s += '<path d="M57,78.6 Q59,80 62.3,80.8" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="0.45" stroke-linecap="round"/>';
         // Belly — lighter
         s += '<ellipse cx="59" cy="80.5" rx="2.5" ry="1.5" fill="#8A9AA8" opacity="0.25"/>';
         // Legs — drawn AFTER body, starting from inside body mass
@@ -28761,6 +28849,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M58,76 Q57,74 57.5,72 Q58,70 59,68 Q60,66 60.5,64" fill="none" stroke="#8A9AA8" stroke-width="1.8" stroke-linecap="round"/>';
         // Neck front — lighter
         s += '<path d="M58,76 Q57.2,74 57.7,72 Q58.2,70.2 59.2,68.2" fill="none" stroke="#B0B8C0" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
+        // Cream specular pickup along neck (upper-left)
+        s += '<path d="M57.6,74 Q58,72 59,69.5" fill="none" stroke="#f5ecd6" stroke-width="0.20" stroke-linecap="round" opacity="0.40"/>';
         // Head — small, flat-topped
         s += '<ellipse cx="60.5" cy="63" rx="2" ry="1.5" fill="#8A9AA8"/>';
         // Crown — dark cap with trailing plume (breeding plumage)
@@ -28768,8 +28858,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M62.5,62.5 Q64,62 65.5,62.5" stroke="#2A3A4A" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
         // Eye — fierce, golden
         s += '<circle cx="59.5" cy="63" r="0.5" fill="#C8A84B"/>';
-        s += '<circle cx="59.5" cy="63" r="0.2" fill="#1A1A10"/>';
-        s += '<circle cx="59.6" cy="62.8" r="0.1" fill="#f5ecd6"/>';
+        s += '<circle cx="59.5" cy="63" r="0.2" fill="#1a1208"/>';
+        s += '<circle cx="59.42" cy="62.92" r="0.10" fill="#fff8e0"/>';
         // Bill — long, dagger-like, yellow
         s += '<path d="M58.5,63.5 L55.5,64 L55.3,63.5 L58.5,62.8 Z" fill="#C8A84B"/>';
         s += '<line x1="55.5" y1="63.7" x2="58.5" y2="63.1" stroke="#A08830" stroke-width="0.15"/>';
@@ -28807,35 +28897,54 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="38" cy="6"  r="0.5" fill="#f5ecd6"/>';
         s += '<circle cx="60" cy="4"  r="0.9" fill="#f5ecd6"/>';
         // Spider dangling from thread
-        s += '<ellipse cx="60" cy="33" rx="2.6" ry="2.0" fill="#0d100c" stroke="#8B2E2E" stroke-width="0.4"/>';
-        s += '<ellipse cx="60" cy="30.8" rx="1.5" ry="1.2" fill="#1a1a1a"/>';
-        // 4 pairs of legs
-        s += '<path d="M57.6,32 L54.8,29.5 M57.6,33 L54.8,35 M62.4,32 L65.2,29.5 M62.4,33 L65.2,35" stroke="#1a1a1a" stroke-width="0.65" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M58.2,31.5 L55.8,28 M58.2,33.5 L55.8,36.5 M61.8,31.5 L64.2,28 M61.8,33.5 L64.2,36.5" stroke="#1a1a1a" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<ellipse cx="60" cy="33" rx="2.6" ry="2.0" fill="#1a1208" stroke="#8B2E2E" stroke-width="0.4"/>';
+        s += '<ellipse cx="58.8" cy="32.2" rx="0.6" ry="0.5" fill="#f5ecd6" opacity="0.30"/>';
+        s += '<ellipse cx="58.6" cy="32.0" rx="0.22" ry="0.18" fill="#fff8e0" opacity="0.55"/>';
+        s += '<ellipse cx="60" cy="30.8" rx="1.5" ry="1.2" fill="#2a1808"/>';
+        // 4 pairs of legs (warm-shifted)
+        s += '<path d="M57.6,32 L54.8,29.5 M57.6,33 L54.8,35 M62.4,32 L65.2,29.5 M62.4,33 L65.2,35" stroke="#1a1208" stroke-width="0.65" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M58.2,31.5 L55.8,28 M58.2,33.5 L55.8,36.5 M61.8,31.5 L64.2,28 M61.8,33.5 L64.2,36.5" stroke="#1a1208" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Leg tip terminators — warm dots
+        s += '<circle cx="54.8" cy="29.5" r="0.16" fill="#3a2010"/><circle cx="54.8" cy="35" r="0.16" fill="#3a2010"/><circle cx="65.2" cy="29.5" r="0.16" fill="#3a2010"/><circle cx="65.2" cy="35" r="0.16" fill="#3a2010"/>';
+        s += '<circle cx="55.8" cy="28" r="0.14" fill="#3a2010"/><circle cx="55.8" cy="36.5" r="0.14" fill="#3a2010"/><circle cx="64.2" cy="28" r="0.14" fill="#3a2010"/><circle cx="64.2" cy="36.5" r="0.14" fill="#3a2010"/>';
         // Red hourglass
         s += '<path d="M59.4,32.8 L60,33.5 L60.6,32.8 L60,33.3 Z" fill="#8B2E2E" opacity="0.7"/>';
         s += '</g>';
         break;
       case 38: // The Beholder — floating eye creature (ultra-rare)
         s += '<g transform="translate(0,0)"><animateTransform attributeName="transform" type="translate" values="0 0; 0 -1.4; 0 0; 0 1.0; 0 0" dur="5.8s" repeatCount="indefinite"/>';
-        s += '<g opacity="0.18"><ellipse cx="55.2" cy="19.6" rx="9.2" ry="8.0" fill="#4A3A5B"/></g>';
+        s += '<radialGradient id="bhGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#C8A84B" stop-opacity="0.35"/><stop offset="40%" stop-color="#8B6BAB" stop-opacity="0.18"/><stop offset="100%" stop-color="#4A3A5B" stop-opacity="0"/></radialGradient>';
+        s += '<ellipse cx="55.2" cy="19.1" rx="14" ry="12" fill="url(#bhGlow)"><animate attributeName="opacity" values="0.55;0.95;0.55" dur="4.2s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="55.2" cy="19.1" rx="11" ry="9.5" fill="url(#bhGlow)" opacity="0.5"><animate attributeName="rx" values="11;13;11" dur="6s" repeatCount="indefinite"/><animate attributeName="ry" values="9.5;11;9.5" dur="6s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="55.2" cy="29.5" rx="7" ry="0.9" fill="rgba(40,20,5,0.30)"/>';
+        s += '<g opacity="0.20"><ellipse cx="55.2" cy="19.6" rx="9.2" ry="8.0" fill="#3a1a4a"/></g>';
         s += '<path d="M48.2,18.6 C47.0,15.6 45.8,13.2 43.9,11.2" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M49.0,15.2 C48.4,12.2 48.4,9.8 49.2,7.8" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M52.2,13.4 C52.6,10.8 53.8,8.6 55.6,6.9" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M58.2,13.8 C60.0,11.8 61.8,10.6 64.3,9.9" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M61.0,17.0 C63.6,15.9 65.6,15.7 67.6,16.3" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
-        s += '<ellipse cx="43.9" cy="11.2" rx="1.5" ry="1.3" fill="#EAE0C8"/><circle cx="43.9" cy="11.2" r="0.62" fill="#C8A84B"/><circle cx="44.05" cy="11.2" r="0.24" fill="#1A1420"/>';
-        s += '<ellipse cx="49.2" cy="7.8" rx="1.35" ry="1.2" fill="#EAE0C8"/><circle cx="49.2" cy="7.8" r="0.56" fill="#C8A84B"/><circle cx="49.3" cy="7.8" r="0.22" fill="#1A1420"/>';
-        s += '<ellipse cx="55.6" cy="6.9" rx="1.45" ry="1.28" fill="#EAE0C8"/><circle cx="55.6" cy="6.9" r="0.60" fill="#C8A84B"/><circle cx="55.72" cy="6.9" r="0.24" fill="#1A1420"/>';
-        s += '<ellipse cx="64.3" cy="9.9" rx="1.45" ry="1.28" fill="#EAE0C8"/><circle cx="64.3" cy="9.9" r="0.60" fill="#C8A84B"/><circle cx="64.42" cy="9.9" r="0.24" fill="#1A1420"/>';
-        s += '<ellipse cx="67.6" cy="16.3" rx="1.35" ry="1.2" fill="#EAE0C8"/><circle cx="67.6" cy="16.3" r="0.56" fill="#C8A84B"/><circle cx="67.72" cy="16.3" r="0.22" fill="#1A1420"/>';
+        s += '<ellipse cx="43.9" cy="11.2" rx="1.5" ry="1.3" fill="#EAE0C8"/><circle cx="43.9" cy="11.2" r="0.62" fill="#C8A84B"/><circle cx="44.05" cy="11.2" r="0.24" fill="#1a0a14"/><circle cx="43.78" cy="11.05" r="0.10" fill="#fff8e0"/>';
+        s += '<ellipse cx="49.2" cy="7.8" rx="1.35" ry="1.2" fill="#EAE0C8"/><circle cx="49.2" cy="7.8" r="0.56" fill="#C8A84B"/><circle cx="49.3" cy="7.8" r="0.22" fill="#1a0a14"/><circle cx="49.08" cy="7.65" r="0.09" fill="#fff8e0"/>';
+        s += '<ellipse cx="55.6" cy="6.9" rx="1.45" ry="1.28" fill="#EAE0C8"/><circle cx="55.6" cy="6.9" r="0.60" fill="#C8A84B"/><circle cx="55.72" cy="6.9" r="0.24" fill="#1a0a14"/><circle cx="55.48" cy="6.75" r="0.10" fill="#fff8e0"/>';
+        s += '<ellipse cx="64.3" cy="9.9" rx="1.45" ry="1.28" fill="#EAE0C8"/><circle cx="64.3" cy="9.9" r="0.60" fill="#C8A84B"/><circle cx="64.42" cy="9.9" r="0.24" fill="#1a0a14"/><circle cx="64.18" cy="9.75" r="0.10" fill="#fff8e0"/>';
+        s += '<ellipse cx="67.6" cy="16.3" rx="1.35" ry="1.2" fill="#EAE0C8"/><circle cx="67.6" cy="16.3" r="0.56" fill="#C8A84B"/><circle cx="67.72" cy="16.3" r="0.22" fill="#1a0a14"/><circle cx="67.48" cy="16.15" r="0.09" fill="#fff8e0"/>';
         s += '<ellipse cx="55.2" cy="19.0" rx="8.0" ry="7.0" fill="#6B5B7B"/>';
+        // Cream highlight on body dome (upper-left, master playbook)
+        s += '<ellipse cx="52.8" cy="16.9" rx="2.5" ry="1.2" fill="#f5ecd6" opacity="0.18"/>';
+        s += '<ellipse cx="52.4" cy="16.6" rx="0.9" ry="0.4" fill="#fff8e0" opacity="0.40"/>';
         s += '<path d="M48.4,21.8 C49.6,25.2 52.6,27.4 56.8,27.0 C60.5,26.7 62.5,24.6 63.4,21.8" fill="#4A3A5B" opacity="0.35"/>';
         s += '<path d="M49.0,16.3 C50.8,14.1 53.4,13.0 56.0,13.1 C59.0,13.2 61.2,14.2 62.8,16.0" fill="none" stroke="#EAE0C8" stroke-width="0.45" stroke-linecap="round" opacity="0.45"/>';
-        s += '<ellipse cx="55.3" cy="19.1" rx="4.0" ry="3.2" fill="#EAE0C8"/>';
-        s += '<ellipse cx="55.3" cy="19.1" rx="2.25" ry="1.95" fill="#C8A84B"/>';
-        s += '<ellipse cx="55.35" cy="19.1" rx="0.52" ry="1.58" fill="#1A1420"/>';
-        s += '<circle cx="54.2" cy="18.15" r="0.44" fill="#EAE0C8" opacity="0.95"/>';
+        s += '<radialGradient id="bhScl" cx="35%" cy="30%" r="80%"><stop offset="0%" stop-color="#fff8e0"/><stop offset="55%" stop-color="#EAE0C8"/><stop offset="85%" stop-color="#B8A88C"/><stop offset="100%" stop-color="#7A6850"/></radialGradient>';
+        s += '<ellipse cx="55.3" cy="19.1" rx="4.0" ry="3.2" fill="url(#bhScl)"/>';
+        s += '<ellipse cx="55.3" cy="19.1" rx="4.0" ry="3.2" fill="none" stroke="#3a1a2a" stroke-width="0.25" opacity="0.55"/>';
+        s += '<radialGradient id="bhIris" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#F0C870"/><stop offset="50%" stop-color="#C8A84B"/><stop offset="85%" stop-color="#8A6028"/><stop offset="100%" stop-color="#3A2010"/></radialGradient>';
+        s += '<ellipse cx="55.3" cy="19.1" rx="2.25" ry="1.95" fill="url(#bhIris)"/>';
+        s += '<ellipse cx="55.3" cy="19.1" rx="2.0" ry="1.7" fill="none" stroke="#8A6028" stroke-width="0.10" opacity="0.5"/>';
+        s += '<ellipse cx="55.3" cy="19.1" rx="1.5" ry="1.3" fill="none" stroke="#5A3018" stroke-width="0.08" opacity="0.4"/>';
+        s += '<ellipse cx="55.35" cy="19.1" rx="0.55" ry="1.65" fill="#0a0508"/>';
+        s += '<circle cx="54.2" cy="18.15" r="0.50" fill="#fff8e0"/>';
+        s += '<circle cx="53.95" cy="17.95" r="0.18" fill="#fff8e0" opacity="0.95"/>';
+        s += '<ellipse cx="55.5" cy="20.55" rx="0.45" ry="0.18" fill="#C8A84B" opacity="0.45"/>';
         s += '<path d="M52.2,23.8 C53.4,25.0 55.0,25.4 56.9,25.1 C58.1,24.9 59.0,24.4 59.8,23.7" fill="none" stroke="#3A2040" stroke-width="0.8" stroke-linecap="round"/>';
         s += '<path d="M53.6,24.3 L54.0,25.0 L54.4,24.3 Z" fill="#B0A890"/>';
         s += '<path d="M55.6,24.7 L56.0,25.5 L56.5,24.6 Z" fill="#B0A890"/>';
@@ -28848,10 +28957,12 @@ document.addEventListener('keydown', function(e) {
       case 39: // Kitty — standing tail-up, classic cat stance, facing left
         s += '<g opacity="1" transform="translate(57,84) scale(1.65) translate(-57,-84)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0;0.15,0;0,0" dur="5.8s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="57" cy="91.5" rx="5" ry="0.6" fill="#0d100c" opacity="0.12"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="57" cy="91.6" rx="5.2" ry="0.75" fill="rgba(40,20,5,0.30)"/>';
         // TAIL — high, curving up from rump (drawn first, behind body)
         s += '<path d="M60.5,86 Q62,84 62.5,81.5 Q63,79.5 62,78 Q61.5,77.5 61.8,77" stroke="#8A6C4E" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+        // Tail tip terminator — warm cream pickup
+        s += '<circle cx="61.85" cy="77.05" r="0.18" fill="#fff8e0" opacity="0.55"/>';
         // Tail highlight
         s += '<path d="M60.8,85.5 Q62.2,83.5 62.6,81.5" stroke="#A08060" stroke-width="0.3" fill="none" opacity="0.25" stroke-linecap="round"/>';
         // Back legs — visible haunches with proper feline anatomy
@@ -28922,16 +29033,19 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.8,80.4 L54.6,79.3 L54.7,80.8 Z" fill="#D7A79A" opacity="0.6"/>';
         // Forehead — subtle lighter M-pattern (tabby marking)
         s += '<path d="M51.8,81 Q53,80.2 54.2,81" fill="none" stroke="#C09868" stroke-width="0.2" opacity="0.2"/>';
-        // Eyes — large, almond-shaped, golden (cat's defining feature)
-        s += '<ellipse cx="52" cy="82" rx="0.6" ry="0.5" fill="#C8A84B"/>';
-        s += '<ellipse cx="54" cy="82" rx="0.6" ry="0.5" fill="#C8A84B"/>';
-        // Slit pupils
-        s += '<ellipse cx="52" cy="82" rx="0.18" ry="0.42" fill="#111"/>';
-        s += '<ellipse cx="54" cy="82" rx="0.18" ry="0.42" fill="#111"/>';
-        // Eye specular — double highlight (Beholder technique)
-        s += '<circle cx="52.15" cy="81.8" r="0.12" fill="#f5ecd6"/>';
+        // Eyes — large, almond-shaped, golden (cat's defining feature) with green outer ring
+        s += '<ellipse cx="52" cy="82" rx="0.6" ry="0.5" fill="#8AA050"/>';
+        s += '<ellipse cx="54" cy="82" rx="0.6" ry="0.5" fill="#8AA050"/>';
+        // Iris inner — warm gold center
+        s += '<ellipse cx="52" cy="82" rx="0.4" ry="0.42" fill="#D4B458"/>';
+        s += '<ellipse cx="54" cy="82" rx="0.4" ry="0.42" fill="#D4B458"/>';
+        // Slit pupils — warm-shifted dark
+        s += '<ellipse cx="52" cy="82" rx="0.18" ry="0.42" fill="#1a1208"/>';
+        s += '<ellipse cx="54" cy="82" rx="0.18" ry="0.42" fill="#1a1208"/>';
+        // Eye specular — sharp upper-left pickup + soft cream pickup
+        s += '<circle cx="52.15" cy="81.8" r="0.13" fill="#fff8e0"/>';
         s += '<circle cx="51.9" cy="82.15" r="0.06" fill="#f5ecd6"/>';
-        s += '<circle cx="54.15" cy="81.8" r="0.12" fill="#f5ecd6"/>';
+        s += '<circle cx="54.15" cy="81.8" r="0.13" fill="#fff8e0"/>';
         s += '<circle cx="53.9" cy="82.15" r="0.06" fill="#f5ecd6"/>';
         // Eye liner — dark rim around each eye
         s += '<ellipse cx="52" cy="82" rx="0.65" ry="0.55" fill="none" stroke="#4A3828" stroke-width="0.12" opacity="0.4"/>';
@@ -28957,8 +29071,8 @@ document.addEventListener('keydown', function(e) {
         // Duck bill, beaver tail, webbed feet, dense waterproof fur.
         s += '<g opacity="1" transform="translate(56,88) scale(1.6) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.28,0.05;0.52,0;0.28,-0.05;0,0" dur="6.2s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="57" cy="91.5" rx="6" ry="0.7" fill="#0d100c" opacity="0.12"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="57" cy="91.6" rx="6.2" ry="0.85" fill="rgba(40,20,5,0.30)"/>';
         // Tail — flat, wide, beaver-like, LONG, CONNECTED into body mass
         s += '<path d="M53,89 Q50,88.8 48,89.2 Q45.5,89.8 44.5,90.3 Q44,90.8 44.5,91 Q46,91.2 48.5,91 Q51,90.5 53,90 Z" fill="#6A4E38"/>';
         // Tail texture — leathery cross-hatch scales
@@ -28995,16 +29109,17 @@ document.addEventListener('keydown', function(e) {
         // Head — connects seamlessly to body (overlapping fill)
         s += '<path d="M60,87.5 Q61,87 62,87 Q63,87.5 63,88.5 Q63,89.5 62,90 Q61,90.5 60,90" fill="#8A6C4E"/>';
         // Eye — small, set high on head (semi-aquatic, can see while swimming)
-        s += '<circle cx="61.5" cy="87.8" r="0.35" fill="#111"/>';
-        s += '<circle cx="61.6" cy="87.7" r="0.1" fill="#f5ecd6"/>';
+        s += '<circle cx="61.5" cy="87.8" r="0.35" fill="#1a1208"/>';
+        s += '<circle cx="61.42" cy="87.72" r="0.12" fill="#fff8e0"/>';
+        s += '<circle cx="61.6" cy="87.85" r="0.05" fill="#f5ecd6"/>';
         // Ear hole — just a tiny opening (no external ear)
         s += '<circle cx="60.8" cy="87.5" r="0.15" fill="#5A3E28" opacity="0.4"/>';
-        // BILL — dark grey-brown, rubbery, electroreceptive
-        s += '<path d="M63,88.5 Q64,88 65.5,88.2 Q66.5,88.5 66.5,89 Q66.5,89.5 65.5,89.8 Q64,90 63,89.5 Z" fill="#4A4038"/>';
-        s += '<path d="M63,88.5 Q64,88 65.5,88.2 Q66.5,88.5 66.5,89 Q66.5,89.5 65.5,89.8 Q64,90 63,89.5 Z" fill="none" stroke="#3A3028" stroke-width="0.2"/>';
-        // Bill nostrils
-        s += '<circle cx="65" cy="88.6" r="0.14" fill="#2A2018" opacity="0.6"/>';
-        s += '<circle cx="65.5" cy="88.7" r="0.14" fill="#2A2018" opacity="0.6"/>';
+        // BILL — warm-shifted dark, rubbery, electroreceptive
+        s += '<path d="M63,88.5 Q64,88 65.5,88.2 Q66.5,88.5 66.5,89 Q66.5,89.5 65.5,89.8 Q64,90 63,89.5 Z" fill="#4A3828"/>';
+        s += '<path d="M63,88.5 Q64,88 65.5,88.2 Q66.5,88.5 66.5,89 Q66.5,89.5 65.5,89.8 Q64,90 63,89.5 Z" fill="none" stroke="#3A2818" stroke-width="0.2"/>';
+        // Bill nostrils — warm-shifted dark
+        s += '<circle cx="65" cy="88.6" r="0.14" fill="#1a1208" opacity="0.7"/>';
+        s += '<circle cx="65.5" cy="88.7" r="0.14" fill="#1a1208" opacity="0.7"/>';
         // Bill texture
         s += '<path d="M63.5,88.8 Q65,88.4 66,88.8" fill="none" stroke="#5A5048" stroke-width="0.15" opacity="0.25"/>';
         s += '<path d="M63.5,89.2 Q65,89.6 66,89.2" fill="none" stroke="#5A5048" stroke-width="0.15" opacity="0.22"/>';
@@ -29018,6 +29133,8 @@ document.addEventListener('keydown', function(e) {
         // raptorial forelegs with spines. All parts are solid connected shapes.
         s += '<g opacity="1" transform="translate(62,72) scale(1.5) translate(-62,-72)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.15;0,0;-0.1,0.1;0,0" dur="7s" repeatCount="indefinite"/>';
+        // AO ground shadow — warm grounding under the mantis
+        s += '<ellipse cx="61.5" cy="85.5" rx="3.5" ry="0.5" fill="rgba(40,20,5,0.30)"/>';
         // Hind legs — long jointed struts, two segments each
         // Right hind leg: femur → knee → tibia → foot
         s += '<path d="M62.5,80 L64,82 L63.5,84.5" stroke="#4A7A38" stroke-width="0.55" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -29028,6 +29145,9 @@ document.addEventListener('keydown', function(e) {
         // Mid legs — thinner, splayed sideways from thorax
         s += '<path d="M62,77.5 L64.5,78 L66,77" stroke="#4A7A38" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
         s += '<path d="M61,77.5 L58.5,78 L57,77" stroke="#4A7A38" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+        // Mid leg tip terminators
+        s += '<circle cx="66" cy="77" r="0.13" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="57" cy="77" r="0.13" fill="rgba(40,20,5,0.55)"/>';
         // ABDOMEN — large, leaf-shaped, tapered, hanging from thorax
         s += '<path d="M60.8,78 Q60,79 59.8,80.5 Q59.6,82 60,83.5 Q60.5,84.5 61.5,84.8 Q62.5,84.5 63,83.5 Q63.4,82 63.2,80.5 Q63,79 62.2,78 Z" fill="#5C8550"/>';
         // Abdomen segmentation — horizontal lines
@@ -29100,8 +29220,8 @@ document.addEventListener('keydown', function(e) {
         // spines radiating from back, soft belly/face visible.
         s += '<g opacity="1" transform="translate(56,88) scale(1.55) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="scale" values="1,1;1.015,0.988;1,1;0.99,1.008;1,1" dur="5.6s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="57" cy="92.5" rx="5.5" ry="0.7" fill="#0d100c" opacity="0.12"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="57" cy="92.6" rx="5.7" ry="0.8" fill="rgba(40,20,5,0.30)"/>';
         // Body — elongated oval, wider than tall (natural hedgehog shape)
         s += '<path d="M51,90 Q51,88 53,87 Q57,85.5 61,87 Q63,88 63,90 Q63,91.5 61,92.5 Q57,93.5 53,92.5 Q51,91.5 51,90 Z" fill="#6A4E38"/>';
         // SPINES — procedural, radiating from back in rows (the defining feature)
@@ -29140,12 +29260,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M50.5,90.5 Q50,89.5 50.5,88.5 Q51,87.5 52,87.2 Q53.5,87 54,88 Q54,89.5 53.5,90.5 Q52.5,91.5 51,91 Q50.5,90.8 50.5,90.5 Z" fill="#B89068"/>';
         // Snout — pointed, extending left beyond face
         s += '<path d="M50.5,89.5 Q49.8,89 49.2,89.5 Q49.5,90 50.5,90 Z" fill="#9A7858"/>';
-        // Nose — on snout tip, dark, prominent
-        s += '<ellipse cx="49.3" cy="89.5" rx="0.35" ry="0.25" fill="#2A1A10"/>';
-        s += '<circle cx="49.4" cy="89.4" r="0.08" fill="#f5ecd6"/>';
-        // Eye — small, dark, beady
-        s += '<circle cx="51.5" cy="88.8" r="0.45" fill="#1A1008"/>';
-        s += '<circle cx="51.6" cy="88.65" r="0.13" fill="rgba(200,180,120,0.5)"/>';
+        // Nose — on snout tip, warm-shifted dark, prominent
+        s += '<ellipse cx="49.3" cy="89.5" rx="0.35" ry="0.25" fill="#1a1208"/>';
+        s += '<circle cx="49.22" cy="89.42" r="0.09" fill="#fff8e0"/>';
+        // Eye — small, warm dark, beady, with cream catchlight
+        s += '<circle cx="51.5" cy="88.8" r="0.45" fill="#1a1208"/>';
+        s += '<circle cx="51.62" cy="88.7" r="0.15" fill="#fff8e0"/>';
+        s += '<circle cx="51.4" cy="88.95" r="0.06" fill="#f5ecd6"/>';
         // Ears — small rounded, ABOVE the face (back ear first, front ear second)
         s += '<ellipse cx="53.2" cy="86.5" rx="0.8" ry="1.0" fill="#A87850"/>';
         s += '<ellipse cx="53.2" cy="86.5" rx="0.45" ry="0.6" fill="#C09868" opacity="0.35"/>';
@@ -29168,8 +29289,8 @@ document.addEventListener('keydown', function(e) {
         // claws, thick prehensile tail. Walking posture, bipedal or quad.
         s += '<g opacity="1" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.18,0.04;0.34,0;0.18,-0.04;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.7" fill="#0d100c" opacity="0.12"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="57" cy="92.6" rx="6.2" ry="0.85" fill="rgba(40,20,5,0.30)"/>';
         // Tail — THICK at base where it connects to body, tapering to tip
         s += '<path d="M60,88 Q62,88.5 64,89 Q66,89.5 68,89.5 Q69,89.2 69.5,88.5 Q69.5,88 69,87.8 Q68,88 66,88.5 Q64,88.5 62,88 Q60.5,87.5 60,87.5 Z" fill="#8A7048" stroke="#7A6038" stroke-width="0.2"/>';
         // Hind legs — short, thick, powerful claws
@@ -29207,7 +29328,10 @@ document.addEventListener('keydown', function(e) {
             _pgSci++;
             // Filled triangle + border ONLY on the two V sides (not top edge)
             s += '<path d="M'+(_prx-_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' L'+_prx.toFixed(1)+','+(_prY+_prH).toFixed(1)+' L'+(_prx+_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' Z" fill="'+_prCol+'" stroke="none" opacity="0.6"/>';
-            s += '<path d="M'+(_prx-_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' L'+_prx.toFixed(1)+','+(_prY+_prH).toFixed(1)+' L'+(_prx+_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+'" fill="none" stroke="#6A5030" stroke-width="0.1" opacity="0.5"/>';
+            // Warm AO under each scale (shadow on V-bottom)
+            s += '<path d="M'+(_prx-_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+' L'+_prx.toFixed(1)+','+(_prY+_prH).toFixed(1)+' L'+(_prx+_prW*0.5).toFixed(1)+','+_prY.toFixed(1)+'" fill="none" stroke="#1a1208" stroke-width="0.12" opacity="0.4"/>';
+            // Cream rim highlight on top edge (lit side)
+            s += '<line x1="'+(_prx-_prW*0.5).toFixed(1)+'" y1="'+_prY.toFixed(1)+'" x2="'+(_prx+_prW*0.5).toFixed(1)+'" y2="'+_prY.toFixed(1)+'" stroke="#fff8e0" stroke-width="0.1" opacity="0.4"/>';
           }
         }
         // Tail scales — only 3 at the fattest part
@@ -29236,11 +29360,11 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M51.6,85.7 L51.9,86 L52.2,85.7 Z" fill="#9A7848" stroke="none" opacity="0.4"/>';
         // Snout — very long, narrow, conical (ant-eating adaptation)
         s += '<path d="M49.5,85 Q48.5,85 47.5,85 Q47,85 46.5,85.2" fill="none" stroke="#A08858" stroke-width="0.8" stroke-linecap="round"/>';
-        // Nostril
-        s += '<circle cx="46.8" cy="85.2" r="0.12" fill="#4A3018" opacity="0.5"/>';
-        // Eye — tiny (pangolins have poor eyesight)
-        s += '<circle cx="50" cy="84.8" r="0.3" fill="#1A1008"/>';
-        s += '<circle cx="50.1" cy="84.7" r="0.08" fill="rgba(200,180,120,0.5)"/>';
+        // Nostril — warm-shifted dark
+        s += '<circle cx="46.8" cy="85.2" r="0.12" fill="#1a1208" opacity="0.7"/>';
+        // Eye — tiny (pangolins have poor eyesight) with cream catchlight
+        s += '<circle cx="50" cy="84.8" r="0.3" fill="#1a1208"/>';
+        s += '<circle cx="50.08" cy="84.72" r="0.1" fill="#fff8e0"/>';
         // Pointy ears — connected to top of head
         s += '<path d="M50.5,84 L50,82.8 L51,83.5 Z" fill="#9A8058"/>';
         s += '<path d="M51.5,83.8 L52.2,82.6 L52.5,83.8 Z" fill="#9A8058"/>';
@@ -29304,6 +29428,8 @@ document.addEventListener('keydown', function(e) {
         // ANTENNAE — feathery/plumose (male luna moth's key ID)
         s += '<path d="M9.7,10 Q9.2,9 8.5,8.5" stroke="#92B37D" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         s += '<path d="M10.3,10 Q10.8,9 11.5,8.5" stroke="#92B37D" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="8.5" cy="8.5" r="0.1" fill="rgba(40,20,5,0.45)"/>';
+        s += '<circle cx="11.5" cy="8.5" r="0.1" fill="rgba(40,20,5,0.45)"/>';
         // Feathery barbs on antennae
         s += '<path d="M9.4,9.3 L9,9 M9.2,9.5 L8.8,9.2 M9.6,9.1 L9.2,8.8" stroke="#A0C890" stroke-width="0.08" fill="none"/>';
         s += '<path d="M10.6,9.3 L11,9 M10.8,9.5 L11.2,9.2 M10.4,9.1 L10.8,8.8" stroke="#A0C890" stroke-width="0.08" fill="none"/>';
@@ -29319,8 +29445,8 @@ document.addEventListener('keydown', function(e) {
         // short legs, long quills with barbed tips, small face.
         s += '<g opacity="1" transform="translate(56,87) scale(1.5) translate(-56,-87)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0.38,0;0.2,0;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="57" cy="92.5" rx="5.5" ry="0.7" fill="#0d100c" opacity="0.12"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="57" cy="92.6" rx="5.7" ry="0.85" fill="rgba(40,20,5,0.30)"/>';
         // Short legs — thick, hidden under body
         s += '<path d="M54,91 L54,92" stroke="#4A3828" stroke-width="1" fill="none" stroke-linecap="round"/>';
         s += '<path d="M56,91.2 L56,92" stroke="#4A3828" stroke-width="1" fill="none" stroke-linecap="round"/>';
@@ -29352,10 +29478,12 @@ document.addEventListener('keydown', function(e) {
           var _pqLen = 2.0 + (_pqSeed % 100) / 80;
           var _pqEx = _pqx + _pqLen * 0.6;
           var _pqEy = _pqy - _pqLen * 0.8;
-          // Dark base — uniform 0.2 width
-          s += '<line x1="'+_pqx.toFixed(1)+'" y1="'+_pqy.toFixed(1)+'" x2="'+_pqEx.toFixed(1)+'" y2="'+_pqEy.toFixed(1)+'" stroke="#3A2818" stroke-width="0.2" stroke-linecap="round"/>';
+          // Warm dark base — uniform 0.2 width
+          s += '<line x1="'+_pqx.toFixed(1)+'" y1="'+_pqy.toFixed(1)+'" x2="'+_pqEx.toFixed(1)+'" y2="'+_pqEy.toFixed(1)+'" stroke="#1a1208" stroke-width="0.2" stroke-linecap="round"/>';
           // Cream barbed tip — top 40%
-          s += '<line x1="'+(_pqx+(_pqEx-_pqx)*0.6).toFixed(1)+'" y1="'+(_pqy+(_pqEy-_pqy)*0.6).toFixed(1)+'" x2="'+_pqEx.toFixed(1)+'" y2="'+_pqEy.toFixed(1)+'" stroke="#E8DCC8" stroke-width="0.15" stroke-linecap="round" opacity="0.6"/>';
+          s += '<line x1="'+(_pqx+(_pqEx-_pqx)*0.6).toFixed(1)+'" y1="'+(_pqy+(_pqEy-_pqy)*0.6).toFixed(1)+'" x2="'+_pqEx.toFixed(1)+'" y2="'+_pqEy.toFixed(1)+'" stroke="#fff8e0" stroke-width="0.15" stroke-linecap="round" opacity="0.7"/>';
+          // Cream terminator dot at the very tip
+          s += '<circle cx="'+_pqEx.toFixed(2)+'" cy="'+_pqEy.toFixed(2)+'" r="0.075" fill="#fff8e0" opacity="0.75"/>';
         }
         // ── HEAD — angled DOWN, blends into body, spines on head ──
         // Porcupine head points slightly downward (grazing/sniffing pose)
@@ -29375,14 +29503,14 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="51.5" cy="86.2" rx="0.5" ry="0.55" fill="#7A6050"/>';
         s += '<ellipse cx="51.5" cy="86.2" rx="0.25" ry="0.3" fill="#8A7060" opacity="0.4"/>';
         s += '<ellipse cx="53" cy="86" rx="0.5" ry="0.55" fill="#7A6050"/>';
-        // Eye — small, beady, lower position (head angled down)
-        s += '<circle cx="51" cy="87.5" r="0.35" fill="#1A1008"/>';
-        s += '<circle cx="51.1" cy="87.4" r="0.1" fill="rgba(200,180,120,0.5)"/>';
+        // Eye — small, beady, lower position with cream catchlight
+        s += '<circle cx="51" cy="87.5" r="0.35" fill="#1a1208"/>';
+        s += '<circle cx="51.12" cy="87.4" r="0.12" fill="#fff8e0"/>';
         // Snout — blunt, pointing down
         s += '<path d="M50.5,88.5 Q49.8,88.5 49.5,88 Q49.5,87.5 50,87.5 Q50.5,87.5 51,88 Z" fill="#7A6050"/>';
-        // Nose — dark, prominent, lower
-        s += '<ellipse cx="49.7" cy="88.3" rx="0.3" ry="0.22" fill="#1A1008"/>';
-        s += '<circle cx="49.8" cy="88.2" r="0.06" fill="#f5ecd6"/>';
+        // Nose — warm-shifted dark, prominent, lower
+        s += '<ellipse cx="49.7" cy="88.3" rx="0.3" ry="0.22" fill="#1a1208"/>';
+        s += '<circle cx="49.62" cy="88.22" r="0.08" fill="#fff8e0"/>';
         // Whiskers
         s += '<line x1="49.8" y1="88" x2="48.3" y2="87.5" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.4"/>';
         s += '<line x1="49.5" y1="88.3" x2="48" y2="88.3" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.35"/>';
@@ -29426,10 +29554,12 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="51" cy="88" r="0.2" fill="#1A1008"/>';
         s += '<circle cx="49.05" cy="87.9" r="0.06" fill="#f5ecd6"/>';
         s += '<circle cx="51.05" cy="87.9" r="0.06" fill="#f5ecd6"/>';
-        // Lower tentacles — shorter, sensory
+        // Lower tentacles — shorter, sensory + tip terminators
         s += '<path d="M50,90 L49,89.5 M50.5,90 L50.2,89.2" stroke="#8A6838" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
-        // Shadow under shell
-        s += '<ellipse cx="55" cy="92" rx="3.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        s += '<circle cx="49" cy="89.5" r="0.06" fill="rgba(40,20,5,0.5)"/>';
+        s += '<circle cx="50.2" cy="89.2" r="0.06" fill="rgba(40,20,5,0.5)"/>';
+        // Shadow under shell — warm-shifted AO
+        s += '<ellipse cx="55" cy="92" rx="3.5" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
         // Action marks (( near tentacles
         s += '<path d="M47.5,88 Q47,89 47.5,90" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M46.8,87.5 Q46,89 46.8,90.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -29441,8 +29571,8 @@ document.addEventListener('keydown', function(e) {
         // tiny limbs, dorsal fin running along tail. Pink/leucistic color.
         s += '<g opacity="1" transform="translate(56,87) scale(1.55) translate(-56,-87)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.18,-0.04;0.34,0;0.18,0.04;0,0" dur="6.8s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.6" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm-shifted AO
+        s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.6" fill="rgba(40,20,5,0.18)"/>';
         // TAIL — long, translucent pink fin tapering to a point
         // Tail body — tapers from body width down to tip
         s += '<path d="M60,89.5 Q62,89.5 64,89 Q65.5,88.5 67,87.5 Q67.5,87 67,87 Q66,87.5 64,88.5 Q62,89 60,89 Z" fill="rgba(215,167,154,0.5)"/>';
@@ -29510,6 +29640,7 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.12,0;0.24,0.02;0.12,0;0,0" dur="6.6s" repeatCount="indefinite"/>';
         // Shadow
         s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.5" fill="#0d100c" opacity="0.12"/>';
+        s += '<ellipse cx="57" cy="92.6" rx="6.2" ry="0.55" fill="rgba(40,20,5,0.28)"/>';
         // ── 8 LEGS — front 2 pairs near head, back 2 pairs near tail ──
         // Left side — 2 FRONT legs (near head, angled forward)
         s += '<path d="M55,88 L53,87 L52,86.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
@@ -29545,6 +29676,7 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="53.5" cy="88.5" r="0.2" fill="#2A1808"/>';
         s += '<circle cx="54.2" cy="88.5" r="0.2" fill="#2A1808"/>';
         s += '<circle cx="53.55" cy="88.4" r="0.06" fill="rgba(240,220,160,0.4)"/>';
+        s += '<circle cx="54.25" cy="88.4" r="0.06" fill="#fff8e0"/>';
         // ── 2 LARGE CLAWS — each with 2-segment pincer ──
         // Left claw arm
         s += '<path d="M53.5,88 Q52,87.5 50.5,86.5" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
@@ -29581,6 +29713,7 @@ document.addEventListener('keydown', function(e) {
         // STINGER — sharp point curving up
         s += '<path d="M62,81 L61.5,80 L62.2,80.5" fill="#4A2810"/>';
         s += '<circle cx="61.6" cy="80" r="0.12" fill="rgba(180,220,140,0.4)"/>';
+        s += '<circle cx="61.5" cy="80" r="0.1" fill="rgba(40,20,5,0.6)"/>';
         // Action marks (( near claws
         s += '<path d="M46.5,86 Q46,87 46.5,88" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M45.8,85.5 Q45,87 45.8,88.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -29650,11 +29783,11 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M57.7,90.5 Q58.5,91 59.0,90.5" stroke="#E6C7A8" stroke-width="0.28" fill="none" stroke-linecap="round"/>';
         // Face — skin colored oval
         s += '<ellipse cx="56.0" cy="89.0" rx="2.0" ry="1.8" fill="#E6C7A8"/>';
-        // Eyes — beady and cheerful
-        s += '<ellipse cx="55.0" cy="88.8" rx="0.2" ry="0.24" fill="#111"/>';
-        s += '<ellipse cx="57.0" cy="88.8" rx="0.2" ry="0.24" fill="#111"/>';
-        s += '<circle cx="55.1" cy="88.7" r="0.06" fill="#f5ecd6"/>';
-        s += '<circle cx="57.1" cy="88.7" r="0.06" fill="#f5ecd6"/>';
+        // Eyes — beady and cheerful (warm-shifted)
+        s += '<ellipse cx="55.0" cy="88.8" rx="0.2" ry="0.24" fill="#1a1208"/>';
+        s += '<ellipse cx="57.0" cy="88.8" rx="0.2" ry="0.24" fill="#1a1208"/>';
+        s += '<circle cx="55.1" cy="88.7" r="0.06" fill="#fff8e0"/>';
+        s += '<circle cx="57.1" cy="88.7" r="0.06" fill="#fff8e0"/>';
         // Nose — round, rosy
         s += '<circle cx="56.0" cy="89.4" r="0.22" fill="#D08B7E"/>';
         // Cheeks — rosy
@@ -29701,11 +29834,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M19.5,9.5 L20.5,9.5 M19,9.8 L20,10" fill="none" stroke="#5A3E28" stroke-width="0.15" opacity="0.4"/>';
         // Head — round
         s += '<circle cx="11.5" cy="9.5" r="1.3" fill="#7A5C3E"/>';
-        // Eye — dark, alert
-        s += '<circle cx="11" cy="9.2" r="0.2" fill="#111"/>';
-        s += '<circle cx="11.05" cy="9.12" r="0.06" fill="#f5ecd6"/>';
-        // Beak — connected to head, pointing left
+        // Eye — dark, alert (warm-shifted)
+        s += '<circle cx="11" cy="9.2" r="0.2" fill="#1a1208"/>';
+        s += '<circle cx="11.05" cy="9.12" r="0.06" fill="#fff8e0"/>';
+        // Beak — connected to head, pointing left + tip terminator
         s += '<path d="M10.8,9.6 L9.2,9.3 L10.8,10.2 Z" fill="#A87850"/>';
+        s += '<circle cx="9.2" cy="9.3" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // Belly highlight
         s += '<ellipse cx="13.5" cy="11.5" rx="1.5" ry="1" fill="rgba(255,200,160,0.12)"/>';
         // Legs — tucked in flight
@@ -29746,8 +29880,10 @@ document.addEventListener('keydown', function(e) {
         // ── HEAD — rounded, at top-left of the S ──
         s += '<circle cx="10" cy="84" r="1" fill="#D98FA1"/>';
         // Smiley face — 2 eyes + smile
-        s += '<circle cx="9.5" cy="83.6" r="0.2" fill="#111"/>';
-        s += '<circle cx="10.3" cy="83.5" r="0.2" fill="#111"/>';
+        s += '<circle cx="9.5" cy="83.6" r="0.2" fill="#1a1208"/>';
+        s += '<circle cx="10.3" cy="83.5" r="0.2" fill="#1a1208"/>';
+        s += '<circle cx="9.55" cy="83.55" r="0.06" fill="#fff8e0"/>';
+        s += '<circle cx="10.35" cy="83.45" r="0.06" fill="#fff8e0"/>';
         // Smile
         s += '<path d="M9.5,84.2 Q10,84.5 10.5,84.2" fill="none" stroke="#8A5060" stroke-width="0.15" stroke-linecap="round"/>';
         // ── TAIL — rounded, at bottom-right of the S ──
@@ -29763,8 +29899,8 @@ document.addEventListener('keydown', function(e) {
       case 53: // Turtle — profile facing left, flat-bottom shell, turtle pattern
         s += '<g opacity="0.88" transform="translate(58,88) scale(1.55) translate(-58,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0.02;0.15,0;0,0" dur="7.1s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="58" cy="92" rx="5" ry="0.6" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="58" cy="92.1" rx="5.3" ry="0.75" fill="rgba(40,20,5,0.30)"/>';
         // ── POINTY TAIL — 2 shades darker ──
         s += '<path d="M62.5,90.5 L64.5,90.8 L62.5,91.2" fill="#3A6A20"/>';
         // ── 4 LEGS — 2 shades darker ──
@@ -29800,17 +29936,19 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M60,88.5 L61,88.2 L62,88.5 L62,89.2 L61,89.5 L60,89.2 Z" fill="none" stroke="#4A7A30" stroke-width="0.15" opacity="0.35"/>';
         // Marginal scutes — small rectangles around edge
         s += '<path d="M55,89.5 Q56,90 57,89.8 M60,89.8 Q61,90 62,89.5" fill="none" stroke="#4A7A30" stroke-width="0.12" opacity="0.3"/>';
-        // Shell highlight
-        s += '<path d="M56.5,87 Q58.5,86.5 60.5,87" fill="none" stroke="rgba(200,230,160,0.15)" stroke-width="0.4"/>';
+        // Shell highlight — cream pickup on dome top
+        s += '<path d="M56.5,87 Q58.5,86.5 60.5,87" fill="none" stroke="#fff8e0" stroke-width="0.4" opacity="0.25"/>';
+        // Warm AO crescent at shell base
+        s += '<path d="M55,90.5 Q58.5,91.3 62,90.5" fill="none" stroke="#1a1208" stroke-width="0.25" opacity="0.4"/>';
         // ── NECK — thick, attached to shell, 2 shades darker ──
         s += '<path d="M55.5,90 Q54,89.5 52.5,89 Q51,89 50.5,89.5 Q51,90 52.5,90.5 Q54,90.8 55.5,91" fill="#3A6A20"/>';
         // ── HEAD ──
         s += '<ellipse cx="50.5" cy="89.5" rx="1.5" ry="1.2" fill="#6BA348"/>';
-        // Eyes — 2
-        s += '<circle cx="50" cy="89" r="0.25" fill="#111"/>';
-        s += '<circle cx="50.05" cy="88.9" r="0.07" fill="#f5ecd6"/>';
-        s += '<circle cx="51" cy="89" r="0.25" fill="#111"/>';
-        s += '<circle cx="51.05" cy="88.9" r="0.07" fill="#f5ecd6"/>';
+        // Eyes — 2, warm-shifted dark with cream catchlight
+        s += '<circle cx="50" cy="89" r="0.25" fill="#1a1208"/>';
+        s += '<circle cx="49.92" cy="88.92" r="0.09" fill="#fff8e0"/>';
+        s += '<circle cx="51" cy="89" r="0.25" fill="#1a1208"/>';
+        s += '<circle cx="50.92" cy="88.92" r="0.09" fill="#fff8e0"/>';
         // Nostril
         s += '<circle cx="49.5" cy="89.5" r="0.06" fill="#3A5A30" opacity="0.4"/>';
         // Mouth
@@ -29836,6 +29974,8 @@ document.addEventListener('keydown', function(e) {
         // ── WINGS — lightened 3 shades ──
         // Left wing
         s += '<path d="M59,8 Q56,7 53,8 Q52,9 53,10 Q55,10 57,9.5 Q58,9 59,8.5" fill="#5B4D54"/>';
+        // Left wing — cream lit-edge highlight (upper edge facing the sky/light)
+        s += '<path d="M59,8 Q56,7 53,8" fill="none" stroke="#fff8e0" stroke-width="0.2" opacity="0.35"/>';
         // Wing finger bones (left)
         s += '<path d="M59,8 L55,7.5" stroke="#6A5A60" stroke-width="0.12" fill="none"/>';
         s += '<path d="M59,8.5 L55.5,9" stroke="#6A5A60" stroke-width="0.1" fill="none" opacity="0.5"/>';
@@ -29845,6 +29985,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M54.5,6.5 L54,6 M54.5,6.5 L54.2,5.8 M54.5,6.5 L55,6" stroke="#7A6A70" stroke-width="0.12" fill="none"/>';
         // Right wing
         s += '<path d="M61,8 Q64,7 67,8 Q68,9 67,10 Q65,10 63,9.5 Q62,9 61,8.5" fill="#5B4D54"/>';
+        // Right wing — cream lit-edge highlight
+        s += '<path d="M61,8 Q64,7 67,8" fill="none" stroke="#fff8e0" stroke-width="0.2" opacity="0.35"/>';
         // Wing finger bones (right)
         s += '<path d="M61,8 L65,7.5" stroke="#6A5A60" stroke-width="0.12" fill="none"/>';
         s += '<path d="M61,8.5 L64.5,9" stroke="#6A5A60" stroke-width="0.1" fill="none" opacity="0.5"/>';
@@ -29869,19 +30011,21 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="60" cy="11.5" r="1.3" fill="#6A5860"/>';
         // Snout/nose area
         s += '<ellipse cx="60" cy="11.8" rx="0.6" ry="0.4" fill="#7A6870"/>';
-        // Nostrils
-        s += '<circle cx="59.7" cy="11.9" r="0.08" fill="#1A1018"/>';
-        s += '<circle cx="60.3" cy="11.9" r="0.08" fill="#1A1018"/>';
-        // ── FANGS at TOP of head (closest to body) — small pointy triangles ──
-        s += '<path d="M59.5,10.5 L59.3,10 L59.7,10.5 Z" fill="#F0ECE4"/>';
+        // Nostrils — warm-shifted dark
+        s += '<circle cx="59.7" cy="11.9" r="0.08" fill="#1a1208"/>';
+        s += '<circle cx="60.3" cy="11.9" r="0.08" fill="#1a1208"/>';
+        // ── FANGS at TOP of head (closest to body) — cream not pure white
+        s += '<path d="M59.5,10.5 L59.3,10 L59.7,10.5 Z" fill="#f5ecd6"/>';
         s += '<path d="M60.5,10.5 L60.3,10 L60.7,10.5 Z" fill="#F0ECE4"/>';
         // Mouth line above fangs
         s += '<path d="M59.3,10.5 Q60,10.3 60.7,10.5" fill="none" stroke="#1A0A0A" stroke-width="0.15"/>';
         // ── EYES — ABOVE nose, closer to ears (lower on upside-down face) ──
         s += '<circle cx="59.3" cy="12.2" r="0.4" fill="#5A2020"/>';
         s += '<circle cx="60.7" cy="12.2" r="0.4" fill="#5A2020"/>';
-        s += '<circle cx="59.3" cy="12.2" r="0.2" fill="#111"/>';
-        s += '<circle cx="60.7" cy="12.2" r="0.2" fill="#111"/>';
+        s += '<circle cx="59.3" cy="12.2" r="0.2" fill="#1a1208"/>';
+        s += '<circle cx="60.7" cy="12.2" r="0.2" fill="#1a1208"/>';
+        s += '<circle cx="59.42" cy="12.32" r="0.1" fill="#fff8e0"/>';
+        s += '<circle cx="60.82" cy="12.32" r="0.1" fill="#fff8e0"/>';
         s += '<circle cx="59.4" cy="12.1" r="0.08" fill="rgba(255,200,200,0.5)"/>';
         s += '<circle cx="60.8" cy="12.1" r="0.08" fill="rgba(255,200,200,0.5)"/>';
         // ── EARS — lightened 3 shades ──
@@ -29896,10 +30040,12 @@ document.addEventListener('keydown', function(e) {
       case 55: // Mouse — full body, profile facing left, bottom-left
         s += '<g opacity="0.88" transform="translate(10,89) scale(1.5) translate(-10,-89)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.05;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="8" cy="92" rx="3.5" ry="0.4" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="8" cy="92.1" rx="3.7" ry="0.5" fill="rgba(40,20,5,0.30)"/>';
         // Long skinny tail — curves upward
         s += '<path d="M10.5,90 Q12,89.5 13.5,89 Q15,88 14.5,87" fill="none" stroke="#C0A088" stroke-width="0.3" stroke-linecap="round"/>';
+        // Tail tip terminator — warm cream pickup
+        s += '<circle cx="14.5" cy="86.95" r="0.13" fill="#fff8e0" opacity="0.6"/>';
         // 4 legs — tiny, visible
         // Back legs
         s += '<path d="M10,91 L10,92" stroke="#8A6C4E" stroke-width="0.5" stroke-linecap="round"/>';
@@ -29923,11 +30069,11 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="3.8" cy="88.2" rx="0.5" ry="0.7" fill="#D8A898" opacity="0.4"/>';
         s += '<ellipse cx="5.5" cy="88" rx="0.8" ry="1" fill="#8A6C4E"/>';
         s += '<ellipse cx="5.5" cy="88" rx="0.5" ry="0.7" fill="#D8A898" opacity="0.4"/>';
-        // 2 eyes — dark, beady
-        s += '<circle cx="4" cy="89.2" r="0.35" fill="#111"/>';
-        s += '<circle cx="4.1" cy="89.1" r="0.1" fill="#f5ecd6"/>';
-        s += '<circle cx="5.2" cy="89.2" r="0.3" fill="#111"/>';
-        s += '<circle cx="5.3" cy="89.1" r="0.08" fill="#f5ecd6"/>';
+        // 2 eyes — warm-shifted dark, beady, with cream catchlight
+        s += '<circle cx="4" cy="89.2" r="0.35" fill="#1a1208"/>';
+        s += '<circle cx="4.1" cy="89.08" r="0.12" fill="#fff8e0"/>';
+        s += '<circle cx="5.2" cy="89.2" r="0.3" fill="#1a1208"/>';
+        s += '<circle cx="5.3" cy="89.08" r="0.1" fill="#fff8e0"/>';
         // Pink nose — centered under eyes
         s += '<ellipse cx="4.5" cy="90" rx="0.25" ry="0.2" fill="#D98FA1"/>';
         // Whiskers — 3 per side
@@ -29975,10 +30121,10 @@ document.addEventListener('keydown', function(e) {
         // ── EYES — large, golden, wise ──
         s += '<circle cx="57" cy="13.6" r="0.9" fill="#D4A83D"/>';
         s += '<circle cx="59" cy="13.6" r="0.9" fill="#D4A83D"/>';
-        s += '<circle cx="57" cy="13.6" r="0.4" fill="#111"/>';
-        s += '<circle cx="59" cy="13.6" r="0.4" fill="#111"/>';
-        s += '<circle cx="57.1" cy="13.4" r="0.15" fill="#f5ecd6"/>';
-        s += '<circle cx="59.1" cy="13.4" r="0.15" fill="#f5ecd6"/>';
+        s += '<circle cx="57" cy="13.6" r="0.4" fill="#1a1208"/>';
+        s += '<circle cx="59" cy="13.6" r="0.4" fill="#1a1208"/>';
+        s += '<circle cx="57.1" cy="13.4" r="0.15" fill="#fff8e0"/>';
+        s += '<circle cx="59.1" cy="13.4" r="0.15" fill="#fff8e0"/>';
         // Brow lines — wise expression
         s += '<path d="M56,12.8 C56.5,12.5 57.5,12.5 57.8,12.8" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
         s += '<path d="M58.2,12.8 C58.5,12.5 59.5,12.5 60,12.8" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
@@ -29995,6 +30141,8 @@ document.addEventListener('keydown', function(e) {
         break;
       case 57: // Silly Goose — bottom-left, head tilted, iconic troublemaker energy
         s += '<g opacity="1" transform="translate(12,88) scale(1.3) translate(-12,-88)">';
+        // AO ground shadow — warm-shifted under feet
+        s += '<ellipse cx="14" cy="92.3" rx="5" ry="0.55" fill="rgba(40,20,5,0.18)"/>';
         // Subtle waddle animation
         s += '<animateTransform attributeName="transform" type="rotate" values="-2 14 88;3 14 88;-1 14 88;2 14 88;-2 14 88" dur="3.8s" repeatCount="indefinite"/>';
         // Body — chunky white oval
@@ -30080,15 +30228,15 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="15.8" cy="79.6" r="0.18" fill="#2888D0"/>';
         // ── BODY — vivid blue, hunched ──
         s += '<path d="M14.5,76.5 Q14,75.5 15,74.5 Q17,73.5 19,74.5 Q20,75.5 20,77 Q20,78 19,78.5 Q17,79 15.5,78.5 Q14.5,78 14.5,76.5 Z" fill="#2888D0"/>';
-        // Black spots on back — dart frog pattern
-        s += '<circle cx="16" cy="75.5" r="0.6" fill="#1A1A1A" opacity="0.7"/>';
-        s += '<circle cx="18" cy="75" r="0.5" fill="#1A1A1A" opacity="0.65"/>';
-        s += '<circle cx="17" cy="76.5" r="0.55" fill="#1A1A1A" opacity="0.6"/>';
-        s += '<circle cx="19" cy="76" r="0.45" fill="#1A1A1A" opacity="0.55"/>';
-        s += '<circle cx="15.5" cy="77" r="0.4" fill="#1A1A1A" opacity="0.5"/>';
-        s += '<circle cx="18.5" cy="77.5" r="0.4" fill="#1A1A1A" opacity="0.5"/>';
-        s += '<circle cx="16.5" cy="74.8" r="0.35" fill="#1A1A1A" opacity="0.45"/>';
-        s += '<circle cx="19.2" cy="75.5" r="0.3" fill="#1A1A1A" opacity="0.4"/>';
+        // Dark spots on back — dart frog pattern (warm-shifted)
+        s += '<circle cx="16" cy="75.5" r="0.6" fill="#1a1208" opacity="0.7"/>';
+        s += '<circle cx="18" cy="75" r="0.5" fill="#1a1208" opacity="0.65"/>';
+        s += '<circle cx="17" cy="76.5" r="0.55" fill="#1a1208" opacity="0.6"/>';
+        s += '<circle cx="19" cy="76" r="0.45" fill="#1a1208" opacity="0.55"/>';
+        s += '<circle cx="15.5" cy="77" r="0.4" fill="#1a1208" opacity="0.5"/>';
+        s += '<circle cx="18.5" cy="77.5" r="0.4" fill="#1a1208" opacity="0.5"/>';
+        s += '<circle cx="16.5" cy="74.8" r="0.35" fill="#1a1208" opacity="0.45"/>';
+        s += '<circle cx="19.2" cy="75.5" r="0.3" fill="#1a1208" opacity="0.4"/>';
         // Belly — slightly lighter blue
         s += '<path d="M15.5,78 Q17,78.5 18.5,78" fill="#48A0D8" opacity="0.3"/>';
         // Body highlight — shiny, moist skin (multiple specular hits)
@@ -30125,14 +30273,14 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="21.8" cy="79" r="0.18" fill="#2888D0"/>';
         // ── HEAD — connected to body ──
         s += '<ellipse cx="16" cy="75" rx="1.5" ry="1.2" fill="#2888D0"/>';
-        // Head black spots
-        s += '<circle cx="15.5" cy="74.5" r="0.25" fill="#1A1A1A" opacity="0.5"/>';
-        s += '<circle cx="16.8" cy="74.8" r="0.2" fill="#1A1A1A" opacity="0.4"/>';
-        // ── EYES — big, shiny, black, bulging with bright white highlights ──
-        s += '<circle cx="15" cy="74.2" r="0.8" fill="#0A0A0A"/>';
+        // Head dark spots (warm-shifted)
+        s += '<circle cx="15.5" cy="74.5" r="0.25" fill="#1a1208" opacity="0.5"/>';
+        s += '<circle cx="16.8" cy="74.8" r="0.2" fill="#1a1208" opacity="0.4"/>';
+        // ── EYES — big, shiny, warm-dark, bulging with cream highlights ──
+        s += '<circle cx="15" cy="74.2" r="0.8" fill="#1a1208"/>';
         s += '<circle cx="15.3" cy="73.9" r="0.3" fill="#fff8e0"/>';
         s += '<circle cx="14.8" cy="74.4" r="0.1" fill="#fff8e0"/>';
-        s += '<circle cx="17.2" cy="74.2" r="0.7" fill="#0A0A0A"/>';
+        s += '<circle cx="17.2" cy="74.2" r="0.7" fill="#1a1208"/>';
         s += '<circle cx="17.5" cy="73.9" r="0.25" fill="#fff8e0"/>';
         s += '<circle cx="17" cy="74.4" r="0.08" fill="#fff8e0"/>';
         // Nostrils — two tiny dots
@@ -30193,6 +30341,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 62: // Cricket — on soil, opaque, hind legs rub together (chirping)
         s += '<g opacity="1" transform="translate(25,90) scale(2.2) translate(-25,-90)">';
+        s += '<ellipse cx="25" cy="92" rx="2.4" ry="0.4" fill="rgba(40,20,5,0.30)"/>';
         // Abdomen
         s += '<ellipse cx="25" cy="90.5" rx="2.0" ry="1.0" fill="#3A5A2A"/>';
         // Thorax
@@ -30200,7 +30349,7 @@ document.addEventListener('keydown', function(e) {
         // Head
         s += '<circle cx="22.2" cy="89.8" r="0.7" fill="#4A6A3A"/>';
         // Eyes
-        s += '<circle cx="21.8" cy="89.5" r="0.2" fill="#111"/>';
+        s += '<circle cx="21.8" cy="89.5" r="0.2" fill="#1a1208"/>';
         s += '<circle cx="21.9" cy="89.4" r="0.06" fill="#f5ecd6"/>';
         // Antennae
         s += '<path d="M22,89.5 Q20.5,88 19.5,87.5" fill="none" stroke="#3A5A2A" stroke-width="0.18" stroke-linecap="round"/>';
@@ -30238,8 +30387,8 @@ document.addEventListener('keydown', function(e) {
         // white face/belly, black back/head, bright orange webbed feet.
         s += '<g opacity="0.9" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.1;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="56" cy="92.5" rx="3" ry="0.4" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm-shifted AO
+        s += '<ellipse cx="56" cy="92.5" rx="3" ry="0.4" fill="rgba(40,20,5,0.18)"/>';
         // ── FEET — bright orange, webbed ──
         s += '<path d="M54.5,92 L53.5,92.5 M54.5,92 L54.5,92.8 M54.5,92 L55.5,92.5" stroke="#E87020" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
         s += '<path d="M53.8,92.3 Q54.5,92.8 55.2,92.3" fill="none" stroke="#E87020" stroke-width="0.15" opacity="0.4"/>';
@@ -30256,19 +30405,19 @@ document.addEventListener('keydown', function(e) {
         // Wing folded — slightly darker grey
         s += '<path d="M58,84 Q59.5,86 59.5,89 Q59,90 58,90.5" fill="#4A4A4A" opacity="0.5"/>';
         // Black outline — visible on all backgrounds
-        s += '<path d="M53,86 Q53,84 55,83 Q57,82.5 59,83.5 Q60,85 60,87 Q60,89.5 58.5,91 Q56,91.5 54,91 Q53,90 53,88" fill="none" stroke="#1A1A1A" stroke-width="0.3"/>';
+        s += '<path d="M53,86 Q53,84 55,83 Q57,82.5 59,83.5 Q60,85 60,87 Q60,89.5 58.5,91 Q56,91.5 54,91 Q53,90 53,88" fill="none" stroke="#1a1208" stroke-width="0.3"/>';
         // ── HEAD — white face, black back of head ──
         // Crown/back of head — lighter dark grey
         s += '<path d="M55.5,82 Q56.5,81 58,81.5 Q59,82 59,83 Q58,83.5 56.5,83 Q55.5,82.5 55.5,82 Z" fill="#3A3A3A"/>';
         // Head outline
-        s += '<path d="M53.5,83 Q53,82 54,81.5 Q55.5,81 56.5,81.5 Q58,81.5 59,82 Q59,83 58,83.5 Q56,83.5 54,83.5 Q53.5,83.5 53.5,83" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
+        s += '<path d="M53.5,83 Q53,82 54,81.5 Q55.5,81 56.5,81.5 Q58,81.5 59,82 Q59,83 58,83.5 Q56,83.5 54,83.5 Q53.5,83.5 53.5,83" fill="none" stroke="#1a1208" stroke-width="0.2"/>';
         // White face — front/sides
         s += '<path d="M53.5,83 Q53,82 54,81.5 Q55.5,81 56.5,81.5 Q56,82 55.5,82.5 Q55,83 54,83.5 Q53.5,83.5 53.5,83 Z" fill="#F0ECE4"/>';
-        // ── EYES — dark, set in white face area ──
-        s += '<circle cx="54.8" cy="82" r="0.4" fill="#1A1A18"/>';
-        s += '<circle cx="54.9" cy="81.9" r="0.1" fill="#f5ecd6"/>';
+        // ── EYES — warm-dark, set in white face area, with cream catchlight ──
+        s += '<circle cx="54.8" cy="82" r="0.4" fill="#1a1208"/>';
+        s += '<circle cx="54.9" cy="81.9" r="0.1" fill="#fff8e0"/>';
         // Dark eye line — runs from eye toward back of head
-        s += '<path d="M55.2,82 Q55.8,82 56.2,82.2" fill="none" stroke="#1A1A18" stroke-width="0.25" opacity="0.5"/>';
+        s += '<path d="M55.2,82 Q55.8,82 56.2,82.2" fill="none" stroke="#1a1208" stroke-width="0.25" opacity="0.5"/>';
         // ── BEAK — fat, colorful, orange with grey/red stripes ──
         // Upper beak — orange with darker ridge
         s += '<path d="M53.5,82.5 Q52,82 51,82.2 Q50.5,82.5 51,82.8 L53.5,83 Z" fill="#E87020"/>';
@@ -30287,6 +30436,8 @@ document.addEventListener('keydown', function(e) {
         break;
       case 64: // Scarab Beetle — iridescent jeweled carapace on soil
         s += '<g opacity="0.88" transform="translate(42,90) scale(2.0) translate(-42,-90)">';
+        // AO ground shadow — warm soft
+        s += '<ellipse cx="42.3" cy="91.5" rx="2" ry="0.4" fill="rgba(40,20,5,0.30)"/>';
         // Shadow
         s += '<ellipse cx="42.3" cy="91.3" rx="1.8" ry="0.6" fill="#0d100c" opacity="0.15"/>';
         // Abdomen (elytra) — deep iridescent green base
@@ -30308,9 +30459,11 @@ document.addEventListener('keydown', function(e) {
         // Head — dark with green sheen
         s += '<circle cx="42" cy="89.2" r="0.55" fill="#1A4A3A"/>';
         s += '<ellipse cx="41.8" cy="89" rx="0.25" ry="0.2" fill="rgba(120,200,80,0.1)"/>';
-        // Eyes
-        s += '<circle cx="41.6" cy="89.1" r="0.12" fill="#111"/>';
-        s += '<circle cx="42.4" cy="89.1" r="0.12" fill="#111"/>';
+        // Eyes (warm dark) + cream catchlights
+        s += '<circle cx="41.6" cy="89.1" r="0.12" fill="#1a1208"/>';
+        s += '<circle cx="42.4" cy="89.1" r="0.12" fill="#1a1208"/>';
+        s += '<circle cx="41.58" cy="89.07" r="0.04" fill="#fff8e0"/>';
+        s += '<circle cx="42.38" cy="89.07" r="0.04" fill="#fff8e0"/>';
         // Mandibles
         s += '<path d="M41.7,88.8 L41.3,88.5" stroke="#1A4A3A" stroke-width="0.15" stroke-linecap="round"/>';
         s += '<path d="M42.3,88.8 L42.7,88.5" stroke="#1A4A3A" stroke-width="0.15" stroke-linecap="round"/>';
@@ -30357,8 +30510,8 @@ document.addEventListener('keydown', function(e) {
         // grey lower feathers, long skinny neck, black beak, dark eyes,
         // long dark grey legs with knobby knees and black webbed feet.
         s += '<g opacity="0.88" transform="translate(58,70) scale(1.05) translate(-58,-70)">';
-        // Shadow
-        s += '<ellipse cx="58" cy="90" rx="4" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm-shifted AO under standing legs
+        s += '<ellipse cx="58" cy="90" rx="4" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
         // ── LEGS — long, dark grey, skinny with knobby knees ──
         // Left leg
         s += '<line x1="57" y1="78" x2="57" y2="83" stroke="#4A4A48" stroke-width="0.5"/>';
@@ -30398,11 +30551,11 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="58.5" cy="58" rx="1.8" ry="1.5" fill="#F0ECE4"/>';
         // Red crown patch — BIG, covers top of white head
         s += '<path d="M57,57 Q58.5,55.5 60,57 Q59.5,57.8 58.5,58 Q57.5,57.8 57,57 Z" fill="#D02020"/>';
-        // Black face patch — around eye area
-        s += '<path d="M57,58.2 Q57.5,57.8 58.2,58.2 Q58.2,58.8 57.5,58.8 Q57,58.8 57,58.2 Z" fill="#1A1A18" opacity="0.5"/>';
-        // Eye — dark
-        s += '<circle cx="57.5" cy="58.2" r="0.35" fill="#1A1A18"/>';
-        s += '<circle cx="57.6" cy="58.1" r="0.1" fill="#f5ecd6"/>';
+        // Dark face patch — around eye area (warm-shifted)
+        s += '<path d="M57,58.2 Q57.5,57.8 58.2,58.2 Q58.2,58.8 57.5,58.8 Q57,58.8 57,58.2 Z" fill="#1a1208" opacity="0.5"/>';
+        // Eye — warm-dark with cream catchlight
+        s += '<circle cx="57.5" cy="58.2" r="0.35" fill="#1a1208"/>';
+        s += '<circle cx="57.6" cy="58.1" r="0.1" fill="#fff8e0"/>';
         // Beak — light grey, long, straight, pointy
         s += '<path d="M56.8,58.8 L54,59 L54,58.5 L56.8,58.3" fill="#8A8A88"/>';
         s += '<path d="M54,58.75 L56.8,58.55" fill="none" stroke="#6A6A68" stroke-width="0.1"/>';
@@ -30415,8 +30568,8 @@ document.addEventListener('keydown', function(e) {
         // curling up behind, clutching an acorn in tiny paws. Side view.
         s += '<g opacity="0.88" transform="translate(12,86) scale(1.5) translate(-12,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.05;0,0" dur="4s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="12" cy="92" rx="4" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="12" cy="92.1" rx="4.2" ry="0.6" fill="rgba(40,20,5,0.30)"/>';
         // ── TAIL — massive bushy S-curve behind body, THE defining feature ──
         s += '<path d="M14,88 C15,86 16,83 16,81 C16,79.5 16.5,78.5 17,79 C17.5,79.5 17.5,81 17,83 C16.5,85 16,87 15.5,89 C15,90 14,90.5 13,90" fill="#8A7050"/>';
         // Tail fur texture — wispy lighter strands
@@ -30424,6 +30577,10 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M16.2,83 C17,82 17.2,81 17.3,81.5" fill="none" stroke="#B8A078" stroke-width="0.6" stroke-linecap="round" opacity="0.25"/>';
         s += '<path d="M15.8,85 C16.5,84 16.8,83 17,83.5" fill="none" stroke="#B8A078" stroke-width="0.5" stroke-linecap="round" opacity="0.2"/>';
         s += '<path d="M15.2,87 C16,86 16.5,85 16.5,85.5" fill="none" stroke="#B8A078" stroke-width="0.4" stroke-linecap="round" opacity="0.18"/>';
+        // Extra wispy fluff strands — cream pickup on the lit edge
+        s += '<path d="M16.8,80 C17.4,79.2 17.6,78.8 17.7,79.2" fill="none" stroke="#fff8e0" stroke-width="0.25" stroke-linecap="round" opacity="0.3"/>';
+        s += '<path d="M17,82.5 C17.5,82 17.7,81.7 17.6,82" fill="none" stroke="#fff8e0" stroke-width="0.22" stroke-linecap="round" opacity="0.28"/>';
+        s += '<path d="M16.5,86 C17,85.5 17.2,85.2 17.1,85.5" fill="none" stroke="#fff8e0" stroke-width="0.2" stroke-linecap="round" opacity="0.25"/>';
         // Tail outline
         s += '<path d="M14,88 C15,86 16,83 16,81 C16,79.5 16.5,78.5 17,79" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.25"/>';
         // ── HIND LEG — tucked under body ──
@@ -30446,10 +30603,14 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M8.8,87.5 L9.2,87.7 M9.5,87.3 L9.5,87.7 M10,87.5 L9.8,87.7" fill="none" stroke="#4A3020" stroke-width="0.08" opacity="0.4"/>';
         // Acorn body — smooth oval nut
         s += '<ellipse cx="9.5" cy="88.5" rx="1" ry="0.8" fill="#B89060" stroke="#8A6838" stroke-width="0.12"/>';
-        // Acorn highlight
-        s += '<ellipse cx="9.3" cy="88.3" rx="0.4" ry="0.3" fill="rgba(220,200,160,0.25)"/>';
-        // Acorn tip
-        s += '<circle cx="9.5" cy="89.2" r="0.12" fill="#6A4828"/>';
+        // Acorn AO — warm shadow on bottom
+        s += '<path d="M8.6,88.85 Q9.5,89.4 10.4,88.85" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.18" stroke-linecap="round"/>';
+        // Acorn cream specular — soft pickup
+        s += '<ellipse cx="9.3" cy="88.3" rx="0.42" ry="0.3" fill="#f5ecd6" opacity="0.4"/>';
+        // Acorn cream sharp highlight
+        s += '<circle cx="9.18" cy="88.2" r="0.13" fill="#fff8e0" opacity="0.7"/>';
+        // Acorn tip — warm dark
+        s += '<circle cx="9.5" cy="89.2" r="0.12" fill="#1a1208"/>';
         // Paws clutching acorn
         s += '<path d="M8.8,88 C8.5,88.3 8.5,88.8 8.8,89" stroke="#9A8060" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
         s += '<path d="M10.2,88 C10.5,88.3 10.5,88.8 10.2,89" stroke="#9A8060" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
@@ -30465,11 +30626,13 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="9" cy="83" rx="0.25" ry="0.5" fill="#C0A880" opacity="0.3"/>';
         s += '<ellipse cx="10.2" cy="82.8" rx="0.5" ry="0.75" fill="#7A6040"/>';
         s += '<ellipse cx="10.2" cy="82.8" rx="0.25" ry="0.45" fill="#B09870" opacity="0.3"/>';
-        // ── EYE — large, dark, alert (side profile = 1 eye) ──
-        s += '<circle cx="8.5" cy="84.5" r="0.55" fill="#1A1410"/>';
-        s += '<circle cx="8.65" cy="84.3" r="0.15" fill="#f5ecd6"/>';
-        // ── NOSE — dark point ──
-        s += '<ellipse cx="8" cy="85.2" rx="0.2" ry="0.15" fill="#3A2A20"/>';
+        // ── EYE — large, warm-shifted dark, alert (side profile = 1 eye) ──
+        s += '<circle cx="8.5" cy="84.5" r="0.55" fill="#1a1208"/>';
+        s += '<circle cx="8.62" cy="84.32" r="0.18" fill="#fff8e0"/>';
+        s += '<circle cx="8.4" cy="84.62" r="0.08" fill="#f5ecd6"/>';
+        // ── NOSE — warm-shifted dark point ──
+        s += '<ellipse cx="8" cy="85.2" rx="0.2" ry="0.15" fill="#1a1208"/>';
+        s += '<circle cx="7.95" cy="85.14" r="0.06" fill="#fff8e0"/>';
         // Whiskers
         s += '<line x1="8" y1="85" x2="6.5" y2="84.5" stroke="#B09A78" stroke-width="0.06" opacity="0.35"/>';
         s += '<line x1="8" y1="85.3" x2="6.5" y2="85.5" stroke="#B09A78" stroke-width="0.06" opacity="0.3"/>';
@@ -30482,8 +30645,8 @@ document.addEventListener('keydown', function(e) {
         // Phascolarctos cinereus. Just the koala sitting. Round face,
         // BIG fluffy ears, large dark nose, sleepy eyes. Simple.
         s += '<g opacity="0.90" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
-        // Shadow
-        s += '<ellipse cx="57" cy="92.5" rx="3.5" ry="0.5" fill="#0d100c" opacity="0.10"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="57" cy="92.6" rx="3.7" ry="0.65" fill="rgba(40,20,5,0.30)"/>';
         // ── FEET — visible below body ──
         s += '<ellipse cx="55.5" cy="92" rx="1" ry="0.5" fill="#7A7A72"/>';
         s += '<ellipse cx="58.5" cy="92" rx="1" ry="0.5" fill="#7A7A72"/>';
@@ -30501,14 +30664,16 @@ document.addEventListener('keydown', function(e) {
         // White cheek patches — fluffy
         s += '<ellipse cx="55.5" cy="86" rx="1.3" ry="0.9" fill="#C8C8C0" opacity="0.5"/>';
         s += '<ellipse cx="58.5" cy="86" rx="1.3" ry="0.9" fill="#C8C8C0" opacity="0.5"/>';
-        // ── NOSE — large, dark, spoon-shaped (the defining feature) ──
-        s += '<ellipse cx="57" cy="85.8" rx="0.9" ry="0.7" fill="#2A2020"/>';
-        s += '<ellipse cx="57" cy="85.5" rx="0.3" ry="0.15" fill="rgba(200,200,200,0.2)"/>';
-        // ── EYES — small, sleepy, set wide ──
-        s += '<circle cx="55.5" cy="84.3" r="0.5" fill="#1A1410"/>';
-        s += '<circle cx="58.5" cy="84.3" r="0.5" fill="#1A1410"/>';
-        s += '<circle cx="55.6" cy="84.1" r="0.12" fill="#f5ecd6"/>';
-        s += '<circle cx="58.6" cy="84.1" r="0.12" fill="#f5ecd6"/>';
+        // ── NOSE — large, warm-shifted dark, spoon-shaped (the defining feature) ──
+        s += '<ellipse cx="57" cy="85.8" rx="0.9" ry="0.7" fill="#1a1208"/>';
+        s += '<ellipse cx="57" cy="85.5" rx="0.32" ry="0.16" fill="#fff8e0" opacity="0.4"/>';
+        // ── EYES — small, sleepy, set wide, warm dark + cream catchlight ──
+        s += '<circle cx="55.5" cy="84.3" r="0.5" fill="#1a1208"/>';
+        s += '<circle cx="58.5" cy="84.3" r="0.5" fill="#1a1208"/>';
+        s += '<circle cx="55.62" cy="84.12" r="0.16" fill="#fff8e0"/>';
+        s += '<circle cx="58.62" cy="84.12" r="0.16" fill="#fff8e0"/>';
+        s += '<circle cx="55.4" cy="84.45" r="0.06" fill="#f5ecd6"/>';
+        s += '<circle cx="58.4" cy="84.45" r="0.06" fill="#f5ecd6"/>';
         // Fur texture arcs on body
         s += '<path d="M55,88 Q55.5,87.5 56,88" fill="none" stroke="#7A7A72" stroke-width="0.12" opacity="0.3"/>';
         s += '<path d="M57.5,87.5 Q58,87 58.5,87.5" fill="none" stroke="#7A7A72" stroke-width="0.12" opacity="0.28"/>';
@@ -30516,6 +30681,13 @@ document.addEventListener('keydown', function(e) {
         // Ear tufts — wispy fur at ear edges
         s += '<path d="M52.5,82.5 Q52,83 52.5,83.5" fill="none" stroke="#A0A098" stroke-width="0.15" opacity="0.35"/>';
         s += '<path d="M61.5,82.5 Q62,83 61.5,83.5" fill="none" stroke="#A0A098" stroke-width="0.15" opacity="0.35"/>';
+        // Cream fluff strands — radiate from ear edge for fluffy feel
+        s += '<path d="M52.2,82.2 Q51.7,82.5 51.5,83" fill="none" stroke="#fff8e0" stroke-width="0.15" stroke-linecap="round" opacity="0.4"/>';
+        s += '<path d="M52.4,84.5 Q52,85 51.8,85.4" fill="none" stroke="#fff8e0" stroke-width="0.13" stroke-linecap="round" opacity="0.35"/>';
+        s += '<path d="M53.2,82 Q53,81.5 53.4,81.3" fill="none" stroke="#fff8e0" stroke-width="0.12" stroke-linecap="round" opacity="0.3"/>';
+        s += '<path d="M61.8,82.2 Q62.3,82.5 62.5,83" fill="none" stroke="#fff8e0" stroke-width="0.15" stroke-linecap="round" opacity="0.4"/>';
+        s += '<path d="M61.6,84.5 Q62,85 62.2,85.4" fill="none" stroke="#fff8e0" stroke-width="0.13" stroke-linecap="round" opacity="0.35"/>';
+        s += '<path d="M60.8,82 Q61,81.5 60.6,81.3" fill="none" stroke="#fff8e0" stroke-width="0.12" stroke-linecap="round" opacity="0.3"/>';
         // Nose specular highlight
         s += '<ellipse cx="56.8" cy="85.4" rx="0.2" ry="0.1" fill="#fff8e0"/>';
         // Action marks near face
@@ -30541,8 +30713,8 @@ document.addEventListener('keydown', function(e) {
         // Phoenicopterus roseus. THE iconic bird pose: one leg, S-neck,
         // hooked beak. Bright pink. Impossible to mistake for anything else.
         s += '<g opacity="0.90" transform="translate(12,50) scale(1.6) translate(-12,-50)">';
-        // Shadow
-        s += '<ellipse cx="12" cy="69" rx="2" ry="0.4" fill="#0d100c" opacity="0.08"/>';
+        // Shadow — warm-shifted AO under standing leg
+        s += '<ellipse cx="12" cy="69" rx="2" ry="0.4" fill="rgba(40,20,5,0.18)"/>';
         // ── STANDING LEG — two segments with backward knee ──
         // Upper leg (thigh) — from body down to backward knee
         s += '<line x1="12" y1="61" x2="12.5" y2="64.5" stroke="#D06070" stroke-width="0.5" stroke-linecap="round"/>';
@@ -30568,8 +30740,8 @@ document.addEventListener('keydown', function(e) {
         // Wing feather lines
         s += '<path d="M10.5,58.5 Q12,57 13.5,58.5" fill="none" stroke="#C05068" stroke-width="0.2" opacity="0.3"/>';
         s += '<path d="M10.8,59.5 Q12,58.5 13.2,59.5" fill="none" stroke="#C05068" stroke-width="0.2" opacity="0.25"/>';
-        // Wing tip — black feathers at back
-        s += '<path d="M9.5,59 Q9,60 9.5,61 Q10,60.5 10,59.5" fill="#1A1A1A" opacity="0.5"/>';
+        // Wing tip — dark feathers at back (warm-shifted)
+        s += '<path d="M9.5,59 Q9,60 9.5,61 Q10,60.5 10,59.5" fill="#1a1208" opacity="0.5"/>';
         // ── NECK — long S-curve, the signature shape ──
         s += '<path d="M12,57 Q11,55 10,53 Q9,51 10,49 Q11,47 12,48" fill="none" stroke="#E87088" stroke-width="1.2" stroke-linecap="round"/>';
         // Neck darker center line
@@ -30578,13 +30750,14 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="12" cy="47.5" r="1.2" fill="#F0A0A8"/>';
         // ── BEAK — long, hooked downward, black tip (THE ID feature) ──
         s += '<path d="M12.8,47.3 L15.5,46.5 L15.2,47.5 L14,48 L12.8,48.2 Z" fill="#F0A0A8"/>';
-        // Black beak tip — the distinctive sharp downward hook
-        s += '<path d="M15,46.5 L16,47 L15.5,48 L15.2,47.5 Z" fill="#1A1A1A"/>';
+        // Dark beak tip — the distinctive sharp downward hook (warm-shifted)
+        s += '<path d="M15,46.5 L16,47 L15.5,48 L15.2,47.5 Z" fill="#1a1208"/>';
+        s += '<circle cx="16" cy="47" r="0.08" fill="rgba(40,20,5,0.7)"/>';
         // Beak dividing line
         s += '<path d="M13,47.8 L15,47" fill="none" stroke="#D08088" stroke-width="0.15" opacity="0.4"/>';
-        // Eye — small, dark
-        s += '<circle cx="12.3" cy="47.2" r="0.3" fill="#1A1008"/>';
-        s += '<circle cx="12.4" cy="47.1" r="0.08" fill="#f5ecd6"/>';
+        // Eye — small, warm-dark with cream catchlight
+        s += '<circle cx="12.3" cy="47.2" r="0.3" fill="#1a1208"/>';
+        s += '<circle cx="12.4" cy="47.1" r="0.08" fill="#fff8e0"/>';
         // Eye ring — pale circle around eye
         s += '<circle cx="12.3" cy="47.2" r="0.5" fill="none" stroke="#F8D0D0" stroke-width="0.1" opacity="0.35"/>';
         // Extra wing feather detail lines
@@ -30626,8 +30799,8 @@ document.addEventListener('keydown', function(e) {
         // Mouth at snout tip
         s += '<circle cx="7.2" cy="17.2" r="0.15" fill="#8A6830"/>';
         // Eye — large, round, prominent
-        s += '<circle cx="10.8" cy="16" r="0.6" fill="#1A1A18"/>';
-        s += '<circle cx="10.9" cy="15.8" r="0.18" fill="rgba(240,220,160,0.6)"/>';
+        s += '<circle cx="10.8" cy="16" r="0.6" fill="#1a1208"/>';
+        s += '<circle cx="10.9" cy="15.8" r="0.18" fill="#fff8e0"/>';
         // Brow ridge
         s += '<path d="M10.3,15.5 Q10.8,15.2 11.5,15.5" fill="none" stroke="#A08040" stroke-width="0.2" opacity="0.4"/>';
         // ── FAN MANE — runs from top of head down to tail ──
@@ -30667,8 +30840,7 @@ document.addEventListener('keydown', function(e) {
       case 71: // Koi Fish — realistic, deep body, flowing split tail
         s += '<g opacity="1" transform="translate(22,88) scale(1.1) translate(-22,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,0.15;0,0;-1,-.15;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="28" cy="92.5" rx="5" ry="0.4" fill="#0d100c" opacity="0.08"/>';
+        // Aquatic — no ground AO; floats via translucent body
         // ── FLOWING TAIL — long & flowy like axolotl, translucent ──
         // Upper lobe — wide at base, long flowing curve to point
         s += '<path d="M33.5,89 Q35,87 37,85 Q39,84 40,84.5 Q40,85.5 39,87 Q37,88.5 35,89.5 Q34,90 33.5,90" fill="rgba(232,120,56,0.5)"/>';
@@ -30711,9 +30883,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M30,92 Q30.5,92.8 31,92.5 Q31,92 30.5,91.8" fill="rgba(240,200,160,0.2)"/>';
         // Head — blunt, wide
         s += '<path d="M23.5,89.5 Q23,89.2 23.2,89.5 Q23,90 23.5,90.5" fill="#F0E8D8"/>';
-        // Eye — round, calm
-        s += '<circle cx="24.2" cy="89.5" r="0.4" fill="#1A1818"/>';
-        s += '<circle cx="24.3" cy="89.3" r="0.12" fill="rgba(240,220,160,0.55)"/>';
+        // Eye — round, calm (warm-shifted with cream catchlight)
+        s += '<circle cx="24.2" cy="89.5" r="0.4" fill="#1a1208"/>';
+        s += '<circle cx="24.3" cy="89.3" r="0.12" fill="#fff8e0"/>';
         // Barbels — 2 whiskers
         s += '<path d="M23.5,89.8 Q22.8,90.3 22.2,90.8" stroke="#D8C0A0" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
         s += '<path d="M23.5,90.2 Q23,90.8 22.5,91.2" stroke="#D8C0A0" stroke-width="0.1" fill="none" stroke-linecap="round"/>';
@@ -30834,12 +31006,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M27.5,87.8 Q28,86 30,84.5 Q32,86 32.5,87.8 Q30.5,88.2 29.5,88.2 Z" fill="#C83828"/>';
         // Cap shadow — darker underside
         s += '<path d="M28,87.5 Q30,88 32,87.5" fill="none" stroke="#8A2018" stroke-width="0.3" opacity="0.3"/>';
-        // White warts (universal velar remnants — the spots!)
-        s += '<circle cx="29" cy="86.5" r="0.45" fill="#F0E8D8" opacity="0.65"/>';
-        s += '<circle cx="30.8" cy="86" r="0.35" fill="#F0E8D8" opacity="0.6"/>';
-        s += '<circle cx="30" cy="85.5" r="0.4" fill="#F0E8D8" opacity="0.55"/>';
-        s += '<circle cx="28.5" cy="85.8" r="0.25" fill="#F0E8D8" opacity="0.5"/>';
-        s += '<circle cx="31.2" cy="87" r="0.3" fill="#F0E8D8" opacity="0.5"/>';
+        // Cream warts (universal velar remnants — the spots!)
+        s += '<circle cx="29" cy="86.5" r="0.45" fill="#f5ecd6" opacity="0.85"/>';
+        s += '<circle cx="30.8" cy="86" r="0.35" fill="#f5ecd6" opacity="0.8"/>';
+        s += '<circle cx="30" cy="85.5" r="0.4" fill="#f5ecd6" opacity="0.75"/>';
+        s += '<circle cx="28.5" cy="85.8" r="0.25" fill="#f5ecd6" opacity="0.7"/>';
+        s += '<circle cx="31.2" cy="87" r="0.3" fill="#f5ecd6" opacity="0.7"/>';
         // Cap rim highlight — catches light on top curve
         s += '<path d="M28.5,86.5 Q30,85 31.5,86.5" fill="none" stroke="rgba(240,200,180,0.2)" stroke-width="0.3"/>';
         // Eyes — two dark dots peering from under the cap. Wide-set, shy.
@@ -30859,8 +31031,8 @@ document.addEventListener('keydown', function(e) {
         // large ears, and spindly newborn legs. Universally endearing.
         s += '<g opacity="0.80" transform="translate(8,87) scale(1.4) translate(-8,-87)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.05,-0.04;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="8" cy="91.5" rx="3" ry="0.4" fill="#0d100c" opacity="0.08"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="8" cy="91.6" rx="3.2" ry="0.5" fill="rgba(40,20,5,0.30)"/>';
         // Legs — long, spindly, slightly knock-kneed (fawn characteristic)
         s += '<line x1="6.5" y1="89" x2="6.2" y2="91.2" stroke="#9A7050" stroke-width="0.4" stroke-linecap="round"/>';
         s += '<line x1="7.5" y1="89" x2="7.8" y2="91.2" stroke="#9A7050" stroke-width="0.4" stroke-linecap="round"/>';
@@ -30893,11 +31065,13 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="5.5" cy="85" rx="1.1" ry="0.9" fill="#B08050"/>';
         // Muzzle — lighter
         s += '<ellipse cx="4.8" cy="85.3" rx="0.55" ry="0.4" fill="#C0A078" opacity="0.5"/>';
-        // Nose — small dark
-        s += '<ellipse cx="4.5" cy="85.2" rx="0.2" ry="0.15" fill="#3A2A20"/>';
-        // Eyes — ENORMOUS and dark (the Bambi effect — largest relative to head of any deer age)
-        s += '<circle cx="5.2" cy="84.7" r="0.5" fill="#1A1410"/>';
-        s += '<circle cx="5.3" cy="84.5" r="0.15" fill="rgba(240,220,180,0.5)"/>';
+        // Nose — small warm-shifted dark
+        s += '<ellipse cx="4.5" cy="85.2" rx="0.2" ry="0.15" fill="#1a1208"/>';
+        s += '<circle cx="4.45" cy="85.14" r="0.06" fill="#fff8e0"/>';
+        // Eyes — ENORMOUS and dark (the Bambi effect — largest relative to head of any deer age) — DEWY
+        s += '<circle cx="5.2" cy="84.7" r="0.5" fill="#1a1208"/>';
+        s += '<circle cx="5.32" cy="84.5" r="0.18" fill="#fff8e0"/>';
+        s += '<circle cx="5.05" cy="84.85" r="0.08" fill="#f5ecd6"/>';
         // Eye lashes — subtle, adds innocence
         s += '<path d="M4.8,84.4 Q5,84.2 5.2,84.3" fill="none" stroke="#3A2A20" stroke-width="0.1"/>';
         // Ears — large but not oversized
@@ -30912,14 +31086,14 @@ document.addEventListener('keydown', function(e) {
         // curved pointed beak, segmented legs with knobby knees, pointy claws.
         s += '<g opacity="1" transform="translate(46,8) scale(1.35) translate(-46,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 46 78;2 46 78;-1 46 78" dur="6s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="52" cy="81.5" rx="3.5" ry="0.4" fill="#0d100c" opacity="0.15"/>';
+        // Shadow — warm-shifted AO
+        s += '<ellipse cx="52" cy="81.5" rx="3.5" ry="0.4" fill="rgba(40,20,5,0.22)"/>';
         // ── TAIL — ends in a POINT ──
         s += '<path d="M55,77.5 L59.5,77.5 L55.5,78.5 Z" fill="#3A3A3A"/>';
-        s += '<path d="M55,77.5 L59.5,77.5 L55.5,78.5 Z" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
-        // Tail feather lines
-        s += '<path d="M56,77.5 L58.5,77.2" stroke="#1A1A1A" stroke-width="0.12" fill="none"/>';
-        s += '<path d="M56,78 L58.5,77.8" stroke="#1A1A1A" stroke-width="0.1" fill="none"/>';
+        s += '<path d="M55,77.5 L59.5,77.5 L55.5,78.5 Z" fill="none" stroke="#1a1208" stroke-width="0.2"/>';
+        // Tail feather lines (warm-shifted)
+        s += '<path d="M56,77.5 L58.5,77.2" stroke="#1a1208" stroke-width="0.12" fill="none"/>';
+        s += '<path d="M56,78 L58.5,77.8" stroke="#1a1208" stroke-width="0.1" fill="none"/>';
         // ── LEGS — lighter grey, 2 segments, bulbous knee, pointy claws ──
         // Left leg: upper segment → knee → lower segment → claws
         s += '<line x1="51" y1="79.5" x2="51" y2="80.5" stroke="#7A7A78" stroke-width="0.35"/>';
@@ -30935,47 +31109,48 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.2,81.3 L52.5,81.8 M53.2,81.3 L53.2,82 M53.2,81.3 L53.9,81.8" stroke="#4A4A48" stroke-width="0.15" fill="none"/>';
         // ── BODY — teardrop/pointed at back, wider at front ──
         s += '<path d="M49,76.5 Q49,75.5 51,75.5 Q53,75.5 55,77 Q56,78 55.5,79 Q54,80 52,80.5 Q50,80 49,79 Q48.5,78 49,76.5 Z" fill="#4A4A4A"/>';
-        s += '<path d="M49,76.5 Q49,75.5 51,75.5 Q53,75.5 55,77 Q56,78 55.5,79 Q54,80 52,80.5 Q50,80 49,79 Q48.5,78 49,76.5" fill="none" stroke="#1A1A1A" stroke-width="0.3"/>';
+        s += '<path d="M49,76.5 Q49,75.5 51,75.5 Q53,75.5 55,77 Q56,78 55.5,79 Q54,80 52,80.5 Q50,80 49,79 Q48.5,78 49,76.5" fill="none" stroke="#1a1208" stroke-width="0.3"/>';
         // Breast — lighter grey
         s += '<path d="M50,79 Q51,80 52.5,79.8" fill="#585858" opacity="0.4"/>';
         // ── LEFT WING (upper) — spread out, angled up-left for flying ──
         s += '<path d="M50,77 Q48,75 45,73.5 Q43,73 41.5,73.5 L42,74.5 Q44,74.5 46,75.5 Q48,76.5 49.5,77.5 Z" fill="#3A3A3A"/>';
-        s += '<path d="M50,77 Q48,75 45,73.5 Q43,73 41.5,73.5 L42,74.5 Q44,74.5 46,75.5 Q48,76.5 49.5,77.5" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
-        // Left wing feather edges
-        s += '<path d="M47,74 Q45,73.5 43,73.8" fill="none" stroke="#1A1A1A" stroke-width="0.15"/>';
-        s += '<path d="M48,75 Q46,74.5 44,74.8" fill="none" stroke="#1A1A1A" stroke-width="0.12"/>';
-        s += '<path d="M49,76 Q47,75.5 45.5,76" fill="none" stroke="#2A2A2A" stroke-width="0.1"/>';
+        s += '<path d="M50,77 Q48,75 45,73.5 Q43,73 41.5,73.5 L42,74.5 Q44,74.5 46,75.5 Q48,76.5 49.5,77.5" fill="none" stroke="#1a1208" stroke-width="0.2"/>';
+        // Left wing feather edges (warm-shifted)
+        s += '<path d="M47,74 Q45,73.5 43,73.8" fill="none" stroke="#1a1208" stroke-width="0.15"/>';
+        s += '<path d="M48,75 Q46,74.5 44,74.8" fill="none" stroke="#1a1208" stroke-width="0.12"/>';
+        s += '<path d="M49,76 Q47,75.5 45.5,76" fill="none" stroke="#2a1812" stroke-width="0.1"/>';
         // ── RIGHT WING (lower) — spread out, angled down-right for flying ──
         s += '<path d="M52,79 Q54,80.5 57,81.5 Q59,82 60.5,81.5 L60,80.5 Q58,80.5 56,79.5 Q54,78.5 52.5,78 Z" fill="#353535"/>';
-        s += '<path d="M52,79 Q54,80.5 57,81.5 Q59,82 60.5,81.5 L60,80.5 Q58,80.5 56,79.5 Q54,78.5 52.5,78" fill="none" stroke="#1A1A1A" stroke-width="0.2"/>';
+        s += '<path d="M52,79 Q54,80.5 57,81.5 Q59,82 60.5,81.5 L60,80.5 Q58,80.5 56,79.5 Q54,78.5 52.5,78" fill="none" stroke="#1a1208" stroke-width="0.2"/>';
         // Right wing feather edges
-        s += '<path d="M55,81 Q57,81.5 59,81.2" fill="none" stroke="#1A1A1A" stroke-width="0.15"/>';
-        s += '<path d="M54,80 Q56,80.5 58,80.2" fill="none" stroke="#1A1A1A" stroke-width="0.12"/>';
-        s += '<path d="M53.5,79.5 Q55,79.8 56.5,79.5" fill="none" stroke="#2A2A2A" stroke-width="0.1"/>';
+        s += '<path d="M55,81 Q57,81.5 59,81.2" fill="none" stroke="#1a1208" stroke-width="0.15"/>';
+        s += '<path d="M54,80 Q56,80.5 58,80.2" fill="none" stroke="#1a1208" stroke-width="0.12"/>';
+        s += '<path d="M53.5,79.5 Q55,79.8 56.5,79.5" fill="none" stroke="#2a1812" stroke-width="0.1"/>';
         // Throat hackles — scruffy feathers
         s += '<path d="M50,77.5 Q49.5,78.2 49.8,79" stroke="#3A3A3A" stroke-width="0.25" fill="none"/>';
         s += '<path d="M50.3,77.8 Q50,78.5 50,79.2" stroke="#3A3A3A" stroke-width="0.2" fill="none"/>';
         // ── HEAD — OVAL (not circle), grey, black outline ──
         s += '<ellipse cx="49.5" cy="76" rx="1.8" ry="1.4" fill="#4A4A4A"/>';
-        s += '<ellipse cx="49.5" cy="76" rx="1.8" ry="1.4" fill="none" stroke="#1A1A1A" stroke-width="0.25"/>';
-        // ── BEAK — triangle shape, sharp point at tip ──
+        s += '<ellipse cx="49.5" cy="76" rx="1.8" ry="1.4" fill="none" stroke="#1a1208" stroke-width="0.25"/>';
+        // ── BEAK — triangle shape, sharp point at tip + tip terminator ──
         // Upper mandible — straight triangle to a point
-        s += '<path d="M48,75.8 L45,76.2 L48,76.3 Z" fill="#1A1A1A"/>';
+        s += '<path d="M48,75.8 L45,76.2 L48,76.3 Z" fill="#1a1208"/>';
         // Lower mandible
-        s += '<path d="M48,76.5 L45.5,76.5 L48,76.8 Z" fill="#2A2A2A"/>';
+        s += '<path d="M48,76.5 L45.5,76.5 L48,76.8 Z" fill="#2a1812"/>';
         // Beak outline
-        s += '<path d="M48,75.8 L45,76.2 L48,76.3 M48,76.5 L45.5,76.5" fill="none" stroke="#0A0A0A" stroke-width="0.15"/>';
+        s += '<path d="M48,75.8 L45,76.2 L48,76.3 M48,76.5 L45.5,76.5" fill="none" stroke="#1a1208" stroke-width="0.15"/>';
+        s += '<circle cx="45" cy="76.2" r="0.08" fill="rgba(40,20,5,0.7)"/>';
         // Nasal bristles
-        s += '<path d="M48.5,75.8 L48,75.6 M48.5,76 L48,75.9" stroke="#1A1A1A" stroke-width="0.1"/>';
-        // ── EYE — white dot with tiny black pupil ──
-        s += '<circle cx="49" cy="75.8" r="0.35" fill="#F0F0F0"/>';
-        s += '<circle cx="49" cy="75.8" r="0.12" fill="#1A1A1A"/>';
+        s += '<path d="M48.5,75.8 L48,75.6 M48.5,76 L48,75.9" stroke="#1a1208" stroke-width="0.1"/>';
+        // ── EYE — cream dot with warm-dark pupil ──
+        s += '<circle cx="49" cy="75.8" r="0.35" fill="#f5ecd6"/>';
+        s += '<circle cx="49" cy="75.8" r="0.12" fill="#1a1208"/>';
         s += '</g>';
         break;
       case 76: // Garden Snake — spring coil shape, green with stripes
         s += '<g opacity="1" transform="translate(46,88) scale(1.2) translate(-46,-88)">';
-        // Shadow
-        s += '<ellipse cx="46" cy="93" rx="5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm-shifted AO
+        s += '<ellipse cx="46" cy="93" rx="5" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
         // ── BODY — spring/coil shape, S-curves stacked ──
         // Main body path — spring shape: left-right-left-right
         s += '<path d="M43,84 Q40,85 42,86.5 Q44,88 48,87 Q52,86 50,88 Q48,90 44,89.5 Q40,89 42,91 Q44,92.5 48,92" fill="none" stroke="#4A7A30" stroke-width="1.8" stroke-linecap="round"/>';
@@ -30992,9 +31167,9 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="42.5" cy="83.5" rx="1.5" ry="1.2" fill="#4A7A30"/>';
         // Head lighter top
         s += '<ellipse cx="42.3" cy="83.2" rx="0.8" ry="0.6" fill="#5A8A40" opacity="0.3"/>';
-        // 1 black eye — profile/sideways look
-        s += '<circle cx="42" cy="83" r="0.35" fill="#111"/>';
-        s += '<circle cx="42.1" cy="82.9" r="0.1" fill="#f5ecd6"/>';
+        // 1 warm-dark eye — profile/sideways look (cream catchlight)
+        s += '<circle cx="42" cy="83" r="0.35" fill="#1a1208"/>';
+        s += '<circle cx="42.1" cy="82.9" r="0.1" fill="#fff8e0"/>';
         // Nostril
         s += '<circle cx="41.5" cy="83.5" r="0.08" fill="#2A4A18" opacity="0.4"/>';
         // Mouth line
@@ -31023,6 +31198,8 @@ document.addEventListener('keydown', function(e) {
         // and venomous forcipules at the head. Ancient, alien, elegant.
         s += '<g opacity="1" transform="translate(30,95) scale(1.6) translate(-30,-95)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;3,0;0,0" dur="7s" repeatCount="indefinite"/>';
+        // AO ground shadow — warm soft long body
+        s += '<ellipse cx="30" cy="92.7" rx="10" ry="0.35" fill="rgba(40,20,5,0.25)"/>';
         // Shadow
         s += '<ellipse cx="30" cy="92.5" rx="10" ry="0.4" fill="#0d100c" opacity="0.06"/>';
         // Body segments — 12 tergite plates, each slightly articulated
@@ -31060,9 +31237,15 @@ document.addEventListener('keydown', function(e) {
         // Antennae — long, sweeping forward
         s += '<path d="M19.5,91.2 Q18,90.5 16.5,90.5" fill="none" stroke="#6A3A20" stroke-width="0.12" stroke-linecap="round"><animate attributeName="d" values="M19.5,91.2 Q18,90.5 16.5,90.5;M19.5,91.2 Q17.5,90.2 16,90.2;M19.5,91.2 Q18,90.5 16.5,90.5" dur="4s" repeatCount="indefinite"/></path>';
         s += '<path d="M19.5,91.5 Q18,91 16.5,91.2" fill="none" stroke="#6A3A20" stroke-width="0.1" stroke-linecap="round"><animate attributeName="d" values="M19.5,91.5 Q18,91 16.5,91.2;M19.5,91.5 Q17.5,91.3 16,91.5;M19.5,91.5 Q18,91 16.5,91.2" dur="4.5s" repeatCount="indefinite"/></path>';
-        // Eyes — two small simple eyes (ocelli)
-        s += '<circle cx="19.3" cy="91.2" r="0.12" fill="#1A1410"/>';
-        s += '<circle cx="19.3" cy="91.7" r="0.1" fill="#1A1410"/>';
+        // Eyes — two small simple eyes (ocelli, warm dark)
+        s += '<circle cx="19.3" cy="91.2" r="0.12" fill="#1a1208"/>';
+        s += '<circle cx="19.3" cy="91.7" r="0.1" fill="#1a1208"/>';
+        // Eye catchlights
+        s += '<circle cx="19.27" cy="91.17" r="0.04" fill="#fff8e0"/>';
+        s += '<circle cx="19.27" cy="91.67" r="0.03" fill="#fff8e0"/>';
+        // Antenna tip terminators
+        s += '<circle cx="16.5" cy="90.5" r="0.08" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="16.5" cy="91.2" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // (tail cerci removed — were disconnected from body)
         s += '</g>';
         break;
@@ -31076,6 +31259,7 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="48" cy="91.2" rx="2" ry="0.5" fill="rgba(155,89,182,0.06)"><animate attributeName="fill" values="rgba(155,89,182,0.06);rgba(90,140,220,0.08);rgba(155,89,182,0.06)" dur="4s" repeatCount="indefinite"/></ellipse>';
         // Shadow
         s += '<ellipse cx="48.2" cy="91" rx="1.5" ry="0.4" fill="#0d100c" opacity="0.12"/>';
+        s += '<ellipse cx="48.2" cy="91.2" rx="1.7" ry="0.35" fill="rgba(40,20,5,0.25)"/>';
         // Opaque base body — dark purple so you can't see through
         s += '<polygon points="48,89.3 46.3,90 46.8,91.1 48,90.9 49.2,91.1 49.7,90 48,89.3" fill="#2A1A3A"/>';
         // Elytra (wing covers) — faceted crystal over opaque base
@@ -31120,6 +31304,8 @@ document.addEventListener('keydown', function(e) {
         // Outer layers: blue, green, iridescent, see-through fog/smoke shapes.
         s += '<g opacity="1">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,-1.5;-0.8,0.5;0.5,-0.8;0,0" dur="7s" repeatCount="indefinite"/>';
+        // AO drop shadow (warm — wisp casts faint warm ground reflection)
+        s += '<ellipse cx="15" cy="46" rx="3.5" ry="0.5" fill="rgba(40,20,5,0.22)"><animate attributeName="opacity" values="0.22;0.32;0.18;0.22" dur="2.5s" repeatCount="indefinite"/></ellipse>';
         // ── OUTER FOG/SMOKE — brighter, more visible ──
         s += '<ellipse cx="15" cy="35" rx="6" ry="4.5" fill="rgba(40,220,200,0.08)" transform="rotate(15,15,35)"><animate attributeName="rx" values="6;7;5.5;6" dur="4s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="14" cy="36" rx="5" ry="3.5" fill="rgba(60,180,240,0.1)" transform="rotate(-10,14,36)"><animate attributeName="ry" values="3.5;4.5;3;3.5" dur="5s" repeatCount="indefinite"/></ellipse>';
@@ -31136,6 +31322,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="15" cy="35" r="0.9" fill="rgba(120,255,245,0.8)"><animate attributeName="opacity" values="0.8;1;0.7;0.9;0.8" dur="1.5s" repeatCount="indefinite"/></circle>';
         // Hot center — white-cyan blazing pinpoint
         s += '<circle cx="15" cy="35" r="0.4" fill="rgba(220,255,255,1)"><animate attributeName="opacity" values="1;1;0.8;1;1" dur="1.2s" repeatCount="indefinite"/></circle>';
+        // Cream specular pickup (master playbook — even magical fire gets warm pickup)
+        s += '<circle cx="14.7" cy="34.7" r="0.18" fill="#fff8e0" opacity="0.85"><animate attributeName="opacity" values="0.85;1;0.7;0.85" dur="1.4s" repeatCount="indefinite"/></circle>';
         // ── SPARKLE MOTES — brighter, more visible ──
         s += '<circle cx="13.5" cy="33.5" r="0.15" fill="rgba(120,255,245,0.6)"><animate attributeName="opacity" values="0;0.8;0" dur="2.2s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="17" cy="34" r="0.12" fill="rgba(80,240,220,0.55)"><animate attributeName="opacity" values="0.55;0;0.55" dur="1.8s" repeatCount="indefinite"/></circle>';
@@ -31182,47 +31370,50 @@ document.addEventListener('keydown', function(e) {
       case 81: // Panda — sitting, facing forward, black and white
         s += '<g opacity="1" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.05;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="56" cy="93" rx="4" ry="0.5" fill="#0d100c" opacity="0.1"/>';
-        // ── HIND LEGS — black, visible below body ──
-        s += '<ellipse cx="53.5" cy="91.5" rx="2" ry="1" fill="#1A1A1A"/>';
-        s += '<ellipse cx="58.5" cy="91.5" rx="2" ry="1" fill="#1A1A1A"/>';
+        // Shadow — warm AO
+        s += '<ellipse cx="56" cy="93.1" rx="4.2" ry="0.65" fill="rgba(40,20,5,0.30)"/>';
+        // ── HIND LEGS — warm-shifted dark, visible below body ──
+        s += '<ellipse cx="53.5" cy="91.5" rx="2" ry="1" fill="#1a1208"/>';
+        s += '<ellipse cx="58.5" cy="91.5" rx="2" ry="1" fill="#1a1208"/>';
         // ── BODY — white, round, chunky ──
         s += '<ellipse cx="56" cy="89" rx="4" ry="3.5" fill="#F0ECE4"/>';
         s += '<ellipse cx="56" cy="89" rx="4" ry="3.5" fill="none" stroke="#D0CCC4" stroke-width="0.15"/>';
         // Belly — slightly warmer white
         s += '<ellipse cx="56" cy="90" rx="2.5" ry="2" fill="#F8F4EC" opacity="0.4"/>';
-        // ── ARMS — black, reaching forward ──
-        s += '<path d="M52.5,88 Q51,89 50.5,90.5" stroke="#1A1A1A" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M59.5,88 Q61,89 61.5,90.5" stroke="#1A1A1A" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+        // ── ARMS — warm-shifted dark, reaching forward ──
+        s += '<path d="M52.5,88 Q51,89 50.5,90.5" stroke="#1a1208" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M59.5,88 Q61,89 61.5,90.5" stroke="#1a1208" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
         // Paw pads
         s += '<circle cx="50.5" cy="90.5" r="0.6" fill="#2A2A2A"/>';
         s += '<circle cx="61.5" cy="90.5" r="0.6" fill="#2A2A2A"/>';
         // ── HEAD — white, round, sitting on body ──
         s += '<circle cx="56" cy="84.5" r="3" fill="#F0ECE4"/>';
         s += '<circle cx="56" cy="84.5" r="3" fill="none" stroke="#D0CCC4" stroke-width="0.12"/>';
-        // ── EARS — black, round, on top of head ──
-        s += '<circle cx="53.5" cy="82.2" r="1" fill="#1A1A1A"/>';
-        s += '<circle cx="58.5" cy="82.2" r="1" fill="#1A1A1A"/>';
-        // ── EYE PATCHES — black ovals around eyes (panda signature) ──
-        s += '<ellipse cx="54.5" cy="84.5" rx="1.2" ry="1" fill="#1A1A1A" transform="rotate(-10,54.5,84.5)"/>';
-        s += '<ellipse cx="57.5" cy="84.5" rx="1.2" ry="1" fill="#1A1A1A" transform="rotate(10,57.5,84.5)"/>';
-        // ── EYES — dark with white highlight inside black patches ──
-        s += '<circle cx="54.5" cy="84.5" r="0.5" fill="#111"/>';
-        s += '<circle cx="57.5" cy="84.5" r="0.5" fill="#111"/>';
-        s += '<circle cx="54.6" cy="84.3" r="0.15" fill="#f5ecd6"/>';
-        s += '<circle cx="57.6" cy="84.3" r="0.15" fill="#f5ecd6"/>';
-        // ── NOSE — black oval ──
-        s += '<ellipse cx="56" cy="85.8" rx="0.5" ry="0.35" fill="#1A1A1A"/>';
+        // ── EARS — warm-shifted dark, round, on top of head ──
+        s += '<circle cx="53.5" cy="82.2" r="1" fill="#1a1208"/>';
+        s += '<circle cx="58.5" cy="82.2" r="1" fill="#1a1208"/>';
+        // ── EYE PATCHES — warm-shifted dark ovals (panda signature) ──
+        s += '<ellipse cx="54.5" cy="84.5" rx="1.2" ry="1" fill="#1a1208" transform="rotate(-10,54.5,84.5)"/>';
+        s += '<ellipse cx="57.5" cy="84.5" rx="1.2" ry="1" fill="#1a1208" transform="rotate(10,57.5,84.5)"/>';
+        // ── EYES — warm dark with cream catchlight inside patches ──
+        s += '<circle cx="54.5" cy="84.5" r="0.5" fill="#1a1208"/>';
+        s += '<circle cx="57.5" cy="84.5" r="0.5" fill="#1a1208"/>';
+        s += '<circle cx="54.62" cy="84.32" r="0.18" fill="#fff8e0"/>';
+        s += '<circle cx="57.62" cy="84.32" r="0.18" fill="#fff8e0"/>';
+        s += '<circle cx="54.4" cy="84.65" r="0.07" fill="#f5ecd6"/>';
+        s += '<circle cx="57.4" cy="84.65" r="0.07" fill="#f5ecd6"/>';
+        // ── NOSE — warm-shifted dark oval with cream pickup ──
+        s += '<ellipse cx="56" cy="85.8" rx="0.5" ry="0.35" fill="#1a1208"/>';
+        s += '<ellipse cx="55.85" cy="85.7" rx="0.18" ry="0.1" fill="#fff8e0" opacity="0.55"/>';
         // Mouth — W shape below nose
-        s += '<path d="M55.5,86.2 Q56,86.6 56.5,86.2" fill="none" stroke="#1A1A1A" stroke-width="0.12" stroke-linecap="round"/>';
-        s += '<line x1="56" y1="86" x2="56" y2="86.3" stroke="#1A1A1A" stroke-width="0.1"/>';
-        // ── BLACK SHOULDER PATCHES — across upper body ──
-        s += '<path d="M52,87 Q53,86 54,86.5" fill="#1A1A1A" opacity="0.6"/>';
-        s += '<path d="M60,87 Q59,86 58,86.5" fill="#1A1A1A" opacity="0.6"/>';
-        // Hind feet — black, peeking below
-        s += '<ellipse cx="53.5" cy="92.2" rx="1" ry="0.4" fill="#1A1A1A"/>';
-        s += '<ellipse cx="58.5" cy="92.2" rx="1" ry="0.4" fill="#1A1A1A"/>';
+        s += '<path d="M55.5,86.2 Q56,86.6 56.5,86.2" fill="none" stroke="#1a1208" stroke-width="0.12" stroke-linecap="round"/>';
+        s += '<line x1="56" y1="86" x2="56" y2="86.3" stroke="#1a1208" stroke-width="0.1"/>';
+        // ── DARK SHOULDER PATCHES — across upper body ──
+        s += '<path d="M52,87 Q53,86 54,86.5" fill="#1a1208" opacity="0.6"/>';
+        s += '<path d="M60,87 Q59,86 58,86.5" fill="#1a1208" opacity="0.6"/>';
+        // Hind feet — warm dark, peeking below
+        s += '<ellipse cx="53.5" cy="92.2" rx="1" ry="0.4" fill="#1a1208"/>';
+        s += '<ellipse cx="58.5" cy="92.2" rx="1" ry="0.4" fill="#1a1208"/>';
         s += '</g>';
         break;
     }
