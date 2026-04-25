@@ -7140,6 +7140,24 @@ window._addSwitchTabHook = function(fn){
       // Mirror PALETTE/PAL_KEYS from the main IIFE (kept local to avoid boot-path exposure)
       var _CT_PAL={pine:'#3A5C2A',sage:'#8CB86E',terra:'#C4633A',sand:'#E8C07A',cream:'#F4EDDA',gold:'#D4B455',plum:'#7A5080',amber:'#D4A014',moss:'#5E8550',rust:'#A85520',slate:'#5E7275',rose:'#A87285',teal:'#4A8A78',copper:'#A87850',ash:'#959588',violet:'#8860A8'};
       var _CT_PAL_KEYS=['pine','sage','terra','sand','cream','moss','slate','teal','copper','ash','plum','amber','rust','rose','violet','gold'];
+      // Mutation tiers: byte threshold + name (matches hashToTraits in this file)
+      var _CT_MUTS=[
+        {byte:0x00,name:'None'},
+        {byte:0xCC,name:'Fossil'},
+        {byte:0xD0,name:'Albino'},
+        {byte:0xD4,name:'Silhouette'},
+        {byte:0xD8,name:'Pixel Art'},
+        {byte:0xDC,name:'Bioluminescent'},
+        {byte:0xE0,name:'Porcelain'},
+        {byte:0xE4,name:'Golden'},
+        {byte:0xE8,name:'Ink Wash'},
+        {byte:0xEC,name:'Neon'},
+        {byte:0xF0,name:'Holographic'},
+        {byte:0xF4,name:'Wireframe'},
+        {byte:0xF8,name:'Glass Stem'},
+        {byte:0xFC,name:'Glitch'}
+      ];
+      var _mutIdx=0;
 
       // Companion names from TRAIT_BANK
       var _compNames=[];
@@ -7167,6 +7185,9 @@ window._addSwitchTabHook = function(fn){
         t.leafSpread=_leafSpread;
         t.flowerSize=_flowerSize;
         t.flowerColor=_flowerColor;
+        var _mut=_CT_MUTS[_mutIdx];
+        t.mutation=_mut.byte;
+        t.mutationName=_mut.name;
         // Render with overridden traits
         var svg='';
         try{svg=window._generatePlantSVG(_hash,_sz,1.0,t);}catch(e){
@@ -7240,6 +7261,14 @@ window._addSwitchTabHook = function(fn){
       }
       h+='</div>';
 
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#a87285;margin:0.4rem 0 0.2rem;">MUTATION</div>';
+      var _mutNames=[];
+      for(var _mi=0;_mi<_CT_MUTS.length;_mi++){
+        var _m=_CT_MUTS[_mi];
+        _mutNames.push(_m.name+(_m.byte?' (0x'+_m.byte.toString(16).toUpperCase()+'+)':''));
+      }
+      h+=_buildSelect('ct-mut',_mutNames,_mutIdx);
+
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">PLANT SIZE <span style="color:var(--cream)">(<span id="ct-size-val">200</span>px)</span></div>';
       h+='<input type="range" id="ct-size" min="120" max="300" value="200" style="width:100%;accent-color:#7ab356;">';
 
@@ -7274,6 +7303,9 @@ window._addSwitchTabHook = function(fn){
 
       var fsSlider=document.getElementById('ct-fs');
       fsSlider.oninput=function(){_flowerSize=parseInt(this.value);document.getElementById('ct-fs-val').textContent=_flowerSize;_render();};
+
+      var mutSel=document.getElementById('ct-mut');
+      if(mutSel)mutSel.onchange=function(){_mutIdx=parseInt(this.value);_render();};
 
       // Wire flower color swatches
       var swatches=document.querySelectorAll('.ct-fc-swatch');
