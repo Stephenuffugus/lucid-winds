@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.75';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.76';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -17857,7 +17857,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="'+_hueShift(_obCol2, i*29, 12)+'" opacity="'+(op*0.08).toFixed(2)+'"/>';
           // Leading edge highlight — bright cream rim
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.4)+','+(ly-ls*0.3)+' '+(tip-side*ls*0.3)+','+(ly-ls*0.85)+' '+tip+','+(tipY+ls*0.35)+' C'+(tip+side*ls*0.2)+','+(tipY-ls*0.05)+' '+(_obCurlX+side*ls*0.15)+','+_obCurlY+' '+_obCurlX+','+(_obCurlY+ls*0.05)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.48)" stroke-width="0.55" stroke-linecap="round"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.55" stroke-linecap="round"/>';
           // Prominent midrib — master pass warm-shifted dark
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.2)+','+(ly-ls*0.5)+' '+(lx+side*ls*0.05)+','+(ly-ls*0.8)+' '+_obCurlX+','+(_obCurlY+ls*0.05)+'"'
              + ' fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.60" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
@@ -18002,7 +18002,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+op+'" filter="url(#ds'+uid+')"/>';
           // Leading edge highlight
           s += '<path d="M'+ox+','+ly+' C'+_mc1x.toFixed(1)+','+_mc1y.toFixed(1)+' '+_mc2x.toFixed(1)+','+_mc2y.toFixed(1)+' '+_mTipX.toFixed(1)+','+_mTipY.toFixed(1)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.5" stroke-linecap="round"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round"/>';
           // Midrib vein — master pass: warm-shifted dark + cream highlight pair (Hokusai trick)
           var _mmX = ox + (_mTipX - ox) * 0.72;
           var _mmY = ly + (_mTipY - ly) * 0.72;
@@ -18060,7 +18060,7 @@ document.addEventListener('keydown', function(e) {
               s += '<path d="'+_ppD+'" fill="'+_fpFill+'" opacity="'+(op*(0.72-_fp*0.06)).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
               if (_fsd === side) {
                 s += '<path d="M'+_fpx.toFixed(1)+','+_fpy.toFixed(1)+' C'+(_fpx+side*_fsd*_fps*0.35).toFixed(1)+','+(_fpy-_fps*0.2).toFixed(1)+' '+(_ppTX-side*_fsd*_fps*0.1).toFixed(1)+','+(_ppTY+_fps*0.06).toFixed(1)+' '+_ppTX.toFixed(1)+','+_ppTY.toFixed(1)+'"'
-                   + ' fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
+                   + ' fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round"/>';
               }
             }
           }
@@ -18092,7 +18092,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="' + bodyD + '" fill="'+_hueShift(_mpCol2, i*29, 15)+'" opacity="'+(op*0.12).toFixed(2)+'"/>';
           // Leading edge highlight — full outer contour
           s += '<path d="M'+ox+','+ly+' '+mlobe(-1.2,ls*0.9,ls*0.25)+' '+mlobe(-0.5,ls*1.15,ls*0.22)+' '+mlobe(0.0,ls*1.1,ls*0.2)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.48)" stroke-width="0.55" stroke-linecap="round"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.55" stroke-linecap="round"/>';
           // PALMATE VEINS — radiating from petiole to each lobe tip (maple signature)
           for (var _mpv = 0; _mpv < _mpLobes.length; _mpv++) {
             var _mpl = _mpLobes[_mpv];
@@ -18683,7 +18683,7 @@ document.addEventListener('keydown', function(e) {
                  + ' C'+_pfC1X.toFixed(1)+','+(_pfC1Y - _pfFW).toFixed(1)
                  + ' '+(_pfTX - Math.cos(_pfAng) * _pfFLen * 0.15 * side).toFixed(1)+','+(_pfTY - _pfFW * 0.4).toFixed(1)
                  + ' '+_pfTX.toFixed(1)+','+_pfTY.toFixed(1)+'"'
-                 + ' fill="none" stroke="rgba(240,235,216,0.4)" stroke-width="0.5" stroke-linecap="round"/>';
+                 + ' fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round"/>';
             }
             // Finger midrib
             s += '<path d="M'+_pfBaseX.toFixed(1)+','+_pfBaseY.toFixed(1)+' L'+_pfTX.toFixed(1)+','+_pfTY.toFixed(1)+'"'
@@ -18721,7 +18721,7 @@ document.addEventListener('keydown', function(e) {
             // Highlight on center needle
             if (_n21i === 3) {
               s += '<path d="M'+ox+','+ly+' C'+(ox+Math.cos(_n21a)*_n21len*0.35*side).toFixed(1)+','+(ly+Math.sin(_n21a)*_n21len*0.35).toFixed(1)+' '+(_n21tx-Math.cos(_n21a)*_n21len*0.15*side).toFixed(1)+','+(_n21ty-Math.sin(_n21a)*_n21len*0.15).toFixed(1)+' '+_n21tx.toFixed(1)+','+_n21ty.toFixed(1)+'"'
-                 + ' stroke="rgba(240,235,216,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+                 + ' stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
             }
           }
           // Basal brass sheath (pine fascicle signature)
@@ -21058,9 +21058,10 @@ document.addEventListener('keydown', function(e) {
             s += '<path d="M'+ox+','+ly+' L'+(ox+Math.cos(_snPaA)*_snWA*side).toFixed(1)+','+(ly+Math.sin(_snPaA)*_snWA).toFixed(1)+' L'+_snTxA.toFixed(1)+','+_snTyA.toFixed(1)+' L'+(ox-Math.cos(_snPaA)*_snWA*side).toFixed(1)+','+(ly-Math.sin(_snPaA)*_snWA).toFixed(1)+' Z" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
             // Cream highlight along needle's lit side
             s += '<line x1="'+(ox+Math.cos(_snPaA)*_snWA*0.5*side).toFixed(2)+'" y1="'+(ly+Math.sin(_snPaA)*_snWA*0.5).toFixed(2)+'" x2="'+(_snTxA*0.85+ox*0.15).toFixed(1)+'" y2="'+(_snTyA*0.85+ly*0.15).toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
-            // Sharp tip glint
+            // Sharp tip terminator + cream glint
+            s += '<circle cx="'+_snTxA.toFixed(1)+'" cy="'+_snTyA.toFixed(1)+'" r="0.20" fill="rgba(40,20,5,0.55)" opacity="'+(op*0.55).toFixed(2)+'"/>';
             if (_sn === 0) {
-              s += '<circle cx="'+_snTxA.toFixed(1)+'" cy="'+_snTyA.toFixed(1)+'" r="0.22" fill="#fff8e0" opacity="'+(op*0.75).toFixed(2)+'"/>';
+              s += '<circle cx="'+_snTxA.toFixed(1)+'" cy="'+_snTyA.toFixed(1)+'" r="0.16" fill="#fff8e0" opacity="'+(op*0.75).toFixed(2)+'"/>';
             }
           }
           // Basal sheath (warm brown band — pine signature)
@@ -21107,6 +21108,10 @@ document.addEventListener('keydown', function(e) {
             _rcLastX = _rcx2; _rcLastY = _rcy2;
           }
           tip = _rcLastX; tipY = _rcLastY;
+          // Tip terminator at curl end
+          s += '<circle cx="'+_rcLastX.toFixed(1)+'" cy="'+_rcLastY.toFixed(1)+'" r="0.30" fill="rgba(40,20,5,0.55)" opacity="'+(op*0.65).toFixed(2)+'"/>';
+          // Cream pickup on terminator
+          s += '<circle cx="'+(_rcLastX-0.12).toFixed(2)+'" cy="'+(_rcLastY-0.12).toFixed(2)+'" r="0.14" fill="#fff8e0" opacity="'+(op*0.55).toFixed(2)+'"/>';
           bodyD = '';
           break;
 
@@ -21368,7 +21373,7 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+_f(sx)+','+_f(sy)+' Q'+_f((sx+stx)/2)+','+_f((sy+sty)/2)+' '+_f(stx)+','+_f(sty)+'" stroke="rgba(240,235,216,'+_specOp.toFixed(2)+')" stroke-width="'+(_darkPlantBoost?'0.5':'0.25')+'" fill="none" stroke-linecap="round"/>';
         // Dark plant boost — cream outline on leaf body for visibility
         if (_darkPlantBoost) {
-          s += '<path d="M'+_f(ox)+','+_f(ly)+' Q'+_f(vcx)+','+_f(vcy)+' '+_f(vx)+','+_f(vy)+'" stroke="rgba(240,235,216,0.15)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+          s += '<path d="M'+_f(ox)+','+_f(ly)+' Q'+_f(vcx)+','+_f(vcy)+' '+_f(vx)+','+_f(vy)+'" stroke="#f5ecd6" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         }
         // Secondary veins — 2 branching off midrib (botanical accuracy)
         var _sv1x = ox + cosA * len * 0.35;
