@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.33';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.34';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13037,32 +13037,79 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="41" cy="78.25" rx="0.5" ry="0.2" fill="#5a4028"/>';
         s += '<ellipse cx="35.5" cy="78.4" rx="0.4" ry="0.18" fill="#4a3220"/>';
         break;
-      case 22: // Treasure Chest — inner glow + LID drawn BEFORE stem so stem overlays open lid. Body + details stay in renderPot AFTER stem.
-        // Inner glow (deep behind, illuminating chest interior)
-        s += '<ellipse cx="35" cy="83" rx="14" ry="6" fill="#c8a84b" opacity="0.07"/>';
-        s += '<ellipse cx="35" cy="83" rx="10" ry="4" fill="#c8a84b" opacity="0.12"/>';
-        s += '<ellipse cx="35" cy="82" rx="6" ry="3" fill="#e0c060" opacity="0.20"/>';
-        s += '<ellipse cx="35" cy="81" rx="3" ry="2" fill="#f0d870" opacity="0.18"/>';
-        // LID — opaque, tilted back, with brass detail. Stem drawn AFTER overlays this.
-        s += '<path d="M18,82 L18,78.5 Q35,72 52,78.5 L52,82 Z" fill="'+g+'" opacity="0.92"/>';
-        s += '<path d="M18,82 L18,78.5 Q35,72 52,78.5 L52,82" fill="none" stroke="#5A3E2B" stroke-width="0.7"/>';
-        // Lid wood plank seams
-        s += '<path d="M26,73.4 Q26,77.8 26,82" stroke="#5A3E2B" stroke-width="0.25" fill="none" opacity="0.4"/>';
-        s += '<path d="M35,72 L35,82" stroke="#5A3E2B" stroke-width="0.25" fill="none" opacity="0.4"/>';
-        s += '<path d="M44,73.4 Q44,77.8 44,82" stroke="#5A3E2B" stroke-width="0.25" fill="none" opacity="0.4"/>';
-        // Lid metal band (top arc)
-        s += '<path d="M19,80 Q35,74 51,80" stroke="#8A8A7A" stroke-width="0.7" fill="none"/>';
-        s += '<path d="M19,80.5 Q35,74.5 51,80.5" stroke="rgba(0,0,0,0.30)" stroke-width="0.3" fill="none"/>';
-        // Lid hinge straps (back of lid)
-        s += '<path d="M22,78.4 L22,82" stroke="#8A8A7A" stroke-width="1.2" fill="none"/>';
-        s += '<path d="M48,78.4 L48,82" stroke="#8A8A7A" stroke-width="1.2" fill="none"/>';
-        s += '<circle cx="22" cy="80" r="0.45" fill="#5a5a52"/>';
-        s += '<circle cx="48" cy="80" r="0.45" fill="#5a5a52"/>';
-        // Brass nails on the front rim of lid
-        s += '<circle cx="20" cy="81.3" r="0.35" fill="#c8a84b"/>';
-        s += '<circle cx="50" cy="81.3" r="0.35" fill="#c8a84b"/>';
-        // Lid highlight (light catches the front edge of the lid)
-        s += '<path d="M19,80.8 Q35,75.5 51,80.8" stroke="rgba(255,240,220,0.35)" stroke-width="0.3" fill="none"/>';
+      case 22: // Treasure Chest — fully opaque lid, dense brass + leather + gold-coin detail. LID in renderPotBack BEFORE stem.
+        // Inner glow (5-stop volumetric — gold treasure within)
+        s += '<ellipse cx="35" cy="83" rx="14" ry="6" fill="#c8a84b" opacity="0.10"/>';
+        s += '<ellipse cx="35" cy="83" rx="10" ry="4" fill="#c8a84b" opacity="0.18"/>';
+        s += '<ellipse cx="35" cy="82" rx="6" ry="3" fill="#e0c060" opacity="0.30"/>';
+        s += '<ellipse cx="35" cy="81" rx="3" ry="2" fill="#fff8b0" opacity="0.40"/>';
+        // Sparkle pinpoints (gold dust visible within)
+        s += '<circle cx="29" cy="81.5" r="0.18" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="32" cy="80.5" r="0.14" fill="#fff8b0" opacity="0.7"/>';
+        s += '<circle cx="38" cy="81" r="0.16" fill="#fff8b0" opacity="0.8"/>';
+        s += '<circle cx="41" cy="80.8" r="0.18" fill="#fff8b0" opacity="0.85"/>';
+        // LID — fully opaque, tilted back, dense detail
+        s += '<path d="M18,82 L18,78.5 Q35,72 52,78.5 L52,82 Z" fill="'+g+'"/>';
+        // Form shadow (left side of lid — inside curve)
+        s += '<path d="M18,82 L18,78.5 Q23,76 28,74.5 L26,82 Z" fill="rgba(0,0,0,0.22)"/>';
+        // BIG diffuse cream specular (top-right of curved lid)
+        s += '<path d="M37,73.5 Q44,73.5 49,76" stroke="#f5ecd6" stroke-width="0.7" fill="none" opacity="0.40" stroke-linecap="round"/>';
+        // SHARP cream pickup (apex of curve)
+        s += '<path d="M40,72.7 Q43,72.6 46,73.6" stroke="#fff8e0" stroke-width="0.45" fill="none" opacity="0.65" stroke-linecap="round"/>';
+        // Bounce light along lid front-bottom edge
+        s += '<path d="M19,81.4 Q35,80.5 51,81.4" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="0.40"/>';
+        // Lid wood plank seams (warm-shifted, more visible)
+        s += '<path d="M22,75.3 Q22,78.6 22,82" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M22.2,75.0 Q22.2,78.3 22.2,81.7" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.30"/>';
+        s += '<path d="M28,73.0 Q28,77.5 28,82" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M28.2,72.7 Q28.2,77.2 28.2,81.7" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.30"/>';
+        s += '<path d="M35,72 L35,82" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M35.2,71.8 L35.2,81.7" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        s += '<path d="M42,73.0 Q42,77.5 42,82" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M48,75.3 Q48,78.6 48,82" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        // Lid metal band (top arc) — brass with cream highlight
+        s += '<path d="M19,80 Q35,74 51,80" stroke="#7a6a52" stroke-width="0.85" fill="none"/>';
+        s += '<path d="M19,79.5 Q35,73.5 51,79.5" stroke="#f5ecd6" stroke-width="0.30" fill="none" opacity="0.55"/>';
+        s += '<path d="M19,80.6 Q35,74.6 51,80.6" stroke="rgba(40,20,5,0.40)" stroke-width="0.30" fill="none"/>';
+        // Second decorative band (mid-lid)
+        s += '<path d="M19,77.5 Q35,72.4 51,77.5" stroke="#7a6a52" stroke-width="0.55" fill="none"/>';
+        s += '<path d="M19,77.2 Q35,72.1 51,77.2" stroke="#f5ecd6" stroke-width="0.20" fill="none" opacity="0.45"/>';
+        // Brass studs on top band
+        s += '<circle cx="22" cy="79.4" r="0.32" fill="#c8a84b"/>';
+        s += '<circle cx="22" cy="79.32" r="0.14" fill="#fff8b0" opacity="0.75"/>';
+        s += '<circle cx="28" cy="76.8" r="0.32" fill="#c8a84b"/>';
+        s += '<circle cx="28" cy="76.72" r="0.14" fill="#fff8b0" opacity="0.75"/>';
+        s += '<circle cx="35" cy="74.4" r="0.34" fill="#c8a84b"/>';
+        s += '<circle cx="35" cy="74.32" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="42" cy="76.8" r="0.32" fill="#c8a84b"/>';
+        s += '<circle cx="42" cy="76.72" r="0.14" fill="#fff8b0" opacity="0.75"/>';
+        s += '<circle cx="48" cy="79.4" r="0.32" fill="#c8a84b"/>';
+        s += '<circle cx="48" cy="79.32" r="0.14" fill="#fff8b0" opacity="0.75"/>';
+        // Brass studs on second band
+        s += '<circle cx="25" cy="78.3" r="0.26" fill="#c8a84b"/>';
+        s += '<circle cx="32" cy="76.0" r="0.26" fill="#c8a84b"/>';
+        s += '<circle cx="38" cy="76.0" r="0.26" fill="#c8a84b"/>';
+        s += '<circle cx="45" cy="78.3" r="0.26" fill="#c8a84b"/>';
+        // Lid hinge straps (heavy iron, back of lid)
+        s += '<path d="M22,78.4 L22,82" stroke="#5a5a52" stroke-width="1.6" fill="none"/>';
+        s += '<path d="M21.6,78.4 L21.6,82" stroke="#f5ecd6" stroke-width="0.20" fill="none" opacity="0.45"/>';
+        s += '<path d="M48,78.4 L48,82" stroke="#5a5a52" stroke-width="1.6" fill="none"/>';
+        s += '<path d="M48.4,78.4 L48.4,82" stroke="#f5ecd6" stroke-width="0.20" fill="none" opacity="0.45"/>';
+        // Hinge bolts
+        s += '<circle cx="22" cy="80" r="0.55" fill="#3a3a34"/>';
+        s += '<circle cx="22" cy="79.93" r="0.22" fill="#f5ecd6" opacity="0.55"/>';
+        s += '<circle cx="48" cy="80" r="0.55" fill="#3a3a34"/>';
+        s += '<circle cx="48" cy="79.93" r="0.22" fill="#f5ecd6" opacity="0.55"/>';
+        // Brass corner caps on lid
+        s += '<path d="M18,82 L17.4,80 L19.4,80.2 L19.6,82 Z" fill="#c8a84b"/>';
+        s += '<path d="M18,82 L17.4,80 L18,80.4" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.55"/>';
+        s += '<path d="M52,82 L52.6,80 L50.6,80.2 L50.4,82 Z" fill="#c8a84b"/>';
+        s += '<path d="M52,82 L52.6,80 L52,80.4" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.55"/>';
+        // Gold coin peeking from chest interior (bottom-front of lid)
+        s += '<ellipse cx="30" cy="81.5" rx="0.7" ry="0.32" fill="#c8a84b"/>';
+        s += '<ellipse cx="30" cy="81.4" rx="0.4" ry="0.15" fill="#fff8b0" opacity="0.7"/>';
+        s += '<ellipse cx="40.5" cy="81.4" rx="0.65" ry="0.30" fill="#c8a84b"/>';
+        s += '<ellipse cx="40.5" cy="81.32" rx="0.38" ry="0.14" fill="#fff8b0" opacity="0.7"/>';
         break;
       case 28: // War Drum — drum head (top rim) drawn BEFORE stem; body + ropes + lugs stay in renderPot. Front-rim cap added in renderPot to cover stem cap.
         s += '<ellipse cx="35" cy="78" rx="13" ry="2.5" fill="'+rim+'"/>';
@@ -13583,6 +13630,97 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="38" cy="78.4" rx="0.45" ry="0.18" fill="#5a4028"/>';
         s += '<ellipse cx="41" cy="78.65" rx="0.4" ry="0.17" fill="#4a3220"/>';
         break;
+      case 21: // Lantern — vintage glass lantern. Full body + bail + glow + back-arc + brown in renderPotBack.
+        // AO 3-stack at base
+        s += '<ellipse cx="35" cy="91.6" rx="13" ry="0.6" fill="rgba(0,0,0,0.30)"/>';
+        s += '<ellipse cx="35" cy="91.4" rx="10" ry="0.35" fill="rgba(40,20,5,0.45)"/>';
+        s += '<path d="M27,91.2 Q35,91.5 43,91.2" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.30"/>';
+        // Warm inner glow (5-stop volumetric)
+        s += '<ellipse cx="35" cy="84" rx="7" ry="6" fill="#c8a84b" opacity="0.10"/>';
+        s += '<ellipse cx="35" cy="84" rx="5" ry="4.5" fill="#c8a84b" opacity="0.16"/>';
+        s += '<ellipse cx="35" cy="84" rx="3.5" ry="3" fill="#e0c060" opacity="0.22"/>';
+        s += '<ellipse cx="35" cy="84" rx="2" ry="1.6" fill="#fff8b0" opacity="0.30"/>';
+        // Glass body (very subtle tint)
+        s += '<path d="M30.0,76.8 L40.0,76.8 L42.8,79.8 L42.2,90.0 L27.8,90.0 L27.2,79.8 Z" fill="rgba(240,235,216,0.10)"/>';
+        // Glass body outline (warm-shifted dark, never #000)
+        s += '<path d="M30.0,76.8 L40.0,76.8 L42.8,79.8 L42.2,90.0 L27.8,90.0 L27.2,79.8 Z" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.55" stroke-linejoin="round"/>';
+        // Form shadow (left wall)
+        s += '<path d="M30.0,76.8 L27.2,79.8 L27.8,90.0 L29.5,90 L29,80 L31.5,77.5 Z" fill="rgba(0,0,0,0.22)"/>';
+        // Bail handle (brass, double-stroke for terminator)
+        s += '<path d="M35.0,72.0 Q28.6,72.5 27.8,76.8" fill="none" stroke="#7a6a52" stroke-width="0.55" stroke-linecap="round"/>';
+        s += '<path d="M35.0,72.0 Q41.4,72.5 42.2,76.8" fill="none" stroke="#7a6a52" stroke-width="0.55" stroke-linecap="round"/>';
+        s += '<path d="M35.2,71.5 Q29.0,72 28.5,76.5" fill="none" stroke="#f5ecd6" stroke-width="0.18" stroke-linecap="round" opacity="0.55"/>';
+        s += '<path d="M34.8,71.5 Q41.0,72 41.5,76.5" fill="none" stroke="#f5ecd6" stroke-width="0.18" stroke-linecap="round" opacity="0.55"/>';
+        // Bail grip
+        s += '<rect x="32.6" y="74.1" width="4.8" height="1.5" rx="0.25" fill="#7a6a52"/>';
+        s += '<rect x="32.7" y="74.2" width="4.6" height="0.35" fill="#f5ecd6" opacity="0.50"/>';
+        // Top cap (brass)
+        s += '<rect x="29.5" y="76.4" width="11" height="0.6" fill="#7a6a52"/>';
+        s += '<rect x="29.5" y="76.4" width="11" height="0.25" fill="#f5ecd6" opacity="0.40"/>';
+        // Frame bars (vertical)
+        s += '<path d="M35.0,76.8 L35.0,90.0" fill="none" stroke="#7a6a52" stroke-width="0.42" stroke-linecap="round"/>';
+        s += '<path d="M34.8,77.2 L34.8,89.5" fill="none" stroke="#f5ecd6" stroke-width="0.16" stroke-linecap="round" opacity="0.45"/>';
+        // Frame top + bottom cross-bars
+        s += '<path d="M27.2,79.8 L42.8,79.8" fill="none" stroke="#7a6a52" stroke-width="0.42" stroke-linecap="round"/>';
+        s += '<path d="M27.5,79.6 L42.5,79.6" fill="none" stroke="#f5ecd6" stroke-width="0.16" stroke-linecap="round" opacity="0.45"/>';
+        s += '<path d="M27.8,90.0 L42.2,90.0" fill="none" stroke="#7a6a52" stroke-width="0.42" stroke-linecap="round"/>';
+        // Glass sheen (big diffuse + sharp pickup)
+        s += '<path d="M30.6,80 Q29.8,84 30.6,89" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="0.40"/>';
+        s += '<path d="M31.2,81 Q30.7,84 31.2,87" fill="none" stroke="#fff8e0" stroke-width="0.22" stroke-linecap="round" opacity="0.55"/>';
+        // Right edge form-shadow shimmer
+        s += '<path d="M41.4,80.5 Q41.6,84 41.4,89" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.28"/>';
+        // Feet
+        s += '<path d="M27.8,90.0 L27.0,91.2" fill="none" stroke="#7a6a52" stroke-width="0.55" stroke-linecap="round"/>';
+        s += '<path d="M42.2,90.0 L43.0,91.2" fill="none" stroke="#7a6a52" stroke-width="0.55" stroke-linecap="round"/>';
+        // BACK ARC of top opening (sweep=1) — narrow opening
+        s += '<path d="M30,76.8 A5,1.0 0 0,1 40,76.8 Z" fill="#7a6a52"/>';
+        s += '<path d="M30,76.8 A5,1.0 0 0,1 40,76.8" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.3"/>';
+        s += '<path d="M30.5,76.3 Q35,75.8 39.5,76.3" stroke="#f5ecd6" stroke-width="0.22" fill="none" opacity="0.55"/>';
+        // Inner cavity dark
+        s += '<ellipse cx="35" cy="76.95" rx="4.3" ry="0.35" fill="rgba(20,10,2,0.65)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="77.0" rx="3.8" ry="0.32" fill="#3a2a18"/>';
+        s += '<ellipse cx="33" cy="76.9" rx="0.3" ry="0.13" fill="#5a4028"/>';
+        s += '<ellipse cx="37" cy="77.05" rx="0.3" ry="0.13" fill="#4a3220"/>';
+        break;
+      case 24: // Birdhouse — peaked-roof birdhouse with shingles + opening + perch. All in renderPotBack.
+        // AO 3-stack at base
+        s += '<ellipse cx="35" cy="92.6" rx="13" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="92.2" rx="11" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        s += '<path d="M25,92 Q35,92.4 45,92" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.30"/>';
+        // House body
+        s += '<path d="M24.0,82.2 L35.0,75.0 L46.0,82.2 L46.0,92.0 L24.0,92.0 Z" fill="'+g+'"/>';
+        // Form shadow (left wall)
+        s += '<path d="M24.0,82.2 L35.0,75.0 L29,80 L26,82.2 L26,92 L24,92 Z" fill="rgba(0,0,0,0.22)"/>';
+        // Big diffuse cream specular (right wall)
+        s += '<ellipse cx="44" cy="86" rx="0.7" ry="3.5" fill="#f5ecd6" opacity="0.32"/>';
+        // Sharp pickup (roof peak)
+        s += '<path d="M35,75.5 L37.5,77.2" stroke="#fff8e0" stroke-width="0.3" stroke-linecap="round" opacity="0.65"/>';
+        // Roof shingles (3 rows)
+        s += '<path d="M27,80 L33,80 L29,82" fill="rgba(40,20,5,0.30)"/>';
+        s += '<path d="M37,80 L43,80 L41,82" fill="rgba(40,20,5,0.30)"/>';
+        s += '<path d="M30,77.4 L35,75.0 L40,77.4 L37.5,79 L32.5,79 Z" fill="rgba(40,20,5,0.18)"/>';
+        // Roof line cream highlight
+        s += '<path d="M24.6,82.0 L35,75.5 L45.4,82.0" fill="none" stroke="#f5ecd6" stroke-width="0.3" opacity="0.55" stroke-linecap="round"/>';
+        // Wood plank seams
+        s += '<path d="M28.4,83.2 L28.4,91.2 M41.6,83.2 L41.6,91.2" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.25" stroke-linecap="round"/>';
+        // House body outline (warm-shifted)
+        s += '<path d="M24.0,82.2 L35.0,75.0 L46.0,82.2 L46.0,92.0 L24.0,92.0 Z" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.55" stroke-linejoin="round"/>';
+        // Round entrance hole (with depth — dark fade)
+        s += '<circle cx="35.0" cy="86.5" r="3.0" fill="rgba(20,10,2,0.85)"/>';
+        s += '<circle cx="35.0" cy="86.5" r="3.0" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.4"/>';
+        s += '<path d="M33.4,84.9 Q34.5,84.4 35.6,84.6" stroke="#f5ecd6" stroke-width="0.2" fill="none" opacity="0.40"/>';
+        // Perch
+        s += '<rect x="34.55" y="89.5" width="0.9" height="2.4" fill="#7a6a52"/>';
+        s += '<rect x="34.6" y="89.55" width="0.18" height="2.3" fill="#f5ecd6" opacity="0.50"/>';
+        s += '<ellipse cx="35.0" cy="92.2" rx="1.6" ry="0.34" fill="#7a6a52"/>';
+        // Bottom contact line
+        s += '<path d="M24.8,91.5 Q35,92.1 45.2,91.5" fill="none" stroke="#f5ecd6" stroke-width="0.25" opacity="0.30"/>';
+        // BACK ARC of small top opening (sweep=1) — birdhouse roof opening
+        // Roof peak doesn't have a typical opening; stem grows from roof top vent
+        s += '<path d="M33.5,75.8 A1.7,0.45 0 0,1 36.5,75.8 Z" fill="#7a6a52"/>';
+        s += '<ellipse cx="35" cy="75.6" rx="1.5" ry="0.18" fill="#3a2a18"/>';
+        break;
       case 14: // Wheelbarrow — 3/4 view with wheel + handles. Frame + wheel + tray + back-arc + brown drawn before stem.
         // Drop shadow at wheel + tray base
         s += '<ellipse cx="13" cy="94.5" rx="3.5" ry="0.5" fill="rgba(0,0,0,0.30)"/>';
@@ -14018,89 +14156,145 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M21,78.5 A14.4,2.0 0 0,0 49,78.5" fill="none" stroke="rgba(40,20,5,0.50)" stroke-width="0.4"/>';
         s += '<path d="M22.6,79.2 Q35,79.9 47.4,79.2" fill="none" stroke="#f5ecd6" stroke-width="0.28" opacity="0.45"/>';
         break;
-      case 21: // Lantern — vintage glass lantern planter with inner glow
-        // Warm glow inside the glass
-        s += '<ellipse cx="35" cy="84" rx="6" ry="5" fill="#c8a84b" opacity="0.08"/>';
-        s += '<ellipse cx="35" cy="84" rx="4" ry="3.5" fill="#c8a84b" opacity="0.12"/>';
-        s += '<ellipse cx="35" cy="84" rx="2" ry="2" fill="#e0c060" opacity="0.15"/>';
-        // Glass body
-        s += '<path d="M30.0,76.8 L40.0,76.8 L42.8,79.8 L42.2,90.0 L27.8,90.0 L27.2,79.8 Z" fill="rgba(240,235,216,0.08)"/>';
-        s += '<path d="M30.0,76.8 L40.0,76.8 L42.8,79.8 L42.2,90.0 L27.8,90.0 L27.2,79.8 Z" fill="none" stroke="#8A8A7A" stroke-width="0.8" stroke-linejoin="round"/>';
-        // Bail handle
-        s += '<path d="M35.0,72.0 Q28.8,72.4 28.0,76.8" fill="none" stroke="#8A8A7A" stroke-width="0.46" stroke-linecap="round"/>';
-        s += '<path d="M35.0,72.0 Q41.2,72.4 42.0,76.8" fill="none" stroke="#8A8A7A" stroke-width="0.46" stroke-linecap="round"/>';
-        s += '<rect x="32.8" y="74.3" width="4.4" height="1.3" rx="0.2" fill="#8A8A7A"/>';
-        // Frame bars
-        s += '<path d="M35.0,76.8 L35.0,90.0" fill="none" stroke="#8A8A7A" stroke-width="0.34" stroke-linecap="round"/>';
-        s += '<path d="M27.2,79.8 L42.8,79.8" fill="none" stroke="#8A8A7A" stroke-width="0.34" stroke-linecap="round"/>';
-        // Glass sheen
-        s += '<path d="M31.0,79.0 Q30.2,83.0 31.0,88.4" fill="none" stroke="rgba(240,235,216,0.3)" stroke-width="0.24" stroke-linecap="round"/>';
-        // Feet
-        s += '<path d="M27.8,90.0 L27.0,91.2" fill="none" stroke="#8A8A7A" stroke-width="0.52" stroke-linecap="round"/>';
-        s += '<path d="M42.2,90.0 L43.0,91.2" fill="none" stroke="#8A8A7A" stroke-width="0.52" stroke-linecap="round"/>';
-        s += '<path d="M30.0,76.8 Q35.0,75.9 40.0,76.8" fill="none" stroke="'+rim+'" stroke-width="0.26" stroke-linecap="round" opacity="0.7"/>';
+      case 21: // Lantern — front-arc on top opening covers stem (full lantern in renderPotBack).
+        s += '<path d="M30,76.8 A5,1.0 0 0,0 40,76.8 Z" fill="#7a6a52"/>';
+        s += '<path d="M30,76.8 A5,1.0 0 0,0 40,76.8" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.3"/>';
+        s += '<path d="M30.5,77.4 Q35,77.7 39.5,77.4" stroke="#f5ecd6" stroke-width="0.2" fill="none" opacity="0.45"/>';
         break;
-      case 22: // Treasure Chest — body + details only. Inner glow + LID in renderPotBack BEFORE stem so stem overlays the open lid.
+      case 22: // Treasure Chest — dense body detail. Lid + glow in renderPotBack BEFORE stem.
+        // AO + drop shadow at base
+        s += '<ellipse cx="35" cy="92.6" rx="19" ry="0.8" fill="rgba(0,0,0,0.35)"/>';
+        s += '<ellipse cx="35" cy="92.3" rx="16" ry="0.45" fill="rgba(40,20,5,0.45)"/>';
         // Chest body
         s += '<path d="M18,82 L52,82 L52,92 L18,92 Z" fill="'+g+'"/>';
-        s += '<path d="M18,82 L52,82 L52,92 L18,92 Z" fill="none" stroke="#5A3E2B" stroke-width="0.6"/>';
-        // Body wood plank seams (vertical)
-        s += '<path d="M26,82 L26,92 M35,82 L35,92 M44,82 L44,92" stroke="#5A3E2B" stroke-width="0.3" opacity="0.55"/>';
-        // Metal bands (top + bottom across body) — more visible than before
-        s += '<rect x="18" y="83.5" width="34" height="0.9" fill="#8A8A7A"/>';
-        s += '<rect x="18" y="83.5" width="34" height="0.9" fill="rgba(0,0,0,0.25)"/>';
-        s += '<rect x="18" y="89.5" width="34" height="0.9" fill="#8A8A7A"/>';
-        s += '<rect x="18" y="89.5" width="34" height="0.9" fill="rgba(0,0,0,0.25)"/>';
-        // Brass nails along bands
-        s += '<circle cx="22" cy="83.95" r="0.32" fill="#c8a84b"/>';
-        s += '<circle cx="35" cy="83.95" r="0.35" fill="#c8a84b"/>';
-        s += '<circle cx="48" cy="83.95" r="0.32" fill="#c8a84b"/>';
-        s += '<circle cx="22" cy="89.95" r="0.32" fill="#c8a84b"/>';
-        s += '<circle cx="35" cy="89.95" r="0.35" fill="#c8a84b"/>';
-        s += '<circle cx="48" cy="89.95" r="0.32" fill="#c8a84b"/>';
-        // Lock plate (front center) — brass plate with keyhole
-        s += '<rect x="32" y="86" width="6" height="3.2" rx="0.4" fill="#c8a84b"/>';
-        s += '<rect x="32" y="86" width="6" height="3.2" rx="0.4" fill="none" stroke="#5A3E2B" stroke-width="0.3"/>';
-        s += '<circle cx="35" cy="87.0" r="0.5" fill="#1a1208"/>';
-        s += '<rect x="34.7" y="87" width="0.6" height="1.4" fill="#1a1208"/>';
-        // Brass plate highlight
-        s += '<rect x="32.3" y="86.2" width="5.4" height="0.3" fill="rgba(255,240,200,0.4)"/>';
-        // Corner brackets (brass)
+        // Form shadow (left side)
+        s += '<path d="M18,82 L18,92 L24,92 L24,82 Z" fill="rgba(0,0,0,0.22)"/>';
+        // BIG diffuse cream specular (right side wood)
+        s += '<rect x="48" y="83" width="0.8" height="7" fill="#f5ecd6" opacity="0.32"/>';
+        // Sharp pickup
+        s += '<rect x="49" y="83.5" width="0.35" height="5" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce light at bottom
+        s += '<path d="M19,91.4 Q35,91.85 51,91.4" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.40"/>';
+        // Body wood plank seams (warm-shifted, with cream highlight pairs)
+        s += '<path d="M26,82 L26,92" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M26.2,82 L26.2,92" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        s += '<path d="M35,82 L35,92" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M35.2,82 L35.2,92" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        s += '<path d="M44,82 L44,92" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M44.2,82 L44.2,92" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.35"/>';
+        // Top metal band (heavy iron)
+        s += '<rect x="18" y="83.4" width="34" height="1.1" fill="#5a5a52"/>';
+        s += '<rect x="18" y="83.4" width="34" height="0.3" fill="#f5ecd6" opacity="0.45"/>';
+        s += '<rect x="18" y="84.2" width="34" height="0.3" fill="rgba(40,20,5,0.40)"/>';
+        // Bottom metal band
+        s += '<rect x="18" y="89.4" width="34" height="1.1" fill="#5a5a52"/>';
+        s += '<rect x="18" y="89.4" width="34" height="0.3" fill="#f5ecd6" opacity="0.45"/>';
+        s += '<rect x="18" y="90.2" width="34" height="0.3" fill="rgba(40,20,5,0.40)"/>';
+        // Brass studs along top band (denser)
+        s += '<circle cx="20" cy="83.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="20" cy="83.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="25" cy="83.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="25" cy="83.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="30" cy="83.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="30" cy="83.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="35" cy="83.95" r="0.38" fill="#c8a84b"/>';
+        s += '<circle cx="35" cy="83.83" r="0.18" fill="#fff8b0" opacity="0.9"/>';
+        s += '<circle cx="40" cy="83.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="40" cy="83.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="45" cy="83.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="45" cy="83.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="50" cy="83.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="50" cy="83.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        // Brass studs along bottom band (denser)
+        s += '<circle cx="20" cy="89.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="20" cy="89.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="25" cy="89.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="25" cy="89.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="30" cy="89.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="30" cy="89.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="40" cy="89.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="40" cy="89.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="45" cy="89.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="45" cy="89.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="50" cy="89.95" r="0.35" fill="#c8a84b"/>';
+        s += '<circle cx="50" cy="89.85" r="0.16" fill="#fff8b0" opacity="0.85"/>';
+        // Lock plate (front center) — ornate brass plate with engraved border
+        s += '<rect x="31.5" y="85.7" width="7" height="3.7" rx="0.5" fill="#7a6a52"/>';
+        s += '<rect x="31.7" y="85.85" width="6.6" height="3.4" rx="0.4" fill="#c8a84b"/>';
+        s += '<rect x="31.7" y="85.85" width="6.6" height="0.4" fill="#fff8b0" opacity="0.75"/>';
+        s += '<rect x="31.5" y="85.7" width="7" height="3.7" rx="0.5" fill="none" stroke="rgba(40,20,5,0.50)" stroke-width="0.30"/>';
+        s += '<rect x="32" y="86.15" width="6" height="2.95" rx="0.3" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.18"/>';
+        // Keyhole (cross-shaped)
+        s += '<circle cx="35" cy="87.1" r="0.55" fill="#1a1208"/>';
+        s += '<rect x="34.65" y="87" width="0.7" height="1.7" fill="#1a1208"/>';
+        s += '<circle cx="35" cy="86.95" r="0.18" fill="#3a2a18"/>';
+        // Brass studs around lock plate corners
+        s += '<circle cx="32" cy="86.2" r="0.18" fill="#fff8b0"/>';
+        s += '<circle cx="38" cy="86.2" r="0.18" fill="#fff8b0"/>';
+        s += '<circle cx="32" cy="89" r="0.18" fill="#fff8b0"/>';
+        s += '<circle cx="38" cy="89" r="0.18" fill="#fff8b0"/>';
+        // Corner brackets (ornate brass)
         s += '<path d="M18,82 L16.2,83.5 L18,85 Z" fill="#c8a84b"/>';
+        s += '<path d="M18,82 L17.5,83 L18,84" stroke="#fff8b0" stroke-width="0.18" fill="none" opacity="0.75"/>';
         s += '<path d="M52,82 L53.8,83.5 L52,85 Z" fill="#c8a84b"/>';
+        s += '<path d="M52,82 L52.5,83 L52,84" stroke="#fff8b0" stroke-width="0.18" fill="none" opacity="0.75"/>';
         s += '<path d="M18,92 L16.2,90.5 L18,89 Z" fill="#c8a84b"/>';
+        s += '<path d="M18,92 L17.5,91 L18,90" stroke="#fff8b0" stroke-width="0.18" fill="none" opacity="0.75"/>';
         s += '<path d="M52,92 L53.8,90.5 L52,89 Z" fill="#c8a84b"/>';
-        // Body wood grain texture (subtle horizontal lines)
-        s += '<path d="M18.5,87 L25,87 M30,87 L40,87 M45,87 L51.5,87" stroke="#5A3E2B" stroke-width="0.2" opacity="0.25" fill="none"/>';
-        s += '<path d="M19,91 Q35,91.6 51,91" stroke="rgba(240,235,216,0.10)" stroke-width="0.22" fill="none"/>';
+        s += '<path d="M52,92 L52.5,91 L52,90" stroke="#fff8b0" stroke-width="0.18" fill="none" opacity="0.75"/>';
+        // Body wood grain (warm-shifted Q-curves, NOT straight)
+        s += '<path d="M19,87 Q22,87.1 25,87" stroke="rgba(40,20,5,0.45)" stroke-width="0.22" fill="none"/>';
+        s += '<path d="M30,87 Q35,87.15 40,87" stroke="rgba(40,20,5,0.45)" stroke-width="0.22" fill="none"/>';
+        s += '<path d="M45,87 Q48,87.1 51,87" stroke="rgba(40,20,5,0.45)" stroke-width="0.22" fill="none"/>';
+        s += '<path d="M19,86 Q22,85.9 25,86" stroke="rgba(40,20,5,0.30)" stroke-width="0.18" fill="none"/>';
+        s += '<path d="M45,88 Q48,87.95 51,88" stroke="rgba(40,20,5,0.30)" stroke-width="0.18" fill="none"/>';
+        // Body outline (warm-shifted)
+        s += '<path d="M18,82 L52,82 L52,92 L18,92 Z" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.55"/>';
         break;
-      case 23: // Hollow Tome — open face-up book with leather binding, gilded edges, bookmark, embossed title on spine
-        // Hardcover spine at bottom (leather)
+      case 23: // Hollow Tome — open face-up book with master-pass polish.
+        // AO 3-stack
+        s += '<ellipse cx="35" cy="92.6" rx="17" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="92.3" rx="14" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        s += '<path d="M22,92.0 Q35,92.4 48,92.0" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.30"/>';
+        // Hardcover spine at bottom (leather, with form shadow)
         s += '<path d="M20,92 L50,92 L50,90 L20,90 Z" fill="'+g+'"/>';
-        s += '<path d="M20,92 L50,92 L50,90 L20,90 Z" fill="none" stroke="#2D1810" stroke-width="0.5"/>';
-        // Spine embossed band lines (leather binding ridges)
-        s += '<line x1="20" y1="90.7" x2="50" y2="90.7" stroke="#5A3E2B" stroke-width="0.25" opacity="0.55"/>';
-        s += '<line x1="20" y1="91.4" x2="50" y2="91.4" stroke="#5A3E2B" stroke-width="0.25" opacity="0.45"/>';
+        s += '<path d="M20,90 L24,90 L24,92 L20,92 Z" fill="rgba(0,0,0,0.20)"/>';
+        s += '<path d="M20,92 L50,92 L50,90 L20,90 Z" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.5"/>';
+        // Spine embossed band lines (warm-shifted, with cream highlight pairs)
+        s += '<line x1="20" y1="90.7" x2="50" y2="90.7" stroke="rgba(40,20,5,0.55)" stroke-width="0.28"/>';
+        s += '<line x1="20" y1="90.5" x2="50" y2="90.5" stroke="#f5ecd6" stroke-width="0.16" opacity="0.35"/>';
+        s += '<line x1="20" y1="91.4" x2="50" y2="91.4" stroke="rgba(40,20,5,0.45)" stroke-width="0.25"/>';
         // Spine title plate (gold-stamped rectangle on spine)
-        s += '<rect x="29" y="90.4" width="12" height="1.2" rx="0.2" fill="rgba(200,168,75,0.35)"/>';
-        s += '<rect x="29" y="90.4" width="12" height="1.2" rx="0.2" fill="none" stroke="#c8a84b" stroke-width="0.2"/>';
-        // Brass corner caps on the cover (leather-bookbinding details)
+        s += '<rect x="29" y="90.4" width="12" height="1.2" rx="0.2" fill="#c8a84b" opacity="0.65"/>';
+        s += '<rect x="29" y="90.4" width="12" height="0.35" fill="#fff8b0" opacity="0.65"/>';
+        s += '<rect x="29" y="90.4" width="12" height="1.2" rx="0.2" fill="none" stroke="#c8a84b" stroke-width="0.22"/>';
+        // Brass corner caps on the cover with cream highlight
         s += '<path d="M20,92 L20,90.6 L21.4,90.6 L20.7,91.3 L20.7,92 Z" fill="#c8a84b"/>';
+        s += '<path d="M20.2,90.7 L21.0,90.7" stroke="#fff8b0" stroke-width="0.18" opacity="0.75"/>';
         s += '<path d="M50,92 L50,90.6 L48.6,90.6 L49.3,91.3 L49.3,92 Z" fill="#c8a84b"/>';
+        s += '<path d="M49.0,90.7 L49.8,90.7" stroke="#fff8b0" stroke-width="0.18" opacity="0.75"/>';
         // Left page — fanned open
         s += '<path d="M20,90 Q21,83 22,80 Q28,78.5 35,78 L35,90 Z" fill="#e8e0d0"/>';
-        s += '<path d="M20,90 Q21,83 22,80 Q28,78.5 35,78 L35,90 Z" fill="none" stroke="#2D1810" stroke-width="0.4"/>';
+        s += '<path d="M20,90 Q21,83 22,80 Q28,78.5 35,78" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
         // Right page — fanned open
         s += '<path d="M50,90 Q49,83 48,80 Q42,78.5 35,78 L35,90 Z" fill="#e8e0d0"/>';
-        s += '<path d="M50,90 Q49,83 48,80 Q42,78.5 35,78 L35,90 Z" fill="none" stroke="#2D1810" stroke-width="0.4"/>';
+        s += '<path d="M50,90 Q49,83 48,80 Q42,78.5 35,78" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        // Page form shadow (left page slightly darker on its inner edge)
+        s += '<path d="M30,80 Q32,79.5 34,79" stroke="rgba(40,20,5,0.18)" stroke-width="2" fill="none"/>';
+        // Big diffuse cream specular on left page (light from upper-left)
+        s += '<ellipse cx="26" cy="83" rx="2.5" ry="3" fill="#fff8e0" opacity="0.30"/>';
         // Page edge layers (suggesting many pages stacked)
-        s += '<path d="M20.5,89.5 Q21,84 22,80.5" stroke="#d4cfbc" stroke-width="0.25" fill="none" opacity="0.55"/>';
-        s += '<path d="M21,89 Q21.5,84.5 22.5,81" stroke="#bab0a0" stroke-width="0.2" fill="none" opacity="0.4"/>';
-        s += '<path d="M49.5,89.5 Q49,84 48,80.5" stroke="#d4cfbc" stroke-width="0.25" fill="none" opacity="0.55"/>';
-        s += '<path d="M49,89 Q48.5,84.5 47.5,81" stroke="#bab0a0" stroke-width="0.2" fill="none" opacity="0.4"/>';
-        // Gilded page-top edges (gold leaf)
-        s += '<path d="M22.5,79.5 Q28.5,78.5 34.5,78.2" stroke="#c8a84b" stroke-width="0.35" fill="none" opacity="0.55"/>';
-        s += '<path d="M35.5,78.2 Q41.5,78.5 47.5,79.5" stroke="#c8a84b" stroke-width="0.35" fill="none" opacity="0.55"/>';
+        s += '<path d="M20.5,89.5 Q21,84 22,80.5" stroke="#d4cfbc" stroke-width="0.25" fill="none" opacity="0.65"/>';
+        s += '<path d="M21,89 Q21.5,84.5 22.5,81" stroke="#bab0a0" stroke-width="0.22" fill="none" opacity="0.45"/>';
+        s += '<path d="M21.5,88.5 Q22,85 23,81.5" stroke="#a0968a" stroke-width="0.18" fill="none" opacity="0.30"/>';
+        s += '<path d="M49.5,89.5 Q49,84 48,80.5" stroke="#d4cfbc" stroke-width="0.25" fill="none" opacity="0.65"/>';
+        s += '<path d="M49,89 Q48.5,84.5 47.5,81" stroke="#bab0a0" stroke-width="0.22" fill="none" opacity="0.45"/>';
+        s += '<path d="M48.5,88.5 Q48,85 47,81.5" stroke="#a0968a" stroke-width="0.18" fill="none" opacity="0.30"/>';
+        // Gilded page-top edges (gold leaf with cream sparkle)
+        s += '<path d="M22.5,79.5 Q28.5,78.5 34.5,78.2" stroke="#c8a84b" stroke-width="0.40" fill="none" opacity="0.65"/>';
+        s += '<path d="M22.5,79.3 Q28.5,78.3 34.5,78.0" stroke="#fff8b0" stroke-width="0.20" fill="none" opacity="0.55"/>';
+        s += '<path d="M35.5,78.2 Q41.5,78.5 47.5,79.5" stroke="#c8a84b" stroke-width="0.40" fill="none" opacity="0.65"/>';
+        s += '<path d="M35.5,78.0 Q41.5,78.3 47.5,79.3" stroke="#fff8b0" stroke-width="0.20" fill="none" opacity="0.55"/>';
         // Dense page text lines (left page — 7 lines for richer feel)
         s += '<path d="M24,80.5 L32,80.0" stroke="#8a8070" stroke-width="0.18" opacity="0.50"/>';
         s += '<path d="M23.6,82 L33,81.5" stroke="#8a8070" stroke-width="0.18" opacity="0.50"/>';
@@ -14128,66 +14322,89 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M21,90.5 L49,90.5" stroke="#d4cfbc" stroke-width="0.8" opacity="0.4"/>';
         s += '<path d="M21,90.5 L49,90.5" stroke="#c8a84b" stroke-width="0.18" opacity="0.4"/>';
         break;
-      case 24: // Birdhouse — simple house planter with round opening and perch
-        s += '<path d="M24.0,82.2 L35.0,75.0 L46.0,82.2 L46.0,92.0 L24.0,92.0 Z" fill="'+g+'"/>';
-        s += '<path d="M24.0,82.2 L35.0,75.0 L46.0,82.2 L46.0,92.0 L24.0,92.0 Z" fill="none" stroke="#2D1810" stroke-width="0.62" stroke-linejoin="round"/>';
-        s += '<path d="M26.2,81.0 Q35.0,78.6 43.8,81.0" fill="none" stroke="rgba(240,235,216,0.28)" stroke-width="0.24" stroke-linecap="round"/>';
-        s += '<circle cx="35.0" cy="84.8" r="3.0" fill="rgba(0,0,0,0.18)"/>';
-        s += '<circle cx="35.0" cy="84.8" r="3.0" fill="none" stroke="#2D1810" stroke-width="0.4"/>';
-        s += '<path d="M32.4,79.8 L37.6,79.8" fill="none" stroke="'+rim+'" stroke-width="0.26" stroke-linecap="round" opacity="0.75"/>';
-        s += '<path d="M35.0,87.8 L35.0,90.0" fill="none" stroke="#8A8A7A" stroke-width="0.34" stroke-linecap="round"/>';
-        s += '<ellipse cx="35.0" cy="90.5" rx="1.6" ry="0.34" fill="#8A8A7A"/>';
-        s += '<path d="M28.4,83.2 L28.4,91.2 M41.6,83.2 L41.6,91.2" fill="none" stroke="#5A3E2B" stroke-width="0.22" stroke-linecap="round" opacity="0.45"/>';
-        s += '<path d="M24.8,91.0 Q35.0,92.2 45.2,91.0" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.22" stroke-linecap="round"/>';
-        s += '<path d="M24.0,82.2 L46.0,82.2" fill="none" stroke="#2D1810" stroke-width="0.24" opacity="0.35"/>';
+      case 24: // Birdhouse — front-arc on roof-top vent covers stem (full house in renderPotBack).
+        s += '<path d="M33.5,75.8 A1.7,0.45 0 0,0 36.5,75.8 Z" fill="#7a6a52"/>';
+        s += '<path d="M33.5,75.8 A1.7,0.45 0 0,0 36.5,75.8" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.25"/>';
+        s += '<path d="M33.7,76.0 Q35,76.15 36.3,76.0" stroke="#f5ecd6" stroke-width="0.16" fill="none" opacity="0.50"/>';
         break;
-      case 25: // Wagon — classic red Radio Flyer garden wagon with spoked wheels
-        // Axle bar behind body
-        s += '<line x1="20" y1="90.5" x2="48" y2="90.5" stroke="#4A4A42" stroke-width="0.5"/>';
-        // Rear wheels — spoked
+      case 25: // Wagon — classic red Radio Flyer with master-pass polish.
+        // AO 3-stack at base
+        s += '<ellipse cx="34" cy="94.6" rx="20" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="34" cy="94.3" rx="17" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        // Axle bar behind body (warm-shifted)
+        s += '<line x1="20" y1="90.5" x2="48" y2="90.5" stroke="rgba(40,20,5,0.65)" stroke-width="0.55"/>';
+        // Rear wheels — spoked, with tire highlight + hub cream
         for (var _wg25w = 0; _wg25w < 2; _wg25w++) {
           var _wg25cx = _wg25w === 0 ? 21 : 47;
           // Tire
-          s += '<circle cx="'+_wg25cx+'" cy="91" r="3.0" fill="#5A5A52"/>';
-          s += '<circle cx="'+_wg25cx+'" cy="91" r="3.0" fill="none" stroke="#3A3A34" stroke-width="0.5"/>';
-          s += '<circle cx="'+_wg25cx+'" cy="91" r="2.7" fill="none" stroke="#4A4A42" stroke-width="0.6"/>';
+          s += '<circle cx="'+_wg25cx+'" cy="91" r="3.0" fill="#3a3a34"/>';
+          s += '<circle cx="'+_wg25cx+'" cy="91" r="3.0" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.5"/>';
+          // Tire cream highlight (upper-left)
+          s += '<path d="M'+(+_wg25cx-2.0)+','+(91-2.0)+' Q'+(+_wg25cx-1.0)+','+(91-2.7)+' '+(+_wg25cx)+','+(91-2.8)+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" opacity="0.40" stroke-linecap="round"/>';
+          // Inner rim
+          s += '<circle cx="'+_wg25cx+'" cy="91" r="2.7" fill="none" stroke="#5a5a52" stroke-width="0.5"/>';
           // Spokes
           for (var _wg25s = 0; _wg25s < 6; _wg25s++) {
             var _wg25a = _wg25s * Math.PI / 3;
-            s += '<line x1="'+(+_wg25cx+Math.cos(_wg25a)*0.5).toFixed(1)+'" y1="'+(91+Math.sin(_wg25a)*0.5).toFixed(1)+'" x2="'+(+_wg25cx+Math.cos(_wg25a)*2.3).toFixed(1)+'" y2="'+(91+Math.sin(_wg25a)*2.3).toFixed(1)+'" stroke="#7A7A72" stroke-width="0.22"/>';
+            s += '<line x1="'+(+_wg25cx+Math.cos(_wg25a)*0.5).toFixed(1)+'" y1="'+(91+Math.sin(_wg25a)*0.5).toFixed(1)+'" x2="'+(+_wg25cx+Math.cos(_wg25a)*2.3).toFixed(1)+'" y2="'+(91+Math.sin(_wg25a)*2.3).toFixed(1)+'" stroke="#7a6a52" stroke-width="0.25"/>';
           }
-          // Hub
-          s += '<circle cx="'+_wg25cx+'" cy="91" r="0.6" fill="#7A7A72" stroke="#5A5A52" stroke-width="0.18"/>';
-          s += '<circle cx="'+_wg25cx+'" cy="91" r="0.2" fill="#5A3E2B"/>';
+          // Hub (brass with cream highlight)
+          s += '<circle cx="'+_wg25cx+'" cy="91" r="0.7" fill="#c8a84b" stroke="rgba(40,20,5,0.55)" stroke-width="0.18"/>';
+          s += '<circle cx="'+_wg25cx+'" cy="90.93" r="0.30" fill="#fff8b0" opacity="0.85"/>';
+          s += '<circle cx="'+_wg25cx+'" cy="91" r="0.18" fill="#3a2a18"/>';
         }
-        // Wagon body — classic red with slight flare
-        // Bottom underside (dark shadow strip)
-        s += '<path d="M16.5,89.2 L51.5,89.2 L52,90 L16,90 Z" fill="#4A1818" opacity="0.4"/>';
-        // Front face — gives 3D depth
-        s += '<path d="M16,78 L16.5,89.2 L16,90 L14.5,79 Z" fill="#922828"/>';
-        s += '<path d="M16,78 L16.5,89.2 L16,90 L14.5,79 Z" fill="none" stroke="#6a1e1e" stroke-width="0.35"/>';
+        // Wagon body — classic red with 3D depth
+        // Bottom underside (warm-shifted shadow strip)
+        s += '<path d="M16.5,89.2 L51.5,89.2 L52,90 L16,90 Z" fill="rgba(40,20,5,0.45)"/>';
+        // Front face — gives 3D depth (form shadow side)
+        s += '<path d="M16,78 L16.5,89.2 L16,90 L14.5,79 Z" fill="#7a1e1e"/>';
+        s += '<path d="M16,78 L16.5,89.2 L16,90 L14.5,79 Z" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.35"/>';
         // Main side face
         s += '<path d="M16,78 L50,78 L51.5,89.2 L16.5,89.2 Z" fill="#a83232"/>';
-        s += '<path d="M16,78 L50,78 L51.5,89.2 L16.5,89.2 Z" fill="none" stroke="#6a1e1e" stroke-width="0.55" stroke-linejoin="round"/>';
-        // Top rim highlight
-        s += '<path d="M17,79 Q34,77 49,79" stroke="rgba(255,220,220,0.22)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // Form shadow on left side of main face
+        s += '<path d="M16,78 L20,78 L20.5,89.2 L16.5,89.2 Z" fill="rgba(0,0,0,0.18)"/>';
+        // Body outline (warm-shifted)
+        s += '<path d="M16,78 L50,78 L51.5,89.2 L16.5,89.2 Z" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.55" stroke-linejoin="round"/>';
+        // BIG diffuse cream specular (right side)
+        s += '<ellipse cx="49" cy="83" rx="0.7" ry="3.5" fill="#f5ecd6" opacity="0.35"/>';
+        // Sharp cream pickup (top-right)
+        s += '<rect x="49" y="79.5" width="0.4" height="2" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce-light crescent (lower-right)
+        s += '<path d="M50.8,87 Q51.6,89 50,89.5" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.40"/>';
+        // Top rim cream highlight
+        s += '<path d="M17,78.5 Q34,77.0 49,78.5" stroke="#f5ecd6" stroke-width="0.32" fill="none" opacity="0.55" stroke-linecap="round"/>';
         // Interior shadow (depth)
-        s += '<path d="M17.5,80 L49,80 L50.5,88 L17,88 Z" fill="#0d100c" opacity="0.06"/>';
-        // Horizontal metal bands — white pinstripe
-        s += '<path d="M16.3,82.5 L51,82.5" stroke="rgba(240,235,216,0.22)" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M16.1,86 L51.3,86" stroke="rgba(240,235,216,0.18)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        // Vertical slat lines (wood grain feel)
-        s += '<path d="M25,78.5 L23.5,88.8 M34,78.3 L33.5,89 M43,78.5 L44.5,88.8" stroke="#7a1e1e" stroke-width="0.2" opacity="0.35"/>';
-        // Side face highlight — subtle warm sheen
-        s += '<path d="M18,80 Q34,79 48,80" stroke="rgba(255,200,200,0.08)" stroke-width="0.5" fill="none"/>';
-        // Pull handle — metal rod with T-grip
-        s += '<path d="M50.5,83 L58,79.5" fill="none" stroke="#5A5A52" stroke-width="0.65" stroke-linecap="round"/>';
+        s += '<path d="M17.5,80 L49,80 L50.5,88 L17,88 Z" fill="rgba(40,20,5,0.10)"/>';
+        // Decorative band pairs (warm-shifted dark + cream highlight)
+        s += '<path d="M16.3,82.5 L51,82.5" stroke="rgba(40,20,5,0.40)" stroke-width="0.32" fill="none"/>';
+        s += '<path d="M16.3,82.2 L51,82.2" stroke="#f5ecd6" stroke-width="0.20" fill="none" opacity="0.45"/>';
+        s += '<path d="M16.1,86 L51.3,86" stroke="rgba(40,20,5,0.40)" stroke-width="0.30" fill="none"/>';
+        s += '<path d="M16.1,85.7 L51.3,85.7" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.40"/>';
+        // Vertical slat lines (wood grain feel — Q-curves)
+        s += '<path d="M25,78.5 Q24.5,84 23.5,88.8" stroke="rgba(40,20,5,0.40)" stroke-width="0.22" opacity="0.55" fill="none"/>';
+        s += '<path d="M34,78.3 Q34.0,84 33.5,89" stroke="rgba(40,20,5,0.40)" stroke-width="0.22" opacity="0.55" fill="none"/>';
+        s += '<path d="M43,78.5 Q43.7,84 44.5,88.8" stroke="rgba(40,20,5,0.40)" stroke-width="0.22" opacity="0.55" fill="none"/>';
+        // Brass studs along top band
+        s += '<circle cx="20" cy="82.45" r="0.32" fill="#c8a84b"/>';
+        s += '<circle cx="20" cy="82.36" r="0.14" fill="#fff8b0" opacity="0.75"/>';
+        s += '<circle cx="48" cy="82.45" r="0.32" fill="#c8a84b"/>';
+        s += '<circle cx="48" cy="82.36" r="0.14" fill="#fff8b0" opacity="0.75"/>';
+        // Pull handle — metal rod with T-grip (master polish)
+        s += '<path d="M50.5,83 L58,79.5" fill="none" stroke="#5a5a52" stroke-width="0.7" stroke-linecap="round"/>';
+        s += '<path d="M50.7,82.6 L57.8,79.1" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="0.55" stroke-linecap="round"/>';
         // T-grip crossbar
-        s += '<path d="M57,78.5 L60,80.5" fill="none" stroke="#2D1810" stroke-width="0.9" stroke-linecap="round"/>';
-        // Handle joint rivet
-        s += '<circle cx="50.5" cy="83" r="0.35" fill="#7A7A72"/>';
+        s += '<path d="M57,78.5 L60,80.5" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.95" stroke-linecap="round"/>';
+        // Handle joint rivet (brass)
+        s += '<circle cx="50.5" cy="83" r="0.4" fill="#c8a84b"/>';
+        s += '<circle cx="50.5" cy="82.92" r="0.18" fill="#fff8b0" opacity="0.75"/>';
         // Bottom edge
-        s += '<path d="M16,90 L52,90" stroke="#4A1818" stroke-width="0.25" opacity="0.4"/>';
+        s += '<path d="M16,90 L52,90" stroke="rgba(40,20,5,0.50)" stroke-width="0.25"/>';
+        // Top opening — brown soil cover for stem terminus
+        s += '<rect x="17" y="78" width="32" height="0.7" fill="#3a2a18"/>';
+        s += '<rect x="17" y="78" width="32" height="0.18" fill="#5a4028" opacity="0.55"/>';
+        s += '<ellipse cx="22" cy="78.2" rx="0.4" ry="0.15" fill="#5a4028"/>';
+        s += '<ellipse cx="32" cy="78.4" rx="0.5" ry="0.18" fill="#4a3220"/>';
+        s += '<ellipse cx="42" cy="78.2" rx="0.4" ry="0.15" fill="#5a4028"/>';
         break;
       case 26: // Mailbox — rounded mailbox planter on short post
         // Red flag — behind mailbox left side, just flag tip visible above
