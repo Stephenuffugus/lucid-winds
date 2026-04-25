@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.71';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.72';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -23059,7 +23059,9 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' C'+(fx-fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*1.36)+','+(fy-fs*1.96)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp30g+'" opacity="'+_bp30o+'" style="mix-blend-mode:screen"/>';
         }
         break;
-      case 31: // Delphinium — tall spire of layered cupped florets, graduating upward
+      case 31: // Delphinium — tall spire of layered cupped florets, graduating upward, master polish
+        // AO halo (vertical spire)
+        s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy-(fs*1.2))+'" rx="'+(fs*0.65)+'" ry="'+(fs*1.55)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Central rachis
         s += '<line x1="'+fx+'" y1="'+(fy+fs*0.1)+'" x2="'+fx+'" y2="'+(fy-fs*2.5)+'" stroke="'+_hueShift(fc, 88, 20)+'" stroke-width="0.6" opacity="'+(0.45*bloomOp)+'" stroke-linecap="round"/>';
         // 10 florets graduating smaller toward tip
@@ -23076,8 +23078,6 @@ document.addEventListener('keydown', function(e) {
             var _d31px = (fx+_d31xOff) + Math.cos(_d31pa) * _d31sz * 0.5;
             var _d31py = _d31y + Math.sin(_d31pa) * _d31sz * 0.35;
             s += '<path d="M'+(fx+_d31xOff).toFixed(1)+','+_d31y.toFixed(1)+' Q'+_d31px.toFixed(1)+','+((_d31py - _d31sz*0.3)).toFixed(1)+' '+((fx+_d31xOff) + Math.cos(_d31pa)*_d31sz).toFixed(1)+','+(_d31y + Math.sin(_d31pa)*_d31sz*0.6).toFixed(1)+' Q'+_d31px.toFixed(1)+','+(_d31py + _d31sz*0.15).toFixed(1)+' '+(fx+_d31xOff).toFixed(1)+','+_d31y.toFixed(1)+' Z" fill="'+_d31hue+'" opacity="'+((0.65 - _d31i*0.04)*bloomOp).toFixed(2)+'"/>';
-          // AO halo (master pass injection)
-          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           }
           // Floret center dot
           s += '<circle cx="'+(fx+_d31xOff).toFixed(1)+'" cy="'+_d31y.toFixed(1)+'" r="'+(fs*0.05).toFixed(2)+'" fill="'+PALETTE.cream+'" opacity="'+((0.5 - _d31i*0.03)*bloomOp).toFixed(2)+'"/>';
@@ -24339,8 +24339,6 @@ document.addEventListener('keydown', function(e) {
             s += '</circle>';
             // Cross-hair lines on each particle — ice crystal arms
             s += '<line x1="'+(fp.x - fpR*1.5).toFixed(1)+'" y1="'+fp.y.toFixed(1)+'" x2="'+(fp.x + fpR*1.5).toFixed(1)+'" y2="'+fp.y.toFixed(1)+'"'
-               // AO halo (master pass injection)
-               s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
                + ' stroke="'+_frostW+'" stroke-width="0.1" opacity="'+(0.2*bloomOp).toFixed(2)+'"/>';
             s += '<line x1="'+fp.x.toFixed(1)+'" y1="'+(fp.y - fpR*1.5).toFixed(1)+'" x2="'+fp.x.toFixed(1)+'" y2="'+(fp.y + fpR*1.5).toFixed(1)+'"'
                + ' stroke="'+_frostW+'" stroke-width="0.1" opacity="'+(0.2*bloomOp).toFixed(2)+'"/>';
@@ -26335,6 +26333,8 @@ document.addEventListener('keydown', function(e) {
         break;
       case 51: // Iris — Y-shaped: 3 upright standards + 3 drooping falls with beards
         (function(){
+          // AO halo (master pass)
+          s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.3))+'" rx="'+(fs*1.85)+'" ry="'+(fs*2.1)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Iris has a unique dual-direction profile:
           // Standards: 3 petals reaching UPWARD at 120° spacing
           // Falls: 3 petals curving DOWNWARD at 120° spacing (offset 60° from standards)
@@ -26444,8 +26444,6 @@ document.addEventListener('keydown', function(e) {
             var aAng = ((ai * 120 + 30) - 90) * Math.PI / 180;
             var ax1 = fx + Math.cos(aAng) * fs * 0.15;
             var ay1 = fy - fs * 0.05;
-            // AO halo (master pass injection)
-            s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
             var ax2 = fx + Math.cos(aAng) * fs * 0.4;
             var ay2 = fy - fs * 0.35;
             s += '<path d="M'+ax1.toFixed(1)+','+ay1.toFixed(1)+' Q'+(ax2 + Math.cos(aAng)*fs*0.1).toFixed(1)+','+(ay2 - fs*0.08).toFixed(1)+' '+ax2.toFixed(1)+','+ay2.toFixed(1)+'"'
@@ -26459,8 +26457,10 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+(fx-fs*0.04)+'" cy="'+(fy-fs*0.04)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
         })();
         break;
-      case 49: // Jasmine Cluster — 4 tiny white star flowers + 1 bud, airy spray
+      case 49: // Jasmine Cluster — 4 tiny white star flowers + 1 bud, airy spray, master polish
         (function(){
+          // AO halo (cluster-wide)
+          s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Jasmine: 3 open flowers, 1 half-open, 1 closed bud
           // Each micro-flower is a 5-pointed waxy white star ~1/3 normal bloom size
           // Scattered around (fx, fy) with thin green connecting stems
@@ -26559,13 +26559,11 @@ document.addEventListener('keydown', function(e) {
               s += '<line x1="'+cxf.toFixed(1)+'" y1="'+cyf.toFixed(1)+'" x2="'+midPx.toFixed(1)+'" y2="'+midPy.toFixed(1)+'"'
                  + ' stroke="rgba(200,190,170,0.3)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
 
-              // Waxy highlight — one side of each petal catches light
+              // Waxy cream specular highlight — one side of each petal catches light
               var hlx = cxf + Math.cos(pAng) * pReach * 0.4 + Math.cos(perpA) * pWidth * 0.15;
               var hly = cyf + Math.sin(pAng) * pReach * 0.4 + Math.sin(perpA) * pWidth * 0.15;
-              // AO halo (master pass injection)
-              s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
               s += '<ellipse cx="'+hlx.toFixed(1)+'" cy="'+hly.toFixed(1)+'" rx="'+(pWidth*0.22)+'" ry="'+(pReach*0.2)+'"'
-                 + ' fill="#fff8e0" opacity="'+bloomOp+'"'
+                 + ' fill="#fff8e0" opacity="'+(0.65*bloomOp)+'"'
                  + ' transform="rotate('+(pAng*180/Math.PI).toFixed(0)+','+hlx.toFixed(1)+','+hly.toFixed(1)+')"/>';
             }
 
@@ -26578,8 +26576,10 @@ document.addEventListener('keydown', function(e) {
           }
         })();
         break;
-      case 48: // Sunflower — large golden ray petals around dark center disc
+      case 48: // Sunflower — large golden ray petals around dark center disc, master polish
         (function(){
+          // AO halo (warm)
+          s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*2.4)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Sunflower petals are ALWAYS warm golden tones regardless of hash color
           // Each petal gets a unique shade cycling through yellow/gold/amber/orange
           var _sfPals = ['#E8C020','#D4A014','#DAB030','#C89018','#E0A828','#D4B455','#CC8820','#E8B830','#D09020','#DBA428','#C8A030','#E0B838','#D49828'];
@@ -26623,16 +26623,18 @@ document.addEventListener('keydown', function(e) {
                + ' stroke="rgba(120,70,5,0.06)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
             s += '<line x1="'+(fx+Math.cos(ang)*_sfReach*0.2).toFixed(1)+'" y1="'+(fy+Math.sin(ang)*_sfReach*0.2).toFixed(1)+'" x2="'+sv2x.toFixed(1)+'" y2="'+sv2y.toFixed(1)+'"'
                + ' stroke="rgba(120,70,5,0.06)" stroke-width="0.2" opacity="'+bloomOp+'"/>';
-            // Highlight edge — upper-left petals
+            // Cream silk-snap edge on upper-left lit petals
             if (pi < 5) {
               s += '<path d="M'+fx+','+fy
                  + ' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)+'"'
-                 + ' fill="none" stroke="rgba(255,255,220,0.2)" stroke-width="0.4" opacity="'+bloomOp+'"/>';
+                 + ' fill="none" stroke="#f5ecd6" stroke-width="0.42" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
             }
-            // Shadow edge — lower petals
+            // Warm-shifted shadow edge — lower petals
             s += '<path d="M'+fx+','+fy
                + ' C'+cp4x.toFixed(1)+','+cp4y.toFixed(1)+' '+cp3x.toFixed(1)+','+cp3y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)+'"'
-               + ' fill="none" stroke="rgba(40,20,5,0.13)" stroke-width="0.3" opacity="'+bloomOp+'"/>';
+               + ' fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.32" opacity="'+(0.55*bloomOp)+'"/>';
+            // Tip terminator at each petal apex
+            s += '<circle cx="'+tipX.toFixed(1)+'" cy="'+tipY.toFixed(1)+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.6*bloomOp)+'"/>';
           }
           // Dark center disc
           var _discR = fs * 0.65;
@@ -26646,19 +26648,25 @@ document.addEventListener('keydown', function(e) {
             var _sdy = fy + Math.sin(_sdA) * _sdR;
             s += '<circle cx="'+_sdx.toFixed(1)+'" cy="'+_sdy.toFixed(1)+'" r="'+(fs*0.05)+'" fill="#5A4020" opacity="'+(0.7*bloomOp)+'"/>';
           }
-          // Disc highlight — upper-left crescent
-          s += '<ellipse cx="'+(fx-_discR*0.25)+'" cy="'+(fy-_discR*0.2)+'" rx="'+(_discR*0.45)+'" ry="'+(_discR*0.35)+'"'
-             + ' fill="#fff8e0" opacity="'+bloomOp+'"/>';
-          // Disc rim highlight
-          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+_discR+'" fill="none" stroke="rgba(200,168,75,0.25)" stroke-width="0.4" opacity="'+bloomOp+'"/>';
+          // Disc warm AO crescent (3-stack lighting)
+          s += '<ellipse cx="'+(fx+_discR*0.15)+'" cy="'+(fy+_discR*0.15)+'" rx="'+(_discR*0.55)+'" ry="'+(_discR*0.40)+'" fill="rgba(40,20,5,0.45)" opacity="'+(0.5*bloomOp)+'"/>';
+          // Disc cream form-light upper-left
+          s += '<ellipse cx="'+(fx-_discR*0.25)+'" cy="'+(fy-_discR*0.20)+'" rx="'+(_discR*0.45)+'" ry="'+(_discR*0.35)+'" fill="#f5ecd6" opacity="'+(0.30*bloomOp)+'"/>';
+          // Sharp specular pickup on disc
+          s += '<ellipse cx="'+(fx-_discR*0.32)+'" cy="'+(fy-_discR*0.28)+'" rx="'+(_discR*0.18)+'" ry="'+(_discR*0.12)+'" fill="#fff8e0" opacity="'+(0.55*bloomOp)+'"/>';
+          // Disc rim warm-shifted highlight
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+_discR+'" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.35" opacity="'+(0.7*bloomOp)+'"/>';
         })();
         break;
-      case 46: // Peony — dense layered rosette, 3 rings of ruffled petals
+      case 46: // Peony — dense layered rosette, 3 rings of ruffled petals, master polish
         (function(){
+          // AO halo
+          s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.75)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+          var _pnDk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
           var _pnRings = [
-            {count:8, scale:1.0, op:0.6, rot:0},       // outer ring
-            {count:8, scale:0.75, op:0.7, rot:22.5},    // middle ring (offset 22.5°)
-            {count:5, scale:0.5, op:0.8, rot:36}        // inner ring (offset 36°)
+            {count:8, scale:1.0,  op:0.62, rot:0,    fill:_pnDk}, // outer ring (dimmed back layer)
+            {count:8, scale:0.75, op:0.85, rot:22.5, fill:fc},     // middle ring (offset 22.5°)
+            {count:5, scale:0.5,  op:0.95, rot:36,   fill:fc}      // inner ring (offset 36°)
           ];
           for (var ri = 0; ri < _pnRings.length; ri++) {
             var ring = _pnRings[ri];
@@ -26686,12 +26694,22 @@ document.addEventListener('keydown', function(e) {
               s += '<path d="M'+fx+','+fy
                  + ' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)
                  + ' C'+cp3x.toFixed(1)+','+cp3y.toFixed(1)+' '+cp4x.toFixed(1)+','+cp4y.toFixed(1)+' '+fx+','+fy+' Z"'
-                 + ' fill="'+fc+'" opacity="'+(ring.op * bloomOp).toFixed(2)+'" stroke="'+fc+'" stroke-width="0.15" stroke-opacity="'+(0.3*bloomOp).toFixed(2)+'"/>';
+                 + ' fill="'+ring.fill+'" opacity="'+(ring.op * bloomOp).toFixed(2)+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.18" stroke-opacity="'+(0.45*bloomOp).toFixed(2)+'"/>';
+              // Cream silk-snap edge on inner-ring + alternating mid-ring petals
+              if (ri >= 1 && pi % 2 === 0) {
+                s += '<path d="M'+fx+','+fy+' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+tipX.toFixed(1)+','+tipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.36" stroke-linecap="round" opacity="'+(0.55*bloomOp).toFixed(2)+'"/>';
+              }
             }
           }
-          // Gold center boss
-          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
-          s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy-fs*0.06)+'" r="'+(fs*0.1)+'" fill="'+PALETTE.cream+'" opacity="'+(0.5*bloomOp)+'"/>';
+          // Form shadow on right hemisphere
+          s += '<path d="M'+fx+','+(fy-fs*1.55)+' A'+(fs*1.55)+' '+(fs*1.55)+' 0 0 1 '+fx+','+(fy+fs*1.55)+' L'+fx+','+(fy-fs*1.55)+'Z" fill="rgba(40,20,5,0.16)" opacity="'+(0.55*bloomOp)+'"/>';
+          // Cream form-light upper-left
+          s += '<ellipse cx="'+(fx-fs*0.55)+'" cy="'+(fy-fs*0.65)+'" rx="'+(fs*0.45)+'" ry="'+(fs*0.30)+'" fill="#f5ecd6" opacity="'+(0.20*bloomOp)+'" transform="rotate(-30,'+(fx-fs*0.55)+','+(fy-fs*0.65)+')"/>';
+          // Gold center boss with warm AO + master cream catchlight
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.26)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="'+PALETTE.gold+'" opacity="'+(0.95*bloomOp)+'"/>';
+          s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy-fs*0.06)+'" r="'+(fs*0.10)+'" fill="#f5ecd6" opacity="'+(0.65*bloomOp)+'"/>';
+          s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.08)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
         })();
         break;
       case 45: // Ghost Orchid — ethereal trailing tendrils (opaque enough to read)
