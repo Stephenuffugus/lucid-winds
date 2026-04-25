@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.64';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.65';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -22080,52 +22080,89 @@ document.addEventListener('keydown', function(e) {
         // Tip terminator at apex
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*1.32)+'" r="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
         break;
-      case 6: // Spike — vertical inflorescence with layered florets
-        // Central rachis (flower stem)
-        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*2.0)+'" stroke="'+_hueShift(fc, 42, 20)+'" stroke-width="0.7" opacity="'+(0.5*bloomOp)+'" stroke-linecap="round"/>';
+      case 6: // Spike — vertical inflorescence with layered florets, master polish
+        // AO halo (vertical)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy-fs*1.0)+'" rx="'+(fs*0.55)+'" ry="'+(fs*1.30)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Central rachis — warm-shifted dark + cream pair
+        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*2.0)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.75" opacity="'+(0.6*bloomOp)+'" stroke-linecap="round"/>';
+        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*2.0)+'" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(0.5*bloomOp)+'" stroke-linecap="round" transform="translate(-0.25,-0.18)"/>';
+        var _b6dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
         // 7 florets graduating from large (bottom) to small (top)
         for (var si6=0; si6<7; si6++) {
           var sy6=fy-si6*fs*0.32, sr6=fs*(0.42-si6*0.04);
           var sxOff = Math.sin(si6*0.8)*sr6*0.3; // subtle alternating offset
-          // Shadow layer
-          s += '<ellipse cx="'+(fx+sxOff+0.3)+'" cy="'+(sy6+0.3)+'" rx="'+sr6.toFixed(1)+'" ry="'+(sr6*0.65).toFixed(1)+'" fill="#0d100c" opacity="'+(0.08*bloomOp)+'"/>';
-          // Floret body
-          s += '<ellipse cx="'+(fx+sxOff)+'" cy="'+sy6+'" rx="'+sr6.toFixed(1)+'" ry="'+(sr6*0.6).toFixed(1)+'" fill="'+fc+'" opacity="'+((0.75-si6*0.06)*bloomOp).toFixed(2)+'"/>';
-          // Top rim highlight
-          s += '<path d="M'+(fx+sxOff-sr6*0.7)+','+(sy6-sr6*0.25)+' Q'+(fx+sxOff)+','+(sy6-sr6*0.8)+' '+(fx+sxOff+sr6*0.7)+','+(sy6-sr6*0.25)+'" fill="none" stroke="rgba(240,235,216,0.3)" stroke-width="0.35" opacity="'+(bloomOp*0.5)+'"/>';
+          // Warm-dark form-shadow under each floret (3-stack AO)
+          s += '<ellipse cx="'+(fx+sxOff+0.3)+'" cy="'+(sy6+0.4)+'" rx="'+sr6.toFixed(1)+'" ry="'+(sr6*0.55).toFixed(1)+'" fill="rgba(40,20,5,0.40)" opacity="'+(0.55*bloomOp)+'"/>';
+          // Floret back-half (dimmed)
+          s += '<ellipse cx="'+(fx+sxOff)+'" cy="'+(sy6+sr6*0.10)+'" rx="'+sr6.toFixed(1)+'" ry="'+(sr6*0.55).toFixed(1)+'" fill="'+_b6dk+'" opacity="'+(0.55*bloomOp)+'"/>';
+          // Floret body (saturated front)
+          s += '<ellipse cx="'+(fx+sxOff)+'" cy="'+sy6+'" rx="'+sr6.toFixed(1)+'" ry="'+(sr6*0.6).toFixed(1)+'" fill="'+fc+'" opacity="'+((0.85-si6*0.05)*bloomOp).toFixed(2)+'"/>';
+          // Cream rim highlight (silk-snap)
+          s += '<path d="M'+(fx+sxOff-sr6*0.7)+','+(sy6-sr6*0.25)+' Q'+(fx+sxOff)+','+(sy6-sr6*0.8)+' '+(fx+sxOff+sr6*0.7)+','+(sy6-sr6*0.25)+'" fill="none" stroke="#f5ecd6" stroke-width="0.40" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+          // Sharp specular pickup on lit half
+          if (si6 < 5) {
+            s += '<ellipse cx="'+(fx+sxOff-sr6*0.30)+'" cy="'+(sy6-sr6*0.30)+'" rx="'+(sr6*0.18)+'" ry="'+(sr6*0.10)+'" fill="#fff8e0" opacity="'+(0.55*bloomOp)+'"/>';
+          }
         }
-        // Crown bud at top — tiny unopened point
-        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*2.15)+'" rx="'+(fs*0.15)+'" ry="'+(fs*0.22)+'" fill="'+_hueShift(fc, 77, 12)+'" opacity="'+(0.6*bloomOp)+'"/>';
+        // Crown bud at top — warm-dark with cream pickup
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*2.15)+'" rx="'+(fs*0.16)+'" ry="'+(fs*0.24)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*2.15)+'" rx="'+(fs*0.13)+'" ry="'+(fs*0.20)+'" fill="'+_hueShift(fc, 77, 12)+'" opacity="'+(0.85*bloomOp)+'"/>';
+        s += '<ellipse cx="'+(fx-fs*0.04)+'" cy="'+(fy-fs*2.20)+'" rx="'+(fs*0.05)+'" ry="'+(fs*0.08)+'" fill="#f5ecd6" opacity="'+(0.55*bloomOp)+'"/>';
+        // Tip terminator
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*2.25)+'" r="'+(fs*0.05)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
         break;
-      case 7: // Mandala — Phase 23: emit tight luminous centre; Halo via renderHalo()
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.38)+'" fill="url(#bg'+uid+')" opacity="'+(0.82*bloomOp)+'" filter="url(#gc'+uid+')"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'" filter="url(#gc'+uid+')"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.08)+'" fill="'+PALETTE.cream+'" opacity="'+(0.95*bloomOp)+'"/>';
+      case 7: // Mandala — luminous sacred-geometry centre (Phase 23 halo via renderHalo()), master polish
+        // AO halo
+        s += '<circle cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" r="'+(fs*0.85)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Outer ring of 12 micro-petals (occlusion sandwich back)
+        var _m7dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
+        for (var _m7p=0; _m7p<12; _m7p++) {
+          var _m7a=(_m7p*30)*Math.PI/180;
+          var _m7px=fx+Math.cos(_m7a)*fs*0.48, _m7py=fy+Math.sin(_m7a)*fs*0.48;
+          s += '<circle cx="'+_m7px.toFixed(1)+'" cy="'+_m7py.toFixed(1)+'" r="'+(fs*0.07)+'" fill="'+_m7dk+'" opacity="'+(0.45*bloomOp)+'"/>';
+        }
+        // Six radiating spear petals — warm-dark + cream highlight pair
         for(var mp=0; mp<6; mp++){
           var mpA = (mp*60-90)*Math.PI/180;
           var mpX = fx+Math.cos(mpA)*fs*0.55, mpY = fy+Math.sin(mpA)*fs*0.55;
-          s += '<path d="M'+fx+','+fy+' C'+(fx+Math.cos(mpA-0.4)*fs*0.3)+','+(fy+Math.sin(mpA-0.4)*fs*0.3)+' '+mpX.toFixed(1)+','+(mpY-fs*0.08).toFixed(1)+' '+mpX.toFixed(1)+','+mpY.toFixed(1)+'"'
-             + ' fill="none" stroke="'+fc+'" stroke-width="0.8" opacity="'+(0.75*bloomOp)+'"/>';
+          var _mpD = 'M'+fx+','+fy+' C'+(fx+Math.cos(mpA-0.4)*fs*0.3)+','+(fy+Math.sin(mpA-0.4)*fs*0.3)+' '+mpX.toFixed(1)+','+(mpY-fs*0.08).toFixed(1)+' '+mpX.toFixed(1)+','+mpY.toFixed(1);
+          s += '<path d="'+_mpD+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="1.0" opacity="'+(0.55*bloomOp)+'" stroke-linecap="round"/>';
+          s += '<path d="'+_mpD+'" fill="none" stroke="'+fc+'" stroke-width="0.8" opacity="'+(0.85*bloomOp)+'" stroke-linecap="round"/>';
+          s += '<path d="'+_mpD+'" fill="none" stroke="#f5ecd6" stroke-width="0.30" opacity="'+(0.5*bloomOp)+'" stroke-linecap="round" transform="translate(-0.22,-0.16)"/>';
+          // Tip terminator
+          s += '<circle cx="'+mpX.toFixed(1)+'" cy="'+mpY.toFixed(1)+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.7*bloomOp)+'"/>';
         }
+        // Luminous centre stack
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.38)+'" fill="url(#bg'+uid+')" opacity="'+(0.82*bloomOp)+'" filter="url(#gc'+uid+')"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.20)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.6*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="'+PALETTE.gold+'" opacity="'+(0.95*bloomOp)+'" filter="url(#gc'+uid+')"/>';
+        // Cream catchlight
+        s += '<circle cx="'+(fx-fs*0.04)+'" cy="'+(fy-fs*0.04)+'" r="'+(fs*0.07)+'" fill="#fff8e0" opacity="'+(0.95*bloomOp)+'"/>';
         break;
 
-      case 8: // Clover Head — compact spherical cluster of tiny tubular florets
-        // Base dome shadow
-        s += '<circle cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" r="'+(fs*0.85)+'" fill="#0d100c" opacity="'+(0.1*bloomOp)+'"/>';
-        // Cluster of ~14 tiny florets arranged in a hemisphere
+      case 8: // Clover Head — compact spherical cluster of tiny tubular florets, master polish
+        // AO halo (warm)
+        s += '<circle cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" r="'+(fs*0.85)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Cluster of ~14 tiny florets arranged in a hemisphere (Vogel phyllotaxis)
         var _c8hue = _hueShift(fc, parseInt(uid.slice(0,2),16), 10);
+        var _c8dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
         for (var _c8i=0; _c8i<14; _c8i++) {
           var _c8a = (_c8i * 137.508) * Math.PI / 180; // golden angle spiral
           var _c8r = fs * 0.15 + (_c8i * fs * 0.045);
           var _c8x = fx + Math.cos(_c8a) * Math.min(_c8r, fs*0.65);
           var _c8y = fy + Math.sin(_c8a) * Math.min(_c8r, fs*0.55) * 0.75;
           var _c8sz = fs * (0.18 - _c8i * 0.006);
-          s += '<circle cx="'+_c8x.toFixed(1)+'" cy="'+_c8y.toFixed(1)+'" r="'+_c8sz.toFixed(2)+'" fill="'+(_c8i%3===0 ? _c8hue : fc)+'" opacity="'+((0.7 - _c8i*0.02)*bloomOp).toFixed(2)+'"/>';
-          // Tiny stamen dot at center of each floret
-          if (_c8i < 8) s += '<circle cx="'+_c8x.toFixed(1)+'" cy="'+(_c8y-_c8sz*0.3).toFixed(1)+'" r="'+(fs*0.04).toFixed(2)+'" fill="'+PALETTE.cream+'" opacity="'+(0.4*bloomOp).toFixed(2)+'"/>';
+          // Each floret: warm-dark drop shadow → body → cream pickup
+          s += '<circle cx="'+(_c8x+0.15).toFixed(2)+'" cy="'+(_c8y+0.18).toFixed(2)+'" r="'+_c8sz.toFixed(2)+'" fill="rgba(40,20,5,0.35)" opacity="'+((0.45 - _c8i*0.012)*bloomOp).toFixed(2)+'"/>';
+          var _c8fill = (_c8i%3===0) ? _c8hue : (_c8i%5===4 ? _c8dk : fc);
+          s += '<circle cx="'+_c8x.toFixed(1)+'" cy="'+_c8y.toFixed(1)+'" r="'+_c8sz.toFixed(2)+'" fill="'+_c8fill+'" opacity="'+((0.85 - _c8i*0.02)*bloomOp).toFixed(2)+'"/>';
+          // Tiny stamen dot at center of each floret (cream)
+          if (_c8i < 10) s += '<circle cx="'+(_c8x-_c8sz*0.18).toFixed(2)+'" cy="'+(_c8y-_c8sz*0.32).toFixed(2)+'" r="'+(fs*0.04).toFixed(2)+'" fill="#f5ecd6" opacity="'+(0.55*bloomOp).toFixed(2)+'"/>';
+          // Sharp pickup on lit florets
+          if (_c8i < 6) s += '<circle cx="'+(_c8x-_c8sz*0.30).toFixed(2)+'" cy="'+(_c8y-_c8sz*0.40).toFixed(2)+'" r="'+(fs*0.025).toFixed(2)+'" fill="#fff8e0" opacity="'+(0.75*bloomOp).toFixed(2)+'"/>';
         }
-        // Soft dome highlight
-        s += '<ellipse cx="'+(fx-fs*0.15)+'" cy="'+(fy-fs*0.2)+'" rx="'+(fs*0.35)+'" ry="'+(fs*0.25)+'" fill="rgba(240,235,216,0.1)" opacity="'+(bloomOp*0.4)+'"/>';
+        // Big diffuse cream form-light upper-left
+        s += '<ellipse cx="'+(fx-fs*0.20)+'" cy="'+(fy-fs*0.25)+'" rx="'+(fs*0.35)+'" ry="'+(fs*0.25)+'" fill="#f5ecd6" opacity="'+(0.18*bloomOp)+'" transform="rotate(-30,'+(fx-fs*0.20)+','+(fy-fs*0.25)+')"/>';
         break;
 
       case 9: // Bottlebrush (Callistemon) — radial stamen explosion in fuzzy cylinder, no petals
