@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.13';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13959,7 +13959,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M36,88 L38,90" fill="none" stroke="#8B5A3C" stroke-width="0.18" opacity="0.12" stroke-linecap="round"/>';
         s += '<path d="M26,80 Q27,83 26,86" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.7" stroke-linecap="round"/>';
         break;
-      case 57: // The Philosopher\'s Vessel — alchemical flask with animated particles
+      case 57: // The Philosopher\'s Vessel — alchemical flask with animated particles. Whole vessel shifted -1 in x via group transform so the neck aligns with the plant stem at x=35.
+        s += '<g transform="translate(-1,0)">';
         s += '<circle cx="35" cy="86" r="7.5" fill="rgba(180,200,220,0.08)"/>';
         s += '<circle cx="35" cy="86" r="7.5" fill="none" stroke="rgba(180,200,220,0.45)" stroke-width="0.9"/>';
         s += '<rect x="33" y="77.5" width="4" height="9" rx="1.5" fill="rgba(180,200,220,0.06)"/>';
@@ -13998,17 +13999,19 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="35" cy="86" r="4" fill="#C8A84B" opacity="0.04">';
         s += '<animate attributeName="opacity" values="0.04;0.08;0.04" dur="5s" repeatCount="indefinite"/>';
         s += '</circle>';
+        s += '</g>';
         break;
-      case 58: // Tractor Tire — FRONT portion only. Back rim/sidewall/cavity/back-dirt all draw in renderPotBack BEFORE stem. Front-dirt here wedges the stem so it disappears INTO brown soil.
-        // FRONT-DIRT — second half of soil mound, drawn AFTER stem. Extends
-        // down past y=79.25 to cover the stem's round stroke-cap (stroke-width
-        // 2.5 means cap radius 1.25 below y=78). Together with BACK-DIRT in
-        // renderPotBack this wedges the stem visually into the dirt.
+      case 58: // Tractor Tire — FRONT portion. Back rim/sidewall/cavity/back-dirt all draw in renderPotBack BEFORE stem. Front-dirt drawn FIRST here, then FRONT-RIM CAP wraps the bottom of the soil mound and overlays the bottom of the stem (Director's "bottom rim of the drum overlay the bottom of the stem").
+        // FRONT-DIRT — drawn FIRST (covers stem base; together with BACK-DIRT in renderPotBack this wedges the stem visually into the dirt)
         s += '<ellipse cx="35" cy="78.4" rx="11.5" ry="1.0" fill="#2e2014"/>';
         // Soil texture flecks (on front-dirt surface)
         s += '<ellipse cx="30" cy="78.25" rx="0.55" ry="0.22" fill="#5a4028"/>';
         s += '<ellipse cx="40" cy="78.45" rx="0.55" ry="0.22" fill="#5a4028"/>';
         s += '<ellipse cx="34.5" cy="78.6" rx="0.4" ry="0.18" fill="#4a3220"/>';
+        // FRONT-RIM CAP — lower half of the tire rim ellipse (rim is rx=21 ry=2.3 in renderPotBack). Drawn AFTER front-dirt so the tire rim wraps the bottom of the soil mound and covers any remaining stem stroke-cap.
+        s += '<path d="M14,78 A21,2.3 0 0,1 56,78 Z" fill="#262626"/>';
+        // Front-rim tread chunks (matches dashed perimeter on back rim)
+        s += '<path d="M14,78 A21,2.3 0 0,1 56,78" fill="none" stroke="#080808" stroke-width="1.4" stroke-dasharray="2 1.5"/>';
         // Front-rim sheen (thin warm line on bottom-front of rim — sells the 3D ring)
         s += '<path d="M20,79.6 Q35,80.3 50,79.6" stroke="rgba(80,72,64,0.4)" stroke-width="0.5" fill="none"/>';
         break;
