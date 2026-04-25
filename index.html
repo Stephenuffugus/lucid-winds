@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.17';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -52772,6 +52772,13 @@ function _getRank(xp){
   var next=null;for(var j=0;j<RANKS.length;j++){if(RANKS[j].xp>xp){next=RANKS[j];break;}}
   return{level:r.lvl,title:r.title,xp:xp,nextXP:next?next.xp:r.xp+5000,nextTitle:next?next.title:'Legend'};
 }
+// Expose level helpers on window — referenced as window._getRank / window._getXP
+// in multiple places (canSee.feralCollect, _lwLevel, post-tutorial gates, etc).
+// Without these exposures, `_lwLevel()` falls back to `return 1`, which made
+// `canSee.feralCollect()` return false for ANY player — even L12 — and the
+// "Foraging unlocks at Keeper Level 4" toast fired for testers above L4.
+window._getRank=_getRank;
+window._getXP=_getXP;
 // Prestige display: P0 hidden, P1-P10 "Pn", P11+ rolls to "Level 1.XXXk"
 function _getEffectiveLevel(){
   var xp=_getXP(),r=_getRank(xp),p=_getPrestige();
@@ -73525,8 +73532,24 @@ function _lwLevel(){
   try{
     var xp=parseInt(localStorage.getItem('pw_xp')||'0');
     if (window.RANKS && window._getRank) return window._getRank(xp).level;
-    // Fallback if RANKS hasn't loaded yet (early init): conservative L1
-    return 1;
+    // Fallback: walk RANKS directly if it's there but _getRank wasn't
+    // exposed (older builds). Returning the highest matched threshold.
+    if (window.RANKS) {
+      for (var i=window.RANKS.length-1;i>=0;i--) {
+        if (xp>=window.RANKS[i].xp) return window.RANKS[i].lvl;
+      }
+    }
+    // Last-resort fallback: compute level from XP using the rank formula
+    // directly (8 * L^1.25 cumulative). This catches the case where neither
+    // RANKS nor _getRank is on window, e.g., during early boot. Returning
+    // a conservative "L1" used to leave L12 testers locked out of foraging.
+    var cum=0;
+    for (var L=1;L<=100;L++) {
+      var cost=L===1?0:Math.round(8*Math.pow(L,1.25));
+      cum+=cost;
+      if (xp<cum) return L-1;
+    }
+    return 100;
   }catch(e){return 1;}
 }
 // Gate advanced features based on player progress.
@@ -73547,11 +73570,23 @@ window.canSee = {
   // Track-A XP grant races with the gate check, and keeps parity with
   // canSee.compendium / nurseryTab / wildTab which use the same flag.
   feralCollect: function(){
-    try { if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true; } catch(e){}
+    try {
+      if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true;
+      // Established-player bypass: any plant in the greenhouse means the
+      // player is past tutorial regardless of whether the flag was wiped.
+      // Mirrors keeperBarSinks below — prevents the "L12 player locked out
+      // of foraging because pw_xp/RANKS wiring lost the level" bug.
+      var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      if (gh.length >= 1) return true;
+    } catch(e){}
     return _lwLevel()>=4;
   },
   strangerTend: function(){
-    try { if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true; } catch(e){}
+    try {
+      if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true;
+      var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      if (gh.length >= 1) return true;
+    } catch(e){}
     return _lwLevel()>=5;
   },
   keeperBarSinks: function(){
