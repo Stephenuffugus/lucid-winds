@@ -7263,8 +7263,9 @@ window._addSwitchTabHook = function(fn){
       if(ov){ov.remove();return;}
       var _mode='leaf'; // 'leaf' or 'bloom'
       var _idx=0;
-      var _maxLeaf=59; // leaf types 0-59
-      var _maxBloom=70; // bloom types 0-70
+      var _bank=window.TRAIT_BANK||{};
+      var _maxLeaf=(_bank.leaves&&_bank.leaves.length?_bank.leaves.length-1:70);
+      var _maxBloom=(_bank.flowers&&_bank.flowers.length?_bank.flowers.length-1:70);
       // Base hash — we'll override specific bytes to force leaf/bloom type
       var _baseHash='5a8f3c2d1e7b4a9063d5f8c2a1b47e9053c6d8f2a4b71e8039d5c7f1a2b64e80';
 
@@ -7315,7 +7316,7 @@ window._addSwitchTabHook = function(fn){
         '<div style="text-align:center;">'+
         '<div id="lbe-label" style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:0.1em;">LEAF #0</div>'+
         '<div id="lbe-name" style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--cream);"></div>'+
-        '<div id="lbe-counter" style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);">0 / 59</div>'+
+        '<div id="lbe-counter" style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);">0 / '+_maxLeaf+'</div>'+
         '</div>'+
         '<button id="lbe-next" style="width:48px;height:48px;border-radius:50%;border:1px solid rgba(122,179,86,0.3);background:none;color:var(--sage);font-size:1.2rem;cursor:pointer;">&#9654;</button>'+
         '<button id="lbe-close" style="width:48px;height:48px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:1.2rem;cursor:pointer;">&#10005;</button>'+
