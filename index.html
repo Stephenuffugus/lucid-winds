@@ -12897,8 +12897,8 @@ document.addEventListener('keydown', function(e) {
     var s = '';
     // set-103-8: Per-pot soil line — matches body width exactly
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
-    var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 20, 20];
-    var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 50, 50];
+    var soilL = [20, 20, 23, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 35, 20];
+    var soilR = [50, 50, 47, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 35, 50];
     var si = (p === 15) ? 15 : (p < 60 ? p : p % 71);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
@@ -13799,8 +13799,21 @@ document.addEventListener('keydown', function(e) {
         s += '<animate attributeName="opacity" values="0.04;0.08;0.04" dur="5s" repeatCount="indefinite"/>';
         s += '</circle>';
         break;
-      case 58: // Reserved
-      case 59: // Reserved
+      case 58: // Tractor Tire — laid flat, deep tread perimeter, soil-filled cavity
+        // Drop shadow under tire (rests on ground)
+        s += '<ellipse cx="35" cy="92" rx="20" ry="1.4" fill="rgba(0,0,0,0.32)"/>';
+        // Outer rubber body (wide flat dark oval)
+        s += '<ellipse cx="35" cy="85" rx="22" ry="7" fill="#1a1a1a"/>';
+        // Aggressive tread chunks (dashed perimeter stroke, slightly wider than body)
+        s += '<ellipse cx="35" cy="85" rx="22.2" ry="7.2" fill="none" stroke="#070707" stroke-width="2" stroke-dasharray="2.5 1.8"/>';
+        // Top sheen (faint rubber highlight)
+        s += '<ellipse cx="35" cy="80.5" rx="18" ry="0.9" fill="rgba(140,128,118,0.18)"/>';
+        // Inner cavity (soil hole)
+        s += '<ellipse cx="35" cy="85" rx="11.5" ry="2.7" fill="#2a1f12"/>';
+        // Cavity top shadow (under-rim of inner hole)
+        s += '<path d="M24,84 Q35,82.2 46,84" stroke="rgba(0,0,0,0.65)" stroke-width="0.7" fill="none"/>';
+        break;
+      case 59: // Genie Lamp (placeholder — falls through to Classic until art ships)
         s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
         s += '<rect x="20" y="76.5" width="30" height="3" rx="1.5" fill="'+rim+'"/>';
         break;
