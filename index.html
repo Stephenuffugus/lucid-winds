@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.50';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.51';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -22947,14 +22947,37 @@ document.addEventListener('keydown', function(e) {
           }
         })();
         break;
-      case 21: // Bird of Paradise — ember crane
-        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+' C'+(fx+fs*1.26)+','+(fy+fs*0.2)+' '+(fx+fs*0.8)+','+(fy+fs*0.28)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.75*bloomOp)+'"/>';
-        s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.2)+','+(fy-fs*0.55)+' '+(fx-fs*0.95)+','+(fy-fs*1.15)+' '+(fx-fs*1.15)+','+(fy-fs*0.48)+' C'+(fx-fs*0.8)+','+(fy-fs*0.1)+' '+(fx-fs*0.35)+','+(fy+fs*0.05)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.62*bloomOp)+'"/>';
-        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.18)+','+(fy+fs*0.08)+' '+(fx+fs*0.85)+','+(fy+fs*0.95)+' '+(fx+fs*0.32)+','+(fy+fs*1.25)+' C'+(fx-fs*0.08)+','+(fy+fs*0.82)+' '+(fx-fs*0.12)+','+(fy+fs*0.25)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.7*bloomOp)+'"/>';
-        s += '<ellipse cx="'+(fx+fs*0.28)+'" cy="'+(fy+fs*0.18)+'" rx="'+(fs*0.18)+'" ry="'+(fs*0.1)+'" fill="'+PALETTE.gold+'" opacity="'+(0.88*bloomOp)+'"/>';
-        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+      case 21: // Bird of Paradise — Strelitzia reginae (orange crest + blue tongue, asymmetric §3.L)
+        // Sheath bract underline (warm shadow base — terminator inset §1)
+        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy+fs*0.06)+' '+(fx+fs*1.30)+','+(fy-fs*0.28)+' '+(fx+fs*1.78)+','+(fy+fs*0.04)+'" fill="none" stroke="rgba(40,20,5,0.42)" stroke-width="0.7" stroke-linecap="round" opacity="'+(bloomOp*0.7)+'"/>';
+        // RIGHT orange crest petal (front, full sat)
+        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+' C'+(fx+fs*1.26)+','+(fy+fs*0.2)+' '+(fx+fs*0.8)+','+(fy+fs*0.28)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.86*bloomOp)+'"/>';
+        // BLUE tongue petal (mid-saturation, hue-shifted toward blue tier signature)
+        s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.2)+','+(fy-fs*0.55)+' '+(fx-fs*0.95)+','+(fy-fs*1.15)+' '+(fx-fs*1.15)+','+(fy-fs*0.48)+' C'+(fx-fs*0.8)+','+(fy-fs*0.1)+' '+(fx-fs*0.35)+','+(fy+fs*0.05)+' '+fx+','+fy+' Z" fill="'+_hueShift(fc,180,18)+'" opacity="'+(0.72*bloomOp)+'"/>';
+        // Lower blue arrow petal — back, dimmed -8% (§2)
+        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.18)+','+(fy+fs*0.08)+' '+(fx+fs*0.85)+','+(fy+fs*0.95)+' '+(fx+fs*0.32)+','+(fy+fs*1.25)+' C'+(fx-fs*0.08)+','+(fy+fs*0.82)+' '+(fx-fs*0.12)+','+(fy+fs*0.25)+' '+fx+','+fy+' Z" fill="'+_hueShift(fc,200,16)+'" opacity="'+(0.66*bloomOp)+'"/>';
+        // Crane-head receptacle (bract knot)
+        s += '<ellipse cx="'+(fx+fs*0.28)+'" cy="'+(fy+fs*0.18)+'" rx="'+(fs*0.22)+'" ry="'+(fs*0.12)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.6)+'"/>';
+        s += '<ellipse cx="'+(fx+fs*0.28)+'" cy="'+(fy+fs*0.16)+'" rx="'+(fs*0.18)+'" ry="'+(fs*0.1)+'" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
+        // Cream highlight on crest (§5 cup highlight)
+        s += '<path d="M'+(fx+fs*0.4)+','+(fy-fs*0.2)+' C'+(fx+fs*0.85)+','+(fy-fs*0.42)+' '+(fx+fs*1.30)+','+(fy-fs*0.46)+' '+(fx+fs*1.62)+','+(fy-fs*0.18)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+        // Edge highlight on outer petal (§1)
+        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+'" fill="none" stroke="#fff8e0" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        // Stamen kit — 3 anther dots emerging from crest
+        s += '<line x1="'+(fx+fs*0.45)+'" y1="'+(fy+fs*0.04)+'" x2="'+(fx+fs*0.62)+'" y2="'+(fy-fs*0.16)+'" stroke="#f5ecd6" stroke-width="0.3" opacity="'+(bloomOp*0.7)+'"/>';
+        s += '<circle cx="'+(fx+fs*0.62)+'" cy="'+(fy-fs*0.16)+'" r="'+(fs*0.06)+'" fill="#1a0e08" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx+fs*0.6)+'" cy="'+(fy-fs*0.18)+'" r="'+(fs*0.025)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.8)+'"/>';
+        // Drip-curl pair on crest tip (§9)
+        s += '<path d="M'+(fx+fs*1.66)+','+(fy-fs*0.18)+' Q'+(fx+fs*1.78)+','+(fy-fs*0.05)+' '+(fx+fs*1.78)+','+(fy+fs*0.04)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" opacity="'+(bloomOp*0.6)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp21g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp21o = Math.min(0.85, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp21g+'" opacity="'+_bp21o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 22: // Fire Flower — emberwheel
+      case 22: // Fire Flower — emberwheel mythic with reflexed flame-tepals (§3.C / §6 throat glow)
+        // Outer back ring — dimmed 8-12% (§2 stack ordering)
         for (var efr = 0; efr < 3; efr++) {
           var efRad = fs * (1.0 - efr*0.22);
           for (var efi = 0; efi < 8; efi++) {
@@ -22963,78 +22986,249 @@ document.addEventListener('keydown', function(e) {
             var efby = fy + Math.sin(efa) * fs * 0.12;
             var eftx = fx + Math.cos(efa) * efRad;
             var efty = fy + Math.sin(efa) * efRad;
-            s += '<path d="M'+efbx+','+efby+' C'+(efbx+Math.cos(efa-0.55)*fs*0.55)+','+(efby+Math.sin(efa-0.55)*fs*0.55)+' '+(eftx+Math.cos(efa-0.18)*fs*0.18)+','+(efty+Math.sin(efa-0.18)*fs*0.18)+' '+eftx+','+efty+' C'+(eftx+Math.cos(efa+0.18)*fs*0.18)+','+(efty+Math.sin(efa+0.18)*fs*0.18)+' '+(efbx+Math.cos(efa+0.55)*fs*0.55)+','+(efby+Math.sin(efa+0.55)*fs*0.55)+' '+efbx+','+efby+' Z" fill="'+fc+'" opacity="'+((0.5-efr*0.08)*bloomOp)+'"/>';
+            // Hue-shift outer ring toward ember-red (warm gradient §6)
+            var _ef22c = (efr === 0) ? _hueShift(fc, 24, 12) : fc;
+            s += '<path d="M'+efbx+','+efby+' C'+(efbx+Math.cos(efa-0.55)*fs*0.55)+','+(efby+Math.sin(efa-0.55)*fs*0.55)+' '+(eftx+Math.cos(efa-0.18)*fs*0.18)+','+(efty+Math.sin(efa-0.18)*fs*0.18)+' '+eftx+','+efty+' C'+(eftx+Math.cos(efa+0.18)*fs*0.18)+','+(efty+Math.sin(efa+0.18)*fs*0.18)+' '+(efbx+Math.cos(efa+0.55)*fs*0.55)+','+(efby+Math.sin(efa+0.55)*fs*0.55)+' '+efbx+','+efby+' Z" fill="'+_ef22c+'" opacity="'+((0.55-efr*0.08)*bloomOp)+'"/>';
+            // Edge highlight on front ring tepals (§1 silk-snap)
+            if (efr === 0) {
+              s += '<path d="M'+efbx+','+efby+' Q'+(eftx+Math.cos(efa-0.1)*fs*0.1)+','+(efty+Math.sin(efa-0.1)*fs*0.1)+' '+eftx+','+efty+'" fill="none" stroke="#fff8e0" stroke-width="0.35" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+            }
           }
         }
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.32)+'" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="'+PALETTE.cream+'" opacity="'+(0.8*bloomOp)+'"/>';
-        s += '<path d="M'+fx+','+(fy-fs*1.0)+' C'+(fx+fs*0.72)+','+(fy-fs*1.22)+' '+(fx+fs*1.0)+','+(fy-fs*0.42)+' '+(fx+fs*0.42)+','+(fy-fs*0.04)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+        // AO ink-pool around throat (§1 attachment wedge)
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.42)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.6)+'"/>';
+        // Throat glow — saturated warm gold disc
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.32)+'" fill="'+PALETTE.gold+'" opacity="'+(0.95*bloomOp)+'"/>';
+        // Inner cream halo
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="#f5ecd6" opacity="'+(0.85*bloomOp)+'"/>';
+        // Stamen ring — 6 anther dots around throat
+        for (var ef22s = 0; ef22s < 6; ef22s++) {
+          var ef22sa = (ef22s * 60) * Math.PI / 180;
+          var ef22sx = fx + Math.cos(ef22sa) * fs * 0.24;
+          var ef22sy = fy + Math.sin(ef22sa) * fs * 0.24;
+          s += '<circle cx="'+ef22sx+'" cy="'+ef22sy+'" r="'+(fs*0.05)+'" fill="#3a1208" opacity="'+(bloomOp*0.85)+'"/>';
+        }
+        // Pistil — center cream pixel
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
+        // Drip-curl on top tepal (§9)
+        s += '<path d="M'+fx+','+(fy-fs*1.0)+' C'+(fx+fs*0.72)+','+(fy-fs*1.22)+' '+(fx+fs*1.0)+','+(fy-fs*0.42)+' '+(fx+fs*0.42)+','+(fy-fs*0.04)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp22g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp22o = Math.min(0.85, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.05)+'" fill="none" stroke="#c8a84b" stroke-width="'+_bp22g+'" opacity="'+_bp22o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 23: // Protea — relic crown
+      case 23: // King Protea — Protea cynaroides (bowl of pointed bracts around fuzzy heart, §3.K cone variant)
+        // Receptacle AO base (§2 step 1)
+        s += '<ellipse cx="'+fx+'" cy="'+(fy+fs*0.05)+'" rx="'+(fs*1.18)+'" ry="'+(fs*0.32)+'" fill="rgba(40,20,5,0.45)" opacity="'+(bloomOp*0.55)+'"/>';
+        // 14 pointed bracts — back-to-front: dim outer 8% (§2)
         for (var pr3 = 0; pr3 < 14; pr3++) {
           var pra3 = (pr3 * (360/14)) * Math.PI / 180;
           var pr3bx = fx + Math.cos(pra3) * fs * 0.42;
           var pr3by = fy + Math.sin(pra3) * fs * 0.42;
           var pr3tx = fx + Math.cos(pra3) * fs * 1.18;
           var pr3ty = fy + Math.sin(pra3) * fs * 1.18;
-          s += '<path d="M'+pr3bx+','+pr3by+' C'+(pr3bx+Math.cos(pra3-0.35)*fs*0.22)+','+(pr3by+Math.sin(pra3-0.35)*fs*0.22)+' '+(pr3tx+Math.cos(pra3-0.12)*fs*0.12)+','+(pr3ty+Math.sin(pra3-0.12)*fs*0.12)+' '+pr3tx+','+pr3ty+' C'+(pr3tx+Math.cos(pra3+0.12)*fs*0.12)+','+(pr3ty+Math.sin(pra3+0.12)*fs*0.12)+' '+(pr3bx+Math.cos(pra3+0.35)*fs*0.22)+','+(pr3by+Math.sin(pra3+0.35)*fs*0.22)+' '+pr3bx+','+pr3by+' Z" fill="'+fc+'" opacity="'+(0.66*bloomOp)+'"/>';
+          // Dim back-half bracts (those pointing down) -10%
+          var _pr3op = (Math.sin(pra3) > 0) ? (0.58*bloomOp) : (0.74*bloomOp);
+          s += '<path d="M'+pr3bx+','+pr3by+' C'+(pr3bx+Math.cos(pra3-0.35)*fs*0.22)+','+(pr3by+Math.sin(pra3-0.35)*fs*0.22)+' '+(pr3tx+Math.cos(pra3-0.12)*fs*0.12)+','+(pr3ty+Math.sin(pra3-0.12)*fs*0.12)+' '+pr3tx+','+pr3ty+' C'+(pr3tx+Math.cos(pra3+0.12)*fs*0.12)+','+(pr3ty+Math.sin(pra3+0.12)*fs*0.12)+' '+(pr3bx+Math.cos(pra3+0.35)*fs*0.22)+','+(pr3by+Math.sin(pra3+0.35)*fs*0.22)+' '+pr3bx+','+pr3by+' Z" fill="'+fc+'" opacity="'+_pr3op+'"/>';
+          // Edge highlight on front bracts only (§1)
+          if (Math.sin(pra3) <= 0) {
+            s += '<path d="M'+pr3bx+','+pr3by+' Q'+(pr3tx+Math.cos(pra3-0.06)*fs*0.06)+','+(pr3ty+Math.sin(pra3-0.06)*fs*0.06)+' '+pr3tx+','+pr3ty+'" fill="none" stroke="#fff8e0" stroke-width="0.32" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+          }
         }
-        s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.44)+'" ry="'+(fs*0.62)+'" fill="'+PALETTE.gold+'" opacity="'+(0.86*bloomOp)+'"/>';
-        s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.85)+' C'+(fx+fs*0.3)+','+(fy-fs*0.95)+' '+(fx+fs*0.9)+','+(fy-fs*0.45)+' '+(fx+fs*0.95)+','+fy+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+        // Fuzzy heart — gold mound
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.04)+'" rx="'+(fs*0.46)+'" ry="'+(fs*0.64)+'" fill="rgba(40,20,5,0.4)" opacity="'+(bloomOp*0.6)+'"/>';
+        s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.44)+'" ry="'+(fs*0.62)+'" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
+        // Fuzzy hairs (10 cream filaments fanning from heart) — stamen kit §4
+        for (var pr3h = 0; pr3h < 10; pr3h++) {
+          var pr3ha = (pr3h * 36 - 90) * Math.PI / 180;
+          var pr3hx = fx + Math.cos(pr3ha) * fs * 0.4;
+          var pr3hy = fy + Math.sin(pr3ha) * fs * 0.55;
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+pr3hx+'" y2="'+pr3hy+'" stroke="#f5ecd6" stroke-width="0.3" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+          s += '<circle cx="'+pr3hx+'" cy="'+pr3hy+'" r="'+(fs*0.04)+'" fill="#e8b53a" opacity="'+(bloomOp*0.85)+'"/>';
+        }
+        // Center cream pixel
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.08)+'" fill="#fff8e0" opacity="'+(bloomOp*0.9)+'"/>';
+        // Cup highlight on rim
+        s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.85)+' C'+(fx+fs*0.3)+','+(fy-fs*0.95)+' '+(fx+fs*0.9)+','+(fy-fs*0.45)+' '+(fx+fs*0.95)+','+fy+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp23g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp23o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*1.22)+'" ry="'+(fs*1.22)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp23g+'" opacity="'+_bp23o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 24: // Anthurium — sky trumpet
-        s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.92)+','+(fy-fs*0.35)+' '+(fx-fs*1.18)+','+(fy-fs*1.18)+' '+fx+','+(fy-fs*1.55)+' C'+(fx+fs*1.18)+','+(fy-fs*1.18)+' '+(fx+fs*0.92)+','+(fy-fs*0.35)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.72*bloomOp)+'"/>';
-        s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.1)+' C'+(fx-fs*0.18)+','+(fy-fs*0.36)+' '+(fx+fs*0.18)+','+(fy-fs*0.36)+' '+(fx+fs*0.28)+','+(fy+fs*0.1)+' C'+(fx+fs*0.18)+','+(fy+fs*0.38)+' '+(fx-fs*0.18)+','+(fy+fs*0.38)+' '+(fx-fs*0.28)+','+(fy+fs*0.1)+' Z" fill="'+fc+'" opacity="'+(0.52*bloomOp)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.18)+'" r="'+(fs*0.16)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
-        s += '<path d="M'+(fx-fs*0.02)+','+(fy-fs*1.52)+' C'+(fx+fs*0.88)+','+(fy-fs*1.22)+' '+(fx+fs*1.02)+','+(fy-fs*0.58)+' '+(fx+fs*0.4)+','+(fy-fs*0.06)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+      case 24: // Anthurium — Anthurium andraeanum (lacquered heart-spathe + yellow spadix tail)
+        // Spathe AO ink-pool at base (§1)
+        s += '<path d="M'+fx+','+(fy+fs*0.04)+' C'+(fx-fs*0.46)+','+(fy-fs*0.18)+' '+(fx-fs*0.42)+','+(fy-fs*0.34)+' '+fx+','+(fy-fs*0.34)+' C'+(fx+fs*0.42)+','+(fy-fs*0.34)+' '+(fx+fs*0.46)+','+(fy-fs*0.18)+' '+fx+','+(fy+fs*0.04)+' Z" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.6)+'"/>';
+        // Heart-spathe — saturated front (§3.L exotic)
+        s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.92)+','+(fy-fs*0.35)+' '+(fx-fs*1.18)+','+(fy-fs*1.18)+' '+fx+','+(fy-fs*1.55)+' C'+(fx+fs*1.18)+','+(fy-fs*1.18)+' '+(fx+fs*0.92)+','+(fy-fs*0.35)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.88*bloomOp)+'"/>';
+        // Lacquered cup highlight — cream lozenge upper-left of spathe (§1)
+        s += '<ellipse cx="'+(fx-fs*0.42)+'" cy="'+(fy-fs*0.92)+'" rx="'+(fs*0.18)+'" ry="'+(fs*0.42)+'" fill="#fff8e0" opacity="'+(bloomOp*0.32)+'" transform="rotate(-22 '+(fx-fs*0.42)+' '+(fy-fs*0.92)+')"/>';
+        // Spadix tail base (warm-shifted shadow band)
+        s += '<path d="M'+(fx-fs*0.32)+','+(fy+fs*0.04)+' C'+(fx-fs*0.22)+','+(fy-fs*0.42)+' '+(fx+fs*0.22)+','+(fy-fs*0.42)+' '+(fx+fs*0.32)+','+(fy+fs*0.04)+' C'+(fx+fs*0.22)+','+(fy+fs*0.44)+' '+(fx-fs*0.22)+','+(fy+fs*0.44)+' '+(fx-fs*0.32)+','+(fy+fs*0.04)+' Z" fill="rgba(40,20,5,0.45)" opacity="'+(bloomOp*0.55)+'"/>';
+        // Yellow spadix tail (§3.L column)
+        s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.1)+' C'+(fx-fs*0.18)+','+(fy-fs*0.36)+' '+(fx+fs*0.18)+','+(fy-fs*0.36)+' '+(fx+fs*0.28)+','+(fy+fs*0.1)+' C'+(fx+fs*0.18)+','+(fy+fs*0.38)+' '+(fx-fs*0.18)+','+(fy+fs*0.38)+' '+(fx-fs*0.28)+','+(fy+fs*0.1)+' Z" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
+        // Pollen specks along spadix (§4)
+        for (var sp24 = 0; sp24 < 5; sp24++) {
+          var sp24y = fy - fs*0.28 + sp24*fs*0.16;
+          s += '<circle cx="'+(fx-fs*0.04)+'" cy="'+sp24y+'" r="'+(fs*0.035)+'" fill="#fff8e0" opacity="'+(bloomOp*0.7)+'"/>';
+          s += '<circle cx="'+(fx+fs*0.06)+'" cy="'+(sp24y+fs*0.04)+'" r="'+(fs*0.025)+'" fill="#3a1208" opacity="'+(bloomOp*0.75)+'"/>';
+        }
+        // Cream tip stigma
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.36)+'" r="'+(fs*0.08)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        // Edge highlight on spathe
+        s += '<path d="M'+(fx-fs*0.02)+','+(fy-fs*1.52)+' C'+(fx+fs*0.88)+','+(fy-fs*1.22)+' '+(fx+fs*1.02)+','+(fy-fs*0.58)+' '+(fx+fs*0.4)+','+(fy-fs*0.06)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp24g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp24o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.92)+','+(fy-fs*0.35)+' '+(fx-fs*1.18)+','+(fy-fs*1.18)+' '+fx+','+(fy-fs*1.55)+' C'+(fx+fs*1.18)+','+(fy-fs*1.18)+' '+(fx+fs*0.92)+','+(fy-fs*0.35)+' '+fx+','+fy+' Z" fill="none" stroke="#7ab356" stroke-width="'+_bp24g+'" opacity="'+_bp24o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 25: // Cherry Blossom — spring lantern
+      case 25: // Cherry Blossom — Prunus (5 near-round petals at 72° with notched tips, §3.A textbook)
+        // Receptacle AO under center (§2)
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.32)+'" fill="rgba(40,20,5,0.4)" opacity="'+(bloomOp*0.55)+'"/>';
+        // 5 petals at 72° — round with notched tip
         for (var cb3 = 0; cb3 < 5; cb3++) {
           var cb3a = (cb3 * 72 - 90) * Math.PI / 180;
           var cb3bx = fx + Math.cos(cb3a) * fs * 0.1;
           var cb3by = fy + Math.sin(cb3a) * fs * 0.1;
           var cb3tx = fx + Math.cos(cb3a) * fs * 1.02;
           var cb3ty = fy + Math.sin(cb3a) * fs * 1.02;
-          s += '<path d="M'+cb3bx+','+cb3by+' C'+(cb3bx+Math.cos(cb3a-0.6)*fs*0.55)+','+(cb3by+Math.sin(cb3a-0.6)*fs*0.55)+' '+(cb3tx+Math.cos(cb3a-0.2)*fs*0.18)+','+(cb3ty+Math.sin(cb3a-0.2)*fs*0.18)+' '+cb3tx+','+cb3ty+' C'+(cb3tx+Math.cos(cb3a)*fs*-0.12)+','+(cb3ty+Math.sin(cb3a)*fs*-0.12)+' '+(cb3tx+Math.cos(cb3a+0.2)*fs*0.18)+','+(cb3ty+Math.sin(cb3a+0.2)*fs*0.18)+' '+cb3tx+','+cb3ty+' C'+(cb3tx+Math.cos(cb3a+0.2)*fs*0.18)+','+(cb3ty+Math.sin(cb3a+0.2)*fs*0.18)+' '+(cb3bx+Math.cos(cb3a+0.6)*fs*0.55)+','+(cb3by+Math.sin(cb3a+0.6)*fs*0.55)+' '+cb3bx+','+cb3by+' Z" fill="'+fc+'" opacity="'+(0.74*bloomOp)+'"/>';
+          // Notched tip — sub-mid point pulled inward
+          var cb3nx = fx + Math.cos(cb3a) * fs * 0.86;
+          var cb3ny = fy + Math.sin(cb3a) * fs * 0.86;
+          s += '<path d="M'+cb3bx+','+cb3by+' C'+(cb3bx+Math.cos(cb3a-0.6)*fs*0.55)+','+(cb3by+Math.sin(cb3a-0.6)*fs*0.55)+' '+(cb3tx+Math.cos(cb3a-0.22)*fs*0.22)+','+(cb3ty+Math.sin(cb3a-0.22)*fs*0.22)+' '+cb3tx+','+cb3ty+' L'+cb3nx+','+cb3ny+' L'+cb3tx+','+cb3ty+' C'+(cb3tx+Math.cos(cb3a+0.22)*fs*0.22)+','+(cb3ty+Math.sin(cb3a+0.22)*fs*0.22)+' '+(cb3bx+Math.cos(cb3a+0.6)*fs*0.55)+','+(cb3by+Math.sin(cb3a+0.6)*fs*0.55)+' '+cb3bx+','+cb3by+' Z" fill="'+fc+'" opacity="'+(0.84*bloomOp)+'"/>';
+          // Edge highlight (§1 silk-snap)
+          s += '<path d="M'+cb3bx+','+cb3by+' Q'+(cb3tx+Math.cos(cb3a-0.16)*fs*0.16)+','+(cb3ty+Math.sin(cb3a-0.16)*fs*0.16)+' '+cb3tx+','+cb3ty+'" fill="none" stroke="#fff8e0" stroke-width="0.35" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+          // Center vein (§1) — cream stripe
+          s += '<line x1="'+(fx+Math.cos(cb3a)*fs*0.12)+'" y1="'+(fy+Math.sin(cb3a)*fs*0.12)+'" x2="'+(fx+Math.cos(cb3a)*fs*0.78)+'" y2="'+(fy+Math.sin(cb3a)*fs*0.78)+'" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.5)+'"/>';
         }
-        for (var cs3 = 0; cs3 < 7; cs3++) {
-          var sa3 = (cs3 * 22 - 66) * Math.PI / 180;
-          s += '<path d="M'+fx+','+fy+' C'+(fx+Math.cos(sa3)*fs*0.16)+','+(fy+Math.sin(sa3)*fs*0.16)+' '+(fx+Math.cos(sa3)*fs*0.36)+','+(fy+Math.sin(sa3)*fs*0.36)+' '+(fx+Math.cos(sa3)*fs*0.52)+','+(fy+Math.sin(sa3)*fs*0.52)+'" fill="none" stroke="'+PALETTE.cream+'" stroke-width="0.55" opacity="'+(0.75*bloomOp)+'"/>';
+        // 10 stamens (§3.A: cherry has 10) — filaments + dark anthers
+        for (var cs3 = 0; cs3 < 10; cs3++) {
+          var sa3 = (cs3 * 36) * Math.PI / 180;
+          var cs3rx = fx + Math.cos(sa3) * fs * 0.46;
+          var cs3ry = fy + Math.sin(sa3) * fs * 0.46;
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+cs3rx+'" y2="'+cs3ry+'" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+          s += '<circle cx="'+cs3rx+'" cy="'+cs3ry+'" r="'+(fs*0.045)+'" fill="#3a1208" opacity="'+(bloomOp*0.88)+'"/>';
+          s += '<circle cx="'+(cs3rx-fs*0.02)+'" cy="'+(cs3ry-fs*0.02)+'" r="'+(fs*0.018)+'" fill="#fff8e0" opacity="'+(bloomOp*0.7)+'"/>';
         }
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.14)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
-        s += '<path d="M'+(fx-fs*0.22)+','+(fy-fs*0.96)+' C'+(fx-fs*0.82)+','+(fy-fs*1.08)+' '+(fx-fs*1.02)+','+(fy-fs*0.36)+' '+(fx-fs*0.52)+','+(fy+fs*0.02)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+        // Center pistil
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.14)+'" fill="'+PALETTE.gold+'" opacity="'+(0.95*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
+        // Drip-curl on top petal (§9)
+        s += '<path d="M'+(fx-fs*0.22)+','+(fy-fs*0.96)+' C'+(fx-fs*0.82)+','+(fy-fs*1.08)+' '+(fx-fs*1.02)+','+(fy-fs*0.36)+' '+(fx-fs*0.52)+','+(fy+fs*0.02)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp25g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp25o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.06)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp25g+'" opacity="'+_bp25o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 26: // Coneflower — dusk halo cone
-        for (var ce3 = 0; ce3 < 10; ce3++) {
-          var ce3a = (ce3 * 36 + 8) * Math.PI / 180;
+      case 26: // Coneflower — Echinacea purpurea (drooping pink rays + spiny orange cone, §3.K reflexed)
+        // Cone AO base shadow (§2)
+        s += '<ellipse cx="'+fx+'" cy="'+(fy+fs*0.04)+'" rx="'+(fs*0.4)+'" ry="'+(fs*0.58)+'" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.6)+'"/>';
+        // 13 reflexed rays drooping outward (§3.K)
+        for (var ce3 = 0; ce3 < 13; ce3++) {
+          var ce3a = (ce3 * (360/13) + 8) * Math.PI / 180;
           var ce3bx = fx + Math.cos(ce3a) * fs * 0.28;
           var ce3by = fy + Math.sin(ce3a) * fs * 0.18;
-          var ce3tx = fx + Math.cos(ce3a) * fs * 1.15;
-          var ce3ty = fy + Math.sin(ce3a) * fs * 1.15 + fs * 0.28;
-          s += '<path d="M'+ce3bx+','+ce3by+' C'+(ce3bx+Math.cos(ce3a-0.38)*fs*0.44)+','+(ce3by+Math.sin(ce3a-0.38)*fs*0.44)+' '+(ce3tx+Math.cos(ce3a-0.14)*fs*0.12)+','+(ce3ty+Math.sin(ce3a-0.14)*fs*0.12)+' '+ce3tx+','+ce3ty+' C'+(ce3tx+Math.cos(ce3a+0.14)*fs*0.12)+','+(ce3ty+Math.sin(ce3a+0.14)*fs*0.12)+' '+(ce3bx+Math.cos(ce3a+0.38)*fs*0.44)+','+(ce3by+Math.sin(ce3a+0.38)*fs*0.44)+' '+ce3bx+','+ce3by+' Z" fill="'+fc+'" opacity="'+(0.62*bloomOp)+'"/>';
+          var ce3tx = fx + Math.cos(ce3a) * fs * 1.18;
+          var ce3ty = fy + Math.sin(ce3a) * fs * 1.18 + fs * 0.32;
+          // Dim back rays (upper half) to enforce z-stack (§2)
+          var _ce3op = (Math.sin(ce3a) > 0) ? (0.7*bloomOp) : (0.55*bloomOp);
+          s += '<path d="M'+ce3bx+','+ce3by+' C'+(ce3bx+Math.cos(ce3a-0.38)*fs*0.44)+','+(ce3by+Math.sin(ce3a-0.38)*fs*0.44)+' '+(ce3tx+Math.cos(ce3a-0.14)*fs*0.12)+','+(ce3ty+Math.sin(ce3a-0.14)*fs*0.12)+' '+ce3tx+','+ce3ty+' C'+(ce3tx+Math.cos(ce3a+0.14)*fs*0.12)+','+(ce3ty+Math.sin(ce3a+0.14)*fs*0.12)+' '+(ce3bx+Math.cos(ce3a+0.38)*fs*0.44)+','+(ce3by+Math.sin(ce3a+0.38)*fs*0.44)+' '+ce3bx+','+ce3by+' Z" fill="'+fc+'" opacity="'+_ce3op+'"/>';
+          // Center vein on ray
+          s += '<line x1="'+(fx+Math.cos(ce3a)*fs*0.34)+'" y1="'+(fy+Math.sin(ce3a)*fs*0.22)+'" x2="'+(fx+Math.cos(ce3a)*fs*0.95)+'" y2="'+(fy+Math.sin(ce3a)*fs*0.95+fs*0.24)+'" stroke="#f5ecd6" stroke-width="0.28" opacity="'+(bloomOp*0.42)+'"/>';
         }
-        s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.34)+'" ry="'+(fs*0.52)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
-        s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.2)+' C'+(fx-fs*0.68)+','+(fy-fs*0.94)+' '+(fx-fs*1.1)+','+(fy-fs*0.7)+' '+(fx-fs*0.92)+','+fy+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+        // Raised dome cone (§3.K)
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.06)+'" rx="'+(fs*0.36)+'" ry="'+(fs*0.55)+'" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.7)+'"/>';
+        s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.34)+'" ry="'+(fs*0.52)+'" fill="'+PALETTE.gold+'" opacity="'+(0.95*bloomOp)+'"/>';
+        // Spiny scale-florets — 14 dots on dome (§3.K)
+        for (var ce3s = 0; ce3s < 14; ce3s++) {
+          var ce3sa = (ce3s * (360/14)) * Math.PI / 180;
+          var ce3sx = fx + Math.cos(ce3sa) * fs * 0.22;
+          var ce3sy = fy + Math.sin(ce3sa) * fs * 0.36;
+          s += '<circle cx="'+ce3sx+'" cy="'+ce3sy+'" r="'+(fs*0.04)+'" fill="#3a1208" opacity="'+(bloomOp*0.8)+'"/>';
+          s += '<circle cx="'+(ce3sx-fs*0.012)+'" cy="'+(ce3sy-fs*0.014)+'" r="'+(fs*0.018)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.65)+'"/>';
+        }
+        // Cone tip cream pixel
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.42)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        // Drip-curl on a ray (§9)
+        s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.2)+' C'+(fx-fs*0.68)+','+(fy-fs*0.94)+' '+(fx-fs*1.1)+','+(fy-fs*0.7)+' '+(fx-fs*0.92)+','+fy+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Chimera stamen-glow (§7 — composite head leans gold halo)
+        if (t.chimerGen > 1) {
+          var _bp26g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp26o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.55)+'" ry="'+(fs*0.78)+'" fill="none" stroke="#c8a84b" stroke-width="'+_bp26g+'" opacity="'+_bp26o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 27: // Snapdragon — tower of mouths
+      case 27: // Snapdragon — Antirrhinum (hinged dragon mouth lower lip, didynamous, §3.G/§3.L)
+        // Spike-rachis shadow line
+        s += '<line x1="'+fx+'" y1="'+(fy-fs*1.1)+'" x2="'+fx+'" y2="'+(fy+fs*1.5)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+        // 5 stacked dragon mouths — bottom open, top buds (§3.G real spikes bloom bottom-up)
         for (var sn3 = 0; sn3 < 5; sn3++) {
           var sn3y = fy - fs*0.9 + sn3 * fs*0.46;
-          s += '<path d="M'+fx+','+sn3y+' C'+(fx-fs*0.55)+','+(sn3y-fs*0.14)+' '+(fx-fs*0.62)+','+(sn3y+fs*0.36)+' '+fx+','+(sn3y+fs*0.42)+' C'+(fx+fs*0.62)+','+(sn3y+fs*0.36)+' '+(fx+fs*0.55)+','+(sn3y-fs*0.14)+' '+fx+','+sn3y+' Z" fill="'+fc+'" opacity="'+((0.64-sn3*0.04)*bloomOp)+'"/>';
-          s += '<path d="M'+fx+','+(sn3y+fs*0.08)+' C'+(fx-fs*0.38)+','+(sn3y+fs*0.16)+' '+(fx-fs*0.42)+','+(sn3y+fs*0.52)+' '+fx+','+(sn3y+fs*0.56)+' C'+(fx+fs*0.42)+','+(sn3y+fs*0.52)+' '+(fx+fs*0.38)+','+(sn3y+fs*0.16)+' '+fx+','+(sn3y+fs*0.08)+' Z" fill="'+PALETTE.cream+'" opacity="'+(0.26*bloomOp)+'"/>';
+          // Hood (upper lip) — back petal, dimmed
+          s += '<path d="M'+fx+','+sn3y+' C'+(fx-fs*0.55)+','+(sn3y-fs*0.14)+' '+(fx-fs*0.62)+','+(sn3y+fs*0.36)+' '+fx+','+(sn3y+fs*0.42)+' C'+(fx+fs*0.62)+','+(sn3y+fs*0.36)+' '+(fx+fs*0.55)+','+(sn3y-fs*0.14)+' '+fx+','+sn3y+' Z" fill="'+fc+'" opacity="'+((0.78-sn3*0.06)*bloomOp)+'"/>';
+          // Hinge dark seam (mouth line — warm dark §1)
+          s += '<path d="M'+(fx-fs*0.5)+','+(sn3y+fs*0.14)+' Q'+fx+','+(sn3y+fs*0.22)+' '+(fx+fs*0.5)+','+(sn3y+fs*0.14)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.55" stroke-linecap="round" opacity="'+(bloomOp*0.78)+'"/>';
+          // Lower lip — cream, lighter
+          s += '<path d="M'+fx+','+(sn3y+fs*0.08)+' C'+(fx-fs*0.38)+','+(sn3y+fs*0.16)+' '+(fx-fs*0.42)+','+(sn3y+fs*0.52)+' '+fx+','+(sn3y+fs*0.56)+' C'+(fx+fs*0.42)+','+(sn3y+fs*0.52)+' '+(fx+fs*0.38)+','+(sn3y+fs*0.16)+' '+fx+','+(sn3y+fs*0.08)+' Z" fill="#f5ecd6" opacity="'+(0.42*bloomOp)+'"/>';
+          // Lower-lip hinge highlight
+          s += '<path d="M'+(fx-fs*0.36)+','+(sn3y+fs*0.18)+' Q'+fx+','+(sn3y+fs*0.1)+' '+(fx+fs*0.36)+','+(sn3y+fs*0.18)+'" fill="none" stroke="#fff8e0" stroke-width="0.32" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+          // Throat dot — didynamous stamen pair peeking
+          if (sn3 < 3) {
+            s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(sn3y+fs*0.26)+'" r="'+(fs*0.04)+'" fill="#3a1208" opacity="'+(bloomOp*0.8)+'"/>';
+            s += '<circle cx="'+(fx+fs*0.06)+'" cy="'+(sn3y+fs*0.28)+'" r="'+(fs*0.04)+'" fill="#3a1208" opacity="'+(bloomOp*0.8)+'"/>';
+          }
         }
-        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.12)+'" r="'+(fs*0.14)+'" fill="'+PALETTE.gold+'" opacity="'+(0.82*bloomOp)+'"/>';
-        s += '<path d="M'+fx+','+(fy-fs*0.9)+' C'+(fx+fs*0.46)+','+(fy-fs*1.02)+' '+(fx+fs*0.62)+','+(fy-fs*0.42)+' '+(fx+fs*0.18)+','+(fy-fs*0.04)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+        // Center stamen highlight
+        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.12)+'" r="'+(fs*0.14)+'" fill="'+PALETTE.gold+'" opacity="'+(0.88*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.12)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
+        // Drip-curl on top bud (§9)
+        s += '<path d="M'+fx+','+(fy-fs*0.9)+' C'+(fx+fs*0.46)+','+(fy-fs*1.02)+' '+(fx+fs*0.62)+','+(fy-fs*0.42)+' '+(fx+fs*0.18)+','+(fy-fs*0.04)+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp27g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp27o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<line x1="'+fx+'" y1="'+(fy-fs*1.0)+'" x2="'+fx+'" y2="'+(fy+fs*1.4)+'" stroke="#7ab356" stroke-width="'+_bp27g+'" opacity="'+_bp27o+'" style="mix-blend-mode:screen" stroke-linecap="round"/>';
+        }
         break;
-      case 28: // Bleeding Heart — widow's garland
-        s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="'+fc+'" stroke-width="0.9" opacity="'+(0.7*bloomOp)+'"/>';
+      case 28: // Bleeding Heart — Lamprocapnos spectabilis (locket hearts dangling, §3.H pendant)
+        // Arching pedicel (warm shadow stroke §1)
+        s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.7" opacity="'+(bloomOp*0.7)+'"/>';
+        // 4 dangling hearts — each with reflexed outer petals + hanging keel (§3.H)
         for (var bh3 = 0; bh3 < 4; bh3++) {
           var bh3x = fx - fs*0.78 + bh3 * fs*0.52;
           var bh3y = fy - fs*0.48 + Math.sin(bh3*0.9)*fs*0.1;
-          s += '<path d="M'+bh3x+','+bh3y+' C'+(bh3x-fs*0.24)+','+(bh3y-fs*0.22)+' '+(bh3x-fs*0.48)+','+(bh3y+fs*0.08)+' '+bh3x+','+(bh3y+fs*0.42)+' C'+(bh3x+fs*0.48)+','+(bh3y+fs*0.08)+' '+(bh3x+fs*0.24)+','+(bh3y-fs*0.22)+' '+bh3x+','+bh3y+' Z" fill="'+fc+'" opacity="'+(0.76*bloomOp)+'"/>';
-          s += '<path d="M'+bh3x+','+(bh3y+fs*0.32)+' C'+bh3x+','+(bh3y+fs*0.54)+' '+bh3x+','+(bh3y+fs*0.66)+' '+bh3x+','+(bh3y+fs*0.78)+'" fill="none" stroke="'+PALETTE.cream+'" stroke-width="0.55" opacity="'+(0.72*bloomOp)+'"/>';
+          // Pedicel from arch to heart
+          s += '<line x1="'+bh3x+'" y1="'+(bh3y-fs*0.25)+'" x2="'+bh3x+'" y2="'+bh3y+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.4" opacity="'+(bloomOp*0.65)+'" stroke-linecap="round"/>';
+          // Heart shadow (back petals, dim)
+          s += '<path d="M'+bh3x+','+(bh3y-fs*0.02)+' C'+(bh3x-fs*0.28)+','+(bh3y-fs*0.26)+' '+(bh3x-fs*0.52)+','+(bh3y+fs*0.06)+' '+bh3x+','+(bh3y+fs*0.44)+' C'+(bh3x+fs*0.52)+','+(bh3y+fs*0.06)+' '+(bh3x+fs*0.28)+','+(bh3y-fs*0.26)+' '+bh3x+','+(bh3y-fs*0.02)+' Z" fill="rgba(40,20,5,0.45)" opacity="'+(bloomOp*0.5)+'"/>';
+          // Heart shape — full sat front
+          s += '<path d="M'+bh3x+','+bh3y+' C'+(bh3x-fs*0.24)+','+(bh3y-fs*0.22)+' '+(bh3x-fs*0.48)+','+(bh3y+fs*0.08)+' '+bh3x+','+(bh3y+fs*0.42)+' C'+(bh3x+fs*0.48)+','+(bh3y+fs*0.08)+' '+(bh3x+fs*0.24)+','+(bh3y-fs*0.22)+' '+bh3x+','+bh3y+' Z" fill="'+fc+'" opacity="'+(0.86*bloomOp)+'"/>';
+          // Reflexed upper petal hooks (§3.H 2 outer petals reflexed up)
+          s += '<path d="M'+(bh3x-fs*0.22)+','+(bh3y-fs*0.18)+' Q'+(bh3x-fs*0.32)+','+(bh3y-fs*0.32)+' '+(bh3x-fs*0.18)+','+(bh3y-fs*0.36)+'" fill="none" stroke="'+fc+'" stroke-width="0.5" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+(bh3x+fs*0.22)+','+(bh3y-fs*0.18)+' Q'+(bh3x+fs*0.32)+','+(bh3y-fs*0.32)+' '+(bh3x+fs*0.18)+','+(bh3y-fs*0.36)+'" fill="none" stroke="'+fc+'" stroke-width="0.5" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+          // Inner cream "tear" droplet — the dangling keel
+          s += '<path d="M'+bh3x+','+(bh3y+fs*0.32)+' C'+(bh3x-fs*0.04)+','+(bh3y+fs*0.5)+' '+(bh3x+fs*0.04)+','+(bh3y+fs*0.66)+' '+bh3x+','+(bh3y+fs*0.82)+'" fill="none" stroke="#f5ecd6" stroke-width="0.6" opacity="'+(bloomOp*0.85)+'" stroke-linecap="round"/>';
+          // Cream highlight on heart upper-left
+          s += '<ellipse cx="'+(bh3x-fs*0.1)+'" cy="'+(bh3y+fs*0.04)+'" rx="'+(fs*0.06)+'" ry="'+(fs*0.12)+'" fill="#fff8e0" opacity="'+(bloomOp*0.45)+'"/>';
         }
-        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.55)+'" r="'+(fs*0.1)+'" fill="'+PALETTE.gold+'" opacity="'+(0.76*bloomOp)+'"/>';
-        s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+        // Center anchor stamen
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.55)+'" r="'+(fs*0.1)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.55)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
+        // Edge highlight on arch
+        s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.5)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp28g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp28o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+(fx-fs*1.1)+','+(fy-fs*0.55)+' C'+(fx-fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*0.45)+','+(fy-fs*1.05)+' '+(fx+fs*1.1)+','+(fy-fs*0.55)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp28g+'" opacity="'+_bp28o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
       // ── set-103-8: NEW BLOOM TYPES (ChatGPT) ──────────────────────
       case 29: // Allium — spherical cluster of tiny star-shaped florets on radiating pedicels
@@ -23062,14 +23256,34 @@ document.addEventListener('keydown', function(e) {
         // Center boss
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.2)+'" r="'+(fs*0.15)+'" fill="'+PALETTE.cream+'" opacity="'+(bloomOp*0.6)+'"/>';
         break;
-      case 30: // Trumpet Vine
+      case 30: // Trumpet Vine — Campsis radicans (orange-red trumpet, 5 fused lobes, §3.D throat glow)
+        // Trumpet silhouette
         s += '<path d="M'+fx+','+(fy+fs*0.18)+' C'+(fx-fs*0.18)+','+(fy-fs*0.06)+' '+(fx-fs*0.24)+','+(fy-fs*0.52)+' '+(fx-fs*0.20)+','+(fy-fs*1.00)+' C'+(fx-fs*0.18)+','+(fy-fs*1.34)+' '+(fx-fs*0.40)+','+(fy-fs*1.72)+' '+(fx-fs*0.88)+','+(fy-fs*1.96)+' C'+(fx-fs*1.12)+','+(fy-fs*2.08)+' '+(fx-fs*1.28)+','+(fy-fs*2.06)+' '+(fx-fs*1.36)+','+(fy-fs*1.96)+' C'+(fx-fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*1.36)+','+(fy-fs*1.96)+' C'+(fx+fs*1.28)+','+(fy-fs*2.06)+' '+(fx+fs*1.12)+','+(fy-fs*2.08)+' '+(fx+fs*0.88)+','+(fy-fs*1.96)+' C'+(fx+fs*0.40)+','+(fy-fs*1.72)+' '+(fx+fs*0.18)+','+(fy-fs*1.34)+' '+(fx+fs*0.20)+','+(fy-fs*1.00)+' C'+(fx+fs*0.24)+','+(fy-fs*0.52)+' '+(fx+fs*0.18)+','+(fy-fs*0.06)+' '+fx+','+(fy+fs*0.18)+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
+        // Deep-throat gradient — dark recess at base of mouth (§6 throat glow recipe)
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.6)+'" rx="'+(fs*0.32)+'" ry="'+(fs*0.86)+'" fill="rgba(40,20,5,0.6)" opacity="'+(bloomOp*0.72)+'"/>';
         s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.88)+'" rx="'+(fs*0.34)+'" ry="'+(fs*0.86)+'" fill="'+bg+'" opacity="'+(bloomOp*0.22)+'"/>';
-        s += '<path d="M'+(fx-fs*0.54)+','+(fy-fs*1.82)+' C'+(fx-fs*0.40)+','+(fy-fs*1.52)+' '+(fx-fs*0.26)+','+(fy-fs*1.20)+' '+(fx-fs*0.14)+','+(fy-fs*0.90)+'" fill="none" stroke="'+PALETTE.cream+'" stroke-width="0.28" opacity="'+(bloomOp*0.16)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*1.90)+' C'+(fx-fs*0.10)+','+(fy-fs*1.58)+' '+(fx-fs*0.04)+','+(fy-fs*1.20)+' '+(fx-fs*0.02)+','+(fy-fs*0.88)+'" fill="none" stroke="'+PALETTE.cream+'" stroke-width="0.28" opacity="'+(bloomOp*0.14)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.18)+','+(fy-fs*1.90)+' C'+(fx+fs*0.10)+','+(fy-fs*1.58)+' '+(fx+fs*0.04)+','+(fy-fs*1.20)+' '+(fx+fs*0.02)+','+(fy-fs*0.88)+'" fill="none" stroke="'+PALETTE.cream+'" stroke-width="0.28" opacity="'+(bloomOp*0.14)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.54)+','+(fy-fs*1.82)+' C'+(fx+fs*0.40)+','+(fy-fs*1.52)+' '+(fx+fs*0.26)+','+(fy-fs*1.20)+' '+(fx+fs*0.14)+','+(fy-fs*0.90)+'" fill="none" stroke="'+PALETTE.cream+'" stroke-width="0.28" opacity="'+(bloomOp*0.16)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*1.12)+','+(fy-fs*1.98)+' C'+(fx-fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*1.12)+','+(fy-fs*1.98)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.55" stroke-linecap="round"/>';
+        // 4 cream throat veins (lobe seams)
+        s += '<path d="M'+(fx-fs*0.54)+','+(fy-fs*1.82)+' C'+(fx-fs*0.40)+','+(fy-fs*1.52)+' '+(fx-fs*0.26)+','+(fy-fs*1.20)+' '+(fx-fs*0.14)+','+(fy-fs*0.90)+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.4)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*1.90)+' C'+(fx-fs*0.10)+','+(fy-fs*1.58)+' '+(fx-fs*0.04)+','+(fy-fs*1.20)+' '+(fx-fs*0.02)+','+(fy-fs*0.88)+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.36)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx+fs*0.18)+','+(fy-fs*1.90)+' C'+(fx+fs*0.10)+','+(fy-fs*1.58)+' '+(fx+fs*0.04)+','+(fy-fs*1.20)+' '+(fx+fs*0.02)+','+(fy-fs*0.88)+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.36)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx+fs*0.54)+','+(fy-fs*1.82)+' C'+(fx+fs*0.40)+','+(fy-fs*1.52)+' '+(fx+fs*0.26)+','+(fy-fs*1.20)+' '+(fx+fs*0.14)+','+(fy-fs*0.90)+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.4)+'" stroke-linecap="round"/>';
+        // Stamen kit — 4 stamens visible at mouth (§3.D)
+        for (var tv30 = 0; tv30 < 4; tv30++) {
+          var tv30x = fx - fs*0.4 + tv30*fs*0.27;
+          s += '<line x1="'+(fx+(tv30x-fx)*0.5)+'" y1="'+(fy-fs*0.4)+'" x2="'+tv30x+'" y2="'+(fy-fs*1.7)+'" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+          s += '<ellipse cx="'+tv30x+'" cy="'+(fy-fs*1.74)+'" rx="'+(fs*0.05)+'" ry="'+(fs*0.07)+'" fill="#e8b53a" opacity="'+(bloomOp*0.9)+'"/>';
+          s += '<circle cx="'+(tv30x-fs*0.02)+'" cy="'+(fy-fs*1.76)+'" r="'+(fs*0.02)+'" fill="#fff8e0" opacity="'+(bloomOp*0.75)+'"/>';
+        }
+        // Rim edge highlight (§1)
+        s += '<path d="M'+(fx-fs*1.12)+','+(fy-fs*1.98)+' C'+(fx-fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*0.68)+','+(fy-fs*2.14)+' '+(fx+fs*1.12)+','+(fy-fs*1.98)+'" fill="none" stroke="#fff8e0" stroke-width="0.55" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
+        // Drip-curl pair on left rim lobe (§9)
+        s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' Q'+(fx-fs*1.4)+','+(fy-fs*1.86)+' '+(fx-fs*1.28)+','+(fy-fs*1.78)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp30g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp30o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+(fx-fs*1.36)+','+(fy-fs*1.96)+' C'+(fx-fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*1.36)+','+(fy-fs*1.96)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp30g+'" opacity="'+_bp30o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
       case 31: // Delphinium — tall spire of layered cupped florets, graduating upward
         // Central rachis
@@ -23140,64 +23354,182 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx+fs*0.74)+'" cy="'+(fy-fs*1.46)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
         s += '<circle cx="'+(fx+fs*0.84)+'" cy="'+(fy-fs*1.54)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
         break;
-      case 33: // Catkin
-        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.10)+','+(fy+fs*0.18)+' '+(fx+fs*0.24)+','+(fy+fs*0.52)+' '+(fx+fs*0.28)+','+(fy+fs*0.92)+' C'+(fx+fs*0.32)+','+(fy+fs*1.28)+' '+(fx+fs*0.24)+','+(fy+fs*1.66)+' '+(fx+fs*0.12)+','+(fy+fs*1.94)+' C'+(fx+fs*0.04)+','+(fy+fs*2.08)+' '+(fx-fs*0.06)+','+(fy+fs*2.12)+' '+(fx-fs*0.14)+','+(fy+fs*2.02)+' C'+(fx-fs*0.24)+','+(fy+fs*1.86)+' '+(fx-fs*0.28)+','+(fy+fs*1.56)+' '+(fx-fs*0.26)+','+(fy+fs*1.22)+' C'+(fx-fs*0.22)+','+(fy+fs*0.84)+' '+(fx-fs*0.14)+','+(fy+fs*0.46)+' '+(fx-fs*0.06)+','+(fy+fs*0.16)+' C'+(fx-fs*0.02)+','+(fy+fs*0.04)+' '+fx+','+(fy+fs*0.00)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
-        s += '<path d="M'+(fx-fs*0.02)+','+(fy+fs*0.10)+' C'+(fx+fs*0.06)+','+(fy+fs*0.28)+' '+(fx+fs*0.14)+','+(fy+fs*0.62)+' '+(fx+fs*0.16)+','+(fy+fs*0.96)+' C'+(fx+fs*0.18)+','+(fy+fs*1.24)+' '+(fx+fs*0.12)+','+(fy+fs*1.56)+' '+(fx+fs*0.04)+','+(fy+fs*1.80)+'" fill="none" stroke="rgba(240,235,216,0.38)" stroke-width="0.5" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.08)+','+(fy+fs*0.28)+' L'+(fx+fs*0.06)+','+(fy+fs*0.34)+' M'+(fx-fs*0.02)+','+(fy+fs*0.50)+' L'+(fx+fs*0.10)+','+(fy+fs*0.56)+' M'+(fx-fs*0.10)+','+(fy+fs*0.72)+' L'+(fx+fs*0.02)+','+(fy+fs*0.78)+' M'+(fx-fs*0.02)+','+(fy+fs*0.94)+' L'+(fx+fs*0.10)+','+(fy+fs*1.00)+' M'+(fx-fs*0.10)+','+(fy+fs*1.16)+' L'+(fx+fs*0.02)+','+(fy+fs*1.22)+' M'+(fx-fs*0.02)+','+(fy+fs*1.38)+' L'+(fx+fs*0.08)+','+(fy+fs*1.44)+' M'+(fx-fs*0.08)+','+(fy+fs*1.60)+' L'+(fx+fs*0.02)+','+(fy+fs*1.66)+' M'+(fx-fs*0.04)+','+(fy+fs*1.80)+' L'+(fx+fs*0.04)+','+(fy+fs*1.86)+'" fill="none" stroke="'+bg+'" stroke-width="0.32" opacity="'+(bloomOp*0.34)+'" stroke-linecap="round"/>';
+      case 33: // Catkin — Salix/Betula pendant fuzzy "lamb tail" cylinder (§3.G pendant rebuild)
+        // Pendant peduncle stalk attaching to plant (warm shadow stroke)
+        s += '<line x1="'+fx+'" y1="'+(fy-fs*0.2)+'" x2="'+fx+'" y2="'+fy+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.5" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+        // Cylinder shadow base — warm dark behind catkin
+        s += '<path d="M'+(fx-fs*0.32)+','+(fy+fs*0.08)+' C'+(fx-fs*0.4)+','+(fy+fs*0.6)+' '+(fx-fs*0.36)+','+(fy+fs*1.4)+' '+(fx-fs*0.18)+','+(fy+fs*2.0)+' C'+(fx-fs*0.08)+','+(fy+fs*2.18)+' '+(fx+fs*0.04)+','+(fy+fs*2.18)+' '+(fx+fs*0.16)+','+(fy+fs*2.0)+' C'+(fx+fs*0.36)+','+(fy+fs*1.4)+' '+(fx+fs*0.4)+','+(fy+fs*0.6)+' '+(fx+fs*0.32)+','+(fy+fs*0.08)+' Z" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.55)+'"/>';
+        // Main catkin body — fuzzy cylinder
+        s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.06)+' C'+(fx-fs*0.34)+','+(fy+fs*0.58)+' '+(fx-fs*0.32)+','+(fy+fs*1.34)+' '+(fx-fs*0.16)+','+(fy+fs*1.94)+' C'+(fx-fs*0.06)+','+(fy+fs*2.1)+' '+(fx+fs*0.04)+','+(fy+fs*2.1)+' '+(fx+fs*0.14)+','+(fy+fs*1.94)+' C'+(fx+fs*0.32)+','+(fy+fs*1.34)+' '+(fx+fs*0.34)+','+(fy+fs*0.58)+' '+(fx+fs*0.28)+','+(fy+fs*0.06)+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
+        // Fuzzy fur — many tiny short hairs (silvery filaments) all over surface
+        for (var ck33 = 0; ck33 < 28; ck33++) {
+          var ck33t = ck33 / 27;
+          var ck33y = fy + fs*0.1 + ck33t * fs*1.92;
+          // Width follows cylinder taper
+          var ck33w = fs * (0.28 + Math.sin(ck33t*Math.PI)*0.06) * (1.0 - Math.abs(ck33t-0.5)*0.4);
+          var ck33sx = (ck33 % 2 === 0) ? -1 : 1;
+          var ck33dx = ck33sx * ck33w * (0.7 + (ck33%3)*0.1);
+          // Hair: tiny outward stroke
+          s += '<line x1="'+(fx+ck33dx*0.7)+'" y1="'+ck33y+'" x2="'+(fx+ck33dx*1.15)+'" y2="'+(ck33y-fs*0.04*ck33sx)+'" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.8)+'" stroke-linecap="round"/>';
+          // Tiny dark anther dot mid-hair (every 3rd)
+          if (ck33 % 3 === 0) {
+            s += '<circle cx="'+(fx+ck33dx*0.95)+'" cy="'+(ck33y-fs*0.02*ck33sx)+'" r="'+(fs*0.025)+'" fill="#3a1208" opacity="'+(bloomOp*0.78)+'"/>';
+          }
+        }
+        // Cream side highlight along cylinder spine (§5 cup highlight)
+        s += '<path d="M'+(fx-fs*0.08)+','+(fy+fs*0.16)+' C'+(fx-fs*0.04)+','+(fy+fs*0.6)+' '+(fx-fs*0.02)+','+(fy+fs*1.2)+' '+(fx-fs*0.04)+','+(fy+fs*1.8)+'" fill="none" stroke="#fff8e0" stroke-width="0.5" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+        // Pollen specks at top and bottom
+        s += '<circle cx="'+(fx+fs*0.08)+'" cy="'+(fy+fs*0.18)+'" r="'+(fs*0.04)+'" fill="#e8b53a" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy+fs*1.78)+'" r="'+(fs*0.04)+'" fill="#e8b53a" opacity="'+(bloomOp*0.8)+'"/>';
+        // Tip drip-curl (§9)
+        s += '<path d="M'+(fx-fs*0.06)+','+(fy+fs*2.04)+' Q'+fx+','+(fy+fs*2.14)+' '+(fx+fs*0.06)+','+(fy+fs*2.04)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp33g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp33o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.06)+' C'+(fx-fs*0.34)+','+(fy+fs*0.58)+' '+(fx-fs*0.32)+','+(fy+fs*1.34)+' '+(fx-fs*0.16)+','+(fy+fs*1.94)+' C'+(fx-fs*0.06)+','+(fy+fs*2.1)+' '+(fx+fs*0.04)+','+(fy+fs*2.1)+' '+(fx+fs*0.14)+','+(fy+fs*1.94)+' C'+(fx+fs*0.32)+','+(fy+fs*1.34)+' '+(fx+fs*0.34)+','+(fy+fs*0.58)+' '+(fx+fs*0.28)+','+(fy+fs*0.06)+' Z" fill="none" stroke="#7ab356" stroke-width="'+_bp33g+'" opacity="'+_bp33o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 34: // Pitcher Bloom
+      case 34: // Pitcher Bloom — Sarracenia (tubular trap + lid, mythic-flavored)
+        // AO base under pitcher
+        s += '<ellipse cx="'+(fx+fs*0.36)+'" cy="'+(fy+fs*1.0)+'" rx="'+(fs*0.7)+'" ry="'+(fs*0.16)+'" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.6)+'"/>';
+        // Pitcher tube body
         s += '<path d="M'+fx+','+(fy+fs*0.92)+' C'+(fx-fs*0.30)+','+(fy+fs*0.84)+' '+(fx-fs*0.58)+','+(fy+fs*0.58)+' '+(fx-fs*0.68)+','+(fy+fs*0.18)+' C'+(fx-fs*0.82)+','+(fy-fs*0.34)+' '+(fx-fs*0.66)+','+(fy-fs*0.90)+' '+(fx-fs*0.22)+','+(fy-fs*1.22)+' C'+(fx+fs*0.10)+','+(fy-fs*1.46)+' '+(fx+fs*0.52)+','+(fy-fs*1.42)+' '+(fx+fs*0.82)+','+(fy-fs*1.14)+' C'+(fx+fs*1.10)+','+(fy-fs*0.90)+' '+(fx+fs*1.22)+','+(fy-fs*0.52)+' '+(fx+fs*1.12)+','+(fy-fs*0.12)+' C'+(fx+fs*1.04)+','+(fy+fs*0.26)+' '+(fx+fs*0.94)+','+(fy+fs*0.54)+' '+(fx+fs*0.74)+','+(fy+fs*0.74)+' C'+(fx+fs*0.52)+','+(fy+fs*0.94)+' '+(fx+fs*0.26)+','+(fy+fs*1.02)+' '+fx+','+(fy+fs*0.92)+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
-        s += '<path d="M'+(fx-fs*0.06)+','+(fy+fs*0.58)+' C'+(fx-fs*0.18)+','+(fy+fs*0.30)+' '+(fx-fs*0.20)+','+(fy-fs*0.08)+' '+(fx-fs*0.02)+','+(fy-fs*0.30)+' C'+(fx+fs*0.12)+','+(fy-fs*0.50)+' '+(fx+fs*0.34)+','+(fy-fs*0.56)+' '+(fx+fs*0.54)+','+(fy-fs*0.42)+' C'+(fx+fs*0.42)+','+(fy-fs*0.06)+' '+(fx+fs*0.26)+','+(fy+fs*0.24)+' '+(fx+fs*0.10)+','+(fy+fs*0.50)+' C'+(fx+fs*0.04)+','+(fy+fs*0.60)+' '+(fx-fs*0.00)+','+(fy+fs*0.62)+' '+(fx-fs*0.06)+','+(fy+fs*0.58)+' Z" fill="'+bg+'" opacity="'+(bloomOp*0.26)+'"/>';
-        s += '<path d="M'+(fx-fs*0.26)+','+(fy-fs*0.20)+' C'+(fx-fs*0.08)+','+(fy-fs*1.02)+' '+(fx+fs*0.34)+','+(fy-fs*1.36)+' '+(fx+fs*0.82)+','+(fy-fs*0.86)+' C'+(fx+fs*0.62)+','+(fy-fs*1.26)+' '+(fx+fs*0.28)+','+(fy-fs*1.42)+' '+(fx-fs*0.06)+','+(fy-fs*1.26)+' C'+(fx-fs*0.42)+','+(fy-fs*1.08)+' '+(fx-fs*0.56)+','+(fy-fs*0.66)+' '+(fx-fs*0.26)+','+(fy-fs*0.20)+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.94)+'"/>';
-        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*0.18)+' C'+(fx-fs*0.02)+','+(fy-fs*0.94)+' '+(fx+fs*0.34)+','+(fy-fs*1.24)+' '+(fx+fs*0.70)+','+(fy-fs*0.92)+'" fill="none" stroke="rgba(240,235,216,0.42)" stroke-width="0.52" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.12)+','+(fy-fs*0.28)+' C'+(fx-fs*0.02)+','+(fy-fs*0.72)+' '+(fx+fs*0.08)+','+(fy-fs*0.94)+' '+(fx+fs*0.18)+','+(fy-fs*1.08)+'" fill="none" stroke="'+bg+'" stroke-width="0.24" opacity="'+(bloomOp*0.34)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.02)+','+(fy-fs*0.32)+' C'+(fx+fs*0.10)+','+(fy-fs*0.74)+' '+(fx+fs*0.20)+','+(fy-fs*0.96)+' '+(fx+fs*0.30)+','+(fy-fs*1.10)+'" fill="none" stroke="'+bg+'" stroke-width="0.24" opacity="'+(bloomOp*0.34)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.16)+','+(fy-fs*0.30)+' C'+(fx+fs*0.24)+','+(fy-fs*0.68)+' '+(fx+fs*0.34)+','+(fy-fs*0.90)+' '+(fx+fs*0.44)+','+(fy-fs*1.02)+'" fill="none" stroke="'+bg+'" stroke-width="0.24" opacity="'+(bloomOp*0.34)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.28)+','+(fy-fs*0.22)+' C'+(fx+fs*0.34)+','+(fy-fs*0.02)+' '+(fx+fs*0.40)+','+(fy+fs*0.14)+' '+(fx+fs*0.46)+','+(fy+fs*0.28)+'" fill="none" stroke="'+bg+'" stroke-width="0.28" opacity="'+(bloomOp*0.42)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.40)+','+(fy+fs*0.14)+' C'+(fx+fs*0.46)+','+(fy+fs*0.22)+' '+(fx+fs*0.48)+','+(fy+fs*0.30)+' '+(fx+fs*0.46)+','+(fy+fs*0.38)+' C'+(fx+fs*0.42)+','+(fy+fs*0.46)+' '+(fx+fs*0.36)+','+(fy+fs*0.48)+' '+(fx+fs*0.32)+','+(fy+fs*0.42)+' C'+(fx+fs*0.30)+','+(fy+fs*0.34)+' '+(fx+fs*0.32)+','+(fy+fs*0.24)+' '+(fx+fs*0.40)+','+(fy+fs*0.14)+' Z" fill="'+PALETTE.cream+'" opacity="'+(bloomOp*0.88)+'"/>';
+        // Inside trap shadow (warm dark §6 deep throat)
+        s += '<path d="M'+(fx-fs*0.06)+','+(fy+fs*0.58)+' C'+(fx-fs*0.18)+','+(fy+fs*0.30)+' '+(fx-fs*0.20)+','+(fy-fs*0.08)+' '+(fx-fs*0.02)+','+(fy-fs*0.30)+' C'+(fx+fs*0.12)+','+(fy-fs*0.50)+' '+(fx+fs*0.34)+','+(fy-fs*0.56)+' '+(fx+fs*0.54)+','+(fy-fs*0.42)+' C'+(fx+fs*0.42)+','+(fy-fs*0.06)+' '+(fx+fs*0.26)+','+(fy+fs*0.24)+' '+(fx+fs*0.10)+','+(fy+fs*0.50)+' C'+(fx+fs*0.04)+','+(fy+fs*0.60)+' '+(fx-fs*0.00)+','+(fy+fs*0.62)+' '+(fx-fs*0.06)+','+(fy+fs*0.58)+' Z" fill="rgba(40,20,5,0.65)" opacity="'+(bloomOp*0.5)+'"/>';
+        // Lid (modified leaf, opens upward)
+        s += '<path d="M'+(fx-fs*0.26)+','+(fy-fs*0.20)+' C'+(fx-fs*0.08)+','+(fy-fs*1.02)+' '+(fx+fs*0.34)+','+(fy-fs*1.36)+' '+(fx+fs*0.82)+','+(fy-fs*0.86)+' C'+(fx+fs*0.62)+','+(fy-fs*1.26)+' '+(fx+fs*0.28)+','+(fy-fs*1.42)+' '+(fx-fs*0.06)+','+(fy-fs*1.26)+' C'+(fx-fs*0.42)+','+(fy-fs*1.08)+' '+(fx-fs*0.56)+','+(fy-fs*0.66)+' '+(fx-fs*0.26)+','+(fy-fs*0.20)+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.96)+'"/>';
+        // Lid edge highlight (§1)
+        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*0.18)+' C'+(fx-fs*0.02)+','+(fy-fs*0.94)+' '+(fx+fs*0.34)+','+(fy-fs*1.24)+' '+(fx+fs*0.70)+','+(fy-fs*0.92)+'" fill="none" stroke="#fff8e0" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.6)+'"/>';
+        // Lid red veins (Sarracenia signature)
+        s += '<path d="M'+(fx-fs*0.12)+','+(fy-fs*0.28)+' C'+(fx-fs*0.02)+','+(fy-fs*0.72)+' '+(fx+fs*0.08)+','+(fy-fs*0.94)+' '+(fx+fs*0.18)+','+(fy-fs*1.08)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.3" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx+fs*0.02)+','+(fy-fs*0.32)+' C'+(fx+fs*0.10)+','+(fy-fs*0.74)+' '+(fx+fs*0.20)+','+(fy-fs*0.96)+' '+(fx+fs*0.30)+','+(fy-fs*1.10)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.3" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx+fs*0.16)+','+(fy-fs*0.30)+' C'+(fx+fs*0.24)+','+(fy-fs*0.68)+' '+(fx+fs*0.34)+','+(fy-fs*0.90)+' '+(fx+fs*0.44)+','+(fy-fs*1.02)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.3" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
+        // Tube highlight stripe
+        s += '<path d="M'+(fx+fs*0.28)+','+(fy-fs*0.22)+' C'+(fx+fs*0.34)+','+(fy-fs*0.02)+' '+(fx+fs*0.40)+','+(fy+fs*0.14)+' '+(fx+fs*0.46)+','+(fy+fs*0.28)+'" fill="none" stroke="#f5ecd6" stroke-width="0.34" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        // Stamen kit — small yellow cluster peeking inside throat
+        s += '<ellipse cx="'+(fx+fs*0.4)+'" cy="'+(fy+fs*0.32)+'" rx="'+(fs*0.1)+'" ry="'+(fs*0.16)+'" fill="#e8b53a" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx+fs*0.4)+'" cy="'+(fy+fs*0.3)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(bloomOp*0.8)+'"/>';
+        // Lure droplet (cream highlight) at lip
+        s += '<path d="M'+(fx+fs*0.40)+','+(fy+fs*0.14)+' C'+(fx+fs*0.46)+','+(fy+fs*0.22)+' '+(fx+fs*0.48)+','+(fy+fs*0.30)+' '+(fx+fs*0.46)+','+(fy+fs*0.38)+' C'+(fx+fs*0.42)+','+(fy+fs*0.46)+' '+(fx+fs*0.36)+','+(fy+fs*0.48)+' '+(fx+fs*0.32)+','+(fy+fs*0.42)+' C'+(fx+fs*0.30)+','+(fy+fs*0.34)+' '+(fx+fs*0.32)+','+(fy+fs*0.24)+' '+(fx+fs*0.40)+','+(fy+fs*0.14)+' Z" fill="#fff8e0" opacity="'+(bloomOp*0.9)+'"/>';
+        // Drip-curl on lid tip (§9)
+        s += '<path d="M'+(fx-fs*0.26)+','+(fy-fs*0.2)+' Q'+(fx-fs*0.32)+','+(fy-fs*0.4)+' '+(fx-fs*0.16)+','+(fy-fs*0.46)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.4" opacity="'+(bloomOp*0.6)+'" stroke-linecap="round"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp34g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp34o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+fx+','+(fy+fs*0.92)+' C'+(fx-fs*0.30)+','+(fy+fs*0.84)+' '+(fx-fs*0.58)+','+(fy+fs*0.58)+' '+(fx-fs*0.68)+','+(fy+fs*0.18)+' C'+(fx-fs*0.82)+','+(fy-fs*0.34)+' '+(fx-fs*0.66)+','+(fy-fs*0.90)+' '+(fx-fs*0.22)+','+(fy-fs*1.22)+' C'+(fx+fs*0.10)+','+(fy-fs*1.46)+' '+(fx+fs*0.52)+','+(fy-fs*1.42)+' '+(fx+fs*0.82)+','+(fy-fs*1.14)+' C'+(fx+fs*1.10)+','+(fy-fs*0.90)+' '+(fx+fs*1.22)+','+(fy-fs*0.52)+' '+(fx+fs*1.12)+','+(fy-fs*0.12)+' C'+(fx+fs*1.04)+','+(fy+fs*0.26)+' '+(fx+fs*0.94)+','+(fy+fs*0.54)+' '+(fx+fs*0.74)+','+(fy+fs*0.74)+' C'+(fx+fs*0.52)+','+(fy+fs*0.94)+' '+(fx+fs*0.26)+','+(fy+fs*1.02)+' '+fx+','+(fy+fs*0.92)+' Z" fill="none" stroke="#7ab356" stroke-width="'+_bp34g+'" opacity="'+_bp34o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
       // ── set-103-8: CORPSE FLOWER BLOOMS (ChatGPT) ─────────────────
-      case 35: // Dracunculus vulgaris (Dragon Arum)
+      case 35: // Dragon Arum — Dracunculus vulgaris (spiky maroon spadix + curled spathe)
+        // Curled spathe (deep maroon, warm-shifted from #1a1d18 → #4A1028)
         s += '<path d="M'+(fx-fs*0.22)+','+(fy+fs*1.08)+' C'+(fx-fs*0.78)+','+(fy+fs*0.92)+' '+(fx-fs*1.18)+','+(fy+fs*0.26)+' '+(fx-fs*1.06)+','+(fy-fs*0.64)+' C'+(fx-fs*0.96)+','+(fy-fs*1.42)+' '+(fx-fs*0.36)+','+(fy-fs*2.18)+' '+(fx+fs*0.34)+','+(fy-fs*2.44)+' C'+(fx+fs*0.86)+','+(fy-fs*2.62)+' '+(fx+fs*1.22)+','+(fy-fs*2.48)+' '+(fx+fs*1.34)+','+(fy-fs*2.18)+' C'+(fx+fs*0.98)+','+(fy-fs*2.22)+' '+(fx+fs*0.60)+','+(fy-fs*2.00)+' '+(fx+fs*0.30)+','+(fy-fs*1.50)+' C'+(fx+fs*0.02)+','+(fy-fs*1.04)+' '+(fx+fs*0.00)+','+(fy-fs*0.44)+' '+(fx+fs*0.22)+','+(fy+fs*0.04)+' C'+(fx+fs*0.46)+','+(fy+fs*0.54)+' '+(fx+fs*0.34)+','+(fy+fs*0.94)+' '+(fx+fs*0.02)+','+(fy+fs*1.12)+' C'+(fx-fs*0.08)+','+(fy+fs*1.18)+' '+(fx-fs*0.14)+','+(fy+fs*1.16)+' '+(fx-fs*0.22)+','+(fy+fs*1.08)+' Z" fill="#4A1028" opacity="'+bloomOp+'"/>';
-        s += '<path d="M'+(fx-fs*0.04)+','+(fy+fs*0.96)+' C'+(fx-fs*0.44)+','+(fy+fs*0.70)+' '+(fx-fs*0.76)+','+(fy+fs*0.10)+' '+(fx-fs*0.70)+','+(fy-fs*0.62)+' C'+(fx-fs*0.62)+','+(fy-fs*1.28)+' '+(fx-fs*0.18)+','+(fy-fs*1.88)+' '+(fx+fs*0.34)+','+(fy-fs*2.08)+' C'+(fx+fs*0.70)+','+(fy-fs*2.24)+' '+(fx+fs*0.96)+','+(fy-fs*2.20)+' '+(fx+fs*1.10)+','+(fy-fs*2.04)+' C'+(fx+fs*0.72)+','+(fy-fs*2.00)+' '+(fx+fs*0.38)+','+(fy-fs*1.76)+' '+(fx+fs*0.16)+','+(fy-fs*1.34)+' C'+(fx-fs*0.04)+','+(fy-fs*0.96)+' '+(fx-fs*0.06)+','+(fy-fs*0.44)+' '+(fx+fs*0.08)+','+(fy-fs*0.08)+' C'+(fx+fs*0.22)+','+(fy+fs*0.26)+' '+(fx+fs*0.20)+','+(fy+fs*0.62)+' '+(fx-fs*0.04)+','+(fy+fs*0.96)+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.30)+'"/>';
+        // Inner spathe lighter wash (warm cream tint instead of pure)
+        s += '<path d="M'+(fx-fs*0.04)+','+(fy+fs*0.96)+' C'+(fx-fs*0.44)+','+(fy+fs*0.70)+' '+(fx-fs*0.76)+','+(fy+fs*0.10)+' '+(fx-fs*0.70)+','+(fy-fs*0.62)+' C'+(fx-fs*0.62)+','+(fy-fs*1.28)+' '+(fx-fs*0.18)+','+(fy-fs*1.88)+' '+(fx+fs*0.34)+','+(fy-fs*2.08)+' C'+(fx+fs*0.70)+','+(fy-fs*2.24)+' '+(fx+fs*0.96)+','+(fy-fs*2.20)+' '+(fx+fs*1.10)+','+(fy-fs*2.04)+' C'+(fx+fs*0.72)+','+(fy-fs*2.00)+' '+(fx+fs*0.38)+','+(fy-fs*1.76)+' '+(fx+fs*0.16)+','+(fy-fs*1.34)+' C'+(fx-fs*0.04)+','+(fy-fs*0.96)+' '+(fx-fs*0.06)+','+(fy-fs*0.44)+' '+(fx+fs*0.08)+','+(fy-fs*0.08)+' C'+(fx+fs*0.22)+','+(fy+fs*0.26)+' '+(fx+fs*0.20)+','+(fy+fs*0.62)+' '+(fx-fs*0.04)+','+(fy+fs*0.96)+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.34)+'"/>';
+        // Curl rim accent
         s += '<path d="M'+(fx-fs*0.34)+','+(fy-fs*1.84)+' C'+(fx-fs*0.18)+','+(fy-fs*2.06)+' '+(fx+fs*0.02)+','+(fy-fs*2.16)+' '+(fx+fs*0.18)+','+(fy-fs*2.12)+' C'+(fx+fs*0.34)+','+(fy-fs*2.08)+' '+(fx+fs*0.52)+','+(fy-fs*2.00)+' '+(fx+fs*0.74)+','+(fy-fs*1.86)+' C'+(fx+fs*0.90)+','+(fy-fs*1.76)+' '+(fx+fs*1.00)+','+(fy-fs*1.68)+' '+(fx+fs*1.10)+','+(fy-fs*1.72)+' C'+(fx+fs*1.00)+','+(fy-fs*1.54)+' '+(fx+fs*0.90)+','+(fy-fs*1.42)+' '+(fx+fs*0.96)+','+(fy-fs*1.24)+' C'+(fx+fs*0.84)+','+(fy-fs*1.34)+' '+(fx+fs*0.72)+','+(fy-fs*1.36)+' '+(fx+fs*0.58)+','+(fy-fs*1.30)+' C'+(fx+fs*0.40)+','+(fy-fs*1.24)+' '+(fx+fs*0.22)+','+(fy-fs*1.28)+' '+(fx+fs*0.02)+','+(fy-fs*1.46)+' C'+(fx-fs*0.14)+','+(fy-fs*1.58)+' '+(fx-fs*0.24)+','+(fy-fs*1.70)+' '+(fx-fs*0.34)+','+(fy-fs*1.84)+' Z" fill="#4A1028" opacity="'+(bloomOp*0.92)+'"/>';
-        s += '<path d="M'+(fx+fs*0.08)+','+(fy-fs*2.86)+' C'+(fx+fs*0.10)+','+(fy-fs*2.34)+' '+(fx+fs*0.12)+','+(fy-fs*1.74)+' '+(fx+fs*0.12)+','+(fy-fs*1.12)+' C'+(fx+fs*0.12)+','+(fy-fs*0.44)+' '+(fx+fs*0.10)+','+(fy+fs*0.18)+' '+(fx+fs*0.04)+','+(fy+fs*0.72)+'" fill="none" stroke="#1A0A14" stroke-width="'+(fs*0.28)+'" stroke-linecap="round" opacity="'+(bloomOp*0.98)+'"/>';
-        s += '<path d="M'+(fx-fs*0.42)+','+(fy+fs*0.82)+' C'+(fx-fs*0.62)+','+(fy+fs*0.18)+' '+(fx-fs*0.62)+','+(fy-fs*0.58)+' '+(fx-fs*0.42)+','+(fy-fs*1.26)+' C'+(fx-fs*0.22)+','+(fy-fs*1.92)+' '+(fx+fs*0.16)+','+(fy-fs*2.30)+' '+(fx+fs*0.66)+','+(fy-fs*2.24)+'" fill="none" stroke="rgba(234,224,200,0.30)" stroke-width="0.46" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.54)+','+(fy+fs*0.56)+' C'+(fx-fs*0.34)+','+(fy+fs*0.04)+' '+(fx-fs*0.16)+','+(fy-fs*0.62)+' '+(fx+fs*0.00)+','+(fy-fs*1.24)+'" fill="none" stroke="#1A0A14" stroke-width="0.24" opacity="'+(bloomOp*0.46)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.76)+' C'+(fx-fs*0.14)+','+(fy+fs*0.14)+' '+(fx+fs*0.00)+','+(fy-fs*0.46)+' '+(fx+fs*0.12)+','+(fy-fs*1.08)+'" fill="none" stroke="#1A0A14" stroke-width="0.24" opacity="'+(bloomOp*0.46)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+fx+','+(fy+fs*0.82)+' C'+(fx+fs*0.10)+','+(fy+fs*0.18)+' '+(fx+fs*0.24)+','+(fy-fs*0.42)+' '+(fx+fs*0.36)+','+(fy-fs*1.00)+'" fill="none" stroke="#1A0A14" stroke-width="0.24" opacity="'+(bloomOp*0.46)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.28)+','+(fy+fs*0.74)+' C'+(fx+fs*0.34)+','+(fy+fs*0.14)+' '+(fx+fs*0.46)+','+(fy-fs*0.36)+' '+(fx+fs*0.60)+','+(fy-fs*0.86)+'" fill="none" stroke="#1A0A14" stroke-width="0.24" opacity="'+(bloomOp*0.46)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.54)+','+(fy-fs*2.02)+' C'+(fx+fs*0.74)+','+(fy-fs*2.00)+' '+(fx+fs*0.92)+','+(fy-fs*1.94)+' '+(fx+fs*1.08)+','+(fy-fs*1.84)+'" fill="none" stroke="'+fc+'" stroke-width="0.34" opacity="'+(bloomOp*0.34)+'" stroke-linecap="round"/>';
+        // Spadix shadow (warm-shifted darker)
+        s += '<path d="M'+(fx+fs*0.08)+','+(fy-fs*2.86)+' C'+(fx+fs*0.10)+','+(fy-fs*2.34)+' '+(fx+fs*0.12)+','+(fy-fs*1.74)+' '+(fx+fs*0.12)+','+(fy-fs*1.12)+' C'+(fx+fs*0.12)+','+(fy-fs*0.44)+' '+(fx+fs*0.10)+','+(fy+fs*0.18)+' '+(fx+fs*0.04)+','+(fy+fs*0.72)+'" fill="none" stroke="rgba(40,20,5,0.95)" stroke-width="'+(fs*0.28)+'" stroke-linecap="round" opacity="'+(bloomOp*0.98)+'"/>';
+        // Spadix highlight stripe (cream)
+        s += '<path d="M'+(fx+fs*0.06)+','+(fy-fs*2.6)+' C'+(fx+fs*0.07)+','+(fy-fs*1.8)+' '+(fx+fs*0.08)+','+(fy-fs*1.0)+' '+(fx+fs*0.05)+','+(fy-fs*0.2)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" opacity="'+(bloomOp*0.45)+'" stroke-linecap="round"/>';
+        // Spike texture on spadix — small bumps/specks (Dracunculus is hairy/spiky)
+        for (var dr35 = 0; dr35 < 9; dr35++) {
+          var dr35y = fy - fs*2.6 + dr35*fs*0.32;
+          var dr35sx = (dr35 % 2 === 0) ? -1 : 1;
+          s += '<line x1="'+(fx+fs*0.08)+'" y1="'+dr35y+'" x2="'+(fx+fs*0.08+dr35sx*fs*0.14)+'" y2="'+(dr35y+fs*0.04)+'" stroke="rgba(40,20,5,0.7)" stroke-width="0.32" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+        }
+        // Spathe edge highlight (§1 silk-snap)
+        s += '<path d="M'+(fx-fs*0.42)+','+(fy+fs*0.82)+' C'+(fx-fs*0.62)+','+(fy+fs*0.18)+' '+(fx-fs*0.62)+','+(fy-fs*0.58)+' '+(fx-fs*0.42)+','+(fy-fs*1.26)+' C'+(fx-fs*0.22)+','+(fy-fs*1.92)+' '+(fx+fs*0.16)+','+(fy-fs*2.30)+' '+(fx+fs*0.66)+','+(fy-fs*2.24)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Spathe pleat shadows (warm dark)
+        s += '<path d="M'+(fx-fs*0.54)+','+(fy+fs*0.56)+' C'+(fx-fs*0.34)+','+(fy+fs*0.04)+' '+(fx-fs*0.16)+','+(fy-fs*0.62)+' '+(fx+fs*0.00)+','+(fy-fs*1.24)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.3" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx-fs*0.28)+','+(fy+fs*0.76)+' C'+(fx-fs*0.14)+','+(fy+fs*0.14)+' '+(fx+fs*0.00)+','+(fy-fs*0.46)+' '+(fx+fs*0.12)+','+(fy-fs*1.08)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+fx+','+(fy+fs*0.82)+' C'+(fx+fs*0.10)+','+(fy+fs*0.18)+' '+(fx+fs*0.24)+','+(fy-fs*0.42)+' '+(fx+fs*0.36)+','+(fy-fs*1.00)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx+fs*0.28)+','+(fy+fs*0.74)+' C'+(fx+fs*0.34)+','+(fy+fs*0.14)+' '+(fx+fs*0.46)+','+(fy-fs*0.36)+' '+(fx+fs*0.60)+','+(fy-fs*0.86)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        // Spathe rim cream highlight
+        s += '<path d="M'+(fx+fs*0.54)+','+(fy-fs*2.02)+' C'+(fx+fs*0.74)+','+(fy-fs*2.00)+' '+(fx+fs*0.92)+','+(fy-fs*1.94)+' '+(fx+fs*1.08)+','+(fy-fs*1.84)+'" fill="none" stroke="#fff8e0" stroke-width="0.4" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        // Spadix tip dot
+        s += '<circle cx="'+(fx+fs*0.08)+'" cy="'+(fy-fs*2.86)+'" r="'+(fs*0.1)+'" fill="rgba(40,20,5,0.85)" opacity="'+bloomOp+'"/>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp35g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp35o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+(fx-fs*0.22)+','+(fy+fs*1.08)+' C'+(fx-fs*1.18)+','+(fy+fs*0.26)+' '+(fx-fs*0.36)+','+(fy-fs*2.18)+' '+(fx+fs*0.34)+','+(fy-fs*2.44)+' C'+(fx+fs*1.22)+','+(fy-fs*2.48)+' '+(fx+fs*1.34)+','+(fy-fs*2.18)+' '+(fx+fs*0.30)+','+(fy-fs*1.50)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp35g+'" opacity="'+_bp35o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 36: // Amorphophallus titanum (Titan Arum)
+      case 36: // Titan Arum — Amorphophallus titanum (massive spadix in pleated maroon spathe, §3.D/§3.E giant)
         s += '<g>';
+        // Outer green spathe (back of pleated bract)
         s += '<path d="M'+(fx-fs*0.34)+','+(fy+fs*1.22)+' C'+(fx-fs*1.02)+','+(fy+fs*0.98)+' '+(fx-fs*1.52)+','+(fy+fs*0.24)+' '+(fx-fs*1.44)+','+(fy-fs*0.74)+' C'+(fx-fs*1.34)+','+(fy-fs*1.86)+' '+(fx-fs*0.54)+','+(fy-fs*2.76)+' '+(fx+fs*0.34)+','+(fy-fs*3.04)+' C'+(fx+fs*1.00)+','+(fy-fs*3.24)+' '+(fx+fs*1.46)+','+(fy-fs*3.10)+' '+(fx+fs*1.74)+','+(fy-fs*2.78)+' C'+(fx+fs*1.28)+','+(fy-fs*2.72)+' '+(fx+fs*0.84)+','+(fy-fs*2.50)+' '+(fx+fs*0.44)+','+(fy-fs*2.04)+' C'+(fx+fs*0.06)+','+(fy-fs*1.54)+' '+(fx-fs*0.04)+','+(fy-fs*0.86)+' '+(fx+fs*0.20)+','+(fy-fs*0.12)+' C'+(fx+fs*0.46)+','+(fy+fs*0.42)+' '+(fx+fs*0.38)+','+(fy+fs*0.88)+' '+(fx+fs*0.00)+','+(fy+fs*1.12)+' C'+(fx-fs*0.10)+','+(fy+fs*1.20)+' '+(fx-fs*0.22)+','+(fy+fs*1.26)+' '+(fx-fs*0.34)+','+(fy+fs*1.22)+' Z" fill="#3A4A2A" opacity="'+bloomOp+'"/>';
+        // Inner maroon spathe (deep throat — §6 throat glow)
         s += '<path d="M'+(fx-fs*0.18)+','+(fy+fs*1.04)+' C'+(fx-fs*0.72)+','+(fy+fs*0.74)+' '+(fx-fs*1.08)+','+(fy-fs*0.00)+' '+(fx-fs*1.02)+','+(fy-fs*0.92)+' C'+(fx-fs*0.94)+','+(fy-fs*1.80)+' '+(fx-fs*0.28)+','+(fy-fs*2.48)+' '+(fx+fs*0.42)+','+(fy-fs*2.72)+' C'+(fx+fs*0.96)+','+(fy-fs*2.88)+' '+(fx+fs*1.32)+','+(fy-fs*2.80)+' '+(fx+fs*1.48)+','+(fy-fs*2.58)+' C'+(fx+fs*1.06)+','+(fy-fs*2.48)+' '+(fx+fs*0.62)+','+(fy-fs*2.22)+' '+(fx+fs*0.32)+','+(fy-fs*1.74)+' C'+(fx+fs*0.02)+','+(fy-fs*1.26)+' '+(fx-fs*0.04)+','+(fy-fs*0.62)+' '+(fx+fs*0.12)+','+(fy+fs*0.00)+' C'+(fx+fs*0.28)+','+(fy+fs*0.40)+' '+(fx+fs*0.20)+','+(fy+fs*0.78)+' '+(fx-fs*0.18)+','+(fy+fs*1.04)+' Z" fill="#6B1A2A" opacity="'+(bloomOp*0.98)+'"/>';
-        s += '<ellipse cx="'+(fx+fs*0.06)+'" cy="'+(fy-fs*0.34)+'" rx="'+(fs*0.52)+'" ry="'+(fs*1.10)+'" fill="'+fc+'" opacity="'+(bloomOp*0.12)+'"/>';
-        s += '<ellipse cx="'+(fx+fs*0.08)+'" cy="'+(fy-fs*0.30)+'" rx="'+(fs*0.32)+'" ry="'+(fs*0.74)+'" fill="'+fc+'" opacity="'+(bloomOp*0.10)+'"/>';
-        s += '<path d="M'+(fx+fs*0.10)+','+(fy-fs*3.98)+' C'+(fx+fs*0.14)+','+(fy-fs*3.22)+' '+(fx+fs*0.18)+','+(fy-fs*2.32)+' '+(fx+fs*0.20)+','+(fy-fs*1.34)+' C'+(fx+fs*0.20)+','+(fy-fs*0.30)+' '+(fx+fs*0.14)+','+(fy+fs*0.42)+' '+(fx+fs*0.04)+','+(fy+fs*1.06)+'" fill="none" stroke="#1A0A14" stroke-width="'+(fs*0.36)+'" stroke-linecap="round" opacity="'+(bloomOp*0.98)+'"/>';
-        s += '<path d="M'+(fx-fs*1.08)+','+(fy-fs*2.66)+' C'+(fx-fs*1.00)+','+(fy-fs*2.82)+' '+(fx-fs*0.88)+','+(fy-fs*2.54)+' '+(fx-fs*0.76)+','+(fy-fs*2.68)+' C'+(fx-fs*0.62)+','+(fy-fs*2.86)+' '+(fx-fs*0.48)+','+(fy-fs*2.54)+' '+(fx-fs*0.30)+','+(fy-fs*2.70)+' C'+(fx-fs*0.12)+','+(fy-fs*2.90)+' '+(fx+fs*0.04)+','+(fy-fs*2.56)+' '+(fx+fs*0.22)+','+(fy-fs*2.72)+' C'+(fx+fs*0.42)+','+(fy-fs*2.90)+' '+(fx+fs*0.58)+','+(fy-fs*2.56)+' '+(fx+fs*0.76)+','+(fy-fs*2.72)+' C'+(fx+fs*0.94)+','+(fy-fs*2.90)+' '+(fx+fs*1.10)+','+(fy-fs*2.58)+' '+(fx+fs*1.34)+','+(fy-fs*2.76)+' C'+(fx+fs*1.46)+','+(fy-fs*2.84)+' '+(fx+fs*1.58)+','+(fy-fs*2.72)+' '+(fx+fs*1.68)+','+(fy-fs*2.82)+'" fill="none" stroke="rgba(234,224,200,0.34)" stroke-width="0.52" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M'+(fx-fs*0.98)+','+(fy-fs*2.50)+' C'+(fx-fs*0.90)+','+(fy-fs*2.64)+' '+(fx-fs*0.78)+','+(fy-fs*2.42)+' '+(fx-fs*0.66)+','+(fy-fs*2.54)+' C'+(fx-fs*0.52)+','+(fy-fs*2.70)+' '+(fx-fs*0.38)+','+(fy-fs*2.44)+' '+(fx-fs*0.20)+','+(fy-fs*2.58)+' C'+(fx-fs*0.04)+','+(fy-fs*2.72)+' '+(fx+fs*0.14)+','+(fy-fs*2.46)+' '+(fx+fs*0.32)+','+(fy-fs*2.60)+' C'+(fx+fs*0.50)+','+(fy-fs*2.74)+' '+(fx+fs*0.66)+','+(fy-fs*2.48)+' '+(fx+fs*0.84)+','+(fy-fs*2.62)+' C'+(fx+fs*1.00)+','+(fy-fs*2.76)+' '+(fx+fs*1.18)+','+(fy-fs*2.54)+' '+(fx+fs*1.30)+','+(fy-fs*2.64)+'" fill="none" stroke="rgba(234,224,200,0.22)" stroke-width="0.38" stroke-linecap="round" stroke-linejoin="round"/>';
-        s += '<path d="M'+(fx-fs*0.52)+','+(fy+fs*0.86)+' C'+(fx-fs*0.74)+','+(fy+fs*0.14)+' '+(fx-fs*0.70)+','+(fy-fs*0.72)+' '+(fx-fs*0.46)+','+(fy-fs*1.54)+' C'+(fx-fs*0.20)+','+(fy-fs*2.26)+' '+(fx+fs*0.18)+','+(fy-fs*2.70)+' '+(fx+fs*0.70)+','+(fy-fs*2.66)+'" fill="none" stroke="rgba(234,224,200,0.22)" stroke-width="0.46" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.70)+','+(fy+fs*0.54)+' C'+(fx-fs*0.44)+','+(fy-fs*0.10)+' '+(fx-fs*0.22)+','+(fy-fs*0.88)+' '+(fx-fs*0.02)+','+(fy-fs*1.62)+'" fill="none" stroke="#4A1028" stroke-width="0.24" opacity="'+(bloomOp*0.48)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.40)+','+(fy+fs*0.82)+' C'+(fx-fs*0.22)+','+(fy+fs*0.08)+' '+(fx-fs*0.04)+','+(fy-fs*0.60)+' '+(fx+fs*0.12)+','+(fy-fs*1.30)+'" fill="none" stroke="#4A1028" stroke-width="0.24" opacity="'+(bloomOp*0.48)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.06)+','+(fy+fs*0.88)+' C'+(fx+fs*0.08)+','+(fy+fs*0.12)+' '+(fx+fs*0.22)+','+(fy-fs*0.54)+' '+(fx+fs*0.36)+','+(fy-fs*1.22)+'" fill="none" stroke="#4A1028" stroke-width="0.24" opacity="'+(bloomOp*0.48)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.30)+','+(fy+fs*0.80)+' C'+(fx+fs*0.40)+','+(fy+fs*0.08)+' '+(fx+fs*0.56)+','+(fy-fs*0.48)+' '+(fx+fs*0.72)+','+(fy-fs*1.06)+'" fill="none" stroke="#4A1028" stroke-width="0.24" opacity="'+(bloomOp*0.48)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx+fs*0.62)+','+(fy+fs*0.62)+' C'+(fx+fs*0.70)+','+(fy-fs*0.02)+' '+(fx+fs*0.84)+','+(fy-fs*0.44)+' '+(fx+fs*0.98)+','+(fy-fs*0.86)+'" fill="none" stroke="#4A1028" stroke-width="0.24" opacity="'+(bloomOp*0.48)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.08)+','+(fy+fs*1.02)+' C'+(fx+fs*0.06)+','+(fy+fs*0.86)+' '+(fx+fs*0.14)+','+(fy+fs*0.72)+' '+(fx+fs*0.16)+','+(fy+fs*0.56)+'" fill="none" stroke="'+fc+'" stroke-width="0.34" opacity="'+(bloomOp*0.26)+'" stroke-linecap="round"/>';
+        // Inner glow halo (warm)
+        s += '<ellipse cx="'+(fx+fs*0.06)+'" cy="'+(fy-fs*0.34)+'" rx="'+(fs*0.52)+'" ry="'+(fs*1.10)+'" fill="'+fc+'" opacity="'+(bloomOp*0.16)+'"/>';
+        s += '<ellipse cx="'+(fx+fs*0.08)+'" cy="'+(fy-fs*0.30)+'" rx="'+(fs*0.32)+'" ry="'+(fs*0.74)+'" fill="'+fc+'" opacity="'+(bloomOp*0.12)+'"/>';
+        // Massive spadix (warm-shifted dark)
+        s += '<path d="M'+(fx+fs*0.10)+','+(fy-fs*3.98)+' C'+(fx+fs*0.14)+','+(fy-fs*3.22)+' '+(fx+fs*0.18)+','+(fy-fs*2.32)+' '+(fx+fs*0.20)+','+(fy-fs*1.34)+' C'+(fx+fs*0.20)+','+(fy-fs*0.30)+' '+(fx+fs*0.14)+','+(fy+fs*0.42)+' '+(fx+fs*0.04)+','+(fy+fs*1.06)+'" fill="none" stroke="rgba(40,20,5,0.95)" stroke-width="'+(fs*0.36)+'" stroke-linecap="round" opacity="'+(bloomOp*0.98)+'"/>';
+        // Spadix cream highlight stripe (§5)
+        s += '<path d="M'+(fx+fs*0.06)+','+(fy-fs*3.7)+' C'+(fx+fs*0.1)+','+(fy-fs*2.6)+' '+(fx+fs*0.12)+','+(fy-fs*1.4)+' '+(fx+fs*0.06)+','+(fy-fs*0.2)+'" fill="none" stroke="#f5ecd6" stroke-width="0.46" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        // Spathe pleat ridges (cream highlights)
+        s += '<path d="M'+(fx-fs*1.08)+','+(fy-fs*2.66)+' C'+(fx-fs*1.00)+','+(fy-fs*2.82)+' '+(fx-fs*0.88)+','+(fy-fs*2.54)+' '+(fx-fs*0.76)+','+(fy-fs*2.68)+' C'+(fx-fs*0.62)+','+(fy-fs*2.86)+' '+(fx-fs*0.48)+','+(fy-fs*2.54)+' '+(fx-fs*0.30)+','+(fy-fs*2.70)+' C'+(fx-fs*0.12)+','+(fy-fs*2.90)+' '+(fx+fs*0.04)+','+(fy-fs*2.56)+' '+(fx+fs*0.22)+','+(fy-fs*2.72)+' C'+(fx+fs*0.42)+','+(fy-fs*2.90)+' '+(fx+fs*0.58)+','+(fy-fs*2.56)+' '+(fx+fs*0.76)+','+(fy-fs*2.72)+' C'+(fx+fs*0.94)+','+(fy-fs*2.90)+' '+(fx+fs*1.10)+','+(fy-fs*2.58)+' '+(fx+fs*1.34)+','+(fy-fs*2.76)+' C'+(fx+fs*1.46)+','+(fy-fs*2.84)+' '+(fx+fs*1.58)+','+(fy-fs*2.72)+' '+(fx+fs*1.68)+','+(fy-fs*2.82)+'" fill="none" stroke="#fff8e0" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<path d="M'+(fx-fs*0.98)+','+(fy-fs*2.50)+' C'+(fx-fs*0.90)+','+(fy-fs*2.64)+' '+(fx-fs*0.78)+','+(fy-fs*2.42)+' '+(fx-fs*0.66)+','+(fy-fs*2.54)+' C'+(fx-fs*0.52)+','+(fy-fs*2.70)+' '+(fx-fs*0.38)+','+(fy-fs*2.44)+' '+(fx-fs*0.20)+','+(fy-fs*2.58)+' C'+(fx-fs*0.04)+','+(fy-fs*2.72)+' '+(fx+fs*0.14)+','+(fy-fs*2.46)+' '+(fx+fs*0.32)+','+(fy-fs*2.60)+' C'+(fx+fs*0.50)+','+(fy-fs*2.74)+' '+(fx+fs*0.66)+','+(fy-fs*2.48)+' '+(fx+fs*0.84)+','+(fy-fs*2.62)+' C'+(fx+fs*1.00)+','+(fy-fs*2.76)+' '+(fx+fs*1.18)+','+(fy-fs*2.54)+' '+(fx+fs*1.30)+','+(fy-fs*2.64)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round" opacity="'+(bloomOp*0.4)+'"/>';
+        // Edge highlight on outer spathe (§1)
+        s += '<path d="M'+(fx-fs*0.52)+','+(fy+fs*0.86)+' C'+(fx-fs*0.74)+','+(fy+fs*0.14)+' '+(fx-fs*0.70)+','+(fy-fs*0.72)+' '+(fx-fs*0.46)+','+(fy-fs*1.54)+' C'+(fx-fs*0.20)+','+(fy-fs*2.26)+' '+(fx+fs*0.18)+','+(fy-fs*2.70)+' '+(fx+fs*0.70)+','+(fy-fs*2.66)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Pleat shadows (warm dark)
+        s += '<path d="M'+(fx-fs*0.70)+','+(fy+fs*0.54)+' C'+(fx-fs*0.44)+','+(fy-fs*0.10)+' '+(fx-fs*0.22)+','+(fy-fs*0.88)+' '+(fx-fs*0.02)+','+(fy-fs*1.62)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx-fs*0.40)+','+(fy+fs*0.82)+' C'+(fx-fs*0.22)+','+(fy+fs*0.08)+' '+(fx-fs*0.04)+','+(fy-fs*0.60)+' '+(fx+fs*0.12)+','+(fy-fs*1.30)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx-fs*0.06)+','+(fy+fs*0.88)+' C'+(fx+fs*0.08)+','+(fy+fs*0.12)+' '+(fx+fs*0.22)+','+(fy-fs*0.54)+' '+(fx+fs*0.36)+','+(fy-fs*1.22)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx+fs*0.30)+','+(fy+fs*0.80)+' C'+(fx+fs*0.40)+','+(fy+fs*0.08)+' '+(fx+fs*0.56)+','+(fy-fs*0.48)+' '+(fx+fs*0.72)+','+(fy-fs*1.06)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        s += '<path d="M'+(fx+fs*0.62)+','+(fy+fs*0.62)+' C'+(fx+fs*0.70)+','+(fy-fs*0.02)+' '+(fx+fs*0.84)+','+(fy-fs*0.44)+' '+(fx+fs*0.98)+','+(fy-fs*0.86)+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.28" opacity="'+(bloomOp*0.5)+'" stroke-linecap="round"/>';
+        // Spadix tip cream pixel
+        s += '<circle cx="'+(fx+fs*0.10)+'" cy="'+(fy-fs*3.98)+'" r="'+(fs*0.12)+'" fill="rgba(40,20,5,0.85)" opacity="'+bloomOp+'"/>';
+        s += '<circle cx="'+(fx+fs*0.08)+'" cy="'+(fy-fs*4.02)+'" r="'+(fs*0.05)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.7)+'"/>';
+        // Cup highlight base
+        s += '<path d="M'+(fx-fs*0.08)+','+(fy+fs*1.02)+' C'+(fx+fs*0.06)+','+(fy+fs*0.86)+' '+(fx+fs*0.14)+','+(fy+fs*0.72)+' '+(fx+fs*0.16)+','+(fy+fs*0.56)+'" fill="none" stroke="'+fc+'" stroke-width="0.34" opacity="'+(bloomOp*0.32)+'" stroke-linecap="round"/>';
         s += '</g>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp36g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp36o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<path d="M'+(fx-fs*0.34)+','+(fy+fs*1.22)+' C'+(fx-fs*1.52)+','+(fy+fs*0.24)+' '+(fx-fs*0.54)+','+(fy-fs*2.76)+' '+(fx+fs*0.34)+','+(fy-fs*3.04)+' C'+(fx+fs*1.46)+','+(fy-fs*3.10)+' '+(fx+fs*1.74)+','+(fy-fs*2.78)+' '+(fx+fs*0.44)+','+(fy-fs*2.04)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp36g+'" opacity="'+_bp36o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
-      case 37: // Stapelia grandiflora (Carrion Starfish)
+      case 37: // Carrion Starfish — Stapelia grandiflora (5-pointed wavy fleshy star, hairy/freckled)
         s += '<g>';
+        // 5-arm wavy fleshy star (warm-shifted maroon, full silhouette preserved)
         s += '<path d="M'+fx+','+(fy-fs*1.74)+' C'+(fx+fs*0.14)+','+(fy-fs*1.34)+' '+(fx+fs*0.22)+','+(fy-fs*0.98)+' '+(fx+fs*0.30)+','+(fy-fs*0.66)+' C'+(fx+fs*0.78)+','+(fy-fs*0.92)+' '+(fx+fs*1.22)+','+(fy-fs*1.10)+' '+(fx+fs*1.68)+','+(fy-fs*1.20)+' C'+(fx+fs*1.34)+','+(fy-fs*0.84)+' '+(fx+fs*1.00)+','+(fy-fs*0.48)+' '+(fx+fs*0.74)+','+(fy-fs*0.12)+' C'+(fx+fs*1.14)+','+(fy-fs*0.00)+' '+(fx+fs*1.52)+','+(fy+fs*0.12)+' '+(fx+fs*1.92)+','+(fy+fs*0.32)+' C'+(fx+fs*1.42)+','+(fy+fs*0.34)+' '+(fx+fs*0.96)+','+(fy+fs*0.32)+' '+(fx+fs*0.50)+','+(fy+fs*0.24)+' C'+(fx+fs*0.58)+','+(fy+fs*0.68)+' '+(fx+fs*0.66)+','+(fy+fs*1.08)+' '+(fx+fs*0.82)+','+(fy+fs*1.52)+' C'+(fx+fs*0.38)+','+(fy+fs*1.22)+' '+fx+','+(fy+fs*0.90)+' '+(fx-fs*0.36)+','+(fy+fs*0.50)+' C'+(fx-fs*0.54)+','+(fy+fs*0.92)+' '+(fx-fs*0.72)+','+(fy+fs*1.28)+' '+(fx-fs*0.92)+','+(fy+fs*1.66)+' C'+(fx-fs*0.94)+','+(fy+fs*1.10)+' '+(fx-fs*0.86)+','+(fy+fs*0.62)+' '+(fx-fs*0.76)+','+(fy+fs*0.20)+' C'+(fx-fs*1.16)+','+(fy+fs*0.32)+' '+(fx-fs*1.58)+','+(fy+fs*0.36)+' '+(fx-fs*2.04)+','+(fy+fs*0.22)+' C'+(fx-fs*1.64)+','+(fy-fs*0.02)+' '+(fx-fs*1.24)+','+(fy-fs*0.26)+' '+(fx-fs*0.88)+','+(fy-fs*0.52)+' C'+(fx-fs*1.22)+','+(fy-fs*0.74)+' '+(fx-fs*1.50)+','+(fy-fs*1.06)+' '+(fx-fs*1.78)+','+(fy-fs*1.44)+' C'+(fx-fs*1.26)+','+(fy-fs*1.24)+' '+(fx-fs*0.82)+','+(fy-fs*1.02)+' '+(fx-fs*0.40)+','+(fy-fs*0.72)+' C'+(fx-fs*0.36)+','+(fy-fs*1.08)+' '+(fx-fs*0.28)+','+(fy-fs*1.42)+' '+fx+','+(fy-fs*1.74)+' Z" fill="#5A2020" opacity="'+bloomOp+'"/>';
-        s += '<path d="M'+fx+','+(fy-fs*1.46)+' C'+(fx+fs*0.08)+','+(fy-fs*1.10)+' '+(fx+fs*0.14)+','+(fy-fs*0.80)+' '+(fx+fs*0.20)+','+(fy-fs*0.50)+' M'+(fx+fs*1.32)+','+(fy-fs*0.98)+' C'+(fx+fs*1.00)+','+(fy-fs*0.80)+' '+(fx+fs*0.68)+','+(fy-fs*0.56)+' '+(fx+fs*0.32)+','+(fy-fs*0.26)+' M'+(fx+fs*1.40)+','+(fy+fs*0.22)+' C'+(fx+fs*1.02)+','+(fy+fs*0.16)+' '+(fx+fs*0.64)+','+(fy+fs*0.12)+' '+(fx+fs*0.22)+','+(fy+fs*0.06)+' M'+(fx+fs*0.54)+','+(fy+fs*1.26)+' C'+(fx+fs*0.30)+','+(fy+fs*0.92)+' '+(fx+fs*0.08)+','+(fy+fs*0.56)+' '+(fx-fs*0.16)+','+(fy+fs*0.22)+' M'+(fx-fs*0.62)+','+(fy+fs*1.28)+' C'+(fx-fs*0.40)+','+(fy+fs*0.92)+' '+(fx-fs*0.18)+','+(fy+fs*0.56)+' '+(fx-fs*0.02)+','+(fy+fs*0.20)+' M'+(fx-fs*1.40)+','+(fy+fs*0.08)+' C'+(fx-fs*1.02)+','+(fy-fs*0.00)+' '+(fx-fs*0.64)+','+(fy-fs*0.12)+' '+(fx-fs*0.24)+','+(fy-fs*0.26)+' M'+(fx-fs*1.32)+','+(fy-fs*1.00)+' C'+(fx-fs*0.98)+','+(fy-fs*0.78)+' '+(fx-fs*0.64)+','+(fy-fs*0.54)+' '+(fx-fs*0.30)+','+(fy-fs*0.28)+'" fill="none" stroke="#7A3434" stroke-width="0.28" opacity="'+(bloomOp*0.66)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*1.50)+' L'+(fx-fs*0.26)+','+(fy-fs*1.70)+' M'+(fx+fs*0.20)+','+(fy-fs*1.48)+' L'+(fx+fs*0.28)+','+(fy-fs*1.68)+' M'+(fx+fs*1.18)+','+(fy-fs*1.00)+' L'+(fx+fs*1.34)+','+(fy-fs*1.12)+' M'+(fx+fs*1.46)+','+(fy-fs*0.10)+' L'+(fx+fs*1.66)+','+(fy-fs*0.08)+' M'+(fx+fs*1.18)+','+(fy+fs*0.38)+' L'+(fx+fs*1.36)+','+(fy+fs*0.50)+' M'+(fx+fs*0.36)+','+(fy+fs*1.18)+' L'+(fx+fs*0.46)+','+(fy+fs*1.38)+' M'+(fx-fs*0.30)+','+(fy+fs*1.24)+' L'+(fx-fs*0.38)+','+(fy+fs*1.46)+' M'+(fx-fs*1.20)+','+(fy+fs*0.38)+' L'+(fx-fs*1.42)+','+(fy+fs*0.50)+' M'+(fx-fs*1.46)+','+(fy-fs*0.10)+' L'+(fx-fs*1.68)+','+(fy-fs*0.08)+' M'+(fx-fs*1.22)+','+(fy-fs*1.02)+' L'+(fx-fs*1.38)+','+(fy-fs*1.16)+' M'+(fx-fs*0.38)+','+(fy-fs*1.18)+' L'+(fx-fs*0.46)+','+(fy-fs*1.40)+' M'+(fx+fs*0.40)+','+(fy-fs*1.14)+' L'+(fx+fs*0.50)+','+(fy-fs*1.34)+'" fill="none" stroke="#9A7070" stroke-width="0.24" opacity="'+(bloomOp*0.76)+'" stroke-linecap="round"/>';
-        s += '<path d="M'+(fx-fs*0.06)+','+(fy-fs*0.92)+' C'+(fx+fs*0.20)+','+(fy-fs*0.78)+' '+(fx+fs*0.44)+','+(fy-fs*0.62)+' '+(fx+fs*0.64)+','+(fy-fs*0.36)+' M'+(fx-fs*0.04)+','+(fy-fs*0.20)+' C'+(fx+fs*0.24)+','+(fy-fs*0.10)+' '+(fx+fs*0.50)+','+fy+' '+(fx+fs*0.78)+','+(fy+fs*0.08)+' M'+(fx-fs*0.10)+','+(fy+fs*0.16)+' C'+(fx+fs*0.08)+','+(fy+fs*0.38)+' '+(fx+fs*0.20)+','+(fy+fs*0.58)+' '+(fx+fs*0.30)+','+(fy+fs*0.86)+' M'+(fx-fs*0.12)+','+(fy+fs*0.14)+' C'+(fx-fs*0.26)+','+(fy+fs*0.42)+' '+(fx-fs*0.38)+','+(fy+fs*0.66)+' '+(fx-fs*0.52)+','+(fy+fs*0.94)+' M'+(fx-fs*0.16)+','+(fy-fs*0.20)+' C'+(fx-fs*0.44)+','+(fy-fs*0.06)+' '+(fx-fs*0.72)+','+(fy+fs*0.04)+' '+(fx-fs*1.00)+','+(fy+fs*0.10)+' M'+(fx-fs*0.06)+','+(fy-fs*0.94)+' C'+(fx-fs*0.28)+','+(fy-fs*0.80)+' '+(fx-fs*0.52)+','+(fy-fs*0.62)+' '+(fx-fs*0.74)+','+(fy-fs*0.34)+'" fill="none" stroke="#8A3C3C" stroke-width="0.18" opacity="'+(bloomOp*0.56)+'" stroke-linecap="round"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.42)+'" fill="#7A3434" opacity="'+(bloomOp*0.96)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.24)+'" fill="#5A2020" opacity="'+bloomOp+'"/>';
-        s += '<path d="M'+(fx-fs*0.16)+','+(fy-fs*0.02)+' C'+(fx-fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.20)+','+(fy-fs*0.02)+'" fill="none" stroke="rgba(234,224,200,0.38)" stroke-width="0.24" stroke-linecap="round"/>';
-        s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.08)+'" r="'+(fs*0.06)+'" fill="rgba(234,224,200,0.60)" opacity="'+bloomOp+'"/>';
+        // Wrinkle ridges from center toward each arm tip (warm-shifted darker)
+        s += '<path d="M'+fx+','+(fy-fs*1.46)+' C'+(fx+fs*0.08)+','+(fy-fs*1.10)+' '+(fx+fs*0.14)+','+(fy-fs*0.80)+' '+(fx+fs*0.20)+','+(fy-fs*0.50)+' M'+(fx+fs*1.32)+','+(fy-fs*0.98)+' C'+(fx+fs*1.00)+','+(fy-fs*0.80)+' '+(fx+fs*0.68)+','+(fy-fs*0.56)+' '+(fx+fs*0.32)+','+(fy-fs*0.26)+' M'+(fx+fs*1.40)+','+(fy+fs*0.22)+' C'+(fx+fs*1.02)+','+(fy+fs*0.16)+' '+(fx+fs*0.64)+','+(fy+fs*0.12)+' '+(fx+fs*0.22)+','+(fy+fs*0.06)+' M'+(fx+fs*0.54)+','+(fy+fs*1.26)+' C'+(fx+fs*0.30)+','+(fy+fs*0.92)+' '+(fx+fs*0.08)+','+(fy+fs*0.56)+' '+(fx-fs*0.16)+','+(fy+fs*0.22)+' M'+(fx-fs*0.62)+','+(fy+fs*1.28)+' C'+(fx-fs*0.40)+','+(fy+fs*0.92)+' '+(fx-fs*0.18)+','+(fy+fs*0.56)+' '+(fx-fs*0.02)+','+(fy+fs*0.20)+' M'+(fx-fs*1.40)+','+(fy+fs*0.08)+' C'+(fx-fs*1.02)+','+(fy-fs*0.00)+' '+(fx-fs*0.64)+','+(fy-fs*0.12)+' '+(fx-fs*0.24)+','+(fy-fs*0.26)+' M'+(fx-fs*1.32)+','+(fy-fs*1.00)+' C'+(fx-fs*0.98)+','+(fy-fs*0.78)+' '+(fx-fs*0.64)+','+(fy-fs*0.54)+' '+(fx-fs*0.30)+','+(fy-fs*0.28)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" opacity="'+(bloomOp*0.72)+'" stroke-linecap="round"/>';
+        // Hairy bristles at each arm tip (Stapelia signature)
+        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*1.50)+' L'+(fx-fs*0.26)+','+(fy-fs*1.70)+' M'+(fx+fs*0.20)+','+(fy-fs*1.48)+' L'+(fx+fs*0.28)+','+(fy-fs*1.68)+' M'+(fx+fs*1.18)+','+(fy-fs*1.00)+' L'+(fx+fs*1.34)+','+(fy-fs*1.12)+' M'+(fx+fs*1.46)+','+(fy-fs*0.10)+' L'+(fx+fs*1.66)+','+(fy-fs*0.08)+' M'+(fx+fs*1.18)+','+(fy+fs*0.38)+' L'+(fx+fs*1.36)+','+(fy+fs*0.50)+' M'+(fx+fs*0.36)+','+(fy+fs*1.18)+' L'+(fx+fs*0.46)+','+(fy+fs*1.38)+' M'+(fx-fs*0.30)+','+(fy+fs*1.24)+' L'+(fx-fs*0.38)+','+(fy+fs*1.46)+' M'+(fx-fs*1.20)+','+(fy+fs*0.38)+' L'+(fx-fs*1.42)+','+(fy+fs*0.50)+' M'+(fx-fs*1.46)+','+(fy-fs*0.10)+' L'+(fx-fs*1.68)+','+(fy-fs*0.08)+' M'+(fx-fs*1.22)+','+(fy-fs*1.02)+' L'+(fx-fs*1.38)+','+(fy-fs*1.16)+' M'+(fx-fs*0.38)+','+(fy-fs*1.18)+' L'+(fx-fs*0.46)+','+(fy-fs*1.40)+' M'+(fx+fs*0.40)+','+(fy-fs*1.14)+' L'+(fx+fs*0.50)+','+(fy-fs*1.34)+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
+        // Freckle/spot pattern across arms (carrion fly lure spots, warm dark)
+        for (var st37 = 0; st37 < 14; st37++) {
+          var st37a = (st37 * (360/14) + 12) * Math.PI / 180;
+          var st37r = fs * (0.5 + (st37 % 3) * 0.18);
+          var st37x = fx + Math.cos(st37a) * st37r;
+          var st37y = fy + Math.sin(st37a) * st37r;
+          s += '<circle cx="'+st37x+'" cy="'+st37y+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.7)" opacity="'+(bloomOp*0.78)+'"/>';
+        }
+        // Surface streaks (bone-cream highlights along ridge crests §1 silk-snap)
+        s += '<path d="M'+(fx-fs*0.06)+','+(fy-fs*0.92)+' C'+(fx+fs*0.20)+','+(fy-fs*0.78)+' '+(fx+fs*0.44)+','+(fy-fs*0.62)+' '+(fx+fs*0.64)+','+(fy-fs*0.36)+' M'+(fx-fs*0.04)+','+(fy-fs*0.20)+' C'+(fx+fs*0.24)+','+(fy-fs*0.10)+' '+(fx+fs*0.50)+','+fy+' '+(fx+fs*0.78)+','+(fy+fs*0.08)+' M'+(fx-fs*0.10)+','+(fy+fs*0.16)+' C'+(fx+fs*0.08)+','+(fy+fs*0.38)+' '+(fx+fs*0.20)+','+(fy+fs*0.58)+' '+(fx+fs*0.30)+','+(fy+fs*0.86)+' M'+(fx-fs*0.12)+','+(fy+fs*0.14)+' C'+(fx-fs*0.26)+','+(fy+fs*0.42)+' '+(fx-fs*0.38)+','+(fy+fs*0.66)+' '+(fx-fs*0.52)+','+(fy+fs*0.94)+' M'+(fx-fs*0.16)+','+(fy-fs*0.20)+' C'+(fx-fs*0.44)+','+(fy-fs*0.06)+' '+(fx-fs*0.72)+','+(fy+fs*0.04)+' '+(fx-fs*1.00)+','+(fy+fs*0.10)+' M'+(fx-fs*0.06)+','+(fy-fs*0.94)+' C'+(fx-fs*0.28)+','+(fy-fs*0.80)+' '+(fx-fs*0.52)+','+(fy-fs*0.62)+' '+(fx-fs*0.74)+','+(fy-fs*0.34)+'" fill="none" stroke="#f5ecd6" stroke-width="0.22" opacity="'+(bloomOp*0.42)+'" stroke-linecap="round"/>';
+        // Center mound (deep pit shadow → warm dark)
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.46)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.7)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.38)+'" fill="#7A3434" opacity="'+(bloomOp*0.96)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="#3a1208" opacity="'+bloomOp+'"/>';
+        // Stamen kit — central pollen tuft (cream specks)
+        s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.04)+'" r="'+(fs*0.04)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx+fs*0.08)+'" cy="'+(fy+fs*0.02)+'" r="'+(fs*0.04)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.8)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.08)+'" r="'+(fs*0.03)+'" fill="#e8b53a" opacity="'+(bloomOp*0.8)+'"/>';
+        // Highlight curl across mound (§9 drip-curl)
+        s += '<path d="M'+(fx-fs*0.16)+','+(fy-fs*0.02)+' C'+(fx-fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.20)+','+(fy-fs*0.02)+'" fill="none" stroke="#fff8e0" stroke-width="0.3" stroke-linecap="round" opacity="'+(bloomOp*0.7)+'"/>';
+        s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.08)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(bloomOp*0.65)+'"/>';
         s += '</g>';
+        // Chimera petal-edge glow (§7)
+        if (t.chimerGen > 1) {
+          var _bp37g = Math.min(1.4, 0.5 + (t.chimerGen-1)*0.22);
+          var _bp37o = Math.min(0.8, 0.35 + (t.chimerGen-1)*0.12);
+          s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.5)+'" fill="none" stroke="#7ab356" stroke-width="'+_bp37g+'" opacity="'+_bp37o+'" style="mix-blend-mode:screen"/>';
+        }
         break;
       // ── set-103-8-14: NEW BLOOM TYPES (ChatGPT Art Round) ──────────────
       case 38: // Passionflower — radial filaments with corona
