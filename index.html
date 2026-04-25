@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.31';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13186,6 +13186,110 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="32" cy="78.55" rx="0.35" ry="0.15" fill="#5a4028"/>';
         s += '<ellipse cx="38" cy="78.65" rx="0.35" ry="0.15" fill="#4a3220"/>';
         break;
+      case 6: // Honeycomb Cell — hexagonal pot with comb texture. Body + back-arc + brown drawn before stem.
+        // Drop shadow + AO 3-stack
+        s += '<ellipse cx="35" cy="91" rx="14" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="90.6" rx="12" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        // Hexagonal body (warm-shifted darks)
+        s += '<polygon points="25,78 20,84 25,90 45,90 50,84 45,78" fill="'+g+'"/>';
+        // Form shadow (left half darker)
+        s += '<polygon points="25,78 20,84 25,90 30,90 28,84 30,78" fill="rgba(0,0,0,0.20)"/>';
+        // Big diffuse cream specular (upper-right facet)
+        s += '<polygon points="42,78.5 47,82 47,84 42,79.5" fill="#f5ecd6" opacity="0.30"/>';
+        // Sharp pickup highlight
+        s += '<ellipse cx="44" cy="80" rx="0.6" ry="1.5" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce light bottom-right
+        s += '<path d="M44,89 Q47,89.5 45.5,90" stroke="#f5ecd6" stroke-width="0.4" fill="none" opacity="0.40"/>';
+        // Honeycomb cell texture (3 small hex motifs on body)
+        s += '<polygon points="29,84 27,86 29,88 33,88 35,86 33,84" fill="rgba(40,20,5,0.30)"/>';
+        s += '<polygon points="35,82 33,84 35,86 39,86 41,84 39,82" fill="rgba(40,20,5,0.25)"/>';
+        s += '<polygon points="40,86 38,88 40,90 44,90 46,88 44,86" fill="rgba(40,20,5,0.30)"/>';
+        // Cream highlight on each hex motif (catches light at top vertex)
+        s += '<path d="M29,84 L33,84" stroke="#f5ecd6" stroke-width="0.2" opacity="0.45"/>';
+        s += '<path d="M35,82 L39,82" stroke="#f5ecd6" stroke-width="0.2" opacity="0.45"/>';
+        s += '<path d="M40,86 L44,86" stroke="#f5ecd6" stroke-width="0.2" opacity="0.45"/>';
+        // Top edge band (horizontal stroke at hex top)
+        s += '<line x1="25" y1="77.5" x2="45" y2="77.5" stroke="'+rim+'" stroke-width="1.8" stroke-linecap="butt"/>';
+        s += '<line x1="25.5" y1="77" x2="44.5" y2="77" stroke="#f5ecd6" stroke-width="0.3" opacity="0.55"/>';
+        // BACK ARC of opening (sweep=1) — narrow oval at hex top
+        s += '<path d="M27,78 A8,1.0 0 0,1 43,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M27,78 A8,1.0 0 0,1 43,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        s += '<ellipse cx="35" cy="77.4" rx="7" ry="0.3" fill="#f5ecd6" opacity="0.55"/>';
+        // Inner cavity dark
+        s += '<ellipse cx="35" cy="78.1" rx="6.5" ry="0.4" fill="rgba(20,10,2,0.55)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="78.2" rx="6" ry="0.45" fill="#3a2a18"/>';
+        s += '<ellipse cx="32" cy="78.05" rx="0.3" ry="0.13" fill="#5a4028"/>';
+        s += '<ellipse cx="38" cy="78.15" rx="0.3" ry="0.13" fill="#4a3220"/>';
+        break;
+      case 7: // Terrarium globe — sealed glass sphere. Plant grows INSIDE the glass. NO back/front arc split — terrarium has no rim opening (sealed). Single render.
+        // Drop shadow + AO 3-stack at base
+        s += '<ellipse cx="35" cy="93.6" rx="11" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="93.2" rx="9" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        // Glass globe body (very subtle tint, near-transparent)
+        s += '<circle cx="35" cy="82" r="11" fill="'+PALETTE[t.potColor]+'" opacity="0.06"/>';
+        // Glass outline (silhouette stroke)
+        s += '<circle cx="35" cy="82" r="11" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="1.4" opacity="0.45"/>';
+        // Terminator inset (Hollow Knight prop trick — double-stroke darkening at silhouette)
+        s += '<circle cx="35" cy="82" r="10.7" fill="none" stroke="rgba(40,20,5,0.30)" stroke-width="0.4"/>';
+        // Inner moss/ground line at bottom of globe
+        s += '<path d="M24,82 Q35,76 46,82" fill="'+PALETTE.moss+'" opacity="0.18"/>';
+        // BROWN soil layer at bottom of globe (visible through glass)
+        s += '<ellipse cx="35" cy="86" rx="9" ry="2" fill="#3a2a18" opacity="0.55"/>';
+        s += '<ellipse cx="32" cy="85.8" rx="0.4" ry="0.18" fill="#5a4028" opacity="0.7"/>';
+        s += '<ellipse cx="38" cy="86.1" rx="0.4" ry="0.18" fill="#4a3220" opacity="0.7"/>';
+        // BIG diffuse glass sheen (upper-left, the soft-box reflection)
+        s += '<path d="M27,76 Q31.5,72.5 36,74" fill="none" stroke="rgba(245,236,214,0.65)" stroke-width="1.0" stroke-linecap="round"/>';
+        // Smaller secondary sheen
+        s += '<path d="M28.5,77.5 Q32.5,75 35,75.8" fill="none" stroke="rgba(245,236,214,0.40)" stroke-width="0.5" stroke-linecap="round"/>';
+        // Sharp pickup glint (small star or pinpoint)
+        s += '<ellipse cx="30" cy="74" rx="0.6" ry="0.3" fill="#fff8e0" opacity="0.85"/>';
+        // Bottom rim reflection (light wraps under the globe)
+        s += '<ellipse cx="35" cy="89" rx="8" ry="1.5" fill="none" stroke="#f5ecd6" stroke-width="0.45" opacity="0.40"/>';
+        // Subtle volume fill (very faint)
+        s += '<circle cx="35" cy="82" r="10.2" fill="rgba(245,236,214,0.025)"/>';
+        // Stand under terrarium (small chrome/wood disc)
+        s += '<ellipse cx="35" cy="93" rx="9" ry="0.8" fill="'+rim+'"/>';
+        s += '<ellipse cx="35" cy="92.7" rx="8.5" ry="0.6" fill="'+g+'"/>';
+        s += '<path d="M27,92.6 Q35,93.1 43,92.6" stroke="rgba(40,20,5,0.40)" stroke-width="0.35" fill="none"/>';
+        break;
+      case 8: // Clay Pipe — vertical cylindrical pipe with rim. Body + back-arc + brown drawn before stem.
+        // Drop shadow + AO
+        s += '<ellipse cx="35" cy="92.8" rx="13" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="92.4" rx="11" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        // Cylindrical body (rounded rect)
+        s += '<rect x="23" y="78" width="24" height="14" rx="3" fill="'+g+'"/>';
+        // FORM shadow (left side)
+        s += '<rect x="23" y="78" width="6" height="14" rx="3" fill="rgba(0,0,0,0.20)"/>';
+        // CORE shadow at left silhouette
+        s += '<path d="M23.5,80 Q22.8,85 23,90" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" fill="none"/>';
+        // BIG diffuse cream specular (upper-right vertical sheen)
+        s += '<rect x="42" y="80" width="1.4" height="9" rx="0.7" fill="#f5ecd6" opacity="0.30"/>';
+        // SMALL sharp pickup
+        s += '<rect x="43" y="81" width="0.5" height="4" rx="0.25" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce light at base (reflected from ground)
+        s += '<path d="M27,90.5 Q35,91 43,90.5" stroke="#f5ecd6" stroke-width="0.5" fill="none" opacity="0.40"/>';
+        // Decorative band mid-body (incised)
+        s += '<line x1="24" y1="84" x2="46" y2="84" stroke="rgba(40,20,5,0.35)" stroke-width="0.35"/>';
+        s += '<line x1="24.2" y1="83.6" x2="45.8" y2="83.6" stroke="#f5ecd6" stroke-width="0.25" opacity="0.4"/>';
+        // BACK ARC of rim (sweep=1)
+        s += '<path d="M23,78 A12,2 0 0,1 47,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M23,78 A12,2 0 0,1 47,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.4"/>';
+        // Back rim cream highlight
+        s += '<ellipse cx="35" cy="77" rx="11" ry="0.4" fill="#f5ecd6" opacity="0.55"/>';
+        // Terminator inset stroke
+        s += '<path d="M23,78 A11.5,1.95 0 0,1 47,78" fill="none" stroke="rgba(40,20,5,0.30)" stroke-width="0.4"/>';
+        // Inner cavity darkness
+        s += '<ellipse cx="35" cy="78.1" rx="10.5" ry="0.6" fill="rgba(20,10,2,0.60)"/>';
+        // Inner reflected light
+        s += '<path d="M25,78 Q30,77.6 35,77.55" stroke="rgba(180,120,80,0.35)" stroke-width="0.4" fill="none"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="78.2" rx="9.5" ry="0.5" fill="#3a2a18"/>';
+        s += '<ellipse cx="30" cy="78.05" rx="0.4" ry="0.17" fill="#5a4028"/>';
+        s += '<ellipse cx="33" cy="78.25" rx="0.35" ry="0.15" fill="#4a3220"/>';
+        s += '<ellipse cx="38" cy="78.1" rx="0.45" ry="0.18" fill="#5a4028"/>';
+        s += '<ellipse cx="40" cy="78.3" rx="0.35" ry="0.15" fill="#4a3220"/>';
+        break;
       case 5: // Amphora — narrow-neck ancient ceramic with two handles
         // Drop shadow + AO
         s += '<ellipse cx="35" cy="93" rx="11" ry="0.7" fill="rgba(0,0,0,0.35)"/>';
@@ -13446,26 +13550,17 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M28,78 A7,1.5 0 0,0 42,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
         s += '<path d="M29,79.3 Q35,79.5 41,79.3" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.45"/>';
         break;
-      case 6: // Hexagonal
-        s += '<polygon points="25,78 20,84 25,90 45,90 50,84 45,78" fill="'+g+'"/>';
-        s += '<line x1="25" y1="77" x2="45" y2="77" stroke="'+PALETTE[t.potColor]+'" stroke-width="2" stroke-linecap="butt" opacity="0.4"/>'; // set-103-8: butt cap flush fix (was round)
+      case 6: // Honeycomb Cell — FRONT portion. Body + hex texture + back-arc + brown in renderPotBack. Front arc here.
+        s += '<path d="M27,78 A8,1.0 0 0,0 43,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M27,78 A8,1.0 0 0,0 43,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        s += '<path d="M28,79 Q35,79.15 42,79" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.45"/>';
         break;
-      case 7: // Terrarium globe — glass with sheen
-        s += '<circle cx="35" cy="82" r="11" fill="'+PALETTE[t.potColor]+'" opacity="0.06"/>';
-        s += '<circle cx="35" cy="82" r="11" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="1.4" opacity="0.45"/>';
-        // Inner ground line
-        s += '<path d="M24,82 Q35,76 46,82" fill="'+PALETTE.moss+'" opacity="0.15"/>';
-        // Glass sheen — curved highlight on upper-left
-        s += '<path d="M28,76 Q32,73 36,74.5" fill="none" stroke="rgba(240,235,216,0.55)" stroke-width="0.8" stroke-linecap="round"/>';
-        s += '<path d="M29.5,77.5 Q33,75 35.5,76" fill="none" stroke="rgba(240,235,216,0.3)" stroke-width="0.45" stroke-linecap="round"/>';
-        // Bottom rim reflection
-        s += '<ellipse cx="35" cy="89" rx="8" ry="1.5" fill="none" stroke="rgba(240,235,216,0.2)" stroke-width="0.5"/>';
-        // Subtle fill to show volume
-        s += '<circle cx="35" cy="82" r="10.2" fill="rgba(240,235,216,0.025)"/>';
+      case 7: // Terrarium globe — sealed glass, no rim opening. Single-render in renderPotBack only.
         break;
-      case 8: // Cylinder
-        s += '<rect x="23" y="78" width="24" height="14" rx="3" fill="'+g+'"/>';
-        s += '<ellipse cx="35" cy="78" rx="12" ry="2" fill="'+rim+'"/>';
+      case 8: // Clay Pipe — FRONT portion. Body + back-arc + brown in renderPotBack. Front arc here.
+        s += '<path d="M23,78 A12,2 0 0,0 47,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M23,78 A12,2 0 0,0 47,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.4"/>';
+        s += '<path d="M25,79.5 Q35,79.85 45,79.5" stroke="#f5ecd6" stroke-width="0.4" fill="none" opacity="0.45"/>';
         break;
       case 9: // Top Hat — FRONT portion. Brown soil drawn FIRST in renderPot AFTER stem so brown covers stem terminus (Director's "sit under brown layer for depth"). Then FRONT ARC of crown rim drawn LAST to wrap the front of the soil.
         // Brown soil patch — covers stem terminus
