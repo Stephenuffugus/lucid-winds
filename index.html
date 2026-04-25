@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.2';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.3';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13828,9 +13828,40 @@ document.addEventListener('keydown', function(e) {
         // Front-rim sheen (thin warm line on bottom-front of rim — sells the 3D ring)
         s += '<path d="M20,79.6 Q35,80.3 50,79.6" stroke="rgba(80,72,64,0.4)" stroke-width="0.5" fill="none"/>';
         break;
-      case 59: // Genie Lamp (placeholder — falls through to Classic until art ships)
-        s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
-        s += '<rect x="20" y="76.5" width="30" height="3" rx="1.5" fill="'+rim+'"/>';
+      case 59: // Genie Lamp — Aladdin-style oil lamp, spout LEFT, handle RIGHT, stem emerges from top opening
+        // Drop shadow on ground
+        s += '<ellipse cx="35" cy="92.8" rx="20" ry="1.0" fill="rgba(0,0,0,0.42)"/>';
+        // Foot ring at base (raised disc)
+        s += '<ellipse cx="35" cy="92.5" rx="13" ry="1.4" fill="'+rim+'"/>';
+        s += '<ellipse cx="35" cy="92.0" rx="12" ry="1.2" fill="'+g+'"/>';
+        // MAIN BODY — bulbous teardrop, narrow at top, widest mid-body
+        s += '<path d="M29,80 Q19,81 17,86 Q16,91 23,92 L47,92 Q54,91 53,86 Q51,81 41,80 Z" fill="'+g+'"/>';
+        // Body shadow (left side darker for 3D form)
+        s += '<path d="M29,80 Q19,81 17,86 Q16,91 23,92 Q22,89 20,86 Q21,82 29,80.4 Z" fill="rgba(0,0,0,0.18)"/>';
+        // SPOUT — curving out to the LEFT
+        s += '<path d="M19,84 Q11,82 7,79 Q5.5,80 6,82 Q11,86 18,87 Z" fill="'+g+'"/>';
+        // Spout outline (top edge — brighter rim)
+        s += '<path d="M19,84 Q11,82 7,79" stroke="'+rim+'" stroke-width="0.4" fill="none"/>';
+        // Spout outline (bottom edge — slight shadow)
+        s += '<path d="M6,82 Q11,86 18,87" stroke="rgba(0,0,0,0.30)" stroke-width="0.4" fill="none"/>';
+        // Spout opening (dark hole at the tip)
+        s += '<ellipse cx="6.6" cy="80.5" rx="1.0" ry="1.4" fill="#0a0805" transform="rotate(-18 6.6 80.5)"/>';
+        // HANDLE — looped on the RIGHT
+        s += '<path d="M52,83 Q58.5,83.5 58.5,87 Q58.5,90.5 52,91" stroke="'+g+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M52.5,83.5 Q57.5,84 57.5,87 Q57.5,90 52.5,90.5" stroke="'+rim+'" stroke-width="0.4" fill="none"/>';
+        // NECK COLLAR — flared rim at top, where stem emerges
+        s += '<rect x="27" y="78.5" width="16" height="1.8" rx="0.4" fill="'+rim+'"/>';
+        s += '<rect x="29" y="79" width="12" height="1" fill="'+g+'"/>';
+        // Collar opening (dark — where stem descends through)
+        s += '<ellipse cx="35" cy="79.2" rx="3.5" ry="0.45" fill="#0a0805"/>';
+        // BODY HIGHLIGHT — sheen on right-of-center for metallic feel
+        s += '<ellipse cx="38" cy="85" rx="2.5" ry="5" fill="rgba(255,240,200,0.18)"/>';
+        s += '<ellipse cx="39" cy="84" rx="0.8" ry="3" fill="rgba(255,250,220,0.32)"/>';
+        // DECORATIVE ENGRAVED BAND across mid-body
+        s += '<path d="M19,87 Q35,89 51,87" stroke="'+rim+'" stroke-width="0.4" fill="none" opacity="0.75"/>';
+        s += '<circle cx="29" cy="87.8" r="0.45" fill="'+rim+'" opacity="0.75"/>';
+        s += '<circle cx="35" cy="88.05" r="0.55" fill="'+rim+'" opacity="0.85"/>';
+        s += '<circle cx="41" cy="87.8" r="0.45" fill="'+rim+'" opacity="0.75"/>';
         break;
       default: // Fallback — classic pot
         s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
@@ -13844,7 +13875,7 @@ document.addEventListener('keydown', function(e) {
     // Wood pots (barrel, stump, book, wagon, old boot) get grain, others get stipple
     if (p === 19 || p === 20 || p === 22 || p === 23 || p === 25 || p === 29 || p === 35 || p === 42 || p === 44) {
       s += microTexture(22, 80, 26, 10, _potSeed, _potDark, 0.12, 'grain');
-    } else if (p !== 15 && p !== 37 && p !== 38 && p !== 50 && p !== 56 && p !== 57) {
+    } else if (p !== 15 && p !== 37 && p !== 38 && p !== 50 && p !== 56 && p !== 57 && p !== 58 && p !== 59) {
       s += microTexture(22, 80, 26, 10, _potSeed, _potDark, 0.08, 'stipple');
     }
     return s;
