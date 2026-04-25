@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.58';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.59';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -18001,11 +18001,15 @@ document.addEventListener('keydown', function(e) {
           // Leading edge highlight
           s += '<path d="M'+ox+','+ly+' C'+_mc1x.toFixed(1)+','+_mc1y.toFixed(1)+' '+_mc2x.toFixed(1)+','+_mc2y.toFixed(1)+' '+_mTipX.toFixed(1)+','+_mTipY.toFixed(1)+'"'
              + ' fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.5" stroke-linecap="round"/>';
-          // Midrib vein
+          // Midrib vein — master pass: warm-shifted dark + cream highlight pair (Hokusai trick)
           var _mmX = ox + (_mTipX - ox) * 0.72;
           var _mmY = ly + (_mTipY - ly) * 0.72;
           s += '<path d="M'+ox+','+ly+' Q'+(ox+side*_mLen*0.2).toFixed(1)+','+(ly-_mLen*0.35).toFixed(1)+' '+_mmX.toFixed(1)+','+_mmY.toFixed(1)+'"'
-             + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.45" opacity="'+(op*0.35).toFixed(2)+'" stroke-linecap="round"/>';
+             + ' fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.50" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' Q'+(ox+side*_mLen*0.2).toFixed(1)+','+(ly-_mLen*0.35).toFixed(1)+' '+_mmX.toFixed(1)+','+_mmY.toFixed(1)+'"'
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // Tip terminator — small dark dot at apex
+          s += '<circle cx="'+_mTipX.toFixed(1)+'" cy="'+_mTipY.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.55)"/>';
           // Fenestration holes — characteristic Monstera splits
           if (ls > 5) {
             var _fhX = ox + (_mTipX - ox) * 0.42 + side * _mWid * 0.18;
@@ -18027,11 +18031,11 @@ document.addEventListener('keydown', function(e) {
           var _fTY = ly - _fRL * 0.55; // less vertical — more horizontal
           var _fCX = ox + side * ls * 1.2;
           var _fCY = ly - _fRL * 0.35;
-          // Rachis stroke
+          // Rachis stroke — master pass warm-shifted dark + Hokusai cream pair
           s += '<path d="M'+ox+','+ly+' Q'+_fCX.toFixed(1)+','+_fCY.toFixed(1)+' '+_fTX.toFixed(1)+','+_fTY.toFixed(1)+'"'
-             + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.7" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
+             + ' fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.70" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
           s += '<path d="M'+ox+','+ly+' Q'+_fCX.toFixed(1)+','+_fCY.toFixed(1)+' '+_fTX.toFixed(1)+','+_fTY.toFixed(1)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.3)" stroke-width="0.3" stroke-linecap="round"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.30" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
           // 5 pairs of pinnae along rachis
           for (var _fp = 0; _fp < 5; _fp++) {
             var _ft = (_fp + 0.8) / 6.0;
@@ -18092,12 +18096,14 @@ document.addEventListener('keydown', function(e) {
             var _mpl = _mpLobes[_mpv];
             var _mpTx = lx + side * _mpl.r * Math.cos(_mpl.ang);
             var _mpTy = ly + _mpl.r * Math.sin(_mpl.ang) - _mpl.r * 0.2;
-            // Primary vein — dark line from base to lobe tip
+            // Primary vein — master pass warm-shifted dark
             s += '<path d="M'+ox+','+ly+' Q'+(ox+((_mpTx-ox)*0.4)).toFixed(1)+','+(ly+((_mpTy-ly)*0.45)).toFixed(1)+' '+_mpTx.toFixed(1)+','+_mpTy.toFixed(1)+'"'
-               + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.4" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
-            // Vein highlight — cream line offset slightly
-            s += '<path d="M'+ox+','+ly+' Q'+(ox+((_mpTx-ox)*0.4)+side*0.2).toFixed(1)+','+(ly+((_mpTy-ly)*0.45)-0.15).toFixed(1)+' '+_mpTx.toFixed(1)+','+_mpTy.toFixed(1)+'"'
-               + ' fill="none" stroke="rgba(240,235,216,0.25)" stroke-width="0.2" opacity="1" stroke-linecap="round"/>';
+               + ' fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.45" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+            // Cream highlight pair (Hokusai)
+            s += '<path d="M'+ox+','+ly+' Q'+(ox+((_mpTx-ox)*0.4)).toFixed(1)+','+(ly+((_mpTy-ly)*0.45)).toFixed(1)+' '+_mpTx.toFixed(1)+','+_mpTy.toFixed(1)+'"'
+               + ' fill="none" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.25,-0.18)"/>';
+            // Tip terminator at each lobe apex
+            s += '<circle cx="'+_mpTx.toFixed(1)+'" cy="'+_mpTy.toFixed(1)+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
             // Secondary vein branches — 1-2 small forks off each primary
             var _mpVmidX = ox + (_mpTx - ox) * 0.5;
             var _mpVmidY = ly + (_mpTy - ly) * 0.5;
