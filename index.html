@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.59';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.60';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -17858,12 +17858,12 @@ document.addEventListener('keydown', function(e) {
           // Leading edge highlight — bright cream rim
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.4)+','+(ly-ls*0.3)+' '+(tip-side*ls*0.3)+','+(ly-ls*0.85)+' '+tip+','+(tipY+ls*0.35)+' C'+(tip+side*ls*0.2)+','+(tipY-ls*0.05)+' '+(_obCurlX+side*ls*0.15)+','+_obCurlY+' '+_obCurlX+','+(_obCurlY+ls*0.05)+'"'
              + ' fill="none" stroke="rgba(240,235,216,0.48)" stroke-width="0.55" stroke-linecap="round"/>';
-          // Prominent midrib — thick dark central vein
+          // Prominent midrib — master pass warm-shifted dark
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.2)+','+(ly-ls*0.5)+' '+(lx+side*ls*0.05)+','+(ly-ls*0.8)+' '+_obCurlX+','+(_obCurlY+ls*0.05)+'"'
-             + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.6" opacity="'+(op*0.48).toFixed(2)+'" stroke-linecap="round"/>';
-          // Midrib cream highlight
+             + ' fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.60" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // Midrib cream highlight pair (Hokusai)
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.2)+','+(ly-ls*0.5)+' '+(lx+side*ls*0.05)+','+(ly-ls*0.8)+' '+_obCurlX+','+(_obCurlY+ls*0.05)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.22)" stroke-width="0.25" stroke-linecap="round"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.25" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
           // Lateral veins — 4 pairs branching from midrib
           for (var _obv = 0; _obv < 4; _obv++) {
             var _obvT = 0.15 + _obv * 0.2;
@@ -17881,8 +17881,10 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox+side*ls*0.2)+','+(ly-ls*0.25)+' Q'+(lx+side*ls*0.1)+','+(ly-ls*0.65)+' '+_obCurlX+','+(_obCurlY+ls*0.15)+'"'
              + ' fill="none" stroke="'+shiftedLight+'" stroke-width="1.3" opacity="'+(op*0.1).toFixed(2)+'" stroke-linecap="round"/>';
           // Curl detail — small spiral mark at the fiddlehead tip
-          s += '<circle cx="'+_obCurlX.toFixed(1)+'" cy="'+(_obCurlY+ls*0.03).toFixed(1)+'" r="'+(ls*0.06).toFixed(2)+'" fill="'+shiftedDark+'" opacity="'+(op*0.25).toFixed(2)+'"/>';
-          s += '<circle cx="'+(_obCurlX-side*ls*0.02).toFixed(1)+'" cy="'+(_obCurlY+ls*0.02).toFixed(1)+'" r="'+(ls*0.03).toFixed(2)+'" fill="rgba(240,235,216,0.4)" opacity="'+(op*0.35).toFixed(2)+'"/>';
+          s += '<circle cx="'+_obCurlX.toFixed(1)+'" cy="'+(_obCurlY+ls*0.03).toFixed(1)+'" r="'+(ls*0.06).toFixed(2)+'" fill="rgba(40,20,5,0.55)" opacity="'+(op*0.45).toFixed(2)+'"/>';
+          s += '<circle cx="'+(_obCurlX-side*ls*0.02).toFixed(1)+'" cy="'+(_obCurlY+ls*0.02).toFixed(1)+'" r="'+(ls*0.03).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          // Tip terminator at curl point (master playbook)
+          s += '<circle cx="'+_obCurlX.toFixed(1)+'" cy="'+(_obCurlY+ls*0.05).toFixed(1)+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
           // Base shadow at petiole
           s += '<path d="M'+(ox-side*ls*0.04)+','+ly+' Q'+(ox+side*ls*0.1)+','+(ly-ls*0.1)+' '+(ox+side*ls*0.25)+','+(ly-ls*0.18)+'"'
              + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.7" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
