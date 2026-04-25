@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.4';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12582,6 +12582,9 @@ document.addEventListener('keydown', function(e) {
     // 3. BASE
     if (prog >= 0.3) svg += renderBase(t, uid);
 
+    // 3.5 POT-BACK (rim/sidewall for split-render pots like tire — drawn BEHIND stem)
+    svg += renderPotBack(t, uid);
+
     // 4. STEM (renders BEFORE pot so rim covers stem base — depth effect)
     var stemTop = Math.max(10, 78 - t.stemHeight);
     var visibleTop = 78 - (t.stemHeight * prog);
@@ -12857,6 +12860,7 @@ document.addEventListener('keydown', function(e) {
     var _safeBloomY = visibleTop;
 
     svg += renderBase(t, uid);
+    svg += renderPotBack(t, uid);
     svg += renderStem(t, uid, visibleTop, isGlass, prog);
     svg += renderPot(t, uid);
     // Front-of-pot mushroom substrate (case 18)
@@ -12888,6 +12892,37 @@ document.addEventListener('keydown', function(e) {
   };
   window.buildAttentionPayload = buildAttentionPayload;
   window.updateFocusPlant = updateFocusPlant;
+
+  // ── POT BACK RENDERER ──
+  // Renders the BACK portion of pots that need split rendering (drawn BEFORE stem
+  // so the stem appears IN FRONT of the back rim while cavity/front-lip in renderPot
+  // still occlude the stem at the hole). Returns empty string for normal pots.
+  function renderPotBack(t, uid) {
+    var p = (t.pot || 0) % 60;
+    var s = '';
+    switch (p) {
+      case 58: // Tractor Tire — back rim + sidewall draw behind stem
+        // Drop shadow on ground
+        s += '<ellipse cx="35" cy="92.8" rx="21" ry="1.2" fill="rgba(0,0,0,0.42)"/>';
+        // Back/ground edge of tire
+        s += '<ellipse cx="35" cy="91" rx="21" ry="2" fill="#0e0e0e"/>';
+        // Tire sidewall body
+        s += '<path d="M14,78 L14,91 Q14,93 35,93 Q56,93 56,91 L56,78 Z" fill="#1a1a1a"/>';
+        // Sidewall vertical tread ribs
+        s += '<path d="M16,80 L16,89 M21,79 L21,90 M27,78.5 L27,90.5 M33,78 L33,91 M37,78 L37,91 M43,78.5 L43,90.5 M49,79 L49,90 M54,80 L54,89" stroke="#080808" stroke-width="0.6" fill="none"/>';
+        // Bottom shadow line
+        s += '<path d="M14,89.5 Q35,91 56,89.5" stroke="rgba(0,0,0,0.55)" stroke-width="0.7" fill="none"/>';
+        // Top contact surface (rim) — drawn BEHIND stem so stem overlays it
+        s += '<ellipse cx="35" cy="78" rx="21" ry="2.3" fill="#262626"/>';
+        // Tread chunks dashed perimeter
+        s += '<ellipse cx="35" cy="78" rx="21" ry="2.3" fill="none" stroke="#080808" stroke-width="1.4" stroke-dasharray="2 1.5"/>';
+        // Highlight band on back of rim
+        s += '<ellipse cx="35" cy="77.4" rx="19" ry="0.5" fill="rgba(170,160,150,0.22)"/>';
+        break;
+    }
+    return s;
+  }
+  window.renderPotBack = renderPotBack;
 
   // ── POT RENDERER ──
   function renderPot(t, uid) {
@@ -13799,26 +13834,10 @@ document.addEventListener('keydown', function(e) {
         s += '<animate attributeName="opacity" values="0.04;0.08;0.04" dur="5s" repeatCount="indefinite"/>';
         s += '</circle>';
         break;
-      case 58: // Tractor Tire — short thick cylinder viewed slightly from above, hole at top
-        // Drop shadow on ground
-        s += '<ellipse cx="35" cy="92.5" rx="21" ry="1.2" fill="rgba(0,0,0,0.42)"/>';
-        // Back/ground edge of tire (subtle dark shape behind)
-        s += '<ellipse cx="35" cy="91" rx="21" ry="2" fill="#0e0e0e"/>';
-        // Tire sidewall body (rubber wall from y=78 to ground)
-        s += '<path d="M14,78 L14,91 Q14,93 35,93 Q56,93 56,91 L56,78 Z" fill="#1a1a1a"/>';
-        // Sidewall vertical tread ribs (depth/texture on visible side wall)
-        s += '<path d="M16,80 L16,89 M21,79 L21,90 M27,78.5 L27,90.5 M33,78 L33,91 M37,78 L37,91 M43,78.5 L43,90.5 M49,79 L49,90 M54,80 L54,89" stroke="#080808" stroke-width="0.6" fill="none"/>';
-        // Bottom shadow line (depth where sidewall curves under)
-        s += '<path d="M14,89.5 Q35,91 56,89.5" stroke="rgba(0,0,0,0.55)" stroke-width="0.7" fill="none"/>';
-        // Top contact surface (the rubber rim seen from above)
-        s += '<ellipse cx="35" cy="78" rx="21" ry="2.3" fill="#262626"/>';
-        // Tread chunks on top rim (dashed perimeter)
-        s += '<ellipse cx="35" cy="78" rx="21" ry="2.3" fill="none" stroke="#080808" stroke-width="1.4" stroke-dasharray="2 1.5"/>';
-        // Subtle highlight band on back edge of rim
-        s += '<ellipse cx="35" cy="77.4" rx="19" ry="0.5" fill="rgba(170,160,150,0.22)"/>';
-        // Inner shadow (darker rubber where rim curves down into cavity) — stays inside rim
+      case 58: // Tractor Tire — front portion only. Back rim + sidewall draw in renderPotBack BEFORE stem so stem overlays the back rim. Cavity here covers stem at the hole.
+        // Inner shadow (darker rubber where rim curves down into cavity)
         s += '<ellipse cx="35" cy="78.05" rx="15.5" ry="1.95" fill="#0a0a0a"/>';
-        // Cavity void (the hole — stem descends into this)
+        // Cavity void (the hole — stem visually descends into this)
         s += '<ellipse cx="35" cy="78" rx="13.5" ry="1.6" fill="#000000"/>';
         // Soil at bottom of cavity
         s += '<ellipse cx="35" cy="78.35" rx="11" ry="1.0" fill="#2a1d10"/>';
@@ -13850,10 +13869,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M52,83 Q58.5,83.5 58.5,87 Q58.5,90.5 52,91" stroke="'+g+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
         s += '<path d="M52.5,83.5 Q57.5,84 57.5,87 Q57.5,90 52.5,90.5" stroke="'+rim+'" stroke-width="0.4" fill="none"/>';
         // NECK COLLAR — flared rim at top, where stem emerges
-        s += '<rect x="27" y="78.5" width="16" height="1.8" rx="0.4" fill="'+rim+'"/>';
-        s += '<rect x="29" y="79" width="12" height="1" fill="'+g+'"/>';
-        // Collar opening (dark — where stem descends through)
-        s += '<ellipse cx="35" cy="79.2" rx="3.5" ry="0.45" fill="#0a0805"/>';
+        s += '<rect x="28" y="78.5" width="14" height="1.8" rx="0.4" fill="'+rim+'"/>';
+        s += '<rect x="30" y="79" width="10" height="1" fill="'+g+'"/>';
+        // Small raised lip around the wick-hole
+        s += '<ellipse cx="35" cy="78.7" rx="2.4" ry="0.55" fill="'+rim+'"/>';
+        // Wick-hole opening (dark — stem descends through this small mouth)
+        s += '<ellipse cx="35" cy="78.85" rx="1.6" ry="0.35" fill="#0a0805"/>';
         // BODY HIGHLIGHT — sheen on right-of-center for metallic feel
         s += '<ellipse cx="38" cy="85" rx="2.5" ry="5" fill="rgba(255,240,200,0.18)"/>';
         s += '<ellipse cx="39" cy="84" rx="0.8" ry="3" fill="rgba(255,250,220,0.32)"/>';
