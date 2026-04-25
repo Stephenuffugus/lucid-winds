@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.42';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.43';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -17322,48 +17322,98 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-side*ls*0.04)+','+ly+' Q'+(ox+side*ls*0.1)+','+(ly-ls*0.1)+' '+(ox+side*ls*0.25)+','+(ly-ls*0.18)+'"'
              + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.7" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
           break;
-        case 1: // Willow
+        case 1: // Willow — lanceolate, pinnate-camptodromous, finely serrate.
           var wTip = lx+side*ls*0.35, wTipY = ly-ls*1.3;
-          if (i === 4) { wTip = lx+side*ls*0.6; wTipY = ly-ls*0.65; } // flatten toward horizontal
+          if (i === 4) { wTip = lx+side*ls*0.6; wTipY = ly-ls*0.65; }
           bodyD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.5)+','+(ly-ls*0.5)+' '+(wTip+side*ls*0.3)+','+(ly-ls)+' '+wTip+','+wTipY
              + ' C'+(wTip-side*ls*0.15)+','+(wTipY-ls*0.1)+' '+(ox+side*ls*0.1)+','+(ly-ls*0.4)+' '+ox+','+ly+'Z';
-          s += '<path d="' + bodyD + '"'
-             + ' fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
-          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.5)+','+(ly-ls*0.5)+' '+(wTip+side*ls*0.3)+','+(ly-ls)+' '+wTip+','+wTipY+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.38)" stroke-width="0.5" stroke-linecap="round"/>';
-          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.28)+','+(ly-ls*0.65)+' '+wTip+','+(wTipY+ls*0.3)+' '+wTip+','+wTipY+'"'
-             + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.4" opacity="'+(op*0.32)+'"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
+          // Cream specular lozenge (upper-third lit area)
+          s += '<ellipse cx="'+(ox+side*ls*0.35).toFixed(1)+'" cy="'+(ly-ls*0.5).toFixed(1)+'" rx="'+(ls*0.10).toFixed(2)+'" ry="'+(ls*0.30).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'" transform="rotate('+(side*-18)+' '+(ox+side*ls*0.35).toFixed(1)+' '+(ly-ls*0.5).toFixed(1)+')"/>';
+          // Leading edge cream highlight
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.5)+','+(ly-ls*0.5)+' '+(wTip+side*ls*0.3)+','+(ly-ls)+' '+wTip+','+wTipY+'" fill="none" stroke="#f5ecd6" stroke-width="0.40" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // Midrib (warm-shifted dark)
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.28)+','+(ly-ls*0.55)+' '+wTip+','+(wTipY+ls*0.3)+' '+wTip+','+wTipY+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.42" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // Midrib cream highlight pair
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.28)+','+(ly-ls*0.55)+' '+wTip+','+(wTipY+ls*0.3)+' '+wTip+','+wTipY+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // 4 brochidodromous secondary veins (looping toward margin, not touching it)
+          for (var _w1v = 0; _w1v < 4; _w1v++) {
+            var _w1t = 0.20 + _w1v * 0.18;
+            var _w1bx = ox + (wTip - ox) * _w1t;
+            var _w1by = ly + (wTipY - ly) * _w1t;
+            var _w1lp = ls * 0.18 * (1 - _w1t * 0.4);
+            s += '<path d="M'+_w1bx.toFixed(1)+','+_w1by.toFixed(1)+' Q'+(_w1bx+side*_w1lp*0.7).toFixed(1)+','+(_w1by-_w1lp*0.5).toFixed(1)+' '+(_w1bx+side*_w1lp*0.4).toFixed(1)+','+(_w1by-_w1lp*0.85).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.20" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round"/>';
+          }
+          // Tip terminator
+          s += '<circle cx="'+wTip+'" cy="'+wTipY+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
           break;
-        case 2: // Asymmetric lobed
+        case 2: // Begonia Rex — asymmetric ovate, palmate, dentate. Spiral silver-and-purple.
           var aLx = lx+side*ls*0.5, aRx = lx-side*ls*0.15;
           bodyD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.6)+','+(ly-ls*0.2)+' '+aLx+','+(ly-ls*0.6)+' '+(lx+side*ls*0.15)+','+ot
              + ' C'+(lx+side*ls*0.4)+','+(ot-ls*0.15)+' '+aRx+','+(ly-ls*0.7)+' '+aRx+','+(ly-ls*0.4)
              + ' S'+ox+','+(ly-ls*0.15)+' '+ox+','+ly+'Z';
-          s += '<path d="' + bodyD + '"'
-             + ' fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
-          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.6)+','+(ly-ls*0.2)+' '+aLx+','+(ly-ls*0.6)+' '+(lx+side*ls*0.15)+','+ot+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.38)" stroke-width="0.5" stroke-linecap="round"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
+          // Silver swirl markings (Begonia Rex signature) — pale curve along leading edge
+          s += '<path d="M'+(ox+side*ls*0.2).toFixed(1)+','+(ly-ls*0.3).toFixed(1)+' Q'+(ox+side*ls*0.5).toFixed(1)+','+(ly-ls*0.45).toFixed(1)+' '+(lx+side*ls*0.05).toFixed(1)+','+(ly-ls*0.85).toFixed(1)+'" fill="none" stroke="#c4d8e8" stroke-width="0.55" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round"/>';
+          // Cream specular
+          s += '<ellipse cx="'+(ox+side*ls*0.45).toFixed(1)+'" cy="'+(ly-ls*0.45).toFixed(1)+'" rx="'+(ls*0.20).toFixed(2)+'" ry="'+(ls*0.10).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'"/>';
+          // Leading edge cream highlight
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.6)+','+(ly-ls*0.2)+' '+aLx+','+(ly-ls*0.6)+' '+(lx+side*ls*0.15)+','+ot+'" fill="none" stroke="#f5ecd6" stroke-width="0.42" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // 3 palmate primaries radiating from base (asymmetric — Begonia Rex)
+          s += '<path d="M'+ox+','+ly+' Q'+(ox+side*ls*0.35).toFixed(1)+','+(ly-ls*0.45).toFixed(1)+' '+(lx+side*ls*0.05).toFixed(1)+','+(ly-ls*0.85).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.40" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' Q'+(ox+side*ls*0.5).toFixed(1)+','+(ly-ls*0.25).toFixed(1)+' '+aLx+','+(ly-ls*0.55).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.32" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' Q'+(ox-side*ls*0.05).toFixed(1)+','+(ly-ls*0.35).toFixed(1)+' '+aRx+','+(ly-ls*0.55).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.32" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+          // Cream highlight pair on central primary
+          s += '<path d="M'+ox+','+ly+' Q'+(ox+side*ls*0.35).toFixed(1)+','+(ly-ls*0.45).toFixed(1)+' '+(lx+side*ls*0.05).toFixed(1)+','+(ly-ls*0.85).toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.16" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.25,-0.15)"/>';
+          // Tip terminator
+          s += '<circle cx="'+(lx+side*ls*0.05).toFixed(1)+'" cy="'+(ly-ls*0.85).toFixed(1)+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
           break;
-        case 3: // Heart
+        case 3: // Sweetheart Hoya — cordate, palmate-pinnate hybrid, entire.
           var hBase = ox, hApex = lx+side*ls*0.5;
           bodyD = 'M'+hBase+','+ly+' C'+(hBase+side*ls*0.7)+','+(ly-ls*0.1)+' '+hApex+','+(ly-ls*0.7)+' '+hApex+','+(ly-ls*1.05)
              + ' C'+hApex+','+(ly-ls*1.35)+' '+lx+','+(ly-ls*1.2)+' '+lx+','+ot
              + ' C'+lx+','+(ot-ls*0.15)+' '+(hBase+side*ls*0.1)+','+(ly-ls*0.55)+' '+hBase+','+ly+'Z';
-          s += '<path d="' + bodyD + '"'
-             + ' fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
-          s += '<path d="M'+hBase+','+ly+' C'+(hBase+side*ls*0.7)+','+(ly-ls*0.1)+' '+hApex+','+(ly-ls*0.7)+' '+hApex+','+(ly-ls*1.05)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.38)" stroke-width="0.5" stroke-linecap="round"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
+          // Cream specular (upper third)
+          s += '<ellipse cx="'+(lx+side*ls*0.25).toFixed(1)+'" cy="'+(ly-ls*0.85).toFixed(1)+'" rx="'+(ls*0.15).toFixed(2)+'" ry="'+(ls*0.08).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.45).toFixed(2)+'"/>';
+          // Leading edge cream highlight
+          s += '<path d="M'+hBase+','+ly+' C'+(hBase+side*ls*0.7)+','+(ly-ls*0.1)+' '+hApex+','+(ly-ls*0.7)+' '+hApex+','+(ly-ls*1.05)+'" fill="none" stroke="#f5ecd6" stroke-width="0.42" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // Midrib + 3 palmate primaries from base sinus (Hoya signature)
+          s += '<path d="M'+hBase+','+ly+' Q'+(hBase+side*ls*0.3).toFixed(1)+','+(ly-ls*0.55).toFixed(1)+' '+lx+','+(ly-ls*1.1).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.45" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // Cream pair on midrib
+          s += '<path d="M'+hBase+','+ly+' Q'+(hBase+side*ls*0.3).toFixed(1)+','+(ly-ls*0.55).toFixed(1)+' '+lx+','+(ly-ls*1.1).toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // 2 lateral palmate primaries
+          s += '<path d="M'+hBase+','+ly+' Q'+(hBase+side*ls*0.55).toFixed(1)+','+(ly-ls*0.30).toFixed(1)+' '+hApex+','+(ly-ls*0.7).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.32" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+hBase+','+ly+' Q'+(hBase-side*ls*0.05).toFixed(1)+','+(ly-ls*0.35).toFixed(1)+' '+lx+','+(ot-ls*0.05).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.32" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+          // Basal sinus deep AO shadow (cordate signature)
+          s += '<ellipse cx="'+hBase+'" cy="'+(ly+0.3).toFixed(1)+'" rx="0.6" ry="0.25" fill="rgba(20,10,2,0.55)"/>';
+          // Tip terminator
+          s += '<circle cx="'+lx+'" cy="'+(ly-ls*1.1).toFixed(1)+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
           break;
-        case 4: // Spear
+        case 4: // Alocasia Polly — sagittate, pinnate-craspedodromous, sinuate. White veins on dark green.
           var sLen = ls*1.55, sTip = lx+side*ls*0.2, sTipY = ly-sLen;
           bodyD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.55)+','+(ly-sLen*0.3)+' '+(sTip+side*ls*0.18)+','+(sTipY+ls*0.4)+' '+sTip+','+sTipY
              + ' C'+(sTip-side*ls*0.1)+','+(sTipY+ls*0.3)+' '+(ox-side*ls*0.1)+','+(ly-sLen*0.4)+' '+ox+','+ly+'Z';
-          s += '<path d="' + bodyD + '"'
-             + ' fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
-          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.55)+','+(ly-sLen*0.3)+' '+(sTip+side*ls*0.18)+','+(sTipY+ls*0.4)+' '+sTip+','+sTipY+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.4)" stroke-width="0.5" stroke-linecap="round"/>';
-          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.15)+','+(ly-sLen*0.5)+' '+sTip+','+(sTipY+ls*0.5)+' '+sTip+','+sTipY+'"'
-             + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.5" opacity="'+(op*0.42)+'"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
+          // Leading edge cream highlight
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.55)+','+(ly-sLen*0.3)+' '+(sTip+side*ls*0.18)+','+(sTipY+ls*0.4)+' '+sTip+','+sTipY+'" fill="none" stroke="#f5ecd6" stroke-width="0.42" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+          // BRIGHT WHITE midrib (Alocasia Polly signature)
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.15)+','+(ly-sLen*0.5)+' '+sTip+','+(sTipY+ls*0.5)+' '+sTip+','+sTipY+'" fill="none" stroke="#f0f5e8" stroke-width="0.55" opacity="'+(op*0.85).toFixed(2)+'" stroke-linecap="round"/>';
+          // Dark warm-shifted shadow under white midrib (depth)
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.15)+','+(ly-sLen*0.5)+' '+sTip+','+(sTipY+ls*0.5)+' '+sTip+','+sTipY+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.22" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(0.25,0.15)"/>';
+          // 4 white-vein lateral channels (radiating to margin teeth)
+          for (var _a4v = 0; _a4v < 4; _a4v++) {
+            var _a4t = 0.18 + _a4v * 0.18;
+            var _a4mx = ox + (sTip - ox) * _a4t;
+            var _a4my = ly + (sTipY - ly) * _a4t;
+            var _a4l = ls * 0.30 * (1 - _a4t * 0.4);
+            // Right side (lit)
+            s += '<line x1="'+_a4mx.toFixed(1)+'" y1="'+_a4my.toFixed(1)+'" x2="'+(_a4mx+side*_a4l*0.85).toFixed(1)+'" y2="'+(_a4my-_a4l*0.4).toFixed(1)+'" stroke="#f0f5e8" stroke-width="0.30" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
+            // Left side
+            s += '<line x1="'+_a4mx.toFixed(1)+'" y1="'+_a4my.toFixed(1)+'" x2="'+(_a4mx-side*_a4l*0.6).toFixed(1)+'" y2="'+(_a4my+_a4l*0.2).toFixed(1)+'" stroke="#f0f5e8" stroke-width="0.25" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          }
+          // Tip terminator
+          s += '<circle cx="'+sTip+'" cy="'+sTipY+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
           break;
         case 5: // Monstera — individual leaves distributed along stem nodes
           // Large organic blade with fenestration, sized up for monstera proportions
@@ -17525,15 +17575,27 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-side*ls*0.05)+','+ly+' Q'+(ox+side*ls*0.1)+','+(ly-ls*0.12)+' '+(ox+side*ls*0.25)+','+(ly-ls*0.2)+'"'
              + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.7" opacity="'+(op*0.2).toFixed(2)+'" stroke-linecap="round"/>';
           break;
-        case 8: // Paddle — wide succulent
+        case 8: // Hosta — ovate-elliptic, ARCUATE veins (concentric ribs base→tip), entire.
           bodyD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.9)+','+(ly+ls*0.05)+' '+(lx+side*ls*0.85)+','+(ly-ls*1.1)+' '+lx+','+(ly-ls*1.1)
              + ' C'+(lx-side*ls*0.85)+','+(ly-ls*1.1)+' '+(ox-side*ls*0.4)+','+(ly+ls*0.05)+' '+ox+','+ly+'Z';
-          s += '<path d="' + bodyD + '"'
-             + ' fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'" filter="url(#ds'+uid+')"/>';
-          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.9)+','+(ly+ls*0.05)+' '+(lx+side*ls*0.85)+','+(ly-ls*1.1)+' '+lx+','+(ly-ls*1.1)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.4)" stroke-width="0.5" stroke-linecap="round"/>';
-          s += '<path d="M'+ox+','+ly+' S'+lx+','+(ly-ls*0.55)+' '+lx+','+(ly-ls*1.1)+'"'
-             + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.5" opacity="'+(op*0.38)+'"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'" filter="url(#ds'+uid+')"/>';
+          // Cream specular (upper third)
+          s += '<ellipse cx="'+(ox+side*ls*0.45).toFixed(1)+'" cy="'+(ly-ls*0.5).toFixed(1)+'" rx="'+(ls*0.18).toFixed(2)+'" ry="'+(ls*0.32).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'" transform="rotate('+(side*-15)+' '+(ox+side*ls*0.45).toFixed(1)+' '+(ly-ls*0.5).toFixed(1)+')"/>';
+          // Leading edge cream highlight
+          s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.9)+','+(ly+ls*0.05)+' '+(lx+side*ls*0.85)+','+(ly-ls*1.1)+' '+lx+','+(ly-ls*1.1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.42" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+          // Midrib (warm-shifted dark + cream pair)
+          s += '<path d="M'+ox+','+ly+' S'+lx+','+(ly-ls*0.55)+' '+lx+','+(ly-ls*1.1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.50" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' S'+lx+','+(ly-ls*0.55)+' '+lx+','+(ly-ls*1.1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // 4 ARCUATE concentric ribs (Hosta signature) — running base toward tip parallel to margin
+          for (var _h8v = 0; _h8v < 4; _h8v++) {
+            var _h8t = 0.20 + _h8v * 0.18; // 0.20..0.74 outward from midrib
+            // Right arc (lit side)
+            s += '<path d="M'+ox+','+ly+' Q'+(ox+side*ls*(0.45+_h8t*0.4)).toFixed(1)+','+(ly-ls*0.55).toFixed(1)+' '+lx+','+(ly-ls*1.05).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="'+(0.30 - _h8v*0.04).toFixed(2)+'" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round"/>';
+            // Left arc (shadow side)
+            s += '<path d="M'+ox+','+ly+' Q'+(ox-side*ls*(0.30+_h8t*0.3)).toFixed(1)+','+(ly-ls*0.55).toFixed(1)+' '+lx+','+(ly-ls*1.05).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.35)" stroke-width="'+(0.28 - _h8v*0.04).toFixed(2)+'" opacity="'+(op*0.40).toFixed(2)+'" stroke-linecap="round"/>';
+          }
+          // Tip terminator
+          s += '<circle cx="'+lx+'" cy="'+(ly-ls*1.1).toFixed(1)+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
           break;
         case 9: // Needle cluster
           for (var ni = 0; ni < 5; ni++) {
