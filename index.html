@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.41';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.42';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -20156,7 +20156,7 @@ document.addEventListener('keydown', function(e) {
           break;
 
         // ═══ RARE+ EXPANDED LEAVES (cases 60-70) ═══
-        case 60: // Crystal Shard — angular geometric leaf, faceted like a gemstone
+        case 60: // Crystal Shard — gemstone-faceted leaf with prismatic edges + light refraction.
           var _csLen = ls * 2.2;
           var _csAng = -0.3 - leafFrac * 0.4;
           var _csTx = ox + Math.cos(_csAng) * _csLen * 0.8 * side;
@@ -20171,12 +20171,26 @@ document.addEventListener('keydown', function(e) {
           var _csRx = _csMx - Math.cos(_csPa) * _csW * 0.6 * side;
           var _csRy = _csMy - Math.sin(_csPa) * _csW * 0.6;
           bodyD = 'M'+ox+','+ly+' L'+_csLx.toFixed(1)+','+_csLy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+' L'+_csRx.toFixed(1)+','+_csRy.toFixed(1)+' Z';
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.8).toFixed(2)+'"/>';
-          s += '<path d="M'+ox+','+ly+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+'" stroke="rgba(240,235,216,0.4)" stroke-width="0.3"/>';
-          s += '<path d="M'+_csLx.toFixed(1)+','+_csLy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+'" stroke="rgba(240,235,216,0.2)" stroke-width="0.2"/>';
+          // Two facet planes (lit + shadow) — diamond bisected along midrib
+          var _csFLx = ox + (_csLx-ox)*0.5; var _csFLy = ly + (_csLy-ly)*0.5;
+          var _csFRx = ox + (_csRx-ox)*0.5; var _csFRy = ly + (_csRy-ly)*0.5;
+          // Lit upper facet (cream-tinted)
+          s += '<path d="M'+ox+','+ly+' L'+_csLx.toFixed(1)+','+_csLy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+' Z" fill="'+shiftedLight+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Shadow lower facet
+          s += '<path d="M'+ox+','+ly+' L'+_csRx.toFixed(1)+','+_csRy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+' Z" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
+          // Inner mid-facets for gem depth
+          s += '<path d="M'+_csFLx.toFixed(1)+','+_csFLy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+' L'+_csFRx.toFixed(1)+','+_csFRy.toFixed(1)+' Z" fill="rgba(245,236,214,0.30)"/>';
+          // Crystalline edge bevels (warm-shifted dark)
+          s += '<path d="M'+ox+','+ly+' L'+_csLx.toFixed(1)+','+_csLy.toFixed(1)+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+' L'+_csRx.toFixed(1)+','+_csRy.toFixed(1)+' Z" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.22" stroke-linejoin="miter"/>';
+          // Cream prismatic refraction line (midrib)
+          s += '<path d="M'+ox+','+ly+' L'+_csTx.toFixed(1)+','+_csTy.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
+          // Sharp pickup glint near tip
+          s += '<circle cx="'+(_csTx*0.85+_csMx*0.15).toFixed(1)+'" cy="'+(_csTy*0.85+_csMy*0.15).toFixed(1)+'" r="0.35" fill="#fff8e0" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Tip terminator dot
+          s += '<circle cx="'+_csTx.toFixed(1)+'" cy="'+_csTy.toFixed(1)+'" r="0.25" fill="rgba(40,20,5,0.55)"/>';
           break;
 
-        case 61: // Ember Leaf — flame-shaped with warm gradient tip
+        case 61: // Ember Leaf — flame-tongue with molten ember tip + sparks rising.
           var _elLen = ls * 2.4;
           var _elAng = -0.25 - leafFrac * 0.35;
           var _elTx = ox + Math.cos(_elAng) * _elLen * 0.85 * side;
@@ -20184,12 +20198,37 @@ document.addEventListener('keydown', function(e) {
           tip = _elTx; tipY = _elTy;
           var _elW = ls * 0.5;
           var _elPa = _elAng + Math.PI * 0.5;
+          // Mid waypoints for undulating flame edge
+          var _elM1x = ox + Math.cos(_elAng)*_elLen*0.35*side + Math.cos(_elPa)*_elW*1.3*side;
+          var _elM1y = ly + Math.sin(_elAng)*_elLen*0.35 + Math.sin(_elPa)*_elW*1.3 - _elLen*0.05;
+          var _elM2x = ox + Math.cos(_elAng)*_elLen*0.65*side + Math.cos(_elPa)*_elW*0.9*side;
+          var _elM2y = ly + Math.sin(_elAng)*_elLen*0.65 + Math.sin(_elPa)*_elW*0.9 - _elLen*0.10;
           bodyD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_elPa)*_elW*1.2*side).toFixed(1)+','+(ly+Math.sin(_elPa)*_elW*1.2-_elLen*0.2).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+' Q'+(ox-Math.cos(_elPa)*_elW*0.8*side).toFixed(1)+','+(ly-Math.sin(_elPa)*_elW*0.8-_elLen*0.15).toFixed(1)+' '+ox+','+ly+' Z';
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.8).toFixed(2)+'"/>';
-          s += '<path d="M'+ox+','+ly+' Q'+(ox+Math.cos(_elAng)*_elLen*0.4*side).toFixed(1)+','+(ly+Math.sin(_elAng)*_elLen*0.4).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+'" fill="none" stroke="'+shiftedDark+'" stroke-width="0.4" opacity="'+(op*0.4).toFixed(2)+'"/>';
+          // Outer flame body (warm green-orange base)
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Inner glow body (smaller, hotter — molten core)
+          var _elI1x = ox + Math.cos(_elPa)*_elW*0.7*side;
+          var _elI1y = ly + Math.sin(_elPa)*_elW*0.7 - _elLen*0.18;
+          var _elI2x = ox - Math.cos(_elPa)*_elW*0.5*side;
+          var _elI2y = ly - Math.sin(_elPa)*_elW*0.5 - _elLen*0.12;
+          s += '<path d="M'+ox+','+ly+' Q'+_elI1x.toFixed(1)+','+_elI1y.toFixed(1)+' '+(_elTx*0.92+ox*0.08).toFixed(1)+','+(_elTy*0.92+ly*0.08).toFixed(1)+' Q'+_elI2x.toFixed(1)+','+_elI2y.toFixed(1)+' '+ox+','+ly+' Z" fill="#d4842a" opacity="'+(op*0.50).toFixed(2)+'"/>';
+          // Molten core (cream-yellow ember)
+          s += '<ellipse cx="'+((_elTx+ox)*0.5).toFixed(1)+'" cy="'+((_elTy+ly)*0.5).toFixed(1)+'" rx="'+(_elW*0.32).toFixed(1)+'" ry="'+(_elLen*0.20).toFixed(1)+'" fill="#fff8b0" opacity="'+(op*0.45).toFixed(2)+'" transform="rotate('+(_elAng*180/Math.PI).toFixed(0)+' '+((_elTx+ox)*0.5).toFixed(1)+' '+((_elTy+ly)*0.5).toFixed(1)+')"/>';
+          // Midrib (warm-shifted dark)
+          s += '<path d="M'+ox+','+ly+' Q'+(ox+Math.cos(_elAng)*_elLen*0.4*side).toFixed(1)+','+(ly+Math.sin(_elAng)*_elLen*0.4).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.42" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // Cream highlight pair on midrib
+          s += '<path d="M'+ox+','+ly+' Q'+(ox+Math.cos(_elAng)*_elLen*0.4*side).toFixed(1)+','+(ly+Math.sin(_elAng)*_elLen*0.4).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // Tip ember glow (sharp pickup)
+          s += '<circle cx="'+_elTx.toFixed(1)+'" cy="'+_elTy.toFixed(1)+'" r="'+(ls*0.18).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          s += '<circle cx="'+_elTx.toFixed(1)+'" cy="'+_elTy.toFixed(1)+'" r="'+(ls*0.10).toFixed(2)+'" fill="#fff" opacity="'+(op*0.75).toFixed(2)+'"/>';
+          // Two tiny sparks rising near tip
+          var _elSpAng = _elAng - 0.4;
+          var _elSp1x = _elTx + Math.cos(_elSpAng)*ls*0.4*side;
+          var _elSp1y = _elTy + Math.sin(_elSpAng)*ls*0.4 - ls*0.15;
+          s += '<circle cx="'+_elSp1x.toFixed(1)+'" cy="'+_elSp1y.toFixed(1)+'" r="0.20" fill="#fff8b0" opacity="'+(op*0.7).toFixed(2)+'"/>';
           break;
 
-        case 62: // Feather Frond — elongated barbed leaf like a bird feather
+        case 62: // Phoenix-Feather Frond — bipinnate frond, pinnae fade green-base to ember-tip with sparks.
           var _ffLen = ls * 2.8;
           var _ffAng = -0.2 - leafFrac * 0.3;
           var _ffTx = ox + Math.cos(_ffAng) * _ffLen * 0.9 * side;
@@ -20198,31 +20237,69 @@ document.addEventListener('keydown', function(e) {
           var _ffW = ls * 0.35;
           var _ffPa = _ffAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_ffPa)*_ffW*side).toFixed(1)+','+(ly+Math.sin(_ffPa)*_ffW-_ffLen*0.15).toFixed(1)+' '+(_ffTx+Math.cos(_ffPa)*_ffW*0.3*side).toFixed(1)+','+(_ffTy+Math.sin(_ffPa)*_ffW*0.3).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+' C'+(_ffTx-Math.cos(_ffPa)*_ffW*0.2*side).toFixed(1)+','+(_ffTy-Math.sin(_ffPa)*_ffW*0.2).toFixed(1)+' '+(ox-Math.cos(_ffPa)*_ffW*0.6*side).toFixed(1)+','+(ly-Math.sin(_ffPa)*_ffW*0.6-_ffLen*0.1).toFixed(1)+' '+ox+','+ly+' Z';
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
-          // Barbs — 5 pairs of fine lines radiating from rachis
-          for (var _fb = 0; _fb < 5; _fb++) {
-            var _fbt = 0.15 + _fb * 0.15;
+          // Frond outline (subtle, low-opacity — pinnae carry the visual weight)
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          // Rachis (warm-shifted dark with cream highlight pair)
+          s += '<path d="M'+ox+','+ly+' Q'+((ox+_ffTx)/2).toFixed(1)+','+((ly+_ffTy)/2).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.45" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' Q'+((ox+_ffTx)/2).toFixed(1)+','+((ly+_ffTy)/2).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // Pinnae — 7 pairs, each is a small filled lanceolate with color shifting from green base to ember tip
+          for (var _fb = 0; _fb < 7; _fb++) {
+            var _fbt = 0.10 + _fb * 0.12; // 0.10..0.82 along rachis
             var _fbx = ox + (_ffTx - ox) * _fbt;
             var _fby = ly + (_ffTy - ly) * _fbt;
-            var _fbl = _ffW * (0.8 - _fbt * 0.5);
-            s += '<line x1="'+_fbx.toFixed(1)+'" y1="'+_fby.toFixed(1)+'" x2="'+(_fbx+Math.cos(_ffPa)*_fbl*side).toFixed(1)+'" y2="'+(_fby+Math.sin(_ffPa)*_fbl).toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.2" opacity="'+(op*0.3).toFixed(2)+'"/>';
-            s += '<line x1="'+_fbx.toFixed(1)+'" y1="'+_fby.toFixed(1)+'" x2="'+(_fbx-Math.cos(_ffPa)*_fbl*0.7*side).toFixed(1)+'" y2="'+(_fby-Math.sin(_ffPa)*_fbl*0.7).toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.2" opacity="'+(op*0.3).toFixed(2)+'"/>';
+            var _fbl = _ffW * (1.1 - _fbt * 0.6); // pinna length
+            // Color shift base→tip: green→amber→ember
+            var _fbCol = _fbt < 0.4 ? baseColor : (_fbt < 0.7 ? '#d4842a' : '#fff8b0');
+            // Right-side pinna (filled lanceolate via Q-curves)
+            var _fb1x = _fbx + Math.cos(_ffPa)*_fbl*side;
+            var _fb1y = _fby + Math.sin(_ffPa)*_fbl;
+            var _fb1cx = _fbx + Math.cos(_ffPa)*_fbl*0.5*side + Math.cos(_ffAng)*_fbl*0.2*side;
+            var _fb1cy = _fby + Math.sin(_ffPa)*_fbl*0.5 + Math.sin(_ffAng)*_fbl*0.2;
+            s += '<path d="M'+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Q'+_fb1cx.toFixed(1)+','+(_fb1cy-_fbl*0.15).toFixed(1)+' '+_fb1x.toFixed(1)+','+_fb1y.toFixed(1)+' Q'+_fb1cx.toFixed(1)+','+(_fb1cy+_fbl*0.05).toFixed(1)+' '+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Z" fill="'+_fbCol+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
+            // Left-side pinna (mirrored)
+            var _fb2x = _fbx - Math.cos(_ffPa)*_fbl*0.85*side;
+            var _fb2y = _fby - Math.sin(_ffPa)*_fbl*0.85;
+            var _fb2cx = _fbx - Math.cos(_ffPa)*_fbl*0.42*side + Math.cos(_ffAng)*_fbl*0.15*side;
+            var _fb2cy = _fby - Math.sin(_ffPa)*_fbl*0.42 + Math.sin(_ffAng)*_fbl*0.15;
+            s += '<path d="M'+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Q'+_fb2cx.toFixed(1)+','+(_fb2cy-_fbl*0.12).toFixed(1)+' '+_fb2x.toFixed(1)+','+_fb2y.toFixed(1)+' Q'+_fb2cx.toFixed(1)+','+(_fb2cy+_fbl*0.05).toFixed(1)+' '+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Z" fill="'+_fbCol+'" opacity="'+(op*0.70).toFixed(2)+'"/>';
+            // Ember spark on hot pinnae only
+            if (_fbt > 0.6) {
+              s += '<circle cx="'+_fb1x.toFixed(1)+'" cy="'+_fb1y.toFixed(1)+'" r="0.18" fill="#fff" opacity="'+(op*0.65).toFixed(2)+'"/>';
+            }
           }
+          // Tip ember glow
+          s += '<circle cx="'+_ffTx.toFixed(1)+'" cy="'+_ffTy.toFixed(1)+'" r="'+(ls*0.20).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.75).toFixed(2)+'"/>';
           break;
 
-        case 63: // Lunar Disc — perfectly circular leaf with concentric rings
+        case 63: // Lunar Disc — orbicular peltate disc with concentric silver bands + crater divots.
           var _ldR = ls * 1.1;
           var _ldAng = -0.35 - leafFrac * 0.3;
           var _ldCx = ox + Math.cos(_ldAng) * _ldR * 1.8 * side;
           var _ldCy = ly + Math.sin(_ldAng) * _ldR * 1.8;
-          tip = _ldCx; tipY = _ldCy; // center of disc
+          tip = _ldCx; tipY = _ldCy;
           bodyD = 'M'+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx+_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' Z';
-          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+_ldR.toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
-          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.65).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.25" opacity="'+(op*0.2).toFixed(2)+'"/>';
-          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.35).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.2" opacity="'+(op*0.15).toFixed(2)+'"/>';
+          // Disc body (cool silver-blue base)
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+_ldR.toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Form shadow (lower-right curve, warm-shifted dark)
+          s += '<path d="M'+(_ldCx+_ldR*0.3).toFixed(1)+','+(_ldCy-_ldR*0.6).toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 0,1 '+(_ldCx+_ldR*0.3).toFixed(1)+','+(_ldCy+_ldR*0.6).toFixed(1)+' L'+_ldCx.toFixed(1)+','+_ldCy.toFixed(1)+' Z" fill="rgba(40,20,5,0.30)"/>';
+          // Big diffuse cream specular (upper-left lunar gleam)
+          s += '<ellipse cx="'+(_ldCx-_ldR*0.35).toFixed(1)+'" cy="'+(_ldCy-_ldR*0.35).toFixed(1)+'" rx="'+(_ldR*0.45).toFixed(1)+'" ry="'+(_ldR*0.30).toFixed(1)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'"/>';
+          // Sharp pickup glint
+          s += '<ellipse cx="'+(_ldCx-_ldR*0.30).toFixed(1)+'" cy="'+(_ldCy-_ldR*0.40).toFixed(1)+'" rx="'+(_ldR*0.20).toFixed(1)+'" ry="'+(_ldR*0.12).toFixed(1)+'" fill="#fff8e0" opacity="'+(op*0.65).toFixed(2)+'"/>';
+          // Concentric reticulate rings (silver bands)
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.78).toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.22" opacity="'+(op*0.45).toFixed(2)+'"/>';
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.55).toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.40).toFixed(2)+'"/>';
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+(_ldR*0.32).toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.35).toFixed(2)+'"/>';
+          // 4 crater divots (warm-shifted)
+          s += '<circle cx="'+(_ldCx+_ldR*0.40).toFixed(1)+'" cy="'+(_ldCy-_ldR*0.20).toFixed(1)+'" r="'+(_ldR*0.10).toFixed(1)+'" fill="rgba(40,20,5,0.45)"/>';
+          s += '<circle cx="'+(_ldCx-_ldR*0.50).toFixed(1)+'" cy="'+(_ldCy+_ldR*0.30).toFixed(1)+'" r="'+(_ldR*0.08).toFixed(1)+'" fill="rgba(40,20,5,0.40)"/>';
+          s += '<circle cx="'+(_ldCx+_ldR*0.10).toFixed(1)+'" cy="'+(_ldCy+_ldR*0.50).toFixed(1)+'" r="'+(_ldR*0.07).toFixed(1)+'" fill="rgba(40,20,5,0.45)"/>';
+          s += '<circle cx="'+(_ldCx-_ldR*0.15).toFixed(1)+'" cy="'+(_ldCy-_ldR*0.50).toFixed(1)+'" r="'+(_ldR*0.06).toFixed(1)+'" fill="rgba(40,20,5,0.40)"/>';
+          // Outline (warm-shifted dark)
+          s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+_ldR.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.25"/>';
           break;
 
-        case 64: // Spine Needle — long thin conifer needle with sharp point
+        case 64: // Spine Needle — long sharp conifer needle, fascicle of 3 with central tip glint.
           var _snLen = ls * 3.0;
           var _snAng = -0.15 - leafFrac * 0.4;
           var _snTx = ox + Math.cos(_snAng) * _snLen * side;
@@ -20231,15 +20308,36 @@ document.addEventListener('keydown', function(e) {
           var _snW = ls * 0.12;
           var _snPa = _snAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' L'+(ox+Math.cos(_snPa)*_snW*side).toFixed(1)+','+(ly+Math.sin(_snPa)*_snW).toFixed(1)+' L'+_snTx.toFixed(1)+','+_snTy.toFixed(1)+' L'+(ox-Math.cos(_snPa)*_snW*side).toFixed(1)+','+(ly-Math.sin(_snPa)*_snW).toFixed(1)+' Z';
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
-          s += '<line x1="'+ox+'" y1="'+ly+'" x2="'+_snTx.toFixed(1)+'" y2="'+_snTy.toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.2" opacity="'+(op*0.3).toFixed(2)+'"/>';
+          // Fascicle of 3 needles fanning slightly
+          for (var _sn = -1; _sn <= 1; _sn++) {
+            var _snFan = _sn * 0.08;
+            var _snAa = _snAng + _snFan;
+            var _snTxA = ox + Math.cos(_snAa) * _snLen * (_sn === 0 ? 1.0 : 0.92) * side;
+            var _snTyA = ly + Math.sin(_snAa) * _snLen * (_sn === 0 ? 1.0 : 0.92);
+            var _snPaA = _snAa + Math.PI * 0.5;
+            var _snWA = _snW * (_sn === 0 ? 1.0 : 0.85);
+            // Filled tapered needle (closed quad)
+            s += '<path d="M'+ox+','+ly+' L'+(ox+Math.cos(_snPaA)*_snWA*side).toFixed(1)+','+(ly+Math.sin(_snPaA)*_snWA).toFixed(1)+' L'+_snTxA.toFixed(1)+','+_snTyA.toFixed(1)+' L'+(ox-Math.cos(_snPaA)*_snWA*side).toFixed(1)+','+(ly-Math.sin(_snPaA)*_snWA).toFixed(1)+' Z" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+            // Cream highlight along needle's lit side
+            s += '<line x1="'+(ox+Math.cos(_snPaA)*_snWA*0.5*side).toFixed(2)+'" y1="'+(ly+Math.sin(_snPaA)*_snWA*0.5).toFixed(2)+'" x2="'+(_snTxA*0.85+ox*0.15).toFixed(1)+'" y2="'+(_snTyA*0.85+ly*0.15).toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+            // Sharp tip glint
+            if (_sn === 0) {
+              s += '<circle cx="'+_snTxA.toFixed(1)+'" cy="'+_snTyA.toFixed(1)+'" r="0.22" fill="#fff8e0" opacity="'+(op*0.75).toFixed(2)+'"/>';
+            }
+          }
+          // Basal sheath (warm brown band — pine signature)
+          s += '<rect x="'+(ox-0.8).toFixed(1)+'" y="'+(ly-0.4).toFixed(1)+'" width="1.6" height="0.9" rx="0.2" fill="rgba(40,20,5,0.65)"/>';
+          s += '<rect x="'+(ox-0.7).toFixed(1)+'" y="'+(ly-0.35).toFixed(1)+'" width="1.4" height="0.20" fill="#f5ecd6" opacity="0.45"/>';
           break;
 
-        case 65: // Ribbon Curl — long spiraling ribbon that twists along its length
+        case 65: // Ribbon Curl — spiraling ribbon with alternating face/underside shades + cream edge.
           var _rcLen = ls * 2.6;
           var _rcAng = -0.2 - leafFrac * 0.35;
           var _rcW = ls * 0.4;
-          var _rcSteps = 4;
+          var _rcSteps = 6;
+          var _rcLastX = ox; var _rcLastY = ly;
+          var _rcPa = _rcAng + Math.PI * 0.5;
+          // Stack two parallel curves (top edge + bottom edge) for ribbon body
           for (var _rci = 0; _rci < _rcSteps; _rci++) {
             var _rct = _rci / _rcSteps;
             var _rcnt = (_rci + 1) / _rcSteps;
@@ -20247,14 +20345,34 @@ document.addEventListener('keydown', function(e) {
             var _rcy1 = ly + Math.sin(_rcAng) * _rcLen * _rct;
             var _rcx2 = ox + Math.cos(_rcAng) * _rcLen * _rcnt * side;
             var _rcy2 = ly + Math.sin(_rcAng) * _rcLen * _rcnt;
-            var _rcTwist = Math.sin(_rct * Math.PI * 2.5) * _rcW;
-            var _rcPa = _rcAng + Math.PI * 0.5;
-            s += '<path d="M'+_rcx1.toFixed(1)+','+_rcy1.toFixed(1)+' Q'+(_rcx1+Math.cos(_rcPa)*_rcTwist*side).toFixed(1)+','+(_rcy1+Math.sin(_rcPa)*_rcTwist).toFixed(1)+' '+_rcx2.toFixed(1)+','+_rcy2.toFixed(1)+'" fill="none" stroke="'+baseColor+'" stroke-width="'+(ls*0.35*(1-_rct*0.5)).toFixed(1)+'" opacity="'+(op*0.8).toFixed(2)+'" stroke-linecap="round"/>';
+            // Twist amount oscillates +/-
+            var _rcTw1 = Math.sin(_rct * Math.PI * 2.5) * _rcW;
+            var _rcTw2 = Math.sin(_rcnt * Math.PI * 2.5) * _rcW;
+            // Width of ribbon at this segment (taper)
+            var _rcSegW = ls * 0.35 * (1 - _rct * 0.5);
+            // Determine if face or underside is showing
+            var _rcShow = Math.cos(_rct * Math.PI * 2.5);
+            var _rcFill = _rcShow > 0 ? baseColor : shiftedDark;
+            var _rcEdge = _rcShow > 0 ? '#f5ecd6' : 'rgba(40,20,5,0.55)';
+            // Build a 4-corner ribbon segment: top-left, top-right, bottom-right, bottom-left
+            var _rcTLx = _rcx1 + Math.cos(_rcPa)*(_rcTw1+_rcSegW*0.5)*side;
+            var _rcTLy = _rcy1 + Math.sin(_rcPa)*(_rcTw1+_rcSegW*0.5);
+            var _rcTRx = _rcx2 + Math.cos(_rcPa)*(_rcTw2+_rcSegW*0.5)*side;
+            var _rcTRy = _rcy2 + Math.sin(_rcPa)*(_rcTw2+_rcSegW*0.5);
+            var _rcBRx = _rcx2 + Math.cos(_rcPa)*(_rcTw2-_rcSegW*0.5)*side;
+            var _rcBRy = _rcy2 + Math.sin(_rcPa)*(_rcTw2-_rcSegW*0.5);
+            var _rcBLx = _rcx1 + Math.cos(_rcPa)*(_rcTw1-_rcSegW*0.5)*side;
+            var _rcBLy = _rcy1 + Math.sin(_rcPa)*(_rcTw1-_rcSegW*0.5);
+            s += '<path d="M'+_rcTLx.toFixed(1)+','+_rcTLy.toFixed(1)+' L'+_rcTRx.toFixed(1)+','+_rcTRy.toFixed(1)+' L'+_rcBRx.toFixed(1)+','+_rcBRy.toFixed(1)+' L'+_rcBLx.toFixed(1)+','+_rcBLy.toFixed(1)+' Z" fill="'+_rcFill+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+            // Edge highlight on top edge
+            s += '<line x1="'+_rcTLx.toFixed(1)+'" y1="'+_rcTLy.toFixed(1)+'" x2="'+_rcTRx.toFixed(1)+'" y2="'+_rcTRy.toFixed(1)+'" stroke="'+_rcEdge+'" stroke-width="0.18" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+            _rcLastX = _rcx2; _rcLastY = _rcy2;
           }
-          bodyD = ''; // ribbon has no fill body
+          tip = _rcLastX; tipY = _rcLastY;
+          bodyD = '';
           break;
 
-        case 66: // Prism Blade — wide flat leaf with rainbow refraction line
+        case 66: // Prism Blade — translucent blade with rainbow refraction stripes along midrib.
           var _pbLen = ls * 2.3;
           var _pbAng = -0.3 - leafFrac * 0.35;
           var _pbTx = ox + Math.cos(_pbAng) * _pbLen * 0.85 * side;
@@ -20263,11 +20381,27 @@ document.addEventListener('keydown', function(e) {
           var _pbW = ls * 0.65;
           var _pbPa = _pbAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_pbPa)*_pbW*side).toFixed(1)+','+(ly+Math.sin(_pbPa)*_pbW-_pbLen*0.2).toFixed(1)+' '+(_pbTx+Math.cos(_pbPa)*_pbW*0.5*side).toFixed(1)+','+(_pbTy+Math.sin(_pbPa)*_pbW*0.5).toFixed(1)+' '+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+' C'+(_pbTx-Math.cos(_pbPa)*_pbW*0.4*side).toFixed(1)+','+(_pbTy-Math.sin(_pbPa)*_pbW*0.4).toFixed(1)+' '+(ox-Math.cos(_pbPa)*_pbW*0.7*side).toFixed(1)+','+(ly-Math.sin(_pbPa)*_pbW*0.7-_pbLen*0.15).toFixed(1)+' '+ox+','+ly+' Z';
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.8).toFixed(2)+'"/>';
-          s += '<path d="M'+ox+','+ly+' L'+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.4" opacity="'+(op*0.35).toFixed(2)+'"/>';
+          // Body fill
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Form shadow on lower half
+          s += '<path d="M'+ox+','+ly+' C'+(_pbTx-Math.cos(_pbPa)*_pbW*0.4*side).toFixed(1)+','+(_pbTy-Math.sin(_pbPa)*_pbW*0.4).toFixed(1)+' '+(ox-Math.cos(_pbPa)*_pbW*0.7*side).toFixed(1)+','+(ly-Math.sin(_pbPa)*_pbW*0.7-_pbLen*0.15).toFixed(1)+' '+ox+','+ly+' L'+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+' Z" fill="rgba(40,20,5,0.20)"/>';
+          // 5 rainbow refraction stripes radiating from midrib
+          var _pbColors = ['#a82832','#d4842a','#fff8b0','#7ab356','#3a6a9e'];
+          for (var _pbi = 0; _pbi < 5; _pbi++) {
+            var _pbT = 0.20 + _pbi * 0.13;
+            var _pbStartX = ox + Math.cos(_pbAng)*_pbLen*_pbT*side;
+            var _pbStartY = ly + Math.sin(_pbAng)*_pbLen*_pbT;
+            var _pbStripeLen = _pbW * (0.85 - _pbT*0.4);
+            s += '<line x1="'+_pbStartX.toFixed(1)+'" y1="'+_pbStartY.toFixed(1)+'" x2="'+(_pbStartX+Math.cos(_pbPa)*_pbStripeLen*side).toFixed(1)+'" y2="'+(_pbStartY+Math.sin(_pbPa)*_pbStripeLen).toFixed(1)+'" stroke="'+_pbColors[_pbi]+'" stroke-width="0.30" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          }
+          // Midrib (warm-shifted dark + cream pair)
+          s += '<path d="M'+ox+','+ly+' L'+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+'" stroke="rgba(40,20,5,0.65)" stroke-width="0.45" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' L'+_pbTx.toFixed(1)+','+_pbTy.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // Cream specular
+          s += '<ellipse cx="'+((ox+_pbTx)/2-Math.cos(_pbPa)*_pbW*0.2*side).toFixed(1)+'" cy="'+((ly+_pbTy)/2-Math.sin(_pbPa)*_pbW*0.2).toFixed(1)+'" rx="'+(_pbLen*0.15).toFixed(2)+'" ry="'+(_pbW*0.18).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'" transform="rotate('+(_pbAng*180/Math.PI).toFixed(0)+' '+((ox+_pbTx)/2).toFixed(1)+' '+((ly+_pbTy)/2).toFixed(1)+')"/>';
           break;
 
-        case 67: // Frost Plate — wide leaf with ice crystal veins
+        case 67: // Frost Plate — pale frosted blade with crystalline fern-like ice-vein branches.
           var _fpLen = ls * 2.0;
           var _fpAng = -0.35 - leafFrac * 0.3;
           var _fpTx = ox + Math.cos(_fpAng) * _fpLen * 0.8 * side;
@@ -20276,19 +20410,42 @@ document.addEventListener('keydown', function(e) {
           var _fpW = ls * 0.75;
           var _fpPa = _fpAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_fpPa)*_fpW*side).toFixed(1)+','+(ly+Math.sin(_fpPa)*_fpW-_fpLen*0.15).toFixed(1)+' '+(_fpTx+Math.cos(_fpPa)*_fpW*0.4*side).toFixed(1)+','+(_fpTy+Math.sin(_fpPa)*_fpW*0.4).toFixed(1)+' '+_fpTx.toFixed(1)+','+_fpTy.toFixed(1)+' C'+(_fpTx-Math.cos(_fpPa)*_fpW*0.35*side).toFixed(1)+','+(_fpTy-Math.sin(_fpPa)*_fpW*0.35).toFixed(1)+' '+(ox-Math.cos(_fpPa)*_fpW*0.6*side).toFixed(1)+','+(ly-Math.sin(_fpPa)*_fpW*0.6-_fpLen*0.1).toFixed(1)+' '+ox+','+ly+' Z';
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
-          // Ice crystal veins — 3 forking lines
-          for (var _iv = 0; _iv < 3; _iv++) {
-            var _ivt = 0.2 + _iv * 0.25;
+          // Frosted body (pale ice)
+          s += '<path d="'+bodyD+'" fill="#c4d8e8" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          // Inner translucent core
+          s += '<path d="'+bodyD+'" fill="#f0f8ff" opacity="'+(op*0.30).toFixed(2)+'"/>';
+          // Ice crystal veins — branching dichotomous fern pattern
+          for (var _iv = 0; _iv < 4; _iv++) {
+            var _ivt = 0.18 + _iv * 0.20;
             var _ivx = ox + (_fpTx - ox) * _ivt;
             var _ivy = ly + (_fpTy - ly) * _ivt;
-            var _ivl = _fpW * 0.6 * (1 - _ivt * 0.4);
-            s += '<line x1="'+_ivx.toFixed(1)+'" y1="'+_ivy.toFixed(1)+'" x2="'+(_ivx+Math.cos(_fpPa)*_ivl*side).toFixed(1)+'" y2="'+(_ivy+Math.sin(_fpPa)*_ivl).toFixed(1)+'" stroke="rgba(160,196,232,0.4)" stroke-width="0.25" stroke-linecap="round"/>';
-            s += '<line x1="'+_ivx.toFixed(1)+'" y1="'+_ivy.toFixed(1)+'" x2="'+(_ivx-Math.cos(_fpPa)*_ivl*0.6*side).toFixed(1)+'" y2="'+(_ivy-Math.sin(_fpPa)*_ivl*0.6).toFixed(1)+'" stroke="rgba(160,196,232,0.3)" stroke-width="0.2" stroke-linecap="round"/>';
+            var _ivl = _fpW * 0.65 * (1 - _ivt * 0.4);
+            // Right branch
+            var _ivRx = _ivx + Math.cos(_fpPa)*_ivl*side;
+            var _ivRy = _ivy + Math.sin(_fpPa)*_ivl;
+            s += '<line x1="'+_ivx.toFixed(1)+'" y1="'+_ivy.toFixed(1)+'" x2="'+_ivRx.toFixed(1)+'" y2="'+_ivRy.toFixed(1)+'" stroke="#a0c4e8" stroke-width="0.30" opacity="'+(op*0.75).toFixed(2)+'" stroke-linecap="round"/>';
+            // Right sub-branches (dichotomous fork)
+            var _ivR1x = _ivx + Math.cos(_fpPa)*_ivl*0.5*side + Math.cos(_fpAng)*_ivl*0.3*side;
+            var _ivR1y = _ivy + Math.sin(_fpPa)*_ivl*0.5 + Math.sin(_fpAng)*_ivl*0.3;
+            s += '<line x1="'+(_ivx+Math.cos(_fpPa)*_ivl*0.4*side).toFixed(1)+'" y1="'+(_ivy+Math.sin(_fpPa)*_ivl*0.4).toFixed(1)+'" x2="'+_ivR1x.toFixed(1)+'" y2="'+_ivR1y.toFixed(1)+'" stroke="#a0c4e8" stroke-width="0.22" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
+            // Left branch (mirrored)
+            var _ivLx = _ivx - Math.cos(_fpPa)*_ivl*0.7*side;
+            var _ivLy = _ivy - Math.sin(_fpPa)*_ivl*0.7;
+            s += '<line x1="'+_ivx.toFixed(1)+'" y1="'+_ivy.toFixed(1)+'" x2="'+_ivLx.toFixed(1)+'" y2="'+_ivLy.toFixed(1)+'" stroke="#a0c4e8" stroke-width="0.30" opacity="'+(op*0.70).toFixed(2)+'" stroke-linecap="round"/>';
+            // Tip glints
+            s += '<circle cx="'+_ivRx.toFixed(1)+'" cy="'+_ivRy.toFixed(1)+'" r="0.18" fill="#fff" opacity="'+(op*0.55).toFixed(2)+'"/>';
+            s += '<circle cx="'+_ivLx.toFixed(1)+'" cy="'+_ivLy.toFixed(1)+'" r="0.16" fill="#fff" opacity="'+(op*0.50).toFixed(2)+'"/>';
           }
+          // Midrib (cool blue, with bright cream pair)
+          s += '<path d="M'+ox+','+ly+' L'+_fpTx.toFixed(1)+','+_fpTy.toFixed(1)+'" stroke="#7aa2c8" stroke-width="0.40" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' L'+_fpTx.toFixed(1)+','+_fpTy.toFixed(1)+'" stroke="#fff" stroke-width="0.18" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.25,-0.15)"/>';
+          // Outline (cool dark)
+          s += '<path d="'+bodyD+'" fill="none" stroke="rgba(60,80,110,0.55)" stroke-width="0.22"/>';
+          // Tip frost-glow
+          s += '<circle cx="'+_fpTx.toFixed(1)+'" cy="'+_fpTy.toFixed(1)+'" r="0.32" fill="#fff" opacity="'+(op*0.65).toFixed(2)+'"/>';
           break;
 
-        case 68: // Void Petal — dark teardrop with glowing edge
+        case 68: // Void Petal — black teardrop with starfield within + violet glowing edge.
           var _vpLen = ls * 2.1;
           var _vpAng = -0.3 - leafFrac * 0.35;
           var _vpTx = ox + Math.cos(_vpAng) * _vpLen * 0.85 * side;
@@ -20297,40 +20454,136 @@ document.addEventListener('keydown', function(e) {
           var _vpW = ls * 0.55;
           var _vpPa = _vpAng + Math.PI * 0.5;
           bodyD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_vpPa)*_vpW*1.3*side).toFixed(1)+','+(ly+Math.sin(_vpPa)*_vpW*1.3-_vpLen*0.25).toFixed(1)+' '+_vpTx.toFixed(1)+','+_vpTy.toFixed(1)+' Q'+(ox-Math.cos(_vpPa)*_vpW*0.9*side).toFixed(1)+','+(ly-Math.sin(_vpPa)*_vpW*0.9-_vpLen*0.18).toFixed(1)+' '+ox+','+ly+' Z';
-          s += '<path d="'+bodyD+'" fill="#1a1d18" opacity="'+(op*0.9).toFixed(2)+'"/>';
-          s += '<path d="'+bodyD+'" fill="none" stroke="'+baseColor+'" stroke-width="0.4" opacity="'+(op*0.6).toFixed(2)+'"/>';
+          // Deep void body (near-black with hint of violet)
+          s += '<path d="'+bodyD+'" fill="#0a0612" opacity="'+(op*0.95).toFixed(2)+'"/>';
+          // Inner purple nebula glow
+          s += '<ellipse cx="'+((ox+_vpTx)/2).toFixed(1)+'" cy="'+((ly+_vpTy)/2).toFixed(1)+'" rx="'+(_vpLen*0.28).toFixed(2)+'" ry="'+(_vpW*0.45).toFixed(2)+'" fill="#5a2d8e" opacity="'+(op*0.45).toFixed(2)+'" transform="rotate('+(_vpAng*180/Math.PI).toFixed(0)+' '+((ox+_vpTx)/2).toFixed(1)+' '+((ly+_vpTy)/2).toFixed(1)+')"/>';
+          // Inner indigo core
+          s += '<ellipse cx="'+((ox+_vpTx)/2).toFixed(1)+'" cy="'+((ly+_vpTy)/2).toFixed(1)+'" rx="'+(_vpLen*0.16).toFixed(2)+'" ry="'+(_vpW*0.25).toFixed(2)+'" fill="#3a1a5e" opacity="'+(op*0.65).toFixed(2)+'" transform="rotate('+(_vpAng*180/Math.PI).toFixed(0)+' '+((ox+_vpTx)/2).toFixed(1)+' '+((ly+_vpTy)/2).toFixed(1)+')"/>';
+          // Starfield — 5 white pinpoints scattered
+          var _vpStars = [
+            [0.30, 0.60], [0.50, 0.30], [0.65, 0.65], [0.42, 0.50], [0.72, 0.40]
+          ];
+          for (var _vpS = 0; _vpS < _vpStars.length; _vpS++) {
+            var _vpST = _vpStars[_vpS][0];
+            var _vpSP = _vpStars[_vpS][1] - 0.5; // perp -0.5..0.5
+            var _vpSx = ox + (_vpTx-ox)*_vpST + Math.cos(_vpPa)*_vpW*_vpSP*side;
+            var _vpSy = ly + (_vpTy-ly)*_vpST + Math.sin(_vpPa)*_vpW*_vpSP;
+            s += '<circle cx="'+_vpSx.toFixed(1)+'" cy="'+_vpSy.toFixed(1)+'" r="'+(0.10 + _vpS*0.03).toFixed(2)+'" fill="#fff" opacity="'+(op*(0.55+_vpS*0.06)).toFixed(2)+'"/>';
+          }
+          // Bright tip (event horizon)
+          s += '<circle cx="'+_vpTx.toFixed(1)+'" cy="'+_vpTy.toFixed(1)+'" r="0.30" fill="#fff" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          s += '<circle cx="'+_vpTx.toFixed(1)+'" cy="'+_vpTy.toFixed(1)+'" r="0.55" fill="none" stroke="#9b5dc8" stroke-width="0.18" opacity="'+(op*0.65).toFixed(2)+'"/>';
+          // Outer violet glow edge (chimera-vein-friendly)
+          s += '<path d="'+bodyD+'" fill="none" stroke="#9b5dc8" stroke-width="0.42" opacity="'+(op*0.65).toFixed(2)+'"/>';
+          s += '<path d="'+bodyD+'" fill="none" stroke="#fff" stroke-width="0.18" opacity="'+(op*0.40).toFixed(2)+'" transform="translate(-0.2,-0.15)"/>';
           break;
 
-        case 69: // Wishbone — Y-shaped forking leaf
+        case 69: // Wishbone — Y-fork ginkgo-style with tapered filled blades + cream highlight pairs.
           var _wbLen = ls * 2.0;
           var _wbAng = -0.25 - leafFrac * 0.35;
-          var _wbFork = 0.55; // fork point
+          var _wbFork = 0.55;
           var _wbFx = ox + Math.cos(_wbAng) * _wbLen * _wbFork * side;
           var _wbFy = ly + Math.sin(_wbAng) * _wbLen * _wbFork;
-          var _wbSpread = 0.4;
-          var _wbT1x = _wbFx + Math.cos(_wbAng - _wbSpread) * _wbLen * 0.5 * side;
-          var _wbT1y = _wbFy + Math.sin(_wbAng - _wbSpread) * _wbLen * 0.5;
-          var _wbT2x = _wbFx + Math.cos(_wbAng + _wbSpread) * _wbLen * 0.45 * side;
-          var _wbT2y = _wbFy + Math.sin(_wbAng + _wbSpread) * _wbLen * 0.45;
-          s += '<line x1="'+ox+'" y1="'+ly+'" x2="'+_wbFx.toFixed(1)+'" y2="'+_wbFy.toFixed(1)+'" stroke="'+baseColor+'" stroke-width="'+(ls*0.25).toFixed(1)+'" opacity="'+(op*0.8).toFixed(2)+'" stroke-linecap="round"/>';
-          s += '<line x1="'+_wbFx.toFixed(1)+'" y1="'+_wbFy.toFixed(1)+'" x2="'+_wbT1x.toFixed(1)+'" y2="'+_wbT1y.toFixed(1)+'" stroke="'+baseColor+'" stroke-width="'+(ls*0.2).toFixed(1)+'" opacity="'+(op*0.75).toFixed(2)+'" stroke-linecap="round"/>';
-          s += '<line x1="'+_wbFx.toFixed(1)+'" y1="'+_wbFy.toFixed(1)+'" x2="'+_wbT2x.toFixed(1)+'" y2="'+_wbT2y.toFixed(1)+'" stroke="'+baseColor+'" stroke-width="'+(ls*0.18).toFixed(1)+'" opacity="'+(op*0.7).toFixed(2)+'" stroke-linecap="round"/>';
-          bodyD = ''; // line-based, no fill body
+          var _wbSpread = 0.45;
+          var _wbT1x = _wbFx + Math.cos(_wbAng - _wbSpread) * _wbLen * 0.55 * side;
+          var _wbT1y = _wbFy + Math.sin(_wbAng - _wbSpread) * _wbLen * 0.55;
+          var _wbT2x = _wbFx + Math.cos(_wbAng + _wbSpread) * _wbLen * 0.50 * side;
+          var _wbT2y = _wbFy + Math.sin(_wbAng + _wbSpread) * _wbLen * 0.50;
+          tip = (_wbT1x + _wbT2x) / 2; tipY = (_wbT1y + _wbT2y) / 2;
+          // Build filled tapered blades (closed paths, not strokes)
+          var _wbStemW = ls * 0.18;
+          var _wbStemPa = _wbAng + Math.PI*0.5;
+          // Stem segment (filled tapered diamond)
+          s += '<path d="M'+(ox+Math.cos(_wbStemPa)*_wbStemW*side).toFixed(1)+','+(ly+Math.sin(_wbStemPa)*_wbStemW).toFixed(1)+' L'+_wbFx.toFixed(1)+','+_wbFy.toFixed(1)+' L'+(ox-Math.cos(_wbStemPa)*_wbStemW*side).toFixed(1)+','+(ly-Math.sin(_wbStemPa)*_wbStemW).toFixed(1)+' Z" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Branch 1 (filled tapered)
+          var _wbB1Pa = (_wbAng - _wbSpread) + Math.PI*0.5;
+          var _wbB1W = ls * 0.16;
+          s += '<path d="M'+(_wbFx+Math.cos(_wbB1Pa)*_wbB1W*side).toFixed(1)+','+(_wbFy+Math.sin(_wbB1Pa)*_wbB1W).toFixed(1)+' L'+_wbT1x.toFixed(1)+','+_wbT1y.toFixed(1)+' L'+(_wbFx-Math.cos(_wbB1Pa)*_wbB1W*side).toFixed(1)+','+(_wbFy-Math.sin(_wbB1Pa)*_wbB1W).toFixed(1)+' Z" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Branch 2 (filled tapered)
+          var _wbB2Pa = (_wbAng + _wbSpread) + Math.PI*0.5;
+          var _wbB2W = ls * 0.16;
+          s += '<path d="M'+(_wbFx+Math.cos(_wbB2Pa)*_wbB2W*side).toFixed(1)+','+(_wbFy+Math.sin(_wbB2Pa)*_wbB2W).toFixed(1)+' L'+_wbT2x.toFixed(1)+','+_wbT2y.toFixed(1)+' L'+(_wbFx-Math.cos(_wbB2Pa)*_wbB2W*side).toFixed(1)+','+(_wbFy-Math.sin(_wbB2Pa)*_wbB2W).toFixed(1)+' Z" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Cream highlight pairs along each branch's lit edge
+          s += '<line x1="'+ox+'" y1="'+ly+'" x2="'+_wbFx.toFixed(1)+'" y2="'+_wbFy.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.25,-0.15)"/>';
+          s += '<line x1="'+_wbFx.toFixed(1)+'" y1="'+_wbFy.toFixed(1)+'" x2="'+_wbT1x.toFixed(1)+'" y2="'+_wbT1y.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.25,-0.15)"/>';
+          s += '<line x1="'+_wbFx.toFixed(1)+'" y1="'+_wbFy.toFixed(1)+'" x2="'+_wbT2x.toFixed(1)+'" y2="'+_wbT2y.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.25,-0.15)"/>';
+          // Fork joint dot (warm-shifted)
+          s += '<circle cx="'+_wbFx.toFixed(1)+'" cy="'+_wbFy.toFixed(1)+'" r="0.30" fill="rgba(40,20,5,0.55)"/>';
+          s += '<circle cx="'+(_wbFx-0.15).toFixed(1)+'" cy="'+(_wbFy-0.15).toFixed(1)+'" r="0.13" fill="#f5ecd6" opacity="'+(op*0.65).toFixed(2)+'"/>';
+          // Tip terminator dots
+          s += '<circle cx="'+_wbT1x.toFixed(1)+'" cy="'+_wbT1y.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.55)"/>';
+          s += '<circle cx="'+_wbT2x.toFixed(1)+'" cy="'+_wbT2y.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.55)"/>';
+          bodyD = '';
           break;
 
-        case 70: // Lantern Pod — bulbous enclosed leaf with translucent shell
-          var _lpR = ls * 0.9;
-          var _lpAng = -0.35 - leafFrac * 0.3;
-          var _lpCx = ox + Math.cos(_lpAng) * _lpR * 2.2 * side;
-          var _lpCy = ly + Math.sin(_lpAng) * _lpR * 2.2;
-          tip = _lpCx; tipY = _lpCy; // center of pod
-          bodyD = 'M'+ox+','+ly+' Q'+(ox+(_lpCx-ox)*0.3+Math.cos(_lpAng+Math.PI*0.5)*_lpR*0.5*side).toFixed(1)+','+(ly+(_lpCy-ly)*0.3).toFixed(1)+' '+_lpCx.toFixed(1)+','+_lpCy.toFixed(1)+' Q'+(ox+(_lpCx-ox)*0.3-Math.cos(_lpAng+Math.PI*0.5)*_lpR*0.3*side).toFixed(1)+','+(ly+(_lpCy-ly)*0.3).toFixed(1)+' '+ox+','+ly+' Z';
-          s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+_lpCy.toFixed(1)+'" rx="'+_lpR.toFixed(1)+'" ry="'+(_lpR*1.3).toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.5).toFixed(2)+'"/>';
-          s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+_lpCy.toFixed(1)+'" rx="'+_lpR.toFixed(1)+'" ry="'+(_lpR*1.3).toFixed(1)+'" fill="none" stroke="'+shiftedLight+'" stroke-width="0.3" opacity="'+(op*0.35).toFixed(2)+'"/>';
-          // Inner glow
-          s += '<ellipse cx="'+_lpCx.toFixed(1)+'" cy="'+(_lpCy-_lpR*0.2).toFixed(1)+'" rx="'+(_lpR*0.4).toFixed(1)+'" ry="'+(_lpR*0.5).toFixed(1)+'" fill="rgba(240,235,216,0.15)" opacity="'+(op*0.4).toFixed(2)+'"/>';
-          // Stem to pod
-          s += '<line x1="'+ox+'" y1="'+ly+'" x2="'+_lpCx.toFixed(1)+'" y2="'+(_lpCy+_lpR*1.3).toFixed(1)+'" stroke="'+shiftedDark+'" stroke-width="0.35" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
+        case 70: // Worldtree Heart — giant cordate leaf with branching pedate veins glowing as lightning.
+          var _whLen = ls * 2.6;
+          var _whAng = -0.3 - leafFrac * 0.35;
+          var _whTx = ox + Math.cos(_whAng) * _whLen * 0.85 * side;
+          var _whTy = ly + Math.sin(_whAng) * _whLen * 0.85;
+          tip = _whTx; tipY = _whTy;
+          var _whW = ls * 0.95;
+          var _whPa = _whAng + Math.PI * 0.5;
+          // Cordate heart silhouette via 4 control points (right shoulder, right basal lobe, left basal, left shoulder)
+          var _whR1x = ox + Math.cos(_whPa)*_whW*1.25*side - Math.cos(_whAng)*_whLen*0.05*side;
+          var _whR1y = ly + Math.sin(_whPa)*_whW*1.25 - _whLen*0.05;
+          var _whR2x = ox + Math.cos(_whPa)*_whW*0.7*side + Math.cos(_whAng)*_whLen*0.45*side;
+          var _whR2y = ly + Math.sin(_whPa)*_whW*0.7 + Math.sin(_whAng)*_whLen*0.45 - _whLen*0.05;
+          var _whL1x = ox - Math.cos(_whPa)*_whW*1.0*side - Math.cos(_whAng)*_whLen*0.05*side;
+          var _whL1y = ly - Math.sin(_whPa)*_whW*1.0 - _whLen*0.05;
+          var _whL2x = ox - Math.cos(_whPa)*_whW*0.55*side + Math.cos(_whAng)*_whLen*0.40*side;
+          var _whL2y = ly - Math.sin(_whPa)*_whW*0.55 + Math.sin(_whAng)*_whLen*0.40 - _whLen*0.05;
+          // Heart silhouette path with V-sinus at base
+          bodyD = 'M'+ox+','+ly
+                + ' Q'+_whR1x.toFixed(1)+','+_whR1y.toFixed(1)+' '+_whR2x.toFixed(1)+','+_whR2y.toFixed(1)
+                + ' Q'+(_whTx+Math.cos(_whPa)*_whW*0.3*side).toFixed(1)+','+(_whTy+Math.sin(_whPa)*_whW*0.3).toFixed(1)+' '+_whTx.toFixed(1)+','+_whTy.toFixed(1)
+                + ' Q'+(_whTx-Math.cos(_whPa)*_whW*0.3*side).toFixed(1)+','+(_whTy-Math.sin(_whPa)*_whW*0.3).toFixed(1)+' '+_whL2x.toFixed(1)+','+_whL2y.toFixed(1)
+                + ' Q'+_whL1x.toFixed(1)+','+_whL1y.toFixed(1)+' '+ox+','+ly+' Z';
+          // Body fill (deep mythic green)
+          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Form shadow on left half
+          s += '<path d="M'+ox+','+ly+' Q'+_whL1x.toFixed(1)+','+_whL1y.toFixed(1)+' '+_whL2x.toFixed(1)+','+_whL2y.toFixed(1)+' Q'+(_whTx-Math.cos(_whPa)*_whW*0.3*side).toFixed(1)+','+(_whTy-Math.sin(_whPa)*_whW*0.3).toFixed(1)+' '+_whTx.toFixed(1)+','+_whTy.toFixed(1)+' L'+ox+','+ly+' Z" fill="rgba(40,20,5,0.22)"/>';
+          // Big diffuse cream specular (upper-right of blade)
+          s += '<ellipse cx="'+((_whR2x+ox)*0.5).toFixed(1)+'" cy="'+((_whR2y+ly)*0.5).toFixed(1)+'" rx="'+(_whLen*0.18).toFixed(2)+'" ry="'+(_whW*0.30).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'" transform="rotate('+(_whAng*180/Math.PI).toFixed(0)+' '+((_whR2x+ox)*0.5).toFixed(1)+' '+((_whR2y+ly)*0.5).toFixed(1)+')"/>';
+          // PEDATE veins — 5 primary spokes branching from base, each forks once outward (bird's-foot)
+          // Central midrib
+          s += '<path d="M'+ox+','+ly+' Q'+((ox+_whTx)/2).toFixed(1)+','+((ly+_whTy)/2 - _whLen*0.05).toFixed(1)+' '+_whTx.toFixed(1)+','+_whTy.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.45" stroke-linecap="round"/>';
+          s += '<path d="M'+ox+','+ly+' Q'+((ox+_whTx)/2).toFixed(1)+','+((ly+_whTy)/2 - _whLen*0.05).toFixed(1)+' '+_whTx.toFixed(1)+','+_whTy.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.20" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // 4 lateral pedate primaries (2 per side), each with a forked tertiary
+          var _whVeins = [
+            [_whR1x, _whR1y, 1],   // upper-right primary
+            [_whR2x, _whR2y, 1],   // lower-right primary (lobe)
+            [_whL1x, _whL1y, -1],  // upper-left primary
+            [_whL2x, _whL2y, -1]   // lower-left primary (lobe)
+          ];
+          for (var _whVi = 0; _whVi < _whVeins.length; _whVi++) {
+            var _wvx = _whVeins[_whVi][0];
+            var _wvy = _whVeins[_whVi][1];
+            // Primary spoke from base
+            s += '<path d="M'+ox+','+ly+' Q'+((ox+_wvx)/2).toFixed(1)+','+((ly+_wvy)/2 - 0.5).toFixed(1)+' '+_wvx.toFixed(1)+','+_wvy.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" stroke-linecap="round"/>';
+            // Pedate fork — secondary branching outward (the "bird's foot" trick)
+            var _wmx = (ox + _wvx) * 0.5;
+            var _wmy = (ly + _wvy) * 0.5;
+            var _wforkX = _wmx + (_wvx - _wmx) * 0.6;
+            var _wforkY = _wmy + (_wvy - _wmy) * 0.6 + ls * 0.15;
+            s += '<path d="M'+_wmx.toFixed(1)+','+_wmy.toFixed(1)+' Q'+((_wmx+_wforkX)/2).toFixed(1)+','+((_wmy+_wforkY)/2).toFixed(1)+' '+_wforkX.toFixed(1)+','+_wforkY.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.22" stroke-linecap="round"/>';
+            s += '<path d="M'+_wmx.toFixed(1)+','+_wmy.toFixed(1)+' Q'+((_wmx+_wforkX)/2).toFixed(1)+','+((_wmy+_wforkY)/2).toFixed(1)+' '+_wforkX.toFixed(1)+','+_wforkY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.12" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.2,-0.15)"/>';
+          }
+          // Basal sinus deep AO shadow (heart-shape signature)
+          s += '<ellipse cx="'+ox+'" cy="'+(ly+0.5).toFixed(1)+'" rx="0.85" ry="0.35" fill="rgba(20,10,2,0.65)"/>';
+          // Crenate margin scallops — 6 small rounded notches
+          for (var _whM = 0; _whM < 6; _whM++) {
+            var _whMt = 0.20 + _whM * 0.13;
+            // Right margin scallop
+            var _whMRx = ox + (_whTx-ox)*_whMt + Math.cos(_whPa)*_whW*(1.1 - Math.abs(_whMt-0.5)*0.6)*side;
+            var _whMRy = ly + (_whTy-ly)*_whMt + Math.sin(_whPa)*_whW*(1.1 - Math.abs(_whMt-0.5)*0.6);
+            s += '<circle cx="'+_whMRx.toFixed(1)+'" cy="'+_whMRy.toFixed(1)+'" r="0.18" fill="rgba(40,20,5,0.30)"/>';
+          }
+          // Body outline (warm-shifted)
+          s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.30"/>';
+          // Tip terminator dot
+          s += '<circle cx="'+_whTx.toFixed(1)+'" cy="'+_whTy.toFixed(1)+'" r="0.25" fill="rgba(40,20,5,0.55)"/>';
           break;
 
       }
