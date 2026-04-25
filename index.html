@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.74';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.75';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -22856,6 +22856,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx-fs*0.2)+','+(fy-fs*0.85)+' C'+(fx+fs*0.3)+','+(fy-fs*0.95)+' '+(fx+fs*0.9)+','+(fy-fs*0.45)+' '+(fx+fs*0.95)+','+fy+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
         break;
       case 24: // Anthurium — Anthurium andraeanum (lacquered heart-spathe + yellow spadix tail)
+        // AO halo (master pass)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.10)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Spathe AO ink-pool at base (§1)
         s += '<path d="M'+fx+','+(fy+fs*0.04)+' C'+(fx-fs*0.46)+','+(fy-fs*0.18)+' '+(fx-fs*0.42)+','+(fy-fs*0.34)+' '+fx+','+(fy-fs*0.34)+' C'+(fx+fs*0.42)+','+(fy-fs*0.34)+' '+(fx+fs*0.46)+','+(fy-fs*0.18)+' '+fx+','+(fy+fs*0.04)+' Z" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.6)+'"/>';
         // Heart-spathe — saturated front (§3.L exotic)
@@ -23004,6 +23006,8 @@ document.addEventListener('keydown', function(e) {
         break;
       // ── set-103-8: NEW BLOOM TYPES (ChatGPT) ──────────────────────
       case 29: // Allium — spherical cluster of tiny star-shaped florets on radiating pedicels
+        // AO halo (master pass)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.10)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Soft glow sphere behind
         s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.2)+'" r="'+(fs*1.2)+'" fill="'+bg+'" opacity="'+(bloomOp*0.08)+'"/>';
         // 12 pedicels (tiny stalks) radiating from center, each with a star floret at tip
@@ -23133,6 +23137,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx+fs*0.84)+'" cy="'+(fy-fs*1.54)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
         break;
       case 33: // Catkin — Salix/Betula pendant fuzzy "lamb tail" cylinder (§3.G pendant rebuild)
+        // AO halo (master pass)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.10)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Pendant peduncle stalk attaching to plant (warm shadow stroke)
         s += '<line x1="'+fx+'" y1="'+(fy-fs*0.2)+'" x2="'+fx+'" y2="'+fy+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.5" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
         // Cylinder shadow base — warm dark behind catkin
@@ -25400,6 +25406,8 @@ document.addEventListener('keydown', function(e) {
         break;
       case 59: // Angel's Trumpet — pendant trumpet on arching stem, hangs to side
         (function(){
+          // AO halo (master pass)
+          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.10)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Brugmansia: trumpet hangs off an arching stem that bends 180°.
           // The stem curves from the bloom anchor point outward and downward,
           // then the trumpet hangs from that bend. Smaller scale, offset to side.
