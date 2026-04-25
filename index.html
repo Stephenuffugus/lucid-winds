@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.12';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12907,10 +12907,10 @@ document.addEventListener('keydown', function(e) {
         // Pan rim ellipse (back arc visible behind stem)
         s += '<ellipse cx="35" cy="78" rx="20" ry="1.5" fill="#262626"/>';
         s += '<ellipse cx="35" cy="78" rx="20" ry="1.5" fill="none" stroke="#080808" stroke-width="0.45"/>';
-        // Pan side wall (thin like Bonsai Dish)
-        s += '<path d="M15,78 L15,80.5 Q15,82 35,82 Q55,82 55,80.5 L55,78 Z" fill="#1a1a1a"/>';
-        // Bottom shadow line
-        s += '<path d="M15,81.5 Q35,82.3 55,81.5" stroke="rgba(0,0,0,0.55)" stroke-width="0.5" fill="none"/>';
+        // Pan side wall — flat-bottom rect (Bonsai Dish style; was a curved path with a gap at the bottom-left corner where the curve pulled away from x=15)
+        s += '<rect x="15" y="78" width="40" height="4" rx="0.5" fill="#1a1a1a"/>';
+        // Bottom edge shadow
+        s += '<line x1="15.5" y1="81.7" x2="54.5" y2="81.7" stroke="rgba(0,0,0,0.55)" stroke-width="0.5"/>';
         // Subtle vertical ribs on side wall (cast metal hint)
         s += '<path d="M20,79 L20,81.5 M27,79 L27,81.7 M35,79 L35,81.8 M43,79 L43,81.7 M50,79 L50,81.5" stroke="#0a0a0a" stroke-width="0.3" fill="none"/>';
         // HANDLE — short tapered bar extending RIGHT (entire handle behind stem; doesn't overlap stem at x=35)
@@ -12924,8 +12924,8 @@ document.addEventListener('keydown', function(e) {
         // COOKING SURFACE — recessed dark inner ellipse
         s += '<ellipse cx="35" cy="78.1" rx="17.5" ry="1.2" fill="#0d0d0d"/>';
         s += '<ellipse cx="35" cy="78.2" rx="14.5" ry="1.0" fill="#050505"/>';
-        // BACK-DIRT — visible behind stem (peeks above the front-dirt drawn after stem)
-        s += '<ellipse cx="35" cy="77.85" rx="12" ry="0.5" fill="#3a2a18"/>';
+        // BACK-DIRT — small ellipse positioned higher than front-dirt so it peeks above
+        s += '<ellipse cx="35" cy="77.0" rx="11" ry="0.5" fill="#3a2a18"/>';
         break;
       case 58: // Tractor Tire — back rim + sidewall + dark cavity + BACK-DIRT all draw behind stem
         // Drop shadow on ground
@@ -12996,17 +12996,18 @@ document.addEventListener('keydown', function(e) {
     // Pot bodies by index
     switch(p) { // set-51-7: use raw index — all 30 pot cases are defined
       case 0: // Hearthstone Crock — classic terracotta crock with shading + decorative band
-        // Drop shadow on ground
-        s += '<ellipse cx="35" cy="91.5" rx="14" ry="0.8" fill="rgba(0,0,0,0.35)"/>';
-        // Foot ring (raised disc at base)
-        s += '<ellipse cx="35" cy="91.0" rx="13" ry="1.0" fill="'+rim+'"/>';
-        s += '<ellipse cx="35" cy="90.6" rx="12.5" ry="0.9" fill="'+g+'"/>';
-        // Body — gracefully tapered with subtle bulge
-        s += '<path d="M21,79 Q17.5,85 19.5,90 L50.5,90 Q52.5,85 49,79 Z" fill="'+g+'"/>';
+        // Drop shadow on ground (below the foot)
+        s += '<ellipse cx="35" cy="92.5" rx="16.5" ry="0.7" fill="rgba(0,0,0,0.35)"/>';
+        // Foot OUTER ring — WIDER than body bottom, sits BELOW the body
+        s += '<ellipse cx="35" cy="90.5" rx="17" ry="1.5" fill="'+rim+'"/>';
+        // Foot INNER (body color, slightly smaller — leaves a thin rim band visible at the very bottom)
+        s += '<ellipse cx="35" cy="90.2" rx="16.5" ry="1.3" fill="'+g+'"/>';
+        // Body — gracefully tapered, ends at y=89 ABOVE the foot
+        s += '<path d="M21,79 Q17.5,84 19.5,89 L50.5,89 Q52.5,84 49,79 Z" fill="'+g+'"/>';
         // Body left shadow (light from upper right)
-        s += '<path d="M21,79 Q17.5,85 19.5,90 L24,90 Q22.5,85 24,79 Z" fill="rgba(0,0,0,0.18)"/>';
+        s += '<path d="M21,79 Q17.5,84 19.5,89 L24,89 Q22.5,84 24,79 Z" fill="rgba(0,0,0,0.18)"/>';
         // Body right highlight (vertical sheen)
-        s += '<path d="M45,80 Q47,85 46,89.5" stroke="rgba(255,240,220,0.22)" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M45,80 Q47,84 46,88.5" stroke="rgba(255,240,220,0.22)" stroke-width="0.8" fill="none" stroke-linecap="round"/>';
         // Decorative engraved band across mid-body
         s += '<path d="M19.5,84 Q35,85.4 50.5,84" stroke="rgba(0,0,0,0.28)" stroke-width="0.4" fill="none"/>';
         s += '<path d="M19.7,83.55 Q35,84.95 50.3,83.55" stroke="rgba(255,240,220,0.15)" stroke-width="0.3" fill="none"/>';
@@ -13027,18 +13028,16 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="31" cy="78.1" rx="0.5" ry="0.2" fill="#5a4028"/>';
         s += '<ellipse cx="39" cy="78.3" rx="0.5" ry="0.2" fill="#5a4028"/>';
         break;
-      case 1: // Cast Iron Skillet — FRONT portion only. Full body drawn in renderPotBack BEFORE stem so stem layers ON TOP of back rim. Here we draw the front-rim cap + front-dirt AFTER stem so stem disappears BEHIND the front of the skillet (Director's three-dimensional wedge).
-        // FRONT-RIM CAP — lower half of the rim ellipse, drawn AFTER stem so it
-        // covers the stem's stroke-cap at y=78-79.25 (creates the illusion of
-        // stem going behind the front of the skillet).
+      case 1: // Cast Iron Skillet — FRONT portion. Order matters: front-dirt drawn FIRST (covers stem base, brown soil mound), then front-rim cap drawn SECOND (rim wraps the front of the soil — soil sits BEHIND the front rim like a real planter from above).
+        // FRONT-DIRT — covers stem base and stem cap (extends down to y=79.0 to fully cover stem cap at stroke-width 2.5)
+        s += '<ellipse cx="35" cy="78.0" rx="12" ry="1.0" fill="#2e2014"/>';
+        // Soil texture flecks on front-dirt
+        s += '<ellipse cx="30" cy="77.7" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="40" cy="77.85" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="35.5" cy="77.5" rx="0.4" ry="0.18" fill="#4a3220"/>';
+        // FRONT-RIM CAP — lower half of the rim ellipse, drawn AFTER front-dirt so the rim wraps the front of the soil mound (3D depth: soil sits behind the rim's front edge)
         s += '<path d="M15,78 A20,1.5 0 0,1 55,78 Z" fill="#262626"/>';
         s += '<path d="M15,78 A20,1.5 0 0,1 55,78" fill="none" stroke="#080808" stroke-width="0.45"/>';
-        // FRONT-DIRT — covers stem base and stem cap, brown soil mound visible
-        // at the cooking surface center
-        s += '<ellipse cx="35" cy="78.3" rx="12" ry="0.7" fill="#2e2014"/>';
-        // Soil texture flecks on front-dirt
-        s += '<ellipse cx="30" cy="78.2" rx="0.5" ry="0.2" fill="#5a4028"/>';
-        s += '<ellipse cx="40" cy="78.4" rx="0.5" ry="0.2" fill="#5a4028"/>';
         // Front-rim sheen (subtle warm metallic line on bottom of front rim)
         s += '<path d="M18,79.2 Q35,79.5 52,79.2" stroke="rgba(80,72,64,0.35)" stroke-width="0.35" fill="none"/>';
         break;
@@ -13129,25 +13128,35 @@ document.addEventListener('keydown', function(e) {
         s += '<rect x="23" y="78" width="24" height="14" rx="3" fill="'+g+'"/>';
         s += '<ellipse cx="35" cy="78" rx="12" ry="2" fill="'+rim+'"/>';
         break;
-      case 9: // Top Hat — right-side-up, brim on top, plant grows from crown below
-        // Hat body (black cylinder hanging down from brim)
-        s += '<path d="M26,79.5 Q25.5,84 26.5,89.5 Q27.5,91.5 35,91.5 Q42.5,91.5 43.5,89.5 Q44.5,84 44,79.5 Z" fill="#1a1a1a"/>';
-        // Fabric sheen highlights
-        s += '<path d="M29,80.5 Q29.5,85 29,90" stroke="rgba(255,255,255,0.08)" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M32,80 Q31.5,85.5 32,91" stroke="rgba(255,255,255,0.05)" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
-        // White satin band
-        s += '<rect x="25.5" y="80" width="19" height="2.4" rx="0.4" fill="#e8e0d0"/>';
-        s += '<path d="M26,81 Q35,80.5 44,81" stroke="rgba(255,255,255,0.5)" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
-        // Wide brim (top)
-        s += '<ellipse cx="35" cy="79.5" rx="16" ry="2.5" fill="#1a1a1a"/>';
-        s += '<ellipse cx="35" cy="79.5" rx="16" ry="2.5" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>';
-        s += '<ellipse cx="35" cy="79.3" rx="14" ry="1.6" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>';
-        // Crown opening at bottom (where plant sits)
-        s += '<ellipse cx="35" cy="91.5" rx="8" ry="1.5" fill="#111"/>';
-        // Brim edge highlight
-        s += '<path d="M19.5,79.5 Q35,77.5 50.5,79.5" stroke="rgba(255,255,255,0.1)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
-        // Star sparkle
-        s += '<path d="M41,84 l0.5,-1 l0.5,1 l-1,0 Z" fill="rgba(255,255,255,0.2)"/>';
+      case 9: // Top Hat — INVERTED planter (brim on BOTTOM, crown extends UP, plant emerges from open top — proper top-hat-as-planter orientation)
+        // Drop shadow
+        s += '<ellipse cx="35" cy="93" rx="17" ry="0.7" fill="rgba(0,0,0,0.40)"/>';
+        // BRIM (bottom, wide ellipse)
+        s += '<ellipse cx="35" cy="91" rx="16" ry="2.0" fill="#1a1a1a"/>';
+        s += '<ellipse cx="35" cy="91" rx="16" ry="2.0" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>';
+        // Brim top highlight (subtle)
+        s += '<ellipse cx="35" cy="90.4" rx="14" ry="0.35" fill="rgba(255,255,255,0.10)"/>';
+        // Brim front-edge sheen
+        s += '<path d="M19.5,91 Q35,89.2 50.5,91" stroke="rgba(255,255,255,0.10)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // CROWN BODY — straight cylindrical column rising from brim to top
+        s += '<path d="M27,79 L26,90 Q26,91 35,91 Q44,91 44,90 L43,79 Z" fill="#1a1a1a"/>';
+        // Crown body sheens (vertical fabric highlights)
+        s += '<path d="M29,79.5 L28.5,90" stroke="rgba(255,255,255,0.10)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M32,79.2 L31.8,90.5" stroke="rgba(255,255,255,0.05)" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // White satin band (wraps the middle of the crown)
+        s += '<rect x="26.3" y="85.5" width="17.4" height="2.2" rx="0.3" fill="#e8e0d0"/>';
+        s += '<path d="M27,86.3 Q35,86.0 43,86.3" stroke="rgba(255,255,255,0.5)" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
+        // CROWN RIM (top of hat — the rim of the open top)
+        s += '<ellipse cx="35" cy="78.5" rx="8.5" ry="1.0" fill="#1a1a1a"/>';
+        s += '<ellipse cx="35" cy="78.5" rx="8.5" ry="1.0" fill="none" stroke="#2a2a2a" stroke-width="0.3"/>';
+        // OPENING — dark interior visible through the rim (you look down INTO the hat)
+        s += '<ellipse cx="35" cy="78.6" rx="7.5" ry="0.85" fill="#0a0a0a"/>';
+        // Inner deeper shadow
+        s += '<ellipse cx="35" cy="78.8" rx="6.5" ry="0.65" fill="#000000"/>';
+        // Soil patch inside opening (where plant grows from)
+        s += '<ellipse cx="35" cy="78.55" rx="5.8" ry="0.5" fill="#3a2a18"/>';
+        // Star sparkle on side of crown
+        s += '<path d="M40,84 l0.5,-1 l0.5,1 l-1,0 Z" fill="rgba(255,255,255,0.2)"/>';
         break;
       case 10: // Lampshade — inverted tapered shade with decorative lines
         s += '<path d="M18,78 L30,92 L40,92 L52,78 Z" fill="'+g+'"/>';
