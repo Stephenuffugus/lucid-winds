@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12967,12 +12967,12 @@ document.addEventListener('keydown', function(e) {
     var s = '';
     // set-103-8: Per-pot soil line — matches body width exactly
     //                  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
-    // Indices 1, 2, 58, 59 set to 35/35 (zero-length, invisible) — these pots
-    // have custom soil rendering and the generic soil line would conflict
-    // (skillet, trencher have their own soil) or peek above a narrow opening
-    // (spire vase, tire, lamp).
-    var soilL = [20, 35, 35, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 22, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 35, 35];
-    var soilR = [50, 35, 35, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 48, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 35, 35];
+    // Indices 1, 2, 37, 58, 59 set to 35/35 (zero-length, invisible) — these
+    // pots have custom soil rendering and the generic soil line would conflict
+    // (skillet, egg carton have their own soil) or peek above a narrow
+    // opening (spire vase, tire, lamp).
+    var soilL = [20, 35, 35, 15, 25, 28, 25, 24, 23, 22, 18, 25, 25, 24, 17, 20, 27, 22, 30, 22, 21, 29, 19, 35, 35, 19, 35, 24, 23, 25, 23, 22, 24, 16, 20, 18, 18, 35, 24, 23, 24, 16, 22, 20, 24, 26, 22, 20, 18, 25, 22, 22, 20, 24, 22, 26, 28, 25, 35, 35];
+    var soilR = [50, 35, 35, 55, 45, 42, 45, 46, 47, 48, 52, 45, 41, 46, 46, 50, 43, 48, 40, 48, 49, 41, 51, 35, 35, 49, 35, 46, 47, 42, 47, 48, 46, 54, 50, 52, 52, 35, 46, 47, 46, 54, 48, 45, 46, 44, 48, 50, 52, 45, 48, 48, 50, 46, 48, 44, 42, 45, 35, 35];
     var si = (p === 15) ? 15 : (p < 60 ? p : p % 71);
     s += '<line x1="'+soilL[si]+'" y1="78" x2="'+soilR[si]+'" y2="78" stroke="#3a3228" stroke-width="1.5" stroke-linecap="butt"/>';
     s += '<line x1="'+(soilL[si]+1)+'" y1="78.5" x2="'+(soilR[si]-1)+'" y2="78.5" stroke="#2a2218" stroke-width="0.5" opacity="0.3"/>';
@@ -13630,15 +13630,37 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M22,79 Q35,80.5 48,79" fill="none" stroke="rgba(240,235,216,0.08)" stroke-width="0.4" stroke-linecap="round"/>';
         s += '<path d="M20,82 Q35,82.8 50,82" fill="none" stroke="#2D1810" stroke-width="0.3" opacity="0.25"/>';
         break;
-      case 37: // Egg Carton — cardboard egg carton section
-        s += '<path d="M22,80 L22,90 L48,90 L48,80 Z" fill="#A08060"/>';
-        s += '<path d="M22,80 Q28,78 35,82 Q42,78 48,80" fill="#A08060" stroke="#8A6D48" stroke-width="0.4"/>';
-        s += '<line x1="35" y1="80" x2="35" y2="90" stroke="#8A6D48" stroke-width="0.4" opacity="0.3"/>';
-        s += '<line x1="23" y1="83" x2="47" y2="83" stroke="#8A6D48" stroke-width="0.2" opacity="0.15"/>';
-        s += '<line x1="23" y1="86" x2="47" y2="86" stroke="#8A6D48" stroke-width="0.2" opacity="0.12"/>';
-        s += '<line x1="23" y1="89" x2="47" y2="89" stroke="#8A6D48" stroke-width="0.2" opacity="0.1"/>';
-        s += '<path d="M24,79.5 Q28,78.5 33,81" fill="none" stroke="rgba(240,235,216,0.1)" stroke-width="0.35" stroke-linecap="round"/>';
-        s += '<line x1="22" y1="90" x2="48" y2="90" stroke="#6A4E30" stroke-width="0.4" opacity="0.3"/>';
+      case 37: // Egg Carton — cardboard section with cup divots, plant grows from middle cup
+        // Drop shadow
+        s += '<ellipse cx="35" cy="91.5" rx="16" ry="0.6" fill="rgba(0,0,0,0.30)"/>';
+        // Carton main body (rectangular cardboard)
+        s += '<rect x="19" y="79.5" width="32" height="11" rx="0.4" fill="'+g+'"/>';
+        s += '<rect x="19" y="79.5" width="32" height="11" rx="0.4" fill="none" stroke="rgba(0,0,0,0.32)" stroke-width="0.4"/>';
+        // Wavy top — peaks (between cups) at y=78, valleys (cup centers) flat at y=79.5
+        s += '<path d="M19,79.5 Q23,78 27,79.5 Q31,78 35,79.5 Q39,78 43,79.5 Q47,78 51,79.5 Z" fill="'+g+'"/>';
+        s += '<path d="M19,79.5 Q23,78 27,79.5 Q31,78 35,79.5 Q39,78 43,79.5 Q47,78 51,79.5" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.35"/>';
+        // Cup interior shadows (4 outer cups, recessed dark ellipses)
+        s += '<ellipse cx="23" cy="78.6" rx="1.6" ry="0.35" fill="rgba(0,0,0,0.30)"/>';
+        s += '<ellipse cx="31" cy="78.6" rx="1.6" ry="0.35" fill="rgba(0,0,0,0.30)"/>';
+        s += '<ellipse cx="39" cy="78.6" rx="1.6" ry="0.35" fill="rgba(0,0,0,0.30)"/>';
+        s += '<ellipse cx="47" cy="78.6" rx="1.6" ry="0.35" fill="rgba(0,0,0,0.30)"/>';
+        // Middle plant cup — wider/deeper (where the stem emerges)
+        s += '<ellipse cx="35" cy="78.4" rx="2.0" ry="0.6" fill="rgba(0,0,0,0.45)"/>';
+        // Soil inside middle cup
+        s += '<ellipse cx="35" cy="78.3" rx="1.6" ry="0.4" fill="#3a2a18"/>';
+        // Cardboard horizontal corrugation lines
+        s += '<line x1="19" y1="83" x2="51" y2="83" stroke="rgba(0,0,0,0.15)" stroke-width="0.25"/>';
+        s += '<line x1="19" y1="85.5" x2="51" y2="85.5" stroke="rgba(0,0,0,0.14)" stroke-width="0.25"/>';
+        s += '<line x1="19" y1="88" x2="51" y2="88" stroke="rgba(0,0,0,0.12)" stroke-width="0.25"/>';
+        // Bottom edge shadow
+        s += '<line x1="19" y1="90.4" x2="51" y2="90.4" stroke="rgba(0,0,0,0.4)" stroke-width="0.4"/>';
+        // Left side highlight
+        s += '<line x1="19.3" y1="80" x2="19.3" y2="90" stroke="rgba(255,240,220,0.15)" stroke-width="0.3"/>';
+        // Vertical divider-line shadows between cups
+        s += '<path d="M27,78.4 L27,80" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M31,78.4 L31,80" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M39,78.4 L39,80" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M43,78.4 L43,80" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
         break;
       case 38: // Cinder Block — rectangular concrete block with hollow center
         s += '<rect x="22" y="78.5" width="26" height="13" rx="0.8" fill="#6A6A64"/>';
