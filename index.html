@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.46';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.47';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -15928,27 +15928,46 @@ document.addEventListener('keydown', function(e) {
     var side = (parseInt(uid.charAt(4)||'0',16) < 8) ? -1 : 1; // set-103-8: deterministic L/R for bonsai stems
     var stemCurve = (parseInt(uid.slice(6,8)||'44',16) / 255) * 6; // set-103-8: 0-6 range curve factor from hash
     switch(t.stem % 24) { // expanded from %15 → %24 (9 new stems)
-      case 0: // Organic straight — subtle cubic taper
-        s += '<path d="M35,78 C'+(35+parseFloat(hw))+','+(mid+8)+' '+(35-parseFloat(hw))+','+(mid-8)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        s += '<path d="M35.8,78 C'+(35.8+parseFloat(hw)*0.6)+','+(mid+6)+' '+(35.2-parseFloat(hw))+','+(mid-4)+' 35.5,'+visibleTop+'" stroke="#C4E89A" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="'+(op*0.3)+'"/>';
-        // Subtle S-curve profile — sample the bezier at key points
+      case 0: // Organic straight — variable taper (filled), cream highlight pair, node swell
         var _s0p1x = 35+parseFloat(hw), _s0p2x = 35-parseFloat(hw);
         var _s0p1y = mid+8, _s0p2y = mid-8;
+        var _s0wB = 1.55, _s0wT = 1.15; // base 80% wider than tip
+        // Filled silhouette — variable taper
+        s += '<path d="M'+(35-_s0wB)+',78 C'+(_s0p1x-_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05)+','+_s0p2y+' '+(35-_s0wT)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-0.5)+' '+(35+_s0wT)+','+visibleTop+' C'+(_s0p2x+_s0wT*1.05)+','+_s0p2y+' '+(_s0p1x+_s0wB*0.95)+','+_s0p1y+' '+(35+_s0wB)+',78 Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
+        // Warm-shifted dark stroke (terminator) — right edge
+        s += '<path d="M'+(35+_s0wB)+',78 C'+(_s0p1x+_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x+_s0wT*1.05)+','+_s0p2y+' '+(35+_s0wT)+','+visibleTop+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Cream highlight pair — left lit edge (Hokusai)
+        s += '<path d="M'+(35-_s0wB)+',78 C'+(_s0p1x-_s0wB*0.95)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05)+','+_s0p2y+' '+(35-_s0wT)+','+visibleTop+'" stroke="rgba(40,20,5,0.28)" stroke-width="0.45" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M'+(35-_s0wB+0.25)+',78 C'+(_s0p1x-_s0wB*0.95+0.25)+','+_s0p1y+' '+(_s0p2x-_s0wT*1.05+0.25)+','+_s0p2y+' '+(35-_s0wT+0.25)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'" transform="translate(-0.3,0)"/>';
+        // Node swell at midpoint (pulvinus)
+        s += '<ellipse cx="'+((_s0p1x+_s0p2x)/2).toFixed(2)+'" cy="'+((_s0p1y+_s0p2y)/2).toFixed(2)+'" rx="'+((_s0wB+_s0wT)/2+0.5).toFixed(2)+'" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+((_s0p1x+_s0p2x)/2).toFixed(2)+'" cy="'+((_s0p1y+_s0p2y)/2+0.5).toFixed(2)+'" rx="'+((_s0wB+_s0wT)/2+0.4).toFixed(2)+'" ry="0.3" fill="rgba(40,20,5,0.25)"/>';
+        // Subtle S-curve profile — sample the bezier at key points
         t._stemProfile = [];
         for (var _s0i = 0; _s0i <= 8; _s0i++) {
           var _s0t = _s0i / 8, _s0u = 1 - _s0t;
           t._stemProfile.push({x: _s0u*_s0u*_s0u*35 + 3*_s0u*_s0u*_s0t*_s0p1x + 3*_s0u*_s0t*_s0t*_s0p2x + _s0t*_s0t*_s0t*35, y: _s0u*_s0u*_s0u*78 + 3*_s0u*_s0u*_s0t*_s0p1y + 3*_s0u*_s0t*_s0t*_s0p2y + _s0t*_s0t*_s0t*parseFloat(visibleTop)});
         }
+        t._stemHW = _s0wB;
         break;
-      case 1: // Deep curve left — rises straight, gentle arc left, returns center
-        // Main body
+```
+
+
+      case 1: // Deep curve left — variable taper, warm-shifted shadow, cream lit edge, node swells
+        // Main body — base stroke (acts as widest taper)
         s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Taper overlay — dark inner shadow
-        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="#0d100c" stroke-width="1.0" fill="none" stroke-linecap="round" opacity="0.2"/>';
-        // Bright rim-light — left edge (light source)
-        s += '<path d="M35.6,78 C35.6,72 '+(33.5-parseFloat(hw))+',66 '+(31.5-parseFloat(hw2))+',58 C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(33.5-parseFloat(hw))+',34 C34.2,30 34.8,27 35.4,'+visibleTop+'" stroke="rgba(240,235,216,0.45)" stroke-width="0.65" fill="none" stroke-linecap="round"/>';
-        // Inner glow — subtle screen blend
-        s += '<path d="M34.4,76 C34.4,71 '+(32.5-parseFloat(hw))+',65 '+(30.5-parseFloat(hw2))+',57 C'+(29.5-parseFloat(hw))+',49 '+(31.5-parseFloat(hw2))+',39 '+(32.5-parseFloat(hw))+',33 C33.5,29 34.2,26 34.6,'+(parseFloat(visibleTop)+1)+'" stroke="#C4E89A" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.16" style="mix-blend-mode:screen"/>';
+        // Inner taper — narrower stroke gives "thicker at base" illusion
+        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+(31-parseFloat(hw2))+',58 C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+(33-parseFloat(hw))+',34 C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(parseFloat(strokeW)*0.55).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'" transform="translate(0,-12)"/>';
+        // Warm-shifted core shadow — right inner edge
+        s += '<path d="M35.5,78 C35.5,72 '+(33.5-parseFloat(hw))+',66 '+(31.5-parseFloat(hw2))+',58 C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(33.5-parseFloat(hw))+',34 C34.3,30 34.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="0.55"/>';
+        // Cream highlight pair (Hokusai lit edge — left)
+        s += '<path d="M34.6,78 C34.6,72 '+(32.6-parseFloat(hw))+',66 '+(30.6-parseFloat(hw2))+',58 C'+(29.6-parseFloat(hw))+',50 '+(31.6-parseFloat(hw2))+',40 '+(32.6-parseFloat(hw))+',34 C33.4,30 34,27 34.5,'+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.6,78 C34.6,72 '+(32.6-parseFloat(hw))+',66 '+(30.6-parseFloat(hw2))+',58 C'+(29.6-parseFloat(hw))+',50 '+(31.6-parseFloat(hw2))+',40 '+(32.6-parseFloat(hw))+',34 C33.4,30 34,27 34.5,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
+        // Node swells at the two cubic joins (32-58 and 34) — pulvinus
+        s += '<ellipse cx="'+(31-parseFloat(hw2))+'" cy="58" rx="1.25" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(31-parseFloat(hw2))+'" cy="58.5" rx="1.05" ry="0.3" fill="rgba(40,20,5,0.28)"/>';
+        s += '<ellipse cx="'+(33-parseFloat(hw))+'" cy="34" rx="1.0" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.2).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(33-parseFloat(hw))+'" cy="34.5" rx="0.85" ry="0.25" fill="rgba(40,20,5,0.25)"/>';
         // Approximate stem profile — key waypoints along the curve
         t._stemProfile = [
           {x: 35, y: 78}, {x: 35, y: 72},
@@ -15957,15 +15976,22 @@ document.addEventListener('keydown', function(e) {
           {x: 33-parseFloat(hw), y: 34}, {x: 35, y: parseFloat(visibleTop)}
         ];
         break;
-      case 2: // Deep curve right — rises straight, gentle arc right, returns to center
-        // Main body — starts vertical from pot, curves gently right mid-stem, returns center at apex
+```
+
+
+      case 2: // Deep curve right — variable taper, warm-shifted shadow, cream lit edge, node swells
+        // Main body
         s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+(39+parseFloat(hw2))+',58 C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+(37+parseFloat(hw))+',34 C36,30 35.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Taper overlay
-        s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+(39+parseFloat(hw2))+',58 C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+(37+parseFloat(hw))+',34 C36,30 35.5,27 35,'+visibleTop+'" stroke="#0d100c" stroke-width="1.0" fill="none" stroke-linecap="round" opacity="0.25"/>';
-        // Bright rim-light
-        s += '<path d="M34.2,78 C34.2,72 '+(36+parseFloat(hw))+',66 '+(38+parseFloat(hw2))+',58 C'+(39+parseFloat(hw))+',50 '+(37+parseFloat(hw2))+',40 '+(36+parseFloat(hw))+',34 C35.2,30 34.8,27 34.3,'+visibleTop+'" stroke="rgba(240,235,216,0.5)" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
-        // Inner glow
-        s += '<path d="M35.8,76 C35.8,71 '+(37.5+parseFloat(hw))+',65 '+(39.5+parseFloat(hw2))+',57.5 C'+(40.5+parseFloat(hw))+',50 '+(38.5+parseFloat(hw2))+',41 '+(37.5+parseFloat(hw))+',35 C36.5,31 35.8,28 35.5,'+(parseFloat(visibleTop)+1)+'" stroke="#C4E89A" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.18" style="mix-blend-mode:screen"/>';
+        // Warm-shifted shadow — right inner (away from light)
+        s += '<path d="M35.5,78 C35.5,72 '+(37.5+parseFloat(hw))+',66 '+(39.5+parseFloat(hw2))+',58 C'+(40.5+parseFloat(hw))+',50 '+(38.5+parseFloat(hw2))+',40 '+(37.5+parseFloat(hw))+',34 C36.3,30 35.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.34)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="0.6"/>';
+        // Cream highlight pair — left edge (light source)
+        s += '<path d="M34.3,78 C34.3,72 '+(36.1+parseFloat(hw))+',66 '+(38.1+parseFloat(hw2))+',58 C'+(39.1+parseFloat(hw))+',50 '+(37.1+parseFloat(hw2))+',40 '+(36.1+parseFloat(hw))+',34 C35.3,30 34.9,27 34.4,'+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.3,78 C34.3,72 '+(36.1+parseFloat(hw))+',66 '+(38.1+parseFloat(hw2))+',58 C'+(39.1+parseFloat(hw))+',50 '+(37.1+parseFloat(hw2))+',40 '+(36.1+parseFloat(hw))+',34 C35.3,30 34.9,27 34.4,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.62" transform="translate(-0.3,-0.1)"/>';
+        // Node swells (pulvinus) at cubic joins
+        s += '<ellipse cx="'+(39+parseFloat(hw2))+'" cy="58" rx="1.25" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(39+parseFloat(hw2))+'" cy="58.5" rx="1.05" ry="0.3" fill="rgba(40,20,5,0.28)"/>';
+        s += '<ellipse cx="'+(37+parseFloat(hw))+'" cy="34" rx="1.0" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.2).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(37+parseFloat(hw))+'" cy="34.5" rx="0.85" ry="0.25" fill="rgba(40,20,5,0.25)"/>';
         // Approximate stem profile — key waypoints along the curve
         t._stemProfile = [
           {x: 35, y: 78}, {x: 35, y: 72},
@@ -15974,18 +16000,27 @@ document.addEventListener('keydown', function(e) {
           {x: 37+parseFloat(hw), y: 34}, {x: 35, y: parseFloat(visibleTop)}
         ];
         break;
-      case 3: // Sinuous S — two opposing control points
-        // Main body
-        s += '<path d="M35,78 C'+(27+parseFloat(hw))+','+(mid+12)+' '+(43+parseFloat(hw2))+','+(mid-10)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Dark shadow — right side
-        s += '<path d="M35.4,78 C'+(27.8+parseFloat(hw))+','+(mid+11)+' '+(43.5+parseFloat(hw2))+','+(mid-9)+' 35.4,'+visibleTop+'" stroke="#0d100c" stroke-width="0.9" fill="none" stroke-linecap="round" opacity="0.2"/>';
-        // Bright rim-light — left edge
-        s += '<path d="M34.3,78 C'+(26.2+parseFloat(hw))+','+(mid+12)+' '+(42.2+parseFloat(hw2))+','+(mid-10)+' 34.3,'+visibleTop+'" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        // Inner glow
-        s += '<path d="M35.7,76 C28,'+mid+' 44,'+(mid-8)+' 35.3,'+(parseFloat(visibleTop)+1)+'" stroke="#C4E89A" stroke-width="0.35" fill="none" opacity="'+(op*0.18)+'" style="mix-blend-mode:screen"/>';
-        // Store stem profile — sample S-curve bezier at 8 points
+```
+
+
+      case 3: // Sinuous S — variable taper, warm-shifted shadow, cream lit edge pair, node swells at S-bend
         var _s3p1x = 27+parseFloat(hw), _s3p2x = 43+parseFloat(hw2);
         var _s3p1y = mid+12, _s3p2y = mid-10, _s3p3y = parseFloat(visibleTop);
+        // Main body
+        s += '<path d="M35,78 C'+_s3p1x+','+_s3p1y+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Inner narrower stroke for taper-toward-tip
+        s += '<path d="M35,'+(78-(78-parseFloat(visibleTop))*0.45)+' C'+(_s3p2x*0.55+35*0.45)+','+(_s3p2y*0.55+_s3p1y*0.45)+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(parseFloat(strokeW)*0.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Warm-shifted core shadow — convex side
+        s += '<path d="M35.4,78 C'+(_s3p1x+0.6)+','+(_s3p1y-0.5)+' '+(_s3p2x+0.5)+','+(_s3p2y+0.5)+' 35.4,'+visibleTop+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.55"/>';
+        // Cream highlight pair — concave/lit edge
+        s += '<path d="M34.4,78 C'+(_s3p1x-0.7)+','+(_s3p1y+0.3)+' '+(_s3p2x-0.7)+','+(_s3p2y-0.3)+' 34.4,'+visibleTop+'" stroke="rgba(40,20,5,0.38)" stroke-width="0.55" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.4,78 C'+(_s3p1x-0.7)+','+(_s3p1y+0.3)+' '+(_s3p2x-0.7)+','+(_s3p2y-0.3)+' 34.4,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
+        // Node swell at the inflection point (~midpoint of S)
+        var _s3mx = 0.125*35 + 0.375*_s3p1x + 0.375*_s3p2x + 0.125*35;
+        var _s3my = 0.125*78 + 0.375*_s3p1y + 0.375*_s3p2y + 0.125*_s3p3y;
+        s += '<ellipse cx="'+_s3mx.toFixed(2)+'" cy="'+_s3my.toFixed(2)+'" rx="1.2" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+_s3mx.toFixed(2)+'" cy="'+(_s3my+0.5).toFixed(2)+'" rx="1.0" ry="0.3" fill="rgba(40,20,5,0.26)"/>';
+        // Store stem profile — sample S-curve bezier at 8 points
         t._stemProfile = [];
         for (var _s3i = 0; _s3i <= 8; _s3i++) {
           var _s3t = _s3i / 8, _s3u = 1 - _s3t;
@@ -15994,15 +16029,33 @@ document.addEventListener('keydown', function(e) {
           t._stemProfile.push({x: _s3x, y: _s3y});
         }
         break;
-      case 4: // Tapering trunk — filled cubic silhouette
+```
+
+
+      case 4: // Tapering trunk — filled cubic silhouette + Q-jittered bark + cream lit edge pair
         var twBase=2.8+parseFloat(hw)*0.3, twTop=0.9;
+        // Main filled silhouette
         s += '<path d="M'+(35-twBase)+',78 C'+(33-parseFloat(hw))+','+mid+' '+(34.5-twTop)+','+visibleTop+' 35,'+visibleTop+' C'+(34.5+twTop)+','+visibleTop+' '+(37+parseFloat(hw))+','+mid+' '+(35+twBase)+',78 Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
-        s += '<path d="M'+(35-twBase)+',78 C'+(33-parseFloat(hw))+','+mid+' '+(34.5-twTop)+','+visibleTop+' 35,'+visibleTop+'" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="'+(op*0.68).toFixed(2)+'"/>';
-        // bark fibers
+        // Warm-shifted core shadow on right edge
+        s += '<path d="M'+(35+twBase)+',78 C'+(37+parseFloat(hw))+','+mid+' '+(34.5+twTop)+','+visibleTop+' 35,'+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'"/>';
+        // Cream highlight pair — left lit edge
+        s += '<path d="M'+(35-twBase)+',78 C'+(33-parseFloat(hw))+','+mid+' '+(34.5-twTop)+','+visibleTop+' 35,'+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M'+(35-twBase)+',78 C'+(33-parseFloat(hw))+','+mid+' '+(34.5-twTop)+','+visibleTop+' 35,'+visibleTop+'" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
+        // Bark fibers — Q-jittered cross-strokes (subtle texture)
         for(var bfi=0;bfi<3;bfi++){
           var bfy=78-((78-visibleTop)*(bfi+1)/4), bfx=35+parseFloat(hw)*0.5*(bfi%2?1:-1);
-          s += '<path d="M'+(bfx-1)+','+bfy+' C'+(bfx)+','+(bfy-4)+' '+(bfx+1)+','+(bfy-8)+' '+(bfx)+','+(bfy-12)+'" stroke="#C4E89A" stroke-width="0.3" fill="none" opacity="'+(op*0.2)+'"/>';
+          var bfqx = bfx + ((bfi%2)?-0.3:0.3);
+          s += '<path d="M'+(bfx-1)+','+bfy+' Q'+bfqx+','+(bfy-6)+' '+(bfx)+','+(bfy-12)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.35" fill="none" opacity="'+(op*0.3).toFixed(2)+'"/>';
+          s += '<path d="M'+(bfx-1)+','+bfy+' Q'+bfqx+','+(bfy-6)+' '+(bfx)+','+(bfy-12)+'" stroke="#f5ecd6" stroke-width="0.22" fill="none" opacity="'+(op*0.18).toFixed(2)+'" transform="translate(-0.25,0)"/>';
         }
+        // Q-jittered cross-grain ticks every ~5px (bark texture)
+        for (var _t4bi = 0; _t4bi < 5; _t4bi++) {
+          var _t4by = 78 - (78-parseFloat(visibleTop)) * ((_t4bi+0.5)/5);
+          var _t4bjit = ((parseInt(uid.charAt((_t4bi+5)%uid.length)||'0',16)/15)-0.5)*0.6;
+          s += '<path d="M'+(35-twBase*0.6+_t4bjit)+','+_t4by.toFixed(1)+' Q35,'+(_t4by-0.4).toFixed(1)+' '+(35+twBase*0.6+_t4bjit)+','+_t4by.toFixed(1)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.25" fill="none" opacity="'+(op*0.28).toFixed(2)+'"/>';
+        }
+        // Base node swell — pulvinus at root flare
+        s += '<ellipse cx="35" cy="78" rx="'+(twBase+0.4).toFixed(2)+'" ry="0.55" fill="rgba(40,20,5,0.4)" opacity="'+(op*0.3).toFixed(2)+'"/>';
         // Stem profile — sample the trunk center (average of left and right edges)
         t._stemProfile = [];
         for (var _t4i = 0; _t4i <= 8; _t4i++) {
@@ -16015,21 +16068,31 @@ document.addEventListener('keydown', function(e) {
           t._stemProfile.push({x: (_t4lx + _t4rx) / 2, y: _t4y});
         }
         break;
-      case 5: // Braided — two interleaving C-curves
-        // Shadow between strands — renders first (behind both strands)
-        s += '<path d="M35,78 C35,'+(mid+8)+' 35,'+(mid-6)+' 35,'+visibleTop+'" stroke="#0d100c" stroke-width="2.4" fill="none" opacity="0.15"/>';
-        // Left strand
-        s += '<path d="M34,78 C'+(30+parseFloat(hw))+','+(mid+8)+' '+(38+parseFloat(hw2))+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.6" fill="none" opacity="'+op+'"/>';
-        // Right strand
-        s += '<path d="M36,78 C'+(40+parseFloat(hw))+','+(mid+8)+' '+(32+parseFloat(hw2))+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.6" fill="none" opacity="'+(op*0.72)+'"/>';
-        // Rim highlight on left strand
-        s += '<path d="M33.6,77 C'+(29.5+parseFloat(hw))+','+(mid+7)+' '+(37.5+parseFloat(hw2))+','+(mid-5)+' 33.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(240,235,216,0.4)" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
-        // Rim highlight on right strand
-        s += '<path d="M36.3,77 C'+(40.5+parseFloat(hw))+','+(mid+7)+' '+(32.5+parseFloat(hw2))+','+(mid-5)+' 36.3,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(240,235,216,0.3)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        // Profile: alternate between the two strands so leaves attach to whichever is closer
-        // Sample BOTH strands and pick the one farther from center (outer surface)
+```
+
+
+      case 5: // Braided — two interleaving strands with cream lit edges + crossing-knot AO
         var _s5Lp1x = 30+parseFloat(hw), _s5Lp2x = 38+parseFloat(hw2);
         var _s5Rp1x = 40+parseFloat(hw), _s5Rp2x = 32+parseFloat(hw2);
+        // Warm-shifted between-strand contact shadow (ink-pool at crossings)
+        s += '<path d="M35,78 C35,'+(mid+8)+' 35,'+(mid-6)+' 35,'+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="2.4" fill="none" opacity="0.22"/>';
+        // Left strand — slightly thicker at base via stacked taper
+        s += '<path d="M34,78 C'+_s5Lp1x+','+(mid+8)+' '+_s5Lp2x+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.85" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M34,'+(78-(78-parseFloat(visibleTop))*0.3)+' C'+(_s5Lp1x*0.7+_s5Lp2x*0.3)+','+((mid+8)*0.7+(mid-6)*0.3)+' '+_s5Lp2x+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'"/>';
+        // Right strand
+        s += '<path d="M36,78 C'+_s5Rp1x+','+(mid+8)+' '+_s5Rp2x+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.85" fill="none" stroke-linecap="round" opacity="'+(op*0.78).toFixed(2)+'"/>';
+        s += '<path d="M36,'+(78-(78-parseFloat(visibleTop))*0.3)+' C'+(_s5Rp1x*0.7+_s5Rp2x*0.3)+','+((mid+8)*0.7+(mid-6)*0.3)+' '+_s5Rp2x+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.5).toFixed(2)+'"/>';
+        // Cream highlight pair — left strand lit edge
+        s += '<path d="M33.6,77 C'+(_s5Lp1x-0.5)+','+(mid+7)+' '+(_s5Lp2x-0.5)+','+(mid-5)+' 33.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M33.6,77 C'+(_s5Lp1x-0.5)+','+(mid+7)+' '+(_s5Lp2x-0.5)+','+(mid-5)+' 33.6,'+(parseFloat(visibleTop)+1)+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
+        // Cream highlight pair — right strand lit edge
+        s += '<path d="M36.3,77 C'+(_s5Rp1x-0.5)+','+(mid+7)+' '+(_s5Rp2x-0.5)+','+(mid-5)+' 36.3,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M36.3,77 C'+(_s5Rp1x-0.5)+','+(mid+7)+' '+(_s5Rp2x-0.5)+','+(mid-5)+' 36.3,'+(parseFloat(visibleTop)+1)+'" stroke="#f5ecd6" stroke-width="0.3" fill="none" stroke-linecap="round" opacity="0.5" transform="translate(-0.3,-0.1)"/>';
+        // Crossing knots — visible at the ~50% point
+        s += '<ellipse cx="35" cy="'+(mid+1)+'" rx="2.2" ry="0.7" fill="rgba(40,20,5,0.3)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="'+(mid+0.5)+'" rx="1.6" ry="0.4" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
+        // Profile: alternate between the two strands so leaves attach to whichever is closer
+        // Sample BOTH strands and pick the one farther from center (outer surface)
         t._stemProfile = [];
         for (var _s5i = 0; _s5i <= 10; _s5i++) {
           var _s5t = _s5i / 10, _s5u = 1 - _s5t;
@@ -16044,20 +16107,35 @@ document.addEventListener('keydown', function(e) {
         // Store stem half-width as the max strand offset
         t._stemHW = 2.5;
         break;
-      case 6: // Organic zigzag — bezier corners instead of hard L
+```
+
+
+      case 6: // Organic zigzag — Q-cornered, taper, cream highlight pair, node swell at every kink
         var segs = 4, segH = (78 - visibleTop) / segs;
         var zpArr = ['M35,78'];
+        var zpKinks = [];
         for (var zi = 1; zi <= segs; zi++) {
           var zy = 78 - zi * segH;
           var zx = (zi%2===1) ? 29+parseFloat(hw) : 41+parseFloat(hw2);
           var pzy = 78 - (zi-1)*segH, pzx = (zi===1)?35:((zi%2===0)?29+parseFloat(hw):41+parseFloat(hw2));
           zpArr.push('C'+(pzx+parseFloat(hw))+','+(pzy-segH*0.4)+' '+zx+','+(zy+segH*0.4)+' '+zx+','+Math.max(visibleTop,zy));
+          zpKinks.push({x: zx, y: Math.max(parseFloat(visibleTop), zy)});
         }
-        s += '<path d="'+zpArr.join(' ')+'" stroke="'+strokeCol+'" stroke-width="2" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Dark shadow offset
-        s += '<path d="'+zpArr.join(' ')+'" stroke="#0d100c" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.18" transform="translate(0.4,0.3)"/>';
-        // Rim-light
-        s += '<path d="'+zpArr.join(' ')+'" stroke="rgba(240,235,216,0.35)" stroke-width="0.5" fill="none" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+        var _zpD = zpArr.join(' ');
+        // Wide base stroke — taper illusion
+        s += '<path d="'+_zpD+'" stroke="'+strokeCol+'" stroke-width="2.3" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Inner narrower stroke
+        s += '<path d="'+_zpD+'" stroke="'+strokeCol+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Warm-shifted core shadow
+        s += '<path d="'+_zpD+'" stroke="rgba(40,20,5,0.4)" stroke-width="1.0" fill="none" stroke-linecap="round" opacity="0.32" transform="translate(0.4,0.3)"/>';
+        // Cream highlight pair (lit edge)
+        s += '<path d="'+_zpD+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.55" fill="none" stroke-linecap="round" transform="translate(-0.25,-0.15)"/>';
+        s += '<path d="'+_zpD+'" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="0.55" transform="translate(-0.55,-0.35)"/>';
+        // Node swells at every kink (pulvinus)
+        for (var _zk = 0; _zk < zpKinks.length-1; _zk++) {
+          s += '<ellipse cx="'+zpKinks[_zk].x+'" cy="'+zpKinks[_zk].y+'" rx="1.35" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.22).toFixed(2)+'"/>';
+          s += '<ellipse cx="'+zpKinks[_zk].x+'" cy="'+(zpKinks[_zk].y+0.5)+'" rx="1.1" ry="0.3" fill="rgba(40,20,5,0.3)"/>';
+        }
         // Store stem profile — zigzag control points
         t._stemProfile = [{x: 35, y: 78}];
         for (var _zpi = 1; _zpi <= segs; _zpi++) {
@@ -16066,17 +16144,28 @@ document.addEventListener('keydown', function(e) {
           t._stemProfile.push({x: _zpx, y: Math.max(parseFloat(visibleTop), _zpy)});
         }
         break;
-      case 7: // Split double — diverging then converging
-        // Shadow between branches
-        s += '<path d="M35,78 L35,'+visibleTop+'" stroke="#0d100c" stroke-width="2.0" fill="none" opacity="0.12"/>';
-        // Left branch
-        s += '<path d="M34.5,78 C'+(32+parseFloat(hw))+','+(mid+6)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+```
+
+
+      case 7: // Split double — taper, cream lit edges, base node swell, base AO ink-pool
+        // Warm contact shadow at base junction
+        s += '<path d="M35,78 L35,'+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="2.0" fill="none" opacity="0.2"/>';
+        // Left branch — base wider
+        s += '<path d="M34.5,78 C'+(32+parseFloat(hw))+','+(mid+6)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Left taper inner
+        s += '<path d="M34.5,'+(78-(78-parseFloat(visibleTop))*0.4)+' C'+((32+parseFloat(hw))*0.6+34.5*0.4)+','+((mid+6)*0.6+78*0.4)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Right branch
-        s += '<path d="M35.5,78 C'+(38+parseFloat(hw))+','+(mid+6)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+strokeCol+'" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="'+(op*0.8)+'"/>';
-        // Rim-light on left branch
-        s += '<path d="M34.1,77 C'+(31.5+parseFloat(hw))+','+(mid+5)+' '+(30.5+parseFloat(hw2))+','+(mid-1)+' 32.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(240,235,216,0.38)" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
-        // Rim-light on right branch
-        s += '<path d="M35.9,77 C'+(38.5+parseFloat(hw))+','+(mid+5)+' '+(39.5+parseFloat(hw2))+','+(mid-1)+' 37.4,'+(parseFloat(visibleTop)+3)+'" stroke="rgba(240,235,216,0.3)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M35.5,78 C'+(38+parseFloat(hw))+','+(mid+6)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+strokeCol+'" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="'+(op*0.85).toFixed(2)+'"/>';
+        s += '<path d="M35.5,'+(78-(78-parseFloat(visibleTop))*0.4)+' C'+((38+parseFloat(hw))*0.6+35.5*0.4)+','+((mid+6)*0.6+78*0.4)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+strokeCol+'" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="'+(op*0.5).toFixed(2)+'"/>';
+        // Cream highlight pair on left branch
+        s += '<path d="M34.1,77 C'+(31.5+parseFloat(hw))+','+(mid+5)+' '+(30.5+parseFloat(hw2))+','+(mid-1)+' 32.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.1,77 C'+(31.5+parseFloat(hw))+','+(mid+5)+' '+(30.5+parseFloat(hw2))+','+(mid-1)+' 32.6,'+(parseFloat(visibleTop)+1)+'" stroke="#f5ecd6" stroke-width="0.32" fill="none" stroke-linecap="round" opacity="0.55" transform="translate(-0.3,-0.1)"/>';
+        // Cream highlight pair on right branch
+        s += '<path d="M35.9,77 C'+(38.5+parseFloat(hw))+','+(mid+5)+' '+(39.5+parseFloat(hw2))+','+(mid-1)+' 37.4,'+(parseFloat(visibleTop)+3)+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M35.9,77 C'+(38.5+parseFloat(hw))+','+(mid+5)+' '+(39.5+parseFloat(hw2))+','+(mid-1)+' 37.4,'+(parseFloat(visibleTop)+3)+'" stroke="#f5ecd6" stroke-width="0.3" fill="none" stroke-linecap="round" opacity="0.5" transform="translate(-0.3,-0.1)"/>';
+        // Junction node swell at base (where branches diverge)
+        s += '<ellipse cx="35" cy="78" rx="2.2" ry="0.6" fill="rgba(40,20,5,0.4)" opacity="'+(op*0.35).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="77.5" rx="1.6" ry="0.4" fill="#f5ecd6" opacity="'+(op*0.2).toFixed(2)+'"/>';
         // Store both branch paths for leaf placement
         t._dblLeft = []; t._dblRight = [];
         for (var _d7i = 0; _d7i <= 8; _d7i++) {
@@ -16097,17 +16186,26 @@ document.addEventListener('keydown', function(e) {
         }
         t._stemHW = 2.5;
         break;
-      case 8: // Cactus — thick ribbed column, deep green, needles reduced 60%
+```
+
+
+      case 8: // Cactus — barrel taper, fluted ribs (5-stop), warm core shadow, cream rim, areole nubs
         var cw = 4.5; // half-width of column
-        s += '<path d="M'+(35-cw)+',78 L'+(35-cw)+','+visibleTop+' Q35,'+(visibleTop-3)+' '+(35+cw)+','+visibleTop+' L'+(35+cw)+',78 Z"'
-           + ' fill="#1E4020" stroke="#2E5A30" stroke-width="0.6" opacity="'+op+'"/>';
-        // Ribs — vertical highlight lines
-        for (var ri=0; ri<3; ri++){
-          var rx = (35-cw+2) + ri*2.5;
-          s += '<line x1="'+rx+'" y1="78" x2="'+rx+'" y2="'+visibleTop+'" stroke="rgba(240,235,216,0.18)" stroke-width="0.4" stroke-linecap="round"/>';
+        var cwTop = cw * 0.78; // ~80% as wide at top per playbook
+        // Filled barrel silhouette with subtle taper
+        s += '<path d="M'+(35-cw)+',78 C'+(35-cw+0.2)+','+(mid+4)+' '+(35-cwTop-0.2)+','+(mid-6)+' '+(35-cwTop)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-3)+' '+(35+cwTop)+','+visibleTop+' C'+(35+cwTop+0.2)+','+(mid-6)+' '+(35+cw-0.2)+','+(mid+4)+' '+(35+cw)+',78 Z" fill="#1E4020" stroke="#2E5A30" stroke-width="0.6" opacity="'+op+'"/>';
+        // Warm-shifted core shadow on right inner edge
+        s += '<path d="M'+(35+cw)+',78 C'+(35+cw-0.2)+','+(mid+4)+' '+(35+cwTop+0.2)+','+(mid-6)+' '+(35+cwTop)+','+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="0.55"/>';
+        // 5 fluted ribs — cream hairlines slightly curved (mints/cactus playbook)
+        for (var ri=0; ri<5; ri++){
+          var rxBase = (35-cw+0.8) + ri*((cw*2-1.6)/4);
+          var rxTop = (35-cwTop+0.6) + ri*((cwTop*2-1.2)/4);
+          s += '<path d="M'+rxBase.toFixed(2)+',78 Q'+((rxBase+rxTop)/2+(ri%2?0.15:-0.15)).toFixed(2)+','+mid+' '+rxTop.toFixed(2)+','+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.32" fill="none" stroke-linecap="round" opacity="'+(op*0.5).toFixed(2)+'"/>';
+          s += '<path d="M'+rxBase.toFixed(2)+',78 Q'+((rxBase+rxTop)/2+(ri%2?0.15:-0.15)).toFixed(2)+','+mid+' '+rxTop.toFixed(2)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.25" fill="none" stroke-linecap="round" opacity="'+(op*0.32).toFixed(2)+'" transform="translate(-0.3,0)"/>';
         }
-        // Left rim light
-        s += '<line x1="'+(35-cw)+'" y1="78" x2="'+(35-cw)+'" y2="'+visibleTop+'" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+op+'"/>';
+        // Cream rim light pair (left lit edge)
+        s += '<path d="M'+(35-cw)+',78 C'+(35-cw+0.2)+','+(mid+4)+' '+(35-cwTop-0.2)+','+(mid-6)+' '+(35-cwTop)+','+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<path d="M'+(35-cw)+',78 C'+(35-cw+0.2)+','+(mid+4)+' '+(35-cwTop-0.2)+','+(mid-6)+' '+(35-cwTop)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.45" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'" transform="translate(-0.3,-0.15)"/>';
         // Needles — 60% smaller, stored for leaf alignment
         var needleY = [];
         var ny_start = parseFloat(visibleTop)+4, ny_step = (78-parseFloat(visibleTop)-8)/7;
@@ -16116,35 +16214,51 @@ document.addEventListener('keydown', function(e) {
         t._cactusNeedles = [];
         needleY.forEach(function(ny,ni){
           var isLeft = (ni%2===0);
-          var nx1 = isLeft ? (35-cw) : (35+cw);
-          var nx2 = isLeft ? (35-cw-2) : (35+cw+2);
+          // taper-aware: column edge narrows toward top — interpolate between cw (base) and cwTop (apex)
+          var _ncf = (78 - parseFloat(ny)) / (78 - parseFloat(visibleTop));
+          var _nedge = cw - (cw - cwTop) * _ncf;
+          var nx1 = isLeft ? (35-_nedge) : (35+_nedge);
+          var nx2 = isLeft ? (35-_nedge-2) : (35+_nedge+2);
           var ny2 = (parseFloat(ny)-1).toFixed(1);
           t._cactusNeedles.push({x: parseFloat(nx2), y: parseFloat(ny2), side: isLeft ? -1 : 1});
+          // Areole — small dark nub at needle base (real cactus signature)
+          s += '<circle cx="'+nx1+'" cy="'+ny+'" r="0.45" fill="rgba(40,20,5,0.5)" opacity="'+(op*0.5).toFixed(2)+'"/>';
           s += '<line x1="'+nx1+'" y1="'+ny+'" x2="'+nx2+'" y2="'+ny2+'"'
-             + ' stroke="#F0EBD8" stroke-width="0.4" stroke-linecap="round" opacity="0.7"/>';
+             + ' stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="0.75"/>';
         });
         break;
+```
 
-      case 9: // Coral — clean single trunk with organic texture
+
+
+      case 9: // Coral — taper trunk, polyp bumps with shadow rings, cream rim, crown polyp specular
         var corBase = 35, corY = 78, corTop = visibleTop;
-        // Main trunk — gentle S-curve, thick organic tube
-        s += '<path d="M'+(corBase-1.5)+','+corY+' C'+(corBase-2.5)+','+(mid+6)+' '+(corBase+1.5)+','+(mid-4)+' '+corBase+','+corTop+'"'
-           + ' stroke="#B85A3A" stroke-width="3.8" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        // Rim light on left edge
-        s += '<path d="M'+(corBase-2)+','+corY+' C'+(corBase-3)+','+(mid+6)+' '+(corBase+1)+','+(mid-4)+' '+(corBase-0.5)+','+corTop+'"'
-           + ' stroke="rgba(240,235,216,0.45)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="'+(op*0.75).toFixed(2)+'"/>';
-        // Texture bumps — small polyp-like bumps along the trunk
+        var _c9p1x = corBase-2.5, _c9p2x = corBase+1.5;
+        // Wider base stroke
+        s += '<path d="M'+(corBase-1.5)+','+corY+' C'+_c9p1x+','+(mid+6)+' '+_c9p2x+','+(mid-4)+' '+corBase+','+corTop+'" stroke="#B85A3A" stroke-width="4.0" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        // Inner taper stroke — narrower toward tip
+        s += '<path d="M'+corBase+','+(corY-(corY-parseFloat(corTop))*0.45)+' C'+(_c9p2x*0.55+_c9p1x*0.45)+','+((mid-4)*0.55+(mid+6)*0.45)+' '+_c9p2x+','+(mid-4)+' '+corBase+','+corTop+'" stroke="#B85A3A" stroke-width="2.6" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'"/>';
+        // Warm-shifted core shadow on right edge
+        s += '<path d="M'+(corBase+0.4)+','+corY+' C'+(_c9p1x+0.6)+','+(mid+6)+' '+(_c9p2x+0.6)+','+(mid-4)+' '+(corBase+0.3)+','+corTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="0.55"/>';
+        // Cream highlight pair on left edge
+        s += '<path d="M'+(corBase-2)+','+corY+' C'+(corBase-3)+','+(mid+6)+' '+(corBase+1)+','+(mid-4)+' '+(corBase-0.5)+','+corTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<path d="M'+(corBase-2)+','+corY+' C'+(corBase-3)+','+(mid+6)+' '+(corBase+1)+','+(mid-4)+' '+(corBase-0.5)+','+corTop+'" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'" transform="translate(-0.3,-0.15)"/>';
+        // Polyp bumps — each gets a node-swell shadow ring
         for (var _c9b = 0; _c9b < 5; _c9b++) {
           var _c9by = corY - (corY - parseFloat(corTop)) * (0.15 + _c9b * 0.18);
           var _c9bSide = (_c9b % 2 === 0) ? -1 : 1;
-          s += '<circle cx="'+(corBase + _c9bSide * 1.8).toFixed(1)+'" cy="'+_c9by.toFixed(1)+'" r="0.6" fill="#D97050" opacity="'+(op*0.3).toFixed(2)+'"/>';
+          var _c9bx = corBase + _c9bSide * 1.8;
+          s += '<ellipse cx="'+_c9bx.toFixed(2)+'" cy="'+(_c9by+0.3).toFixed(2)+'" rx="0.85" ry="0.3" fill="rgba(40,20,5,0.4)" opacity="'+(op*0.35).toFixed(2)+'"/>';
+          s += '<circle cx="'+_c9bx.toFixed(2)+'" cy="'+_c9by.toFixed(2)+'" r="0.7" fill="#D97050" opacity="'+(op*0.5).toFixed(2)+'"/>';
+          s += '<circle cx="'+(_c9bx-0.2).toFixed(2)+'" cy="'+(_c9by-0.2).toFixed(2)+'" r="0.25" fill="#f5ecd6" opacity="'+(op*0.4).toFixed(2)+'"/>';
         }
-        // Crown polyp — rounded tip at top
-        s += '<circle cx="'+corBase+'" cy="'+corTop+'" r="2.5" fill="#E07848" opacity="'+(op*0.75).toFixed(2)+'"/>';
-        s += '<circle cx="'+corBase+'" cy="'+corTop+'" r="1.2" fill="#F0EBD8" opacity="'+(op*0.3).toFixed(2)+'"/>';
+        // Crown polyp — rounded tip with cream specular pickup
+        s += '<circle cx="'+corBase+'" cy="'+(parseFloat(corTop)+0.5)+'" r="2.6" fill="rgba(40,20,5,0.3)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+        s += '<circle cx="'+corBase+'" cy="'+corTop+'" r="2.5" fill="#E07848" opacity="'+(op*0.85).toFixed(2)+'"/>';
+        s += '<circle cx="'+(corBase-0.6)+'" cy="'+(parseFloat(corTop)-0.5)+'" r="0.8" fill="#f5ecd6" opacity="'+(op*0.5).toFixed(2)+'"/>';
+        s += '<circle cx="'+(corBase-0.9)+'" cy="'+(parseFloat(corTop)-0.7)+'" r="0.35" fill="#f5ecd6" opacity="'+(op*0.85).toFixed(2)+'"/>';
         // Stem profile — sample the S-curve trunk center
         t._stemProfile = [];
-        var _c9p1x = corBase-2.5, _c9p2x = corBase+1.5;
         for (var _c9i = 0; _c9i <= 8; _c9i++) {
           var _c9t = _c9i / 8, _c9u = 1 - _c9t;
           t._stemProfile.push({
@@ -16154,48 +16268,70 @@ document.addEventListener('keydown', function(e) {
         }
         t._stemHW = 1.9; // trunk half-width (3.8/2)
         break;
+```
 
-      case 10: // Succulent trunk — short, fat, glaucous column
+
+
+      case 10: // Succulent trunk — flared base, glaucous waxy sheen, ring nodes (pulvinus), specular pickup
         var sw2 = 5.5;
-        // Base silhouette — flared at base, tapering slightly at top
-        s += '<path d="M'+(35-sw2-1)+',78 C'+(35-sw2)+','+(78-4)+' '+(35-sw2+1)+','+mid+' '+(35-sw2+0.5)+','+visibleTop
-           + ' Q35,'+(parseFloat(visibleTop)-2)+' '+(35+sw2-0.5)+','+visibleTop
-           + ' C'+(35+sw2-1)+','+mid+' '+(35+sw2)+','+(78-4)+' '+(35+sw2+1)+',78 Z"'
+        var sw2Top = sw2 * 0.82;
+        // Filled silhouette
+        s += '<path d="M'+(35-sw2-1)+',78 C'+(35-sw2)+','+(78-4)+' '+(35-sw2Top+1)+','+mid+' '+(35-sw2Top+0.5)+','+visibleTop
+           + ' Q35,'+(parseFloat(visibleTop)-2)+' '+(35+sw2Top-0.5)+','+visibleTop
+           + ' C'+(35+sw2Top-1)+','+mid+' '+(35+sw2)+','+(78-4)+' '+(35+sw2+1)+',78 Z"'
            + ' fill="#2D5A2D" stroke="#3A7040" stroke-width="0.6" opacity="'+op+'"/>';
-        // Waxy sheen stripe
-        s += '<path d="M'+(35-sw2+1.5)+',78 C'+(35-sw2+2)+','+(78-4)+' '+(35-sw2+2)+','+mid+' '+(35-sw2+1.5)+','+visibleTop+'"'
-           + ' stroke="#C4E89A" stroke-width="0.5" fill="none" stroke-linecap="round" opacity="'+(op*0.22).toFixed(2)+'"/>';
-        // Rim light
-        s += '<path d="M'+(35-sw2-1)+',78 C'+(35-sw2)+','+(78-4)+' '+(35-sw2+1)+','+mid+' '+(35-sw2+0.5)+','+visibleTop+'"'
-           + ' stroke="rgba(240,235,216,0.45)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="'+(op*0.7).toFixed(2)+'"/>';
-        // Horizontal segment rings (echeveria-style)
+        // Warm-shifted right core shadow
+        s += '<path d="M'+(35+sw2+1)+',78 C'+(35+sw2)+','+(78-4)+' '+(35+sw2Top-1)+','+mid+' '+(35+sw2Top-0.5)+','+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="0.55"/>';
+        // Glaucous waxy sheen (specular)
+        s += '<path d="M'+(35-sw2+2)+',78 C'+(35-sw2+2.5)+','+(78-4)+' '+(35-sw2Top+2.5)+','+mid+' '+(35-sw2Top+2)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.6" fill="none" stroke-linecap="round" opacity="'+(op*0.32).toFixed(2)+'"/>';
+        // Cream highlight pair (left lit edge)
+        s += '<path d="M'+(35-sw2-1)+',78 C'+(35-sw2)+','+(78-4)+' '+(35-sw2Top+1)+','+mid+' '+(35-sw2Top+0.5)+','+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.6" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<path d="M'+(35-sw2-1)+',78 C'+(35-sw2)+','+(78-4)+' '+(35-sw2Top+1)+','+mid+' '+(35-sw2Top+0.5)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.5" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'" transform="translate(-0.3,-0.15)"/>';
+        // Horizontal segment rings (echeveria-style) with node-swell shading
         for (var sr=1; sr<=3; sr++){
           var sry = parseFloat(visibleTop) + sr*(78-parseFloat(visibleTop))/4;
-          var srw = sw2*(0.92+sr*0.02);
-          s += '<path d="M'+(35-srw)+','+sry.toFixed(1)+' Q35,'+(sry-1.5).toFixed(1)+' '+(35+srw)+','+sry.toFixed(1)+'"'
-             + ' fill="none" stroke="#4A8050" stroke-width="0.5" opacity="0.4"/>';
+          var srw = sw2*(0.82+sr*0.04);
+          s += '<path d="M'+(35-srw)+','+sry.toFixed(1)+' Q35,'+(sry+0.4).toFixed(1)+' '+(35+srw)+','+sry.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.35)" stroke-width="0.5" opacity="'+(op*0.4).toFixed(2)+'"/>';
+          s += '<path d="M'+(35-srw)+','+sry.toFixed(1)+' Q35,'+(sry-1.5).toFixed(1)+' '+(35+srw)+','+sry.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" opacity="'+(op*0.3).toFixed(2)+'"/>';
         }
+        // Specular pickup — small bright lozenge upper left (waxy)
+        s += '<ellipse cx="'+(35-sw2Top+1.5)+'" cy="'+((parseFloat(visibleTop)+mid)/2)+'" rx="0.5" ry="2.2" fill="#f5ecd6" opacity="'+(op*0.45).toFixed(2)+'" transform="rotate(-8 '+(35-sw2Top+1.5)+' '+((parseFloat(visibleTop)+mid)/2)+')"/>';
         break;
+```
+
+
       // ── set-103-8: SPECIALTY STEMS (cases 11-14) ─────────────────────
-      case 11: // Twisted Vine — double-helix wrap, stays centered
+      case 11: // Twisted Vine — double-helix wrap with cream highlight pair, crossing nodes
         var _tw11a = 3.5 + stemCurve * 0.3;
         // Store vine strand positions for leaf placement
         t._vineStrands = [[],[]];
+        var _tw11Paths = ['', ''];
         for (var _tw=0; _tw<2; _tw++) {
           var _twSide = _tw === 0 ? 1 : -1;
-          var _twOp = _tw === 0 ? op : (op*0.65);
-          s += '<path d="M'+(35+_twSide*1)+',78';
+          var _twOp = _tw === 0 ? op : (op*0.7);
+          var _twD = 'M'+(35+_twSide*1)+',78';
           t._vineStrands[_tw].push({x: 35+_twSide*1, y: 78});
           for (var _ts=1; _ts<=5; _ts++) {
             var _ty = 78 - (78-visibleTop)*(_ts/5);
             var _tx = 35 + _twSide * Math.sin(_ts*1.26+stemCurve*0.2) * _tw11a * (1 - _ts*0.12);
-            s += ' Q'+(_tx+_twSide*2).toFixed(1)+','+(_ty+3).toFixed(1)+' '+_tx.toFixed(1)+','+_ty.toFixed(1);
+            _twD += ' Q'+(_tx+_twSide*2).toFixed(1)+','+(_ty+3).toFixed(1)+' '+_tx.toFixed(1)+','+_ty.toFixed(1);
             t._vineStrands[_tw].push({x: _tx, y: _ty});
           }
-          s += '" fill="none" stroke="'+strokeCol+'" stroke-width="'+(_tw===0?strokeW:(parseFloat(strokeW)*0.7).toFixed(1))+'" stroke-linecap="round" opacity="'+_twOp+'"/>';
+          _tw11Paths[_tw] = _twD;
+          // Wider base stroke
+          s += '<path d="'+_twD+'" fill="none" stroke="'+strokeCol+'" stroke-width="'+(_tw===0?(parseFloat(strokeW)*1.05).toFixed(2):(parseFloat(strokeW)*0.75).toFixed(2))+'" stroke-linecap="round" opacity="'+_twOp+'"/>';
+          // Inner taper stroke
+          s += '<path d="'+_twD+'" fill="none" stroke="'+strokeCol+'" stroke-width="'+(_tw===0?(parseFloat(strokeW)*0.65).toFixed(2):(parseFloat(strokeW)*0.45).toFixed(2))+'" stroke-linecap="round" opacity="'+(_twOp*0.55).toFixed(2)+'"/>';
         }
-        // Rim highlight on first strand only
-        s += '<path d="M36,78 Q'+(35+Math.sin(1.26+stemCurve*0.2)*_tw11a*0.88+2).toFixed(1)+','+(78-(78-parseFloat(visibleTop))*0.2+3).toFixed(1)+' '+(35+Math.sin(1.26+stemCurve*0.2)*_tw11a*0.88).toFixed(1)+','+(78-(78-parseFloat(visibleTop))*0.2).toFixed(1)+'" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        // Cream highlight pair on dominant strand
+        s += '<path d="'+_tw11Paths[0]+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round"/>';
+        s += '<path d="'+_tw11Paths[0]+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" stroke-linecap="round" opacity="0.55" transform="translate(-0.3,-0.1)"/>';
+        // Crossing-knot AO ink-pools where strands cross (every other node)
+        for (var _tw11k = 1; _tw11k < t._vineStrands[0].length-1; _tw11k+=2) {
+          var _twkx = (t._vineStrands[0][_tw11k].x + t._vineStrands[1][_tw11k].x)/2;
+          var _twky = (t._vineStrands[0][_tw11k].y + t._vineStrands[1][_tw11k].y)/2;
+          s += '<ellipse cx="'+_twkx.toFixed(2)+'" cy="'+(_twky+0.4).toFixed(2)+'" rx="1.4" ry="0.45" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+        }
         // Profile — average of both strands
         t._stemProfile = [];
         for (var _tw11p = 0; _tw11p < t._vineStrands[0].length; _tw11p++) {
@@ -16206,51 +16342,103 @@ document.addEventListener('keydown', function(e) {
         }
         t._stemHW = 2.0;
         break;
-      case 12: // Ancient Bark — thick filled trunk with knots and texture
+```
+
+
+      case 12: // Ancient Bark — taper, Q-jittered cross-grain bark, knot rings, vertical cracks, root-flare AO
         var _ab12w = 3.2 + parseFloat(hw)*0.4;
-        s += '<path d="M'+(35-_ab12w)+',78 C'+(35-_ab12w+0.5)+','+(mid+6)+' '+(35-_ab12w*0.7)+','+(mid-2)+' '+(35-_ab12w*0.4)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-1.5)+' '+(35+_ab12w*0.4)+','+visibleTop+' C'+(35+_ab12w*0.7)+','+(mid-2)+' '+(35+_ab12w-0.5)+','+(mid+6)+' '+(35+_ab12w)+',78 Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
-        // Bright rim left
-        s += '<path d="M'+(35-_ab12w)+',78 C'+(35-_ab12w+0.5)+','+(mid+6)+' '+(35-_ab12w*0.7)+','+(mid-2)+' '+(35-_ab12w*0.4)+','+visibleTop+'" stroke="rgba(240,235,216,0.45)" stroke-width="0.9" fill="none" stroke-linecap="round" opacity="'+(op*0.6)+'"/>';
-        // Knots — 2 dark ovals on trunk
+        var _ab12wTop = _ab12w * 0.42; // 80%-of-base-via-tapering — top is 42% of base
+        // Filled silhouette
+        s += '<path d="M'+(35-_ab12w)+',78 C'+(35-_ab12w+0.5)+','+(mid+6)+' '+(35-_ab12w*0.7)+','+(mid-2)+' '+(35-_ab12wTop)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-1.5)+' '+(35+_ab12wTop)+','+visibleTop+' C'+(35+_ab12w*0.7)+','+(mid-2)+' '+(35+_ab12w-0.5)+','+(mid+6)+' '+(35+_ab12w)+',78 Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
+        // Warm-shifted right core shadow
+        s += '<path d="M'+(35+_ab12w)+',78 C'+(35+_ab12w-0.5)+','+(mid+6)+' '+(35+_ab12w*0.7)+','+(mid-2)+' '+(35+_ab12wTop)+','+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'"/>';
+        // Cream highlight pair — left lit edge
+        s += '<path d="M'+(35-_ab12w)+',78 C'+(35-_ab12w+0.5)+','+(mid+6)+' '+(35-_ab12w*0.7)+','+(mid-2)+' '+(35-_ab12wTop)+','+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M'+(35-_ab12w)+',78 C'+(35-_ab12w+0.5)+','+(mid+6)+' '+(35-_ab12w*0.7)+','+(mid-2)+' '+(35-_ab12wTop)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'" transform="translate(-0.35,-0.15)"/>';
+        // Q-jittered cross-grain bark ticks every ~5px
+        for (var _abi = 0; _abi < 6; _abi++) {
+          var _aby = 78 - (78-parseFloat(visibleTop)) * ((_abi+0.5)/6);
+          var _abjit = ((parseInt(uid.charAt((_abi+7)%uid.length)||'0',16)/15)-0.5)*0.7;
+          var _abef = 1 - (_abi/6) * 0.45; // edge-frac, narrows toward top
+          s += '<path d="M'+(35-_ab12w*0.6*_abef+_abjit)+','+_aby.toFixed(1)+' Q35,'+(_aby-0.5).toFixed(1)+' '+(35+_ab12w*0.6*_abef+_abjit)+','+_aby.toFixed(1)+'" stroke="rgba(40,20,5,0.5)" stroke-width="0.32" fill="none" opacity="'+(op*0.32).toFixed(2)+'"/>';
+        }
+        // Knot rings — dark oval + cream concentric pulvinus
         var _k1y = mid + 4, _k2y = mid - 6;
-        s += '<ellipse cx="'+(35-_ab12w*0.15)+'" cy="'+_k1y+'" rx="1.4" ry="0.9" fill="#0d100c" opacity="0.25"/>';
-        s += '<ellipse cx="'+(35+_ab12w*0.2)+'" cy="'+_k2y+'" rx="1.1" ry="0.7" fill="#0d100c" opacity="0.2"/>';
-        // Vertical crack lines
-        s += '<path d="M'+(35-0.5)+','+(78-4)+' C'+(35-0.8)+','+(mid+2)+' '+(35+0.3)+','+(mid-5)+' '+(35-0.2)+','+(parseFloat(visibleTop)+3)+'" stroke="#0d100c" stroke-width="0.4" fill="none" opacity="0.18"/>';
+        s += '<ellipse cx="'+(35-_ab12w*0.15)+'" cy="'+_k1y+'" rx="1.55" ry="1.0" fill="rgba(40,20,5,0.55)" opacity="0.4"/>';
+        s += '<ellipse cx="'+(35-_ab12w*0.15)+'" cy="'+_k1y+'" rx="1.0" ry="0.6" fill="rgba(40,20,5,0.6)" opacity="0.45"/>';
+        s += '<ellipse cx="'+(35-_ab12w*0.15-0.2)+'" cy="'+(_k1y-0.2)+'" rx="0.4" ry="0.22" fill="#f5ecd6" opacity="'+(op*0.3).toFixed(2)+'"/>';
+        s += '<ellipse cx="'+(35+_ab12w*0.2)+'" cy="'+_k2y+'" rx="1.2" ry="0.75" fill="rgba(40,20,5,0.5)" opacity="0.35"/>';
+        s += '<ellipse cx="'+(35+_ab12w*0.2)+'" cy="'+_k2y+'" rx="0.7" ry="0.4" fill="rgba(40,20,5,0.55)" opacity="0.4"/>';
+        // Vertical crack lines (Q-jittered, not straight)
+        s += '<path d="M'+(35-0.5)+','+(78-4)+' Q'+(35-0.8)+','+(mid+2)+' '+(35+0.3)+','+(mid-5)+' Q'+(35-0.1)+','+(mid-9)+' '+(35-0.2)+','+(parseFloat(visibleTop)+3)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.4" fill="none" opacity="0.28"/>';
+        s += '<path d="M'+(35+0.6)+','+(78-7)+' Q'+(35+0.9)+','+(mid)+' '+(35+0.4)+','+(mid-7)+'" stroke="rgba(40,20,5,0.5)" stroke-width="0.3" fill="none" opacity="0.22"/>';
+        // Root-flare AO ellipse at base
+        s += '<ellipse cx="35" cy="78.3" rx="'+(_ab12w+0.5).toFixed(2)+'" ry="0.6" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.35).toFixed(2)+'"/>';
         break;
-      case 13: // Bamboo Segments — straight with visible nodes, stays centered
+```
+
+
+      case 13: // Bamboo Segments — taper, fluted ridges, swollen pulvinus nodes, cream lit edges
         var _bamW = 1.8;
+        var _bamWTop = 1.45; // ~80% of base
         var _bamSegs = 4;
         var _bamSegH = (78 - visibleTop) / _bamSegs;
         for (var _bi=0; _bi<_bamSegs; _bi++) {
           var _bTop = 78 - (_bi+1)*_bamSegH;
           var _bBot = 78 - _bi*_bamSegH;
-          // Segment body
-          s += '<rect x="'+(35-_bamW)+'" y="'+_bTop.toFixed(1)+'" width="'+(_bamW*2)+'" height="'+_bamSegH.toFixed(1)+'" rx="0.6" fill="'+strokeCol+'" opacity="'+op+'"/>';
-          // Node ring at each joint (except top)
+          var _bWBot = _bamW - (_bamW - _bamWTop) * (_bi/_bamSegs);
+          var _bWTop = _bamW - (_bamW - _bamWTop) * ((_bi+1)/_bamSegs);
+          // Segment body — taper-aware trapezoid with rounded ends
+          s += '<path d="M'+(35-_bWBot)+','+_bBot.toFixed(2)+' L'+(35-_bWTop)+','+_bTop.toFixed(2)+' Q35,'+(_bTop-0.3).toFixed(2)+' '+(35+_bWTop)+','+_bTop.toFixed(2)+' L'+(35+_bWBot)+','+_bBot.toFixed(2)+' Q35,'+(_bBot+0.3).toFixed(2)+' '+(35-_bWBot)+','+_bBot.toFixed(2)+' Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
+          // Warm-shifted core shadow on right edge
+          s += '<line x1="'+(35+_bWBot-0.15)+'" y1="'+_bBot.toFixed(2)+'" x2="'+(35+_bWTop-0.15)+'" y2="'+_bTop.toFixed(2)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.45" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          // Cream highlight pair on left edge (Hokusai)
+          s += '<line x1="'+(35-_bWBot+0.3)+'" y1="'+_bBot.toFixed(2)+'" x2="'+(35-_bWTop+0.3)+'" y2="'+_bTop.toFixed(2)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" stroke-linecap="round"/>';
+          s += '<line x1="'+(35-_bWBot+0.3)+'" y1="'+_bBot.toFixed(2)+'" x2="'+(35-_bWTop+0.3)+'" y2="'+_bTop.toFixed(2)+'" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'" transform="translate(-0.3,0)"/>';
+          // 3 fluting hairlines per segment (curved cream)
+          for (var _bff = 0; _bff < 3; _bff++) {
+            var _bfx = (-_bWBot+0.7) + _bff*((_bWBot*2-1.4)/2);
+            var _bfxT = (-_bWTop+0.6) + _bff*((_bWTop*2-1.2)/2);
+            s += '<path d="M'+(35+_bfx).toFixed(2)+','+_bBot.toFixed(2)+' Q'+(35+(_bfx+_bfxT)/2+(_bff===1?0:0.1*(_bff-1))).toFixed(2)+','+((_bBot+_bTop)/2).toFixed(2)+' '+(35+_bfxT).toFixed(2)+','+_bTop.toFixed(2)+'" stroke="#f5ecd6" stroke-width="0.18" fill="none" stroke-linecap="round" opacity="'+(op*0.22).toFixed(2)+'"/>';
+          }
+          // Node ring at joint (except top) — pulvinus swell
           if (_bi < _bamSegs - 1) {
-            s += '<ellipse cx="35" cy="'+_bTop.toFixed(1)+'" rx="'+(_bamW+0.8)+'" ry="0.9" fill="'+strokeCol+'" stroke="rgba(240,235,216,0.3)" stroke-width="0.4" opacity="'+op+'"/>';
+            s += '<ellipse cx="35" cy="'+(_bTop+0.4).toFixed(2)+'" rx="'+(_bWTop+0.95).toFixed(2)+'" ry="0.55" fill="rgba(40,20,5,0.4)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+            s += '<ellipse cx="35" cy="'+_bTop.toFixed(2)+'" rx="'+(_bWTop+0.85).toFixed(2)+'" ry="0.95" fill="'+strokeCol+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.35" opacity="'+op+'"/>';
+            s += '<ellipse cx="35" cy="'+(_bTop-0.25).toFixed(2)+'" rx="'+(_bWTop+0.6).toFixed(2)+'" ry="0.3" fill="#f5ecd6" opacity="'+(op*0.32).toFixed(2)+'"/>';
           }
         }
-        // Bright left edge
-        s += '<line x1="'+(35-_bamW+0.3)+'" y1="78" x2="'+(35-_bamW+0.3)+'" y2="'+visibleTop+'" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" opacity="'+(op*0.5)+'"/>';
-        // Faint vertical inner groove
-        s += '<line x1="35" y1="78" x2="35" y2="'+visibleTop+'" stroke="#C4E89A" stroke-width="0.25" opacity="'+(op*0.15)+'"/>';
         break;
-      case 14: // Hollow Trunk — wide organic cylinder with dark center void
+```
+
+
+      case 14: // Hollow Trunk — taper, deep cavity AO, inner-rim shadow, Q-jittered bark cracks, cream lit edge
         var _htW = 4.0 + parseFloat(hw)*0.5;
-        // Outer shell
-        s += '<path d="M'+(35-_htW)+',78 C'+(35-_htW+0.8)+','+(mid+4)+' '+(35-_htW*0.85)+','+(mid-6)+' '+(35-_htW*0.5)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-2)+' '+(35+_htW*0.5)+','+visibleTop+' C'+(35+_htW*0.85)+','+(mid-6)+' '+(35+_htW-0.8)+','+(mid+4)+' '+(35+_htW)+',78 Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
-        // Dark center void — the hollow
-        s += '<path d="M'+(35-_htW*0.35)+',78 C'+(35-_htW*0.25)+','+(mid+2)+' '+(35-_htW*0.15)+','+(mid-4)+' 35,'+(parseFloat(visibleTop)+4)+' C'+(35+_htW*0.15)+','+(mid-4)+' '+(35+_htW*0.25)+','+(mid+2)+' '+(35+_htW*0.35)+',78 Z" fill="#0d100c" opacity="0.4"/>';
-        // Rim light
-        s += '<path d="M'+(35-_htW)+',78 C'+(35-_htW+0.8)+','+(mid+4)+' '+(35-_htW*0.85)+','+(mid-6)+' '+(35-_htW*0.5)+','+visibleTop+'" stroke="rgba(240,235,216,0.45)" stroke-width="1.0" fill="none" stroke-linecap="round" opacity="'+(op*0.55)+'"/>';
-        // Bark texture lines
-        s += '<path d="M'+(35-_htW*0.6)+','+(78-3)+' C'+(35-_htW*0.55)+','+(mid)+' '+(35-_htW*0.45)+','+(mid-8)+' '+(35-_htW*0.35)+','+(parseFloat(visibleTop)+2)+'" stroke="#0d100c" stroke-width="0.35" fill="none" opacity="0.15"/>';
-        s += '<path d="M'+(35+_htW*0.55)+','+(78-5)+' C'+(35+_htW*0.5)+','+(mid+2)+' '+(35+_htW*0.4)+','+(mid-6)+' '+(35+_htW*0.35)+','+(parseFloat(visibleTop)+3)+'" stroke="#0d100c" stroke-width="0.3" fill="none" opacity="0.12"/>';
+        var _htWTop = _htW * 0.5;
+        // Outer shell — wider base, narrower at top
+        s += '<path d="M'+(35-_htW)+',78 C'+(35-_htW+0.8)+','+(mid+4)+' '+(35-_htW*0.85)+','+(mid-6)+' '+(35-_htWTop)+','+visibleTop+' Q35,'+(parseFloat(visibleTop)-2)+' '+(35+_htWTop)+','+visibleTop+' C'+(35+_htW*0.85)+','+(mid-6)+' '+(35+_htW-0.8)+','+(mid+4)+' '+(35+_htW)+',78 Z" fill="'+strokeCol+'" opacity="'+op+'"/>';
+        // Warm-shifted right core shadow
+        s += '<path d="M'+(35+_htW)+',78 C'+(35+_htW-0.8)+','+(mid+4)+' '+(35+_htW*0.85)+','+(mid-6)+' '+(35+_htWTop)+','+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        // Dark cavity (warm-shifted, not pure black)
+        s += '<path d="M'+(35-_htW*0.35)+',78 C'+(35-_htW*0.25)+','+(mid+2)+' '+(35-_htW*0.15)+','+(mid-4)+' 35,'+(parseFloat(visibleTop)+4)+' C'+(35+_htW*0.15)+','+(mid-4)+' '+(35+_htW*0.25)+','+(mid+2)+' '+(35+_htW*0.35)+',78 Z" fill="rgba(20,12,4,0.85)" opacity="0.55"/>';
+        // Cavity inner-rim shadow (occlusion arc)
+        s += '<path d="M'+(35-_htW*0.35)+',78 C'+(35-_htW*0.25)+','+(mid+2)+' '+(35-_htW*0.15)+','+(mid-4)+' 35,'+(parseFloat(visibleTop)+4)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.5" fill="none" opacity="0.45"/>';
+        // Cavity faint cream sub-rim (catching light)
+        s += '<path d="M'+(35+_htW*0.32)+',78 C'+(35+_htW*0.22)+','+(mid+2)+' '+(35+_htW*0.12)+','+(mid-4)+' '+(35-0.2)+','+(parseFloat(visibleTop)+4)+'" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="'+(op*0.18).toFixed(2)+'"/>';
+        // Cream highlight pair (left lit edge)
+        s += '<path d="M'+(35-_htW)+',78 C'+(35-_htW+0.8)+','+(mid+4)+' '+(35-_htW*0.85)+','+(mid-6)+' '+(35-_htWTop)+','+visibleTop+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M'+(35-_htW)+',78 C'+(35-_htW+0.8)+','+(mid+4)+' '+(35-_htW*0.85)+','+(mid-6)+' '+(35-_htWTop)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'" transform="translate(-0.35,-0.15)"/>';
+        // Q-jittered bark crack lines (warm-shifted)
+        s += '<path d="M'+(35-_htW*0.6)+','+(78-3)+' Q'+(35-_htW*0.5)+','+(mid)+' '+(35-_htW*0.45)+','+(mid-8)+' Q'+(35-_htW*0.4)+','+(mid-12)+' '+(35-_htW*0.35)+','+(parseFloat(visibleTop)+2)+'" stroke="rgba(40,20,5,0.5)" stroke-width="0.35" fill="none" opacity="0.32"/>';
+        s += '<path d="M'+(35+_htW*0.55)+','+(78-5)+' Q'+(35+_htW*0.48)+','+(mid+2)+' '+(35+_htW*0.4)+','+(mid-6)+' Q'+(35+_htW*0.36)+','+(mid-10)+' '+(35+_htW*0.35)+','+(parseFloat(visibleTop)+3)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.3" fill="none" opacity="0.25"/>';
+        // Root-flare base AO
+        s += '<ellipse cx="35" cy="78.3" rx="'+(_htW+0.4).toFixed(2)+'" ry="0.55" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.32).toFixed(2)+'"/>';
         break;
+```
+
+
       // ── STEM BATCH 1: COMMON (cases 15–18) ──────────────────────────
-      case 15: // Vine Twist — two thin strokes spiraling loosely
+      case 15: // Vine Twist — two thin spiraling strands with cream highlight pair, twist-node pulvinus
         var _vt15amp = 2.8 + Math.abs(parseFloat(hw)) * 1.2;
         var _vt15segs = 5;
         var _vt15segH = (78 - visibleTop) / _vt15segs;
@@ -16264,7 +16452,10 @@ document.addEventListener('keydown', function(e) {
           _vt15a += ' Q' + (_vx + parseFloat(hw2) * 0.8).toFixed(1) + ',' + (_vy + _vt15segH * 0.4).toFixed(1) + ' ' + _vx.toFixed(1) + ',' + _vy.toFixed(1);
           t._vt15strands[0].push({x: _vx, y: _vy});
         }
-        s += '<path d="' + _vt15a + '" fill="none" stroke="' + strokeCol + '" stroke-width="1.2" stroke-linecap="round" opacity="' + op + '"/>';
+        // Wider base stroke for strand A
+        s += '<path d="' + _vt15a + '" fill="none" stroke="' + strokeCol + '" stroke-width="1.4" stroke-linecap="round" opacity="' + op + '"/>';
+        // Inner taper
+        s += '<path d="' + _vt15a + '" fill="none" stroke="' + strokeCol + '" stroke-width="0.9" stroke-linecap="round" opacity="' + (op*0.55).toFixed(2) + '"/>';
         // Strand B (phase-shifted)
         var _vt15b = 'M35,78';
         for (var _vj=1; _vj<=_vt15segs; _vj++) {
@@ -16273,9 +16464,20 @@ document.addEventListener('keydown', function(e) {
           _vt15b += ' Q' + (_vx2 + parseFloat(hw2) * 0.8).toFixed(1) + ',' + (_vy2 + _vt15segH * 0.4).toFixed(1) + ' ' + _vx2.toFixed(1) + ',' + _vy2.toFixed(1);
           t._vt15strands[1].push({x: _vx2, y: _vy2});
         }
-        s += '<path d="' + _vt15b + '" fill="none" stroke="' + strokeCol + '" stroke-width="1.0" stroke-linecap="round" opacity="' + (op * 0.65).toFixed(2) + '"/>';
-        // Rim highlight on strand A (replaces center line)
-        s += '<path d="M35.3,77 Q' + (t._vt15strands[0][1].x + 0.4).toFixed(1) + ',' + (t._vt15strands[0][1].y + _vt15segH * 0.4).toFixed(1) + ' ' + (t._vt15strands[0][1].x + 0.3).toFixed(1) + ',' + t._vt15strands[0][1].y.toFixed(1) + '" stroke="rgba(240,235,216,0.3)" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        s += '<path d="' + _vt15b + '" fill="none" stroke="' + strokeCol + '" stroke-width="1.15" stroke-linecap="round" opacity="' + (op * 0.7).toFixed(2) + '"/>';
+        s += '<path d="' + _vt15b + '" fill="none" stroke="' + strokeCol + '" stroke-width="0.7" stroke-linecap="round" opacity="' + (op * 0.45).toFixed(2) + '"/>';
+        // Cream highlight pair on strand A
+        s += '<path d="' + _vt15a + '" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round" opacity="0.5"/>';
+        s += '<path d="' + _vt15a + '" fill="none" stroke="#f5ecd6" stroke-width="0.32" stroke-linecap="round" opacity="' + (op*0.5).toFixed(2) + '" transform="translate(-0.3,-0.1)"/>';
+        // Twist-node pulvinus where strands cross
+        for (var _vtk = 1; _vtk < t._vt15strands[0].length-1; _vtk++) {
+          var _vtkx = (t._vt15strands[0][_vtk].x + t._vt15strands[1][_vtk].x)/2;
+          var _vtky = (t._vt15strands[0][_vtk].y + t._vt15strands[1][_vtk].y)/2;
+          if (Math.abs(t._vt15strands[0][_vtk].x - t._vt15strands[1][_vtk].x) < 1.5) {
+            s += '<ellipse cx="'+_vtkx.toFixed(2)+'" cy="'+(_vtky+0.35).toFixed(2)+'" rx="1.2" ry="0.4" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+            s += '<ellipse cx="'+_vtkx.toFixed(2)+'" cy="'+_vtky.toFixed(2)+'" rx="0.85" ry="0.25" fill="#f5ecd6" opacity="'+(op*0.2).toFixed(2)+'"/>';
+          }
+        }
         // Profile — average of both strands
         t._stemProfile = [];
         for (var _vt15p = 0; _vt15p < t._vt15strands[0].length; _vt15p++) {
@@ -16286,19 +16488,34 @@ document.addEventListener('keydown', function(e) {
         }
         t._stemHW = 2.0;
         break;
-      case 16: // Leaning — asymmetric off-center stem
+```
+
+
+      case 16: // Leaning — asymmetric, taper, cream lit edge on outer (lit) side, base node swell
         var _lean16 = side * (6 + stemCurve * 1.5);
         var _tight16y = 78 - (78 - visibleTop) * 0.25;
         var _sweep16y = 78 - (78 - visibleTop) * 0.65;
         var _lean16topX = 35 + _lean16 * 0.7 + parseFloat(hw);
-        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + _lean16topX.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
-        s += '<path d="M35,78 C' + (35 + _lean16 * 0.3).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + _lean16topX.toFixed(1) + ',' + visibleTop + '" stroke="#0d100c" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.2"/>';
+        var _l16p1x = 35 + _lean16 * 0.3, _l16p2x = 35 + _lean16 * 0.85, _l16p3x = _lean16topX;
+        // Wider base stroke
+        s += '<path d="M35,78 C' + _l16p1x.toFixed(2) + ',' + _tight16y.toFixed(1) + ' ' + _l16p2x.toFixed(2) + ',' + _sweep16y.toFixed(1) + ' ' + _l16p3x.toFixed(2) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW)*1.1).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        // Inner taper stroke
+        s += '<path d="M' + (35*0.55+_l16p1x*0.45).toFixed(2) + ',' + (78*0.55+_tight16y*0.45).toFixed(1) + ' C' + ((_l16p1x+_l16p2x)/2).toFixed(2) + ',' + ((_tight16y+_sweep16y)/2).toFixed(1) + ' ' + _l16p2x.toFixed(2) + ',' + _sweep16y.toFixed(1) + ' ' + _l16p3x.toFixed(2) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW)*0.62).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + (op*0.55).toFixed(2) + '"/>';
+        // Warm-shifted core shadow on lean-side (compression side)
+        var _shadOff16 = side * 0.55;
+        s += '<path d="M' + (35 + _shadOff16) + ',78 C' + (_l16p1x + _shadOff16).toFixed(2) + ',' + _tight16y.toFixed(1) + ' ' + (_l16p2x + _shadOff16).toFixed(2) + ',' + _sweep16y.toFixed(1) + ' ' + (_l16p3x + _shadOff16).toFixed(2) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="0.45"/>';
+        // Cream highlight pair on tension side (away from lean)
         var _rimOff16 = side * -0.8;
-        s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (35 + _lean16 * 0.3 + _rimOff16).toFixed(1) + ',' + _tight16y.toFixed(1) + ' ' + (35 + _lean16 * 0.85 + _rimOff16).toFixed(1) + ',' + _sweep16y.toFixed(1) + ' ' + (_lean16topX + _rimOff16).toFixed(1) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (_l16p1x + _rimOff16).toFixed(2) + ',' + _tight16y.toFixed(1) + ' ' + (_l16p2x + _rimOff16).toFixed(2) + ',' + _sweep16y.toFixed(1) + ' ' + (_l16p3x + _rimOff16).toFixed(2) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.55" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M' + (35 + _rimOff16) + ',78 C' + (_l16p1x + _rimOff16).toFixed(2) + ',' + _tight16y.toFixed(1) + ' ' + (_l16p2x + _rimOff16).toFixed(2) + ',' + _sweep16y.toFixed(1) + ' ' + (_l16p3x + _rimOff16).toFixed(2) + ',' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
+        // Base node swell (root flare)
+        s += '<ellipse cx="35" cy="78" rx="1.6" ry="0.55" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.35).toFixed(2)+'"/>';
+        // Mid pulvinus
+        s += '<ellipse cx="'+_l16p1x.toFixed(2)+'" cy="'+_tight16y.toFixed(1)+'" rx="1.0" ry="0.45" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
         // Store stem profile — sample the cubic bezier at 8 heights
         // Bezier: P0=(35,78), P1=(35+lean*0.3, tight16y), P2=(35+lean*0.85, sweep16y), P3=(lean16topX, visibleTop)
         t._stemProfile = [];
-        var _l16p0x = 35, _l16p1x = 35 + _lean16 * 0.3, _l16p2x = 35 + _lean16 * 0.85, _l16p3x = _lean16topX;
+        var _l16p0x = 35;
         var _l16p0y = 78, _l16p1y = _tight16y, _l16p2y = _sweep16y, _l16p3y = parseFloat(visibleTop);
         for (var _l16i = 0; _l16i <= 8; _l16i++) {
           var _l16t = _l16i / 8;
@@ -16308,20 +16525,30 @@ document.addEventListener('keydown', function(e) {
           t._stemProfile.push({x: _l16x, y: _l16y});
         }
         break;
-      case 17: // Kinked — straight stem with one sharp bend
+```
+
+
+      case 17: // Kinked — taper through both segments, bold pulvinus at the bend, cream lit edge
         var _kinkFrac = 0.35 + (stemCurve / 6) * 0.3;
         var _kinkY = 78 - (78 - visibleTop) * _kinkFrac;
         var _kinkX = 35 + side * (3 + Math.abs(parseFloat(hw)) * 2.5);
-        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.4).toFixed(1) + ' ' + (_kinkX - side * 1).toFixed(1) + ',' + (_kinkY + 3).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
         var _kinkTopX = 35 + side * (parseFloat(hw2) * 1.5);
-        s += '<path d="M' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + ' C' + (_kinkX + side * 0.5).toFixed(1) + ',' + (_kinkY - 4).toFixed(1) + ' ' + (_kinkTopX + parseFloat(hw) * 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 5).toFixed(1) + ' ' + _kinkTopX.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.85).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
-        s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + _kinkY.toFixed(1) + '" rx="2.2" ry="1.3" fill="' + strokeCol + '" opacity="' + (op * 0.3).toFixed(2) + '"/>';
-        // Dark shadow on lower segment
-        s += '<path d="M35.3,78 C' + (35.3 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.35).toFixed(1) + ' ' + (_kinkX - side * 0.8).toFixed(1) + ',' + (_kinkY + 2.5).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#0d100c" stroke-width="0.9" fill="none" opacity="0.18"/>';
-        // Bright rim-light on lower segment
-        s += '<path d="M34.5,78 C' + (34.5 + parseFloat(hw) * 0.25).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.38).toFixed(1) + ' ' + (_kinkX - side * 1.2).toFixed(1) + ',' + (_kinkY + 3).toFixed(1) + ' ' + (_kinkX - side * 0.3).toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="rgba(240,235,216,0.38)" stroke-width="0.55" fill="none" stroke-linecap="round"/>';
-        // Inner glow
-        s += '<path d="M35.5,78 C' + (35.5 + parseFloat(hw) * 0.2).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.3).toFixed(1) + ' ' + (_kinkX - side * 0.5).toFixed(1) + ',' + (_kinkY + 2).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#C4E89A" stroke-width="0.3" fill="none" opacity="' + (op * 0.16).toFixed(2) + '" style="mix-blend-mode:screen"/>';
+        // Lower segment — wider base
+        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.4).toFixed(1) + ' ' + (_kinkX - side * 1).toFixed(1) + ',' + (_kinkY + 3).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW)*1.05).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        // Upper segment — slightly narrower
+        s += '<path d="M' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + ' C' + (_kinkX + side * 0.5).toFixed(1) + ',' + (_kinkY - 4).toFixed(1) + ' ' + (_kinkTopX + parseFloat(hw) * 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 5).toFixed(1) + ' ' + _kinkTopX.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.82).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        // Warm-shifted shadow on lower segment (compression side)
+        s += '<path d="M35.4,78 C' + (35.4 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.35).toFixed(1) + ' ' + (_kinkX - side * 0.7).toFixed(1) + ',' + (_kinkY + 2.5).toFixed(1) + ' ' + _kinkX.toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="rgba(40,20,5,0.42)" stroke-width="0.85" fill="none" opacity="0.45"/>';
+        // Cream highlight pair on lower segment
+        s += '<path d="M34.5,78 C' + (34.5 + parseFloat(hw) * 0.25).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.38).toFixed(1) + ' ' + (_kinkX - side * 1.2).toFixed(1) + ',' + (_kinkY + 3).toFixed(1) + ' ' + (_kinkX - side * 0.3).toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.5,78 C' + (34.5 + parseFloat(hw) * 0.25).toFixed(1) + ',' + (78 - (78 - _kinkY) * 0.38).toFixed(1) + ' ' + (_kinkX - side * 1.2).toFixed(1) + ',' + (_kinkY + 3).toFixed(1) + ' ' + (_kinkX - side * 0.3).toFixed(1) + ',' + _kinkY.toFixed(1) + '" stroke="#f5ecd6" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
+        // Cream highlight pair on upper segment
+        s += '<path d="M' + (_kinkX - side*0.4).toFixed(1) + ',' + _kinkY.toFixed(1) + ' C' + (_kinkX + side * 0.1).toFixed(1) + ',' + (_kinkY - 4).toFixed(1) + ' ' + (_kinkTopX + parseFloat(hw) * 0.4 - 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 5).toFixed(1) + ' ' + (_kinkTopX - 0.4).toFixed(1) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M' + (_kinkX - side*0.4).toFixed(1) + ',' + _kinkY.toFixed(1) + ' C' + (_kinkX + side * 0.1).toFixed(1) + ',' + (_kinkY - 4).toFixed(1) + ' ' + (_kinkTopX + parseFloat(hw) * 0.4 - 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 5).toFixed(1) + ' ' + (_kinkTopX - 0.4).toFixed(1) + ',' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.32" fill="none" stroke-linecap="round" opacity="0.5" transform="translate(-0.3,-0.1)"/>';
+        // Bold pulvinus at the kink (swell + shadow ring)
+        s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + (parseFloat(_kinkY)+0.3).toFixed(1) + '" rx="2.4" ry="0.55" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+        s += '<ellipse cx="' + _kinkX.toFixed(1) + '" cy="' + _kinkY.toFixed(1) + '" rx="2.3" ry="1.35" fill="' + strokeCol + '" opacity="' + (op * 0.42).toFixed(2) + '"/>';
+        s += '<ellipse cx="' + (parseFloat(_kinkX)-0.4).toFixed(1) + '" cy="' + (parseFloat(_kinkY)-0.2).toFixed(1) + '" rx="1.0" ry="0.4" fill="#f5ecd6" opacity="'+(op*0.3).toFixed(2)+'"/>';
         // Store stem profile — two segments: base→kink, kink→top
         t._stemProfile = [
           {x: 35, y: 78},
@@ -16331,24 +16558,38 @@ document.addEventListener('keydown', function(e) {
           {x: _kinkTopX, y: parseFloat(visibleTop)}
         ];
         break;
-      case 18: // Forking Y — first L-system stem, one bifurcation
+```
+
+
+      case 18: // Forking Y — taper trunk, fork-pulvinus collar, cream lit edges, branch tapers
         var _forkFrac = 0.55 + (stemCurve / 6) * 0.15;
         var _forkY = 78 - (78 - visibleTop) * _forkFrac;
         var _forkSpread = 4 + stemCurve * 0.8;
-        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.5).toFixed(1) + ',' + (mid + 6).toFixed(1) + ' ' + (35 + parseFloat(hw2) * 0.3).toFixed(1) + ',' + (_forkY + 6).toFixed(1) + ' 35,' + _forkY.toFixed(1) + '" stroke="' + strokeCol + '" stroke-width="' + strokeW + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
         var _forkLx = 35 - _forkSpread + parseFloat(hw) * 0.5;
-        s += '<path d="M35,' + _forkY.toFixed(1) + ' C' + (35 - _forkSpread * 0.3).toFixed(1) + ',' + (_forkY - 4).toFixed(1) + ' ' + (_forkLx + 1).toFixed(1) + ',' + (parseFloat(visibleTop) + 4).toFixed(1) + ' ' + _forkLx.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.7).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
         var _forkRx = 35 + _forkSpread + parseFloat(hw2) * 0.5;
-        s += '<path d="M35,' + _forkY.toFixed(1) + ' C' + (35 + _forkSpread * 0.3).toFixed(1) + ',' + (_forkY - 4).toFixed(1) + ' ' + (_forkRx - 1).toFixed(1) + ',' + (parseFloat(visibleTop) + 4).toFixed(1) + ' ' + _forkRx.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.7).toFixed(1) + '" fill="none" stroke-linecap="round" opacity="' + (op * 0.85).toFixed(2) + '"/>';
-        s += '<ellipse cx="35" cy="' + _forkY.toFixed(1) + '" rx="2.5" ry="1.5" fill="' + strokeCol + '" opacity="' + (op * 0.25).toFixed(2) + '"/>';
-        // Rim-light on main trunk
-        s += '<path d="M34.2,78 C' + (34.2 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 5).toFixed(1) + ' ' + (34.2 + parseFloat(hw2) * 0.2).toFixed(1) + ',' + (_forkY + 5).toFixed(1) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        // Rim-light on left branch
-        s += '<path d="M34.5,' + _forkY.toFixed(1) + ' C' + (34.5 - _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkLx + 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkLx + 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        // Rim-light on right branch
-        s += '<path d="M35.5,' + _forkY.toFixed(1) + ' C' + (35.5 + _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkRx - 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkRx - 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="rgba(240,235,216,0.3)" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M35,78 C35,' + (mid + 6) + ' 35,' + (_forkY + 6) + ' 35,' + _forkY.toFixed(1) + '" stroke="#0d100c" stroke-width="0.6" fill="none" opacity="0.15"/>';
-        s += '<path d="M34.2,78 C34.2,' + (mid + 5) + ' 34.2,' + (_forkY + 5) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        // Trunk — wider base
+        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.5).toFixed(1) + ',' + (mid + 6).toFixed(1) + ' ' + (35 + parseFloat(hw2) * 0.3).toFixed(1) + ',' + (_forkY + 6).toFixed(1) + ' 35,' + _forkY.toFixed(1) + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW)*1.1).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        // Trunk inner taper
+        s += '<path d="M35,'+(78-(78-_forkY)*0.4).toFixed(1)+' C' + (35 + parseFloat(hw) * 0.3).toFixed(1) + ',' + ((mid + 6)*0.6+78*0.4).toFixed(1) + ' ' + (35 + parseFloat(hw2) * 0.3).toFixed(1) + ',' + (_forkY + 6).toFixed(1) + ' 35,' + _forkY.toFixed(1) + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW)*0.65).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + (op*0.55).toFixed(2) + '"/>';
+        // Left branch (taper)
+        s += '<path d="M35,' + _forkY.toFixed(1) + ' C' + (35 - _forkSpread * 0.3).toFixed(1) + ',' + (_forkY - 4).toFixed(1) + ' ' + (_forkLx + 1).toFixed(1) + ',' + (parseFloat(visibleTop) + 4).toFixed(1) + ' ' + _forkLx.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.78).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
+        // Right branch
+        s += '<path d="M35,' + _forkY.toFixed(1) + ' C' + (35 + _forkSpread * 0.3).toFixed(1) + ',' + (_forkY - 4).toFixed(1) + ' ' + (_forkRx - 1).toFixed(1) + ',' + (parseFloat(visibleTop) + 4).toFixed(1) + ' ' + _forkRx.toFixed(1) + ',' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + (parseFloat(strokeW) * 0.78).toFixed(2) + '" fill="none" stroke-linecap="round" opacity="' + (op * 0.88).toFixed(2) + '"/>';
+        // Fork pulvinus collar — swell + warm shadow
+        s += '<ellipse cx="35" cy="' + (_forkY+0.4).toFixed(1) + '" rx="2.7" ry="0.55" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="' + _forkY.toFixed(1) + '" rx="2.5" ry="1.5" fill="' + strokeCol + '" opacity="' + (op * 0.32).toFixed(2) + '"/>';
+        s += '<ellipse cx="34.6" cy="' + (parseFloat(_forkY)-0.2).toFixed(1) + '" rx="1.0" ry="0.4" fill="#f5ecd6" opacity="'+(op*0.32).toFixed(2)+'"/>';
+        // Cream highlight pair on trunk
+        s += '<path d="M34.2,78 C' + (34.2 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 5).toFixed(1) + ' ' + (34.2 + parseFloat(hw2) * 0.2).toFixed(1) + ',' + (_forkY + 5).toFixed(1) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.2,78 C' + (34.2 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 5).toFixed(1) + ' ' + (34.2 + parseFloat(hw2) * 0.2).toFixed(1) + ',' + (_forkY + 5).toFixed(1) + ' 34.2,' + _forkY.toFixed(1) + '" stroke="#f5ecd6" stroke-width="0.45" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.15)"/>';
+        // Cream highlight pair on left branch
+        s += '<path d="M34.5,' + _forkY.toFixed(1) + ' C' + (34.5 - _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkLx + 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkLx + 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="rgba(40,20,5,0.35)" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.5,' + _forkY.toFixed(1) + ' C' + (34.5 - _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkLx + 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkLx + 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="#f5ecd6" stroke-width="0.32" fill="none" stroke-linecap="round" opacity="0.55" transform="translate(-0.3,-0.1)"/>';
+        // Cream highlight pair on right branch
+        s += '<path d="M35.5,' + _forkY.toFixed(1) + ' C' + (35.5 + _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkRx - 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkRx - 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="rgba(40,20,5,0.3)" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M35.5,' + _forkY.toFixed(1) + ' C' + (35.5 + _forkSpread * 0.25).toFixed(1) + ',' + (_forkY - 3.5).toFixed(1) + ' ' + (_forkRx - 1.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 3.5).toFixed(1) + ' ' + (_forkRx - 0.4).toFixed(1) + ',' + (parseFloat(visibleTop) + 0.5) + '" stroke="#f5ecd6" stroke-width="0.28" fill="none" stroke-linecap="round" opacity="0.5" transform="translate(-0.3,-0.1)"/>';
+        // Trunk warm-shifted core shadow
+        s += '<path d="M35.4,78 C35.4,' + (mid + 6) + ' 35.4,' + (_forkY + 6) + ' 35.4,' + _forkY.toFixed(1) + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" opacity="0.32"/>';
         // Store fork data — leaf renderer alternates branches above fork
         t._forkData = {
           forkY: _forkY,
@@ -16363,77 +16604,176 @@ document.addEventListener('keydown', function(e) {
           {x: (_forkLx + _forkRx) * 0.5, y: parseFloat(visibleTop)}
         ];
         break;
+```
+
+
 
       // ── STEM BATCH 2 (cases 19–23) ──────────────────────────────────
-      case 19: // Thin Wire — ultra-delicate, barely there
-        var _tw19w = isGlass ? '0.8' : '1.0';
+      case 19: // Thin Wire — ultra-delicate, slight base taper, cream lit edge, terminal node beads
+        var _tw19w = isGlass ? '1.05' : '1.25';
+        var _tw19wT = isGlass ? '0.65' : '0.85';
+        // Wider base stroke (lower 60%)
         s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 3).toFixed(1) + ' ' + (35 - parseFloat(hw2) * 0.3).toFixed(1) + ',' + (mid - 3).toFixed(1) + ' 35,' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + _tw19w + '" fill="none" stroke-linecap="round" opacity="' + op + '"/>';
-        s += '<path d="M34.7,78 C' + (34.7 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (34.7 - parseFloat(hw2) * 0.2).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' 34.7,' + visibleTop + '" stroke="rgba(240,235,216,0.25)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        // Inner taper (full length, narrower) — gives top its 80%-of-base illusion
+        s += '<path d="M35,78 C' + (35 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 3).toFixed(1) + ' ' + (35 - parseFloat(hw2) * 0.3).toFixed(1) + ',' + (mid - 3).toFixed(1) + ' 35,' + visibleTop + '" stroke="' + strokeCol + '" stroke-width="' + _tw19wT + '" fill="none" stroke-linecap="round" opacity="' + (op*0.6).toFixed(2) + '"/>';
+        // Warm-shifted core shadow
+        s += '<path d="M35.3,78 C' + (35.3 + parseFloat(hw) * 0.4).toFixed(1) + ',' + (mid + 3).toFixed(1) + ' ' + (35.3 - parseFloat(hw2) * 0.3).toFixed(1) + ',' + (mid - 3).toFixed(1) + ' 35.3,' + visibleTop + '" stroke="rgba(40,20,5,0.35)" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.45"/>';
+        // Cream highlight pair (lit edge)
+        s += '<path d="M34.7,78 C' + (34.7 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (34.7 - parseFloat(hw2) * 0.2).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' 34.7,' + visibleTop + '" stroke="rgba(40,20,5,0.3)" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M34.7,78 C' + (34.7 + parseFloat(hw) * 0.3).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (34.7 - parseFloat(hw2) * 0.2).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' 34.7,' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.25" fill="none" stroke-linecap="round" opacity="0.4" transform="translate(-0.25,-0.1)"/>';
+        // Tiny pulvinus beads at quartiles
+        s += '<circle cx="'+(35 + parseFloat(hw)*0.2).toFixed(2)+'" cy="'+(mid+2).toFixed(1)+'" r="0.45" fill="#f5ecd6" opacity="'+(op*0.3).toFixed(2)+'"/>';
+        s += '<circle cx="'+(35 + parseFloat(hw)*0.2).toFixed(2)+'" cy="'+(mid+2.4).toFixed(1)+'" r="0.3" fill="rgba(40,20,5,0.4)"/>';
+        s += '<circle cx="'+(35 - parseFloat(hw2)*0.15).toFixed(2)+'" cy="'+(mid-2).toFixed(1)+'" r="0.4" fill="#f5ecd6" opacity="'+(op*0.28).toFixed(2)+'"/>';
+        s += '<circle cx="'+(35 - parseFloat(hw2)*0.15).toFixed(2)+'" cy="'+(mid-1.6).toFixed(1)+'" r="0.28" fill="rgba(40,20,5,0.4)"/>';
         break;
-      case 20: // Root Pillar — aggressive taper + visible root tendrils
+```
+
+
+      case 20: // Root Pillar — aggressive taper, visible root tendrils with AO, Q-jittered grain, cream lit edge
         var _rp20wBase = 3.5;
         var _rp20wTop = 0.8;
+        // Filled silhouette
         s += '<path d="M' + (35 - _rp20wBase) + ',78 C' + (35 - _rp20wBase + 0.3).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 - _rp20wTop - 0.3).toFixed(1) + ',' + (mid - 6).toFixed(1) + ' ' + (35 - _rp20wTop) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 1.5) + ' ' + (35 + _rp20wTop) + ',' + visibleTop + ' C' + (35 + _rp20wTop + 0.3).toFixed(1) + ',' + (mid - 6).toFixed(1) + ' ' + (35 + _rp20wBase - 0.3).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 + _rp20wBase) + ',78 Z" fill="' + strokeCol + '" opacity="' + op + '"/>';
-        s += '<path d="M' + (35 - _rp20wBase) + ',78 C' + (35 - _rp20wBase + 0.3) + ',' + (mid + 4) + ' ' + (35 - _rp20wTop - 0.3) + ',' + (mid - 6) + ' ' + (35 - _rp20wTop) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="' + (op * 0.55).toFixed(2) + '"/>';
-        s += '<path d="M' + (35 - _rp20wBase + 0.5) + ',78 C' + (35 - _rp20wBase - 1) + ',80 ' + (35 - _rp20wBase - 3 + parseFloat(hw) * 0.5).toFixed(1) + ',82 ' + (35 - _rp20wBase - 2 + parseFloat(hw)).toFixed(1) + ',84" stroke="' + strokeCol + '" stroke-width="0.6" fill="none" stroke-linecap="round" opacity="' + (op * 0.22).toFixed(2) + '"/>';
-        s += '<path d="M' + (35 + _rp20wBase - 0.5) + ',78 C' + (35 + _rp20wBase + 0.5) + ',80 ' + (35 + _rp20wBase + 2 + parseFloat(hw2) * 0.4).toFixed(1) + ',81.5 ' + (35 + _rp20wBase + 1.5 + parseFloat(hw2)).toFixed(1) + ',83.5" stroke="' + strokeCol + '" stroke-width="0.5" fill="none" stroke-linecap="round" opacity="' + (op * 0.18).toFixed(2) + '"/>';
-        s += '<path d="M35,78 C35,79.5 ' + (35 + parseFloat(hw) * 0.3).toFixed(1) + ',80.5 ' + (35 + parseFloat(hw) * 0.5).toFixed(1) + ',82" stroke="' + strokeCol + '" stroke-width="0.4" fill="none" stroke-linecap="round" opacity="' + (op * 0.15).toFixed(2) + '"/>';
+        // Warm-shifted right core shadow
+        s += '<path d="M' + (35 + _rp20wBase) + ',78 C' + (35 + _rp20wBase - 0.3) + ',' + (mid + 4) + ' ' + (35 + _rp20wTop + 0.3) + ',' + (mid - 6) + ' ' + (35 + _rp20wTop) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.45)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="' + (op * 0.6).toFixed(2) + '"/>';
+        // Cream highlight pair (left lit edge)
+        s += '<path d="M' + (35 - _rp20wBase) + ',78 C' + (35 - _rp20wBase + 0.3) + ',' + (mid + 4) + ' ' + (35 - _rp20wTop - 0.3) + ',' + (mid - 6) + ' ' + (35 - _rp20wTop) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M' + (35 - _rp20wBase) + ',78 C' + (35 - _rp20wBase + 0.3) + ',' + (mid + 4) + ' ' + (35 - _rp20wTop - 0.3) + ',' + (mid - 6) + ' '
++ (35 - _rp20wTop) + ',' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.5" fill="none" stroke-linecap="round" opacity="' + (op * 0.6).toFixed(2) + '" transform="translate(-0.3,-0.15)"/>';
+        // Root tendrils with AO drop-shadow per tendril
+        s += '<ellipse cx="'+(35-_rp20wBase-1.5)+'" cy="83.2" rx="2.5" ry="0.4" fill="rgba(40,20,5,0.45)" opacity="'+(op*0.35).toFixed(2)+'"/>';
+        s += '<path d="M' + (35 - _rp20wBase + 0.5) + ',78 Q' + (35 - _rp20wBase - 1.5).toFixed(1) + ',80.5 ' + (35 - _rp20wBase - 2 + parseFloat(hw)).toFixed(1) + ',84" stroke="' + strokeCol + '" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="' + (op * 0.4).toFixed(2) + '"/>';
+        s += '<path d="M' + (35 - _rp20wBase + 0.5) + ',78 Q' + (35 - _rp20wBase - 1.5).toFixed(1) + ',80.5 ' + (35 - _rp20wBase - 2 + parseFloat(hw)).toFixed(1) + ',84" stroke="#f5ecd6" stroke-width="0.3" fill="none" stroke-linecap="round" opacity="' + (op * 0.25).toFixed(2) + '" transform="translate(-0.2,-0.1)"/>';
+        s += '<ellipse cx="'+(35+_rp20wBase+1.4)+'" cy="83" rx="2.2" ry="0.35" fill="rgba(40,20,5,0.4)" opacity="'+(op*0.3).toFixed(2)+'"/>';
+        s += '<path d="M' + (35 + _rp20wBase - 0.5) + ',78 Q' + (35 + _rp20wBase + 1.2).toFixed(1) + ',80.3 ' + (35 + _rp20wBase + 1.5 + parseFloat(hw2)).toFixed(1) + ',83.5" stroke="' + strokeCol + '" stroke-width="0.6" fill="none" stroke-linecap="round" opacity="' + (op * 0.32).toFixed(2) + '"/>';
+        s += '<path d="M35,78 Q' + (35 + parseFloat(hw) * 0.3).toFixed(1) + ',80.2 ' + (35 + parseFloat(hw) * 0.5).toFixed(1) + ',82.2" stroke="' + strokeCol + '" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="' + (op * 0.28).toFixed(2) + '"/>';
+        // Q-jittered bark grain (warm)
         var _rp20midY = parseFloat(mid);
-        s += '<path d="M' + (35 - 0.5) + ',' + (78 - 3) + ' C' + (35 - 0.7) + ',' + (_rp20midY + 1).toFixed(1) + ' ' + (35 + 0.2) + ',' + (_rp20midY - 4).toFixed(1) + ' ' + (35 - 0.1) + ',' + (parseFloat(visibleTop) + 3) + '" stroke="#0d100c" stroke-width="0.35" fill="none" opacity="0.14"/>';
+        for (var _rpgi = 0; _rpgi < 3; _rpgi++) {
+          var _rpgy = 78 - (78-parseFloat(visibleTop)) * ((_rpgi+0.5)/3);
+          var _rpgjit = ((parseInt(uid.charAt((_rpgi+9)%uid.length)||'0',16)/15)-0.5)*0.5;
+          s += '<path d="M' + (35-1.2+_rpgjit).toFixed(2) + ',' + _rpgy.toFixed(1) + ' Q35,' + (_rpgy-0.3).toFixed(1) + ' ' + (35+1.2+_rpgjit).toFixed(2) + ',' + _rpgy.toFixed(1) + '" stroke="rgba(40,20,5,0.5)" stroke-width="0.3" fill="none" opacity="' + (op*0.3).toFixed(2) + '"/>';
+        }
+        // Vertical crack
+        s += '<path d="M' + (35 - 0.5) + ',' + (78 - 3) + ' Q' + (35 - 0.7) + ',' + (_rp20midY + 1).toFixed(1) + ' ' + (35 + 0.2) + ',' + (_rp20midY - 4).toFixed(1) + ' Q' + (35 - 0.05) + ',' + (_rp20midY - 8).toFixed(1) + ' ' + (35 - 0.1) + ',' + (parseFloat(visibleTop) + 3) + '" stroke="rgba(40,20,5,0.55)" stroke-width="0.35" fill="none" opacity="0.25"/>';
         break;
-      case 21: // Mushroom Stipe — reverse taper, wider at crown
+      case 21: // Mushroom Stipe — reverse-taper crown, fluted ridges, soft annular ring at flare, cream lit edge
         var _ms21wBase = 1.8;
         var _ms21wTop = 4.5;
+        // Filled silhouette
         s += '<path d="M' + (35 - _ms21wBase) + ',78 C' + (35 - _ms21wBase - 0.5).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 - _ms21wTop + 1).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' ' + (35 - _ms21wTop) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 2.5) + ' ' + (35 + _ms21wTop) + ',' + visibleTop + ' C' + (35 + _ms21wTop - 1).toFixed(1) + ',' + (mid - 2).toFixed(1) + ' ' + (35 + _ms21wBase + 0.5).toFixed(1) + ',' + (mid + 4).toFixed(1) + ' ' + (35 + _ms21wBase) + ',78 Z" fill="' + strokeCol + '" opacity="' + op + '"/>';
-        s += '<path d="M' + (35 - _ms21wBase) + ',78 C' + (35 - _ms21wBase - 0.5) + ',' + (mid + 4) + ' ' + (35 - _ms21wTop + 1) + ',' + (mid - 2) + ' ' + (35 - _ms21wTop) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.4)" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="' + (op * 0.5).toFixed(2) + '"/>';
-        var _ms21rings = 3;
+        // Warm-shifted right core shadow
+        s += '<path d="M' + (35 + _ms21wBase) + ',78 C' + (35 + _ms21wBase + 0.5) + ',' + (mid + 4) + ' ' + (35 + _ms21wTop - 1) + ',' + (mid - 2) + ' ' + (35 + _ms21wTop) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.75" fill="none" stroke-linecap="round" opacity="' + (op * 0.55).toFixed(2) + '"/>';
+        // Cream highlight pair (left lit edge)
+        s += '<path d="M' + (35 - _ms21wBase) + ',78 C' + (35 - _ms21wBase - 0.5) + ',' + (mid + 4) + ' ' + (35 - _ms21wTop + 1) + ',' + (mid - 2) + ' ' + (35 - _ms21wTop) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.55" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M' + (35 - _ms21wBase) + ',78 C' + (35 - _ms21wBase - 0.5) + ',' + (mid + 4) + ' ' + (35 - _ms21wTop + 1) + ',' + (mid - 2) + ' ' + (35 - _ms21wTop) + ',' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.45" fill="none" stroke-linecap="round" opacity="' + (op * 0.55).toFixed(2) + '" transform="translate(-0.3,-0.15)"/>';
+        // 4 fluted ridge hairlines (cream, slightly curved)
+        for (var _msfli = 0; _msfli < 4; _msfli++) {
+          var _msflfrac = (_msfli+0.5)/4;
+          var _msflxBase = (35 - _ms21wBase) + _msflfrac * (_ms21wBase*2);
+          var _msflxTop = (35 - _ms21wTop) + _msflfrac * (_ms21wTop*2);
+          s += '<path d="M'+_msflxBase.toFixed(2)+',78 Q'+((_msflxBase+_msflxTop)/2 + (_msfli%2?0.15:-0.15)).toFixed(2)+','+mid+' '+_msflxTop.toFixed(2)+','+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.25" fill="none" stroke-linecap="round" opacity="'+(op*0.32).toFixed(2)+'"/>';
+          s += '<path d="M'+_msflxBase.toFixed(2)+',78 Q'+((_msflxBase+_msflxTop)/2 + (_msfli%2?0.15:-0.15)).toFixed(2)+','+mid+' '+_msflxTop.toFixed(2)+','+visibleTop+'" stroke="#f5ecd6" stroke-width="0.18" fill="none" stroke-linecap="round" opacity="'+(op*0.22).toFixed(2)+'" transform="translate(-0.25,0)"/>';
+        }
+        // Annular ring (real mushroom signature, mid-stipe)
         var _ms21h = 78 - parseFloat(visibleTop);
+        var _ms21rings = 3;
         for (var _mri = 1; _mri <= _ms21rings; _mri++) {
           var _mry = 78 - (_ms21h * _mri / (_ms21rings + 1));
           var _mrFrac = _mri / (_ms21rings + 1);
           var _mrw = _ms21wBase + (_ms21wTop - _ms21wBase) * _mrFrac;
-          s += '<path d="M' + (35 - _mrw + 0.5).toFixed(1) + ',' + _mry.toFixed(1) + ' Q35,' + (_mry - 0.8).toFixed(1) + ' ' + (35 + _mrw - 0.5).toFixed(1) + ',' + _mry.toFixed(1) + '" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.4" stroke-linecap="round"/>';
+          s += '<path d="M' + (35 - _mrw + 0.5).toFixed(1) + ',' + _mry.toFixed(1) + ' Q35,' + (_mry - 0.8).toFixed(1) + ' ' + (35 + _mrw - 0.5).toFixed(1) + ',' + _mry.toFixed(1) + '" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(op*0.22).toFixed(2)+'"/>';
         }
-        s += '<line x1="35" y1="78" x2="35" y2="' + visibleTop + '" stroke="#0d100c" stroke-width="0.5" opacity="0.1"/>';
-        s += '<path d="M' + (35 + _ms21wBase - 0.3) + ',78 C' + (35 + _ms21wBase) + ',' + (mid + 3) + ' ' + (35 + _ms21wTop - 1.5) + ',' + (mid - 3) + ' ' + (35 + _ms21wTop - 0.5) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.08)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
+        // Mid annulus pulvinus
+        var _msAnnY = 78 - _ms21h * 0.5;
+        var _msAnnW = _ms21wBase + (_ms21wTop - _ms21wBase) * 0.5;
+        s += '<ellipse cx="35" cy="'+(_msAnnY+0.3).toFixed(1)+'" rx="'+(_msAnnW+0.6).toFixed(2)+'" ry="0.4" fill="rgba(40,20,5,0.35)" opacity="'+(op*0.35).toFixed(2)+'"/>';
+        s += '<ellipse cx="35" cy="'+_msAnnY.toFixed(1)+'" rx="'+(_msAnnW+0.4).toFixed(2)+'" ry="0.55" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
+        // Right shadow flute
+        s += '<path d="M' + (35 + _ms21wBase - 0.3) + ',78 C' + (35 + _ms21wBase) + ',' + (mid + 3) + ' ' + (35 + _ms21wTop - 1.5) + ',' + (mid - 3) + ' ' + (35 + _ms21wTop - 0.5) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.3)" stroke-width="0.5" fill="none" stroke-linecap="round" opacity="'+(op*0.28).toFixed(2)+'"/>';
         break;
-      case 22: // Crystal Spine — translucent faceted segments
+```
+
+
+      case 22: // Crystal Spine — glass-fill faceted segments, twin near-white stops, pale-blue rim, double cream highlight
         var _cs22segs = 3 + Math.floor(stemCurve * 0.5);
         var _cs22segH = (78 - visibleTop) / _cs22segs;
-        var _cs22w = 1.6;
+        var _cs22wBase = 1.85;
+        var _cs22wTop = 1.5; // ~80% of base
         for (var _ci = 0; _ci < _cs22segs; _ci++) {
           var _cTop = 78 - (_ci + 1) * _cs22segH;
           var _cBot = 78 - _ci * _cs22segH;
           var _cOff = ((parseInt(uid.charAt((_ci + 2) % uid.length) || '0', 16) - 8) * 0.25);
           var _cOffTop = _cOff * 0.7;
-          s += '<polygon points="' + (35 - _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + ' ' + (35 - _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + '" fill="' + strokeCol + '" opacity="' + (op * 0.12).toFixed(2) + '"/>';
-          s += '<polygon points="' + (35 - _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + ' ' + (35 - _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w * 0.8 + _cOffTop).toFixed(1) + ',' + _cTop.toFixed(1) + ' ' + (35 + _cs22w + _cOff).toFixed(1) + ',' + _cBot.toFixed(1) + '" fill="none" stroke="' + strokeCol + '" stroke-width="0.5" opacity="' + (op * 0.45).toFixed(2) + '"/>';
-          s += '<line x1="' + (35 - _cs22w + _cOff).toFixed(1) + '" y1="' + _cBot.toFixed(1) + '" x2="' + (35 - _cs22w * 0.8 + _cOffTop).toFixed(1) + '" y2="' + _cTop.toFixed(1) + '" stroke="rgba(240,235,216,0.35)" stroke-width="0.4" stroke-linecap="round"/>';
+          // Per-segment taper interpolation (base wider, tip narrower across all segs)
+          var _cwBot = _cs22wBase - (_cs22wBase - _cs22wTop) * (_ci/_cs22segs);
+          var _cwTop = _cs22wBase - (_cs22wBase - _cs22wTop) * ((_ci+1)/_cs22segs);
+          var _ptsLB = (35 - _cwBot + _cOff).toFixed(2), _ptsLT = (35 - _cwTop * 0.85 + _cOffTop).toFixed(2);
+          var _ptsRT = (35 + _cwTop * 0.85 + _cOffTop).toFixed(2), _ptsRB = (35 + _cwBot + _cOff).toFixed(2);
+          var _polyPts = _ptsLB + ',' + _cBot.toFixed(1) + ' ' + _ptsLT + ',' + _cTop.toFixed(1) + ' ' + _ptsRT + ',' + _cTop.toFixed(1) + ' ' + _ptsRB + ',' + _cBot.toFixed(1);
+          // Glass body fill (translucent, layered)
+          s += '<polygon points="' + _polyPts + '" fill="' + strokeCol + '" opacity="' + (op * 0.16).toFixed(2) + '"/>';
+          // Twin near-white internal highlight (30% from left, 70% from left — fakes 5-stop glass gradient)
+          var _gh1x_b = parseFloat(_ptsLB) + (parseFloat(_ptsRB)-parseFloat(_ptsLB))*0.30;
+          var _gh1x_t = parseFloat(_ptsLT) + (parseFloat(_ptsRT)-parseFloat(_ptsLT))*0.30;
+          var _gh2x_b = parseFloat(_ptsLB) + (parseFloat(_ptsRB)-parseFloat(_ptsLB))*0.70;
+          var _gh2x_t = parseFloat(_ptsLT) + (parseFloat(_ptsRT)-parseFloat(_ptsLT))*0.70;
+          s += '<line x1="'+_gh1x_b.toFixed(2)+'" y1="'+_cBot.toFixed(1)+'" x2="'+_gh1x_t.toFixed(2)+'" y2="'+_cTop.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(op*0.45).toFixed(2)+'"/>';
+          s += '<line x1="'+_gh2x_b.toFixed(2)+'" y1="'+_cBot.toFixed(1)+'" x2="'+_gh2x_t.toFixed(2)+'" y2="'+_cTop.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.25" stroke-linecap="round" opacity="'+(op*0.32).toFixed(2)+'"/>';
+          // Pale-blue facet outline (glass stroke recipe)
+          s += '<polygon points="' + _polyPts + '" fill="none" stroke="#b8d4d4" stroke-width="0.4" opacity="' + (op * 0.5).toFixed(2) + '"/>';
+          // Sharp specular sliver on left edge
+          s += '<line x1="'+_ptsLB+'" y1="'+_cBot.toFixed(1)+'" x2="'+_ptsLT+'" y2="'+_cTop.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          // Joint pulvinus (faceted node — small dark band)
           if (_ci > 0) {
-            s += '<line x1="' + (35 - _cs22w - 0.3 + _cOff).toFixed(1) + '" y1="' + _cBot.toFixed(1) + '" x2="' + (35 + _cs22w + 0.3 + _cOff).toFixed(1) + '" y2="' + _cBot.toFixed(1) + '" stroke="rgba(240,235,216,0.2)" stroke-width="0.25"/>';
+            s += '<line x1="' + (parseFloat(_ptsLB) - 0.3).toFixed(2) + '" y1="' + _cBot.toFixed(1) + '" x2="' + (parseFloat(_ptsRB) + 0.3).toFixed(2) + '" y2="' + _cBot.toFixed(1) + '" stroke="rgba(40,20,5,0.4)" stroke-width="0.3" opacity="'+(op*0.4).toFixed(2)+'"/>';
+            s += '<line x1="' + (parseFloat(_ptsLB) - 0.2).toFixed(2) + '" y1="' + (_cBot-0.3).toFixed(1) + '" x2="' + (parseFloat(_ptsRB) + 0.2).toFixed(2) + '" y2="' + (_cBot-0.3).toFixed(1) + '" stroke="#f5ecd6" stroke-width="0.22" opacity="'+(op*0.32).toFixed(2)+'"/>';
           }
         }
-        s += '<line x1="35" y1="78" x2="35" y2="' + visibleTop + '" stroke="rgba(240,235,216,0.15)" stroke-width="0.3"/>';
+        // Center axis cream sheen
+        s += '<line x1="35" y1="78" x2="35" y2="' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.3" opacity="'+(op*0.22).toFixed(2)+'"/>';
         break;
-      case 23: // Iron Trunk — dark metallic industrial stem
+```
+
+
+      case 23: // Iron Trunk — cast-iron filled silhouette, hammered band detail, rivet specular pickup, brass-rail cream pair
         var _it23w = 3.0 + parseFloat(hw) * 0.3;
+        // Filled silhouette
         s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 - _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 - _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 1.5) + ' ' + (35 + _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' C' + (35 + _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 + _it23w - 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 + _it23w) + ',78 Z" fill="#3A3A38" opacity="' + op + '" filter="url(#ds' + uid + ')"/>';
-        s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2) + ',' + (mid + 2) + ' ' + (35 - _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 - _it23w * 0.55) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.55)" stroke-width="0.9" fill="none" stroke-linecap="round" opacity="' + (op * 0.65).toFixed(2) + '"/>';
+        // Inner darker terminator (cast-iron 5-stop ramp fake)
+        s += '<path d="M' + (35 + _it23w) + ',78 C' + (35 + _it23w - 0.2) + ',' + (mid + 2) + ' ' + (35 + _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 + _it23w * 0.55) + ',' + visibleTop + '" stroke="rgba(20,12,4,0.7)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="' + (op * 0.7).toFixed(2) + '"/>';
+        // Cream highlight pair (brass-rail look — left lit edge)
+        s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2) + ',' + (mid + 2) + ' ' + (35 - _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 - _it23w * 0.55) + ',' + visibleTop + '" stroke="rgba(40,20,5,0.5)" stroke-width="0.65" fill="none" stroke-linecap="round" opacity="' + (op * 0.6).toFixed(2) + '"/>';
+        s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2) + ',' + (mid + 2) + ' ' + (35 - _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 - _it23w * 0.55) + ',' + visibleTop + '" stroke="#f5ecd6" stroke-width="0.55" fill="none" stroke-linecap="round" opacity="' + (op * 0.65).toFixed(2) + '" transform="translate(-0.3,-0.15)"/>';
+        // Sharp specular sliver (polished metal pickup)
+        s += '<path d="M' + (35 - _it23w*0.7) + ',' + (78-2).toFixed(1) + ' Q' + (35 - _it23w*0.6).toFixed(2) + ',' + mid + ' ' + (35 - _it23w*0.45) + ',' + (parseFloat(visibleTop)+2).toFixed(1) + '" stroke="#f5ecd6" stroke-width="0.32" fill="none" stroke-linecap="round" opacity="' + (op*0.5).toFixed(2) + '"/>';
+        // Hammered horizontal bands with cast-iron Q-jitter and pulvinus shadow
         var _it23bands = 3;
         for (var _ibi = 1; _ibi <= _it23bands; _ibi++) {
           var _iby = 78 - (78 - parseFloat(visibleTop)) * (_ibi / (_it23bands + 1));
           var _ibw = _it23w * (1 - _ibi * 0.08);
-          s += '<line x1="' + (35 - _ibw).toFixed(1) + '" y1="' + _iby.toFixed(1) + '" x2="' + (35 + _ibw).toFixed(1) + '" y2="' + _iby.toFixed(1) + '" stroke="#5A5A55" stroke-width="0.6" opacity="' + (op * 0.35).toFixed(2) + '"/>';
-          s += '<line x1="' + (35 - _ibw + 0.5).toFixed(1) + '" y1="' + (_iby - 0.5).toFixed(1) + '" x2="' + (35 + _ibw - 0.5).toFixed(1) + '" y2="' + (_iby - 0.5).toFixed(1) + '" stroke="rgba(240,235,216,0.15)" stroke-width="0.25"/>';
+          // Band node-swell shadow (warm)
+          s += '<ellipse cx="35" cy="'+(_iby+0.35).toFixed(2)+'" rx="'+(_ibw+0.2).toFixed(2)+'" ry="0.3" fill="rgba(40,20,5,0.5)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+          // Main band line (warmer mid-grey)
+          s += '<line x1="' + (35 - _ibw).toFixed(1) + '" y1="' + _iby.toFixed(1) + '" x2="' + (35 + _ibw).toFixed(1) + '" y2="' + _iby.toFixed(1) + '" stroke="#5A5A55" stroke-width="0.65" opacity="' + (op * 0.45).toFixed(2) + '"/>';
+          // Cream top-edge highlight on band (chamfer pickup)
+          s += '<line x1="' + (35 - _ibw + 0.5).toFixed(1) + '" y1="' + (_iby - 0.45).toFixed(1) + '" x2="' + (35 + _ibw - 0.5).toFixed(1) + '" y2="' + (_iby - 0.45).toFixed(1) + '" stroke="#f5ecd6" stroke-width="0.28" opacity="'+(op*0.4).toFixed(2)+'"/>';
         }
+        // Rivets — circle + AO + cream pickup
         for (var _iri = 0; _iri <= _it23bands; _iri++) {
           var _iry = 78 - (78 - parseFloat(visibleTop)) * ((_iri + 0.5) / (_it23bands + 1));
-          s += '<circle cx="35" cy="' + _iry.toFixed(1) + '" r="0.7" fill="#5A5A55" opacity="' + (op * 0.35).toFixed(2) + '"/>';
-          s += '<circle cx="35" cy="' + _iry.toFixed(1) + '" r="0.3" fill="rgba(240,235,216,0.2)"/>';
+          s += '<circle cx="35.1" cy="' + (_iry+0.3).toFixed(1) + '" r="0.78" fill="rgba(40,20,5,0.55)" opacity="'+(op*0.4).toFixed(2)+'"/>';
+          s += '<circle cx="35" cy="' + _iry.toFixed(1) + '" r="0.75" fill="#5A5A55" opacity="' + (op * 0.55).toFixed(2) + '"/>';
+          s += '<circle cx="34.75" cy="' + (_iry - 0.2).toFixed(1) + '" r="0.32" fill="#f5ecd6" opacity="'+(op*0.5).toFixed(2)+'"/>';
+          s += '<circle cx="34.6" cy="' + (_iry - 0.3).toFixed(1) + '" r="0.15" fill="#f5ecd6" opacity="'+(op*0.85).toFixed(2)+'"/>';
         }
-        s += '<path d="M' + (35 + _it23w) + ',78 C' + (35 + _it23w - 0.2) + ',' + (mid + 2) + ' ' + (35 + _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 + _it23w * 0.55) + ',' + visibleTop + '" stroke="rgba(240,235,216,0.12)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
-        s += '<line x1="35.3" y1="78" x2="35.3" y2="' + visibleTop + '" stroke="#1a1a18" stroke-width="0.6" opacity="' + (op * 0.2).toFixed(2) + '"/>';
+        // Inner darker vertical seam (forged centerline)
+        s += '<line x1="35.4" y1="78" x2="35.4" y2="' + visibleTop + '" stroke="rgba(20,12,4,0.55)" stroke-width="0.55" opacity="' + (op * 0.3).toFixed(2) + '"/>';
+        // Base AO ground contact
+        s += '<ellipse cx="35" cy="78.3" rx="'+(_it23w+0.4).toFixed(2)+'" ry="0.55" fill="rgba(20,12,4,0.65)" opacity="'+(op*0.4).toFixed(2)+'"/>';
         break;
+
       default: // Fallback — organic straight
         s += '<path d="M35,78 C'+(35+parseFloat(hw))+','+(mid+8)+' '+(35-parseFloat(hw))+','+(mid-8)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         break;
