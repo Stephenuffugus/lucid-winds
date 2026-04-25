@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.36';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.37';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13630,6 +13630,234 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="38" cy="78.4" rx="0.45" ry="0.18" fill="#5a4028"/>';
         s += '<ellipse cx="41" cy="78.65" rx="0.4" ry="0.17" fill="#4a3220"/>';
         break;
+      case 39: // Paint Can — metal cylinder with handle and dried paint drips. Full body + drips + handle + back-arc + brown.
+        // AO 3-stack
+        s += '<ellipse cx="35" cy="92.0" rx="13" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="91.7" rx="11" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        s += '<path d="M24,91.4 Q35,91.7 46,91.4" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.30"/>';
+        // Body
+        s += '<rect x="23" y="79" width="24" height="12.5" rx="0.4" fill="'+g+'"/>';
+        // Form shadow (left)
+        s += '<rect x="23" y="79" width="3.5" height="12.5" rx="0.4" fill="rgba(0,0,0,0.22)"/>';
+        // BIG diffuse cream specular
+        s += '<rect x="44.5" y="80" width="0.7" height="10" fill="#f5ecd6" opacity="0.32"/>';
+        s += '<rect x="45.5" y="80.5" width="0.30" height="7" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce light at base
+        s += '<path d="M24,91 Q35,91.4 46,91" stroke="#f5ecd6" stroke-width="0.28" fill="none" opacity="0.40"/>';
+        // Body outline
+        s += '<rect x="23" y="79" width="24" height="12.5" rx="0.4" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.5"/>';
+        // Mid-band (label area) with cream highlight pair
+        s += '<rect x="23" y="84" width="24" height="3" fill="rgba(40,20,5,0.18)"/>';
+        s += '<rect x="23" y="84" width="24" height="0.35" fill="#f5ecd6" opacity="0.40"/>';
+        s += '<rect x="23" y="86.65" width="24" height="0.35" fill="rgba(40,20,5,0.40)"/>';
+        // Paint drips (red, with cream highlight on each drip)
+        s += '<path d="M42,79.5 Q42.5,82 42.2,85 Q42,86 42.8,86.5" fill="none" stroke="#a82832" stroke-width="0.95" stroke-linecap="round"/>';
+        s += '<path d="M42.05,79.5 Q42.55,82 42.25,85" stroke="#fff8b0" stroke-width="0.20" fill="none" opacity="0.55" stroke-linecap="round"/>';
+        s += '<path d="M40,79.5 Q40.3,81 40.1,83" fill="none" stroke="#a82832" stroke-width="0.7" stroke-linecap="round"/>';
+        s += '<path d="M40.05,79.5 Q40.35,81 40.15,82.5" stroke="#fff8b0" stroke-width="0.18" fill="none" opacity="0.50" stroke-linecap="round"/>';
+        s += '<path d="M44,79.5 Q44.2,80.5 44,81.8" fill="none" stroke="#a82832" stroke-width="0.6" stroke-linecap="round"/>';
+        // Drip pool at top
+        s += '<path d="M39,79.3 Q42,78.8 45,79.3" fill="#a82832" opacity="0.65"/>';
+        s += '<path d="M40,79.0 Q42,78.5 44,79.0" fill="#fff8b0" opacity="0.40"/>';
+        // Bottom rim line
+        s += '<line x1="23.5" y1="90.5" x2="46.5" y2="90.5" stroke="rgba(40,20,5,0.55)" stroke-width="0.30"/>';
+        // Wire handle (with cream pickup)
+        s += '<path d="M25,79 Q35,73 45,79" fill="none" stroke="#7a6a52" stroke-width="0.7" stroke-linecap="round"/>';
+        s += '<path d="M25.3,78.7 Q35,73.3 44.7,78.7" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="0.55" stroke-linecap="round"/>';
+        // Handle ears (brass)
+        s += '<circle cx="25" cy="79" r="0.55" fill="#c8a84b"/>';
+        s += '<circle cx="25" cy="78.93" r="0.22" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="45" cy="79" r="0.55" fill="#c8a84b"/>';
+        s += '<circle cx="45" cy="78.93" r="0.22" fill="#fff8b0" opacity="0.85"/>';
+        // BACK ARC of opening (sweep=1)
+        s += '<path d="M23,79 A12,1.8 0 0,1 47,79 Z" fill="#7a6a52"/>';
+        s += '<path d="M23,79 A12,1.8 0 0,1 47,79" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<ellipse cx="35" cy="78" rx="11" ry="0.4" fill="#f5ecd6" opacity="0.55"/>';
+        // Inner cavity
+        s += '<ellipse cx="35" cy="79.1" rx="11" ry="0.65" fill="rgba(20,10,2,0.65)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="79.2" rx="10.4" ry="0.55" fill="#3a2a18"/>';
+        s += '<ellipse cx="29" cy="79.05" rx="0.4" ry="0.17" fill="#5a4028"/>';
+        s += '<ellipse cx="34" cy="79.3" rx="0.35" ry="0.15" fill="#4a3220"/>';
+        s += '<ellipse cx="40" cy="79.05" rx="0.45" ry="0.18" fill="#5a4028"/>';
+        break;
+      case 40: // Coffee Mug — chunky ceramic with handle. Full body + handle + back-arc + brown in renderPotBack.
+        // AO 3-stack
+        s += '<ellipse cx="35" cy="92.0" rx="13" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="91.7" rx="11" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        s += '<path d="M25,91.4 Q35,91.7 45,91.4" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.30"/>';
+        // Mug body
+        s += '<rect x="24" y="78.5" width="22" height="13" rx="2" fill="'+g+'"/>';
+        // Form shadow (left)
+        s += '<path d="M24,78.5 L24,91.5 Q24,91.5 26,91.5 L26,78.5 Z" fill="rgba(0,0,0,0.22)"/>';
+        // BIG diffuse cream specular
+        s += '<ellipse cx="43" cy="83" rx="1.0" ry="3.5" fill="#f5ecd6" opacity="0.35"/>';
+        // Sharp pickup
+        s += '<ellipse cx="43.5" cy="82" rx="0.4" ry="2" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce light
+        s += '<path d="M25,90.8 Q35,91.2 45,90.8" stroke="#f5ecd6" stroke-width="0.28" fill="none" opacity="0.40"/>';
+        // Mug body outline
+        s += '<rect x="24" y="78.5" width="22" height="13" rx="2" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.5"/>';
+        // Handle (right side)
+        s += '<path d="M46,81 Q53,81 53,85.5 Q53,90 46,90" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="2.5" stroke-linecap="round"/>';
+        s += '<path d="M46,81 Q53,81 53,85.5 Q53,90 46,90" fill="none" stroke="'+g+'" stroke-width="2.0" stroke-linecap="round"/>';
+        s += '<path d="M46.5,81.7 Q52.4,81.7 52.4,85.5" fill="none" stroke="#f5ecd6" stroke-width="0.30" stroke-linecap="round" opacity="0.55"/>';
+        // Decorative band
+        s += '<rect x="24" y="84" width="22" height="2.5" fill="rgba(40,20,5,0.15)"/>';
+        s += '<rect x="24" y="84" width="22" height="0.35" fill="#f5ecd6" opacity="0.40"/>';
+        // Vertical sheen (left side)
+        s += '<line x1="25.7" y1="79.5" x2="25.7" y2="90.5" stroke="#f5ecd6" stroke-width="0.30" opacity="0.40" stroke-linecap="round"/>';
+        // Top rim ring
+        s += '<rect x="23.5" y="77" width="23" height="2.8" rx="1.2" fill="#7a6a52"/>';
+        s += '<rect x="23.7" y="77.2" width="22.6" height="0.4" fill="#f5ecd6" opacity="0.45"/>';
+        s += '<rect x="23.5" y="77" width="23" height="2.8" rx="1.2" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
+        // BACK ARC of opening (sweep=1)
+        s += '<path d="M24,77 A11,1.0 0 0,1 46,77 Z" fill="#7a6a52"/>';
+        s += '<path d="M24,77 A11,1.0 0 0,1 46,77" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<ellipse cx="35" cy="76.4" rx="10" ry="0.35" fill="#f5ecd6" opacity="0.55"/>';
+        // Inner cavity (with hot cup steam suggestion via dark)
+        s += '<ellipse cx="35" cy="77.2" rx="10" ry="0.55" fill="rgba(20,10,2,0.65)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="77.3" rx="9.4" ry="0.45" fill="#3a2a18"/>';
+        s += '<ellipse cx="30" cy="77.2" rx="0.4" ry="0.17" fill="#5a4028"/>';
+        s += '<ellipse cx="36" cy="77.4" rx="0.35" ry="0.15" fill="#4a3220"/>';
+        s += '<ellipse cx="40" cy="77.2" rx="0.45" ry="0.18" fill="#5a4028"/>';
+        break;
+      case 42: // Wooden Crate — slatted shipping crate. Full body + slats + back-arc + brown.
+        // AO 3-stack
+        s += '<ellipse cx="35" cy="92.0" rx="14" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="91.7" rx="12" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        s += '<path d="M23,91.4 Q35,91.7 47,91.4" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.30"/>';
+        // Crate body
+        s += '<rect x="22" y="79" width="26" height="12" rx="0.5" fill="'+g+'"/>';
+        // Form shadow (left)
+        s += '<rect x="22" y="79" width="3" height="12" rx="0.5" fill="rgba(0,0,0,0.22)"/>';
+        // BIG diffuse cream specular (right side)
+        s += '<rect x="45.5" y="80" width="0.7" height="9.5" fill="#f5ecd6" opacity="0.32"/>';
+        // Bounce light
+        s += '<path d="M23,90.5 Q35,90.85 47,90.5" stroke="#f5ecd6" stroke-width="0.28" fill="none" opacity="0.40"/>';
+        // Body outline
+        s += '<rect x="22" y="79" width="26" height="12" rx="0.5" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.5"/>';
+        // Horizontal slats with shadow + cream pair
+        s += '<rect x="22.5" y="79.5" width="25" height="3" fill="rgba(40,20,5,0.10)"/>';
+        s += '<line x1="22.5" y1="82.5" x2="47.5" y2="82.5" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
+        s += '<line x1="22.5" y1="82.2" x2="47.5" y2="82.2" stroke="#f5ecd6" stroke-width="0.18" opacity="0.40"/>';
+        s += '<rect x="22.5" y="83.5" width="25" height="3" fill="rgba(40,20,5,0.10)"/>';
+        s += '<line x1="22.5" y1="86.5" x2="47.5" y2="86.5" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
+        s += '<line x1="22.5" y1="86.2" x2="47.5" y2="86.2" stroke="#f5ecd6" stroke-width="0.18" opacity="0.40"/>';
+        // Vertical edge slats (warm-shifted)
+        s += '<rect x="22" y="79" width="2.5" height="12" fill="rgba(40,20,5,0.18)"/>';
+        s += '<rect x="45.5" y="79" width="2.5" height="12" fill="rgba(40,20,5,0.18)"/>';
+        s += '<line x1="22.5" y1="79" x2="22.5" y2="91" stroke="rgba(40,20,5,0.55)" stroke-width="0.5"/>';
+        s += '<line x1="47.5" y1="79" x2="47.5" y2="91" stroke="rgba(40,20,5,0.55)" stroke-width="0.5"/>';
+        // Brass nails on corners
+        s += '<circle cx="23.2" cy="80.3" r="0.30" fill="#c8a84b"/>';
+        s += '<circle cx="23.2" cy="80.22" r="0.13" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="46.8" cy="80.3" r="0.30" fill="#c8a84b"/>';
+        s += '<circle cx="46.8" cy="80.22" r="0.13" fill="#fff8b0" opacity="0.85"/>';
+        s += '<circle cx="23.2" cy="85" r="0.28" fill="#c8a84b"/>';
+        s += '<circle cx="46.8" cy="85" r="0.28" fill="#c8a84b"/>';
+        s += '<circle cx="23.2" cy="89.7" r="0.30" fill="#c8a84b"/>';
+        s += '<circle cx="46.8" cy="89.7" r="0.30" fill="#c8a84b"/>';
+        // BACK ARC of opening (sweep=1)
+        s += '<path d="M22,79 A13,1.6 0 0,1 48,79 Z" fill="#7a6a52"/>';
+        s += '<path d="M22,79 A13,1.6 0 0,1 48,79" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<ellipse cx="35" cy="78.1" rx="12" ry="0.35" fill="#f5ecd6" opacity="0.55"/>';
+        // Inner cavity
+        s += '<ellipse cx="35" cy="79.1" rx="12" ry="0.55" fill="rgba(20,10,2,0.65)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="79.2" rx="11.4" ry="0.5" fill="#3a2a18"/>';
+        s += '<ellipse cx="29" cy="79.05" rx="0.4" ry="0.17" fill="#5a4028"/>';
+        s += '<ellipse cx="34" cy="79.3" rx="0.35" ry="0.15" fill="#4a3220"/>';
+        s += '<ellipse cx="40" cy="79.05" rx="0.45" ry="0.18" fill="#5a4028"/>';
+        break;
+      case 43: // Shattered Urn — left half of smashed terracotta with sharp jagged edge. Full half + jagged edge + cavity in renderPotBack.
+        // AO at base
+        s += '<ellipse cx="33" cy="92.4" rx="13" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="33" cy="92.0" rx="11" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        // Body — left half remaining
+        s += '<path d="M20,78 Q18,84 20,88 Q22,91 28,92 L38,92 L42,87 L38,84 L45,81 L40,78 Z" fill="'+g+'"/>';
+        // Form shadow (left)
+        s += '<path d="M20,78 Q18,84 20,88 Q22,91 25,92 L25,78 Q22,80 20,78 Z" fill="rgba(0,0,0,0.22)"/>';
+        // BIG diffuse cream specular (top center)
+        s += '<ellipse cx="32" cy="83" rx="1.5" ry="3.5" fill="#f5ecd6" opacity="0.32" transform="rotate(-10 32 83)"/>';
+        // Sharp pickup
+        s += '<ellipse cx="33" cy="81" rx="0.5" ry="2" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce light
+        s += '<path d="M22,91.4 Q30,92.0 38,91.8" stroke="#f5ecd6" stroke-width="0.30" fill="none" opacity="0.40"/>';
+        // Body outline (warm-shifted)
+        s += '<path d="M20,78 Q18,84 20,88 Q22,91 28,92 L38,92 L42,87 L38,84 L45,81 L40,78 Z" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.5" stroke-linejoin="round"/>';
+        // Jagged break edge (with cream highlight on chip facets — Hollow Knight terminator trick)
+        s += '<path d="M40,78 L45,81 L38,84 L42,87 L38,92" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.55" stroke-linejoin="round"/>';
+        s += '<path d="M40.4,78.4 L44.5,81 L38.5,83.7 L41.5,86.5" fill="none" stroke="#f5ecd6" stroke-width="0.30" stroke-linejoin="round" opacity="0.55"/>';
+        // Inner break face (darker)
+        s += '<path d="M40,78 L42,80 L40,82 L42,84 L40,87 L42,89 L40,91 L38,92 L42,87 L38,84 L45,81 Z" fill="rgba(40,20,5,0.30)"/>';
+        // Terracotta stipple
+        s += '<circle cx="26" cy="83" r="0.18" fill="rgba(40,20,5,0.30)"/>';
+        s += '<circle cx="32" cy="86" r="0.15" fill="rgba(40,20,5,0.25)"/>';
+        s += '<circle cx="35" cy="89" r="0.16" fill="rgba(40,20,5,0.25)"/>';
+        // Top rim (left half)
+        s += '<rect x="20" y="76.5" width="20" height="3" rx="0.8" fill="#7a6a52"/>';
+        s += '<rect x="20.3" y="76.7" width="19.4" height="0.55" fill="#f5ecd6" opacity="0.45"/>';
+        s += '<rect x="20" y="76.5" width="20" height="3" rx="0.8" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
+        // Pottery shard nearby
+        s += '<path d="M46,90 L48,88 L49,91 Z" fill="#7a6a52"/>';
+        s += '<path d="M46,90 L48,88" stroke="#f5ecd6" stroke-width="0.20" opacity="0.55"/>';
+        // BACK ARC of opening (sweep=1, on left half only)
+        s += '<path d="M20,78 A10,1.5 0 0,1 40,78 Z" fill="#7a6a52"/>';
+        s += '<path d="M20,78 A10,1.5 0 0,1 40,78" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<ellipse cx="30" cy="77.0" rx="9" ry="0.4" fill="#f5ecd6" opacity="0.55"/>';
+        // Inner cavity
+        s += '<ellipse cx="30" cy="78.1" rx="9.5" ry="0.55" fill="rgba(20,10,2,0.65)"/>';
+        // BROWN soil
+        s += '<ellipse cx="30" cy="78.2" rx="9" ry="0.45" fill="#3a2a18"/>';
+        s += '<ellipse cx="25" cy="78.1" rx="0.4" ry="0.17" fill="#5a4028"/>';
+        s += '<ellipse cx="32" cy="78.3" rx="0.35" ry="0.15" fill="#4a3220"/>';
+        break;
+      case 44: // Paper Bag — rolled-top brown paper bag. Full bag + crinkles + back-arc + brown.
+        // AO 3-stack
+        s += '<ellipse cx="35" cy="91.6" rx="13" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="91.3" rx="11" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        s += '<path d="M25,91.0 Q35,91.3 45,91.0" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.30"/>';
+        // Bag main body (kraft brown)
+        s += '<path d="M24,82 L25,91 L45,91 L46,82 Z" fill="#a07b54"/>';
+        // Form shadow (left)
+        s += '<path d="M24,82 L25,91 L28,91 L27,82 Z" fill="rgba(0,0,0,0.22)"/>';
+        // BIG diffuse cream specular
+        s += '<rect x="42" y="83.5" width="0.7" height="6" fill="#f5ecd6" opacity="0.30"/>';
+        // Sharp pickup
+        s += '<rect x="42.7" y="84" width="0.30" height="4" fill="#fff8e0" opacity="0.50"/>';
+        // Bounce light
+        s += '<path d="M26,90.5 Q35,90.9 44,90.5" stroke="#f5ecd6" stroke-width="0.28" fill="none" opacity="0.40"/>';
+        // Bag body outline
+        s += '<path d="M24,82 L25,91 L45,91 L46,82 Z" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.45"/>';
+        // Rolled top (lighter brown, with crinkles)
+        s += '<path d="M23,80 Q26,78.5 30,80.5 Q33,79 35,80.8 Q37,79 40,80.5 Q44,78.5 47,80 L46,82 L24,82 Z" fill="#b8956a"/>';
+        // Roll crinkles (cream highlights on each fold)
+        s += '<path d="M23.3,80.0 Q26,78.7 30,80.7" stroke="#f5ecd6" stroke-width="0.22" fill="none" opacity="0.55"/>';
+        s += '<path d="M30,80.7 Q33,79.2 35,80.9" stroke="#f5ecd6" stroke-width="0.20" fill="none" opacity="0.50"/>';
+        s += '<path d="M35,80.9 Q37,79.2 40,80.7" stroke="#f5ecd6" stroke-width="0.20" fill="none" opacity="0.50"/>';
+        s += '<path d="M40,80.7 Q44,78.7 46.7,80.0" stroke="#f5ecd6" stroke-width="0.22" fill="none" opacity="0.55"/>';
+        // Roll outline
+        s += '<path d="M23,80 Q26,78.5 30,80.5 Q33,79 35,80.8 Q37,79 40,80.5 Q44,78.5 47,80" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.45" stroke-linecap="round"/>';
+        // Roll bottom edge
+        s += '<path d="M24,82 Q35,81.5 46,82" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        // Bag panel seams
+        s += '<line x1="28" y1="82" x2="28.5" y2="91" stroke="rgba(40,20,5,0.40)" stroke-width="0.30"/>';
+        s += '<line x1="42" y1="82" x2="41.5" y2="91" stroke="rgba(40,20,5,0.40)" stroke-width="0.30"/>';
+        // Horizontal crease low on bag
+        s += '<line x1="25" y1="89" x2="45" y2="89" stroke="rgba(40,20,5,0.30)" stroke-width="0.25"/>';
+        // BACK ARC of opening (sweep=1) — narrow opening at fold
+        s += '<path d="M27,80.5 A8,0.7 0 0,1 43,80.5 Z" fill="#3a2a18"/>';
+        s += '<path d="M27,80.5 A8,0.7 0 0,1 43,80.5" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
+        s += '<path d="M28.5,80.05 Q35,79.8 41.5,80.05" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.50"/>';
+        // Inner cavity dark
+        s += '<ellipse cx="35" cy="80.6" rx="7.6" ry="0.4" fill="rgba(20,10,2,0.65)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="80.7" rx="7.0" ry="0.35" fill="#3a2a18"/>';
+        s += '<ellipse cx="32" cy="80.6" rx="0.3" ry="0.13" fill="#5a4028"/>';
+        s += '<ellipse cx="38" cy="80.75" rx="0.3" ry="0.13" fill="#4a3220"/>';
+        break;
       case 31: // Bucket — galvanized metal pail with wire bail. Full body + bail + back-arc + brown in renderPotBack.
         // AO 3-stack
         s += '<ellipse cx="35" cy="92.0" rx="13" ry="0.7" fill="rgba(0,0,0,0.32)"/>';
@@ -14974,28 +15202,17 @@ document.addEventListener('keydown', function(e) {
         // Front-rim sheen (cream line at the bottom of the front opening edge)
         s += '<path d="M31,80.2 Q35,80.4 39,80.2" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.55"/>';
         break;
-      case 39: // Paint Can — metal cylinder with handle and dried paint drips
-        // Body — sharper top corners (rx=0.4) so the rim's bottom curve meets the body cleanly with no gap. Bottom keeps soft edge via rounded rect.
-        s += '<rect x="23" y="79" width="24" height="12.5" rx="0.4" fill="'+g+'"/>';
-        s += '<ellipse cx="35" cy="79" rx="12" ry="1.8" fill="'+rim+'"/>';
-        s += '<path d="M25,79 Q35,73 45,79" fill="none" stroke="#8A8A7A" stroke-width="0.6" stroke-linecap="round"/>';
-        s += '<circle cx="25" cy="79" r="0.5" fill="#8A8A7A" opacity="0.5"/>';
-        s += '<circle cx="45" cy="79" r="0.5" fill="#8A8A7A" opacity="0.5"/>';
-        s += '<path d="M42,79.5 Q42.5,82 42.2,85 Q42,86 42.8,86.5" fill="none" stroke="#D44444" stroke-width="0.9" stroke-linecap="round" opacity="0.4"/>';
-        s += '<path d="M40,79.5 Q40.3,81 40.1,83" fill="none" stroke="#D44444" stroke-width="0.7" stroke-linecap="round" opacity="0.35"/>';
-        s += '<path d="M44,79.5 Q44.2,80.5 44,81.8" fill="none" stroke="#D44444" stroke-width="0.6" stroke-linecap="round" opacity="0.3"/>';
-        s += '<path d="M39,79.3 Q42,78.8 45,79.3" fill="#D44444" opacity="0.2"/>';
-        s += '<line x1="23.5" y1="90.5" x2="46.5" y2="90.5" stroke="#2D1810" stroke-width="0.3" opacity="0.25"/>';
+      case 39: // Paint Can — front-arc covers stem at rim (full body in renderPotBack).
+        s += '<path d="M23,79 A12,1.8 0 0,0 47,79 Z" fill="#7a6a52"/>';
+        s += '<path d="M23,79 A12,1.8 0 0,0 47,79" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<path d="M24,80.0 Q35,80.3 46,80.0" stroke="#f5ecd6" stroke-width="0.30" fill="none" opacity="0.45"/>';
         break;
 
       // ── BATCH 3: COMMON POTS (cases 40–44) ──────────────────────────
-      case 40: // Coffee Mug — chunky straight-sided ceramic mug
-        s += '<rect x="24" y="78.5" width="22" height="13" rx="2" fill="'+g+'"/>';
-        s += '<rect x="23.5" y="77" width="23" height="2.8" rx="1.2" fill="'+rim+'"/>';
-        s += '<path d="M46,81 Q53,81 53,85.5 Q53,90 46,90" fill="none" stroke="'+g+'" stroke-width="2.2" stroke-linecap="round"/>';
-        s += '<path d="M46.5,82 Q51.5,82 51.5,85.5 Q51.5,89 46.5,89" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.4" stroke-linecap="round"/>';
-        s += '<path d="M26,80 Q35,79.5 44,80" fill="none" stroke="#5A3E2B" stroke-width="0.3" opacity="0.15" stroke-linecap="round"/>';
-        s += '<line x1="25.5" y1="79.5" x2="25.5" y2="90.5" stroke="rgba(240,235,216,0.12)" stroke-width="0.6" stroke-linecap="round"/>';
+      case 40: // Coffee Mug — front-arc covers stem at rim (full body in renderPotBack).
+        s += '<path d="M24,77 A11,1.0 0 0,0 46,77 Z" fill="#7a6a52"/>';
+        s += '<path d="M24,77 A11,1.0 0 0,0 46,77" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<path d="M25,77.7 Q35,78.0 45,77.7" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.45"/>';
         break;
       case 41: // Soup Bowl — wide round shallow bowl
         s += '<path d="M16,78 Q14,82 18,86 Q26,90 35,90 Q44,90 52,86 Q56,82 54,78 Z" fill="'+g+'"/>';
@@ -15003,40 +15220,20 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M20,79.5 Q35,82 50,79.5" fill="none" stroke="rgba(240,235,216,0.08)" stroke-width="0.5" stroke-linecap="round"/>';
         s += '<path d="M22,89 Q35,91 48,89" fill="none" stroke="#2D1810" stroke-width="0.3" opacity="0.2"/>';
         break;
-      case 42: // Wooden Crate — open-top slatted shipping crate
-        s += '<rect x="22" y="79" width="26" height="12" rx="0.5" fill="#8B6B4A"/>';
-        s += '<rect x="22" y="79" width="26" height="12" rx="0.5" fill="none" stroke="#5A3E2B" stroke-width="0.5"/>';
-        s += '<rect x="22.5" y="79.5" width="25" height="3" fill="#9A7B5A"/>';
-        s += '<line x1="22.5" y1="82.5" x2="47.5" y2="82.5" stroke="#5A3E2B" stroke-width="0.3" opacity="0.4"/>';
-        s += '<line x1="23" y1="83" x2="47" y2="83" stroke="#1a1208" stroke-width="0.5" opacity="0.25"/>';
-        s += '<rect x="22.5" y="83.5" width="25" height="3" fill="#9A7B5A"/>';
-        s += '<line x1="22.5" y1="86.5" x2="47.5" y2="86.5" stroke="#5A3E2B" stroke-width="0.3" opacity="0.4"/>';
-        s += '<line x1="23" y1="87" x2="47" y2="87" stroke="#1a1208" stroke-width="0.5" opacity="0.25"/>';
-        s += '<rect x="22.5" y="87.5" width="25" height="3" fill="#9A7B5A"/>';
-        s += '<line x1="22.5" y1="79" x2="22.5" y2="91" stroke="#6A4E30" stroke-width="0.8" opacity="0.35"/>';
-        s += '<line x1="47.5" y1="79" x2="47.5" y2="91" stroke="#6A4E30" stroke-width="0.8" opacity="0.35"/>';
-        s += '<circle cx="23.2" cy="81" r="0.25" fill="#4A3A28" opacity="0.3"/>';
-        s += '<circle cx="47" cy="81" r="0.25" fill="#4A3A28" opacity="0.3"/>';
-        s += '<circle cx="23.2" cy="85" r="0.25" fill="#4A3A28" opacity="0.3"/>';
-        s += '<circle cx="47" cy="85" r="0.25" fill="#4A3A28" opacity="0.3"/>';
-        s += '<line x1="24" y1="80" x2="46" y2="80" stroke="rgba(240,235,216,0.08)" stroke-width="0.3"/>';
+      case 42: // Wooden Crate — front-arc covers stem at rim (full crate in renderPotBack).
+        s += '<path d="M22,79 A13,1.6 0 0,0 48,79 Z" fill="#7a6a52"/>';
+        s += '<path d="M22,79 A13,1.6 0 0,0 48,79" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<path d="M23.5,79.9 Q35,80.3 46.5,79.9" stroke="#f5ecd6" stroke-width="0.30" fill="none" opacity="0.45"/>';
         break;
-      case 43: // Broken Pot — left half of a smashed terracotta pot
-        s += '<path d="M20,78 Q18,84 20,88 Q22,91 28,92 L38,92 L42,87 L38,84 L45,81 L40,78 Z" fill="'+g+'"/>';
-        s += '<path d="M20,77 L40,77 L40,79 L20,79 Z" rx="0.8" fill="'+rim+'"/>';
-        s += '<path d="M40,78 L45,81 L38,84 L42,87 L38,92" fill="none" stroke="#2D1810" stroke-width="0.6" stroke-linejoin="round" opacity="0.45"/>';
-        s += '<path d="M40.5,78.5 L44.5,81 L38.5,83.5 L41.5,86.5" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.5" stroke-linejoin="round"/>';
-        s += '<path d="M40,79 Q38,83 40,87" fill="none" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.8" opacity="0.2"/>';
-        s += '<path d="M46,90 L48,88 L49,91 Z" fill="'+PALETTE[t.potColor]+'" opacity="0.25"/>';
+      case 43: // Shattered Urn — front-arc covers stem at rim (full half + jagged in renderPotBack).
+        s += '<path d="M20,78 A10,1.5 0 0,0 40,78 Z" fill="#7a6a52"/>';
+        s += '<path d="M20,78 A10,1.5 0 0,0 40,78" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        s += '<path d="M21,79.0 Q30,79.4 39,79.0" stroke="#f5ecd6" stroke-width="0.28" fill="none" opacity="0.45"/>';
         break;
-      case 44: // Paper Bag — rolled-top brown paper bag
-        s += '<path d="M24,82 L25,91 L45,91 L46,82 Z" fill="#B8956A"/>';
-        s += '<path d="M23,80 Q26,78.5 30,80.5 Q33,79 35,80.8 Q37,79 40,80.5 Q44,78.5 47,80 L46,82 L24,82 Z" fill="#C4A478"/>';
-        s += '<path d="M24,82 Q35,81 46,82" fill="none" stroke="#8A6D48" stroke-width="0.5" opacity="0.3"/>';
-        s += '<line x1="28" y1="82" x2="28.5" y2="91" stroke="#A08060" stroke-width="0.3" opacity="0.15"/>';
-        s += '<line x1="42" y1="82" x2="41.5" y2="91" stroke="#A08060" stroke-width="0.3" opacity="0.15"/>';
-        s += '<line x1="25" y1="89" x2="45" y2="89" stroke="#8A6D48" stroke-width="0.25" opacity="0.12"/>';
-        s += '<path d="M30,84 Q35,85 40,84" fill="none" stroke="rgba(240,235,216,0.06)" stroke-width="0.3"/>';
+      case 44: // Paper Bag — front-arc covers stem at rolled rim (full bag in renderPotBack).
+        s += '<path d="M27,80.5 A8,0.7 0 0,0 43,80.5 Z" fill="#3a2a18"/>';
+        s += '<path d="M27,80.5 A8,0.7 0 0,0 43,80.5" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
+        s += '<path d="M28.5,81.0 Q35,81.2 41.5,81.0" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.45"/>';
         break;
 
       // ── BATCH 4: COMMON/UNCOMMON (cases 45–48) ──────────────────────
