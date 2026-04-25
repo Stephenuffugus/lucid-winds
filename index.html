@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.48';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.49';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12615,6 +12615,10 @@ document.addEventListener('keydown', function(e) {
     if ((t.stem % 24) === 18 && t._forkData) {
       _stemTipX = t._forkData.leftX;
     }
+    // Split Double — primary bloom sits at left branch tip too (so each branch gets a flower)
+    if ((t.stem % 24) === 7 && t._dblLeft && t._dblLeft.length > 0) {
+      _stemTipX = t._dblLeft[t._dblLeft.length - 1].x;
+    }
     // 5.25 STEM TERMINAL NODE — apical meristem bridging stem to canopy
     if (prog >= 0.4) {
       var _tnCol = _hueShift(PALETTE.moss, parseInt(uid.slice(4,6),16), 6);
@@ -12747,24 +12751,47 @@ document.addEventListener('keydown', function(e) {
       }
     }
 
-    // 7a. DUAL BLOOM — forking stems get a second smaller bloom on the other branch
+    // 7a. DUAL BLOOM — forking stems get a SECOND fully-formed bloom on the OTHER branch.
+    // Per Stephen 2026-04-25: previously only the right branch got a small bare bloom and
+    // the left branch was unflowered; now each branch gets a complete bloom (stipe +
+    // receptacle + sepals + bloom + halo). Primary on LEFT branch (via _stemTipX redirect
+    // above), secondary on RIGHT branch built here.
     if (prog >= 0.8 && t.hasFlower && !_isThumb) {
       var _stemCase = t.stem % 24;
-      if (_stemCase === 7 && t._dblLeft) {
-        // Case 7: split double — second bloom at right branch tip (37, visibleTop+2)
-        var _db7x = 37, _db7y = Math.max(parseFloat(visibleTop) + 2, _safeBloomY + 2);
-        svg += '<g transform="translate(' + (_db7x - 35).toFixed(1) + ',' + (_db7y - _safeBloomY).toFixed(1) + ') scale(0.65)">';
-        svg += renderBloom(t, uid + 'b', _safeBloomY, prog);
-        svg += '</g>';
+      var _branch2X = null, _branch2Y = null;
+      if (_stemCase === 7 && t._dblRight && t._dblRight.length > 0) {
+        var _db7tip = t._dblRight[t._dblRight.length - 1];
+        _branch2X = _db7tip.x;
+        _branch2Y = Math.max(_db7tip.y, _safeBloomY);
       } else if (_stemCase === 18 && t._forkData) {
-        // Case 18: forking Y — second bloom at right branch tip
-        var _fd = t._forkData;
-        var _db18x = _fd.rightX, _db18y = Math.max(_fd.topY, _safeBloomY);
-        // Stipe bridge from right branch tip to second bloom
-        var _s18col = _hueShift(PALETTE.moss, parseInt(uid.slice(4,6),16), 6);
-        svg += '<line x1="'+_db18x.toFixed(1)+'" y1="'+_fd.topY+'" x2="'+_db18x.toFixed(1)+'" y2="'+_db18y+'" stroke="'+_s18col+'" stroke-width="0.8" opacity="0.4" stroke-linecap="round"/>';
-        // Scale around the bloom center point, not (0,0)
-        svg += '<g transform="translate('+_db18x.toFixed(1)+','+_db18y.toFixed(1)+') scale(0.6) translate(-35,-'+_safeBloomY+')">';
+        _branch2X = t._forkData.rightX;
+        _branch2Y = Math.max(t._forkData.topY, _safeBloomY);
+      }
+      if (_branch2X !== null) {
+        // Bloom slightly below branch tip for natural hang weight
+        var _b2BloomY = _branch2Y + 1;
+        var _b2BloomX = _branch2X;
+        // Receptacle styling matches primary (warm pine), slightly smaller (0.85x) for visual hierarchy
+        var _b2col = _hueShift(PALETTE.pine, parseInt(uid.slice(0,2),16), 8);
+        var _b2cw = (2.8 + t.flowerSize * 0.3) * 0.85;
+        var _b2ch = 2.2 * 0.85;
+        // Stipe bridge from branch tip to bloom
+        var _b2gap = _b2BloomY - _branch2Y;
+        if (_b2gap > 0.5) {
+          svg += '<line x1="'+_branch2X.toFixed(1)+'" y1="'+_branch2Y.toFixed(1)+'" x2="'+_b2BloomX.toFixed(1)+'" y2="'+_b2BloomY.toFixed(1)+'" stroke="'+_b2col+'" stroke-width="0.7" opacity="0.40" stroke-linecap="round"/>';
+          svg += '<line x1="'+(_branch2X-0.35).toFixed(1)+'" y1="'+(_branch2Y+0.4).toFixed(1)+'" x2="'+(_b2BloomX-0.35).toFixed(1)+'" y2="'+(_b2BloomY-0.4).toFixed(1)+'" stroke="rgba(240,235,216,0.14)" stroke-width="0.22" stroke-linecap="round"/>';
+        }
+        // Receptacle cup
+        svg += '<path d="M'+(_b2BloomX-_b2cw*0.35).toFixed(1)+','+_b2BloomY.toFixed(1)+' C'+(_b2BloomX-_b2cw*0.5).toFixed(1)+','+(_b2BloomY-_b2ch*0.3).toFixed(1)+' '+(_b2BloomX-_b2cw*0.6).toFixed(1)+','+(_b2BloomY-_b2ch*0.8).toFixed(1)+' '+(_b2BloomX-_b2cw*0.28).toFixed(1)+','+(_b2BloomY-_b2ch).toFixed(1)+' L'+(_b2BloomX+_b2cw*0.28).toFixed(1)+','+(_b2BloomY-_b2ch).toFixed(1)+' C'+(_b2BloomX+_b2cw*0.6).toFixed(1)+','+(_b2BloomY-_b2ch*0.8).toFixed(1)+' '+(_b2BloomX+_b2cw*0.5).toFixed(1)+','+(_b2BloomY-_b2ch*0.3).toFixed(1)+' '+(_b2BloomX+_b2cw*0.35).toFixed(1)+','+_b2BloomY.toFixed(1)+' Z" fill="'+_b2col+'" opacity="0.55"/>';
+        // 3 sepal flaps fanning outward (matching primary bloom's sepal logic)
+        for (var _b2si = 0; _b2si < 3; _b2si++) {
+          var _b2sa = ((_b2si - 1) * 0.7) - 1.57;
+          var _b2stx = _b2BloomX + Math.cos(_b2sa) * _b2cw * 0.65;
+          var _b2sty = (_b2BloomY - _b2ch) + Math.sin(_b2sa) * _b2cw * 0.55;
+          svg += '<path d="M'+(_b2BloomX + Math.cos(_b2sa)*_b2cw*0.18).toFixed(1)+','+(_b2BloomY-_b2ch).toFixed(1)+' Q'+_b2stx.toFixed(1)+','+_b2sty.toFixed(1)+' '+(_b2BloomX + Math.cos(_b2sa)*_b2cw*0.10).toFixed(1)+','+(_b2BloomY-_b2ch-0.5).toFixed(1)+'" fill="none" stroke="'+_b2col+'" stroke-width="0.55" opacity="0.45" stroke-linecap="round"/>';
+        }
+        // Bloom rendered at branch tip, scaled to 0.85 (visual hierarchy: primary slightly bigger)
+        svg += '<g transform="translate('+_b2BloomX.toFixed(1)+','+_b2BloomY.toFixed(1)+') scale(0.85) translate(-35,-'+_safeBloomY+')">';
         svg += renderBloom(t, uid + 'b', _safeBloomY, prog);
         svg += '</g>';
       }
