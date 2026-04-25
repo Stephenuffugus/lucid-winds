@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.66';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.67';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -23266,7 +23266,9 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       // ── set-103-8-14: NEW BLOOM TYPES (ChatGPT Art Round) ──────────────
-      case 38: // Passionflower — radial filaments with corona
+      case 38: // Passionflower — radial filaments with corona, master polish
+        // AO halo
+        s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" rx="'+(fs*2.1)+'" ry="'+(fs*2.0)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         s += '<path d="M'+fx+','+(fy-(fs*2.2))+' C'+(fx+(fs*0.55))+','+(fy-(fs*1.7))+' '+(fx+(fs*0.95))+','+(fy-(fs*0.7))+' '+fx+','+(fy+(fs*0.15))+' C'+(fx-(fs*0.95))+','+(fy-(fs*0.7))+' '+(fx-(fs*0.55))+','+(fy-(fs*1.7))+' '+fx+','+(fy-(fs*2.2))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.9)+'"/>';
         s += '<path d="M'+(fx+(fs*2.05))+','+(fy-(fs*0.15))+' C'+(fx+(fs*1.35))+','+(fy-(fs*0.7))+' '+(fx+(fs*0.7))+','+(fy-(fs*0.35))+' '+fx+','+(fy+(fs*0.15))+' C'+(fx+(fs*0.7))+','+(fy+(fs*0.65))+' '+(fx+(fs*1.35))+','+(fy+(fs*0.4))+' '+(fx+(fs*2.05))+','+(fy-(fs*0.15))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.9)+'"/>';
         s += '<path d="M'+(fx+(fs*1.25))+','+(fy+(fs*1.9))+' C'+(fx+(fs*0.5))+','+(fy+(fs*1.45))+' '+(fx+(fs*0.25))+','+(fy+(fs*0.7))+' '+fx+','+(fy+(fs*0.15))+' C'+(fx-(fs*0.2))+','+(fy+(fs*0.7))+' '+(fx+(fs*0.05))+','+(fy+(fs*1.5))+' '+(fx+(fs*1.25))+','+(fy+(fs*1.9))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.88)+'"/>';
@@ -23293,13 +23295,28 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx-(fs*1.02))+'" cy="'+(fy-(fs*1.4))+'" r="'+(fs*0.14)+'" fill="#D8C36A" opacity="'+(bloomOp*0.95)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+(fy-(fs*1.66))+'" r="'+(fs*0.14)+'" fill="#D8C36A" opacity="'+(bloomOp*0.95)+'"/>';
         s += '<circle cx="'+(fx+(fs*1.02))+'" cy="'+(fy-(fs*1.4))+'" r="'+(fs*0.14)+'" fill="#D8C36A" opacity="'+(bloomOp*0.95)+'"/>';
-        // Ovary center
+        // Ovary center with warm-dark AO + cream catchlight
+        s += '<circle cx="'+(fx+0.15)+'" cy="'+(fy-(fs*0.16))+'" r="'+(fs*0.24)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.55)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+(fy-(fs*0.18))+'" r="'+(fs*0.22)+'" fill="#5E7B45" opacity="'+(bloomOp*0.95)+'"/>';
-        s += '<path d="M'+(fx-(fs*0.55))+','+(fy-(fs*0.95))+' Q'+fx+','+(fy-(fs*0.55))+' '+(fx+(fs*0.55))+','+(fy-(fs*0.95))+'" fill="none" stroke="#F7F2E7" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
+        s += '<circle cx="'+(fx-(fs*0.06))+'" cy="'+(fy-(fs*0.24))+'" r="'+(fs*0.07)+'" fill="#fff8e0" opacity="'+(bloomOp*0.7)+'"/>';
+        // Cream form-light upper-left
+        s += '<ellipse cx="'+(fx-(fs*0.7))+'" cy="'+(fy-(fs*1.0))+'" rx="'+(fs*0.45)+'" ry="'+(fs*0.30)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.18)+'" transform="rotate(-30,'+(fx-(fs*0.7))+','+(fy-(fs*1.0))+')"/>';
+        // Top-petal cream silk-snap edge
+        s += '<path d="M'+(fx-(fs*0.55))+','+(fy-(fs*0.95))+' Q'+fx+','+(fy-(fs*0.55))+' '+(fx+(fs*0.55))+','+(fy-(fs*0.95))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Anther cream pollen pickups (master pass)
+        s += '<circle cx="'+(fx-(fs*1.04))+'" cy="'+(fy-(fs*1.42))+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx-0.04)+'" cy="'+(fy-(fs*1.68))+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx+(fs*1.0))+'" cy="'+(fy-(fs*1.42))+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        // Tip terminator on top petal
+        s += '<circle cx="'+fx+'" cy="'+(fy-(fs*2.2))+'" r="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
         break;
-      case 39: // Heliconia (Lobster Claw) — stacked alternating bracts
-        // Central stem
-        s += '<path d="M'+(fx-(fs*0.08))+','+(fy-(fs*1.9))+' Q'+(fx+(fs*0.16))+','+(fy-(fs*0.45))+' '+(fx-(fs*0.05))+','+(fy+(fs*2.45))+'" fill="none" stroke="#5E8B4A" stroke-width="'+(fs*0.16)+'" stroke-linecap="round" opacity="'+(bloomOp*0.72)+'"/>';
+      case 39: // Heliconia (Lobster Claw) — stacked alternating bracts, master polish
+        // AO halo (vertical)
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+(fs*0.3))+'" rx="'+(fs*1.7)+'" ry="'+(fs*2.5)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
+        // Central stem with warm-shifted dark AO + cream rim
+        s += '<path d="M'+(fx-(fs*0.08))+','+(fy-(fs*1.9))+' Q'+(fx+(fs*0.16))+','+(fy-(fs*0.45))+' '+(fx-(fs*0.05))+','+(fy+(fs*2.45))+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.20)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<path d="M'+(fx-(fs*0.08))+','+(fy-(fs*1.9))+' Q'+(fx+(fs*0.16))+','+(fy-(fs*0.45))+' '+(fx-(fs*0.05))+','+(fy+(fs*2.45))+'" fill="none" stroke="#5E8B4A" stroke-width="'+(fs*0.16)+'" stroke-linecap="round" opacity="'+(bloomOp*0.78)+'"/>';
+        s += '<path d="M'+(fx-(fs*0.08))+','+(fy-(fs*1.9))+' Q'+(fx+(fs*0.16))+','+(fy-(fs*0.45))+' '+(fx-(fs*0.05))+','+(fy+(fs*2.45))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.50)+'" transform="translate(-0.25,-0.18)"/>';
         // Bract 1 — upper right
         s += '<path d="M'+fx+','+(fy-(fs*1.15))+' C'+(fx+(fs*0.95))+','+(fy-(fs*1.35))+' '+(fx+(fs*1.7))+','+(fy-(fs*1.0))+' '+(fx+(fs*1.65))+','+(fy-(fs*0.45))+' C'+(fx+(fs*1.55))+','+(fy-(fs*0.02))+' '+(fx+(fs*0.8))+','+(fy+(fs*0.08))+' '+(fx+(fs*0.08))+','+(fy-(fs*0.22))+' C'+(fx+(fs*0.22))+','+(fy-(fs*0.58))+' '+(fx+(fs*0.08))+','+(fy-(fs*0.9))+' '+fx+','+(fy-(fs*1.15))+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
         s += '<path d="M'+(fx+(fs*0.86))+','+(fy-(fs*0.93))+' Q'+(fx+(fs*1.32))+','+(fy-(fs*0.98))+' '+(fx+(fs*1.42))+','+(fy-(fs*0.62))+' Q'+(fx+(fs*1.24))+','+(fy-(fs*0.28))+' '+(fx+(fs*0.72))+','+(fy-(fs*0.34))+'" fill="none" stroke="#F0D45A" stroke-width="'+(fs*0.16)+'" stroke-linecap="round" opacity="'+(bloomOp*0.78)+'"/>';
@@ -23316,10 +23333,18 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+(fs*0.02))+','+(fy+(fs*1.65))+' C'+(fx+(fs*0.82))+','+(fy+(fs*1.48))+' '+(fx+(fs*1.4))+','+(fy+(fs*1.72))+' '+(fx+(fs*1.36))+','+(fy+(fs*2.18))+' C'+(fx+(fs*1.3))+','+(fy+(fs*2.52))+' '+(fx+(fs*0.7))+','+(fy+(fs*2.56))+' '+(fx+(fs*0.05))+','+(fy+(fs*2.35))+' C'+(fx+(fs*0.14))+','+(fy+(fs*2.06))+' '+(fx+(fs*0.04))+','+(fy+(fs*1.84))+' '+(fx+(fs*0.02))+','+(fy+(fs*1.65))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.86)+'"/>';
         s += '<path d="M'+(fx+(fs*0.7))+','+(fy+(fs*1.8))+' Q'+(fx+(fs*1.0))+','+(fy+(fs*1.76))+' '+(fx+(fs*1.1))+','+(fy+(fs*2.02))+' Q'+(fx+(fs*0.96))+','+(fy+(fs*2.28))+' '+(fx+(fs*0.56))+','+(fy+(fs*2.24))+'" fill="none" stroke="#F0D45A" stroke-width="'+(fs*0.13)+'" stroke-linecap="round" opacity="'+(bloomOp*0.68)+'"/>';
         // Stem node marks
-        s += '<path d="M'+(fx-(fs*0.12))+','+(fy-(fs*1.72))+' L'+(fx+(fs*0.08))+','+(fy-(fs*1.34))+' M'+(fx-(fs*0.02))+','+(fy-(fs*0.86))+' L'+(fx+(fs*0.16))+','+(fy-(fs*0.56))+' M'+(fx-(fs*0.08))+','+(fy+(fs*0.02))+' L'+(fx+(fs*0.12))+','+(fy+(fs*0.32))+' M'+(fx-(fs*0.02))+','+(fy+(fs*0.74))+' L'+(fx+(fs*0.16))+','+(fy+(fs*1.02))+' M'+(fx-(fs*0.08))+','+(fy+(fs*1.38))+' L'+(fx+(fs*0.1))+','+(fy+(fs*1.68))+'" fill="none" stroke="#A9C48A" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.34)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+(fy-(fs*1.16))+'" r="'+(fs*0.08)+'" fill="#E8DFC8" opacity="'+(bloomOp*0.75)+'"/>';
+        s += '<path d="M'+(fx-(fs*0.12))+','+(fy-(fs*1.72))+' L'+(fx+(fs*0.08))+','+(fy-(fs*1.34))+' M'+(fx-(fs*0.02))+','+(fy-(fs*0.86))+' L'+(fx+(fs*0.16))+','+(fy-(fs*0.56))+' M'+(fx-(fs*0.08))+','+(fy+(fs*0.02))+' L'+(fx+(fs*0.12))+','+(fy+(fs*0.32))+' M'+(fx-(fs*0.02))+','+(fy+(fs*0.74))+' L'+(fx+(fs*0.16))+','+(fy+(fs*1.02))+' M'+(fx-(fs*0.08))+','+(fy+(fs*1.38))+' L'+(fx+(fs*0.1))+','+(fy+(fs*1.68))+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Cream silk-snap on each bract leading edge (master pass)
+        s += '<path d="M'+(fx+(fs*0.08))+','+(fy-(fs*1.15))+' C'+(fx+(fs*0.85))+','+(fy-(fs*1.30))+' '+(fx+(fs*1.55))+','+(fy-(fs*0.95))+' '+(fx+(fs*1.62))+','+(fy-(fs*0.45))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.05)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<path d="M'+(fx-(fs*0.04))+','+(fy-(fs*0.36))+' C'+(fx-(fs*0.85))+','+(fy-(fs*0.60))+' '+(fx-(fs*1.55))+','+(fy-(fs*0.26))+' '+(fx-(fs*1.55))+','+(fy+(fs*0.22))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.05)+'" stroke-linecap="round" opacity="'+(bloomOp*0.50)+'"/>';
+        // Stem nectar drop (cream catchlight)
+        s += '<circle cx="'+fx+'" cy="'+(fy-(fs*1.16))+'" r="'+(fs*0.08)+'" fill="rgba(40,20,5,0.45)" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<circle cx="'+(fx-0.04)+'" cy="'+(fy-(fs*1.18))+'" r="'+(fs*0.05)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx-0.06)+'" cy="'+(fy-(fs*1.20))+'" r="'+(fs*0.025)+'" fill="#fff8e0" opacity="'+(bloomOp*0.90)+'"/>';
         break;
-      case 40: // Plumeria — 5 waxy spiral petals with golden center
+      case 40: // Plumeria — 5 waxy spiral petals with golden center, master polish
+        // AO halo
+        s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" rx="'+(fs*1.85)+'" ry="'+(fs*1.85)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         s += '<path d="M'+fx+','+(fy-(fs*1.95))+' C'+(fx+(fs*0.55))+','+(fy-(fs*1.55))+' '+(fx+(fs*0.95))+','+(fy-(fs*0.78))+' '+(fx+(fs*0.72))+','+(fy-(fs*0.08))+' C'+(fx+(fs*0.22))+','+(fy-(fs*0.22))+' '+(fx-(fs*0.1))+','+(fy-(fs*0.7))+' '+fx+','+(fy-(fs*1.95))+' Z" fill="#F6F2E9" opacity="'+(bloomOp*0.96)+'"/>';
         s += '<path d="M'+(fx+(fs*1.78))+','+(fy-(fs*0.32))+' C'+(fx+(fs*1.15))+','+(fy-(fs*0.82))+' '+(fx+(fs*0.45))+','+(fy-(fs*0.45))+' '+(fx-(fs*0.02))+','+(fy+(fs*0.1))+' C'+(fx+(fs*0.48))+','+(fy+(fs*0.42))+' '+(fx+(fs*1.15))+','+(fy+(fs*0.28))+' '+(fx+(fs*1.78))+','+(fy-(fs*0.32))+' Z" fill="#F5F0E6" opacity="'+(bloomOp*0.95)+'"/>';
         s += '<path d="M'+(fx+(fs*1.02))+','+(fy+(fs*1.62))+' C'+(fx+(fs*0.35))+','+(fy+(fs*1.45))+' '+(fx-(fs*0.05))+','+(fy+(fs*0.85))+' '+(fx-(fs*0.08))+','+(fy+(fs*0.12))+' C'+(fx+(fs*0.45))+','+(fy+(fs*0.28))+' '+(fx+(fs*0.95))+','+(fy+(fs*0.78))+' '+(fx+(fs*1.02))+','+(fy+(fs*1.62))+' Z" fill="#F7F3EA" opacity="'+(bloomOp*0.94)+'"/>';
@@ -23331,10 +23356,23 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+(fs*1.02))+','+(fy-(fs*0.12))+' Q'+(fx+(fs*0.54))+','+(fy+(fs*0.1))+' '+(fx+(fs*0.08))+','+(fy+(fs*0.22))+'" fill="none" stroke="#D7D0C5" stroke-width="'+(fs*0.07)+'" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
         s += '<path d="M'+(fx+(fs*0.58))+','+(fy+(fs*0.98))+' Q'+(fx+(fs*0.14))+','+(fy+(fs*0.52))+' '+(fx-(fs*0.26))+','+(fy+(fs*0.26))+'" fill="none" stroke="#D7D0C5" stroke-width="'+(fs*0.07)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
         s += '<path d="M'+(fx-(fs*0.82))+','+(fy+(fs*0.74))+' Q'+(fx-(fs*0.28))+','+(fy+(fs*0.36))+' '+(fx-(fs*0.02))+','+(fy-(fs*0.04))+'" fill="none" stroke="#D7D0C5" stroke-width="'+(fs*0.07)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
-        s += '<path d="M'+(fx-(fs*1.0))+','+(fy-(fs*0.34))+' Q'+(fx-(fs*0.48))+','+(fy-(fs*0.24))+' '+fx+','+(fy-(fs*0.08))+'" fill="none" stroke="#D7D0C5" stroke-width="'+(fs*0.07)+'" stroke-linecap="round" opacity="'+(bloomOp*0.3)+'"/>';
+        s += '<path d="M'+(fx-(fs*1.0))+','+(fy-(fs*0.34))+' Q'+(fx-(fs*0.48))+','+(fy-(fs*0.24))+' '+fx+','+(fy-(fs*0.08))+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="'+(fs*0.07)+'" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'"/>';
+        // Cream form-light upper-left + sharp specular pickup
+        s += '<ellipse cx="'+(fx-(fs*0.45))+'" cy="'+(fy-(fs*1.10))+'" rx="'+(fs*0.30)+'" ry="'+(fs*0.20)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.32)+'" transform="rotate(-30,'+(fx-(fs*0.45))+','+(fy-(fs*1.10))+')"/>';
+        s += '<ellipse cx="'+(fx-(fs*0.55))+'" cy="'+(fy-(fs*1.20))+'" rx="'+(fs*0.10)+'" ry="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(bloomOp*0.55)+'"/>';
+        // Center AO + cream catchlight on golden core
+        s += '<circle cx="'+(fx+0.10)+'" cy="'+(fy+0.10)+'" r="'+(fs*0.42)+'" fill="rgba(40,20,5,0.45)" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<circle cx="'+(fx-(fs*0.10))+'" cy="'+(fy-(fs*0.10))+'" r="'+(fs*0.10)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        // Tip terminator on top petal apex
+        s += '<circle cx="'+fx+'" cy="'+(fy-(fs*1.95))+'" r="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
         break;
-      case 41: // Foxglove Bell — tubular spotted bells hanging downward
-        s += '<path d="M'+fx+','+(fy-(fs*1.3))+' Q'+(fx+(fs*0.08))+','+(fy+(fs*0.1))+' '+(fx-(fs*0.04))+','+(fy+(fs*2.45))+'" fill="none" stroke="#6E9A62" stroke-width="'+(fs*0.16)+'" stroke-linecap="round" opacity="'+(bloomOp*0.72)+'"/>';
+      case 41: // Foxglove Bell — tubular spotted bells hanging downward, master polish
+        // AO halo (vertical pendant)
+        s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.6))+'" rx="'+(fs*1.2)+'" ry="'+(fs*2.2)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
+        // Stem with warm-shifted dark AO
+        s += '<path d="M'+fx+','+(fy-(fs*1.3))+' Q'+(fx+(fs*0.08))+','+(fy+(fs*0.1))+' '+(fx-(fs*0.04))+','+(fy+(fs*2.45))+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.20)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<path d="M'+fx+','+(fy-(fs*1.3))+' Q'+(fx+(fs*0.08))+','+(fy+(fs*0.1))+' '+(fx-(fs*0.04))+','+(fy+(fs*2.45))+'" fill="none" stroke="#6E9A62" stroke-width="'+(fs*0.16)+'" stroke-linecap="round" opacity="'+(bloomOp*0.78)+'"/>';
+        s += '<path d="M'+fx+','+(fy-(fs*1.3))+' Q'+(fx+(fs*0.08))+','+(fy+(fs*0.1))+' '+(fx-(fs*0.04))+','+(fy+(fs*2.45))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'" transform="translate(-0.25,-0.18)"/>';
         s += '<path d="M'+(fx-(fs*0.52))+','+(fy-(fs*0.52))+' C'+(fx-(fs*1.18))+','+(fy-(fs*0.02))+' '+(fx-(fs*1.02))+','+(fy+(fs*0.92))+' '+(fx-(fs*0.76))+','+(fy+(fs*1.46))+' C'+(fx-(fs*0.22))+','+(fy+(fs*1.9))+' '+(fx+(fs*0.42))+','+(fy+(fs*1.86))+' '+(fx+(fs*0.82))+','+(fy+(fs*1.34))+' C'+(fx+(fs*1.06))+','+(fy+(fs*0.84))+' '+(fx+(fs*0.94))+','+(fy-(fs*0.02))+' '+(fx+(fs*0.36))+','+(fy-(fs*0.38))+' C'+(fx+(fs*0.02))+','+(fy-(fs*0.62))+' '+(fx-(fs*0.28))+','+(fy-(fs*0.64))+' '+(fx-(fs*0.52))+','+(fy-(fs*0.52))+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
         s += '<path d="M'+(fx-(fs*0.34))+','+(fy-(fs*0.08))+' C'+(fx-(fs*0.78))+','+(fy+(fs*0.28))+' '+(fx-(fs*0.66))+','+(fy+(fs*1.0))+' '+(fx-(fs*0.42))+','+(fy+(fs*1.36))+' C'+(fx-(fs*0.02))+','+(fy+(fs*1.66))+' '+(fx+(fs*0.42))+','+(fy+(fs*1.62))+' '+(fx+(fs*0.64))+','+(fy+(fs*1.22))+' C'+(fx+(fs*0.78))+','+(fy+(fs*0.8))+' '+(fx+(fs*0.68))+','+(fy+(fs*0.18))+' '+(fx+(fs*0.24))+','+(fy-(fs*0.02))+' C'+(fx-(fs*0.02))+','+(fy-(fs*0.16))+' '+(fx-(fs*0.16))+','+(fy-(fs*0.18))+' '+(fx-(fs*0.34))+','+(fy-(fs*0.08))+' Z" fill="#F1E6EE" opacity="'+(bloomOp*0.62)+'"/>';
         s += '<path d="M'+(fx+(fs*0.28))+','+(fy+(fs*0.66))+' C'+(fx+(fs*0.84))+','+(fy+(fs*0.9))+' '+(fx+(fs*0.96))+','+(fy+(fs*1.56))+' '+(fx+(fs*0.74))+','+(fy+(fs*2.02))+' C'+(fx+(fs*0.46))+','+(fy+(fs*2.42))+' '+(fx-(fs*0.02))+','+(fy+(fs*2.5))+' '+(fx-(fs*0.34))+','+(fy+(fs*2.16))+' C'+(fx-(fs*0.56))+','+(fy+(fs*1.8))+' '+(fx-(fs*0.5))+','+(fy+(fs*1.2))+' '+(fx-(fs*0.06))+','+(fy+(fs*0.9))+' C'+(fx+(fs*0.08))+','+(fy+(fs*0.72))+' '+(fx+(fs*0.14))+','+(fy+(fs*0.66))+' '+(fx+(fs*0.28))+','+(fy+(fs*0.66))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
@@ -23347,9 +23385,20 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx+(fs*0.08))+'" cy="'+(fy+(fs*1.54))+'" r="'+(fs*0.07)+'" fill="#9E5F87" opacity="'+(bloomOp*0.3)+'"/>';
         s += '<path d="M'+fx+','+(fy-(fs*0.28))+' Q'+(fx+(fs*0.08))+','+(fy+(fs*0.52))+' '+(fx+(fs*0.02))+','+(fy+(fs*1.32))+'" fill="none" stroke="#D9D0DE" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.26)+'"/>';
         s += '<path d="M'+(fx+(fs*0.22))+','+(fy+(fs*0.86))+' Q'+(fx+(fs*0.36))+','+(fy+(fs*1.46))+' '+(fx+(fs*0.2))+','+(fy+(fs*2.0))+'" fill="none" stroke="#D9D0DE" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.24)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+(fy-(fs*0.18))+'" r="'+(fs*0.09)+'" fill="#E8DEC6" opacity="'+(bloomOp*0.8)+'"/>';
+        // Spots use warm-shifted dark instead of grey-purple
+        // Cream silk-snap on lit side of upper bell
+        s += '<path d="M'+(fx-(fs*0.40))+','+(fy-(fs*0.42))+' C'+(fx-(fs*0.95))+','+(fy+(fs*0.06))+' '+(fx-(fs*0.84))+','+(fy+(fs*0.92))+' '+(fx-(fs*0.62))+','+(fy+(fs*1.40))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        // Cream form-light + sharp pickup on upper bell
+        s += '<ellipse cx="'+(fx-(fs*0.42))+'" cy="'+(fy+(fs*0.30))+'" rx="'+(fs*0.20)+'" ry="'+(fs*0.40)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.20)+'" transform="rotate(-15,'+(fx-(fs*0.42))+','+(fy+(fs*0.30))+')"/>';
+        s += '<ellipse cx="'+(fx-(fs*0.50))+'" cy="'+(fy+(fs*0.20))+'" rx="'+(fs*0.06)+'" ry="'+(fs*0.14)+'" fill="#fff8e0" opacity="'+(bloomOp*0.55)+'" transform="rotate(-10,'+(fx-(fs*0.50))+','+(fy+(fs*0.20))+')"/>';
+        // Throat AO + cream catchlight on top bell
+        s += '<circle cx="'+(fx+0.12)+'" cy="'+(fy-(fs*0.16))+'" r="'+(fs*0.10)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.50)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy-(fs*0.18))+'" r="'+(fs*0.09)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.8)+'"/>';
+        s += '<circle cx="'+(fx-(fs*0.03))+'" cy="'+(fy-(fs*0.22))+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
         break;
-      case 42: // Magnolia — thick cupped creamy petals
+      case 42: // Magnolia — thick cupped creamy petals, master polish
+        // AO halo
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.3)+'" rx="'+(fs*1.85)+'" ry="'+(fs*1.95)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         s += '<path d="M'+fx+','+(fy-(fs*2.05))+' C'+(fx+(fs*0.58))+','+(fy-(fs*1.35))+' '+(fx+(fs*0.72))+','+(fy-(fs*0.42))+' '+fx+','+(fy+(fs*0.18))+' C'+(fx-(fs*0.72))+','+(fy-(fs*0.42))+' '+(fx-(fs*0.58))+','+(fy-(fs*1.35))+' '+fx+','+(fy-(fs*2.05))+' Z" fill="#F6F1E8" opacity="'+(bloomOp*0.9)+'"/>';
         s += '<path d="M'+(fx+(fs*1.58))+','+(fy-(fs*0.92))+' C'+(fx+(fs*1.26))+','+(fy+(fs*0.06))+' '+(fx+(fs*0.82))+','+(fy+(fs*0.88))+' '+(fx+(fs*0.14))+','+(fy+(fs*0.72))+' C'+(fx+(fs*0.26))+','+(fy-(fs*0.04))+' '+(fx+(fs*0.76))+','+(fy-(fs*0.72))+' '+(fx+(fs*1.58))+','+(fy-(fs*0.92))+' Z" fill="#F7F3EC" opacity="'+(bloomOp*0.92)+'"/>';
         s += '<path d="M'+(fx+(fs*1.06))+','+(fy+(fs*1.68))+' C'+(fx+(fs*0.24))+','+(fy+(fs*1.94))+' '+(fx-(fs*0.48))+','+(fy+(fs*1.18))+' '+(fx-(fs*0.02))+','+(fy+(fs*0.42))+' C'+(fx+(fs*0.78))+','+(fy+(fs*0.52))+' '+(fx+(fs*1.14))+','+(fy+(fs*1.04))+' '+(fx+(fs*1.06))+','+(fy+(fs*1.68))+' Z" fill="#F5EFE6" opacity="'+(bloomOp*0.95)+'"/>';
@@ -23363,10 +23412,22 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+(fs*1.08))+','+(fy-(fs*0.62))+' Q'+(fx+(fs*0.72))+','+(fy+(fs*0.08))+' '+(fx+(fs*0.42))+','+(fy+(fs*0.68))+'" fill="none" stroke="#D8D1C8" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
         s += '<path d="M'+(fx+(fs*0.54))+','+(fy+(fs*1.24))+' Q'+(fx+(fs*0.18))+','+(fy+(fs*0.82))+' '+(fx-(fs*0.12))+','+(fy+(fs*0.54))+'" fill="none" stroke="#D8D1C8" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
         s += '<path d="M'+(fx-(fs*0.54))+','+(fy+(fs*1.24))+' Q'+(fx-(fs*0.18))+','+(fy+(fs*0.82))+' '+(fx+(fs*0.12))+','+(fy+(fs*0.54))+'" fill="none" stroke="#D8D1C8" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
-        s += '<path d="M'+(fx-(fs*1.08))+','+(fy-(fs*0.62))+' Q'+(fx-(fs*0.72))+','+(fy+(fs*0.08))+' '+(fx-(fs*0.42))+','+(fy+(fs*0.68))+'" fill="none" stroke="#D8D1C8" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
+        s += '<path d="M'+(fx-(fs*1.08))+','+(fy-(fs*0.62))+' Q'+(fx-(fs*0.72))+','+(fy+(fs*0.08))+' '+(fx-(fs*0.42))+','+(fy+(fs*0.68))+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.40)+'"/>';
+        // Cream silk-snap on top petal lit edge
+        s += '<path d="M'+fx+','+(fy-(fs*2.05))+' C'+(fx+(fs*0.58))+','+(fy-(fs*1.35))+' '+(fx+(fs*0.72))+','+(fy-(fs*0.42))+' '+fx+','+(fy+(fs*0.18))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        // Cream form-light upper-left + sharp pickup
+        s += '<ellipse cx="'+(fx-(fs*0.55))+'" cy="'+(fy-(fs*0.95))+'" rx="'+(fs*0.32)+'" ry="'+(fs*0.45)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.25)+'" transform="rotate(-30,'+(fx-(fs*0.55))+','+(fy-(fs*0.95))+')"/>';
+        s += '<ellipse cx="'+(fx-(fs*0.62))+'" cy="'+(fy-(fs*1.05))+'" rx="'+(fs*0.10)+'" ry="'+(fs*0.18)+'" fill="#fff8e0" opacity="'+(bloomOp*0.55)+'" transform="rotate(-25,'+(fx-(fs*0.62))+','+(fy-(fs*1.05))+')"/>';
+        // Tip terminator
+        s += '<circle cx="'+fx+'" cy="'+(fy-(fs*2.05))+'" r="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
         break;
-      case 43: // Wisteria Cascade — hanging grape-like clusters
-        s += '<path d="M'+fx+','+(fy-(fs*1.35))+' Q'+(fx+(fs*0.18))+','+(fy+(fs*0.28))+' '+(fx-(fs*0.06))+','+(fy+(fs*2.75))+'" fill="none" stroke="#6F9562" stroke-width="'+(fs*0.15)+'" stroke-linecap="round" opacity="'+(bloomOp*0.72)+'"/>';
+      case 43: // Wisteria Cascade — hanging grape-like clusters, master polish
+        // AO halo (vertical pendant)
+        s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.9))+'" rx="'+(fs*1.0)+'" ry="'+(fs*2.4)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
+        // Stem with warm-shifted dark + cream pair
+        s += '<path d="M'+fx+','+(fy-(fs*1.35))+' Q'+(fx+(fs*0.18))+','+(fy+(fs*0.28))+' '+(fx-(fs*0.06))+','+(fy+(fs*2.75))+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.18)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<path d="M'+fx+','+(fy-(fs*1.35))+' Q'+(fx+(fs*0.18))+','+(fy+(fs*0.28))+' '+(fx-(fs*0.06))+','+(fy+(fs*2.75))+'" fill="none" stroke="#6F9562" stroke-width="'+(fs*0.15)+'" stroke-linecap="round" opacity="'+(bloomOp*0.78)+'"/>';
+        s += '<path d="M'+fx+','+(fy-(fs*1.35))+' Q'+(fx+(fs*0.18))+','+(fy+(fs*0.28))+' '+(fx-(fs*0.06))+','+(fy+(fs*2.75))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.05)+'" stroke-linecap="round" opacity="'+(bloomOp*0.45)+'" transform="translate(-0.22,-0.16)"/>';
         s += '<path d="M'+fx+','+fy+' C'+(fx+(fs*0.72))+','+(fy+(fs*0.18))+' '+(fx+(fs*0.62))+','+(fy+(fs*0.92))+' '+(fx+(fs*0.18))+','+(fy+(fs*1.18))+' C'+(fx-(fs*0.22))+','+(fy+(fs*1.4))+' '+(fx-(fs*0.72))+','+(fy+(fs*1.16))+' '+(fx-(fs*0.78))+','+(fy+(fs*0.62))+' C'+(fx-(fs*0.84))+','+(fy+(fs*0.18))+' '+(fx-(fs*0.38))+','+(fy-(fs*0.04))+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
         s += '<path d="M'+(fx+(fs*0.14))+','+(fy+(fs*0.34))+' C'+(fx+(fs*0.82))+','+(fy+(fs*0.56))+' '+(fx+(fs*0.72))+','+(fy+(fs*1.18))+' '+(fx+(fs*0.24))+','+(fy+(fs*1.48))+' C'+(fx-(fs*0.16))+','+(fy+(fs*1.7))+' '+(fx-(fs*0.56))+','+(fy+(fs*1.48))+' '+(fx-(fs*0.62))+','+(fy+(fs*1.02))+' C'+(fx-(fs*0.68))+','+(fy+(fs*0.58))+' '+(fx-(fs*0.24))+','+(fy+(fs*0.32))+' '+(fx+(fs*0.14))+','+(fy+(fs*0.34))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.94)+'"/>';
         s += '<path d="M'+(fx-(fs*0.1))+','+(fy+(fs*0.86))+' C'+(fx+(fs*0.46))+','+(fy+(fs*1.04))+' '+(fx+(fs*0.38))+','+(fy+(fs*1.56))+' '+(fx+(fs*0.02))+','+(fy+(fs*1.82))+' C'+(fx-(fs*0.28))+','+(fy+(fs*2.02))+' '+(fx-(fs*0.66))+','+(fy+(fs*1.84))+' '+(fx-(fs*0.7))+','+(fy+(fs*1.44))+' C'+(fx-(fs*0.76))+','+(fy+(fs*1.04))+' '+(fx-(fs*0.42))+','+(fy+(fs*0.84))+' '+(fx-(fs*0.1))+','+(fy+(fs*0.86))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.9)+'"/>';
@@ -23374,8 +23435,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+fx+','+(fy+(fs*1.8))+' C'+(fx+(fs*0.4))+','+(fy+(fs*1.94))+' '+(fx+(fs*0.32))+','+(fy+(fs*2.34))+' '+fx+','+(fy+(fs*2.56))+' C'+(fx-(fs*0.24))+','+(fy+(fs*2.72))+' '+(fx-(fs*0.5))+','+(fy+(fs*2.58))+' '+(fx-(fs*0.54))+','+(fy+(fs*2.3))+' C'+(fx-(fs*0.58))+','+(fy+(fs*1.98))+' '+(fx-(fs*0.24))+','+(fy+(fs*1.8))+' '+fx+','+(fy+(fs*1.8))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.8)+'"/>';
         s += '<path d="M'+(fx+(fs*0.04))+','+(fy+(fs*0.06))+' Q'+(fx+(fs*0.26))+','+(fy+(fs*0.68))+' '+(fx+(fs*0.08))+','+(fy+(fs*1.22))+'" fill="none" stroke="#E7DDF0" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
         s += '<path d="M'+(fx+(fs*0.16))+','+(fy+(fs*0.54))+' Q'+(fx+(fs*0.3))+','+(fy+(fs*1.14))+' '+(fx+(fs*0.08))+','+(fy+(fs*1.64))+'" fill="none" stroke="#E7DDF0" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.24)+'"/>';
-        s += '<path d="M'+(fx-(fs*0.08))+','+(fy+(fs*1.02))+' Q'+(fx+(fs*0.06))+','+(fy+(fs*1.58))+' '+(fx-(fs*0.08))+','+(fy+(fs*2.04))+'" fill="none" stroke="#E7DDF0" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.22)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+(fy+(fs*0.14))+'" r="'+(fs*0.08)+'" fill="#E9DEC7" opacity="'+(bloomOp*0.78)+'"/>';
+        s += '<path d="M'+(fx-(fs*0.08))+','+(fy+(fs*1.02))+' Q'+(fx+(fs*0.06))+','+(fy+(fs*1.58))+' '+(fx-(fs*0.08))+','+(fy+(fs*2.04))+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.40)+'"/>';
+        // Cream silk-snap on lit side of upper grape cluster
+        s += '<path d="M'+fx+','+fy+' C'+(fx+(fs*0.72))+','+(fy+(fs*0.18))+' '+(fx+(fs*0.62))+','+(fy+(fs*0.92))+' '+(fx+(fs*0.18))+','+(fy+(fs*1.18))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.50)+'"/>';
+        // Anchor cream halo (warm AO + cream catchlight)
+        s += '<circle cx="'+(fx+0.10)+'" cy="'+(fy+(fs*0.16))+'" r="'+(fs*0.10)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.55)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy+(fs*0.14))+'" r="'+(fs*0.08)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.85)+'"/>';
+        s += '<circle cx="'+(fx-0.04)+'" cy="'+(fy+(fs*0.10))+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
         break;
       case 44: // Cactus Bloom — wide flat dish, 15 satin petals, dense stamen ring (Echinopsis-style)
         (function(){
