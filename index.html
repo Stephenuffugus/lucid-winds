@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.61';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.62';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -19014,8 +19014,9 @@ document.addEventListener('keydown', function(e) {
             var _sda = (_sdv / _sdN) * Math.PI * 2;
             var _sdEx = _sdCx + Math.cos(_sda) * _sdR * 0.92;
             var _sdEy = _sdCy + Math.sin(_sda) * _sdR * 0.92;
-            // radial primary
+            // radial primary (warm dark + cream highlight pair)
             s += '<line x1="'+_sdCx.toFixed(1)+'" y1="'+_sdCy.toFixed(1)+'" x2="'+_sdEx.toFixed(1)+'" y2="'+_sdEy.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.18" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
+            s += '<line x1="'+_sdCx.toFixed(1)+'" y1="'+_sdCy.toFixed(1)+'" x2="'+_sdEx.toFixed(1)+'" y2="'+_sdEy.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.10" opacity="'+(op*0.30).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.18,-0.12)"/>';
           }
           // Concentric arcs (cells of the net)
           for (var _sdc = 1; _sdc <= 3; _sdc++) {
@@ -19032,6 +19033,8 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(_sdCx-_sdR*0.55).toFixed(1)+','+(_sdCy-_sdR*0.70).toFixed(1)+' A'+_sdR.toFixed(1)+','+_sdR.toFixed(1)+' 0 0,1 '+(_sdCx+_sdR*0.65).toFixed(1)+','+(_sdCy-_sdR*0.55).toFixed(1)+'" fill="none" stroke="#fff8e0" stroke-width="0.75" opacity="0.55" stroke-linecap="round"/>';
           // Pulvinus dot
           s += '<circle cx="'+ox.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.6)"/>';
+          // Tip terminator at top of disc
+          s += '<circle cx="'+_sdCx.toFixed(1)+'" cy="'+(_sdCy-_sdR).toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.55)"/>';
           break;
         case 27: // Arrowhead Vine (Syngonium) — sagittate, 2 pointed basal lobes, central midrib
           var _arLen = ls * 3.0;
