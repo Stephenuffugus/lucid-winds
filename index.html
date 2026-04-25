@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.27';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.28';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12936,10 +12936,12 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="35" cy="93.0" rx="18" ry="0.9" fill="rgba(0,0,0,0.32)"/>';
         s += '<ellipse cx="35" cy="92.6" rx="16" ry="0.45" fill="rgba(0,0,0,0.45)"/>';
         s += '<path d="M19,91.4 Q35,91.85 51,91.4" stroke="rgba(40,20,5,0.45)" stroke-width="0.4" fill="none"/>';
-        // Body
-        s += '<path d="M21,79 Q16,85 17.5,90 L52.5,90 Q54,85 49,79 Z" fill="'+g+'"/>';
-        s += '<path d="M21,79 Q16,85 17.5,90 L24,90 Q22.5,85 24,79 Z" fill="rgba(0,0,0,0.22)"/>';
-        s += '<path d="M17.5,90 Q16,86 18,82 Q19.5,80 21,79" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" fill="none"/>';
+        // Body — top edge at y=78 to meet the rim back arc bottom (no gap)
+        s += '<path d="M19.5,78 Q16,85 17.5,90 L52.5,90 Q54,85 50.5,78 Z" fill="'+g+'"/>';
+        // Body left shadow
+        s += '<path d="M19.5,78 Q16,85 17.5,90 L24,90 Q22,85 24,78 Z" fill="rgba(0,0,0,0.22)"/>';
+        // Body core shadow at silhouette terminator
+        s += '<path d="M17.5,90 Q16,86 17.5,82 Q19,80 19.5,78" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" fill="none"/>';
         s += '<ellipse cx="44" cy="83" rx="2.2" ry="6.5" fill="#f5ecd6" opacity="0.32" transform="rotate(-12 44 83)"/>';
         s += '<ellipse cx="45" cy="81" rx="0.7" ry="2.5" fill="#fff8e0" opacity="0.55"/>';
         s += '<path d="M48,87 Q49.5,89 47,89.7" stroke="#f5ecd6" stroke-width="0.4" fill="none" opacity="0.35"/>';
