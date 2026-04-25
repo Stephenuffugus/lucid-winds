@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.63';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.64';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -21888,100 +21888,197 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="'+(fx-fs*0.32)+'" y1="'+(fy-fs*0.05)+'" x2="'+(fx-fs*0.42)+'" y2="'+(fy+fs*0.18)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
         s += '<line x1="'+(fx+fs*0.32)+'" y1="'+(fy-fs*0.05)+'" x2="'+(fx+fs*0.42)+'" y2="'+(fy+fs*0.18)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
         break;
-      case 1: // Rose — overlapping cupped petals in two rings
-        // outer ring
+      case 1: // Rose — overlapping cupped petals, 3-ring occlusion sandwich + master polish
+        // AO halo behind bloom
+        s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.0)+'" fill="rgba(40,20,5,0.22)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Hue-shifted dark for back-petal ring (occlusion sandwich)
+        var _b1dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
+        // OUTER RING — 6 petals dimmed back layer
         for (var ri=0; ri<6; ri++) {
           var ra=(ri*60)*Math.PI/180, rr=fs*0.72;
           var rpx=fx+Math.cos(ra)*rr, rpy=fy+Math.sin(ra)*rr;
-          s += '<path d="M'+fx+','+fy+' C'+(rpx-Math.sin(ra)*fs*0.45)+','+(rpy+Math.cos(ra)*fs*0.45)+' '+(rpx+Math.cos(ra)*fs*0.55)+','+(rpy+Math.sin(ra)*fs*0.55)+' '+rpx+','+rpy+' C'+(rpx+Math.sin(ra)*fs*0.4)+','+(rpy-Math.cos(ra)*fs*0.4)+' '+fx+','+fy+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.5*bloomOp)+'"/>';
+          s += '<path d="M'+fx+','+fy+' C'+(rpx-Math.sin(ra)*fs*0.45)+','+(rpy+Math.cos(ra)*fs*0.45)+' '+(rpx+Math.cos(ra)*fs*0.55)+','+(rpy+Math.sin(ra)*fs*0.55)+' '+rpx+','+rpy+' C'+(rpx+Math.sin(ra)*fs*0.4)+','+(rpy-Math.cos(ra)*fs*0.4)+' '+fx+','+fy+' '+fx+','+fy+'Z" fill="'+_b1dk+'" opacity="'+(0.55*bloomOp)+'"/>';
         }
-        // inner ring
+        // MID RING — 5 petals at full saturation (offset 18°)
         for (var ri2=0; ri2<5; ri2++) {
           var ra2=(ri2*72+18)*Math.PI/180, rr2=fs*0.38;
           var rpx2=fx+Math.cos(ra2)*rr2, rpy2=fy+Math.sin(ra2)*rr2;
-          s += '<path d="M'+fx+','+fy+' C'+(rpx2-Math.sin(ra2)*fs*0.28)+','+(rpy2+Math.cos(ra2)*fs*0.28)+' '+(rpx2+Math.cos(ra2)*fs*0.38)+','+(rpy2+Math.sin(ra2)*fs*0.38)+' '+rpx2+','+rpy2+' C'+(rpx2+Math.sin(ra2)*fs*0.22)+','+(rpy2-Math.cos(ra2)*fs*0.22)+' '+fx+','+fy+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.75*bloomOp)+'"/>';
+          s += '<path d="M'+fx+','+fy+' C'+(rpx2-Math.sin(ra2)*fs*0.28)+','+(rpy2+Math.cos(ra2)*fs*0.28)+' '+(rpx2+Math.cos(ra2)*fs*0.38)+','+(rpy2+Math.sin(ra2)*fs*0.38)+' '+rpx2+','+rpy2+' C'+(rpx2+Math.sin(ra2)*fs*0.22)+','+(rpy2-Math.cos(ra2)*fs*0.22)+' '+fx+','+fy+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.78*bloomOp)+'"/>';
+          // Edge highlight on every other front-ring petal (silk-snap)
+          if (ri2 % 2 === 0) {
+            s += '<path d="M'+fx+','+fy+' Q'+(rpx2-Math.sin(ra2)*fs*0.20)+','+(rpy2+Math.cos(ra2)*fs*0.20)+' '+rpx2+','+rpy2+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
+          }
         }
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.74)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" opacity="'+(bloomOp*0.24)+'"'+'/>';
+        // INNER CUP — 3 small petals tightly closed in center
+        for (var ri3=0; ri3<3; ri3++) {
+          var ra3=(ri3*120+60)*Math.PI/180, rr3=fs*0.16;
+          var rpx3=fx+Math.cos(ra3)*rr3, rpy3=fy+Math.sin(ra3)*rr3;
+          s += '<path d="M'+fx+','+fy+' Q'+(rpx3-Math.sin(ra3)*fs*0.12)+','+(rpy3+Math.cos(ra3)*fs*0.12)+' '+rpx3+','+rpy3+' Q'+(rpx3+Math.sin(ra3)*fs*0.08)+','+(rpy3-Math.cos(ra3)*fs*0.08)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.92*bloomOp)+'"/>';
+        }
+        // Form shadow on right hemisphere
+        s += '<path d="M'+fx+','+(fy-fs*0.78)+' A'+(fs*0.78)+' '+(fs*0.78)+' 0 0 1 '+fx+','+(fy+fs*0.78)+' L'+fx+','+(fy-fs*0.78)+'Z" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Big diffuse cream form-light upper-left
+        s += '<ellipse cx="'+(fx-fs*0.32)+'" cy="'+(fy-fs*0.36)+'" rx="'+(fs*0.32)+'" ry="'+(fs*0.20)+'" fill="#f5ecd6" opacity="'+(0.22*bloomOp)+'" transform="rotate(-30,'+(fx-fs*0.32)+','+(fy-fs*0.36)+')"/>';
+        // Sharp cream specular pickup
+        s += '<ellipse cx="'+(fx-fs*0.24)+'" cy="'+(fy-fs*0.30)+'" rx="'+(fs*0.10)+'" ry="'+(fs*0.05)+'" fill="#fff8e0" opacity="'+(0.6*bloomOp)+'"/>';
+        // Warm focal AO around heart
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.20)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.7*bloomOp)+'"/>';
+        // Gold pip
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.13)+'" fill="'+PALETTE.gold+'" opacity="'+(0.95*bloomOp)+'"/>';
+        // Cream catchlight on pip
+        s += '<circle cx="'+(fx-fs*0.04)+'" cy="'+(fy-fs*0.04)+'" r="'+(fs*0.05)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
         break;
-      case 2: // Hibiscus — 5 wide overlapping petals with stamen column and veining
+      case 2: // Hibiscus — 5 wide overlapping petals, stamen column, master polish
         var _h2dark = _hueShift(fc, parseInt(uid.slice(1,3),16), 18);
-        // Back petal shadows (slightly offset and darker)
+        // AO halo
+        s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.25)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Back petal shadows (occlusion sandwich, dimmed darker)
         for (var hi2b=0; hi2b<5; hi2b++) {
           var ha2b=(hi2b*72-90)*Math.PI/180;
           var htx2b=fx+Math.cos(ha2b)*fs*1.2+0.4, hty2b=fy+Math.sin(ha2b)*fs*1.2+0.3;
-          s += '<path d="M'+fx+','+fy+' C'+(fx-Math.sin(ha2b)*fs*0.7+Math.cos(ha2b)*fs*0.3)+','+(fy+Math.cos(ha2b)*fs*0.7+Math.sin(ha2b)*fs*0.3)+' '+htx2b+','+(hty2b-Math.sin(ha2b)*fs*0.3)+' '+htx2b+','+hty2b+' C'+(htx2b+Math.sin(ha2b)*fs*0.35)+','+(hty2b+Math.cos(ha2b)*fs*0.2)+' '+(fx+Math.sin(ha2b)*fs*0.5)+','+(fy-Math.cos(ha2b)*fs*0.5)+' '+fx+','+fy+'Z" fill="'+_h2dark+'" opacity="'+(0.25*bloomOp)+'"/>';
+          s += '<path d="M'+fx+','+fy+' C'+(fx-Math.sin(ha2b)*fs*0.7+Math.cos(ha2b)*fs*0.3)+','+(fy+Math.cos(ha2b)*fs*0.7+Math.sin(ha2b)*fs*0.3)+' '+htx2b+','+(hty2b-Math.sin(ha2b)*fs*0.3)+' '+htx2b+','+hty2b+' C'+(htx2b+Math.sin(ha2b)*fs*0.35)+','+(hty2b+Math.cos(ha2b)*fs*0.2)+' '+(fx+Math.sin(ha2b)*fs*0.5)+','+(fy-Math.cos(ha2b)*fs*0.5)+' '+fx+','+fy+'Z" fill="'+_h2dark+'" opacity="'+(0.55*bloomOp)+'"/>';
         }
-        // Main petals
+        // Main petals — full saturation front ring
         for (var hi=0; hi<5; hi++) {
           var ha=(hi*72-90)*Math.PI/180, hr=fs*0.55;
           var hpx=fx+Math.cos(ha)*hr, hpy=fy+Math.sin(ha)*hr;
           var htx=fx+Math.cos(ha)*fs*1.15, hty=fy+Math.sin(ha)*fs*1.15;
-          s += '<path d="M'+fx+','+fy+' C'+(hpx-Math.sin(ha)*fs*0.65)+','+(hpy+Math.cos(ha)*fs*0.65)+' '+htx+','+(hty-Math.sin(ha)*fs*0.3)+' '+htx+','+hty+' C'+(htx+Math.sin(ha)*fs*0.35)+','+(hty+Math.cos(ha)*fs*0.25)+' '+(hpx+Math.sin(ha)*fs*0.55)+','+(hpy-Math.cos(ha)*fs*0.55)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.6*bloomOp)+'"/>';
-          // Petal vein — midline from center to tip
-          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+htx.toFixed(1)+'" y2="'+hty.toFixed(1)+'" stroke="rgba(240,235,216,0.12)" stroke-width="0.25" opacity="'+(bloomOp*0.45)+'"/>';
-          // Secondary veins — 2 branching from midline
-          var _v2dx = Math.cos(ha)*fs*0.55, _v2dy = Math.sin(ha)*fs*0.55;
-          s += '<line x1="'+(fx+_v2dx*0.4).toFixed(1)+'" y1="'+(fy+_v2dy*0.4).toFixed(1)+'" x2="'+(fx+_v2dx*0.4-Math.sin(ha)*fs*0.2).toFixed(1)+'" y2="'+(fy+_v2dy*0.4+Math.cos(ha)*fs*0.2).toFixed(1)+'" stroke="rgba(240,235,216,0.08)" stroke-width="0.2" opacity="'+(bloomOp*0.4)+'"/>';
+          s += '<path d="M'+fx+','+fy+' C'+(hpx-Math.sin(ha)*fs*0.65)+','+(hpy+Math.cos(ha)*fs*0.65)+' '+htx+','+(hty-Math.sin(ha)*fs*0.3)+' '+htx+','+hty+' C'+(htx+Math.sin(ha)*fs*0.35)+','+(hty+Math.cos(ha)*fs*0.25)+' '+(hpx+Math.sin(ha)*fs*0.55)+','+(hpy-Math.cos(ha)*fs*0.55)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+(0.78*bloomOp)+'"/>';
+          // Petal vein — warm-shifted dark midline
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+htx.toFixed(1)+'" y2="'+hty.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.3" opacity="'+(bloomOp*0.55)+'"/>';
+          // Cream highlight pair on petal vein (Hokusai)
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+htx.toFixed(1)+'" y2="'+hty.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(bloomOp*0.45)+'" transform="translate(-0.25,-0.18)"/>';
+          // Edge highlight on leading petal edge (silk-snap)
+          s += '<path d="M'+fx+','+fy+' C'+(hpx-Math.sin(ha)*fs*0.65)+','+(hpy+Math.cos(ha)*fs*0.65)+' '+htx+','+(hty-Math.sin(ha)*fs*0.3)+' '+htx+','+hty+'" fill="none" stroke="#f5ecd6" stroke-width="0.42" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
+          // Tip terminator
+          s += '<circle cx="'+htx.toFixed(1)+'" cy="'+hty.toFixed(1)+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
         }
-        // Stamen column — tall protruding structure with anthers
-        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*0.9)+'" stroke="'+PALETTE.cream+'" stroke-width="'+(fs*0.08).toFixed(1)+'" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'"/>';
-        // 5 anthers at top of column
+        // Form shadow on right hemisphere
+        s += '<path d="M'+fx+','+(fy-fs*1.1)+' A'+(fs*1.1)+' '+(fs*1.1)+' 0 0 1 '+fx+','+(fy+fs*1.1)+' L'+fx+','+(fy-fs*1.1)+'Z" fill="rgba(40,20,5,0.16)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Big diffuse cream form-light upper-left
+        s += '<ellipse cx="'+(fx-fs*0.42)+'" cy="'+(fy-fs*0.50)+'" rx="'+(fs*0.30)+'" ry="'+(fs*0.20)+'" fill="#f5ecd6" opacity="'+(0.22*bloomOp)+'" transform="rotate(-30,'+(fx-fs*0.42)+','+(fy-fs*0.50)+')"/>';
+        // Stamen column AO base
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.05)+'" rx="'+(fs*0.10)+'" ry="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.75*bloomOp)+'"/>';
+        // Stamen column — cream filament with warm-dark inset shadow
+        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*0.9)+'" stroke="rgba(40,20,5,0.45)" stroke-width="'+(fs*0.10).toFixed(1)+'" stroke-linecap="round" opacity="'+(0.45*bloomOp)+'"/>';
+        s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*0.9)+'" stroke="#f5ecd6" stroke-width="'+(fs*0.06).toFixed(1)+'" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
+        // 5 anthers at top of column with jitter (stamen kit)
         for (var _ha=0; _ha<5; _ha++) {
           var _haa = (_ha*72-90)*Math.PI/180;
-          s += '<circle cx="'+(fx+Math.cos(_haa)*fs*0.12).toFixed(1)+'" cy="'+(fy-fs*0.85+Math.sin(_haa)*fs*0.06).toFixed(1)+'" r="'+(fs*0.06).toFixed(2)+'" fill="'+PALETTE.gold+'" opacity="'+(0.8*bloomOp)+'"/>';
+          var _hjit = ((parseInt(uid.charAt(_ha%uid.length)||'0',16)/15)-0.5)*0.6;
+          var _hax = fx+Math.cos(_haa)*fs*0.12;
+          var _hay = fy-fs*0.85+Math.sin(_haa)*fs*0.06+_hjit*fs*0.04;
+          s += '<circle cx="'+_hax.toFixed(1)+'" cy="'+_hay.toFixed(1)+'" r="'+(fs*0.08)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.5*bloomOp)+'"/>';
+          s += '<circle cx="'+_hax.toFixed(1)+'" cy="'+_hay.toFixed(1)+'" r="'+(fs*0.06).toFixed(2)+'" fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
+          s += '<circle cx="'+(_hax-fs*0.015).toFixed(1)+'" cy="'+(_hay-fs*0.015).toFixed(1)+'" r="'+(fs*0.025).toFixed(2)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
         }
-        // Stigma at tip
-        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.95)+'" r="'+(fs*0.05)+'" fill="'+PALETTE.cream+'" opacity="'+(0.7*bloomOp)+'"/>';
-        // Soft outer glow
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*1.1)+'" fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="0.6" opacity="'+(bloomOp*0.2)+'"/>';
+        // Stigma cream tip with warm AO
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.95)+'" r="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.55*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*0.95)+'" r="'+(fs*0.05)+'" fill="#f5ecd6" opacity="'+(0.85*bloomOp)+'"/>';
         break;
-      case 3: // Lotus — boat-shaped petals, 2 staggered layers with veining
+      case 3: // Lotus — boat-shaped petals, 2 staggered layers with master polish
+        // AO halo
+        s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.25)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        var _l3dk = _hueShift(fc, parseInt(uid.slice(2,4),16), -14);
         for (var li=0; li<8; li++) {
           var la=(li*45+(li<4?0:22.5))*Math.PI/180;
           var lr=li<4?fs*0.52:fs*0.72, lr2=li<4?fs*1.1:fs*0.85;
           var lpx=fx+Math.cos(la)*lr, lpy=fy+Math.sin(la)*lr;
           var ltx=fx+Math.cos(la)*lr2, lty=fy+Math.sin(la)*lr2;
-          // Petal body
-          s += '<path d="M'+fx+','+fy+' C'+(lpx-Math.sin(la)*fs*0.38)+','+(lpy+Math.cos(la)*fs*0.38)+' '+ltx+','+(lty-Math.sin(la)*fs*0.2)+' '+ltx+','+lty+' C'+(ltx+Math.sin(la)*fs*0.25)+','+(lty+Math.cos(la)*fs*0.15)+' '+(lpx+Math.sin(la)*fs*0.35)+','+(lpy-Math.cos(la)*fs*0.35)+' '+fx+','+fy+'Z" fill="'+fc+'" opacity="'+((li<4?0.72:0.48)*bloomOp)+'"/>';
-          // Petal vein — center line to tip
-          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+ltx.toFixed(1)+'" y2="'+lty.toFixed(1)+'" stroke="rgba(240,235,216,0.15)" stroke-width="0.25" opacity="'+(bloomOp*0.4)+'"/>';
-          // Rim highlight on outer petals
-          if (li >= 4) {
-            s += '<path d="M'+fx+','+fy+' C'+(lpx-Math.sin(la)*fs*0.38)+','+(lpy+Math.cos(la)*fs*0.38)+' '+ltx+','+(lty-Math.sin(la)*fs*0.2)+' '+ltx+','+lty+'" fill="none" stroke="rgba(240,235,216,0.25)" stroke-width="0.35" opacity="'+(bloomOp*0.5)+'"/>';
+          var _lFill = (li>=4) ? _l3dk : fc;
+          var _lOp = (li<4 ? 0.85 : 0.55);
+          // Petal body (back layer dimmed darker, front saturated)
+          s += '<path d="M'+fx+','+fy+' C'+(lpx-Math.sin(la)*fs*0.38)+','+(lpy+Math.cos(la)*fs*0.38)+' '+ltx+','+(lty-Math.sin(la)*fs*0.2)+' '+ltx+','+lty+' C'+(ltx+Math.sin(la)*fs*0.25)+','+(lty+Math.cos(la)*fs*0.15)+' '+(lpx+Math.sin(la)*fs*0.35)+','+(lpy-Math.cos(la)*fs*0.35)+' '+fx+','+fy+'Z" fill="'+_lFill+'" opacity="'+(_lOp*bloomOp)+'"/>';
+          // Petal vein — warm-shifted dark
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+ltx.toFixed(1)+'" y2="'+lty.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.28" opacity="'+(bloomOp*0.50)+'"/>';
+          // Cream highlight pair on vein (Hokusai)
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+ltx.toFixed(1)+'" y2="'+lty.toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.16" opacity="'+(bloomOp*0.45)+'" transform="translate(-0.22,-0.16)"/>';
+          // Rim highlight on FRONT petals (silk-snap)
+          if (li < 4) {
+            s += '<path d="M'+fx+','+fy+' C'+(lpx-Math.sin(la)*fs*0.38)+','+(lpy+Math.cos(la)*fs*0.38)+' '+ltx+','+(lty-Math.sin(la)*fs*0.2)+' '+ltx+','+lty+'" fill="none" stroke="#f5ecd6" stroke-width="0.40" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+          }
+          // Tip terminator (front petals only)
+          if (li < 4) {
+            s += '<circle cx="'+ltx.toFixed(1)+'" cy="'+lty.toFixed(1)+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
           }
         }
-        // Gold seed pod center — multi-layer
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.3)+'" fill="'+_hueShift(PALETTE.gold, 33, 10)+'" opacity="'+(0.75*bloomOp)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.26)+'" fill="'+PALETTE.gold+'" opacity="'+(0.88*bloomOp)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy-fs*0.06)+'" r="'+(fs*0.1)+'" fill="'+PALETTE.cream+'" opacity="'+(0.3*bloomOp)+'"/>';
+        // Form shadow right
+        s += '<path d="M'+fx+','+(fy-fs*1.05)+' A'+(fs*1.05)+' '+(fs*1.05)+' 0 0 1 '+fx+','+(fy+fs*1.05)+' L'+fx+','+(fy-fs*1.05)+'Z" fill="rgba(40,20,5,0.16)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Cream form-light upper-left
+        s += '<ellipse cx="'+(fx-fs*0.40)+'" cy="'+(fy-fs*0.45)+'" rx="'+(fs*0.28)+'" ry="'+(fs*0.18)+'" fill="#f5ecd6" opacity="'+(0.22*bloomOp)+'" transform="rotate(-30,'+(fx-fs*0.40)+','+(fy-fs*0.45)+')"/>';
+        // Seed pod AO + multi-layer center
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.34)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.30)+'" fill="'+_hueShift(PALETTE.gold, 33, 10)+'" opacity="'+(0.85*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.26)+'" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
+        // Seed pod dimples — 7 dots
+        for (var _l3sp=0; _l3sp<7; _l3sp++) {
+          var _l3spa=(_l3sp*51.4)*Math.PI/180;
+          s += '<circle cx="'+(fx+Math.cos(_l3spa)*fs*0.16).toFixed(1)+'" cy="'+(fy+Math.sin(_l3spa)*fs*0.16).toFixed(1)+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.7*bloomOp)+'"/>';
+        }
+        // Catchlight on pod
+        s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.08)+'" r="'+(fs*0.08)+'" fill="#fff8e0" opacity="'+(0.55*bloomOp)+'"/>';
         break;
-      case 4: // Dahlia — three rings of tapered petals
+      case 4: // Dahlia — three rings of tapered petals, master polish
+        // AO halo
+        s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.10)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        var _d4dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
+        // BACK ring first (dimmed dark, drawn behind)
+        for (var di_b=0; di_b<6; di_b++) {
+          var da_b=(di_b*60+10)*Math.PI/180;
+          var dr_b=fs*0.86;
+          var dpxb=fx+Math.cos(da_b)*dr_b*0.40, dpyb=fy+Math.sin(da_b)*dr_b*0.40;
+          var dtxb=fx+Math.cos(da_b)*dr_b, dtyb=fy+Math.sin(da_b)*dr_b;
+          s += '<path d="M'+dpxb+','+dpyb+' C'+(dpxb-Math.sin(da_b)*fs*0.18)+','+(dpyb+Math.cos(da_b)*fs*0.18)+' '+dtxb+','+(dtyb-Math.sin(da_b)*fs*0.1)+' '+dtxb+','+dtyb+' C'+(dtxb+Math.sin(da_b)*fs*0.14)+','+(dtyb+Math.cos(da_b)*fs*0.1)+' '+(dpxb+Math.sin(da_b)*fs*0.15)+','+(dpyb-Math.cos(da_b)*fs*0.15)+' '+dpxb+','+dpyb+'Z" fill="'+_d4dk+'" opacity="'+(0.55*bloomOp)+'"/>';
+        }
+        // FRONT 3 rings (saturated, 6 petals each)
         for (var di=0; di<18; di++) {
           var da=(di*20)*Math.PI/180;
           var dRing=di%3, dr=fs*(0.3+dRing*0.28);
           var dpx=fx+Math.cos(da)*dr, dpy=fy+Math.sin(da)*dr;
           var dtx=fx+Math.cos(da)*(dr+fs*0.38), dty=fy+Math.sin(da)*(dr+fs*0.38);
-          s += '<path d="M'+dpx+','+dpy+' C'+(dpx-Math.sin(da)*fs*0.18)+','+(dpy+Math.cos(da)*fs*0.18)+' '+dtx+','+(dty-Math.sin(da)*fs*0.1)+' '+dtx+','+dty+' C'+(dtx+Math.sin(da)*fs*0.14)+','+(dty+Math.cos(da)*fs*0.1)+' '+(dpx+Math.sin(da)*fs*0.15)+','+(dpy-Math.cos(da)*fs*0.15)+' '+dpx+','+dpy+'Z" fill="'+fc+'" opacity="'+((0.7-dRing*0.12)*bloomOp)+'"/>';
+          s += '<path d="M'+dpx+','+dpy+' C'+(dpx-Math.sin(da)*fs*0.18)+','+(dpy+Math.cos(da)*fs*0.18)+' '+dtx+','+(dty-Math.sin(da)*fs*0.1)+' '+dtx+','+dty+' C'+(dtx+Math.sin(da)*fs*0.14)+','+(dty+Math.cos(da)*fs*0.1)+' '+(dpx+Math.sin(da)*fs*0.15)+','+(dpy-Math.cos(da)*fs*0.15)+' '+dpx+','+dpy+'Z" fill="'+fc+'" opacity="'+((0.78-dRing*0.10)*bloomOp)+'"/>';
+          // Edge highlight on outer ring petals (silk-snap)
+          if (dRing === 2 && di % 2 === 0) {
+            s += '<path d="M'+dpx+','+dpy+' Q'+(dtx-Math.sin(da)*fs*0.06)+','+(dty+Math.cos(da)*fs*0.06)+' '+dtx+','+dty+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
+          }
         }
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="'+PALETTE.cream+'" opacity="'+(0.7*bloomOp)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.88)+'" fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" opacity="'+(bloomOp*0.16)+'"'+'/>';
+        // Form shadow on right
+        s += '<path d="M'+fx+','+(fy-fs*1.0)+' A'+(fs*1.0)+' '+(fs*1.0)+' 0 0 1 '+fx+','+(fy+fs*1.0)+' L'+fx+','+(fy-fs*1.0)+'Z" fill="rgba(40,20,5,0.16)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Cream form-light upper-left
+        s += '<ellipse cx="'+(fx-fs*0.40)+'" cy="'+(fy-fs*0.45)+'" rx="'+(fs*0.30)+'" ry="'+(fs*0.20)+'" fill="#f5ecd6" opacity="'+(0.22*bloomOp)+'" transform="rotate(-30,'+(fx-fs*0.40)+','+(fy-fs*0.45)+')"/>';
+        // Center AO + cream pip
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.26)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="#f5ecd6" opacity="'+(0.85*bloomOp)+'"/>';
+        // Sharp catchlight
+        s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy-fs*0.06)+'" r="'+(fs*0.07)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
         break;
-      case 5: // Tulip — cupped bezier form with layered petals and interior glow
-        // Back petals (darker, slightly larger)
-        var _t5dark = _hueShift(fc, parseInt(uid.slice(2,4),16), 15);
-        s += '<path d="M'+(fx-fs*1.05)+','+(fy+fs*0.1)+' C'+(fx-fs*0.95)+','+(fy-fs*0.7)+' '+(fx-fs*0.38)+','+(fy-fs*1.7)+' '+fx+','+(fy-fs*1.4)+' C'+(fx+fs*0.38)+','+(fy-fs*1.7)+' '+(fx+fs*0.95)+','+(fy-fs*0.7)+' '+(fx+fs*1.05)+','+(fy+fs*0.1)+' C'+(fx+fs*0.55)+','+(fy+fs*0.5)+' '+(fx-fs*0.55)+','+(fy+fs*0.5)+' '+(fx-fs*1.05)+','+(fy+fs*0.1)+'Z" fill="'+_t5dark+'" opacity="'+(0.5*bloomOp)+'"/>';
-        // Front petal cup (main shape)
-        s += '<path d="M'+(fx-fs)+','+fy+' C'+(fx-fs*0.9)+','+(fy-fs*0.6)+' '+(fx-fs*0.35)+','+(fy-fs*1.6)+' '+fx+','+(fy-fs*1.3)+' C'+(fx+fs*0.35)+','+(fy-fs*1.6)+' '+(fx+fs*0.9)+','+(fy-fs*0.6)+' '+(fx+fs)+','+fy+' C'+(fx+fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs)+','+fy+'Z" fill="'+fc+'" opacity="'+(0.75*bloomOp)+'"/>';
-        // Petal veins — 3 subtle internal lines
+      case 5: // Tulip — cupped bezier form with layered petals + master polish
+        // AO halo
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy-fs*0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.20)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Back petals (occlusion sandwich, darker hue-shift)
+        var _t5dark = _hueShift(fc, parseInt(uid.slice(2,4),16), -14);
+        s += '<path d="M'+(fx-fs*1.05)+','+(fy+fs*0.1)+' C'+(fx-fs*0.95)+','+(fy-fs*0.7)+' '+(fx-fs*0.38)+','+(fy-fs*1.7)+' '+fx+','+(fy-fs*1.4)+' C'+(fx+fs*0.38)+','+(fy-fs*1.7)+' '+(fx+fs*0.95)+','+(fy-fs*0.7)+' '+(fx+fs*1.05)+','+(fy+fs*0.1)+' C'+(fx+fs*0.55)+','+(fy+fs*0.5)+' '+(fx-fs*0.55)+','+(fy+fs*0.5)+' '+(fx-fs*1.05)+','+(fy+fs*0.1)+'Z" fill="'+_t5dark+'" opacity="'+(0.55*bloomOp)+'"/>';
+        // Front petal cup (saturated front)
+        s += '<path d="M'+(fx-fs)+','+fy+' C'+(fx-fs*0.9)+','+(fy-fs*0.6)+' '+(fx-fs*0.35)+','+(fy-fs*1.6)+' '+fx+','+(fy-fs*1.3)+' C'+(fx+fs*0.35)+','+(fy-fs*1.6)+' '+(fx+fs*0.9)+','+(fy-fs*0.6)+' '+(fx+fs)+','+fy+' C'+(fx+fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs*0.5)+','+(fy+fs*0.45)+' '+(fx-fs)+','+fy+'Z" fill="'+fc+'" opacity="'+(0.85*bloomOp)+'"/>';
+        // Petal veins — warm-shifted dark + cream pair (3 internal lines)
         for (var _tv=0; _tv<3; _tv++) {
           var _tvx = fx + (_tv-1)*fs*0.3;
-          s += '<path d="M'+_tvx+','+fy+' C'+_tvx+','+(fy-fs*0.4)+' '+(fx+(_tv-1)*fs*0.1)+','+(fy-fs*1.0)+' '+fx+','+(fy-fs*1.25)+'" fill="none" stroke="rgba(240,235,216,0.2)" stroke-width="0.3" opacity="'+(bloomOp*0.5)+'"/>';
+          var _tvD = 'M'+_tvx+','+fy+' C'+_tvx+','+(fy-fs*0.4)+' '+(fx+(_tv-1)*fs*0.1)+','+(fy-fs*1.0)+' '+fx+','+(fy-fs*1.25);
+          s += '<path d="'+_tvD+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.32" opacity="'+(bloomOp*0.5)+'"/>';
+          s += '<path d="'+_tvD+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(bloomOp*0.45)+'" transform="translate(-0.25,-0.18)"/>';
         }
-        // Interior glow — warm center
-        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.15)+'" rx="'+(fs*0.4)+'" ry="'+(fs*0.25)+'" fill="'+PALETTE.cream+'" opacity="'+(0.12*bloomOp)+'"/>';
-        // Rim highlight — left edge specular
-        s += '<path d="M'+(fx-fs*0.9)+','+(fy-fs*0.1)+' C'+(fx-fs*0.85)+','+(fy-fs*0.55)+' '+(fx-fs*0.35)+','+(fy-fs*1.45)+' '+fx+','+(fy-fs*1.2)+'" fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.5" stroke-linecap="round" opacity="'+(bloomOp*0.6)+'"/>';
+        // Form shadow on right cup half
+        s += '<path d="M'+fx+','+(fy-fs*1.3)+' C'+(fx+fs*0.35)+','+(fy-fs*1.6)+' '+(fx+fs*0.9)+','+(fy-fs*0.6)+' '+(fx+fs)+','+fy+' C'+(fx+fs*0.5)+','+(fy+fs*0.45)+' '+fx+','+(fy+fs*0.4)+' '+fx+','+(fy-fs*1.3)+'Z" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Interior throat glow — warm cream
+        s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.15)+'" rx="'+(fs*0.40)+'" ry="'+(fs*0.25)+'" fill="#f5ecd6" opacity="'+(0.18*bloomOp)+'"/>';
+        // Cream form-light upper-left
+        s += '<ellipse cx="'+(fx-fs*0.35)+'" cy="'+(fy-fs*0.85)+'" rx="'+(fs*0.20)+'" ry="'+(fs*0.40)+'" fill="#f5ecd6" opacity="'+(0.22*bloomOp)+'" transform="rotate(-15,'+(fx-fs*0.35)+','+(fy-fs*0.85)+')"/>';
+        // Rim cream highlight — left edge silk-snap
+        s += '<path d="M'+(fx-fs*0.9)+','+(fy-fs*0.1)+' C'+(fx-fs*0.85)+','+(fy-fs*0.55)+' '+(fx-fs*0.35)+','+(fy-fs*1.45)+' '+fx+','+(fy-fs*1.2)+'" fill="none" stroke="#f5ecd6" stroke-width="0.50" stroke-linecap="round" opacity="'+(bloomOp*0.65)+'"/>';
+        // Sharp specular pickup on lit petal
+        s += '<ellipse cx="'+(fx-fs*0.42)+'" cy="'+(fy-fs*1.0)+'" rx="'+(fs*0.08)+'" ry="'+(fs*0.16)+'" fill="#fff8e0" opacity="'+(0.55*bloomOp)+'" transform="rotate(-10,'+(fx-fs*0.42)+','+(fy-fs*1.0)+')"/>';
+        // Tip terminator at apex
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*1.32)+'" r="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.65)+'"/>';
         break;
       case 6: // Spike — vertical inflorescence with layered florets
         // Central rachis (flower stem)
