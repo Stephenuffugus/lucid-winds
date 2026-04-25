@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.43';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.44';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -17597,7 +17597,7 @@ document.addEventListener('keydown', function(e) {
           // Tip terminator
           s += '<circle cx="'+lx+'" cy="'+(ly-ls*1.1).toFixed(1)+'" r="0.20" fill="rgba(40,20,5,0.55)"/>';
           break;
-        case 9: // Needle cluster
+        case 9: // Pine Needle — fascicle of 5 conifer needles with brass basal sheath.
           for (var ni = 0; ni < 5; ni++) {
             var na = (ni - 2) * 0.28 * side;
             var nLen = ls*(0.55 + Math.abs(ni-2)*0.08);
@@ -17605,10 +17605,12 @@ document.addEventListener('keydown', function(e) {
             s += '<path d="M'+ox+','+ly+' C'+(ox+side*nLen*0.3)+','+(ly-nLen*0.4)+' '+nx+','+(ny+nLen*0.15)+' '+nx+','+ny+'"'
                + ' fill="none" stroke="'+(fill==='none'?stroke:shiftedFill)+'" stroke-width="1.1" opacity="'+(op*0.92)+'" stroke-linecap="round"/>';
             if (ni === 2) {
-              // Rim highlight on centre needle
+              // Cream highlight on centre needle
               s += '<path d="M'+ox+','+ly+' C'+(ox+side*nLen*0.3)+','+(ly-nLen*0.4)+' '+nx+','+(ny+nLen*0.15)+' '+nx+','+ny+'"'
-                 + ' fill="none" stroke="rgba(240,235,216,0.3)" stroke-width="0.4" stroke-linecap="round"/>';
+                 + ' fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
             }
+            // Sharp tip glint on each needle
+            s += '<circle cx="'+nx.toFixed(1)+'" cy="'+ny.toFixed(1)+'" r="0.18" fill="#fff8e0" opacity="'+(op*0.65).toFixed(2)+'"/>';
             // ── Needle chimera vein — single central line per needle ──
             if (t.chimerGen > 1) { // veins only on bred plants (gen 2+)
               var _nChiColor = shiftedLight;
@@ -17626,6 +17628,9 @@ document.addEventListener('keydown', function(e) {
               if (_ncvD) s += '<path d="'+_ncvD+'" fill="none" stroke="'+_nChiColor+'" stroke-width="0.30" opacity="0.28" stroke-linecap="round"/>';
             }
           }
+          // Basal brass sheath (pine fascicle signature)
+          s += '<rect x="'+(ox-0.7).toFixed(1)+'" y="'+(ly-0.3).toFixed(1)+'" width="1.4" height="0.7" rx="0.18" fill="rgba(40,20,5,0.65)"/>';
+          s += '<rect x="'+(ox-0.6).toFixed(1)+'" y="'+(ly-0.25).toFixed(1)+'" width="1.2" height="0.18" fill="#f5ecd6" opacity="0.50"/>';
           break;
 
         case 10: // Monstera+ (rare) — per-node split-leaf with deeper fenestrations
@@ -18029,7 +18034,7 @@ document.addEventListener('keydown', function(e) {
             if (_c19d) s += '<path d="'+_c19d+'" fill="none" stroke="'+_c19chi+'" stroke-width="'+ _vs.width +'" opacity="'+_vs.opacity+'" stroke-linecap="round" stroke-linejoin="round"/>';
           }
           break;
-        case 20: // Palmate Fan — horizontal ~30° angle, finger segments
+        case 20: // Ginkgo — flabellate fan with DICHOTOMOUS forks on each finger (signature).
           // Fan extends outward at shallow angle (mostly lateral, slightly up)
           // dx/dy ratio ~2:1 gives roughly 30° from horizontal
           var _pfLen = ls * 2.07; // 15% larger
@@ -18074,7 +18079,22 @@ document.addEventListener('keydown', function(e) {
             }
             // Finger midrib
             s += '<path d="M'+_pfBaseX.toFixed(1)+','+_pfBaseY.toFixed(1)+' L'+_pfTX.toFixed(1)+','+_pfTY.toFixed(1)+'"'
-               + ' fill="none" stroke="'+shiftedDark+'" stroke-width="0.35" opacity="'+(op*0.3).toFixed(2)+'" stroke-linecap="round"/>';
+               + ' fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.35" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+            // Cream highlight pair on midrib
+            s += '<path d="M'+_pfBaseX.toFixed(1)+','+_pfBaseY.toFixed(1)+' L'+_pfTX.toFixed(1)+','+_pfTY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.16" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.2,-0.15)"/>';
+            // DICHOTOMOUS fork (Ginkgo signature) — each vein bifurcates partway up
+            var _gkForkT = 0.55;
+            var _gkForkX = _pfBaseX + Math.cos(_pfAng) * _pfFLen * _gkForkT * side;
+            var _gkForkY = _pfBaseY + Math.sin(_pfAng) * _pfFLen * _gkForkT;
+            var _gkSpread = 0.12;
+            // Right fork
+            var _gkR1x = _pfBaseX + Math.cos(_pfAng - _gkSpread) * _pfFLen * 0.85 * side;
+            var _gkR1y = _pfBaseY + Math.sin(_pfAng - _gkSpread) * _pfFLen * 0.85;
+            s += '<path d="M'+_gkForkX.toFixed(1)+','+_gkForkY.toFixed(1)+' L'+_gkR1x.toFixed(1)+','+_gkR1y.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.22" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
+            // Left fork
+            var _gkL1x = _pfBaseX + Math.cos(_pfAng + _gkSpread) * _pfFLen * 0.85 * side;
+            var _gkL1y = _pfBaseY + Math.sin(_pfAng + _gkSpread) * _pfFLen * 0.85;
+            s += '<path d="M'+_gkForkX.toFixed(1)+','+_gkForkY.toFixed(1)+' L'+_gkL1x.toFixed(1)+','+_gkL1y.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.22" opacity="'+(op*0.50).toFixed(2)+'" stroke-linecap="round"/>';
           }
           // Chimera veins — one per finger
           if (t.chimerGen > 1) {
@@ -18089,7 +18109,7 @@ document.addEventListener('keydown', function(e) {
             s += '<path d="'+_c20vd+'" fill="none" stroke="'+shiftedLight+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
           }
           break;
-        case 21: // Needle Cluster 2 — 7 pine needles fanning at ~18° angle
+        case 21: // Pine Fascicle — 7 pine needles fanning with brass basal sheath.
           var _n21Base = -1.26; // base angle: mostly up, ~18° lean outward
           var _n21Count = 7;
           var _n21Span = 0.7; // total fan arc in radians
@@ -18118,6 +18138,9 @@ document.addEventListener('keydown', function(e) {
             }
             s += '<path d="'+_c21vd+'" fill="none" stroke="'+_vs.color+'" stroke-width="'+_vs.width+'" opacity="'+_vs.opacity+'" stroke-linecap="round"/>';
           }
+          // Basal brass sheath (pine fascicle signature)
+          s += '<rect x="'+(ox-0.85).toFixed(1)+'" y="'+(ly-0.35).toFixed(1)+'" width="1.7" height="0.85" rx="0.20" fill="rgba(40,20,5,0.65)"/>';
+          s += '<rect x="'+(ox-0.75).toFixed(1)+'" y="'+(ly-0.30).toFixed(1)+'" width="1.5" height="0.20" fill="#f5ecd6" opacity="0.50"/>';
           break;
         case 22: // Elephant Ear — wide lateral blade with vein ridges
           // Extends more horizontally from stem, with characteristic ear shape
