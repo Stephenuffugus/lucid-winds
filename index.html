@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.73';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.74';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -26209,8 +26209,10 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.12)+'" fill="rgba(80,50,10,0.25)" opacity="'+bloomOp+'"/>';
         })();
         break;
-      case 52: // Fuchsia Drop — pendant: 4 sepals flare up, 4 petals cascade down, hanging stamen
+      case 52: // Fuchsia Drop — pendant: 4 sepals flare up, 4 petals cascade down, hanging stamen, master polish
         (function(){
+          // AO halo (vertical pendant)
+          s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.9))+'" rx="'+(fs*1.0)+'" ry="'+(fs*1.85)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Fuchsia hangs downward like a ballet tutu.
           // Sepals: thin pointed blades flaring upward from center — in fc (hash color)
           // Petals: wider rounder shapes cascading below — lighter tint of fc
@@ -26317,10 +26319,9 @@ document.addEventListener('keydown', function(e) {
           // Stamen shadow line
           s += '<line x1="'+(fx+fs*0.02)+'" y1="'+(fy+fs*0.55)+'" x2="'+(fx+fs*0.02)+'" y2="'+(fy+fs*0.5+_stLen-fs*0.05)+'"'
              + ' stroke="rgba(40,20,5,0.16)" stroke-width="'+(fs*0.03)+'" opacity="'+bloomOp+'"/>';
-          // Anther dot at tip
-          s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.5+_stLen)+'" r="'+(fs*0.08)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
-          // AO halo (master pass injection)
-          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
+          // Anther dot at tip with warm AO
+          s += '<circle cx="'+(fx+0.10)+'" cy="'+(fy+fs*0.5+_stLen+0.10)+'" r="'+(fs*0.10)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.6*bloomOp)+'"/>';
+          s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.5+_stLen)+'" r="'+(fs*0.08)+'" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
           // Anther highlight
           s += '<circle cx="'+(fx-fs*0.02)+'" cy="'+(fy+fs*0.5+_stLen-fs*0.02)+'" r="'+(fs*0.03)+'" fill="#fff8e0" opacity="'+bloomOp+'"/>';
           // Second stamen — slightly offset
