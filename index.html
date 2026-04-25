@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.29';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.30';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13074,6 +13074,152 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="35" cy="78" rx="13" ry="2.5" fill="'+rim+'"/>';
         s += '<ellipse cx="35" cy="78" rx="13" ry="2.5" fill="none" stroke="#2D1810" stroke-width="0.5"/>';
         break;
+      case 2: // Spire Vase — slender ceramic vase with narrow neck. Body + bands + back-arc + brown soil drawn BEFORE stem.
+        // Drop shadow + AO 3-stack at base
+        s += '<ellipse cx="35" cy="93.7" rx="11.5" ry="0.8" fill="rgba(0,0,0,0.32)"/>';
+        s += '<ellipse cx="35" cy="93.3" rx="9.5" ry="0.4" fill="rgba(0,0,0,0.50)"/>';
+        // Foot ring (narrow base)
+        s += '<ellipse cx="35" cy="93.0" rx="9" ry="0.9" fill="'+rim+'"/>';
+        s += '<ellipse cx="35" cy="92.6" rx="8.5" ry="0.7" fill="'+g+'"/>';
+        s += '<path d="M26,92.4 Q35,92.85 44,92.4" stroke="rgba(40,20,5,0.40)" stroke-width="0.35" fill="none"/>';
+        // Body — slender ceramic with bulged shoulder
+        s += '<path d="M28,78 Q22,82 20,86 Q19,90 26,93 L44,93 Q51,90 50,86 Q48,82 42,78 Z" fill="'+g+'"/>';
+        // FORM shadow (left)
+        s += '<path d="M28,78 Q22,82 20,86 Q19,90 26,93 Q26,90 24,86 Q26,82 30,78 Z" fill="rgba(0,0,0,0.22)"/>';
+        // CORE shadow at silhouette (terminator)
+        s += '<path d="M20,86 Q19,90 22,92" stroke="rgba(40,20,5,0.45)" stroke-width="0.5" fill="none"/>';
+        // BIG diffuse cream specular (upper-right)
+        s += '<ellipse cx="44" cy="84" rx="1.6" ry="5" fill="#f5ecd6" opacity="0.32" transform="rotate(-8 44 84)"/>';
+        // SMALL sharp pickup highlight
+        s += '<ellipse cx="45" cy="82" rx="0.5" ry="2" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce-light crescent (reflected from ground, lower-right)
+        s += '<path d="M48,90 Q49,92 47,92.7" stroke="#f5ecd6" stroke-width="0.35" fill="none" opacity="0.35"/>';
+        // Three decorative engraved bands (incised dark + cream highlight pairs)
+        s += '<path d="M23,82.6 Q35,83.4 47,82.6" stroke="rgba(40,20,5,0.40)" stroke-width="0.35" fill="none"/>';
+        s += '<path d="M23.2,82.2 Q35,83.0 46.8,82.2" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.35"/>';
+        s += '<path d="M21,86 Q35,87 49,86" stroke="rgba(40,20,5,0.45)" stroke-width="0.4" fill="none"/>';
+        s += '<path d="M21.3,85.5 Q35,86.4 48.7,85.5" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.4"/>';
+        s += '<path d="M22,89.5 Q35,90.3 48,89.5" stroke="rgba(40,20,5,0.40)" stroke-width="0.35" fill="none"/>';
+        s += '<path d="M22.2,89.1 Q35,89.9 47.8,89.1" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.35"/>';
+        // BACK ARC of narrow rim (sweep=1, upper half)
+        s += '<path d="M27,78 A8,1.2 0 0,1 43,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M27,78 A8,1.2 0 0,1 43,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        // Back rim cream highlight
+        s += '<ellipse cx="35" cy="77.4" rx="7" ry="0.3" fill="#f5ecd6" opacity="0.6"/>';
+        // Inner cavity darkness (narrow)
+        s += '<ellipse cx="35" cy="78.1" rx="6.5" ry="0.45" fill="rgba(20,10,2,0.65)"/>';
+        // BROWN soil patch (narrow, fits in neck)
+        s += '<ellipse cx="35" cy="78.2" rx="5.8" ry="0.5" fill="#3a2a18"/>';
+        s += '<ellipse cx="32.5" cy="78.05" rx="0.3" ry="0.13" fill="#5a4028"/>';
+        s += '<ellipse cx="37.5" cy="78.15" rx="0.3" ry="0.13" fill="#4a3220"/>';
+        break;
+      case 3: // Wood Trencher — shallow wide wooden basin. All but front arc in renderPotBack.
+        // Drop shadow + AO 3-stack
+        s += '<ellipse cx="35" cy="86.2" rx="22" ry="0.8" fill="rgba(0,0,0,0.35)"/>';
+        s += '<ellipse cx="35" cy="85.7" rx="18" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        // Side wall (very shallow basin)
+        s += '<path d="M15,78 Q14,82 16,85 L54,85 Q56,82 55,78 Z" fill="'+g+'"/>';
+        // Form shadow on left side (cool-shifted)
+        s += '<path d="M15,78 Q14,82 16,85 L20,85 Q19,82 20,78 Z" fill="rgba(0,0,0,0.18)"/>';
+        // Cream sheen on right side of body (waxy wood)
+        s += '<path d="M48,78.5 Q49.5,81.5 49,84.5" stroke="#f5ecd6" stroke-width="0.5" fill="none" opacity="0.30"/>';
+        // Vertical wood grain Q-curves (NOT straight, per botanical agent — true grain warps)
+        s += '<path d="M19,78.5 Q19.3,81 19.5,84.7" stroke="rgba(40,20,5,0.32)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M23,78.5 Q22.7,81 23.5,85" stroke="rgba(40,20,5,0.32)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M28,78.5 Q28.2,81.5 28,85.2" stroke="rgba(40,20,5,0.30)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M33,78.5 Q33.3,81.5 33.5,85.3" stroke="rgba(40,20,5,0.30)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M38,78.5 Q37.8,81.5 38,85.3" stroke="rgba(40,20,5,0.30)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M42,78.5 Q42.5,81 42.5,85.2" stroke="rgba(40,20,5,0.32)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M47,78.5 Q46.8,81 47,85" stroke="rgba(40,20,5,0.32)" stroke-width="0.3" fill="none"/>';
+        s += '<path d="M51,78.5 Q51.3,81 51.5,84.7" stroke="rgba(40,20,5,0.32)" stroke-width="0.3" fill="none"/>';
+        // Wood knots (concentric inner ring per botanical agent — knots have core + outer)
+        s += '<ellipse cx="25" cy="82" rx="0.85" ry="0.45" fill="rgba(40,20,5,0.45)"/>';
+        s += '<ellipse cx="25" cy="82" rx="0.4" ry="0.2" fill="rgba(20,10,2,0.65)"/>';
+        s += '<ellipse cx="44" cy="82.6" rx="0.75" ry="0.4" fill="rgba(40,20,5,0.45)"/>';
+        s += '<ellipse cx="44" cy="82.6" rx="0.35" ry="0.18" fill="rgba(20,10,2,0.6)"/>';
+        // Bottom contact shadow
+        s += '<path d="M16,84.7 Q35,85.7 54,84.7" stroke="rgba(40,20,5,0.50)" stroke-width="0.45" fill="none"/>';
+        // BACK ARC of rim (sweep=1, upper half)
+        s += '<path d="M15,78 A20,2.2 0 0,1 55,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M15,78 A20,2.2 0 0,1 55,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.4"/>';
+        // Back rim cream highlight (light from above on hand-carved edge)
+        s += '<ellipse cx="35" cy="77.1" rx="18" ry="0.45" fill="#f5ecd6" opacity="0.50"/>';
+        // Terminator inset stroke
+        s += '<path d="M15,78 A19.5,2.15 0 0,1 55,78" fill="none" stroke="rgba(40,20,5,0.30)" stroke-width="0.4"/>';
+        // Inner cavity darkness
+        s += '<ellipse cx="35" cy="78.2" rx="17.5" ry="1.2" fill="rgba(20,10,2,0.50)"/>';
+        // Inner reflected light (S-curve bounce on far side)
+        s += '<path d="M19,77.9 Q26,77.6 33,77.55" stroke="rgba(180,120,80,0.30)" stroke-width="0.4" fill="none"/>';
+        // BROWN soil (wide, since trencher has wide opening)
+        s += '<ellipse cx="35" cy="78.3" rx="15.5" ry="1.0" fill="#3a2a18"/>';
+        s += '<ellipse cx="29" cy="78.15" rx="0.5" ry="0.2" fill="#5a4028"/>';
+        s += '<ellipse cx="33" cy="78.4" rx="0.4" ry="0.17" fill="#4a3220"/>';
+        s += '<ellipse cx="38" cy="78.2" rx="0.55" ry="0.22" fill="#5a4028"/>';
+        s += '<ellipse cx="42" cy="78.45" rx="0.4" ry="0.18" fill="#4a3220"/>';
+        break;
+      case 4: // Hanging Censer — small pot with hanging chains rising above
+        // Drop shadow (small — hangs above ground)
+        s += '<ellipse cx="35" cy="87" rx="11" ry="0.5" fill="rgba(0,0,0,0.25)"/>';
+        // Hanging chains (3 chains converging above)
+        s += '<line x1="27" y1="78.5" x2="33" y2="71" stroke="'+rim+'" stroke-width="0.4" opacity="0.85"/>';
+        s += '<line x1="35" y1="78" x2="35" y2="71" stroke="'+rim+'" stroke-width="0.4" opacity="0.85"/>';
+        s += '<line x1="43" y1="78.5" x2="37" y2="71" stroke="'+rim+'" stroke-width="0.4" opacity="0.85"/>';
+        // Chain ring at top (where chains meet)
+        s += '<circle cx="35" cy="71" r="1.3" fill="'+rim+'"/>';
+        s += '<circle cx="35" cy="71" r="0.7" fill="rgba(20,10,2,0.6)"/>';
+        s += '<circle cx="34.7" cy="70.7" r="0.3" fill="#f5ecd6" opacity="0.7"/>';
+        // Body — small bowl
+        s += '<path d="M25,78.5 Q24,82 26,86 L44,86 Q46,82 45,78.5 Z" fill="'+g+'"/>';
+        // Body left shadow
+        s += '<path d="M25,78.5 Q24,82 26,86 L29,86 Q28,82 28,78.5 Z" fill="rgba(0,0,0,0.20)"/>';
+        // Body specular highlight
+        s += '<ellipse cx="42" cy="81" rx="0.6" ry="2" fill="#f5ecd6" opacity="0.40"/>';
+        // BACK ARC of rim (sweep=1)
+        s += '<path d="M25,78.5 A10,1.0 0 0,1 45,78.5 Z" fill="'+rim+'"/>';
+        s += '<path d="M25,78.5 A10,1.0 0 0,1 45,78.5" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        // Back rim cream highlight
+        s += '<ellipse cx="35" cy="78.0" rx="8.5" ry="0.3" fill="#f5ecd6" opacity="0.5"/>';
+        // Inner cavity dark
+        s += '<ellipse cx="35" cy="78.6" rx="8" ry="0.4" fill="rgba(20,10,2,0.55)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="78.7" rx="7.2" ry="0.4" fill="#3a2a18"/>';
+        s += '<ellipse cx="32" cy="78.55" rx="0.35" ry="0.15" fill="#5a4028"/>';
+        s += '<ellipse cx="38" cy="78.65" rx="0.35" ry="0.15" fill="#4a3220"/>';
+        break;
+      case 5: // Amphora — narrow-neck ancient ceramic with two handles
+        // Drop shadow + AO
+        s += '<ellipse cx="35" cy="93" rx="11" ry="0.7" fill="rgba(0,0,0,0.35)"/>';
+        s += '<ellipse cx="35" cy="92.6" rx="9" ry="0.4" fill="rgba(0,0,0,0.50)"/>';
+        // Body — bulbous bottom narrowing to neck
+        s += '<path d="M28,78 Q22,82 24,88 Q26,92 35,92 Q44,92 46,88 Q48,82 42,78 Z" fill="'+g+'"/>';
+        // Form shadow (left)
+        s += '<path d="M28,78 Q22,82 24,88 Q26,92 35,92 Q33,90 30,86 Q26,82 30,78 Z" fill="rgba(0,0,0,0.22)"/>';
+        // Big specular (upper-right)
+        s += '<ellipse cx="44" cy="83" rx="1.4" ry="4" fill="#f5ecd6" opacity="0.30" transform="rotate(-8 44 83)"/>';
+        // Sharp pickup
+        s += '<ellipse cx="45" cy="81" rx="0.5" ry="1.5" fill="#fff8e0" opacity="0.55"/>';
+        // Bounce light bottom-right
+        s += '<path d="M44,89 Q46,91 43.5,91.7" stroke="#f5ecd6" stroke-width="0.35" fill="none" opacity="0.32"/>';
+        // Decorative band at shoulder
+        s += '<path d="M24,82 Q35,83 46,82" stroke="rgba(40,20,5,0.40)" stroke-width="0.35" fill="none"/>';
+        s += '<path d="M24.2,81.6 Q35,82.5 45.8,81.6" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.4"/>';
+        // Two handles (left and right, curved C-shapes connecting neck to shoulder)
+        s += '<path d="M28,79 Q21,82 23,86" fill="none" stroke="'+rim+'" stroke-width="1.2" stroke-linecap="round"/>';
+        s += '<path d="M28.3,79.4 Q22.5,82 23.7,86" fill="none" stroke="rgba(40,20,5,0.50)" stroke-width="0.25" stroke-linecap="round"/>';
+        s += '<path d="M42,79 Q49,82 47,86" fill="none" stroke="'+rim+'" stroke-width="1.2" stroke-linecap="round"/>';
+        s += '<path d="M41.7,79.4 Q47.5,82 46.3,86" fill="none" stroke="rgba(40,20,5,0.50)" stroke-width="0.25" stroke-linecap="round"/>';
+        // BACK ARC of narrow rim (sweep=1)
+        s += '<path d="M28,78 A7,1.5 0 0,1 42,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M28,78 A7,1.5 0 0,1 42,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        // Back rim cream highlight
+        s += '<ellipse cx="35" cy="77.3" rx="6" ry="0.3" fill="#f5ecd6" opacity="0.55"/>';
+        // Inner cavity darkness
+        s += '<ellipse cx="35" cy="78.2" rx="5.8" ry="0.5" fill="rgba(20,10,2,0.60)"/>';
+        // BROWN soil
+        s += '<ellipse cx="35" cy="78.25" rx="5.2" ry="0.45" fill="#3a2a18"/>';
+        s += '<ellipse cx="32.5" cy="78.1" rx="0.3" ry="0.13" fill="#5a4028"/>';
+        s += '<ellipse cx="37.5" cy="78.2" rx="0.3" ry="0.13" fill="#4a3220"/>';
+        break;
       case 38: // Disco Ball — chrome sphere with mirror tiles, sparkles, chrome cup stand. Plant emerges from cut top opening.
         // Drop shadow + AO 3-stack at base contact
         s += '<ellipse cx="35" cy="92.8" rx="9" ry="0.8" fill="rgba(0,0,0,0.45)"/>';
@@ -13280,71 +13426,25 @@ document.addEventListener('keydown', function(e) {
         // Front-rim core shadow (terminator)
         s += '<path d="M18,79.45 Q35,79.75 52,79.45" stroke="rgba(40,20,5,0.50)" stroke-width="0.35" fill="none"/>';
         break;
-      case 2: // Spire Vase — tall slender vase with narrow neck, bulged body, tapered foot
-        // Drop shadow
-        s += '<ellipse cx="35" cy="93.6" rx="11" ry="0.7" fill="rgba(0,0,0,0.35)"/>';
-        // Foot ring (narrow base)
-        s += '<ellipse cx="35" cy="93.0" rx="9" ry="0.9" fill="'+rim+'"/>';
-        s += '<ellipse cx="35" cy="92.6" rx="8.5" ry="0.7" fill="'+g+'"/>';
-        // Body — narrow neck flaring to bulged shoulder, gentle taper to foot
-        s += '<path d="M28,79 Q22,82 20,86 Q19,90 26,93 L44,93 Q51,90 50,86 Q48,82 42,79 Z" fill="'+g+'"/>';
-        // Body left shadow
-        s += '<path d="M28,79 Q22,82 20,86 Q19,90 26,93 Q26,90 24,86 Q26,82 30,79 Z" fill="rgba(0,0,0,0.20)"/>';
-        // Body right highlight (vertical sheen)
-        s += '<path d="M44,80 Q47,84 47,87 Q47,90 45,92.5" stroke="rgba(255,240,220,0.22)" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
-        // Three decorative bands (elegant ceramic feel)
-        s += '<path d="M23,82.6 Q35,83.4 47,82.6" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
-        s += '<path d="M21,86 Q35,87 49,86" stroke="rgba(0,0,0,0.30)" stroke-width="0.4" fill="none"/>';
-        s += '<path d="M21.3,85.5 Q35,86.4 48.7,85.5" stroke="rgba(255,240,220,0.18)" stroke-width="0.3" fill="none"/>';
-        s += '<path d="M22,89.5 Q35,90.3 48,89.5" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
-        // RIM — narrow flared lip
-        s += '<ellipse cx="35" cy="78" rx="8" ry="1.2" fill="'+rim+'"/>';
-        s += '<ellipse cx="35" cy="78" rx="8" ry="1.2" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.3"/>';
-        // Rim top highlight
-        s += '<ellipse cx="35" cy="77.6" rx="7" ry="0.3" fill="rgba(255,245,225,0.30)"/>';
-        // Inner shadow inside narrow opening
-        s += '<ellipse cx="35" cy="78.25" rx="6" ry="0.75" fill="rgba(0,0,0,0.42)"/>';
-        // Soil patch inside neck
-        s += '<ellipse cx="35" cy="78.2" rx="5.5" ry="0.55" fill="#3a2a18"/>';
+      case 2: // Spire Vase — FRONT portion. Body, foot, decorative bands, back-arc, brown soil all in renderPotBack. Front arc here AFTER stem.
+        s += '<path d="M27,78 A8,1.2 0 0,0 43,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M27,78 A8,1.2 0 0,0 43,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        s += '<path d="M28,79.0 Q35,79.2 42,79.0" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.45"/>';
         break;
-      case 3: // Wood Trencher — shallow wide wooden basin, hand-carved feel
-        // Drop shadow
-        s += '<ellipse cx="35" cy="86.0" rx="21" ry="0.7" fill="rgba(0,0,0,0.35)"/>';
-        // Side wall (very shallow basin)
-        s += '<path d="M15,78 Q14,82 16,85 L54,85 Q56,82 55,78 Z" fill="'+g+'"/>';
-        // Bottom shadow line (where basin meets ground)
-        s += '<path d="M16,84.5 Q35,85.6 54,84.5" stroke="rgba(0,0,0,0.45)" stroke-width="0.5" fill="none"/>';
-        // Wood grain (vertical lines on side wall)
-        s += '<path d="M19,79 L19.5,84.7 M23,79 L23.5,85 M28,79 L28,85.2 M33,79 L33.5,85.3 M38,79 L38,85.3 M42,79 L42.5,85.2 M47,79 L47,85 M51,79 L51.5,84.7" stroke="rgba(0,0,0,0.22)" stroke-width="0.3" fill="none"/>';
-        // Wood knots (two for character)
-        s += '<ellipse cx="25" cy="82" rx="0.8" ry="0.4" fill="rgba(0,0,0,0.32)"/>';
-        s += '<ellipse cx="25" cy="82" rx="0.4" ry="0.2" fill="rgba(0,0,0,0.5)"/>';
-        s += '<ellipse cx="44" cy="82.6" rx="0.7" ry="0.35" fill="rgba(0,0,0,0.32)"/>';
-        // RIM — wide flared wooden edge
-        s += '<ellipse cx="35" cy="78" rx="20" ry="2.2" fill="'+rim+'"/>';
-        s += '<ellipse cx="35" cy="78" rx="20" ry="2.2" fill="none" stroke="rgba(0,0,0,0.32)" stroke-width="0.4"/>';
-        // Rim top highlight (light from above on hand-carved edge)
-        s += '<ellipse cx="35" cy="77.4" rx="18" ry="0.4" fill="rgba(255,240,220,0.25)"/>';
-        // Rim inner edge shadow (where the basin recesses)
-        s += '<ellipse cx="35" cy="78.4" rx="17.5" ry="1.5" fill="rgba(0,0,0,0.32)"/>';
-        // Soil patch (wide, since trencher has wide opening)
-        s += '<ellipse cx="35" cy="78.3" rx="15.5" ry="1.2" fill="#3a2a18"/>';
-        // Soil flecks
-        s += '<ellipse cx="29" cy="78.2" rx="0.5" ry="0.2" fill="#5a4028"/>';
-        s += '<ellipse cx="35" cy="78.45" rx="0.5" ry="0.2" fill="#5a4028"/>';
-        s += '<ellipse cx="41" cy="78.3" rx="0.5" ry="0.2" fill="#5a4028"/>';
+      case 3: // Wood Trencher — FRONT portion. Body, grain, knots, back-arc, brown soil in renderPotBack. Front arc here AFTER stem.
+        s += '<path d="M15,78 A20,2.2 0 0,0 55,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M15,78 A20,2.2 0 0,0 55,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.4"/>';
+        s += '<path d="M17,79.5 Q35,79.9 53,79.5" stroke="#f5ecd6" stroke-width="0.4" fill="none" opacity="0.45"/>';
         break;
-      case 4: // Hanging
-        s += '<path d="M25,78 Q24,84 28,86 L42,86 Q46,84 45,78 Z" fill="'+g+'"/>';
-        s += '<line x1="28" y1="78" x2="35" y2="72" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.8" opacity="0.4"/>';
-        s += '<line x1="42" y1="78" x2="35" y2="72" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.8" opacity="0.4"/>';
-        s += '<circle cx="35" cy="72" r="1.5" fill="'+PALETTE[t.potColor]+'" opacity="0.3"/>';
+      case 4: // Hanging Censer — FRONT portion. Body, chains, back-arc, brown soil in renderPotBack. Front arc here AFTER stem.
+        s += '<path d="M25,78.5 A10,1.0 0 0,0 45,78.5 Z" fill="'+rim+'"/>';
+        s += '<path d="M25,78.5 A10,1.0 0 0,0 45,78.5" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        s += '<path d="M26.5,79.3 Q35,79.45 43.5,79.3" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.45"/>';
         break;
-      case 5: // Amphora
-        s += '<path d="M28,78 Q22,82 24,88 Q26,92 35,92 Q44,92 46,88 Q48,82 42,78 Z" fill="'+g+'"/>';
-        s += '<ellipse cx="35" cy="78" rx="7" ry="1.5" fill="'+rim+'"/>'; // set-103-8: rim flush fix (was rx=8, body mouth=14px)
-        s += '<path d="M25,81 Q20,83 22,80" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.7" fill="none" opacity="0.3"/>';
-        s += '<path d="M45,81 Q50,83 48,80" stroke="'+PALETTE[t.potColor]+'" stroke-width="0.7" fill="none" opacity="0.3"/>';
+      case 5: // Amphora — FRONT portion. Body, handles, back-arc, brown soil in renderPotBack. Front arc here AFTER stem.
+        s += '<path d="M28,78 A7,1.5 0 0,0 42,78 Z" fill="'+rim+'"/>';
+        s += '<path d="M28,78 A7,1.5 0 0,0 42,78" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="0.3"/>';
+        s += '<path d="M29,79.3 Q35,79.5 41,79.3" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.45"/>';
         break;
       case 6: // Hexagonal
         s += '<polygon points="25,78 20,84 25,90 45,90 50,84 45,78" fill="'+g+'"/>';
