@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.65';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.25.66';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -22208,53 +22208,87 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(fx-fs*0.05)+'" cy="'+(fy-fs*1.6)+'" r="'+(fs*0.05)+'" fill="#f5ecd6" opacity="'+(0.45*bloomOp)+'"/>';
         break;
 
-      case 10: // Orchid — complex layered petals with labellum lip
-        // Back sepals (3 narrow spears rotated 120°)
+      case 10: // Orchid — complex layered petals with labellum lip, master polish
+        // AO halo
+        s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+fs*0.3)+'" rx="'+(fs*1.85)+'" ry="'+(fs*1.50)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        var _o10dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
+        // Back sepals (3 dimmed darker spears rotated 120°, occlusion sandwich back)
         for(var mm=0; mm<3; mm++){
           s += '<path d="M'+fx+','+fy
              + ' C'+(fx-fs*0.4)+','+(fy-fs*1.2)+' '+(fx+fs*0.4)+','+(fy-fs*1.3)+' '+fx+','+(fy-fs*1.6)
              + ' C'+(fx+fs*0.3)+','+(fy-fs*1.3)+' '+(fx+fs*0.3)+','+(fy-fs*0.8)+' '+fx+','+fy+'"'
-             + ' fill="'+fc+'" opacity="'+(0.55*bloomOp)+'"'
+             + ' fill="'+_o10dk+'" opacity="'+(0.62*bloomOp)+'"'
              + ' transform="rotate('+(mm*120)+','+fx+','+fy+')"/>';
         }
-        // Lateral petals — wide and cupped
+        // Sepal warm-dark stroke + cream silk-snap edge (only on top sepal)
+        s += '<path d="M'+fx+','+fy+' C'+(fx-fs*0.4)+','+(fy-fs*1.2)+' '+(fx+fs*0.4)+','+(fy-fs*1.3)+' '+fx+','+(fy-fs*1.6)+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
+        // Lateral petals — wide and cupped, full saturation
         s += '<path d="M'+fx+','+fy
            + ' C'+(fx-fs*1.8)+','+(fy-fs*0.5)+' '+(fx-fs*2.0)+','+(fy+fs*0.4)+' '+(fx-fs*1.3)+','+(fy+fs*0.8)
            + ' C'+(fx-fs*0.5)+','+(fy+fs*0.6)+' '+fx+','+(fy+fs*0.1)+' '+fx+','+fy+'"'
-           + ' fill="'+fc+'" opacity="'+(0.82*bloomOp)+'"/>';
+           + ' fill="'+fc+'" opacity="'+(0.88*bloomOp)+'"/>';
         s += '<path d="M'+fx+','+fy
            + ' C'+(fx+fs*1.8)+','+(fy-fs*0.5)+' '+(fx+fs*2.0)+','+(fy+fs*0.4)+' '+(fx+fs*1.3)+','+(fy+fs*0.8)
            + ' C'+(fx+fs*0.5)+','+(fy+fs*0.6)+' '+fx+','+(fy+fs*0.1)+' '+fx+','+fy+'"'
-           + ' fill="'+fc+'" opacity="'+(0.82*bloomOp)+'"/>';
-        // The Lip / Labellum — gold tongue
+           + ' fill="'+fc+'" opacity="'+(0.88*bloomOp)+'"/>';
+        // Lateral petal cream silk-snap edges (lit side only)
+        s += '<path d="M'+fx+','+fy+' C'+(fx-fs*1.8)+','+(fy-fs*0.5)+' '+(fx-fs*2.0)+','+(fy+fs*0.4)+' '+(fx-fs*1.3)+','+(fy+fs*0.8)+'" fill="none" stroke="#f5ecd6" stroke-width="0.42" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'"/>';
+        // Form shadow on right lateral
+        s += '<path d="M'+fx+','+fy+' C'+(fx+fs*1.8)+','+(fy-fs*0.5)+' '+(fx+fs*2.0)+','+(fy+fs*0.4)+' '+(fx+fs*1.3)+','+(fy+fs*0.8)+' L'+fx+','+fy+' Z" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Specular pickup on lit lateral petal
+        s += '<ellipse cx="'+(fx-fs*0.95)+'" cy="'+(fy+fs*0.30)+'" rx="'+(fs*0.18)+'" ry="'+(fs*0.10)+'" fill="#fff8e0" opacity="'+(0.50*bloomOp)+'" transform="rotate(-15,'+(fx-fs*0.95)+','+(fy+fs*0.30)+')"/>';
+        // The Lip / Labellum — gold tongue with AO + warm-dark inset
         s += '<path d="M'+fx+','+fy
            + ' C'+(fx-fs*0.9)+','+(fy+fs*0.8)+' '+(fx-fs*0.7)+','+(fy+fs*1.6)+' '+fx+','+(fy+fs*1.8)
            + ' C'+(fx+fs*0.7)+','+(fy+fs*1.6)+' '+(fx+fs*0.9)+','+(fy+fs*0.8)+' '+fx+','+fy+'"'
-           + ' fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
-        // Column (gynostemium) — central boss — Phase 23: glow core
-        s += '<ellipse cx="'+fx+'" cy="'+(fy+fs*0.25)+'" rx="'+(fs*0.22)+'" ry="'+(fs*0.3)+'" fill="'+PALETTE.cream+'" opacity="'+(0.85*bloomOp)+'" filter="url(#gc'+uid+')"/>';
-        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.18)+'" r="'+(fs*0.1)+'" fill="'+PALETTE.pine+'" opacity="'+(0.6*bloomOp)+'"/>';
+           + ' fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
+        // Labellum throat veins (warm-dark)
+        for (var _o10v=0; _o10v<3; _o10v++) {
+          var _o10vx=fx+((_o10v-1)*fs*0.16);
+          s += '<line x1="'+_o10vx+'" y1="'+(fy+fs*0.3)+'" x2="'+(fx+(_o10v-1)*fs*0.05)+'" y2="'+(fy+fs*1.5)+'" stroke="rgba(40,20,5,0.50)" stroke-width="0.30" opacity="'+(0.55*bloomOp)+'" stroke-linecap="round"/>';
+        }
+        // Column (gynostemium) — warm-dark AO + cream column + gold tip
+        s += '<ellipse cx="'+(fx+0.2)+'" cy="'+(fy+fs*0.30)+'" rx="'+(fs*0.24)+'" ry="'+(fs*0.32)+'" fill="rgba(40,20,5,0.45)" opacity="'+(0.55*bloomOp)+'"/>';
+        s += '<ellipse cx="'+fx+'" cy="'+(fy+fs*0.25)+'" rx="'+(fs*0.22)+'" ry="'+(fs*0.30)+'" fill="#f5ecd6" opacity="'+(0.92*bloomOp)+'" filter="url(#gc'+uid+')"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.18)+'" r="'+(fs*0.10)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
+        s += '<circle cx="'+(fx-fs*0.04)+'" cy="'+(fy+fs*0.16)+'" r="'+(fs*0.05)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
+        // Tip terminator on top sepal apex
+        s += '<circle cx="'+fx+'" cy="'+(fy-fs*1.6)+'" r="'+(fs*0.06)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
         break;
 
-      case 11: // Rose+ — concentric spiral petals with inward progressive scaling
+      case 11: // Rose+ — concentric spiral petals with inward progressive scaling, master polish
+        // AO halo
+        s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.05)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
+        var _r11dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
         for(var mm=0; mm<8; mm++){
           var rscale = 1 - (mm * 0.1);
           var rrot = mm * 45;
           var rrad = fs * rscale;
+          var _r11fill = (mm < 2) ? _r11dk : fc;
+          var _r11op = (mm < 2) ? 0.55 : (0.88 - (mm-2)*0.06);
           // Each petal: asymmetric closed bezier loop rotated around center
           s += '<path d="M'+fx+','+fy
              + ' C'+(fx-rrad)+','+(fy-rrad)+' '+(fx+rrad)+','+(fy-rrad)+' '+(fx+rrad)+','+(fy+rrad)
              + ' C'+(fx-rrad)+','+(fy+rrad)+' '+fx+','+fy+' '+fx+','+fy+'"'
-             + ' fill="'+fc+'" opacity="'+((0.88-mm*0.07)*bloomOp)+'"'
+             + ' fill="'+_r11fill+'" opacity="'+(_r11op*bloomOp)+'"'
              + ' transform="rotate('+rrot+','+fx+','+fy+')"/>';
-          // Subtle vein crease along petal axis
+          // Vein crease — warm-shifted dark
           var vx = fx + Math.cos(rrot*Math.PI/180) * rrad * 0.5;
           var vy = fy + Math.sin(rrot*Math.PI/180) * rrad * 0.5;
           s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+vx.toFixed(1)+'" y2="'+vy.toFixed(1)+'"'
-             + ' stroke="'+PALETTE.pine+'" stroke-width="0.45" opacity="'+(0.35*bloomOp)+'"/>';
+             + ' stroke="rgba(40,20,5,0.45)" stroke-width="0.42" opacity="'+(0.45*bloomOp)+'" stroke-linecap="round"/>';
+          // Cream highlight pair on vein (Hokusai)
+          s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+vx.toFixed(1)+'" y2="'+vy.toFixed(1)+'"'
+             + ' stroke="#f5ecd6" stroke-width="0.20" opacity="'+(0.40*bloomOp)+'" stroke-linecap="round" transform="translate(-0.22,-0.16)"/>';
         }
-        // Tight center boss
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="'+PALETTE.gold+'" opacity="'+(0.9*bloomOp)+'"/>';
+        // Form shadow right
+        s += '<path d="M'+fx+','+(fy-fs*0.95)+' A'+(fs*0.95)+' '+(fs*0.95)+' 0 0 1 '+fx+','+(fy+fs*0.95)+' L'+fx+','+(fy-fs*0.95)+'Z" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
+        // Cream form-light upper-left
+        s += '<ellipse cx="'+(fx-fs*0.32)+'" cy="'+(fy-fs*0.36)+'" rx="'+(fs*0.30)+'" ry="'+(fs*0.20)+'" fill="#f5ecd6" opacity="'+(0.22*bloomOp)+'" transform="rotate(-30,'+(fx-fs*0.32)+','+(fy-fs*0.36)+')"/>';
+        // Center boss with AO + cream catchlight
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.65*bloomOp)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="'+PALETTE.gold+'" opacity="'+(0.95*bloomOp)+'"/>';
+        s += '<circle cx="'+(fx-fs*0.05)+'" cy="'+(fy-fs*0.05)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
         break;
       case 13: // Pitcher Plant — deep tubular trap with overlapping lid
         (function(){
@@ -22267,26 +22301,26 @@ document.addEventListener('keydown', function(e) {
           // Lid — overlapping kidney shape
           s += '<path d="M'+(ptx-pw*0.58)+','+(pty-pw*0.12)+' C'+(ptx-pw*0.6)+','+(pty-ph*0.42)+' '+(ptx+pw*0.6)+','+(pty-ph*0.42)+' '+(ptx+pw*0.58)+','+(pty-pw*0.12)+' C'+(ptx+pw*0.3)+','+(pty+pw*0.08)+' '+(ptx-pw*0.3)+','+(pty+pw*0.08)+' '+(ptx-pw*0.58)+','+(pty-pw*0.12)+' Z"'
              + ' fill="#2A5030" stroke="#3A7040" stroke-width="0.6" opacity="'+(0.88*bloomOp)+'"/>';
-          // ── THREE-LAYER CATCH-LIGHT: Lid ──
+          // ── THREE-LAYER CATCH-LIGHT: Lid (master pass cream) ──
           // Layer 1: wide soft glow
           s += '<path d="M'+(ptx-pw*0.58)+','+(pty-pw*0.12)+' C'+(ptx-pw*0.6)+','+(pty-ph*0.42)+' '+(ptx+pw*0.6)+','+(pty-ph*0.42)+' '+(ptx+pw*0.58)+','+(pty-pw*0.12)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.14)" stroke-width="2.8" stroke-linecap="round" opacity="'+(0.9*bloomOp)+'"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="2.8" stroke-linecap="round" opacity="'+(0.16*bloomOp)+'"/>';
           // Layer 2: crisp primary edge
           s += '<path d="M'+(ptx-pw*0.58)+','+(pty-pw*0.12)+' C'+(ptx-pw*0.6)+','+(pty-ph*0.42)+' '+(ptx+pw*0.6)+','+(pty-ph*0.42)+' '+(ptx+pw*0.58)+','+(pty-pw*0.12)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.82*bloomOp)+'"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
           // Layer 3: specular hot-spot — apex of lid curve
           s += '<path d="M'+(ptx-pw*0.22)+','+(pty-ph*0.38)+' C'+ptx+','+(pty-ph*0.44)+' '+(ptx+pw*0.22)+','+(pty-ph*0.38)+' '+(ptx+pw*0.22)+','+(pty-ph*0.38)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.88)" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.75*bloomOp)+'"/>';
-          // ── THREE-LAYER CATCH-LIGHT: Left body ──
+             + ' fill="none" stroke="#fff8e0" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.75*bloomOp)+'"/>';
+          // ── THREE-LAYER CATCH-LIGHT: Left body (master pass cream) ──
           // Layer 1: soft glow
           s += '<path d="M'+(ptx-pw*0.45)+','+pty+' C'+(ptx-pw*0.5)+','+(pty+ph*0.4)+' '+(ptx-pw*0.42)+','+(pty+ph*0.75)+' '+(ptx-pw*0.35)+','+(pty+ph)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.14)" stroke-width="2.4" stroke-linecap="round" opacity="'+(0.9*bloomOp)+'"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="2.4" stroke-linecap="round" opacity="'+(0.16*bloomOp)+'"/>';
           // Layer 2: crisp edge
           s += '<path d="M'+(ptx-pw*0.45)+','+pty+' C'+(ptx-pw*0.5)+','+(pty+ph*0.4)+' '+(ptx-pw*0.42)+','+(pty+ph*0.75)+' '+(ptx-pw*0.35)+','+(pty+ph)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.75*bloomOp)+'"/>';
+             + ' fill="none" stroke="#f5ecd6" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
           // Layer 3: specular glint on upper-body shoulder
           s += '<path d="M'+(ptx-pw*0.46)+','+(pty+ph*0.08)+' L'+(ptx-pw*0.48)+','+(pty+ph*0.22)+'"'
-             + ' stroke="rgba(240,235,216,0.82)" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
+             + ' stroke="#fff8e0" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.70*bloomOp)+'"/>';
           // Inner subsurface scatter — warm glow inside body
           s += '<ellipse cx="'+(ptx-pw*0.08)+'" cy="'+(pty+ph*0.5)+'" rx="'+(pw*0.22)+'" ry="'+(ph*0.15)+'"'
              + ' fill="rgba(90,80,40,0.18)" opacity="'+(0.7*bloomOp)+'"/>';
