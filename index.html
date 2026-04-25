@@ -7136,6 +7136,10 @@ window._addSwitchTabHook = function(fn){
       var _compIdx=20;var _auraIdx=0;var _baseIdx=0;var _sz=200;var _hasFlower=true;
       var _stemIdx=0;
       var _leafCount=7;var _leafSize=11;var _leafSpread=9;
+      var _flowerSize=9;var _flowerColor='rose';
+      // Mirror PALETTE/PAL_KEYS from the main IIFE (kept local to avoid boot-path exposure)
+      var _CT_PAL={pine:'#3A5C2A',sage:'#8CB86E',terra:'#C4633A',sand:'#E8C07A',cream:'#F4EDDA',gold:'#D4B455',plum:'#7A5080',amber:'#D4A014',moss:'#5E8550',rust:'#A85520',slate:'#5E7275',rose:'#A87285',teal:'#4A8A78',copper:'#A87850',ash:'#959588',violet:'#8860A8'};
+      var _CT_PAL_KEYS=['pine','sage','terra','sand','cream','moss','slate','teal','copper','ash','plum','amber','rust','rose','violet','gold'];
 
       // Companion names from TRAIT_BANK
       var _compNames=[];
@@ -7161,6 +7165,8 @@ window._addSwitchTabHook = function(fn){
         t.leafCount=_leafCount;
         t.leafSize=_leafSize;
         t.leafSpread=_leafSpread;
+        t.flowerSize=_flowerSize;
+        t.flowerColor=_flowerColor;
         // Render with overridden traits
         var svg='';
         try{svg=window._generatePlantSVG(_hash,_sz,1.0,t);}catch(e){
@@ -7221,6 +7227,19 @@ window._addSwitchTabHook = function(fn){
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">LEAF SPREAD <span style="color:var(--cream)">(<span id="ct-lsp-val">9</span>, 7-12)</span></div>';
       h+='<input type="range" id="ct-lsp" min="7" max="12" value="9" style="width:100%;accent-color:#7ab356;">';
 
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#c8a84b;margin:0.4rem 0 0.2rem;">FLOWER SIZE <span style="color:var(--cream)">(<span id="ct-fs-val">9</span>, 6-12)</span></div>';
+      h+='<input type="range" id="ct-fs" min="6" max="12" value="9" style="width:100%;accent-color:#c8a84b;">';
+
+      h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#c8a84b;margin:0.4rem 0 0.2rem;">FLOWER COLOR <span style="color:var(--cream)">(<span id="ct-fc-val">rose</span>)</span></div>';
+      h+='<div id="ct-fc-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.2rem;">';
+      for(var _pi=0;_pi<_CT_PAL_KEYS.length;_pi++){
+        var _pk=_CT_PAL_KEYS[_pi];
+        var _ph=_CT_PAL[_pk];
+        var _isActive=(_pk===_flowerColor);
+        h+='<button data-color="'+_pk+'" class="ct-fc-swatch" title="'+_pk+'" style="width:30px;height:30px;border-radius:50%;background:'+_ph+';border:'+(_isActive?'2px solid #c8a84b':'1px solid rgba(255,255,255,0.15)')+';cursor:pointer;padding:0;box-shadow:'+(_isActive?'0 0 6px rgba(200,168,75,0.5)':'none')+';"></button>';
+      }
+      h+='</div>';
+
       h+='<div style="font-family:sans-serif;font-size:0.55rem;color:#7ab356;margin:0.4rem 0 0.2rem;">PLANT SIZE <span style="color:var(--cream)">(<span id="ct-size-val">200</span>px)</span></div>';
       h+='<input type="range" id="ct-size" min="120" max="300" value="200" style="width:100%;accent-color:#7ab356;">';
 
@@ -7252,6 +7271,26 @@ window._addSwitchTabHook = function(fn){
       lcSlider.oninput=function(){_leafCount=parseInt(this.value);document.getElementById('ct-lc-val').textContent=_leafCount;_render();};
       lsSlider.oninput=function(){_leafSize=parseInt(this.value);document.getElementById('ct-ls-val').textContent=_leafSize;_render();};
       lspSlider.oninput=function(){_leafSpread=parseInt(this.value);document.getElementById('ct-lsp-val').textContent=_leafSpread;_render();};
+
+      var fsSlider=document.getElementById('ct-fs');
+      fsSlider.oninput=function(){_flowerSize=parseInt(this.value);document.getElementById('ct-fs-val').textContent=_flowerSize;_render();};
+
+      // Wire flower color swatches
+      var swatches=document.querySelectorAll('.ct-fc-swatch');
+      for(var _si=0;_si<swatches.length;_si++){
+        swatches[_si].onclick=function(){
+          _flowerColor=this.getAttribute('data-color');
+          document.getElementById('ct-fc-val').textContent=_flowerColor;
+          // Refresh active ring
+          var all=document.querySelectorAll('.ct-fc-swatch');
+          for(var _xi=0;_xi<all.length;_xi++){
+            var active=(all[_xi].getAttribute('data-color')===_flowerColor);
+            all[_xi].style.border=active?'2px solid #c8a84b':'1px solid rgba(255,255,255,0.15)';
+            all[_xi].style.boxShadow=active?'0 0 6px rgba(200,168,75,0.5)':'none';
+          }
+          _render();
+        };
+      }
 
       window._ctPrev=function(){
         _compIdx--;if(_compIdx<0)_compIdx=_compNames.length-1;
