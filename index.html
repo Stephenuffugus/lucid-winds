@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.52';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.53';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -78030,18 +78030,37 @@ function _bosSecretsContent() {
       ? '<span style="color:var(--sage);font-size:0.5rem;text-shadow:0 0 4px rgba(122,179,86,0.5);">'
       : '<span style="color:rgba(138,145,120,0.35);font-size:0.5rem;">';
   }
+  // 151+ triggers is a long scroll. Filter chip lets the keeper hide
+  // discovered entries and focus on what's still hidden. State persists
+  // in localStorage so the choice survives a tab switch.
+  var _trFilter='all';try{_trFilter=localStorage.getItem('lw_secret_filter')||'all';}catch(e){}
+  h+='<div style="display:flex;gap:6px;margin:0 0 0.7rem 0;font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;">';
+  var _trChips=[['all','ALL'],['undiscovered','UNDISCOVERED'],['discovered','DISCOVERED']];
+  for(var _tci=0;_tci<_trChips.length;_tci++){
+    var _tcId=_trChips[_tci][0],_tcLbl=_trChips[_tci][1];
+    var _tcOn=(_trFilter===_tcId);
+    h+='<button onclick="try{localStorage.setItem(\'lw_secret_filter\',\''+_tcId+'\');}catch(e){};if(window._bosSetTab)_bosSetTab(\'secrets\');" style="flex:1;padding:5px 6px;background:'+(_tcOn?'rgba(122,179,86,0.18)':'rgba(18,22,16,0.5)')+';border:1px solid '+(_tcOn?'var(--sage)':'rgba(74,124,53,0.18)')+';border-radius:8px;color:'+(_tcOn?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit;font-size:inherit;letter-spacing:inherit;">'+_tcLbl+'</button>';
+  }
+  h+='</div>';
   for(var ci=0;ci<CATEGORIES.length;ci++){
     var cat=CATEGORIES[ci];
     var catTriggers=triggers.filter(function(t){return t.category===cat.key;});
     if(catTriggers.length===0)continue;
     var catFound=catTriggers.filter(function(t){return t.unlocked;}).length;
     var catGrown=catTriggers.filter(function(t){return grownLookup[t.id];}).length;
+    // Apply the chip filter
+    var _shownCat=catTriggers.filter(function(t){
+      if(_trFilter==='discovered')return !!t.unlocked;
+      if(_trFilter==='undiscovered')return !t.unlocked;
+      return true;
+    });
+    if(_shownCat.length===0)continue;
 
     h+='<div style="margin-bottom:0.8rem;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+cat.color+';letter-spacing:0.1em;margin-bottom:0.4rem;">'+cat.icon+' '+cat.label+' <span style="color:var(--muted);font-size:0.4rem;">🔍 '+catFound+' · 🌱 '+catGrown+' / '+catTriggers.length+'</span></div>';
 
-    for(var ti=0;ti<catTriggers.length;ti++){
-      var tr=catTriggers[ti];
+    for(var ti=0;ti<_shownCat.length;ti++){
+      var tr=_shownCat[ti];
       var _isGrown=!!grownLookup[tr.id];
       var _badges=_trBadge(tr.unlocked)+'🔍</span> '+_trBadge(_isGrown)+'🌱</span>';
       if(tr.unlocked){
