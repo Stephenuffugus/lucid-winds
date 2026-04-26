@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.15';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2510,6 +2510,8 @@
     .lw-hut .lwh-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.7rem 0.6rem 1.2rem;}
     .lw-hut .lwh-section-text{font-family:'Playfair Display',serif;font-style:italic;font-size:0.6rem;color:var(--cream);text-align:center;margin-bottom:0.6rem;opacity:0.8;}
     .lw-hut .lwh-section-foot{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);text-align:center;margin-top:0.6rem;}
+    .lw-hut .lwh-pouch-buy{display:inline-block;margin-left:6px;padding:3px 8px;border-radius:6px;border:1px solid rgba(200,168,75,0.55);background:rgba(200,168,75,0.18);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;vertical-align:middle;}
+    .lw-hut .lwh-pouch-buy:hover{background:rgba(200,168,75,0.28);}
     .lw-hut .lwh-active{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:6px;padding:0.4rem 0.6rem;text-align:center;margin-bottom:0.6rem;}
 
     /* SHOP — ALL items always visible, hi-res art at full read size */
@@ -41466,14 +41468,55 @@ function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 var MAX_DROPS=3,MAX_POUCH=8,COLLECT_RANGE=75,ZONE_SIZE=0.001;
-// L23 grants +1 wild drop per day (LEVEL_UNLOCKS[23] promised this; was never wired).
-// Prestige bonus: P6+ grants an additional +1 wild drop per day.
+var EXTRA_DROP_SUNBEAM_COST=30;
+// Sunbeam-bought extra drops today. 700m self-radius cap prevents
+// neighborhood domination, so we don't cap how many extras can be bought.
+function _lwExtraDropsToday(){
+  try{
+    var t=new Date().toISOString().split('T')[0];
+    var raw=localStorage.getItem('lw_extra_drops_today')||'{}';
+    var s=JSON.parse(raw)||{};
+    if(s.day!==t)return 0;
+    return s.count||0;
+  }catch(e){return 0;}
+}
+function _lwAddExtraDrop(){
+  try{
+    var t=new Date().toISOString().split('T')[0];
+    var raw=localStorage.getItem('lw_extra_drops_today')||'{}';
+    var s={};try{s=JSON.parse(raw)||{};}catch(e){}
+    if(s.day!==t)s={day:t,count:0};
+    s.count=(s.count||0)+1;
+    localStorage.setItem('lw_extra_drops_today',JSON.stringify(s));
+  }catch(e){}
+}
+// L23 grants +1 wild drop per day. Prestige P6+ grants another +1.
+// Sunbeam-bought extras stack on top.
 function _getMaxDrops(){
   var base=MAX_DROPS;
   try{if(window._lwLevel&&window._lwLevel()>=23)base+=1;}catch(e){}
   try{var p=parseInt(localStorage.getItem('pw_prestige')||'0',10)||0;if(p>=6)base+=1;}catch(e){}
+  base+=_lwExtraDropsToday();
   return base;
 }
+// Spend Sunbeams to buy +1 wild drop today. Returns true on success.
+function _lwBuyExtraDrop(){
+  if(!window._lwSpendSunbeams)return false;
+  var bal=window._getSunbeamBalance?window._getSunbeamBalance():0;
+  if(bal<EXTRA_DROP_SUNBEAM_COST){
+    if(window._toast)window._toast('Need '+EXTRA_DROP_SUNBEAM_COST+' Sunbeams. You have '+bal+'.');
+    return false;
+  }
+  if(!window._lwSpendSunbeams(EXTRA_DROP_SUNBEAM_COST,'wild_drop_extra'))return false;
+  _lwAddExtraDrop();
+  if(window._toast)window._toast('☀️ +1 drop today. '+(EXTRA_DROP_SUNBEAM_COST)+' Sunbeams spent.');
+  if(window._haptic)window._haptic('bloom');
+  if(typeof gtag!=='undefined')gtag('event','wild_drop_extra_bought',{cost:EXTRA_DROP_SUNBEAM_COST});
+  // Refresh the SOW FAB badge
+  try{if(typeof _updateUI==='function')_updateUI();}catch(e){}
+  return true;
+}
+window._lwBuyExtraDrop=_lwBuyExtraDrop;
 // Dynamic collect range — Wanderer temperament adds 50m
 function _getCollectRange(){
   var range=COLLECT_RANGE;
@@ -45727,10 +45770,26 @@ function openPicker(){
   var _maxD=_getMaxDrops();
   var rem=_maxD-_drops;
   if(rem<=0){
-    // Show-locked hint at the wall: if player isn't yet at L23, surface the unlock
+    // Show-locked + Sunbeam buy. If player has 30+ Sunbeams, offer the +1 buy
+    // via confirm dialog (pull, not push). Otherwise toast the L23 hint.
     var _lvlNow=(window._lwLevel)?window._lwLevel():1;
-    if(_lvlNow<23){_toast('All '+_maxD+' drops used. Reach Keeper L23 for a 4th daily drop.');}
-    else{_toast('All '+_maxD+' drops used today! Resets at midnight.');}
+    var _sbBal=window._getSunbeamBalance?window._getSunbeamBalance():0;
+    var _hint = (_lvlNow<23) ? 'Reach Keeper L23 for a permanent 4th daily drop.' : 'Resets at midnight.';
+    if (_sbBal >= EXTRA_DROP_SUNBEAM_COST && window._lwConfirm){
+      window._lwConfirm({
+        title:'ALL DROPS USED',
+        body:'You’ve planted all '+_maxD+' wild plants today. Spend <b>'+EXTRA_DROP_SUNBEAM_COST+' Sunbeams</b> for one more? '+_hint,
+        yes:'+1 DROP · '+EXTRA_DROP_SUNBEAM_COST+' ☀️',
+        no:'WAIT'
+      },function(){
+        if(_lwBuyExtraDrop()){
+          // Re-enter openPicker now that we have a fresh drop
+          setTimeout(function(){openPicker();},150);
+        }
+      });
+    } else {
+      _toast('All '+_maxD+' drops used. '+_hint);
+    }
     return;
   }
   var gh=_getGH();
@@ -62368,14 +62427,27 @@ window.LW_Pi={
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },
-  // Field pouch upgrade — Pi per slot
-  buyPouchUpgrade:function(cb){
-    createPayment(1,'Field Pouch Upgrade',{type:'pouch_upgrade'},function(){
-      // Deliver: increment seed pouch capacity
-      if(window.showHexMsg)showHexMsg('Seed pouch expanded!');
+  // Item Pouch +1 slot — actually delivers (was just toast).
+  // lw_pouch_cap clamps 25-40 in LW_HUT.getPouchCap(). 1 Pi per slot,
+  // 15 Pi total to max out (25 → 40).
+  buyItemPouchSlot:function(cb){
+    var cur=parseInt(localStorage.getItem('lw_pouch_cap')||'25',10);if(isNaN(cur))cur=25;
+    if(cur>=40){
+      if(window._toast)window._toast('Item Pouch is already at max (40).');
+      if(cb)cb(false);return;
+    }
+    createPayment(1,'Item Pouch +1 Slot',{type:'item_pouch_slot',from:cur},function(){
+      var cur2=parseInt(localStorage.getItem('lw_pouch_cap')||'25',10);if(isNaN(cur2))cur2=25;
+      var next=Math.min(40,cur2+1);
+      try{localStorage.setItem('lw_pouch_cap',String(next));}catch(e){}
+      if(window.LW_HUT&&LW_HUT.refresh)LW_HUT.refresh();
+      if(window.showHexMsg)showHexMsg('Item Pouch '+next+'/40 unlocked!');
+      if(window._toast)window._toast('🎒 Pouch '+next+'/40');
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },
+  // Backwards alias — old name kept in case any caller still references it
+  buyPouchUpgrade:function(cb){return window.LW_Pi.buyItemPouchSlot(cb);},
   // Hut shop — early-open a closed item window (5 Pi). Pure FOMO pull.
   // The Hut tracks the actual "is this open today" state via lw_hut_early_opens.
   earlyOpenHutItem:function(itemKey,tier,cb){
@@ -73113,7 +73185,14 @@ window._lwClaimHerbarium = function(id){
       html += '</div>';
     }
     html += '</div>';
-    html += '<div class="lwh-section-foot">Stock + windows refresh at midnight · pouch cap '+getPouchCap()+'</div>';
+    var _capNow = getPouchCap();
+    var _capFootHtml = 'Stock + windows refresh at midnight · pouch cap '+_capNow;
+    if (_capNow < 40){
+      _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyPouchSlot()" title="Pi expands your item pouch by 1 slot (max 40).">+1 SLOT · 1 π</button>';
+    } else {
+      _capFootHtml += ' (max)';
+    }
+    html += '<div class="lwh-section-foot">'+_capFootHtml+'</div>';
     body.innerHTML = html;
   }
 
@@ -73235,6 +73314,30 @@ window._lwClaimHerbarium = function(id){
     if (typeof gtag !== 'undefined') gtag('event','hut_pi_early_open_attempt',{key:slot.key,tier:slot.tier});
   }
 
+  // ─── PI ITEM POUCH +1 (1 Pi per slot, max 40) ───
+  function buyPouchSlot(){
+    var cur = getPouchCap();
+    if (cur >= 40){
+      if (window._toast) try { window._toast('Pouch is already at max (40).'); } catch(e){}
+      return;
+    }
+    if (!window.LW_Pi || !window.LW_Pi.buyItemPouchSlot){
+      if (window._toast) try { window._toast('Pi payments arrive in the full launch. Thank you for testing.'); } catch(e){}
+      return;
+    }
+    if (window._lwConfirm){
+      window._lwConfirm({
+        title: 'EXPAND POUCH',
+        body: 'Buy 1 extra pouch slot (now '+cur+'/40 → '+(cur+1)+'/40). 1 π. Permanent.',
+        yes: 'PAY 1 π',
+        no: 'NOT NOW'
+      }, function(){ window.LW_Pi.buyItemPouchSlot(); });
+    } else {
+      window.LW_Pi.buyItemPouchSlot();
+    }
+    if (typeof gtag !== 'undefined') gtag('event','hut_pi_pouch_slot_attempt',{from:cur});
+  }
+
   // ─── ALMANAC (weather summon) ───
   function renderAlmanac(){
     var body = document.getElementById('lwh-body');
@@ -73353,7 +73456,7 @@ window._lwClaimHerbarium = function(id){
 
   window.LW_HUT = {
     open: open, close: close, switchTab: switchTab,
-    buy: buy, earlyOpen: earlyOpen,
+    buy: buy, earlyOpen: earlyOpen, buyPouchSlot: buyPouchSlot,
     castWeather: castWeather, openSlots: openSlots, claimQuest: claimQuest,
     refresh: render,
     getPouchCap: getPouchCap, pouchCount: pouchCount
