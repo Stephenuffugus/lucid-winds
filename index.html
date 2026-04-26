@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.65';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.66';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38741,10 +38741,20 @@ document.addEventListener('keydown', function(e) {
     showDNASplice(2000, async function() {
       try {
         var result    = await FG_Data.crossPollinateHashes(selA.hash, selB.hash);
-        var addResult = FG_Data.addSeed({ seedHash:result.childHash, parentAHash:selA.hash, parentBHash:selB.hash, nonce:result.nonce });
-        if (!addResult.ok) {
-          _setNurMsg(addResult.reason==='NURSERY_FULL' ? 'Nursery is full.' : 'Could not add seed: '+addResult.reason);
-          return;
+        // Stephen 2026-04-26 architecture: new seeds go to the BACKPACK
+        // (player chooses when to move to nursery). Falls back to direct
+        // nursery add if BP isn't available.
+        var bpSeedObj = { hash:result.childHash, loc:'bred', clim:'greenhouse', parentAHash:selA.hash, parentBHash:selB.hash, nonce:result.nonce, origin:'bred' };
+        var bpAdded = (window.FG_Backpack && FG_Backpack.as) ? FG_Backpack.as(bpSeedObj) : false;
+        if (!bpAdded) {
+          // Fallback to nursery add if BP full or unavailable
+          var addResult = FG_Data.addSeed({ seedHash:result.childHash, parentAHash:selA.hash, parentBHash:selB.hash, nonce:result.nonce });
+          if (!addResult.ok) {
+            _setNurMsg(addResult.reason==='NURSERY_FULL' ? 'Both pouch and nursery full. Bloom or move a seed first.' : 'Could not add seed: '+addResult.reason);
+            return;
+          }
+        } else {
+          if (window._lwSilenceableToast) window._lwSilenceableToast('crossbred_to_pouch','🧬 Cross-bred seed added to your pouch — send to nursery to grow.');
         }
         // Increment breedCount on both parents
         var _bcGh = loadGreenhouse();
@@ -46133,9 +46143,18 @@ function _doCrossPollination(wildPlant,matePlant){
         if(p.hash===matePlant.hash)_mpGen=p.generation||1;
       });
       var offGen=Math.max(_wpGen,_mpGen)+1;
-      if(window.FG_Data&&FG_Data.addSeed){
-        var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offGen});
-        if(!addResult.ok){_toast('Nursery full. Bloom or abandon a seed first.');return;}
+      // Stephen 2026-04-26 architecture: cross-pollinate result lands in
+      // the BACKPACK first (player chooses when to send to nursery).
+      var _wbpSeed = { hash:offHash, loc:'wild-bred', clim:'wild', parentAHash:wildPlant.hash, parentBHash:matePlant.hash, nonce:offGen, origin:'bred' };
+      var _wbpAdded = (window.FG_Backpack && FG_Backpack.as) ? FG_Backpack.as(_wbpSeed) : false;
+      if (!_wbpAdded) {
+        // Fallback to nursery direct
+        if(window.FG_Data&&FG_Data.addSeed){
+          var addResult=FG_Data.addSeed({seedHash:offHash,parentAHash:wildPlant.hash,parentBHash:matePlant.hash,nonce:offGen});
+          if(!addResult.ok){_toast('Both pouch and nursery are full. Bloom or move a seed first.');return;}
+        }
+      } else {
+        if (window._lwSilenceableToast) window._lwSilenceableToast('crossbred_to_pouch','🧬 Wild-bred seed added to your pouch — send to nursery to grow.');
       }
       // Seed landed — NOW bump breedCount on both parents.
       var _bcDirty3=false;
@@ -49993,10 +50012,12 @@ window._hexAction=function(action){
     // Cuttings use the dedicated CLIPPING cap (not the seed cap) so a
     // full seed nursery doesn't block cutting collection. Stephen's split
     // nursery design — clippings live in their own slots.
-    var _clipMax=(window.FG_Data&&window.FG_Data.getNurClippingSlots)?window.FG_Data.getNurClippingSlots():2;
-    var _clipNow=0;
-    try{var _nurFC=window.FG_Data&&window.FG_Data.getNursery?window.FG_Data.getNursery():[];for(var _fcI=0;_fcI<_nurFC.length;_fcI++){if(window.FG_Data.isClippingOrigin&&window.FG_Data.isClippingOrigin(_nurFC[_fcI]&&_nurFC[_fcI].origin))_clipNow++;}}catch(e){}
-    if(_clipNow>=_clipMax){_toast('Clipping slots full ('+_clipNow+'/'+_clipMax+'). Cross-pollinate one to free a slot.');return;}
+    // Clippings now land in the BACKPACK. Cap-check the BP seed pouch
+    // (which holds both seeds + clippings; xc() returns the total cap).
+    var _bpCap = (window.BP && window.BP.xc) ? 25 : 25;
+    var _bpNow = 0;
+    try { if (window.FG_Backpack && FG_Backpack.getState) _bpNow = (FG_Backpack.getState().seeds||[]).length; } catch(e){}
+    if (_bpNow >= _bpCap) { _toast('Pouch is full. Send a seed to nursery first.'); return; }
     window._lwConfirm&&window._lwConfirm({
       title:'TAKE A CUTTING',
       body:'You\u2019ll gain a clone seed (Gen 2) carrying this plant\u2019s genetics. Costs <b>20 Dew</b>. The parent is unharmed.',
@@ -50020,18 +50041,21 @@ window._hexAction=function(action){
       // the clipping's seed hash so the sprout (and any breed it joins)
       // doesn't inherit them.
       var _clipHash = (window._lwStripEnvironmentalTraits ? window._lwStripEnvironmentalTraits(p.hash) : p.hash);
-      var _addResult=window.FG_Data.addSeed({
-        seedHash:_clipHash,
-        parentAHash:_clipHash,
-        parentBHash:_clipHash,
-        nonce:0,
-        mystery:false,
-        origin:'cutting'
-      });
-      if(!_addResult||!_addResult.ok){
-        // Refund Dew so the player isn't double-punished
+      // Stephen 2026-04-26 architecture: cuttings land in the BACKPACK,
+      // not the nursery. Player explicitly sends to nursery + cross-pollinates.
+      var _wcBpAdded = false;
+      try {
+        if (window.FG_Backpack && FG_Backpack.as) {
+          _wcBpAdded = FG_Backpack.as({
+            hash: _clipHash, loc: 'cutting', clim: 'wild',
+            parentAHash: _clipHash, parentBHash: _clipHash, nonce: 0,
+            origin: 'cutting'
+          });
+        }
+      } catch(e){}
+      if(!_wcBpAdded){
         if(typeof window.earnDew==='function')window.earnDew(CUTTING_DEW_COST,'wild_cutting_refund');
-        _toast('Cutting failed to land in nursery. Dew refunded.');
+        _toast('Cutting failed to land. Dew refunded.');
         return;
       }
       // Seed landed. Log + increment daily counter. Parent untouched
@@ -62685,17 +62709,9 @@ window.FG_Backpack.takeClipping = function(idx) {
     if (window._toast) window._toast('Clipping cooldown: ' + label);
     return;
   }
-  // Check nursery capacity
-  var nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
-  var nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
-  if (nurNow >= nurMax) {
-    if (window._toast) window._toast('Nursery full. Bloom a seed first.');
-    return;
-  }
-  // Create seed with parent hash (auto-bloom will reuse that hash via breeding normally)
-  // For a clipping, the bloomed plant is an exact copy — we use a slightly perturbed hash so it's not a duplicate
+  // Stephen 2026-04-26 architecture: clippings land in BACKPACK, not
+  // nursery. BP.as() does its own cap check + returns false if full.
   var childHash = plant.hash;
-  // Dispatch seed-to-nursery event like backpack does for ferals
   var seed = {
     hash: childHash,
     loc: 'clipping',
@@ -62705,7 +62721,10 @@ window.FG_Backpack.takeClipping = function(idx) {
     parentBHash: plant.hash,
     origin: 'clipping'
   };
-  window.dispatchEvent(new CustomEvent('bp-seed-to-nursery', {detail: seed}));
+  if (!BP.as(seed)) {
+    if (window._toast) window._toast('Pouch is full. Send a seed to nursery first.');
+    return;
+  }
   // Record cooldown start
   clipCDs[cdKey] = Date.now();
   try { localStorage.setItem('fg_bp_clipCDs', JSON.stringify(clipCDs)); } catch(e){}
