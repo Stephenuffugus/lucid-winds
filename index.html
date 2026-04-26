@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.25.81';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.1';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7428,8 +7428,23 @@ window._addSwitchTabHook = function(fn){
         }
         var hash=h.join('');
         var svg='';
-        try{svg=window._generatePlantSVG(hash,280);}catch(e){svg='<text x="35" y="50" fill="red" font-size="3">'+e.message+'</text>';}
-        card.innerHTML='<svg viewBox="0 0 70 95" style="width:100%;height:100%;background:rgba(13,16,12,0.95);border-radius:8px;">'+svg+'</svg>';
+        try{svg=window._generatePlantSVG(hash,280);}catch(e){svg='<div style="color:red;font-size:0.6rem;padding:1rem;">Render error: '+e.message+'</div>';}
+        // _generatePlantSVG returns a complete <svg> element. Inject directly,
+        // then size it to fit the card via CSS.
+        card.innerHTML=svg;
+        card.style.background='rgba(13,16,12,0.95)';
+        card.style.display='flex';
+        card.style.alignItems='center';
+        card.style.justifyContent='center';
+        var svgEl=card.querySelector('svg');
+        if(svgEl){
+          svgEl.removeAttribute('width');
+          svgEl.removeAttribute('height');
+          svgEl.style.width='100%';
+          svgEl.style.height='100%';
+          svgEl.style.maxWidth='280px';
+          svgEl.style.maxHeight='100%';
+        }
         document.getElementById('lbe-label').textContent=_mode.toUpperCase()+' #'+_idx;
         document.getElementById('lbe-counter').textContent=(_idx)+' / '+max;
         // Get trait name from TRAIT_BANK
