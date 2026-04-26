@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.22';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.23';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -36368,6 +36368,9 @@ document.addEventListener('keydown', function(e) {
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') { _flushPendingSaves(); }
   });
+  // pagehide — iOS Safari may skip visibilitychange on tab close / nav-away.
+  // pagehide is the only reliable last-chance save point on iOS.
+  window.addEventListener('pagehide', function(){ _flushPendingSaves(); });
 
   // ═══ PHENOTYPE REVELATION REGISTRY ══════════════════════════════════════
   // Per-hash registry that survives plants moving between greenhouse/wild/
