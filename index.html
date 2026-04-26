@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.57';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.58';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5097,12 +5097,17 @@
 /* Default BP position: sits in the keeper-bar row 2 area on the right
    so it lines up with the Sunbeams/Hut/Dew icons. Stephen 2026-04-26
    round 2: 'move them up into that bar in greenhouse and nursery to
-   help clean up the UI on those pages.' Wild + game overrides below. */
-#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 62px) !important;right:10px !important;z-index:998;width:64px;height:64px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat}
-/* Compendium / Book of Secrets — same row, just to the left of the BP.
-   !important needed to override the inline placeholder style on the div. */
-#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 62px) !important;right:80px !important;width:64px !important;height:64px !important;}
-#kb-compendium img{object-fit:contain !important;}
+   help clean up the UI on those pages.' Wild + game overrides below.
+   Round 3 (2026-04-26): bumped 64→70px + background-size:120% so the
+   BP art has the same visual mass as the other icons (which overflow
+   their containers by 20-30%). */
+#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 59px) !important;right:8px !important;z-index:998;width:70px;height:70px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:120%;}
+/* Compendium / Book of Secrets — same row, same square container size as
+   the other keeper-bar icons. !important overrides the inline placeholder
+   style on the div. Image scales to 130% so the portrait BoS art has
+   visual mass matching the other icons (which overflow their containers). */
+#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 59px) !important;right:84px !important;width:70px !important;height:70px !important;}
+#kb-compendium img{width:130% !important;height:130% !important;object-fit:contain !important;margin:-15% !important;display:block !important;}
 /* Hide BP during game-active so the game UI gets the full screen
    (kb-compendium is already in the game-active hide list). */
 body.game-active #bpi{display:none !important;}
