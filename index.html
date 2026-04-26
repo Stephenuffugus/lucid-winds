@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.93';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.95';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1323,11 +1323,13 @@
     }
     .pgm-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
     .pgm-dl-btn {
-      background: linear-gradient(135deg, rgba(200,168,75,0.12), rgba(200,168,75,0.04));
-      border: 1px solid rgba(200,168,75,0.3); color: var(--gold);
-      font-family: 'Bebas Neue', sans-serif; font-size: 0.62rem;
-      letter-spacing: 0.1em; padding: 0.35rem 1.1rem; border-radius: 4px;
-      cursor: pointer; transition: all 0.2s; min-height: 36px;
+      background: linear-gradient(135deg, rgba(200,168,75,0.18), rgba(200,168,75,0.06));
+      border: 1.5px solid rgba(200,168,75,0.45); color: var(--gold);
+      font-family: 'Bebas Neue', sans-serif; font-size: 0.82rem;
+      letter-spacing: 0.12em; padding: 0.55rem 1.5rem; border-radius: 6px;
+      cursor: pointer; transition: all 0.2s; min-height: 50px;
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,220,140,0.15);
     }
     .pgm-dl-btn:hover { background: rgba(200,168,75,0.2); border-color: var(--gold); }
     .pgm-act-btn {
@@ -33809,6 +33811,55 @@ document.addEventListener('keydown', function(e) {
         if (window._toast) window._toast('Greenhouse full! Expand slots or compost to make room.');
       }
       return false;
+    }
+    // ── FIRST-MINT GRADE CAP (Stephen 2026-04-26 ruling) ──
+    // First-mints (no breed lineage) are capped at Rare with a 50/35/15
+    // distribution: Common 50%, Uncommon 35%, Rare 15%. Higher grades
+    // (Epic, Legendary, Mythic, Cosmic) are reachable ONLY through
+    // breeding. Implementation: if the original hash would grade higher
+    // than the rolled target, re-roll the SEED-zone bytes (positions
+    // 32-63) until a candidate matches. Mendelian zone (0-31) stays
+    // intact so the player's attention still drives the visible plant
+    // (pot/stem/leaf/flower/aura). Substrate, companion, mythic byte,
+    // and mutation byte are in the SEED zone and get adjusted to fit
+    // the target grade.
+    var _isCross = !!(opts && opts.isCross);
+    if (!_isCross && window.getTerraGrade && window.hashToTraits) {
+      try {
+        var _roll = Math.random() * 100;
+        var _target = _roll < 50 ? 'Common' : _roll < 85 ? 'Uncommon' : 'Rare';
+        var _curT = window.hashToTraits(hash);
+        var _curG = window.getTerraGrade(_curT);
+        if (!_curG || _curG.name !== _target) {
+          var _baseHex = hash.toLowerCase();
+          var _attempts = 0, _maxAttempts = 80;
+          var _candidate = hash;
+          while (_attempts < _maxAttempts) {
+            // Re-roll positions 32-63 only — keep player's Mendelian-zone
+            // bytes (0-31) intact. Positions 32-63 carry mythic, mutation,
+            // substrate, companion, and entropy reserve.
+            var _newTail = '';
+            for (var _ti = 0; _ti < 32; _ti++) {
+              _newTail += ((Math.random() * 16) | 0).toString(16);
+            }
+            _candidate = _baseHex.slice(0, 32) + _newTail;
+            var _candT = window.hashToTraits(_candidate);
+            var _candG = window.getTerraGrade(_candT);
+            if (_candG && _candG.name === _target) {
+              hash = _candidate;
+              break;
+            }
+            // Fallback: at minimum, accept anything <= Rare so we never
+            // mint Epic+ on a first-mint even if target couldn't be hit.
+            if (_attempts >= _maxAttempts - 1 && _candG &&
+                (_candG.name === 'Common' || _candG.name === 'Uncommon' || _candG.name === 'Rare')) {
+              hash = _candidate;
+              break;
+            }
+            _attempts++;
+          }
+        }
+      } catch (_fmErr) { /* fail open — better to mint than block */ }
     }
     var traits = hashToTraits(hash);
     // Pity timer: Model H — reset on Uncommon+ (score >= 2), not just isRare
