@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.83';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.84';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9110,20 +9110,36 @@ document.addEventListener('keydown', function(e) {
     var mutByte  = hb(16);
     var mythByte = hb(18);
 
+    // ── MUTATION LADDER (rebalanced 2026-04-26 from 20% → 12.1% total) ──
+    // Stephen call: mutations were too common; cluster into showpiece tiers.
+    // Bands (each value listed is 1/256 = 0.39%):
+    //   ULTRA (new, 6): 0xFA-0xFF — Constellation, Origami, Stained Glass,
+    //                                Verdigris, Mycelium, Daguerreotype
+    //   LEGENDARY (3):  0xF7-0xF9 — Glitch, Glass Stem, Holographic
+    //   RARE (4):       0xF3-0xF6 — Golden, Neon, Ink Wash, Bioluminescent
+    //   COMMON-ISH (6): 0xE1-0xF2 in 3-byte bands (1.17% each) — Wireframe,
+    //                                Porcelain, Silhouette, Pixel Art, Albino, Fossil
+    //   NONE: 0x00-0xE0 (88%)
     var mutName =
-      mutByte >= 0xFC ? 'Glitch'          :
-      mutByte >= 0xF8 ? 'Glass Stem'      :
-      mutByte >= 0xF4 ? 'Wireframe'       :
-      mutByte >= 0xF0 ? 'Holographic'     :
-      mutByte >= 0xEC ? 'Neon'            :
-      mutByte >= 0xE8 ? 'Ink Wash'        :
-      mutByte >= 0xE4 ? 'Golden'          :
-      mutByte >= 0xE0 ? 'Porcelain'       :
-      mutByte >= 0xDC ? 'Bioluminescent'  :
-      mutByte >= 0xD8 ? 'Pixel Art'       :
-      mutByte >= 0xD4 ? 'Silhouette'      :
-      mutByte >= 0xD0 ? 'Albino'          :
-      mutByte >= 0xCC ? 'Fossil'          :
+      mutByte === 0xFF ? 'Constellation'  :
+      mutByte === 0xFE ? 'Origami'        :
+      mutByte === 0xFD ? 'Stained Glass'  :
+      mutByte === 0xFC ? 'Verdigris'      :
+      mutByte === 0xFB ? 'Mycelium'       :
+      mutByte === 0xFA ? 'Daguerreotype'  :
+      mutByte === 0xF9 ? 'Glitch'         :
+      mutByte === 0xF8 ? 'Glass Stem'     :
+      mutByte === 0xF7 ? 'Holographic'    :
+      mutByte === 0xF6 ? 'Golden'         :
+      mutByte === 0xF5 ? 'Neon'           :
+      mutByte === 0xF4 ? 'Ink Wash'       :
+      mutByte === 0xF3 ? 'Bioluminescent' :
+      mutByte >= 0xF0 ? 'Wireframe'       :
+      mutByte >= 0xED ? 'Porcelain'       :
+      mutByte >= 0xEA ? 'Silhouette'      :
+      mutByte >= 0xE7 ? 'Pixel Art'       :
+      mutByte >= 0xE4 ? 'Albino'          :
+      mutByte >= 0xE1 ? 'Fossil'          :
       'None';
 
     // Phase 3 mythic rarity — set-103-8-14: Beholder pushed to 0xFF (0.39%)
@@ -9736,6 +9752,8 @@ document.addEventListener('keydown', function(e) {
       if (_mn==='Wireframe'||_mn==='Albino'||_mn==='Silhouette') score += 1;
       else if (_mn==='Fossil'||_mn==='Glass Stem'||_mn==='Neon'||_mn==='Bioluminescent') score += 2;
       else if (_mn==='Golden'||_mn==='Ink Wash'||_mn==='Porcelain'||_mn==='Glitch'||_mn==='Holographic'||_mn==='Pixel Art') score += 3;
+      else if (_mn==='Origami'||_mn==='Mycelium'||_mn==='Verdigris') score += 3;
+      else if (_mn==='Constellation'||_mn==='Stained Glass'||_mn==='Daguerreotype') score += 5;
     }
 
     // ── SPIKE: MYTHIC COMPANION (0-8) ── scored by mythic byte tier
@@ -9863,7 +9881,7 @@ document.addEventListener('keydown', function(e) {
   // ═══ SYNERGY ENGINE — trait combination bonuses ═══════════════════════════
   var SYNERGY_META = [
     { id:'crystalline',  emoji:'💠', name:'Crystalline Harmony',  desc:'Crystal base + Glass Stem mutation',
-      test: function(t){ return (t.base >= 25) && (t.mutation >= 0xE0 && t.mutation < 0xF0); } },
+      test: function(t){ return (t.base >= 25) && (t.mutation === 0xF8 || t.mutationName === 'Glass Stem'); } },
     { id:'deepglow',     emoji:'🔮', name:'Deep Glow',            desc:'Biolum aura + rare flower',
       test: function(t){ return (t.aura >= 18) && t.hasFlower && (t.flower >= 60); } },
     { id:'ancientroots', emoji:'🌿', name:'Ancient Roots',        desc:'Braided stem + Mycelial Crown',
@@ -9877,7 +9895,7 @@ document.addEventListener('keydown', function(e) {
     { id:'mossweave',    emoji:'🍃', name:'Moss Weave',           desc:'5+ leaves + Leaf Memory compost',
       test: function(t){ return (t.leafCount >= 7) && t.compostLayers && t.compostLayers.leafMemory; } },
     { id:'stormborn',    emoji:'⛈', name:'Stormborn',             desc:'Glitch mutation + mythic companion',
-      test: function(t){ return (t.mutation >= 0xF0) && (t.companion >= 32 && t.companion <= 38); } },
+      test: function(t){ return (t.mutation === 0xF9 || t.mutationName === 'Glitch') && (t.companion >= 32 && t.companion <= 38); } },
     { id:'deepheritage', emoji:'📜', name:'Deep Heritage',        desc:'Dual Heritage + Tier Imprint compost',
       test: function(t){ return t.compostLayers && t.compostLayers.dualHeritage && t.compostLayers.tierImprint; } },
     { id:'cosmicbloom',  emoji:'🌌', name:'Cosmic Bloom',         desc:'Cosmic-tier score + any synergy',
@@ -12361,6 +12379,39 @@ document.addEventListener('keydown', function(e) {
     warm = Math.min(255, warm);
     return '#' + ((1<<24)+(warm<<16)+(Math.round(warm*0.97)<<8)+Math.round(warm*0.90)).toString(16).slice(1);
   }
+  // ── Ultra-rare mutation color helpers (added 2026-04-26) ──
+  // Daguerreotype: warm sepia photograph tone
+  function _toDaguerre(hex) {
+    if (!hex || hex.length < 7) return '#9A7C58';
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    var gray = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+    var rr = Math.min(255, Math.round(gray * 0.95 + 50));
+    var gg = Math.min(255, Math.round(gray * 0.85 + 30));
+    var bb = Math.min(255, Math.round(gray * 0.65 + 12));
+    return '#' + ((1<<24)+(rr<<16)+(gg<<8)+bb).toString(16).slice(1);
+  }
+  // Mycelium: muted desaturated greys with a faint cool cast,
+  // so the bright fungal threading reads on top
+  function _toMycelium(hex) {
+    if (!hex || hex.length < 7) return '#7A7868';
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    var gray = Math.round(r * 0.34 + g * 0.45 + b * 0.21);
+    var rr = Math.round(gray * 0.55 + 64);
+    var gg = Math.round(gray * 0.55 + 66);
+    var bb = Math.round(gray * 0.55 + 60);
+    return '#' + ((1<<24)+(rr<<16)+(gg<<8)+bb).toString(16).slice(1);
+  }
+  // Verdigris: shift everything toward copper-oxide green-blue patina
+  function _toVerdigris(hex) {
+    if (!hex || hex.length < 7) return '#5FA59A';
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    var gray = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+    var rr = Math.round(gray * 0.30 + 60);
+    var gg = Math.round(gray * 0.55 + 110);
+    var bb = Math.round(gray * 0.55 + 105);
+    return '#' + ((1<<24)+(Math.min(255,rr)<<16)+(Math.min(255,gg)<<8)+Math.min(255,bb)).toString(16).slice(1);
+  }
+
   function _mutColor(hex, mutName) {
     if (mutName === 'Albino') return _toAlbino(hex);
     if (mutName === 'Fossil') return _toStone(hex);
@@ -12368,6 +12419,9 @@ document.addEventListener('keydown', function(e) {
     if (mutName === 'Ink Wash') return _toInk(hex);
     if (mutName === 'Neon') return '#1a1a2a';
     if (mutName === 'Silhouette') return '#0d100c';
+    if (mutName === 'Daguerreotype') return _toDaguerre(hex);
+    if (mutName === 'Mycelium') return _toMycelium(hex);
+    if (mutName === 'Verdigris') return _toVerdigris(hex);
     return hex;
   }
 
@@ -12417,7 +12471,10 @@ document.addEventListener('keydown', function(e) {
   function buildDefs(t, uid) {
     var d = '<defs>';
     var _mn = t.mutationName || 'None';
-    var _colorMut = (_mn === 'Albino' || _mn === 'Fossil' || _mn === 'Porcelain' || _mn === 'Ink Wash' || _mn === 'Neon' || _mn === 'Silhouette');
+    // _colorMut governs whether base trait colors get pre-mutated by _mutColor
+    // before going into gradients. New ultra-rares Daguerreotype, Mycelium,
+    // and Verdigris also remap the palette pre-render so they read correctly.
+    var _colorMut = (_mn === 'Albino' || _mn === 'Fossil' || _mn === 'Porcelain' || _mn === 'Ink Wash' || _mn === 'Neon' || _mn === 'Silhouette' || _mn === 'Daguerreotype' || _mn === 'Mycelium' || _mn === 'Verdigris');
     // Pot gradient
     var pc = PALETTE[t.potColor] || PALETTE.terra;
     if (_colorMut) pc = _mutColor(pc, _mn);
@@ -12544,6 +12601,13 @@ document.addEventListener('keydown', function(e) {
     else if (_mn === 'Ink Wash') _mutSlug = 'ink';
     else if (_mn === 'Wireframe') _mutSlug = 'wire';
     else if (_mn === 'Glass Stem') _mutSlug = 'glass';
+    // ── Ultra-rare (added 2026-04-26) ──
+    else if (_mn === 'Constellation') _mutSlug = 'constel';
+    else if (_mn === 'Origami') _mutSlug = 'origami';
+    else if (_mn === 'Stained Glass') _mutSlug = 'stained';
+    else if (_mn === 'Verdigris') _mutSlug = 'verdig';
+    else if (_mn === 'Mycelium') _mutSlug = 'mycel';
+    else if (_mn === 'Daguerreotype') _mutSlug = 'daguerre';
     if (_mutSlug) {
       var _fid = 'mut' + _mutSlug + '_' + uid;
       if (_mutSlug === 'albino') {
@@ -12664,6 +12728,51 @@ document.addEventListener('keydown', function(e) {
         d += '<filter id="'+_fid+'" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">';
         d += '<feColorMatrix type="matrix" values="0.85 0.1 0.15 0 0.08  0.1 0.85 0.2 0 0.10  0.2 0.25 0.95 0 0.12  0 0 0 0.92 0"/>';
         d += '<feGaussianBlur stdDeviation="0.25"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'constel') {
+        // Constellation — crush the plant toward dark navy so star
+        // speckles in the post-overlay read as galaxy points.
+        d += '<filter id="'+_fid+'" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0.10 0 0 0 0.04  0 0.10 0 0 0.05  0 0 0.18 0 0.10  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'origami') {
+        // Origami — discrete posterize to 4 steps so curves snap into
+        // hard paper-fold facets. Crease lines drawn in renderMutationFX.
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feComponentTransfer>';
+        d += '<feFuncR type="discrete" tableValues="0.18 0.45 0.72 1"/>';
+        d += '<feFuncG type="discrete" tableValues="0.18 0.45 0.72 1"/>';
+        d += '<feFuncB type="discrete" tableValues="0.18 0.45 0.72 1"/>';
+        d += '</feComponentTransfer>';
+        d += '</filter>';
+      } else if (_mutSlug === 'stained') {
+        // Stained Glass — saturate hard, then a thin dark inner outline
+        // so panel boundaries look like leaded glass.
+        d += '<filter id="'+_fid+'" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="saturate" values="1.85" result="sat"/>';
+        d += '<feMorphology in="SourceAlpha" operator="dilate" radius="0.55" result="dil"/>';
+        d += '<feComposite in="dil" in2="SourceAlpha" operator="out" result="ring"/>';
+        d += '<feFlood flood-color="#1a0f0a" flood-opacity="0.9" result="lead"/>';
+        d += '<feComposite in="lead" in2="ring" operator="in" result="leaded"/>';
+        d += '<feMerge><feMergeNode in="sat"/><feMergeNode in="leaded"/></feMerge>';
+        d += '</filter>';
+      } else if (_mutSlug === 'verdig') {
+        // Verdigris — copper-oxide patina; cool green-blue cast on every surface.
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0.30 0.20 0.10 0 0.10  0.20 0.55 0.25 0 0.18  0.20 0.40 0.50 0 0.16  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'mycel') {
+        // Mycelium — mute the plant toward a dim leaf-litter tone so
+        // bright fungal threads in the overlay glow on top.
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="saturate" values="0.35" result="g"/>';
+        d += '<feColorMatrix in="g" type="matrix" values="0.78 0 0 0 0.04  0.78 0 0 0 0.05  0.70 0 0 0 0.04  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'daguerre') {
+        // Daguerreotype — warm sepia photograph plus a soft inner vignette.
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0.50 0.78 0.18 0 0.04  0.42 0.70 0.16 0 0.04  0.30 0.55 0.12 0 0.02  0 0 0 1 0"/>';
+        d += '<feGaussianBlur stdDeviation="0.18"/>';
         d += '</filter>';
       }
     }
@@ -13229,6 +13338,13 @@ document.addEventListener('keydown', function(e) {
       else if (isInk) _mwSlug = 'ink';
       else if (isWire) _mwSlug = 'wire';
       else if (isGlass) _mwSlug = 'glass';
+      // ── Ultra-rare (added 2026-04-26) ──
+      else if (t.mutationName === 'Constellation') _mwSlug = 'constel';
+      else if (t.mutationName === 'Origami') _mwSlug = 'origami';
+      else if (t.mutationName === 'Stained Glass') _mwSlug = 'stained';
+      else if (t.mutationName === 'Verdigris') _mwSlug = 'verdig';
+      else if (t.mutationName === 'Mycelium') _mwSlug = 'mycel';
+      else if (t.mutationName === 'Daguerreotype') _mwSlug = 'daguerre';
       if (_mwSlug) {
         _mutWrap = 'mut' + _mwSlug + '_' + uid;
         svg += '<g filter="url(#'+_mutWrap+')">';
@@ -32623,6 +32739,127 @@ document.addEventListener('keydown', function(e) {
         }
         s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1" rx="3"/>';
         break;
+      // ── Ultra-rare mutations (added 2026-04-26) ──
+      case 'Constellation':
+        // Filter darkened the plant toward navy. Post: scatter star points
+        // in a hash-deterministic grid; gentle twinkle on a subset.
+        var _csSeed = parseInt((uid||'0').slice(0,6),16) || 0;
+        var _csN = 22;
+        for (var csi = 0; csi < _csN; csi++) {
+          var _csv = (_csSeed * (csi + 13) * 2654435761) >>> 0;
+          var _csx = ((_csv % 60) + 5).toFixed(1);
+          var _csy = (((_csv >>> 8) % 75) + 10).toFixed(1);
+          var _csr = (0.25 + ((_csv >>> 16) % 4) * 0.10).toFixed(2);
+          var _cso = (0.45 + ((_csv >>> 20) % 5) * 0.08).toFixed(2);
+          s += '<circle cx="'+_csx+'" cy="'+_csy+'" r="'+_csr+'" fill="#FFFCEA" opacity="'+_cso+'">';
+          if ((csi % 4) === 0) {
+            s += '<animate attributeName="opacity" values="'+_cso+';0.95;'+_cso+'" dur="'+(2.2 + (csi % 5) * 0.4).toFixed(1)+'s" begin="'+((csi * 0.13) % 3).toFixed(2)+'s" repeatCount="indefinite"/>';
+          }
+          s += '</circle>';
+        }
+        // Faint connecting line (one constellation segment for flavor)
+        s += '<line x1="22" y1="28" x2="48" y2="42" stroke="#FFFCEA" stroke-width="0.18" opacity="0.22" stroke-dasharray="0.6 0.8"/>';
+        s += '<line x1="48" y1="42" x2="38" y2="64" stroke="#FFFCEA" stroke-width="0.18" opacity="0.20" stroke-dasharray="0.6 0.8"/>';
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(255,252,234,0.15)" stroke-width="0.3" rx="4"/>';
+        break;
+      case 'Origami':
+        // Filter posterized the plant into 4 flat tones. Post: visible
+        // crease lines along leaf and stem regions to imply paper folds.
+        var _orSeed = parseInt((uid||'0').slice(0,6),16) || 0;
+        for (var ori = 0; ori < 9; ori++) {
+          var _orv = (_orSeed * (ori + 7) * 1597463007) >>> 0;
+          var _orx1 = (8 + (_orv % 50));
+          var _ory1 = (16 + ((_orv >>> 6) % 60));
+          var _orlen = (5 + ((_orv >>> 12) % 9));
+          var _orang = (((_orv >>> 18) % 180) - 90) * Math.PI / 180;
+          var _orx2 = (_orx1 + Math.cos(_orang) * _orlen).toFixed(1);
+          var _ory2 = (_ory1 + Math.sin(_orang) * _orlen).toFixed(1);
+          s += '<line x1="'+_orx1.toFixed(1)+'" y1="'+_ory1.toFixed(1)+'" x2="'+_orx2+'" y2="'+_ory2+'" stroke="#1a1410" stroke-width="0.28" opacity="0.42"/>';
+        }
+        // Bright crease highlights (ridge tops catching light)
+        s += '<line x1="34" y1="76" x2="35" y2="'+(78-t.stemHeight*0.85).toFixed(1)+'" stroke="#FFF6E0" stroke-width="0.22" opacity="0.55"/>';
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(26,20,16,0.18)" stroke-width="0.3" rx="2"/>';
+        break;
+      case 'Stained Glass':
+        // Filter saturates and adds dark inner ring. Post: thick lead lattice
+        // criss-crossing the canopy; cool colored panel washes.
+        s += '<defs><linearGradient id="sgls_'+uid+'" x1="0" y1="0" x2="1" y2="1">';
+        s += '<stop offset="0%" stop-color="#C03050" stop-opacity="0.10"/>';
+        s += '<stop offset="35%" stop-color="#FFD93D" stop-opacity="0.08"/>';
+        s += '<stop offset="70%" stop-color="#3060C0" stop-opacity="0.10"/>';
+        s += '<stop offset="100%" stop-color="#A030C0" stop-opacity="0.10"/>';
+        s += '</linearGradient></defs>';
+        s += '<rect x="0" y="10" width="70" height="70" fill="url(#sgls_'+uid+')" style="mix-blend-mode:overlay" opacity="0.7"/>';
+        // Lead lattice — a few diagonal channels
+        var _slxs = [12,28,46,60];
+        for (var sli = 0; sli < _slxs.length; sli++) {
+          s += '<line x1="'+_slxs[sli]+'" y1="14" x2="'+(_slxs[sli]+8)+'" y2="74" stroke="#1a0f0a" stroke-width="0.5" opacity="0.55"/>';
+        }
+        s += '<line x1="6" y1="32" x2="64" y2="38" stroke="#1a0f0a" stroke-width="0.5" opacity="0.50"/>';
+        s += '<line x1="6" y1="58" x2="64" y2="52" stroke="#1a0f0a" stroke-width="0.5" opacity="0.50"/>';
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(26,15,10,0.22)" stroke-width="0.45" rx="2"/>';
+        break;
+      case 'Verdigris':
+        // Filter shifts everything copper-oxide green-blue. Post: drip stains
+        // running off leaf edges + scattered patina speckle.
+        var _vdSeed = parseInt((uid||'0').slice(0,6),16) || 0;
+        for (var vdi = 0; vdi < 14; vdi++) {
+          var _vdv = (_vdSeed * (vdi + 11) * 2246822519) >>> 0;
+          var _vdx = ((_vdv % 60) + 5).toFixed(1);
+          var _vdy = (((_vdv >>> 6) % 65) + 15).toFixed(1);
+          var _vdr = (0.4 + ((_vdv >>> 12) % 4) * 0.18).toFixed(2);
+          s += '<circle cx="'+_vdx+'" cy="'+_vdy+'" r="'+_vdr+'" fill="#3F8B7A" opacity="0.42"/>';
+        }
+        // Drip runs from upper canopy
+        s += '<path d="M22,30 Q22,42 23,55 Q22,62 22,70" stroke="#5FA59A" stroke-width="0.45" fill="none" opacity="0.55"/>';
+        s += '<path d="M44,28 Q45,40 44,52 Q45,60 44,68" stroke="#5FA59A" stroke-width="0.4" fill="none" opacity="0.5"/>';
+        s += '<path d="M52,36 Q53,48 51,60" stroke="#5FA59A" stroke-width="0.35" fill="none" opacity="0.45"/>';
+        // Bright copper highlight on a couple of leaf tips
+        s += '<circle cx="28" cy="36" r="0.5" fill="#D4A847" opacity="0.55"/>';
+        s += '<circle cx="46" cy="42" r="0.45" fill="#D4A847" opacity="0.5"/>';
+        break;
+      case 'Mycelium':
+        // Filter mutes the plant. Post: white-cream fungal threads tracing
+        // along stem and leaf boundaries; a few small fruiting bodies.
+        s += '<path d="M35,76 Q33,68 35,60 Q37,52 34,44 Q36,36 33,28" stroke="#F0EBD8" stroke-width="0.32" fill="none" opacity="0.62"/>';
+        s += '<path d="M35,76 Q37,70 35,62 Q33,54 36,46 Q34,38 36,30" stroke="#E8DCC8" stroke-width="0.28" fill="none" opacity="0.55"/>';
+        // Branching threads off the main runner
+        s += '<path d="M34,56 Q28,54 22,52" stroke="#F0EBD8" stroke-width="0.22" fill="none" opacity="0.5"/>';
+        s += '<path d="M36,48 Q42,46 48,44" stroke="#F0EBD8" stroke-width="0.22" fill="none" opacity="0.5"/>';
+        s += '<path d="M34,40 Q26,38 20,40" stroke="#E8DCC8" stroke-width="0.20" fill="none" opacity="0.45"/>';
+        s += '<path d="M36,32 Q44,30 50,32" stroke="#E8DCC8" stroke-width="0.20" fill="none" opacity="0.45"/>';
+        // Small fruiting bodies (caps) along the threads
+        s += '<ellipse cx="22" cy="52" rx="0.85" ry="0.45" fill="#F0EBD8" opacity="0.7"/>';
+        s += '<ellipse cx="48" cy="44" rx="0.8" ry="0.4" fill="#F0EBD8" opacity="0.65"/>';
+        s += '<ellipse cx="20" cy="40" rx="0.7" ry="0.38" fill="#E8DCC8" opacity="0.6"/>';
+        s += '<ellipse cx="50" cy="32" rx="0.7" ry="0.36" fill="#E8DCC8" opacity="0.58"/>';
+        // Faint pulse on one runner so it feels alive
+        s += '<circle cx="35" cy="50" r="0.5" fill="#F0EBD8" opacity="0">';
+        s += '<animate attributeName="opacity" values="0;0.7;0" dur="3.6s" repeatCount="indefinite"/>';
+        s += '<animate attributeName="cy" values="68;28;28" dur="3.6s" repeatCount="indefinite"/>';
+        s += '</circle>';
+        break;
+      case 'Daguerreotype':
+        // Filter sepias the plant + slight blur. Post: vignette ring + tarnish
+        // spots at the corners + thin photographic frame.
+        s += '<defs><radialGradient id="dgvg_'+uid+'" cx="50%" cy="50%" r="60%">';
+        s += '<stop offset="55%" stop-color="rgba(0,0,0,0)"/>';
+        s += '<stop offset="100%" stop-color="rgba(20,12,4,0.55)"/>';
+        s += '</radialGradient></defs>';
+        s += '<rect x="0" y="0" width="70" height="95" fill="url(#dgvg_'+uid+')"/>';
+        // Tarnish blooms (silver-mirror oxidation) at random hash spots
+        var _dgSeed = parseInt((uid||'0').slice(0,6),16) || 0;
+        for (var dgi = 0; dgi < 5; dgi++) {
+          var _dgv = (_dgSeed * (dgi + 19) * 374761393) >>> 0;
+          var _dgx = ((_dgv % 56) + 7).toFixed(1);
+          var _dgy = (((_dgv >>> 6) % 75) + 8).toFixed(1);
+          var _dgr = (1.5 + ((_dgv >>> 12) % 4) * 0.6).toFixed(2);
+          s += '<circle cx="'+_dgx+'" cy="'+_dgy+'" r="'+_dgr+'" fill="#3a2e1f" opacity="0.18"/>';
+        }
+        // Photographic frame
+        s += '<rect x="1.5" y="1.5" width="67" height="92" fill="none" stroke="rgba(40,28,16,0.55)" stroke-width="0.6" rx="1"/>';
+        s += '<rect x="3.2" y="3.2" width="63.6" height="88.6" fill="none" stroke="rgba(220,200,160,0.18)" stroke-width="0.3" rx="0.6"/>';
+        break;
     }
     return s;
   }
@@ -33738,6 +33975,9 @@ document.addEventListener('keydown', function(e) {
     if (cat==='MUTATION') {
       var _mn=t.mutationName;
       if (_mn==='None') return null;
+      // Ultra-rare (added 2026-04-26 mutation rebalance, ~0.39% each)
+      if (_mn==='Constellation'||_mn==='Stained Glass'||_mn==='Daguerreotype') return {tier:'legendary',color:_TIER_COLORS.legendary};
+      if (_mn==='Origami'||_mn==='Mycelium'||_mn==='Verdigris') return {tier:'epic',color:_TIER_COLORS.epic};
       if (_mn==='Golden'||_mn==='Ink Wash'||_mn==='Porcelain'||_mn==='Glitch'||_mn==='Holographic'||_mn==='Pixel Art') return {tier:'epic',color:_TIER_COLORS.epic};
       if (_mn==='Fossil'||_mn==='Glass Stem'||_mn==='Neon'||_mn==='Bioluminescent') return {tier:'rare',color:_TIER_COLORS.rare};
       return {tier:'uncommon',color:_TIER_COLORS.uncommon};
@@ -68937,7 +69177,28 @@ var TRIGGERS=[
     effect:'Translucent and impossibly fragile. It survived anyway.',reward:{pollen:14}},
   {id:'mut_glitch',name:'The Glitch Bloom',riddle:'Beauty in the broken pixel.',category:'trait',
     check:function(c){return c.plant&&c.plant.mutationName==='Glitch';},
-    effect:'The hash hiccupped. The plant agreed.',reward:{pollen:20,ea:1}}
+    effect:'The hash hiccupped. The plant agreed.',reward:{pollen:20,ea:1}},
+
+  // ── ULTRA-RARE MUTATION DISCOVERIES (added 2026-04-26 with mutation rebalance) ──
+  // Each ~0.39% appearance rate. Reward scales with rarity tier.
+  {id:'mut_constellation',name:'Star Chart',riddle:'A small sky kept inside a single leaf.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Constellation';},
+    effect:'The dark inside became a map of points; the points found names.',reward:{pollen:24,ea:2}},
+  {id:'mut_origami',name:'Folded Form',riddle:'A flat sheet remembered how to be a flower.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Origami';},
+    effect:'Curves snapped to creases. The plant grew along the folds.',reward:{pollen:22,ea:1}},
+  {id:'mut_stained_glass',name:'Cathedral Pane',riddle:'Color held in lead, light passing through.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Stained Glass';},
+    effect:'Sunlight enters as one beam and leaves as a sermon of color.',reward:{pollen:26,ea:2}},
+  {id:'mut_verdigris',name:'Patina',riddle:'Copper outlasts iron by changing color first.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Verdigris';},
+    effect:'Time wrote itself on the surface as a green-blue letter.',reward:{pollen:22,ea:1}},
+  {id:'mut_mycelium',name:'Underweave',riddle:'The garden was talking; you finally saw the threads.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Mycelium';},
+    effect:'The fungal weave broke the surface, and the plant did not mind.',reward:{pollen:24,ea:2}},
+  {id:'mut_daguerreotype',name:'Silver Plate',riddle:'A photograph that grew its own subject.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Daguerreotype';},
+    effect:'It looks like a memory of a plant, and yet it is the plant.',reward:{pollen:28,ea:2}}
 ];
 
 // ── COMPANION BOND DISCOVERIES — one per of 49 creatures (60 design slots) ──
