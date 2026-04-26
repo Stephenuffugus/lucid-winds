@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.38';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.39';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -33158,6 +33158,9 @@ document.addEventListener('keydown', function(e) {
         origin: (opts && opts.origin) || 'mint'
       });
     }
+    // GROWN tracker — record any trait-only triggers this newly-bloomed
+    // plant satisfies. See _recordGrownForHash for granularity rules.
+    try{if(window._lwRecordGrown)window._lwRecordGrown(hash);}catch(e){}
     return true;
   }
 
@@ -68175,6 +68178,56 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
 // ── COMPENDIUM DATA ──
 function _getDiscovered(){try{return JSON.parse(localStorage.getItem(TRIGGER_KEY)||'[]');}catch(e){return[];}}
 function _saveDiscovered(arr){localStorage.setItem(TRIGGER_KEY,JSON.stringify(arr));}
+
+// GROWN tracker — parallel to DISCOVERED. Records which triggers the
+// player has actually grown a plant matching (vs. merely encountered in
+// the wild). Per Stephen 2026-04-26: "we want people growing the stuff
+// to get the traits." Ships at trigger granularity (mirrors discovery).
+var TRIGGER_GROWN_KEY='lw_triggers_grown';
+var TRIGGER_GROWN_SCAN_KEY='lw_triggers_grown_scan_done';
+function _getGrown(){try{return JSON.parse(localStorage.getItem(TRIGGER_GROWN_KEY)||'[]');}catch(e){return[];}}
+function _saveGrown(arr){localStorage.setItem(TRIGGER_GROWN_KEY,JSON.stringify(arr));}
+
+// Evaluate every trigger against a synthetic plant-only ctx and record any
+// that fire. Triggers needing weather / nearbyPlants / moonPhase will not
+// fire here — those still come through DISCOVERED on wild scan. Trait-only
+// triggers (Prism, Moonstone, Phoenix Ash etc.) are the "grown" surface.
+function _recordGrownForHash(hash){
+  if(!hash||!window.hashToTraits)return;
+  var traits;try{traits=window.hashToTraits(hash);}catch(e){return;}
+  if(!traits)return;
+  var grown=_getGrown();
+  var added=false;
+  var ctx={
+    plant:traits, plantObj:{hash:hash,traits:traits},
+    nearbyPlants:[], weather:{}, hour:new Date().getHours(),
+    month:new Date().getMonth(),
+    realSeason:new Date().getMonth()<3?3:new Date().getMonth()<6?0:new Date().getMonth()<9?1:2,
+    moonPhase:typeof _getMoonPhase==='function'?_getMoonPhase():'new',
+    playerStats:{}, ea:0, plantAge:0
+  };
+  for(var i=0;i<TRIGGERS.length;i++){
+    if(grown.indexOf(TRIGGERS[i].id)>=0)continue;
+    try{if(TRIGGERS[i].check(ctx)){grown.push(TRIGGERS[i].id);added=true;}}catch(e){}
+  }
+  if(added)_saveGrown(grown);
+}
+window._lwRecordGrown=_recordGrownForHash;
+
+// One-time retroactive scan of the existing greenhouse so long-time
+// players don't feel "I have to start over." Idempotent — guarded by
+// TRIGGER_GROWN_SCAN_KEY. Runs on first load post-update.
+function _retroScanGrown(){
+  if(localStorage.getItem(TRIGGER_GROWN_SCAN_KEY)==='1')return;
+  try{
+    var raw=window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse');
+    var gh=JSON.parse(raw||'[]');
+    for(var i=0;i<gh.length;i++){if(gh[i]&&gh[i].hash)_recordGrownForHash(gh[i].hash);}
+    localStorage.setItem(TRIGGER_GROWN_SCAN_KEY,'1');
+  }catch(e){localStorage.setItem(TRIGGER_GROWN_SCAN_KEY,'1');}
+}
+// Defer until after main IIFE has had a chance to expose hashToTraits.
+setTimeout(function(){try{_retroScanGrown();}catch(e){}},2500);
 
 function getCompendium(){
   var disc=_getDiscovered();
