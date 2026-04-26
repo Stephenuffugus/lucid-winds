@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.44';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.45';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -21352,88 +21352,180 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+_csTx.toFixed(1)+'" cy="'+_csTy.toFixed(1)+'" r="0.25" fill="rgba(40,20,5,0.55)"/>';
           break;
 
-        case 61: // Ember Leaf — flame-tongue with molten ember tip + sparks rising.
-          var _elLen = ls * 2.4;
-          var _elAng = -0.25 - leafFrac * 0.35;
-          var _elTx = ox + Math.cos(_elAng) * _elLen * 0.85 * side;
-          var _elTy = ly + Math.sin(_elAng) * _elLen * 0.85;
-          tip = _elTx; tipY = _elTy;
-          var _elW = ls * 0.5;
+        case 61: // Ember Leaf — REAL flame silhouette: 3 asymmetric flicker tongues
+          // Stephen 2026-04-26 ('the flame ones looked stupid as hell'): the
+          // old version was a generic teardrop with orange tint. Real flames
+          // have multiple flicker tongues with V-cuts between them, a hot
+          // glowing core, asymmetric lean, and rising sparks.
+          var _elH = ls * 2.6;          // flame total height (forward)
+          var _elAng = -0.30 - leafFrac * 0.30;
           var _elPa = _elAng + Math.PI * 0.5;
-          // Mid waypoints for undulating flame edge
-          var _elM1x = ox + Math.cos(_elAng)*_elLen*0.35*side + Math.cos(_elPa)*_elW*1.3*side;
-          var _elM1y = ly + Math.sin(_elAng)*_elLen*0.35 + Math.sin(_elPa)*_elW*1.3 - _elLen*0.05;
-          var _elM2x = ox + Math.cos(_elAng)*_elLen*0.65*side + Math.cos(_elPa)*_elW*0.9*side;
-          var _elM2y = ly + Math.sin(_elAng)*_elLen*0.65 + Math.sin(_elPa)*_elW*0.9 - _elLen*0.10;
-          bodyD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_elPa)*_elW*1.2*side).toFixed(1)+','+(ly+Math.sin(_elPa)*_elW*1.2-_elLen*0.2).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+' Q'+(ox-Math.cos(_elPa)*_elW*0.8*side).toFixed(1)+','+(ly-Math.sin(_elPa)*_elW*0.8-_elLen*0.15).toFixed(1)+' '+ox+','+ly+' Z';
-          // Outer flame body (warm green-orange base) — 0.85 → 0.94 for presence
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.94).toFixed(2)+'"/>';
-          // Inner glow body (smaller, hotter — molten core)
-          var _elI1x = ox + Math.cos(_elPa)*_elW*0.7*side;
-          var _elI1y = ly + Math.sin(_elPa)*_elW*0.7 - _elLen*0.18;
-          var _elI2x = ox - Math.cos(_elPa)*_elW*0.5*side;
-          var _elI2y = ly - Math.sin(_elPa)*_elW*0.5 - _elLen*0.12;
-          s += '<path d="M'+ox+','+ly+' Q'+_elI1x.toFixed(1)+','+_elI1y.toFixed(1)+' '+(_elTx*0.92+ox*0.08).toFixed(1)+','+(_elTy*0.92+ly*0.08).toFixed(1)+' Q'+_elI2x.toFixed(1)+','+_elI2y.toFixed(1)+' '+ox+','+ly+' Z" fill="#d4842a" opacity="'+(op*0.72).toFixed(2)+'"/>';
-          // Molten core (cream-yellow ember) — 0.45 → 0.65, was reading washed-out
-          s += '<ellipse cx="'+((_elTx+ox)*0.5).toFixed(1)+'" cy="'+((_elTy+ly)*0.5).toFixed(1)+'" rx="'+(_elW*0.32).toFixed(1)+'" ry="'+(_elLen*0.20).toFixed(1)+'" fill="#fff8b0" opacity="'+(op*0.65).toFixed(2)+'" transform="rotate('+(_elAng*180/Math.PI).toFixed(0)+' '+((_elTx+ox)*0.5).toFixed(1)+' '+((_elTy+ly)*0.5).toFixed(1)+')"/>';
-          // Midrib (warm-shifted dark)
-          s += '<path d="M'+ox+','+ly+' Q'+(ox+Math.cos(_elAng)*_elLen*0.4*side).toFixed(1)+','+(ly+Math.sin(_elAng)*_elLen*0.4).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.42" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
-          // Cream highlight pair on midrib
-          s += '<path d="M'+ox+','+ly+' Q'+(ox+Math.cos(_elAng)*_elLen*0.4*side).toFixed(1)+','+(ly+Math.sin(_elAng)*_elLen*0.4).toFixed(1)+' '+_elTx.toFixed(1)+','+_elTy.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
-          // Tip ember glow (sharp pickup)
-          s += '<circle cx="'+_elTx.toFixed(1)+'" cy="'+_elTy.toFixed(1)+'" r="'+(ls*0.18).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.85).toFixed(2)+'"/>';
-          s += '<circle cx="'+_elTx.toFixed(1)+'" cy="'+_elTy.toFixed(1)+'" r="'+(ls*0.10).toFixed(2)+'" fill="#fff" opacity="'+(op*0.75).toFixed(2)+'"/>';
-          // Two tiny sparks rising near tip
-          var _elSpAng = _elAng - 0.4;
-          var _elSp1x = _elTx + Math.cos(_elSpAng)*ls*0.4*side;
-          var _elSp1y = _elTy + Math.sin(_elSpAng)*ls*0.4 - ls*0.15;
-          s += '<circle cx="'+_elSp1x.toFixed(1)+'" cy="'+_elSp1y.toFixed(1)+'" r="0.20" fill="#fff8b0" opacity="'+(op*0.7).toFixed(2)+'"/>';
+          // (forward, lateral) → world coords helper
+          var _flx = function(fwd, lat){return (ox + Math.cos(_elAng)*fwd*side + Math.cos(_elPa)*lat*side).toFixed(1);};
+          var _fly = function(fwd, lat){return (ly + Math.sin(_elAng)*fwd + Math.sin(_elPa)*lat).toFixed(1);};
+          // Apex (center flicker tongue tip) is the leaf "tip"
+          var _elTx = parseFloat(_flx(_elH * 1.05, 0));
+          var _elTy = parseFloat(_fly(_elH * 1.05, 0));
+          tip = _elTx; tipY = _elTy;
+          // Flame silhouette — 3 flicker tongues w/ sharp V-cuts. Asymmetric
+          // (right side wider) for organic feel; left tongue shorter than right.
+          bodyD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)
+            // up the right side
+            + ' C'+_flx(_elH*0.05, ls*0.55)+','+_fly(_elH*0.05, ls*0.55)
+            +   ' '+_flx(_elH*0.30, ls*1.10)+','+_fly(_elH*0.30, ls*1.10)
+            +   ' '+_flx(_elH*0.55, ls*0.85)+','+_fly(_elH*0.55, ls*0.85)
+            + ' Q'+_flx(_elH*0.72, ls*0.50)+','+_fly(_elH*0.72, ls*0.50)
+            +   ' '+_flx(_elH*0.85, ls*0.30)+','+_fly(_elH*0.85, ls*0.30)
+            // right flicker tongue tip
+            + ' L'+_flx(_elH*0.92, ls*0.18)+','+_fly(_elH*0.92, ls*0.18)
+            // sharp V-cut down toward apex base
+            + ' L'+_flx(_elH*0.78, ls*0.05)+','+_fly(_elH*0.78, ls*0.05)
+            // up to center apex
+            + ' L'+_elTx.toFixed(1)+','+_elTy.toFixed(1)
+            // down the left side of apex
+            + ' L'+_flx(_elH*0.78, -ls*0.08)+','+_fly(_elH*0.78, -ls*0.08)
+            // left flicker tongue tip (shorter than right)
+            + ' L'+_flx(_elH*0.85, -ls*0.30)+','+_fly(_elH*0.85, -ls*0.30)
+            + ' Q'+_flx(_elH*0.65, -ls*0.55)+','+_fly(_elH*0.65, -ls*0.55)
+            +   ' '+_flx(_elH*0.50, -ls*0.75)+','+_fly(_elH*0.50, -ls*0.75)
+            + ' C'+_flx(_elH*0.30, -ls*0.95)+','+_fly(_elH*0.30, -ls*0.95)
+            +   ' '+_flx(_elH*0.10, -ls*0.55)+','+_fly(_elH*0.10, -ls*0.55)
+            +   ' '+ox.toFixed(1)+','+ly.toFixed(1)
+            + ' Z';
+          // 5-stop temperature gradient: green-base → amber → orange → cream-tip
+          var _flGId = 'flameG_' + uid + '_' + i;
+          s += '<defs><linearGradient id="'+_flGId+'" x1="'+ox.toFixed(1)+'" y1="'+ly.toFixed(1)+'" x2="'+_elTx.toFixed(1)+'" y2="'+_elTy.toFixed(1)+'" gradientUnits="userSpaceOnUse">'
+            +  '<stop offset="0%" stop-color="'+baseColor+'" stop-opacity="0.95"/>'
+            +  '<stop offset="35%" stop-color="#a8602a" stop-opacity="0.95"/>'
+            +  '<stop offset="65%" stop-color="#d4842a" stop-opacity="0.95"/>'
+            +  '<stop offset="85%" stop-color="#f5b840" stop-opacity="0.92"/>'
+            +  '<stop offset="100%" stop-color="#fff8b0" stop-opacity="0.85"/>'
+            +  '</linearGradient></defs>';
+          // AO drop-shadow underbody (anchors the flame)
+          s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.30)" transform="translate(0.4,0.4)"/>';
+          // Body fill — gradient from cool green base to white-hot tip
+          s += '<path d="'+bodyD+'" fill="url(#'+_flGId+')" opacity="'+(op*0.96).toFixed(2)+'"/>';
+          // Hot inner core (smaller flame inside the body)
+          var _coreH = _elH * 0.75;
+          var _coreD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)
+            + ' C'+_flx(_coreH*0.20, ls*0.55)+','+_fly(_coreH*0.20, ls*0.55)
+            +   ' '+_flx(_coreH*0.50, ls*0.45)+','+_fly(_coreH*0.50, ls*0.45)
+            +   ' '+_flx(_coreH*0.80, ls*0.20)+','+_fly(_coreH*0.80, ls*0.20)
+            + ' Q'+_flx(_coreH*0.95, 0)+','+_fly(_coreH*0.95, 0)
+            +   ' '+_flx(_coreH*0.80, -ls*0.18)+','+_fly(_coreH*0.80, -ls*0.18)
+            + ' C'+_flx(_coreH*0.45, -ls*0.40)+','+_fly(_coreH*0.45, -ls*0.40)
+            +   ' '+_flx(_coreH*0.18, -ls*0.50)+','+_fly(_coreH*0.18, -ls*0.50)
+            +   ' '+ox.toFixed(1)+','+ly.toFixed(1)
+            + ' Z';
+          s += '<path d="'+_coreD+'" fill="#f5b840" opacity="'+(op*0.62).toFixed(2)+'"/>';
+          // White-hot core (innermost, just above midpoint)
+          var _whCx = parseFloat(_flx(_elH * 0.55, 0));
+          var _whCy = parseFloat(_fly(_elH * 0.55, 0));
+          s += '<ellipse cx="'+_whCx.toFixed(1)+'" cy="'+_whCy.toFixed(1)+'" rx="'+(ls*0.30).toFixed(2)+'" ry="'+(_elH*0.22).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.55).toFixed(2)+'" transform="rotate('+(_elAng*180/Math.PI).toFixed(0)+' '+_whCx.toFixed(1)+' '+_whCy.toFixed(1)+')"/>';
+          // Outline (warm-shifted dark) — gives flame definition against dark bg
+          s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.35"/>';
+          // Tip ember pickup glow (3-stack)
+          s += '<circle cx="'+_elTx.toFixed(1)+'" cy="'+_elTy.toFixed(1)+'" r="'+(ls*0.30).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          s += '<circle cx="'+_elTx.toFixed(1)+'" cy="'+_elTy.toFixed(1)+'" r="'+(ls*0.16).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          s += '<circle cx="'+_elTx.toFixed(1)+'" cy="'+_elTy.toFixed(1)+'" r="'+(ls*0.08).toFixed(2)+'" fill="#fff" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // 3 rising ember sparks above tip (scattered)
+          var _spOff = [[0.35, 0.65, 0.18], [-0.15, 1.05, 0.14], [0.55, 0.95, 0.12]];
+          for (var _sp = 0; _sp < _spOff.length; _sp++) {
+            var _spX = parseFloat(_flx(_elH*(1.05+_spOff[_sp][1]), ls*_spOff[_sp][0]));
+            var _spY = parseFloat(_fly(_elH*(1.05+_spOff[_sp][1]), ls*_spOff[_sp][0]));
+            s += '<circle cx="'+_spX.toFixed(1)+'" cy="'+_spY.toFixed(1)+'" r="'+_spOff[_sp][2]+'" fill="#fff8b0" opacity="'+(op*0.65).toFixed(2)+'"/>';
+            s += '<circle cx="'+_spX.toFixed(1)+'" cy="'+_spY.toFixed(1)+'" r="'+(_spOff[_sp][2]*0.4).toFixed(2)+'" fill="#fff" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          }
           break;
 
-        case 62: // Phoenix-Feather Frond — bipinnate frond, pinnae fade green-base to ember-tip with sparks.
-          var _ffLen = ls * 2.8;
-          var _ffAng = -0.2 - leafFrac * 0.3;
-          var _ffTx = ox + Math.cos(_ffAng) * _ffLen * 0.9 * side;
-          var _ffTy = ly + Math.sin(_ffAng) * _ffLen * 0.9;
-          tip = _ffTx; tipY = _ffTy;
-          var _ffW = ls * 0.35;
+        case 62: // Phoenix-Feather — single dramatic plume w/ peacock-style eye-spot ocellus + ember tip
+          // Stephen 2026-04-26 ('flame ones looked stupid as hell'): old version
+          // was a generic fern with orange dots — looked like nothing in nature.
+          // Real phoenix/peacock feather: a SINGLE dramatic plume with concentric
+          // eye-spot iridescence in the upper third, soft barbs feathering off
+          // a curved rachis, ember-burning tip. The eye-spot is the signature.
+          var _ffLen = ls * 3.0;       // tall, dramatic
+          var _ffAng = -0.20 - leafFrac * 0.30;
           var _ffPa = _ffAng + Math.PI * 0.5;
-          bodyD = 'M'+ox+','+ly+' C'+(ox+Math.cos(_ffPa)*_ffW*side).toFixed(1)+','+(ly+Math.sin(_ffPa)*_ffW-_ffLen*0.15).toFixed(1)+' '+(_ffTx+Math.cos(_ffPa)*_ffW*0.3*side).toFixed(1)+','+(_ffTy+Math.sin(_ffPa)*_ffW*0.3).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+' C'+(_ffTx-Math.cos(_ffPa)*_ffW*0.2*side).toFixed(1)+','+(_ffTy-Math.sin(_ffPa)*_ffW*0.2).toFixed(1)+' '+(ox-Math.cos(_ffPa)*_ffW*0.6*side).toFixed(1)+','+(ly-Math.sin(_ffPa)*_ffW*0.6-_ffLen*0.1).toFixed(1)+' '+ox+','+ly+' Z';
-          // Frond underbody — solid base so silhouette reads. Pinnae layer on top.
-          // Stephen 2026-04-26: leaves were 'far too transparent.' 0.55 → 0.92.
-          s += '<path d="'+bodyD+'" fill="'+baseColor+'" opacity="'+(op*0.92).toFixed(2)+'"/>';
-          // Form shadow on lower-left half so pinnae-carrying frond has volume
-          s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.18)"/>';
-          // Rachis (warm-shifted dark with cream highlight pair)
-          s += '<path d="M'+ox+','+ly+' Q'+((ox+_ffTx)/2).toFixed(1)+','+((ly+_ffTy)/2).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.45" stroke-linecap="round"/>';
-          s += '<path d="M'+ox+','+ly+' Q'+((ox+_ffTx)/2).toFixed(1)+','+((ly+_ffTy)/2).toFixed(1)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
-          // Pinnae — 7 pairs, each is a small filled lanceolate with color shifting from green base to ember tip
-          for (var _fb = 0; _fb < 7; _fb++) {
-            var _fbt = 0.10 + _fb * 0.12; // 0.10..0.82 along rachis
-            var _fbx = ox + (_ffTx - ox) * _fbt;
-            var _fby = ly + (_ffTy - ly) * _fbt;
-            var _fbl = _ffW * (1.1 - _fbt * 0.6); // pinna length
-            // Color shift base→tip: green→amber→ember
-            var _fbCol = _fbt < 0.4 ? baseColor : (_fbt < 0.7 ? '#d4842a' : '#fff8b0');
-            // Right-side pinna (filled lanceolate via Q-curves)
-            var _fb1x = _fbx + Math.cos(_ffPa)*_fbl*side;
-            var _fb1y = _fby + Math.sin(_ffPa)*_fbl;
-            var _fb1cx = _fbx + Math.cos(_ffPa)*_fbl*0.5*side + Math.cos(_ffAng)*_fbl*0.2*side;
-            var _fb1cy = _fby + Math.sin(_ffPa)*_fbl*0.5 + Math.sin(_ffAng)*_fbl*0.2;
-            s += '<path d="M'+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Q'+_fb1cx.toFixed(1)+','+(_fb1cy-_fbl*0.15).toFixed(1)+' '+_fb1x.toFixed(1)+','+_fb1y.toFixed(1)+' Q'+_fb1cx.toFixed(1)+','+(_fb1cy+_fbl*0.05).toFixed(1)+' '+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Z" fill="'+_fbCol+'" opacity="'+(op*0.75).toFixed(2)+'"/>';
-            // Left-side pinna (mirrored)
-            var _fb2x = _fbx - Math.cos(_ffPa)*_fbl*0.85*side;
-            var _fb2y = _fby - Math.sin(_ffPa)*_fbl*0.85;
-            var _fb2cx = _fbx - Math.cos(_ffPa)*_fbl*0.42*side + Math.cos(_ffAng)*_fbl*0.15*side;
-            var _fb2cy = _fby - Math.sin(_ffPa)*_fbl*0.42 + Math.sin(_ffAng)*_fbl*0.15;
-            s += '<path d="M'+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Q'+_fb2cx.toFixed(1)+','+(_fb2cy-_fbl*0.12).toFixed(1)+' '+_fb2x.toFixed(1)+','+_fb2y.toFixed(1)+' Q'+_fb2cx.toFixed(1)+','+(_fb2cy+_fbl*0.05).toFixed(1)+' '+_fbx.toFixed(1)+','+_fby.toFixed(1)+' Z" fill="'+_fbCol+'" opacity="'+(op*0.70).toFixed(2)+'"/>';
-            // Ember spark on hot pinnae only
-            if (_fbt > 0.6) {
-              s += '<circle cx="'+_fb1x.toFixed(1)+'" cy="'+_fb1y.toFixed(1)+'" r="0.18" fill="#fff" opacity="'+(op*0.65).toFixed(2)+'"/>';
-            }
+          var _ffTx = ox + Math.cos(_ffAng) * _ffLen * 0.95 * side;
+          var _ffTy = ly + Math.sin(_ffAng) * _ffLen * 0.95;
+          tip = _ffTx; tipY = _ffTy;
+          var _ffW = ls * 0.55;       // half-width at widest point
+          // Helper: (forward, lateral) → world coords along feather axis
+          var _fpx = function(fwd, lat){return (ox + Math.cos(_ffAng)*fwd*side + Math.cos(_ffPa)*lat*side).toFixed(1);};
+          var _fpy = function(fwd, lat){return (ly + Math.sin(_ffAng)*fwd + Math.sin(_ffPa)*lat).toFixed(1);};
+          // Plume silhouette — long lanceolate, widest at 0.4t
+          bodyD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)
+            // up the right side
+            + ' C'+_fpx(_ffLen*0.10, ls*0.22)+','+_fpy(_ffLen*0.10, ls*0.22)
+            +   ' '+_fpx(_ffLen*0.30, ls*0.55)+','+_fpy(_ffLen*0.30, ls*0.55)
+            +   ' '+_fpx(_ffLen*0.45, ls*0.55)+','+_fpy(_ffLen*0.45, ls*0.55)
+            + ' C'+_fpx(_ffLen*0.65, ls*0.50)+','+_fpy(_ffLen*0.65, ls*0.50)
+            +   ' '+_fpx(_ffLen*0.85, ls*0.30)+','+_fpy(_ffLen*0.85, ls*0.30)
+            +   ' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)
+            // back down the left side
+            + ' C'+_fpx(_ffLen*0.85, -ls*0.30)+','+_fpy(_ffLen*0.85, -ls*0.30)
+            +   ' '+_fpx(_ffLen*0.65, -ls*0.50)+','+_fpy(_ffLen*0.65, -ls*0.50)
+            +   ' '+_fpx(_ffLen*0.45, -ls*0.55)+','+_fpy(_ffLen*0.45, -ls*0.55)
+            + ' C'+_fpx(_ffLen*0.30, -ls*0.55)+','+_fpy(_ffLen*0.30, -ls*0.55)
+            +   ' '+_fpx(_ffLen*0.10, -ls*0.22)+','+_fpy(_ffLen*0.10, -ls*0.22)
+            +   ' '+ox.toFixed(1)+','+ly.toFixed(1)
+            + ' Z';
+          // AO underbody (anchors the plume)
+          s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.28)" transform="translate(0.4,0.4)"/>';
+          // Body — green base fading to amber at midpoint via gradient
+          var _ffGId = 'plumeG_' + uid + '_' + i;
+          s += '<defs><linearGradient id="'+_ffGId+'" x1="'+ox.toFixed(1)+'" y1="'+ly.toFixed(1)+'" x2="'+_ffTx.toFixed(1)+'" y2="'+_ffTy.toFixed(1)+'" gradientUnits="userSpaceOnUse">'
+            +  '<stop offset="0%"  stop-color="'+baseColor+'" stop-opacity="0.96"/>'
+            +  '<stop offset="40%" stop-color="'+baseColor+'" stop-opacity="0.92"/>'
+            +  '<stop offset="68%" stop-color="#7a4a1c" stop-opacity="0.94"/>'
+            +  '<stop offset="88%" stop-color="#d4842a" stop-opacity="0.95"/>'
+            +  '<stop offset="100%" stop-color="#f5b840" stop-opacity="0.92"/>'
+            +  '</linearGradient></defs>';
+          s += '<path d="'+bodyD+'" fill="url(#'+_ffGId+')" opacity="'+(op*0.95).toFixed(2)+'"/>';
+          // Soft barbs feathering off the rachis (14 hairlines per side, gentle taper)
+          for (var _bb = 0; _bb < 14; _bb++) {
+            var _bbt = 0.08 + _bb * 0.063;
+            // skip barbs in the eye-spot zone so the ocellus reads clean
+            if (_bbt > 0.62 && _bbt < 0.85) continue;
+            var _bbW = ls * (0.50 - Math.abs(_bbt - 0.40) * 0.55); // widest near 0.4
+            if (_bbW < 0.12) continue;
+            var _bbcx = parseFloat(_fpx(_ffLen * _bbt, 0));
+            var _bbcy = parseFloat(_fpy(_ffLen * _bbt, 0));
+            var _bbRx = parseFloat(_fpx(_ffLen * _bbt + ls*0.15, _bbW));
+            var _bbRy = parseFloat(_fpy(_ffLen * _bbt + ls*0.15, _bbW));
+            var _bbLx = parseFloat(_fpx(_ffLen * _bbt + ls*0.15, -_bbW));
+            var _bbLy = parseFloat(_fpy(_ffLen * _bbt + ls*0.15, -_bbW));
+            s += '<line x1="'+_bbcx.toFixed(1)+'" y1="'+_bbcy.toFixed(1)+'" x2="'+_bbRx.toFixed(1)+'" y2="'+_bbRy.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.18" stroke-linecap="round"/>';
+            s += '<line x1="'+_bbcx.toFixed(1)+'" y1="'+_bbcy.toFixed(1)+'" x2="'+_bbLx.toFixed(1)+'" y2="'+_bbLy.toFixed(1)+'" stroke="rgba(40,20,5,0.40)" stroke-width="0.16" stroke-linecap="round"/>';
           }
-          // Tip ember glow
-          s += '<circle cx="'+_ffTx.toFixed(1)+'" cy="'+_ffTy.toFixed(1)+'" r="'+(ls*0.20).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.75).toFixed(2)+'"/>';
+          // EYE-SPOT OCELLUS — phoenix signature. Concentric rings at 0.74t.
+          var _eyCx = parseFloat(_fpx(_ffLen * 0.74, 0));
+          var _eyCy = parseFloat(_fpy(_ffLen * 0.74, 0));
+          var _eyR = ls * 0.55;
+          // Outer iris ring (gold halo)
+          s += '<circle cx="'+_eyCx.toFixed(1)+'" cy="'+_eyCy.toFixed(1)+'" r="'+_eyR.toFixed(2)+'" fill="#c8a84b" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Middle ring (ember)
+          s += '<circle cx="'+_eyCx.toFixed(1)+'" cy="'+_eyCy.toFixed(1)+'" r="'+(_eyR*0.72).toFixed(2)+'" fill="#d4842a" opacity="'+(op*0.95).toFixed(2)+'"/>';
+          // Inner ring (deep red ember)
+          s += '<circle cx="'+_eyCx.toFixed(1)+'" cy="'+_eyCy.toFixed(1)+'" r="'+(_eyR*0.50).toFixed(2)+'" fill="#7a2818" opacity="'+(op*0.95).toFixed(2)+'"/>';
+          // Pupil (warm-shifted black core)
+          s += '<circle cx="'+_eyCx.toFixed(1)+'" cy="'+_eyCy.toFixed(1)+'" r="'+(_eyR*0.30).toFixed(2)+'" fill="rgba(20,8,2,0.95)"/>';
+          // Cream catchlight on pupil — sells the iridescence
+          s += '<ellipse cx="'+(_eyCx-_eyR*0.10).toFixed(1)+'" cy="'+(_eyCy-_eyR*0.12).toFixed(1)+'" rx="'+(_eyR*0.16).toFixed(2)+'" ry="'+(_eyR*0.10).toFixed(2)+'" fill="#fff8e0" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Outer iris glow ring (above body so it pops)
+          s += '<circle cx="'+_eyCx.toFixed(1)+'" cy="'+_eyCy.toFixed(1)+'" r="'+(_eyR*1.05).toFixed(2)+'" fill="none" stroke="#f5b840" stroke-width="0.20" opacity="'+(op*0.50).toFixed(2)+'"/>';
+          // Rachis (warm-shifted dark + cream pair)
+          s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_fpx(_ffLen*0.50,0)+','+_fpy(_ffLen*0.50,0)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.70)" stroke-width="0.45" stroke-linecap="round"/>';
+          s += '<path d="M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_fpx(_ffLen*0.50,0)+','+_fpy(_ffLen*0.50,0)+' '+_ffTx.toFixed(1)+','+_ffTy.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.30,-0.20)"/>';
+          // Calamus (cream quill) at base — phoenix signature
+          s += '<ellipse cx="'+_fpx(ls*0.15, 0)+'" cy="'+_fpy(ls*0.15, 0)+'" rx="'+(ls*0.18).toFixed(2)+'" ry="'+(ls*0.10).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.65).toFixed(2)+'" transform="rotate('+(_ffAng*180/Math.PI).toFixed(0)+' '+_fpx(ls*0.15, 0)+' '+_fpy(ls*0.15, 0)+')"/>';
+          // Tip ember 3-stack (burning apex)
+          s += '<circle cx="'+_ffTx.toFixed(1)+'" cy="'+_ffTy.toFixed(1)+'" r="'+(ls*0.32).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.55).toFixed(2)+'"/>';
+          s += '<circle cx="'+_ffTx.toFixed(1)+'" cy="'+_ffTy.toFixed(1)+'" r="'+(ls*0.18).toFixed(2)+'" fill="#fff8b0" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          s += '<circle cx="'+_ffTx.toFixed(1)+'" cy="'+_ffTy.toFixed(1)+'" r="'+(ls*0.09).toFixed(2)+'" fill="#fff" opacity="'+(op*0.85).toFixed(2)+'"/>';
+          // Outline (defines the plume against dark backgrounds)
+          s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.30"/>';
           break;
 
         case 63: // Lunar Disc — orbicular peltate disc with concentric silver bands + crater divots.
