@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.76';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.77';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9026,6 +9026,47 @@ document.addEventListener('keydown', function(e) {
     var zeroAt = [0,1, 30,31, 36,37,38,39, 40,41, 42,43];
     for (var i = 0; i < zeroAt.length; i++) c[zeroAt[i]] = '0';
     return c.join('');
+  };
+
+  // ── Rehydrate the zeroed slots in a clipping hash from a 64-char entropy
+  // source (any other hash). Used at bloom-time and breed-time so a
+  // clipping's offspring rolls a real pot/aura/substrate/companion instead
+  // of inheriting the zeros that mark a clipping's identity.
+  // For standalone bloom: pass a freshly-rolled hex string as entropy.
+  // For breed: pass the partner's hash so the cross treats the clipping
+  // as if it had matching environmental bytes (Mendelian then resolves).
+  window._lwRehydrateClippingHash = function(clipHash, entropyHex) {
+    if (!clipHash || clipHash.length < 44) return clipHash;
+    if (!entropyHex || entropyHex.length < 44) return clipHash;
+    var c = clipHash.split('');
+    var e = entropyHex.toLowerCase();
+    var fillAt = [0,1, 30,31, 36,37,38,39, 40,41, 42,43];
+    for (var i = 0; i < fillAt.length; i++) {
+      c[fillAt[i]] = e[fillAt[i]] || '0';
+    }
+    return c.join('');
+  };
+
+  // Fresh 64-char hex string for standalone-bloom rehydration. Browser
+  // crypto preferred; Math.random fallback is fine here — the hash only
+  // needs to feed pot/substrate/aura/companion lookups, not stand up to
+  // adversarial use.
+  window._lwFreshHex64 = function() {
+    try {
+      if (window.crypto && window.crypto.getRandomValues) {
+        var arr = new Uint8Array(32);
+        window.crypto.getRandomValues(arr);
+        var out = '';
+        for (var i = 0; i < arr.length; i++) {
+          var s = arr[i].toString(16);
+          out += s.length === 1 ? ('0' + s) : s;
+        }
+        return out;
+      }
+    } catch(e){}
+    var r = '';
+    for (var j = 0; j < 64; j++) r += Math.floor(Math.random()*16).toString(16);
+    return r;
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -38537,20 +38578,24 @@ document.addEventListener('keydown', function(e) {
     var _canFert = _invFert > 0 && _seedFert < _fertMax && !bloomReady;
 
     var actionBtns;
-    if (_isClipping) {
-      // Clippings cannot bloom on their own. Their only purpose is to
-      // be crossed with another plant in the Nursery — that crossing
-      // consumes the clipping. Hides WATER / BLOOM / ACCELERATE so
-      // players can't waste resources or try to exploit the source
-      // plant. Stephen test: 'cant download, save, anything, not even
-      // see the hex cuz we don't want people to fuck with the system.'
-      actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)" style="background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.5);color:var(--sage);">\u2702\ufe0f USE TO BREED</button>';
-    } else if (bloomReady) {
+    // Clippings now water/accelerate/bloom like normal seeds (Stephen
+    // 2026-04-26 redesign). Anti-spam is collection-side: 2/day cap,
+    // 20 Dew per cutting, lifetime per-plant lock. Bloom rehydrates
+    // the clipping zeroed bytes from fresh entropy so the resulting
+    // plant has a real pot, substrate, possible aura + companion.
+    // USE TO BREED is appended below as an additional path that
+    // consumes the clipping for cross-pollination.
+    if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
     } else {
       var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '\ud83d\udca7 WATER') + '</button>';
       var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);" title="Spend 21 Dew to advance one day">\u26a1 ACCELERATE (21\ud83d\udca7)</button>';
       actionBtns = waterBtn + accelBtn;
+    }
+    // Clippings get USE TO BREED as a bonus path on top of the normal
+    // water/accel/bloom flow above. The breed flow consumes the clipping.
+    if (_isClipping && !bloomReady) {
+      actionBtns += '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)" style="background:rgba(122,179,86,0.10);border-color:rgba(122,179,86,0.35);color:var(--sage);font-size:0.55rem;" title="Cross this clipping with a greenhouse plant. Consumes the clipping.">\u2702\ufe0f USE TO BREED</button>';
     }
     // BOOST (renamed from FERT) — compost → rarity boost, independent of time/skip
     actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.55rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom">\ud83c\udf3f BOOST ' + _seedFert + '/' + _fertMax + '</button>';
@@ -39253,6 +39298,22 @@ document.addEventListener('keydown', function(e) {
 
   async function _executeBloom(nur, seedIndex, seed) {
     // 1. DNA Splice
+    // Clipping seeds carry zeroed bytes for pot/aura/substrate/companion
+    // (their identity = parent genetics only, no environment). Rehydrate
+    // those slots from fresh entropy at bloom time so the resulting plant
+    // looks complete — pot, substrate, possibly aura, possibly companion.
+    // Stephen 2026-04-26: 'when theyre bred, they should still roll
+    // chance for companions, and auras, and theyll need a pot and
+    // companion.' Same rule applies to standalone bloom.
+    if (seed && (seed.origin === 'cutting' || seed.origin === 'clipping')
+        && window._lwRehydrateClippingHash && window._lwFreshHex64) {
+      var _clipFresh = window._lwFreshHex64();
+      seed.seedHash = window._lwRehydrateClippingHash(seed.seedHash, _clipFresh);
+      // Mark on the seed so the persisted record reflects the rehydrated
+      // hash. Otherwise reload would re-rehydrate to a different value.
+      seed.parentAHash = seed.seedHash;
+      seed.parentBHash = seed.seedHash;
+    }
     var parentA = seed.parentAHash || seed.seedHash || '';
     var parentB = seed.parentBHash || seed.seedHash || '';
     var spliced = seed.seedHash || generateSplicedHash(parentA, parentB);
@@ -39551,14 +39612,10 @@ document.addEventListener('keydown', function(e) {
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
     if (seedIndex < 0) { _setNurMsg('Seed not found. Please refresh.'); return; }
     var seed = nur[seedIndex];
-    // Anti-exploit: clippings can NEVER bloom alone. They must be used
-    // in a cross-pollination — that consumes the clipping and produces
-    // a new chimera lineage. Returning here with a clear message stops
-    // any stale UI or scripted call.
-    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
-      _setNurMsg('A cutting can\u2019t bloom alone. Tap CROSS-POLLINATE and pair it with another plant.');
-      return;
-    }
+    // Stephen 2026-04-26 redesign: clippings bloom like normal seeds.
+    // _executeBloom rehydrates the clipping zeroed bytes from fresh
+    // entropy so the bloomed plant has a real pot/substrate and a
+    // chance at aura+companion. Anti-spam now lives at collection.
     if (!seed.waterLog || seed.waterLog.length < 3) {
       _setNurMsg('Seed needs ' + (3 - (seed.waterLog ? seed.waterLog.length : 0)) + ' more watering(s).');
       return;
@@ -39581,14 +39638,8 @@ document.addEventListener('keydown', function(e) {
 
     var seed = nur[seedIndex];
 
-    // Clippings can't be watered into bloom — same anti-exploit gate
-    // as handleBloomBtn. Players bred this from a wild plant; the only
-    // valid path is cross-pollination.
-    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
-      _setNurMsg('A cutting only blooms through a cross. Tap CROSS-POLLINATE.');
-      return;
-    }
-
+    // Stephen 2026-04-26 redesign: clippings water like normal seeds.
+    // Bloom path rehydrates zeroed environment bytes from fresh entropy.
     if (seed.status !== 'growing') {
       _setNurMsg('Seed is no longer active.');
       return;
@@ -39677,13 +39728,7 @@ document.addEventListener('keydown', function(e) {
     if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
     var seed = nur[seedIndex];
 
-    // Same anti-exploit gate as handleWaterSeed: clippings/cuttings
-    // cannot be fertilized into a bloom alone — they must cross-pollinate.
-    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
-      _setNurMsg('A cutting only blooms through a cross. Tap CROSS-POLLINATE.');
-      return;
-    }
-
+    // Stephen 2026-04-26 redesign: clippings can be fertilized too.
     if (!seed.waterLog) seed.waterLog = [];
     if (seed.waterLog.length >= 3) {
       _setNurMsg('Seed is already bloom-ready. Tap BLOOM.');
@@ -67346,6 +67391,14 @@ window.bsExecuteBreed=function(){
   // the nursery on success.
   var _clipSidToConsume = (_plantACtx==='nursery-clipping' && window._lwClippingParentSid)
     ? window._lwClippingParentSid : null;
+
+  // Clipping breed: rehydrate the clipping's zeroed bytes from the
+  // partner's hash so the cross properly rolls/inherits pot, aura,
+  // substrate, companion (instead of mendelian-mixing in zeros).
+  // Mutate _plantA.hash before the async cross fires.
+  if (_clipSidToConsume && window._lwRehydrateClippingHash) {
+    _plantA.hash = window._lwRehydrateClippingHash(_plantA.hash, mate.hash);
+  }
 
   // Use Wild IIFE _doCrossPollination only for own wild plants
   // wild-other (non-owned) uses greenhouse path since the plant isn't in user's collection
