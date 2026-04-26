@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.63';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.64';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3081,7 +3081,21 @@
     .nur-streak-sep{opacity:0.35;}
     .nur-mercy{color:var(--sage);}
     .nur-milestone-next{color:var(--gold);margin-left:auto;}
-    .nur-grid{display:flex;flex-direction:column;gap:0.7rem;}
+    .nur-grid{display:flex;flex-direction:column;gap:0.5rem;}
+    /* Section headers split nursery into SEEDS vs CLIPPINGS — Stephen's
+       split-cap design so neither category squeezes the other. Distinct
+       accent colors so the player reads the two zones at a glance. */
+    .nur-section-hdr{display:flex;align-items:center;gap:0.55rem;padding:0.5rem 0.7rem 0.4rem;border-radius:8px;background:linear-gradient(180deg,rgba(122,179,86,0.10),rgba(13,16,12,0.45));border:1px solid rgba(122,179,86,0.22);border-left:3px solid var(--sage);margin-top:0.3rem;}
+    .nur-section-hdr-clip{background:linear-gradient(180deg,rgba(200,168,75,0.10),rgba(13,16,12,0.45));border:1px solid rgba(200,168,75,0.22);border-left:3px solid var(--gold);}
+    .nur-section-hdr .nur-sec-icon{font-size:0.9rem;line-height:1;}
+    .nur-section-hdr .nur-sec-title{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.14em;color:var(--cream);flex:0 0 auto;}
+    .nur-section-hdr .nur-sec-count{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--sage);margin-left:auto;}
+    .nur-section-hdr-clip .nur-sec-count{color:var(--gold);}
+    .nur-section-hdr .nur-sec-hint{font-family:'DM Mono',monospace;font-size:0.4rem;letter-spacing:0.04em;color:var(--muted);font-style:italic;display:none;}
+    @media (min-width:380px){.nur-section-hdr .nur-sec-hint{display:inline;margin-left:0.4rem;}}
+    .nur-section-row{display:flex;flex-direction:column;gap:0.55rem;margin-bottom:0.2rem;}
+    .nur-section-row-clip .nur-slot{border-left:2px solid rgba(200,168,75,0.28);}
+    .nur-slot.nur-slot-clip{}
     .nur-slot{background:linear-gradient(180deg,rgba(26,36,22,0.7) 0%,rgba(18,24,16,0.85) 100%);border:1.5px solid rgba(74,124,53,0.3);border-radius:14px;padding:0.35rem;overflow:hidden;transition:border-color 0.4s ease,box-shadow 0.4s ease;position:relative;box-shadow:0 4px 16px rgba(0,0,0,0.3);}
     .nur-slot::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,rgba(122,179,86,0.25),transparent);border-radius:14px 14px 0 0;}
     .nur-slot.ready{border-color:rgba(200,168,75,0.5);}
@@ -9955,6 +9969,12 @@ document.addEventListener('keydown', function(e) {
   var NUR_SLOTS_KEY = 'sws_nursery_slots';
   var NUR_SLOTS_BASE = 3;
   var NUR_SLOTS_MAX = 6;
+  // Clipping cap is independent of the seed cap so clippings don't squeeze
+  // out seeds (or vice versa). Stephen 2026-04-26: 'players feeling
+  // screwed or cornered' — separate caps prevent the cross-pollution.
+  var NUR_CLIPPING_KEY = 'lw_nur_clipping_slots';
+  var NUR_CLIPPING_BASE = 2;
+  var NUR_CLIPPING_MAX = 5;
   function getNurSlots() {
     var base = NUR_SLOTS_BASE;
     try {
@@ -9978,12 +9998,35 @@ document.addEventListener('keydown', function(e) {
     localStorage.setItem(NUR_SLOTS_KEY, String(clamped));
     return clamped;
   }
+  // Clipping cap helpers — same shape as seed cap but separate storage.
+  function getNurClippingSlots() {
+    var base = NUR_CLIPPING_BASE;
+    try {
+      var stored = parseInt(localStorage.getItem(NUR_CLIPPING_KEY), 10);
+      if (stored >= NUR_CLIPPING_BASE && stored <= NUR_CLIPPING_MAX) base = stored;
+    } catch(e) {}
+    return base;
+  }
+  function setNurClippingSlots(n) {
+    var clamped = Math.max(NUR_CLIPPING_BASE, Math.min(NUR_CLIPPING_MAX, n));
+    localStorage.setItem(NUR_CLIPPING_KEY, String(clamped));
+    return clamped;
+  }
+  function _isClippingOrigin(o) { return o === 'clipping' || o === 'cutting'; }
 
   function addSeed(opts){
     var nursery=_loadNursery();
-    // getNurSlots already folds in the Breeder L1 +1 slot bonus.
-    var maxSlots = getNurSlots();
-    if(nursery.length>=maxSlots) return {ok:false,reason:'NURSERY_FULL'};
+    // Split-cap check: clippings use their own cap, seeds use theirs.
+    // Stephen 2026-04-26: separate caps so clippings don't squeeze seeds.
+    var isClip = _isClippingOrigin(opts && opts.origin);
+    var maxSlots = isClip ? getNurClippingSlots() : getNurSlots();
+    var sameKindCount = 0;
+    for (var _ckI = 0; _ckI < nursery.length; _ckI++) {
+      if (_isClippingOrigin(nursery[_ckI] && nursery[_ckI].origin) === isClip) sameKindCount++;
+    }
+    if (sameKindCount >= maxSlots) {
+      return {ok:false, reason:'NURSERY_FULL', kind: isClip ? 'clipping' : 'seed'};
+    }
     var today=_today();
     var seed={
       id:'nur_'+Date.now()+'_'+Math.floor(Math.random()*1000),
@@ -10293,6 +10336,9 @@ document.addEventListener('keydown', function(e) {
     useMercySeed: useMercySeed,
     getNurSlots: getNurSlots,
     setNurSlots: setNurSlots,
+    getNurClippingSlots: getNurClippingSlots,
+    setNurClippingSlots: setNurClippingSlots,
+    isClippingOrigin: _isClippingOrigin,
     getBreedStatus: getBreedStatus,
     useBreedCharge: useBreedCharge,
     formatBreedStatus: formatBreedStatus,
@@ -37953,22 +37999,59 @@ document.addEventListener('keydown', function(e) {
       nmEl.textContent = nextM ? (nextM - streak.currentStreak) + 'd to milestone' : '★ All milestones reached';
     }
 
-    var maxNurSlots = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
+    var maxSeedSlots = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
+    var maxClipSlots = FG_Data.getNurClippingSlots ? FG_Data.getNurClippingSlots() : 2;
     var nurGrid = document.getElementById('nur-grid');
     if (nurGrid) {
+      // Split nursery into seeds vs clippings — Stephen 2026-04-26 design:
+      // separate visual sections so players see "Seeds 2/3 · Clippings 1/2"
+      // and never feel one squeezed out the other. Each section keeps its
+      // own slot indices so click handlers stay simple.
+      var seeds = [], clips = [];
+      for (var _ni2 = 0; _ni2 < nursery.length; _ni2++) {
+        var _ns2 = nursery[_ni2];
+        if (FG_Data.isClippingOrigin && FG_Data.isClippingOrigin(_ns2 && _ns2.origin)) clips.push(_ns2);
+        else seeds.push(_ns2);
+      }
       nurGrid.innerHTML = '';
-      for (var i = 0; i < maxNurSlots; i++) {
-        var seed = nursery[i] || null;
+      // ── SEEDS section ──
+      var seedsHdr = document.createElement('div');
+      seedsHdr.className = 'nur-section-hdr';
+      seedsHdr.innerHTML = '<span class="nur-sec-icon">🌱</span><span class="nur-sec-title">SEEDS</span><span class="nur-sec-count">' + seeds.length + ' / ' + maxSeedSlots + '</span>';
+      nurGrid.appendChild(seedsHdr);
+      var seedsRow = document.createElement('div');
+      seedsRow.className = 'nur-section-row';
+      for (var i = 0; i < maxSeedSlots; i++) {
+        var seed = seeds[i] || null;
         var slotDiv = document.createElement('div');
         slotDiv.id = 'nur-slot-' + i;
         slotDiv.className = 'nur-slot' + (seed && FG_Data.isBloomReady(seed) ? ' ready' : '');
         slotDiv.innerHTML = _buildNurSlotHTML(seed, i);
-        nurGrid.appendChild(slotDiv);
+        seedsRow.appendChild(slotDiv);
       }
+      nurGrid.appendChild(seedsRow);
+      // ── CLIPPINGS section ──
+      var clipsHdr = document.createElement('div');
+      clipsHdr.className = 'nur-section-hdr nur-section-hdr-clip';
+      clipsHdr.innerHTML = '<span class="nur-sec-icon">✂️</span><span class="nur-sec-title">CLIPPINGS</span><span class="nur-sec-count">' + clips.length + ' / ' + maxClipSlots + '</span><span class="nur-sec-hint">cross-pollinate to bloom</span>';
+      nurGrid.appendChild(clipsHdr);
+      var clipsRow = document.createElement('div');
+      clipsRow.className = 'nur-section-row nur-section-row-clip';
+      // Clipping slots use a contiguous index space starting after seed slots
+      // so the slot DOM ids remain unique (water/fertilize handlers read by id).
+      for (var ci = 0; ci < maxClipSlots; ci++) {
+        var cseed = clips[ci] || null;
+        var cslotDiv = document.createElement('div');
+        cslotDiv.id = 'nur-slot-' + (maxSeedSlots + ci);
+        cslotDiv.className = 'nur-slot nur-slot-clip' + (cseed && FG_Data.isBloomReady(cseed) ? ' ready' : '');
+        cslotDiv.innerHTML = _buildNurSlotHTML(cseed, maxSeedSlots + ci);
+        clipsRow.appendChild(cslotDiv);
+      }
+      nurGrid.appendChild(clipsRow);
     }
     // Hide expand button at max
     var nurExpBtn = document.getElementById('nur-expand-btn');
-    if (nurExpBtn) nurExpBtn.style.display = (maxNurSlots >= 6) ? 'none' : '';
+    if (nurExpBtn) nurExpBtn.style.display = (maxSeedSlots >= 6) ? 'none' : '';
   }
   window.renderNursery = renderNursery;
 
@@ -49885,9 +49968,13 @@ window._hexAction=function(action){
     var CUTTING_DEW_COST=20;
     var _cutDewBal=(typeof window.getTotalDew==='function')?window.getTotalDew():0;
     if(_cutDewBal<CUTTING_DEW_COST){_toast('Need '+CUTTING_DEW_COST+' Dew. You have '+_cutDewBal+'. Tend wild plants to earn Dew.');return;}
-    var _nurMax=(window.FG_Data&&window.FG_Data.getNurSlots)?window.FG_Data.getNurSlots():3;
-    var _nurNow=(window.FG_Data&&window.FG_Data.getNursery)?window.FG_Data.getNursery().length:0;
-    if(_nurNow>=_nurMax){_toast('Nursery full ('+_nurNow+'/'+_nurMax+'). Bloom or abandon a seed first.');return;}
+    // Cuttings use the dedicated CLIPPING cap (not the seed cap) so a
+    // full seed nursery doesn't block cutting collection. Stephen's split
+    // nursery design — clippings live in their own slots.
+    var _clipMax=(window.FG_Data&&window.FG_Data.getNurClippingSlots)?window.FG_Data.getNurClippingSlots():2;
+    var _clipNow=0;
+    try{var _nurFC=window.FG_Data&&window.FG_Data.getNursery?window.FG_Data.getNursery():[];for(var _fcI=0;_fcI<_nurFC.length;_fcI++){if(window.FG_Data.isClippingOrigin&&window.FG_Data.isClippingOrigin(_nurFC[_fcI]&&_nurFC[_fcI].origin))_clipNow++;}}catch(e){}
+    if(_clipNow>=_clipMax){_toast('Clipping slots full ('+_clipNow+'/'+_clipMax+'). Cross-pollinate one to free a slot.');return;}
     window._lwConfirm&&window._lwConfirm({
       title:'TAKE A CUTTING',
       body:'You\u2019ll gain a clone seed (Gen 2) carrying this plant\u2019s genetics. Costs <b>20 Dew</b>. The parent is unharmed.',
@@ -62526,12 +62613,15 @@ window.FG_Backpack.sendSeedToNursery = function(idx) {
   if (!BP || !BP.getState) return;
   var state = BP.getState();
   if (idx >= state.seeds.length) return;
-  // Pre-check nursery space so we never splice a seed out of the bag only to lose it.
+  // Pre-check SEED nursery space so we never splice a seed out of the bag
+  // only to lose it. Counts only non-clipping entries against the seed cap
+  // (clippings have their own slots).
   var _nurMax = (window.FG_Data && FG_Data.getNurSlots) ? FG_Data.getNurSlots() : 3;
-  var _nurNow = (window.FG_Data && FG_Data.getNursery) ? FG_Data.getNursery().length : 0;
-  if (_nurNow >= _nurMax) {
-    if (BP.toast) BP.toast('Nursery full (' + _nurNow + '/' + _nurMax + '). Bloom or abandon a seed first.');
-    else if (window._toast) window._toast('Nursery full (' + _nurNow + '/' + _nurMax + '). Bloom or abandon a seed first.');
+  var _seedNow = 0;
+  try { var _nurFS = window.FG_Data && FG_Data.getNursery ? FG_Data.getNursery() : []; for (var _fsI = 0; _fsI < _nurFS.length; _fsI++) { if (!(window.FG_Data.isClippingOrigin && window.FG_Data.isClippingOrigin(_nurFS[_fsI] && _nurFS[_fsI].origin))) _seedNow++; } } catch(e) {}
+  if (_seedNow >= _nurMax) {
+    if (BP.toast) BP.toast('Seed slots full (' + _seedNow + '/' + _nurMax + '). Bloom one first.');
+    else if (window._toast) window._toast('Seed slots full (' + _seedNow + '/' + _nurMax + '). Bloom one first.');
     return;
   }
   var seed = state.seeds.splice(idx, 1)[0];
