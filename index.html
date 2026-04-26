@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.19';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.20';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -61655,6 +61655,14 @@ function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');
 function render(){
   var bg=document.getElementById('bpb');var t=st.plants.length+st.seeds.length;bg.textContent=t;bg.classList.toggle('e',t===0);
   var pe=document.getElementById('bpp');var mx=xp();var h='';
+  // Empty-pouch hint — spans the grid so first-time players see what to do
+  // instead of a sea of "+" placeholder slots. Disappears the moment they
+  // collect anything.
+  if(t===0){
+    h+='<div style="grid-column:1/-1;padding:12px 14px;margin-bottom:6px;border:1px dashed rgba(122,179,86,0.3);border-radius:10px;background:rgba(20,28,18,0.5);text-align:center;font-family:DM Mono,monospace;font-size:0.5rem;line-height:1.6;color:var(--muted);">'
+      +'<span style="color:var(--sage);">Your pouch is empty.</span><br>Collect ferals from glowing hexes, or harvest a wild plant within 75m.'
+      +'</div>';
+  }
   // Player level gate for cutting-clippings feature
   var keeperLvl=0;try{if(window._getXP&&window._getRank){keeperLvl=window._getRank(window._getXP()).level;}}catch(e){}
   // Lv3 unlock per Stephen's tutorial spec (was Lv5). Players encounter
