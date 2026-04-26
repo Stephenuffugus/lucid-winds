@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.49';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.50';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68286,6 +68286,91 @@ var TRIGGERS=[
     check:function(c){return c.plant&&c.plant.mutationName==='Glitch';},
     effect:'The hash hiccupped. The plant agreed.',reward:{pollen:20,ea:1}}
 ];
+
+// ── COMPANION BOND DISCOVERIES — one per of 49 creatures (60 design slots) ──
+// Per BoS expansion roadmap: each distinct creature earns a discovery moment
+// when first encountered or grown. Hooks via GROWN tracker (mintPlant) AND
+// the wild-scan checkTriggers path. Loop-built so adding/changing creatures
+// only requires editing this table, not the trigger array directly.
+var _COMPANION_BONDS = [
+  {idx:20, n:'First Sight of Navi',     r:'A small lantern crossed your garden once.',                 e:'Navi recognized you. The forest knows it now.',                                          t:'common'},
+  {idx:21, n:'First Worker',            r:'The first scout found your bloom and reported back.',       e:'A whole hive will know your garden by morning.',                                         t:'common'},
+  {idx:22, n:'First Curl',              r:'Touch one and it folds itself into a stone.',               e:'A small armored guest accepted your soil.',                                              t:'common'},
+  {idx:23, n:'First Spark',             r:'One green light answered the dusk.',                        e:'The dark holds a witness for you now.',                                                  t:'common'},
+  {idx:24, n:'First Wing',              r:'Slow as paper. Fast as wind.',                              e:'The wing found your garden and rested.',                                                 t:'common'},
+  {idx:25, n:'Moth Hour',               r:'Pale wings come for the porchlight.',                       e:'A moth chose your dim corner. It will return.',                                          t:'common'},
+  {idx:26, n:'Lady\'s Mark',            r:'Seven dots and a story.',                                   e:'A small red guardian counted your aphids gone.',                                         t:'common'},
+  {idx:27, n:'Slow Patience',           r:'The shell is the home.',                                    e:'A snail carried home across your soil. It approved.',                                    t:'common'},
+  {idx:28, n:'Hummingbird Visit',       r:'You moved slowly enough.',                                  e:'A small heart beat at one thousand. It chose to pause here.',                            t:'common'},
+  {idx:29, n:'Dragon\'s Watch',         r:'Four wings hold one body still.',                           e:'The pond saw your plant and sent its hunter.',                                           t:'common'},
+  {idx:30, n:'First Crawl',             r:'What is small now will not stay small.',                    e:'A future wing began as a hunger. You fed it.',                                           t:'common'},
+  {idx:31, n:'First Web',               r:'A web needs only the right wind.',                          e:'A spider strung its lines through your garden. The math is exquisite.',                  t:'common'},
+  {idx:32, n:'Toad\'s Trust',           r:'The toad chose your soil. It does not choose lightly.',     e:'Rain may answer where the toad sits.',                                                   t:'mythic'},
+  {idx:33, n:'Cicada Chorus',           r:'Seventeen years of silence, broken at once.',                e:'The chorus rose. Even the wind paused.',                                                 t:'mythic'},
+  {idx:34, n:'Tiny Tusk',               r:'Older than ice, smaller than a kit.',                       e:'Something ancient is small enough to fit in your garden.',                               t:'mythic'},
+  {idx:35, n:'Raccoon\'s Rounds',       r:'Curious hands work the night shift.',                       e:'A masked auditor inspected your stores. Found nothing missing.',                         t:'mythic'},
+  {idx:36, n:'Heron Stand',             r:'Stillness as a hunting tool.',                              e:'The heron stood watch. Nothing moved that did not announce itself.',                     t:'mythic'},
+  {idx:37, n:'Argiope\'s Cross',        r:'A zig-zag in the silk is its signature.',                   e:'A garden spider signed your air with one strong word.',                                  t:'mythic'},
+  {idx:38, n:'The Beholder\'s Eye',     r:'An eye opens where eyes do not belong.',                    e:'Something looked at you from somewhere it should not exist. It approved.',               t:'cosmic'},
+  {idx:39, n:'Cat Ownership',           r:'You think you own the cat.',                                e:'A cat decided you were acceptable. This is a high honor.',                               t:'common'},
+  {idx:40, n:'Platypus Sighting',       r:'An impossible animal that exists anyway.',                  e:'The river-mammal-bird-thing visited. Reality felt loose for a moment.',                  t:'rare'},
+  {idx:41, n:'Mantis Bow',              r:'Two arms folded as if in prayer.',                          e:'A mantis turned its triangle face to you. You felt judged.',                             t:'common'},
+  {idx:42, n:'Quill Curl',              r:'Soft underneath the spines.',                               e:'A hedgehog visited. It rolled into a perfect ball when you looked too closely.',         t:'common'},
+  {idx:43, n:'Pangolin Tracks',         r:'Armor like a pinecone walking.',                            e:'A pangolin chose your garden as cover. They are precious and rare.',                     t:'rare'},
+  {idx:44, n:'Luna Wing',               r:'Pale green light with a long forked tail.',                  e:'A luna moth crossed once. It will not return for another year.',                         t:'rare'},
+  {idx:45, n:'Porcupine Pause',         r:'Slow walker. Sharp diplomat.',                              e:'A porcupine considered your garden. Diplomatic immunity granted.',                       t:'common'},
+  {idx:47, n:'Axolotl Smile',           r:'A creature that never grows up.',                           e:'A pink salamander surfaced in a place it should not be. The world has soft places.',     t:'rare'},
+  {idx:48, n:'Scorpion Glow',           r:'Patient under the rocks. Fluorescent under UV.',            e:'A scorpion blessed your darkest corner. The rocks know now.',                            t:'rare'},
+  {idx:49, n:'Paper Crane',             r:'A thousand brings a wish. One brings notice.',              e:'A folded crane appeared without explanation. Make a wish.',                              t:'rare'},
+  {idx:50, n:'Gnome\'s Welcome',        r:'The first gnome was a jest. The second was a society.',     e:'A ceramic neighbor moved in overnight. It will not move out.',                           t:'rare'},
+  {idx:51, n:'Robin Visit',             r:'A red breast against the morning grey.',                    e:'The robin worked the new earth and sang for the worms it found.',                        t:'common'},
+  {idx:52, n:'Worm Work',               r:'The slow architects of soil.',                              e:'A worm passed through. Your soil is now measurably better.',                             t:'common'},
+  {idx:53, n:'Ancient Patience',        r:'A turtle measures time differently.',                       e:'A turtle visited. It will remember where you live for fifty years.',                     t:'common'},
+  {idx:54, n:'Bat Echo',                r:'A small voice the night returns.',                          e:'A bat clicked its survey through your garden. You scored well.',                         t:'common'},
+  {idx:55, n:'Mouse Trail',             r:'Tiny feet leave loud opinions.',                            e:'A mouse ran a small kingdom through your roots. You are the king\'s neighbor.',          t:'common'},
+  {idx:56, n:'Owl Watch',               r:'Silent wings keep silent count.',                           e:'An owl perched and counted everything. The list was long.',                              t:'common'},
+  {idx:57, n:'The Goose Finds You',     r:'All geese are silly. Some are also serious.',               e:'A goose chose your garden as its bouncer post. Honk.',                                   t:'common'},
+  {idx:60, n:'Dart Frog Brilliance',    r:'Bright color is the frog\'s promise.',                      e:'A dart frog visited. Its colors meant something specific. You did not catch it.',        t:'common'},
+  {idx:61, n:'Rabbit Visit',            r:'One rabbit. Briefly.',                                      e:'A rabbit considered your lettuce and decided against it. Today.',                        t:'common'},
+  {idx:62, n:'Cricket Song',            r:'The night learned a tune.',                                 e:'A cricket scored your evening. A small orchestra keeps the dark warm.',                  t:'common'},
+  {idx:63, n:'Puffin Visit',            r:'Atlantic sailor in a tuxedo.',                              e:'A puffin somehow made it inland. The cliffs sent regards.',                              t:'common'},
+  {idx:64, n:'Scarab Mark',             r:'Dung is gold to those who roll it.',                        e:'A scarab approved your soil. Egyptian gods notwithstanding.',                            t:'common'},
+  {idx:65, n:'Ant Trail',               r:'One ant means a thousand are coming.',                      e:'A trail formed between your bloom and somewhere distant. Excellent commerce.',           t:'common'},
+  {idx:66, n:'Crane Dance',             r:'Two cranes dance across mirrors.',                          e:'A red-crowned crane crossed your sky. Marriages are imminent.',                          t:'common'},
+  {idx:67, n:'Squirrel\'s Court',       r:'Burying things they will not remember.',                    e:'A squirrel buried something near your roots. It is your secret now.',                    t:'common'},
+  {idx:68, n:'Koala Climb',             r:'Slow eyes. Sharp claws.',                                   e:'A koala somehow appeared. You are now responsible for eucalyptus.',                      t:'common'},
+  {idx:69, n:'Flamingo Stand',          r:'Pink because of what it eats.',                             e:'A single flamingo balanced on one leg in your garden. Aesthetic peak.',                  t:'rare'},
+  {idx:70, n:'Seahorse Cradle',         r:'The father carries the eggs.',                              e:'A seahorse crossed an impossibility to find you. Cherish it.',                           t:'common'},
+  {idx:71, n:'Koi Pond',                r:'Patient color. Long memory.',                               e:'A koi acknowledged you. They live a hundred years and remember faces.',                  t:'common'},
+  {idx:72, n:'Jellyfish Drift',         r:'Older than the bone.',                                      e:'A jellyfish drifted through your reality. Time shimmered.',                              t:'rare'},
+  {idx:73, n:'Sprite Spotted',          r:'Some mushrooms walk.',                                      e:'A mushroom sprite was here. The fairy ring may follow.',                                 t:'common'},
+  {idx:74, n:'Fawn\'s First Step',      r:'New legs. Ancient eyes.',                                   e:'A fawn watched you from the edge. Its mother was nearby. So were you.',                  t:'common'},
+  {idx:75, n:'Raven\'s Witness',        r:'The raven called once. It will remember.',                  e:'A raven took your face into the great memory. You are filed.',                           t:'rare'},
+  {idx:79, n:'Wisp Light',              r:'Light that moves on no body.',                              e:'A wisp passed. Some say it leads. Some say it follows. You can choose.',                 t:'rare'},
+  {idx:81, n:'Panda Visit',             r:'Bamboo. Sleep. Repeat.',                                    e:'A panda visited and ate your bamboo if any. Worth it.',                                  t:'common'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 6},
+    rare:   {pollen: 12},
+    mythic: {pollen: 25, ea: 1},
+    cosmic: {pollen: 50, ea: 2}
+  };
+  for (var ci = 0; ci < _COMPANION_BONDS.length; ci++) {
+    var c = _COMPANION_BONDS[ci];
+    (function(idx, name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'bond_' + idx,
+        name: name,
+        riddle: riddle,
+        category: 'companion',
+        check: function(ctx) { return ctx.plant && ctx.plant.companion === idx; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(c.idx, c.n, c.r, c.e, c.t);
+  }
+})();
 
 // ── MOON PHASE CALCULATOR (client-side) ──
 function _getMoonPhase(){
