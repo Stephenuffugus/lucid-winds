@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.11';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2586,6 +2586,22 @@
     /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots) */
     #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:64px;height:64px;flex-shrink:0;overflow:hidden;}
     #kb-hut:hover{background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(200,168,75,0.08));}
+
+    /* ═══ MY PLANTS NAVIGATOR (wild tab) ═══ */
+    .lw-mp-list{display:flex;flex-direction:column;gap:0.45rem;}
+    .lw-mp-row{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.6rem;background:linear-gradient(180deg,rgba(40,46,32,0.7),rgba(20,24,16,0.85));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;cursor:pointer;transition:all 0.15s;}
+    .lw-mp-row:hover{border-color:rgba(122,179,86,0.55);transform:translateX(2px);}
+    .lw-mp-row.mp-crit{border-color:rgba(220,90,90,0.5);background:linear-gradient(180deg,rgba(60,28,28,0.7),rgba(28,16,16,0.85));}
+    .lw-mp-row.mp-warn{border-color:rgba(212,168,67,0.45);background:linear-gradient(180deg,rgba(54,46,24,0.7),rgba(24,20,12,0.85));}
+    .lw-mp-art{width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.6);border-radius:8px;border:1px solid rgba(122,179,86,0.15);overflow:hidden;}
+    .lw-mp-art svg{width:60px;height:60px;}
+    .lw-mp-info{flex:1;min-width:0;}
+    .lw-mp-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:700;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .lw-mp-status{font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);margin-top:2px;}
+    .mp-crit .lw-mp-status{color:rgba(232,140,140,0.95);}
+    .mp-warn .lw-mp-status{color:rgba(232,200,100,0.95);}
+    .mp-ok .lw-mp-status{color:rgba(122,179,86,0.85);}
+    .lw-mp-dist{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;color:var(--gold);flex-shrink:0;min-width:50px;text-align:right;}
 
     /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
     .lu-overlay{position:fixed;inset:0;z-index:99998;display:none;}
@@ -6376,6 +6392,8 @@ window._addSwitchTabHook = function(fn){
     <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(160px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.45);background:rgba(13,16,12,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.5);-webkit-tap-highlight-color:transparent;color:rgba(140,200,235,0.95);font-size:1.4rem;line-height:1;">&#8982;</button>
     <!-- MASS WATER BUTTON — appears when player has 2+ wild plants needing water -->
     <button id="w-mass-water" onclick="window._lwMassWater();" style="display:none;position:fixed;bottom:calc(190px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;min-width:46px;height:46px;padding:0 12px;border-radius:23px;border:1.5px solid rgba(91,143,185,0.5);background:rgba(13,18,24,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 14px rgba(0,0,0,0.5),0 0 12px rgba(91,143,185,0.2);-webkit-tap-highlight-color:transparent;color:#7ab3d4;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;white-space:nowrap;"><span id="w-mass-water-label">&#128167; WATER ALL</span></button>
+    <!-- MY PLANTS NAVIGATOR — list view of owned wild plants for fast travel -->
+    <button id="w-my-plants" onclick="if(window._lwOpenMyPlants)_lwOpenMyPlants();" style="display:none;position:fixed;bottom:calc(220px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;min-width:46px;height:46px;padding:0 12px;border-radius:23px;border:1.5px solid rgba(122,179,86,0.5);background:rgba(13,20,12,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 14px rgba(0,0,0,0.5),0 0 12px rgba(122,179,86,0.2);-webkit-tap-highlight-color:transparent;color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;white-space:nowrap;">&#127807; MY PLANTS <span id="w-my-plants-count" style="opacity:0.8;">0</span></button>
     <!-- MAP -->
     <div id="wild-map" style="width:100%;height:100vh;height:100dvh;min-height:250px;"></div>
     <!-- Current-hex info pill — what's in the hex you're standing in -->
@@ -45302,6 +45320,10 @@ function _showHarvestReveal(p,reward){
 }
 
 // ═══ WATER OWN PLANT (GPS-proximate only) ═══
+// Water cooldown: 24h per plant. Anti-spam guard so a single plant can't be
+// kept alive forever by spam-tapping water. Plant decay continues to tick
+// while on cooldown, so abandonment still results in death.
+var WATER_COOLDOWN_MS = 24 * 3600000;
 function _waterOwnPlant(p,mk){
   if(!p||!p.hash){_toast('No plant selected.');return;}
   if(!_uLat||!p.lat){_toast('Need GPS location.');return;}
@@ -45310,6 +45332,14 @@ function _waterOwnPlant(p,mk){
   var distToPlant=_dist(_uLat,_uLng,p.lat,p.lng);
   if(distToPlant>COLLECT_RANGE){
     _toast('Too far! Walk within '+Math.round(COLLECT_RANGE)+'m to water. ('+Math.round(distToPlant)+'m away)');
+    return;
+  }
+
+  // Per-plant 24h water cooldown
+  var _lastWaterMs = p.lastWateredAt || (p.lastWatered ? new Date(p.lastWatered).getTime() : 0);
+  if (_lastWaterMs && (Date.now() - _lastWaterMs) < WATER_COOLDOWN_MS){
+    var _hLeft = Math.ceil((WATER_COOLDOWN_MS - (Date.now() - _lastWaterMs)) / 3600000);
+    _toast('Watered recently. Returns in '+_hLeft+'h. Plant still ages until then.');
     return;
   }
 
@@ -48610,6 +48640,124 @@ function _lwMassWaterRefreshButton(){
   if (label) label.innerHTML = (isL3?'\ud83c\udf27\ufe0f RAIN':'\ud83d\udca7 WATER ALL') + ' (' + eligible.length + (cost?(' \u00b7 ' + cost + ' Dew'):' \u00b7 FREE') + ')';
   btn.style.display = 'flex';
 }
+// ═══ MY PLANTS NAVIGATOR — fast travel to your owned wild plants ═══
+// Lists every owned wild plant with status (water needed / contest / decay /
+// healthy) and distance from user. Tap a row → close + map.panTo + open trait
+// panel. Update count badge on the wild dock.
+window._lwUpdateMyPlantsCount = function(){
+  var btn = document.getElementById('w-my-plants-count');
+  if (!btn) return;
+  var arr = [];
+  try { arr = JSON.parse(localStorage.getItem('fg_wild_plants')||'[]'); } catch(e){}
+  var n = 0;
+  for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].own) n++;
+  btn.textContent = String(n);
+};
+window._lwOpenMyPlants = function(){
+  var arr = [];
+  try { arr = JSON.parse(localStorage.getItem('fg_wild_plants')||'[]'); } catch(e){}
+  var mine = arr.filter(function(p){ return p && p.own; });
+  if (mine.length === 0){
+    if (window._toast) _toast('You have no plants in the wild yet. Drop one from the Wild tab.');
+    return;
+  }
+  // Get user position from FG_Wild
+  var pos = (window.FG_Wild && window.FG_Wild._getUserPos) ? FG_Wild._getUserPos() : { lat:null, lng:null };
+  // Haversine distance in meters
+  function distMeters(lat1, lng1, lat2, lng2){
+    if (lat1 == null || lat2 == null) return null;
+    var R = 6371000;
+    var toRad = function(d){ return d * Math.PI / 180; };
+    var dLat = toRad(lat2 - lat1);
+    var dLng = toRad(lng2 - lng1);
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function fmtDist(m){
+    if (m == null) return '— km';
+    if (m < 1000) return Math.round(m) + 'm';
+    return (m/1000).toFixed(1) + 'km';
+  }
+  // Status calc — water (lastWatered > 24h), decay (decayAt < 24h), contest (defenderGame)
+  function statusFor(p){
+    var now = Date.now();
+    if (p.decayAt && p.decayAt - now < 24 * 3600000) {
+      var hLeft = Math.max(0, Math.round((p.decayAt - now) / 3600000));
+      return { lbl: 'Decaying ' + hLeft + 'h', cls: 'crit', sortKey: 0 };
+    }
+    var lw = p.lastWatered ? new Date(p.lastWatered).getTime() : 0;
+    if (!lw || (now - lw) > 24 * 3600000) {
+      return { lbl: 'Needs water', cls: 'warn', sortKey: 1 };
+    }
+    return { lbl: 'Healthy', cls: 'ok', sortKey: 2 };
+  }
+  // Annotate + sort by status (urgent first), then distance
+  var rows = mine.map(function(p){
+    var d = distMeters(pos.lat, pos.lng, p.lat, p.lng);
+    var s = statusFor(p);
+    var name = (window.getPlantName && p.hash) ? getPlantName(p.hash) : (p.hash ? p.hash.slice(0,8) : 'Plant');
+    return { p:p, dist:d, status:s, name:name };
+  });
+  rows.sort(function(a,b){
+    if (a.status.sortKey !== b.status.sortKey) return a.status.sortKey - b.status.sortKey;
+    var da = a.dist == null ? 1e9 : a.dist;
+    var db = b.dist == null ? 1e9 : b.dist;
+    return da - db;
+  });
+  // Build overlay
+  var prev = document.getElementById('lw-myplants-overlay');
+  if (prev) prev.remove();
+  var ov = document.createElement('div');
+  ov.id = 'lw-myplants-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100008;background:rgba(8,10,6,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;padding:1rem 0.6rem;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.25s ease;';
+  var html = '<div style="max-width:440px;width:100%;margin:0 auto;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem;">';
+  html += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--sage);">&#127807; MY PLANTS</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">' + mine.length + ' planted &middot; sorted by status, then distance</div></div>';
+  html += '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:0.95rem;cursor:pointer;">&times;</button>';
+  html += '</div>';
+  html += '<div class="lw-mp-list">';
+  for (var i = 0; i < rows.length; i++){
+    var r = rows[i];
+    var sCls = 'mp-' + r.status.cls;
+    html += '<div class="lw-mp-row '+sCls+'" onclick="window._lwNavToPlant('+i+')" data-mpidx="'+i+'">';
+    html += '<div class="lw-mp-art" id="lw-mp-art-'+i+'"></div>';
+    html += '<div class="lw-mp-info">';
+    html += '<div class="lw-mp-name">'+r.name+'</div>';
+    html += '<div class="lw-mp-status">'+r.status.lbl+'</div>';
+    html += '</div>';
+    html += '<div class="lw-mp-dist">'+fmtDist(r.dist)+'</div>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+  ov.innerHTML = html;
+  document.body.appendChild(ov);
+  // Render plant SVGs into the slots after the DOM is in
+  setTimeout(function(){
+    for (var i = 0; i < rows.length; i++){
+      var slot = document.getElementById('lw-mp-art-'+i);
+      if (slot && window._generatePlantSVG && rows[i].p.hash){
+        try { slot.innerHTML = window._generatePlantSVG(rows[i].p.hash, 60); } catch(e){}
+      }
+    }
+  }, 0);
+  // Navigate handler — close overlay, pan map, open trait panel for that plant
+  window._lwNavToPlant = function(idx){
+    var r = rows[idx]; if (!r) return;
+    var ovEl = document.getElementById('lw-myplants-overlay');
+    if (ovEl) ovEl.remove();
+    if (window.FG_Wild) {
+      try {
+        // Use Leaflet map directly via FG_Wild — there's no public panTo, so
+        // call setView on the internal map via the showTP path which centers
+        // and opens the trait panel for this plant.
+        if (FG_Wild.showTP) FG_Wild.showTP(r.p);
+      } catch(e){}
+    }
+  };
+};
 window._lwMassWater = function(){
   var eligible = _lwMassWaterEligible();
   if (eligible.length === 0) { _toast('All your plants are watered.'); return; }
@@ -61519,6 +61667,9 @@ window.FG_Backpack.show = function() {
   if (BP.checkMidnightDeliver) BP.checkMidnightDeliver();
   // Show recenter button
   var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'flex';
+  // Show My Plants navigator (count is updated by _lwOpenMyPlants on open)
+  var mp = document.getElementById('w-my-plants'); if (mp) mp.style.display = 'flex';
+  if (window._lwUpdateMyPlantsCount) try{ window._lwUpdateMyPlantsCount(); }catch(e){}
 };
 window.FG_Backpack.hide = function() {
   if (window.BP) BP.close();
@@ -61531,6 +61682,7 @@ window.FG_Backpack.hide = function() {
   if (rtb) rtb.style.display = 'none';
   var rc = document.getElementById('w-recenter'); if (rc) rc.style.display = 'none';
   var mw = document.getElementById('w-mass-water'); if (mw) mw.style.display = 'none';
+  var mp2 = document.getElementById('w-my-plants'); if (mp2) mp2.style.display = 'none';
   var stp = document.getElementById('stp');
   if (stp) stp.style.display = 'none';
   // Hide map overlays
