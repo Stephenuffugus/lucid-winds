@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -37409,6 +37409,10 @@ document.addEventListener('keydown', function(e) {
       // Don't spawn particles when the tab is backgrounded — drains battery
       // on old iPads for no visible benefit.
       if (document.hidden) return;
+      // Tier 1 perf: gate on Wild active + hard cap 12 live nodes
+      var _wp = document.getElementById('panel-wild');
+      if (!_wp || !_wp.classList.contains('active')) return;
+      if (document.querySelectorAll('.pollen-particle').length >= 12) return;
       var p = document.createElement('div');
       p.className = 'pollen-particle';
       var x = 10 + Math.random() * 80;
@@ -42277,6 +42281,10 @@ function _spawnFireflies(){
   _fireflyTimer=setInterval(function(){
     var panel=document.getElementById('panel-wild');if(!panel)return;
     if(!panel.classList.contains('tod-night')){clearInterval(_fireflyTimer);_fireflyTimer=null;return;}
+    // Tier 1 perf: gate on Wild active + page visible + hard cap 12 live fireflies
+    if(document.hidden)return;
+    if(!panel.classList.contains('active'))return;
+    if(panel.querySelectorAll('.firefly').length>=12)return;
     var f=document.createElement('div');f.className='firefly';
     f.style.cssText='left:'+(10+Math.random()*80)+'%;top:'+(10+Math.random()*70)+'%;--fx:'+(Math.random()*60-30)+'px;--fy:'+(Math.random()*-60-10)+'px;--fx2:'+(Math.random()*40-20)+'px;--fy2:'+(Math.random()*40-20)+'px;animation:fireflyFloat '+(5+Math.random()*8)+'s ease-in-out forwards;';
     panel.appendChild(f);
@@ -42303,7 +42311,12 @@ function _startSeasonalParticles(){
   // the slower rate but the layout doesn't thrash.
   var interval=season==='autumn'?2500:season==='spring'?3000:season==='winter'?3500:3200;
   _seasonParticleTimer=setInterval(function(){
-    var panel=document.getElementById('panel-wild');if(!panel||panel.style.display==='none')return;
+    var panel=document.getElementById('panel-wild');if(!panel)return;
+    // Tier 1 perf: gate on Wild active (was checking style.display which never set)
+    // + page visible + hard cap 14 live nodes
+    if(document.hidden)return;
+    if(!panel.classList.contains('active'))return;
+    if(panel.querySelectorAll('.season-particle').length>=14)return;
     var p=document.createElement('div');
     p.className='season-particle sp-'+season;
     var spin=Math.random()*360;
