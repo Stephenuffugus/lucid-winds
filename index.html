@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.34';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.35';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4605,6 +4605,8 @@
 .hi-zone-name{flex:1;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--cream);letter-spacing:0.02em;}
 .hi-zone-dist{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--gold);white-space:nowrap;background:rgba(200,168,75,0.06);border:1px solid rgba(200,168,75,0.12);border-radius:6px;padding:3px 8px;}
 .hi-close{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.15);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.hi-info{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.25);background:rgba(26,36,22,0.5);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;}
+.hi-info:active{background:rgba(200,168,75,0.18);}
 .hi-habitat{display:flex;gap:6px;padding:0.3rem 1rem;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
 .hi-hab-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(26,36,22,0.6);border:1px solid rgba(74,124,53,0.15);border-radius:8px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);flex-shrink:0;}
 .hi-hab-chip b{color:var(--cream);font-weight:500;}
@@ -6540,6 +6542,7 @@ window._addSwitchTabHook = function(fn){
     <div class="hi-header">
       <div class="hi-zone-name" id="hi-zone-name">Zone</div>
       <div class="hi-zone-dist" id="hi-zone-dist"></div>
+      <button class="hi-info" onclick="window._lwShowHexHelp()" title="What do these actions do?" aria-label="Help">?</button>
       <button class="hi-close" onclick="window._closeHexInspector()">&#10005;</button>
     </div>
     <div class="hi-habitat" id="hi-habitat"></div>
@@ -48310,6 +48313,46 @@ window._closeHexInspector=function(){
   _hexInspOpen=false;_hexInspZone=null;_hexSelPlant=null;
   var p=document.getElementById('hex-inspector'),s=document.getElementById('hex-insp-scrim');
   if(p)p.classList.remove('open');if(s)s.classList.remove('open');
+};
+
+// ═══ HEX HELP MODAL — explains every action a player can take in a hex ═══
+// Opened from the (?) button in the hex inspector header. One screen,
+// dismissible, no scroll-lock. Single source of truth for action labels.
+window._lwShowHexHelp=function(){
+  var existing=document.getElementById('lw-hex-help');
+  if(existing)return; // already open
+  var ov=document.createElement('div');
+  ov.id='lw-hex-help';
+  ov.style.cssText='position:fixed;inset:0;z-index:100050;display:flex;align-items:center;justify-content:center;background:rgba(8,10,6,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1rem;animation:fadeIn 0.25s ease;';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  var card=document.createElement('div');
+  card.style.cssText='max-width:380px;width:100%;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,rgba(13,16,12,0.99) 0%,rgba(8,10,6,1) 100%);border:1.5px solid rgba(200,168,75,0.35);border-radius:18px;padding:1.1rem 1rem 0.8rem;color:var(--cream,#e8dcc8);box-shadow:0 12px 60px rgba(0,0,0,0.7);font-family:DM Sans,sans-serif;-webkit-overflow-scrolling:touch;';
+  var rows=[
+    ['💧','WATER','Refresh your own plant\'s lifespan. Costs 5 Dew. 12h cooldown.'],
+    ['💧','HOLD TO WATER','Hold 4 seconds to water a stranger plant. 5 grants per day.'],
+    ['🌿','TEND','Add 6 hours of life to a stranger plant. You earn 2 Dew. Unlocks at Keeper Level 5. 4h cooldown.'],
+    ['🌷','MULCH','Spend 1 fertilizer to give any plant +24h life and +1 EA. Earn fertilizer by composting greenhouse plants. 24h cooldown.'],
+    ['🙏','BLESSING','A daily Dew gift from any Rare-or-rarer stranger plant. Once per plant per day.'],
+    ['✂️','CUTTING','Spend 20 Dew to turn this plant into a seed in your nursery. Limit 2 per day, and once per plant ever. Unlocks at Keeper Level 5.'],
+    ['🛡️','DEFENSE','Pick a mini-game challengers must beat to harvest your plant. 24h cooldown to change.'],
+    ['🔍','SEARCH FOR SEEDS','Once per day per zone, hunt for feral seeds. Difficulty scales with seed rarity.']
+  ];
+  var html='<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.85rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.14em;color:var(--gold);flex:1;">HEX ACTIONS</div><button id="lw-hex-help-close" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.7rem;cursor:pointer;">&#10005;</button></div>';
+  html+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.55;margin-bottom:0.85rem;">Tap a hex to see its plants. Tap any plant to inspect, breed, or act on it.</div>';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    html+='<div style="display:flex;gap:0.55rem;padding:0.55rem 0;border-bottom:1px solid rgba(200,168,75,0.08);">';
+    html+='<div style="font-size:1.1rem;line-height:1.2;width:28px;flex-shrink:0;text-align:center;">'+r[0]+'</div>';
+    html+='<div style="flex:1;min-width:0;">';
+    html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--cream);margin-bottom:0.15rem;">'+r[1]+'</div>';
+    html+='<div style="font-family:DM Sans,sans-serif;font-size:0.55rem;color:var(--muted);line-height:1.45;">'+r[2]+'</div>';
+    html+='</div></div>';
+  }
+  card.innerHTML=html;
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  var closeBtn=document.getElementById('lw-hex-help-close');
+  if(closeBtn)closeBtn.onclick=function(){ov.remove();};
 };
 
 function _openHexInspector(zk){
