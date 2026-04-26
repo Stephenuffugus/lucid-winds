@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.67';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.68';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -21643,16 +21643,23 @@ document.addEventListener('keydown', function(e) {
           break;
 
         case 63: // Lunar Disc — orbicular peltate disc with concentric silver bands + crater divots.
-          // Stephen 2026-04-26: 'lunar discs are floating far away from the
-          // plant.' Offset reduced from _ldR*1.8 (= ls*1.98) to _ldR*0.55
-          // so the petiole reads as inserting INTO the disc (peltate) rather
-          // than floating to it across empty space. Disc still extends out
-          // a full radius past attachment.
+          // Round 3 (2026-04-26): Stephen 'lunar discs need to have little
+          // stems or something because now theyre crowding the space too
+          // much.' Pulled offset from _ldR*0.55 (too close, crowding) to
+          // _ldR*1.10 (sweet spot — disc held away on a real petiole stalk
+          // like a water lily / nasturtium). Petiole drawn as a thin sage
+          // stroke from attachment to disc edge so the leaf reads as
+          // peltate without floating disconnected.
           var _ldR = ls * 1.1;
           var _ldAng = -0.35 - leafFrac * 0.3;
-          var _ldCx = ox + Math.cos(_ldAng) * _ldR * 0.55 * side;
-          var _ldCy = ly + Math.sin(_ldAng) * _ldR * 0.55;
+          var _ldCx = ox + Math.cos(_ldAng) * _ldR * 1.10 * side;
+          var _ldCy = ly + Math.sin(_ldAng) * _ldR * 1.10;
           tip = _ldCx; tipY = _ldCy;
+          // Petiole stalk — thin sage line from attachment to disc center.
+          // Drawn first so the disc covers the part that enters its underside.
+          s += '<line x1="'+ox.toFixed(1)+'" y1="'+ly.toFixed(1)+'" x2="'+_ldCx.toFixed(1)+'" y2="'+_ldCy.toFixed(1)+'" stroke="'+_hueShift(PALETTE.moss,parseInt(uid.slice(0,2),16),6)+'" stroke-width="0.55" stroke-linecap="round" opacity="'+(op*0.78).toFixed(2)+'"/>';
+          // Cream highlight pair on the petiole for that crispness-stack feel
+          s += '<line x1="'+(ox-0.25).toFixed(1)+'" y1="'+(ly-0.15).toFixed(1)+'" x2="'+(_ldCx-0.25).toFixed(1)+'" y2="'+(_ldCy-0.15).toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.18" stroke-linecap="round" opacity="'+(op*0.40).toFixed(2)+'"/>';
           bodyD = 'M'+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx+_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' Z';
           // Disc body (cool silver-blue base) — 0.85 → 0.95, full lunar opacity
           s += '<circle cx="'+_ldCx.toFixed(1)+'" cy="'+_ldCy.toFixed(1)+'" r="'+_ldR.toFixed(1)+'" fill="'+baseColor+'" opacity="'+(op*0.95).toFixed(2)+'"/>';
