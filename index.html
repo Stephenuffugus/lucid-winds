@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.59';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.60';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4971,7 +4971,7 @@
        z-index 1000 = 1 above nav (999) so dock never gets buried */
     /* wild-dock CSS removed — replaced by BP backpack */
     /* ═══ KEEPER IDENTITY BAR ═══ */
-    #pw-keeper-bar{position:fixed;top:0;left:0;right:0;z-index:997;display:none;flex-direction:column;gap:0.35rem;padding:0.4rem 0.7rem 0.45rem 0.7rem;padding-top:calc(0.4rem + env(safe-area-inset-top, 0px));background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.92));border-bottom:1px solid rgba(74,124,53,0.08);backdrop-filter:blur(8px);max-width:680px;margin:0 auto;}
+    #pw-keeper-bar{position:fixed;top:0;left:0;right:0;z-index:997;display:none;flex-direction:column;gap:0.35rem;padding:0.4rem 0.7rem 1.1rem 0.7rem;padding-top:calc(0.4rem + env(safe-area-inset-top, 0px));background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.92));border-bottom:1px solid rgba(74,124,53,0.08);backdrop-filter:blur(8px);max-width:680px;margin:0 auto;}
     #pw-keeper-bar .kb-row1{display:flex;align-items:center;gap:0.6rem;}
     /* Row 2 is now 3 buttons (Sunbeams, Hut, Dew) — Install moved to Row 1.
        Tighter max-width condenses the row so it doesn't sprawl. */
@@ -5096,28 +5096,30 @@
 /* Backpack: greenhouse/nursery — 96x96 (top:65, right:10) */
 /* Default BP position: sits in the keeper-bar row 2 area on the right
    so it lines up with the Sunbeams/Hut/Dew icons. Stephen 2026-04-26
-   round 2: 'move them up into that bar in greenhouse and nursery to
-   help clean up the UI on those pages.' Wild + game overrides below.
-   Round 3 (2026-04-26): bumped 64→70px + background-size:120% so the
-   BP art has the same visual mass as the other icons (which overflow
-   their containers by 20-30%). */
-#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 59px) !important;right:8px !important;z-index:998;width:70px;height:70px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:120%;}
-/* Compendium / Book of Secrets — same row, same square container size as
-   the other keeper-bar icons. !important overrides the inline placeholder
-   style on the div. Image scales to 130% so the portrait BoS art has
-   visual mass matching the other icons (which overflow their containers). */
-#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 59px) !important;right:84px !important;width:70px !important;height:70px !important;}
-#kb-compendium img{width:130% !important;height:130% !important;object-fit:contain !important;margin:-15% !important;display:block !important;}
+   round 4: 'the book in greenhouse is just slightly too large its
+   covering xp. you could move that entire bar down just slightly to
+   clear the xp and make it feel comfy.' Bumped top 59 → 72 to drop
+   below the XP bar in row 1. Image overflow trimmed 120 → 115% so
+   BP art doesn't poke up into row 1. */
+#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:8px !important;z-index:998;width:70px;height:70px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:115%;}
+/* Compendium / Book of Secrets — same row, same Y as BP. Image scaled
+   115% (was 130%) so it stops poking up into the XP bar. */
+#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:84px !important;width:70px !important;height:70px !important;}
+#kb-compendium img{width:115% !important;height:115% !important;object-fit:contain !important;margin:-7.5% !important;display:block !important;}
 /* Hide BP during game-active so the game UI gets the full screen
    (kb-compendium is already in the game-active hide list). */
 body.game-active #bpi{display:none !important;}
-/* Wild tab: BP + BoS sit IN the stats bar strip right under the hero
-   banner instead of in the keeper bar (the keeper bar is hidden on
-   Wild). 56px keeps the art readable without overshrinking. */
-body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 121px)!important;right:8px!important;width:56px!important;height:56px!important;}
-body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 119px)!important;right:70px!important;width:56px!important;height:60px!important;}
+/* Wild tab: BP + BoS sit in the stats-bar strip under the hero. Stats
+   bar padding bumped 7 → 14 so the bar is thicker and the icons fit
+   without poking out. BP + BoS both 60x60 — same size as Stephen
+   asked ('book and backpack fit comfortably... backpack a little
+   bigger to match the book'). Chips also taller (min-height 50) so
+   the dew/pollen/steps numbers feel proportional in the new bar. */
+body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 122px)!important;right:8px!important;width:60px!important;height:60px!important;}
+body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 122px)!important;right:74px!important;width:60px!important;height:60px!important;}
 body.tab-wild #kb-compendium #kb-comp-count{top:-4px!important;left:-4px!important;min-width:18px!important;height:18px!important;font-size:0.5rem!important;}
-body.tab-wild #w-stats-bar{padding-right:138px!important;}
+body.tab-wild #w-stats-bar{padding:14px 10px!important;padding-right:148px!important;}
+body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
 /* Wild secondary actions consolidated into a single menu FAB.
    Stephen 2026-04-26: '...anxiety due to the amount of things to do.'
    Default Wild: only #w-menu-fab is visible (bottom-left). The 4
@@ -5386,7 +5388,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    Leaflet canvas. Pointer-events:none to stay transparent to gestures. */
 #w-map-frame-l,#w-map-frame-r{
   position:fixed;
-  top:calc(118px + 58px + env(safe-area-inset-top,0px));
+  top:calc(118px + 78px + env(safe-area-inset-top,0px));
   bottom:calc(var(--nav-h) + var(--sb));
   width:3px;z-index:459;pointer-events:none;
   background:linear-gradient(180deg,rgba(200,168,75,0.7) 0%,rgba(200,168,75,0.38) 18%,rgba(200,168,75,0.3) 82%,rgba(200,168,75,0.68) 100%);
@@ -5421,7 +5423,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 /* Wild-tab placement: fixed just below the stats bar, above the map. */
 #lw-quest-wild{
   position:fixed;
-  top:calc(118px + 58px + env(safe-area-inset-top,0px) + 8px);
+  top:calc(118px + 78px + env(safe-area-inset-top,0px) + 8px);
   left:10px;right:10px;
   z-index:458;
   max-width:480px;margin:0 auto;
