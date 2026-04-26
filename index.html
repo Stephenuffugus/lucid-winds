@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.6';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2488,6 +2488,83 @@
     @keyframes myPrizeRare{from{text-shadow:0 0 6px rgba(232,160,191,0.4);}to{text-shadow:0 0 16px rgba(232,160,191,0.8),0 0 24px rgba(240,208,144,0.5);}}
     .mystery-modal .my-pull{width:100%;padding:0.85rem;border:1.5px solid rgba(232,160,191,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(232,160,191,0.2),rgba(232,160,191,0.08));color:#E8A0BF;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(232,160,191,0.15);}
     .mystery-modal .my-pull:disabled{opacity:0.4;cursor:not-allowed;}
+
+    /* ═══ HERMIT'S HUT ═══ */
+    .lw-hut{position:fixed;inset:0;z-index:100015;display:none;}
+    .lw-hut.open{display:block;animation:panelFadeIn 0.25s ease;}
+    .lw-hut .lwh-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+    .lw-hut .lwh-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,440px);max-height:90vh;background:linear-gradient(180deg,#1a1f15,#0d100c);border:2px solid rgba(200,168,75,0.45);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.85),0 0 0 1px rgba(200,168,75,0.15),inset 0 1px 0 rgba(255,235,195,0.06);display:flex;flex-direction:column;overflow:hidden;}
+    .lw-hut .lwh-header{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.9rem;border-bottom:1px solid rgba(200,168,75,0.18);background:linear-gradient(180deg,rgba(200,168,75,0.10),transparent);}
+    .lw-hut .lwh-title{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.14em;color:var(--gold);}
+    .lw-hut .lwh-close{background:none;border:1px solid rgba(200,168,75,0.3);color:var(--cream);font-size:0.9rem;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .lw-hut .lwh-close:hover{border-color:rgba(200,168,75,0.6);}
+    .lw-hut .lwh-balance{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);padding:0.4rem 0.9rem;background:rgba(13,16,12,0.6);}
+    .lw-hut .lwh-balance .lwh-pouch{color:var(--sage);}
+    .lw-hut .lwh-tabs{display:flex;gap:0;background:rgba(13,16,12,0.85);border-bottom:1px solid rgba(200,168,75,0.18);}
+    .lw-hut .lwh-tab{flex:1;background:none;border:none;border-bottom:2px solid transparent;color:rgba(200,188,160,0.55);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;padding:0.55rem 0.2rem;cursor:pointer;min-height:44px;transition:all 0.15s;}
+    .lw-hut .lwh-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.14),transparent);}
+    .lw-hut .lwh-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.7rem 0.6rem 1.2rem;}
+    .lw-hut .lwh-section-text{font-family:'Playfair Display',serif;font-style:italic;font-size:0.6rem;color:var(--cream);text-align:center;margin-bottom:0.6rem;opacity:0.8;}
+    .lw-hut .lwh-section-foot{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);text-align:center;margin-top:0.6rem;}
+    .lw-hut .lwh-active{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:6px;padding:0.4rem 0.6rem;text-align:center;margin-bottom:0.6rem;}
+
+    /* SHOP cards */
+    .lw-hut .lwh-shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;}
+    .lw-hut .lwh-shop-card{position:relative;background:linear-gradient(180deg,rgba(40,38,28,0.7),rgba(20,18,14,0.85));border:1.5px solid rgba(200,168,75,0.32);border-radius:10px;padding:0.55rem 0.4rem 0.4rem;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:200px;}
+    .lw-hut .lwh-shop-card.rar-uncommon{border-color:rgba(122,179,86,0.55);}
+    .lw-hut .lwh-shop-card.rar-rare{border-color:rgba(91,175,220,0.65);box-shadow:0 0 8px rgba(91,175,220,0.12);}
+    .lw-hut .lwh-shop-card.rar-epic{border-color:rgba(192,122,200,0.75);box-shadow:0 0 10px rgba(192,122,200,0.18);}
+    .lw-hut .lwh-shop-card.rar-legendary{border-color:rgba(232,160,80,0.95);box-shadow:0 0 14px rgba(232,160,80,0.28);}
+    .lw-hut .lwh-shop-card.sold{opacity:0.4;filter:grayscale(0.7);}
+    .lw-hut .lwh-shop-badge{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:0.42rem;letter-spacing:0.08em;color:#0d100c;background:var(--sage);padding:2px 7px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.5);}
+    .lw-hut .lwh-shop-badge.gold{background:var(--gold);}
+    .lw-hut .lwh-shop-art{width:64px;height:64px;display:flex;align-items:center;justify-content:center;margin:0.45rem 0 0.3rem;}
+    .lw-hut .lwh-shop-art img{max-width:100%;max-height:100%;object-fit:contain;}
+    .lw-hut .lwh-shop-emoji{font-size:2.4rem;line-height:1;}
+    .lw-hut .lwh-shop-name{font-family:'Playfair Display',serif;font-size:0.6rem;font-weight:700;color:var(--cream);margin-bottom:0.2rem;line-height:1.2;}
+    .lw-hut .lwh-shop-desc{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);line-height:1.35;min-height:2.7em;margin-bottom:0.4rem;}
+    .lw-hut .lwh-shop-buy{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(91,175,220,0.4),rgba(46,90,120,0.6));border:1.5px solid rgba(91,175,220,0.7);color:var(--cream);border-radius:8px;padding:0.45rem 0.6rem;cursor:pointer;min-height:42px;width:100%;}
+    .lw-hut .lwh-shop-buy.broke{background:rgba(60,40,40,0.5);border-color:rgba(180,80,80,0.5);color:rgba(220,180,180,0.65);cursor:not-allowed;}
+    .lw-hut .lwh-shop-buy.is-sold{background:rgba(40,40,40,0.4);border:1.5px solid rgba(120,120,120,0.3);color:var(--muted);cursor:not-allowed;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;padding:0.45rem 0.6rem;min-height:42px;width:100%;text-align:center;}
+
+    /* ALMANAC weather cards */
+    .lw-hut .lwh-weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;}
+    .lw-hut .lwh-weather-card{display:flex;flex-direction:column;align-items:center;text-align:center;background:linear-gradient(180deg,rgba(40,52,68,0.75),rgba(20,28,40,0.9));border:1.5px solid rgba(91,175,220,0.55);border-radius:10px;padding:0.7rem 0.45rem 0.5rem;cursor:pointer;min-height:160px;color:var(--cream);font-family:inherit;}
+    .lw-hut .lwh-weather-card img{width:64px;height:64px;object-fit:contain;}
+    .lw-hut .lwh-weather-emoji{font-size:2.4rem;line-height:1;}
+    .lw-hut .lwh-weather-card.broke{opacity:0.5;cursor:not-allowed;}
+    .lw-hut .lwh-weather-name{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.1em;color:var(--gold);margin:0.4rem 0 0.2rem;}
+    .lw-hut .lwh-weather-desc{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.3;flex:1;}
+    .lw-hut .lwh-weather-cost{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:rgba(91,175,220,0.95);margin-top:0.3rem;}
+
+    /* SLOTS frame */
+    .lw-hut .lwh-slots-frame{display:flex;flex-direction:column;align-items:center;gap:0.5rem;padding:0.4rem 0.2rem;}
+    .lw-hut .lwh-slots-art{width:120px;height:120px;filter:drop-shadow(0 6px 18px rgba(200,168,75,0.4));}
+    .lw-hut .lwh-slots-art img{width:100%;height:100%;object-fit:contain;}
+    .lw-hut .lwh-slots-summary{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--cream);text-align:center;line-height:1.7;padding:0.5rem 0.7rem;background:rgba(13,16,12,0.6);border-radius:8px;width:100%;}
+    .lw-hut .lwh-slots-summary b{color:var(--gold);}
+    .lw-hut .lwh-slots-pull{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;background:linear-gradient(180deg,var(--gold),#a88a2f);border:none;color:#0d100c;border-radius:8px;padding:0.7rem 1.6rem;cursor:pointer;min-height:48px;width:100%;box-shadow:0 3px 10px rgba(200,168,75,0.3);}
+
+    /* QUESTS card */
+    .lw-hut .lwh-quest-card{background:linear-gradient(180deg,rgba(60,52,40,0.7),rgba(28,22,14,0.9));border:1.5px solid rgba(200,168,75,0.45);border-radius:12px;padding:0.85rem 0.7rem;}
+    .lw-hut .lwh-quest-text{font-family:'Playfair Display',serif;font-style:italic;font-size:0.62rem;color:var(--cream);text-align:center;line-height:1.55;margin-bottom:0.9rem;}
+    .lw-hut .lwh-quest-trade{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.85rem;}
+    .lw-hut .lwh-quest-side{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;}
+    .lw-hut .lwh-quest-label{font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;color:var(--muted);}
+    .lw-hut .lwh-quest-art{width:56px;height:56px;display:flex;align-items:center;justify-content:center;}
+    .lw-hut .lwh-quest-art img{max-width:100%;max-height:100%;object-fit:contain;}
+    .lw-hut .lwh-quest-itemname{font-family:'Playfair Display',serif;font-size:0.5rem;color:var(--cream);text-align:center;}
+    .lw-hut .lwh-quest-count{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);}
+    .lw-hut .lwh-quest-count.ok{color:var(--sage);}
+    .lw-hut .lwh-quest-arrow{font-size:1.4rem;color:var(--gold);}
+    .lw-hut .lwh-quest-btn{width:100%;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.1em;background:linear-gradient(180deg,rgba(122,179,86,0.4),rgba(46,90,32,0.6));border:1.5px solid rgba(122,179,86,0.7);color:var(--cream);border-radius:8px;padding:0.55rem 0.6rem;cursor:pointer;min-height:48px;}
+    .lw-hut .lwh-quest-btn.broke{background:rgba(40,40,40,0.45);border-color:rgba(120,120,120,0.35);color:var(--muted);cursor:not-allowed;}
+    .lw-hut .lwh-quest-claimed{font-family:'Playfair Display',serif;font-style:italic;font-size:0.55rem;color:var(--sage);text-align:center;padding:0.5rem;}
+
+    /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots) */
+    #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:64px;height:64px;flex-shrink:0;overflow:hidden;}
+    #kb-hut:hover{background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(200,168,75,0.08));}
+
     /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
     .lu-overlay{position:fixed;inset:0;z-index:99998;display:none;}
     .lu-overlay.open{display:block;}
@@ -3444,9 +3521,7 @@
     body.game-active .kb-row2,
     body.game-active #kb-sunbeams,
     body.game-active #kb-dew,
-    body.game-active #kb-slots,
-    body.game-active #kb-mystery,
-    body.game-active #kb-weather,
+    body.game-active #kb-hut,
     body.game-active #kb-install,
     body.game-active #pw-lb-toggle,
     body.game-active #kb-compendium,
@@ -6428,10 +6503,8 @@ window._addSwitchTabHook = function(fn){
     <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
     <div class="kb-row2">
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
-      <div id="kb-mystery" onclick="if(window._openMystery)_openMystery();" title="Mystery Box" style="border:2px solid rgba(232,160,191,0.5);"><img src="assets/btn-mystery.png" alt="Mystery" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-mystery.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
-      <div id="kb-weather" onclick="if(window._openWeather)_openWeather();" title="Summon Weather" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-weather.png" alt="Weather" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
-      <div id="kb-slots" onclick="if(window._openSlots)_openSlots();" title="Slot Machine"><img src="assets/btn-slots.png" alt="Slots" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install.png" alt="Install" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
     </div>
   </div>
@@ -49352,9 +49425,7 @@ return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,use
      entire tutorial. */
   body.lw-tut-active #kb-sunbeams,
   body.lw-tut-active #kb-dew,
-  body.lw-tut-active #kb-mystery,
-  body.lw-tut-active #kb-weather,
-  body.lw-tut-active #kb-slots,
+  body.lw-tut-active #kb-hut,
   body.lw-tut-active #kb-install{pointer-events:none !important;opacity:0.35 !important;filter:saturate(0.3) brightness(0.65) !important;transition:opacity 0.4s,filter 0.4s;}
   /* Tutorial: lock the greenhouse grid-sort buttons (New / Rare / A-Z /
      Season / EA) at the top-right of the greenhouse panel. Their default
@@ -71618,9 +71689,21 @@ window._lwClaimHerbarium = function(id){
   function count(key){ return _load()[key] || 0; }
   function add(key, n){
     if (!CATALOG[key]) return false;
-    var inv = _load(); inv[key] = (inv[key]||0) + (n||1); _save(inv);
+    // Pouch cap (default 25, Pi expansion to 40). Adds capped at remaining headroom.
+    var cap = parseInt(localStorage.getItem('lw_pouch_cap')||'25',10);
+    if (isNaN(cap)) cap = 25;
+    cap = Math.max(25, Math.min(40, cap));
+    var have = total();
+    var room = cap - have;
+    var want = n||1;
+    if (want > 0 && room <= 0) {
+      if (window._toast) try { window._toast('Pouch full ('+have+'/'+cap+'). Use or trade items first.'); } catch(e){}
+      return false;
+    }
+    var actual = (want > 0) ? Math.min(want, room) : want;
+    var inv = _load(); inv[key] = (inv[key]||0) + actual; _save(inv);
     if (window._toast && CATALOG[key]) {
-      try { window._toast(CATALOG[key].icon + ' ' + CATALOG[key].name + ' ' + (n>0?'+'+n:n) + ', in your pouch'); } catch(e){}
+      try { window._toast(CATALOG[key].icon + ' ' + CATALOG[key].name + ' ' + (actual>0?'+'+actual:actual) + ', in your pouch'); } catch(e){}
     }
     return true;
   }
@@ -72281,6 +72364,414 @@ window._lwClaimHerbarium = function(id){
       add('compassShard', 1);
     }
   } catch(e){}
+})();
+
+// ═══ LW_HUT — Hermit's Hut: shop + almanac + slots + quests ═══
+// One overlay, four tabs. Daily-rotating shop stock. Item-conversion quests.
+// Replaces the home-row mystery / weather / slots buttons with a single
+// HERMIT'S HUT entry. Mystery box stays as a slot; weather + slots get tabs.
+(function(){
+  'use strict';
+  var SHOP_KEY  = 'lw_hut_shop_v1';   // { date, stock, purchased }
+  var QUEST_KEY = 'lw_hut_quest_v1';  // { date, recipe, claimed }
+
+  // Pricing per rarity (Dew range — daily-seeded value within range)
+  var PRICE = {
+    Common:    { min: 30,   max: 50   },
+    Uncommon:  { min: 100,  max: 150  },
+    Rare:      { min: 250,  max: 400  },
+    Epic:      { min: 600,  max: 800  },
+    Legendary: { min: 1500, max: 2000 }
+  };
+
+  // Daily-quest recipes (item-conversion). One picked per day.
+  var QUEST_RECIPES = [
+    { ask:{key:'compassShard',n:3}, give:{key:'wanderersMap',n:1},
+      text:"I'll show you a place no one's been. Three compass shards, and the map is yours." },
+    { ask:{key:'foragersLens',n:4}, give:{key:'tetherMoss',n:1},
+      text:"Old lens leaves something behind. Bring me four. I'll wrap you in tether moss." },
+    { ask:{key:'whisperVine',n:2}, give:{key:'ravenEye',n:1},
+      text:"Two whisper vines for the raven's eye. The bird sees what the vine only whispers." },
+    { ask:{key:'compassShard',n:5}, give:{key:'lanternPath',n:1},
+      text:"Five shards. I'll braid them into a lantern path. Your steps will be lit." },
+    { ask:{key:'moonwake',n:2},     give:{key:'shellgourd',n:1},
+      text:"Two moonwakes for one shellgourd. Trade silver for stone." },
+    { ask:{key:'foragersLens',n:2}, give:{key:'compassShard',n:1},
+      text:"Two lenses for a fresh shard. The needle finds true." }
+  ];
+
+  // ─── daily seed + RNG ───
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function dailySeed(salt){
+    var s = (salt||'') + todayStr();
+    var h = 0;
+    for (var i=0;i<s.length;i++){ h = ((h<<5)-h + s.charCodeAt(i))|0; }
+    return Math.abs(h) || 1;
+  }
+  function seededRng(seed){
+    return function(){
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+  }
+
+  // ─── stock generation ───
+  function generateStock(){
+    var rng = seededRng(dailySeed('shop'));
+    var cat = window.LW_ITEMS_CATALOG || {};
+    var byTier = { Common:[], Uncommon:[], Rare:[], Epic:[], Legendary:[] };
+    for (var k in cat){
+      var it = cat[k];
+      if (it.wired === false) continue;
+      if (byTier[it.rarity]) byTier[it.rarity].push(k);
+    }
+    function pick(tier, n){
+      var pool = byTier[tier].slice();
+      var out = [];
+      for (var i=0;i<n;i++){
+        if (!pool.length) break;
+        var idx = Math.floor(rng() * pool.length);
+        out.push(pool.splice(idx,1)[0]);
+      }
+      return out;
+    }
+    function priceFor(tier){
+      var p = PRICE[tier] || PRICE.Common;
+      return Math.round(p.min + rng() * (p.max - p.min));
+    }
+    var slots = [];
+    pick('Common',2).forEach(function(k){ slots.push({type:'item',key:k,tier:'Common',price:priceFor('Common')}); });
+    pick('Uncommon',1).forEach(function(k){ slots.push({type:'item',key:k,tier:'Uncommon',price:priceFor('Uncommon')}); });
+    pick('Rare',1).forEach(function(k){ slots.push({type:'item',key:k,tier:'Rare',price:priceFor('Rare')}); });
+    // Mystery box slot — always present, fixed cost
+    slots.push({type:'mystery', price:25});
+    // Daily Special — random tier, 50% off, no overlap with regular slots
+    var specialTiers = ['Common','Uncommon','Rare','Epic'];
+    var st = specialTiers[Math.floor(rng() * specialTiers.length)];
+    var taken = {};
+    for (var i=0;i<slots.length;i++){ if (slots[i].key) taken[slots[i].key] = 1; }
+    var pool = byTier[st].filter(function(k){ return !taken[k]; });
+    if (pool.length){
+      var sk = pool[Math.floor(rng() * pool.length)];
+      slots.push({type:'special', key:sk, tier:st, price:Math.round(priceFor(st) * 0.5)});
+    }
+    return slots;
+  }
+
+  function getStock(){
+    var t = todayStr();
+    var st = null;
+    try { st = JSON.parse(localStorage.getItem(SHOP_KEY)||'null'); } catch(e){}
+    if (!st || st.date !== t){
+      st = { date:t, stock:generateStock(), purchased:{} };
+      try { localStorage.setItem(SHOP_KEY, JSON.stringify(st)); } catch(e){}
+    }
+    return st;
+  }
+
+  function getQuest(){
+    var t = todayStr();
+    var q = null;
+    try { q = JSON.parse(localStorage.getItem(QUEST_KEY)||'null'); } catch(e){}
+    if (!q || q.date !== t){
+      var rng = seededRng(dailySeed('quest'));
+      var r = QUEST_RECIPES[Math.floor(rng() * QUEST_RECIPES.length)];
+      q = { date:t, recipe:r, claimed:false };
+      try { localStorage.setItem(QUEST_KEY, JSON.stringify(q)); } catch(e){}
+    }
+    return q;
+  }
+
+  function getPouchCap(){
+    var c = parseInt(localStorage.getItem('lw_pouch_cap')||'25',10);
+    if (isNaN(c)) c = 25;
+    return Math.max(25, Math.min(40, c));
+  }
+  function pouchCount(){
+    if (window.LW_ITEMS && window.LW_ITEMS.total) return window.LW_ITEMS.total();
+    return 0;
+  }
+
+  // ─── filename helper: 'foragersLens' → 'foragers-lens' ───
+  function artFile(key){
+    return key.replace(/([A-Z])/g, '-$1').toLowerCase();
+  }
+  function itemArt(key, fallbackIcon){
+    var src = 'assets/items/' + artFile(key) + '.png';
+    return '<img src="'+src+'" alt="" onerror="this.outerHTML=\'<div class=&quot;lwh-shop-emoji&quot;>'+(fallbackIcon||'?')+'</div>\';">';
+  }
+
+  // ─── DOM ───
+  var currentTab = 'shop';
+
+  function ensureOverlay(){
+    var ov = document.getElementById('lw-hut');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'lw-hut';
+    ov.className = 'lw-hut';
+    ov.innerHTML =
+      '<div class="lwh-scrim" onclick="LW_HUT.close()"></div>' +
+      '<div class="lwh-panel">' +
+        '<div class="lwh-header">' +
+          '<div class="lwh-title">🛋 HERMIT’S HUT</div>' +
+          '<button class="lwh-close" onclick="LW_HUT.close()">✕</button>' +
+        '</div>' +
+        '<div class="lwh-balance" id="lwh-balance"></div>' +
+        '<div class="lwh-tabs">' +
+          '<button class="lwh-tab active" data-tab="shop"    onclick="LW_HUT.switchTab(\'shop\')">🛍 SHOP</button>' +
+          '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')">🌤 ALMANAC</button>' +
+          '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">🎰 SLOTS</button>' +
+          '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">📜 QUESTS</button>' +
+        '</div>' +
+        '<div class="lwh-body" id="lwh-body"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    return ov;
+  }
+
+  function refreshBalance(){
+    var el = document.getElementById('lwh-balance');
+    if (!el) return;
+    var dew = (window.getTotalDew && window.getTotalDew()) || 0;
+    el.innerHTML = '<span>💧 ' + dew + '</span><span class="lwh-pouch">🌿 ' + pouchCount() + '/' + getPouchCap() + '</span>';
+  }
+
+  function switchTab(name){
+    currentTab = name;
+    var ts = document.querySelectorAll('.lw-hut .lwh-tab');
+    for (var i=0;i<ts.length;i++){
+      if (ts[i].getAttribute('data-tab') === name) ts[i].classList.add('active');
+      else ts[i].classList.remove('active');
+    }
+    render();
+  }
+
+  function render(){
+    refreshBalance();
+    if (currentTab === 'shop')        renderShop();
+    else if (currentTab === 'almanac') renderAlmanac();
+    else if (currentTab === 'slots')   renderSlots();
+    else if (currentTab === 'quests')  renderQuest();
+  }
+
+  function open(tab){
+    ensureOverlay();
+    if (tab) currentTab = tab;
+    render();
+    var ov = document.getElementById('lw-hut');
+    ov.classList.add('open');
+    if (typeof gtag !== 'undefined') gtag('event','hut_open',{tab:currentTab});
+  }
+  function close(){
+    var ov = document.getElementById('lw-hut');
+    if (ov) ov.classList.remove('open');
+  }
+
+  // ─── SHOP ───
+  function renderShop(){
+    var body = document.getElementById('lwh-body');
+    if (!body) return;
+    var st = getStock();
+    var cat = window.LW_ITEMS_CATALOG || {};
+    var bal = (window.getTotalDew && window.getTotalDew()) || 0;
+    var html = '<div class="lwh-section-text">The hermit lays out today’s wares.</div>';
+    html += '<div class="lwh-shop-grid">';
+    for (var i=0;i<st.stock.length;i++){
+      var s = st.stock[i];
+      var sold = !!st.purchased[i];
+      var afford = bal >= s.price;
+      var rarity = (s.tier||'Common').toLowerCase();
+      var rcls = 'rar-' + rarity;
+      var name, desc, art, badge='';
+      if (s.type === 'mystery'){
+        name = 'Mystery Box';
+        desc = 'A surprise. Sunbeams, Dew, Fertilizer, or jackpot.';
+        art = '<img src="assets/btn-mystery.png" alt="Mystery Box">';
+        rcls = 'rar-uncommon';
+        badge = '<div class="lwh-shop-badge sage">MYSTERY</div>';
+      } else {
+        var it = cat[s.key]; if (!it) continue;
+        name = it.name;
+        desc = it.desc;
+        art = itemArt(s.key, it.icon);
+        if (s.type === 'special') badge = '<div class="lwh-shop-badge gold">DAILY · 50% OFF</div>';
+      }
+      html += '<div class="lwh-shop-card '+rcls+(sold?' sold':'')+'">';
+      html += badge;
+      html += '<div class="lwh-shop-art">'+art+'</div>';
+      html += '<div class="lwh-shop-name">'+name+'</div>';
+      html += '<div class="lwh-shop-desc">'+desc+'</div>';
+      if (sold){
+        html += '<div class="lwh-shop-buy is-sold">SOLD</div>';
+      } else {
+        html += '<button class="lwh-shop-buy'+(afford?'':' broke')+'" onclick="LW_HUT.buy('+i+')">'+s.price+' 💧</button>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<div class="lwh-section-foot">Stock refreshes daily at midnight · pouch cap '+getPouchCap()+'</div>';
+    body.innerHTML = html;
+  }
+
+  function buy(slotIdx){
+    var st = getStock();
+    if (st.purchased[slotIdx]) return;
+    var slot = st.stock[slotIdx];
+    if (!slot) return;
+    var bal = (window.getTotalDew && window.getTotalDew()) || 0;
+    if (bal < slot.price){
+      if (window._toast) try { window._toast('Need '+slot.price+' Dew. You have '+bal+'.'); } catch(e){}
+      return;
+    }
+    if (slot.type === 'mystery'){
+      // Open mystery box modal — its existing flow already deducts 25 Dew
+      // and rolls loot. Mark sold so the slot dims after one purchase.
+      if (window._openMystery){
+        st.purchased[slotIdx] = true;
+        try { localStorage.setItem(SHOP_KEY, JSON.stringify(st)); } catch(e){}
+        window._openMystery();
+        // Re-render after the modal opens so the SOLD state is visible
+        setTimeout(render, 50);
+      }
+      return;
+    }
+    // Item purchase — pouch cap check (LW_ITEMS.add also enforces, but check first to avoid double-spend)
+    if (pouchCount() >= getPouchCap()){
+      if (window._toast) try { window._toast('Pouch full. Use or trade items first.'); } catch(e){}
+      return;
+    }
+    if (!(window.spendDew && window.spendDew(slot.price))) return;
+    if (window.LW_ITEMS && window.LW_ITEMS.add) window.LW_ITEMS.add(slot.key, 1);
+    st.purchased[slotIdx] = true;
+    try { localStorage.setItem(SHOP_KEY, JSON.stringify(st)); } catch(e){}
+    if (window._haptic) try { window._haptic('bloom'); } catch(e){}
+    if (typeof gtag !== 'undefined') gtag('event','hut_buy',{key:slot.key||'mystery',price:slot.price});
+    render();
+  }
+
+  // ─── ALMANAC (weather summon) ───
+  function renderAlmanac(){
+    var body = document.getElementById('lwh-body');
+    if (!body) return;
+    var bal = (window.getTotalDew && window.getTotalDew()) || 0;
+    var active = (window.getActiveWeather && window.getActiveWeather()) || null;
+    var WT = window.WEATHER_TYPES || {};
+    var html = '<div class="lwh-section-text">Summon weather across your grove.</div>';
+    if (active && WT[active.type]){
+      var aw = WT[active.type];
+      var rem = active.endAt ? Math.max(0, Math.ceil((active.endAt - Date.now())/3600000)) + 'h remaining' : 'one-time effect';
+      html += '<div class="lwh-active">'+aw.icon+' '+aw.name+' · '+rem+'</div>';
+    }
+    html += '<div class="lwh-weather-grid">';
+    for (var key in WT){
+      var t = WT[key];
+      var afford = bal >= t.cost;
+      var imgKey = t.id;
+      html += '<button class="lwh-weather-card'+(afford?'':' broke')+'" onclick="LW_HUT.castWeather(\''+t.id+'\')">' +
+        '<img src="assets/weather/weather-'+imgKey+'.png" alt="" onerror="this.outerHTML=\'<div class=&quot;lwh-weather-emoji&quot;>'+t.icon+'</div>\';">' +
+        '<div class="lwh-weather-name">'+t.name+'</div>' +
+        '<div class="lwh-weather-desc">'+t.desc+'</div>' +
+        '<div class="lwh-weather-cost">'+t.cost+' 💧</div>' +
+        '</button>';
+    }
+    html += '</div>';
+    body.innerHTML = html;
+  }
+  function castWeather(id){
+    if (window._castWeather){
+      window._castWeather(id);
+      setTimeout(render, 100);
+    }
+  }
+
+  // ─── SLOTS — opens existing slot modal beneath ───
+  function renderSlots(){
+    var body = document.getElementById('lwh-body');
+    if (!body) return;
+    body.innerHTML =
+      '<div class="lwh-section-text">Spin three reels. Match for Dew.</div>' +
+      '<div class="lwh-slots-frame">' +
+        '<div class="lwh-slots-art"><img src="assets/btn-slots.png" alt="Slots"></div>' +
+        '<div class="lwh-slots-summary">' +
+          '<div>Pull cost <b>15 💧</b></div>' +
+          '<div>Pair pays <b>10 💧</b></div>' +
+          '<div>Triple pays <b>80–8000 💧</b></div>' +
+          '<div>Top tier (☀️×3) JACKPOT · 8000 💧 +15 🌿</div>' +
+        '</div>' +
+        '<button class="lwh-slots-pull" onclick="LW_HUT.openSlots()">OPEN SLOT MACHINE</button>' +
+      '</div>';
+  }
+  function openSlots(){
+    if (window._openSlots) window._openSlots();
+  }
+
+  // ─── QUESTS ───
+  function renderQuest(){
+    var body = document.getElementById('lwh-body');
+    if (!body) return;
+    var q = getQuest();
+    var cat = window.LW_ITEMS_CATALOG || {};
+    var ask = cat[q.recipe.ask.key] || {};
+    var give = cat[q.recipe.give.key] || {};
+    var have = (window.LW_ITEMS && window.LW_ITEMS.count) ? window.LW_ITEMS.count(q.recipe.ask.key) : 0;
+    var canTrade = have >= q.recipe.ask.n && !q.claimed;
+    var html = '<div class="lwh-section-text">The hermit speaks.</div>';
+    html += '<div class="lwh-quest-card">';
+    html += '<div class="lwh-quest-text">"'+q.recipe.text+'"</div>';
+    html += '<div class="lwh-quest-trade">';
+    html += '<div class="lwh-quest-side">';
+    html += '<div class="lwh-quest-label">YOU GIVE</div>';
+    html += '<div class="lwh-quest-art">'+itemArt(q.recipe.ask.key, ask.icon)+'</div>';
+    html += '<div class="lwh-quest-itemname">'+(ask.name||'?')+'</div>';
+    html += '<div class="lwh-quest-count'+(canTrade?' ok':'')+'">'+have+' / '+q.recipe.ask.n+'</div>';
+    html += '</div>';
+    html += '<div class="lwh-quest-arrow">→</div>';
+    html += '<div class="lwh-quest-side">';
+    html += '<div class="lwh-quest-label">HE GIVES</div>';
+    html += '<div class="lwh-quest-art">'+itemArt(q.recipe.give.key, give.icon)+'</div>';
+    html += '<div class="lwh-quest-itemname">'+(give.name||'?')+'</div>';
+    html += '<div class="lwh-quest-count">×'+q.recipe.give.n+'</div>';
+    html += '</div>';
+    html += '</div>';
+    if (q.claimed){
+      html += '<div class="lwh-quest-claimed">Trade complete. Return tomorrow.</div>';
+    } else {
+      html += '<button class="lwh-quest-btn'+(canTrade?'':' broke')+'" onclick="LW_HUT.claimQuest()">'+(canTrade?'COMPLETE THE TRADE':('NEED '+(q.recipe.ask.n - have)+' MORE'))+'</button>';
+    }
+    html += '</div>';
+    html += '<div class="lwh-section-foot">A new ask each day at midnight</div>';
+    body.innerHTML = html;
+  }
+  function claimQuest(){
+    var q = getQuest();
+    if (q.claimed) return;
+    var have = (window.LW_ITEMS && window.LW_ITEMS.count) ? window.LW_ITEMS.count(q.recipe.ask.key) : 0;
+    if (have < q.recipe.ask.n){
+      if (window._toast) try { window._toast('You need '+q.recipe.ask.n+' to trade.'); } catch(e){}
+      return;
+    }
+    if (pouchCount() >= getPouchCap()){
+      if (window._toast) try { window._toast('Pouch full. Use or trade items first.'); } catch(e){}
+      return;
+    }
+    if (window.LW_ITEMS && window.LW_ITEMS.spend){
+      for (var i=0;i<q.recipe.ask.n;i++) window.LW_ITEMS.spend(q.recipe.ask.key);
+    }
+    if (window.LW_ITEMS && window.LW_ITEMS.add) window.LW_ITEMS.add(q.recipe.give.key, q.recipe.give.n);
+    q.claimed = true;
+    try { localStorage.setItem(QUEST_KEY, JSON.stringify(q)); } catch(e){}
+    if (window._haptic) try { window._haptic('bloom'); } catch(e){}
+    if (typeof gtag !== 'undefined') gtag('event','hut_quest_complete',{ask:q.recipe.ask.key,give:q.recipe.give.key});
+    render();
+  }
+
+  window.LW_HUT = {
+    open: open, close: close, switchTab: switchTab,
+    buy: buy, castWeather: castWeather, openSlots: openSlots, claimQuest: claimQuest,
+    refresh: render,
+    getPouchCap: getPouchCap, pouchCount: pouchCount
+  };
 })();
 
 // ═══ LW_BOXES — mystery boxes that drop LW_ITEMS ═══
@@ -76284,7 +76775,8 @@ window._lwApplyGates=function(){
   // Keeper-bar sinks (mystery/slots/weather) — visible from start but
   // GREYED OUT until Lv 6 so players see what they're working toward.
   // Tapping a locked one shows the unlock-level toast instead of opening.
-  var sinks=['kb-mystery','kb-slots','kb-weather'];
+  // Keeper-bar sink gating now applies to the single Hermit's Hut entry.
+  var sinks=['kb-hut'];
   var sinksUnlocked=window.canSee.keeperBarSinks();
   for(var i=0;i<sinks.length;i++){
     var el=document.getElementById(sinks[i]);
@@ -76303,28 +76795,19 @@ window._lwApplyGates=function(){
     }
   }
 };
-// Intercept clicks on locked sinks so they explain the gate instead of
-// firing _openMystery/_openSlots/_openWeather.
+// Intercept Hermit's Hut open when locked.
 (function(){
-  var _origMystery=window._openMystery,_origSlots=window._openSlots,_origWeather=window._openWeather;
-  function _lockedToast(name){
-    if(window._toast)window._toast('🔒 '+name+' unlocks at Keeper Level 6.');
-  }
-  window._openMystery=function(){
-    var el=document.getElementById('kb-mystery');
-    if(el&&el.classList.contains('lw-locked')){_lockedToast('Mystery Box');return;}
-    if(_origMystery)return _origMystery.apply(this,arguments);
+  if (!window.LW_HUT || window.LW_HUT._gateInstalled) return;
+  var _origOpen = window.LW_HUT.open;
+  window.LW_HUT.open = function(){
+    var el = document.getElementById('kb-hut');
+    if (el && el.classList.contains('lw-locked')){
+      if (window._toast) window._toast('🔒 The Hermit\'s Hut unlocks at Keeper Level 6.');
+      return;
+    }
+    return _origOpen.apply(this, arguments);
   };
-  window._openSlots=function(){
-    var el=document.getElementById('kb-slots');
-    if(el&&el.classList.contains('lw-locked')){_lockedToast('Slot Machine');return;}
-    if(_origSlots)return _origSlots.apply(this,arguments);
-  };
-  window._openWeather=function(){
-    var el=document.getElementById('kb-weather');
-    if(el&&el.classList.contains('lw-locked')){_lockedToast('Weather Summon');return;}
-    if(_origWeather)return _origWeather.apply(this,arguments);
-  };
+  window.LW_HUT._gateInstalled = true;
 })();
 // Plant-XP lock — new players don't level up from plant-related grants
 // during tutorial. Prevents power-leveling from gift plant + first mints.
