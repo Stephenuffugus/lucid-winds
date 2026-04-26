@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.88';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.89';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -33186,7 +33186,7 @@ document.addEventListener('keydown', function(e) {
   // ════════════════════════════════════════════════════════════════════════
   // ═══ HAIKU ENGINE v4.1 — Director ear-checked, all banks verified ═══
   var _HW = {
-    n1: [ // 1-syllable (180 words)
+    n1: [ // 1-syllable (224 words — was 180, +44 in v4.2)
       'arc','arch','bast','bloom','bolt','bone','bore','bough','bract','breach','brim','brook',
       'bulb','burst','cairn','cap','cell','chaff','chert','clasp','cliff','copse','crag','creek',
       'crest','crook','crown','crypt','cup','cyst','den','dew','dome','drift','dross','drum',
@@ -33202,9 +33202,15 @@ document.addEventListener('keydown', function(e) {
       'surge','switch','tarn','thread','trace','tract','tread','trench','trunk','truss','turn','tusk',
       'vault','veil','vein','vent','verge','void','wake','wall','wash','well','wharf','whorl',
       'wick','wilds','wisp','wreath','leaf','corm','thorn','spathe','drupe','bale','bole','gale',
-      'scale','swale'
+      'scale','swale',
+      // v4.2 additions — earthy single-syllable nouns
+      'ash','beak','blade','blight','branch','breath','bud','calf','claw','cone',
+      'dawn','dirt','dock','dove','dusk','finch','fleece','forge','grass','hawk',
+      'heart','herb','hide','hoof','lark','moss','pine','plum','rind','rope',
+      'sage','shade','sheep','shore','silk','sky','snow','swarm','thatch','twig',
+      'vine','wing','wren','yew'
     ],
-    n2: [ // 2-syllable (196 words)
+    n2: [ // 2-syllable (246 words — was 196, +50 in v4.2)
       'aerie','alder','anther','arbor','archive','ashfall','ashpit','aspen','atrium','aurum','barrow','basin',
       'bedrock','belfry','beryl','bladder','bracket','bramble','branchlet','briarroot','bristle','burrow','cairnstone','calyx',
       'canal','candle','cascade','cavern','cellar','chamber','chimney','cinder','cipher','circuit','cistern','cluster',
@@ -33221,16 +33227,26 @@ document.addEventListener('keydown', function(e) {
       'vertex','vessel','vestige','vigil','vista','watershed','whisper','wildroot','window','pistil','stolon','tuber',
       'rachis','pollen','nectar','xylem','lignin','tannin','latex','sucker','carpel','spadix','taproot','ampoule',
       'cupule','nodule','stonepit','tideway','stipule','briar','chasm','coil','geode','phial','prism','spire',
-      'vial','phloem','mire','pyre'
+      'vial','phloem','mire','pyre',
+      // v4.2 additions — flora and fauna nouns, two syllables
+      'acorn','antler','apple','aster','beetle','birdsong','blossom','bracken','catkin','clover',
+      'cricket','crocus','dewdrop','eelgrass','fennel','foxglove','foxtail','garnet','granite','hawthorn',
+      'heron','hyssop','holly','jasper','kestrel','larkspur','locust','magpie','milkweed','nettle',
+      'nuthatch','osprey','otter','plover','primrose','raven','robin','rowan','sapling','serpent',
+      'snowdrop','sparrow','spider','splinter','sumac','swallow','tadpole','thistle','willow','weasel'
     ],
-    n3: [ // 3-syllable (53 words)
+    n3: [ // 3-syllable (83 words — was 53, +30 in v4.2)
       'aperture','artery','bramblewood','canopy','carapace','catacomb','catalyst','cavernmouth','chamberpot','clusterhead','corona','corridor',
       'cradlewood','deltafan','eddyline','effigy','elderwood','emberfall','filament','fountainhead','haloform','horizon','icicle','keystonearch',
       'lacuna','monolith','nodulebed','obelisk','palisade','parapet','pavilion','petiole','pillarroot','portico','precipice','quarryface',
       'reservoir','rivulet','rotunda','spindlewood','talonroot','thicketroot','vesselroot','watermark','windowarch','corolla','samara','diadem',
-      'furrowbed','needlebed','nucleus','torrentbed','cambium'
+      'furrowbed','needlebed','nucleus','torrentbed','cambium',
+      // v4.2 additions — three-syllable plant and creature nouns
+      'amaranth','amethyst','aroma','buttercup','cantata','caraway','chickadee','chrysalis','cinnamon','clematis',
+      'cottonwood','daffodil','damselfly','dragonfly','evergreen','goldenrod','grasshopper','hellebore','hummingbird','hyacinth',
+      'labyrinth','lavender','marigold','meadowlark','mistletoe','mulberry','peridot','rosemary','sassafras','snowberry'
     ],
-    v1: [ // 1-syllable (89 words)
+    v1: [ // 1-syllable (124 words — was 89, +35 in v4.2)
       'drinks','feeds','holds','guards','grips','bends','climbs','hums','stirs','wakes','waits','dreams',
       'rests','sleeps','seeks','finds','fades','drifts','clings','splits','weaves','braids','sips','seeps',
       'creeps','coils','swells','cools','warms','lifts','sinks','blooms','folds','cracks','heals','seals',
@@ -33238,20 +33254,32 @@ document.addEventListener('keydown', function(e) {
       'arcs','bores','bursts','caps','clasps','crests','crowns','cups','dews','drums','flares','floods',
       'frosts','gleams','glints','glooms','looms','mists','nests','rains','roots','scars','scoops','seeds',
       'sheds','shells','slips','spills','spores','spurs','stacks','stalks','stems','steps','treads','vaults',
-      'veils','vents','walls','wells','wicks'
+      'veils','vents','walls','wells','wicks',
+      // v4.2 additions — one-syllable verbs (third-person singular)
+      'asks','bathes','bites','bows','brings','calls','casts','churns','clears','drips',
+      'drops','falls','feels','fights','flies','floats','flows','gives','glides','gnaws',
+      'hangs','leans','leaps','lends','melts','mends','moves','nods','plants','prunes',
+      'reads','sends','sows','stands','takes'
     ],
-    v2: [ // 2-syllable (57 words)
+    v2: [ // 2-syllable (87 words — was 57, +30 in v4.2)
       'gathers','whispers','listens','cradles','anchors','shelters','darkens','ripens','scatters','covers','opens','trembles',
       'shimmers','flickers','softens','reaches','settles','wanders','searches','blankets','beckons','welcomes','nurtures','quivers',
       'burrows','cascades','channels','ciphers','clusters','cocoons','echoes','eddies','fissures','furrows','halos','harbors',
       'hollows','mirrors','murmurs','orbits','pillars','ripples','saddles','shadows','signals','spirals','tethers','towers',
-      'tunnels','hatches','patches','perches','ridges','surges','traces','washes','mires'
+      'tunnels','hatches','patches','perches','ridges','surges','traces','washes','mires',
+      // v4.2 additions — two-syllable verbs
+      'brightens','broadens','buries','carries','comforts','crackles','crinkles','crumbles','dapples','dazzles',
+      'deepens','dwindles','fattens','feathers','gentles','glimmers','glistens','glitters','hardens','hastens',
+      'hovers','kindles','mingles','ponders','quenches','sharpens','simmers','sparkles','sweetens','thickens'
     ],
-    v3: [ // 3-syllable (14 words)
+    v3: [ // 3-syllable (34 words — was 14, +20 in v4.2)
       'remembers','surrenders','discovers','envelops','meanders','nourishes','penetrates','radiates','resonates','awakens','uncovers','overgrows',
-      'intertwines','releases'
+      'intertwines','releases',
+      // v4.2 additions — three-syllable verbs
+      'abandons','beseeches','burnishes','considers','develops','discloses','embraces','encloses','examines','exposes',
+      'illumines','imagines','inhabits','languishes','navigates','occupies','recovers','refreshes','resembles','traverses'
     ],
-    a1: [ // 1-syllable (108 words)
+    a1: [ // 1-syllable (155 words — was 108, +47 in v4.2)
       'bleak','blown','calm','chalked','chilled','clad','coiled','cold','creased','cupped','damp','deep',
       'delved','dense','drab','draped','dry','edged','etched','faint','fanged','far','fine','flaked',
       'flecked','fluxed','forked','frail','furled','fused','gild','glassed','grim','grooved','hazed','hushed',
@@ -33260,9 +33288,15 @@ document.addEventListener('keydown', function(e) {
       'runed','sapped','scaled','scorched','scribed','seared','seeped','short','shrunk','slick','soft','sparse',
       'spined','spored','sprung','stalked','still','strange','streaked','thorned','torn','traced','trapped','tucked',
       'twined','veiled','veined','walled','waned','warped','whorled','wild','worn','wyrd','stemmed','winged',
-      'barbed','pale','aged','mossed','cragged','knurled','murked','nicked','stilled','wreathed','sheathed','ridged'
+      'barbed','pale','aged','mossed','cragged','knurled','murked','nicked','stilled','wreathed','sheathed','ridged',
+      // v4.2 additions — one-syllable adjectives
+      'bare','blank','bold','bound','branched','brave','brimmed','broad','brushed','burnt',
+      'charred','chipped','churned','clean','clear','clipped','crisp','drained','dropped','fierce',
+      'firm','fixed','fresh','full','gaunt','glad','grand','green','grey','hewn',
+      'keen','knit','light','lush','masked','meek','mild','moist','mute','neat',
+      'oiled','plumed','pruned','quaint','quick','raw','rich'
     ],
-    a2: [ // 2-syllable (253 words)
+    a2: [ // 2-syllable (303 words — was 253, +50 in v4.2)
       'abstruse','acrid','adrift','algid','ambered','ancient','arcane','ardent','arid','ashen','astral','attuned',
       'barren','benthic','bitter','bloomless','boggy','brackish','briny','brittle','brumal','buried','calcic','caustic',
       'charnel','chloric','cindered','ciphered','clayborn','coastal','cobwebbed','compact','condensed','congealed','copper','crawling',
@@ -33284,16 +33318,26 @@ document.addEventListener('keydown', function(e) {
       'jagged','jointed','knotted','lidded','lustred','mantled','marbled','matted','moated','mottled','mounded','muted',
       'needled','pebbled','pitted','plated','pleated','seeded','settled','silted','spindled','spotted','threaded','wicked',
       'rooted','antique','baleful','densewood','icebound','oblique','pulselit','stonebound','tactile','dire','gnarled','wired',
-      'tattered'
+      'tattered',
+      // v4.2 additions — two-syllable adjectives
+      'abloom','agile','airy','amber','ample','balmy','beaming','biting','bloomy','blossomed',
+      'blunted','brooded','bushy','careworn','ceaseless','chalky','chambered','chilly','chiseled','clayey',
+      'clinging','clouded','cluttered','cobbled','coppered','covered','creaking','crested','crooked','dazzled',
+      'dewy','dismal','dreamy','dripping','drunken','dusky','dusty','earnest','earthbound','encased',
+      'fearless','feeble','fertile','fevered','fleeting','flinty','flowered','flowing','foamy','foggy'
     ],
-    a3: [ // 3-syllable (84 words)
+    a3: [ // 3-syllable (114 words — was 84, +30 in v4.2)
       'abyssal','alchemic','alkaline','ammonic','anoxic','apical','ascetic','auroral','autumnal','basaltic','bifurcate','botryoid',
       'calcified','canescent','carbonic','cauterized','cavernous','ceramic','chimeric','chitinous','cindery','crystalline','dormitive','enshadowed',
       'everbloom','feraline','fossilized','fuligin','granular','hematic','imbricate','liminal','luminous','mineral','monadic','morrowless',
       'nebular','nitreous','orbital','ossified','pendulous','penumbral','pollenrich','prismatic','quietus','radicate','recondite','resinous',
       'sequestered','serpentine','silicate','sinuous','skeletal','smoldering','solaris','sulfuric','terminal','tremulous','verdigris','vernalized',
       'vesperal','vitreous','volcanic','waterbound','waterworn','wickedly','tapering','aureate','brocaded','corroded','divided','enfolded',
-      'enrooted','eroded','heliac','indented','miasmic','occluded','outlying','pluvial','radial','stygian','striated','axial'
+      'enrooted','eroded','heliac','indented','miasmic','occluded','outlying','pluvial','radial','stygian','striated','axial',
+      // v4.2 additions — three-syllable adjectives
+      'abundant','attentive','botanic','bountiful','contented','devoted','diminished','discerning','draconic','ecstatic',
+      'elated','elegant','emergent','enchanted','enduring','exotic','fantastic','faraway','fathomless','feathery',
+      'feverish','flowering','forgiving','gigantic','glorious','harrowing','hazardous','heavenly','hibernal','horrendous'
     ],
     p1: [ // 1-syllable (9 words)
       'through','from','in','on','by','with','near','past','down'
@@ -33397,6 +33441,51 @@ document.addEventListener('keydown', function(e) {
     return _hw(rng, bank); // fallback to full bank
   }
 
+  // ═══ HAIKU UNIQUENESS PASS (v4.2) ═══
+  // Prevents the "same content word appears in all three lines" bug Stephen
+  // reported. Repetition of short connectors ("the","a","of","and","over"...)
+  // is fine — only enforced on content words (>3 chars and not a stopword).
+  var _H_STOP = {
+    'the':1,'and':1,'for':1,'from':1,'with':1,'into':1,'onto':1,'near':1,
+    'past':1,'down':1,'over':1,'under':1,'across':1,'beyond':1,'within':1,
+    'among':1,'around':1,'beneath':1,'this':1,'that':1,'these':1,'those':1,
+    'all':1,'one':1,'two':1,'few':1,'some':1,'any':1,'each':1,'just':1,
+    'their':1,'there':1,'where':1,'when':1,'what':1,'who':1,'how':1,
+    'than':1,'then':1,'them':1,'they':1,'will':1,'have':1,'has':1,'had':1,
+    'are':1,'was':1,'were':1,'been':1,'being':1,'but':1,'not':1,'nor':1,
+    'yet':1,'still':1,'very':1,'more':1,'most':1,'much':1,'many':1,
+    'such':1,'only':1,'also':1,'even':1,'ever':1,'once':1,'now':1,'here':1
+  };
+  function _hIsContent(w) {
+    if (!w) return false;
+    if (w.length <= 3) return false; // short connectors fine to repeat
+    return !_H_STOP[w];
+  }
+  function _hLineWords(line) {
+    if (!line) return [];
+    // Strip punctuation, lowercase, split on whitespace
+    var cleaned = String(line).toLowerCase().replace(/[^a-z0-9 ]+/g, ' ');
+    var raw = cleaned.split(/\s+/);
+    var out = [];
+    for (var i = 0; i < raw.length; i++) {
+      if (raw[i]) out.push(raw[i]);
+    }
+    return out;
+  }
+  function _hLineContentSet(line, target) {
+    var words = _hLineWords(line);
+    for (var i = 0; i < words.length; i++) {
+      if (_hIsContent(words[i])) target[words[i]] = 1;
+    }
+  }
+  function _hLineHasCollision(line, used) {
+    var words = _hLineWords(line);
+    for (var i = 0; i < words.length; i++) {
+      if (_hIsContent(words[i]) && used[words[i]]) return true;
+    }
+    return false;
+  }
+
   function getHaiku(hash) {
     var h = (hash || '00000000000000000000000000000000').toLowerCase();
     var selector = parseInt(h[25], 16) || 0;
@@ -33405,6 +33494,19 @@ document.addEventListener('keydown', function(e) {
       var i1 = (parseInt(h[26]+h[27], 16) || 0) % HAIKU_A.length;
       var i2 = (parseInt(h[28]+h[29], 16) || 0) % HAIKU_B.length;
       var i3 = (parseInt(h[30]+h[31], 16) || 0) % HAIKU_C.length;
+      // Uniqueness pass — advance line2/line3 if a content word repeats from earlier line
+      var used1 = {}; _hLineContentSet(HAIKU_A[i1], used1);
+      var tries = 0;
+      while (tries < HAIKU_B.length && _hLineHasCollision(HAIKU_B[i2], used1)) {
+        i2 = (i2 + 1) % HAIKU_B.length; tries++;
+      }
+      var used12 = {};
+      for (var k in used1) { if (used1.hasOwnProperty(k)) used12[k] = 1; }
+      _hLineContentSet(HAIKU_B[i2], used12);
+      tries = 0;
+      while (tries < HAIKU_C.length && _hLineHasCollision(HAIKU_C[i3], used12)) {
+        i3 = (i3 + 1) % HAIKU_C.length; tries++;
+      }
       return { line1: HAIKU_A[i1], line2: HAIKU_B[i2], line3: HAIKU_C[i3] };
     }
     // Template-builder mode — select a THEME first, then all words share it
@@ -33414,12 +33516,31 @@ document.addEventListener('keydown', function(e) {
     var themeSeed = parseInt(h.slice(38, 40), 16) || 0;
     var theme = _HT_KEYS[themeSeed % _HT_KEYS.length];
     var rng1 = _haikuRng(seed1), rng2 = _haikuRng(seed2), rng3 = _haikuRng(seed3);
-    // Override _hw to use themed version for this haiku
+    // Uniqueness pass — track content words used so far in this haiku
+    var hUsed = {};
     var _origHw = _hw;
     _hw = function(rng, bank) {
       var tb = _HT[theme];
-      if (tb && tb[bank] && tb[bank].length > 0) return tb[bank][rng() % tb[bank].length];
-      return _origHw(rng, bank);
+      var arr;
+      if (tb && tb[bank] && tb[bank].length > 0) arr = tb[bank];
+      else arr = _HW[bank];
+      if (!arr || !arr.length) return _origHw(rng, bank);
+      var idx = rng() % arr.length;
+      var pick = arr[idx];
+      // If the pick is a content word already used in this haiku, advance the
+      // bank index (modular wraparound) until we find a fresh one. Stopwords
+      // and short connectors fall through immediately.
+      if (_hIsContent(pick) && hUsed[pick]) {
+        var step = 0;
+        while (step < arr.length) {
+          idx = (idx + 1) % arr.length;
+          pick = arr[idx];
+          if (!_hIsContent(pick) || !hUsed[pick]) break;
+          step++;
+        }
+      }
+      if (_hIsContent(pick)) hUsed[pick] = 1;
+      return pick;
     };
     var result = {
       line1: _hCap(_H5[rng1() % _H5.length](rng1)),
