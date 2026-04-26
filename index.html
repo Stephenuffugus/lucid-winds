@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.31';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.32';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5553,12 +5553,9 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
     .tab-bg{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0;pointer-events:none;}
     .tab-bg.active{opacity:1;}
     .tab-bg::after{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.55);pointer-events:none;}
-    #tab-bg-game{background-image:url('assets/backgrounds/bg-game-540x960.jpg');}
-    #tab-bg-greenhouse{background-image:url('assets/backgrounds/bg-greenhouse-540x960.jpg');}
-    #tab-bg-nursery{background-image:url('assets/backgrounds/bg-nursery-540x960.jpg');}
-    #tab-bg-wild{background-image:url('assets/backgrounds/bg-wild-540x960.jpg');}
-    #tab-bg-dashboard{background-image:url('assets/backgrounds/bg-menu-540x960.jpg');}
-    #tab-bg-binder{background-image:url('assets/backgrounds/bg-greenhouse-540x960.jpg');}
+    /* Tier 3 perf: backgrounds are now lazy-loaded via JS in switchTab.
+       Only the active tab's background is fetched; others load on first visit.
+       See window._lwLoadTabBg in the main IIFE. */
 
     /* Menu frame border-image for modals/panels */
     .pw-framed{border:16px solid transparent;border-image:url('assets/menu-frame-v2.png') 80 fill;border-image-outset:0;border-radius:0;}
@@ -5797,7 +5794,9 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
   <div id="lw-offline-banner"><span>Offline &#8212; progress saves locally only</span><button class="lw-ob-x" onclick="document.getElementById('lw-offline-banner').style.display='none';">&times;</button></div>
 
   <!-- ═══ FLUX TAB BACKGROUNDS (set-38) ═══ -->
-  <div class="tab-bg active" id="tab-bg-game"></div>
+  <!-- Tier 3 perf: only the initially active tab's bg is set inline; others
+       are lazy-loaded by window._lwLoadTabBg on first switchTab. -->
+  <div class="tab-bg active" id="tab-bg-game" style="background-image:url('assets/backgrounds/bg-game-540x960.jpg');" data-bg-loaded="1"></div>
   <div class="tab-bg" id="tab-bg-greenhouse"></div>
   <div class="tab-bg" id="tab-bg-nursery"></div>
   <div class="tab-bg" id="tab-bg-wild"></div>
@@ -37448,6 +37447,25 @@ document.addEventListener('keydown', function(e) {
     if (window.FG_Wild && FG_Wild._stopSeasons) FG_Wild._stopSeasons();
   }
 
+  // Tier 3 perf: lazy-load tab background images on first switchTab visit.
+  // The game tab's bg is set inline in HTML so the initial paint isn't blank.
+  var _LW_TAB_BG_URL = {
+    game:'assets/backgrounds/bg-game-540x960.jpg',
+    greenhouse:'assets/backgrounds/bg-greenhouse-540x960.jpg',
+    nursery:'assets/backgrounds/bg-nursery-540x960.jpg',
+    wild:'assets/backgrounds/bg-wild-540x960.jpg',
+    dashboard:'assets/backgrounds/bg-menu-540x960.jpg',
+    binder:'assets/backgrounds/bg-greenhouse-540x960.jpg'
+  };
+  window._lwLoadTabBg = function(tab) {
+    var el = document.getElementById('tab-bg-' + tab);
+    if (!el || el.getAttribute('data-bg-loaded') === '1') return;
+    var u = _LW_TAB_BG_URL[tab];
+    if (!u) return;
+    el.style.backgroundImage = "url('" + u + "')";
+    el.setAttribute('data-bg-loaded', '1');
+  };
+
   window.switchTab = function(tab) {
     _haptic('tab');
     if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:tab});
@@ -37491,7 +37509,11 @@ document.addEventListener('keydown', function(e) {
     var _tabBgNames=['game','greenhouse','nursery','wild','dashboard','binder'];
     _tabBgNames.forEach(function(t){var bg=document.getElementById('tab-bg-'+t);if(bg)bg.classList.remove('active');});
     var _activeBg=document.getElementById('tab-bg-'+tab);
-    if(_activeBg)_activeBg.classList.add('active');
+    if(_activeBg){
+      // Tier 3 perf: lazy-load this tab's background on first visit.
+      if(window._lwLoadTabBg)window._lwLoadTabBg(tab);
+      _activeBg.classList.add('active');
+    }
     _flushPendingSaves();
     // Update bottom nav active state
     document.querySelectorAll('.fg-nav-btn').forEach(function(t) { t.classList.remove('active'); });
