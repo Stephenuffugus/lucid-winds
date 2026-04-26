@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.24';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -42011,16 +42011,19 @@ function deactivate(){
   // battery win per the Apr 26 perf audit. _startGeoWatch is idempotent so
   // the next activate() restores it cleanly.
   _stopGeoWatch();
+  // Detach Firestore wildDrops listener — kept firing on Greenhouse/Nursery
+  // tabs, burning cellular data + Firestore quota for nothing.
+  try{_unsubscribeSharedDrops();}catch(e){}
 }
 var _visListenerWired=false;
 function _wireVisibilityGate(){
   if(_visListenerWired||typeof document==='undefined')return;
   _visListenerWired=true;
   try{document.addEventListener('visibilitychange',function(){
-    if(document.hidden){_stopGeoWatch();return;}
+    if(document.hidden){_stopGeoWatch();try{_unsubscribeSharedDrops();}catch(e){}return;}
     // Only restart if Wild is the active panel
     var p=document.getElementById('panel-wild');
-    if(p&&p.classList&&p.classList.contains('active'))_startGeoWatch();
+    if(p&&p.classList&&p.classList.contains('active')){_startGeoWatch();try{_subscribeSharedDrops();}catch(e){}}
   });}catch(e){}
 }
 function activate(){
@@ -42032,7 +42035,7 @@ function activate(){
   }catch(e){}
   _wireVisibilityGate();
   if(!_inited){_initMap();_initGeo();_inited=true;}
-  else{_startGeoWatch();}
+  else{_startGeoWatch();_subscribeSharedDrops();}
   // Prune expired wild plants before loading
   _pruneWild();
   // Sweep for already-adjacent complementary pairs (one-time-per-activate)
