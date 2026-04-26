@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.17';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2516,6 +2516,8 @@
 
     /* SHOP — ALL items always visible, hi-res art at full read size */
     .lw-hut .lwh-special-banner{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:#0d100c;background:linear-gradient(90deg,rgba(232,180,80,0.95),var(--gold),rgba(232,180,80,0.95));padding:0.45rem 0.6rem;border-radius:8px;text-align:center;margin-bottom:0.7rem;box-shadow:0 0 14px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,235,195,0.3);animation:specialPulse 3s ease-in-out infinite;}
+    .lw-hut .lwh-broke-hint{font-family:'DM Mono',monospace;font-size:0.55rem;color:rgba(220,180,180,0.92);background:linear-gradient(90deg,rgba(80,50,50,0.55),rgba(60,40,40,0.45));border:1px solid rgba(180,90,90,0.35);padding:0.45rem 0.6rem;border-radius:8px;line-height:1.5;margin-bottom:0.7rem;}
+    .lw-hut .lwh-broke-hint b{color:var(--cream);font-weight:700;}
     .lw-hut .lwh-special-banner b{font-weight:900;}
     @keyframes specialPulse{0%,100%{box-shadow:0 0 14px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,235,195,0.3);}50%{box-shadow:0 0 20px rgba(200,168,75,0.7),inset 0 1px 0 rgba(255,235,195,0.5);}}
     .lw-hut .lwh-shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;}
@@ -45796,7 +45798,7 @@ function openPicker(){
     return;
   }
   var gh=_getGH();
-  if(!gh.length){_toast('No plants! Play the Grove game first.');return;}
+  if(!gh.length){_toast('No plants in your greenhouse yet. Play a Grove game to earn Sunbeams, then mint your first plant.');return;}
   // STEPHEN'S DESIGN: drop-plant should feel like the greenhouse
   // carousel, not a small grid. Players need to flip the card, read
   // the haiku + DNA + EA + season before committing a real-world drop.
@@ -47449,17 +47451,24 @@ function _updateUI(){
   var b=document.getElementById('dbb');if(b){b.textContent=rem+'/'+_maxDr;b.classList.toggle('lo',rem<=1);}
   var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';
   var dl=document.getElementById('w-drops-left');if(dl){dl.textContent=rem;dl.style.color=rem<=0?'var(--muted)':rem<=1?'var(--gold)':'var(--cream)';}
-  // Empty state nudge for first-time players
+  // Empty state nudge for first-time players. Shows three core actions
+  // so the first Wild visit isn't a guessing game. Dismissible \u2014 once
+  // closed, lw_wild_oriented blocks future re-shows.
   var nudge=document.getElementById('w-empty-nudge');
   var wild=_getWild();
-  if(wild.length===0&&_drops===0){
+  var _dismissed=false;try{_dismissed=localStorage.getItem('lw_wild_oriented')==='1';}catch(e){}
+  if(wild.length===0&&_drops===0&&!_dismissed){
     if(!nudge){
       nudge=document.createElement('div');nudge.id='w-empty-nudge';
-      nudge.style.cssText='position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9990;text-align:center;pointer-events:none;animation:panelFadeIn 0.5s ease;';
-      nudge.innerHTML='<div style="background:rgba(13,16,12,0.92);border:1.5px solid rgba(122,179,86,0.2);border-radius:14px;padding:14px 22px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);max-width:280px;">'
-        +'<div style="font-family:Playfair Display,serif;font-size:0.8rem;color:var(--cream);margin-bottom:6px;">Plant your first specimen</div>'
-        +'<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.5;">Tap the \ud83c\udf31 button to drop a plant from your greenhouse onto the real-world map. Other players can see it!</div>'
-        +'<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--sage);margin-top:8px;">'+rem+' drops remaining today</div>'
+      // pointer-events:auto so the dismiss button can be tapped
+      nudge.style.cssText='position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9990;text-align:left;animation:panelFadeIn 0.5s ease;pointer-events:auto;';
+      nudge.innerHTML='<div style="position:relative;background:rgba(13,16,12,0.94);border:1.5px solid rgba(122,179,86,0.25);border-radius:14px;padding:14px 18px 12px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.5);">'
+        +'<button onclick="try{localStorage.setItem(\'lw_wild_oriented\',\'1\');}catch(e){}var n=document.getElementById(\'w-empty-nudge\');if(n)n.remove();" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:1px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.55);color:var(--muted);font-size:0.75rem;cursor:pointer;line-height:1;padding:0;">&times;</button>'
+        +'<div style="font-family:Playfair Display,serif;font-size:0.8rem;color:var(--cream);margin-bottom:8px;text-align:center;">Welcome to the wild</div>'
+        +'<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;"><span style="font-size:0.85rem;flex-shrink:0;">\ud83c\udf31</span><div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.5;"><b style="color:var(--sage);">SOW</b> button drops a plant from your greenhouse onto the real-world map.</div></div>'
+        +'<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;"><span style="font-size:0.85rem;flex-shrink:0;">\u2728</span><div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.5;">Glowing hexes hold <b style="color:var(--gold);">ferals</b>. Tap one within 75m to forage.</div></div>'
+        +'<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;"><span style="font-size:0.85rem;flex-shrink:0;">\ud83c\udf33</span><div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.5;"><b style="color:var(--sage);">MY PLANTS</b> lists your wild plants by status &middot; tap to fast-travel.</div></div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);text-align:center;margin-top:6px;opacity:0.7;">'+rem+' drops remaining today</div>'
         +'</div>';
       var mapWrap=document.getElementById('wild-tab');
       if(mapWrap)mapWrap.appendChild(nudge);
@@ -48452,11 +48461,23 @@ function _selectHexPlant(idx,p){
   // Fertilizer count for the MULCH button gating + tooltip
   var _mInv={};try{_mInv=JSON.parse(localStorage.getItem('sws_inventory')||'{}')||{};}catch(e){}
   var _mFert=_mInv.fertilizer||0;
+  // Mulch cooldown reads happen below in the cooldown helpers block;
+  // the button itself is computed here so it stays in the existing render
+  // ordering. Three states: on-cooldown, no-fert, ready.
   var _mulchTitle=_mFert>=1?'Spend 1 fertilizer for +24h lifespan + 1 EA':'Need 1 fertilizer (compost a greenhouse plant)';
-  var _mulchCls=_mFert>=1?'':' locked';
-  // Locked MULCH gets a toast onclick instead of bare display so the
-  // tap surfaces the requirement. Was a silent fail before.
-  var _mulchBtn='<button class="hi-action-btn'+_mulchCls+'" onclick="'+(_mFert>=1?'window._hexAction(\'mulch\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Need 1 fertilizer. Compost a greenhouse plant to get one.\')')+'" title="'+_mulchTitle+'">&#127807; MULCH ('+_mFert+')</button>';
+  var _mulchBtn;
+  // We need _mulchCdMs which is computed in the cooldown helpers block —
+  // but that block runs later. Read it inline here too so order doesn't matter.
+  var _mInlineCd=0;
+  try{var _mcdR=JSON.parse(localStorage.getItem('lw_mulch_cd')||'{}');if(_mcdR[p.hash]&&Date.now()-_mcdR[p.hash]<24*3600000)_mInlineCd=24*3600000-(Date.now()-_mcdR[p.hash]);}catch(e){}
+  function _fmtCdHInline(ms){var h=Math.ceil(ms/3600000);if(h>=1)return h+'h';var m=Math.ceil(ms/60000);return m+'m';}
+  if(_mInlineCd>0){
+    _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Already mulched. Returns in '+_fmtCdHInline(_mInlineCd)+'.\')" title="On cooldown">&#127807; MULCHED &middot; '+_fmtCdHInline(_mInlineCd)+'</button>';
+  } else if(_mFert>=1){
+    _mulchBtn='<button class="hi-action-btn" onclick="window._hexAction(\'mulch\')" title="'+_mulchTitle+'">&#127807; MULCH &middot; 1&#127807; ('+_mFert+' left)</button>';
+  } else {
+    _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 1 fertilizer. Compost a greenhouse plant to get one.\')" title="'+_mulchTitle+'">&#127807; MULCH &middot; need 1&#127807;</button>';
+  }
   // BLESSING button — Rare+ plants generate a daily Dew gift, claimable
   // once per plant per day per player. Available on own AND stranger plants.
   var _blessBtn='';
@@ -48480,8 +48501,37 @@ function _selectHexPlant(idx,p){
   // Phoenix Bloom removed (companion retired). Placeholder kept so downstream
   // layout that reads _phxBtn continues to no-op cleanly.
   var _phxBtn='';
+  // ─── COOLDOWN + COST PREVIEW HELPERS (2026-04-26 polish) ───
+  // Reads relevant timestamps so each action button can render cost at rest
+  // and time-remaining when on cooldown. Eliminates the "tap and discover"
+  // anti-pattern. fmtH returns "Xh" / "Xm" for short readability.
+  function fmtCdH(ms){var h=Math.ceil(ms/3600000);if(h>=1)return h+'h';var m=Math.ceil(ms/60000);return m+'m';}
+  // Water cooldown — own plant 24h, tracked by lastWateredAt
+  var _waterCdMs=0;
   if(isOwn){
-    actions+='<button class="hi-action-btn" onclick="window._hexAction(\'water\')">&#128167; WATER</button>';
+    var _lwAt=p.lastWateredAt||(p.lastWatered?new Date(p.lastWatered).getTime():0);
+    if(_lwAt&&Date.now()-_lwAt<24*3600000)_waterCdMs=24*3600000-(Date.now()-_lwAt);
+  }
+  // Tend cooldown (stranger) — 6h per plant
+  var _tendCdMs=0;
+  if(!isOwn){
+    try{var _tcd=JSON.parse(localStorage.getItem('lw_tend_cd')||'{}');if(_tcd[p.hash]&&Date.now()-_tcd[p.hash]<6*3600000)_tendCdMs=6*3600000-(Date.now()-_tcd[p.hash]);}catch(e){}
+  }
+  // Mulch cooldown — 24h per plant
+  var _mulchCdMs=0;
+  try{var _mcd=JSON.parse(localStorage.getItem('lw_mulch_cd')||'{}');if(_mcd[p.hash]&&Date.now()-_mcd[p.hash]<24*3600000)_mulchCdMs=24*3600000-(Date.now()-_mcd[p.hash]);}catch(e){}
+  // Cuttings — lifetime per-plant + 2/day per-player
+  var _cutTaken=false,_cutDailyLeft=2;
+  try{var _ctl=JSON.parse(localStorage.getItem('lw_cuttings_taken')||'{}');if(_ctl[p.hash])_cutTaken=true;}catch(e){}
+  try{var _cd2=JSON.parse(localStorage.getItem('lw_cuttings_daily')||'{}');var _today2=new Date().toISOString().split('T')[0];if(_cd2.day===_today2)_cutDailyLeft=Math.max(0,2-(_cd2.count||0));}catch(e){}
+  if(isOwn){
+    // OWN: water cost is 5 Dew when fresh; cooldown text when watered.
+    var _waterDew=window.getTotalDew?window.getTotalDew():0;
+    var _waterLabel,_waterCls,_waterClick;
+    if(_waterCdMs>0){_waterLabel='&#128167; WATERED &middot; '+fmtCdH(_waterCdMs);_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Returns in '+fmtCdH(_waterCdMs)+'.\')';}
+    else if(_waterDew<5){_waterLabel='&#128167; WATER &middot; 5&#128167;';_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Need 5 Dew to water.\')';}
+    else{_waterLabel='&#128167; WATER &middot; 5&#128167;';_waterCls='';_waterClick='window._hexAction(\'water\')';}
+    actions+='<button class="hi-action-btn'+_waterCls+'" onclick="'+_waterClick+'">'+_waterLabel+'</button>';
     actions+=_inspectBtn;
     actions+=_mulchBtn;
     if(_blessBtn)actions+=_blessBtn;
@@ -48504,8 +48554,21 @@ function _selectHexPlant(idx,p){
     // Locked buttons get a toast onclick instead of bare display so the
     // tap surfaces the unlock requirement. Was a silent fail before
     // (Stephen 2026-04-19: "nothing seems to happen" on cutting tap).
-    actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'" onclick="'+(_canTend?'window._hexAction(\'tend\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')')+'" title="'+(_canTend?'Tend this plant, gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
-    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'" onclick="'+(_canCut?'window._hexAction(\'cutting\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 5.\')')+'" title="'+(_canCut?'Take a cutting (clone seed). Costs 20 Dew. Parent unharmed. 2/day per player.':'Unlocks at Keeper Level 5')+'">&#9986; CUTTING'+(_canCut?' · 20💧':' &#128274;')+'</button>';
+    // TEND — show 6h cooldown when active, else "+6h · +2💧" reward preview
+    var _tendLbl,_tendCls,_tendClick;
+    if(!_canTend){_tendLbl='&#127807; TEND &#128274;';_tendCls=' locked';_tendClick='window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')';}
+    else if(_tendCdMs>0){_tendLbl='&#127807; TENDED &middot; '+fmtCdH(_tendCdMs);_tendCls=' locked';_tendClick='window._toast&&window._toast(\'Already tended. Returns in '+fmtCdH(_tendCdMs)+'.\')';}
+    else{_tendLbl='&#127807; TEND &middot; +6h, +2&#128167;';_tendCls='';_tendClick='window._hexAction(\'tend\')';}
+    actions+='<button class="hi-action-btn'+_tendCls+'" onclick="'+_tendClick+'" title="'+(_canTend?'Tend this plant, gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">'+_tendLbl+'</button>';
+    // CUTTING — lifetime per-plant lock + daily 2/player + 20 Dew. Show all 3 states.
+    var _cutLbl,_cutCls,_cutClick;
+    var _cutDewBalH=window.getTotalDew?window.getTotalDew():0;
+    if(!_canCut){_cutLbl='&#9986; CUTTING &#128274;';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 5.\')';}
+    else if(_cutTaken){_cutLbl='&#9986; CUTTING &middot; TAKEN';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'You\\u2019ve already taken a cutting from this plant.\')';}
+    else if(_cutDailyLeft<=0){_cutLbl='&#9986; CUTTING &middot; 0/2 today';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'Daily cuttings used (2/2). Resets at midnight.\')';}
+    else if(_cutDewBalH<20){_cutLbl='&#9986; CUTTING &middot; 20&#128167;';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'Need 20 Dew. You have '+_cutDewBalH+'.\')';}
+    else{_cutLbl='&#9986; CUTTING &middot; 20&#128167; &middot; '+_cutDailyLeft+'/2';_cutCls='';_cutClick='window._hexAction(\'cutting\')';}
+    actions+='<button class="hi-action-btn gold'+_cutCls+'" onclick="'+_cutClick+'" title="'+(_canCut?'Take a cutting (clone seed). Costs 20 Dew. Parent unharmed. 2/day.':'Unlocks at Keeper Level 5')+'">'+_cutLbl+'</button>';
     // Nickname button — lets you label this keeper for easy identification
     if(p.ownerUid){
       var _curNick='';try{_curNick=(JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}'))[p.ownerUid]||'';}catch(e){}
@@ -48792,7 +48855,21 @@ window._lwOpenMyPlants = function(){
   try { arr = JSON.parse(localStorage.getItem('fg_wild_plants')||'[]'); } catch(e){}
   var mine = arr.filter(function(p){ return p && p.own; });
   if (mine.length === 0){
-    if (window._toast) _toast('You have no plants in the wild yet. Drop one from the Wild tab.');
+    // Inline empty card instead of toast — gives space for explanation + CTA
+    var prevE = document.getElementById('lw-myplants-overlay');
+    if (prevE) prevE.remove();
+    var ovE = document.createElement('div');
+    ovE.id = 'lw-myplants-overlay';
+    ovE.style.cssText = 'position:fixed;inset:0;z-index:100008;background:rgba(8,10,6,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.25s ease;';
+    ovE.innerHTML =
+      '<div style="max-width:340px;text-align:center;">' +
+        '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="position:absolute;top:1rem;right:1rem;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:0.95rem;cursor:pointer;">&times;</button>' +
+        '<div style="font-size:3.5rem;line-height:1;margin-bottom:0.7rem;opacity:0.5;">🌳</div>' +
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:0.5rem;">NO PLANTS IN THE WILD</div>' +
+        '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:var(--cream);line-height:1.5;margin-bottom:1rem;">Drop your first specimen with the SOW button. Other keepers see it on their map.</div>' +
+        '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();" style="padding:11px 20px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.55);background:linear-gradient(180deg,rgba(122,179,86,0.32),rgba(60,90,40,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;">🌱 SOW A PLANT</button>' +
+      '</div>';
+    document.body.appendChild(ovE);
     return;
   }
   // Get user position from FG_Wild
@@ -73143,6 +73220,11 @@ window._lwClaimHerbarium = function(id){
       }
     }
     var html = '<div class="lwh-section-text">The hermit lays out his wares. Some items only appear in their daily window.</div>';
+    // Broke hint — when player has 0 Dew, surface where Dew comes from
+    // so they don't feel locked out. Pure earn path, no monetization required.
+    if (bal === 0){
+      html += '<div class="lwh-broke-hint">💧 You have 0 Dew. <b>Tend wild plants</b> (your own or strangers) to earn Dew. Or play games to earn Sunbeams.</div>';
+    }
     if (specialName){
       var specialEnds = fmtCountdown(msUntilMidnight());
       html += '<div class="lwh-special-banner">⭐ TODAY\'S SPECIAL · <b>'+specialName+'</b> · 50% OFF · ends in <span data-countdown="midnight">'+specialEnds+'</span></div>';
