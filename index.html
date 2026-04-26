@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.51';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.52';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39839,44 +39839,44 @@ document.addEventListener('keydown', function(e) {
   // Hard milestones give 20-30 (one plant per chase moment).
   var ACHIEVEMENTS = [
     // ── Collection milestones ──
-    { id:'first_plant',   icon:'🌱', name:'First Harvest',       desc:'Bloom your first Plant',               reward:5,  check: function(gh){ return gh.length >= 1; } },
-    { id:'full_row',      icon:'🏛', name:'Full Row',             desc:'Collect 10 Plants',                    reward:10, check: function(gh){ return gh.length >= 10; } },
-    { id:'half_house',    icon:'🏠', name:'Half House',           desc:'Collect 30 Plants',                    reward:20, check: function(gh){ return gh.length >= 30; } },
-    { id:'full_house',    icon:'🏰', name:'Full House',           desc:'Fill all 60 greenhouse slots',         reward:30, check: function(gh){ return gh.length >= 60; } },
+    { id:'first_plant',   icon:'🌱', name:'First Harvest',       desc:'Bloom your first plant. Begin here.',               reward:5,  check: function(gh){ return gh.length >= 1; } },
+    { id:'full_row',      icon:'🏛', name:'Full Row',             desc:'Collect ten plants. The garden answers.',                    reward:10, check: function(gh){ return gh.length >= 10; } },
+    { id:'half_house',    icon:'🏠', name:'Half House',           desc:'Collect thirty plants. The greenhouse hums.',                    reward:20, check: function(gh){ return gh.length >= 30; } },
+    { id:'full_house',    icon:'🏰', name:'Full House',           desc:'Fill all sixty slots. A keeper of gardens.',         reward:30, check: function(gh){ return gh.length >= 60; } },
     // ── Rarity ──
-    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare+ Plant',                  reward:10, check: function(gh){ return gh.some(function(p){ return p.rare; }); } },
-    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic+ Plant',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
-    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary+ Plant',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=12;}catch(e){return false;} }); } },
-    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic Plant',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=18;}catch(e){return false;} }); } },
+    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare plant. The math chose you.',                  reward:10, check: function(gh){ return gh.some(function(p){ return p.rare; }); } },
+    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic plant. Three layers of luck align.',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
+    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary plant. Few will see what you keep.',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=12;}catch(e){return false;} }); } },
+    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic plant. The unlikely, witnessed.',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=18;}catch(e){return false;} }); } },
     // ── Breeding ──
-    { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a Cross-Bred Plant',             reward:10, check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
-    { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed 5 Plants',                       reward:10, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
-    { id:'breed_20',      icon:'🔬', name:'Genetic Pioneer',     desc:'Breed 20 Plants',                      reward:20, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 20; } },
-    { id:'chimera_gen3',  icon:'🐉', name:'Deep Chimera',        desc:'Own a Gen 3+ Chimera',                 reward:20, check: function(gh){ return gh.some(function(p){ return (p.generation || 1) >= 3; }); } },
+    { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a cross-bred plant. Two parents, one new shape.',             reward:10, check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
+    { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed five plants. The hybridist begins.',                       reward:10, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
+    { id:'breed_20',      icon:'🔬', name:'Genetic Pioneer',     desc:'Breed twenty plants. The gene library is yours.',                      reward:20, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 20; } },
+    { id:'chimera_gen3',  icon:'🐉', name:'Deep Chimera',        desc:'Own a Gen 3 or deeper chimera. Lineage runs old.',                 reward:20, check: function(gh){ return gh.some(function(p){ return (p.generation || 1) >= 3; }); } },
     // ── Compost ──
-    { id:'first_compost', icon:'🍂', name:'Return to Earth',     desc:'Compost your first Plant',             reward:5,  check: function(gh,r,l,cl){ return (cl || []).length >= 1; } },
-    { id:'compost_10',    icon:'♻️', name:'Cycle of Life',       desc:'Compost 10 Plants',                    reward:10, check: function(gh,r,l,cl){ return (cl || []).length >= 10; } },
-    { id:'compost_crown', icon:'👸', name:'Crown Bearer',        desc:'Own a Plant with Mycelial Crown',      reward:20, check: function(gh){ return gh.some(function(p){ return p.mycelialCrown; }); } },
-    { id:'compost_deep',  icon:'🌳', name:'Deep Roots',          desc:'Own a Plant with 3+ compost layers',   reward:20, check: function(gh){ return gh.some(function(p){ return p.compostLayers && Object.keys(p.compostLayers).length >= 3; }); } },
+    { id:'first_compost', icon:'🍂', name:'Return to Earth',     desc:'Compost a plant. Endings feed beginnings.',             reward:5,  check: function(gh,r,l,cl){ return (cl || []).length >= 1; } },
+    { id:'compost_10',    icon:'♻️', name:'Cycle of Life',       desc:'Compost ten plants. The cycle is honest.',                    reward:10, check: function(gh,r,l,cl){ return (cl || []).length >= 10; } },
+    { id:'compost_crown', icon:'👸', name:'Crown Bearer',        desc:'Own a plant crowned by mycelium. The dead remember.',      reward:20, check: function(gh){ return gh.some(function(p){ return p.mycelialCrown; }); } },
+    { id:'compost_deep',  icon:'🌳', name:'Deep Roots',          desc:'Own a plant with three compost layers. Heritage runs through every leaf.',   reward:20, check: function(gh){ return gh.some(function(p){ return p.compostLayers && Object.keys(p.compostLayers).length >= 3; }); } },
     // ── Streaks ──
-    { id:'streak_7',      icon:'🔥', name:'7-Day Streak',        desc:'Play 7 days in a row',                 reward:10, check: function(gh,r){ return r && r.currentStreak >= 7; } },
-    { id:'streak_30',     icon:'🔥', name:'Monthly Devotion',    desc:'30-day streak',                        reward:20, check: function(gh,r){ return r && r.currentStreak >= 30; } },
-    { id:'streak_100',    icon:'🔥', name:'Centurion',           desc:'100-day streak',                       reward:30, check: function(gh,r){ return r && r.currentStreak >= 100; } },
+    { id:'streak_7',      icon:'🔥', name:'7-Day Streak',        desc:'Tend seven days unbroken. A weekly pulse.',                 reward:10, check: function(gh,r){ return r && r.currentStreak >= 7; } },
+    { id:'streak_30',     icon:'🔥', name:'Monthly Devotion',    desc:'Tend thirty days unbroken. Devotion measured.',                        reward:20, check: function(gh,r){ return r && r.currentStreak >= 30; } },
+    { id:'streak_100',    icon:'🔥', name:'Centurion',           desc:'Tend a hundred days unbroken. The Centurion stands.',                       reward:30, check: function(gh,r){ return r && r.currentStreak >= 100; } },
     // ── Economy ──
-    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend 100 Sunbeams',                   reward:10, check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
-    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend 1000 Sunbeams',                  reward:30, check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
+    { id:'spent_100',     icon:'💸', name:'Big Spender',         desc:'Spend a hundred sunbeams. The economy moves.',                   reward:10, check: function(gh,r,ledger){ return (ledger.spent||0) >= 100; } },
+    { id:'spent_1000',    icon:'💰', name:'Whale',               desc:'Spend a thousand sunbeams. The garden flows through you.',                  reward:30, check: function(gh,r,ledger){ return (ledger.spent||0) >= 1000; } },
     // ── Seasons ──
-    { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Own plants from all 4 seasons',        reward:10, check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
+    { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Hold all four seasons in one greenhouse. The wheel is whole.',        reward:10, check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
     // ── Companions ──
-    { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a Plant with a companion',         reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
-    { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada companion',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
-    { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder companion (0.39%)',   reward:30, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
+    { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a plant with a companion. Something chose to stay.',         reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
+    { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada. Mythic creatures answer few.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
+    { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder. An eye opens that should not exist.',   reward:30, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
     // ── Mutations ──
-    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated Plant',                  reward:5,  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
-    { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch mutation (0xF0+)',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xF0;}catch(e){return false;} }); } },
+    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated plant. The hash hiccupped in your favor.',                  reward:5,  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
+    { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch. The pixels broke into beauty.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xF0;}catch(e){return false;} }); } },
     // ── Synergy (Spec 14 — checked after synergy engine lands) ──
-    { id:'first_synergy',  icon:'✨', name:'Resonance',           desc:'Own a Plant with a synergy bonus',     reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>0;}catch(e){return false;} }); } },
-    { id:'triple_synergy', icon:'🌟', name:'Triple Resonance',   desc:'Own a Plant with 3+ synergies',        reward:20, check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>=3;}catch(e){return false;} }); } }
+    { id:'first_synergy',  icon:'✨', name:'Resonance',           desc:'Own a plant resonating with one synergy. Two truths align.',     reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>0;}catch(e){return false;} }); } },
+    { id:'triple_synergy', icon:'🌟', name:'Triple Resonance',   desc:'Own a plant resonating with three synergies. Triple convergence.',        reward:20, check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>=3;}catch(e){return false;} }); } }
   ];
 
   function loadAchievements(){
