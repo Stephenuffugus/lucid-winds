@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.50';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.51';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68369,6 +68369,98 @@ var _COMPANION_BONDS = [
         reward: rewards[tier] || rewards.common
       });
     })(c.idx, c.n, c.r, c.e, c.t);
+  }
+})();
+
+// ── SUBSTRATE RESIDENCY DISCOVERIES — 62 unique substrates ──
+// Per BoS expansion roadmap: each named substrate type earns a discovery
+// moment when first encountered. Skips the 7 'None' slots and dedups
+// the two slots that share names (Pine Bark, Kelp Meal). 90% of plants
+// have a substrate so common reward stays modest (5 pollen) — rare
+// substrates (Crystal Matrix, Phoenix Ash, Void Essence, etc.) tier up
+// to 12 pollen + 1 EA.
+var _SUBSTRATE_TRIGS = [
+  {idx:7,  n:'Floating Roots',     r:'Roots in water, no earth needed.',                     e:'Water alone fed your bloom.',                                       t:'common'},
+  {idx:8,  n:'White Pearls',       r:'Stones that breathe.',                                 e:'Perlite kept the air close to the roots.',                          t:'common'},
+  {idx:9,  n:'Moss Bed',           r:'A green carpet that breathes back.',                   e:'Moss accepted your seed. The carpet thickens.',                     t:'common'},
+  {idx:10, n:'Cooled Lava',        r:'What the mountain made into glass.',                   e:'Stone that was once fire now holds your roots.',                    t:'common'},
+  {idx:11, n:'Desert Bed',         r:'Glass-grade quartz, baked.',                           e:'Sand that survives anything cradled your bloom.',                   t:'common'},
+  {idx:12, n:'Coir Cradle',        r:'Husk made into bedding.',                              e:'The coconut gave its hide to your soil.',                           t:'common'},
+  {idx:13, n:'Aggregate Bed',      r:'Fired pellets hold what they hold.',                   e:'Clay aggregates kept the moisture honest.',                         t:'common'},
+  {idx:14, n:'River Smooth',       r:'Smoothed by patience.',                                e:'The river polished these stones for you.',                          t:'common'},
+  {idx:15, n:'Crystal Lattice',    r:'Geometry that grows.',                                 e:'Crystals cradled your roots in perfect angles.',                    t:'rare'},
+  {idx:16, n:'Acid Bed',           r:'For the picky bloomers.',                              e:'What other plants refuse, this one drank gladly.',                  t:'common'},
+  {idx:17, n:'Obsidian Sleep',     r:'Black glass remembers being lava.',                    e:'Obsidian held your seed. The dark gave back.',                      t:'common'},
+  {idx:18, n:'Spent Mushroom',     r:'Spent substrate, second life.',                        e:'What grew mushrooms now grows your bloom.',                         t:'common'},
+  {idx:19, n:'Worm Tea',           r:'Five hundred million years of soil engineering.',      e:'Worms processed every grain. Excellent work.',                      t:'common'},
+  {idx:20, n:'Bone Meal',          r:'Calcium for the patient.',                             e:'Bones became your bloom\'s quiet strength.',                        t:'common'},
+  {idx:21, n:'Cave Gold',          r:'Caves give what caves take.',                          e:'Guano older than civilization fed your roots.',                     t:'common'},
+  {idx:22, n:'Pure Water',         r:'Two parts hydrogen, one part oxygen.',                 e:'The simplest substrate of all held your seed.',                     t:'common'},
+  {idx:23, n:'Charcoal Filter',    r:'Carbon with a job.',                                   e:'Charcoal pulled the wrong things out and let the right things in.', t:'common'},
+  {idx:24, n:'Peat Memory',        r:'Bog moss compressed by millennia.',                    e:'Peat held the water like memory.',                                  t:'common'},
+  {idx:25, n:'Pumice Breath',      r:'Fire\'s foam, cooled.',                                e:'Pumice kept the breath close to the roots.',                        t:'common'},
+  {idx:26, n:'Zeolite Sponge',     r:'Stone that holds water like a sponge.',                e:'Zeolite balanced the moisture for weeks.',                          t:'common'},
+  {idx:27, n:'Glacier\'s Gift',    r:'What the ice scraped down and left behind.',           e:'Till from a glacier held your roots. Ancient minerals welcome.',    t:'common'},
+  {idx:28, n:'Star Iron',          r:'Iron that fell from the sky.',                         e:'Star-iron grounded your bloom. Magnetic and old.',                  t:'rare'},
+  {idx:29, n:'Mycelial Net',       r:'Fungal nerves connect everything.',                    e:'The mycelium routed your bloom into a vast conversation.',          t:'common'},
+  {idx:30, n:'Leaf Return',        r:'Last season, given back.',                             e:'Old leaves became new growth. The cycle is honest.',                t:'common'},
+  {idx:31, n:'Pine Husk',          r:'Conifer bark with character.',                         e:'Pine bark scented the soil and held it loose.',                     t:'common'},
+  {idx:32, n:'Compost Brew',       r:'Soil\'s broth.',                                       e:'Brewed compost watered your seed. Microbiome thriving.',            t:'common'},
+  {idx:33, n:'Ash Bed',            r:'Fire\'s leftovers, alkaline gold.',                    e:'Wood ash balanced your soil\'s pH. The bloom said thank you.',      t:'common'},
+  {idx:34, n:'Ocean Feed',         r:'The ocean\'s gift to gardens.',                        e:'Fish protein fed the leaves directly.',                             t:'common'},
+  {idx:35, n:'Kelp Bloom',         r:'Sea grass dried and ground.',                          e:'Kelp gave your bloom every micronutrient at once.',                 t:'common'},
+  {idx:36, n:'Green Sand',         r:'Marine deposit, geological time.',                     e:'Green sand released its potassium slowly. Years of food.',          t:'common'},
+  {idx:37, n:'Phosphate Stone',    r:'Mineral for the long game.',                           e:'Phosphate stored under stone now feeds your bloom.',                t:'common'},
+  {idx:38, n:'Sawdust Fade',       r:'Wood becomes soil eventually.',                        e:'Sawdust held the moisture and broke down on its own schedule.',     t:'common'},
+  {idx:39, n:'Morning Grounds',    r:'The morning\'s gift.',                                 e:'Coffee grounds added acid and nitrogen. The roots took both.',      t:'common'},
+  {idx:40, n:'Eggshell Strength',  r:'Calcium with a curve.',                                e:'Crushed shell strengthened your bloom\'s cell walls.',              t:'common'},
+  {idx:41, n:'Banana Heart',       r:'Potassium in disguise.',                               e:'The peel surrendered its potassium to your roots.',                 t:'common'},
+  {idx:42, n:'Vermiculite Hold',   r:'Mica that holds water like a promise.',                e:'Vermiculite balanced the moisture for the long haul.',              t:'common'},
+  {idx:43, n:'Charred Hulls',      r:'Rice\'s husk, fired.',                                 e:'Burned rice hulls aerated your soil and kept the worms moving.',    t:'common'},
+  {idx:44, n:'Aqua Gel',           r:'Polymer that drinks.',                                 e:'The gel held water until the roots called for it.',                 t:'common'},
+  {idx:45, n:'Lava Pockets',       r:'Holes where the gas escaped.',                         e:'Lava rock held a thousand tiny pockets of air. Roots loved it.',    t:'common'},
+  {idx:46, n:'Biochar Bond',       r:'Wood charred and held forever.',                       e:'Biochar locked carbon into your soil for centuries.',               t:'common'},
+  {idx:47, n:'Tideline Grit',      r:'Crushed shells from the tideline.',                    e:'Shell grit slowly fed calcium to the roots.',                       t:'common'},
+  {idx:48, n:'Terra Preta',        r:'Amazonian black gold.',                                e:'Pre-Columbian soil chemistry held your bloom. Centuries-old wisdom.', t:'common'},
+  {idx:49, n:'Diatom Dust',        r:'Ancient algae, now dust.',                             e:'Microscopic skeletons held the soil\'s structure together.',        t:'common'},
+  {idx:50, n:'Amber Time',         r:'Tree\'s blood, hardened to gold.',                     e:'Amber from an ancient tree blessed your roots. Time bottled.',      t:'rare'},
+  {idx:51, n:'Glow Bed',           r:'Soil that glows in the dark.',                         e:'Your soil held its own light. The night had a green floor.',        t:'rare'},
+  {idx:52, n:'Magnetic Bed',       r:'Iron-rich. Listens to compasses.',                     e:'Magnetic grains arranged themselves around your roots.',            t:'rare'},
+  {idx:53, n:'Fossil Bed',         r:'Bones turned to stone, laid flat.',                    e:'Fossils older than memory held your seed.',                         t:'rare'},
+  {idx:54, n:'Stardust',           r:'Soil that fell from the sky.',                         e:'Atoms older than the planet held your seed. They remember a longer story.', t:'rare'},
+  {idx:55, n:'Dragon Ash',         r:'Whatever it is, it works.',                            e:'Bone ash from something extinct fed your bloom. Don\'t ask.',       t:'rare'},
+  {idx:56, n:'Quicksilver',        r:'Liquid metal under glass.',                            e:'Quicksilver held the heat constant. Alchemists would weep.',        t:'rare'},
+  {idx:57, n:'Phoenix Ash',        r:'Burned twice. Reborn three times.',                    e:'Ash from a burning bird made your soil. The next bloom is louder.', t:'rare'},
+  {idx:58, n:'Void Bed',           r:'What lives between the stars.',                        e:'The void learned the shape of your roots. It taught them new tricks.', t:'rare'},
+  {idx:59, n:'Moondust',           r:'Ground from a stone that drinks moonlight.',           e:'Moonstone dust rendered your roots silver-tipped at dawn.',         t:'rare'},
+  {idx:61, n:'Granite Grit',       r:'Mountain ground to grit.',                             e:'Granite gave its minerals to your bloom one decade at a time.',     t:'common'},
+  {idx:62, n:'Kaolin Cradle',      r:'White clay, pottery-grade.',                           e:'Kaolin held water like a careful potter.',                          t:'common'},
+  {idx:64, n:'Oyster Calcium',     r:'Shells for cell walls.',                               e:'Oyster grit slowly armored your roots.',                            t:'common'},
+  {idx:65, n:'Basalt Cool',        r:'Volcanic glass, dark.',                                e:'Basalt gravel kept the temperature even.',                          t:'common'},
+  {idx:66, n:'Coir Drink',         r:'Coconut hair, finely ground.',                         e:'Coir held five times its weight in water.',                         t:'common'},
+  {idx:67, n:'Gypsum Soft',        r:'Calcium sulfate, soft stone.',                         e:'Gypsum balanced the calcium without raising pH.',                   t:'common'},
+  {idx:68, n:'Silica Drain',       r:'Pure quartz, washed.',                                 e:'Silica drained perfectly. The roots breathed.',                     t:'common'},
+  {idx:69, n:'Marble Reflect',     r:'Calcium carbonate, polished.',                         e:'Marble chips reflected light onto the leaves and slowly fed calcium.', t:'common'},
+  {idx:70, n:'River Clay',         r:'What the river leaves on the bank.',                   e:'River clay held nutrients tight. The bloom worked for them.',       t:'common'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 5},
+    rare:   {pollen: 12, ea: 1}
+  };
+  for (var sti = 0; sti < _SUBSTRATE_TRIGS.length; sti++) {
+    var st = _SUBSTRATE_TRIGS[sti];
+    (function(idx, name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'soil_' + idx,
+        name: name,
+        riddle: riddle,
+        category: 'trait',
+        check: function(ctx) { return ctx.plant && (ctx.plant.base % 71) === idx; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(st.idx, st.n, st.r, st.e, st.t);
   }
 })();
 
