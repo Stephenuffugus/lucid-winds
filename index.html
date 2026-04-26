@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.48';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.49';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -36087,6 +36087,16 @@ document.addEventListener('keydown', function(e) {
         }, 600);
       }
     } catch(e) {}
+    // First-time tester fix (Apr 26): teach Dew-on-tap. First plant open
+    // silently grants Dew without telling the player WHY tapping matters.
+    try {
+      if (!localStorage.getItem('lw_tut_dew_intro_v1')) {
+        localStorage.setItem('lw_tut_dew_intro_v1', '1');
+        setTimeout(function(){
+          if (window._toast) window._toast('\ud83d\udca7 Tapping a plant earns Dew. Spend it on cuttings, the Hut, and time-skips.');
+        }, 4400);
+      }
+    } catch(e) {}
     // Reset flipped state on every card slot so the next carousel open
     // doesn't show a stale back-face (was a real bug — flipped class
     // persisted on .cs-flip-wrap elements across closes).
@@ -60993,6 +61003,17 @@ function finish(){
   if(window.renderGreenhouse)renderGreenhouse();
   if(window.updateDashboard)updateDashboard();
   if(window.switchTab)switchTab('greenhouse');
+  // First-time tester fix (Apr 26 audit): keeper bar appeared without
+  // any introduction at finish(). 4 resource numbers (XP/Dew/Sunbeams/
+  // Level) suddenly exist with no context. One-time toast explains them.
+  try{
+    if(!localStorage.getItem('lw_kb_intro_v1')){
+      localStorage.setItem('lw_kb_intro_v1','1');
+      setTimeout(function(){
+        if(window._toast)window._toast('🪴 The bar at the top is your Keeper Bar. XP, Dew, Sunbeams, Level — everything you build grows these.');
+      },2200);
+    }
+  }catch(e){}
   // Fire the Phase 2 walkthrough once the greenhouse has painted.
   // PW_Tutorial.start() bails if the player isn't on step 0 or already
   // has >1 plant, so it's safe to call unconditionally.
