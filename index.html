@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.21';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13212,14 +13212,14 @@ document.addEventListener('keydown', function(e) {
       if (t.breedLayers && t.breedLayers.aerialRoot && window._lastLowestLeaf) svg += renderAerialRoot(uid, window._lastLowestLeaf.x, window._lastLowestLeaf.y);
       if (t.compostLayers && t.compostLayers.sporeHalo) svg += renderSporeHalo(uid, visibleTop);
 
-      // 8. COMPANION — individual scaling deferred to per-case work
-      if (prog >= 1) svg += renderCompanion(t, uid);
-
       // ── MUTATION FILTER WRAPPER (close) ──
-      // Closes the filter group opened before renderPotBack so post-FX
+      // Closes the filter group opened before renderPotBack. Companion + post-FX
       // overlays (kintsugi cracks, ink seal, scanlines, sparkles) draw
-      // unfiltered on top of the transformed plant.
+      // unfiltered on top of the transformed plant. Aura was already outside.
       if (_mutWrap) svg += '</g>';
+
+      // 8. COMPANION — outside mutation filter so creature reads true regardless of plant mutation
+      if (prog >= 1) svg += renderCompanion(t, uid);
 
       // 9. MUTATION FX
       if (isMut && prog >= 1) svg += renderMutationFX(t, uid);
@@ -37547,6 +37547,8 @@ document.addEventListener('keydown', function(e) {
       if (window._requestWakeLock) _requestWakeLock(); // Keep screen on while exploring
     } else {
       if (window._releaseWakeLock) _releaseWakeLock();
+      // Tier 1 perf: stop GPS watch when leaving Wild
+      if (window.FG_Wild && FG_Wild.deactivate) try{FG_Wild.deactivate();}catch(e){}
     }
     if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); if(window._primeWildWeather)setTimeout(function(){window._primeWildWeather(false);},1500); }
     // First-ever Wild tab entry — explain the map before they stare at it
@@ -41714,6 +41716,35 @@ function _getMaxPouch(){
 }
 var _gpsDenied=false,_gpsFallbackTimer=null; // tracks if GPS was denied/unavailable
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
+var _gpsWatchId=null;
+function _startGeoWatch(){
+  if(_gpsWatchId!==null)return;
+  if(!navigator.geolocation)return;
+  try{_gpsWatchId=navigator.geolocation.watchPosition(function(p){
+    var nL=p.coords.latitude,nN=p.coords.longitude;
+    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){_addSteps(Math.round(d));}}
+    _uLat=nL;_uLng=nN;
+    window._uLat=_uLat;window._uLng=_uLng;
+    var _now=Date.now();
+    if(_lastGeoTime>0&&_lastGeoLat){var _sd=_dist(_lastGeoLat,_lastGeoLng,nL,nN);var _dt=(_now-_lastGeoTime)/1000;if(_dt>0)_speedKmh=(_sd/_dt)*3.6;}
+    _lastGeoTime=_now;_lastGeoLat=nL;_lastGeoLng=nN;
+    if(_uM)_uM.setLatLng([_uLat,_uLng]);
+    if(_scanRing)_scanRing.setLatLng([_uLat,_uLng]);
+    _updateProximity();
+    _trail.push([_uLat,_uLng]);
+    if(_trail.length>500)_trail.splice(0,_trail.length-500);
+    if(_tLine){_tLine.setLatLngs(_trail);if(_tGlow)_tGlow.setLatLngs(_trail);}
+    else if(_map){
+      _tGlow=L.polyline(_trail,{color:'rgba(122,179,86,0.08)',weight:14,lineCap:'round',lineJoin:'round',interactive:false}).addTo(_map);
+      _tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.3)',weight:4,lineCap:'round',lineJoin:'round',interactive:false,className:'trail-glow'}).addTo(_map);
+    }
+  },null,{enableHighAccuracy:true,maximumAge:5000});}catch(e){}
+}
+function _stopGeoWatch(){
+  if(_gpsWatchId===null)return;
+  try{navigator.geolocation.clearWatch(_gpsWatchId);}catch(e){}
+  _gpsWatchId=null;
+}
 // ── Shared drop real-time listener state ──
 var _sharedMarkers={}; // hash → {marker, data} for live shared drops
 var _snapUnsub=null;   // Firestore onSnapshot unsubscribe function
@@ -41968,6 +41999,23 @@ function _saveGH(a){if(window.saveGreenhouse)window.saveGreenhouse(a);else local
 function _zoneKey(a,b){return(Math.round(a/ZONE_SIZE)*ZONE_SIZE).toFixed(4)+','+(Math.round(b/ZONE_SIZE)*ZONE_SIZE).toFixed(4);}
 function _dist(a,b,c,d){var x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;var z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return 6371000*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
 
+function deactivate(){
+  // Stop GPS watch when Wild tab is no longer the active surface — biggest
+  // battery win per the Apr 26 perf audit. _startGeoWatch is idempotent so
+  // the next activate() restores it cleanly.
+  _stopGeoWatch();
+}
+var _visListenerWired=false;
+function _wireVisibilityGate(){
+  if(_visListenerWired||typeof document==='undefined')return;
+  _visListenerWired=true;
+  try{document.addEventListener('visibilitychange',function(){
+    if(document.hidden){_stopGeoWatch();return;}
+    // Only restart if Wild is the active panel
+    var p=document.getElementById('panel-wild');
+    if(p&&p.classList&&p.classList.contains('active'))_startGeoWatch();
+  });}catch(e){}
+}
 function activate(){
   // Diagnostic: show system status on first Wild visit
   try{
@@ -41975,7 +42023,9 @@ function activate(){
     console.log('[Wild.activate] '+diag);
     if(!window.L)_toast('Error: Leaflet not loaded. Check internet connection.');
   }catch(e){}
+  _wireVisibilityGate();
   if(!_inited){_initMap();_initGeo();_inited=true;}
+  else{_startGeoWatch();}
   // Prune expired wild plants before loading
   _pruneWild();
   // Sweep for already-adjacent complementary pairs (one-time-per-activate)
@@ -42474,27 +42524,7 @@ function _initGeo(){
     if(_map){_map.setView(FALLBACK,17);_placeUser();_loadAll();}
     _showGpsBanner();
   },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
-  try{navigator.geolocation.watchPosition(function(p){
-    var nL=p.coords.latitude,nN=p.coords.longitude;
-    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){_addSteps(Math.round(d));}}
-    _uLat=nL;_uLng=nN;
-    window._uLat=_uLat;window._uLng=_uLng;
-    // Speed tracking
-    var _now=Date.now();
-    if(_lastGeoTime>0&&_lastGeoLat){var _sd=_dist(_lastGeoLat,_lastGeoLng,nL,nN);var _dt=(_now-_lastGeoTime)/1000;if(_dt>0)_speedKmh=(_sd/_dt)*3.6;}
-    _lastGeoTime=_now;_lastGeoLat=nL;_lastGeoLng=nN;
-    if(_uM)_uM.setLatLng([_uLat,_uLng]);
-    if(_scanRing)_scanRing.setLatLng([_uLat,_uLng]);
-    _updateProximity();
-    _trail.push([_uLat,_uLng]);
-    if(_trail.length>500)_trail.splice(0,_trail.length-500);
-    if(_tLine){_tLine.setLatLngs(_trail);if(_tGlow)_tGlow.setLatLngs(_trail);}
-    else if(_map){
-      // Bioluminescent trail — outer glow + inner bright line
-      _tGlow=L.polyline(_trail,{color:'rgba(122,179,86,0.08)',weight:14,lineCap:'round',lineJoin:'round',interactive:false}).addTo(_map);
-      _tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.3)',weight:4,lineCap:'round',lineJoin:'round',interactive:false,className:'trail-glow'}).addTo(_map);
-    }
-  },null,{enableHighAccuracy:true,maximumAge:5000});}catch(e){}
+  _startGeoWatch();
   // ═══ COMPASS — device orientation ═══
   _initCompass();
 }
@@ -49635,7 +49665,7 @@ function _autoCarouselFromInspector(){
     window.openCarousel(_hexInspPlants.slice(),0,'wild-inspect');
   },120);
 }
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
+return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
