@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.60';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.61';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5121,20 +5121,24 @@ body.tab-wild #kb-compendium #kb-comp-count{top:-4px!important;left:-4px!importa
 body.tab-wild #w-stats-bar{padding:14px 10px!important;padding-right:148px!important;}
 body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
 /* Wild secondary actions consolidated into a single menu FAB.
-   Stephen 2026-04-26: '...anxiety due to the amount of things to do.'
-   Default Wild: only #w-menu-fab is visible (bottom-left). The 4
-   secondary buttons (RECENTER/WATER ALL/MY PLANTS/FORAGE) are hidden
-   by !important until the menu is opened. When body.lw-wm-open is set,
-   these CSS rules drop out and the JS-controlled inline display
-   (which respects each button's availability condition) takes over. */
+   Stephen 2026-04-26 round 4: 'sow and forage comfortable for players'
+   so FORAGE stays primary alongside SOW. The 3 LEFT-SIDE secondaries
+   (RECENTER, WATER ALL, MY PLANTS) hide behind the menu fab. When the
+   menu opens, they appear stacked ABOVE the menu fab with 62px gaps
+   so nothing overlaps and recenter is no longer 'behind the hamburger'. */
 body.tab-wild #w-menu-fab{display:flex!important;}
 body:not(.tab-wild) #w-menu-fab{display:none!important;}
 body.tab-wild:not(.lw-wm-open) #w-recenter,
 body.tab-wild:not(.lw-wm-open) #w-mass-water,
-body.tab-wild:not(.lw-wm-open) #w-my-plants,
-body.tab-wild:not(.lw-wm-open) #ffb{display:none!important;}
-/* Menu fab opened state: rotate the icon to indicate "X to close" */
+body.tab-wild:not(.lw-wm-open) #w-my-plants{display:none!important;}
+/* Menu fab opened state: rotate to indicate close */
 #w-menu-fab.open{transform:rotate(90deg);background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.18))!important;}
+/* When menu is open, override the secondary buttons' bottom positions
+   so they stack cleanly above the menu fab (which sits at bottom:108).
+   62px gaps = comfortable tap target spacing, no overlaps. */
+body.tab-wild.lw-wm-open #w-recenter{bottom:calc(170px + env(safe-area-inset-bottom,0px))!important;}
+body.tab-wild.lw-wm-open #w-mass-water{bottom:calc(232px + env(safe-area-inset-bottom,0px))!important;}
+body.tab-wild.lw-wm-open #w-my-plants{bottom:calc(294px + env(safe-area-inset-bottom,0px))!important;}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
 #bpb.e{opacity:0;transform:scale(0.5);}
@@ -5232,7 +5236,12 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    gold when there's something to collect. Foraging is the signature
    Wild moment — this button exists so players never have to hunt for
    it on the map. */
-#ffb{position:fixed;top:calc(env(safe-area-inset-top,0px) + 415px);left:10px;z-index:999;width:92px;height:92px;border-radius:0;border:none;cursor:pointer;background:url('assets/forage-fab-v1.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.2s;-webkit-tap-highlight-color:transparent;padding:0;opacity:0.65;}
+/* FORAGE FAB — left-side mirror of SOW, positioned high on the map
+   (top:215+safe, just below the stats bar) so it stays well clear of
+   the bottom-left menu stack. Stephen 2026-04-26 round 4: 'sow and
+   forage comfortable for players... forage sits over top of my plants
+   overlapping' — separating the two stacks fixes the overlap. */
+#ffb{position:fixed;top:calc(env(safe-area-inset-top,0px) + 215px);left:10px;z-index:999;width:92px;height:92px;border-radius:0;border:none;cursor:pointer;background:url('assets/forage-fab-v1.png') center/contain no-repeat;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));display:flex;align-items:center;justify-content:center;transition:transform 0.15s,opacity 0.2s;-webkit-tap-highlight-color:transparent;padding:0;opacity:0.65;}
 #ffb.ready{opacity:1;animation:ffp 1.8s ease-in-out infinite;}
 #ffb:active{transform:scale(.92);animation:none;}
 @keyframes ffp{0%,100%{filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)) drop-shadow(0 0 6px rgba(200,168,75,0.3));}50%{filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)) drop-shadow(0 0 20px rgba(200,168,75,0.85));}}
