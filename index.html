@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.1';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.2';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7411,18 +7411,21 @@ window._addSwitchTabHook = function(fn){
         if(_idx<0)_idx=max;
         if(_idx>max)_idx=0;
         // Build a hash that forces the desired trait type
+        // hb(i) reads 2 hex chars at h[i] and h[i+1] (character index, NOT byte offset)
+        // hc(i) reads 1 hex char at h[i]
         var h=_baseHash.split('');
         if(_mode==='leaf'){
-          // leafType = hb(4), hb reads 2 hex chars at position n*2
+          // leafType = hb(4) → h[4]+h[5]
           var leafHex=(_idx).toString(16).padStart(2,'0');
-          h[8]=leafHex[0];h[9]=leafHex[1];
+          h[4]=leafHex[0];h[5]=leafHex[1];
         } else if(_mode==='bloom'){
-          // flower = hb(11), hasFlower = hc(10) > 4 so force hc(10)=f
-          h[20]='f'; // force hasFlower
+          // hasFlower = hc(10) > 4 → force h[10]='f' so it's > 4
+          // flower = hb(11) → h[11]+h[12]
+          h[10]='f';
           var bloomHex=(_idx).toString(16).padStart(2,'0');
-          h[22]=bloomHex[0];h[23]=bloomHex[1];
+          h[11]=bloomHex[0];h[12]=bloomHex[1];
         } else {
-          // vessel: pot = hb(0), bytes 0-1
+          // vessel: pot = hb(0) → h[0]+h[1]
           var potHex=(_idx).toString(16).padStart(2,'0');
           h[0]=potHex[0];h[1]=potHex[1];
         }
