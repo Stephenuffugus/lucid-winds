@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.37';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.38';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44976,6 +44976,11 @@ function showTP(p,mk){
   }
   var ow=document.getElementById('wtp-owner');if(ow){
     var ownerTxt=p.own?'Your plant':(p.ownerName||'Wild specimen');
+    // Friend badge — appears next to owner name when this plant's owner is
+    // an explicitly-added friend. Privacy: friending only via char sheet.
+    if(!p.own&&p.ownerUid&&window.isFriend&&window.isFriend(p.ownerUid)){
+      ownerTxt+=' · 🌿 FRIEND';
+    }
     if(p.wildBorn&&p.originDropperUid&&p.originDropperUid!=='wild'){
       ownerTxt+=' · Lineage of '+(p.originDropperName||'a keeper');
     }
@@ -48485,6 +48490,12 @@ function _openHexInspector(zk){
       var _nick=null;
       if(!ap.own&&ap.ownerUid){try{var _nicks=JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}');_nick=_nicks[ap.ownerUid]||null;}catch(e){}}
       var origin=ap.own?'Planted':(ap.wildBorn?'Wild Born':(_nick||ap.ownerName));
+      // Friend badge — only visible when player has explicitly added the
+      // owner as a friend via character sheet. Phase 1 ships single tier.
+      var _friendBadge='';
+      if(!ap.own&&ap.ownerUid&&window.isFriend&&window.isFriend(ap.ownerUid)){
+        _friendBadge=' · <span style="color:var(--sage);font-weight:600;">🌿 FRIEND</span>';
+      }
       // Phenotype reveal badge — only after a complementary-season neighbor triggered it
       var _phenoBadge='';
       if(ap.phenoRevealed&&window._phenotypeOf){
@@ -48508,7 +48519,7 @@ function _openHexInspector(zk){
       }
       var _rowCls=ap.pestStage>0?'hi-plant-row hi-plant-row-pest':'hi-plant-row';
       row.className=_rowCls;
-      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' \u00b7 '+origin+_phenoBadge+_pestBadge+_patternBadge+'</div></div>';
+      row.innerHTML='<div class="hi-pr-svg">'+svgHtml+'</div><div class="hi-pr-info"><div class="hi-pr-name">'+name+'</div><div class="hi-pr-meta" style="color:'+gc+';">'+grade+' \u00b7 '+origin+_friendBadge+_phenoBadge+_pestBadge+_patternBadge+'</div></div>';
       (function(idx,pd){row.addEventListener('click',function(){_selectHexPlant(idx,pd);});})(j,ap);
       el.appendChild(row);
     }
@@ -59831,6 +59842,9 @@ function ensureProfile(user){
         try{localStorage.setItem('pw_active_companion',JSON.stringify(d.activeCompanion));}catch(e){}
       }
       if(window.PW_UI)PW_UI.updateKeeperBar();
+      // Prime the friend-UID cache so the wild plant card render can
+      // surface the FRIEND badge on the next hex tap.
+      try{loadFriends(function(){});}catch(e){}
       console.log('[PW_Social] Profile loaded: '+d.displayName+' #'+d.accountNumber);
       return;
     }
@@ -60030,9 +60044,20 @@ function loadFriends(callback){
       snap.forEach(function(doc){
         var d=doc.data();d.uid=doc.id;friends.push(d);
       });
+      // Tier 1 friend-badge cache: keep a sync-readable map of friend UIDs
+      // so wild plant render code doesn't need an async lookup per plant.
+      // Refreshed every time loadFriends fires (profile load, friendsUI open).
+      if(!window._friendUids)window._friendUids={};
+      var fresh={};
+      for(var i=0;i<friends.length;i++){if(friends[i]&&friends[i].uid)fresh[friends[i].uid]=true;}
+      window._friendUids=fresh;
       callback(friends);
     }).catch(function(){callback([]);});
 }
+// Sync-readable friend check. Safe to call before _friendUids is populated;
+// returns false until the first loadFriends() resolves. Honors the privacy
+// guardrail: friending only happens via the explicit character-sheet flow.
+window.isFriend=function(uid){return !!(uid&&window._friendUids&&window._friendUids[uid]);};
 
 // ═══ LOAD PENDING REQUESTS ═══
 function loadPendingRequests(callback){
