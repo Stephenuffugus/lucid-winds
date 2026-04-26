@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.64';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.65';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2593,7 +2593,7 @@
     .lw-hut .lwh-quest-claimed{font-family:'Playfair Display',serif;font-style:italic;font-size:0.55rem;color:var(--sage);text-align:center;padding:0.5rem;}
 
     /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots) */
-    #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:64px;height:64px;flex-shrink:0;overflow:hidden;}
+    #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:70px;height:70px;flex-shrink:0;overflow:hidden;}
     #kb-hut:hover{background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(200,168,75,0.08));}
 
     /* ═══ FORAGING PANEL POLISH ═══ */
@@ -4989,7 +4989,7 @@
     #pw-keeper-bar .kb-row1{display:flex;align-items:center;gap:0.6rem;}
     /* Row 2 is now 3 buttons (Sunbeams, Hut, Dew) — Install moved to Row 1.
        Tighter max-width condenses the row so it doesn't sprawl. */
-    #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;max-width:200px;}
+    #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.45rem;max-width:228px;}
     /* Install button in Row 1: same height as the avatar, sized to fit alongside name+xp */
     #pw-keeper-bar .kb-row1 #kb-install{width:48px;height:48px;border-radius:10px;border:2px solid rgba(200,168,75,0.5);background:rgba(26,36,22,0.6);cursor:pointer;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:0;}
     #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;position:relative;}
@@ -5003,7 +5003,7 @@
     /* Currency badges in row 2 — big, readable, thumb-friendly, ready for art drop-in */
     /* overflow:hidden was eating the corner mint-pip (positioned at top:-4px, right:-4px).
        Removed here; clip-path on the inner <img> preserves the 140%/150% zoom crop. */
-    #kb-sunbeams,#kb-dew{padding:0;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:64px;height:64px;border:none;background:none;flex-shrink:0;position:relative;}
+    #kb-sunbeams,#kb-dew{padding:0;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:70px;height:70px;border:none;background:none;flex-shrink:0;position:relative;}
     #kb-sunbeams>img{clip-path:inset(14.28% round 8px);-webkit-clip-path:inset(14.28% round 8px);}
     #kb-dew>img{clip-path:inset(16.67% round 8px);-webkit-clip-path:inset(16.67% round 8px);}
     #kb-sunbeams .kb-val,#kb-dew .kb-val{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);z-index:2;pointer-events:none;}
@@ -5619,7 +5619,14 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
     #ob-beat3 .ob-img-area img{object-position:center 60%;}
 
     /* Tab backgrounds */
-    .tab-bg{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0;pointer-events:none;}
+    /* Stephen 2026-04-26: 'background seems to shift at a point and change
+       size slightly' on greenhouse scroll. Cause: position:fixed inset:0
+       resizes when the mobile browser's address bar collapses (viewport
+       grows). Fix: pin to top-left + size to 100lvh (large viewport height
+       — always the post-collapse value) so the bg image doesn't re-cover
+       at a different size when the bar moves. Falls back to 100vh on
+       browsers without lvh. */
+    .tab-bg{position:fixed;top:0;left:0;width:100vw;height:100vh;height:100lvh;z-index:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0;pointer-events:none;}
     .tab-bg.active{opacity:1;}
     .tab-bg::after{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.55);pointer-events:none;}
     /* Tier 3 perf: backgrounds are now lazy-loaded via JS in switchTab.
@@ -38033,7 +38040,11 @@ document.addEventListener('keydown', function(e) {
       // ── CLIPPINGS section ──
       var clipsHdr = document.createElement('div');
       clipsHdr.className = 'nur-section-hdr nur-section-hdr-clip';
-      clipsHdr.innerHTML = '<span class="nur-sec-icon">✂️</span><span class="nur-sec-title">CLIPPINGS</span><span class="nur-sec-count">' + clips.length + ' / ' + maxClipSlots + '</span><span class="nur-sec-hint">cross-pollinate to bloom</span>';
+      // Hide the "cross-pollinate to bloom" hint for L7+ players — they know.
+      var _hdrPlvl = 0;
+      try { if (window._getXP && window._getRank) _hdrPlvl = window._getRank(window._getXP()).level; } catch(e){}
+      var _clipHint = _hdrPlvl < 7 ? '<span class="nur-sec-hint">cross-pollinate to bloom</span>' : '';
+      clipsHdr.innerHTML = '<span class="nur-sec-icon">✂️</span><span class="nur-sec-title">CLIPPINGS</span><span class="nur-sec-count">' + clips.length + ' / ' + maxClipSlots + '</span>' + _clipHint;
       nurGrid.appendChild(clipsHdr);
       var clipsRow = document.createElement('div');
       clipsRow.className = 'nur-section-row nur-section-row-clip';
@@ -38421,6 +38432,17 @@ document.addEventListener('keydown', function(e) {
 
   function _buildNurSlotHTML(seed, idx) {
     if (!seed) {
+      // Empty-slot prompt: verbose for new players, terse for L7+.
+      // Stephen 2026-04-26: 'a prompt that says thats where my seeds go.
+      // duh im level 20.' L7 = post-class-pick = graduated tutorial.
+      var _empPlvl = 0;
+      try { if (window._getXP && window._getRank) _empPlvl = window._getRank(window._getXP()).level; } catch(e){}
+      if (_empPlvl >= 7) {
+        return '<div class="nur-empty-slot">' +
+          '<div class="nur-empty-icon" style="opacity:0.55;">\ud83c\udf31</div>' +
+          '<div class="nur-empty-label" style="opacity:0.55;">EMPTY</div>' +
+        '</div>';
+      }
       return '<div class="nur-empty-slot">' +
         '<div class="nur-empty-icon">\ud83c\udf31</div>' +
         '<div class="nur-empty-label">SLOT ' + (idx + 1) + '</div>' +
