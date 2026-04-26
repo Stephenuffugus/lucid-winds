@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.95';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.96';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44754,7 +44754,7 @@ function _wildClimateTick(weather) {
     var damageH = 0;
     if (weather.temp > t.heatMax) {
       var over = weather.temp - t.heatMax;
-      var dH = Math.min(24, Math.ceil(over) * 6);
+      var dH = Math.min(30, Math.ceil(over) * 9);
       // Scorpion (idx 48) Heatproof signature — desert specialist.
       // Halves heat damage on this plant. Closes the heat vector.
       if (t.companion === 48) dH = Math.round(dH * 0.5);
@@ -44763,13 +44763,13 @@ function _wildClimateTick(weather) {
     }
     if (weather.temp < t.coldMin) {
       var under = t.coldMin - weather.temp;
-      var dC = Math.min(24, Math.ceil(under) * 6);
+      var dC = Math.min(30, Math.ceil(under) * 9);
       breaches.push({ kind: 'cold', diff: Math.round(under * 10) / 10, hours: dC });
       damageH += dC;
     }
     if (typeof t.floodMm === 'number' && weather.rain > t.floodMm) {
       var extraMm = weather.rain - t.floodMm;
-      var dF = Math.min(24, Math.ceil(extraMm) * 4);
+      var dF = Math.min(30, Math.ceil(extraMm) * 6);
       // Koi Fish (idx 71) Flood Born signature — thrives in water.
       // Halves flood damage. Closes the 5/5 climate-vector loop
       // (alongside Mammoth/Worm/Pangolin/Scorpion).
@@ -44782,7 +44782,7 @@ function _wildClimateTick(weather) {
       var windMph = weather.wind / 1.609;
       if (windMph > t.windMax) {
         var overMph = windMph - t.windMax;
-        var dG = Math.min(24, Math.ceil(overMph / 5) * 6);
+        var dG = Math.min(30, Math.ceil(overMph / 5) * 9);
         // Pangolin (idx 43) Scale Coat signature — armored scales
         // shed wind shear. Halves wind damage. Closes the wind vector.
         if (t.companion === 43) dG = Math.round(dG * 0.5);
@@ -44791,10 +44791,10 @@ function _wildClimateTick(weather) {
       }
     }
     // Drought: consecutive dry days > plant's droughtDays tolerance.
-    // Each day beyond tolerance → -6h, cap -24h.
+    // Each day beyond tolerance → -9h, cap -30h (Stephen 2026-04-26 lethality bump).
     if (typeof t.droughtDays === 'number' && dryDays > t.droughtDays) {
       var overDry = dryDays - t.droughtDays;
-      var dD = Math.min(24, overDry * 6);
+      var dD = Math.min(30, overDry * 9);
       // Worm (idx 52) Tilth signature — soil aerator. Halves drought
       // damage on this plant's drought vector. Closes one of the 5
       // climate-vector signature gaps the Apr 18 session flagged.
@@ -44843,7 +44843,7 @@ function _wildClimateTick(weather) {
           }
         }
       } catch(e){}
-      if (damageH > 36) damageH = 36; // daily cap
+      if (damageH > 48) damageH = 48; // daily cap (bumped from 36 — Stephen 2026-04-26 wants more death pressure)
     }
     if (damageH > 0) {
       var damageMs = damageH * 3600000;
@@ -64080,7 +64080,8 @@ var SLOT_WEIGHTS = [0.30, 0.22, 0.17, 0.13, 0.10, 0.06, 0.02];
 // Three-of-a-kind payouts by symbol index. Tuned to 83.5% RTP
 // (verified in 200k-pull Monte Carlo sim) so the slot is a meaningful
 // Dew sink without feeling punishing. Player wins something ~47% of
-// pulls; trio 1 in 22; jackpot 1 in 100k pulls.
+// pulls; trio 1 in 22; Sun-trio jackpot 1 in 125k by math
+// (0.02 cubed = 8e-6), 1 in 200k by sim variance.
 var SLOT_PAYOUTS = [
   { dew:  80, fert: 0, label: 'Sprout trio'         },  // Common
   { dew: 160, fert: 0, label: 'Fern trio'           },  // Uncommon
