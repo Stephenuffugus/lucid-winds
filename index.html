@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.69';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.70';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38075,7 +38075,23 @@ document.addEventListener('keydown', function(e) {
       if (hb) hb.style.display = _hbPlvl >= 7 ? 'none' : '';
     } catch(e){}
   }
-  window.renderNursery = renderNursery;
+  // Stephen 2026-04-26 lag fix: rAF dedup wrapper. Breed flow used to
+  // call renderNursery 5+ times in quick succession (post-mint, switchTab,
+  // syncVaultToCloud, etc.), each wiping + rebuilding the slot DOM. The
+  // wrapper coalesces multiple calls in the same frame into one render.
+  // Synchronous renderNursery still available for tutorial-driven paths
+  // that expect immediate DOM presence.
+  var _renderNurQueued = false;
+  window.renderNursery = function() {
+    if (_renderNurQueued) return;
+    _renderNurQueued = true;
+    requestAnimationFrame(function() {
+      _renderNurQueued = false;
+      renderNursery();
+    });
+  };
+  // Sync version for callers that need the DOM immediately (rare).
+  window.renderNurserySync = renderNursery;
 
   // Visual pulse on nursery seed cards after water/fertilize
   function _nurPulse(slotIdx, type) {
@@ -67260,12 +67276,16 @@ window.bsExecuteBreed=function(){
       // Unified SVG particles replace the old emoji ring (🌿✨🌸🌾🍃🌱).
       // Petals + leaves drift down for the "two lineages becoming one" feel.
       // Sparkles fire in two waves to bracket the 2.2s overlay lifespan.
+      // Stephen 2026-04-26 lag fix: particle counts halved (was 12+6+6
+       // sparkles/petals/leaves + a second wave of 10). 34 simultaneous
+       // animated DOM nodes + backdrop-filter blur stuttered on Pixel 9
+       // during the breed flow. Visual punch retained, jank gone.
       try{
         if(window._lwSpawnParticles){
-          window._lwSpawnParticles(_breedOv,{rings:2,sparkles:12,petals:6,leaves:6});
+          window._lwSpawnParticles(_breedOv,{rings:1,sparkles:6,petals:3,leaves:3});
           setTimeout(function(){
             if(_breedOv.parentNode&&window._lwSpawnParticles){
-              window._lwSpawnParticles(_breedOv,{sparkles:10});
+              window._lwSpawnParticles(_breedOv,{sparkles:5});
             }
           },900);
         }
