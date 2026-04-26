@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.35';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.36';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -48730,11 +48730,10 @@ function _selectHexPlant(idx,p){
     else if(_cutDewBalH<20){_cutLbl='&#9986; CUTTING &middot; 20&#128167;';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'Need 20 Dew. You have '+_cutDewBalH+'.\')';}
     else{_cutLbl='&#9986; CUTTING &middot; 20&#128167; &middot; '+_cutDailyLeft+'/2';_cutCls='';_cutClick='window._hexAction(\'cutting\')';}
     actions+='<button class="hi-action-btn gold'+_cutCls+'" onclick="'+_cutClick+'" title="'+(_canCut?'Take a cutting (clone seed). Costs 20 Dew. Parent unharmed. 2/day.':'Unlocks at Keeper Level 5')+'">'+_cutLbl+'</button>';
-    // Nickname button — lets you label this keeper for easy identification
-    if(p.ownerUid){
-      var _curNick='';try{_curNick=(JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}'))[p.ownerUid]||'';}catch(e){}
-      actions+='<button class="hi-action-btn" onclick="window._lwNicknameKeeper(\''+p.ownerUid+'\',\''+p.ownerName.replace(/'/g,"\\'")+'\')" title="Give this keeper a nickname">\u270f\ufe0f '+(_curNick?'RENAME':'NICKNAME')+'</button>';
-    }
+    // NICKNAME button removed 2026-04-26 (Stephen): nicknaming a stranger
+    // from their wild plant reads as cross-player tracking. Friend system
+    // will surface this through an explicit friend-add flow instead.
+    // _lwNicknameKeeper function kept available for that future flow.
   }
   el.innerHTML='<div class="hi-detail-name">'+name+'</div><div class="hi-detail-grade" style="color:'+gc+';">'+grade+'</div>'+traitHtml+phenoHtml+vitalityHtml+'<div class="hi-actions">'+actions+'</div>';
   el.style.display='block';
