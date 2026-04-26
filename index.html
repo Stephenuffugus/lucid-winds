@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.4';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -17955,8 +17955,11 @@ document.addEventListener('keydown', function(e) {
       var fill = isWire ? 'none' : shiftedFill;
       var stroke = isWire ? (PALETTE[t.leafColors[i%2]] || PALETTE.sage) : 'none';
       // set-104: φ-decay opacity + atmospheric perspective combined
-      var phiOp = Math.max(0.35, 0.92 - (i * 0.04));
-      var depthOp = 0.70 + Math.abs(cosT) * 0.30;
+      // Master polish 2026-04-26: floor raised 0.35→0.72, decay 0.04→0.025,
+      // depth softened so back-side leaves don't ghost out. Leaves now read
+      // as solid foliage at every angle.
+      var phiOp = Math.max(0.72, 0.98 - (i * 0.025));
+      var depthOp = 0.85 + Math.abs(cosT) * 0.15;
       var op = phiOp * depthOp * (0.75 + prog * 0.25);
 
       // Audit: solo leaf mode — ghost all leaves except the target index
@@ -17970,7 +17973,9 @@ document.addEventListener('keydown', function(e) {
       // to draw the eye to the central bloom. The flower is the hero;
       // leaves become supporting context. Stronger blooms = more dimming.
       if (t.hasFlower && prog >= 0.8) {
-        var _bloomComplexity = (t.flower % 71 >= 18) ? 0.72 : 0.82; // exotic blooms dim more
+        // Master polish 2026-04-26: softened exotic 0.72→0.84, standard 0.82→0.90.
+        // Bloom is still the hero; leaves no longer go translucent under it.
+        var _bloomComplexity = (t.flower % 71 >= 18) ? 0.84 : 0.90;
         op = op * _bloomComplexity;
       }
 
