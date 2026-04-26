@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.58';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.59';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5118,6 +5118,21 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 121px)!important;righ
 body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 119px)!important;right:70px!important;width:56px!important;height:60px!important;}
 body.tab-wild #kb-compendium #kb-comp-count{top:-4px!important;left:-4px!important;min-width:18px!important;height:18px!important;font-size:0.5rem!important;}
 body.tab-wild #w-stats-bar{padding-right:138px!important;}
+/* Wild secondary actions consolidated into a single menu FAB.
+   Stephen 2026-04-26: '...anxiety due to the amount of things to do.'
+   Default Wild: only #w-menu-fab is visible (bottom-left). The 4
+   secondary buttons (RECENTER/WATER ALL/MY PLANTS/FORAGE) are hidden
+   by !important until the menu is opened. When body.lw-wm-open is set,
+   these CSS rules drop out and the JS-controlled inline display
+   (which respects each button's availability condition) takes over. */
+body.tab-wild #w-menu-fab{display:flex!important;}
+body:not(.tab-wild) #w-menu-fab{display:none!important;}
+body.tab-wild:not(.lw-wm-open) #w-recenter,
+body.tab-wild:not(.lw-wm-open) #w-mass-water,
+body.tab-wild:not(.lw-wm-open) #w-my-plants,
+body.tab-wild:not(.lw-wm-open) #ffb{display:none!important;}
+/* Menu fab opened state: rotate the icon to indicate "X to close" */
+#w-menu-fab.open{transform:rotate(90deg);background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.18))!important;}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
 #bpb.e{opacity:0;transform:scale(0.5);}
@@ -6463,6 +6478,13 @@ window._addSwitchTabHook = function(fn){
       </div>
       <div id="w-territory-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-family:DM Mono,monospace;font-size:0.5rem;text-align:center;"></div>
     </div>
+    <!-- WILD MENU FAB — single trigger that hides/shows the 4 secondary
+         action buttons (RECENTER / WATER ALL / MY PLANTS / FORAGE).
+         Stephen 2026-04-26: 'streamline the Wild UI to reduce anxiety.'
+         Default: 4 secondary buttons hidden, menu fab visible. Tap menu
+         → CSS toggles body.lw-wm-open which un-hides the 4 buttons in
+         their condition-driven states. -->
+    <button id="w-menu-fab" onclick="document.body.classList.toggle('lw-wm-open');this.classList.toggle('open');" style="display:none;position:fixed;bottom:calc(108px + env(safe-area-inset-bottom,0px));left:12px;z-index:1000;width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(26,36,22,0.95),rgba(13,16,12,0.95));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.5),inset 0 1px 0 rgba(200,168,75,0.18);-webkit-tap-highlight-color:transparent;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.3rem;line-height:1;letter-spacing:0;transition:transform 0.2s,background 0.2s;" aria-label="Wild menu">&#9776;</button>
     <!-- RECENTER BUTTON -->
     <button id="w-recenter" onclick="if(window.FG_Wild&&window.FG_Wild._recenter)FG_Wild._recenter();" style="display:none;position:fixed;bottom:calc(160px + env(safe-area-inset-bottom,0px));left:12px;z-index:999;width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(74,144,217,0.45);background:rgba(13,16,12,0.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.5);-webkit-tap-highlight-color:transparent;color:rgba(140,200,235,0.95);font-size:1.4rem;line-height:1;">&#8982;</button>
     <!-- MASS WATER BUTTON — appears when player has 2+ wild plants needing water -->
