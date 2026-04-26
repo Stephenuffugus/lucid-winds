@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.42';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.43';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -21434,10 +21434,15 @@ document.addEventListener('keydown', function(e) {
           break;
 
         case 63: // Lunar Disc — orbicular peltate disc with concentric silver bands + crater divots.
+          // Stephen 2026-04-26: 'lunar discs are floating far away from the
+          // plant.' Offset reduced from _ldR*1.8 (= ls*1.98) to _ldR*0.55
+          // so the petiole reads as inserting INTO the disc (peltate) rather
+          // than floating to it across empty space. Disc still extends out
+          // a full radius past attachment.
           var _ldR = ls * 1.1;
           var _ldAng = -0.35 - leafFrac * 0.3;
-          var _ldCx = ox + Math.cos(_ldAng) * _ldR * 1.8 * side;
-          var _ldCy = ly + Math.sin(_ldAng) * _ldR * 1.8;
+          var _ldCx = ox + Math.cos(_ldAng) * _ldR * 0.55 * side;
+          var _ldCy = ly + Math.sin(_ldAng) * _ldR * 0.55;
           tip = _ldCx; tipY = _ldCy;
           bodyD = 'M'+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx+_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' A'+_ldR.toFixed(1)+','+_ldR.toFixed(1)+' 0 1,1 '+(_ldCx-_ldR).toFixed(1)+','+_ldCy.toFixed(1)+' Z';
           // Disc body (cool silver-blue base)
