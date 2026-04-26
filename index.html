@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -48551,7 +48551,17 @@ function _selectHexPlant(idx,p){
     if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
     if(_phxBtn)actions+=_phxBtn;
-    actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')">&#128737; DEFENSE</button>';
+    // DEFENSE shows current defender game so the player knows what
+    // challengers will face. Also shows 24h cooldown from defense change.
+    var _defGameNames={set:'Trios',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
+    var _curDefName=_defGameNames[p.defenderGame]||'Trios';
+    var _defCdMs=0;
+    try{var _dcd=JSON.parse(localStorage.getItem('lw_defense_cd')||'{}');if(_dcd[p.hash]&&Date.now()-_dcd[p.hash]<24*3600000)_defCdMs=24*3600000-(Date.now()-_dcd[p.hash]);}catch(e){}
+    if(_defCdMs>0){
+      actions+='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Defense: '+_curDefName+'. Change again in '+fmtCdH(_defCdMs)+'.\')">&#128737; DEFENSE: '+_curDefName.toUpperCase()+' &middot; '+fmtCdH(_defCdMs)+'</button>';
+    } else {
+      actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')" title="Pick which mini-game challengers must beat to harvest this plant. 24h between changes.">&#128737; DEFENSE: '+_curDefName.toUpperCase()+'</button>';
+    }
   }else{
     // Wild v3: stranger plants no longer have HARVEST.
     // INSPECT is always available — seeing is free, acting has gates.
@@ -48561,7 +48571,13 @@ function _selectHexPlant(idx,p){
     actions+=_inspectBtn;
     // Stranger water requires a 10-second hold (spec §5: "10s hold")
     // — handlers attached to pointerdown/up so it works for touch + mouse.
-    actions+='<button class="hi-action-btn hi-water-hold" data-hold-action="water" data-hold-ms="10000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold for 10 seconds to water"><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER</span></button>';
+    // HOLD TO WATER (stranger) — surface daily 5/day budget so the player
+    // sees how many strangers they can still help today.
+    var _wBudgetH={};try{_wBudgetH=JSON.parse(localStorage.getItem('lw_water_budget')||'{}');}catch(e){}
+    var _wTodayH=new Date().toISOString().split('T')[0];
+    if(_wBudgetH.date!==_wTodayH){_wBudgetH={date:_wTodayH,count:0};}
+    var _wLeftH=Math.max(0,5-(_wBudgetH.count||0));
+    actions+='<button class="hi-action-btn hi-water-hold'+(_wLeftH<=0?' locked':'')+'" '+(_wLeftH>0?'data-hold-action="water" data-hold-ms="10000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)"':'onclick="window._toast&&window._toast(\'Daily stranger waters used (5/5). Resets at midnight.\')"')+' title="Hold for 10 seconds to water. 5 stranger waters per day."><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER &middot; '+_wLeftH+'/5</span></button>';
     actions+=_mulchBtn;
     if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
@@ -73400,6 +73416,12 @@ window._lwClaimHerbarium = function(id){
     try { localStorage.setItem(SHOP_KEY, JSON.stringify(st)); } catch(e){}
     if (window._haptic) try { window._haptic('bloom'); } catch(e){}
     if (typeof gtag !== 'undefined') gtag('event','hut_buy',{key:slot.key||'mystery',price:slot.price});
+    // Confirmation toast — players don't always know where bought items go.
+    // Surfacing the destination once per buy closes that loop.
+    if (window._toast){
+      var _itemNm = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[slot.key] && window.LW_ITEMS_CATALOG[slot.key].name) || slot.key;
+      try { window._toast('🌿 ' + _itemNm + ' added to your pouch · −' + slot.price + ' Dew'); } catch(e){}
+    }
     render();
   }
 
@@ -73576,6 +73598,11 @@ window._lwClaimHerbarium = function(id){
     try { localStorage.setItem(QUEST_KEY, JSON.stringify(q)); } catch(e){}
     if (window._haptic) try { window._haptic('bloom'); } catch(e){}
     if (typeof gtag !== 'undefined') gtag('event','hut_quest_complete',{ask:q.recipe.ask.key,give:q.recipe.give.key});
+    // Confirmation toast — show what you got from the trade
+    if (window._toast){
+      var _gNm = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[q.recipe.give.key] && window.LW_ITEMS_CATALOG[q.recipe.give.key].name) || q.recipe.give.key;
+      try { window._toast('🌿 ' + (q.recipe.give.n>1?q.recipe.give.n+'× ':'') + _gNm + ' added to your pouch'); } catch(e){}
+    }
     render();
   }
 
