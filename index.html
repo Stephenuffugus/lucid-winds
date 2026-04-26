@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.33';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.34';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -43070,23 +43070,12 @@ function _drawZoneHexes(_force){
       if (window._LW_DEBUG) console.log('[HEX TAP] zone='+this._zoneKey+' dist='+Math.round(this._zoneDist)+'m plants='+this._zonePlantCount+' FG_Wild.inspector='+(!!window.FG_Wild&&!!FG_Wild._openHexInspector));
       var _dynR=typeof _getCollectRange==='function'?_getCollectRange():COLLECT_RANGE;
       if(window.FG_Wild&&FG_Wild._openHexInspector&&this._zoneDist<=_dynR){
-        // Stephen test: 'this is so redundant it opens the list with
-        // an open to swipe through plant. no just open the carosel
-        // only.' If the hex has plants, open the carousel directly
-        // and skip the inspector list entirely. Inspector still
-        // mounted for the SEARCH FOR SEEDS button — it sits behind
-        // the carousel so closing the carousel exposes it.
+        // Stephen test 2026-04-26 (round 3): 'when we click on a hex the
+        // plants open immediately. when i close the plant im on the hex
+        // menu...' — auto-carousel feels intrusive. Single-tap intent:
+        // hex tap opens INSPECTOR ONLY. User taps a plant in the
+        // inspector list to open the carousel manually.
         FG_Wild._openHexInspector(this._zoneKey);
-        if(this._zonePlantCount>0){
-          setTimeout(function(){
-            try{
-              var _hex=document.querySelector('.hi-plant-row');
-              if(_hex&&window.FG_Wild&&FG_Wild._autoCarouselFromInspector){
-                FG_Wild._autoCarouselFromInspector();
-              }
-            }catch(err){}
-          },180);
-        }
       }else if(this._zoneDist>_dynR){
         // Out of range — show locked preview
         var _hlEl=document.getElementById('hex-locked');
