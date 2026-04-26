@@ -4,9 +4,11 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v3';
-var ASSET_CACHE = 'lw-assets-v3';
-var GAME_CACHE = 'lw-games-v3';
+var CACHE_VERSION = 'lw-v4';
+var ASSET_CACHE = 'lw-assets-v4';
+var GAME_CACHE = 'lw-games-v4';
+var TILE_CACHE = 'lw-tiles-v1';
+var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 
 // Assets to precache on install (critical path only)
 var PRECACHE = [
@@ -34,7 +36,7 @@ self.addEventListener('install', function(event) {
 
 // ── ACTIVATE: clean old cache versions ──
 self.addEventListener('activate', function(event) {
-  var keep = [ASSET_CACHE, GAME_CACHE];
+  var keep = [ASSET_CACHE, GAME_CACHE, TILE_CACHE];
   event.waitUntil(
     caches.keys().then(function(names) {
       return Promise.all(
@@ -50,6 +52,28 @@ self.addEventListener('activate', function(event) {
   );
 });
 
+// ── Map tile cache helpers ──
+// Stale-while-revalidate: returns cached tile immediately if present and
+// kicks off a background refresh; on a miss falls through to network.
+// FIFO-trim caps entries at TILE_MAX_ENTRIES (Cache.keys() preserves
+// insertion order so oldest are removed first). LRU isn't worth tracking.
+function _tileTrim(cache) {
+  cache.keys().then(function(keys) {
+    if (keys.length <= TILE_MAX_ENTRIES) return;
+    var excess = keys.length - TILE_MAX_ENTRIES;
+    for (var i = 0; i < excess; i++) cache.delete(keys[i]);
+  });
+}
+function _tileFetchAndCache(req, cache) {
+  return fetch(req).then(function(res) {
+    if (res && res.ok) {
+      var clone = res.clone();
+      cache.put(req, clone).then(function(){ _tileTrim(cache); });
+    }
+    return res;
+  });
+}
+
 // ── FETCH: route by request type ──
 self.addEventListener('fetch', function(event) {
   var url = new URL(event.request.url);
@@ -59,6 +83,26 @@ self.addEventListener('fetch', function(event) {
 
   // Skip non-http(s) requests
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
+
+  // ── Map tiles (CartoDB Voyager): stale-while-revalidate, capped at 1000 ──
+  // Biggest cellular-data win per the Apr 26 mobile audit. Serves cached
+  // tiles instantly on revisit and refreshes in the background.
+  if (url.hostname.indexOf('cartocdn.com') !== -1 && /\/\d+\/\d+\/\d+(@\dx)?\.png/.test(url.pathname)) {
+    event.respondWith(
+      caches.open(TILE_CACHE).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          if (cached) {
+            // Background refresh — don't block the response
+            _tileFetchAndCache(event.request, cache).catch(function(){});
+            return cached;
+          }
+          // Cache miss — go to network and cache the result
+          return _tileFetchAndCache(event.request, cache);
+        });
+      })
+    );
+    return;
+  }
 
   // ── HTML pages: network-first (so deploys go live instantly) ──
   if (event.request.mode === 'navigate' || url.pathname.match(/\.html$/)) {
