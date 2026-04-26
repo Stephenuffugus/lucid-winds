@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38938,11 +38938,11 @@ document.addEventListener('keydown', function(e) {
     // Check for first-discovery celebrations — new synergies fire a modal.
     try { if (window._lwCheckSynergyDiscovery) setTimeout(function(){ window._lwCheckSynergyDiscovery(newHash); }, 2500); } catch(e) {}
 
-    // Foraging card grant: every bloom rewards a random element card,
-    // capped at card capacity. Encourages nursery use + gives players
-    // a reason to come back after their 3-day wait.
+    // Bloom-gift card grant ripped 2026-04-26 — element cards no longer
+    // collected. Wrapped in `if (false)` to silence without removing the
+    // legacy block (future iteration may convert this to a Dew/Sunbeam reward).
     try {
-      if (window.LW_FORAGING) {
+      if (false && window.LW_FORAGING) {
         var _inv = window.LW_FORAGING.loadInventory();
         if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
           // Resolve the bloomed plant's grade so rarer plants have a shot
@@ -43179,7 +43179,8 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   // actually reach the player from the game they came out of, not only
   // from nursery blooms later. Skips if the hand is already at capacity.
   try {
-    if (window.LW_FORAGING && info && info.grade) {
+    if (false && window.LW_FORAGING && info && info.grade) {
+      // Forage-success card drop ripped 2026-04-26 — element cards not collected.
       var _fInv = window.LW_FORAGING.loadInventory();
       if (window.LW_FORAGING.totalCards(_fInv) < window.LW_FORAGING.cardCapacity()) {
         var _rareByGrade = {
@@ -58156,13 +58157,21 @@ function _renderMilestoneSection(){
   el.innerHTML=h;
 }
 
+// Foraging deck/inventory section ripped 2026-04-26. Players no longer own
+// or manage element cards — the foraging hand is provisioned per-attempt
+// from the universal element pool, sized by hex rarity. Stub kept so any
+// stale callers don't throw.
 function _renderForageSection(){
-  var el=document.getElementById('cs-forage-body');if(!el)return;
-  if(!window.LW_FORAGING){el.innerHTML='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">Foraging system loading...</div>';return;}
-  var inv=window.LW_FORAGING.loadInventory();
-  var deck=window.LW_FORAGING.getActiveDeck();
-  var cap=window.LW_FORAGING.cardCapacity();
-  var total=window.LW_FORAGING.totalCards(inv);
+  var el=document.getElementById('cs-forage-body');
+  if(el) el.innerHTML='';
+}
+function _renderForageSection_legacy_unused(){
+  var el=document.getElementById('cs-forage-body');
+  if(!el)return;
+  var inv={};
+  var deck={name:'Default'};
+  var cap=8;
+  var total=0;
   var h='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.4rem;">Inventory '+total+'/'+cap+' \u00b7 Active deck: '+deck.name+'</div>';
   h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;">';
   var order=['sun','shade','rain','dry','wind','still'];
@@ -58197,7 +58206,12 @@ function _renderForageSection(){
   }
   el.innerHTML=h;
 }
+// Deck editor ripped 2026-04-26 — players no longer build decks. Foraging
+// hands are auto-provisioned per hex from the universal element pool.
 window._lwOpenDeckEditor=function(){
+  if(window._toast) try{window._toast('Foraging hands are now provisioned automatically per hex.');}catch(e){}
+};
+window._lwOpenDeckEditor_legacy=function(){
   if(!window.LW_FORAGING){return;}
   var inv=window.LW_FORAGING.loadInventory();
   // Multi-slot support — 4 saved decks unlock at Keeper Lv 5 per spec §5.
@@ -58418,7 +58432,7 @@ function openCharacter(){
   _csOpen=true;
   updateKeeperBar();updateStats();loadFriendsUI();
   _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
-  _renderClassSection();_renderToolSection();_renderEffectsSection();_renderForageSection();
+  _renderClassSection();_renderToolSection();_renderEffectsSection();
   _renderMilestoneSection();
   document.getElementById('pw-character').classList.add('open');
   // Tick booster timers every 30s while open
@@ -70530,36 +70544,29 @@ window._lwClaimHerbarium = function(id){
   // play. Score math: match=2, counter=1, wild=1 (first wild/attempt=2).
   function hexDifficulty(grade) {
     var g = String(grade || 'Common').toLowerCase();
-    // Mastermind scoring: exact=2, present=1, miss=0 → max per attempt = slots*2.
-    // Tightened scoreNeeded so failure is a real possibility — was too lenient.
+    // Final spec from Stephen 2026-04-26:
+    //   slots = the hidden hex sequence length (cards needed)
+    //   handSize = how many cards the player gets to deduce from
+    //   attempts = guesses allowed
+    //   scoreNeeded = perfect (slots*2) — must nail every slot exactly
+    // Order matters. No repeats in either hex or hand. Rare cards (Moonlight,
+    // Thunder, Aurora) sprinkle into the hand at low probability for flavor.
     var map = {
-      common:    { slots: 3, cards: 3, handSize: 5,  attempts: 3, scoreNeeded: 5 },   // max 6
-      uncommon:  { slots: 3, cards: 3, handSize: 6,  attempts: 3, scoreNeeded: 6 },   // must be perfect
-      rare:      { slots: 4, cards: 4, handSize: 7,  attempts: 3, scoreNeeded: 7 },   // max 8
-      epic:      { slots: 4, cards: 4, handSize: 8,  attempts: 3, scoreNeeded: 8 },   // must be perfect
-      legendary: { slots: 5, cards: 5, handSize: 9,  attempts: 4, scoreNeeded: 9 },   // max 10
-      mythic:    { slots: 6, cards: 6, handSize: 10, attempts: 4, scoreNeeded: 11 },  // max 12
-      cosmic:    { slots: 7, cards: 7, handSize: 10, attempts: 4, scoreNeeded: 13 }   // max 14
+      common:    { slots: 3, cards: 3, handSize: 4, attempts: 3, scoreNeeded: 6  },
+      uncommon:  { slots: 3, cards: 3, handSize: 5, attempts: 3, scoreNeeded: 6  },
+      rare:      { slots: 4, cards: 4, handSize: 5, attempts: 3, scoreNeeded: 8  },
+      epic:      { slots: 4, cards: 4, handSize: 6, attempts: 4, scoreNeeded: 8  },
+      legendary: { slots: 4, cards: 4, handSize: 7, attempts: 4, scoreNeeded: 8  },
+      mythic:    { slots: 5, cards: 5, handSize: 8, attempts: 5, scoreNeeded: 10 },
+      cosmic:    { slots: 5, cards: 5, handSize: 9, attempts: 5, scoreNeeded: 10 }
     };
     return map[g] || map.common;
   }
 
-  // Silent downgrade guard: if the player doesn't own enough cards to possibly
-  // solve a hex at its assigned rarity, step down one rarity at a time until
-  // their hand can support it. Prevents impossible lockouts for new keepers.
-  function effectiveGrade(grade) {
-    var order = ['cosmic','mythic','legendary','epic','rare','uncommon','common'];
-    var g = String(grade || 'Common').toLowerCase();
-    var idx = order.indexOf(g);
-    if (idx < 0) return 'common';
-    var inv = loadInventory();
-    var total = totalCards(inv);
-    for (var i = idx; i < order.length; i++) {
-      var need = hexDifficulty(order[i]).cards;
-      if (total >= need) return order[i];
-    }
-    return 'common';
-  }
+  // No-op: kept as alias so existing callsites don't break. Player no longer
+  // owns cards — the hand is always provisioned by buildHand based on hex
+  // rarity, so there's nothing to "downgrade to."
+  function effectiveGrade(grade) { return String(grade || 'Common').toLowerCase(); }
 
   function hexComposition(zoneKey, biomeId, grade, handPool) {
     if (!biomeId) biomeId = (window._lastDetectedBiome || 'forest');
@@ -71003,14 +71010,57 @@ window._lwClaimHerbarium = function(id){
   // Build a hand up to `size` cards (defaults to 5 for backwards compat).
   // Deck-first, then fills remaining from inventory so harder hexes can
   // still find a workable hand. Rare wild cards are eligible too.
-  function buildHand(size) {
-    // Hand size scales with puzzle difficulty per hexDifficulty.handSize.
-    // First 6 entries are the base elements; 7-9 are rare weather cards
-    // that unlock on harder hexes. Common (size 5) gets fewer types
-    // than Cosmic (size 10 → capped at 9 by the pool length).
-    var all = ['sun','shade','rain','dry','wind','still','moonlight','thunder','aurora'];
-    if (!size || size >= all.length) return all;
-    return all.slice(0, size);
+  // Build a hand of `size` UNIQUE element cards. The hand always covers a
+  // mix of base elements (sun/shade/rain/dry/wind/still). Rare cards
+  // (moonlight/thunder/aurora) appear with probability tuned per rarity:
+  // a sprinkle at common, expected at cosmic. Stephen's design call: rares
+  // spice low-rarity hunts for flavor, become reliable signal at high.
+  function buildHand(size, grade, zoneKey) {
+    var BASE = ['sun','shade','rain','dry','wind','still'];
+    var RARES = ['moonlight','thunder','aurora'];
+    var g = String(grade || 'common').toLowerCase();
+    // Probability that ONE rare slot appears in this hand. Stacks linearly:
+    // higher rarity → more rare slots expected.
+    var RARE_PROB = {
+      common:0.12, uncommon:0.16, rare:0.22, epic:0.34,
+      legendary:0.50, mythic:0.65, cosmic:0.80
+    };
+    var rareProb = RARE_PROB[g] != null ? RARE_PROB[g] : 0.12;
+
+    // Deterministic RNG seeded by zone + day so the hand is stable for a
+    // given hex on a given day (player can leave + reopen without resetting).
+    var dateStr = new Date().toISOString().slice(0,10);
+    var seedSrc = (zoneKey||'') + '|' + dateStr + '|hand|' + g + '|' + size;
+    var seed = 0;
+    for (var si = 0; si < seedSrc.length; si++) seed = ((seed<<5) - seed + seedSrc.charCodeAt(si))|0;
+    var rng = function(){ seed = (seed * 9301 + 49297) % 233280; return Math.abs(seed) / 233280; };
+
+    // Decide how many rare slots, capped at min(size-2, 3) so hand always
+    // has at least 2 base elements + can never exceed the rare pool length.
+    var rareCount = 0;
+    for (var rc = 0; rc < Math.min(size - 2, RARES.length); rc++) {
+      if (rng() < rareProb) rareCount++;
+    }
+
+    // Shuffle helper (Fisher-Yates with seeded rng)
+    function shuffle(arr){
+      var a = arr.slice();
+      for (var i = a.length-1; i > 0; i--){
+        var j = Math.floor(rng() * (i+1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    var picks = [];
+    // Pick rares first (so they stay if hand is small)
+    var rarePool = shuffle(RARES);
+    for (var p = 0; p < rareCount && p < rarePool.length; p++) picks.push(rarePool[p]);
+    // Fill the rest from base elements
+    var basePool = shuffle(BASE);
+    for (var b = 0; b < basePool.length && picks.length < size; b++) picks.push(basePool[b]);
+    // Final shuffle so rare cards aren't always at the front
+    return shuffle(picks).slice(0, size);
   }
   function openForagePanel(zoneKey, grade, onDone) {
     var attempts = getAttempts(zoneKey);
@@ -71071,11 +71121,12 @@ window._lwClaimHerbarium = function(id){
         fetchWeather(window._uLat, window._uLng);
       }
     } catch(e){}
-    // Build the hand FIRST so we can constrain the hex composition to
-    // elements the player actually has. Stephen Apr 22: puzzle was
-    // unsolvable because the hex picked 'still' at Common while the
-    // player's 5-card hand only had sun/shade/rain/dry/wind.
-    var hand = buildHand(diff.handSize || (diff.cards + 2));
+    // Build the hand FIRST, then constrain the hex's element pool to the
+    // hand. The hand is a deck of N unique elements (base + rare flavor)
+    // sized by hex rarity. The hex picks `slots` unique elements FROM the
+    // hand — guarantees a perfect solve is theoretically possible, since
+    // every hex element is in your hand. The puzzle is order + identification.
+    var hand = buildHand(diff.handSize, effGrade, zoneKey);
     var comp = hexComposition(zoneKey, null, effGrade, hand);
     // If the hex composition identified a weather-hint slot, pre-reveal it
     // so the player sees the "free" slot on attempt 1. Matches the attempt-3
@@ -71132,28 +71183,8 @@ window._lwClaimHerbarium = function(id){
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of ' + diff.attempts + '</div></div>';
       h += '<button onclick="window._lwForageClose(false)" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
       h += '</div>';
-      // Deck selector — one-tap swap between the player's saved decks
-      // (spec §5: "including mid-trip"). Only shown if >1 deck has cards.
-      // Disabled once the player has committed to an attempt (selected
-      // cards or resolved attempt) so swapping can't cheat the puzzle.
-      try {
-        var _curDecks = (window.LW_FORAGING && window.LW_FORAGING.loadDecks) ? window.LW_FORAGING.loadDecks() : [];
-        var _savedCount = 0;
-        for (var _sc = 0; _sc < _curDecks.length; _sc++) if (_curDecks[_sc] && (_curDecks[_sc].cards || []).length >= 3) _savedCount++;
-        if (_savedCount > 1 && !resolved && selected.length === 0) {
-          var _actIdx = parseInt(localStorage.getItem('lw_forage_deck_active')||'0',10) || 0;
-          h += '<div style="margin-bottom:0.7rem;padding:0.5rem;background:rgba(18,22,16,0.55);border:1px solid rgba(122,179,86,0.15);border-radius:10px;">';
-          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">DECK</div>';
-          h += '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
-          for (var _di = 0; _di < _curDecks.length; _di++) {
-            var _dd = _curDecks[_di];
-            if (!_dd || !(_dd.cards||[]).length) continue;
-            var _da = _di === _actIdx;
-            h += '<button onclick="window._lwForageSwapDeck(' + _di + ')" style="flex:1;min-width:70px;padding:6px 4px;background:' + (_da ? 'rgba(200,168,75,0.18)' : 'rgba(26,36,22,0.5)') + ';border:1px solid ' + (_da ? 'var(--gold)' : 'rgba(122,179,86,0.2)') + ';color:' + (_da ? 'var(--gold)' : 'var(--cream)') + ';font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.05em;border-radius:6px;cursor:pointer;min-height:36px;">' + ((_dd.name || ('Deck ' + (_di+1))).toUpperCase()) + '</button>';
-          }
-          h += '</div></div>';
-        }
-      } catch(e) {}
+      // Deck selector ripped 2026-04-26 — hand is auto-built per hex now,
+      // no swap needed.
 
       // Hex slots
       h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(26,36,22,0.5),rgba(13,16,12,0.7));border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;margin-bottom:0.9rem;">';
@@ -71348,17 +71379,8 @@ window._lwClaimHerbarium = function(id){
       } catch(e){}
     }
 
-    window._lwForageSwapDeck = function(n) {
-      // Mid-trip deck swap — only valid before a card is selected or an
-      // attempt resolves. Persist the choice so subsequent attempts on
-      // this hex pick up the same deck. Keeps learned + lastPlay since
-      // those describe the hex, not the player's hand.
-      if (resolved || selected.length > 0) return;
-      try { localStorage.setItem('lw_forage_deck_active', String(n)); } catch(e) {}
-      hand = buildHand(diff.cards + 2);
-      selected = [];
-      render();
-    };
+    // _lwForageSwapDeck ripped 2026-04-26 — no decks anymore.
+    window._lwForageSwapDeck = function(){};
     window._lwForagePick = function(cardId) {
       if (resolved) return;
       // No duplicates: a card already placed in this attempt is removed
@@ -77086,11 +77108,9 @@ window._lwLevelCeremony=function(newLvl){
   if(window._toast)window._toast(c.icon+' '+c.title+'. '+c.body);
   try{if(window._playWin)window._playWin();}catch(e){}
   try{if(window._haptic)window._haptic('bloom');}catch(e){}
-  // Foraging card grant on every level-up (capped at card capacity).
-  // Element picked weighted toward what the player owns least so the
-  // hand stays balanced instead of mono-element.
+  // Level-up foraging-card grant ripped 2026-04-26 — element cards no longer collected.
   try {
-    if (window.LW_FORAGING) {
+    if (false && window.LW_FORAGING) {
       var _inv = window.LW_FORAGING.loadInventory();
       if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
         var _min = Infinity;
