@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2648,6 +2648,9 @@
     .mp-warn .lw-mp-status{color:rgba(232,200,100,0.95);}
     .mp-ok .lw-mp-status{color:rgba(122,179,86,0.85);}
     .lw-mp-dist{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;color:var(--gold);flex-shrink:0;min-width:50px;text-align:right;}
+    /* In-range glow — left ribbon + soft outer glow so the player sees at a glance which plants they can act on */
+    .lw-mp-row.mp-in-range{box-shadow:inset 4px 0 0 #9bd66a,0 0 12px rgba(155,214,106,0.18);}
+    .lw-mp-row.mp-in-range .lw-mp-dist{color:#9bd66a;}
 
     /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
     .lu-overlay{position:fixed;inset:0;z-index:99998;display:none;}
@@ -48858,21 +48861,47 @@ window._lwOpenMyPlants = function(){
   var ov = document.createElement('div');
   ov.id = 'lw-myplants-overlay';
   ov.style.cssText = 'position:fixed;inset:0;z-index:100008;background:rgba(8,10,6,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;padding:1rem 0.6rem;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:panelFadeIn 0.25s ease;';
+  // Count statuses for the header pulse line
+  var nCrit = 0, nWarn = 0, nOk = 0, nInRange = 0;
+  var COLLECT = (window.FG_Wild && window.FG_Wild._getCollectRange) ? window.FG_Wild._getCollectRange() : 75;
+  for (var ci = 0; ci < rows.length; ci++){
+    if (rows[ci].status.cls === 'crit') nCrit++;
+    else if (rows[ci].status.cls === 'warn') nWarn++;
+    else nOk++;
+    if (rows[ci].dist != null && rows[ci].dist <= COLLECT) nInRange++;
+  }
   var html = '<div style="max-width:440px;width:100%;margin:0 auto;">';
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem;">';
   html += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--sage);">&#127807; MY PLANTS</div>';
-  html += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">' + mine.length + ' planted &middot; sorted by status, then distance</div></div>';
+  // Header pulse: counts of each status + in-range
+  var statusBits = [];
+  if (nCrit) statusBits.push('<span style="color:#d97a7a;">'+nCrit+' critical</span>');
+  if (nWarn) statusBits.push('<span style="color:var(--gold);">'+nWarn+' need water</span>');
+  if (nOk) statusBits.push('<span style="color:var(--sage);">'+nOk+' healthy</span>');
+  if (nInRange) statusBits.push('<span style="color:#9bd66a;">'+nInRange+' in range</span>');
+  html += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">' + mine.length + ' planted</div>';
+  if (statusBits.length){
+    html += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;margin-top:3px;">'+statusBits.join(' &middot; ')+'</div>';
+  }
+  html += '</div>';
   html += '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:0.95rem;cursor:pointer;">&times;</button>';
   html += '</div>';
+  // Mass-water shortcut — only show if ≥1 plant needs water. _lwMassWater
+  // already handles eligibility filter, cost preview, and surcharge tiers.
+  if (nWarn + nCrit > 0){
+    html += '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window._lwMassWater)window._lwMassWater();" style="display:block;width:100%;margin:0 0 10px;padding:10px;border-radius:10px;border:1.5px solid rgba(91,175,220,0.55);background:linear-gradient(180deg,rgba(91,175,220,0.32),rgba(46,90,120,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">&#128167; WATER ALL ('+ (nWarn+nCrit) +')</button>';
+  }
   html += '<div class="lw-mp-list">';
   for (var i = 0; i < rows.length; i++){
     var r = rows[i];
     var sCls = 'mp-' + r.status.cls;
+    var inRange = r.dist != null && r.dist <= COLLECT;
+    if (inRange) sCls += ' mp-in-range';
     html += '<div class="lw-mp-row '+sCls+'" onclick="window._lwNavToPlant('+i+')" data-mpidx="'+i+'">';
     html += '<div class="lw-mp-art" id="lw-mp-art-'+i+'"></div>';
     html += '<div class="lw-mp-info">';
     html += '<div class="lw-mp-name">'+r.name+'</div>';
-    html += '<div class="lw-mp-status">'+r.status.lbl+'</div>';
+    html += '<div class="lw-mp-status">'+r.status.lbl+(inRange?' &middot; <span style="color:#9bd66a;">in range</span>':'')+'</div>';
     var hexHint = r.hexCount > 1 ? ('Hex with ' + (r.hexCount - 1) + ' neighbor' + (r.hexCount > 2 ? 's' : '')) : 'Solo in hex';
     html += '<div class="lw-mp-hex">'+hexHint+'</div>';
     html += '</div>';
@@ -48891,16 +48920,16 @@ window._lwOpenMyPlants = function(){
       }
     }
   }, 0);
-  // Navigate handler — close overlay, pan map, open trait panel for that plant
+  // Navigate handler — close overlay, pan map to plant, open trait panel.
+  // panTo was added to FG_Wild's public API so the map actually moves;
+  // showTP alone only opens the side panel without recentering.
   window._lwNavToPlant = function(idx){
     var r = rows[idx]; if (!r) return;
     var ovEl = document.getElementById('lw-myplants-overlay');
     if (ovEl) ovEl.remove();
     if (window.FG_Wild) {
       try {
-        // Use Leaflet map directly via FG_Wild — there's no public panTo, so
-        // call setView on the internal map via the showTP path which centers
-        // and opens the trait panel for this plant.
+        if (FG_Wild.panTo && r.p && r.p.lat) FG_Wild.panTo(r.p.lat, r.p.lng, 17);
         if (FG_Wild.showTP) FG_Wild.showTP(r.p);
       } catch(e){}
     }
@@ -49499,7 +49528,7 @@ function _autoCarouselFromInspector(){
     window.openCarousel(_hexInspPlants.slice(),0,'wild-inspect');
   },120);
 }
-return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_dist:_dist};
+return{activate:activate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
