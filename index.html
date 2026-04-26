@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.7';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.8';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2520,6 +2520,12 @@
     .lw-hut .lwh-shop-card.rar-legendary{border-color:rgba(232,160,80,1);box-shadow:0 0 16px rgba(232,160,80,0.35);}
     .lw-hut .lwh-shop-card.is-special{border-color:rgba(232,200,100,1);box-shadow:0 0 18px rgba(232,200,100,0.45);background:linear-gradient(180deg,rgba(60,52,30,0.85),rgba(28,24,12,0.9));}
     .lw-hut .lwh-shop-card.sold{opacity:0.4;filter:grayscale(0.7);}
+    .lw-hut .lwh-shop-card.locked{opacity:0.55;filter:grayscale(0.8) brightness(0.7);}
+    .lw-hut .lwh-shop-card.locked .lwh-shop-art img{filter:grayscale(0.9);}
+    .lw-hut .lwh-shop-timer{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.04em;margin-bottom:0.3rem;padding:2px 6px;border-radius:4px;}
+    .lw-hut .lwh-shop-timer.in{color:rgba(122,179,86,0.9);background:rgba(74,124,53,0.12);border:1px solid rgba(122,179,86,0.25);}
+    .lw-hut .lwh-shop-timer.out{color:rgba(220,180,180,0.85);background:rgba(120,60,60,0.12);border:1px solid rgba(180,80,80,0.25);}
+    .lw-hut .lwh-shop-buy.is-locked{background:rgba(40,40,40,0.4);border:1.5px solid rgba(180,80,80,0.35);color:rgba(220,180,180,0.7);cursor:not-allowed;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;padding:0.5rem 0.6rem;min-height:42px;width:100%;text-align:center;}
     .lw-hut .lwh-shop-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.08em;color:#0d100c;background:var(--sage);padding:3px 9px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.6);z-index:2;}
     .lw-hut .lwh-shop-badge.gold{background:linear-gradient(180deg,#f5d97a,var(--gold));color:#1a1208;font-weight:900;}
     /* Item art slot — hi-res reads at 140px square. Hard floor: never shrink below 110px. */
@@ -4890,9 +4896,13 @@
        z-index 1000 = 1 above nav (999) so dock never gets buried */
     /* wild-dock CSS removed — replaced by BP backpack */
     /* ═══ KEEPER IDENTITY BAR ═══ */
-    #pw-keeper-bar{position:fixed;top:0;left:0;right:0;z-index:997;display:none;flex-direction:column;gap:0.45rem;padding:0.55rem 0.7rem 0.55rem 0.7rem;padding-top:calc(0.55rem + env(safe-area-inset-top, 0px));background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.92));border-bottom:1px solid rgba(74,124,53,0.08);backdrop-filter:blur(8px);max-width:680px;margin:0 auto;}
+    #pw-keeper-bar{position:fixed;top:0;left:0;right:0;z-index:997;display:none;flex-direction:column;gap:0.35rem;padding:0.4rem 0.7rem 0.45rem 0.7rem;padding-top:calc(0.4rem + env(safe-area-inset-top, 0px));background:linear-gradient(180deg,rgba(13,16,12,0.97),rgba(13,16,12,0.92));border-bottom:1px solid rgba(74,124,53,0.08);backdrop-filter:blur(8px);max-width:680px;margin:0 auto;}
     #pw-keeper-bar .kb-row1{display:flex;align-items:center;gap:0.6rem;}
-    #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;max-width:220px;}
+    /* Row 2 is now 3 buttons (Sunbeams, Hut, Dew) — Install moved to Row 1.
+       Tighter max-width condenses the row so it doesn't sprawl. */
+    #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;max-width:200px;}
+    /* Install button in Row 1: same height as the avatar, sized to fit alongside name+xp */
+    #pw-keeper-bar .kb-row1 #kb-install{width:48px;height:48px;border-radius:10px;border:2px solid rgba(200,168,75,0.5);background:rgba(26,36,22,0.6);cursor:pointer;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:0;}
     #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;position:relative;}
     #pw-keeper-bar .kb-avatar > img,#pw-keeper-bar .kb-avatar > span#kb-avatar-art{border-radius:50%;}
     #pw-keeper-bar .kb-avatar > img{clip-path:circle(50%);}
@@ -6510,14 +6520,13 @@ window._addSwitchTabHook = function(fn){
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 Pollen</div>
       </div>
-      <div id="pw-lb-toggle" onclick="PW_UI.toggleLeaderboard()"><span id="lb-my-rank">#—</span> <span style="font-size:0.55rem;">▼</span></div>
+      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install.png" alt="Install" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"></div>
     </div>
-    <!-- Row 2: currency badges (Sunbeams + Dew + optional Compendium + Install) -->
+    <!-- Row 2: currency + hut (3 buttons — was 4 before install moved up) -->
     <div class="kb-row2">
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
       <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-mystery.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
-      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install.png" alt="Install" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
     </div>
   </div>
   <!-- Book of Secrets — floating button, separate from keeper bar -->
@@ -72396,6 +72405,17 @@ window._lwClaimHerbarium = function(id){
     Legendary: { min: 1500, max: 2000 }
   };
 
+  // Daily availability windows per rarity — rare items only buyable in a small
+  // slice of each day, creating natural cycling. Commons always; Legendary
+  // is a 1h burst once daily. Greyed-out items show countdown timers.
+  var WINDOW_HOURS = {
+    Common:    24,   // always available (no timer)
+    Uncommon:  8,    // 8h window each day
+    Rare:      4,
+    Epic:      2,
+    Legendary: 1
+  };
+
   // Daily-quest recipes (item-conversion). One picked per day.
   var QUEST_RECIPES = [
     { ask:{key:'compassShard',n:3}, give:{key:'wanderersMap',n:1},
@@ -72486,6 +72506,50 @@ window._lwClaimHerbarium = function(id){
     return st;
   }
 
+  // ─── per-item availability windows ───
+  // Each item has a daily window starting at a deterministic hour (key+date hash).
+  // Returns: { available, untilMs (when current window ends), nextMs (when next window opens) }
+  function getItemAvailability(key, tier){
+    var hours = WINDOW_HOURS[tier] || 24;
+    if (hours >= 24) return { available:true, untilMs:null, nextMs:null };
+    var seed = dailySeed(key + '_window');
+    var startHour = seed % 24;
+    var now = new Date();
+    var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var nowMs = now.getTime();
+    var winStartMs = midnight + startHour * 3600000;
+    var winEndMs = winStartMs + hours * 3600000;
+    // Cap window end at midnight so windows don't wrap (simpler)
+    var dayEndMs = midnight + 24 * 3600000;
+    if (winEndMs > dayEndMs) winEndMs = dayEndMs;
+    if (nowMs >= winStartMs && nowMs < winEndMs){
+      return { available:true, untilMs:winEndMs, nextMs:null };
+    }
+    if (nowMs < winStartMs){
+      return { available:false, untilMs:null, nextMs:winStartMs };
+    }
+    // Past today's window — next opens tomorrow at the same hour
+    return { available:false, untilMs:null, nextMs:dayEndMs + startHour * 3600000 };
+  }
+
+  // Format ms → "2h 15m" / "47m" / "12s"
+  function fmtCountdown(ms){
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    if (h > 0) return h + 'h ' + m + 'm';
+    if (m > 0) return m + 'm';
+    return sec + 's';
+  }
+
+  // Time until midnight tonight (for Daily Special expiry)
+  function msUntilMidnight(){
+    var now = new Date();
+    var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1).getTime();
+    return midnight - now.getTime();
+  }
+
   function getQuest(){
     var t = todayStr();
     var q = null;
@@ -72510,7 +72574,13 @@ window._lwClaimHerbarium = function(id){
   }
 
   // ─── filename helper: 'foragersLens' → 'foragers-lens' ───
+  // OVERRIDES handle the few items where art files don't match the camelCase convert.
+  // 'ravenEye' → 'ravens-eye.png' (with the apostrophe-s in the filename).
+  var ART_OVERRIDES = {
+    ravenEye: 'ravens-eye'
+  };
   function artFile(key){
+    if (ART_OVERRIDES[key]) return ART_OVERRIDES[key];
     return key.replace(/([A-Z])/g, '-$1').toLowerCase();
   }
   function itemArt(key, fallbackIcon){
@@ -72562,6 +72632,8 @@ window._lwClaimHerbarium = function(id){
       else ts[i].classList.remove('active');
     }
     render();
+    if (name === 'shop') startCountdown();
+    else stopCountdown();
   }
 
   function render(){
@@ -72578,11 +72650,13 @@ window._lwClaimHerbarium = function(id){
     render();
     var ov = document.getElementById('lw-hut');
     ov.classList.add('open');
+    if (currentTab === 'shop') startCountdown();
     if (typeof gtag !== 'undefined') gtag('event','hut_open',{tab:currentTab});
   }
   function close(){
     var ov = document.getElementById('lw-hut');
     if (ov) ov.classList.remove('open');
+    stopCountdown();
   }
 
   // ─── SHOP ───
@@ -72592,6 +72666,7 @@ window._lwClaimHerbarium = function(id){
     var st = getStock();
     var cat = window.LW_ITEMS_CATALOG || {};
     var bal = (window.getTotalDew && window.getTotalDew()) || 0;
+    var nowMs = Date.now();
     // Find today's special for the callout banner
     var specialName = '';
     for (var si=0;si<st.stock.length;si++){
@@ -72600,9 +72675,10 @@ window._lwClaimHerbarium = function(id){
         break;
       }
     }
-    var html = '<div class="lwh-section-text">The hermit lays out his wares. All in stock today.</div>';
+    var html = '<div class="lwh-section-text">The hermit lays out his wares. Some items only appear in their daily window.</div>';
     if (specialName){
-      html += '<div class="lwh-special-banner">⭐ TODAY\'S SPECIAL · <b>'+specialName+'</b> · 50% OFF</div>';
+      var specialEnds = fmtCountdown(msUntilMidnight());
+      html += '<div class="lwh-special-banner">⭐ TODAY\'S SPECIAL · <b>'+specialName+'</b> · 50% OFF · ends in <span data-countdown="midnight">'+specialEnds+'</span></div>';
     }
     html += '<div class="lwh-shop-grid">';
     for (var i=0;i<st.stock.length;i++){
@@ -72611,7 +72687,8 @@ window._lwClaimHerbarium = function(id){
       var afford = bal >= s.price;
       var rarity = (s.tier||'Common').toLowerCase();
       var rcls = 'rar-' + rarity;
-      var name, desc, art, badge='', ownedTxt='';
+      var name, desc, art, badge='', ownedTxt='', timerTxt='';
+      var avail = { available:true, untilMs:null, nextMs:null };
       if (s.type === 'mystery'){
         name = 'Mystery Box';
         desc = 'A surprise. Sunbeams, Dew, Fertilizer, or jackpot.';
@@ -72624,27 +72701,82 @@ window._lwClaimHerbarium = function(id){
         desc = it.desc;
         art = itemArt(s.key, it.icon);
         if (s.type === 'special') badge = '<div class="lwh-shop-badge gold">DAILY · 50% OFF</div>';
-        // Owned indicator — small badge if player already has copies
+        // Owned indicator
         var owned = (window.LW_ITEMS && window.LW_ITEMS.count) ? window.LW_ITEMS.count(s.key) : 0;
         if (owned > 0) ownedTxt = '<div class="lwh-shop-owned">×'+owned+' in pouch</div>';
+        // Availability window for non-Common, non-Special items
+        if (s.type !== 'special'){
+          avail = getItemAvailability(s.key, s.tier);
+        }
+        // Render timer line
+        if (avail.available && avail.untilMs){
+          var leaves = avail.untilMs - nowMs;
+          timerTxt = '<div class="lwh-shop-timer in">leaves in <span data-countdown="'+avail.untilMs+'">'+fmtCountdown(leaves)+'</span></div>';
+        } else if (!avail.available && avail.nextMs){
+          var opens = avail.nextMs - nowMs;
+          timerTxt = '<div class="lwh-shop-timer out">opens in <span data-countdown="'+avail.nextMs+'">'+fmtCountdown(opens)+'</span></div>';
+        }
       }
-      html += '<div class="lwh-shop-card '+rcls+(sold?' sold':'')+(s.type==='special'?' is-special':'')+'">';
+      var locked = !avail.available && s.type !== 'special';
+      var cardCls = 'lwh-shop-card '+rcls;
+      if (sold) cardCls += ' sold';
+      if (s.type === 'special') cardCls += ' is-special';
+      if (locked) cardCls += ' locked';
+      html += '<div class="'+cardCls+'">';
       html += badge;
       html += '<div class="lwh-shop-art">'+art+'</div>';
       html += '<div class="lwh-shop-name">'+name+'</div>';
       html += '<div class="lwh-shop-tier rar-'+rarity+'-text">'+(s.type==='mystery'?'Mystery':(s.tier||'Common'))+'</div>';
       html += '<div class="lwh-shop-desc">'+desc+'</div>';
+      html += timerTxt;
       html += ownedTxt;
       if (sold){
         html += '<div class="lwh-shop-buy is-sold">SOLD</div>';
+      } else if (locked){
+        html += '<div class="lwh-shop-buy is-locked">LOCKED</div>';
       } else {
         html += '<button class="lwh-shop-buy'+(afford?'':' broke')+'" onclick="LW_HUT.buy('+i+')">'+s.price+' 💧</button>';
       }
       html += '</div>';
     }
     html += '</div>';
-    html += '<div class="lwh-section-foot">Stock refreshes daily at midnight · pouch cap '+getPouchCap()+'</div>';
+    html += '<div class="lwh-section-foot">Stock + windows refresh at midnight · pouch cap '+getPouchCap()+'</div>';
     body.innerHTML = html;
+  }
+
+  // Live countdown ticker — updates every 30s while shop tab is open.
+  var _countdownTimer = null;
+  function startCountdown(){
+    stopCountdown();
+    _countdownTimer = setInterval(function(){
+      // If hut closed or not on shop tab, stop ticking
+      var ov = document.getElementById('lw-hut');
+      if (!ov || !ov.classList.contains('open') || currentTab !== 'shop'){
+        stopCountdown(); return;
+      }
+      var nowMs = Date.now();
+      var spans = document.querySelectorAll('.lw-hut [data-countdown]');
+      var anyExpired = false;
+      for (var i=0;i<spans.length;i++){
+        var t = spans[i].getAttribute('data-countdown');
+        var targetMs;
+        if (t === 'midnight'){
+          targetMs = msUntilMidnight() + nowMs;
+        } else {
+          targetMs = parseInt(t, 10);
+        }
+        var rem = targetMs - nowMs;
+        if (rem <= 0) anyExpired = true;
+        spans[i].textContent = fmtCountdown(Math.max(0, rem));
+      }
+      if (anyExpired){
+        // Re-render to flip locked/unlocked state
+        renderShop();
+      }
+    }, 30000);
+  }
+  function stopCountdown(){
+    if (_countdownTimer){ clearInterval(_countdownTimer); _countdownTimer = null; }
   }
 
   function buy(slotIdx){
@@ -72652,6 +72784,17 @@ window._lwClaimHerbarium = function(id){
     if (st.purchased[slotIdx]) return;
     var slot = st.stock[slotIdx];
     if (!slot) return;
+    // Window check: locked items can't be bought (mystery + special skip the gate)
+    if (slot.type !== 'mystery' && slot.type !== 'special'){
+      var avail = getItemAvailability(slot.key, slot.tier);
+      if (!avail.available){
+        if (window._toast) try {
+          var when = avail.nextMs ? fmtCountdown(avail.nextMs - Date.now()) : 'tomorrow';
+          window._toast('Out of stock. Returns in '+when+'.');
+        } catch(e){}
+        return;
+      }
+    }
     var bal = (window.getTotalDew && window.getTotalDew()) || 0;
     if (bal < slot.price){
       if (window._toast) try { window._toast('Need '+slot.price+' Dew. You have '+bal+'.'); } catch(e){}
