@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.72';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.73';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68915,6 +68915,92 @@ var _LEAF_TRIGS = [
         reward: rewards[tier] || rewards.common
       });
     })(lf.idx, lf.n, lf.r, lf.e, lf.t);
+  }
+})();
+
+// ── POT DISCOVERIES — one per of 60 named vessels ──
+// Every container the procedural plant could land in deserves a moment.
+// Same compact pattern as substrates / flowers / leaves / etc.
+var _POT_TRIGS = [
+  {idx:0,  n:'Hearth Vessel',       r:'What sat by the fire for generations.',          e:'A hearthstone crock cradled your bloom. Continuity made of clay.', t:'common'},
+  {idx:1,  n:'Skillet Garden',      r:'Heavy enough to last a life.',                   e:'A cast iron skillet held your roots. Generations of seasoning underneath.', t:'common'},
+  {idx:2,  n:'Spire Vase',          r:'Tall as a small cathedral.',                     e:'A spire vase lifted your bloom skyward. Reach matters.', t:'common'},
+  {idx:3,  n:'Wood Trencher',       r:'A bowl carved from one piece of tree.',          e:'A wood trencher cradled your soil. Honest as bread.', t:'common'},
+  {idx:4,  n:'Hanging Censer',      r:'Smoke rises, plant follows.',                    e:'A hanging censer held your bloom aloft. Incense and chlorophyll.', t:'common'},
+  {idx:5,  n:'Amphora',             r:'Wine carriers, repurposed.',                     e:'An amphora cradled your roots. Greek shipping crate, eternal beauty.', t:'common'},
+  {idx:6,  n:'Honeycomb Cell',      r:'A hexagonal hideout.',                           e:'A honeycomb cell hosted your bloom. Bees would approve.', t:'common'},
+  {idx:7,  n:'Terrarium',           r:'A garden under glass.',                          e:'A terrarium contained your tiny world. Climate inside the climate.', t:'common'},
+  {idx:8,  n:'Clay Pipe',           r:'A pipe with retirement plans.',                  e:'A clay pipe became a vase. Its smoking days well behind it.', t:'common'},
+  {idx:9,  n:'Top Hat Pot',         r:'Eccentric. Aristocratic. Plant home.',           e:'A top hat held your bloom. Magician\'s leftovers, repurposed.', t:'common'},
+  {idx:10, n:'Lampshade',           r:'Light passes through. So does water.',           e:'A lampshade hosted your bloom. The roots find their own warmth.', t:'common'},
+  {idx:11, n:'Teacup Garden',       r:'Small enough for a windowsill.',                 e:'A teacup cradled your bloom. Tiny garden, full intent.', t:'common'},
+  {idx:12, n:'Rain Boot',           r:'A boot that gave up walking.',                   e:'A rain boot held your soil. The miles it walked, the miles it grows.', t:'common'},
+  {idx:13, n:'Watering Can',        r:'From tool to home.',                             e:'A watering can held your bloom. Identity crisis resolved.', t:'common'},
+  {idx:14, n:'Wheelbarrow',         r:'Big enough for a village.',                      e:'A wheelbarrow cradled your garden. Mobile gardening solved.', t:'common'},
+  {idx:15, n:'Golden Pot',          r:'A vessel of gold-leaf and gravity.',             e:'A golden pot held your bloom. Wealth as soil.', t:'rare'},
+  {idx:16, n:'Gravestone',          r:'Even endings can grow things.',                  e:'A gravestone hosted your bloom. The memorial blooms back.', t:'common'},
+  {idx:17, n:'Woven Basket',        r:'Rough fibers, gentle hands.',                    e:'A woven basket held your soil. Crafted to carry; now staying still.', t:'common'},
+  {idx:18, n:'Lab Flask',           r:'Borosilicate. Patient.',                         e:'A lab flask hosted your roots. Science meets cellulose.', t:'common'},
+  {idx:19, n:'Barrel',              r:'What held wine now holds growth.',               e:'A barrel cradled your bloom. Oak staves, cooper\'s pride.', t:'common'},
+  {idx:20, n:'Stump Garden',        r:'What was the tree, holds the tree.',             e:'A stump hosted your bloom. The forest comes full circle.', t:'common'},
+  {idx:21, n:'Lantern',             r:'A lamp without a flame.',                        e:'A lantern held your bloom. Light from green, not fire.', t:'common'},
+  {idx:22, n:'Treasure Chest',      r:'What thieves passed by.',                        e:'A treasure chest held your bloom. The real gold was always living.', t:'common'},
+  {idx:23, n:'Hollow Tome',         r:'Pages cut to make space.',                       e:'A hollow tome cradled your roots. Stories make good soil.', t:'common'},
+  {idx:24, n:'Birdhouse',           r:'From bird shelter to plant home.',               e:'A birdhouse hosted your bloom. The wing bones long gone.', t:'common'},
+  {idx:25, n:'Wagon Pot',           r:'Mobile garden, kid-sized.',                      e:'A wagon held your soil. Was a child\'s, now a planter\'s.', t:'common'},
+  {idx:26, n:'Mailbox',             r:'No more letters. All bloom.',                    e:'A mailbox cradled your bloom. The address still matters.', t:'common'},
+  {idx:27, n:'Marlo Pipe',          r:'Pipework with second life.',                     e:'A Marlo pipe held your roots. Plumbing as planter.', t:'common'},
+  {idx:28, n:'War Drum',            r:'What thundered now grows.',                      e:'A war drum cradled your bloom. The skin remembers.', t:'common'},
+  {idx:29, n:'Old Boot',            r:'One boot. No partner.',                          e:'An old boot held your soil. The other one walked away years ago.', t:'common'},
+  {idx:30, n:'Tin Can',             r:'Recycled, replanted, reborn.',                   e:'A tin can hosted your bloom. Soup label long faded.', t:'common'},
+  {idx:31, n:'Dented Pail',         r:'Banged up but doing its job.',                   e:'A dented pail cradled your roots. Imperfect, persistent.', t:'common'},
+  {idx:32, n:'Mason Jar',           r:'What preserves became what grows.',              e:'A mason jar held your bloom. Preservation pivot.', t:'common'},
+  {idx:33, n:'Colander',            r:'Drainage built in.',                             e:'A colander held your soil. The roots breathe through the holes.', t:'common'},
+  {idx:34, n:'Cracked Crock',       r:'Imperfect, useful, beloved.',                    e:'A cracked crock held your bloom. The crack lets the rain out.', t:'common'},
+  {idx:35, n:'Coconut Shell',       r:'Tropical hardware.',                             e:'A coconut shell cradled your bloom. Ocean-traveled, dirt-bound.', t:'common'},
+  {idx:36, n:'Saucer Garden',       r:'Shallow but sufficient.',                        e:'A saucer held your soil. Low profile, big intent.', t:'common'},
+  {idx:37, n:'Egg Carton',          r:'Cardboard cells with a purpose.',                e:'An egg carton hosted your bloom. Compostable, intentional.', t:'common'},
+  {idx:38, n:'Disco Ball Pot',      r:'Mirrors. Plant. Light show.',                    e:'A disco ball held your bloom. Saturday Night Fever, perennial.', t:'common'},
+  {idx:39, n:'Paint Can',           r:'From cover-up to growth.',                       e:'A paint can cradled your roots. The drips still on the side.', t:'common'},
+  {idx:40, n:'Coffee Mug',          r:'First it warmed, now it waters.',                e:'A coffee mug held your bloom. The morning ritual continues.', t:'common'},
+  {idx:41, n:'Soup Bowl',           r:'Empty but full of intent.',                      e:'A soup bowl cradled your soil. The chowder moved on.', t:'common'},
+  {idx:42, n:'Wooden Crate',        r:'Shipping retired, gardening commenced.',         e:'A wooden crate hosted your bloom. The cargo now lives inside.', t:'common'},
+  {idx:43, n:'Shattered Urn',       r:'What was whole, now nests roots.',               e:'A shattered urn held your bloom. The break became the beginning.', t:'common'},
+  {idx:44, n:'Paper Bag',           r:'Will it last? It will try.',                     e:'A paper bag cradled your soil. Optimism in cellulose form.', t:'common'},
+  {idx:45, n:'Yogurt Cup',          r:'Plastic with second purpose.',                   e:'A yogurt cup held your bloom. The label peeled, the roots took hold.', t:'common'},
+  {idx:46, n:'Tin Pail',            r:'Workhorse vessel.',                              e:'A tin pail cradled your bloom. Galvanized, patient.', t:'common'},
+  {idx:47, n:'Gramophone Horn',     r:'From music to mineral soil.',                    e:'A gramophone horn held your bloom. The records stopped spinning long ago.', t:'common'},
+  {idx:48, n:'Bonsai Dish',         r:'Shallow on purpose.',                            e:'A bonsai dish held your roots. Restraint as art form.', t:'common'},
+  {idx:49, n:'Vintage Camera',      r:'Captured light. Now feeds light.',               e:'A vintage camera cradled your bloom. The shutter clicks no more.', t:'common'},
+  {idx:50, n:'Cauldron',            r:'Not for brewing today.',                         e:'A cauldron held your bloom. Witches notwithstanding.', t:'rare'},
+  {idx:51, n:'Dragon Egg',          r:'Whatever it was, this is what it is now.',       e:'A dragon egg cradled your bloom. Ask no questions.', t:'common'},
+  {idx:52, n:'Geode Hollow',        r:'Crystal-lined shelter.',                         e:'A geode hosted your bloom. The crystals listen.', t:'common'},
+  {idx:53, n:'Skull Planter',       r:'From skull to soil. Memento mori.',              e:'A skull held your bloom. Death feeds new life. Always.', t:'common'},
+  {idx:54, n:'Samurai Helmet',      r:'From battle to garden.',                         e:'A samurai helmet held your bloom. Bushido pivot.', t:'common'},
+  {idx:55, n:'Clock Tower',         r:'A miniature timepiece. Plant included.',         e:'A clock tower cradled your bloom. Gears keep growing too.', t:'common'},
+  {idx:56, n:'Ancient Amphora',     r:'Older than empires. Newer than the bloom.',      e:'An ancient amphora held your bloom. History in baked clay.', t:'rare'},
+  {idx:57, n:"Philosopher's Vessel",r:'Containing the questions.',                      e:'A philosopher\'s vessel cradled your bloom. The thoughts continue.', t:'rare'},
+  {idx:58, n:'Tractor Tire',        r:'What rolled now stays put.',                     e:'A tractor tire held your soil. The acres it crossed are in the rubber.', t:'common'},
+  {idx:59, n:'Genie Lamp',          r:'Three wishes. Used up.',                         e:'A genie lamp cradled your bloom. The genie left their soil behind.', t:'common'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 4},
+    rare:   {pollen: 12, ea: 1}
+  };
+  for (var pti = 0; pti < _POT_TRIGS.length; pti++) {
+    var pt = _POT_TRIGS[pti];
+    (function(idx, name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'pot_' + idx,
+        name: name,
+        riddle: riddle,
+        category: 'trait',
+        check: function(ctx) { return ctx.plant && (ctx.plant.pot % 60) === idx; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(pt.idx, pt.n, pt.r, pt.e, pt.t);
   }
 })();
 
