@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.41';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.42';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -49772,6 +49772,27 @@ window._hexAction=function(action){
 // nullability checks (the #w-toast element is position:fixed and
 // layered above everything, so it works from any tab).
 window._toast = _toast;
+// Show a toast only the first N times for a given key, OR until the
+// player is L7+. After that, repeated confirmations (like "Seed sent
+// to Nursery!") get suppressed. Stephen 2026-04-26: "im level 20 i
+// dont need for you to tell me ... where my seeds are going every
+// single time."
+window._lwSilenceableToast = function(key, msg, max) {
+  if (!msg) return;
+  if (typeof max !== 'number') max = 3;
+  var lvl = 0;
+  try { if (window._getXP && window._getRank) lvl = window._getRank(window._getXP()).level; } catch(e){}
+  var counts = {};
+  try { counts = JSON.parse(localStorage.getItem('lw_silence_counts') || '{}'); } catch(e){}
+  var seen = counts[key] || 0;
+  // Always show during first N OR while still a beginner (< L7).
+  if (seen < max || lvl < 7) {
+    _toast(msg);
+    counts[key] = seen + 1;
+    try { localStorage.setItem('lw_silence_counts', JSON.stringify(counts)); } catch(e){}
+  }
+  // Else: silently no-op. The action's result is visible in the UI anyway.
+};
 // Helper: auto-launch the carousel for the currently-open hex
 // inspector. Called from the hex tap handler so a single tap on a
 // hex with plants opens the carousel directly (no list-then-button).
@@ -61940,7 +61961,7 @@ function ts(i){if(i>=st.seeds.length)return;_ss=i;cpi();var s=st.seeds[i];hap();
 function s2n(){if(_ss===null)return;var seed=st.seeds[_ss];st.seeds.splice(_ss,1);csi();render();hap();
 // Fire event so the nursery listener picks it up
 if(seed){window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:seed}));}
-toast('Seed sent to Nursery!');}
+if(window._lwSilenceableToast)window._lwSilenceableToast('seed_to_nursery','Seed sent to Nursery!');else toast('Seed sent to Nursery!');}
 var _sht=null;
 function sns(){if(_ss===null)return;document.getElementById('htcn').style.transition='width 0.3s linear';document.getElementById('htc-nur').classList.add('holding');_sht=setTimeout(function(){s2n();},300);}
 function sne(){clearTimeout(_sht);document.getElementById('htc-nur').classList.remove('holding');document.getElementById('htcn').style.transition='none';document.getElementById('htcn').style.width='0';}
@@ -62304,7 +62325,8 @@ window.FG_Backpack.sendSeedToNursery = function(idx) {
   BP.render();
   if (window.renderNursery) setTimeout(window.renderNursery, 200);
   if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 500);
-  if (BP.toast) BP.toast('Seed sent to Nursery!');
+  if (window._lwSilenceableToast) window._lwSilenceableToast('seed_to_nursery','Seed sent to Nursery!');
+  else if (BP.toast) BP.toast('Seed sent to Nursery!');
   else if (window._toast) window._toast('Seed sent to Nursery!');
 };
 
@@ -62363,7 +62385,8 @@ window.FG_Backpack.takeClipping = function(idx) {
   if (window._LW_toolXP) window._LW_toolXP('shears', 10);
   BP.render();
   var _cdHrs=Math.round(((window._LW_toolMod&&window._LW_toolMod('shears'))||(6*60*60*1000))/3600000);
-  if (window._toast) window._toast('✂️ Clipping sent to Nursery! '+_cdHrs+'h cooldown started.');
+  if (window._lwSilenceableToast) window._lwSilenceableToast('clipping_to_nursery','✂️ Clipping sent to Nursery! '+_cdHrs+'h cooldown started.');
+  else if (window._toast) window._toast('✂️ Clipping sent to Nursery! '+_cdHrs+'h cooldown started.');
   if (window.renderNursery) setTimeout(window.renderNursery, 200);
   if (window.syncVaultToCloud) setTimeout(window.syncVaultToCloud, 500);
   if (window._lwJITCutting) window._lwJITCutting('greenhouse');
@@ -62476,7 +62499,8 @@ window.addEventListener('bp-seed-to-nursery', function(e) {
     });
     if (result.ok) {
       if (window.renderNursery) renderNursery();
-      if (window._toast) _toast(isMystery ? '\ud83c\udf31 Mystery seed planted! Water it daily to see what it becomes.' : '\ud83c\udf31 Seed added to nursery! Water it daily.');
+      if (window._lwSilenceableToast) window._lwSilenceableToast(isMystery?'mystery_seed_planted':'seed_added_to_nursery', isMystery ? '\ud83c\udf31 Mystery seed planted! Water it daily to see what it becomes.' : '\ud83c\udf31 Seed added to nursery! Water it daily.');
+      else if (window._toast) _toast(isMystery ? '\ud83c\udf31 Mystery seed planted! Water it daily to see what it becomes.' : '\ud83c\udf31 Seed added to nursery! Water it daily.');
     } else {
       if (window._toast) _toast('Nursery full. Bloom or abandon a seed first.');
     }
@@ -79050,6 +79074,13 @@ function _getNextStep(){
   var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
   var nur=[];try{nur=JSON.parse(localStorage.getItem('sws_nursery')||'[]');}catch(e){}
   var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+  // Beginner-nudge gate: stop showing "play games to earn sunbeams" and
+  // similar starter prompts to experienced players. Stephen 2026-04-26
+  // (L20): "i dont need for you to tell me to play games for sunbeams
+  // every single time." Urgent state (water/bloom/almost-mint) still fires
+  // for all levels. Threshold L7 = post-class-pick = "graduated tutorial".
+  var _plvl=0;try{if(window._getXP&&window._getRank)_plvl=window._getRank(window._getXP()).level;}catch(e){}
+  var _hideBeginner=_plvl>=7;
   // Sunbeams drive mint progress (games earn them). Variable name kept
   // as "sunbeams" — the old "dew" label was a rename-miss from the split.
   var hl={};try{hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');}catch(e){}
@@ -79076,34 +79107,38 @@ function _getNextStep(){
   if(sunbeams>=Math.floor(_nsCost*0.66)&&sunbeams<_nsCost){
     return{icon:'🌱',text:'Almost there. '+(_nsCost-sunbeams)+' more sunbeams to bloom a new plant.',action:'game',color:'var(--sage)'};
   }
-  // 4. No plants yet (besides gift)
-  if(gh.length<=1){
+  // 4. No plants yet (besides gift) — beginner only
+  if(!_hideBeginner&&gh.length<=1){
     return{icon:'☀️',text:'Play a game to earn sunbeams. '+_nsCost+' sunbeams bloom your next plant.',action:'game',color:'var(--sage)'};
   }
-  // 5. Haven't dropped anything in wild yet
-  if(gh.length>=3&&wild.length===0){
+  // 5. Haven't dropped anything in wild yet — beginner only
+  if(!_hideBeginner&&gh.length>=3&&wild.length===0){
     return{icon:'🗺️',text:'Try the Wild tab! Drop a plant on the map near you.',action:'wild',color:'rgba(122,179,86,0.8)'};
   }
-  // 6. Have plants but haven't bred — only show if plants are actually ready
-  if(gh.length>=2&&!localStorage.getItem('lw_first_breed')){
+  // 6. Have plants but haven't bred — beginner only
+  if(!_hideBeginner&&gh.length>=2&&!localStorage.getItem('lw_first_breed')){
     var eligible=gh.filter(function(p){
       if(window.FG_Data&&FG_Data.getBreedStatus){return FG_Data.getBreedStatus(p).canBreed;}
-      return true; // Plan A fallback — let downstream re-validate
+      return true;
     });
     if(eligible.length>=2){
       return{icon:'🧬',text:'You can breed! Open a plant and tap BREED to create offspring.',action:'greenhouse',color:'var(--gold)'};
     }
   }
-  // 7. Greenhouse getting full
+  // 7. Greenhouse getting full — actionable, fires for all levels
   if(gh.length>=8&&gh.length<=10){
     return{icon:'📦',text:gh.length+'/10 slots used. Compost a plant for fertilizer or expand storage.',action:'greenhouse',color:'rgba(200,168,75,0.8)'};
   }
-  // 8. Default: earn more
-  if(sunbeams<Math.floor(_nsCost*0.33)){
+  // 8. Default: earn more — beginner only
+  if(!_hideBeginner&&sunbeams<Math.floor(_nsCost*0.33)){
     return{icon:'🎯',text:'Play games to earn sunbeams. '+sunbeams+'/'+_nsCost+' toward your next plant.',action:'game',color:'var(--muted)'};
   }
-  // 9. Mid-progress
-  return{icon:'🌱',text:sunbeams+'/'+_nsCost+' sunbeams collected. Keep playing to bloom your next plant.',action:'game',color:'var(--sage)'};
+  // 9. Mid-progress — beginner only
+  if(!_hideBeginner){
+    return{icon:'🌱',text:sunbeams+'/'+_nsCost+' sunbeams collected. Keep playing to bloom your next plant.',action:'game',color:'var(--sage)'};
+  }
+  // L7+ with no urgent state — return null so the widget hides cleanly.
+  return null;
 }
 
 function _updateNextStep(){
@@ -79112,6 +79147,7 @@ function _updateNextStep(){
   // Don't show during onboarding
   if(localStorage.getItem('pw_onboarded')!=='1'){_nsEl.style.display='none';return;}
   var step=_getNextStep();
+  if(!step){_nsEl.style.display='none';_nsVisible=false;return;}
   _nsEl.innerHTML='<span style="font-size:0.55rem;">'+step.icon+'</span> <span style="color:'+step.color+';">'+step.text+'</span>';
   _nsEl.onclick=function(){if(window.switchTab)switchTab(step.action);};
   _nsEl.style.display='flex';
