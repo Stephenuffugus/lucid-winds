@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.82';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.83';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5169,9 +5169,31 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 /* Seed panel: vertical strip just left of the backpack plant column so
    seeds sit next to the backpack instead of drifting to the top corner.
    3x-ish larger than the old 42px tiles — reads as real inventory now. */
-#bps{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:88px;width:108px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:10px;align-items:center;padding:6px 4px;z-index:999;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;}
+#bps{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:88px;width:108px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:10px;align-items:center;padding:6px 4px;z-index:1002;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;}
 #bps::-webkit-scrollbar{display:none;}
-#bpe.open #bps{opacity:1;transform:translateX(0);}
+#bpe.open #bps{opacity:1;transform:translateX(0);pointer-events:auto;}
+/* When BP is open, dim the wild FABs + hamburger menu so they read as
+   inactive and don't visually compete with the open inventory. The bps
+   description panel sits at z 1002 so it's above all FABs. */
+#bpe.open ~ #dfb,
+#bpe.open ~ #ffb,
+#bpe.open ~ #w-menu-fab,
+#bpe.open ~ #w-recenter,
+#bpe.open ~ #w-mass-water,
+#bpe.open ~ #w-my-plants{opacity:0.28!important;pointer-events:none!important;transition:opacity 0.2s;}
+body:has(#bpe.open) #dfb,
+body:has(#bpe.open) #ffb,
+body:has(#bpe.open) #w-menu-fab,
+body:has(#bpe.open) #w-recenter,
+body:has(#bpe.open) #w-mass-water,
+body:has(#bpe.open) #w-my-plants{opacity:0.28!important;pointer-events:none!important;transition:opacity 0.2s;}
+/* JS-driven body class — works on browsers without :has() (iPad <16). */
+body.lw-bp-open #dfb,
+body.lw-bp-open #ffb,
+body.lw-bp-open #w-menu-fab,
+body.lw-bp-open #w-recenter,
+body.lw-bp-open #w-mass-water,
+body.lw-bp-open #w-my-plants{opacity:0.28!important;pointer-events:none!important;transition:opacity 0.2s;}
 /* Return to Base button */
 #bp-rtb{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom,0px) + 8px);left:12px;z-index:999;min-width:100px;height:40px;border-radius:20px;border:1.5px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
 #bp-rtb:active{transform:scale(0.92);box-shadow:0 2px 8px rgba(0,0,0,0.3);}
@@ -38586,6 +38608,76 @@ document.addEventListener('keydown', function(e) {
         '<button class="nur-btn water" onclick="window._nurStartBreed()" style="margin-top:0.28rem;">\ud83e\uddec CROSS-POLLINATE</button>' +
       '</div>';
     }
+    // Clipping cards get their own layout \u2014 no seed sprite, no water/accel
+    // pips, no bloom button. Just the genetic preview rendered from the
+    // clipping's hash (showing inherited leaf+stem+flower+season since the
+    // env bytes are zeroed), the source plant name, an optional wilt
+    // timer, and two large action buttons: CROSS-POLLINATE + THROW AWAY.
+    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
+      var _clipSid = seed.id;
+      var _clipName = (typeof getPlantName === 'function')
+        ? getPlantName(seed.parentAHash || seed.seedHash)
+        : (seed.parentAHash || seed.seedHash || '').substring(0,6);
+      var _clipSvg = '';
+      try {
+        if (window._generatePlantSVG) {
+          _clipSvg = window._generatePlantSVG(seed.seedHash, 100);
+        }
+      } catch(e){}
+      // Trait readout \u2014 show the three inherited gene names so the player
+      // can tell what they're carrying without booting up the breed screen.
+      var _clipTraitLine = '';
+      try {
+        if (window.hashToTraits && window.TRAIT_BANK) {
+          var _ct = window.hashToTraits(seed.seedHash);
+          var _leafName = (window.TRAIT_BANK.leaves[_ct.leafType % 71] || {}).name || 'unknown leaf';
+          var _stemIdx = _ct.stem % 24;
+          var _stemNames = ['Straight','Curved','Wandering','Spiral','Forked','Knotted','Ribbed','Smooth','Hairy','Thorned','Hollow','Square','Striped','Banded','Speckled','Gnarled','Crystalline','Braided','Drooping','Whorled','Rope','Glassy','Lightning','Mossy'];
+          var _stemName = _stemNames[_stemIdx] || 'stem';
+          var _seasonNames = ['Spring','Summer','Autumn','Winter'];
+          var _seasonName = _seasonNames[_ct.season] || '';
+          var _flowerLine = '';
+          if (_ct.hasFlower) {
+            var _flowerName = (window.TRAIT_BANK.flowers[_ct.flower % 71] || {}).name || 'bloom';
+            _flowerLine = '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);opacity:0.85;">\u00b7 ' + _flowerName + ' bloom</div>';
+          } else {
+            _flowerLine = '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);opacity:0.7;">\u00b7 no flower carried</div>';
+          }
+          _clipTraitLine =
+            '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);opacity:0.85;">\u00b7 ' + _leafName + ' leaf</div>' +
+            '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);opacity:0.85;">\u00b7 ' + _stemName + ' stem</div>' +
+            _flowerLine +
+            '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);opacity:0.7;">\u00b7 ' + _seasonName + ' season</div>';
+        }
+      } catch(e){}
+      var _clipWilt = '';
+      if (seed.wiltDeadline) {
+        var _wMsLeft = Math.max(0, seed.wiltDeadline - Date.now());
+        var _wHrs = Math.floor(_wMsLeft / 3600000);
+        var _wMin = Math.floor((_wMsLeft % 3600000) / 60000);
+        var _wTxt = _wHrs > 0 ? (_wHrs + 'h ' + _wMin + 'm') : (_wMin + 'm');
+        var _wColor = _wMsLeft < 3600000 ? '#d96b4b' : 'var(--gold)';
+        _clipWilt = '<div style="margin-top:0.35rem;padding:0.3rem 0.5rem;background:rgba(217,107,75,0.07);border:1px solid rgba(217,107,75,0.25);border-radius:6px;font-family:DM Mono,monospace;font-size:0.5rem;color:' + _wColor + ';line-height:1.3;">\u23f3 Wilts in ' + _wTxt + ' \u2014 nursery is full.</div>';
+      }
+      return '<div class="nur-stage-bar" style="background:rgba(13,16,12,0.55);padding:0.32rem 0.7rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(122,179,86,0.18);">' +
+        '<span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--sage);">\u2702\ufe0f CLIPPING</span>' +
+        '<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">Cross only</span>' +
+      '</div>' +
+      '<div class="nur-slot-inner">' +
+        '<div class="nur-plant-col" style="background:radial-gradient(circle at 50% 60%,rgba(122,179,86,0.10),rgba(122,179,86,0));">' + _clipSvg + '</div>' +
+        '<div class="nur-info-col">' +
+          '<div class="nur-slot-label">Clipping ' + (idx + 1) + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);margin:3px 0 4px;line-height:1.3;">From ' + _clipName + '</div>' +
+          '<div style="margin:0.2rem 0 0.35rem;display:flex;flex-direction:column;gap:1px;">' + _clipTraitLine + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);line-height:1.4;opacity:0.8;">A genetic clone, no pot or substrate of its own. Cross with a greenhouse plant to start a new lineage.</div>' +
+          _clipWilt +
+          '<div class="nur-actions" style="margin-top:0.5rem;">' +
+            '<button class="nur-btn water" data-sid="' + _clipSid + '" onclick="window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)" style="background:rgba(122,179,86,0.22);border-color:rgba(122,179,86,0.55);color:var(--sage);font-size:0.62rem;">\u2702\ufe0f CROSS-POLLINATE</button>' +
+            '<button class="nur-btn abandon" data-sid="' + _clipSid + '" onclick="handleRemoveSeed(this.dataset.sid)" title="Throw away clipping">\u2715</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
     var bloomReady   = FG_Data.isBloomReady(seed);
     var wateredToday = !FG_Data.canWaterToday(seed);
     var pips = '';
@@ -39345,22 +39437,9 @@ document.addEventListener('keydown', function(e) {
 
   async function _executeBloom(nur, seedIndex, seed) {
     // 1. DNA Splice
-    // Clipping seeds carry zeroed bytes for pot/aura/substrate/companion
-    // (their identity = parent genetics only, no environment). Rehydrate
-    // those slots from fresh entropy at bloom time so the resulting plant
-    // looks complete — pot, substrate, possibly aura, possibly companion.
-    // Stephen 2026-04-26: 'when theyre bred, they should still roll
-    // chance for companions, and auras, and theyll need a pot and
-    // companion.' Same rule applies to standalone bloom.
-    if (seed && (seed.origin === 'cutting' || seed.origin === 'clipping')
-        && window._lwRehydrateClippingHash && window._lwFreshHex64) {
-      var _clipFresh = window._lwFreshHex64();
-      seed.seedHash = window._lwRehydrateClippingHash(seed.seedHash, _clipFresh);
-      // Mark on the seed so the persisted record reflects the rehydrated
-      // hash. Otherwise reload would re-rehydrate to a different value.
-      seed.parentAHash = seed.seedHash;
-      seed.parentBHash = seed.seedHash;
-    }
+    // Clipping rehydration removed at bloom — clippings cross-pollinate
+    // only (handleBloomBtn gate blocks the standalone path). Cross-time
+    // rehydration is still wired in bsExecuteBreed.
     var parentA = seed.parentAHash || seed.seedHash || '';
     var parentB = seed.parentBHash || seed.seedHash || '';
     var spliced = seed.seedHash || generateSplicedHash(parentA, parentB);
@@ -39659,10 +39738,14 @@ document.addEventListener('keydown', function(e) {
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });
     if (seedIndex < 0) { _setNurMsg('Seed not found. Please refresh.'); return; }
     var seed = nur[seedIndex];
-    // Stephen 2026-04-26 redesign: clippings bloom like normal seeds.
-    // _executeBloom rehydrates the clipping zeroed bytes from fresh
-    // entropy so the bloomed plant has a real pot/substrate and a
-    // chance at aura+companion. Anti-spam now lives at collection.
+    // Clippings cross-pollinate only — they don't bloom alone (Stephen
+    // 2026-04-26 final ruling). Card UX shows only THROW AWAY and
+    // CROSS-POLLINATE buttons, but this gate is the safety net if any
+    // path tries to mint a clipping directly.
+    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
+      _setNurMsg('A cutting only blooms through a cross. Tap CROSS-POLLINATE.');
+      return;
+    }
     if (!seed.waterLog || seed.waterLog.length < 3) {
       _setNurMsg('Seed needs ' + (3 - (seed.waterLog ? seed.waterLog.length : 0)) + ' more watering(s).');
       return;
@@ -39685,8 +39768,11 @@ document.addEventListener('keydown', function(e) {
 
     var seed = nur[seedIndex];
 
-    // Stephen 2026-04-26 redesign: clippings water like normal seeds.
-    // Bloom path rehydrates zeroed environment bytes from fresh entropy.
+    // Clippings can't be watered into bloom — they cross-pollinate only.
+    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
+      _setNurMsg('A cutting only blooms through a cross. Tap CROSS-POLLINATE.');
+      return;
+    }
     if (seed.status !== 'growing') {
       _setNurMsg('Seed is no longer active.');
       return;
@@ -39775,7 +39861,11 @@ document.addEventListener('keydown', function(e) {
     if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
     var seed = nur[seedIndex];
 
-    // Stephen 2026-04-26 redesign: clippings can be fertilized too.
+    // Clippings/cuttings cannot be fertilized into bloom — cross only.
+    if (seed.origin === 'cutting' || seed.origin === 'clipping') {
+      _setNurMsg('A cutting only blooms through a cross. Tap CROSS-POLLINATE.');
+      return;
+    }
     if (!seed.waterLog) seed.waterLog = [];
     if (seed.waterLog.length >= 3) {
       _setNurMsg('Seed is already bloom-ready. Tap BLOOM.');
@@ -62367,8 +62457,8 @@ function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pou
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','🎒 +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
-function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}document.getElementById('bpe').classList.add('open');render();}
-function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');}
+function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}document.getElementById('bpe').classList.add('open');document.body.classList.add('lw-bp-open');render();}
+function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');document.body.classList.remove('lw-bp-open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
 function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');}
 function render(){
