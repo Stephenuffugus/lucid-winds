@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.54';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.55';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68469,6 +68469,104 @@ var _SUBSTRATE_TRIGS = [
         reward: rewards[tier] || rewards.common
       });
     })(st.idx, st.n, st.r, st.e, st.t);
+  }
+})();
+
+// ── FLOWER DISCOVERIES — one per of 71 flower types ──
+// Per BoS expansion: every named flower in TRAIT_BANK.flowers earns a
+// discovery moment when first bloomed in your nursery or scanned in the
+// wild. Hooks via GROWN tracker + checkTriggers, same as substrates.
+var _FLOWER_TRIGS = [
+  {idx:0,  n:'First Bud',          r:'Closed but promised.',                            e:'A bud appeared. The first promise of color.',                         t:'common'},
+  {idx:1,  n:'First Rose',         r:'Old as memory, new as today.',                    e:'A rose opened. The classic returns.',                                 t:'common'},
+  {idx:2,  n:'Hibiscus Day',       r:'Tropical, brief, brilliant.',                     e:'A hibiscus bloomed for one perfect day.',                             t:'common'},
+  {idx:3,  n:'Lotus Rise',         r:'Mud below, pure above.',                          e:'A lotus rose from the soil of your patience.',                        t:'common'},
+  {idx:4,  n:'Dahlia Geometry',    r:'Petals in mathematical perfection.',              e:'A dahlia bloomed. Nature did its math.',                              t:'common'},
+  {idx:5,  n:'Tulip Season',       r:'Once they crashed an empire\'s economy.',         e:'A tulip opened. The empire holds steady this time.',                  t:'common'},
+  {idx:6,  n:'Floral Spike',       r:'Flowers stacked along a stem.',                   e:'A spike of blossoms opened. Rich in pollen, rich in form.',           t:'common'},
+  {idx:7,  n:'Mandala Bloom',      r:'Sacred geometry made flesh.',                     e:'A mandala bloomed. The petals know their duty.',                      t:'common'},
+  {idx:8,  n:'Clover Crown',       r:'Three leaves, four if lucky.',                    e:'A clover head bloomed. Tiny luck multiplied.',                        t:'common'},
+  {idx:9,  n:'Bottlebrush Spike',  r:'Red fingers brushed the sky.',                    e:'A bottlebrush opened. The hummingbirds rejoiced.',                    t:'common'},
+  {idx:10, n:'Orchid Witness',     r:'The most prolific family of flowers.',            e:'An orchid bloomed. There are 28,000 species; this is one.',           t:'common'},
+  {idx:11, n:'Rose Cascade',       r:'When a single rose isn\'t enough.',               e:'A double rose opened. The petals doubled their work.',                t:'common'},
+  {idx:12, n:'Flytrap Opens',      r:'A flower with appetites.',                        e:'A flytrap bloomed. It ate three flies before noon.',                  t:'common'},
+  {idx:13, n:'Pitcher\'s Promise', r:'A vessel that drowns its dinner.',                e:'A pitcher plant bloomed. The trap is set with sweetness.',            t:'rare'},
+  {idx:14, n:'Cattail Stand',      r:'Brown velvet on green stalks.',                   e:'Cattails opened. The marsh found a new note.',                        t:'common'},
+  {idx:15, n:'Bell Cluster',       r:'Bells that ring without sound.',                  e:'Bell flowers chimed open. The garden listened.',                      t:'common'},
+  {idx:16, n:'Fiddlehead Curl',    r:'A spiral that uncoils into a frond.',             e:'A fiddlehead unfurled. Patience made visible.',                       t:'common'},
+  {idx:17, n:'Chrysanthemum Day',  r:'The flower of late autumn.',                      e:'A chrysanthemum opened. November in petal form.',                     t:'common'},
+  {idx:18, n:'Moon Orchid',        r:'White blooms that catch starlight.',              e:'A moon orchid opened. Phosphorescent, almost.',                       t:'common'},
+  {idx:19, n:'Poppy Field',        r:'Red against gray for one week each year.',        e:'A poppy bloomed. The field remembers its dead.',                      t:'common'},
+  {idx:20, n:'Dandelion Puff',     r:'Four hundred seeds in a sphere.',                 e:'A dandelion went to seed. The wind has its work cut out.',            t:'rare'},
+  {idx:21, n:'Strelitzia',         r:'A bird disguised as a flower.',                   e:'A bird of paradise bloomed. Tropics imported.',                       t:'common'},
+  {idx:22, n:'Fire Flower',        r:'A bloom that flickers.',                          e:'A fire flower opened. The petals smoldered beautifully.',             t:'rare'},
+  {idx:23, n:'Protea Crown',       r:'Ancient as the dinosaurs.',                       e:'A protea opened. South Africa sent regards.',                         t:'common'},
+  {idx:24, n:'Anthurium Heart',    r:'Heart-shaped and waxy.',                          e:'An anthurium bloomed. Its red lasted weeks.',                         t:'common'},
+  {idx:25, n:'Cherry Blossom',     r:'Bloom for one week, fall for the next.',          e:'A cherry blossom opened. Hanami begins.',                             t:'common'},
+  {idx:26, n:'Coneflower',         r:'Daisy with a bumblebee in the middle.',           e:'A coneflower bloomed. The bees took note.',                           t:'common'},
+  {idx:27, n:'Snapdragon',         r:'Squeeze the flower and watch it bite.',           e:'A snapdragon opened. Children will torment it.',                      t:'common'},
+  {idx:28, n:'Bleeding Heart',     r:'A heart with a single drop of pink.',             e:'A bleeding heart bloomed. Quiet drama.',                              t:'common'},
+  {idx:29, n:'Allium Sphere',      r:'Onion family, royal cousin.',                     e:'An allium bloomed. A purple sphere on a stalk.',                      t:'common'},
+  {idx:30, n:'Trumpet Vine',       r:'Orange horns that call the hummingbirds.',        e:'A trumpet vine bloomed. The birds answered.',                         t:'common'},
+  {idx:31, n:'Delphinium Spire',   r:'Blue tower in the cottage garden.',               e:'A delphinium opened. The cottage feels complete.',                    t:'common'},
+  {idx:32, n:'Queen Anne\'s Lace', r:'Lace made of white doilies.',                     e:'Queen Anne\'s Lace opened. The wild ranges lawful.',                  t:'common'},
+  {idx:33, n:'Catkin Hang',        r:'Furry caterpillar pretending to be a flower.',    e:'A catkin opened. Spring announced itself softly.',                    t:'common'},
+  {idx:34, n:'Pitcher Bloom',      r:'The pitcher-plant flower, smaller than the trap.',e:'A pitcher bloom opened. Pollination still matters even here.',        t:'common'},
+  {idx:35, n:'Dragon Arum',        r:'It smells of rotting meat. On purpose.',          e:'A dragon arum bloomed. The flies came running.',                      t:'rare'},
+  {idx:36, n:'Corpse Flower',      r:'It blooms once a decade, smelling like death.',   e:'A titan arum bloomed. Worth the wait, worse than expected.',          t:'rare'},
+  {idx:37, n:'Carrion Star',       r:'Five points of putrid perfume.',                  e:'A carrion starfish opened. Flies adore it. So do you.',               t:'rare'},
+  {idx:38, n:'Passion Vine',       r:'Named for the Crucifixion.',                      e:'A passionflower bloomed. Symbol-dense and beautiful.',                t:'common'},
+  {idx:39, n:'Heliconia Claw',     r:'Lobster claws hanging in formation.',             e:'A heliconia bloomed. Tropical impossibility achieved.',               t:'common'},
+  {idx:40, n:'Plumeria Crown',     r:'The flower of leis.',                             e:'A plumeria opened. Hawaii arrived in your garden.',                   t:'common'},
+  {idx:41, n:'Foxglove Tower',     r:'Beautiful and toxic.',                            e:'A foxglove opened. Beautiful poison.',                                t:'common'},
+  {idx:42, n:'Magnolia Cup',       r:'Older than the bees that fertilize them.',        e:'A magnolia opened. The beetles still know what to do.',               t:'common'},
+  {idx:43, n:'Wisteria Cascade',   r:'Purple rain that lasts.',                         e:'A wisteria opened. Falling petals are a feature.',                    t:'common'},
+  {idx:44, n:'Desert Crown',       r:'After the rain, after the wait.',                 e:'A cactus bloomed. Years of patience, hours of glory.',                t:'rare'},
+  {idx:45, n:'Ghost Orchid',       r:'Roots only, no leaves, white bloom.',             e:'A ghost orchid bloomed. Florida swamp delivered the impossible.',     t:'rare'},
+  {idx:46, n:'Peony Globe',        r:'All the petals at once.',                         e:'A peony opened. Five hundred petals at once.',                        t:'common'},
+  {idx:47, n:'Lantern Bloom',      r:'A pendant that holds light.',                     e:'A lantern bloom opened. The dark feels less dark.',                   t:'common'},
+  {idx:48, n:'Sunflower Face',     r:'Always pointed at the sun.',                      e:'A sunflower opened. The face you cannot ignore.',                     t:'common'},
+  {idx:49, n:'Jasmine Cluster',    r:'Tiny and outrageous.',                            e:'A jasmine cluster opened. The night smelled different.',              t:'common'},
+  {idx:50, n:'Marigold Border',    r:'What gardeners plant for protection.',            e:'A marigold opened. The pests will find another row.',                 t:'common'},
+  {idx:51, n:'Iris Standard',      r:'Three petals up, three down.',                    e:'An iris opened. Fleur-de-lis lives.',                                 t:'common'},
+  {idx:52, n:'Fuchsia Drop',       r:'A pendant the color of itself.',                  e:'A fuchsia opened. Hummingbirds noticed first.',                       t:'common'},
+  {idx:53, n:'Daffodil Trumpet',   r:'The first that means spring.',                    e:'A daffodil opened. Winter is officially done.',                       t:'common'},
+  {idx:54, n:'Camellia Bowl',      r:'A tea cup made of petals.',                       e:'A camellia opened. The Japanese poets had their reasons.',            t:'common'},
+  {idx:55, n:'Lavender Spike',     r:'Color and scent in equal measure.',               e:'A lavender spike opened. The bees are losing their minds.',           t:'common'},
+  {idx:56, n:'Bougainvillea Burst',r:'Bracts so colorful you forget the actual flower.',e:'A bougainvillea bloomed. The walls bled magenta.',                    t:'common'},
+  {idx:57, n:'Thistle Crown',      r:'Spike defending purple velvet.',                  e:'A thistle opened. Don\'t touch but do admire.',                       t:'common'},
+  {idx:58, n:'Hydrangea Head',     r:'Color tells you the soil\'s pH.',                 e:'A hydrangea opened. Blue means acid; pink means base.',               t:'common'},
+  {idx:59, n:'Angel\'s Trumpet',   r:'Pendant horns, dangerously beautiful.',           e:'An angel\'s trumpet opened. Don\'t sniff too deep.',                  t:'common'},
+  {idx:60, n:'First Pod',          r:'What follows the flower is its second life.',     e:'A seed pod formed. The flower is over; the future begins.',           t:'common'},
+  {idx:61, n:'Baby\'s Breath',     r:'Tiny stars in clouds.',                           e:'Baby\'s breath bloomed. The bouquet found its background.',           t:'common'},
+  {idx:62, n:'Black-Eyed Susan',   r:'A flower that won\'t quit.',                      e:'A Black-Eyed Susan opened. It will outlast the season.',              t:'common'},
+  {idx:63, n:'Sacred Lotus',       r:'Self-cleaning. Self-warming. Self-aware?',        e:'A sacred lotus opened. Two thousand years of significance bloomed.',  t:'common'},
+  {idx:64, n:'Cascade Repeat',     r:'When once is not enough.',                        e:'A wisteria cascade fell again. A second wave of purple.',             t:'common'},
+  {idx:65, n:'Violet Modesty',     r:'Heart-shape, low to the ground.',                 e:'A violet opened. Subtle but persistent.',                             t:'common'},
+  {idx:66, n:'Flame Bloom',        r:'The bloom that flickers like fire.',              e:'A flame bloom opened. The petals burned without consuming.',          t:'rare'},
+  {idx:67, n:'Ice Rose',           r:'Crystalline petals that won\'t melt.',            e:'An ice rose opened. The frost held its shape.',                       t:'rare'},
+  {idx:68, n:'Void Blossom',       r:'A bloom that drinks light.',                      e:'A void blossom opened. The garden grew slightly darker, slightly stranger.', t:'rare'},
+  {idx:69, n:'Clock Flower',       r:'Petals that mark the hour.',                      e:'A clock flower opened. Time made visible.',                           t:'rare'},
+  {idx:70, n:'Prism Bloom',        r:'A flower that bends light into colors.',          e:'A prism bloom opened. The garden saw a rainbow indoors.',             t:'rare'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 4},
+    rare:   {pollen: 14, ea: 1}
+  };
+  for (var fti = 0; fti < _FLOWER_TRIGS.length; fti++) {
+    var fl = _FLOWER_TRIGS[fti];
+    (function(idx, name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'flower_' + idx,
+        name: name,
+        riddle: riddle,
+        category: 'trait',
+        check: function(ctx) { return ctx.plant && ctx.plant.hasFlower && (ctx.plant.flower % 71) === idx; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(fl.idx, fl.n, fl.r, fl.e, fl.t);
   }
 })();
 
