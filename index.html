@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.6';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.7';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2508,24 +2508,36 @@
     .lw-hut .lwh-section-foot{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);text-align:center;margin-top:0.6rem;}
     .lw-hut .lwh-active{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:var(--gold);background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:6px;padding:0.4rem 0.6rem;text-align:center;margin-bottom:0.6rem;}
 
-    /* SHOP cards */
-    .lw-hut .lwh-shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;}
-    .lw-hut .lwh-shop-card{position:relative;background:linear-gradient(180deg,rgba(40,38,28,0.7),rgba(20,18,14,0.85));border:1.5px solid rgba(200,168,75,0.32);border-radius:10px;padding:0.55rem 0.4rem 0.4rem;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:200px;}
-    .lw-hut .lwh-shop-card.rar-uncommon{border-color:rgba(122,179,86,0.55);}
-    .lw-hut .lwh-shop-card.rar-rare{border-color:rgba(91,175,220,0.65);box-shadow:0 0 8px rgba(91,175,220,0.12);}
-    .lw-hut .lwh-shop-card.rar-epic{border-color:rgba(192,122,200,0.75);box-shadow:0 0 10px rgba(192,122,200,0.18);}
-    .lw-hut .lwh-shop-card.rar-legendary{border-color:rgba(232,160,80,0.95);box-shadow:0 0 14px rgba(232,160,80,0.28);}
+    /* SHOP — ALL items always visible, hi-res art at full read size */
+    .lw-hut .lwh-special-banner{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:#0d100c;background:linear-gradient(90deg,rgba(232,180,80,0.95),var(--gold),rgba(232,180,80,0.95));padding:0.45rem 0.6rem;border-radius:8px;text-align:center;margin-bottom:0.7rem;box-shadow:0 0 14px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,235,195,0.3);animation:specialPulse 3s ease-in-out infinite;}
+    .lw-hut .lwh-special-banner b{font-weight:900;}
+    @keyframes specialPulse{0%,100%{box-shadow:0 0 14px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,235,195,0.3);}50%{box-shadow:0 0 20px rgba(200,168,75,0.7),inset 0 1px 0 rgba(255,235,195,0.5);}}
+    .lw-hut .lwh-shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;}
+    .lw-hut .lwh-shop-card{position:relative;background:linear-gradient(180deg,rgba(40,38,28,0.7),rgba(20,18,14,0.88));border:1.5px solid rgba(200,168,75,0.32);border-radius:12px;padding:0.65rem 0.45rem 0.5rem;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:300px;}
+    .lw-hut .lwh-shop-card.rar-uncommon{border-color:rgba(122,179,86,0.6);}
+    .lw-hut .lwh-shop-card.rar-rare{border-color:rgba(91,175,220,0.7);box-shadow:0 0 8px rgba(91,175,220,0.15);}
+    .lw-hut .lwh-shop-card.rar-epic{border-color:rgba(192,122,200,0.8);box-shadow:0 0 10px rgba(192,122,200,0.22);}
+    .lw-hut .lwh-shop-card.rar-legendary{border-color:rgba(232,160,80,1);box-shadow:0 0 16px rgba(232,160,80,0.35);}
+    .lw-hut .lwh-shop-card.is-special{border-color:rgba(232,200,100,1);box-shadow:0 0 18px rgba(232,200,100,0.45);background:linear-gradient(180deg,rgba(60,52,30,0.85),rgba(28,24,12,0.9));}
     .lw-hut .lwh-shop-card.sold{opacity:0.4;filter:grayscale(0.7);}
-    .lw-hut .lwh-shop-badge{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:0.42rem;letter-spacing:0.08em;color:#0d100c;background:var(--sage);padding:2px 7px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.5);}
-    .lw-hut .lwh-shop-badge.gold{background:var(--gold);}
-    .lw-hut .lwh-shop-art{width:64px;height:64px;display:flex;align-items:center;justify-content:center;margin:0.45rem 0 0.3rem;}
-    .lw-hut .lwh-shop-art img{max-width:100%;max-height:100%;object-fit:contain;}
-    .lw-hut .lwh-shop-emoji{font-size:2.4rem;line-height:1;}
-    .lw-hut .lwh-shop-name{font-family:'Playfair Display',serif;font-size:0.6rem;font-weight:700;color:var(--cream);margin-bottom:0.2rem;line-height:1.2;}
-    .lw-hut .lwh-shop-desc{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);line-height:1.35;min-height:2.7em;margin-bottom:0.4rem;}
-    .lw-hut .lwh-shop-buy{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(91,175,220,0.4),rgba(46,90,120,0.6));border:1.5px solid rgba(91,175,220,0.7);color:var(--cream);border-radius:8px;padding:0.45rem 0.6rem;cursor:pointer;min-height:42px;width:100%;}
+    .lw-hut .lwh-shop-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.08em;color:#0d100c;background:var(--sage);padding:3px 9px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.6);z-index:2;}
+    .lw-hut .lwh-shop-badge.gold{background:linear-gradient(180deg,#f5d97a,var(--gold));color:#1a1208;font-weight:900;}
+    /* Item art slot — hi-res reads at 140px square. Hard floor: never shrink below 110px. */
+    .lw-hut .lwh-shop-art{width:140px;height:140px;display:flex;align-items:center;justify-content:center;margin:0.55rem 0 0.45rem;}
+    .lw-hut .lwh-shop-art img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));}
+    .lw-hut .lwh-shop-emoji{font-size:4.2rem;line-height:1;}
+    .lw-hut .lwh-shop-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:700;color:var(--cream);margin-bottom:0.15rem;line-height:1.2;}
+    .lw-hut .lwh-shop-tier{font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;margin-bottom:0.3rem;}
+    .lw-hut .lwh-shop-tier.rar-common-text{color:rgba(200,188,160,0.7);}
+    .lw-hut .lwh-shop-tier.rar-uncommon-text{color:var(--sage);}
+    .lw-hut .lwh-shop-tier.rar-rare-text{color:rgba(91,175,220,0.95);}
+    .lw-hut .lwh-shop-tier.rar-epic-text{color:rgba(212,142,220,1);}
+    .lw-hut .lwh-shop-tier.rar-legendary-text{color:var(--gold);text-shadow:0 0 8px rgba(232,160,80,0.5);}
+    .lw-hut .lwh-shop-desc{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.4;min-height:3.6em;margin-bottom:0.35rem;padding:0 0.1rem;}
+    .lw-hut .lwh-shop-owned{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--sage);margin-bottom:0.35rem;}
+    .lw-hut .lwh-shop-buy{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(91,175,220,0.4),rgba(46,90,120,0.6));border:1.5px solid rgba(91,175,220,0.7);color:var(--cream);border-radius:8px;padding:0.5rem 0.6rem;cursor:pointer;min-height:42px;width:100%;}
     .lw-hut .lwh-shop-buy.broke{background:rgba(60,40,40,0.5);border-color:rgba(180,80,80,0.5);color:rgba(220,180,180,0.65);cursor:not-allowed;}
-    .lw-hut .lwh-shop-buy.is-sold{background:rgba(40,40,40,0.4);border:1.5px solid rgba(120,120,120,0.3);color:var(--muted);cursor:not-allowed;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;padding:0.45rem 0.6rem;min-height:42px;width:100%;text-align:center;}
+    .lw-hut .lwh-shop-buy.is-sold{background:rgba(40,40,40,0.4);border:1.5px solid rgba(120,120,120,0.3);color:var(--muted);cursor:not-allowed;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;padding:0.5rem 0.6rem;min-height:42px;width:100%;text-align:center;}
 
     /* ALMANAC weather cards */
     .lw-hut .lwh-weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;}
@@ -72372,7 +72384,7 @@ window._lwClaimHerbarium = function(id){
 // HERMIT'S HUT entry. Mystery box stays as a slot; weather + slots get tabs.
 (function(){
   'use strict';
-  var SHOP_KEY  = 'lw_hut_shop_v1';   // { date, stock, purchased }
+  var SHOP_KEY  = 'lw_hut_shop_v2';   // { date, stock, purchased } — v2: full-catalog layout
   var QUEST_KEY = 'lw_hut_quest_v1';  // { date, recipe, claimed }
 
   // Pricing per rarity (Dew range — daily-seeded value within range)
@@ -72415,45 +72427,50 @@ window._lwClaimHerbarium = function(id){
     };
   }
 
-  // ─── stock generation ───
+  // ─── stock generation — show ALL wired items every day ───
+  // The hermit's general store. Every wired item visible, sorted by rarity.
+  // One random item gets the DAILY SPECIAL 50% off stamp. Mystery Box pinned
+  // at top. Pouch cap is the natural strategic limiter (you can't buy them
+  // all, so the player chooses what matters this week).
   function generateStock(){
     var rng = seededRng(dailySeed('shop'));
     var cat = window.LW_ITEMS_CATALOG || {};
-    var byTier = { Common:[], Uncommon:[], Rare:[], Epic:[], Legendary:[] };
+    var allKeys = [];
     for (var k in cat){
-      var it = cat[k];
-      if (it.wired === false) continue;
-      if (byTier[it.rarity]) byTier[it.rarity].push(k);
+      if (cat[k].wired === false) continue;
+      allKeys.push(k);
     }
-    function pick(tier, n){
-      var pool = byTier[tier].slice();
-      var out = [];
-      for (var i=0;i<n;i++){
-        if (!pool.length) break;
-        var idx = Math.floor(rng() * pool.length);
-        out.push(pool.splice(idx,1)[0]);
-      }
-      return out;
-    }
+    // Sort by rarity (Common first) then alphabetic for stable layout
+    var rarityOrder = { Common:0, Uncommon:1, Rare:2, Epic:3, Legendary:4 };
+    allKeys.sort(function(a,b){
+      var ra = rarityOrder[cat[a].rarity] || 0;
+      var rb = rarityOrder[cat[b].rarity] || 0;
+      if (ra !== rb) return ra - rb;
+      return (cat[a].name || '').localeCompare(cat[b].name || '');
+    });
+    // Pick today's special (deterministic per date)
+    var specialKey = allKeys[Math.floor(rng() * allKeys.length)];
+
     function priceFor(tier){
       var p = PRICE[tier] || PRICE.Common;
       return Math.round(p.min + rng() * (p.max - p.min));
     }
-    var slots = [];
-    pick('Common',2).forEach(function(k){ slots.push({type:'item',key:k,tier:'Common',price:priceFor('Common')}); });
-    pick('Uncommon',1).forEach(function(k){ slots.push({type:'item',key:k,tier:'Uncommon',price:priceFor('Uncommon')}); });
-    pick('Rare',1).forEach(function(k){ slots.push({type:'item',key:k,tier:'Rare',price:priceFor('Rare')}); });
-    // Mystery box slot — always present, fixed cost
-    slots.push({type:'mystery', price:25});
-    // Daily Special — random tier, 50% off, no overlap with regular slots
-    var specialTiers = ['Common','Uncommon','Rare','Epic'];
-    var st = specialTiers[Math.floor(rng() * specialTiers.length)];
-    var taken = {};
-    for (var i=0;i<slots.length;i++){ if (slots[i].key) taken[slots[i].key] = 1; }
-    var pool = byTier[st].filter(function(k){ return !taken[k]; });
-    if (pool.length){
-      var sk = pool[Math.floor(rng() * pool.length)];
-      slots.push({type:'special', key:sk, tier:st, price:Math.round(priceFor(st) * 0.5)});
+
+    // Mystery Box pinned first — always available for 25 Dew
+    var slots = [{type:'mystery', price:25}];
+    // Then every catalog item, sorted by rarity ascending
+    for (var i = 0; i < allKeys.length; i++){
+      var key = allKeys[i];
+      var tier = cat[key].rarity || 'Common';
+      var basePrice = priceFor(tier);
+      var isSpecial = (key === specialKey);
+      var price = isSpecial ? Math.round(basePrice * 0.5) : basePrice;
+      slots.push({
+        type: isSpecial ? 'special' : 'item',
+        key: key,
+        tier: tier,
+        price: price
+      });
     }
     return slots;
   }
@@ -72575,7 +72592,18 @@ window._lwClaimHerbarium = function(id){
     var st = getStock();
     var cat = window.LW_ITEMS_CATALOG || {};
     var bal = (window.getTotalDew && window.getTotalDew()) || 0;
-    var html = '<div class="lwh-section-text">The hermit lays out today’s wares.</div>';
+    // Find today's special for the callout banner
+    var specialName = '';
+    for (var si=0;si<st.stock.length;si++){
+      if (st.stock[si].type === 'special'){
+        specialName = (cat[st.stock[si].key] || {}).name || '';
+        break;
+      }
+    }
+    var html = '<div class="lwh-section-text">The hermit lays out his wares. All in stock today.</div>';
+    if (specialName){
+      html += '<div class="lwh-special-banner">⭐ TODAY\'S SPECIAL · <b>'+specialName+'</b> · 50% OFF</div>';
+    }
     html += '<div class="lwh-shop-grid">';
     for (var i=0;i<st.stock.length;i++){
       var s = st.stock[i];
@@ -72583,7 +72611,7 @@ window._lwClaimHerbarium = function(id){
       var afford = bal >= s.price;
       var rarity = (s.tier||'Common').toLowerCase();
       var rcls = 'rar-' + rarity;
-      var name, desc, art, badge='';
+      var name, desc, art, badge='', ownedTxt='';
       if (s.type === 'mystery'){
         name = 'Mystery Box';
         desc = 'A surprise. Sunbeams, Dew, Fertilizer, or jackpot.';
@@ -72596,12 +72624,17 @@ window._lwClaimHerbarium = function(id){
         desc = it.desc;
         art = itemArt(s.key, it.icon);
         if (s.type === 'special') badge = '<div class="lwh-shop-badge gold">DAILY · 50% OFF</div>';
+        // Owned indicator — small badge if player already has copies
+        var owned = (window.LW_ITEMS && window.LW_ITEMS.count) ? window.LW_ITEMS.count(s.key) : 0;
+        if (owned > 0) ownedTxt = '<div class="lwh-shop-owned">×'+owned+' in pouch</div>';
       }
-      html += '<div class="lwh-shop-card '+rcls+(sold?' sold':'')+'">';
+      html += '<div class="lwh-shop-card '+rcls+(sold?' sold':'')+(s.type==='special'?' is-special':'')+'">';
       html += badge;
       html += '<div class="lwh-shop-art">'+art+'</div>';
       html += '<div class="lwh-shop-name">'+name+'</div>';
+      html += '<div class="lwh-shop-tier rar-'+rarity+'-text">'+(s.type==='mystery'?'Mystery':(s.tier||'Common'))+'</div>';
       html += '<div class="lwh-shop-desc">'+desc+'</div>';
+      html += ownedTxt;
       if (sold){
         html += '<div class="lwh-shop-buy is-sold">SOLD</div>';
       } else {
