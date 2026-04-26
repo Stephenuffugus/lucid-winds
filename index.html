@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.73';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.74';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69056,6 +69056,95 @@ var _AURA_TRIGS = [
         reward: rewards[tier] || rewards.common
       });
     })(au.idx, au.n, au.r, au.e, au.t);
+  }
+})();
+
+// ── MUTATION DISCOVERIES — one per of 13 named mutations ──
+// Tier rewards by mutation tier: t1=common, t2=rare, t3=mythic.
+var _MUTATION_TRIGS = [
+  {n:'Wireframe',      r:'A diagram learned to grow.',                       e:'Wireframe took your plant. The schematic became flesh.',                                    t:'common'},
+  {n:'Glass Stem',     r:'Light passes through what should hold weight.',    e:'A glass stem rose. Fragile, transparent, true.',                                            t:'rare'},
+  {n:'Glitch',         r:'A bug in the render became a feature in the bloom.',e:'Glitch infected your plant. The error message reads as poetry.',                          t:'mythic'},
+  {n:'Albino',         r:'Pigment refused. Beauty agreed.',                  e:'Albino took your plant. Everything pale, everything visible.',                              t:'common'},
+  {n:'Silhouette',     r:'Outlined against nothing.',                        e:'Silhouette settled on your plant. Only the shape remains.',                                 t:'rare'},
+  {n:'Golden',         r:'Touched, then transmuted.',                        e:'Golden took your plant. Midas walked your garden in soft shoes.',                           t:'mythic'},
+  {n:'Neon',           r:'Color set to its loudest setting.',                e:'Neon claimed your plant. Vegas approves from a distance.',                                  t:'rare'},
+  {n:'Ink Wash',       r:'Sumi-e in three deliberate strokes.',              e:'Ink wash settled on your plant. Hokusai signed somewhere off-frame.',                       t:'mythic'},
+  {n:'Fossil',         r:'A bloom remembering it was a stone.',              e:'Fossil shaped your plant. The ages pressed it gently.',                                     t:'rare'},
+  {n:'Porcelain',      r:'Fired clay holds a flower well.',                  e:'Porcelain took your plant. It will outlast the gardener.',                                  t:'mythic'},
+  {n:'Bioluminescent', r:'A bloom that pays its own electricity bill.',      e:'Bioluminescence claimed your plant. The dark made room for it.',                            t:'rare'},
+  {n:'Holographic',    r:'A real flower made of refracted light.',           e:'Holographic settled on your plant. Each angle showed a different bloom.',                   t:'mythic'},
+  {n:'Pixel Art',      r:'Resolution low, intention high.',                  e:'Pixel art took your plant. Sixteen colors. Infinite affection.',                            t:'mythic'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 6},
+    rare:   {pollen: 14, ea: 1},
+    mythic: {pollen: 25, ea: 2}
+  };
+  for (var mti = 0; mti < _MUTATION_TRIGS.length; mti++) {
+    var mu = _MUTATION_TRIGS[mti];
+    (function(name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'mut_' + name.toLowerCase().replace(/\s+/g, '_'),
+        name: 'First ' + name,
+        riddle: riddle,
+        category: 'trait',
+        check: function(ctx) { return ctx.plant && ctx.plant.mutationName === name; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(mu.n, mu.r, mu.e, mu.t);
+  }
+})();
+
+// ── STEM DISCOVERIES — one per of 24 stem patterns ──
+// Stems are aesthetic; rewards stay common with two rare picks (Crystalline,
+// Braided) for visually distinctive forms.
+var _STEM_TRIGS = [
+  {idx:0,  n:'Straight Reach',     r:'Up. As planned.',                                      e:'Your stem grew straight. Gravity respected.',                                t:'common'},
+  {idx:1,  n:'Slow Curve',         r:'A bend that earns its angle.',                         e:'Your stem curved. The light it followed had a name.',                        t:'common'},
+  {idx:2,  n:'Wandering Stem',     r:'It went where it wanted.',                             e:'Your stem wandered. The route was the point.',                               t:'common'},
+  {idx:3,  n:'Spiral Climb',       r:'Around the support, not through it.',                  e:'Your stem spiraled. Twining is older than fire.',                            t:'common'},
+  {idx:4,  n:'Forked Path',        r:'Two ways from one trunk.',                             e:'Your stem forked. The choice doubled.',                                      t:'common'},
+  {idx:5,  n:'Knotted Stem',       r:'A knot is a memory of stress.',                        e:'A knot formed in your stem. The plant survived something.',                  t:'common'},
+  {idx:6,  n:'Ribbed Column',      r:'Strength through repetition.',                         e:'Ribs ran your stem\'s length. Engineering.',                                 t:'common'},
+  {idx:7,  n:'Smooth Lacquer',     r:'A surface that refuses to catch dust.',                e:'Your stem turned smooth as lacquer. The light slid off.',                    t:'common'},
+  {idx:8,  n:'Hairy Stem',         r:'Trichomes hold what they hold.',                       e:'Fine hairs clothed your stem. The dew had something to cling to.',           t:'common'},
+  {idx:9,  n:'Thorned Stem',       r:'The plant taught its own boundary.',                   e:'Thorns rose along your stem. Approach was now a question.',                  t:'common'},
+  {idx:10, n:'Hollow Reed',        r:'Empty inside, useful for it.',                         e:'Your stem hollowed. A flute could be made.',                                 t:'common'},
+  {idx:11, n:'Square Stem',        r:'Mints. Always mints.',                                 e:'Your stem squared. The Lamiaceae nodded in passing.',                        t:'common'},
+  {idx:12, n:'Striped Stem',       r:'Two pigments could not agree.',                        e:'Stripes ran your stem. Even the bark had opinions.',                         t:'common'},
+  {idx:13, n:'Banded Stem',        r:'Rings to count, slowly.',                              e:'Bands marked your stem. Each one a season.',                                 t:'common'},
+  {idx:14, n:'Speckled Stem',      r:'Freckles on a green face.',                            e:'Speckles dotted your stem. The plant was its own galaxy.',                   t:'common'},
+  {idx:15, n:'Gnarled Stem',       r:'Old wood remembers everything.',                       e:'Your stem gnarled. The years pressed visible records into it.',              t:'common'},
+  {idx:16, n:'Crystalline Stem',   r:'A stem grown like a mineral.',                         e:'Your stem crystallized. The geology departments wrote follow-up papers.',    t:'rare'},
+  {idx:17, n:'Braided Stem',       r:'Three strands hold what one cannot.',                  e:'Your stem braided itself. Tensile strength, plus aesthetic.',                t:'rare'},
+  {idx:18, n:'Drooping Stem',      r:'Gravity finally won the argument.',                    e:'Your stem drooped. The flower hung close to its source.',                    t:'common'},
+  {idx:19, n:'Whorled Stem',       r:'Leaves arrive in council.',                            e:'Whorls patterned your stem. Three at a time. Council met.',                  t:'common'},
+  {idx:20, n:'Rope Stem',          r:'Twisted fibers, no shipwright needed.',                e:'Your stem twisted like rope. Sailors would have noticed.',                   t:'common'},
+  {idx:21, n:'Glassy Sheen',       r:'Polished by no hand.',                                 e:'A glassy sheen took your stem. Light bounced and behaved.',                  t:'common'},
+  {idx:22, n:'Lightning Stem',     r:'Forked by something heavier than weather.',            e:'Lightning shape took your stem. Survived the strike, kept the scar.',        t:'common'},
+  {idx:23, n:'Mossy Stem',         r:'A stem grown its own coat.',                           e:'Moss covered your stem. The plant decided to host another plant.',           t:'common'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 3},
+    rare:   {pollen: 10, ea: 1}
+  };
+  for (var sti = 0; sti < _STEM_TRIGS.length; sti++) {
+    var stm = _STEM_TRIGS[sti];
+    (function(idx, name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'stem_' + idx,
+        name: name,
+        riddle: riddle,
+        category: 'trait',
+        check: function(ctx) { return ctx.plant && (ctx.plant.stem % 24) === idx; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(stm.idx, stm.n, stm.r, stm.e, stm.t);
   }
 })();
 
