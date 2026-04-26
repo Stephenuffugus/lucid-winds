@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.2';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.3';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -12101,6 +12101,145 @@ document.addEventListener('keydown', function(e) {
       d+='<feComposite in="blend" in2="SourceAlpha" operator="in"/>';
       d+='</filter>';
     }
+    // ── MUTATION FILTERS — wrap-applied to plant render (stem onward) ──
+    // Only register the filter for the active mutation to keep DOM lean.
+    var _mutSlug = '';
+    if (_mn === 'Albino') _mutSlug = 'albino';
+    else if (_mn === 'Silhouette') _mutSlug = 'silhouette';
+    else if (_mn === 'Pixel Art') _mutSlug = 'pixel';
+    else if (_mn === 'Neon') _mutSlug = 'neon';
+    else if (_mn === 'Porcelain') _mutSlug = 'porcelain';
+    else if (_mn === 'Fossil') _mutSlug = 'fossil';
+    else if (_mn === 'Golden') _mutSlug = 'golden';
+    else if (_mn === 'Glitch') _mutSlug = 'glitch';
+    else if (_mn === 'Holographic') _mutSlug = 'holo';
+    else if (_mn === 'Bioluminescent') _mutSlug = 'biolum';
+    else if (_mn === 'Ink Wash') _mutSlug = 'ink';
+    else if (_mn === 'Wireframe') _mutSlug = 'wire';
+    else if (_mn === 'Glass Stem') _mutSlug = 'glass';
+    if (_mutSlug) {
+      var _fid = 'mut' + _mutSlug + '_' + uid;
+      if (_mutSlug === 'albino') {
+        // Desaturate, brighten, lift toward cream
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="saturate" values="0"/>';
+        d += '<feComponentTransfer>';
+        d += '<feFuncR type="linear" slope="1.4" intercept="0.05"/>';
+        d += '<feFuncG type="linear" slope="1.4" intercept="0.05"/>';
+        d += '<feFuncB type="linear" slope="1.4" intercept="0.05"/>';
+        d += '</feComponentTransfer>';
+        d += '</filter>';
+      } else if (_mutSlug === 'silhouette') {
+        // Crush all RGB to dark warm tone, keep alpha
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0 0 0 0 0.05  0 0 0 0 0.04  0 0 0 0 0.02  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'pixel') {
+        // Quantize to chunky pixels via dilate. Acts like a mosaic.
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feMorphology operator="dilate" radius="0.45" result="chunk"/>';
+        d += '<feComponentTransfer in="chunk">';
+        d += '<feFuncR type="discrete" tableValues="0 0.2 0.4 0.6 0.8 1"/>';
+        d += '<feFuncG type="discrete" tableValues="0 0.2 0.4 0.6 0.8 1"/>';
+        d += '<feFuncB type="discrete" tableValues="0 0.2 0.4 0.6 0.8 1"/>';
+        d += '</feComponentTransfer>';
+        d += '</filter>';
+      } else if (_mutSlug === 'neon') {
+        // Glowing edges, dark interior. Edge = source minus eroded source.
+        d += '<filter id="'+_fid+'" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">';
+        // Darken interior (multiply ~0.25)
+        d += '<feColorMatrix type="matrix" values="0.25 0 0 0 0  0 0.25 0 0 0  0 0 0.25 0 0  0 0 0 1 0" result="dark"/>';
+        // Outline ring
+        d += '<feMorphology in="SourceAlpha" operator="dilate" radius="0.6" result="dil"/>';
+        d += '<feMorphology in="SourceAlpha" operator="erode" radius="0.4" result="ero"/>';
+        d += '<feComposite in="dil" in2="ero" operator="out" result="ring"/>';
+        // Color the ring cyan and bloom it
+        d += '<feFlood flood-color="#00E5FF" flood-opacity="1" result="col"/>';
+        d += '<feComposite in="col" in2="ring" operator="in" result="cring"/>';
+        d += '<feGaussianBlur in="cring" stdDeviation="1.4" result="glow"/>';
+        d += '<feMerge>';
+        d += '<feMergeNode in="dark"/>';
+        d += '<feMergeNode in="glow"/>';
+        d += '<feMergeNode in="glow"/>';
+        d += '<feMergeNode in="cring"/>';
+        d += '</feMerge>';
+        d += '</filter>';
+      } else if (_mutSlug === 'porcelain') {
+        // Cool grey-white, glossy
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0.7 0.2 0.1 0 0.15  0.15 0.7 0.15 0 0.18  0.1 0.15 0.75 0 0.20  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'fossil') {
+        // Sepia stone palette
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0.39 0.77 0.19 0 0  0.35 0.69 0.17 0 0  0.27 0.53 0.13 0 0  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'golden') {
+        // Shift toward gold + boost luminance
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="1.0 0.4 0.1 0 0  0.6 0.7 0.1 0 0  0.1 0.2 0.05 0 0  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'glitch') {
+        // RGB channel separation
+        d += '<filter id="'+_fid+'" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">';
+        // Red channel offset left
+        d += '<feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r"/>';
+        d += '<feOffset in="r" dx="-0.6" dy="0" result="ro"/>';
+        // Green channel (no offset)
+        d += '<feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="g"/>';
+        // Blue channel offset right
+        d += '<feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b"/>';
+        d += '<feOffset in="b" dx="0.6" dy="0" result="bo"/>';
+        d += '<feBlend in="ro" in2="g" mode="screen" result="rg"/>';
+        d += '<feBlend in="rg" in2="bo" mode="screen"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'holo') {
+        // Prismatic edge: light pass + chroma boost. Pairs with rainbow overlay in renderMutationFX.
+        d += '<filter id="'+_fid+'" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">';
+        // Saturate boost to push the existing color toward iridescent
+        d += '<feColorMatrix type="saturate" values="1.6" result="sat"/>';
+        // Edge light: erode-vs-source for thin highlight band
+        d += '<feMorphology in="SourceAlpha" operator="dilate" radius="0.35" result="dil"/>';
+        d += '<feComposite in="dil" in2="SourceAlpha" operator="out" result="edge"/>';
+        d += '<feFlood flood-color="#ffffff" flood-opacity="0.55" result="white"/>';
+        d += '<feComposite in="white" in2="edge" operator="in" result="hi"/>';
+        d += '<feMerge><feMergeNode in="sat"/><feMergeNode in="hi"/></feMerge>';
+        d += '</filter>';
+      } else if (_mutSlug === 'biolum') {
+        // Outer glow that wraps the plant silhouette
+        d += '<filter id="'+_fid+'" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">';
+        d += '<feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="blur"/>';
+        d += '<feFlood flood-color="#00E5CC" flood-opacity="0.85" result="col"/>';
+        d += '<feComposite in="col" in2="blur" operator="in" result="glow"/>';
+        d += '<feMerge>';
+        d += '<feMergeNode in="glow"/>';
+        d += '<feMergeNode in="glow"/>';
+        d += '<feMergeNode in="SourceGraphic"/>';
+        d += '</feMerge>';
+        d += '</filter>';
+      } else if (_mutSlug === 'ink') {
+        // Monochrome ink wash — desaturate with warm sepia tint
+        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="saturate" values="0" result="g"/>';
+        // Push toward warm paper tone, deepen darks
+        d += '<feColorMatrix in="g" type="matrix" values="0.85 0 0 0 0.05  0.78 0 0 0 0.04  0.65 0 0 0 0.03  0 0 0 1 0"/>';
+        d += '</filter>';
+      } else if (_mutSlug === 'wire') {
+        // Wireframe is mostly handled in geometry (isWire flag strips fills).
+        // Filter adds subtle edge glow so remaining strokes pop.
+        d += '<filter id="'+_fid+'" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0.6 0 0 0 0  0 1.0 0 0 0  0 0 0.6 0 0  0 0 0 1 0" result="g"/>';
+        d += '<feGaussianBlur in="g" stdDeviation="0.4" result="b"/>';
+        d += '<feMerge><feMergeNode in="b"/><feMergeNode in="g"/></feMerge>';
+        d += '</filter>';
+      } else if (_mutSlug === 'glass') {
+        // Glass — boost translucency shimmer. Stem geometry already uses gl gradient.
+        d += '<filter id="'+_fid+'" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">';
+        d += '<feColorMatrix type="matrix" values="0.85 0.1 0.15 0 0.08  0.1 0.85 0.2 0 0.10  0.2 0.25 0.95 0 0.12  0 0 0 0.92 0"/>';
+        d += '<feGaussianBlur stdDeviation="0.25"/>';
+        d += '</filter>';
+      }
+    }
     d += '</defs>';
     return d;
   }
@@ -12643,6 +12782,32 @@ document.addEventListener('keydown', function(e) {
     // 3. BASE
     if (prog >= 0.3) svg += renderBase(t, uid);
 
+    // ── MUTATION FILTER WRAPPER (open) ──
+    // Wraps stem onward so mutations actually transform the rendered plant
+    // (not just paste decorative overlays). Aura + base stay OUTSIDE so the
+    // atmosphere reads true. Closed just before renderMutationFX overlays.
+    var _mutWrap = '';
+    if (!_isThumb && isMut && prog >= 1) {
+      var _mwSlug = '';
+      if (isAlbino) _mwSlug = 'albino';
+      else if (isSilhouette) _mwSlug = 'silhouette';
+      else if (isPixel) _mwSlug = 'pixel';
+      else if (isNeon) _mwSlug = 'neon';
+      else if (isPorcelain) _mwSlug = 'porcelain';
+      else if (isFossil) _mwSlug = 'fossil';
+      else if (isGolden) _mwSlug = 'golden';
+      else if (isGlitch) _mwSlug = 'glitch';
+      else if (isHolo) _mwSlug = 'holo';
+      else if (isBioLum) _mwSlug = 'biolum';
+      else if (isInk) _mwSlug = 'ink';
+      else if (isWire) _mwSlug = 'wire';
+      else if (isGlass) _mwSlug = 'glass';
+      if (_mwSlug) {
+        _mutWrap = 'mut' + _mwSlug + '_' + uid;
+        svg += '<g filter="url(#'+_mutWrap+')">';
+      }
+    }
+
     // 3.5 POT-BACK (rim/sidewall for split-render pots like tire — drawn BEHIND stem)
     svg += renderPotBack(t, uid);
 
@@ -12881,6 +13046,12 @@ document.addEventListener('keydown', function(e) {
 
       // 8. COMPANION — individual scaling deferred to per-case work
       if (prog >= 1) svg += renderCompanion(t, uid);
+
+      // ── MUTATION FILTER WRAPPER (close) ──
+      // Closes the filter group opened before renderPotBack so post-FX
+      // overlays (kintsugi cracks, ink seal, scanlines, sparkles) draw
+      // unfiltered on top of the transformed plant.
+      if (_mutWrap) svg += '</g>';
 
       // 9. MUTATION FX
       if (isMut && prog >= 1) svg += renderMutationFX(t, uid);
@@ -31759,125 +31930,128 @@ document.addEventListener('keydown', function(e) {
     var s = '';
     switch(t.mutationName) {
       case 'Wireframe':
-        // Wireframe mode was already applied in leaf rendering (isWire flag)
-        // Add scan overlay
-        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="#6B8F5B" stroke-width="0.3" opacity="0.08" rx="4"/>';
-        // mutation label removed (was visible on carousel cards)
+        // Wireframe geometry handled via isWire flag in leaf/stem rendering.
+        // Filter (mutwire_) adds subtle green edge glow. Post-overlay: scan grid.
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="#6B8F5B" stroke-width="0.3" opacity="0.22" rx="4"/>';
+        for (var wgi = 0; wgi < 6; wgi++) {
+          s += '<line x1="0" y1="'+(15 + wgi * 13)+'" x2="70" y2="'+(15 + wgi * 13)+'" stroke="#6B8F5B" stroke-width="0.15" opacity="0.18"/>';
+        }
         break;
       case 'Glass Stem':
-        // Glass was applied in stem rendering (isGlass flag)
-        // Add refraction highlight
-        s += '<line x1="34" y1="76" x2="36" y2="'+(78-t.stemHeight*0.8)+'" stroke="#EAE0C8" stroke-width="0.3" opacity="0.1"/>';
-        // mutation label removed
+        // Glass geometry handled in stem (isGlass). Filter adds shimmer.
+        // Post-overlay: refraction highlight + faint sparkles
+        s += '<line x1="34" y1="76" x2="36" y2="'+(78-t.stemHeight*0.8)+'" stroke="#EAE0C8" stroke-width="0.3" opacity="0.28"/>';
+        s += '<circle cx="36" cy="'+(78-t.stemHeight*0.4)+'" r="0.5" fill="#EAE0C8" opacity="0.35"/>';
+        s += '<circle cx="34" cy="'+(78-t.stemHeight*0.7)+'" r="0.35" fill="#EAE0C8" opacity="0.3"/>';
         break;
       case 'Glitch':
-        // Digital glitch — displaced scanlines
-        for (var gi = 0; gi < 5; gi++) {
-          var gy = 15 + gi * 16;
-          var gw = 5 + (gi * 3) % 12;
-          var gx = 10 + (gi * 7) % 40;
-          s += '<rect x="'+gx+'" y="'+gy+'" width="'+gw+'" height="1.5" fill="#C8A84B" opacity="0.08">';
-          s += '<animate attributeName="x" values="'+gx+';'+(gx+8)+';'+gx+'" dur="'+(2+gi*0.3)+'s" repeatCount="indefinite"/>';
+        // Filter (mutglitch_) does the RGB channel split on the plant.
+        // Post-overlay: stronger animated scanlines + cyan sweeping band
+        for (var gi = 0; gi < 7; gi++) {
+          var gy = 8 + gi * 12;
+          var gw = 8 + (gi * 5) % 18;
+          var gx = 6 + (gi * 9) % 42;
+          s += '<rect x="'+gx+'" y="'+gy+'" width="'+gw+'" height="1.5" fill="#C8A84B" opacity="0.22">';
+          s += '<animate attributeName="x" values="'+gx+';'+(gx+10)+';'+gx+'" dur="'+(1.6+gi*0.25)+'s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.05;0.28;0.05" dur="'+(0.8+gi*0.15)+'s" repeatCount="indefinite"/>';
           s += '</rect>';
         }
-        // mutation label removed
+        s += '<rect x="0" y="42" width="70" height="0.8" fill="#00E5FF" opacity="0.18"><animate attributeName="y" values="20;75;20" dur="3.5s" repeatCount="indefinite"/></rect>';
         break;
       case 'Albino':
-        // mutation label removed
+        // Filter (mutalbino_) desaturates + brightens. Post-overlay: rim light
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.3" rx="4"/>';
         break;
       case 'Silhouette':
-        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(240,235,216,0.06)" stroke-width="0.3" rx="4"/>';
-        // mutation label removed
+        // Filter (mutsilhouette_) crushes plant to dark. Post-overlay: rim light
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.3" rx="4"/>';
         break;
       case 'Golden':
-        // Kintsugi gold crack lines on pot
-        s += '<path d="M28,82 Q30,78 29,74 Q31,70 28,66" stroke="#C8A84B" stroke-width="0.35" fill="none" opacity="0.3" filter="url(#gw'+uid+')"/>';
-        s += '<path d="M40,83 Q42,77 41,71" stroke="#C8A84B" stroke-width="0.3" fill="none" opacity="0.25" filter="url(#gw'+uid+')"/>';
-        // Gold vein on stem
-        s += '<line x1="35" y1="76" x2="35" y2="'+(78-t.stemHeight*0.8)+'" stroke="#C8A84B" stroke-width="0.3" opacity="0.2" filter="url(#gw'+uid+')"/>';
-        // mutation label removed
+        // Filter (mutgolden_) tints whole plant gold. Post-overlay: kintsugi cracks pop on top
+        s += '<path d="M28,82 Q30,78 29,74 Q31,70 28,66" stroke="#FFD75A" stroke-width="0.45" fill="none" opacity="0.7" filter="url(#gw'+uid+')"/>';
+        s += '<path d="M40,83 Q42,77 41,71" stroke="#FFD75A" stroke-width="0.4" fill="none" opacity="0.62" filter="url(#gw'+uid+')"/>';
+        s += '<path d="M32,80 Q34,72 33,64 Q35,58 33,52" stroke="#FFD75A" stroke-width="0.35" fill="none" opacity="0.5" filter="url(#gw'+uid+')"/>';
+        s += '<line x1="35" y1="76" x2="35" y2="'+(78-t.stemHeight*0.85)+'" stroke="#FFD75A" stroke-width="0.4" opacity="0.55" filter="url(#gw'+uid+')"/>';
+        s += '<circle cx="22" cy="32" r="0.5" fill="#FFE07A" opacity="0.6"><animate attributeName="opacity" values="0.3;0.85;0.3" dur="2.4s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="48" cy="40" r="0.4" fill="#FFE07A" opacity="0.55"><animate attributeName="opacity" values="0.25;0.75;0.25" dur="3.1s" begin="0.7s" repeatCount="indefinite"/></circle>';
         break;
       case 'Neon':
-        // Faint neon grid
-        s += '<line x1="0" y1="30" x2="70" y2="30" stroke="#00E5FF" stroke-width="0.15" opacity="0.03"/>';
-        s += '<line x1="0" y1="60" x2="70" y2="60" stroke="#00E5FF" stroke-width="0.15" opacity="0.03"/>';
-        s += '<line x1="20" y1="0" x2="20" y2="95" stroke="#00E5FF" stroke-width="0.15" opacity="0.03"/>';
-        s += '<line x1="50" y1="0" x2="50" y2="95" stroke="#00E5FF" stroke-width="0.15" opacity="0.03"/>';
-        // mutation label removed
+        // Filter (mutneon_) does dark interior + cyan ring. Post: scanlines + outer aura
+        s += '<line x1="0" y1="22" x2="70" y2="22" stroke="#00E5FF" stroke-width="0.18" opacity="0.18"/>';
+        s += '<line x1="0" y1="48" x2="70" y2="48" stroke="#FF00E5" stroke-width="0.18" opacity="0.16"/>';
+        s += '<line x1="0" y1="70" x2="70" y2="70" stroke="#00E5FF" stroke-width="0.18" opacity="0.18"/>';
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="#00E5FF" stroke-width="0.5" opacity="0.18" rx="6"/>';
         break;
       case 'Ink Wash':
-        // Red seal/chop mark
-        s += '<rect x="60" y="86" width="4" height="4" rx="0.3" fill="#C03030" opacity="0.6"/>';
-        s += '<text x="62" y="89.5" font-size="2.5" fill="#F0EBD8" text-anchor="middle" opacity="0.7">\u5370</text>';
-        // mutation label removed
+        // Filter (mutink_) renders plant as warm sepia ink. Post: red chop seal + paper border
+        s += '<rect x="58.5" y="84" width="6" height="6" rx="0.4" fill="#C03030" opacity="0.85"/>';
+        s += '<text x="61.5" y="88.6" font-size="3.2" fill="#F0EBD8" text-anchor="middle" opacity="0.95" font-family="serif">\u5370</text>';
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(60,40,20,0.18)" stroke-width="0.3" rx="2"/>';
         break;
       case 'Fossil':
-        // Mineral grain lines
-        for (var fi = 0; fi < 5; fi++) {
-          var fy = 25 + fi * 12;
-          s += '<line x1="8" y1="'+fy+'" x2="62" y2="'+(fy+1.5)+'" stroke="#7A7A6E" stroke-width="0.2" opacity="'+(0.06+fi*0.01)+'"/>';
+        // Filter (mutfossil_) does sepia on the plant. Post: stronger mineral grain + crystals
+        for (var fi = 0; fi < 7; fi++) {
+          var fy = 18 + fi * 10;
+          s += '<line x1="6" y1="'+fy+'" x2="64" y2="'+(fy+1.8)+'" stroke="#7A6E50" stroke-width="0.22" opacity="'+(0.18 + fi * 0.015).toFixed(3)+'"/>';
         }
-        // Crystal deposits
-        s += '<circle cx="22" cy="38" r="0.5" fill="#D4C8A8" opacity="0.2"/>';
-        s += '<circle cx="45" cy="44" r="0.4" fill="#D4C8A8" opacity="0.18"/>';
-        s += '<circle cx="30" cy="55" r="0.35" fill="#D4C8A8" opacity="0.15"/>';
-        // mutation label removed
+        s += '<circle cx="22" cy="38" r="0.7" fill="#E8DCB8" opacity="0.55"/>';
+        s += '<circle cx="45" cy="44" r="0.55" fill="#E8DCB8" opacity="0.5"/>';
+        s += '<circle cx="30" cy="55" r="0.5" fill="#E8DCB8" opacity="0.45"/>';
+        s += '<circle cx="50" cy="62" r="0.45" fill="#E8DCB8" opacity="0.4"/>';
         break;
       case 'Porcelain':
-        // Craquelure hairlines
-        s += '<path d="M15,30 Q25,35 20,50 Q18,60 25,70" stroke="#8A8A7A" stroke-width="0.15" fill="none" opacity="0.06"/>';
-        s += '<path d="M50,25 Q45,40 52,55 Q48,65 55,75" stroke="#8A8A7A" stroke-width="0.15" fill="none" opacity="0.07"/>';
-        s += '<path d="M30,20 Q35,30 32,45" stroke="#8A8A7A" stroke-width="0.12" fill="none" opacity="0.05"/>';
-        // mutation label removed
+        // Filter (mutporcelain_) does cool grey-white. Post: stronger craquelure + gloss highlight
+        s += '<path d="M15,30 Q25,35 20,50 Q18,60 25,70" stroke="#5A5A4A" stroke-width="0.2" fill="none" opacity="0.28"/>';
+        s += '<path d="M50,25 Q45,40 52,55 Q48,65 55,75" stroke="#5A5A4A" stroke-width="0.18" fill="none" opacity="0.25"/>';
+        s += '<path d="M30,20 Q35,30 32,45 Q34,55 30,65" stroke="#5A5A4A" stroke-width="0.16" fill="none" opacity="0.22"/>';
+        s += '<path d="M40,32 Q44,40 42,52" stroke="#5A5A4A" stroke-width="0.15" fill="none" opacity="0.2"/>';
+        s += '<rect x="0" y="0" width="70" height="40" fill="rgba(255,255,255,0.06)"/>';
         break;
       case 'Bioluminescent':
-        // Luminous stem veins
-        s += '<line x1="34" y1="76" x2="33" y2="'+(78-t.stemHeight*0.8)+'" stroke="#00E5CC" stroke-width="0.5" opacity="0">';
-        s += '<animate attributeName="opacity" values="0.08;0.22;0.08" dur="3.2s" repeatCount="indefinite"/>';
+        // Filter (mutbiolum_) wraps plant in cyan outer glow. Post: pulsing veins + dots
+        s += '<line x1="34" y1="76" x2="33" y2="'+(78-t.stemHeight*0.8)+'" stroke="#00E5CC" stroke-width="0.6" opacity="0">';
+        s += '<animate attributeName="opacity" values="0.18;0.42;0.18" dur="3.2s" repeatCount="indefinite"/>';
         s += '</line>';
-        s += '<line x1="36" y1="76" x2="37" y2="'+(78-t.stemHeight*0.7)+'" stroke="#4dd0e1" stroke-width="0.4" opacity="0">';
-        s += '<animate attributeName="opacity" values="0.06;0.18;0.06" dur="4.1s" begin="0.8s" repeatCount="indefinite"/>';
+        s += '<line x1="36" y1="76" x2="37" y2="'+(78-t.stemHeight*0.7)+'" stroke="#4dd0e1" stroke-width="0.5" opacity="0">';
+        s += '<animate attributeName="opacity" values="0.15;0.36;0.15" dur="4.1s" begin="0.8s" repeatCount="indefinite"/>';
         s += '</line>';
-        // Pulsing bloom core
         if (t.hasFlower) {
           s += '<circle cx="35" cy="'+(78-t.stemHeight*0.85)+'" r="4" fill="#00E5CC" opacity="0" filter="url(#gw'+uid+')">';
-          s += '<animate attributeName="opacity" values="0.08;0.18;0.08" dur="3.4s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.16;0.36;0.16" dur="3.4s" repeatCount="indefinite"/>';
           s += '</circle>';
         }
-        // Glow dots on canopy
-        s += '<circle cx="25" cy="35" r="0.6" fill="#00E5CC" opacity="0"><animate attributeName="opacity" values="0.05;0.15;0.05" dur="2.8s" begin="0.3s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="42" cy="30" r="0.5" fill="#4dd0e1" opacity="0"><animate attributeName="opacity" values="0.04;0.12;0.04" dur="3.5s" begin="1.2s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="32" cy="42" r="0.45" fill="#00E5CC" opacity="0"><animate attributeName="opacity" values="0.06;0.14;0.06" dur="2.5s" begin="0.6s" repeatCount="indefinite"/></circle>';
-        // mutation label removed
+        s += '<circle cx="25" cy="35" r="0.7" fill="#00E5CC" opacity="0"><animate attributeName="opacity" values="0.12;0.32;0.12" dur="2.8s" begin="0.3s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="42" cy="30" r="0.6" fill="#4dd0e1" opacity="0"><animate attributeName="opacity" values="0.10;0.28;0.10" dur="3.5s" begin="1.2s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="32" cy="42" r="0.55" fill="#00E5CC" opacity="0"><animate attributeName="opacity" values="0.14;0.30;0.14" dur="2.5s" begin="0.6s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="46" cy="48" r="0.5" fill="#4dd0e1" opacity="0"><animate attributeName="opacity" values="0.10;0.26;0.10" dur="3.1s" begin="0.9s" repeatCount="indefinite"/></circle>';
         break;
       case 'Holographic':
-        // Animated rainbow gradient overlay
+        // Filter (mutholo_) saturates plant + adds white edge highlight. Post: rainbow wash
         s += '<defs><linearGradient id="holo_'+uid+'" x1="0" y1="0" x2="1" y2="1">';
-        s += '<stop offset="0%" stop-color="#FF6B6B" stop-opacity="0.08"/>';
-        s += '<stop offset="20%" stop-color="#FFD93D" stop-opacity="0.06"/>';
-        s += '<stop offset="40%" stop-color="#6BCB77" stop-opacity="0.06"/>';
-        s += '<stop offset="60%" stop-color="#4D96FF" stop-opacity="0.06"/>';
-        s += '<stop offset="80%" stop-color="#9B59B6" stop-opacity="0.08"/>';
-        s += '<stop offset="100%" stop-color="#FF6B6B" stop-opacity="0.06"/>';
+        s += '<stop offset="0%" stop-color="#FF6B6B" stop-opacity="0.22"/>';
+        s += '<stop offset="20%" stop-color="#FFD93D" stop-opacity="0.20"/>';
+        s += '<stop offset="40%" stop-color="#6BCB77" stop-opacity="0.20"/>';
+        s += '<stop offset="60%" stop-color="#4D96FF" stop-opacity="0.20"/>';
+        s += '<stop offset="80%" stop-color="#9B59B6" stop-opacity="0.22"/>';
+        s += '<stop offset="100%" stop-color="#FF6B6B" stop-opacity="0.20"/>';
         s += '<animate attributeName="x1" values="0;1;0" dur="6s" repeatCount="indefinite"/>';
         s += '<animate attributeName="y1" values="0;0.5;0" dur="6s" repeatCount="indefinite"/>';
         s += '</linearGradient></defs>';
-        s += '<rect x="0" y="0" width="70" height="95" fill="url(#holo_'+uid+')" opacity="0.8"/>';
-        // Sparkle dots
-        s += '<circle cx="20" cy="28" r="0.4" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.3;0" dur="2.2s" begin="0.5s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="48" cy="45" r="0.35" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.25;0" dur="2.8s" begin="1.3s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="33" cy="60" r="0.3" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.2;0" dur="3.1s" begin="0.1s" repeatCount="indefinite"/></circle>';
-        // mutation label removed
+        s += '<rect x="0" y="0" width="70" height="95" fill="url(#holo_'+uid+')" style="mix-blend-mode:screen"/>';
+        s += '<circle cx="20" cy="28" r="0.5" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.7;0" dur="2.2s" begin="0.5s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="48" cy="45" r="0.45" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.65;0" dur="2.8s" begin="1.3s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="33" cy="60" r="0.4" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.6;0" dur="3.1s" begin="0.1s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="42" cy="22" r="0.35" fill="#fff" opacity="0"><animate attributeName="opacity" values="0;0.55;0" dur="2.6s" begin="1.7s" repeatCount="indefinite"/></circle>';
         break;
       case 'Pixel Art':
-        // Faint pixel grid overlay
+        // Filter (mutpixel_) chunks/quantizes the plant. Post: visible pixel grid + CRT vignette
         for (var pi = 0; pi < 18; pi++) {
-          s += '<line x1="0" y1="'+(pi*5.3)+'" x2="70" y2="'+(pi*5.3)+'" stroke="#5E8550" stroke-width="0.1" opacity="0.04"/>';
+          s += '<line x1="0" y1="'+(pi*5.3).toFixed(2)+'" x2="70" y2="'+(pi*5.3).toFixed(2)+'" stroke="#0a0d08" stroke-width="0.15" opacity="0.22"/>';
         }
         for (var pj = 0; pj < 14; pj++) {
-          s += '<line x1="'+(pj*5)+'" y1="0" x2="'+(pj*5)+'" y2="95" stroke="#5E8550" stroke-width="0.1" opacity="0.04"/>';
+          s += '<line x1="'+(pj*5).toFixed(2)+'" y1="0" x2="'+(pj*5).toFixed(2)+'" y2="95" stroke="#0a0d08" stroke-width="0.15" opacity="0.22"/>';
         }
-        // mutation label removed
+        s += '<rect x="0" y="0" width="70" height="95" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1" rx="3"/>';
         break;
     }
     return s;
