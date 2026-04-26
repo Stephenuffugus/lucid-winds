@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.18';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -45061,6 +45061,20 @@ function showTP(p,mk){
     if(waterBtn){
       waterBtn.onclick=function(){_waterOwnPlant(p,mk);};
       waterBtn.disabled=false;
+      // Update label to show cost (5💧) at rest, cooldown when active.
+      // Mirrors the hex inspector pattern so labels stay consistent.
+      var _wLbl=waterBtn.querySelector('.wtp2-btn-lbl');
+      if(_wLbl){
+        var _wAt=p.lastWateredAt||(p.lastWatered?new Date(p.lastWatered).getTime():0);
+        if(_wAt&&Date.now()-_wAt<24*3600000){
+          var _wHrLeft=Math.ceil((24*3600000-(Date.now()-_wAt))/3600000);
+          _wLbl.textContent='Watered '+_wHrLeft+'h';
+          _wLbl.style.opacity='0.55';
+        } else {
+          _wLbl.textContent='Water · 5💧';
+          _wLbl.style.opacity='1';
+        }
+      }
       if(_uLat&&p.lat){
         var distToPlant=_dist(_uLat,_uLng,p.lat,p.lng);
         if(distToPlant>COLLECT_RANGE){
