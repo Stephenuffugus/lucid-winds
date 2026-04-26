@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.77';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.80';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -60062,7 +60062,26 @@ var LW_MEMENTOS = {
   74:{name:'Velvet Moss', text:'A strip of fawn-soft moss.'},
   75:{name:'Raven Eye', text:'A polished obsidian stone. Watches back.'},
   79:{name:'Wisp Jar', text:'A sealed jar that glows faintly. Always.'},
-  81:{name:'Bamboo Flute', text:'A panda-carved flute that plays by itself when you\u2019re sad.'}
+  81:{name:'Bamboo Flute', text:'A panda-carved flute that plays by itself when you\u2019re sad.'},
+  // \u2550\u2550\u2550 Indices 82-96: drafted Apr 26, wiring deferred. Triggers prefixed
+  // TODO_ so future passes can grep them. _lwCheckMementos currently only
+  // handles the 30-day equip rule, so these entries will sit dormant until
+  // each TODO_ trigger is wired into the matching event source.
+  82:{name:'Keeper\u2019s First Mark', text:'The mark you made on your journal when you met them, now they\u2019ve marked you back.', trigger:'TODO_first_companion_equipped'},
+  83:{name:'Midnight Bloom', text:'A flower that only opens when you\u2019re asleep. They left it on your pillow.', trigger:'TODO_offline_bloom_6h'},
+  84:{name:'Rank Crown', text:'A tiny circlet woven from grass, marking your bond at the highest level.', trigger:'TODO_companion_rank_5'},
+  85:{name:'Storm Glass', text:'Frosted from a lightning strike you both survived. Still warm from that night.', trigger:'TODO_lightning_with_companion'},
+  86:{name:'Threshold Stone', text:'Smooth from a hundred crossings between home and wild. Your footprints fade; theirs don\u2019t.', trigger:'TODO_100_wild_tends_with_companion'},
+  87:{name:'Starlight Scrap', text:'A piece of cloth from a night hunt, soaked in bioluminescence that never quite fades.', trigger:'TODO_hunt_catch_late_night'},
+  88:{name:'Solstice Token', text:'Pressed from soil where a solstice fire burned. They gave it to you as the season turned.', trigger:'TODO_equipped_during_solstice'},
+  89:{name:'Harmony Bell', text:'A chime made from a healed wound, it rings when you\u2019re near.', trigger:'TODO_recover_from_low_vitality'},
+  90:{name:'Root Pendant', text:'A root carved with your shared path, worn smooth by their constant touch.', trigger:'TODO_30_cross_pollinations_with_companion'},
+  91:{name:'Borrowed Warmth', text:'Their fur, shed during the coldest night. Still radiates heat.', trigger:'TODO_survive_frost_glass_with_companion'},
+  92:{name:'Echo Chime', text:'A bell that rings in harmony with theirs, they\u2019ll always know where you are.', trigger:'TODO_visit_10_biomes_with_companion'},
+  93:{name:'Dusk Vial', text:'A sealed bottle of twilight air, collected the day your bond was sealed.', trigger:'TODO_first_bond_tier_at_dusk'},
+  94:{name:'Liberty Lock', text:'A lock of hair from your first free adventure together, braided with theirs.', trigger:'TODO_first_wild_drop_with_companion'},
+  95:{name:'Sanctuary Shard', text:'A piece of their rest-nest, woven with protection runes you taught them.', trigger:'TODO_first_successful_defense_with_companion'},
+  96:{name:'Farewell Token', text:'Given when they return to the wild. Proof they\u2019ll always remember you.', trigger:'TODO_unequip_after_90_days'}
 };
 window._lwCheckMementos = function() {
   try {
