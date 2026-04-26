@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.32';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.33';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -48577,7 +48577,7 @@ function _selectHexPlant(idx,p){
   // Mulch cooldown reads happen below in the cooldown helpers block;
   // the button itself is computed here so it stays in the existing render
   // ordering. Three states: on-cooldown, no-fert, ready.
-  var _mulchTitle=_mFert>=1?'Spend 1 fertilizer for +24h lifespan + 1 EA':'Need 1 fertilizer (compost a greenhouse plant)';
+  var _mulchTitle=_mFert>=1?'Spend 1 fertilizer: this plant gains +24h lifespan and +1 EA. 24h cooldown.':'Need 1 fertilizer (compost a greenhouse plant to earn one).';
   var _mulchBtn;
   // We need _mulchCdMs which is computed in the cooldown helpers block —
   // but that block runs later. Read it inline here too so order doesn't matter.
@@ -48587,7 +48587,7 @@ function _selectHexPlant(idx,p){
   if(_mInlineCd>0){
     _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Already mulched. Returns in '+_fmtCdHInline(_mInlineCd)+'.\')" title="On cooldown">&#127807; MULCHED &middot; '+_fmtCdHInline(_mInlineCd)+'</button>';
   } else if(_mFert>=1){
-    _mulchBtn='<button class="hi-action-btn" onclick="window._hexAction(\'mulch\')" title="'+_mulchTitle+'">&#127807; MULCH &middot; 1&#127807; ('+_mFert+' left)</button>';
+    _mulchBtn='<button class="hi-action-btn" onclick="window._hexAction(\'mulch\')" title="'+_mulchTitle+'">&#127807; MULCH &middot; 1&#127807; &rarr; +24h, +1 EA</button>';
   } else {
     _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 1 fertilizer. Compost a greenhouse plant to get one.\')" title="'+_mulchTitle+'">&#127807; MULCH &middot; need 1&#127807;</button>';
   }
@@ -48596,7 +48596,7 @@ function _selectHexPlant(idx,p){
   var _blessBtn='';
   var _blessDew=window._canReceiveBlessing?window._canReceiveBlessing(p):0;
   if(_blessDew>0){
-    _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Receive a daily blessing from this plant">\ud83d\ude4f BLESSING (+'+_blessDew+'\ud83d\udca7)</button>';
+    _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Daily Dew gift from any Rare or rarer plant. Once per plant per day.">\ud83d\ude4f BLESSING &middot; +'+_blessDew+'\ud83d\udca7 daily</button>';
   }
   // PRUNE button — only when this plant has an active pest. 5s hold + 3 hashes.
   var _pruneBtn='';
@@ -48676,7 +48676,7 @@ function _selectHexPlant(idx,p){
     var _wTodayH=new Date().toISOString().split('T')[0];
     if(_wBudgetH.date!==_wTodayH){_wBudgetH={date:_wTodayH,count:0};}
     var _wLeftH=Math.max(0,5-(_wBudgetH.count||0));
-    actions+='<button class="hi-action-btn hi-water-hold'+(_wLeftH<=0?' locked':'')+'" '+(_wLeftH>0?'data-hold-action="water" data-hold-ms="10000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)"':'onclick="window._toast&&window._toast(\'Daily stranger waters used (5/5). Resets at midnight.\')"')+' title="Hold for 10 seconds to water. 5 stranger waters per day."><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER &middot; '+_wLeftH+'/5</span></button>';
+    actions+='<button class="hi-action-btn hi-water-hold'+(_wLeftH<=0?' locked':'')+'" '+(_wLeftH>0?'data-hold-action="water" data-hold-ms="4000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)"':'onclick="window._toast&&window._toast(\'Daily stranger waters used (5/5). Resets at midnight.\')"')+' title="Hold for 4 seconds to water. 5 stranger waters per day."><span class="hi-water-fill"></span><span class="hi-water-label">&#128167; HOLD TO WATER &middot; '+_wLeftH+'/5</span></button>';
     actions+=_mulchBtn;
     if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
@@ -48687,8 +48687,8 @@ function _selectHexPlant(idx,p){
     var _tendLbl,_tendCls,_tendClick;
     if(!_canTend){_tendLbl='&#127807; TEND &#128274;';_tendCls=' locked';_tendClick='window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')';}
     else if(_tendCdMs>0){_tendLbl='&#127807; TENDED &middot; '+fmtCdH(_tendCdMs);_tendCls=' locked';_tendClick='window._toast&&window._toast(\'Already tended. Returns in '+fmtCdH(_tendCdMs)+'.\')';}
-    else{_tendLbl='&#127807; TEND &middot; +6h, +2&#128167;';_tendCls='';_tendClick='window._hexAction(\'tend\')';}
-    actions+='<button class="hi-action-btn'+_tendCls+'" onclick="'+_tendClick+'" title="'+(_canTend?'Tend this plant, gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">'+_tendLbl+'</button>';
+    else{_tendLbl='&#127807; TEND &middot; +6h life, earn 2&#128167;';_tendCls='';_tendClick='window._hexAction(\'tend\')';}
+    actions+='<button class="hi-action-btn'+_tendCls+'" onclick="'+_tendClick+'" title="'+(_canTend?'Add +6 hours of lifespan to this stranger plant. You earn 2 Dew. 4h cooldown.':'Unlocks at Keeper Level 5')+'">'+_tendLbl+'</button>';
     // CUTTING — lifetime per-plant lock + daily 2/player + 20 Dew. Show all 3 states.
     var _cutLbl,_cutCls,_cutClick;
     var _cutDewBalH=window.getTotalDew?window.getTotalDew():0;
@@ -49261,7 +49261,7 @@ window._lwMassWaterRefresh = _lwMassWaterRefreshButton;
 
 // Generic press-and-hold handlers — used for both water (10s) and prune (5s).
 // The button declares which _hexAction to fire and how long via data attrs:
-//   data-hold-action="water"  data-hold-ms="10000"
+//   data-hold-action="water"  data-hold-ms="4000"
 //   data-hold-action="prune"  data-hold-ms="5000"
 // CSS handles the fill bar animation tied to .holding class. Releasing
 // before the threshold cancels with a toast; holding through fires the
