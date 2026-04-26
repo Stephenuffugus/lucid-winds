@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.80';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.81';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68654,6 +68654,108 @@ var TRIGGERS=[
   {id:'full_house',name:'Full House',riddle:'Every slot filled. Every plant unique.',category:'action',
     check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');return gh.length>=10;}catch(e){return false;}},
     effect:'Ten slots, ten lives. Every one shaped by your singular attention.',reward:{pollen:15}},
+
+  // ── EVENT EXPANSIONS (weather / season / action / time / moon) ──
+  // 30 ambient triggers added 2026-04-26 to give the BoS more reasons to
+  // surface a discovery moment beyond per-trait recognition.
+
+  // Weather (8)
+  {id:'evt_heatwave',name:'Furnace Day',riddle:'Even the shadows are thirsty.',category:'weather',
+    check:function(c){return c.weather&&typeof c.weather.temp==='number'&&c.weather.temp>=35;},
+    effect:'A furnace day. Your bloom held its color through it.',reward:{pollen:12,ea:1}},
+  {id:'evt_killing_frost',name:'Killing Frost',riddle:'Glass forms on every leaf at first light.',category:'weather',
+    check:function(c){return c.weather&&typeof c.weather.temp==='number'&&c.weather.temp<=-5;},
+    effect:'A killing frost passed. Your plant survived a cold most do not.',reward:{pollen:14,ea:1}},
+  {id:'evt_monsoon',name:'Monsoon',riddle:'A whole season of rain in a single afternoon.',category:'weather',
+    check:function(c){return c.weather&&typeof c.weather.rain==='number'&&c.weather.rain>=30;},
+    effect:'A monsoon arrived. The rain wrote a quick paragraph on every leaf.',reward:{pollen:10}},
+  {id:'evt_galewind',name:'Gale',riddle:'Every loose petal becomes a passenger.',category:'weather',
+    check:function(c){return c.weather&&typeof c.weather.wind==='number'&&c.weather.wind>=40;},
+    effect:'A gale crossed the garden. Your plant bowed and rose again.',reward:{pollen:9}},
+  {id:'evt_drought',name:'Drought',riddle:'Days line up dry, the soil counts each one.',category:'weather',
+    check:function(c){return c.weather&&typeof c.weather.rain==='number'&&c.weather.rain<=0&&typeof c.weather.temp==='number'&&c.weather.temp>=28;},
+    effect:'Drought tested your roots. They held their depth.',reward:{pollen:11}},
+  {id:'evt_clear_blue',name:'Clear Blue',riddle:'No cloud. No mercy. Just light.',category:'weather',
+    check:function(c){return c.weather&&typeof c.weather.rain==='number'&&c.weather.rain===0&&typeof c.weather.wind==='number'&&c.weather.wind<6&&c.hour>=10&&c.hour<=14;},
+    effect:'A clear blue noon. Photosynthesis went professional.',reward:{pollen:6}},
+  {id:'evt_perfect_growing',name:'Perfect Growing Day',riddle:'Mild rain, mild warmth, mild everything.',category:'weather',
+    check:function(c){if(!c.weather)return false;var t=c.weather.temp,r=c.weather.rain,w=c.weather.wind;return typeof t==='number'&&t>=18&&t<=24&&typeof r==='number'&&r>=2&&r<=8&&typeof w==='number'&&w<15;},
+    effect:'A perfect growing day arrived. Every bud paid attention.',reward:{pollen:8}},
+  {id:'evt_chill_snap',name:'Chill Snap',riddle:'Summer forgets itself for an hour.',category:'weather',
+    check:function(c){return c.realSeason===1&&c.weather&&typeof c.weather.temp==='number'&&c.weather.temp<=10;},
+    effect:'A chill snap broke summer for an hour. Your plant adjusted.',reward:{pollen:9}},
+
+  // Season (6)
+  {id:'evt_spring_first',name:'Spring Opener',riddle:'The first bloom of the warming half.',category:'season',
+    check:function(c){return c.realSeason===0&&c.plant&&c.plant.season===0;},
+    effect:'A spring plant met its real spring. The garden noticed.',reward:{pollen:8}},
+  {id:'evt_summer_peak',name:'Solstice Crown',riddle:'The longest day finds its rightful bloom.',category:'season',
+    check:function(c){return c.realSeason===1&&c.month===5&&c.plant&&c.plant.season===1;},
+    effect:'A summer plant bloomed at the solstice. Light gathered around it.',reward:{pollen:14,ea:1}},
+  {id:'evt_autumn_keeper',name:'Autumn Keeper',riddle:'Color released and color received.',category:'season',
+    check:function(c){return c.realSeason===2&&c.plant&&c.plant.season===2;},
+    effect:'An autumn plant met its real autumn. The wheel turned in tune.',reward:{pollen:8}},
+  {id:'evt_winter_warrior',name:'Winter Warrior',riddle:'Held a bloom through the coldest months.',category:'season',
+    check:function(c){return c.realSeason===3&&c.plant&&c.plantAge>=30;},
+    effect:'Winter could not take this one. Thirty days of cold survived.',reward:{pollen:18,ea:1}},
+  {id:'evt_equinox_bloom',name:'Equinox Bloom',riddle:'The day the world is balanced.',category:'season',
+    check:function(c){return c.plant&&((c.month===2&&c.plant.season===0)||(c.month===8&&c.plant.season===2));},
+    effect:'A bloom landed on the equinox. The scales agreed for one moment.',reward:{pollen:12}},
+  {id:'evt_off_season_bloom',name:'Off-Season Bloom',riddle:'The wheel turned, the flower did not.',category:'season',
+    check:function(c){if(!c.plant||typeof c.plant.season!=='number')return false;var off=(c.plant.season+2)%4;return c.realSeason===off;},
+    effect:'Your plant bloomed against its season. The garden tilted slightly.',reward:{pollen:10}},
+
+  // Action (10)
+  {id:'evt_breeder_ten',name:'Decade Breeder',riddle:'Ten lineages crossed under one keeper.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var t=0;for(var i=0;i<gh.length;i++)t+=(gh[i].breedCount||0);return t>=10;}catch(e){return false;}},
+    effect:'Ten crosses under your hands. The lineages remember.',reward:{pollen:18}},
+  {id:'evt_breeder_fifty',name:'Master Breeder',riddle:'Fifty lineages crossed. The greenhouse hums.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var t=0;for(var i=0;i<gh.length;i++)t+=(gh[i].breedCount||0);return t>=50;}catch(e){return false;}},
+    effect:'Fifty crosses. The garden recognizes your patience as a craft.',reward:{pollen:35,ea:2}},
+  {id:'evt_chimera_three',name:'Triple Chimera',riddle:'Three generations, all under your hands.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');for(var i=0;i<gh.length;i++)if((gh[i].generation||1)>=3)return true;return false;}catch(e){return false;}},
+    effect:'A Gen 3 chimera stands in your garden. The lineage runs deep.',reward:{pollen:20,ea:1}},
+  {id:'evt_compost_keeper',name:'Compost Keeper',riddle:'You returned a plant to the soil for the next.',category:'action',
+    check:function(c){try{var n=parseInt(localStorage.getItem('sws_compost_count')||'0',10);return n>=5;}catch(e){return false;}},
+    effect:'Five plants returned to soil. The cycle thanks you.',reward:{pollen:10}},
+  {id:'evt_clipping_three',name:'Quiet Multiplier',riddle:'Three quiet copies of one promising line.',category:'action',
+    check:function(c){try{var ct=JSON.parse(localStorage.getItem('lw_cuttings_taken')||'{}');return Object.keys(ct).length>=3;}catch(e){return false;}},
+    effect:'Three lineages preserved by clipping. The library expands.',reward:{pollen:9}},
+  {id:'evt_first_pi_buy',name:'First Investment',riddle:'You traded the chain for a permanent room.',category:'action',
+    check:function(c){try{var pb=parseInt(localStorage.getItem('lw_pi_purchases_count')||'0',10);return pb>=1;}catch(e){return false;}},
+    effect:'A keeper put real weight behind a garden. Permanence acknowledged.',reward:{pollen:25}},
+  {id:'evt_first_kept_legendary',name:'First Legendary',riddle:'A rare grade walked into your collection.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');for(var i=0;i<gh.length;i++){if(window.hashToTraits&&window.getTerraGrade){var tt=window.hashToTraits(gh[i].hash);var gr=window.getTerraGrade(tt);if(gr&&(gr.name==='Legendary'||gr.name==='Mythic'||gr.name==='Cosmic'))return true;}}return false;}catch(e){return false;}},
+    effect:'A Legendary or higher grade lives under your roof now.',reward:{pollen:20,ea:1}},
+  {id:'evt_one_of_each',name:'Cabinet of Seasons',riddle:'Each of the four wheels has a tooth here.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');if(gh.length<4)return false;var s={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t)s[t.season]=true;}return Object.keys(s).length>=4;}catch(e){return false;}},
+    effect:'All four seasons stand together in your greenhouse. The wheel is whole.',reward:{pollen:14}},
+  {id:'evt_long_keeper',name:'Long Keeper',riddle:'A plant older than the oldest news cycle.',category:'action',
+    check:function(c){return c.plantAge>=90;},
+    effect:'Ninety days under your hands. The plant has moved past being a project.',reward:{pollen:18,ea:1}},
+  {id:'evt_companion_pair',name:'Quiet Pair',riddle:'Two plants in your garden share a creature.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');if(gh.length<2)return false;var cmp={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.companion>=20)cmp[t.companion]=(cmp[t.companion]||0)+1;}for(var k in cmp)if(cmp[k]>=2)return true;return false;}catch(e){return false;}},
+    effect:'Two of your plants share a companion. The creatures recognize each other.',reward:{pollen:11}},
+
+  // Time and moon (6)
+  {id:'evt_dawn_keeper',name:'Dawn Keeper',riddle:'You met the plant before the sun crested.',category:'weather',
+    check:function(c){return c.hour>=5&&c.hour<=7;},
+    effect:'A dawn check-in. The garden rewards keepers who meet the day with it.',reward:{pollen:6}},
+  {id:'evt_golden_hour',name:'Golden Hour',riddle:'Light long, color soft, garden patient.',category:'weather',
+    check:function(c){return (c.hour>=6&&c.hour<=8)||(c.hour>=18&&c.hour<=20);},
+    effect:'Golden hour found you tending. Every leaf turned to honey.',reward:{pollen:7}},
+  {id:'evt_dusk_walker',name:'Dusk Walker',riddle:'Between the day and the night, the keepers move.',category:'weather',
+    check:function(c){return c.hour>=17&&c.hour<=19;},
+    effect:'Dusk crossed the garden with you in it. The plants noticed.',reward:{pollen:6}},
+  {id:'evt_full_moon_bloom',name:'Full Moon Bloom',riddle:'Tides answer to it; so does the night-bloom.',category:'season',
+    check:function(c){return c.moonPhase==='full';},
+    effect:'A full moon bloom. Silver lit every white in the garden.',reward:{pollen:12}},
+  {id:'evt_new_moon_quiet',name:'New Moon Quiet',riddle:'No light from above, the dark does the work.',category:'season',
+    check:function(c){return c.moonPhase==='new';},
+    effect:'A new moon found you tending in the dark. The plants drank the quiet.',reward:{pollen:10}},
+  {id:'evt_lunar_witness',name:'Lunar Witness',riddle:'You walked the garden through every phase.',category:'season',
+    check:function(c){try{var seen=JSON.parse(localStorage.getItem('lw_moon_phases_seen')||'[]');var phases=['new','waxing','first_quarter','full','waning','last_quarter'];if(c.moonPhase&&seen.indexOf(c.moonPhase)<0){seen.push(c.moonPhase);localStorage.setItem('lw_moon_phases_seen',JSON.stringify(seen));}for(var i=0;i<phases.length;i++)if(seen.indexOf(phases[i])<0)return false;return true;}catch(e){return false;}},
+    effect:'Every moon phase witnessed under your watch. The cycle is yours now.',reward:{pollen:30,ea:2}},
 
   // ── MUTATION DISCOVERIES (one per of the 13 mutations) ──
   // Per Stephen 2026-04-26 BoS expansion: "we want people growing the stuff
