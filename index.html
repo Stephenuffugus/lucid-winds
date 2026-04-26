@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.12';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2587,6 +2587,45 @@
     #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:64px;height:64px;flex-shrink:0;overflow:hidden;}
     #kb-hut:hover{background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(200,168,75,0.08));}
 
+    /* ═══ FORAGING PANEL POLISH ═══ */
+    /* Verdict cards pop in staggered when an attempt resolves — use CSS var
+       --idx (set inline) for per-slot delay so the row animates left-to-right.
+       Combined with backdrop blur of resolved colors, the moment lands. */
+    @keyframes fgVerdictPop {
+      0%   { transform: scale(0.78); opacity: 0; }
+      55%  { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1.00); opacity: 1; }
+    }
+    .fg-verdict { animation: fgVerdictPop 0.42s cubic-bezier(0.2,0.8,0.3,1.1) both; animation-delay: calc(var(--idx,0) * 0.085s); }
+
+    /* Success message — gold glow pulse on resolved success */
+    @keyframes fgSuccessPulse {
+      0%,100% { transform: scale(1); text-shadow: 0 0 6px rgba(122,179,86,0.4); }
+      50%     { transform: scale(1.08); text-shadow: 0 0 18px rgba(122,179,86,0.85), 0 0 30px rgba(232,200,100,0.4); }
+    }
+    .fg-success-msg { animation: fgSuccessPulse 1.4s ease-in-out infinite; display:inline-block; }
+
+    /* Pre-revealed hint slots — subtle ambient pulse so they read as "given" */
+    @keyframes fgHintBreath {
+      0%,100% { box-shadow: inset 0 0 8px rgba(200,168,75,0.18); }
+      50%     { box-shadow: inset 0 0 14px rgba(200,168,75,0.38); }
+    }
+    .fg-hint { animation: fgHintBreath 2.4s ease-in-out infinite; }
+
+    /* Slot snap — quick bounce when a card lands in a slot via drop */
+    @keyframes fgSlotSnap {
+      0%   { transform: scale(0.92); }
+      55%  { transform: scale(1.08); }
+      100% { transform: scale(1.00); }
+    }
+    .fg-slot-snap { animation: fgSlotSnap 0.28s cubic-bezier(0.2,0.8,0.3,1.1); }
+
+    /* Empty-zone state */
+    .fg-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.4rem 1rem; text-align:center; }
+    .fg-empty-icon { font-size: 2.6rem; opacity: 0.55; margin-bottom: 0.6rem; }
+    .fg-empty-title { font-family:'Playfair Display',serif; font-size: 0.95rem; font-style: italic; color: var(--cream); margin-bottom: 0.35rem; }
+    .fg-empty-body { font-family:'DM Mono',monospace; font-size: 0.5rem; color: var(--muted); line-height: 1.5; max-width: 280px; }
+
     /* ═══ MY PLANTS NAVIGATOR (wild tab) ═══ */
     .lw-mp-list{display:flex;flex-direction:column;gap:0.45rem;}
     .lw-mp-row{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.6rem;background:linear-gradient(180deg,rgba(40,46,32,0.7),rgba(20,24,16,0.85));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;cursor:pointer;transition:all 0.15s;}
@@ -2598,6 +2637,7 @@
     .lw-mp-info{flex:1;min-width:0;}
     .lw-mp-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:700;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .lw-mp-status{font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);margin-top:2px;}
+    .lw-mp-hex{font-family:'DM Mono',monospace;font-size:0.4rem;color:rgba(138,145,120,0.7);margin-top:1px;}
     .mp-crit .lw-mp-status{color:rgba(232,140,140,0.95);}
     .mp-warn .lw-mp-status{color:rgba(232,200,100,0.95);}
     .mp-ok .lw-mp-status{color:rgba(122,179,86,0.85);}
@@ -41798,7 +41838,7 @@ window._lwSunbeamRescue=function(hash){
   return {ok:true,cost:cost};
 };
 function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
-function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}}
+function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}if(window._lwUpdateMyPlantsCount)try{window._lwUpdateMyPlantsCount();}catch(e){}}
 // Prune withered wild plants using rarity-scaled vitality. Dormant
 // plants (within 72h grace after vitality hits 0) are preserved so
 // the owner can revive via Sunbeam emergency rescue.
@@ -48035,13 +48075,32 @@ function _changeDefense(p){
   modal.classList.add('open');
 }
 window._applyDefenseChange=function(hash,gameId){
+  // Per-plant defense-change cooldown: 24h. Anti-spam guard so a player
+  // can't swap defenses to dodge an active contest. The cooldown is set
+  // when defense is changed; first-ever set has no cooldown.
+  var DEFENSE_COOLDOWN_MS = 24 * 3600000;
+  var wild=_getWild();
+  var _target = null;
+  for (var _ti = 0; _ti < wild.length; _ti++) if (wild[_ti].hash === hash){ _target = wild[_ti]; break; }
+  if (_target && _target.defenderGame && _target.lastDefenseChangeAt){
+    var _since = Date.now() - _target.lastDefenseChangeAt;
+    if (_since < DEFENSE_COOLDOWN_MS){
+      var _hLeft = Math.ceil((DEFENSE_COOLDOWN_MS - _since) / 3600000);
+      _toast('Defense locked. Can change again in '+_hLeft+'h.');
+      var modalC=document.getElementById('fc-modal'); if(modalC) modalC.classList.remove('open');
+      return;
+    }
+  }
   var modal=document.getElementById('fc-modal');if(modal)modal.classList.remove('open');
   var timerWrap=document.getElementById('fc-timer-wrap');if(timerWrap)timerWrap.style.display='block';
   var timerText=document.getElementById('fc-timer-text');if(timerText)timerText.style.display='block';
-  // Update local wild plant
-  var wild=_getWild();
+  // Update local wild plant — stamp lastDefenseChangeAt so next change waits 24h
   for(var i=0;i<wild.length;i++){
-    if(wild[i].hash===hash){wild[i].defenderGame=gameId;break;}
+    if(wild[i].hash===hash){
+      wild[i].defenderGame=gameId;
+      wild[i].lastDefenseChangeAt=Date.now();
+      break;
+    }
   }
   _saveWild(wild);
   // Update Firestore
@@ -48693,12 +48752,27 @@ window._lwOpenMyPlants = function(){
     }
     return { lbl: 'Healthy', cls: 'ok', sortKey: 2 };
   }
+  // Group all wild plants by zone-key (hex bucket) so we can show neighbor
+  // counts on each row. Includes other players' plants in the count, since
+  // hexes are shared territory.
+  var ZS = (typeof ZONE_SIZE !== 'undefined') ? ZONE_SIZE : 0.0015;
+  function zk(lat, lng){
+    return (Math.round(lat/ZS)*ZS).toFixed(4) + ',' + (Math.round(lng/ZS)*ZS).toFixed(4);
+  }
+  var hexCounts = {};
+  for (var hi = 0; hi < arr.length; hi++){
+    var hp = arr[hi]; if (!hp || !hp.lat) continue;
+    var k = zk(hp.lat, hp.lng);
+    hexCounts[k] = (hexCounts[k] || 0) + 1;
+  }
   // Annotate + sort by status (urgent first), then distance
   var rows = mine.map(function(p){
     var d = distMeters(pos.lat, pos.lng, p.lat, p.lng);
     var s = statusFor(p);
     var name = (window.getPlantName && p.hash) ? getPlantName(p.hash) : (p.hash ? p.hash.slice(0,8) : 'Plant');
-    return { p:p, dist:d, status:s, name:name };
+    var hk = zk(p.lat, p.lng);
+    var hc = hexCounts[hk] || 1;
+    return { p:p, dist:d, status:s, name:name, hexCount:hc };
   });
   rows.sort(function(a,b){
     if (a.status.sortKey !== b.status.sortKey) return a.status.sortKey - b.status.sortKey;
@@ -48727,6 +48801,8 @@ window._lwOpenMyPlants = function(){
     html += '<div class="lw-mp-info">';
     html += '<div class="lw-mp-name">'+r.name+'</div>';
     html += '<div class="lw-mp-status">'+r.status.lbl+'</div>';
+    var hexHint = r.hexCount > 1 ? ('Hex with ' + (r.hexCount - 1) + ' neighbor' + (r.hexCount > 2 ? 's' : '')) : 'Solo in hex';
+    html += '<div class="lw-mp-hex">'+hexHint+'</div>';
     html += '</div>';
     html += '<div class="lw-mp-dist">'+fmtDist(r.dist)+'</div>';
     html += '</div>';
@@ -71280,6 +71356,24 @@ window._lwClaimHerbarium = function(id){
     // every hex element is in your hand. The puzzle is order + identification.
     var hand = buildHand(diff.handSize, effGrade, zoneKey);
     var comp = hexComposition(zoneKey, null, effGrade, hand);
+    // Empty-zone guard — if comp came back with no elements (can't happen
+    // under normal flow now, but defensive against future biome edits or
+    // pool-filtered states), show a friendly message instead of an empty puzzle.
+    if (!comp.elements || comp.elements.length === 0) {
+      var ovEmpty = document.createElement('div');
+      ovEmpty.id = 'lw-forage-panel';
+      ovEmpty.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(5,8,4,0.94);backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;';
+      ovEmpty.innerHTML =
+        '<div class="fg-empty">' +
+          '<div class="fg-empty-icon">🌫</div>' +
+          '<div class="fg-empty-title">This zone is barren today.</div>' +
+          '<div class="fg-empty-body">Try a different hex, or come back tomorrow when the wind shifts.</div>' +
+        '</div>' +
+        '<button onclick="window._lwForageClose(false)" style="margin-top:1.4rem;padding:0.7rem 1.6rem;background:rgba(26,36,22,0.7);border:1.5px solid rgba(122,179,86,0.35);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;border-radius:10px;cursor:pointer;min-height:48px;">CLOSE</button>';
+      document.body.appendChild(ovEmpty);
+      window._lwForageClose = function(){ var p=document.getElementById('lw-forage-panel'); if(p) p.remove(); onDone(false); };
+      return;
+    }
     // If the hex composition identified a weather-hint slot, pre-reveal it
     // so the player sees the "free" slot on attempt 1. Matches the attempt-3
     // safety-net pattern for Legendary+ hexes, same `learned` map.
@@ -71333,7 +71427,7 @@ window._lwClaimHerbarium = function(id){
       h += '<div><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Foraging</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">' + biomeIcon + ' ' + biomeName + ' \u00b7 ' + weatherIcon + ' ' + weatherLbl + '</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of ' + diff.attempts + '</div></div>';
-      h += '<button onclick="window._lwForageClose(false)" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.9rem;cursor:pointer;">\u2715</button>';
+      h += '<button onclick="window._lwForageClose(false)" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:1rem;cursor:pointer;flex-shrink:0;">\u2715</button>';
       h += '</div>';
       // Deck selector ripped 2026-04-26 — hand is auto-built per hex now,
       // no swap needed.
@@ -71385,7 +71479,7 @@ window._lwClaimHerbarium = function(id){
             vBg = 'rgba(30,18,14,0.55)'; vBorderW = '1.5px'; vShadow = 'none';
           }
           var vLbl = r.verdict === 'match' ? 'EXACT' : r.verdict === 'wild-exact' ? 'WILD EXACT' : r.verdict === 'counter' ? 'ELSEWHERE' : r.verdict === 'wild' ? 'WILD \u00bd' : 'MISS';
-          h += '<div style="position:relative;aspect-ratio:3/4;min-height:108px;background:' + vBg + ';border:' + vBorderW + ' solid ' + vColor + ';border-radius:12px;overflow:hidden;box-shadow:' + vShadow + ';">';
+          h += '<div class="fg-verdict" style="--idx:' + s + ';position:relative;aspect-ratio:3/4;min-height:108px;background:' + vBg + ';border:' + vBorderW + ' solid ' + vColor + ';border-radius:12px;overflow:hidden;box-shadow:' + vShadow + ';">';
           if (showEl) h += '<img src="assets/foraging/el-' + showCardKey + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;' + (r.verdict === 'neutral' ? 'filter:grayscale(0.7) brightness(0.65);' : '') + '" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;&quot;>' + showEl.icon + '</div>\'">';
           h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 4px 5px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.92));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
           h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:' + vColor + ';letter-spacing:0.1em;">' + vLbl + '</div>';
@@ -71403,7 +71497,7 @@ window._lwClaimHerbarium = function(id){
           // Empty slot — drop target for dragged cards.
           var hint = learned[s] ? EL[learned[s].hex] : null;
           var hintOp = hint ? 0.45 : 0;
-          h += '<div data-lwforage-drop="slot:' + s + '" style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;touch-action:none;">';
+          h += '<div data-lwforage-drop="slot:' + s + '" class="' + (hint ? 'fg-hint' : '') + '" style="position:relative;aspect-ratio:3/4;min-height:108px;background:rgba(13,16,12,0.55);border:1.5px dashed rgba(122,179,86,0.35);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;touch-action:none;">';
           if (hint) {
             h += '<img src="assets/foraging/el-' + learned[s].hex + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:' + hintOp + ';filter:saturate(0.4);" onerror="this.style.display=\'none\';">';
             h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;background:rgba(13,16,12,0.35);">';
@@ -71420,7 +71514,7 @@ window._lwClaimHerbarium = function(id){
       if (resolved) {
         h += '<div style="text-align:center;margin-top:0.6rem;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.08em;color:' + (resolved.success ? 'var(--sage)' : '#c07060') + ';">';
         if (resolved.success) {
-          h += '\u2728 SUCCESS \u00b7 ' + resolved.matches + ' matches, ' + resolved.counters + ' counters';
+          h += '<span class="fg-success-msg">\u2728 SUCCESS \u00b7 ' + resolved.matches + ' matches, ' + resolved.counters + ' counters</span>';
         } else {
           h += 'NOT ENOUGH \u00b7 ' + resolved.matches + ' match, ' + resolved.counters + ' counter';
         }
