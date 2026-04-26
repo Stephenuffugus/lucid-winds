@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.89';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.90';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6584,6 +6584,10 @@ window._addSwitchTabHook = function(fn){
       <!-- Climate stress readout — only populated when a recent _wildClimateTick
            breach is stashed on the plant (.lastClimateBreach). Hidden otherwise. -->
       <div id="wtp-climate" style="display:none;font-family:'DM Mono',monospace;font-size:clamp(.4rem,1.1vw,.5rem);text-align:center;padding:2px 16px 4px;letter-spacing:0.06em;"></div>
+      <!-- Always-on tolerance readout so the climate system reads as real
+           even on plants without a recent breach. Populated by the inspector
+           with this plant's heatMax/coldMin/floodMm/windMax/droughtDays. -->
+      <div id="wtp-tolerances" style="display:none;font-family:'DM Mono',monospace;font-size:clamp(.36rem,1vw,.46rem);text-align:center;padding:2px 16px 4px;letter-spacing:0.04em;color:var(--muted);line-height:1.55;"></div>
       <!-- Action buttons — other player's plant -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
@@ -33272,12 +33276,11 @@ document.addEventListener('keydown', function(e) {
       'deepens','dwindles','fattens','feathers','gentles','glimmers','glistens','glitters','hardens','hastens',
       'hovers','kindles','mingles','ponders','quenches','sharpens','simmers','sparkles','sweetens','thickens'
     ],
-    v3: [ // 3-syllable (34 words — was 14, +20 in v4.2)
+    v3: [ // 3-syllable (24 words — clinical pruned, soft kept)
       'remembers','surrenders','discovers','envelops','meanders','nourishes','penetrates','radiates','resonates','awakens','uncovers','overgrows',
       'intertwines','releases',
-      // v4.2 additions — three-syllable verbs
-      'abandons','beseeches','burnishes','considers','develops','discloses','embraces','encloses','examines','exposes',
-      'illumines','imagines','inhabits','languishes','navigates','occupies','recovers','refreshes','resembles','traverses'
+      // v4.2 additions — three-syllable verbs (clinical pruned, soft kept)
+      'embraces','encloses','exposes','illumines','imagines','overflows','caresses','enkindles','emerges','unlatches'
     ],
     a1: [ // 1-syllable (155 words — was 108, +47 in v4.2)
       'bleak','blown','calm','chalked','chilled','clad','coiled','cold','creased','cupped','damp','deep',
@@ -44675,6 +44678,11 @@ function _wildClimateTick(weather) {
   var now = Date.now();
   var TTL = 20 * 3600000;
   var mutated = false;
+  // Visibility (Stephen 2026-04-26): show players the climate damage
+  // happening to their wild plants instead of letting it bleed silently
+  // in the background. Tally damaged plants + dominant breach kind for
+  // a single toast at the end of the tick.
+  var _vizDamaged = 0, _vizKinds = {};
   for (var i = 0; i < wild.length; i++) {
     var p = wild[i];
     if (!p || !p.hash) continue;
@@ -44805,8 +44813,34 @@ function _wildClimateTick(weather) {
           });
         } catch (e) {}
       }
+      _vizDamaged++;
+      for (var _vbi = 0; _vbi < breaches.length; _vbi++) {
+        var _vk = breaches[_vbi].kind;
+        _vizKinds[_vk] = (_vizKinds[_vk] || 0) + 1;
+      }
     }
     mutated = true;
+  }
+  // Surface today's weather damage as a single toast. Stamp into a
+  // localStorage key so the same toast doesn't replay if the tick re-runs
+  // within the same calendar day (rare — TTL throttle usually catches it
+  // first, but the toast key is the user-facing dedup).
+  if (_vizDamaged > 0) {
+    try {
+      var _todayK = new Date().toISOString().slice(0, 10);
+      var _lastToast = localStorage.getItem('lw_climate_toast_day') || '';
+      if (_lastToast !== _todayK) {
+        localStorage.setItem('lw_climate_toast_day', _todayK);
+        var _kindIcons = {heat:'🔥',cold:'❄️',flood:'🌊',wind:'💨',drought:'🌵'};
+        var _topKind = '', _topN = 0;
+        for (var _kk in _vizKinds) {
+          if (_vizKinds[_kk] > _topN) { _topN = _vizKinds[_kk]; _topKind = _kk; }
+        }
+        var _icon = _kindIcons[_topKind] || '🌡️';
+        var _msg = _icon + ' Today\'s weather stressed ' + _vizDamaged + ' wild plant' + (_vizDamaged === 1 ? '' : 's') + ' (mostly ' + _topKind + ').';
+        if (window._toast) window._toast(_msg);
+      }
+    } catch (e) {}
   }
   if (mutated) {
     _saveWild(wild);
@@ -46127,6 +46161,29 @@ function showTP(p,mk){
     } else {
       _climEl.style.display = 'none';
     }
+  }
+
+  // Always-on tolerance readout \u2014 shows this plant's per-trait climate
+  // profile (heat/cold/flood/wind/drought thresholds). Visible even on
+  // healthy plants so the player understands the system is real and each
+  // plant is unique. Pulled from hashToTraits.
+  var _tolEl = document.getElementById('wtp-tolerances');
+  if (_tolEl) {
+    try {
+      var _tt = window.hashToTraits ? window.hashToTraits(p.hash) : null;
+      if (_tt && typeof _tt.heatMax === 'number') {
+        var _wmph = typeof _tt.windMax === 'number' ? Math.round(_tt.windMax) : '?';
+        _tolEl.innerHTML =
+          '\ud83d\udd25 ' + Math.round(_tt.heatMax) + '\u00b0C \u00b7 ' +
+          '\u2744\ufe0f ' + Math.round(_tt.coldMin) + '\u00b0C \u00b7 ' +
+          '\ud83d\udca6 ' + Math.round(_tt.floodMm) + 'mm \u00b7 ' +
+          '\ud83d\udca8 ' + _wmph + 'mph \u00b7 ' +
+          '\ud83c\udfdc\ufe0f ' + _tt.droughtDays + 'd';
+        _tolEl.style.display = 'block';
+      } else {
+        _tolEl.style.display = 'none';
+      }
+    } catch (_te) { _tolEl.style.display = 'none'; }
   }
 
   // Wire INSPECT buttons (both own and other)
