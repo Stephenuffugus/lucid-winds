@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.27';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.28';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -10002,10 +10002,15 @@ document.addEventListener('keydown', function(e) {
   }
   // Expose so outside callers (bloom, remove, UI) can trigger re-checks.
   window._lwUpdateCuttingPressure = _updateCuttingPressure;
-  // Periodic tick so wilt fires even if no UI action touches the nursery.
-  // Only starts once; idempotent on reload.
-  if (typeof window !== 'undefined' && !window._lwCuttingTicker) {
-    window._lwCuttingTicker = setInterval(_updateCuttingPressure, 60000);
+  // Tier 2 perf: dropped the 60s interval. Wilt is a 6h timer — checking
+  // every minute is wasteful. Triggers now: addSeed/bloom/remove (existing),
+  // and visibilitychange when becoming visible (catches the "app left
+  // foreground for hours" case the interval was guarding).
+  if (typeof window !== 'undefined' && !window._lwCuttingVisWired) {
+    window._lwCuttingVisWired = true;
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden) try { _updateCuttingPressure(); } catch(e){}
+    });
   }
 
   function waterSeed(id){
