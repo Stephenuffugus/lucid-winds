@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.47';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.48';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68218,7 +68218,52 @@ var TRIGGERS=[
     effect:'You walked where rare things still grow. The seed bank remembers.',reward:{pollen:30}},
   {id:'full_house',name:'Full House',riddle:'Every slot filled. Every plant unique.',category:'action',
     check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');return gh.length>=10;}catch(e){return false;}},
-    effect:'Ten slots, ten lives. Every one shaped by your singular attention.',reward:{pollen:15}}
+    effect:'Ten slots, ten lives. Every one shaped by your singular attention.',reward:{pollen:15}},
+
+  // ── MUTATION DISCOVERIES (one per of the 13 mutations) ──
+  // Per Stephen 2026-04-26 BoS expansion: "we want people growing the stuff
+  // to get the traits." Each mutation, when first encountered or grown,
+  // earns a discovery moment and pollen. Hooks via the existing GROWN
+  // tracker (mintPlant) AND the wild-scan checkTriggers path.
+  {id:'mut_fossil',name:'Fossil Hands',riddle:'Stone keeps the shape long after the green is gone.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Fossil';},
+    effect:'What time forgot, you remember.',reward:{pollen:8}},
+  {id:'mut_albino',name:'The White Form',riddle:'Some things grow without color and lose nothing.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Albino';},
+    effect:'Color drained, but the form stayed perfect.',reward:{pollen:8}},
+  {id:'mut_silhouette',name:'Shadow Cast',riddle:'The body remembers how to stand even without the light.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Silhouette';},
+    effect:'The plant became its own shadow.',reward:{pollen:10}},
+  {id:'mut_pixel',name:'Pixel Bloom',riddle:'Look closely enough and the curves become squares.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Pixel Art';},
+    effect:'The world pixelates around it. Geometry won.',reward:{pollen:10}},
+  {id:'mut_biolum',name:'Inner Light',riddle:'The dark does not always win the argument.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Bioluminescent';},
+    effect:'Something inside it generates its own evening.',reward:{pollen:12}},
+  {id:'mut_porcelain',name:'Kiln-Fired',riddle:'Glaze hides the pulse but does not stop it.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Porcelain';},
+    effect:'Cold-fired and unbreakable, this leaf holds its glaze.',reward:{pollen:10}},
+  {id:'mut_golden',name:'Kintsugi Heart',riddle:'What broke once was repaired with gold.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Golden';},
+    effect:'Kintsugi runs through every vein. Even the breaks are precious.',reward:{pollen:15,ea:1}},
+  {id:'mut_ink',name:'Single Stroke',riddle:'A single stroke holds the whole.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Ink Wash';},
+    effect:'Centuries of brushwork condensed into a single living stem.',reward:{pollen:12}},
+  {id:'mut_neon',name:'Live Wire',riddle:'Light without warmth, awake without sun.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Neon';},
+    effect:'An electric pulse you can almost hear.',reward:{pollen:12}},
+  {id:'mut_holo',name:'Spectrum Fold',riddle:'Refraction is a kind of honesty.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Holographic';},
+    effect:'The plant scatters light into seven colors at once.',reward:{pollen:18,ea:1}},
+  {id:'mut_wire',name:'Bare Geometry',riddle:'What is a leaf without its skin?',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Wireframe';},
+    effect:'Reality rendered as line art. Substance optional.',reward:{pollen:14}},
+  {id:'mut_glass',name:'Brittle Star',riddle:'Brittle is not the same as weak.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Glass Stem';},
+    effect:'Translucent and impossibly fragile. It survived anyway.',reward:{pollen:14}},
+  {id:'mut_glitch',name:'The Glitch Bloom',riddle:'Beauty in the broken pixel.',category:'trait',
+    check:function(c){return c.plant&&c.plant.mutationName==='Glitch';},
+    effect:'The hash hiccupped. The plant agreed.',reward:{pollen:20,ea:1}}
 ];
 
 // ── MOON PHASE CALCULATOR (client-side) ──
