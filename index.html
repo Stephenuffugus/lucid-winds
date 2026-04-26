@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.13';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6798,7 +6798,7 @@ window._addSwitchTabHook = function(fn){
       <button class="dev-btn" onclick="PW_Dev.classLevel(3)">⬆ FORCE L3 (MASTER)</button>
       <button class="dev-btn" onclick="PW_Dev.toolLevel('shears',3)">✂️ SHEARS L3</button>
       <button class="dev-btn" onclick="PW_Dev.toolLevel('can',3)">💧 CAN L3 (RAIN)</button>
-      <button class="dev-btn" onclick="PW_Dev.toolLevel('pouch',3)">🎒 POUCH L3 (7 SLOTS)</button>
+      <button class="dev-btn" onclick="PW_Dev.toolLevel('pouch',3)">🎒 POUCH L3 (18 SLOTS)</button>
       <button class="dev-btn" onclick="PW_Dev.toolLevel('compass',3)">🧭 COMPASS L3</button>
       <button class="dev-btn" onclick="PW_Dev.accelCompanion()" style="border-color:rgba(200,168,75,0.5);color:var(--gold);">🐾 COMPANION L3 + MEMENTO</button>
       <button class="dev-btn" onclick="PW_Dev.accelHerbarium()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 RESET HERBARIUM CLAIMS</button>
@@ -34430,7 +34430,7 @@ document.addEventListener('keydown', function(e) {
       case 'wild_cutting_taken':
         icon = '\u2702\ufe0f'; color = '#c88a4a';
         var cutName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'a wild plant');
-        body = 'You took a cutting from <b>' + cutName + '</b>' + (d.ownerName ? ' (' + d.ownerName + ')' : '') + '. A clone seed is in the nursery; the parent weakened.';
+        body = 'You took a cutting from <b>' + cutName + '</b>' + (d.ownerName ? ' (' + d.ownerName + ')' : '') + '. A clone seed is in the nursery.';
         break;
       case 'wild_tended_stranger':
         icon = '\ud83c\udf3f'; color = 'var(--sage)';
@@ -41461,10 +41461,12 @@ window.FG_Wild=(function(){
 function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-var MAX_DROPS=3,MAX_POUCH=3,COLLECT_RANGE=75,ZONE_SIZE=0.001;
-// Prestige bonus: P6+ grants +1 wild drop per day
+var MAX_DROPS=3,MAX_POUCH=8,COLLECT_RANGE=75,ZONE_SIZE=0.001;
+// L23 grants +1 wild drop per day (LEVEL_UNLOCKS[23] promised this; was never wired).
+// Prestige bonus: P6+ grants an additional +1 wild drop per day.
 function _getMaxDrops(){
   var base=MAX_DROPS;
+  try{if(window._lwLevel&&window._lwLevel()>=23)base+=1;}catch(e){}
   try{var p=parseInt(localStorage.getItem('pw_prestige')||'0',10)||0;if(p>=6)base+=1;}catch(e){}
   return base;
 }
@@ -41650,10 +41652,10 @@ function _afRecordDrop(){
 }
 var _map=null,_uM=null,_uLat=null,_uLng=null,_trail=[],_tLine=null,_tGlow=null,_inited=false;
 var _drops=0,_pouch=[],_sel=null,_selMk=null,_menuOpen=false,_tt=null;
-// Dynamic pouch cap — reads the Pouch tool level so L2 → 5, L3 → 7
-// (×1.5 in matching biome via _LW_toolMod). Fallback to MAX_POUCH if
-// the tool system isn't loaded yet. Was hardcoded 3 — upgrade UI said
-// you had more slots, but the check blocked you at 3 regardless.
+// Dynamic pouch cap — reads the Pouch tool level so L2 → 12, L3 → 18
+// (×1.5 in matching biome via _LW_toolMod). Fallback to MAX_POUCH (8) if
+// the tool system isn't loaded yet. 2026-04-26 balance pass bumped base
+// from 3 → 8 (3 punished any productive walk session).
 function _getMaxPouch(){
   try{if(window._LW_toolMod){var n=_LW_toolMod('pouch');if(n&&n>=MAX_POUCH)return n;}}catch(e){}
   return MAX_POUCH;
@@ -49276,30 +49278,50 @@ window._hexAction=function(action){
       setTimeout(function(){FG_Wild._openHexInspector(_hexInspZone);},200);
     }
   }else if(action==='cutting'){
-    // Wild v3 Phase 2 — destructive stranger interaction.
-    // Creates a clone seed in the nursery, wounds parent by 10% remaining lifespan.
-    // Once per player per plant, ever.
-    if(!window.canSee||!window.canSee.wildCutting||!window.canSee.wildCutting()){_toast('Cuttings unlock at Keeper Level 15.');return;}
+    // Wild v3 Phase 3 — non-destructive stranger interaction (2026-04-26).
+    // Damage to parent removed; gang/locust risk (10 alts × 10% = dead plant)
+    // outweighed design value. Anti-spam now lives in three guards:
+    //   1) once per player per plant ever (lw_cuttings_taken)
+    //   2) 2 cuttings per player per day (lw_cuttings_daily)
+    //   3) 20 Dew cost (skin in the game)
+    if(!window.canSee||!window.canSee.wildCutting||!window.canSee.wildCutting()){
+      var _curLvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
+      _toast('Cuttings unlock at Keeper Level 5. You are L'+_curLvl+'.');
+      return;
+    }
     if(_uLat&&p.lat){var _cutDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_cutDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_cutDist)+'m away.');return;}}
-    if(p.own){_toast('Cuttings from your own plants don\u2019t wound. Just breed them normally.');return;}
+    if(p.own){_toast('That\u2019s your own plant. Just breed it in the greenhouse.');return;}
     var _cutKey='lw_cuttings_taken',_cutLog={};try{_cutLog=JSON.parse(localStorage.getItem(_cutKey)||'{}');}catch(e){}
     if(_cutLog[p.hash]){_toast('You\u2019ve already taken a cutting from this plant. Each is a lifetime one-shot.');return;}
+    // Daily per-player cap: 2 cuttings/day (anti-locust). Resets at local midnight.
+    var _cutDayKey='lw_cuttings_daily',_cutDay={};try{_cutDay=JSON.parse(localStorage.getItem(_cutDayKey)||'{}');}catch(e){}
+    var _cutToday=new Date().toISOString().split('T')[0];
+    if(_cutDay.day!==_cutToday){_cutDay={day:_cutToday,count:0};}
+    var CUTTINGS_PER_DAY=2;
+    if((_cutDay.count||0)>=CUTTINGS_PER_DAY){_toast('Daily cuttings used ('+CUTTINGS_PER_DAY+'/'+CUTTINGS_PER_DAY+'). Resets at midnight.');return;}
+    // Dew cost (skin in the game; nominal price, refunded on failure).
+    var CUTTING_DEW_COST=20;
+    var _cutDewBal=(typeof window.getTotalDew==='function')?window.getTotalDew():0;
+    if(_cutDewBal<CUTTING_DEW_COST){_toast('Need '+CUTTING_DEW_COST+' Dew. You have '+_cutDewBal+'. Tend wild plants to earn Dew.');return;}
     var _nurMax=(window.FG_Data&&window.FG_Data.getNurSlots)?window.FG_Data.getNurSlots():3;
     var _nurNow=(window.FG_Data&&window.FG_Data.getNursery)?window.FG_Data.getNursery().length:0;
     if(_nurNow>=_nurMax){_toast('Nursery full ('+_nurNow+'/'+_nurMax+'). Bloom or abandon a seed first.');return;}
     window._lwConfirm&&window._lwConfirm({
       title:'TAKE A CUTTING',
-      body:'You\u2019ll gain a clone seed (Gen 2, \u22122 EA from the wound). The parent plant loses <b>10%</b> of its remaining lifespan. This cannot be undone. Tend other plants instead to be kind.',
-      yes:'TAKE CUTTING',
+      body:'You\u2019ll gain a clone seed (Gen 2) carrying this plant\u2019s genetics. Costs <b>20 Dew</b>. The parent is unharmed.',
+      yes:'TAKE CUTTING (20 DEW)',
       no:'LEAVE IT ALONE',
-      danger:true
+      danger:false
     },function(){
-      // Atomicity fix: try addSeed FIRST. Only wound the parent + log
-      // the cutting if the seed actually landed in the nursery. The old
-      // order wounded the parent then checked, so a full nursery left
-      // the parent permanently scarred with no seed to show for it.
+      // Atomicity: re-check Dew at confirm time, spend, then add seed.
+      // Refund Dew if seed fails to land (Phase 3: nothing to refund on parent).
       if(!window.FG_Data||!window.FG_Data.addSeed){
         _toast('Nursery engine not available. Try again.');return;
+      }
+      var _cutDewBal2=(typeof window.getTotalDew==='function')?window.getTotalDew():0;
+      if(_cutDewBal2<CUTTING_DEW_COST){_toast('Not enough Dew. Need '+CUTTING_DEW_COST+', have '+_cutDewBal2+'.');return;}
+      if(typeof window.spendDew!=='function'||!window.spendDew(CUTTING_DEW_COST)){
+        _toast('Dew spend failed. Try again.');return;
       }
       // A clipping carries only the plant's genetics (leaf, stem, flower,
       // season). Pot, substrate, aura, and companion are the parent's
@@ -49316,22 +49338,20 @@ window._hexAction=function(action){
         origin:'cutting'
       });
       if(!_addResult||!_addResult.ok){
-        _toast('Cutting failed to land in nursery. Parent plant was spared.');
+        // Refund Dew so the player isn't double-punished
+        if(typeof window.earnDew==='function')window.earnDew(CUTTING_DEW_COST,'wild_cutting_refund');
+        _toast('Cutting failed to land in nursery. Dew refunded.');
         return;
       }
-      // Seed landed. Now apply the wound + log.
-      try{
-        if(_sharedMarkers&&_sharedMarkers[p.hash]&&_sharedMarkers[p.hash].data){
-          var _cSmd=_sharedMarkers[p.hash].data;
-          _ensureVitality(_cSmd);
-          var _rem=Math.max(0,(_cSmd.decayAt||Date.now())-Date.now());
-          var _wound=Math.round(_rem*0.10);
-          _cSmd.decayAt=(_cSmd.decayAt||Date.now())-_wound;
-          _cSmd.cuttingWounds=(_cSmd.cuttingWounds||0)+1;
-        }
-      }catch(e){}
+      // Seed landed. Log + increment daily counter. Parent untouched
+      // (Wild v3 Phase 3 2026-04-26 — wound removed; gang/locust risk
+      // outweighed design value. Anti-spam now: lifetime per-plant +
+      // 2/day per-player + Dew cost above).
       _cutLog[p.hash]=Date.now();
       try{localStorage.setItem(_cutKey,JSON.stringify(_cutLog));}catch(e){}
+      // Increment the daily counter (cap was checked above)
+      _cutDay.count=(_cutDay.count||0)+1;
+      try{localStorage.setItem(_cutDayKey,JSON.stringify(_cutDay));}catch(e){}
       if(window.PW_grantXP)PW_grantXP(15,'wild_cutting');
       if(window.LW_Log)window.LW_Log.write('wild_cutting_taken',{
         hash:p.hash,
@@ -49349,8 +49369,9 @@ window._hexAction=function(action){
       } catch(e){}
       if(window.renderNursery)renderNursery();
       if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,500);
-      _toast('\u2702\ufe0f Clone seed added to the nursery. The parent weakened.');
-      if(window._haptic)_haptic('error');
+      var _cutLeft=Math.max(0,CUTTINGS_PER_DAY-_cutDay.count);
+      _toast('\u2702\ufe0f Clone seed added \u00b7 \u221220 Dew \u00b7 '+_cutLeft+' cuttings left today');
+      if(window._haptic)_haptic('match');
     });
   }else if(action==='inspect'){
     if(window._openPlantDetails){window._closeHexInspector();window._openPlantDetails(p.hash);}
@@ -61394,7 +61415,7 @@ var BP=(function(){
 var _o=false,_ss=null,_sp=null,_ht=null;
 var SL=[{id:1},{id:2,h:'Harvest 1st plant',k:'slot2'},{id:3,h:'100 pollen',k:'slot3'},{id:4,h:'10 games',k:'slot4'},{id:5,h:'Drop 5 in Wild',k:'slot5'},{id:6,h:'Daily slot',k:'slot6',dy:true}];
 var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:20,k:'seed20'}];
-function xp(){var c=3;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return Math.min(c,12);} // cap at 12 — prevents grid overflow when pouch L3 + biome + all unlocks stack
+function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return Math.min(c,25);} // cap at 25 — matches item pouch cap (single mental model). Was 12 when base pouch was 3; balance pass 2026-04-26 bumped base to 8.
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','🎒 +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
@@ -69681,7 +69702,7 @@ window._lwShowMutationDetail = function(mutName) {
 var LW_TOOL_LORE = {
   shears:  'A clean cut is quiet respect. The shears let you take cuttings from stranger plants in the wild, genetic samples without harm to the original. Cooldown reduces as you level the tool. At L3 the shears find their rhythm.',
   can:     'Water is the oldest commitment. The can begins with one plant at a time; by L3 it waters six and calls a gentle rain. Tenders will tell you this is the tool that teaches you the garden\u2019s routine better than any other.',
-  pouch:   'The Field Pouch carries what you find in the wild. Three slots to start; five by L2; seven by L3. The deeper the pouch, the longer the walk you can take, the farther from home you can go and still bring something back.',
+  pouch:   'The Field Pouch carries what you find in the wild. Eight slots to start; twelve by L2; eighteen by L3. The deeper the pouch, the longer the walk you can take, the farther from home you can go and still bring something back.',
   compass: 'The compass points differently depending on how much you\u2019ve leveled it. At L1 it reads wind. At L2 it names the biome under your feet. At L3 it predicts where the next feral seed will sprout, a kind of botanical weather forecast.'
 };
 window._lwShowToolDetail = function(toolId) {
@@ -77445,7 +77466,7 @@ var LW_CLASSES={
 var LW_TOOLS={
   shears:{name:'Shears',icon:'✂️',desc:'Clipping cooldown reducer',levels:{1:'6h cooldown',2:'4h cooldown',3:'2h cooldown'}},
   can:{name:'Watering Can',icon:'💧',desc:'Batch watering',levels:{1:'Single tap-water',2:'Mass water 3',3:'Mass water 6 + rain'}},
-  pouch:{name:'Field Pouch',icon:'🎒',desc:'Backpack capacity',levels:{1:'3 slots',2:'5 slots',3:'7 slots'}},
+  pouch:{name:'Field Pouch',icon:'🎒',desc:'Backpack capacity',levels:{1:'8 slots',2:'12 slots',3:'18 slots'}},
   compass:{name:'Compass',icon:'🧭',desc:'Wayfinding',levels:{1:'Wind direction',2:'Tap reveals biome',3:'Predicts next feral'}}
 };
 // XP thresholds per class level (cumulative)
@@ -77759,7 +77780,10 @@ window._LW_toolMod=function(tool){
   // multiplicative (×1.5) to match Shears so the "biome boost = 1.5×
   // tool effect" promise is uniform across tools.
   if(tool==='pouch'){
-    var slots=lvl>=3?7:lvl>=2?5:3;
+    // Bumped 3/5/7 → 8/12/18 (2026-04-26 balance pass).
+    // 3-slot start punished any productive walk; 8 fits a normal session.
+    // L3 + biome match (×1.5) ≈ 27, capped by BP grid (see xp() in BP module).
+    var slots=lvl>=3?18:lvl>=2?12:8;
     if(biomeBoost>1)slots=Math.round(slots*biomeBoost);
     return slots;
   }
@@ -78900,7 +78924,7 @@ window.canSee = {
   nurseryShopBoosters: function(){return _lwLevel()>=10;},
   fruitHarvest: function(){return _lwLevel()>=10;},
   nurseryMergeBreed: function(){return _lwLevel()>=12;},
-  wildCutting: function(){return _lwLevel()>=15;},
+  wildCutting: function(){return _lwLevel()>=5;}, // was L15 — too punishing; cuttings are core gameplay (2026-04-26)
   bookOfSecretsPages: function(){return _lwLevel()>=19;},
   fourthWildDrop: function(){return _lwLevel()>=23;},
   masterKeeper: function(){return _lwLevel()>=25;},
