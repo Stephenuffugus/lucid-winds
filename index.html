@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.55';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.56';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68567,6 +68567,101 @@ var _FLOWER_TRIGS = [
         reward: rewards[tier] || rewards.common
       });
     })(fl.idx, fl.n, fl.r, fl.e, fl.t);
+  }
+})();
+
+// ── LEAF DISCOVERIES — one per of 71 leaf types ──
+var _LEAF_TRIGS = [
+  {idx:0,  n:'First Oak',          r:'Acorns and patience.',                            e:'An oak leaf opened. Centuries begin like this.',                      t:'common'},
+  {idx:1,  n:'Willow Drop',        r:'Drooping by design.',                             e:'A willow leaf opened. The riverbank approves.',                       t:'common'},
+  {idx:2,  n:'Begonia Rex',        r:'Royalty in foliage form.',                        e:'A Begonia Rex unfurled. The shade has its diva.',                     t:'common'},
+  {idx:3,  n:'Sweetheart Hoya',    r:'Heart-shaped, low maintenance.',                  e:'A hoya leaf opened. Compact love.',                                   t:'common'},
+  {idx:4,  n:'Alocasia Polly',     r:'Arrowheads with white veins.',                    e:'An Alocasia leaf unfurled. The stripes glow against dark.',           t:'common'},
+  {idx:5,  n:'Monstera Hole',      r:'Splits and holes by design.',                     e:'A Monstera leaf opened. Swiss cheese plant achieves architecture.',   t:'common'},
+  {idx:6,  n:'First Fern',         r:'Older than dinosaurs.',                           e:'A fern unfurled. Three hundred million years of practice.',           t:'common'},
+  {idx:7,  n:'Maple Crown',        r:'What turns red in October.',                      e:'A sugar maple leaf opened. Vermont sent regards.',                    t:'common'},
+  {idx:8,  n:'Hosta Bed',          r:'The shade gardener\'s friend.',                   e:'A hosta leaf opened. Slugs take note.',                               t:'common'},
+  {idx:9,  n:'Pine Needle',        r:'A leaf in evergreen disguise.',                   e:'A pine needle emerged. Conifer minimalism.',                          t:'common'},
+  {idx:10, n:'Variegata',          r:'Splashed with cream.',                            e:'A variegated Monstera opened. The price tag would alarm a banker.',   t:'rare'},
+  {idx:11, n:'Maidenhair',         r:'Fragile and elegant.',                            e:'A maidenhair fern unfurled. Black stems, lace fingers.',              t:'rare'},
+  {idx:12, n:'Rosette',            r:'Geometry that holds water.',                      e:'A succulent rosette opened. Drought-proof beauty.',                   t:'common'},
+  {idx:13, n:'Coral Branch',       r:'A leaf imitating an undersea cousin.',            e:'A coral leaf branched. The reef envies the dry land.',                t:'common'},
+  {idx:14, n:'Pad Born',           r:'A leaf the size of a hand.',                      e:'A cactus pad opened. The desert keeps adding chapters.',              t:'common'},
+  {idx:15, n:'Holly Edge',         r:'Glossy and prickled.',                            e:'A holly leaf opened. Christmas already filed paperwork.',             t:'common'},
+  {idx:16, n:'Bramble Crown',      r:'Five leaflets, sharp on every side.',             e:'A bramble cluster opened. Berries are coming.',                       t:'common'},
+  {idx:17, n:'Filange',            r:'Like a feather, like a fan.',                     e:'A filange unfurled. Cinematic, almost.',                              t:'common'},
+  {idx:18, n:'Lady Fern',          r:'Frond after frond.',                              e:'A lady fern unfurled. Forest floor is now official.',                 t:'common'},
+  {idx:19, n:'Fiddle-Leaf Fig',    r:'Instagram\'s favorite.',                          e:'A fiddle-leaf opened. The corner of every coffee shop is jealous.',   t:'common'},
+  {idx:20, n:'Ginkgo Fan',         r:'A living fossil.',                                e:'A ginkgo leaf opened. Two hundred million years of survival.',        t:'common'},
+  {idx:21, n:'Pine Fascicle',      r:'Three needles bound at the base.',                e:'A pine fascicle opened. Bundle of patience.',                         t:'common'},
+  {idx:22, n:'Elephant Ear',       r:'Big as your face.',                               e:'An elephant ear opened. Garden suddenly tropical.',                   t:'common'},
+  {idx:23, n:'Sword Fern',         r:'Long, narrow, and not subtle.',                   e:'A sword fern unfurled. The Pacific Northwest sent regards.',          t:'common'},
+  {idx:24, n:'White Clover',       r:'Three leaves. Sometimes four.',                   e:'A clover leaf opened. Bees find it; you might find luck.',            t:'common'},
+  {idx:25, n:'Banana Sail',        r:'Wide enough to use as paper.',                    e:'A banana leaf opened. The rain has somewhere to go.',                 t:'common'},
+  {idx:26, n:'Silver Dollar',      r:'Coins on a stem.',                                e:'A silver dollar leaf opened. Fortune appraised.',                     t:'common'},
+  {idx:27, n:'Arrowhead Vine',     r:'Pointed for a reason.',                           e:'An arrowhead vine opened. Direction implied.',                        t:'common'},
+  {idx:28, n:'Lacecap',            r:'Disc of sterile florets around fertile center.',  e:'A lacecap hydrangea leaf opened. Old-world cottage style.',           t:'common'},
+  {idx:29, n:'Resurrection',       r:'Dies, dries, returns.',                           e:'A resurrection plant unfurled. Patience scientifically validated.',   t:'common'},
+  {idx:30, n:'Feather Frond',      r:'Soft as down.',                                   e:'A feather frond opened. The light passes through gently.',            t:'common'},
+  {idx:31, n:'Drip Tip',           r:'Engineered for monsoon.',                         e:'A drip-tip opened. Rain has somewhere to slide.',                     t:'common'},
+  {idx:32, n:'Spider Plant',       r:'Babies hang from stalks.',                        e:'A spider plant leaf opened. The dorm room is officially decorated.',  t:'common'},
+  {idx:33, n:'Snap Leaf',          r:'Lance-shaped, smooth-edged.',                     e:'A snapdragon leaf opened. Quiet support for loud blooms.',            t:'common'},
+  {idx:34, n:'Moth Wing',          r:'Translucent and patterned.',                      e:'A moth-wing leaf opened. Light reads through it.',                    t:'rare'},
+  {idx:35, n:'Prism Shard',        r:'A leaf that scatters light.',                     e:'A prism shard unfurled. The garden holds a tiny rainbow.',            t:'common'},
+  {idx:36, n:'Batwing',            r:'Pointed, dark, dramatic.',                        e:'A batwing leaf opened. The corner of the garden gained a goth.',      t:'common'},
+  {idx:37, n:'Thorn Crescent',     r:'Curved blade with serrated promise.',             e:'A thorn crescent opened. Don\'t reach for it casually.',              t:'common'},
+  {idx:38, n:'Bell Petiole',       r:'A stem with character.',                          e:'A bell petiole opened. The connection point became the feature.',     t:'common'},
+  {idx:39, n:'Ghost Willow',       r:'Pale willow that drifts.',                        e:'A ghost willow opened. Translucent enough to hold moonlight.',        t:'common'},
+  {idx:40, n:'Crown Laurel',       r:'What victors wear.',                              e:'A laurel leaf opened. You earned this without fighting Greeks.',      t:'common'},
+  {idx:41, n:'Coilspring',         r:'A leaf that won\'t stay flat.',                   e:'A coilspring leaf opened. Then partly recoiled. Then opened again.',  t:'common'},
+  {idx:42, n:'Kraken Frond',       r:'Tentacles that reach.',                           e:'A kraken frond unfurled. Eight arms in green.',                       t:'common'},
+  {idx:43, n:'Lantern Pod',        r:'Hollow, papery, glowing.',                        e:'A lantern pod opened. The light came from inside.',                   t:'rare'},
+  {idx:44, n:'Coral Antler',       r:'Branched like a buck, colored like the reef.',    e:'A coral antler opened. Two ecosystems shook hands.',                  t:'rare'},
+  {idx:45, n:'Oracle Eye',         r:'A leaf that looks back.',                         e:'An oracle eye opened. You felt watched. Politely.',                   t:'rare'},
+  {idx:46, n:'Spiral Shell',       r:'A leaf in fibonacci form.',                       e:'A spiral shell opened. The math wrote itself.',                       t:'rare'},
+  {idx:47, n:'Dagger Ivy',         r:'Pointed and persistent.',                         e:'A dagger ivy opened. The wall now has texture.',                      t:'common'},
+  {idx:48, n:'Veil Fern',          r:'Translucent, almost weightless.',                 e:'A veil fern unfurled. The garden gained a curtain.',                  t:'common'},
+  {idx:49, n:'Jellyleaf',          r:'A leaf with the ocean in it.',                    e:'A jellyleaf opened. Translucent, slightly luminous, very strange.',   t:'rare'},
+  {idx:50, n:'Watcher Frond',      r:'A frond that follows.',                           e:'A watcher frond opened. Eyes in the canopy.',                         t:'common'},
+  {idx:51, n:'Stamen Burst',       r:'A leaf that mimics a flower\'s center.',          e:'A stamen burst opened. The leaf wore the flower\'s clothes.',         t:'common'},
+  {idx:52, n:'Mountain Ash',       r:'Compound leaves the deer don\'t touch.',          e:'A mountain ash leaf opened. The slope welcomes it.',                  t:'common'},
+  {idx:53, n:'Tendril Coil',       r:'A leaf grasping for purchase.',                   e:'A tendril coil unfurled. Then grasped. Architecture in motion.',      t:'common'},
+  {idx:54, n:'Lily Pad',           r:'Floats. Bears a frog if asked.',                  e:'A water lily pad opened. The pond is officially complete.',           t:'common'},
+  {idx:55, n:'Dragon Scale',       r:'Quilted like an armored back.',                   e:'A dragon scale frond opened. Reptilian in texture, plant in spirit.', t:'common'},
+  {idx:56, n:'Tall Fescue',        r:'A grass that means business.',                    e:'A tall fescue blade opened. The lawn that won\'t quit.',              t:'common'},
+  {idx:57, n:'Flytrap Leaf',       r:'Two halves with hairs that count.',               e:'A flytrap leaf opened. Three touches before it shuts.',               t:'common'},
+  {idx:58, n:'Bird\'s Nest Fern',  r:'A central rosette like a green bowl.',            e:'A bird\'s nest fern unfurled. The center holds water and intent.',    t:'common'},
+  {idx:59, n:'Lace Fern',          r:'Fronds so fine they read as lace.',               e:'A lace fern opened. Detail enough to lose an hour.',                  t:'common'},
+  {idx:60, n:'Crystal Shard Leaf', r:'A leaf made of facets.',                          e:'A crystal shard leaf opened. Light bent through it.',                 t:'rare'},
+  {idx:61, n:'Ember Leaf',         r:'A leaf shaped like fire.',                        e:'An ember leaf opened. The petal-tongues flickered without burning.',  t:'rare'},
+  {idx:62, n:'Phoenix Feather',    r:'A feather in plant form.',                        e:'A phoenix feather opened. The eye-spot watched you back.',            t:'rare'},
+  {idx:63, n:'Lunar Disc',         r:'A round leaf with crater shadow.',                e:'A lunar disc opened. The moon set down briefly.',                     t:'rare'},
+  {idx:64, n:'Spine Needle',       r:'Pine fascicle taken to the extreme.',             e:'A spine needle opened. Conifer with conviction.',                     t:'rare'},
+  {idx:65, n:'Ribbon Curl',        r:'A spiral of ribbon as a leaf.',                   e:'A ribbon curl opened. The leaf curled itself just to be seen.',       t:'rare'},
+  {idx:66, n:'Prism Blade',        r:'A leaf that fans light into colors.',             e:'A prism blade opened. Refraction made deliberate.',                   t:'rare'},
+  {idx:67, n:'Frost Plate',        r:'A leaf with ice in its veins.',                   e:'A frost plate opened. Crystalline veins traced themselves.',          t:'rare'},
+  {idx:68, n:'Void Petal Leaf',    r:'A leaf that holds a starfield.',                  e:'A void petal opened. Five stars and a black core. Physics stretched.',t:'rare'},
+  {idx:69, n:'Wishbone Leaf',      r:'Y-shaped like a fork made of luck.',              e:'A wishbone leaf opened. Make a wish. Pull a branch.',                 t:'rare'},
+  {idx:70, n:'Worldtree Heart',    r:'Lightning veins on a giant heart.',               e:'A Worldtree Heart opened. The cosmology approved.',                   t:'rare'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 4},
+    rare:   {pollen: 14, ea: 1}
+  };
+  for (var lti = 0; lti < _LEAF_TRIGS.length; lti++) {
+    var lf = _LEAF_TRIGS[lti];
+    (function(idx, name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'leaf_' + idx,
+        name: name,
+        riddle: riddle,
+        category: 'trait',
+        check: function(ctx) { return ctx.plant && (ctx.plant.leafType % 71) === idx; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(lf.idx, lf.n, lf.r, lf.e, lf.t);
   }
 })();
 
