@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.75';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.76';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38544,7 +38544,7 @@ document.addEventListener('keydown', function(e) {
       // players can't waste resources or try to exploit the source
       // plant. Stephen test: 'cant download, save, anything, not even
       // see the hex cuz we don't want people to fuck with the system.'
-      actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed()" style="background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.5);color:var(--sage);">\u2702\ufe0f USE TO BREED</button>';
+      actionBtns = '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)" style="background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.5);color:var(--sage);">\u2702\ufe0f USE TO BREED</button>';
     } else if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
     } else {
@@ -38642,9 +38642,54 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── Nursery breed shortcut — routes to full breed screen with genetic info ──
-  window._nurStartBreed = function() {
+  // If clippingSeedId is provided, locks that clipping as Parent A and lets
+  // the user pick any greenhouse plant as Parent B. The clipping is consumed
+  // from the nursery on bsExecuteBreed success (handled in that function via
+  // window._lwClippingParentSid).
+  window._nurStartBreed = function(clippingSeedId) {
     if (!window.FG_Data) {
       if (window._toast) window._toast('Game engine loading... try again in a moment.');
+      return;
+    }
+    // Clipping-as-parent path. Needs only 1 greenhouse partner (clipping
+    // is the locked side). The clipping itself doesn't count toward the
+    // nursery cap because it gets consumed in the cross — the bred seed
+    // takes its slot.
+    if (clippingSeedId) {
+      var _nurArr;
+      try { _nurArr = JSON.parse(localStorage.getItem('sws_nursery') || '[]'); } catch(e) { _nurArr = []; }
+      var _clip = null;
+      for (var _ci = 0; _ci < _nurArr.length; _ci++) {
+        if (_nurArr[_ci].id === clippingSeedId) { _clip = _nurArr[_ci]; break; }
+      }
+      if (!_clip) { if (window._toast) window._toast('Clipping not found. Try again.'); return; }
+      var _ghc = loadGreenhouse();
+      if (_ghc.length < 1) {
+        if (window._lwConfirm) {
+          window._lwConfirm({
+            title:'NEED A PARTNER',
+            body:'A clipping needs another plant to cross with. Play games to grow your first plant.',
+            yes:'PLAY GAMES', no:'LATER'
+          }, function(){ if (window.switchTab) switchTab('game'); }, function(){});
+        } else if (window._toast) {
+          window._toast('Need a greenhouse plant to cross with the clipping.');
+        }
+        return;
+      }
+      // Build a plant-like object the breed screen can render. seedHash on
+      // a clipping IS the (environment-stripped) plant hash; that's what the
+      // cross uses as parent A.
+      var _clipPlant = {
+        hash: _clip.seedHash,
+        name: 'Clipping',
+        chimerGen: 1,
+        _isClipping: true,
+        _clippingSid: clippingSeedId
+      };
+      window._lwClippingParentSid = clippingSeedId;
+      if (window.openBreedScreen) {
+        openBreedScreen(_clipPlant, 'nursery-clipping');
+      }
       return;
     }
     var nurLen = FG_Data.getNursery().length;
@@ -67166,6 +67211,22 @@ window.openBreedScreen=function(plantA,context){
     return;
   }
 
+  // Nursery-clipping: clipping seed is locked on side A, greenhouse plants
+  // are partners. The clipping is consumed in bsExecuteBreed.
+  if(_plantACtx==='nursery-clipping'){
+    if(_allEligible.length<1){
+      if(window._toast)window._toast('No plants ready to breed. Check cooldowns and maturity.');
+      return;
+    }
+    _plantA=plantA;
+    _partners=_allEligible;
+    _pIdx=0;
+    _aIdx=-1;
+    _renderBreedCards();
+    document.getElementById('breed-screen').classList.add('open');
+    return;
+  }
+
   if(_allEligible.length<2){
     // Give helpful message about WHY — use _lwConfirm so it's visible on any tab
     var immature=gh.filter(function(p){if(!FG_Data||!FG_Data.getBreedStatus)return false;var bs=FG_Data.getBreedStatus(p);return bs.reason==='IMMATURE';});
@@ -67280,6 +67341,12 @@ window.bsExecuteBreed=function(){
   if(!_plantA||!_partners[_pIdx])return;
   var mate=_partners[_pIdx];
 
+  // Capture clipping-breed flag BEFORE closeBreedScreen clears _plantA.
+  // Used inside the async addSeed branch to consume the clipping from
+  // the nursery on success.
+  var _clipSidToConsume = (_plantACtx==='nursery-clipping' && window._lwClippingParentSid)
+    ? window._lwClippingParentSid : null;
+
   // Use Wild IIFE _doCrossPollination only for own wild plants
   // wild-other (non-owned) uses greenhouse path since the plant isn't in user's collection
   if(_plantACtx==='wild'&&typeof _doCrossPollination==='function'){
@@ -67320,6 +67387,20 @@ window.bsExecuteBreed=function(){
           _genGh.forEach(function(p){if(p.hash===_bsA.hash)_genA=p.generation||1;if(p.hash===_bsM.hash)_genB=p.generation||1;});
         }catch(e){}
         var offGen=Math.max(_genA,_genB)+1;
+        // Clipping breed: remove the clipping from nursery FIRST so its
+        // slot is free for the bred offspring. Otherwise addSeed could
+        // bounce on a full nursery (e.g. 3 clippings filling all 3 slots).
+        if(_clipSidToConsume){
+          try{
+            var _nurC=JSON.parse(localStorage.getItem('sws_nursery')||'[]');
+            var _nurC2=_nurC.filter(function(s){return s.id!==_clipSidToConsume;});
+            if(_nurC2.length!==_nurC.length){
+              localStorage.setItem('sws_nursery',JSON.stringify(_nurC2));
+              if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,400);
+            }
+          }catch(e){}
+          window._lwClippingParentSid=null;
+        }
         // Bred seed direct to nursery (Stephen 2026-04-26 round 5).
         if(window.FG_Data&&window.FG_Data.addSeed){
           var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
