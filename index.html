@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.29';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.30';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34680,7 +34680,7 @@ document.addEventListener('keydown', function(e) {
     }
   }
   window._updateRootReportBadge = _updateRootReportBadge;
-  setInterval(_updateRootReportBadge, 30000);
+  setInterval(function(){if(!document.hidden)_updateRootReportBadge();}, 30000);
   setTimeout(_updateRootReportBadge, 500);
 
   // ═══ HASH LEDGER — tracks earned and spent ═══
@@ -58988,7 +58988,7 @@ function openCharacter(){
   document.getElementById('pw-character').classList.add('open');
   // Tick booster timers every 30s while open
   if(_csEffectTimer)clearInterval(_csEffectTimer);
-  _csEffectTimer=setInterval(function(){if(_csOpen)_renderEffectsSection();else{clearInterval(_csEffectTimer);_csEffectTimer=null;}},30000);
+  _csEffectTimer=setInterval(function(){if(document.hidden)return;if(_csOpen)_renderEffectsSection();else{clearInterval(_csEffectTimer);_csEffectTimer=null;}},30000);
 }
 function closeCharacter(){
   _csOpen=false;
@@ -78981,8 +78981,8 @@ window.addEventListener('lw-plant-minted',function(){setTimeout(_updateNextStep,
 // Initial update after load
 setTimeout(function(){
   _updateNextStep();
-  // Re-check every 30 seconds for nursery watering
-  setInterval(_updateNextStep,30000);
+  // Re-check every 30 seconds for nursery watering (skip when backgrounded)
+  setInterval(function(){if(!document.hidden)_updateNextStep();},30000);
 },2000);
 
 window._updateNextStep=_updateNextStep;
@@ -79987,7 +79987,7 @@ window.LW_Comp = (function(){
     } catch(e){}
   };
   setTimeout(window._lwCheckL7ClassPulse, 4000);
-  setInterval(window._lwCheckL7ClassPulse, 30000);
+  setInterval(function(){if(!document.hidden)window._lwCheckL7ClassPulse();}, 30000);
 
   // Trigger: first game tab visit with no sunbeam progress and no plants →
   // pulse the WHAT NOW button so they know help is there.
