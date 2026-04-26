@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.90';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.91';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9737,6 +9737,15 @@ document.addEventListener('keydown', function(e) {
     if (traits.mutationName === 'Wireframe') h += 1;
     if (traits.mutationName === 'Glass Stem') h += 1;
     if (traits.mutationName === 'Glitch') h += 1.5;
+    // Six new ultra-rare mutations from the Apr 26 rebalance — each
+    // 0.4% appearance, designed to read as legendary. +1.5 brings them
+    // in line with Glitch tier durability.
+    if (traits.mutationName === 'Constellation') h += 1.5;
+    if (traits.mutationName === 'Origami') h += 1.5;
+    if (traits.mutationName === 'Stained Glass') h += 1.5;
+    if (traits.mutationName === 'Verdigris') h += 1.5;
+    if (traits.mutationName === 'Mycelium') h += 1.5;
+    if (traits.mutationName === 'Daguerreotype') h += 1.5;
     if (traits.companion >= 32 && traits.companion <= 33) h += 1;
     if (traits.companion >= 34 && traits.companion <= 36) h += 1.5;
     if (traits.companion >= 37) h += 2;
@@ -60743,6 +60752,52 @@ window._lwCheckMementos = function() {
         collected.push(entry);
         newMementos.push(entry);
       }
+    }
+    // ─── Event-keyed mementos (idx 82-96) ───
+    // The 30-day rule above only handles companion-keyed mementos. Indices
+    // 82-96 fire on lifecycle events (first-equip, rank-up, solstice, etc).
+    // Wired here for the four triggers that have existing data sources;
+    // remaining TODO_ entries stay dormant until their hooks ship.
+    var equipKeys = []; for (var _eki in equipLog) equipKeys.push(parseInt(_eki, 10));
+    var hasEverEquipped = equipKeys.length > 0;
+    var firstEquipMs = hasEverEquipped ? Math.min.apply(null, equipKeys.map(function(k){return equipLog[k];})) : 0;
+    var currentEquipped = null;
+    try {
+      var _ce = JSON.parse(localStorage.getItem('pw_active_companion') || '{}');
+      if (_ce && typeof _ce.idx === 'number') currentEquipped = _ce.idx;
+    } catch(_e) {}
+    function _awardEvent(idx, source) {
+      if (ownedIdx[idx]) return;
+      var em = LW_MEMENTOS[idx]; if (!em) return;
+      var entry = { idx: idx, name: em.name, text: em.text, awardedAt: now, source: source || 'event' };
+      collected.push(entry);
+      newMementos.push(entry);
+      ownedIdx[idx] = true;
+    }
+    // 82 — Keeper's First Mark: fires the moment any companion has been
+    // equipped at least once. Instant gratification on first equip.
+    if (hasEverEquipped) _awardEvent(82, 'first_equip');
+    // 84 — Rank Crown: any companion in equip log has reached level 5+.
+    if (window.LW_COMPANION && typeof window.LW_COMPANION.getLevel === 'function') {
+      for (var _rki = 0; _rki < equipKeys.length; _rki++) {
+        try {
+          if (window.LW_COMPANION.getLevel(equipKeys[_rki]) >= 5) { _awardEvent(84, 'rank_5'); break; }
+        } catch(_re){}
+      }
+    }
+    // 88 — Solstice Token: companion currently equipped during a solstice
+    // or equinox month (Mar=2, Jun=5, Sep=8, Dec=11).
+    if (currentEquipped !== null) {
+      var _solMonth = new Date().getMonth();
+      if (_solMonth === 2 || _solMonth === 5 || _solMonth === 8 || _solMonth === 11) {
+        _awardEvent(88, 'solstice');
+      }
+    }
+    // 96 — Farewell Token: first equip was 90+ days ago and the player
+    // has unequipped (no companion currently active). The "they returned
+    // to the wild" beat.
+    if (hasEverEquipped && currentEquipped === null && (now - firstEquipMs) >= 90 * 86400000) {
+      _awardEvent(96, 'unequip_90');
     }
     if (newMementos.length) {
       localStorage.setItem('lw_companion_mementos', JSON.stringify(collected));
