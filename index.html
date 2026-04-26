@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.28';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.29';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -41951,7 +41951,12 @@ window._lwSunbeamRescue=function(hash){
   return {ok:true,cost:cost};
 };
 function _getWild(){try{var j=window._secureGet?window._secureGet('fg_wild_plants'):localStorage.getItem('fg_wild_plants');return JSON.parse(j||'[]');}catch(e){return[];}}
-function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}if(window._lwUpdateMyPlantsCount)try{window._lwUpdateMyPlantsCount();}catch(e){}}
+function _saveWild(a){if(window._secureSet){window._secureSet('fg_wild_plants',a);}else{localStorage.setItem('fg_wild_plants',JSON.stringify(a));}if(window._lwUpdateMyPlantsCount)try{window._lwUpdateMyPlantsCount();}catch(e){}_wildHourlyDirty=true;}
+// Tier 2 perf: cache the per-plant Dew rate aggregate. The 60s tick used to
+// re-iterate the entire wild array, sort, fade, and re-sum on every fire.
+// Recompute only when _saveWild flips this dirty bit (any add/remove/edit).
+var _wildHourlyDirty=true;
+var _wildHourlyCached=0;
 // Prune withered wild plants using rarity-scaled vitality. Dormant
 // plants (within 72h grace after vitality hits 0) are preserved so
 // the owner can revive via Sunbeam emergency rescue.
@@ -47736,51 +47741,53 @@ function _getWildGrade(hash){
   _wildGradeCache[hash]=grade;
   return grade;
 }
-setInterval(function(){var w=_getWild();if(w.length>0){
-  // ECON BALANCE: Dew rate is ~1/4 of nominal to keep the economy
-  // from running away. Rate table stays readable; divisor is 240
-  // (4h worth of minutes) so a Common earns 1 Dew every 4 hours,
-  // a Cosmic every 16 minutes. Previously: Common 1/hr, Cosmic 4/min.
-  // Diminishing-returns tail after 5 plants — additional plants
-  // contribute at half rate. Prevents whale armies from printing Dew.
-  var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
-  // Lineage fade: deep-generation plants earn less passive Dew.
-  // Keeps your ancient lineage spiritually meaningful without letting
-  // whales farm infinite descendants for XP. Gen 1-2 full, then taper.
-  function _lineageFade(gen){
-    var g=gen||1;
-    if(g<=2)return 1.0;
-    if(g===3)return 0.75;
-    if(g===4)return 0.50;
-    if(g===5)return 0.25;
-    return 0.0; // Gen 6+ earn nothing passive — stories & challenges only
-  }
-  var hourlyTotal=0;
-  // Apply lineage fade to each plant's rate, then sort + top-5 rule
-  var fadedRates=[];
-  for(var si=0;si<w.length;si++){
-    var _plantGen=w[si].generation||1;
-    var _faded=(pollenRates[_getWildGrade(w[si].hash)]||1)*_lineageFade(_plantGen);
-    if(_faded>0)fadedRates.push(_faded);
-  }
-  fadedRates.sort(function(a,b){return b-a;});
-  for(var i=0;i<fadedRates.length;i++){
-    var mult=i<5?1.0:0.5;
-    hourlyTotal+=fadedRates[i]*mult;
-  }
-  // RESTLESS keyword — each Restless plant adds +1 Dew per 24h to the
-  // total. hourlyTotal is in Dew-per-4h units, so +1/6 per plant = 1
-  // Dew/day per plant. Small trickle that compounds across a roster.
-  try {
-    if (window._LW_plantHasKeyword) {
-      for (var _ri=0; _ri<w.length; _ri++) {
-        if (w[_ri] && w[_ri].hash && window._LW_plantHasKeyword(w[_ri].hash, 'restless')) {
-          hourlyTotal += 1/6;
+setInterval(function(){
+  // Tier 2 perf: cache the plant-aggregate hourlyTotal. _saveWild flips
+  // _wildHourlyDirty, so unchanged-roster ticks skip the entire iteration.
+  if(_wildHourlyDirty){
+    var w=_getWild();
+    if(w.length===0){_wildHourlyCached=0;_wildHourlyDirty=false;return;}
+    // ECON BALANCE: Dew rate is ~1/4 of nominal to keep the economy
+    // from running away. A Common earns 1 Dew every 4 hours,
+    // a Cosmic every 16 minutes. Diminishing-returns tail after 5
+    // plants — additional plants contribute at half rate.
+    var pollenRates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
+    function _lineageFade(gen){
+      var g=gen||1;
+      if(g<=2)return 1.0;
+      if(g===3)return 0.75;
+      if(g===4)return 0.50;
+      if(g===5)return 0.25;
+      return 0.0;
+    }
+    var _agg=0;
+    var fadedRates=[];
+    for(var si=0;si<w.length;si++){
+      var _plantGen=w[si].generation||1;
+      var _faded=(pollenRates[_getWildGrade(w[si].hash)]||1)*_lineageFade(_plantGen);
+      if(_faded>0)fadedRates.push(_faded);
+    }
+    fadedRates.sort(function(a,b){return b-a;});
+    for(var i=0;i<fadedRates.length;i++){
+      var mult=i<5?1.0:0.5;
+      _agg+=fadedRates[i]*mult;
+    }
+    // RESTLESS keyword — +1 Dew/24h per plant.
+    try {
+      if (window._LW_plantHasKeyword) {
+        for (var _ri=0; _ri<w.length; _ri++) {
+          if (w[_ri] && w[_ri].hash && window._LW_plantHasKeyword(w[_ri].hash, 'restless')) {
+            _agg += 1/6;
+          }
         }
       }
-    }
-  } catch(e){}
-  // Weather: Dawn Mist doubles Dew generation while active
+    } catch(e){}
+    _wildHourlyCached=_agg;
+    _wildHourlyDirty=false;
+  }
+  if(_wildHourlyCached<=0)return;
+  var hourlyTotal=_wildHourlyCached;
+  // Weather mult is fresh per tick (cheap, no plant iteration).
   try{if(window.isWeatherMist&&window.isWeatherMist())hourlyTotal*=2;}catch(e){}
   // Fractional accumulator — keep leftover under a minute until it rounds
   var remainder=0;try{remainder=parseFloat(localStorage.getItem('fg_dew_rem')||localStorage.getItem('fg_pollen_rem')||'0');}catch(e){}
@@ -47796,7 +47803,7 @@ setInterval(function(){var w=_getWild();if(w.length>0){
     if(p){try{p.textContent=parseInt(localStorage.getItem('pw_xp')||'0');}catch(e){}}
   }
   localStorage.setItem('fg_dew_tick',String(Date.now()));
-}},60000);
+},60000);
 
 // ═══ DROP FROM BACKPACK — place a plant from BP onto the map ═══
 function _dropFromBP(p){
