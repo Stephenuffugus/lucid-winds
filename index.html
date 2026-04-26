@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.14';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2548,6 +2548,10 @@
     .lw-hut .lwh-shop-buy{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(91,175,220,0.4),rgba(46,90,120,0.6));border:1.5px solid rgba(91,175,220,0.7);color:var(--cream);border-radius:8px;padding:0.5rem 0.6rem;cursor:pointer;min-height:42px;width:100%;}
     .lw-hut .lwh-shop-buy.broke{background:rgba(60,40,40,0.5);border-color:rgba(180,80,80,0.5);color:rgba(220,180,180,0.65);cursor:not-allowed;}
     .lw-hut .lwh-shop-buy.is-sold{background:rgba(40,40,40,0.4);border:1.5px solid rgba(120,120,120,0.3);color:var(--muted);cursor:not-allowed;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;padding:0.5rem 0.6rem;min-height:42px;width:100%;text-align:center;}
+    /* Pi early-open button — overrides .locked card opacity so the button stays bright */
+    .lw-hut .lwh-shop-card.locked .lwh-shop-buy.is-pi-early{opacity:1;filter:none;background:linear-gradient(180deg,rgba(200,168,75,0.55),rgba(120,90,30,0.7));border:1.5px solid rgba(232,200,120,0.85);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.1em;border-radius:8px;padding:0.5rem 0.6rem;min-height:42px;width:100%;text-align:center;cursor:pointer;font-weight:700;text-shadow:0 1px 1px rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,255,255,0.25);animation:pulseGold 2.4s ease-in-out infinite;}
+    .lw-hut .lwh-shop-card.locked .lwh-shop-buy.is-pi-early:active{transform:scale(0.97);}
+    @keyframes pulseGold{0%,100%{box-shadow:0 2px 8px rgba(200,168,75,0.4),inset 0 1px 0 rgba(255,255,255,0.25);}50%{box-shadow:0 2px 14px rgba(232,200,120,0.65),inset 0 1px 0 rgba(255,255,255,0.35);}}
 
     /* ALMANAC weather cards */
     .lw-hut .lwh-weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.55rem;}
@@ -5166,7 +5170,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #dfb:active{transform:scale(.92);}
 @keyframes fr{0%,100%{box-shadow:0 4px 20px rgba(42,92,42,0.5),0 0 0 3px rgba(122,179,86,0.08)}50%{box-shadow:0 6px 24px rgba(42,92,42,0.6),0 0 0 5px rgba(122,179,86,0.12)}}
 #dfb:active{transform:scale(0.9);animation:none;}
-#dbb{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:var(--sage);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(13,16,12,.6);}
+#dbb{position:absolute;top:4px;right:4px;min-width:26px;height:26px;padding:0 5px;border-radius:13px;background:var(--sage);color:#0d100c;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:0.04em;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5);border:1.5px solid rgba(13,16,12,.6);}
 #dbb.lo{background:var(--gold);animation:dw 1s ease-in-out infinite;}
 /* Affordance label so players know this button = release a greenhouse
    plant into the wild. Lives just below the FAB sprite, gold pill. */
@@ -8544,7 +8548,7 @@ window._addSwitchTabHook = function(fn){
              walking through a hex can water + take cuttings without
              closing the carousel. -->
         <button class="pgm-act-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" style="display:none;border-color:rgba(91,173,220,0.45);color:rgba(91,173,220,0.95);">💧 WATER</button>
-        <button class="pgm-act-btn pgm-wild-act gold" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" style="display:none;border-color:rgba(200,168,75,0.45);color:var(--gold);">✂ CUTTING</button>
+        <button class="pgm-act-btn pgm-wild-act gold" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" style="display:none;border-color:rgba(200,168,75,0.45);color:var(--gold);" title="Take a cutting (clone seed). Costs 20 Dew. Parent unharmed. 2/day.">✂ CUTTING · 20💧</button>
         <!-- WILD-PLACE mode: drop the currently-shown plant into the
              player's current hex. Hidden by default; shown in
              wild-place mode by openCarousel. -->
@@ -45722,7 +45726,13 @@ function openPicker(){
   if(!_uLat){_toast('Getting location...');return;}
   var _maxD=_getMaxDrops();
   var rem=_maxD-_drops;
-  if(rem<=0){_toast('All '+_maxD+' drops used today!');return;}
+  if(rem<=0){
+    // Show-locked hint at the wall: if player isn't yet at L23, surface the unlock
+    var _lvlNow=(window._lwLevel)?window._lwLevel():1;
+    if(_lvlNow<23){_toast('All '+_maxD+' drops used. Reach Keeper L23 for a 4th daily drop.');}
+    else{_toast('All '+_maxD+' drops used today! Resets at midnight.');}
+    return;
+  }
   var gh=_getGH();
   if(!gh.length){_toast('No plants! Play the Grove game first.');return;}
   // STEPHEN'S DESIGN: drop-plant should feel like the greenhouse
@@ -47372,8 +47382,9 @@ function _savePouch(){localStorage.setItem('fg_pouch',JSON.stringify(_pouch));}
 
 // ═══ UI ═══
 function _updateUI(){
-  var rem=Math.max(0,_getMaxDrops()-_drops);
-  var b=document.getElementById('dbb');if(b){b.textContent=rem;b.classList.toggle('lo',rem<=1);}
+  var _maxDr=_getMaxDrops();
+  var rem=Math.max(0,_maxDr-_drops);
+  var b=document.getElementById('dbb');if(b){b.textContent=rem+'/'+_maxDr;b.classList.toggle('lo',rem<=1);}
   var f=document.getElementById('dfb');if(f)f.style.opacity=rem<=0?'0.4':'1';
   var dl=document.getElementById('w-drops-left');if(dl){dl.textContent=rem;dl.style.color=rem<=0?'var(--muted)':rem<=1?'var(--gold)':'var(--cream)';}
   // Empty state nudge for first-time players
@@ -48432,7 +48443,7 @@ function _selectHexPlant(idx,p){
     // tap surfaces the unlock requirement. Was a silent fail before
     // (Stephen 2026-04-19: "nothing seems to happen" on cutting tap).
     actions+='<button class="hi-action-btn'+(_canTend?'':' locked')+'" onclick="'+(_canTend?'window._hexAction(\'tend\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')')+'" title="'+(_canTend?'Tend this plant, gives it +6h and grants you Dew':'Unlocks at Keeper Level 5')+'">&#127807; TEND'+(_canTend?'':' &#128274;')+'</button>';
-    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'" onclick="'+(_canCut?'window._hexAction(\'cutting\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 15.\')')+'" title="'+(_canCut?'Take a cutting, clone seed, parent loses 10% lifespan. One-time per plant':'Unlocks at Keeper Level 15')+'">&#9986; CUTTING'+(_canCut?'':' &#128274;')+'</button>';
+    actions+='<button class="hi-action-btn gold'+(_canCut?'':' locked')+'" onclick="'+(_canCut?'window._hexAction(\'cutting\')':'window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 5.\')')+'" title="'+(_canCut?'Take a cutting (clone seed). Costs 20 Dew. Parent unharmed. 2/day per player.':'Unlocks at Keeper Level 5')+'">&#9986; CUTTING'+(_canCut?' · 20💧':' &#128274;')+'</button>';
     // Nickname button — lets you label this keeper for easy identification
     if(p.ownerUid){
       var _curNick='';try{_curNick=(JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}'))[p.ownerUid]||'';}catch(e){}
@@ -48836,26 +48847,49 @@ window._lwOpenMyPlants = function(){
     }
   };
 };
+// 6th-onward mass-water surcharge (2026-04-26 balance pass).
+// Old: hard cap at 5/day. New: 5 free uses, then escalating Dew premium
+// 6th=+5, 7th=+10, 8th=+15, 9th+=+20. Surcharge stacks ON TOP of any
+// per-plant cost (still free at tool L3). Pull, not push.
+function _lwMassWaterSurcharge(usesTodayBefore){
+  // usesTodayBefore is the count BEFORE this attempt (so 0..N)
+  if (usesTodayBefore < LW_MASS_WATER_DAILY_USES) return 0;
+  var over = usesTodayBefore - LW_MASS_WATER_DAILY_USES; // 0=6th, 1=7th, 2=8th
+  if (over === 0) return 5;
+  if (over === 1) return 10;
+  if (over === 2) return 15;
+  return 20; // 9th and beyond
+}
+window._lwMassWaterSurcharge = _lwMassWaterSurcharge;
 window._lwMassWater = function(){
   var eligible = _lwMassWaterEligible();
   if (eligible.length === 0) { _toast('All your plants are watered.'); return; }
-  if (_lwMassWaterUsesToday() >= LW_MASS_WATER_DAILY_USES) {
-    _toast('Mass water limit reached for today (' + LW_MASS_WATER_DAILY_USES + '/day). Walk to your plants for a free water.');
-    return;
-  }
-  // Can L3 = rain ability, free; otherwise pay per plant
+  // Can L3 = rain ability, normally free; otherwise pay per plant
   var isL3 = _lwCanToolCap() >= 6;
-  var cost = isL3 ? 0 : (eligible.length * LW_MASS_WATER_DEW_PER);
+  var baseCost = isL3 ? 0 : (eligible.length * LW_MASS_WATER_DEW_PER);
+  var usesToday = _lwMassWaterUsesToday();
+  var surcharge = _lwMassWaterSurcharge(usesToday);
+  var cost = baseCost + surcharge;
   var bal = window.getTotalDew ? window.getTotalDew() : 0;
   if (cost > 0 && bal < cost) {
     _toast('Need ' + cost + ' Dew (have ' + bal + ').');
     return;
   }
   if (window._lwConfirm) {
+    var costLine;
+    if (cost === 0) {
+      costLine = 'Summon <b>rain</b>. Free watering for every plant.';
+    } else {
+      costLine = 'Water <b>' + eligible.length + '</b> plant' + (eligible.length===1?'':'s') + ' for <b>' + cost + ' Dew</b>';
+      if (surcharge > 0) {
+        costLine += ' (use #' + (usesToday + 1) + ' today \u2014 +' + surcharge + ' Dew premium)';
+      }
+      costLine += '?';
+    }
     window._lwConfirm({
       title: 'WATER ALL PLANTS',
-      body: (isL3?'Summon <b>rain</b>. Free watering for every plant.':'Water <b>' + eligible.length + '</b> plant' + (eligible.length===1?'':'s') + ' for <b>' + cost + ' Dew</b>?') + '<br><br>Each plant\u2019s lifespan resets to full. ' + (LW_MASS_WATER_DAILY_USES - _lwMassWaterUsesToday() - 1) + ' uses left after this.',
-      yes: isL3?'SUMMON RAIN':'WATER ALL',
+      body: costLine + '<br><br>Each plant\u2019s lifespan resets to full.' + (surcharge === 0 ? ' ' + (LW_MASS_WATER_DAILY_USES - usesToday - 1) + ' free uses left after this.' : ''),
+      yes: isL3 && surcharge === 0 ? 'SUMMON RAIN' : 'WATER ALL',
       no: 'CANCEL'
     }, function(){ _lwMassWaterDoIt(eligible, cost); });
   } else {
@@ -62341,6 +62375,25 @@ window.LW_Pi={
       if(window.showHexMsg)showHexMsg('Seed pouch expanded!');
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
+  },
+  // Hut shop — early-open a closed item window (5 Pi). Pure FOMO pull.
+  // The Hut tracks the actual "is this open today" state via lw_hut_early_opens.
+  earlyOpenHutItem:function(itemKey,tier,cb){
+    var memo='Hut early-open · '+(itemKey||'item');
+    createPayment(5,memo,{type:'hut_early_open',item:itemKey,tier:tier||'Unknown'},function(){
+      try{
+        var t=new Date().toISOString().split('T')[0];
+        var key='lw_hut_early_opens';
+        var raw='{}';try{raw=localStorage.getItem(key)||'{}';}catch(e){}
+        var st={};try{st=JSON.parse(raw)||{};}catch(e){}
+        if(st.date!==t){st={date:t,opened:{}};}
+        st.opened[itemKey]=Date.now();
+        try{localStorage.setItem(key,JSON.stringify(st));}catch(e){}
+      }catch(e){}
+      if(window.LW_HUT&&LW_HUT.refresh)LW_HUT.refresh();
+      if(window.showHexMsg)showHexMsg('Window opened · pick it up before midnight.');
+      if(cb)cb(true);
+    },function(){if(cb)cb(false);});
   }
 };
 
@@ -72801,11 +72854,30 @@ window._lwClaimHerbarium = function(id){
   }
 
   // ─── per-item availability windows ───
+  // Pi early-open: an item the player paid 5 Pi to unlock counts as "available
+  // until midnight" regardless of its natural window. Tracked per-day in
+  // lw_hut_early_opens. The Hut shop refresh at midnight clears it.
+  function isEarlyOpened(key){
+    try{
+      var t = new Date().toISOString().split('T')[0];
+      var raw = localStorage.getItem('lw_hut_early_opens') || '{}';
+      var st = JSON.parse(raw) || {};
+      if (st.date !== t) return false;
+      return !!(st.opened && st.opened[key]);
+    }catch(e){ return false; }
+  }
   // Each item has a daily window starting at a deterministic hour (key+date hash).
   // Returns: { available, untilMs (when current window ends), nextMs (when next window opens) }
   function getItemAvailability(key, tier){
     var hours = WINDOW_HOURS[tier] || 24;
     if (hours >= 24) return { available:true, untilMs:null, nextMs:null };
+    // Pi early-open overrides the natural window for the rest of the day
+    if (isEarlyOpened(key)){
+      var nowM = Date.now();
+      var midnightTonight = new Date();
+      midnightTonight.setHours(24,0,0,0);
+      return { available:true, untilMs:midnightTonight.getTime(), nextMs:null, earlyOpened:true };
+    }
     var seed = dailySeed(key + '_window');
     var startHour = seed % 24;
     var now = new Date();
@@ -73027,9 +73099,16 @@ window._lwClaimHerbarium = function(id){
       if (sold){
         html += '<div class="lwh-shop-buy is-sold">SOLD</div>';
       } else if (locked){
-        html += '<div class="lwh-shop-buy is-locked">LOCKED</div>';
+        // Pi early-open: 5 Pi opens the window now (until midnight). Pure FOMO pull.
+        // Mystery box doesn't have an item key to early-open against, so skip there.
+        if (s.type === 'mystery' || !s.key){
+          html += '<div class="lwh-shop-buy is-locked">LOCKED</div>';
+        } else {
+          html += '<button class="lwh-shop-buy is-pi-early" onclick="LW_HUT.earlyOpen('+i+')" title="Skip the wait. Window opens until midnight.">OPEN NOW · 5 π</button>';
+        }
       } else {
-        html += '<button class="lwh-shop-buy'+(afford?'':' broke')+'" onclick="LW_HUT.buy('+i+')">'+s.price+' 💧</button>';
+        var earlyTag = avail.earlyOpened ? ' · <span style="opacity:0.75;font-size:0.55rem;">EARLY</span>' : '';
+        html += '<button class="lwh-shop-buy'+(afford?'':' broke')+'" onclick="LW_HUT.buy('+i+')">'+s.price+' 💧'+earlyTag+'</button>';
       }
       html += '</div>';
     }
@@ -73118,6 +73197,42 @@ window._lwClaimHerbarium = function(id){
     if (window._haptic) try { window._haptic('bloom'); } catch(e){}
     if (typeof gtag !== 'undefined') gtag('event','hut_buy',{key:slot.key||'mystery',price:slot.price});
     render();
+  }
+
+  // ─── PI EARLY-OPEN (5 Pi to skip the wait) ───
+  // Pure FOMO pull. Window opens until midnight. Player still pays Dew price
+  // when they actually buy — Pi only buys ACCESS, not the item itself.
+  function earlyOpen(slotIdx){
+    var st = getStock();
+    var slot = st.stock[slotIdx];
+    if (!slot || slot.type === 'mystery' || !slot.key) return;
+    if (st.purchased[slotIdx]) return;
+    // Sanity: don't charge Pi if the window is already open
+    var avail = getItemAvailability(slot.key, slot.tier);
+    if (avail.available){
+      if (window._toast) try { window._toast('Window is already open.'); } catch(e){}
+      render();
+      return;
+    }
+    if (!window.LW_Pi || !window.LW_Pi.earlyOpenHutItem){
+      if (window._toast) try { window._toast('Pi payments arrive in the full launch. Thank you for testing.'); } catch(e){}
+      return;
+    }
+    // Confirm before charging — 5 Pi is real money
+    var name = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[slot.key] && window.LW_ITEMS_CATALOG[slot.key].name) || slot.key;
+    if (window._lwConfirm){
+      window._lwConfirm({
+        title: 'OPEN THE WINDOW',
+        body: 'Skip the wait on <b>'+name+'</b> ('+slot.tier+'). 5 π buys access until midnight. You still pay '+slot.price+' Dew to take the item.',
+        yes: 'PAY 5 π',
+        no: 'WAIT'
+      }, function(){
+        window.LW_Pi.earlyOpenHutItem(slot.key, slot.tier);
+      });
+    } else {
+      window.LW_Pi.earlyOpenHutItem(slot.key, slot.tier);
+    }
+    if (typeof gtag !== 'undefined') gtag('event','hut_pi_early_open_attempt',{key:slot.key,tier:slot.tier});
   }
 
   // ─── ALMANAC (weather summon) ───
@@ -73238,7 +73353,8 @@ window._lwClaimHerbarium = function(id){
 
   window.LW_HUT = {
     open: open, close: close, switchTab: switchTab,
-    buy: buy, castWeather: castWeather, openSlots: openSlots, claimQuest: claimQuest,
+    buy: buy, earlyOpen: earlyOpen,
+    castWeather: castWeather, openSlots: openSlots, claimQuest: claimQuest,
     refresh: render,
     getPouchCap: getPouchCap, pouchCount: pouchCount
   };
