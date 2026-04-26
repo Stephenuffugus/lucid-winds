@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.81';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.82';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9518,7 +9518,54 @@ document.addEventListener('keydown', function(e) {
     {id:77,name:'Phoenix Ashes',     a:function(t){return t.flower%71===66;},     b:function(t){return t.base%71===57&&t.aura%36===25;}, ea:3, theme:'mythical', fx:'bloom ignites and regrows, ash trails upward'},
     {id:78,name:'Wyrmscale Hoard',   a:function(t){return t.leafType%71===55;},   b:function(t){return t.base%71===15;},      ea:3, theme:'mythical', fx:'crystals gleam dragon-gold, scales shimmer in tandem'},
     {id:79,name:'Beholder Vortex',   a:function(t){return t.companion===38;},     b:function(t){return t.leafType%71===45&&t.aura%36===29;}, ea:3, theme:'mythical', fx:'oracle eye-leaf focuses beholders sight into a void swirl'},
-    {id:80,name:'Druid\'s Thorn',    a:function(t){return t.flower%71===57;},     b:function(t){return t.companion===41;},    ea:2, theme:'mythical', fx:'mantis stands guard at the thistles base'}
+    {id:80,name:'Druid\'s Thorn',    a:function(t){return t.flower%71===57;},     b:function(t){return t.companion===41;},    ea:2, theme:'mythical', fx:'mantis stands guard at the thistles base'},
+    // ── 2026-04-26 BoS expansion (id 81 → 120, +40 entries) ──
+    // ELEMENTAL
+    {id:81,name:'Tidewatcher',       a:function(t){return t.aura%36===34;},       b:function(t){return t.companion===70;},    ea:2, theme:'elemental', fx:'seahorse drifts through tidal ripples, salt mist clings'},
+    {id:82,name:'Wildfire Ember',    a:function(t){return t.leafType%71===61;},   b:function(t){return t.aura%36===20;},      ea:2, theme:'elemental', fx:'ember leaves glow brighter, drifting heat haloes the bloom'},
+    {id:83,name:'Hailstorm',         a:function(t){return t.aura%36===22;},       b:function(t){return t.flower%71===67;},    ea:2, theme:'elemental', fx:'snow flurries gather around the ice rose, petals chime'},
+    {id:84,name:'Volcanic Breath',   a:function(t){return t.base%71===44;},       b:function(t){return t.flower%71===35;},    ea:2, theme:'elemental', fx:'dragon arum exhales steam, lava rock cracks with heat'},
+    {id:85,name:'River Stone Calm',  a:function(t){return t.base%71===14;},       b:function(t){return t.companion===71;},    ea:1, theme:'elemental', fx:'koi circles smooth river stones, water gently parting'},
+    {id:86,name:'Sun Anvil',         a:function(t){return t.aura%36===10;},       b:function(t){return t.pot%60===15;},       ea:2, theme:'elemental', fx:'golden vessel takes the sun, radiant rim hammers light'},
+    {id:87,name:'Frostbound Wisp',   a:function(t){return t.aura%36===19;},       b:function(t){return t.companion===79;},    ea:2, theme:'elemental', fx:'wisp threads between frost crystals, breath turns blue'},
+    // COSMIC
+    {id:88,name:'Galactic Drift',    a:function(t){return t.base%71===58;},       b:function(t){return t.aura%36===17;},      ea:2, theme:'cosmic', fx:'void essence churns beneath, meteors arc across the canopy'},
+    {id:89,name:'Constellation Map', a:function(t){return t.aura%36===8;},        b:function(t){return t.leafType%71===70;},  ea:2, theme:'cosmic', fx:'starfall traces the worldtree heart, ancient routes unfold'},
+    {id:90,name:'Quasar Heart',      a:function(t){return t.flower%71===68;},     b:function(t){return t.base%71===29;},      ea:2, theme:'cosmic', fx:'void blossom pulses, meteorite dust spirals inward'},
+    {id:91,name:'Eclipse Vow',       a:function(t){return t.aura%36===29;},       b:function(t){return t.flower%71===18;},    ea:2, theme:'cosmic', fx:'moon orchid darkens behind the eclipse, then blooms anew'},
+    {id:92,name:'Crystal Spire',     a:function(t){return t.stem%24===22;},       b:function(t){return t.base%71===15;},      ea:2, theme:'cosmic', fx:'crystal spine stem grows from the matrix, refracting starlight'},
+    {id:93,name:'Pulsar Bloom',      a:function(t){return t.base%71===51;},       b:function(t){return t.flower%71===69;},    ea:2, theme:'cosmic', fx:'clock face ticks in soft phosphor, soil glows in time'},
+    {id:94,name:'Stellar Cradle',    a:function(t){return t.base%71===54;},       b:function(t){return t.flower%71===63;},    ea:2, theme:'cosmic', fx:'sacred lotus rests on stardust, petals catch passing light'},
+    // DARK
+    {id:95,name:"Crow's Vigil",      a:function(t){return t.companion===75;},     b:function(t){return t.pot%60===53;},       ea:2, theme:'dark', fx:'raven perches on the skull, gold eye unblinking at dusk'},
+    {id:96,name:'Bone Tithe',        a:function(t){return t.base%71===21;},       b:function(t){return t.flower%71===37;},    ea:2, theme:'dark', fx:'carrion star opens above bone meal, scent settles low'},
+    {id:97,name:'Spider Tomb',       a:function(t){return t.companion===37;},     b:function(t){return t.pot%60===16;},       ea:2, theme:'dark', fx:'garden spider strings silk between gravestone and stem'},
+    {id:98,name:'Wraithlight',       a:function(t){return t.aura%36===18;},       b:function(t){return t.flower%71===45;},    ea:2, theme:'dark', fx:'ghost orchid flickers within green miasma, edges undefined'},
+    {id:99,name:'Inkfall',           a:function(t){return t.mutationName==='Ink Wash';}, b:function(t){return t.companion===75;}, ea:2, theme:'dark', fx:'raven leaves drips of ink across every leaf in slow runs'},
+    {id:100,name:'Crypt Lily',       a:function(t){return t.companion===54;},     b:function(t){return t.leafType%71===39;},  ea:2, theme:'dark', fx:'bat circles ghost willow, leaves trail silver in the dark'},
+    // NATURE
+    {id:101,name:'Burrow Den',       a:function(t){return t.companion===61;},     b:function(t){return t.pot%60===20;},       ea:1, theme:'nature', fx:'rabbit ducks behind the stump, ear flicking at every breeze'},
+    {id:102,name:'Hive Sentry',      a:function(t){return t.companion===21;},     b:function(t){return t.pot%60===6;},        ea:1, theme:'nature', fx:'bee patrols the honeycomb rim, low industrious hum'},
+    {id:103,name:'Pond Skimmer',     a:function(t){return t.companion===29;},     b:function(t){return t.leafType%71===54;},  ea:1, theme:'nature', fx:'dragonfly skips above the lily pad, wings catching sun'},
+    {id:104,name:'Forest Floor',     a:function(t){return t.base%71===30;},       b:function(t){return t.companion===73;},    ea:1, theme:'nature', fx:'mushroom sprite tends the leaf mulch, spores drift in shafts'},
+    {id:105,name:'Vinekeeper',       a:function(t){return t.stem%24===11;},       b:function(t){return t.base%71===7;},       ea:1, theme:'nature', fx:'twisted vine roots in overgrowth, tendrils reach for any ledge'},
+    {id:106,name:'Acorn Cache',      a:function(t){return t.companion===67;},     b:function(t){return t.leafType%71===0;},   ea:1, theme:'nature', fx:'squirrel buries acorns under the oak, autumn rustle echoes'},
+    {id:107,name:'Lavender Drift',   a:function(t){return t.flower%71===55;},     b:function(t){return t.companion===24;},    ea:1, theme:'nature', fx:'butterfly weaves through lavender spikes, scent rises with each pass'},
+    // MYTHICAL
+    {id:108,name:'Phoenix Egg',      a:function(t){return t.pot%60===51;},        b:function(t){return t.leafType%71===62;},  ea:2, theme:'mythical', fx:'dragon egg warms while feather fronds shed sparks of ash'},
+    {id:109,name:'Crane Choir',      a:function(t){return t.companion===66;},     b:function(t){return t.flower%71===21;},    ea:2, theme:'mythical', fx:'red crowned crane sings to the bird of paradise, both unfurl together'},
+    {id:110,name:'Origami Sky',      a:function(t){return t.companion===49;},     b:function(t){return t.aura%36===10;},      ea:2, theme:'mythical', fx:'paper crane circles in golden light, folds catching the sun'},
+    {id:111,name:'Mantis Vigil',     a:function(t){return t.companion===41;},     b:function(t){return t.leafType%71===37;},  ea:2, theme:'mythical', fx:'mantis poses in thorn crescent, every joint perfectly still'},
+    {id:112,name:"Toad's Pulpit",    a:function(t){return t.companion===32;},     b:function(t){return t.flower%71===13;},    ea:2, theme:'mythical', fx:'toad sits beside the pitcher plant, patient and unhurried'},
+    {id:113,name:'Hermit Lantern',   a:function(t){return t.flower%71===47;},     b:function(t){return t.leafType%71===43;},  ea:2, theme:'mythical', fx:'lantern bloom flickers within the lantern pod, paired warm glow'},
+    // BOTANICAL
+    {id:114,name:'Banana Fronds',    a:function(t){return t.leafType%71===25;},   b:function(t){return t.season===1;},        ea:1, theme:'botanical', fx:'banana fronds drip in summer heat, slow tropical breath'},
+    {id:115,name:'Hosta Shade',      a:function(t){return t.leafType%71===8;},    b:function(t){return t.base%71===9;},       ea:1, theme:'botanical', fx:'hosta layers shade over living moss, cool understory hush'},
+    {id:116,name:'Cactus Bloom Path',a:function(t){return t.stem%24===8;},        b:function(t){return t.flower%71===44;},    ea:1, theme:'botanical', fx:'cactus stem opens a single bloom at the crown, bright against spines'},
+    {id:117,name:'Fiddlehead Spiral',a:function(t){return t.flower%71===16;},     b:function(t){return t.leafType%71===11;},  ea:1, theme:'botanical', fx:'fiddlehead unfurls beside maidenhair fans, spiral mirrored in lace'},
+    {id:118,name:'Hydrangea Mound',  a:function(t){return t.flower%71===58;},     b:function(t){return t.leafType%71===28;},  ea:1, theme:'botanical', fx:'hydrangea heads cluster above lacecap leaves, blue and cream washes'},
+    {id:119,name:'Magnolia Court',   a:function(t){return t.flower%71===42;},     b:function(t){return t.leafType%71===7;},   ea:2, theme:'botanical', fx:'magnolia opens above sugar maple, citrus and resin in the air'},
+    {id:120,name:'Snapdragon Roar',  a:function(t){return t.flower%71===27;},     b:function(t){return t.leafType%71===33;},  ea:1, theme:'botanical', fx:'snapdragon jaws yawn between matching foliage, mock fierce'}
   ];
 
   // Get ALL synergies for a plant (capped at 3 displayed, +4 EA max)
