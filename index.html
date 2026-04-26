@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.71';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.72';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9456,7 +9456,28 @@ document.addEventListener('keydown', function(e) {
     {id:57,name:'Needle Rain',       a:function(t){return t.leafType%71===9;},    b:function(t){return t.season===2;},        ea:1, theme:'nature', fx:'autumn needles drift down like copper rain'},
     {id:58,name:'Dragon Egg Hatch',  a:function(t){return t.pot%60===51;},        b:function(t){return t.flower%71===35;},    ea:2, theme:'mythical', fx:'dragon arum unfurls from cracked egg, steam and spice'},
     {id:59,name:'Jellyfish Drift',   a:function(t){return t.companion===72;},     b:function(t){return t.aura%36>=5&&t.aura%36<=10;}, ea:2, theme:'cosmic', fx:'jellyfish trails bioluminescent tendrils through aurora aura'},
-    {id:60,name:'Will-o-Wisp Trail', a:function(t){return t.companion===79;},     b:function(t){return t.base%71===29;},      ea:2, theme:'dark', fx:'wisp drifts along mycelium network lines, eerie green glow'}
+    {id:60,name:'Will-o-Wisp Trail', a:function(t){return t.companion===79;},     b:function(t){return t.base%71===29;},      ea:2, theme:'dark', fx:'wisp drifts along mycelium network lines, eerie green glow'},
+    // ── 2026-04-26 expansion (Stephen: fill out the BoS) ──
+    {id:61,name:'Frost Bloom',       a:function(t){return t.leafType%71===67;},   b:function(t){return t.flower%71===20&&t.season===3;}, ea:2, theme:'elemental', fx:'snowflake fractals bloom on dandelion puffball'},
+    {id:62,name:'Lava Weep',         a:function(t){return t.leafType%71===61;},   b:function(t){return t.base%71===10;},      ea:2, theme:'elemental', fx:'molten sap weeps from branch scars, glowing'},
+    {id:63,name:'Ember Glacier',     a:function(t){return t.flower%71===66&&t.leafType%71===67;}, b:function(t){return t.mutationName==='Pixel Art';}, ea:2, theme:'elemental', fx:'pixelated flames + ice crystals dance across petals'},
+    {id:64,name:'Aurora Storm',      a:function(t){return t.aura%36===15;},       b:function(t){return t.flower%71===67&&t.mutationName==='Neon';}, ea:3, theme:'elemental', fx:'aura flickers between aurora green and ice-blue neon'},
+    {id:65,name:'Void Spiral',       a:function(t){return t.leafType%71===68;},   b:function(t){return t.flower%71===69&&t.aura%36===31;}, ea:3, theme:'cosmic', fx:'black hole distortion spirals through clock face'},
+    {id:66,name:'Prism Nexus',       a:function(t){return t.leafType%71===35;},   b:function(t){return t.flower%71===70&&t.aura%36===35;}, ea:3, theme:'cosmic', fx:'rainbow geometry pulses through stained-glass panels'},
+    {id:67,name:'Lunar Anchor',      a:function(t){return t.leafType%71===63;},   b:function(t){return t.aura%36===12;},      ea:2, theme:'cosmic', fx:'moon shadow cast by leaf grows and shrinks with breath'},
+    {id:68,name:'Worldtree Beacon',  a:function(t){return t.leafType%71===70;},   b:function(t){return t.flower%71===63&&t.aura%36===9;}, ea:3, theme:'cosmic', fx:'sacred geometry pulses from tree-heart through lotus'},
+    {id:69,name:'Carrion Crown',     a:function(t){return t.flower%71===37;},     b:function(t){return t.companion===32&&t.aura%36===18;}, ea:2, theme:'dark', fx:'stench lines coalesce around the toad, pulsing toxic'},
+    {id:70,name:'Night Blossom',     a:function(t){return t.leafType%71===68;},   b:function(t){return t.flower%71===45&&t.aura%36===7;}, ea:2, theme:'dark', fx:'ghost petals flicker in and out with moonlit pulse'},
+    {id:71,name:'Lich Bloom',        a:function(t){return t.flower%71===36;},     b:function(t){return t.companion===79&&t.aura%36===29;}, ea:3, theme:'dark', fx:'wisp trails spiral from arums decaying bloom'},
+    {id:72,name:'Pollinator Waltz',  a:function(t){return t.companion===28;},     b:function(t){return t.companion===24;},    ea:2, theme:'nature', fx:'hummingbird and butterfly orbit the same bloom'},
+    {id:73,name:'Canopy Crown',      a:function(t){return t.leafType%71===40&&t.leafType%71===38;}, b:function(t){return t.leafCount>=7;}, ea:2, theme:'nature', fx:'leaves form an interlocking crown that sways together'},
+    {id:74,name:'Seed Scatter',      a:function(t){return t.flower%71===20;},     b:function(t){return t.companion===61&&t.season===2;}, ea:1, theme:'nature', fx:'rabbit nudges seeds, they drift slower'},
+    {id:75,name:'Wetland Bloom',     a:function(t){return t.base%71===9;},        b:function(t){return t.leafType%71===54&&t.flower%71===14;}, ea:2, theme:'nature', fx:'cattails bow to the water-lily, mirrored in the moss'},
+    {id:76,name:'Pollinator Cascade',a:function(t){return t.flower%71===49;},     b:function(t){return t.companion===21&&t.flower%71===55;}, ea:2, theme:'nature', fx:'bees dance between jasmine and lavender'},
+    {id:77,name:'Phoenix Ashes',     a:function(t){return t.flower%71===66;},     b:function(t){return t.base%71===57&&t.aura%36===25;}, ea:3, theme:'mythical', fx:'bloom ignites and regrows, ash trails upward'},
+    {id:78,name:'Wyrmscale Hoard',   a:function(t){return t.leafType%71===55;},   b:function(t){return t.base%71===15;},      ea:3, theme:'mythical', fx:'crystals gleam dragon-gold, scales shimmer in tandem'},
+    {id:79,name:'Beholder Vortex',   a:function(t){return t.companion===38;},     b:function(t){return t.leafType%71===45&&t.aura%36===29;}, ea:3, theme:'mythical', fx:'oracle eye-leaf focuses beholders sight into a void swirl'},
+    {id:80,name:'Druid\'s Thorn',    a:function(t){return t.flower%71===57;},     b:function(t){return t.companion===41;},    ea:2, theme:'mythical', fx:'mantis stands guard at the thistles base'}
   ];
 
   // Get ALL synergies for a plant (capped at 3 displayed, +4 EA max)
@@ -77764,7 +77785,7 @@ function _bosSecretsContent() {
 
   // Synergies section
   h+='<div id="sec-synergies" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.5rem;">'+synCount+' / 60</span></div>';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.5rem;">'+synCount+' / '+(window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)+'</span></div>';
   // Theme color + hint map — applied to both discovered + locked
   // tiles so players can see "what kind of synergy am I chasing"
   // without needing a riddle per entry. Audit: Events tab shows full
@@ -77796,7 +77817,7 @@ function _bosSecretsContent() {
         }
       }
     } catch(e){}
-    for (var _asi = 0; _asi < _allSyns.length && _asi < 60; _asi++) {
+    for (var _asi = 0; _asi < _allSyns.length; _asi++) {
       var _asEntry = _allSyns[_asi];
       if (!_asEntry || !_asEntry.name) continue;
       var _asFound = !!foundSynergies[_asEntry.name];
