@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.62';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.63';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68727,6 +68727,61 @@ var _LEAF_TRIGS = [
         reward: rewards[tier] || rewards.common
       });
     })(lf.idx, lf.n, lf.r, lf.e, lf.t);
+  }
+})();
+
+// ── AURA DISCOVERIES — one per of 31 named auras ──
+var _AURA_TRIGS = [
+  {idx:5,  n:'Aurora\'s Dance',     r:'The sky paints in green and pink.',                e:'An aurora draped your plant. The colors are not from any pigment.',     t:'rare'},
+  {idx:6,  n:'Golden Hour',         r:'An hour the camera was made for.',                  e:'Golden hour found your plant. Every pixel turned to honey.',            t:'common'},
+  {idx:7,  n:'Moonlit',             r:'Light filtered through cold patience.',             e:'Moonlight settled on your plant. The garden gained a quiet.',           t:'common'},
+  {idx:8,  n:'Starfall',            r:'Things that fell from above.',                      e:'Star-fall blessed your plant. Microscopic blessings.',                  t:'common'},
+  {idx:9,  n:'Seed of Life',        r:'Sacred geometry made visible.',                     e:'The Seed of Life pulsed around your plant. Every flower remembered the math.', t:'rare'},
+  {idx:10, n:'Sun Aura',            r:'Light direct, light certain.',                      e:'Sun-aura crowned your plant. The leaves photosynthesized loudly.',      t:'common'},
+  {idx:11, n:'Arch Halo',           r:'An arch overhead, made of light.',                  e:'An arch-halo formed. The plant became a small cathedral.',              t:'common'},
+  {idx:12, n:'Moon Aura',           r:'Reflected light is still light.',                   e:'Moon-aura circled your plant. Subtle, total.',                          t:'common'},
+  {idx:13, n:'Concentric Rings',    r:'Rings around something quiet.',                     e:'Rings appeared around your plant. Each one means something.',           t:'common'},
+  {idx:14, n:'Elder Runes',         r:'Glyphs from before any alphabet.',                  e:'Elder runes orbit your plant. They translate roughly to "hello."',      t:'common'},
+  {idx:15, n:'Storm Wraith',        r:'Weather with attitude.',                            e:'A storm wraith circled your plant. The garden gained a guardian.',      t:'common'},
+  {idx:16, n:'Shimmer',             r:'Subtle light that refuses to settle.',              e:'Shimmer settled on your plant. The leaves developed an opinion.',       t:'common'},
+  {idx:17, n:'Meteor Shower',       r:'The sky drops short pencil-strokes.',               e:'A meteor shower rained over your plant. Tiny streaks. Big implication.',t:'rare'},
+  {idx:18, n:'Poison Miasma',       r:'Beautiful, dangerous, useful.',                     e:'A miasma surrounded your plant. The toxic became aesthetic.',           t:'rare'},
+  {idx:19, n:'Frost Crystal',       r:'Crystal grown by cold.',                            e:'Frost crystals formed around your plant. Geometric precision.',         t:'common'},
+  {idx:20, n:'Ember Glow',          r:'What remains after the fire.',                      e:'An ember-glow surrounded your plant. The warmth lingered.',             t:'common'},
+  {idx:21, n:'Rain Aura',           r:'Water from above, on schedule.',                    e:'Rain found your plant. The leaves cleaned themselves of the day.',      t:'common'},
+  {idx:22, n:'Snow Aura',           r:'Light made cold.',                                  e:'Snow gathered around your plant. The garden held its breath.',          t:'common'},
+  {idx:23, n:'Cherry Blossom Drift',r:'Pink confetti from a tree\'s hand.',                e:'Cherry blossom petals drifted around your plant. A week of paintings.', t:'rare'},
+  {idx:24, n:'Autumn Leaves',       r:'Color released from the chlorophyll.',              e:'Autumn leaves gathered around your plant. The wheel turned.',           t:'common'},
+  {idx:25, n:'Volcanic Ash',        r:'Old fire, still warm.',                             e:'Volcanic ash blessed your plant. The minerals made the leaves stronger.',t:'common'},
+  {idx:26, n:'Fairy Ring',          r:'A circle in the grass that shouldn\'t be there.',   e:'A fairy ring formed around your plant. Step inside, become someone else.',t:'rare'},
+  {idx:27, n:'Candlelight',         r:'A small light, defended.',                          e:'Candlelight surrounded your plant. The room felt smaller and warmer.',  t:'common'},
+  {idx:28, n:'Deep Sea',            r:'Pressure and color most never see.',                e:'Deep-sea light enveloped your plant. The fish here are bioluminescent.',t:'common'},
+  {idx:29, n:'Void Eclipse',        r:'When the light vanishes for a reason.',             e:'A void eclipse darkened around your plant. Something looked back.',     t:'rare'},
+  {idx:30, n:'Pollen Drift',        r:'Yellow-gold smoke from honest work.',               e:'Pollen drifted around your plant. The bees took notes.',                t:'common'},
+  {idx:31, n:'Ethereal Veil',       r:'Translucent material from no fabric.',              e:'An ethereal veil draped your plant. You could see through it but couldn\'t grasp it.', t:'rare'},
+  {idx:32, n:'Dandelion Seeds',     r:'The wind chooses where they land.',                 e:'Dandelion seeds floated around your plant. Four hundred attempts at one survival.', t:'common'},
+  {idx:33, n:'Chain Lightning',     r:'Light moves between high points.',                  e:'Chain lightning leapt from leaf to leaf. The plant said yes.',          t:'rare'},
+  {idx:34, n:'Tidal Pool',          r:'A small ocean held by stone.',                      e:'A tidal pool formed around your plant. Microscopic ecosystems thanked you.', t:'common'},
+  {idx:35, n:'Stained Glass',       r:'Light filtered through made meaning.',              e:'Stained-glass light fell on your plant. Each color meant something specific.', t:'rare'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 5},
+    rare:   {pollen: 14, ea: 1}
+  };
+  for (var ati = 0; ati < _AURA_TRIGS.length; ati++) {
+    var au = _AURA_TRIGS[ati];
+    (function(idx, name, riddle, effect, tier) {
+      TRIGGERS.push({
+        id: 'aura_' + idx,
+        name: name,
+        riddle: riddle,
+        category: 'trait',
+        check: function(ctx) { return ctx.plant && (ctx.plant.aura % 36) === idx; },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(au.idx, au.n, au.r, au.e, au.t);
   }
 })();
 
