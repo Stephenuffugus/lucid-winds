@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.8';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.9';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2242,9 +2242,13 @@
        up and cards arent fitting the borders. that looks bad! borders
        arent rendering. just keep them the same size they were.' Back
        to 3-wide default; mobile breakpoints restored below. */
-    .greenhouse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.55rem;padding:0 14px;box-sizing:border-box;}
+    /* Asymmetric padding: tight left edge, wider right gutter so the EA knot
+       (positioned at right:-6px on each card) hangs clearly past the rightmost
+       card and stays inside the viewport. The gutter doubles as a quick-read
+       column for EA values at a glance. */
+    .greenhouse-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.45rem;padding:0 24px 0 6px;box-sizing:border-box;}
     /* ═══ CARD FRONT: Seasonal frames ═══ */
-    .greenhouse-plant{border:1px solid rgba(122,179,86,0.12);border-radius:8px;padding:0.4rem 0.3rem;text-align:center;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;contain:layout style paint;transition:box-shadow 0.2s ease,transform 0.15s ease;}
+    .greenhouse-plant{border:1px solid rgba(122,179,86,0.12);border-radius:8px;padding:0.3rem 0.22rem;text-align:center;position:relative;overflow:visible;background-color:#050505;background-size:100% 100%;background-position:center;background-repeat:no-repeat;box-shadow:0 2px 6px rgba(0,0,0,0.4);aspect-ratio:544/736;display:flex;flex-direction:column;align-items:center;justify-content:center;contain:layout style;transition:box-shadow 0.2s ease,transform 0.15s ease;}
     .greenhouse-plant:active{transform:scale(0.97);}
     @media (hover:hover){.greenhouse-plant:hover{box-shadow:0 0 14px rgba(122,179,86,0.2),0 4px 12px rgba(0,0,0,0.5);transform:scale(1.02);}}
     .greenhouse-plant.gh-new{box-shadow:0 0 12px rgba(200,168,75,0.2),0 2px 6px rgba(0,0,0,0.4);}
@@ -2686,10 +2690,11 @@
     @keyframes mutateGlow{0%,100%{box-shadow:0 0 8px rgba(200,168,75,0.1)}50%{box-shadow:0 0 16px rgba(200,168,75,0.25)}}
 
     /* EA Knot Badge — top-right */
-    .ea-knot{position:absolute;top:-10px;right:-6px;width:28px;height:28px;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+    /* EA knot — pushed further right (-12 vs -6) so it floats in the grid's right gutter, reading clearly outside the card edge. Bigger knot + bolder number for at-a-glance scan. */
+    .ea-knot{position:absolute;top:-8px;right:-12px;width:34px;height:34px;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;}
     .ea-knot svg{position:absolute;top:0;left:0;width:100%;height:100%;}
-    .ea-knot .ea-frost{position:relative;z-index:6;display:flex;align-items:center;justify-content:center;min-width:16px;height:15px;padding:0 3px;border-radius:7px;background:rgba(13,16,12,0.72);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:1px solid rgba(200,188,160,0.15);}
-    .ea-knot .ea-num{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.03em;line-height:1;}
+    .ea-knot .ea-frost{position:relative;z-index:6;display:flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 4px;border-radius:9px;background:rgba(13,16,12,0.82);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:1px solid rgba(200,188,160,0.25);box-shadow:0 1px 3px rgba(0,0,0,0.5);}
+    .ea-knot .ea-num{font-family:'Bebas Neue',sans-serif;font-size:0.62rem;font-weight:700;letter-spacing:0.03em;line-height:1;}
     .season-spring .ea-knot .ea-frost{border-color:rgba(232,160,191,0.3);}
     .season-spring .ea-num{color:#E8A0BF;}
     .season-summer .ea-knot .ea-frost{border-color:rgba(212,168,67,0.3);}
@@ -2902,15 +2907,15 @@
       .card-grid{grid-template-columns:repeat(3,1fr);gap:min(0.3rem,0.8vmin);}
       .shape-svg{max-width:38px;}
       .game-title{font-size:1rem;}
-      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.4rem;padding:0 12px;}
+      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.35rem;padding:0 22px 0 4px;}
     }
     @media(max-width:400px){
       .card-grid{gap:min(0.2rem,0.5vmin);}
       .grove-card{border-radius:6px;}
       .shape-svg{max-width:30px;}
       .shape-row{gap:0px;}
-      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.3rem;padding:0 10px;}
-      .greenhouse-plant{padding:0.3rem 0.2rem;}
+      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.3rem;padding:0 20px 0 4px;}
+      .greenhouse-plant{padding:0.25rem 0.18rem;}
     }
 
     /* ── P3 · PHYSICAL BUTTON PRESS ── */
