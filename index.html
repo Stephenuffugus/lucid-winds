@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.27';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6662,8 +6662,12 @@ window._addSwitchTabHook = function(fn){
       };
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window._bosHeal);
       else window._bosHeal();
-      // Safety-net interval (10s — barely noticeable DOM work).
-      setInterval(window._bosHeal, 10000);
+      // Tier 2 perf: replaced 10s interval with event-driven safety net.
+      // Heal on visibilitychange (back from background) covers the cases
+      // the switchTab + DOMContentLoaded triggers miss.
+      document.addEventListener('visibilitychange', function(){
+        if (!document.hidden) try { window._bosHeal(); } catch(e){}
+      });
       // Hook into switchTab — wrap AFTER the game finishes initializing.
       setTimeout(function(){
         if (typeof window.switchTab !== 'function') return;
