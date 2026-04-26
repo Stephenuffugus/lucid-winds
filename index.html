@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.74';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.75';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69059,44 +69059,19 @@ var _AURA_TRIGS = [
   }
 })();
 
-// ── MUTATION DISCOVERIES — one per of 13 named mutations ──
-// Tier rewards by mutation tier: t1=common, t2=rare, t3=mythic.
-var _MUTATION_TRIGS = [
-  {n:'Wireframe',      r:'A diagram learned to grow.',                       e:'Wireframe took your plant. The schematic became flesh.',                                    t:'common'},
-  {n:'Glass Stem',     r:'Light passes through what should hold weight.',    e:'A glass stem rose. Fragile, transparent, true.',                                            t:'rare'},
-  {n:'Glitch',         r:'A bug in the render became a feature in the bloom.',e:'Glitch infected your plant. The error message reads as poetry.',                          t:'mythic'},
-  {n:'Albino',         r:'Pigment refused. Beauty agreed.',                  e:'Albino took your plant. Everything pale, everything visible.',                              t:'common'},
-  {n:'Silhouette',     r:'Outlined against nothing.',                        e:'Silhouette settled on your plant. Only the shape remains.',                                 t:'rare'},
-  {n:'Golden',         r:'Touched, then transmuted.',                        e:'Golden took your plant. Midas walked your garden in soft shoes.',                           t:'mythic'},
-  {n:'Neon',           r:'Color set to its loudest setting.',                e:'Neon claimed your plant. Vegas approves from a distance.',                                  t:'rare'},
-  {n:'Ink Wash',       r:'Sumi-e in three deliberate strokes.',              e:'Ink wash settled on your plant. Hokusai signed somewhere off-frame.',                       t:'mythic'},
-  {n:'Fossil',         r:'A bloom remembering it was a stone.',              e:'Fossil shaped your plant. The ages pressed it gently.',                                     t:'rare'},
-  {n:'Porcelain',      r:'Fired clay holds a flower well.',                  e:'Porcelain took your plant. It will outlast the gardener.',                                  t:'mythic'},
-  {n:'Bioluminescent', r:'A bloom that pays its own electricity bill.',      e:'Bioluminescence claimed your plant. The dark made room for it.',                            t:'rare'},
-  {n:'Holographic',    r:'A real flower made of refracted light.',           e:'Holographic settled on your plant. Each angle showed a different bloom.',                   t:'mythic'},
-  {n:'Pixel Art',      r:'Resolution low, intention high.',                  e:'Pixel art took your plant. Sixteen colors. Infinite affection.',                            t:'mythic'}
-];
-(function(){
-  var rewards = {
-    common: {pollen: 6},
-    rare:   {pollen: 14, ea: 1},
-    mythic: {pollen: 25, ea: 2}
-  };
-  for (var mti = 0; mti < _MUTATION_TRIGS.length; mti++) {
-    var mu = _MUTATION_TRIGS[mti];
-    (function(name, riddle, effect, tier) {
-      TRIGGERS.push({
-        id: 'mut_' + name.toLowerCase().replace(/\s+/g, '_'),
-        name: 'First ' + name,
-        riddle: riddle,
-        category: 'trait',
-        check: function(ctx) { return ctx.plant && ctx.plant.mutationName === name; },
-        effect: effect,
-        reward: rewards[tier] || rewards.common
-      });
-    })(mu.n, mu.r, mu.e, mu.t);
-  }
-})();
+// ── MUTATION DISCOVERIES (gap fill) ──
+// 12 of 13 mutations are covered above (mut_fossil, mut_albino, mut_silhouette,
+// mut_pixel, mut_biolum, mut_porcelain, mut_golden, mut_ink, mut_neon, mut_holo,
+// mut_wire, mut_glass). Only Glitch was missing — add it here.
+TRIGGERS.push({
+  id: 'mut_glitch',
+  name: 'Render Error',
+  riddle: 'A bug in the render became a feature in the bloom.',
+  category: 'trait',
+  check: function(c) { return c.plant && c.plant.mutationName === 'Glitch'; },
+  effect: 'Glitch infected your plant. The error message reads as poetry.',
+  reward: {pollen: 14}
+});
 
 // ── STEM DISCOVERIES — one per of 24 stem patterns ──
 // Stems are aesthetic; rewards stay common with two rare picks (Crystalline,
