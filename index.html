@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.25';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.26';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -41727,6 +41727,7 @@ function _getMaxPouch(){
 var _gpsDenied=false,_gpsFallbackTimer=null; // tracks if GPS was denied/unavailable
 var _lastGeoTime=0,_lastGeoLat=0,_lastGeoLng=0,_speedKmh=0;
 var _gpsWatchId=null;
+var _lastTrailRedraw=0; // throttle Leaflet polyline redraw — perf audit Tier 2
 function _startGeoWatch(){
   if(_gpsWatchId!==null)return;
   if(!navigator.geolocation)return;
@@ -41742,11 +41743,19 @@ function _startGeoWatch(){
     if(_scanRing)_scanRing.setLatLng([_uLat,_uLng]);
     _updateProximity();
     _trail.push([_uLat,_uLng]);
-    if(_trail.length>500)_trail.splice(0,_trail.length-500);
-    if(_tLine){_tLine.setLatLngs(_trail);if(_tGlow)_tGlow.setLatLngs(_trail);}
+    // Tier 2 perf: trim to 200 points (was 500) + throttle Leaflet redraw to 30s.
+    // Trail is decorative, not gameplay-critical, so stale-by-30s is fine.
+    if(_trail.length>200)_trail.splice(0,_trail.length-200);
+    if(_tLine){
+      if(_now-_lastTrailRedraw>=30000){
+        _tLine.setLatLngs(_trail);if(_tGlow)_tGlow.setLatLngs(_trail);
+        _lastTrailRedraw=_now;
+      }
+    }
     else if(_map){
       _tGlow=L.polyline(_trail,{color:'rgba(122,179,86,0.08)',weight:14,lineCap:'round',lineJoin:'round',interactive:false}).addTo(_map);
       _tLine=L.polyline(_trail,{color:'rgba(122,179,86,0.3)',weight:4,lineCap:'round',lineJoin:'round',interactive:false,className:'trail-glow'}).addTo(_map);
+      _lastTrailRedraw=_now;
     }
   },null,{enableHighAccuracy:true,maximumAge:5000});}catch(e){}
 }
