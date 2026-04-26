@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.66';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.26.67';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6293,7 +6293,7 @@ window._addSwitchTabHook = function(fn){
     </div>
     <div id="nur-msg"></div>
     <div class="nur-grid" id="nur-grid"></div>
-    <div style="margin-top:0.6rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.35);border-radius:6px;border:1px solid rgba(74,124,53,0.08);">
+    <div id="nur-help-box" style="margin-top:0.6rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.35);border-radius:6px;border:1px solid rgba(74,124,53,0.08);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:0.44rem;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.15rem;">HOW CROSS-POLLINATION WORKS</div>
       <p style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.6;opacity:0.7;">Select two Plants to mix their DNA. The child inherits traits from both parents — rare traits are recessive and only pass under the right genetic conditions. Water your seed once per day for 3 days, then bloom it into your Greenhouse.</p>
     </div>
@@ -38006,63 +38006,35 @@ document.addEventListener('keydown', function(e) {
       nmEl.textContent = nextM ? (nextM - streak.currentStreak) + 'd to milestone' : '★ All milestones reached';
     }
 
-    var maxSeedSlots = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
-    var maxClipSlots = FG_Data.getNurClippingSlots ? FG_Data.getNurClippingSlots() : 2;
+    var maxNurSlots = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
     var nurGrid = document.getElementById('nur-grid');
     if (nurGrid) {
-      // Split nursery into seeds vs clippings — Stephen 2026-04-26 design:
-      // separate visual sections so players see "Seeds 2/3 · Clippings 1/2"
-      // and never feel one squeezed out the other. Each section keeps its
-      // own slot indices so click handlers stay simple.
-      var seeds = [], clips = [];
-      for (var _ni2 = 0; _ni2 < nursery.length; _ni2++) {
-        var _ns2 = nursery[_ni2];
-        if (FG_Data.isClippingOrigin && FG_Data.isClippingOrigin(_ns2 && _ns2.origin)) clips.push(_ns2);
-        else seeds.push(_ns2);
-      }
+      // Architecture phase 2 (Stephen 2026-04-26): backpack is the inventory,
+      // nursery is the active growing surface. Single unified grid of slots
+      // — seeds and clippings can both occupy any slot once moved from the
+      // pouch. The earlier seeds-vs-clippings visual split was reverted
+      // because the empty clipping slots looked broken now that clippings
+      // default-route to the backpack.
       nurGrid.innerHTML = '';
-      // ── SEEDS section ──
-      var seedsHdr = document.createElement('div');
-      seedsHdr.className = 'nur-section-hdr';
-      seedsHdr.innerHTML = '<span class="nur-sec-icon">🌱</span><span class="nur-sec-title">SEEDS</span><span class="nur-sec-count">' + seeds.length + ' / ' + maxSeedSlots + '</span>';
-      nurGrid.appendChild(seedsHdr);
-      var seedsRow = document.createElement('div');
-      seedsRow.className = 'nur-section-row';
-      for (var i = 0; i < maxSeedSlots; i++) {
-        var seed = seeds[i] || null;
+      for (var i = 0; i < maxNurSlots; i++) {
+        var seed = nursery[i] || null;
         var slotDiv = document.createElement('div');
         slotDiv.id = 'nur-slot-' + i;
         slotDiv.className = 'nur-slot' + (seed && FG_Data.isBloomReady(seed) ? ' ready' : '');
         slotDiv.innerHTML = _buildNurSlotHTML(seed, i);
-        seedsRow.appendChild(slotDiv);
+        nurGrid.appendChild(slotDiv);
       }
-      nurGrid.appendChild(seedsRow);
-      // ── CLIPPINGS section ──
-      var clipsHdr = document.createElement('div');
-      clipsHdr.className = 'nur-section-hdr nur-section-hdr-clip';
-      // Hide the "cross-pollinate to bloom" hint for L7+ players — they know.
-      var _hdrPlvl = 0;
-      try { if (window._getXP && window._getRank) _hdrPlvl = window._getRank(window._getXP()).level; } catch(e){}
-      var _clipHint = _hdrPlvl < 7 ? '<span class="nur-sec-hint">cross-pollinate to bloom</span>' : '';
-      clipsHdr.innerHTML = '<span class="nur-sec-icon">✂️</span><span class="nur-sec-title">CLIPPINGS</span><span class="nur-sec-count">' + clips.length + ' / ' + maxClipSlots + '</span>' + _clipHint;
-      nurGrid.appendChild(clipsHdr);
-      var clipsRow = document.createElement('div');
-      clipsRow.className = 'nur-section-row nur-section-row-clip';
-      // Clipping slots use a contiguous index space starting after seed slots
-      // so the slot DOM ids remain unique (water/fertilize handlers read by id).
-      for (var ci = 0; ci < maxClipSlots; ci++) {
-        var cseed = clips[ci] || null;
-        var cslotDiv = document.createElement('div');
-        cslotDiv.id = 'nur-slot-' + (maxSeedSlots + ci);
-        cslotDiv.className = 'nur-slot nur-slot-clip' + (cseed && FG_Data.isBloomReady(cseed) ? ' ready' : '');
-        cslotDiv.innerHTML = _buildNurSlotHTML(cseed, maxSeedSlots + ci);
-        clipsRow.appendChild(cslotDiv);
-      }
-      nurGrid.appendChild(clipsRow);
     }
-    // Hide expand button at max
     var nurExpBtn = document.getElementById('nur-expand-btn');
-    if (nurExpBtn) nurExpBtn.style.display = (maxSeedSlots >= 6) ? 'none' : '';
+    if (nurExpBtn) nurExpBtn.style.display = (maxNurSlots >= 6) ? 'none' : '';
+    // Hide the "HOW CROSS-POLLINATION WORKS" tutorial box for L7+ players.
+    // Stephen 2026-04-26 (L20): 'i havent seen that 100 fucking times by now.'
+    try {
+      var _hbPlvl = 0;
+      if (window._getXP && window._getRank) _hbPlvl = window._getRank(window._getXP()).level;
+      var hb = document.getElementById('nur-help-box');
+      if (hb) hb.style.display = _hbPlvl >= 7 ? 'none' : '';
+    } catch(e){}
   }
   window.renderNursery = renderNursery;
 
@@ -62253,7 +62225,14 @@ function render(){
     var _bpSeedInner=_bpSeedImg
       ?'<img src="'+_bpSeedImg+'" alt="seed" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:6px;">'
       :I.seed;
-    h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+'" onclick="BP.ts('+m+')"><div class="sd-icon">'+_bpSeedInner+'</div></div>';
+    // Clipping vs seed marker — clippings get a ✂️ corner badge so the
+    // player can tell at a glance which entries are clones-from-cuts vs
+    // bred/feral seeds. Stephen 2026-04-26: 'i took a clipping but im
+    // unsure of where it went.'
+    var _bpO=st.seeds[m]&&st.seeds[m].origin;
+    var _bpIsClip=(_bpO==='clipping'||_bpO==='cutting');
+    var _bpBadge=_bpIsClip?'<div style="position:absolute;top:-4px;right:-4px;background:rgba(13,16,12,0.92);border:1px solid var(--gold);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;z-index:3;">✂️</div>':'';
+    h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+(_bpIsClip?' bp-seed-clip':'')+'" onclick="BP.ts('+m+')" style="position:relative;"><div class="sd-icon">'+_bpSeedInner+'</div>'+_bpBadge+'</div>';
   }
   for(var n=st.seeds.length;n<cp;n++)h+='<div class="se"></div>';
   // ═══ Inline items strip — Phase 6b ═══
@@ -66794,7 +66773,7 @@ function _resume(step){
 </div>
 <div class="bs-confirm" id="bs-confirm">
   <div class="bs-confirm-card">
-    <div class="bs-confirm-title">🧬 Send seed to Nursery?</div>
+    <div class="bs-confirm-title">🧬 Confirm cross-pollination</div>
     <div class="bs-confirm-text" id="bs-confirm-text"></div>
     <div class="bs-confirm-btns">
       <button class="bs-cancel" onclick="document.getElementById('bs-confirm').classList.remove('open')">CANCEL</button>
@@ -67182,14 +67161,17 @@ window.bsSwipe=function(dir){
   if(!_partners.length)return;
   _pIdx=(_pIdx+dir+_partners.length)%_partners.length;
   var cardB=document.getElementById('bs-card-b');
+  // Stephen 2026-04-26: 'ridiculous amount of time to scroll plants to
+  // breed with.' Was 140ms per tap; now 50ms — 3× faster paging while
+  // keeping a brief settle frame so the swap doesn't read as instant.
   cardB.style.opacity='0';
-  cardB.style.transform=dir>0?'translateX(10px)':'translateX(-10px)';
+  cardB.style.transform=dir>0?'translateX(8px)':'translateX(-8px)';
   setTimeout(function(){
     _renderCard(cardB,_partners[_pIdx],'PLANT B','b');
     _renderForecast();
     cardB.style.opacity='1';
     cardB.style.transform='translateX(0)';
-  },140);
+  },50);
 };
 
 window.bsSwipeA=function(dir){
@@ -67201,12 +67183,12 @@ window.bsSwipeA=function(dir){
   if(_pIdx>=_partners.length)_pIdx=0;
   var cardA=document.getElementById('bs-card-a');
   cardA.style.opacity='0';
-  cardA.style.transform=dir>0?'translateX(10px)':'translateX(-10px)';
+  cardA.style.transform=dir>0?'translateX(8px)':'translateX(-8px)';
   setTimeout(function(){
     _renderBreedCards();
     cardA.style.opacity='1';
     cardA.style.transform='translateX(0)';
-  },140);
+  },50);
 };
 
 window.bsConfirmBreed=function(){
@@ -67216,9 +67198,15 @@ window.bsConfirmBreed=function(){
   var genA=(iA.t?iA.t.chimerGen:1)||1;
   var genB=(iB.t?iB.t.chimerGen:1)||1;
   var offGen=Math.max(genA,genB)+1;
+  // L7+ players don't need the "seed goes to your Nursery" tail —
+  // they've shipped a few of these. Stephen 2026-04-26.
+  var _bcPlvl = 0;
+  try { if (window._getXP && window._getRank) _bcPlvl = window._getRank(window._getXP()).level; } catch(e){}
   var txt='Cross <b>'+iA.nm+'</b> with <b>'+iB.nm+'</b>?<br><br>';
-  txt+='Offspring will be a <b>Gen '+offGen+' Chimera</b> with -'+(offGen-1)*2+' EA but 2× climate immunity.<br><br>';
-  txt+='The seed goes to your Nursery. Water it 3 days to bloom.';
+  txt+='Offspring will be a <b>Gen '+offGen+' Chimera</b> with -'+(offGen-1)*2+' EA but 2× climate immunity.';
+  if (_bcPlvl < 7) {
+    txt += '<br><br>The seed goes to your pouch. Send it to the Nursery to grow.';
+  }
   document.getElementById('bs-confirm-text').innerHTML=txt;
   document.getElementById('bs-confirm').classList.add('open');
 };
@@ -67264,9 +67252,17 @@ window.bsExecuteBreed=function(){
           _genGh.forEach(function(p){if(p.hash===_bsA.hash)_genA=p.generation||1;if(p.hash===_bsM.hash)_genB=p.generation||1;});
         }catch(e){}
         var offGen=Math.max(_genA,_genB)+1;
-        if(window.FG_Data&&window.FG_Data.addSeed){
-          var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
-          if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
+        // Stephen 2026-04-26 architecture phase 1: bred seed lands in BP first.
+        var _bsBpAdded = false;
+        try { if (window.FG_Backpack && FG_Backpack.as) _bsBpAdded = FG_Backpack.as({hash:offHash,loc:'bred',clim:'greenhouse',parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen,origin:'bred'}); } catch(e){}
+        if (!_bsBpAdded) {
+          // Fallback to nursery direct
+          if(window.FG_Data&&window.FG_Data.addSeed){
+            var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
+            if(!res.ok){if(window._toast)window._toast('Pouch and nursery both full. Bloom one first.');return;}
+          }
+        } else {
+          if(window._lwSilenceableToast)window._lwSilenceableToast('crossbred_to_pouch','🧬 Bred seed added to your pouch.');
         }
         if(window._LW_classXP){window._LW_classXP('breed',30);if(offGen>=2)window._LW_classXP('chimera',15);}
         // Use breed charges on both parents (handles cooldown, charges, breedCount)
