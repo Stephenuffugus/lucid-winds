@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.12';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -76729,7 +76729,7 @@ window._lwClaimHerbarium = function(id){
     var lore = LORE[idx % LORE.length];
     _showCatchToast(idx, lore);
     try { if (window._haptic) window._haptic('bloom'); } catch(e){}
-    // Engagement counters: hunt catch + late-night bonus
+    // Engagement counters: hunt catch + late-night/dawn bonuses + streak.
     if (window.LW_ACH) {
       LW_ACH.bump('hunt_caught', 1);
       LW_ACH.bump('d_hunt', 1);
@@ -76737,6 +76737,24 @@ window._lwClaimHerbarium = function(id){
       var _hHr = new Date().getHours();
       if (_hHr >= 22 || _hHr < 4) LW_ACH.bump('hunt_late_night', 1);
       if (_hHr >= 5 && _hHr <= 7) LW_ACH.bump('hunt_dawn', 1);
+      // Hunt streak: count consecutive catches within rolling 7-day window.
+      // Reads timestamps from this season's catches and checks how many
+      // of the last 3 are within 7 days of each other. Sticky-set the max.
+      try {
+        var _hcaughts = (s.spawned || []).filter(function(x){return x && x.caught && x.caughtAt;}).map(function(x){return x.caughtAt;}).sort(function(a,b){return b-a;});
+        var _streak = 0;
+        if (_hcaughts.length >= 1) {
+          _streak = 1;
+          for (var _hi = 1; _hi < _hcaughts.length; _hi++) {
+            if ((_hcaughts[_hi-1] - _hcaughts[_hi]) <= 7*86400000) _streak++;
+            else break;
+          }
+        }
+        LW_ACH.set('hunt_streak', Math.max(LW_ACH.get('hunt_streak') || 0, _streak));
+        // Session-3 — three catches in this session window (last hour).
+        var _session3 = _hcaughts.filter(function(t){return Date.now() - t <= 3600000;}).length;
+        if (_session3 >= 3) LW_ACH.set('hunt_session_3', 1);
+      } catch(e) {}
     }
     // Full-hunt prize
     var prog = progress();
