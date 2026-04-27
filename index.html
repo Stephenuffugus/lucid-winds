@@ -38592,13 +38592,19 @@ document.addEventListener('keydown', function(e) {
         panel.style.opacity = '0';
         panel.style.transform = 'scale(0.85) translateY(20px)';
       }
-      // Spawn floating leaf particles over the modal
-      for (var lp = 0; lp < 8; lp++) {
-        var leaf = document.createElement('div');
-        var lx = 30 + Math.random() * 40;
-        var ly = 30 + Math.random() * 30;
-        leaf.style.cssText = 'position:fixed;left:' + lx + '%;top:' + ly + '%;z-index:100002;font-size:' + (0.8 + Math.random() * 0.8) + 'rem;pointer-events:none;opacity:0.9;transition:all 1.2s ease;';
-        leaf.textContent = ['\ud83c\udf42','\ud83c\udf43','\ud83c\udf3f','\u2728'][lp % 4];
+      // Spawn sprite leaf particles over the modal \u2014 uses our painted FX
+      // sprites instead of emojis so the moment reads like the rest of
+      // the game.
+      var _compostSprites = ['compost-leaf-green','compost-leaf-purple','compost-leaf-vine','compost-flame','compost-spark'];
+      for (var lp = 0; lp < 9; lp++) {
+        var leaf = document.createElement('img');
+        var lx = 28 + Math.random() * 44;
+        var ly = 28 + Math.random() * 34;
+        var sz = 36 + Math.random() * 26;
+        var sprite = _compostSprites[Math.floor(Math.random()*_compostSprites.length)];
+        leaf.src = 'assets/fx/' + sprite + '.png';
+        leaf.alt = '';
+        leaf.style.cssText = 'position:fixed;left:'+lx+'%;top:'+ly+'%;width:'+sz+'px;height:'+sz+'px;object-fit:contain;z-index:100002;pointer-events:none;opacity:0.92;transition:all 1.2s ease;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));';
         document.body.appendChild(leaf);
         (function(el, delay) {
           setTimeout(function() {
@@ -38606,7 +38612,7 @@ document.addEventListener('keydown', function(e) {
             el.style.transform = 'translateY(' + (40 + Math.random() * 40) + 'px) rotate(' + (Math.random() * 180 - 90) + 'deg)';
             setTimeout(function() { if (el.parentNode) el.remove(); }, 1300);
           }, delay);
-        })(leaf, lp * 80);
+        })(leaf, lp * 70);
       }
     }
     _haptic('disc');
@@ -53207,29 +53213,32 @@ function _showMintCelebration(fullHash){
   setTimeout(function(){if(window._haptic)_haptic('bloom');if(window._play)_play('match');},2000);
   // Gold radial flash
   var flash=document.createElement('div');flash.style.cssText='position:absolute;inset:0;background:radial-gradient(circle,rgba(200,168,75,0.6),rgba(200,168,75,0) 70%);pointer-events:none;opacity:0;animation:mintFlash 1.2s ease forwards;';ov.appendChild(flash);
-  // SVG leaf/petal particle burst (no emojis)
-  var _leafColors=['#7ab356','#5a9a3a','#c8a84b','#8a9178','#4a7c35','#9ab87a'];
-  for(var si=0;si<20;si++){(function(i){
-    var angle=(i/20)*Math.PI*2+Math.random()*0.3;
-    var dist=80+Math.random()*120;
+  // Gold sprite burst — painted FX sprites instead of generic SVG leaves
+  // so the bloom moment matches the rest of the game's botanical art.
+  var _bloomSprites=['bloom-leaf','bloom-flower','bloom-flowercluster','bloom-drop','compost-spark'];
+  for(var si=0;si<18;si++){(function(i){
+    var angle=(i/18)*Math.PI*2+Math.random()*0.3;
+    var dist=90+Math.random()*120;
     var dx=Math.cos(angle)*dist;
     var dy=Math.sin(angle)*dist;
     var rot=Math.floor(Math.random()*360);
-    var sz=6+Math.floor(Math.random()*8);
-    var col=_leafColors[i%_leafColors.length];
-    var sp=document.createElement('div');
-    // Inline SVG leaf shape — no emojis
-    sp.innerHTML='<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 12 12"><path d="M6,1 C8,3 10,5 10,8 C10,10 8,11 6,11 C4,11 2,10 2,8 C2,5 4,3 6,1Z" fill="'+col+'" opacity="0.85"/><path d="M6,2 L6,10" stroke="rgba(255,255,255,0.3)" stroke-width="0.4" fill="none"/></svg>';
-    sp.style.cssText='position:absolute;left:50%;top:40%;pointer-events:none;opacity:0;transform:rotate('+rot+'deg);animation:sparkBurst 2s ease forwards;animation-delay:'+(i*30)+'ms;--sdx:'+dx+'px;--sdy:'+dy+'px;';
+    var sz=18+Math.floor(Math.random()*22);
+    var sprite=_bloomSprites[i%_bloomSprites.length];
+    var sp=document.createElement('img');
+    sp.src='assets/fx/'+sprite+'.png';
+    sp.alt='';
+    sp.style.cssText='position:absolute;left:50%;top:40%;width:'+sz+'px;height:'+sz+'px;object-fit:contain;pointer-events:none;opacity:0;transform:rotate('+rot+'deg);animation:sparkBurst 2s ease forwards;animation-delay:'+(i*30)+'ms;--sdx:'+dx+'px;--sdy:'+dy+'px;filter:drop-shadow(0 0 6px rgba(200,168,75,0.45));';
     ov.appendChild(sp);
   })(si);}
-  // Floating petal drift (gentle, slow — replaces _spawnLeafParticles)
+  // Floating petal drift (gentle, slow — small inline ellipses for the
+  // background hush; the gold sprites above are the headline particles).
+  var _driftColors=['#7ab356','#5a9a3a','#c8a84b','#8a9178','#4a7c35','#9ab87a'];
   for(var pi=0;pi<10;pi++){(function(i){
     var x=10+Math.random()*80;
     var delay=i*400+Math.random()*600;
     var dur=3+Math.random()*3;
     var sz=4+Math.floor(Math.random()*5);
-    var col=_leafColors[i%_leafColors.length];
+    var col=_driftColors[i%_driftColors.length];
     var drift=document.createElement('div');
     drift.innerHTML='<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 10 10"><ellipse cx="5" cy="5" rx="4" ry="2.5" fill="'+col+'" opacity="0.5" transform="rotate('+(Math.random()*60-30)+' 5 5)"/></svg>';
     drift.style.cssText='position:absolute;left:'+x+'%;top:-5%;pointer-events:none;opacity:0;animation:petalDrift '+dur+'s ease-in '+delay+'ms forwards;';
