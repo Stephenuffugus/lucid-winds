@@ -6763,8 +6763,8 @@ window._addSwitchTabHook = function(fn){
     </div>
     <!-- Row 2: currency + hut (3 buttons — was 4 before install moved up) -->
     <div class="kb-row2">
-      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
-      <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-mystery.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams-v2.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
+      <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew.png" alt="Dew" style="width:150%;height:150%;object-fit:cover;display:block;margin:-25%;"><span class="kb-val">0</span></div>
     </div>
   </div>
@@ -38554,7 +38554,7 @@ document.addEventListener('keydown', function(e) {
     // In-game compost confirmation modal
     var modal = document.createElement('div');
     modal.id = 'compost-confirm-modal';
-    modal.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/compost-confirm.png) top center/110% auto no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/screens/compost-screen-v2.png) top center/contain no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
     var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.4rem;">RETURN TO EARTH</div>';
     h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
@@ -41313,7 +41313,7 @@ document.addEventListener('keydown', function(e) {
     { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada. Mythic creatures answer few.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
     { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder. An eye opens that should not exist.',   reward:30, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
     // ── Mutations ──
-    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated plant. The hash hiccupped in your favor.',                  reward:5,  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
+    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated plant. The seed bent the rules in your favor.',              reward:5,  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
     { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch. The pixels broke into beauty.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xF0;}catch(e){return false;} }); } },
     // ── Synergy (Spec 14 — checked after synergy engine lands) ──
     { id:'first_synergy',  icon:'✨', name:'Resonance',           desc:'Own a plant resonating with one synergy. Two truths align.',     reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>0;}catch(e){return false;} }); } },
@@ -53126,7 +53126,9 @@ window.openSunbeamModal=function(){
   // Bloom button (plants bloom from sunlight — botanical verb replaces
   // the old "mint" wording everywhere this modal is shown).
   if(ready>0){
-    h+='<button onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;padding:0.6rem;margin-bottom:0.4rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;">\ud83c\udf31 BLOOM A PLANT ('+cost+' \u2600\ufe0f)'+(ready>1?' \u00d7'+ready:'')+'</button>';
+    h+='<button onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" aria-label="Photosynthesize a plant" style="position:relative;width:100%;aspect-ratio:2/1;padding:0;margin-bottom:0.5rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:14px;background:url(assets/btn-photosynthesize-v1.png) center/cover no-repeat,linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));cursor:pointer;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.45),inset 0 0 0 1px rgba(240,208,144,0.12);">'
+      +'<span style="position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:0.35rem 0.85rem;border-radius:8px;background:rgba(13,16,12,0.78);border:1px solid rgba(200,168,75,0.55);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;text-shadow:0 1px 2px rgba(0,0,0,0.85);white-space:nowrap;">PHOTOSYNTHESIZE \u00b7 '+cost+' \u2600\ufe0f'+(ready>1?' \u00d7'+ready:'')+'</span>'
+      +'</button>';
   }else{
     h+='<div style="width:100%;padding:0.5rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:10px;background:rgba(26,31,23,0.5);text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.08em;">KEEP PLAYING TO GROW A PLANT</div><div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:2px;">'+cost+' Sunbeams = 1 unique plant</div></div>';
   }
@@ -70618,7 +70620,7 @@ var TRIGGERS=[
     effect:'Forty days, no break. The garden took your name as a verb.',reward:{pollen:30,ea:1}},
   {id:'ach_015',name:'All Mutations',riddle:'You have grown five distinct mutations.',category:'action',
     check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var m={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.mutationName&&t.mutationName!=='None')m[t.mutationName]=true;}return Object.keys(m).length>=5;}catch(e){return false;}},
-    effect:'Five mutations, five different signatures. The hash has been generous.',reward:{pollen:32,ea:2}},
+    effect:'Five mutations, five different signatures. The garden has been generous.',reward:{pollen:32,ea:2}},
 
   // ── LORE BEATS (10) — narrative discovery moments ──
   {id:'lore_001',name:'The First Letter',riddle:'A plant arrived from someone you do not know.',category:'action',
@@ -70727,7 +70729,7 @@ var TRIGGERS=[
     effect:'Translucent and impossibly fragile. It survived anyway.',reward:{pollen:14}},
   {id:'mut_glitch',name:'The Glitch Bloom',riddle:'Beauty in the broken pixel.',category:'trait',
     check:function(c){return c.plant&&c.plant.mutationName==='Glitch';},
-    effect:'The hash hiccupped. The plant agreed.',reward:{pollen:20,ea:1}},
+    effect:'The seed slipped a step. The plant agreed.',reward:{pollen:20,ea:1}},
 
   // ── ULTRA-RARE MUTATION DISCOVERIES (added 2026-04-26 with mutation rebalance) ──
   // Each ~0.39% appearance rate. Reward scales with rarity tier.
@@ -71541,7 +71543,7 @@ var _LINEAGE_TRIGS = [
   {n:'Orchid Lineage',         check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.hasFlower&&typeof c.plant.flower==='number'&&(c.plant.flower%71)===10;}, e:'An orchid inherited. Out of 28,000 species, this one twice over.', t:'rare'},
   {n:'Mature Bloom',           check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.hasFlower&&c.plantAge>=21;},                               e:'Three weeks of a second-generation bloom. The cross has earned its window.',    t:'rare'},
   {n:'Companion-Locked Line',  check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.companion>=20;},                                            e:'Three generations carrying the same companion. The creature chose loyalty.',    t:'rare'},
-  {n:'Mutation-Locked Line',   check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.mutationName&&c.plant.mutationName!=='None';},             e:'Three generations carrying the same mutation. The hash kept its preference.',    t:'rare'},
+  {n:'Mutation-Locked Line',   check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.mutationName&&c.plant.mutationName!=='None';},             e:'Three generations carrying the same mutation. The line kept its preference.',    t:'rare'},
   {n:'Pure Spring Inheritance',check:function(c){return c.plant&&c.plant.chimerGen>=4&&c.plant.season===0&&c.plant.hasFlower;},                            e:'Four generations of spring blooms. The line has a season as a name.',           t:'rare'},
   {n:'Fertile Lineage',        check:function(c){try{return c.plant&&c.plant.chimerGen>=2&&c.plantObj&&(c.plantObj.breedCount||0)>=2;}catch(e){return false;}}, e:'A second-generation plant has bred twice. The lineage lives on.',    t:'rare'}
 ];
