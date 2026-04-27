@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.46';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.47';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5172,7 +5172,10 @@ body:not(.tab-wild) #w-my-plants{display:none!important;}
 #bpe.open{display:block;pointer-events:auto;}
 #bpbk{position:absolute;inset:0;background:rgba(8,10,7,0.6);opacity:0;transition:opacity 0.3s;backdrop-filter:blur(3px);}
 #bpe.open #bpbk{opacity:1;}
-#bpp{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:10px;width:68px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:8px;padding:4px;z-index:1000;opacity:0;transform:translateY(-24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
+/* Plant column. 2026-04-27 comfort pass: width 68px → 92px so 64-px
+   tiles aren't visually crammed against the right edge. Side gutter
+   widened from 4 to 8 so taps near the edge don't scroll the body. */
+#bpp{position:fixed;top:calc(112px + env(safe-area-inset-top,0px));right:10px;width:92px;max-height:calc(100vh - 220px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;padding:6px 8px 8px;z-index:1000;opacity:0;transform:translateY(-24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
 /* Hide the Book of Secrets while backpack panel is open so seeds don't
    render behind it. Backpack panel has z-index 1000 (above 999 book). */
 body:has(#bpe.open) #kb-compendium{display:none !important;}
@@ -5181,7 +5184,9 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 /* Seed panel: vertical strip just left of the backpack plant column so
    seeds sit next to the backpack instead of drifting to the top corner.
    3x-ish larger than the old 42px tiles — reads as real inventory now. */
-#bps{position:fixed;top:calc(120px + env(safe-area-inset-top,0px));right:88px;width:108px;max-height:calc(100vh - 240px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:10px;align-items:center;padding:6px 4px;z-index:1002;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;}
+/* Seed column. Right offset bumped 88 → 112 to clear the wider plant
+   column. Gap and padding bumped for breathing room. */
+#bps{position:fixed;top:calc(112px + env(safe-area-inset-top,0px));right:112px;width:108px;max-height:calc(100vh - 220px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;align-items:center;padding:6px 4px 8px;z-index:1002;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;}
 #bps::-webkit-scrollbar{display:none;}
 #bpe.open #bps{opacity:1;transform:translateX(0);pointer-events:auto;}
 /* When BP is open, dim the wild FABs + hamburger menu so they read as
@@ -5206,6 +5211,37 @@ body.lw-bp-open #w-menu-fab,
 body.lw-bp-open #w-recenter,
 body.lw-bp-open #w-mass-water,
 body.lw-bp-open #w-my-plants{opacity:0.28!important;pointer-events:none!important;transition:opacity 0.2s;}
+/* Comfort pass 2026-04-27: lift the BASE / ITEMS / BOXES / COCOONS /
+   CLOSE row out of the narrow plant column and pin it as a bottom
+   action bar when the backpack is open. Each button gets real width
+   and a thumb-comfortable reach. */
+body.lw-bp-open .bp-extra-row{
+  position:fixed!important;
+  left:8px!important;right:8px!important;
+  bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;
+  margin:0!important;
+  padding:8px 10px!important;
+  background:linear-gradient(180deg,rgba(13,16,12,0.82),rgba(13,16,12,0.95))!important;
+  border:1px solid rgba(122,179,86,0.18)!important;
+  border-radius:14px!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+  z-index:1003!important;
+  box-shadow:0 6px 22px rgba(0,0,0,0.55)!important;
+  justify-content:space-around!important;
+  gap:6px!important;
+  flex-wrap:nowrap!important;
+  overflow-x:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  scrollbar-width:none!important;
+}
+body.lw-bp-open .bp-extra-row::-webkit-scrollbar{display:none!important;}
+body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!important;}
+/* Column section labels — printed above the first plant / seed tile.
+   Pure type, low contrast, so they help orient without competing with
+   the inventory itself. */
+.bp-col-label{font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.15em;color:var(--muted);text-align:center;padding:2px 0 4px;line-height:1;width:100%;flex-shrink:0;border-bottom:1px solid rgba(122,179,86,0.08);margin-bottom:2px;}
+.bp-col-label .cnt{color:var(--gold);margin-left:4px;}
 /* Return to Base button */
 #bp-rtb{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom,0px) + 8px);left:12px;z-index:999;min-width:100px;height:40px;border-radius:20px;border:1.5px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
 #bp-rtb:active{transform:scale(0.92);box-shadow:0 2px 8px rgba(0,0,0,0.3);}
@@ -63815,6 +63851,8 @@ function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');
 function render(){
   var bg=document.getElementById('bpb');var t=st.plants.length+st.seeds.length;bg.textContent=t;bg.classList.toggle('e',t===0);
   var pe=document.getElementById('bpp');var mx=xp();var h='';
+  // Section header — orients first-time players, contextualizes count
+  h+='<div class="bp-col-label">PLANTS<span class="cnt">'+st.plants.length+'/'+mx+'</span></div>';
   // Empty-pouch hint — spans the grid so first-time players see what to do
   // instead of a sea of "+" placeholder slots. Disappears the moment they
   // collect anything.
@@ -63873,6 +63911,8 @@ function render(){
   h+='</div>';
   pe.innerHTML=h;
   var se=document.getElementById('bps');var cp=xc();h='';
+  // Section header — same treatment as the plant column.
+  h+='<div class="bp-col-label">SEEDS<span class="cnt">'+st.seeds.length+'/'+cp+'</span></div>';
   for(var m=0;m<st.seeds.length&&m<cp;m++){
     // Use the same per-seed art image that the nursery uses, so the seed
     // looks consistent across UIs. Falls back to the default I.seed icon
