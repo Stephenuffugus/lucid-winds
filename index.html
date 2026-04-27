@@ -81256,8 +81256,8 @@ function _bosSecretsContent() {
   h+='</div>';
 
   // Synergies section \u2014 with search + filter for the now-300-entry grid
-  h+='<div id="sec-synergies" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.5rem;">'+synCount+' / '+(window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)+'</span></div>';
+  h+='<div id="sec-synergies" style="margin-bottom:0.9rem;scroll-margin-top:8px;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.6rem;">'+synCount+' / '+(window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)+'</span></div>';
   // Search + filter chips for the grid (Stephen 2026-04-27 UX smoothing).
   var _synFilter = window._bosSynFilter || 'all';
   var _synSearch = String(window._bosSynSearch || '').toLowerCase();
@@ -81282,7 +81282,7 @@ function _bosSecretsContent() {
     cosmic:    { color:'#a88fd4', icon:'\u2728',       hint:'Cosmic alignment \u2014 aura, star, time' },
     dark:      { color:'#8a6b9d', icon:'\ud83c\udf11', hint:'Shadow work \u2014 void, bone, silhouette' }
   };
-  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
   // Build synergy grid from LW_SYNERGIES (full catalog) so locked
   // slots carry a theme hint instead of bare '?'. If the expose
   // hasn't loaded yet, fall back to the legacy discovered-only view.
@@ -81323,17 +81323,17 @@ function _bosSecretsContent() {
         var _asBg = _asNew ? 'rgba(200,168,75,0.12)' : _asTheme.color + '14';
         var _asShadow = _asNew ? 'box-shadow:0 0 8px rgba(200,168,75,0.35);' : '';
         var _asNameEsc = _asEntry.name.replace(/'/g,"\\'");
-        h += '<div onclick="window._lwShowSynergyDetail(\''+_asNameEsc+'\')" style="position:relative;padding:4px;background:'+_asBg+';border:1px solid '+_asBorder+';border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s ease;'+_asShadow+'" title="'+_asEntry.name+': '+(_asEntry.fx||'')+(_asNew?' (new)':'')+'">';
-        if (_asNew) h += '<span style="position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
-        h += '<div style="font-size:0.5rem;">'+_asTheme.icon+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.25rem;color:'+(_asNew?'var(--gold)':_asTheme.color)+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+_asEntry.name+'</div>';
+        h += '<div onclick="window._lwShowSynergyDetail(\''+_asNameEsc+'\')" style="position:relative;padding:8px 6px;background:'+_asBg+';border:1px solid '+_asBorder+';border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:background 0.15s ease;'+_asShadow+'" title="'+_asEntry.name+': '+(_asEntry.fx||'')+(_asNew?' (new)':'')+'">';
+        if (_asNew) h += '<span style="position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
+        h += '<div style="font-size:1rem;line-height:1;">'+_asTheme.icon+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:'+(_asNew?'var(--gold)':_asTheme.color)+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+_asEntry.name+'</div>';
         h += '</div>';
       } else {
         // Locked — show theme hint, not bare '?'. Tooltip carries the
         // fuller hint string for players who hover/long-press.
-        h += '<div style="padding:4px;background:rgba(26,36,22,0.3);border:1px dashed '+_asTheme.color+'44;border-radius:6px;text-align:center;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0.55;" title="'+_asTheme.hint+'">';
-        h += '<div style="font-size:0.46rem;color:'+_asTheme.color+';opacity:0.7;">'+_asTheme.icon+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.24rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+_asEntry.theme+'</div>';
+        h += '<div style="padding:8px 6px;background:rgba(26,36,22,0.3);border:1px dashed '+_asTheme.color+'44;border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0.55;" title="'+_asTheme.hint+'">';
+        h += '<div style="font-size:0.95rem;line-height:1;color:'+_asTheme.color+';opacity:0.7;">'+_asTheme.icon+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+_asEntry.theme+'</div>';
         h += '</div>';
       }
     }
