@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44917,6 +44917,20 @@ function _wildClimateTick(weather) {
       for (var _vbi = 0; _vbi < breaches.length; _vbi++) {
         var _vk = breaches[_vbi].kind;
         _vizKinds[_vk] = (_vizKinds[_vk] || 0) + 1;
+        // Engagement counter: plant survived a vector breach today.
+        // Each named vector counter drives its WEATHER-tier achievement
+        // ("Survived 10 heatwaves", "Survived 50 storms"). Counted per
+        // (plant, vector) so a single 4-vector storm bumps 4 separate
+        // survival counters for that one plant.
+        if (window.LW_ACH) {
+          if (_vk === 'heat')   LW_ACH.bump('survived_heat', 1);
+          if (_vk === 'cold')   LW_ACH.bump('survived_cold', 1);
+          if (_vk === 'flood')  LW_ACH.bump('survived_flood', 1);
+          if (_vk === 'wind')   LW_ACH.bump('survived_storm', 1);
+          if (_vk === 'drought')LW_ACH.bump('survived_drought', 1);
+          // Multi-vector survivor — fired once per damaging tick if 2+ kinds breached.
+          if (breaches.length >= 2) LW_ACH.set('survived_vectors', Math.max(LW_ACH.get('survived_vectors') || 0, breaches.length));
+        }
       }
     }
     mutated = true;
@@ -60424,6 +60438,10 @@ function loadFriendsUI(){
     var el=document.getElementById('cs-friends-list');
     var cnt=document.getElementById('cs-friend-count');
     if(cnt)cnt.textContent='('+friends.length+')';
+    // Engagement counter: friends_total reflects accepted-friends count.
+    // Set on every load so achievements stay accurate even if an
+    // accepted friend gets removed elsewhere.
+    if(window.LW_ACH)LW_ACH.set('friends_total',friends.length);
     if(!el)return;
     if(friends.length===0){el.innerHTML='<div style="color:var(--muted);font-size:0.42rem;">No friends yet. Share your code!</div>';return;}
     var h='';
