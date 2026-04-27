@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.39';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.40';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -80498,6 +80498,79 @@ function _bosSecretsContent() {
   var h='';
   h+='<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:3px;"><span>'+totalDiscovered+' / '+totalAll+'</span><span>'+pctAll+'%</span></div>';
   h+='<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.6rem;"><div style="height:100%;width:'+pctAll+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;"></div></div>';
+
+  // ─── ATLAS — single-glance category progress ───
+  // Stephen 2026-04-27: "compact at glance, deeper on tap." Shows the
+  // depth of every collection in one dense strip so players see what's
+  // there to chase. Each cell is tap-to-jump (anchors below).
+  try {
+    var atlasRows = [];
+    // Triggers (BoS Events tab)
+    try {
+      var _trigUnlocked = JSON.parse(localStorage.getItem('lw_wild_events') || '{}');
+      var _trigFound = 0;
+      for (var _tk in _trigUnlocked) if (_trigUnlocked[_tk]) _trigFound++;
+      var _trigTotal = window.TRIGGERS ? window.TRIGGERS.length : 0;
+      if (_trigTotal > 0) atlasRows.push({label:'Events', cur:_trigFound, total:_trigTotal, color:'#c8a84b', tab:'events'});
+    } catch(e){}
+    // Synergies (count + total via LW_SYNERGIES)
+    if (window.LW_SYNERGIES) {
+      atlasRows.push({label:'Synergies', cur:synCount, total:window.LW_SYNERGIES.length, color:'#c07ac8', tab:null, anchor:'sec-synergies'});
+    }
+    // Achievements (LW_ACH)
+    try {
+      if (window.LW_ACH) {
+        var _achProg = window.LW_ACH.progress() || {};
+        var _achDone = 0; for (var _akk in _achProg) if (_achProg[_akk]) _achDone++;
+        var _achTotal = (window.LW_ACH.catalog || []).length;
+        atlasRows.push({label:'Achievements', cur:_achDone, total:_achTotal, color:'#a87285', tab:'quests'});
+      }
+    } catch(e){}
+    // Mementos
+    try {
+      var _memCol = JSON.parse(localStorage.getItem('lw_companion_mementos') || '[]');
+      var _memTotal = 0; if (window.LW_MEMENTOS) for (var _mk in window.LW_MEMENTOS) _memTotal++;
+      atlasRows.push({label:'Mementos', cur:_memCol.length, total:_memTotal, color:'var(--gold)', tab:'mementos'});
+    } catch(e){}
+    // Trait diversity (leaves seen + flowers seen + companions seen + substrates seen)
+    try {
+      if (window.LW_ACH && window.LW_ACH.get) {
+        var _leafSeen = window.LW_ACH.get('leaves_seen') || 0;
+        var _flowerSeen = window.LW_ACH.get('flowers_seen') || 0;
+        var _compSeen = window.LW_ACH.get('companions_seen') || 0;
+        var _potSeen = window.LW_ACH.get('pots_seen') || 0;
+        var _subSeen = window.LW_ACH.get('substrates_seen') || 0;
+        var _mutSeen = window.LW_ACH.get('mutations_seen') || 0;
+        var _auraSeen = window.LW_ACH.get('auras_seen') || 0;
+        if (_leafSeen) atlasRows.push({label:'Leaves', cur:_leafSeen, total:71, color:'#7ab356', tab:null});
+        if (_flowerSeen) atlasRows.push({label:'Flowers', cur:_flowerSeen, total:71, color:'#e8a0bf', tab:null});
+        if (_compSeen) atlasRows.push({label:'Companions', cur:_compSeen, total:47, color:'#a8c87e', tab:null});
+        if (_potSeen) atlasRows.push({label:'Vessels', cur:_potSeen, total:60, color:'#c8a84b', tab:null});
+        if (_subSeen) atlasRows.push({label:'Substrates', cur:_subSeen, total:62, color:'#a87236', tab:null});
+        if (_mutSeen) atlasRows.push({label:'Mutations', cur:_mutSeen, total:19, color:'#a88fd4', tab:null});
+        if (_auraSeen) atlasRows.push({label:'Auras', cur:_auraSeen, total:31, color:'#7eb8d4', tab:null});
+      }
+    } catch(e){}
+
+    if (atlasRows.length) {
+      h += '<div style="margin-bottom:0.9rem;padding:0.55rem 0.6rem;background:rgba(13,16,12,0.5);border:1px solid rgba(122,179,86,0.12);border-radius:8px;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:var(--muted);letter-spacing:0.18em;margin-bottom:6px;">ATLAS</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;">';
+      for (var _ari = 0; _ari < atlasRows.length; _ari++) {
+        var _ar = atlasRows[_ari];
+        var _arPct = _ar.total > 0 ? Math.min(100, Math.round((_ar.cur / _ar.total) * 100)) : 0;
+        var _arClick = '';
+        if (_ar.tab) _arClick = ' onclick="if(window._bosSetTab)_bosSetTab(\'' + _ar.tab + '\');" style="cursor:pointer;';
+        else if (_ar.anchor) _arClick = ' onclick="var el=document.getElementById(\'' + _ar.anchor + '\');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});" style="cursor:pointer;';
+        else _arClick = ' style="';
+        h += '<div' + _arClick + 'padding:5px 7px;background:rgba(18,22,16,0.6);border:1px solid ' + _ar.color + '33;border-left:2.5px solid ' + _ar.color + ';border-radius:5px;">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:baseline;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:2px;"><span style="color:' + _ar.color + ';">' + _ar.label + '</span><span>' + _ar.cur + '/' + _ar.total + '</span></div>';
+        h += '<div style="height:3px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + _arPct + '%;background:' + _ar.color + ';"></div></div>';
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
+  } catch(e){}
   // Quick-nav chips — jump to each grid within the SECRETS tab. Sticky-
   // feeling but actually just scrollIntoView on anchor elements the grids
   // render further down. Scales with the tab's growing number of sections.
