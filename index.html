@@ -1245,7 +1245,7 @@
       isolation: isolate;
       position: relative;
     }
-    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;margin:0 auto;position:relative;contain:layout style paint;}
+    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:100%;max-height:none;margin:0 auto;position:relative;contain:layout style paint;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
@@ -1423,7 +1423,7 @@
       filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));
       -webkit-tap-highlight-color: transparent;
     }
-    .pgm-card-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .pgm-card-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .pgm-card-btn:active { transform: scale(0.94); }
     .pgm-act-btn {
       background: rgba(26,36,22,0.7); border: 1.5px solid rgba(74,124,53,0.25);
@@ -36818,7 +36818,7 @@ document.addEventListener('keydown', function(e) {
       nameEl.style.display = 'none';
     }
     if (counterEl) counterEl.textContent = (_carousel.idx + 1) + ' / ' + _carousel.arr.length;
-    if (dlBtn)     { dlBtn.textContent = '⬡ DOWNLOAD'; dlBtn.disabled = false; }
+    if (dlBtn)     { dlBtn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">'; dlBtn.disabled = false; }
     // Update galleryPlant so download/share functions work on current plant
     plant.collectionIndex = _carousel.idx;
     galleryPlant = plant;
@@ -37409,7 +37409,7 @@ document.addEventListener('keydown', function(e) {
     try { if (window.LW_ACH) LW_ACH.bump('d_download', 1); } catch(e){}
     var plant = galleryPlant;
     var btn = document.getElementById('gallery-download-btn');
-    btn.textContent = '⏳ RENDERING...';
+    if (window._toast) window._toast('⏳ Rendering plant card…');
     btn.disabled = true;
 
     var cardW = 640, cardH = 960;
@@ -37671,8 +37671,8 @@ document.addEventListener('keydown', function(e) {
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          btn.textContent = '✅ SAVED!';
-          setTimeout(function() { btn.textContent = '⬡ DOWNLOAD'; btn.disabled = false; }, 2000);
+          if (window._toast) window._toast('✅ Plant card saved!');
+          setTimeout(function() { btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">'; btn.disabled = false; }, 800);
           if (typeof gtag !== 'undefined') gtag('event', 'plant_card_download', { hash: plant.hash.substring(0,16), rare: plant.rare || false });
         }, 'image/png');
       } catch(e) {
@@ -37681,14 +37681,14 @@ document.addEventListener('keydown', function(e) {
         a.href = dataUrl;
         a.download = 'focus-grove-' + plant.hash.substring(0,8) + '.png';
         a.click();
-        btn.textContent = '⬡ DOWNLOAD';
+        btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">';
         btn.disabled = false;
       }
     };
 
     img.onerror = function() {
       URL.revokeObjectURL(svgUrl);
-      btn.textContent = '⬡ DOWNLOAD';
+      btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">';
       btn.disabled = false;
     };
 
