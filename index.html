@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -33897,6 +33897,22 @@ document.addEventListener('keydown', function(e) {
       phoenixSuppressed: false
     };
     if (opts && opts.isCross) entry.isCross = true;
+    // Engagement counter: substrate kinds seen on owned plants. Tracks
+    // diversity of bases the player has minted; drives the "every
+    // substrate" tier completionist achievements.
+    if (window.LW_ACH) {
+      try {
+        var _subIdx = traits.base % 71;
+        var _ss = JSON.parse(localStorage.getItem('lw_ach_substr_seen') || '{}');
+        if (!_ss[_subIdx]) {
+          _ss[_subIdx] = 1;
+          localStorage.setItem('lw_ach_substr_seen', JSON.stringify(_ss));
+          var _ssc = 0; for (var _ssk in _ss) _ssc++;
+          LW_ACH.set('d_substr_kinds', _ssc);
+          LW_ACH.set('substr_kinds_total', _ssc);
+        }
+      } catch(e) {}
+    }
     // PLANT SEAL — cryptographic signature
     await _sealPlant(entry);
     if (isEnhance) {
@@ -36798,6 +36814,14 @@ document.addEventListener('keydown', function(e) {
     } else {
       // Already revealed — normal flip toggle
       el.classList.toggle('flipped');
+      // Engagement counters: flip + (if landed on back) haiku read.
+      if (window.LW_ACH) {
+        LW_ACH.bump('d_flip_card', 1);
+        if (el.classList.contains('flipped')) {
+          LW_ACH.bump('d_haiku', 1);
+          LW_ACH.bump('d_lineage', 1);
+        }
+      }
       // DWELL XP — if the card is now flipped to back (showing haiku/DNA),
       // award reading XP after sustained dwell. Cancels if flipped back early.
       try{
@@ -48821,7 +48845,11 @@ function _finishDrop(defenderGame){
     });
   }
   if(window._lwBumpCompCounter)window._lwBumpCompCounter('drop');
-  if(window.LW_ACH){LW_ACH.bump('wild_drops',1);LW_ACH.bump('hexes_planted',1);LW_ACH.bump('d_drop',1);LW_ACH.bump('w_drop',1);}
+  if(window.LW_ACH){
+    LW_ACH.bump('wild_drops',1);LW_ACH.bump('hexes_planted',1);LW_ACH.bump('d_drop',1);LW_ACH.bump('w_drop',1);
+    // Takeover: this drop displaced another player's plant
+    if(pd&&pd.displaced)LW_ACH.bump('takeovers',1);
+  }
   // Book of Secrets: Root Down (first wild plant ever)
   try { if (window.LW_Events) window.LW_Events.fire('Root Down'); } catch(e){}
 }
@@ -50688,6 +50716,24 @@ window._hexAction=function(action){
         if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash,addH:_addH});
         try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
         try { if (window._lwWaterStreakGrant) window._lwWaterStreakGrant(); } catch(e){}
+        // Engagement counters: own-plant water (per-day, per-week + season-set)
+        if (window.LW_ACH) {
+          LW_ACH.bump('d_water_own', 1);
+          LW_ACH.bump('w_water_own', 1);
+          // Track which seasons the player has watered in (for the "watered
+          // through the year" achievement). Real-world season from current month.
+          try {
+            var _ws = JSON.parse(localStorage.getItem('lw_ach_water_seasons') || '{}');
+            var _m = new Date().getMonth();
+            var _wsi = _m < 3 ? 3 : _m < 6 ? 0 : _m < 9 ? 1 : 2;
+            if (!_ws[_wsi]) {
+              _ws[_wsi] = 1;
+              localStorage.setItem('lw_ach_water_seasons', JSON.stringify(_ws));
+              var _wsc = 0; for (var _wk in _ws) _wsc++;
+              LW_ACH.set('d_water_seasons', _wsc);
+            }
+          } catch(e) {}
+        }
       };
       // Confirmation modal — surfaces exact mechanics so the trade is
       // visible. Cost stays free; the daily walk + tap is the input.
@@ -80662,6 +80708,8 @@ window._lwApplyGates=function(){
       if (window._toast) window._toast('🔒 The Hermit\'s Hut unlocks at Keeper Level 6.');
       return;
     }
+    // Engagement counter: hermit visit (a Hut open is a hermit interaction)
+    if (window.LW_ACH) LW_ACH.bump('hermit_tips', 1);
     return _origOpen.apply(this, arguments);
   };
   window.LW_HUT._gateInstalled = true;
