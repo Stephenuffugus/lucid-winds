@@ -49609,7 +49609,7 @@ function _checkPendingRewards(){
     }).catch(function(e){if(window._swsLog)_swsLog('Pending rewards err: '+e.message,'warn');});
   }catch(e){}
 }
-function _toast(m){var e=document.getElementById('w-toast');if(!e)return;e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
+function _toast(m,opts){var e=document.getElementById('w-toast');if(!e)return;if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
 
 // Simulated wind direction retained for dispersal math (_wd is read by
 // reproduction's wind-weighted target selection). The old span-write was
