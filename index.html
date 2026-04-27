@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -45027,6 +45027,28 @@ function _doReproduction(weather, simMode) {
   // Mutates local wild plants in place; saves via _saveWild. Skipped
   // in simMode so economy-simulation runs don't corrupt real state.
   if (!simMode) { try { _wildClimateTick(weather); } catch (e) {} }
+
+  // Engagement counters: scan all wild plants for longevity milestones.
+  // plant_age_max_d = max days any owned wild plant has lived. Drives
+  // the "Long Keeper" + "Five Years of One Plant" tier achievements.
+  // plant_4_seasons = 1 once any plant has lived through all 4 real
+  // seasons (>= 365 days as approximation; exact season-crossing
+  // tracking would need richer per-plant state).
+  if (!simMode && window.LW_ACH) {
+    try {
+      var _wAll = _getWild();
+      var _maxDays = window.LW_ACH.get('plant_age_max_d') || 0;
+      var _now = Date.now();
+      for (var _wai = 0; _wai < _wAll.length; _wai++) {
+        var _wp = _wAll[_wai];
+        if (!_wp || !_wp.droppedAt) continue;
+        var _ageD = Math.floor((_now - _wp.droppedAt) / 86400000);
+        if (_ageD > _maxDays) _maxDays = _ageD;
+        if (_ageD >= 365) window.LW_ACH.set('plant_4_seasons', 1);
+      }
+      window.LW_ACH.set('plant_age_max_d', _maxDays);
+    } catch(e){}
+  }
 
   // Compendium trigger check — fires the 29-event TRIGGERS registry
   // (audit-flagged as shipped-but-unplugged). Runs once/day per local
