@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.15';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -35750,6 +35750,8 @@ document.addEventListener('keydown', function(e) {
     ledger.spent = (ledger.spent || 0) + amount;
     _secureSet(DEW_LEDGER_KEY, ledger);
     _updateDewDisplay();
+    // Engagement counter: total Dew spent (lifetime + daily).
+    if (window.LW_ACH) { LW_ACH.bump('dew_spent_total', amount); LW_ACH.bump('d_dew_spent', amount); }
     return true;
   }
   function getTotalDew() {
@@ -40188,8 +40190,16 @@ document.addEventListener('keydown', function(e) {
     if (typeof gtag !== 'undefined') {
       if(typeof gtag!=='undefined') gtag('event', 'nursery_bloom', { hash: newHash.slice(0, 8), mutated: mut.mutated, mutCount: mut.count });
     }
-    // Engagement counters: bloom completed
-    if (window.LW_ACH) { LW_ACH.bump('blooms_total', 1); LW_ACH.bump('d_bloom', 1); LW_ACH.bump('w_bloom', 1); }
+    // Engagement counters: bloom completed (+ purity tracker for the
+    // "bloomed without accelerate" achievement). seed.fertApplied counts
+    // the BOOST + ACCELERATE button uses; if none were used the bloom
+    // was patient.
+    if (window.LW_ACH) {
+      LW_ACH.bump('blooms_total', 1);
+      LW_ACH.bump('d_bloom', 1);
+      LW_ACH.bump('w_bloom', 1);
+      if (!seed.fertApplied || seed.fertApplied === 0) LW_ACH.bump('bloom_no_skip', 1);
+    }
 
     // Event log: bloom is the reveal moment for mystery seeds.
     if (window.LW_Log) {
@@ -80761,6 +80771,14 @@ window._LW_toolXP=function(tool,amount){
   var was=x[tool]||0;
   x[tool]=was+amount;
   _lwSetToolXP(x);
+  // Engagement counters: tool use + unique tools used (sticky set).
+  if(window.LW_ACH){
+    LW_ACH.bump('d_tool_use',1);
+    try{
+      var _ts=JSON.parse(localStorage.getItem('lw_ach_tools_seen')||'{}');
+      if(!_ts[tool]){_ts[tool]=1;localStorage.setItem('lw_ach_tools_seen',JSON.stringify(_ts));var _tc=0;for(var _tk in _ts)_tc++;LW_ACH.set('tools_used',_tc);LW_ACH.set('d_tool_kinds',_tc);}
+    }catch(e){}
+  }
   var oldLvl=was>=LW_TOOL_XP_L3?3:was>=LW_TOOL_XP_L2?2:1;
   var newLvl=x[tool]>=LW_TOOL_XP_L3?3:x[tool]>=LW_TOOL_XP_L2?2:1;
   if(newLvl>oldLvl){
