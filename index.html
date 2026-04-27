@@ -1378,7 +1378,7 @@
       border-top: 1px solid rgba(74,124,53,0.1);
       background: rgba(10,13,9,0.6);
     }
-    .pgm-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
+    .pgm-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
     /* Download button — image IS the face. The source art has its own
        gold frame baked in, so no CSS border or gradient. Sized at 120px
        so the painted detail reads at intended size; we are NOT
@@ -1393,6 +1393,22 @@
     }
     .pgm-dl-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .pgm-dl-btn:active { transform: scale(0.94); }
+    /* Parchment-tall card buttons (share/details/breed/compost) — image
+       IS the face, with the flower illustration up top and the action
+       glyph baked into the bottom medallion. 1024×1536 source (2:3),
+       so we render 100px wide × 150px tall to honor that ratio without
+       overshrinking. Row flex-aligns to bottom so the action glyphs
+       at the parchment foot line up across all the buttons. */
+    .pgm-card-btn {
+      padding: 0; border: none; background: none;
+      cursor: pointer; transition: transform 0.15s;
+      width: 100px; height: 150px;
+      display: inline-flex; align-items: flex-end; justify-content: center;
+      filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pgm-card-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .pgm-card-btn:active { transform: scale(0.94); }
     .pgm-act-btn {
       background: rgba(26,36,22,0.7); border: 1.5px solid rgba(74,124,53,0.25);
       color: var(--sage); font-family: 'Bebas Neue', sans-serif;
@@ -8836,10 +8852,10 @@ window._addSwitchTabHook = function(fn){
     <div class="pgm-actions">
       <div class="pgm-btn-row">
         <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()" title="Download plant card" aria-label="Download plant card"><img src="assets/btn-download-v2.png" alt="Download"></button>
-        <button class="pgm-act-btn" onclick="shareGalleryPlant()">↗ SHARE</button>
-        <button class="pgm-act-btn" onclick="window._carouselDetails()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">⬡ DETAILS</button>
-        <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
-        <button class="pgm-act-btn" onclick="carouselCompost()" style="border-color:rgba(139,46,46,0.3);color:rgba(192,112,112,0.9);">🧪 COMPOST</button>
+        <button class="pgm-card-btn" onclick="shareGalleryPlant()" title="Share this plant" aria-label="Share"><img src="assets/btn-share.png" alt="Share"></button>
+        <button class="pgm-card-btn" onclick="window._carouselDetails()" title="View details" aria-label="Details"><img src="assets/btn-details.png" alt="Details"></button>
+        <button class="pgm-card-btn" onclick="carouselBreed()" title="Breed this plant" aria-label="Breed"><img src="assets/btn-breed.png" alt="Breed"></button>
+        <button class="pgm-card-btn" onclick="carouselCompost()" title="Compost this plant" aria-label="Compost"><img src="assets/btn-compost.png" alt="Compost"></button>
         <!-- Wild-inspect-only action buttons. Hidden by default; shown when
              openCarousel is called with source='wild-inspect' so players
              walking through a hex can water + take cuttings without
@@ -37078,7 +37094,7 @@ document.addEventListener('keydown', function(e) {
     // to share yet on a plant the player is about to drop.
     var _dlBtn = document.getElementById('gallery-download-btn');
     if (_dlBtn) _dlBtn.style.display = _isWild ? 'none' : '';
-    var _shareBtn = _actRow ? _actRow.querySelector('.pgm-act-btn[onclick*="shareGalleryPlant"]') : null;
+    var _shareBtn = _actRow ? _actRow.querySelector('[onclick*="shareGalleryPlant"]') : null;
     if (_shareBtn) _shareBtn.style.display = _isWild ? 'none' : '';
 
     _pushModal('plant-gallery-modal');
@@ -52037,7 +52053,8 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
   /* Step 19: carousel-lock is active but BREED carved out. The broad
      lock (.pgm-act-btn rule above) catches BREED too, so this rule
      selects the BREED button by its inline onclick and re-enables it. */
-  body.lw-tut-active.lw-tut-carousel-breed-only .pgm-act-btn[onclick*="carouselBreed"]{pointer-events:auto !important;opacity:1 !important;filter:none !important;}
+  body.lw-tut-active.lw-tut-carousel-breed-only .pgm-act-btn[onclick*="carouselBreed"],
+  body.lw-tut-active.lw-tut-carousel-breed-only .pgm-card-btn[onclick*="carouselBreed"]{pointer-events:auto !important;opacity:1 !important;filter:none !important;}
   /* Step 20: inside the breed screen, only the CROSS-POLLINATE confirm
      button is tappable. Close-X, partner cycler arrows, and self
      cycler arrows dim + pointer-events:none. */
@@ -52088,6 +52105,7 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
      those steps. pgm-close-btn + swipe arrows also locked. Step 12
      opens the exit path via lw-tut-carousel-can-close class. */
   body.lw-tut-active.lw-tut-carousel-lock .pgm-act-btn,
+  body.lw-tut-active.lw-tut-carousel-lock .pgm-card-btn,
   body.lw-tut-active.lw-tut-carousel-lock .pgm-dl-btn,
   body.lw-tut-active.lw-tut-carousel-lock .pgm-close-btn,
   body.lw-tut-active.lw-tut-carousel-lock .cs-nav-arrow,
@@ -52101,7 +52119,8 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
      carousel card. The other .pgm-act-btn buttons fade and lose pointer
      events so the tester can't veer off. We target by onclick attribute
      because the buttons themselves have no stable id. */
-  body.lw-tut-limit-actions .pgm-act-btn:not([onclick*="carouselDetails"]):not([onclick*="_carouselDetails"]):not([onclick*="shareGalleryPlant"]){
+  body.lw-tut-limit-actions .pgm-act-btn:not([onclick*="carouselDetails"]):not([onclick*="_carouselDetails"]):not([onclick*="shareGalleryPlant"]),
+  body.lw-tut-limit-actions .pgm-card-btn:not([onclick*="carouselDetails"]):not([onclick*="_carouselDetails"]):not([onclick*="shareGalleryPlant"]){
     opacity:0.25;pointer-events:none;filter:saturate(0.35);
   }
 </style>
