@@ -73064,9 +73064,9 @@ function _bosItemsContent(){
     for (var ck in CAT) if (CAT[ck].category === cat.key) keysInCat.push(ck);
     if (!keysInCat.length) continue;
     var catFound = 0; for (var fi=0;fi<keysInCat.length;fi++) if (discovered[keysInCat[fi]]) catFound++;
-    h += '<div style="margin-top:1rem;margin-bottom:0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;color:'+cat.color+';display:flex;align-items:center;gap:0.4rem;">';
-    h += '<span>'+cat.label+'</span><span style="font-size:0.5rem;color:var(--muted);">'+catFound+'/'+keysInCat.length+'</span></div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.5;margin-bottom:0.5rem;">'+cat.desc+'</div>';
+    h += '<div style="margin-top:1rem;margin-bottom:0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:'+cat.color+';display:flex;align-items:center;gap:0.4rem;">';
+    h += '<span>'+cat.label+'</span><span style="font-size:0.6rem;color:var(--muted);">'+catFound+'/'+keysInCat.length+'</span></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.6;margin-bottom:0.6rem;">'+cat.desc+'</div>';
     for (var ki = 0; ki < keysInCat.length; ki++) {
       var it = CAT[keysInCat[ki]];
       var isFound = !!discovered[it.key];
@@ -73078,23 +73078,23 @@ function _bosItemsContent(){
         h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>\';">';
         h += '</div>';
         h += '<div style="flex:1;min-width:0;">';
-        h += '<div style="display:flex;align-items:baseline;gap:0.4rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.06em;">'+it.name+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:'+rc+';letter-spacing:0.08em;">'+it.rarity.toUpperCase()+'</div></div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.6;margin-top:3px;">'+it.desc+'</div>';
-        h += '<div style="font-family:Playfair Display,serif;font-size:0.58rem;font-style:italic;color:var(--muted);line-height:1.6;margin-top:6px;">'+it.lore+'</div>';
+        h += '<div style="display:flex;align-items:baseline;gap:0.45rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.88rem;color:var(--cream);letter-spacing:0.06em;">'+it.name+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:'+rc+';letter-spacing:0.08em;">'+it.rarity.toUpperCase()+'</div></div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.6;margin-top:4px;">'+it.desc+'</div>';
+        h += '<div style="font-family:Playfair Display,serif;font-size:0.68rem;font-style:italic;color:var(--muted);line-height:1.6;margin-top:6px;">'+it.lore+'</div>';
         h += '</div></div></div>';
       } else {
         h += '<div style="margin-bottom:0.5rem;padding:0.7rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.1);border-left:3px solid rgba(138,145,120,0.2);border-radius:10px;">';
         h += '<div style="display:flex;align-items:center;gap:0.7rem;">';
         h += '<div style="width:48px;height:48px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px dashed rgba(138,145,120,0.3);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--muted);">?</div>';
         h += '<div style="flex:1;min-width:0;">';
-        h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.5rem;color:var(--muted);line-height:1.5;">'+it.usage+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+rc+';opacity:0.6;letter-spacing:0.08em;margin-top:3px;">'+it.rarity.toUpperCase()+' \u00b7 UNDISCOVERED</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.58rem;color:var(--muted);line-height:1.6;">'+it.usage+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+rc+';opacity:0.7;letter-spacing:0.08em;margin-top:4px;">'+it.rarity.toUpperCase()+' \u00b7 UNDISCOVERED</div>';
         h += '</div></div></div>';
       }
     }
   }
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.6;">Items are earned from mystery boxes, slot jackpots, nursery blooms, step milestones, and login streaks. Burn on use \u2014 no permanent stacks.</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-top:1.2rem;line-height:1.7;">Items are earned from mystery boxes, slot jackpots, nursery blooms, step milestones, and login streaks. Burn on use \u2014 no permanent stacks.</div>';
   return h;
 }
 window._bosItemsContent = _bosItemsContent;
@@ -78228,21 +78228,21 @@ window.LW_debug.cleanGhostDrops = function(){
     var h = '';
     h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(46,38,18,0.4),rgba(18,22,16,0.7));border:1.5px solid rgba(200,168,75,0.3);border-radius:12px;margin-bottom:0.9rem;">';
     h += '<div style="font-family:Playfair Display,serif;font-size:1.05rem;font-style:italic;color:var(--gold);margin-bottom:0.3rem;">'+seasonEmblem+' The '+s.season.charAt(0).toUpperCase()+s.season.slice(1)+' Hunt</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.7;">Twelve fireflies hide in the garden each season. Catch them all before the next solstice for a prize only found this way.</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:0.5rem;font-style:italic;">\u2014 L., age 7</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);line-height:1.7;">Twelve fireflies hide in the garden each season. Catch them all before the next solstice for a prize only found this way.</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.5rem;font-style:italic;">\u2014 L., age 7</div>';
     h += '</div>';
-    h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:3px;"><span>'+prog.caught+' / '+TOTAL_PER_SEASON+' caught</span><span>'+prog.available+' spawned so far</span></div>';
+    h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-bottom:5px;"><span>'+prog.caught+' / '+TOTAL_PER_SEASON+' caught</span><span>'+prog.available+' spawned so far</span></div>';
     h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.9rem;"><div style="height:100%;width:'+(100*prog.caught/TOTAL_PER_SEASON)+'%;background:linear-gradient(90deg,rgba(200,168,75,0.8),rgba(122,179,86,0.8));border-radius:2px;"></div></div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;">';
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
     for (var i=0;i<TOTAL_PER_SEASON;i++){
       var f = s.spawned[i] || {};
       var isCaught = !!f.caught;
       var isSpawned = f.at && f.at <= Date.now();
       var bg = isCaught ? 'radial-gradient(circle at 50% 40%,rgba(200,168,75,0.35),rgba(26,36,22,0.8))' : 'rgba(13,16,12,0.55)';
       var border = isCaught ? 'rgba(200,168,75,0.7)' : (isSpawned?'rgba(200,168,75,0.25)':'rgba(74,124,53,0.1)');
-      h += '<div style="aspect-ratio:1;background:'+bg+';border:1.5px solid '+border+';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4px;'+(isCaught?'box-shadow:0 0 12px rgba(200,168,75,0.35);':'')+'">';
-      h += '<div style="font-size:1.5rem;opacity:'+(isCaught?1:(isSpawned?0.45:0.15))+';">'+(isCaught?'\u2728':'?')+'</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+(isCaught?'var(--gold)':'var(--muted)')+';letter-spacing:0.05em;margin-top:2px;">#'+(i+1)+'</div>';
+      h += '<div style="aspect-ratio:1;background:'+bg+';border:1.5px solid '+border+';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;'+(isCaught?'box-shadow:0 0 12px rgba(200,168,75,0.35);':'')+'">';
+      h += '<div style="font-size:1.7rem;opacity:'+(isCaught?1:(isSpawned?0.5:0.18))+';line-height:1;">'+(isCaught?'\u2728':'?')+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:'+(isCaught?'var(--gold)':'var(--muted)')+';letter-spacing:0.05em;margin-top:4px;">#'+(i+1)+'</div>';
       h += '</div>';
     }
     h += '</div>';
@@ -78251,12 +78251,12 @@ window.LW_debug.cleanGhostDrops = function(){
       h += '<div style="font-family:Playfair Display,serif;font-size:0.95rem;font-style:italic;color:var(--gold);">\u2728 Hunt complete.</div>';
       // Prize contents — used to say "the season rewarded you" without
       // naming the prize. Now lists what the player actually received.
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-top:0.5rem;line-height:1.7;">';
-      h += '<div style="color:var(--muted);font-size:0.48rem;letter-spacing:0.1em;margin-bottom:4px;">YOU EARNED</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);margin-top:0.5rem;line-height:1.8;">';
+      h += '<div style="color:var(--muted);font-size:0.55rem;letter-spacing:0.1em;margin-bottom:4px;">YOU EARNED</div>';
       h += '<div>+500 Dew</div>';
       h += '<div>\u00d73 Legendary Mystery Box</div>';
       h += '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:0.6rem;font-style:italic;">Come back next season \u2014 twelve new fireflies, new prizes.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.6rem;font-style:italic;">Come back next season \u2014 twelve new fireflies, new prizes.</div>';
       h += '</div>';
     } else {
       // Next firefly hint: find earliest uncaught spawn with at > now.
@@ -78274,13 +78274,13 @@ window.LW_debug.cleanGhostDrops = function(){
           var _days = Math.floor(_ms / 86400000);
           var _hrs = Math.floor((_ms % 86400000) / 3600000);
           var _eta = _days > 0 ? (_days + 'd ' + _hrs + 'h') : (_hrs > 0 ? (_hrs + 'h') : 'soon');
-          h += '<div style="margin-top:0.8rem;padding:0.55rem 0.7rem;background:rgba(232,200,106,0.06);border:1px dashed rgba(232,200,106,0.3);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);">Next firefly drifts in</div>';
-          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--gold);">' + _eta + '</div>';
+          h += '<div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(232,200,106,0.06);border:1px dashed rgba(232,200,106,0.3);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);">Next firefly drifts in</div>';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.08em;color:var(--gold);">' + _eta + '</div>';
           h += '</div>';
         }
       } catch(_eN){}
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);text-align:center;margin-top:0.7rem;line-height:1.7;">Fireflies hide across the game, the Wild map, the nursery, the Book. Keep your eyes open. One spawns every 7 to 8 days.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);text-align:center;margin-top:0.8rem;line-height:1.7;">Fireflies hide across the game, the Wild map, the nursery, the Book. Keep your eyes open. One spawns every 7 to 8 days.</div>';
     }
     // Lifetime hunt stats: scan localStorage for lw_hunt_<year>_<season> keys.
     try {
@@ -78301,11 +78301,11 @@ window.LW_debug.cleanGhostDrops = function(){
       }
       if (_lifeSeasons > 1 || _lifeCompleted > 0) {
         h += '<div style="margin-top:1rem;padding:0.7rem 0.85rem;background:rgba(18,22,16,0.55);border:1px solid rgba(122,179,86,0.18);border-radius:9px;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--muted);letter-spacing:0.16em;margin-bottom:5px;">SINCE YOU STARTED HUNTING</div>';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.16em;margin-bottom:6px;">SINCE YOU STARTED HUNTING</div>';
         h += '<div style="display:flex;justify-content:space-around;text-align:center;">';
-        h += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--gold);">' + _lifeCaught + '</div><div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);letter-spacing:0.08em;">FIREFLIES</div></div>';
-        h += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--sage);">' + _lifeSeasons + '</div><div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);letter-spacing:0.08em;">SEASONS</div></div>';
-        h += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:#a87285;">' + _lifeCompleted + '</div><div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);letter-spacing:0.08em;">COMPLETED</div></div>';
+        h += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--gold);">' + _lifeCaught + '</div><div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);letter-spacing:0.08em;">FIREFLIES</div></div>';
+        h += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:var(--sage);">' + _lifeSeasons + '</div><div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);letter-spacing:0.08em;">SEASONS</div></div>';
+        h += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:#a87285;">' + _lifeCompleted + '</div><div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);letter-spacing:0.08em;">COMPLETED</div></div>';
         h += '</div>';
         h += '</div>';
       }
