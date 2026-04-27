@@ -71,6 +71,9 @@
             if (ae && ae.tier === 'mythic' && window._haptic) try { window._haptic('bloom'); } catch(e){}
           }
         }
+        // Refresh the BoS QUESTS tab badge so the count drops live as
+        // dailies complete. No-op if the book overlay isn't open.
+        try { if (window._bosRefreshBadges) window._bosRefreshBadges(); } catch(e){}
       } catch(e){}
     }, 1500);
   }
