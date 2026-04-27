@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.38';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.39';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -79254,6 +79254,53 @@ function _bosTodayContent() {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.55;">' + card.body + '</div>';
     h += '</div></div>';
   }
+
+  // ─── NEAR COMPLETION nudges ───
+  // Surface up to 3 achievements where the player is within 20% of done.
+  // Direct motivational push: "you're one walk away from this." Pulls
+  // straight from LW_ACH catalog + counters.
+  try {
+    if (window.LW_ACH) {
+      var _aProg = window.LW_ACH.progress() || {};
+      var _aCounters = window.LW_ACH.counters() || {};
+      var _near = [];
+      var _aCat = window.LW_ACH.catalog || [];
+      for (var _aci = 0; _aci < _aCat.length; _aci++) {
+        var _ae = _aCat[_aci];
+        if (!_ae || !_ae.counter || !_ae.target) continue;
+        if (_aProg[_ae.id]) continue;
+        if (_ae.hidden) continue; // skip secret achievements (don't spoil)
+        var _aV = _aCounters[_ae.counter] || 0;
+        if (_aV <= 0) continue;
+        var _aPct = _aV / _ae.target;
+        if (_aPct >= 0.8 && _aPct < 1) {
+          _near.push({ ae: _ae, cur: _aV, pct: Math.round(_aPct * 100) });
+        }
+      }
+      // Sort by closest-to-done first
+      _near.sort(function(a, b) { return b.pct - a.pct; });
+      _near = _near.slice(0, 3);
+      if (_near.length) {
+        h += '<div style="margin-top:1rem;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.18em;color:var(--muted);margin-bottom:0.4rem;">SO CLOSE</div>';
+        var _tcMap = { bronze:'#a87236', silver:'#a8a8a8', gold:'#c8a84b', platinum:'#7eb8d4', mythic:'#a87285' };
+        for (var _ni = 0; _ni < _near.length; _ni++) {
+          var _ne = _near[_ni];
+          var _tc = _tcMap[_ne.ae.tier] || '#c8a84b';
+          var _remain = _ne.ae.target - _ne.cur;
+          h += '<div onclick="if(window._bosSetTab)_bosSetTab(\'quests\');" style="cursor:pointer;padding:0.5rem 0.7rem;margin-bottom:5px;background:linear-gradient(180deg,rgba(18,22,16,0.55),' + _tc + '11);border:1px solid ' + _tc + '55;border-left:3px solid ' + _tc + ';border-radius:6px;">';
+          h += '<div style="display:flex;justify-content:space-between;align-items:baseline;">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:' + _tc + ';letter-spacing:0.06em;">' + _ne.ae.name + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">' + _ne.cur + ' / ' + _ne.ae.target + '</div>';
+          h += '</div>';
+          h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin:4px 0 3px;"><div style="height:100%;width:' + _ne.pct + '%;background:' + _tc + ';"></div></div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--cream);font-style:italic;">' + (_ne.ae.desc || '') + ' · <span style="color:' + _tc + ';">' + _remain + ' to go</span></div>';
+          h += '</div>';
+        }
+        h += '</div>';
+      }
+    }
+  } catch(e){}
 
   // ─── RECENT DISCOVERIES feed ───
   // Stephen 2026-04-27 UX rule: compact at a glance, room to dive. Surface
