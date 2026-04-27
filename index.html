@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.21';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5142,19 +5142,17 @@ body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
    (RECENTER, WATER ALL, MY PLANTS) hide behind the menu fab. When the
    menu opens, they appear stacked ABOVE the menu fab with 62px gaps
    so nothing overlaps and recenter is no longer 'behind the hamburger'. */
-body.tab-wild #w-menu-fab{display:flex!important;}
-body:not(.tab-wild) #w-menu-fab{display:none!important;}
-body.tab-wild:not(.lw-wm-open) #w-recenter,
-body.tab-wild:not(.lw-wm-open) #w-mass-water,
-body.tab-wild:not(.lw-wm-open) #w-my-plants{display:none!important;}
-/* Menu fab opened state: rotate to indicate close */
-#w-menu-fab.open{transform:rotate(90deg);background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.18))!important;}
-/* When menu is open, override the secondary buttons' bottom positions
-   so they stack cleanly above the menu fab (which sits at bottom:108).
-   62px gaps = comfortable tap target spacing, no overlaps. */
-body.tab-wild.lw-wm-open #w-recenter{bottom:calc(170px + env(safe-area-inset-bottom,0px))!important;}
-body.tab-wild.lw-wm-open #w-mass-water{bottom:calc(232px + env(safe-area-inset-bottom,0px))!important;}
-body.tab-wild.lw-wm-open #w-my-plants{bottom:calc(294px + env(safe-area-inset-bottom,0px))!important;}
+/* Stephen 2026-04-27: hamburger menu retired. Recenter and My Plants
+   are always visible on Wild — recenter on the LEFT, my-plants on
+   the RIGHT, both pinned at the same y-coordinate so they read as a
+   matched pair. Mass-water hides for now until Stephen places it. */
+#w-menu-fab{display:none!important;}
+body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;}
+body.tab-wild #w-my-plants{display:flex!important;left:auto!important;right:12px!important;bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;}
+body.tab-wild #w-mass-water{display:none!important;}
+body:not(.tab-wild) #w-recenter,
+body:not(.tab-wild) #w-mass-water,
+body:not(.tab-wild) #w-my-plants{display:none!important;}
 #bpi:active{transform:scale(0.88);}
 #bpb{position:absolute;top:-4px;left:-4px;min-width:20px;height:20px;border-radius:10px;background:var(--gold);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.4);transition:all 0.25s ease;}
 #bpb.e{opacity:0;transform:scale(0.5);}
@@ -47820,9 +47818,22 @@ function _drop(pl){
   // Combined occupancy: local wild + shared remote markers in this zone
   var inZone=_allPlantsInZone(zone);
   // Already have your own plant in this zone? Refuse (one self per zone).
+  // Stephen 2026-04-27 bug fix: a stale shared marker with myUid but no
+  // matching local entry was blocking new placements. Local is source of
+  // truth for "this is mine"; the iz.ownerUid === myUid path now ALSO
+  // requires the plant to exist in local fg_wild_plants. If it doesn't,
+  // the marker is a ghost (failed delete, multi-device drift) and we
+  // silently ignore it for placement decisions.
+  var _localWild = _getWild();
+  var _localHashes = {};
+  for (var _lwi = 0; _lwi < _localWild.length; _lwi++) {
+    if (_localWild[_lwi] && _localWild[_lwi].hash) _localHashes[_localWild[_lwi].hash] = 1;
+  }
   for(var io=0;io<inZone.length;io++){
     var iz=inZone[io];
-    var mine=(iz.own===true)||(myUid&&iz.ownerUid===myUid);
+    var mineLocal = (iz.own === true);
+    var mineCloud = (myUid && iz.ownerUid === myUid && _localHashes[iz.hash]);
+    var mine = mineLocal || mineCloud;
     if(mine){_toast('You already have a plant in this zone.');return;}
   }
   var displaced=null;
@@ -49118,10 +49129,19 @@ function _dropFromBP(p){
   var _selfCount=_checkSelfRadius(la,lo);
   if(_selfCount){_toast('\ud83c\udf3f Too close to your other plants ('+_selfCount+' within 700m). Walk further to plant.');return;}
   // 3-per-zone cap with weakest-eviction (combined local + shared markers)
+  // Same stale-marker fix as the primary placement path: cloud-claimed
+  // ownership must also exist in local for the zone to count as "mine".
   var inZone=_allPlantsInZone(zone);
+  var _lw2 = _getWild();
+  var _lh2 = {};
+  for (var _li2 = 0; _li2 < _lw2.length; _li2++) {
+    if (_lw2[_li2] && _lw2[_li2].hash) _lh2[_lw2[_li2].hash] = 1;
+  }
   for(var io=0;io<inZone.length;io++){
     var iz=inZone[io];
-    var mine=(iz.own===true)||(myUid&&iz.ownerUid===myUid);
+    var mineLocal=(iz.own===true);
+    var mineCloud=(myUid&&iz.ownerUid===myUid&&_lh2[iz.hash]);
+    var mine = mineLocal || mineCloud;
     if(mine){_toast('You already have a plant in this zone.');return;}
   }
   var displaced=null;
@@ -50532,6 +50552,13 @@ window._lwWaterStreakGrant = function(){
     var cap = 5;
     try{ if (window._LW_treePoints) { var pts = (window._LW_treePoints() || {}).waterStreak || 0; cap += pts; } }catch(e){}
     var bonus = Math.min(streak, cap);
+    // Engagement counters: water streak. Sticky-set the lifetime max
+    // and bump per-period for the daily/weekly water-streak challenges.
+    if (window.LW_ACH) {
+      LW_ACH.set('water_streak_max', Math.max(LW_ACH.get('water_streak_max') || 0, streak));
+      LW_ACH.set('d_water_streak', streak);
+      LW_ACH.set('w_water_streak', streak);
+    }
     if (bonus > 1) {
       if (window.earnDew) window.earnDew(bonus, 'water_streak');
       // Soft reveal — only on day 2+ so day 1 doesn't toast every water
@@ -76467,6 +76494,57 @@ window._lwClaimHerbarium = function(id){
   window.LW_debug.grantBox = function(n){ return add(n||1); };
   window.LW_debug.openBoxes = function(){ openPanel(); };
 })();
+
+// ═══ LW_debug.cleanGhostDrops ═══════════════════════════════════════
+// Stephen 2026-04-27: stale Firestore wildDrops with this player's UID
+// were blocking new placements (the placement check trusted the cloud
+// marker as proof of ownership even if local had no record). Primary
+// fix is in _allPlantsInZone callers (require local-existence). This
+// debug helper can also PURGE the stale cloud markers — useful if
+// Stephen sees the bug and wants a clean slate.
+//
+// Usage: LW_debug.cleanGhostDrops()
+//   - Lists Firestore wildDrops where ownerUid === me but hash isn't
+//     in local fg_wild_plants.
+//   - Asks for confirm before deleting.
+window.LW_debug = window.LW_debug || {};
+window.LW_debug.cleanGhostDrops = function(){
+  try {
+    var u = window.firebase && firebase.auth() && firebase.auth().currentUser;
+    if (!u || !u.uid || !window.db) {
+      console.warn('[cleanGhostDrops] Need signed-in user + db.');
+      return;
+    }
+    var local = [];
+    try { local = JSON.parse(localStorage.getItem('fg_wild_plants') || '[]'); } catch(e) {}
+    var localHashes = {};
+    for (var i = 0; i < local.length; i++) if (local[i] && local[i].hash) localHashes[local[i].hash] = 1;
+    window.db.collection('wildDrops').where('ownerUid','==',u.uid).get().then(function(snap){
+      var ghosts = [];
+      snap.forEach(function(doc){
+        var d = doc.data();
+        if (!d || !d.hash) return;
+        if (!localHashes[d.hash]) ghosts.push({id: doc.id, hash: d.hash, lat: d.lat, lng: d.lng});
+      });
+      console.log('[cleanGhostDrops] Found ' + ghosts.length + ' ghost markers:');
+      console.table(ghosts);
+      if (ghosts.length === 0) return;
+      var ok = confirm('Delete ' + ghosts.length + ' ghost wildDrops markers? This cannot be undone.');
+      if (!ok) return;
+      var deleted = 0;
+      for (var gi = 0; gi < ghosts.length; gi++) {
+        (function(id){
+          window.db.collection('wildDrops').doc(id).delete().then(function(){
+            deleted++;
+            if (deleted === ghosts.length) console.log('[cleanGhostDrops] Done. Deleted ' + deleted + ' ghosts.');
+          }).catch(function(e){ console.warn('[cleanGhostDrops] Delete failed for ' + id, e); });
+        })(ghosts[gi].id);
+      }
+    }).catch(function(e){ console.error('[cleanGhostDrops] Query failed:', e); });
+  } catch(e) {
+    console.error('[cleanGhostDrops] Error:', e);
+  }
+};
 
 // ═══ LW_COCOONS — walk-to-open chrysalis system (PoGo-egg adaptation) ═══
 // Cocoons are NOT seeds (those grow plants in the nursery). They're moth
