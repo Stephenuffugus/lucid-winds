@@ -6878,6 +6878,19 @@ window._addSwitchTabHook = function(fn){
       <button onclick="PW_UI.closeCharacter()" style="flex:1 1 100%;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button>
     </div>
   </div>
+  <!-- ═══ CLASS MANAGER (lifted out of Book of Secrets) ═══
+       Full-screen overlay opened from the CLASS section of the character
+       sheet. Contains Keeper's Tree allocation, class picker / respec,
+       and tools list. Same content the BoS CLASS tab used to show. -->
+  <div id="cs-class-manager" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(8,10,6,0.97);overflow-y:auto;padding:1rem;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+    <button onclick="if(window._lwCloseClassManager)_lwCloseClassManager();" aria-label="Close" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.85);color:var(--gold);font-size:1.1rem;cursor:pointer;z-index:2;">&#10005;</button>
+    <div style="max-width:560px;margin:0 auto;padding:1.5rem 0 1rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:0.2rem;">CLASS &middot; TREE &middot; TOOLS</div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.9rem;line-height:1.5;">Pick or change your class, allocate Keeper's Tree points, and review tool levels.</div>
+      <div id="cs-class-manager-body"></div>
+      <button onclick="if(window._lwCloseClassManager)_lwCloseClassManager();" style="width:100%;margin-top:1rem;padding:0.6rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;">CLOSE</button>
+    </div>
+  </div>
   <!-- ═══ ONBOARDING ═══ -->
   <div id="pw-onboard">
     <!-- Splash: seed + root, "lucid winds" (shown before story beats, new users only) -->
@@ -60278,7 +60291,7 @@ window.PW_grantXP=function(amount,reason){
             no:'LATER'
           },function(){
             if(window._LW_openClassPicker)window._LW_openClassPicker();
-            else if(window._openCompendiumUI){window._openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('class');},400);}
+            else if(window._lwOpenClassManager)window._lwOpenClassManager();
           });
         };
         setTimeout(function(){_classJITPoll(0);},2500);
@@ -60592,7 +60605,7 @@ function _renderClassSection(){
       el.innerHTML='<div class="cs-class-none">Pick a class at Keeper Level 7.<br>(Currently '+curLvl+'.)</div>';
     } else {
       el.innerHTML='<div class="cs-class-none">Ready to choose a path.</div>'
-        +'<button class="cs-class-pick-btn" onclick="if(window._LW_openClassPicker)window._LW_openClassPicker()">\u270e CHOOSE A CLASS</button>';
+        +'<button class="cs-class-pick-btn" onclick="if(window._lwOpenClassManager)_lwOpenClassManager();else if(window._LW_openClassPicker)window._LW_openClassPicker()">\u270e CHOOSE A CLASS</button>';
     }
     return;
   }
@@ -60613,7 +60626,7 @@ function _renderClassSection(){
   // Art path
   var artSrc='assets/character-sheet/classes/'+cls+'.png?v=20260427b';
   var emblemCls='cs-class-emblem'+(syn?' synergy':'');
-  var h='<div class="cs-class-row" onclick="if(window._lwShowClassDetail)_lwShowClassDetail(\''+cls+'\')" style="cursor:pointer;">';
+  var h='<div class="cs-class-row" onclick="if(window._lwOpenClassManager)_lwOpenClassManager()" style="cursor:pointer;" title="Manage class · Tree · tools">';
   h+='<div class="'+emblemCls+'">'+_csArt(artSrc,def.icon,'2rem')+'</div>';
   h+='<div class="cs-class-info">';
   h+='<div class="cs-class-name">'+def.name+_csPips(true,lvl)+'</div>';
@@ -60623,6 +60636,7 @@ function _renderClassSection(){
   if(lvl>=3){h+='<span class="cs-badge'+(syn?' synergy':'')+'">'+(syn?'SYNERGY ACTIVE':'L3 SYNERGY')+'</span>';}
   h+='</div></div></div>';
   h+='<div class="cs-class-xp"><div class="cs-class-xp-bar"><div class="cs-class-xp-fill" style="width:'+xpBar+'%;"></div></div><div class="cs-class-xp-text">'+xpText+(biomeMatch?' · +25% in biome':'')+'</div></div>';
+  h+='<button onclick="if(window._lwOpenClassManager)_lwOpenClassManager()" style="display:block;width:100%;margin-top:8px;padding:0.5rem;border-radius:8px;border:1.5px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(46,38,18,0.45),rgba(28,24,12,0.6));color:var(--gold);font-family:\'Bebas Neue\',sans-serif;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">☘ KEEPER’S TREE · TOOLS · RESPEC</button>';
   el.innerHTML=h;
 }
 function _renderMilestoneSection(){
@@ -68038,38 +68052,35 @@ function _step46(){
 function _step47(){
   _setStep(47);
   _clear();
-  // Close char sheet + open Book of Secrets Class tab. Class picker
-  // L7 gate is honored via canSee.classPick which returns true during
-  // tutorial step 47+ (and after tutorial completion).
+  // Close char sheet + open Class Manager (lifted out of BoS 2026-04-27).
+  // Class picker L7 gate is honored via canSee.classPick which returns
+  // true during tutorial step 47+ (and after tutorial completion).
   try{
     var cs=document.getElementById('pw-character');
     if(cs)cs.classList.remove('open');
   }catch(e){}
   setTimeout(function(){
-    try{if(window._openCompendiumUI)window._openCompendiumUI();}catch(e){}
+    try{if(window._lwOpenClassManager)window._lwOpenClassManager();}catch(e){}
     setTimeout(function(){
-      try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
-      setTimeout(function(){
+      if(_getStep()!==47)return;
+      _dialog(
+        'Pick your <span style="color:var(--gold);">specialization</span>.<br><br>' +
+        'Forager, Breeder, Cartographer, Tender, or Steward; each shapes how you play. Tap CHOOSE on the one that calls to you.',
+        '',null,'top');
+      if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+      var polls=0;
+      var watch=function(){
         if(_getStep()!==47)return;
-        _dialog(
-          'Pick your <span style="color:var(--gold);">specialization</span>.<br><br>' +
-          'Forager, Breeder, Cartographer, Tender, or Steward; each shapes how you play. Tap CHOOSE on the one that calls to you.',
-          '',null,'top');
-        if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-        var polls=0;
-        var watch=function(){
-          if(_getStep()!==47)return;
-          var cls=null;try{cls=localStorage.getItem('lw_class');}catch(e){}
-          if(cls){
-            _clear();
-            setTimeout(_step47b,1200);
-            return;
-          }
-          if(polls<1200){polls++;setTimeout(watch,500);}
-        };
-        watch();
-      },350);
-    },300);
+        var cls=null;try{cls=localStorage.getItem('lw_class');}catch(e){}
+        if(cls){
+          _clear();
+          setTimeout(_step47b,1200);
+          return;
+        }
+        if(polls<1200){polls++;setTimeout(watch,500);}
+      };
+      watch();
+    },350);
   },200);
 }
 
@@ -68082,52 +68093,50 @@ function _step47(){
 function _step47b(){
   _setStep(47);
   _clear();
-  // Re-assert BoS + class tab in case the pick-confirm flow left us
-  // in a transitional state.
-  try{if(window._openCompendiumUI)window._openCompendiumUI();}catch(e){}
+  // Re-assert Class Manager in case the pick-confirm flow left us in a
+  // transitional state. Re-render so the just-picked class shows the
+  // tree allocator at the top with + buttons enabled.
+  try{if(window._lwOpenClassManager)window._lwOpenClassManager();}catch(e){}
   setTimeout(function(){
-    try{if(window._bosSetTab)window._bosSetTab('class');}catch(e){}
-    setTimeout(function(){
+    if(_getStep()!==47)return;
+    _dialog(
+      'Every Keeper level gives you <span style="color:var(--gold);">one point</span> to spend in your class path.<br><br>' +
+      'Tap a <span style="color:var(--sage);">+</span> next to any node above to feel how it works.',
+      '',null,'top');
+    if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+    var _startSpent=0;
+    try{
+      var _pts=(window._LW_treePoints&&window._LW_treePoints())||{};
+      for(var _k in _pts){if(_pts.hasOwnProperty(_k))_startSpent += _pts[_k]||0;}
+    }catch(e){}
+    var polls=0;
+    var watch=function(){
       if(_getStep()!==47)return;
-      _dialog(
-        'Every Keeper level gives you <span style="color:var(--gold);">one point</span> to spend in your class path.<br><br>' +
-        'Tap a <span style="color:var(--sage);">+</span> next to any node above to feel how it works.',
-        '',null,'top');
-      if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-      // Snapshot total tree points spent. Watch for an increase.
-      var _startSpent=0;
+      var nowSpent=0;
       try{
-        var _pts=(window._LW_treePoints&&window._LW_treePoints())||{};
-        for(var _k in _pts){if(_pts.hasOwnProperty(_k))_startSpent += _pts[_k]||0;}
+        var _p=(window._LW_treePoints&&window._LW_treePoints())||{};
+        for(var _k in _p){if(_p.hasOwnProperty(_k))nowSpent += _p[_k]||0;}
       }catch(e){}
-      var polls=0;
-      var watch=function(){
-        if(_getStep()!==47)return;
-        var nowSpent=0;
-        try{
-          var _p=(window._LW_treePoints&&window._LW_treePoints())||{};
-          for(var _k in _p){if(_p.hasOwnProperty(_k))nowSpent += _p[_k]||0;}
-        }catch(e){}
-        if(nowSpent>_startSpent){
-          _clear();
-          setTimeout(_step48,800);
-          return;
-        }
-        if(polls<1200){polls++;setTimeout(watch,500);}
-      };
-      watch();
-    },300);
-  },200);
+      if(nowSpent>_startSpent){
+        _clear();
+        setTimeout(_step48,800);
+        return;
+      }
+      if(polls<1200){polls++;setTimeout(watch,500);}
+    };
+    watch();
+  },500);
 }
 
 // ═══ STEP 48: point out companion slot ═══
 function _step48(){
   _setStep(48);
   _clear();
-  // Close BoS, re-open char sheet so companion card is visible.
+  // Close BoS / Class Manager, re-open char sheet so companion card is visible.
   try{
     var ov=document.getElementById('bos-overlay');
     if(ov)ov.remove();
+    if(window._lwCloseClassManager)window._lwCloseClassManager();
   }catch(e){}
   setTimeout(function(){
     try{if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}catch(e){}
@@ -72226,7 +72235,7 @@ window._updateBookBadge=function(){
     // 'report' was double-counting the same log entries as 'activity' and
     // never had a UI to clear (JOURNAL tab only stamps 'activity'), so the
     // badge could never drop to zero. Activity alone covers the signal.
-    var tabs = ['activity','secrets','events','mementos','herbarium','quests','class'];
+    var tabs = ['activity','secrets','events','mementos','herbarium','quests'];
     for (var i = 0; i < tabs.length; i++) n += window._bosGetTabUnread(tabs[i]);
   } else {
     // Fallback during boot before _bosGetTabUnread is wired
@@ -72646,7 +72655,28 @@ window._bosRefreshBadges = function() {
   }
 };
 
+// CLASS section retired from Book of Secrets 2026-04-27. The same content
+// lives in the character-sheet "Class Manager" overlay so players find it
+// where they look for it. _bosSetTab('class') redirects there for legacy
+// nudges and tutorial steps that haven't been re-pointed yet.
+window._lwOpenClassManager = function(){
+  var ov = document.getElementById('cs-class-manager');
+  var body = document.getElementById('cs-class-manager-body');
+  if (!ov || !body) return;
+  try { body.innerHTML = (typeof _bosClassContent === 'function') ? _bosClassContent() : ''; } catch(e) { body.innerHTML = ''; }
+  ov.style.display = 'block';
+  ov.scrollTop = 0;
+};
+window._lwCloseClassManager = function(){
+  var ov = document.getElementById('cs-class-manager');
+  if (ov) ov.style.display = 'none';
+};
+
 function _bosSetTab(tab) {
+  if (tab === 'class') {
+    if (window._lwOpenClassManager) window._lwOpenClassManager();
+    return;
+  }
   _bosTab = tab;
   // Capture previous read-time BEFORE stamping — this is what content
   // functions compare against to decide whether to mark an item NEW.
@@ -82089,7 +82119,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ITEMS</button>'+
         '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HUNT</button>'+
         '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
-        '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
+        /* CLASS tab moved to Character Screen → Class Manager (2026-04-27). */
         '<button class="bos-tab" data-tab="about" onclick="_bosSetTab(\'about\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ABOUT</button>'+
       '</div>'+
       // Body
@@ -82592,8 +82622,8 @@ window._lwPickClass=function(cid,nm,icon){
       try{window._lwRefreshAvatar();}catch(e){}
       try{if(window._updateCompCount)window._updateCompCount();}catch(e){}
       // Close the class picker overlay so the player sees the updated
-      // character sheet (or Book of Secrets class tab) instead of the
-      // picker list still sitting underneath.
+      // character sheet (or Class Manager) instead of the picker list
+      // still sitting underneath.
       try{var _ov=document.getElementById('lw-class-overlay');if(_ov)_ov.remove();}catch(e){}
       try{if(window._renderClassSection)_renderClassSection();}catch(e){}
       if(window._bosSetTab)window._bosSetTab('class');
@@ -84350,7 +84380,7 @@ window.LW_Comp = (function(){
     }
     // Level 7 reached, class not picked
     if(lvl>=7&&!cls&&!_qDone('q_choose_class')){
-      out.push({icon:'\ud83c\udf3f',title:'Choose your keeper class',body:'Five paths await. Each shapes your abilities. Complete this quest to unlock tools.',priority:80,action:function(){if(window._openCompendiumUI)_openCompendiumUI();}});
+      out.push({icon:'\ud83c\udf3f',title:'Choose your keeper class',body:'Five paths await. Each shapes your abilities. Open your character sheet to choose.',priority:80,action:function(){if(window._lwOpenClassManager)window._lwOpenClassManager();else if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}});
     }
     // Level 3 reached, Wild quest not done
     if(lvl>=3&&!_qDone('q_first_wild')&&gh.length>=2){
@@ -84429,7 +84459,7 @@ window.LW_Comp = (function(){
         }
         if (_nearestTool && window.LW_TOOLS && window.LW_TOOLS[_nearestTool]) {
           var _toolNm = window.LW_TOOLS[_nearestTool].name;
-          out.push({icon:'\ud83d\udd27',title:_nearestRem+' XP to ' + _toolNm + ' L' + _nearestLvl,body:'Use your ' + _toolNm.toLowerCase() + ' to push it to the next tier.',priority:34,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('class');},250);}});
+          out.push({icon:'\ud83d\udd27',title:_nearestRem+' XP to ' + _toolNm + ' L' + _nearestLvl,body:'Use your ' + _toolNm.toLowerCase() + ' to push it to the next tier.',priority:34,action:function(){if(window._lwOpenClassManager)window._lwOpenClassManager();}});
         }
       }
     } catch(e) {}
@@ -84445,7 +84475,7 @@ window.LW_Comp = (function(){
           var _remaining = _nextT - _xCur;
           var _pct = _xCur / _nextT;
           if (_pct >= 0.7) {
-            out.push({icon:'\ud83c\udf3f',title:_remaining+' XP to '+_nextL,body:'Your '+window.LW_CLASSES[cls].name+' rank is close to the next tier. Do what your class rewards to push it over.',priority:38,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('class');},250);}});
+            out.push({icon:'\ud83c\udf3f',title:_remaining+' XP to '+_nextL,body:'Your '+window.LW_CLASSES[cls].name+' rank is close to the next tier. Do what your class rewards to push it over.',priority:38,action:function(){if(window._lwOpenClassManager)window._lwOpenClassManager();}});
           }
         }
       }
