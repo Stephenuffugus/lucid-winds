@@ -6972,7 +6972,7 @@ window._addSwitchTabHook = function(fn){
     <div style="display:flex;justify-content:space-between;align-items:center;"><div class="dev-title">⚠ DEV ADMIN</div><button onclick="document.getElementById('pw-dev-admin').classList.remove('open')" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(192,80,80,0.3);background:none;color:#c07070;font-size:0.75rem;cursor:pointer;">✕</button></div>
     <div class="dev-section"><div class="dev-section-title">CURRENT ACCOUNT</div><div id="dev-account-info" style="font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);line-height:1.8;margin-bottom:0.3rem;">Not logged in</div><button class="dev-btn danger" onclick="PW_Dev.nukeAccount()">🗑 WIPE CURRENT ACCOUNT</button></div>
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
-    <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button><button class="dev-btn" onclick="PW_Dev.resetTutorial()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">↺ RESET TUTORIAL</button></div>
+    <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button><button class="dev-btn" onclick="PW_Dev.resetTutorial()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">↺ RESET TUTORIAL</button><button class="dev-btn" onclick="PW_Dev.skipAllIntros()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">↷ SKIP ALL INTROS</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
     <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.auditTriggers()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🔬 AUDIT TRIGGERS + LW_ACH</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
@@ -7114,6 +7114,21 @@ window._addSwitchTabHook = function(fn){
       localStorage.clear();
       alert('Cleared. Reload the page.');
       location.reload();
+    },
+    skipAllIntros:function(){
+      // Stamps every one-shot intro / first-open / tab-teach / JIT flag
+      // as "seen" so testing after a browser-clear doesn't drown in
+      // pop-ups. Tutorial flags handled separately by resetTutorial.
+      var keys=['lw_tab_teach_game','lw_tab_teach_greenhouse','lw_tab_teach_nursery','lw_tab_teach_wild',
+        'lw_tut_book_v1','lw_tut_currency_v1','lw_tut_herbarium_v1','lw_tut_wild_v1',
+        'lw_tut_forage_v1','lw_tut_companion_v1','lw_tut_tap_plant_v1','lw_tut_longpress_v1',
+        'lw_jit_boxes_v1','lw_jit_cutting_v1','lw_jit_class_v1','lw_jit_pollen_v1',
+        'lw_jit_daily_v1','lw_jit_prestige_v1','lw_jit_territory_v1','lw_jit_hermit_v1',
+        'lw_wild_intro_seen','lw_pulse_firstgame_v1','lw_pulse_highprio_v1','lw_pulse_l7class_v1',
+        'lw_pulse_first_plant_tap','lw_pulse_breed_first','lw_pulse_wild_drop','lw_pulse_whatnow_first',
+        'lw_fb_hint_shown'];
+      for(var i=0;i<keys.length;i++){try{localStorage.setItem(keys[i],'1');}catch(e){}}
+      alert('All intros marked seen. They will not pop again.');
     },
     resetTutorial:function(){
       if(!confirm('Reset first-run tutorial and plant-XP lock? (your plants stay)'))return;
@@ -52277,12 +52292,12 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
   // while teaching all the features.' Each tab gets a focused teach.
   var TAB_TEACHES={
     nursery:{
-      icon:'🌱',
+      icon:'<span class="lwe lwe-bloom"></span>',
       title:'NURSERY',
       body:'Your seeds grow here. Water a seed once per day for 3 days and it blooms into a new plant in your Greenhouse.<br><br>Cross-pollinate two of your Greenhouse plants to grow a chimera seed. You can hold up to <b>3 seeds</b> at once (Breeder class adds +1).'
     },
     wild:{
-      icon:'🌍',
+      icon:'<span class="lwe lwe-leaf"></span>',
       title:'WILD',
       body:'The real-world map. Three things to do here:<br><br>'+
         '<b>1. DROP</b>. Tap the + button (right side) to plant one of your Greenhouse plants into the hex you\u2019re standing in. Lasts 7-60 days depending on rarity.<br>'+
@@ -52290,7 +52305,7 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
         '<b>3. CLIPPING</b>. Tap any wild plant you pass, yours or another Keeper\u2019s, to take a cutting. One clipping per plant every 6 hours.'
     },
     game:{
-      icon:'🎮',
+      icon:'<span class="lwe lwe-sun"></span>',
       title:'GAMES',
       body:'Find games you like or do something creative to progress and earn <b>Sunbeams</b>.<br><br>'+
         '<b>30 Sunbeams = a new plant</b> in your Greenhouse. Different games pay different amounts. Try them all to find your favorites.<br><br>'+
@@ -82097,14 +82112,14 @@ window._openCompendiumUI=function(){
       if (window._lwConfirm) {
         window._lwConfirm({
           title: 'THE BOOK OF SECRETS',
-          body: 'Everything you discover lives here. Seven tabs, most fill in as you play.<br><br>' +
-                '\u2728 <b>REPORT</b> \u2014 your morning briefing<br>' +
-                '\u270f\ufe0f <b>ACTIVITY</b> \u2014 a diary of what you\u2019ve done<br>' +
-                '\ud83d\udd2e <b>SECRETS</b> \u2014 synergies, mutations, achievements, and more<br>' +
-                '\ud83c\udf28\ufe0f <b>EVENTS</b> \u2014 rare moments and riddles to solve<br>' +
-                '\u269c\ufe0f <b>MEMENTOS</b> \u2014 30-day companion keepsakes<br>' +
-                '\ud83c\udf3f <b>HERBARIUM</b> \u2014 weekly collection goals<br>' +
-                '\ud83e\uddec <b>CLASS</b> \u2014 pick or change your keeper path<br><br>' +
+          body: 'Everything you discover lives here. The tabs fill in as you play.<br><br>' +
+                '\u2022 <b>TODAY</b> \u2014 your daily briefing<br>' +
+                '\u2022 <b>JOURNAL</b> \u2014 a diary of what you\u2019ve done<br>' +
+                '\u2022 <b>SECRETS</b> \u2014 synergies, mutations, achievements, and more<br>' +
+                '\u2022 <b>EVENTS</b> \u2014 rare moments and riddles to solve<br>' +
+                '\u2022 <b>MEMENTOS</b> \u2014 30-day companion keepsakes<br>' +
+                '\u2022 <b>HERBARIUM</b> \u2014 weekly collection goals<br>' +
+                '\u2022 <b>QUESTS</b> \u2014 long-term achievements with rewards<br><br>' +
                 '<b style="color:var(--gold);">A small gold number</b> will appear on any tab when something new is waiting. Reading the page clears it. No pop-ups \u2014 the book just quietly remembers.<br><br>' +
                 'Tap anything for its full story.',
           yes: 'OPEN THE BOOK',
