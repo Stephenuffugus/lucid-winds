@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.1';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.2';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39947,6 +39947,16 @@ document.addEventListener('keydown', function(e) {
   }
 
   async function _executeBloom(nur, seedIndex, seed) {
+    // Memento 83 (Midnight Bloom): if the player was away 6+ hours
+    // before this bloom, stamp lw_offline_bloom_at so _lwCheckMementos
+    // can award the keepsake on next check. Companion-equipped check
+    // happens in the memento dispatcher.
+    try {
+      var _laMs = parseInt(localStorage.getItem('lw_last_active') || '0', 10);
+      if (_laMs > 0 && (Date.now() - _laMs) >= 6 * 3600 * 1000) {
+        localStorage.setItem('lw_offline_bloom_at', String(Date.now()));
+      }
+    } catch(_obme) {}
     // 1. DNA Splice
     // Clipping rehydration removed at bloom — clippings cross-pollinate
     // only (handleBloomBtn gate blocks the standalone path). Cross-time
@@ -60818,6 +60828,27 @@ window._lwGetCompCounterMax = function(action) {
   } catch(e) { return 0; }
 };
 
+// ── Last-active timestamp tracker ────────────────────────────────────
+// Used by the offline-bloom memento (83) to detect "you came back after
+// 6+ hours away and your plant bloomed during that gap." Stamped on
+// page hide / visibility hide and read by _executeBloom.
+(function _lwLastActiveWire(){
+  if (typeof window === 'undefined' || window._lwLastActiveWired) return;
+  window._lwLastActiveWired = true;
+  function _stamp() {
+    try { localStorage.setItem('lw_last_active', String(Date.now())); } catch(e) {}
+  }
+  try {
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden) _stamp();
+    });
+    window.addEventListener('pagehide', _stamp);
+    window.addEventListener('beforeunload', _stamp);
+    // Also stamp once now so we have a baseline for the very first session.
+    if (!localStorage.getItem('lw_last_active')) _stamp();
+  } catch(e) {}
+})();
+
 window._lwCheckMementos = function() {
   try {
     var equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}');
@@ -60894,6 +60925,16 @@ window._lwCheckMementos = function() {
     // 94 — Liberty Lock: first wild plant drop with any companion equipped.
     if (window._lwGetCompCounterMax && window._lwGetCompCounterMax('drop') >= 1) {
       _awardEvent(94, 'comp_drop_1');
+    }
+    // 83 — Midnight Bloom: a flower bloomed while the player was away
+    // 6+ hours AND a companion is currently equipped. The bloom path
+    // sets lw_offline_bloom_at when this condition fires; we just check
+    // the flag and claim the memento here.
+    if (currentEquipped !== null) {
+      try {
+        var _obAt = parseInt(localStorage.getItem('lw_offline_bloom_at') || '0', 10);
+        if (_obAt > 0) _awardEvent(83, 'offline_bloom');
+      } catch(_obe) {}
     }
     if (newMementos.length) {
       localStorage.setItem('lw_companion_mementos', JSON.stringify(collected));
