@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -71427,6 +71427,21 @@ window._bosGetTabUnread = function(tab) {
       for (var ir = 0; ir < allR.length; ir++) { if (allR[ir].ts > lastRead) cr++; }
       return cr;
     }
+    // QUESTS — count uncompleted daily picks (so the badge shows
+    // "you have N undone today"). Players see the number drop as they
+    // complete dailies; clears to 0 once all 3 are done.
+    if (tab === 'quests') {
+      try {
+        if (!window.LW_ACH) return 0;
+        var ds = window.LW_ACH.dailies();
+        if (!ds || !ds.picks) return 0;
+        var doneSet = {};
+        if (ds.done) for (var dq = 0; dq < ds.done.length; dq++) doneSet[ds.done[dq]] = 1;
+        var undone = 0;
+        for (var pq = 0; pq < ds.picks.length; pq++) if (!doneSet[ds.picks[pq]]) undone++;
+        return undone;
+      } catch(e) { return 0; }
+    }
     // CLASS — 1 if class unpicked and player is L7+ and never opened this tab
     if (tab === 'class') {
       try {
@@ -71495,6 +71510,7 @@ function _bosSetTab(tab) {
   else if (tab === 'herbarium') body.innerHTML = _bosHerbariumContent();
   else if (tab === 'items') body.innerHTML = _bosItemsContent();
   else if (tab === 'hunt') body.innerHTML = (window.LW_HUNT && window.LW_HUNT._bosContent) ? window.LW_HUNT._bosContent() : '';
+  else if (tab === 'quests') body.innerHTML = (typeof _bosQuestsContent === 'function') ? _bosQuestsContent() : '';
   else if (tab === 'about') body.innerHTML = (typeof _bosAboutContent === 'function') ? _bosAboutContent() : '';
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
@@ -79047,6 +79063,185 @@ window.LW_EVENT_LOOKUP = (function(){
   return m;
 })();
 
+// ═══ BoS QUESTS — engagement system surface ════════════════════════════
+// Built on top of LW_ACH (engagement.js). Renders in the BoS QUESTS subtab.
+// Daily challenges (3 picks, deterministic per local date), weekly challenges
+// (3 picks, ISO week), and the lifetime achievement catalog with tier filter.
+function _bosQuestsContent() {
+  if (!window.LW_ACH) {
+    return '<div style="padding:1rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;">Engagement system loading...</div>';
+  }
+  var ACH = window.LW_ACH;
+  var counters = ACH.counters() || {};
+  var progress = ACH.progress() || {};
+  var dailyState = ACH.dailies() || { picks: [], done: [] };
+  var weeklyState = ACH.weeklies() || { picks: [], done: [] };
+  var catalog = ACH.catalog || [];
+  var dailyPool = ACH.dailyPool || [];
+  var weeklyPool = ACH.weeklyPool || [];
+
+  function _findById(pool, id) {
+    for (var i = 0; i < pool.length; i++) if (pool[i].id === id) return pool[i];
+    return null;
+  }
+  function _esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function _isDoneDaily(id) { return (dailyState.done || []).indexOf(id) >= 0; }
+  function _isDoneWeekly(id) { return (weeklyState.done || []).indexOf(id) >= 0; }
+  function _rewardChip(reward) {
+    if (!reward) return '';
+    var pieces = [];
+    if (reward.dew) pieces.push('💧 ' + reward.dew);
+    if (reward.pollen) pieces.push('🌿 ' + reward.pollen);
+    if (reward.box) pieces.push('🎁 ' + reward.box);
+    if (reward.trophy) pieces.push('🏆 trophy');
+    if (reward.lore) pieces.push('📜 lore');
+    return pieces.length ? '<span style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:4px;padding:1px 5px;margin-left:6px;white-space:nowrap;">' + pieces.join(' · ') + '</span>' : '';
+  }
+  function _progressBar(pct, color) {
+    pct = Math.max(0, Math.min(100, pct));
+    color = color || 'rgba(122,179,86,0.7)';
+    return '<div style="height:5px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;margin:4px 0 2px;"><div style="height:100%;width:' + pct + '%;background:' + color + ';transition:width 0.3s ease;"></div></div>';
+  }
+  function _entryCard(entry, done, periodLabel) {
+    if (!entry) return '';
+    var cur = ACH.get(entry.counter || '_no_counter') || 0;
+    var tgt = entry.target || 1;
+    var pct = done ? 100 : Math.min(100, Math.round((cur / tgt) * 100));
+    var bg = done ? 'rgba(122,179,86,0.10)' : 'rgba(18,22,16,0.6)';
+    var border = done ? 'rgba(122,179,86,0.5)' : 'rgba(122,179,86,0.18)';
+    var icon = done ? '✓' : '○';
+    var iconColor = done ? 'var(--sage)' : 'var(--muted)';
+    var nameColor = done ? 'var(--sage)' : 'var(--cream)';
+    var counterText = done ? 'Complete' : (cur + ' / ' + tgt);
+    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:0.55rem 0.7rem;margin-bottom:6px;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.06em;color:' + nameColor + ';">' + _esc(entry.name) + _rewardChip(entry.reward) + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);line-height:1.4;margin-top:2px;">' + _esc(entry.desc || '') + '</div>' +
+        '</div>' +
+        '<div style="font-size:1rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
+      '</div>' +
+      _progressBar(pct, done ? 'var(--sage)' : 'rgba(200,168,75,0.6)') +
+      '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">' +
+        '<span>' + counterText + '</span>' +
+        (periodLabel ? '<span>' + periodLabel + '</span>' : '') +
+      '</div>' +
+    '</div>';
+  }
+  function _achCard(entry) {
+    var done = !!progress[entry.id];
+    var cur = ACH.get(entry.counter || '_no_counter') || 0;
+    var tgt = entry.target || 1;
+    var pct = done ? 100 : Math.min(100, Math.round((cur / tgt) * 100));
+    var tierColors = { bronze:'#a87236', silver:'#a8a8a8', gold:'#c8a84b', platinum:'#7eb8d4', mythic:'#a87285' };
+    var tierColor = tierColors[entry.tier] || tierColors.bronze;
+    var bg = done ? 'rgba(122,179,86,0.10)' : 'rgba(18,22,16,0.55)';
+    var border = done ? 'rgba(122,179,86,0.5)' : tierColor + '44';
+    var hidden = entry.hidden && !done;
+    var displayName = hidden ? '???' : entry.name;
+    var displayDesc = hidden ? 'A secret achievement waits to be discovered.' : (entry.desc || '');
+    var icon = done ? '✓' : (hidden ? '?' : '○');
+    var iconColor = done ? 'var(--sage)' : 'var(--muted)';
+    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-left:3px solid ' + tierColor + ';border-radius:6px;padding:0.45rem 0.65rem;margin-bottom:5px;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.06em;color:' + (done ? 'var(--sage)' : tierColor) + ';">' + _esc(displayName) + _rewardChip(entry.reward) + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.4;margin-top:2px;">' + _esc(displayDesc) + '</div>' +
+        '</div>' +
+        '<div style="font-size:0.85rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
+      '</div>' +
+      (hidden ? '' : _progressBar(pct, done ? 'var(--sage)' : tierColor)) +
+      (hidden ? '' : '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);">' + (done ? 'Complete' : (cur + ' / ' + tgt)) + '</div>') +
+    '</div>';
+  }
+
+  // ─── Header summary ───
+  var totalAch = catalog.length;
+  var doneCount = 0;
+  for (var pi in progress) if (progress.hasOwnProperty(pi) && progress[pi]) doneCount++;
+  var donePct = totalAch ? Math.round((doneCount / totalAch) * 100) : 0;
+  var dailyDone = (dailyState.done || []).length;
+  var weeklyDone = (weeklyState.done || []).length;
+
+  // Hours until daily reset (local midnight)
+  var _now = new Date();
+  var _midnight = new Date(_now); _midnight.setHours(24, 0, 0, 0);
+  var _dHrs = Math.ceil((_midnight - _now) / 3600000);
+  // Days until weekly reset (next Monday)
+  var _dow = _now.getDay();
+  var _daysToMon = (8 - _dow) % 7; if (_daysToMon === 0) _daysToMon = 7;
+
+  var h = '';
+  h += '<div style="padding:0.7rem 0.9rem 1rem;">';
+  h += '<div style="text-align:center;margin-bottom:0.8rem;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.15rem;">📜 QUESTS</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">' + doneCount + ' / ' + totalAch + ' achievements · ' + donePct + '%</div>';
+  h += '</div>';
+
+  // ─── DAILY ───
+  h += '<div style="margin-bottom:1rem;">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);">☀️ TODAY · ' + dailyDone + '/3</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">resets in ' + _dHrs + 'h</div>';
+  h += '</div>';
+  if (!dailyState.picks || dailyState.picks.length === 0) {
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Daily picks load on next tab visit.</div>';
+  } else {
+    for (var di = 0; di < dailyState.picks.length; di++) {
+      var de = _findById(dailyPool, dailyState.picks[di]);
+      if (de) h += _entryCard(de, _isDoneDaily(de.id), null);
+    }
+  }
+  h += '</div>';
+
+  // ─── WEEKLY ───
+  h += '<div style="margin-bottom:1rem;">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);">🌙 THIS WEEK · ' + weeklyDone + '/3</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">resets in ' + _daysToMon + 'd</div>';
+  h += '</div>';
+  if (!weeklyState.picks || weeklyState.picks.length === 0) {
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Weekly picks load on next tab visit.</div>';
+  } else {
+    for (var wi = 0; wi < weeklyState.picks.length; wi++) {
+      var we = _findById(weeklyPool, weeklyState.picks[wi]);
+      if (we) h += _entryCard(we, _isDoneWeekly(we.id), null);
+    }
+  }
+  h += '</div>';
+
+  // ─── LIFETIME ACHIEVEMENTS ───
+  var activeFilter = window._bosQuestFilter || 'all';
+  h += '<div style="margin-bottom:0.5rem;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.4rem;">🏆 ACHIEVEMENTS</div>';
+  // Tier filter chips
+  var tiers = ['all','bronze','silver','gold','platinum','mythic'];
+  var tierColors2 = { all:'var(--cream)', bronze:'#a87236', silver:'#a8a8a8', gold:'#c8a84b', platinum:'#7eb8d4', mythic:'#a87285' };
+  h += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:0.5rem;">';
+  for (var ti = 0; ti < tiers.length; ti++) {
+    var tk = tiers[ti];
+    var act = activeFilter === tk;
+    h += '<button onclick="window._bosQuestFilter=\'' + tk + '\';if(window._bosSetTab)_bosSetTab(\'quests\');" style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.06em;padding:4px 9px;border-radius:6px;cursor:pointer;border:1px solid ' + tierColors2[tk] + (act ? '' : '44') + ';background:' + (act ? tierColors2[tk] + '22' : 'rgba(18,22,16,0.5)') + ';color:' + tierColors2[tk] + ';">' + tk.toUpperCase() + '</button>';
+  }
+  h += '</div>';
+  // Filtered list
+  var shown = 0;
+  for (var ai = 0; ai < catalog.length; ai++) {
+    var ae = catalog[ai];
+    if (activeFilter !== 'all' && ae.tier !== activeFilter) continue;
+    h += _achCard(ae);
+    shown++;
+    if (shown >= 50) {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;padding:0.6rem;">' + (catalog.length - shown) + ' more in this tier. Showing first 50 to keep the page light.</div>';
+      break;
+    }
+  }
+  h += '</div>';
+  h += '</div>';
+  return h;
+}
+window._bosQuestsContent = _bosQuestsContent;
+
 // Event detail Reader page.
 window._lwShowEventDetail = function(eventName) {
   var rec = window.LW_EVENT_LOOKUP[eventName];
@@ -80166,6 +80361,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HERBARIUM</button>'+
         '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ITEMS</button>'+
         '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HUNT</button>'+
+        '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
         '<button class="bos-tab" data-tab="class" onclick="_bosSetTab(\'class\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CLASS'+ ((!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())?'<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.8);"></span>':'') +'</button>'+
         '<button class="bos-tab" data-tab="about" onclick="_bosSetTab(\'about\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ABOUT</button>'+
       '</div>'+
