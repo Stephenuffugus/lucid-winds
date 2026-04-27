@@ -8,6 +8,28 @@ originSessionId: ed657dcd-42e7-4e80-99b4-77907a2638de
 
 This doc is for the artist. Drop PNGs at the EXACT paths listed; the engine auto-loads them on next refresh, no code changes needed. Sizes are real pixels (verified against existing siblings).
 
+## Batch 10 — BoS UX smoothing polish (added 2026-04-27 LATE)
+
+EVENTS / SECRETS / QUESTS / MEMENTOS / HUNT subtabs got search inputs + filter chips + collapsible tier sections. Functionality is solid; these are lift-up assets to make the navigation feel premium.
+
+| Filename | Size | Concept | Priority |
+|---|---|---|---|
+| `assets/bos/banner-events.png` | 480x80 | "EVENTS" header banner, scroll/parchment vibe | P2 |
+| `assets/bos/banner-secrets.png` | 480x80 | "SECRETS" header banner, mystic-purple | P2 |
+| `assets/bos/banner-quests.png` | 480x80 | "QUESTS" header banner, gold trophy lean | P2 |
+| `assets/bos/banner-mementos.png` | 480x80 | "MEMENTOS" header banner, antique relic feel | P2 |
+| `assets/bos/banner-hunt.png` | 480x80 | "HUNT" header banner, firefly-glow gold | P2 |
+| `assets/bos/chip-all.png` | 32x32 | Magnifier or grid glyph for ALL filter | P2 |
+| `assets/bos/chip-found.png` | 32x32 | Checkmark glyph for FOUND filter | P2 |
+| `assets/bos/chip-undisc.png` | 32x32 | Question-mark or veil glyph for UNDISCOVERED | P2 |
+| `assets/bos/memento-locked-frame.png` | 256x256 | Dim wax-seal / closed-envelope frame for WANT-list catalog rows. Companion to the lit memento-frame in Batch 5. | P2 |
+| `assets/hunt/firefly-large.png` | 64x64 | Bigger rendered firefly for the NEXT FIREFLY countdown pill | P2 |
+| `assets/hunt/season-complete-banner.png` | 480x120 | Celebratory full-width banner for the "Hunt complete" panel | P2 |
+
+**Batch 10 count:** 11 PNGs, all P2 polish. No current functional gaps; CSS placeholders are working but premium art would lift the navigation feel.
+
+---
+
 Priority legend:
 - **P0** broken now or shipping with a placeholder
 - **P1** shipped but no art (graceful emoji or color block fallback)
