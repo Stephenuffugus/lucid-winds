@@ -73746,7 +73746,13 @@ var LW_MUTATION_LORE = {
   'Pixel Art':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant rendered in deliberate, chunky pixels, like an old video-game sprite that escaped into three dimensions. The garden has a sense of humor. This is one of its jokes.' },
   'Silhouette':     { theme:'dark',      rate:'~1.6%', lore:'No interior detail. Just shape, deep void-black against the background, sometimes with a star-field texture where the inside should be. Pairs with Void Petal leaves into Shadow Loom.' },
   'Albino':         { theme:'nature',    rate:'~1.6%', lore:'No pigment. Pure white stem, pale petals, ghostly leaves. In real botanical terms, albino plants rarely survive, they can\u2019t photosynthesize. In this garden they thrive, and that\u2019s the gift.' },
-  'Fossil':         { theme:'dark',      rate:'~1.6%', lore:'The plant looks petrified, stone-gray, textures hinting at ancient imprint. Pairs with Fossil Bed substrate into Fossil Memory. A living thing remembering the first version of itself.' }
+  'Fossil':         { theme:'dark',      rate:'~1.6%', lore:'The plant looks petrified, stone-gray, textures hinting at ancient imprint. Pairs with Fossil Bed substrate into Fossil Memory. A living thing remembering the first version of itself.' },
+  'Constellation':  { theme:'cosmic',    rate:'~0.4%', lore:'A pattern of stars climbs the stem and traces every leaf. The pattern is consistent: same stars, same connecting lines, every Constellation plant. Astronomers have noticed. They have not commented.' },
+  'Origami':        { theme:'cosmic',    rate:'~0.4%', lore:'Every leaf is folded paper, sharp creases, geometric facets, light catching every fold. The plant breathes anyway, somehow. The folds shift very slowly when no one is looking.' },
+  'Stained Glass':  { theme:'cosmic',    rate:'~0.4%', lore:'Translucent leaves and petals laid out like cathedral panels, lead lines tracing every vein. Light passing through casts colored shadows. A church floor lit by a plant.' },
+  'Verdigris':      { theme:'dark',      rate:'~0.4%', lore:'The plant is patinated, the green-blue oxide that grows on old bronze statues. It looks like an artifact someone watered until it remembered being alive.' },
+  'Mycelium':       { theme:'nature',    rate:'~0.4%', lore:'Visible fungal filaments thread the substrate and sometimes climb the stem. Not a parasite, a partner. The two of them are a single organism by now, and the plant prefers it that way.' },
+  'Daguerreotype':  { theme:'dark',      rate:'~0.4%', lore:'Silver-plate sheen, faint sepia ghosting, the stillness of a 19th-century portrait. The plant looks photographed, not grown. Hold it long enough and you start to feel watched back.' }
 };
 window._lwShowMutationDetail = function(mutName) {
   var m = LW_MUTATION_LORE[mutName];
@@ -81531,11 +81537,13 @@ function _bosSecretsContent() {
   } catch(e){}
 
   // ─── MUTATIONS ────────────────────────────────────────────────
-  // 13 mutations. Lock state = whether you own any plant with this mutation.
-  // Each tile taps into the existing _lwShowMutationDetail Reader page.
-  // Art slot per mutation falls back to the theme glyph when PNG missing.
+  // 19 mutations total. Common-tier band (~1.6% each) + ultra-rare
+  // band (~0.4% each, added 2026-04). Lock state = whether you own
+  // any plant with this mutation. Each tile taps into the existing
+  // _lwShowMutationDetail Reader page. Art slot per mutation falls
+  // back to the theme glyph when PNG missing.
   try {
-    var mutNames = ['Glitch','Glass Stem','Wireframe','Holographic','Neon','Ink Wash','Golden','Porcelain','Bioluminescent','Pixel Art','Silhouette','Albino','Fossil'];
+    var mutNames = ['Glitch','Glass Stem','Wireframe','Holographic','Neon','Ink Wash','Golden','Porcelain','Bioluminescent','Pixel Art','Silhouette','Albino','Fossil','Constellation','Origami','Stained Glass','Verdigris','Mycelium','Daguerreotype'];
     var mutSeen = {};
     for (var mgi = 0; mgi < gh.length; mgi++) {
       try {
@@ -81545,9 +81553,9 @@ function _bosSecretsContent() {
     }
     var mutFound = 0;
     for (var _mfi = 0; _mfi < mutNames.length; _mfi++) if (mutSeen[mutNames[_mfi]]) mutFound++;
-    h += '<div id="sec-mutations" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#c07ac8;letter-spacing:0.1em;margin-bottom:0.4rem;">\u2746 MUTATIONS <span style="color:var(--muted);font-size:0.5rem;">' + mutFound + ' / ' + mutNames.length + '</span></div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
+    h += '<div id="sec-mutations" style="margin-bottom:0.9rem;scroll-margin-top:8px;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#c07ac8;letter-spacing:0.1em;margin-bottom:0.5rem;">\u2746 MUTATIONS <span style="color:var(--muted);font-size:0.6rem;">' + mutFound + ' / ' + mutNames.length + '</span></div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
     // Visual hint glyphs per mutation — tiny emoji/symbol while custom badge
     // art is still in flight. Swap to <img src="assets/mutations/..."> when ready.
     var mutGlyph = {
@@ -81555,7 +81563,10 @@ function _bosSecretsContent() {
       'Holographic':    '\ud83c\udf08', 'Neon':       '\u26a1',       'Ink Wash':  '\ud83d\udd8b\ufe0f',
       'Golden':         '\u2728',        'Porcelain':  '\u26aa',       'Bioluminescent': '\ud83d\udca1',
       'Pixel Art':      '\u25a3',        'Silhouette': '\u25cf',       'Albino':    '\u26aa',
-      'Fossil':         '\ud83e\uddb4'
+      'Fossil':         '\ud83e\uddb4',
+      // Ultra-rare band \u2014 fallbacks until art arrives
+      'Constellation':  '\u2736', 'Origami':       '\u25c6', 'Stained Glass': '\u25c8',
+      'Verdigris':      '\u25ef', 'Mycelium':      '\u273f', 'Daguerreotype': '\u25c9'
     };
     // Slug-ify mutation names for filename lookup: "Glass Stem" → "glass-stem"
     var _mutSlug = function(n){ return n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); };
@@ -81567,16 +81578,16 @@ function _bosSecretsContent() {
       var cardBg = mnSeen ? 'rgba(192,122,200,0.08)' : 'rgba(26,36,22,0.3)';
       var cardBorder = mnSeen ? 'rgba(192,122,200,0.2)' : 'rgba(74,124,53,0.06)';
       var cardOpacity = mnSeen ? '' : 'opacity:0.4;';
-      h += '<div onclick="if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+mnEsc+'\')" style="padding:4px;background:'+cardBg+';border:1px solid '+cardBorder+';border-radius:6px;text-align:center;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;'+cardOpacity+'" title="'+mn+(mnSeen?' \u2014 discovered':' \u2014 locked')+'">';
+      h += '<div onclick="if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+mnEsc+'\')" style="padding:8px 6px;background:'+cardBg+';border:1px solid '+cardBorder+';border-radius:8px;text-align:center;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;'+cardOpacity+'" title="'+mn+(mnSeen?' \u2014 discovered':' \u2014 locked')+'">';
       // Visual slot: try Jessie's PNG first, fall back to the emoji glyph
       // if no asset file exists yet. onerror swaps cleanly with no flicker.
       if (mnSeen) {
         var _glyph = mutGlyph[mn] || '\u2746';
-        h += '<img src="assets/mutations/mutation-'+mnSlug+'.png" alt="" style="width:28px;height:28px;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:0.8rem;line-height:1;&quot;>'+_glyph+'</div>\'">';
+        h += '<img src="assets/mutations/mutation-'+mnSlug+'.png" alt="" style="width:38px;height:38px;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.3rem;line-height:1;&quot;>'+_glyph+'</div>\'">';
       } else {
-        h += '<div style="font-size:0.75rem;line-height:1;">?</div>';
+        h += '<div style="font-size:1.1rem;line-height:1;color:var(--muted);">?</div>';
       }
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.28rem;color:'+(mnSeen?'#c07ac8':'var(--muted)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:2px;">'+(mnSeen?mn:'???')+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:'+(mnSeen?'#c07ac8':'var(--muted)')+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+(mnSeen?mn:'???')+'</div>';
       h += '</div>';
     }
     h += '</div></div>';
