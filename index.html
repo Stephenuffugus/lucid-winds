@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.32';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.33';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -80117,8 +80117,28 @@ function _bosEventsContent() {
   h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:8px;"><span>' + foundEvents + ' / ' + totalEvents + ' discovered</span><span>' + Math.round(foundEvents / totalEvents * 100) + '%</span></div>';
   h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:1rem;"><div style="height:100%;width:' + Math.round(foundEvents / totalEvents * 100) + '%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;"></div></div>';
 
-  // Scroll-sigil art by event-family theme. Each tier maps to one of the six
-  // class-themed scrolls (keeper/tender/forager/breeder/cartographer/listeners).
+  // \u2500\u2500\u2500 EVENTS LIST CONTROLS (Stephen 2026-04-27 UX smoothing) \u2500\u2500\u2500
+  // With 700+ triggers the raw scrolling list overwhelms. Three tools:
+  //   - Filter chips (ALL / FOUND / UNDISCOVERED)
+  //   - Search input (matches name OR hint OR riddle, case-insensitive)
+  //   - Per-tier collapse via _bosTierCollapse[tierName] state
+  // State lives on window so re-renders preserve it.
+  var _evFilter = window._bosEventFilter || 'all';
+  var _evSearch = String(window._bosEventSearch || '').toLowerCase();
+  if (!window._bosTierCollapse) window._bosTierCollapse = {};
+  h += '<div style="position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(13,16,12,0.96),rgba(13,16,12,0.92));backdrop-filter:blur(8px);padding:0.5rem 0.1rem;margin:0 -0.1rem 0.7rem;border-bottom:1px solid rgba(122,179,86,0.12);">';
+  // Search input
+  h += '<input type="text" id="bos-event-search" placeholder="Search events, riddles, hints..." value="' + _evSearch.replace(/"/g, '&quot;') + '" oninput="window._bosEventSearch=this.value;clearTimeout(window._bosEventSearchT);window._bosEventSearchT=setTimeout(function(){window._bosSetTab&&_bosSetTab(\'events\');var el=document.getElementById(\'bos-event-search\');if(el){el.focus();var v=el.value;el.value=\'\';el.value=v;}},250);" style="width:100%;padding:8px 10px;background:rgba(18,22,16,0.7);border:1px solid rgba(122,179,86,0.25);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;outline:none;box-sizing:border-box;margin-bottom:6px;" />';
+  // Filter chips
+  var chips = [{k:'all',label:'ALL '+totalEvents},{k:'found',label:'FOUND '+foundEvents},{k:'undisc',label:'UNDISCOVERED '+(totalEvents-foundEvents)}];
+  h += '<div style="display:flex;gap:5px;">';
+  for (var ci = 0; ci < chips.length; ci++) {
+    var ck = chips[ci].k, act = _evFilter === ck;
+    h += '<button onclick="window._bosEventFilter=\'' + ck + '\';if(window._bosSetTab)_bosSetTab(\'events\');" style="flex:1;font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.06em;padding:5px 8px;border-radius:5px;cursor:pointer;border:1px solid ' + (act?'var(--gold)':'rgba(122,179,86,0.2)') + ';background:' + (act?'rgba(200,168,75,0.15)':'rgba(18,22,16,0.5)') + ';color:' + (act?'var(--gold)':'var(--muted)') + ';">' + chips[ci].label + '</button>';
+  }
+  h += '</div></div>';
+
+  // Scroll-sigil art by event-family theme.
   var _scrollByTier = {
     COMMON:'keeper', CRAFT:'keeper',
     BOND:'tender', COMPANION:'tender',
@@ -80127,34 +80147,68 @@ function _bosEventsContent() {
     SEASONAL:'cartographer', EPIC:'cartographer', LEGENDARY:'cartographer',
     HOUR:'listeners', SOCIAL:'listeners'
   };
+  function _bosEvMatchesSearch(ev) {
+    if (!_evSearch) return true;
+    if (ev.name && ev.name.toLowerCase().indexOf(_evSearch) >= 0) return true;
+    if (ev.hint && ev.hint.toLowerCase().indexOf(_evSearch) >= 0) return true;
+    if (ev.riddle && ev.riddle.toLowerCase().indexOf(_evSearch) >= 0) return true;
+    return false;
+  }
+  function _bosEvMatchesFilter(ev) {
+    if (_evFilter === 'all') return true;
+    var f = !!unlocked[ev.name];
+    return _evFilter === 'found' ? f : !f;
+  }
+  var _shownTotal = 0;
   for (var ti2 = 0; ti2 < tiers.length; ti2++) {
     var tier = tiers[ti2];
+    // Filter the tier's events
+    var visEvs = [];
     var tierFound = 0;
-    for (var ei = 0; ei < tier.events.length; ei++) if (unlocked[tier.events[ei].name]) tierFound++;
+    for (var ei = 0; ei < tier.events.length; ei++) {
+      var _e = tier.events[ei];
+      if (unlocked[_e.name]) tierFound++;
+      if (_bosEvMatchesFilter(_e) && _bosEvMatchesSearch(_e)) visEvs.push(_e);
+    }
+    if (visEvs.length === 0) continue; // hide entirely if nothing visible
+    _shownTotal += visEvs.length;
     var _scrollKey = _scrollByTier[tier.name] || 'keeper';
+    var _collapsed = !!window._bosTierCollapse[tier.name];
+    var _tnEsc = tier.name.replace(/'/g, "\\'");
     h += '<div style="margin-bottom:1rem;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + tier.color + ';letter-spacing:0.1em;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.7rem;">';
+    // Tier header \u2014 clickable to collapse/expand
+    h += '<div onclick="window._bosTierCollapse[\'' + _tnEsc + '\']=!window._bosTierCollapse[\'' + _tnEsc + '\'];if(window._bosSetTab)_bosSetTab(\'events\');" style="cursor:pointer;font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + tier.color + ';letter-spacing:0.1em;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.7rem;user-select:none;">';
     h += '<img src="assets/bos/scroll-' + _scrollKey + '-cut.png" alt="" style="width:auto;height:88px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.6));" onerror="this.onerror=null;this.src=\'assets/bos/scroll-' + _scrollKey + '.png\';">';
-    h += '<span>' + tier.name + ' <span style="font-size:0.5rem;color:var(--muted);">' + tierFound + '/' + tier.events.length + ' \u00b7 ' + tier.desc + '</span></span></div>';
-    for (var ei2 = 0; ei2 < tier.events.length; ei2++) {
-      var ev = tier.events[ei2];
-      var found = !!unlocked[ev.name];
-      var _evNameEsc = ev.name.replace(/'/g, "\\'");
-      if (found) {
-        // NEW chip when the event was discovered after the keeper last
-        // visited the EVENTS tab. Fades out on next visit (prev-read rolls).
-        var _isNew = (window._bosPrevReadTs != null) && unlocked[ev.name] && unlocked[ev.name].t && unlocked[ev.name].t > window._bosPrevReadTs;
-        var _newChip = _isNew ? '<span style="margin-left:6px;padding:1px 6px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.1em;vertical-align:middle;box-shadow:0 0 6px rgba(200,168,75,0.5);">NEW</span>' : '';
-        h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + (_isNew ? 'var(--gold)' : tier.color + '44') + ';border-left:3px solid ' + tier.color + ';border-radius:8px;cursor:pointer;transition:background 0.15s ease;' + (_isNew ? 'box-shadow:0 0 10px rgba(200,168,75,0.18);' : '') + '" onmouseover="this.style.background=\'linear-gradient(180deg,rgba(28,36,22,0.8),rgba(18,24,14,0.9))\'" onmouseout="this.style.background=\'linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8))\'">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + tier.color + ';letter-spacing:0.06em;">' + ev.name + _newChip + '</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:2px;">' + ev.hint + '</div>';
-        h += '</div>';
-      } else {
-        h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.08);border-left:3px solid rgba(138,145,120,0.15);border-radius:8px;cursor:pointer;">';
-        h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.5rem;color:var(--muted);line-height:1.4;">"' + ev.riddle + '"</div>';
-        h += '</div>';
+    h += '<span style="flex:1;">' + tier.name + ' <span style="font-size:0.5rem;color:var(--muted);">' + tierFound + '/' + tier.events.length + ' \u00b7 ' + tier.desc + '</span></span>';
+    h += '<span style="font-size:0.85rem;color:' + tier.color + ';opacity:0.7;flex-shrink:0;">' + (_collapsed ? '\u25b8' : '\u25be') + '</span>';
+    h += '</div>';
+    if (!_collapsed) {
+      for (var ei2 = 0; ei2 < visEvs.length; ei2++) {
+        var ev = visEvs[ei2];
+        var found = !!unlocked[ev.name];
+        var _evNameEsc = ev.name.replace(/'/g, "\\'");
+        if (found) {
+          var _isNew = (window._bosPrevReadTs != null) && unlocked[ev.name] && unlocked[ev.name].t && unlocked[ev.name].t > window._bosPrevReadTs;
+          var _newChip = _isNew ? '<span style="margin-left:6px;padding:1px 6px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.1em;vertical-align:middle;box-shadow:0 0 6px rgba(200,168,75,0.5);">NEW</span>' : '';
+          h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + (_isNew ? 'var(--gold)' : tier.color + '44') + ';border-left:3px solid ' + tier.color + ';border-radius:8px;cursor:pointer;transition:background 0.15s ease;' + (_isNew ? 'box-shadow:0 0 10px rgba(200,168,75,0.18);' : '') + '" onmouseover="this.style.background=\'linear-gradient(180deg,rgba(28,36,22,0.8),rgba(18,24,14,0.9))\'" onmouseout="this.style.background=\'linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8))\'">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + tier.color + ';letter-spacing:0.06em;">' + ev.name + _newChip + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:2px;">' + ev.hint + '</div>';
+          h += '</div>';
+        } else {
+          h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.08);border-left:3px solid rgba(138,145,120,0.15);border-radius:8px;cursor:pointer;">';
+          h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.5rem;color:var(--muted);line-height:1.4;">"' + ev.riddle + '"</div>';
+          h += '</div>';
+        }
       }
     }
+    h += '</div>';
+  }
+  // Empty state when search/filter hides everything
+  if (_shownTotal === 0) {
+    h += '<div style="padding:1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);background:rgba(18,22,16,0.4);border:1px dashed rgba(122,179,86,0.15);border-radius:8px;">';
+    if (_evSearch) h += 'No events match "' + _evSearch.replace(/[<>]/g,'') + '". Try a different word, or clear the search.';
+    else if (_evFilter === 'undisc') h += 'You have discovered every event. The book has nothing left to whisper.';
+    else h += 'Nothing to show with the current filter.';
     h += '</div>';
   }
   return h;
