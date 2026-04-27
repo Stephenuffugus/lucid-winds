@@ -81579,7 +81579,11 @@ function _bosQuestsContent() {
   var _daysToMon = (8 - _dow) % 7; if (_daysToMon === 0) _daysToMon = 7;
 
   var h = '';
-  h += '<div style="position:relative;padding:1.4rem 1.4rem 1.6rem;background:linear-gradient(180deg,rgba(13,16,12,0.32) 0%,rgba(13,16,12,0.18) 35%,rgba(13,16,12,0.18) 65%,rgba(13,16,12,0.45) 100%),url(\'assets/questsbackdropscroll.png\') center top/100% auto no-repeat,#0d100c;background-attachment:local;border-radius:10px;box-shadow:0 0 0 1px rgba(200,168,75,0.18),0 8px 24px rgba(0,0,0,0.5);">';
+  // Outer wrapper — clean dark frame. The scroll backdrop is opened
+  // AFTER the DAILY block so the daily-quests banner sits on its own
+  // and the scroll visibly backs the WEEKLY + ACHIEVEMENTS + TROPHY
+  // sections below. Stephen 2026-04-27.
+  h += '<div style="position:relative;padding:1.4rem 1.4rem 1.6rem;background:#0d100c;border-radius:10px;box-shadow:0 0 0 1px rgba(200,168,75,0.18),0 8px 24px rgba(0,0,0,0.5);">';
   h += '<div style="text-align:center;margin-bottom:0.8rem;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.2rem;text-shadow:0 1px 2px rgba(0,0,0,0.7);">QUESTS</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">' + doneCount + ' / ' + totalAch + ' achievements · ' + donePct + '%</div>';
@@ -81597,6 +81601,12 @@ function _bosQuestsContent() {
     }
   }
   h += '</div>';
+
+  // ── Scroll backdrop wraps the rest (WEEKLY + ACHIEVEMENTS + TROPHY).
+  // The parchment image is the visible backing here, with a light
+  // dark gradient on top so cards stay readable. Bumped slight inset
+  // padding so the scroll's painted ornamental border shows. ──
+  h += '<div style="position:relative;margin:0 -0.6rem;padding:1.2rem 0.9rem 1.4rem;background:linear-gradient(180deg,rgba(13,16,12,0.30) 0%,rgba(13,16,12,0.18) 30%,rgba(13,16,12,0.18) 70%,rgba(13,16,12,0.42) 100%),url(\'assets/questsbackdropscroll.png\') center top/100% auto no-repeat;background-attachment:local;">';
 
   // ─── WEEKLY ───
   h += '<div style="margin-bottom:1rem;">';
@@ -81712,9 +81722,10 @@ function _bosQuestsContent() {
     }
     h += '</div>';
   }
-  h += '</div>';
+  h += '</div>'; // close trophy cabinet section
 
-  h += '</div>';
+  h += '</div>'; // close scroll backdrop wrapper (WEEKLY+ACHIEVEMENTS+TROPHY)
+  h += '</div>'; // close outer wrapper
   return h;
 }
 window._bosQuestsContent = _bosQuestsContent;
