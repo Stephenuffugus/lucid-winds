@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.6';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -43583,6 +43583,24 @@ function _addSteps(meters){
   _checkStepMilestone();
   // Credit the same walked meters to every incubating cocoon.
   try { if (window.LW_COCOONS && window.LW_COCOONS.creditSteps) window.LW_COCOONS.creditSteps(meters); } catch(e){}
+  // Engagement counters: meters + steps. _addSteps takes raw meters;
+  // _metersToSteps converts to steps via the existing conversion. Bump
+  // both lifetime and per-period (daily/weekly) so distance-based
+  // achievements (Ten Thousand Kilometers, mile-eaters) actually fire.
+  if (window.LW_ACH) {
+    var _mInt = Math.round(meters);
+    var _sInt = Math.round(_metersToSteps(meters));
+    if (_mInt > 0) {
+      LW_ACH.bump('meters_total', _mInt);
+      LW_ACH.bump('d_meters', _mInt);
+      LW_ACH.bump('w_meters', _mInt);
+    }
+    if (_sInt > 0) {
+      LW_ACH.bump('steps_total', _sInt);
+      LW_ACH.bump('d_steps', _sInt);
+      LW_ACH.bump('w_steps', _sInt);
+    }
+  }
   // Walker title check — only fire on the milestone crossing
   if(prevLifetime<10000&&s.lifetime>=10000&&window.lwCheckEarnedTitles)window.lwCheckEarnedTitles();
 }
@@ -64555,6 +64573,17 @@ window._castWeather = function(typeId) {
   if (window._toast) _toast(t.icon + ' ' + t.name + ' cast! ' + t.log);
   if (window._haptic) _haptic('bloom');
   if (typeof gtag !== 'undefined') gtag('event', 'weather_cast', { type: t.id, cost: t.cost });
+  // Engagement counters: weather summon (per cast + unique types tracked)
+  if (window.LW_ACH) {
+    LW_ACH.bump('weather_summon', 1);
+    LW_ACH.bump('d_weather', 1);
+    try {
+      var _wts = JSON.parse(localStorage.getItem('lw_ach_weather_seen') || '{}');
+      if (!_wts[t.id]) { _wts[t.id] = 1; localStorage.setItem('lw_ach_weather_seen', JSON.stringify(_wts)); }
+      var _wtu = 0; for (var _wk in _wts) _wtu++;
+      LW_ACH.set('weather_types', _wtu);
+    } catch(e) {}
+  }
   // Book of Secrets: Storm Walker — cast all 4 weather types (unique set)
   try {
     var _wkey = 'lw_weather_cast_set';
@@ -74732,7 +74761,20 @@ window._lwClaimHerbarium = function(id){
   }
   function spend(key){
     var inv = _load(); if (!inv[key] || inv[key] <= 0) return false;
-    inv[key]--; if (!inv[key]) delete inv[key]; _save(inv); return true;
+    inv[key]--; if (!inv[key]) delete inv[key]; _save(inv);
+    // Engagement counter: every successful item spend
+    if (window.LW_ACH) {
+      LW_ACH.bump('items_used_total', 1);
+      LW_ACH.bump('d_item_used', 1);
+      // Track unique items used as a set; LW_ACH.set is the right tool here
+      try {
+        var seen = JSON.parse(localStorage.getItem('lw_ach_items_seen') || '{}');
+        if (!seen[key]) { seen[key] = 1; localStorage.setItem('lw_ach_items_seen', JSON.stringify(seen)); }
+        var uniq = 0; for (var sk in seen) uniq++;
+        LW_ACH.set('items_unique', uniq);
+      } catch(e) {}
+    }
+    return true;
   }
   function total(){
     var inv = _load(); var s=0; for (var k in inv) s += inv[k]; return s;
@@ -78888,6 +78930,21 @@ window.LW_EVENT_LOOKUP = (function(){
 window._lwShowEventDetail = function(eventName) {
   var rec = window.LW_EVENT_LOOKUP[eventName];
   if (!rec) return;
+  // Engagement counter: track unique BoS pages opened. Use a per-page
+  // set so re-opening the same page doesn't re-bump.
+  if (window.LW_ACH) {
+    LW_ACH.bump('d_bos_read', 1);
+    LW_ACH.bump('w_bos_read', 1);
+    try {
+      var _bps = JSON.parse(localStorage.getItem('lw_ach_bos_pages_seen') || '{}');
+      if (!_bps[eventName]) {
+        _bps[eventName] = 1;
+        localStorage.setItem('lw_ach_bos_pages_seen', JSON.stringify(_bps));
+        var _bpu = 0; for (var _bk in _bps) _bpu++;
+        LW_ACH.set('bos_pages_read', _bpu);
+      }
+    } catch(e) {}
+  }
   var ev = rec.event, tier = rec.tier;
   var unlocked = {};
   try { unlocked = JSON.parse(localStorage.getItem('lw_wild_events') || '{}'); } catch(e){}
