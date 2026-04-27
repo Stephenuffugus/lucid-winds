@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.7';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.8';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -60967,6 +60967,9 @@ window._lwCheckMementos = function() {
     }
     if (newMementos.length) {
       localStorage.setItem('lw_companion_mementos', JSON.stringify(collected));
+      // Engagement counter: total mementos owned (sticky, sets to current
+      // collected count). Drives the "all keepsakes" tier achievements.
+      if (window.LW_ACH) LW_ACH.set('mementos_owned', collected.length);
       for (var nm = 0; nm < newMementos.length; nm++) {
         var nmE = newMementos[nm];
         if (window._logWildEvent) window._logWildEvent({ type: 'memento', source: 'companion', name: nmE.name, text: nmE.text });
@@ -77376,6 +77379,18 @@ window._lwClaimHerbarium = function(id){
     if (!x[idx]) x[idx] = { c:0 };
     x[idx].c = (x[idx].c || 0) + (amount || 1);
     _saveXp(x);
+    // Engagement counters: companion bond level milestones. Recompute
+    // the just-bumped companion's level and set the global max-reached
+    // counter. Sticky once set so a later companion at lower level
+    // doesn't unset it.
+    if (window.LW_ACH) {
+      try {
+        var _lvl = getLevel(idx);
+        if (_lvl >= 3 && !LW_ACH.get('comp_l3')) LW_ACH.set('comp_l3', 1);
+        if (_lvl >= 5 && !LW_ACH.get('comp_l5')) LW_ACH.set('comp_l5', 1);
+        if (_lvl >= 6 && !LW_ACH.get('comp_l6')) LW_ACH.set('comp_l6', 1);
+      } catch(e){}
+    }
     return x[idx].c;
   }
   // Live-compute kinship: count of unique companion-families currently
