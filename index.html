@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.2';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.3';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -40157,6 +40157,8 @@ document.addEventListener('keydown', function(e) {
     if (typeof gtag !== 'undefined') {
       if(typeof gtag!=='undefined') gtag('event', 'nursery_bloom', { hash: newHash.slice(0, 8), mutated: mut.mutated, mutCount: mut.count });
     }
+    // Engagement counters: bloom completed
+    if (window.LW_ACH) { LW_ACH.bump('blooms_total', 1); LW_ACH.bump('d_bloom', 1); LW_ACH.bump('w_bloom', 1); }
 
     // Event log: bloom is the reveal moment for mystery seeds.
     if (window.LW_Log) {
@@ -48705,6 +48707,7 @@ function _finishDrop(defenderGame){
     });
   }
   if(window._lwBumpCompCounter)window._lwBumpCompCounter('drop');
+  if(window.LW_ACH){LW_ACH.bump('wild_drops',1);LW_ACH.bump('hexes_planted',1);LW_ACH.bump('d_drop',1);LW_ACH.bump('w_drop',1);}
   // Book of Secrets: Root Down (first wild plant ever)
   try { if (window.LW_Events) window.LW_Events.fire('Root Down'); } catch(e){}
 }
@@ -50675,6 +50678,7 @@ window._hexAction=function(action){
     try{if(window.LW_XP)window.LW_XP.grantOnce('first_tend',15,'first_of_kind','🤝 +15 XP, first stranger tended. You\'re part of something bigger.');}catch(e){}
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
     if(window._lwBumpCompCounter)window._lwBumpCompCounter('tend');
+    if(window.LW_ACH){LW_ACH.bump('tend_strangers',1);LW_ACH.bump('d_tend',1);LW_ACH.bump('w_tend',1);LW_ACH.bump('d_water_str',1);}
     _writeWitnessFee(p,'tend');
     _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
     if(window._play)_play('match');
@@ -50902,6 +50906,7 @@ window._hexAction=function(action){
       // Increment the daily counter (cap was checked above)
       _cutDay.count=(_cutDay.count||0)+1;
       try{localStorage.setItem(_cutDayKey,JSON.stringify(_cutDay));}catch(e){}
+      if(window.LW_ACH){LW_ACH.bump('clipping_total',1);LW_ACH.bump('d_clipping',1);LW_ACH.bump('w_clipping',1);}
       if(window.PW_grantXP)PW_grantXP(15,'wild_cutting');
       if(window.LW_Log)window.LW_Log.write('wild_cutting_taken',{
         hash:p.hash,
@@ -68336,6 +68341,7 @@ window.bsExecuteBreed=function(){
         }
         if(window._LW_classXP){window._LW_classXP('breed',30);if(offGen>=2)window._LW_classXP('chimera',15);}
         if(window._lwBumpCompCounter)window._lwBumpCompCounter('cross');
+        if(window.LW_ACH){LW_ACH.bump('crosses_total',1);LW_ACH.bump('d_cross',1);LW_ACH.bump('w_cross',1);if(offGen>=2)LW_ACH.bump('chimera_total',1);}
         // Use breed charges on both parents (handles cooldown, charges, breedCount)
         if(window.FG_Data&&FG_Data.useBreedCharge){
           FG_Data.useBreedCharge(_bsA.hash);
@@ -82740,9 +82746,8 @@ window.LW_Comp = (function(){
 })();
 </script>
 
-<script>
-// ENGAGEMENT SYSTEM v1 placeholder; see real block below.
-</script>
+<!-- Engagement system: lifetime achievements + daily/weekly challenges. Data + tracking only. UI is separate. -->
+<script src="engagement.js"></script>
 
 </body>
 </html>
