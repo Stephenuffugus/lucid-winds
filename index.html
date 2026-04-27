@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.33';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.34';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -80265,9 +80265,22 @@ function _bosSecretsContent() {
   }
   h+='</div>';
 
-  // Synergies section
+  // Synergies section \u2014 with search + filter for the now-300-entry grid
   h+='<div id="sec-synergies" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.5rem;">'+synCount+' / '+(window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)+'</span></div>';
+  // Search + filter chips for the grid (Stephen 2026-04-27 UX smoothing).
+  var _synFilter = window._bosSynFilter || 'all';
+  var _synSearch = String(window._bosSynSearch || '').toLowerCase();
+  var _synTotal = (window.LW_SYNERGIES ? window.LW_SYNERGIES.length : 0);
+  h += '<div style="margin-bottom:0.5rem;">';
+  h += '<input type="text" id="bos-syn-search" placeholder="Search synergies..." value="' + _synSearch.replace(/"/g, '&quot;') + '" oninput="window._bosSynSearch=this.value;clearTimeout(window._bosSynSearchT);window._bosSynSearchT=setTimeout(function(){window._bosSetTab&&_bosSetTab(\'secrets\');var el=document.getElementById(\'bos-syn-search\');if(el){el.focus();var v=el.value;el.value=\'\';el.value=v;}},250);" style="width:100%;padding:6px 9px;background:rgba(18,22,16,0.7);border:1px solid rgba(199,122,200,0.25);border-radius:5px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.5rem;outline:none;box-sizing:border-box;margin-bottom:5px;" />';
+  var _synChips = [{k:'all',label:'ALL '+_synTotal},{k:'found',label:'FOUND '+synCount},{k:'undisc',label:'UNDISC '+(_synTotal-synCount)}];
+  h += '<div style="display:flex;gap:4px;">';
+  for (var _scI = 0; _scI < _synChips.length; _scI++) {
+    var _sck = _synChips[_scI].k, _sca = _synFilter === _sck;
+    h += '<button onclick="window._bosSynFilter=\'' + _sck + '\';if(window._bosSetTab)_bosSetTab(\'secrets\');" style="flex:1;font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.06em;padding:4px 6px;border-radius:4px;cursor:pointer;border:1px solid ' + (_sca?'#c07ac8':'rgba(122,179,86,0.2)') + ';background:' + (_sca?'rgba(192,122,200,0.15)':'rgba(18,22,16,0.5)') + ';color:' + (_sca?'#c07ac8':'var(--muted)') + ';">' + _synChips[_scI].label + '</button>';
+  }
+  h += '</div></div>';
   // Theme color + hint map — applied to both discovered + locked
   // tiles so players can see "what kind of synergy am I chasing"
   // without needing a riddle per entry. Audit: Events tab shows full
@@ -80299,10 +80312,20 @@ function _bosSecretsContent() {
         }
       }
     } catch(e){}
+    var _synShown = 0;
     for (var _asi = 0; _asi < _allSyns.length; _asi++) {
       var _asEntry = _allSyns[_asi];
       if (!_asEntry || !_asEntry.name) continue;
       var _asFound = !!foundSynergies[_asEntry.name];
+      // Apply filter: found / undisc / all
+      if (_synFilter === 'found' && !_asFound) continue;
+      if (_synFilter === 'undisc' && _asFound) continue;
+      // Apply search across name + theme + fx
+      if (_synSearch) {
+        var _hay = (_asEntry.name + ' ' + (_asEntry.theme || '') + ' ' + (_asEntry.fx || '')).toLowerCase();
+        if (_hay.indexOf(_synSearch) < 0) continue;
+      }
+      _synShown++;
       var _asTheme = _synThemeMeta[_asEntry.theme] || { color:'rgba(122,179,86,0.35)', icon:'\u2726', hint:'Hidden alignment' };
       var _asNew = _synNewSet[_asEntry.name];
       if (_asFound) {
@@ -80361,7 +80384,16 @@ function _bosSecretsContent() {
       h+='</div>';
     }
   }
-  h+='</div></div>';
+  h+='</div>';
+  // Empty-state when search/filter hides all synergies
+  if (window.LW_SYNERGIES && typeof _synShown === 'number' && _synShown === 0) {
+    h += '<div style="padding:0.7rem;text-align:center;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);background:rgba(18,22,16,0.4);border:1px dashed rgba(192,122,200,0.2);border-radius:6px;">';
+    if (_synSearch) h += 'No synergies match "' + _synSearch.replace(/[<>]/g,'') + '". Try a shorter word.';
+    else if (_synFilter === 'undisc') h += 'You have unlocked every synergy. The whole catalog has bloomed.';
+    else h += 'Nothing here with the current filter.';
+    h += '</div>';
+  }
+  h+='</div>';
 
   // ─── ACHIEVEMENTS ─────────────────────────────────────────────
   // All 29 achievements in a dense tile grid. Unlocked = full color,
