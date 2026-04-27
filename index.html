@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.44';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.45';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34274,10 +34274,37 @@ document.addEventListener('keydown', function(e) {
         if (_atGn === 'Mythic')    LW_ACH.bump('mint_mythic', 1);
         if (_atGn === 'Cosmic')    LW_ACH.bump('mint_cosmic', 1);
         // Time-of-day mint flags
-        var _atH = new Date().getHours();
+        var _atD = new Date();
+        var _atH = _atD.getHours();
         if (_atH === 0 || _atH === 1 || _atH === 23) LW_ACH.bump('mint_midnight', 1);
         if (_atH >= 5 && _atH < 8)  LW_ACH.bump('mint_dawn', 1);
         if (_atH >= 18 && _atH < 21) LW_ACH.bump('mint_dusk', 1);
+        // Calendar-based mint flags. Solstice and equinox use the
+        // approximate astronomical dates (Dec 21, Jun 21, Mar 20, Sep 22).
+        // Birth-month requires the player to have stored a birthday.
+        var _atM = _atD.getMonth() + 1; // 1-12
+        var _atDay = _atD.getDate();
+        var _atY = _atD.getFullYear();
+        if (_atM === 1 && _atDay === 1) LW_ACH.bump('mint_jan1', 1);
+        // Leap day = Feb 29 in a leap year
+        if (_atM === 2 && _atDay === 29) LW_ACH.bump('mint_leap', 1);
+        // Solstices ±1 day
+        if ((_atM === 12 && (_atDay === 20 || _atDay === 21 || _atDay === 22)) ||
+            (_atM === 6  && (_atDay === 20 || _atDay === 21 || _atDay === 22))) LW_ACH.bump('mint_solstice', 1);
+        // Equinoxes ±1 day
+        if ((_atM === 3 && (_atDay === 19 || _atDay === 20 || _atDay === 21)) ||
+            (_atM === 9 && (_atDay === 21 || _atDay === 22 || _atDay === 23))) LW_ACH.bump('mint_equinox', 1);
+        // Birth month: stored as YYYY-MM-DD or MM-DD in lw_birthday
+        try {
+          var _bday = localStorage.getItem('lw_birthday') || '';
+          if (_bday) {
+            var _bMatch = _bday.match(/(\d{1,2})\D(\d{1,2})/);
+            if (_bMatch) {
+              var _bMonth = parseInt(_bMatch[1].length === 4 ? _bMatch[2] : _bMatch[1], 10);
+              if (_bMonth === _atM) LW_ACH.bump('mint_birth_month', 1);
+            }
+          }
+        } catch(e){}
         // Per-layer trait-seen sets — store as JSON map per layer, count = set size
         if (_atTraits && window.TRAIT_BANK) {
           var _layers = [
@@ -38100,12 +38127,16 @@ document.addEventListener('keydown', function(e) {
     if (window.LW_ACH) {
       LW_ACH.bump('compost_total', 1);
       LW_ACH.bump('d_compost', 1);
+      LW_ACH.bump('w_compost', 1);
       // d_compost_old: composted a plant 30+ days old (intentional retire,
       // not impulse). plant.born is the mint timestamp.
       if (plant.born && (Date.now() - plant.born) >= 30 * 86400000) {
         LW_ACH.bump('d_compost_old', 1);
       }
     }
+    // Stamp today's date so the daily-login purity-streak heartbeat knows
+    // the player composted today; resets days_no_compost to 0 tomorrow.
+    try { localStorage.setItem('lw_compost_today', new Date().toISOString().slice(0,10)); } catch(e){}
 
     // UX feedback
     _haptic('error'); // short sharp — deliberate destructive action confirmation
@@ -38718,6 +38749,16 @@ document.addEventListener('keydown', function(e) {
           LW_ACH.set('tabs_in_session', _tcount);
         }
         LW_ACH.bump('d_tabs', 1);
+        // Daily per-tab visit flags. Engagement.js daily counters self-reset
+        // on date change so bumping each switch is idempotent for "did the
+        // player visit X today" semantics.
+        if (tab === 'wild') LW_ACH.bump('d_wild_check', 1);
+        if (tab === 'nursery') LW_ACH.bump('d_nursery', 1);
+        if (tab === 'game') LW_ACH.bump('d_first_play', 1);
+        // Time-of-day session flags
+        var _tabHr = new Date().getHours();
+        if (_tabHr >= 5 && _tabHr < 8)  LW_ACH.bump('d_dawn', 1);
+        if (_tabHr >= 18 && _tabHr < 21) LW_ACH.bump('d_dusk', 1);
       } catch(e) {}
     }
     // STUDIO AUDIO COEXISTENCE — kill any music-tool audio + tear down
@@ -43485,6 +43526,11 @@ function _pruneWild(){
       if(window.LW_Log){
         window.LW_Log.write('wild_withered',{hash:dp.hash,name:nm,rarity:dp.rarity||'Common',droppedAt:dp.droppedAt||null,lifespanDays:Math.round((dp.lifespanMs||0)/86400000)});
       }
+    }
+    // Stamp today as a wither day so the daily-login purity-streak
+    // heartbeat resets days_no_wither tomorrow.
+    if (died.length > 0) {
+      try { localStorage.setItem('lw_wither_today', new Date().toISOString().slice(0,10)); } catch(e){}
     }
     var msg=died.length===1
       ?'\ud83c\udf42 '+names[0]+' withered in the wild.'
@@ -68167,8 +68213,10 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
 // Daily login stamp — runs once per page load. Maintains login_days_total
 // (lifetime count of distinct calendar days the player has opened the app)
 // and login_streak (consecutive days, breaks if a calendar day is skipped).
-// session_4am fires when the local clock hour is 3-4 ('graveyard keeper'
-// achievement). Writes to LW_ACH so engagement.js can read.
+// On a new-day boot, also rolls the purity streak counters forward
+// (days_no_compost / days_no_wither) if the player went the previous day
+// without composting or losing a wild plant. session_4am fires when the
+// local clock hour is 3-4 ('graveyard keeper' achievement).
 (function _lwDailyLoginStamp(){
   try {
     var todayStr = new Date().toISOString().slice(0,10); // YYYY-MM-DD
@@ -68184,15 +68232,37 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
       }
       try { localStorage.setItem('lw_login_days_total', String(total)); } catch(e){}
       try { localStorage.setItem('lw_login_streak', String(streak)); } catch(e){}
+      // Purity streaks: roll yesterday forward. lw_compost_today / lw_wither_today
+      // are stamped to today's date by compost / death paths. If they don't
+      // match yesterday, the player went a clean day → increment streak.
+      var noCompostStreak = parseInt(localStorage.getItem('lw_days_no_compost')||'0',10);
+      var noWitherStreak  = parseInt(localStorage.getItem('lw_days_no_wither')||'0',10);
+      var compostMark = localStorage.getItem('lw_compost_today') || '';
+      var witherMark  = localStorage.getItem('lw_wither_today')  || '';
+      if (last) {
+        // Compute yesterday string for comparison
+        var _yest = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+        if (compostMark !== _yest) noCompostStreak += 1; else noCompostStreak = 0;
+        if (witherMark  !== _yest) noWitherStreak  += 1; else noWitherStreak  = 0;
+      } else {
+        noCompostStreak = 1;
+        noWitherStreak  = 1;
+      }
+      try { localStorage.setItem('lw_days_no_compost', String(noCompostStreak)); } catch(e){}
+      try { localStorage.setItem('lw_days_no_wither',  String(noWitherStreak));  } catch(e){}
       try { localStorage.setItem('lw_last_login_date', todayStr); } catch(e){}
       if (window.LW_ACH) {
         LW_ACH.set('login_days_total', total);
         LW_ACH.set('login_streak', streak);
+        LW_ACH.set('days_no_compost', noCompostStreak);
+        LW_ACH.set('days_no_wither',  noWitherStreak);
       }
     } else if (window.LW_ACH) {
       // Same-day re-open — re-publish current values so reads stay fresh.
       LW_ACH.set('login_days_total', parseInt(localStorage.getItem('lw_login_days_total')||'0',10));
       LW_ACH.set('login_streak', parseInt(localStorage.getItem('lw_login_streak')||'0',10));
+      LW_ACH.set('days_no_compost', parseInt(localStorage.getItem('lw_days_no_compost')||'0',10));
+      LW_ACH.set('days_no_wither',  parseInt(localStorage.getItem('lw_days_no_wither')||'0',10));
     }
     var hr = new Date().getHours();
     if (hr >= 3 && hr < 5 && window.LW_ACH) LW_ACH.bump('session_4am', 1);
