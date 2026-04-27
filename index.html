@@ -1323,15 +1323,18 @@
     }
     .pgm-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
     .pgm-dl-btn {
-      background: linear-gradient(135deg, rgba(200,168,75,0.18), rgba(200,168,75,0.06));
-      border: 1.5px solid rgba(200,168,75,0.45); color: var(--gold);
-      font-family: 'Bebas Neue', sans-serif; font-size: 0.82rem;
-      letter-spacing: 0.12em; padding: 0.55rem 1.5rem; border-radius: 6px;
-      cursor: pointer; transition: all 0.2s; min-height: 50px;
-      display: inline-flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,220,140,0.15);
+      background: linear-gradient(135deg, rgba(200,168,75,0.22), rgba(200,168,75,0.08));
+      border: 2px solid var(--gold); color: var(--gold);
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 0.1em; padding: 0.4rem 0.9rem; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s; min-height: 64px; min-width: 64px;
+      display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,220,140,0.2), 0 0 12px rgba(200,168,75,0.18);
     }
-    .pgm-dl-btn:hover { background: rgba(200,168,75,0.2); border-color: var(--gold); }
+    .pgm-dl-btn .pgm-dl-icon { font-size: 1.7rem; line-height: 1; }
+    .pgm-dl-btn .pgm-dl-label { font-size: 0.5rem; line-height: 1; opacity: 0.92; }
+    .pgm-dl-btn:hover { background: rgba(200,168,75,0.28); border-color: var(--gold); box-shadow: 0 3px 14px rgba(0,0,0,0.5), 0 0 18px rgba(200,168,75,0.3); }
+    .pgm-dl-btn:active { transform: scale(0.96); }
     .pgm-act-btn {
       background: rgba(26,36,22,0.7); border: 1.5px solid rgba(74,124,53,0.25);
       color: var(--sage); font-family: 'Bebas Neue', sans-serif;
@@ -8658,7 +8661,7 @@ window._addSwitchTabHook = function(fn){
     <!-- Actions — always visible, outside the swipe track -->
     <div class="pgm-actions">
       <div class="pgm-btn-row">
-        <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()">⬡ DOWNLOAD</button>
+        <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()" title="Download plant card"><span class="pgm-dl-icon">⬡</span><span class="pgm-dl-label">DOWNLOAD</span></button>
         <button class="pgm-act-btn" onclick="shareGalleryPlant()">↗ SHARE</button>
         <button class="pgm-act-btn" onclick="window._carouselDetails()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">⬡ DETAILS</button>
         <button class="pgm-act-btn" onclick="carouselBreed()" style="border-color:rgba(200,168,75,0.3);color:var(--gold);">🧬 BREED</button>
@@ -60248,7 +60251,7 @@ function _renderClassSection(){
   var ability=def.abilities&&def.abilities[lvl]?def.abilities[lvl]:null;
   var abilityHtml=ability?('<b style="color:var(--cream);">'+ability.name+'</b>, '+ability.desc):'';
   // Art path
-  var artSrc='assets/character-sheet/classes/'+cls+'.png';
+  var artSrc='assets/character-sheet/classes/'+cls+'.png?v=20260427b';
   var emblemCls='cs-class-emblem'+(syn?' synergy':'');
   var h='<div class="cs-class-row" onclick="if(window._lwShowClassDetail)_lwShowClassDetail(\''+cls+'\')" style="cursor:pointer;">';
   h+='<div class="'+emblemCls+'">'+_csArt(artSrc,def.icon,'2rem')+'</div>';
@@ -72329,7 +72332,7 @@ function _bosClassContentLegacy() {
     h += '<div style="margin-bottom:0.7rem;padding:0.7rem;background:' + (picked ? 'rgba(200,168,75,0.1)' : 'rgba(26,36,22,0.4)') + ';border:1.5px solid ' + (picked ? 'rgba(200,168,75,0.5)' : 'rgba(74,124,53,0.15)') + ';border-radius:12px;' + (lockedCur ? 'opacity:0.4;' : '') + '">';
     h += '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;">';
     h += '<div style="width:64px;height:64px;flex-shrink:0;border-radius:12px;overflow:hidden;border:1.5px solid ' + (picked ? 'rgba(200,168,75,0.5)' : 'rgba(122,179,86,0.2)') + ';background:radial-gradient(circle at 40% 35%,rgba(42,54,34,0.9),rgba(13,16,12,0.95));">';
-    h += '<img src="assets/character-sheet/classes/' + cid + '.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;&quot;>' + def.icon + '</div>\'">';
+    h += '<img src="assets/character-sheet/classes/' + cid + '.png?v=20260427b" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;&quot;>' + def.icon + '</div>\'">';
     h += '</div>';
     h += '<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + (picked ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.08em;">' + def.name.toUpperCase() + (picked ? ' · L' + lvl : '') + '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.4;">' + def.desc + '</div></div>';
@@ -73235,7 +73238,7 @@ window._lwShowClassDetail = function(classId) {
     title: def.name,
     subtitle: null,
     theme: 'gold',
-    hero: 'assets/character-sheet/classes/' + classId + '.png',
+    hero: 'assets/character-sheet/classes/' + classId + '.png?v=20260427b',
     heroStyle: 'inline',
     chips: [def.name.toUpperCase(), isYou ? ('LEVEL ' + lvl) : 'NOT PICKED'],
     body: body,
@@ -78242,7 +78245,51 @@ window.LW_debug.cleanGhostDrops = function(){
   function getTotalMs(idx) {
     var timer = loadTimer();
     var t = timer[idx];
-    if (!t) return 0;
+    // Self-heal: if no timer entry exists but this companion is currently
+    // equipped, reconstruct from the first-equipped log so the bond
+    // doesn't show 0 days for a long-equipped companion. Stephen 2026-04-27
+    // bug: "ive had a pangolin equipped for quite a while and it says 0 days."
+    // Root cause was the timer never started ticking on equip (race or
+    // pre-LW_COMPANION-load equip). Fix here is read-side: rebuild from
+    // the equip-log timestamp + persist a normal timer record.
+    if (!t) {
+      try {
+        var _activeIdx = parseInt(localStorage.getItem(ACTIVE_KEY) || '-1', 10);
+        var _activeIdx2 = parseInt(localStorage.getItem('lw_companion_active_idx_2') || '-1', 10);
+        // Also check pw_active_companion (the surface-level equipped key)
+        var _surfaceIdx = -1;
+        try {
+          var _ce = JSON.parse(localStorage.getItem('pw_active_companion') || '{}');
+          if (_ce && typeof _ce.idx === 'number') _surfaceIdx = _ce.idx;
+        } catch(_pse){}
+        if (idx === _activeIdx || idx === _activeIdx2 || idx === _surfaceIdx) {
+          var _equipLog = {};
+          try { _equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}'); } catch(_ele){}
+          var _firstAt = _equipLog[idx] || _equipLog[String(idx)] || 0;
+          if (_firstAt > 0) {
+            // Backfill: count from first equip moment as if the timer had
+            // been running. Persist so subsequent reads + level checks
+            // see the corrected state.
+            timer[idx] = { totalMs: 0, activeSinceMs: _firstAt };
+            saveTimer(timer);
+            try { localStorage.setItem(ACTIVE_KEY, String(idx)); } catch(_aki){}
+            t = timer[idx];
+          }
+        }
+      } catch(_he) {}
+      if (!t) return 0;
+    }
+    // Same self-heal but for stale entries: t exists but activeSinceMs is
+    // null AND this companion is currently equipped → resume the clock.
+    var _activeNow = -1;
+    try {
+      var _ce2 = JSON.parse(localStorage.getItem('pw_active_companion') || '{}');
+      if (_ce2 && typeof _ce2.idx === 'number') _activeNow = _ce2.idx;
+    } catch(_e2) {}
+    if (!t.activeSinceMs && idx === _activeNow) {
+      t.activeSinceMs = Date.now();
+      saveTimer(timer);
+    }
     var live = t.activeSinceMs ? (Date.now() - t.activeSinceMs) : 0;
     return (t.totalMs || 0) + live;
   }
@@ -81897,7 +81944,7 @@ window._lwRefreshAvatar=function(){
       while(av.firstChild&&av.firstChild.id!=='kb-class-lvl'){av.removeChild(av.firstChild);}
       av.insertBefore(artNode,av.firstChild);
     }
-    if(artNode.tagName==='IMG'){artNode.src='assets/character-sheet/classes/'+cid+'.png';}
+    if(artNode.tagName==='IMG'){artNode.src='assets/character-sheet/classes/'+cid+'.png?v=20260427b';}
     else {artNode.textContent=def.icon;}
     if(lvlBadge){lvlBadge.textContent='L'+lvl;lvlBadge.style.display='flex';}
     av.title=def.name+' · Level '+lvl;
@@ -82031,7 +82078,7 @@ window._LW_updateWildClassStat=function(){
   var match=_lwBiomeMatch();
   // Full-tile emblem — the class art is the main visual in this cell.
   iEl.textContent='';
-  iEl.style.cssText='width:64px;height:64px;margin:0 auto 2px;border-radius:50%;background-image:url("assets/character-sheet/classes/'+cls+'.png");background-size:cover;background-position:center;border:2px solid '+(match?'var(--gold)':'rgba(122,179,86,0.45)')+';box-shadow:'+(match?'0 0 14px rgba(200,168,75,0.55), inset 0 0 8px rgba(200,168,75,0.25)':'0 2px 6px rgba(0,0,0,0.45)')+';';
+  iEl.style.cssText='width:64px;height:64px;margin:0 auto 2px;border-radius:50%;background-image:url("assets/character-sheet/classes/'+cls+'.png?v=20260427b");background-size:cover;background-position:center;border:2px solid '+(match?'var(--gold)':'rgba(122,179,86,0.45)')+';box-shadow:'+(match?'0 0 14px rgba(200,168,75,0.55), inset 0 0 8px rgba(200,168,75,0.25)':'0 2px 6px rgba(0,0,0,0.45)')+';';
   if(cell)cell.style.cssText='cursor:pointer;grid-column:span 1;min-height:96px;';
   lEl.textContent=def.name+(match?' ✓':'');
   lEl.style.cssText='color:'+(match?'var(--gold)':'var(--cream)')+';font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.08em;';
@@ -82635,7 +82682,7 @@ window._LW_openClassPicker=function(){
     var cTitles = ['', 'Apprentice', 'Journeyman', 'Master'];
     h += '<div style="position:relative;display:flex;flex-direction:column;align-items:center;padding:1rem 1rem 1.1rem;margin-bottom:1rem;background:radial-gradient(ellipse at 50% 20%,rgba(200,168,75,0.1) 0%,rgba(26,36,22,0.4) 60%);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;box-shadow:inset 0 1px 0 rgba(240,235,216,0.06),0 8px 24px rgba(0,0,0,0.4);">';
     h += '<div style="width:160px;height:160px;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(200,168,75,0.2));">';
-    h += '<img src="assets/character-sheet/classes/' + cur + '.png" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:6rem;line-height:1;&quot;>' + cDef.icon + '</div>\'">';
+    h += '<img src="assets/character-sheet/classes/' + cur + '.png?v=20260427b" alt="" style="width:100%;height:100%;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:6rem;line-height:1;&quot;>' + cDef.icon + '</div>\'">';
     h += '</div>';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;color:var(--gold);letter-spacing:0.2em;margin-bottom:2px;">' + cTitles[cLvl].toUpperCase() + ' \u00b7 L' + cLvl + '</div>';
     h += '<div style="font-family:Playfair Display,serif;font-size:1.4rem;color:var(--cream);margin-bottom:6px;">' + cDef.name + '</div>';
@@ -82661,7 +82708,7 @@ window._LW_openClassPicker=function(){
     h+='<div style="margin-bottom:0.7rem;padding:0.8rem;background:'+(picked?'rgba(200,168,75,0.1)':'rgba(26,36,22,0.4)')+';border:1.5px solid '+(picked?'rgba(200,168,75,0.5)':'rgba(74,124,53,0.15)')+';border-radius:12px;'+(lockedCur?'opacity:0.4;':'')+'">';
     h+='<div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.4rem;">';
     h+='<div style="width:72px;height:72px;flex-shrink:0;border-radius:14px;overflow:hidden;border:1.5px solid '+(picked?'rgba(200,168,75,0.5)':'rgba(122,179,86,0.2)')+';background:radial-gradient(circle at 40% 35%,rgba(42,54,34,0.9),rgba(13,16,12,0.95));">';
-    h+='<img src="assets/character-sheet/classes/'+cid+'.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;&quot;>'+def.icon+'</div>\'">';
+    h+='<img src="assets/character-sheet/classes/'+cid+'.png?v=20260427b" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;&quot;>'+def.icon+'</div>\'">';
     h+='</div>';
     h+='<div style="flex:1;min-width:0;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+(picked?'var(--gold)':'var(--cream)')+';letter-spacing:0.08em;">'+def.name.toUpperCase()+(picked?' · L'+lvl:'')+'</div>';
