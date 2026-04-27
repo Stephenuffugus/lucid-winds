@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.34';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.35';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -79126,6 +79126,55 @@ function _bosTodayContent() {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.55;">' + card.body + '</div>';
     h += '</div></div>';
   }
+
+  // ─── RECENT DISCOVERIES feed ───
+  // Stephen 2026-04-27 UX rule: compact at a glance, room to dive. Surface
+  // the last 8 things the keeper has unlocked from any system (events,
+  // synergies, mementos, achievements, level-ups). Each row taps into the
+  // matching reader page so a player can chain "what just happened →
+  // why does it matter" in one click.
+  try {
+    if (window.LW_Log) {
+      var allLog = window.LW_Log.all();
+      var feedTypes = {
+        event_discovered: { glyph:'✦', label:'EVENT',     color:'#c8a84b', open:function(d){return d&&d.name?'_lwShowEventDetail("'+d.name.replace(/"/g,'\\"')+'")':''} },
+        synergy_discovered: { glyph:'✶', label:'SYNERGY', color:'#c07ac8', open:function(d){return d&&d.name?'_lwShowSynergyDetail("'+d.name.replace(/"/g,'\\"')+'")':''} },
+        achievement_unlock: { glyph:'★', label:'ACHIEVE', color:'#a87285', open:function(){return ''} },
+        memento:           { glyph:'✿', label:'MEMENTO', color:'var(--gold)', open:function(){return '_bosSetTab("mementos")'} },
+        level_up:          { glyph:'△', label:'LEVEL',   color:'var(--sage)', open:function(){return ''} }
+      };
+      var feed = [];
+      for (var fi = 0; fi < allLog.length && feed.length < 8; fi++) {
+        var le = allLog[fi];
+        if (!le || !feedTypes[le.type]) continue;
+        var d = le.data || {};
+        var name = d.name || (le.type === 'level_up' ? 'L' + (d.toLevel || '?') + ' ' + (d.newTitle || 'Keeper') : 'Discovery');
+        feed.push({ type: le.type, name: name, ts: le.ts, data: d });
+      }
+      if (feed.length) {
+        h += '<div style="margin-top:1rem;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.18em;color:var(--muted);margin-bottom:0.4rem;">RECENT DISCOVERIES</div>';
+        for (var fdi = 0; fdi < feed.length; fdi++) {
+          var fe = feed[fdi];
+          var ft = feedTypes[fe.type];
+          var ago = now - fe.ts;
+          var agoTxt = ago < 3600000 ? Math.max(1,Math.floor(ago/60000))+'m' : ago < 86400000 ? Math.floor(ago/3600000)+'h' : Math.floor(ago/86400000)+'d';
+          var openCall = ft.open(fe.data);
+          var clickAttr = openCall ? ' onclick="' + openCall + '" style="cursor:pointer;"' : ' style="cursor:default;"';
+          h += '<div' + clickAttr + ' style="padding:0.5rem 0.7rem;margin-bottom:4px;background:rgba(18,22,16,0.55);border:1px solid rgba(122,179,86,0.12);border-left:3px solid ' + ft.color + ';border-radius:6px;display:flex;align-items:center;gap:0.6rem;cursor:' + (openCall?'pointer':'default') + ';">';
+          h += '<div style="flex-shrink:0;font-size:0.95rem;color:' + ft.color + ';">' + ft.glyph + '</div>';
+          h += '<div style="flex:1;min-width:0;">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:' + ft.color + ';letter-spacing:0.1em;">' + ft.label + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + fe.name + '</div>';
+          h += '</div>';
+          h += '<div style="flex-shrink:0;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">' + agoTxt + '</div>';
+          h += '</div>';
+        }
+        h += '</div>';
+      }
+    }
+  } catch(e){}
+
   // ── Quiet footer nav ────────────────────────────────────────
   h += '<div style="margin-top:0.8rem;padding:0.6rem;text-align:center;border-top:1px dashed rgba(122,179,86,0.15);">';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.1em;">Swipe the tabs above for the full ledger.</div>';
@@ -79899,8 +79948,20 @@ function _bosQuestsContent() {
 
   // ─── LIFETIME ACHIEVEMENTS ───
   var activeFilter = window._bosQuestFilter || 'all';
+  var activeStatus = window._bosQuestStatus || 'all'; // all / done / undone
+  var questSearch = String(window._bosQuestSearch || '').toLowerCase();
   h += '<div style="margin-bottom:0.5rem;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.4rem;">🏆 ACHIEVEMENTS</div>';
+  // Search input
+  h += '<input type="text" id="bos-quest-search" placeholder="Search achievements..." value="' + questSearch.replace(/"/g, '&quot;') + '" oninput="window._bosQuestSearch=this.value;clearTimeout(window._bosQuestSearchT);window._bosQuestSearchT=setTimeout(function(){window._bosSetTab&&_bosSetTab(\'quests\');var el=document.getElementById(\'bos-quest-search\');if(el){el.focus();var v=el.value;el.value=\'\';el.value=v;}},250);" style="width:100%;padding:6px 9px;background:rgba(18,22,16,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:5px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.5rem;outline:none;box-sizing:border-box;margin-bottom:5px;" />';
+  // Status chips (done/undone)
+  var statusChips = [{k:'all',label:'ALL'},{k:'undone',label:'UNDONE'},{k:'done',label:'DONE'}];
+  h += '<div style="display:flex;gap:4px;margin-bottom:5px;">';
+  for (var sci = 0; sci < statusChips.length; sci++) {
+    var skey = statusChips[sci].k, sact = activeStatus === skey;
+    h += '<button onclick="window._bosQuestStatus=\'' + skey + '\';if(window._bosSetTab)_bosSetTab(\'quests\');" style="flex:1;font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.06em;padding:4px 6px;border-radius:4px;cursor:pointer;border:1px solid ' + (sact?'var(--sage)':'rgba(122,179,86,0.2)') + ';background:' + (sact?'rgba(122,179,86,0.15)':'rgba(18,22,16,0.5)') + ';color:' + (sact?'var(--sage)':'var(--muted)') + ';">' + statusChips[sci].label + '</button>';
+  }
+  h += '</div>';
   // Tier filter chips
   var tiers = ['all','bronze','silver','gold','platinum','mythic'];
   var tierColors2 = { all:'var(--cream)', bronze:'#a87236', silver:'#a8a8a8', gold:'#c8a84b', platinum:'#7eb8d4', mythic:'#a87285' };
@@ -79913,15 +79974,31 @@ function _bosQuestsContent() {
   h += '</div>';
   // Filtered list
   var shown = 0;
+  var totalMatching = 0;
   for (var ai = 0; ai < catalog.length; ai++) {
     var ae = catalog[ai];
     if (activeFilter !== 'all' && ae.tier !== activeFilter) continue;
-    h += _achCard(ae);
-    shown++;
-    if (shown >= 50) {
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;padding:0.6rem;">' + (catalog.length - shown) + ' more in this tier. Showing first 50 to keep the page light.</div>';
-      break;
+    var aeDone = !!progress[ae.id];
+    if (activeStatus === 'done' && !aeDone) continue;
+    if (activeStatus === 'undone' && aeDone) continue;
+    if (questSearch) {
+      var aeHay = (ae.name + ' ' + (ae.desc || '') + ' ' + (ae.category || '')).toLowerCase();
+      if (aeHay.indexOf(questSearch) < 0) continue;
     }
+    totalMatching++;
+    if (shown < 50) {
+      h += _achCard(ae);
+      shown++;
+    }
+  }
+  if (totalMatching > 50) {
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;padding:0.6rem;">' + (totalMatching - 50) + ' more match. Refine the search to narrow further.</div>';
+  } else if (totalMatching === 0) {
+    h += '<div style="padding:0.7rem;text-align:center;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);background:rgba(18,22,16,0.4);border:1px dashed rgba(200,168,75,0.2);border-radius:6px;">';
+    if (questSearch) h += 'No achievements match "' + questSearch.replace(/[<>]/g,'') + '".';
+    else if (activeStatus === 'undone' && activeFilter === 'all') h += 'You have unlocked everything. The whole catalog is yours.';
+    else h += 'Nothing here with the current filter.';
+    h += '</div>';
   }
   h += '</div>';
 
