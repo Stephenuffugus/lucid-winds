@@ -1378,7 +1378,7 @@
       border-top: 1px solid rgba(74,124,53,0.1);
       background: rgba(10,13,9,0.6);
     }
-    .pgm-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
+    .pgm-btn-row { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
     /* Download button — image IS the face. The source art has its own
        gold frame baked in, so no CSS border or gradient. Sized at 120px
        so the painted detail reads at intended size; we are NOT
@@ -1396,13 +1396,15 @@
     /* Parchment-tall card buttons (share/details/breed/compost) — image
        IS the face, with the flower illustration up top and the action
        glyph baked into the bottom medallion. 1024×1536 source (2:3),
-       so we render 100px wide × 150px tall to honor that ratio without
-       overshrinking. Row flex-aligns to bottom so the action glyphs
-       at the parchment foot line up across all the buttons. */
+       rendered 120px wide × 180px tall to match the DOWNLOAD button's
+       width and honor the parchment ratio without overshrinking. Row
+       flex-aligns to bottom so the action glyphs at the parchment foot
+       line up across all the buttons. Gap minimized to 2px so the
+       parchments sit shoulder-to-shoulder (Stephen 2026-04-27). */
     .pgm-card-btn {
       padding: 0; border: none; background: none;
       cursor: pointer; transition: transform 0.15s;
-      width: 100px; height: 150px;
+      width: 120px; height: 180px;
       display: inline-flex; align-items: flex-end; justify-content: center;
       filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));
       -webkit-tap-highlight-color: transparent;
