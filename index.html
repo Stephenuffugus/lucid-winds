@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.4';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -10075,6 +10075,7 @@ document.addEventListener('keydown', function(e) {
         for (var fi = 0; fi < fresh.length; fi++) {
           if (window.LW_Log) window.LW_Log.write('synergy_discovered', { id: fresh[fi].id, name: fresh[fi].name, emoji: fresh[fi].emoji });
         }
+        if (window.LW_ACH) { LW_ACH.bump('synergy_disc', fresh.length); LW_ACH.bump('d_synergy', fresh.length); LW_ACH.bump('w_synergy', fresh.length); }
         try { if (window._bosRefreshBadges) window._bosRefreshBadges(); } catch(e){}
       }
       return fresh.length;
@@ -44543,6 +44544,7 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
       reward: dewReward
     });
   }
+  if (window.LW_ACH) { LW_ACH.bump('ferals_total', 1); LW_ACH.bump('d_feral', 1); LW_ACH.bump('w_feral', 1); }
 
   _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' Dew \u00b7 sprout it to see what it is');
   // First-ever feral celebration — meatier than a toast.
@@ -50470,6 +50472,7 @@ function _lwMassWaterDoIt(eligibleIdx, cost){
   // can't grant L2→L3 in one tap.
   if (window._LW_toolXP) window._LW_toolXP('can', Math.min(watered, 4));
   if (window.LW_Log) LW_Log.write('mass_water', { count: watered, cost: cost });
+  if (window.LW_ACH) { LW_ACH.bump('d_mass_water', 1); LW_ACH.bump('d_water_own', watered); LW_ACH.bump('w_water_own', watered); }
   if (window._haptic) _haptic('bloom');
   _toast('\ud83d\udca7 Watered ' + watered + ' plants. \u2796 ' + cost + ' Dew \u00b7 +' + watered + ' XP');
   _lwMassWaterRefreshButton();
@@ -52174,6 +52177,8 @@ function _e(v){
       base=0;
     }else{
       _afLastComplete=now;
+      // Engagement counters fire ONLY after all anti-farm guards pass.
+      if(v==='game_win'&&window.LW_ACH){LW_ACH.bump('games_won_total',1);LW_ACH.bump('d_game_win',1);LW_ACH.bump('w_game_win',1);}
     }
   }
   // RARITY HASH MULTIPLIER — owning Legendary+ plants boosts hash income
