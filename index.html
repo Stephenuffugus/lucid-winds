@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.11';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38381,6 +38381,26 @@ document.addEventListener('keydown', function(e) {
   window.switchTab = function(tab) {
     _haptic('tab');
     if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:tab});
+    // Engagement counter: per-tab time-spent (d_wild_secs / d_gh_secs /
+    // d_session_secs). Compute the just-left tab's elapsed seconds and
+    // bump the matching counter, then stamp a fresh entry timestamp.
+    if (window.LW_ACH) {
+      try {
+        var _now = Date.now();
+        var _prevTab = window._lwActiveTab || null;
+        var _enteredAt = window._lwTabEnteredAt || _now;
+        if (_prevTab && _enteredAt) {
+          var _secs = Math.round((_now - _enteredAt) / 1000);
+          if (_secs > 0 && _secs < 14400) { // ignore >4hr (probably tab left in background)
+            LW_ACH.bump('d_session_secs', _secs);
+            if (_prevTab === 'wild') LW_ACH.bump('d_wild_secs', _secs);
+            else if (_prevTab === 'greenhouse') LW_ACH.bump('d_gh_secs', _secs);
+          }
+        }
+        window._lwActiveTab = tab;
+        window._lwTabEnteredAt = _now;
+      } catch(e) {}
+    }
     // STUDIO AUDIO COEXISTENCE — kill any music-tool audio + tear down
     // their iframes the moment the player navigates away from the game
     // tab. Without this, Bloom Wheel keeps playing through the tab nav
