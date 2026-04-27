@@ -74128,10 +74128,10 @@ function _bosMementosContent() {
       var agoTxt = ago < 86400000 ? 'today' : Math.floor(ago/86400000) + 'd ago';
       h += '<div style="padding:0.6rem;margin-bottom:0.35rem;background:linear-gradient(180deg,rgba(32,28,18,0.65),rgba(18,22,16,0.8));border:1px solid rgba(200,168,75,0.3);border-left:3px solid var(--gold);border-radius:8px;">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-      h += '<span style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.06em;">\u2728 ' + m.name + '</span>';
-      h += '<span style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">' + agoTxt + '</span>';
+      h += '<span style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.06em;"><span class="lwe lwe-sparkle"></span> ' + m.name + '</span>';
+      h += '<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">' + agoTxt + '</span>';
       h += '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:4px;line-height:1.5;font-style:italic;">' + m.text + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);margin-top:4px;line-height:1.6;font-style:italic;">' + m.text + '</div>';
       h += '</div>';
     }
   }
@@ -74166,7 +74166,7 @@ function _bosMementosContent() {
       h += '<div onclick="window._lwOpenCompanionProfile&&_lwOpenCompanionProfile(' + p.idx + ')" style="padding:0.55rem;margin-bottom:0.35rem;background:rgba(18,22,16,0.55);border:1px solid rgba(74,124,53,0.18);border-radius:7px;cursor:pointer;min-height:48px;">';
       h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
       if (portrait) h += '<div style="flex-shrink:0;">' + portrait + '</div>';
-      h += '<div style="flex:1;display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);"><span>' + compName + '</span><span style="color:var(--muted);">' + daysLeft + 'd to keepsake</span></div>';
+      h += '<div style="flex:1;display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);"><span>' + compName + '</span><span style="color:var(--muted);">' + daysLeft + 'd to keepsake</span></div>';
       h += '</div>';
       h += '<div style="height:3px;background:rgba(122,179,86,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--sage),var(--gold));"></div></div>';
       h += '</div>';
@@ -74199,7 +74199,7 @@ function _bosMementosContent() {
         byFamily[rFam].push(rIdx);
       }
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.08em;margin:1rem 0 0.4rem;">YOUR ROSTER \u00b7 ' + rosterList.length + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.5;">Every companion you\u2019ve seen in your garden. Tap for profile + bond status.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;line-height:1.6;">Every companion you\u2019ve seen in your garden. Tap for profile + bond status.</div>';
       // Second EQUIP COMPANION button removed — the prominent one at
       // top of Mementos (line ~61041) covers this. Duplicate flagged
       // in BoS audit.
@@ -74234,8 +74234,8 @@ function _bosMementosContent() {
           var lvlColor = bLvl === 3 ? 'var(--gold)' : (bLvl === 2 ? 'var(--sage)' : 'var(--muted)');
           h += '<div onclick="window._lwOpenCompanionProfile&&_lwOpenCompanionProfile(' + bIdx + ')" style="cursor:pointer;padding:5px;background:rgba(18,22,16,0.55);border:1px solid rgba(74,124,53,0.15);border-radius:7px;text-align:center;min-height:44px;position:relative;">';
           h += '<div style="display:flex;justify-content:center;align-items:center;height:48px;">' + bPort + '</div>';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--cream);margin-top:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + bName + '</div>';
-          h += '<div style="position:absolute;top:2px;right:3px;font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:' + lvlColor + ';letter-spacing:0.04em;">L' + bLvl + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--cream);margin-top:3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.02em;">' + bName + '</div>';
+          h += '<div style="position:absolute;top:3px;right:4px;font-family:Bebas Neue,sans-serif;font-size:0.52rem;color:' + lvlColor + ';letter-spacing:0.04em;">L' + bLvl + '</div>';
           h += '</div>';
         }
         h += '</div></div>';
@@ -74716,8 +74716,8 @@ function _bosHerbariumContent() {
       }, 400);
     }
   } catch(e) {}
-  var h = '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;">Weekly rotating challenges. Complete any of the 3 with plants already in your greenhouse \u2014 no submission, no consumption, just earn the reward.</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;">Week ' + window.LW_HERBARIUM.weekKey() + '</div>';
+  var h = '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.7;">Weekly rotating challenges. Complete any of the 3 with plants already in your greenhouse \u2014 no submission, no consumption, just earn the reward.</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;">Week ' + window.LW_HERBARIUM.weekKey() + '</div>';
   for (var i = 0; i < bundles.length; i++) {
     var b = bundles[i];
     if (!b || !b.req) { try { console.warn('[Herbarium] tab skipped bundle index ' + i, b); } catch(e){} continue; }
@@ -74727,8 +74727,8 @@ function _bosHerbariumContent() {
     var statusColor = claimed ? 'var(--muted)' : prog.complete ? 'var(--gold)' : 'var(--sage)';
     h += '<div style="padding:0.7rem;margin-bottom:0.5rem;background:' + (claimed ? 'rgba(26,36,22,0.4)' : prog.complete ? 'linear-gradient(180deg,rgba(200,168,75,0.15),rgba(74,124,53,0.1))' : 'rgba(18,22,16,0.65)') + ';border:1.5px solid ' + (claimed ? 'rgba(74,124,53,0.15)' : prog.complete ? 'var(--gold)' : 'rgba(122,179,86,0.25)') + ';border-radius:10px;' + (claimed ? 'opacity:0.55;' : '') + '">';
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">';
-    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:' + statusColor + ';letter-spacing:0.06em;">' + b.name + (claimed ? ' \u2713' : '') + '</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:3px;line-height:1.5;">' + b.blurb + '</div>';
+    h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + statusColor + ';letter-spacing:0.06em;">' + b.name + (claimed ? ' \u2713' : '') + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);margin-top:4px;line-height:1.6;">' + b.blurb + '</div>';
     // Resolve internal title key to its display word via BUNDLE_TITLES
     // lookup — previously showed e.g. "Title: curator" instead of
     // "Title: Curator." Falls back to the raw key if unmapped.
@@ -74740,8 +74740,8 @@ function _bosHerbariumContent() {
       var _bTWord = (_bT && _bT.word) ? _bT.word : (b.rewardAmt || 'Title');
       _bRewardTxt = 'Title: ' + _bTWord;
     }
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;">' + _bRewardTxt + '</div></div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:' + statusColor + ';white-space:nowrap;">' + prog.count + ' / ' + prog.required + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:4px;">' + _bRewardTxt + '</div></div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:' + statusColor + ';white-space:nowrap;font-weight:bold;">' + prog.count + ' / ' + prog.required + '</div>';
     h += '</div>';
     if (!claimed) {
       h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-top:6px;"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--sage),var(--gold));"></div></div>';
