@@ -930,6 +930,26 @@
       --set-c1:#5b8fb9;--set-c2:#C8A84B;--set-c3:#c07070;
     }
     *{margin:0;padding:0;box-sizing:border-box;}
+    /* ══ Sprite glyphs — replaces emojis in headline UI strings.
+       Use as <span class="lwe lwe-bloom"></span>. The base .lwe sets
+       the inline-block sizing to match a 1em-tall glyph; modifiers
+       paint the sprite. Sized to 1.1em so the painted art reads at
+       the same visual weight as Apple/Google native emoji glyphs in
+       buttons. Safe to use in any innerHTML string; NOT safe in
+       plain-text contexts (alert(), title=, aria-label=). */
+    .lwe{display:inline-block;width:1.1em;height:1.1em;vertical-align:-0.18em;background-position:center;background-size:contain;background-repeat:no-repeat;flex-shrink:0;}
+    .lwe-bloom{background-image:url('assets/fx/bloom-sprout.png');}
+    .lwe-leaf{background-image:url('assets/fx/bloom-leaf.png');}
+    .lwe-leaf-fall{background-image:url('assets/fx/compost-flame.png');}
+    .lwe-leaf-vine{background-image:url('assets/fx/compost-leaf-vine.png');}
+    .lwe-sparkle{background-image:url('assets/fx/compost-spark.png');}
+    .lwe-drop{background-image:url('assets/fx/drop-blue.png');}
+    .lwe-sun{background-image:url('assets/fx/bloom-sun.png');}
+    .lwe-flame{background-image:url('assets/fx/compost-flame.png');}
+    .lwe-flower{background-image:url('assets/fx/bloom-flower.png');}
+    .lwe-flowers{background-image:url('assets/fx/bloom-flowercluster.png');}
+    .lwe-butterfly{background-image:url('assets/fx/butterfly-pink.png');}
+    .lwe-snowflake{background-image:url('assets/fx/snowflake-blue.png');}
     /* View Transition — botanical fade */
     ::view-transition-old(root){animation:vtFadeOut 0.2s ease-in both;}
     ::view-transition-new(root){animation:vtFadeIn 0.25s ease-out 0.1s both;}
@@ -6941,7 +6961,7 @@ window._addSwitchTabHook = function(fn){
       <div id="ob-haiku" class="ob-haiku"></div>
       <div id="ob-creature" class="ob-creature-text"></div>
       <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:rgba(240,235,216,0.7);line-height:1.8;margin-top:0.6rem;max-width:300px;opacity:0;transition:opacity 1.5s ease 0.3s;" id="ob-manifesto">Every plant here is born from attention.<br>No two are the same.<br>Care for yours, and it will shape the world around you.</div>
-      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">CLAIM YOUR FIRST PLANT</div><div style="margin-bottom:0.7rem;text-align:center;"><button onclick="PW_Onboard.showLogin()" style="background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;padding:10px 16px;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--gold);cursor:pointer;min-height:44px;">ALREADY HAVE AN ACCOUNT? SIGN IN</button></div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()">🌱 CLAIM THIS PLANT</button></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;">WELCOME BACK, KEEPER</div><div style="margin-bottom:0.7rem;text-align:center;"><button onclick="PW_Onboard.showSignup()" style="background:rgba(122,179,86,0.08);border:1.5px solid rgba(122,179,86,0.4);border-radius:8px;padding:10px 16px;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--sage);cursor:pointer;min-height:44px;">NEW HERE? CREATE AN ACCOUNT</button></div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:44px;display:inline-block;padding:6px 0;">Forgot password?</span></div></div></div>
+      <div class="ob-auth" id="ob-auth"><div id="ob-auth-new"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">CLAIM YOUR FIRST PLANT</div><div style="margin-bottom:0.7rem;text-align:center;"><button onclick="PW_Onboard.showLogin()" style="background:rgba(200,168,75,0.08);border:1.5px solid rgba(200,168,75,0.35);border-radius:8px;padding:10px 16px;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--gold);cursor:pointer;min-height:44px;">ALREADY HAVE AN ACCOUNT? SIGN IN</button></div><input type="text" id="ob-name-input" placeholder="What should we call you, Keeper?" maxlength="24" autocomplete="off" /><input type="email" id="ob-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-pass" placeholder="Password (6+ characters)" autocomplete="new-password" /><div class="ob-auth-err" id="ob-auth-err"></div><button class="ob-auth-btn" id="ob-auth-btn" onclick="PW_Onboard.submitAuth()"<span class="lwe lwe-bloom"></span> CLAIM THIS PLANT</button></div><div id="ob-auth-login" style="display:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.3rem;">WELCOME BACK, KEEPER</div><div style="margin-bottom:0.7rem;text-align:center;"><button onclick="PW_Onboard.showSignup()" style="background:rgba(122,179,86,0.08);border:1.5px solid rgba(122,179,86,0.4);border-radius:8px;padding:10px 16px;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--sage);cursor:pointer;min-height:44px;">NEW HERE? CREATE AN ACCOUNT</button></div><input type="email" id="ob-login-email" placeholder="Email" autocomplete="email" /><input type="password" id="ob-login-pass" placeholder="Password" autocomplete="current-password" /><div class="ob-auth-err" id="ob-login-err"></div><button class="ob-auth-btn" id="ob-login-btn" onclick="PW_Onboard.submitLogin()" style="background:linear-gradient(145deg,var(--gold),#8a6e2f);">SIGN IN</button><div style="margin-top:0.5rem;text-align:center;"><span onclick="PW_Onboard.forgotPassword()" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);cursor:pointer;text-decoration:underline;min-height:44px;display:inline-block;padding:6px 0;">Forgot password?</span></div></div></div>
       <button class="ob-continue" id="ob-continue" onclick="PW_Onboard.finish()">ENTER YOUR GREENHOUSE →</button>
     </div>
     <div class="ob-skip" id="ob-skip" onclick="PW_Onboard.skip()">skip →</div>
@@ -8778,12 +8798,12 @@ window._addSwitchTabHook = function(fn){
              openCarousel is called with source='wild-inspect' so players
              walking through a hex can water + take cuttings without
              closing the carousel. -->
-        <button class="pgm-act-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" style="display:none;border-color:rgba(91,173,220,0.45);color:rgba(91,173,220,0.95);">💧 WATER</button>
+        <button class="pgm-act-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" style="display:none;border-color:rgba(91,173,220,0.45);color:rgba(91,173,220,0.95);"<span class="lwe lwe-drop"></span> WATER</button>
         <button class="pgm-act-btn pgm-wild-act gold" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" style="display:none;border-color:rgba(200,168,75,0.45);color:var(--gold);" title="Take a cutting. Costs 20 Dew. Parent unharmed. 2 per day.">✂ CUTTING · 20💧</button>
         <!-- WILD-PLACE mode: drop the currently-shown plant into the
              player's current hex. Hidden by default; shown in
              wild-place mode by openCarousel. -->
-        <button class="pgm-act-btn pgm-wild-place" id="gallery-place-btn" onclick="window._wildPlaceFromCarousel&&window._wildPlaceFromCarousel()" style="display:none;border-color:rgba(122,179,86,0.55);color:var(--sage);background:linear-gradient(180deg,rgba(74,124,53,0.28),rgba(46,80,34,0.4));font-weight:bold;">🌱 PLACE HERE</button>
+        <button class="pgm-act-btn pgm-wild-place" id="gallery-place-btn" onclick="window._wildPlaceFromCarousel&&window._wildPlaceFromCarousel()" style="display:none;border-color:rgba(122,179,86,0.55);color:var(--sage);background:linear-gradient(180deg,rgba(74,124,53,0.28),rgba(46,80,34,0.4));font-weight:bold;"<span class="lwe lwe-bloom"></span> PLACE HERE</button>
         <!-- ITEMS access — visible on both wild modes. Opens the items
              panel so players can apply seasonal/climate buffs while
              comparing plants for a drop or while inspecting a hex. -->
@@ -50874,7 +50894,7 @@ window._lwOpenMyPlants = function(){
         '<div style="font-size:3.5rem;line-height:1;margin-bottom:0.7rem;opacity:0.5;">🌳</div>' +
         '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:0.5rem;">NO PLANTS IN THE WILD</div>' +
         '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:var(--cream);line-height:1.5;margin-bottom:1rem;">Drop your first specimen with the SOW button. Other keepers see it on their map.</div>' +
-        '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();" style="padding:11px 20px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.55);background:linear-gradient(180deg,rgba(122,179,86,0.32),rgba(60,90,40,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;">🌱 SOW A PLANT</button>' +
+        '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();" style="padding:11px 20px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.55);background:linear-gradient(180deg,rgba(122,179,86,0.32),rgba(60,90,40,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;"<span class="lwe lwe-bloom"></span> SOW A PLANT</button>' +
       '</div>';
     document.body.appendChild(ovE);
     return;
@@ -53286,7 +53306,7 @@ function _showWinCelebration(){
   else if(_winNear){h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);margin-bottom:0.4rem;animation:nearBloomPulse 1.5s ease infinite;">'+_winRemain+' MORE TO FULL BLOOM</div>';}
   else{h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);margin-bottom:0.5rem;">'+inPlant+' / '+_winCost+' to next plant</div>';}
   if(_winReady>0){
-    h+='<button onclick="_dismissWin();if(window.openSunbeamModal)openSunbeamModal();" style="width:100%;padding:0.65rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">\ud83c\udf31 BLOOM A PLANT</button>';
+    h+='<button onclick="_dismissWin();if(window.openSunbeamModal)openSunbeamModal();" style="width:100%;padding:0.65rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;"><span class="lwe lwe-bloom"></span> BLOOM A PLANT</button>';
   }
   h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:'+(_winNear&&!_winReady?'0.65rem':'0.55rem')+';margin-bottom:0.3rem;border:1.5px solid '+((_winNear&&!_winReady)?'rgba(200,168,75,0.5)':'rgba(122,179,86,0.35)')+';border-radius:8px;background:linear-gradient(180deg,'+((_winNear&&!_winReady)?'rgba(200,168,75,0.25),rgba(120,100,40,0.35)':'rgba(74,124,53,0.3),rgba(26,60,22,0.4)')+');color:'+((_winNear&&!_winReady)?'var(--gold)':'var(--sage)')+';font-family:Bebas Neue,sans-serif;font-size:'+((_winNear&&!_winReady)?'0.95rem':'0.85rem')+';letter-spacing:0.1em;cursor:pointer;min-height:48px;'+((_winNear&&!_winReady)?'':'')+'">'+(_winNear&&!_winReady?'ONE MORE GAME':'PLAY AGAIN')+'</button>';
   h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.2);border-radius:8px;background:rgba(46,40,32,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;">\ud83c\udfae TRY ANOTHER GAME</button>';
