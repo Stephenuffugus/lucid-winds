@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.8';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.9';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -43246,6 +43246,13 @@ function activate(){
     if(window.detectBiome&&_uLat){
       detectBiome(_uLat,_uLng,function(b){
         window._lastDetectedBiome=b;
+        // Engagement counter: unique biomes visited. Sticky set.
+        if(window.LW_ACH&&b){
+          try{
+            var _bs=JSON.parse(localStorage.getItem('lw_ach_biomes_seen')||'{}');
+            if(!_bs[b]){_bs[b]=1;localStorage.setItem('lw_ach_biomes_seen',JSON.stringify(_bs));var _bc=0;for(var _bk in _bs)_bc++;LW_ACH.set('biomes_visited',_bc);}
+          }catch(e){}
+        }
         if(window.getBiomeInfo){
           var _bInf=getBiomeInfo(b);
           var _bIc=document.getElementById('w-biome');if(_bIc)_bIc.textContent=_bInf.icon;
@@ -50700,7 +50707,17 @@ window._hexAction=function(action){
     try{if(window.LW_XP)window.LW_XP.grantOnce('first_tend',15,'first_of_kind','🤝 +15 XP, first stranger tended. You\'re part of something bigger.');}catch(e){}
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
     if(window._lwBumpCompCounter)window._lwBumpCompCounter('tend');
-    if(window.LW_ACH){LW_ACH.bump('tend_strangers',1);LW_ACH.bump('d_tend',1);LW_ACH.bump('w_tend',1);LW_ACH.bump('d_water_str',1);}
+    if(window.LW_ACH){
+      LW_ACH.bump('tend_strangers',1);LW_ACH.bump('d_tend',1);LW_ACH.bump('w_tend',1);LW_ACH.bump('d_water_str',1);
+      // Track unique keeper UIDs tended for the social-tier achievements.
+      try{
+        var _kuid=p.ownerUid||p.ownerName||null;
+        if(_kuid){
+          var _ks=JSON.parse(localStorage.getItem('lw_ach_keepers_seen')||'{}');
+          if(!_ks[_kuid]){_ks[_kuid]=1;localStorage.setItem('lw_ach_keepers_seen',JSON.stringify(_ks));var _kc=0;for(var _kk in _ks)_kc++;LW_ACH.set('unique_keepers',_kc);}
+        }
+      }catch(e){}
+    }
     _writeWitnessFee(p,'tend');
     _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
     if(window._play)_play('match');
