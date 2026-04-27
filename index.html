@@ -6335,7 +6335,7 @@ window._addSwitchTabHook = function(fn){
       <div class="panel-header-title">PLANTS</div>
       <div style="display:flex;align-items:center;gap:0.4rem;">
         <div class="greenhouse-count" id="gh-count">0 / 10</div>
-        <button id="gh-expand-btn" onclick="expandGHSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:6px;padding:0.3rem 0.5rem;cursor:pointer;min-height:44px;white-space:nowrap;">+ SLOT (1 π)</button>
+        <button id="gh-expand-btn" onclick="expandGHSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:6px;padding:0.3rem 0.5rem;cursor:pointer;min-height:44px;white-space:nowrap;">+ SLOT</button>
       </div>
     </div>
     <div class="gh-progress">
@@ -12407,7 +12407,7 @@ document.addEventListener('keydown', function(e) {
       + '<div class="guide-section">'
       + '<div class="guide-heading">YOUR PLANTS</div>'
       + '<p class="guide-text">When you gather enough Sunbeams, a unique plant photosynthesizes into your <strong>Greenhouse</strong>. Every plant is procedurally generated from your gameplay, its leaves, bloom, pot, companion, and poem are all one-of-a-kind.</p>'
-      + '<p class="guide-text">Plants are stored in your <strong>Greenhouse</strong> (starts at 10 slots, expandable with Pi).</p>'
+      + '<p class="guide-text">Plants are stored in your <strong>Greenhouse</strong> (starts at 10 slots, expandable as you grow).</p>'
       + '</div>'
 
       // TERRA GRADE
@@ -12460,15 +12460,13 @@ document.addEventListener('keydown', function(e) {
       + '<strong style="color:#e8c878;">Sunbeams</strong>, gathered from focused play. 30 = 1 new plant.<br>'
       + '<strong style="color:#5baddc;">Dew</strong>, produced by your wild plants and earned from participation. Spent on nursery acceleration and wild plant cuttings.<br>'
       + '<strong style="color:var(--sage);">Fertilizer</strong>, earned by composting. Applied to seeds before bloom.<br>'
-      + '<strong style="color:var(--sage);">Pollen</strong>, earned passively from wild plants. Never spent. Milestones unlock cosmetics.<br>'
-      + '<strong style="color:var(--gold);">Pi</strong>, optional. Buys greenhouse slots, feral pouch upgrades, cryo chambers. Never buys power.'
+      + '<strong style="color:var(--sage);">Pollen</strong>, earned passively from wild plants. Never spent. Milestones unlock cosmetics.'
       + '</div></div>'
 
       // FERAL POUCH
       + '<div class="guide-section">'
       + '<div class="guide-heading">FERAL COLLECTION</div>'
-      + '<p class="guide-text">Find wild plants while walking. Base: 2 per day (upgradeable to 5 with Pi). Ferals are <strong>sealed</strong>, they can\'t be removed once collected. Choose wisely.</p>'
-      + '<p class="guide-text"><strong>Cryo Chamber</strong> (5 Pi, one-time): emergency slot if your pouch is full and you find something incredible.</p>'
+      + '<p class="guide-text">Find wild plants while walking. Base: 2 per day. Ferals are <strong>sealed</strong>, they can\'t be removed once collected. Choose wisely.</p>'
       + '</div>'
 
       // WATERING
@@ -34963,7 +34961,7 @@ document.addEventListener('keydown', function(e) {
     var _piOn = !!window.LW_PI_ENABLED;
     var _bodyCopy = _piOn
       ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
-      : 'Add slot ' + (current + 1) + '?<br><span style="color:var(--muted);font-size:0.35rem;">Pi payment required at launch. Free during beta.</span>';
+      : 'Add slot ' + (current + 1) + '?';
     _lwConfirm({
       title: 'EXPAND GREENHOUSE',
       body: _bodyCopy,
@@ -39468,7 +39466,7 @@ document.addEventListener('keydown', function(e) {
     }
     _lwConfirm({
       title: 'EXPAND NURSERY',
-      body: 'Add slot ' + (current + 1) + '?<br><span style="color:var(--muted);font-size:0.35rem;">Pi payment required at launch. Free during beta.</span>',
+      body: 'Add slot ' + (current + 1) + '?',
       yes: 'EXPAND',
       no: 'NOT YET'
     }, function() {
@@ -41495,7 +41493,7 @@ document.addEventListener('keydown', function(e) {
     // (so the player gets something useful) and toast that verification is
     // coming. When verify.html ships, swap this back to window.open.
     if (navigator.clipboard) navigator.clipboard.writeText(galleryPlant.hash).catch(function(){});
-    if (window._toast) window._toast('🔍 Code copied. Public verifier launches with Pi.');
+    if (window._toast) window._toast('🔍 Code copied to clipboard.');
     else if (window.showHexMsg) window.showHexMsg('Code copied. Public verifier coming soon.');
   };
   // ═══ PHASE 25 — SWS ID FULL AUTH ENGINE ════════════════════════════════
@@ -77223,9 +77221,10 @@ window._lwClaimHerbarium = function(id){
       if (sold){
         html += '<div class="lwh-shop-buy is-sold">SOLD</div>';
       } else if (locked){
-        // Pi early-open: 5 Pi opens the window now (until midnight). Pure FOMO pull.
-        // Mystery box doesn't have an item key to early-open against, so skip there.
-        if (s.type === 'mystery' || !s.key){
+        // Pi early-open is gated behind LW_PI_ENABLED — until the SDK +
+        // backend ship, lock is just LOCKED everywhere. Players don't see
+        // a price they can't actually pay yet.
+        if (s.type === 'mystery' || !s.key || !window.LW_PI_ENABLED){
           html += '<div class="lwh-shop-buy is-locked">LOCKED</div>';
         } else {
           html += '<button class="lwh-shop-buy is-pi-early" onclick="LW_HUT.earlyOpen('+i+')" title="Skip the wait. Window opens until midnight.">OPEN NOW · 5 π</button>';
@@ -77239,9 +77238,9 @@ window._lwClaimHerbarium = function(id){
     html += '</div>';
     var _capNow = getPouchCap();
     var _capFootHtml = 'Stock + windows refresh at midnight · pouch cap '+_capNow;
-    if (_capNow < 40){
+    if (_capNow < 40 && window.LW_PI_ENABLED){
       _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyPouchSlot()" title="Pi expands your item pouch by 1 slot (max 40).">+1 SLOT · 1 π</button>';
-    } else {
+    } else if (_capNow >= 40) {
       _capFootHtml += ' (max)';
     }
     html += '<div class="lwh-section-foot">'+_capFootHtml+'</div>';
