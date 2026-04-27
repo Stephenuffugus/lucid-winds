@@ -73155,7 +73155,7 @@ function _bosActivityContent() {
   h += '</div>';
   // Apply filter to event list — counted before filter so "N recent events" still reads true.
   var _filteredEvts = (_actFilter === 'all') ? evts : evts.filter(function(e){return _actCat(e.type) === _actFilter;});
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.6rem;">' + _filteredEvts.length + (_actFilter==='all' ? ' recent events \u00b7 newest first' : ' ' + _actFilter + ' events \u00b7 newest first') + '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-bottom:0.7rem;letter-spacing:0.02em;">' + _filteredEvts.length + (_actFilter==='all' ? ' recent events \u00b7 newest first' : ' ' + _actFilter + ' events \u00b7 newest first') + '</div>';
   // Use filtered list for the render loop below.
   evts = _filteredEvts;
   var cutoff = Date.now() - 7 * 86400000;
@@ -73234,11 +73234,11 @@ function _bosActivityContent() {
         body = e.name || e.event || '';
     }
     var when = e.ts ? _bosFormatWhen(e.ts) : '';
-    h += '<div style="padding:0.5rem 0.6rem;margin-bottom:0.35rem;background:rgba(18,22,16,0.65);border-left:2px solid ' + color + ';border-radius:6px;display:flex;gap:0.55rem;align-items:flex-start;">';
-    h += '<span style="font-size:0.9rem;flex-shrink:0;">' + icon + '</span>';
+    h += '<div style="padding:0.6rem 0.7rem;margin-bottom:0.45rem;background:rgba(18,22,16,0.65);border-left:2px solid ' + color + ';border-radius:6px;display:flex;gap:0.6rem;align-items:flex-start;">';
+    h += '<span style="font-size:1.05rem;flex-shrink:0;line-height:1;">' + icon + '</span>';
     h += '<div style="flex:1;min-width:0;">';
-    h += '<div style="display:flex;justify-content:space-between;gap:0.5rem;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:' + color + ';letter-spacing:0.06em;">' + title + '</span><span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);white-space:nowrap;">' + when + '</span></div>';
-    if (body) h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--cream);margin-top:2px;line-height:1.5;">' + body + '</div>';
+    h += '<div style="display:flex;justify-content:space-between;gap:0.5rem;align-items:baseline;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:' + color + ';letter-spacing:0.06em;">' + title + '</span><span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);white-space:nowrap;">' + when + '</span></div>';
+    if (body) h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);margin-top:3px;line-height:1.6;">' + body + '</div>';
     h += '</div></div>';
   }
   return h;
@@ -79753,8 +79753,8 @@ function _bosTodayContent() {
     try { _sug = window._lwTopSuggestion ? window._lwTopSuggestion() : null; } catch(e){}
     h += '<div style="padding:0.85rem 0.9rem 0.9rem;margin-bottom:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.08),rgba(18,22,16,0.55));border:1.5px solid rgba(200,168,75,0.38);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.35);">';
     h +=   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">';
-    h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.22em;color:var(--muted);">WHERE YOU ARE</div>';
-    h +=     '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);">' + _into + ' / ' + _span + ' XP</div>';
+    h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.22em;color:var(--muted);">WHERE YOU ARE</div>';
+    h +=     '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + _into + ' / ' + _span + ' XP</div>';
     h +=   '</div>';
     h +=   '<div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--gold);font-style:italic;line-height:1.15;margin-bottom:3px;">Lvl ' + _lvl + (_title ? ' &middot; ' + _title : '') + '</div>';
     // XP bar
@@ -79763,12 +79763,12 @@ function _bosTodayContent() {
     h +=   '</div>';
     // Next unlocks
     if (_unlocks.length) {
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.16em;color:var(--muted);margin:0.4rem 0 4px;">NEXT UNLOCKS</div>';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.16em;color:var(--muted);margin:0.5rem 0 4px;">NEXT UNLOCKS</div>';
       for (var _u = 0; _u < _unlocks.length; _u++) {
         var _U = _unlocks[_u];
-        h += '<div style="display:flex;align-items:baseline;gap:0.5rem;padding:3px 0;">';
-        h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.08em;color:var(--gold);flex-shrink:0;min-width:30px;">Lv ' + _U.lvl + '</div>';
-        h +=   '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.3;">' + _U.info.title + '</div>';
+        h += '<div style="display:flex;align-items:baseline;gap:0.55rem;padding:4px 0;">';
+        h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--gold);flex-shrink:0;min-width:36px;">Lv ' + _U.lvl + '</div>';
+        h +=   '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.4;">' + _U.info.title + '</div>';
         h += '</div>';
       }
     }
@@ -79777,8 +79777,8 @@ function _bosTodayContent() {
       h += '<button onclick="var m=document.getElementById(\'bos-overlay\');if(m)m.remove();setTimeout(function(){if(window._lwQuestTap)window._lwQuestTap();else if(window._lwTopSuggestion){var s=window._lwTopSuggestion();if(s&&s.action)s.action();}},150);" style="display:flex;align-items:center;gap:9px;width:100%;margin-top:0.7rem;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.5);background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(74,124,53,0.12));color:var(--cream);cursor:pointer;text-align:left;min-height:52px;">';
       h +=   '<div style="font-size:1.15rem;line-height:1;flex-shrink:0;">' + (_sug.icon || '\ud83c\udf31') + '</div>';
       h +=   '<div style="flex:1;min-width:0;">';
-      h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.16em;color:var(--muted);margin-bottom:2px;">DO THIS NEXT</div>';
-      h +=     '<div style="font-family:Playfair Display,serif;font-size:0.78rem;color:var(--gold);font-style:italic;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _sug.title + '</div>';
+      h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.16em;color:var(--muted);margin-bottom:3px;">DO THIS NEXT</div>';
+      h +=     '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--gold);font-style:italic;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _sug.title + '</div>';
       h +=   '</div>';
       h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);opacity:0.6;flex-shrink:0;">\u203a</div>';
       h += '</button>';
