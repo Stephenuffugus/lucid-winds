@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.40';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.41';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1261,22 +1261,31 @@
     /* Mythic back art has the "MYTHIC" label baked into the card higher than
        other tiers — nudge the rarity text down so it doesn't overlap the art. */
     .cs-card-back[data-tier="mythic"] .cb-rarity{margin-top:1.4rem;}
-    /* Book of Secrets — global font bump. Stephen reported text too small. */
+    /* Book of Secrets — global font bump. Stephen reported text too small,
+       second pass 2026-04-27 bumps tiny sizes (0.28-0.4rem) more aggressively
+       so SECRETS grid tiles, atlas labels, and counter chips read at glance. */
     #bos-body{font-size:14px;}
-    #bos-body [style*="font-size:0.35rem"]{font-size:0.52rem!important;}
-    #bos-body [style*="font-size:0.38rem"]{font-size:0.54rem!important;}
-    #bos-body [style*="font-size:0.4rem"]{font-size:0.56rem!important;}
-    #bos-body [style*="font-size:0.42rem"]{font-size:0.58rem!important;}
-    #bos-body [style*="font-size:0.45rem"]{font-size:0.6rem!important;}
-    #bos-body [style*="font-size:0.48rem"]{font-size:0.62rem!important;}
-    #bos-body [style*="font-size:0.5rem"]{font-size:0.66rem!important;}
-    #bos-body [style*="font-size:0.52rem"]{font-size:0.68rem!important;}
-    #bos-body [style*="font-size:0.55rem"]{font-size:0.72rem!important;}
-    #bos-body [style*="font-size:0.58rem"]{font-size:0.76rem!important;}
-    #bos-body [style*="font-size:0.6rem"]{font-size:0.78rem!important;}
-    #bos-body [style*="font-size:0.62rem"]{font-size:0.8rem!important;}
-    #bos-body [style*="font-size:0.65rem"]{font-size:0.85rem!important;}
-    #bos-body [style*="font-size:0.7rem"]{font-size:0.9rem!important;}
+    #bos-body [style*="font-size:0.28rem"]{font-size:0.62rem!important;}
+    #bos-body [style*="font-size:0.3rem"]{font-size:0.62rem!important;}
+    #bos-body [style*="font-size:0.32rem"]{font-size:0.64rem!important;}
+    #bos-body [style*="font-size:0.35rem"]{font-size:0.66rem!important;}
+    #bos-body [style*="font-size:0.38rem"]{font-size:0.68rem!important;}
+    #bos-body [style*="font-size:0.4rem"]{font-size:0.7rem!important;}
+    #bos-body [style*="font-size:0.42rem"]{font-size:0.72rem!important;}
+    #bos-body [style*="font-size:0.45rem"]{font-size:0.74rem!important;}
+    #bos-body [style*="font-size:0.48rem"]{font-size:0.76rem!important;}
+    #bos-body [style*="font-size:0.5rem"]{font-size:0.78rem!important;}
+    #bos-body [style*="font-size:0.52rem"]{font-size:0.8rem!important;}
+    #bos-body [style*="font-size:0.55rem"]{font-size:0.82rem!important;}
+    #bos-body [style*="font-size:0.58rem"]{font-size:0.84rem!important;}
+    #bos-body [style*="font-size:0.6rem"]{font-size:0.86rem!important;}
+    #bos-body [style*="font-size:0.62rem"]{font-size:0.88rem!important;}
+    #bos-body [style*="font-size:0.65rem"]{font-size:0.92rem!important;}
+    #bos-body [style*="font-size:0.7rem"]{font-size:0.98rem!important;}
+    #bos-body [style*="font-size:0.75rem"]{font-size:1.05rem!important;}
+    #bos-body [style*="font-size:0.8rem"]{font-size:1.1rem!important;}
+    /* Bump line-height for tiny text so the readability boost actually lands */
+    #bos-body [style*="font-size:0."]{line-height:1.35!important;}
     .cb-ledger-label{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;color:var(--muted);}
     .cb-ledger-value{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:400;color:var(--cream);}
     .cb-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:1.0rem;color:rgba(212,207,188,0.90);line-height:1.7;text-align:center;}
@@ -6889,7 +6898,7 @@ window._addSwitchTabHook = function(fn){
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button><button class="dev-btn" onclick="PW_Dev.resetTutorial()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">↺ RESET TUTORIAL</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
-    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.auditTriggers()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🔬 AUDIT TRIGGERS + LW_ACH</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">TIME SKIP (WILD SIM)</div>
       <button class="dev-btn" onclick="PW_Dev.backdateWilds(1)">⏩ BACKDATE WILDS 1 DAY</button>
@@ -8219,6 +8228,48 @@ window._addSwitchTabHook = function(fn){
     accelBackpack:function(){
       localStorage.removeItem('fg_bp_slot_cd');
       alert('Backpack cooldowns cleared!');
+    },
+    auditTriggers:function(){
+      // 2026-04-27 — Stephen wanted "do we know if events, and everything
+      // else is actually firing properly?" This bundles a one-shot audit:
+      //  • TRIGGERS catalog count
+      //  • DISCOVERED count (lw_wild_events) — fired via wild scan
+      //  • GROWN count (lw_triggers_grown) — fired via greenhouse hashes
+      //  • LW_ACH counter sample (random 5 keys + their current values)
+      //  • Forces a fresh greenhouse → grown scan and reports the delta
+      var msg = '';
+      try {
+        var trigTotal = (window.INTERACTION_TRIGGERS||window.TRIGGERS||[]).length;
+        msg += 'TRIGGERS catalog: ' + trigTotal + '\n';
+        var disc = JSON.parse(localStorage.getItem('lw_wild_events')||'[]');
+        if (Array.isArray(disc)) msg += 'Discovered (wild scan): ' + disc.length + '\n';
+        else { var _dc = 0; for (var _dk in disc) if (disc[_dk]) _dc++; msg += 'Discovered (wild scan): ' + _dc + '\n'; }
+        var grownBefore = JSON.parse(localStorage.getItem('lw_triggers_grown')||'[]');
+        msg += 'Grown (greenhouse-derived) before scan: ' + grownBefore.length + '\n';
+      } catch(e){ msg += 'Read error: ' + e.message + '\n'; }
+      // Force a fresh scan
+      try {
+        var gh = JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');
+        if (window._lwRecordGrown) for (var i=0;i<gh.length;i++) if (gh[i]&&gh[i].hash) window._lwRecordGrown(gh[i].hash);
+        var grownAfter = JSON.parse(localStorage.getItem('lw_triggers_grown')||'[]');
+        msg += 'Grown after rescan: ' + grownAfter.length + '\n';
+        msg += 'Greenhouse plants scanned: ' + gh.length + '\n\n';
+      } catch(e){ msg += 'Scan error: ' + e.message + '\n'; }
+      // LW_ACH sample
+      try {
+        if (window.LW_ACH && LW_ACH.progress) {
+          var prog = LW_ACH.progress() || {};
+          var nonZero = 0; for (var pk in prog) if (prog[pk]) nonZero++;
+          msg += 'LW_ACH counters with value: ' + nonZero + '\n';
+          var samples = ['blooms_total','synergy_disc','dew_spent_total','meters_total','compost_total'];
+          for (var si=0; si<samples.length; si++) {
+            msg += '  ' + samples[si] + ' = ' + (prog[samples[si]]||0) + '\n';
+          }
+        } else {
+          msg += 'LW_ACH not loaded.\n';
+        }
+      } catch(e){ msg += 'LW_ACH error: ' + e.message + '\n'; }
+      alert(msg);
     },
     grantHashes:function(n){
       n=n||100;
@@ -10033,6 +10084,23 @@ document.addEventListener('keydown', function(e) {
   };
 
   // _TERRA_GRADES: internal only — not exposed on window (anti-cheat)
+
+  // Terra grade icon HTML — returns a real PNG <img> (assets/symbols/symbol-{name}.png)
+  // sized to fill its frame, with the unicode glyph as graceful 404 fallback.
+  // Use this anywhere the grade is rendered visually (BoS Secrets grid, Reader
+  // titles, plant chips). Stephen made the symbol art; the unicode glyphs were
+  // a placeholder. Wired 2026-04-27.
+  window._lwGradeIconHtml = function(nameOrGrade, sizePx){
+    var nm = (nameOrGrade && nameOrGrade.name) ? nameOrGrade.name : nameOrGrade;
+    var fallback = '○';
+    for (var _gi = 0; _gi < _TERRA_GRADES.length; _gi++) {
+      if (_TERRA_GRADES[_gi].name === nm) { fallback = _TERRA_GRADES[_gi].icon; break; }
+    }
+    var slug = String(nm||'').toLowerCase();
+    var sz = sizePx || 24;
+    var src = 'assets/symbols/symbol-' + slug + '.png';
+    return '<img src="' + src + '" alt="' + nm + '" style="width:' + sz + 'px;height:' + sz + 'px;object-fit:contain;display:inline-block;vertical-align:middle;" onerror="var s=document.createElement(\'span\');s.textContent=\'' + fallback + '\';s.style.fontSize=\'' + sz + 'px\';s.style.lineHeight=\'1\';if(this.parentNode){this.parentNode.replaceChild(s,this);}">';
+  };
 
   // ═══ BREED LAYER ENGINE — deterministic layer activation at bloom ═══
   // Uses seed hash bytes 40-53 for probability rolls (no Math.random).
@@ -60579,6 +60647,7 @@ function openCharacter(){
   _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
   _renderClassSection();_renderToolSection();_renderEffectsSection();
   _renderMilestoneSection();
+  try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
   document.getElementById('pw-character').classList.add('open');
   // Tick booster timers every 30s while open
   if(_csEffectTimer)clearInterval(_csEffectTimer);
@@ -73297,9 +73366,11 @@ window._lwShowGradeDetail = function(gradeName) {
   body.push({type:'stat', label:'Plants at this tier', value: myCount});
   window.LW_Reader.open({
     eyebrow: 'TERRA GRADE',
-    title: def.icon + ' ' + def.name,
+    title: def.name,
     subtitle: null,
     theme: def.theme,
+    hero: 'assets/symbols/symbol-' + def.name.toLowerCase() + '.png',
+    heroStyle: 'inline',
     chips: [def.name, 'score \u2265 ' + def.minScore, lore.pct],
     body: body,
     actions: [{label:'CLOSE', kind:'ghost'}]
@@ -80841,9 +80912,11 @@ function _bosSecretsContent() {
       var g = grades[gti];
       var gc = tgCounts[g.name] || 0;
       var has = gc > 0;
-      h += '<div onclick="if(window._lwShowGradeDetail)_lwShowGradeDetail(\''+g.name+'\')" style="padding:4px 2px;background:'+(has?'rgba(18,22,16,0.7)':'rgba(26,36,22,0.3)')+';border:1px solid '+g.color+(has?'44':'22')+';border-radius:5px;text-align:center;cursor:pointer;'+(has?'':'opacity:0.55;')+'" title="'+g.name+' \u00b7 '+gc+' owned">';
-      h += '<div style="font-size:0.7rem;color:'+g.color+';">'+g.icon+'</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:'+(has?'var(--cream)':'var(--muted)')+';margin-top:1px;">'+gc+'</div>';
+      var _gIcon = (window._lwGradeIconHtml ? window._lwGradeIconHtml(g.name, 38) : '<span style="font-size:0.95rem;color:'+g.color+';">'+g.icon+'</span>');
+      h += '<div onclick="if(window._lwShowGradeDetail)_lwShowGradeDetail(\''+g.name+'\')" style="padding:7px 3px;background:'+(has?'rgba(18,22,16,0.7)':'rgba(26,36,22,0.3)')+';border:1.5px solid '+g.color+(has?'55':'22')+';border-radius:7px;text-align:center;cursor:pointer;'+(has?'':'opacity:0.55;')+'" title="'+g.name+' \u00b7 '+gc+' owned">';
+      h += '<div style="line-height:1;">'+_gIcon+'</div>';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.45rem;color:'+g.color+';letter-spacing:0.08em;margin-top:3px;line-height:1;">'+g.name.toUpperCase()+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(has?'var(--cream)':'var(--muted)')+';margin-top:2px;">'+gc+'</div>';
       h += '</div>';
     }
     h += '</div></div>';
@@ -81905,6 +81978,7 @@ window._lwGetClass=_lwGetClass;
 function _lwSetClass(id){
   localStorage.setItem('lw_class',id);
   if(window.LW_ACH)LW_ACH.set('class_picked',1);
+  try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
 }
 function _lwGetClassXP(){try{return JSON.parse(localStorage.getItem('lw_class_xp')||'{}');}catch(e){return{};}}
 function _lwSetClassXP(x){localStorage.setItem('lw_class_xp',JSON.stringify(x));}
@@ -81924,38 +81998,66 @@ function _lwGetToolLevel(toolId){
   return 1;
 }
 window._lwGetToolLevel=_lwGetToolLevel;
-// Refresh keeper-bar avatar to show chosen class
+// Refresh keeper-bar avatar AND character-sheet avatar to show chosen class.
+// Both share the same logic: img tag from class PNG, emoji fallback only on
+// 404, never the static 🌱 once a class is picked.
 window._lwRefreshAvatar=function(){
-  var av=document.getElementById('kb-avatar');if(!av)return;
-  var lvlBadge=document.getElementById('kb-class-lvl');
   var cid=_lwGetClass();
-  // Find or create the art node — keep the level-badge span intact.
-  var artNode=document.getElementById('kb-avatar-art');
-  if(cid&&LW_CLASSES[cid]){
-    var def=LW_CLASSES[cid];
-    var lvl=_lwGetClassLevel(cid);
-    if(!artNode){
-      artNode=document.createElement('img');
-      artNode.id='kb-avatar-art';
-      artNode.alt='';
-      artNode.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;';
-      artNode.onerror=function(){var s=document.createElement('span');s.id='kb-avatar-art';s.textContent=def.icon;s.style.cssText='font-size:1.4rem;line-height:1;';if(artNode&&artNode.parentNode){artNode.parentNode.replaceChild(s,artNode);}};
-      // Clear any existing text node/emoji in front of the level badge
-      while(av.firstChild&&av.firstChild.id!=='kb-class-lvl'){av.removeChild(av.firstChild);}
-      av.insertBefore(artNode,av.firstChild);
+  var def=cid&&LW_CLASSES[cid]?LW_CLASSES[cid]:null;
+  var lvl=def?_lwGetClassLevel(cid):0;
+  var src=def?('assets/character-sheet/classes/'+cid+'.png?v=20260427c'):null;
+  // Keeper-bar avatar — preserves the class-level pip overlay
+  var kbAv=document.getElementById('kb-avatar');
+  var lvlBadge=document.getElementById('kb-class-lvl');
+  if(kbAv){
+    var kbArt=document.getElementById('kb-avatar-art');
+    if(def){
+      if(!kbArt||kbArt.tagName!=='IMG'){
+        if(kbArt&&kbArt.parentNode)kbArt.parentNode.removeChild(kbArt);
+        kbArt=document.createElement('img');
+        kbArt.id='kb-avatar-art';
+        kbArt.alt='';
+        kbArt.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;';
+        kbArt.onerror=function(){var s=document.createElement('span');s.id='kb-avatar-art';s.textContent=def.icon;s.style.cssText='font-size:1.4rem;line-height:1;';if(kbArt&&kbArt.parentNode){kbArt.parentNode.replaceChild(s,kbArt);}};
+        while(kbAv.firstChild&&kbAv.firstChild.id!=='kb-class-lvl'&&kbAv.firstChild.id!=='kb-prestige-mark'){kbAv.removeChild(kbAv.firstChild);}
+        kbAv.insertBefore(kbArt,kbAv.firstChild);
+      }
+      kbArt.src=src;
+      if(lvlBadge){lvlBadge.textContent='L'+lvl;lvlBadge.style.display='flex';}
+      kbAv.title=def.name+' · Level '+lvl;
+    } else {
+      while(kbAv.firstChild&&kbAv.firstChild.id!=='kb-class-lvl'&&kbAv.firstChild.id!=='kb-prestige-mark'){kbAv.removeChild(kbAv.firstChild);}
+      var kbFb=document.createElement('span');
+      kbFb.id='kb-avatar-art';
+      kbFb.textContent='🌱';
+      kbFb.style.cssText='font-size:1.4rem;line-height:1;';
+      kbAv.insertBefore(kbFb,kbAv.firstChild);
+      if(lvlBadge)lvlBadge.style.display='none';
     }
-    if(artNode.tagName==='IMG'){artNode.src='assets/character-sheet/classes/'+cid+'.png?v=20260427b';}
-    else {artNode.textContent=def.icon;}
-    if(lvlBadge){lvlBadge.textContent='L'+lvl;lvlBadge.style.display='flex';}
-    av.title=def.name+' · Level '+lvl;
-  } else {
-    while(av.firstChild&&av.firstChild.id!=='kb-class-lvl'){av.removeChild(av.firstChild);}
-    var fallback=document.createElement('span');
-    fallback.id='kb-avatar-art';
-    fallback.textContent='🌱';
-    fallback.style.cssText='font-size:1.4rem;line-height:1;';
-    av.insertBefore(fallback,av.firstChild);
-    if(lvlBadge)lvlBadge.style.display='none';
+  }
+  // Character-sheet avatar — bigger circle next to the player name. Same
+  // class art, sized to fill the 80px frame. Was hardcoded 🌱 in the HTML
+  // and never updated; Stephen flagged that the seedling stayed even after
+  // picking a class.
+  var csAv=document.getElementById('cs-avatar');
+  if(csAv){
+    if(def){
+      var csImg=csAv.querySelector('img.cs-avatar-art');
+      if(!csImg){
+        csAv.innerHTML='';
+        csImg=document.createElement('img');
+        csImg.className='cs-avatar-art';
+        csImg.alt='';
+        csImg.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;';
+        csImg.onerror=function(){csAv.innerHTML='';var s=document.createElement('span');s.textContent=def.icon;s.style.cssText='font-size:2rem;line-height:1;';csAv.appendChild(s);};
+        csAv.appendChild(csImg);
+      }
+      csImg.src=src;
+      csAv.title=def.name+' · Level '+lvl;
+    } else {
+      csAv.innerHTML='🌱';
+      csAv.title='';
+    }
   }
 };
 setTimeout(function(){try{window._lwRefreshAvatar();}catch(e){}},500);
