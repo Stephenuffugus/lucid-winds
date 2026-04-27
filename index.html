@@ -81096,7 +81096,7 @@ function _bosEventsContent() {
     // Tier header \u2014 clickable to collapse/expand
     h += '<div onclick="window._bosTierCollapse[\'' + _tnEsc + '\']=!window._bosTierCollapse[\'' + _tnEsc + '\'];if(window._bosSetTab)_bosSetTab(\'events\');" style="cursor:pointer;font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + tier.color + ';letter-spacing:0.1em;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.7rem;user-select:none;">';
     h += '<img src="assets/bos/scroll-' + _scrollKey + '-cut.png" alt="" style="width:auto;height:88px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.6));" onerror="this.onerror=null;this.src=\'assets/bos/scroll-' + _scrollKey + '.png\';">';
-    h += '<span style="flex:1;">' + tier.name + ' <span style="font-size:0.5rem;color:var(--muted);">' + tierFound + '/' + tier.events.length + ' \u00b7 ' + tier.desc + '</span></span>';
+    h += '<span style="flex:1;">' + tier.name + ' <span style="font-size:0.58rem;color:var(--muted);">' + tierFound + '/' + tier.events.length + ' \u00b7 ' + tier.desc + '</span></span>';
     h += '<span style="font-size:0.85rem;color:' + tier.color + ';opacity:0.7;flex-shrink:0;">' + (_collapsed ? '\u25b8' : '\u25be') + '</span>';
     h += '</div>';
     if (!_collapsed) {
@@ -81107,13 +81107,13 @@ function _bosEventsContent() {
         if (found) {
           var _isNew = (window._bosPrevReadTs != null) && unlocked[ev.name] && unlocked[ev.name].t && unlocked[ev.name].t > window._bosPrevReadTs;
           var _newChip = _isNew ? '<span style="margin-left:6px;padding:1px 6px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.1em;vertical-align:middle;box-shadow:0 0 6px rgba(200,168,75,0.5);">NEW</span>' : '';
-          h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + (_isNew ? 'var(--gold)' : tier.color + '44') + ';border-left:3px solid ' + tier.color + ';border-radius:8px;cursor:pointer;transition:background 0.15s ease;' + (_isNew ? 'box-shadow:0 0 10px rgba(200,168,75,0.18);' : '') + '" onmouseover="this.style.background=\'linear-gradient(180deg,rgba(28,36,22,0.8),rgba(18,24,14,0.9))\'" onmouseout="this.style.background=\'linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8))\'">';
-          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + tier.color + ';letter-spacing:0.06em;">' + ev.name + _newChip + '</div>';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:2px;">' + ev.hint + '</div>';
+          h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.65rem 0.8rem;margin-bottom:6px;background:linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8));border:1px solid ' + (_isNew ? 'var(--gold)' : tier.color + '44') + ';border-left:3px solid ' + tier.color + ';border-radius:8px;cursor:pointer;transition:background 0.15s ease;' + (_isNew ? 'box-shadow:0 0 10px rgba(200,168,75,0.18);' : '') + '" onmouseover="this.style.background=\'linear-gradient(180deg,rgba(28,36,22,0.8),rgba(18,24,14,0.9))\'" onmouseout="this.style.background=\'linear-gradient(180deg,rgba(18,22,16,0.7),rgba(13,16,12,0.8))\'">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + tier.color + ';letter-spacing:0.06em;">' + ev.name + _newChip + '</div>';
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.5;margin-top:3px;">' + ev.hint + '</div>';
           h += '</div>';
         } else {
-          h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.55rem 0.7rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.08);border-left:3px solid rgba(138,145,120,0.15);border-radius:8px;cursor:pointer;">';
-          h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.5rem;color:var(--muted);line-height:1.4;">"' + ev.riddle + '"</div>';
+          h += '<div onclick="window._lwShowEventDetail(\'' + _evNameEsc + '\')" style="padding:0.65rem 0.8rem;margin-bottom:6px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.08);border-left:3px solid rgba(138,145,120,0.15);border-radius:8px;cursor:pointer;">';
+          h += '<div style="font-family:DM Mono,monospace;font-style:italic;font-size:0.58rem;color:var(--muted);line-height:1.5;">"' + ev.riddle + '"</div>';
           h += '</div>';
         }
       }
