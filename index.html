@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.22';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.23';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -37827,7 +37827,15 @@ document.addEventListener('keydown', function(e) {
     // Step 6: delete staging key — full commit confirmed
     try { localStorage.removeItem(INV_STAGING); } catch(e) {}
     // Note: cloud sync fires automatically via saveGreenhouse() interceptor above
-    if (window.LW_ACH) { LW_ACH.bump('compost_total', 1); LW_ACH.bump('d_compost', 1); }
+    if (window.LW_ACH) {
+      LW_ACH.bump('compost_total', 1);
+      LW_ACH.bump('d_compost', 1);
+      // d_compost_old: composted a plant 30+ days old (intentional retire,
+      // not impulse). plant.born is the mint timestamp.
+      if (plant.born && (Date.now() - plant.born) >= 30 * 86400000) {
+        LW_ACH.bump('d_compost_old', 1);
+      }
+    }
 
     // UX feedback
     _haptic('error'); // short sharp — deliberate destructive action confirmation
@@ -46162,6 +46170,7 @@ function _fjInteract(p){
   var key=p.hash.slice(0,16);
   var entry=j[key]||{};
   var reward=0;var rewardType='';
+  var _isFirstTap = !entry.discovered;
 
   // DISCOVERY: first time ever tapping this plant
   if(!entry.discovered){
@@ -46177,6 +46186,13 @@ function _fjInteract(p){
   entry.lastScout=today;
   j[key]=entry;
   _fjSave(j);
+
+  // Engagement counters: tap counters per inspect.
+  if (window.LW_ACH) {
+    LW_ACH.bump('d_pet', 1);
+    if (_isFirstTap) LW_ACH.bump('d_tap_new', 1);
+    if (!p.own) LW_ACH.bump('d_str_inspect', 1);
+  }
 
   if(reward>0){
     if(window.earnDew)window.earnDew(reward,'field_journal');
