@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.26.96';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.1';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -48694,6 +48694,7 @@ function _finishDrop(defenderGame){
       displaced:pd.displaced?pd.displaced.hash:null
     });
   }
+  if(window._lwBumpCompCounter)window._lwBumpCompCounter('drop');
   // Book of Secrets: Root Down (first wild plant ever)
   try { if (window.LW_Events) window.LW_Events.fire('Root Down'); } catch(e){}
 }
@@ -50663,6 +50664,7 @@ window._hexAction=function(action){
     if(window.PW_grantXP)PW_grantXP(10,'wild_tend_stranger');
     try{if(window.LW_XP)window.LW_XP.grantOnce('first_tend',15,'first_of_kind','🤝 +15 XP, first stranger tended. You\'re part of something bigger.');}catch(e){}
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
+    if(window._lwBumpCompCounter)window._lwBumpCompCounter('tend');
     _writeWitnessFee(p,'tend');
     _toast('\ud83c\udf3f Tended '+(p.ownerName||'a keeper')+'\u2019s plant. +6h lifespan \u00b7 +2 Dew \u00b7 +10 XP');
     if(window._play)_play('match');
@@ -60785,6 +60787,37 @@ var LW_MEMENTOS = {
   95:{name:'Sanctuary Shard', text:'A piece of their rest-nest, woven with protection runes you taught them.', trigger:'TODO_first_successful_defense_with_companion'},
   96:{name:'Farewell Token', text:'Given when they return to the wild. Proof they\u2019ll always remember you.', trigger:'TODO_unequip_after_90_days'}
 };
+
+// \u2500\u2500 Companion-action counters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Tracks per-companion event counts (tend, cross, drop, etc) so the
+// event-keyed mementos at idx 82-96 can fire on milestones like
+// "100 wild tends with this companion equipped" or "30 cross-
+// pollinations with this companion." Storage shape:
+// lw_compaction_counters = { tend: {0:N, 1:N, ...}, cross: {...}, drop: {...} }
+window._lwBumpCompCounter = function(action) {
+  try {
+    var ce = JSON.parse(localStorage.getItem('pw_active_companion') || '{}');
+    if (!ce || typeof ce.idx !== 'number') return;
+    var compIdx = ce.idx;
+    var store = {};
+    try { store = JSON.parse(localStorage.getItem('lw_compaction_counters') || '{}'); } catch(e){}
+    if (!store[action]) store[action] = {};
+    store[action][compIdx] = (store[action][compIdx] || 0) + 1;
+    localStorage.setItem('lw_compaction_counters', JSON.stringify(store));
+  } catch(e) {}
+};
+window._lwGetCompCounterMax = function(action) {
+  try {
+    var store = JSON.parse(localStorage.getItem('lw_compaction_counters') || '{}');
+    if (!store[action]) return 0;
+    var max = 0;
+    for (var k in store[action]) {
+      if (store[action][k] > max) max = store[action][k];
+    }
+    return max;
+  } catch(e) { return 0; }
+};
+
 window._lwCheckMementos = function() {
   try {
     var equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}');
@@ -60849,6 +60882,18 @@ window._lwCheckMementos = function() {
     // to the wild" beat.
     if (hasEverEquipped && currentEquipped === null && (now - firstEquipMs) >= 90 * 86400000) {
       _awardEvent(96, 'unequip_90');
+    }
+    // 86 — Threshold Stone: 100 wild tends with any one companion equipped.
+    if (window._lwGetCompCounterMax && window._lwGetCompCounterMax('tend') >= 100) {
+      _awardEvent(86, 'comp_tend_100');
+    }
+    // 90 — Root Pendant: 30 cross-pollinations with any one companion equipped.
+    if (window._lwGetCompCounterMax && window._lwGetCompCounterMax('cross') >= 30) {
+      _awardEvent(90, 'comp_cross_30');
+    }
+    // 94 — Liberty Lock: first wild plant drop with any companion equipped.
+    if (window._lwGetCompCounterMax && window._lwGetCompCounterMax('drop') >= 1) {
+      _awardEvent(94, 'comp_drop_1');
     }
     if (newMementos.length) {
       localStorage.setItem('lw_companion_mementos', JSON.stringify(collected));
@@ -68249,6 +68294,7 @@ window.bsExecuteBreed=function(){
           if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
         }
         if(window._LW_classXP){window._LW_classXP('breed',30);if(offGen>=2)window._LW_classXP('chimera',15);}
+        if(window._lwBumpCompCounter)window._lwBumpCompCounter('cross');
         // Use breed charges on both parents (handles cooldown, charges, breedCount)
         if(window.FG_Data&&FG_Data.useBreedCharge){
           FG_Data.useBreedCharge(_bsA.hash);
@@ -82651,6 +82697,10 @@ window.LW_Comp = (function(){
   // pill reflects state immediately where it matters.
   setInterval(_refresh, 45000);
 })();
+</script>
+
+<script>
+// ENGAGEMENT SYSTEM v1 placeholder; see real block below.
 </script>
 
 </body>
