@@ -84391,7 +84391,7 @@ window.LW_Comp = (function(){
     // lw_first_focus_done flag so it disappears the moment any game
     // completes (win, loss, or quit) — not just on a win.
     if(gh.length===1&&!localStorage.getItem('lw_first_focus_done')){
-      out.push({icon:'\ud83c\udfae',title:'Play your first game',body:'Win or lose, you\u2019ll earn Sunbeams. 30 Sunbeams mints another plant.',priority:120,action:function(){if(window.switchTab)switchTab('game');}});
+      out.push({icon:'<span class="lwe lwe-sun"></span>',title:'Play your first game',body:'Win or lose, you\u2019ll earn Sunbeams. 30 Sunbeams mints another plant.',priority:120,action:function(){if(window.switchTab)switchTab('game');}});
     }
 
     // Bloom Day is live right now
@@ -84406,7 +84406,7 @@ window.LW_Comp = (function(){
     for(var ns=0;ns<nur.length;ns++){
       var s=nur[ns];
       if(s&&s.status==='growing'&&(s.waterLog||[]).length>=3){
-        out.push({icon:'✨',title:'A seed is ready to bloom',body:'Tap the nursery to mint your new plant.',priority:100,action:function(){if(window.switchTab)switchTab('nursery');}});
+        out.push({icon:'<span class="lwe lwe-sparkle"></span>',title:'A seed is ready to bloom',body:'Tap the nursery to mint your new plant.',priority:100,action:function(){if(window.switchTab)switchTab('nursery');}});
         break;
       }
     }
@@ -84415,7 +84415,7 @@ window.LW_Comp = (function(){
     for(var nw=0;nw<nur.length;nw++){
       var sw=nur[nw];
       if(sw&&sw.status==='growing'&&(sw.waterLog||[]).indexOf(today)<0){
-        out.push({icon:'💧',title:'Water your seed',body:'Seeds bloom after 3 waterings on 3 different days.',priority:85,action:function(){if(window.switchTab)switchTab('nursery');}});
+        out.push({icon:'<span class="lwe lwe-drop"></span>',title:'Water your seed',body:'Seeds bloom after 3 waterings on 3 different days.',priority:85,action:function(){if(window.switchTab)switchTab('nursery');}});
         break;
       }
     }
@@ -84424,7 +84424,7 @@ window.LW_Comp = (function(){
     // Plants ready to mint → tap sunbeam icon
     var _wnReady=0; try{_wnReady=window._getMintableCount?_getMintableCount():0;}catch(e){}
     if(_wnReady>0){
-      out.push({icon:'\ud83c\udf31',title:'Bloom a new plant',body:'You have '+_wnReady+' plant'+ (_wnReady>1?'s':'')+' ready. Tap the Sunbeam icon to bloom.',priority:95,action:function(){if(window.openSunbeamModal)openSunbeamModal();}});
+      out.push({icon:'<span class="lwe lwe-bloom"></span>',title:'Bloom a new plant',body:'You have '+_wnReady+' plant'+ (_wnReady>1?'s':'')+' ready. Tap the Sunbeam icon to bloom.',priority:95,action:function(){if(window.openSunbeamModal)openSunbeamModal();}});
     }
     // Has 1 plant, low sunbeams → play games to earn more. After First
     // Focus lands (any game completion), the "first game" copy is
@@ -84435,19 +84435,19 @@ window.LW_Comp = (function(){
       var _firstFocus=!localStorage.getItem('lw_first_focus_done');
       var _gameQPri=_firstFocus?90:75;
       var _gameQBody=_firstFocus?'Win, lose, or quit. Any first game completes the First Focus quest and gives you 30 Sunbeams.':_wnBal+'/'+_wnCost+' toward your next plant.';
-      out.push({icon:'\ud83c\udfae',title:_firstFocus?'Complete your First Focus':'Play games to earn Sunbeams',body:_gameQBody,priority:_gameQPri,action:function(){if(window.switchTab)switchTab('game');}});
+      out.push({icon:'<span class="lwe lwe-sun"></span>',title:_firstFocus?'Complete your First Focus':'Play games to earn Sunbeams',body:_gameQBody,priority:_gameQPri,action:function(){if(window.switchTab)switchTab('game');}});
     }
     // Has 2+ plants but hasn't bred → teach breeding
     if(gh.length>=2&&!_qDone('q_first_breed')){
-      out.push({icon:'\ud83e\uddec',title:'Breed your first chimera',body:'Open a plant, tap BREED. Create a seed that combines two plants\u2019 DNA. Quest reward!',priority:70,action:function(){if(window.switchTab)switchTab('greenhouse');}});
+      out.push({icon:'<span class="lwe lwe-flower"></span>',title:'Breed your first chimera',body:'Open a plant, tap BREED. Create a seed that combines two plants\u2019 DNA. Quest reward!',priority:70,action:function(){if(window.switchTab)switchTab('greenhouse');}});
     }
     // Level 7 reached, class not picked
     if(lvl>=7&&!cls&&!_qDone('q_choose_class')){
-      out.push({icon:'\ud83c\udf3f',title:'Choose your keeper class',body:'Five paths await. Each shapes your abilities. Open your character sheet to choose.',priority:80,action:function(){if(window._lwOpenClassManager)window._lwOpenClassManager();else if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}});
+      out.push({icon:'<span class="lwe lwe-leaf"></span>',title:'Choose your keeper class',body:'Five paths await. Each shapes your abilities. Open your character sheet to choose.',priority:80,action:function(){if(window._lwOpenClassManager)window._lwOpenClassManager();else if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}});
     }
     // Level 3 reached, Wild quest not done
     if(lvl>=3&&!_qDone('q_first_wild')&&gh.length>=2){
-      out.push({icon:'\ud83d\uddfa\ufe0f',title:'Drop a plant in the Wild',body:'Place a plant on the real-world map. Others can find it. Quest reward!',priority:60,action:function(){if(window.switchTab)switchTab('wild');}});
+      out.push({icon:'<span class="lwe lwe-leaf"></span>',title:'Drop a plant in the Wild',body:'Place a plant on the real-world map. Others can find it. Quest reward!',priority:60,action:function(){if(window.switchTab)switchTab('wild');}});
     }
 
     // ─── PRIORITY 40-60 — growth activities ───
@@ -84475,10 +84475,10 @@ window.LW_Comp = (function(){
           if (window.LW_HERBARIUM.isClaimed(_hb.id)) continue;
           var _hp = window.LW_HERBARIUM.getProgress(_hb);
           if (_hp.complete) {
-            out.push({icon:'\ud83c\udf3f',title:'Claim "'+_hb.name+'"',body:'Bundle complete. Tap to claim your reward.',priority:95,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('herbarium');},250);}});
+            out.push({icon:'<span class="lwe lwe-leaf"></span>',title:'Claim "'+_hb.name+'"',body:'Bundle complete. Tap to claim your reward.',priority:95,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('herbarium');},250);}});
             break;
           } else if (_hp.required > 0 && _hp.count/_hp.required >= 0.66) {
-            out.push({icon:'\ud83c\udf3f',title:'Bundle almost ready',body:'"'+_hb.name+'" at '+_hp.count+'/'+_hp.required+'. Close to claimable.',priority:42,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('herbarium');},250);}});
+            out.push({icon:'<span class="lwe lwe-leaf"></span>',title:'Bundle almost ready',body:'"'+_hb.name+'" at '+_hp.count+'/'+_hp.required+'. Close to claimable.',priority:42,action:function(){if(window._openCompendiumUI)_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab('herbarium');},250);}});
             break;
           }
         }
@@ -84538,7 +84538,7 @@ window.LW_Comp = (function(){
           var _remaining = _nextT - _xCur;
           var _pct = _xCur / _nextT;
           if (_pct >= 0.7) {
-            out.push({icon:'\ud83c\udf3f',title:_remaining+' XP to '+_nextL,body:'Your '+window.LW_CLASSES[cls].name+' rank is close to the next tier. Do what your class rewards to push it over.',priority:38,action:function(){if(window._lwOpenClassManager)window._lwOpenClassManager();}});
+            out.push({icon:'<span class="lwe lwe-leaf"></span>',title:_remaining+' XP to '+_nextL,body:'Your '+window.LW_CLASSES[cls].name+' rank is close to the next tier. Do what your class rewards to push it over.',priority:38,action:function(){if(window._lwOpenClassManager)window._lwOpenClassManager();}});
           }
         }
       }
@@ -84574,7 +84574,7 @@ window.LW_Comp = (function(){
           var _fRec = _fMap[_fz];
           if (!_fRec || _fRec.date !== _today2) continue;
           if (_fRec.count >= 1 && _fRec.count < 3) {
-            out.push({icon:'\ud83c\udf31',title:(3-_fRec.count)+' forage attempt'+(3-_fRec.count===1?'':'s')+' left nearby',body:'You started a foraging attempt on a hex today. Tap it again, each attempt reveals more info than the last.',priority:36,action:function(){if(window.switchTab)switchTab('wild');}});
+            out.push({icon:'<span class="lwe lwe-bloom"></span>',title:(3-_fRec.count)+' forage attempt'+(3-_fRec.count===1?'':'s')+' left nearby',body:'You started a foraging attempt on a hex today. Tap it again, each attempt reveals more info than the last.',priority:36,action:function(){if(window.switchTab)switchTab('wild');}});
             break;
           }
         }
@@ -84953,7 +84953,8 @@ window.LW_Comp = (function(){
     var g = el.querySelector('.lw-quest-glyph');
     var t = el.querySelector('.lw-quest-title');
     var b = el.querySelector('.lw-quest-body');
-    if(g)g.textContent = sug.icon || '\ud83c\udf31';
+    var _ic = sug.icon || '\ud83c\udf31';
+    if(g){if(_ic.indexOf('<')>=0)g.innerHTML=_ic;else g.textContent=_ic;}
     if(t)t.textContent = sug.title || '';
     if(b)b.textContent = sug.body || '';
     el.style.display='flex';
