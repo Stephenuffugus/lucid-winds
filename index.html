@@ -81494,14 +81494,29 @@ function _bosQuestsContent() {
   function _esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function _isDoneDaily(id) { return (dailyState.done || []).indexOf(id) >= 0; }
   function _isDoneWeekly(id) { return (weeklyState.done || []).indexOf(id) >= 0; }
+  // Reward chip — handles both reward shapes:
+  //   1) {dew:15, box:1}            (compact map)
+  //   2) {type:'dew', amt:15}       (engagement.js catalog shape)
+  //   3) {type:'trophy', amt:1, name:'X'}
+  // Some catalog entries also have a `name` (trophy/title) shown after.
   function _rewardChip(reward) {
     if (!reward) return '';
     var pieces = [];
-    if (reward.dew) pieces.push('<span class="lwe lwe-drop"></span> ' + reward.dew);
-    if (reward.pollen) pieces.push('<span class="lwe lwe-leaf"></span> ' + reward.pollen);
-    if (reward.box) pieces.push('<span class="lwe lwe-flowers"></span> ' + reward.box);
-    if (reward.trophy) pieces.push('<span class="lwe lwe-sparkle"></span> trophy');
-    if (reward.lore) pieces.push('<span class="lwe lwe-sparkle"></span> lore');
+    // Normalize: if reward.type exists, fold it into the named-key form.
+    if (reward.type) {
+      if (reward.type === 'dew')     pieces.push('<span class="lwe lwe-drop"></span> ' + (reward.amt || 1));
+      else if (reward.type === 'pollen') pieces.push('<span class="lwe lwe-leaf"></span> ' + (reward.amt || 1));
+      else if (reward.type === 'box')    pieces.push('<span class="lwe lwe-flowers"></span> ' + (reward.amt || 1));
+      else if (reward.type === 'trophy') pieces.push('<span class="lwe lwe-trophy-cup"></span> ' + (reward.name || 'trophy'));
+      else if (reward.type === 'lore')   pieces.push('<span class="lwe lwe-sparkle"></span> lore');
+      else if (reward.type === 'title')  pieces.push('<span class="lwe lwe-sparkle"></span> ' + (reward.name || 'title'));
+    } else {
+      if (reward.dew)    pieces.push('<span class="lwe lwe-drop"></span> ' + reward.dew);
+      if (reward.pollen) pieces.push('<span class="lwe lwe-leaf"></span> ' + reward.pollen);
+      if (reward.box)    pieces.push('<span class="lwe lwe-flowers"></span> ' + reward.box);
+      if (reward.trophy) pieces.push('<span class="lwe lwe-trophy-cup"></span> trophy');
+      if (reward.lore)   pieces.push('<span class="lwe lwe-sparkle"></span> lore');
+    }
     return pieces.length ? '<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:4px;padding:2px 6px;margin-left:6px;white-space:nowrap;">' + pieces.join(' · ') + '</span>' : '';
   }
   function _progressBar(pct, color) {
