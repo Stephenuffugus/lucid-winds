@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.42';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.43';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47329,6 +47329,25 @@ function _doCrossPollination(wildPlant,matePlant){
     var chimerMsg=offGen>1?' Gen '+offGen+' chimera, 2× climate immunity, -'+(offGen-1)*2+' EA':'';
     _toast('\ud83c\udf31 Cross-pollinated!\n'+parentInfo.nm+' × '+mateInfo.nm+'\nSeed → Nursery.'+chimerMsg+'\n'+rewardMsg);
     if(window.PW_grantXP)PW_grantXP(5,'cross_pollinate');
+    // Engagement counters: breed-source + chimera generation milestones.
+    // Wild path always counts as breed_with_wild; if the wild plant
+    // belongs to another keeper, it's also breed_with_stranger.
+    if (window.LW_ACH) {
+      try {
+        LW_ACH.bump('breed_total', 1);
+        LW_ACH.bump('breed_with_wild', 1);
+        var _myU = '';
+        try { var _u = (window.firebase && firebase.auth && firebase.auth().currentUser); if (_u) _myU = _u.uid; } catch(e){}
+        if (wildPlant && wildPlant.ownerUid && _myU && wildPlant.ownerUid !== _myU) LW_ACH.bump('breed_with_stranger', 1);
+        if (offGen >= 2 && offGen <= 6) LW_ACH.bump('chimera_g'+offGen, 1);
+        if (offGen >= 2) LW_ACH.bump('w_chimera', 1);
+        try {
+          var _gW = window.getTerraGrade ? window.getTerraGrade(window.hashToTraits(wildPlant.hash)) : null;
+          var _gM = window.getTerraGrade ? window.getTerraGrade(window.hashToTraits(matePlant.hash)) : null;
+          if (_gW && _gM && _gW.name === _gM.name) LW_ACH.bump('lineage_pure', 1);
+        } catch(e){}
+      } catch(e){}
+    }
     // Pollinator title progress — bump lifetime counter and check
     try {
       var _polCt = parseInt(localStorage.getItem('lw_pollinations')||'0',10) + 1;
@@ -68862,7 +68881,25 @@ window.bsExecuteBreed=function(){
         }
         if(window._LW_classXP){window._LW_classXP('breed',30);if(offGen>=2)window._LW_classXP('chimera',15);}
         if(window._lwBumpCompCounter)window._lwBumpCompCounter('cross');
-        if(window.LW_ACH){LW_ACH.bump('crosses_total',1);LW_ACH.bump('d_cross',1);LW_ACH.bump('w_cross',1);if(offGen>=2)LW_ACH.bump('chimera_total',1);}
+        if(window.LW_ACH){
+          LW_ACH.bump('crosses_total',1);LW_ACH.bump('d_cross',1);LW_ACH.bump('w_cross',1);
+          LW_ACH.bump('breed_total',1);LW_ACH.bump('d_breed',1);LW_ACH.bump('w_breed',1);
+          if(offGen>=2)LW_ACH.bump('chimera_total',1);
+          if(offGen>=2&&offGen<=6)LW_ACH.bump('chimera_g'+offGen,1);
+          if(offGen>=2)LW_ACH.bump('w_chimera',1);
+          // Breed-source counters: where the partners came from. Greenhouse
+          // path = both parents already in collection = breed_within.
+          // Wild-other path is handled in _doCrossPollination below.
+          if(_plantACtx==='greenhouse'||_plantACtx==='nursery-clipping')LW_ACH.bump('breed_within',1);
+          // Lineage purity: same grade on both parents = lineage_pure bump
+          try {
+            var _gA=window.getTerraGrade?window.getTerraGrade(window.hashToTraits(_bsA.hash)):null;
+            var _gB=window.getTerraGrade?window.getTerraGrade(window.hashToTraits(_bsM.hash)):null;
+            if(_gA&&_gB&&_gA.name===_gB.name)LW_ACH.bump('lineage_pure',1);
+          } catch(e){}
+          // Second-gen breed: parent A or B was already a chimera
+          if(_genA>=2||_genB>=2)LW_ACH.bump('second_gen_breed',1);
+        }
         // Use breed charges on both parents (handles cooldown, charges, breedCount)
         if(window.FG_Data&&FG_Data.useBreedCharge){
           FG_Data.useBreedCharge(_bsA.hash);
