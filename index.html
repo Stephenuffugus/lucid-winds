@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.43';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.44';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34851,6 +34851,7 @@ document.addEventListener('keydown', function(e) {
         renderGreenhouse();
         showHexMsg('Greenhouse expanded to ' + newSlots + ' slots.');
         if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_expanded', { slots: newSlots });
+        try { if (window.LW_ACH) LW_ACH.set('gh_max_slots', newSlots); } catch(e){}
         _claimFromReserve();
       };
       if (_piOn && window.LW_Pi && window.LW_Pi.buySlot) {
@@ -34929,6 +34930,23 @@ document.addEventListener('keydown', function(e) {
     // Progress header
     var pct = Math.round((gh.length / MAX_COLLECTION_SIZE) * 100);
     if (countEl) countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
+    // Engagement counters: gh_full (1 once you've ever maxed out), gh_max_slots
+    // (current slot ceiling), and pots_owned_unique (distinct pot indices in
+    // the live greenhouse). Cheap to derive on render — already iterating.
+    try {
+      if (window.LW_ACH) {
+        if (gh.length >= MAX_COLLECTION_SIZE) LW_ACH.set('gh_full', 1);
+        LW_ACH.set('gh_max_slots', MAX_COLLECTION_SIZE);
+        if (window.hashToTraits) {
+          var _potIdxSet = {};
+          for (var _gpi = 0; _gpi < gh.length; _gpi++) {
+            try { var _gpt = window.hashToTraits(gh[_gpi].hash); if (_gpt && typeof _gpt.pot === 'number') _potIdxSet[_gpt.pot] = 1; } catch(e){}
+          }
+          var _potUniq = 0; for (var _pk in _potIdxSet) _potUniq++;
+          LW_ACH.set('pots_owned_unique', _potUniq);
+        }
+      }
+    } catch(e){}
     // Nav badge — show plant count
     var _ghBadge = document.getElementById('nav-gh-badge');
     if (_ghBadge) { if (gh.length > 0) { _ghBadge.textContent = gh.length; _ghBadge.style.display = 'flex'; } else { _ghBadge.style.display = 'none'; } }
@@ -35884,6 +35902,8 @@ document.addEventListener('keydown', function(e) {
     ledger.earned = (ledger.earned || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
     if (window._LW_DEBUG) console.log('[earnHashes] ledger.earned now:', ledger.earned);
+    // Engagement counter: daily Sunbeams earned.
+    try { if (window.LW_ACH) LW_ACH.bump('d_sunbeams', amount); } catch(e){}
     // Game XP: half a level-XP per sunbeam earned. Stephen hit L11 in 10 min
     // under 1:1; tuning to 0.5:1 slows the curve without capping active play.
     if(window.PW_grantXP) PW_grantXP(Math.max(1, Math.floor(amount/2)), 'dew_drop');
@@ -36001,6 +36021,8 @@ document.addEventListener('keydown', function(e) {
     // 6+ plants) compound XP way too fast. Keeps Dew economy intact.
     if (window.PW_grantXP) PW_grantXP(Math.max(1, Math.floor(amount/2)), source || 'dew_earn');
     _updateDewDisplay();
+    // Engagement counter: daily + weekly Dew earned (post-multiplier).
+    try { if (window.LW_ACH) { LW_ACH.bump('d_dew_earned', amount); LW_ACH.bump('w_dew_earned', amount); } } catch(e){}
   }
   function spendDew(amount) {
     if (!amount || amount < 0) return false;
@@ -45551,6 +45573,8 @@ function _doReproduction(weather, simMode) {
               if (window._logWildEvent) window._logWildEvent({type:'rare',event:'shell_shift',hash:weakest.hash,
                 name:window.getPlantName?window.getPlantName(weakest.hash):''});
               if (simMode) simLog.push({zone:zk,result:'Shell Shift! Defender relocated instead of dying'});
+              // Defender survived — counts as a defense hold for the keeper
+              try { if (!simMode && window.LW_ACH && weakest && weakest.own) LW_ACH.bump('def_holds', 1); } catch(e){}
               continue; // skip this invasion — defender survived
             }
           } catch (e) {}
@@ -45559,6 +45583,9 @@ function _doReproduction(weather, simMode) {
         displacedPlant = weakest;
       } else {
         if (simMode) simLog.push({ zone: zk, chance: Math.round(finalChance * 100) + '%', result: 'blocked by EA ' + weakestEA + ' (offspring EA ' + offEA + ')' });
+        // Defender's EA was strong enough — counts as a hold if the
+        // protected plant belongs to the player.
+        try { if (!simMode && window.LW_ACH && weakest && weakest.own) LW_ACH.bump('def_holds', 1); } catch(e){}
         continue; // can't invade, offspring dies
       }
     }
@@ -71335,6 +71362,8 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
         if(discovered.indexOf(TRIGGERS[t].id)<0){
           discovered.push(TRIGGERS[t].id);
           _saveDiscovered(discovered);
+          // Engagement: lifetime BoS trigger discovery counter
+          try { if (window.LW_ACH) LW_ACH.set('bos_triggers', discovered.length); } catch(e){}
           // Log discovery for morning report
           if(window._logWildEvent)window._logWildEvent({
             type:'trigger',triggerId:TRIGGERS[t].id,name:TRIGGERS[t].name,
@@ -71343,6 +71372,8 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
             firstDiscovery:true
           });
         }
+        // Daily counter for ANY trigger fire (not just first discovery)
+        try { if (window.LW_ACH) LW_ACH.bump('d_trigger', 1); } catch(e){}
         break; // max 1 event per plant per check (priority order)
       }
     }catch(e){}
