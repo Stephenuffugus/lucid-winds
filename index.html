@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.6';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.7';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -74566,6 +74566,16 @@ window._lwClaimHerbarium = function(id){
       allPlays.push({ plays: lastPlay, success: resolved.success, score: resolved.score, scoreNeeded: resolved.scoreNeeded });
       try { console.log('[forage attempt #'+allPlays.length+']', JSON.parse(JSON.stringify(lastPlay)), 'score', resolved.score, '/', resolved.scoreNeeded); } catch(e){}
       var attemptNumber = bumpAttempts(zoneKey);
+      // Engagement counters: forage outcome
+      if (window.LW_ACH && resolved.success) {
+        LW_ACH.bump('forage_solved', 1);
+        LW_ACH.bump('d_forage', 1);
+        LW_ACH.bump('w_forage', 1);
+        // Perfect = full score (resolved.score === scoreNeeded AND on attempt 1)
+        if (resolved.score >= resolved.scoreNeeded && attemptNumber === 1) {
+          LW_ACH.bump('forage_perfect', 1);
+        }
+      }
       if (window._haptic) window._haptic(resolved.success ? 'bloom' : 'tap');
       // Book of Secrets diary entry — logs biome / weather / outcome per spec §8.
       try {
@@ -80395,7 +80405,10 @@ var LW_TOOL_XP_L3=200;
 
 function _lwGetClass(){return localStorage.getItem('lw_class')||null;}
 window._lwGetClass=_lwGetClass;
-function _lwSetClass(id){localStorage.setItem('lw_class',id);}
+function _lwSetClass(id){
+  localStorage.setItem('lw_class',id);
+  if(window.LW_ACH)LW_ACH.set('class_picked',1);
+}
 function _lwGetClassXP(){try{return JSON.parse(localStorage.getItem('lw_class_xp')||'{}');}catch(e){return{};}}
 function _lwSetClassXP(x){localStorage.setItem('lw_class_xp',JSON.stringify(x));}
 function _lwGetClassLevel(classId){
@@ -80632,6 +80645,11 @@ window._LW_classXP=function(source,amount){
     if(window._toast)window._toast(def.icon+' '+titles[newLvl]+' '+def.name+': '+ab.name);
     try{if(window._playWin)_playWin();}catch(e){}
     try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
+    // Engagement counters: class progression milestones
+    if(window.LW_ACH){
+      if(newLvl>=2)LW_ACH.set('class_l2',1);
+      if(newLvl>=3)LW_ACH.set('class_l3',1);
+    }
   }
 };
 // Award tool XP
@@ -80971,6 +80989,13 @@ window._LW_treeAlloc=function(nodeId,delta){
   }
   p[nodeId]=cur+delta;
   _lwTreeSetPoints(p);
+  // Engagement counter: total tree points spent (lifetime). Recompute
+  // from p so respec doesn't double-count.
+  if(window.LW_ACH){
+    var _tspent=0;
+    for(var _tk in p){if(p.hasOwnProperty(_tk))_tspent+=p[_tk]||0;}
+    LW_ACH.set('tree_spent',_tspent);
+  }
   try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
   if(window._haptic)window._haptic();
   return true;
