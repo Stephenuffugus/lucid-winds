@@ -1332,16 +1332,17 @@
     }
     .pgm-btn-row { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
     .pgm-dl-btn {
-      background: linear-gradient(135deg, rgba(200,168,75,0.22), rgba(200,168,75,0.08));
+      background: linear-gradient(135deg, rgba(200,168,75,0.28), rgba(200,168,75,0.10));
       border: 2px solid var(--gold); color: var(--gold);
       font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: 0.1em; padding: 0.4rem 0.9rem; border-radius: 8px;
-      cursor: pointer; transition: all 0.2s; min-height: 64px; min-width: 64px;
-      display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,220,140,0.2), 0 0 12px rgba(200,168,75,0.18);
+      letter-spacing: 0.08em; padding: 0; border-radius: 12px;
+      cursor: pointer; transition: all 0.2s; width: 96px; height: 96px;
+      display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,220,140,0.22), 0 0 16px rgba(200,168,75,0.22);
+      overflow: hidden; position: relative;
     }
-    .pgm-dl-btn .pgm-dl-icon { font-size: 1.7rem; line-height: 1; }
-    .pgm-dl-btn .pgm-dl-label { font-size: 0.5rem; line-height: 1; opacity: 0.92; }
+    .pgm-dl-btn .pgm-dl-icon { font-size: 3.8rem; line-height: 1; margin-top: -4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45)); }
+    .pgm-dl-btn .pgm-dl-label { position: absolute; bottom: 4px; left: 0; right: 0; font-size: 0.52rem; line-height: 1; letter-spacing: 0.14em; opacity: 0.95; text-shadow: 0 1px 2px rgba(0,0,0,0.7); }
     .pgm-dl-btn:hover { background: rgba(200,168,75,0.28); border-color: var(--gold); box-shadow: 0 3px 14px rgba(0,0,0,0.5), 0 0 18px rgba(200,168,75,0.3); }
     .pgm-dl-btn:active { transform: scale(0.96); }
     .pgm-act-btn {
@@ -6862,7 +6863,6 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-header"><div class="cs-avatar" id="cs-avatar">🌱</div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
     <div class="cs-section"><div class="cs-section-title">CLASS</div><div id="cs-class-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
-    <div class="cs-section"><div class="cs-section-title">FORAGING HAND</div><div id="cs-forage-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;position:relative;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div><button id="cs-companion-info" onclick="event.stopPropagation();try{var c=JSON.parse(localStorage.getItem('pw_active_companion')||'{}');if(typeof c.idx==='number'&&window._lwOpenCompanionProfile)_lwOpenCompanionProfile(c.idx);}catch(e){}" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.7);color:var(--gold);font-family:DM Mono,monospace;font-size:0.55rem;font-weight:bold;cursor:pointer;padding:0;z-index:2;" title="View profile">ⓘ</button></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
@@ -60888,7 +60888,7 @@ function _renderToolSection(){
         }
       } catch(e){}
     }
-    h+='<div class="cs-tool-card" onclick="if(window._lwShowToolDetail)_lwShowToolDetail(\''+tid+'\')" style="cursor:pointer;">';
+    h+='<div class="cs-tool-card" onclick="if(window._lwOpenClassManager)_lwOpenClassManager();" style="cursor:pointer;" title="Manage tools in Class Manager">';
     h+='<div class="cs-tool-emblem">'+_csArt(artSrc,def.icon,'1.1rem')+'</div>';
     h+='<div class="cs-tool-info">';
     h+='<div class="cs-tool-name">'+def.name+_csPips(true,lvl)+'</div>';
@@ -73749,7 +73749,7 @@ window._lwShowToolDetail = function(toolId) {
   var def = window.LW_TOOLS[toolId];
   var lore = LW_TOOL_LORE[toolId] || '';
   var xp = 0;
-  try { xp = parseInt(localStorage.getItem('lw_tool_xp_' + toolId) || '0', 10) || 0; } catch(e){}
+  try { var _txp = JSON.parse(localStorage.getItem('lw_tool_xp')||'{}'); xp = parseInt(_txp[toolId]||0,10)||0; } catch(e){}
   var lvl = xp >= 200 ? 3 : xp >= 50 ? 2 : 1;
   var nextXP = lvl >= 3 ? 'MAX' : lvl >= 2 ? 200 : 50;
   var body = [];
