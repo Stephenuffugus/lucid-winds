@@ -72949,14 +72949,22 @@ function _bosCodexContent() {
   try { h += (typeof _bosItemsContent === 'function') ? _bosItemsContent() : ''; } catch(e){}
   return h;
 }
-// QUESTS — daily, weekly, bundles, and the lifetime achievement catalog.
-// Bundles moved here from CODEX — they're a weekly cadence challenge.
+// QUESTS tab — daily + weekly cadence challenges + bundles. Achievements
+// and trophy cabinet now live in their own tabs (Stephen 2026-04-27).
 function _bosQuestsTabContent() {
   var h = '';
-  try { h += (typeof _bosQuestsContent === 'function') ? _bosQuestsContent() : ''; } catch(e){}
+  try { h += (typeof _bosQuestsContent === 'function') ? _bosQuestsContent({cadence:true, achievements:false, trophies:false}) : ''; } catch(e){}
   h += _bosSectionHeader('WEEKLY BUNDLES');
   try { h += (typeof _bosHerbariumContent === 'function') ? _bosHerbariumContent() : ''; } catch(e){}
   return h;
+}
+// ACHIEVEMENTS tab — full lifetime catalog with tier + earned/undone filters.
+function _bosAchievementsTabContent() {
+  return window._bosAchievementsContent ? window._bosAchievementsContent() : '';
+}
+// TROPHIES tab — trophy cabinet grid.
+function _bosTrophiesTabContent() {
+  return window._bosTrophiesContent ? window._bosTrophiesContent() : '';
 }
 // JOURNAL — what's fresh + recent events in one quiet feed. The old
 // _bosTodayContent is the curated view (greeting, since-last-visit
@@ -73012,8 +73020,10 @@ function _bosSetTab(tab) {
   if (tab === 'codex')        body.innerHTML = _bosCodexContent();
   else if (tab === 'journal') body.innerHTML = _bosJournalContent();
   else if (tab === 'hunt')    body.innerHTML = (window.LW_HUNT && window.LW_HUNT._bosContent) ? window.LW_HUNT._bosContent() : '';
-  else if (tab === 'quests')  body.innerHTML = (typeof _bosQuestsTabContent === 'function') ? _bosQuestsTabContent() : '';
-  else if (tab === 'about')   body.innerHTML = (typeof _bosAboutContent === 'function') ? _bosAboutContent() : '';
+  else if (tab === 'quests')       body.innerHTML = (typeof _bosQuestsTabContent       === 'function') ? _bosQuestsTabContent()       : '';
+  else if (tab === 'achievements') body.innerHTML = (typeof _bosAchievementsTabContent === 'function') ? _bosAchievementsTabContent() : '';
+  else if (tab === 'trophies')     body.innerHTML = (typeof _bosTrophiesTabContent     === 'function') ? _bosTrophiesTabContent()     : '';
+  else if (tab === 'about')        body.innerHTML = (typeof _bosAboutContent           === 'function') ? _bosAboutContent()           : '';
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -81474,7 +81484,17 @@ window.LW_EVENT_LOOKUP = (function(){
 // Built on top of LW_ACH (engagement.js). Renders in the BoS QUESTS subtab.
 // Daily challenges (3 picks, deterministic per local date), weekly challenges
 // (3 picks, ISO week), and the lifetime achievement catalog with tier filter.
-function _bosQuestsContent() {
+// Renders the daily/weekly/achievements/trophy content as one or more
+// sections. Pass opts to gate which sections appear (so QUESTS tab can
+// show cadence-only, ACHIEVEMENTS its own tab, TROPHIES its own tab).
+//   opts = { cadence:bool, achievements:bool, trophies:bool, title:string }
+// Defaults to all-sections-shown for back-compat.
+function _bosQuestsContent(opts) {
+  opts = opts || {};
+  var _showCadence      = opts.cadence      !== false;
+  var _showAchievements = opts.achievements !== false;
+  var _showTrophies     = opts.trophies     !== false;
+  var _titleStr         = opts.title || 'QUESTS';
   if (!window.LW_ACH) {
     return '<div style="padding:1rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;">Engagement system loading...</div>';
   }
@@ -81600,46 +81620,51 @@ function _bosQuestsContent() {
   // sections below. Stephen 2026-04-27.
   h += '<div style="position:relative;padding:1.4rem 1.4rem 1.6rem;background:#0d100c;border-radius:10px;box-shadow:0 0 0 1px rgba(200,168,75,0.18),0 8px 24px rgba(0,0,0,0.5);">';
   h += '<div style="text-align:center;margin-bottom:0.8rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.2rem;text-shadow:0 1px 2px rgba(0,0,0,0.7);">QUESTS</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.2rem;text-shadow:0 1px 2px rgba(0,0,0,0.7);">'+_titleStr+'</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">' + doneCount + ' / ' + totalAch + ' achievements · ' + donePct + '%</div>';
   h += '</div>';
 
   // ─── DAILY ───
-  h += '<div style="margin-bottom:1rem;">';
-  h += '<div style="position:relative;width:100%;margin:0 0 0.5rem;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);"><img src="assets/daily-quests.png" alt="Daily" style="display:block;width:100%;height:auto;"><div style="position:absolute;right:8px;bottom:6px;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);background:rgba(13,16,12,0.7);padding:3px 8px;border-radius:4px;border:1px solid rgba(200,168,75,0.35);">' + dailyDone + ' / 3 · resets in ' + _dHrs + 'h</div></div>';
-  if (!dailyState.picks || dailyState.picks.length === 0) {
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Daily picks load on next tab visit.</div>';
-  } else {
-    for (var di = 0; di < dailyState.picks.length; di++) {
-      var de = _findById(dailyPool, dailyState.picks[di]);
-      if (de) h += _entryCard(de, _isDoneDaily(de.id), null);
+  if (_showCadence) {
+    h += '<div style="margin-bottom:1rem;">';
+    h += '<div style="position:relative;width:100%;margin:0 0 0.5rem;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);"><img src="assets/daily-quests.png" alt="Daily" style="display:block;width:100%;height:auto;"><div style="position:absolute;right:8px;bottom:6px;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);background:rgba(13,16,12,0.7);padding:3px 8px;border-radius:4px;border:1px solid rgba(200,168,75,0.35);">' + dailyDone + ' / 3 · resets in ' + _dHrs + 'h</div></div>';
+    if (!dailyState.picks || dailyState.picks.length === 0) {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Daily picks load on next tab visit.</div>';
+    } else {
+      for (var di = 0; di < dailyState.picks.length; di++) {
+        var de = _findById(dailyPool, dailyState.picks[di]);
+        if (de) h += _entryCard(de, _isDoneDaily(de.id), null);
+      }
     }
-  }
-  h += '</div>';
+    h += '</div>';
 
-  // ── Scroll backdrop wraps the rest (WEEKLY + ACHIEVEMENTS + TROPHY).
+    // ─── WEEKLY ───
+    h += '<div style="margin-bottom:1rem;">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);"><span class="lwe lwe-sparkle"></span> THIS WEEK · ' + weeklyDone + '/3</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">resets in ' + _daysToMon + 'd</div>';
+    h += '</div>';
+    if (!weeklyState.picks || weeklyState.picks.length === 0) {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Weekly picks load on next tab visit.</div>';
+    } else {
+      for (var wi = 0; wi < weeklyState.picks.length; wi++) {
+        var we = _findById(weeklyPool, weeklyState.picks[wi]);
+        if (we) h += _entryCard(we, _isDoneWeekly(we.id), null);
+      }
+    }
+    h += '</div>';
+  }
+
+  // ── Scroll backdrop wraps the long-tail sections (ACHIEVEMENTS + TROPHY).
   // The parchment image is the visible backing here, with a light
-  // dark gradient on top so cards stay readable. Bumped slight inset
-  // padding so the scroll's painted ornamental border shows. ──
-  h += '<div style="position:relative;margin:0 -0.6rem;padding:1.2rem 0.9rem 1.4rem;background:linear-gradient(180deg,rgba(13,16,12,0.30) 0%,rgba(13,16,12,0.18) 30%,rgba(13,16,12,0.18) 70%,rgba(13,16,12,0.42) 100%),url(\'assets/questsbackdropscroll.png\') center top/100% auto no-repeat;background-attachment:local;">';
-
-  // ─── WEEKLY ───
-  h += '<div style="margin-bottom:1rem;">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);"><span class="lwe lwe-sparkle"></span> THIS WEEK · ' + weeklyDone + '/3</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">resets in ' + _daysToMon + 'd</div>';
-  h += '</div>';
-  if (!weeklyState.picks || weeklyState.picks.length === 0) {
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Weekly picks load on next tab visit.</div>';
-  } else {
-    for (var wi = 0; wi < weeklyState.picks.length; wi++) {
-      var we = _findById(weeklyPool, weeklyState.picks[wi]);
-      if (we) h += _entryCard(we, _isDoneWeekly(we.id), null);
-    }
+  // dark gradient on top so cards stay readable. ──
+  var _wrapScroll = _showAchievements || _showTrophies;
+  if (_wrapScroll) {
+    h += '<div style="position:relative;margin:0 -0.6rem;padding:1.2rem 0.9rem 1.4rem;background:linear-gradient(180deg,rgba(13,16,12,0.30) 0%,rgba(13,16,12,0.18) 30%,rgba(13,16,12,0.18) 70%,rgba(13,16,12,0.42) 100%),url(\'assets/questsbackdropscroll.png\') center top/100% auto no-repeat;background-attachment:local;">';
   }
-  h += '</div>';
 
   // ─── LIFETIME ACHIEVEMENTS ───
+  if (_showAchievements) {
   var activeFilter = window._bosQuestFilter || 'all';
   var activeStatus = window._bosQuestStatus || 'all'; // all / done / undone
   var questSearch = String(window._bosQuestSearch || '').toLowerCase();
@@ -81694,8 +81719,10 @@ function _bosQuestsContent() {
     h += '</div>';
   }
   h += '</div>';
+  } // close if(_showAchievements)
 
   // ─── TROPHY CABINET ───
+  if (_showTrophies) {
   // 43 mythic-tier (and a few lower-tier) achievements grant `trophy`-type
   // rewards. Display them as a grid here. Empty slots stay dim with a
   // "?" placeholder so the cabinet shows the player how many are out
@@ -81738,12 +81765,16 @@ function _bosQuestsContent() {
     h += '</div>';
   }
   h += '</div>'; // close trophy cabinet section
+  } // close if(_showTrophies)
 
-  h += '</div>'; // close scroll backdrop wrapper (WEEKLY+ACHIEVEMENTS+TROPHY)
+  if (_wrapScroll) h += '</div>'; // close scroll backdrop wrapper
   h += '</div>'; // close outer wrapper
   return h;
 }
 window._bosQuestsContent = _bosQuestsContent;
+// Section-specific renderers for the new dedicated tabs (Stephen 2026-04-27).
+window._bosAchievementsContent = function(){ return _bosQuestsContent({cadence:false, achievements:true, trophies:false, title:'ACHIEVEMENTS'}); };
+window._bosTrophiesContent     = function(){ return _bosQuestsContent({cadence:false, achievements:false, trophies:true, title:'TROPHY CABINET'}); };
 
 // Event detail Reader page.
 window._lwShowEventDetail = function(eventName) {
@@ -83029,7 +83060,9 @@ window._openCompendiumUI=function(){
       '<div id="bos-tabbar" style="display:flex;gap:0.3rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;">'+
         '<button class="bos-tab active" data-tab="codex" onclick="_bosSetTab(\'codex\')" title="Everything you have discovered: plants, triggers, biomes, companions, items" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CODEX</button>'+
         '<button class="bos-tab" data-tab="journal" onclick="_bosSetTab(\'journal\')" title="Everything that has happened in your garden — what is fresh, what is recent, what came before" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL</button>'+
-        '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" title="Daily and weekly challenges, bundles, and the lifetime achievement catalog" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
+        '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" title="Daily and weekly challenges plus bundles" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
+        '<button class="bos-tab" data-tab="achievements" onclick="_bosSetTab(\'achievements\')" title="The lifetime catalog of achievements you can chase" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ACHIEVEMENTS</button>'+
+        '<button class="bos-tab" data-tab="trophies" onclick="_bosSetTab(\'trophies\')" title="Trophies you have earned and the ones still waiting" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">TROPHIES</button>'+
         '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" title="The Seasonal Scavenger Hunt — twelve fireflies, ninety days, one tribute" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HUNT</button>'+
         /* CLASS tab moved to Character Screen → Class Manager (2026-04-27). */
         '<button class="bos-tab" data-tab="about" onclick="_bosSetTab(\'about\')" title="The hermit who keeps this garden, and a tip jar if you\'ve enjoyed yourself" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ABOUT</button>'+
