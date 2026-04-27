@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.41';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.42';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34255,6 +34255,69 @@ document.addEventListener('keydown', function(e) {
     // GROWN tracker — record any trait-only triggers this newly-bloomed
     // plant satisfies. See _recordGrownForHash for granularity rules.
     try{if(window._lwRecordGrown)window._lwRecordGrown(hash);}catch(e){}
+    // Engagement counters: mint counts + per-layer trait-seen sets. The Atlas
+    // dashboard in BoS Secrets reads these directly (leaves_seen, etc.) so
+    // without these wires the dashboard always shows 0. Keys are stored as
+    // localStorage maps of {name:1} so we can compute set size cheaply.
+    try {
+      if (window.LW_ACH) {
+        var _atTraits = window.hashToTraits ? window.hashToTraits(hash) : null;
+        var _atG = (_atTraits && window.getTerraGrade) ? window.getTerraGrade(_atTraits) : null;
+        LW_ACH.bump('mint_total', 1);
+        LW_ACH.bump('d_mint', 1);
+        LW_ACH.bump('w_mint', 1);
+        var _atGn = (_atG && _atG.name) || 'Common';
+        if (_atGn === 'Uncommon')  LW_ACH.bump('mint_uncommon', 1);
+        if (_atGn === 'Rare')      LW_ACH.bump('mint_rare', 1);
+        if (_atGn === 'Epic')      LW_ACH.bump('mint_epic', 1);
+        if (_atGn === 'Legendary') LW_ACH.bump('mint_legendary', 1);
+        if (_atGn === 'Mythic')    LW_ACH.bump('mint_mythic', 1);
+        if (_atGn === 'Cosmic')    LW_ACH.bump('mint_cosmic', 1);
+        // Time-of-day mint flags
+        var _atH = new Date().getHours();
+        if (_atH === 0 || _atH === 1 || _atH === 23) LW_ACH.bump('mint_midnight', 1);
+        if (_atH >= 5 && _atH < 8)  LW_ACH.bump('mint_dawn', 1);
+        if (_atH >= 18 && _atH < 21) LW_ACH.bump('mint_dusk', 1);
+        // Per-layer trait-seen sets — store as JSON map per layer, count = set size
+        if (_atTraits && window.TRAIT_BANK) {
+          var _layers = [
+            {key:'pots_seen', store:'lw_seen_pots', bank:'pots', idx:_atTraits.pot},
+            {key:'leaves_seen', store:'lw_seen_leaves', bank:'leaves', idx:_atTraits.leafType},
+            {key:'flowers_seen', store:'lw_seen_flowers', bank:'flowers', idx:_atTraits.hasFlower ? _atTraits.flower : -1},
+            {key:'companions_seen', store:'lw_seen_companions', bank:'companions', idx:_atTraits.companion},
+            {key:'substrates_seen', store:'lw_seen_substrates', bank:'substrates', idx:_atTraits.base},
+            {key:'auras_seen', store:'lw_seen_auras', bank:'auras', idx:(_atTraits.aura >= 5 ? _atTraits.aura : -1)}
+          ];
+          for (var _li = 0; _li < _layers.length; _li++) {
+            var _lay = _layers[_li];
+            if (_lay.idx < 0 || _lay.idx == null) continue;
+            var _bank = window.TRAIT_BANK[_lay.bank];
+            var _ent = _bank && _bank[_lay.idx];
+            var _name = _ent && _ent.name;
+            if (!_name || _name === 'None') continue;
+            var _set = {};
+            try { _set = JSON.parse(localStorage.getItem(_lay.store)||'{}'); } catch(e){}
+            if (!_set[_name]) {
+              _set[_name] = 1;
+              try { localStorage.setItem(_lay.store, JSON.stringify(_set)); } catch(e){}
+            }
+            var _cnt = 0; for (var _sk in _set) _cnt++;
+            LW_ACH.set(_lay.key, _cnt);
+          }
+          // Mutations are name-based via _atTraits.mutationName
+          if (_atTraits.mutationName && _atTraits.mutationName !== 'None') {
+            var _mset = {};
+            try { _mset = JSON.parse(localStorage.getItem('lw_seen_mutations')||'{}'); } catch(e){}
+            if (!_mset[_atTraits.mutationName]) {
+              _mset[_atTraits.mutationName] = 1;
+              try { localStorage.setItem('lw_seen_mutations', JSON.stringify(_mset)); } catch(e){}
+            }
+            var _mcnt = 0; for (var _msk in _mset) _mcnt++;
+            LW_ACH.set('mutations_seen', _mcnt);
+          }
+        }
+      }
+    } catch(e){}
     return true;
   }
 
@@ -36733,6 +36796,7 @@ document.addEventListener('keydown', function(e) {
   // ── Public: open carousel ────────────────────────────────────────────
   window.openCarousel = function(arr, startIdx, source) {
     if (!arr || !arr.length) return;
+    try { if (window.LW_ACH) LW_ACH.bump('d_carousel', 1); } catch(e){}
     // Discovery XP — first time opening the plant inspector.
     try{if(window.LW_XP)window.LW_XP.grantOnce('disc_carousel',8,'discover_carousel','🔍 +8 XP, plant inspector unlocked. Swipe to browse, tap to flip.');}catch(e){}
     // First-time 2+ plant keeper: pulse the BREED button to teach them
@@ -37113,6 +37177,7 @@ document.addEventListener('keydown', function(e) {
   // ═══ DOWNLOAD PLANT CARD — Canvas Renderer ═══
   window.downloadPlantCard = function() {
     if (!galleryPlant) return;
+    try { if (window.LW_ACH) LW_ACH.bump('d_download', 1); } catch(e){}
     var plant = galleryPlant;
     var btn = document.getElementById('gallery-download-btn');
     btn.textContent = '⏳ RENDERING...';
@@ -38623,6 +38688,14 @@ document.addEventListener('keydown', function(e) {
         }
         window._lwActiveTab = tab;
         window._lwTabEnteredAt = _now;
+        // Tabs in session: count distinct tab IDs visited this run.
+        if (!window._lwSessTabs) window._lwSessTabs = {};
+        if (!window._lwSessTabs[tab]) {
+          window._lwSessTabs[tab] = 1;
+          var _tcount = 0; for (var _tk in window._lwSessTabs) _tcount++;
+          LW_ACH.set('tabs_in_session', _tcount);
+        }
+        LW_ACH.bump('d_tabs', 1);
       } catch(e) {}
     }
     // STUDIO AUDIO COEXISTENCE — kill any music-tool audio + tear down
@@ -41227,6 +41300,7 @@ document.addEventListener('keydown', function(e) {
   };
   window.shareGalleryPlant = function() {
     if (!galleryPlant) return;
+    try { if (window.LW_ACH) { LW_ACH.bump('d_share', 1); LW_ACH.bump('shares_total', 1); } } catch(e){}
     var name = getPlantName(galleryPlant.hash);
     var text = 'I just grew "' + name + '" in Lucid Winds. Specimen: ' + galleryPlant.hash.slice(0,16) + '...';
     if (navigator.share) {
@@ -68043,6 +68117,41 @@ function start(){
 }
 
 window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed};
+
+// Daily login stamp — runs once per page load. Maintains login_days_total
+// (lifetime count of distinct calendar days the player has opened the app)
+// and login_streak (consecutive days, breaks if a calendar day is skipped).
+// session_4am fires when the local clock hour is 3-4 ('graveyard keeper'
+// achievement). Writes to LW_ACH so engagement.js can read.
+(function _lwDailyLoginStamp(){
+  try {
+    var todayStr = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+    var last = localStorage.getItem('lw_last_login_date') || '';
+    if (last !== todayStr) {
+      var total = parseInt(localStorage.getItem('lw_login_days_total')||'0',10) + 1;
+      var streak = 1;
+      if (last) {
+        var yest = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+        if (last === yest) {
+          streak = parseInt(localStorage.getItem('lw_login_streak')||'0',10) + 1;
+        }
+      }
+      try { localStorage.setItem('lw_login_days_total', String(total)); } catch(e){}
+      try { localStorage.setItem('lw_login_streak', String(streak)); } catch(e){}
+      try { localStorage.setItem('lw_last_login_date', todayStr); } catch(e){}
+      if (window.LW_ACH) {
+        LW_ACH.set('login_days_total', total);
+        LW_ACH.set('login_streak', streak);
+      }
+    } else if (window.LW_ACH) {
+      // Same-day re-open — re-publish current values so reads stay fresh.
+      LW_ACH.set('login_days_total', parseInt(localStorage.getItem('lw_login_days_total')||'0',10));
+      LW_ACH.set('login_streak', parseInt(localStorage.getItem('lw_login_streak')||'0',10));
+    }
+    var hr = new Date().getHours();
+    if (hr >= 3 && hr < 5 && window.LW_ACH) LW_ACH.bump('session_4am', 1);
+  } catch(e) {}
+})();
 
 // Auto-boot the force-restart path. Returning players who use DEV → RESET
 // TUTORIAL don't go through PW_Onboard.finish(), so nothing would normally
