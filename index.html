@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.4';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.5';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -37794,6 +37794,7 @@ document.addEventListener('keydown', function(e) {
     // Step 6: delete staging key — full commit confirmed
     try { localStorage.removeItem(INV_STAGING); } catch(e) {}
     // Note: cloud sync fires automatically via saveGreenhouse() interceptor above
+    if (window.LW_ACH) { LW_ACH.bump('compost_total', 1); LW_ACH.bump('d_compost', 1); }
 
     // UX feedback
     _haptic('error'); // short sharp — deliberate destructive action confirmation
@@ -76133,6 +76134,7 @@ window._lwClaimHerbarium = function(id){
   function openOne(){
     var s = _load(); if (!s.count || s.count <= 0) return null;
     s.count--; _save(s);
+    if (window.LW_ACH) { LW_ACH.bump('boxes_opened', 1); LW_ACH.bump('d_box', 1); LW_ACH.bump('w_box', 1); }
     var p = _loadPity();
     var minRank = 0;
     // Items audit Apr 19: 1% Legendary with no pity = months without
@@ -76617,11 +76619,21 @@ window._lwClaimHerbarium = function(id){
     var lore = LORE[idx % LORE.length];
     _showCatchToast(idx, lore);
     try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    // Engagement counters: hunt catch + late-night bonus
+    if (window.LW_ACH) {
+      LW_ACH.bump('hunt_caught', 1);
+      LW_ACH.bump('d_hunt', 1);
+      LW_ACH.bump('w_hunt', 1);
+      var _hHr = new Date().getHours();
+      if (_hHr >= 22 || _hHr < 4) LW_ACH.bump('hunt_late_night', 1);
+      if (_hHr >= 5 && _hHr <= 7) LW_ACH.bump('hunt_dawn', 1);
+    }
     // Full-hunt prize
     var prog = progress();
     if (prog.caught >= TOTAL_PER_SEASON && !s.prizeGranted) {
       s.prizeGranted = true; _saveState(s);
       _grantSeasonalPrize();
+      if (window.LW_ACH) LW_ACH.bump('hunt_full_season', 1);
     }
     return f;
   }
