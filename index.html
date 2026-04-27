@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.45';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.46';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34342,6 +34342,28 @@ document.addEventListener('keydown', function(e) {
             var _mcnt = 0; for (var _msk in _mset) _mcnt++;
             LW_ACH.set('mutations_seen', _mcnt);
           }
+          // Weekly trait-set counters — w_pots / w_leaves / w_flowers / w_comps.
+          // Same trait names but stored in week-scoped bags; the helper auto-
+          // resets when ISO week rolls over.
+          if (window._lwWeeklyAdd) {
+            try {
+              var _wPotN = window.TRAIT_BANK.pots[_atTraits.pot] && window.TRAIT_BANK.pots[_atTraits.pot].name;
+              if (_wPotN) window._lwWeeklyAdd('lw_w_pots', 'w_pots', _wPotN);
+              var _wLeafN = window.TRAIT_BANK.leaves[_atTraits.leafType] && window.TRAIT_BANK.leaves[_atTraits.leafType].name;
+              if (_wLeafN) window._lwWeeklyAdd('lw_w_leaves', 'w_leaves', _wLeafN);
+              if (_atTraits.hasFlower) {
+                var _wFlowN = window.TRAIT_BANK.flowers[_atTraits.flower] && window.TRAIT_BANK.flowers[_atTraits.flower].name;
+                if (_wFlowN) window._lwWeeklyAdd('lw_w_flowers', 'w_flowers', _wFlowN);
+              }
+              var _wCompN = window.TRAIT_BANK.companions[_atTraits.companion] && window.TRAIT_BANK.companions[_atTraits.companion].name;
+              if (_wCompN && _wCompN !== 'None') window._lwWeeklyAdd('lw_w_comps', 'w_comps', _wCompN);
+              if (_atG && _atG.name) window._lwWeeklyAdd('lw_w_grades', 'w_grade_kinds', _atG.name);
+              if (window.SEASON_DATA && window.SEASON_DATA[_atTraits.season]) {
+                var _wSeasN = window.SEASON_DATA[_atTraits.season].name;
+                window._lwWeeklyAdd('lw_w_seasons', 'w_seasons_full', _wSeasN);
+              }
+            } catch(e){}
+          }
         }
       }
     } catch(e){}
@@ -43646,6 +43668,8 @@ function activate(){
             var _bs=JSON.parse(localStorage.getItem('lw_ach_biomes_seen')||'{}');
             if(!_bs[b]){_bs[b]=1;localStorage.setItem('lw_ach_biomes_seen',JSON.stringify(_bs));var _bc=0;for(var _bk in _bs)_bc++;LW_ACH.set('biomes_visited',_bc);}
           }catch(e){}
+          // Weekly biome diversity
+          try { if (window._lwWeeklyAdd) window._lwWeeklyAdd('lw_w_biomes', 'w_biomes', b); } catch(e){}
         }
         if(window.getBiomeInfo){
           var _bInf=getBiomeInfo(b);
@@ -44964,7 +44988,21 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
       reward: dewReward
     });
   }
-  if (window.LW_ACH) { LW_ACH.bump('ferals_total', 1); LW_ACH.bump('d_feral', 1); LW_ACH.bump('w_feral', 1); }
+  if (window.LW_ACH) {
+    LW_ACH.bump('ferals_total', 1); LW_ACH.bump('d_feral', 1); LW_ACH.bump('w_feral', 1);
+    // Per-grade feral counters. The grade is resolved from the seed hash
+    // since collected feral seeds do carry resolvable traits.
+    try {
+      var _fT = window.hashToTraits ? window.hashToTraits(hash) : null;
+      var _fG = (_fT && window.getTerraGrade) ? window.getTerraGrade(_fT) : null;
+      if (_fG && _fG.name) {
+        var _fn = _fG.name;
+        if (_fn === 'Rare' || _fn === 'Epic' || _fn === 'Legendary' || _fn === 'Mythic' || _fn === 'Cosmic') LW_ACH.bump('ferals_rare_plus', 1);
+        if (_fn === 'Legendary' || _fn === 'Mythic' || _fn === 'Cosmic') LW_ACH.bump('ferals_legend_plus', 1);
+        if (_fn === 'Cosmic') LW_ACH.bump('ferals_cosmic', 1);
+      }
+    } catch(e){}
+  }
 
   _toast('\ud83c\udf30 Mystery seed pocketed. +' + dewReward + ' Dew \u00b7 sprout it to see what it is');
   // First-ever feral celebration — meatier than a toast.
@@ -45320,10 +45358,22 @@ function _wildClimateTick(weather) {
           if (_vk === 'heat')   LW_ACH.bump('survived_heat', 1);
           if (_vk === 'cold')   LW_ACH.bump('survived_cold', 1);
           if (_vk === 'flood')  LW_ACH.bump('survived_flood', 1);
-          if (_vk === 'wind')   LW_ACH.bump('survived_storm', 1);
-          if (_vk === 'drought')LW_ACH.bump('survived_drought', 1);
+          if (_vk === 'wind')   { LW_ACH.bump('survived_wind', 1); LW_ACH.bump('survived_storm', 1); }
+          if (_vk === 'drought'){ LW_ACH.bump('survived_drought', 1); LW_ACH.bump('drought_10', 1); }
           // Multi-vector survivor — fired once per damaging tick if 2+ kinds breached.
           if (breaches.length >= 2) LW_ACH.set('survived_vectors', Math.max(LW_ACH.get('survived_vectors') || 0, breaches.length));
+          // Single plant survives all 5 vectors at any point in its life:
+          // track per-plant set under lw_pvec_<hashPrefix>.
+          try {
+            if (plant && plant.hash) {
+              var _pvKey = 'lw_pvec_' + plant.hash.slice(0,12);
+              var _pvSet = JSON.parse(localStorage.getItem(_pvKey) || '{}');
+              _pvSet[_vk] = 1;
+              localStorage.setItem(_pvKey, JSON.stringify(_pvSet));
+              var _pvN = 0; for (var _pvK in _pvSet) _pvN++;
+              if (_pvN >= 5) LW_ACH.set('one_plant_5vec', 1);
+            }
+          } catch(e){}
         }
       }
     }
@@ -46521,7 +46571,23 @@ function _fjInteract(p){
   if (window.LW_ACH) {
     LW_ACH.bump('d_pet', 1);
     if (_isFirstTap) LW_ACH.bump('d_tap_new', 1);
-    if (!p.own) LW_ACH.bump('d_str_inspect', 1);
+    if (!p.own) {
+      LW_ACH.bump('d_str_inspect', 1);
+      // Track unique stranger UIDs encountered (set tracker).
+      try {
+        if (p.ownerUid) {
+          var _stSet = JSON.parse(localStorage.getItem('lw_ach_strangers_seen')||'{}');
+          if (!_stSet[p.ownerUid]) {
+            _stSet[p.ownerUid] = 1;
+            localStorage.setItem('lw_ach_strangers_seen', JSON.stringify(_stSet));
+            var _stN = 0; for (var _stK in _stSet) _stN++;
+            LW_ACH.set('strangers_seen', _stN);
+          }
+        }
+      } catch(e){}
+      // Weekly distinct strangers
+      try { if (window._lwWeeklyAdd && p.ownerUid) window._lwWeeklyAdd('lw_w_str', 'w_str', p.ownerUid); } catch(e){}
+    }
   }
 
   if(reward>0){
@@ -47409,6 +47475,9 @@ function _doCrossPollination(wildPlant,matePlant){
       try {
         LW_ACH.bump('breed_total', 1);
         LW_ACH.bump('breed_with_wild', 1);
+        LW_ACH.bump('d_breed', 1);
+        LW_ACH.bump('d_breed_wild', 1);
+        LW_ACH.bump('w_breed', 1);
         var _myU = '';
         try { var _u = (window.firebase && firebase.auth && firebase.auth().currentUser); if (_u) _myU = _u.uid; } catch(e){}
         if (wildPlant && wildPlant.ownerUid && _myU && wildPlant.ownerUid !== _myU) LW_ACH.bump('breed_with_stranger', 1);
@@ -47418,6 +47487,11 @@ function _doCrossPollination(wildPlant,matePlant){
           var _gW = window.getTerraGrade ? window.getTerraGrade(window.hashToTraits(wildPlant.hash)) : null;
           var _gM = window.getTerraGrade ? window.getTerraGrade(window.hashToTraits(matePlant.hash)) : null;
           if (_gW && _gM && _gW.name === _gM.name) LW_ACH.bump('lineage_pure', 1);
+          var _tW = window.hashToTraits ? window.hashToTraits(wildPlant.hash) : null;
+          var _tM = window.hashToTraits ? window.hashToTraits(matePlant.hash) : null;
+          if (_tW && _tM && typeof _tW.season === 'number' && typeof _tM.season === 'number') {
+            if (Math.abs(_tW.season - _tM.season) === 2) LW_ACH.bump('breed_opposite', 1);
+          }
         } catch(e){}
       } catch(e){}
     }
@@ -49212,9 +49286,17 @@ function _finishDrop(defenderGame){
   if(window._lwBumpCompCounter)window._lwBumpCompCounter('drop');
   if(window.LW_ACH){
     LW_ACH.bump('wild_drops',1);LW_ACH.bump('hexes_planted',1);LW_ACH.bump('d_drop',1);LW_ACH.bump('w_drop',1);
+    LW_ACH.bump('d_hex_drop',1);
     // Takeover: this drop displaced another player's plant
     if(pd&&pd.displaced)LW_ACH.bump('takeovers',1);
   }
+  // Weekly distinct hex set: bag by lat/lng rounded to ~hex resolution.
+  try {
+    if (window._lwWeeklyAdd && pd && typeof pd.lat === 'number') {
+      var _hk = (pd.lat.toFixed(3)) + ',' + (pd.lng.toFixed(3));
+      window._lwWeeklyAdd('lw_w_hexes', 'w_hexes', _hk);
+    }
+  } catch(e){}
   // Book of Secrets: Root Down (first wild plant ever)
   try { if (window.LW_Events) window.LW_Events.fire('Root Down'); } catch(e){}
 }
@@ -65120,6 +65202,7 @@ window._castWeather = function(typeId) {
   if (window.LW_ACH) {
     LW_ACH.bump('weather_summon', 1);
     LW_ACH.bump('d_weather', 1);
+    if (t.id === 'storm' || /storm|tempest|gale/i.test(t.name||'')) LW_ACH.bump('w_storm', 1);
     try {
       var _wts = JSON.parse(localStorage.getItem('lw_ach_weather_seen') || '{}');
       if (!_wts[t.id]) { _wts[t.id] = 1; localStorage.setItem('lw_ach_weather_seen', JSON.stringify(_wts)); }
@@ -68217,6 +68300,50 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
 // (days_no_compost / days_no_wither) if the player went the previous day
 // without composting or losing a wild plant. session_4am fires when the
 // local clock hour is 3-4 ('graveyard keeper' achievement).
+// Weekly trait-set tracker — adds traits seen / pots placed / hexes
+// claimed / etc to a per-week localStorage map. The map auto-resets
+// when the ISO week changes. Returns the new set size after add.
+// Used by mintPlant + hex drop + weather + tab-visit to publish weekly
+// counters that engagement.js reads (w_pots, w_leaves, w_flowers, etc.).
+window._lwIsoWeek = function(){
+  var d = new Date();
+  d.setHours(0,0,0,0);
+  // ISO week: Thursday in current week decides the year
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  var jan4 = new Date(d.getFullYear(), 0, 4);
+  var weekNum = 1 + Math.round(((d - jan4) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7);
+  return d.getFullYear() + '-W' + (weekNum < 10 ? '0' + weekNum : weekNum);
+};
+window._lwWeeklyAdd = function(storeKey, achKey, value){
+  if (!value) return 0;
+  try {
+    var raw = localStorage.getItem(storeKey);
+    var bag = raw ? JSON.parse(raw) : {week:'', set:{}};
+    var nowWeek = window._lwIsoWeek();
+    if (bag.week !== nowWeek) bag = {week:nowWeek, set:{}};
+    bag.set[value] = 1;
+    localStorage.setItem(storeKey, JSON.stringify(bag));
+    var n = 0; for (var k in bag.set) n++;
+    if (window.LW_ACH) LW_ACH.set(achKey, n);
+    return n;
+  } catch(e) { return 0; }
+};
+// Per-week login + per-week dawn/dusk day counters. Called by the
+// daily-login stamp on new-day boot.
+window._lwWeeklyBumpDay = function(storeKey, achKey, dayStr){
+  try {
+    var raw = localStorage.getItem(storeKey);
+    var bag = raw ? JSON.parse(raw) : {week:'', set:{}};
+    var nowWeek = window._lwIsoWeek();
+    if (bag.week !== nowWeek) bag = {week:nowWeek, set:{}};
+    if (bag.set[dayStr]) return; // already counted today
+    bag.set[dayStr] = 1;
+    localStorage.setItem(storeKey, JSON.stringify(bag));
+    var n = 0; for (var k in bag.set) n++;
+    if (window.LW_ACH) LW_ACH.set(achKey, n);
+  } catch(e) {}
+};
+
 (function _lwDailyLoginStamp(){
   try {
     var todayStr = new Date().toISOString().slice(0,10); // YYYY-MM-DD
@@ -68257,6 +68384,13 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
         LW_ACH.set('days_no_compost', noCompostStreak);
         LW_ACH.set('days_no_wither',  noWitherStreak);
       }
+      // Weekly distinct-day counters
+      try { if (window._lwWeeklyBumpDay) window._lwWeeklyBumpDay('lw_w_login_days', 'w_login_days', todayStr); } catch(e){}
+      try {
+        var _hr0 = new Date().getHours();
+        if (_hr0 >= 5 && _hr0 < 8 && window._lwWeeklyBumpDay) window._lwWeeklyBumpDay('lw_w_dawn_days', 'w_dawn_days', todayStr);
+        if (_hr0 >= 18 && _hr0 < 21 && window._lwWeeklyBumpDay) window._lwWeeklyBumpDay('lw_w_dusk_days', 'w_dusk_days', todayStr);
+      } catch(e){}
     } else if (window.LW_ACH) {
       // Same-day re-open — re-publish current values so reads stay fresh.
       LW_ACH.set('login_days_total', parseInt(localStorage.getItem('lw_login_days_total')||'0',10));
@@ -68266,6 +68400,36 @@ window.PW_Tutorial={start:start,checkNursery:checkNursery,checkBreed:checkBreed}
     }
     var hr = new Date().getHours();
     if (hr >= 3 && hr < 5 && window.LW_ACH) LW_ACH.bump('session_4am', 1);
+    // Moon-phase tracking: track unique phases seen + per-phase visits.
+    // Inline phase calc (synodic period 29.530589 days from a known new moon).
+    try {
+      var _mpNow = Date.now();
+      var _mpRef = Date.UTC(2000,0,6,18,14,0); // Jan 6 2000 new moon
+      var _mpAge = ((_mpNow - _mpRef) / 86400000) % 29.530589;
+      if (_mpAge < 0) _mpAge += 29.530589;
+      var _mp = (_mpAge < 1.84) ? 'new' :
+                (_mpAge < 5.53) ? 'waxing_crescent' :
+                (_mpAge < 9.22) ? 'first_quarter' :
+                (_mpAge < 12.91) ? 'waxing_gibbous' :
+                (_mpAge < 16.61) ? 'full' :
+                (_mpAge < 20.30) ? 'waning_gibbous' :
+                (_mpAge < 23.99) ? 'last_quarter' :
+                (_mpAge < 27.68) ? 'waning_crescent' : 'new';
+      if (_mp && window.LW_ACH) {
+        var _msn = JSON.parse(localStorage.getItem('lw_moon_seen')||'{}');
+        if (!_msn[_mp]) { _msn[_mp] = 1; try { localStorage.setItem('lw_moon_seen', JSON.stringify(_msn)); } catch(e){} }
+        var _mc = 0; for (var _mk in _msn) _mc++;
+        LW_ACH.set('moon_phases_seen', _mc);
+        // Once-per-day visit bumps for full / new
+        var _mvDay = todayStr;
+        var _mvKey = 'lw_moon_visit_'+_mp+'_day';
+        if (localStorage.getItem(_mvKey) !== _mvDay) {
+          try { localStorage.setItem(_mvKey, _mvDay); } catch(e){}
+          if (_mp === 'full') LW_ACH.bump('full_moon_visits', 1);
+          if (_mp === 'new')  LW_ACH.bump('new_moon_visits', 1);
+        }
+      }
+    } catch(e){}
   } catch(e) {}
 })();
 
@@ -68993,6 +69157,12 @@ window.bsExecuteBreed=function(){
             var _gA=window.getTerraGrade?window.getTerraGrade(window.hashToTraits(_bsA.hash)):null;
             var _gB=window.getTerraGrade?window.getTerraGrade(window.hashToTraits(_bsM.hash)):null;
             if(_gA&&_gB&&_gA.name===_gB.name)LW_ACH.bump('lineage_pure',1);
+            // Opposite-season breed: Spring/Autumn (0/2) or Summer/Winter (1/3)
+            var _tA=window.hashToTraits?window.hashToTraits(_bsA.hash):null;
+            var _tB=window.hashToTraits?window.hashToTraits(_bsM.hash):null;
+            if(_tA&&_tB&&typeof _tA.season==='number'&&typeof _tB.season==='number'){
+              if(Math.abs(_tA.season-_tB.season)===2)LW_ACH.bump('breed_opposite',1);
+            }
           } catch(e){}
           // Second-gen breed: parent A or B was already a chimera
           if(_genA>=2||_genB>=2)LW_ACH.bump('second_gen_breed',1);
@@ -77265,6 +77435,7 @@ window._lwClaimHerbarium = function(id){
   function add(n){
     var prev=(_load().count||0);
     var s = _load(); s.count = (s.count||0) + (n||1); _save(s);
+    try { if (window.LW_ACH) LW_ACH.bump('d_box_earned', n||1); } catch(e){}
     // First-ever mystery box — teach the system instead of just toasting.
     // Gated by lw_jit_boxes_v1 so it only ever fires once per device.
     if(prev===0&&!localStorage.getItem('lw_jit_boxes_v1')){
@@ -82844,11 +83015,13 @@ window._LW_treeAlloc=function(nodeId,delta){
   p[nodeId]=cur+delta;
   _lwTreeSetPoints(p);
   // Engagement counter: total tree points spent (lifetime). Recompute
-  // from p so respec doesn't double-count.
+  // from p so respec doesn't double-count. Also bump d_tree_point
+  // for the daily flag.
   if(window.LW_ACH){
     var _tspent=0;
     for(var _tk in p){if(p.hasOwnProperty(_tk))_tspent+=p[_tk]||0;}
     LW_ACH.set('tree_spent',_tspent);
+    if (delta > 0) LW_ACH.bump('d_tree_point', delta);
   }
   try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
   if(window._haptic)window._haptic();
