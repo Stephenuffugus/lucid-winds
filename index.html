@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.18';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -60784,6 +60784,7 @@ function _pickCompanion(idx, slot){
       }
     } catch(e) {}
     localStorage.setItem('pw_active_companion',JSON.stringify(compData));
+    if (window.LW_ACH) LW_ACH.bump('d_swap_comp', 1);
     try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip) window.LW_COMPANION.onEquip(f.idx); } catch(e) {}
     if(window._lwCompleteQuest)window._lwCompleteQuest('q_equip_comp');
   }
@@ -71489,6 +71490,14 @@ function _bosSetTab(tab) {
   window._bosPrevReadTs = _bosGetTabRead(tab);
   // Stamp the tab as read the moment it opens — subtle, no confirmation needed
   _bosStampTabRead(tab);
+  // Engagement counters: per-subtab opens. Drives the daily "read 3
+  // BoS pages" type challenges and the longer "explored every section"
+  // achievements.
+  if (window.LW_ACH) {
+    if (tab === 'activity' || tab === 'report') LW_ACH.bump('d_journal', 1);
+    else if (tab === 'herbarium') LW_ACH.bump('d_compendium', 1);
+    else if (tab === 'today') LW_ACH.bump('d_orient', 1);
+  }
   var body = document.getElementById('bos-body');
   if (!body) return;
   if (tab === 'report' || tab === 'activity') {
@@ -79237,6 +79246,49 @@ function _bosQuestsContent() {
     }
   }
   h += '</div>';
+
+  // ─── TROPHY CABINET ───
+  // 43 mythic-tier (and a few lower-tier) achievements grant `trophy`-type
+  // rewards. Display them as a grid here. Empty slots stay dim with a
+  // "?" placeholder so the cabinet shows the player how many are out
+  // there waiting.
+  var trophies = ACH.trophies() || [];
+  // Count total trophy-yielding achievements in the catalog
+  var trophyCatalog = [];
+  for (var tci = 0; tci < catalog.length; tci++) {
+    if (catalog[tci].reward && (catalog[tci].reward.type === 'trophy' || catalog[tci].reward.type === 'lore')) trophyCatalog.push(catalog[tci]);
+  }
+  h += '<div style="margin-top:1rem;padding-top:0.7rem;border-top:1px solid rgba(200,168,75,0.15);">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);">🏵️ TROPHY CABINET</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">' + trophies.length + ' / ' + trophyCatalog.length + '</div>';
+  h += '</div>';
+  if (trophyCatalog.length === 0) {
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">No trophy achievements in this catalog.</div>';
+  } else {
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:0.4rem;">';
+    // Build map of earned trophy names so we can match against catalog
+    var earnedMap = {};
+    for (var tri = 0; tri < trophies.length; tri++) earnedMap[trophies[tri].name] = trophies[tri];
+    for (var tci2 = 0; tci2 < trophyCatalog.length; tci2++) {
+      var tEntry = trophyCatalog[tci2];
+      var tName = (tEntry.reward && tEntry.reward.name) || tEntry.name;
+      var earned = !!earnedMap[tName] || !!progress[tEntry.id];
+      var tierColors3 = { bronze:'#a87236', silver:'#a8a8a8', gold:'#c8a84b', platinum:'#7eb8d4', mythic:'#a87285' };
+      var bColor = tierColors3[tEntry.tier] || tierColors3.bronze;
+      var bg = earned ? 'linear-gradient(180deg,' + bColor + '22,' + bColor + '0a)' : 'rgba(18,22,16,0.5)';
+      var border = earned ? bColor : 'rgba(122,179,86,0.12)';
+      var displayName = earned ? tName : '???';
+      var icon = earned ? '🏆' : '·';
+      h += '<div title="' + _esc(earned ? (tEntry.desc || tEntry.name) : 'A trophy waits to be earned.') + '" style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:8px;padding:0.5rem 0.3rem;text-align:center;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;' + (earned ? '' : 'opacity:0.45;') + '">';
+      h += '<div style="font-size:1.4rem;">' + icon + '</div>';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.04em;color:' + (earned ? bColor : 'var(--muted)') + ';line-height:1.1;text-align:center;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + _esc(displayName) + '</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+
   h += '</div>';
   return h;
 }
