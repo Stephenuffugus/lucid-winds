@@ -950,6 +950,27 @@
     .lwe-flowers{background-image:url('assets/fx/bloom-flowercluster.png');}
     .lwe-butterfly{background-image:url('assets/fx/butterfly-pink.png');}
     .lwe-snowflake{background-image:url('assets/fx/snowflake-blue.png');}
+    .lwe-paw{background-image:url('assets/fx/paw-gold.png');}
+    .lwe-book{background-image:url('assets/fx/book-gold.png');}
+    .lwe-figure{background-image:url('assets/fx/figure-gold.png');}
+    .lwe-magnifier{background-image:url('assets/fx/magnifier-gold.png');}
+    .lwe-trophy-cup{background-image:url('assets/fx/trophy-cup.png');}
+    .lwe-trophy-medal{background-image:url('assets/fx/trophy-medal.png');}
+    .lwe-trophy-crown{background-image:url('assets/fx/trophy-crown.png');}
+    .lwe-trophy-shield{background-image:url('assets/fx/trophy-shield.png');}
+    .lwe-trophy-star{background-image:url('assets/fx/trophy-star.png');}
+    .lwe-trophy-chalice{background-image:url('assets/fx/trophy-chalice.png');}
+    .lwe-trophy-banner{background-image:url('assets/fx/trophy-banner.png');}
+    .lwe-trophy-rosette{background-image:url('assets/fx/trophy-rosette.png');}
+    .lwe-trophy-crystal{background-image:url('assets/fx/trophy-crystal.png');}
+    .lwe-globe{background-image:url('assets/fx/globe-gold.png');}
+    .lwe-fam-pollinators{background-image:url('assets/fx/family-pollinators.png');}
+    .lwe-fam-scatterers{background-image:url('assets/fx/family-scatterers.png');}
+    .lwe-fam-weavers{background-image:url('assets/fx/family-weavers.png');}
+    .lwe-fam-wayfinders{background-image:url('assets/fx/family-wayfinders.png');}
+    .lwe-fam-guardians{background-image:url('assets/fx/family-guardians.png');}
+    .lwe-fam-mycelium{background-image:url('assets/fx/family-mycelium.png');}
+    .lwe-fam-listeners{background-image:url('assets/fx/family-listeners.png');}
     /* View Transition — botanical fade */
     ::view-transition-old(root){animation:vtFadeOut 0.2s ease-in both;}
     ::view-transition-new(root){animation:vtFadeIn 0.25s ease-out 0.1s both;}
@@ -2540,7 +2561,10 @@
     .lw-hut{position:fixed;inset:0;z-index:100015;display:none;}
     .lw-hut.open{display:block;animation:panelFadeIn 0.25s ease;}
     .lw-hut .lwh-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
-    .lw-hut .lwh-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,440px);max-height:90vh;background:linear-gradient(180deg,#1a1f15,#0d100c);border:2px solid rgba(200,168,75,0.45);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.85),0 0 0 1px rgba(200,168,75,0.15),inset 0 1px 0 rgba(255,235,195,0.06);display:flex;flex-direction:column;overflow:hidden;}
+    .lw-hut .lwh-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,440px);max-height:90vh;background:linear-gradient(180deg,rgba(13,16,12,0.55) 0%,rgba(13,16,12,0.78) 55%,rgba(13,16,12,0.94) 100%),url('assets/shop.png') center/cover no-repeat,#0d100c;border:2px solid rgba(200,168,75,0.45);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.85),0 0 0 1px rgba(200,168,75,0.15),inset 0 1px 0 rgba(255,235,195,0.06);display:flex;flex-direction:column;overflow:hidden;}
+    .lw-hut .lwh-portrait{position:relative;width:100%;height:148px;overflow:hidden;flex-shrink:0;border-bottom:1px solid rgba(200,168,75,0.28);}
+    .lw-hut .lwh-portrait img{width:100%;height:100%;object-fit:cover;object-position:center 28%;display:block;}
+    .lw-hut .lwh-portrait::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,transparent 55%,rgba(13,16,12,0.7) 100%);pointer-events:none;}
     .lw-hut .lwh-header{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.9rem;border-bottom:1px solid rgba(200,168,75,0.18);background:linear-gradient(180deg,rgba(200,168,75,0.10),transparent);}
     .lw-hut .lwh-title{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.14em;color:var(--gold);}
     .lw-hut .lwh-close{background:none;border:1px solid rgba(200,168,75,0.3);color:var(--cream);font-size:0.9rem;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
@@ -2612,8 +2636,8 @@
 
     /* SLOTS frame */
     .lw-hut .lwh-slots-frame{display:flex;flex-direction:column;align-items:center;gap:0.5rem;padding:0.4rem 0.2rem;}
-    .lw-hut .lwh-slots-art{width:120px;height:120px;filter:drop-shadow(0 6px 18px rgba(200,168,75,0.4));}
-    .lw-hut .lwh-slots-art img{width:100%;height:100%;object-fit:contain;}
+    .lw-hut .lwh-slots-art{width:100%;max-width:300px;filter:drop-shadow(0 6px 18px rgba(200,168,75,0.4));}
+    .lw-hut .lwh-slots-art img{display:block;width:100%;height:auto;border-radius:10px;}
     .lw-hut .lwh-slots-summary{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--cream);text-align:center;line-height:1.7;padding:0.5rem 0.7rem;background:rgba(13,16,12,0.6);border-radius:8px;width:100%;}
     .lw-hut .lwh-slots-summary b{color:var(--gold);}
     .lw-hut .lwh-slots-pull{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;background:linear-gradient(180deg,var(--gold),#a88a2f);border:none;color:#0d100c;border-radius:8px;padding:0.7rem 1.6rem;cursor:pointer;min-height:48px;width:100%;box-shadow:0 3px 10px rgba(200,168,75,0.3);}
@@ -6787,7 +6811,7 @@ window._addSwitchTabHook = function(fn){
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 Pollen</div>
       </div>
-      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install.png" alt="Install" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;"></div>
+      <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install-v2.png?v=apr27" alt="Install" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"></div>
     </div>
     <!-- Row 2: currency + hut (3 buttons — was 4 before install moved up) -->
     <div class="kb-row2">
@@ -6982,7 +7006,7 @@ window._addSwitchTabHook = function(fn){
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button><button class="dev-btn" onclick="PW_Dev.resetTutorial()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">↺ RESET TUTORIAL</button><button class="dev-btn" onclick="PW_Dev.skipAllIntros()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">↷ SKIP ALL INTROS</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
-    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.auditTriggers()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🔬 AUDIT TRIGGERS + LW_ACH</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.auditTriggers()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🔬 AUDIT TRIGGERS + LW_ACH</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.fireHuntCapstone)LW_debug.fireHuntCapstone();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">✨ FIRE HUNT CAPSTONE</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.advanceHuntWeek)LW_debug.advanceHuntWeek();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">⏩ ADVANCE HUNT 1 WEEK</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">TIME SKIP (WILD SIM)</div>
       <button class="dev-btn" onclick="PW_Dev.backdateWilds(1)">⏩ BACKDATE WILDS 1 DAY</button>
@@ -38179,6 +38203,9 @@ document.addEventListener('keydown', function(e) {
     var inv = loadInventory();
     // Tree node Rich Compost (+0.25%/pt fertilizer return)
     try{if(window._LW_treeBonus){var _cm=window._LW_treeBonus('compostReturn');if(_cm>1)fertReward=Math.ceil(fertReward*_cm);}}catch(e){}
+    // Spring Hunt capstone — cumulative +N fertilizer per compost.
+    // Year 1 completion = +1, Year 2 = +2, etc. (stacking by design).
+    try{if(window.LW_HUNT&&window.LW_HUNT.getUpgrade){var _spB=window.LW_HUNT.getUpgrade('fert_slot_bonus')||0;if(_spB>0)fertReward+=_spB;}}catch(e){}
     // Conduit T3 RITUAL "Compost Song" — Dew refund by Terra Grade tier.
     // Common=1, Uncommon=2, Rare=3, Epic=4, Legendary=5, Mythic=6, Cosmic=7.
     try{
@@ -40786,6 +40813,17 @@ document.addEventListener('keydown', function(e) {
     }
     if (!seed.waterLog || seed.waterLog.length < 3) {
       _setNurMsg('Seed needs ' + (3 - (seed.waterLog ? seed.waterLog.length : 0)) + ' more watering(s).');
+      return;
+    }
+    // Greenhouse capacity gate — block bloom if full, surface the same
+    // expand/place-wild/compost fork the sunbeam modal uses. Reads
+    // directly from localStorage so this works regardless of which
+    // closure exposes MAX_COLLECTION_SIZE.
+    var _ghLen=0,_ghMax=10;
+    try{_ghLen=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]').length;}catch(e){}
+    try{_ghMax=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10',10)||10;}catch(e){}
+    if (_ghLen >= _ghMax && window._lwGreenhouseFullPrompt) {
+      window._lwGreenhouseFullPrompt('Your seed is ready, but the greenhouse is full.', _ghLen, _ghMax);
       return;
     }
     _setNurMsg('🌸 Bloom initiated…');
@@ -43525,6 +43563,14 @@ function _getWildVitality(plant){
   // revive in that window via Sunbeam emergency rescue. Tracked via
   // dormantSince (set lazily below the first time we see remaining<=0).
   var GRACE_MS=72*3600000;
+  // Winter Hunt capstone — +N days of dormancy grace before climate decay.
+  // Cumulative across years (Year 1 = +1 day = +24h, Year 2 = +2 days, etc).
+  try{
+    if(window.LW_HUNT&&window.LW_HUNT.getUpgrade){
+      var _winterB=window.LW_HUNT.getUpgrade('dormancy_grace_days')||0;
+      if(_winterB>0) GRACE_MS += _winterB*86400000;
+    }
+  }catch(e){}
   var dormant=false,graceLeftMs=0;
   if(remaining<=0){
     if(!plant.dormantSince){plant.dormantSince=now;}
@@ -48400,7 +48446,11 @@ function _drop(pl){
     var mineLocal = (iz.own === true);
     var mineCloud = (myUid && iz.ownerUid === myUid && _localHashes[iz.hash]);
     var mine = mineLocal || mineCloud;
-    if(mine){_toast('You already have a plant in this zone.');return;}
+    if(mine){
+      var _occName='';try{_occName=window.getPlantName?window.getPlantName(iz.hash):'';}catch(e){}
+      _toast('Your '+(_occName||iz.hash.slice(0,6))+' is already growing here.');
+      return;
+    }
   }
   var displaced=null;
   if(inZone.length>=MAX_PER_ZONE){
@@ -49680,6 +49730,14 @@ setInterval(function(){
   var minuteEarned=hourlyTotal/240+remainder;
   var wholeEarned=Math.floor(minuteEarned);
   localStorage.setItem('fg_dew_rem',String(minuteEarned-wholeEarned));
+  // Summer Hunt capstone — +N Dew per minute during noon hours (12:00-12:59
+  // local). Cumulative across years (Year 1 = +1, Year 2 = +2, etc).
+  try{
+    if(window.LW_HUNT&&window.LW_HUNT.getUpgrade){
+      var _summerB=window.LW_HUNT.getUpgrade('noon_dew_bonus')||0;
+      if(_summerB>0 && new Date().getHours()===12) wholeEarned+=_summerB;
+    }
+  }catch(e){}
   if(wholeEarned>0){
     // Route to the real Dew ledger — earnDew also grants matching XP
     if(typeof earnDew==='function')earnDew(wholeEarned,'wild_tick');
@@ -49720,7 +49778,11 @@ function _dropFromBP(p){
     var mineLocal=(iz.own===true);
     var mineCloud=(myUid&&iz.ownerUid===myUid&&_lh2[iz.hash]);
     var mine = mineLocal || mineCloud;
-    if(mine){_toast('You already have a plant in this zone.');return;}
+    if(mine){
+      var _occName2='';try{_occName2=window.getPlantName?window.getPlantName(iz.hash):'';}catch(e){}
+      _toast('Your '+(_occName2||iz.hash.slice(0,6))+' is already growing here.');
+      return;
+    }
   }
   var displaced=null;
   if(inZone.length>=MAX_PER_ZONE){
@@ -53136,6 +53198,29 @@ function _updateSunbeamBadge(){
   }else if(pip){pip.style.display='none';kbs.style.animation='';}
 }
 window._updateSunbeamBadge=_updateSunbeamBadge;
+
+// ═══ GREENHOUSE-FULL PROMPT — shared fork shown when a bloom/mint is
+// blocked by no slots. Three actions: expand, place in wild, compost.
+// Used by both the sunbeam-modal photosynthesize gate (inline) and the
+// nursery handleBloomBtn gate (this helper).
+window._lwGreenhouseFullPrompt = function(message, ghLen, ghMax){
+  var old = document.getElementById('lw-gh-full-modal'); if (old) old.remove();
+  var ov = document.createElement('div'); ov.id = 'lw-gh-full-modal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);padding:1rem;animation:panelFadeIn 0.3s ease;';
+  ov.onclick = function(e){ if (e.target === ov) ov.remove(); };
+  var msg = message || 'Your greenhouse is full.';
+  var h = '<div style="background:rgba(13,16,12,0.97);border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.2rem;max-width:340px;width:100%;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.12em;text-align:center;margin-bottom:0.4rem;">GREENHOUSE FULL</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);text-align:center;opacity:0.85;margin-bottom:0.3rem;line-height:1.5;">'+msg+'</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;margin-bottom:1rem;">'+(ghLen||0)+' / '+(ghMax||0)+' plants · make room first</div>';
+  h += '<button onclick="var m=document.getElementById(\'lw-gh-full-modal\');if(m)m.remove();if(window.expandGHSlot)expandGHSlot();" style="width:100%;padding:0.75rem;margin-bottom:0.4rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">+ EXPAND A SLOT</button>';
+  h += '<button onclick="var m=document.getElementById(\'lw-gh-full-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'wild\');setTimeout(function(){if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();},250);" style="width:100%;padding:0.65rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(60,90,40,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:46px;"><span class="lwe lwe-bloom"></span> PLACE ONE IN THE WILD</button>';
+  h += '<button onclick="var m=document.getElementById(\'lw-gh-full-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'greenhouse\');" style="width:100%;padding:0.65rem;margin-bottom:0.4rem;border:1.5px solid rgba(216,112,96,0.45);border-radius:10px;background:rgba(36,22,22,0.55);color:rgba(216,144,128,0.95);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:46px;"><span class="lwe lwe-flame"></span> OPEN GREENHOUSE TO COMPOST</button>';
+  h += '<button onclick="var m=document.getElementById(\'lw-gh-full-modal\');if(m)m.remove();" style="width:100%;padding:0.45rem;margin-top:0.3rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:8px;background:rgba(26,31,23,0.4);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">NOT NOW</button>';
+  h += '</div>';
+  ov.innerHTML = h;
+  document.body.appendChild(ov);
+};
 // ═══ SUNBEAM MODAL — replaces economy info with actionable mint UI ═══
 window.openSunbeamModal=function(){
   var old=document.getElementById('lw-sunbeam-modal');if(old)old.remove();
@@ -53157,6 +53242,15 @@ window.openSunbeamModal=function(){
   var ov=document.createElement('div');ov.id='lw-sunbeam-modal';
   ov.style.cssText='position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);padding:1rem;animation:panelFadeIn 0.3s ease;';
   if(!_tutMint)ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  // Greenhouse capacity check — gates the bloom button when full so the
+  // player sees the constraint instead of silently pushing plants to reserve.
+  // Tutorial bypasses (mint-only flow must not get blocked).
+  var _ghLen=0,_ghMax=10,_ghFull=false;
+  if(!_tutMint){
+    try{_ghLen=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]').length;}catch(e){}
+    try{_ghMax=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10',10)||10;}catch(e){}
+    _ghFull=(_ghLen>=_ghMax);
+  }
   var h='<div style="background:rgba(13,16,12,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1.2rem;max-width:320px;width:100%;max-height:80vh;overflow-y:auto;">';
   h+='<div style="text-align:center;margin-bottom:0.6rem;">';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;color:var(--gold);letter-spacing:0.06em;">'+bal+'</div>';
@@ -53171,9 +53265,18 @@ window.openSunbeamModal=function(){
   }
   // Bloom button (plants bloom from sunlight — botanical verb replaces
   // the old "mint" wording everywhere this modal is shown).
-  if(ready>0){
+  if(ready>0&&_ghFull){
+    h+='<div style="position:relative;width:100%;aspect-ratio:2/1;margin-bottom:0.5rem;border:1.5px solid rgba(200,168,75,0.45);border-radius:14px;background:url(assets/btn-photosynthesize-v1.png) center/cover no-repeat;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(13,16,12,0.4);">'
+      +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(13,16,12,0.62);text-align:center;padding:0.7rem;">'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:rgba(232,200,140,0.95);letter-spacing:0.12em;text-shadow:0 1px 3px rgba(0,0,0,0.85);">GREENHOUSE FULL</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:rgba(220,200,160,0.85);margin-top:6px;">'+_ghLen+' / '+_ghMax+' plants · make room to bloom</div>'
+      +'</div></div>';
+    h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();if(window.expandGHSlot)expandGHSlot();" style="width:100%;padding:0.75rem;margin-bottom:0.4rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">+ EXPAND A SLOT</button>';
+    h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'wild\');setTimeout(function(){if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();},250);" style="width:100%;padding:0.65rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(60,90,40,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:46px;"><span class="lwe lwe-bloom"></span> PLACE ONE IN THE WILD</button>';
+    h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'greenhouse\');" style="width:100%;padding:0.65rem;margin-bottom:0.4rem;border:1.5px solid rgba(216,112,96,0.45);border-radius:10px;background:rgba(36,22,22,0.55);color:rgba(216,144,128,0.95);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:46px;"><span class="lwe lwe-flame"></span> OPEN GREENHOUSE TO COMPOST</button>';
+  }else if(ready>0){
     h+='<button onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" aria-label="Photosynthesize a plant" style="position:relative;width:100%;aspect-ratio:2/1;padding:0;margin-bottom:0.5rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:14px;background:url(assets/btn-photosynthesize-v1.png) center/cover no-repeat,linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));cursor:pointer;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.45),inset 0 0 0 1px rgba(240,208,144,0.12);">'
-      +'<span style="position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:0.35rem 0.85rem;border-radius:8px;background:rgba(13,16,12,0.78);border:1px solid rgba(200,168,75,0.55);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;text-shadow:0 1px 2px rgba(0,0,0,0.85);white-space:nowrap;">PHOTOSYNTHESIZE \u00b7 '+cost+' \u2600\ufe0f'+(ready>1?' \u00d7'+ready:'')+'</span>'
+      +(ready>1?'<span style="position:absolute;top:8px;right:10px;min-width:28px;height:28px;padding:0 8px;border-radius:14px;background:rgba(13,16,12,0.82);border:1.5px solid rgba(200,168,75,0.6);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.04em;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,0.85);">\u00d7'+ready+'</span>':'')
       +'</button>';
   }else{
     h+='<div style="width:100%;padding:0.5rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:10px;background:rgba(26,31,23,0.5);text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.08em;">KEEP PLAYING TO GROW A PLANT</div><div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:2px;">'+cost+' Sunbeams = 1 unique plant</div></div>';
@@ -61201,18 +61304,37 @@ function _saveName(){
 // Optional companion portrait lookup, idx → PNG path. Falls back to emoji
 // when a companion has no art yet. Extend this map as Midjourney renders
 // land in assets/companions/.
-var LW_COMPANION_IMG = {
-  33: 'assets/companions/cicada-v1-b.png'
-};
+var LW_COMPANION_IMG = {};
 window.LW_COMPANION_IMG = LW_COMPANION_IMG;
-// Render helper, returns an <img> string when art exists, emoji otherwise.
-// Caller supplies size (px). onerror falls back to emoji inline so a missing
-// file never leaves a hollow circle.
+// Render helper, returns an <img> string when art exists, then a procedural
+// SVG portrait via renderCompanion if available, finally an emoji span.
+// Caller supplies size (px). onerror on the <img> falls back to emoji inline
+// so a missing PNG file never leaves a hollow circle.
 function _compPortrait(idx, emoji, sizePx) {
   var sz = sizePx || 32;
   var src = LW_COMPANION_IMG[idx];
   if (src) {
     return '<img src="'+src+'" alt="" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(sz*0.7)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;&quot;>'+(emoji||'?')+'</span>\'" style="width:'+sz+'px;height:'+sz+'px;object-fit:cover;border-radius:'+Math.round(sz*0.18)+'px;border:1px solid rgba(200,168,75,0.35);display:inline-block;vertical-align:middle;">';
+  }
+  // Procedural SVG portrait — uses the same renderCompanion the plant uses,
+  // cropped to a 30×30 viewBox centered on the companion's anchor point.
+  // The anchor is the last translate(X,Y) before scale(N) in the rendered
+  // fragment — that's the "scale-around-point" pattern every case follows.
+  if (typeof idx === 'number' && idx >= 20 && window._LW && window._LW.renderCompanion) {
+    try {
+      var t = { companion:idx, stemHeight:50, flowerSize:6, flower:0, leafType:0, base:0, pot:0, hasFlower:true,
+                potColor:'#7a5840', stemColor:'#5a8a3a',
+                leafColors:['#7ab356','#5a9a36','#4a8a26'], flowerColor:'#e8a0bf' };
+      var frag = window._LW.renderCompanion(t, 'cs'+idx);
+      if (frag) {
+        var m = frag.match(/translate\((-?[\d.]+),(-?[\d.]+)\)\s*scale/);
+        var ax = m ? parseFloat(m[1]) : 35;
+        var ay = m ? parseFloat(m[2]) : 47;
+        var crop = 30;
+        var vbX = ax - crop/2, vbY = ay - crop/2;
+        return '<svg viewBox="'+vbX+' '+vbY+' '+crop+' '+crop+'" width="'+sz+'" height="'+sz+'" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;border-radius:'+Math.round(sz*0.18)+'px;border:1px solid rgba(200,168,75,0.35);background:rgba(13,16,12,0.55);">'+frag+'</svg>';
+      }
+    } catch(e){}
   }
   return '<span style="font-size:'+Math.round(sz*0.72)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;">'+(emoji||'?')+'</span>';
 }
@@ -61227,9 +61349,10 @@ function _loadCompanion(){
     var name=document.getElementById('cs-companion-name');
     var buff=document.getElementById('cs-companion-buff');
     if(icon){
-      // Portrait when available, emoji fallback. Slot is ~48px on the
-      // character-sheet card so we size the image accordingly.
-      if (typeof comp.idx === 'number' && LW_COMPANION_IMG[comp.idx]) {
+      // Procedural SVG portrait via _compPortrait. The 48px slot on the
+      // character sheet card matches the BoS roster sizing, so the same
+      // helper renders consistently across surfaces.
+      if (typeof comp.idx === 'number' && window._compPortrait) {
         icon.innerHTML = _compPortrait(comp.idx, comp.icon||'\ud83d\udc3e', 48);
       } else {
         icon.textContent = comp.icon || '\ud83d\udc3e';
@@ -64969,7 +65092,7 @@ function _ensureSlotModal() {
         '<div class="slot-title">SLOTS</div>' +
         '<button class="slot-close" onclick="window._closeSlots()">\u2715</button>' +
       '</div>' +
-      '<div style="width:140px;height:140px;margin:0 auto 0.6rem;filter:drop-shadow(0 6px 20px rgba(200,168,75,0.45));"><img src="assets/btn-slots.png" alt="Slots" style="width:100%;height:100%;object-fit:contain;"></div>' +
+      '<div style="width:100%;max-width:260px;margin:0 auto 0.6rem;filter:drop-shadow(0 6px 20px rgba(200,168,75,0.45));"><img src="assets/slots.png" alt="Slots" style="display:block;width:100%;height:auto;border-radius:8px;"></div>' +
       '<div class="slot-balance" id="slot-balance">Dew: 0</div>' +
       '<div class="slot-reels">' +
         '<div class="slot-reel" id="slot-reel-0">?</div>' +
@@ -65406,7 +65529,7 @@ function _ensureMysteryModal() {
         '<button class="my-close" onclick="window._closeMystery()">\u2715</button>' +
       '</div>' +
       '<div class="my-balance" id="my-balance">Dew: 0</div>' +
-      '<div class="my-box" id="my-box"><img src="assets/btn-mystery.png" alt="Mystery Box"></div>' +
+      '<div class="my-box" id="my-box"><img src="assets/mysterybox.png" alt="Mystery Box"></div>' +
       '<div class="my-prize" id="my-prize">Pay ' + MYSTERY_COST + ' Dew to open...</div>' +
       '<button class="my-pull" id="my-pull" onclick="window._openMysteryBox()">OPEN BOX \u2014 ' + MYSTERY_COST + ' \ud83d\udca7</button>' +
     '</div>';
@@ -65422,7 +65545,7 @@ function _refreshMyBalance() {
 window._openMystery = function() {
   _ensureMysteryModal();
   _refreshMyBalance();
-  var box = document.getElementById('my-box'); if (box) { box.className = 'my-box'; box.innerHTML = '<img src="assets/btn-mystery.png" alt="Mystery Box">'; }
+  var box = document.getElementById('my-box'); if (box) { box.className = 'my-box'; box.innerHTML = '<img src="assets/mysterybox.png" alt="Mystery Box">'; }
   var p = document.getElementById('my-prize'); if (p) { p.textContent = 'Pay ' + MYSTERY_COST + ' Dew to open...'; p.className = 'my-prize'; }
   var btn = document.getElementById('my-pull'); if (btn) { btn.disabled = false; btn.textContent = 'OPEN BOX \u2014 ' + MYSTERY_COST + ' \ud83d\udca7'; }
   document.getElementById('mystery-modal').classList.add('open');
@@ -72330,7 +72453,7 @@ function _generateReport(){
   var compEvts=recent.filter(function(e){return e.type==='companion';});
   if(compEvts.length>0){
     var ce2=compEvts[compEvts.length-1];
-    lines.push({icon:'🐾',text:ce2.text||ce2.companion+' did something helpful.',color:'var(--sage)'});
+    lines.push({icon:'<span class="lwe lwe-paw"></span>',text:ce2.text||ce2.companion+' did something helpful.',color:'var(--sage)'});
   }
 
   // Phenotype revelation stories
@@ -72551,18 +72674,18 @@ window._getWildEvents=_loadEvents;
 
 var CATEGORIES=[
   {key:'trait',    label:'SYNERGIES',    icon:'✦', color:'var(--sage)'},
-  {key:'companion',label:'COMPANIONS',  icon:'🐾', color:'var(--gold)'},
-  {key:'weather',  label:'WEATHER',     icon:'⛅', color:'rgba(91,175,220,0.9)'},
-  {key:'season',   label:'SEASONS',     icon:'🌸', color:'rgba(232,160,191,0.9)'},
-  {key:'action',   label:'ACTIONS',     icon:'👤', color:'var(--cream)'},
-  {key:'natural',  label:'EVENTS',      icon:'🌿', color:'var(--sage)'}
+  {key:'companion',label:'COMPANIONS',  icon:'<span class="lwe lwe-paw"></span>', color:'var(--gold)'},
+  {key:'weather',  label:'WEATHER',     icon:'<span class="lwe lwe-sun"></span>', color:'rgba(91,175,220,0.9)'},
+  {key:'season',   label:'SEASONS',     icon:'<span class="lwe lwe-flower"></span>', color:'rgba(232,160,191,0.9)'},
+  {key:'action',   label:'ACTIONS',     icon:'<span class="lwe lwe-figure"></span>', color:'var(--cream)'},
+  {key:'natural',  label:'EVENTS',      icon:'<span class="lwe lwe-leaf"></span>', color:'var(--sage)'}
 ];
 
 // ═══ BOOK OF SECRETS — Unified 3-tab field journal ═══
 // Tab 1: ROOT REPORT — daily journal + activity log
 // Tab 2: SECRETS — synergies, mythic hall, trait diversity, companions
 // Tab 3: WILD EVENTS — tiered discovery challenges (color-coded difficulty)
-var _bosTab = 'secrets';
+var _bosTab = 'codex';
 // ═══ PER-TAB UNREAD TRACKING ═══
 // One-time migration: existing keepers who installed the silent-unread
 // system after they already had content should NOT get a flood of NEW
@@ -72591,6 +72714,26 @@ function _bosGetTabRead(tab) { return _bosLoadReads()[tab] || 0; }
 function _bosStampTabRead(tab) { var r = _bosLoadReads(); r[tab] = Date.now(); _bosSaveReads(r); }
 window._bosGetTabUnread = function(tab) {
   try {
+    // Consolidated 5-tab structure aggregates the legacy per-tab counts.
+    // Bundles live in QUESTS now (moved from CODEX), so herbarium counts
+    // toward the QUESTS badge.
+    if (tab === 'codex') {
+      var n0 = 0;
+      try { n0 += window._bosGetTabUnread('secrets')  || 0; } catch(e){}
+      try { n0 += window._bosGetTabUnread('mementos') || 0; } catch(e){}
+      try { n0 += window._bosGetTabUnread('items')    || 0; } catch(e){}
+      return n0;
+    }
+    if (tab === 'journal') {
+      var nJ = 0;
+      try { nJ += window._bosGetTabUnread('today')    || 0; } catch(e){}
+      try { nJ += window._bosGetTabUnread('activity') || 0; } catch(e){}
+      try { nJ += window._bosGetTabUnread('events')   || 0; } catch(e){}
+      return nJ;
+    }
+    // QUESTS now owns the bundles section (was in HERBARIUM), so add
+    // herbarium's unread count to whatever the legacy 'quests' branch
+    // computes. The legacy branch runs below — we just augment.
     var lastRead = _bosGetTabRead(tab);
     // EVENTS — count wild-event discoveries since last-read
     if (tab === 'events') {
@@ -72657,13 +72800,17 @@ window._bosGetTabUnread = function(tab) {
     // complete dailies; clears to 0 once all 3 are done.
     if (tab === 'quests') {
       try {
-        if (!window.LW_ACH) return 0;
-        var ds = window.LW_ACH.dailies();
-        if (!ds || !ds.picks) return 0;
-        var doneSet = {};
-        if (ds.done) for (var dq = 0; dq < ds.done.length; dq++) doneSet[ds.done[dq]] = 1;
         var undone = 0;
-        for (var pq = 0; pq < ds.picks.length; pq++) if (!doneSet[ds.picks[pq]]) undone++;
+        if (window.LW_ACH) {
+          var ds = window.LW_ACH.dailies();
+          if (ds && ds.picks) {
+            var doneSet = {};
+            if (ds.done) for (var dq = 0; dq < ds.done.length; dq++) doneSet[ds.done[dq]] = 1;
+            for (var pq = 0; pq < ds.picks.length; pq++) if (!doneSet[ds.picks[pq]]) undone++;
+          }
+        }
+        // Add bundles (was HERBARIUM) since they live in QUESTS now.
+        try { undone += window._bosGetTabUnread('herbarium') || 0; } catch(e){}
         return undone;
       } catch(e) { return 0; }
     }
@@ -72723,49 +72870,106 @@ window._lwCloseClassManager = function(){
   if (ov) ov.style.display = 'none';
 };
 
+// ═══ BoS CONSOLIDATED 5-TAB DISPATCH ═══
+// Legacy 10 tabs (today/activity/secrets/events/mementos/herbarium/items/hunt/quests/about)
+// route to 5 consolidated tabs (codex/journal/quests/hunt/about). Old keys are
+// preserved as aliases so any existing _bosSetTab('mementos') deep-links keep
+// working. The content functions for the old tabs are unchanged — the new
+// composers just compose them with section headers in one scroll.
+var _BOS_LEGACY_REDIRECT = {
+  today:    'journal',
+  activity: 'journal',
+  report:   'journal',
+  events:   'journal',
+  secrets:  'codex',
+  mementos: 'codex',
+  herbarium:'codex',
+  items:    'codex'
+};
+function _bosSectionHeader(label) {
+  return '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.16em;color:var(--gold);margin:1.2rem 0 0.6rem;padding-bottom:0.3rem;border-bottom:1px solid rgba(200,168,75,0.18);">' + label + '</div>';
+}
+// CODEX — everything you've discovered. Long scroll. Bundles moved to
+// QUESTS where they conceptually belong (weekly chore, not discovery).
+// _bosCodexMode flag flips on so _bosSecretsContent suppresses the
+// Companion Gallery (the dedicated COMPANIONS section below covers it).
+function _bosCodexContent() {
+  var h = '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);opacity:0.85;font-size:0.7rem;line-height:1.5;margin-bottom:0.4rem;">"Everything you have found, gathered into one quiet record."</div>';
+  h += _bosSectionHeader('DISCOVERY ATLAS');
+  window._bosCodexMode = true;
+  try { h += (typeof _bosSecretsContent === 'function') ? _bosSecretsContent() : ''; } catch(e){}
+  window._bosCodexMode = false;
+  h += _bosSectionHeader('COMPANIONS');
+  try { h += (typeof _bosMementosContent === 'function') ? _bosMementosContent() : ''; } catch(e){}
+  h += _bosSectionHeader('ITEMS');
+  try { h += (typeof _bosItemsContent === 'function') ? _bosItemsContent() : ''; } catch(e){}
+  return h;
+}
+// QUESTS — daily, weekly, bundles, and the lifetime achievement catalog.
+// Bundles moved here from CODEX — they're a weekly cadence challenge.
+function _bosQuestsTabContent() {
+  var h = '';
+  try { h += (typeof _bosQuestsContent === 'function') ? _bosQuestsContent() : ''; } catch(e){}
+  h += _bosSectionHeader('WEEKLY BUNDLES');
+  try { h += (typeof _bosHerbariumContent === 'function') ? _bosHerbariumContent() : ''; } catch(e){}
+  return h;
+}
+// JOURNAL — what's fresh + recent events in one quiet feed. The old
+// _bosTodayContent is the curated view (greeting, since-last-visit
+// surface, "so close" nudges, fallback meditative prompts). Events
+// from _bosEventsContent appended below as the longer-tail discovery
+// catalog. The raw activity log (_bosActivityContent) is intentionally
+// left out — it's too noisy and duplicates Today's surface. Re-add via
+// sub-tab when JOURNAL gets Today/Week/All filtering.
+function _bosJournalContent() {
+  var h = '';
+  try { h += (typeof _bosTodayContent === 'function') ? _bosTodayContent() : ''; } catch(e){}
+  h += _bosSectionHeader('EVENTS WITNESSED');
+  try { h += (typeof _bosEventsContent === 'function') ? _bosEventsContent() : ''; } catch(e){}
+  try { localStorage.setItem('lw_bos_today_viewed', String(Date.now())); } catch(e){}
+  return h;
+}
+
 function _bosSetTab(tab) {
+  // CLASS still hard-redirects to the Class Manager overlay.
   if (tab === 'class') {
     if (window._lwOpenClassManager) window._lwOpenClassManager();
     return;
   }
+  // Map legacy 10-tab keys onto the 5-tab consolidated structure.
+  if (_BOS_LEGACY_REDIRECT[tab]) tab = _BOS_LEGACY_REDIRECT[tab];
   _bosTab = tab;
   // Capture previous read-time BEFORE stamping — this is what content
   // functions compare against to decide whether to mark an item NEW.
   // Available to any renderer as window._bosPrevReadTs.
   window._bosPrevReadTs = _bosGetTabRead(tab);
-  // Stamp the tab as read the moment it opens — subtle, no confirmation needed
+  // Stamp the tab as read the moment it opens — subtle, no confirmation needed.
+  // For consolidated tabs, also stamp the legacy sub-tabs so their badges clear.
   _bosStampTabRead(tab);
-  // Engagement counters: per-subtab opens. Drives the daily "read 3
-  // BoS pages" type challenges and the longer "explored every section"
-  // achievements.
+  if (tab === 'codex') {
+    _bosStampTabRead('secrets');
+    _bosStampTabRead('mementos');
+    _bosStampTabRead('items');
+  } else if (tab === 'journal') {
+    _bosStampTabRead('today');
+    _bosStampTabRead('activity');
+    _bosStampTabRead('events');
+  } else if (tab === 'quests') {
+    // Bundles moved from CODEX to QUESTS — stamp herbarium read here.
+    _bosStampTabRead('herbarium');
+  }
+  // Engagement counters
   if (window.LW_ACH) {
-    if (tab === 'activity' || tab === 'report') LW_ACH.bump('d_journal', 1);
-    else if (tab === 'herbarium') LW_ACH.bump('d_compendium', 1);
-    else if (tab === 'today') LW_ACH.bump('d_orient', 1);
+    if (tab === 'journal') LW_ACH.bump('d_journal', 1);
+    else if (tab === 'codex')   LW_ACH.bump('d_compendium', 1);
   }
   var body = document.getElementById('bos-body');
   if (!body) return;
-  if (tab === 'report' || tab === 'activity') {
-    // Report + Activity combined into one JOURNAL tab — summary + recent entries
-    var _combined = '';
-    try { _combined += _bosReportContent ? _bosReportContent() : ''; } catch(e){}
-    try { _combined += _bosActivityContent ? _bosActivityContent() : ''; } catch(e){}
-    body.innerHTML = _combined || '';
-    _bosTab = 'activity';
-  }
-  else if (tab === 'today') {
-    body.innerHTML = (typeof _bosTodayContent === 'function') ? _bosTodayContent() : '';
-    try { localStorage.setItem('lw_bos_today_viewed', String(Date.now())); } catch(e){}
-  }
-  else if (tab === 'secrets') body.innerHTML = _bosSecretsContent();
-  else if (tab === 'events') body.innerHTML = _bosEventsContent();
-  else if (tab === 'class') body.innerHTML = _bosClassContent();
-  else if (tab === 'mementos') body.innerHTML = _bosMementosContent();
-  else if (tab === 'herbarium') body.innerHTML = _bosHerbariumContent();
-  else if (tab === 'items') body.innerHTML = _bosItemsContent();
-  else if (tab === 'hunt') body.innerHTML = (window.LW_HUNT && window.LW_HUNT._bosContent) ? window.LW_HUNT._bosContent() : '';
-  else if (tab === 'quests') body.innerHTML = (typeof _bosQuestsContent === 'function') ? _bosQuestsContent() : '';
-  else if (tab === 'about') body.innerHTML = (typeof _bosAboutContent === 'function') ? _bosAboutContent() : '';
+  if (tab === 'codex')        body.innerHTML = _bosCodexContent();
+  else if (tab === 'journal') body.innerHTML = _bosJournalContent();
+  else if (tab === 'hunt')    body.innerHTML = (window.LW_HUNT && window.LW_HUNT._bosContent) ? window.LW_HUNT._bosContent() : '';
+  else if (tab === 'quests')  body.innerHTML = (typeof _bosQuestsTabContent === 'function') ? _bosQuestsTabContent() : '';
+  else if (tab === 'about')   body.innerHTML = (typeof _bosAboutContent === 'function') ? _bosAboutContent() : '';
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -74118,7 +74322,7 @@ function _bosMementosContent() {
   var THIRTY = 30 * 86400000;
 
   // Prominent EQUIP button at the top so players don't have to hunt for it
-  var h = '<button onclick="var _bos=document.getElementById(\'bos-overlay\');if(_bos)_bos.remove();setTimeout(function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();},200);" style="width:100%;padding:0.75rem;margin-bottom:0.8rem;border:2px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(200,168,75,0.15);">\ud83d\udc3e EQUIP COMPANION</button>';
+  var h = '<button onclick="var _bos=document.getElementById(\'bos-overlay\');if(_bos)_bos.remove();setTimeout(function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();},200);" style="width:100%;padding:0.75rem;margin-bottom:0.8rem;border:2px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(200,168,75,0.15);"><span class="lwe lwe-paw"></span> EQUIP COMPANION</button>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;"><b style="color:var(--gold);">Mementos</b> are keepsakes from your friends in the garden. They appear when a companion has been with you a long time, when you reach a milestone, when another player gifts you something, and from many quieter moments along the way. Each one is yours forever.</div>';
 
   if (!collected.length && !Object.keys(equipLog).length) {
@@ -74205,7 +74409,7 @@ function _bosMementosContent() {
         if (!byFamily[rFam]) byFamily[rFam] = [];
         byFamily[rFam].push(rIdx);
       }
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.08em;margin:1rem 0 0.4rem;">YOUR ROSTER \u00b7 ' + rosterList.length + '</div>';
+      h += '<div style="position:relative;width:100%;margin:1rem 0 0.5rem;border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);border:1px solid rgba(200,168,75,0.32);"><img src="assets/companions-banner.png" alt="Companions" style="display:block;width:100%;height:auto;"><div style="position:absolute;left:0;right:0;bottom:0;padding:8px 12px;background:linear-gradient(180deg,transparent,rgba(13,16,12,0.85));font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.12em;text-shadow:0 1px 3px rgba(0,0,0,0.8);">YOUR ROSTER \u00b7 ' + rosterList.length + '</div></div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;line-height:1.6;">Every companion you\u2019ve seen in your garden. Tap for profile + bond status.</div>';
       // Second EQUIP COMPANION button removed — the prominent one at
       // top of Mementos (line ~61041) covers this. Duplicate flagged
@@ -74213,15 +74417,15 @@ function _bosMementosContent() {
       // Family order — signature/class-aligned first, universals last
       var FAM_ORDER = ['pollinators','scatterers','weavers','wayfinders','guardians','conduits','mycelium','listeners','unlinked'];
       var FAM_META = {
-        pollinators:{name:'Pollinators',icon:'\ud83d\udc1d',color:'#e8a843'},
-        scatterers:{name:'Scatterers',icon:'\ud83d\udc3f',color:'#d4842a'},
-        weavers:{name:'Weavers',icon:'\ud83d\udd78',color:'#a88fbf'},
-        wayfinders:{name:'Wayfinders',icon:'\ud83e\udd85',color:'#7ab3d4'},
-        guardians:{name:'Guardians',icon:'\ud83d\udee1',color:'#c8a84b'},
-        conduits:{name:'Conduits',icon:'\ud83d\udca7',color:'#7ab356'},
-        mycelium:{name:'Mycelium',icon:'\ud83c\udf44',color:'#c07a9a'},
-        listeners:{name:'Listeners',icon:'\ud83d\udc42',color:'#8a9178'},
-        unlinked:{name:'Unlinked',icon:'\ud83c\udf3e',color:'#8a9178'}
+        pollinators:{name:'Pollinators',icon:'<span class="lwe lwe-fam-pollinators"></span>',color:'#e8a843'},
+        scatterers:{name:'Scatterers',icon:'<span class="lwe lwe-fam-scatterers"></span>',color:'#d4842a'},
+        weavers:{name:'Weavers',icon:'<span class="lwe lwe-fam-weavers"></span>',color:'#a88fbf'},
+        wayfinders:{name:'Wayfinders',icon:'<span class="lwe lwe-fam-wayfinders"></span>',color:'#7ab3d4'},
+        guardians:{name:'Guardians',icon:'<span class="lwe lwe-fam-guardians"></span>',color:'#c8a84b'},
+        conduits:{name:'Conduits',icon:'<span class="lwe lwe-drop"></span>',color:'#7ab356'},
+        mycelium:{name:'Mycelium',icon:'<span class="lwe lwe-fam-mycelium"></span>',color:'#c07a9a'},
+        listeners:{name:'Listeners',icon:'<span class="lwe lwe-fam-listeners"></span>',color:'#8a9178'},
+        unlinked:{name:'Unlinked',icon:'<span class="lwe lwe-leaf"></span>',color:'#8a9178'}
       };
       for (var fo = 0; fo < FAM_ORDER.length; fo++) {
         var famKey = FAM_ORDER[fo];
@@ -74273,7 +74477,7 @@ function _bosMementosContent() {
 
       h += '<div style="margin-top:1rem;padding-top:0.6rem;border-top:1px dashed rgba(200,168,75,0.18);">';
       h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;">📖 FULL CATALOG</div>';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;"><span class="lwe lwe-book"></span> FULL CATALOG</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">' + collected.length + ' / ' + totalMem + ' collected</div>';
       h += '</div>';
       // Search input
@@ -77111,16 +77315,17 @@ window._lwClaimHerbarium = function(id){
     ov.innerHTML =
       '<div class="lwh-scrim" onclick="LW_HUT.close()"></div>' +
       '<div class="lwh-panel">' +
+        '<div class="lwh-portrait"><img src="assets/hermitportrait.png" alt="The Hermit"></div>' +
         '<div class="lwh-header">' +
-          '<div class="lwh-title">🛋 HERMIT’S HUT</div>' +
+          '<div class="lwh-title">HERMIT’S HUT</div>' +
           '<button class="lwh-close" onclick="LW_HUT.close()">✕</button>' +
         '</div>' +
         '<div class="lwh-balance" id="lwh-balance"></div>' +
         '<div class="lwh-tabs">' +
-          '<button class="lwh-tab active" data-tab="shop"    onclick="LW_HUT.switchTab(\'shop\')">🛍 SHOP</button>' +
-          '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')">🌤 ALMANAC</button>' +
-          '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">🎰 SLOTS</button>' +
-          '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">📜 QUESTS</button>' +
+          '<button class="lwh-tab active" data-tab="shop"    onclick="LW_HUT.switchTab(\'shop\')">SHOP</button>' +
+          '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> ALMANAC</button>' +
+          '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">SLOTS</button>' +
+          '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">QUESTS</button>' +
         '</div>' +
         '<div class="lwh-body" id="lwh-body"></div>' +
       '</div>';
@@ -77190,11 +77395,11 @@ window._lwClaimHerbarium = function(id){
     // Broke hint — when player has 0 Dew, surface where Dew comes from
     // so they don't feel locked out. Pure earn path, no monetization required.
     if (bal === 0){
-      html += '<div class="lwh-broke-hint">💧 You have 0 Dew. <b>Tend wild plants</b> (your own or strangers) to earn Dew. Or play games to earn Sunbeams.</div>';
+      html += '<div class="lwh-broke-hint"><span class="lwe lwe-drop"></span> You have 0 Dew. <b>Tend wild plants</b> (your own or strangers) to earn Dew. Or play games to earn Sunbeams.</div>';
     }
     if (specialName){
       var specialEnds = fmtCountdown(msUntilMidnight());
-      html += '<div class="lwh-special-banner">⭐ TODAY\'S SPECIAL · <b>'+specialName+'</b> · 50% OFF · ends in <span data-countdown="midnight">'+specialEnds+'</span></div>';
+      html += '<div class="lwh-special-banner"><span class="lwe lwe-sparkle"></span> TODAY\'S SPECIAL · <b>'+specialName+'</b> · 50% OFF · ends in <span data-countdown="midnight">'+specialEnds+'</span></div>';
     }
     html += '<div class="lwh-shop-grid">';
     for (var i=0;i<st.stock.length;i++){
@@ -77208,7 +77413,7 @@ window._lwClaimHerbarium = function(id){
       if (s.type === 'mystery'){
         name = 'Mystery Box';
         desc = 'A surprise. Sunbeams, Dew, Fertilizer, or jackpot.';
-        art = '<img src="assets/btn-mystery.png" alt="Mystery Box">';
+        art = '<img src="assets/mysterybox.png" alt="Mystery Box">';
         rcls = 'rar-uncommon';
         badge = '<div class="lwh-shop-badge sage">MYSTERY</div>';
       } else {
@@ -77259,7 +77464,7 @@ window._lwClaimHerbarium = function(id){
         }
       } else {
         var earlyTag = avail.earlyOpened ? ' · <span style="opacity:0.75;font-size:0.55rem;">EARLY</span>' : '';
-        html += '<button class="lwh-shop-buy'+(afford?'':' broke')+'" onclick="LW_HUT.buy('+i+')">'+s.price+' 💧'+earlyTag+'</button>';
+        html += '<button class="lwh-shop-buy'+(afford?'':' broke')+'" onclick="LW_HUT.buy('+i+')">'+s.price+' <span class="lwe lwe-drop"></span>'+earlyTag+'</button>';
       }
       html += '</div>';
     }
@@ -77358,7 +77563,7 @@ window._lwClaimHerbarium = function(id){
     // Surfacing the destination once per buy closes that loop.
     if (window._toast){
       var _itemNm = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[slot.key] && window.LW_ITEMS_CATALOG[slot.key].name) || slot.key;
-      try { window._toast('🌿 ' + _itemNm + ' added to your pouch · −' + slot.price + ' Dew'); } catch(e){}
+      try { window._toast('<span class="lwe lwe-leaf"></span> ' + _itemNm + ' added to your pouch · −' + slot.price + ' Dew', { html:true }); } catch(e){}
     }
     render();
   }
@@ -77430,7 +77635,8 @@ window._lwClaimHerbarium = function(id){
     var bal = (window.getTotalDew && window.getTotalDew()) || 0;
     var active = (window.getActiveWeather && window.getActiveWeather()) || null;
     var WT = window.WEATHER_TYPES || {};
-    var html = '<div class="lwh-section-text">Summon weather across your grove.</div>';
+    var html = '<div style="position:relative;width:100%;margin:0 0 0.6rem;border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);border:1px solid rgba(200,168,75,0.32);"><img src="assets/weather-book.png" alt="Weather Almanac" style="display:block;width:100%;height:auto;"></div>';
+    html += '<div class="lwh-section-text">Summon weather across your grove.</div>';
     if (active && WT[active.type]){
       var aw = WT[active.type];
       var rem = active.endAt ? Math.max(0, Math.ceil((active.endAt - Date.now())/3600000)) + 'h remaining' : 'one-time effect';
@@ -77445,7 +77651,7 @@ window._lwClaimHerbarium = function(id){
         '<img src="assets/weather/weather-'+imgKey+'.png" alt="" onerror="this.outerHTML=\'<div class=&quot;lwh-weather-emoji&quot;>'+t.icon+'</div>\';">' +
         '<div class="lwh-weather-name">'+t.name+'</div>' +
         '<div class="lwh-weather-desc">'+t.desc+'</div>' +
-        '<div class="lwh-weather-cost">'+t.cost+' 💧</div>' +
+        '<div class="lwh-weather-cost">'+t.cost+' <span class="lwe lwe-drop"></span></div>' +
         '</button>';
     }
     html += '</div>';
@@ -77465,12 +77671,12 @@ window._lwClaimHerbarium = function(id){
     body.innerHTML =
       '<div class="lwh-section-text">Spin three reels. Match for Dew.</div>' +
       '<div class="lwh-slots-frame">' +
-        '<div class="lwh-slots-art"><img src="assets/btn-slots.png" alt="Slots"></div>' +
+        '<div class="lwh-slots-art"><img src="assets/slots.png" alt="Slots"></div>' +
         '<div class="lwh-slots-summary">' +
-          '<div>Pull cost <b>15 💧</b></div>' +
-          '<div>Pair pays <b>10 💧</b></div>' +
-          '<div>Triple pays <b>80–8000 💧</b></div>' +
-          '<div>Top tier (☀️×3) JACKPOT · 8000 💧 +15 🌿</div>' +
+          '<div>Pull cost <b>15 <span class="lwe lwe-drop"></span></b></div>' +
+          '<div>Pair pays <b>10 <span class="lwe lwe-drop"></span></b></div>' +
+          '<div>Triple pays <b>80–8000 <span class="lwe lwe-drop"></span></b></div>' +
+          '<div>Top tier (<span class="lwe lwe-sun"></span>×3) JACKPOT · 8000 <span class="lwe lwe-drop"></span> +15 <span class="lwe lwe-leaf"></span></div>' +
         '</div>' +
         '<button class="lwh-slots-pull" onclick="LW_HUT.openSlots()">OPEN SLOT MACHINE</button>' +
       '</div>';
@@ -77539,7 +77745,7 @@ window._lwClaimHerbarium = function(id){
     // Confirmation toast — show what you got from the trade
     if (window._toast){
       var _gNm = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[q.recipe.give.key] && window.LW_ITEMS_CATALOG[q.recipe.give.key].name) || q.recipe.give.key;
-      try { window._toast('🌿 ' + (q.recipe.give.n>1?q.recipe.give.n+'× ':'') + _gNm + ' added to your pouch'); } catch(e){}
+      try { window._toast('<span class="lwe lwe-leaf"></span> ' + (q.recipe.give.n>1?q.recipe.give.n+'× ':'') + _gNm + ' added to your pouch', { html:true }); } catch(e){}
     }
     render();
   }
@@ -78049,14 +78255,85 @@ window.LW_debug.cleanGhostDrops = function(){
   try { setTimeout(tryDailyGrant, 3000); } catch(e){}
 })();
 
-// ═══ LW_HUNT — seasonal Firefly Hunt (scavenger hunt per season) ═══
+// ═══ LW_HUNT — Seasonal Scavenger Hunt ═══
 // Each real season, 12 fireflies drift through the UI. Catch them all
-// before the solstice for a unique seasonal prize. Design credit: L.
-// (Stephen's daughter). Copy voiced to stay playful inside the
-// midnight-greenhouse tone.
+// before the solstice for a permanent upgrade, a commemorative scroll,
+// a seasonal title, a cosmetic, and bonus materials. The mechanic was
+// originally designed by L. (Stephen's daughter, age 7); the world voice
+// is now solely the hermit's so the narrative stays coherent.
 (function(){
   'use strict';
   var TOTAL_PER_SEASON = 12;
+
+  // ── SEASON THEMES ─────────────────────────────────────────────────
+  // Per-season prologue + epilogue + capstone artifact spec.
+  // Prologue shown at top of HUNT tab. Epilogue shown on capstone claim.
+  // Upgrade effects are cumulative — completing the same season in
+  // future years stacks the base amount (Year 2 +1 becomes +2, etc.).
+  var SEASON_THEMES = {
+    spring: {
+      label:    'The Returning',
+      titleStr: 'The Returning Keeper',
+      prologue: 'The hermit watches the soil for what comes back. "The first ones never announce themselves. They glint, then they are gone. Look small. Look quick."',
+      epilogue: 'Twelve glints, twelve returnings. You watched the season come alive and you missed nothing.',
+      upgrade:  { key: 'fert_slot_bonus',     label: '+1 fertilizer slot per compost',   amount: 1 },
+      cosmetic: { key: 'frame_returning',     label: 'Returning Frame' },
+      prompts:  [
+        { id:'spring_w1', type:'witness', text:'Witness 5 blooms open',     hook:{kind:'counter_delta', key:'blooms_total',  target:5}, reward:{dew:25} },
+        { id:'spring_w2', type:'witness', text:'Cross-pollinate 3 times',   hook:{kind:'counter_delta', key:'crosses_total', target:3}, reward:{dew:25} },
+        { id:'spring_v1', type:'visit',   text:'Walk into 2 different biomes', hook:{kind:'biomes_distinct', target:2},                  reward:{dew:50} },
+        { id:'spring_v2', type:'visit',   text:'Stand in a Garden biome',   hook:{kind:'biome_match', value:'garden'},                   reward:{dew:50} }
+      ]
+    },
+    summer: {
+      label:    'The Long Day',
+      titleStr: 'The Long Day Watcher',
+      prologue: 'The hermit walks the garden with a notebook. "Bees go quiet at noon — the heat tightens them. But the fireflies stay. They like the long days more than anyone admits."',
+      epilogue: 'The longest light of the year passed through your hands and you held it twelve times over.',
+      upgrade:  { key: 'noon_dew_bonus',      label: '+1 Dew tick from your wild plants at noon hours', amount: 1 },
+      cosmetic: { key: 'frame_long_day',      label: 'Long Day Frame' },
+      prompts:  [
+        { id:'summer_w1', type:'witness', text:'Win 5 minigames',           hook:{kind:'counter_delta', key:'games_won_total', target:5}, reward:{dew:25} },
+        { id:'summer_w2', type:'witness', text:"Tend a stranger's plant 3 times", hook:{kind:'counter_delta', key:'tend_strangers', target:3}, reward:{dew:25} },
+        { id:'summer_v1', type:'visit',   text:'Stand in a Coastal biome',  hook:{kind:'biome_match', value:'coastal'},                   reward:{dew:50} },
+        { id:'summer_v2', type:'visit',   text:'Forage 5 times',            hook:{kind:'counter_delta', key:'forage_solved', target:5},  reward:{dew:50} }
+      ]
+    },
+    autumn: {
+      label:    'The Falling Path',
+      titleStr: 'The Falling Path Walker',
+      prologue: 'The hermit reads old entries by candle. "Autumn is a careful undoing. What you find now you will not find again. Treat each glimpse as a memory before it has finished happening."',
+      epilogue: 'You walked the falling path. The season let you keep what it was about to lose.',
+      // Autumn ships cosmetic-only — the falling-path scroll is the
+      // permanent artifact. No mechanical bonus, by design (avoids the
+      // harvest-pollen mismatch where harvest actually pays Dew, not pollen).
+      upgrade:  { key: 'falling_path_scroll', label: 'Falling Path scroll style unlocked', amount: 0 },
+      cosmetic: { key: 'frame_falling_path',  label: 'Falling Path Frame' },
+      prompts:  [
+        { id:'autumn_w1', type:'witness', text:'Compost 5 plants',          hook:{kind:'counter_delta', key:'compost_total',  target:5}, reward:{dew:25} },
+        { id:'autumn_w2', type:'witness', text:'Take 3 cuttings',           hook:{kind:'counter_delta', key:'clipping_total', target:3}, reward:{dew:25} },
+        { id:'autumn_v1', type:'visit',   text:'Walk into 3 different biomes', hook:{kind:'biomes_distinct', target:3},                  reward:{dew:50} },
+        { id:'autumn_v2', type:'visit',   text:'Stand in a Forest biome',   hook:{kind:'biome_match', value:'forest'},                   reward:{dew:50} }
+      ]
+    },
+    winter: {
+      label:    'The Watching',
+      titleStr: 'The Long Night Keeper',
+      prologue: 'The hermit keeps a count of what survives. "The dormant ones do not sleep, they watch. If you are quiet, they will let you watch with them."',
+      epilogue: 'Twelve quiet hours, twelve quiet finds. The dormant garden noted you, and remembered.',
+      upgrade:  { key: 'dormancy_grace_days', label: '+1 day of dormancy grace before climate decay', amount: 1 },
+      cosmetic: { key: 'frame_watching',      label: 'Watching Frame' },
+      prompts:  [
+        { id:'winter_w1', type:'witness', text:'Mint a Legendary or Mythic plant', hook:{kind:'counter_delta_any', keys:['mint_legendary','mint_cosmic'], target:1}, reward:{dew:50} },
+        { id:'winter_w2', type:'witness', text:'Visit during a full moon',         hook:{kind:'counter_delta', key:'full_moon_visits', target:1}, reward:{dew:25} },
+        { id:'winter_v1', type:'visit',   text:'Stand in a Mountain biome',        hook:{kind:'biome_match', value:'mountain'},                  reward:{dew:50} },
+        { id:'winter_v2', type:'visit',   text:'Plant 3 wild plants',              hook:{kind:'counter_delta', key:'wild_drops', target:3},      reward:{dew:50} }
+      ]
+    }
+  };
+  // Materials still grant on capstone — stack alongside the artifact.
+  var CAPSTONE_DEW = 500;
+  var CAPSTONE_BOXES = 3;
   // Spawn locations — where a firefly can appear in the UI. The code
   // attaches a sprite to one of these hooks; tap collects. Each is
   // checked during renders / tab switches by _tryPlaceFirefly().
@@ -78106,18 +78383,306 @@ window.LW_debug.cleanGhostDrops = function(){
   }
   function _saveState(s){ try { localStorage.setItem(_stateKey(), JSON.stringify(s)); } catch(e){} }
 
+  // ── Season rollover + claim window ────────────────────────────────
+  // Last day of the last month of each season — matches _currentSeason()
+  // boundaries. Used to know when a season is officially over.
+  function _seasonEndTs(season, year) {
+    var y = parseInt(year, 10);
+    switch (season) {
+      case 'winter': return new Date(y, 2, 31, 23, 59, 59).getTime();  // March 31
+      case 'spring': return new Date(y, 5, 30, 23, 59, 59).getTime();  // June 30
+      case 'summer': return new Date(y, 8, 30, 23, 59, 59).getTime();  // September 30
+      case 'autumn': return new Date(y, 11, 31, 23, 59, 59).getTime(); // December 31
+    }
+    return 0;
+  }
+  function _parseHuntKey(k) {
+    var m = k.match(/^lw_hunt_(\d+)_(spring|summer|autumn|winter)$/);
+    return m ? { year: m[1], season: m[2] } : null;
+  }
+  // Silent artifact-stack grant — used by rollover when a state was
+  // completed but the modal/grant never fired (e.g., player offline at the
+  // moment of 12th catch, came back after season end). No celebration
+  // modal — just writes the ledger so they don't lose what they earned.
+  function _grantArtifactSilent(season, year, state) {
+    var theme = SEASON_THEMES[season];
+    if (!theme) return;
+    if (_isCompleted(season, year)) return;
+    _recordCompletion(season, year);
+    _bumpUpgrade(season);
+    _addUnique('lw_hunt_titles', theme.titleStr);
+    _addUnique('lw_hunt_cosmetics', theme.cosmetic.key);
+    _appendScroll(state);
+    if (window.earnDew) window.earnDew(CAPSTONE_DEW, 'hunt_complete_late');
+    if (window.LW_BOXES) window.LW_BOXES.add(CAPSTONE_BOXES);
+  }
+  // Memoized rollover. The actual check does a full localStorage scan;
+  // we only need it once per long while. 5 minutes between scans is plenty
+  // — season transitions happen at most quarterly, and the failure mode
+  // of a delayed scan is just a slightly delayed memento archive.
+  var _ROLLOVER_TTL_MS = 5 * 60 * 1000;
+  var _lastRolloverAt = 0;
+  function _checkSeasonRolloverThrottled(){
+    var now = Date.now();
+    if (now - _lastRolloverAt < _ROLLOVER_TTL_MS) return;
+    _lastRolloverAt = now;
+    try { _checkSeasonRollover(); } catch(e){}
+  }
+  // Scan all hunt states. For each non-current season:
+  //   - completed + already claimed → skip
+  //   - completed + unclaimed → silently grant the artifact stack
+  //     (this is the "auto-mail leftovers" path)
+  //   - partial + season ended → archive as a memento (one-time)
+  // Runs from _ensure() so any LW_HUNT operation triggers it.
+  function _checkSeasonRollover() {
+    var current = _currentSeason() + '-' + _yearTag();
+    var partials = _readJSON('lw_hunt_partial_scrolls', []);
+    var partialSeen = {};
+    for (var pi = 0; pi < partials.length; pi++) {
+      if (partials[pi]) partialSeen[partials[pi].season + '-' + partials[pi].year] = true;
+    }
+    var now = Date.now();
+    var partialsChanged = false;
+    for (var li = 0; li < localStorage.length; li++) {
+      var k = localStorage.key(li);
+      if (!k) continue;
+      var parsed = _parseHuntKey(k);
+      if (!parsed) continue;
+      var keyId = parsed.season + '-' + parsed.year;
+      if (keyId === current) continue;
+      var st;
+      try { st = JSON.parse(localStorage.getItem(k) || 'null'); } catch(e) { st = null; }
+      if (!st || !st.spawned) continue;
+      var caught = 0;
+      for (var ci = 0; ci < st.spawned.length; ci++) {
+        if (st.spawned[ci] && st.spawned[ci].caught) caught++;
+      }
+      var seasonEnd = _seasonEndTs(parsed.season, parsed.year);
+      var pastSeasonEnd = now > seasonEnd;
+      if (caught >= TOTAL_PER_SEASON) {
+        if (!st.prizeGranted) {
+          st.prizeGranted = true;
+          try { localStorage.setItem(k, JSON.stringify(st)); } catch(e){}
+          _grantArtifactSilent(parsed.season, parsed.year, st);
+        }
+      } else if (pastSeasonEnd && !partialSeen[keyId]) {
+        partials.push({
+          season: parsed.season, year: parsed.year,
+          caughtCount: caught, total: TOTAL_PER_SEASON,
+          archivedAt: now, endedAt: seasonEnd
+        });
+        partialSeen[keyId] = true;
+        partialsChanged = true;
+      }
+    }
+    if (partialsChanged) _writeJSON('lw_hunt_partial_scrolls', partials);
+  }
+
+  // Snapshot the lifetime LW_ACH counters that the season's prompts care
+  // about. We freeze them at season start so prompt progress is "delta
+  // since season started" rather than lifetime totals.
+  function _snapshotCounters(season) {
+    var snap = {};
+    var theme = SEASON_THEMES[season];
+    if (!theme || !theme.prompts || !window.LW_ACH) return snap;
+    for (var i = 0; i < theme.prompts.length; i++) {
+      var hook = theme.prompts[i].hook;
+      if (hook.kind === 'counter_delta' && hook.key) {
+        snap[hook.key] = window.LW_ACH.get(hook.key) || 0;
+      } else if (hook.kind === 'counter_delta_any' && hook.keys) {
+        for (var ki = 0; ki < hook.keys.length; ki++) {
+          snap[hook.keys[ki]] = window.LW_ACH.get(hook.keys[ki]) || 0;
+        }
+      }
+    }
+    return snap;
+  }
+
+  // Read + parse the biome cache once per evaluation pass. Pass the
+  // result into _evalPrompt so multiple prompts don't reparse it.
+  function _readBiomeCache() {
+    try { return JSON.parse(localStorage.getItem('lw_biome_cache') || '{}'); }
+    catch(e){
+      try { localStorage.removeItem('lw_biome_cache'); } catch(e2){}
+      return {};
+    }
+  }
+
+  // Evaluate a single prompt against current state. Returns
+  // {progress, target, complete}. target=1 for binary prompts.
+  // biomeCache is optional — pass to avoid reparsing across prompts.
+  function _evalPrompt(prompt, state, biomeCache) {
+    var hook = prompt.hook;
+    var snapshot = state.counterSnapshot || {};
+    var startedAt = state.startedAt || 0;
+    if (hook.kind === 'counter_delta' && hook.key) {
+      var cur = (window.LW_ACH && window.LW_ACH.get(hook.key)) || 0;
+      var base = snapshot[hook.key] || 0;
+      var prog = Math.max(0, cur - base);
+      return { progress: prog, target: hook.target, complete: prog >= hook.target };
+    }
+    if (hook.kind === 'counter_delta_any' && hook.keys) {
+      var sum = 0;
+      for (var i = 0; i < hook.keys.length; i++) {
+        var c = (window.LW_ACH && window.LW_ACH.get(hook.keys[i])) || 0;
+        var b = snapshot[hook.keys[i]] || 0;
+        sum += Math.max(0, c - b);
+      }
+      return { progress: sum, target: hook.target, complete: sum >= hook.target };
+    }
+    if (hook.kind === 'biome_match' && hook.value) {
+      var cache = biomeCache || _readBiomeCache();
+      for (var bk in cache) {
+        if (bk === '_lastBiome') continue;
+        var entry = cache[bk];
+        // Defensive: skip malformed entries (no biome or no ts).
+        if (entry && entry.biome === hook.value && (entry.ts || 0) >= startedAt) {
+          return { progress: 1, target: 1, complete: true };
+        }
+      }
+      return { progress: 0, target: 1, complete: false };
+    }
+    if (hook.kind === 'biomes_distinct') {
+      var cache2 = biomeCache || _readBiomeCache();
+      var seen = {};
+      for (var bk2 in cache2) {
+        if (bk2 === '_lastBiome') continue;
+        var e2 = cache2[bk2];
+        if (e2 && e2.biome && (e2.ts || 0) >= startedAt) seen[e2.biome] = true;
+      }
+      var n = 0; for (var sk in seen) n++;
+      return { progress: n, target: hook.target, complete: n >= hook.target };
+    }
+    return { progress: 0, target: 1, complete: false };
+  }
+
+  // Eval all prompts for the active season. New completions grant the
+  // prompt's reward + log a journal entry. State.promptsDone tracks
+  // which prompts have already paid out so we don't double-grant.
+  // We mark+save BEFORE side effects so any re-entry (e.g., earnDew
+  // triggers another _ensure) sees the prompt as done.
+  function _evalAllPrompts(state) {
+    if (!state) return;
+    var theme = SEASON_THEMES[state.season];
+    if (!theme || !theme.prompts) return;
+    if (!state.promptsDone) state.promptsDone = {};
+    var biomeCache = _readBiomeCache();
+    var newlyComplete = [];
+    for (var i = 0; i < theme.prompts.length; i++) {
+      var p = theme.prompts[i];
+      if (state.promptsDone[p.id]) continue;
+      var ev = _evalPrompt(p, state, biomeCache);
+      if (ev.complete) {
+        state.promptsDone[p.id] = Date.now();
+        newlyComplete.push(p);
+      }
+    }
+    // Persist the completion record FIRST. This way any side-effect
+    // re-entry into _ensure() sees promptsDone[p.id] as true and skips.
+    if (newlyComplete.length) _saveState(state);
+    // Now fire side effects (rewards, toasts, journal log).
+    for (var ni = 0; ni < newlyComplete.length; ni++) {
+      var np = newlyComplete[ni];
+      if (np.reward && np.reward.dew && window.earnDew) {
+        window.earnDew(np.reward.dew, 'hunt_prompt');
+      }
+      if (window._toast) {
+        var rewardChip = np.reward && np.reward.dew ? ' · +' + np.reward.dew + ' Dew' : '';
+        window._toast('<span class="lwe lwe-sparkle"></span> ' + np.text + rewardChip, { html:true });
+      }
+      if (window._logWildEvent) {
+        try { window._logWildEvent({ type:'hunt_prompt', id:np.id, text:np.text, season:state.season }); } catch(e){}
+      }
+    }
+  }
+
+  // ── Weekly hint pacer ─────────────────────────────────────────────
+  // 12 fireflies = 12 weeks. Each week index N (0..11) gets one
+  // hermit-voiced hint pointing to firefly N's location. Hints drop
+  // into the JOURNAL feed. If a player misses several weeks, the
+  // missed hints all drop in one batch on next visit.
+  function _hintForFirefly(firefly) {
+    if (!firefly || !firefly.location) return null;
+    var spot = null;
+    for (var si = 0; si < SPOTS.length; si++) if (SPOTS[si].id === firefly.location) { spot = SPOTS[si]; break; }
+    if (!spot) return null;
+    // Hermit's voice — soft, declarative, never demanding. Caps the line
+    // around 90 chars so it reads cleanly in the JOURNAL chip.
+    return 'The hermit saw something glint ' + spot.desc + ' last evening. Look there this week.';
+  }
+  function _checkWeeklyHints(state) {
+    if (!state || !state.startedAt) return;
+    if (!state.hintsDropped) state.hintsDropped = {};
+    var weekMs = 7 * 86400000;
+    var nowWeek = Math.floor((Date.now() - state.startedAt) / weekMs);
+    var maxWeek = Math.min(nowWeek, TOTAL_PER_SEASON - 1);
+    var changed = false;
+    var droppedCount = 0;
+    for (var w = 0; w <= maxWeek; w++) {
+      if (state.hintsDropped[w]) continue;
+      var firefly = state.spawned[w];
+      if (!firefly) continue;
+      if (firefly.caught) {
+        // Already caught — skip the hint cleanly. Mark it as dropped
+        // so we don't reconsider next pass.
+        state.hintsDropped[w] = true;
+        changed = true;
+        continue;
+      }
+      var hintText = _hintForFirefly(firefly);
+      if (!hintText) continue;
+      state.hintsDropped[w] = true;
+      changed = true;
+      droppedCount++;
+      if (window._logWildEvent) {
+        try { window._logWildEvent({
+          type: 'hunt_hint', text: hintText,
+          weekIdx: w, fireflyIdx: firefly.idx, season: state.season
+        }); } catch(e){}
+      }
+    }
+    if (changed) _saveState(state);
+    // Single batched toast for newly dropped hints. If the player missed
+    // multiple weeks, we don't spam them — one quiet line.
+    if (droppedCount > 0 && window._toast) {
+      var msg = droppedCount === 1
+        ? '<span class="lwe lwe-sparkle"></span> A hermit\'s hint waits in your journal.'
+        : '<span class="lwe lwe-sparkle"></span> ' + droppedCount + ' hermit\'s hints wait in your journal.';
+      window._toast(msg, { html: true });
+    }
+  }
+
   function _ensure(){
+    // Rollover check throttled to ~once per 5 minutes — full localStorage
+    // scan is wasted work on every catch / render. Season transitions
+    // happen quarterly so this is plenty.
+    _checkSeasonRolloverThrottled();
     var s = _loadState();
     if (!s.startedAt) {
       s = {
         season: _currentSeason(), year: _yearTag(), startedAt: Date.now(),
-        spawned: [], caught: [], prizeGranted: false
+        spawned: [], caught: [], prizeGranted: false,
+        counterSnapshot: _snapshotCounters(_currentSeason()),
+        promptsDone: {}
       };
       // Schedule spawns at roughly 7-day intervals across 90 days
       var cadenceMs = 90 * 86400000 / TOTAL_PER_SEASON;
       for (var i=0;i<TOTAL_PER_SEASON;i++) s.spawned.push({ idx:i, at:s.startedAt + i*cadenceMs, location:SPOTS[i%SPOTS.length].id, caught:false });
       _saveState(s);
+    } else {
+      // Migration: pre-Phase-2 states won't have counterSnapshot/promptsDone.
+      // Initialize them so prompts can evaluate from the moment we load.
+      var migrated = false;
+      if (!s.counterSnapshot) { s.counterSnapshot = _snapshotCounters(s.season); migrated = true; }
+      if (!s.promptsDone) { s.promptsDone = {}; migrated = true; }
+      if (migrated) _saveState(s);
     }
+    // Run prompt evaluation on every ensure — cheap enough (small fixed
+    // set of counters + biome cache scan).
+    try { _evalAllPrompts(s); } catch(_pe){}
+    // Weekly hint pacer — drops once per week per chapter, batches if
+    // the player missed several weeks.
+    try { _checkWeeklyHints(s); } catch(_he){}
     return s;
   }
 
@@ -78160,8 +78725,21 @@ window.LW_debug.cleanGhostDrops = function(){
       window.LW_ITEMS.add(commons[Math.floor(Math.random()*commons.length)], 1);
     }
     var lore = LORE[idx % LORE.length];
+    f.lore = lore;
     _showCatchToast(idx, lore);
     try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    // First-ever-catch delight: special toast the very first time the
+    // player ever catches a firefly across all seasons. One-shot, gentle.
+    try {
+      if (!localStorage.getItem('lw_hunt_first_catch_done')) {
+        localStorage.setItem('lw_hunt_first_catch_done', '1');
+        if (window._toast) {
+          setTimeout(function(){
+            window._toast('<span class="lwe lwe-sparkle"></span> Your first firefly. The hermit will keep counting from here.', { html:true });
+          }, 1800);
+        }
+      }
+    } catch(e){}
     // Engagement counters: hunt catch + late-night/dawn bonuses + streak.
     if (window.LW_ACH) {
       LW_ACH.bump('hunt_caught', 1);
@@ -78203,27 +78781,99 @@ window.LW_debug.cleanGhostDrops = function(){
     var p = progress();
     window._toast('\u2728 Firefly caught ('+p.caught+'/'+TOTAL_PER_SEASON+'): "'+lore+'"');
   }
+  // ── Completion + upgrade ledger ───────────────────────────────────
+  // lw_hunt_completed:  { 'spring-2026': true, ... }
+  // lw_hunt_upgrades:   { fert_slot_bonus: 2, ... } cumulative across years
+  // lw_hunt_titles:     [ 'The Returning Keeper', ... ]
+  // lw_hunt_cosmetics:  [ 'frame_returning', ... ]
+  // lw_hunt_scrolls:    [ { season,year,completedAt,caught:[...] }, ... ]
+  function _readJSON(k, fb){ try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(fb)); } catch(e){ return fb; } }
+  function _writeJSON(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  function _completionKey(season, year){ return season + '-' + year; }
+  function _isCompleted(season, year){
+    var done = _readJSON('lw_hunt_completed', {});
+    return !!done[_completionKey(season, year)];
+  }
+  function _recordCompletion(season, year){
+    var done = _readJSON('lw_hunt_completed', {});
+    done[_completionKey(season, year)] = true;
+    _writeJSON('lw_hunt_completed', done);
+  }
+  function _bumpUpgrade(seasonKey){
+    var theme = SEASON_THEMES[seasonKey];
+    if (!theme || !theme.upgrade) return;
+    var ups = _readJSON('lw_hunt_upgrades', {});
+    ups[theme.upgrade.key] = (ups[theme.upgrade.key] || 0) + theme.upgrade.amount;
+    _writeJSON('lw_hunt_upgrades', ups);
+  }
+  function _addUnique(listKey, value){
+    var arr = _readJSON(listKey, []);
+    if (arr.indexOf(value) < 0) { arr.push(value); _writeJSON(listKey, arr); }
+  }
+  function _appendScroll(state){
+    var caughtList = [];
+    for (var i = 0; i < (state.spawned||[]).length; i++) {
+      var sp = state.spawned[i];
+      if (sp && sp.caught) {
+        caughtList.push({ idx: sp.idx, location: sp.location, lore: sp.lore || '', caughtAt: sp.caughtAt || 0 });
+      }
+    }
+    var scrolls = _readJSON('lw_hunt_scrolls', []);
+    scrolls.push({ season: state.season, year: state.year, completedAt: Date.now(), caught: caughtList });
+    _writeJSON('lw_hunt_scrolls', scrolls);
+  }
+  // Read-only getter exposed so consumer systems (compost, dew tick,
+  // harvest, dormancy) can apply the cumulative bonus.
+  function getUpgrade(key){
+    var ups = _readJSON('lw_hunt_upgrades', {});
+    return ups[key] || 0;
+  }
+
   function _grantSeasonalPrize(){
-    // Stub: future pass grants a unique pot / companion / cosmetic.
-    // For now, 500 Dew + 3 Legendary mystery boxes.
-    var _hDew = 500, _hBoxes = 3;
+    var s = _ensure();
+    var theme = SEASON_THEMES[s.season] || SEASON_THEMES.spring;
+    var alreadyDone = _isCompleted(s.season, s.year);
+    var _hDew = CAPSTONE_DEW, _hBoxes = CAPSTONE_BOXES;
     if (window.earnDew) window.earnDew(_hDew, 'hunt_complete');
     if (window.LW_BOXES) window.LW_BOXES.add(_hBoxes);
     // Celebration modal — was just a vague toast promising "a prize in
     // the Book of Secrets" that never materialized. Now tells the
     // player what they actually won.
+    // Artifact stack \u2014 first-completion only. Materials granted above run every time
+    // (gate is upstream \u2014 prizeGranted only allows _grantSeasonalPrize once per season).
+    if (!alreadyDone) {
+      _recordCompletion(s.season, s.year);
+      _bumpUpgrade(s.season);
+      _addUnique('lw_hunt_titles', theme.titleStr);
+      _addUnique('lw_hunt_cosmetics', theme.cosmetic.key);
+      _appendScroll(s);
+    }
+    // Celebration modal \u2014 voiced through the hermit's per-season epilogue.
+    if (window._huntShowArtifactModal) window._huntShowArtifactModal();
+    else if (window._toast) window._toast(theme.titleStr + ' earned. Tribute granted.');
+  }
+  // Artifact modal \u2014 voiced through the hermit's epilogue. Called by
+  // _grantSeasonalPrize after materials are dispensed.
+  window._huntShowArtifactModal = function(){
+    var s = _ensure();
+    var theme = SEASON_THEMES[s.season] || SEASON_THEMES.spring;
     if (window._lwConfirm) {
+      var body = '';
+      body += '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);margin-bottom:0.7rem;line-height:1.5;">' + theme.epilogue + '</div>';
+      body += '<div style="padding:0.65rem 0.7rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:8px;margin-bottom:0.35rem;">';
+      body += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.14em;color:var(--gold);margin-bottom:6px;">YOUR TRIBUTE</div>';
+      body += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.8;">';
+      body += '<div><span class="lwe lwe-sparkle"></span> Title earned \u00b7 <b style="color:var(--gold);">' + theme.titleStr + '</b></div>';
+      body += '<div><span class="lwe lwe-book"></span> Scroll added to your archive</div>';
+      body += '<div><span class="lwe lwe-bloom"></span> ' + theme.upgrade.label + ' (permanent)</div>';
+      body += '<div><span class="lwe lwe-flowers"></span> Cosmetic unlocked \u00b7 ' + theme.cosmetic.label + '</div>';
+      body += '<div><span class="lwe lwe-drop"></span> +' + CAPSTONE_DEW + ' Dew \u00b7 \u00d7' + CAPSTONE_BOXES + ' Legendary Box</div>';
+      body += '</div></div>';
       window._lwConfirm({
-        title: '<span class="lwe lwe-sparkle"></span> SEASONAL HUNT COMPLETE',
-        body: '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);margin-bottom:0.6rem;">You caught all twelve fireflies. The season pays its tribute.</div>' +
-              '<div style="padding:0.6rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:8px;margin-bottom:0.3rem;">' +
-              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:4px;">PRIZE</div>' +
-              '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.6;">+' + _hDew + ' Dew<br>\u00d7' + _hBoxes + ' Legendary Mystery Box</div>' +
-              '</div>',
+        title: '<span class="lwe lwe-trophy-cup"></span> ' + theme.label.toUpperCase(),
+        body: body,
         yes: 'WONDERFUL', no: ''
       }, function(){});
-    } else if (window._toast) {
-      window._toast('\u2728 Seasonal Hunt complete, +' + _hDew + ' Dew + ' + _hBoxes + ' Legendary Boxes.');
     }
   }
 
@@ -78233,12 +78883,59 @@ window.LW_debug.cleanGhostDrops = function(){
     var prog = progress();
     var seasonEmblem = {spring:'\ud83c\udf38',summer:'\u2600\ufe0f',autumn:'\ud83c\udf42',winter:'\u2744\ufe0f'}[s.season] || '\u2728';
     var h = '';
+    var theme = SEASON_THEMES[s.season] || SEASON_THEMES.spring;
+    // Previous-season summary chip (if rollover archive has anything).
+    // Surfaces what was earned/missed last season as a memento — Stephen
+    // 2026-04-27: "no shame for incomplete seasons".
+    var partials = _readJSON('lw_hunt_partial_scrolls', []);
+    var scrolls = _readJSON('lw_hunt_scrolls', []);
+    var lastEvent = null;
+    for (var lpi = partials.length-1; lpi >= 0; lpi--) {
+      if (partials[lpi]) { lastEvent = { type:'partial', data: partials[lpi] }; break; }
+    }
+    for (var lsi = scrolls.length-1; lsi >= 0; lsi--) {
+      if (scrolls[lsi] && (!lastEvent || (scrolls[lsi].completedAt > (lastEvent.data.archivedAt||lastEvent.data.completedAt||0)))) {
+        lastEvent = { type:'completed', data: scrolls[lsi] };
+        break;
+      }
+    }
+    if (lastEvent) {
+      var prevSeasonLabel = (SEASON_THEMES[lastEvent.data.season]||{label:lastEvent.data.season}).label;
+      var prevColor = lastEvent.type==='completed' ? 'var(--gold)' : 'var(--muted)';
+      var prevSummary = lastEvent.type==='completed'
+        ? prevSeasonLabel + ' · complete'
+        : prevSeasonLabel + ' · ' + (lastEvent.data.caughtCount||0) + ' / ' + TOTAL_PER_SEASON;
+      h += '<div style="padding:0.5rem 0.7rem;background:rgba(13,16,12,0.55);border:1px solid '+(lastEvent.type==='completed'?'rgba(200,168,75,0.35)':'rgba(122,179,86,0.18)')+';border-radius:8px;margin-bottom:0.7rem;display:flex;justify-content:space-between;align-items:center;">';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;">MOST RECENT SEASON</div>';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:'+prevColor+';letter-spacing:0.08em;">'+prevSummary+'</div>';
+      h += '</div>';
+    }
     h += '<div style="padding:0.8rem;background:linear-gradient(180deg,rgba(46,38,18,0.4),rgba(18,22,16,0.7));border:1.5px solid rgba(200,168,75,0.3);border-radius:12px;margin-bottom:0.9rem;">';
-    h += '<div style="font-family:Playfair Display,serif;font-size:1.05rem;font-style:italic;color:var(--gold);margin-bottom:0.3rem;">'+seasonEmblem+' The '+s.season.charAt(0).toUpperCase()+s.season.slice(1)+' Hunt</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);line-height:1.7;">Twelve fireflies hide in the garden each season. Catch them all before the next solstice for a prize only found this way.</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.5rem;font-style:italic;">\u2014 L., age 7</div>';
+    h += '<div style="font-family:Playfair Display,serif;font-size:1.05rem;font-style:italic;color:var(--gold);margin-bottom:0.3rem;">'+seasonEmblem+' '+theme.label+'</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.12em;margin-bottom:0.5rem;">'+s.season.toUpperCase()+' SEASONAL SCAVENGER HUNT</div>';
+    h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:var(--cream);line-height:1.6;">'+theme.prologue+'</div>';
+    // Current chapter hint chip — show the most recent hermit hint
+    // for an uncaught firefly. Falls back silently if no hint exists.
+    var weekMs = 7*86400000;
+    var nowWeek = Math.floor((Date.now() - s.startedAt) / weekMs);
+    var curWeek = Math.min(nowWeek, TOTAL_PER_SEASON - 1);
+    var currentHintFirefly = null;
+    for (var hwi = curWeek; hwi >= 0; hwi--) {
+      var hwf = s.spawned[hwi];
+      if (hwf && !hwf.caught) { currentHintFirefly = hwf; break; }
+    }
+    if (currentHintFirefly) {
+      var hintText = _hintForFirefly(currentHintFirefly);
+      if (hintText) {
+        h += '<div style="margin-top:0.7rem;padding:0.5rem 0.7rem;background:rgba(13,16,12,0.55);border-left:2.5px solid rgba(232,200,106,0.55);border-radius:6px;">';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;letter-spacing:0.14em;color:rgba(232,200,106,0.7);margin-bottom:3px;">HERMIT&rsquo;S HINT</div>';
+        h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.62rem;color:var(--cream);line-height:1.55;">'+hintText+'</div>';
+        h += '</div>';
+      }
+    }
     h += '</div>';
-    h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-bottom:5px;"><span>'+prog.caught+' / '+TOTAL_PER_SEASON+' caught</span><span>'+prog.available+' spawned so far</span></div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.16em;color:var(--gold);margin:0.7rem 0 0.4rem;"><span class="lwe lwe-sparkle"></span> FIREFLIES</div>';
+    h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-bottom:5px;"><span>'+prog.caught+' / '+TOTAL_PER_SEASON+' caught</span><span title="Fireflies arrive over time. The rest are still on their way.">'+prog.available+' available now</span></div>';
     h += '<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.9rem;"><div style="height:100%;width:'+(100*prog.caught/TOTAL_PER_SEASON)+'%;background:linear-gradient(90deg,rgba(200,168,75,0.8),rgba(122,179,86,0.8));border-radius:2px;"></div></div>';
     h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">';
     for (var i=0;i<TOTAL_PER_SEASON;i++){
@@ -78253,15 +78950,59 @@ window.LW_debug.cleanGhostDrops = function(){
       h += '</div>';
     }
     h += '</div>';
+    // Witness + Visit prompts — bonus discovery cards below the firefly
+    // grid. Auto-evaluate from natural play. Each completion grants Dew.
+    if (theme.prompts && theme.prompts.length) {
+      var doneN = 0; for (var dpi=0;dpi<theme.prompts.length;dpi++) { if (s.promptsDone && s.promptsDone[theme.prompts[dpi].id]) doneN++; }
+      h += '<div style="margin-top:1rem;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.14em;color:var(--gold);">SEASONAL DISCOVERIES</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+doneN+' / '+theme.prompts.length+'</div>';
+      h += '</div>';
+      h += '<div style="display:flex;flex-direction:column;gap:5px;">';
+      for (var pi = 0; pi < theme.prompts.length; pi++) {
+        var pt = theme.prompts[pi];
+        var ev = _evalPrompt(pt, s);
+        var done = !!(s.promptsDone && s.promptsDone[pt.id]);
+        var typeIcon = pt.type === 'witness' ? '<span class="lwe lwe-sparkle"></span>' : '<span class="lwe lwe-globe"></span>';
+        var typeLabel = pt.type === 'witness' ? 'WITNESS' : 'VISIT';
+        var typeColor = pt.type === 'witness' ? 'rgba(200,168,75,0.7)' : 'rgba(122,179,86,0.7)';
+        var bg = done ? 'rgba(122,179,86,0.10)' : 'rgba(13,16,12,0.55)';
+        var border = done ? 'rgba(122,179,86,0.45)' : (pt.type === 'witness' ? 'rgba(200,168,75,0.18)' : 'rgba(122,179,86,0.18)');
+        var pct = ev.target > 1 ? Math.min(100, Math.round((ev.progress / ev.target) * 100)) : (ev.complete ? 100 : 0);
+        h += '<div style="padding:0.5rem 0.65rem;background:'+bg+';border:1px solid '+border+';border-radius:8px;">';
+        h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:3px;">';
+        h += typeIcon;
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:'+typeColor+';letter-spacing:0.14em;">'+typeLabel+'</div>';
+        if (done) {
+          h += '<div style="margin-left:auto;font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:var(--sage);letter-spacing:0.1em;">DONE</div>';
+        } else if (ev.target > 1) {
+          h += '<div style="margin-left:auto;font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">'+ev.progress+' / '+ev.target+'</div>';
+        }
+        h += '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:'+(done?'var(--sage)':'var(--cream)')+';line-height:1.5;">'+pt.text+'</div>';
+        if (!done && ev.target > 1) {
+          h += '<div style="height:3px;background:rgba(74,124,53,0.08);border-radius:2px;overflow:hidden;margin-top:5px;"><div style="height:100%;width:'+pct+'%;background:'+typeColor+';"></div></div>';
+        }
+        if (pt.reward && pt.reward.dew) {
+          h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-top:3px;">'+(done?'Earned':'Reward')+' · +'+pt.reward.dew+' Dew</div>';
+        }
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
     if (prog.caught >= TOTAL_PER_SEASON) {
       h += '<div style="margin-top:1rem;padding:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(74,124,53,0.08));border:1.5px solid var(--gold);border-radius:12px;text-align:center;">';
       h += '<div style="font-family:Playfair Display,serif;font-size:0.95rem;font-style:italic;color:var(--gold);">\u2728 Hunt complete.</div>';
       // Prize contents — used to say "the season rewarded you" without
       // naming the prize. Now lists what the player actually received.
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);margin-top:0.5rem;line-height:1.8;">';
-      h += '<div style="color:var(--muted);font-size:0.55rem;letter-spacing:0.1em;margin-bottom:4px;">YOU EARNED</div>';
-      h += '<div>+500 Dew</div>';
-      h += '<div>\u00d73 Legendary Mystery Box</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.85;padding:0.5rem 0.7rem;background:rgba(13,16,12,0.5);border-radius:8px;">';
+      h += '<div style="color:var(--muted);font-size:0.5rem;letter-spacing:0.12em;margin-bottom:6px;">YOUR TRIBUTE</div>';
+      h += '<div><span class="lwe lwe-sparkle"></span> '+theme.titleStr+'</div>';
+      h += '<div><span class="lwe lwe-book"></span> Scroll archived</div>';
+      h += '<div><span class="lwe lwe-bloom"></span> '+theme.upgrade.label+'</div>';
+      h += '<div><span class="lwe lwe-flowers"></span> '+theme.cosmetic.label+'</div>';
+      h += '<div><span class="lwe lwe-drop"></span> +'+CAPSTONE_DEW+' Dew \u00b7 \u00d7'+CAPSTONE_BOXES+' Legendary Box</div>';
       h += '</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.6rem;font-style:italic;">Come back next season \u2014 twelve new fireflies, new prizes.</div>';
       h += '</div>';
@@ -78287,7 +79028,7 @@ window.LW_debug.cleanGhostDrops = function(){
           h += '</div>';
         }
       } catch(_eN){}
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);text-align:center;margin-top:0.8rem;line-height:1.7;">Fireflies hide across the game, the Wild map, the nursery, the Book. Keep your eyes open. One spawns every 7 to 8 days.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);text-align:center;margin-top:0.8rem;line-height:1.7;font-style:italic;">Fireflies appear naturally as you play. The hermit’s weekly hint will point you toward the next one.</div>';
     }
     // Lifetime hunt stats: scan localStorage for lw_hunt_<year>_<season> keys.
     try {
@@ -78387,7 +79128,13 @@ window.LW_debug.cleanGhostDrops = function(){
     pickActiveFirefly: pickActiveFirefly, spriteHTML: spriteHTML,
     _placeFloatingFirefly: _placeFloatingFirefly,
     _placeOnAnchor: _placeOnAnchor, sweepAnchors: sweepAnchors,
-    _bosContent: _bosContent
+    _bosContent: _bosContent,
+    // Public getter for cumulative season-completion upgrades. Consumer
+    // systems (compost, harvest, dew tick, dormancy) read these to apply
+    // the bonus. Keys: fert_slot_bonus, noon_dew_bonus, harvest_pollen_pct,
+    // dormancy_grace_days. Returns 0 if never earned.
+    getUpgrade: getUpgrade,
+    SEASON_THEMES: SEASON_THEMES
   };
   window.LW_debug = window.LW_debug || {};
   window.LW_debug.spawnFirefly = function(){
@@ -78397,6 +79144,39 @@ window.LW_debug.cleanGhostDrops = function(){
     _placeFloatingFirefly();
   };
   window.LW_debug.huntStatus = function(){ return progress(); };
+  // Dev: rewind state.startedAt by one week so the next week's hint
+  // becomes eligible. Run again to keep advancing. Useful for testing
+  // the weekly hint pacer without waiting 7 real days.
+  window.LW_debug.advanceHuntWeek = function(){
+    var s = _ensure();
+    s.startedAt = (s.startedAt || Date.now()) - 7*86400000;
+    _saveState(s);
+    _checkWeeklyHints(s);
+    return { newStartedAt: s.startedAt, hintsDropped: s.hintsDropped };
+  };
+  // Dev: simulate full-season completion. Marks all 12 caught (clearing
+  // any prior catches), unsets prizeGranted so the artifact stack actually
+  // grants, then fires _grantSeasonalPrize. Lets you preview the capstone
+  // modal + ledger writes without actually catching 12 fireflies.
+  window.LW_debug.fireHuntCapstone = function(){
+    var s = _ensure();
+    var nowTs = Date.now();
+    for (var i=0;i<s.spawned.length;i++){
+      s.spawned[i].caught = true;
+      s.spawned[i].caughtAt = nowTs;
+      s.spawned[i].lore = s.spawned[i].lore || LORE[i % LORE.length];
+    }
+    s.prizeGranted = false;
+    // Wipe completion record for this season+year so the artifact path
+    // actually grants (otherwise alreadyDone gates the ledger writes).
+    var done = _readJSON('lw_hunt_completed', {});
+    delete done[_completionKey(s.season, s.year)];
+    _writeJSON('lw_hunt_completed', done);
+    _saveState(s);
+    _grantSeasonalPrize();
+    s.prizeGranted = true;
+    _saveState(s);
+  };
 
   // Place a firefly on Wild-tab switch when one is active; sweep non-Wild
   // anchors so keeper-bar / backpack / BoS fireflies appear too.
@@ -80755,18 +81535,15 @@ function _bosQuestsContent() {
   var _daysToMon = (8 - _dow) % 7; if (_daysToMon === 0) _daysToMon = 7;
 
   var h = '';
-  h += '<div style="padding:0.7rem 0.9rem 1rem;">';
+  h += '<div style="position:relative;padding:1.4rem 1.4rem 1.6rem;background:linear-gradient(180deg,rgba(13,16,12,0.32) 0%,rgba(13,16,12,0.18) 35%,rgba(13,16,12,0.18) 65%,rgba(13,16,12,0.45) 100%),url(\'assets/questsbackdropscroll.png\') center top/100% auto no-repeat,#0d100c;background-attachment:local;border-radius:10px;box-shadow:0 0 0 1px rgba(200,168,75,0.18),0 8px 24px rgba(0,0,0,0.5);">';
   h += '<div style="text-align:center;margin-bottom:0.8rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.2rem;">QUESTS</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.2rem;text-shadow:0 1px 2px rgba(0,0,0,0.7);">QUESTS</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">' + doneCount + ' / ' + totalAch + ' achievements · ' + donePct + '%</div>';
   h += '</div>';
 
   // ─── DAILY ───
   h += '<div style="margin-bottom:1rem;">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);"><span class="lwe lwe-sun"></span> TODAY · ' + dailyDone + '/3</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">resets in ' + _dHrs + 'h</div>';
-  h += '</div>';
+  h += '<div style="position:relative;width:100%;margin:0 0 0.5rem;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);"><img src="assets/daily-quests.png" alt="Daily" style="display:block;width:100%;height:auto;"><div style="position:absolute;right:8px;bottom:6px;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);background:rgba(13,16,12,0.7);padding:3px 8px;border-radius:4px;border:1px solid rgba(200,168,75,0.35);">' + dailyDone + ' / 3 · resets in ' + _dHrs + 'h</div></div>';
   if (!dailyState.picks || dailyState.picks.length === 0) {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Daily picks load on next tab visit.</div>';
   } else {
@@ -80798,7 +81575,7 @@ function _bosQuestsContent() {
   var activeStatus = window._bosQuestStatus || 'all'; // all / done / undone
   var questSearch = String(window._bosQuestSearch || '').toLowerCase();
   h += '<div style="margin-bottom:0.5rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.4rem;">🏆 ACHIEVEMENTS</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.4rem;"><span class="lwe lwe-trophy-cup"></span> ACHIEVEMENTS</div>';
   // Search input
   h += '<input type="text" id="bos-quest-search" placeholder="Search achievements..." value="' + questSearch.replace(/"/g, '&quot;') + '" oninput="window._bosQuestSearch=this.value;clearTimeout(window._bosQuestSearchT);window._bosQuestSearchT=setTimeout(function(){window._bosSetTab&&_bosSetTab(\'quests\');var el=document.getElementById(\'bos-quest-search\');if(el){el.focus();var v=el.value;el.value=\'\';el.value=v;}},250);" style="width:100%;padding:6px 9px;background:rgba(18,22,16,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:5px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.5rem;outline:none;box-sizing:border-box;margin-bottom:5px;" />';
   // Status chips (done/undone)
@@ -80862,7 +81639,7 @@ function _bosQuestsContent() {
   }
   h += '<div style="margin-top:1rem;padding-top:0.7rem;border-top:1px solid rgba(200,168,75,0.15);">';
   h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);">🏵️ TROPHY CABINET</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);"><span class="lwe lwe-trophy-cup"></span> TROPHY CABINET</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">' + trophies.length + ' / ' + trophyCatalog.length + '</div>';
   h += '</div>';
   if (trophyCatalog.length === 0) {
@@ -80881,9 +81658,11 @@ function _bosQuestsContent() {
       var bg = earned ? 'linear-gradient(180deg,' + bColor + '22,' + bColor + '0a)' : 'rgba(18,22,16,0.5)';
       var border = earned ? bColor : 'rgba(122,179,86,0.12)';
       var displayName = earned ? tName : '???';
-      var icon = earned ? '🏆' : '·';
+      var TROPHY_BY_TIER = { bronze:'lwe-trophy-medal', silver:'lwe-trophy-shield', gold:'lwe-trophy-cup', platinum:'lwe-trophy-crown', mythic:'lwe-trophy-star' };
+      var trophyClass = TROPHY_BY_TIER[tEntry.tier] || 'lwe-trophy-cup';
+      var icon = earned ? '<span class="lwe ' + trophyClass + '" style="width:2em;height:2em;"></span>' : '·';
       h += '<div title="' + _esc(earned ? (tEntry.desc || tEntry.name) : 'A trophy waits to be earned.') + '" style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:8px;padding:0.5rem 0.3rem;text-align:center;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;' + (earned ? '' : 'opacity:0.45;') + '">';
-      h += '<div style="font-size:1.4rem;">' + icon + '</div>';
+      h += '<div style="font-size:1.4rem;line-height:1;display:flex;align-items:center;justify-content:center;">' + icon + '</div>';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.04em;color:' + (earned ? bColor : 'var(--muted)') + ';line-height:1.1;text-align:center;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + _esc(displayName) + '</div>';
       h += '</div>';
     }
@@ -81985,7 +82764,10 @@ function _bosSecretsContent() {
   // ─── COMPANION GALLERY ────────────────────────────────────────
   // All 60 companions in a 6-column grid. Discovered ones full color,
   // rest greyed with ??? name. Reads collection from greenhouse history.
-  try {
+  // Suppressed inside CODEX context (window._bosCodexMode) — the
+  // dedicated COMPANIONS section below already covers companions and
+  // showing both reads as a duplicate.
+  if (!window._bosCodexMode) try {
     if (window.TRAIT_BANK && window.TRAIT_BANK.companions) {
       var companions = window.TRAIT_BANK.companions;
       var seen = {};
@@ -82013,7 +82795,7 @@ function _bosSecretsContent() {
       }
       var seenCount = Object.keys(seen).length;
       h+='<div style="margin-bottom:0.8rem;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83d\udc3e COMPANIONS <span style="color:var(--muted);font-size:0.4rem;">'+seenCount+' / '+namedCount+'</span></div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;"><span class="lwe lwe-paw"></span> COMPANIONS <span style="color:var(--muted);font-size:0.4rem;">'+seenCount+' / '+namedCount+'</span></div>';
       h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;">';
       for (var ccx=20; ccx<companions.length; ccx++) {
         var comp = companions[ccx];
@@ -82041,7 +82823,7 @@ function _bosSecretsContent() {
     var biomeKeys=Object.keys(BIOMES);
     var biomeFound=Object.keys(discoveredBiomes).length;
     h+='<div style="margin-bottom:0.8rem;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">🌍 BIOMES <span style="color:var(--muted);font-size:0.4rem;">'+biomeFound+' / '+biomeKeys.length+'</span></div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;"><span class="lwe lwe-globe"></span> BIOMES <span style="color:var(--muted);font-size:0.4rem;">'+biomeFound+' / '+biomeKeys.length+'</span></div>';
     h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">';
     for(var bi2=0;bi2<biomeKeys.length;bi2++){
       var bm=BIOMES[biomeKeys[bi2]];
@@ -82092,12 +82874,12 @@ function _bosSecretsContent() {
     if(_shownCat.length===0)continue;
 
     h+='<div style="margin-bottom:0.8rem;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+cat.color+';letter-spacing:0.1em;margin-bottom:0.4rem;">'+cat.icon+' '+cat.label+' <span style="color:var(--muted);font-size:0.4rem;">🔍 '+catFound+' · 🌱 '+catGrown+' / '+catTriggers.length+'</span></div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+cat.color+';letter-spacing:0.1em;margin-bottom:0.4rem;">'+cat.icon+' '+cat.label+' <span style="color:var(--muted);font-size:0.4rem;"><span class="lwe lwe-magnifier"></span> '+catFound+' · <span class="lwe lwe-bloom"></span> '+catGrown+' / '+catTriggers.length+'</span></div>';
 
     for(var ti=0;ti<_shownCat.length;ti++){
       var tr=_shownCat[ti];
       var _isGrown=!!grownLookup[tr.id];
-      var _badges=_trBadge(tr.unlocked)+'🔍</span> '+_trBadge(_isGrown)+'🌱</span>';
+      var _badges=_trBadge(tr.unlocked)+'<span class="lwe lwe-magnifier" style="width:0.85em;height:0.85em;"></span></span> '+_trBadge(_isGrown)+'<span class="lwe lwe-bloom" style="width:0.85em;height:0.85em;"></span></span>';
       if(tr.unlocked){
         h+='<div style="padding:0.4rem;margin-bottom:4px;background:rgba(18,22,16,0.6);border:1px solid '+cat.color+'33;border-left:3px solid '+cat.color+';border-radius:6px;">';
         h+='<div style="display:flex;align-items:center;gap:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:'+cat.color+';flex:1;">'+tr.name+'</div><div style="display:flex;gap:3px;">'+_badges+'</div></div>';
@@ -82130,16 +82912,18 @@ window._openCompendiumUI=function(){
       if (window._lwConfirm) {
         window._lwConfirm({
           title: 'THE BOOK OF SECRETS',
-          body: 'Everything you discover lives here. The tabs fill in as you play.<br><br>' +
-                '\u2022 <b>TODAY</b> \u2014 your daily briefing<br>' +
-                '\u2022 <b>JOURNAL</b> \u2014 a diary of what you\u2019ve done<br>' +
-                '\u2022 <b>SECRETS</b> \u2014 synergies, mutations, achievements, and more<br>' +
-                '\u2022 <b>EVENTS</b> \u2014 rare moments and riddles to solve<br>' +
-                '\u2022 <b>MEMENTOS</b> \u2014 30-day companion keepsakes<br>' +
-                '\u2022 <b>HERBARIUM</b> \u2014 weekly collection goals<br>' +
-                '\u2022 <b>QUESTS</b> \u2014 long-term achievements with rewards<br><br>' +
-                '<b style="color:var(--gold);">A small gold number</b> will appear on any tab when something new is waiting. Reading the page clears it. No pop-ups \u2014 the book just quietly remembers.<br><br>' +
-                'Tap anything for its full story.',
+          body: '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);margin-bottom:0.7rem;line-height:1.5;">"Everything you find lives here. The pages fill themselves as you play. You don\u2019t have to read it all today."</div>' +
+                '\u2022 <b>TODAY</b> \u2014 what\u2019s fresh since you last visited<br>' +
+                '\u2022 <b>JOURNAL</b> \u2014 the timeline of your garden<br>' +
+                '\u2022 <b>SECRETS</b> \u2014 synergies and mythic plants<br>' +
+                '\u2022 <b>EVENTS</b> \u2014 rare moments you\'ve witnessed<br>' +
+                '\u2022 <b>MEMENTOS</b> \u2014 companions and their keepsakes<br>' +
+                '\u2022 <b>HERBARIUM</b> \u2014 triggers, biomes, and bundles<br>' +
+                '\u2022 <b>ITEMS</b> \u2014 your foraging pouch and catalog<br>' +
+                '\u2022 <b>HUNT</b> \u2014 the seasonal scavenger hunt<br>' +
+                '\u2022 <b>QUESTS</b> \u2014 daily, weekly, and lifetime goals<br>' +
+                '\u2022 <b>ABOUT</b> \u2014 the hermit who keeps this garden<br><br>' +
+                '<b style="color:var(--gold);">A small gold number</b> appears on any tab when something new is waiting. Reading clears it.',
           yes: 'OPEN THE BOOK',
           no: ''
         }, function(){});
@@ -82173,17 +82957,12 @@ window._openCompendiumUI=function(){
       // Tabs — horizontal scroll (one row, swipeable). TODAY tab first so
       // daily-return keepers land in curated view without picking.
       '<div id="bos-tabbar" style="display:flex;gap:0.3rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;">'+
-        '<button class="bos-tab active" data-tab="today" onclick="_bosSetTab(\'today\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">TODAY</button>'+
-        '<button class="bos-tab" data-tab="activity" onclick="_bosSetTab(\'activity\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL</button>'+
-        '<button class="bos-tab" data-tab="secrets" onclick="_bosSetTab(\'secrets\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">SECRETS</button>'+
-        '<button class="bos-tab" data-tab="events" onclick="_bosSetTab(\'events\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">EVENTS</button>'+
-        '<button class="bos-tab" data-tab="mementos" onclick="_bosSetTab(\'mementos\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">MEMENTOS</button>'+
-        '<button class="bos-tab" data-tab="herbarium" onclick="_bosSetTab(\'herbarium\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HERBARIUM</button>'+
-        '<button class="bos-tab" data-tab="items" onclick="_bosSetTab(\'items\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ITEMS</button>'+
-        '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HUNT</button>'+
-        '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
+        '<button class="bos-tab active" data-tab="codex" onclick="_bosSetTab(\'codex\')" title="Everything you have discovered: plants, triggers, biomes, companions, items" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CODEX</button>'+
+        '<button class="bos-tab" data-tab="journal" onclick="_bosSetTab(\'journal\')" title="Everything that has happened in your garden — what is fresh, what is recent, what came before" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL</button>'+
+        '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" title="Daily and weekly challenges, bundles, and the lifetime achievement catalog" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
+        '<button class="bos-tab" data-tab="hunt" onclick="_bosSetTab(\'hunt\')" title="The Seasonal Scavenger Hunt — twelve fireflies, ninety days, one tribute" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">HUNT</button>'+
         /* CLASS tab moved to Character Screen → Class Manager (2026-04-27). */
-        '<button class="bos-tab" data-tab="about" onclick="_bosSetTab(\'about\')" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ABOUT</button>'+
+        '<button class="bos-tab" data-tab="about" onclick="_bosSetTab(\'about\')" title="The hermit who keeps this garden, and a tip jar if you\'ve enjoyed yourself" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ABOUT</button>'+
       '</div>'+
       // Body
       '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;font-size:1.25em;"></div>'+
@@ -82191,14 +82970,15 @@ window._openCompendiumUI=function(){
   document.body.appendChild(ov);
   // Set initial tab content — priority order:
   //   1. Class unpicked & eligible → CLASS (onboarding prompt)
-  //   2. Daily first-open (TODAY not viewed in last 20h) → TODAY
+  //   2. Daily first-open (JOURNAL not viewed in last 20h) → JOURNAL
   //   3. Unread activity → JOURNAL (what's new)
-  //   4. Last-used tab
+  //   4. Default → CODEX
   var _todayViewTs = parseInt(localStorage.getItem('lw_bos_today_viewed')||'0',10)||0;
   var _todayStale = (Date.now()-_todayViewTs) > 72000000; // ~20h
+  _bosTab = 'codex';
   if(!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())_bosTab='class';
-  else if(_todayStale)_bosTab='today';
-  else if(window._getBookUnreadCount&&window._getBookUnreadCount()>0)_bosTab='activity';
+  else if(_todayStale)_bosTab='journal';
+  else if(window._getBookUnreadCount&&window._getBookUnreadCount()>0)_bosTab='journal';
   _bosSetTab(_bosTab);
   // Mark report as read
   if(window._setLastRead)_setLastRead(Date.now());
