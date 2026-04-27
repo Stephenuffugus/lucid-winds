@@ -80666,12 +80666,12 @@ function _bosQuestsContent() {
   function _rewardChip(reward) {
     if (!reward) return '';
     var pieces = [];
-    if (reward.dew) pieces.push('💧 ' + reward.dew);
-    if (reward.pollen) pieces.push('🌿 ' + reward.pollen);
-    if (reward.box) pieces.push('🎁 ' + reward.box);
-    if (reward.trophy) pieces.push('🏆 trophy');
-    if (reward.lore) pieces.push('📜 lore');
-    return pieces.length ? '<span style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:4px;padding:1px 5px;margin-left:6px;white-space:nowrap;">' + pieces.join(' · ') + '</span>' : '';
+    if (reward.dew) pieces.push('<span class="lwe lwe-drop"></span> ' + reward.dew);
+    if (reward.pollen) pieces.push('<span class="lwe lwe-leaf"></span> ' + reward.pollen);
+    if (reward.box) pieces.push('<span class="lwe lwe-flowers"></span> ' + reward.box);
+    if (reward.trophy) pieces.push('<span class="lwe lwe-sparkle"></span> trophy');
+    if (reward.lore) pieces.push('<span class="lwe lwe-sparkle"></span> lore');
+    return pieces.length ? '<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:4px;padding:2px 6px;margin-left:6px;white-space:nowrap;">' + pieces.join(' · ') + '</span>' : '';
   }
   function _progressBar(pct, color) {
     pct = Math.max(0, Math.min(100, pct));
@@ -80692,13 +80692,13 @@ function _bosQuestsContent() {
     return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:0.55rem 0.7rem;margin-bottom:6px;">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.06em;color:' + nameColor + ';">' + _esc(entry.name) + _rewardChip(entry.reward) + '</div>' +
-          '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);line-height:1.4;margin-top:2px;">' + _esc(entry.desc || '') + '</div>' +
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.82rem;letter-spacing:0.06em;color:' + nameColor + ';">' + _esc(entry.name) + _rewardChip(entry.reward) + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.5;margin-top:3px;">' + _esc(entry.desc || '') + '</div>' +
         '</div>' +
-        '<div style="font-size:1rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
+        '<div style="font-size:1.1rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
       '</div>' +
       _progressBar(pct, done ? 'var(--sage)' : 'rgba(200,168,75,0.6)') +
-      '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">' +
+      '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">' +
         '<span>' + counterText + '</span>' +
         (periodLabel ? '<span>' + periodLabel + '</span>' : '') +
       '</div>' +
@@ -80721,13 +80721,13 @@ function _bosQuestsContent() {
     return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-left:3px solid ' + tierColor + ';border-radius:6px;padding:0.45rem 0.65rem;margin-bottom:5px;">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.06em;color:' + (done ? 'var(--sage)' : tierColor) + ';">' + _esc(displayName) + _rewardChip(entry.reward) + '</div>' +
-          '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.4;margin-top:2px;">' + _esc(displayDesc) + '</div>' +
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.74rem;letter-spacing:0.06em;color:' + (done ? 'var(--sage)' : tierColor) + ';">' + _esc(displayName) + _rewardChip(entry.reward) + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:3px;">' + _esc(displayDesc) + '</div>' +
         '</div>' +
-        '<div style="font-size:0.85rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
+        '<div style="font-size:1rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
       '</div>' +
       (hidden ? '' : _progressBar(pct, done ? 'var(--sage)' : tierColor)) +
-      (hidden ? '' : '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);">' + (done ? 'Complete' : (cur + ' / ' + tgt)) + '</div>') +
+      (hidden ? '' : '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);">' + (done ? 'Complete' : (cur + ' / ' + tgt)) + '</div>') +
     '</div>';
   }
 
@@ -80750,15 +80750,15 @@ function _bosQuestsContent() {
   var h = '';
   h += '<div style="padding:0.7rem 0.9rem 1rem;">';
   h += '<div style="text-align:center;margin-bottom:0.8rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.15rem;">📜 QUESTS</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">' + doneCount + ' / ' + totalAch + ' achievements · ' + donePct + '%</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.2rem;">QUESTS</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">' + doneCount + ' / ' + totalAch + ' achievements · ' + donePct + '%</div>';
   h += '</div>';
 
   // ─── DAILY ───
   h += '<div style="margin-bottom:1rem;">';
   h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);">☀️ TODAY · ' + dailyDone + '/3</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">resets in ' + _dHrs + 'h</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);"><span class="lwe lwe-sun"></span> TODAY · ' + dailyDone + '/3</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">resets in ' + _dHrs + 'h</div>';
   h += '</div>';
   if (!dailyState.picks || dailyState.picks.length === 0) {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Daily picks load on next tab visit.</div>';
@@ -80773,8 +80773,8 @@ function _bosQuestsContent() {
   // ─── WEEKLY ───
   h += '<div style="margin-bottom:1rem;">';
   h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);">🌙 THIS WEEK · ' + weeklyDone + '/3</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">resets in ' + _daysToMon + 'd</div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);"><span class="lwe lwe-sparkle"></span> THIS WEEK · ' + weeklyDone + '/3</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">resets in ' + _daysToMon + 'd</div>';
   h += '</div>';
   if (!weeklyState.picks || weeklyState.picks.length === 0) {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">Weekly picks load on next tab visit.</div>';
