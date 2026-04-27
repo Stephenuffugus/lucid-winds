@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.27.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.27.32';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69979,6 +69979,169 @@ var TRIGGERS=[
     check:function(c){try{var seen=JSON.parse(localStorage.getItem('lw_moon_phases_seen')||'[]');var phases=['new','waxing','first_quarter','full','waning','last_quarter'];if(c.moonPhase&&seen.indexOf(c.moonPhase)<0){seen.push(c.moonPhase);localStorage.setItem('lw_moon_phases_seen',JSON.stringify(seen));}for(var i=0;i<phases.length;i++)if(seen.indexOf(phases[i])<0)return false;return true;}catch(e){return false;}},
     effect:'Every moon phase witnessed under your watch. The cycle is yours now.',reward:{pollen:30,ea:2}},
 
+  // ── LUNAR PAIRINGS (10) — moon phase + plant trait combos ──
+  // Added 2026-04-27 with BoS expansion to ~1000. Each requires a specific
+  // moon phase plus a thematically matched trait. Pollen rewards scale with
+  // how rare the alignment is.
+  {id:'lunar_001',name:'Silver Crown',riddle:'A full moon over a flower that drinks light.',category:'season',
+    check:function(c){return c.moonPhase==='full'&&c.plant&&c.plant.hasFlower&&(c.plant.aura%36)===12;},
+    effect:'Moon-aura met the full moon. The flower glowed twice over.',reward:{pollen:18,ea:1}},
+  {id:'lunar_002',name:'Owl Hour',riddle:'The new moon and the owl agree on silence.',category:'season',
+    check:function(c){return c.moonPhase==='new'&&c.plant&&c.plant.companion===56;},
+    effect:'New moon, owl perched. The dark held its breath for both.',reward:{pollen:14}},
+  {id:'lunar_003',name:'Tide Pull',riddle:'A full moon and a creature of pulled water.',category:'season',
+    check:function(c){return c.moonPhase==='full'&&c.plant&&(c.plant.companion===70||c.plant.companion===71||c.plant.companion===72);},
+    effect:'The tide reached for your garden. The shell-creature answered.',reward:{pollen:16}},
+  {id:'lunar_004',name:'Quarter Bloom',riddle:'Half lit, half shadow, fully open.',category:'season',
+    check:function(c){return (c.moonPhase==='first_quarter'||c.moonPhase==='last_quarter')&&c.plant&&c.plant.hasFlower&&c.plant.season===0;},
+    effect:'The half-moon found a spring bloom. Balance favored the petal.',reward:{pollen:10}},
+  {id:'lunar_005',name:'Waxing Promise',riddle:'The moon grows. The bud agrees.',category:'season',
+    check:function(c){return c.moonPhase==='waxing'&&c.plant&&!c.plant.hasFlower&&c.plant.chimerGen>=2;},
+    effect:'A waxing moon over a chimera bud. Promise compounded.',reward:{pollen:12}},
+  {id:'lunar_006',name:'Waning Wisdom',riddle:'The moon recedes. The seed remembers.',category:'season',
+    check:function(c){return c.moonPhase==='waning'&&c.plantAge>=60;},
+    effect:'The waning moon found an old plant. Some lessons only show once the light leaves.',reward:{pollen:13}},
+  {id:'lunar_007',name:'Bat Ascension',riddle:'A new moon and a creature of echoes.',category:'season',
+    check:function(c){return c.moonPhase==='new'&&c.plant&&c.plant.companion===54&&c.hour>=21;},
+    effect:'The bat charted your garden in absolute dark. Every leaf logged.',reward:{pollen:15}},
+  {id:'lunar_008',name:'Lantern Festival',riddle:'A full moon, a firefly, a hush.',category:'season',
+    check:function(c){return c.moonPhase==='full'&&c.plant&&c.plant.companion===23;},
+    effect:'Two lights met in your garden. Neither was the brighter for it.',reward:{pollen:14}},
+  {id:'lunar_009',name:'Frost Moon',riddle:'A winter plant under the cold mirror.',category:'season',
+    check:function(c){return c.moonPhase==='full'&&c.plant&&c.plant.season===3&&c.month>=10;},
+    effect:'A winter bloom under a winter moon. Cold held cold; both were honest.',reward:{pollen:17,ea:1}},
+  {id:'lunar_010',name:'Harvest Mirror',riddle:'The full moon of autumn over a thing returned.',category:'season',
+    check:function(c){return c.moonPhase==='full'&&c.realSeason===2&&c.plant&&c.plant.season===2;},
+    effect:'Autumn moon, autumn plant. The wheel found its harvest.',reward:{pollen:18,ea:1}},
+
+  // ── ECLIPSE EVENTS (5) — multi-condition rare beats ──
+  {id:'eclipse_001',name:'Total Eclipse',riddle:'The new moon swallows the sun for a moment.',category:'season',
+    check:function(c){return c.moonPhase==='new'&&c.hour>=11&&c.hour<=14&&c.weather&&typeof c.weather.rain==='number'&&c.weather.rain===0&&c.plant&&c.plant.hasFlower;},
+    effect:'A noon-dark moment. The flower stayed open through the wrong hour.',reward:{pollen:30,ea:2}},
+  {id:'eclipse_002',name:'Blood Moon',riddle:'A full moon turned red by something atmospheric.',category:'season',
+    check:function(c){return c.moonPhase==='full'&&c.plant&&(c.plant.aura%36)===20&&c.hour>=22;},
+    effect:'A blood moon found ember-glow. The garden ran in copper for one night.',reward:{pollen:32,ea:2}},
+  {id:'eclipse_003',name:'Solstice Eclipse',riddle:'The longest day finds its shadow.',category:'season',
+    check:function(c){return c.moonPhase==='new'&&c.month===5&&c.plant&&c.plant.season===1&&c.ea>=15;},
+    effect:'A summer plant met an eclipse on the longest day. Improbable lined up.',reward:{pollen:40,ea:2}},
+  {id:'eclipse_004',name:'Equinox Eclipse',riddle:'The day of balance loses its center.',category:'season',
+    check:function(c){return c.moonPhase==='new'&&((c.month===2&&c.realSeason===0)||(c.month===8&&c.realSeason===2))&&c.plant&&c.plant.chimerGen>=2;},
+    effect:'A chimera bloomed under an equinox eclipse. The lineage will remember.',reward:{pollen:36,ea:2}},
+  {id:'eclipse_005',name:'Wolf Moon',riddle:'The first full moon of the cold half.',category:'season',
+    check:function(c){return c.moonPhase==='full'&&c.month===0&&c.plant&&c.plant.companion>=20;},
+    effect:'The wolf moon rose over your companion. Old names held their ground.',reward:{pollen:25,ea:1}},
+
+  // ── ACHIEVEMENT MILESTONES (15) — multi-trait play patterns ──
+  {id:'ach_001',name:'Pollinator',riddle:'Three pollinator companions in one greenhouse.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var p=0;var poll=[21,23,24,28];for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&poll.indexOf(t.companion)>=0)p++;}return p>=3;}catch(e){return false;}},
+    effect:'Three pollinators under one roof. The honey will be talked about.',reward:{pollen:18}},
+  {id:'ach_002',name:'Aurora Keeper',riddle:'You held a plant under aurora light long enough to learn it.',category:'action',
+    check:function(c){return c.plant&&(c.plant.aura%36)===5&&c.plantAge>=14;},
+    effect:'Two weeks of aurora over one plant. The colors changed the leaf.',reward:{pollen:20,ea:1}},
+  {id:'ach_003',name:'Nightshade Garden',riddle:'Four plants at owl hour on the same night.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');return gh.length>=4&&(c.hour>=22||c.hour<=4);}catch(e){return false;}},
+    effect:'Four plants tended past midnight. The dark logged you as a regular.',reward:{pollen:16}},
+  {id:'ach_004',name:'Mythic Hand',riddle:'You held a mythic creature long enough for it to settle.',category:'action',
+    check:function(c){return c.plant&&c.plant.companion>=32&&c.plant.companion<=38&&c.plantAge>=21;},
+    effect:'Three weeks of a mythic guest. They do not stay for those who hurry.',reward:{pollen:35,ea:2}},
+  {id:'ach_005',name:'Glasshouse',riddle:'Three glass-stem plants in your care at once.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var g=0;for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.mutationName==='Glass Stem')g++;}return g>=3;}catch(e){return false;}},
+    effect:'Three glass stems, all unbroken. A keeper of fragile things.',reward:{pollen:25,ea:1}},
+  {id:'ach_006',name:'Color Theory',riddle:'Five plants, five distinct flower colors.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var col={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.hasFlower&&t.flowerColor)col[t.flowerColor]=true;}return Object.keys(col).length>=5;}catch(e){return false;}},
+    effect:'Five colors, five flowers, one keeper. The palette is yours.',reward:{pollen:14}},
+  {id:'ach_007',name:'Substrate Scholar',riddle:'You have grown plants in ten different substrates.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var s={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&typeof t.base==='number')s[t.base%71]=true;}return Object.keys(s).length>=10;}catch(e){return false;}},
+    effect:'Ten substrates studied through one practice. The earth has many letters.',reward:{pollen:22,ea:1}},
+  {id:'ach_008',name:'Foliage Library',riddle:'Twenty leaf forms held in one greenhouse.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var l={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&typeof t.leafType==='number')l[t.leafType%71]=true;}return Object.keys(l).length>=20;}catch(e){return false;}},
+    effect:'Twenty distinct leaf forms under one keeper. The library reads itself.',reward:{pollen:28,ea:1}},
+  {id:'ach_009',name:'Pot Connoisseur',riddle:'You have used fifteen distinct vessels.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var p={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&typeof t.pot==='number')p[t.pot%60]=true;}return Object.keys(p).length>=15;}catch(e){return false;}},
+    effect:'Fifteen vessels held your work. Each one earned its shape.',reward:{pollen:20}},
+  {id:'ach_010',name:'Aura Anthology',riddle:'Eight aura signatures under one watch.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var a={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&typeof t.aura==='number'&&(t.aura%36)>=5)a[t.aura%36]=true;}return Object.keys(a).length>=8;}catch(e){return false;}},
+    effect:'Eight auras gathered. The greenhouse glows in committee.',reward:{pollen:24,ea:1}},
+  {id:'ach_011',name:'Companion Atlas',riddle:'Twelve creatures hosted across your collection.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var k={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.companion>=20)k[t.companion]=true;}return Object.keys(k).length>=12;}catch(e){return false;}},
+    effect:'Twelve creatures answer your name. The atlas is filling.',reward:{pollen:30,ea:1}},
+  {id:'ach_012',name:'High EA Collection',riddle:'Three plants of EA twenty or higher.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var n=0;for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&window.computeEA){var e=window.computeEA(t,0,gh[i]);if(e>=20)n++;}}return n>=3;}catch(e){return false;}},
+    effect:'Three high-EA plants in one keeping. The garden reads strong.',reward:{pollen:26,ea:1}},
+  {id:'ach_013',name:'Patient Bloomer',riddle:'A plant flowered for you on its hundredth day.',category:'action',
+    check:function(c){return c.plant&&c.plant.hasFlower&&c.plantAge>=100;},
+    effect:'A century of days, then a bloom. Patience proved the gentler instrument.',reward:{pollen:35,ea:2}},
+  {id:'ach_014',name:'Streak of Forty',riddle:'Forty days of unbroken tending.',category:'action',
+    check:function(c){try{var s=parseInt(localStorage.getItem('lw_login_streak')||'0',10);return s>=40;}catch(e){return false;}},
+    effect:'Forty days, no break. The garden took your name as a verb.',reward:{pollen:30,ea:1}},
+  {id:'ach_015',name:'All Mutations',riddle:'You have grown five distinct mutations.',category:'action',
+    check:function(c){try{var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');var m={};for(var i=0;i<gh.length;i++){var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.mutationName&&t.mutationName!=='None')m[t.mutationName]=true;}return Object.keys(m).length>=5;}catch(e){return false;}},
+    effect:'Five mutations, five different signatures. The hash has been generous.',reward:{pollen:32,ea:2}},
+
+  // ── LORE BEATS (10) — narrative discovery moments ──
+  {id:'lore_001',name:'The First Letter',riddle:'A plant arrived from someone you do not know.',category:'action',
+    check:function(c){try{var ferals=JSON.parse(localStorage.getItem('lw_ferals_collected')||'[]');return ferals.length>=1;}catch(e){return false;}},
+    effect:'A feral seed found you. Somewhere a stranger left a letter for the wind.',reward:{pollen:12}},
+  {id:'lore_002',name:'The Returning Tide',riddle:'You released a plant; another took its place.',category:'action',
+    check:function(c){try{var d=parseInt(localStorage.getItem('lw_wild_drops_total')||'0',10);var f=JSON.parse(localStorage.getItem('lw_ferals_collected')||'[]').length;return d>=3&&f>=3;}catch(e){return false;}},
+    effect:'You gave three plants to the world. Three others answered. The tide is returning.',reward:{pollen:18}},
+  {id:'lore_003',name:'The Quiet Library',riddle:'Your compendium is half full and growing on its own.',category:'action',
+    check:function(c){try{var d=JSON.parse(localStorage.getItem('lw_triggers_discovered')||'[]');return d.length>=50;}catch(e){return false;}},
+    effect:'Fifty discoveries logged. The book has begun reading itself in your absence.',reward:{pollen:25,ea:1}},
+  {id:'lore_004',name:'A Hand Upon a Hand',riddle:'You watered another keeper’s plant.',category:'action',
+    check:function(c){try{return parseInt(localStorage.getItem('lw_strangers_watered')||'0',10)>=1;}catch(e){return false;}},
+    effect:'You tended a plant that was not yours. A stranger felt their absence shorter.',reward:{pollen:14}},
+  {id:'lore_005',name:'The Inheritor',riddle:'A second-generation plant became your favorite.',category:'action',
+    check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plantAge>=30;},
+    effect:'A child plant outlived the novelty. The lineage chose its keeper.',reward:{pollen:20,ea:1}},
+  {id:'lore_006',name:'The Naming',riddle:'You held a plant long enough that its name was old to you.',category:'action',
+    check:function(c){return c.plantAge>=50&&c.plant&&c.plant.hasFlower;},
+    effect:'Fifty days. The name on the card is now a face. The plant feels read.',reward:{pollen:15}},
+  {id:'lore_007',name:'The Counting',riddle:'You have minted as many plants as a small forest holds.',category:'action',
+    check:function(c){try{var n=parseInt(localStorage.getItem('lw_total_minted')||'0',10);if(n>=25)return true;var gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');return gh.length>=25;}catch(e){return false;}},
+    effect:'Twenty-five plants under your hand. A grove begins.',reward:{pollen:22}},
+  {id:'lore_008',name:'The Apprentice',riddle:'You completed the keeper’s tutorial.',category:'action',
+    check:function(c){try{return localStorage.getItem('lw_tutorial_done')==='1'||localStorage.getItem('lw_carousel_done')==='1';}catch(e){return false;}},
+    effect:'The tutorial closed behind you. The garden is now its own teacher.',reward:{pollen:8}},
+  {id:'lore_009',name:'The Keeper’s Mark',riddle:'A class chosen, a path begun.',category:'action',
+    check:function(c){try{return localStorage.getItem('lw_class')&&localStorage.getItem('lw_class')!=='';}catch(e){return false;}},
+    effect:'You chose a path among the five. The garden marked the choice.',reward:{pollen:10}},
+  {id:'lore_010',name:'The Long Watch',riddle:'You returned to the garden a hundredth time.',category:'action',
+    check:function(c){try{var s=parseInt(localStorage.getItem('lw_session_count')||'0',10);return s>=100;}catch(e){return false;}},
+    effect:'A hundred returns. The garden was already expecting you.',reward:{pollen:30,ea:2}},
+
+  // ── RITUAL TIMES (10) — specific time-of-day + trait combos ──
+  {id:'ritual_001',name:'Pre-Dawn Tending',riddle:'You met a flower before the sun.',category:'weather',
+    check:function(c){return c.hour>=4&&c.hour<=6&&c.plant&&c.plant.hasFlower;},
+    effect:'A bloom before dawn. The petals had no audience but you.',reward:{pollen:10}},
+  {id:'ritual_002',name:'Noon Reverence',riddle:'A summer plant at the height of summer light.',category:'weather',
+    check:function(c){return c.hour>=11&&c.hour<=13&&c.plant&&c.plant.season===1&&c.realSeason===1;},
+    effect:'Noon, summer plant, summer day. Photosynthesis approached the sublime.',reward:{pollen:12}},
+  {id:'ritual_003',name:'Dusk Exchange',riddle:'A pollinator at the cross-fade.',category:'weather',
+    check:function(c){return c.hour>=18&&c.hour<=20&&c.plant&&(c.plant.companion===21||c.plant.companion===24||c.plant.companion===28);},
+    effect:'A pollinator worked the dusk shift. Half the day for half the price.',reward:{pollen:11}},
+  {id:'ritual_004',name:'Midnight Council',riddle:'A mythic creature at the witching hour.',category:'weather',
+    check:function(c){return c.hour>=23||c.hour<=1;},
+    effect:'You stood with the garden at midnight. Some councils only meet then.',reward:{pollen:9}},
+  {id:'ritual_005',name:'Cricket Hour',riddle:'A cricket companion after sundown.',category:'weather',
+    check:function(c){return c.hour>=19&&c.hour<=23&&c.plant&&c.plant.companion===62;},
+    effect:'The cricket scored your evening. The melody had your name as its rest.',reward:{pollen:10}},
+  {id:'ritual_006',name:'Heron Stand',riddle:'Stillness before noon, with the long-legged guest.',category:'weather',
+    check:function(c){return c.hour>=8&&c.hour<=11&&c.plant&&c.plant.companion===36;},
+    effect:'Morning, motionless, heron-watched. The day waited politely.',reward:{pollen:14,ea:1}},
+  {id:'ritual_007',name:'Toad Vespers',riddle:'A toad at twilight after rain.',category:'weather',
+    check:function(c){return c.hour>=18&&c.hour<=21&&c.plant&&c.plant.companion===32&&c.weather&&typeof c.weather.rain==='number'&&c.weather.rain>0;},
+    effect:'The toad came out for vespers. The garden ran a small temple.',reward:{pollen:18,ea:1}},
+  {id:'ritual_008',name:'Cicada Prime',riddle:'A summer afternoon, the long voice singing.',category:'weather',
+    check:function(c){return c.hour>=13&&c.hour<=16&&c.realSeason===1&&c.plant&&c.plant.companion===33;},
+    effect:'The cicada hit its highest note in the highest hour. Air rang.',reward:{pollen:16,ea:1}},
+  {id:'ritual_009',name:'Firefly Threshold',riddle:'The first hour the lights begin.',category:'weather',
+    check:function(c){return c.hour>=20&&c.hour<=22&&c.plant&&c.plant.companion===23&&c.realSeason===1;},
+    effect:'A firefly opened the night with the smallest possible signal.',reward:{pollen:13}},
+  {id:'ritual_010',name:'Morning Mist',riddle:'A rain-aura plant before the sun cleared.',category:'weather',
+    check:function(c){return c.hour>=6&&c.hour<=8&&c.plant&&(c.plant.aura%36)===21;},
+    effect:'Mist met rain-aura. The leaves cleaned themselves with their own weather.',reward:{pollen:11}},
+
   // ── MUTATION DISCOVERIES (one per of the 13 mutations) ──
   // Per Stephen 2026-04-26 BoS expansion: "we want people growing the stuff
   // to get the traits." Each mutation, when first encountered or grown,
@@ -70618,6 +70781,247 @@ var _STEM_TRIGS = [
         reward: rewards[tier] || rewards.common
       });
     })(stm.idx, stm.n, stm.r, stm.e, stm.t);
+  }
+})();
+
+// ── COMPANION HABITAT DISCOVERIES — 50 named creature x season x aura combos ──
+// Added 2026-04-27 (BoS 200+ expansion). Each named companion (idx 20-81,
+// skipping the 7 None slots: 46, 58, 59, 76, 77, 78, 80) earns a "where
+// they came from" discovery trigger when the player holds a plant carrying
+// that companion in a specific season and a specific aura. The combination
+// is thematic: Hummingbird wants Summer + Golden Hour; Toad wants Autumn +
+// Rain. Common reward for non-mythic, rare for the mythic creatures (idx
+// 32-38). Reads c.plant.companion, c.plant.season, (c.plant.aura % 36).
+var _COMPANION_HABITAT_TRIGS = [
+  {idx:20, season:1, aura:9,  n:'Navi\'s Forest',           e:'Navi led you into the lit edge of a forest. The trees agreed.',                         t:'common'},
+  {idx:21, season:0, aura:30, n:'Bee Pasture',              e:'A bee pasture full of pollen drift. The hive expanded by one row.',                     t:'common'},
+  {idx:22, season:0, aura:21, n:'Pill Bug Damp',            e:'Rain found the rotten log. The pill bug curled into thanks.',                           t:'common'},
+  {idx:23, season:3, aura:8,  n:'Firefly Marsh',            e:'Fireflies wintered with you. The marsh remembered its small lanterns.',                 t:'common'},
+  {idx:24, season:0, aura:23, n:'Butterfly Grove',          e:'Cherry petals drifted; the butterfly chose them as runway.',                            t:'common'},
+  {idx:25, season:2, aura:7,  n:'Moth Porchlight',          e:'Autumn moonlight under a moth-soft wing. The porch held its glow.',                     t:'common'},
+  {idx:26, season:0, aura:6,  n:'Ladybug Field',            e:'A field, an hour of gold, seven dots steady on a leaf.',                                t:'common'},
+  {idx:27, season:0, aura:21, n:'Snail Lane',               e:'A snail crossed in soft rain. Pace as patient as the route.',                           t:'common'},
+  {idx:28, season:1, aura:6,  n:'Hummingbird Meadow',       e:'A meadow at golden hour. The smallest heart held its quickest beat.',                   t:'common'},
+  {idx:29, season:1, aura:34, n:'Dragon Pond',              e:'The pond shimmered; four wings hovered the surface. Hunting paused.',                   t:'common'},
+  {idx:30, season:0, aura:30, n:'Caterpillar Crawl',        e:'A leaf, a hunger, the slow promise of wing. Pollen drifted on the next breeze.',         t:'common'},
+  {idx:31, season:2, aura:31, n:'Spider Veil',              e:'Autumn mist held the web. The spider read its wires for tone.',                         t:'common'},
+  {idx:32, season:2, aura:21, n:'Toad Hollow',              e:'Autumn rain, a leaf-littered hollow. The toad logged its rain-call.',                   t:'rare'},
+  {idx:33, season:1, aura:20, n:'Cicada Heat',              e:'Heat shimmered; the long voice rose. Seventeen years of quiet, paid in one summer.',    t:'rare'},
+  {idx:34, season:3, aura:22, n:'Mammoth Tundra',           e:'Snow on tusk, breath visible. The world before this world said hello.',                 t:'rare'},
+  {idx:35, season:2, aura:7,  n:'Raccoon Ridge',            e:'Autumn moon, masked auditor at work. Your stores were inventoried and praised.',         t:'rare'},
+  {idx:36, season:0, aura:34, n:'Heron Reedbank',           e:'A spring tidal pool; the heron stood as if drawn there. Stillness was the catch.',      t:'rare'},
+  {idx:37, season:2, aura:31, n:'Argiope\'s Hedge',         e:'A garden hedge in autumn veil. The zig-zag signature held the air.',                    t:'rare'},
+  {idx:38, season:1, aura:29, n:'Beholder\'s Eclipse',      e:'A summer void-eclipse; the eye opened where it should not. It chose to approve.',       t:'mythic'},
+  {idx:39, season:2, aura:27, n:'Cat\'s Window',            e:'Autumn candlelight on a sill. The cat moved one inch, judged everything.',              t:'common'},
+  {idx:40, season:1, aura:34, n:'Platypus Creek',           e:'A summer creek. An impossible animal proved itself by simply existing.',                t:'common'},
+  {idx:41, season:1, aura:6,  n:'Mantis Hedge',             e:'Hedge at golden hour. The triangle face turned. You felt seen.',                        t:'common'},
+  {idx:42, season:2, aura:7,  n:'Hedgehog Burrow',          e:'Moonlit autumn; quills out, then in. The burrow opened a crack for you.',                t:'common'},
+  {idx:43, season:1, aura:24, n:'Pangolin Trail',           e:'Dry leaves, scaled walker. A pinecone took a step and your garden answered.',           t:'common'},
+  {idx:44, season:0, aura:8,  n:'Luna Glade',               e:'A spring star-fall. The pale wing crossed once, on schedule with no calendar.',         t:'common'},
+  {idx:45, season:3, aura:22, n:'Porcupine Snowline',       e:'Snow line, slow walker. Diplomatic immunity granted by quill alone.',                   t:'common'},
+  {idx:47, season:0, aura:34, n:'Axolotl Pool',             e:'A spring tidal pool; pink salamander surfaced where it should not. Soft places exist.', t:'common'},
+  {idx:48, season:1, aura:14, n:'Scorpion Stones',          e:'Summer night; elder runes under UV. The rocks held their bright secret.',                t:'common'},
+  {idx:49, season:0, aura:31, n:'Crane Folding',            e:'An ethereal veil; a folded crane appeared without explanation. Make a wish.',           t:'common'},
+  {idx:50, season:2, aura:27, n:'Gnome Doorstep',           e:'Autumn candle, ceramic neighbor. The society admitted you by silence.',                  t:'common'},
+  {idx:51, season:0, aura:6,  n:'Robin Lawn',               e:'Spring lawn at golden hour. The red breast worked the new earth and announced the day.',t:'common'},
+  {idx:52, season:0, aura:30, n:'Worm Earth',               e:'Spring soil thick with pollen. The worm engineer left your dirt measurably better.',     t:'common'},
+  {idx:53, season:1, aura:34, n:'Turtle Bay',               e:'A summer tidal pool; the turtle read your face for fifty years of memory.',              t:'common'},
+  {idx:54, season:1, aura:7,  n:'Bat Eaves',                e:'Summer moonlight under eaves. The clicks charted you as friendly geometry.',             t:'common'},
+  {idx:55, season:2, aura:24, n:'Mouse Granary',            e:'Autumn leaves piled; tiny feet ran a small kingdom through your roots.',                 t:'common'},
+  {idx:56, season:3, aura:7,  n:'Owl Snowbough',            e:'Winter moonlight; silent wings counted everything. The list ended with you.',           t:'common'},
+  {idx:57, season:0, aura:32, n:'Goose Common',             e:'Spring dandelion drift; the goose chose your garden as bouncer post. Honk.',            t:'common'},
+  {idx:60, season:1, aura:23, n:'Dart Frog Canopy',         e:'A summer canopy of pink petals; the frog glowed warning. You did not catch it.',         t:'common'},
+  {idx:61, season:0, aura:32, n:'Rabbit Field',             e:'Spring; dandelion seeds rode the wind. The rabbit considered, decided against, today.',  t:'common'},
+  {idx:62, season:1, aura:27, n:'Cricket Hearth',           e:'Summer candlelight; a cricket scored your evening into a small symphony.',               t:'common'},
+  {idx:63, season:3, aura:22, n:'Puffin Cliff',             e:'A snowy cliff; a tuxedoed sailor inland. The Atlantic sent regards by way of wing.',     t:'common'},
+  {idx:64, season:1, aura:25, n:'Scarab Sun',               e:'Summer volcanic ash; the scarab approved your soil. Egyptian gods notwithstanding.',     t:'common'},
+  {idx:65, season:1, aura:30, n:'Ant Highway',              e:'Summer pollen drift; a trail formed between bloom and elsewhere. Excellent commerce.',   t:'common'},
+  {idx:66, season:0, aura:9,  n:'Crane Mirror',             e:'A spring sacred geometry; two cranes danced across a mirror. Marriages were imminent.',  t:'common'},
+  {idx:67, season:2, aura:24, n:'Squirrel Cache',           e:'Autumn leaves; something buried near your roots that even the burier may forget.',       t:'common'},
+  {idx:68, season:1, aura:9,  n:'Koala Eucalypt',           e:'Summer eucalyptus, sacred geometry. You are now responsible for the menu.',              t:'common'},
+  {idx:69, season:1, aura:34, n:'Flamingo Lagoon',          e:'A summer tidal pool; one pink leg, one balance. Aesthetic peak achieved.',               t:'common'},
+  {idx:70, season:1, aura:34, n:'Seahorse Eddy',            e:'Summer tidal pool; the father carried his eggs across the impossible to find you.',      t:'common'},
+  {idx:71, season:1, aura:34, n:'Koi Reflecting Pool',      e:'A summer pool; the koi held its color and its hundred-year memory.',                     t:'common'},
+  {idx:72, season:1, aura:28, n:'Jellyfish Drift',          e:'A summer deep-sea; the jellyfish drifted through your reality. Time shimmered.',         t:'common'},
+  {idx:73, season:0, aura:26, n:'Mushroom Sprite Ring',     e:'Spring fairy ring; a small mushroom that walked. The ring may follow.',                  t:'common'},
+  {idx:74, season:0, aura:6,  n:'Fawn Edge',                e:'Spring golden hour; a fawn watched you from the edge of trees. So did its mother.',     t:'common'},
+  {idx:75, season:2, aura:14, n:'Raven Stones',             e:'Autumn elder runes; a raven took your face into the long memory. You are filed.',        t:'common'},
+  {idx:79, season:3, aura:26, n:'Wisp Marsh',               e:'A winter fairy ring; a wisp passed without body. Choose: lead or follow.',               t:'common'},
+  {idx:81, season:1, aura:23, n:'Panda Bamboo',             e:'Summer cherry drift; the panda ate your bamboo if any. Worth it. Worth it.',            t:'common'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 7},
+    rare:   {pollen: 16, ea: 1},
+    mythic: {pollen: 30, ea: 2}
+  };
+  for (var hi = 0; hi < _COMPANION_HABITAT_TRIGS.length; hi++) {
+    var ch = _COMPANION_HABITAT_TRIGS[hi];
+    (function(idx, season, aura, name, effect, tier) {
+      TRIGGERS.push({
+        id: 'comphab_' + idx,
+        name: name,
+        riddle: 'A creature found its proper weather and season.',
+        category: 'companion',
+        check: function(ctx) {
+          return ctx.plant
+            && ctx.plant.companion === idx
+            && ctx.plant.season === season
+            && (ctx.plant.aura % 36) === aura;
+        },
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(ch.idx, ch.season, ch.aura, ch.n, ch.e, ch.t);
+  }
+})();
+
+// ── PHENOLOGY DISCOVERIES — 40 calendar/clock x trait moments ──
+// Added 2026-04-27 (BoS 200+ expansion). Real-world calendar months and
+// clock hours x plant trait combos. Reads c.month (0-11), c.realSeason
+// (0-3), c.hour (0-23), c.moonPhase. Pure trait + real-time checks; no
+// nearbyPlants, no weather. Pollen tier scales with rarity of alignment.
+var _PHENOLOGY_TRIGS = [
+  {n:'Vernal Awakening',     check:function(c){return c.month>=2&&c.month<=4&&c.plant&&c.plant.season===0;},                                                e:'A spring plant met its real spring. The garden noticed.',                         t:'common'},
+  {n:'Equinox Mirror',       check:function(c){return (c.month===2||c.month===8)&&c.plant&&c.plant.chimerGen>=2;},                                          e:'The day of balance found a chimera. Even the lineage stood still.',               t:'rare'},
+  {n:'Solstice Blaze',       check:function(c){return c.month===5&&c.plant&&c.plant.season===1&&(c.plant.aura%36)===10;},                                   e:'Summer solstice on a sun-aura plant. Light approached self-portrait.',            t:'rare'},
+  {n:'Yule Ember',           check:function(c){return c.month===11&&c.plant&&!c.plant.hasFlower;},                                                          e:'Yuletide; no bloom; only the bare promise. Ember-quiet held the night.',          t:'common'},
+  {n:'Pre-Dawn Bloom',       check:function(c){return c.hour>=4&&c.hour<=6&&c.plant&&c.plant.hasFlower;},                                                   e:'A flower opened before the sun. A small, private inauguration.',                  t:'common'},
+  {n:'Owl-Hour Bloom',       check:function(c){return (c.hour>=22||c.hour<=2)&&c.plant&&c.plant.companion===56;},                                           e:'Owl hour; the owl perched. The bloom continued under audit.',                     t:'common'},
+  {n:'New-Year Sprout',      check:function(c){return c.month===0&&c.plant&&c.plantAge<=14;},                                                              e:'A new-year sprout. The calendar and the seedling agreed on the date.',            t:'common'},
+  {n:'May Crown',            check:function(c){return c.month===4&&c.plant&&c.plant.hasFlower&&c.plant.season===0;},                                        e:'May; a spring flower in full claim. The maypole tradition has no patent.',         t:'common'},
+  {n:'June Heat',            check:function(c){return c.month===5&&c.plant&&c.plant.season===1&&(c.plant.aura%36)===20;},                                  e:'June heat met ember-glow. Summer admitted itself early.',                         t:'common'},
+  {n:'July Shimmer',         check:function(c){return c.month===6&&c.plant&&(c.plant.aura%36)===16;},                                                       e:'July; shimmer on every leaf. The garden refused to settle.',                       t:'common'},
+  {n:'August Cicada',        check:function(c){return c.month===7&&c.plant&&c.plant.companion===33;},                                                       e:'August cicada chorus rose. The afternoon held its breath.',                       t:'rare'},
+  {n:'September Turn',       check:function(c){return c.month===8&&c.plant&&c.plant.season===2;},                                                           e:'September; an autumn plant met its real autumn. The wheel began.',                t:'common'},
+  {n:'October Flame',        check:function(c){return c.month===9&&c.plant&&(c.plant.aura%36)===24;},                                                       e:'October; autumn leaves drifted around your plant. Color released, color received.',t:'common'},
+  {n:'November Ash',         check:function(c){return c.month===10&&c.plant&&(c.plant.aura%36)===25;},                                                      e:'November volcanic ash; the year asked its quiet questions before frost.',          t:'common'},
+  {n:'December Frost',       check:function(c){return c.month===11&&c.plant&&(c.plant.aura%36)===19;},                                                      e:'December frost crystals. Cold made geometry of every breath.',                     t:'rare'},
+  {n:'February Patience',    check:function(c){return c.month===1&&c.plant&&c.plantAge>=60;},                                                              e:'February held an old plant alive. Patience overrode the calendar.',                t:'common'},
+  {n:'March Stir',           check:function(c){return c.month===2&&c.plant&&!c.plant.hasFlower&&c.plant.season===0;},                                       e:'March; a spring plant stirred. The bud was the only news.',                        t:'common'},
+  {n:'April Rain',           check:function(c){return c.month===3&&c.plant&&(c.plant.aura%36)===21;},                                                       e:'April rain found rain-aura. The plant cleaned itself of winter.',                  t:'common'},
+  {n:'High Noon',            check:function(c){return c.hour===12&&c.plant&&c.plant.hasFlower;},                                                           e:'A flower fully open at noon. Photosynthesis ran the show.',                       t:'common'},
+  {n:'Twilight Meeting',     check:function(c){return (c.hour===18||c.hour===19)&&c.plant&&c.plant.companion>=20&&c.plant.companion<=31;},                  e:'A small companion met you at twilight. Some appointments are kept by instinct.',  t:'common'},
+  {n:'Witching Bloom',       check:function(c){return c.hour>=23||c.hour<=1;},                                                                              e:'You stood with the garden between days. Some hours only the patient know.',        t:'common'},
+  {n:'Three AM Vigil',       check:function(c){return c.hour===3&&c.plant&&c.plantAge>=14;},                                                               e:'Three in the morning; a plant you have known two weeks. The vigil was returned.',  t:'rare'},
+  {n:'Sunrise Ledger',       check:function(c){return c.hour===6&&c.plant&&c.plant.hasFlower&&c.plant.season===0;},                                         e:'Sunrise; spring flower; the day opened its books in your favor.',                 t:'common'},
+  {n:'Sunset Closing',       check:function(c){return (c.hour===19||c.hour===20)&&c.plant&&c.plant.season===2;},                                            e:'Sunset closed an autumn day. The ledger balanced in copper.',                     t:'common'},
+  {n:'New Moon March',       check:function(c){return c.month===2&&c.moonPhase==='new'&&c.plant;},                                                          e:'A new moon in March. The dark seed in the dark month felt right.',                t:'common'},
+  {n:'Strawberry Moon',      check:function(c){return c.month===5&&c.moonPhase==='full'&&c.plant&&c.plant.hasFlower;},                                       e:'June full moon; a flower lit silver. The strawberry month earned its name again.', t:'rare'},
+  {n:'Hunter Moon',          check:function(c){return c.month===9&&c.moonPhase==='full'&&c.plant&&c.plant.companion>=20;},                                  e:'October full moon; the companion stayed visible through the cold.',                t:'rare'},
+  {n:'Midwinter Quiet',      check:function(c){return c.month===0&&(c.hour>=22||c.hour<=4)&&c.plant&&c.plant.season===3;},                                  e:'January, owl-hour, winter plant. The cold was its own audience.',                 t:'common'},
+  {n:'Lammas Loaf',          check:function(c){return c.month===7&&c.plant&&c.plant.hasFlower&&(c.plant.flower%71)===4;},                                   e:'August first; a dahlia opened. The harvest had begun being counted.',             t:'common'},
+  {n:'Imbolc Sprout',        check:function(c){return c.month===1&&c.plant&&!c.plant.hasFlower&&c.plant.season===0;},                                       e:'February first; a spring plant put up its first true sign. Imbolc kept.',         t:'common'},
+  {n:'Beltane Fire',         check:function(c){return c.month===4&&c.plant&&(c.plant.aura%36)===20;},                                                       e:'May first; ember-glow on a leaf. Beltane fire kept itself small.',                t:'common'},
+  {n:'Samhain Threshold',    check:function(c){return c.month===9&&(c.hour>=20||c.hour<=2)&&c.plant&&c.plant.companion>=32&&c.plant.companion<=38;},        e:'October night; mythic creature present. The veil thinned exactly as expected.',    t:'rare'},
+  {n:'First Frost Window',   check:function(c){return c.month===9&&c.hour<=8&&c.plant&&c.plant.season===2;},                                                e:'October dawn; an autumn plant under first frost. The keeper noted the date.',     t:'common'},
+  {n:'Last Frost Window',    check:function(c){return c.month===4&&c.hour<=8&&c.plant&&c.plant.season===0;},                                                e:'May dawn; spring plant survived the last cold morning. Spring made permanent.',    t:'common'},
+  {n:'Hottest Hour',         check:function(c){return c.hour===15&&c.realSeason===1&&c.plant&&c.plant.season===1;},                                         e:'Three PM in summer; a summer plant chose this hour to look its best.',            t:'common'},
+  {n:'Coldest Hour',         check:function(c){return c.hour===5&&c.realSeason===3&&c.plant&&c.plant.season===3;},                                          e:'Five AM in winter; a winter plant kept its color through the lowest hour.',        t:'common'},
+  {n:'Lunar Garden',         check:function(c){return c.moonPhase==='full'&&(c.hour>=22||c.hour<=4)&&c.plant&&(c.plant.aura%36)===7;},                      e:'Full moon, owl hour, moonlit aura. The garden was a small lunar event.',          t:'rare'},
+  {n:'New-Moon Sowing',      check:function(c){return c.moonPhase==='new'&&c.plantAge<=7&&c.plant;},                                                        e:'A young plant under a new moon. The dark welcomed the seed.',                     t:'common'},
+  {n:'Birthday Bloom',       check:function(c){var d=new Date(c.plantObj&&(c.plantObj.born||c.plantObj.mintedAt)||Date.now());return c.month===d.getMonth()&&c.plant&&c.plantAge>=300;},
+                                                                                                                                                            e:'A plant came back around to its birth month. A year on the same wheel.',          t:'rare'},
+  {n:'Daylight Savings',     check:function(c){return (c.month===2||c.month===10)&&c.hour>=2&&c.hour<=4&&c.plant;},                                          e:'The clock changed; the plant did not. You met it in the wrong hour.',             t:'common'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 6},
+    rare:   {pollen: 14, ea: 1}
+  };
+  for (var pi = 0; pi < _PHENOLOGY_TRIGS.length; pi++) {
+    var ph = _PHENOLOGY_TRIGS[pi];
+    (function(num, name, checkFn, effect, tier) {
+      var idStr = 'pheno_' + (num < 10 ? '00' + num : (num < 100 ? '0' + num : '' + num));
+      TRIGGERS.push({
+        id: idStr,
+        name: name,
+        riddle: 'A calendar moment found a matching plant.',
+        category: 'season',
+        check: checkFn,
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(pi + 1, ph.n, ph.check, ph.e, ph.t);
+  }
+})();
+
+// ── LINEAGE DISCOVERIES — 50 chimera generation x trait moments ──
+// Added 2026-04-27 (BoS 200+ expansion). Specific Chimera generation
+// milestones tied to specific traits. These reward breeders by surfacing a
+// discovery whenever a generational lineage carries a specific trait.
+// Reads c.plant.chimerGen + c.plant.{season, hasFlower, companion, aura, base, leafType, flower, mutationName}.
+var _LINEAGE_TRIGS = [
+  {n:'Second Bloom',           check:function(c){return c.plant&&c.plant.chimerGen===2&&c.plant.hasFlower;},                                              e:'A second-generation flower. The lineage has its own opinion about color now.', t:'common'},
+  {n:'Third Sun',              check:function(c){return c.plant&&c.plant.chimerGen===3&&c.plant.season===1;},                                             e:'A Gen 3 summer plant. Three crosses, three summers; the heat understands.',     t:'rare'},
+  {n:'Crown Lineage',          check:function(c){return c.plant&&c.plant.chimerGen>=4&&(c.plant.aura%36)===11;},                                          e:'A fourth-generation arch-halo. The plant became its own small cathedral.',      t:'rare'},
+  {n:'Tenth Generation',       check:function(c){return c.plant&&c.plant.chimerGen>=10;},                                                                 e:'Ten generations deep. The lineage has become a story with chapters.',           t:'rare'},
+  {n:'Mythic Inheritance',     check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.companion>=32&&c.plant.companion<=38;},                    e:'A second-generation mythic creature. The line carried the rare guest.',         t:'rare'},
+  {n:'Glass Heir',             check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.mutationName==='Glass Stem';},                             e:'A glass-stem child. Fragile twice over and unbroken once.',                     t:'rare'},
+  {n:'Golden Heir',            check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.mutationName==='Golden';},                                  e:'A kintsugi child of a kintsugi parent. The repair lasts.',                       t:'rare'},
+  {n:'Holographic Lineage',    check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.mutationName==='Holographic';},                            e:'Refraction inherited. The seven colors split themselves on schedule.',          t:'rare'},
+  {n:'Bioluminescent Heir',    check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.mutationName==='Bioluminescent';},                         e:'Inner light, generational. The dark continues to lose its argument.',            t:'rare'},
+  {n:'Spring Dynasty',         check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.season===0;},                                              e:'Three generations of spring. The bloodline learned the warming half.',          t:'rare'},
+  {n:'Winter Dynasty',         check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.season===3;},                                              e:'Three generations of winter. The cold was an inheritance, not a hardship.',     t:'rare'},
+  {n:'Autumn Dynasty',         check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.season===2;},                                              e:'Three generations of autumn. The wheel turned, and the lineage kept its color.',t:'rare'},
+  {n:'Pollinator Lineage',     check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.companion===21||c.plant.companion===24||c.plant.companion===28);}, e:'Inherited pollinator. The hive recognized your name across one cross.', t:'common'},
+  {n:'Toad Bloodline',         check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.companion===32;},                                          e:'A toad held across generations. Rain may answer twice.',                         t:'rare'},
+  {n:'Cicada Bloodline',       check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.companion===33;},                                          e:'Cicada in the second generation. Seventeen years took on a longer meaning.',    t:'rare'},
+  {n:'Beholder Inheritance',   check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.companion===38;},                                          e:'The eye opened in a child. Some witnesses are inherited.',                       t:'rare'},
+  {n:'Color-Locked Line',      check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.hasFlower;},                                               e:'Three generations of bloom. The color stayed faithful across crosses.',          t:'rare'},
+  {n:'Old Growth',             check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plantAge>=30;},                                                  e:'A second-generation plant aged a month. Lineage and longevity, both.',          t:'common'},
+  {n:'Ancient Lineage',        check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plantAge>=90;},                                                  e:'Three months on a second-generation plant. The line settled in.',                t:'rare'},
+  {n:'Pristine Form',          check:function(c){return c.plant&&c.plant.chimerGen===1&&c.ea>=20;},                                                       e:'A first-generation plant of high EA. The starting form held its weight.',        t:'common'},
+  {n:'Refined Heir',           check:function(c){return c.plant&&c.plant.chimerGen===2&&c.ea>=18;},                                                       e:'A child of high EA. The cross was kind to the lineage.',                         t:'rare'},
+  {n:'Resilient Inheritance',  check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.ea>=15;},                                                        e:'Three generations and the EA held. The breeding stayed honest.',                 t:'rare'},
+  {n:'Substrate Lineage',      check:function(c){return c.plant&&c.plant.chimerGen>=2&&typeof c.plant.base==='number'&&(c.plant.base%71)===15;},          e:'A crystal-matrix child. The geometry was genetic, not garden.',                  t:'rare'},
+  {n:'Phoenix Lineage',        check:function(c){return c.plant&&c.plant.chimerGen>=2&&typeof c.plant.base==='number'&&(c.plant.base%71)===57;},          e:'Phoenix Ash inherited. The next bloom is louder still.',                         t:'rare'},
+  {n:'Stardust Lineage',       check:function(c){return c.plant&&c.plant.chimerGen>=2&&typeof c.plant.base==='number'&&(c.plant.base%71)===54;},          e:'A child grown in stardust. Atoms older than the planet held the seed twice.',    t:'rare'},
+  {n:'Aurora Bloodline',       check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.aura%36)===5;},                                            e:'Aurora-light carried across a cross. The colors were not from any pigment.',     t:'rare'},
+  {n:'Moon Lineage',           check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.aura%36)===12;},                                          e:'Moon-aura inherited. The plant glowed for two generations of nights.',           t:'common'},
+  {n:'Stained Glass Lineage',  check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.aura%36)===35;},                                          e:'Stained-glass light passed through the cross. Each color still meant something.',t:'rare'},
+  {n:'Lightning Lineage',      check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.aura%36)===33;},                                          e:'Chain lightning across two generations. The leaves leapt to each other.',        t:'rare'},
+  {n:'Fairy Ring Inheritance', check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.aura%36)===26;},                                          e:'A second-generation fairy ring. The circle remembered the older circle.',       t:'rare'},
+  {n:'Patient Cross',          check:function(c){return c.plant&&c.plant.chimerGen===2&&c.plantAge>=14;},                                                 e:'Two weeks on a Gen 2 plant. The cross has earned its first fortnight.',          t:'common'},
+  {n:'Two-Step Lineage',       check:function(c){return c.plant&&c.plant.chimerGen===2&&c.plant.hasFlower&&c.plant.season===0;},                          e:'A spring flower in the second generation. The line learned the early color.',   t:'common'},
+  {n:'Three-Step Lineage',     check:function(c){return c.plant&&c.plant.chimerGen===3&&c.plant.hasFlower;},                                              e:'Three crosses, one bloom. The lineage agrees on flowering.',                     t:'rare'},
+  {n:'Five-Step Lineage',      check:function(c){return c.plant&&c.plant.chimerGen>=5;},                                                                  e:'Five generations under one keeper. The pedigree is now a small history.',       t:'rare'},
+  {n:'Seven-Step Lineage',     check:function(c){return c.plant&&c.plant.chimerGen>=7;},                                                                  e:'Seven crosses deep. The lineage no longer remembers its first parents.',        t:'rare'},
+  {n:'Frost Inheritance',      check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.aura%36)===19;},                                          e:'Frost crystal inherited. Cold made geometry across two generations.',            t:'rare'},
+  {n:'Ember Inheritance',      check:function(c){return c.plant&&c.plant.chimerGen>=2&&(c.plant.aura%36)===20;},                                          e:'Ember-glow inherited. Warmth held longer than expected, twice over.',            t:'rare'},
+  {n:'Thorned Inheritance',    check:function(c){return c.plant&&c.plant.chimerGen>=2&&typeof c.plant.leafType==='number'&&[5,12,18,25,33].indexOf(c.plant.leafType%71)>=0;}, e:'Thorned leaf carried into a child. The boundary was hereditary.', t:'common'},
+  {n:'Spiral Inheritance',     check:function(c){return c.plant&&c.plant.chimerGen>=2&&typeof c.plant.stem==='number'&&(c.plant.stem%24)===3;},           e:'A spiral stem in the second generation. Twining is older than fire, and now older than this lineage.', t:'common'},
+  {n:'Braided Inheritance',    check:function(c){return c.plant&&c.plant.chimerGen>=2&&typeof c.plant.stem==='number'&&(c.plant.stem%24)===17;},          e:'A braided stem inherited. Three strands, two generations.',                     t:'rare'},
+  {n:'Crystalline Inheritance',check:function(c){return c.plant&&c.plant.chimerGen>=2&&typeof c.plant.stem==='number'&&(c.plant.stem%24)===16;},          e:'A crystal stem in the second generation. Geology ran two crosses deep.',        t:'rare'},
+  {n:'Lotus Lineage',          check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.hasFlower&&typeof c.plant.flower==='number'&&(c.plant.flower%71)===3;}, e:'A lotus inherited. Mud below, pure above; same recipe, second pot.', t:'rare'},
+  {n:'Rose Lineage',           check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.hasFlower&&typeof c.plant.flower==='number'&&(c.plant.flower%71)===1;}, e:'A rose carried across a cross. The classic stayed classic.', t:'common'},
+  {n:'Cherry Lineage',         check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.hasFlower&&typeof c.plant.flower==='number'&&(c.plant.flower%71)===25;}, e:'Cherry blossom in the second generation. Hanami begins on schedule.', t:'rare'},
+  {n:'Orchid Lineage',         check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.hasFlower&&typeof c.plant.flower==='number'&&(c.plant.flower%71)===10;}, e:'An orchid inherited. Out of 28,000 species, this one twice over.', t:'rare'},
+  {n:'Mature Bloom',           check:function(c){return c.plant&&c.plant.chimerGen>=2&&c.plant.hasFlower&&c.plantAge>=21;},                               e:'Three weeks of a second-generation bloom. The cross has earned its window.',    t:'rare'},
+  {n:'Companion-Locked Line',  check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.companion>=20;},                                            e:'Three generations carrying the same companion. The creature chose loyalty.',    t:'rare'},
+  {n:'Mutation-Locked Line',   check:function(c){return c.plant&&c.plant.chimerGen>=3&&c.plant.mutationName&&c.plant.mutationName!=='None';},             e:'Three generations carrying the same mutation. The hash kept its preference.',    t:'rare'},
+  {n:'Pure Spring Inheritance',check:function(c){return c.plant&&c.plant.chimerGen>=4&&c.plant.season===0&&c.plant.hasFlower;},                            e:'Four generations of spring blooms. The line has a season as a name.',           t:'rare'},
+  {n:'Fertile Lineage',        check:function(c){try{return c.plant&&c.plant.chimerGen>=2&&c.plantObj&&(c.plantObj.breedCount||0)>=2;}catch(e){return false;}}, e:'A second-generation plant has bred twice. The lineage lives on.',    t:'rare'}
+];
+(function(){
+  var rewards = {
+    common: {pollen: 8},
+    rare:   {pollen: 16, ea: 1}
+  };
+  for (var li = 0; li < _LINEAGE_TRIGS.length; li++) {
+    var ln = _LINEAGE_TRIGS[li];
+    (function(num, name, checkFn, effect, tier) {
+      var idStr = 'lineage_' + (num < 10 ? '00' + num : (num < 100 ? '0' + num : '' + num));
+      TRIGGERS.push({
+        id: idStr,
+        name: name,
+        riddle: 'A lineage carries a trait across generations.',
+        category: 'trait',
+        check: checkFn,
+        effect: effect,
+        reward: rewards[tier] || rewards.common
+      });
+    })(li + 1, ln.n, ln.check, ln.e, ln.t);
   }
 })();
 
