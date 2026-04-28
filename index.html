@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.27';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.28';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5568,7 +5568,7 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
    sprites for all 10 biomes (assets/wild-biomes/icons/icon-*.png).
    The earlier "shitty suburban emoji" complaint is resolved by the
    img swap in _biomeIconHTML — the icon is now the gold neon outline. */
-.w-biome-label .wbl-icon{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;}
+.w-biome-label .wbl-icon{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;flex-shrink:0;}
 .w-biome-label .wbl-icon img{max-width:100%;max-height:100%;object-fit:contain;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));}
 .w-biome-label .wbl-name{
   font-family:'Bebas Neue',sans-serif;font-size:0.82rem;letter-spacing:0.22em;
@@ -40973,7 +40973,7 @@ document.addEventListener('keydown', function(e) {
           window.LW_FORAGING.addCard(_pick, 1);
           if (window.LW_FORAGING.EL[_pick] && window._toast) {
             var _rareTag = _rolledRare ? ' \u2605 RARE WILD' : '';
-            var _eIc = (window._elIconHTML ? _elIconHTML(_pick, 16) : window.LW_FORAGING.EL[_pick].icon);
+            var _eIc = (window._elIconHTML ? _elIconHTML(_pick, 28) : window.LW_FORAGING.EL[_pick].icon);
             setTimeout(function(){
               try { window._toast('\ud83c\udf3f Bloom gift: ' + _eIc + ' ' + window.LW_FORAGING.EL[_pick].label + _rareTag + ' card added to foraging hand.', { html:true }); }
               catch(e){ window._toast('\ud83c\udf3f Bloom gift: ' + window.LW_FORAGING.EL[_pick].icon + ' ' + window.LW_FORAGING.EL[_pick].label + _rareTag + ' card added to foraging hand.'); }
@@ -44092,7 +44092,7 @@ function activate(){
           var _bhName=document.getElementById('w-biome-hero-name');if(_bhName)_bhName.textContent=_bInf.name;
           var _bhIcon=document.getElementById('w-biome-hero-icon');if(_bhIcon){
             // innerHTML so the iconImg renders; falls back to emoji on 404.
-            _bhIcon.innerHTML = (window._biomeIconHTML?_biomeIconHTML(b,28):_bInf.icon);
+            _bhIcon.innerHTML = (window._biomeIconHTML?_biomeIconHTML(b,52):_bInf.icon);
           }
         }
         // Weather chip — compact today's weather + element tilt for foraging.
@@ -47325,7 +47325,7 @@ function showTP(p,mk){
         // Add soil info
         if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0)_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">\ud83c\udf3f Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}
         // Biome info
-        if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);var _bIcoH=(window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,16):_bInfo.icon);_statusExtra+='<br><span style="color:'+_bInfo.color+';">'+_bIcoH+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
+        if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);var _bIcoH=(window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,28):_bInfo.icon);_statusExtra+='<br><span style="color:'+_bInfo.color+';">'+_bIcoH+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
         if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_statusExtra;ownStatus.style.display='block';}
       }
     }
@@ -70353,9 +70353,11 @@ window.checkBiodiversity=checkBiodiversity;
 window.BIOMES=BIOMES;
 
 // HTML helper: returns <img> for biome icon w/ emoji fallback. size in px.
+// Default size 36 (was 22 — Stephen 2026-04-28: "ALL emojis you have replaced
+// ARE FUCKING OVER SHRUNK"). Callers bumped accordingly.
 window._biomeIconHTML=function(key,size){
   var b=BIOMES[key]||BIOMES.suburban;
-  var s=size||22;
+  var s=size||36;
   var emo=(b.icon||'🌿').replace(/'/g,'&#39;');
   if(b.iconImg){
     return '<img src="'+b.iconImg+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;" onerror="this.outerHTML=\''+emo+'\';">';
@@ -75422,7 +75424,8 @@ window._lwClaimHerbarium = function(id){
   // HTML helper: prefer img sprite, fall back to emoji on 404.
   function _elIconHTML(elKey, size){
     var el = EL[elKey]; if (!el) return '';
-    var s = size || 22;
+    // Default 36 (was 22 — bumped 2026-04-28 per Stephen "OVER SHRUNK" call).
+    var s = size || 36;
     var emo = (el.icon || '').replace(/'/g,'&#39;');
     if (el.iconImg){
       return '<img src="'+el.iconImg+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\''+emo+'\';">';
@@ -76230,8 +76233,8 @@ window._lwClaimHerbarium = function(id){
 
     function render() {
       var biomeName = (window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).name || 'Unknown') : (comp.biome||'Unknown');
-      var biomeIcon = (window._biomeIconHTML && window._lastDetectedBiome) ? _biomeIconHTML(window._lastDetectedBiome, 24) : ((window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).icon || '\ud83c\udf3f') : '\ud83c\udf3f');
-      var weatherIcon = comp.weather && EL[comp.weather] ? _elIconHTML(comp.weather, 22) : '';
+      var biomeIcon = (window._biomeIconHTML && window._lastDetectedBiome) ? _biomeIconHTML(window._lastDetectedBiome, 44) : ((window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).icon || '\ud83c\udf3f') : '\ud83c\udf3f');
+      var weatherIcon = comp.weather && EL[comp.weather] ? _elIconHTML(comp.weather, 40) : '';
       var weatherLbl = comp.weather ? ('Weather favors ' + EL[comp.weather].label) : 'Calm conditions';
       // Weather is a SILENT signal — it tilts the deck and reveals one slot
       // but never displays. Keeps the puzzle as Mastermind, not as weather-app.
@@ -76660,7 +76663,7 @@ window._lwClaimHerbarium = function(id){
             var _blPick = RARE_POOL[Math.floor(Math.random() * RARE_POOL.length)];
             addCard(_blPick, 1);
             if (EL[_blPick] && window._toast) {
-              var _bIc = (window._elIconHTML ? _elIconHTML(_blPick, 16) : EL[_blPick].icon);
+              var _bIc = (window._elIconHTML ? _elIconHTML(_blPick, 28) : EL[_blPick].icon);
               setTimeout(function(){
                 try { window._toast('\u2728 Bloom Day reward: ' + _bIc + ' ' + EL[_blPick].label + ', a rare wild card. Works on any hex (half strength).', { html:true }); }
                 catch(e){ window._toast('\u2728 Bloom Day reward: ' + EL[_blPick].icon + ' ' + EL[_blPick].label + ', a rare wild card. Works on any hex (half strength).'); }
@@ -80701,7 +80704,7 @@ window.LW_FAMILY_T3 = {
         msg = '\ud83e\uddf5 Soft Thread \u2014 +1 Fertilizer';
       } else if (family === 'wayfinders') {
         var biomeName = 'unknown terrain';
-        try { if (window._lastDetectedBiome && window.getBiomeInfo) { var bi = getBiomeInfo(window._lastDetectedBiome); if (bi) biomeName = (window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,16):bi.icon) + ' ' + bi.name; } } catch(e) {}
+        try { if (window._lastDetectedBiome && window.getBiomeInfo) { var bi = getBiomeInfo(window._lastDetectedBiome); if (bi) biomeName = (window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,28):bi.icon) + ' ' + bi.name; } } catch(e) {}
         var sInfo = null; try { if (window.getSeasonInfo) sInfo = getSeasonInfo(); } catch(e) {}
         var seasonTxt = sInfo ? (sInfo.emoji + ' ' + sInfo.name) : '';
         if (window.earnHashes) window.earnHashes(1);
@@ -83268,7 +83271,7 @@ function _bosSecretsContent() {
       // Stephen 2026-04-28: replaced default emojis with hand-drawn icons.
       // img falls back to emoji on 404 via onerror for any missing file.
       function _trIco(slug, fallback){
-        return '<img src="assets/codex/' + slug + '.png" alt="" style="width:32px;height:32px;object-fit:contain;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=\'' + fallback + '\';">';
+        return '<img src="assets/codex/' + slug + '.png" alt="" style="width:64px;height:64px;object-fit:contain;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=\'<span style=&quot;font-size:1.8rem;&quot;>' + fallback + '</span>\';">';
       }
       var _rows = [
         { label: 'LEAF TYPES',     icon: _trIco('leaf','\ud83c\udf43'),      seen: Object.keys(_seenT.leaves).length,      total: (_tb.leaves||[]).length || 71 },
