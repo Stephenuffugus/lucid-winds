@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.50';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.51';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -70486,7 +70486,14 @@ window._LW_EMOJI_SPRITES = {
   '♾️': 'assets/fx/infinity-green.png',         // infinity
   '🌍': 'assets/fx/planet-blue.png',           // earth
   '🌎': 'assets/fx/planet-blue.png',           // earth americas
-  '🌏': 'assets/fx/planet-blue.png'            // earth asia
+  '🌏': 'assets/fx/planet-blue.png',           // earth asia
+  '🐉': 'assets/fx/sparkle-purple.png',         // dragon — placeholder until tier-2 dragon-gold lands
+  '🐾': 'assets/fx/paw-gold.png',              // paw prints (companion family)
+  '📚': 'assets/fx/book-gold.png',             // books (codex)
+  '✦':       'assets/fx/sparkle-pink.png',          // four-pointed star (mythic glyph)
+  '✧':       'assets/fx/sparkle-purple.png',        // open four-point star (cosmic)
+  '★':        'assets/fx/sparkle-pink.png',          // five-pointed star
+  '⭐': 'assets/fx/sparkle-pink.png'           // star emoji
 };
 
 window._lwEmojiSprite = function(emoji, size){
@@ -73416,20 +73423,78 @@ var _BOS_LEGACY_REDIRECT = {
 function _bosSectionHeader(label) {
   return '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.16em;color:var(--gold);margin:1.2rem 0 0.6rem;padding-bottom:0.3rem;border-bottom:1px solid rgba(200,168,75,0.18);">' + label + '</div>';
 }
+
+// Collapsible section helper — tap title to toggle. Default-collapsed for
+// the CODEX rabbit-hole feel: the player sees a short navigable list,
+// taps in to discover what each section holds.
+//
+// Usage:
+//   h += _bosCollapsible('synergies-elem', 'ELEMENTAL', '12 / 20', false, function(){ return innerHTML; });
+//   h += _bosCollapsible('rare-events', 'RARE EVENTS', '', true, function(){ return body; });
+//
+// id must be unique within the page. Defaults to closed unless openByDefault is true.
+function _bosCollapsible(id, label, badge, openByDefault, bodyFn) {
+  var key = 'lw_acc_' + id;
+  var open = openByDefault;
+  try {
+    var stored = localStorage.getItem(key);
+    if (stored !== null) open = stored === '1';
+  } catch(e){}
+  var arrow = open ? '▾' : '▸'; // ▾ open / ▸ closed
+  var labelEsc = String(label).replace(/'/g, "\\'");
+  var badgeHtml = badge ? '<span style="color:var(--muted);font-size:0.6rem;letter-spacing:0.04em;margin-left:8px;">' + badge + '</span>' : '';
+  var h = '';
+  h += '<div class="bos-acc" data-acc-id="' + id + '" style="margin:0.7rem 0 0.4rem;border:1px solid rgba(200,168,75,0.16);border-radius:8px;overflow:hidden;background:rgba(13,16,12,0.4);">';
+  h += '<div onclick="window._bosToggleAcc(\'' + id + '\')" role="button" tabindex="0" aria-expanded="' + (open ? 'true' : 'false') + '" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.7rem 0.85rem;cursor:pointer;background:rgba(26,36,22,0.3);border-bottom:' + (open ? '1px solid rgba(200,168,75,0.16)' : 'none') + ';min-height:44px;-webkit-tap-highlight-color:transparent;user-select:none;">';
+  h += '<span style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">';
+  h += '<span class="bos-acc-arrow" style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);width:14px;flex-shrink:0;">' + arrow + '</span>';
+  h += '<span style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;color:var(--gold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + label + '</span>';
+  h += badgeHtml;
+  h += '</span>';
+  h += '</div>';
+  h += '<div class="bos-acc-body" style="padding:' + (open ? '0.7rem 0.7rem 0.5rem' : '0') + ';display:' + (open ? 'block' : 'none') + ';">';
+  if (open) { try { h += bodyFn(); } catch(e){} }
+  else h += '<!-- collapsed -->';
+  h += '</div>';
+  h += '</div>';
+  return h;
+}
+
+// Toggle handler for collapsible accordions. Persists state in localStorage
+// under lw_acc_<id> so panels stay open/closed across renders.
+window._bosToggleAcc = function(id) {
+  var key = 'lw_acc_' + id;
+  var current = false;
+  try { current = localStorage.getItem(key) === '1'; } catch(e){}
+  try { localStorage.setItem(key, current ? '0' : '1'); } catch(e){}
+  // Re-render the active CODEX content so the body fills/empties.
+  // Simpler than DOM-surgery and keeps state correct.
+  if (window._bosSetTab && window._bosTab) {
+    window._bosSetTab(window._bosTab);
+  } else if (typeof _bosSetTab === 'function' && typeof _bosTab !== 'undefined') {
+    _bosSetTab(_bosTab);
+  }
+};
 // CODEX — everything you've discovered. Long scroll. Bundles moved to
 // QUESTS where they conceptually belong (weekly chore, not discovery).
 // _bosCodexMode flag flips on so _bosSecretsContent suppresses the
 // Companion Gallery (the dedicated COMPANIONS section below covers it).
 function _bosCodexContent() {
-  var h = '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);opacity:0.85;font-size:0.7rem;line-height:1.5;margin-bottom:0.4rem;">"Everything you have found, gathered into one quiet record."</div>';
-  h += _bosSectionHeader('DISCOVERY ATLAS');
-  window._bosCodexMode = true;
-  try { h += (typeof _bosSecretsContent === 'function') ? _bosSecretsContent() : ''; } catch(e){}
-  window._bosCodexMode = false;
-  h += _bosSectionHeader('COMPANIONS');
-  try { h += (typeof _bosMementosContent === 'function') ? _bosMementosContent() : ''; } catch(e){}
-  h += _bosSectionHeader('ITEMS');
-  try { h += (typeof _bosItemsContent === 'function') ? _bosItemsContent() : ''; } catch(e){}
+  var h = '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);opacity:0.85;font-size:0.7rem;line-height:1.5;margin-bottom:0.6rem;">"Everything you have found, gathered into one quiet record. Tap to open each chapter."</div>';
+  // DISCOVERY ATLAS open by default — that's where most of the chase happens.
+  h += _bosCollapsible('codex-atlas', 'DISCOVERY ATLAS', '', true, function(){
+    window._bosCodexMode = true;
+    var inner = '';
+    try { inner = (typeof _bosSecretsContent === 'function') ? _bosSecretsContent() : ''; } catch(e){}
+    window._bosCodexMode = false;
+    return inner;
+  });
+  h += _bosCollapsible('codex-companions', 'COMPANIONS', '', false, function(){
+    try { return (typeof _bosMementosContent === 'function') ? _bosMementosContent() : ''; } catch(e){ return ''; }
+  });
+  h += _bosCollapsible('codex-items', 'ITEMS', '', false, function(){
+    try { return (typeof _bosItemsContent === 'function') ? _bosItemsContent() : ''; } catch(e){ return ''; }
+  });
   return h;
 }
 // QUESTS tab — daily + weekly cadence challenges + bundles. Achievements
@@ -73473,7 +73538,7 @@ function _bosSetTab(tab) {
   }
   // Map legacy 10-tab keys onto the 5-tab consolidated structure.
   if (_BOS_LEGACY_REDIRECT[tab]) tab = _BOS_LEGACY_REDIRECT[tab];
-  _bosTab = tab;
+  _bosTab = tab; window._bosTab = tab;
   // Capture previous read-time BEFORE stamping — this is what content
   // functions compare against to decide whether to mark an item NEW.
   // Available to any renderer as window._bosPrevReadTs.
@@ -82938,16 +83003,16 @@ function _bosSecretsContent() {
     elemental: { color:'#d4842a', icon:'\ud83d\udd25', hint:'Elemental fusion \u2014 fire, ice, storm, tide' },
     nature:    { color:'#7ab356', icon:'\ud83c\udf3f', hint:'Natural alliance \u2014 creature + root + season' },
     cosmic:    { color:'#a88fd4', icon:'\u2728',       hint:'Cosmic alignment \u2014 aura, star, time' },
-    dark:      { color:'#8a6b9d', icon:'\ud83c\udf11', hint:'Shadow work \u2014 void, bone, silhouette' }
+    dark:      { color:'#8a6b9d', icon:'\ud83c\udf11', hint:'Shadow work \u2014 void, bone, silhouette' },
+    mythical:  { color:'#c8a84b', icon:'\ud83d\udc09', hint:'Mythical fusion \u2014 dragons, beholders, legends' }
   };
-  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
-  // Build synergy grid from LW_SYNERGIES (full catalog) so locked
-  // slots carry a theme hint instead of bare '?'. If the expose
-  // hasn't loaded yet, fall back to the legacy discovered-only view.
+  // Per-theme accordion grouping. Walk LW_SYNERGIES once, bucket by theme,
+  // render each theme as its own collapsible section. Each section header
+  // shows the count of found / total in that theme. Themes the player has
+  // discovered something in default-open; empty themes default-closed.
   if(window.LW_SYNERGIES){
     var _allSyns = window.LW_SYNERGIES;
-    // Build a set of synergy names discovered since last SECRETS visit
-    // (via LW_Log). These get the NEW treatment — gold ring + dot.
+    // NEW set: synergies discovered since last SECRETS visit (gold ring/dot).
     var _synNewSet = {};
     try {
       if (window.LW_Log && window._bosPrevReadTs != null) {
@@ -82960,43 +83025,76 @@ function _bosSecretsContent() {
         }
       }
     } catch(e){}
+    // Bucket by theme + apply filter/search
+    var _byTheme = {};
+    var _themeOrder = ['elemental','nature','cosmic','dark','mythical'];
     var _synShown = 0;
     for (var _asi = 0; _asi < _allSyns.length; _asi++) {
       var _asEntry = _allSyns[_asi];
       if (!_asEntry || !_asEntry.name) continue;
       var _asFound = !!foundSynergies[_asEntry.name];
-      // Apply filter: found / undisc / all
       if (_synFilter === 'found' && !_asFound) continue;
       if (_synFilter === 'undisc' && _asFound) continue;
-      // Apply search across name + theme + fx
       if (_synSearch) {
         var _hay = (_asEntry.name + ' ' + (_asEntry.theme || '') + ' ' + (_asEntry.fx || '')).toLowerCase();
         if (_hay.indexOf(_synSearch) < 0) continue;
       }
+      var _bk = _asEntry.theme || 'unknown';
+      if (!_byTheme[_bk]) _byTheme[_bk] = [];
+      _byTheme[_bk].push({ entry: _asEntry, found: _asFound, isNew: !!_synNewSet[_asEntry.name] });
       _synShown++;
-      var _asTheme = _synThemeMeta[_asEntry.theme] || { color:'rgba(122,179,86,0.35)', icon:'\u2726', hint:'Hidden alignment' };
-      var _asNew = _synNewSet[_asEntry.name];
-      if (_asFound) {
-        var _asBorder = _asNew ? 'var(--gold)' : _asTheme.color + '66';
-        var _asBg = _asNew ? 'rgba(200,168,75,0.12)' : _asTheme.color + '14';
-        var _asShadow = _asNew ? 'box-shadow:0 0 8px rgba(200,168,75,0.35);' : '';
-        var _asNameEsc = _asEntry.name.replace(/'/g,"\\'");
-        h += '<div onclick="window._lwShowSynergyDetail(\''+_asNameEsc+'\')" style="position:relative;padding:8px 6px;background:'+_asBg+';border:1px solid '+_asBorder+';border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:background 0.15s ease;'+_asShadow+'" title="'+_asEntry.name+': '+(_asEntry.fx||'')+(_asNew?' (new)':'')+'">';
-        if (_asNew) h += '<span style="position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
-        h += '<div style="font-size:1rem;line-height:1;">'+_asTheme.icon+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:'+(_asNew?'var(--gold)':_asTheme.color)+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+_asEntry.name+'</div>';
-        h += '</div>';
-      } else {
-        // Locked — show theme hint, not bare '?'. Tooltip carries the
-        // fuller hint string for players who hover/long-press.
-        h += '<div style="padding:8px 6px;background:rgba(26,36,22,0.3);border:1px dashed '+_asTheme.color+'44;border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0.55;" title="'+_asTheme.hint+'">';
-        h += '<div style="font-size:0.95rem;line-height:1;color:'+_asTheme.color+';opacity:0.7;">'+_asTheme.icon+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+_asEntry.theme+'</div>';
-        h += '</div>';
+    }
+    // Render one accordion per theme.
+    var _renderThemeGrid = function(items, themeMeta){
+      var inner = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+      for (var _i = 0; _i < items.length; _i++) {
+        var it = items[_i];
+        var en = it.entry, found = it.found, isNew = it.isNew;
+        var icoHtml = (window._lwEmojiSprite ? window._lwEmojiSprite(themeMeta.icon, 18) : themeMeta.icon);
+        if (found) {
+          var bd = isNew ? 'var(--gold)' : themeMeta.color + '66';
+          var bg = isNew ? 'rgba(200,168,75,0.12)' : themeMeta.color + '14';
+          var sh = isNew ? 'box-shadow:0 0 8px rgba(200,168,75,0.35);' : '';
+          var nmEsc = en.name.replace(/'/g,"\\'");
+          inner += '<div onclick="window._lwShowSynergyDetail(\''+nmEsc+'\')" style="position:relative;padding:8px 6px;background:'+bg+';border:1px solid '+bd+';border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:background 0.15s ease;'+sh+'" title="'+en.name+': '+(en.fx||'')+(isNew?' (new)':'')+'">';
+          if (isNew) inner += '<span style="position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
+          inner += '<div style="line-height:1;">'+icoHtml+'</div>';
+          inner += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:'+(isNew?'var(--gold)':themeMeta.color)+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+en.name+'</div>';
+          inner += '</div>';
+        } else {
+          inner += '<div style="padding:8px 6px;background:rgba(26,36,22,0.3);border:1px dashed '+themeMeta.color+'44;border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0.55;" title="'+themeMeta.hint+'">';
+          inner += '<div style="line-height:1;opacity:0.7;">'+icoHtml+'</div>';
+          inner += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">locked</div>';
+          inner += '</div>';
+        }
       }
+      inner += '</div>';
+      return inner;
+    };
+    for (var _ti = 0; _ti < _themeOrder.length; _ti++) {
+      var _tk = _themeOrder[_ti];
+      var _items = _byTheme[_tk];
+      if (!_items || !_items.length) continue;
+      var _tm = _synThemeMeta[_tk] || { color:'rgba(122,179,86,0.35)', icon:'\u2726', hint:'Hidden' };
+      var _foundInTheme = 0;
+      for (var _fi = 0; _fi < _items.length; _fi++) if (_items[_fi].found) _foundInTheme++;
+      var _badge = _foundInTheme + ' / ' + _items.length;
+      var _openByDefault = _foundInTheme > 0;
+      (function(items, tm, themeKey){
+        h += _bosCollapsible(
+          'syn-theme-' + themeKey,
+          themeKey.toUpperCase(),
+          _badge,
+          _openByDefault,
+          function(){ return _renderThemeGrid(items, tm); }
+        );
+      })(_items, _tm, _tk);
     }
   } else if(window._SYNERGIES){
     // Legacy fallback — kept in case LW_SYNERGIES somehow missing.
+    // Wraps its cells in its own grid since the per-theme accordion
+    // path above doesn't share a grid wrapper.
+    h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
     var synKeys=Object.keys(foundSynergies);
     // Build a set of synergy names discovered since last SECRETS visit
     // (via LW_Log). These will get the NEW treatment — gold ring + dot.
@@ -83031,8 +83129,8 @@ function _bosSecretsContent() {
       h+='<div style="font-size:0.4rem;color:var(--muted);">?</div>';
       h+='</div>';
     }
+    h+='</div>'; // close legacy grid
   }
-  h+='</div>';
   // Empty-state when search/filter hides all synergies
   if (window.LW_SYNERGIES && typeof _synShown === 'number' && _synShown === 0) {
     h += '<div style="padding:0.7rem;text-align:center;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);background:rgba(18,22,16,0.4);border:1px dashed rgba(192,122,200,0.2);border-radius:6px;">';
@@ -83854,7 +83952,7 @@ window._openCompendiumUI=function(){
   //   4. Default → CODEX
   var _todayViewTs = parseInt(localStorage.getItem('lw_bos_today_viewed')||'0',10)||0;
   var _todayStale = (Date.now()-_todayViewTs) > 72000000; // ~20h
-  _bosTab = 'codex';
+  _bosTab = 'codex'; window._bosTab = 'codex';
   if(!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())_bosTab='class';
   else if(_todayStale)_bosTab='journal';
   else if(window._getBookUnreadCount&&window._getBookUnreadCount()>0)_bosTab='journal';
