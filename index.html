@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2708,6 +2708,22 @@
     .lwh-trade-celebrate-btn{width:100%;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.12em;background:linear-gradient(180deg,rgba(200,168,75,0.4),rgba(160,128,55,0.6));border:1.5px solid rgba(200,168,75,0.7);color:var(--cream);border-radius:10px;padding:0.65rem;cursor:pointer;min-height:48px;}
     @keyframes tradeSlamIn{0%{transform:scale(0.6) translateY(20px);opacity:0;}60%{transform:scale(1.05) translateY(0);opacity:1;}100%{transform:scale(1) translateY(0);opacity:1;}}
     @keyframes tradeArtPulse{0%,100%{transform:scale(1) rotate(-1deg);}50%{transform:scale(1.06) rotate(1deg);}}
+
+    /* ═══ TROPHY CABINET DETAIL MODAL ═══ */
+    /* Tap an unlocked trophy in the cabinet → modal opens with full art + lore. */
+    .lw-trophy-detail{position:fixed;inset:0;z-index:100024;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;}
+    .lw-trophy-detail .lwt-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+    .lw-trophy-detail .lwt-panel{position:relative;background:linear-gradient(180deg,rgba(28,22,14,0.98),rgba(13,16,12,0.99));border:2px solid var(--gold);border-radius:18px;padding:1.6rem 1.2rem 1.4rem;max-width:340px;width:calc(100vw - 2rem);max-height:88vh;overflow-y:auto;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,0.9),0 0 36px rgba(200,168,75,0.3);animation:trophyDetailIn 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+    .lw-trophy-detail .lwt-close{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;background:rgba(40,40,30,0.6);border:1px solid rgba(200,168,75,0.3);color:var(--cream);font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;}
+    .lw-trophy-detail .lwt-close:hover{border-color:rgba(200,168,75,0.7);}
+    .lw-trophy-detail .lwt-art-frame{width:240px;height:240px;margin:0.2rem auto 0.8rem;display:flex;align-items:center;justify-content:center;}
+    .lw-trophy-detail .lwt-art{max-width:100%;max-height:100%;object-fit:contain;display:block;filter:drop-shadow(0 4px 18px rgba(200,168,75,0.4));}
+    .lw-trophy-detail .lwt-tier{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.15em;margin-bottom:0.3rem;opacity:0.85;}
+    .lw-trophy-detail .lwt-name{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;line-height:1.2;margin-bottom:0.4rem;}
+    .lw-trophy-detail .lwt-ach-name{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.1em;color:var(--cream);margin-bottom:0.5rem;}
+    .lw-trophy-detail .lwt-desc{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);line-height:1.55;margin-bottom:0.7rem;opacity:0.92;}
+    .lw-trophy-detail .lwt-lore{font-family:'Playfair Display',serif;font-style:italic;font-size:0.6rem;color:var(--muted);line-height:1.6;border-top:1px solid rgba(200,168,75,0.18);padding-top:0.7rem;margin-top:0.5rem;}
+    @keyframes trophyDetailIn{0%{transform:scale(0.7) translateY(30px);opacity:0;}60%{transform:scale(1.04) translateY(0);opacity:1;}100%{transform:scale(1) translateY(0);opacity:1;}}
 
     /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots) */
     #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:70px;height:70px;flex-shrink:0;overflow:hidden;}
@@ -81882,10 +81898,11 @@ function _bosQuestsContent(opts) {
   if (trophyCatalog.length === 0) {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);padding:0.5rem;text-align:center;">No trophy achievements in this catalog.</div>';
   } else {
-    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:0.4rem;">';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:0.5rem;">';
     // Build map of earned trophy names so we can match against catalog
     var earnedMap = {};
     for (var tri = 0; tri < trophies.length; tri++) earnedMap[trophies[tri].name] = trophies[tri];
+    var TROPHY_BY_TIER = { bronze:'lwe-trophy-medal', silver:'lwe-trophy-shield', gold:'lwe-trophy-cup', platinum:'lwe-trophy-crown', mythic:'lwe-trophy-star' };
     for (var tci2 = 0; tci2 < trophyCatalog.length; tci2++) {
       var tEntry = trophyCatalog[tci2];
       var tName = (tEntry.reward && tEntry.reward.name) || tEntry.name;
@@ -81895,12 +81912,25 @@ function _bosQuestsContent(opts) {
       var bg = earned ? 'linear-gradient(180deg,' + bColor + '22,' + bColor + '0a)' : 'rgba(18,22,16,0.5)';
       var border = earned ? bColor : 'rgba(122,179,86,0.12)';
       var displayName = earned ? tName : '???';
-      var TROPHY_BY_TIER = { bronze:'lwe-trophy-medal', silver:'lwe-trophy-shield', gold:'lwe-trophy-cup', platinum:'lwe-trophy-crown', mythic:'lwe-trophy-star' };
       var trophyClass = TROPHY_BY_TIER[tEntry.tier] || 'lwe-trophy-cup';
-      var icon = earned ? '<span class="lwe ' + trophyClass + '" style="width:2em;height:2em;"></span>' : '·';
-      h += '<div title="' + _esc(earned ? (tEntry.desc || tEntry.name) : 'A trophy waits to be earned.') + '" style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:8px;padding:0.5rem 0.3rem;text-align:center;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;' + (earned ? '' : 'opacity:0.45;') + '">';
-      h += '<div style="font-size:1.4rem;line-height:1;display:flex;align-items:center;justify-content:center;">' + icon + '</div>';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.04em;color:' + (earned ? bColor : 'var(--muted)') + ';line-height:1.1;text-align:center;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + _esc(displayName) + '</div>';
+      // Slug for per-trophy art lookup. "A Star, In a Pot" -> "a-star-in-a-pot".
+      var trophySlug = tName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+      var artSrc = 'assets/trophies/' + trophySlug + '.png';
+      // Earned: try per-trophy PNG first; if missing, fall back to tier sprite.
+      // Locked: dim "?" placeholder so the player sees how many wait.
+      var icon;
+      if (earned) {
+        var fallbackIcon = '<span class=&quot;lwe ' + trophyClass + '&quot; style=&quot;width:2.6em;height:2.6em;&quot;></span>';
+        icon = '<img src="' + artSrc + '" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=\'' + fallbackIcon + '\';">';
+      } else {
+        icon = '·';
+      }
+      // Earned trophies are clickable — opens the detail modal with full art + lore.
+      var onclick = earned ? ' onclick="if(window._lwTrophyOpen)_lwTrophyOpen(\'' + _esc(tEntry.id).replace(/'/g,"\\'") + '\');"' : '';
+      var cursor = earned ? 'cursor:pointer;' : '';
+      h += '<div' + onclick + ' title="' + _esc(earned ? (tEntry.desc || tEntry.name) : 'A trophy waits to be earned.') + '" style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:10px;padding:0.5rem 0.3rem;text-align:center;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;' + cursor + (earned ? '' : 'opacity:0.45;') + '">';
+      h += '<div style="width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem;line-height:1;">' + icon + '</div>';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;letter-spacing:0.04em;color:' + (earned ? bColor : 'var(--muted)') + ';line-height:1.1;text-align:center;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + _esc(displayName) + '</div>';
       h += '</div>';
     }
     h += '</div>';
@@ -81916,6 +81946,49 @@ window._bosQuestsContent = _bosQuestsContent;
 // Section-specific renderers for the new dedicated tabs (Stephen 2026-04-27).
 window._bosAchievementsContent = function(){ return _bosQuestsContent({cadence:false, achievements:true, trophies:false, title:'ACHIEVEMENTS'}); };
 window._bosTrophiesContent     = function(){ return _bosQuestsContent({cadence:false, achievements:false, trophies:true, title:'TROPHY CABINET'}); };
+
+// Trophy click-to-detail modal — fires when player taps an unlocked trophy
+// in the cabinet grid. Shows the per-trophy art at full detail with the
+// achievement that earned it.
+window._lwTrophyOpen = function(achId){
+  if (!window.LW_ACH || !LW_ACH.catalog) return;
+  var ach = null;
+  for (var i = 0; i < LW_ACH.catalog.length; i++) {
+    if (LW_ACH.catalog[i].id === achId) { ach = LW_ACH.catalog[i]; break; }
+  }
+  if (!ach) return;
+  var tName = (ach.reward && ach.reward.name) || ach.name;
+  var slug = tName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  var artSrc = 'assets/trophies/' + slug + '.png';
+  var tierColors = { bronze:'#a87236', silver:'#a8a8a8', gold:'#c8a84b', platinum:'#7eb8d4', mythic:'#a87285' };
+  var bColor = tierColors[ach.tier] || tierColors.gold;
+  var TROPHY_BY_TIER = { bronze:'lwe-trophy-medal', silver:'lwe-trophy-shield', gold:'lwe-trophy-cup', platinum:'lwe-trophy-crown', mythic:'lwe-trophy-star' };
+  var fbClass = TROPHY_BY_TIER[ach.tier] || 'lwe-trophy-cup';
+  var fb = '<span class=&quot;lwe ' + fbClass + '&quot; style=&quot;width:5em;height:5em;&quot;></span>';
+  // Escape helper (LW_ACH catalog strings can contain user-style punctuation)
+  function _e(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // Strip existing modal if present
+  var prior = document.getElementById('lw-trophy-detail');
+  if (prior) prior.remove();
+  var ov = document.createElement('div');
+  ov.id = 'lw-trophy-detail';
+  ov.className = 'lw-trophy-detail';
+  ov.innerHTML =
+    '<div class="lwt-scrim" onclick="document.getElementById(\'lw-trophy-detail\').remove();"></div>' +
+    '<div class="lwt-panel" style="border-color:' + bColor + ';">' +
+      '<button class="lwt-close" onclick="document.getElementById(\'lw-trophy-detail\').remove();" aria-label="Close">&#x2715;</button>' +
+      '<div class="lwt-art-frame">' +
+        '<img src="' + artSrc + '" alt="" class="lwt-art" onerror="this.outerHTML=\'' + fb + '\';">' +
+      '</div>' +
+      '<div class="lwt-tier" style="color:' + bColor + ';">' + _e((ach.tier || '').toUpperCase()) + ' &middot; ' + _e(ach.category || '') + '</div>' +
+      '<div class="lwt-name" style="color:' + bColor + ';">' + _e(tName) + '</div>' +
+      '<div class="lwt-ach-name">' + _e(ach.name) + '</div>' +
+      (ach.desc ? '<div class="lwt-desc">' + _e(ach.desc) + '</div>' : '') +
+      (ach.lore ? '<div class="lwt-lore">' + _e(ach.lore) + '</div>' : '') +
+    '</div>';
+  document.body.appendChild(ov);
+  if (window._haptic) try { _haptic('tap'); } catch(e){}
+};
 
 // Event detail Reader page.
 window._lwShowEventDetail = function(eventName) {
