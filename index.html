@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.54';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.55';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38564,7 +38564,7 @@ document.addEventListener('keydown', function(e) {
               '<span class="pad-btn-icon">'+(window._lwIcon?_lwIcon('dna',40,'🧬'):'🧬')+'</span><span class="pad-btn-label">BREED</span></button>';
       if(plant.parentAHash||plant.parentBHash||(plant.generation&&plant.generation>1)){
         btns += '<button class="pad-btn" onclick="if(window.openAncestryViewer)openAncestryViewer(window._padBreedPlant);" style="border-color:rgba(200,168,75,0.15);">' +
-                '<span class="pad-btn-icon">🌳</span><span class="pad-btn-label">ANCESTRY</span></button>';
+                '<span class="pad-btn-icon">'+(window._lwEmojiSprite?_lwEmojiSprite('🌳',32):'🌳')+'</span><span class="pad-btn-label">ANCESTRY</span></button>';
       }
       btns += '<button class="pad-btn compost" onclick="confirmCompost('+idx+')">' +
               '<span class="pad-btn-icon"><img src="assets/fx/compost-leaf-vine.png" alt="" style="width:28px;height:28px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83e\uddea&apos;;"></span><span class="pad-btn-label">COMPOST</span></button>';
@@ -51259,7 +51259,7 @@ window._lwOpenMyPlants = function(){
     ovE.innerHTML =
       '<div style="max-width:340px;text-align:center;">' +
         '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="position:absolute;top:1rem;right:1rem;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:0.95rem;cursor:pointer;">&times;</button>' +
-        '<div style="font-size:3.5rem;line-height:1;margin-bottom:0.7rem;opacity:0.5;">🌳</div>' +
+        '<div style="line-height:1;margin-bottom:0.7rem;opacity:0.7;"><img src="assets/fx/tree-gold.png" alt="" style="width:96px;height:96px;object-fit:contain;display:inline-block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:3.5rem;&quot;>🌳</span>&apos;;"></div>' +
         '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:0.5rem;">NO PLANTS IN THE WILD</div>' +
         '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:var(--cream);line-height:1.5;margin-bottom:1rem;">Drop your first specimen with the SOW button. Other keepers see it on their map.</div>' +
         '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();" style="padding:11px 20px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.55);background:linear-gradient(180deg,rgba(122,179,86,0.32),rgba(60,90,40,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;"<span class="lwe lwe-bloom"></span> SOW A PLANT</button>' +
@@ -64406,7 +64406,7 @@ function render(){
   // Dedicated CLOSE so the backpack never gets "stuck open" when the
   // dim overlay behind it fails to catch the tap. Stephen flagged it.
   h+='<button onclick="if(window.BP)BP.close();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--cream);background:linear-gradient(180deg,rgba(60,70,50,0.55),rgba(40,50,32,0.65));border:1.5px solid rgba(180,170,130,0.35);border-radius:10px;cursor:pointer;">✕ CLOSE</button>';
-  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 RETURN</button>';
+  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/house-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;🏠&apos;;"> RETURN</button>';
   var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
   h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;">\ud83c\udf31 ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
   var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
@@ -70493,8 +70493,22 @@ window._LW_EMOJI_SPRITES = {
   '✦':       'assets/fx/sparkle-pink.png',          // four-pointed star (mythic glyph)
   '✧':       'assets/fx/sparkle-purple.png',        // open four-point star (cosmic)
   '★':        'assets/fx/sparkle-pink.png',          // five-pointed star
-  '⭐': 'assets/fx/sparkle-pink.png'           // star emoji
+  '⭐': 'assets/fx/sparkle-pink.png',          // star emoji
+  // ─── 2026-04-28 batch: 10 new tier-2 sprites ───
+  '🐝': 'assets/fx/bee-gold.png',              // bee (Conduits family + 🐝 sites)
+  '🌳': 'assets/fx/tree-gold.png',             // deciduous tree (Deep Roots, Forest milestones)
+  '👑': 'assets/fx/crown-gold.png',            // crown (Living Legend achievement)
+  '🏠': 'assets/fx/house-gold.png',            // house (Half House)
+  '🏡': 'assets/fx/house-gold.png',            // house with garden — same sprite
+  '🏰': 'assets/fx/castle-gold.png',           // european castle (Full House)
+  '🌌': 'assets/fx/galaxy-gold.png',           // milky way (Cosmic Gardener)
+  '💨': 'assets/fx/wind-blue.png',             // wind/dash (climate wind label)
+  '🌊': 'assets/fx/wave-blue.png',             // water wave (climate flood)
+  '📍': 'assets/fx/pin-gold.png'               // round pushpin / map pin
 };
+// snowflake-blue-v2 is the newer detailed snowflake; keep ❄️ pointed at
+// the original snowflake-blue.png for backward compat with existing inline
+// references. Sites that want the v2 art can call it directly.
 
 window._lwEmojiSprite = function(emoji, size){
   if (!emoji) return '';
