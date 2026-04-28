@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.6';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5519,11 +5519,12 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
   pointer-events:none;
   max-width:calc(100% - 96px);
 }
-/* Biome icon hidden — Stephen: "remove the shitty suburban emoji".
-   Keeping the DOM node so biome-detection writes don't throw, just
-   not shown. The Bebas Neue name pill carries the biome identity
-   through typography alone. */
-.w-biome-label .wbl-icon{display:none;}
+/* Biome icon: re-enabled 2026-04-28 once Stephen shipped neon-outline
+   sprites for all 10 biomes (assets/wild-biomes/icons/icon-*.png).
+   The earlier "shitty suburban emoji" complaint is resolved by the
+   img swap in _biomeIconHTML — the icon is now the gold neon outline. */
+.w-biome-label .wbl-icon{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;}
+.w-biome-label .wbl-icon img{max-width:100%;max-height:100%;object-fit:contain;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));}
 .w-biome-label .wbl-name{
   font-family:'Bebas Neue',sans-serif;font-size:0.82rem;letter-spacing:0.22em;
   color:var(--gold);text-transform:uppercase;
