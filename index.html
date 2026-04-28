@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.1';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.2';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -48592,7 +48592,16 @@ function _drop(pl){
               if (_roll.vowTarget && !_roll.vowHit && window._toast) {
                 setTimeout(function(){_toast('\ud83d\udc38 Oracle\u2019s Vow broken \u2014 forfeited on target '+_roll.vowTarget+'.');}, 400);
               }
-              if(iq.uprootCharm){_toast('\ud83c\udf38 Uproot Charm pulled your plant home.');return;}
+              if(iq.uprootCharm){
+                // Refund the daily drop attempt \u2014 this is the meaningful effect.
+                // Without this the charm just printed a message and the player
+                // still ate the cost. Stephen 2026-04-28: "make it not count as a loss".
+                if (_drops > 0) { _drops--; _saveState(); }
+                _toast('\u270d\ufe0f Uproot Charm rescued your sow \u00b7 attempt restored');
+                if (window.LW_Log) try { window.LW_Log.write('uproot_rescue', { hash: pl.hash }); } catch(e){}
+                if (window.LW_ACH) try { LW_ACH.bump('uproot_rescues', 1); } catch(e){}
+                return;
+              }
               return;
             }
             // Attacker wins — grant Vow bonus Sunbeams before the drop.
@@ -76375,9 +76384,9 @@ window._lwClaimHerbarium = function(id){
       usage:'tap before a forage', wired:true },
     divinersGlass: { key:'divinersGlass', name:"Diviner\u2019s Glass", category:'foraging', rarity:'Epic',
       art:'assets/items/diviners-glass.png', icon:'\ud83d\udd0d',
-      desc:'For 30 minutes: every MISS card counts as ELSEWHERE instead.',
+      desc:'For 30 min: up to 5 MISS cards count as ELSEWHERE instead.',
       lore:'A lens ground from river quartz. Looking through it, every near-miss becomes a clue.',
-      usage:'tap once \u2014 active for an entire hex session', wired:true },
+      usage:'tap once \u2014 active for one hex session, max 5 conversions', wired:true },
     // ─── DEFENSE ───
     mulchWard: { key:'mulchWard', name:'Mulch Ward', category:'defense', rarity:'Rare',
       art:'assets/items/mulch-ward.png', icon:'\ud83d\udee1\ufe0f',
@@ -76417,8 +76426,8 @@ window._lwClaimHerbarium = function(id){
       usage:'prime once \u2014 lasts 3 contests', wired:true },
     uprootCharm: { key:'uprootCharm', name:'Uproot Charm', category:'offense', rarity:'Uncommon',
       art:'assets/items/uproot-charm.png', icon:'\ud83c\udf38',
-      desc:'Lose your next contest? Plant returns to you, unharmed.',
-      lore:'A braided knot that remembers home. If the roll goes against you, your plant finds its way back.',
+      desc:'Lose your next contest? Sow refunded \u2014 attempt doesn\u2019t count.',
+      lore:'A braided knot that remembers home. If the roll goes against you, your sow finds its way back.',
       usage:'prime before your next contest', wired:true },
     // ─── REMOTE FORAGING ───
     scryingStone: { key:'scryingStone', name:'Scrying Stone', category:'remote', rarity:'Uncommon',
@@ -76685,9 +76694,10 @@ window._lwClaimHerbarium = function(id){
     var raw = p.divinerGlass;
     if (!raw) return false;
     var startedAt = (typeof raw === 'object') ? raw.startedAt : 0;
+    var conversions = (typeof raw === 'object' && typeof raw.n === 'number') ? raw.n : 0;
     // Legacy boolean payload from prior versions: treat as just-activated
     if (typeof raw !== 'object') {
-      p.divinerGlass = { startedAt: Date.now() };
+      p.divinerGlass = { startedAt: Date.now(), n: 1 };
       _savePending(p);
       return true;
     }
@@ -76696,6 +76706,17 @@ window._lwClaimHerbarium = function(id){
       _savePending(p);
       return false;
     }
+    // Conversion cap (Stephen 2026-04-28 nerf): max 5 elsewhere-conversions
+    // per activation. Prevents infinite-retry abuse on hard hexes within
+    // the 30min window.
+    if (conversions >= 5) {
+      delete p.divinerGlass;
+      _savePending(p);
+      if (window._toast) _toast('🔍 Diviner’s Glass exhausted (5/5).');
+      return false;
+    }
+    p.divinerGlass = { startedAt: startedAt, n: conversions + 1 };
+    _savePending(p);
     return true;
   }
   function clearDiviner(){
