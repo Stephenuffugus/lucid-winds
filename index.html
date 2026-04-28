@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.38';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.39';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -8982,7 +8982,7 @@ window._addSwitchTabHook = function(fn){
              walking through a hex can water + take cuttings without
              closing the carousel. -->
         <button class="pgm-act-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" style="display:none;border-color:rgba(91,173,220,0.45);color:rgba(91,173,220,0.95);"<span class="lwe lwe-drop"></span> WATER</button>
-        <button class="pgm-act-btn pgm-wild-act gold" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" style="display:none;border-color:rgba(200,168,75,0.45);color:var(--gold);" title="Take a cutting. Costs 20 Dew. Parent unharmed. 2 per day.">✂ CUTTING · 20💧</button>
+        <button class="pgm-act-btn pgm-wild-act gold" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" style="display:none;border-color:rgba(200,168,75,0.45);color:var(--gold);" title="Take a cutting. Costs 20 Dew. Parent unharmed. 2 per day.">✂ CUTTING · 20<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"></button>
         <!-- WILD-PLACE mode: drop the currently-shown plant into the
              player's current hex. Hidden by default; shown in
              wild-place mode by openCarousel. -->
@@ -36326,7 +36326,7 @@ document.addEventListener('keydown', function(e) {
           if (window._lwConfirm) {
             window._lwConfirm({
               title: 'TWO CURRENCIES',
-              body: '<b>Sunbeams</b> are earned by playing games. Tap the Sunbeam icon to spend them. 30 Sunbeams = one unique plant. Save up for events or the wild.<br><br>\ud83d\udca7 <b>Dew</b> is earned from the wild and from watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
+              body: '<b>Sunbeams</b> are earned by playing games. Tap the Sunbeam icon to spend them. 30 Sunbeams = one unique plant. Save up for events or the wild.<br><br><img src="assets/fx/drop-blue.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> <b>Dew</b> is earned from the wild and from watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
               yes: 'GOT IT',
               no: ''
             }, function(){});
@@ -37490,7 +37490,7 @@ document.addEventListener('keydown', function(e) {
       if (!localStorage.getItem('lw_tut_dew_intro_v1')) {
         localStorage.setItem('lw_tut_dew_intro_v1', '1');
         setTimeout(function(){
-          if (window._toast) window._toast('\ud83d\udca7 Tapping a plant earns Dew. Spend it on cuttings, the Hut, and time-skips.');
+          if (window._toast) window._toast('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Tapping a plant earns Dew. Spend it on cuttings, the Hut, and time-skips.');
         }, 4400);
       }
     } catch(e) {}
@@ -38383,7 +38383,7 @@ document.addEventListener('keydown', function(e) {
           }
         }catch(e){}
         if(window.earnDew)window.earnDew(_dr,'compost_song');
-        if(window._toast)setTimeout(function(){window._toast('\ud83d\udca7 Compost Song. +'+_dr+' Dew from the song of decay');},1400);
+        if(window._toast)setTimeout(function(){window._toast('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Compost Song. +'+_dr+' Dew from the song of decay');},1400);
       }
     }catch(e){}
     inv.fertilizer = (inv.fertilizer || 0) + fertReward;
@@ -38540,7 +38540,7 @@ document.addEventListener('keydown', function(e) {
                 '<span class="pad-btn-icon">🌸</span><span class="pad-btn-label">BLOOM</span></button>';
       } else if (!_padWateredTdy) {
         btns += '<button class="pad-btn water" onclick="handleWaterSeed(\''+plant.id+'\')">' +
-                '<span class="pad-btn-icon">💧</span><span class="pad-btn-label">WATER</span></button>';
+                '<span class="pad-btn-icon"><img src="assets/fx/drop-blue.png" alt="" style="width:28px;height:28px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"></span><span class="pad-btn-label">WATER</span></button>';
       } else {
         btns += '<button class="pad-btn water" onclick="handleFertilize(\''+plant.id+'\')" title="Spend 21 Dew to advance one day">' +
                 '<span class="pad-btn-icon">⚡</span><span class="pad-btn-label">+1 DAY (21)</span></button>';
@@ -39497,7 +39497,7 @@ document.addEventListener('keydown', function(e) {
     h += '<div style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.9rem 1rem 1.1rem;flex:1;">';
     var curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;">';
-    h += '<span style="color:var(--sage);">Balance: <span style="color:var(--gold);">' + dew + ' \ud83d\udca7 Dew</span></span>';
+    h += '<span style="color:var(--sage);">Balance: <span style="color:var(--gold);">' + dew + ' <img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Dew</span></span>';
     h += '<span style="color:var(--muted);">Level <span style="color:var(--cream);">' + curLvl + '</span></span>';
     h += '</div>';
     if (_nurseryShopTab === 'boosters') {
@@ -39955,7 +39955,7 @@ document.addEventListener('keydown', function(e) {
       stateLabel = '\ud83d\udca4 Resting, water again in ' + _hrsLeft + 'h';
       stateColor = 'var(--muted)';
     } else {
-      stateLabel = '💧 Needs water today';
+      stateLabel = '<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Needs water today';
       stateColor = 'var(--sage)';
     }
     // Progressive growth visual — consistent seedling sprites for ALL seeds
@@ -39965,7 +39965,7 @@ document.addEventListener('keydown', function(e) {
     var stageIdx = days >= 3 ? 3 : days; // 0,1,2,3
     var svgHtml = _seedSpriteHtml(stageIdx, !!seed.mystery, seed);
     var sid = seed.id;
-    var waterLabel    = wateredToday ? '✓ WATERED' : '💧 WATER';
+    var waterLabel    = wateredToday ? '✓ WATERED' : '<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> WATER';
     var waterDisabled = (wateredToday || bloomReady) ? 'disabled' : '';
 
     var _seedFert = seed.fertApplied || 0;
@@ -39985,8 +39985,8 @@ document.addEventListener('keydown', function(e) {
     if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
     } else {
-      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '\ud83d\udca7 WATER') + '</button>';
-      var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);" title="Spend 21 Dew to advance one day">\u26a1 ACCELERATE (21\ud83d\udca7)</button>';
+      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> WATER') + '</button>';
+      var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);" title="Spend 21 Dew to advance one day">\u26a1 ACCELERATE (21<img src="assets/fx/drop-blue.png" alt="" style="width:12px;height:12px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;">)</button>';
       actionBtns = waterBtn + accelBtn;
     }
     // Clippings get USE TO BREED as a bonus path on top of the normal
@@ -41130,7 +41130,7 @@ document.addEventListener('keydown', function(e) {
       // "needs water today" text). Force the write before re-render.
       _throttledSave('sws_nursery', JSON.stringify(nur), true);
       renderNursery();
-      _setNurMsg('💧 Watered. ' + seed.waterLog.length + '/3 days done.');
+      _setNurMsg('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Watered. ' + seed.waterLog.length + '/3 days done.');
       _haptic('tab');
       _nurPulse(seedIndex, 'water');
       // Sync to cloud so nursery persists across sessions
@@ -47402,7 +47402,7 @@ function showTP(p,mk){
               if(window._logWildEvent)window._logWildEvent({type:'watered',hash:p.hash,name:_pName,by:_myName});
               // Grant Keeper XP to the waterer (was: fg_pollen dead counter)
               if(window.PW_grantXP)PW_grantXP(2,'water_other_button');
-              if(window._toast)_toast('💧 Watered! +2 XP. '+(5-_wBudget.count)+' waters left today.');
+              if(window._toast)_toast('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Watered! +2 XP. '+(5-_wBudget.count)+' waters left today.');
               if(window._haptic)_haptic('bloom');
               if(window._trackQuest)_trackQuest('plantsWatered',1);
             }
@@ -47742,7 +47742,7 @@ function _waterOwnPlant(p,mk){
   var _waterXP=3;
   try{if(window.LW_COMPANION){_waterXP=Math.ceil(_waterXP*window.LW_COMPANION.getCompanionMult('waterEfficiency'));}}catch(e){}
   if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
-  try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','💧 +10 XP, first watering. Plants remember kindness.');}catch(e){}
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> +10 XP, first watering. Plants remember kindness.');}catch(e){}
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
@@ -47782,7 +47782,7 @@ function _waterOwnPlant(p,mk){
     }
   } catch(e){}
   _play('water');
-  _toast('\ud83d\udca7 Watered! Lifespan reset. (-5 Dew, +'+_waterXP+' XP)');
+  _toast('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Watered! Lifespan reset. (-5 Dew, +'+_waterXP+' XP)');
   if(mk&&mk._icon){
     var mEl=mk._icon;
     // Brief glow pulse
@@ -50851,7 +50851,7 @@ function _selectHexPlant(idx,p){
   var _blessBtn='';
   var _blessDew=window._canReceiveBlessing?window._canReceiveBlessing(p):0;
   if(_blessDew>0){
-    _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Daily Dew gift from any Rare or rarer plant. Once per plant per day.">\ud83d\ude4f BLESSING &middot; +'+_blessDew+'\ud83d\udca7 daily</button>';
+    _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Daily Dew gift from any Rare or rarer plant. Once per plant per day.">\ud83d\ude4f BLESSING &middot; +'+_blessDew+'<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> daily</button>';
   }
   // PRUNE button — only when this plant has an active pest. 5s hold + 3 hashes.
   var _pruneBtn='';
@@ -51217,7 +51217,7 @@ function _lwMassWaterRefreshButton(){
   var label = document.getElementById('w-mass-water-label');
   var isL3 = canCap >= 6;
   var cost = isL3 ? 0 : (eligible.length * LW_MASS_WATER_DEW_PER);
-  if (label) label.innerHTML = (isL3?'\ud83c\udf27\ufe0f RAIN':'\ud83d\udca7 WATER ALL') + ' (' + eligible.length + (cost?(' \u00b7 ' + cost + ' Dew'):' \u00b7 FREE') + ')';
+  if (label) label.innerHTML = (isL3?'\ud83c\udf27\ufe0f RAIN':'<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> WATER ALL') + ' (' + eligible.length + (cost?(' \u00b7 ' + cost + ' Dew'):' \u00b7 FREE') + ')';
   btn.style.display = 'flex';
 }
 // ═══ MY PLANTS NAVIGATOR — fast travel to your owned wild plants ═══
@@ -51516,7 +51516,7 @@ function _lwMassWaterDoIt(eligibleIdx, cost){
   if (window.LW_Log) LW_Log.write('mass_water', { count: watered, cost: cost });
   if (window.LW_ACH) { LW_ACH.bump('d_mass_water', 1); LW_ACH.bump('d_water_own', watered); LW_ACH.bump('w_water_own', watered); }
   if (window._haptic) _haptic('bloom');
-  _toast('\ud83d\udca7 Watered ' + watered + ' plants. \u2796 ' + cost + ' Dew \u00b7 +' + watered + ' XP');
+  _toast('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Watered ' + watered + ' plants. \u2796 ' + cost + ' Dew \u00b7 +' + watered + ' XP');
   _lwMassWaterRefreshButton();
 }
 window._lwMassWaterRefresh = _lwMassWaterRefreshButton;
@@ -51596,7 +51596,7 @@ window._hexAction=function(action){
         _hit.decayAt=Math.min(_maxDecay,(_hit.decayAt||Date.now())+_addMs);
         _wild[_hitIdx]=_hit;
         _saveWild(_wild);
-        _toast('\ud83d\udca7 +'+_addH+'h lifespan');
+        _toast('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> +'+_addH+'h lifespan');
         if(window._haptic)_haptic('bloom');
         if(window._trackQuest)_trackQuest('plantsWatered',1);
         if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash,addH:_addH});
@@ -51685,7 +51685,7 @@ window._hexAction=function(action){
       } catch(e){}
       if(window.LW_Log)window.LW_Log.write('wild_watered_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
       _writeWitnessFee(p,'water');
-      _toast('\ud83d\udca7 Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.');
+      _toast('<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.');
       if(window._haptic)_haptic('bloom');
       if(window._trackQuest)_trackQuest('plantsWatered',1);
       };
@@ -52761,7 +52761,7 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
     '</div>';
     // TEND
     html += '<div style="'+sectionStyle+'">'+
-      '<div style="'+titleStyle+'\ud83d\udca7 TEND</div>'+
+      '<div style="'+titleStyle+'<img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> TEND</div>'+
       '<div style="'+bodyStyle+'">Walk near any wild plant, yours or another player\u2019s, to <b>water</b> it with your collected <b style="color:rgba(91,175,220,0.95);">dew</b>. Helping plants stay alive deepens the whole map.</div>'+
     '</div>';
     // CUTTINGS
@@ -52797,7 +52797,7 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
     '</div>';
     // DEW
     html += '<div style="'+sectionStyle+'">'+
-      '<div style="'+titleStyle+'\ud83d\udca7 DEW</div>'+
+      '<div style="'+titleStyle+'<img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> DEW</div>'+
       '<div style="'+bodyStyle+'"><b style="color:rgba(91,175,220,0.9);">Dew</b> drips from your wild plants and is collected when helping other players. Spend it in the Nursery, when taking cuttings, and many other places.</div>'+
     '</div>';
     // POLLEN
@@ -60390,7 +60390,7 @@ window._openTitleShop = function(){
   h += '<button onclick="document.getElementById(\'lw-title-shop\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:0.9rem;">\u2715</button>';
   h += '</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.55rem;line-height:1.5;">Your title appears next to your name when other keepers see your work in the wild.</div>';
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);margin-bottom:0.55rem;letter-spacing:0.08em;">Balance: <span style="color:var(--gold);">' + dew + ' \ud83d\udca7 Dew</span> \u00b7 Owned: <span style="color:var(--cream);">' + owned.length + '/' + Object.keys(window.LW_TITLES).length + '</span></div>';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);margin-bottom:0.55rem;letter-spacing:0.08em;">Balance: <span style="color:var(--gold);">' + dew + ' <img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Dew</span> \u00b7 Owned: <span style="color:var(--cream);">' + owned.length + '/' + Object.keys(window.LW_TITLES).length + '</span></div>';
   // Clear-title button
   var clearActive = active === '' ? ' style="border-color:rgba(122,179,86,0.7);"' : '';
   h += '<button onclick="window.lwEquipTitle(\'\')" class="lw-title-row"' + clearActive + ' style="display:flex;width:100%;padding:0.55rem 0.7rem;margin-bottom:0.55rem;background:rgba(13,16,12,0.55);border:1.5px solid rgba(122,179,86,0.25);border-radius:8px;color:var(--muted);cursor:pointer;text-align:left;align-items:center;justify-content:space-between;">';
@@ -60425,7 +60425,7 @@ window._openTitleShop = function(){
         h += '<button onclick="window.lwEquipTitle(\'' + key + '\')" style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;background:rgba(74,124,53,0.25);border:1.5px solid rgba(122,179,86,0.45);color:var(--cream);border-radius:6px;padding:0.45rem 0.6rem;cursor:pointer;min-height:42px;">EQUIP</button>';
       } else {
         var canBuy = dew >= ttl.cost;
-        h += '<button onclick="window.lwBuyTitle(\'' + key + '\')" ' + (canBuy ? '' : 'disabled') + ' style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;background:' + (canBuy ? 'linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7))' : 'rgba(46,46,46,0.3)') + ';border:1.5px solid ' + (canBuy ? 'rgba(200,168,75,0.45)' : 'rgba(122,122,122,0.3)') + ';color:' + (canBuy ? 'var(--gold)' : 'rgba(160,160,160,0.5)') + ';border-radius:6px;padding:0.45rem 0.6rem;cursor:' + (canBuy ? 'pointer' : 'not-allowed') + ';min-height:42px;min-width:70px;">' + ttl.cost + '\ud83d\udca7</button>';
+        h += '<button onclick="window.lwBuyTitle(\'' + key + '\')" ' + (canBuy ? '' : 'disabled') + ' style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;background:' + (canBuy ? 'linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7))' : 'rgba(46,46,46,0.3)') + ';border:1.5px solid ' + (canBuy ? 'rgba(200,168,75,0.45)' : 'rgba(122,122,122,0.3)') + ';color:' + (canBuy ? 'var(--gold)' : 'rgba(160,160,160,0.5)') + ';border-radius:6px;padding:0.45rem 0.6rem;cursor:' + (canBuy ? 'pointer' : 'not-allowed') + ';min-height:42px;min-width:70px;">' + ttl.cost + '<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"></button>';
       }
       h += '</div>';
     }
