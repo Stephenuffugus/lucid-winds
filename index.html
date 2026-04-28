@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.7';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.8';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13127,9 +13127,17 @@ document.addEventListener('keydown', function(e) {
         d += '</feComponentTransfer>';
         d += '</filter>';
       } else if (_mutSlug === 'silhouette') {
-        // Crush all RGB to dark warm tone, keep alpha
-        d += '<filter id="'+_fid+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">';
-        d += '<feColorMatrix type="matrix" values="0 0 0 0 0.05  0 0 0 0 0.04  0 0 0 0 0.02  0 0 0 1 0"/>';
+        // Crushed dark figure + warm backlit glow behind it (Stephen 2026-04-28:
+        // "needs a nice glow around the silhouette to make it stand out and not
+        // look like the card glitched and is pure black. should look backlit
+        // behind the plant almost"). Filter now: blurred source-alpha + amber
+        // flood as glow layer, merged BEHIND the crushed dark figure.
+        d += '<filter id="'+_fid+'" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">';
+        d += '<feGaussianBlur in="SourceAlpha" stdDeviation="2.4" result="bgblur"/>';
+        d += '<feFlood flood-color="#FFC872" flood-opacity="0.85" result="bgcol"/>';
+        d += '<feComposite in="bgcol" in2="bgblur" operator="in" result="bgglow"/>';
+        d += '<feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0.05  0 0 0 0 0.04  0 0 0 0 0.02  0 0 0 1 0" result="figure"/>';
+        d += '<feMerge><feMergeNode in="bgglow"/><feMergeNode in="figure"/></feMerge>';
         d += '</filter>';
       } else if (_mutSlug === 'pixel') {
         // Quantize to chunky pixels via dilate. Acts like a mosaic.
@@ -13142,21 +13150,21 @@ document.addEventListener('keydown', function(e) {
         d += '</feComponentTransfer>';
         d += '</filter>';
       } else if (_mutSlug === 'neon') {
-        // Glowing edges, dark interior. Edge = source minus eroded source.
+        // Glowing edges over a dimmed interior. Stephen 2026-04-28: previous
+        // version was "too bright and losing too much of the image" because
+        // interior multiply was 0.25 and the glow was double-merged.
+        // New: interior multiply 0.55 (much more plant visible), single glow
+        // merge, cyan flood at 0.85, smaller blur for tighter ring.
         d += '<filter id="'+_fid+'" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">';
-        // Darken interior (multiply ~0.25)
-        d += '<feColorMatrix type="matrix" values="0.25 0 0 0 0  0 0.25 0 0 0  0 0 0.25 0 0  0 0 0 1 0" result="dark"/>';
-        // Outline ring
+        d += '<feColorMatrix type="matrix" values="0.55 0 0 0 0  0 0.55 0 0 0  0 0 0.55 0 0  0 0 0 1 0" result="dark"/>';
         d += '<feMorphology in="SourceAlpha" operator="dilate" radius="0.6" result="dil"/>';
         d += '<feMorphology in="SourceAlpha" operator="erode" radius="0.4" result="ero"/>';
         d += '<feComposite in="dil" in2="ero" operator="out" result="ring"/>';
-        // Color the ring cyan and bloom it
-        d += '<feFlood flood-color="#00E5FF" flood-opacity="1" result="col"/>';
+        d += '<feFlood flood-color="#00E5FF" flood-opacity="0.85" result="col"/>';
         d += '<feComposite in="col" in2="ring" operator="in" result="cring"/>';
-        d += '<feGaussianBlur in="cring" stdDeviation="1.4" result="glow"/>';
+        d += '<feGaussianBlur in="cring" stdDeviation="1.0" result="glow"/>';
         d += '<feMerge>';
         d += '<feMergeNode in="dark"/>';
-        d += '<feMergeNode in="glow"/>';
         d += '<feMergeNode in="glow"/>';
         d += '<feMergeNode in="cring"/>';
         d += '</feMerge>';
