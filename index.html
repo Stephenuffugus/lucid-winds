@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.53';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.54';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -35459,7 +35459,7 @@ document.addEventListener('keydown', function(e) {
       var _ssH = '';
       for (var _ssi = 0; _ssi < 4; _ssi++) {
         var _isPeak = _ssi === _curSeason;
-        _ssH += '<span style="color:' + _ssColors[_ssi] + ';opacity:' + (_ssCounts[_ssi] > 0 ? '1' : '0.3') + ';">' + (window._lwSeasonEmblem?_lwSeasonEmblem(_ssi,18):_ssEmblems[_ssi]) + ' ' + _ssCounts[_ssi] + (_isPeak ? ' \u2605' : '') + '</span>';
+        _ssH += '<span style="color:' + _ssColors[_ssi] + ';opacity:' + (_ssCounts[_ssi] > 0 ? '1' : '0.3') + ';">' + (window._lwSeasonEmblem?_lwSeasonEmblem(_ssi,32):_ssEmblems[_ssi]) + ' ' + _ssCounts[_ssi] + (_isPeak ? ' \u2605' : '') + '</span>';
       }
       _ssStrip.innerHTML = _ssH;
       _ssStrip.style.display = 'flex';
@@ -37308,7 +37308,7 @@ document.addEventListener('keydown', function(e) {
     html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.54rem;letter-spacing:0.06em;display:flex;gap:0.3rem;">';
     html += '<span style="color:' + sColor + ';">EA ' + _ea + '</span>';
     var _seasonNameEsc = String(_seasonName||'').replace(/'/g,"\\'");
-    html += '<span style="color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();if(window._lwShowSeasonDetail)_lwShowSeasonDetail(\'' + _seasonNameEsc + '\')">' + (window._lwSeasonEmblem?_lwSeasonEmblem(_season,18):seasonEmblems[_season]) + '</span>';
+    html += '<span style="color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();if(window._lwShowSeasonDetail)_lwShowSeasonDetail(\'' + _seasonNameEsc + '\')">' + (window._lwSeasonEmblem?_lwSeasonEmblem(_season,32):seasonEmblems[_season]) + '</span>';
     html += '<span style="color:var(--muted);">Gen ' + (_t ? _t.chimerGen || 1 : 1) + '</span>';
     html += '</div>';
     html += '</div>';
@@ -38645,11 +38645,11 @@ document.addEventListener('keydown', function(e) {
       var _sB = (parseInt(_hB.charAt(44) + _hB.charAt(45), 16) || 0) % 4;
       if (_sA !== _sB) {
         _isDualSeason = true;
-        _seasonLabel = (window._lwSeasonEmblem?_lwSeasonEmblem(_sA,16):_sIcons[_sA]) + ' ' + _sNames[_sA] + ' / ' + (window._lwSeasonEmblem?_lwSeasonEmblem(_sB,16):_sIcons[_sB]) + ' ' + _sNames[_sB];
+        _seasonLabel = (window._lwSeasonEmblem?_lwSeasonEmblem(_sA,28):_sIcons[_sA]) + ' ' + _sNames[_sA] + ' / ' + (window._lwSeasonEmblem?_lwSeasonEmblem(_sB,28):_sIcons[_sB]) + ' ' + _sNames[_sB];
       }
     }
     if (!_isDualSeason) {
-      _seasonLabel = (window._lwSeasonEmblem?_lwSeasonEmblem(_seasonIdx,16):_sIcons[_seasonIdx]) + ' ' + _sNames[_seasonIdx];
+      _seasonLabel = (window._lwSeasonEmblem?_lwSeasonEmblem(_seasonIdx,28):_sIcons[_seasonIdx]) + ' ' + _sNames[_seasonIdx];
     }
 
     var title = document.getElementById('pdm-title');
@@ -69341,7 +69341,7 @@ function _renderCard(el,plant,role,side){
     }
     h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?(window._lwEmojiSprite?_lwEmojiSprite(i.tg.icon,14):i.tg.icon):'')+' '+(i.tg?i.tg.name:'')+'</span>';
     h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
-    h+='<span style="color:var(--muted);">'+(window._lwSeasonEmblem?_lwSeasonEmblem(i.season,14):_seasonEmblems[i.season])+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
+    h+='<span style="color:var(--muted);">'+(window._lwSeasonEmblem?_lwSeasonEmblem(i.season,26):_seasonEmblems[i.season])+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
     h+='<span style="color:'+_bcColor+';">'+_bcLabel+'</span>';
     if(i.phenoRevealed&&i.phenotype){
       h+='<span style="color:'+i.phenotype.color+';font-weight:600;">\ud83d\udd2e '+i.phenotype.name+'</span>';
@@ -69451,7 +69451,7 @@ function _renderForecast(){
   h+='<div class="bs-seasons"><div class="bs-ml">Season</div>';
   for(var si=0;si<4;si++){
     var pct=Math.round(sw[si]/swTotal*100);
-    h+='<span class="bs-sc'+(pct>=30?' hot':'')+'">'+(window._lwSeasonEmblem?_lwSeasonEmblem(si,14):_seasonEmblems[si])+' '+pct+'%</span>';
+    h+='<span class="bs-sc'+(pct>=30?' hot':'')+'">'+(window._lwSeasonEmblem?_lwSeasonEmblem(si,26):_seasonEmblems[si])+' '+pct+'%</span>';
   }
   h+='</div>';
   h+='<div class="bs-chimera">\ud83e\uddec <span>Gen '+offGen+' Chimera, <b>-'+(offGen-1)*2+' EA</b> but <b>2× climate immunity</b>.</span></div>';
@@ -70515,7 +70515,7 @@ window._lwSeasonEmblem = function(idx, size){
   var fb    = ['🌸',  '☀️',     '🍂',    '❄️'];
   var n = names[idx] || 'spring';
   var emo = fb[idx] || '🌿';
-  var s = size || 22;
+  var s = size || 32;
   return '<img src="assets/seasons/'+n+'.png" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;'+emo+'&apos;;">';
 };
 })();
