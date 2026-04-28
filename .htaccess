@@ -25,22 +25,30 @@
 # ── 3. CACHING RULES ──
 <IfModule mod_headers.c>
 
-  # index.html: ALWAYS revalidate so deploys go live instantly
+  # index.html: 5min edge cache + stale-while-revalidate. Lets Cloudflare
+  # serve repeat visits within the 5min window from the edge (sub-100ms
+  # response vs. ~500-1500ms transit to Hostinger origin), saves 1.4MB
+  # transfer per repeat visit. Deploys still go live within 5min, and
+  # the LW_VERSION boot-check inside index.html still forces a hard
+  # reload when the version string changes — so iteration loop is
+  # preserved. Was no-cache+must-revalidate prior to 2026-04-28.
   <FilesMatch "^index\.html$">
-    Header set Cache-Control "no-cache, must-revalidate"
+    Header set Cache-Control "public, max-age=300, stale-while-revalidate=86400"
   </FilesMatch>
 
-  # studio.html / other HTML pages: same treatment
+  # studio.html / other HTML pages: same 5min edge cache.
   <FilesMatch "\.html$">
-    Header set Cache-Control "no-cache, must-revalidate"
+    Header set Cache-Control "public, max-age=300, stale-while-revalidate=86400"
   </FilesMatch>
 
-  # Core split-build scripts — must revalidate on every load so deploys
-  # go live instantly. The old 1-year immutable rule applied to every .js
-  # file and trapped users on stale core.js / app.js / systems.js / etc.
+  # Core split-build scripts + engagement.js — must revalidate on every
+  # load so deploys go live instantly. The old 1-year immutable rule
+  # applied to every .js file and trapped users on stale core.js, etc.
   # The LW_VERSION check inside core.js could never fire because the
   # browser never re-fetched core.js to see the new version number.
-  <FilesMatch "^(core|app|systems|init|games|wild|dev|shared)\.(js|css)$">
+  # engagement added 2026-04-28 — was falling through to Hostinger's
+  # 7-day default and trapping players on stale counter-write code.
+  <FilesMatch "^(core|app|systems|init|games|wild|dev|shared|engagement)\.(js|css)$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
