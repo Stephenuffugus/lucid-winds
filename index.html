@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.51';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.52';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -73206,8 +73206,13 @@ window._getWildEvents=_loadEvents;
 (function(){
 'use strict';
 
+// CATEGORIES — for the older trigger-based compendium (riddle discoveries).
+// 'trait' was previously labeled SYNERGIES, which collided with the newer
+// LW_SYNERGIES list (active +EA trait combos). Renamed to OMENS so both
+// systems can coexist under distinct chapter names: OMENS are riddle-based
+// discoveries, SYNERGIES are the active mechanical trait fusions.
 var CATEGORIES=[
-  {key:'trait',    label:'SYNERGIES',    icon:'✦', color:'var(--sage)'},
+  {key:'trait',    label:'OMENS',        icon:'✦', color:'var(--sage)'},
   {key:'companion',label:'COMPANIONS',  icon:'<span class="lwe lwe-paw"></span>', color:'var(--gold)'},
   {key:'weather',  label:'WEATHER',     icon:'<span class="lwe lwe-sun"></span>', color:'rgba(91,175,220,0.9)'},
   {key:'season',   label:'SEASONS',     icon:'<span class="lwe lwe-flower"></span>', color:'rgba(232,160,191,0.9)'},
@@ -77321,14 +77326,17 @@ window._lwClaimHerbarium = function(id){
   }
   function _addWard(hash){
     var p = _loadPending(); p.wards = p.wards || {};
-    // Stack cap: max 3 wards on a single plant. Uncapped stacks were a
-    // theoretical infinite-block exploit flagged in the audit.
+    // Stack cap: 1 ward per plant. Stephen 2026-04-28 balance pass \u2014 was 3
+    // (auto-blocked 3 contests on one plant which made any warded plant
+    // effectively un-attackable for a week of active play). Mulch Ward is
+    // now a single reactive defense; Shellgourd Epic is the proactive
+    // 48h zone-control answer for entrenched defense.
     var cur = p.wards[hash] || 0;
-    if (cur >= 3) {
-      if (window._toast) window._toast('\ud83d\udee1\ufe0f Ward maxed on this plant (3/3).');
+    if (cur >= 1) {
+      if (window._toast) window._toast('\ud83d\udee1\ufe0f This plant already has a Ward. Burns on next attack.');
       return;
     }
-    p.wards[hash] = cur + 1;
+    p.wards[hash] = 1;
     _savePending(p);
   }
   function consumeWard(hash){
@@ -78884,8 +78892,24 @@ window.LW_debug.cleanGhostDrops = function(){
     }
     s.slots.push({ tier:tier, distance:0, target:TIERS[tier].distance, startedAt:Date.now() });
     _save(s);
-    if (window._toast) window._toast(TIERS[tier].icon + ' ' + TIERS[tier].name + ', a new cocoon. Walk to hatch it.');
-    try { if (window._haptic) window._haptic('ok'); } catch(e){}
+    // First-cocoon celebration — bigger moment than a quiet toast. Once
+    // per account. Sets the expectation that walking pays off.
+    var firstEver = false;
+    try {
+      if (localStorage.getItem('lw_cocoon_first_ever') !== '1') {
+        localStorage.setItem('lw_cocoon_first_ever', '1');
+        firstEver = true;
+      }
+    } catch(e){}
+    if (firstEver && window._toast) {
+      // Two-line celebration toast — first line is the discovery, second
+      // is the call to action.
+      window._toast(TIERS[tier].icon + ' Your first cocoon. Walk to incubate it. Hatch it for items, Dew, or mystery boxes.');
+      try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    } else if (window._toast) {
+      window._toast(TIERS[tier].icon + ' ' + TIERS[tier].name + ', a new cocoon. Walk to hatch it.');
+      try { if (window._haptic) window._haptic('ok'); } catch(e){}
+    }
     return true;
   }
 
@@ -78945,8 +78969,20 @@ window.LW_debug.cleanGhostDrops = function(){
     h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">'+(s.slots?s.slots.length:0)+' / '+(s.cap||3)+' carried. Walking hatches them.</div></div>';
     h += '<button onclick="window.LW_COCOONS.close()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">\u2715</button>';
     h += '</div>';
+    // How-it-works strip \u2014 visible whether or not the player has cocoons.
+    // Three short rows, no jargon. Doubles as the first-time explainer.
+    h += '<div style="padding:0.8rem;margin-bottom:0.9rem;background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(13,16,12,0.7));border:1px solid rgba(122,179,86,0.18);border-radius:10px;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.5rem;">HOW THIS WORKS</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:0.45rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.55;">';
+    h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Find</b> \u2014 cocoons drop when plants bloom, and one free <b>Gossamer Silk</b> appears each day. Bigger plants drop fancier cocoons.</span></div>';
+    h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> \u2014 every step you take in the Wild credits all your carried cocoons at once. No equip slot, no incubator to buy. Just walk.</span></div>';
+    h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> \u2014 at distance threshold, tap the cocoon to open it. Dew, items, mystery boxes. Better tiers = better rewards.</span></div>';
+    h += '</div></div>';
     if (!s.slots || !s.slots.length){
-      h += '<div style="padding:2rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);line-height:1.7;">No cocoons yet.<br><br>They\u2019re drawn to wanderers. Walk the Wild tab, bloom a rare plant, or return tomorrow for your daily Gossamer.</div>';
+      h += '<div style="padding:1.5rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.7;background:rgba(13,16,12,0.4);border:1px dashed rgba(122,179,86,0.18);border-radius:10px;">';
+      h += '<div style="font-size:0.65rem;color:var(--cream);margin-bottom:0.5rem;">No cocoons in your pouch yet.</div>';
+      h += 'Bloom a plant in the Greenhouse to find one,<br>or come back tomorrow for your daily Gossamer.';
+      h += '</div>';
     } else {
       for (var i=0;i<s.slots.length;i++){
         var c = s.slots[i]; var t = TIERS[c.tier] || TIERS.gossamer;
@@ -83050,19 +83086,19 @@ function _bosSecretsContent() {
       for (var _i = 0; _i < items.length; _i++) {
         var it = items[_i];
         var en = it.entry, found = it.found, isNew = it.isNew;
-        var icoHtml = (window._lwEmojiSprite ? window._lwEmojiSprite(themeMeta.icon, 18) : themeMeta.icon);
+        var icoHtml = (window._lwEmojiSprite ? window._lwEmojiSprite(themeMeta.icon, 36) : themeMeta.icon);
         if (found) {
           var bd = isNew ? 'var(--gold)' : themeMeta.color + '66';
           var bg = isNew ? 'rgba(200,168,75,0.12)' : themeMeta.color + '14';
           var sh = isNew ? 'box-shadow:0 0 8px rgba(200,168,75,0.35);' : '';
           var nmEsc = en.name.replace(/'/g,"\\'");
-          inner += '<div onclick="window._lwShowSynergyDetail(\''+nmEsc+'\')" style="position:relative;padding:8px 6px;background:'+bg+';border:1px solid '+bd+';border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:background 0.15s ease;'+sh+'" title="'+en.name+': '+(en.fx||'')+(isNew?' (new)':'')+'">';
+          inner += '<div onclick="window._lwShowSynergyDetail(\''+nmEsc+'\')" style="position:relative;padding:8px 6px;background:'+bg+';border:1px solid '+bd+';border-radius:8px;text-align:center;min-height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:background 0.15s ease;'+sh+'" title="'+en.name+': '+(en.fx||'')+(isNew?' (new)':'')+'">';
           if (isNew) inner += '<span style="position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
           inner += '<div style="line-height:1;">'+icoHtml+'</div>';
-          inner += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:'+(isNew?'var(--gold)':themeMeta.color)+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+en.name+'</div>';
+          inner += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(isNew?'var(--gold)':themeMeta.color)+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+en.name+'</div>';
           inner += '</div>';
         } else {
-          inner += '<div style="padding:8px 6px;background:rgba(26,36,22,0.3);border:1px dashed '+themeMeta.color+'44;border-radius:8px;text-align:center;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0.55;" title="'+themeMeta.hint+'">';
+          inner += '<div style="padding:8px 6px;background:rgba(26,36,22,0.3);border:1px dashed '+themeMeta.color+'44;border-radius:8px;text-align:center;min-height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;opacity:0.55;" title="'+themeMeta.hint+'">';
           inner += '<div style="line-height:1;opacity:0.7;">'+icoHtml+'</div>';
           inner += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">locked</div>';
           inner += '</div>';
