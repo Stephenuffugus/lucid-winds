@@ -14,12 +14,14 @@
  *   3. Re-fetch the payment from Pi to double-check amount/memo/metadata vs what was approved
  *   4. POST /v2/payments/{paymentId}/complete with { txid }
  *   5. Apply fulfillment to vaults/{uid} based on metadata.type:
- *        - slot              → vault.greenhouse.maxSlots += 1 (cap 60)
- *        - nursery_slot      → vault.nursery.maxSlots += 1 (cap 6)
- *        - item_pouch_slot   → vault.lw_pouch_cap += 1 (cap 40)
- *        - emergency_pouch   → vault.emergency_pouch_today = today; expires after 24h
- *        - early_open_hut    → vault.lw_hut_early_opens.opened[itemKey] = ts
- *        - hut_early_open    → alias of early_open_hut (matches client memo metadata)
+ *        - slot                  → vault.greenhouse.maxSlots += 1 (cap 60)
+ *        - nursery_slot          → vault.nursery.maxSlots += 1 (cap 6)
+ *        - nursery_clipping_slot → vault.lw_nur_clipping_slots += 1 (cap 5)
+ *        - item_pouch_slot       → vault.lw_pouch_cap += 1 (cap 40)
+ *        - seed_pouch_slot       → vault.backpack.unlocks.{seed15|seed20} = true
+ *        - emergency_pouch       → vault.emergency_pouch_today = today; expires after 24h
+ *        - early_open_hut        → vault.lw_hut_early_opens.opened[itemKey] = ts
+ *        - hut_early_open        → alias of early_open_hut (matches client memo metadata)
  *   6. Stamp piTransactions/{paymentId} as { status: 'completed', txid, completedAt }
  *   7. Return { ok: true, paymentId, fulfillment }
  *
@@ -41,7 +43,9 @@ import { piGet, piPost, getPiServerKey } from './piClient.js'
 
 const SLOT_CAP_GREENHOUSE = 60
 const SLOT_CAP_NURSERY = 6
+const SLOT_CAP_NURSERY_CLIPPING = 5
 const SLOT_CAP_POUCH = 40
+const SEED_POUCH_TIERS = ['seed15', 'seed20']  // valid tier flags for seed_pouch_slot
 
 /**
  * Apply fulfillment in a single Firestore transaction so we never double-grant.
@@ -119,6 +123,38 @@ async function fulfill(db, uid, paymentId, metadata) {
       fulfillment.applied = next > cur
       fulfillment.before = cur
       fulfillment.after = next
+    } else if (type === 'nursery_clipping_slot') {
+      // Nursery clipping slots — separate from seed slots, cap 5.
+      // Mirror to vault root doc for cross-device sync.
+      const vaultDoc = await tx.get(vaultRef)
+      const cur = Number(
+        (vaultDoc.exists && vaultDoc.data().lw_nur_clipping_slots) || 2,
+      )
+      const next = Math.min(SLOT_CAP_NURSERY_CLIPPING, cur + 1)
+      tx.set(vaultRef, { lw_nur_clipping_slots: next }, { merge: true })
+      fulfillment.applied = next > cur
+      fulfillment.before = cur
+      fulfillment.after = next
+    } else if (type === 'seed_pouch_slot') {
+      // Backpack seed pouch tiers (seed15 → 15 slots, seed20 → 20 slots).
+      // The client routes through FG_Backpack.loadFromCloud({unlocks:{...}})
+      // so we write the unlock flag to vault.backpack.unlocks.{tier}.
+      const tier = (metadata && metadata.tier) ? String(metadata.tier) : ''
+      if (SEED_POUCH_TIERS.indexOf(tier) === -1) {
+        logger.warn('[piComplete] seed_pouch_slot with invalid tier=%s payment=%s', tier, paymentId)
+        fulfillment.applied = false
+        fulfillment.note = `Invalid seed pouch tier: ${tier}`
+      } else {
+        const vaultDoc = await tx.get(vaultRef)
+        const bp = (vaultDoc.exists && vaultDoc.data().backpack) || {}
+        const unlocks = (bp.unlocks && typeof bp.unlocks === 'object') ? { ...bp.unlocks } : {}
+        const wasSet = !!unlocks[tier]
+        unlocks[tier] = true
+        tx.set(vaultRef, { backpack: { ...bp, unlocks } }, { merge: true })
+        fulfillment.applied = !wasSet
+        fulfillment.tier = tier
+        fulfillment.cap = (tier === 'seed20') ? 20 : 15
+      }
     } else if (type === 'emergency_pouch') {
       tx.set(
         vaultRef,

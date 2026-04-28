@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.27';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -42223,6 +42223,13 @@ document.addEventListener('keydown', function(e) {
       try {
         localStorage.setItem('sws_nursery_slots', String(data.lw_nursery_slots));
         if (window.FG_Data && FG_Data.setNurSlots) FG_Data.setNurSlots(data.lw_nursery_slots);
+      } catch(e){}
+    }
+    // Pi-paid nursery CLIPPING slot mirror — same pattern, cap 5.
+    if (typeof data.lw_nur_clipping_slots === 'number' && data.lw_nur_clipping_slots > 0) {
+      try {
+        localStorage.setItem('lw_nur_clipping_slots', String(data.lw_nur_clipping_slots));
+        if (window.FG_Data && FG_Data.setNurClippingSlots) FG_Data.setNurClippingSlots(data.lw_nur_clipping_slots);
       } catch(e){}
     }
     // Pi-paid item pouch cap mirror — same pattern.

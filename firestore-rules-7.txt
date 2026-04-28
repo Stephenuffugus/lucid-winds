@@ -74,6 +74,11 @@ service cloud.firestore {
         || (data.lw_nursery_slots is number
             && data.lw_nursery_slots >= 0
             && data.lw_nursery_slots <= 6)
+      ) && (
+        !('lw_nur_clipping_slots' in data)
+        || (data.lw_nur_clipping_slots is number
+            && data.lw_nur_clipping_slots >= 0
+            && data.lw_nur_clipping_slots <= 5)
       );
     }
 
