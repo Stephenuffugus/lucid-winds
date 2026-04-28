@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.28';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.29';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -70364,6 +70364,37 @@ window._biomeIconHTML=function(key,size){
   }
   return emo;
 };
+
+// Companion portrait helper. Returns an <img> tag for a per-companion PNG
+// at /assets/companions/<slug>.png, with emoji fallback on 404. Stephen's
+// art queue: 55 creature portraits (close-up faces). Drop them as ready
+// and they auto-light up via the onerror cascade — no code changes needed.
+//
+// idx: companion index into TRAIT_BANK.companions
+// size: display size in px (default 64 — generous, won't look tiny)
+// fallbackEmoji: optional emoji to show if PNG missing (default 🐾)
+window._companionPortrait = function(idx, size, fallbackEmoji){
+  var s = size || 64;
+  var emo = (fallbackEmoji || '🐾').replace(/'/g, '&#39;');
+  var name = '';
+  try {
+    if (window.TRAIT_BANK && window.TRAIT_BANK.companions && window.TRAIT_BANK.companions[idx]) {
+      name = window.TRAIT_BANK.companions[idx].name || '';
+    }
+  } catch(e){}
+  if (!name || name === 'None') return '<span style="font-size:'+Math.round(s*0.7)+'px;">'+emo+'</span>';
+  // Slugify: lowercase, alphanumerics + dashes only.
+  var slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return '<img src="assets/companions/'+slug+'.png" alt="'+name.replace(/"/g,'&quot;')+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>\';">';
+};
+// Convenience: portrait by NAME (e.g. for the friendship ICONS map).
+window._companionPortraitByName = function(name, size, fallbackEmoji){
+  var s = size || 64;
+  var emo = (fallbackEmoji || '🐾').replace(/'/g, '&#39;');
+  if (!name) return '<span style="font-size:'+Math.round(s*0.7)+'px;">'+emo+'</span>';
+  var slug = String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return '<img src="assets/companions/'+slug+'.png" alt="'+String(name).replace(/"/g,'&quot;')+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>\';">';
+};
 })();
 </script>
 
@@ -85853,7 +85884,12 @@ window.LW_Comp = (function(){
   function registry(){
     var out=[];for(var slug in NAMES)if(NAMES.hasOwnProperty(slug)){
       var fr=friendship(slug);
-      out.push({slug:slug, name:NAMES[slug], icon:ICONS[slug], level:fr.lv, xp:fr.xp, nextAt:fr.nextAt, title:fr.title});
+      // Both fields exposed: `icon` (emoji char, for legacy text uses) and
+      // `portrait` (HTML <img> with emoji onerror fallback, for richer renders).
+      var portraitHtml = (window._companionPortraitByName)
+        ? window._companionPortraitByName(NAMES[slug], 64, ICONS[slug] || '🐾')
+        : ICONS[slug];
+      out.push({slug:slug, name:NAMES[slug], icon:ICONS[slug], portrait:portraitHtml, level:fr.lv, xp:fr.xp, nextAt:fr.nextAt, title:fr.title});
     }return out;
   }
 
