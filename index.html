@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -83187,13 +83187,18 @@ function _bosSecretsContent() {
       var _tb = window.TRAIT_BANK;
       // Defaults verified against TRAIT_BANK array sizes at index.html:9622+
       // (awk count: pots=60, stems=24, leaves=71, flowers=71, auras=36, substrates=71)
+      // Stephen 2026-04-28: replaced default emojis with hand-drawn icons.
+      // img falls back to emoji on 404 via onerror for any missing file.
+      function _trIco(slug, fallback){
+        return '<img src="assets/codex/' + slug + '.png" alt="" style="width:32px;height:32px;object-fit:contain;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=\'' + fallback + '\';">';
+      }
       var _rows = [
-        { label: 'LEAF TYPES',     icon: '\ud83c\udf43', seen: Object.keys(_seenT.leaves).length,      total: (_tb.leaves||[]).length || 71 },
-        { label: 'STEM PATTERNS',  icon: '\ud83c\udf3f', seen: Object.keys(_seenT.stems).length,       total: (_tb.stems||[]).length || 24 },
-        { label: 'VESSEL TYPES',   icon: '\ud83c\udffa', seen: Object.keys(_seenT.pots).length,        total: (_tb.pots||[]).length || 60 },
-        { label: 'BLOOM SHAPES',   icon: '\ud83c\udf38', seen: Object.keys(_seenT.blooms).length,      total: (_tb.flowers||[]).length || 71 },
-        { label: 'AURAS',          icon: '\u2728',       seen: Object.keys(_seenT.auras).length,       total: (_tb.auras||[]).length || 36 },
-        { label: 'SUBSTRATES',     icon: '\ud83e\udea8', seen: Object.keys(_seenT.substrates).length,  total: (_tb.substrates||[]).length || 71 }
+        { label: 'LEAF TYPES',     icon: _trIco('leaf','\ud83c\udf43'),      seen: Object.keys(_seenT.leaves).length,      total: (_tb.leaves||[]).length || 71 },
+        { label: 'STEM PATTERNS',  icon: _trIco('stem','\ud83c\udf3f'),      seen: Object.keys(_seenT.stems).length,       total: (_tb.stems||[]).length || 24 },
+        { label: 'VESSEL TYPES',   icon: _trIco('vessel','\ud83c\udffa'),    seen: Object.keys(_seenT.pots).length,        total: (_tb.pots||[]).length || 60 },
+        { label: 'BLOOM SHAPES',   icon: _trIco('bloom','\ud83c\udf38'),     seen: Object.keys(_seenT.blooms).length,      total: (_tb.flowers||[]).length || 71 },
+        { label: 'AURAS',          icon: _trIco('aura','\u2728'),            seen: Object.keys(_seenT.auras).length,       total: (_tb.auras||[]).length || 36 },
+        { label: 'SUBSTRATES',     icon: _trIco('substrate','\ud83e\udea8'), seen: Object.keys(_seenT.substrates).length,  total: (_tb.substrates||[]).length || 71 }
       ];
       h+='<div style="margin-bottom:0.8rem;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf31 TRAIT DIVERSITY</div>';
