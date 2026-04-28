@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39629,17 +39629,34 @@ document.addEventListener('keydown', function(e) {
       else if (window.showHexMsg) showHexMsg('Maximum 6 nursery slots.');
       return;
     }
+    // Pi Payment Hook — mirrors greenhouse expansion (line 35119+).
+    // When LW_PI_ENABLED is true (Cloud Functions deployed), routes through
+    // LW_Pi.buyNurserySlot. During beta the expansion is free with confirm.
+    var _piOn = !!window.LW_PI_ENABLED;
+    var _bodyCopy = _piOn
+      ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
+      : 'Add slot ' + (current + 1) + '?';
     _lwConfirm({
       title: 'EXPAND NURSERY',
-      body: 'Add slot ' + (current + 1) + '?',
-      yes: 'EXPAND',
+      body: _bodyCopy,
+      yes: _piOn ? 'PAY 1 PI' : 'EXPAND',
       no: 'NOT YET'
     }, function() {
-      FG_Data.setNurSlots(current + 1);
-      if (window._haptic) _haptic('tab');
-      renderNursery();
-      if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
-      if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+      var _applyExpansion = function(){
+        FG_Data.setNurSlots(current + 1);
+        if (window._haptic) _haptic('tab');
+        renderNursery();
+        if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
+        if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+      };
+      if (_piOn && window.LW_Pi && window.LW_Pi.buyNurserySlot) {
+        window.LW_Pi.buyNurserySlot(current + 1, function(ok){
+          // Pi wrapper handles slot increment + render on success.
+          // Nothing further needed here.
+        });
+      } else {
+        _applyExpansion();
+      }
     });
   };
 
@@ -65120,6 +65137,23 @@ window.LW_Pi={
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },
+  // Nursery slot expansion — 1 Pi per slot (max 6 slots, so 5 Pi total cap)
+  buyNurserySlot:function(slotNum,cb){
+    createPayment(1,'Nursery Slot '+slotNum,{type:'nursery_slot',slot:slotNum},function(){
+      // Deliver: bump nursery slot count via FG_Data
+      try{
+        if(window.FG_Data&&FG_Data.getNurSlots&&FG_Data.setNurSlots){
+          var cur=FG_Data.getNurSlots();
+          FG_Data.setNurSlots(cur+1);
+        }
+      }catch(e){}
+      if(window.renderNursery)renderNursery();
+      if(window.syncVaultToCloud)syncVaultToCloud();
+      if(window.showHexMsg)showHexMsg('Nursery slot '+slotNum+' unlocked!');
+      if(window._haptic)_haptic('tab');
+      if(cb)cb(true);
+    },function(){if(cb)cb(false);});
+  },
   // Item Pouch +1 slot — actually delivers (was just toast).
   // lw_pouch_cap clamps 25-40 in LW_HUT.getPouchCap(). 1 Pi per slot,
   // 15 Pi total to max out (25 → 40).
@@ -77668,6 +77702,17 @@ window._lwClaimHerbarium = function(id){
     } else if (_capNow >= 40) {
       _capFootHtml += ' (max)';
     }
+    // Emergency pouch slot — 10 Pi, ONE-TIME per day. Only show if Pi is on
+    // and player hasn't used it today.
+    if (window.LW_PI_ENABLED) {
+      var _epToday = '';
+      try { _epToday = localStorage.getItem('lw_emergency_pouch_today') || ''; } catch(e){}
+      if (_epToday !== todayStr()) {
+        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyEmergencyPouch()" title="One emergency slot for 24 hours. Once per day.">+EMERGENCY · 10 π</button>';
+      } else {
+        _capFootHtml += ' · <span style="opacity:0.55;">EMERGENCY USED TODAY</span>';
+      }
+    }
     html += '<div class="lwh-section-foot">'+_capFootHtml+'</div>';
     body.innerHTML = html;
   }
@@ -77794,6 +77839,43 @@ window._lwClaimHerbarium = function(id){
       window.LW_Pi.earlyOpenHutItem(slot.key, slot.tier);
     }
     if (typeof gtag !== 'undefined') gtag('event','hut_pi_early_open_attempt',{key:slot.key,tier:slot.tier});
+  }
+
+  // ─── PI EMERGENCY POUCH (10 Pi, once per day, +1 slot for 24h) ───
+  function buyEmergencyPouch(){
+    var today = todayStr();
+    var lastUsed = '';
+    try { lastUsed = localStorage.getItem('lw_emergency_pouch_today') || ''; } catch(e){}
+    if (lastUsed === today){
+      if (window._toast) try { window._toast('Emergency Pouch already used today. Resets at midnight.'); } catch(e){}
+      return;
+    }
+    if (!window.LW_Pi || !window.LW_Pi.buyEmergencySlot){
+      if (window._toast) try { window._toast('Pi payments arrive in the full launch. Thank you for testing.'); } catch(e){}
+      return;
+    }
+    if (window._lwConfirm){
+      window._lwConfirm({
+        title: 'EMERGENCY POUCH',
+        body: 'Buy one extra pouch slot for the next 24 hours. <b>10 π</b>. Once per day.',
+        yes: 'PAY 10 π',
+        no: 'NOT NOW'
+      }, function(){
+        window.LW_Pi.buyEmergencySlot(function(ok){
+          if (ok){
+            try { localStorage.setItem('lw_emergency_pouch_today', todayStr()); } catch(e){}
+            if (window.LW_HUT && LW_HUT.refresh) LW_HUT.refresh();
+          }
+        });
+      });
+    } else {
+      window.LW_Pi.buyEmergencySlot(function(ok){
+        if (ok){
+          try { localStorage.setItem('lw_emergency_pouch_today', todayStr()); } catch(e){}
+        }
+      });
+    }
+    if (typeof gtag !== 'undefined') gtag('event','hut_pi_emergency_pouch_attempt');
   }
 
   // ─── PI ITEM POUCH +1 (1 Pi per slot, max 40) ───
@@ -77965,7 +78047,7 @@ window._lwClaimHerbarium = function(id){
 
   window.LW_HUT = {
     open: open, close: close, switchTab: switchTab,
-    buy: buy, earlyOpen: earlyOpen, buyPouchSlot: buyPouchSlot,
+    buy: buy, earlyOpen: earlyOpen, buyPouchSlot: buyPouchSlot, buyEmergencyPouch: buyEmergencyPouch,
     castWeather: castWeather, openSlots: openSlots, claimQuest: claimQuest,
     refresh: render,
     getPouchCap: getPouchCap, pouchCount: pouchCount
