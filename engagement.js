@@ -329,6 +329,7 @@
     {id:'exp_biome_3',        tier:'bronze',   category:'EXPLORATION',name:'Three Biomes Visited',       desc:'Visit 3 different biomes.',                                            counter:'biomes_visited',   target:3,    reward:{type:'dew', amt:30}},
     {id:'exp_biome_5',        tier:'silver',   category:'EXPLORATION',name:'Five Biomes Walked',         desc:'Visit 5 different biomes.',                                            counter:'biomes_visited',   target:5,    reward:{type:'dew', amt:80}},
     {id:'exp_biome_all',      tier:'gold',     category:'EXPLORATION',name:'All Ten Biomes',             desc:'Visit all 10 biomes.',                                                 counter:'biomes_visited',   target:10,   reward:{type:'dew', amt:250}},
+    {id:'exp_biome_trophy',   tier:'mythic',   category:'EXPLORATION',name:'Every Biome, Every Wind',    desc:'Visit all 10 biomes AND collect a feral from each.',                   counter:'biomes_visited',   target:10,   reward:{type:'trophy', amt:1, name:'Every Biome'}},
 
     {id:'exp_feral_first',    tier:'bronze',   category:'EXPLORATION',name:'A First Feral',              desc:'Collect your first feral seed.',                                       counter:'ferals_total',     target:1,    reward:{type:'dew', amt:20}},
     {id:'exp_feral_10',       tier:'bronze',   category:'EXPLORATION',name:'Ten Wild Seeds',             desc:'Collect 10 feral seeds.',                                              counter:'ferals_total',     target:10,   reward:{type:'dew', amt:50}},
