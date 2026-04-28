@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Lucid Winds</title>
+<style>
+  :root {
+    --bg: #0d100c;
+    --bg-2: #161b13;
+    --sage: #7ab356;
+    --gold: #c8a84b;
+    --cream: #e8dcc8;
+    --muted: #8a9178;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--cream);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  header {
+    border-bottom: 1px solid rgba(200, 168, 75, 0.25);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+  }
+  h1 {
+    color: var(--gold);
+    font-size: 1.6rem;
+    margin: 0 0 6px;
+    letter-spacing: 0.5px;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  h2 {
+    color: var(--sage);
+    font-size: 1.15rem;
+    margin: 28px 0 10px;
+    letter-spacing: 0.3px;
+  }
+  p, li { font-size: 0.95rem; }
+  a { color: var(--gold); text-decoration: underline; text-decoration-color: rgba(200,168,75,0.4); }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  .box {
+    background: var(--bg-2);
+    border: 1px solid rgba(122, 179, 86, 0.18);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 18px 0;
+  }
+  .box strong { color: var(--gold); }
+  footer {
+    margin-top: 40px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(200, 168, 75, 0.25);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>LUCID WINDS — Privacy Policy</h1>
+    <p class="sub">Effective: April 28, 2026 · Last updated: April 28, 2026</p>
+  </header>
+
+  <p>Lucid Winds is a botanical pattern-matching game playable in any modern browser
+  and on the Pi Network. This policy explains exactly what data the game collects,
+  why, and what choices you have. We tried to keep it short and human.</p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Account email</strong> — handled by Firebase Authentication (Google) for signup
+        and sign-in. We do not see or store your password.</li>
+    <li><strong>GPS coordinates</strong> — only while the WILD tab is open. Used to drop and
+        harvest plants on a real-world map. Your phone asks you for location permission first;
+        you can refuse and most of the game still works (you only lose the WILD tab).</li>
+    <li><strong>Pi Network user ID and payment records</strong> — only if you make a Pi
+        payment. We receive a Pi user identifier from the Pi SDK and a transaction id from
+        the Pi server. We never see your Pi wallet seed phrase.</li>
+    <li><strong>In-game state (your "vault")</strong> — your greenhouse plants, nursery
+        seeds, currencies (Sunbeams, Dew, fertilizer), and progress, stored in Firestore
+        under your account so the game restores when you sign in on a new device.</li>
+    <li><strong>Engagement counters</strong> — anonymous-ish numbers like how many plants
+        you've grown or how many achievements you've unlocked, used to power the in-game
+        Compendium and Trophies tabs.</li>
+    <li><strong>Basic analytics</strong> — Google Analytics 4 (Measurement ID
+        G-XE58S4X6RX) records aggregate events such as "plant minted" or "tab switched".
+        We do not link these events to your email.</li>
+  </ul>
+
+  <h2>Why we collect it</h2>
+  <ul>
+    <li>To run the game: keep your collection saved and syncing across devices.</li>
+    <li>To process Pi payments: confirm the payment with Pi's servers and grant the item.</li>
+    <li>To improve the game: understand which features get used, which are confusing.</li>
+    <li>To prevent cheating: our anti-spoof checks rely on knowing your GPS movement.</li>
+  </ul>
+
+  <h2>Third parties we use</h2>
+  <div class="box">
+    <p><strong>Firebase (Google)</strong> — Auth, Firestore, Cloud Functions, hosting.</p>
+    <p><strong>Pi Network</strong> — payment processing and Pi user identity.</p>
+    <p><strong>Cloudflare</strong> — content delivery network in front of the site.</p>
+    <p><strong>Google Analytics 4</strong> — aggregate gameplay analytics.</p>
+    <p><strong>Open-Meteo</strong> — public weather feed, no API key, no PII sent.</p>
+    <p><strong>OpenStreetMap / CartoDB</strong> — map tiles for the WILD tab.</p>
+  </div>
+  <p>We do not sell your data. We do not share your data with advertisers.</p>
+
+  <h2>Your rights</h2>
+  <ul>
+    <li><strong>Export</strong> — email <a href="mailto:stephenfurpahs@gmail.com">stephenfurpahs@gmail.com</a>
+        from the address tied to your account and we'll send a JSON dump of your vault within 14 days.</li>
+    <li><strong>Delete</strong> — same email address, ask for deletion, and we'll remove your
+        account and all server-side data within 14 days. Some anonymized analytics may persist
+        in aggregate.</li>
+    <li><strong>Correct</strong> — most of your data is editable in-game. For account email
+        changes, write to the same address.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>Lucid Winds is not directed at children under 13. We do not knowingly collect data
+  from children under 13. If you believe a child has signed up, email us and we'll delete
+  the account.</p>
+
+  <h2>Security</h2>
+  <p>Data is stored in Google's Firebase infrastructure, which is encrypted at rest and
+  in transit (TLS). Firestore security rules restrict access so only you can read your
+  vault. Cloud Functions verify your Firebase auth token before granting any Pi-paid
+  entitlement.</p>
+
+  <h2>Cookies and local storage</h2>
+  <p>We use browser local storage to keep your session, settings, and an offline copy of
+  your vault. We do not use third-party advertising cookies.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If we materially change what we collect or how we use it, we'll update the date at
+  the top and post a note in-game on first launch after the change. Continued use of the
+  game after that note means you accept the updated policy.</p>
+
+  <h2>Contact</h2>
+  <p>Questions, deletion requests, or anything else: <a href="mailto:stephenfurpahs@gmail.com">stephenfurpahs@gmail.com</a>.</p>
+
+  <footer>
+    Lucid Winds is a solo-developed game by Stephen.<br>
+    Domain: <a href="https://lucidwinds.com">lucidwinds.com</a>.
+  </footer>
+</div>
+</body>
+</html>
