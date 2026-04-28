@@ -116,18 +116,61 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Vault subcollection documents (catch-all for greenhouse, hashWallet,
-    // companions, settings, purchases, future subcollections + meta/dailyStats).
+    // hashWallet/state — Sunbeam balance cap (anti-cheat absolute ceiling).
+    // 10M Sunbeams is ~333k plants worth — well beyond any legit player. Any
+    // value above this is almost certainly tampered. Real anti-cheat (per-write
+    // delta validation, Cloud-Function-gated grants) is post-launch work.
+    match /vaults/{uid}/hashWallet/state {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && (
+          !('balance' in request.resource.data)
+          || (request.resource.data.balance is number
+              && request.resource.data.balance >= 0
+              && request.resource.data.balance <= 10000000)
+        )
+        && (
+          !('totalEarned' in request.resource.data)
+          || (request.resource.data.totalEarned is number
+              && request.resource.data.totalEarned >= 0
+              && request.resource.data.totalEarned <= 50000000)
+        );
+    }
+
+    // feralPouch/state — daily collection cap (anti-cheat). Cap is 100/day
+    // even though base is 2 + cryo 5 = max ~7 legit per day. 100 is the
+    // tampered-payload threshold; legit play never approaches it.
+    match /vaults/{uid}/feralPouch/state {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && (
+          !('collectedToday' in request.resource.data)
+          || (request.resource.data.collectedToday is number
+              && request.resource.data.collectedToday >= 0
+              && request.resource.data.collectedToday <= 100)
+        )
+        && (
+          !('maxDaily' in request.resource.data)
+          || (request.resource.data.maxDaily is number
+              && request.resource.data.maxDaily >= 0
+              && request.resource.data.maxDaily <= 20)
+        );
+    }
+
+    // Vault subcollection documents (catch-all for greenhouse, companions,
+    // settings, purchases, future subcollections + meta/dailyStats).
     //
-    // IMPORTANT: Firestore rules OR together. To enforce the meta/state
-    // slot-cap and the pendingRewards cross-account rule above, this catch-all
-    // EXCLUDES those paths. Otherwise the broader rule would silently allow
-    // an over-cap write that the more-specific rule denied.
+    // IMPORTANT: Firestore rules OR together. To enforce all the more-specific
+    // rules above (meta/state slot-cap, hashWallet/feralPouch caps, pendingRewards),
+    // this catch-all EXCLUDES those paths. Otherwise the broader rule would
+    // silently allow an over-cap write that the more-specific rule denied.
     match /vaults/{uid}/{collection}/{docId} {
       allow read, write: if request.auth != null
         && request.auth.uid == uid
         && !(collection == 'pendingRewards')
-        && !(collection == 'meta' && docId == 'state');
+        && !(collection == 'meta' && docId == 'state')
+        && !(collection == 'hashWallet' && docId == 'state')
+        && !(collection == 'feralPouch' && docId == 'state');
     }
 
     // PENDING REWARDS — other players can CREATE rewards for the vault owner

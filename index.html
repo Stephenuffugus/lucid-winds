@@ -845,7 +845,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.48';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.49';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39596,7 +39596,7 @@ document.addEventListener('keydown', function(e) {
       h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid ' + borderCol + ';border-radius:9px;align-items:center;opacity:' + rowOpacity + ';position:relative;">';
       // Icon — desaturated with a lock when level-gated
       var iconStyle = levelLocked ? 'font-size:1.6rem;flex-shrink:0;width:42px;text-align:center;filter:grayscale(1) brightness(0.7);' : 'font-size:1.6rem;flex-shrink:0;width:42px;text-align:center;';
-      h += '<div style="' + iconStyle + '">' + pot.icon + '</div>';
+      h += '<div style="' + iconStyle + '">' + (window._lwEmojiSprite?_lwEmojiSprite(pot.icon,28):pot.icon) + '</div>';
       h += '<div style="flex:1;min-width:0;">';
       var nameCol = levelLocked ? 'rgba(160,160,160,0.75)' : pot.color;
       h += '<div style="display:flex;align-items:center;gap:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:' + nameCol + ';letter-spacing:0.06em;">' + pot.name + '</div>';
@@ -39662,7 +39662,7 @@ document.addEventListener('keydown', function(e) {
       var pp = owned[j];
       var ct = pots[pp.id] || 0;
       h += '<button onclick="window.lwApplyPot(\'' + seedId + '\',\'' + pp.id + '\');document.getElementById(\'lw-pot-picker\').remove();" style="display:flex;width:100%;gap:0.6rem;padding:0.65rem 0.5rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1.5px solid ' + pp.color + '55;border-radius:9px;align-items:center;cursor:pointer;text-align:left;">';
-      h += '<div style="font-size:1.4rem;flex-shrink:0;width:38px;text-align:center;">' + pp.icon + '</div>';
+      h += '<div style="font-size:1.4rem;flex-shrink:0;width:38px;text-align:center;">' + (window._lwEmojiSprite?_lwEmojiSprite(pp.icon,28):pp.icon) + '</div>';
       h += '<div style="flex:1;min-width:0;">';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:' + pp.color + ';letter-spacing:0.06em;">' + pp.name + ' \u00d7' + ct + '</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.35;margin-top:0.15rem;">' + pp.blurb + '</div>';
@@ -49538,7 +49538,7 @@ function _renderPatternNamer(){
   var h = '<div style="max-width:440px;width:100%;margin:1.5rem auto;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.4);border-radius:14px;padding:1.2rem 1.1rem 1rem;box-shadow:0 20px 60px rgba(0,0,0,0.8),0 0 24px rgba(200,168,75,0.15);">';
   h += '<div style="text-align:center;margin-bottom:0.7rem;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.16em;color:var(--gold);">A NEW PATTERN HAS FORMED</div>';
-  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-top:0.35rem;">' + meta.icon + ' ' + meta.name + '</div>';
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-top:0.35rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(meta.icon,18):meta.icon) + ' ' + meta.name + '</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.2rem;">' + meta.desc + '</div>';
   h += '</div>';
   // Live preview of the chosen name
@@ -54039,7 +54039,7 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
     // blank category header. When present, the banner fills the row at
     // full width and the icon/label/count ride on top of it.
     h+='<img class="gp-cat-banner" src="assets/games/category-banners/'+cat.key+'.png" alt="" onerror="this.style.display=\'none\';var f=this.nextSibling;if(f)f.classList.add(\'show\');">';
-    h+='<span class="gp-cat-text-fallback"><span class="gp-cat-icon">'+cat.icon+'</span>';
+    h+='<span class="gp-cat-text-fallback"><span class="gp-cat-icon">'+(window._lwEmojiSprite?_lwEmojiSprite(cat.icon,28):cat.icon)+'</span>';
     h+='<span class="gp-cat-label">'+cat.label+'</span></span>';
     h+='<span class="gp-cat-count">'+games.length+'</span>';
     h+='<span class="gp-chev">\u25bc</span>';
@@ -66193,7 +66193,7 @@ function _showDailyReward() {
     var color = isLogged ? 'var(--gold)' : isFuture ? 'var(--muted)' : 'rgba(192,112,112,0.5)';
     h += '<div title="' + (ms ? ms.label : '') + '" style="background:' + bg + ';border:1px solid ' + border + ';border-radius:4px;padding:2px;text-align:center;min-height:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;">';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:' + color + ';">' + d + '</div>';
-    if (ms) h += '<div style="font-size:0.5rem;line-height:1;margin-top:1px;">' + ms.icon + '</div>';
+    if (ms) h += '<div style="font-size:0.5rem;line-height:1;margin-top:1px;">' + (window._lwEmojiSprite?_lwEmojiSprite(ms.icon,12):ms.icon) + '</div>';
     else if (isLogged) h += '<div style="font-size:0.22rem;color:var(--sage);">+' + tierReward + '</div>';
     h += '</div>';
   }
@@ -69337,7 +69337,7 @@ function _renderCard(el,plant,role,side){
       _bcLabel='\ud83e\uddec Bred '+_bc+'\u00d7';
       _bcColor='var(--muted)';
     }
-    h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?i.tg.icon:'')+' '+(i.tg?i.tg.name:'')+'</span>';
+    h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?(window._lwEmojiSprite?_lwEmojiSprite(i.tg.icon,14):i.tg.icon):'')+' '+(i.tg?i.tg.name:'')+'</span>';
     h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
     h+='<span style="color:var(--muted);">'+_seasonEmblems[i.season]+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
     h+='<span style="color:'+_bcColor+';">'+_bcLabel+'</span>';
@@ -70474,7 +70474,17 @@ window._LW_EMOJI_SPRITES = {
   '🦋': 'assets/fx/butterfly-pink.png',        // butterfly
   '❄️': 'assets/fx/snowflake-blue.png',        // snowflake
   '🎁': 'assets/icons/box.png',                // gift
-  '🎒': 'assets/backpack-64x64.png'            // backpack
+  '🎒': 'assets/backpack-64x64.png',           // backpack
+  '⏳': 'assets/fx/clock-gold.png',            // hourglass / cooldown
+  '⏰': 'assets/fx/clock-gold.png',            // alarm clock
+  '❤️': 'assets/fx/heart-red.png',            // red heart
+  '💚': 'assets/fx/heart-green.png',           // green heart
+  '💕': 'assets/fx/heart-pink.png',            // two hearts
+  '💖': 'assets/fx/heart-pink.png',            // sparkle heart
+  '♾️': 'assets/fx/infinity-green.png',         // infinity
+  '🌍': 'assets/fx/planet-blue.png',           // earth
+  '🌎': 'assets/fx/planet-blue.png',           // earth americas
+  '🌏': 'assets/fx/planet-blue.png'            // earth asia
 };
 
 window._lwEmojiSprite = function(emoji, size){
@@ -73584,7 +73594,7 @@ function _bosTreeContent() {
       h += _bosTreeBranchHtml(ub, pts, avail);
     } else {
       h += '<div style="margin-bottom:0.7rem;padding:0.55rem 0.7rem;background:rgba(13,16,12,0.5);border:1px dashed rgba(74,124,53,0.2);border-radius:10px;opacity:0.5;">';
-      h += '<div style="display:flex;align-items:center;gap:0.4rem;"><span style="font-size:0.9rem;">' + ubDef.icon + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;">' + ubDef.name.toUpperCase() + ' \u2014 LV ' + ubDef.unlockLvl + '</span></div>';
+      h += '<div style="display:flex;align-items:center;gap:0.4rem;"><span style="font-size:0.9rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(ubDef.icon,16):ubDef.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;">' + ubDef.name.toUpperCase() + ' \u2014 LV ' + ubDef.unlockLvl + '</span></div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;line-height:1.4;">Reach Keeper Lv ' + ubDef.unlockLvl + ' to open this path.</div>';
       h += '</div>';
     }
@@ -73596,7 +73606,7 @@ function _bosTreeContent() {
 function _bosTreeBranchHtml(bId, pts, avail) {
   var b = LW_TREE_BRANCHES[bId]; if (!b) return '';
   var h = '<div style="margin-bottom:0.7rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
-  h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;"><span style="font-size:0.9rem;">' + b.icon + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + b.color + ';letter-spacing:0.1em;">' + b.name.toUpperCase() + '</span></div>';
+  h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;"><span style="font-size:0.9rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(b.icon,16):b.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + b.color + ';letter-spacing:0.1em;">' + b.name.toUpperCase() + '</span></div>';
   for (var nId in LW_TREE_NODES) {
     if (!LW_TREE_NODES.hasOwnProperty(nId)) continue;
     var nd = LW_TREE_NODES[nId]; if (nd.branch !== bId) continue;
@@ -74958,7 +74968,7 @@ function _bosMementosContent() {
         if (!byFamily[famKey] || !byFamily[famKey].length) continue;
         var fm = FAM_META[famKey];
         h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.55rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:9px;">';
-        h += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.35rem;"><span style="font-size:0.75rem;">' + fm.icon + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + fm.color + ';letter-spacing:0.1em;">' + fm.name.toUpperCase() + ' \u00b7 ' + byFamily[famKey].length + '</span></div>';
+        h += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.35rem;"><span style="font-size:0.75rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(fm.icon,14):fm.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + fm.color + ';letter-spacing:0.1em;">' + fm.name.toUpperCase() + ' \u00b7 ' + byFamily[famKey].length + '</span></div>';
         h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:5px;">';
         byFamily[famKey].sort(function(a,b){return a-b;});
         for (var bi = 0; bi < byFamily[famKey].length; bi++) {
