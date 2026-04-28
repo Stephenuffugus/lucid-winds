@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.4';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.5';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -43928,7 +43928,10 @@ function activate(){
             }
           }
           var _bhName=document.getElementById('w-biome-hero-name');if(_bhName)_bhName.textContent=_bInf.name;
-          var _bhIcon=document.getElementById('w-biome-hero-icon');if(_bhIcon)_bhIcon.textContent=_bInf.icon;
+          var _bhIcon=document.getElementById('w-biome-hero-icon');if(_bhIcon){
+            // innerHTML so the iconImg renders; falls back to emoji on 404.
+            _bhIcon.innerHTML = (window._biomeIconHTML?_biomeIconHTML(b,28):_bInf.icon);
+          }
         }
         // Weather chip — compact today's weather + element tilt for foraging.
         try {
@@ -47146,7 +47149,7 @@ function showTP(p,mk){
         // Add soil info
         if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0)_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">\ud83c\udf3f Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}
         // Biome info
-        if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);_statusExtra+='<br><span style="color:'+_bInfo.color+';">'+_bInfo.icon+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
+        if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);var _bIcoH=(window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,16):_bInfo.icon);_statusExtra+='<br><span style="color:'+_bInfo.color+';">'+_bIcoH+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
         if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_statusExtra;ownStatus.style.display='block';}
       }
     }
@@ -69969,16 +69972,16 @@ document.addEventListener('visibilitychange',function(){
 'use strict';
 var BIOME_KEY='lw_biome_cache';
 var BIOMES={
-  wetland:  {name:'Wetland',   icon:'🌊', color:'#5BA0C4', rarityBoost:0.08, spawnMod:1.0, mutation:'Root Rot Resistance', img:'assets/wild-biomes/biome-wetland.png'},
-  riverside:{name:'Riverside', icon:'🏞️', color:'#6BAFB2', rarityBoost:0.04, spawnMod:1.3, mutation:'Driftwood Stem',     img:'assets/wild-biomes/biome-coastal.png'},
-  coastal:  {name:'Coastal',   icon:'🏖️', color:'#A0C4E8', rarityBoost:0.03, spawnMod:0.8, mutation:'Salt Crystal',       img:'assets/wild-biomes/biome-coastal.png'},
-  forest:   {name:'Forest',    icon:'🌲', color:'#4A7C35', rarityBoost:0.05, spawnMod:1.2, mutation:'Moss Veil',          img:'assets/wild-biomes/biome-temperate.png'},
-  mountain: {name:'Mountain',  icon:'⛰️', color:'#8A9178', rarityBoost:0.10, spawnMod:0.6, mutation:'Alpine Frost',       img:'assets/wild-biomes/biome-mountain.png'},
-  desert:   {name:'Desert',    icon:'🏜️', color:'#D4A843', rarityBoost:0.12, spawnMod:0.4, mutation:'Thorn Crown',        img:'assets/wild-biomes/biome-desert.png'},
-  farmland: {name:'Farmland',  icon:'🌾', color:'#A0A060', rarityBoost:0,    spawnMod:1.5, mutation:null,                 img:'assets/wild-biomes/biome-suburban.png'},
-  garden:   {name:'Garden',    icon:'🌷', color:'#E8A0BF', rarityBoost:0.02, spawnMod:1.4, mutation:'Cultivar Bloom',     img:'assets/wild-biomes/biome-suburban.png'},
-  park:     {name:'Urban Park',icon:'🌳', color:'#7AB356', rarityBoost:0.01, spawnMod:1.0, mutation:null,                 img:'assets/wild-biomes/biome-temperate.png'},
-  suburban: {name:'Suburban',  icon:'🏡', color:'#8A9178', rarityBoost:0,    spawnMod:0.8, mutation:null,                 img:'assets/wild-biomes/biome-suburban.png'},
+  wetland:  {name:'Wetland',   icon:'🌊', iconImg:'assets/wild-biomes/icons/icon-wetland.png',   color:'#5BA0C4', rarityBoost:0.08, spawnMod:1.0, mutation:'Root Rot Resistance', img:'assets/wild-biomes/biome-wetland.png'},
+  riverside:{name:'Riverside', icon:'🏞️', iconImg:'assets/wild-biomes/icons/icon-riverside.png', color:'#6BAFB2', rarityBoost:0.04, spawnMod:1.3, mutation:'Driftwood Stem',     img:'assets/wild-biomes/biome-coastal.png'},
+  coastal:  {name:'Coastal',   icon:'🏖️', iconImg:'assets/wild-biomes/icons/icon-coastal.png',   color:'#A0C4E8', rarityBoost:0.03, spawnMod:0.8, mutation:'Salt Crystal',       img:'assets/wild-biomes/biome-coastal.png'},
+  forest:   {name:'Forest',    icon:'🌲', iconImg:'assets/wild-biomes/icons/icon-forest.png',    color:'#4A7C35', rarityBoost:0.05, spawnMod:1.2, mutation:'Moss Veil',          img:'assets/wild-biomes/biome-temperate.png'},
+  mountain: {name:'Mountain',  icon:'⛰️', iconImg:'assets/wild-biomes/icons/icon-mountain.png',  color:'#8A9178', rarityBoost:0.10, spawnMod:0.6, mutation:'Alpine Frost',       img:'assets/wild-biomes/biome-mountain.png'},
+  desert:   {name:'Desert',    icon:'🏜️', iconImg:'assets/wild-biomes/icons/icon-desert.png',    color:'#D4A843', rarityBoost:0.12, spawnMod:0.4, mutation:'Thorn Crown',        img:'assets/wild-biomes/biome-desert.png'},
+  farmland: {name:'Farmland',  icon:'🌾', iconImg:'assets/wild-biomes/icons/icon-farmland.png',  color:'#A0A060', rarityBoost:0,    spawnMod:1.5, mutation:null,                 img:'assets/wild-biomes/biome-suburban.png'},
+  garden:   {name:'Garden',    icon:'🌷', iconImg:'assets/wild-biomes/icons/icon-garden.png',    color:'#E8A0BF', rarityBoost:0.02, spawnMod:1.4, mutation:'Cultivar Bloom',     img:'assets/wild-biomes/biome-suburban.png'},
+  park:     {name:'Urban Park',icon:'🌳', iconImg:'assets/wild-biomes/icons/icon-park.png',      color:'#7AB356', rarityBoost:0.01, spawnMod:1.0, mutation:null,                 img:'assets/wild-biomes/biome-temperate.png'},
+  suburban: {name:'Suburban',  icon:'🏡', iconImg:'assets/wild-biomes/icons/icon-suburban.png',  color:'#8A9178', rarityBoost:0,    spawnMod:0.8, mutation:null,                 img:'assets/wild-biomes/biome-suburban.png'},
   // Extra paintings available (Jessie Apr 15): biome-african, biome-asian,
   // biome-rainforest, biome-tundra. Not wired as standalone biomes yet — OSM
   // detection rules pending. Stored in assets/wild-biomes/ for future use.
@@ -70085,6 +70088,17 @@ window.getBiomeInfo=getBiomeInfo;
 window.getCurrentBiome=getCurrentBiome;
 window.checkBiodiversity=checkBiodiversity;
 window.BIOMES=BIOMES;
+
+// HTML helper: returns <img> for biome icon w/ emoji fallback. size in px.
+window._biomeIconHTML=function(key,size){
+  var b=BIOMES[key]||BIOMES.suburban;
+  var s=size||22;
+  var emo=(b.icon||'🌿').replace(/'/g,'&#39;');
+  if(b.iconImg){
+    return '<img src="'+b.iconImg+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;" onerror="this.outerHTML=\''+emo+'\';">';
+  }
+  return emo;
+};
 })();
 </script>
 
@@ -75941,7 +75955,7 @@ window._lwClaimHerbarium = function(id){
 
     function render() {
       var biomeName = (window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).name || 'Unknown') : (comp.biome||'Unknown');
-      var biomeIcon = (window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).icon || '\ud83c\udf3f') : '\ud83c\udf3f';
+      var biomeIcon = (window._biomeIconHTML && window._lastDetectedBiome) ? _biomeIconHTML(window._lastDetectedBiome, 24) : ((window.getBiomeInfo && window._lastDetectedBiome) ? (getBiomeInfo(window._lastDetectedBiome).icon || '\ud83c\udf3f') : '\ud83c\udf3f');
       var weatherIcon = comp.weather ? (EL[comp.weather] ? EL[comp.weather].icon : '') : '';
       var weatherLbl = comp.weather ? ('Weather favors ' + EL[comp.weather].label) : 'Calm conditions';
       // Weather is a SILENT signal — it tilts the deck and reveals one slot
@@ -80296,7 +80310,7 @@ window.LW_FAMILY_T3 = {
         msg = '\ud83e\uddf5 Soft Thread \u2014 +1 Fertilizer';
       } else if (family === 'wayfinders') {
         var biomeName = 'unknown terrain';
-        try { if (window._lastDetectedBiome && window.getBiomeInfo) { var bi = getBiomeInfo(window._lastDetectedBiome); if (bi) biomeName = bi.icon + ' ' + bi.name; } } catch(e) {}
+        try { if (window._lastDetectedBiome && window.getBiomeInfo) { var bi = getBiomeInfo(window._lastDetectedBiome); if (bi) biomeName = (window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,16):bi.icon) + ' ' + bi.name; } } catch(e) {}
         var sInfo = null; try { if (window.getSeasonInfo) sInfo = getSeasonInfo(); } catch(e) {}
         var seasonTxt = sInfo ? (sInfo.emoji + ' ' + sInfo.name) : '';
         if (window.earnHashes) window.earnHashes(1);
