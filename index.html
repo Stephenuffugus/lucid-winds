@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.45';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.46';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -61372,7 +61372,7 @@ function _renderEffectsSection(){
   for(var i=0;i<rows.length;i++){
     var r=rows[i];
     h+='<div class="cs-effect-row '+r.cls+'">';
-    h+='<div class="cs-effect-icon">'+r.icon+'</div>';
+    h+='<div class="cs-effect-icon">'+(window._lwEmojiSprite?_lwEmojiSprite(r.icon,28):r.icon)+'</div>';
     h+='<div class="cs-effect-info"><div class="cs-effect-name">'+r.name+'</div><div class="cs-effect-blurb">'+r.blurb+'</div></div>';
     if(r.timer)h+='<div class="cs-effect-timer">'+r.timer+'</div>';
     h+='</div>';
@@ -72744,7 +72744,7 @@ window._openDailyQuests=function(){
     var tmpl=TEMPLATES.filter(function(t){return t.id===q.id;})[0];
     var done=tmpl&&tmpl.check(d.progress);
     h+='<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem;margin-bottom:4px;background:rgba(26,36,22,'+(done?'0.6':'0.3')+');border:1px solid '+(done?'rgba(122,179,86,0.3)':'rgba(74,124,53,0.1)')+';border-radius:8px;min-height:48px;">';
-    h+='<span style="font-size:0.7rem;width:28px;text-align:center;">'+(done?'✅':q.icon)+'</span>';
+    h+='<span style="font-size:0.7rem;width:28px;text-align:center;">'+(done?'✅':(window._lwEmojiSprite?_lwEmojiSprite(q.icon,18):q.icon))+'</span>';
     h+='<div style="flex:1;font-family:DM Mono,monospace;font-size:0.42rem;color:'+(done?'var(--sage)':'var(--cream)')+';'+(done?'text-decoration:line-through;opacity:0.7;':'')+'">'+q.text+'</div>';
     h+='</div>';
   }
