@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2724,6 +2724,20 @@
     .lw-trophy-detail .lwt-desc{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);line-height:1.55;margin-bottom:0.7rem;opacity:0.92;}
     .lw-trophy-detail .lwt-lore{font-family:'Playfair Display',serif;font-style:italic;font-size:0.6rem;color:var(--muted);line-height:1.6;border-top:1px solid rgba(200,168,75,0.18);padding-top:0.7rem;margin-top:0.5rem;}
     @keyframes trophyDetailIn{0%{transform:scale(0.7) translateY(30px);opacity:0;}60%{transform:scale(1.04) translateY(0);opacity:1;}100%{transform:scale(1) translateY(0);opacity:1;}}
+
+    /* ═══ PRESSURE MODAL — contextual pay-point CTA at friction moments ═══ */
+    /* Stephen 2026-04-28: "we should have buttons where the pay point pressure
+       happens." This modal pops at moments when the player hits a wall (pouch
+       full, nursery full, drops used). Offers Pi expand + free alternatives. */
+    .lw-pressure{position:fixed;inset:0;z-index:100025;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;}
+    .lw-pressure .lwp-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    .lw-pressure .lwp-panel{position:relative;background:linear-gradient(180deg,rgba(28,22,14,0.98),rgba(13,16,12,0.99));border:2px solid var(--gold);border-radius:16px;padding:1.3rem 1.1rem 1rem;max-width:340px;width:calc(100vw - 2rem);max-height:88vh;overflow-y:auto;box-shadow:0 18px 60px rgba(0,0,0,0.85),0 0 28px rgba(200,168,75,0.3);animation:trophyDetailIn 0.35s cubic-bezier(0.34,1.56,0.64,1);}
+    .lw-pressure .lwp-title{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.16em;color:var(--gold);text-align:center;margin-bottom:0.3rem;}
+    .lw-pressure .lwp-body{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);text-align:center;line-height:1.55;margin-bottom:0.9rem;opacity:0.92;}
+    .lw-pressure .lwp-pi{width:100%;padding:0.7rem;border:1.5px solid rgba(200,168,75,0.65);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(160,128,55,0.45));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;margin-bottom:0.5rem;}
+    .lw-pressure .lwp-alt{width:100%;padding:0.6rem;border:1.5px solid rgba(122,179,86,0.45);border-radius:8px;background:rgba(26,31,23,0.6);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;margin-bottom:0.4rem;}
+    .lw-pressure .lwp-alt:last-of-type{margin-bottom:0.6rem;}
+    .lw-pressure .lwp-cancel{width:100%;padding:0.5rem;border:none;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.55rem;cursor:pointer;text-decoration:underline;}
 
     /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots) */
     #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:70px;height:70px;flex-shrink:0;overflow:hidden;}
@@ -6347,6 +6361,12 @@ window._addSwitchTabHook = function(fn){
         <div class="settings-group-label">MORE</div>
         <button class="settings-big-btn" onclick="switchTab('dashboard');toggleSettingsMenu();">Shop</button>
         <button class="settings-big-btn" onclick="switchTab('binder');toggleSettingsMenu();">Collection Binder</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">SUPPORT</div>
+        <div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.55;">Lucid Winds is a one-person studio. I keep it ad-free, no popups, no tracking-for-sale. Tips and Pi support keep it that way.</div>
+        <button class="settings-big-btn" onclick="toggleSettingsMenu();if(window._openCompendiumUI){_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)_bosSetTab('about');},250);}">Support the Studio</button>
       </div>
     </div>
   </div>
@@ -40057,7 +40077,19 @@ document.addEventListener('keydown', function(e) {
     var nurLen = FG_Data.getNursery().length;
     var nurMax = FG_Data.getNurSlots ? FG_Data.getNurSlots() : 3;
     if (nurLen >= nurMax) {
-      if (window._toast) window._toast('Nursery full (' + nurLen + '/' + nurMax + '). Bloom or abandon a seed first.');
+      // Pressure modal: contextual Pi expand + alts (Stephen 2026-04-28)
+      if (window._lwPressure && nurMax < 6) {
+        _lwPressure({
+          title: 'NURSERY FULL',
+          body: 'Your nursery holds <b>'+nurLen+'/'+nurMax+'</b>. Bloom a seed, abandon one, or expand the nursery.',
+          pi: { label: '+1 SLOT · 1 π', action: function(){ if (window.expandNurSlot) expandNurSlot(); } },
+          alts: [
+            { label: 'OPEN NURSERY', action: function(){ if (window.switchTab) switchTab('nursery'); } }
+          ]
+        });
+      } else if (window._toast) {
+        window._toast('Nursery full (' + nurLen + '/' + nurMax + '). Bloom or abandon a seed first.');
+      }
       return;
     }
     var gh = loadGreenhouse();
@@ -46634,10 +46666,24 @@ function _rollFeralHash(f){
 function _doCollectFeral(f,mk){
   var info=_buildInfo(f.hash);
   var seedObj={hash:f.hash,loc:'Wild zone',clim:'Temperate',date:new Date().toISOString(),rare:info.grade!=='Common'};
+  // Pressure-modal helper: show contextual buy/alt CTAs when pouch full.
+  // Stephen 2026-04-28: pay-point pressure should happen at friction.
+  function _seedFullPressure(){
+    if (!window._lwPressure) { _toast('Seed pouch full!'); return; }
+    var cap = 0; try { var _bs = window.FG_Backpack && window.FG_Backpack.getState && window.FG_Backpack.getState(); cap = (_bs && _bs.seeds && _bs.seeds.length) || 0; } catch(e){}
+    _lwPressure({
+      title: 'SEED POUCH FULL',
+      body: 'Your pouch is full. Send a seed to the nursery to grow it, or expand the pouch.',
+      pi: { label: '+5 SEEDS · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buySeedPouchSlotPi) LW_HUT.buySeedPouchSlotPi(); } },
+      alts: [
+        { label: 'OPEN BACKPACK', action: function(){ if (window.FG_Backpack && FG_Backpack.toggle) FG_Backpack.toggle(); } }
+      ]
+    });
+  }
   if(window.FG_Backpack){
-    if(!FG_Backpack.as(seedObj)){_toast('Seed pouch full!');return;}
+    if(!FG_Backpack.as(seedObj)){_seedFullPressure();return;}
   } else {
-    if(_pouch.length>=_getMaxPouch()){_toast('Seed pouch full!');return;}
+    if(_pouch.length>=_getMaxPouch()){_seedFullPressure();return;}
     _pouch.push({hash:f.hash,name:info.nm,type:'feral'});_savePouch();
   }
   f.collected=true;
@@ -74778,7 +74824,8 @@ window.LW_CREATOR = window.LW_CREATOR || {
   hermitImg:   'assets/hermit-bio.jpg',
   bioLines: [
     'Lucid Winds is a one-person studio. Every plant in this game is unique because every player\'s attention is unique.',
-    'I built this on the belief that quiet, slow play deserves the same craft a fast game gets. Thank you for being here for the early days.'
+    'I built this on the belief that quiet, slow play deserves the same craft a fast game gets.',
+    'I keep it ad-free. No popups, no tracking-for-sale, no engagement traps. Tips and Pi keep it that way. Anything you give helps me keep building. Nothing is required, ever.'
   ],
   pi:          'GBGJ2BJNGDF2RSUSLMODYMNFMCZZFTCE43L44F53CYWDTFTSAXT65TNI',
   btc:         'bc1q0fjfk3n4mls49glen8sflfhrjxewncd8c9cfpy',
@@ -76644,7 +76691,17 @@ window._lwClaimHerbarium = function(id){
     var room = cap - have;
     var want = n||1;
     if (want > 0 && room <= 0) {
-      if (window._toast) try { window._toast('Pouch full ('+have+'/'+cap+'). Use or trade items first.'); } catch(e){}
+      // Pressure modal: contextual item-pouch expand + alts.
+      if (window._lwPressure && cap < 40) {
+        _lwPressure({
+          title: 'ITEM POUCH FULL',
+          body: 'Your item pouch holds <b>'+have+'/'+cap+'</b>. Use an item from your pouch, or expand it.',
+          pi: { label: '+1 SLOT · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buyPouchSlot) LW_HUT.buyPouchSlot(); } },
+          alts: [
+            { label: 'OPEN POUCH', action: function(){ if (window.LW_ITEMS && LW_ITEMS.openPanel) LW_ITEMS.openPanel(); } }
+          ]
+        });
+      } else if (window._toast) try { window._toast('Pouch full ('+have+'/'+cap+'). Use or trade items first.'); } catch(e){}
       return false;
     }
     var actual = (want > 0) ? Math.min(want, room) : want;
@@ -82103,6 +82160,67 @@ window._bosTrophiesContent     = function(){ return _bosQuestsContent({cadence:f
 // Trophy click-to-detail modal — fires when player taps an unlocked trophy
 // in the cabinet grid. Shows the per-trophy art at full detail with the
 // achievement that earned it.
+// Pressure modal — contextual pay-point CTA at friction moments. Stephen
+// 2026-04-28: "buttons where the pay point pressure happens".
+//
+// Usage:
+//   _lwPressure({
+//     title: 'SEED POUCH FULL',
+//     body: 'Your seed pouch holds 10/10. Make room or expand.',
+//     pi:  { label: 'EXPAND +5 · 1 π', action: function(){ LW_HUT.buySeedPouchSlotPi(); } },
+//     alts: [
+//       { label: 'SEND A SEED TO NURSERY', action: function(){ /* ... */ } },
+//       { label: 'DROP A SEED', action: function(){ /* ... */ } }
+//     ]
+//   });
+//
+// pi: only renders when LW_PI_ENABLED is true. alts: render always.
+window._lwPressure = function(opts){
+  opts = opts || {};
+  var prior = document.getElementById('lw-pressure-modal');
+  if (prior) prior.remove();
+  function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var ov = document.createElement('div');
+  ov.id = 'lw-pressure-modal';
+  ov.className = 'lw-pressure';
+  var html = '<div class="lwp-scrim" onclick="document.getElementById(\'lw-pressure-modal\').remove();"></div>';
+  html += '<div class="lwp-panel">';
+  html += '<div class="lwp-title">'+_esc(opts.title||'OUT OF ROOM')+'</div>';
+  html += '<div class="lwp-body">'+(opts.body||'')+'</div>'; // body may contain HTML
+  // Pi-expand button (top, prominent) — only when LW_PI_ENABLED
+  if (opts.pi && window.LW_PI_ENABLED) {
+    html += '<button class="lwp-pi" data-pi="1">'+_esc(opts.pi.label||'EXPAND')+'</button>';
+  }
+  // Alternative free actions (1+ buttons under Pi)
+  if (opts.alts && opts.alts.length) {
+    for (var i = 0; i < opts.alts.length; i++) {
+      html += '<button class="lwp-alt" data-alt="'+i+'">'+_esc(opts.alts[i].label||'')+'</button>';
+    }
+  }
+  html += '<button class="lwp-cancel" onclick="document.getElementById(\'lw-pressure-modal\').remove();">cancel</button>';
+  html += '</div>';
+  ov.innerHTML = html;
+  // Wire button clicks (avoiding inline handlers for the actions to keep
+  // closures over opts.pi.action and opts.alts[i].action)
+  ov.addEventListener('click', function(e){
+    var t = e.target;
+    if (t.classList && t.classList.contains('lwp-pi') && opts.pi && typeof opts.pi.action === 'function'){
+      ov.remove();
+      try { opts.pi.action(); } catch(err){}
+      return;
+    }
+    if (t.classList && t.classList.contains('lwp-alt')){
+      var idx = parseInt(t.getAttribute('data-alt'),10);
+      if (opts.alts && opts.alts[idx] && typeof opts.alts[idx].action === 'function'){
+        ov.remove();
+        try { opts.alts[idx].action(); } catch(err){}
+      }
+    }
+  });
+  document.body.appendChild(ov);
+  if (window._haptic) try { _haptic('tap'); } catch(e){}
+};
+
 window._lwTrophyOpen = function(achId){
   if (!window.LW_ACH || !LW_ACH.catalog) return;
   var ach = null;
