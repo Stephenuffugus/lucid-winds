@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.24';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5304,8 +5304,19 @@ body:not(.tab-wild) #w-my-plants{display:none!important;}
 #bpb.e{opacity:0;transform:scale(0.5);}
 #bpe{position:fixed;inset:0;z-index:998;display:none;pointer-events:none;}
 #bpe.open{display:block;pointer-events:auto;}
-#bpbk{position:absolute;inset:0;background:rgba(8,10,7,0.6);opacity:0;transition:opacity 0.3s;backdrop-filter:blur(3px);}
+/* Solid dark backdrop — Stephen 2026-04-28: blur of game behind was
+   distracting. Now opaque so the inventory reads as its own surface. */
+#bpbk{position:absolute;inset:0;background:rgba(8,10,7,0.94);opacity:0;transition:opacity 0.25s;}
 #bpe.open #bpbk{opacity:1;}
+/* Visible close X for the backpack overlay. Sits in the safe area top-
+   right, above all other backpack elements. Tap dismisses. */
+#bpe-close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:1010;width:48px;height:48px;border-radius:50%;background:rgba(28,22,14,0.85);border:1.5px solid rgba(200,168,75,0.55);color:var(--cream);font-size:1rem;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.6);}
+#bpe.open #bpe-close{display:flex;}
+#bpe-close:active{transform:scale(0.92);}
+/* Title bar — labels what the player is looking at. Sits along the top
+   under the close button. */
+#bpe-title{position:absolute;top:calc(20px + env(safe-area-inset-top,0px));left:0;right:0;z-index:1009;display:none;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.2em;color:var(--gold);text-shadow:0 2px 6px rgba(0,0,0,0.85);pointer-events:none;}
+#bpe.open #bpe-title{display:block;}
 /* Plant column. 2026-04-27 comfort pass: width 68px → 92px so 64-px
    tiles aren't visually crammed against the right edge. Side gutter
    widened from 4 to 8 so taps near the edge don't scroll the body. */
@@ -6848,7 +6859,13 @@ window._addSwitchTabHook = function(fn){
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
-  <div id="bpe"><div id="bpbk" onclick="BP.close()"></div><div id="bpp"></div><div id="bps"></div></div>
+  <div id="bpe">
+    <div id="bpbk" onclick="BP.close()"></div>
+    <div id="bpe-title">BACKPACK</div>
+    <button id="bpe-close" onclick="BP.close()" aria-label="Close backpack" type="button">&#x2715;</button>
+    <div id="bpp"></div>
+    <div id="bps"></div>
+  </div>
   <!-- bp-rtb removed: return-to-base now lives inside the backpack panel. -->
   <div id="bp-rtb" style="display:none !important;"></div>
   <!-- Plant info card with hold-to-release -->
