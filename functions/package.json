@@ -1,10 +1,26 @@
 {
   "name": "lucid-winds-functions",
-  "description": "Pi Network payment + NFT mint signing for Lucid Winds",
-  "engines": {"node": "18"},
+  "description": "Pi Network payment processing + NFT mint signing for Lucid Winds",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
   "dependencies": {
-    "firebase-functions": "^4.0.0",
-    "firebase-admin": "^11.0.0",
-    "ethers": "^6.9.0"
-  }
+    "ethers": "^6.13.0",
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "private": true
 }
