@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.21';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6924,10 +6924,11 @@ window._addSwitchTabHook = function(fn){
       </div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install-v2.png?v=apr27" alt="Install" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"></div>
     </div>
-    <!-- Row 2: currency + hut (3 buttons — was 4 before install moved up) -->
+    <!-- Row 2: currency + hut + items + dew -->
     <div class="kb-row2">
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams-v2.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
       <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
+      <div id="kb-items" onclick="if(window.LW_ITEMS&&LW_ITEMS.openPanel)LW_ITEMS.openPanel();" title="Items pouch — items you've bought or earned" style="border:2px solid rgba(192,122,200,0.5);"><img src="assets/backpack-64x64.png" alt="Items" style="width:120%;height:120%;object-fit:contain;display:block;margin:-10%;"><span id="kb-items-count" class="kb-val" style="display:none;">0</span></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew-v2.png" alt="Dew" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
     </div>
   </div>
@@ -76755,11 +76756,13 @@ window._lwClaimHerbarium = function(id){
     if (window._toast && CATALOG[key]) {
       try { window._toast(CATALOG[key].icon + ' ' + CATALOG[key].name + ' ' + (actual>0?'+'+actual:actual) + ', in your pouch'); } catch(e){}
     }
+    if (typeof _refreshItemsBadge === 'function') _refreshItemsBadge();
     return true;
   }
   function spend(key){
     var inv = _load(); if (!inv[key] || inv[key] <= 0) return false;
     inv[key]--; if (!inv[key]) delete inv[key]; _save(inv);
+    if (typeof _refreshItemsBadge === 'function') _refreshItemsBadge();
     // Engagement counter: every successful item spend
     if (window.LW_ACH) {
       LW_ACH.bump('items_used_total', 1);
@@ -76777,6 +76780,19 @@ window._lwClaimHerbarium = function(id){
   function total(){
     var inv = _load(); var s=0; for (var k in inv) s += inv[k]; return s;
   }
+  // Refresh the keeper-bar items count badge. Called after add/spend so
+  // the player sees their pouch count change in real time.
+  function _refreshItemsBadge(){
+    try {
+      var el = document.getElementById('kb-items-count');
+      if (!el) return;
+      var n = total();
+      if (n > 0) { el.textContent = String(n); el.style.display = 'flex'; }
+      else { el.style.display = 'none'; }
+    } catch(e){}
+  }
+  // Refresh once on load (after ~500ms so DOM is ready)
+  setTimeout(_refreshItemsBadge, 500);
 
   // === Phase 1 item effects — flag-based. Hooked from forage/contest code. ===
 
@@ -77939,10 +77955,11 @@ window._lwClaimHerbarium = function(id){
     if (window._haptic) try { window._haptic('bloom'); } catch(e){}
     if (typeof gtag !== 'undefined') gtag('event','hut_buy',{key:slot.key||'mystery',price:slot.price});
     // Confirmation toast — players don't always know where bought items go.
-    // Surfacing the destination once per buy closes that loop.
+    // Stephen 2026-04-28: "i bought everything ... cant find any of the items
+    // i bought." Now points to the new kb-items button in the keeper bar.
     if (window._toast){
       var _itemNm = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[slot.key] && window.LW_ITEMS_CATALOG[slot.key].name) || slot.key;
-      try { window._toast('<span class="lwe lwe-leaf"></span> ' + _itemNm + ' added to your pouch · −' + slot.price + ' Dew', { html:true }); } catch(e){}
+      try { window._toast('<span class="lwe lwe-leaf"></span> ' + _itemNm + ' added · tap the 🎒 ITEMS button (top right) to use it', { html:true }); } catch(e){}
     }
     render();
   }
