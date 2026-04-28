@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.18';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39629,17 +39629,34 @@ document.addEventListener('keydown', function(e) {
       else if (window.showHexMsg) showHexMsg('Maximum 6 nursery slots.');
       return;
     }
+    // Pi Payment Hook — mirrors greenhouse expansion (line 35119+).
+    // When LW_PI_ENABLED is true (Cloud Functions deployed), routes through
+    // LW_Pi.buyNurserySlot. During beta the expansion is free with confirm.
+    var _piOn = !!window.LW_PI_ENABLED;
+    var _bodyCopy = _piOn
+      ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
+      : 'Add slot ' + (current + 1) + '?';
     _lwConfirm({
       title: 'EXPAND NURSERY',
-      body: 'Add slot ' + (current + 1) + '?',
-      yes: 'EXPAND',
+      body: _bodyCopy,
+      yes: _piOn ? 'PAY 1 PI' : 'EXPAND',
       no: 'NOT YET'
     }, function() {
-      FG_Data.setNurSlots(current + 1);
-      if (window._haptic) _haptic('tab');
-      renderNursery();
-      if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
-      if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+      var _applyExpansion = function(){
+        FG_Data.setNurSlots(current + 1);
+        if (window._haptic) _haptic('tab');
+        renderNursery();
+        if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
+        if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+      };
+      if (_piOn && window.LW_Pi && window.LW_Pi.buyNurserySlot) {
+        window.LW_Pi.buyNurserySlot(current + 1, function(ok){
+          // Pi wrapper handles slot increment + render on success.
+          // Nothing further needed here.
+        });
+      } else {
+        _applyExpansion();
+      }
     });
   };
 
@@ -53412,7 +53429,7 @@ window.openSunbeamModal=function(){
       +(ready>1?'<span style="position:absolute;top:8px;right:10px;min-width:28px;height:28px;padding:0 8px;border-radius:14px;background:rgba(13,16,12,0.82);border:1.5px solid rgba(200,168,75,0.6);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.04em;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,0.85);">\u00d7'+ready+'</span>':'')
       +'</button>';
   }else{
-    h+='<div style="width:100%;padding:0.5rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.15);border-radius:10px;background:rgba(26,31,23,0.5);text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.08em;">KEEP PLAYING TO GROW A PLANT</div><div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:2px;">'+cost+' Sunbeams = 1 unique plant</div></div>';
+    h+='<div style="width:100%;padding:0.6rem 0.5rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.18);border-radius:10px;background:rgba(26,31,23,0.5);text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.08em;">PLAY A GAME TO EARN SUNBEAMS</div><div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--cream);margin-top:4px;opacity:0.85;">'+cost+' Sunbeams grows 1 unique plant. Win or progress in any mini-game.</div><button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'game\');" style="margin-top:8px;padding:8px 18px;border:1.5px solid rgba(122,179,86,0.55);border-radius:8px;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(60,90,40,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">START PLAYING</button></div>';
   }
   // Info section + CLOSE (hidden during tutorial-mint; player is steered
   // straight into the bloom flow with no exit).
@@ -65117,6 +65134,52 @@ window.LW_Pi={
   buyEmergencySlot:function(cb){
     createPayment(10,'Emergency Pouch Slot',{type:'emergency_pouch'},function(){
       if(window.FG_Backpack&&FG_Backpack.ul)FG_Backpack.ul('slot6','Emergency slot unlocked!','One-time daily.');
+      if(cb)cb(true);
+    },function(){if(cb)cb(false);});
+  },
+  // Seed pouch expansion (backpack) — 1 Pi per +5 slots tier.
+  // Tiers: 10 (default after walking) -> 15 (seed15 unlock) -> 20 (seed20 unlock).
+  // Returns cb(false) if already at max 20.
+  buySeedPouchSlot:function(cb){
+    var unlocks = {};
+    try { var st = window.FG_Backpack && window.FG_Backpack.getState && window.FG_Backpack.getState(); unlocks = (st && st.unlocks) || {}; } catch(e){}
+    var nextTier = unlocks.seed20 ? null : unlocks.seed15 ? 'seed20' : 'seed15';
+    if (!nextTier){
+      if (window._toast) window._toast('Seed pouch is already at max (20).');
+      if (cb) cb(false); return;
+    }
+    var nextCap = nextTier === 'seed15' ? 15 : 20;
+    createPayment(1,'Seed Pouch +5 ('+nextCap+' total)',{type:'seed_pouch_slot',tier:nextTier},function(){
+      // Deliver: set the unlock flag via FG_Backpack.loadFromCloud — which
+      // merges unlocks + re-renders. Avoids touching the IIFE internals.
+      try {
+        if (window.FG_Backpack && window.FG_Backpack.loadFromCloud){
+          var merged = {};
+          for (var k in unlocks) merged[k] = unlocks[k];
+          merged[nextTier] = true;
+          window.FG_Backpack.loadFromCloud({unlocks: merged});
+        }
+      } catch(e){}
+      if (window.syncVaultToCloud) syncVaultToCloud();
+      if (window.showHexMsg) showHexMsg('Seed pouch expanded to '+nextCap+'!');
+      if (window._toast) window._toast('🎒 Seed pouch '+nextCap+'/20');
+      if (cb) cb(true);
+    },function(){if(cb)cb(false);});
+  },
+  // Nursery slot expansion — 1 Pi per slot (max 6 slots, so 5 Pi total cap)
+  buyNurserySlot:function(slotNum,cb){
+    createPayment(1,'Nursery Slot '+slotNum,{type:'nursery_slot',slot:slotNum},function(){
+      // Deliver: bump nursery slot count via FG_Data
+      try{
+        if(window.FG_Data&&FG_Data.getNurSlots&&FG_Data.setNurSlots){
+          var cur=FG_Data.getNurSlots();
+          FG_Data.setNurSlots(cur+1);
+        }
+      }catch(e){}
+      if(window.renderNursery)renderNursery();
+      if(window.syncVaultToCloud)syncVaultToCloud();
+      if(window.showHexMsg)showHexMsg('Nursery slot '+slotNum+' unlocked!');
+      if(window._haptic)_haptic('tab');
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },
@@ -77668,6 +77731,27 @@ window._lwClaimHerbarium = function(id){
     } else if (_capNow >= 40) {
       _capFootHtml += ' (max)';
     }
+    // Emergency pouch slot — 10 Pi, ONE-TIME per day. Only show if Pi is on
+    // and player hasn't used it today.
+    if (window.LW_PI_ENABLED) {
+      var _epToday = '';
+      try { _epToday = localStorage.getItem('lw_emergency_pouch_today') || ''; } catch(e){}
+      if (_epToday !== todayStr()) {
+        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyEmergencyPouch()" title="One emergency slot for 24 hours. Once per day.">+EMERGENCY · 10 π</button>';
+      } else {
+        _capFootHtml += ' · <span style="opacity:0.55;">EMERGENCY USED TODAY</span>';
+      }
+    }
+    // Seed pouch (backpack) expansion — 1 Pi per +5 slots, max 20.
+    // Only render if Pi enabled AND not already at max.
+    if (window.LW_PI_ENABLED) {
+      var _seedUnlocks = {};
+      try { var _bs = window.FG_Backpack && window.FG_Backpack.getState && window.FG_Backpack.getState(); _seedUnlocks = (_bs && _bs.unlocks) || {}; } catch(e){}
+      var _seedCap = _seedUnlocks.seed20 ? 20 : _seedUnlocks.seed15 ? 15 : _seedUnlocks.seed10 ? 10 : _seedUnlocks.seed5 ? 5 : 1;
+      if (_seedCap < 20) {
+        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buySeedPouchSlotPi()" title="Pi expands your backpack seed pouch by 5 slots (max 20).">+5 SEEDS · 1 π</button>';
+      }
+    }
     html += '<div class="lwh-section-foot">'+_capFootHtml+'</div>';
     body.innerHTML = html;
   }
@@ -77794,6 +77878,75 @@ window._lwClaimHerbarium = function(id){
       window.LW_Pi.earlyOpenHutItem(slot.key, slot.tier);
     }
     if (typeof gtag !== 'undefined') gtag('event','hut_pi_early_open_attempt',{key:slot.key,tier:slot.tier});
+  }
+
+  // ─── PI SEED POUCH +5 (1 Pi per tier, max 20 slots) ───
+  function buySeedPouchSlotPi(){
+    if (!window.LW_Pi || !window.LW_Pi.buySeedPouchSlot){
+      if (window._toast) try { window._toast('Pi payments arrive in the full launch.'); } catch(e){}
+      return;
+    }
+    // Compute current cap for confirm-dialog copy
+    var unlocks = {};
+    try { var bs = window.FG_Backpack && window.FG_Backpack.getState && window.FG_Backpack.getState(); unlocks = (bs && bs.unlocks) || {}; } catch(e){}
+    var cur = unlocks.seed20 ? 20 : unlocks.seed15 ? 15 : unlocks.seed10 ? 10 : unlocks.seed5 ? 5 : 1;
+    if (cur >= 20){
+      if (window._toast) try { window._toast('Seed pouch is already at max (20).'); } catch(e){}
+      return;
+    }
+    var next = cur < 15 ? 15 : 20;
+    if (window._lwConfirm){
+      window._lwConfirm({
+        title: 'EXPAND SEED POUCH',
+        body: 'Buy 5 extra seed slots (now '+cur+'/20 → '+next+'/20). <b>1 π</b>. Permanent.',
+        yes: 'PAY 1 π',
+        no: 'NOT NOW'
+      }, function(){
+        window.LW_Pi.buySeedPouchSlot(function(ok){
+          if (ok && window.LW_HUT && LW_HUT.refresh) LW_HUT.refresh();
+        });
+      });
+    } else {
+      window.LW_Pi.buySeedPouchSlot();
+    }
+    if (typeof gtag !== 'undefined') gtag('event','hut_pi_seed_pouch_attempt',{from:cur});
+  }
+
+  // ─── PI EMERGENCY POUCH (10 Pi, once per day, +1 slot for 24h) ───
+  function buyEmergencyPouch(){
+    var today = todayStr();
+    var lastUsed = '';
+    try { lastUsed = localStorage.getItem('lw_emergency_pouch_today') || ''; } catch(e){}
+    if (lastUsed === today){
+      if (window._toast) try { window._toast('Emergency Pouch already used today. Resets at midnight.'); } catch(e){}
+      return;
+    }
+    if (!window.LW_Pi || !window.LW_Pi.buyEmergencySlot){
+      if (window._toast) try { window._toast('Pi payments arrive in the full launch. Thank you for testing.'); } catch(e){}
+      return;
+    }
+    if (window._lwConfirm){
+      window._lwConfirm({
+        title: 'EMERGENCY POUCH',
+        body: 'Buy one extra pouch slot for the next 24 hours. <b>10 π</b>. Once per day.',
+        yes: 'PAY 10 π',
+        no: 'NOT NOW'
+      }, function(){
+        window.LW_Pi.buyEmergencySlot(function(ok){
+          if (ok){
+            try { localStorage.setItem('lw_emergency_pouch_today', todayStr()); } catch(e){}
+            if (window.LW_HUT && LW_HUT.refresh) LW_HUT.refresh();
+          }
+        });
+      });
+    } else {
+      window.LW_Pi.buyEmergencySlot(function(ok){
+        if (ok){
+          try { localStorage.setItem('lw_emergency_pouch_today', todayStr()); } catch(e){}
+        }
+      });
+    }
+    if (typeof gtag !== 'undefined') gtag('event','hut_pi_emergency_pouch_attempt');
   }
 
   // ─── PI ITEM POUCH +1 (1 Pi per slot, max 40) ───
@@ -77965,7 +78118,7 @@ window._lwClaimHerbarium = function(id){
 
   window.LW_HUT = {
     open: open, close: close, switchTab: switchTab,
-    buy: buy, earlyOpen: earlyOpen, buyPouchSlot: buyPouchSlot,
+    buy: buy, earlyOpen: earlyOpen, buyPouchSlot: buyPouchSlot, buyEmergencyPouch: buyEmergencyPouch, buySeedPouchSlotPi: buySeedPouchSlotPi,
     castWeather: castWeather, openSlots: openSlots, claimQuest: claimQuest,
     refresh: render,
     getPouchCap: getPouchCap, pouchCount: pouchCount
