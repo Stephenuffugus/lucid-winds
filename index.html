@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.19';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.20';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4624,6 +4624,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
   <!-- Calendly removed — no live help in Lucid Winds -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -6367,6 +6368,12 @@ window._addSwitchTabHook = function(fn){
         <div class="settings-group-label">SUPPORT</div>
         <div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.55;">Lucid Winds is a one-person studio. I keep it ad-free, no popups, no tracking-for-sale. Tips and Pi support keep it that way.</div>
         <button class="settings-big-btn" onclick="toggleSettingsMenu();if(window._openCompendiumUI){_openCompendiumUI();setTimeout(function(){if(window._bosSetTab)_bosSetTab('about');},250);}">Support the Studio</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">LEGAL</div>
+        <a href="/legal/privacy.html" target="_blank" rel="noopener noreferrer" class="settings-big-btn" style="display:block;text-decoration:none;">Privacy Policy</a>
+        <a href="/legal/terms.html"   target="_blank" rel="noopener noreferrer" class="settings-big-btn" style="display:block;text-decoration:none;">Terms of Service</a>
       </div>
     </div>
   </div>
@@ -42150,6 +42157,20 @@ document.addEventListener('keydown', function(e) {
     if (data.shopUnlocks)    _ss('sws_shop_unlocks',   data.shopUnlocks);
     if (data.achievements)   _ss('sws_achievements',   data.achievements);
     if (data.rewardsClaimed) _ss('sws_rewards_claimed',data.rewardsClaimed);
+    // Pi-paid nursery slot mirror — added 2026-04-28 alongside the Cloud
+    // Function piComplete handler. The function writes the new slot count to
+    // vaults/{uid}.lw_nursery_slots; this restores it client-side on login so
+    // a Pi-paid nursery expansion survives reinstall/cross-device.
+    if (typeof data.lw_nursery_slots === 'number' && data.lw_nursery_slots > 0) {
+      try {
+        localStorage.setItem('sws_nursery_slots', String(data.lw_nursery_slots));
+        if (window.FG_Data && FG_Data.setNurSlots) FG_Data.setNurSlots(data.lw_nursery_slots);
+      } catch(e){}
+    }
+    // Pi-paid item pouch cap mirror — same pattern.
+    if (typeof data.lw_pouch_cap === 'number' && data.lw_pouch_cap >= 25 && data.lw_pouch_cap <= 40) {
+      try { localStorage.setItem('lw_pouch_cap', String(data.lw_pouch_cap)); } catch(e){}
+    }
     // Restore wild tab state from cloud
     if (data.wildPlants && data.wildPlants.length) { if(window._secureSet){window._secureSet('fg_wild_plants',data.wildPlants);}else{_ss('fg_wild_plants', data.wildPlants);} }
     if (data.wildDropState) { if(window._secureSet){window._secureSet('fg_w_d',data.wildDropState);}else{_ss('fg_w_d', data.wildDropState);} }
@@ -65135,28 +65156,53 @@ function createPayment(amount,memo,metadata,onSuccess,onCancel){
   });
 }
 
-// Server-side approval — calls Firebase Cloud Function
+// Server-side approval — calls v2 onCall via httpsCallable so Firebase
+// auth attaches automatically. The functions/piApprove handler reads
+// request.auth.uid; without auth context the call returns 'unauthenticated'.
+// 2026-04-28: migrated from raw XHR per Cloud Functions v2 onCall protocol.
 function _approvePayment(paymentId){
-  // TODO: Replace with actual Cloud Function URL after deployment
-  var url='https://us-central1-focus-grove-fffa8.cloudfunctions.net/piApprove';
-  try{
-    var xhr=new XMLHttpRequest();
-    xhr.open('POST',url,true);
-    xhr.setRequestHeader('Content-Type','application/json');
-    xhr.send(JSON.stringify({paymentId:paymentId}));
-  }catch(e){console.error('[Pi] Approve error:',e);}
+  if (typeof firebase === 'undefined' || !firebase.functions) {
+    console.error('[Pi] firebase.functions not loaded; payment cannot be approved.');
+    return;
+  }
+  try {
+    var fn = firebase.functions().httpsCallable('piApprove');
+    fn({ paymentId: paymentId })
+      .then(function(res){
+        if (res && res.data && res.data.ok) console.log('[Pi] Approved:', paymentId);
+        else console.warn('[Pi] Approve returned non-ok:', res && res.data);
+      })
+      .catch(function(err){
+        console.error('[Pi] Approve error:', err && err.code, err && err.message);
+        if (window._toast) window._toast('Pi payment failed to approve. Try again or contact support.');
+      });
+  } catch(e){ console.error('[Pi] Approve threw:', e); }
 }
 
-// Server-side completion — calls Firebase Cloud Function
+// Server-side completion — same pattern. cb fires regardless of result so
+// the calling flow doesn't stall (Pi SDK requires acknowledging completion).
 function _completePayment(paymentId,txid,cb){
-  var url='https://us-central1-focus-grove-fffa8.cloudfunctions.net/piComplete';
-  try{
-    var xhr=new XMLHttpRequest();
-    xhr.open('POST',url,true);
-    xhr.setRequestHeader('Content-Type','application/json');
-    xhr.onload=function(){if(cb)cb();};
-    xhr.send(JSON.stringify({paymentId:paymentId,txid:txid}));
-  }catch(e){console.error('[Pi] Complete error:',e);}
+  if (typeof firebase === 'undefined' || !firebase.functions) {
+    console.error('[Pi] firebase.functions not loaded; payment cannot complete.');
+    if (cb) cb();
+    return;
+  }
+  try {
+    var fn = firebase.functions().httpsCallable('piComplete');
+    fn({ paymentId: paymentId, txid: txid })
+      .then(function(res){
+        var d = (res && res.data) || {};
+        if (d.alreadyCompleted) { console.log('[Pi] Already completed:', paymentId); }
+        else if (d.ok) { console.log('[Pi] Completed:', paymentId, 'fulfillment:', d.fulfillment); }
+        else { console.warn('[Pi] Complete returned non-ok:', d); }
+        if (cb) cb();
+      })
+      .catch(function(err){
+        console.error('[Pi] Complete error:', err && err.code, err && err.message);
+        if (window._toast) window._toast('Pi payment failed to finalize. Your purchase may be pending. Contact support if not granted in 5 min.');
+        if (cb) cb();
+      });
+  } catch(e){ console.error('[Pi] Complete threw:', e); if (cb) cb(); }
 }
 
 // ── Payment wrappers for game features ──
