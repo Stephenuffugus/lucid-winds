@@ -32,6 +32,35 @@
     try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
   }
 
+  // ─── COUNTERS WRITE BATCHING (perf) ────────────────────────────────────
+  // bump() used to parse + stringify + setItem on every call. Hot actions
+  // (water/breed/feral/tend) were hammering localStorage 60+ times/sec.
+  // Now we hold the counters object in memory and flush every 5s, on
+  // visibilitychange, and on beforeunload. Reads always come from cache.
+  var _countersCache = null;
+  var _countersDirty = false;
+  var _countersFlushT = null;
+  function _getCounters(){
+    if (_countersCache === null) _countersCache = _read(COUNTERS_KEY, {});
+    return _countersCache;
+  }
+  function _markCountersDirty(){
+    _countersDirty = true;
+    if (_countersFlushT) return;
+    _countersFlushT = setTimeout(_flushCounters, 5000);
+  }
+  function _flushCounters(){
+    if (_countersFlushT) { clearTimeout(_countersFlushT); _countersFlushT = null; }
+    if (!_countersDirty || _countersCache === null) return;
+    _write(COUNTERS_KEY, _countersCache);
+    _countersDirty = false;
+  }
+  try {
+    document.addEventListener('visibilitychange', function(){ if (document.hidden) _flushCounters(); });
+    window.addEventListener('beforeunload', _flushCounters);
+    window.addEventListener('pagehide', _flushCounters);
+  } catch(e){}
+
   // ─── COUNTER STORE ──────────────────────────────────────────────────────
   // Throttled completion-checker. checkAll loops the full catalog so we
   // can't run it on every bump. 1.5s after the last bump we run it once
@@ -85,20 +114,19 @@
   function bump(counter, amount){
     if (!counter) return 0;
     if (typeof amount !== 'number' || isNaN(amount)) amount = 1;
-    var c = _read(COUNTERS_KEY, {});
+    var c = _getCounters();
     c[counter] = (c[counter] || 0) + amount;
-    _write(COUNTERS_KEY, c);
+    _markCountersDirty();
     _scheduleCheck();
     return c[counter];
   }
   function get(counter){
-    var c = _read(COUNTERS_KEY, {});
-    return c[counter] || 0;
+    return _getCounters()[counter] || 0;
   }
   function setCounter(counter, value){
-    var c = _read(COUNTERS_KEY, {});
+    var c = _getCounters();
     c[counter] = value;
-    _write(COUNTERS_KEY, c);
+    _markCountersDirty();
     _scheduleCheck();
     return value;
   }
@@ -620,9 +648,10 @@
       var seed = (_yearDayIndex() + _uidHash()) | 0;
       st = {date: today, picks: _pickN(DAILIES, 3, seed), done: []};
       _write(DAILY_KEY, st);
-      var c = _read(COUNTERS_KEY, {});
+      var c = _getCounters();
       for (var k in c) { if (k.indexOf('d_') === 0) delete c[k]; }
-      _write(COUNTERS_KEY, c);
+      _markCountersDirty();
+      _flushCounters();
     }
     return st;
   }
@@ -635,9 +664,10 @@
       var seed = ((weekIdx * 97) + _uidHash() + 31) | 0;
       st = {monday: monday, picks: _pickN(WEEKLIES, 3, seed), done: []};
       _write(WEEKLY_KEY, st);
-      var c2 = _read(COUNTERS_KEY, {});
+      var c2 = _getCounters();
       for (var k2 in c2) { if (k2.indexOf('w_') === 0) delete c2[k2]; }
-      _write(COUNTERS_KEY, c2);
+      _markCountersDirty();
+      _flushCounters();
     }
     return st;
   }
@@ -652,7 +682,7 @@
   // ─── CHECK PASS ─────────────────────────────────────────────────────────
   function _checkLifetime(){
     var newAch = [];
-    var c = _read(COUNTERS_KEY, {});
+    var c = _getCounters();
     var p = _read(PROGRESS_KEY, {});
     try {
       var disc = JSON.parse(localStorage.getItem('lw_triggers_discovered')||'[]') || [];
@@ -684,7 +714,7 @@
       if (Object.keys(seasons).length >= 4) {
         if (!p['col_seasons_4']) markAchDone(ACH_BY_ID['col_seasons_4']);
       }
-      _write(COUNTERS_KEY, c);
+      _markCountersDirty();
     } catch(e){}
     for (var i = 0; i < ACH.length; i++) {
       var a = ACH[i];
@@ -713,7 +743,7 @@
 
   function _checkDaily(){
     var st = dailies();
-    var c = _read(COUNTERS_KEY, {});
+    var c = _getCounters();
     var newDone = [];
     for (var i = 0; i < st.picks.length; i++) {
       var id = st.picks[i];
@@ -737,7 +767,7 @@
 
   function _checkWeekly(){
     var st = weeklies();
-    var c = _read(COUNTERS_KEY, {});
+    var c = _getCounters();
     var newDone = [];
     for (var i = 0; i < st.picks.length; i++) {
       var id = st.picks[i];
@@ -818,18 +848,22 @@
     dailyPool: DAILIES,
     weeklyPool: WEEKLIES,
     progress: function(){ return _read(PROGRESS_KEY, {}); },
-    counters: function(){ return _read(COUNTERS_KEY, {}); },
+    counters: function(){ return _getCounters(); },
     trophies: function(){ return _read(TROPHY_KEY, []); },
     _resetDay:  function(){ localStorage.removeItem(DAILY_KEY); },
     _resetWeek: function(){ localStorage.removeItem(WEEKLY_KEY); },
     _resetAll:  function(){
+      _countersCache = {};
+      _countersDirty = false;
+      if (_countersFlushT) { clearTimeout(_countersFlushT); _countersFlushT = null; }
       localStorage.removeItem(COUNTERS_KEY);
       localStorage.removeItem(PROGRESS_KEY);
       localStorage.removeItem(DAILY_KEY);
       localStorage.removeItem(WEEKLY_KEY);
       localStorage.removeItem(TROPHY_KEY);
       localStorage.removeItem('lw_ach_login');
-    }
+    },
+    _flush: _flushCounters
   };
 
   setTimeout(function(){
@@ -886,9 +920,9 @@
       var s = _read(setKey, {});
       if (s[val]) return;
       s[val] = 1; _write(setKey, s);
-      var c = _read(COUNTERS_KEY, {});
+      var c = _getCounters();
       c[ctrKey] = (c[ctrKey] || 0) + 1;
-      _write(COUNTERS_KEY, c);
+      _markCountersDirty();
     } catch(e){}
   }
 

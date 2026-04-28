@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.2';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.3';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5881,26 +5881,36 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
 
   <!-- ═══ PERFORMANCE TIER DETECTION (set-39) ═══
        Detects low-end devices and adds .perf-lite to <html>.
-       Must run before first paint so CSS overrides apply immediately. -->
+       Must run before first paint so CSS overrides apply immediately.
+       2026-04-28: also honors a user override at lw_perf_lite ('1' = force,
+       '0' = force-off). Stephen's "Reduce Effects" toggle in Settings
+       writes this key. -->
   <script>(function(){
+    var override = null;
+    try { override = localStorage.getItem('lw_perf_lite'); } catch(e){}
     var dominated = false;
-    var cores = navigator.hardwareConcurrency || 2;
-    var mem = navigator.deviceMemory || 0;
-    if (cores <= 4) dominated = true;
-    if (mem > 0 && mem <= 4) dominated = true;
-    var ua = navigator.userAgent || '';
-    // Old iPhones/iPads — deviceMemory not available in Safari so detect by OS version
-    if (/iPhone|iPad|iPod/.test(ua)) {
-      var m = ua.match(/OS (\d+)/);
-      if (m && parseInt(m[1], 10) < 16) dominated = true;
-      // iPhone with 2 cores = iPhone 5S/6/6S era
-      if (cores <= 2) dominated = true;
+    if (override === '1') dominated = true;
+    else if (override === '0') dominated = false;
+    else {
+      var cores = navigator.hardwareConcurrency || 2;
+      var mem = navigator.deviceMemory || 0;
+      if (cores <= 4) dominated = true;
+      if (mem > 0 && mem <= 4) dominated = true;
+      var ua = navigator.userAgent || '';
+      // Old iPhones/iPads — deviceMemory not available in Safari so detect by OS version
+      if (/iPhone|iPad|iPod/.test(ua)) {
+        var m = ua.match(/OS (\d+)/);
+        if (m && parseInt(m[1], 10) < 16) dominated = true;
+        // iPhone with 2 cores = iPhone 5S/6/6S era
+        if (cores <= 2) dominated = true;
+      }
+      if (/Android/.test(ua) && cores <= 4) dominated = true;
     }
-    if (/Android/.test(ua) && cores <= 4) dominated = true;
     if (dominated) {
       document.documentElement.classList.add('perf-lite');
     }
     window._perfLite = dominated;
+    window._perfLiteOverride = override;
   })();</script>
 
   <style>
@@ -6282,6 +6292,12 @@ window._addSwitchTabHook = function(fn){
         <button class="settings-big-btn" onclick="toggleColorblind();toggleSettingsMenu();">Colorblind Mode</button>
         <button class="settings-big-btn" onclick="toggleCustomize();toggleSettingsMenu();">Change Card Shapes</button>
         <button class="settings-big-btn" onclick="toggleAudio();toggleSettingsMenu();" id="audio-settings-btn">Sound: Off</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">PERFORMANCE</div>
+        <div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.3rem;line-height:1.5;">If the game runs slowly, turn this on. Disables blur, glow, and ambient animations. Reload to apply.</div>
+        <button class="settings-big-btn" id="perf-lite-btn" onclick="window._togglePerfLite()">Reduce Effects: Off</button>
       </div>
 
       <div class="settings-group">
@@ -12591,6 +12607,25 @@ document.addEventListener('keydown', function(e) {
   window.toggleSettingsMenu = function() {
     var ov = document.getElementById('settings-overlay');
     if (ov) ov.style.display = ov.style.display === 'none' ? 'block' : 'none';
+    // Refresh perf-lite toggle label so it reflects the stored state
+    var b = document.getElementById('perf-lite-btn');
+    if (b) {
+      var cur = '0';
+      try { cur = localStorage.getItem('lw_perf_lite') || '0'; } catch(e){}
+      b.textContent = 'Reduce Effects: ' + (cur === '1' ? 'On' : 'Off');
+    }
+  };
+
+  // Reduce Effects toggle — flips lw_perf_lite, prompts reload to apply.
+  window._togglePerfLite = function(){
+    var cur = '0';
+    try { cur = localStorage.getItem('lw_perf_lite') || '0'; } catch(e){}
+    var next = cur === '1' ? '0' : '1';
+    try { localStorage.setItem('lw_perf_lite', next); } catch(e){}
+    var b = document.getElementById('perf-lite-btn');
+    if (b) b.textContent = 'Reduce Effects: ' + (next === '1' ? 'On' : 'Off');
+    if (window._toast) window._toast((next === '1' ? '✓ Reduce Effects ON' : '✗ Reduce Effects OFF') + ' · reloading…');
+    setTimeout(function(){ try { location.reload(); } catch(e){} }, 700);
   };
   // Close settings when clicking outside (removed — full screen handles its own close)
 
