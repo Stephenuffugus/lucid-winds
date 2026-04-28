@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.43';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.44';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -8990,7 +8990,7 @@ window._addSwitchTabHook = function(fn){
         <!-- ITEMS access — visible on both wild modes. Opens the items
              panel so players can apply seasonal/climate buffs while
              comparing plants for a drop or while inspecting a hex. -->
-        <button class="pgm-act-btn pgm-wild-items" id="gallery-items-btn" onclick="if(window.LW_ITEMS&&LW_ITEMS.openPanel)LW_ITEMS.openPanel();" style="display:none;border-color:rgba(192,122,200,0.45);color:rgba(220,160,228,0.95);">🎒 ITEMS</button>
+        <button class="pgm-act-btn pgm-wild-items" id="gallery-items-btn" onclick="if(window.LW_ITEMS&&LW_ITEMS.openPanel)LW_ITEMS.openPanel();" style="display:none;border-color:rgba(192,122,200,0.45);color:rgba(220,160,228,0.95);"><img src="assets/backpack-64x64.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> ITEMS</button>
       </div>
       <!-- Stephen: 'coe and verify buttons seem to do same thing and
            shouldnt exist. theres an old syn button under them remove
@@ -41698,11 +41698,13 @@ document.addEventListener('keydown', function(e) {
     grid.innerHTML = ACHIEVEMENTS.map(function(ach){
       var cls = unlocked[ach.id] ? 'ach-card unlocked' : 'ach-card';
       var _r = (typeof ach.reward === 'number') ? ach.reward : 5;
+      var _achIco = (window._lwEmojiSprite ? window._lwEmojiSprite(ach.icon, 36) : ach.icon);
+      var _achSun = (window._lwEmojiSprite ? window._lwEmojiSprite('☀️', 12) : '⚡');
       return '<div class="'+cls+'">' +
-        '<div class="ach-icon">'+ach.icon+'</div>' +
+        '<div class="ach-icon">'+_achIco+'</div>' +
         '<div><div class="ach-name">'+ach.name+'</div>' +
         '<div class="ach-desc">'+ach.desc+'</div>' +
-        '<div class="ach-reward">'+( unlocked[ach.id] ? '✓ +'+_r+' ⚡ Claimed' : '+'+_r+' ⚡ on unlock' )+'</div></div>' +
+        '<div class="ach-reward">'+( unlocked[ach.id] ? '✓ +'+_r+' '+_achSun+' Claimed' : '+'+_r+' '+_achSun+' on unlock' )+'</div></div>' +
         '</div>';
     }).join('');
   }
@@ -47635,7 +47637,7 @@ function _showHarvestReveal(p,reward){
   h+='<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--cream);margin-bottom:0.15rem;">'+nm+'</div>';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+gc+';letter-spacing:0.1em;margin-bottom:0.3rem;">'+grade+'</div>';
   h+='<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:rgba(91,175,220,0.9);margin-bottom:0.1rem;">+'+reward+' Dew to owner</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:0.2rem;">\ud83c\udf92 Added to backpack</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);margin-top:0.2rem;"><img src="assets/backpack-64x64.png" alt="" style="width:13px;height:13px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> Added to backpack</div>';
   h+='</div>';
   ov.innerHTML=h;
   ov.onclick=function(){ov.style.opacity='0';ov.style.transition='opacity 0.25s';setTimeout(function(){if(ov.parentNode)ov.remove();},300);};
@@ -64326,7 +64328,7 @@ var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:2
 function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return Math.min(c,25);} // cap at 25 — matches item pouch cap (single mental model). Was 12 when base pouch was 3; balance pass 2026-04-26 bumped base to 8.
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
-function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','🎒 +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
+function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','<img src="assets/backpack-64x64.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
 function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}document.getElementById('bpe').classList.add('open');document.body.classList.add('lw-bp-open');render();}
 function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');document.body.classList.remove('lw-bp-open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
@@ -65324,7 +65326,7 @@ window.LW_Pi={
       } catch(e){}
       if (window.syncVaultToCloud) syncVaultToCloud();
       if (window.showHexMsg) showHexMsg('Seed pouch expanded to '+nextCap+'!');
-      if (window._toast) window._toast('🎒 Seed pouch '+nextCap+'/20');
+      if (window._toast) window._toast('<img src="assets/backpack-64x64.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> Seed pouch '+nextCap+'/20');
       if (cb) cb(true);
     },function(){if(cb)cb(false);});
   },
@@ -65376,7 +65378,7 @@ window.LW_Pi={
       try{localStorage.setItem('lw_pouch_cap',String(next));}catch(e){}
       if(window.LW_HUT&&LW_HUT.refresh)LW_HUT.refresh();
       if(window.showHexMsg)showHexMsg('Item Pouch '+next+'/40 unlocked!');
-      if(window._toast)window._toast('🎒 Pouch '+next+'/40');
+      if(window._toast)window._toast('<img src="assets/backpack-64x64.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> Pouch '+next+'/40');
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },
@@ -70425,6 +70427,36 @@ window._lwSparkle = function(color, size){
   var s = size || 22;
   return '<img src="assets/fx/sparkle-'+c+'.png" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=&apos;\\u2728&apos;;">';
 };
+
+// Smart emoji→sprite lookup. Pass an emoji char, get back an <img> tag if
+// we have hand-painted art for it, otherwise the raw emoji. Lets render
+// code stay simple — old `ach.icon` style emoji strings auto-upgrade
+// without rewriting the data.
+window._LW_EMOJI_SPRITES = {
+  '🌱': 'assets/fx/bloom-sprout.png',         // sprout
+  '🌿': 'assets/fx/leaf-gold.png',            // herb
+  '🌸': 'assets/fx/bloom-flower.png',         // cherry blossom
+  '☀️': 'assets/fx/bloom-sun.png',            // sun
+  '💧': 'assets/fx/drop-blue.png',            // drop
+  '🧬': 'assets/icons/dna.png',                // dna
+  '🧪': 'assets/fx/compost-leaf-vine.png',    // test tube
+  '🔥': 'assets/fx/compost-flame.png',        // fire
+  '🌙': 'assets/fx/moon-gold.png',            // crescent moon
+  '🍄': 'assets/fx/mushroom-gold.png',        // mushroom
+  '✨':       'assets/fx/sparkle-pink.png',          // sparkles
+  '🦋': 'assets/fx/butterfly-pink.png',        // butterfly
+  '❄️': 'assets/fx/snowflake-blue.png',        // snowflake
+  '🎁': 'assets/icons/box.png',                // gift
+  '🎒': 'assets/backpack-64x64.png'            // backpack
+};
+
+window._lwEmojiSprite = function(emoji, size){
+  if (!emoji) return '';
+  var path = window._LW_EMOJI_SPRITES[emoji];
+  if (!path) return emoji; // no art for this emoji yet
+  var s = size || 22;
+  return '<img src="'+path+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;'+emoji+'&apos;;">';
+};
 })();
 </script>
 
@@ -74389,7 +74421,8 @@ window._lwShowAchievementDetail = function(achId) {
   var body = [];
   body.push({type:'quote', text: ach.desc});
   body.push({type:'section-head', text:'Reward'});
-  body.push({type:'stat', label:'Sunbeams', value:'+25 \u26a1'});
+  var _achDtlSun = window._lwEmojiSprite ? window._lwEmojiSprite('\u2600\ufe0f', 14) : '\u26a1';
+  body.push({type:'stat', label:'Sunbeams', value:'+25 ' + _achDtlSun});
   body.push({type:'divider'});
   body.push({type:'section-head', text:'Status'});
   body.push({type:'stat', label:'Unlocked', value: got ? 'Yes' : 'Not yet'});
@@ -74399,10 +74432,10 @@ window._lwShowAchievementDetail = function(achId) {
   }
   window.LW_Reader.open({
     eyebrow: 'ACHIEVEMENT',
-    title: ach.icon + ' ' + ach.name,
+    title: (window._lwEmojiSprite ? window._lwEmojiSprite(ach.icon, 28) : ach.icon) + ' ' + ach.name,
     subtitle: null,
     theme: got ? 'gold' : 'sage',
-    chips: [got ? 'UNLOCKED' : 'LOCKED', '+25 \u26a1'],
+    chips: [got ? 'UNLOCKED' : 'LOCKED', '+25 ' + _achDtlSun],
     body: body,
     actions: [{label:'CLOSE', kind:'ghost'}]
   });
@@ -82998,7 +83031,7 @@ function _bosSecretsContent() {
         var glow = isFresh ? 'box-shadow:0 0 8px rgba(200,168,75,0.4);' : '';
         h += '<div onclick="if(window._lwShowAchievementDetail)_lwShowAchievementDetail(\''+a.id+'\')" style="position:relative;padding:4px 2px;background:'+bg+';border:1px solid '+bd+';border-radius:5px;text-align:center;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;'+op+glow+'" title="'+a.name+(isFresh?' (new)':'')+' \u2014 '+a.desc+'">';
         if (isFresh) h += '<span style="position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
-        h += '<div style="font-size:0.85rem;line-height:1;">'+(gotIt?a.icon:'?')+'</div>';
+        h += '<div style="font-size:0.85rem;line-height:1;">'+(gotIt?(window._lwEmojiSprite?window._lwEmojiSprite(a.icon,22):a.icon):'?')+'</div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.26rem;color:'+(isFresh?'var(--gold)':(gotIt?'var(--cream)':'var(--muted)'))+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:1px;">'+(gotIt?a.name:'???')+'</div>';
         h += '</div>';
       }
