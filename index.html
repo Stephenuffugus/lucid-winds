@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.58';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.59';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -83083,11 +83083,11 @@ function _bosSecretsContent() {
   // riddles for locked entries; Synergies had bare '?' with no
   // "what should I chase" signal.
   var _synThemeMeta = {
-    elemental: { color:'#d4842a', icon:'\ud83d\udd25', hint:'Elemental fusion \u2014 fire, ice, storm, tide' },
-    nature:    { color:'#7ab356', icon:'\ud83c\udf3f', hint:'Natural alliance \u2014 creature + root + season' },
-    cosmic:    { color:'#a88fd4', icon:'\u2728',       hint:'Cosmic alignment \u2014 aura, star, time' },
-    dark:      { color:'#8a6b9d', icon:'\ud83c\udf11', hint:'Shadow work \u2014 void, bone, silhouette' },
-    mythical:  { color:'#c8a84b', icon:'\ud83d\udc09', hint:'Mythical fusion \u2014 dragons, beholders, legends' }
+    elemental: { color:'#d4842a', icon:'\ud83d\udd25', iconImg:'assets/themes/elemental.png', hint:'Elemental fusion \u2014 fire, ice, storm, tide' },
+    nature:    { color:'#7ab356', icon:'\ud83c\udf3f', iconImg:'assets/themes/nature.png',    hint:'Natural alliance \u2014 creature + root + season' },
+    cosmic:    { color:'#a88fd4', icon:'\u2728',       iconImg:'assets/themes/cosmic.png',    hint:'Cosmic alignment \u2014 aura, star, time' },
+    dark:      { color:'#8a6b9d', icon:'\ud83c\udf11', iconImg:'assets/themes/dark.png',      hint:'Shadow work \u2014 void, bone, silhouette' },
+    mythical:  { color:'#c8a84b', icon:'\ud83d\udc09', iconImg:'assets/themes/mythical.png',  hint:'Mythical fusion \u2014 dragons, beholders, legends' }
   };
   // Per-theme accordion grouping. Walk LW_SYNERGIES once, bucket by theme,
   // render each theme as its own collapsible section. Each section header
@@ -83133,7 +83133,14 @@ function _bosSecretsContent() {
       for (var _i = 0; _i < items.length; _i++) {
         var it = items[_i];
         var en = it.entry, found = it.found, isNew = it.isNew;
-        var icoHtml = (window._lwEmojiSprite ? window._lwEmojiSprite(themeMeta.icon, 36) : themeMeta.icon);
+        // Prefer the painted theme medallion over the smart-emoji fallback.
+        // 36px is large enough for the gilded frame + glyph to read.
+        var icoHtml;
+        if (themeMeta.iconImg) {
+          icoHtml = '<img src="'+themeMeta.iconImg+'" alt="" style="width:36px;height:36px;object-fit:contain;display:inline-block;" onerror="this.outerHTML=&apos;'+(themeMeta.icon||'').replace(/\'/g,'&#39;')+'&apos;;">';
+        } else {
+          icoHtml = (window._lwEmojiSprite ? window._lwEmojiSprite(themeMeta.icon, 36) : themeMeta.icon);
+        }
         if (found) {
           var bd = isNew ? 'var(--gold)' : themeMeta.color + '66';
           var bg = isNew ? 'rgba(200,168,75,0.12)' : themeMeta.color + '14';
