@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.25';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.26';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6532,7 +6532,8 @@ window._addSwitchTabHook = function(fn){
       <div class="panel-header-title">NURSERY</div>
       <div style="display:flex;gap:0.3rem;align-items:center;">
         <button onclick="window._openPotShop()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));border:1.5px solid rgba(200,168,75,0.45);color:var(--gold);border-radius:6px;padding:0.5rem 0.7rem;cursor:pointer;min-height:44px;white-space:nowrap;box-shadow:0 0 10px rgba(200,168,75,0.15);">&#129995; POT SHOP</button>
-        <button id="nur-expand-btn" onclick="expandNurSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;background:rgba(200,168,75,0.1);border:1.5px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:6px;padding:0.5rem 0.7rem;cursor:pointer;min-height:44px;white-space:nowrap;">+ SLOT</button>
+        <button id="nur-expand-btn" onclick="expandNurSlot()" title="Add a seed slot — seeds become plants" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;background:rgba(200,168,75,0.1);border:1.5px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:6px;padding:0.5rem 0.6rem;cursor:pointer;min-height:44px;white-space:nowrap;">+ SEED</button>
+        <button id="nur-expand-clip-btn" onclick="expandNurClipSlot()" title="Add a clipping slot — clippings from your greenhouse plants" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;background:rgba(192,122,200,0.1);border:1.5px solid rgba(192,122,200,0.4);color:rgba(220,160,228,0.95);border-radius:6px;padding:0.5rem 0.6rem;cursor:pointer;min-height:44px;white-space:nowrap;">+ CLIP</button>
       </div>
     </div>
     <div style="display:flex;gap:0.4rem;align-items:center;justify-content:center;margin-bottom:0.25rem;">
@@ -39670,6 +39671,41 @@ document.addEventListener('keydown', function(e) {
     document.body.appendChild(modal);
   };
 
+  // Nursery clipping-slot expansion. Mirrors expandNurSlot but uses
+  // FG_Data.getNurClippingSlots() / setNurClippingSlots() and routes
+  // through LW_Pi.buyNurseryClippingSlot when Pi is enabled. Cap is 5.
+  window.expandNurClipSlot = function() {
+    if (!window.FG_Data || !FG_Data.getNurClippingSlots) return;
+    var current = FG_Data.getNurClippingSlots();
+    if (current >= 5) {
+      if (window._toast) _toast('Maximum 5 clipping slots reached.');
+      return;
+    }
+    var _piOn = !!window.LW_PI_ENABLED;
+    var _bodyCopy = _piOn
+      ? 'Add clipping slot ' + (current + 1) + ' for <b>1 Pi</b>?'
+      : 'Add clipping slot ' + (current + 1) + '?';
+    _lwConfirm({
+      title: 'EXPAND CLIPPING SLOTS',
+      body: _bodyCopy,
+      yes: _piOn ? 'PAY 1 PI' : 'EXPAND',
+      no: 'NOT YET'
+    }, function() {
+      var _applyExpansion = function(){
+        FG_Data.setNurClippingSlots(current + 1);
+        if (window._haptic) _haptic('tab');
+        if (window.renderNursery) renderNursery();
+        if (window.showHexMsg) showHexMsg('Clipping slots expanded to ' + (current + 1) + '.');
+        if (typeof gtag !== 'undefined') gtag('event', 'nur_clip_slot_expanded', { slots: current + 1 });
+      };
+      if (_piOn && window.LW_Pi && window.LW_Pi.buyNurseryClippingSlot) {
+        window.LW_Pi.buyNurseryClippingSlot(current + 1, function(){});
+      } else {
+        _applyExpansion();
+      }
+    });
+  };
+
   window.expandNurSlot = function() {
     if (!window.FG_Data || !FG_Data.getNurSlots) return;
     var current = FG_Data.getNurSlots();
@@ -65278,6 +65314,22 @@ window.LW_Pi={
       if (window.showHexMsg) showHexMsg('Seed pouch expanded to '+nextCap+'!');
       if (window._toast) window._toast('🎒 Seed pouch '+nextCap+'/20');
       if (cb) cb(true);
+    },function(){if(cb)cb(false);});
+  },
+  // Nursery clipping-slot expansion — 1 Pi per slot (max 5, so 3 Pi total)
+  buyNurseryClippingSlot:function(slotNum,cb){
+    createPayment(1,'Nursery Clipping Slot '+slotNum,{type:'nursery_clipping_slot',slot:slotNum},function(){
+      try{
+        if(window.FG_Data&&FG_Data.getNurClippingSlots&&FG_Data.setNurClippingSlots){
+          var cur=FG_Data.getNurClippingSlots();
+          FG_Data.setNurClippingSlots(cur+1);
+        }
+      }catch(e){}
+      if(window.renderNursery)renderNursery();
+      if(window.syncVaultToCloud)syncVaultToCloud();
+      if(window.showHexMsg)showHexMsg('Clipping slot '+slotNum+' unlocked!');
+      if(window._haptic)_haptic('tab');
+      if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },
   // Nursery slot expansion — 1 Pi per slot (max 6 slots, so 5 Pi total cap)
