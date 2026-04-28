@@ -774,6 +774,14 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://lucidwinds.com">
   <meta property="og:site_name" content="Lucid Winds">
+  <meta property="og:image" content="https://lucidwinds.com/assets/onboarding/splash-seed-540x960.jpg">
+  <meta property="og:image:width" content="540">
+  <meta property="og:image:height" content="960">
+  <meta property="og:image:alt" content="A seed waits in dark soil. Lucid Winds.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Lucid Winds — Botanical Collectible Game">
+  <meta name="twitter:description" content="Earn unique procedural plants by playing games. Every plant is one-of-one.">
+  <meta name="twitter:image" content="https://lucidwinds.com/assets/onboarding/splash-seed-540x960.jpg">
   <meta name="application-name" content="Lucid Winds">
   <meta name="apple-mobile-web-app-title" content="Lucid Winds">
   <meta name="theme-color" content="#0d100c" />
@@ -837,7 +845,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.47';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.48';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -63252,7 +63260,17 @@ function submitAuth(){
           clearTimeout(_authTimeout);
           console.error('[LW] Auth error:',e2.code,e2.message);
           if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
-          if(errEl)errEl.textContent='Account exists. Wrong password? Use "Sign in" below.';
+          // Auto-flip to the Sign In form so the user has somewhere to go.
+          // Pre-fill email so they don't retype, focus the password field,
+          // and surface the error inline. Kinder than asking them to hunt
+          // for a button that's hidden in the other form.
+          if (window.PW_Onboard && PW_Onboard.showLogin) PW_Onboard.showLogin();
+          var _liEmail = document.getElementById('ob-login-email');
+          var _liPass  = document.getElementById('ob-login-pass');
+          var _liErr   = document.getElementById('ob-login-err');
+          if (_liEmail) _liEmail.value = email;
+          if (_liPass)  { _liPass.value = ''; setTimeout(function(){ _liPass.focus(); }, 50); }
+          if (_liErr)   _liErr.textContent = 'You already have an account here. Enter your password to sign in.';
         });
         return;
       }
@@ -65166,8 +65184,17 @@ function _finish(){
 // undeployed endpoints and silently fail, leaving the player in
 // a limbo state. To enable: either set localStorage lw_pi_enabled=1
 // in the dev panel, or flip the default below to true.
+// Default ON for production submission. Override per-device via the dev
+// panel or by setting localStorage.lw_pi_enabled = '0' to disable. Pi
+// SDK still runs in sandbox mode (Pi.init below) — flip that to false
+// when promoting to mainnet after App Studio review.
 window.LW_PI_ENABLED=(function(){
-  try{return localStorage.getItem('lw_pi_enabled')==='1';}catch(e){return false;}
+  try{
+    var v = localStorage.getItem('lw_pi_enabled');
+    if (v === '0') return false;   // explicit opt-out
+    if (v === '1') return true;    // explicit opt-in
+    return true;                    // default ON
+  } catch(e){ return true; }
 })();
 var _piReady=false;
 var _piUser=null;
