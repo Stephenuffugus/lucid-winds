@@ -9,6 +9,25 @@
 //     existing +1 increment check.
 //   - meta/accountCounter: ADD create rule (initial seed) restricted to
 //     `next == 1`, so the counter can be initialized but not reset.
+// Changes 2026-04-28 (P4 — anti-cheat field validation on Pi-paid entitlements):
+//   - Split the previous catch-all `vaults/{uid}/{document=**}` rule into
+//     three rules: root doc, meta/state, and a subcollection catch-all that
+//     EXCLUDES the validated paths. This is necessary because Firestore rules
+//     OR together — a recursive rule on the parent path silently overrides
+//     any stricter rule on a child path.
+//   - Root-doc validation:
+//       lw_pouch_cap     ≤ 40   (item pouch slot cap)
+//       lw_nursery_slots ≤ 6    (nursery slot cap mirror)
+//   - meta/state validation:
+//       slots            ≤ 100  (greenhouse slot cap; 60 base + prestige headroom)
+//   - Prevents a malicious client from raising these caps directly. Pi-paid
+//     entitlements only flow through the piComplete Cloud Function (admin SDK
+//     writes bypass rules entirely).
+//   - These caps are coarse — they don't stop hashWallet (Sunbeam) or Dew
+//     manipulation. Legit gameplay decrements + increments those freely, so
+//     real anti-cheat there needs server-authoritative writes via Cloud
+//     Functions (same path the Pi entitlements take). Documented as TODO
+//     at the top of the vaults section.
 // Deploy: Firebase Console → focus-grove-fffa8 → Firestore → Rules → paste → Publish
 
 rules_version = '2';
@@ -20,9 +39,90 @@ service cloud.firestore {
     // Contains: greenhouse, nursery, feralPouch, hashWallet,
     //           breedingLog, compostLog, companions, trailSteps,
     //           settings, purchases
+    //
+    // 2026-04-28 split into two rules:
+    //   1. Root doc (`vaults/{uid}`) — owner-only + cap validation on
+    //      Pi-paid entitlement fields. Prevents a malicious client from
+    //      writing oversized maxSlots / pouch_cap values directly.
+    //   2. Subcollection docs (`vaults/{uid}/{coll}/{doc}`) — lenient
+    //      owner-only. pendingRewards has its own override below.
+    //
+    // TODO production: hashWallet (Sunbeams) and feralPouch counts still
+    //   accept any owner-authored value. Real anti-cheat there needs
+    //   server-authoritative writes via Cloud Functions (the same path the
+    //   Pi entitlements take). Until that lands these rules are coarse.
     // ════════════════════════════════════════════════════════════
-    match /vaults/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    // Helper for root-vault writes — validates the entitlement caps for
+    // root-doc fields the Pi-payment Cloud Function writes. Fields not
+    // listed here are unrestricted (free-form gameplay state). Real
+    // canonical paths:
+    //   vaults/{uid}.lw_pouch_cap          ≤ 40   (item pouch slot cap)
+    //   vaults/{uid}.lw_nursery_slots      ≤ 6    (nursery slot cap mirror)
+    //   vaults/{uid}.emergency_pouch_today is string (today's date YYYY-MM-DD)
+    //   vaults/{uid}.lw_hut_early_opens    is map  ({ date, opened:{key:ts} })
+    // Greenhouse slot cap (`meta/state.slots`) is validated on the meta
+    // subcollection rule below.
+    function validVaultRootCaps(data) {
+      return (
+        !('lw_pouch_cap' in data)
+        || (data.lw_pouch_cap is number
+            && data.lw_pouch_cap >= 0
+            && data.lw_pouch_cap <= 40)
+      ) && (
+        !('lw_nursery_slots' in data)
+        || (data.lw_nursery_slots is number
+            && data.lw_nursery_slots >= 0
+            && data.lw_nursery_slots <= 6)
+      );
+    }
+
+    // Helper for vaults/{uid}/meta/state — bounds the greenhouse slot cap.
+    //   meta/state.slots ≤ 100
+    //   (60 base + 40 prestige headroom — P4 prestige is +1/level so 100
+    //    covers prestige 1-40. Tighten when prestige caps elsewhere.)
+    function validMetaState(data) {
+      return (
+        !('slots' in data)
+        || (data.slots is number
+            && data.slots >= 0
+            && data.slots <= 100)
+      );
+    }
+
+    // Root vault document
+    match /vaults/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && validVaultRootCaps(request.resource.data);
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && validVaultRootCaps(request.resource.data);
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // meta/state — slot cap validation
+    match /vaults/{uid}/meta/state {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && validMetaState(request.resource.data);
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Vault subcollection documents (catch-all for greenhouse, hashWallet,
+    // companions, settings, purchases, future subcollections + meta/dailyStats).
+    //
+    // IMPORTANT: Firestore rules OR together. To enforce the meta/state
+    // slot-cap and the pendingRewards cross-account rule above, this catch-all
+    // EXCLUDES those paths. Otherwise the broader rule would silently allow
+    // an over-cap write that the more-specific rule denied.
+    match /vaults/{uid}/{collection}/{docId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && !(collection == 'pendingRewards')
+        && !(collection == 'meta' && docId == 'state');
     }
 
     // PENDING REWARDS — other players can CREATE rewards for the vault owner

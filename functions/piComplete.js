@@ -46,10 +46,22 @@ const SLOT_CAP_POUCH = 40
 /**
  * Apply fulfillment in a single Firestore transaction so we never double-grant.
  * The piTransactions doc is the lock — once status='completed' we early-return.
+ *
+ * Vault structure note: Lucid Winds spreads state across the root vault doc
+ * AND a `meta/state` subcollection doc. Slot caps live at:
+ *   vaults/{uid}/meta/state.slots               — greenhouse max slots (canonical)
+ *   vaults/{uid}.lw_nursery_slots               — nursery slots (mirror, root-doc)
+ *   vaults/{uid}.lw_pouch_cap                   — item pouch cap (root-doc)
+ *   vaults/{uid}.emergency_pouch_today          — emergency-pouch unlock day
+ *   vaults/{uid}.lw_hut_early_opens             — Hut early-open map
+ * The client reads `meta/state.slots` on login and copies into localStorage
+ * `sws_greenhouse_slots`, then the slot value flows from that. We write to the
+ * meta/state doc so the slot survives reinstall + cross-device sync.
  */
 async function fulfill(db, uid, paymentId, metadata) {
   const txRef = db.collection('piTransactions').doc(paymentId)
   const vaultRef = db.collection('vaults').doc(uid)
+  const metaRef = vaultRef.collection('meta').doc('state')
   const type = metadata && metadata.type ? String(metadata.type) : ''
   const today = new Date().toISOString().split('T')[0]
 
@@ -71,28 +83,37 @@ async function fulfill(db, uid, paymentId, metadata) {
       throw new HttpsError('permission-denied', 'Transaction belongs to another user.')
     }
 
-    const vaultDoc = await tx.get(vaultRef)
-    const vault = vaultDoc.exists ? vaultDoc.data() : {}
+    // Pre-read whichever docs each branch will need. Firestore txns require
+    // all reads before any writes.
     const fulfillment = { type, applied: false }
 
     if (type === 'slot') {
-      const gh = vault.greenhouse || {}
-      const cur = Number(gh.maxSlots || 10)
+      // Greenhouse slot cap lives in meta/state.slots (the canonical sync field)
+      const metaDoc = await tx.get(metaRef)
+      const cur = Number((metaDoc.exists && metaDoc.data().slots) || 10)
       const next = Math.min(SLOT_CAP_GREENHOUSE, cur + 1)
-      tx.set(vaultRef, { greenhouse: { ...gh, maxSlots: next } }, { merge: true })
+      tx.set(metaRef, { slots: next }, { merge: true })
       fulfillment.applied = next > cur
       fulfillment.before = cur
       fulfillment.after = next
     } else if (type === 'nursery_slot') {
-      const nu = vault.nursery || {}
-      const cur = Number(nu.maxSlots || 3)
+      // Nursery slots: client manages localStorage 'sws_nursery_slots' but we
+      // mirror to vault root doc for cross-device. The client must read this
+      // on login (setNurSlots from cloud) — currently localStorage-only, so
+      // until that wires we record but the client won't see it without a
+      // restore-path code change. Doc'd in submission-prep.md frontend list.
+      const vaultDoc = await tx.get(vaultRef)
+      const cur = Number(
+        (vaultDoc.exists && vaultDoc.data().lw_nursery_slots) || 3,
+      )
       const next = Math.min(SLOT_CAP_NURSERY, cur + 1)
-      tx.set(vaultRef, { nursery: { ...nu, maxSlots: next } }, { merge: true })
+      tx.set(vaultRef, { lw_nursery_slots: next }, { merge: true })
       fulfillment.applied = next > cur
       fulfillment.before = cur
       fulfillment.after = next
     } else if (type === 'item_pouch_slot') {
-      const cur = Number(vault.lw_pouch_cap || 25)
+      const vaultDoc = await tx.get(vaultRef)
+      const cur = Number((vaultDoc.exists && vaultDoc.data().lw_pouch_cap) || 25)
       const next = Math.min(SLOT_CAP_POUCH, cur + 1)
       tx.set(vaultRef, { lw_pouch_cap: next }, { merge: true })
       fulfillment.applied = next > cur
@@ -111,7 +132,11 @@ async function fulfill(db, uid, paymentId, metadata) {
       fulfillment.expiresInMs = 24 * 60 * 60 * 1000
     } else if (type === 'early_open_hut' || type === 'hut_early_open') {
       const itemKey = (metadata && metadata.item) ? String(metadata.item) : 'unknown'
-      const existing = vault.lw_hut_early_opens || { date: today, opened: {} }
+      const vaultDoc = await tx.get(vaultRef)
+      const existing = (vaultDoc.exists && vaultDoc.data().lw_hut_early_opens) || {
+        date: today,
+        opened: {},
+      }
       if (existing.date !== today) {
         existing.date = today
         existing.opened = {}

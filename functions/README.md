@@ -83,13 +83,31 @@ plumbing needed.
 
 ## Entitlements granted by metadata.type
 
-| `metadata.type` | Effect on `vaults/{uid}` |
-|---|---|
-| `slot` | `greenhouse.maxSlots += 1` (cap 60) |
-| `nursery_slot` | `nursery.maxSlots += 1` (cap 6) |
-| `item_pouch_slot` | `lw_pouch_cap += 1` (cap 40) |
-| `emergency_pouch` | `emergency_pouch_today = today; emergency_pouch_expires = now + 24h` |
-| `early_open_hut` / `hut_early_open` | `lw_hut_early_opens.opened[itemKey] = ts` |
+The vault is split across the root doc + a `meta/state` subcollection doc.
+We write to whichever path the client reads on login.
+
+| `metadata.type` | Vault path written | Cap |
+|---|---|---|
+| `slot` | `vaults/{uid}/meta/state.slots` | 60 |
+| `nursery_slot` | `vaults/{uid}.lw_nursery_slots` | 6 |
+| `item_pouch_slot` | `vaults/{uid}.lw_pouch_cap` | 40 |
+| `emergency_pouch` | `vaults/{uid}.emergency_pouch_today + .emergency_pouch_expires` | 24h |
+| `early_open_hut` / `hut_early_open` | `vaults/{uid}.lw_hut_early_opens.opened[itemKey]` | n/a |
+
+`meta/state.slots` is the canonical greenhouse slot field — the client copies
+it into `localStorage['sws_greenhouse_slots']` on login.
+
+`lw_nursery_slots` is a NEW root-doc mirror. The client currently only reads
+nursery slots from `localStorage['sws_nursery_slots']`. The frontend Claude
+needs to add a one-line restore in `_applyCloudData` so a Pi-paid nursery
+slot survives reinstall:
+
+```js
+if (typeof data.lw_nursery_slots === 'number') {
+  localStorage.setItem('sws_nursery_slots', String(data.lw_nursery_slots));
+  if (window.FG_Data && FG_Data.setNurSlots) FG_Data.setNurSlots(data.lw_nursery_slots);
+}
+```
 
 Unknown types log a warning and do NOT grant anything; the transaction still
 completes on Pi (we owe the player a manual reconciliation, not a stuck state).
