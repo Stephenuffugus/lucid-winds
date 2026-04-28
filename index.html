@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.37';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.38';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6300,7 +6300,7 @@ window._addSwitchTabHook = function(fn){
     <div class="game-title">Lucid <em>Winds</em></div>
     <!-- Sunbeams progress bar — shows balance + progress to next plant -->
     <div id="game-dew-bar" style="display:flex;align-items:center;gap:8px;padding:4px 12px;margin-top:2px;">
-      <div onclick="if(window.openSunbeamModal)openSunbeamModal();" style="font-family:DM Mono,monospace;font-size:clamp(.55rem,1.5vw,.7rem);color:rgba(240,208,144,0.95);white-space:nowrap;cursor:pointer;">☀️ <span id="game-dew-val">0</span> sunbeams</div>
+      <div onclick="if(window.openSunbeamModal)openSunbeamModal();" style="font-family:DM Mono,monospace;font-size:clamp(.55rem,1.5vw,.7rem);color:rgba(240,208,144,0.95);white-space:nowrap;cursor:pointer;"><img src="assets/fx/bloom-sun.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> <span id="game-dew-val">0</span> sunbeams</div>
       <div style="flex:1;height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;position:relative;"><div id="game-dew-fill" style="height:100%;background:linear-gradient(90deg,rgba(200,168,75,0.65),rgba(240,208,144,0.8));border-radius:3px;width:0%;transition:width 0.4s ease;"></div></div>
       <div style="font-family:DM Mono,monospace;font-size:clamp(.5rem,1.3vw,.65rem);color:var(--muted);white-space:nowrap;">next: <span id="game-dew-progress">0</span>/30</div>
       <div id="game-streak" style="font-family:DM Mono,monospace;font-size:clamp(.5rem,1.3vw,.65rem);color:var(--gold);white-space:nowrap;opacity:0.7;"></div>
@@ -8901,7 +8901,7 @@ window._addSwitchTabHook = function(fn){
       <h3>How Lucid Winds Works</h3>
       <div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);line-height:1.7;">
         <div style="margin-bottom:0.5rem;"><span style="color:var(--sage);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">1. PLAY</span><br>Find patterns in card games. Each match gathers Sunbeams.</div>
-        <div style="margin-bottom:0.5rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">2. BLOOM</span><br>Tap the ☀️ Sunbeam icon when you have 30+. Choose when to bloom — save up or bloom now.</div>
+        <div style="margin-bottom:0.5rem;"><span style="color:rgba(91,175,220,0.9);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">2. BLOOM</span><br>Tap the <img src="assets/fx/bloom-sun.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> Sunbeam icon when you have 30+. Choose when to bloom — save up or bloom now.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">3. COLLECT</span><br>Plants live in your Greenhouse. Sort by rarity. Flip cards to see DNA + haiku.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:#E8A0BF;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">4. BREED</span><br>Cross two plants to create a seed. Water it 3 days in the Nursery to bloom.</div>
         <div style="margin-bottom:0.5rem;"><span style="color:#D4842A;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;font-size:0.7rem;">5. EXPLORE</span><br>Drop plants on a real-world map. Others can see and try to harvest them.</div>
@@ -35317,8 +35317,8 @@ document.addEventListener('keydown', function(e) {
       if (_nbBal > 0) {
         _nbEl.style.display = 'flex';
         var _nbTxt = _nbReady > 0
-          ? '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--gold);white-space:nowrap;cursor:pointer;" onclick="if(window.openSunbeamModal)openSunbeamModal();">\u2600\ufe0f ' + _nbBal + ' \u00b7 ' + _nbReady + ' plant' + (_nbReady > 1 ? 's' : '') + ' ready!</div>'
-          : '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);white-space:nowrap;">\u2600\ufe0f ' + _prog + '/' + _nbCost + '</div>';
+          ? '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--gold);white-space:nowrap;cursor:pointer;" onclick="if(window.openSunbeamModal)openSunbeamModal();"><img src="assets/fx/bloom-sun.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> ' + _nbBal + ' \u00b7 ' + _nbReady + ' plant' + (_nbReady > 1 ? 's' : '') + ' ready!</div>'
+          : '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);white-space:nowrap;"><img src="assets/fx/bloom-sun.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> ' + _prog + '/' + _nbCost + '</div>';
         _nbEl.innerHTML = _nbTxt +
           '<div style="flex:1;height:4px;background:rgba(42,48,37,0.6);border-radius:2px;overflow:hidden;"><div style="width:' + _nbPct + '%;height:100%;background:linear-gradient(90deg,var(--sage),var(--gold));border-radius:2px;transition:width 0.4s ease;"></div></div>' +
           (_nbReady === 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--gold);">' + (_nbCost - _prog) + ' more</div>' : '');
@@ -35600,7 +35600,7 @@ document.addEventListener('keydown', function(e) {
         (_prog > 0 ? '<div style="display:flex;align-items:center;gap:6px;max-width:200px;margin:0 auto 0.5rem;">' +
           '<div style="flex:1;height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;"><div style="width:'+_pct+'%;height:100%;background:linear-gradient(90deg,rgba(91,175,220,0.6),rgba(122,179,86,0.7));border-radius:2px;"></div></div>' +
           '<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">'+_prog+'/30</div></div>' : '') +
-        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Tap the \u2600\ufe0f icon when you have 30+ Sunbeams to bloom a unique, one-of-one plant.</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);line-height:1.6;max-width:240px;margin:0 auto 0.5rem;">Tap the <img src="assets/fx/bloom-sun.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> icon when you have 30+ Sunbeams to bloom a unique, one-of-one plant.</div>' +
         '<button onclick="switchTab(\'game\')" style="padding:0.45rem 1.2rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:linear-gradient(180deg,rgba(74,124,53,0.2),rgba(26,60,22,0.3));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">START PLAYING</button>';
       grid.appendChild(_welcome);
     }
@@ -38684,7 +38684,7 @@ document.addEventListener('keydown', function(e) {
       html += '<div class="pdm-section">';
       html += '<div class="pdm-section-title">MUTATION</div>';
       html += '<div style="display:flex;align-items:center;gap:0.6rem;">';
-      html += '<img src="assets/mutations/mutation-'+_mSlug+'.png" alt="'+_mName+'" onerror="this.outerHTML=\'<span style=&quot;font-size:1.4rem;&quot;>\ud83e\uddec</span>\'" style="width:110px;height:110px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">';
+      html += '<img src="assets/mutations/mutation-'+_mSlug+'.png" alt="'+_mName+'" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.4rem;&quot;>\ud83e\uddec</span>&apos;" style="width:110px;height:110px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">';
       html += '<span style="font-family:Playfair Display,serif;font-size:0.95rem;font-style:italic;color:#d8a0a0;">' + _mName + '</span>';
       html += '</div>';
       html += '</div>';
@@ -43480,7 +43480,7 @@ function _lwBuyExtraDrop(){
   }
   if(!window._lwSpendSunbeams(EXTRA_DROP_SUNBEAM_COST,'wild_drop_extra'))return false;
   _lwAddExtraDrop();
-  if(window._toast)window._toast('☀️ +1 drop today. '+(EXTRA_DROP_SUNBEAM_COST)+' Sunbeams spent.');
+  if(window._toast)window._toast('<img src="assets/fx/bloom-sun.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> +1 drop today. '+(EXTRA_DROP_SUNBEAM_COST)+' Sunbeams spent.');
   if(window._haptic)window._haptic('bloom');
   if(typeof gtag!=='undefined')gtag('event','wild_drop_extra_bought',{cost:EXTRA_DROP_SUNBEAM_COST});
   // Refresh the SOW FAB badge
@@ -52792,7 +52792,7 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
     '</div>';
     // WEATHER
     html += '<div style="'+sectionStyle+'">'+
-      '<div style="'+titleStyle+'\u2600\ufe0f WEATHER + SEASON</div>'+
+      '<div style="'+titleStyle+'<img src="assets/fx/bloom-sun.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> WEATHER + SEASON</div>'+
       '<div style="'+bodyStyle+'">Every plant has five resistances: <span style="color:#e67a4a;">heat</span>, <span style="color:#7fcfd8;">cold</span>, <span style="color:#a8c8a0;">wind</span>, <span style="color:#d4a843;">drought</span>, <span style="color:#5baddc;">water</span>. The seasonal border on your card tells you when it thrives and when it\u2019s vulnerable. Real-world weather here drives what survives.</div>'+
     '</div>';
     // DEW
@@ -53564,7 +53564,7 @@ window.openSunbeamModal=function(){
     h+='<div style="border-top:1px solid rgba(74,124,53,0.1);padding-top:0.5rem;margin-top:0.3rem;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.3rem;">HOW SUNBEAMS WORK</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--cream);line-height:1.7;opacity:0.8;">';
-    h+='\u2600\ufe0f Earned by playing games. Never bought.<br>';
+    h+='<img src="assets/fx/bloom-sun.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> Earned by playing games. Never bought.<br>';
     h+='\ud83c\udf31 '+cost+' Sunbeams = bloom one unique plant<br>';
     h+='\ud83d\udcb0 Save up for events or spend on the wild<br>';
     h+='\ud83c\udf3f Every plant is one-of-one forever</div>';
@@ -53795,7 +53795,7 @@ function _hashToast(n){
   var s=document.getElementById('gp-strip');if(!s)return;
   var cost=window._getMintCost?window._getMintCost():30;
   var bal=_readyHashes.length*cost+_hashFilled;
-  var t=document.createElement('div');t.className='hash-toast';t.textContent='+'+n+' \u2600\ufe0f ('+bal+')';
+  var t=document.createElement('div');t.className='hash-toast';t.innerHTML='+'+n+' <img src="assets/fx/bloom-sun.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> ('+bal+')';
   s.appendChild(t);setTimeout(function(){if(t.parentNode)t.remove()},1800);
 }
 function _guardToast(msg){
@@ -53849,7 +53849,7 @@ function _updateGP(){
   var pct=Math.round(prog*100);
   var remain=cost-inPlant;
   var _nearCls=prog>=0.83&&prog<1?' near-bloom':'';
-  var balTxt='\u2600\ufe0f '+totalBal;
+  var balTxt='<img src="assets/fx/bloom-sun.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2600\';"> '+totalBal;
   var readyTxt=ready>0?' \u00b7 <span style="color:var(--gold);">'+ready+' plant'+(ready>1?'s':'')+' ready!</span>':'';
   var _gpTxt='<span class="gp-count">'+balTxt+'</span><span class="gp-stage">\u00b7 '+lbl+' ('+inPlant+'/'+cost+')'+readyTxt+'</span>';
   el.innerHTML='<div class="gp-lbl">'+_gpTxt+'</div><div style="flex:1;min-width:0"><div class="gp-bar"><div class="gp-fill'+_nearCls+'" style="width:'+pct+'%;transition:none"></div></div></div>';
@@ -54116,7 +54116,7 @@ window._lwPickDiff=function(id,level){
 };
 function _os(){var o=document.getElementById('fg-sc');
   var S=[['Card Games & Executive Function','PMC 2023 RCT, n=68','Card games improve flexibility, inhibition & working memory in 18 sessions.'],['Memory & Visual Processing','PLOS ONE 2013, 5 groups','Memory games improve spatial working memory and visual search.'],['Game-Based Learning','Frontiers 2024, 136 studies','Moderate-to-large effects on cognitive, social & emotional outcomes.'],['Solitaire Biomarkers','PMC 2021, n=46','Solitaire produces 23 cognitive biomarkers; 12 differentiate MCI.'],['Pattern Recognition','Frontiers 2024','Pattern games develop logical thinking & spatial reasoning.'],['Cards & Verbal Fluency','PubMed 2020 RCT, 65+','Card games maintain verbal fluency and impulsivity control in seniors.']];
-  var h='<div style="max-width:420px;margin:0 auto"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);display:flex;align-items:center;gap:8px;"><img src="assets/icons/microscope.png" alt="" style="width:36px;height:36px;object-fit:contain;" onerror="this.outerHTML=\'🔬\';"> THE SCIENCE</div><button class="gb" onclick="_cs()">CLOSE</button></div>';
+  var h='<div style="max-width:420px;margin:0 auto"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);display:flex;align-items:center;gap:8px;"><img src="assets/icons/microscope.png" alt="" style="width:36px;height:36px;object-fit:contain;" onerror="this.outerHTML=&apos;🔬&apos;;"> THE SCIENCE</div><button class="gb" onclick="_cs()">CLOSE</button></div>';
   S.forEach(function(s){h+='<div style="background:rgba(26,31,23,.85);border:1px solid rgba(74,124,53,.12);border-radius:8px;padding:10px;margin-bottom:6px"><div style="font-family:Bebas Neue,sans-serif;font-size:.6rem;color:var(--gold)">'+s[0]+'</div><div style="font-size:.36rem;color:rgba(122,179,86,.6);margin-top:2px">'+s[1]+'</div><div style="font-size:.42rem;color:var(--cream);margin-top:4px;line-height:1.5">'+s[2]+'</div></div>'});
   h+='</div>';o.innerHTML=h;o.classList.add('open')}
 window._cs=function(){document.getElementById('fg-sc').classList.remove('open')};
@@ -61232,7 +61232,7 @@ window._lwOpenDeckEditor_legacy=function(){
       var avail=n-used;
       var canPick=avail>0&&picked.length<5;
       h+='<div '+(canPick?'onclick="window._lwDeckPick(\''+k+'\')"':'')+' style="position:relative;'+(canPick?'cursor:pointer;':'')+'background:rgba(18,22,16,'+(n>0?'0.7':'0.35')+');border:1.5px solid rgba(74,124,53,'+(canPick?'0.35':'0.1')+');border-radius:8px;overflow:hidden;aspect-ratio:3/4;min-height:110px;'+(n===0?'opacity:0.35;':canPick?'':'opacity:0.5;')+'">';
-      h+='<img src="assets/foraging/el-'+k+'.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>'+el2.icon+'</div>\';">';
+      h+='<img src="assets/foraging/el-'+k+'.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>'+el2.icon+'</div>&apos;;">';
       h+='<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.85));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;color:var(--cream);letter-spacing:0.05em;">'+el2.label+'</div>';
       h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:'+(avail>0?'var(--gold)':'var(--muted)')+';margin-top:1px;">'+avail+' / '+n+'</div>';
@@ -61589,9 +61589,19 @@ window.LW_COMPANION_IMG = LW_COMPANION_IMG;
 // so a missing PNG file never leaves a hollow circle.
 function _compPortrait(idx, emoji, sizePx) {
   var sz = sizePx || 32;
+  // Source: explicit map override → auto-derived path from name slug → null.
+  // Stephen's portraits land in /assets/companions/<slug>.png; once any
+  // file is dropped in it auto-lights up via this lookup.
   var src = LW_COMPANION_IMG[idx];
+  if (!src && typeof idx === 'number' && window.TRAIT_BANK && window.TRAIT_BANK.companions[idx]) {
+    var nm = window.TRAIT_BANK.companions[idx].name || '';
+    if (nm && nm !== 'None') {
+      var slug = nm.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+      src = 'assets/companions/'+slug+'.png';
+    }
+  }
   if (src) {
-    return '<img src="'+src+'" alt="" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(sz*0.7)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;&quot;>'+(emoji||'?')+'</span>\'" style="width:'+sz+'px;height:'+sz+'px;object-fit:cover;border-radius:'+Math.round(sz*0.18)+'px;border:1px solid rgba(200,168,75,0.35);display:inline-block;vertical-align:middle;">';
+    return '<img src="'+src+'" alt="" onerror="this.outerHTML=&apos;<span style=&quot;font-size:'+Math.round(sz*0.7)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;&quot;>'+(emoji||'?')+'</span>&apos;" style="width:'+sz+'px;height:'+sz+'px;object-fit:cover;border-radius:'+Math.round(sz*0.18)+'px;border:1px solid rgba(200,168,75,0.35);display:inline-block;vertical-align:middle;">';
   }
   // Procedural SVG portrait — uses the same renderCompanion the plant uses,
   // cropped to a 30×30 viewBox centered on the companion's anchor point.
@@ -65425,7 +65435,7 @@ var SLOT_SPRITES = [
   'assets/symbols/symbol-cosmic.png'
 ];
 function _slotImg(idx){
-  return '<img src="'+SLOT_SPRITES[idx]+'" alt="'+SLOT_NAMES[idx]+'" onerror="this.outerHTML=\''+SLOT_SYMBOLS[idx]+'\';">';
+  return '<img src="'+SLOT_SPRITES[idx]+'" alt="'+SLOT_NAMES[idx]+'" onerror="this.outerHTML=&apos;'+SLOT_SYMBOLS[idx]+'&apos;;">';
 }
 // Weighted draw: common most frequent, cosmic rarest
 var SLOT_WEIGHTS = [0.30, 0.22, 0.17, 0.13, 0.10, 0.06, 0.02];
@@ -65732,7 +65742,7 @@ function _renderWeatherOpts() {
     // Icon slot: try Jessie's weather plate if shipped, fall back to emoji.
     // Convention: assets/weather/weather-{sun,rain,wind,calm}.png
     var _wImgKey = (t.id === 'sun' ? 'sun' : t.id === 'rain' ? 'rain' : t.id === 'wind' ? 'wind' : t.id === 'calm' ? 'calm' : t.id);
-    var _wIconHtml = '<img src="assets/weather/weather-' + _wImgKey + '.png" alt="" style="width:56px;height:56px;object-fit:contain;" onerror="this.outerHTML=\'<div class=&quot;w-opt-icon&quot;>' + t.icon + '</div>\';">';
+    var _wIconHtml = '<img src="assets/weather/weather-' + _wImgKey + '.png" alt="" style="width:56px;height:56px;object-fit:contain;" onerror="this.outerHTML=&apos;<div class=&quot;w-opt-icon&quot;>' + t.icon + '</div>&apos;;">';
     html += '<button class="w-opt"' + disabled + ' onclick="window._castWeather(\'' + t.id + '\')">' +
       _wIconHtml +
       '<div class="w-opt-name">' + t.name + '</div>' +
@@ -70361,7 +70371,7 @@ window._biomeIconHTML=function(key,size){
   var s=size||36;
   var emo=(b.icon||'🌿').replace(/'/g,'&#39;');
   if(b.iconImg){
-    return '<img src="'+b.iconImg+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;" onerror="this.outerHTML=\''+emo+'\';">';
+    return '<img src="'+b.iconImg+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;" onerror="this.outerHTML=&apos;'+emo+'&apos;;">';
   }
   return emo;
 };
@@ -70386,7 +70396,7 @@ window._companionPortrait = function(idx, size, fallbackEmoji){
   if (!name || name === 'None') return '<span style="font-size:'+Math.round(s*0.7)+'px;">'+emo+'</span>';
   // Slugify: lowercase, alphanumerics + dashes only.
   var slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  return '<img src="assets/companions/'+slug+'.png" alt="'+name.replace(/"/g,'&quot;')+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>\';">';
+  return '<img src="assets/companions/'+slug+'.png" alt="'+name.replace(/"/g,'&quot;')+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>&apos;;">';
 };
 // Convenience: portrait by NAME (e.g. for the friendship ICONS map).
 window._companionPortraitByName = function(name, size, fallbackEmoji){
@@ -70394,7 +70404,7 @@ window._companionPortraitByName = function(name, size, fallbackEmoji){
   var emo = (fallbackEmoji || '🐾').replace(/'/g, '&#39;');
   if (!name) return '<span style="font-size:'+Math.round(s*0.7)+'px;">'+emo+'</span>';
   var slug = String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  return '<img src="assets/companions/'+slug+'.png" alt="'+String(name).replace(/"/g,'&quot;')+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>\';">';
+  return '<img src="assets/companions/'+slug+'.png" alt="'+String(name).replace(/"/g,'&quot;')+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>&apos;;">';
 };
 
 // Generic gilded-icon helper. assets/icons/<name>.png with emoji fallback.
@@ -70403,7 +70413,7 @@ window._companionPortraitByName = function(name, size, fallbackEmoji){
 window._lwIcon = function(name, size, fallbackEmoji){
   var s = size || 36;
   var emo = (fallbackEmoji || '').replace(/'/g, '&#39;');
-  return '<img src="assets/icons/'+name+'.png" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>\';">';
+  return '<img src="assets/icons/'+name+'.png" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>&apos;;">';
 };
 
 // Colored sparkle helper — 4 hand-painted starbursts in /assets/fx/.
@@ -70413,7 +70423,7 @@ window._lwIcon = function(name, size, fallbackEmoji){
 window._lwSparkle = function(color, size){
   var c = color || 'pink';
   var s = size || 22;
-  return '<img src="assets/fx/sparkle-'+c+'.png" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'\\u2728\';">';
+  return '<img src="assets/fx/sparkle-'+c+'.png" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=&apos;\\u2728&apos;;">';
 };
 })();
 </script>
@@ -73662,7 +73672,7 @@ function _bosClassContentLegacy() {
     h += '<div style="margin-bottom:0.5rem;padding:0.55rem;background:rgba(26,36,22,0.4);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
     h += '<div style="display:flex;align-items:center;gap:0.5rem;">';
     // Tool hero art — matches the character-sheet tool emblem render.
-    h += '<img src="assets/character-sheet/tools/' + tid + '.png" alt="" onerror="this.outerHTML=\'<span style=&quot;font-size:1.3rem;width:44px;text-align:center;&quot;>' + tdef.icon + '</span>\'" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(200,168,75,0.25);flex-shrink:0;">';
+    h += '<img src="assets/character-sheet/tools/' + tid + '.png" alt="" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.3rem;width:44px;text-align:center;&quot;>' + tdef.icon + '</span>&apos;" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(200,168,75,0.25);flex-shrink:0;">';
     h += '<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.06em;">' + tdef.name.toUpperCase() + ' \u00b7 L' + tlvl + '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);">' + tdef.levels[tlvl] + '</div></div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">' + txp + ' / ' + tnextXP + '</div>';
@@ -73742,7 +73752,7 @@ function _bosItemsContent(){
         h += '<div style="margin-bottom:0.5rem;padding:0.7rem;background:linear-gradient(180deg,rgba(18,22,16,0.8),rgba(13,16,12,0.9));border:1px solid '+rc+'55;border-left:3px solid '+rc+';border-radius:10px;">';
         h += '<div style="display:flex;align-items:flex-start;gap:0.7rem;">';
         h += '<div style="width:56px;height:56px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px solid '+rc+'44;display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>\';">';
+        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>&apos;;">';
         h += '</div>';
         h += '<div style="flex:1;min-width:0;">';
         h += '<div style="display:flex;align-items:baseline;gap:0.45rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.88rem;color:var(--cream);letter-spacing:0.06em;">'+it.name+'</div>';
@@ -75479,7 +75489,7 @@ window._lwClaimHerbarium = function(id){
     var s = size || 36;
     var emo = (el.icon || '').replace(/'/g,'&#39;');
     if (el.iconImg){
-      return '<img src="'+el.iconImg+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\''+emo+'\';">';
+      return '<img src="'+el.iconImg+'" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=&apos;'+emo+'&apos;;">';
     }
     return emo;
   }
@@ -75941,7 +75951,7 @@ window._lwClaimHerbarium = function(id){
     function close() { var ov = document.getElementById('lw-sim-overlay'); if (ov) ov.remove(); }
     function verdictLabel(v){return v==='match'?'EXACT':v==='wild-exact'?'WILD EXACT':v==='counter'?'ELSEWHERE':v==='wild'?'WILD ½':v==='safety'?'SAFETY REVEAL':'MISS';}
     function verdictColor(v){return (v==='match'||v==='wild-exact')?'var(--sage)':v==='counter'?'var(--gold)':v==='wild'?'#c07ac8':v==='safety'?'#87a3c2':'var(--muted)';}
-    function elHtml(k, sz){ sz=sz||48; var el=EL[k]||{icon:'?',label:k}; return '<div style="width:'+sz+'px;text-align:center;"><img src="assets/foraging/el-'+k+'.png" alt="" style="width:100%;max-width:'+sz+'px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=\'<div style=&quot;font-size:'+Math.round(sz*0.5)+'px;&quot;>'+el.icon+'</div>\';"><div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--cream);margin-top:2px;letter-spacing:0.06em;">'+el.label+'</div></div>'; }
+    function elHtml(k, sz){ sz=sz||48; var el=EL[k]||{icon:'?',label:k}; return '<div style="width:'+sz+'px;text-align:center;"><img src="assets/foraging/el-'+k+'.png" alt="" style="width:100%;max-width:'+sz+'px;aspect-ratio:1/1;object-fit:contain;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:'+Math.round(sz*0.5)+'px;&quot;>'+el.icon+'</div>&apos;;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--cream);margin-top:2px;letter-spacing:0.06em;">'+el.label+'</div></div>'; }
     function render() {
       var ov = document.getElementById('lw-sim-overlay'); if (!ov) return;
       var diff = S.diff;
@@ -76019,7 +76029,7 @@ window._lwClaimHerbarium = function(id){
         var el3 = EL[c];
         var isRare = el3 && el3.rare;
         h += '<div onclick="LW_simulator.pick(' + ci + ')" style="position:relative;cursor:pointer;aspect-ratio:3/4;min-height:110px;background:' + bg + ';border:' + brd + ';border-radius:10px;overflow:hidden;' + (S.resolved ? 'pointer-events:none;opacity:0.5;' : '') + (isRare ? 'box-shadow:0 0 8px rgba(200,168,75,0.25);' : '') + '">';
-        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + el3.icon + '</div>\';">';
+        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;&quot;>' + el3.icon + '</div>&apos;;">';
         h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 4px 4px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.85));text-align:center;text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + (isSel ? 'var(--gold)' : 'var(--cream)') + ';letter-spacing:0.05em;">' + el3.label + (isRare?' \u2605':'') + '</div>';
         if (isSel) h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);margin-top:1px;">' + (S.selected.indexOf(ci) + 1) + '</div>';
@@ -76419,7 +76429,7 @@ window._lwClaimHerbarium = function(id){
         var border = isSelected ? '2px solid rgba(200,168,75,0.5)' : '1.5px solid rgba(74,124,53,0.25)';
         var hintTxt = isSelected ? ('PLACED \u00d7' + placedN) : 'TAP TO PLACE';
         h += '<div data-lwforage-drag="hand:' + c + '" onclick="if(!window._lwForageWasDrag)window._lwForagePick(\'' + c + '\');window._lwForageWasDrag=false;" style="position:relative;cursor:grab;width:168px;aspect-ratio:3/4;flex-shrink:0;background:' + bg + ';border:' + border + ';border-radius:14px;overflow:hidden;touch-action:pan-x;' + (resolved ? 'pointer-events:none;opacity:0.4;' : '') + 'transition:opacity 0.18s ease;box-shadow:0 6px 16px rgba(0,0,0,0.5);">';
-        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6rem;&quot;>' + el.icon + '</div>\';">';
+        h += '<img src="assets/foraging/el-' + c + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6rem;&quot;>' + el.icon + '</div>&apos;;">';
         if (placedN > 0) {
           h += '<div style="position:absolute;top:6px;right:6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.7rem;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(240,208,144,0.7);">\u00d7' + placedN + '</div>';
         }
@@ -76470,7 +76480,7 @@ window._lwClaimHerbarium = function(id){
             else if (_lr.verdict === 'neutral') _vLbl = '\u00d7';
             h += '<div style="flex:1;text-align:center;padding:3px 2px;background:rgba(13,16,12,0.6);border:1px solid ' + _vColor + '55;border-radius:6px;position:relative;min-width:0;">';
             h += '<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:4px;overflow:hidden;margin-bottom:2px;background:rgba(0,0,0,0.3);">';
-            h += '<img src="assets/foraging/el-' + _lr.card + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1rem;&quot;>' + (_lCard ? _lCard.icon : '?') + '</div>\';">';
+            h += '<img src="assets/foraging/el-' + _lr.card + '.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1rem;&quot;>' + (_lCard ? _lCard.icon : '?') + '</div>&apos;;">';
             h += '</div>';
             h += '<div style="font-size:0.55rem;color:' + _vColor + ';">' + _vLbl + '</div>';
             h += '</div>';
@@ -76595,7 +76605,7 @@ window._lwClaimHerbarium = function(id){
           var el = EL[cardId];
           var ghost = document.createElement('div');
           ghost.style.cssText = 'position:fixed;z-index:1000020;width:80px;aspect-ratio:3/4;pointer-events:none;border:2px solid #c8a84b;border-radius:10px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,0.7);opacity:0.92;';
-          ghost.innerHTML = '<img src="assets/foraging/el-' + cardId + '.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;background:rgba(18,22,16,0.9);&quot;>' + (el ? el.icon : '?') + '</div>\';">';
+          ghost.innerHTML = '<img src="assets/foraging/el-' + cardId + '.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;background:rgba(18,22,16,0.9);&quot;>' + (el ? el.icon : '?') + '</div>&apos;;">';
           document.body.appendChild(ghost);
           st.ghost = ghost;
         }
@@ -77517,7 +77527,7 @@ window._lwClaimHerbarium = function(id){
         h += '<div style="margin-bottom:0.5rem;padding:0.7rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(disabled?'rgba(74,124,53,0.15)':'rgba(200,168,75,0.35)')+';border-radius:12px;opacity:'+op+';">';
         h += '<div style="display:flex;align-items:center;gap:0.7rem;">';
         h += '<div style="width:56px;height:56px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px solid rgba(122,179,86,0.2);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>\';">';
+        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>&apos;;">';
         h += '</div>';
         h += '<div style="flex:1;min-width:0;">';
         h += '<div style="display:flex;align-items:center;gap:0.4rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:'+(disabled?'var(--muted)':'var(--cream)')+';">'+it.name+'</div>';
@@ -77808,7 +77818,7 @@ window._lwClaimHerbarium = function(id){
   }
   function itemArt(key, fallbackIcon){
     var src = 'assets/items/' + artFile(key) + '.png';
-    return '<img src="'+src+'" alt="" onerror="this.outerHTML=\'<div class=&quot;lwh-shop-emoji&quot;>'+(fallbackIcon||'?')+'</div>\';">';
+    return '<img src="'+src+'" alt="" onerror="this.outerHTML=&apos;<div class=&quot;lwh-shop-emoji&quot;>'+(fallbackIcon||'?')+'</div>&apos;;">';
   }
 
   // ─── DOM ───
@@ -78245,7 +78255,7 @@ window._lwClaimHerbarium = function(id){
       var afford = bal >= t.cost;
       var imgKey = t.id;
       html += '<button class="lwh-weather-card'+(afford?'':' broke')+'" onclick="LW_HUT.castWeather(\''+t.id+'\')">' +
-        '<img src="assets/weather/weather-'+imgKey+'.png" alt="" onerror="this.outerHTML=\'<div class=&quot;lwh-weather-emoji&quot;>'+t.icon+'</div>\';">' +
+        '<img src="assets/weather/weather-'+imgKey+'.png" alt="" onerror="this.outerHTML=&apos;<div class=&quot;lwh-weather-emoji&quot;>'+t.icon+'</div>&apos;;">' +
         '<div class="lwh-weather-name">'+t.name+'</div>' +
         '<div class="lwh-weather-desc">'+t.desc+'</div>' +
         '<div class="lwh-weather-cost">'+t.cost+' <span class="lwe lwe-drop"></span></div>' +
@@ -78536,7 +78546,7 @@ window._lwClaimHerbarium = function(id){
     var h = '<div style="max-width:320px;text-align:center;">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.2em;color:'+rColor+';margin-bottom:0.6rem;">'+result.rarity.toUpperCase()+'</div>';
     h += '<div style="width:180px;height:180px;margin:0 auto 1rem;border-radius:20px;background:rgba(18,22,16,0.85);border:3px solid '+rColor+';overflow:hidden;box-shadow:0 0 30px '+rColor+';display:flex;align-items:center;justify-content:center;">';
-    h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:4.5rem;&quot;>'+it.icon+'</div>\';">';
+    h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:4.5rem;&quot;>'+it.icon+'</div>&apos;;">';
     h += '</div>';
     h += '<div style="font-family:Playfair Display,serif;font-size:1.3rem;color:var(--cream);font-style:italic;margin-bottom:0.4rem;">'+it.name+'</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;margin-bottom:1.2rem;">'+it.desc+'</div>';
@@ -78580,7 +78590,7 @@ window._lwClaimHerbarium = function(id){
       var it = CAT[all[i].itemKey] || {};
       var rc = all[i].rarity==='Legendary'?'#ff8ab0':all[i].rarity==='Epic'?'#c07ac8':all[i].rarity==='Rare'?'var(--gold)':all[i].rarity==='Uncommon'?'var(--sage)':'var(--muted)';
       h += '<div style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem;margin-bottom:0.5rem;background:rgba(18,22,16,0.7);border:1.5px solid '+rc+';border-radius:12px;">';
-      h += '<div style="width:60px;height:60px;flex-shrink:0;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.6);display:flex;align-items:center;justify-content:center;"><img src="'+(it.art||'')+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.8rem;&quot;>'+(it.icon||'?')+'</div>\';"></div>';
+      h += '<div style="width:60px;height:60px;flex-shrink:0;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.6);display:flex;align-items:center;justify-content:center;"><img src="'+(it.art||'')+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:1.8rem;&quot;>'+(it.icon||'?')+'</div>&apos;;"></div>';
       h += '<div style="flex:1;min-width:0;">';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.06em;">'+(it.name||'?')+'</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:'+rc+';letter-spacing:0.08em;">'+all[i].rarity.toUpperCase()+'</div>';
@@ -78800,7 +78810,7 @@ window.LW_debug.cleanGhostDrops = function(){
         h += '<div style="margin-bottom:0.7rem;padding:0.9rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?t.color:'rgba(74,124,53,0.2)')+';border-radius:14px;'+(ready?'box-shadow:0 0 16px '+t.color+'55;':'')+'">';
         h += '<div style="display:flex;align-items:center;gap:0.9rem;">';
         h += '<div style="width:80px;height:80px;flex-shrink:0;border-radius:50%;background:rgba(5,8,4,0.7);border:2.5px solid '+t.color+';position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">';
-        h += '<img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:2.2rem;&quot;>'+t.icon+'</div>\';">';
+        h += '<img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.2rem;&quot;>'+t.icon+'</div>&apos;;">';
         h += '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:'+t.color+';transform:rotate('+(pct*3.6-90)+'deg);transition:transform 0.4s ease;"></div>';
         h += '</div>';
         h += '<div style="flex:1;min-width:0;">';
@@ -78838,10 +78848,10 @@ window.LW_debug.cleanGhostDrops = function(){
     rv.style.cssText = 'position:fixed;inset:0;z-index:100011;background:radial-gradient(ellipse at 50% 40%,rgba(30,28,10,0.95) 0%,rgba(5,8,4,0.98) 70%);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.3s ease;';
     var hh = '<div style="max-width:340px;text-align:center;">';
     hh += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.2em;color:'+t.color+';margin-bottom:0.5rem;">'+t.name.toUpperCase()+' HATCHES</div>';
-    hh += '<div style="width:160px;height:160px;margin:0 auto 1.2rem;border-radius:50%;border:3px solid '+t.color+';box-shadow:0 0 40px '+t.color+';background:rgba(18,22,16,0.7);overflow:hidden;display:flex;align-items:center;justify-content:center;animation:spinSlow 1.8s ease;"><img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:4rem;&quot;>'+t.icon+'</div>\';"></div>';
+    hh += '<div style="width:160px;height:160px;margin:0 auto 1.2rem;border-radius:50%;border:3px solid '+t.color+';box-shadow:0 0 40px '+t.color+';background:rgba(18,22,16,0.7);overflow:hidden;display:flex;align-items:center;justify-content:center;animation:spinSlow 1.8s ease;"><img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:4rem;&quot;>'+t.icon+'</div>&apos;;"></div>';
     for (var pi=0; pi<parts.length; pi++){
       hh += '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem;margin-bottom:0.5rem;background:rgba(18,22,16,0.7);border:1.5px solid '+t.color+'55;border-radius:10px;">';
-      if (parts[pi].art) hh += '<div style="width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden;background:rgba(5,8,4,0.6);display:flex;align-items:center;justify-content:center;"><img src="'+parts[pi].art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=\'<div style=&quot;font-size:1.6rem;&quot;>'+parts[pi].icon+'</div>\';"></div>';
+      if (parts[pi].art) hh += '<div style="width:48px;height:48px;flex-shrink:0;border-radius:8px;overflow:hidden;background:rgba(5,8,4,0.6);display:flex;align-items:center;justify-content:center;"><img src="'+parts[pi].art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:1.6rem;&quot;>'+parts[pi].icon+'</div>&apos;;"></div>';
       else hh += '<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;">'+parts[pi].icon+'</div>';
       hh += '<div style="flex:1;text-align:left;font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.06em;">'+parts[pi].label+'</div>';
       hh += '</div>';
@@ -82326,7 +82336,7 @@ function _bosQuestsContent(opts) {
       var icon;
       if (earned) {
         var fallbackIcon = '<span class=&quot;lwe ' + trophyClass + '&quot; style=&quot;width:2.6em;height:2.6em;&quot;></span>';
-        icon = '<img src="' + artSrc + '" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=\'' + fallbackIcon + '\';">';
+        icon = '<img src="' + artSrc + '" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;' + fallbackIcon + '&apos;;">';
       } else {
         icon = '·';
       }
@@ -82444,7 +82454,7 @@ window._lwTrophyOpen = function(achId){
     '<div class="lwt-panel" style="border-color:' + bColor + ';">' +
       '<button class="lwt-close" onclick="document.getElementById(\'lw-trophy-detail\').remove();" aria-label="Close">&#x2715;</button>' +
       '<div class="lwt-art-frame">' +
-        '<img src="' + artSrc + '" alt="" class="lwt-art" onerror="this.outerHTML=\'' + fb + '\';">' +
+        '<img src="' + artSrc + '" alt="" class="lwt-art" onerror="this.outerHTML=&apos;' + fb + '&apos;;">' +
       '</div>' +
       '<div class="lwt-tier" style="color:' + bColor + ';">' + _e((ach.tier || '').toUpperCase()) + ' &middot; ' + _e(ach.category || '') + '</div>' +
       '<div class="lwt-name" style="color:' + bColor + ';">' + _e(tName) + '</div>' +
@@ -83322,7 +83332,7 @@ function _bosSecretsContent() {
       // Stephen 2026-04-28: replaced default emojis with hand-drawn icons.
       // img falls back to emoji on 404 via onerror for any missing file.
       function _trIco(slug, fallback){
-        return '<img src="assets/codex/' + slug + '.png" alt="" style="width:64px;height:64px;object-fit:contain;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=\'<span style=&quot;font-size:1.8rem;&quot;>' + fallback + '</span>\';">';
+        return '<img src="assets/codex/' + slug + '.png" alt="" style="width:64px;height:64px;object-fit:contain;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.8rem;&quot;>' + fallback + '</span>&apos;;">';
       }
       var _rows = [
         { label: 'LEAF TYPES',     icon: _trIco('leaf','\ud83c\udf43'),      seen: Object.keys(_seenT.leaves).length,      total: (_tb.leaves||[]).length || 71 },
@@ -84982,7 +84992,7 @@ window._LW_openClassPicker=function(){
     h+='<div style="display:flex;align-items:center;gap:0.5rem;">';
     // Tool hero art — same assets the character sheet uses. onerror falls
     // back to the emoji so a missing file never leaves a hole.
-    h+='<img src="assets/character-sheet/tools/'+tid+'.png" alt="" onerror="this.outerHTML=\'<span style=&quot;font-size:1.3rem;width:44px;text-align:center;&quot;>'+tdef.icon+'</span>\'" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(200,168,75,0.25);flex-shrink:0;">';
+    h+='<img src="assets/character-sheet/tools/'+tid+'.png" alt="" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.3rem;width:44px;text-align:center;&quot;>'+tdef.icon+'</span>&apos;" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(200,168,75,0.25);flex-shrink:0;">';
     h+='<div style="flex:1;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--cream);letter-spacing:0.06em;">'+tdef.name.toUpperCase()+' \u00b7 L'+tlvl+'</div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);">'+tdef.levels[tlvl]+'</div></div>';
     h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+txp+' xp</div>';
