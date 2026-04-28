@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.29';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.30';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -85874,8 +85874,14 @@ window.LW_Comp = (function(){
     f[slug]=rec;saveFriends(f);
     if(newLv>prevLv){
       try{
-        var name=NAMES[slug]||'Companion';var icon=ICONS[slug]||'🐾';
-        if(window._toast)window._toast(icon+' '+name+' is now '+titleFor(newLv));
+        var name=NAMES[slug]||'Companion';
+        // Stephen 2026-04-28: switch to per-companion PNG portrait (HTML img
+        // with emoji onerror fallback) so level-up toast shows the actual
+        // creature face once art is shipped.
+        var iconHtml = (window._companionPortraitByName)
+          ? window._companionPortraitByName(name, 36, ICONS[slug] || '🐾')
+          : (ICONS[slug] || '🐾');
+        if(window._toast)window._toast(iconHtml+' '+name+' is now '+titleFor(newLv), {html:true});
         if(window.LW_Log)window.LW_Log.write('companion_friendship_up',{slug:slug,lv:newLv,xp:rec.xp,title:titleFor(newLv)});
       }catch(e){}
     }
