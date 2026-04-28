@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.32';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6625,7 +6625,7 @@ window._addSwitchTabHook = function(fn){
           <button class="hex-btn" id="hex-shears-btn" onclick="purchaseItem(50,'golden_shears')">50 ⚡</button>
         </div>
         <div class="hex-item" id="hex-mutate">
-          <div class="hex-icon">🧬</div>
+          <div class="hex-icon"><img src="assets/icons/dna.png" alt="" style="width:48px;height:48px;object-fit:contain;" onerror="this.outerHTML='🧬';"></div>
           <div class="hex-info">
             <div class="hex-name">Mutate a Plant</div>
             <div class="hex-desc">Apply a rare glow mutation to any plant in your gallery.</div>
@@ -6697,7 +6697,7 @@ window._addSwitchTabHook = function(fn){
 
     <!-- Partner Rewards -->
     <div class="dash-section pr-section">
-      <div class="dash-title">🤝 PARTNER REWARDS</div>
+      <div class="dash-title"><img src="assets/icons/handshake.png" alt="" style="width:36px;height:36px;object-fit:contain;vertical-align:middle;margin-right:6px;" onerror="this.outerHTML='🤝 ';">PARTNER REWARDS</div>
       <p style="font-size:0.45rem;color:var(--muted);margin-bottom:0.5rem;">Your Plants act as your digital loyalty card. Grow your collection to unlock exclusive discounts from Lucid Winds partner brands.</p>
       <div id="partner-rewards-container"></div>
     </div>
@@ -9157,7 +9157,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cp-plant-grid" id="cp-plant-grid">
       <div style="grid-column:1/-1;text-align:center;font-size:0.55rem;color:var(--muted);padding:1rem;">Loading plants…</div>
     </div>
-    <button class="cp-confirm-btn" id="cp-confirm-btn" onclick="confirmCrossPollinateSelection()" disabled>🧬 BEGIN CROSS-POLLINATION</button>
+    <button class="cp-confirm-btn" id="cp-confirm-btn" onclick="confirmCrossPollinateSelection()" disabled><img src="assets/icons/dna.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:6px;" onerror="this.outerHTML='🧬 ';"> BEGIN CROSS-POLLINATION</button>
     <div id="cp-msg"></div>
   </div>
 </div>
@@ -38556,7 +38556,7 @@ document.addEventListener('keydown', function(e) {
       // greenhouse context
       var idx = (typeof plantIndex === 'number') ? plantIndex : -1;
       btns += '<button class="pad-btn" onclick="var _bp=window._padBreedPlant;closePlantActionDrawer();if(window.openBreedScreen&&_bp)openBreedScreen(_bp,\'greenhouse\');" style="border-color:rgba(200,168,75,0.25);">' +
-              '<span class="pad-btn-icon">🧬</span><span class="pad-btn-label">BREED</span></button>';
+              '<span class="pad-btn-icon">'+(window._lwIcon?_lwIcon('dna',40,'🧬'):'🧬')+'</span><span class="pad-btn-label">BREED</span></button>';
       if(plant.parentAHash||plant.parentBHash||(plant.generation&&plant.generation>1)){
         btns += '<button class="pad-btn" onclick="if(window.openAncestryViewer)openAncestryViewer(window._padBreedPlant);" style="border-color:rgba(200,168,75,0.15);">' +
                 '<span class="pad-btn-icon">🌳</span><span class="pad-btn-label">ANCESTRY</span></button>';
@@ -39868,7 +39868,7 @@ document.addEventListener('keydown', function(e) {
         '<div class="nur-empty-icon">\ud83c\udf31</div>' +
         '<div class="nur-empty-label">SLOT ' + (idx + 1) + '</div>' +
         '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.4;text-align:center;">Breed two plants or find a feral seed in the Wild</div>' +
-        '<button class="nur-btn water" onclick="window._nurStartBreed()" style="margin-top:0.28rem;">\ud83e\uddec CROSS-POLLINATE</button>' +
+        '<button class="nur-btn water" onclick="window._nurStartBreed()" style="margin-top:0.28rem;"><img src="assets/icons/dna.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:4px;" onerror="this.outerHTML=\'\ud83e\uddec \';"> CROSS-POLLINATE</button>' +
       '</div>';
     }
     // Clipping cards get their own layout \u2014 no seed sprite, no water/accel
@@ -53992,7 +53992,7 @@ function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='
     c.addEventListener('click',function(){_opCat(cat.key)});p.appendChild(c);
   });
   // Science button
-  var sciBtn=document.createElement('div');sciBtn.className='fg-c';sciBtn.innerHTML='<span class="fi">\ud83d\udd2c</span><span class="fn">SCIENCE</span>';
+  var sciBtn=document.createElement('div');sciBtn.className='fg-c';sciBtn.innerHTML='<span class="fi"><img src="assets/icons/microscope.png" alt="" style="width:48px;height:48px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83d\\udd2c\';"></span><span class="fn">SCIENCE</span>';
   sciBtn.addEventListener('click',_os);p.appendChild(sciBtn);}
 // Open picker filtered to one category
 function _opCat(catKey){
@@ -54121,7 +54121,7 @@ window._lwPickDiff=function(id,level){
 };
 function _os(){var o=document.getElementById('fg-sc');
   var S=[['Card Games & Executive Function','PMC 2023 RCT, n=68','Card games improve flexibility, inhibition & working memory in 18 sessions.'],['Memory & Visual Processing','PLOS ONE 2013, 5 groups','Memory games improve spatial working memory and visual search.'],['Game-Based Learning','Frontiers 2024, 136 studies','Moderate-to-large effects on cognitive, social & emotional outcomes.'],['Solitaire Biomarkers','PMC 2021, n=46','Solitaire produces 23 cognitive biomarkers; 12 differentiate MCI.'],['Pattern Recognition','Frontiers 2024','Pattern games develop logical thinking & spatial reasoning.'],['Cards & Verbal Fluency','PubMed 2020 RCT, 65+','Card games maintain verbal fluency and impulsivity control in seniors.']];
-  var h='<div style="max-width:420px;margin:0 auto"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold)">🔬 THE SCIENCE</div><button class="gb" onclick="_cs()">CLOSE</button></div>';
+  var h='<div style="max-width:420px;margin:0 auto"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);display:flex;align-items:center;gap:8px;"><img src="assets/icons/microscope.png" alt="" style="width:36px;height:36px;object-fit:contain;" onerror="this.outerHTML=\'🔬\';"> THE SCIENCE</div><button class="gb" onclick="_cs()">CLOSE</button></div>';
   S.forEach(function(s){h+='<div style="background:rgba(26,31,23,.85);border:1px solid rgba(74,124,53,.12);border-radius:8px;padding:10px;margin-bottom:6px"><div style="font-family:Bebas Neue,sans-serif;font-size:.6rem;color:var(--gold)">'+s[0]+'</div><div style="font-size:.36rem;color:rgba(122,179,86,.6);margin-top:2px">'+s[1]+'</div><div style="font-size:.42rem;color:var(--cream);margin-top:4px;line-height:1.5">'+s[2]+'</div></div>'});
   h+='</div>';o.innerHTML=h;o.classList.add('open')}
 window._cs=function(){document.getElementById('fg-sc').classList.remove('open')};
@@ -64379,11 +64379,11 @@ function render(){
   // Dedicated CLOSE so the backpack never gets "stuck open" when the
   // dim overlay behind it fails to catch the tap. Stephen flagged it.
   h+='<button onclick="if(window.BP)BP.close();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--cream);background:linear-gradient(180deg,rgba(60,70,50,0.55),rgba(40,50,32,0.65));border:1.5px solid rgba(180,170,130,0.35);border-radius:10px;cursor:pointer;">✕ CLOSE</button>';
-  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 BASE</button>';
+  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;">🏠 RETURN</button>';
   var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
   h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;">\ud83c\udf31 ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
   var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
-  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'">\ud83c\udf81 BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
+  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+';display:inline-flex;align-items:center;gap:6px;"><img src="assets/icons/box.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';">BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
   var _cocoonTotal=0,_cocoonReady=0;try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_cocoonTotal=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_cocoonReady++;}}catch(e){}
   h+='<button onclick="if(window.LW_COCOONS)LW_COCOONS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_cocoonReady>0?'#c8a84b':(_cocoonTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_cocoonReady>0?'rgba(200,168,75,0.7)':(_cocoonTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_cocoonReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'">\ud83e\uddf5 COCOONS'+(_cocoonTotal>0?' ('+_cocoonTotal+(_cocoonReady>0?' \u2022 '+_cocoonReady+' READY':'')+')':'')+'</button>';
   h+='</div>';
@@ -64560,7 +64560,7 @@ function returnToBase(){
   if(delivered>0&&window._startReveal){
     window._startReveal(plants,seedCount);
   } else {
-    var msg='Returned to base!';
+    var msg='Returned home!';
     if(seedCount>0)msg+=' '+seedCount+' seed'+(seedCount>1?'s':'')+' → nursery.';
     celeb('\ud83c\udfe0 '+msg,'Next return in 6 hours.');
   }
@@ -65907,7 +65907,7 @@ function _ensureMysteryModal() {
     '<div class="my-scrim" onclick="window._closeMystery()"></div>' +
     '<div class="my-panel">' +
       '<div class="my-header">' +
-        '<div class="my-title">\ud83c\udf81 MYSTERY BOX</div>' +
+        '<div class="my-title" style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/box.png" alt="" style="width:36px;height:36px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';"> MYSTERY BOX</div>' +
         '<button class="my-close" onclick="window._closeMystery()">\u2715</button>' +
       '</div>' +
       '<div class="my-balance" id="my-balance">Dew: 0</div>' +
@@ -70394,6 +70394,15 @@ window._companionPortraitByName = function(name, size, fallbackEmoji){
   if (!name) return '<span style="font-size:'+Math.round(s*0.7)+'px;">'+emo+'</span>';
   var slug = String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   return '<img src="assets/companions/'+slug+'.png" alt="'+String(name).replace(/"/g,'&quot;')+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>\';">';
+};
+
+// Generic gilded-icon helper. assets/icons/<name>.png with emoji fallback.
+// Used for DNA (breeding), microscope (science), handshake (partner),
+// box (mystery boxes). Default size 36 — Stephen anti-shrink rule.
+window._lwIcon = function(name, size, fallbackEmoji){
+  var s = size || 36;
+  var emo = (fallbackEmoji || '').replace(/'/g, '&#39;');
+  return '<img src="assets/icons/'+name+'.png" alt="" style="width:'+s+'px;height:'+s+'px;object-fit:contain;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'<span style=&quot;font-size:'+Math.round(s*0.7)+'px;&quot;>'+emo+'</span>\';">';
 };
 })();
 </script>
@@ -78491,7 +78500,7 @@ window._lwClaimHerbarium = function(id){
     h += pity.nextLegendIn === 0 ? '\u2605 Your next box guarantees <b style="color:#e8c86b;">Legendary</b>.' : (pity.nextLegendIn === 1 ? '\u2605 Next box guarantees <b style="color:#e8c86b;">Legendary</b>.' : '\u2605 Legendary guaranteed in <b>'+pity.nextLegendIn+'</b> boxes.');
     h += '</div></div>';
     if (n > 0) {
-      h += '<button id="lw-box-open-btn" onclick="window.LW_BOXES.openNext()" style="display:block;width:100%;padding:18px;border-radius:14px;border:2px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;cursor:pointer;min-height:64px;box-shadow:0 0 20px rgba(200,168,75,0.3);">\ud83c\udf81 OPEN BOX ('+n+')</button>';
+      h += '<button id="lw-box-open-btn" onclick="window.LW_BOXES.openNext()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:18px;border-radius:14px;border:2px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;cursor:pointer;min-height:64px;box-shadow:0 0 20px rgba(200,168,75,0.3);"><img src="assets/icons/box.png" alt="" style="width:36px;height:36px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';"> OPEN BOX ('+n+')</button>';
       if (n >= 2) h += '<button onclick="window.LW_BOXES.openAll()" style="display:block;width:100%;margin-top:0.6rem;padding:12px;border-radius:12px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(26,36,22,0.5);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">OPEN ALL '+n+'</button>';
     } else {
       h += '<div style="padding:2rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);line-height:1.6;">No boxes yet.<br><br>Earn them from Uncommon+ blooms, step milestones, and login streaks.</div>';
