@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.32';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.33';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -36435,7 +36435,6 @@ document.addEventListener('keydown', function(e) {
       invEl.innerHTML =
         '<div class="inventory-label">⬡ INVENTORY</div>' +
         '<div class="inventory-val" style="color:var(--gold);">' + (inv.fertilizer||0) + ' FERT</div>' +
-        '<div class="inventory-val">' + (inv.dnaFragments||0) + ' DNA</div>' +
         '<div class="inventory-val" style="color:var(--muted);font-size:0.55rem;">· ' + subTotal + ' SUBSTRATE</div>';
     }
   }
@@ -38349,7 +38348,6 @@ document.addEventListener('keydown', function(e) {
       }
     } catch(e) {}
     var fertReward = _fertTable[_gradeForFert] || 1;
-    var dnaReward = fertReward;
     var substrateKey = String(t.base || 0);
     var _srcTraits = {
       tierName: _tg.name, tierScore: _tg.score || 0,
@@ -38357,7 +38355,7 @@ document.addEventListener('keydown', function(e) {
       hasRareAura: (t.aura >= 18),
       baseIndex: t.base || 0, leafType: t.leafType || 0, auraIndex: t.aura || 0
     };
-    var reward = { dnaFragments: dnaReward, fertilizer: fertReward, substrateKey: substrateKey, plantHash: plant.hash, ts: Date.now(), sourceTraits: _srcTraits };
+    var reward = { fertilizer: fertReward, substrateKey: substrateKey, plantHash: plant.hash, ts: Date.now(), sourceTraits: _srcTraits };
 
     // Step 3: write staging key BEFORE any production write
     try { localStorage.setItem(INV_STAGING, JSON.stringify({ reward: reward, plantIndex: plantIndex, plant: plant })); }
@@ -38388,7 +38386,6 @@ document.addEventListener('keydown', function(e) {
         if(window._toast)setTimeout(function(){window._toast('\ud83d\udca7 Compost Song. +'+_dr+' Dew from the song of decay');},1400);
       }
     }catch(e){}
-    inv.dnaFragments = (inv.dnaFragments || 0) + dnaReward;
     inv.fertilizer = (inv.fertilizer || 0) + fertReward;
     inv.lastCompostSource = _srcTraits;
     inv.substrate[substrateKey] = (inv.substrate[substrateKey] || 0) + 1;
@@ -38424,7 +38421,6 @@ document.addEventListener('keydown', function(e) {
         }
       } catch(e3) {}
       // Rollback inventory to pre-compost state
-      inv.dnaFragments -= dnaReward;
       inv.fertilizer = Math.max(0, (inv.fertilizer || 0) - fertReward);
       inv.substrate[substrateKey] = Math.max(0, (inv.substrate[substrateKey] || 1) - 1);
       try { localStorage.setItem(INV_KEY, JSON.stringify(inv)); } catch(e2) {}
@@ -38454,7 +38450,7 @@ document.addEventListener('keydown', function(e) {
     closePlantGallery();
     renderGreenhouse();
     updateDashboard();
-    showHexMsg('🧪 Composted. +' + fertReward + ' Fertilizer, +' + dnaReward + ' DNA added.');
+    showHexMsg('🧪 Composted. +' + fertReward + ' Fertilizer.');
     // First-compost breadcrumb
     try {
       var _cLogLen = (JSON.parse(localStorage.getItem('sws_compost_log') || '[]')).length;
@@ -38471,7 +38467,7 @@ document.addEventListener('keydown', function(e) {
       _cLog.push({ hash: plant.hash, tier: _tg.name, ts: Date.now() });
       localStorage.setItem('sws_compost_log', JSON.stringify(_cLog));
     } catch(e) {}
-    if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), dna: dnaReward });
+    if (typeof gtag !== 'undefined') gtag('event', 'plant_composted', { hash: plant.hash.slice(0,8), fert: fertReward });
     if (window._trackQuest) window._trackQuest('composted', 1);
     if (window.LW_Log) window.LW_Log.write('plant_composted', { hash: plant.hash, name: typeof getPlantName === 'function' ? getPlantName(plant.hash) : '', tier: _tg.name, fertilizer: fertReward });
     // Leveling archetype: Scarab Beetle (64) Action — +1 per compost.
@@ -38503,7 +38499,6 @@ document.addEventListener('keydown', function(e) {
       var inv = loadInventory();
       var r = pending.reward;
       if (r) {
-        inv.dnaFragments = (inv.dnaFragments || 0) + r.dnaFragments;
         inv.fertilizer = (inv.fertilizer || 0) + (r.fertilizer || 0);
         inv.substrate[r.substrateKey] = (inv.substrate[r.substrateKey] || 0) + 1;
         inv.lastUpdated = new Date().toISOString();
@@ -65969,13 +65964,6 @@ window._openMysteryBox = function() {
         var inv = JSON.parse(localStorage.getItem('sws_inventory') || '{}');
         inv.fertilizer = (inv.fertilizer || 0) + loot.fert;
         localStorage.setItem('sws_inventory', JSON.stringify(inv));
-      } catch(e) {}
-    }
-    if (loot.dna) {
-      try {
-        var inv2 = JSON.parse(localStorage.getItem('sws_inventory') || '{}');
-        inv2.dnaFragments = (inv2.dnaFragments || 0) + loot.dna;
-        localStorage.setItem('sws_inventory', JSON.stringify(inv2));
       } catch(e) {}
     }
     if (loot.sb && typeof window.earnHashes === 'function') window.earnHashes(loot.sb);
