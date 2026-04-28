@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.36';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.37';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -65874,13 +65874,13 @@ var MYSTERY_COST = 25;
 // Loot tuned to ~84% RTP with conservative value estimates
 // (1 fert ≈ 5 dew, 1 DNA ≈ 1 dew, 1 Sunbeam ≈ 1 dew).
 var MYSTERY_LOOT = [
-  { weight: 0.30, icon: '\ud83c\udf3e', name: 'Seed Shell',  desc: '+2 Fertilizer',                          fert:  2, rare: false },
-  { weight: 0.25, icon: '\u2600\ufe0f', name: 'Sun Spark',   desc: '+10 Sunbeams',                           sb:   10, rare: false },
-  { weight: 0.20, icon: '\u2728',       name: 'Sun Drop',    desc: '+20 Sunbeams',                           sb:   20, rare: false },
-  { weight: 0.15, icon: '\ud83d\udca7', name: 'Dew Pearl',   desc: '+15 Dew',                                dew:  15, rare: false },
-  { weight: 0.07, icon: '\ud83c\udf19', name: 'Moon Shard',  desc: '+40 Sunbeams +1 Fertilizer',             sb:  40, fert: 1, rare: true },
-  { weight: 0.02, icon: '\ud83c\udf20', name: 'Starstone',   desc: '+120 Sunbeams +3 Fertilizer',            sb: 120, fert: 3, rare: true },
-  { weight: 0.01, icon: '\ud83d\udc8e', name: 'JACKPOT!',    desc: '+300 Sunbeams +5 Fertilizer +30 Dew',    sb: 300, fert: 5, dew: 30, rare: true, jackpot: true }
+  { weight: 0.30, icon: '\ud83c\udf3e', iconImg: 'assets/fx/bloom-sprout.png',     name: 'Seed Shell',  desc: '+2 Fertilizer',                          fert:  2, rare: false },
+  { weight: 0.25, icon: '\u2600\ufe0f', iconImg: 'assets/fx/bloom-sun.png',         name: 'Sun Spark',   desc: '+10 Sunbeams',                           sb:   10, rare: false },
+  { weight: 0.20, icon: '\u2728',       iconImg: 'assets/fx/drop-gold.png',         name: 'Sun Drop',    desc: '+20 Sunbeams',                           sb:   20, rare: false },
+  { weight: 0.15, icon: '\ud83d\udca7', iconImg: 'assets/fx/drop-blue.png',         name: 'Dew Pearl',   desc: '+15 Dew',                                dew:  15, rare: false },
+  { weight: 0.07, icon: '\ud83c\udf19', iconImg: 'assets/fx/moon-gold.png',         name: 'Moon Shard',  desc: '+40 Sunbeams +1 Fertilizer',             sb:  40, fert: 1, rare: true },
+  { weight: 0.02, icon: '\ud83c\udf20', iconImg: 'assets/fx/comet-gold.png',        name: 'Starstone',   desc: '+120 Sunbeams +3 Fertilizer',            sb: 120, fert: 3, rare: true },
+  { weight: 0.01, icon: '\ud83d\udc8e', iconImg: 'assets/fx/sparkle-purple.png',    name: 'JACKPOT!',    desc: '+300 Sunbeams +5 Fertilizer +30 Dew',    sb: 300, fert: 5, dew: 30, rare: true, jackpot: true }
 ];
 
 function _pickLoot() {
@@ -65957,7 +65957,13 @@ window._openMysteryBox = function() {
   // Shake for 900ms then reveal
   setTimeout(function() {
     var loot = _pickLoot();
-    if (box) { box.classList.remove('shaking'); box.classList.add('opened'); box.innerHTML = '<span style="font-size:5.5rem;">' + loot.icon + '</span>'; }
+    if (box) {
+      box.classList.remove('shaking'); box.classList.add('opened');
+      var _lootIcoHtml = loot.iconImg
+        ? '<img src="'+loot.iconImg+'" alt="" style="width:5.5rem;height:5.5rem;object-fit:contain;display:inline-block;" onerror="this.outerHTML=\''+(loot.icon||'').replace(/\'/g,"&#39;")+'\';">'
+        : loot.icon;
+      box.innerHTML = '<span style="font-size:5.5rem;">' + _lootIcoHtml + '</span>';
+    }
     // Apply rewards
     if (loot.fert) {
       try {
