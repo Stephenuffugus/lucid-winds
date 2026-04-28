@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.4';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2695,6 +2695,19 @@
     .lw-hut .lwh-quest-btn{width:100%;font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.1em;background:linear-gradient(180deg,rgba(122,179,86,0.4),rgba(46,90,32,0.6));border:1.5px solid rgba(122,179,86,0.7);color:var(--cream);border-radius:8px;padding:0.55rem 0.6rem;cursor:pointer;min-height:48px;}
     .lw-hut .lwh-quest-btn.broke{background:rgba(40,40,40,0.45);border-color:rgba(120,120,120,0.35);color:var(--muted);cursor:not-allowed;}
     .lw-hut .lwh-quest-claimed{font-family:'Playfair Display',serif;font-style:italic;font-size:0.55rem;color:var(--sage);text-align:center;padding:0.5rem;}
+    .lw-hut .lwh-quest-why{margin:0.4rem 0 0.85rem;padding:0.55rem 0.65rem;background:rgba(13,16,12,0.55);border-left:3px solid rgba(200,168,75,0.55);border-radius:0 6px 6px 0;font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);line-height:1.5;}
+    /* Trade completion celebration overlay (richer than a toast) */
+    .lwh-trade-celebrate{position:fixed;inset:0;z-index:100022;display:flex;align-items:center;justify-content:center;background:rgba(8,10,6,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fadeIn 0.25s ease;}
+    .lwh-trade-celebrate-inner{background:linear-gradient(180deg,rgba(60,52,40,0.95),rgba(28,22,14,0.98));border:2px solid rgba(200,168,75,0.7);border-radius:16px;padding:1.4rem 1.2rem;max-width:320px;text-align:center;box-shadow:0 18px 60px rgba(0,0,0,0.85),0 0 28px rgba(200,168,75,0.35);animation:tradeSlamIn 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+    .lwh-trade-celebrate-title{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.18em;color:var(--gold);margin-bottom:0.4rem;}
+    .lwh-trade-celebrate-art{width:120px;height:120px;margin:0.3rem auto 0.6rem;display:flex;align-items:center;justify-content:center;animation:tradeArtPulse 1.6s ease-in-out infinite;}
+    .lwh-trade-celebrate-art img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 0 14px rgba(200,168,75,0.55));}
+    .lwh-trade-celebrate-name{font-family:'Playfair Display',serif;font-size:0.95rem;color:var(--cream);margin-bottom:0.25rem;}
+    .lwh-trade-celebrate-tier{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.7rem;}
+    .lwh-trade-celebrate-desc{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);line-height:1.55;margin-bottom:1rem;opacity:0.92;}
+    .lwh-trade-celebrate-btn{width:100%;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.12em;background:linear-gradient(180deg,rgba(200,168,75,0.4),rgba(160,128,55,0.6));border:1.5px solid rgba(200,168,75,0.7);color:var(--cream);border-radius:10px;padding:0.65rem;cursor:pointer;min-height:48px;}
+    @keyframes tradeSlamIn{0%{transform:scale(0.6) translateY(20px);opacity:0;}60%{transform:scale(1.05) translateY(0);opacity:1;}100%{transform:scale(1) translateY(0);opacity:1;}}
+    @keyframes tradeArtPulse{0%,100%{transform:scale(1) rotate(-1deg);}50%{transform:scale(1.06) rotate(1deg);}}
 
     /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots) */
     #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:70px;height:70px;flex-shrink:0;overflow:hidden;}
@@ -77450,7 +77463,7 @@ window._lwClaimHerbarium = function(id){
           '<button class="lwh-tab active" data-tab="shop"    onclick="LW_HUT.switchTab(\'shop\')">SHOP</button>' +
           '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> ALMANAC</button>' +
           '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">SLOTS</button>' +
-          '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">QUESTS</button>' +
+          '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">TRADE</button>' +
         '</div>' +
         '<div class="lwh-body" id="lwh-body"></div>' +
       '</div>';
@@ -77820,7 +77833,7 @@ window._lwClaimHerbarium = function(id){
     var give = cat[q.recipe.give.key] || {};
     var have = (window.LW_ITEMS && window.LW_ITEMS.count) ? window.LW_ITEMS.count(q.recipe.ask.key) : 0;
     var canTrade = have >= q.recipe.ask.n && !q.claimed;
-    var html = '<div class="lwh-section-text">The hermit speaks.</div>';
+    var html = '<div class="lwh-section-text">The hermit offers a fair swap. New trade every midnight.</div>';
     html += '<div class="lwh-quest-card">';
     html += '<div class="lwh-quest-text">"'+q.recipe.text+'"</div>';
     html += '<div class="lwh-quest-trade">';
@@ -77832,19 +77845,25 @@ window._lwClaimHerbarium = function(id){
     html += '</div>';
     html += '<div class="lwh-quest-arrow">→</div>';
     html += '<div class="lwh-quest-side">';
-    html += '<div class="lwh-quest-label">HE GIVES</div>';
+    html += '<div class="lwh-quest-label">YOU GET</div>';
     html += '<div class="lwh-quest-art">'+itemArt(q.recipe.give.key, give.icon)+'</div>';
-    html += '<div class="lwh-quest-itemname">'+(give.name||'?')+'</div>';
-    html += '<div class="lwh-quest-count">×'+q.recipe.give.n+'</div>';
+    html += '<div class="lwh-quest-itemname">'+(give.name||'?')+(q.recipe.give.n>1?' ×'+q.recipe.give.n:'')+'</div>';
+    html += '<div class="lwh-quest-count">'+(give.rarity||'')+'</div>';
     html += '</div>';
     html += '</div>';
+    // Tells the player WHY this trade matters — the give-item's effect.
+    // Stephen 2026-04-28: "why would i want that trade? doesnt make sense
+    // and its poorly explained". Catalog desc surfaced below the swap.
+    if (give.desc){
+      html += '<div class="lwh-quest-why"><span style="font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;color:var(--gold);font-size:0.55rem;">WHAT IT DOES</span><br>'+give.desc+'</div>';
+    }
     if (q.claimed){
-      html += '<div class="lwh-quest-claimed">Trade complete. Return tomorrow.</div>';
+      html += '<div class="lwh-quest-claimed">Trade complete. The hermit returns at midnight.</div>';
     } else {
-      html += '<button class="lwh-quest-btn'+(canTrade?'':' broke')+'" onclick="LW_HUT.claimQuest()">'+(canTrade?'COMPLETE THE TRADE':('NEED '+(q.recipe.ask.n - have)+' MORE'))+'</button>';
+      html += '<button class="lwh-quest-btn'+(canTrade?'':' broke')+'" onclick="LW_HUT.claimQuest()">'+(canTrade?'COMPLETE TRADE':('NEED '+(q.recipe.ask.n - have)+' MORE'))+'</button>';
     }
     html += '</div>';
-    html += '<div class="lwh-section-foot">A new ask each day at midnight</div>';
+    html += '<div class="lwh-section-foot">One trade per day · resets at midnight</div>';
     body.innerHTML = html;
   }
   function claimQuest(){
@@ -77867,11 +77886,26 @@ window._lwClaimHerbarium = function(id){
     try { localStorage.setItem(QUEST_KEY, JSON.stringify(q)); } catch(e){}
     if (window._haptic) try { window._haptic('bloom'); } catch(e){}
     if (typeof gtag !== 'undefined') gtag('event','hut_quest_complete',{ask:q.recipe.ask.key,give:q.recipe.give.key});
-    // Confirmation toast — show what you got from the trade
-    if (window._toast){
-      var _gNm = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[q.recipe.give.key] && window.LW_ITEMS_CATALOG[q.recipe.give.key].name) || q.recipe.give.key;
-      try { window._toast('<span class="lwe lwe-leaf"></span> ' + (q.recipe.give.n>1?q.recipe.give.n+'× ':'') + _gNm + ' added to your pouch', { html:true }); } catch(e){}
-    }
+    // Stephen 2026-04-28: "completely bland" — replace tiny toast with a
+    // celebration overlay showing the new item's art + name + effect.
+    var _gItem = (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[q.recipe.give.key]) || {};
+    var _gNm = _gItem.name || q.recipe.give.key;
+    var _gN  = q.recipe.give.n || 1;
+    var _gDesc = _gItem.desc || '';
+    var _gTier = _gItem.rarity || '';
+    var _gArt = itemArt(q.recipe.give.key, _gItem.icon || '');
+    var _cel = document.createElement('div');
+    _cel.className = 'lwh-trade-celebrate';
+    _cel.innerHTML = '<div class="lwh-trade-celebrate-inner">' +
+      '<div class="lwh-trade-celebrate-title">TRADE COMPLETE</div>' +
+      '<div class="lwh-trade-celebrate-art">'+_gArt+'</div>' +
+      '<div class="lwh-trade-celebrate-name">'+(_gN>1?_gN+'× ':'')+_gNm+'</div>' +
+      (_gTier?'<div class="lwh-trade-celebrate-tier">'+_gTier.toUpperCase()+'</div>':'') +
+      (_gDesc?'<div class="lwh-trade-celebrate-desc">'+_gDesc+'</div>':'') +
+      '<button class="lwh-trade-celebrate-btn" onclick="this.parentElement.parentElement.remove();">CONTINUE</button>' +
+      '</div>';
+    _cel.addEventListener('click', function(e){ if (e.target === _cel) _cel.remove(); });
+    document.body.appendChild(_cel);
     render();
   }
 
