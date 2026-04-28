@@ -837,7 +837,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.24';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.28.25';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5317,23 +5317,26 @@ body:not(.tab-wild) #w-my-plants{display:none!important;}
    under the close button. */
 #bpe-title{position:absolute;top:calc(20px + env(safe-area-inset-top,0px));left:0;right:0;z-index:1009;display:none;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.2em;color:var(--gold);text-shadow:0 2px 6px rgba(0,0,0,0.85);pointer-events:none;}
 #bpe.open #bpe-title{display:block;}
-/* Plant column. 2026-04-27 comfort pass: width 68px → 92px so 64-px
-   tiles aren't visually crammed against the right edge. Side gutter
-   widened from 4 to 8 so taps near the edge don't scroll the body. */
-#bpp{position:fixed;top:calc(112px + env(safe-area-inset-top,0px));right:10px;width:92px;max-height:calc(100vh - 220px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;padding:6px 8px 8px;z-index:1000;opacity:0;transform:translateY(-24px);transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;}
+/* ═══ BACKPACK PANEL — bag-style mockup 2026-04-28 ═══
+   Single centered container with stacked sections (plants / seeds /
+   items) inside a solid dark surface. Was two floating columns at the
+   right edge of the screen with a blurred game behind — Stephen flagged
+   that as sloppy. */
+#bpp{position:fixed;top:calc(72px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(-24px);width:min(360px,calc(100vw - 28px));max-height:34vh;overflow-y:auto;overflow-x:hidden;display:flex;flex-wrap:wrap;gap:10px;padding:42px 14px 14px;z-index:1000;opacity:0;transition:opacity 0.3s ease 0.05s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;scrollbar-width:none;background:linear-gradient(180deg,rgba(34,28,18,0.96),rgba(20,18,12,0.98));border:2px solid rgba(120,90,40,0.55);border-radius:16px 16px 6px 6px;box-shadow:0 8px 28px rgba(0,0,0,0.7),inset 0 1px 0 rgba(200,168,75,0.18),inset 0 0 0 1px rgba(60,44,22,0.4);justify-content:center;}
 /* Hide the Book of Secrets while backpack panel is open so seeds don't
    render behind it. Backpack panel has z-index 1000 (above 999 book). */
 body:has(#bpe.open) #kb-compendium{display:none !important;}
 #bpp::-webkit-scrollbar{display:none;}
-#bpe.open #bpp{opacity:1;transform:translateY(0);}
+#bpe.open #bpp{opacity:1;transform:translateX(-50%) translateY(0);}
 /* Seed panel: vertical strip just left of the backpack plant column so
    seeds sit next to the backpack instead of drifting to the top corner.
    3x-ish larger than the old 42px tiles — reads as real inventory now. */
-/* Seed column. Right offset bumped 88 → 112 to clear the wider plant
-   column. Gap and padding bumped for breathing room. */
-#bps{position:fixed;top:calc(112px + env(safe-area-inset-top,0px));right:112px;width:108px;max-height:calc(100vh - 220px);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;align-items:center;padding:6px 4px 8px;z-index:1002;opacity:0;transform:translateX(24px);transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;}
+/* Seed + items panel — sits below the plant section, same centered bag
+   width, separate solid surface so the two sections read as distinct
+   compartments. Items strip auto-appends inside the seed render. */
+#bps{position:fixed;top:calc(72px + 34vh + 14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(24px);width:min(360px,calc(100vw - 28px));max-height:42vh;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px;align-items:start;padding:14px 14px 14px;z-index:1002;opacity:0;transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;background:linear-gradient(180deg,rgba(20,18,12,0.98),rgba(34,28,18,0.96));border:2px solid rgba(120,90,40,0.55);border-radius:6px 6px 16px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.7),inset 0 -1px 0 rgba(200,168,75,0.18),inset 0 0 0 1px rgba(60,44,22,0.4);}
 #bps::-webkit-scrollbar{display:none;}
-#bpe.open #bps{opacity:1;transform:translateX(0);pointer-events:auto;}
+#bpe.open #bps{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
 /* When BP is open, dim the wild FABs + hamburger menu so they read as
    inactive and don't visually compete with the open inventory. The bps
    description panel sits at z 1002 so it's above all FABs. */
