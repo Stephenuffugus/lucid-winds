@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.13';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -873,10 +873,25 @@
         console.log('[LW] Reset anti-farming timer for new 10min window.');
       }
       localStorage.setItem('lw_version',LW_VERSION);
-      console.log('[LW] Version changed: '+stored+' → '+LW_VERSION+'. Reloading.');
-      // Cache-bust: append version to URL to bypass CDN/browser cache
-      var _cbUrl=location.href.split('?')[0]+'?v='+LW_VERSION;
-      location.replace(_cbUrl);
+      console.log('[LW] Version changed: '+stored+' → '+LW_VERSION+'. Nuking SW + caches + reloading.');
+      // Nuclear cache flush on every version bump — kills the
+      // "old service worker keeps serving stale HTML" problem
+      // (Stephen 2026-04-30: stuck for hours on stale builds).
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          navigator.serviceWorker.getRegistrations().then(function(regs){
+            for (var ri=0; ri<regs.length; ri++) regs[ri].unregister();
+          });
+        }
+        if (window.caches && caches.keys) {
+          caches.keys().then(function(ks){
+            for (var ki=0; ki<ks.length; ki++) caches.delete(ks[ki]);
+          });
+        }
+      } catch(e){}
+      // Cache-bust: append unique timestamp so even Cloudflare misses
+      var _cbUrl=location.href.split('?')[0]+'?v='+LW_VERSION+'&t='+Date.now();
+      setTimeout(function(){ location.replace(_cbUrl); }, 200);
       return;
     }
     localStorage.setItem('lw_version',LW_VERSION);
