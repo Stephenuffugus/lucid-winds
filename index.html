@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.6';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2314,7 +2314,7 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(44px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(118px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
     .grove-panel.active{display:block;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
@@ -6527,7 +6527,7 @@ window._addSwitchTabHook = function(fn){
       </div>
       <div class="lw-quest-arrow">&rsaquo;</div>
     </div>
-    <div id="gh-season-strip" style="display:flex;justify-content:center;gap:0.5rem;padding:0.15rem 0.5rem;font-family:DM Mono,monospace;font-size:0.5rem;"></div>
+    <div id="gh-season-strip" style="display:none;justify-content:center;gap:0.5rem;padding:0.15rem 0.5rem;font-family:DM Mono,monospace;font-size:0.5rem;"></div>
     <div id="gh-spotlight" style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);text-align:center;padding:0.15rem 0;min-height:1em;"></div>
     <div id="gh-collection-stats" style="display:none;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);text-align:center;padding:0.1rem 0.5rem;"></div>
     <div id="gh-recent-wrap" style="display:none;">
@@ -35478,23 +35478,11 @@ document.addEventListener('keydown', function(e) {
     } else if (_spotEl) { _spotEl.textContent = ''; }
 
     // ── Seasonal Status Strip ──
+    // Season strip parked 2026-04-30 \u2014 Stephen called it "almost invisible
+    // flower with a 0 and a star at the top above my cards"; he wants the
+    // cards to be the main visual on greenhouse, not metadata strips.
     var _ssStrip = document.getElementById('gh-season-strip');
-    if (_ssStrip && gh.length >= 2) {
-      var _ssEmblems = ['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
-      var _ssNames = ['Spring','Summer','Autumn','Winter'];
-      var _ssColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
-      var _ssCounts = [0,0,0,0];
-      var _curMonth = new Date().getMonth();
-      var _curSeason = _curMonth < 3 ? 3 : _curMonth < 6 ? 0 : _curMonth < 9 ? 1 : 2;
-      gh.forEach(function(p) { try { var t = hashToTraits(p.hash); _ssCounts[t.season]++; } catch(e){} });
-      var _ssH = '';
-      for (var _ssi = 0; _ssi < 4; _ssi++) {
-        var _isPeak = _ssi === _curSeason;
-        _ssH += '<span style="color:' + _ssColors[_ssi] + ';opacity:' + (_ssCounts[_ssi] > 0 ? '1' : '0.3') + ';">' + (window._lwSeasonEmblem?_lwSeasonEmblem(_ssi,32):_ssEmblems[_ssi]) + ' ' + _ssCounts[_ssi] + (_isPeak ? ' \u2605' : '') + '</span>';
-      }
-      _ssStrip.innerHTML = _ssH;
-      _ssStrip.style.display = 'flex';
-    } else if (_ssStrip) { _ssStrip.style.display = 'none'; }
+    if (_ssStrip) _ssStrip.style.display = 'none';
 
     // ── Collection stats (total EA, rarest grade, companion count) ──
     var _csEl = document.getElementById('gh-collection-stats');
