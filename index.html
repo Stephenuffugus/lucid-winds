@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.15';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2623,7 +2623,7 @@
     .lw-hut .lwh-tab{flex:1;background:none;border:none;border-bottom:2px solid transparent;color:rgba(200,188,160,0.55);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;padding:0.55rem 0.2rem;cursor:pointer;min-height:44px;transition:all 0.15s;}
     .lw-hut .lwh-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.14),transparent);}
     .lw-hut .lwh-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.7rem 0.6rem 1.2rem;}
-    .lw-hut .lwh-section-text{font-family:'Playfair Display',serif;font-style:italic;font-size:0.6rem;color:var(--cream);text-align:center;margin-bottom:0.6rem;opacity:0.8;}
+    .lw-hut .lwh-section-text{font-family:'Playfair Display',serif;font-style:italic;font-size:0.85rem;color:var(--cream);text-align:center;margin-bottom:0.7rem;opacity:0.85;line-height:1.5;}
     .lw-hut .lwh-section-foot{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);text-align:center;margin-top:0.6rem;}
     .lw-hut .lwh-pouch-buy{display:inline-block;margin-left:6px;padding:3px 8px;border-radius:6px;border:1px solid rgba(200,168,75,0.55);background:rgba(200,168,75,0.18);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;vertical-align:middle;}
     .lw-hut .lwh-pouch-buy:hover{background:rgba(200,168,75,0.28);}
@@ -2686,8 +2686,9 @@
     .lw-hut .lwh-slots-frame{display:flex;flex-direction:column;align-items:center;gap:0.5rem;padding:0.4rem 0.2rem;}
     .lw-hut .lwh-slots-art{width:100%;max-width:300px;filter:drop-shadow(0 6px 18px rgba(200,168,75,0.4));}
     .lw-hut .lwh-slots-art img{display:block;width:100%;height:auto;border-radius:10px;}
-    .lw-hut .lwh-slots-summary{font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--cream);text-align:center;line-height:1.7;padding:0.5rem 0.7rem;background:rgba(13,16,12,0.6);border-radius:8px;width:100%;}
-    .lw-hut .lwh-slots-summary b{color:var(--gold);}
+    .lw-hut .lwh-slots-summary{font-family:'DM Mono',monospace;font-size:0.85rem;color:var(--cream);text-align:center;line-height:1.8;padding:0.7rem 0.9rem;background:rgba(13,16,12,0.6);border-radius:8px;width:100%;}
+    .lw-hut .lwh-slots-summary b{color:var(--gold);font-size:1.05em;}
+    .lw-hut .lwh-slots-summary .lwe{width:1.3em;height:1.3em;vertical-align:-0.28em;}
     .lw-hut .lwh-slots-pull{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;background:linear-gradient(180deg,var(--gold),#a88a2f);border:none;color:#0d100c;border-radius:8px;padding:0.7rem 1.6rem;cursor:pointer;min-height:48px;width:100%;box-shadow:0 3px 10px rgba(200,168,75,0.3);}
 
     /* QUESTS card */
@@ -74997,15 +74998,32 @@ function _bosMementosContent() {
   try { collected = JSON.parse(localStorage.getItem('lw_companion_mementos') || '[]'); } catch(e) {}
   var equipLog = {};
   try { equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}'); } catch(e) {}
+  // Detect a CURRENTLY-equipped companion so the button + empty-state copy
+  // reflect reality. Either the primary slot or the L3-master second slot
+  // counts. Stephen 2026-04-29.
+  var hasActive = false;
+  try {
+    var _a1 = JSON.parse(localStorage.getItem('pw_active_companion') || 'null');
+    var _a2 = JSON.parse(localStorage.getItem('pw_active_companion_2') || 'null');
+    hasActive = !!((_a1 && typeof _a1.idx === 'number') || (_a2 && typeof _a2.idx === 'number'));
+  } catch(e) {}
   var now = Date.now();
   var THIRTY = 30 * 86400000;
 
-  // Prominent EQUIP button at the top so players don't have to hunt for it
-  var h = '<button onclick="var _bos=document.getElementById(\'bos-overlay\');if(_bos)_bos.remove();setTimeout(function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();},200);" style="width:100%;padding:0.75rem;margin-bottom:0.8rem;border:2px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(200,168,75,0.15);"><span class="lwe lwe-paw"></span> EQUIP COMPANION</button>';
+  // Prominent EQUIP button at the top so players don't have to hunt for it.
+  // Wording flips to CHANGE COMPANION once one is already active.
+  var _btnLabel = hasActive ? 'CHANGE COMPANION' : 'EQUIP COMPANION';
+  var h = '<button onclick="var _bos=document.getElementById(\'bos-overlay\');if(_bos)_bos.remove();setTimeout(function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();},200);" style="width:100%;padding:0.75rem;margin-bottom:0.8rem;border:2px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(200,168,75,0.15);"><span class="lwe lwe-paw"></span> ' + _btnLabel + '</button>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;"><b style="color:var(--gold);">Mementos</b> are keepsakes from your friends in the garden. They appear when a companion has been with you a long time, when you reach a milestone, when another player gifts you something, and from many quieter moments along the way. Each one is yours forever.</div>';
 
-  if (!collected.length && !Object.keys(equipLog).length) {
+  if (!collected.length && !Object.keys(equipLog).length && !hasActive) {
     h += '<div style="padding:1.2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.58rem;line-height:1.7;">Equip a companion to start a bond.<br>Mementos collect here as you play.</div>';
+    return h;
+  }
+  // Active companion but no mementos yet — bond is started, just no rewards
+  // landed. Tell the player that, instead of asking them to do what they did.
+  if (!collected.length && !Object.keys(equipLog).length && hasActive) {
+    h += '<div style="padding:1.2rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.58rem;line-height:1.7;">The bond is fresh. Mementos collect here as time, milestones, and quiet moments accumulate.</div>';
     return h;
   }
 
