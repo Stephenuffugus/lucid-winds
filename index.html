@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.31';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -35280,6 +35280,7 @@ document.addEventListener('keydown', function(e) {
   };
 
   window.expandGHSlot = function() {
+    if (window._toast) window._toast('🔍 [DEBUG] expandGHSlot fired');
     var current = getGHSlots();
     if (current >= GH_SLOTS_MAX) {
       showHexMsg('Maximum 60 slots reached.');
@@ -35287,10 +35288,8 @@ document.addEventListener('keydown', function(e) {
     }
 
     // ── Pi Payment Hook ──────────────────────────────────
-    // When LW_PI_ENABLED is true (Cloud Functions deployed), payments
-    // route through window.LW_Pi.buySlot for real Pi charge. During
-    // beta (default) the expansion is free with a confirmation modal.
     var _piOn = !!window.LW_PI_ENABLED;
+    if (window._toast) window._toast('🔍 [DEBUG] LW_PI_ENABLED=' + _piOn + ' · LW_Pi=' + (!!window.LW_Pi) + ' · buySlot=' + (!!(window.LW_Pi && window.LW_Pi.buySlot)));
     var _bodyCopy = _piOn
       ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
       : 'Add slot ' + (current + 1) + '?';
@@ -65677,6 +65676,7 @@ function authenticate(cb){
 }
 
 function createPayment(amount,memo,metadata,onSuccess,onCancel){
+  if(window._toast)window._toast('🔍 [DEBUG] createPayment '+amount+'π · piReady='+_piReady+' · Pi='+(typeof Pi));
   if(!window.LW_PI_ENABLED){
     if(window._toast)window._toast('Pi payments arrive in the full launch. Thank you for testing.');
     else if(window.showHexMsg)showHexMsg('Payments coming soon');
@@ -65684,9 +65684,11 @@ function createPayment(amount,memo,metadata,onSuccess,onCancel){
     return;
   }
   if(!_piReady){
+    if(window._toast)window._toast('🔍 [DEBUG] Pi SDK not ready. Are you in Pi Browser at sandbox.minepi.com?');
     if(window.showHexMsg)showHexMsg('Pi payments not available. Open in Pi Browser.');
     return;
   }
+  if(window._toast)window._toast('🔍 [DEBUG] calling Pi.createPayment...');
   Pi.createPayment({amount:amount,memo:memo,metadata:metadata},{
     onReadyForServerApproval:function(paymentId){
       _approvePayment(paymentId);
