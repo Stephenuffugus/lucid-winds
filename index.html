@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6524,10 +6524,7 @@ window._addSwitchTabHook = function(fn){
   <div class="grove-panel active" id="panel-greenhouse">
     <div class="panel-header">
       <div class="panel-header-title">PLANTS</div>
-      <div style="display:flex;align-items:center;gap:0.4rem;">
-        <div class="greenhouse-count" id="gh-count">0 / 10</div>
-        <button id="gh-expand-btn" onclick="expandGHSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.42));border:1.5px solid rgba(200,168,75,0.65);color:var(--gold);border-radius:10px;padding:0.5rem 0.85rem;cursor:pointer;min-height:60px;white-space:nowrap;box-shadow:0 2px 8px rgba(200,168,75,0.2);display:inline-flex;align-items:center;gap:8px;"><img src="assets/buttons/btn-pi.png" alt="" style="width:48px;height:48px;object-fit:contain;display:inline-block;flex-shrink:0;"> + SLOT</button>
-      </div>
+      <div class="greenhouse-count" id="gh-count">0 / 10</div>
     </div>
     <div class="gh-progress">
       <div class="gh-progress-bar"><div class="gh-progress-fill" id="gh-progress-fill" style="width:0%"></div></div>
@@ -35255,6 +35252,49 @@ document.addEventListener('keydown', function(e) {
     });
   };
 
+  // Bulk-buy 10 greenhouse slots for 10π. Stephen 2026-04-30: "maybe make
+  // it buy 10 for 10 here." Same per-slot price (1π each) but one tap.
+  // Caps at GH_SLOTS_MAX (60) — partial bundle if fewer slots available.
+  window.expandGHSlot10 = function() {
+    var current = getGHSlots();
+    var available = GH_SLOTS_MAX - current;
+    if (available <= 0) { showHexMsg('Maximum ' + GH_SLOTS_MAX + ' slots reached.'); return; }
+    var qty = Math.min(10, available);
+    var cost = qty;
+    var _piOn = !!window.LW_PI_ENABLED;
+    _lwConfirm({
+      title: 'EXPAND GREENHOUSE',
+      body: 'Add ' + qty + ' slots (slot ' + (current + 1) + ' through ' + (current + qty) + ')' + (_piOn ? ' for <b>' + cost + ' Pi</b>?' : '?'),
+      yes: _piOn ? ('PAY ' + cost + ' PI') : 'EXPAND',
+      no: 'NOT YET'
+    }, function() {
+      var _apply = function(){
+        var newSlots = setGHSlots(current + qty);
+        MAX_COLLECTION_SIZE = newSlots;
+        _haptic('tab');
+        renderGreenhouse();
+        showHexMsg('Greenhouse expanded by ' + qty + ' to ' + newSlots + ' slots.');
+        if (typeof gtag !== 'undefined') gtag('event', 'gh_slot_bulk_expanded', { qty: qty, slots: newSlots });
+        try { if (window.LW_ACH) LW_ACH.set('gh_max_slots', newSlots); } catch(e){}
+        for (var k = 0; k < qty; k++) _claimFromReserve();
+      };
+      if (_piOn && window.LW_Pi && window.LW_Pi.buySlotBundle) {
+        window.LW_Pi.buySlotBundle(qty, cost, function(ok){ if (ok) _apply(); });
+      } else if (_piOn && window.LW_Pi && window.LW_Pi.buySlot) {
+        // Fallback: chain single-slot buys. Each one prompts Pi.
+        // Bundle endpoint is the recommended path post-Cloud-Functions.
+        var _i = 0;
+        var _next = function(){
+          if (_i >= qty) { _apply(); return; }
+          window.LW_Pi.buySlot(current + 1 + _i, function(ok){ if (ok) { _i++; _next(); } });
+        };
+        _next();
+      } else {
+        _apply();
+      }
+    });
+  };
+
   // Claim one plant from reserve into greenhouse
   function _claimFromReserve() {
     var reserve = [];
@@ -35341,25 +35381,9 @@ document.addEventListener('keydown', function(e) {
     var _ghBadge = document.getElementById('nav-gh-badge');
     if (_ghBadge) { if (gh.length > 0) { _ghBadge.textContent = gh.length; _ghBadge.style.display = 'flex'; } else { _ghBadge.style.display = 'none'; } }
     if (fillEl) fillEl.style.width = pct + '%';
-    // Stephen 2026-04-30: button "appeared and then disappeared" — slot
-    // cap was already at GH_SLOTS_MAX (60) in his localStorage from prior
-    // testing, so the hide-when-maxed branch fired. Never hide; show a
-    // greyed MAXED state instead so the entry point stays discoverable.
-    var expandBtn = document.getElementById('gh-expand-btn');
-    if (expandBtn) {
-      expandBtn.style.display = '';
-      if (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) {
-        expandBtn.disabled = true;
-        expandBtn.style.opacity = '0.55';
-        expandBtn.style.cursor = 'default';
-        expandBtn.innerHTML = '<img src="assets/buttons/btn-pi.png" alt="" style="width:48px;height:48px;object-fit:contain;display:inline-block;flex-shrink:0;filter:grayscale(0.6);"> MAX · ' + GH_SLOTS_MAX;
-      } else {
-        expandBtn.disabled = false;
-        expandBtn.style.opacity = '';
-        expandBtn.style.cursor = 'pointer';
-        expandBtn.innerHTML = '<img src="assets/buttons/btn-pi.png" alt="" style="width:48px;height:48px;object-fit:contain;display:inline-block;flex-shrink:0;"> + SLOT';
-      }
-    }
+    // gh-expand-btn removed 2026-04-30 — Stephen wanted the buy-slot
+    // entry point INSIDE each empty grid slot, not floating in panel-
+    // header. Empty slots now render as buyable "+ SLOT · 1π" cards.
 
     // Reserve indicator — show if plants are waiting
     var _reserveEl = document.getElementById('gh-reserve-indicator');
@@ -35795,11 +35819,43 @@ document.addEventListener('keydown', function(e) {
             _ghostSvg +
             '<div class="gh-name" style="color:rgba(138,145,120,0.3);font-style:italic;">' + (_ghost.name || 'composted') + '</div>';
         } else {
-          // Undiscovered slot
-          el.className = 'greenhouse-plant undiscovered';
-          el.innerHTML =
-            '<div class="gh-slot">#' + (i + 1) + '</div>' +
-            '<div class="gh-mystery">' + UNDISCOVERED_SVG + '<div class="gh-question">?</div></div>';
+          // Empty slot — buyable. Stephen 2026-04-30: per-slot buy CTA
+          // replaces the panel-header + SLOT button. First slot beyond
+          // capacity offers the "Buy 1 · 1π" CTA; the slot after that
+          // offers the bulk "Buy 10 · 10π" bundle for keepers expanding
+          // in chunks. Beyond that we fade to plain "next slot" tiles.
+          var _emptyOffset = i - sorted.length; // 0 = first empty slot
+          el.className = 'greenhouse-plant gh-slot-buy';
+          el.style.cursor = 'pointer';
+          if (_emptyOffset === 0) {
+            // PRIMARY BUY CARD — gold-bordered, π badge, BUY 1 · 1π
+            el.style.cssText = 'background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:2px solid rgba(200,168,75,0.55);box-shadow:0 4px 14px rgba(0,0,0,0.55),0 0 16px rgba(200,168,75,0.18);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:544/736;';
+            el.onclick = function(){ if (window.expandGHSlot) expandGHSlot(); };
+            el.innerHTML =
+              '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.08em;">SLOT #' + (i + 1) + '</div>' +
+              '<img src="assets/buttons/btn-pi.png" alt="" style="width:88px;height:88px;object-fit:contain;display:block;">' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.12em;line-height:1;">+ 1 SLOT</div>' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.1em;">1 π</div>';
+          } else if (_emptyOffset === 1) {
+            // BULK BUY CARD — chunky 10-pack, lighter style. Stephen
+            // 2026-04-30: "maybe make it buy 10 for 10 here".
+            el.style.cssText = 'background:linear-gradient(180deg,rgba(36,30,16,0.85),rgba(20,24,16,0.9));border:2px dashed rgba(200,168,75,0.45);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;aspect-ratio:544/736;';
+            el.onclick = function(){ if (window.expandGHSlot10) expandGHSlot10(); else if (window.expandGHSlot) expandGHSlot(); };
+            el.innerHTML =
+              '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.08em;">BULK</div>' +
+              '<img src="assets/buttons/btn-pi.png" alt="" style="width:72px;height:72px;object-fit:contain;display:block;opacity:0.85;">' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.12em;line-height:1;">+ 10 SLOTS</div>' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.1em;">10 π</div>';
+          } else {
+            // Far-future empty slots — show subdued "next slot" tile so
+            // the grid still looks populated but doesn't shout BUY ten
+            // times in a row.
+            el.style.cssText = 'background:rgba(13,16,12,0.5);border:1px dashed rgba(122,179,86,0.18);opacity:0.6;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:544/736;';
+            el.onclick = function(){ if (window.expandGHSlot) expandGHSlot(); };
+            el.innerHTML =
+              '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.08em;">SLOT #' + (i + 1) + '</div>' +
+              '<div style="font-size:1.6rem;color:rgba(200,168,75,0.45);">+</div>';
+          }
         }
       }
 
