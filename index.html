@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.28.60';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.1';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44883,7 +44883,7 @@ function _lwAddBadgeMarker(zk,lat,lng){
   var html='<div class="lw-badge-stack">';
   for(var i=0;i<visible.length;i++){
     var b=visible[i];var col=LW_BADGE_COLOR[b.category]||'#fff';
-    html+='<span class="lw-badge-dot" style="background:'+col+';" title="'+b.label+'">'+(window._lwEmojiSprite?_lwEmojiSprite(b.icon,14):b.icon)+'</span>';
+    html+='<span class="lw-badge-dot" style="background:'+col+';" title="'+b.label+'">'+(window._lwEmojiSprite?_lwEmojiSprite(b.icon,22):b.icon)+'</span>';
   }
   if(overflow>0)html+='<span class="lw-badge-dot lw-badge-more">+'+overflow+'</span>';
   html+='</div>';
@@ -66198,7 +66198,7 @@ function _showDailyReward() {
     var color = isLogged ? 'var(--gold)' : isFuture ? 'var(--muted)' : 'rgba(192,112,112,0.5)';
     h += '<div title="' + (ms ? ms.label : '') + '" style="background:' + bg + ';border:1px solid ' + border + ';border-radius:4px;padding:2px;text-align:center;min-height:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;">';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:' + color + ';">' + d + '</div>';
-    if (ms) h += '<div style="font-size:0.5rem;line-height:1;margin-top:1px;">' + (window._lwEmojiSprite?_lwEmojiSprite(ms.icon,12):ms.icon) + '</div>';
+    if (ms) h += '<div style="font-size:0.5rem;line-height:1;margin-top:1px;">' + (window._lwEmojiSprite?_lwEmojiSprite(ms.icon,22):ms.icon) + '</div>';
     else if (isLogged) h += '<div style="font-size:0.22rem;color:var(--sage);">+' + tierReward + '</div>';
     h += '</div>';
   }
@@ -69342,7 +69342,7 @@ function _renderCard(el,plant,role,side){
       _bcLabel='\ud83e\uddec Bred '+_bc+'\u00d7';
       _bcColor='var(--muted)';
     }
-    h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?(window._lwEmojiSprite?_lwEmojiSprite(i.tg.icon,14):i.tg.icon):'')+' '+(i.tg?i.tg.name:'')+'</span>';
+    h+='<div class="bs-meta"><span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">'+(i.tg?(window._lwEmojiSprite?_lwEmojiSprite(i.tg.icon,22):i.tg.icon):'')+' '+(i.tg?i.tg.name:'')+'</span>';
     h+='<span style="color:'+(i.tg?i.tg.color:'var(--cream)')+';">EA '+i.ea+'</span>';
     h+='<span style="color:var(--muted);">'+(window._lwSeasonEmblem?_lwSeasonEmblem(i.season,26):_seasonEmblems[i.season])+' G'+(i.t?i.t.chimerGen||1:1)+'</span>';
     h+='<span style="color:'+_bcColor+';">'+_bcLabel+'</span>';
@@ -73213,7 +73213,7 @@ function _showMorningReport(){
     for(var i=0;i<lines.length;i++){
       var l=lines[i];
       h+='<div style="margin-bottom:0.6rem;opacity:0;animation:tierFadeIn 0.6s ease '+(0.3+i*0.4)+'s forwards;">';
-      h+='<span style="font-size:0.65rem;">'+(window._lwEmojiSprite?_lwEmojiSprite(l.icon,12):l.icon)+'</span>';
+      h+='<span style="font-size:0.65rem;">'+(window._lwEmojiSprite?_lwEmojiSprite(l.icon,22):l.icon)+'</span>';
       h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+l.color+';line-height:1.6;margin-top:0.15rem;">'+l.text+'</div>';
       h+='</div>';
     }
@@ -73720,7 +73720,7 @@ function _bosTreeContent() {
       h += _bosTreeBranchHtml(ub, pts, avail);
     } else {
       h += '<div style="margin-bottom:0.7rem;padding:0.55rem 0.7rem;background:rgba(13,16,12,0.5);border:1px dashed rgba(74,124,53,0.2);border-radius:10px;opacity:0.5;">';
-      h += '<div style="display:flex;align-items:center;gap:0.4rem;"><span style="font-size:0.9rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(ubDef.icon,16):ubDef.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;">' + ubDef.name.toUpperCase() + ' \u2014 LV ' + ubDef.unlockLvl + '</span></div>';
+      h += '<div style="display:flex;align-items:center;gap:0.4rem;"><span style="font-size:0.9rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(ubDef.icon,22):ubDef.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;">' + ubDef.name.toUpperCase() + ' \u2014 LV ' + ubDef.unlockLvl + '</span></div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;line-height:1.4;">Reach Keeper Lv ' + ubDef.unlockLvl + ' to open this path.</div>';
       h += '</div>';
     }
@@ -73732,7 +73732,7 @@ function _bosTreeContent() {
 function _bosTreeBranchHtml(bId, pts, avail) {
   var b = LW_TREE_BRANCHES[bId]; if (!b) return '';
   var h = '<div style="margin-bottom:0.7rem;padding:0.5rem 0.6rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:10px;">';
-  h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;"><span style="font-size:0.9rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(b.icon,16):b.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + b.color + ';letter-spacing:0.1em;">' + b.name.toUpperCase() + '</span></div>';
+  h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;"><span style="font-size:0.9rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(b.icon,22):b.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:' + b.color + ';letter-spacing:0.1em;">' + b.name.toUpperCase() + '</span></div>';
   for (var nId in LW_TREE_NODES) {
     if (!LW_TREE_NODES.hasOwnProperty(nId)) continue;
     var nd = LW_TREE_NODES[nId]; if (nd.branch !== bId) continue;
@@ -75098,7 +75098,7 @@ function _bosMementosContent() {
         if (!byFamily[famKey] || !byFamily[famKey].length) continue;
         var fm = FAM_META[famKey];
         h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.55rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:9px;">';
-        h += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.35rem;"><span style="font-size:0.75rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(fm.icon,14):fm.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + fm.color + ';letter-spacing:0.1em;">' + fm.name.toUpperCase() + ' \u00b7 ' + byFamily[famKey].length + '</span></div>';
+        h += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.35rem;"><span style="font-size:0.75rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(fm.icon,22):fm.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + fm.color + ';letter-spacing:0.1em;">' + fm.name.toUpperCase() + ' \u00b7 ' + byFamily[famKey].length + '</span></div>';
         h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:5px;">';
         byFamily[famKey].sort(function(a,b){return a-b;});
         for (var bi = 0; bi < byFamily[famKey].length; bi++) {
@@ -78459,7 +78459,7 @@ window._lwClaimHerbarium = function(id){
     if (active && WT[active.type]){
       var aw = WT[active.type];
       var rem = active.endAt ? Math.max(0, Math.ceil((active.endAt - Date.now())/3600000)) + 'h remaining' : 'one-time effect';
-      html += '<div class="lwh-active">'+(window._lwEmojiSprite?_lwEmojiSprite(aw.icon,14):aw.icon)+' '+aw.name+' · '+rem+'</div>';
+      html += '<div class="lwh-active">'+(window._lwEmojiSprite?_lwEmojiSprite(aw.icon,22):aw.icon)+' '+aw.name+' · '+rem+'</div>';
     }
     html += '<div class="lwh-weather-grid">';
     for (var key in WT){
@@ -83265,8 +83265,8 @@ function _bosSecretsContent() {
           }
         }
       } catch(e){}
+      var _achievementsStart=h.length;
       h += '<div id="sec-achievements" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2605 ACHIEVEMENTS <span style="color:var(--muted);font-size:0.5rem;">' + achGot + ' / ' + achs.length + '</span></div>';
       h += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">';
       for (var ai = 0; ai < achs.length; ai++) {
         var a = achs[ai];
@@ -83283,6 +83283,8 @@ function _bosSecretsContent() {
         h += '</div>';
       }
       h += '</div></div>';
+      var _achievementsInner=h.slice(_achievementsStart);
+      h = h.slice(0,_achievementsStart) + _bosCollapsible('codex-achievements','ACHIEVEMENTS',(achGot + ' / ' + achs.length),false,function(){return _achievementsInner;});
     }
   } catch(e){}
 
@@ -83309,8 +83311,8 @@ function _bosSecretsContent() {
     }
     var tgSeen = 0;
     for (var _tci = 0; _tci < grades.length; _tci++) if (tgCounts[grades[_tci].name]) tgSeen++;
+    var _gradesStart=h.length;
     h += '<div id="sec-grades" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;">\u2726 TERRA GRADES <span style="color:var(--muted);font-size:0.5rem;">' + tgSeen + ' / ' + grades.length + ' tiers seen</span></div>';
     h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">';
     for (var gti = 0; gti < grades.length; gti++) {
       var g = grades[gti];
@@ -83324,6 +83326,8 @@ function _bosSecretsContent() {
       h += '</div>';
     }
     h += '</div></div>';
+    var _gradesInner=h.slice(_gradesStart);
+    h = h.slice(0,_gradesStart) + _bosCollapsible('codex-grades','TERRA GRADES',(tgSeen + ' / ' + grades.length),false,function(){return _gradesInner;});
   } catch(e){}
 
   // ─── SEASONS ──────────────────────────────────────────────────
@@ -83341,8 +83345,8 @@ function _bosSecretsContent() {
         } catch(e){}
       }
       var _cm = new Date().getMonth();
+      var _seasonsStart=h.length;
       h += '<div id="sec-seasons" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:0.4rem;">\u273f SEASONS</div>';
       h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
       for (var sdi = 0; sdi < window.SEASON_DATA.length; sdi++) {
         var sd = window.SEASON_DATA[sdi];
@@ -83358,6 +83362,8 @@ function _bosSecretsContent() {
         h += '</div>';
       }
       h += '</div></div>';
+      var _seasonsInner=h.slice(_seasonsStart);
+      h = h.slice(0,_seasonsStart) + _bosCollapsible('codex-seasons','SEASONS',(''),false,function(){return _seasonsInner;});
     }
   } catch(e){}
 
@@ -83374,8 +83380,8 @@ function _bosSecretsContent() {
       if (window._lastDetectedBiome) visitedBiomes[window._lastDetectedBiome] = true;
       var bdSeen = 0;
       for (var _bdi = 0; _bdi < bdKeys.length; _bdi++) if (visitedBiomes[bdKeys[_bdi]]) bdSeen++;
+      var _biomesStart=h.length;
       h += '<div id="sec-biomes" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#7ab356;letter-spacing:0.1em;margin-bottom:0.4rem;">\u26f0 BIOMES <span style="color:var(--muted);font-size:0.5rem;">' + bdSeen + ' / ' + bdKeys.length + ' visited</span></div>';
       h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;">';
       for (var bgi = 0; bgi < bdKeys.length; bgi++) {
         var bk = bdKeys[bgi];
@@ -83390,6 +83396,8 @@ function _bosSecretsContent() {
         h += '</div>';
       }
       h += '</div></div>';
+      var _biomesInner=h.slice(_biomesStart);
+      h = h.slice(0,_biomesStart) + _bosCollapsible('codex-biomes','BIOMES',(bdSeen + ' / ' + bdKeys.length),false,function(){return _biomesInner;});
     }
   } catch(e){}
 
@@ -83410,8 +83418,8 @@ function _bosSecretsContent() {
     }
     var mutFound = 0;
     for (var _mfi = 0; _mfi < mutNames.length; _mfi++) if (mutSeen[mutNames[_mfi]]) mutFound++;
+    var _mutationsStart=h.length;
     h += '<div id="sec-mutations" style="margin-bottom:0.9rem;scroll-margin-top:8px;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:#c07ac8;letter-spacing:0.1em;margin-bottom:0.5rem;">\u2746 MUTATIONS <span style="color:var(--muted);font-size:0.6rem;">' + mutFound + ' / ' + mutNames.length + '</span></div>';
     h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
     // Visual hint glyphs per mutation — tiny emoji/symbol while custom badge
     // art is still in flight. Swap to <img src="assets/mutations/..."> when ready.
@@ -83448,6 +83456,8 @@ function _bosSecretsContent() {
       h += '</div>';
     }
     h += '</div></div>';
+    var _mutationsInner=h.slice(_mutationsStart);
+    h = h.slice(0,_mutationsStart) + _bosCollapsible('codex-mutations','MUTATIONS',(''),false,function(){return _mutationsInner;});
   } catch(e){}
 
   // ─── MYTHIC HALL ──────────────────────────────────────────────
@@ -83497,8 +83507,8 @@ function _bosSecretsContent() {
       }
     } catch(e) {}
     var _mhFound = Object.keys(_mhSeen).length;
+    var _mythicStart=h.length;
     h+='<div id="sec-mythic" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:#D94FFF;letter-spacing:0.1em;margin-bottom:0.4rem;"><img src="assets/fx/sparkle-purple.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"> MYTHIC HALL <span style="color:var(--muted);font-size:0.4rem;">'+_mhFound+' / 7 witnessed</span></div>';
     for (var _mci=0; _mci<_mcDefs.length; _mci++) {
       var _mc = _mcDefs[_mci];
       var _mcFound = !!_mhSeen[_mc.idx];
@@ -83529,6 +83539,8 @@ function _bosSecretsContent() {
       }
     }
     h+='</div>';
+    var _mythicInner=h.slice(_mythicStart);
+    h = h.slice(0,_mythicStart) + _bosCollapsible('codex-mythic','MYTHIC HALL',(_mhFound + ' / 7'),false,function(){return _mythicInner;});
   } catch(e) {}
 
   // ─── GROVE MILESTONES ────────────────────────────────────────
@@ -83574,8 +83586,8 @@ function _bosSecretsContent() {
       } catch(e) {}
     }
     if (_milestones.length > 0) {
+      var _grove_milestonesStart=h.length;
       h+='<div style="margin-bottom:0.8rem;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--cream);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf7e GROVE MILESTONES</div>';
       for (var _msi=0; _msi<_milestones.length; _msi++) {
         var _ms = _milestones[_msi];
         var _mcol = _ms.color || 'var(--cream)';
@@ -83585,6 +83597,8 @@ function _bosSecretsContent() {
         h+='</div>';
       }
       h+='</div>';
+      var _grove_milestonesInner=h.slice(_grove_milestonesStart);
+      h = h.slice(0,_grove_milestonesStart) + _bosCollapsible('codex-grove-milestones','GROVE MILESTONES',(_milestones.length + ' rec'),false,function(){return _grove_milestonesInner;});
     }
   } catch(e) {}
 
@@ -83622,8 +83636,8 @@ function _bosSecretsContent() {
         { label: 'AURAS',          icon: _trIco('aura','\u2728'),            seen: Object.keys(_seenT.auras).length,       total: (_tb.auras||[]).length || 36 },
         { label: 'SUBSTRATES',     icon: _trIco('substrate','\ud83e\udea8'), seen: Object.keys(_seenT.substrates).length,  total: (_tb.substrates||[]).length || 71 }
       ];
+      var _trait_diversityStart=h.length;
       h+='<div style="margin-bottom:0.8rem;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf31 TRAIT DIVERSITY</div>';
       for (var _trj=0; _trj<_rows.length; _trj++) {
         var _rr = _rows[_trj];
         var _pct = _rr.total > 0 ? Math.round(_rr.seen/_rr.total*100) : 0;
@@ -83636,6 +83650,8 @@ function _bosSecretsContent() {
         h+='</div>';
       }
       h+='</div>';
+      var _trait_diversityInner=h.slice(_trait_diversityStart);
+      h = h.slice(0,_trait_diversityStart) + _bosCollapsible('codex-trait-diversity','TRAIT DIVERSITY',(''),false,function(){return _trait_diversityInner;});
     }
   } catch(e) {}
 
@@ -83661,8 +83677,8 @@ function _bosSecretsContent() {
     }
     var foundParade = 0;
     for (var pk in parade) if (parade[pk]) foundParade++;
+    var _rarity_paradeStart=h.length;
     h+='<div style="margin-bottom:0.8rem;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;"><img src="assets/fx/sparkle-purple.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"> RARITY PARADE <span style="color:var(--muted);font-size:0.4rem;">'+foundParade+' / 7</span></div>';
     h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
     for (var pi3=0; pi3<parOrder.length; pi3++) {
       var rname = parOrder[pi3];
@@ -83683,6 +83699,8 @@ function _bosSecretsContent() {
       }
     }
     h+='</div></div>';
+    var _rarity_paradeInner=h.slice(_rarity_paradeStart);
+    h = h.slice(0,_rarity_paradeStart) + _bosCollapsible('codex-rarity-parade','RARITY PARADE',(foundParade + ' / 7'),false,function(){return _rarity_paradeInner;});
   } catch(e) {}
 
   // ─── MEMORY GARDEN ───────────────────────────────────────────
@@ -83694,8 +83712,8 @@ function _bosSecretsContent() {
     if (_cLog.length > 0) {
       var _recentComp = _cLog.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); }).slice(0, 6);
       var _mpc = { Common:'#959588', Uncommon:'#8CB86E', Rare:'#5b8fb9', Epic:'#9B59B6', Legendary:'#C8A84B', Mythic:'#A87285', Cosmic:'#D94FFF' };
+      var _memory_gardenStart=h.length;
       h+='<div style="margin-bottom:0.8rem;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:#a58a6e;letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udf42 MEMORY GARDEN <span style="color:var(--muted);font-size:0.4rem;">'+_cLog.length+' returned to earth</span></div>';
       h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">';
       for (var _mi=0; _mi<_recentComp.length; _mi++) {
         var _mem = _recentComp[_mi];
@@ -83714,6 +83732,8 @@ function _bosSecretsContent() {
         h+='</div>';
       }
       h+='</div></div>';
+      var _memory_gardenInner=h.slice(_memory_gardenStart);
+      h = h.slice(0,_memory_gardenStart) + _bosCollapsible('codex-memory-garden','MEMORY GARDEN',(_cLog.length + ' / ' + gh.length),false,function(){return _memory_gardenInner;});
     }
   } catch(e) {}
 
