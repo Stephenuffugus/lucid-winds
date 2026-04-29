@@ -6,12 +6,13 @@
  *   - piComplete       (v2 onCall) — Pi payment completion + entitlement grant
  *   - mintPlant        (v2 onCall) — Server-authoritative plant mint (NFT-grade)
  *   - earnHashes       (v2 onCall) — Server-authoritative Sunbeam earn (NFT-grade)
- *   - nftSignMint      (v2 onRequest) — Polygon mint voucher signer (legacy, kept)
  *
  * Deploy:        firebase deploy --only functions
  * Set secrets:   firebase functions:secrets:set PI_SERVER_KEY
- *                firebase functions:secrets:set NFT_SIGNER_KEY  (legacy)
- *                firebase functions:secrets:set NFT_CHAIN_ID    (legacy, e.g. "137")
+ *
+ * The Polygon nftSignMint export is parked until the dual-chain feature
+ * is wired — re-enable by adding the export back AND setting NFT_SIGNER_KEY
+ * + NFT_CHAIN_ID secrets.
  */
 
 import { initializeApp } from 'firebase-admin/app'
@@ -22,4 +23,3 @@ export { piApprove } from './piApprove.js'
 export { piComplete } from './piComplete.js'
 export { mintPlant } from './mintPlant.js'
 export { earnHashes } from './earnHashes.js'
-export { nftSignMint } from './nftSignMint.js'
