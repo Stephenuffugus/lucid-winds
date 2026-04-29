@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.14';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -83086,8 +83086,12 @@ function _bosSecretsContent() {
   h+='</div>';
 
   // Synergies section \u2014 with search + filter for the now-300-entry grid
+  // Wrapped in outer accordion so SYNERGIES sits flush with the rest of the
+  // CODEX accordion city (achievements/grades/seasons/biomes/etc are all
+  // collapsibles already). Per-theme sub-accordions live inside the body.
+  var _synergiesStart = h.length;
   h+='<div id="sec-synergies" style="margin-bottom:0.9rem;scroll-margin-top:8px;">';
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.6rem;">'+synCount+' / '+(window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)+'</span></div>';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--sage);letter-spacing:0.1em;margin-bottom:0.5rem;display:none;">\u2726 SYNERGIES <span style="color:var(--muted);font-size:0.6rem;">'+synCount+' / '+(window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)+'</span></div>';
   // Search + filter chips for the grid (Stephen 2026-04-27 UX smoothing).
   var _synFilter = window._bosSynFilter || 'all';
   var _synSearch = String(window._bosSynSearch || '').toLowerCase();
@@ -83254,6 +83258,8 @@ function _bosSecretsContent() {
     h += '</div>';
   }
   h+='</div>';
+  var _synergiesInner = h.slice(_synergiesStart);
+  h = h.slice(0,_synergiesStart) + _bosCollapsible('codex-synergies','SYNERGIES',(synCount + ' / ' + (window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)),false,function(){return _synergiesInner;});
 
   // ─── ACHIEVEMENTS ─────────────────────────────────────────────
   // All 29 achievements in a dense tile grid. Unlocked = full color,
@@ -83968,6 +83974,10 @@ function _bosSecretsContent() {
     h+='<button onclick="try{localStorage.setItem(\'lw_secret_filter\',\''+_tcId+'\');}catch(e){};if(window._bosSetTab)_bosSetTab(\'secrets\');" style="flex:1;padding:5px 6px;background:'+(_tcOn?'rgba(122,179,86,0.18)':'rgba(18,22,16,0.5)')+';border:1px solid '+(_tcOn?'var(--sage)':'rgba(74,124,53,0.18)')+';border-radius:8px;color:'+(_tcOn?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit;font-size:inherit;letter-spacing:inherit;">'+_tcLbl+'</button>';
   }
   h+='</div>';
+  // Each compendium category (OMENS, COMPANIONS, WEATHER, SEASONS, ACTIONS,
+  // EVENTS) gets its own collapsible accordion, matching the rest of the
+  // CODEX accordion city. Body builds inside an IIFE so loop-var capture
+  // is clean.
   for(var ci=0;ci<CATEGORIES.length;ci++){
     var cat=CATEGORIES[ci];
     var catTriggers=triggers.filter(function(t){return t.category===cat.key;});
@@ -83982,25 +83992,30 @@ function _bosSecretsContent() {
     });
     if(_shownCat.length===0)continue;
 
-    h+='<div style="margin-bottom:0.8rem;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:'+cat.color+';letter-spacing:0.1em;margin-bottom:0.4rem;">'+cat.icon+' '+cat.label+' <span style="color:var(--muted);font-size:0.4rem;"><span class="lwe lwe-magnifier"></span> '+catFound+' · <span class="lwe lwe-bloom"></span> '+catGrown+' / '+catTriggers.length+'</span></div>';
-
-    for(var ti=0;ti<_shownCat.length;ti++){
-      var tr=_shownCat[ti];
-      var _isGrown=!!grownLookup[tr.id];
-      var _badges=_trBadge(tr.unlocked)+'<span class="lwe lwe-magnifier" style="width:0.85em;height:0.85em;"></span></span> '+_trBadge(_isGrown)+'<span class="lwe lwe-bloom" style="width:0.85em;height:0.85em;"></span></span>';
-      if(tr.unlocked){
-        h+='<div style="padding:0.4rem;margin-bottom:4px;background:rgba(18,22,16,0.6);border:1px solid '+cat.color+'33;border-left:3px solid '+cat.color+';border-radius:6px;">';
-        h+='<div style="display:flex;align-items:center;gap:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:'+cat.color+';flex:1;">'+tr.name+'</div><div style="display:flex;gap:3px;">'+_badges+'</div></div>';
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--cream);margin-top:2px;">'+tr.effect+'</div>';
-        h+='</div>';
-      }else{
-        h+='<div style="padding:0.4rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.06);border-left:3px solid rgba(138,145,120,0.15);border-radius:6px;">';
-        h+='<div style="display:flex;align-items:center;gap:6px;"><div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);font-style:italic;flex:1;">\"'+tr.riddle+'\"</div><div style="display:flex;gap:3px;">'+_badges+'</div></div>';
-        h+='</div>';
-      }
-    }
-    h+='</div>';
+    (function(cat, _shownCat, catFound, catGrown, catTotal){
+      var badge = catFound + ' / ' + catTotal;
+      h += _bosCollapsible('compendium-cat-'+cat.key, cat.label, badge, false, function(){
+        var inner = '';
+        // Footer-style stat strip under the accordion header
+        inner += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:0.45rem;letter-spacing:0.04em;"><span class="lwe lwe-magnifier"></span> '+catFound+' discovered · <span class="lwe lwe-bloom"></span> '+catGrown+' grown</div>';
+        for(var ti=0;ti<_shownCat.length;ti++){
+          var tr=_shownCat[ti];
+          var _isGrown=!!grownLookup[tr.id];
+          var _badges=_trBadge(tr.unlocked)+'<span class="lwe lwe-magnifier" style="width:0.85em;height:0.85em;"></span></span> '+_trBadge(_isGrown)+'<span class="lwe lwe-bloom" style="width:0.85em;height:0.85em;"></span></span>';
+          if(tr.unlocked){
+            inner += '<div style="padding:0.4rem;margin-bottom:4px;background:rgba(18,22,16,0.6);border:1px solid '+cat.color+'33;border-left:3px solid '+cat.color+';border-radius:6px;">';
+            inner += '<div style="display:flex;align-items:center;gap:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:'+cat.color+';flex:1;">'+tr.name+'</div><div style="display:flex;gap:3px;">'+_badges+'</div></div>';
+            inner += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--cream);margin-top:2px;">'+tr.effect+'</div>';
+            inner += '</div>';
+          }else{
+            inner += '<div style="padding:0.4rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.06);border-left:3px solid rgba(138,145,120,0.15);border-radius:6px;">';
+            inner += '<div style="display:flex;align-items:center;gap:6px;"><div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);font-style:italic;flex:1;">"'+tr.riddle+'"</div><div style="display:flex;gap:3px;">'+_badges+'</div></div>';
+            inner += '</div>';
+          }
+        }
+        return inner;
+      });
+    })(cat, _shownCat, catFound, catGrown, catTriggers.length);
   }
 
   return h;
