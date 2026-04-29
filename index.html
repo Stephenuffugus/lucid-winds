@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.28';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.29';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3332,7 +3332,27 @@
     .nur-btn.skipday,.nur-btn.boost{font-size:0.7rem;}
     .nur-seed-sprite{position:relative;display:flex;align-items:center;justify-content:center;width:108px;height:144px;}
     .nur-seed-sprite svg,.nur-seed-sprite img{display:block;width:100%;height:100%;object-fit:contain;}
-    .nur-seed-sprite.nur-seed-mystery::before{content:'';position:absolute;inset:-4px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.18) 30%,transparent 70%);pointer-events:none;}
+    /* Seed effect framework — Stephen 2026-04-30: "we could have a
+       multitude of awesome glows and effects radiating around the
+       seeds." Each effect is a named class that adds a CSS-only halo
+       or motion. Apply combinations on .nur-seed-sprite. */
+    .nur-seed-sprite{position:relative;}
+    /* Mystery: warm gold radial — subtle, static */
+    .nur-seed-sprite.nur-seed-mystery::before{content:'';position:absolute;inset:-6px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,0.22) 30%,transparent 70%);pointer-events:none;animation:nurAuraSoft 4s ease-in-out infinite;}
+    /* Bloom-ready: brighter gold pulse — signals "open me!" */
+    .nur-seed-sprite.nur-seed-bloom::before{content:'';position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle,rgba(255,215,90,0.4) 25%,rgba(200,168,75,0.15) 55%,transparent 75%);pointer-events:none;animation:nurAuraBloom 2.4s ease-in-out infinite;}
+    /* Rare: shimmering gold particles — applies to seeds Stephen marks rare */
+    .nur-seed-sprite.nur-seed-rare::after{content:'';position:absolute;inset:-12px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg,rgba(255,220,140,0.35) 90deg,transparent 180deg,rgba(255,220,140,0.35) 270deg,transparent 360deg);pointer-events:none;animation:nurAuraRare 8s linear infinite;mix-blend-mode:screen;opacity:0.7;}
+    /* Clipping: sage radial pulse — leaf-energy theme */
+    .nur-seed-sprite.nur-seed-clipping::before{content:'';position:absolute;inset:-8px;border-radius:50%;background:radial-gradient(circle,rgba(122,179,86,0.28) 30%,transparent 70%);pointer-events:none;animation:nurAuraSoft 3.6s ease-in-out infinite;}
+    /* Thirsty: cool blue drift — needs water today */
+    .nur-seed-sprite.nur-seed-thirsty::before{content:'';position:absolute;inset:-6px;border-radius:50%;background:radial-gradient(circle,rgba(91,143,185,0.22) 30%,transparent 70%);pointer-events:none;animation:nurAuraSoft 5s ease-in-out infinite;}
+    /* Watered: brief blue ripple — fades after a moment */
+    .nur-seed-sprite.nur-seed-watered::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(91,143,185,0.6);pointer-events:none;animation:nurAuraRipple 1.4s ease-out 1;}
+    @keyframes nurAuraSoft{0%,100%{opacity:0.55;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
+    @keyframes nurAuraBloom{0%,100%{opacity:0.55;transform:scale(1);}50%{opacity:1;transform:scale(1.18);}}
+    @keyframes nurAuraRare{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+    @keyframes nurAuraRipple{0%{opacity:1;transform:scale(0.85);}100%{opacity:0;transform:scale(1.6);}}
     .nur-seed-sprite.nur-seed-mystery::after{content:'?';position:absolute;top:0;right:-4px;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);text-shadow:0 0 6px rgba(200,168,75,0.6);pointer-events:none;}
     /* Clipping seeds: genome-only, visually distinguished by desaturation +
        subtle green tint. The ✂️ CLIPPING text label below the seed carries
@@ -40132,11 +40152,23 @@ document.addEventListener('keydown', function(e) {
 
   function _seedSpriteHtml(stage, isMystery, seed) {
     if (stage < 0) stage = 0; if (stage > 3) stage = 3;
-    var mysteryCls = isMystery ? ' nur-seed-mystery' : '';
-    // Clipping seeds are genome-only (no pot/substrate/aura/companion) — give
-    // them a desaturated + slightly hue-shifted filter so the seed pile reads
-    // as "the plant only" before bloom. Text label reinforces with ✂️ CLIPPING.
-    var clippingCls = (seed && (seed.origin === 'cutting' || seed.origin === 'clipping')) ? ' nur-seed-clipping' : '';
+    // Effect framework — Stephen 2026-04-30. Each named class maps to a
+    // CSS-only halo / motion. Bloom takes priority over rare > clipping >
+    // mystery > thirsty so the strongest signal wins.
+    var auraCls = '';
+    var _isClip = (seed && (seed.origin === 'cutting' || seed.origin === 'clipping'));
+    if (seed) {
+      try {
+        if (window.FG_Data && FG_Data.isBloomReady && FG_Data.isBloomReady(seed)) auraCls = ' nur-seed-bloom';
+        else if (seed.rare) auraCls = ' nur-seed-rare';
+        else if (_isClip) auraCls = ' nur-seed-clipping';
+        else if (isMystery) auraCls = ' nur-seed-mystery';
+        else if (window.FG_Data && FG_Data.canWaterToday && FG_Data.canWaterToday(seed)) auraCls = ' nur-seed-thirsty';
+      } catch(e) { if (isMystery) auraCls = ' nur-seed-mystery'; }
+    } else if (isMystery) auraCls = ' nur-seed-mystery';
+    // Old class names kept for any external CSS that targets them.
+    var mysteryCls = isMystery ? ' nur-seed-mystery-legacy' : '';
+    var clippingCls = _isClip ? ' nur-seed-clipping-legacy' : '';
     // NEW: if we have a seed object, render its assigned art image at full
     // size — gives variety so seeds visually differ. Stage progression is
     // optional (commented out for now per Stephen's "single image per
@@ -40144,18 +40176,18 @@ document.addEventListener('keydown', function(e) {
     if (seed) {
       var p = _LW_seedImagePath(seed);
       if (p) {
-        return '<div class="nur-seed-sprite' + mysteryCls + clippingCls + '">' +
-          '<img src="' + p + '" alt="seed" style="width:100%;height:100%;object-fit:contain;display:block;">' +
+        return '<div class="nur-seed-sprite' + auraCls + mysteryCls + clippingCls + '">' +
+          '<img src="' + p + '" alt="seed" style="width:100%;height:100%;object-fit:contain;display:block;position:relative;z-index:2;">' +
         '</div>';
       }
     }
     // Fallback to original stage sprites (used when no seed object passed)
     if (_seedSpriteAvail[stage] === true) {
-      return '<div class="nur-seed-sprite' + mysteryCls + '">' +
+      return '<div class="nur-seed-sprite' + auraCls + mysteryCls + '">' +
         '<img src="' + _SEED_SPRITE_PATHS[stage] + '" alt="seed stage ' + stage + '">' +
       '</div>';
     }
-    return '<div class="nur-seed-sprite' + mysteryCls + '">' + _SEED_SPRITE_FALLBACKS[stage] + '</div>';
+    return '<div class="nur-seed-sprite' + auraCls + mysteryCls + '">' + _SEED_SPRITE_FALLBACKS[stage] + '</div>';
   }
 
   function _buildNurSlotHTML(seed, idx) {
