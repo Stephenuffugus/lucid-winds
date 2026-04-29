@@ -99,16 +99,11 @@ service cloud.firestore {
     // SERVER-MANAGED. Cloud Functions write them via admin SDK (which
     // bypasses these rules); clients can never CHANGE them.
     //
-    // Uses diff().affectedKeys() so map-type fields like hashLedger /
-    // dailyMints / earnRateMin compare by structure, not by reference.
-    // Cloud-sync that echoes the exact server values back is fine; only
-    // CHANGES to these keys are rejected.
+    // Uses diff().affectedKeys() so map-type fields like hashLedger
+    // compare by structure. Only called from allow update where
+    // resource is guaranteed non-null, so no null guard needed.
     function vaultServerFieldsImmutable() {
-      return resource == null
-        || !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['hashLedger', 'mintCounter', 'lastMintAt',
-                     'dailyMints', 'earnRateMin', 'earnRateDay',
-                     'lastEarnAt', 'lastEarnSource']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['hashLedger', 'mintCounter', 'lastMintAt', 'dailyMints', 'earnRateMin', 'earnRateDay', 'lastEarnAt', 'lastEarnSource']);
     }
 
     // Root vault document
