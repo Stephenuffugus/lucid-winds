@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.1';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.2';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9007,11 +9007,11 @@ window._addSwitchTabHook = function(fn){
         <!-- WILD-PLACE mode: drop the currently-shown plant into the
              player's current hex. Hidden by default; shown in
              wild-place mode by openCarousel. -->
-        <button class="pgm-act-btn pgm-wild-place" id="gallery-place-btn" onclick="window._wildPlaceFromCarousel&&window._wildPlaceFromCarousel()" style="display:none;border-color:rgba(122,179,86,0.55);color:var(--sage);background:linear-gradient(180deg,rgba(74,124,53,0.28),rgba(46,80,34,0.4));font-weight:bold;"<span class="lwe lwe-bloom"></span> PLACE HERE</button>
+        <button class="pgm-card-btn pgm-wild-place" id="gallery-place-btn" onclick="window._wildPlaceFromCarousel&&window._wildPlaceFromCarousel()" title="Place here" aria-label="Place here" style="display:none;"><img src="assets/toplantwildbutton.png" alt="Place here"></button>
         <!-- ITEMS access — visible on both wild modes. Opens the items
              panel so players can apply seasonal/climate buffs while
              comparing plants for a drop or while inspecting a hex. -->
-        <button class="pgm-act-btn pgm-wild-items" id="gallery-items-btn" onclick="if(window.LW_ITEMS&&LW_ITEMS.openPanel)LW_ITEMS.openPanel();" style="display:none;border-color:rgba(192,122,200,0.45);color:rgba(220,160,228,0.95);"><img src="assets/backpack-64x64.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> ITEMS</button>
+        <button class="pgm-card-btn pgm-wild-items" id="gallery-items-btn" onclick="if(window.LW_ITEMS&&LW_ITEMS.openPanel)LW_ITEMS.openPanel();" title="Items" aria-label="Items" style="display:none;"><img src="assets/wilditems.png" alt="Items"></button>
       </div>
       <!-- Stephen: 'coe and verify buttons seem to do same thing and
            shouldnt exist. theres an old syn button under them remove
@@ -73625,7 +73625,7 @@ var _BOS_LEGACY_REDIRECT = {
   report:   'journal',
   events:   'journal',
   secrets:  'codex',
-  mementos: 'codex',
+  mementos: 'companions',
   herbarium:'codex',
   items:    'codex'
 };
@@ -73805,8 +73805,9 @@ function _bosSetTab(tab) {
   _bosStampTabRead(tab);
   if (tab === 'codex') {
     _bosStampTabRead('secrets');
-    _bosStampTabRead('mementos');
     _bosStampTabRead('items');
+  } else if (tab === 'companions') {
+    _bosStampTabRead('mementos');
   } else if (tab === 'journal') {
     _bosStampTabRead('today');
     _bosStampTabRead('activity');
@@ -73823,6 +73824,7 @@ function _bosSetTab(tab) {
   var body = document.getElementById('bos-body');
   if (!body) return;
   if (tab === 'codex')        body.innerHTML = _bosCodexContent();
+  else if (tab === 'companions') body.innerHTML = (typeof _bosMementosContent === 'function') ? _bosMementosContent() : '';
   else if (tab === 'journal') body.innerHTML = _bosJournalContent();
   else if (tab === 'hunt')    body.innerHTML = (window.LW_HUNT && window.LW_HUNT._bosContent) ? window.LW_HUNT._bosContent() : '';
   else if (tab === 'quests')       body.innerHTML = (typeof _bosQuestsTabContent       === 'function') ? _bosQuestsTabContent()       : '';
@@ -75224,6 +75226,25 @@ function _bosMementosContent() {
     if (window.TRAIT_BANK && window.TRAIT_BANK.companions) {
       var _seen = {};
       try { _seen = JSON.parse(localStorage.getItem('lw_seen_companions')||'{}'); } catch(e) {}
+      // Self-heal: the seen-set only writes on NEW mints; existing plants in
+      // the greenhouse from before this tracking shipped never got logged.
+      // Walk gh + nursery + wild every open and union in any companion the
+      // player already has — Pokedex stays accurate across migrations.
+      try {
+        var _ghHeal = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+        var _seenChanged = false;
+        for (var _hi = 0; _hi < _ghHeal.length; _hi++) {
+          try {
+            var _ht = window.hashToTraits ? window.hashToTraits(_ghHeal[_hi].hash) : null;
+            if (!_ht || typeof _ht.companion !== 'number') continue;
+            var _hcomp = window.TRAIT_BANK.companions[_ht.companion];
+            if (_hcomp && _hcomp.name && _hcomp.name !== 'None' && !_seen[_hcomp.name]) {
+              _seen[_hcomp.name] = 1; _seenChanged = true;
+            }
+          } catch(e){}
+        }
+        if (_seenChanged) { try { localStorage.setItem('lw_seen_companions', JSON.stringify(_seen)); } catch(e){} }
+      } catch(e){}
       var _comps = window.TRAIT_BANK.companions;
       var _named = []; var _seenCount = 0;
       for (var _ci = 0; _ci < _comps.length; _ci++) {
@@ -84341,8 +84362,9 @@ window._openCompendiumUI=function(){
       // Tabs — horizontal scroll (one row, swipeable). TODAY tab first so
       // daily-return keepers land in curated view without picking.
       '<div id="bos-tabbar" style="display:flex;gap:0.3rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;">'+
-        '<button class="bos-tab active" data-tab="codex" onclick="_bosSetTab(\'codex\')" title="Everything you have discovered: plants, triggers, biomes, companions, items" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CODEX</button>'+
-        '<button class="bos-tab" data-tab="journal" onclick="_bosSetTab(\'journal\')" title="Everything that has happened in your garden — what is fresh, what is recent, what came before" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL</button>'+
+        '<button class="bos-tab active" data-tab="journal" onclick="_bosSetTab(\'journal\')" title="Everything that has happened in your garden — what is fresh, what is recent, what came before" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL</button>'+
+        '<button class="bos-tab" data-tab="codex" onclick="_bosSetTab(\'codex\')" title="Everything you have discovered: plants, triggers, biomes, companions, items" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CODEX</button>'+
+        '<button class="bos-tab" data-tab="companions" onclick="_bosSetTab(\'companions\')" title="Every creature you have met — full Pokedex of painted portraits" style="flex:0 0 auto;padding:0.65rem 1.1rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">COMPANIONS</button>'+
         '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" title="Daily and weekly challenges plus bundles" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
         '<button class="bos-tab" data-tab="achievements" onclick="_bosSetTab(\'achievements\')" title="The lifetime catalog of achievements you can chase" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ACHIEVEMENTS</button>'+
         '<button class="bos-tab" data-tab="trophies" onclick="_bosSetTab(\'trophies\')" title="Trophies you have earned and the ones still waiting" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">TROPHIES</button>'+
