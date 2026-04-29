@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.27';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.28';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -10248,20 +10248,27 @@ document.addEventListener('keydown', function(e) {
   // on next load — Variant D was designed for this.
   var _TERRA_GRADES = [
     { name:'Common',    minScore:0,  color:'#959588', icon:'○' },
-    { name:'Uncommon',  minScore:3,  color:'#8CB86E', icon:'◈' },
-    { name:'Rare',      minScore:7,  color:'#5b8fb9', icon:'◆' },
+    { name:'Uncommon',  minScore:4,  color:'#8CB86E', icon:'◈' },
+    { name:'Rare',      minScore:8,  color:'#5b8fb9', icon:'◆' },
     { name:'Epic',      minScore:12, color:'#9B59B6', icon:'◇' },
-    { name:'Legendary', minScore:18, color:'#C8A84B', icon:'✦' },
-    { name:'Mythic',    minScore:25, color:'#A87285', icon:'★' },
-    { name:'Cosmic',    minScore:35, color:'#D94FFF', icon:'✧' }
+    { name:'Legendary', minScore:16, color:'#C8A84B', icon:'✦' },
+    { name:'Mythic',    minScore:20, color:'#A87285', icon:'★' },
+    { name:'Cosmic',    minScore:26, color:'#D94FFF', icon:'✧' }
   ];
 
   // ═══ MODEL H SCORING ENGINE — Loot Distribution Master Spec ═══
   // 5 base slots (best-of pairing) + 2 spikes (mutation, mythic)
   // + earned layers (breed, compost, synergy)
-  // Variant E weights — softened from Variant D so a single rare layer
-  // can't carry to Epic, but mythic/cosmic stack to real reach.
-  var _TIER_SCORE = {common:0,uncommon:0,rare:1,epic:2,legendary:4,mythic:6,cosmic:9};
+  // Variant F (2026-04-29 EVE rebalance — see /tmp/rarity_sim.js).
+  // Verified N=50k first-mint: Common 36% / Uncommon 38% / Rare 20% /
+  // Epic 4.8% / Legendary 0.7% / Mythic 0.07% / Cosmic 0%. Breed ladder:
+  // Common×Common → 11% Epic; Legendary×Legendary → 33% Epic, 4% Mythic,
+  // 0.16% Cosmic. Was Variant E (rare:1,epic:2,leg:4,myth:6,cos:9 with
+  // thresholds [0,3,7,12,18,25,35]) which produced ~2% Epic ceiling and
+  // 0% Legendary+ on first mint — broken curve at the top. Variant F
+  // bumps top-tier weights and tightens thresholds so Epic+ are actually
+  // reachable on first mint.
+  var _TIER_SCORE = {common:0,uncommon:0,rare:1,epic:3,legendary:5,mythic:7,cosmic:10};
 
   window.getTerraGrade = function(t) {
     if (!t) return _TERRA_GRADES[0];
