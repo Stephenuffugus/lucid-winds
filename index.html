@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.17';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39863,6 +39863,15 @@ document.addEventListener('keydown', function(e) {
   // Nursery clipping-slot expansion. Mirrors expandNurSlot but uses
   // FG_Data.getNurClippingSlots() / setNurClippingSlots() and routes
   // through LW_Pi.buyNurseryClippingSlot when Pi is enabled. Cap is 5.
+  // Clipping slot pricing (Stephen 2026-04-30): tiered like nursery
+  // but lighter — clippings are secondary to seeds.
+  window._nurClipSlotPrice = function(targetSlot) {
+    if (targetSlot === 3) return 3;
+    if (targetSlot === 4) return 5;
+    if (targetSlot === 5) return 8;
+    return 3;
+  };
+
   window.expandNurClipSlot = function() {
     if (!window.FG_Data || !FG_Data.getNurClippingSlots) return;
     var current = FG_Data.getNurClippingSlots();
@@ -39870,14 +39879,15 @@ document.addEventListener('keydown', function(e) {
       if (window._toast) _toast('Maximum 5 clipping slots reached.');
       return;
     }
+    var _price = window._nurClipSlotPrice(current + 1);
     var _piOn = !!window.LW_PI_ENABLED;
     var _bodyCopy = _piOn
-      ? 'Add clipping slot ' + (current + 1) + ' for <b>1 Pi</b>?'
+      ? 'Add clipping slot ' + (current + 1) + ' for <b>' + _price + ' Pi</b>?'
       : 'Add clipping slot ' + (current + 1) + '?';
     _lwConfirm({
       title: 'EXPAND CLIPPING SLOTS',
       body: _bodyCopy,
-      yes: _piOn ? 'PAY 1 PI' : 'EXPAND',
+      yes: _piOn ? ('PAY ' + _price + ' PI') : 'EXPAND',
       no: 'NOT YET'
     }, function() {
       var _applyExpansion = function(){
@@ -39895,6 +39905,16 @@ document.addEventListener('keydown', function(e) {
     });
   };
 
+  // Nursery slot pricing (Stephen 2026-04-30: "those are super important").
+  // Tiered escalation — each new slot costs more than the last because each
+  // one materially expands how many plants can grow at once. Cap is 6.
+  window._nurSlotPrice = function(targetSlot) {
+    if (targetSlot === 4) return 5;
+    if (targetSlot === 5) return 10;
+    if (targetSlot === 6) return 20;
+    return 5; // safety default
+  };
+
   window.expandNurSlot = function() {
     if (!window.FG_Data || !FG_Data.getNurSlots) return;
     var current = FG_Data.getNurSlots();
@@ -39903,17 +39923,15 @@ document.addEventListener('keydown', function(e) {
       else if (window.showHexMsg) showHexMsg('Maximum 6 nursery slots.');
       return;
     }
-    // Pi Payment Hook — mirrors greenhouse expansion (line 35119+).
-    // When LW_PI_ENABLED is true (Cloud Functions deployed), routes through
-    // LW_Pi.buyNurserySlot. During beta the expansion is free with confirm.
+    var _price = window._nurSlotPrice(current + 1);
     var _piOn = !!window.LW_PI_ENABLED;
     var _bodyCopy = _piOn
-      ? 'Add slot ' + (current + 1) + ' for <b>1 Pi</b>?'
+      ? 'Add slot ' + (current + 1) + ' for <b>' + _price + ' Pi</b>?'
       : 'Add slot ' + (current + 1) + '?';
     _lwConfirm({
       title: 'EXPAND NURSERY',
       body: _bodyCopy,
-      yes: _piOn ? 'PAY 1 PI' : 'EXPAND',
+      yes: _piOn ? ('PAY ' + _price + ' PI') : 'EXPAND',
       no: 'NOT YET'
     }, function() {
       var _applyExpansion = function(){
@@ -39921,10 +39939,10 @@ document.addEventListener('keydown', function(e) {
         if (window._haptic) _haptic('tab');
         renderNursery();
         if (window.showHexMsg) showHexMsg('Nursery expanded to ' + (current + 1) + ' slots.');
-        if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1 });
+        if (typeof gtag !== 'undefined') gtag('event', 'nur_slot_expanded', { slots: current + 1, price: _price });
       };
       if (_piOn && window.LW_Pi && window.LW_Pi.buyNurserySlot) {
-        window.LW_Pi.buyNurserySlot(current + 1, function(ok){
+        window.LW_Pi.buyNurserySlot(current + 1, _price, function(ok){
           // Pi wrapper handles slot increment + render on success.
           // Nothing further needed here.
         });
@@ -65588,9 +65606,11 @@ window.LW_Pi={
       if (cb) cb(true);
     },function(){if(cb)cb(false);});
   },
-  // Nursery clipping-slot expansion — 1 Pi per slot (max 5, so 3 Pi total)
+  // Nursery clipping-slot expansion — tiered (Stephen 2026-04-30):
+  //   slot 3 → 3 Pi, slot 4 → 5 Pi, slot 5 → 8 Pi.
   buyNurseryClippingSlot:function(slotNum,cb){
-    createPayment(1,'Nursery Clipping Slot '+slotNum,{type:'nursery_clipping_slot',slot:slotNum},function(){
+    var price = (slotNum===3?3:slotNum===4?5:slotNum===5?8:3);
+    createPayment(price,'Nursery Clipping Slot '+slotNum,{type:'nursery_clipping_slot',slot:slotNum,price:price},function(){
       try{
         if(window.FG_Data&&FG_Data.getNurClippingSlots&&FG_Data.setNurClippingSlots){
           var cur=FG_Data.getNurClippingSlots();
@@ -65604,9 +65624,15 @@ window.LW_Pi={
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },
-  // Nursery slot expansion — 1 Pi per slot (max 6 slots, so 5 Pi total cap)
-  buyNurserySlot:function(slotNum,cb){
-    createPayment(1,'Nursery Slot '+slotNum,{type:'nursery_slot',slot:slotNum},function(){
+  // Nursery slot expansion — tiered escalating (Stephen 2026-04-30
+  // "those are super important"): slot 4 → 5 Pi, slot 5 → 10 Pi,
+  // slot 6 → 20 Pi. Total 35 Pi to fully expand from 3 → 6 slots.
+  buyNurserySlot:function(slotNum,price,cb){
+    // Backward-compat: caller may have passed (slotNum, cb) without a
+    // price. Default to the tier table in that case.
+    if (typeof price === 'function') { cb = price; price = null; }
+    if (price == null) price = (slotNum===4?5:slotNum===5?10:slotNum===6?20:5);
+    createPayment(price,'Nursery Slot '+slotNum,{type:'nursery_slot',slot:slotNum,price:price},function(){
       // Deliver: bump nursery slot count via FG_Data
       try{
         if(window.FG_Data&&FG_Data.getNurSlots&&FG_Data.setNurSlots){
