@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.27';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -73666,10 +73666,13 @@ function _bosTrophiesTabContent() {
 // left out — it's too noisy and duplicates Today's surface. Re-add via
 // sub-tab when JOURNAL gets Today/Week/All filtering.
 function _bosJournalContent() {
+  // 2026-04-29 EVE rebalance per Stephen: "the journal seems overwhelming
+  // and full of unnecessary info. lets really make it easy to navigate
+  // and feel special for players." EVENTS WITNESSED ledger removed — it
+  // duplicated content that lives in CODEX → OMENS. _bosTodayContent
+  // alone now carries the journal: a curated, poetic short page.
   var h = '';
   try { h += (typeof _bosTodayContent === 'function') ? _bosTodayContent() : ''; } catch(e){}
-  h += _bosSectionHeader('EVENTS WITNESSED');
-  try { h += (typeof _bosEventsContent === 'function') ? _bosEventsContent() : ''; } catch(e){}
   try { localStorage.setItem('lw_bos_today_viewed', String(Date.now())); } catch(e){}
   return h;
 }
@@ -81561,48 +81564,19 @@ function _bosTodayContent() {
     var _span = Math.max(1, _nxtThr - _curThr);
     var _into = Math.max(0, _xp - _curThr);
     var _pct = Math.max(0, Math.min(100, Math.round((_into / _span) * 100)));
-    // Next 2 unlocks from the canon table
-    var _unlocks = [];
-    if (window.LEVEL_UNLOCKS) {
-      for (var _lk = _lvl + 1; _lk <= 30 && _unlocks.length < 2; _lk++) {
-        if (window.LEVEL_UNLOCKS[_lk]) _unlocks.push({lvl:_lk, info:window.LEVEL_UNLOCKS[_lk]});
-      }
-    }
-    // Top suggestion
-    var _sug = null;
-    try { _sug = window._lwTopSuggestion ? window._lwTopSuggestion() : null; } catch(e){}
-    h += '<div style="padding:0.85rem 0.9rem 0.9rem;margin-bottom:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.08),rgba(18,22,16,0.55));border:1.5px solid rgba(200,168,75,0.38);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.35);">';
+    // 2026-04-29 EVE journal slim: NEXT UNLOCKS dropped (lives in QUESTS
+    // top tab \u2014 duplicating it here was clutter). DO THIS NEXT button
+    // also dropped \u2014 it lives on every other surface. Journal keeps just
+    // level + XP bar so the page reads as a personal log, not a dashboard.
+    h += '<div style="padding:0.85rem 0.9rem 0.95rem;margin-bottom:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.08),rgba(18,22,16,0.55));border:1.5px solid rgba(200,168,75,0.38);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.35);">';
     h +=   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">';
     h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.22em;color:var(--muted);">WHERE YOU ARE</div>';
     h +=     '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + _into + ' / ' + _span + ' XP</div>';
     h +=   '</div>';
-    h +=   '<div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--gold);font-style:italic;line-height:1.15;margin-bottom:3px;">Lvl ' + _lvl + (_title ? ' &middot; ' + _title : '') + '</div>';
-    // XP bar
-    h +=   '<div style="height:6px;border-radius:3px;background:rgba(13,16,12,0.7);border:1px solid rgba(200,168,75,0.25);overflow:hidden;margin:8px 0 10px;">';
+    h +=   '<div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--gold);font-style:italic;line-height:1.15;">Lvl ' + _lvl + (_title ? ' &middot; ' + _title : '') + '</div>';
+    h +=   '<div style="height:6px;border-radius:3px;background:rgba(13,16,12,0.7);border:1px solid rgba(200,168,75,0.25);overflow:hidden;margin-top:10px;">';
     h +=     '<div style="height:100%;width:' + _pct + '%;background:linear-gradient(90deg,rgba(122,179,86,0.8),var(--gold));transition:width 0.4s;"></div>';
     h +=   '</div>';
-    // Next unlocks
-    if (_unlocks.length) {
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.16em;color:var(--muted);margin:0.5rem 0 4px;">NEXT UNLOCKS</div>';
-      for (var _u = 0; _u < _unlocks.length; _u++) {
-        var _U = _unlocks[_u];
-        h += '<div style="display:flex;align-items:baseline;gap:0.55rem;padding:4px 0;">';
-        h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--gold);flex-shrink:0;min-width:36px;">Lv ' + _U.lvl + '</div>';
-        h +=   '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.4;">' + _U.info.title + '</div>';
-        h += '</div>';
-      }
-    }
-    // Top suggestion as a big DO THIS button
-    if (_sug && _sug.title) {
-      h += '<button onclick="var m=document.getElementById(\'bos-overlay\');if(m)m.remove();setTimeout(function(){if(window._lwQuestTap)window._lwQuestTap();else if(window._lwTopSuggestion){var s=window._lwTopSuggestion();if(s&&s.action)s.action();}},150);" style="display:flex;align-items:center;gap:9px;width:100%;margin-top:0.7rem;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.5);background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(74,124,53,0.12));color:var(--cream);cursor:pointer;text-align:left;min-height:52px;">';
-      h +=   '<div style="font-size:1.15rem;line-height:1;flex-shrink:0;">' + (_sug.icon || '\ud83c\udf31') + '</div>';
-      h +=   '<div style="flex:1;min-width:0;">';
-      h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.16em;color:var(--muted);margin-bottom:3px;">DO THIS NEXT</div>';
-      h +=     '<div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--gold);font-style:italic;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _sug.title + '</div>';
-      h +=   '</div>';
-      h +=   '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);opacity:0.6;flex-shrink:0;">\u203a</div>';
-      h += '</button>';
-    }
     h += '</div>';
   } catch(e) {}
   // ── Gather recent activity ───────────────────────────────────
@@ -81713,32 +81687,28 @@ function _bosTodayContent() {
       tint: 'rgba(200,168,75,0.35)'
     });
   }
-  // ── Render cards ────────────────────────────────────────────
+  // 2026-04-29 EVE: cards capped at ONE per Stephen ("feel special, not
+  // overwhelming"). Pick the highest-priority card built above; if none
+  // qualified, fall back to a single rotating meditative prompt.
   if (cards.length === 0) {
-    // Meditative fallback — three prompts rotated by day-of-year
     var PROMPTS = [
-      { glyph:'✦', title:'A still garden', body:'Nothing loud happened this week. Consider tending one plant you have not looked at in a while.' },
-      { glyph:'❦', title:'A slow return', body:'The soil keeps time differently than we do. Your next act is enough.' },
-      { glyph:'✧', title:'Begin small', body:'Play one game. Water one plant. The book will fill itself again.' },
-      { glyph:'❀', title:'An empty page', body:'The keeper\u2019s journal awaits its next entry. Breathe, then tend.' },
-      { glyph:'☀', title:'Light on the sill', body:'Every garden goes quiet sometimes. A pause is not a gap.' }
+      { glyph:'\u2726', title:'A still garden', body:'Nothing loud happened this week. Consider tending one plant you have not looked at in a while.', tint:'rgba(200,168,75,0.3)' },
+      { glyph:'\u2766', title:'A slow return', body:'The soil keeps time differently than we do. Your next act is enough.', tint:'rgba(122,179,86,0.3)' },
+      { glyph:'\u2727', title:'Begin small', body:'Play one game. Water one plant. The book will fill itself again.', tint:'rgba(200,168,75,0.3)' },
+      { glyph:'\u2740', title:'An empty page', body:'The keeper\u2019s journal awaits its next entry. Breathe, then tend.', tint:'rgba(192,122,200,0.25)' },
+      { glyph:'\u2600', title:'Light on the sill', body:'Every garden goes quiet sometimes. A pause is not a gap.', tint:'rgba(200,168,75,0.3)' }
     ];
     var doy = Math.floor((now - new Date(new Date().getFullYear(),0,0)) / oneDay);
     cards.push(PROMPTS[doy % PROMPTS.length]);
-    cards.push(PROMPTS[(doy+2) % PROMPTS.length]);
-    cards.push(PROMPTS[(doy+4) % PROMPTS.length]);
   }
-  // Cap at 5 cards
-  if (cards.length > 5) cards = cards.slice(0, 5);
-  for (var c = 0; c < cards.length; c++) {
-    var card = cards[c];
-    h += '<div style="padding:0.75rem 0.85rem;margin-bottom:0.55rem;background:linear-gradient(160deg,rgba(42,54,34,0.45),rgba(18,22,16,0.6));border:1px solid ' + card.tint + ';border-radius:10px;display:flex;gap:0.65rem;align-items:flex-start;">';
-    h += '<div style="flex-shrink:0;font-family:Playfair Display,serif;font-size:1.4rem;color:var(--gold);line-height:1;margin-top:1px;">' + card.glyph + '</div>';
-    h += '<div style="min-width:0;flex:1;">';
-    h += '<div style="font-family:Playfair Display,serif;font-size:0.88rem;color:var(--cream);font-style:italic;line-height:1.2;margin-bottom:4px;">' + card.title + '</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);line-height:1.55;">' + card.body + '</div>';
-    h += '</div></div>';
-  }
+  // Render exactly ONE card — larger and more poetic so it carries the page.
+  var card = cards[0];
+  h += '<div style="padding:1rem 1.1rem;margin-bottom:0.9rem;background:linear-gradient(160deg,rgba(42,54,34,0.55),rgba(18,22,16,0.7));border:1.5px solid ' + card.tint + ';border-radius:14px;display:flex;gap:0.85rem;align-items:flex-start;box-shadow:0 4px 14px rgba(0,0,0,0.35);">';
+  h += '<div style="flex-shrink:0;font-family:Playfair Display,serif;font-size:2.2rem;color:var(--gold);line-height:1;">' + card.glyph + '</div>';
+  h += '<div style="min-width:0;flex:1;">';
+  h += '<div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--cream);font-style:italic;line-height:1.3;margin-bottom:6px;">' + card.title + '</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;">' + card.body + '</div>';
+  h += '</div></div>';
 
   // ─── NEAR COMPLETION nudges ───
   // Surface up to 3 achievements where the player is within 20% of done.
@@ -81762,9 +81732,11 @@ function _bosTodayContent() {
           _near.push({ ae: _ae, cur: _aV, pct: Math.round(_aPct * 100) });
         }
       }
-      // Sort by closest-to-done first
+      // 2026-04-29 EVE: capped at 1 (was 3) — journal stays focused on
+      // the single closest-to-done achievement instead of becoming a
+      // multi-row dashboard.
       _near.sort(function(a, b) { return b.pct - a.pct; });
-      _near = _near.slice(0, 3);
+      _near = _near.slice(0, 1);
       if (_near.length) {
         h += '<div style="margin-top:1rem;">';
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.18em;color:var(--muted);margin-bottom:0.4rem;">SO CLOSE</div>';
@@ -81787,59 +81759,13 @@ function _bosTodayContent() {
     }
   } catch(e){}
 
-  // ─── RECENT DISCOVERIES feed ───
-  // Stephen 2026-04-27 UX rule: compact at a glance, room to dive. Surface
-  // the last 8 things the keeper has unlocked from any system (events,
-  // synergies, mementos, achievements, level-ups). Each row taps into the
-  // matching reader page so a player can chain "what just happened →
-  // why does it matter" in one click.
-  try {
-    if (window.LW_Log) {
-      var allLog = window.LW_Log.all();
-      var feedTypes = {
-        event_discovered: { glyph:'✦', label:'EVENT',     color:'#c8a84b', open:function(d){return d&&d.name?'_lwShowEventDetail("'+d.name.replace(/"/g,'\\"')+'")':''} },
-        synergy_discovered: { glyph:'✶', label:'SYNERGY', color:'#c07ac8', open:function(d){return d&&d.name?'_lwShowSynergyDetail("'+d.name.replace(/"/g,'\\"')+'")':''} },
-        achievement_unlock: { glyph:'★', label:'ACHIEVE', color:'#a87285', open:function(){return ''} },
-        memento:           { glyph:'✿', label:'MEMENTO', color:'var(--gold)', open:function(){return '_bosSetTab("mementos")'} },
-        level_up:          { glyph:'△', label:'LEVEL',   color:'var(--sage)', open:function(){return ''} }
-      };
-      var feed = [];
-      for (var fi = 0; fi < allLog.length && feed.length < 8; fi++) {
-        var le = allLog[fi];
-        if (!le || !feedTypes[le.type]) continue;
-        var d = le.data || {};
-        var name = d.name || (le.type === 'level_up' ? 'L' + (d.toLevel || '?') + ' ' + (d.newTitle || 'Keeper') : 'Discovery');
-        feed.push({ type: le.type, name: name, ts: le.ts, data: d });
-      }
-      if (feed.length) {
-        h += '<div style="margin-top:1rem;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.18em;color:var(--muted);margin-bottom:0.4rem;">RECENT DISCOVERIES</div>';
-        for (var fdi = 0; fdi < feed.length; fdi++) {
-          var fe = feed[fdi];
-          var ft = feedTypes[fe.type];
-          var ago = now - fe.ts;
-          var agoTxt = ago < 3600000 ? Math.max(1,Math.floor(ago/60000))+'m' : ago < 86400000 ? Math.floor(ago/3600000)+'h' : Math.floor(ago/86400000)+'d';
-          var openCall = ft.open(fe.data);
-          var clickAttr = openCall ? ' onclick="' + openCall + '" style="cursor:pointer;"' : ' style="cursor:default;"';
-          h += '<div' + clickAttr + ' style="padding:0.5rem 0.7rem;margin-bottom:4px;background:rgba(18,22,16,0.55);border:1px solid rgba(122,179,86,0.12);border-left:3px solid ' + ft.color + ';border-radius:6px;display:flex;align-items:center;gap:0.6rem;cursor:' + (openCall?'pointer':'default') + ';">';
-          h += '<div style="flex-shrink:0;font-size:0.95rem;color:' + ft.color + ';">' + ft.glyph + '</div>';
-          h += '<div style="flex:1;min-width:0;">';
-          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:' + ft.color + ';letter-spacing:0.1em;">' + ft.label + '</div>';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + fe.name + '</div>';
-          h += '</div>';
-          h += '<div style="flex-shrink:0;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">' + agoTxt + '</div>';
-          h += '</div>';
-        }
-        h += '</div>';
-      }
-    }
-  } catch(e){}
+  // 2026-04-29 EVE: RECENT DISCOVERIES feed + footer nav removed. The
+  // single-card "this week" highlight + SO CLOSE nudge above already
+  // surface the meaningful moments; this feed was redundant noise. The
+  // footer pointer to "the full ledger" pointed at EVENTS WITNESSED
+  // which has also been removed.
 
-  // ── Quiet footer nav ────────────────────────────────────────
-  h += '<div style="margin-top:0.8rem;padding:0.6rem;text-align:center;border-top:1px dashed rgba(122,179,86,0.15);">';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.1em;">Swipe the tabs above for the full ledger.</div>';
-  h += '</div>';
-  return h;
+    return h;
 }
 
 function _bosReportContent() {
