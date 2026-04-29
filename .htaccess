@@ -83,8 +83,12 @@
   # Prevent MIME-type sniffing
   Header set X-Content-Type-Options "nosniff"
 
-  # Block iframe embedding (clickjacking protection)
-  Header set X-Frame-Options "SAMEORIGIN"
+  # Iframe policy — CSP frame-ancestors supersedes X-Frame-Options
+  # on modern browsers and allows whitelisting minepi.com so the Pi
+  # sandbox can embed lucidwinds.com for testing + production review.
+  # X-Frame-Options stays unset because it has no allow-list syntax.
+  Header unset X-Frame-Options
+  Header set Content-Security-Policy "frame-ancestors 'self' https://*.minepi.com https://minepi.com"
 
   # Control referrer leakage
   Header set Referrer-Policy "strict-origin-when-cross-origin"
