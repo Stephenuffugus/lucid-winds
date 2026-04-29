@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -35326,8 +35326,25 @@ document.addEventListener('keydown', function(e) {
     var _ghBadge = document.getElementById('nav-gh-badge');
     if (_ghBadge) { if (gh.length > 0) { _ghBadge.textContent = gh.length; _ghBadge.style.display = 'flex'; } else { _ghBadge.style.display = 'none'; } }
     if (fillEl) fillEl.style.width = pct + '%';
+    // Stephen 2026-04-30: button "appeared and then disappeared" — slot
+    // cap was already at GH_SLOTS_MAX (60) in his localStorage from prior
+    // testing, so the hide-when-maxed branch fired. Never hide; show a
+    // greyed MAXED state instead so the entry point stays discoverable.
     var expandBtn = document.getElementById('gh-expand-btn');
-    if (expandBtn) expandBtn.style.display = (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) ? 'none' : '';
+    if (expandBtn) {
+      expandBtn.style.display = '';
+      if (MAX_COLLECTION_SIZE >= GH_SLOTS_MAX) {
+        expandBtn.disabled = true;
+        expandBtn.style.opacity = '0.55';
+        expandBtn.style.cursor = 'default';
+        expandBtn.textContent = 'MAX · ' + GH_SLOTS_MAX;
+      } else {
+        expandBtn.disabled = false;
+        expandBtn.style.opacity = '';
+        expandBtn.style.cursor = 'pointer';
+        expandBtn.textContent = '+ SLOT · 1π';
+      }
+    }
 
     // Reserve indicator — show if plants are waiting
     var _reserveEl = document.getElementById('gh-reserve-indicator');
