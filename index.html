@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.22';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.23';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -75079,6 +75079,50 @@ function _bosMementosContent() {
   // Wording flips to CHANGE COMPANION once one is already active.
   var _btnLabel = hasActive ? 'CHANGE COMPANION' : 'EQUIP COMPANION';
   var h = '<button onclick="var _bos=document.getElementById(\'bos-overlay\');if(_bos)_bos.remove();setTimeout(function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();},200);" style="width:100%;padding:0.75rem;margin-bottom:0.8rem;border:2px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(200,168,75,0.15);"><span class="lwe lwe-paw"></span> ' + _btnLabel + '</button>';
+
+  // ─── DISCOVERY GRID — every named companion as Pokedex slot ───
+  // Stephen 2026-04-29 EVE: "i thought under companions we were supposed
+  // to have every slot so its like a mystery for people as they unlock
+  // them they can go see their nice profile pics here." Painted portraits
+  // light up as the player encounters each creature. Locked tiles show a
+  // silhouetted ??? to surface what's still out there.
+  try {
+    if (window.TRAIT_BANK && window.TRAIT_BANK.companions) {
+      var _seen = {};
+      try { _seen = JSON.parse(localStorage.getItem('lw_seen_companions')||'{}'); } catch(e) {}
+      var _comps = window.TRAIT_BANK.companions;
+      var _named = []; var _seenCount = 0;
+      for (var _ci = 0; _ci < _comps.length; _ci++) {
+        var _comp = _comps[_ci];
+        if (!_comp.name || _comp.name === 'None') continue;
+        var _wasSeen = !!_seen[_comp.name];
+        if (_wasSeen) _seenCount++;
+        _named.push({idx:_ci, name:_comp.name, seen:_wasSeen, rare:!!_comp.rare});
+      }
+      h += '<div style="margin-bottom:1rem;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;"><span class="lwe lwe-paw" style="width:18px;height:18px;"></span> COMPANIONS</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+_seenCount+' / '+_named.length+'</div>';
+      h += '</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">';
+      for (var _ni = 0; _ni < _named.length; _ni++) {
+        var _n = _named[_ni];
+        var _portrait = (window._compPortrait ? _compPortrait(_n.idx, '🐾', 80) : '🐾');
+        var _ringColor = _n.seen ? (_n.rare ? 'var(--gold)' : 'rgba(122,179,86,0.5)') : 'rgba(74,124,53,0.15)';
+        var _bg = _n.seen ? (_n.rare ? 'rgba(200,168,75,0.1)' : 'rgba(122,179,86,0.06)') : 'rgba(13,16,12,0.5)';
+        var _filter = _n.seen ? '' : 'filter:brightness(0.15) saturate(0);';
+        var _label = _n.seen ? _n.name : '???';
+        var _click = _n.seen ? 'onclick="if(window._lwOpenCompanionProfile)_lwOpenCompanionProfile('+_n.idx+');"' : '';
+        h += '<div '+_click+' title="'+(_n.seen?_n.name:'Undiscovered')+'" style="position:relative;background:'+_bg+';border:1.5px solid '+_ringColor+';border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:'+(_n.seen?'pointer':'default')+';">';
+        h += '<div style="width:80px;height:80px;border-radius:8px;overflow:hidden;'+_filter+'">'+_portrait+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+(_n.seen?(_n.rare?'var(--gold)':'var(--cream)'):'var(--muted)')+';line-height:1.2;text-align:center;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+_label+'</div>';
+        if (_n.rare && _n.seen) h += '<div style="position:absolute;top:3px;right:5px;font-size:0.6rem;color:var(--gold);">✦</div>';
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
+  } catch(e){}
+
   h += '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.6;"><b style="color:var(--gold);">Mementos</b> are keepsakes from your friends in the garden. They appear when a companion has been with you a long time, when you reach a milestone, when another player gifts you something, and from many quieter moments along the way. Each one is yours forever.</div>';
 
   if (!collected.length && !Object.keys(equipLog).length && !hasActive) {
@@ -83506,10 +83550,20 @@ function _bosSecretsContent() {
     if (window.BIOMES) {
       var bdKeys = ['wetland','riverside','coastal','forest','mountain','desert','farmland','garden','park','suburban'];
       var visitedBiomes = {};
+      // PRIMARY source: lw_ach_biomes_seen — name-keyed map written every
+      // time biome detection fires (line 44087). Survives geo-cache TTL.
+      try {
+        var _bsLog = JSON.parse(localStorage.getItem('lw_ach_biomes_seen')||'{}');
+        for (var _bsk in _bsLog) if (_bsLog[_bsk]) visitedBiomes[_bsk] = true;
+      } catch(e){}
+      // SECONDARY source: lw_biome_cache — geo-grid cache. Pulls in any
+      // biome the player passed through that wasn't logged for some reason.
       try {
         var _bdCache = JSON.parse(localStorage.getItem('lw_biome_cache')||'{}');
         for (var _bdk in _bdCache) { if (_bdCache[_bdk] && _bdCache[_bdk].biome) visitedBiomes[_bdCache[_bdk].biome] = true; }
       } catch(e){}
+      // TERTIARY: current biome (covers the "I'm here right now but the
+      // detection hasn't been written yet" race).
       if (window._lastDetectedBiome) visitedBiomes[window._lastDetectedBiome] = true;
       var bdSeen = 0;
       for (var _bdi = 0; _bdi < bdKeys.length; _bdi++) if (visitedBiomes[bdKeys[_bdi]]) bdSeen++;
@@ -83899,46 +83953,10 @@ function _bosSecretsContent() {
     }
   } catch(e) {}
 
-  // ─── ACHIEVEMENT SHOWCASE ────────────────────────────────────
-  // Surfaces unlocked achievements inside the compendium for quick review.
-  try {
-    var _unl = JSON.parse(localStorage.getItem('sws_achievements') || '{}');
-    var _unlList = Object.keys(_unl);
-    if (_unlList.length > 0) {
-      h+='<div style="margin-bottom:0.8rem;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.4rem;">\ud83c\udfc6 ACHIEVEMENTS <span style="color:var(--muted);font-size:0.4rem;">'+_unlList.length+' unlocked</span></div>';
-      _unlList.sort(function(a,b){
-        var aT = (_unl[a] && _unl[a].unlockedAt) ? new Date(_unl[a].unlockedAt).getTime() : 0;
-        var bT = (_unl[b] && _unl[b].unlockedAt) ? new Date(_unl[b].unlockedAt).getTime() : 0;
-        return bT - aT;
-      });
-      // Verified against ACHIEVEMENTS array in index.html — all 29 IDs
-      // covered. Unknown IDs fall through to the ✨ fallback.
-      var _achIcons = {
-        first_plant:'\ud83c\udf31', full_row:'\ud83c\udfdb', half_house:'\ud83c\udfe0', full_house:'\ud83c\udff0',
-        first_rare:'\u2b50', first_epic:'\ud83d\udc8e', first_legend:'\ud83d\udc51', first_cosmic:'\ud83c\udf0c',
-        beholder:'\ud83d\udc41\ufe0f', first_mythic_c:'\ud83d\udd2e',
-        first_cross:'\ud83e\uddec', breed_5:'\ud83e\uddea', breed_20:'\ud83d\udd2c', chimera_gen3:'\ud83d\udc09',
-        first_compost:'\ud83c\udf42', compost_10:'\u267b\ufe0f', compost_crown:'\ud83d\udc78', compost_deep:'\ud83c\udf33',
-        streak_7:'\ud83d\udd25', streak_30:'\ud83d\udd25', streak_100:'\ud83d\udd25',
-        spent_100:'\ud83d\udcb8', spent_1000:'\ud83d\udcb0', all_seasons:'\ud83c\udf0d',
-        first_companion:'\ud83d\udc3e', first_mutation:'\ud83e\uddec', first_synergy:'\u2728', triple_synergy:'\ud83c\udf1f',
-        glitch_owner:'\ud83d\udcfa'
-      };
-      h+='<div style="display:flex;flex-wrap:wrap;gap:5px;">';
-      for (var _ak=0; _ak<Math.min(_unlList.length, 18); _ak++) {
-        var _aid = _unlList[_ak];
-        var _ico = _achIcons[_aid] || '\u2728';
-        var _aLabel = _aid.replace(/_/g,' ').replace(/\b\w/g, function(c){return c.toUpperCase();});
-        h+='<div style="padding:5px 8px;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.28);border-radius:16px;display:flex;align-items:center;gap:4px;" title="'+_aLabel+'">';
-        h+='<span style="font-size:0.75rem;">'+_ico+'</span>';
-        h+='<span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--gold);">'+_aLabel+'</span>';
-        h+='</div>';
-      }
-      if (_unlList.length > 18) h+='<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);align-self:center;">+ '+(_unlList.length-18)+' more</div>';
-      h+='</div></div>';
-    }
-  } catch(e) {}
+  // ─── ACHIEVEMENT SHOWCASE — REMOVED 2026-04-29 EVE ────────────
+  // The dedicated ACHIEVEMENTS top-level BoS tab (engagement.js, 254
+  // catalog) is the canonical home. This duplicate block leaked raw
+  // emoji icons onto every CODEX subtab regardless of filter.
 
   // ─── HAIKU COLLECTION ────────────────────────────────────────
   // Every minted plant has a unique procedural 7-5-7 haiku. Shows up
@@ -84145,22 +84163,33 @@ function _bosSecretsContent() {
 
     (function(cat, _shownCat, catFound, catGrown, catTotal){
       var badge = catFound + ' / ' + catTotal;
-      h += _bosCollapsible('compendium-cat-'+cat.key, cat.label, badge, false, function(){
+      // Prepend the painted category icon (or unicode glyph) to the
+      // accordion title so every section reads at a glance. cat.icon is
+      // already a sprite span like '<span class="lwe lwe-paw"></span>'
+      // for most categories; OMENS uses unicode '✦'. Wrapped in a
+      // 22px-sized inline-flex so the lwe sprite resolves at a usable
+      // size inside the Bebas-Neue accordion header.
+      var _catIcoHTML = '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-right:6px;font-size:18px;color:'+cat.color+';">'+cat.icon+'</span>';
+      var _catLabel = _catIcoHTML + cat.label;
+      h += _bosCollapsible('compendium-cat-'+cat.key, _catLabel, badge, false, function(){
         var inner = '';
-        // Footer-style stat strip under the accordion header
-        inner += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:0.45rem;letter-spacing:0.04em;"><span class="lwe lwe-magnifier"></span> '+catFound+' discovered · <span class="lwe lwe-bloom"></span> '+catGrown+' grown</div>';
+        // Footer-style stat strip under the accordion header. Icons bumped
+        // to 16px so the painted magnifier + bloom sprites read clearly.
+        inner += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.55rem;letter-spacing:0.04em;display:flex;align-items:center;gap:8px;"><span style="display:inline-flex;align-items:center;gap:4px;"><span class="lwe lwe-magnifier" style="width:16px;height:16px;"></span> '+catFound+' discovered</span><span style="opacity:0.5;">·</span><span style="display:inline-flex;align-items:center;gap:4px;"><span class="lwe lwe-bloom" style="width:16px;height:16px;"></span> '+catGrown+' grown</span></div>';
         for(var ti=0;ti<_shownCat.length;ti++){
           var tr=_shownCat[ti];
           var _isGrown=!!grownLookup[tr.id];
-          var _badges=_trBadge(tr.unlocked)+'<span class="lwe lwe-magnifier" style="width:0.85em;height:0.85em;"></span></span> '+_trBadge(_isGrown)+'<span class="lwe lwe-bloom" style="width:0.85em;height:0.85em;"></span></span>';
+          // Per-row badges bumped 0.85em on 0.5rem text (~6.8px) → fixed
+          // 14px so they actually read.
+          var _badges=_trBadge(tr.unlocked)+'<span class="lwe lwe-magnifier" style="width:14px;height:14px;"></span></span> '+_trBadge(_isGrown)+'<span class="lwe lwe-bloom" style="width:14px;height:14px;"></span></span>';
           if(tr.unlocked){
-            inner += '<div style="padding:0.4rem;margin-bottom:4px;background:rgba(18,22,16,0.6);border:1px solid '+cat.color+'33;border-left:3px solid '+cat.color+';border-radius:6px;">';
-            inner += '<div style="display:flex;align-items:center;gap:6px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:'+cat.color+';flex:1;">'+tr.name+'</div><div style="display:flex;gap:3px;">'+_badges+'</div></div>';
-            inner += '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--cream);margin-top:2px;">'+tr.effect+'</div>';
+            inner += '<div style="padding:0.5rem 0.55rem;margin-bottom:5px;background:rgba(18,22,16,0.6);border:1px solid '+cat.color+'33;border-left:3px solid '+cat.color+';border-radius:6px;">';
+            inner += '<div style="display:flex;align-items:center;gap:8px;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:'+cat.color+';flex:1;letter-spacing:0.04em;">'+tr.name+'</div><div style="display:flex;gap:5px;align-items:center;">'+_badges+'</div></div>';
+            inner += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);margin-top:4px;line-height:1.5;">'+tr.effect+'</div>';
             inner += '</div>';
           }else{
-            inner += '<div style="padding:0.4rem;margin-bottom:4px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.06);border-left:3px solid rgba(138,145,120,0.15);border-radius:6px;">';
-            inner += '<div style="display:flex;align-items:center;gap:6px;"><div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);font-style:italic;flex:1;">"'+tr.riddle+'"</div><div style="display:flex;gap:3px;">'+_badges+'</div></div>';
+            inner += '<div style="padding:0.5rem 0.55rem;margin-bottom:5px;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.06);border-left:3px solid rgba(138,145,120,0.15);border-radius:6px;">';
+            inner += '<div style="display:flex;align-items:center;gap:8px;"><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-style:italic;flex:1;line-height:1.5;">"'+tr.riddle+'"</div><div style="display:flex;gap:5px;align-items:center;">'+_badges+'</div></div>';
             inner += '</div>';
           }
         }
