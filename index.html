@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.28';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.29';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34386,6 +34386,17 @@ document.addEventListener('keydown', function(e) {
       phoenixSuppressed: false
     };
     if (opts && opts.isCross) entry.isCross = true;
+    // NFT-grade hardening (2026-04-29 EVE): mark whether this plant was
+    // server-validated. The future Pi NFT marketplace gates listings on
+    // serverSigned===true. Server-mint path sets opts.serverSigned=true;
+    // legacy/offline-fallback mints get serverSigned=false. Plants minted
+    // before this rollout have neither field — grandfather as legit via
+    // a one-time migration when NFT goes live.
+    if (opts && typeof opts.serverSigned === 'boolean') {
+      entry.serverSigned = opts.serverSigned;
+      if (opts.mintedAt) entry.mintedAt = opts.mintedAt;
+      if (opts.mintSource) entry.mintSource = opts.mintSource;
+    }
     // Engagement counter: substrate kinds seen on owned plants. Tracks
     // diversity of bases the player has minted; drives the "every
     // substrate" tier completionist achievements.
@@ -35849,10 +35860,71 @@ document.addEventListener('keydown', function(e) {
   // new Legendary+ plant kicks in the multiplier on next game event
   // instead of waiting up to 60 seconds for natural cache expiry.
   var _origMint = mintPlant;
-  window.mintPlant = function(){
+
+  // ─── SERVER-AUTH MINT (NFT-grade hardening, 2026-04-29 EVE) ─────────
+  // For manual mints (not breed/cross), call the mintPlant Cloud Function
+  // first. Server reads the authoritative ledger from Firestore, validates
+  // balance + rate limits, generates the hash server-side (so client
+  // can't grind for favourable traits), and writes the plant to vault.
+  //
+  // Client uses the server-returned hash. If the server call fails we
+  // fall back to the legacy client mint with serverSigned:false — a
+  // plant the future NFT marketplace will refuse to list. Players can
+  // still play offline; only NFT-listable mints require server.
+  //
+  // Breeding (opts.isCross) still routes locally — parent-hash-derived
+  // offspring is deterministic and not currently NFT-eligible. Future
+  // pass: server-mint breeding too.
+  function _serverMintCall(opts) {
+    return new Promise(function(resolve){
+      try {
+        if (typeof firebase === 'undefined' || !firebase.functions || !firebase.auth || !firebase.auth().currentUser) {
+          resolve(null); return;
+        }
+        var fn = firebase.functions().httpsCallable('mintPlant');
+        fn({ source: (opts && opts.source) || 'manual' })
+          .then(function(res){
+            if (res && res.data && res.data.ok && res.data.plant && res.data.plant.hash) {
+              resolve(res.data.plant);
+            } else { resolve(null); }
+          })
+          .catch(function(err){
+            if (window.console) console.warn('[mintPlant server] fallback to local:', err && err.message);
+            resolve(null);
+          });
+      } catch(e){ resolve(null); }
+    });
+  }
+  window.mintPlant = async function(hash, opts) {
     window._rarityMultCacheAt = 0;
-    return _origMint.apply(this, arguments);
+    // Cross-pollination / breeding stays local — parent-hash-derived,
+    // not NFT-eligible until server breed lands.
+    if (opts && opts.isCross) {
+      return _origMint.apply(this, arguments);
+    }
+    // Manual mint — try server first
+    var serverPlant = await _serverMintCall(opts);
+    if (serverPlant && serverPlant.hash) {
+      // Server gave us a signed hash + ledger debit + plant write. The
+      // legacy _origMint also writes to local greenhouse / fires UI
+      // updates, so call it with the server hash. Pass serverSigned via
+      // opts so the local record carries the flag (cloud sync will
+      // reconcile against the server-written copy on next pull).
+      var mergedOpts = Object.assign({}, opts || {}, {
+        serverSigned: true,
+        mintedAt: serverPlant.mintedAt,
+        mintSource: serverPlant.mintSource
+      });
+      return _origMint.call(this, serverPlant.hash, mergedOpts);
+    }
+    // Fallback: legacy client mint. Plant gets serverSigned:false (set
+    // inside _origMint by reading opts), which the future NFT
+    // marketplace will use to gate listing.
+    var fallbackOpts = Object.assign({}, opts || {}, { serverSigned: false });
+    return _origMint.call(this, hash, fallbackOpts);
   };
+
+  // ─── SERVER-AUTH HASH EARN: see wrap right after window.earnHashes is set ──
   window.renderGreenhouse = renderGreenhouse;
   window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
@@ -36400,6 +36472,30 @@ document.addEventListener('keydown', function(e) {
   window.earnHashes = earnHashes;
   window.getTotalHashes = getTotalHashes;
   window.spendHashes = spendHashes;
+
+  // ─── SERVER-AUTH HASH EARN (NFT-grade hardening, 2026-04-29 EVE) ────
+  // Mirror every earn to the server ledger. Server is source of truth at
+  // mint time; client copy is a UI-friendly cache. Best-effort: if the
+  // server call fails (offline, function not deployed yet) we still
+  // credit locally so play stays responsive. mintPlant cross-checks
+  // server balance — local-ahead-of-server states will fail the mint
+  // when they shouldn't (rare with rate-limited play).
+  (function(){
+    var _origEarn = window.earnHashes;
+    window.earnHashes = function(amount, source) {
+      try { _origEarn.apply(this, arguments); } catch(e) {}
+      try {
+        if (typeof firebase === 'undefined' || !firebase.functions) return;
+        if (!firebase.auth || !firebase.auth().currentUser) return;
+        if (!Number.isInteger(amount) || amount <= 0 || amount > 200) return;
+        var fn = firebase.functions().httpsCallable('earnHashes');
+        fn({ amount: amount, source: source || 'unknown' })
+          .catch(function(err){
+            if (window.console && window._LW_DEBUG) console.warn('[earnHashes server]', err && err.message);
+          });
+      } catch(e){}
+    };
+  })();
   // Debounced wrapper — callers fire updateDashboard many times during
   // rapid state changes (plant action, breed, etc). Burst-coalesce to one
   // render per ~300ms; immediate call if last ran > 500ms ago.
@@ -77177,9 +77273,9 @@ window._lwClaimHerbarium = function(id){
     // ─── DEFENSE ───
     mulchWard: { key:'mulchWard', name:'Mulch Ward', category:'defense', rarity:'Rare',
       art:'assets/items/mulch-ward.png', icon:'\ud83d\udee1\ufe0f',
-      desc:'Protect a wild plant. Auto-wins its next contest.',
+      desc:'Blocks the next attack on a wild plant. Holds for 24h, then dries out.',
       lore:'Damp, dense, full of the year\u2019s letting-go. Attackers arrive tired and leave more tired.',
-      usage:'tap a wild plant of yours to ward it', wired:true },
+      usage:'tap a wild plant of yours to ward it (24h)', wired:true },
     brambleThicket: { key:'brambleThicket', name:'Bramble Thicket', category:'defense', rarity:'Rare',
       art:'assets/items/bramble-thicket.png', icon:'\ud83c\udf31',
       desc:'For 24h, attackers roll only 1d6 against this plant. Brutal.',
@@ -77562,23 +77658,31 @@ window._lwClaimHerbarium = function(id){
     // Stack cap: 1 ward per plant. Stephen 2026-04-28 balance pass \u2014 was 3
     // (auto-blocked 3 contests on one plant which made any warded plant
     // effectively un-attackable for a week of active play). Mulch Ward is
-    // now a single reactive defense; Shellgourd Epic is the proactive
-    // 48h zone-control answer for entrenched defense.
-    var cur = p.wards[hash] || 0;
-    if (cur >= 1) {
+    // now a single reactive defense.
+    //
+    // 2026-04-29 EVE: ward gained a 24h expiry (was permanent-until-consumed).
+    // Pairs Mulch Ward (Rare, 24h reactive) with Bramble (Rare, 24h roll
+    // weakener) at the same time tier; Shellgourd (Epic) keeps the 48h
+    // zone-lock advantage. Stored value is now expiry timestamp, not count.
+    var cur = p.wards[hash];
+    if (cur && cur > Date.now()) {
       if (window._toast) window._toast('\ud83d\udee1\ufe0f This plant already has a Ward. Burns on next attack.');
       return;
     }
-    p.wards[hash] = 1;
+    p.wards[hash] = Date.now() + 86400000; // 24h expiry
     _savePending(p);
   }
   function consumeWard(hash){
     var p = _loadPending(); if (!p.wards || !p.wards[hash]) return false;
-    p.wards[hash]--; if (p.wards[hash] <= 0) delete p.wards[hash]; _savePending(p);
+    if (p.wards[hash] <= Date.now()) { delete p.wards[hash]; _savePending(p); return false; }
+    delete p.wards[hash]; _savePending(p);
     return true;
   }
   function hasWard(hash){
-    var p = _loadPending(); return !!(p.wards && p.wards[hash]);
+    var p = _loadPending();
+    if (!p.wards || !p.wards[hash]) return false;
+    if (p.wards[hash] <= Date.now()) { delete p.wards[hash]; _savePending(p); return false; }
+    return true;
   }
 
   function _openWardPicker(plants){

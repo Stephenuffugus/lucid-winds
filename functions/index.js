@@ -4,6 +4,8 @@
  * Exports:
  *   - piApprove        (v2 onCall) — Pi payment approval
  *   - piComplete       (v2 onCall) — Pi payment completion + entitlement grant
+ *   - mintPlant        (v2 onCall) — Server-authoritative plant mint (NFT-grade)
+ *   - earnHashes       (v2 onCall) — Server-authoritative Sunbeam earn (NFT-grade)
  *   - nftSignMint      (v2 onRequest) — Polygon mint voucher signer (legacy, kept)
  *
  * Deploy:        firebase deploy --only functions
@@ -18,4 +20,6 @@ initializeApp()
 
 export { piApprove } from './piApprove.js'
 export { piComplete } from './piComplete.js'
+export { mintPlant } from './mintPlant.js'
+export { earnHashes } from './earnHashes.js'
 export { nftSignMint } from './nftSignMint.js'

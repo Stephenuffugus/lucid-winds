@@ -95,16 +95,66 @@ service cloud.firestore {
       );
     }
 
+    // 2026-04-29 EVE — NFT-grade hardening. These root-vault fields are
+    // SERVER-MANAGED. Cloud Functions write them via admin SDK (which
+    // bypasses these rules); clients can never change them. A client write
+    // that includes any of these fields must keep the existing value
+    // (cloud-sync echoes them back unchanged — that's allowed).
+    function vaultServerFieldsImmutable() {
+      return (
+        !('hashLedger' in request.resource.data)
+        || (resource != null && request.resource.data.hashLedger == resource.data.hashLedger)
+      ) && (
+        !('mintCounter' in request.resource.data)
+        || (resource != null && request.resource.data.mintCounter == resource.data.mintCounter)
+      ) && (
+        !('lastMintAt' in request.resource.data)
+        || (resource != null && request.resource.data.lastMintAt == resource.data.lastMintAt)
+      ) && (
+        !('dailyMints' in request.resource.data)
+        || (resource != null && request.resource.data.dailyMints == resource.data.dailyMints)
+      ) && (
+        !('earnRateMin' in request.resource.data)
+        || (resource != null && request.resource.data.earnRateMin == resource.data.earnRateMin)
+      ) && (
+        !('earnRateDay' in request.resource.data)
+        || (resource != null && request.resource.data.earnRateDay == resource.data.earnRateDay)
+      ) && (
+        !('lastEarnAt' in request.resource.data)
+        || (resource != null && request.resource.data.lastEarnAt == resource.data.lastEarnAt)
+      ) && (
+        !('lastEarnSource' in request.resource.data)
+        || (resource != null && request.resource.data.lastEarnSource == resource.data.lastEarnSource)
+      );
+    }
+
     // Root vault document
     match /vaults/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create: if request.auth != null
         && request.auth.uid == uid
-        && validVaultRootCaps(request.resource.data);
+        && validVaultRootCaps(request.resource.data)
+        // On create, server fields must be absent (server seeds them on first mint/earn)
+        && !('hashLedger' in request.resource.data)
+        && !('mintCounter' in request.resource.data);
       allow update: if request.auth != null
         && request.auth.uid == uid
-        && validVaultRootCaps(request.resource.data);
+        && validVaultRootCaps(request.resource.data)
+        && vaultServerFieldsImmutable();
       allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // MINT LOG — unforgeable proof of server-validated mints.
+    // Owner reads (to query their own mintable NFTs); only Cloud
+    // Functions admin SDK writes. The future NFT marketplace listing
+    // contract checks here: a plant can only list if a matching log
+    // entry exists. Client can forge serverSigned:true in localStorage
+    // but cannot forge a mintLog row.
+    // ════════════════════════════════════════════════════════════
+    match /mintLog/{uid}/mints/{plantHash} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update, delete: if false;
     }
 
     // meta/state — slot cap validation
