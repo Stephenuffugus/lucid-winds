@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.27';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2347,7 +2347,15 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(155px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(118px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
+    /* Nursery tight layout — drops the big top padding so the action row
+       sits closer to the keeper bar. Stephen 2026-04-30: "huge gap
+       between the sun and hermit shop and backpack and our new buttons". */
+    .grove-panel.nur-tight{padding-top:calc(108px + env(safe-area-inset-top, 0px));}
+    .grove-panel.nur-tight .nur-streak-strip{margin:2px 8px 4px!important;padding:2px 8px!important;}
+    .grove-panel.nur-tight #nur-msg{min-height:0!important;padding:0!important;}
+    .grove-panel.nur-tight .wallet-balance{padding:2px 6px!important;font-size:0.55rem!important;}
+    .grove-panel.nur-tight .nur-grid{margin-top:4px!important;}
     .grove-panel.active{display:block;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
@@ -6587,17 +6595,12 @@ window._addSwitchTabHook = function(fn){
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
     </div>
   </div>
-  <div class="grove-panel" id="panel-nursery">
-    <!-- DEBUG BANNER — Stephen 2026-04-30 invisible-buttons saga.
-         If you see this red banner, the new HTML loaded. If not,
-         your cache is still serving v22 or older. -->
-    <div style="background:#c34;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;padding:8px 12px;text-align:center;border-radius:8px;margin:0.5rem;">VERSION 24 — IF YOU SEE THIS, NEW BUTTONS WORK</div>
-    <div class="panel-header">
-      <div class="panel-header-title">NURSERY</div>
-    </div>
+  <div class="grove-panel nur-tight" id="panel-nursery">
+    <!-- Compact NURSERY header — small inline title above the action row -->
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.16em;color:var(--gold);text-align:center;padding:0.3rem 0.5rem 0;line-height:1;">NURSERY</div>
     <!-- Three big painted parchment buttons — image FILLS the button.
          Label overlay at bottom with gradient scrim. -->
-    <div id="nur-action-row" style="display:flex;gap:8px;padding:0 12px;margin:8px 0 12px;justify-content:space-around;position:relative;z-index:10;">
+    <div id="nur-action-row" style="display:flex;gap:6px;padding:0 8px;margin:4px 0 4px;justify-content:space-around;position:relative;z-index:10;">
       <button onclick="window._openPotShop()" title="Pot shop" style="flex:1;max-width:140px;aspect-ratio:1;background:linear-gradient(180deg,rgba(80,60,30,0.95),rgba(50,38,20,0.97));border:2.5px solid rgba(200,168,75,0.85);border-radius:14px;padding:0;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);color:var(--gold);"><img src="assets/potshop.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';"><span style="position:absolute;left:0;right:0;bottom:0;padding:6px 4px;background:linear-gradient(180deg,rgba(13,16,12,0) 0%,rgba(13,16,12,0.92) 80%);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;line-height:1;text-align:center;">POT SHOP</span></button>
       <button id="nur-expand-btn" onclick="expandNurSlot()" title="Add a seed slot" style="flex:1;max-width:140px;aspect-ratio:1;background:linear-gradient(180deg,rgba(80,60,30,0.95),rgba(50,38,20,0.97));border:2.5px solid rgba(200,168,75,0.85);border-radius:14px;padding:0;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);color:var(--gold);"><img src="assets/nurseryexpansion.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';"><span class="nur-expand-label" style="position:absolute;left:0;right:0;bottom:0;padding:6px 4px;background:linear-gradient(180deg,rgba(13,16,12,0) 0%,rgba(13,16,12,0.92) 80%);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;line-height:1;text-align:center;">+ SEED</span></button>
       <button id="nur-expand-clip-btn" onclick="expandNurClipSlot()" title="Add a clipping slot" style="flex:1;max-width:140px;aspect-ratio:1;background:linear-gradient(180deg,rgba(70,40,80,0.95),rgba(45,28,55,0.97));border:2.5px solid rgba(192,122,200,0.85);border-radius:14px;padding:0;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);color:rgba(232,184,235,1);"><img src="assets/clippingexpansion.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';"><span class="nur-expand-clip-label" style="position:absolute;left:0;right:0;bottom:0;padding:6px 4px;background:linear-gradient(180deg,rgba(13,16,12,0) 0%,rgba(13,16,12,0.92) 80%);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:rgba(232,184,235,1);letter-spacing:0.1em;line-height:1;text-align:center;">+ CLIPPING</span></button>
