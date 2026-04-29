@@ -208,7 +208,7 @@
 
     {id:'col_disc_mut_3',     tier:'silver',   category:'COLLECTION', name:'Three Strange Things',       desc:'Witness 3 mutations.',                                                 counter:'mutations_seen',   target:3,    reward:{type:'dew', amt:60}},
     {id:'col_disc_mut_10',    tier:'gold',     category:'COLLECTION', name:'Ten Quiet Anomalies',        desc:'Witness 10 mutations.',                                                counter:'mutations_seen',   target:10,   reward:{type:'dew', amt:160}},
-    {id:'col_disc_mut_all',   tier:'mythic',   category:'COLLECTION', name:'Every Mutation, Loved',      desc:'Witness all 13 mutations.',                                            counter:'mutations_seen',   target:13,   reward:{type:'trophy', amt:1, name:'Every Mutation'}},
+    {id:'col_disc_mut_all',   tier:'mythic',   category:'COLLECTION', name:'Every Mutation, Loved',      desc:'Witness all 19 mutations.',                                            counter:'mutations_seen',   target:19,   reward:{type:'trophy', amt:1, name:'Every Mutation'}},
 
     {id:'col_grade_uncommon', tier:'bronze',   category:'COLLECTION', name:'Uncommon Light',             desc:'Mint your first Uncommon plant.',                                      counter:'mint_uncommon',    target:1,    reward:{type:'dew', amt:15}},
     {id:'col_grade_rare',     tier:'bronze',   category:'COLLECTION', name:'Rare Air',                   desc:'Mint your first Rare plant.',                                          counter:'mint_rare',        target:1,    reward:{type:'dew', amt:25}},
