@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -73548,26 +73548,56 @@ window._bosToggleAcc = function(id) {
     _bosSetTab(_bosTab);
   }
 };
-// CODEX — everything you've discovered. Long scroll. Bundles moved to
-// QUESTS where they conceptually belong (weekly chore, not discovery).
-// _bosCodexMode flag flips on so _bosSecretsContent suppresses the
-// Companion Gallery (the dedicated COMPANIONS section below covers it).
+// CODEX — everything you've discovered. Subtabs split it into focused
+// pages so it's not one infinite scroll. Each subtab routes to either a
+// filtered view of _bosSecretsContent (BIOMES / MYTHIC / TRAITS / OMENS /
+// MORE) or a dedicated content fn (COMPANIONS / ITEMS).
+//
+// _bosCodexMode flag flips on for any subtab that calls _bosSecretsContent
+// so the inline COMPANION GALLERY block stays suppressed (the dedicated
+// COMPANIONS subtab covers that).
+//
+// Active subtab persists in window._bosCodexSubtab; default = 'omens'.
+window._bosSetCodexSubtab = function(key){
+  window._bosCodexSubtab = key;
+  if (window._bosSetTab) _bosSetTab('codex');
+};
 function _bosCodexContent() {
-  var h = '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);opacity:0.85;font-size:0.7rem;line-height:1.5;margin-bottom:0.6rem;">"Everything you have found, gathered into one quiet record. Tap to open each chapter."</div>';
-  // DISCOVERY ATLAS open by default — that's where most of the chase happens.
-  h += _bosCollapsible('codex-atlas', 'DISCOVERY ATLAS', '', true, function(){
+  var subtab = window._bosCodexSubtab || 'omens';
+  var subtabs = [
+    {key:'omens',      label:'OMENS'},
+    {key:'companions', label:'COMPANIONS'},
+    {key:'biomes',     label:'BIOMES'},
+    {key:'mythic',     label:'MYTHIC'},
+    {key:'traits',     label:'TRAITS'},
+    {key:'items',      label:'ITEMS'},
+    {key:'more',       label:'MORE'}
+  ];
+  var h = '';
+  // Header line (italic) + subtab strip
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);opacity:0.85;font-size:0.7rem;line-height:1.5;margin-bottom:0.5rem;">"Everything you have found, gathered into one quiet record. Pick a chapter."</div>';
+  h += '<div style="display:flex;gap:5px;overflow-x:auto;margin-bottom:0.7rem;padding-bottom:6px;-webkit-overflow-scrolling:touch;">';
+  for (var i = 0; i < subtabs.length; i++) {
+    var st = subtabs[i];
+    var on = subtab === st.key;
+    h += '<button onclick="window._bosSetCodexSubtab(\''+st.key+'\')" style="flex:0 0 auto;padding:0.55rem 0.75rem;border:1.5px solid '+(on?'var(--gold)':'rgba(122,179,86,0.22)')+';background:'+(on?'rgba(200,168,75,0.16)':'rgba(26,36,22,0.42)')+';color:'+(on?'var(--gold)':'var(--muted)')+';font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">'+st.label+'</button>';
+  }
+  h += '</div>';
+  // Body
+  if (subtab === 'companions') {
+    try { h += (typeof _bosMementosContent === 'function') ? _bosMementosContent() : ''; } catch(e){}
+  } else if (subtab === 'items') {
+    try { h += (typeof _bosItemsContent === 'function') ? _bosItemsContent() : ''; } catch(e){}
+  } else {
+    // omens / biomes / mythic / traits / more — all filtered through secrets
     window._bosCodexMode = true;
+    window._bosCodexFilter = subtab;
     var inner = '';
     try { inner = (typeof _bosSecretsContent === 'function') ? _bosSecretsContent() : ''; } catch(e){}
     window._bosCodexMode = false;
-    return inner;
-  });
-  h += _bosCollapsible('codex-companions', 'COMPANIONS', '', false, function(){
-    try { return (typeof _bosMementosContent === 'function') ? _bosMementosContent() : ''; } catch(e){ return ''; }
-  });
-  h += _bosCollapsible('codex-items', 'ITEMS', '', false, function(){
-    try { return (typeof _bosItemsContent === 'function') ? _bosItemsContent() : ''; } catch(e){ return ''; }
-  });
+    window._bosCodexFilter = null;
+    h += inner;
+  }
   return h;
 }
 // QUESTS tab — daily + weekly cadence challenges + bundles. Achievements
@@ -82980,6 +83010,25 @@ function _bosEventsContent() {
 }
 
 function _bosSecretsContent() {
+  // Subtab filter — when set, only sections matching the active subtab
+  // render. '' / null = legacy single-page (all sections). Set by
+  // _bosCodexContent before calling. See _CXOK() below.
+  var _CXF = window._bosCodexFilter || '';
+  function _CXOK(id) {
+    if (!_CXF) return true;
+    var groups = {
+      omens:  { 'compendium-cat': 1 },
+      biomes: { 'codex-biomes': 1 },
+      mythic: { 'codex-mythic': 1, 'codex-rarity-parade': 1 },
+      traits: { 'codex-synergies': 1, 'codex-mutations': 1, 'codex-trait-diversity': 1, 'codex-seasons': 1 },
+      more:   { 'codex-grades': 1, 'codex-grove-milestones': 1, 'codex-memory-garden': 1, 'codex-achievements': 1, 'atlas': 1, 'haiku': 1, 'weather-almanac': 1, 'progress-strip': 1 }
+    };
+    var g = groups[_CXF];
+    if (!g) return false;
+    if (g[id]) return true;
+    for (var k in g) if (id.indexOf(k) === 0) return true;
+    return false;
+  }
   var triggers=window.getCompendium?window.getCompendium():[];
   var progress=window.getCompendiumProgress?window.getCompendiumProgress():{found:0,total:0,pct:0};
   var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
@@ -83009,14 +83058,16 @@ function _bosSecretsContent() {
   var pctAll=Math.round(totalDiscovered/totalAll*100);
 
   var h='';
-  h+='<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:3px;"><span>'+totalDiscovered+' / '+totalAll+'</span><span>'+pctAll+'%</span></div>';
-  h+='<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.6rem;"><div style="height:100%;width:'+pctAll+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;"></div></div>';
+  if (_CXOK('progress-strip')) {
+    h+='<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:3px;"><span>'+totalDiscovered+' / '+totalAll+'</span><span>'+pctAll+'%</span></div>';
+    h+='<div style="height:4px;background:rgba(122,179,86,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.6rem;"><div style="height:100%;width:'+pctAll+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),rgba(200,168,75,0.7));border-radius:2px;"></div></div>';
+  }
 
   // ─── ATLAS — single-glance category progress ───
   // Stephen 2026-04-27: "compact at glance, deeper on tap." Shows the
   // depth of every collection in one dense strip so players see what's
   // there to chase. Each cell is tap-to-jump (anchors below).
-  try {
+  if (_CXOK('atlas')) try {
     var atlasRows = [];
     // Triggers (BoS Events tab)
     try {
@@ -83087,6 +83138,9 @@ function _bosSecretsContent() {
   // Quick-nav chips — jump to each grid within the SECRETS tab. Sticky-
   // feeling but actually just scrollIntoView on anchor elements the grids
   // render further down. Scales with the tab's growing number of sections.
+  // Hide when a subtab filter is active (only 1-3 sections show — chips
+  // would scroll to anchors that aren't rendered).
+  if (!_CXF) {
   h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0.8rem;padding:0.3rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.12);border-radius:8px;">';
   var _navChips = [
     ['sec-achievements','Achievements','var(--sage)'],
@@ -83102,6 +83156,7 @@ function _bosSecretsContent() {
     h += '<button onclick="var el=document.getElementById(\''+nc[0]+'\');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});" style="padding:3px 8px;background:rgba(18,22,16,0.7);border:1px solid '+nc[2]+'44;color:'+nc[2]+';font-family:Bebas Neue,sans-serif;font-size:0.48rem;letter-spacing:0.1em;border-radius:10px;cursor:pointer;">'+nc[1]+'</button>';
   }
   h+='</div>';
+  } // close if (!_CXF) \u2014 nav chips strip
 
   // Synergies section \u2014 with search + filter for the now-300-entry grid
   // Wrapped in outer accordion so SYNERGIES sits flush with the rest of the
@@ -83277,7 +83332,7 @@ function _bosSecretsContent() {
   }
   h+='</div>';
   var _synergiesInner = h.slice(_synergiesStart);
-  h = h.slice(0,_synergiesStart) + _bosCollapsible('codex-synergies','SYNERGIES',(synCount + ' / ' + (window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)),false,function(){return _synergiesInner;});
+  h = h.slice(0,_synergiesStart) + (_CXOK('codex-synergies') ? _bosCollapsible('codex-synergies','SYNERGIES',(synCount + ' / ' + (window.LW_SYNERGIES?window.LW_SYNERGIES.length:80)),false,function(){return _synergiesInner;}) : '');
 
   // ─── ACHIEVEMENTS ─────────────────────────────────────────────
   // All 29 achievements in a dense tile grid. Unlocked = full color,
@@ -83321,7 +83376,7 @@ function _bosSecretsContent() {
       }
       h += '</div></div>';
       var _achievementsInner=h.slice(_achievementsStart);
-      h = h.slice(0,_achievementsStart) + _bosCollapsible('codex-achievements','ACHIEVEMENTS',(achGot + ' / ' + achs.length),false,function(){return _achievementsInner;});
+      h = h.slice(0,_achievementsStart) + (_CXOK('codex-achievements') ? _bosCollapsible('codex-achievements','ACHIEVEMENTS',(achGot + ' / ' + achs.length),false,function(){return _achievementsInner;}) : '');
     }
   } catch(e){}
 
@@ -83364,7 +83419,7 @@ function _bosSecretsContent() {
     }
     h += '</div></div>';
     var _gradesInner=h.slice(_gradesStart);
-    h = h.slice(0,_gradesStart) + _bosCollapsible('codex-grades','TERRA GRADES',(tgSeen + ' / ' + grades.length),false,function(){return _gradesInner;});
+    h = h.slice(0,_gradesStart) + (_CXOK('codex-grades') ? _bosCollapsible('codex-grades','TERRA GRADES',(tgSeen + ' / ' + grades.length),false,function(){return _gradesInner;}) : '');
   } catch(e){}
 
   // ─── SEASONS ──────────────────────────────────────────────────
@@ -83400,7 +83455,7 @@ function _bosSecretsContent() {
       }
       h += '</div></div>';
       var _seasonsInner=h.slice(_seasonsStart);
-      h = h.slice(0,_seasonsStart) + _bosCollapsible('codex-seasons','SEASONS',(''),false,function(){return _seasonsInner;});
+      h = h.slice(0,_seasonsStart) + (_CXOK('codex-seasons') ? _bosCollapsible('codex-seasons','SEASONS',(''),false,function(){return _seasonsInner;}) : '');
     }
   } catch(e){}
 
@@ -83434,7 +83489,7 @@ function _bosSecretsContent() {
       }
       h += '</div></div>';
       var _biomesInner=h.slice(_biomesStart);
-      h = h.slice(0,_biomesStart) + _bosCollapsible('codex-biomes','BIOMES',(bdSeen + ' / ' + bdKeys.length),false,function(){return _biomesInner;});
+      h = h.slice(0,_biomesStart) + (_CXOK('codex-biomes') ? _bosCollapsible('codex-biomes','BIOMES',(bdSeen + ' / ' + bdKeys.length),false,function(){return _biomesInner;}) : '');
     }
   } catch(e){}
 
@@ -83494,7 +83549,7 @@ function _bosSecretsContent() {
     }
     h += '</div></div>';
     var _mutationsInner=h.slice(_mutationsStart);
-    h = h.slice(0,_mutationsStart) + _bosCollapsible('codex-mutations','MUTATIONS',(''),false,function(){return _mutationsInner;});
+    h = h.slice(0,_mutationsStart) + (_CXOK('codex-mutations') ? _bosCollapsible('codex-mutations','MUTATIONS',(''),false,function(){return _mutationsInner;}) : '');
   } catch(e){}
 
   // ─── MYTHIC HALL ──────────────────────────────────────────────
@@ -83577,7 +83632,7 @@ function _bosSecretsContent() {
     }
     h+='</div>';
     var _mythicInner=h.slice(_mythicStart);
-    h = h.slice(0,_mythicStart) + _bosCollapsible('codex-mythic','MYTHIC HALL',(_mhFound + ' / 7'),false,function(){return _mythicInner;});
+    h = h.slice(0,_mythicStart) + (_CXOK('codex-mythic') ? _bosCollapsible('codex-mythic','MYTHIC HALL',(_mhFound + ' / 7'),false,function(){return _mythicInner;}) : '');
   } catch(e) {}
 
   // ─── GROVE MILESTONES ────────────────────────────────────────
@@ -83635,7 +83690,7 @@ function _bosSecretsContent() {
       }
       h+='</div>';
       var _grove_milestonesInner=h.slice(_grove_milestonesStart);
-      h = h.slice(0,_grove_milestonesStart) + _bosCollapsible('codex-grove-milestones','GROVE MILESTONES',(_milestones.length + ' rec'),false,function(){return _grove_milestonesInner;});
+      h = h.slice(0,_grove_milestonesStart) + (_CXOK('codex-grove-milestones') ? _bosCollapsible('codex-grove-milestones','GROVE MILESTONES',(_milestones.length + ' rec'),false,function(){return _grove_milestonesInner;}) : '');
     }
   } catch(e) {}
 
@@ -83688,7 +83743,7 @@ function _bosSecretsContent() {
       }
       h+='</div>';
       var _trait_diversityInner=h.slice(_trait_diversityStart);
-      h = h.slice(0,_trait_diversityStart) + _bosCollapsible('codex-trait-diversity','TRAIT DIVERSITY',(''),false,function(){return _trait_diversityInner;});
+      h = h.slice(0,_trait_diversityStart) + (_CXOK('codex-trait-diversity') ? _bosCollapsible('codex-trait-diversity','TRAIT DIVERSITY',(''),false,function(){return _trait_diversityInner;}) : '');
     }
   } catch(e) {}
 
@@ -83737,7 +83792,7 @@ function _bosSecretsContent() {
     }
     h+='</div></div>';
     var _rarity_paradeInner=h.slice(_rarity_paradeStart);
-    h = h.slice(0,_rarity_paradeStart) + _bosCollapsible('codex-rarity-parade','RARITY PARADE',(foundParade + ' / 7'),false,function(){return _rarity_paradeInner;});
+    h = h.slice(0,_rarity_paradeStart) + (_CXOK('codex-rarity-parade') ? _bosCollapsible('codex-rarity-parade','RARITY PARADE',(foundParade + ' / 7'),false,function(){return _rarity_paradeInner;}) : '');
   } catch(e) {}
 
   // ─── MEMORY GARDEN ───────────────────────────────────────────
@@ -83770,7 +83825,7 @@ function _bosSecretsContent() {
       }
       h+='</div></div>';
       var _memory_gardenInner=h.slice(_memory_gardenStart);
-      h = h.slice(0,_memory_gardenStart) + _bosCollapsible('codex-memory-garden','MEMORY GARDEN',(_cLog.length + ' / ' + gh.length),false,function(){return _memory_gardenInner;});
+      h = h.slice(0,_memory_gardenStart) + (_CXOK('codex-memory-garden') ? _bosCollapsible('codex-memory-garden','MEMORY GARDEN',(_cLog.length + ' / ' + gh.length),false,function(){return _memory_gardenInner;}) : '');
     }
   } catch(e) {}
 
@@ -83818,7 +83873,7 @@ function _bosSecretsContent() {
   // ─── HAIKU COLLECTION ────────────────────────────────────────
   // Every minted plant has a unique procedural 7-5-7 haiku. Shows up
   // to 5 of the rarest plants' haikus as a poetic preview.
-  try {
+  if (_CXOK('haiku')) try {
     if (gh.length > 0 && window.getHaiku) {
       var _rarOrder = { Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6 };
       var _ranked = gh.slice().map(function(p) {
@@ -83857,7 +83912,7 @@ function _bosSecretsContent() {
   // ─── WEATHER ALMANAC ─────────────────────────────────────────
   // Tally weather_cast events from the event log to show the player
   // which weathers they've summoned and how many times each.
-  try {
+  if (_CXOK('weather-almanac')) try {
     var _wCounts = { sun:0, rain:0, mist:0, bloom:0 };
     if (window.LW_Log) {
       var _ae = LW_Log.all();
@@ -83947,8 +84002,10 @@ function _bosSecretsContent() {
     }
   } catch(e) {}
 
-  // Biomes section
-  if(window.BIOMES){
+  // Biomes section — legacy inline grid. Suppressed when a subtab filter
+  // is active (the codex-biomes accordion above already covers biomes
+  // for the BIOMES subtab; showing both is duplicate noise).
+  if(!_CXF && window.BIOMES){
     var biomeCache={};try{biomeCache=JSON.parse(localStorage.getItem('lw_biome_cache')||'{}');}catch(e){}
     var discoveredBiomes={};
     var bKeys=Object.keys(biomeCache);
@@ -83995,7 +84052,8 @@ function _bosSecretsContent() {
   // Each compendium category (OMENS, COMPANIONS, WEATHER, SEASONS, ACTIONS,
   // EVENTS) gets its own collapsible accordion, matching the rest of the
   // CODEX accordion city. Body builds inside an IIFE so loop-var capture
-  // is clean.
+  // is clean. Gated to the OMENS subtab + the legacy unfiltered view.
+  if (_CXOK('compendium-cat'))
   for(var ci=0;ci<CATEGORIES.length;ci++){
     var cat=CATEGORIES[ci];
     var catTriggers=triggers.filter(function(t){return t.category===cat.key;});
