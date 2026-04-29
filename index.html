@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.15';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6519,14 +6519,6 @@ window._addSwitchTabHook = function(fn){
       <button class="mini-close" onclick="closePrintModal()">Not now</button>
     </div>
   </div>
-
-  <!-- Floating + SLOT button — fixed-position so layout bugs can't hide it.
-       Stephen 2026-04-30: spent two hours not finding the inline panel-header
-       button; the floating version pins to the viewport so it cannot vanish. -->
-  <button id="lw-fab-slot" onclick="if(window.expandGHSlot)expandGHSlot();" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 175px);right:12px;z-index:998;width:78px;height:78px;border-radius:14px;border:2px solid rgba(200,168,75,0.7);background:linear-gradient(180deg,rgba(36,30,16,0.95),rgba(20,24,16,0.97));cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;box-shadow:0 6px 18px rgba(0,0,0,0.6),0 0 18px rgba(200,168,75,0.25);-webkit-tap-highlight-color:transparent;">
-    <img src="assets/buttons/btn-pi.png" alt="" style="width:48px;height:48px;object-fit:contain;display:block;">
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.08em;line-height:1;">+ SLOT</span>
-  </button>
 
   <!-- Greenhouse panel -->
   <div class="grove-panel active" id="panel-greenhouse">
@@ -39174,12 +39166,6 @@ document.addEventListener('keydown', function(e) {
   window.switchTab = function(tab) {
     _haptic('tab');
     if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:tab});
-    // Floating + SLOT FAB — visible only on greenhouse tab. Belt-and-
-    // suspenders backup for the panel-header button (Stephen 2026-04-30).
-    try {
-      var _fabSlot = document.getElementById('lw-fab-slot');
-      if (_fabSlot) _fabSlot.style.display = (tab === 'greenhouse') ? 'flex' : 'none';
-    } catch(e){}
     // Engagement counter: per-tab time-spent (d_wild_secs / d_gh_secs /
     // d_session_secs). Compute the just-left tab's elapsed seconds and
     // bump the matching counter, then stamp a fresh entry timestamp.
