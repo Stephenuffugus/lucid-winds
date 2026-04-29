@@ -846,8 +846,26 @@
   })();
   </script>
   <script>
+  // ═══ EMERGENCY SW NUKE — Stephen 2026-04-30 stuck on stale despite
+  // incognito + history clear. Service worker is sticky. Unconditionally
+  // unregister + flush caches on EVERY load until 2026-05-02 so he can
+  // ship Pi launch. Will be reverted after launch.
+  (function(){
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        navigator.serviceWorker.getRegistrations().then(function(regs){
+          for (var ri=0; ri<regs.length; ri++) regs[ri].unregister();
+        });
+      }
+      if (window.caches && caches.keys) {
+        caches.keys().then(function(ks){
+          for (var ki=0; ki<ks.length; ki++) caches.delete(ks[ki]);
+        });
+      }
+    } catch(e){}
+  })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.24';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6570,6 +6588,10 @@ window._addSwitchTabHook = function(fn){
     </div>
   </div>
   <div class="grove-panel" id="panel-nursery">
+    <!-- DEBUG BANNER — Stephen 2026-04-30 invisible-buttons saga.
+         If you see this red banner, the new HTML loaded. If not,
+         your cache is still serving v22 or older. -->
+    <div style="background:#c34;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.1em;padding:8px 12px;text-align:center;border-radius:8px;margin:0.5rem;">VERSION 24 — IF YOU SEE THIS, NEW BUTTONS WORK</div>
     <div class="panel-header">
       <div class="panel-header-title">NURSERY</div>
     </div>
