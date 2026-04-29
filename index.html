@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5370,6 +5370,16 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #bps{position:fixed;top:calc(72px + 34vh + 14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(24px);width:min(360px,calc(100vw - 28px));max-height:42vh;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px;align-items:start;padding:14px 14px 14px;z-index:1002;opacity:0;transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;background:linear-gradient(180deg,rgba(20,18,12,0.98),rgba(34,28,18,0.96));border:2px solid rgba(120,90,40,0.55);border-radius:6px 6px 16px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.7),inset 0 -1px 0 rgba(200,168,75,0.18),inset 0 0 0 1px rgba(60,44,22,0.4);}
 #bps::-webkit-scrollbar{display:none;}
 #bpe.open #bps{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+/* ── Backpack tab bar — PLANTS / SEEDS toggle (Stephen 2026-04-30) ── */
+#bpe-tabs{position:fixed;top:calc(56px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:1011;display:none;gap:6px;background:rgba(13,16,12,0.85);padding:5px;border-radius:14px;border:1.5px solid rgba(200,168,75,0.45);box-shadow:0 4px 14px rgba(0,0,0,0.6);}
+#bpe.open #bpe-tabs{display:flex;}
+.bp-tab{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.12em;color:var(--muted);background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.2);border-radius:9px;padding:0.5rem 1.1rem;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;}
+.bp-tab.active{color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.42));border-color:rgba(200,168,75,0.7);box-shadow:0 0 12px rgba(200,168,75,0.3);}
+/* Tab mode controls panel visibility. PLANTS mode (default): show #bpp,
+   hide #bps. SEEDS mode: hide #bpp, move #bps up to take its place. */
+#bpe.bp-mode-plants #bps{display:none !important;}
+#bpe.bp-mode-seeds #bpp{display:none !important;}
+#bpe.bp-mode-seeds #bps{top:calc(112px + env(safe-area-inset-top,0px)) !important;max-height:60vh !important;border-radius:16px !important;}
 /* When BP is open, dim the wild FABs + hamburger menu so they read as
    inactive and don't visually compete with the open inventory. The bps
    description panel sits at z 1002 so it's above all FABs. */
@@ -6898,10 +6908,14 @@ window._addSwitchTabHook = function(fn){
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
-  <div id="bpe">
+  <div id="bpe" class="bp-mode-plants">
     <div id="bpbk" onclick="BP.close()"></div>
     <div id="bpe-title">BACKPACK</div>
     <button id="bpe-close" onclick="BP.close()" aria-label="Close backpack" type="button">&#x2715;</button>
+    <div id="bpe-tabs">
+      <button class="bp-tab" data-bp-tab="plants" onclick="if(window.BP&&BP.setMode)BP.setMode('plants')">PLANTS</button>
+      <button class="bp-tab" data-bp-tab="seeds" onclick="if(window.BP&&BP.setMode)BP.setMode('seeds')">SEEDS</button>
+    </div>
     <div id="bpp"></div>
     <div id="bps"></div>
   </div>
@@ -64640,7 +64654,8 @@ function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pou
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','<img src="assets/backpack-64x64.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
-function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}document.getElementById('bpe').classList.add('open');document.body.classList.add('lw-bp-open');render();}
+function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}var bpe=document.getElementById('bpe');bpe.classList.add('open');document.body.classList.add('lw-bp-open');// Default mode = plants on every open + sync tab active state
+bpe.classList.remove('bp-mode-seeds');bpe.classList.add('bp-mode-plants');var _btns=document.querySelectorAll('#bpe-tabs .bp-tab');for(var _bi=0;_bi<_btns.length;_bi++){_btns[_bi].classList.toggle('active',_btns[_bi].getAttribute('data-bp-tab')==='plants');}render();}
 function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');document.body.classList.remove('lw-bp-open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
 function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');}
@@ -64767,6 +64782,25 @@ function render(){
     itemH+='</div>';
     h+=itemH;
   }catch(e){}
+  // ═══ EXPAND SEED POUCH — buy +5 slots for 1 Pi ═══
+  // Stephen 2026-04-30: SEEDS gets its own tab, with the buy-slot CTA
+  // visible right inside that tab so players don't have to find it in
+  // the Hut. Tier: every +5 slots = 1 Pi, capped at 25 base + tools.
+  try {
+    var _bpCurCap = cp;
+    var _bpMaxCap = 25;
+    if (_bpCurCap < _bpMaxCap) {
+      h += '<div style="grid-column:1/-1;margin-top:10px;">';
+      h += '<button onclick="if(window.LW_Pi&&LW_Pi.buySeedPouchSlot){LW_Pi.buySeedPouchSlot(function(ok){if(ok&&window.BP)BP.render();});}else if(window.LW_HUT&&LW_HUT.buySeedPouchSlotPi){LW_HUT.buySeedPouchSlotPi();}" style="width:100%;min-height:64px;padding:0.7rem 0.9rem;background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:2px solid rgba(200,168,75,0.55);border-radius:12px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,0.5),0 0 14px rgba(200,168,75,0.18);">';
+      h += '<img src="assets/expand-pouch-slot.png" alt="" style="width:48px;height:48px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\\\"assets/buttons/btn-pi.png\\\" style=\\\"width:48px;height:48px;object-fit:contain;\\\">&apos;;">';
+      h += '<span>+ 5 SEED SLOTS · 1 π</span>';
+      h += '</button>';
+      h += '<div style="text-align:center;margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;">' + _bpCurCap + ' / ' + _bpMaxCap + ' seed slots owned</div>';
+      h += '</div>';
+    } else {
+      h += '<div style="grid-column:1/-1;margin-top:10px;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">Seed pouch maxed (' + _bpMaxCap + ' slots).</div>';
+    }
+  } catch(e){}
   se.innerHTML=h;
   // dbb badge is owned by FG_Wild._updateUI — do not overwrite here
   uab();
@@ -64962,7 +64996,25 @@ function checkMidnightDeliver(){
 // ═══ CLOUD SYNC ═══
 function getState(){return{plants:st.plants,seeds:st.seeds,unlocks:st.unlocks,daily:st.daily,pollen:st.pollen,hashes:st.hashes,steps:st.steps,drops:st.drops,ph:st.ph,gp:st.gp,fc:st.fc,wd:st.wd,lastRTB:_rtbLoadState()};}
 function loadFromCloud(data){if(!data)return;if(data.plants)st.plants=data.plants;if(data.seeds)st.seeds=data.seeds;if(data.unlocks){for(var k in data.unlocks)st.unlocks[k]=data.unlocks[k];}if(typeof data.pollen==='number')st.pollen=data.pollen;if(typeof data.hashes==='number')st.hashes=data.hashes;if(typeof data.steps==='number')st.steps=data.steps;if(typeof data.ph==='number')st.ph=data.ph;if(typeof data.gp==='number')st.gp=data.gp;if(typeof data.fc==='number')st.fc=data.fc;if(typeof data.wd==='number')st.wd=data.wd;if(data.lastRTB)localStorage.setItem(RTB_KEY,String(data.lastRTB));render();_rtbRender();_rtbStartTimer();}
-return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
+// PLANTS / SEEDS tab mode (Stephen 2026-04-30 — "needs to be obviously
+// seperate"). Toggles bp-mode-plants / bp-mode-seeds class on #bpe; CSS
+// rules show/hide and reposition the active panel.
+function setMode(mode){
+  if (mode !== 'plants' && mode !== 'seeds') mode = 'plants';
+  var bpe = document.getElementById('bpe');
+  if (!bpe) return;
+  bpe.classList.remove('bp-mode-plants','bp-mode-seeds');
+  bpe.classList.add('bp-mode-' + mode);
+  // Update active tab state
+  var tabs = document.querySelectorAll('#bpe-tabs .bp-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', tabs[i].getAttribute('data-bp-tab') === mode);
+  }
+  if (window._haptic) window._haptic('tab');
+  // Re-render so the SEEDS panel can include the buy-slot CTA on activation
+  render();
+}
+return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,setMode:setMode,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
 })();
 window.BP=BP;
 window._BP_UI=UI;
