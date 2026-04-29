@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.6';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.7';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -40061,7 +40061,7 @@ document.addEventListener('keydown', function(e) {
       stateLabel = '\ud83d\udca4 Resting, water again in ' + _hrsLeft + 'h';
       stateColor = 'var(--muted)';
     } else {
-      stateLabel = '<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Needs water today';
+      stateLabel = '<img src="assets/fx/drop-blue.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Needs water today';
       stateColor = 'var(--sage)';
     }
     // Progressive growth visual — consistent seedling sprites for ALL seeds
@@ -40091,7 +40091,7 @@ document.addEventListener('keydown', function(e) {
     if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
     } else {
-      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> WATER') + '</button>';
+      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '<img src="assets/fx/drop-blue.png" alt="" style="width:28px;height:28px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> WATER') + '</button>';
       var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);display:inline-flex;align-items:center;gap:6px;justify-content:center;" title="Spend 21 Dew to advance one day"><img src="assets/fx/arrow-up-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\u26a1&apos;;"> ACCELERATE (21<img src="assets/fx/drop-blue.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;">)</button>';
       actionBtns = waterBtn + accelBtn;
     }
@@ -40101,7 +40101,7 @@ document.addEventListener('keydown', function(e) {
       actionBtns += '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)" style="background:rgba(122,179,86,0.10);border-color:rgba(122,179,86,0.35);color:var(--sage);font-size:0.55rem;" title="Cross this clipping with a greenhouse plant. Consumes the clipping.">\u2702\ufe0f USE TO BREED</button>';
     }
     // BOOST (renamed from FERT) — compost → rarity boost, independent of time/skip
-    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.55rem;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom"><img src="assets/fx/leaf-gold.png" alt="" style="width:13px;height:13px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> BOOST ' + _seedFert + '/' + _fertMax + '</button>';
+    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.7rem;display:inline-flex;align-items:center;gap:6px;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom"><img src="assets/fx/leaf-gold.png" alt="" style="width:32px;height:32px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> BOOST ' + _seedFert + '/' + _fertMax + '</button>';
     // POT button — apply a specialty pot from inventory, or open the shop
     if (!bloomReady) {
       var _potOnSeed = seed.pot ? (window.LW_POTS && window.LW_POTS[seed.pot]) : null;
@@ -40114,7 +40114,7 @@ document.addEventListener('keydown', function(e) {
       }
     }
 
-    var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--gold);margin-top:2px;"><img src="assets/fx/leaf-gold.png" alt="" style="width:13px;height:13px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> ' + (seed.fertApplied || 0) + '/25 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</div>' : '';
+    var _fertInfo = (seed.fertApplied || 0) > 0 ? '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);margin-top:4px;display:flex;align-items:center;gap:6px;"><img src="assets/fx/leaf-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> <span>' + (seed.fertApplied || 0) + '/25 fertilizer (+' + (seed.fertApplied || 0) + '% rarity)</span></div>' : '';
 
     // Mystery seeds get a small "sealed" plate. Bred seeds get NOTHING here —
     // showing offspring name/grade/EA/companion before bloom destroys the
@@ -73716,9 +73716,12 @@ function _bosCodexContent() {
   //     ACHIEVEMENTS top-level tab is the canonical source)
   //   - TRAITS now = Trait Diversity + Mutations only (no Synergies/Seasons)
   //   - MORE = Terra Grades + Grove Milestones + Memory Garden + atlas/haiku/weather
+  // COMPANIONS removed 2026-04-30 — promoted to its own top-level tab so
+  // the duplicate subtab here is redundant. Stephen 2026-04-30: "now that
+  // they have their own tab they dont need to have the tab in the codex
+  // now its redundant."
   var subtabs = [
     {key:'omens',      label:'OMENS'},
-    {key:'companions', label:'COMPANIONS'},
     {key:'biomes',     label:'BIOMES'},
     {key:'synergies',  label:'SYNERGIES'},
     {key:'traits',     label:'TRAITS'},
@@ -75886,23 +75889,10 @@ window._lwOpenInviteModal = function(){
 function _bosHerbariumContent() {
   if (!window.LW_HERBARIUM) return '<div style="padding:2rem;text-align:center;color:var(--muted);">Herbarium loading...</div>';
   var bundles = window.LW_HERBARIUM.pickBundlesForWeek();
-  // First-open explainer for the Herbarium tab. Frames the feature as
-  // goal-directed collecting instead of mystery-meat UI. One-shot.
-  try {
-    if (!localStorage.getItem('lw_tut_herbarium_v1')) {
-      localStorage.setItem('lw_tut_herbarium_v1', '1');
-      setTimeout(function(){
-        if (window._lwConfirm) {
-          window._lwConfirm({
-            title: 'HERBARIUM BUNDLES',
-            body: 'Three bundles rotate every week, same three for every keeper, pulled from a pool of challenges.<br><br>\ud83c\udf3f Your <b>existing greenhouse</b> counts toward progress automatically. No submission, no consumption, no deadline-panic.<br><br>\u2728 Complete a bundle \u2192 claim it for <b>Dew</b> or an unlockable <b>title</b>. Uncaimed bundles reset each Monday.',
-            yes: 'LOOK AT THIS WEEK',
-            no: ''
-          }, function(){});
-        }
-      }, 400);
-    }
-  } catch(e) {}
+  // Tutorial popup removed 2026-04-30 \u2014 Stephen: "theres an herbarium
+  // prompt that regularly pops up when im in the BoS and its obnoxious
+  // and offers nothing. stop it." The inline header copy below explains
+  // bundles in one sentence; that's enough.
   var h = '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.7;">Weekly rotating challenges. Complete any of the 3 with plants already in your greenhouse \u2014 no submission, no consumption, just earn the reward.</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;">Week ' + window.LW_HERBARIUM.weekKey() + '</div>';
   for (var i = 0; i < bundles.length; i++) {
@@ -81378,6 +81368,45 @@ window.LW_FAMILY_T3 = {
     return d+(d===1?' day':' days');
   }
   function _prettyKind(k){var p=k.replace(/([A-Z])/g,' $1').toLowerCase();return p.charAt(0).toUpperCase()+p.slice(1);}
+  // BRING THIS BUDDY — equip a specific companion by trait-bank idx.
+  // Walks the player's greenhouse to find a plant carrying this companion
+  // (needed to populate the active-companion blob with ability + temperament
+  // metadata). Toasts gracefully if the player doesn't own one yet.
+  window._lwEquipCompanionDirect=function(compIdx){
+    if(typeof compIdx!=='number'){compIdx=parseInt(compIdx,10);}
+    if(isNaN(compIdx)||compIdx<0)return false;
+    var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
+    for(var i=0;i<gh.length;i++){
+      var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;
+      if(!t||t.companion!==compIdx)continue;
+      var c=window.TRAIT_BANK&&window.TRAIT_BANK.companions?window.TRAIT_BANK.companions[compIdx]:null;
+      if(!c)return false;
+      var _ci=window.getCompanionInfo?window.getCompanionInfo(t):null;
+      var compData={
+        idx:compIdx,
+        name:c.name,
+        icon:c.icon||'🐾',
+        ability:_ci&&_ci.ability?(_ci.ability.name+': '+_ci.ability.desc):'',
+        temperament:_ci&&_ci.temperament?(_ci.temperament.name+' — '+_ci.temperament.desc):'',
+        tempIcon:_ci&&_ci.temperament?(_ci.temperament.icon||''):''
+      };
+      try{localStorage.setItem('pw_active_companion',JSON.stringify(compData));}catch(e){}
+      // Clear slot 2 if same companion was there
+      try{var sec=JSON.parse(localStorage.getItem('pw_active_companion_2')||'null');if(sec&&sec.idx===compIdx){localStorage.removeItem('pw_active_companion_2');if(window.LW_COMPANION&&window.LW_COMPANION.pauseActive2)window.LW_COMPANION.pauseActive2();}}catch(e){}
+      if(window.LW_ACH)window.LW_ACH.bump('d_swap_comp',1);
+      try{if(window.LW_COMPANION&&window.LW_COMPANION.onEquip)window.LW_COMPANION.onEquip(compIdx);}catch(e){}
+      if(window._lwCompleteQuest)window._lwCompleteQuest('q_equip_comp');
+      // Refresh character sheet companion card if open
+      try{if(window.PW_UI&&window.PW_UI.refreshActiveCompanion)window.PW_UI.refreshActiveCompanion();}catch(e){}
+      if(window._toast)window._toast('🐾 '+c.name+' is by your side.');
+      return true;
+    }
+    var _name='this creature';
+    try{if(window.TRAIT_BANK&&window.TRAIT_BANK.companions[compIdx])_name=window.TRAIT_BANK.companions[compIdx].name;}catch(e){}
+    if(window._toast)window._toast('You need a plant with '+_name+' first.');
+    return false;
+  };
+
   window._lwOpenCompanionProfile=function(idx){
     if(typeof idx!=='number'){idx=parseInt(idx,10);}
     if(isNaN(idx)||idx<0)return;
@@ -81396,7 +81425,17 @@ window.LW_FAMILY_T3 = {
     var nextMs=lvl===1?L2:(lvl===2?L3:(lvl===3?L4:(lvl===4?L5:(lvl===5?L6:L6))));
     var pct=Math.min(100,Math.max(0,(ms/nextMs)*100));
     if(lvl>=6)pct=100;
-    var portrait=window._compPortrait?window._compPortrait(idx,icon,120):'<div style="font-size:3.2rem;">'+icon+'</div>';
+    // Full-bleed painted portrait at NATIVE aspect (480×320 = 3/2). The
+    // _compPortrait helper crops to a square — wrong for the profile
+    // hero. Stephen 2026-04-30: "click on my companions it expands but
+    // then uses a cropped image of them. thats horribly dumb." Build
+    // the slug ourselves and render the PNG full-bleed with object-fit
+    // contain so the whole painting reads.
+    var _profileSlug = '';
+    try { _profileSlug = (window.TRAIT_BANK.companions[idx].name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); } catch(e){}
+    var portrait = _profileSlug
+      ? '<img src="assets/companions/'+_profileSlug+'.png" alt="'+name+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:4rem;display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:3/2;background:rgba(26,36,22,0.5);border-radius:12px;&quot;>'+(icon||'🐾')+'</div>&apos;" style="display:block;width:100%;max-width:360px;aspect-ratio:3/2;object-fit:contain;border-radius:12px;border:2px solid rgba(200,168,75,0.45);background:rgba(13,16,12,0.55);box-shadow:0 6px 18px rgba(0,0,0,0.55);margin:0 auto;">'
+      : '<div style="font-size:3.2rem;">'+icon+'</div>';
     var signature=family&&window.LW_COMPANION&&LW_COMPANION.L3_SIGNATURES?LW_COMPANION.L3_SIGNATURES[family]:null;
     var buffs=family&&window.LW_COMPANION&&LW_COMPANION.FAMILY_BUFFS?LW_COMPANION.FAMILY_BUFFS[family]:null;
     var ov=document.createElement('div');
@@ -81418,6 +81457,16 @@ window.LW_FAMILY_T3 = {
     if(fam)h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;color:var(--sage);letter-spacing:0.14em;">'+fam.icon+' '+family.toUpperCase()+'</div>';
     h+='</div>';
     if(fam)h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.6;text-align:center;margin-bottom:0.8rem;font-style:italic;padding:0 0.4rem;">'+fam.blurb+'</div>';
+    // BRING THIS BUDDY — primary CTA right under the family blurb. Active
+    // companion shows ACTIVE state. Stephen 2026-04-30: "there sould also
+    // be a button on each companion thats Bring this Buddy or something
+    // to switch out your companion."
+    var _curEqIdx=-1;try{var _cur=JSON.parse(localStorage.getItem('pw_active_companion')||'null');if(_cur&&typeof _cur.idx==='number')_curEqIdx=_cur.idx;}catch(e){}
+    if(_curEqIdx===idx){
+      h+='<button disabled style="width:100%;padding:0.7rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.42));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;cursor:default;min-height:48px;">✓ ALREADY BY YOUR SIDE</button>';
+    } else {
+      h+='<button onclick="if(window._lwEquipCompanionDirect)_lwEquipCompanionDirect('+idx+');var _o=document.getElementById(\'lw-comp-profile\');if(_o)_o.remove();" style="width:100%;padding:0.7rem;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.42));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;box-shadow:0 2px 8px rgba(200,168,75,0.2);">🐾 BRING THIS BUDDY</button>';
+    }
     // Bond meter with named tier (extended through L6 Primordial)
     var _tierNames=['','Noticed','Tended','Kindred','Ancient','Eternal','Primordial'];
     var tierLabel=_tierNames[lvl]||'Noticed';
