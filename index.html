@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6744,9 +6744,12 @@ window._addSwitchTabHook = function(fn){
       <span id="w-weather-chip" style="display:none;"></span>
       <span id="w-class-icon" style="display:none;"></span>
       <span id="w-class-lbl" style="display:none;"></span>
-      <!-- Biome label pill — shows the player what ecosystem they're in. -->
+      <!-- Biome label pill — shows the player what ecosystem they're in.
+           Placeholder uses the painted magnifier sprite during scanning;
+           _biomeIconHTML swaps in the painted biome icon (wild-biomes/icons/
+           icon-<key>.png) once detection completes. -->
       <div class="w-biome-label">
-        <span class="wbl-icon" id="w-biome-hero-icon">&#x1F33F;</span>
+        <span class="wbl-icon" id="w-biome-hero-icon"><img src="assets/fx/magnifier-gold.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML='&#x1F33F;';"></span>
         <span class="wbl-name" id="w-biome-hero-name">Scanning&hellip;</span>
       </div>
       <!-- Compass cabinet — floats on banner right. -->
