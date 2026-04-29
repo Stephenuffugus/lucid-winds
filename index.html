@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.24';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -36328,27 +36328,13 @@ document.addEventListener('keydown', function(e) {
   }
   function earnDew(amount, source) {
     if (!amount || amount < 0) return;
-    // First-ever Dew — teach the split, but NOT during onboarding.
-    // Gift plant grants Dew immediately; firing a modal 800ms later
-    // collides with level-up + greenhouse welcome. Defer until the
-    // player earns Dew from actual gameplay (source !== gift).
-    try {
-      if (!localStorage.getItem('lw_tut_currency_v1') && source !== 'plant_mint_gift') {
-        localStorage.setItem('lw_tut_currency_v1', '1');
-        setTimeout(function(){
-          if (document.querySelector('.lu-overlay')) return;
-          if (window._lwConfirm) {
-            window._lwConfirm({
-              title: 'TWO CURRENCIES',
-              body: '<b>Sunbeams</b> are earned by playing games. Tap the Sunbeam icon to spend them. 30 Sunbeams = one unique plant. Save up for events or the wild.<br><br><img src="assets/fx/drop-blue.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> <b>Dew</b> is earned from the wild and from watering. Use it to accelerate the nursery or take cuttings.<br><br>Both level up your keeper rank. They never convert into each other.',
-              yes: 'GOT IT',
-              no: ''
-            }, function(){});
-          }
-        }, 1500);
-      }
-    } catch(e) {}
-    // DEW RATE stack — class × tree × family × Dew Cache × Dawn Anthem.
+    // TWO CURRENCIES explainer modal removed 2026-04-29 EVE per Stephen
+    // ("im tired of the two currencies prompt every freakin tiem i log
+    // on"). The flag was being cleared somewhere — instead of chasing
+    // the cause, the prompt is gone. Players learn the split through
+    // play; the keeper bar already shows both balances.
+    try { localStorage.setItem('lw_tut_currency_v1', '1'); } catch(e) {}
+        // DEW RATE stack — class × tree × family × Dew Cache × Dawn Anthem.
     // Composed into a single multiplier so _LW_capMultiplier can pin the
     // ceiling. Without the cap, peak dew stacked to 2.54× (see stacking
     // audit); capped at 2.5× so new abilities can't push it higher.
@@ -52552,11 +52538,29 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
     };
   };
 
+  // Established-player guard. Returning keepers who cleared browser cache
+  // (or roamed across devices) shouldn't get drowned in first-time
+  // tutorials. Stephen at L28: "im tired of the two currencies prompt
+  // every freakin tiem i log on" / "im level 28 and when i click on games
+  // it still has a prompt telling em to find game si like" / nursery prompt
+  // every time. Two signals, OR-ed: meaningful XP OR meaningful greenhouse.
+  // Safe for new players (both are 0/empty until they actually play).
+  function _lwIsEstablishedPlayer(){
+    try {
+      var xp = parseInt(localStorage.getItem('pw_xp')||'0',10);
+      if (xp >= 100) return true;
+      var gh = (JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;
+      if (gh >= 3) return true;
+    } catch(e){}
+    return false;
+  }
+
   // ── First-greenhouse hint: highlight the FEEDBACK button so testers
   // notice it exists. Fires once per account when the player first
   // reaches greenhouse with at least one plant (proves they finished
   // onboarding, not just opened tabs from a skip).
   function _maybeShowFeedbackHint(tab){
+    if (_lwIsEstablishedPlayer()) { try{localStorage.setItem('lw_fb_hint_shown','1');}catch(e){} return; }
     if(tab!=='greenhouse')return;
     if(localStorage.getItem('lw_fb_hint_shown'))return;
     var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
@@ -52591,6 +52595,7 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
   // gift plant without knowing they need to play games to earn the next.
   // Highlights the GAMES nav button and toasts a concrete next step.
   function _maybeShowGamesNudge(tab){
+    if (_lwIsEstablishedPlayer()) { try{localStorage.setItem('lw_games_nudge_shown','1');}catch(e){} return; }
     if(tab!=='greenhouse')return;
     if(localStorage.getItem('lw_games_nudge_shown'))return;
     var ghLen=0;try{ghLen=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
@@ -52681,6 +52686,16 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
     }
   };
   function _maybeShowTabTeach(tab){
+    // Established-player skip — L28 keeper who cleared cache shouldn't see
+    // first-time tab-teach prompts for game/greenhouse/nursery. Stamps
+    // every TAB_TEACHES key so the check is idempotent on next switchTab.
+    if (_lwIsEstablishedPlayer()) {
+      try {
+        var teachKeys=['lw_tab_teach_game','lw_tab_teach_greenhouse','lw_tab_teach_nursery','lw_tab_teach_wild','lw_wild_intro_seen'];
+        for (var _ti=0;_ti<teachKeys.length;_ti++) localStorage.setItem(teachKeys[_ti],'1');
+      } catch(e){}
+      return;
+    }
     // Wild gets its own dedicated full-screen takeover via _lwShowWildIntro.
     // The small tab-teach modal is wrong for Wild — too much to cover.
     if(tab==='wild' && typeof window._lwShowWildIntro==='function'
