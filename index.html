@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.4';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.5';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3140,14 +3140,14 @@
       .card-grid{grid-template-columns:repeat(3,1fr);gap:min(0.3rem,0.8vmin);}
       .shape-svg{max-width:38px;}
       .game-title{font-size:1rem;}
-      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.35rem;padding:0 22px 0 4px;}
+      .greenhouse-grid{grid-template-columns:repeat(2,1fr);gap:0.6rem;padding:0 22px 0 4px;}
     }
     @media(max-width:400px){
       .card-grid{gap:min(0.2rem,0.5vmin);}
       .grove-card{border-radius:6px;}
       .shape-svg{max-width:30px;}
       .shape-row{gap:0px;}
-      .greenhouse-grid{grid-template-columns:repeat(3,1fr);gap:0.3rem;padding:0 20px 0 4px;}
+      .greenhouse-grid{grid-template-columns:repeat(2,1fr);gap:0.5rem;padding:0 20px 0 4px;}
       .greenhouse-plant{padding:0.25rem 0.18rem;}
     }
 
@@ -5700,9 +5700,11 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
   z-index:458;
   max-width:480px;margin:0 auto;
 }
-/* Greenhouse-tab placement: inline, between progress bar and season strip. */
+/* Greenhouse-tab placement: HIDDEN per Stephen 2026-04-30. The JOURNAL
+   tab covers this same advisory; on greenhouse the pill read as
+   floating ghost text and added visual noise. */
 #lw-quest-gh{
-  margin:0.35rem 0.6rem 0.5rem;
+  display:none !important;
 }
 
 /* ── Trait Panel v2 (bottom sheet) ── */
@@ -6509,7 +6511,7 @@ window._addSwitchTabHook = function(fn){
       <div class="panel-header-title">PLANTS</div>
       <div style="display:flex;align-items:center;gap:0.4rem;">
         <div class="greenhouse-count" id="gh-count">0 / 10</div>
-        <button id="gh-expand-btn" onclick="expandGHSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.06em;background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.3);color:var(--gold);border-radius:6px;padding:0.3rem 0.5rem;cursor:pointer;min-height:44px;white-space:nowrap;">+ SLOT</button>
+        <button id="gh-expand-btn" onclick="expandGHSlot()" style="font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.1em;background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.42));border:1.5px solid rgba(200,168,75,0.65);color:var(--gold);border-radius:8px;padding:0.5rem 0.85rem;cursor:pointer;min-height:46px;white-space:nowrap;box-shadow:0 2px 8px rgba(200,168,75,0.2);">+ SLOT · 1π</button>
       </div>
     </div>
     <div class="gh-progress">
