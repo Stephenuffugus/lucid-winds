@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.29';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.30';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2347,15 +2347,17 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(118px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
-    /* Nursery tight layout — drops the big top padding so the action row
-       sits closer to the keeper bar. Stephen 2026-04-30: "huge gap
-       between the sun and hermit shop and backpack and our new buttons". */
-    .grove-panel.nur-tight{padding-top:calc(108px + env(safe-area-inset-top, 0px));}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(102px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
+    /* Nursery tight layout — even tighter top so action row sits flush
+       under the keeper bar. */
+    .grove-panel.nur-tight{padding-top:calc(94px + env(safe-area-inset-top, 0px));}
     .grove-panel.nur-tight .nur-streak-strip{margin:2px 8px 4px!important;padding:2px 8px!important;}
     .grove-panel.nur-tight #nur-msg{min-height:0!important;padding:0!important;}
     .grove-panel.nur-tight .wallet-balance{padding:2px 6px!important;font-size:0.55rem!important;}
     .grove-panel.nur-tight .nur-grid{margin-top:4px!important;}
+    /* Greenhouse tight panel-header: smaller padding + tighter gh-progress */
+    .grove-panel#panel-greenhouse .panel-header{margin:4px 6px 4px!important;padding:4px 8px!important;min-height:36px;}
+    .grove-panel#panel-greenhouse .gh-progress{margin-bottom:0.3rem!important;}
     .grove-panel.active{display:block;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
@@ -3318,8 +3320,13 @@
     .nur-pip{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(74,124,53,0.4);background:transparent;transition:background 0.4s ease,border-color 0.4s ease,box-shadow 0.4s ease;flex-shrink:0;}
     .nur-pip.watered{background:var(--sage);border-color:var(--sage);box-shadow:0 0 10px rgba(122,179,86,0.6);}
     .nur-pip-label{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-left:0.3rem;}
-    .nur-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:0.3rem;align-items:stretch;}
-    .nur-actions .nur-btn{padding:0.35rem 0.45rem;font-size:0.62rem;min-height:48px;}
+    /* Seed action buttons: full-width row below the info col, painted PNG
+       fills the button properly. Stephen 2026-04-30: "you tried to
+       condesnse the buttons but then you fucking shrunk them on the seeds
+       to fit in those stupid svg boxes." Reverted from 2-col grid to
+       flex-wrap with bigger image sizes. */
+    .nur-actions{display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;justify-content:flex-start;}
+    .nur-actions .nur-btn{padding:0.45rem 0.6rem;font-size:0.7rem;min-height:80px;}
     .nur-btn{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.07em;padding:0.7rem 0.95rem;border-radius:8px;cursor:pointer;transition:background 0.2s ease,border-color 0.2s ease;border:1.5px solid;box-shadow:0 2px 0 rgba(0,0,0,0.35);min-height:56px;}
     .nur-btn:active{transform:translateY(2px);box-shadow:none;}
     .nur-btn.water{background:rgba(91,143,185,0.15);border-color:rgba(91,143,185,0.45);color:#7ab3d4;}
@@ -38322,7 +38329,7 @@ document.addEventListener('keydown', function(e) {
       cost: 120,
       levelRequired: 3,
       durationMs: 60 * 60 * 1000, // 1 hour
-      blurb: '2× Pollen XP for 1 hour',
+      blurb: '2× Keeper XP for 1 hour',
       color: '#c8a84b'
     },
     bloomTonic: {
@@ -38433,9 +38440,19 @@ document.addEventListener('keydown', function(e) {
         }
       }
     }
+    // Block re-buy while THIS booster is already active. Stephen
+    // 2026-04-30: "it looked like i could buy it over and over". Old
+    // behavior extended duration with no cap → infinite Dew sink.
+    var _curBoosters=window.lwLoadBoosters();
+    if (_curBoosters[def.id] && _curBoosters[def.id] > Date.now()){
+      var _msLeft = _curBoosters[def.id] - Date.now();
+      var _minLeft = Math.ceil(_msLeft/60000);
+      if (window._toast) _toast(def.name + ' already active · ' + _minLeft + 'm remaining.');
+      return false;
+    }
     if(!window.spendDew(def.cost))return false;
     var boosters=window.lwLoadBoosters();
-    var base=boosters[def.id]&&boosters[def.id]>Date.now()?boosters[def.id]:Date.now();
+    var base=Date.now();
     boosters[def.id]=base+def.durationMs;
     window.lwSaveBoosters(boosters);
     if(window._toast)_toast(def.icon+' '+def.name+' active!');
@@ -38504,33 +38521,59 @@ document.addEventListener('keydown', function(e) {
     var _shop = document.getElementById('lw-pot-shop');
     if (_shop) _shop.remove();
     // Stephen 2026-04-30: "i tried to buy a pot in there but then it
-    // didnt prompt me to apply it or anything." After buy, prompt to
-    // apply to a pre-bloom seed if any are available.
+    // didnt prompt me to apply it or anything." After buy, route based
+    // on # of applyable seeds:
+    //   0 → toast + switch to nursery so player can start a seed
+    //   1 → apply directly (one tap)
+    //   2+ → open the seed-picker modal so player CHOOSES which seed
     try {
       var _seeds = (window.FG_Data && FG_Data.getSeeds) ? FG_Data.getSeeds() : [];
       var _applyableSeeds = _seeds.filter(function(s){
         return s && !s.pot && (!s.waterLog || s.waterLog.length < 3);
       });
-      if (_applyableSeeds.length > 0 && window._lwConfirm) {
+      if (_applyableSeeds.length === 0) {
+        if (window._toast) window._toast('🪴 ' + pot.name + ' saved to inventory. Apply it at a seed in the Nursery.');
+        setTimeout(function(){ if (window.switchTab) window.switchTab('nursery'); }, 1200);
+      } else if (_applyableSeeds.length === 1) {
         setTimeout(function(){
-          window._lwConfirm({
-            title: 'APPLY ' + pot.name.toUpperCase() + '?',
-            body: 'You bought ' + pot.icon + ' <b>' + pot.name + '</b>. Apply it to one of your nursery seeds now?<br><br><i style="color:var(--muted);font-size:0.55rem;">' + (pot.blurb || pot.desc || 'Triggers at bloom.') + '</i>',
-            yes: 'APPLY NOW',
-            no: 'LATER'
-          }, function(){
-            if (_applyableSeeds.length === 1 && window.lwApplyPot) {
-              window.lwApplyPot(_applyableSeeds[0].id, potId);
-            } else if (window._openPotPicker) {
-              window._openPotPicker(_applyableSeeds[0].id);
-            } else if (window.switchTab) {
-              window.switchTab('nursery');
-            }
-          });
-        }, 250);
+          if (window.lwApplyPot) window.lwApplyPot(_applyableSeeds[0].id, potId);
+        }, 200);
+      } else if (window._lwOpenSeedPickerForPot) {
+        setTimeout(function(){ window._lwOpenSeedPickerForPot(potId); }, 200);
       }
     } catch(e){}
     return true;
+  };
+
+  // Seed picker — fires after pot purchase when 2+ applyable seeds exist.
+  // Lists each unbloomed seed so the player chooses where the pot goes.
+  // Stephen 2026-04-30: bug was that the pot-shop buy auto-applied to
+  // seed[0] without giving the player a choice.
+  window._lwOpenSeedPickerForPot = function(potId) {
+    var pot = window.LW_POTS && window.LW_POTS[potId];
+    if (!pot) return;
+    var seeds = (window.FG_Data && FG_Data.getSeeds) ? FG_Data.getSeeds() : [];
+    var applyable = seeds.filter(function(s){return s && !s.pot && (!s.waterLog || s.waterLog.length < 3);});
+    if (!applyable.length) return;
+    var ex = document.getElementById('lw-seed-picker-pot');
+    if (ex) ex.remove();
+    var modal = document.createElement('div');
+    modal.id = 'lw-seed-picker-pot';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100003;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);padding:1rem;';
+    modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+    var h = '<div onclick="event.stopPropagation()" style="max-width:400px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.45);border-radius:14px;padding:1rem;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.7rem;text-align:center;">APPLY ' + pot.name.toUpperCase() + ' TO WHICH SEED?</div>';
+    for (var i = 0; i < applyable.length; i++) {
+      var s = applyable[i];
+      var nm = (typeof getPlantName === 'function' && s.parentAHash) ? getPlantName(s.parentAHash) : ('Seed ' + (i + 1));
+      var seedImg = (window._LW_seedImagePath && window._LW_seedImagePath(s)) || '';
+      var thumb = seedImg ? '<img src="' + seedImg + '" alt="" style="width:48px;height:48px;object-fit:contain;flex-shrink:0;">' : '<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">🌱</div>';
+      h += '<button onclick="if(window.lwApplyPot)lwApplyPot(\'' + s.id + '\',\'' + potId + '\');document.getElementById(\'lw-seed-picker-pot\').remove();" style="display:flex;align-items:center;gap:10px;width:100%;padding:0.6rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1.5px solid rgba(122,179,86,0.35);border-radius:10px;color:var(--cream);cursor:pointer;text-align:left;">' + thumb + '<span style="flex:1;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--sage);letter-spacing:0.08em;">' + nm + '</span><br><span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">' + (s.waterLog ? s.waterLog.length : 0) + '/3 watered</span></span></button>';
+    }
+    h += '<button onclick="document.getElementById(\'lw-seed-picker-pot\').remove();" style="display:block;width:100%;padding:0.55rem;margin-top:0.4rem;background:rgba(26,36,22,0.5);border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;">SAVE FOR LATER</button>';
+    h += '</div>';
+    modal.innerHTML = h;
+    document.body.appendChild(modal);
   };
   window.lwApplyPot = function(seedId, potId) {
     var pot = window.LW_POTS[potId];
@@ -39809,18 +39852,19 @@ document.addEventListener('keydown', function(e) {
     h += '<span style="color:var(--muted);">Level <span style="color:var(--cream);">' + curLvl + '</span></span>';
     h += '</div>';
     if (_nurseryShopTab === 'boosters') {
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Timed multipliers. Activating again while one is still running extends the duration.</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Timed multipliers. Only one of each can be active at a time.</div>';
       var boosters=window.lwLoadBoosters();
       var bks=Object.keys(window.LW_BOOSTERS);
       for (var bi=0;bi<bks.length;bi++){
         var b=window.LW_BOOSTERS[bks[bi]];
         var lvlReq=b.levelRequired||1; var locked=curLvl<lvlReq;
-        var canAfford=dew>=b.cost; var canBuy=!locked&&canAfford;
-        var rowOpacity=locked?'0.55':'1';
-        var borderCol=locked?'rgba(122,122,122,0.35)':(b.color+'55');
+        var canAfford=dew>=b.cost;
         var expireTs=boosters[b.id]||0; var active=expireTs>Date.now();
+        var canBuy=!locked&&canAfford&&!active;
+        var rowOpacity=locked?'0.55':'1';
+        var borderCol=locked?'rgba(122,122,122,0.35)':active?'rgba(200,168,75,0.55)':(b.color+'55');
         h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid '+borderCol+';border-radius:9px;align-items:center;opacity:'+rowOpacity+';">';
-        h += '<div style="font-size:1.6rem;width:42px;text-align:center;flex-shrink:0;'+(locked?'filter:grayscale(1) brightness(0.7);':'')+'">'+(window._lwEmojiSprite?_lwEmojiSprite(b.icon,28):b.icon)+'</div>';
+        h += '<div style="width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;'+(locked?'filter:grayscale(1) brightness(0.7);':'')+'"><img src="assets/boosters/'+b.id+'.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2.2rem;&quot;>'+b.icon+'</span>&apos;;"></div>';
         h += '<div style="flex:1;min-width:0;">';
         h += '<div style="display:flex;align-items:center;gap:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(locked?'rgba(160,160,160,0.75)':b.color)+';letter-spacing:0.06em;">'+b.name+'</div>';
         h += '<span onclick="event.stopPropagation();if(window._lwShowShopBoosterDetail)_lwShowShopBoosterDetail(\''+b.id+'\')" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(200,168,75,0.35);color:var(--gold);font-family:DM Mono,monospace;font-size:0.45rem;cursor:pointer;flex-shrink:0;" title="Lore + details">\u2139</span></div>';
@@ -39831,10 +39875,10 @@ document.addEventListener('keydown', function(e) {
         else if (!canAfford) line='<span style="color:var(--gold);">Save '+(b.cost-dew)+' more Dew</span>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.22rem;">'+line+'</div>';
         h += '</div>';
-        var btnBg=locked?'rgba(80,30,30,0.25)':(!canAfford?'rgba(46,46,46,0.3)':'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))');
-        var btnBorder=locked?'rgba(217,107,75,0.35)':(!canAfford?'rgba(122,122,122,0.3)':'rgba(122,179,86,0.5)');
-        var btnColor=locked?'rgba(217,107,75,0.85)':(!canAfford?'rgba(160,160,160,0.6)':'var(--cream)');
-        var btnLbl=locked?'\ud83d\udd12 Lv'+lvlReq:(b.cost+'\ud83d\udca7');
+        var btnBg=locked?'rgba(80,30,30,0.25)':active?'linear-gradient(180deg,rgba(200,168,75,0.4),rgba(120,100,40,0.55))':(!canAfford?'rgba(46,46,46,0.3)':'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))');
+        var btnBorder=locked?'rgba(217,107,75,0.35)':active?'rgba(200,168,75,0.7)':(!canAfford?'rgba(122,122,122,0.3)':'rgba(122,179,86,0.5)');
+        var btnColor=locked?'rgba(217,107,75,0.85)':active?'var(--gold)':(!canAfford?'rgba(160,160,160,0.6)':'var(--cream)');
+        var btnLbl=locked?'\ud83d\udd12 Lv'+lvlReq:active?'ACTIVE':(b.cost+'\ud83d\udca7');
         h += '<button onclick="window.lwBuyBooster(\''+b.id+'\')" '+(canBuy?'':'disabled')+' style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;background:'+btnBg+';border:1.5px solid '+btnBorder+';color:'+btnColor+';border-radius:8px;padding:0.5rem 0.65rem;cursor:'+(canBuy?'pointer':'not-allowed')+';min-height:48px;min-width:68px;flex-shrink:0;">'+btnLbl+'</button>';
         h += '</div>';
       }
@@ -39858,7 +39902,7 @@ document.addEventListener('keydown', function(e) {
           var owned=classInv[item.id]||0;
           var bCol=mineCls?(item.color+'55'):'rgba(122,122,122,0.3)';
           h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid '+bCol+';border-radius:9px;align-items:center;opacity:'+(mineCls?'1':'0.6')+';">';
-          h += '<div style="font-size:1.6rem;width:42px;text-align:center;flex-shrink:0;'+(mineCls?'':'filter:grayscale(0.6);')+'">'+(window._lwEmojiSprite?_lwEmojiSprite(item.icon,28):item.icon)+'</div>';
+          h += '<div style="width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;'+(mineCls?'':'filter:grayscale(0.6);')+'"><img src="assets/class-items/'+item.id+'.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2.2rem;&quot;>'+item.icon+'</span>&apos;;"></div>';
           h += '<div style="flex:1;min-width:0;">';
           h += '<div style="display:flex;align-items:center;gap:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(mineCls?item.color:'rgba(180,180,180,0.85)')+';letter-spacing:0.06em;">'+item.name+'</div>';
           h += '<span onclick="event.stopPropagation();if(window._lwShowShopClassItemDetail)_lwShowShopClassItemDetail(\''+cks[ci]+'\')" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(200,168,75,0.35);color:var(--gold);font-family:DM Mono,monospace;font-size:0.45rem;cursor:pointer;flex-shrink:0;" title="Lore + details">\u2139</span></div>';
@@ -40329,8 +40373,8 @@ document.addEventListener('keydown', function(e) {
     if (bloomReady) {
       actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
     } else {
-      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '<img src="assets/21water.png" alt="" style="width:56px;height:56px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/drop-blue.png\" alt=\"\" style=\"width:28px;height:28px;object-fit:contain;\">&apos;;"> WATER') + '</button>';
-      var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);display:inline-flex;align-items:center;gap:8px;justify-content:center;" title="Spend 21 Dew to advance one day"><img src="assets/accelerate.png" alt="" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/arrow-up-gold.png\" alt=\"\" style=\"width:28px;height:28px;object-fit:contain;\">&apos;;"><span style="display:inline-flex;flex-direction:column;line-height:1;gap:2px;align-items:flex-start;"><span>ACCELERATE</span><span style="font-size:0.65rem;color:var(--cream);">21 <img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"></span></span></button>';
+      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '<img src="assets/21water.png" alt="" style="width:72px;height:72px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/drop-blue.png\" alt=\"\" style=\"width:28px;height:28px;object-fit:contain;\">&apos;;"> WATER') + '</button>';
+      var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);display:inline-flex;align-items:center;gap:8px;justify-content:center;" title="Spend 21 Dew to advance one day"><img src="assets/accelerate.png" alt="" style="width:72px;height:72px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/arrow-up-gold.png\" alt=\"\" style=\"width:28px;height:28px;object-fit:contain;\">&apos;;"><span style="display:inline-flex;flex-direction:column;line-height:1;gap:2px;align-items:flex-start;"><span>ACCELERATE</span><span style="font-size:0.65rem;color:var(--cream);">21 <img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"></span></span></button>';
       actionBtns = waterBtn + accelBtn;
     }
     // Clippings get USE TO BREED as a bonus path on top of the normal
@@ -40339,7 +40383,7 @@ document.addEventListener('keydown', function(e) {
       actionBtns += '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)" style="background:rgba(122,179,86,0.10);border-color:rgba(122,179,86,0.35);color:var(--sage);font-size:0.55rem;" title="Cross this clipping with a greenhouse plant. Consumes the clipping.">\u2702\ufe0f USE TO BREED</button>';
     }
     // BOOST (renamed from FERT) — compost → rarity boost, independent of time/skip
-    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.7rem;display:inline-flex;align-items:center;gap:8px;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom"><img src="assets/boost.png" alt="" style="width:56px;height:56px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/leaf-gold.png\" alt=\"\" style=\"width:32px;height:32px;object-fit:contain;\">&apos;;"> BOOST ' + _seedFert + '/' + _fertMax + '</button>';
+    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.7rem;display:inline-flex;align-items:center;gap:8px;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom"><img src="assets/boost.png" alt="" style="width:72px;height:72px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/leaf-gold.png\" alt=\"\" style=\"width:32px;height:32px;object-fit:contain;\">&apos;;"> BOOST ' + _seedFert + '/' + _fertMax + '</button>';
     // POT button — apply a specialty pot from inventory, or open the shop
     if (!bloomReady) {
       var _potOnSeed = seed.pot ? (window.LW_POTS && window.LW_POTS[seed.pot]) : null;
@@ -40348,7 +40392,7 @@ document.addEventListener('keydown', function(e) {
           (_potOnSeed.color === '#a0c4e8' ? '160,196,232' : _potOnSeed.color === '#c0d0e0' ? '192,208,224' : _potOnSeed.color === '#d4842a' ? '212,132,42' : '122,179,86') +
           ',0.18);border-color:' + _potOnSeed.color + '88;color:' + _potOnSeed.color + ';font-size:0.55rem;cursor:default;" title="' + _potOnSeed.name + ' applied. Triggers at bloom.">' + _potOnSeed.icon + ' ' + _potOnSeed.name.split(' ')[0].toUpperCase() + '</button>';
       } else {
-        actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="window._openPotPicker(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.35);color:var(--gold);font-size:0.7rem;display:inline-flex;align-items:center;gap:8px;" title="Apply a specialty pot from your inventory"><img src="assets/potshop.png" alt="" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;\ud83e\udeb4&apos;;"> ADD POT</button>';
+        actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="window._openPotPicker(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.35);color:var(--gold);font-size:0.7rem;display:inline-flex;align-items:center;gap:8px;" title="Apply a specialty pot from your inventory"><img src="assets/potshop.png" alt="" style="width:72px;height:72px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;\ud83e\udeb4&apos;;"> ADD POT</button>';
       }
     }
 
@@ -74732,7 +74776,7 @@ window._bosActivityContent = _bosActivityContent;
 // ═══ NURSERY SHOP BOOSTER DETAIL via LW_Reader ═══
 // Timed multipliers (pollenRush / bloomTonic / dewCache).
 var LW_BOOSTER_LORE = {
-  pollenRush: 'A burst of intention. For an hour, every sliver of Pollen you earn arrives doubled. Useful when you know you\u2019re about to play a lot, less useful when you\u2019re grinding casually.',
+  pollenRush: 'A burst of intention. For an hour, every sliver of Keeper XP you earn arrives doubled. Useful when you know you\u2019re about to play a lot, less useful when you\u2019re grinding casually.',
   bloomTonic: 'A 24-hour nursery accelerator. Seeds grow 50% faster. Does not bypass the 3-waters-on-3-days rule, but the in-between hours move more generously.',
   dewCache:   'Three hours of 50% more Dew on every action that earns it. Pair with a watering-heavy session for maximum return.'
 };
