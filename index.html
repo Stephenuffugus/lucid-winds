@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.29';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.30';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2610,19 +2610,26 @@
     .lw-hut.open{display:block;animation:panelFadeIn 0.25s ease;}
     .lw-hut .lwh-scrim{position:absolute;inset:0;background:rgba(8,10,6,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
     .lw-hut .lwh-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,440px);max-height:90vh;background:linear-gradient(180deg,rgba(13,16,12,0.55) 0%,rgba(13,16,12,0.78) 55%,rgba(13,16,12,0.94) 100%),url('assets/shop.png') center/cover no-repeat,#0d100c;border:2px solid rgba(200,168,75,0.45);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.85),0 0 0 1px rgba(200,168,75,0.15),inset 0 1px 0 rgba(255,235,195,0.06);display:flex;flex-direction:column;overflow:hidden;}
-    .lw-hut .lwh-portrait{position:relative;width:100%;aspect-ratio:1/1;max-height:280px;overflow:hidden;flex-shrink:0;border-bottom:1px solid rgba(200,168,75,0.28);background:#0d100c;}
+    /* 2026-04-29 EVE — Stephen UX: title + X moved ABOVE portrait. Header
+       and tabs stay sticky; portrait + balance + body all share one
+       scrollable region so the hermit scrolls off as you read items. */
+    .lw-hut .lwh-portrait{position:relative;width:100%;aspect-ratio:1/1;max-height:200px;overflow:hidden;border-bottom:1px solid rgba(200,168,75,0.28);background:#0d100c;}
     .lw-hut .lwh-portrait img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;}
     .lw-hut .lwh-portrait::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,transparent 55%,rgba(13,16,12,0.7) 100%);pointer-events:none;}
-    .lw-hut .lwh-header{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.9rem;border-bottom:1px solid rgba(200,168,75,0.18);background:linear-gradient(180deg,rgba(200,168,75,0.10),transparent);}
+    .lw-hut .lwh-header{display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0.9rem;border-bottom:1px solid rgba(200,168,75,0.18);background:linear-gradient(180deg,rgba(200,168,75,0.16),rgba(13,16,12,0.85));flex-shrink:0;}
     .lw-hut .lwh-title{font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.14em;color:var(--gold);}
     .lw-hut .lwh-close{background:none;border:1px solid rgba(200,168,75,0.3);color:var(--cream);font-size:0.9rem;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
     .lw-hut .lwh-close:hover{border-color:rgba(200,168,75,0.6);}
     .lw-hut .lwh-balance{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--cream);padding:0.4rem 0.9rem;background:rgba(13,16,12,0.6);}
     .lw-hut .lwh-balance .lwh-pouch{color:var(--sage);}
-    .lw-hut .lwh-tabs{display:flex;gap:0;background:rgba(13,16,12,0.85);border-bottom:1px solid rgba(200,168,75,0.18);}
+    .lw-hut .lwh-tabs{display:flex;gap:0;background:rgba(13,16,12,0.92);border-bottom:1px solid rgba(200,168,75,0.18);flex-shrink:0;}
+    /* Single scroll region: portrait + balance + body. Tabs above stay
+       sticky for quick switching; portrait scrolls off naturally. */
+    .lw-hut .lwh-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     .lw-hut .lwh-tab{flex:1;background:none;border:none;border-bottom:2px solid transparent;color:rgba(200,188,160,0.55);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;padding:0.55rem 0.2rem;cursor:pointer;min-height:44px;transition:all 0.15s;}
     .lw-hut .lwh-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.14),transparent);}
-    .lw-hut .lwh-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.7rem 0.6rem 1.2rem;}
+    /* .lwh-body lives inside .lwh-scroll now — scrolling moved up a level. */
+    .lw-hut .lwh-body{padding:0.8rem 0.6rem 1.4rem;}
     .lw-hut .lwh-section-text{font-family:'Playfair Display',serif;font-style:italic;font-size:0.85rem;color:var(--cream);text-align:center;margin-bottom:0.7rem;opacity:0.85;line-height:1.5;}
     .lw-hut .lwh-section-foot{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);text-align:center;margin-top:0.6rem;}
     .lw-hut .lwh-pouch-buy{display:inline-block;margin-left:6px;padding:3px 8px;border-radius:6px;border:1px solid rgba(200,168,75,0.55);background:rgba(200,168,75,0.18);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;vertical-align:middle;}
@@ -78324,19 +78331,24 @@ window._lwClaimHerbarium = function(id){
     ov.innerHTML =
       '<div class="lwh-scrim" onclick="LW_HUT.close()"></div>' +
       '<div class="lwh-panel">' +
-        '<div class="lwh-portrait"><img src="assets/hermitportrait.png" alt="The Hermit"></div>' +
+        // Header — title + close above the portrait, sticky at top
         '<div class="lwh-header">' +
           '<div class="lwh-title">HERMIT’S HUT</div>' +
           '<button class="lwh-close" onclick="LW_HUT.close()">✕</button>' +
         '</div>' +
-        '<div class="lwh-balance" id="lwh-balance"></div>' +
+        // Tabs — sticky so user can switch sections without scrolling back
         '<div class="lwh-tabs">' +
           '<button class="lwh-tab active" data-tab="shop"    onclick="LW_HUT.switchTab(\'shop\')">SHOP</button>' +
           '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> ALMANAC</button>' +
           '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">SLOTS</button>' +
           '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">TRADE</button>' +
         '</div>' +
-        '<div class="lwh-body" id="lwh-body"></div>' +
+        // Scroll region — portrait scrolls off naturally as user reads body
+        '<div class="lwh-scroll">' +
+          '<div class="lwh-portrait"><img src="assets/hermitportrait.png" alt="The Hermit"></div>' +
+          '<div class="lwh-balance" id="lwh-balance"></div>' +
+          '<div class="lwh-body" id="lwh-body"></div>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(ov);
     return ov;
