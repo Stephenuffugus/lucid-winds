@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.24';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.25';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -75096,11 +75096,11 @@ function _bosMementosContent() {
   var h = '<button onclick="var _bos=document.getElementById(\'bos-overlay\');if(_bos)_bos.remove();setTimeout(function(){if(window.PW_UI&&PW_UI.equipCompanion)PW_UI.equipCompanion();},200);" style="width:100%;padding:0.75rem;margin-bottom:0.8rem;border:2px solid rgba(200,168,75,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(120,100,40,0.35));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;min-height:52px;box-shadow:0 2px 8px rgba(200,168,75,0.15);"><span class="lwe lwe-paw"></span> ' + _btnLabel + '</button>';
 
   // ─── DISCOVERY GRID — every named companion as Pokedex slot ───
-  // Stephen 2026-04-29 EVE: "i thought under companions we were supposed
-  // to have every slot so its like a mystery for people as they unlock
-  // them they can go see their nice profile pics here." Painted portraits
-  // light up as the player encounters each creature. Locked tiles show a
-  // silhouetted ??? to surface what's still out there.
+  // Stephen 2026-04-29 EVE: portraits should FILL the tile, full-bleed,
+  // 2 columns so each painting reads at the size it was drawn for. Native
+  // companion art is 480×320 (3:2 landscape), so tiles match that aspect.
+  // Discovered = full painted portrait with name banner. Locked = same
+  // tile with brightness-crushed silhouette + ??? label.
   try {
     if (window.TRAIT_BANK && window.TRAIT_BANK.companions) {
       var _seen = {};
@@ -75119,19 +75119,23 @@ function _bosMementosContent() {
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;"><span class="lwe lwe-paw" style="width:18px;height:18px;"></span> COMPANIONS</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+_seenCount+' / '+_named.length+'</div>';
       h += '</div>';
-      h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">';
+      h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.55rem;">';
       for (var _ni = 0; _ni < _named.length; _ni++) {
         var _n = _named[_ni];
-        var _portrait = (window._compPortrait ? _compPortrait(_n.idx, '🐾', 80) : '🐾');
-        var _ringColor = _n.seen ? (_n.rare ? 'var(--gold)' : 'rgba(122,179,86,0.5)') : 'rgba(74,124,53,0.15)';
-        var _bg = _n.seen ? (_n.rare ? 'rgba(200,168,75,0.1)' : 'rgba(122,179,86,0.06)') : 'rgba(13,16,12,0.5)';
-        var _filter = _n.seen ? '' : 'filter:brightness(0.15) saturate(0);';
+        var _slug = _n.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+        var _src = 'assets/companions/' + _slug + '.png';
+        var _ringColor = _n.seen ? (_n.rare ? 'var(--gold)' : 'rgba(122,179,86,0.55)') : 'rgba(74,124,53,0.15)';
+        var _glow = _n.rare && _n.seen ? 'box-shadow:0 0 12px rgba(200,168,75,0.45);' : '';
+        var _filter = _n.seen ? '' : 'filter:brightness(0.18) saturate(0);';
         var _label = _n.seen ? _n.name : '???';
         var _click = _n.seen ? 'onclick="if(window._lwOpenCompanionProfile)_lwOpenCompanionProfile('+_n.idx+');"' : '';
-        h += '<div '+_click+' title="'+(_n.seen?_n.name:'Undiscovered')+'" style="position:relative;background:'+_bg+';border:1.5px solid '+_ringColor+';border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:'+(_n.seen?'pointer':'default')+';">';
-        h += '<div style="width:80px;height:80px;border-radius:8px;overflow:hidden;'+_filter+'">'+_portrait+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+(_n.seen?(_n.rare?'var(--gold)':'var(--cream)'):'var(--muted)')+';line-height:1.2;text-align:center;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">'+_label+'</div>';
-        if (_n.rare && _n.seen) h += '<div style="position:absolute;top:3px;right:5px;font-size:0.6rem;color:var(--gold);">✦</div>';
+        var _nameColor = _n.seen ? (_n.rare ? 'var(--gold)' : 'var(--cream)') : 'var(--muted)';
+        h += '<div '+_click+' title="'+(_n.seen?_n.name:'Undiscovered')+'" style="position:relative;border:2px solid '+_ringColor+';border-radius:12px;overflow:hidden;cursor:'+(_n.seen?'pointer':'default')+';background:rgba(13,16,12,0.7);'+_glow+_filter+'">';
+        h += '<img src="'+_src+'" alt="" style="display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;width:100%;aspect-ratio:3/2;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.4);font-size:2.4rem;&quot;>🐾</div>&apos;;">';
+        h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:0.45rem 0.65rem;background:linear-gradient(180deg,rgba(13,16,12,0) 0%,rgba(13,16,12,0.92) 80%);">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:'+_nameColor+';letter-spacing:0.08em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_label+'</div>';
+        h += '</div>';
+        if (_n.rare && _n.seen) h += '<div style="position:absolute;top:6px;right:8px;font-size:0.85rem;color:var(--gold);text-shadow:0 1px 3px rgba(0,0,0,0.7);">✦</div>';
         h += '</div>';
       }
       h += '</div></div>';
