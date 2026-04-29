@@ -847,7 +847,7 @@
   </script>
   <script>
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.29.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.29.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39667,8 +39667,11 @@ document.addEventListener('keydown', function(e) {
     for (var j = 0; j < owned.length; j++) {
       var pp = owned[j];
       var ct = pots[pp.id] || 0;
-      h += '<button onclick="window.lwApplyPot(\'' + seedId + '\',\'' + pp.id + '\');document.getElementById(\'lw-pot-picker\').remove();" style="display:flex;width:100%;gap:0.6rem;padding:0.65rem 0.5rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1.5px solid ' + pp.color + '55;border-radius:9px;align-items:center;cursor:pointer;text-align:left;">';
-      h += '<div style="font-size:1.4rem;flex-shrink:0;width:38px;text-align:center;">' + (window._lwEmojiSprite?_lwEmojiSprite(pp.icon,28):pp.icon) + '</div>';
+      h += '<button onclick="window.lwApplyPot(\'' + seedId + '\',\'' + pp.id + '\');document.getElementById(\'lw-pot-picker\').remove();" style="display:flex;width:100%;gap:0.7rem;padding:0.7rem 0.6rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1.5px solid ' + pp.color + '55;border-radius:9px;align-items:center;cursor:pointer;text-align:left;">';
+      // Painted pot art from /assets/nursery-pots/<id>.png. Same source the
+      // shop uses (line 39605) — emoji fallback if PNG missing.
+      var _ppIcoEsc = String(pp.icon || '').replace(/'/g,"\\'");
+      h += '<div style="flex-shrink:0;width:64px;height:64px;border-radius:8px;overflow:hidden;background:rgba(5,8,4,0.5);border:1px solid ' + pp.color + '33;display:flex;align-items:center;justify-content:center;"><img src="assets/nursery-pots/' + pp.id + '.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2rem;&quot;>' + _ppIcoEsc + '</span>&apos;;"></div>';
       h += '<div style="flex:1;min-width:0;">';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:' + pp.color + ';letter-spacing:0.06em;">' + pp.name + ' \u00d7' + ct + '</div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.35;margin-top:0.15rem;">' + pp.blurb + '</div>';
@@ -73558,17 +73561,32 @@ window._bosToggleAcc = function(id) {
 // COMPANIONS subtab covers that).
 //
 // Active subtab persists in window._bosCodexSubtab; default = 'omens'.
+// Click handler renders the body DIRECTLY instead of going through
+// _bosSetTab — _bosSetTab triggered a re-stamp + badge refresh chain
+// that, in some flow paths, was racing with the subtab assignment and
+// snapping the user back to OMENS.
 window._bosSetCodexSubtab = function(key){
   window._bosCodexSubtab = key;
-  if (window._bosSetTab) _bosSetTab('codex');
+  var body = document.getElementById('bos-body');
+  if (body) body.innerHTML = _bosCodexContent();
+  // Scroll the body to top so the subtab bar stays visible.
+  if (body) body.scrollTop = 0;
 };
 function _bosCodexContent() {
   var subtab = window._bosCodexSubtab || 'omens';
+  // Subtab bar reorganized 2026-04-29 EVE per Stephen test feedback:
+  //   - Synergies pulled out into its own tab (was buried under TRAITS)
+  //   - Seasons dropped (we know the season — redundant with the keeper bar)
+  //   - Mythic Hall + Rarity Parade dropped (Stephen ruled them clutter)
+  //   - Legacy 29-achievement grid dropped from MORE (the dedicated
+  //     ACHIEVEMENTS top-level tab is the canonical source)
+  //   - TRAITS now = Trait Diversity + Mutations only (no Synergies/Seasons)
+  //   - MORE = Terra Grades + Grove Milestones + Memory Garden + atlas/haiku/weather
   var subtabs = [
     {key:'omens',      label:'OMENS'},
     {key:'companions', label:'COMPANIONS'},
     {key:'biomes',     label:'BIOMES'},
-    {key:'mythic',     label:'MYTHIC'},
+    {key:'synergies',  label:'SYNERGIES'},
     {key:'traits',     label:'TRAITS'},
     {key:'items',      label:'ITEMS'},
     {key:'more',       label:'MORE'}
@@ -73959,17 +73977,26 @@ function _bosItemsContent(){
       var pouchN = window.LW_ITEMS.total();
       var boxN = window.LW_BOXES ? window.LW_BOXES.count() : 0;
       h += '<div style="display:flex;gap:0.5rem;margin-bottom:0.9rem;">';
-      h += '<button onclick="window.LW_ITEMS.openPanel()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(122,179,86,0.1);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">\ud83c\udf31 POUCH ('+pouchN+')</button>';
-      h += '<button onclick="window.LW_BOXES&&window.LW_BOXES.openPanel()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid '+(boxN>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';background:rgba(232,160,191,0.08);color:'+(boxN>0?'var(--gold)':'var(--muted)')+';font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">\ud83c\udf81 BOXES ('+boxN+')</button>';
+      var _pouchIco = '<img src="assets/backpack-64x64.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;margin-right:6px;" onerror="this.outerHTML=&apos;<span class=&quot;lwe lwe-leaf&quot;></span> &apos;;">';
+      var _boxIco = '<img src="assets/icons/box.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;margin-right:6px;" onerror="this.outerHTML=&apos;\ud83c\udf81 &apos;;">';
+      h += '<button onclick="window.LW_ITEMS.openPanel()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(122,179,86,0.1);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">'+_pouchIco+'POUCH ('+pouchN+')</button>';
+      h += '<button onclick="window.LW_BOXES&&window.LW_BOXES.openPanel()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid '+(boxN>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';background:rgba(232,160,191,0.08);color:'+(boxN>0?'var(--gold)':'var(--muted)')+';font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">'+_boxIco+'BOXES ('+boxN+')</button>';
       h += '</div>';
     }
   } catch(e){}
 
+  // Category labels \u2014 emoji prefix routed through painted sprite where
+  // available (foraging=sprout, defense=shield-gold, offense=lightning-purple,
+  // remote=pin-gold).
+  var _foragingIco = '<img src="assets/fx/bloom-sprout.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;margin-right:4px;" onerror="this.outerHTML=&apos;\ud83c\udf31 &apos;;">';
+  var _defenseIco  = '<img src="assets/fx/trophy-shield.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;margin-right:4px;" onerror="this.outerHTML=&apos;\ud83d\udee1 &apos;;">';
+  var _offenseIco  = '<img src="assets/fx/lightning-purple.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;margin-right:4px;" onerror="this.outerHTML=&apos;\u2694 &apos;;">';
+  var _remoteIco   = '<img src="assets/fx/pin-gold.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;margin-right:4px;" onerror="this.outerHTML=&apos;\ud83e\udded &apos;;">';
   var cats = [
-    {key:'foraging',label:'\ud83c\udf31 FORAGING AIDS',color:'var(--sage)',     desc:'Cards you tap before a forage. They bend the puzzle in your favor.'},
-    {key:'defense', label:'\ud83d\udee1\ufe0f DEFENSE',color:'var(--gold)',     desc:'Protect one of your wild plants against the next challenger.'},
-    {key:'offense', label:'\u2694\ufe0f OFFENSE',color:'#c07060',               desc:'Primed before you contest a hex. Bends the roll your way.'},
-    {key:'remote',  label:'\ud83e\udded REMOTE', color:'#87a3c2',               desc:'Forage hexes you can\u2019t walk to. The reason busy keepers keep playing.'}
+    {key:'foraging',label:_foragingIco+'FORAGING AIDS',color:'var(--sage)',     desc:'Cards you tap before a forage. They bend the puzzle in your favor.'},
+    {key:'defense', label:_defenseIco+'DEFENSE',color:'var(--gold)',            desc:'Protect one of your wild plants against the next challenger.'},
+    {key:'offense', label:_offenseIco+'OFFENSE',color:'#c07060',                desc:'Primed before you contest a hex. Bends the roll your way.'},
+    {key:'remote',  label:_remoteIco+'REMOTE', color:'#87a3c2',                 desc:'Forage hexes you can\u2019t walk to. The reason busy keepers keep playing.'}
   ];
   var rarityColor = function(r){
     return r==='Legendary'?'#ff8ab0':r==='Epic'?'#c07ac8':r==='Rare'?'var(--gold)':r==='Uncommon'?'var(--sage)':'var(--muted)';
@@ -83016,12 +83043,16 @@ function _bosSecretsContent() {
   var _CXF = window._bosCodexFilter || '';
   function _CXOK(id) {
     if (!_CXF) return true;
+    // 7-subtab routing (2026-04-29 EVE — Stephen rebalance).
+    // 'biomes-banners' is the new big-banner BIOMES view; the legacy
+    // codex-biomes accordion grid is omitted from the active subtabs
+    // (lives only in the unfiltered legacy view).
     var groups = {
-      omens:  { 'compendium-cat': 1 },
-      biomes: { 'codex-biomes': 1 },
-      mythic: { 'codex-mythic': 1, 'codex-rarity-parade': 1 },
-      traits: { 'codex-synergies': 1, 'codex-mutations': 1, 'codex-trait-diversity': 1, 'codex-seasons': 1 },
-      more:   { 'codex-grades': 1, 'codex-grove-milestones': 1, 'codex-memory-garden': 1, 'codex-achievements': 1, 'atlas': 1, 'haiku': 1, 'weather-almanac': 1, 'progress-strip': 1 }
+      omens:     { 'compendium-cat': 1 },
+      biomes:    { 'biomes-banners': 1 },
+      synergies: { 'codex-synergies': 1 },
+      traits:    { 'codex-trait-diversity': 1, 'codex-mutations': 1 },
+      more:      { 'codex-grades': 1, 'codex-grove-milestones': 1, 'codex-memory-garden': 1, 'atlas': 1, 'haiku': 1, 'weather-almanac': 1, 'progress-strip': 1 }
     };
     var g = groups[_CXF];
     if (!g) return false;
@@ -83460,7 +83491,9 @@ function _bosSecretsContent() {
   } catch(e){}
 
   // ─── BIOMES VISITED ───────────────────────────────────────────
-  // 10 biomes. Each tile shows whether you've been there (cached detection).
+  // Two views — gated by subtab filter:
+  //   biomes-banners: full-width painted banner cards (BIOMES subtab)
+  //   codex-biomes:   small icon grid (legacy unfiltered view only)
   try {
     if (window.BIOMES) {
       var bdKeys = ['wetland','riverside','coastal','forest','mountain','desert','farmland','garden','park','suburban'];
@@ -83472,6 +83505,35 @@ function _bosSecretsContent() {
       if (window._lastDetectedBiome) visitedBiomes[window._lastDetectedBiome] = true;
       var bdSeen = 0;
       for (var _bdi = 0; _bdi < bdKeys.length; _bdi++) if (visitedBiomes[bdKeys[_bdi]]) bdSeen++;
+      // ─── Big-banner view (BIOMES subtab) ───
+      if (_CXOK('biomes-banners')) {
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;letter-spacing:0.04em;">'+bdSeen+' / '+bdKeys.length+' biomes visited</div>';
+        h += '<div style="display:flex;flex-direction:column;gap:0.6rem;">';
+        for (var _bbi = 0; _bbi < bdKeys.length; _bbi++) {
+          var _bbk = bdKeys[_bbi];
+          var _bbg = window.BIOMES[_bbk];
+          if (!_bbg) continue;
+          var _bbHas = !!visitedBiomes[_bbk];
+          var _bbCurrent = (window._lastDetectedBiome === _bbk);
+          var _bbImg = _bbg.img || '';
+          var _bbBorder = _bbCurrent ? _bbg.color : (_bbHas ? _bbg.color+'66' : 'rgba(74,124,53,0.16)');
+          var _bbGlow = _bbCurrent ? 'box-shadow:0 0 14px '+_bbg.color+'55;' : '';
+          h += '<div onclick="if(window._lwShowBiomeDetail)_lwShowBiomeDetail(\''+_bbk+'\')" style="position:relative;border:2px solid '+_bbBorder+';border-radius:12px;overflow:hidden;cursor:pointer;'+_bbGlow+'background:rgba(13,16,12,0.7);'+(_bbHas?'':'filter:brightness(0.35) saturate(0.4);')+'">';
+          if (_bbImg) {
+            h += '<img src="'+_bbImg+'" alt="" style="display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;">';
+          } else {
+            h += '<div style="width:100%;aspect-ratio:16/9;background:rgba(26,36,22,0.4);display:flex;align-items:center;justify-content:center;font-size:3rem;color:'+_bbg.color+';">'+(_bbg.icon||'?')+'</div>';
+          }
+          h += '<div style="position:absolute;left:0;right:0;bottom:0;padding:0.55rem 0.85rem;background:linear-gradient(180deg,rgba(13,16,12,0) 0%,rgba(13,16,12,0.92) 80%);">';
+          h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:'+(_bbHas?_bbg.color:'var(--muted)')+';letter-spacing:0.12em;line-height:1;">'+(_bbHas?_bbg.name:'???')+'</div>';
+          if (_bbCurrent) h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-top:3px;">HERE NOW</div>';
+          else if (_bbHas && _bbg.mutation) h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);opacity:0.85;margin-top:3px;">Signature: '+_bbg.mutation+'</div>';
+          else if (!_bbHas) h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:3px;font-style:italic;">Visit to unlock.</div>';
+          h += '</div></div>';
+        }
+        h += '</div>';
+      }
+      // ─── Legacy small-icon grid (unfiltered view only) ───
       var _biomesStart=h.length;
       h += '<div id="sec-biomes" style="margin-bottom:0.8rem;scroll-margin-top:8px;">';
       h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;">';
@@ -84040,20 +84102,25 @@ function _bosSecretsContent() {
   // 151+ triggers is a long scroll. Filter chip lets the keeper hide
   // discovered entries and focus on what's still hidden. State persists
   // in localStorage so the choice survives a tab switch.
+  // The chips + the loop are BOTH gated to the OMENS subtab + the legacy
+  // unfiltered view. Previously the chips were always emitted, so they
+  // appeared at the bottom of every CODEX subtab and clicking them
+  // re-rendered into a subtab where the trigger loop didn't exist =
+  // chips that did nothing.
   var _trFilter='all';try{_trFilter=localStorage.getItem('lw_secret_filter')||'all';}catch(e){}
+  if (_CXOK('compendium-cat')) {
   h+='<div style="display:flex;gap:6px;margin:0 0 0.7rem 0;font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;">';
   var _trChips=[['all','ALL'],['undiscovered','UNDISCOVERED'],['discovered','DISCOVERED']];
   for(var _tci=0;_tci<_trChips.length;_tci++){
     var _tcId=_trChips[_tci][0],_tcLbl=_trChips[_tci][1];
     var _tcOn=(_trFilter===_tcId);
-    h+='<button onclick="try{localStorage.setItem(\'lw_secret_filter\',\''+_tcId+'\');}catch(e){};if(window._bosSetTab)_bosSetTab(\'secrets\');" style="flex:1;padding:5px 6px;background:'+(_tcOn?'rgba(122,179,86,0.18)':'rgba(18,22,16,0.5)')+';border:1px solid '+(_tcOn?'var(--sage)':'rgba(74,124,53,0.18)')+';border-radius:8px;color:'+(_tcOn?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit;font-size:inherit;letter-spacing:inherit;">'+_tcLbl+'</button>';
+    h+='<button onclick="try{localStorage.setItem(\'lw_secret_filter\',\''+_tcId+'\');}catch(e){};if(window._bosSetCodexSubtab)window._bosSetCodexSubtab(\'omens\');else if(window._bosSetTab)_bosSetTab(\'secrets\');" style="flex:1;padding:5px 6px;background:'+(_tcOn?'rgba(122,179,86,0.18)':'rgba(18,22,16,0.5)')+';border:1px solid '+(_tcOn?'var(--sage)':'rgba(74,124,53,0.18)')+';border-radius:8px;color:'+(_tcOn?'var(--sage)':'var(--muted)')+';cursor:pointer;font-family:inherit;font-size:inherit;letter-spacing:inherit;">'+_tcLbl+'</button>';
   }
   h+='</div>';
   // Each compendium category (OMENS, COMPANIONS, WEATHER, SEASONS, ACTIONS,
   // EVENTS) gets its own collapsible accordion, matching the rest of the
   // CODEX accordion city. Body builds inside an IIFE so loop-var capture
-  // is clean. Gated to the OMENS subtab + the legacy unfiltered view.
-  if (_CXOK('compendium-cat'))
+  // is clean.
   for(var ci=0;ci<CATEGORIES.length;ci++){
     var cat=CATEGORIES[ci];
     var catTriggers=triggers.filter(function(t){return t.category===cat.key;});
@@ -84093,6 +84160,7 @@ function _bosSecretsContent() {
       });
     })(cat, _shownCat, catFound, catGrown, catTriggers.length);
   }
+  } // close if (_CXOK('compendium-cat')) — chips + trigger loop
 
   return h;
 }
