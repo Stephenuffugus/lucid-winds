@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.31';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.32';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -65676,7 +65676,7 @@ function authenticate(cb){
 }
 
 function createPayment(amount,memo,metadata,onSuccess,onCancel){
-  if(window._toast)window._toast('🔍 [DEBUG] createPayment '+amount+'π · piReady='+_piReady+' · Pi='+(typeof Pi));
+  if(window._toast)window._toast('🔍 [DEBUG] createPayment '+amount+'π · piReady='+_piReady+' · authed='+(!!_piUser));
   if(!window.LW_PI_ENABLED){
     if(window._toast)window._toast('Pi payments arrive in the full launch. Thank you for testing.');
     else if(window.showHexMsg)showHexMsg('Payments coming soon');
@@ -65686,6 +65686,25 @@ function createPayment(amount,memo,metadata,onSuccess,onCancel){
   if(!_piReady){
     if(window._toast)window._toast('🔍 [DEBUG] Pi SDK not ready. Are you in Pi Browser at sandbox.minepi.com?');
     if(window.showHexMsg)showHexMsg('Pi payments not available. Open in Pi Browser.');
+    return;
+  }
+  // Pi requires the user to be authenticated BEFORE createPayment. Lazy-
+  // auth on first payment attempt so the user only sees the Pi sign-in
+  // dialog when they actually try to spend. Stephen 2026-04-30: nothing
+  // happened on PAY tap because authenticate() was never called.
+  if(!_piUser){
+    if(window._toast)window._toast('🔍 [DEBUG] not authed yet · calling Pi.authenticate first...');
+    authenticate(function(user){
+      if(!user){
+        if(window._toast)window._toast('🔍 [DEBUG] Pi.authenticate failed — sign into Pi Browser first');
+        if(window.showHexMsg)showHexMsg('Pi sign-in required.');
+        if(onCancel)onCancel();
+        return;
+      }
+      if(window._toast)window._toast('🔍 [DEBUG] authed as '+user.username+' · retrying payment...');
+      // Re-enter createPayment now that we have a user
+      createPayment(amount,memo,metadata,onSuccess,onCancel);
+    });
     return;
   }
   if(window._toast)window._toast('🔍 [DEBUG] calling Pi.createPayment...');
