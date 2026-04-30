@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.76';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.77';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5648,10 +5648,11 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
 .htc-label{position:relative;z-index:1;}
 
 /* ═══ SEED INFO ═══ */
-#sdi{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 64px);left:50%;transform:translateX(-50%) translateY(10px);z-index:1001;background:rgba(13,16,12,0.96);border:1px solid rgba(74,124,53,0.12);border-radius:12px;padding:10px 14px;max-width:220px;box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;opacity:0;transition:opacity 0.2s,transform 0.2s;}
+#sdi{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 64px);left:50%;transform:translateX(-50%) translateY(10px);z-index:1001;background:rgba(13,16,12,0.96);border:1px solid rgba(74,124,53,0.12);border-radius:12px;padding:14px 18px;max-width:300px;box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;opacity:0;transition:opacity 0.2s,transform 0.2s;}
 #sdi.show{display:block;opacity:1;transform:translateX(-50%) translateY(0);}
-.sir{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:4px;}.sir .sv{color:var(--cream);}
-.sia{display:block;width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid rgba(74,124,53,0.2);background:rgba(74,124,53,0.08);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:0.1em;cursor:pointer;text-align:center;min-height:40px;}
+.sir{display:flex;align-items:center;gap:10px;font-size:0.78rem;color:var(--muted);margin-bottom:8px;}.sir .sv{color:var(--cream);font-family:'DM Mono',monospace;}
+.sir img{width:32px!important;height:32px!important;vertical-align:middle!important;}
+.sia{display:block;width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1px solid rgba(74,124,53,0.2);background:rgba(74,124,53,0.08);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.1em;cursor:pointer;text-align:center;min-height:48px;}
 .sia:active{background:rgba(74,124,53,0.2);}
 
 /* ═══ DROP PICKER PANEL ═══ */
@@ -5881,8 +5882,8 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
 .dpk2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 16px 16px;overflow-y:auto;flex:1;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 .dpk2-card{background:rgba(26,36,22,.3);border-radius:12px;padding:10px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:2px solid rgba(74,124,53,.1);transition:all .15s;-webkit-tap-highlight-color:transparent}
 .dpk2-card:active{border-color:rgba(122,179,86,.4);background:rgba(74,124,53,.1);transform:scale(.96)}
-.dpk2-card-svg{width:48px;height:48px;display:flex;align-items:center;justify-content:center}
-.dpk2-card-svg svg{width:40px;height:40px}
+.dpk2-card-svg{width:96px;height:108px;display:flex;align-items:center;justify-content:center}
+.dpk2-card-svg svg{width:90px;height:108px}
 .dpk2-card-name{font-family:'Playfair Display',serif;font-size:clamp(.35rem,1vw,.45rem);color:var(--cream);text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dpk2-card-grade{font-family:'Bebas Neue',sans-serif;font-size:clamp(.3rem,.9vw,.38rem);letter-spacing:.06em}
 
@@ -7038,7 +7039,7 @@ window._addSwitchTabHook = function(fn){
   <!-- Plant info card with hold-to-release -->
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
-  <div id="sdi"><div class="sir"><span><img src="assets/fx/pin-gold.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML='📍'"></span><span class="sv" id="sdl">—</span></div><div class="sir"><span><img src="assets/fx/compost-flame.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML='🌡'"></span><span class="sv" id="sdc">—</span></div><div class="sir"><span id="sdhi"></span><span class="sv" id="sdh">—</span></div><div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div><button class="sia" onclick="BP.csi()" style="margin-top:4px;font-size:10px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button></div>
+  <div id="sdi"><div class="sir"><span><img src="assets/fx/pin-gold.png" alt="" style="object-fit:contain;display:inline-block;" onerror="this.outerHTML='📍'"></span><span class="sv" id="sdl">—</span></div><div class="sir"><span><img src="assets/fx/compost-flame.png" alt="" style="object-fit:contain;display:inline-block;" onerror="this.outerHTML='🌡'"></span><span class="sv" id="sdc">—</span></div><div id="sdh" style="display:none;"></div><span id="sdhi" style="display:none;"></span><div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div><button class="sia" onclick="BP.csi()" style="margin-top:6px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button></div>
   <!-- Harvest Reveal Overlay -->
   <div id="reveal-overlay"><div class="reveal-count" id="rev-count"></div><div class="reveal-card" id="rev-card"><div class="reveal-inner"><div class="reveal-front"></div><div class="reveal-back"><div class="reveal-glow" id="rev-glow"></div><div class="reveal-svg" id="rev-svg"></div><div class="reveal-name" id="rev-name"></div><div class="reveal-grade" id="rev-grade"></div><div class="reveal-haiku" id="rev-haiku"></div></div></div></div><div class="reveal-tap" id="rev-tap">tap to reveal</div></div>
   <!-- Drop FAB -->
@@ -7218,9 +7219,9 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-section"><div class="cs-section-title">FRIEND CODE</div><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;" id="cs-friend-code">????-????</div><button onclick="PW_UI.copyFriendCode()" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.5rem 0.8rem;border-radius:6px;cursor:pointer;min-height:44px;">COPY</button></div><div style="display:flex;gap:0.3rem;align-items:center;"><input type="text" id="cs-add-friend" placeholder="Enter friend code" maxlength="9" style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.15);border-radius:6px;color:var(--cream);font-family:'DM Mono',monospace;font-size:0.5rem;outline:none;" /><button onclick="PW_UI.addFriend()" style="padding:0.55rem 0.8rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;cursor:pointer;min-height:44px;">ADD</button></div><div id="cs-friend-err" style="font-size:0.38rem;color:var(--muted);margin-top:0.25rem;min-height:0.8rem;"></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIENDS <span id="cs-friend-count" style="color:var(--muted);">(0)</span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
     <div style="display:flex;gap:0.4rem;margin-top:0.3rem;flex-wrap:wrap;">
-      <button onclick="window._openTitleShop()" style="flex:1 1 30%;padding:0.85rem 0.6rem;border-radius:12px;border:2px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(46,38,18,0.62),rgba(28,24,12,0.78));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:88px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/trophy-rosette.png" alt="" style="width:44px;height:44px;object-fit:contain;display:block;" onerror="this.outerHTML='&#10024;';"> TITLES</button>
-      <button onclick="if(window._lwOpenInviteModal)window._lwOpenInviteModal();" style="flex:1 1 30%;padding:0.85rem 0.6rem;border-radius:12px;border:2px solid rgba(232,160,191,0.5);background:linear-gradient(180deg,rgba(40,22,30,0.62),rgba(24,14,18,0.78));color:rgba(232,160,191,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:88px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/figure-gold.png" alt="" style="width:44px;height:44px;object-fit:contain;display:block;" onerror="this.outerHTML='&#128106;';"> INVITE</button>
-      <button onclick="if(window._lwOpenFeedback){PW_UI.closeCharacter();setTimeout(window._lwOpenFeedback,250);}" style="flex:1 1 30%;padding:0.85rem 0.6rem;border-radius:12px;border:2px solid rgba(122,179,86,0.4);background:linear-gradient(180deg,rgba(26,40,20,0.62),rgba(18,28,14,0.78));color:rgba(122,179,86,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:88px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/book-gold.png" alt="" style="width:44px;height:44px;object-fit:contain;display:block;" onerror="this.outerHTML='&#128221;';"> FEEDBACK</button>
+      <button onclick="window._openTitleShop()" style="flex:1 1 30%;padding:0.7rem 0.5rem;border-radius:12px;border:2px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(46,38,18,0.62),rgba(28,24,12,0.78));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:108px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/trophy-rosette.png" alt="" style="width:64px;height:64px;object-fit:contain;display:block;" onerror="this.outerHTML='&#10024;';"> TITLES</button>
+      <button onclick="if(window._lwOpenInviteModal)window._lwOpenInviteModal();" style="flex:1 1 30%;padding:0.7rem 0.5rem;border-radius:12px;border:2px solid rgba(232,160,191,0.5);background:linear-gradient(180deg,rgba(40,22,30,0.62),rgba(24,14,18,0.78));color:rgba(232,160,191,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:108px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/figure-gold.png" alt="" style="width:64px;height:64px;object-fit:contain;display:block;" onerror="this.outerHTML='&#128106;';"> INVITE</button>
+      <button onclick="if(window._lwOpenFeedback){PW_UI.closeCharacter();setTimeout(window._lwOpenFeedback,250);}" style="flex:1 1 30%;padding:0.7rem 0.5rem;border-radius:12px;border:2px solid rgba(122,179,86,0.4);background:linear-gradient(180deg,rgba(26,40,20,0.62),rgba(18,28,14,0.78));color:rgba(122,179,86,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:108px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/book-gold.png" alt="" style="width:64px;height:64px;object-fit:contain;display:block;" onerror="this.outerHTML='&#128221;';"> FEEDBACK</button>
       <button onclick="PW_UI.closeCharacter()" style="flex:1 1 100%;padding:0.5rem;border-radius:8px;border:2px solid rgba(74,124,53,0.15);background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;cursor:pointer;min-height:48px;">CLOSE</button>
     </div>
   </div>
@@ -45106,7 +45107,7 @@ window._retryGps=function(){
     if(_map)_map.setView([_uLat,_uLng],17);
     _placeUser();_loadAll();
     _hideDemoBadge();
-    _toast('Location locked! Tap \ud83c\udf31 to plant.');
+    /* "tap to plant" toast retired 2026-04-30 LATE \u2014 Stephen: ugly, redundant; the SOW button speaks for itself */
   },function(err){
     _toast('GPS still unavailable. Check device settings.');
     _showGpsBanner();
@@ -45124,7 +45125,7 @@ function _initGeo(){
     // cold start. Guard both paths so the handler stashes coords and
     // defers the view call until the map object exists.
     if(_map){_map.setView([_uLat,_uLng],17);_placeUser();_loadAll();}
-    _toast('Location locked! Tap \ud83c\udf31 to plant.');
+    /* "tap to plant" toast retired 2026-04-30 LATE \u2014 Stephen: ugly, redundant; the SOW button speaks for itself */
   },function(){
     _uLat=FALLBACK[0];_uLng=FALLBACK[1];
     window._uLat=_uLat;window._uLng=_uLng;
@@ -48699,8 +48700,8 @@ function openPicker(){
   for(var i=0;i<gh.length;i++){(function(pl){
     var c=document.createElement('div');
     c.className='dpk2-card';
-    var sv='';try{if(window._generatePlantSVG)sv=window._generatePlantSVG(pl.hash,40);}catch(e){}
-    if(!sv)sv='<div style="width:40px;height:48px;background:rgba(122,179,86,0.15);border-radius:8px;"></div>';
+    var sv='';try{if(window._generatePlantSVG)sv=window._generatePlantSVG(pl.hash,90);}catch(e){}
+    if(!sv)sv='<div style="width:90px;height:108px;background:rgba(122,179,86,0.15);border-radius:8px;"></div>';
     var info=_buildInfo(pl.hash);
     var gc=GC[info.grade]||'#8a9a7a';
     c.innerHTML='<div class="dpk2-card-svg">'+sv+'</div><div class="dpk2-card-name">'+info.nm+'</div><div class="dpk2-card-grade" style="color:'+gc+';">'+info.grade.toUpperCase()+'</div>';
@@ -67492,8 +67493,7 @@ function _step8(){
   _setStep(8);
   try{document.body.classList.add('lw-tut-carousel-freeze');}catch(e){}
   _dialog(
-    'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant.<br><br>' +
-    'Every trait came from your unique touch, timing, and experience. There are literal <span style="color:var(--gold);">QUINTILLIONS</span> of possible combinations, and growing.',
+    'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant. <span style="color:var(--gold);">Quintillions</span> of combinations are possible.',
     'NEXT',function(){_clear();setTimeout(_step9,300);},'bottom');
 }
 
@@ -69555,11 +69555,14 @@ function _step48(){
 }
 
 // ═══ STEP 49: invite friends + send gifts ═══
+// Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE: prompt at 'bottom'
+// anchor was overlapping the friend button (centered in viewport after
+// scrollIntoView), so the player never saw what to tap before the NEXT
+// button advanced past it. Now anchored 'top', prompt sits above the
+// scrolled-to button. Also pulse the button so the target is unmistakable.
 function _step49(){
   _setStep(49);
   _clear();
-  // Char sheet is still open from step 48. Scroll down to friends
-  // section + spotlight it.
   var scrollAndSpotlight=function(){
     var friends=document.getElementById('cs-friends-list');
     var target=friends
@@ -69567,14 +69570,23 @@ function _step49(){
             || document.querySelector('#pw-character button[onclick*="_lwOpenInviteModal"]');
     if(target){
       try{target.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
-      setTimeout(function(){try{_spotlight&&_spotlight(target);}catch(e){}},400);
+      setTimeout(function(){
+        try{_spotlight&&_spotlight(target);}catch(e){}
+        try{target.classList.add('lw-pulse-hint');}catch(e){}
+      },400);
     }
   };
   scrollAndSpotlight();
   _dialog(
-    'Scroll down in your profile to <span style="color:var(--gold);">invite friends</span> and send gifts.<br><br>' +
-    'Tending together makes the garden stronger.',
-    'NEXT',function(){_clear();setTimeout(_step50,400);},'bottom');
+    'Scroll down in your profile to <span style="color:var(--gold);">invite friends</span> and send gifts. Tending together makes the garden stronger.',
+    'NEXT',function(){
+      // Drop the pulse before advancing.
+      try{
+        var t=document.getElementById('cs-friends-list')||document.querySelector('#pw-character button[onclick*="Invite"]')||document.querySelector('#pw-character button[onclick*="_lwOpenInviteModal"]');
+        if(t)t.classList.remove('lw-pulse-hint');
+      }catch(e){}
+      _clear();setTimeout(_step50,400);
+    },'top');
 }
 
 // ═══ STEP 50: wrap + cleanup + _done ═══
@@ -74204,43 +74216,47 @@ window._bosGetTabUnread = function(tab) {
       for (var ir = 0; ir < allR.length; ir++) { if (allR[ir].ts > lastRead) cr++; }
       return cr;
     }
-    // QUESTS — count uncompleted daily picks AND completed-but-unclaimed
-    // dailies/weeklies (Stephen 2026-04-30: manual claim means players
-    // need a visible nudge that they have rewards waiting). Drops to 0
-    // only when all are done AND all are claimed.
+    // QUESTS — Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE: badge
+    // now ONLY counts rewards waiting to be claimed (completed-but-unclaimed
+    // dailies + weeklies). It does NOT count uncompleted picks. The badge
+    // disappears the moment everything completed has been claimed.
     if (tab === 'quests') {
       try {
-        var pending = 0;
+        var claimable = 0;
         if (window.LW_ACH) {
           var ds = window.LW_ACH.dailies();
-          if (ds && ds.picks) {
-            var doneSet = {};
-            if (ds.done) for (var dq = 0; dq < ds.done.length; dq++) doneSet[ds.done[dq]] = 1;
-            var claimedSet = {};
-            if (ds.claimed) for (var dc = 0; dc < ds.claimed.length; dc++) claimedSet[ds.claimed[dc]] = 1;
-            for (var pq = 0; pq < ds.picks.length; pq++) {
-              if (!doneSet[ds.picks[pq]]) pending++;
-              else if (!claimedSet[ds.picks[pq]]) pending++; // done, awaiting claim
+          if (ds && ds.done) {
+            var dClaimed = {};
+            if (ds.claimed) for (var dc = 0; dc < ds.claimed.length; dc++) dClaimed[ds.claimed[dc]] = 1;
+            for (var dd = 0; dd < ds.done.length; dd++) {
+              if (!dClaimed[ds.done[dd]]) claimable++;
             }
           }
           var ws = window.LW_ACH.weeklies();
-          if (ws && ws.picks && ws.done) {
-            var wClaimedSet = {};
-            if (ws.claimed) for (var wc = 0; wc < ws.claimed.length; wc++) wClaimedSet[ws.claimed[wc]] = 1;
-            for (var pw = 0; pw < ws.done.length; pw++) {
-              if (!wClaimedSet[ws.done[pw]]) pending++;
+          if (ws && ws.done) {
+            var wClaimed = {};
+            if (ws.claimed) for (var wc = 0; wc < ws.claimed.length; wc++) wClaimed[ws.claimed[wc]] = 1;
+            for (var ww = 0; ww < ws.done.length; ww++) {
+              if (!wClaimed[ws.done[ww]]) claimable++;
             }
           }
         }
-        // Herbarium contribution removed 2026-04-30 LATE LATE LATE LATE
-        // LATE — Stephen test: badge was sticking at 1 after he claimed
-        // every daily/weekly, because a stale herbarium bundle was still
-        // in complete-but-unclaimed state. The herbarium subsection
-        // inside QUESTS already renders its own CLAIM REWARD button, so
-        // the player still gets a clear in-tab nudge when they open it.
-        // Top-level badge now reflects only daily/weekly state, which
-        // Stephen actively cycles through.
-        return pending;
+        return claimable;
+      } catch(e) { return 0; }
+    }
+    // ACHIEVEMENTS — same shape: count completed-but-unclaimed lifetime
+    // achievements only. Drops to 0 once everything earned is claimed.
+    if (tab === 'achievements') {
+      try {
+        if (!window.LW_ACH) return 0;
+        var prog = window.LW_ACH.progress() || {};
+        var achClaim = 0;
+        for (var aid in prog) {
+          if (!prog.hasOwnProperty(aid)) continue;
+          var entry = prog[aid];
+          if (entry && entry.claimed === false) achClaim++;
+        }
+        return achClaim;
       } catch(e) { return 0; }
     }
     // CLASS — 1 if class unpicked and player is L7+ and never opened this tab
