@@ -761,7 +761,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.17';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1020,7 +1020,7 @@
     @keyframes vtFadeOut{from{opacity:1;filter:none;}to{opacity:0;filter:blur(2px);}}
     @keyframes vtFadeIn{from{opacity:0;filter:blur(2px);}to{opacity:1;filter:none;}}
     html{background:var(--black);color:var(--cream);scroll-behavior:smooth;overflow-x:hidden;font-size:clamp(18px,4.5vw,22px);}
-    body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;overflow-x:hidden;
+    body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;min-height:100dvh;overflow-x:hidden;
       -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
     /* ── Smoothness pass (2026-04-24) ─────────────────────────────
        Small touches that make every tap and state-change feel nicer
@@ -45001,7 +45001,11 @@ window._showWildHints=_showWildHints;
 
 function _initMap(){
   var el=document.getElementById('wild-map');if(!el||!window.L)return;
-  _map=L.map('wild-map',{center:[39.83,-98.58],zoom:4,zoomControl:false,attributionControl:false,tap:true,tapTolerance:15});
+  // Stephen 2026-05-01: tap:false disables Leaflet's synthetic tap
+  // emulation. iOS Safari has its own tap handling; Leaflet's emulator
+  // double-fires gestures and can swallow first-tap on markers. Native
+  // touch wins on iPhone. Desktop/Android are unaffected.
+  _map=L.map('wild-map',{center:[39.83,-98.58],zoom:4,zoomControl:false,attributionControl:false,tap:false,tapTolerance:15});
   L.tileLayer(TILES,{attribution:'&copy; OSM &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(_map);
   // If GPS resolved BEFORE _initMap ran (slow cold start), the setView
   // in _initGeo was skipped behind its null-guard. Catch up now.
