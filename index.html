@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.80';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.81';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -14002,21 +14002,35 @@ document.addEventListener('keydown', function(e) {
     // — only run if the caller didn't explicitly override and we have a hash
     if (hash && (!traitOverrides || (traitOverrides.companion === undefined && traitOverrides.hasFlower === undefined))) {
       try {
-        // Cache a forceFlower lookup map. Fingerprint the raw greenhouse
-        // string so we only reparse when it actually changes (runs on
-        // every carousel swipe / grid render otherwise).
+        // Cache a forceFlower + generation lookup map. Fingerprint the raw
+        // greenhouse string so we only reparse when it actually changes
+        // (runs on every carousel swipe / grid render otherwise).
         var _ghRaw = localStorage.getItem('sws_greenhouse') || '[]';
         var _ghFp = _ghRaw.length + ':' + _ghRaw.slice(0, 32);
         if (!window._ffMap || window._ffMapFp !== _ghFp) {
           var _ovGhCache = JSON.parse(_ghRaw);
           var _ff = {};
+          var _genMap = {};
           for (var _ovI2 = 0; _ovI2 < _ovGhCache.length; _ovI2++) {
             if (_ovGhCache[_ovI2].forceFlower) _ff[_ovGhCache[_ovI2].hash] = true;
+            // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE:
+            // chimera veins were rendering at Gen 1 width (0.35px =
+            // invisible) even on bred plants because plant.generation only
+            // reaches the SVG when the caller manually passes
+            // traitOverrides.chimerGen — and 30+ callers don't. Cache the
+            // generation by hash here so every render path picks it up.
+            var _gOv = _ovGhCache[_ovI2].generation;
+            if (_gOv && _gOv > 1) _genMap[_ovGhCache[_ovI2].hash] = _gOv;
           }
           window._ffMap = _ff;
+          window._ghGenMap = _genMap;
           window._ffMapFp = _ghFp;
         }
         if (window._ffMap[hash]) t0.hasFlower = true;
+        // Apply cached generation if the caller didn't override it.
+        if ((!traitOverrides || traitOverrides.chimerGen === undefined) && window._ghGenMap && window._ghGenMap[hash]) {
+          t0.chimerGen = window._ghGenMap[hash];
+        }
       } catch(e) {}
     }
     var _cacheKey = (hash || 'x') + '|' + s + '|' + prog.toFixed(2) + (traitOverrides ? '|ov' : '') + (t0.companion === -1 ? '|sup' : '') + (t0.hasFlower ? '|f' : '|nf');
