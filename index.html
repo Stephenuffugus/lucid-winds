@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.13';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -49593,10 +49593,12 @@ function _drop(pl){
             _toast('\ud83c\udf31 Attack committed \u00b7 1 sow used \u00b7 ' + _sowsLeft + ' left today');
           }, 100);
         }
-        // Shellgourd — zone locked, no roll even happens. Burns the gourd.
+        // Shellgourd — zone locked, no roll even happens. Single-use
+        // (Stephen audit 2026-05-01 #4): gourd shatters absorbing this
+        // contest. Subsequent attacks within the 48h window roll normally.
         if(window.LW_ITEMS&&window.LW_ITEMS.hasShellgourd&&window.LW_ITEMS.hasShellgourd(targetPlant.hash)){
           window.LW_ITEMS.consumeShellgourd(targetPlant.hash);
-          _toast('\ud83e\uddc9 Shellgourd refused the challenge. The zone is sealed.');
+          _toast('\ud83e\uddc9 Shellgourd shattered to absorb the blow. The zone is open again.');
           return;
         }
         // Mulch Ward — auto-fail the attack, burn one ward.
@@ -78367,8 +78369,8 @@ window._lwClaimHerbarium = function(id){
       usage:'tap a wild plant of yours', wired:true },
     shellgourd: { key:'shellgourd', name:'Shellgourd', category:'defense', rarity:'Epic',
       art:'assets/items/shellgourd.png', icon:'\ud83e\uddc9',
-      desc:'Zone sealed for 48h \u2014 every contest in that window is auto-blocked, no roll.',
-      lore:'Hollow gourd harder than ceramic. Place it at the foot of a plant and the zone itself refuses company.',
+      desc:'Seals your zone. The next contest within 48h auto-blocks, then the gourd shatters.',
+      lore:'Hollow gourd harder than ceramic. Place it at the foot of a plant and the zone itself refuses company \u2014 once.',
       usage:'tap a wild plant of yours', wired:true },
     moonwake: { key:'moonwake', name:'Moonwake', category:'defense', rarity:'Uncommon',
       art:'assets/items/moonwake.png', icon:'\ud83c\udf19',
@@ -78638,11 +78640,16 @@ window._lwClaimHerbarium = function(id){
   function hasShellgourd(hash){ return !!_getPlantBuff(hash,'shellgourd'); }
   function hasMoonwake(hash){ return !!_getPlantBuff(hash,'moonwake'); }
   function consumeShellgourd(hash){
-    // Shellgourd seals the zone for the full 48h duration. Each blocked
-    // contest is a no-op consume — buff expires only on timestamp via
-    // _getPlantBuff. Caller still uses the return value to know a block
-    // fired, so keep the truthy return.
+    // Shellgourd seals your zone for up to 48h, then SHATTERS on the
+    // first blocked contest. Stephen audit 2026-05-01 #4 rebalanced
+    // this from "no-op consume" — the old behavior gave Epic players
+    // ~4× the value of a Mulch Ward (Rare) for one tier higher,
+    // which broke the defense ladder. Now it's "Epic single-use ward
+    // with a long fuse" — pairs cleanly with Mulch Ward (R) 24h
+    // single-use and Bramble (R) 24h dice-cap.
     var p = _loadPending(); if (!p.shellgourd || !p.shellgourd[hash]) return false;
+    delete p.shellgourd[hash];
+    _savePending(p);
     return true;
   }
   function consumeMoonwake(hash){
