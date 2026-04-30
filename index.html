@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.42';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.43';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -37519,10 +37519,21 @@ document.addEventListener('keydown', function(e) {
         }
       }
     }
-    // Toggle wild-inspect-only actions (water / cutting).
+    // Toggle wild-inspect-only actions (water / cutting). Cutting is
+    // stranger-plants-only (you can't cut your own — just breed it). Water
+    // works on both own and stranger plants. Audit Apr 30 — the cutting
+    // button was showing on the player's own carousel, then no-op'd.
     var _inspectBtns = document.querySelectorAll('.pgm-wild-act');
+    var _firstPlant = arr[startIdx] || {};
     for (var _wb = 0; _wb < _inspectBtns.length; _wb++) {
-      _inspectBtns[_wb].style.display = (source === 'wild-inspect') ? '' : 'none';
+      var _btn = _inspectBtns[_wb];
+      var _isCut = _btn.id === 'gallery-cutting-btn';
+      if (source !== 'wild-inspect') { _btn.style.display = 'none'; continue; }
+      if (_isCut) {
+        _btn.style.display = (_firstPlant.own === false) ? '' : 'none';
+      } else {
+        _btn.style.display = '';
+      }
     }
     // Toggle wild-place-only action (PLACE HERE).
     var _placeBtns = document.querySelectorAll('.pgm-wild-place');
@@ -37752,8 +37763,15 @@ document.addEventListener('keydown', function(e) {
   };
 
   // ── Open details modal for whichever plant the carousel is showing ──
+  // Mystery guard: on a stranger's wild plant, the front-only rule applies.
+  // _openPlantDetails would render full DNA / EA / haiku / lineage which
+  // bypasses the wild-mystery design. Block the call and toast.
   window._carouselDetails = function() {
     var plant = _carousel ? _carousel.arr[_carousel.idx] : null;
+    if (plant && _carousel && _carousel.source === 'wild-inspect' && plant.own === false) {
+      if (window._toast) window._toast('A keeper\'s plant keeps its secrets. Take a cutting to learn them.');
+      return;
+    }
     if (plant && plant.hash && window._openPlantDetails) {
       try { window._openPlantDetails(plant.hash); }
       catch (e) { if (window._toast) window._toast('Details failed: ' + (e && e.message ? e.message : '')); }
@@ -47656,9 +47674,23 @@ function showTP(p,mk){
     } catch (_te) { _tolEl.style.display = 'none'; }
   }
 
-  // Wire INSPECT buttons (both own and other)
+  // Wire INSPECT buttons (both own and other). Carousel must carry the
+  // ownership fields so _carouselWildAction can route water/cutting to the
+  // correct path. Without this, tapping INSPECT on YOUR OWN plant routes
+  // subsequent WATER through the stranger codepath (burns daily stranger
+  // waters and tries to update a non-existent shared marker). Audit Apr 30.
   var inspFn=function(){
-    var _wildPlant={hash:p.hash,date:p.date||'',born:Date.now(),origin:'wild',rare:false,traits:''};
+    var _wildPlant={
+      hash:p.hash,
+      date:p.date||'',
+      born:Date.now(),
+      origin:'wild',
+      rare:false,
+      traits:'',
+      own:!!p.own,
+      ownerUid:p.ownerUid||'',
+      ownerName:p.ownerName||''
+    };
     if(window.openCarousel){closeTP();openCarousel([_wildPlant],0,'wild-inspect');}
   };
   // Inspect only for own plants (wtp-inspect2 is in own-actions panel)
