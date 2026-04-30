@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.66';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.67';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6662,15 +6662,6 @@ window._addSwitchTabHook = function(fn){
     <div id="gh-recent-wrap" style="display:none;">
       <div class="gh-recent-label">RECENT BLOOMS</div>
       <div class="gh-recent-strip" id="gh-recent-strip"></div>
-    </div>
-    <div class="gh-grid-selector" style="display:flex;justify-content:flex-end;align-items:center;">
-      <div style="display:flex;gap:0.2rem;flex-wrap:wrap;" id="gh-sort-btns">
-        <button class="gh-grid-btn active" onclick="setGHSort('newest')">New</button>
-        <button class="gh-grid-btn" onclick="setGHSort('rarest')">Rare</button>
-        <button class="gh-grid-btn" onclick="setGHSort('name')">A-Z</button>
-        <button class="gh-grid-btn" onclick="setGHSort('season')">Season</button>
-        <button class="gh-grid-btn" onclick="setGHSort('ea')">EA</button>
-      </div>
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
@@ -40816,7 +40807,7 @@ document.addEventListener('keydown', function(e) {
     _renderCPGrid();
     _updateCPDisplay();
     document.getElementById('cp-confirm-btn').disabled = true;
-    document.getElementById('cp-confirm-btn').textContent = '🧬 BEGIN CROSS-POLLINATION';
+    document.getElementById('cp-confirm-btn').innerHTML = '<img src="assets/icons/dna.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:6px;" onerror="this.outerHTML=&apos;🧬 &apos;;"> BEGIN CROSS-POLLINATION';
     document.getElementById('cp-msg').textContent = '';
     _pushModal('cp-modal');
     document.getElementById('cp-modal').classList.add('open');
@@ -48532,7 +48523,7 @@ function _doCrossPollination(wildPlant,matePlant){
     if(window.closeBreedScreen)window.closeBreedScreen();
     var _wildBreedOv=document.createElement('div');
     _wildBreedOv.style.cssText='position:fixed;inset:0;z-index:99996;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(14px);animation:panelFadeIn 0.3s ease;';
-    _wildBreedOv.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.2em;color:var(--sage);margin-bottom:0.6rem;">CROSS-POLLINATING</div><div style="font-size:3rem;animation:nearBloomPulse 1.2s ease infinite;">\ud83e\uddec</div><div style="font-family:Playfair Display,serif;font-size:0.7rem;font-style:italic;color:var(--cream);margin-top:0.6rem;opacity:0.7;">Genes intertwining...</div>';
+    _wildBreedOv.innerHTML='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.2em;color:var(--sage);margin-bottom:0.6rem;">CROSS-POLLINATING</div><div style="animation:nearBloomPulse 1.2s ease infinite;display:flex;align-items:center;justify-content:center;"><img src="assets/icons/dna.png" alt="" style="width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(122,179,86,0.4));" onerror="this.outerHTML=&apos;<span style=&quot;font-size:3rem;&quot;>\\ud83e\\uddec</span>&apos;;"></div><div style="font-family:Playfair Display,serif;font-size:0.7rem;font-style:italic;color:var(--cream);margin-top:0.6rem;opacity:0.7;">Genes intertwining...</div>';
     document.body.appendChild(_wildBreedOv);
     try{
       if(window._lwSpawnParticles){
@@ -54176,7 +54167,7 @@ window.openSunbeamModal=function(){
     h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'wild\');setTimeout(function(){if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();},250);" style="width:100%;padding:0.65rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(60,90,40,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:46px;"><span class="lwe lwe-bloom"></span> PLACE ONE IN THE WILD</button>';
     h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'greenhouse\');" style="width:100%;padding:0.65rem;margin-bottom:0.4rem;border:1.5px solid rgba(216,112,96,0.45);border-radius:10px;background:rgba(36,22,22,0.55);color:rgba(216,144,128,0.95);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:46px;"><span class="lwe lwe-flame"></span> OPEN GREENHOUSE TO COMPOST</button>';
   }else if(ready>0){
-    h+='<button onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" aria-label="Photosynthesize a plant" style="position:relative;width:100%;aspect-ratio:2/1;padding:0;margin-bottom:0.5rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:14px;background:url(assets/btn-photosynthesize-v1.png) center/cover no-repeat,linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));cursor:pointer;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.45),inset 0 0 0 1px rgba(240,208,144,0.12);">'
+    h+='<button id="lw-mint-now-btn" onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" aria-label="Photosynthesize a plant" style="position:relative;width:100%;aspect-ratio:2/1;padding:0;margin-bottom:0.5rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:14px;background:url(assets/btn-photosynthesize-v1.png) center/cover no-repeat,linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));cursor:pointer;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.45),inset 0 0 0 1px rgba(240,208,144,0.12);">'
       +(ready>1?'<span style="position:absolute;top:8px;right:10px;min-width:28px;height:28px;padding:0 8px;border-radius:14px;background:rgba(13,16,12,0.82);border:1.5px solid rgba(200,168,75,0.6);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.04em;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,0.85);">\u00d7'+ready+'</span>':'')
       +'</button>';
   }else{
@@ -67855,13 +67846,26 @@ function _watchMintModal(attempts){
   }
 }
 
-// ═══ STEP 17: bloom modal — point at BLOOM button ═══
+// ═══ STEP 17: bloom modal — point at the painted photosynthesize button ═══
+// Stephen 2026-04-30 LATE LATE LATE: the button is painted art with no
+// visible "BLOOM" label, so the old "Tap BLOOM" copy was confusing. Reword
+// + pulse the button itself so the target is unambiguous.
 function _step17(){
   _setStep(17);
   _dialog(
-    'Tap <span style="color:var(--gold);">BLOOM</span> to bring your second plant into being.',
+    '<span style="color:var(--gold);">Press the button</span> to bring your second plant into being.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Pulse the painted photosynthesize button inside the open bloom modal
+  // so the player sees exactly what to tap. Re-poll up to ~3s in case the
+  // modal hasn't finished rendering yet when step 17 fires.
+  var pulseAttempts=0;
+  var addPulse=function(){
+    var mintBtn=document.getElementById('lw-mint-now-btn');
+    if(mintBtn){mintBtn.classList.add('lw-pulse-hint');return;}
+    if(pulseAttempts<30){pulseAttempts++;setTimeout(addPulse,100);}
+  };
+  addPulse();
   _watchMintComplete(0);
 }
 
@@ -67946,7 +67950,7 @@ function _step18CarouselSafety(){
     if(isOpen){
       if(openSince===0)openSince=Date.now();
       // Stage 2 of step 18: carousel just opened → swap prompts.
-      if(!flipPromptShown && Date.now()-openSince>=900){
+      if(!flipPromptShown && Date.now()-openSince>=200){
         flipPromptShown=true;
         try { if (_dlg && _dlg.parentNode) _dlg.remove(); _dlg = null; } catch(e){}
         _dialog(
@@ -68349,8 +68353,7 @@ function _step23AfterCeremony(attempts){
     setTimeout(function(){_step23AfterCeremony(attempts+1);},500);return;
   }
   _dialog(
-    'Your new plant has bloomed.<br><br>' +
-    'The <span style="color:var(--gold);">Wild</span> opens.',
+    'Your new plant has bloomed. The <span style="color:var(--gold);">Wild</span> opens.',
     'LET\u2019S EXPLORE',function(){
       _clear();
       // Release the carousel lock set in _step23WaitForReveal, then close
@@ -68372,7 +68375,18 @@ function _step23AfterCeremony(attempts){
         document.body.classList.add('lw-tut-nav-wild');
       }catch(e){}
       setTimeout(_step24,1100);
-    },'top');
+    },'bottom');
+  // Wide-strip override: short vertical footprint, anchored just above
+  // the bottom nav so the player can still see the freshly bloomed card
+  // (back of the card sits in the middle of the screen). Stephen ruling
+  // 2026-04-30 LATE LATE LATE.
+  if(_dlg){
+    try{
+      _dlg.style.maxWidth='min(96vw,520px)';
+      _dlg.style.padding='0.7rem 1rem';
+      _dlg.style.bottom='calc(70px + env(safe-area-inset-bottom,0px))';
+    }catch(e){}
+  }
 }
 
 // ═══ STEP 24: Wild tab unlock — pulse nav + intro line ═══
@@ -69906,7 +69920,7 @@ function _resume(step){
 
 <div id="breed-screen">
   <div class="bs-topbar">
-    <div class="bs-title">🧬 CROSS-POLLINATE</div>
+    <div class="bs-title" style="display:flex;align-items:center;justify-content:center;gap:8px;"><img src="assets/icons/dna.png" alt="" style="width:30px;height:30px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML='🧬'"> CROSS-POLLINATE</div>
     <button class="bs-close" onclick="window.closeBreedScreen()">✕</button>
   </div>
   <div class="bs-nav">
