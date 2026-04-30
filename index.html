@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.82';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.83';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69127,6 +69127,13 @@ function _step40(){
   _ensureWildActive(function(){_step40Inner();});
 }
 function _step40Inner(){
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE LATE:
+  // dismiss any leftover contest dice modal + open SOW picker before the
+  // forage prompt fires. Stephen: "the dice roll still up" / "the sowing
+  // screen was there behind it but still disorienting."
+  try{var _dm=document.getElementById('lw-contest-roll');if(_dm&&_dm.parentNode)_dm.parentNode.removeChild(_dm);}catch(e){}
+  try{var _wp=document.getElementById('w-picker');if(_wp)_wp.classList.remove('open');}catch(e){}
+  try{if(window.closePicker)window.closePicker();}catch(e){}
   // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE: previous fix used
   // forage.offsetParent !== null as a "visible" check, but #ffb is
   // position:fixed which makes offsetParent null even when fully visible
@@ -69621,12 +69628,32 @@ function _step48(){
               || document.querySelector('#pw-character [id*="companion"]');
       if(card){
         try{card.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
-        setTimeout(function(){try{_spotlight&&_spotlight(card);}catch(e){}},350);
+        // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE LATE:
+        // _spotlight puts a dark mask 9999px around the card. When the
+        // player taps the card to open the companion picker, the picker
+        // renders BEHIND the spotlight's dim overlay — making every
+        // companion option look greyed out and unequippable. Pulse the
+        // card instead so it stands out without dimming the picker.
+        try{card.classList.add('lw-pulse-hint');}catch(e){}
       }
+      // Watch for the companion picker opening; when it does, clear the
+      // pulse so it doesn't carry into the picker view.
+      var _step48PickerWatch=function(){
+        if(_getStep()!==48)return;
+        if(document.getElementById('cs-comp-picker')){
+          try{var c=document.getElementById('cs-companion-card')||document.querySelector('.cs-companion-card');if(c)c.classList.remove('lw-pulse-hint');}catch(e){}
+          return;
+        }
+        setTimeout(_step48PickerWatch,400);
+      };
+      setTimeout(_step48PickerWatch,800);
       _dialog(
         'This is your <span style="color:var(--gold);">companion slot</span>.<br><br>' +
         'Plants with a companion trait can live here and grant passive bonuses. Come back anytime to change it.',
-        'NEXT',function(){_clear();setTimeout(_step49,400);},'bottom');
+        'NEXT',function(){
+          try{var c=document.getElementById('cs-companion-card')||document.querySelector('.cs-companion-card');if(c)c.classList.remove('lw-pulse-hint');}catch(e){}
+          _clear();setTimeout(_step49,400);
+        },'bottom');
     },500);
   },250);
 }
@@ -69640,6 +69667,13 @@ function _step48(){
 function _step49(){
   _setStep(49);
   _clear();
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE LATE: if
+  // the player still has the companion picker open from step 48, close
+  // it first so they're back on the character sheet before we tell them
+  // to scroll down. Also re-open the character sheet in case it was
+  // closed by step 48's flow.
+  try{var pk=document.getElementById('cs-comp-picker');if(pk)pk.remove();}catch(e){}
+  try{if(window.PW_UI&&PW_UI.openCharacter)PW_UI.openCharacter();}catch(e){}
   var scrollAndSpotlight=function(){
     // Prioritize the painted INVITE button (real action), not the muted
     // friends list (cosmetic / empty state).
@@ -69655,7 +69689,9 @@ function _step49(){
       },400);
     }
   };
-  scrollAndSpotlight();
+  // Wait for the character sheet to actually be open before scrolling.
+  // (Re-opening from a closed state takes ~200-300ms to render.)
+  setTimeout(scrollAndSpotlight,400);
   _dialog(
     'Scroll down in your profile and tap <span style="color:var(--gold);">INVITE</span> to share Lucid Winds with friends. Tending together makes the garden stronger.',
     'NEXT',function(){
@@ -83617,25 +83653,46 @@ function _bosQuestsContent(opts) {
     h += '<button onclick="window._bosQuestFilter=\'' + tk + '\';if(window._bosSetTab)_bosSetTab(window._bosTab||\'quests\');" style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.06em;padding:4px 9px;border-radius:6px;cursor:pointer;border:1px solid ' + tierColors2[tk] + (act ? '' : '44') + ';background:' + (act ? tierColors2[tk] + '22' : 'rgba(18,22,16,0.5)') + ';color:' + tierColors2[tk] + ';">' + tk.toUpperCase() + '</button>';
   }
   h += '</div>';
-  // Filtered list
+  // Filtered list with two-pass render — Stephen 2026-04-30 LATE: claimable
+  // achievements get sorted to the top under a banner so unclaimed rewards
+  // are visible immediately instead of buried in catalog order across 50+
+  // entries.
   var shown = 0;
   var totalMatching = 0;
-  for (var ai = 0; ai < catalog.length; ai++) {
-    var ae = catalog[ai];
-    if (activeFilter !== 'all' && ae.tier !== activeFilter) continue;
-    var aeDone = !!progress[ae.id];
-    if (activeStatus === 'done' && !aeDone) continue;
-    if (activeStatus === 'undone' && aeDone) continue;
+  // (We re-walk the catalog rather than buffer cards to keep the existing
+  // search/filter logic untouched.)
+  var _claimables = [];
+  var _rest = [];
+  for (var ai2 = 0; ai2 < catalog.length; ai2++) {
+    var ae2 = catalog[ai2];
+    if (activeFilter !== 'all' && ae2.tier !== activeFilter) continue;
+    var ae2Done = !!progress[ae2.id];
+    if (activeStatus === 'done' && !ae2Done) continue;
+    if (activeStatus === 'undone' && ae2Done) continue;
     if (questSearch) {
-      var aeHay = (ae.name + ' ' + (ae.desc || '') + ' ' + (ae.category || '')).toLowerCase();
-      if (aeHay.indexOf(questSearch) < 0) continue;
+      var ae2Hay = (ae2.name + ' ' + (ae2.desc || '') + ' ' + (ae2.category || '')).toLowerCase();
+      if (ae2Hay.indexOf(questSearch) < 0) continue;
     }
-    totalMatching++;
-    if (shown < 50) {
-      h += _achCard(ae);
+    var _isClaim = ae2Done && ACH.isClaimed && !ACH.isClaimed('ach', ae2.id);
+    if (_isClaim) _claimables.push(ae2); else _rest.push(ae2);
+  }
+  shown = 0;
+  if (_claimables.length) {
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;color:var(--gold);margin:0.6rem 0 0.4rem;text-align:center;text-shadow:0 0 8px rgba(200,168,75,0.3);">★ READY TO CLAIM · ' + _claimables.length + ' ★</div>';
+    for (var ci = 0; ci < _claimables.length; ci++) {
+      h += _achCard(_claimables[ci]);
       shown++;
     }
+    if (_rest.length) {
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;margin:0.7rem 0 0.3rem;text-align:center;opacity:0.8;">— REST —</div>';
+    }
   }
+  for (var ri = 0; ri < _rest.length && shown < 50; ri++) {
+    h += _achCard(_rest[ri]);
+    shown++;
+  }
+  // Update totalMatching to claim+rest count for the empty-state branch.
+  totalMatching = _claimables.length + _rest.length;
   if (totalMatching > 50) {
     h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;padding:0.6rem;">' + (totalMatching - 50) + ' more match. Refine the search to narrow further.</div>';
   } else if (totalMatching === 0) {
