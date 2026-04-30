@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.72';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.73';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69059,21 +69059,32 @@ function _step40(){
   _ensureWildActive(function(){_step40Inner();});
 }
 function _step40Inner(){
-  // Stephen 2026-04-30 LATE LATE LATE LATE LATE: this used to auto-skip to
-  // _step41 if #ffb wasn't visible after one 800ms retry — Stephen never
-  // saw the FORAGE prompt. Now we keep polling (every 250ms, up to 60s)
-  // until the button is queryable, then spotlight it. Tutorial doesn't
-  // silently advance past the prompt.
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE: previous fix used
+  // forage.offsetParent !== null as a "visible" check, but #ffb is
+  // position:fixed which makes offsetParent null even when fully visible
+  // — that meant the poll always fell through to the 60s safety, and the
+  // FORAGE prompt landed two minutes late. Now we trust computed display
+  // and inline display:none, which is what the FAB-show logic actually
+  // toggles. Polls every 200ms with a soft 30s ceiling that surfaces the
+  // prompt anyway as a last resort.
   var attempts = 0;
+  var isShown = function(el){
+    if (!el) return false;
+    if (el.style && el.style.display === 'none') return false;
+    try {
+      var cs = window.getComputedStyle ? window.getComputedStyle(el) : null;
+      if (cs && cs.display === 'none') return false;
+      if (cs && cs.visibility === 'hidden') return false;
+    } catch(e){}
+    return true;
+  };
   var find = function(){
     var forage = document.getElementById('ffb');
-    if (forage && forage.style.display !== 'none' && forage.offsetParent !== null) {
+    if (isShown(forage)) {
       _step40Spotlight(forage);
       return;
     }
-    if (attempts < 240) { attempts++; setTimeout(find, 250); return; }
-    // 60s safety: if still no FORAGE button, surface the prompt anyway
-    // so the player isn't stuck staring at blank wild.
+    if (attempts < 150) { attempts++; setTimeout(find, 200); return; }
     if (forage) _step40Spotlight(forage);
   };
   find();
