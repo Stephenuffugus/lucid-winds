@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.44';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.45';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6982,7 +6982,7 @@ window._addSwitchTabHook = function(fn){
   <!-- Plant info card with hold-to-release -->
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
-  <div id="sdi"><div class="sir"><span>📍</span><span class="sv" id="sdl">—</span></div><div class="sir"><span>🌡</span><span class="sv" id="sdc">—</span></div><div class="sir"><span id="sdhi"></span><span class="sv" id="sdh">—</span></div><div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div><button class="sia" onclick="BP.csi()" style="margin-top:4px;font-size:10px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button></div>
+  <div id="sdi"><div class="sir"><span><img src="assets/fx/pin-gold.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML='📍'"></span><span class="sv" id="sdl">—</span></div><div class="sir"><span><img src="assets/fx/compost-flame.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML='🌡'"></span><span class="sv" id="sdc">—</span></div><div class="sir"><span id="sdhi"></span><span class="sv" id="sdh">—</span></div><div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div><button class="sia" onclick="BP.csi()" style="margin-top:4px;font-size:10px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button></div>
   <!-- Harvest Reveal Overlay -->
   <div id="reveal-overlay"><div class="reveal-count" id="rev-count"></div><div class="reveal-card" id="rev-card"><div class="reveal-inner"><div class="reveal-front"></div><div class="reveal-back"><div class="reveal-glow" id="rev-glow"></div><div class="reveal-svg" id="rev-svg"></div><div class="reveal-name" id="rev-name"></div><div class="reveal-grade" id="rev-grade"></div><div class="reveal-haiku" id="rev-haiku"></div></div></div></div><div class="reveal-tap" id="rev-tap">tap to reveal</div></div>
   <!-- Drop FAB -->
@@ -46345,14 +46345,26 @@ function _wildClimateTick(weather) {
       var _lastToast = localStorage.getItem('lw_climate_toast_day') || '';
       if (_lastToast !== _todayK) {
         localStorage.setItem('lw_climate_toast_day', _todayK);
-        var _kindIcons = {heat:'🔥',cold:'❄️',flood:'🌊',wind:'💨',drought:'🌵'};
+        // Painted climate icons swap in via the foraging element family
+        // (matches the el-* style from elsewhere in the wild tab). Emoji
+        // stays as onerror fallback so missing PNG never leaves a void.
+        var _kindIco = function(p, em){
+          return '<img src="'+p+'" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\''+em+'\'">';
+        };
+        var _kindIcons = {
+          heat:    _kindIco('assets/fx/compost-flame.png','🔥'),
+          cold:    _kindIco('assets/foraging/el-shade.png','❄️'),
+          flood:   _kindIco('assets/foraging/el-rain.png','🌊'),
+          wind:    _kindIco('assets/foraging/el-wind.png','💨'),
+          drought: _kindIco('assets/foraging/el-dry.png','🌵')
+        };
         var _topKind = '', _topN = 0;
         for (var _kk in _vizKinds) {
           if (_vizKinds[_kk] > _topN) { _topN = _vizKinds[_kk]; _topKind = _kk; }
         }
-        var _icon = _kindIcons[_topKind] || '🌡️';
+        var _icon = _kindIcons[_topKind] || _kindIco('assets/fx/compost-flame.png','🌡️');
         var _msg = _icon + ' Today\'s weather stressed ' + _vizDamaged + ' wild plant' + (_vizDamaged === 1 ? '' : 's') + ' (mostly ' + _topKind + ').';
-        if (window._toast) window._toast(_msg);
+        if (window._toast) window._toast(_msg, {html:true});
       }
     } catch (e) {}
   }
@@ -51414,12 +51426,14 @@ function _selectHexPlant(idx,p){
   var _mInlineCd=0;
   try{var _mcdR=JSON.parse(localStorage.getItem('lw_mulch_cd')||'{}');if(_mcdR[p.hash]&&Date.now()-_mcdR[p.hash]<24*3600000)_mInlineCd=24*3600000-(Date.now()-_mcdR[p.hash]);}catch(e){}
   function _fmtCdHInline(ms){var h=Math.ceil(ms/3600000);if(h>=1)return h+'h';var m=Math.ceil(ms/60000);return m+'m';}
+  var _mIco='<img src="assets/mulchward.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#127807;\'">';
+  var _mFertIco='<img src="assets/fx/leaf-gold.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=\'&#127807;\'">';
   if(_mInlineCd>0){
-    _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Already mulched. Returns in '+_fmtCdHInline(_mInlineCd)+'.\')" title="On cooldown">&#127807; MULCHED &middot; '+_fmtCdHInline(_mInlineCd)+'</button>';
+    _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Already mulched. Returns in '+_fmtCdHInline(_mInlineCd)+'.\')" title="On cooldown">'+_mIco+' MULCHED &middot; '+_fmtCdHInline(_mInlineCd)+'</button>';
   } else if(_mFert>=1){
-    _mulchBtn='<button class="hi-action-btn" onclick="window._hexAction(\'mulch\')" title="'+_mulchTitle+'">&#127807; MULCH &middot; 1&#127807; &rarr; +24h, +1 EA</button>';
+    _mulchBtn='<button class="hi-action-btn" onclick="window._hexAction(\'mulch\')" title="'+_mulchTitle+'">'+_mIco+' MULCH &middot; 1'+_mFertIco+' &rarr; +24h, +1 EA</button>';
   } else {
-    _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 1 fertilizer. Compost a greenhouse plant to get one.\')" title="'+_mulchTitle+'">&#127807; MULCH &middot; need 1&#127807;</button>';
+    _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 1 fertilizer. Compost a greenhouse plant to get one.\')" title="'+_mulchTitle+'">'+_mIco+' MULCH &middot; need 1'+_mFertIco+'</button>';
   }
   // BLESSING button — Rare+ plants generate a daily Dew gift, claimable
   // once per plant per day per player. Available on own AND stranger plants.
@@ -51436,9 +51450,9 @@ function _selectHexPlant(idx,p){
       // Removed onpointerleave: on mobile, slight finger shifts fire leave
       // even with setPointerCapture, which cancelled the hold mid-gesture.
       // pointerup + pointercancel are enough for cleanup.
-      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 sunbeams"><span class="hi-water-fill"></span><span class="hi-water-label">\u2702 HOLD TO PRUNE (\u22923\u26a1)</span></button>';
+      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 sunbeams"><span class="hi-water-fill"></span><span class="hi-water-label"><img src="assets/character-sheet/tools/shears.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'\\u2702\'"> HOLD TO PRUNE (\u22923\u26a1)</span></button>';
     } else {
-      _pruneBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 3 Sunbeams to prune.\')" title="Need 3 sunbeams to prune">\u2702 PRUNE (need 3\u26a1)</button>';
+      _pruneBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 3 Sunbeams to prune.\')" title="Need 3 sunbeams to prune"><img src="assets/character-sheet/tools/shears.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'\\u2702\'"> PRUNE (need 3\u26a1)</button>';
     }
   }
   // Phoenix Bloom removed (companion retired). Placeholder kept so downstream
