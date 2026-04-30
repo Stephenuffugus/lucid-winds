@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.67';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.68';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3224,9 +3224,9 @@
     .lw-modal-frame.with-bottom-knots>.lw-modal-knot-bl,.lw-modal-frame.with-bottom-knots>.lw-modal-knot-br{content:'';position:absolute;width:28px;height:28px;background-repeat:no-repeat;background-size:contain;pointer-events:none;opacity:0.85;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><g fill='none' stroke='%23c8a84b' stroke-width='1.3' stroke-linecap='round'><circle cx='16' cy='11' r='5.2'/><circle cx='11' cy='19' r='5.2'/><circle cx='21' cy='19' r='5.2'/></g></svg>");}
     .lw-modal-frame.with-bottom-knots>.lw-modal-knot-bl{bottom:-6px;left:-6px;transform:scaleY(-1);}
     .lw-modal-frame.with-bottom-knots>.lw-modal-knot-br{bottom:-6px;right:-6px;transform:scale(-1,-1);}
-    .lw-modal-title{font-family:'Bebas Neue',sans-serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.16em;text-align:center;margin-bottom:0.55rem;text-shadow:0 1px 0 rgba(0,0,0,0.4);}
-    .lw-modal-subtitle{font-family:'Playfair Display',serif;font-style:italic;font-size:0.62rem;color:var(--sage);text-align:center;margin:-0.2rem 0 0.6rem;opacity:0.88;}
-    .lw-modal-body{font-family:'DM Mono',monospace;font-size:0.52rem;color:var(--cream);line-height:1.65;text-align:center;margin-bottom:0.9rem;}
+    .lw-modal-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.16em;text-align:center;margin-bottom:0.65rem;text-shadow:0 1px 0 rgba(0,0,0,0.4);}
+    .lw-modal-subtitle{font-family:'Playfair Display',serif;font-style:italic;font-size:0.78rem;color:var(--sage);text-align:center;margin:-0.2rem 0 0.6rem;opacity:0.88;}
+    .lw-modal-body{font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--cream);line-height:1.6;text-align:center;margin-bottom:0.95rem;}
     .lw-modal-body p{margin:0 0 0.5rem;}
     .lw-modal-body p:last-child{margin-bottom:0;}
     .lw-modal-actions{display:flex;flex-direction:column;gap:0.35rem;}
@@ -3236,7 +3236,7 @@
     .lw-modal-btn.primary{border-color:rgba(122,179,86,0.5);background:linear-gradient(180deg,rgba(74,124,53,0.38),rgba(26,60,22,0.48));color:var(--sage);box-shadow:0 0 0 0.5px rgba(122,179,86,0.12) inset,0 1px 0 rgba(240,235,216,0.06) inset;}
     .lw-modal-btn.gold{border-color:rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,90,30,0.42));color:var(--gold);}
     .lw-modal-btn.danger{border-color:rgba(200,80,60,0.48);background:linear-gradient(180deg,rgba(180,60,40,0.3),rgba(120,30,20,0.42));color:#e8a0a0;}
-    .lw-modal-btn.ghost{min-height:40px;font-size:0.58rem;border-color:rgba(122,179,86,0.14);background:rgba(26,36,22,0.2);color:var(--muted);}
+    .lw-modal-btn.ghost{min-height:48px;font-size:0.72rem;border-color:rgba(122,179,86,0.14);background:rgba(26,36,22,0.2);color:var(--muted);}
 
     /* ── LW_READER — unified lore / detail modal ── */
     /* Full-screen scrolling "journal page" used for every in-game detail:
@@ -5474,7 +5474,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
    hide #bps. SEEDS mode: hide #bpp, move #bps up to take its place. */
 #bpe.bp-mode-plants #bps{display:none !important;}
 #bpe.bp-mode-seeds #bpp{display:none !important;}
-#bpe.bp-mode-seeds #bps{top:calc(112px + env(safe-area-inset-top,0px)) !important;max-height:60vh !important;border-radius:16px !important;}
+#bpe.bp-mode-seeds #bps{top:calc(72px + env(safe-area-inset-top,0px)) !important;max-height:78vh !important;border-radius:16px !important;}
 /* When BP is open, dim the wild FABs + hamburger menu so they read as
    inactive and don't visually compete with the open inventory. The bps
    description panel sits at z 1002 so it's above all FABs. */
@@ -7016,14 +7016,11 @@ window._addSwitchTabHook = function(fn){
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
-  <div id="bpe" class="bp-mode-plants">
+  <div id="bpe" class="bp-mode-seeds">
     <div id="bpbk" onclick="BP.close()"></div>
     <div id="bpe-title">BACKPACK</div>
     <button id="bpe-close" onclick="BP.close()" aria-label="Close backpack" type="button">&#x2715;</button>
-    <div id="bpe-tabs">
-      <button class="bp-tab" data-bp-tab="plants" onclick="if(window.BP&&BP.setMode)BP.setMode('plants')">PLANTS</button>
-      <button class="bp-tab" data-bp-tab="seeds" onclick="if(window.BP&&BP.setMode)BP.setMode('seeds')">SEEDS</button>
-    </div>
+    <!-- Tab bar removed 2026-04-30 LATE LATE LATE: backpack carries seeds + items only. Plants section retired. -->
     <div id="bpp"></div>
     <div id="bps"></div>
   </div>
@@ -45015,6 +45012,13 @@ function _checkStepMilestone(){
     if(meters>=milestones[i]&&_lastStepMilestone<milestones[i]){
       _lastStepMilestone=milestones[i];
       var _reward=rewards[milestones[i]]||0;
+      // Tutorial gate \u2014 step milestones are veteran-loop rewards. Firing
+      // them during tutorial pumps a new player's Dew balance into the
+      // hundreds (Stephen test 2026-04-30 LATE LATE LATE: finished tutorial
+      // with 316 Dew). Skip the grant + toast entirely while tutorial is
+      // mid-flight.
+      var _tutInProg=false;try{var _t=localStorage.getItem('lw_tut');_tutInProg=_t&&_t!=='done';}catch(e){}
+      if(_tutInProg){_lastStepMilestone=milestones[i];break;}
       if(_reward>0&&window.earnDew)earnDew(_reward,'step_milestone');
       // Visible toast so the player knows they were rewarded for walking.
       if(window._toast)_toast('\u2728 '+labels[milestones[i]]+'. +'+_reward+' Dew');
@@ -47320,7 +47324,13 @@ function _rollFeralHash(f){
 
 function _doCollectFeral(f,mk){
   var info=_buildInfo(f.hash);
-  var seedObj={hash:f.hash,loc:'Wild zone',clim:'Temperate',date:new Date().toISOString(),rare:info.grade!=='Common'};
+  // seedHash is the field _LW_seedImagePath reads first to resolve the
+  // sprite. Without it, the resolver fell back to seed.id (undefined) and
+  // the backpack rendered seed-01.png; once transferred to nursery, the
+  // schema normalized seedHash from f.hash and a different sprite appeared.
+  // Stephen test 2026-04-30 LATE LATE LATE: "the seed image changed when
+  // I sent it to nursery." Set both fields so every render path agrees.
+  var seedObj={seedHash:f.hash,hash:f.hash,loc:'Wild zone',clim:'Temperate',date:new Date().toISOString(),rare:info.grade!=='Common'};
   // Pressure-modal helper: show contextual buy/alt CTAs when pouch full.
   // Stephen 2026-04-28: pay-point pressure should happen at friction.
   function _seedFullPressure(){
@@ -50597,8 +50607,13 @@ setInterval(function(){
     }
   }catch(e){}
   if(wholeEarned>0){
+    // Tutorial gate — wild_tick was the biggest culprit in Stephen's
+    // 316-Dew tutorial-end balance. While tutorial is mid-flight, freeze
+    // passive Dew accumulation. Saved decimal remainder still ticks so
+    // the moment tutorial ends, accumulation resumes naturally.
+    var _tutInProgT=false;try{var _tt=localStorage.getItem('lw_tut');_tutInProgT=_tt&&_tt!=='done';}catch(e){}
     // Route to the real Dew ledger — earnDew also grants matching XP
-    if(typeof earnDew==='function')earnDew(wholeEarned,'wild_tick');
+    if(!_tutInProgT && typeof earnDew==='function')earnDew(wholeEarned,'wild_tick');
     var wd=document.getElementById('w-dew');
     if(wd&&typeof getTotalDew==='function')wd.textContent=getTotalDew();
     var p=document.getElementById('w-pollen');
@@ -64952,74 +64967,20 @@ function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pou
 function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','<img src="assets/backpack-64x64.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
-function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}var bpe=document.getElementById('bpe');bpe.classList.add('open');document.body.classList.add('lw-bp-open');// Default mode = plants on every open + sync tab active state
-bpe.classList.remove('bp-mode-seeds');bpe.classList.add('bp-mode-plants');var _btns=document.querySelectorAll('#bpe-tabs .bp-tab');for(var _bi=0;_bi<_btns.length;_bi++){_btns[_bi].classList.toggle('active',_btns[_bi].getAttribute('data-bp-tab')==='plants');}render();}
+function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}var bpe=document.getElementById('bpe');bpe.classList.add('open');document.body.classList.add('lw-bp-open');
+// Backpack now carries seeds + items only. Lock to seeds mode on every open.
+bpe.classList.remove('bp-mode-plants');bpe.classList.add('bp-mode-seeds');render();}
 function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');document.body.classList.remove('lw-bp-open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
 function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');}
 function render(){
   var bg=document.getElementById('bpb');var t=st.plants.length+st.seeds.length;bg.textContent=t;bg.classList.toggle('e',t===0);
-  var pe=document.getElementById('bpp');var mx=xp();var h='';
-  // Section header — orients first-time players, contextualizes count
-  h+='<div class="bp-col-label">PLANTS<span class="cnt">'+st.plants.length+'/'+mx+'</span></div>';
-  // Empty-pouch hint — spans the grid so first-time players see what to do
-  // instead of a sea of "+" placeholder slots. Disappears the moment they
-  // collect anything.
-  if(t===0){
-    h+='<div style="grid-column:1/-1;padding:12px 14px;margin-bottom:6px;border:1px dashed rgba(122,179,86,0.3);border-radius:10px;background:rgba(20,28,18,0.5);text-align:center;font-family:DM Mono,monospace;font-size:0.5rem;line-height:1.6;color:var(--muted);">'
-      +'<span style="color:var(--sage);">Your pouch is empty.</span><br>Collect ferals from glowing hexes, or harvest a wild plant within 75m.'
-      +'</div>';
-  }
-  // Player level gate for cutting-clippings feature
-  var keeperLvl=0;try{if(window._getXP&&window._getRank){keeperLvl=window._getRank(window._getXP()).level;}}catch(e){}
-  // Lv3 unlock per Stephen's tutorial spec (was Lv5). Players encounter
-  // cuttings in the Phase 6 walkthrough, which fires around Lv3.
-  var CLIPPING_UNLOCK_LEVEL=3, CLIPPING_CD_MS=(window._LW_toolMod&&window._LW_toolMod('shears'))||(6*60*60*1000);
-  var _clipHrs=Math.round(CLIPPING_CD_MS/3600000);
-  var clipCDs={};try{clipCDs=JSON.parse(localStorage.getItem('fg_bp_clipCDs')||'{}');}catch(e){}
-  var now=Date.now();
-  for(var i=0;i<st.plants.length&&i<mx;i++){
-    var p=st.plants[i];var g=p.grade;var gc=GC[g]||GC.Common;
-    var plantSvg='';if(window._generatePlantSVG&&p.hash){try{plantSvg=window._generatePlantSVG(p.hash,28);}catch(e){}}if(!plantSvg)plantSvg=MP[p.pi%5];
-    h+='<div class="ps" onclick="BP.tp('+i+')" style="position:relative;"><div class="tr" data-g="'+g+'">'+I.ter+'<div class="pm">'+plantSvg+'</div><div class="hd '+(p.hp||'h')+'"></div><div class="gl" style="color:'+gc+';background:rgba(13,16,12,0.8);">'+g.toUpperCase()+'</div></div>';
-    h+='<button onclick="event.stopPropagation();window.FG_Backpack.sendPlantHome('+i+');" style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);z-index:2;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);background:rgba(13,16,12,0.9);border:1px solid rgba(122,179,86,0.35);border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap;min-height:36px;">\ud83c\udfe0 SEND</button>';
-    // Clipping button (level 5+, per-slot 6hr cooldown)
-    if(keeperLvl>=CLIPPING_UNLOCK_LEVEL){
-      var cdKey=(p.hash||('slot'+i))+'|cut';
-      var lastCut=clipCDs[cdKey]||0;
-      var timeLeft=CLIPPING_CD_MS-(now-lastCut);
-      if(timeLeft>0){
-        var mins=Math.ceil(timeLeft/60000);
-        var label=mins>=60?Math.floor(mins/60)+'h '+(mins%60)+'m':mins+'m';
-        h+='<div title="Clipping cooldown" style="position:absolute;top:-6px;right:-6px;z-index:2;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);background:rgba(13,16,12,0.9);border:1px solid rgba(138,145,121,0.35);border-radius:8px;padding:3px 6px;">⏳ '+label+'</div>';
-      }else{
-        h+='<button onclick="event.stopPropagation();window.FG_Backpack.takeClipping('+i+');" title="Take a clipping ('+_clipHrs+'h cooldown)" style="position:absolute;top:-6px;right:-6px;z-index:2;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);background:rgba(13,16,12,0.9);border:1px solid rgba(200,168,75,0.5);border-radius:8px;padding:4px 8px;cursor:pointer;">✂️</button>';
-      }
-    }
-    h+='</div>';
-  }
-  for(var j=st.plants.length;j<mx;j++){h+='<div class="ps"><div class="tr" data-g="Common" style="opacity:0.2;">'+I.ter+'<div class="pm" style="opacity:0.12;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;">+</div></div></div>';}
-  var sh=0;for(var k=1;k<SL.length&&sh<2;k++){if(SL[k].k&&!st.unlocks[SL[k].k]){h+='<div class="lk">'+UI.lk+'<div class="lh">'+SL[k].h+'</div></div>';sh++;}}
-  // Return to Base + Items + Boxes buttons inside backpack panel.
-  // Container class bp-extra-row so tutorial CSS can hide the whole
-  // bundle during the backpack intro (steps 28-29). Stephen test:
-  // "there are three buttons in the bottom right. base items and
-  // boxes. i dont think we have a base and the other two should [not]
-  // be accessible yet."
-  h+='<div class="bp-extra-row" style="grid-column:1/-1;margin-top:8px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
-  // Dedicated CLOSE so the backpack never gets "stuck open" when the
-  // dim overlay behind it fails to catch the tap. Stephen flagged it.
-  h+='<button onclick="if(window.BP)BP.close();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--cream);background:linear-gradient(180deg,rgba(60,70,50,0.55),rgba(40,50,32,0.65));border:1.5px solid rgba(180,170,130,0.35);border-radius:10px;cursor:pointer;">✕ CLOSE</button>';
-  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/house-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;🏠&apos;;"> RETURN</button>';
-  var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
-  h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/sprout-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=\'\ud83c\udf31\';">ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
-  var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
-  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+';display:inline-flex;align-items:center;gap:6px;"><img src="assets/icons/box.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';">BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
-  var _cocoonTotal=0,_cocoonReady=0;try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_cocoonTotal=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_cocoonReady++;}}catch(e){}
-  h+='<button onclick="if(window.LW_COCOONS)LW_COCOONS.openPanel();" style="min-height:44px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_cocoonReady>0?'#c8a84b':(_cocoonTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_cocoonReady>0?'rgba(200,168,75,0.7)':(_cocoonTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_cocoonReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=\'\ud83e\uddf5\';">COCOONS'+(_cocoonTotal>0?' ('+_cocoonTotal+(_cocoonReady>0?' \u2022 '+_cocoonReady+' READY':'')+')':'')+'</button>';
-  h+='</div>';
-  pe.innerHTML=h;
-  var se=document.getElementById('bps');var cp=xc();h='';
+  // Plants section retired 2026-04-30 LATE LATE LATE — backpack now
+  // carries seeds + items only. bpp left empty; the previous action
+  // row (CLOSE/RETURN/ITEMS/BOXES/COCOONS) is now appended at the
+  // bottom of the seeds panel below so it stays visible.
+  var pe=document.getElementById('bpp');pe.innerHTML='';
+  var se=document.getElementById('bps');var cp=xc();var h='';
   // Section header — same treatment as the plant column.
   h+='<div class="bp-col-label">SEEDS<span class="cnt">'+st.seeds.length+'/'+cp+'</span></div>';
   for(var m=0;m<st.seeds.length&&m<cp;m++){
@@ -65099,6 +65060,19 @@ function render(){
       h += '<div style="grid-column:1/-1;margin-top:10px;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">Seed pouch maxed (' + _bpMaxCap + ' slots).</div>';
     }
   } catch(e){}
+  // ═══ Action row — moved out of the retired plants panel.
+  // Container class bp-extra-row so tutorial CSS gating still applies
+  // (see index.html:52826 — display:none during early backpack steps).
+  h+='<div class="bp-extra-row" style="grid-column:1/-1;margin-top:10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
+  h+='<button onclick="if(window.BP)BP.close();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--cream);background:linear-gradient(180deg,rgba(60,70,50,0.55),rgba(40,50,32,0.65));border:1.5px solid rgba(180,170,130,0.35);border-radius:10px;cursor:pointer;">\u2715 CLOSE</button>';
+  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/house-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udfe0&apos;;"> RETURN</button>';
+  var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
+  h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/sprout-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf31&apos;;">ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
+  var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
+  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/icons/box.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf81&apos;;">BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
+  var _cocoonTotal=0,_cocoonReady=0;try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_cocoonTotal=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_cocoonReady++;}}catch(e){}
+  h+='<button onclick="if(window.LW_COCOONS)LW_COCOONS.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_cocoonReady>0?"#c8a84b":(_cocoonTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_cocoonReady>0?'rgba(200,168,75,0.7)':(_cocoonTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_cocoonReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83e\udd8b&apos;;">COCOONS'+(_cocoonTotal>0?' ('+_cocoonTotal+(_cocoonReady>0?' \u2022 '+_cocoonReady+' READY':'')+')':'')+'</button>';
+  h+='</div>';
   se.innerHTML=h;
   // dbb badge is owned by FG_Wild._updateUI — do not overwrite here
   uab();
@@ -68616,7 +68590,8 @@ function _step32(){
   _overlay(function(){/* no-op */});
   _spotlight(bos);
   _dialog(
-    'Every discovery you ever make lives in the <span style="color:var(--gold);">Book of Secrets</span>.<br><br>Tap it to take a look.',
+    '<div style="display:flex;justify-content:center;margin-bottom:0.5rem;"><img src="assets/btn-compendium.png" alt="" style="width:64px;height:auto;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.4));" onerror="this.outerHTML=&apos;&apos;;"></div>' +
+    '<div style="font-size:1.1rem;line-height:1.5;">Every discovery you ever make lives in the <span style="color:var(--gold);">Book of Secrets</span>.<br><br>Tap it to take a look.</div>',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
@@ -68921,9 +68896,20 @@ function _step36Spotlight(sow){
 function _step37(){
   _setStep(37);
   _dialog(
-    'Pick a plant and tap <span style="color:var(--gold);">PLACE HERE</span> to plant it in the Wild.',
+    'Pick a plant and tap the <span style="color:var(--gold);">PLANT HERE</span> button to plant it in the Wild.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Pulse the painted PLANT HERE button so the player sees the target.
+  // The button only renders inside the open carousel; re-poll up to ~6s
+  // because the player has to tap a plant card first to bring up the
+  // action bar where the button lives.
+  var _phAttempts=0;
+  var _addPHPulse=function(){
+    var ph=document.getElementById('gallery-place-btn');
+    if(ph&&ph.offsetParent!==null){ph.classList.add('lw-pulse-hint');return;}
+    if(_phAttempts<60){_phAttempts++;setTimeout(_addPHPulse,100);}
+  };
+  _addPHPulse();
   // Snapshot wild plant count so we can detect an ACTUAL placement
   // (count increased) vs a bare carousel close (player cancelled).
   // Previous logic treated any carousel close as "placed in empty hex"
@@ -69016,11 +69002,14 @@ function _step38(){
 // ═══ STEP 39: post-contest explanation ═══
 function _step39(){
   _setStep(39);
+  var _ic=function(src,fall){return '<img src="'+src+'" alt="" style="width:32px;height:32px;object-fit:contain;vertical-align:-10px;display:inline-block;margin-right:6px;" onerror="this.outerHTML=&apos;'+fall+'&apos;;">';};
   _dialog(
-    'If your plant lives in the world now:<br><br>' +
-    '\u2728 It earns <b>pollen per hour</b> based on its rarity.<br>' +
-    '\ud83d\udca7 It generates <b>dew</b> over time.<br>' +
-    '\ud83c\udf38 It cross-pollinates with nearby plants; you\'ll never know what surprises pop up around your rare ones.',
+    'If your plant lives in the wild now:<br><br>' +
+    '<div style="text-align:left;line-height:2;">' +
+    _ic('assets/pollen-64.png','\u2728')+'It earns <b>pollen per hour</b> based on its rarity.<br>' +
+    _ic('assets/btn-dew-v2.png','\ud83d\udca7')+'It generates <b>dew</b> over time.<br>' +
+    _ic('assets/icons/dna.png','\ud83c\udf38')+'It cross-pollinates with nearby plants; you\u2019ll never know what surprises pop up around your rare ones.' +
+    '</div>',
     'CONTINUE',function(){_clear();setTimeout(_step40,400);},'center');
 }
 
@@ -69145,23 +69134,57 @@ function _step41(){
 function _step42(){
   _setStep(42);
   _clear();
-  // Tiny banner at the very bottom of screen, well below the backpack's
-  // seed-info panel (which anchors at ~122px from bottom). No button,
-  // no dashes. Stephen 2026-04-22: "a little prompt at the bottom of
-  // the screen telling us to click on the backpack and send the seed
-  // to the nursery."
+  // Stephen 2026-04-30 LATE LATE LATE: "after CARRY IT HOME nothing
+  // happened — we need to open the backpack and send it to nursery,
+  // monorail style no diverting." Three-stage spotlight:
+  //   1) banner asks player to open backpack
+  //   2) pulse the backpack icon so target is unmistakable
+  //   3) once backpack opens, pulse HOLD TO SEND TO NURSERY (#htc-nur)
   try {
     var old = document.getElementById('lw-tut-mini-prompt');
     if (old) old.remove();
     var mini = document.createElement('div');
     mini.id = 'lw-tut-mini-prompt';
-    mini.style.cssText = 'position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:1000010;background:linear-gradient(180deg,rgba(32,40,24,0.98),rgba(18,24,16,0.98));border:2px solid rgba(200,168,75,0.6);border-radius:12px;padding:0.75rem 1.1rem;font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.08em;max-width:92vw;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,0.75),0 0 20px rgba(200,168,75,0.3);animation:lwTutMiniPulse 2s ease-in-out infinite;';
+    mini.style.cssText = 'position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:1000010;background:linear-gradient(180deg,rgba(32,40,24,0.98),rgba(18,24,16,0.98));border:2px solid rgba(200,168,75,0.6);border-radius:12px;padding:0.75rem 1.1rem;font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.08em;max-width:92vw;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,0.75),0 0 20px rgba(200,168,75,0.3);animation:lwTutMiniPulse 2s ease-in-out infinite;';
     mini.textContent = 'TAP YOUR BACKPACK. SEND THE SEED TO YOUR NURSERY.';
     document.body.appendChild(mini);
   } catch(e) {}
+  // Pulse the backpack icon until the player taps it.
+  var _bpiPulsed=false;
+  var _pulseBpi=function(){
+    var bpi=document.getElementById('bpi');
+    if(bpi){_bpiPulsed=true;bpi.classList.add('lw-pulse-hint');}
+  };
+  _pulseBpi();
+  // Watch for the backpack to open, then pulse the HOLD-TO-SEND button.
+  var _htcPulsed=false;
+  var _watchOpen=function(){
+    if(_getStep()!==42)return;
+    var bpe=document.getElementById('bpe');
+    if(bpe&&bpe.classList.contains('open')){
+      // Stop the bpi pulse — they found the backpack.
+      try{var bpi=document.getElementById('bpi');if(bpi)bpi.classList.remove('lw-pulse-hint');}catch(e){}
+      // Update banner copy — they're inside the backpack now.
+      try{var m=document.getElementById('lw-tut-mini-prompt');if(m)m.textContent='HOLD TO SEND THE SEED TO YOUR NURSERY.';}catch(e){}
+      // Pulse HOLD-TO-SEND (re-poll because htc-nur is rendered when a
+      // seed is selected — could be a brief delay).
+      var pollAttempts=0;
+      var pulseHtc=function(){
+        var htc=document.getElementById('htc-nur');
+        if(htc&&htc.offsetParent!==null){_htcPulsed=true;htc.classList.add('lw-pulse-hint');return;}
+        if(pollAttempts<60){pollAttempts++;setTimeout(pulseHtc,150);}
+      };
+      pulseHtc();
+      return; // stop watching for open; transition handled by bp-seed-to-nursery event
+    }
+    setTimeout(_watchOpen,400);
+  };
+  setTimeout(_watchOpen,400);
   var _advanced=false;
   var _cleanup=function(){
     try{var m=document.getElementById('lw-tut-mini-prompt');if(m)m.remove();}catch(e){}
+    try{var bpi=document.getElementById('bpi');if(bpi)bpi.classList.remove('lw-pulse-hint');}catch(e){}
+    try{var htc=document.getElementById('htc-nur');if(htc)htc.classList.remove('lw-pulse-hint');}catch(e){}
   };
   var onSeedSent=function(){
     if(_advanced)return;
@@ -77255,9 +77278,11 @@ window._lwClaimHerbarium = function(id){
             no: ''
           }, function(){});
         };
+        var _elIco = function(k){return '<img src="assets/foraging/elements/'+k+'.png" alt="" style="width:26px;height:26px;object-fit:contain;vertical-align:-7px;display:inline-block;margin:0 2px;" onerror="this.outerHTML=&apos;&apos;;">';};
         window._lwConfirm({
           title: 'FORAGING. A QUIET PUZZLE',
-          body: '<p>Every wild hex hides a sequence of <b>elements</b>. Sun, Shade, Rain, Dry, Wind, Still.</p>' +
+          body: '<p>Every wild hex hides a sequence of <b>elements</b>:</p>' +
+                '<p style="line-height:2;">'+_elIco('sun')+' Sun '+_elIco('shade')+' Shade '+_elIco('rain')+' Rain '+_elIco('dry')+' Dry '+_elIco('wind')+' Wind '+_elIco('still')+' Tranquility</p>' +
                 '<p>Play cards from your hand into the slots. Try to match the hex\u2019s hidden order.</p>' +
                 '<p style="color:var(--sage);">Higher-rarity hexes have more slots, bigger hands, and more attempts. Each attempt teaches you more.</p>',
           yes: 'NEXT \u2192',
