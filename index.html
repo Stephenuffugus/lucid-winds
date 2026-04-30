@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.22';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.23';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -49577,7 +49577,17 @@ function _drop(pl){
   closePicker();
   if(!_uLat||!_uLng){_toast('No location.');return;}
   if(_gpsDenied){_toast('\u2316 Demo mode. Enable GPS to plant in the real world.');return;}
-  if((_getMaxDrops()-_drops)<=0)return;
+  // Stephen audit 2026-05-01 #17: silent fail \u2192 explicit toast.
+  // Was: silent return when drops exhausted, leaving the player to
+  // wonder why nothing happened. Now tells them the cap and offers
+  // the Sunbeam buy path.
+  if((_getMaxDrops()-_drops)<=0){
+    if(window._toast){
+      var _bonusInfo = (window._lwBuyExtraDrop) ? ' Tap SOW again to buy +1 with Sunbeams.' : '';
+      _toast('\ud83c\udf31 All ' + _getMaxDrops() + ' drops used today. Resets at midnight.' + _bonusInfo);
+    }
+    return;
+  }
   var wild=_getWild();
   var myUid='';try{var _cu=window.firebase&&firebase.auth()&&firebase.auth().currentUser;if(_cu)myUid=_cu.uid;}catch(e){}
   var la=_uLat+(Math.random()-0.5)*0.0005,lo=_uLng+(Math.random()-0.5)*0.0005;
@@ -77853,6 +77863,33 @@ window._lwClaimHerbarium = function(id){
     var itemQ = { lens:false, extraAttempt:false };
     try { if (window.LW_ITEMS) itemQ = window.LW_ITEMS.consumeForageQueue(); } catch(e){}
     if (itemQ.extraAttempt) diff = { slots:diff.slots, cards:diff.cards, handSize:diff.handSize, attempts:diff.attempts+1, scoreNeeded:diff.scoreNeeded };
+    // Stephen audit 2026-05-01 #17: surface item-effect application so
+    // primed Compass Shard / Lens / Glass don't feel silent. Player sees
+    // what's being spent on this forage as the panel opens.
+    try {
+      var _itParts = [];
+      if (itemQ.lens) _itParts.push('🔮 Lens revealing 1 slot');
+      if (itemQ.extraAttempt) _itParts.push('🧭 Compass Shard +1 attempt');
+      // Diviner's Glass: read directly from pending — it's not consumed
+      // by consumeForageQueue (only by attempt-resolution), so we have to
+      // peek. Show "X/5 used" so player knows the state.
+      try {
+        var _pendRaw = localStorage.getItem('sws_items_pending') || '{}';
+        var _pend = JSON.parse(_pendRaw);
+        var _g = _pend.divinerGlass;
+        if (_g && typeof _g === 'object') {
+          var _gAge = Date.now() - (_g.startedAt || 0);
+          if (_gAge < 30 * 60 * 1000) {
+            var _used = (typeof _g.n === 'number') ? _g.n : 0;
+            var _minsLeft = Math.max(1, Math.ceil((30 * 60 * 1000 - _gAge) / 60000));
+            _itParts.push('🔍 Glass active · ' + _used + '/5 used · ' + _minsLeft + 'm left');
+          }
+        }
+      } catch(e){}
+      if (_itParts.length && window._toast) {
+        setTimeout(function(){ _toast(_itParts.join(' · ')); }, 400);
+      }
+    } catch(e){}
     // Per-grade attempt cap — higher rarity gets more chances.
     if (attempts >= diff.attempts) {
       if (window._toast) _toast('This hex is locked until tomorrow. Try another.');
