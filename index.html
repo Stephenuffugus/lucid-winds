@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.34';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.35';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -77654,7 +77654,7 @@ window._lwClaimHerbarium = function(id){
       usage:'tap a wild plant of yours', wired:true },
     shellgourd: { key:'shellgourd', name:'Shellgourd', category:'defense', rarity:'Epic',
       art:'assets/items/shellgourd.png', icon:'\ud83e\uddc9',
-      desc:'Zone locked for 48h \u2014 one contest blocks entirely, no roll.',
+      desc:'Zone sealed for 48h \u2014 every contest in that window is auto-blocked, no roll.',
       lore:'Hollow gourd harder than ceramic. Place it at the foot of a plant and the zone itself refuses company.',
       usage:'tap a wild plant of yours', wired:true },
     moonwake: { key:'moonwake', name:'Moonwake', category:'defense', rarity:'Uncommon',
@@ -77912,7 +77912,7 @@ window._lwClaimHerbarium = function(id){
     document.body.appendChild(ov);
   }
   function useBramble(){ return _applyPlantBuff('brambleThicket','bramble', 86400000, '\ud83c\udf31 Bramble laid around {name}. Attackers roll 1d6 for 24h.'); }
-  function useShellgourd(){ return _applyPlantBuff('shellgourd','shellgourd', 172800000, '\ud83e\uddc9 Shellgourd placed at {name}. One contest blocked, 48h.'); }
+  function useShellgourd(){ return _applyPlantBuff('shellgourd','shellgourd', 172800000, '\ud83e\uddc9 Shellgourd placed at {name}. Zone sealed for 48h.'); }
   function useMoonwake(){ return _applyPlantBuff('moonwake','moonwake', 0, '\ud83c\udf19 Moonwake on {name}. +3 EA next contest.'); }
   // Per-plant buff lookups — called by contest inspector / takeover roll
   function _getPlantBuff(hash, key){
@@ -77925,8 +77925,12 @@ window._lwClaimHerbarium = function(id){
   function hasShellgourd(hash){ return !!_getPlantBuff(hash,'shellgourd'); }
   function hasMoonwake(hash){ return !!_getPlantBuff(hash,'moonwake'); }
   function consumeShellgourd(hash){
+    // Shellgourd seals the zone for the full 48h duration. Each blocked
+    // contest is a no-op consume — buff expires only on timestamp via
+    // _getPlantBuff. Caller still uses the return value to know a block
+    // fired, so keep the truthy return.
     var p = _loadPending(); if (!p.shellgourd || !p.shellgourd[hash]) return false;
-    delete p.shellgourd[hash]; _savePending(p); return true;
+    return true;
   }
   function consumeMoonwake(hash){
     var p = _loadPending(); if (!p.moonwake || !p.moonwake[hash]) return false;
