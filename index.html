@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.40';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.41';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47400,37 +47400,23 @@ function _fjInteract(p){
   var reward=0;var rewardType='';
   var _isFirstTap = !entry.discovered;
 
-  // DISCOVERY: first time ever tapping this plant
+  // SCOUT: first time ever tapping this plant — small Dew reward for
+  // scouting a new specimen. Note: "species" / "unlock" framing was
+  // pulled 2026-04-30; tapping is scouting income, not collection
+  // unlock. Real species unlocks live elsewhere (growing, breeding,
+  // foraging seeds — TBD per director).
   if(!entry.discovered){
     entry.discovered=today;
-    reward+=2;rewardType='🌱 New species logged · +2 Dew';
-    // Track total discoveries
+    reward+=2;rewardType='+2 Dew · scouted (new)';
     j._count=(j._count||0)+1;
   }
   // SCOUT: first inspect this plant today
   else if(entry.lastScout!==today){
-    reward+=1;rewardType='👁 Scouted today · +1 Dew';
+    reward+=1;rewardType='+1 Dew · scouted today';
   }
   entry.lastScout=today;
   j[key]=entry;
   _fjSave(j);
-
-  // First-ever species discovery — explain the field journal once. Gated by
-  // lw_jit_species_v1 so it only fires for the first plant any player taps.
-  // 1.6s delay lets the toast surface first; modal arrives as the second
-  // beat with the "what just happened" explanation.
-  if (_isFirstTap && !localStorage.getItem('lw_jit_species_v1') && window._lwConfirm) {
-    try { localStorage.setItem('lw_jit_species_v1','1'); } catch(e){}
-    setTimeout(function(){
-      if (document.querySelector('.lu-overlay,#pw-win-overlay,#lw-confirm-modal')) return;
-      window._lwConfirm({
-        title:'YOUR FIELD JOURNAL',
-        body:'Every wild plant you tap is logged. New species pay <b>+2 Dew</b>. Re-checking a known plant later in the day pays <b>+1 Dew</b> as a scout reward.<br><br>Walking the map and tapping plants is a real income stream — the more species you log, the more your journal fills out.',
-        yes:'GOT IT',
-        no:''
-      }, function(){});
-    }, 1600);
-  }
 
   // Engagement counters: tap counters per inspect.
   if (window.LW_ACH) {
@@ -47457,8 +47443,8 @@ function _fjInteract(p){
 
   if(reward>0){
     if(window.earnDew)window.earnDew(reward,'field_journal');
-    _play(reward>=2?'discover':'tap'); // discovery sparkle vs scout tap
-    _toast(rewardType+(j._count?' \u00b7 '+j._count+' species found':''));
+    _play(reward>=2?'discover':'tap');
+    _toast(rewardType);
     if(window._updateGameDew)_updateGameDew();
   }
 }
