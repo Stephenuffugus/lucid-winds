@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.60';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.61';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -51197,25 +51197,27 @@ window._lwShowHexHelp=function(){
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
   var card=document.createElement('div');
   card.style.cssText='max-width:380px;width:100%;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,rgba(13,16,12,0.99) 0%,rgba(8,10,6,1) 100%);border:1.5px solid rgba(200,168,75,0.35);border-radius:18px;padding:1.1rem 1rem 0.8rem;color:var(--cream,#e8dcc8);box-shadow:0 12px 60px rgba(0,0,0,0.7);font-family:DM Sans,sans-serif;-webkit-overflow-scrolling:touch;';
+  // Apr 30: emoji column replaced with painted assets, defense row dropped
+  // (system retired). Each row [iconPath, emojiFallback, label, description].
   var rows=[
-    ['💧','WATER','Refresh your own plant\'s lifespan. Costs 5 Dew. 12h cooldown.'],
-    ['💧','HOLD TO WATER','Hold 4 seconds to water a stranger plant. 5 grants per day.'],
-    ['🌿','TEND','Add 6 hours of life to a stranger plant. You earn 2 Dew. Unlocks at Keeper Level 5. 4h cooldown.'],
-    ['🌷','MULCH','Spend 1 fertilizer to give any plant +24h life and +1 EA. Earn fertilizer by composting greenhouse plants. 24h cooldown.'],
-    ['🙏','BLESSING','A daily Dew gift from any Rare-or-rarer stranger plant. Once per plant per day.'],
-    ['✂️','CUTTING','Spend 20 Dew to turn this plant into a seed in your nursery. Limit 2 per day, and once per plant ever. Unlocks at Keeper Level 5.'],
-    ['🛡️','DEFENSE','Pick a mini-game challengers must beat to harvest your plant. 24h cooldown to change.'],
-    ['🔍','SEARCH FOR SEEDS','Once per day per zone, hunt for feral seeds. Difficulty scales with seed rarity.']
+    ['assets/wild-water-btn.png','💧','WATER','Refresh your own plant\'s lifespan. Costs 5 Dew. 12h cooldown.'],
+    ['assets/wild-water-btn.png','💧','HOLD TO WATER','Hold 4 seconds to water a stranger plant. 5 grants per day.'],
+    ['assets/character-sheet/tools/can.png','🌿','TEND','Add 6 hours of life to a stranger plant. You earn 2 Dew. Unlocks at Keeper Level 5. 4h cooldown.'],
+    ['assets/mulchward.png','🌷','MULCH','Spend 1 fertilizer to give any plant +24h life and +1 EA. Earn fertilizer by composting greenhouse plants. 24h cooldown.'],
+    ['assets/fx/praying-hands-gold.png','🙏','BLESSING','A daily Dew gift from any Rare-or-rarer stranger plant. Once per plant per day.'],
+    ['assets/character-sheet/tools/shears.png','✂️','CUTTING','Spend 20 Dew to turn this plant into a seed in your nursery. Limit 2 per day, and once per plant ever. Unlocks at Keeper Level 5.'],
+    ['assets/wild-inspect-btn.png','🔍','INSPECT','Open the plant in the carousel to see traits, age, and lineage.'],
+    ['assets/splash-seed-v2.png','🌱','SEARCH FOR SEEDS','Once per day per zone, hunt for feral seeds. Difficulty scales with seed rarity.']
   ];
-  var html='<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.85rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.14em;color:var(--gold);flex:1;">HEX ACTIONS</div><button id="lw-hex-help-close" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.25);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.7rem;cursor:pointer;">&#10005;</button></div>';
-  html+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.55;margin-bottom:0.85rem;">Tap a hex to see its plants. Tap any plant to inspect, breed, or act on it.</div>';
+  var html='<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.85rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.14em;color:var(--gold);flex:1;">HEX ACTIONS</div><button id="lw-hex-help-close" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.4);background:rgba(26,36,22,0.6);color:var(--cream);font-size:1rem;cursor:pointer;">&#10005;</button></div>';
+  html+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">Tap a hex to see its plants. Tap any plant to inspect or act on it.</div>';
   for(var i=0;i<rows.length;i++){
     var r=rows[i];
-    html+='<div style="display:flex;gap:0.55rem;padding:0.55rem 0;border-bottom:1px solid rgba(200,168,75,0.08);">';
-    html+='<div style="font-size:1.1rem;line-height:1.2;width:28px;flex-shrink:0;text-align:center;">'+r[0]+'</div>';
+    html+='<div style="display:flex;gap:0.85rem;padding:0.7rem 0;border-bottom:1px solid rgba(200,168,75,0.08);align-items:center;">';
+    html+='<div style="width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;"><img src="'+r[0]+'" alt="" style="width:60px;height:60px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));" onerror="this.outerHTML=\'<span style=&quot;font-size:2rem;&quot;>'+r[1]+'</span>\'"></div>';
     html+='<div style="flex:1;min-width:0;">';
-    html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--cream);margin-bottom:0.15rem;">'+r[1]+'</div>';
-    html+='<div style="font-family:DM Sans,sans-serif;font-size:0.55rem;color:var(--muted);line-height:1.45;">'+r[2]+'</div>';
+    html+='<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.12em;color:var(--cream);margin-bottom:0.2rem;">'+r[2]+'</div>';
+    html+='<div style="font-family:DM Sans,sans-serif;font-size:0.78rem;color:var(--muted);line-height:1.5;">'+r[3]+'</div>';
     html+='</div></div>';
   }
   card.innerHTML=html;
