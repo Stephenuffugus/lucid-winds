@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.39';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.40';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47403,17 +47403,34 @@ function _fjInteract(p){
   // DISCOVERY: first time ever tapping this plant
   if(!entry.discovered){
     entry.discovered=today;
-    reward+=2;rewardType='New discovery! +2 Dew';
+    reward+=2;rewardType='🌱 New species logged · +2 Dew';
     // Track total discoveries
     j._count=(j._count||0)+1;
   }
   // SCOUT: first inspect this plant today
   else if(entry.lastScout!==today){
-    reward+=1;rewardType='Scouted +1 Dew';
+    reward+=1;rewardType='👁 Scouted today · +1 Dew';
   }
   entry.lastScout=today;
   j[key]=entry;
   _fjSave(j);
+
+  // First-ever species discovery — explain the field journal once. Gated by
+  // lw_jit_species_v1 so it only fires for the first plant any player taps.
+  // 1.6s delay lets the toast surface first; modal arrives as the second
+  // beat with the "what just happened" explanation.
+  if (_isFirstTap && !localStorage.getItem('lw_jit_species_v1') && window._lwConfirm) {
+    try { localStorage.setItem('lw_jit_species_v1','1'); } catch(e){}
+    setTimeout(function(){
+      if (document.querySelector('.lu-overlay,#pw-win-overlay,#lw-confirm-modal')) return;
+      window._lwConfirm({
+        title:'YOUR FIELD JOURNAL',
+        body:'Every wild plant you tap is logged. New species pay <b>+2 Dew</b>. Re-checking a known plant later in the day pays <b>+1 Dew</b> as a scout reward.<br><br>Walking the map and tapping plants is a real income stream — the more species you log, the more your journal fills out.',
+        yes:'GOT IT',
+        no:''
+      }, function(){});
+    }, 1600);
+  }
 
   // Engagement counters: tap counters per inspect.
   if (window.LW_ACH) {
