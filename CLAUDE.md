@@ -227,36 +227,35 @@ window._reRenderAll                  window._fgDeviceId
 
 ---
 
-## TERRA GRADE SYSTEM (7 tiers — Variant F, 2026-04-29)
+## TERRA GRADE SYSTEM (7 tiers — Variant G, 2026-05-01)
 
 Computed from trait rarity score. The grade is the PLANT'S OVERALL rarity. Each layer has its own tier score that adds to the total.
 
-### Variant F scoring (index.html:10339, 10361)
+### Variant G scoring (live in index.html:10449, 10419)
 ```
 _TIER_SCORE = { common:0, uncommon:0, rare:1, epic:3, legendary:5, mythic:7, cosmic:10 }
-_TERRA_GRADES thresholds = [ 0, 4, 8, 12, 16, 20, 26 ]
+_TERRA_GRADES thresholds = [ 0, 5, 10, 15, 21, 27, 34 ]
 ```
 
-### Verified first-mint distribution (sim N=50k, Variant F)
+### Verified first-mint distribution (sim N=200k, Variant G)
 ```
-Common     36%
-Uncommon   38%
-Rare       20%
-Epic        4.8%
-Legendary   0.7%
-Mythic      0.07%
-Cosmic      0%
+Common     30.3%
+Uncommon   37.2%
+Rare       22.5%
+Epic        8.6%
+Legendary   1.4%
+Mythic      0.14%
+Cosmic      0.01%
 ```
 
-### Verified breed distribution (Variant F)
-```
-Common×Common         → 11% Epic
-Legendary×Legendary   → 33% Epic, 4% Mythic, 0.16% Cosmic
-```
+### History
+- Variant D (mid-Apr): too tight, Common only 8%
+- Variant F (late-Apr): Common 36%, Epic 4.8%, Legendary 0.7%, Mythic 0.07% — felt thin on the high end (very few Epic+ drops, almost zero Mythic)
+- **Variant G (live)**: Stephen ruling 2026-05-01: keep G. "It's okay to be a little generous." Player retention research said the Variant F Epic+ rate was too punishing for an audience that already walks every day. Variant G doubles the Epic+ rate without making Common feel cheap. Verdict: keep.
 
 ### Bugs in scoring still parked (not blocking)
-- Mythic-byte spike still REPLACES companion-tier score (`if (compT && t.mythic < 0xD0)` at line 10390). A Beholder gets +8 spike OR +10 cosmic-tier, never both. Cosmetic; Beholder still grades Cosmic via spike alone.
-- First-mint Common% lands at 36% vs spec 42%. Variant F closed most of the gap from Variant D's 8%. Closing the last 6 points requires either (a) Uncommon threshold bump 4→5 or (b) trait bank reorg to thin out rare-tier layers. Both re-grade every existing plant on next load. Not blocking; revisit post-Pi-launch if still desired.
+- Mythic-byte spike still REPLACES companion-tier score (`if (compT && t.mythic < 0xD0)` at line 10478). A Beholder gets +8 spike OR +10 cosmic-tier, never both. Cosmetic; Beholder still grades Cosmic via spike alone.
+- VESSEL/FOLIAGE/AURA banks contribute ~25-28% epic-or-better at the layer level (vs ~13% balanced). Under Variant G the wider thresholds absorb this; under Variant F it would have caused Epic over-shoot. Keeping G means we don't need to prune those banks. Audit memo: `project_rarity_engine_audit_may01.md`.
 
 ---
 
