@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.18';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -78450,7 +78450,7 @@ window._lwClaimHerbarium = function(id){
       usage:'tap USE \u2014 counts 1 of 2 daily remote forages', wired:true },
     slowArrow: { key:'slowArrow', name:'Slow Arrow', category:'remote', rarity:'Rare',
       art:'assets/items/slow-arrow.png', icon:'\ud83c\udff9',
-      desc:'Pin this spot for 6 hours. Return any time in that window to forage it from anywhere.',
+      desc:'Pin this spot for 6 hours. Return within the window to forage it from anywhere. One pin per day.',
       lore:'Loosed at moss, not at a heart. The arrow waits where it fell and the hex stays open to you.',
       usage:'tap USE to pin, then again within 6h to forage', wired:true },
     whisperVine: { key:'whisperVine', name:'Whisper Vine', category:'remote', rarity:'Common',
@@ -79047,11 +79047,25 @@ window._lwClaimHerbarium = function(id){
       _resolveArrowPin(pin);
       return true;
     }
+    // 1-pin-per-day cooldown \u2014 Stephen audit 2026-05-01 #7. Slow Arrow
+    // is intentionally free of the 2/day remote-forage cap (it's its
+    // own earned attempt with a 6h play loop), but without a daily
+    // cooldown a player could re-pin the moment the 6h window expires
+    // and effectively get unbounded extra remote attempts. Cap at one
+    // pin per local-date so the "free attempt" is real but bounded.
+    var _today = new Date().toISOString().slice(0,10);
+    var _lastPinDay = '';
+    try { _lastPinDay = localStorage.getItem('lw_slow_arrow_pin_day') || ''; } catch(e){}
+    if (_lastPinDay === _today) {
+      if (window._toast) window._toast('\ud83c\udff9 Already pinned an arrow today. New pin available at midnight.');
+      return false;
+    }
     // Pin a new arrow: use current biome, expire in 6h
     if (!spend('slowArrow')) return false;
     var biome = window._lastDetectedBiome || 'suburban';
     var newPin = { pinnedAt: Date.now(), expiresAt: Date.now() + 6*3600000, biome: biome };
     try { localStorage.setItem('sws_slow_arrow', JSON.stringify(newPin)); } catch(e){}
+    try { localStorage.setItem('lw_slow_arrow_pin_day', _today); } catch(e){}
     if (window._toast) window._toast('\ud83c\udff9 Slow Arrow pinned to this '+(biome||'spot')+'. Return within 6 hours to forage from anywhere.');
     _closePanel();
     return true;
