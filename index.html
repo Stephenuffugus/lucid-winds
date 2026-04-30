@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.79';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.80';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -32441,11 +32441,16 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="42" cy="90.5" r="1" fill="rgba(80,140,220,0.12)"/>';
         s += '</g>';
         break;
-      case 65: // Ant Trail — 5 ants marching below pot rim with glow
+      case 65: // Ant Trail — 5 ants marching at the BASE of the pot.
+        // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE: pot rims
+        // vary in size and shape across the 60 pot variants, so positioning
+        // ants on the rim landed inconsistently. Anchored to y=94 (just
+        // above the ground shadow) and centered the trail under the pot
+        // so it reads as "ants at the base" across every pot.
         s += '<g opacity="0.82">';
         for (var _a65i = 0; _a65i < 5; _a65i++) {
-          var _a65x = 22 + _a65i * 5.5;
-          var _a65y = 82;
+          var _a65x = 36 + _a65i * 5.5;
+          var _a65y = 94;
           s += '<g><animateTransform attributeName="transform" type="translate" values="0,0;'+(_a65i*2+10)+',0;0,0" dur="'+(10+_a65i)+'" repeatCount="indefinite"/>';
           // Body-shaped glow — follows ant shape, not an oval
           s += '<ellipse cx="'+(_a65x+1.2)+'" cy="'+_a65y+'" rx="0.85" ry="0.6" fill="none" stroke="#fff8e0" stroke-width="0.3"/>';
@@ -45283,6 +45288,15 @@ function _lwHexBadges(zk){
     for(var i=0;i<own.length;i++){
       var p=own[i];if(!p||!p.lat||!p.hash)continue;
       if(_zoneKey(p.lat,p.lng)!==zk)continue;
+      // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE: tutorial
+      // mock plants get written to fg_wild_plants with own:false +
+      // ownerUid:'__tutorial_mock__' so the map renderer treats them as
+      // strangers — but this badge logic was iterating fg_wild_plants
+      // wholesale and treating every entry as the player's own. Result:
+      // "Your plant has pests" alerts firing on plants the player never
+      // planted. Skip mocks AND any record explicitly flagged own:false.
+      if(p.own===false)continue;
+      if(p.ownerUid==='__tutorial_mock__')continue;
       _ensureVitality(p);
       plantsHere.push({p:p,own:true});
       ownInZone.push(p);
@@ -81906,6 +81920,26 @@ window.LW_debug.cleanGhostDrops = function(){
   // threshold while the app was backgrounded.
   setInterval(checkL3Unlocks, 30 * 60 * 1000);
   setTimeout(checkL3Unlocks, 15000);
+
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE: companion days
+  // weren't accumulating across sessions. Bug: resumeActive(idx) only ran
+  // from onEquip(); page reload left activeSinceMs null and getTotalMs()'s
+  // self-heal restamped the clock to "now", losing all offline time.
+  // Fix: resume the timer for the equipped companion on page init. If
+  // someone is equipped, re-stamp activeSinceMs to Date.now() so live
+  // accumulation continues. Existing totalMs is preserved.
+  (function _initCompanionTimer(){
+    try {
+      var idx = getActiveCompanionIdx();
+      if (idx == null) return;
+      var timer = loadTimer();
+      if (!timer[idx]) timer[idx] = { totalMs: 0, activeSinceMs: null };
+      if (!timer[idx].activeSinceMs) {
+        timer[idx].activeSinceMs = Date.now();
+        saveTimer(timer);
+      }
+    } catch(e){}
+  })();
 
   window.LW_COMPANION = {
     FAMILY_OF: FAMILY_OF,
