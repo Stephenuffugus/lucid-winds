@@ -191,8 +191,9 @@ function layerTier(cat, t) {
   if (cat === 'AURA') {
     const _au = t.aura % 36;
     if (_au < 5) return null;
-    if (_au === 29) return 'mythic';                              // Void Eclipse
-    if (_au === 35 || _au === 17) return 'legendary';             // Stained Glass Light, Meteor Shower
+    if (_au === 29) return 'cosmic';                              // Void Eclipse
+    if (_au === 35) return 'mythic';                              // Stained Glass Light
+    if (_au === 17) return 'legendary';                           // Meteor Shower
     if (_au >= 18 && _au <= 20) return 'epic';
     if (_au === 26 || _au === 31 || _au === 33) return 'epic';    // Fairy Ring, Ethereal Veil, Chain Lightning
     if ([9,11,13,14,15,16,23].indexOf(_au) >= 0) return 'rare';   // closes idx 14/16 gap, adds Cherry Blossom
@@ -235,8 +236,9 @@ function layerTier(cat, t) {
   }
   if (cat === 'GROWTH PATH' || cat === 'STRUCTURE') {
     const _st = t.stem % 24;
-    if (_st === 23) return 'mythic';                              // Iron Trunk
-    if (_st === 22 || _st === 14) return 'legendary';             // Crystal Spine, Hollow Trunk
+    if (_st === 23) return 'cosmic';                              // Iron Trunk — anvil-of-the-world
+    if (_st === 22) return 'mythic';                              // Crystal Spine
+    if (_st === 14) return 'legendary';                           // Hollow Trunk
     if (_st === 12) return 'epic';                                // Ancient Bark
     if ([5,9,10,11,21].indexOf(_st) >= 0) return 'rare';          // Braided, Coral, Succulent, Twisted Vine, Mushroom Stipe
     if ([6,7,8,13].indexOf(_st) >= 0) return 'uncommon';          // Zigzag, Double, Cactus, Bamboo

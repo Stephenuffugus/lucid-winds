@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.38';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.39';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34963,8 +34963,9 @@ document.addEventListener('keydown', function(e) {
     if (cat==='AURA') {
       var _au=t.aura%36;
       if (_au<5) return null;
-      if (_au===29) return {tier:'mythic',color:_TIER_COLORS.mythic};         // Void Eclipse
-      if (_au===35||_au===17) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Stained Glass Light, Meteor Shower
+      if (_au===29) return {tier:'cosmic',color:_TIER_COLORS.cosmic};         // Void Eclipse
+      if (_au===35) return {tier:'mythic',color:_TIER_COLORS.mythic};         // Stained Glass Light
+      if (_au===17) return {tier:'legendary',color:_TIER_COLORS.legendary};   // Meteor Shower
       if (_au>=18&&_au<=20) return {tier:'epic',color:_TIER_COLORS.epic};
       if (_au===26||_au===31||_au===33) return {tier:'epic',color:_TIER_COLORS.epic}; // Fairy Ring, Ethereal Veil, Chain Lightning
       if (_au===9||_au===11||_au===13||_au===15||_au===14||_au===16||_au===23) return {tier:'rare',color:_TIER_COLORS.rare}; // closes idx 14/16 fall-through, adds Cherry Blossom
@@ -35009,10 +35010,11 @@ document.addEventListener('keydown', function(e) {
     // MYTHIC row removed — mythic creatures now render via COMPANION with tier from idx 32-38
     if (cat==='GROWTH PATH'||cat==='STRUCTURE') {
       var _st=t.stem%24;
-      if (_st===23) return {tier:'mythic',color:_TIER_COLORS.mythic};                            // Iron Trunk
-      if (_st===22||_st===14) return {tier:'legendary',color:_TIER_COLORS.legendary};            // Crystal Spine, Hollow Trunk
+      if (_st===23) return {tier:'cosmic',color:_TIER_COLORS.cosmic};                            // Iron Trunk — anvil-of-the-world
+      if (_st===22) return {tier:'mythic',color:_TIER_COLORS.mythic};                            // Crystal Spine
+      if (_st===14) return {tier:'legendary',color:_TIER_COLORS.legendary};                      // Hollow Trunk
       if (_st===12) return {tier:'epic',color:_TIER_COLORS.epic};                                 // Ancient Bark
-      if (_st===5||_st===9||_st===10||_st===11||_st===21) return {tier:'rare',color:_TIER_COLORS.rare}; // Braided, Coral, Succulent, Twisted Vine, Mushroom Stipe (closes the rare gap)
+      if (_st===5||_st===9||_st===10||_st===11||_st===21) return {tier:'rare',color:_TIER_COLORS.rare}; // Braided, Coral, Succulent, Twisted Vine, Mushroom Stipe
       if (_st===6||_st===7||_st===8||_st===13) return {tier:'uncommon',color:_TIER_COLORS.uncommon}; // Zigzag, Double, Cactus, Bamboo
       return {tier:'common',color:_TIER_COLORS.common};
     }
