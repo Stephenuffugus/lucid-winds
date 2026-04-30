@@ -589,7 +589,7 @@ Unlock tiers + boosters documented in the prestige_system memory note.
 
 ## KEEPER'S TREE (SHIPPED Apr 15)
 
-100-point passive skill tree. 5 branches × 4 nodes × 5 pts/node = 100. Respec free once per 24h. 5 milestones at 10/25/50/75/100.
+100-point passive skill tree. 5 branches × 4 nodes × 5 pts/node = 100. Respec free once per 24h.
 
 ### Branches
 - **Forager** (🍂) — feralRange, rareOdds, feralCd, harvestHash
@@ -602,12 +602,15 @@ Unlock tiers + boosters documented in the prestige_system memory note.
 - **The Bower** (🌿) unlocks at L60
 - **The Long Watch** (🌙) unlocks at L80
 
-### Milestones
-- 10: Path Opened (+5 bonus tree points)
-- 25: Second Bloom (guaranteed 1 feral/day)
-- 50: The Gilding (1hr/day all bonuses ×2)
-- 75: Near Horizon (equip 2nd companion)
-- 100: The Long Watch (biome match applies everywhere)
+### Milestones (gated on PLAYER LEVEL, not tree-pts)
+
+The "10/25/50/75/100" thresholds below refer to **player keeper level**, not tree points spent. Easy to misread because the tree pool is also 100 — but every milestone gate in code reads `canSee.currentLevel()`. Stephen audit 2026-05-01 #8 confirmed this is the design (consistent with Second Bloom at `lvl<25`, Near Horizon at `lvl>=75`).
+
+- L10: Path Opened (+5 bonus tree points)
+- L25: Second Bloom (guaranteed 1 feral/day)
+- L50: The Gilding (1hr/day all bonuses ×2)
+- L75: Near Horizon (equip 2nd companion)
+- L100: The Long Watch (biome match applies everywhere)
 
 ### Reading tree bonus
 `window._LW_treeBonus(kind)` returns multiplier. Folded into `_LW_classBonus` for transparent consumption.
