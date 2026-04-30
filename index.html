@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.54';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.55';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3326,21 +3326,22 @@
     .nur-pip{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(74,124,53,0.4);background:transparent;transition:background 0.4s ease,border-color 0.4s ease,box-shadow 0.4s ease;flex-shrink:0;}
     .nur-pip.watered{background:var(--sage);border-color:var(--sage);box-shadow:0 0 10px rgba(122,179,86,0.6);}
     .nur-pip-label{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-left:0.3rem;}
-    /* Seed action buttons — Apr 30 v2: full-size painted plaques in a
-       2-column grid. Director: 'buttons should be full size 2x2 next to
-       the seed clearly labeled. this is like the fifth fucking time
-       ive asked for this.' Each cell is aspect-ratio:1 with the painting
-       filling the cell. Label + cost overlay at bottom on a gradient
-       scrim, same treatment as the pot-shop / +seed / +clipping cards. */
-    .nur-actions{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;align-items:stretch;justify-items:stretch;width:100%;}
-    .nur-actions .nur-btn{aspect-ratio:1;padding:0;font-size:0.85rem;min-height:0;position:relative;overflow:hidden;border-radius:14px;display:block;}
-    .nur-actions .nur-btn .nur-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:14px;}
-    .nur-actions .nur-btn .nur-lbl{position:absolute;left:0;right:0;bottom:0;padding:8px 6px;background:linear-gradient(180deg,rgba(13,16,12,0) 0%,rgba(13,16,12,0.92) 80%);font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;line-height:1.05;text-align:center;border-radius:0 0 14px 14px;text-shadow:0 1px 2px rgba(0,0,0,0.6);}
-    .nur-actions .nur-btn .nur-lbl .nur-cost{display:block;font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.04em;margin-top:3px;opacity:0.9;}
+    /* Seed action buttons — Apr 30 v3: painted plaque on top, label
+       BELOW (not overlapping). Director: 'put their labels below them
+       but not overlapping.' The painted art now reads cleanly without
+       a gradient scrim eating its bottom third; the label is a free-
+       standing Bebas Neue line under the square. */
+    .nur-actions{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;align-items:start;justify-items:stretch;width:100%;}
+    .nur-actions .nur-btn{display:flex;flex-direction:column;align-items:stretch;padding:0;font-size:0.85rem;min-height:0;background:transparent;border:0;border-radius:14px;cursor:pointer;overflow:visible;}
+    .nur-actions .nur-btn:active{transform:scale(0.97);}
+    .nur-actions .nur-btn .nur-bg{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.55);}
+    .nur-actions .nur-btn .nur-lbl{display:block;padding:6px 2px 0;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;line-height:1.15;text-align:center;color:var(--gold);}
+    .nur-actions .nur-btn .nur-lbl .nur-cost{display:block;font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.04em;margin-top:3px;color:var(--cream);opacity:0.85;}
     .nur-actions .nur-btn:disabled{opacity:0.5;cursor:default;}
+    .nur-actions .nur-btn:disabled .nur-lbl{color:var(--muted);}
     /* The abandon (X) button is a small destructive — keep it skinny so it
        doesn't take a grid cell from the painted ones. */
-    .nur-actions .nur-btn.abandon{aspect-ratio:auto;min-height:44px;padding:0.4rem 0.55rem;font-size:0.85rem;background:none !important;border:1px solid rgba(139,46,46,0.3);color:rgba(192,112,112,0.7);}
+    .nur-actions .nur-btn.abandon{aspect-ratio:auto;min-height:44px;padding:0.4rem 0.55rem;font-size:0.85rem;background:none !important;border:1px solid rgba(139,46,46,0.3);color:rgba(192,112,112,0.7);align-self:start;}
     .nur-btn{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.07em;padding:0.7rem 0.95rem;border-radius:8px;cursor:pointer;transition:background 0.2s ease,border-color 0.2s ease;border:1.5px solid;box-shadow:0 2px 0 rgba(0,0,0,0.35);min-height:56px;}
     .nur-btn:active{transform:translateY(2px);box-shadow:none;}
     .nur-btn.water{background:rgba(91,143,185,0.15);border-color:rgba(91,143,185,0.45);color:#7ab3d4;}
