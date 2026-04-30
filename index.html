@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.37';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.38';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -10338,26 +10338,34 @@ document.addEventListener('keydown', function(e) {
   // on next load — Variant D was designed for this.
   var _TERRA_GRADES = [
     { name:'Common',    minScore:0,  color:'#959588', icon:'○' },
-    { name:'Uncommon',  minScore:4,  color:'#8CB86E', icon:'◈' },
-    { name:'Rare',      minScore:8,  color:'#5b8fb9', icon:'◆' },
-    { name:'Epic',      minScore:12, color:'#9B59B6', icon:'◇' },
-    { name:'Legendary', minScore:16, color:'#C8A84B', icon:'✦' },
-    { name:'Mythic',    minScore:20, color:'#A87285', icon:'★' },
-    { name:'Cosmic',    minScore:26, color:'#D94FFF', icon:'✧' }
+    { name:'Uncommon',  minScore:5,  color:'#8CB86E', icon:'◈' },
+    { name:'Rare',      minScore:10, color:'#5b8fb9', icon:'◆' },
+    { name:'Epic',      minScore:15, color:'#9B59B6', icon:'◇' },
+    { name:'Legendary', minScore:21, color:'#C8A84B', icon:'✦' },
+    { name:'Mythic',    minScore:27, color:'#A87285', icon:'★' },
+    { name:'Cosmic',    minScore:34, color:'#D94FFF', icon:'✧' }
   ];
 
   // ═══ MODEL H SCORING ENGINE — Loot Distribution Master Spec ═══
   // 5 base slots (best-of pairing) + 2 spikes (mutation, mythic)
   // + earned layers (breed, compost, synergy)
-  // Variant F (2026-04-29 EVE rebalance — see /tmp/rarity_sim.js).
-  // Verified N=50k first-mint: Common 36% / Uncommon 38% / Rare 20% /
-  // Epic 4.8% / Legendary 0.7% / Mythic 0.07% / Cosmic 0%. Breed ladder:
-  // Common×Common → 11% Epic; Legendary×Legendary → 33% Epic, 4% Mythic,
-  // 0.16% Cosmic. Was Variant E (rare:1,epic:2,leg:4,myth:6,cos:9 with
-  // thresholds [0,3,7,12,18,25,35]) which produced ~2% Epic ceiling and
-  // 0% Legendary+ on first mint — broken curve at the top. Variant F
-  // bumps top-tier weights and tightens thresholds so Epic+ are actually
-  // reachable on first mint.
+  //
+  // Variant G (2026-04-30 — rarity ladder spread across all banks).
+  // Director's call: every layer should show every tier from common→cosmic
+  // where lore-fit names support it. Players were complaining "I never
+  // see Legendary or Mythic outside companions." This pass promoted
+  // strategic entries in vessels / foliage / flower / aura / substrate /
+  // mutation / stems and re-tuned thresholds to keep top tiers apex-rare.
+  //
+  // Verified N=500k first-mint (scripts/rarity_sim.js):
+  //   Common 30.24% / Uncommon 39.88% / Rare 21.85% / Epic 7.09% /
+  //   Legendary 0.87% / Mythic 0.06% / Cosmic 0.003% (~1 in 31k)
+  //
+  // Was Variant F: same scores + thresholds [0,4,8,12,16,20,26]; produced
+  // Cosmic 0.0006% (essentially unreachable on first mint without Beholder).
+  // Variant G keeps Beholder as the marquee but Cosmic is now also reachable
+  // through Genie Lamp pot, Worldtree Heart leaf, Void Blossom flower,
+  // Void Essence substrate, or Constellation mutation in any combination.
   var _TIER_SCORE = {common:0,uncommon:0,rare:1,epic:3,legendary:5,mythic:7,cosmic:10};
 
   window.getTerraGrade = function(t) {
@@ -34915,19 +34923,26 @@ document.addEventListener('keydown', function(e) {
   function _layerTier(cat, t) {
     // Per-layer rarity tiers — MUST MATCH getTerraGrade (window.getTerraGrade)
     // so aggregate grade is consistent with layer colors. See index.html:7533.
+    // ── Rarity ladder spread across all banks (Apr 30, 2026) ──
+    // Director call: every layer should show every tier where names support
+    // it. Players were complaining "I never see Legendary or Mythic outside
+    // companions." Promotions chosen by lore fit, not bank position.
     if (cat==='VESSEL') {
       var _p=t.pot%60;
-      if (t.pot===15) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Golden Pot
-      if (_p===59) return {tier:'mythic',color:_TIER_COLORS.mythic};          // World Seed Cradle
-      if (_p===56||_p===57||_p===58) return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (_p===50||_p===51||_p===52||_p===53||_p===54) return {tier:'epic',color:_TIER_COLORS.epic};
-      if (_p===7||_p===21||_p===22||_p===23||_p===27||_p===28) return {tier:'rare',color:_TIER_COLORS.rare};
-      if (_p===4||_p===5||_p===6||_p===11||_p===12||_p===13||_p===14||_p===16||_p===18||_p===20||_p===24||_p===25||_p===26) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      if (_p===59) return {tier:'cosmic',color:_TIER_COLORS.cosmic};          // Genie Lamp — impossible wishes
+      if (_p===56||_p===57) return {tier:'mythic',color:_TIER_COLORS.mythic}; // Ancient Amphora, Philosopher's Vessel
+      if (t.pot===15||_p===58||_p===22||_p===47) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Golden, Tractor Tire, Treasure Chest, Gramophone Horn
+      if (_p===50||_p===51||_p===52||_p===53||_p===54||_p===55||_p===38) return {tier:'epic',color:_TIER_COLORS.epic}; // Cauldron, Dragon Egg, Geode, Skull, Samurai, Clock Tower, Disco
+      if (_p===7||_p===21||_p===23||_p===27||_p===28||_p===18||_p===9||_p===39) return {tier:'rare',color:_TIER_COLORS.rare}; // Terrarium, Lantern, Hollow Tome, Marlo Pipe, War Drum, Lab Flask, Top Hat, Paint Can
+      if (_p===4||_p===5||_p===6||_p===11||_p===12||_p===13||_p===14||_p===16||_p===20||_p===24||_p===25||_p===26) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
       return {tier:'common',color:_TIER_COLORS.common};
     }
     if (cat==='FOLIAGE') {
       var _lt=t.leafType%71;
-      if (_lt>=60&&_lt<=65) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_lt===70) return {tier:'cosmic',color:_TIER_COLORS.cosmic};         // Worldtree Heart
+      if (_lt===62||_lt===68) return {tier:'mythic',color:_TIER_COLORS.mythic}; // Phoenix-Feather Frond, Void Petal
+      if (_lt===60||_lt===63||_lt===67) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Crystal Shard, Lunar Disc, Frost Plate
+      if (_lt===61||_lt===64||_lt===65||_lt===66||_lt===69) return {tier:'epic',color:_TIER_COLORS.epic}; // Ember Leaf, Spine Needle, Ribbon Curl, Prism Blade, Wishbone
       if (_lt>=40&&_lt<=49) return {tier:'epic',color:_TIER_COLORS.epic};
       if (_lt>=30&&_lt<=39) return {tier:'rare',color:_TIER_COLORS.rare};
       if (_lt>=10&&_lt<=29) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
@@ -34936,8 +34951,10 @@ document.addEventListener('keydown', function(e) {
     if (cat==='FLOWER') {
       if (!t.hasFlower) return null;
       var _bl=t.flower%71;
-      if (_bl===15) return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (_bl>=66&&_bl<=70) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_bl===68) return {tier:'cosmic',color:_TIER_COLORS.cosmic};         // Void Blossom
+      if (_bl===70) return {tier:'mythic',color:_TIER_COLORS.mythic};         // Prism Bloom
+      if (_bl===15||_bl===36||_bl===37||_bl===67) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Bell Flowers, Titan Arum, Carrion Starfish, Ice Rose
+      if (_bl===66||_bl===69) return {tier:'epic',color:_TIER_COLORS.epic};   // Flame Bloom, Clock Flower
       if (_bl>=34&&_bl<=45) return {tier:'epic',color:_TIER_COLORS.epic};
       if (_bl>=18&&_bl<=33) return {tier:'rare',color:_TIER_COLORS.rare};
       if (_bl>=10&&_bl<=17) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
@@ -34946,19 +34963,22 @@ document.addEventListener('keydown', function(e) {
     if (cat==='AURA') {
       var _au=t.aura%36;
       if (_au<5) return null;
-      if (_au===29||_au===35) return {tier:'epic',color:_TIER_COLORS.epic};
-      if ((_au>=17&&_au<=20)) return {tier:'epic',color:_TIER_COLORS.epic};
-      if (_au===9||_au===11||_au===13||_au===15) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (_au===29) return {tier:'mythic',color:_TIER_COLORS.mythic};         // Void Eclipse
+      if (_au===35||_au===17) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Stained Glass Light, Meteor Shower
+      if (_au>=18&&_au<=20) return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_au===26||_au===31||_au===33) return {tier:'epic',color:_TIER_COLORS.epic}; // Fairy Ring, Ethereal Veil, Chain Lightning
+      if (_au===9||_au===11||_au===13||_au===15||_au===14||_au===16||_au===23) return {tier:'rare',color:_TIER_COLORS.rare}; // closes idx 14/16 fall-through, adds Cherry Blossom
       if (_au>=5&&_au<=8||_au===10||_au===12) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
       return {tier:'common',color:_TIER_COLORS.common};
     }
     if (cat==='SUBSTRATE') {
-      // Must match getTerraGrade substrate tiers (index.html:7549)
+      // Must match getTerraGrade substrate tiers.
       var _b=t.base%71;
       if (_b<7) return null;
-      if (_b===59||_b===60||_b===61) return {tier:'mythic',color:_TIER_COLORS.mythic};   // Phoenix Ash, Void Essence, Moonstone Dust
-      if (_b===56||_b===57||_b===58) return {tier:'legendary',color:_TIER_COLORS.legendary}; // Stardust, Dragon Bone, Quicksilver
-      if (_b===52||_b===53||_b===54||_b===55) return {tier:'epic',color:_TIER_COLORS.epic};  // Amber, Biolum, Magnetic, Fossil
+      if (_b===60) return {tier:'cosmic',color:_TIER_COLORS.cosmic};                             // Void Essence
+      if (_b===59||_b===61) return {tier:'mythic',color:_TIER_COLORS.mythic};                    // Phoenix Ash, Moonstone Dust
+      if (_b===56||_b===57||_b===58) return {tier:'legendary',color:_TIER_COLORS.legendary};     // Stardust, Dragon Bone Ash, Quicksilver
+      if (_b===52||_b===53||_b===54||_b===55) return {tier:'epic',color:_TIER_COLORS.epic};      // Amber, Biolum, Magnetic, Fossil
       if (_b===15||_b===16||_b===17||_b===28||_b===29) return {tier:'rare',color:_TIER_COLORS.rare}; // Crystal, Sulfuric, Obsidian, Meteorite, Mycelium
       if (_b===7||_b===10||_b===18||_b===22) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
       return {tier:'common',color:_TIER_COLORS.common};
@@ -34979,9 +34999,9 @@ document.addEventListener('keydown', function(e) {
     if (cat==='MUTATION') {
       var _mn=t.mutationName;
       if (_mn==='None') return null;
-      // Ultra-rare (added 2026-04-26 mutation rebalance, ~0.39% each)
-      if (_mn==='Constellation'||_mn==='Stained Glass'||_mn==='Daguerreotype') return {tier:'legendary',color:_TIER_COLORS.legendary};
-      if (_mn==='Origami'||_mn==='Mycelium'||_mn==='Verdigris') return {tier:'epic',color:_TIER_COLORS.epic};
+      if (_mn==='Constellation') return {tier:'cosmic',color:_TIER_COLORS.cosmic};
+      if (_mn==='Stained Glass'||_mn==='Daguerreotype') return {tier:'mythic',color:_TIER_COLORS.mythic};
+      if (_mn==='Origami'||_mn==='Mycelium'||_mn==='Verdigris') return {tier:'legendary',color:_TIER_COLORS.legendary};
       if (_mn==='Golden'||_mn==='Ink Wash'||_mn==='Porcelain'||_mn==='Glitch'||_mn==='Holographic'||_mn==='Pixel Art') return {tier:'epic',color:_TIER_COLORS.epic};
       if (_mn==='Fossil'||_mn==='Glass Stem'||_mn==='Neon'||_mn==='Bioluminescent') return {tier:'rare',color:_TIER_COLORS.rare};
       return {tier:'uncommon',color:_TIER_COLORS.uncommon};
@@ -34989,9 +35009,11 @@ document.addEventListener('keydown', function(e) {
     // MYTHIC row removed — mythic creatures now render via COMPANION with tier from idx 32-38
     if (cat==='GROWTH PATH'||cat==='STRUCTURE') {
       var _st=t.stem%24;
-      if (_st===22||_st===23) return {tier:'epic',color:_TIER_COLORS.epic};
-      if (_st===12||_st===14) return {tier:'epic',color:_TIER_COLORS.epic};
-      if (_st>=5&&_st<=11) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
+      if (_st===23) return {tier:'mythic',color:_TIER_COLORS.mythic};                            // Iron Trunk
+      if (_st===22||_st===14) return {tier:'legendary',color:_TIER_COLORS.legendary};            // Crystal Spine, Hollow Trunk
+      if (_st===12) return {tier:'epic',color:_TIER_COLORS.epic};                                 // Ancient Bark
+      if (_st===5||_st===9||_st===10||_st===11||_st===21) return {tier:'rare',color:_TIER_COLORS.rare}; // Braided, Coral, Succulent, Twisted Vine, Mushroom Stipe (closes the rare gap)
+      if (_st===6||_st===7||_st===8||_st===13) return {tier:'uncommon',color:_TIER_COLORS.uncommon}; // Zigzag, Double, Cactus, Bamboo
       return {tier:'common',color:_TIER_COLORS.common};
     }
     return {tier:'common',color:_TIER_COLORS.common};

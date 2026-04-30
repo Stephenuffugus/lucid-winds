@@ -44,7 +44,7 @@ if (args.scores) {
 }
 
 // Grade thresholds — overridable
-const DEFAULT_THRESHOLDS = [0, 4, 8, 12, 16, 20, 26];
+const DEFAULT_THRESHOLDS = [0, 5, 10, 15, 21, 27, 34];  // Variant G — Apr 30 ladder spread
 const THRESHOLDS = args.thresholds
   ? args.thresholds.split(',').map(s => parseInt(s, 10))
   : DEFAULT_THRESHOLDS;
@@ -157,17 +157,20 @@ function hashToTraits(hash) {
 function layerTier(cat, t) {
   if (cat === 'VESSEL') {
     const _p = t.pot % 60;
-    if (t.pot === 15) return 'legendary';
-    if (_p === 59) return 'mythic';
-    if (_p === 56 || _p === 57 || _p === 58) return 'legendary';
-    if (_p >= 50 && _p <= 54) return 'epic';
-    if ([7,21,22,23,27,28].indexOf(_p) >= 0) return 'rare';
-    if ([4,5,6,11,12,13,14,16,18,20,24,25,26].indexOf(_p) >= 0) return 'uncommon';
+    if (_p === 59) return 'cosmic';                               // Genie Lamp
+    if (_p === 56 || _p === 57) return 'mythic';                  // Ancient Amphora, Philosopher's Vessel
+    if (t.pot === 15 || _p === 58 || _p === 22 || _p === 47) return 'legendary'; // Golden, Tractor Tire, Treasure Chest, Gramophone Horn
+    if ([50,51,52,53,54,55,38].indexOf(_p) >= 0) return 'epic';   // Cauldron, Dragon Egg, Geode, Skull, Samurai, Clock Tower, Disco
+    if ([7,21,23,27,28,18,9,39].indexOf(_p) >= 0) return 'rare';  // Terrarium, Lantern, Hollow Tome, Marlo Pipe, War Drum, Lab Flask, Top Hat, Paint Can
+    if ([4,5,6,11,12,13,14,16,20,24,25,26].indexOf(_p) >= 0) return 'uncommon';
     return 'common';
   }
   if (cat === 'FOLIAGE') {
     const _lt = t.leafType % 71;
-    if (_lt >= 60 && _lt <= 65) return 'rare';
+    if (_lt === 70) return 'cosmic';                              // Worldtree Heart
+    if (_lt === 62 || _lt === 68) return 'mythic';                // Phoenix-Feather Frond, Void Petal
+    if (_lt === 60 || _lt === 63 || _lt === 67) return 'legendary'; // Crystal Shard, Lunar Disc, Frost Plate
+    if (_lt === 61 || _lt === 64 || _lt === 65 || _lt === 66 || _lt === 69) return 'epic'; // Ember Leaf, Spine Needle, Ribbon Curl, Prism Blade, Wishbone
     if (_lt >= 40 && _lt <= 49) return 'epic';
     if (_lt >= 30 && _lt <= 39) return 'rare';
     if (_lt >= 10 && _lt <= 29) return 'uncommon';
@@ -176,8 +179,10 @@ function layerTier(cat, t) {
   if (cat === 'FLOWER') {
     if (!t.hasFlower) return null;
     const _bl = t.flower % 71;
-    if (_bl === 15) return 'legendary';
-    if (_bl >= 66 && _bl <= 70) return 'rare';
+    if (_bl === 68) return 'cosmic';                              // Void Blossom
+    if (_bl === 70) return 'mythic';                              // Prism Bloom
+    if (_bl === 15 || _bl === 36 || _bl === 37 || _bl === 67) return 'legendary'; // Bell Flowers, Titan Arum, Carrion Starfish, Ice Rose
+    if (_bl === 66 || _bl === 69) return 'epic';                  // Flame Bloom, Clock Flower
     if (_bl >= 34 && _bl <= 45) return 'epic';
     if (_bl >= 18 && _bl <= 33) return 'rare';
     if (_bl >= 10 && _bl <= 17) return 'uncommon';
@@ -186,17 +191,20 @@ function layerTier(cat, t) {
   if (cat === 'AURA') {
     const _au = t.aura % 36;
     if (_au < 5) return null;
-    if (_au === 29 || _au === 35) return 'epic';
-    if (_au >= 17 && _au <= 20) return 'epic';
-    if (_au === 9 || _au === 11 || _au === 13 || _au === 15) return 'rare';
+    if (_au === 29) return 'mythic';                              // Void Eclipse
+    if (_au === 35 || _au === 17) return 'legendary';             // Stained Glass Light, Meteor Shower
+    if (_au >= 18 && _au <= 20) return 'epic';
+    if (_au === 26 || _au === 31 || _au === 33) return 'epic';    // Fairy Ring, Ethereal Veil, Chain Lightning
+    if ([9,11,13,14,15,16,23].indexOf(_au) >= 0) return 'rare';   // closes idx 14/16 gap, adds Cherry Blossom
     if ((_au >= 5 && _au <= 8) || _au === 10 || _au === 12) return 'uncommon';
     return 'common';
   }
   if (cat === 'SUBSTRATE') {
     const _b = t.base % 71;
     if (_b < 7) return null;
-    if (_b === 59 || _b === 60 || _b === 61) return 'mythic';
-    if (_b === 56 || _b === 57 || _b === 58) return 'legendary';
+    if (_b === 60) return 'cosmic';                               // Void Essence
+    if (_b === 59 || _b === 61) return 'mythic';                  // Phoenix Ash, Moonstone Dust
+    if (_b === 56 || _b === 57 || _b === 58) return 'legendary';  // Stardust, Dragon Bone Ash, Quicksilver
     if (_b >= 52 && _b <= 55) return 'epic';
     if ([15,16,17,28,29].indexOf(_b) >= 0) return 'rare';
     if ([7,10,18,22].indexOf(_b) >= 0) return 'uncommon';
@@ -218,17 +226,20 @@ function layerTier(cat, t) {
   if (cat === 'MUTATION') {
     const _mn = t.mutationName;
     if (_mn === 'None') return null;
-    if (_mn === 'Constellation' || _mn === 'Stained Glass' || _mn === 'Daguerreotype') return 'legendary';
-    if (_mn === 'Origami' || _mn === 'Mycelium' || _mn === 'Verdigris') return 'epic';
+    if (_mn === 'Constellation') return 'cosmic';
+    if (_mn === 'Stained Glass' || _mn === 'Daguerreotype') return 'mythic';
+    if (_mn === 'Origami' || _mn === 'Mycelium' || _mn === 'Verdigris') return 'legendary';
     if (['Golden','Ink Wash','Porcelain','Glitch','Holographic','Pixel Art'].indexOf(_mn) >= 0) return 'epic';
     if (['Fossil','Glass Stem','Neon','Bioluminescent'].indexOf(_mn) >= 0) return 'rare';
     return 'uncommon';
   }
   if (cat === 'GROWTH PATH' || cat === 'STRUCTURE') {
     const _st = t.stem % 24;
-    if (_st === 22 || _st === 23) return 'epic';
-    if (_st === 12 || _st === 14) return 'epic';
-    if (_st >= 5 && _st <= 11) return 'uncommon';
+    if (_st === 23) return 'mythic';                              // Iron Trunk
+    if (_st === 22 || _st === 14) return 'legendary';             // Crystal Spine, Hollow Trunk
+    if (_st === 12) return 'epic';                                // Ancient Bark
+    if ([5,9,10,11,21].indexOf(_st) >= 0) return 'rare';          // Braided, Coral, Succulent, Twisted Vine, Mushroom Stipe
+    if ([6,7,8,13].indexOf(_st) >= 0) return 'uncommon';          // Zigzag, Double, Cactus, Bamboo
     return 'common';
   }
   return 'common';
