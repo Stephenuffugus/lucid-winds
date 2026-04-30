@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -62791,10 +62791,15 @@ function _pickCompanion(idx, slot){
       if (window._toast) _toast('Near Horizon unlocks at Lv 75.');
       return;
     }
-    // Prevent same companion in both slots — clear from slot 1 if it's there
+    // Prevent same companion in both slots — clear from slot 1 if it's there.
+    // Stephen audit 2026-05-01 #9: must call pauseActive() FIRST to flush
+    // slot 1's activeSinceMs into totalMs. Without this, the slot-1 clock
+    // ticks invisibly until the next equip/swap, inflating the bond.
+    // Symmetric to the slot-1 path below which already calls pauseActive2.
     try {
       var prim = JSON.parse(localStorage.getItem('pw_active_companion')||'null');
       if (prim && prim.idx === f.idx) {
+        if (window.LW_COMPANION && window.LW_COMPANION.pauseActive) window.LW_COMPANION.pauseActive();
         localStorage.removeItem('pw_active_companion');
       }
     } catch(e) {}
@@ -78467,7 +78472,21 @@ window._lwClaimHerbarium = function(id){
       art:'assets/items/lantern-path.png', icon:'\ud83c\udfee',
       desc:'A high-quality remote forage in your current biome. Rare floor.',
       lore:'A pilgrim\u2019s lantern. Light it, and the path shows three places worth your attention.',
-      usage:'tap USE \u2014 counts 1 of 2 daily remote forages', wired:true }
+      usage:'tap USE \u2014 counts 1 of 2 daily remote forages', wired:true },
+    // \u2500\u2500\u2500 UNBUILT (Phase 6 co-op) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // Stephen audit 2026-05-01 #15. delegateToken design was lost; this
+    // stub preserves the shape for the future co-op pass. wired:false
+    // means the items panel hides it and LW_BOXES drop pool excludes it
+    // (filter at ~line 80109). When the Firestore co-op flow lands, flip
+    // wired:true and implement useDelegate() following the remote-item
+    // pattern (see useScryProper, useRaven). Cost spec TBD; should not
+    // count toward the 2/day remote cap (it's a social item, not a
+    // forage attempt \u2014 partner does the work).
+    delegateToken: { key:'delegateToken', name:'Delegate Token', category:'remote', rarity:'Epic',
+      art:'assets/items/delegate-token.png', icon:'\ud83e\udd1d',
+      desc:'[Phase 6 co-op] Share a hex with a friend for 24h. Both can forage it.',
+      lore:'A token passed hand to hand. The hex you stand on becomes the hex they stand on, for a day.',
+      usage:'[unbuilt] tap to share with a friend', wired:false }
   };
   window.LW_ITEMS_CATALOG = CATALOG;
 
@@ -82625,10 +82644,16 @@ window.LW_debug.cleanGhostDrops = function(){
           try { _equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}'); } catch(_ele){}
           var _firstAt = _equipLog[idx] || _equipLog[String(idx)] || 0;
           if (_firstAt > 0) {
-            // Backfill: count from first equip moment as if the timer had
-            // been running. Persist so subsequent reads + level checks
-            // see the corrected state.
-            timer[idx] = { totalMs: 0, activeSinceMs: _firstAt };
+            // Backfill capped at L3 (30 days). Stephen audit 2026-05-01 #11:
+            // the old backfill set activeSinceMs = _firstAt, which credits
+            // the FULL elapsed time since first equip — including any
+            // periods the player had this companion swapped away. Capping
+            // the credit at L3_MS bounds worst-case over-credit (player
+            // can land at L3 Master via self-heal, but never higher; they
+            // have to earn L4-L6 the normal way once timers resume).
+            var _elapsed = Date.now() - _firstAt;
+            var _seedTotal = Math.min(_elapsed, L3_MS);
+            timer[idx] = { totalMs: _seedTotal, activeSinceMs: Date.now() };
             saveTimer(timer);
             try { localStorage.setItem(ACTIVE_KEY, String(idx)); } catch(_aki){}
             t = timer[idx];
@@ -83379,9 +83404,16 @@ window.LW_FAMILY_T3 = {
     // companion shows ACTIVE state. Stephen 2026-04-30: "there sould also
     // be a button on each companion thats Bring this Buddy or something
     // to switch out your companion."
-    var _curEqIdx=-1;try{var _cur=JSON.parse(localStorage.getItem('pw_active_companion')||'null');if(_cur&&typeof _cur.idx==='number')_curEqIdx=_cur.idx;}catch(e){}
+    // Stephen audit 2026-05-01 #10: also check slot 2 (Near Horizon).
+    // Slot-2-equipped companions used to show "BRING THIS BUDDY" in the
+    // profile modal because the check only read pw_active_companion.
+    var _curEqIdx=-1, _curEqIdx2=-1;
+    try{var _cur=JSON.parse(localStorage.getItem('pw_active_companion')||'null');if(_cur&&typeof _cur.idx==='number')_curEqIdx=_cur.idx;}catch(e){}
+    try{var _cur2=JSON.parse(localStorage.getItem('pw_active_companion_2')||'null');if(_cur2&&typeof _cur2.idx==='number')_curEqIdx2=_cur2.idx;}catch(e){}
     if(_curEqIdx===idx){
       h+='<button disabled style="width:100%;padding:0.7rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.42));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;cursor:default;min-height:48px;">✓ ALREADY BY YOUR SIDE</button>';
+    } else if(_curEqIdx2===idx){
+      h+='<button disabled style="width:100%;padding:0.7rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.42));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;cursor:default;min-height:48px;">✓ BY YOUR SIDE · SLOT 2</button>';
     } else {
       h+='<button onclick="if(window._lwEquipCompanionDirect)_lwEquipCompanionDirect('+idx+');var _o=document.getElementById(\'lw-comp-profile\');if(_o)_o.remove();" style="width:100%;padding:0.7rem;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.42));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;box-shadow:0 2px 8px rgba(200,168,75,0.2);">🐾 BRING THIS BUDDY</button>';
     }
