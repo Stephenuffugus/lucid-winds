@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.33';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.34';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -35381,12 +35381,20 @@ document.addEventListener('keydown', function(e) {
   (function() {
     var DEVICE_KEY = 'fg_device_id';
     var existing = localStorage.getItem(DEVICE_KEY);
-    if (!existing) {
+    var isNew = !existing;
+    if (isNew) {
       // Generate a persistent device ID
       var id = 'fg-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
       localStorage.setItem(DEVICE_KEY, id);
     }
     window._fgDeviceId = localStorage.getItem(DEVICE_KEY);
+    // devices_seen — bump once per device, ever. LW_ACH may not be ready
+    // at parse time, so defer. Guard with lw_ach_dev_counted so re-runs
+    // never double-count on this device.
+    if (isNew && !localStorage.getItem('lw_ach_dev_counted')) {
+      try { localStorage.setItem('lw_ach_dev_counted', '1'); } catch(e) {}
+      setTimeout(function(){ try { if (window.LW_ACH) LW_ACH.bump('devices_seen', 1); } catch(e) {} }, 4000);
+    }
   })();
 
   // Card HTML cache, avoid recomputing SVG/traits/names on every render
@@ -44806,6 +44814,14 @@ function _addSteps(meters){
       LW_ACH.bump('meters_total', _mInt);
       LW_ACH.bump('d_meters', _mInt);
       LW_ACH.bump('w_meters', _mInt);
+      // d_quiet_meters: meters on Wild before any game played today
+      try{
+        var _qToday = new Date().toISOString().split('T')[0];
+        if (document.body.classList.contains('tab-wild') &&
+            localStorage.getItem('lw_quiet_broken') !== _qToday) {
+          LW_ACH.bump('d_quiet_meters', _mInt);
+        }
+      }catch(e){}
     }
     if (_sInt > 0) {
       LW_ACH.bump('steps_total', _sInt);
@@ -50158,6 +50174,7 @@ function _updateUI(){
         +'</div>';
       var mapWrap=document.getElementById('wild-tab');
       if(mapWrap)mapWrap.appendChild(nudge);
+      try{if(window.LW_ACH)LW_ACH.bump('d_orient',1);}catch(e){}
     }
   } else if(nudge){nudge.remove();}
 }
@@ -53668,6 +53685,9 @@ function _e(v){
       _afLastComplete=now;
       // Engagement counters fire ONLY after all anti-farm guards pass.
       if(v==='game_win'&&window.LW_ACH){LW_ACH.bump('games_won_total',1);LW_ACH.bump('d_game_win',1);LW_ACH.bump('w_game_win',1);}
+      // Quiet-walk break — any completed game (win or loss) breaks the
+      // quiet-walk daily until tomorrow. Used by d_quiet_meters in _addSteps.
+      try{localStorage.setItem('lw_quiet_broken', new Date().toISOString().split('T')[0]);}catch(e){}
     }
   }
   // RARITY HASH MULTIPLIER — owning Legendary+ plants boosts hash income
@@ -64980,6 +65000,7 @@ function returnToBase(){
     if(gh.length>=_ghCap){deferred.push(p);continue;}
     gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
     delivered++;
+    try{if(window.LW_ACH)LW_ACH.bump('d_bp_move',1);}catch(e){}
   }
   if(window.saveGreenhouse)window.saveGreenhouse(gh);
   else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
@@ -65071,6 +65092,7 @@ function checkMidnightDeliver(){
     if(gh.length>=_ghCap){deferred.push(p);continue;}
     gh.push({hash:p.hash,date:new Date().toISOString(),born:Date.now(),origin:p.origin||'wild',rare:false,traits:null,breedCount:0,generation:1});
     delivered++;
+    try{if(window.LW_ACH)LW_ACH.bump('d_bp_move',1);}catch(e){}
   }
   if(window.saveGreenhouse)window.saveGreenhouse(gh);
   else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));

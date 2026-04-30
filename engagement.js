@@ -1043,41 +1043,20 @@
     }
   }, null);
 
-  // ─── TODO: counter sites that still need wiring at action sites ───────
+  // ─── Counter sites still UNWIRED (audited 2026-04-30) ─────────────────
   //
-  //   - 'd_tend' / 'w_tend'      every wild tend or water (own + stranger)
-  //   - 'd_water_own'            water on a player OWN wild plant
-  //   - 'd_water_str'/'tend_strangers'  water on a stranger wild plant
-  //   - 'd_mass_water'           when _lwMassWaterDoIt completes
-  //   - 'd_drop' / 'w_drop' / 'wild_drops' / 'hexes_planted'  wild drop
-  //   - 'd_feral' / 'w_feral' / 'ferals_total'  feral collect site (~44430)
-  //   - 'd_forage' / 'w_forage' / 'forage_solved' / 'forage_perfect'
-  //   - 'd_meters' / 'w_meters' / 'meters_total'  per tick distance
-  //   - 'd_steps' / 'w_steps' / 'steps_total'  step counter delta
-  //   - 'd_game_win' / 'w_game_win'  _e('game_win') call site (~52092)
-  //   - 'd_clipping' / 'w_clipping' / 'clipping_total'  clipping action
-  //   - 'd_box' / 'w_box' / 'boxes_opened' / 'd_box_earned'  LW_BOXES
-  //   - 'd_swap_comp', 'd_dew_spent', 'd_bos_read', 'w_bos_read', 'bos_pages_read'
-  //   - 'd_synergy' / 'w_synergy' / 'synergy_disc'  synergy discovery
-  //   - 'd_water_streak' / 'w_water_streak'  water streak day increment
-  //   - 'd_wild_secs' / 'd_gh_secs'  per tab time in seconds
-  //   - 'd_tap_new' / 'd_str_inspect' / 'd_pet'
-  //   - 'd_journal' / 'd_compendium' / 'd_orient'
-  //   - 'd_nursery' / 'd_bloom' / 'd_tool_use' / 'd_tool_kinds' / 'tools_used'
-  //   - 'd_lineage' / 'd_haiku' / 'd_water_seasons' / 'd_substr_kinds'
-  //   - 'd_session_secs' / 'd_quiet_meters' / 'd_hex_drop' / 'd_tree_point'
-  //   - 'd_item_used' / 'd_compost_old' / 'd_flip_card' / 'd_bp_move' / 'd_wild_check'
-  //   - 'd_weather' / 'w_storm' / 'weather_summon' / 'weather_types'
-  //   - 'unique_keepers'  set of stranger keeper UIDs tended
-  //   - 'comp_l3' / 'comp_l5' / 'comp_l6'  companion bond level milestones
-  //   - 'class_picked' / 'class_l2' / 'class_l3'  class progression
-  //   - 'tree_spent' / 'kp_level' / 'prestige_lvl'
-  //   - 'survived_*' / 'plant_age_max_d' / 'plant_4_seasons'
-  //   - 'hunt_caught' / 'hunt_full_season' / 'hunt_streak' / 'hunt_session_3'
-  //   - 'friends_total' / 'def_holds' / 'takeovers'
-  //   - 'mementos_owned' / 'biomes_visited' / 'devices_seen'
-  //   - 'hermit_tips' / 'bloom_no_skip' / 'days_no_wither'
-  //   - 'perfect_seasons' / 'perfect_years' / 'days_no_compost'
+  // Two remain — both need a daily/seasonal boundary daemon, not just a
+  // bump at one action site.
+  //
+  //   - 'perfect_seasons'   bump if a real-world meteorological season
+  //                         starts and ends with zero plant deaths in
+  //                         _pruneWild. Hook _pruneWild's `died.length>0`
+  //                         block to clear the lw_perfect_season flag,
+  //                         then a daily heartbeat checks if the season
+  //                         crossed and bumps perfect_seasons if the
+  //                         flag is still clean.
+  //
+  //   - 'perfect_years'     same shape but on Jan-1 boundary.
   //
   // Drop a single LW_ACH.bump('counter_key', amount) at each site and the
   // engine will pick up. checkAll() runs on tab change and on every BoS
