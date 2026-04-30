@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.50';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.51';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3326,13 +3326,21 @@
     .nur-pip{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(74,124,53,0.4);background:transparent;transition:background 0.4s ease,border-color 0.4s ease,box-shadow 0.4s ease;flex-shrink:0;}
     .nur-pip.watered{background:var(--sage);border-color:var(--sage);box-shadow:0 0 10px rgba(122,179,86,0.6);}
     .nur-pip-label{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-left:0.3rem;}
-    /* Seed action buttons: full-width row below the info col, painted PNG
-       fills the button properly. Stephen 2026-04-30: "you tried to
-       condesnse the buttons but then you fucking shrunk them on the seeds
-       to fit in those stupid svg boxes." Reverted from 2-col grid to
-       flex-wrap with bigger image sizes. */
-    .nur-actions{display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;justify-content:flex-start;}
-    .nur-actions .nur-btn{padding:0.45rem 0.6rem;font-size:0.7rem;min-height:80px;}
+    /* Seed action buttons — Apr 30 v2: full-size painted plaques in a
+       2-column grid. Director: 'buttons should be full size 2x2 next to
+       the seed clearly labeled. this is like the fifth fucking time
+       ive asked for this.' Each cell is aspect-ratio:1 with the painting
+       filling the cell. Label + cost overlay at bottom on a gradient
+       scrim, same treatment as the pot-shop / +seed / +clipping cards. */
+    .nur-actions{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;align-items:stretch;justify-items:stretch;width:100%;}
+    .nur-actions .nur-btn{aspect-ratio:1;padding:0;font-size:0.85rem;min-height:0;position:relative;overflow:hidden;border-radius:14px;display:block;}
+    .nur-actions .nur-btn .nur-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;border-radius:14px;}
+    .nur-actions .nur-btn .nur-lbl{position:absolute;left:0;right:0;bottom:0;padding:8px 6px;background:linear-gradient(180deg,rgba(13,16,12,0) 0%,rgba(13,16,12,0.92) 80%);font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;line-height:1.05;text-align:center;border-radius:0 0 14px 14px;text-shadow:0 1px 2px rgba(0,0,0,0.6);}
+    .nur-actions .nur-btn .nur-lbl .nur-cost{display:block;font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.04em;margin-top:3px;opacity:0.9;}
+    .nur-actions .nur-btn:disabled{opacity:0.5;cursor:default;}
+    /* The abandon (X) button is a small destructive — keep it skinny so it
+       doesn't take a grid cell from the painted ones. */
+    .nur-actions .nur-btn.abandon{aspect-ratio:auto;min-height:44px;padding:0.4rem 0.55rem;font-size:0.85rem;background:none !important;border:1px solid rgba(139,46,46,0.3);color:rgba(192,112,112,0.7);}
     .nur-btn{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.07em;padding:0.7rem 0.95rem;border-radius:8px;cursor:pointer;transition:background 0.2s ease,border-color 0.2s ease;border:1.5px solid;box-shadow:0 2px 0 rgba(0,0,0,0.35);min-height:56px;}
     .nur-btn:active{transform:translateY(2px);box-shadow:none;}
     .nur-btn.water{background:rgba(91,143,185,0.15);border-color:rgba(91,143,185,0.45);color:#7ab3d4;}
@@ -40546,36 +40554,48 @@ document.addEventListener('keydown', function(e) {
     var _canFert = _invFert > 0 && _seedFert < _fertMax && !bloomReady;
 
     var actionBtns;
-    // Clippings now water/accelerate/bloom like normal seeds (Stephen
-    // 2026-04-26 redesign). Anti-spam is collection-side: 2/day cap,
-    // 20 Dew per cutting, lifetime per-plant lock. Bloom rehydrates
-    // the clipping zeroed bytes from fresh entropy so the resulting
-    // plant has a real pot, substrate, possible aura + companion.
-    // USE TO BREED is appended below as an additional path that
-    // consumes the clipping for cross-pollination.
+    // Painted-plaque squares — director Apr 30: "buttons should be full
+    // size 2x2 next to the seed clearly labeled. this is like the fifth
+    // fucking time ive asked for this." Each cell is aspect-ratio:1 with
+    // the painting filling cover, label/cost overlay at bottom on a
+    // gradient scrim. CSS .nur-actions does the 2-col grid.
+    function _seedBtn(o){
+      var st = o.extraStyle || '';
+      var dis = o.disabled ? ' disabled' : '';
+      var dataS = o.sid ? ' data-sid="'+o.sid+'"' : '';
+      var oc = o.onclick ? ' onclick="'+o.onclick+'"' : '';
+      var ttl = o.title ? ' title="'+(o.title.replace(/"/g,'&quot;'))+'"' : '';
+      var costH = o.cost ? ('<span class="nur-cost">'+o.cost+'</span>') : '';
+      var fbAttr = (o.artFallback || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      var imgErr = fbAttr ? (' onerror="this.outerHTML=&#39;'+fbAttr+'&#39;"') : '';
+      return '<button class="nur-btn '+(o.cls||'')+'"'+dataS+oc+ttl+dis+' style="'+st+'">'+
+        '<img class="nur-bg" src="'+o.art+'" alt=""'+imgErr+'>'+
+        '<span class="nur-lbl">'+o.label+costH+'</span>'+
+      '</button>';
+    }
+
     if (bloomReady) {
-      actionBtns = '<button class="nur-btn bloom" data-sid="' + sid + '" onclick="handleBloomBtn(this.dataset.sid)">\ud83c\udf38 BLOOM</button>';
+      actionBtns = _seedBtn({ cls:'bloom', sid:sid, onclick:'handleBloomBtn(this.dataset.sid)', art:'assets/fx/bloom-flower.png', label:'BLOOM' });
     } else {
-      var waterBtn = '<button class="nur-btn water" data-sid="' + sid + '" onclick="handleWaterSeed(this.dataset.sid)"' + (wateredToday ? ' disabled style="opacity:0.5;"' : '') + '>' + (wateredToday ? '\u2713 WATERED' : '<img src="assets/21water.png" alt="" style="width:72px;height:72px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/drop-blue.png\" alt=\"\" style=\"width:28px;height:28px;object-fit:contain;\">&apos;;"> WATER') + '</button>';
-      var accelBtn = '<button class="nur-btn skipday" data-sid="' + sid + '" onclick="handleFertilize(this.dataset.sid)" style="background:rgba(200,168,75,0.12);border-color:rgba(200,168,75,0.4);color:var(--gold);display:inline-flex;align-items:center;gap:8px;justify-content:center;" title="Spend 21 Dew to advance one day"><img src="assets/accelerate.png" alt="" style="width:72px;height:72px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/arrow-up-gold.png\" alt=\"\" style=\"width:28px;height:28px;object-fit:contain;\">&apos;;"><span style="display:inline-flex;flex-direction:column;line-height:1;gap:2px;align-items:flex-start;"><span>ACCELERATE</span><span style="font-size:0.65rem;color:var(--cream);">21 <img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"></span></span></button>';
+      var waterBtn;
+      if (wateredToday) {
+        waterBtn = _seedBtn({ cls:'water', disabled:true, art:'assets/21water.png', extraStyle:'opacity:0.55;', label:'✓ WATERED' });
+      } else {
+        waterBtn = _seedBtn({ cls:'water', sid:sid, onclick:'handleWaterSeed(this.dataset.sid)', art:'assets/21water.png', label:'WATER' });
+      }
+      var accelBtn = _seedBtn({ cls:'skipday', sid:sid, onclick:'handleFertilize(this.dataset.sid)', title:'Spend 21 Dew to advance one day', art:'assets/accelerate.png', label:'ACCELERATE', cost:'21 💧' });
       actionBtns = waterBtn + accelBtn;
     }
-    // Clippings get USE TO BREED as a bonus path on top of the normal
-    // water/accel/bloom flow above. The breed flow consumes the clipping.
     if (_isClipping && !bloomReady) {
-      actionBtns += '<button class="nur-btn water" data-sid="' + sid + '" onclick="window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)" style="background:linear-gradient(180deg,rgba(122,179,86,0.32),rgba(60,90,40,0.42));border:1.5px solid rgba(122,179,86,0.6);color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;padding:12px 14px;min-height:54px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);" title="Cross this clipping with a greenhouse plant. Consumes the clipping."><img src="assets/icons/dna.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=\'\u2702\ufe0f\'"> USE TO BREED</button>';
+      actionBtns += _seedBtn({ cls:'water', sid:sid, onclick:'window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)', title:'Cross this clipping with a greenhouse plant. Consumes the clipping.', art:'assets/icons/dna.png', label:'USE TO BREED' });
     }
-    // BOOST (renamed from FERT) — compost → rarity boost, independent of time/skip
-    actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="handleApplyFertilizer(this.dataset.sid)" style="background:rgba(200,168,75,0.06);border-color:rgba(200,168,75,0.2);color:var(--gold);font-size:0.7rem;display:inline-flex;align-items:center;gap:8px;"' + (_canFert ? '' : ' disabled') + ' title="Apply 1 compost for +1% rarity boost on bloom"><img src="assets/boost.png" alt="" style="width:72px;height:72px;object-fit:contain;display:inline-block;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\"assets/fx/leaf-gold.png\" alt=\"\" style=\"width:32px;height:32px;object-fit:contain;\">&apos;;"> BOOST ' + _seedFert + '/' + _fertMax + '</button>';
-    // POT button — apply a specialty pot from inventory, or open the shop
+    actionBtns += _seedBtn({ cls:'boost', sid:sid, onclick:'handleApplyFertilizer(this.dataset.sid)', title:'Apply 1 compost for +1% rarity boost on bloom', disabled:!_canFert, art:'assets/boost.png', label:'BOOST', cost:_seedFert+' / '+_fertMax });
     if (!bloomReady) {
       var _potOnSeed = seed.pot ? (window.LW_POTS && window.LW_POTS[seed.pot]) : null;
       if (_potOnSeed) {
-        actionBtns += '<button class="nur-btn boost" disabled style="background:rgba(' +
-          (_potOnSeed.color === '#a0c4e8' ? '160,196,232' : _potOnSeed.color === '#c0d0e0' ? '192,208,224' : _potOnSeed.color === '#d4842a' ? '212,132,42' : '122,179,86') +
-          ',0.18);border-color:' + _potOnSeed.color + '88;color:' + _potOnSeed.color + ';font-size:0.55rem;cursor:default;" title="' + _potOnSeed.name + ' applied. Triggers at bloom.">' + _potOnSeed.icon + ' ' + _potOnSeed.name.split(' ')[0].toUpperCase() + '</button>';
+        actionBtns += _seedBtn({ cls:'boost', disabled:true, art:'assets/potshop.png', title:_potOnSeed.name+' applied. Triggers at bloom.', label:_potOnSeed.name.split(' ')[0].toUpperCase(), cost:'applied' });
       } else {
-        actionBtns += '<button class="nur-btn boost" data-sid="' + sid + '" onclick="window._openPotPicker(this.dataset.sid)" style="background:rgba(200,168,75,0.08);border-color:rgba(200,168,75,0.35);color:var(--gold);font-size:0.7rem;display:inline-flex;align-items:center;gap:8px;" title="Apply a specialty pot from your inventory"><img src="assets/potshop.png" alt="" style="width:72px;height:72px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;\ud83e\udeb4&apos;;"> ADD POT</button>';
+        actionBtns += _seedBtn({ cls:'boost', sid:sid, onclick:'window._openPotPicker(this.dataset.sid)', title:'Apply a specialty pot from your inventory', art:'assets/potshop.png', label:'ADD POT' });
       }
     }
 
