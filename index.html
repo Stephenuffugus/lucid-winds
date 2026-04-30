@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.6';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.7';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -13849,7 +13849,16 @@ document.addEventListener('keydown', function(e) {
       {name:'None'},                                                                               // idx 78
       {name:'Will-o-Wisp',rare:true,temp:'mystic',keywords:['swift']},                            // idx 79
       {name:'None'},                                                                               // idx 80
-      {name:'Panda',temp:'guardian',keywords:['lush']}                                            // idx 81
+      {name:'Panda',temp:'guardian',keywords:['lush']},                                           // idx 81
+      // ─── KEEPER COCOON CREATURES ───────────────────────────────────────────
+      // Indices 82-84 sit ABOVE the hashToTraits procedural roll cap of 82,
+      // so these creatures can never appear on a minted plant. They unlock
+      // ONLY when the player hatches the corresponding cocoon in LW_KEEPER.
+      // They show up in the BoS Companions Pokedex (locked silhouette until
+      // hatched) and become equippable via the keeper-aware equip path.
+      {name:'Parasitic Wasp',rare:true,temp:'forager',ability:'pestStrike',keywords:['swift','restless']},   // idx 82
+      {name:'Lungfish',rare:true,temp:'symbiote',ability:'droughtBreath',keywords:['hardy','rooted']},       // idx 83
+      {name:'Tardigrade',rare:true,temp:'guardian',ability:'cryptobiosis',keywords:['hardy','rooted']}       // idx 84
     ],
     mutations: [
       {name:'None',tier:0}, {name:'Wireframe',tier:1},
@@ -80578,10 +80587,11 @@ window.LW_debug.cleanGhostDrops = function(){
   var KEEPERS = [
     {
       key:'wasp',
+      companionIdx:82,
       cocoonName:'A Curious Caterpillar',
       hatchedName:'Parasitic Wasp',
       cocoonArt:'assets/cocoons/keeper-caterpillar.png',
-      hatchedArt:'assets/companions/parasitic_wasp.png',
+      hatchedArt:'assets/companions/parasitic-wasp.png',
       flavor:'It eats more than its share. Something is taking shape inside it.',
       hatchFlavor:'A wasp emerges, jeweled and watchful. It hunts the pests that visit your wild plants.',
       costDew:30000, costSunbeams:100,
@@ -80591,6 +80601,7 @@ window.LW_debug.cleanGhostDrops = function(){
     },
     {
       key:'lungfish',
+      companionIdx:83,
       cocoonName:'A Cracked Mudball',
       hatchedName:'Lungfish',
       cocoonArt:'assets/cocoons/keeper-mudball.png',
@@ -80610,6 +80621,7 @@ window.LW_debug.cleanGhostDrops = function(){
     },
     {
       key:'tardigrade',
+      companionIdx:84,
       cocoonName:'A Meteor Fragment',
       hatchedName:'Tardigrade',
       cocoonArt:'assets/cocoons/keeper-meteor.png',
@@ -80622,6 +80634,11 @@ window.LW_debug.cleanGhostDrops = function(){
       ability:'cryptobiosis'
     }
   ];
+  // Map companionIdx (in TRAIT_BANK.companions) → keeper key. Used by the
+  // companion equip flow to recognize keeper creatures (which never roll on
+  // a procedural plant). Index range 82-84 sits above the procedural roll
+  // cap of 82 in hashToTraits, so these can never appear on a card.
+  var KEEPER_BY_COMPIDX = { 82:'wasp', 83:'lungfish', 84:'tardigrade' };
   var KEEPER_BY_KEY = {};
   for (var i=0;i<KEEPERS.length;i++){ KEEPER_BY_KEY[KEEPERS[i].key]=KEEPERS[i]; }
 
@@ -80882,7 +80899,24 @@ window.LW_debug.cleanGhostDrops = function(){
     _save(d);
     try{ if(window._haptic) window._haptic('bloom'); }catch(e){}
     try{ if(window.LW_ACH && LW_ACH.bump) LW_ACH.bump('keeper_hatches',1); }catch(e){}
+    // Mark as discovered in BoS Companions Pokedex. The hatched creature
+    // exists in TRAIT_BANK at spec.companionIdx but never rolls on a card,
+    // so this hatch IS the discovery moment.
+    try {
+      var seen = {};
+      try { seen = JSON.parse(localStorage.getItem('lw_seen_companions')||'{}'); } catch(e){}
+      if (!seen[spec.hatchedName]) {
+        seen[spec.hatchedName] = 1;
+        localStorage.setItem('lw_seen_companions', JSON.stringify(seen));
+      }
+    } catch(e){}
     return true;
+  }
+  function companionIdxFor(key){
+    var spec=_spec(key); return spec ? (spec.companionIdx||null) : null;
+  }
+  function keyForCompanionIdx(idx){
+    return KEEPER_BY_COMPIDX[idx] || null;
   }
 
   function equip(key){
@@ -80947,7 +80981,9 @@ window.LW_debug.cleanGhostDrops = function(){
     getOwned: getOwned,
     getAllOwned: getAllOwned,
     progress: progress,
-    refreshPip: refreshPip
+    refreshPip: refreshPip,
+    companionIdxFor: companionIdxFor,
+    keyForCompanionIdx: keyForCompanionIdx
   };
   // Dev helpers — gated to LW_debug like other modules.
   window.LW_debug = window.LW_debug || {};
@@ -82997,7 +83033,10 @@ window.LW_FAMILY_T3 = {
     74:{about:'Newborn fawns have white spots that work like the forest\u2019s dappled sunlight, hiding them from predators while their mother forages. They have no scent for the first few days of life, and they can stand within an hour of being born.', group:'A group of deer is called a herd, or a bevy.'},
     75:{about:'Ravens are among the smartest birds on Earth. They can solve puzzles with several steps, mimic human voices and other animals, and even hold grudges against people who have wronged them, recognizing the same person years later.', group:'A group of ravens is called an unkindness, or a conspiracy.'},
     79:{about:'A tiny floating flame seen on quiet swamp nights. Folklore says these wisps lead travelers astray, but kinder stories say they just want company. Real ones are likely puffs of marsh gas igniting in the dark.', group:'A group of wisps is called a flicker.'},
-    81:{about:'Giant pandas eat for nearly fourteen hours a day because bamboo gives almost no energy. They have a special wrist bone that works like a thumb to grip bamboo stalks, and a baby panda is born about the size of a stick of butter, blind and pink.', group:'A group of pandas is called an embarrassment.'}
+    81:{about:'Giant pandas eat for nearly fourteen hours a day because bamboo gives almost no energy. They have a special wrist bone that works like a thumb to grip bamboo stalks, and a baby panda is born about the size of a stick of butter, blind and pink.', group:'A group of pandas is called an embarrassment.'},
+    82:{about:'Parasitic wasps are tiny, jeweled hunters with a vital job in the garden. The female finds a caterpillar or aphid, lays a single egg inside it, and the wasp grub grows up eating the host from within. Most species are harmless to humans, and gardeners love them because a healthy wasp population means almost no pests.', group:'A group of parasitic wasps has no widely accepted name.'},
+    83:{about:'Lungfish are living fossils, almost unchanged for nearly four hundred million years. They have both gills and a primitive lung, so when their pond dries up they burrow into the mud, wrap themselves in a slime cocoon, and breathe air for years until the rain returns. They are some of the closest living relatives to the very first animals that ever crawled onto land.', group:'A group of lungfish has no widely accepted name.'},
+    84:{about:'Tardigrades, also called water bears or moss piglets, are smaller than a poppy seed and the toughest animals on Earth. They survive boiling, freezing, the vacuum of outer space, and radiation that would kill anything else. When conditions get too harsh they curl up into a dry husk called a tun and can wait there for decades, then plump back up the moment a drop of water finds them.', group:'A group of tardigrades has no widely accepted name.'}
   };
   function _fmtTime(ms){
     if(ms<=0)return 'ready';
@@ -83012,6 +83051,44 @@ window.LW_FAMILY_T3 = {
   window._lwEquipCompanionDirect=function(compIdx){
     if(typeof compIdx!=='number'){compIdx=parseInt(compIdx,10);}
     if(isNaN(compIdx)||compIdx<0)return false;
+    // Keeper Cocoon creatures (idx 82-84) — equippable when their cocoon is
+    // hatched, no plant required. Handled BEFORE the greenhouse walk because
+    // they can never appear on a card.
+    try {
+      if (window.LW_KEEPER && LW_KEEPER.keyForCompanionIdx) {
+        var _kk = LW_KEEPER.keyForCompanionIdx(compIdx);
+        if (_kk) {
+          if (!LW_KEEPER.isHatched(_kk)) {
+            var _kSpec = LW_KEEPER.getSpec(_kk);
+            if (window._toast) window._toast('Hatch the '+(_kSpec?_kSpec.cocoonName:'cocoon')+' first.');
+            return false;
+          }
+          var _kSpec2 = LW_KEEPER.getSpec(_kk);
+          var _cBank = window.TRAIT_BANK && window.TRAIT_BANK.companions ? window.TRAIT_BANK.companions[compIdx] : null;
+          var _abilityText = '';
+          if (_kSpec2.ability === 'pestClear') _abilityText = 'Pest Strike: clears pests on visit, +2 Dew gall.';
+          else if (_kSpec2.ability === 'droughtBreath') _abilityText = 'Drought Breath: +2 day drought tolerance on your wild plants.';
+          else if (_kSpec2.ability === 'cryptobiosis') _abilityText = 'Cryptobiosis: half climate damage on your wild plants.';
+          var _kCompData = {
+            idx: compIdx,
+            name: _kSpec2.hatchedName,
+            icon: '🐾',
+            ability: _abilityText,
+            temperament: _cBank && _cBank.temp ? _cBank.temp : '',
+            tempIcon: ''
+          };
+          try { localStorage.setItem('pw_active_companion', JSON.stringify(_kCompData)); } catch(e){}
+          // Equip the keeper cocoon itself so the ability fires.
+          try { LW_KEEPER.equip(_kk); } catch(e){}
+          if (window.LW_ACH) window.LW_ACH.bump('d_swap_comp',1);
+          try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip) window.LW_COMPANION.onEquip(compIdx); } catch(e){}
+          if (window._lwCompleteQuest) window._lwCompleteQuest('q_equip_comp');
+          try { if (window.PW_UI && window.PW_UI.refreshActiveCompanion) window.PW_UI.refreshActiveCompanion(); } catch(e){}
+          if (window._toast) window._toast('🐾 ' + _kSpec2.hatchedName + ' is by your side.');
+          return true;
+        }
+      }
+    } catch(e){}
     var gh=[];try{gh=JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');}catch(e){}
     for(var i=0;i<gh.length;i++){
       var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;
