@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44655,11 +44655,17 @@ function _lwTendCaps(){
 }
 function _lwTendSave(c){try{localStorage.setItem('lw_tend_caps',JSON.stringify(c));}catch(e){}}
 window._lwCanTend=function(hash){
+  // Stephen audit 2026-05-01 #19 (option B): caps tightened from
+  // 10/3 to 3/1. The old caps were theatrical because the rescue
+  // SETs decayAt to "now + lifespanMs" \u2014 multiple rescues per day
+  // overwrote each other and were wasted. The new caps reflect
+  // the actual ceiling: at most one meaningful rescue per plant
+  // per day, and the player can spread across at most three plants.
   var c=_lwTendCaps();
-  if((c.total||0)>=10)return {ok:false,reason:'You\u2019ve tended 10 plants today. Caps reset at midnight.'};
+  if((c.total||0)>=3)return {ok:false,reason:'You\u2019ve rescued 3 plants today. Caps reset at midnight.'};
   var p=(c.perPlant&&c.perPlant[hash])||0;
-  if(p>=3)return {ok:false,reason:'This plant has been tended 3 times today.'};
-  return {ok:true,playerLeft:10-(c.total||0),plantLeft:3-p};
+  if(p>=1)return {ok:false,reason:'This plant has already been rescued today. Try again tomorrow.'};
+  return {ok:true,playerLeft:3-(c.total||0),plantLeft:1-p};
 };
 window._lwRecordTend=function(hash){
   var c=_lwTendCaps();
@@ -44670,11 +44676,20 @@ window._lwRecordTend=function(hash){
 };
 
 // ═══ SUNBEAM EMERGENCY RESCUE ═══
-// The 30-Sunbeam shock for Cosmic plants in trouble. Restores full
-// vitality (resets decayAt to droppedAt + lifespanMs * 1.0). Costs
+// The Sunbeam shock for Rare+ plants in trouble. Restores full
+// vitality (resets decayAt to now + lifespanMs * 1.0). Costs
 // scale with rarity per the design ladder.
+//
+// Stephen audit 2026-05-01 #19 (option D): cost ladder doubled
+// from 5/10/15/20/30 to 10/20/30/40/60. Rationale: a single
+// Cosmic could be kept alive forever at 30 SB / week (~1
+// plant-mint-cost per week, which felt too cheap). Doubled cost
+// makes solo immortality cost ~1 plant-mint per 3.5 days for a
+// Cosmic, ~1 / 7 days for a Rare. Still solo-friendly, but the
+// resource pressure means players have to choose whether to
+// rescue or mint each week.
 var SUNBEAM_RESCUE_COST = {
-  Common: 0, Uncommon: 0, Rare: 5, Epic: 10, Legendary: 15, Mythic: 20, Cosmic: 30
+  Common: 0, Uncommon: 0, Rare: 10, Epic: 20, Legendary: 30, Mythic: 40, Cosmic: 60
 };
 window._lwSunbeamRescueCost=function(rarity){return SUNBEAM_RESCUE_COST[rarity]||5;};
 window._lwSunbeamRescue=function(hash){
