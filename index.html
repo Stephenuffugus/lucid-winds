@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.19';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.20';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -73766,7 +73766,7 @@ window.INTERACTION_TRIGGERS=TRIGGERS;
 var ABILITIES = {
   rainCaller:    {name:'Rain Caller',    desc:'Reduces water decay 50%, 30% auto-water chance'},
   herdImmunity:  {name:'Herd Immunity',  desc:'+1 EA per ally within 500m (max +4)'},
-  omnisight:     {name:'Omnisight',      desc:'Reveals ferals 1km, takeover alerts'},
+  omnisight:     {name:'Omnisight',      desc:'Sees the whole map. Reports feral counts, plants near and far, stranger kindness. +2 EA on contests.'},
   permafrost:    {name:'Permafrost',     desc:'Ignores seasonal stress, +2 off-season EA'},
   scavenger:     {name:'Scavenger',      desc:'Banks fertilizer from displaced plants'},
   silkTrap:      {name:'Silk Trap',      desc:'Takeover requires beating defense 2x'},
@@ -82868,16 +82868,33 @@ window.LW_debug.cleanGhostDrops = function(){
     mycelium:    'Kin Network',
     listeners:    'Hidden Trait'
   };
+  // Level-up celebrations for ALL bond tiers. Stephen audit 2026-05-01 #12.
+  // The original checkL3Unlocks only fired a toast at L3 Master; L2/L4/L5/L6
+  // crossed silently. Players had no idea their bond had grown.
+  // Unified watcher keyed by `lw_companion_levels_seen` (highest level toasted
+  // per idx). L3 keeps its special "Unlocked: [Signature]" message; other
+  // levels get a simpler "[Companion] bond grew to [Tier]" line. Old L3_KEY
+  // is preserved on read so existing players who already crossed L3 don't
+  // re-toast.
+  var LEVELS_KEY = 'lw_companion_levels_seen';
+  var LEVEL_TIER_NAMES = ['','Noticed','Tended','Kindred','Ancient','Eternal','Primordial'];
   function checkL3Unlocks() {
     try {
-      var unlocked = JSON.parse(localStorage.getItem(L3_KEY) || '{}');
+      var seen = {};
+      try { seen = JSON.parse(localStorage.getItem(LEVELS_KEY) || '{}') || {}; } catch(e){}
+      // Backfill from legacy L3_KEY: any idx already L3-celebrated should
+      // start at level 3 in the new tracker so we don't double-toast.
+      try {
+        var legacy = JSON.parse(localStorage.getItem(L3_KEY) || '{}') || {};
+        for (var lk in legacy) if (legacy[lk] && (!seen[lk] || seen[lk] < 3)) seen[lk] = 3;
+      } catch(e){}
       var timer = loadTimer();
       var touched = false;
+      var _delay = 1500;
       for (var idxStr in timer) {
-        if (unlocked[idxStr]) continue;
-        if (getTotalMs(idxStr) >= L3_MS) {
-          unlocked[idxStr] = Date.now();
-          touched = true;
+        var curLvl = getLevel(idxStr);
+        var prev = seen[idxStr] || 1;
+        if (curLvl > prev) {
           var family = FAMILY_OF[idxStr];
           var sig = family ? L3_SIGNATURES[family] : '';
           var compName = 'Companion';
@@ -82886,17 +82903,38 @@ window.LW_debug.cleanGhostDrops = function(){
               compName = window.TRAIT_BANK.companions[idxStr].name;
             }
           } catch(e) {}
-          if (window._toast && sig) {
-            setTimeout(function(cn, sg){return function(){
-              window._toast('\u2728 ' + cn + ' reached MASTER. Unlocked: ' + sg + '.');
-            };}(compName, sig), 2000);
+          // Toast for each newly-crossed level (rare to cross multiple at once
+          // but possible on first session after a long absence).
+          for (var newLvl = prev + 1; newLvl <= curLvl; newLvl++) {
+            var tierName = LEVEL_TIER_NAMES[newLvl] || ('L' + newLvl);
+            var msg;
+            if (newLvl === 3 && sig) {
+              msg = '\u2728 ' + compName + ' reached MASTER. Unlocked: ' + sig + '.';
+            } else if (newLvl === 6) {
+              msg = '\u2728 ' + compName + ' is ' + tierName + '. The longest watch.';
+            } else {
+              msg = '\u2728 ' + compName + ' bond grew to ' + tierName + '.';
+            }
+            (function(m, d){ setTimeout(function(){ if(window._toast) window._toast(m); }, d); })(msg, _delay);
+            _delay += 600; // stagger so multiple toasts don't collide
+            if (window._logWildEvent && newLvl === 3) {
+              window._logWildEvent({ type: 'companion_l3', idx: parseInt(idxStr, 10), name: compName, family: family, signature: sig });
+            }
           }
-          if (window._logWildEvent) {
-            window._logWildEvent({ type: 'companion_l3', idx: parseInt(idxStr, 10), name: compName, family: family, signature: sig });
-          }
+          seen[idxStr] = curLvl;
+          touched = true;
         }
       }
-      if (touched) localStorage.setItem(L3_KEY, JSON.stringify(unlocked));
+      if (touched) {
+        try { localStorage.setItem(LEVELS_KEY, JSON.stringify(seen)); } catch(e){}
+        // Keep legacy L3_KEY in sync so any code still reading it sees
+        // current truth (any idx that's at level 3+ counts as L3-unlocked).
+        try {
+          var l3Legacy = {};
+          for (var sk in seen) if (seen[sk] >= 3) l3Legacy[sk] = Date.now();
+          localStorage.setItem(L3_KEY, JSON.stringify(l3Legacy));
+        } catch(e){}
+      }
     } catch(e) {}
   }
 
