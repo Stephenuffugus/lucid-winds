@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.48';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.49';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -51848,13 +51848,17 @@ window._lwOpenMyPlants = function(){
     var ovE = document.createElement('div');
     ovE.id = 'lw-myplants-overlay';
     ovE.style.cssText = 'position:fixed;inset:0;z-index:100008;background:rgba(8,10,6,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.25s ease;';
+    // Empty state — proportions rebuilt Apr 30. Tree was 96px and dominant
+    // while the SOW button was 0.75rem text in 48px tall plaque, looked
+    // like a footnote. Tree shrunk + button enlarged to feel like the CTA.
     ovE.innerHTML =
-      '<div style="max-width:340px;text-align:center;">' +
-        '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="position:absolute;top:1rem;right:1rem;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:0.95rem;cursor:pointer;">&times;</button>' +
-        '<div style="line-height:1;margin-bottom:0.7rem;opacity:0.7;"><img src="assets/fx/tree-gold.png" alt="" style="width:96px;height:96px;object-fit:contain;display:inline-block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:3.5rem;&quot;>🌳</span>&apos;;"></div>' +
-        '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:0.5rem;">NO PLANTS IN THE WILD</div>' +
-        '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.7rem;color:var(--cream);line-height:1.5;margin-bottom:1rem;">Drop your first specimen with the SOW button. Other keepers see it on their map.</div>' +
-        '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();" style="padding:11px 20px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.55);background:linear-gradient(180deg,rgba(122,179,86,0.32),rgba(60,90,40,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;"<span class="lwe lwe-bloom"></span> SOW A PLANT</button>' +
+      '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="position:fixed;top:1rem;right:1rem;width:48px;height:48px;border-radius:50%;border:2px solid rgba(200,168,75,0.45);background:rgba(26,36,22,0.7);color:var(--cream);font-size:1.2rem;cursor:pointer;z-index:1;line-height:1;">&times;</button>' +
+      '<div style="max-width:380px;width:100%;text-align:center;padding:0 1rem;">' +
+        '<div style="line-height:1;margin-bottom:1.4rem;opacity:0.85;"><img src="assets/fx/tree-gold.png" alt="" style="width:140px;height:140px;object-fit:contain;display:inline-block;filter:drop-shadow(0 4px 24px rgba(200,168,75,0.25));" onerror="this.outerHTML=&apos;<span style=&quot;font-size:4.5rem;&quot;>🌳</span>&apos;;"></div>' +
+        '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.4rem;color:#f5e7b8;margin-bottom:0.4rem;letter-spacing:0.02em;text-shadow:0 2px 18px rgba(200,168,75,0.4);">Your wild is quiet</div>' +
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.18em;color:var(--sage);margin-bottom:0.9rem;">NO PLANTS PLANTED</div>' +
+        '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.85rem;color:var(--cream);line-height:1.6;margin-bottom:1.6rem;opacity:0.92;">Plant a specimen on the real-world map.<br>Other keepers will see it. Some will tend it.</div>' +
+        '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window.FG_Wild&&FG_Wild.openPicker)FG_Wild.openPicker();" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:18px 24px;border-radius:14px;border:2px solid rgba(200,168,75,0.6);background:linear-gradient(180deg,rgba(122,179,86,0.4),rgba(60,90,40,0.55));color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.18em;cursor:pointer;min-height:64px;box-shadow:0 4px 20px rgba(200,168,75,0.2),inset 0 1px 0 rgba(255,235,180,0.18);text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/wild-drop-fab.png" alt="" style="width:32px;height:32px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=\'\'"> SOW A PLANT</button>' +
       '</div>';
     document.body.appendChild(ovE);
     return;
