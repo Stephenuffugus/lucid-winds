@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.15';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -67646,7 +67646,35 @@ function _step1b(){
   var cards=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
   if(!cards.length){_stepEmpty();return;}
   var firstCard=cards[0];
-  _overlay(function(){/* no-op — overlay is a capture zone only */});
+  // Build the click handler ONCE so both the card and the overlay-bounds
+  // fallback (iOS) can share it. Stephen 2026-05-01: iPhone tester could
+  // not advance past this step. Root cause: iOS Safari traps a child's
+  // z-index inside a parent's local stacking context (transform /
+  // will-change / contain:layout). Even with z-index 1000012 on the card,
+  // iOS routes the tap to the 1000010 overlay first. Desktop honored the
+  // z-index, iOS didn't. Fix: also accept taps on the overlay if they
+  // land within the spotlight bounds.
+  var origClick=firstCard.onclick;
+  var _advance=function(e){
+    _clear();firstCard.style.zIndex='';firstCard.style.animation='';firstCard.onclick=origClick;
+    var ar=document.getElementById('_lw-tut-arrow');if(ar)ar.remove();
+    try{document.body.classList.add('lw-tut-carousel-lock','lw-tut-carousel-freeze');}catch(e){}
+    if(origClick)origClick.call(firstCard,e);
+    _setStep(2);_waitForCarousel(0);
+  };
+  _overlay(function(ev){
+    // iOS fallback: if the tap landed inside the spotlight rect, treat
+    // it as a tap on the plant. Otherwise swallow (overlay still blocks
+    // taps on other UI).
+    try{
+      var r=firstCard.getBoundingClientRect();
+      var x=(ev&&typeof ev.clientX==='number')?ev.clientX:-1;
+      var y=(ev&&typeof ev.clientY==='number')?ev.clientY:-1;
+      if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom){
+        _advance(ev);
+      }
+    }catch(e){}
+  });
   _spotlight(firstCard);
   // Pulse the PLANT, not the arrow — Stephen's call. The spotlight cutout
   // keeps the card lit while the rest of the UI stays dim; the pulse
@@ -67662,17 +67690,9 @@ function _step1b(){
   arr.style.cssText='position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);z-index:1000012;pointer-events:none;font-family:Playfair Display,serif;font-size:clamp(3.4rem,12vw,5rem);color:var(--gold);line-height:1;text-shadow:0 0 18px rgba(200,168,75,0.65),0 0 6px rgba(0,0,0,0.9);';
   arr.textContent='\u2190';
   document.body.appendChild(arr);
-  var origClick=firstCard.onclick;
-  firstCard.onclick=function(e){
-    _clear();firstCard.style.zIndex='';firstCard.style.animation='';firstCard.onclick=origClick;
-    var ar=document.getElementById('_lw-tut-arrow');if(ar)ar.remove();
-    // Lock the carousel immediately so compost/breed/close/swipe can't
-    // be triggered by the same tap that opens it. Also freeze flips
-    // until step 7 explicitly invites the player to flip the card.
-    try{document.body.classList.add('lw-tut-carousel-lock','lw-tut-carousel-freeze');}catch(e){}
-    if(origClick)origClick.call(firstCard,e);
-    _setStep(2);_waitForCarousel(0);
-  };
+  // Desktop / Android path: direct card click still works because z-index
+  // resolves correctly there. iOS path falls through to overlay handler.
+  firstCard.onclick=_advance;
 }
 
 function _waitForCarousel(attempts){
