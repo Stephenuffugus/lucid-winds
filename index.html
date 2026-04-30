@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.47';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.48';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3524,17 +3524,30 @@
     #rain-canvas{position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:0.28;transition:opacity 0.8s ease;}
     #rain-canvas.hidden{opacity:0;}
 
-    /* ── P5 · DNA SPLICE OVERLAY ── */
-    #dna-splice-overlay{display:none;position:fixed;inset:0;z-index:999997;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;flex-direction:column;gap:0.6rem;backdrop-filter:blur(16px);}
-    #dna-splice-overlay.active{display:flex;animation:drawerIn 0.25s ease;}
-    .dna-helix{width:60px;height:80px;position:relative;margin:0 auto;}
-    .dna-strand{position:absolute;width:100%;height:100%;}
-    @keyframes helixA{0%{transform:scaleX(1)}25%{transform:scaleX(0.15)}50%{transform:scaleX(1)}75%{transform:scaleX(0.15)}100%{transform:scaleX(1)}}
-    @keyframes helixB{0%{transform:scaleX(0.15)}25%{transform:scaleX(1)}50%{transform:scaleX(0.15)}75%{transform:scaleX(1)}100%{transform:scaleX(0.15)}}
-    @keyframes rungFade{0%,100%{opacity:0.15}50%{opacity:0.55}}
-    @keyframes dnaSplice{0%{opacity:0;transform:scale(0.85)}100%{opacity:1;transform:scale(1)}}
-    .dna-label{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.2em;color:var(--sage);animation:attnPulse 1s ease-in-out infinite;}
-    .dna-sublabel{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--muted);}
+    /* ── P5 · CROSS-POLLINATION OVERLAY (Apr 30 redesign) ──
+       Director call: "remove the big emoji, take a little longer, make
+       cross pollinating elegant, switch fonts between a few like the art."
+       Helix SVG removed; replaced with layered typography that mixes
+       Playfair Display italic ('Cross'), Bebas Neue uppercase
+       ('POLLINATION'), and DM Mono micro-tagline. Soft pollen drift
+       behind everything for atmosphere. */
+    #dna-splice-overlay{display:none;position:fixed;inset:0;z-index:999997;background:radial-gradient(ellipse at center,rgba(40,52,28,0.92) 0%,rgba(8,10,6,0.96) 80%);align-items:center;justify-content:center;flex-direction:column;gap:0.4rem;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+    #dna-splice-overlay.active{display:flex;animation:drawerIn 0.5s ease;}
+    @keyframes pollenDriftIn{0%{opacity:0;transform:translateY(20px) scale(0.92);}100%{opacity:1;transform:translateY(0) scale(1);}}
+    @keyframes pollenDriftFloat{0%{transform:translate(-50%,0) rotate(0deg);}50%{transform:translate(-50%,-12px) rotate(180deg);}100%{transform:translate(-50%,0) rotate(360deg);}}
+    @keyframes pollenSparkle{0%,100%{opacity:0;transform:translate(var(--px,0),var(--py,0)) scale(0.4);}40%{opacity:0.85;}60%{transform:translate(calc(var(--px,0) + var(--pdx,30px)),calc(var(--py,0) + var(--pdy,-20px))) scale(1);}}
+    @keyframes cpWordIn{0%{opacity:0;letter-spacing:0.6em;}60%{opacity:1;}100%{opacity:1;letter-spacing:var(--cp-ls,0.18em);}}
+    @keyframes cpItalicIn{0%{opacity:0;transform:translateX(-12px) skew(-8deg);}100%{opacity:1;transform:translateX(0) skew(0);}}
+    .cp-stack{position:relative;text-align:center;animation:pollenDriftIn 0.6s ease both;display:flex;flex-direction:column;align-items:center;gap:0.05rem;padding:0 1rem;}
+    .cp-word-cross{font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:clamp(2.2rem,9vw,3.4rem);color:#f5e7b8;letter-spacing:0.02em;text-shadow:0 2px 22px rgba(200,168,75,0.5),0 0 6px rgba(255,235,180,0.35);line-height:1;animation:cpItalicIn 0.7s cubic-bezier(0.2,0.8,0.3,1.05) 0.1s both;}
+    .cp-word-pollination{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.05rem,4vw,1.45rem);color:var(--sage);--cp-ls:0.32em;letter-spacing:0.32em;margin-top:0.1rem;text-shadow:0 1px 10px rgba(122,179,86,0.4);animation:cpWordIn 1s cubic-bezier(0.2,0.8,0.3,1) 0.4s both;}
+    .cp-word-amp{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1.05rem,4vw,1.4rem);color:#c8a84b;line-height:1;margin:0.1rem 0 0.05rem;opacity:0.85;animation:cpItalicIn 0.6s ease 0.7s both;}
+    .cp-tagline{font-family:'DM Mono',monospace;font-style:italic;font-size:0.6rem;color:rgba(232,220,200,0.7);letter-spacing:0.16em;margin-top:0.7rem;animation:cpWordIn 1.1s ease 0.95s both;}
+    .cp-breath{font-family:'DM Mono',monospace;font-size:0.46rem;color:rgba(138,145,120,0.6);letter-spacing:0.12em;margin-top:0.25rem;text-transform:uppercase;animation:cpWordIn 1.3s ease 1.5s both;}
+    .cp-pollen{position:absolute;width:5px;height:5px;border-radius:50%;background:radial-gradient(circle,#f5dc95 30%,rgba(245,220,149,0) 70%);pointer-events:none;animation:pollenSparkle 2.4s ease-in-out infinite;}
+    /* legacy class names kept so any callers from old code still parse */
+    .dna-helix,.dna-strand{display:none;}
+    .dna-label,.dna-sublabel{display:none;}
 
     /* ── P5 · MASTER BADGE ── */
     body .badge-icon[title="Master Grower"]{color:#E8D080;text-shadow:0 0 6px rgba(232,208,128,0.5);}
@@ -40819,12 +40832,14 @@ document.addEventListener('keydown', function(e) {
     if (!_cpSelectedA || !_cpSelectedB || !window.FG_Data) return;
     var btn=document.getElementById('cp-confirm-btn');
     var selA=_cpSelectedA, selB=_cpSelectedB;
-    if (btn){ btn.disabled=true; btn.textContent='🧬 SPLICING…'; }
+    if (btn){ btn.disabled=true; btn.textContent='POLLINATING…'; }
     _setCPMsg('');
-    // Close modal first — overlay takes over visually
+    // Close modal first — overlay takes over visually.
     closeCPModal();
-    // 2-second DNA splice animation, then do the real work
-    showDNASplice(2000, async function() {
+    // 3.8-second elegant cross-pollination animation (Apr 30 polish: was
+    // 2.0s, felt rushed; the typography stagger needs ~3.5s to read fully
+    // before the user gets bumped into the nursery).
+    showDNASplice(3800, async function() {
       try {
         var result    = await FG_Data.crossPollinateHashes(selA.hash, selB.hash);
         // Stephen 2026-04-26 round 5: 'when you breed plants in your
@@ -42081,39 +42096,42 @@ document.addEventListener('keydown', function(e) {
     if (document.getElementById('dna-splice-overlay')) return;
     var el = document.createElement('div');
     el.id = 'dna-splice-overlay';
-    // SVG helix
-    var svgH = '<svg width="60" height="80" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg">';
-    svgH += '<style>';
-    svgH += '.dna-sa{animation:helixA 1.2s ease-in-out infinite}';
-    svgH += '.dna-sb{animation:helixB 1.2s ease-in-out infinite}';
-    for (var ri=0; ri<7; ri++) {
-      svgH += '.r'+ri+'{animation:rungFade 1.2s ease-in-out '+((ri*0.17).toFixed(2))+'s infinite}';
+    // Apr 30 redesign — typography first. Three fonts layered (Playfair
+    // italic, Bebas, DM Mono) mirrors the same mix the rest of the art
+    // uses. Pollen sparkles drift behind the words for atmosphere.
+    var stack = '<div class="cp-stack">';
+    // Drifting pollen — 7 sparkles at varied positions/timings.
+    var positions = [
+      {x:-110,y:-60,dx:30,dy:-22,d:0,dur:2.6},
+      {x:90,y:-80,dx:-25,dy:-18,d:0.4,dur:2.9},
+      {x:-130,y:50,dx:35,dy:25,d:0.8,dur:3.1},
+      {x:120,y:30,dx:-30,dy:30,d:1.2,dur:2.7},
+      {x:0,y:-110,dx:18,dy:-30,d:0.2,dur:3.3},
+      {x:-60,y:90,dx:-22,dy:18,d:1.6,dur:2.5},
+      {x:70,y:80,dx:28,dy:-25,d:0.6,dur:3.0}
+    ];
+    for (var pi=0; pi<positions.length; pi++) {
+      var p = positions[pi];
+      stack += '<span class="cp-pollen" style="--px:'+p.x+'px;--py:'+p.y+'px;--pdx:'+p.dx+'px;--pdy:'+p.dy+'px;animation-delay:'+p.d+'s;animation-duration:'+p.dur+'s;"></span>';
     }
-    svgH += '</style>';
-    // Strand A (left)
-    svgH += '<g class="dna-sa" style="transform-origin:30px 40px">';
-    svgH += '<path d="M14,4 C8,14 8,26 14,36 C20,46 20,58 14,68 C20,76 30,78 30,78" stroke="#8CB86E" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.85"/>';
-    svgH += '</g>';
-    // Strand B (right)
-    svgH += '<g class="dna-sb" style="transform-origin:30px 40px">';
-    svgH += '<path d="M46,4 C52,14 52,26 46,36 C40,46 40,58 46,68 C40,76 30,78 30,78" stroke="#D4B455" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.85"/>';
-    svgH += '</g>';
-    // Rungs
-    var rungYs = [8,20,32,44,52,60,68];
-    for (var ri=0; ri<7; ri++) {
-      var ry = rungYs[ri];
-      svgH += '<line x1="16" y1="'+ry+'" x2="44" y2="'+ry+'" stroke="rgba(140,184,110,0.4)" stroke-width="1" class="r'+ri+'"/>';
-    }
-    svgH += '</svg>';
-    el.innerHTML = svgH +
-      '<div class="dna-label">SPLICING DNA</div>' +
-      '<div class="dna-sublabel">Combining genetic sequences…</div>';
+    stack += '<div class="cp-word-cross">Cross</div>';
+    stack += '<div class="cp-word-amp">&amp;</div>';
+    stack += '<div class="cp-word-pollination">POLLINATION</div>';
+    stack += '<div class="cp-tagline">two lineages, one new shape</div>';
+    stack += '<div class="cp-breath">splicing genome</div>';
+    stack += '</div>';
+    el.innerHTML = stack;
     document.body.appendChild(el);
   }
 
   function showDNASplice(durationMs, callback) {
     _buildDNASpliceOverlay();
     var ov = document.getElementById('dna-splice-overlay');
+    // Wipe and rebuild so re-pollination plays the entrance animation again.
+    ov.innerHTML = '';
+    document.body.removeChild(ov);
+    _buildDNASpliceOverlay();
+    ov = document.getElementById('dna-splice-overlay');
     ov.classList.add('active');
     setTimeout(function() {
       ov.classList.remove('active');
