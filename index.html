@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.74';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.75';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69152,6 +69152,7 @@ function _step41(){
   // Stephen Apr 22: "if player fails foraging or fails to plant their
   // plant the tutorial needs to cleanly continue."
   var _panelWasOpen = false;
+  var _panelClosedTicks = 0;
   var polls=0;
   var watch=function(){
     if(_getStep()!==41)return;
@@ -69173,9 +69174,19 @@ function _step41(){
     // step 46 (class intro). Stephen Apr 22: "i failed foraging and
     // it told me my seed was in the nursery which was obviously not
     // true." The nursery steps only make sense when there's a seed.
+    //
+    // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE: this raced — on
+    // a SUCCESSFUL forage the panel closes a fraction of a tick before
+    // _awardFeral writes the seed to backpack. If the watch ticked right
+    // in that gap, fail-path fired and the player jumped straight to
+    // step 46, missing the entire backpack→nursery→water sequence.
+    // Now we grace-debounce: panel must be closed for 4 consecutive
+    // ticks (~2s) before we declare a real fail, giving the seed-write
+    // path plenty of time to land.
     var _panelNow = !!document.getElementById('lw-forage-panel');
-    if (_panelNow) _panelWasOpen = true;
-    if (_panelWasOpen && !_panelNow) {
+    if (_panelNow) { _panelWasOpen = true; _panelClosedTicks = 0; }
+    else if (_panelWasOpen) { _panelClosedTicks++; }
+    if (_panelWasOpen && !_panelNow && _panelClosedTicks >= 4) {
       setTimeout(_step46, 1200);
       return;
     }
