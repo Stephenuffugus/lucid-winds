@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.1';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.2';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -45000,6 +45000,8 @@ function _addSteps(meters){
   _checkStepMilestone();
   // Credit the same walked meters to every incubating cocoon.
   try { if (window.LW_COCOONS && window.LW_COCOONS.creditSteps) window.LW_COCOONS.creditSteps(meters); } catch(e){}
+  // Credit the equipped Keeper Cocoon (parallel premium system).
+  try { if (window.LW_KEEPER && window.LW_KEEPER.creditMeters) window.LW_KEEPER.creditMeters(meters); } catch(e){}
   // Engagement counters: meters + steps. _addSteps takes raw meters;
   // _metersToSteps converts to steps via the existing conversion. Bump
   // both lifetime and per-period (daily/weekly) so distance-based
@@ -80248,6 +80250,318 @@ window.LW_debug.cleanGhostDrops = function(){
 
   // Daily grant — try once per session load. A dawn cronish.
   try { setTimeout(tryDailyGrant, 3000); } catch(e){}
+})();
+
+// ═══ LW_KEEPER — Premium Keeper Cocoons (parallel to LW_COCOONS) ═══
+// Three named, one-time-purchase, permanent-unlock cocoons hatched
+// over a 1000 km walk. Dew + Sunbeam currency only (never Pi).
+//   wasp        Curious Caterpillar  → Parasitic Wasp   (Dew-heavy)
+//   lungfish    Cracked Mudball      → Lungfish         (tap-to-feed)
+//   tardigrade  Meteor Fragment      → Tardigrade       (cryptobiosis)
+// Foundation module: storage + API + walking credit. UI / per-cocoon
+// abilities / hatch ceremony are wired in subsequent phases.
+(function(){
+  'use strict';
+  var STORAGE_KEY = 'lw_pcocoons';
+  var DAILY_KEY   = 'lw_pcocoons_daily';
+  var HATCH_M     = 1000000; // 1000 km in meters
+  var KEEPERS = [
+    {
+      key:'wasp',
+      cocoonName:'A Curious Caterpillar',
+      hatchedName:'Parasitic Wasp',
+      cocoonArt:'assets/cocoons/keeper-caterpillar.png',
+      hatchedArt:'assets/companions/parasitic_wasp.png',
+      flavor:'It eats more than its share. Something is taking shape inside it.',
+      hatchFlavor:'A wasp emerges, jeweled and watchful. It hunts the pests that visit your wild plants.',
+      costDew:30000, costSunbeams:100,
+      distanceM:HATCH_M,
+      requires:null,
+      ability:'pestClear'
+    },
+    {
+      key:'lungfish',
+      cocoonName:'A Cracked Mudball',
+      hatchedName:'Lungfish',
+      cocoonArt:'assets/cocoons/keeper-mudball.png',
+      hatchedArt:'assets/companions/lungfish.png',
+      flavor:'Heavy. Wet. Too warm. Something inside is breathing slow.',
+      hatchFlavor:'A lungfish surfaces, ancient and patient. It teaches your wild plants to outlast drought.',
+      costDew:5000, costSunbeams:600,
+      distanceM:HATCH_M,
+      requires:'wasp',
+      ability:'droughtBreath',
+      // Feed mechanics: tap-to-feed during incubation. Walking earns
+      // pour tokens (1 per 10 km) that release 100 Dew each into the
+      // mudball. 300 pours = 30000 Dew total = full incubation feed.
+      feedTokensRequired:300,
+      feedAmount:100,
+      feedTokenPerKm:10
+    },
+    {
+      key:'tardigrade',
+      cocoonName:'A Meteor Fragment',
+      hatchedName:'Tardigrade',
+      cocoonArt:'assets/cocoons/keeper-meteor.png',
+      hatchedArt:'assets/companions/tardigrade.png',
+      flavor:'Still warm from the fall. Something inside is still alive.',
+      hatchFlavor:'A tardigrade unfolds, indestructible. It halves the climate damage your wild plants take.',
+      costDew:25000, costSunbeams:500,
+      distanceM:HATCH_M,
+      requires:'lungfish',
+      ability:'cryptobiosis'
+    }
+  ];
+  var KEEPER_BY_KEY = {};
+  for (var i=0;i<KEEPERS.length;i++){ KEEPER_BY_KEY[KEEPERS[i].key]=KEEPERS[i]; }
+
+  function _load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return { owned:{}, equipped:null };
+      var d = JSON.parse(raw);
+      if(!d || typeof d!=='object') return { owned:{}, equipped:null };
+      if(!d.owned || typeof d.owned!=='object') d.owned = {};
+      if(typeof d.equipped==='undefined') d.equipped = null;
+      return d;
+    }catch(e){ return { owned:{}, equipped:null }; }
+  }
+  function _save(d){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }catch(e){}
+    try{ if(window._throttledSave) window._throttledSave(); }catch(e){}
+  }
+  function _spec(key){ return KEEPER_BY_KEY[key] || null; }
+  function _toast(msg){ try{ if(window._toast) window._toast(msg); }catch(e){} }
+
+  function getSpec(key){ return _spec(key); }
+  function listSpecs(){ return KEEPERS.slice(); }
+
+  function isOwned(key){
+    var d=_load();
+    return !!(d.owned && d.owned[key]);
+  }
+  function isHatched(key){
+    var d=_load();
+    return !!(d.owned && d.owned[key] && d.owned[key].state==='hatched');
+  }
+  function isIncubating(key){
+    var d=_load();
+    return !!(d.owned && d.owned[key] && d.owned[key].state==='incubating');
+  }
+  function isReady(key){
+    var d=_load();
+    var o = d.owned && d.owned[key];
+    if(!o || o.state!=='incubating') return false;
+    var spec=_spec(key); if(!spec) return false;
+    if((o.distance||0) < spec.distanceM) return false;
+    // Lungfish also requires fed tokens
+    if(spec.feedTokensRequired){
+      if((o.fed||0) < spec.feedTokensRequired) return false;
+    }
+    return true;
+  }
+  function getOwned(key){
+    var d=_load();
+    return (d.owned && d.owned[key]) ? d.owned[key] : null;
+  }
+  function getAllOwned(){
+    var d=_load();
+    return d.owned || {};
+  }
+
+  function _prereqMet(key){
+    var spec=_spec(key); if(!spec) return false;
+    if(!spec.requires) return true;
+    return isHatched(spec.requires);
+  }
+  function canPurchase(key){
+    if(isOwned(key)) return false;
+    return _prereqMet(key);
+  }
+
+  function purchase(key){
+    var spec=_spec(key); if(!spec) return false;
+    if(isOwned(key)){ _toast('Already owned.'); return false; }
+    if(!_prereqMet(key)){ _toast('Hatch the previous cocoon first.'); return false; }
+    var sb = (window.getTotalHashes ? window.getTotalHashes() : 0);
+    var dw = (window.getTotalDew ? window.getTotalDew() : 0);
+    if(sb < spec.costSunbeams){ _toast('Not enough Sunbeams.'); return false; }
+    if(dw < spec.costDew){ _toast('Not enough Dew.'); return false; }
+    // Atomic spend: Sunbeams first, then Dew. Refund Sunbeams if Dew fails.
+    try{ if(window.spendHashes) window.spendHashes(spec.costSunbeams); }catch(e){ return false; }
+    var dewOk = false;
+    try{ dewOk = !!(window.spendDew && window.spendDew(spec.costDew)); }catch(e){ dewOk = false; }
+    if(!dewOk){
+      try{ if(window.earnHashes) window.earnHashes(spec.costSunbeams,'cocoon_refund'); }catch(e){}
+      _toast('Purchase failed. Sunbeams refunded.');
+      return false;
+    }
+    var d=_load();
+    d.owned[key] = {
+      state:'incubating',
+      distance:0,
+      fed:0,
+      purchasedAt:Date.now(),
+      hatchedAt:0
+    };
+    _save(d);
+    try{ if(window._haptic) window._haptic('bloom'); }catch(e){}
+    _toast(spec.cocoonName+' is yours. Walk a thousand kilometers to hatch.');
+    try{ if(window.LW_ACH && LW_ACH.bump) LW_ACH.bump('keeper_purchases',1); }catch(e){}
+    return true;
+  }
+
+  // Walking hook. Called from _addSteps with post-multiplier meters.
+  // Only credits the equipped cocoon. Hatched cocoons are no-ops.
+  function creditMeters(meters){
+    if(!meters || meters<=0) return;
+    // Tutorial gate — match _addSteps milestone gating.
+    try{ if(window._tutInProg) return; }catch(e){}
+    var d=_load();
+    if(!d.equipped) return;
+    var key = d.equipped;
+    var o = d.owned && d.owned[key];
+    if(!o || o.state!=='incubating') return;
+    var spec=_spec(key); if(!spec) return;
+    var prev = o.distance || 0;
+    var next = prev + meters;
+    if(next > spec.distanceM) next = spec.distanceM;
+    o.distance = next;
+    // Lungfish: every feedTokenPerKm km of walking earns 1 pour token.
+    // Tokens accrue separately from auto-feed; player still has to tap
+    // to actually pour them. Stash tokens on the cocoon's record.
+    if(spec.feedTokenPerKm){
+      var prevKm = Math.floor(prev/1000);
+      var nextKm = Math.floor(next/1000);
+      var prevTokens = Math.floor(prevKm/spec.feedTokenPerKm);
+      var nextTokens = Math.floor(nextKm/spec.feedTokenPerKm);
+      var earned = nextTokens - prevTokens;
+      if(earned>0){ o.tokens = (o.tokens||0) + earned; }
+    }
+    _save(d);
+  }
+
+  // Lungfish tap-to-feed. Spends one pour token + feedAmount Dew per call.
+  // Returns true on success.
+  function feed(key){
+    var spec=_spec(key); if(!spec) return false;
+    if(!spec.feedTokensRequired){ return false; }
+    var d=_load();
+    var o = d.owned && d.owned[key];
+    if(!o || o.state!=='incubating') return false;
+    if((o.fed||0) >= spec.feedTokensRequired){ _toast('Already full.'); return false; }
+    if((o.tokens||0) <= 0){ _toast('Walk farther to earn a pour.'); return false; }
+    var dw = (window.getTotalDew ? window.getTotalDew() : 0);
+    if(dw < spec.feedAmount){ _toast('Not enough Dew to pour.'); return false; }
+    var ok=false;
+    try{ ok = !!(window.spendDew && window.spendDew(spec.feedAmount)); }catch(e){ ok=false; }
+    if(!ok) return false;
+    o.tokens = (o.tokens||0) - 1;
+    o.fed    = (o.fed||0) + 1;
+    _save(d);
+    try{ if(window._haptic) window._haptic('tap'); }catch(e){}
+    return true;
+  }
+
+  function hatch(key){
+    var spec=_spec(key); if(!spec) return false;
+    if(!isReady(key)){ _toast('Not ready to hatch.'); return false; }
+    var d=_load();
+    var o = d.owned[key];
+    o.state = 'hatched';
+    o.hatchedAt = Date.now();
+    _save(d);
+    try{ if(window._haptic) window._haptic('bloom'); }catch(e){}
+    try{ if(window.LW_ACH && LW_ACH.bump) LW_ACH.bump('keeper_hatches',1); }catch(e){}
+    return true;
+  }
+
+  function equip(key){
+    if(!isHatched(key)){ _toast('Hatch this cocoon first.'); return false; }
+    var d=_load();
+    if(d.equipped===key) return true;
+    d.equipped = key;
+    _save(d);
+    var spec=_spec(key);
+    if(spec) _toast(spec.hatchedName+' equipped.');
+    return true;
+  }
+  function unequip(){
+    var d=_load();
+    if(!d.equipped) return false;
+    d.equipped = null;
+    _save(d);
+    return true;
+  }
+  function equipped(){
+    var d=_load();
+    return d.equipped || null;
+  }
+  function activeAbility(){
+    var key = equipped();
+    if(!key) return null;
+    if(!isHatched(key)) return null;
+    var spec=_spec(key);
+    return spec ? spec.ability : null;
+  }
+  function progress(key){
+    var spec=_spec(key); if(!spec) return null;
+    var o = getOwned(key);
+    if(!o) return { state:'locked', distance:0, distanceM:spec.distanceM, fed:0, tokens:0 };
+    return {
+      state:o.state,
+      distance:o.distance||0,
+      distanceM:spec.distanceM,
+      fed:o.fed||0,
+      feedRequired:spec.feedTokensRequired||0,
+      tokens:o.tokens||0
+    };
+  }
+
+  window.LW_KEEPER = {
+    KEEPERS: KEEPERS,
+    listSpecs: listSpecs,
+    getSpec: getSpec,
+    canPurchase: canPurchase,
+    purchase: purchase,
+    creditMeters: creditMeters,
+    feed: feed,
+    hatch: hatch,
+    equip: equip,
+    unequip: unequip,
+    equipped: equipped,
+    activeAbility: activeAbility,
+    isOwned: isOwned,
+    isHatched: isHatched,
+    isIncubating: isIncubating,
+    isReady: isReady,
+    getOwned: getOwned,
+    getAllOwned: getAllOwned,
+    progress: progress
+  };
+  // Dev helpers — gated to LW_debug like other modules.
+  window.LW_debug = window.LW_debug || {};
+  window.LW_debug.keeperGrant = function(key){
+    var spec=_spec(key||'wasp'); if(!spec) return false;
+    var d=_load();
+    d.owned[spec.key] = {state:'incubating', distance:0, fed:0, tokens:9999, purchasedAt:Date.now(), hatchedAt:0};
+    _save(d); return true;
+  };
+  window.LW_debug.keeperWalk = function(m){ creditMeters(m||100000); };
+  window.LW_debug.keeperHatch = function(key){
+    var spec=_spec(key||'wasp'); if(!spec) return false;
+    var d=_load();
+    if(!d.owned[spec.key]){ d.owned[spec.key]={state:'incubating', distance:0, fed:0, tokens:0, purchasedAt:Date.now(), hatchedAt:0}; }
+    d.owned[spec.key].state='hatched';
+    d.owned[spec.key].distance=spec.distanceM;
+    if(spec.feedTokensRequired) d.owned[spec.key].fed = spec.feedTokensRequired;
+    d.owned[spec.key].hatchedAt=Date.now();
+    _save(d); return true;
+  };
+  window.LW_debug.keeperReset = function(){
+    try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(DAILY_KEY); }catch(e){}
+    return true;
+  };
 })();
 
 // ═══ LW_HUNT — Seasonal Scavenger Hunt ═══
