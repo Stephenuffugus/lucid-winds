@@ -1,7 +1,7 @@
 
 # LUCID WINDS — CLAUDE.md
 # Claude Code reads this file automatically on startup. THIS IS THE SOURCE OF TRUTH.
-# Last updated: April 18, 2026 — Variant D rarity rebalance, climate audit, items system, terminology glossary
+# Last updated: April 30, 2026 — Variant F rarity (post-Variant D), Pi sandbox transaction completed, items balance pass, engagement counter wiring
 
 ---
 
@@ -227,40 +227,36 @@ window._reRenderAll                  window._fgDeviceId
 
 ---
 
-## TERRA GRADE SYSTEM (7 tiers — Variant D, 2026-04-18)
+## TERRA GRADE SYSTEM (7 tiers — Variant F, 2026-04-29)
 
 Computed from trait rarity score. The grade is the PLANT'S OVERALL rarity. Each layer has its own tier score that adds to the total.
 
-### Variant D scoring (index.html:8619, 8634)
+### Variant F scoring (index.html:10339, 10361)
 ```
-_TIER_SCORE = { common:0, uncommon:0, rare:2, epic:3, legendary:5, mythic:7, cosmic:10 }
-_TERRA_GRADES thresholds = [ 0, 2, 5, 9, 14, 20, 28 ]
-```
-
-### Grade thresholds + theoretical signals
-```
-Common     — score 0-1   — all-common layers
-Uncommon   — score 2-4   — one rare-tier layer
-Rare       — score 5-8   — golden pot OR glow flower OR crystal base OR rare mutation
-Epic       — score 9-13  — multiple rare layers + breed bonus
-Legendary  — score 14-19 — legendary substrate + something else
-Mythic     — score 20-27 — mythic byte (Toad/Cicada) + multiple rare layers
-Cosmic     — score 28+   — Beholder + supporting rare layers
+_TIER_SCORE = { common:0, uncommon:0, rare:1, epic:3, legendary:5, mythic:7, cosmic:10 }
+_TERRA_GRADES thresholds = [ 0, 4, 8, 12, 16, 20, 26 ]
 ```
 
-### Verified breed distribution (sim N=25k each, see project_rarity_audit_findings.md)
+### Verified first-mint distribution (sim N=50k, Variant F)
 ```
-Common×Common      → 28% Common, 39% Uncommon, 26% Rare, 7% Epic, 0.6% Legendary, 0.02% Mythic
-Uncommon×Uncommon  → 9% / 34% / 41% / 15% / 1.6% / 0.04%
-Rare×Rare          → 4% / 17% / 44% / 30% / 4.8% / 0.13%
-Epic×Epic          → 1% / 8% / 30% / 45% / 15% / 0.74%
-Legendary×Legendary → 0.5% / 3% / 17% / 39% / 35% / 4.93% Mythic, 0.03% Cosmic
+Common     36%
+Uncommon   38%
+Rare       20%
+Epic        4.8%
+Legendary   0.7%
+Mythic      0.07%
+Cosmic      0%
 ```
-Mythic rate ~5× per tier-up. Cosmic essentially impossible until Legendary×Legendary. Highest tiers REACHABLE from any breed but earned, not given.
+
+### Verified breed distribution (Variant F)
+```
+Common×Common         → 11% Epic
+Legendary×Legendary   → 33% Epic, 4% Mythic, 0.16% Cosmic
+```
 
 ### Bugs in scoring still parked (not blocking)
-- Mythic-byte spike still REPLACES companion-tier score (`if (compT && t.mythic < 0xD0)` at line 8663). A Beholder gets +8 spike OR +10 cosmic-tier, never both. Cosmetic; Beholder still grades Cosmic via spike alone.
-- First-mint Common% still ~8% vs spec 42%. Trait banks themselves are rare-heavy. Fix requires bank reorganization, not scoring.
+- Mythic-byte spike still REPLACES companion-tier score (`if (compT && t.mythic < 0xD0)` at line 10390). A Beholder gets +8 spike OR +10 cosmic-tier, never both. Cosmetic; Beholder still grades Cosmic via spike alone.
+- First-mint Common% lands at 36% vs spec 42%. Variant F closed most of the gap from Variant D's 8%. Closing the last 6 points requires either (a) Uncommon threshold bump 4→5 or (b) trait bank reorg to thin out rare-tier layers. Both re-grade every existing plant on next load. Not blocking; revisit post-Pi-launch if still desired.
 
 ---
 
@@ -669,7 +665,7 @@ Each class has a companion family. Holding any plant with matching companion unl
 - **delegateToken** — co-op friend-hex share, needs Firestore flow
 - **Balance pass on items** — Mulch Ward auto-win vs Shellgourd 48h-lock (same tier, different power)
 - **Pi SDK integration** — ALL payments through Pi
-- **First-mint Common %** — trait bank reorganization to hit 42% spec
+- **First-mint Common %** — currently 36% (Variant F), spec 42%. Closing the gap re-grades every plant. Defer until post-Pi-launch unless director calls otherwise.
 
 ### Parked design (see memory index)
 - EA Takeover spec (15-min async vote)
