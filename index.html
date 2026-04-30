@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.81';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.82';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7045,7 +7045,14 @@ window._addSwitchTabHook = function(fn){
   <!-- Plant info card with hold-to-release -->
   <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
-  <div id="sdi"><div class="sir"><span><img src="assets/fx/pin-gold.png" alt="" style="object-fit:contain;display:inline-block;" onerror="this.outerHTML='📍'"></span><span class="sv" id="sdl">—</span></div><div class="sir"><span><img src="assets/fx/compost-flame.png" alt="" style="object-fit:contain;display:inline-block;" onerror="this.outerHTML='🌡'"></span><span class="sv" id="sdc">—</span></div><div id="sdh" style="display:none;"></div><span id="sdhi" style="display:none;"></span><div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div><button class="sia" onclick="BP.csi()" style="margin-top:6px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button></div>
+  <!-- Seed info panel: now compact + anchored near the tapped seed.
+       Stephen 2026-04-30 LATE: stripped pin/flame metadata rows
+       entirely and dropped the hash. Just HOLD button + CANCEL. -->
+  <div id="sdi">
+    <span id="sdl" style="display:none;"></span><span id="sdc" style="display:none;"></span><span id="sdh" style="display:none;"></span><span id="sdhi" style="display:none;"></span>
+    <div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div>
+    <button class="sia" onclick="BP.csi()" style="margin-top:6px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button>
+  </div>
   <!-- Harvest Reveal Overlay -->
   <div id="reveal-overlay"><div class="reveal-count" id="rev-count"></div><div class="reveal-card" id="rev-card"><div class="reveal-inner"><div class="reveal-front"></div><div class="reveal-back"><div class="reveal-glow" id="rev-glow"></div><div class="reveal-svg" id="rev-svg"></div><div class="reveal-name" id="rev-name"></div><div class="reveal-grade" id="rev-grade"></div><div class="reveal-haiku" id="rev-haiku"></div></div></div></div><div class="reveal-tap" id="rev-tap">tap to reveal</div></div>
   <!-- Drop FAB -->
@@ -65149,8 +65156,35 @@ function tp(i){if(i>=st.plants.length)return;_sp=i;csi();var p=st.plants[i];var 
   document.getElementById('pic').classList.add('show');
 }
 function ts(i){if(i>=st.seeds.length)return;_ss=i;cpi();var s=st.seeds[i];hap();
-  document.getElementById('sdl').textContent=s.loc;document.getElementById('sdc').textContent=s.clim;
-  document.getElementById('sdh').textContent=s.hash.substring(0,12)+'...';document.getElementById('sdi').classList.add('show');}
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE: reposition
+  // #sdi to sit RIGHT under the tapped seed instead of pinned to the
+  // bottom of the screen. Compute the seed tile's bounding rect and
+  // anchor the panel just below it (or above if there's no room below).
+  var sdi=document.getElementById('sdi');
+  if(sdi){
+    var tile=null;
+    try{
+      var bps=document.getElementById('bps');
+      if(bps){var tiles=bps.querySelectorAll('.ss');if(tiles&&tiles[i])tile=tiles[i];}
+    }catch(e){}
+    if(tile){
+      try{
+        var r=tile.getBoundingClientRect();
+        var vh=window.innerHeight||800;
+        var sdiH=180; // approx panel height
+        var roomBelow=vh-r.bottom;
+        var top;
+        if(roomBelow>=sdiH+12){top=r.bottom+8;} else {top=Math.max(8,r.top-sdiH-8);}
+        sdi.style.position='fixed';
+        sdi.style.left='50%';
+        sdi.style.top=top+'px';
+        sdi.style.bottom='auto';
+        sdi.style.transform='translateX(-50%) translateY(0)';
+      }catch(e){}
+    }
+    sdi.classList.add('show');
+  }
+}
 function s2n(){if(_ss===null)return;var seed=st.seeds[_ss];st.seeds.splice(_ss,1);csi();render();hap();
 // Fire event so the nursery listener picks it up
 if(seed){window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:seed}));}
@@ -67527,7 +67561,7 @@ function _step8(){
   _setStep(8);
   try{document.body.classList.add('lw-tut-carousel-freeze');}catch(e){}
   _dialog(
-    'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant. <span style="color:var(--gold);">Quintillions</span> of combinations are possible.',
+    'These are the <span style="color:var(--gold);">genetic layers</span> shaping your plant. <span style="color:var(--gold);">Literal Quintillions</span> of combinations are possible.',
     'NEXT',function(){_clear();setTimeout(_step9,300);},'bottom');
 }
 
@@ -69387,13 +69421,19 @@ function _step44(){
   try{_startState=localStorage.getItem('sws_nursery')||'[]';}catch(e){}
   var _startGh='';
   try{_startGh=localStorage.getItem('sws_greenhouse')||'[]';}catch(e){}
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE: the
+  // _spotlight box was misaligned around the WATER button (variable
+  // nursery layouts). Switched to a one-time pulse on the button itself.
+  // The CONTINUE fallback already exists, so missing the pulse is fine.
   var waterBtn=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
             || document.querySelector('.nur-btn.water');
-  if(waterBtn){try{_spotlight&&_spotlight(waterBtn);}catch(e){}}
+  if(waterBtn){try{waterBtn.classList.add('lw-pulse-hint');}catch(e){}}
   _dialog(
     'Tap <span style="color:var(--gold);">WATER</span> on your seed.',
-    'CONTINUE',function(){_clear();setTimeout(_step45,400);},'top');
-  // (tutorial: button kept for manual advance — audit Apr 22)
+    'CONTINUE',function(){
+      try{var wb2=document.querySelector('.nur-btn.water.lw-pulse-hint');if(wb2)wb2.classList.remove('lw-pulse-hint');}catch(e){}
+      _clear();setTimeout(_step45,400);
+    },'top');
   var polls=0;
   var watch=function(){
     if(_getStep()!==44)return;
@@ -69402,16 +69442,15 @@ function _step44(){
     var nowGh='';
     try{nowGh=localStorage.getItem('sws_greenhouse')||'[]';}catch(e){}
     if(nowState!==_startState||nowGh!==_startGh){
+      try{var wb3=document.querySelector('.nur-btn.water.lw-pulse-hint');if(wb3)wb3.classList.remove('lw-pulse-hint');}catch(e){}
       _clear();
       setTimeout(_step45,600);
       return;
     }
-    // Re-spotlight the button in case the seed card re-rendered.
-    if(!_spot){
-      var wb=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
-          || document.querySelector('.nur-btn.water');
-      if(wb){try{_spotlight&&_spotlight(wb);}catch(e){}}
-    }
+    // Re-attach the pulse if the seed card re-rendered and stripped it.
+    var wb=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
+        || document.querySelector('.nur-btn.water');
+    if(wb && !wb.classList.contains('lw-pulse-hint')){try{wb.classList.add('lw-pulse-hint');}catch(e){}}
     if(polls<1200){polls++;setTimeout(watch,500);}
   };
   watch();
@@ -69431,20 +69470,18 @@ function _step45(){
 function _step46(){
   _setStep(46);
   _clear();
-  // Spotlight + pulse the WHOLE keeper bar so the player sees the
-  // full UI region that opens the profile. Stephen Apr 22: "can we
-  // make the keeper bar glow when it says keepers walk one of five
-  // paths just to better guide them."
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE:
+  // spotlighting the WHOLE keeper bar made the target ambiguous —
+  // wasn't clear it was the NAME that needed tapping. Now pulse JUST
+  // the .kb-name element so it visibly throbs while the rest of the
+  // bar stays calm. Avatar tap still works as a secondary affordance.
   var bar = document.getElementById('pw-keeper-bar');
   var avEl = document.querySelector('#pw-keeper-bar .kb-avatar');
   var nmEl = document.querySelector('#pw-keeper-bar .kb-name');
-  if(bar){
-    try{_spotlight&&_spotlight(bar);}catch(e){}
-    try{if(window._lwPulseHint)window._lwPulseHint(bar,60000,'lw_tut_kb_pulse');}catch(e){}
+  if(nmEl){
+    try{nmEl.classList.add('lw-pulse-hint');}catch(e){}
   }
-  // Unlock taps on the tap-triggers AFTER _spotlight so the !important
-  // flag sticks (spotlight sets pointer-events='auto' without
-  // !important, which would clear our priority on subsequent writes).
+  // Unlock taps on the tap-triggers so they're actually clickable.
   try{
     if(avEl){avEl.style.setProperty('pointer-events','auto','important');avEl.style.setProperty('opacity','1','important');}
     if(nmEl){nmEl.style.setProperty('pointer-events','auto','important');nmEl.style.setProperty('opacity','1','important');}
@@ -69454,10 +69491,14 @@ function _step46(){
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
   var polls=0;
+  var _step46Cleanup=function(){
+    try{var n=document.querySelector('#pw-keeper-bar .kb-name');if(n)n.classList.remove('lw-pulse-hint');}catch(e){}
+  };
   var watch=function(){
     if(_getStep()!==46)return;
     var cs=document.getElementById('pw-character');
     if(cs&&cs.classList.contains('open')){
+      _step46Cleanup();
       _clear();
       setTimeout(_step47,500);
       return;
@@ -69465,12 +69506,8 @@ function _step46(){
     if(polls<1200){polls++;setTimeout(watch,500);}
   };
   watch();
-  // Belt-and-suspenders: 90s fallback so the player never silently hangs
-  // on the keeper bar if the spotlight or tap zone misbehaves. _step47
-  // re-opens the class manager itself, so jumping there is safe even if
-  // the character sheet never opened.
   setTimeout(function(){
-    if(_getStep()===46){_clear();setTimeout(_step47,400);}
+    if(_getStep()===46){_step46Cleanup();_clear();setTimeout(_step47,400);}
   },90000);
 }
 
@@ -69519,9 +69556,20 @@ function _step47(){
 function _step47b(){
   _setStep(47);
   _clear();
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE: there was
+  // a race — _startSpent was captured AFTER _lwOpenClassManager() and a
+  // 500ms wait, so a player who tapped + immediately had their spend
+  // baked into the baseline and the watch waited forever for ANOTHER
+  // spend (then auto-advanced via the 60s fallback, feeling broken).
+  // Capture baseline BEFORE opening the manager. Poll faster (250ms),
+  // shorter fallback (25s).
+  var _startSpent=0;
+  try{
+    var _pts0=(window._LW_treePoints&&window._LW_treePoints())||{};
+    for(var _k0 in _pts0){if(_pts0.hasOwnProperty(_k0))_startSpent += _pts0[_k0]||0;}
+  }catch(e){}
   // Re-assert Class Manager in case the pick-confirm flow left us in a
-  // transitional state. Re-render so the just-picked class shows the
-  // tree allocator at the top with + buttons enabled.
+  // transitional state.
   try{if(window._lwOpenClassManager)window._lwOpenClassManager();}catch(e){}
   setTimeout(function(){
     if(_getStep()!==47)return;
@@ -69530,11 +69578,6 @@ function _step47b(){
       'Tap a <span style="color:var(--sage);">+</span> next to any node above to feel how it works.',
       '',null,'top');
     if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
-    var _startSpent=0;
-    try{
-      var _pts=(window._LW_treePoints&&window._LW_treePoints())||{};
-      for(var _k in _pts){if(_pts.hasOwnProperty(_k))_startSpent += _pts[_k]||0;}
-    }catch(e){}
     var polls=0;
     var watch=function(){
       if(_getStep()!==47)return;
@@ -69548,14 +69591,14 @@ function _step47b(){
         setTimeout(_step48,800);
         return;
       }
-      if(polls<1200){polls++;setTimeout(watch,500);}
+      if(polls<240){polls++;setTimeout(watch,250);}
     };
     watch();
-    // 60s fallback — tree-point spend is exploratory, not critical. Move
-    // on if the player doesn't engage so they can see steps 48-50.
+    // 25s fallback — tree-point spend is exploratory, not critical. If
+    // detection misses, don't make the player wait.
     setTimeout(function(){
       if(_getStep()===47){_clear();setTimeout(_step48,400);}
-    },60000);
+    },25000);
   },500);
 }
 
@@ -69589,34 +69632,35 @@ function _step48(){
 }
 
 // ═══ STEP 49: invite friends + send gifts ═══
-// Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE: prompt at 'bottom'
-// anchor was overlapping the friend button (centered in viewport after
-// scrollIntoView), so the player never saw what to tap before the NEXT
-// button advanced past it. Now anchored 'top', prompt sits above the
-// scrolled-to button. Also pulse the button so the target is unmistakable.
+// Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE LATE: previous
+// pass spotlighted #cs-friends-list which renders greyed out + muted
+// when the player has no friends yet. The actual actionable element is
+// the painted INVITE button in the character-sheet bottom row. Target
+// THAT first; pulse it; fall back to the friends list only if missing.
 function _step49(){
   _setStep(49);
   _clear();
   var scrollAndSpotlight=function(){
-    var friends=document.getElementById('cs-friends-list');
-    var target=friends
+    // Prioritize the painted INVITE button (real action), not the muted
+    // friends list (cosmetic / empty state).
+    var target=document.querySelector('#pw-character button[onclick*="_lwOpenInviteModal"]')
             || document.querySelector('#pw-character button[onclick*="Invite"]')
-            || document.querySelector('#pw-character button[onclick*="_lwOpenInviteModal"]');
+            || document.getElementById('cs-friends-list');
     if(target){
       try{target.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
       setTimeout(function(){
-        try{_spotlight&&_spotlight(target);}catch(e){}
         try{target.classList.add('lw-pulse-hint');}catch(e){}
+        // Force-show the target in case any !important style dims it.
+        try{target.style.setProperty('opacity','1','important');}catch(e){}
       },400);
     }
   };
   scrollAndSpotlight();
   _dialog(
-    'Scroll down in your profile to <span style="color:var(--gold);">invite friends</span> and send gifts. Tending together makes the garden stronger.',
+    'Scroll down in your profile and tap <span style="color:var(--gold);">INVITE</span> to share Lucid Winds with friends. Tending together makes the garden stronger.',
     'NEXT',function(){
-      // Drop the pulse before advancing.
       try{
-        var t=document.getElementById('cs-friends-list')||document.querySelector('#pw-character button[onclick*="Invite"]')||document.querySelector('#pw-character button[onclick*="_lwOpenInviteModal"]');
+        var t=document.querySelector('#pw-character button[onclick*="_lwOpenInviteModal"]')||document.querySelector('#pw-character button[onclick*="Invite"]')||document.getElementById('cs-friends-list');
         if(t)t.classList.remove('lw-pulse-hint');
       }catch(e){}
       _clear();setTimeout(_step50,400);
