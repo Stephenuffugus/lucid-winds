@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.11';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39026,6 +39026,58 @@ document.addEventListener('keydown', function(e) {
     // Stamp today's date so the daily-login purity-streak heartbeat knows
     // the player composted today; resets days_no_compost to 0 tomorrow.
     try { localStorage.setItem('lw_compost_today', new Date().toISOString().slice(0,10)); } catch(e){}
+
+    // Unequip-on-compost guard. If the composted plant carried the
+    // currently-equipped companion AND no other plant in the greenhouse
+    // also carries that companion, the companion has nothing to ride on
+    // and must be unequipped. Without this, the companion stays "equipped"
+    // as a zombie with the bond timer still ticking. Stephen audit
+    // 2026-05-01 #2. Same check for slot 2 (Near Horizon).
+    try {
+      var _compIdx = (typeof t.companion === 'number') ? t.companion : -1;
+      if (_compIdx >= 0) {
+        // Scan remaining greenhouse for any other plant with same companion.
+        var _stillCarried = false;
+        for (var _cci = 0; _cci < gh.length; _cci++) {
+          try {
+            var _ct = window.hashToTraits(gh[_cci].hash);
+            if (_ct && _ct.companion === _compIdx) { _stillCarried = true; break; }
+          } catch(e){}
+        }
+        if (!_stillCarried) {
+          var _unequippedNames = [];
+          // Slot 1
+          try {
+            var _a1 = JSON.parse(localStorage.getItem('pw_active_companion') || 'null');
+            if (_a1 && _a1.idx === _compIdx) {
+              _unequippedNames.push(_a1.name || 'Companion');
+              localStorage.removeItem('pw_active_companion');
+              localStorage.removeItem('lw_companion_active_idx');
+              if (window.LW_COMPANION && window.LW_COMPANION.pauseActive) window.LW_COMPANION.pauseActive();
+            }
+          } catch(e){}
+          // Slot 2 (Near Horizon)
+          try {
+            var _a2 = JSON.parse(localStorage.getItem('pw_active_companion_2') || 'null');
+            if (_a2 && _a2.idx === _compIdx) {
+              if (_unequippedNames.indexOf(_a2.name || 'Companion') < 0) {
+                _unequippedNames.push(_a2.name || 'Companion');
+              }
+              localStorage.removeItem('pw_active_companion_2');
+              localStorage.removeItem('lw_companion_active_idx_2');
+              if (window.LW_COMPANION && window.LW_COMPANION.pauseActive2) window.LW_COMPANION.pauseActive2();
+            }
+          } catch(e){}
+          if (_unequippedNames.length && window._toast) {
+            window._toast(_unequippedNames[0] + ' has nothing to ride on. Set aside.');
+          }
+          // Refresh character sheet companion card if open.
+          try { if (window.PW_UI && window.PW_UI.refreshActiveCompanion) window.PW_UI.refreshActiveCompanion(); } catch(e){}
+          // Push to cloud — the unequip is a real state change.
+          try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
+        }
+      }
+    } catch(e){}
 
     // UX feedback
     _haptic('error'); // short sharp — deliberate destructive action confirmation
