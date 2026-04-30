@@ -325,7 +325,7 @@ hb(18) === 0xFF  → The Beholder       (idx 38)   COSMIC-tier      0.39%
 hb(18) >= 0xFE   → Garden Spider      (idx 37)   LEGENDARY-tier   0.39%
 hb(18) >= 0xFC   → Great Blue Heron   (idx 36)   LEGENDARY-tier   0.78%
 hb(18) >= 0xF8   → Raccoon            (idx 35)   LEGENDARY-tier   1.56%
-hb(18) >= 0xF4   → Woolly Mammoth     (idx 34)   LEGENDARY-tier   1.56%
+hb(18) >= 0xF4   → Baby Mammoth       (idx 34)   LEGENDARY-tier   1.56%
 hb(18) >= 0xE0   → The Cicada         (idx 33)   MYTHIC-tier      7.81%
 hb(18) >= 0xD0   → The Toad           (idx 32)   MYTHIC-tier      6.25%
 else              → hb(21) % 82                  ~41% base creature rate
@@ -335,7 +335,7 @@ Dead names / retired creatures (never reference these in new UI):
 - Starfall, Storm Wraith, Ancient Rune Field, Bioluminescent Pulse → these became AURAS, not companions
 - The Capybara → never existed
 - Phoenix → retired 2026-04-14, Cicada took its slot
-- Baby Mammoth → renamed to Woolly Mammoth
+- (Mammoth idx 34 is Baby Mammoth — Stephen ruling 2026-04-30; older notes that said "Woolly Mammoth" are incorrect)
 
 ---
 
