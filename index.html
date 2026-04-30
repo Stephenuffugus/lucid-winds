@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.77';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.78';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -80845,16 +80845,22 @@ window.LW_debug.cleanGhostDrops = function(){
         var pt = theme.prompts[pi];
         var ev = _evalPrompt(pt, s);
         var done = !!(s.promptsDone && s.promptsDone[pt.id]);
-        var typeIcon = pt.type === 'witness' ? '<span class="lwe lwe-sparkle"></span>' : '<span class="lwe lwe-globe"></span>';
+        // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE: type
+        // icons used .lwe em-sized (1.1em) on a 0.4rem font label parent
+        // — rendered at ~7px on mobile. Pulled out to explicit 28px
+        // painted images so they actually read.
+        var typeIcon = pt.type === 'witness'
+          ? '<img src="assets/fx/compost-spark.png" alt="" style="width:28px;height:28px;object-fit:contain;flex-shrink:0;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=&apos;✨&apos;;">'
+          : '<img src="assets/fx/leaf-gold.png" alt="" style="width:28px;height:28px;object-fit:contain;flex-shrink:0;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=&apos;🌍&apos;;">';
         var typeLabel = pt.type === 'witness' ? 'WITNESS' : 'VISIT';
         var typeColor = pt.type === 'witness' ? 'rgba(200,168,75,0.7)' : 'rgba(122,179,86,0.7)';
         var bg = done ? 'rgba(122,179,86,0.10)' : 'rgba(13,16,12,0.55)';
         var border = done ? 'rgba(122,179,86,0.45)' : (pt.type === 'witness' ? 'rgba(200,168,75,0.18)' : 'rgba(122,179,86,0.18)');
         var pct = ev.target > 1 ? Math.min(100, Math.round((ev.progress / ev.target) * 100)) : (ev.complete ? 100 : 0);
-        h += '<div style="padding:0.5rem 0.65rem;background:'+bg+';border:1px solid '+border+';border-radius:8px;">';
-        h += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:3px;">';
+        h += '<div style="padding:0.6rem 0.75rem;background:'+bg+';border:1px solid '+border+';border-radius:8px;">';
+        h += '<div style="display:flex;align-items:center;gap:0.55rem;margin-bottom:5px;">';
         h += typeIcon;
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.4rem;color:'+typeColor+';letter-spacing:0.14em;">'+typeLabel+'</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+typeColor+';letter-spacing:0.14em;">'+typeLabel+'</div>';
         if (done) {
           h += '<div style="margin-left:auto;font-family:Bebas Neue,sans-serif;font-size:0.5rem;color:var(--sage);letter-spacing:0.1em;">DONE</div>';
         } else if (ev.target > 1) {
@@ -83489,13 +83495,18 @@ function _bosQuestsContent(opts) {
   h += '<div style="margin-bottom:0.5rem;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.4rem;"><span class="lwe lwe-trophy-cup"></span> ACHIEVEMENTS</div>';
   // Search input
-  h += '<input type="text" id="bos-quest-search" placeholder="Search achievements..." value="' + questSearch.replace(/"/g, '&quot;') + '" oninput="window._bosQuestSearch=this.value;clearTimeout(window._bosQuestSearchT);window._bosQuestSearchT=setTimeout(function(){window._bosSetTab&&_bosSetTab(\'quests\');var el=document.getElementById(\'bos-quest-search\');if(el){el.focus();var v=el.value;el.value=\'\';el.value=v;}},250);" style="width:100%;padding:6px 9px;background:rgba(18,22,16,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:5px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.5rem;outline:none;box-sizing:border-box;margin-bottom:5px;" />';
+  // Stephen 2026-04-30 LATE LATE LATE LATE LATE LATE LATE: chips/search
+  // hardcoded `_bosSetTab('quests')` even when this rendering ran inside
+  // the Achievements tab — every filter tap kicked the player back to
+  // Quests. Resolve dynamically: route to whatever tab is currently open
+  // (window._bosTab), falling back to 'quests' for the QUESTS tab path.
+  h += '<input type="text" id="bos-quest-search" placeholder="Search achievements..." value="' + questSearch.replace(/"/g, '&quot;') + '" oninput="window._bosQuestSearch=this.value;clearTimeout(window._bosQuestSearchT);window._bosQuestSearchT=setTimeout(function(){window._bosSetTab&&_bosSetTab(window._bosTab||\'quests\');var el=document.getElementById(\'bos-quest-search\');if(el){el.focus();var v=el.value;el.value=\'\';el.value=v;}},250);" style="width:100%;padding:6px 9px;background:rgba(18,22,16,0.7);border:1px solid rgba(200,168,75,0.25);border-radius:5px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.5rem;outline:none;box-sizing:border-box;margin-bottom:5px;" />';
   // Status chips (done/undone)
   var statusChips = [{k:'all',label:'ALL'},{k:'undone',label:'UNDONE'},{k:'done',label:'DONE'}];
   h += '<div style="display:flex;gap:4px;margin-bottom:5px;">';
   for (var sci = 0; sci < statusChips.length; sci++) {
     var skey = statusChips[sci].k, sact = activeStatus === skey;
-    h += '<button onclick="window._bosQuestStatus=\'' + skey + '\';if(window._bosSetTab)_bosSetTab(\'quests\');" style="flex:1;font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.06em;padding:4px 6px;border-radius:4px;cursor:pointer;border:1px solid ' + (sact?'var(--sage)':'rgba(122,179,86,0.2)') + ';background:' + (sact?'rgba(122,179,86,0.15)':'rgba(18,22,16,0.5)') + ';color:' + (sact?'var(--sage)':'var(--muted)') + ';">' + statusChips[sci].label + '</button>';
+    h += '<button onclick="window._bosQuestStatus=\'' + skey + '\';if(window._bosSetTab)_bosSetTab(window._bosTab||\'quests\');" style="flex:1;font-family:Bebas Neue,sans-serif;font-size:0.45rem;letter-spacing:0.06em;padding:4px 6px;border-radius:4px;cursor:pointer;border:1px solid ' + (sact?'var(--sage)':'rgba(122,179,86,0.2)') + ';background:' + (sact?'rgba(122,179,86,0.15)':'rgba(18,22,16,0.5)') + ';color:' + (sact?'var(--sage)':'var(--muted)') + ';">' + statusChips[sci].label + '</button>';
   }
   h += '</div>';
   // Tier filter chips
@@ -83505,7 +83516,7 @@ function _bosQuestsContent(opts) {
   for (var ti = 0; ti < tiers.length; ti++) {
     var tk = tiers[ti];
     var act = activeFilter === tk;
-    h += '<button onclick="window._bosQuestFilter=\'' + tk + '\';if(window._bosSetTab)_bosSetTab(\'quests\');" style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.06em;padding:4px 9px;border-radius:6px;cursor:pointer;border:1px solid ' + tierColors2[tk] + (act ? '' : '44') + ';background:' + (act ? tierColors2[tk] + '22' : 'rgba(18,22,16,0.5)') + ';color:' + tierColors2[tk] + ';">' + tk.toUpperCase() + '</button>';
+    h += '<button onclick="window._bosQuestFilter=\'' + tk + '\';if(window._bosSetTab)_bosSetTab(window._bosTab||\'quests\');" style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.06em;padding:4px 9px;border-radius:6px;cursor:pointer;border:1px solid ' + tierColors2[tk] + (act ? '' : '44') + ';background:' + (act ? tierColors2[tk] + '22' : 'rgba(18,22,16,0.5)') + ';color:' + tierColors2[tk] + ';">' + tk.toUpperCase() + '</button>';
   }
   h += '</div>';
   // Filtered list
