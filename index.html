@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.21';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -46449,24 +46449,34 @@ function _wildClimateTick(weather) {
       var over = weather.temp - t.heatMax;
       var dH = Math.min(30, Math.ceil(over) * 9);
       // Scorpion (idx 48) Heatproof signature — desert specialist.
-      // Halves heat damage on this plant. Closes the heat vector.
-      if (t.companion === 48) dH = Math.round(dH * 0.5);
+      // Cicada (idx 33) Sun-singer — sings loudest in summer heat;
+      // its herd-immunity ability already implies thermal tolerance.
+      // Both halve heat damage on this plant. Stephen audit
+      // 2026-05-01 #14 wired Cicada — was parked since April.
+      if (t.companion === 48 || t.companion === 33) dH = Math.round(dH * 0.5);
       breaches.push({ kind: 'heat', diff: Math.round(over * 10) / 10, hours: dH });
       damageH += dH;
     }
     if (weather.temp < t.coldMin) {
       var under = t.coldMin - weather.temp;
       var dC = Math.min(30, Math.ceil(under) * 9);
+      // Baby Mammoth (idx 34) Permafrost signature — woolly fur,
+      // Ice Age survivor. Halves cold damage on this plant. Closes
+      // the cold vector (was the only unprotected vector).
+      // Stephen audit 2026-05-01 #14 wired Mammoth — was parked since April.
+      if (t.companion === 34) dC = Math.round(dC * 0.5);
       breaches.push({ kind: 'cold', diff: Math.round(under * 10) / 10, hours: dC });
       damageH += dC;
     }
     if (typeof t.floodMm === 'number' && weather.rain > t.floodMm) {
       var extraMm = weather.rain - t.floodMm;
       var dF = Math.min(30, Math.ceil(extraMm) * 6);
-      // Koi Fish (idx 71) Flood Born signature — thrives in water.
-      // Halves flood damage. Closes the 5/5 climate-vector loop
-      // (alongside Mammoth/Worm/Pangolin/Scorpion).
-      if (t.companion === 71) dF = Math.round(dF * 0.5);
+      // Koi Fish (idx 71) Flood Born — thrives in water.
+      // Toad (idx 32) Rain-caller — amphibian, needs the rain.
+      // Great Blue Heron (idx 36) wading bird — flood is its element.
+      // All three halve flood damage. Stephen audit 2026-05-01 #14
+      // wired Toad + Heron — were parked since April.
+      if (t.companion === 71 || t.companion === 32 || t.companion === 36) dF = Math.round(dF * 0.5);
       breaches.push({ kind: 'flood', diff: Math.round(extraMm * 10) / 10, hours: dF });
       damageH += dF;
     }

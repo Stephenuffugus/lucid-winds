@@ -570,8 +570,15 @@ Open-Meteo (no API key), 1h cache. Silent fallback: temp=20, rain=0, wind=0 on f
 ### Stress visibility
 `#wtp-climate` in trait panel (line 39179). Shows icon + label + damage hours. 26h visibility window. Colors: ≥18h red, ≥8h gold, else muted.
 
-### Companion protection — PARKED
-No companion ability reduces climate damage. Future mapping: Toad→flood, Cicada→heat, Heron→flood, Mammoth→cold.
+### Companion protection (SHIPPED 2026-05-01, audit #14)
+Single-vector ×0.5 climate damage halve, applied per-plant by companion idx:
+- **Heat**: Scorpion (48), Cicada (33)
+- **Cold**: Baby Mammoth (34)
+- **Flood**: Koi (71), Toad (32), Great Blue Heron (36)
+- **Wind**: Pangolin (43)
+- **Drought**: Worm (52)
+
+A plant has one companion, so halving applies once per plant per relevant vector. Stacks multiplicatively with chimera gen 2+ (×0.5) and Tardigrade Cryptobiosis (×0.5 across all vectors when LW_KEEPER equipped). Hardy keyword still rolls a 50% weekly dodge on top.
 
 ---
 
