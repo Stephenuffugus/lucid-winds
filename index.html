@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.68';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.69';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6256,7 +6256,7 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
   })();
   </script>
   <!-- ═══ OFFLINE WARNING BANNER ═══ -->
-  <div id="lw-offline-banner"><span>Offline &#8212; progress saves locally only</span><button class="lw-ob-x" onclick="document.getElementById('lw-offline-banner').style.display='none';">&times;</button></div>
+  <div id="lw-offline-banner"><span>Offline &#8212; progress saves locally only</span><button class="lw-ob-x" onclick="document.getElementById('lw-offline-banner').style.display='none';try{sessionStorage.setItem('lw_offline_dismissed','1');localStorage.setItem('lw_offline_dismissed_until',String(Date.now()+86400000));}catch(e){}">&times;</button></div>
 
   <!-- ═══ FLUX TAB BACKGROUNDS (set-38) ═══ -->
   <!-- Tier 3 perf: only the initially active tab's bg is set inline; others
@@ -6339,10 +6339,19 @@ window._addSwitchTabHook = function(fn){
     var b = document.getElementById('lw-offline-banner');
     if (b) b.style.display = 'none';
   };
-  // After page loads, check if Firebase SDK loaded at all
+  // After page loads, check if Firebase SDK loaded at all. Stephen test
+  // 2026-04-30: incognito blocks Firebase init, banner re-fired on every
+  // refresh and felt constant. Suppress if dismissed this session OR
+  // dismissed within the last 24h (persists outside incognito only —
+  // sessionStorage covers the in-tab case).
   window.addEventListener('load', function() {
     setTimeout(function() {
       if (!window.firebase || !window.firebase.auth) {
+        try {
+          if (sessionStorage.getItem('lw_offline_dismissed') === '1') return;
+          var until = parseInt(localStorage.getItem('lw_offline_dismissed_until') || '0', 10);
+          if (until && Date.now() < until) return;
+        } catch(e){}
         window._showOfflineBanner();
       }
     }, 4000);
@@ -35939,11 +35948,10 @@ document.addEventListener('keydown', function(e) {
         // perfLite: simplified card — skip EA knots/synergies but keep breed status
         // (it's a single text node, the cost is trivial)
         var _breedTxt = (function(){var _gbs=window.FG_Data&&FG_Data.getBreedStatus?FG_Data.getBreedStatus(plant):null;if(!_gbs)return '';if(_gbs.reason==='IMMATURE')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(120,190,230,0.95);margin-top:2px;letter-spacing:0.04em;"><img src="assets/fx/bloom-sprout.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf31&apos;;"> '+_gbs.daysLeft+'d to mature</div>';if(_gbs.reason==='COOLDOWN')return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(220,184,90,0.95);margin-top:2px;letter-spacing:0.04em;">\u23f3 '+_gbs.cooldownDays+'d cooldown</div>';if(_gbs.canBreed)return'<div style="font-family:DM Mono,monospace;font-size:0.5rem;font-weight:600;color:rgba(140,200,100,1);margin-top:2px;letter-spacing:0.04em;text-shadow:0 0 4px rgba(122,179,86,0.35);">\u26a1 Ready to breed</div>';return'';})();
-        // Wild-born badge — corner chip for plants hatched from a
-        // foraged feral seed (origin:'feral' + wildBorn:true stamped
-        // at _executeBloom). Distinguishes field-caught plants from
-        // bred ones at a glance.
-        var _wildBadge = plant.wildBorn ? '<div style="position:absolute;top:4px;left:4px;z-index:3;font-family:Bebas Neue,sans-serif;font-size:0.4rem;letter-spacing:0.08em;color:var(--sage);background:rgba(13,16,12,0.85);border:1px solid rgba(122,179,86,0.5);border-radius:6px;padding:2px 5px;text-shadow:0 1px 2px rgba(0,0,0,0.7);pointer-events:none;"><img src="assets/fx/leaf-gold.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> WILD</div>' : '';
+        // Wild-born badge retired 2026-04-30 LATE LATE LATE LATE per
+        // Stephen — UI clutter on greenhouse cards. Lineage origin is
+        // still available on the back of the card (DNA ledger).
+        var _wildBadge = '';
         if (window._perfLite) {
           el.innerHTML = _wildBadge + plantSvg +
             '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
@@ -74124,23 +74132,37 @@ window._bosGetTabUnread = function(tab) {
       for (var ir = 0; ir < allR.length; ir++) { if (allR[ir].ts > lastRead) cr++; }
       return cr;
     }
-    // QUESTS — count uncompleted daily picks (so the badge shows
-    // "you have N undone today"). Players see the number drop as they
-    // complete dailies; clears to 0 once all 3 are done.
+    // QUESTS — count uncompleted daily picks AND completed-but-unclaimed
+    // dailies/weeklies (Stephen 2026-04-30: manual claim means players
+    // need a visible nudge that they have rewards waiting). Drops to 0
+    // only when all are done AND all are claimed.
     if (tab === 'quests') {
       try {
-        var undone = 0;
+        var pending = 0;
         if (window.LW_ACH) {
           var ds = window.LW_ACH.dailies();
           if (ds && ds.picks) {
             var doneSet = {};
             if (ds.done) for (var dq = 0; dq < ds.done.length; dq++) doneSet[ds.done[dq]] = 1;
-            for (var pq = 0; pq < ds.picks.length; pq++) if (!doneSet[ds.picks[pq]]) undone++;
+            var claimedSet = {};
+            if (ds.claimed) for (var dc = 0; dc < ds.claimed.length; dc++) claimedSet[ds.claimed[dc]] = 1;
+            for (var pq = 0; pq < ds.picks.length; pq++) {
+              if (!doneSet[ds.picks[pq]]) pending++;
+              else if (!claimedSet[ds.picks[pq]]) pending++; // done, awaiting claim
+            }
+          }
+          var ws = window.LW_ACH.weeklies();
+          if (ws && ws.picks && ws.done) {
+            var wClaimedSet = {};
+            if (ws.claimed) for (var wc = 0; wc < ws.claimed.length; wc++) wClaimedSet[ws.claimed[wc]] = 1;
+            for (var pw = 0; pw < ws.done.length; pw++) {
+              if (!wClaimedSet[ws.done[pw]]) pending++;
+            }
           }
         }
         // Add bundles (was HERBARIUM) since they live in QUESTS now.
-        try { undone += window._bosGetTabUnread('herbarium') || 0; } catch(e){}
-        return undone;
+        try { pending += window._bosGetTabUnread('herbarium') || 0; } catch(e){}
+        return pending;
       } catch(e) { return 0; }
     }
     // CLASS — 1 if class unpicked and player is L7+ and never opened this tab
@@ -83234,18 +83256,22 @@ function _bosQuestsContent(opts) {
     color = color || 'rgba(122,179,86,0.7)';
     return '<div style="height:5px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;margin:4px 0 2px;"><div style="height:100%;width:' + pct + '%;background:' + color + ';transition:width 0.3s ease;"></div></div>';
   }
-  function _entryCard(entry, done, periodLabel) {
+  function _entryCard(entry, done, periodLabel, kind) {
     if (!entry) return '';
     var cur = ACH.get(entry.counter || '_no_counter') || 0;
     var tgt = entry.target || 1;
     var pct = done ? 100 : Math.min(100, Math.round((cur / tgt) * 100));
-    var bg = done ? 'rgba(122,179,86,0.10)' : 'rgba(18,22,16,0.6)';
-    var border = done ? 'rgba(122,179,86,0.5)' : 'rgba(122,179,86,0.18)';
-    var icon = done ? '✓' : '○';
-    var iconColor = done ? 'var(--sage)' : 'var(--muted)';
-    var nameColor = done ? 'var(--sage)' : 'var(--cream)';
-    var counterText = done ? 'Complete' : (cur + ' / ' + tgt);
-    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:0.55rem 0.7rem;margin-bottom:6px;">' +
+    var claimable = done && kind && ACH.isClaimed && !ACH.isClaimed(kind, entry.id);
+    var bg = claimable ? 'rgba(200,168,75,0.14)' : (done ? 'rgba(122,179,86,0.10)' : 'rgba(18,22,16,0.6)');
+    var border = claimable ? 'rgba(200,168,75,0.7)' : (done ? 'rgba(122,179,86,0.5)' : 'rgba(122,179,86,0.18)');
+    var icon = claimable ? '★' : (done ? '✓' : '○');
+    var iconColor = claimable ? 'var(--gold)' : (done ? 'var(--sage)' : 'var(--muted)');
+    var nameColor = claimable ? 'var(--gold)' : (done ? 'var(--sage)' : 'var(--cream)');
+    var counterText = done ? (claimable ? 'Ready to claim' : 'Claimed') : (cur + ' / ' + tgt);
+    var claimBtn = claimable
+      ? '<button onclick="if(window._lwClaimQuest)window._lwClaimQuest(\'' + kind + '\',\'' + entry.id + '\');" style="margin-top:6px;width:100%;min-height:48px;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;color:#0d100c;background:linear-gradient(180deg,#f5dc95,#c8a84b);border:1.5px solid rgba(200,168,75,0.85);border-radius:9px;cursor:pointer;box-shadow:0 0 14px rgba(200,168,75,0.4);">CLAIM REWARD</button>'
+      : '';
+    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:0.55rem 0.7rem;margin-bottom:6px;' + (claimable ? 'box-shadow:0 0 10px rgba(200,168,75,0.18);' : '') + '">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">' +
         '<div style="flex:1;min-width:0;">' +
           '<div style="font-family:Bebas Neue,sans-serif;font-size:0.82rem;letter-spacing:0.06em;color:' + nameColor + ';">' + _esc(entry.name) + _rewardChip(entry.reward) + '</div>' +
@@ -83253,37 +83279,44 @@ function _bosQuestsContent(opts) {
         '</div>' +
         '<div style="font-size:1.1rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
       '</div>' +
-      _progressBar(pct, done ? 'var(--sage)' : 'rgba(200,168,75,0.6)') +
+      _progressBar(pct, claimable ? 'var(--gold)' : (done ? 'var(--sage)' : 'rgba(200,168,75,0.6)')) +
       '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">' +
         '<span>' + counterText + '</span>' +
         (periodLabel ? '<span>' + periodLabel + '</span>' : '') +
       '</div>' +
+      claimBtn +
     '</div>';
   }
   function _achCard(entry) {
     var done = !!progress[entry.id];
+    var claimable = done && ACH.isClaimed && !ACH.isClaimed('ach', entry.id);
     var cur = ACH.get(entry.counter || '_no_counter') || 0;
     var tgt = entry.target || 1;
     var pct = done ? 100 : Math.min(100, Math.round((cur / tgt) * 100));
     var tierColors = { bronze:'#a87236', silver:'#a8a8a8', gold:'#c8a84b', platinum:'#7eb8d4', mythic:'#a87285' };
     var tierColor = tierColors[entry.tier] || tierColors.bronze;
-    var bg = done ? 'rgba(122,179,86,0.10)' : 'rgba(18,22,16,0.55)';
-    var border = done ? 'rgba(122,179,86,0.5)' : tierColor + '44';
+    var bg = claimable ? 'rgba(200,168,75,0.14)' : (done ? 'rgba(122,179,86,0.10)' : 'rgba(18,22,16,0.55)');
+    var border = claimable ? 'rgba(200,168,75,0.7)' : (done ? 'rgba(122,179,86,0.5)' : tierColor + '44');
     var hidden = entry.hidden && !done;
     var displayName = hidden ? '???' : entry.name;
     var displayDesc = hidden ? 'A secret achievement waits to be discovered.' : (entry.desc || '');
-    var icon = done ? '✓' : (hidden ? '?' : '○');
-    var iconColor = done ? 'var(--sage)' : 'var(--muted)';
-    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-left:3px solid ' + tierColor + ';border-radius:6px;padding:0.45rem 0.65rem;margin-bottom:5px;">' +
+    var icon = claimable ? '★' : (done ? '✓' : (hidden ? '?' : '○'));
+    var iconColor = claimable ? 'var(--gold)' : (done ? 'var(--sage)' : 'var(--muted)');
+    var statusText = claimable ? 'Ready to claim' : (done ? 'Claimed' : (cur + ' / ' + tgt));
+    var claimBtn = claimable
+      ? '<button onclick="if(window._lwClaimQuest)window._lwClaimQuest(\'ach\',\'' + entry.id + '\');" style="margin-top:5px;width:100%;min-height:44px;font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;color:#0d100c;background:linear-gradient(180deg,#f5dc95,#c8a84b);border:1.5px solid rgba(200,168,75,0.85);border-radius:8px;cursor:pointer;box-shadow:0 0 12px rgba(200,168,75,0.35);">CLAIM</button>'
+      : '';
+    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-left:3px solid ' + tierColor + ';border-radius:6px;padding:0.45rem 0.65rem;margin-bottom:5px;' + (claimable ? 'box-shadow:0 0 10px rgba(200,168,75,0.18);' : '') + '">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.74rem;letter-spacing:0.06em;color:' + (done ? 'var(--sage)' : tierColor) + ';">' + _esc(displayName) + _rewardChip(entry.reward) + '</div>' +
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:0.74rem;letter-spacing:0.06em;color:' + (claimable ? 'var(--gold)' : (done ? 'var(--sage)' : tierColor)) + ';">' + _esc(displayName) + _rewardChip(entry.reward) + '</div>' +
           '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:3px;">' + _esc(displayDesc) + '</div>' +
         '</div>' +
         '<div style="font-size:1rem;color:' + iconColor + ';flex-shrink:0;">' + icon + '</div>' +
       '</div>' +
-      (hidden ? '' : _progressBar(pct, done ? 'var(--sage)' : tierColor)) +
-      (hidden ? '' : '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);">' + (done ? 'Complete' : (cur + ' / ' + tgt)) + '</div>') +
+      (hidden ? '' : _progressBar(pct, claimable ? 'var(--gold)' : (done ? 'var(--sage)' : tierColor))) +
+      (hidden ? '' : '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);">' + statusText + '</div>') +
+      claimBtn +
     '</div>';
   }
 
@@ -83323,7 +83356,7 @@ function _bosQuestsContent(opts) {
     } else {
       for (var di = 0; di < dailyState.picks.length; di++) {
         var de = _findById(dailyPool, dailyState.picks[di]);
-        if (de) h += _entryCard(de, _isDoneDaily(de.id), null);
+        if (de) h += _entryCard(de, _isDoneDaily(de.id), null, 'daily');
       }
     }
     h += '</div>';
@@ -83339,7 +83372,7 @@ function _bosQuestsContent(opts) {
     } else {
       for (var wi = 0; wi < weeklyState.picks.length; wi++) {
         var we = _findById(weeklyPool, weeklyState.picks[wi]);
-        if (we) h += _entryCard(we, _isDoneWeekly(we.id), null);
+        if (we) h += _entryCard(we, _isDoneWeekly(we.id), null, 'weekly');
       }
     }
     h += '</div>';
@@ -83477,6 +83510,34 @@ window._bosQuestsContent = _bosQuestsContent;
 // Section-specific renderers for the new dedicated tabs (Stephen 2026-04-27).
 window._bosAchievementsContent = function(){ return _bosQuestsContent({cadence:false, achievements:true, trophies:false, title:'ACHIEVEMENTS'}); };
 window._bosTrophiesContent     = function(){ return _bosQuestsContent({cadence:false, achievements:false, trophies:true, title:'TROPHY CABINET'}); };
+
+// Claim handler — called from the CLAIM button rendered on completed-but-
+// unclaimed quest/achievement cards. Stephen ruling 2026-04-30 LATE LATE
+// LATE LATE: standard gaming practice, manual reward collection.
+window._lwClaimQuest = function(kind, id){
+  if (!window.LW_ACH || !LW_ACH.claim) return;
+  var reward = LW_ACH.claim(kind, id);
+  if (!reward) return;
+  // Build a short reward summary for the toast.
+  var summary = '';
+  if (reward && typeof reward === 'object') {
+    if (reward.type === 'dew') summary = '+' + (reward.amt || 0) + ' Dew';
+    else if (reward.type === 'sunbeam') summary = '+' + Math.min(reward.amt || 0, 5) + ' Sunbeams';
+    else if (reward.type === 'pollen') summary = '+' + (reward.amt || 0) + ' XP';
+    else if (reward.type === 'box') summary = '+' + (reward.amt || 1) + ' Mystery Box';
+    else if (reward.type === 'trophy' || reward.type === 'lore') summary = (reward.name || 'Trophy');
+    else if (reward.type === 'title') summary = 'Title: ' + (reward.name || '');
+  }
+  if (window._toast) window._toast('★ Claimed' + (summary ? ' — ' + summary : ''));
+  try { if (window._haptic) window._haptic('ok'); } catch(e){}
+  // Re-render the open BoS so the card transitions Ready→Claimed without
+  // the player having to leave + re-enter the QUESTS tab. Same pattern
+  // used elsewhere in the BoS — call _bosSetTab on the current tab.
+  try {
+    if (window._bosSetTab && window._bosTab) window._bosSetTab(window._bosTab);
+    if (window._bosRefreshBadges) window._bosRefreshBadges();
+  } catch(e){}
+};
 
 // Trophy click-to-detail modal — fires when player taps an unlocked trophy
 // in the cabinet grid. Shows the per-trophy art at full detail with the

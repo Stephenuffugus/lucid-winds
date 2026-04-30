@@ -73,29 +73,29 @@
       try {
         var r = checkAll();
         if (!r) return;
-        // Daily completions
+        // Daily completions — toast directs player to QUESTS to claim.
         if (r.newDailyDone && r.newDailyDone.length) {
           for (var di = 0; di < r.newDailyDone.length; di++) {
             var de = null;
             for (var dj = 0; dj < DAILIES.length; dj++) if (DAILIES[dj].id === r.newDailyDone[di]) { de = DAILIES[dj]; break; }
-            if (de && window._toast) window._toast('☀️ Daily done: ' + de.name);
+            if (de && window._toast) window._toast('☀️ Daily complete: ' + de.name + ' — claim in QUESTS');
           }
         }
-        // Weekly completions
+        // Weekly completions — same pattern.
         if (r.newWeeklyDone && r.newWeeklyDone.length) {
           for (var wi = 0; wi < r.newWeeklyDone.length; wi++) {
             var we = null;
             for (var wj = 0; wj < WEEKLIES.length; wj++) if (WEEKLIES[wj].id === r.newWeeklyDone[wi]) { we = WEEKLIES[wj]; break; }
-            if (we && window._toast) window._toast('🌙 Weekly done: ' + we.name);
+            if (we && window._toast) window._toast('🌙 Weekly complete: ' + we.name + ' — claim in QUESTS');
           }
         }
-        // Lifetime achievements (these are bigger moments — slightly louder)
+        // Lifetime achievements — same pattern (bigger moment, but still claim-required).
         if (r.newAch && r.newAch.length) {
           for (var ai = 0; ai < r.newAch.length; ai++) {
             var ae = ACH_BY_ID[r.newAch[ai]];
             if (ae && window._toast) {
               var tierEmoji = { bronze:'🥉', silver:'🥈', gold:'🥇', platinum:'💎', mythic:'✨' }[ae.tier] || '🏆';
-              window._toast(tierEmoji + ' Achievement: ' + ae.name);
+              window._toast(tierEmoji + ' ' + ae.name + ' — claim in QUESTS');
             }
             if (ae && ae.tier === 'mythic' && window._haptic) try { window._haptic('bloom'); } catch(e){}
           }
@@ -621,9 +621,12 @@
   function markAchDone(ach){
     var p = _read(PROGRESS_KEY, {});
     if (p[ach.id]) return false;
-    p[ach.id] = {at: Date.now(), tier: ach.tier};
+    // Stephen 2026-04-30 LATE LATE LATE LATE: rewards no longer auto-grant
+    // on completion. Player must tap CLAIM in the QUESTS panel. Stamp
+    // claimed:false so the legacy migration (which sets claimed:true on
+    // entries missing the field) never claims this for them.
+    p[ach.id] = {at: Date.now(), tier: ach.tier, claimed: false};
     _write(PROGRESS_KEY, p);
-    grantReward(ach.reward);
     try { if (typeof gtag !== 'undefined') gtag('event', 'achievement_earned', {ach_id: ach.id, tier: ach.tier, category: ach.category}); } catch(e){}
     return true;
   }
@@ -758,7 +761,7 @@
         bump('daily_done', 1);
         bump('w_daily_done', 1);
         bump('d_complete_2_dailies', 1);
-        grantReward(d.reward);
+        // Auto-grant retired 2026-04-30 — player claims manually in QUESTS.
         try { if (typeof gtag !== 'undefined') gtag('event', 'daily_done', {id: id}); } catch(e){}
       }
     }
@@ -780,7 +783,7 @@
         st.done.push(id);
         newDone.push(id);
         bump('weekly_done', 1);
-        grantReward(w.reward);
+        // Auto-grant retired 2026-04-30 — player claims manually in QUESTS.
         try { if (typeof gtag !== 'undefined') gtag('event', 'weekly_done', {id: id}); } catch(e){}
       }
     }
@@ -834,6 +837,101 @@
     return markAchDone(a);
   }
 
+  // ─── CLAIM (manual reward collection) ──────────────────────────────────
+  // Stephen 2026-04-30 LATE LATE LATE LATE — completed quests/achievements
+  // no longer auto-pay. Player taps CLAIM in the QUESTS UI to collect.
+  // kind: 'ach' | 'daily' | 'weekly'
+  function isClaimed(kind, id){
+    if (kind === 'ach') {
+      var p = _read(PROGRESS_KEY, {});
+      var entry = p[id];
+      if (!entry) return true; // not earned yet, treat as nothing-to-claim
+      return entry.claimed !== false;
+    }
+    if (kind === 'daily') {
+      var st = dailies();
+      if ((st.done || []).indexOf(id) < 0) return true;
+      return (st.claimed || []).indexOf(id) >= 0;
+    }
+    if (kind === 'weekly') {
+      var st2 = weeklies();
+      if ((st2.done || []).indexOf(id) < 0) return true;
+      return (st2.claimed || []).indexOf(id) >= 0;
+    }
+    return true;
+  }
+  function claim(kind, id){
+    if (kind === 'ach') {
+      var p = _read(PROGRESS_KEY, {});
+      var entry = p[id];
+      if (!entry || entry.claimed) return false;
+      var ach = ACH_BY_ID[id];
+      if (!ach) return false;
+      entry.claimed = true;
+      _write(PROGRESS_KEY, p);
+      grantReward(ach.reward);
+      try { if (typeof gtag !== 'undefined') gtag('event', 'achievement_claimed', {ach_id: id}); } catch(e){}
+      return ach.reward || true;
+    }
+    if (kind === 'daily') {
+      var st = dailies();
+      if ((st.done || []).indexOf(id) < 0) return false;
+      if (!st.claimed) st.claimed = [];
+      if (st.claimed.indexOf(id) >= 0) return false;
+      var d = DAILY_BY_ID[id];
+      if (!d) return false;
+      st.claimed.push(id);
+      _write(DAILY_KEY, st);
+      grantReward(d.reward);
+      try { if (typeof gtag !== 'undefined') gtag('event', 'daily_claimed', {id: id}); } catch(e){}
+      return d.reward || true;
+    }
+    if (kind === 'weekly') {
+      var st2 = weeklies();
+      if ((st2.done || []).indexOf(id) < 0) return false;
+      if (!st2.claimed) st2.claimed = [];
+      if (st2.claimed.indexOf(id) >= 0) return false;
+      var w = WEEKLY_BY_ID[id];
+      if (!w) return false;
+      st2.claimed.push(id);
+      _write(WEEKLY_KEY, st2);
+      grantReward(w.reward);
+      try { if (typeof gtag !== 'undefined') gtag('event', 'weekly_claimed', {id: id}); } catch(e){}
+      return w.reward || true;
+    }
+    return false;
+  }
+  // One-shot migration on first load after the auto-grant → manual-claim
+  // switch. Existing players already received their auto-grants under the
+  // old system, so mark every already-completed entry as claimed to prevent
+  // double-payout. New completions write claimed:false so the migration
+  // never touches them.
+  function _migrateClaim(){
+    try {
+      var p = _read(PROGRESS_KEY, {});
+      var changed = false;
+      for (var id in p) {
+        if (!p.hasOwnProperty(id)) continue;
+        if (p[id] && p[id].claimed === undefined) {
+          p[id].claimed = true;
+          changed = true;
+        }
+      }
+      if (changed) _write(PROGRESS_KEY, p);
+      var d = _read(DAILY_KEY, null);
+      if (d && d.done && !d.claimed) {
+        d.claimed = d.done.slice();
+        _write(DAILY_KEY, d);
+      }
+      var w = _read(WEEKLY_KEY, null);
+      if (w && w.done && !w.claimed) {
+        w.claimed = w.done.slice();
+        _write(WEEKLY_KEY, w);
+      }
+    } catch(e){}
+  }
+  _migrateClaim();
+
   // ─── PUBLIC API ─────────────────────────────────────────────────────────
   window.LW_ACH = {
     bump: bump,
@@ -845,6 +943,8 @@
     weeklies: weeklies,
     markDone: markDone,
     isDone: isAchDone,
+    isClaimed: isClaimed,
+    claim: claim,
     catalog: ACH,
     dailyPool: DAILIES,
     weeklyPool: WEEKLIES,
