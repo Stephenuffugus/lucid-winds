@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.14';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47881,7 +47881,7 @@ function _fjPassivePollen(){
   if(earned>0){
     // Proximity "passing-by" reward — grants Dew (which also grants
     // matching XP via earnDew) instead of the dead fg_pollen counter.
-    // Matches wild.js split file. 10-min cooldown per plant enforced above.
+    // 10-min cooldown per plant enforced above.
     if(typeof earnDew==='function')earnDew(earned,'wild_pass_by');
     _fjSave(j);
   }
@@ -61184,7 +61184,7 @@ window.lwCheckEarnedTitles = function(){
     if (mulchCount >= 50) add('steward');
     // hermit_30: any of the player's wild plants has existed 30+ days.
     // fg_wild_plants is the local mirror of this user's wildDrops; droppedAt
-    // is a millisecond timestamp (wild.js:209-217 normalizes legacy strings).
+    // is a millisecond timestamp (legacy strings normalized at write time).
     // We flip the flag the first time the threshold crosses so recompute is cheap.
     try {
       if (localStorage.getItem('lw_hermit_30_done') !== '1') {
