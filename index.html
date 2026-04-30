@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.2';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.3';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3888,6 +3888,7 @@
     body.game-active .kb-row2,
     body.game-active #kb-sunbeams,
     body.game-active #kb-dew,
+    body.game-active #kb-cocoon,
     body.game-active #kb-hut,
     body.game-active #kb-install,
     body.game-active #pw-lb-toggle,
@@ -7127,6 +7128,10 @@ window._addSwitchTabHook = function(fn){
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams-v2.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span><span class="kb-bloom-label">BLOOM</span></div>
       <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew-v2.png" alt="Dew" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
+      <div id="kb-cocoon" title="Cocoonery" onclick="if(window.LW_HUT)LW_HUT.open('cocoonery');" style="display:none;border:2px solid rgba(200,168,75,0.5);position:relative;overflow:hidden;">
+        <img id="kb-cocoon-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;">
+        <div id="kb-cocoon-ring" style="position:absolute;inset:-2px;border-radius:10px;border:3px solid transparent;border-top-color:#c8a84b;transform:rotate(-90deg);pointer-events:none;transition:transform 0.4s ease;"></div>
+      </div>
     </div>
   </div>
   <!-- Book of Secrets — floating button, separate from keeper bar -->
@@ -7225,6 +7230,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;position:relative;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div><button id="cs-companion-info" onclick="event.stopPropagation();try{var c=JSON.parse(localStorage.getItem('pw_active_companion')||'{}');if(typeof c.idx==='number'&&window._lwOpenCompanionProfile)_lwOpenCompanionProfile(c.idx);}catch(e){}" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.7);color:var(--gold);font-family:DM Mono,monospace;font-size:0.55rem;font-weight:bold;cursor:pointer;padding:0;z-index:2;" title="View profile">ⓘ</button></div></div>
+    <div class="cs-section" id="cs-cocoon-section" style="display:none;"><div class="cs-section-title">EQUIPPED COCOON</div><div class="cs-companion-card" onclick="if(window.LW_HUT)LW_HUT.open('cocoonery');" style="cursor:pointer;min-height:64px;" title="Tap to manage cocoons"><div class="cs-companion-icon" id="cs-cocoon-icon" style="width:48px;height:48px;border-radius:8px;overflow:hidden;background:rgba(20,18,14,0.5);"></div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-cocoon-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-cocoon-buff">Tap to manage</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">MILESTONES</div><div id="cs-milestone-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
@@ -42816,6 +42822,9 @@ document.addEventListener('keydown', function(e) {
       wildPlants:      _ls('fg_wild_plants')  || [],
       wildDropState:   _ls('fg_w_d')          || {},
       wildSteps:       _ls('lw_wild_steps')   || null,
+      // Premium Keeper Cocoons — permanent paid Dew + Sunbeam unlocks.
+      // MUST sync; losing this on reinstall = losing real spend.
+      pcocoons:        _ls('lw_pcocoons')     || null,
       phenoRevealed:   _ls('lw_pheno_revealed') || {},
       ferals:          _ls('fg_ferals')       || [],
       pollen:          parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0'),
@@ -42925,6 +42934,40 @@ document.addEventListener('keydown', function(e) {
         var localLifetime = (localSteps && localSteps.lifetime) || 0;
         var merged = (cloudLifetime > localLifetime) ? data.wildSteps : (localSteps || data.wildSteps);
         localStorage.setItem('lw_wild_steps', JSON.stringify(merged));
+      } catch(e) {}
+    }
+    // Premium Keeper Cocoons — merge so we never lose a paid unlock or
+    // walked distance. Owned-and-hatched is sticky; distance is max.
+    if (data.pcocoons && typeof data.pcocoons === 'object') {
+      try {
+        var localPcoRaw = localStorage.getItem('lw_pcocoons');
+        var localPco = localPcoRaw ? JSON.parse(localPcoRaw) : null;
+        var cloudPco = data.pcocoons;
+        if (!localPco) {
+          localStorage.setItem('lw_pcocoons', JSON.stringify(cloudPco));
+        } else {
+          var mergedPco = { owned:{}, equipped: cloudPco.equipped || localPco.equipped || null };
+          var keys = ['wasp','lungfish','tardigrade'];
+          for (var pi=0; pi<keys.length; pi++) {
+            var pk = keys[pi];
+            var lo = localPco.owned && localPco.owned[pk];
+            var co = cloudPco.owned && cloudPco.owned[pk];
+            if (!lo && !co) continue;
+            if (lo && !co) { mergedPco.owned[pk] = lo; continue; }
+            if (co && !lo) { mergedPco.owned[pk] = co; continue; }
+            // Both have it — merge state (hatched > incubating), max distance + fed + tokens.
+            var hatched = (lo.state==='hatched' || co.state==='hatched');
+            mergedPco.owned[pk] = {
+              state: hatched ? 'hatched' : 'incubating',
+              distance: Math.max(lo.distance||0, co.distance||0),
+              fed:      Math.max(lo.fed||0,      co.fed||0),
+              tokens:   Math.max(lo.tokens||0,   co.tokens||0),
+              purchasedAt: Math.min(lo.purchasedAt||Date.now(), co.purchasedAt||Date.now()),
+              hatchedAt:   Math.max(lo.hatchedAt||0, co.hatchedAt||0)
+            };
+          }
+          localStorage.setItem('lw_pcocoons', JSON.stringify(mergedPco));
+        }
       } catch(e) {}
     }
     if (data.ferals && data.ferals.length) _ss('fg_ferals', data.ferals);
@@ -46302,17 +46345,22 @@ function _wildClimateTick(weather) {
     }
     // Drought: consecutive dry days > plant's droughtDays tolerance.
     // Each day beyond tolerance → -9h, cap -30h (Stephen 2026-04-26 lethality bump).
-    if (typeof t.droughtDays === 'number' && dryDays > t.droughtDays) {
-      var overDry = dryDays - t.droughtDays;
-      var dD = Math.min(30, overDry * 9);
-      // Worm (idx 52) Tilth signature — soil aerator. Halves drought
-      // damage on this plant's drought vector. Closes one of the 5
-      // climate-vector signature gaps the Apr 18 session flagged.
-      if (t.companion === 52) {
-        dD = Math.round(dD * 0.5);
+    if (typeof t.droughtDays === 'number') {
+      var droughtThresh = t.droughtDays;
+      // Lungfish — Drought Breath: +2 day tolerance on equipped player's plants.
+      try { if (window.LW_KEEPER && LW_KEEPER.activeAbility && LW_KEEPER.activeAbility() === 'droughtBreath') droughtThresh += 2; } catch(e){}
+      if (dryDays > droughtThresh) {
+        var overDry = dryDays - droughtThresh;
+        var dD = Math.min(30, overDry * 9);
+        // Worm (idx 52) Tilth signature — soil aerator. Halves drought
+        // damage on this plant's drought vector. Closes one of the 5
+        // climate-vector signature gaps the Apr 18 session flagged.
+        if (t.companion === 52) {
+          dD = Math.round(dD * 0.5);
+        }
+        breaches.push({ kind: 'drought', diff: overDry, hours: dD });
+        damageH += dD;
       }
-      breaches.push({ kind: 'drought', diff: overDry, hours: dD });
-      damageH += dD;
     }
     // Stamp regardless of whether we damaged — prevents re-checking
     // minutes later if the player reopens the app.
@@ -46334,6 +46382,12 @@ function _wildClimateTick(weather) {
       if (t.chimerGen && t.chimerGen >= 2) {
         damageH = Math.round(damageH * 0.5);
       }
+      // Tardigrade — Cryptobiosis: half climate damage on equipped player's plants.
+      try {
+        if (window.LW_KEEPER && LW_KEEPER.activeAbility && LW_KEEPER.activeAbility() === 'cryptobiosis') {
+          damageH = Math.round(damageH * 0.5);
+        }
+      } catch(e){}
       // HARDY keyword — 50% chance to ignore climate damage, once per week.
       // Track last-dodge timestamp on plant.hardyDodgedAt. If >7 days ago,
       // eligible to dodge. 50% roll. Dodge = damageH set to 0 and stamp.
@@ -52356,6 +52410,21 @@ window._hexAction=function(action){
       _toast('<img src="assets/fx/drop-blue.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.', {html:true});
       if(window._haptic)_haptic('bloom');
       if(window._trackQuest)_trackQuest('plantsWatered',1);
+      // Parasitic Wasp \u2014 Pest Strike: when equipped, clears pests on visit
+      // and grants the keeper a +2 Dew "wasp gall" reward.
+      try {
+        if (window.LW_KEEPER && LW_KEEPER.activeAbility && LW_KEEPER.activeAbility() === 'pestClear' && p.pestedAt) {
+          // Clear pest on shared marker + best-effort on local copy
+          try { if (_sharedMarkers && _sharedMarkers[p.hash] && _sharedMarkers[p.hash].data) _sharedMarkers[p.hash].data.pestedAt = null; } catch(e){}
+          try {
+            var _ww = _getWild();
+            for (var _wi=0; _wi<_ww.length; _wi++) if (_ww[_wi].hash === p.hash) { _ww[_wi].pestedAt = null; break; }
+            _saveWild(_ww);
+          } catch(e){}
+          if (window.earnDew) window.earnDew(2,'wasp_gall');
+          _toast('<img src="assets/companions/parasitic_wasp.png" alt="" style="width:22px;height:22px;vertical-align:-5px;" onerror="this.outerHTML=&apos;\ud83d\udc1d&apos;;"> The wasp struck the pests. +2 Dew (wasp gall).', {html:true});
+        }
+      } catch(e){}
       };
       // Show the confirmation modal with exact mechanics, then run
       // _doStrangerWater on confirm. Falls through to direct execution
@@ -52788,6 +52857,13 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
     100%{box-shadow:0 0 0 0 rgba(200,168,75,0), 0 0 14px 2px rgba(200,168,75,0.25);}
   }
   .lw-pulse-hint{animation:lwPulseHint 1.6s ease-in-out infinite;border-radius:inherit;position:relative;}
+
+  /* Cocoonery hatch ceremony */
+  @keyframes hatchPulse{
+    0%,100%{transform:scale(1);filter:drop-shadow(0 0 24px rgba(200,168,75,0.55));}
+    50%{transform:scale(1.06);filter:drop-shadow(0 0 36px rgba(200,168,75,0.85));}
+  }
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 
   /* ═══ SUNBEAM RAIN — acquisition feedback ═══
      Full-screen overlay that plays whenever the Keeper absorbs light.
@@ -62086,6 +62162,7 @@ function openCharacter(){
   _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
   _renderClassSection();_renderToolSection();_renderEffectsSection();
   _renderMilestoneSection();
+  try{ _loadKeeperCocoon(); }catch(e){}
   try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
   document.getElementById('pw-character').classList.add('open');
   // Tick booster timers every 30s while open
@@ -62450,6 +62527,39 @@ function _loadCompanion(){
     } catch(e) {}
     if(buff)buff.innerHTML=_buffText;
   }catch(e){}
+}
+function _loadKeeperCocoon(){
+  var section = document.getElementById('cs-cocoon-section');
+  if (!section) return;
+  if (!window.LW_KEEPER) { section.style.display='none'; return; }
+  var owned = LW_KEEPER.getAllOwned() || {};
+  var ownedKeys = [];
+  for (var k in owned) if (owned.hasOwnProperty(k)) ownedKeys.push(k);
+  // Hide entire section until player owns at least one keeper cocoon.
+  if (ownedKeys.length === 0) { section.style.display='none'; return; }
+  section.style.display = '';
+  var equippedKey = LW_KEEPER.equipped();
+  var icon = document.getElementById('cs-cocoon-icon');
+  var name = document.getElementById('cs-cocoon-name');
+  var buff = document.getElementById('cs-cocoon-buff');
+  if (equippedKey){
+    var spec = LW_KEEPER.getSpec(equippedKey);
+    if (spec && icon){
+      icon.innerHTML = '<img src="'+spec.hatchedArt+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;&#x1F41B;&apos;;">';
+    }
+    if (name && spec) name.innerHTML = spec.hatchedName + ' <span style="color:var(--gold);font-family:DM Mono,monospace;font-size:0.4rem;">· EQUIPPED</span>';
+    if (buff && spec){
+      var abilityText = '';
+      if (spec.ability === 'pestClear') abilityText = 'Pest Strike · clears pests on visit · +2 Dew gall';
+      else if (spec.ability === 'droughtBreath') abilityText = 'Drought Breath · +2 day drought tolerance on your wild plants';
+      else if (spec.ability === 'cryptobiosis') abilityText = 'Cryptobiosis · half climate damage on your wild plants';
+      buff.textContent = abilityText || 'Equipped';
+    }
+  } else {
+    if (icon) icon.innerHTML = '<div style="font-size:1.4rem;line-height:48px;text-align:center;color:var(--muted);">✥</div>';
+    if (name) name.textContent = 'None Equipped';
+    if (buff) buff.textContent = ownedKeys.length + ' owned · tap to equip';
+  }
 }
 function equipCompanion(){
   // Scan greenhouse for plants with companions
@@ -79180,6 +79290,7 @@ window._lwClaimHerbarium = function(id){
           '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> ALMANAC</button>' +
           '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">SLOTS</button>' +
           '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">TRADE</button>' +
+          '<button class="lwh-tab"        data-tab="cocoonery" onclick="LW_HUT.switchTab(\'cocoonery\')">COCOONERY</button>' +
         '</div>' +
         // Scroll region — portrait scrolls off naturally as user reads body
         '<div class="lwh-scroll">' +
@@ -79217,6 +79328,7 @@ window._lwClaimHerbarium = function(id){
     else if (currentTab === 'almanac') renderAlmanac();
     else if (currentTab === 'slots')   renderSlots();
     else if (currentTab === 'quests')  renderQuest();
+    else if (currentTab === 'cocoonery') renderCocoonery();
   }
 
   function open(tab){
@@ -79576,6 +79688,139 @@ window._lwClaimHerbarium = function(id){
     if (typeof gtag !== 'undefined') gtag('event','hut_pi_pouch_slot_attempt',{from:cur});
   }
 
+  // ─── COCOONERY (premium Keeper Cocoons) ───
+  function renderCocoonery(){
+    var body = document.getElementById('lwh-body');
+    if (!body) return;
+    if (!window.LW_KEEPER){
+      body.innerHTML = '<div class="lwh-section-text">The cocoonery is being prepared. Come back soon.</div>';
+      return;
+    }
+    var specs = LW_KEEPER.listSpecs();
+    var equippedKey = LW_KEEPER.equipped();
+    var dewBal = (window.getTotalDew && window.getTotalDew()) || 0;
+    var sbBal  = (window.getTotalHashes && window.getTotalHashes()) || 0;
+
+    var html = '<div class="lwh-section-text">Three cradles wait beneath the cloth. The hermit only sells one a season, and only to those who walk far enough to deserve them.</div>';
+
+    if (equippedKey){
+      var eqSpec = LW_KEEPER.getSpec(equippedKey);
+      if (eqSpec){
+        html += '<div class="lwh-active" style="margin-bottom:0.6rem;">' +
+          '<b style="color:#c8a84b;">EQUIPPED</b> · ' + eqSpec.hatchedName +
+          ' <button onclick="LW_HUT.keeperUnequip()" style="margin-left:0.6rem;background:rgba(200,168,75,0.2);border:1px solid rgba(200,168,75,0.4);color:#e8dcc8;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.7rem;cursor:pointer;">Set aside</button>' +
+        '</div>';
+      }
+    }
+
+    html += '<div class="lwh-shop-grid" style="grid-template-columns:1fr;">';
+    for (var i=0;i<specs.length;i++){
+      var spec = specs[i];
+      var prog = LW_KEEPER.progress(spec.key);
+      var owned = prog.state !== 'locked';
+      var hatched = prog.state === 'hatched';
+      var ready = LW_KEEPER.isReady(spec.key);
+      var canBuy = LW_KEEPER.canPurchase(spec.key);
+      var canAfford = (dewBal >= spec.costDew) && (sbBal >= spec.costSunbeams);
+      var artSrc = hatched ? spec.hatchedArt : spec.cocoonArt;
+      var artFallback = hatched ? '🐛' : '🥚';
+
+      html += '<div class="lwh-shop-card" style="min-height:auto;flex-direction:row;text-align:left;padding:0.7rem;align-items:flex-start;gap:0.7rem;">' +
+        '<div style="width:96px;height:96px;flex:0 0 96px;border-radius:10px;overflow:hidden;background:rgba(20,18,14,0.5);border:1px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;">' +
+          '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:cover;'+(owned?'':'filter:grayscale(0.7) opacity(0.55);')+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.4rem;&quot;>'+artFallback+'</div>&apos;;">' +
+        '</div>' +
+        '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.35rem;">';
+
+      // Name + state badge
+      var displayName = hatched ? spec.hatchedName : spec.cocoonName;
+      var stateBadge = '';
+      if (hatched && equippedKey === spec.key) stateBadge = '<span style="background:linear-gradient(180deg,#c8a84b,#a08534);color:#1a1208;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">EQUIPPED</span>';
+      else if (hatched) stateBadge = '<span style="background:rgba(122,179,86,0.2);color:#a8d484;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">HATCHED</span>';
+      else if (ready) stateBadge = '<span style="background:rgba(200,168,75,0.3);color:#f0d674;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;animation:lwPulseHint 1.6s ease-in-out infinite;">READY</span>';
+      else if (owned) stateBadge = '<span style="background:rgba(80,140,200,0.2);color:#9ec4ec;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">INCUBATING</span>';
+      else if (!canBuy) stateBadge = '<span style="background:rgba(120,120,120,0.2);color:#9a9a9a;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">LOCKED</span>';
+
+      html += '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">' +
+        '<div style="font-weight:700;color:#e8dcc8;font-size:0.95rem;">'+displayName+'</div>' +
+        stateBadge +
+        '</div>';
+
+      // Flavor
+      var flavor = hatched ? spec.hatchFlavor : spec.flavor;
+      html += '<div style="font-size:0.72rem;color:#9aa090;line-height:1.4;font-style:italic;">'+flavor+'</div>';
+
+      // State-specific body
+      if (!owned){
+        // LOCKED — show cost or prereq
+        if (canBuy){
+          var dewClass = (dewBal >= spec.costDew) ? '' : 'style="color:#c97a7a;"';
+          var sbClass  = (sbBal  >= spec.costSunbeams) ? '' : 'style="color:#c97a7a;"';
+          html += '<div style="display:flex;gap:0.7rem;font-size:0.78rem;color:#e8dcc8;margin-top:0.15rem;">' +
+            '<span '+dewClass+'><b>'+spec.costDew.toLocaleString()+'</b> Dew</span>' +
+            '<span '+sbClass+'><b>'+spec.costSunbeams+'</b> Sunbeams</span>' +
+            '</div>';
+          html += '<div style="font-size:0.7rem;color:#8a9178;">'+(spec.distanceM/1000)+' km walk to hatch</div>';
+          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperBuy(\''+spec.key+'\')" '+(canAfford?'':'disabled')+' style="margin-top:0.35rem;">' +
+            (canAfford ? 'ACQUIRE' : 'NOT ENOUGH') + '</button>';
+        } else {
+          var req = spec.requires ? LW_KEEPER.getSpec(spec.requires) : null;
+          if (req){
+            html += '<div style="font-size:0.72rem;color:#8a9178;margin-top:0.15rem;">Hatch the <b style="color:#c8a84b;">'+req.hatchedName+'</b> first.</div>';
+          }
+        }
+      } else if (!hatched){
+        // INCUBATING — progress
+        var pctD = Math.min(100, Math.round(100 * prog.distance / prog.distanceM));
+        var kmDone = (prog.distance/1000).toFixed(1);
+        var kmTotal = (prog.distanceM/1000);
+        html += '<div style="margin-top:0.2rem;">' +
+          '<div style="height:6px;background:rgba(20,18,14,0.6);border-radius:3px;overflow:hidden;">' +
+            '<div style="height:100%;width:'+pctD+'%;background:linear-gradient(90deg,#7ab356,#c8a84b);transition:width 0.4s;"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9aa090;margin-top:0.2rem;">' +
+            '<span>'+kmDone+' / '+kmTotal+' km</span>' +
+            '<span>'+pctD+'%</span>' +
+          '</div>' +
+        '</div>';
+        // Lungfish: feed bar + tap-to-feed
+        if (spec.feedTokensRequired){
+          var pctF = Math.min(100, Math.round(100 * prog.fed / prog.feedRequired));
+          html += '<div style="margin-top:0.35rem;">' +
+            '<div style="font-size:0.7rem;color:#9ec4ec;margin-bottom:0.15rem;">Pour Dew into the mudball</div>' +
+            '<div style="height:6px;background:rgba(20,18,14,0.6);border-radius:3px;overflow:hidden;">' +
+              '<div style="height:100%;width:'+pctF+'%;background:linear-gradient(90deg,#5fa3d8,#9ec4ec);transition:width 0.4s;"></div>' +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9aa090;margin-top:0.2rem;">' +
+              '<span>'+prog.fed+' / '+prog.feedRequired+' pours</span>' +
+              '<span>'+prog.tokens+' ready · '+spec.feedAmount+' Dew/pour</span>' +
+            '</div>';
+          var canFeed = (prog.tokens > 0) && (dewBal >= spec.feedAmount) && (prog.fed < prog.feedRequired);
+          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperFeed(\''+spec.key+'\')" '+(canFeed?'':'disabled')+' style="margin-top:0.35rem;background:linear-gradient(180deg,#5fa3d8,#3d7aa8);">';
+          if (prog.fed >= prog.feedRequired) html += 'FULL';
+          else if (prog.tokens <= 0) html += 'WALK FOR POURS';
+          else if (dewBal < spec.feedAmount) html += 'NEED '+spec.feedAmount+' DEW';
+          else html += 'POUR ('+spec.feedAmount+' DEW)';
+          html += '</button>';
+          html += '</div>';
+        }
+        if (ready){
+          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperHatch(\''+spec.key+'\')" style="margin-top:0.35rem;background:linear-gradient(180deg,#f0d674,#c8a84b);color:#1a1208;font-weight:700;">HATCH NOW</button>';
+        }
+      } else {
+        // HATCHED — equip / unequip
+        if (equippedKey === spec.key){
+          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperUnequip()" style="margin-top:0.35rem;background:rgba(80,80,80,0.4);">SET ASIDE</button>';
+        } else {
+          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperEquip(\''+spec.key+'\')" style="margin-top:0.35rem;">EQUIP</button>';
+        }
+      }
+
+      html += '</div></div>';
+    }
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
   // ─── ALMANAC (weather summon) ───
   function renderAlmanac(){
     var body = document.getElementById('lwh-body');
@@ -79719,12 +79964,75 @@ window._lwClaimHerbarium = function(id){
     render();
   }
 
+  // ─── COCOONERY actions ───
+  function keeperBuy(key){
+    if (!window.LW_KEEPER) return;
+    if (LW_KEEPER.purchase(key)){
+      // Auto-equip first cocoon? No — design says player chooses.
+      render();
+      // Fire hatch ceremony only on hatch, not on purchase.
+    }
+  }
+  function keeperFeed(key){
+    if (!window.LW_KEEPER) return;
+    if (LW_KEEPER.feed(key)) render();
+  }
+  function keeperHatch(key){
+    if (!window.LW_KEEPER) return;
+    if (LW_KEEPER.hatch(key)){
+      // Show hatch ceremony, then re-render.
+      try { _showHatchCeremony(key); } catch(e){}
+      render();
+    }
+  }
+  function keeperEquip(key){
+    if (!window.LW_KEEPER) return;
+    if (LW_KEEPER.equip(key)) render();
+  }
+  function keeperUnequip(){
+    if (!window.LW_KEEPER) return;
+    if (LW_KEEPER.unequip()) render();
+  }
+
+  // Two-stage hatch ceremony. Cocoon shatters, hatched creature unfolds.
+  function _showHatchCeremony(key){
+    if (!window.LW_KEEPER) return;
+    var spec = LW_KEEPER.getSpec(key);
+    if (!spec) return;
+    var rv = document.createElement('div');
+    rv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at center,rgba(40,30,15,0.95) 0%,rgba(10,8,5,0.98) 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadeIn 0.4s ease;cursor:pointer;';
+    rv.innerHTML =
+      '<div style="text-align:center;padding:1.5rem;max-width:420px;">' +
+        '<div style="width:200px;height:200px;margin:0 auto 1rem;animation:hatchPulse 1.6s ease-in-out infinite;">' +
+          '<img src="'+spec.hatchedArt+'" alt="" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 24px rgba(200,168,75,0.6));" onerror="this.outerHTML=&apos;<div style=&quot;font-size:6rem;&quot;>✨</div>&apos;;">' +
+        '</div>' +
+        '<div style="font-size:0.75rem;color:#c8a84b;letter-spacing:0.2em;margin-bottom:0.4rem;">HATCHED</div>' +
+        '<div style="font-size:1.4rem;font-weight:700;color:#e8dcc8;margin-bottom:0.6rem;">'+spec.hatchedName+'</div>' +
+        '<div style="font-size:0.85rem;color:#a0a89a;font-style:italic;line-height:1.5;margin-bottom:1.4rem;">'+spec.hatchFlavor+'</div>' +
+        '<div style="font-size:0.7rem;color:#7a8268;letter-spacing:0.1em;margin-bottom:0.8rem;">THIS STAYS WITH YOU</div>' +
+        '<div style="display:flex;gap:0.6rem;justify-content:center;">' +
+          '<button onclick="event.stopPropagation();LW_HUT._dismissHatch(true,\''+key+'\');" style="background:linear-gradient(180deg,#c8a84b,#a08534);color:#1a1208;border:none;padding:0.7rem 1.2rem;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer;letter-spacing:0.05em;">WEAR IT</button>' +
+          '<button onclick="event.stopPropagation();LW_HUT._dismissHatch(false);" style="background:rgba(60,55,40,0.8);color:#c8b888;border:1px solid rgba(200,168,75,0.4);padding:0.7rem 1.2rem;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;letter-spacing:0.05em;">SET ASIDE</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(rv);
+    try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+    window.LW_HUT._dismissHatch = function(equip, key2){
+      try { rv.remove(); } catch(e){}
+      if (equip && key2 && window.LW_KEEPER) LW_KEEPER.equip(key2);
+      render();
+    };
+  }
+
   window.LW_HUT = {
     open: open, close: close, switchTab: switchTab,
     buy: buy, earlyOpen: earlyOpen, buyPouchSlot: buyPouchSlot, buyEmergencyPouch: buyEmergencyPouch, buySeedPouchSlotPi: buySeedPouchSlotPi,
     castWeather: castWeather, openSlots: openSlots, claimQuest: claimQuest,
     refresh: render,
-    getPouchCap: getPouchCap, pouchCount: pouchCount
+    getPouchCap: getPouchCap, pouchCount: pouchCount,
+    keeperBuy: keeperBuy, keeperFeed: keeperFeed, keeperHatch: keeperHatch,
+    keeperEquip: keeperEquip, keeperUnequip: keeperUnequip,
+    _dismissHatch: function(){}
   };
 })();
 
@@ -80328,8 +80636,94 @@ window.LW_debug.cleanGhostDrops = function(){
   }
   function _save(d){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }catch(e){}
-    try{ if(window._throttledSave) window._throttledSave(); }catch(e){}
+    // Push to cloud — paid Sunbeam + Dew unlocks must survive reinstall.
+    try{ if(window.syncVaultToCloud) window.syncVaultToCloud(); }catch(e){}
+    // Refresh keeper-bar pip + character sheet.
+    try{ refreshPip(); }catch(e){}
   }
+  // Pick the cocoon to surface in the keeper-bar pip. Priority:
+  //   1. equipped + hatched     (show hatched art)
+  //   2. ready to hatch          (pulse, hatched art preview)
+  //   3. currently incubating    (show cocoon art with progress ring)
+  //   4. owned + hatched         (show hatched art, no ring)
+  // Returns null if nothing to surface (player owns nothing).
+  function _pipState(){
+    var d = _load();
+    if (!d.owned) return null;
+    var owned = d.owned;
+    // Pass 1: equipped
+    if (d.equipped && owned[d.equipped] && owned[d.equipped].state==='hatched'){
+      return { spec:_spec(d.equipped), o:owned[d.equipped], mode:'equipped' };
+    }
+    // Pass 2: ready to hatch (any)
+    for (var i=0;i<KEEPERS.length;i++){
+      var k = KEEPERS[i].key;
+      if (owned[k] && isReady(k)){
+        return { spec:KEEPERS[i], o:owned[k], mode:'ready' };
+      }
+    }
+    // Pass 3: incubating (any)
+    for (var j=0;j<KEEPERS.length;j++){
+      var k2 = KEEPERS[j].key;
+      if (owned[k2] && owned[k2].state==='incubating'){
+        return { spec:KEEPERS[j], o:owned[k2], mode:'incubating' };
+      }
+    }
+    // Pass 4: any hatched (unequipped)
+    for (var m=0;m<KEEPERS.length;m++){
+      var k3 = KEEPERS[m].key;
+      if (owned[k3] && owned[k3].state==='hatched'){
+        return { spec:KEEPERS[m], o:owned[k3], mode:'hatched-idle' };
+      }
+    }
+    return null;
+  }
+  function refreshPip(){
+    var pip = document.getElementById('kb-cocoon');
+    if (!pip) return;
+    var img = document.getElementById('kb-cocoon-img');
+    var ring = document.getElementById('kb-cocoon-ring');
+    var st = _pipState();
+    if (!st){
+      pip.style.display = 'none';
+      pip.classList.remove('lw-pulse-hint');
+      return;
+    }
+    pip.style.display = '';
+    var src;
+    if (st.mode==='incubating') src = st.spec.cocoonArt;
+    else src = st.spec.hatchedArt;
+    if (img && img.getAttribute('src') !== src) img.setAttribute('src', src);
+    // Ring: progress fraction → rotation (90deg = full ring, since border-top-color)
+    var pct;
+    if (st.mode==='incubating') pct = Math.min(100, Math.round(100 * (st.o.distance||0) / st.spec.distanceM));
+    else pct = 100;
+    if (ring){
+      // Ring rotation pattern from existing LW_COCOONS panel: pct*3.6 - 90.
+      ring.style.transform = 'rotate(' + (pct * 3.6 - 90) + 'deg)';
+      ring.style.borderTopColor = (st.mode==='ready') ? '#f0d674' : '#c8a84b';
+    }
+    // Pulse on ready
+    if (st.mode === 'ready') pip.classList.add('lw-pulse-hint');
+    else pip.classList.remove('lw-pulse-hint');
+    // Tooltip
+    var tip;
+    if (st.mode==='incubating') tip = st.spec.cocoonName + ' · ' + Math.round((st.o.distance||0)/1000) + ' / ' + (st.spec.distanceM/1000) + ' km';
+    else if (st.mode==='ready') tip = st.spec.cocoonName + ' · READY TO HATCH';
+    else if (st.mode==='equipped') tip = st.spec.hatchedName + ' (equipped)';
+    else tip = st.spec.hatchedName;
+    pip.setAttribute('title', tip);
+  }
+  // Refresh when DOM is ready (cocoon pip element may not exist on first call).
+  try {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(refreshPip, 200);
+    } else {
+      document.addEventListener('DOMContentLoaded', function(){ setTimeout(refreshPip, 200); });
+    }
+  } catch(e){}
+  // Periodic refresh while incubating — distance accumulates over time.
+  try { setInterval(refreshPip, 30000); } catch(e){}
   function _spec(key){ return KEEPER_BY_KEY[key] || null; }
   function _toast(msg){ try{ if(window._toast) window._toast(msg); }catch(e){} }
 
@@ -80537,7 +80931,8 @@ window.LW_debug.cleanGhostDrops = function(){
     isReady: isReady,
     getOwned: getOwned,
     getAllOwned: getAllOwned,
-    progress: progress
+    progress: progress,
+    refreshPip: refreshPip
   };
   // Dev helpers — gated to LW_debug like other modules.
   window.LW_debug = window.LW_debug || {};
