@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -42834,6 +42834,12 @@ document.addEventListener('keydown', function(e) {
       // Premium Keeper Cocoons — permanent paid Dew + Sunbeam unlocks.
       // MUST sync; losing this on reinstall = losing real spend.
       pcocoons:        _ls('lw_pcocoons')     || null,
+      // Companion bond timer + first-equipped log. Drives L1-L6 ladder
+      // (3d/30d/90d/180d/365d) + signature unlocks + bond mementos. Was
+      // missing from sync, so reinstall wiped every player's bond
+      // progress. Stephen audit 2026-05-01 #1.
+      companionTimer:  _ls('lw_companion_timer') || {},
+      companionFirst:  _ls('lw_companion_first_equipped') || {},
       phenoRevealed:   _ls('lw_pheno_revealed') || {},
       ferals:          _ls('fg_ferals')       || [],
       pollen:          parseInt((window._secureGet?window._secureGet('fg_pollen'):localStorage.getItem('fg_pollen'))||'0'),
@@ -42980,6 +42986,60 @@ document.addEventListener('keydown', function(e) {
       } catch(e) {}
     }
     if (data.ferals && data.ferals.length) _ss('fg_ferals', data.ferals);
+    // Companion bond timer — merge with MAX totalMs per idx so a player
+    // who reinstalls never loses bond progress, and so a longer-running
+    // device wins over a stale cloud record. activeSinceMs only kept if
+    // local has it (the locally-equipped companion's clock keeps ticking).
+    if (data.companionTimer && typeof data.companionTimer === 'object') {
+      try {
+        var _ctRaw = localStorage.getItem('lw_companion_timer');
+        var _ctLocal = _ctRaw ? JSON.parse(_ctRaw) : {};
+        var _ctCloud = data.companionTimer;
+        var _ctMerged = {};
+        var _ctSeen = {};
+        for (var _ctK in _ctLocal) if (_ctLocal.hasOwnProperty(_ctK)) _ctSeen[_ctK] = 1;
+        for (var _ctK2 in _ctCloud) if (_ctCloud.hasOwnProperty(_ctK2)) _ctSeen[_ctK2] = 1;
+        for (var _ctIdx in _ctSeen) {
+          var _ctL = _ctLocal[_ctIdx] || {};
+          var _ctC = _ctCloud[_ctIdx] || {};
+          var _ctTL = (typeof _ctL.totalMs === 'number') ? _ctL.totalMs : 0;
+          var _ctTC = (typeof _ctC.totalMs === 'number') ? _ctC.totalMs : 0;
+          var _ctMerge = { totalMs: Math.max(_ctTL, _ctTC) };
+          // activeSinceMs: prefer local (the locally-equipped companion is
+          // mid-tick on this device); cloud value is from a different session
+          // and would inflate the elapsed-since-stamp on first read.
+          if (typeof _ctL.activeSinceMs === 'number' && _ctL.activeSinceMs > 0) {
+            _ctMerge.activeSinceMs = _ctL.activeSinceMs;
+          }
+          _ctMerged[_ctIdx] = _ctMerge;
+        }
+        localStorage.setItem('lw_companion_timer', JSON.stringify(_ctMerged));
+      } catch(e) {}
+    }
+    // First-equipped log — union merge, take MIN timestamp on collision so
+    // the earliest-known equip moment wins (that's the bond's true age).
+    if (data.companionFirst && typeof data.companionFirst === 'object') {
+      try {
+        var _cfRaw = localStorage.getItem('lw_companion_first_equipped');
+        var _cfLocal = _cfRaw ? JSON.parse(_cfRaw) : {};
+        var _cfCloud = data.companionFirst;
+        var _cfMerged = {};
+        var _cfSeen = {};
+        for (var _cfK in _cfLocal) if (_cfLocal.hasOwnProperty(_cfK)) _cfSeen[_cfK] = 1;
+        for (var _cfK2 in _cfCloud) if (_cfCloud.hasOwnProperty(_cfK2)) _cfSeen[_cfK2] = 1;
+        for (var _cfIdx in _cfSeen) {
+          var _cfL = _cfLocal[_cfIdx];
+          var _cfC = _cfCloud[_cfIdx];
+          var _cfBest = 0;
+          if (typeof _cfL === 'number' && _cfL > 0) _cfBest = _cfL;
+          if (typeof _cfC === 'number' && _cfC > 0) {
+            _cfBest = (_cfBest === 0) ? _cfC : Math.min(_cfBest, _cfC);
+          }
+          if (_cfBest > 0) _cfMerged[_cfIdx] = _cfBest;
+        }
+        localStorage.setItem('lw_companion_first_equipped', JSON.stringify(_cfMerged));
+      } catch(e) {}
+    }
     if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
     // Keeper XP — restore from cloud, prefer the higher of cloud vs local so
     // we never DROP a player's level on hydration.
@@ -62679,6 +62739,8 @@ function _pickCompanion(idx, slot){
     if (!_equipLog[f.idx]) {
       _equipLog[f.idx] = Date.now();
       localStorage.setItem('lw_companion_first_equipped', JSON.stringify(_equipLog));
+      // Push to cloud — first-equip moment is the bond's true age. Stephen audit 2026-05-01 #1.
+      try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e) {}
     }
   } catch(e) {}
   _loadCompanion();
@@ -82407,6 +82469,10 @@ window.LW_debug.cleanGhostDrops = function(){
   }
   function saveTimer(t) {
     try { localStorage.setItem(TIMER_KEY, JSON.stringify(t)); } catch(e) {}
+    // Push companion bond progress to Firestore. syncVaultToCloud is
+    // already debounced (~500ms), so this is safe to call from every
+    // saveTimer write. Stephen audit 2026-05-01 #1.
+    try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e) {}
   }
   function getTotalMs(idx) {
     var timer = loadTimer();
