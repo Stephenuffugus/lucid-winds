@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.46';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.47';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2843,24 +2843,26 @@
     .fg-empty-title { font-family:'Playfair Display',serif; font-size: 0.95rem; font-style: italic; color: var(--cream); margin-bottom: 0.35rem; }
     .fg-empty-body { font-family:'DM Mono',monospace; font-size: 0.5rem; color: var(--muted); line-height: 1.5; max-width: 280px; }
 
-    /* ═══ MY PLANTS NAVIGATOR (wild tab) ═══ */
-    .lw-mp-list{display:flex;flex-direction:column;gap:0.45rem;}
-    .lw-mp-row{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.6rem;background:linear-gradient(180deg,rgba(40,46,32,0.7),rgba(20,24,16,0.85));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;cursor:pointer;transition:all 0.15s;}
+    /* ═══ MY PLANTS NAVIGATOR (wild tab) — Apr 30 readability rebuild ═══
+       Director feedback: text was unreadable, buttons hardly visible. Sizes
+       bumped across the board. Hex-neighbor hint removed (was a vestige of
+       the contest/defense system retired same pass). */
+    .lw-mp-list{display:flex;flex-direction:column;gap:0.6rem;}
+    .lw-mp-row{display:flex;align-items:center;gap:0.85rem;padding:0.85rem 0.85rem;background:linear-gradient(180deg,rgba(40,46,32,0.7),rgba(20,24,16,0.85));border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;cursor:pointer;transition:all 0.15s;min-height:88px;}
     .lw-mp-row:hover{border-color:rgba(122,179,86,0.55);transform:translateX(2px);}
     .lw-mp-row.mp-crit{border-color:rgba(220,90,90,0.5);background:linear-gradient(180deg,rgba(60,28,28,0.7),rgba(28,16,16,0.85));}
     .lw-mp-row.mp-warn{border-color:rgba(212,168,67,0.45);background:linear-gradient(180deg,rgba(54,46,24,0.7),rgba(24,20,12,0.85));}
-    .lw-mp-art{width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.6);border-radius:8px;border:1px solid rgba(122,179,86,0.15);overflow:hidden;}
-    .lw-mp-art svg{width:60px;height:60px;}
+    .lw-mp-art{width:72px;height:72px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.6);border-radius:10px;border:1px solid rgba(122,179,86,0.18);overflow:hidden;}
+    .lw-mp-art svg{width:72px;height:72px;}
     .lw-mp-info{flex:1;min-width:0;}
-    .lw-mp-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:700;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .lw-mp-status{font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);margin-top:2px;}
-    .lw-mp-hex{font-family:'DM Mono',monospace;font-size:0.4rem;color:rgba(138,145,120,0.7);margin-top:1px;}
+    .lw-mp-name{font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;}
+    .lw-mp-status{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);margin-top:5px;letter-spacing:0.04em;}
     .mp-crit .lw-mp-status{color:rgba(232,140,140,0.95);}
     .mp-warn .lw-mp-status{color:rgba(232,200,100,0.95);}
-    .mp-ok .lw-mp-status{color:rgba(122,179,86,0.85);}
-    .lw-mp-dist{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.06em;color:var(--gold);flex-shrink:0;min-width:50px;text-align:right;}
+    .mp-ok .lw-mp-status{color:rgba(122,179,86,0.95);}
+    .lw-mp-dist{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.06em;color:var(--gold);flex-shrink:0;min-width:60px;text-align:right;}
     /* In-range glow — left ribbon + soft outer glow so the player sees at a glance which plants they can act on */
-    .lw-mp-row.mp-in-range{box-shadow:inset 4px 0 0 #9bd66a,0 0 12px rgba(155,214,106,0.18);}
+    .lw-mp-row.mp-in-range{box-shadow:inset 4px 0 0 #9bd66a,0 0 14px rgba(155,214,106,0.2);}
     .lw-mp-row.mp-in-range .lw-mp-dist{color:#9bd66a;}
 
     /* ═══ LEVEL UP CELEBRATION OVERLAY ═══ */
@@ -6932,12 +6934,14 @@ window._addSwitchTabHook = function(fn){
         <button class="wtp2-btn" id="wtp-water-other"><div class="wtp2-btn-icon" style="font-size:1.4rem;"><span class="lwe lwe-drop"></span></div><div class="wtp2-btn-lbl">Water</div></button>
         <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
-      <!-- Action buttons — your own plant -->
+      <!-- Action buttons — your own plant. Defense retired Apr 30 (cascade
+           from harvest retirement — no harvest = no defender challenge to
+           protect against). _changeDefense / _pickDefense kept as dead
+           code in JS for legacy callers; no UI path reaches them. -->
       <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
         <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
         <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
-        <button class="wtp2-btn" id="wtp-defense"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-territory-shield-v4.png" loading="lazy" style="width:36px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Defense</div></button>
         <button class="wtp2-btn gold" id="wtp-cross"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
     </div>
@@ -47911,14 +47915,10 @@ function showTP(p,mk){
     }
     var crossBtn=document.getElementById('wtp-cross');
     if(crossBtn)crossBtn.onclick=function(){_crossPollinate(p);};
-    // Defense change button — show current game, tap to change
+    // Defense button retired (Apr 30). Element removed from HTML; if/when a
+    // legacy DOM still has it, hide it explicitly so it can't fire.
     var defBtn=document.getElementById('wtp-defense');
-    if(defBtn){
-      var _gNames={set:'Trios',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
-      var _curDef=_gNames[p.defenderGame]||'Trios';
-      defBtn.querySelector('.wtp2-btn-lbl').textContent=_curDef;
-      defBtn.onclick=function(){_changeDefense(p);};
-    }
+    if(defBtn){defBtn.style.display='none';}
   } else {
     if(ownActions)ownActions.style.display='none';
     if(otherAct)otherAct.style.display='flex';
@@ -51496,18 +51496,10 @@ function _selectHexPlant(idx,p){
     if(_blessBtn)actions+=_blessBtn;
     if(_pruneBtn)actions+=_pruneBtn;
     if(_phxBtn)actions+=_phxBtn;
-    // DEFENSE shows current defender game so the player knows what
-    // challengers will face. Also shows 24h cooldown from defense change.
-    var _defGameNames={set:'Trios',memory:'Memory',growth:'Growth',color:'Color',math:'Math',word:'Word'};
-    var _curDefName=_defGameNames[p.defenderGame]||'Trios';
-    var _defCdMs=0;
-    try{var _dcd=JSON.parse(localStorage.getItem('lw_defense_cd')||'{}');if(_dcd[p.hash]&&Date.now()-_dcd[p.hash]<24*3600000)_defCdMs=24*3600000-(Date.now()-_dcd[p.hash]);}catch(e){}
-    var _dIco='<img src="assets/wild-territory-shield.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#128737;\'">';
-    if(_defCdMs>0){
-      actions+='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Defense: '+_curDefName+'. Change again in '+fmtCdH(_defCdMs)+'.\')">'+_dIco+' DEFENSE: '+_curDefName.toUpperCase()+' &middot; '+fmtCdH(_defCdMs)+'</button>';
-    } else {
-      actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')" title="Pick which mini-game challengers must beat to harvest this plant. 24h between changes.">'+_dIco+' DEFENSE: '+_curDefName.toUpperCase()+'</button>';
-    }
+    // DEFENSE retired Apr 30 (cascade from harvest retirement). The defender
+    // game system existed to make a stranger's HARVEST attempt non-trivial;
+    // no harvest action means no challenge to attach. Field stays on plant
+    // objects for Firestore back-compat but nothing reads it.
   }else{
     // Wild v3: stranger plants no longer have HARVEST.
     // INSPECT is always available — seeing is free, acting has gates.
@@ -51881,27 +51873,15 @@ window._lwOpenMyPlants = function(){
     }
     return { lbl: 'Healthy', cls: 'ok', sortKey: 2 };
   }
-  // Group all wild plants by zone-key (hex bucket) so we can show neighbor
-  // counts on each row. Includes other players' plants in the count, since
-  // hexes are shared territory.
-  var ZS = (typeof ZONE_SIZE !== 'undefined') ? ZONE_SIZE : 0.0015;
-  function zk(lat, lng){
-    return (Math.round(lat/ZS)*ZS).toFixed(4) + ',' + (Math.round(lng/ZS)*ZS).toFixed(4);
-  }
-  var hexCounts = {};
-  for (var hi = 0; hi < arr.length; hi++){
-    var hp = arr[hi]; if (!hp || !hp.lat) continue;
-    var k = zk(hp.lat, hp.lng);
-    hexCounts[k] = (hexCounts[k] || 0) + 1;
-  }
+  // Hex-neighbor count was previously surfaced per row to flag contest
+  // pressure. With defense/harvest both retired Apr 30, neighbor count is
+  // not a meaningful action signal — dropped from the row UI.
   // Annotate + sort by status (urgent first), then distance
   var rows = mine.map(function(p){
     var d = distMeters(pos.lat, pos.lng, p.lat, p.lng);
     var s = statusFor(p);
     var name = (window.getPlantName && p.hash) ? getPlantName(p.hash) : (p.hash ? p.hash.slice(0,8) : 'Plant');
-    var hk = zk(p.lat, p.lng);
-    var hc = hexCounts[hk] || 1;
-    return { p:p, dist:d, status:s, name:name, hexCount:hc };
+    return { p:p, dist:d, status:s, name:name };
   });
   rows.sort(function(a,b){
     if (a.status.sortKey !== b.status.sortKey) return a.status.sortKey - b.status.sortKey;
@@ -51924,26 +51904,26 @@ window._lwOpenMyPlants = function(){
     else nOk++;
     if (rows[ci].dist != null && rows[ci].dist <= COLLECT) nInRange++;
   }
-  var html = '<div style="max-width:440px;width:100%;margin:0 auto;">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem;">';
-  html += '<div><div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--sage);">&#127807; MY PLANTS</div>';
-  // Header pulse: counts of each status + in-range
+  var html = '<div style="max-width:480px;width:100%;margin:0 auto;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.9rem;gap:0.6rem;">';
+  html += '<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.14em;color:var(--sage);"><img src="assets/fx/leaf-gold.png" alt="" style="width:28px;height:28px;object-fit:contain;vertical-align:-7px;display:inline-block;margin-right:6px;" onerror="this.outerHTML=\'&#127807;\'">MY PLANTS</div>';
+  // Header pulse: counts of each status + in-range. Sizes bumped so they're actually readable.
   var statusBits = [];
   if (nCrit) statusBits.push('<span style="color:#d97a7a;">'+nCrit+' critical</span>');
   if (nWarn) statusBits.push('<span style="color:var(--gold);">'+nWarn+' need water</span>');
   if (nOk) statusBits.push('<span style="color:var(--sage);">'+nOk+' healthy</span>');
   if (nInRange) statusBits.push('<span style="color:#9bd66a;">'+nInRange+' in range</span>');
-  html += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">' + mine.length + ' planted</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-top:5px;letter-spacing:0.04em;">' + mine.length + ' planted</div>';
   if (statusBits.length){
-    html += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;margin-top:3px;">'+statusBits.join(' &middot; ')+'</div>';
+    html += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;margin-top:4px;letter-spacing:0.03em;line-height:1.5;">'+statusBits.join(' &middot; ')+'</div>';
   }
   html += '</div>';
-  html += '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:0.95rem;cursor:pointer;">&times;</button>';
+  html += '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove()" style="width:48px;height:48px;border-radius:50%;border:2px solid rgba(200,168,75,0.45);background:rgba(26,36,22,0.7);color:var(--cream);font-size:1.2rem;cursor:pointer;flex-shrink:0;line-height:1;">&times;</button>';
   html += '</div>';
   // Mass-water shortcut — only show if ≥1 plant needs water. _lwMassWater
   // already handles eligibility filter, cost preview, and surcharge tiers.
   if (nWarn + nCrit > 0){
-    html += '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window._lwMassWater)window._lwMassWater();" style="display:block;width:100%;margin:0 0 10px;padding:10px;border-radius:10px;border:1.5px solid rgba(91,175,220,0.55);background:linear-gradient(180deg,rgba(91,175,220,0.32),rgba(46,90,120,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">&#128167; WATER ALL ('+ (nWarn+nCrit) +')</button>';
+    html += '<button onclick="document.getElementById(\'lw-myplants-overlay\').remove();if(window._lwMassWater)window._lwMassWater();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 12px;padding:14px;border-radius:12px;border:1.5px solid rgba(91,175,220,0.55);background:linear-gradient(180deg,rgba(91,175,220,0.32),rgba(46,90,120,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;cursor:pointer;min-height:54px;"><img src="assets/wild-water-btn.png" alt="" style="width:28px;height:28px;object-fit:contain;display:inline-block;" onerror="this.outerHTML=\'&#128167;\'"> WATER ALL ('+ (nWarn+nCrit) +')</button>';
   }
   html += '<div class="lw-mp-list">';
   for (var i = 0; i < rows.length; i++){
@@ -51956,8 +51936,6 @@ window._lwOpenMyPlants = function(){
     html += '<div class="lw-mp-info">';
     html += '<div class="lw-mp-name">'+r.name+'</div>';
     html += '<div class="lw-mp-status">'+r.status.lbl+(inRange?' &middot; <span style="color:#9bd66a;">in range</span>':'')+'</div>';
-    var hexHint = r.hexCount > 1 ? ('Hex with ' + (r.hexCount - 1) + ' neighbor' + (r.hexCount > 2 ? 's' : '')) : 'Solo in hex';
-    html += '<div class="lw-mp-hex">'+hexHint+'</div>';
     html += '</div>';
     html += '<div class="lw-mp-dist">'+fmtDist(r.dist)+'</div>';
     html += '</div>';
@@ -51965,12 +51943,13 @@ window._lwOpenMyPlants = function(){
   html += '</div></div>';
   ov.innerHTML = html;
   document.body.appendChild(ov);
-  // Render plant SVGs into the slots after the DOM is in
+  // Render plant SVGs into the slots after the DOM is in. Size matches the
+  // new 72px lw-mp-art slot from the Apr 30 readability rebuild.
   setTimeout(function(){
     for (var i = 0; i < rows.length; i++){
       var slot = document.getElementById('lw-mp-art-'+i);
       if (slot && window._generatePlantSVG && rows[i].p.hash){
-        try { slot.innerHTML = window._generatePlantSVG(rows[i].p.hash, 60); } catch(e){}
+        try { slot.innerHTML = window._generatePlantSVG(rows[i].p.hash, 72); } catch(e){}
       }
     }
   }, 0);
