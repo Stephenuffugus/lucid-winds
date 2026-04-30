@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.43';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.44';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6922,12 +6922,15 @@ window._addSwitchTabHook = function(fn){
            even on plants without a recent breach. Populated by the inspector
            with this plant's heatMax/coldMin/floodMm/windMax/droughtDays. -->
       <div id="wtp-tolerances" style="display:none;font-family:'DM Mono',monospace;font-size:clamp(.36rem,1vw,.46rem);text-align:center;padding:2px 16px 4px;letter-spacing:0.04em;color:var(--muted);line-height:1.55;"></div>
-      <!-- Action buttons — other player's plant -->
+      <!-- Action buttons — other player's plant. Harvest retired Apr 30 —
+           clippings replaced it. wtp-act button removed; _harvestToPouch /
+           _doHarvest retain in JS for legacy callers but no longer reachable
+           via UI. Stranger interactions: water (kindness) + breed + cutting
+           via the carousel inspect path. -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
         <button class="wtp2-btn" id="wtp-water-other"><div class="wtp2-btn-icon" style="font-size:1.4rem;"><span class="lwe lwe-drop"></span></div><div class="wtp2-btn-lbl">Water</div></button>
         <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
-        <button class="wtp2-btn gold" id="wtp-act"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-harvest-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Harvest</div></button>
       </div>
       <!-- Action buttons — your own plant -->
       <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
@@ -37283,6 +37286,13 @@ document.addEventListener('keydown', function(e) {
       track.style.transform  = 'translate3d(-33.333%, 0, 0)';
     }
     _syncTopBar();
+    // Refresh per-slide button state (water cooldown / daily budget / GPS).
+    // Without this, gallery-water-btn was a static icon — users tapped it on
+    // a plant they'd already watered or after their daily 5 kindness ran out
+    // and got a silent no-op or a generic toast. Audit Apr 30.
+    if (typeof window._refreshCarouselWaterBtn === 'function') {
+      try { window._refreshCarouselWaterBtn(); } catch(e) {}
+    }
     _carousel.busy = false;
   }
 
@@ -37583,7 +37593,88 @@ document.addEventListener('keydown', function(e) {
       if (typeof window._hexAction === 'function') {
         window._hexAction(action);
       }
-    } catch(e) { console.error('[carousel wild action]', e); }
+      // Re-read state after the action so the badge updates (e.g. just
+      // burned a daily kindness, plant now on cooldown).
+      setTimeout(function(){
+        if (typeof window._refreshCarouselWaterBtn === 'function') {
+          try { window._refreshCarouselWaterBtn(); } catch(e) {}
+        }
+      }, 200);
+    } catch(e) {
+      console.error('[carousel wild action]', e);
+      if (window._toast) window._toast('Action failed. Try the trait panel.');
+    }
+  };
+
+  // ── Carousel water button state refresh ────────────────────────────────
+  // Reads the active slide's plant, surfaces water cooldown (own plants) or
+  // daily kindness budget (stranger plants) on the gallery-water-btn so
+  // players see the state instead of tapping a silent no-op. Called from
+  // _carouselLoad on every slide change and after _carouselWildAction.
+  window._refreshCarouselWaterBtn = function(){
+    var btn = document.getElementById('gallery-water-btn');
+    if (!btn || !_carousel || !_carousel.arr) return;
+    if (btn.style.display === 'none') return;
+    var plant = _carousel.arr[_carousel.idx];
+    if (!plant || !plant.hash) return;
+
+    var ok = true;
+    var label = '';
+    var tip = 'Water this plant';
+
+    if (plant.own) {
+      // Own plants: 24h cooldown per plant via lastWateredAt.
+      try {
+        var wild = (typeof window._getWild === 'function') ? window._getWild() : [];
+        var hit = null;
+        for (var i = 0; i < wild.length; i++) {
+          if (wild[i].hash === plant.hash) { hit = wild[i]; break; }
+        }
+        if (hit && hit.lastWateredAt) {
+          var hrs = 24 - (Date.now() - hit.lastWateredAt) / 3600000;
+          if (hrs > 0) {
+            ok = false;
+            label = Math.ceil(hrs) + 'h';
+            tip = 'Already watered. Available in ' + Math.ceil(hrs) + 'h.';
+          } else { tip = 'Water this plant · +12h lifespan'; }
+        } else { tip = 'Water this plant · +12h lifespan'; }
+      } catch(e) {}
+    } else {
+      // Stranger plants: 5/day kindness budget.
+      try {
+        var bRaw = localStorage.getItem('lw_water_budget') || '{}';
+        var b = JSON.parse(bRaw);
+        var today = new Date().toISOString().split('T')[0];
+        if (b.date !== today) b = { date: today, count: 0 };
+        var left = 5 - (b.count || 0);
+        if (left > 0) {
+          label = left + '/5';
+          tip = 'Hold 10s to water · ' + left + ' kindness left today';
+        } else {
+          ok = false;
+          label = '0';
+          tip = 'Daily kindness used. Resets at midnight.';
+        }
+      } catch(e) {}
+    }
+
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '0.4';
+    btn.style.pointerEvents = ok ? 'auto' : 'none';
+    btn.title = tip;
+
+    var badge = btn.querySelector('.water-state-badge');
+    if (label) {
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'water-state-badge';
+        badge.style.cssText = 'position:absolute;bottom:-3px;right:-3px;background:rgba(13,16,12,0.92);color:var(--cream);font-family:DM Mono,monospace;font-size:0.42rem;padding:2px 5px;border-radius:6px;border:1px solid rgba(122,179,86,0.4);pointer-events:none;line-height:1;letter-spacing:0.05em;';
+        btn.style.position = 'relative';
+        btn.appendChild(badge);
+      }
+      badge.textContent = label;
+      badge.style.display = '';
+    } else if (badge) { badge.style.display = 'none'; }
   };
 
   // ── Lazy back-face builder: populates DNA ledger on first flip ─────
@@ -37678,7 +37769,10 @@ document.addEventListener('keydown', function(e) {
     try {
       var _srcGuard = window._carousel && window._carousel.source;
       var _plantGuard = window._carousel && window._carousel.arr ? window._carousel.arr[window._carousel.idx] : null;
-      if (_srcGuard === 'wild-inspect' && _plantGuard && _plantGuard.own === false) {
+      // Fail-safe: when the carousel plant lacks ownership info entirely
+      // (synth bug elsewhere), treat as non-own. Strict-equals false would
+      // pass through a missing field and reveal stranger DNA.
+      if (_srcGuard === 'wild-inspect' && _plantGuard && !_plantGuard.own) {
         if (window._toast) window._toast('A cutting reveals the genome. The front face is all a passerby sees.');
         return;
       }
@@ -47816,32 +47910,14 @@ function showTP(p,mk){
   } else {
     if(ownActions)ownActions.style.display='none';
     if(otherAct)otherAct.style.display='flex';
-    // Proximity hint + reward preview for non-owned plants
-    var _dewRewards={Common:3,Uncommon:5,Rare:8,Epic:12,Legendary:18,Mythic:25,Cosmic:40};
-    var _reward=_dewRewards[p.grade]||'?';
+    // Proximity for non-owned plants \u2014 used by water-other/breed-other below.
+    // Harvest retired Apr 30 (clippings replaced); the wtp-act button + its
+    // setup block here are gone. Reward preview no longer surfaced on this
+    // panel since the only stranger payout path is now CUTTING via carousel.
     var _tooFar=false;
     var _distOther=0;
     if(_uLat&&p.lat){_distOther=_dist(_uLat,_uLng,p.lat,p.lng);_tooFar=_distOther>COLLECT_RANGE;}
-    if(ab){
-      if(_tooFar){
-        ab.style.opacity='0.35';ab.style.pointerEvents='none';
-        var _abLbl=ab.querySelector('.wtp2-btn-lbl');
-        if(_abLbl)_abLbl.textContent=Math.round(_distOther)+'m away';
-      } else {
-        ab.style.opacity='1';ab.style.pointerEvents='auto';
-        ab.onclick=function(){_harvestToPouch(p);};
-        var _abLbl2=ab.querySelector('.wtp2-btn-lbl');
-        if(_abLbl2)_abLbl2.textContent='Harvest';
-      }
-    }
-    if(ownStatus){
-      if(_tooFar){
-        ownStatus.innerHTML='Walk within '+Math.round(COLLECT_RANGE)+'m to harvest <span style="color:rgba(91,175,220,0.9);">\u2b50 '+_reward+' Dew</span>';
-      } else {
-        ownStatus.innerHTML='Beat their challenge to harvest <span style="color:rgba(91,175,220,0.9);">\u2b50 '+_reward+' Dew</span>';
-      }
-      ownStatus.style.display='block';
-    }
+    if(ownStatus){ownStatus.style.display='none';}
     // Water other player's plant button
     var waterOtherBtn=document.getElementById('wtp-water-other');
     if(waterOtherBtn){
@@ -47867,6 +47943,20 @@ function showTP(p,mk){
           var _wStart=Date.now();
           var _wInterval=setInterval(function(){
             var elapsed=((Date.now()-_wStart)/1000).toFixed(0);
+            // GPS recheck mid-hold — if the player walks away, abort. Without
+            // this you could open the panel within range, walk off, and the
+            // timer still completes "watering" a plant you can no longer see.
+            if (_uLat && p.lat) {
+              var _midD = _dist(_uLat,_uLng,p.lat,p.lng);
+              if (_midD > COLLECT_RANGE) {
+                clearInterval(_wInterval);
+                waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent='Walked away';
+                waterOtherBtn.style.background='';
+                if (window._toast) _toast('Too far now ('+Math.round(_midD)+'m). Hold cancelled.');
+                setTimeout(function(){ if(_uLat&&p.lat){var __re=_dist(_uLat,_uLng,p.lat,p.lng);if(__re<=COLLECT_RANGE)waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent='Water ('+Math.max(0,5-(_wBudget.count||0))+')';} },1500);
+                return;
+              }
+            }
             waterOtherBtn.querySelector('.wtp2-btn-lbl').textContent=elapsed+'s / 10s';
             if(elapsed>=10){
               clearInterval(_wInterval);
@@ -51310,7 +51400,7 @@ function _selectHexPlant(idx,p){
   var actions='';
   var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
   var isOwn=p.own||(user&&user.uid&&p.ownerUid===user.uid);
-  var _inspectBtn='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')">&#128269; INSPECT</button>';
+  var _inspectBtn='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')"><img src="assets/wild-inspect-btn.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#128269;\'"> INSPECT</button>';
   // Fertilizer count for the MULCH button gating + tooltip
   var _mInv={};try{_mInv=JSON.parse(localStorage.getItem('sws_inventory')||'{}')||{};}catch(e){}
   var _mFert=_mInv.fertilizer||0;
@@ -51381,9 +51471,11 @@ function _selectHexPlant(idx,p){
     // OWN: water cost is 5 Dew when fresh; cooldown text when watered.
     var _waterDew=window.getTotalDew?window.getTotalDew():0;
     var _waterLabel,_waterCls,_waterClick;
-    if(_waterCdMs>0){_waterLabel='&#128167; WATERED &middot; '+fmtCdH(_waterCdMs);_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Returns in '+fmtCdH(_waterCdMs)+'.\')';}
-    else if(_waterDew<5){_waterLabel='&#128167; WATER &middot; 5&#128167;';_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Need 5 Dew to water.\')';}
-    else{_waterLabel='&#128167; WATER &middot; 5&#128167;';_waterCls='';_waterClick='window._hexAction(\'water\')';}
+    var _wIco='<img src="assets/wild-water-btn.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#128167;\'">';
+    var _wDewIco='<img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=\'&#128167;\'">';
+    if(_waterCdMs>0){_waterLabel=_wIco+' WATERED &middot; '+fmtCdH(_waterCdMs);_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Returns in '+fmtCdH(_waterCdMs)+'.\')';}
+    else if(_waterDew<5){_waterLabel=_wIco+' WATER &middot; 5'+_wDewIco;_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Need 5 Dew to water.\')';}
+    else{_waterLabel=_wIco+' WATER &middot; 5'+_wDewIco;_waterCls='';_waterClick='window._hexAction(\'water\')';}
     actions+='<button class="hi-action-btn'+_waterCls+'" onclick="'+_waterClick+'">'+_waterLabel+'</button>';
     actions+=_inspectBtn;
     actions+=_mulchBtn;
@@ -51396,10 +51488,11 @@ function _selectHexPlant(idx,p){
     var _curDefName=_defGameNames[p.defenderGame]||'Trios';
     var _defCdMs=0;
     try{var _dcd=JSON.parse(localStorage.getItem('lw_defense_cd')||'{}');if(_dcd[p.hash]&&Date.now()-_dcd[p.hash]<24*3600000)_defCdMs=24*3600000-(Date.now()-_dcd[p.hash]);}catch(e){}
+    var _dIco='<img src="assets/wild-territory-shield.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#128737;\'">';
     if(_defCdMs>0){
-      actions+='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Defense: '+_curDefName+'. Change again in '+fmtCdH(_defCdMs)+'.\')">&#128737; DEFENSE: '+_curDefName.toUpperCase()+' &middot; '+fmtCdH(_defCdMs)+'</button>';
+      actions+='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Defense: '+_curDefName+'. Change again in '+fmtCdH(_defCdMs)+'.\')">'+_dIco+' DEFENSE: '+_curDefName.toUpperCase()+' &middot; '+fmtCdH(_defCdMs)+'</button>';
     } else {
-      actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')" title="Pick which mini-game challengers must beat to harvest this plant. 24h between changes.">&#128737; DEFENSE: '+_curDefName.toUpperCase()+'</button>';
+      actions+='<button class="hi-action-btn" onclick="window._hexAction(\'defense\')" title="Pick which mini-game challengers must beat to harvest this plant. 24h between changes.">'+_dIco+' DEFENSE: '+_curDefName.toUpperCase()+'</button>';
     }
   }else{
     // Wild v3: stranger plants no longer have HARVEST.
@@ -52355,6 +52448,7 @@ window._hexAction=function(action){
     // by the button itself via _waterHoldStart/End — by the time this
     // action fires, the player has already held for 5 seconds. We just
     // verify the hash cost, clear the pest, and toast the result.
+    if(!p.own){_toast('Only your own plants can be pruned. Take a cutting from a stranger\'s plant instead.');return;}
     if(_uLat&&p.lat){var _prDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_prDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_prDist)+'m away.');return;}}
     var _hashTotal=window.getTotalHashes?window.getTotalHashes():0;
     if(_hashTotal<3){_toast('Need 3 sunbeams to prune. Play a game to earn more.');return;}
@@ -52494,6 +52588,7 @@ window._hexAction=function(action){
     // a gameId to finish an in-flight drop, so it bailed silently because
     // _pendingDrop was null. _changeDefense opens the defender-game picker
     // for an already-placed plant.
+    if(!p.own){_toast('Defense is set by the planter. This isn\'t your plant.');return;}
     if(typeof _changeDefense==='function'){window._closeHexInspector();_changeDefense(p);}
     else{_toast('Defense picker unavailable.');}
   }else if(action==='phoenix'){
