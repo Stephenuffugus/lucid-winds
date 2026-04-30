@@ -273,7 +273,7 @@ Legendary×Legendary   → 33% Epic, 4% Mythic, 0.16% Cosmic
 | **Mythic creature** | The Toad (0xD0+) or The Cicada (0xE0+). Render via COMPANION layer at mythic-tier. |
 | **Mythic-tier** | Any LAYER at mythic rarity (e.g., a mythic-tier substrate like Phoenix Ash, a mythic-tier companion). Not the same as Mythic grade. |
 | **Mythic grade** | A PLANT graded Mythic (score 20+). A plant can have mythic-tier layers without being Mythic grade if score is insufficient. |
-| **Mutation byte** | Hash byte 16 (`hb(16)`). Values ≥ 0xCC produce visible mutations (Glitch, Glass Stem, etc). Rendered via MUTATION layer. |
+| **Mutation byte** | Hash byte 16 (`hb(16)`). Values ≥ 0xE1 produce visible mutations (Fossil, Albino, Wireframe, … Constellation). Effective fire rate ≈ 12.1% of mints. Rendered via MUTATION layer. |
 | **Sunbeams** | Hash-earning currency. 30 Sunbeams = 1 ready-to-mint plant. Player clicks ☀️ to convert queue into plant. |
 | **Dew** | Secondary currency earned from wild tending. Spent on: slot machine, mystery box, nursery skip, weather summon. |
 

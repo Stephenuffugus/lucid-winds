@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.04.30.36';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.04.30.37';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -10402,13 +10402,17 @@ document.addEventListener('keydown', function(e) {
       else if (_mn==='Constellation'||_mn==='Stained Glass'||_mn==='Daguerreotype') score += 5;
     }
 
-    // ── SPIKE: MYTHIC COMPANION (0-8) ── scored by mythic byte tier
+    // ── SPIKE: MYTHIC COMPANION (0-8) ── scored by mythic byte tier.
+    // Spike replaces companion-tier score (gated above at line ~10390).
+    // Creature names below match current TRAIT_BANK (Apr 2026). Retired
+    // names — Starfall, Storm Wraith, Biolum Pulse, Ancient Rune, Phoenix —
+    // were aura/event names, never companions; do not search for them.
     var _mb = t.mythic;
-    if (_mb===0xFF) score += 8;                          // Beholder (Cosmic)
-    else if (_mb>=0xFE) score += 7;                      // Starfall
-    else if (_mb>=0xFC) score += 6;                      // Storm Wraith
-    else if (_mb>=0xF4&&_mb<0xFC) score += 5;            // Biolum Pulse + Ancient Rune
-    else if (_mb>=0xD0&&_mb<0xF4) score += 4;            // Toad + Phoenix
+    if (_mb===0xFF) score += 8;                          // The Beholder       (idx 38, Cosmic)
+    else if (_mb>=0xFE) score += 7;                      // Garden Spider      (idx 37, Legendary)
+    else if (_mb>=0xFC) score += 6;                      // Great Blue Heron   (idx 36, Legendary)
+    else if (_mb>=0xF4&&_mb<0xFC) score += 5;            // Raccoon (idx 35) + Woolly Mammoth (idx 34), both Legendary
+    else if (_mb>=0xD0&&_mb<0xF4) score += 4;            // The Cicada (idx 33) + The Toad (idx 32), both Mythic
 
     // ── EARNED LAYERS (breeding, composting, synergies) ──
 
@@ -10427,9 +10431,12 @@ document.addEventListener('keydown', function(e) {
       if (t.breedLayers.aerialRoot) score += 1;
     }
 
-    // Compost layers (0-7)
+    // Compost layers (0-7). NOTE: mycelialCrown is intentionally NOT scored
+    // here — _executeBloom (index.html:41239) sets BOTH t.mycelialCrown and
+    // t.compostLayers.mycelialCrown from the same source, so the standalone
+    // +2 at line 10416 already covers the layer. Adding +1 here was a
+    // double-count (~+1 score per crowned plant). Audited 2026-04-30.
     if (t.compostLayers) {
-      if (t.compostLayers.mycelialCrown) score += 1;
       if (t.compostLayers.substrateEcho) score += 1;
       if (t.compostLayers.leafMemory) score += 1;
       if (t.compostLayers.auraResidue) score += 1;
