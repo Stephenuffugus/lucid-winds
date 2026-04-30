@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.4';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -62162,7 +62162,7 @@ function openCharacter(){
   _loadCompanion();_renderShowcase();_loadFeaturedHaiku();
   _renderClassSection();_renderToolSection();_renderEffectsSection();
   _renderMilestoneSection();
-  try{ _loadKeeperCocoon(); }catch(e){}
+  try{ if(window._loadKeeperCocoon) window._loadKeeperCocoon(); }catch(e){}
   try{if(window._lwRefreshAvatar)window._lwRefreshAvatar();}catch(e){}
   document.getElementById('pw-character').classList.add('open');
   // Tick booster timers every 30s while open
@@ -62528,7 +62528,7 @@ function _loadCompanion(){
     if(buff)buff.innerHTML=_buffText;
   }catch(e){}
 }
-function _loadKeeperCocoon(){
+window._loadKeeperCocoon = function(){
   var section = document.getElementById('cs-cocoon-section');
   if (!section) return;
   if (!window.LW_KEEPER) { section.style.display='none'; return; }
@@ -80578,7 +80578,7 @@ window.LW_debug.cleanGhostDrops = function(){
       key:'wasp',
       cocoonName:'A Curious Caterpillar',
       hatchedName:'Parasitic Wasp',
-      cocoonArt:'assets/cocoons/keeper-caterpillar.png',
+      cocoonArt:'assets/companions/caterpillar.png',
       hatchedArt:'assets/companions/parasitic_wasp.png',
       flavor:'It eats more than its share. Something is taking shape inside it.',
       hatchFlavor:'A wasp emerges, jeweled and watchful. It hunts the pests that visit your wild plants.',
@@ -80638,8 +80638,9 @@ window.LW_debug.cleanGhostDrops = function(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }catch(e){}
     // Push to cloud — paid Sunbeam + Dew unlocks must survive reinstall.
     try{ if(window.syncVaultToCloud) window.syncVaultToCloud(); }catch(e){}
-    // Refresh keeper-bar pip + character sheet.
+    // Refresh keeper-bar pip + character-sheet section if open.
     try{ refreshPip(); }catch(e){}
+    try{ if(window._loadKeeperCocoon) window._loadKeeperCocoon(); }catch(e){}
   }
   // Pick the cocoon to surface in the keeper-bar pip. Priority:
   //   1. equipped + hatched     (show hatched art)
@@ -80806,16 +80807,28 @@ window.LW_debug.cleanGhostDrops = function(){
   }
 
   // Walking hook. Called from _addSteps with post-multiplier meters.
-  // Only credits the equipped cocoon. Hatched cocoons are no-ops.
+  // Credits the currently-incubating cocoon (equip-state irrelevant for
+  // progress; equip only gates abilities). Chain prereq means at most
+  // one cocoon is ever in 'incubating' state, so this is unambiguous.
   function creditMeters(meters){
     if(!meters || meters<=0) return;
     // Tutorial gate — match _addSteps milestone gating.
     try{ if(window._tutInProg) return; }catch(e){}
     var d=_load();
-    if(!d.equipped) return;
-    var key = d.equipped;
-    var o = d.owned && d.owned[key];
-    if(!o || o.state!=='incubating') return;
+    if(!d.owned) return;
+    // Find the incubating cocoon (max one at a time, by chain rule).
+    // Prefer equipped if it's incubating; otherwise first incubating.
+    var key = null;
+    if (d.equipped && d.owned[d.equipped] && d.owned[d.equipped].state==='incubating') {
+      key = d.equipped;
+    } else {
+      for (var i=0;i<KEEPERS.length;i++){
+        var k = KEEPERS[i].key;
+        if (d.owned[k] && d.owned[k].state==='incubating'){ key = k; break; }
+      }
+    }
+    if(!key) return;
+    var o = d.owned[key];
     var spec=_spec(key); if(!spec) return;
     var prev = o.distance || 0;
     var next = prev + meters;
