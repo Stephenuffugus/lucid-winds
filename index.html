@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.12';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -49005,6 +49005,16 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   }
   var attEA=(attackerPlant&&attackerPlant.ea)||0;
   var defEA=(defenderPlant&&defenderPlant.ea)||0;
+  // Guardians family — defenseEA multiplier (base L1: +3%, scales with
+  // companion level + class affinity via getCompanionMult). Stephen audit
+  // 2026-05-01 #3. Wired here because contest-roll is the only canonical
+  // surface where defender EA matters.
+  try {
+    if (defenderPlant && window.LW_COMPANION && window.LW_COMPANION.getCompanionMult) {
+      var _deaMult = window.LW_COMPANION.getCompanionMult('defenseEA');
+      if (_deaMult > 1) defEA = Math.round(defEA * _deaMult);
+    }
+  } catch(e){}
   // Attacker's roll:
   //   Torch = 3d6 keep best 2   (attacker buff)
   //   Bramble = attacker rolls only 1d6 (defender buff — spec: "attackers
@@ -62583,8 +62593,8 @@ function _loadCompanion(){
             dewRate:'Dew income', feralRange:'Feral range', feralRarity:'Rare feral odds',
             pollen:'Pollen/XP', chimeraPurity:'Chimera purity', breedReward:'Breed reward',
             plantLifespan:'Plant lifespan', defenseEA:'Defense EA', stepXp:'Step XP',
-            biomeReveal:'Biome reveal', waterEfficiency:'Water XP', eaFloor:'EA floor',
-            bookEntryRate:'Book entries', revealTrait:'Trait reveal'
+            waterEfficiency:'Water XP', eaFloor:'EA floor',
+            revealTrait:'Trait reveal'
           };
           var _chips = '';
           for (var _bk in _famBuffs) {
@@ -82449,11 +82459,15 @@ window.LW_debug.cleanGhostDrops = function(){
     pollinators: { pollen: 1.03 },
     scatterers:  { feralRange: 1.03, feralRarity: 1.03 },
     weavers:     { chimeraPurity: 1.03, breedReward: 1.03 },
-    wayfinders:  { stepXp: 1.03, biomeReveal: 1.03 },
+    // Wayfinders — biomeReveal removed 2026-05-01 (audit #3): the game
+    // shows biomes on GPS arrival, no discovery-rate mechanic exists.
+    wayfinders:  { stepXp: 1.03 },
     guardians:   { plantLifespan: 1.03, defenseEA: 1.03 },
     conduits:    { dewRate: 1.03, waterEfficiency: 1.03 },
     mycelium:    { eaFloor: 1.03 },
-    listeners:    { bookEntryRate: 1.03, revealTrait: 1.03 }
+    // Listeners — bookEntryRate removed 2026-05-01 (audit #3): event
+    // triggers are deterministic, not RNG-gated.
+    listeners:    { revealTrait: 1.03 }
   };
   function getActiveCompanionIdx() {
     try {
