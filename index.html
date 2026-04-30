@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -914,6 +914,21 @@
     }
     localStorage.setItem('lw_version',LW_VERSION);
   })();
+  </script>
+  <script>
+  // Local-midnight day key (YYYY-MM-DD) for player-facing daily caps.
+  // Stephen audit 2026-05-01 #16: caps used UTC midnight, which made
+  // Pacific Time players' "fresh day" flip at 4pm local — confusing
+  // ("I just used these 6 hours ago, why do I have more?"). Using
+  // local components means each player's caps reset at their own
+  // midnight. Data records (plant mint dates, feral dates, weather
+  // cache keys) intentionally still use UTC for cross-device consistency.
+  window._lwLocalDay = function(){
+    var d = new Date();
+    var m = d.getMonth() + 1;
+    var dd = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (dd < 10 ? '0' + dd : dd);
+  };
   </script>
   <script>(function(){
     var CK=7776000;
@@ -44647,7 +44662,8 @@ window._getWildVitality=_getWildVitality;
 // day, 10 tends per player per day. Tracked in localStorage; resets
 // at midnight local. Used by both Dew tend and Sunbeam rescue.
 function _lwTendCaps(){
-  var today=new Date().toISOString().split('T')[0];
+  // Stephen audit 2026-05-01 #16: local midnight reset.
+  var today=(window._lwLocalDay?_lwLocalDay():new Date().toISOString().split('T')[0]);
   var raw='{}';try{raw=localStorage.getItem('lw_tend_caps')||'{}';}catch(e){}
   var c={};try{c=JSON.parse(raw)||{};}catch(e){}
   if(c.day!==today){c={day:today,total:0,perPlant:{}};}
@@ -52525,8 +52541,9 @@ window._hexAction=function(action){
       }
     }else{
       // Water a stranger's plant — budgeted kindness, +2h via shared marker.
+      // Stephen audit 2026-05-01 #16: cap resets at LOCAL midnight via _lwLocalDay.
       var wk='lw_water_budget',wb={};try{wb=JSON.parse(localStorage.getItem(wk)||'{}');}catch(e){}
-      var wt=new Date().toISOString().split('T')[0];if(wb.date!==wt)wb={date:wt,count:0};
+      var wt=(window._lwLocalDay?_lwLocalDay():new Date().toISOString().split('T')[0]);if(wb.date!==wt)wb={date:wt,count:0};
       if(wb.count>=5){_toast('No waters left today (5/day).');return;}
       var _wDistTxt='';
       if(_uLat&&p.lat){
@@ -52813,9 +52830,11 @@ window._hexAction=function(action){
     if(p.own){_toast('That\u2019s your own plant. Just breed it in the greenhouse.');return;}
     var _cutKey='lw_cuttings_taken',_cutLog={};try{_cutLog=JSON.parse(localStorage.getItem(_cutKey)||'{}');}catch(e){}
     if(_cutLog[p.hash]){_toast('You\u2019ve already taken a cutting from this plant. Each is a lifetime one-shot.');return;}
-    // Daily per-player cap: 2 cuttings/day (anti-locust). Resets at local midnight.
+    // Daily per-player cap: 2 cuttings/day (anti-locust). Resets at local
+    // midnight. Stephen audit 2026-05-01 #16: comment said "local midnight"
+    // but the key was UTC. Now matches the comment via _lwLocalDay.
     var _cutDayKey='lw_cuttings_daily',_cutDay={};try{_cutDay=JSON.parse(localStorage.getItem(_cutDayKey)||'{}');}catch(e){}
-    var _cutToday=new Date().toISOString().split('T')[0];
+    var _cutToday=(window._lwLocalDay?_lwLocalDay():new Date().toISOString().split('T')[0]);
     if(_cutDay.day!==_cutToday){_cutDay={day:_cutToday,count:0};}
     var CUTTINGS_PER_DAY=2;
     if((_cutDay.count||0)>=CUTTINGS_PER_DAY){_toast('Daily cuttings used ('+CUTTINGS_PER_DAY+'/'+CUTTINGS_PER_DAY+'). Resets at midnight.');return;}
@@ -79082,7 +79101,8 @@ window._lwClaimHerbarium = function(id){
     // cooldown a player could re-pin the moment the 6h window expires
     // and effectively get unbounded extra remote attempts. Cap at one
     // pin per local-date so the "free attempt" is real but bounded.
-    var _today = new Date().toISOString().slice(0,10);
+    // Stephen audit 2026-05-01 #16: local midnight reset.
+    var _today = (window._lwLocalDay ? _lwLocalDay() : new Date().toISOString().slice(0,10));
     var _lastPinDay = '';
     try { _lastPinDay = localStorage.getItem('lw_slow_arrow_pin_day') || ''; } catch(e){}
     if (_lastPinDay === _today) {
