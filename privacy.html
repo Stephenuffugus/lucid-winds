@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d100c">
+<title>Privacy Policy — Lucid Winds</title>
+<link rel="icon" type="image/png" href="assets/icon-192.png">
+<style>
+  body {
+    margin: 0;
+    padding: 2rem 1.25rem 4rem;
+    background: #0d100c;
+    color: #e8dcc8;
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h1, h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: #c8a84b;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+  h1 {
+    font-size: 1.7rem;
+    margin: 0 0 0.5rem;
+    border-bottom: 1px solid rgba(122, 179, 86, 0.25);
+    padding-bottom: 0.6rem;
+  }
+  h2 {
+    font-size: 1.05rem;
+    margin: 2rem 0 0.5rem;
+    color: #7ab356;
+  }
+  .meta {
+    font-size: 0.7rem;
+    color: #8a9178;
+    margin-bottom: 1.5rem;
+  }
+  a {
+    color: #c8a84b;
+    text-decoration: underline;
+  }
+  ul {
+    padding-left: 1.4rem;
+  }
+  li {
+    margin-bottom: 0.4rem;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 2rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(122, 179, 86, 0.4);
+    border-radius: 8px;
+    color: #7ab356;
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Privacy Policy</h1>
+<div class="meta">Lucid Winds — last updated April 30, 2026</div>
+
+<p>
+  Lucid Winds is a single-player botanical game with optional cloud sync and Pi
+  Network payments. This page explains exactly what we collect, why, and what
+  we do not do.
+</p>
+
+<h2>Who we are</h2>
+<p>
+  Lucid Winds is built and operated by Stephen Furpahs as an independent
+  developer. Contact: <a href="mailto:stephenfurpahs@gmail.com">stephenfurpahs@gmail.com</a>.
+</p>
+
+<h2>What we collect</h2>
+<ul>
+  <li>
+    <b>Account email + password hash.</b> Stored in Firebase Authentication so
+    you can sign in across devices. Password is hashed by Firebase; we never
+    see the plaintext.
+  </li>
+  <li>
+    <b>Game state.</b> Your greenhouse, nursery, wild plants, currencies,
+    achievements, settings. Stored in Firebase Firestore at <code>vaults/{your-uid}</code>.
+    Readable only by you (enforced by Firestore security rules).
+  </li>
+  <li>
+    <b>Wild plant locations you choose to share.</b> When you sow a plant on
+    the real-world map, the latitude and longitude you tap and the plant's
+    hash are written to a public collection so other players can interact with
+    it. You can drop plants only at your own location.
+  </li>
+  <li>
+    <b>Anonymous Pi user identifier.</b> If you pay with Pi, the Pi Network
+    SDK gives us a Pi-issued user ID and the payment ID. We use these to
+    fulfill your purchase and reconcile with Pi's servers. We do not receive
+    your Pi wallet address, your phone number, or your name.
+  </li>
+  <li>
+    <b>Anonymous analytics.</b> Google Analytics 4 (measurement ID
+    G-XE58S4X6RX) records aggregate, non-identifying events such as
+    "game completed" or "tab switched." It uses Google's standard cookies and
+    is subject to <a href="https://policies.google.com/privacy">Google's privacy policy</a>.
+  </li>
+  <li>
+    <b>Approximate device location.</b> The Wild tab uses your browser's
+    geolocation API to show your position on a map and to allow planting and
+    foraging. Location is read only while the Wild tab is open and is not
+    stored, except as part of plants you choose to drop.
+  </li>
+</ul>
+
+<h2>What we do not collect</h2>
+<ul>
+  <li>We do not sell your data.</li>
+  <li>We do not run third-party advertising.</li>
+  <li>We do not access your contacts, photos, microphone, or camera.</li>
+  <li>We do not custody your Pi. All payments flow through Pi Network's SDK and your Pi wallet.</li>
+</ul>
+
+<h2>How long we keep it</h2>
+<p>
+  Account data lives as long as your account exists. If you want it deleted,
+  email us at the address above and we will remove your <code>vaults/{uid}</code>
+  document and Firebase Authentication record within 14 days.
+</p>
+
+<h2>Children</h2>
+<p>
+  Lucid Winds is a general-audience botanical game. It is not directed at
+  children under 13 and we do not knowingly collect data from them.
+</p>
+
+<h2>Third parties we rely on</h2>
+<ul>
+  <li>
+    <b>Firebase</b> (Google) — authentication and Firestore database.
+    <a href="https://firebase.google.com/support/privacy">Firebase privacy</a>.
+  </li>
+  <li>
+    <b>Pi Network</b> — payments. <a href="https://minepi.com/privacy/">Pi privacy</a>.
+  </li>
+  <li>
+    <b>Google Analytics</b> — anonymous usage analytics.
+    <a href="https://policies.google.com/privacy">Google privacy</a>.
+  </li>
+  <li>
+    <b>Open-Meteo</b> — weather data for the climate damage system. No personal
+    data sent. <a href="https://open-meteo.com/en/terms">Open-Meteo terms</a>.
+  </li>
+  <li>
+    <b>OpenStreetMap / CartoDB</b> — map tiles for the Wild tab. No personal
+    data sent.
+  </li>
+  <li>
+    <b>Stripe</b> (optional) — credit card tips. Stripe handles all card data
+    directly. <a href="https://stripe.com/privacy">Stripe privacy</a>.
+  </li>
+</ul>
+
+<h2>Your rights</h2>
+<p>
+  You can request a copy of the data we hold about you, or request deletion,
+  by emailing <a href="mailto:stephenfurpahs@gmail.com">stephenfurpahs@gmail.com</a>.
+  We will respond within 30 days.
+</p>
+
+<h2>Changes</h2>
+<p>
+  If this policy changes meaningfully we will update the "last updated" date
+  at the top and, where appropriate, surface a notice in the app.
+</p>
+
+<a class="back-link" href="/">← back to lucidwinds.com</a>
+
+</body>
+</html>
