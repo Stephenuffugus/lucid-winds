@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.58';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.59';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -30937,6 +30937,8 @@ document.addEventListener('keydown', function(e) {
         // Orbit path — gentle figure-8 hover
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;2,-1.5;0.5,1;-1.5,-0.5;0,0" dur="5s" repeatCount="indefinite"/>';
         // Outer glow — large soft halo
+        // 2x pollen-halo wash — extra wide low-opacity outer ring (master playbook E4)
+        s += '<circle cx="55" cy="22" r="12" fill="rgba(140,200,255,0.04)"><animate attributeName="r" values="12;14;12" dur="3s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="55" cy="22" r="6" fill="rgba(140,200,255,0.08)"><animate attributeName="r" values="6;7.5;6" dur="2s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="55" cy="22" r="4" fill="rgba(160,220,255,0.12)"><animate attributeName="r" values="4;5;4" dur="2s" repeatCount="indefinite"/></circle>';
         // Core body — brilliant blue-white orb
@@ -30944,6 +30946,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="55" cy="22" r="1.4" fill="rgba(220,245,255,0.85)"/>';
         // Hot center — pure white
         s += '<circle cx="55" cy="22" r="0.7" fill="#fff8e0"/>';
+        // A3 sharp white specular pickup (upper-left), brighter than cream core
+        s += '<circle cx="54.75" cy="21.75" r="0.28" fill="#ffffff" opacity="0.9"/>';
         // Wings — translucent diamond shapes, rapid flutter
         s += '<path d="M53,22 L49,18 L48,22 L53,22Z" fill="rgba(180,230,255,0.2)" stroke="rgba(200,240,255,0.3)" stroke-width="0.2"><animate attributeName="opacity" values="0.2;0.35;0.2" dur="0.3s" repeatCount="indefinite"/></path>';
         s += '<path d="M57,22 L61,18 L62,22 L57,22Z" fill="rgba(180,230,255,0.2)" stroke="rgba(200,240,255,0.3)" stroke-width="0.2"><animate attributeName="opacity" values="0.2;0.35;0.2" dur="0.3s" repeatCount="indefinite"/></path>';
@@ -30957,6 +30961,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="51" cy="27" r="0.15" fill="rgba(200,240,255,0.3)"><animate attributeName="opacity" values="0.3;0.05;0.3" dur="1.8s" repeatCount="indefinite"/></circle>';
         // Ground illumination — soft pool of light beneath
         s += '<ellipse cx="55" cy="30" rx="4" ry="0.8" fill="rgba(140,200,255,0.04)"><animate attributeName="rx" values="4;5;4" dur="2s" repeatCount="indefinite"/></ellipse>';
+        // A2 warm bounce — cream tint at the hottest pool center
+        s += '<ellipse cx="55" cy="30" rx="1.5" ry="0.35" fill="rgba(245,236,214,0.06)"/>';
         // Action marks (( )) near wings
         s += '<path d="M47,21 Q46.5,22.5 47,24" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M46.2,20.5 Q45.5,22.5 46.2,24.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -30968,8 +30974,10 @@ document.addEventListener('keydown', function(e) {
         // blur in flight. The bee that makes gardens possible.
         s += '<g opacity="0.78" transform="translate(12,29) scale(1.4) translate(-12,-29)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.8,-1.2;-0.3,0.4;0.5,-0.8;0,0" dur="3.5s" repeatCount="indefinite"/>';
-        // AO ground shadow — warm soft ellipse beneath hovering bee
+        // AO ground shadow — warm soft ellipse beneath hovering bee (A6 3-stack)
+        s += '<ellipse cx="12" cy="33.2" rx="2.6" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="12" cy="33" rx="2.2" ry="0.4" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="12" cy="32.95" rx="1.5" ry="0.18" fill="rgba(40,20,5,0.20)"/>';
         // Wings — translucent with venation, rapid flutter
         // Forewings (larger)
         s += '<ellipse cx="10.5" cy="27.5" rx="3" ry="1.4" fill="rgba(230,225,210,0.2)" stroke="rgba(200,195,180,0.15)" stroke-width="0.12" transform="rotate(-25,10.5,27.5)"><animate attributeName="ry" values="1.4;0.6;1.4" dur="0.15s" repeatCount="indefinite"/></ellipse>';
@@ -30977,6 +30985,9 @@ document.addEventListener('keydown', function(e) {
         // Wing veins — faint internal structure
         s += '<line x1="10.5" y1="27.5" x2="8.5" y2="26.5" stroke="rgba(180,175,160,0.1)" stroke-width="0.06"/>';
         s += '<line x1="13.5" y1="27.5" x2="15.5" y2="26.5" stroke="rgba(180,175,160,0.1)" stroke-width="0.06"/>';
+        // A3 sharp specular sliver on each forewing leading edge (master playbook)
+        s += '<path d="M9.5,27 Q10,26.5 10.8,26.6" stroke="#fff8e0" stroke-width="0.1" fill="none" opacity="0.55" stroke-linecap="round"/>';
+        s += '<path d="M14.5,27 Q14,26.5 13.2,26.6" stroke="#fff8e0" stroke-width="0.1" fill="none" opacity="0.55" stroke-linecap="round"/>';
         // (hindwings removed — at this scale they read as a 3rd wing)
         // Thorax — fuzzy, golden-brown (the "teddy bear")
         s += '<ellipse cx="12" cy="29" rx="1.8" ry="1.4" fill="#B89840"/>';
@@ -31018,6 +31029,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="10" cy="32.5" r="0.3" fill="#D8B840" opacity="0.5"/>';
         s += '<line x1="12.8" y1="31.5" x2="14" y2="32.5" stroke="#3A3018" stroke-width="0.15"/>';
         s += '<circle cx="14" cy="32.5" r="0.25" fill="#D8B840" opacity="0.45"/>';
+        // Pollen-halo cream glints on baskets (E4 2x radius wash)
+        s += '<circle cx="10" cy="32.5" r="0.6" fill="rgba(245,236,214,0.10)"/>';
+        s += '<circle cx="14" cy="32.5" r="0.5" fill="rgba(245,236,214,0.08)"/>';
         // Action marks (( )) near wings
         s += '<path d="M9,27 Q8.5,28.5 9,30" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M8.2,26.5 Q7.5,28.5 8.2,30.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -31036,6 +31050,8 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="'+_pbx+'" cy="'+(_pby+_pbR+0.8)+'" rx="'+(_pbR*1.1)+'" ry="0.6" fill="rgba(40,20,5,0.19)">';
         s += '<animate attributeName="rx" values="'+(_pbR*1.1)+';'+(_pbR*0.9)+';'+(_pbR*1.1)+';'+(_pbR*0.9)+';'+(_pbR*1.1)+'" dur="6s" repeatCount="indefinite"/>';
         s += '</ellipse>';
+        // A6 contact crease — tighter dark line right at ground meeting
+        s += '<ellipse cx="'+_pbx+'" cy="'+(_pby+_pbR+0.6)+'" rx="'+(_pbR*0.7)+'" ry="0.18" fill="rgba(40,20,5,0.30)"/>';
         // Spin rotation synced to the roll direction
         s += '<g transform="translate('+_pbx+','+_pby+')">';
         s += '<animateTransform attributeName="transform" type="rotate" values="0,0,0;25,0,0;0,0,0;-25,0,0;0,0,0" dur="6s" repeatCount="indefinite" additive="sum"/>';
@@ -31101,6 +31117,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M-1.0,'+(_pbR*0.88)+' Q0,'+(_pbR*0.97)+' 1.0,'+(_pbR*0.88)+'" fill="none" stroke="rgba(60,60,70,0.15)" stroke-width="0.1"/>';
         // Specular highlight — top-left sheen
         s += '<ellipse cx="'+(-_pbR*0.3)+'" cy="'+(-_pbR*0.35)+'" rx="'+(_pbR*0.45)+'" ry="'+(_pbR*0.3)+'" fill="rgba(200,200,220,0.08)" transform="rotate(-20)"/>';
+        // A3 sharp pickup near top-left brightest point
+        s += '<ellipse cx="'+(-_pbR*0.35)+'" cy="'+(-_pbR*0.5)+'" rx="'+(_pbR*0.18)+'" ry="'+(_pbR*0.12)+'" fill="#fff8e0" opacity="0.30" transform="rotate(-15)"/>';
         // Iridescent purple sheen on center plates
         s += '<ellipse cx="0" cy="0" rx="'+(_pbR*0.6)+'" ry="'+(_pbR*0.35)+'" fill="rgba(160,150,200,0.05)"/>';
         s += '</g>'; // end rotation group
@@ -31113,7 +31131,11 @@ document.addEventListener('keydown', function(e) {
         // patterns to attract mates. Not constant — rhythmic flashing.
         s += '<g transform="translate(54,25) scale(1.5) translate(-54,-25)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;-0.5,-1;0.8,0.5;-0.3,-0.5;0,0" dur="5s" repeatCount="indefinite"/>';
+        // AO drop shadow — warm soft, faint (firefly hovers but ground-pool reads)
+        s += '<ellipse cx="54" cy="29" rx="2" ry="0.3" fill="rgba(40,20,5,0.18)"/>';
         // Glow field — wide ambient light from the lantern
+        // 2x pollen-halo outermost wash — extra-wide ambient bloom (master playbook E4)
+        s += '<circle cx="54" cy="26.5" r="6" fill="rgba(200,200,80,0.025)"><animate attributeName="opacity" values="0.025;0.08;0.01;0.07;0.025" dur="3.2s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="54" cy="26.5" r="3" fill="rgba(200,200,80,0.04)"><animate attributeName="opacity" values="0.04;0.15;0.02;0.12;0.04" dur="3.2s" repeatCount="indefinite"/></circle>';
         // Wing covers (elytra) — dark, elongated
         s += '<ellipse cx="54" cy="24.5" rx="1.2" ry="2.0" fill="#2A2820" opacity="0.8"/>';
@@ -31143,6 +31165,8 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="54" cy="26.5" rx="0.5" ry="0.4" fill="rgba(230,250,120,0.5)"><animate attributeName="opacity" values="0.5;0.9;0.1;0;0.7;1;0.3;0.5" dur="3.2s" repeatCount="indefinite"/></ellipse>';
         // Hot pinpoint — brightest at flash peak
         s += '<circle cx="54" cy="26.5" r="0.2" fill="rgba(255,255,200,0.6)"><animate attributeName="opacity" values="0.6;1;0;0;0.8;1;0.2;0.6" dur="3.2s" repeatCount="indefinite"/></circle>';
+        // A2 warm bounce-light pool below lantern (ground reflection)
+        s += '<ellipse cx="54" cy="29" rx="2.5" ry="0.4" fill="rgba(220,210,120,0.08)"><animate attributeName="opacity" values="0.08;0.18;0.02;0.0;0.14;0.20;0.04;0.08" dur="3.2s" repeatCount="indefinite"/></ellipse>';
         // Legs — 3 pairs, dangling in flight
         s += '<line x1="53.3" y1="24.5" x2="52.5" y2="25.5" stroke="#2A2820" stroke-width="0.1"/>';
         s += '<line x1="54.7" y1="24.5" x2="55.5" y2="25.5" stroke="#2A2820" stroke-width="0.1"/>';
@@ -31165,6 +31189,8 @@ document.addEventListener('keydown', function(e) {
         // two rows of white dots in the black border, black body.
         s += '<g opacity="0.82" transform="translate(60,22) scale(1.6) translate(-60,-22)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,-1.5;-0.6,0.8;0.4,-1;0,0" dur="6s" repeatCount="indefinite"/>';
+        // AO ground shadow — warm soft, faint (butterfly hovering)
+        s += '<ellipse cx="60" cy="30" rx="6" ry="0.6" fill="rgba(40,20,5,0.16)"/>';
         // ── LEFT FOREWING — broad, rounded outer edge ──
         // Black base (the border)
         s += '<path d="M59.5,21 Q56,17 52,15 Q50,14.5 50.5,16 Q51,18 53,20 Q55,22 59.5,23.5 Z" fill="#1a1208"/>';
@@ -31190,6 +31216,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M61,22 L64.5,17.5" stroke="#1a1208" stroke-width="0.35"/>';
         s += '<path d="M61,22 L63.5,19" stroke="#1a1208" stroke-width="0.3"/>';
         s += '<path d="M61,22 L66.5,19" stroke="#1a1208" stroke-width="0.3"/>';
+        // A3 cream specular slivers on forewing leading edges (master dual-specular)
+        s += '<path d="M58,21 Q56,19 54,17.5" stroke="#fff8e0" stroke-width="0.18" fill="none" opacity="0.40" stroke-linecap="round"/>';
+        s += '<path d="M62,21 Q64,19 66,17.5" stroke="#fff8e0" stroke-width="0.18" fill="none" opacity="0.40" stroke-linecap="round"/>';
         // Hindwing veins
         s += '<path d="M59.5,24 L55.5,26" stroke="#1a1208" stroke-width="0.25"/>';
         s += '<path d="M59.5,24 L57,26.5" stroke="#1a1208" stroke-width="0.25"/>';
@@ -31230,6 +31259,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="57.5" cy="17.5" r="0.2" fill="#1a1208"/>';
         s += '<path d="M60.4,19.3 Q61.5,18 62.5,17.5" stroke="#1a1208" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         s += '<circle cx="62.5" cy="17.5" r="0.2" fill="#1a1208"/>';
+        // Cream catchlight pickups on each club tip (A3)
+        s += '<circle cx="57.42" cy="17.42" r="0.08" fill="#f5ecd6" opacity="0.7"/>';
+        s += '<circle cx="62.42" cy="17.42" r="0.08" fill="#f5ecd6" opacity="0.7"/>';
         // Wing flutter
         s += '<animateTransform attributeName="transform" type="rotate" values="-3,60,22;5,60,22;-3,60,22" dur="2s" repeatCount="indefinite" additive="sum"/>';
         // Action marks (( )) near wings
@@ -31254,6 +31286,9 @@ document.addEventListener('keydown', function(e) {
         // Right hindwing tail
         s += '<path d="M12,18 Q14,19 15.5,20.5 Q16,22 15.5,21 Q14,20 12,19" fill="#98D078" opacity="0.38"/>';
         s += '<path d="M15.5,21 Q16.5,23.5 16,25 Q15.5,25.5 15.5,24.5 Q16,23 15.5,21" fill="#88C068" opacity="0.32"/>';
+        // Tail tip terminators — warm-dark dots at trailing tail ends
+        s += '<circle cx="8.2" cy="25" r="0.13" fill="rgba(40,20,5,0.45)"/>';
+        s += '<circle cx="15.8" cy="25" r="0.13" fill="rgba(40,20,5,0.45)"/>';
         // Wing veins — delicate, radiating from body
         s += '<path d="M12,18 L8,15" stroke="rgba(130,190,100,0.15)" stroke-width="0.1"/>';
         s += '<path d="M12,18 L9,16" stroke="rgba(130,190,100,0.12)" stroke-width="0.08"/>';
@@ -31271,6 +31306,9 @@ document.addEventListener('keydown', function(e) {
         // Leading edge highlight — darker front edge of forewing
         s += '<path d="M12,18 Q9,16 7,14" fill="none" stroke="rgba(150,100,80,0.15)" stroke-width="0.3"/>';
         s += '<path d="M12,18 Q15,16 17,14" fill="none" stroke="rgba(150,100,80,0.15)" stroke-width="0.3"/>';
+        // A3 cream sliver — pale wing pickup picks up the moonlight
+        s += '<path d="M11.5,17.5 Q9.5,15.7 8,14.5" stroke="#f5ecd6" stroke-width="0.12" fill="none" opacity="0.30" stroke-linecap="round"/>';
+        s += '<path d="M12.5,17.5 Q14.5,15.7 16,14.5" stroke="#f5ecd6" stroke-width="0.12" fill="none" opacity="0.30" stroke-linecap="round"/>';
         // Body — white, furry
         s += '<ellipse cx="12" cy="18" rx="0.5" ry="1.5" fill="#E8E0D0" opacity="0.6"/>';
         s += '<ellipse cx="12" cy="18" rx="0.35" ry="1" fill="#F0EAD8" opacity="0.3"/>';
@@ -31286,6 +31324,8 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="13" y1="15.8" x2="13.5" y2="15.5" stroke="#C0B8A0" stroke-width="0.06"/>';
         s += '<line x1="12.8" y1="15.5" x2="13.2" y2="15.2" stroke="#C0B8A0" stroke-width="0.06"/>';
         // Moonlight glow — luna moths are associated with the moon
+        // 2x outer pollen-halo wash (master playbook E4)
+        s += '<ellipse cx="12" cy="18" rx="6" ry="7" fill="rgba(160,220,130,0.018)"><animate attributeName="opacity" values="0.018;0.035;0.018" dur="6s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="12" cy="18" rx="3" ry="3.5" fill="rgba(160,220,130,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
         // Action marks (( )) near wings
         s += '<path d="M5.5,17 Q5,18.5 5.5,20" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
@@ -31311,6 +31351,10 @@ document.addEventListener('keydown', function(e) {
         // Dome highlight — glossy shell sheen
         s += '<ellipse cx="55.2" cy="88.8" rx="1.2" ry="0.7" fill="rgba(255,120,120,0.15)"/>';
         s += '<ellipse cx="55" cy="88.5" rx="0.5" ry="0.3" fill="rgba(255,200,200,0.2)"/>';
+        // A3 sharp white pickup — the lacquer hot spot
+        s += '<ellipse cx="54.85" cy="88.4" rx="0.2" ry="0.12" fill="#ffffff" opacity="0.7"/>';
+        // A2 warm-shifted shadow on right shoulder of dome (away from upper-left light)
+        s += '<ellipse cx="57.2" cy="89.7" rx="1.2" ry="1.4" fill="rgba(60,15,5,0.18)"/>';
         // Center suture line — where elytra meet
         s += '<line x1="56" y1="87.7" x2="56" y2="91.3" stroke="#1a1208" stroke-width="0.25"/>';
         // THE 7 SPOTS — species-specific pattern (septempunctata = "seven-spotted")
@@ -31355,8 +31399,11 @@ document.addEventListener('keydown', function(e) {
         // ── SLIME TRAIL — MUCH LONGER, wavy, to the left ──
         s += '<path d="M-15,91.5 Q-12,90.5 -9,91.5 Q-6,92.5 -3,91 Q0,89.5 3,91 Q5,92 7,91 Q9,92 10,91" fill="none" stroke="rgba(200,215,190,0.22)" stroke-width="1.5" stroke-linecap="round"/>';
         s += '<path d="M-15,91.5 Q-12,90.8 -9,91.6 Q-6,92.4 -3,91.1 Q0,89.8 3,91.1 Q5,92 7,91.1 Q9,92 10,91" fill="none" stroke="#fff8e0" stroke-width="3" opacity="0.15"/>';
-        // Shadow — warm-shifted AO
+        // Shadow — warm-shifted AO (3-stack)
         s += '<ellipse cx="11" cy="92" rx="6" ry="0.6" fill="rgba(40,20,5,0.18)"/>';
+        s += '<ellipse cx="11" cy="91.85" rx="3.8" ry="0.22" fill="rgba(40,20,5,0.30)"/>';
+        // Warm under-shell shadow — AO where shell meets body
+        s += '<ellipse cx="7.5" cy="89.8" rx="2.6" ry="0.4" fill="rgba(40,20,5,0.20)"/>';
         // ── BODY — one continuous piece: foot → neck → head ──
         // The entire soft body is a single filled shape
         s += '<path d="M9,91 Q10,91.8 12,91.8 Q14,91.8 15.5,91.2 Q17,90.5 17.8,89.5 Q18.2,88.5 18,87.5 Q17.5,87 17,87.2 Q16.5,87.5 16,88 Q15,89 13,89.5 Q11,89.8 9.5,89.5 Z" fill="#8A9878"/>';
@@ -31373,6 +31420,8 @@ document.addEventListener('keydown', function(e) {
         // Shell highlight — cream glossy sheen on dome
         s += '<ellipse cx="6" cy="86" rx="1.5" ry="1.2" fill="#f5ecd6" opacity="0.22"/>';
         s += '<ellipse cx="5.5" cy="85.5" rx="0.6" ry="0.4" fill="#fff8e0" opacity="0.3"/>';
+        // A3 sharp white pickup — wet-shell hot spot
+        s += '<ellipse cx="5.4" cy="85.3" rx="0.2" ry="0.13" fill="#ffffff" opacity="0.65"/>';
         // Shell banding — subtle color variation
         s += '<path d="M4,85.5 Q7,83.5 10,86" fill="none" stroke="#B8A078" stroke-width="0.3" opacity="0.15"/>';
         s += '<path d="M3.5,88 Q5,90 8,90" fill="none" stroke="#7A5A38" stroke-width="0.25" opacity="0.12"/>';
@@ -31391,6 +31440,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="18.2" cy="84.3" r="0.5" fill="rgba(200,255,200,0.15)"/>';
         s += '<circle cx="18.2" cy="84.3" r="0.3" fill="#90E890"/>';
         s += '<circle cx="18.2" cy="84.3" r="0.15" fill="#F0FFF0"/>';
+        // E4 2x pollen-halo wash on each glowing eyestalk
+        s += '<circle cx="16.8" cy="84.3" r="1.0" fill="rgba(180,240,180,0.08)"/>';
+        s += '<circle cx="18.2" cy="84.3" r="1.0" fill="rgba(180,240,180,0.08)"/>';
         // Mouth — tiny smile
         s += '<path d="M17,88 Q17.5,88.3 18,88" fill="none" stroke="#6A7A5A" stroke-width="0.15" opacity="0.4" stroke-linecap="round"/>';
         // Action marks (( near eyes/antennae
@@ -31416,6 +31468,9 @@ document.addEventListener('keydown', function(e) {
         // Tail — forked, iridescent blue-green
         s += '<path d="M'+(_hbx+0.5)+','+_hby+' Q'+(_hbx-1)+','+(_hby+0.8)+' '+(_hbx-2.5)+','+(_hby+2)+'" fill="none" stroke="#56C3D8" stroke-width="0.8" stroke-linecap="round" opacity="0.85"/>';
         s += '<path d="M'+(_hbx+0.5)+','+(_hby+0.3)+' Q'+(_hbx-0.5)+','+(_hby+1.2)+' '+(_hbx-1.5)+','+(_hby+2.2)+'" fill="none" stroke="#4AB0C8" stroke-width="0.6" stroke-linecap="round" opacity="0.7"/>';
+        // Tail-tip warm terminators on each fork
+        s += '<circle cx="'+(_hbx-2.5)+'" cy="'+(_hby+2)+'" r="0.16" fill="rgba(40,20,5,0.50)"/>';
+        s += '<circle cx="'+(_hbx-1.5)+'" cy="'+(_hby+2.2)+'" r="0.13" fill="rgba(40,20,5,0.45)"/>';
         // Body — compact, iridescent emerald green
         s += '<path d="M'+(_hbx+0.8)+','+(_hby-0.5)+' Q'+(_hbx+2.5)+','+(_hby-1.5)+' '+(_hbx+4.5)+','+(_hby-1.0)+' Q'+(_hbx+4)+','+(_hby+0.2)+' '+(_hbx+2)+','+(_hby+0.5)+' Q'+(_hbx+1)+','+(_hby+0.1)+' '+(_hbx+0.8)+','+(_hby-0.5)+' Z" fill="#2A9A78"/>';
         // Iridescent sheen on back
@@ -31425,11 +31480,15 @@ document.addEventListener('keydown', function(e) {
         // Head — small, round
         s += '<circle cx="'+(_hbx+4.2)+'" cy="'+(_hby-0.8)+'" r="1" fill="#2A8A68"/>';
         // Ruby gorget (throat patch) — THE hummingbird flash
+        // E4 pollen-halo wash on the gorget — flashes warm light
+        s += '<ellipse cx="'+(_hbx+4.2)+'" cy="'+(_hby-0.05)+'" rx="1.5" ry="0.7" fill="rgba(220,80,80,0.08)"><animate attributeName="opacity" values="0.05;0.16;0.05" dur="2s" repeatCount="indefinite"/></ellipse>';
         s += '<path d="M'+(_hbx+3.5)+','+(_hby-0.2)+' Q'+(_hbx+4.2)+','+(_hby+0.2)+' '+(_hbx+4.8)+','+(_hby-0.3)+'" fill="rgba(200,40,40,0.4)" stroke="none"/>';
         s += '<path d="M'+(_hbx+3.5)+','+(_hby-0.2)+' Q'+(_hbx+4.2)+','+(_hby+0.2)+' '+(_hbx+4.8)+','+(_hby-0.3)+'" fill="rgba(220,60,60,0.2)"><animate attributeName="fill" values="rgba(220,60,60,0.2);rgba(255,40,40,0.4);rgba(220,60,60,0.2)" dur="2s" repeatCount="indefinite"/></path>';
         // Eye — dark, prominent (warm-shifted)
         s += '<circle cx="'+(_hbx+4.5)+'" cy="'+(_hby-1)+'" r="0.35" fill="#1a1208"/>';
         s += '<circle cx="'+(_hbx+4.55)+'" cy="'+(_hby-1.1)+'" r="0.1" fill="#fff8e0"/>';
+        // A3 sharp white sub-pickup (master dual-specular)
+        s += '<circle cx="'+(_hbx+4.5)+'" cy="'+(_hby-1.13)+'" r="0.04" fill="#ffffff" opacity="0.95"/>';
         // Beak — long, thin, precision nectar probe + warm tip terminator
         s += '<path d="M'+(_hbx+5)+','+(_hby-0.9)+' L'+(_hbx+7.5)+','+(_hby-0.7)+'" stroke="#2E2A24" stroke-width="0.35" stroke-linecap="round"/>';
         s += '<path d="M'+(_hbx+5)+','+(_hby-0.7)+' L'+(_hbx+7.5)+','+(_hby-0.6)+'" stroke="#3E3A34" stroke-width="0.25" stroke-linecap="round" opacity="0.6"/>';
@@ -31467,6 +31526,9 @@ document.addEventListener('keydown', function(e) {
         // Action marks (( near head
         s += '<path d="M4.5,9 Q4,10 4.5,11" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M3.8,8.5 Q3,10 3.8,11.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
+        // Cream specular slivers on upper wings (master playbook A3)
+        s += '<path d="M9.5,8 Q11,7.8 12.5,8.2" stroke="#fff8e0" stroke-width="0.1" fill="none" opacity="0.45" stroke-linecap="round"/>';
+        s += '<path d="M13.5,7.8 Q15,7.7 16.5,8.1" stroke="#fff8e0" stroke-width="0.1" fill="none" opacity="0.45" stroke-linecap="round"/>';
         // Wing venation — fine lines across each wing
         s += '<line x1="9" y1="8.5" x2="12" y2="9.5" stroke="#8AB0BA" stroke-width="0.06" opacity="0.25"/>';
         s += '<line x1="8.5" y1="9" x2="11" y2="9.8" stroke="#8AB0BA" stroke-width="0.05" opacity="0.2"/>';
@@ -31476,6 +31538,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M10,9.8 Q10.5,9.6 11,9.8" fill="none" stroke="#3A4C58" stroke-width="0.1" opacity="0.25"/>';
         s += '<path d="M13,9.8 Q13.5,9.6 14,9.8" fill="none" stroke="#3A4C58" stroke-width="0.1" opacity="0.22"/>';
         s += '<path d="M16,9.9 Q16.5,9.7 17,9.9" fill="none" stroke="#3A4C58" stroke-width="0.08" opacity="0.2"/>';
+        // A2 warm-shifted under-belly shadow on abdomen (sun from upper-left)
+        s += '<path d="M9,10.2 Q13,10.4 19,10.3" fill="none" stroke="rgba(40,20,5,0.30)" stroke-width="0.18" stroke-linecap="round"/>';
         // Eye shimmer — compound eye highlight
         s += '<circle cx="6.1" cy="9.6" r="0.12" fill="rgba(180,230,240,0.3)"/>';
         s += '</g>';
@@ -31483,8 +31547,10 @@ document.addEventListener('keydown', function(e) {
       case 30: // Caterpillar — crawling across bottom, left to right
         s += '<g opacity="1" transform="translate(18,90) scale(1.3) translate(-18,-90)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.6,0;1.2,0;0.6,0;0,0" dur="4.5s" repeatCount="indefinite"/>';
-        // Shadow
+        // Shadow (A6 3-stack)
         s += '<ellipse cx="18" cy="92.5" rx="9" ry="0.5" fill="#0d100c" opacity="0.12"/>';
+        s += '<ellipse cx="18" cy="92.4" rx="6.5" ry="0.25" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="18" cy="92.35" rx="4.5" ry="0.12" fill="rgba(40,20,5,0.20)"/>';
         // Body segments — touching, overlapping slightly for connected look
         var _cBy = 90, _cBx = 10;
         s += '<circle cx="'+(_cBx)+'" cy="'+_cBy+'" r="1.15" fill="#6DAE52"/>';
@@ -31499,6 +31565,10 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="'+(_cBx+6.3)+'" cy="'+(_cBy-0.6)+'" r="0.35" fill="#B8E898" opacity="0.35"/>';
         s += '<circle cx="'+(_cBx+8.5)+'" cy="'+(_cBy-0.7)+'" r="0.3" fill="#B8E898" opacity="0.35"/>';
         s += '<circle cx="'+(_cBx+10.5)+'" cy="'+(_cBy-0.7)+'" r="0.28" fill="#B8E898" opacity="0.35"/>';
+        // A3 sharp cream pickups — wet-skin specular on each segment
+        s += '<circle cx="'+(_cBx+4.0)+'" cy="'+(_cBy-0.95)+'" r="0.12" fill="#fff8e0" opacity="0.55"/>';
+        s += '<circle cx="'+(_cBx+6.2)+'" cy="'+(_cBy-0.85)+'" r="0.13" fill="#fff8e0" opacity="0.6"/>';
+        s += '<circle cx="'+(_cBx+8.4)+'" cy="'+(_cBy-0.95)+'" r="0.11" fill="#fff8e0" opacity="0.5"/>';
         // Head — slightly raised, darker
         s += '<circle cx="'+(_cBx+12.4)+'" cy="'+(_cBy-0.4)+'" r="1.15" fill="#567B46"/>';
         // Eye
@@ -31511,6 +31581,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(_cBx+13.4)+','+(_cBy-0.8)+' L'+(_cBx+15.2)+','+(_cBy-1.6)+'" fill="none" stroke="#4D6C40" stroke-width="0.15" stroke-linecap="round"/>';
         s += '<circle cx="'+(_cBx+14.8)+'" cy="'+(_cBy-2.5)+'" r="0.15" fill="#4D6C40"/>';
         s += '<circle cx="'+(_cBx+15.2)+'" cy="'+(_cBy-1.6)+'" r="0.15" fill="#4D6C40"/>';
+        // Warm tip terminators on antenna ends (master playbook)
+        s += '<circle cx="'+(_cBx+14.8)+'" cy="'+(_cBy-2.5)+'" r="0.07" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="'+(_cBx+15.2)+'" cy="'+(_cBy-1.6)+'" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // Legs — 4 per body segment (2 left, 2 right), not on head
         var _cSegX = [_cBx, _cBx+2.0, _cBx+4.1, _cBx+6.3, _cBx+8.5, _cBx+10.5];
         for (var _cli = 0; _cli < _cSegX.length; _cli++) {
@@ -31534,8 +31607,10 @@ document.addEventListener('keydown', function(e) {
       case 31: // Garden Spider — descending on silk, vivid brown-red
         s += '<g opacity="0.92" transform="translate(60,19) scale(1.4) translate(-60,-19)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,1;0,2;0,1;0,0" dur="5.6s" repeatCount="indefinite"/>';
-        // AO drop shadow under spider body (warm)
+        // AO drop shadow under spider body (warm) — A6 3-stack
+        s += '<ellipse cx="60" cy="26.5" rx="4" ry="0.7" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="60" cy="26.2" rx="3.2" ry="0.6" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="60" cy="26.05" rx="2" ry="0.20" fill="rgba(40,20,5,0.25)"/>';
         // Silk thread (cream, not cool grey)
         s += '<line x1="60" y1="2" x2="60" y2="19" stroke="#f5ecd6" stroke-width="0.15" opacity="0.55"/>';
         // Abdomen — rich brown-red
@@ -31546,6 +31621,8 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="59.5" cy="21.5" rx="1.5" ry="1.8" fill="rgba(220,140,80,0.28)"/>';
         // Cream specular pickup (upper-left)
         s += '<ellipse cx="59.2" cy="21" rx="0.5" ry="0.7" fill="#f5ecd6" opacity="0.55"/>';
+        // A3 sharp white sub-pickup over cream form-light
+        s += '<ellipse cx="59.1" cy="20.7" rx="0.18" ry="0.24" fill="#ffffff" opacity="0.7"/>';
         // Abdomen markings — vivid chevrons
         s += '<path d="M58.2,21 L60,19.8 L61.8,21" fill="none" stroke="#C87040" stroke-width="0.4" opacity="0.7"/>';
         s += '<path d="M58,22.5 L60,21.3 L62,22.5" fill="none" stroke="#B86030" stroke-width="0.35" opacity="0.6"/>';
@@ -31599,6 +31676,9 @@ document.addEventListener('keydown', function(e) {
         // Hind feet — webbed toes
         s += '<path d="M43,78.5 L42,79.2 M43.5,78.5 L43.5,79.5 M44,78.5 L44.5,79.3" stroke="#3A5A30" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '<path d="M53,78.5 L54,79.2 M52.5,78.5 L52.5,79.5 M52,78.5 L51.5,79.3" stroke="#3A5A30" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Toe tip terminators — warm dots at every visible toe end
+        s += '<circle cx="42" cy="79.2" r="0.10" fill="rgba(40,20,5,0.55)"/><circle cx="43.5" cy="79.5" r="0.10" fill="rgba(40,20,5,0.55)"/><circle cx="44.5" cy="79.3" r="0.10" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="54" cy="79.2" r="0.10" fill="rgba(40,20,5,0.55)"/><circle cx="52.5" cy="79.5" r="0.10" fill="rgba(40,20,5,0.55)"/><circle cx="51.5" cy="79.3" r="0.10" fill="rgba(40,20,5,0.55)"/>';
         // Body — squat, heavy, ground-hugging
         s += '<ellipse cx="48" cy="74" rx="5.5" ry="3.8" fill="#4A6A38"/>';
         // Body warm-shifted shadow (right side, away from upper-left light)
@@ -31640,6 +31720,12 @@ document.addEventListener('keydown', function(e) {
         // Eye specular — sharp cream pickup (upper-left, fff8e0)
         s += '<circle cx="45.7" cy="68.7" r="0.22" fill="#fff8e0"/>';
         s += '<circle cx="49.7" cy="68.7" r="0.22" fill="#fff8e0"/>';
+        // A3 sharper sub-pickup — pure white pinpoint over cream
+        s += '<circle cx="45.62" cy="68.62" r="0.09" fill="#ffffff" opacity="0.95"/>';
+        s += '<circle cx="49.62" cy="68.62" r="0.09" fill="#ffffff" opacity="0.95"/>';
+        // Warm gold bounce-light below pupil (Beholder-style mythic kicker)
+        s += '<ellipse cx="46" cy="69.4" rx="0.4" ry="0.16" fill="#C8A84B" opacity="0.40"/>';
+        s += '<ellipse cx="50" cy="69.4" rx="0.4" ry="0.16" fill="#C8A84B" opacity="0.40"/>';
         // Diffuse iris highlight (broader)
         s += '<ellipse cx="45.6" cy="68.55" rx="0.45" ry="0.25" fill="#f5ecd6" opacity="0.40"/>';
         s += '<ellipse cx="49.6" cy="68.55" rx="0.45" ry="0.25" fill="#f5ecd6" opacity="0.40"/>';
@@ -31657,11 +31743,17 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M45.5,72.6 Q48,73.6 50.5,72.6" fill="none" stroke="rgba(40,20,5,0.35)" stroke-width="0.35" stroke-linecap="round"/>';
         s += '<path d="M46,73.1 Q48,73.9 50,73.1" fill="none" stroke="rgba(40,20,5,0.20)" stroke-width="0.25" stroke-linecap="round"/>';
         // Mythic glow — subtle golden aura (this is a MYTHIC creature)
+        // E4 2x outer mythic halo — extra-wide breathing wash (master playbook)
+        s += '<ellipse cx="48" cy="74" rx="14" ry="10" fill="rgba(200,168,75,0.018)"><animate attributeName="opacity" values="0.018;0.045;0.018" dur="6s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="48" cy="74" rx="7" ry="5" fill="rgba(200,168,75,0.04)"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="4s" repeatCount="indefinite"/></ellipse>';
         // Mythic gold flecks at warts (treasure-spotted)
         s += '<circle cx="46.5" cy="71.8" r="0.18" fill="#C8A84B" opacity="0.45"/>';
         s += '<circle cx="50.2" cy="72.3" r="0.16" fill="#C8A84B" opacity="0.4"/>';
         s += '<circle cx="48" cy="73.2" r="0.14" fill="#C8A84B" opacity="0.35"/>';
+        // Extra mythic flecks (F5 mythic decoration density) + cream sparkle pickup
+        s += '<circle cx="44.5" cy="73.8" r="0.12" fill="#C8A84B" opacity="0.35"/>';
+        s += '<circle cx="51.5" cy="74.5" r="0.13" fill="#C8A84B" opacity="0.30"/>';
+        s += '<circle cx="46.5" cy="71.8" r="0.06" fill="#fff8e0" opacity="0.6"/>';
         // Action marks (( )) near eyes
         s += '<path d="M43,68 Q42.5,69.5 43,71" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M42.2,67.5 Q41.5,69.5 42.2,71.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -31679,6 +31771,8 @@ document.addEventListener('keydown', function(e) {
         // Soft chorus halo — dusk-lit sage glow
         s += '<radialGradient id="cicGlow"><stop offset="0%" stop-color="#A8B872" stop-opacity="0.2"/><stop offset="100%" stop-color="#A8B872" stop-opacity="0"/></radialGradient>';
         s += '<ellipse cx="55" cy="82" rx="12" ry="8" fill="url(#cicGlow)"><animate attributeName="opacity" values="0.5;0.95;0.5" dur="5s" repeatCount="indefinite"/></ellipse>';
+        // E4 2x mythic outer wash — gold-tinged, slow breath (master playbook)
+        s += '<ellipse cx="55" cy="82" rx="20" ry="13" fill="rgba(200,168,75,0.022)"><animate attributeName="opacity" values="0.022;0.05;0.022" dur="7s" repeatCount="indefinite"/></ellipse>';
         // ── HINDWINGS (behind, longer, translucent) ──
         // Swept down and slightly back, gently rounded tip. Left mirrors right.
         s += '<path d="M53.2,79 Q47.5,81 46,86 Q48,88.5 53.5,86.5 Q55,83 53.2,79 Z" fill="rgba(220,232,200,0.22)" stroke="rgba(160,180,130,0.5)" stroke-width="0.3"/>';
@@ -31721,14 +31815,27 @@ document.addEventListener('keydown', function(e) {
         // Eye shine — sharp cream pickup (master playbook)
         s += '<circle cx="53.2" cy="76.05" r="0.13" fill="#fff8e0"/>';
         s += '<circle cx="56.4" cy="76.05" r="0.13" fill="#fff8e0"/>';
+        // A3 sharp pure-white sub-pickup over cream (mythic dual-specular)
+        s += '<circle cx="53.15" cy="75.98" r="0.05" fill="#ffffff" opacity="0.95"/>';
+        s += '<circle cx="56.35" cy="75.98" r="0.05" fill="#ffffff" opacity="0.95"/>';
         // Antennae — thin, curving up and back
         s += '<path d="M54.1,75.3 Q53.2,73 51.8,72.2" stroke="#3A4A1E" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.9,75.3 Q56.8,73 58.2,72.2" stroke="#3A4A1E" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        // Antennae tip terminators (warm + cream highlight kicker)
+        s += '<circle cx="51.8" cy="72.2" r="0.10" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="58.2" cy="72.2" r="0.10" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="51.8" cy="72.2" r="0.05" fill="#f5ecd6" opacity="0.7"/>';
+        s += '<circle cx="58.2" cy="72.2" r="0.05" fill="#f5ecd6" opacity="0.7"/>';
         // ── LEGS — 3 pairs, the front two gripping the stem ──
         s += '<path d="M53.4,78.5 Q52,79.5 51.4,81.5" stroke="#3A4A1E" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         s += '<path d="M56.6,78.5 Q58,79.5 58.6,81.5" stroke="#3A4A1E" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         s += '<path d="M53.4,80 Q52,81 51.5,82.8" stroke="#3A4A1E" stroke-width="0.27" fill="none" stroke-linecap="round"/>';
         s += '<path d="M56.6,80 Q58,81 58.5,82.8" stroke="#3A4A1E" stroke-width="0.27" fill="none" stroke-linecap="round"/>';
+        // Leg tip terminators — warm dots at every visible leg end
+        s += '<circle cx="51.4" cy="81.5" r="0.13" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="58.6" cy="81.5" r="0.13" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="51.5" cy="82.8" r="0.12" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="58.5" cy="82.8" r="0.12" fill="rgba(40,20,5,0.55)"/>';
         // ── CHORUS RINGS — the signature sonic halo ──
         s += '<circle cx="55" cy="82" r="4" fill="none" stroke="rgba(200,184,110,0.4)" stroke-width="0.22"><animate attributeName="r" values="4;9;4" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.4;0;0.4" dur="4s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="55" cy="82" r="4" fill="none" stroke="rgba(168,184,114,0.3)" stroke-width="0.2"><animate attributeName="r" values="4;11;4" dur="5s" begin="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.3;0;0.3" dur="5s" begin="1.5s" repeatCount="indefinite"/></circle>';
@@ -31741,9 +31848,13 @@ document.addEventListener('keydown', function(e) {
         // big eyes, tiny tusks barely poking out, short curly trunk,
         // fluffy fur tufts, stubby legs. Adorable not fearsome.
         s += '<g opacity="0.95" transform="translate(6,0)">';
-        // AO drop shadow — warm, wider for legendary presence
+        // AO drop shadow — warm, wider for legendary presence (A6 3-stack)
+        s += '<ellipse cx="54" cy="93.5" rx="11" ry="1.3" fill="rgba(40,20,5,0.16)"/>';
         s += '<ellipse cx="54" cy="93.2" rx="8.5" ry="1" fill="rgba(40,20,5,0.30)"/>';
         s += '<ellipse cx="54" cy="92.4" rx="7.5" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
+        // Tight contact crease right under each foot
+        s += '<ellipse cx="48" cy="93" rx="2.2" ry="0.22" fill="rgba(40,20,5,0.40)"/>';
+        s += '<ellipse cx="59" cy="93" rx="2.2" ry="0.22" fill="rgba(40,20,5,0.40)"/>';
         // ── HIND LEGS (behind body) ──
         s += '<rect x="57" y="88" width="3.5" height="4.5" rx="1.2" fill="#4A3428"/>';
         s += '<rect x="54" y="88.5" width="3.5" height="4" rx="1.2" fill="#5A4438"/>';
@@ -31788,6 +31899,10 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="45" cy="77" r="1.0" fill="#1A1008"/>';
         s += '<circle cx="45.4" cy="76.5" r="0.35" fill="#f5ecd6"/>';
         s += '<circle cx="44.7" cy="77.3" r="0.15" fill="rgba(200,180,140,0.3)"/>';
+        // A3 sharp pure-white pinpoint sub-pickup (master dual-specular for legendary)
+        s += '<circle cx="45.45" cy="76.4" r="0.13" fill="#ffffff" opacity="0.95"/>';
+        // Warm copper iris glow ring (legendary mammal eye treatment)
+        s += '<circle cx="45" cy="77" r="0.5" fill="none" stroke="#8A5F40" stroke-width="0.08" opacity="0.5"/>';
         // Brow — soft, not wrinkled like adult
         s += '<path d="M44,76 C44.5,75.5 45.5,75.5 46,76" fill="none" stroke="#4A3020" stroke-width="0.2" opacity="0.25"/>';
         // ── TRUNK — short, stubby, curls up at tip (baby trunk) ──
@@ -31800,10 +31915,15 @@ document.addEventListener('keydown', function(e) {
         // ── TINY TUSKS — barely poking out, warm cream/ivory ──
         s += '<path d="M43.5,80 Q42.5,80.8 42.5,81.2" fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round"/>';
         s += '<circle cx="42.5" cy="81.2" r="0.18" fill="#fff8e0"/>';
+        // A3 sharp white pickup at tusk tip (dual-specular)
+        s += '<circle cx="42.48" cy="81.18" r="0.07" fill="#ffffff" opacity="0.9"/>';
+        // Warm shadow under tusk root (terminator dot)
+        s += '<circle cx="43.5" cy="80.05" r="0.08" fill="rgba(40,20,5,0.45)"/>';
         // ── TAIL — tiny tuft ──
         s += '<path d="M63,82 Q64,81 64.5,82 Q64.5,83 63.5,83" fill="#3A2418" stroke="#2A1A10" stroke-width="0.2"/>';
         s += '<path d="M64,81.5 q0.2,0.4 0,0.8" fill="none" stroke="#2A1A10" stroke-width="0.15" opacity="0.3"/>';
-        // Legendary glow
+        // Legendary glow (E4 2x outer wash + warmer inner)
+        s += '<ellipse cx="53" cy="83" rx="16" ry="11" fill="rgba(200,168,75,0.012)"><animate attributeName="opacity" values="0.012;0.025;0.012" dur="7s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="53" cy="83" rx="9" ry="6" fill="rgba(200,168,75,0.02)"><animate attributeName="opacity" values="0.02;0.04;0.02" dur="5s" repeatCount="indefinite"/></ellipse>';
         s += '</g>';
         break;
@@ -31811,9 +31931,14 @@ document.addEventListener('keydown', function(e) {
         // Procyon lotor. Sitting upright, tail wrapping from body, head on shoulders.
         // Key fix: connected anatomy — body→tail as one flow, neck→head overlapping.
         s += '<g opacity="1" transform="translate(-4,0) translate(18,84) scale(1.0) translate(-18,-84)">';
+        // E4 outer legendary halo — slow breathing wash
+        s += '<ellipse cx="18" cy="83" rx="14" ry="11" fill="rgba(200,168,75,0.014)"><animate attributeName="opacity" values="0.014;0.030;0.014" dur="6s" repeatCount="indefinite"/></ellipse>';
         // AO drop shadow — warm, two-pass for legendary presence
         s += '<ellipse cx="18" cy="92" rx="6.5" ry="1" fill="rgba(40,20,5,0.30)"/>';
         s += '<ellipse cx="18" cy="91.2" rx="5.5" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
+        // Tight contact crease at each foot (A6 stack)
+        s += '<ellipse cx="14" cy="91.8" rx="1.6" ry="0.18" fill="rgba(40,20,5,0.40)"/>';
+        s += '<ellipse cx="22" cy="91.8" rx="1.6" ry="0.18" fill="rgba(40,20,5,0.40)"/>';
         // Tail — thick, originating from INSIDE body mass at left hip
         s += '<path d="M15,86 Q13,87 10,86 Q7.5,84.5 6,82 Q5,79.5 5.5,77.5" fill="#7A7A72" stroke="#6A6A62" stroke-width="0.3"/>';
         // Tail rings — dark bands overlaid on filled tail
@@ -31821,6 +31946,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M7,82 Q6,80.5 5.8,79" stroke="#3A3A32" stroke-width="2.5" stroke-linecap="butt" opacity="0.45"/>';
         // Tail tip — dark
         s += '<ellipse cx="5.5" cy="77" rx="1.2" ry="1.5" fill="#3A3A32" opacity="0.5"/>';
+        // Tail-tip warm terminator + cream pickup (master legendary detail)
+        s += '<circle cx="5.5" cy="76" r="0.18" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="5.3" cy="75.85" r="0.08" fill="#f5ecd6" opacity="0.55"/>';
         // Tail light rings (between dark)
         s += '<path d="M9.5,84.8 Q8.5,83.8 7.5,83" stroke="#8A8A82" stroke-width="0.4" opacity="0.2" fill="none"/>';
         // Hind legs — sitting, tucked under round body
@@ -31847,8 +31975,12 @@ document.addEventListener('keydown', function(e) {
         // Paws — tiny human-like hands (raccoon's defining feature)
         s += '<circle cx="12.8" cy="79.8" r="1" fill="#5A5A52"/>';
         s += '<path d="M12,79.3 L11.7,78.8 M12.5,79 L12.5,78.3 M13,79 L13.3,78.5 M13.5,79.3 L13.8,78.8" stroke="#4A4A42" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
+        // Left paw fingertip terminators (master playbook)
+        s += '<circle cx="11.7" cy="78.8" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="12.5" cy="78.3" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="13.3" cy="78.5" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="13.8" cy="78.8" r="0.08" fill="rgba(40,20,5,0.55)"/>';
         s += '<circle cx="23.2" cy="79.8" r="1" fill="#4A4A42"/>';
         s += '<path d="M22.5,79.3 L22.2,78.8 M23,79 L23,78.3 M23.5,79 L23.8,78.5 M24,79.3 L24.2,78.8" stroke="#3A3A32" stroke-width="0.22" fill="none" stroke-linecap="round"/>';
+        // Right paw fingertip terminators
+        s += '<circle cx="22.2" cy="78.8" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="23" cy="78.3" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="23.8" cy="78.5" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="24.2" cy="78.8" r="0.08" fill="rgba(40,20,5,0.55)"/>';
         // Neck/shoulders — overlapping fill connects body to head
         s += '<path d="M15,79 Q16,77 18,76.5 Q20,77 21,79" fill="#7A7A72"/>';
         s += '<path d="M16,78 Q18,77 20,78" fill="#8A8A82" opacity="0.3"/>';
@@ -31887,6 +32019,10 @@ document.addEventListener('keydown', function(e) {
         // Nose — small, dark, rounded
         s += '<ellipse cx="18" cy="76.2" rx="0.55" ry="0.38" fill="#1a1208"/>';
         s += '<circle cx="17.92" cy="76.08" r="0.10" fill="#fff8e0"/>';
+        // A3 sharp white sub-pickup on nose (wet-nose dual-specular)
+        s += '<circle cx="17.88" cy="76.04" r="0.04" fill="#ffffff" opacity="0.95"/>';
+        // A2 warm bounce-light hint on snout dome (master playbook)
+        s += '<ellipse cx="17.6" cy="76.5" rx="0.5" ry="0.2" fill="#f5ecd6" opacity="0.20"/>';
         // Whiskers — longer, more visible
         s += '<line x1="16.5" y1="76.8" x2="13.5" y2="76.2" stroke="#B0B0A0" stroke-width="0.08" opacity="0.35"/>';
         s += '<line x1="16.5" y1="77" x2="13.5" y2="77.5" stroke="#B0B0A0" stroke-width="0.08" opacity="0.3"/>';
@@ -31904,8 +32040,14 @@ document.addEventListener('keydown', function(e) {
         // elegant S-curved neck, dagger bill, slate-blue plumage.
         // Standing motionless on one leg, watching.
         s += '<g opacity="1" transform="translate(60,68) scale(1.15) translate(-60,-68)">';
-        // AO drop shadow under heron foot — warm
+        // Back-water mirror sheen — legendary atmospheric layer beneath foot
+        s += '<ellipse cx="60" cy="91.8" rx="6" ry="0.55" fill="rgba(170,200,220,0.10)"/>';
+        s += '<path d="M55,92 Q60,92.25 65,92" fill="none" stroke="rgba(200,220,235,0.18)" stroke-width="0.18" stroke-linecap="round"/>';
+        s += '<path d="M56.5,92.4 Q60,92.55 63.5,92.4" fill="none" stroke="rgba(200,220,235,0.12)" stroke-width="0.14" stroke-linecap="round"/>';
+        // AO drop shadow under heron foot — warm 3-stack (soft + mid + contact)
+        s += '<ellipse cx="60" cy="91.55" rx="4.6" ry="0.95" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="60" cy="91.5" rx="3.5" ry="0.7" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="60" cy="91.45" rx="1.6" ry="0.28" fill="rgba(20,10,2,0.55)"/>';
         s += '<ellipse cx="60" cy="90.7" rx="2.5" ry="0.4" fill="rgba(40,20,5,0.20)"/>';
         // Body — compact, angled slightly forward
         s += '<ellipse cx="59" cy="79" rx="4" ry="3" fill="#6A7A8A" transform="rotate(-10,59,79)"/>';
@@ -31927,6 +32069,7 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M59,80.5 Q58,83 57.5,84.5 Q58,85.5 59,85 Q60,84 59.5,82" stroke="#7A8A78" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         // Foot — long spread toes (herons have unwedded, long toes)
         s += '<path d="M60,89.5 L58,90.5 M60,89.5 L59.5,91 M60,89.5 L60.5,91 M60,89.5 L62,90.5" stroke="#7A8A78" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="58" cy="90.5" r="0.075" fill="rgba(40,20,5,0.55)"/><circle cx="59.5" cy="91" r="0.075" fill="rgba(40,20,5,0.55)"/><circle cx="60.5" cy="91" r="0.075" fill="rgba(40,20,5,0.55)"/><circle cx="62" cy="90.5" r="0.075" fill="rgba(40,20,5,0.55)"/>';
         // Neck — long S-curve (heron's signature)
         s += '<path d="M58,76 Q57,74 57.5,72 Q58,70 59,68 Q60,66 60.5,64" fill="none" stroke="#8A9AA8" stroke-width="1.8" stroke-linecap="round"/>';
         // Neck front — lighter
@@ -31942,9 +32085,13 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="59.5" cy="63" r="0.5" fill="#C8A84B"/>';
         s += '<circle cx="59.5" cy="63" r="0.2" fill="#1a1208"/>';
         s += '<circle cx="59.42" cy="62.92" r="0.10" fill="#fff8e0"/>';
+        s += '<circle cx="59.55" cy="63.08" r="0.05" fill="#f5ecd6" opacity="0.85"/>';
+        s += '<ellipse cx="59.62" cy="63.18" rx="0.18" ry="0.06" fill="#C8A84B" opacity="0.45"/>';
         // Bill — long, dagger-like, yellow
         s += '<path d="M58.5,63.5 L55.5,64 L55.3,63.5 L58.5,62.8 Z" fill="#C8A84B"/>';
         s += '<line x1="55.5" y1="63.7" x2="58.5" y2="63.1" stroke="#A08830" stroke-width="0.15"/>';
+        s += '<circle cx="55.32" cy="63.78" r="0.08" fill="rgba(40,20,5,0.55)"/>';
+        s += '<path d="M56.5,63.0 L58.3,62.85" stroke="#fff8e0" stroke-width="0.07" opacity="0.45" stroke-linecap="round"/>';
         // Breast streaks — dark vertical marks
         s += '<line x1="58" y1="73" x2="58.2" y2="75" stroke="#4A5A6A" stroke-width="0.2" opacity="0.3"/>';
         s += '<line x1="59" y1="72.5" x2="59.2" y2="74.5" stroke="#4A5A6A" stroke-width="0.2" opacity="0.25"/>';
@@ -31972,17 +32119,26 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M70,18 Q56,12 38,6"    fill="none" stroke="#f5ecd6" stroke-width="0.45"/>';
         s += '<path d="M70,26 Q54,18 32,14"   fill="none" stroke="#f5ecd6" stroke-width="0.4"/>';
         s += '<path d="M64,34 Q52,24 36,22"   fill="none" stroke="#f5ecd6" stroke-width="0.35"/>';
-        // Dew drops
+        // Dew drops with dual-specular cream + sharp white pickup
         s += '<circle cx="66" cy="-2" r="0.6" fill="#f5ecd6"/>';
         s += '<circle cx="54" cy="-2" r="0.5" fill="#f5ecd6"/>';
         s += '<circle cx="48" cy="0"  r="0.7" fill="#f5ecd6"/>';
         s += '<circle cx="38" cy="6"  r="0.5" fill="#f5ecd6"/>';
         s += '<circle cx="60" cy="4"  r="0.9" fill="#f5ecd6"/>';
+        s += '<circle cx="65.85" cy="-2.18" r="0.18" fill="#fff8e0"/><circle cx="47.82" cy="-0.2" r="0.22" fill="#fff8e0"/><circle cx="59.78" cy="3.7" r="0.28" fill="#fff8e0"/>';
+        s += '<circle cx="66.18" cy="-1.8" r="0.10" fill="rgba(180,210,230,0.45)"/><circle cx="48.18" cy="0.18" r="0.12" fill="rgba(180,210,230,0.45)"/><circle cx="60.20" cy="4.18" r="0.14" fill="rgba(180,210,230,0.45)"/>';
+        // Silk dangling thread — anchors spider to web hub
+        s += '<line x1="60" y1="4.6" x2="60" y2="30.5" stroke="#f5ecd6" stroke-width="0.18" opacity="0.55"/>';
+        s += '<line x1="60" y1="4.6" x2="60" y2="30.5" stroke="#fff8e0" stroke-width="0.08" opacity="0.85"/>';
         // Spider dangling from thread
+        s += '<ellipse cx="60" cy="35.6" rx="3.2" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="60" cy="33" rx="2.6" ry="2.0" fill="#1a1208" stroke="#8B2E2E" stroke-width="0.4"/>';
         s += '<ellipse cx="58.8" cy="32.2" rx="0.6" ry="0.5" fill="#f5ecd6" opacity="0.30"/>';
         s += '<ellipse cx="58.6" cy="32.0" rx="0.22" ry="0.18" fill="#fff8e0" opacity="0.55"/>';
         s += '<ellipse cx="60" cy="30.8" rx="1.5" ry="1.2" fill="#2a1808"/>';
+        s += '<ellipse cx="59.5" cy="30.4" rx="0.55" ry="0.32" fill="#f5ecd6" opacity="0.22"/>';
+        s += '<ellipse cx="59.35" cy="30.25" rx="0.18" ry="0.10" fill="#fff8e0" opacity="0.55"/>';
+        s += '<path d="M58.0,33.6 Q60,34.4 62.0,33.6" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.18" opacity="0.45"/>';
         // 4 pairs of legs (warm-shifted)
         s += '<path d="M57.6,32 L54.8,29.5 M57.6,33 L54.8,35 M62.4,32 L65.2,29.5 M62.4,33 L65.2,35" stroke="#1a1208" stroke-width="0.65" fill="none" stroke-linecap="round"/>';
         s += '<path d="M58.2,31.5 L55.8,28 M58.2,33.5 L55.8,36.5 M61.8,31.5 L64.2,28 M61.8,33.5 L64.2,36.5" stroke="#1a1208" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
@@ -31996,15 +32152,23 @@ document.addEventListener('keydown', function(e) {
       case 38: // The Beholder — floating eye creature (ultra-rare)
         s += '<g transform="translate(0,0)"><animateTransform attributeName="transform" type="translate" values="0 0; 0 -1.4; 0 0; 0 1.0; 0 0" dur="5.8s" repeatCount="indefinite"/>';
         s += '<radialGradient id="bhGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#C8A84B" stop-opacity="0.35"/><stop offset="40%" stop-color="#8B6BAB" stop-opacity="0.18"/><stop offset="100%" stop-color="#4A3A5B" stop-opacity="0"/></radialGradient>';
+        s += '<radialGradient id="bhChrom" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#E8D070" stop-opacity="0"/><stop offset="55%" stop-color="#A878D8" stop-opacity="0.18"/><stop offset="80%" stop-color="#5A3A7A" stop-opacity="0.10"/><stop offset="100%" stop-color="#1a0a14" stop-opacity="0"/></radialGradient>';
+        s += '<ellipse cx="55.2" cy="19.1" rx="17" ry="14.5" fill="url(#bhChrom)"><animate attributeName="opacity" values="0.55;0.9;0.55" dur="7.2s" repeatCount="indefinite"/><animate attributeName="rx" values="17;19;17" dur="7.2s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="55.2" cy="19.1" rx="14" ry="12" fill="url(#bhGlow)"><animate attributeName="opacity" values="0.55;0.95;0.55" dur="4.2s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="55.2" cy="19.1" rx="11" ry="9.5" fill="url(#bhGlow)" opacity="0.5"><animate attributeName="rx" values="11;13;11" dur="6s" repeatCount="indefinite"/><animate attributeName="ry" values="9.5;11;9.5" dur="6s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="55.2" cy="29.7" rx="9.5" ry="1.15" fill="rgba(40,20,5,0.16)"/>';
         s += '<ellipse cx="55.2" cy="29.5" rx="7" ry="0.9" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="55.2" cy="29.4" rx="3.3" ry="0.32" fill="rgba(20,8,2,0.55)"/>';
         s += '<g opacity="0.20"><ellipse cx="55.2" cy="19.6" rx="9.2" ry="8.0" fill="#3a1a4a"/></g>';
         s += '<path d="M48.2,18.6 C47.0,15.6 45.8,13.2 43.9,11.2" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M49.0,15.2 C48.4,12.2 48.4,9.8 49.2,7.8" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M52.2,13.4 C52.6,10.8 53.8,8.6 55.6,6.9" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M58.2,13.8 C60.0,11.8 61.8,10.6 64.3,9.9" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
         s += '<path d="M61.0,17.0 C63.6,15.9 65.6,15.7 67.6,16.3" fill="none" stroke="#8B7B9B" stroke-width="0.7" stroke-linecap="round"/>';
+        s += '<circle cx="43.9" cy="11.2" r="3.0" fill="#C8A84B" opacity="0.10"/><circle cx="49.2" cy="7.8" r="2.7" fill="#C8A84B" opacity="0.10"/><circle cx="55.6" cy="6.9" r="2.9" fill="#C8A84B" opacity="0.10"/><circle cx="64.3" cy="9.9" r="2.9" fill="#C8A84B" opacity="0.10"/><circle cx="67.6" cy="16.3" r="2.7" fill="#C8A84B" opacity="0.10"/>';
+        s += '<path d="M48.4,21.8 C49.6,25.2 52.6,27.4 56.8,27.0 C60.5,26.7 62.5,24.6 63.4,21.8" fill="#4A3A5B" opacity="0.35"/>';
+        s += '<path d="M49.6,24.6 C51.0,26.4 53.4,27.6 56.8,27.5 C60.0,27.3 61.6,26.4 62.6,24.6" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.35" opacity="0.55"/>';
+        s += '<path d="M50.8,26.4 Q56.0,27.9 61.0,26.4" fill="none" stroke="#C8A84B" stroke-width="0.18" opacity="0.30" stroke-linecap="round"/>';
         s += '<ellipse cx="43.9" cy="11.2" rx="1.5" ry="1.3" fill="#EAE0C8"/><circle cx="43.9" cy="11.2" r="0.62" fill="#C8A84B"/><circle cx="44.05" cy="11.2" r="0.24" fill="#1a0a14"/><circle cx="43.78" cy="11.05" r="0.10" fill="#fff8e0"/>';
         s += '<ellipse cx="49.2" cy="7.8" rx="1.35" ry="1.2" fill="#EAE0C8"/><circle cx="49.2" cy="7.8" r="0.56" fill="#C8A84B"/><circle cx="49.3" cy="7.8" r="0.22" fill="#1a0a14"/><circle cx="49.08" cy="7.65" r="0.09" fill="#fff8e0"/>';
         s += '<ellipse cx="55.6" cy="6.9" rx="1.45" ry="1.28" fill="#EAE0C8"/><circle cx="55.6" cy="6.9" r="0.60" fill="#C8A84B"/><circle cx="55.72" cy="6.9" r="0.24" fill="#1a0a14"/><circle cx="55.48" cy="6.75" r="0.10" fill="#fff8e0"/>';
@@ -32026,11 +32190,15 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="55.35" cy="19.1" rx="0.55" ry="1.65" fill="#0a0508"/>';
         s += '<circle cx="54.2" cy="18.15" r="0.50" fill="#fff8e0"/>';
         s += '<circle cx="53.95" cy="17.95" r="0.18" fill="#fff8e0" opacity="0.95"/>';
+        s += '<circle cx="56.55" cy="19.85" r="0.14" fill="#f5ecd6" opacity="0.65"/>';
         s += '<ellipse cx="55.5" cy="20.55" rx="0.45" ry="0.18" fill="#C8A84B" opacity="0.45"/>';
+        s += '<ellipse cx="55.5" cy="20.7" rx="0.85" ry="0.10" fill="#E8B860" opacity="0.30"/>';
         s += '<path d="M52.2,23.8 C53.4,25.0 55.0,25.4 56.9,25.1 C58.1,24.9 59.0,24.4 59.8,23.7" fill="none" stroke="#3A2040" stroke-width="0.8" stroke-linecap="round"/>';
         s += '<path d="M53.6,24.3 L54.0,25.0 L54.4,24.3 Z" fill="#B0A890"/>';
         s += '<path d="M55.6,24.7 L56.0,25.5 L56.5,24.6 Z" fill="#B0A890"/>';
         s += '<path d="M57.7,24.2 L58.1,24.9 L58.5,24.2 Z" fill="#B0A890"/>';
+        s += '<path d="M53.7,24.4 L54.0,25.0 M55.7,24.85 L56.0,25.5 M57.8,24.32 L58.1,24.9" stroke="#fff8e0" stroke-width="0.06" opacity="0.55" stroke-linecap="round"/>';
+        s += '<path d="M53.6,24.3 Q54.0,24.45 54.4,24.3 M55.6,24.7 Q56.05,24.85 56.5,24.6 M57.7,24.2 Q58.1,24.35 58.5,24.2" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.07"/>';
         // Action marks (( )) near eye stalks
         s += '<path d="M42,10 Q41.5,11.5 42,13" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M41.2,9.5 Q40.5,11.5 41.2,13.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -32039,8 +32207,10 @@ document.addEventListener('keydown', function(e) {
       case 39: // Kitty — standing tail-up, classic cat stance, facing left
         s += '<g opacity="1" transform="translate(57,84) scale(1.65) translate(-57,-84)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0;0.15,0;0,0" dur="5.8s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="57" cy="91.7" rx="6.6" ry="0.95" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="57" cy="91.6" rx="5.2" ry="0.75" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="57" cy="91.55" rx="2.8" ry="0.28" fill="rgba(20,10,2,0.55)"/>';
         // TAIL — high, curving up from rump (drawn first, behind body)
         s += '<path d="M60.5,86 Q62,84 62.5,81.5 Q63,79.5 62,78 Q61.5,77.5 61.8,77" stroke="#8A6C4E" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
         // Tail tip terminator — warm cream pickup
@@ -32100,6 +32270,8 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="56" cy="91.2" rx="0.8" ry="0.35" fill="#A87850"/>';
         // Toe lines on front paws
         s += '<path d="M54.1,91.2 L54.1,91.5 M54.5,91.2 L54.5,91.55 M54.9,91.2 L54.9,91.5" stroke="#7A5C3E" stroke-width="0.08" fill="none" opacity="0.3"/>';
+        s += '<circle cx="51.2" cy="78.9" r="0.10" fill="#fff8e0" opacity="0.55"/><circle cx="54.85" cy="78.9" r="0.10" fill="#fff8e0" opacity="0.55"/>';
+        s += '<circle cx="54.5" cy="91.55" r="0.07" fill="rgba(40,20,5,0.55)"/><circle cx="56" cy="91.55" r="0.07" fill="rgba(40,20,5,0.55)"/><circle cx="58.8" cy="91.55" r="0.07" fill="rgba(40,20,5,0.55)"/><circle cx="60" cy="91.55" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // Neck — thick, connects body to head (overlapping fill)
         s += '<path d="M54,85.5 Q53,84.5 52.5,83.5 Q52,83 52.5,82.5 L55,83 Q55,84 54.5,85" fill="#8A6C4E"/>';
         // Head — round, proper feline proportions, OVERLAPPING neck
@@ -32153,8 +32325,10 @@ document.addEventListener('keydown', function(e) {
         // Duck bill, beaver tail, webbed feet, dense waterproof fur.
         s += '<g opacity="1" transform="translate(56,88) scale(1.6) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.28,0.05;0.52,0;0.28,-0.05;0,0" dur="6.2s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="57" cy="91.7" rx="7.6" ry="1.05" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="57" cy="91.6" rx="6.2" ry="0.85" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="57" cy="91.55" rx="3.2" ry="0.30" fill="rgba(20,10,2,0.55)"/>';
         // Tail — flat, wide, beaver-like, LONG, CONNECTED into body mass
         s += '<path d="M53,89 Q50,88.8 48,89.2 Q45.5,89.8 44.5,90.3 Q44,90.8 44.5,91 Q46,91.2 48.5,91 Q51,90.5 53,90 Z" fill="#6A4E38"/>';
         // Tail texture — leathery cross-hatch scales
@@ -32207,6 +32381,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M63.5,89.2 Q65,89.6 66,89.2" fill="none" stroke="#5A5048" stroke-width="0.15" opacity="0.22"/>';
         // Bill edge highlight — subtle
         s += '<path d="M63.2,88.6 Q64.5,88.2 66,88.4" fill="none" stroke="rgba(200,190,170,0.12)" stroke-width="0.15"/>';
+        s += '<path d="M63.6,88.5 Q64.6,88.3 65.7,88.45" fill="none" stroke="#fff8e0" stroke-width="0.10" opacity="0.45" stroke-linecap="round"/>';
+        s += '<circle cx="66.3" cy="88.85" r="0.08" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="51.2" cy="91.5" r="0.06" fill="rgba(40,20,5,0.55)"/><circle cx="59.5" cy="91.5" r="0.06" fill="rgba(40,20,5,0.55)"/>';
         s += '</g>';
         break;
       case 41: // Praying Mantis — upright on pot rim, raptorial prayer pose, facing viewer
@@ -32302,8 +32479,10 @@ document.addEventListener('keydown', function(e) {
         // spines radiating from back, soft belly/face visible.
         s += '<g opacity="1" transform="translate(56,88) scale(1.55) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="scale" values="1,1;1.015,0.988;1,1;0.99,1.008;1,1" dur="5.6s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="57" cy="92.7" rx="7.0" ry="1.0" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="57" cy="92.6" rx="5.7" ry="0.8" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="57" cy="92.55" rx="3.0" ry="0.30" fill="rgba(20,10,2,0.55)"/>';
         // Body — elongated oval, wider than tall (natural hedgehog shape)
         s += '<path d="M51,90 Q51,88 53,87 Q57,85.5 61,87 Q63,88 63,90 Q63,91.5 61,92.5 Q57,93.5 53,92.5 Q51,91.5 51,90 Z" fill="#6A4E38"/>';
         // SPINES — procedural, radiating from back in rows (the defining feature)
@@ -32345,6 +32524,8 @@ document.addEventListener('keydown', function(e) {
         // Nose — on snout tip, warm-shifted dark, prominent
         s += '<ellipse cx="49.3" cy="89.5" rx="0.35" ry="0.25" fill="#1a1208"/>';
         s += '<circle cx="49.22" cy="89.42" r="0.09" fill="#fff8e0"/>';
+        s += '<circle cx="49.32" cy="89.55" r="0.04" fill="#f5ecd6" opacity="0.85"/>';
+        s += '<ellipse cx="49.3" cy="89.66" rx="0.20" ry="0.05" fill="#C8A84B" opacity="0.30"/>';
         // Eye — small, warm dark, beady, with cream catchlight
         s += '<circle cx="51.5" cy="88.8" r="0.45" fill="#1a1208"/>';
         s += '<circle cx="51.62" cy="88.7" r="0.15" fill="#fff8e0"/>';
@@ -32371,8 +32552,10 @@ document.addEventListener('keydown', function(e) {
         // claws, thick prehensile tail. Walking posture, bipedal or quad.
         s += '<g opacity="1" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.18,0.04;0.34,0;0.18,-0.04;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="57" cy="92.7" rx="7.6" ry="1.05" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="57" cy="92.6" rx="6.2" ry="0.85" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="57" cy="92.55" rx="3.2" ry="0.30" fill="rgba(20,10,2,0.55)"/>';
         // Tail — THICK at base where it connects to body, tapering to tip
         s += '<path d="M60,88 Q62,88.5 64,89 Q66,89.5 68,89.5 Q69,89.2 69.5,88.5 Q69.5,88 69,87.8 Q68,88 66,88.5 Q64,88.5 62,88 Q60.5,87.5 60,87.5 Z" fill="#8A7048" stroke="#7A6038" stroke-width="0.2"/>';
         // Hind legs — short, thick, powerful claws
@@ -32431,6 +32614,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.5,92 L53.5,92.8" stroke="#5A4028" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.5,92 Q55,92.8 54.5,93" stroke="#5A4028" stroke-width="0.3" fill="none" stroke-linecap="round"/>';
         s += '<path d="M55.5,92 L55.5,92.8" stroke="#5A4028" stroke-width="0.25" fill="none" stroke-linecap="round"/>';
+        s += '<circle cx="54.5" cy="93" r="0.07" fill="#fff8e0" opacity="0.50"/><circle cx="55.5" cy="92.85" r="0.06" fill="#fff8e0" opacity="0.45"/><circle cx="52.5" cy="93" r="0.07" fill="#fff8e0" opacity="0.50"/><circle cx="53.5" cy="92.85" r="0.06" fill="#fff8e0" opacity="0.45"/>';
+        s += '<circle cx="46.7" cy="85.3" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // Neck — THICKER, wider connection
         s += '<path d="M54.5,87.5 Q53,86 51.5,85 Q50.5,84.5 50,84.5 L49.5,84 Q50.5,83.5 52,83.5 Q53.5,84 54.5,85.5 Q55,86.5 54.5,87.5 Z" fill="#8A7048"/>';
         // Head — small, elongated cone shape
@@ -32464,6 +32649,10 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,-0.25;0.4,0;0.2,0.2;0,0" dur="7.4s" repeatCount="indefinite"/>';
         // Moonlight glow — faint ethereal halo
         s += '<ellipse cx="10" cy="14" rx="10" ry="8" fill="rgba(183,223,168,0.04)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
+        // Pollen-halo wing dust — outer 2x glow at 0.25 op
+        s += '<ellipse cx="6.5" cy="11.5" rx="3.5" ry="2.8" fill="rgba(207,232,182,0.08)"/>';
+        s += '<ellipse cx="13.5" cy="11.5" rx="3.5" ry="2.8" fill="rgba(207,232,182,0.08)"/>';
+        s += '<circle cx="4" cy="10" r="0.18" fill="#f5ecd6" opacity="0.55"/><circle cx="16" cy="10" r="0.18" fill="#f5ecd6" opacity="0.55"/><circle cx="5" cy="17" r="0.15" fill="#f5ecd6" opacity="0.45"/><circle cx="15" cy="17" r="0.15" fill="#f5ecd6" opacity="0.45"/>';
         // HINDWINGS — drawn first (behind forewings), with long TAILS
         s += '<path d="M9.8,13.5 C8.5,13 7,13.2 6,14 C5,15 4.8,16.5 5.2,17.5 C5.6,18.2 6.5,18.5 7.5,18.3 Q9,17.8 10,16.5 Z" fill="#CFE8B6"/>';
         s += '<path d="M10.2,13.5 C11.5,13 13,13.2 14,14 C15,15 15.2,16.5 14.8,17.5 C14.4,18.2 13.5,18.5 12.5,18.3 Q11,17.8 10,16.5 Z" fill="#CFE8B6"/>';
@@ -32490,16 +32679,21 @@ document.addEventListener('keydown', function(e) {
         // Body — furry thorax + segmented abdomen
         s += '<ellipse cx="10" cy="11.5" rx="0.9" ry="1.8" fill="#92B37D"/>';
         s += '<ellipse cx="10" cy="14.5" rx="0.6" ry="2.5" fill="#82A36D"/>';
-        // Body fur — fluffy white thorax
+        // Body fur — fluffy white thorax + cream pickup
         s += '<ellipse cx="10" cy="11" rx="1.1" ry="1" fill="#D0E8C0" opacity="0.25"/>';
+        s += '<ellipse cx="9.7" cy="10.7" rx="0.45" ry="0.32" fill="#f5ecd6" opacity="0.40"/>';
+        s += '<ellipse cx="9.55" cy="10.55" rx="0.18" ry="0.12" fill="#fff8e0" opacity="0.65"/>';
+        s += '<circle cx="4" cy="23" r="0.10" fill="rgba(40,20,5,0.55)"/><circle cx="16" cy="23" r="0.10" fill="rgba(40,20,5,0.55)"/>';
         // EYESPOTS — concentric rings (3 layers each, luna moth technique)
         // Forewing eyespots
         s += '<circle cx="6.5" cy="12" r="0.8" fill="rgba(80,60,100,0.2)"/>';
         s += '<circle cx="6.5" cy="12" r="0.5" fill="rgba(200,180,80,0.25)"/>';
         s += '<circle cx="6.5" cy="12" r="0.2" fill="rgba(40,30,60,0.35)"/>';
+        s += '<circle cx="6.42" cy="11.92" r="0.06" fill="#fff8e0" opacity="0.85"/>';
         s += '<circle cx="13.5" cy="12" r="0.8" fill="rgba(80,60,100,0.2)"/>';
         s += '<circle cx="13.5" cy="12" r="0.5" fill="rgba(200,180,80,0.25)"/>';
         s += '<circle cx="13.5" cy="12" r="0.2" fill="rgba(40,30,60,0.35)"/>';
+        s += '<circle cx="13.42" cy="11.92" r="0.06" fill="#fff8e0" opacity="0.85"/>';
         // Hindwing eyespots — slightly smaller
         s += '<circle cx="7.2" cy="16" r="0.6" fill="rgba(80,60,100,0.18)"/>';
         s += '<circle cx="7.2" cy="16" r="0.35" fill="rgba(200,180,80,0.22)"/>';
@@ -32527,8 +32721,10 @@ document.addEventListener('keydown', function(e) {
         // short legs, long quills with barbed tips, small face.
         s += '<g opacity="1" transform="translate(56,87) scale(1.5) translate(-56,-87)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0.38,0;0.2,0;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="57" cy="92.7" rx="7.0" ry="1.05" fill="rgba(40,20,5,0.18)"/>';
         s += '<ellipse cx="57" cy="92.6" rx="5.7" ry="0.85" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="57" cy="92.55" rx="3.0" ry="0.32" fill="rgba(20,10,2,0.55)"/>';
         // Short legs — thick, hidden under body
         s += '<path d="M54,91 L54,92" stroke="#4A3828" stroke-width="1" fill="none" stroke-linecap="round"/>';
         s += '<path d="M56,91.2 L56,92" stroke="#4A3828" stroke-width="1" fill="none" stroke-linecap="round"/>';
@@ -32593,6 +32789,8 @@ document.addEventListener('keydown', function(e) {
         // Nose — warm-shifted dark, prominent, lower
         s += '<ellipse cx="49.7" cy="88.3" rx="0.3" ry="0.22" fill="#1a1208"/>';
         s += '<circle cx="49.62" cy="88.22" r="0.08" fill="#fff8e0"/>';
+        s += '<circle cx="49.74" cy="88.36" r="0.04" fill="#f5ecd6" opacity="0.85"/>';
+        s += '<circle cx="54" cy="92.2" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="56" cy="92.2" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="59" cy="92.2" r="0.08" fill="rgba(40,20,5,0.55)"/><circle cx="61" cy="92.2" r="0.08" fill="rgba(40,20,5,0.55)"/>';
         // Whiskers
         s += '<line x1="49.8" y1="88" x2="48.3" y2="87.5" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.4"/>';
         s += '<line x1="49.5" y1="88.3" x2="48" y2="88.3" stroke="#B0A090" stroke-width="0.08" fill="none" opacity="0.35"/>';
@@ -32607,6 +32805,9 @@ document.addEventListener('keydown', function(e) {
         // from shell to head/tentacles as one continuous mass.
         s += '<g opacity="1" transform="translate(55,88) scale(1.5) translate(-55,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.16,0;0.3,0.03;0.16,0;0,0" dur="7.2s" repeatCount="indefinite"/>';
+        // Outer pollen-halo glow (master playbook E4 — 2x radius, 0.25 opacity)
+        s += '<ellipse cx="55" cy="89.5" rx="6.4" ry="5.6" fill="rgba(196,232,154,0.06)"><animate attributeName="opacity" values="0.04;0.10;0.04" dur="4.6s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="55" cy="89.5" rx="4.5" ry="3.8" fill="rgba(196,232,154,0.10)"/>';
         // Glow snail trail — BEHIND the snail (to the RIGHT)
         s += '<path d="M58,92 Q60,91 62,92 Q64,93 66,91.5 Q68,90.5 70,91.5" fill="none" stroke="rgba(160,230,120,0.15)" stroke-width="1.2" stroke-linecap="round"/>';
         s += '<path d="M58,92 Q60,91.2 62,92 Q64,92.8 66,91.8 Q68,90.8 70,91.5" fill="none" stroke="rgba(200,255,160,0.06)" stroke-width="2.5"/>';
@@ -32624,8 +32825,10 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="55" cy="89.5" r="0.5" fill="#D8ECC8" opacity="0.3"/>';
         // Shell glow — bioluminescent pulse
         s += '<ellipse cx="55" cy="89.5" rx="3.5" ry="3" fill="rgba(196,232,154,0.05)"><animate attributeName="opacity" values="0.03;0.08;0.03" dur="3s" repeatCount="indefinite"/></ellipse>';
-        // Shell highlight — light catching on curve
+        // Shell highlight — light catching on curve + sharp pickup
         s += '<path d="M53.5,88 Q55,87.5 56.5,88.5" fill="none" stroke="#f5ecd6" stroke-width="0.3"/>';
+        s += '<circle cx="54.2" cy="87.85" r="0.18" fill="#fff8e0" opacity="0.85"/>';
+        s += '<circle cx="54.0" cy="87.7" r="0.07" fill="#fff8e0"/>';
         // Head/neck — extending forward from body, CONTINUOUS with foot
         s += '<path d="M51,91.5 Q50,91 49.5,90.5 Q49,90 49.5,89.5 Q50,89 50.5,89.5 Q51,90 51,91 Z" fill="#A87850"/>';
         // Upper tentacles — eyes on stalks
@@ -32640,8 +32843,10 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M50,90 L49,89.5 M50.5,90 L50.2,89.2" stroke="#8A6838" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         s += '<circle cx="49" cy="89.5" r="0.06" fill="rgba(40,20,5,0.5)"/>';
         s += '<circle cx="50.2" cy="89.2" r="0.06" fill="rgba(40,20,5,0.5)"/>';
-        // Shadow under shell — warm-shifted AO
+        // Shadow under foot — warm AO 3-stack
+        s += '<ellipse cx="55" cy="92.1" rx="5.2" ry="0.65" fill="rgba(40,20,5,0.12)"/>';
         s += '<ellipse cx="55" cy="92" rx="3.5" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
+        s += '<ellipse cx="55" cy="91.95" rx="2.0" ry="0.18" fill="rgba(20,10,2,0.45)"/>';
         // Action marks (( near tentacles
         s += '<path d="M47.5,88 Q47,89 47.5,90" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M46.8,87.5 Q46,89 46.8,90.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -32653,8 +32858,10 @@ document.addEventListener('keydown', function(e) {
         // tiny limbs, dorsal fin running along tail. Pink/leucistic color.
         s += '<g opacity="1" transform="translate(56,87) scale(1.55) translate(-56,-87)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.18,-0.04;0.34,0;0.18,0.04;0,0" dur="6.8s" repeatCount="indefinite"/>';
-        // Shadow — warm-shifted AO
+        // Shadow — warm-shifted AO 3-stack
+        s += '<ellipse cx="57" cy="92.6" rx="7.4" ry="0.8" fill="rgba(40,20,5,0.12)"/>';
         s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.6" fill="rgba(40,20,5,0.18)"/>';
+        s += '<ellipse cx="57" cy="92.45" rx="3.0" ry="0.22" fill="rgba(20,10,2,0.45)"/>';
         // TAIL — long, translucent pink fin tapering to a point
         // Tail body — tapers from body width down to tip
         s += '<path d="M60,89.5 Q62,89.5 64,89 Q65.5,88.5 67,87.5 Q67.5,87 67,87 Q66,87.5 64,88.5 Q62,89 60,89 Z" fill="rgba(215,167,154,0.5)"/>';
@@ -32686,6 +32893,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M50,89 Q49.5,88 50,87 Q51,86 53,86 Q54,86.5 54,87.5 Q54,89 53,90 Q51.5,90.5 50,89.5 Z" fill="#E6BBB0"/>';
         // The SMILE — axolotl's famous permanent grin
         s += '<path d="M50,89 Q51.5,89.8 53,89" fill="none" stroke="#B08878" stroke-width="0.2" opacity="0.4"/>';
+        s += '<path d="M50.4,89.2 Q51.5,89.65 52.6,89.2" fill="none" stroke="#fff8e0" stroke-width="0.06" opacity="0.55" stroke-linecap="round"/>';
+        s += '<ellipse cx="55.6" cy="88.4" rx="0.85" ry="0.32" fill="#f5ecd6" opacity="0.18"/>';
         // EXTERNAL GILLS — the axolotl's most magical feature
         // 3 feathery gill stalks per side, branching like coral
         // Right side gills (origin offset from head to avoid eye overlap)
@@ -32701,9 +32910,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M49.5,87 Q48.5,86.5 47.5,86" stroke="#C97C93" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
         s += '<path d="M48.5,86.5 L48,85.8 M48,86.5 L47.5,86" stroke="#C97C93" stroke-width="0.18" fill="none" stroke-linecap="round"/>';
         s += '<path d="M50,87.5 Q49,87 48,87" stroke="#C97C93" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        // Gill filament shimmer — blood-red tips
+        // Gill filament shimmer — blood-red tips with cream pickup + halo
+        s += '<circle cx="55.5" cy="85" r="0.55" fill="rgba(232,160,176,0.18)"/>';
+        s += '<circle cx="48" cy="85" r="0.55" fill="rgba(232,160,176,0.18)"/>';
         s += '<circle cx="55.5" cy="85" r="0.2" fill="#E06070" opacity="0.3"/>';
         s += '<circle cx="48" cy="85" r="0.2" fill="#E06070" opacity="0.3"/>';
+        s += '<circle cx="55.45" cy="84.92" r="0.06" fill="#fff8e0" opacity="0.85"/>';
+        s += '<circle cx="48.05" cy="84.92" r="0.06" fill="#fff8e0" opacity="0.85"/>';
         // Eyes — drawn AFTER gills so they sit on top, always visible
         s += '<circle cx="50.5" cy="87.8" r="0.45" fill="#1A1008"/>';
         s += '<circle cx="52.5" cy="87.8" r="0.45" fill="#1A1008"/>';
@@ -32720,9 +32933,11 @@ document.addEventListener('keydown', function(e) {
       case 48: // Scorpion — brown, shiny, big claws, curving tail (Rare)
         s += '<g opacity="1" transform="translate(56,88) scale(1.55) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.12,0;0.24,0.02;0.12,0;0,0" dur="6.6s" repeatCount="indefinite"/>';
-        // Shadow
+        // Shadow — AO 3-stack
+        s += '<ellipse cx="57" cy="92.7" rx="7.4" ry="0.78" fill="rgba(40,20,5,0.14)"/>';
         s += '<ellipse cx="57" cy="92.5" rx="6" ry="0.5" fill="#0d100c" opacity="0.12"/>';
         s += '<ellipse cx="57" cy="92.6" rx="6.2" ry="0.55" fill="rgba(40,20,5,0.28)"/>';
+        s += '<ellipse cx="57" cy="92.62" rx="3.2" ry="0.22" fill="rgba(20,10,2,0.55)"/>';
         // ── 8 LEGS — front 2 pairs near head, back 2 pairs near tail ──
         // Left side — 2 FRONT legs (near head, angled forward)
         s += '<path d="M55,88 L53,87 L52,86.5" stroke="#6A4020" stroke-width="0.2" fill="none"/>';
@@ -32767,6 +32982,9 @@ document.addEventListener('keydown', function(e) {
         // Left claw — smaller segment, SHARP pointy tip
         s += '<path d="M50.5,86.2 Q49.5,85.5 48,85.5 L48.8,86.2 Q49.5,86.3 50.5,86.2 Z" fill="#9A6838" stroke="#5A3018" stroke-width="0.1"/>';
         s += '<ellipse cx="49" cy="87" rx="0.35" ry="0.25" fill="rgba(220,160,80,0.15)"/>';
+        s += '<circle cx="47.5" cy="87" r="0.08" fill="#fff8e0" opacity="0.65"/>';
+        s += '<circle cx="48" cy="85.5" r="0.07" fill="#fff8e0" opacity="0.65"/>';
+        s += '<path d="M48.3,86.9 Q49,87 49.8,86.85" fill="none" stroke="#f5ecd6" stroke-width="0.06" opacity="0.55" stroke-linecap="round"/>';
         // Right claw arm
         s += '<path d="M53.5,90 Q52,90.5 50.5,91.5" stroke="#7A4828" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         // Right claw — larger segment, SHARP pointy tip
@@ -32796,6 +33014,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M62,81 L61.5,80 L62.2,80.5" fill="#4A2810"/>';
         s += '<circle cx="61.6" cy="80" r="0.12" fill="rgba(180,220,140,0.4)"/>';
         s += '<circle cx="61.5" cy="80" r="0.1" fill="rgba(40,20,5,0.6)"/>';
+        s += '<circle cx="61.55" cy="79.95" r="0.05" fill="#fff8e0" opacity="0.85"/>';
+        s += '<ellipse cx="61.6" cy="80.2" rx="0.45" ry="0.10" fill="rgba(180,220,140,0.18)"/>';
+        s += '<circle cx="47.5" cy="91" r="0.08" fill="#fff8e0" opacity="0.65"/><circle cx="48" cy="92.5" r="0.07" fill="#fff8e0" opacity="0.65"/>';
         // Action marks (( near claws
         s += '<path d="M46.5,86 Q46,87 46.5,88" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M45.8,85.5 Q45,87 45.8,88.5" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -32806,6 +33027,9 @@ document.addEventListener('keydown', function(e) {
         // Center mapped from (1080,750) to (56,16). Scale 0.014.
         s += '<g opacity="0.88" transform="translate(56,16) scale(1.8) translate(-56,-16)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,-0.5;0,0;-0.2,0.4;0,0" dur="7s" repeatCount="indefinite"/>';
+        // Soft cast shadow halo (paper backlit)
+        s += '<ellipse cx="56" cy="24" rx="8.5" ry="0.55" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="56" cy="24" rx="5.2" ry="0.32" fill="rgba(40,20,5,0.18)"/>';
         // ── TAIL — narrow triangle, upper-left ──
         s += '<polygon points="45.7,7.5 51.2,19.8 53.4,19.9" fill="#DDD6C8" stroke="#A8A090" stroke-width="0.15"/>';
         // ── RIGHT WING bottom (aile droite dessous) ──
@@ -32822,8 +33046,11 @@ document.addEventListener('keydown', function(e) {
         s += '<polygon points="67.1,9.3 55.3,13.9 53.9,16.8 58.8,21.6 62.3,19.5 67.1,9.3" fill="#E8E2D6" stroke="#A8A090" stroke-width="0.15"/>';
         // Left wing highlight — lighter panel
         s += '<polygon points="67.0,9.4 55.3,14.9 54.0,17.8 54.4,18.1 56.2,18.3 58.4,18.8 67.0,9.4" fill="#F0EBE0" opacity="0.35"/>';
-        // Wing fold crease
+        // Wing fold crease + cream specular along the fold
         s += '<line x1="65.3" y1="10.3" x2="55.6" y2="16.8" stroke="#B0A898" stroke-width="0.12" opacity="0.35"/>';
+        s += '<line x1="64.5" y1="10.7" x2="56.2" y2="16.5" stroke="#fff8e0" stroke-width="0.08" opacity="0.45"/>';
+        s += '<circle cx="65.5" cy="21.85" r="0.10" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="45.7" cy="7.5" r="0.10" fill="rgba(40,20,5,0.55)"/>';
         // ── NECK (cou) — narrow quad pointing lower-right toward head ──
         s += '<polygon points="57.2,25.4 62.6,18.3 62.2,18.0 58.0,21.9" fill="#E0D8CA" stroke="#A8A090" stroke-width="0.12"/>';
         // Neck shadow panel
@@ -32852,6 +33079,10 @@ document.addEventListener('keydown', function(e) {
       case 50: // Garden Gnome — friendly compact figure on soil (Epic)
         s += '<g opacity="0.85" transform="translate(56,88) scale(1.4) translate(-56,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.04;0.16,0;0.08,0.04;0,0" dur="7.0s" repeatCount="indefinite"/>';
+        // AO 3-stack under feet — warm ground shadow
+        s += '<ellipse cx="56" cy="93.7" rx="5.4" ry="0.65" fill="rgba(40,20,5,0.18)"/>';
+        s += '<ellipse cx="56" cy="93.6" rx="3.6" ry="0.45" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="56" cy="93.55" rx="1.8" ry="0.20" fill="rgba(20,10,2,0.55)"/>';
         // Feet — large, thick, visible below body
         s += '<ellipse cx="54.5" cy="93" rx="1.2" ry="0.5" fill="#5A3E2B"/>';
         s += '<ellipse cx="57.5" cy="93" rx="1.2" ry="0.5" fill="#5A3E2B"/>';
@@ -32870,6 +33101,10 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="57.0" cy="88.8" rx="0.2" ry="0.24" fill="#1a1208"/>';
         s += '<circle cx="55.1" cy="88.7" r="0.06" fill="#fff8e0"/>';
         s += '<circle cx="57.1" cy="88.7" r="0.06" fill="#fff8e0"/>';
+        s += '<circle cx="54.95" cy="88.95" r="0.03" fill="#f5ecd6" opacity="0.85"/>';
+        s += '<circle cx="56.95" cy="88.95" r="0.03" fill="#f5ecd6" opacity="0.85"/>';
+        s += '<circle cx="53.4" cy="93.2" r="0.10" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="58.6" cy="93.2" r="0.10" fill="rgba(40,20,5,0.55)"/>';
         // Nose — round, rosy
         s += '<circle cx="56.0" cy="89.4" r="0.22" fill="#D08B7E"/>';
         // Cheeks — rosy
@@ -32883,15 +33118,22 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M55.5,89.95 Q56.0,90.2 56.5,89.95" stroke="#7A5C3E" stroke-width="0.16" fill="none" stroke-linecap="round"/>';
         // White beard — drawn AFTER face, hangs below chin, doesn't cover features
         s += '<path d="M54.2,90 Q54,91 54.5,92 Q55.5,92.8 56,93 Q56.5,92.8 57.5,92 Q58,91 57.8,90 Q57,90.5 56,90.8 Q55,90.5 54.2,90 Z" fill="#F2EFE8"/>';
+        s += '<path d="M54.6,90.2 Q54.4,91 54.8,91.8" fill="none" stroke="#fff8e0" stroke-width="0.10" opacity="0.55" stroke-linecap="round"/>';
         s += '<path d="M54.8,90.5 Q55.5,91.5 56,92 Q56.5,91.5 57.2,90.5" fill="none" stroke="#E0D8CC" stroke-width="0.15" opacity="0.4"/>';
+        s += '<path d="M55.2,92.4 Q56,92.85 56.8,92.4" fill="none" stroke="rgba(40,20,5,0.30)" stroke-width="0.10" stroke-linecap="round"/>';
         s += '<path d="M55.2,91 Q56,92.2 56.8,91" fill="none" stroke="#E8E0D4" stroke-width="0.12" opacity="0.3"/>';
         // Hat — red pointy gnome cap (on top of everything)
         s += '<path d="M56.0,84.5 L58.4,88.2 L53.6,88.2 Z" fill="#B4433D"/>';
         s += '<path d="M56.0,84.5 L58.4,88.2 L53.6,88.2 Z" fill="none" stroke="#8A2A28" stroke-width="0.2"/>';
         // Hat brim highlight
         s += '<path d="M54,88 Q56,87.5 58,88" fill="none" stroke="rgba(255,200,200,0.15)" stroke-width="0.2"/>';
-        // Hat pompom
+        // Hat front-face cream specular sliver (lit from upper-left)
+        s += '<path d="M55.4,85.6 L54.3,87.9" stroke="#f5ecd6" stroke-width="0.18" opacity="0.50" stroke-linecap="round"/>';
+        s += '<path d="M55.6,85.8 L54.7,87.7" stroke="#fff8e0" stroke-width="0.07" opacity="0.85" stroke-linecap="round"/>';
+        // Hat pompom + dual-specular pickup
         s += '<circle cx="56.0" cy="84.6" r="0.25" fill="#f5ecd6"/>';
+        s += '<circle cx="55.92" cy="84.52" r="0.10" fill="#fff8e0"/>';
+        s += '<circle cx="56.06" cy="84.72" r="0.04" fill="#f5ecd6" opacity="0.85"/>';
         // Ground shadow line
         // (ground shadow line removed)
         // Action marks (( near hat
@@ -32910,15 +33152,18 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="13" cy="11" rx="2" ry="1.5" fill="#C96E3A" opacity="0.8"/>';
         // Wing — stretched back in flight
         s += '<path d="M15,9 Q18,8 20.5,9.5 Q19,10 16,10 Z" fill="#6A4E38"/>';
+        // Cool sky-light pickup along leading edge (warm/cool contrast)
+        s += '<path d="M15.5,8.8 Q18,7.95 20.4,9.4" fill="none" stroke="rgba(200,220,240,0.35)" stroke-width="0.12" stroke-linecap="round"/>';
         // Wing bar
         s += '<path d="M16,9.5 Q18,9 20,9.8" fill="none" stroke="#8A7058" stroke-width="0.3" opacity="0.3"/>';
         // Wing feather tips
         s += '<path d="M19.5,9.5 L20.5,9.5 M19,9.8 L20,10" fill="none" stroke="#5A3E28" stroke-width="0.15" opacity="0.4"/>';
         // Head — round
         s += '<circle cx="11.5" cy="9.5" r="1.3" fill="#7A5C3E"/>';
-        // Eye — dark, alert (warm-shifted)
+        // Eye — dark, alert (warm-shifted) + dual catchlight (cream diffuse + white pickup)
         s += '<circle cx="11" cy="9.2" r="0.2" fill="#1a1208"/>';
         s += '<circle cx="11.05" cy="9.12" r="0.06" fill="#fff8e0"/>';
+        s += '<circle cx="11.02" cy="9.16" r="0.025" fill="#ffffff" opacity="0.85"/>';
         // Beak — connected to head, pointing left + tip terminator
         s += '<path d="M10.8,9.6 L9.2,9.3 L10.8,10.2 Z" fill="#A87850"/>';
         s += '<circle cx="9.2" cy="9.3" r="0.07" fill="rgba(40,20,5,0.55)"/>';
@@ -32942,8 +33187,10 @@ document.addEventListener('keydown', function(e) {
       case 52: // Worm — S-shaped, section lines, rounded ends, 2 eyes
         s += '<g opacity="0.9" transform="translate(12,88) scale(1.6) translate(-12,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.2,0;0,0" dur="4s" repeatCount="indefinite"/>';
-        // Shadow
-        s += '<ellipse cx="12" cy="92.5" rx="5" ry="0.4" fill="#0d100c" opacity="0.08"/>';
+        // Shadow — warm AO 3-stack (broad warm-cast, mid, tight contact)
+        s += '<ellipse cx="12" cy="92.55" rx="5.4" ry="0.5" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="12" cy="92.5" rx="4.2" ry="0.38" fill="rgba(40,20,5,0.18)"/>';
+        s += '<ellipse cx="12" cy="92.45" rx="2.8" ry="0.22" fill="rgba(40,20,5,0.30)"/>';
         // ── BODY — true letter S shape, vertical orientation ──
         s += '<path d="M10,84 Q13,84 14,86 Q15,88 12,89 Q9,90 10,92 Q11,93 14,93" fill="none" stroke="#D98FA1" stroke-width="2.2" stroke-linecap="round"/>';
         // (belly highlight removed — was translucent sticking out)
@@ -32966,6 +33213,8 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="10.3" cy="83.5" r="0.2" fill="#1a1208"/>';
         s += '<circle cx="9.55" cy="83.55" r="0.06" fill="#fff8e0"/>';
         s += '<circle cx="10.35" cy="83.45" r="0.06" fill="#fff8e0"/>';
+        s += '<circle cx="9.52" cy="83.58" r="0.022" fill="#ffffff" opacity="0.9"/>';
+        s += '<circle cx="10.32" cy="83.48" r="0.022" fill="#ffffff" opacity="0.9"/>';
         // Smile
         s += '<path d="M9.5,84.2 Q10,84.5 10.5,84.2" fill="none" stroke="#8A5060" stroke-width="0.15" stroke-linecap="round"/>';
         // ── TAIL — rounded, at bottom-right of the S ──
@@ -32981,10 +33230,14 @@ document.addEventListener('keydown', function(e) {
       case 53: // Turtle — profile facing left, flat-bottom shell, turtle pattern
         s += '<g opacity="0.88" transform="translate(58,88) scale(1.55) translate(-58,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.15,0;0.3,0.02;0.15,0;0,0" dur="7.1s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
-        s += '<ellipse cx="58" cy="92.1" rx="5.3" ry="0.75" fill="rgba(40,20,5,0.30)"/>';
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="58" cy="92.2" rx="6.2" ry="0.85" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="58" cy="92.15" rx="5.3" ry="0.75" fill="rgba(40,20,5,0.20)"/>';
+        s += '<ellipse cx="58" cy="92.1" rx="4.0" ry="0.55" fill="rgba(40,20,5,0.32)"/>';
         // ── POINTY TAIL — 2 shades darker ──
         s += '<path d="M62.5,90.5 L64.5,90.8 L62.5,91.2" fill="#3A6A20"/>';
+        // Tail tip terminator
+        s += '<circle cx="64.5" cy="90.8" r="0.09" fill="rgba(20,10,2,0.5)"/>';
         // ── 4 LEGS — 2 shades darker ──
         // Back right leg (far)
         s += '<path d="M61,91 L61.5,92.5" stroke="#3A6A20" stroke-width="1" fill="none" stroke-linecap="round"/>';
@@ -33029,8 +33282,10 @@ document.addEventListener('keydown', function(e) {
         // Eyes — 2, warm-shifted dark with cream catchlight
         s += '<circle cx="50" cy="89" r="0.25" fill="#1a1208"/>';
         s += '<circle cx="49.92" cy="88.92" r="0.09" fill="#fff8e0"/>';
+        s += '<circle cx="49.88" cy="88.96" r="0.035" fill="#ffffff" opacity="0.9"/>';
         s += '<circle cx="51" cy="89" r="0.25" fill="#1a1208"/>';
         s += '<circle cx="50.92" cy="88.92" r="0.09" fill="#fff8e0"/>';
+        s += '<circle cx="50.88" cy="88.96" r="0.035" fill="#ffffff" opacity="0.9"/>';
         // Nostril
         s += '<circle cx="49.5" cy="89.5" r="0.06" fill="#3A5A30" opacity="0.4"/>';
         // Mouth
@@ -33076,6 +33331,9 @@ document.addEventListener('keydown', function(e) {
         // Right hand + claws — at top of wing (closer to sky)
         s += '<path d="M64.5,7.5 L65,7 L65.5,6.5" stroke="#7A6A70" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         s += '<path d="M65.5,6.5 L66,6 M65.5,6.5 L65.8,5.8 M65.5,6.5 L65,6" stroke="#7A6A70" stroke-width="0.12" fill="none"/>';
+        // Claw tip terminators — both hands
+        s += '<circle cx="54" cy="6" r="0.06" fill="rgba(20,10,5,0.55)"/>';
+        s += '<circle cx="66" cy="6" r="0.06" fill="rgba(20,10,5,0.55)"/>';
         // ── WHITE ACTION MARKS — curved arcs ((( ))) ──
         // Left side (((
         s += '<path d="M52,7.5 Q51,9 52,10.5" fill="none" stroke="#fff8e0" stroke-width="0.2" stroke-linecap="round"/>';
@@ -33108,8 +33366,12 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="60.7" cy="12.2" r="0.2" fill="#1a1208"/>';
         s += '<circle cx="59.42" cy="12.32" r="0.1" fill="#fff8e0"/>';
         s += '<circle cx="60.82" cy="12.32" r="0.1" fill="#fff8e0"/>';
+        s += '<circle cx="59.42" cy="12.32" r="0.04" fill="#ffffff" opacity="0.95"/>';
+        s += '<circle cx="60.82" cy="12.32" r="0.04" fill="#ffffff" opacity="0.95"/>';
         s += '<circle cx="59.4" cy="12.1" r="0.08" fill="rgba(255,200,200,0.5)"/>';
         s += '<circle cx="60.8" cy="12.1" r="0.08" fill="rgba(255,200,200,0.5)"/>';
+        // Cool moonlight halo behind body (E4 halo at 2x — bat hangs in night air)
+        s += '<ellipse cx="60" cy="9" rx="3" ry="2.4" fill="rgba(180,200,235,0.06)"/>';
         // ── EARS — lightened 3 shades ──
         s += '<path d="M58.8,12.5 L58,13.8 L59.2,12.8 Z" fill="#6A5860"/>';
         s += '<path d="M58.8,12.5 L58,13.8" fill="none" stroke="rgba(180,160,170,0.3)" stroke-width="0.15"/>';
@@ -33122,8 +33384,10 @@ document.addEventListener('keydown', function(e) {
       case 55: // Mouse — full body, profile facing left, bottom-left
         s += '<g opacity="0.88" transform="translate(10,89) scale(1.5) translate(-10,-89)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.05;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
-        s += '<ellipse cx="8" cy="92.1" rx="3.7" ry="0.5" fill="rgba(40,20,5,0.30)"/>';
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="8" cy="92.2" rx="4.4" ry="0.6" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="8" cy="92.15" rx="3.7" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
+        s += '<ellipse cx="8" cy="92.1" rx="2.7" ry="0.32" fill="rgba(40,20,5,0.32)"/>';
         // Long skinny tail — curves upward
         s += '<path d="M10.5,90 Q12,89.5 13.5,89 Q15,88 14.5,87" fill="none" stroke="#C0A088" stroke-width="0.3" stroke-linecap="round"/>';
         // Tail tip terminator — warm cream pickup
@@ -33154,6 +33418,7 @@ document.addEventListener('keydown', function(e) {
         // 2 eyes — warm-shifted dark, beady, with cream catchlight
         s += '<circle cx="4" cy="89.2" r="0.35" fill="#1a1208"/>';
         s += '<circle cx="4.1" cy="89.08" r="0.12" fill="#fff8e0"/>';
+        s += '<circle cx="4.06" cy="89.12" r="0.045" fill="#ffffff" opacity="0.9"/>';
         s += '<circle cx="5.2" cy="89.2" r="0.3" fill="#1a1208"/>';
         s += '<circle cx="5.3" cy="89.08" r="0.1" fill="#fff8e0"/>';
         // Pink nose — centered under eyes
@@ -33165,6 +33430,9 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="5" y1="89.8" x2="6.5" y2="89.4" stroke="#C0A088" stroke-width="0.06" opacity="0.3"/>';
         s += '<line x1="5" y1="90" x2="6.5" y2="90" stroke="#C0A088" stroke-width="0.06" opacity="0.25"/>';
         s += '<line x1="5" y1="90.2" x2="6.5" y2="90.5" stroke="#C0A088" stroke-width="0.06" opacity="0.2"/>';
+        // Whisker tip terminators — tiny cream pickups (suggestion of motion)
+        s += '<circle cx="2.5" cy="89.4" r="0.05" fill="#fff8e0" opacity="0.5"/>';
+        s += '<circle cx="2.5" cy="90.6" r="0.05" fill="#fff8e0" opacity="0.4"/>';
         // Action marks (( near ears
         s += '<path d="M2.5,87.5 Q2,88.5 2.5,89.5" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M1.8,87 Q1,88.5 1.8,90" fill="none" stroke="rgba(200,200,200,0.18)" stroke-width="0.15" stroke-linecap="round"/>';
@@ -33172,6 +33440,9 @@ document.addEventListener('keydown', function(e) {
         break;
       case 56: // Owl — perched on branch, no wings, bigger, facing left
         s += '<g opacity="0.90" transform="translate(58,18) scale(1.6) translate(-58,-18)">';
+        // Soft warm AO under owl's body where it meets branch
+        s += '<ellipse cx="58" cy="22.3" rx="3.2" ry="0.4" fill="rgba(40,20,5,0.22)"/>';
+        s += '<ellipse cx="58" cy="22.25" rx="2.0" ry="0.25" fill="rgba(40,20,5,0.32)"/>';
         // ── BRANCH — enters from right edge, slight downward angle ──
         s += '<path d="M70,22 C66,22.5 62,22 58,22.5 C55,23 53,23 51,22.5" fill="none" stroke="#5A3E28" stroke-width="1.2" stroke-linecap="round"/>';
         // Branch bark texture
@@ -33200,19 +33471,24 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M60,12.5 L60.7,10.5" fill="none" stroke="#6A4E38" stroke-width="0.2"/>';
         // Facial disc — lighter area around eyes
         s += '<circle cx="58" cy="13.8" r="1.8" fill="#9A7C5E" opacity="0.4"/>';
-        // ── EYES — large, golden, wise ──
+        // ── EYES — large, golden, wise (E4 halo + dual specular) ──
+        s += '<circle cx="57" cy="13.6" r="1.8" fill="rgba(212,168,61,0.10)"/>';
+        s += '<circle cx="59" cy="13.6" r="1.8" fill="rgba(212,168,61,0.10)"/>';
         s += '<circle cx="57" cy="13.6" r="0.9" fill="#D4A83D"/>';
         s += '<circle cx="59" cy="13.6" r="0.9" fill="#D4A83D"/>';
         s += '<circle cx="57" cy="13.6" r="0.4" fill="#1a1208"/>';
         s += '<circle cx="59" cy="13.6" r="0.4" fill="#1a1208"/>';
         s += '<circle cx="57.1" cy="13.4" r="0.15" fill="#fff8e0"/>';
         s += '<circle cx="59.1" cy="13.4" r="0.15" fill="#fff8e0"/>';
+        s += '<circle cx="57.06" cy="13.46" r="0.06" fill="#ffffff" opacity="0.95"/>';
+        s += '<circle cx="59.06" cy="13.46" r="0.06" fill="#ffffff" opacity="0.95"/>';
         // Brow lines — wise expression
         s += '<path d="M56,12.8 C56.5,12.5 57.5,12.5 57.8,12.8" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
         s += '<path d="M58.2,12.8 C58.5,12.5 59.5,12.5 60,12.8" fill="none" stroke="#5A3E28" stroke-width="0.2" opacity="0.3"/>';
-        // Beak — small, hooked
+        // Beak — small, hooked + tip terminator
         s += '<path d="M57.6,14.5 L58,15.2 L58.4,14.5 Z" fill="#A87850"/>';
         s += '<path d="M58,15.2 L58,15.5" stroke="#8A6040" stroke-width="0.15" fill="none"/>';
+        s += '<circle cx="58" cy="15.5" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // ── FEET — gripping branch ──
         s += '<path d="M56.8,22 L56.2,22.5 M56.8,22 L57,22.6 M56.8,22 L57.4,22.4" stroke="#A87850" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
         s += '<path d="M59.2,22 L58.8,22.5 M59.2,22 L59.4,22.6 M59.2,22 L59.8,22.4" stroke="#A87850" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
@@ -33285,8 +33561,10 @@ document.addEventListener('keydown', function(e) {
         // Dendrobates azureus: vivid blue body with black spots/patches.
         // Big shiny black eyes, 4 long toes with bulbous pads on each foot.
         s += '<g opacity="1" transform="translate(14,84) scale(1.3) translate(-14,-74)">';
-        // Shadow
-        s += '<ellipse cx="17" cy="79.5" rx="3.5" ry="0.5" fill="#0d100c" opacity="0.1"/>';
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="17" cy="79.6" rx="4.1" ry="0.6" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="17" cy="79.55" rx="3.5" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
+        s += '<ellipse cx="17" cy="79.5" rx="2.5" ry="0.32" fill="rgba(40,20,5,0.32)"/>';
         // ── HIND LEGS — long toes with bulbous ends ──
         // Left hind leg
         s += '<path d="M19,77.5 Q19.5,78.5 19.5,79" stroke="#2080C8" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
@@ -33358,12 +33636,16 @@ document.addEventListener('keydown', function(e) {
         // Head dark spots (warm-shifted)
         s += '<circle cx="15.5" cy="74.5" r="0.25" fill="#1a1208" opacity="0.5"/>';
         s += '<circle cx="16.8" cy="74.8" r="0.2" fill="#1a1208" opacity="0.4"/>';
-        // ── EYES — big, shiny, warm-dark, bulging with cream highlights ──
+        // ── EYES — big, shiny, warm-dark, bulging (E4 cool halo + dual specular) ──
+        s += '<circle cx="15" cy="74.2" r="1.6" fill="rgba(120,200,255,0.08)"/>';
+        s += '<circle cx="17.2" cy="74.2" r="1.4" fill="rgba(120,200,255,0.08)"/>';
         s += '<circle cx="15" cy="74.2" r="0.8" fill="#1a1208"/>';
         s += '<circle cx="15.3" cy="73.9" r="0.3" fill="#fff8e0"/>';
+        s += '<circle cx="15.36" cy="73.84" r="0.11" fill="#ffffff" opacity="0.95"/>';
         s += '<circle cx="14.8" cy="74.4" r="0.1" fill="#fff8e0"/>';
         s += '<circle cx="17.2" cy="74.2" r="0.7" fill="#1a1208"/>';
         s += '<circle cx="17.5" cy="73.9" r="0.25" fill="#fff8e0"/>';
+        s += '<circle cx="17.55" cy="73.85" r="0.09" fill="#ffffff" opacity="0.95"/>';
         s += '<circle cx="17" cy="74.4" r="0.08" fill="#fff8e0"/>';
         // Nostrils — two tiny dots
         s += '<circle cx="15.5" cy="75.2" r="0.08" fill="#1A4A6A" opacity="0.4"/>';
@@ -33377,6 +33659,10 @@ document.addEventListener('keydown', function(e) {
       case 61: // Rabbit — sitting beside pot right side, head clearly visible
         s += '<g opacity="0.85" transform="translate(57,88) scale(1.5) translate(-57,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.05,-0.08;0,0" dur="4s" repeatCount="indefinite"/>';
+        // Warm AO 3-stack ground shadow under rabbit
+        s += '<ellipse cx="57.5" cy="91.8" rx="4.5" ry="0.55" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="57.5" cy="91.75" rx="3.6" ry="0.42" fill="rgba(40,20,5,0.20)"/>';
+        s += '<ellipse cx="57.5" cy="91.7" rx="2.6" ry="0.28" fill="rgba(40,20,5,0.32)"/>';
         // Cottontail — behind body
         s += '<circle cx="60.8" cy="88.5" r="0.8" fill="#E8DCD0"/>';
         // Body
@@ -33397,9 +33683,10 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M54.5,84.5 Q54.3,84 54.6,83.5" fill="#D8A090" opacity="0.35" stroke="none"/>';
         s += '<path d="M56,86.8 Q56.5,84 57,82.5 Q57.2,82 57.7,82.8 Q57.5,84 56.5,86.5" fill="#B8A088" stroke="#A89078" stroke-width="0.15"/>';
         s += '<path d="M56.7,84 Q56.5,83.5 56.8,83" fill="#D8A090" opacity="0.35" stroke="none"/>';
-        // Eye — large
+        // Eye — large + dual specular
         s += '<circle cx="55" cy="87.5" r="0.5" fill="#1A1A1A"/>';
         s += '<circle cx="55.1" cy="87.3" r="0.14" fill="#f5ecd6"/>';
+        s += '<circle cx="55.06" cy="87.34" r="0.05" fill="#ffffff" opacity="0.95"/>';
         // Nose — pink
         s += '<path d="M54,88.3 L53.8,88.5 L54.2,88.5 Z" fill="#D8A090"/>';
         // Mouth
@@ -33409,6 +33696,9 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="54" y1="88.6" x2="52.5" y2="88.8" stroke="#C8B098" stroke-width="0.08" opacity="0.35"/>';
         // Extra whisker — third pair
         s += '<line x1="54" y1="88.5" x2="52.5" y2="89.2" stroke="#C8B098" stroke-width="0.06" opacity="0.25"/>';
+        // Whisker tip terminators (motion)
+        s += '<circle cx="52.5" cy="88" r="0.04" fill="#fff8e0" opacity="0.55"/>';
+        s += '<circle cx="52.5" cy="88.8" r="0.04" fill="#fff8e0" opacity="0.45"/>';
         // Fur texture arcs on body
         s += '<path d="M57,89 Q57.5,88.5 58,89" fill="none" stroke="#A89078" stroke-width="0.1" opacity="0.2"/>';
         s += '<path d="M58.5,90 Q59,89.5 59.5,90" fill="none" stroke="#A89078" stroke-width="0.1" opacity="0.18"/>';
@@ -33423,16 +33713,20 @@ document.addEventListener('keydown', function(e) {
         break;
       case 62: // Cricket — on soil, opaque, hind legs rub together (chirping)
         s += '<g opacity="1" transform="translate(25,90) scale(2.2) translate(-25,-90)">';
-        s += '<ellipse cx="25" cy="92" rx="2.4" ry="0.4" fill="rgba(40,20,5,0.30)"/>';
+        // Warm AO 3-stack ground shadow
+        s += '<ellipse cx="25" cy="92.1" rx="3.1" ry="0.5" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="25" cy="92" rx="2.4" ry="0.4" fill="rgba(40,20,5,0.20)"/>';
+        s += '<ellipse cx="25" cy="91.95" rx="1.7" ry="0.25" fill="rgba(40,20,5,0.32)"/>';
         // Abdomen
         s += '<ellipse cx="25" cy="90.5" rx="2.0" ry="1.0" fill="#3A5A2A"/>';
         // Thorax
         s += '<ellipse cx="23.5" cy="90.2" rx="1.2" ry="0.8" fill="#4A6A3A"/>';
         // Head
         s += '<circle cx="22.2" cy="89.8" r="0.7" fill="#4A6A3A"/>';
-        // Eyes
+        // Eyes — dual specular
         s += '<circle cx="21.8" cy="89.5" r="0.2" fill="#1a1208"/>';
         s += '<circle cx="21.9" cy="89.4" r="0.06" fill="#f5ecd6"/>';
+        s += '<circle cx="21.88" cy="89.42" r="0.022" fill="#ffffff" opacity="0.9"/>';
         // Antennae
         s += '<path d="M22,89.5 Q20.5,88 19.5,87.5" fill="none" stroke="#3A5A2A" stroke-width="0.18" stroke-linecap="round"/>';
         s += '<path d="M22.3,89.3 Q21.5,87.5 21,86.5" fill="none" stroke="#3A5A2A" stroke-width="0.18" stroke-linecap="round"/>';
@@ -33469,8 +33763,10 @@ document.addEventListener('keydown', function(e) {
         // white face/belly, black back/head, bright orange webbed feet.
         s += '<g opacity="0.9" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.1,-0.1;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow — warm-shifted AO
-        s += '<ellipse cx="56" cy="92.5" rx="3" ry="0.4" fill="rgba(40,20,5,0.18)"/>';
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="56" cy="92.6" rx="3.6" ry="0.5" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="56" cy="92.55" rx="3" ry="0.4" fill="rgba(40,20,5,0.20)"/>';
+        s += '<ellipse cx="56" cy="92.5" rx="2.1" ry="0.26" fill="rgba(40,20,5,0.32)"/>';
         // ── FEET — bright orange, webbed ──
         s += '<path d="M54.5,92 L53.5,92.5 M54.5,92 L54.5,92.8 M54.5,92 L55.5,92.5" stroke="#E87020" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
         s += '<path d="M53.8,92.3 Q54.5,92.8 55.2,92.3" fill="none" stroke="#E87020" stroke-width="0.15" opacity="0.4"/>';
@@ -33495,9 +33791,10 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.5,83 Q53,82 54,81.5 Q55.5,81 56.5,81.5 Q58,81.5 59,82 Q59,83 58,83.5 Q56,83.5 54,83.5 Q53.5,83.5 53.5,83" fill="none" stroke="#1a1208" stroke-width="0.2"/>';
         // White face — front/sides
         s += '<path d="M53.5,83 Q53,82 54,81.5 Q55.5,81 56.5,81.5 Q56,82 55.5,82.5 Q55,83 54,83.5 Q53.5,83.5 53.5,83 Z" fill="#F0ECE4"/>';
-        // ── EYES — warm-dark, set in white face area, with cream catchlight ──
+        // ── EYES — warm-dark, set in white face area, dual specular ──
         s += '<circle cx="54.8" cy="82" r="0.4" fill="#1a1208"/>';
         s += '<circle cx="54.9" cy="81.9" r="0.1" fill="#fff8e0"/>';
+        s += '<circle cx="54.86" cy="81.94" r="0.038" fill="#ffffff" opacity="0.95"/>';
         // Dark eye line — runs from eye toward back of head
         s += '<path d="M55.2,82 Q55.8,82 56.2,82.2" fill="none" stroke="#1a1208" stroke-width="0.25" opacity="0.5"/>';
         // ── BEAK — fat, colorful, orange with grey/red stripes ──
@@ -33505,8 +33802,9 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M53.5,82.5 Q52,82 51,82.2 Q50.5,82.5 51,82.8 L53.5,83 Z" fill="#E87020"/>';
         // Lower beak
         s += '<path d="M53.5,83 L51,83 Q50.5,82.8 51,82.8" fill="#D06018"/>';
-        // Beak tip — slightly darker
+        // Beak tip — slightly darker + tip terminator
         s += '<path d="M51,82.2 Q50.5,82.5 51,82.8" fill="none" stroke="#C05010" stroke-width="0.2"/>';
+        s += '<circle cx="50.55" cy="82.5" r="0.07" fill="rgba(40,15,5,0.6)"/>';
         // Grey beak base — where it meets the face
         s += '<path d="M53.2,82.5 Q53.5,82.8 53.2,83" fill="none" stroke="#6A6A68" stroke-width="0.3" opacity="0.4"/>';
         // Beak color stripe — red/yellow detail
@@ -33518,19 +33816,21 @@ document.addEventListener('keydown', function(e) {
         break;
       case 64: // Scarab Beetle — iridescent jeweled carapace on soil
         s += '<g opacity="0.88" transform="translate(42,90) scale(2.0) translate(-42,-90)">';
-        // AO ground shadow — warm soft
-        s += '<ellipse cx="42.3" cy="91.5" rx="2" ry="0.4" fill="rgba(40,20,5,0.30)"/>';
-        // Shadow
-        s += '<ellipse cx="42.3" cy="91.3" rx="1.8" ry="0.6" fill="#0d100c" opacity="0.15"/>';
+        // AO ground shadow — warm 3-stack
+        s += '<ellipse cx="42.3" cy="91.55" rx="2.5" ry="0.5" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="42.3" cy="91.5" rx="2" ry="0.4" fill="rgba(40,20,5,0.22)"/>';
+        s += '<ellipse cx="42.3" cy="91.45" rx="1.4" ry="0.25" fill="rgba(40,20,5,0.34)"/>';
         // Abdomen (elytra) — deep iridescent green base
         s += '<ellipse cx="42" cy="91" rx="1.8" ry="1.2" fill="#1A5A3A"/>';
         // Iridescent color layers — green, gold, copper shifting
         s += '<ellipse cx="41.3" cy="90.5" rx="0.8" ry="0.9" fill="rgba(100,200,80,0.15)"/>';
         s += '<ellipse cx="42.8" cy="90.5" rx="0.7" ry="0.8" fill="rgba(200,180,60,0.12)"/>';
         s += '<ellipse cx="42" cy="91.2" rx="1" ry="0.5" fill="rgba(180,120,60,0.1)"/>';
-        // Bright highlight — shiny metallic catch-light
+        // Bright highlight — shiny metallic catch-light + cream specular pickup
         s += '<ellipse cx="41.5" cy="90.3" rx="0.5" ry="0.35" fill="rgba(255,255,220,0.2)"/>';
         s += '<ellipse cx="42.5" cy="90.8" rx="0.3" ry="0.2" fill="rgba(255,240,180,0.15)"/>';
+        s += '<circle cx="41.45" cy="90.22" r="0.12" fill="#fff8e0" opacity="0.7"/>';
+        s += '<circle cx="41.42" cy="90.18" r="0.04" fill="#ffffff" opacity="0.95"/>';
         // Wing cover seam
         s += '<line x1="42" y1="90" x2="42" y2="92" stroke="#0d3A1A" stroke-width="0.2"/>';
         // Animated iridescent shimmer — color shifts
@@ -33556,6 +33856,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M43,90.5 Q43.8,90.8 44,91.3" stroke="#1A3A2A" stroke-width="0.18" fill="none"/>';
         s += '<path d="M43,91 Q44,91.2 44.2,91.6" stroke="#1A3A2A" stroke-width="0.18" fill="none"/>';
         s += '<path d="M42.5,91.5 Q43.2,91.6 43.5,92" stroke="#1A3A2A" stroke-width="0.15" fill="none"/>';
+        // Leg tip terminators — tiny warm-dark feet
+        s += '<circle cx="40" cy="91.3" r="0.06" fill="rgba(20,10,5,0.6)"/>';
+        s += '<circle cx="39.8" cy="91.6" r="0.06" fill="rgba(20,10,5,0.6)"/>';
+        s += '<circle cx="40.5" cy="92" r="0.05" fill="rgba(20,10,5,0.55)"/>';
+        s += '<circle cx="44" cy="91.3" r="0.06" fill="rgba(20,10,5,0.6)"/>';
+        s += '<circle cx="44.2" cy="91.6" r="0.06" fill="rgba(20,10,5,0.6)"/>';
+        s += '<circle cx="43.5" cy="92" r="0.05" fill="rgba(20,10,5,0.55)"/>';
         // Translucent blue shiny circle — makes it look shiny
         s += '<circle cx="42" cy="90.5" r="1" fill="rgba(80,140,220,0.12)"/>';
         s += '</g>';
@@ -33581,6 +33888,8 @@ document.addEventListener('keydown', function(e) {
           s += '<ellipse cx="'+_a65x+'" cy="'+_a65y+'" rx="0.45" ry="0.35" fill="#3A2A1A"/>';
           // Head
           s += '<circle cx="'+(_a65x-0.7)+'" cy="'+_a65y+'" r="0.35" fill="#2A1A10"/>';
+          // Eye pickup — tiny cream catchlight
+          s += '<circle cx="'+(_a65x-0.78)+'" cy="'+(_a65y-0.08)+'" r="0.05" fill="#fff8e0" opacity="0.8"/>';
           // Antennae
           s += '<path d="M'+(_a65x-1)+','+_a65y+' L'+(_a65x-1.6)+','+(_a65y-0.5)+'" stroke="#2A1A10" stroke-width="0.08"/>';
           s += '<path d="M'+(_a65x-0.9)+','+(_a65y-0.1)+' L'+(_a65x-1.4)+','+(_a65y-0.7)+'" stroke="#2A1A10" stroke-width="0.08"/>';
@@ -33588,6 +33897,10 @@ document.addEventListener('keydown', function(e) {
           s += '<line x1="'+(_a65x-0.3)+'" y1="'+_a65y+'" x2="'+(_a65x-0.6)+'" y2="'+(_a65y+0.6)+'" stroke="#2A1A10" stroke-width="0.08"/>';
           s += '<line x1="'+_a65x+'" y1="'+_a65y+'" x2="'+_a65x+'" y2="'+(_a65y+0.65)+'" stroke="#2A1A10" stroke-width="0.08"/>';
           s += '<line x1="'+(_a65x+0.5)+'" y1="'+_a65y+'" x2="'+(_a65x+0.7)+'" y2="'+(_a65y+0.6)+'" stroke="#2A1A10" stroke-width="0.08"/>';
+          // Leg tip terminators — tiny warm-dark feet
+          s += '<circle cx="'+(_a65x-0.6)+'" cy="'+(_a65y+0.6)+'" r="0.04" fill="rgba(20,10,5,0.65)"/>';
+          s += '<circle cx="'+_a65x+'" cy="'+(_a65y+0.65)+'" r="0.04" fill="rgba(20,10,5,0.65)"/>';
+          s += '<circle cx="'+(_a65x+0.7)+'" cy="'+(_a65y+0.6)+'" r="0.04" fill="rgba(20,10,5,0.65)"/>';
           s += '</g>';
         }
         s += '</g>';
@@ -33597,8 +33910,10 @@ document.addEventListener('keydown', function(e) {
         // grey lower feathers, long skinny neck, black beak, dark eyes,
         // long dark grey legs with knobby knees and black webbed feet.
         s += '<g opacity="0.88" transform="translate(58,70) scale(1.05) translate(-58,-70)">';
-        // Shadow — warm-shifted AO under standing legs
-        s += '<ellipse cx="58" cy="90" rx="4" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="58" cy="90.1" rx="4.8" ry="0.6" fill="rgba(40,20,5,0.10)"/>';
+        s += '<ellipse cx="58" cy="90.05" rx="4" ry="0.5" fill="rgba(40,20,5,0.20)"/>';
+        s += '<ellipse cx="58" cy="90" rx="2.8" ry="0.32" fill="rgba(40,20,5,0.32)"/>';
         // ── LEGS — long, dark grey, skinny with knobby knees ──
         // Left leg
         s += '<line x1="57" y1="78" x2="57" y2="83" stroke="#4A4A48" stroke-width="0.5"/>';
@@ -33638,13 +33953,20 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="58.5" cy="58" rx="1.8" ry="1.5" fill="#F0ECE4"/>';
         // Red crown patch — BIG, covers top of white head
         s += '<path d="M57,57 Q58.5,55.5 60,57 Q59.5,57.8 58.5,58 Q57.5,57.8 57,57 Z" fill="#D02020"/>';
+        // Warm halo around crown (E4 at 2x — make the red crown POP)
+        s += '<ellipse cx="58.5" cy="56.8" rx="2.4" ry="1.4" fill="rgba(208,32,32,0.10)"/>';
+        // Cream specular pickup on crown
+        s += '<ellipse cx="58.3" cy="56.4" rx="0.6" ry="0.25" fill="#fff8e0" opacity="0.55"/>';
+        s += '<circle cx="58.2" cy="56.32" r="0.13" fill="#ffffff" opacity="0.85"/>';
         // Dark face patch — around eye area (warm-shifted)
         s += '<path d="M57,58.2 Q57.5,57.8 58.2,58.2 Q58.2,58.8 57.5,58.8 Q57,58.8 57,58.2 Z" fill="#1a1208" opacity="0.5"/>';
-        // Eye — warm-dark with cream catchlight
+        // Eye — warm-dark with dual specular
         s += '<circle cx="57.5" cy="58.2" r="0.35" fill="#1a1208"/>';
         s += '<circle cx="57.6" cy="58.1" r="0.1" fill="#fff8e0"/>';
-        // Beak — light grey, long, straight, pointy
+        s += '<circle cx="57.56" cy="58.14" r="0.038" fill="#ffffff" opacity="0.95"/>';
+        // Beak — light grey, long, straight, pointy + tip terminator
         s += '<path d="M56.8,58.8 L54,59 L54,58.5 L56.8,58.3" fill="#8A8A88"/>';
+        s += '<circle cx="54" cy="58.75" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         s += '<path d="M54,58.75 L56.8,58.55" fill="none" stroke="#6A6A68" stroke-width="0.1"/>';
         // Head outline
         s += '<ellipse cx="58.5" cy="58" rx="1.8" ry="1.5" fill="none" stroke="#C8C4BC" stroke-width="0.15" opacity="0.3"/>';
@@ -33655,8 +33977,10 @@ document.addEventListener('keydown', function(e) {
         // curling up behind, clutching an acorn in tiny paws. Side view.
         s += '<g opacity="0.88" transform="translate(12,86) scale(1.5) translate(-12,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.05;0,0" dur="4s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="12" cy="92.3" rx="4.6" ry="0.55" fill="rgba(40,20,5,0.16)"/>';
         s += '<ellipse cx="12" cy="92.1" rx="4.2" ry="0.6" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="12" cy="92.0" rx="3.0" ry="0.32" fill="rgba(20,12,4,0.45)"/>';
         // ── TAIL — massive bushy S-curve behind body, THE defining feature ──
         s += '<path d="M14,88 C15,86 16,83 16,81 C16,79.5 16.5,78.5 17,79 C17.5,79.5 17.5,81 17,83 C16.5,85 16,87 15.5,89 C15,90 14,90.5 13,90" fill="#8A7050"/>';
         // Tail fur texture — wispy lighter strands
@@ -33677,6 +34001,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M9,86 C8.5,84.5 9,83 10,82.5 C11,82 12.5,82 13.5,83 C14.5,84 14.5,86 14,88 C13.5,90 12.5,91.5 11,91.5 C9.5,91.5 8.5,90.5 8.5,89 C8.5,87.5 9,86.5 9,86 Z" fill="#8A7050"/>';
         // Belly — lighter cream
         s += '<path d="M9.5,87 C10,88 10.5,89.5 11,90.5 C11.5,91 12,91 12.5,90" fill="#C8B898" opacity="0.4"/>';
+        // A2 cool-shadow under-belly rim (hue shift toward purple-grey)
+        s += '<path d="M9.6,89 C10,90 11,91 12,91" fill="none" stroke="#5A5060" stroke-width="0.18" opacity="0.22" stroke-linecap="round"/>';
         // Back fur grizzle
         s += '<path d="M10,83 C11.5,82.5 13,83 14,84" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.15"/>';
         s += '<path d="M9,85 C10.5,84.5 12,85 13.5,86" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.12"/>';
@@ -33732,8 +34058,10 @@ document.addEventListener('keydown', function(e) {
         // Phascolarctos cinereus. Just the koala sitting. Round face,
         // BIG fluffy ears, large dark nose, sleepy eyes. Simple.
         s += '<g opacity="0.90" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="57" cy="92.85" rx="4.2" ry="0.6" fill="rgba(40,20,5,0.15)"/>';
         s += '<ellipse cx="57" cy="92.6" rx="3.7" ry="0.65" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="57" cy="92.45" rx="2.6" ry="0.32" fill="rgba(20,12,4,0.45)"/>';
         // ── FEET — visible below body ──
         s += '<ellipse cx="55.5" cy="92" rx="1" ry="0.5" fill="#7A7A72"/>';
         s += '<ellipse cx="58.5" cy="92" rx="1" ry="0.5" fill="#7A7A72"/>';
@@ -33741,6 +34069,11 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="57" cy="89" rx="3.5" ry="3.2" fill="#8A8A80"/>';
         // Lighter belly
         s += '<ellipse cx="57" cy="90" rx="2.2" ry="2" fill="#B0B0A8" opacity="0.4"/>';
+        // Fur direction — short downward strokes following body curve
+        s += '<path d="M54.5,87.5 L54.3,88.2 M55.2,87 L55,87.7 M55.8,86.8 L55.6,87.5 M58.2,86.8 L58.4,87.5 M58.8,87 L59,87.7 M59.5,87.5 L59.7,88.2" stroke="#7A7A72" stroke-width="0.12" opacity="0.35" stroke-linecap="round"/>';
+        s += '<path d="M55,89 L54.8,89.7 M56,89.2 L55.9,89.9 M58,89.2 L58.1,89.9 M59,89 L59.2,89.7" stroke="#7A7A72" stroke-width="0.1" opacity="0.3" stroke-linecap="round"/>';
+        // A2 cool-shadow under chin (hue toward blue-grey)
+        s += '<path d="M55,86.8 Q57,87.4 59,86.8" fill="none" stroke="#5A5868" stroke-width="0.2" opacity="0.25" stroke-linecap="round"/>';
         // ── EARS — BIG, round, FLUFFY (the koala signature) ──
         s += '<ellipse cx="54" cy="83.5" rx="2.2" ry="2.3" fill="#8A8A80"/>';
         s += '<ellipse cx="54" cy="83.5" rx="1.4" ry="1.5" fill="#C0C0B8" opacity="0.5"/>';
@@ -33800,8 +34133,10 @@ document.addEventListener('keydown', function(e) {
         // Phoenicopterus roseus. THE iconic bird pose: one leg, S-neck,
         // hooked beak. Bright pink. Impossible to mistake for anything else.
         s += '<g opacity="0.90" transform="translate(12,50) scale(1.6) translate(-12,-50)">';
-        // Shadow — warm-shifted AO under standing leg
+        // Shadow — warm-shifted AO 3-stack under standing leg
+        s += '<ellipse cx="12" cy="69.2" rx="2.4" ry="0.4" fill="rgba(40,20,5,0.10)"/>';
         s += '<ellipse cx="12" cy="69" rx="2" ry="0.4" fill="rgba(40,20,5,0.18)"/>';
+        s += '<ellipse cx="12" cy="68.95" rx="1.3" ry="0.22" fill="rgba(20,12,4,0.32)"/>';
         // ── STANDING LEG — two segments with backward knee ──
         // Upper leg (thigh) — from body down to backward knee
         s += '<line x1="12" y1="61" x2="12.5" y2="64.5" stroke="#D06070" stroke-width="0.5" stroke-linecap="round"/>';
@@ -33811,6 +34146,10 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="12.5" cy="64.5" r="0.25" fill="#C05060"/>';
         // Foot — spread webbed toes
         s += '<path d="M12,68.5 L11,69.2 M12,68.5 L12,69.2 M12,68.5 L13,69.2" stroke="#C05060" stroke-width="0.2" fill="none" stroke-linecap="round"/>';
+        // Toe tip terminators (warm-dark dots)
+        s += '<circle cx="11" cy="69.2" r="0.07" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="12" cy="69.2" r="0.07" fill="rgba(40,20,5,0.55)"/>';
+        s += '<circle cx="13" cy="69.2" r="0.07" fill="rgba(40,20,5,0.55)"/>';
         // ── TUCKED LEG — thigh visible, shin folded up against body ──
         // Thigh angles down and back from body
         s += '<path d="M12.5,61 L14,63.5" stroke="#D06070" stroke-width="0.45" fill="none" stroke-linecap="round"/>';
@@ -33822,6 +34161,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M13.5,61.5 L14,61 M13.5,61.5 L13,61" stroke="#C05060" stroke-width="0.15" fill="none" stroke-linecap="round"/>';
         // ── BODY — round/oval, bright pink ──
         s += '<ellipse cx="12" cy="59" rx="3" ry="2.5" fill="#E87088"/>';
+        // Cream pickup highlight on top of body (warm A2)
+        s += '<ellipse cx="11.6" cy="57.8" rx="0.8" ry="0.4" fill="#fff8e0" opacity="0.28"/>';
         // Wing — darker pink, folded against body
         s += '<path d="M10,58 Q12,56 14,58 Q14,60 12,61 Q10,60 10,58 Z" fill="#D06078"/>';
         // Wing feather lines
@@ -33860,6 +34201,8 @@ document.addEventListener('keydown', function(e) {
       case 70: // Seahorse — upright, round body, horse head, curling tail
         s += '<g opacity="0.85" transform="translate(11,22) scale(1.6) translate(-11,-22)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.3,-1;0,0;-0.2,0.7;0,0" dur="5.5s" repeatCount="indefinite"/>';
+        // Faint underwater caustic ripple beneath (no ground AO — aquatic)
+        s += '<ellipse cx="11" cy="29.8" rx="2.6" ry="0.25" fill="rgba(180,230,235,0.14)"><animate attributeName="rx" values="2.6;3.2;2.6" dur="4s" repeatCount="indefinite"/></ellipse>';
         // ── TAIL — curling inward tightly to a skinny point ──
         s += '<path d="M10.5,26 Q10,27.5 10.5,29 Q11.5,30 12,29.5 Q12.5,28.5 12,27.5 Q11.5,27 11.2,27.5 Q11,28 11.3,28.2 Q11.5,28 11.4,27.8" fill="none" stroke="#C8A060" stroke-width="0.8" stroke-linecap="round"/>';
         // Tail gets thinner toward the tight curl point
@@ -33888,6 +34231,7 @@ document.addEventListener('keydown', function(e) {
         // Eye — large, round, prominent
         s += '<circle cx="10.8" cy="16" r="0.6" fill="#1a1208"/>';
         s += '<circle cx="10.9" cy="15.8" r="0.18" fill="#fff8e0"/>';
+        s += '<circle cx="10.74" cy="16.16" r="0.06" fill="#ffffff" opacity="0.85"/>';
         // Brow ridge
         s += '<path d="M10.3,15.5 Q10.8,15.2 11.5,15.5" fill="none" stroke="#A08040" stroke-width="0.2" opacity="0.4"/>';
         // ── FAN MANE — runs from top of head down to tail ──
@@ -33927,7 +34271,9 @@ document.addEventListener('keydown', function(e) {
       case 71: // Koi Fish — realistic, deep body, flowing split tail
         s += '<g opacity="1" transform="translate(22,88) scale(1.1) translate(-22,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,0.15;0,0;-1,-.15;0,0" dur="6s" repeatCount="indefinite"/>';
-        // Aquatic — no ground AO; floats via translucent body
+        // Aquatic — no ground AO; instead a faint pale ripple beneath body
+        s += '<ellipse cx="28" cy="93.2" rx="6" ry="0.3" fill="rgba(200,235,245,0.16)"><animate attributeName="rx" values="6;7.2;6" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.16;0.08;0.16" dur="5s" repeatCount="indefinite"/></ellipse>';
+        s += '<ellipse cx="28" cy="93.4" rx="4" ry="0.18" fill="rgba(220,245,250,0.10)"><animate attributeName="rx" values="4;5;4" dur="6s" repeatCount="indefinite"/></ellipse>';
         // ── FLOWING TAIL — long & flowy like axolotl, translucent ──
         // Upper lobe — wide at base, long flowing curve to point
         s += '<path d="M33.5,89 Q35,87 37,85 Q39,84 40,84.5 Q40,85.5 39,87 Q37,88.5 35,89.5 Q34,90 33.5,90" fill="rgba(232,120,56,0.5)"/>';
@@ -33970,9 +34316,10 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M30,92 Q30.5,92.8 31,92.5 Q31,92 30.5,91.8" fill="rgba(240,200,160,0.2)"/>';
         // Head — blunt, wide
         s += '<path d="M23.5,89.5 Q23,89.2 23.2,89.5 Q23,90 23.5,90.5" fill="#F0E8D8"/>';
-        // Eye — round, calm (warm-shifted with cream catchlight)
+        // Eye — round, calm (warm-shifted with cream catchlight + sharp white)
         s += '<circle cx="24.2" cy="89.5" r="0.4" fill="#1a1208"/>';
         s += '<circle cx="24.3" cy="89.3" r="0.12" fill="#fff8e0"/>';
+        s += '<circle cx="24.16" cy="89.66" r="0.05" fill="#ffffff" opacity="0.9"/>';
         // Barbels — 2 whiskers
         s += '<path d="M23.5,89.8 Q22.8,90.3 22.2,90.8" stroke="#D8C0A0" stroke-width="0.12" fill="none" stroke-linecap="round"/>';
         s += '<path d="M23.5,90.2 Q23,90.8 22.5,91.2" stroke="#D8C0A0" stroke-width="0.1" fill="none" stroke-linecap="round"/>';
@@ -33991,6 +34338,10 @@ document.addEventListener('keydown', function(e) {
       case 72: // Jellyfish — aqua-colored bell with wavy tentacles (Rare)
         s += '<g opacity="0.7" transform="translate(12,20) scale(1.5) translate(-12,-20)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.6,-1.2;0.2,0;-0.4,0.8;0,0" dur="7s" repeatCount="indefinite"/>';
+        // Faint translucent AO at long-tentacle ends — implies depth
+        s += '<ellipse cx="10.5" cy="33.4" rx="0.35" ry="0.1" fill="rgba(0,80,90,0.18)"/>';
+        s += '<ellipse cx="12" cy="34.2" rx="0.35" ry="0.1" fill="rgba(0,80,90,0.16)"/>';
+        s += '<ellipse cx="13.5" cy="34" rx="0.35" ry="0.1" fill="rgba(0,80,90,0.16)"/>';
         // Aqua glow behind bell
         s += '<ellipse cx="12" cy="20" rx="4" ry="3" fill="rgba(0,200,200,0.04)"><animate attributeName="opacity" values="0.04;0.08;0.04" dur="3.5s" repeatCount="indefinite"/></ellipse>';
         // Bell dome — aqua, pulsing
@@ -34027,9 +34378,12 @@ document.addEventListener('keydown', function(e) {
         // Glow around jellyfish — soft aqua aura
         s += '<ellipse cx="12" cy="22" rx="5" ry="6" fill="rgba(0,210,210,0.03)"><animate attributeName="opacity" values="0.03;0.06;0.03" dur="4s" repeatCount="indefinite"/></ellipse>';
         // ── WHITE HIGHLIGHTS on bell and tentacles ──
-        // Bell dome highlight — translucent white
+        // Bell dome highlight — translucent white + warm cream pickup
         s += '<ellipse cx="11.5" cy="19" rx="1.5" ry="1" fill="#fff8e0"/>';
         s += '<ellipse cx="11" cy="18.5" rx="0.8" ry="0.5" fill="#fff8e0"/>';
+        s += '<ellipse cx="10.7" cy="18.3" rx="0.32" ry="0.18" fill="#ffffff" opacity="0.85"/>';
+        // A2 cool-violet outer haze ring (atmospheric depth — Rare extra)
+        s += '<ellipse cx="12" cy="20" rx="5.6" ry="3.2" fill="none" stroke="rgba(140,180,255,0.10)" stroke-width="0.4"><animate attributeName="opacity" values="0.10;0.18;0.10" dur="5s" repeatCount="indefinite"/></ellipse>';
         // Bell rim white highlight
         s += '<path d="M9,20.5 Q12,21 15,20.5" fill="none" stroke="#fff8e0" stroke-width="0.3"/>';
         // ── 3 LIGHTER AQUA SHADES on tentacles ──
@@ -34099,8 +34453,9 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="30" cy="85.5" r="0.4" fill="#f5ecd6" opacity="0.75"/>';
         s += '<circle cx="28.5" cy="85.8" r="0.25" fill="#f5ecd6" opacity="0.7"/>';
         s += '<circle cx="31.2" cy="87" r="0.3" fill="#f5ecd6" opacity="0.7"/>';
-        // Cap rim highlight — catches light on top curve
+        // Cap rim highlight — catches light on top curve + sharp cream specular
         s += '<path d="M28.5,86.5 Q30,85 31.5,86.5" fill="none" stroke="rgba(240,200,180,0.2)" stroke-width="0.3"/>';
+        s += '<ellipse cx="29.4" cy="85.2" rx="0.32" ry="0.18" fill="#fff8e0" opacity="0.7" transform="rotate(-25,29.4,85.2)"/>';
         // Eyes — two dark dots peering from under the cap. Wide-set, shy.
         s += '<circle cx="29.5" cy="88" r="0.22" fill="#1A1410"/>';
         s += '<circle cx="30.5" cy="88" r="0.22" fill="#1A1410"/>';
@@ -34118,8 +34473,10 @@ document.addEventListener('keydown', function(e) {
         // large ears, and spindly newborn legs. Universally endearing.
         s += '<g opacity="0.80" transform="translate(8,87) scale(1.4) translate(-8,-87)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.05,-0.04;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="8" cy="91.85" rx="3.7" ry="0.45" fill="rgba(40,20,5,0.15)"/>';
         s += '<ellipse cx="8" cy="91.6" rx="3.2" ry="0.5" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="8" cy="91.5" rx="2.2" ry="0.26" fill="rgba(20,12,4,0.42)"/>';
         // Legs — long, spindly, slightly knock-kneed (fawn characteristic)
         s += '<line x1="6.5" y1="89" x2="6.2" y2="91.2" stroke="#9A7050" stroke-width="0.4" stroke-linecap="round"/>';
         s += '<line x1="7.5" y1="89" x2="7.8" y2="91.2" stroke="#9A7050" stroke-width="0.4" stroke-linecap="round"/>';
@@ -34130,6 +34487,11 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="7.8" cy="91.3" r="0.2" fill="#5A4030"/>';
         s += '<circle cx="8.7" cy="91.3" r="0.2" fill="#5A4030"/>';
         s += '<circle cx="10.3" cy="91.3" r="0.2" fill="#5A4030"/>';
+        // Hoof tip terminators — warm-dark anchoring dots
+        s += '<circle cx="6.2" cy="91.45" r="0.07" fill="rgba(40,20,5,0.65)"/>';
+        s += '<circle cx="7.8" cy="91.45" r="0.07" fill="rgba(40,20,5,0.65)"/>';
+        s += '<circle cx="8.7" cy="91.45" r="0.07" fill="rgba(40,20,5,0.65)"/>';
+        s += '<circle cx="10.3" cy="91.45" r="0.07" fill="rgba(40,20,5,0.65)"/>';
         // Body — compact, round (fawns are well-fed)
         s += '<ellipse cx="8.5" cy="87.5" rx="3.2" ry="2.0" fill="#B08050"/>';
         // White belly
@@ -34173,8 +34535,12 @@ document.addEventListener('keydown', function(e) {
         // curved pointed beak, segmented legs with knobby knees, pointy claws.
         s += '<g opacity="1" transform="translate(46,8) scale(1.35) translate(-46,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 46 78;2 46 78;-1 46 78" dur="6s" repeatCount="indefinite"/>';
-        // Shadow — warm-shifted AO
+        // Shadow — warm-shifted AO 3-stack
+        s += '<ellipse cx="52" cy="81.7" rx="4.0" ry="0.4" fill="rgba(40,20,5,0.12)"/>';
         s += '<ellipse cx="52" cy="81.5" rx="3.5" ry="0.4" fill="rgba(40,20,5,0.22)"/>';
+        s += '<ellipse cx="52" cy="81.45" rx="2.4" ry="0.22" fill="rgba(20,12,4,0.36)"/>';
+        // Cool A2 atmospheric haze under spread wings (Rare extra layer)
+        s += '<ellipse cx="50" cy="80" rx="6" ry="1.4" fill="rgba(120,140,170,0.06)"/>';
         // ── TAIL — ends in a POINT ──
         s += '<path d="M55,77.5 L59.5,77.5 L55.5,78.5 Z" fill="#3A3A3A"/>';
         s += '<path d="M55,77.5 L59.5,77.5 L55.5,78.5 Z" fill="none" stroke="#1a1208" stroke-width="0.2"/>';
@@ -34229,15 +34595,25 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="45" cy="76.2" r="0.08" fill="rgba(40,20,5,0.7)"/>';
         // Nasal bristles
         s += '<path d="M48.5,75.8 L48,75.6 M48.5,76 L48,75.9" stroke="#1a1208" stroke-width="0.1"/>';
-        // ── EYE — cream dot with warm-dark pupil ──
+        // ── EYE — cream dot with warm-dark pupil + bright pickup ──
         s += '<circle cx="49" cy="75.8" r="0.35" fill="#f5ecd6"/>';
         s += '<circle cx="49" cy="75.8" r="0.12" fill="#1a1208"/>';
+        s += '<circle cx="48.96" cy="75.74" r="0.04" fill="#ffffff" opacity="0.95"/>';
+        // Claw tip terminators — anchoring darker dots at toe ends
+        s += '<circle cx="50.3" cy="82" r="0.06" fill="rgba(20,12,4,0.7)"/>';
+        s += '<circle cx="51" cy="82.2" r="0.06" fill="rgba(20,12,4,0.7)"/>';
+        s += '<circle cx="51.7" cy="82" r="0.06" fill="rgba(20,12,4,0.7)"/>';
+        s += '<circle cx="52.5" cy="81.8" r="0.06" fill="rgba(20,12,4,0.7)"/>';
+        s += '<circle cx="53.2" cy="82" r="0.06" fill="rgba(20,12,4,0.7)"/>';
+        s += '<circle cx="53.9" cy="81.8" r="0.06" fill="rgba(20,12,4,0.7)"/>';
         s += '</g>';
         break;
       case 76: // Garden Snake — spring coil shape, green with stripes
         s += '<g opacity="1" transform="translate(46,88) scale(1.2) translate(-46,-88)">';
-        // Shadow — warm-shifted AO
+        // Shadow — warm-shifted AO 3-stack
+        s += '<ellipse cx="46" cy="93.2" rx="5.6" ry="0.45" fill="rgba(40,20,5,0.10)"/>';
         s += '<ellipse cx="46" cy="93" rx="5" ry="0.5" fill="rgba(40,20,5,0.18)"/>';
+        s += '<ellipse cx="46" cy="92.9" rx="3.4" ry="0.26" fill="rgba(20,12,4,0.30)"/>';
         // ── BODY — spring/coil shape, S-curves stacked ──
         // Main body path — spring shape: left-right-left-right
         s += '<path d="M43,84 Q40,85 42,86.5 Q44,88 48,87 Q52,86 50,88 Q48,90 44,89.5 Q40,89 42,91 Q44,92.5 48,92" fill="none" stroke="#4A7A30" stroke-width="1.8" stroke-linecap="round"/>';
@@ -34327,9 +34703,12 @@ document.addEventListener('keydown', function(e) {
         // Eyes — two small simple eyes (ocelli, warm dark)
         s += '<circle cx="19.3" cy="91.2" r="0.12" fill="#1a1208"/>';
         s += '<circle cx="19.3" cy="91.7" r="0.1" fill="#1a1208"/>';
-        // Eye catchlights
+        // Eye catchlights — sharp white pickup on top of cream
         s += '<circle cx="19.27" cy="91.17" r="0.04" fill="#fff8e0"/>';
         s += '<circle cx="19.27" cy="91.67" r="0.03" fill="#fff8e0"/>';
+        s += '<circle cx="19.25" cy="91.15" r="0.018" fill="#ffffff" opacity="0.9"/>';
+        // A2 warm cream pickup along dorsal crest at body midpoint
+        s += '<ellipse cx="30" cy="91.3" rx="2.2" ry="0.12" fill="#fff8e0" opacity="0.18"/>';
         // Antenna tip terminators
         s += '<circle cx="16.5" cy="90.5" r="0.08" fill="rgba(40,20,5,0.55)"/>';
         s += '<circle cx="16.5" cy="91.2" r="0.07" fill="rgba(40,20,5,0.55)"/>';
@@ -34344,9 +34723,13 @@ document.addEventListener('keydown', function(e) {
         s += '<g opacity="0.88" transform="translate(48,90) scale(2.0) translate(-48,-90)">';
         // Ground glow — prismatic light cast on soil beneath
         s += '<ellipse cx="48" cy="91.2" rx="2" ry="0.5" fill="rgba(155,89,182,0.06)"><animate attributeName="fill" values="rgba(155,89,182,0.06);rgba(90,140,220,0.08);rgba(155,89,182,0.06)" dur="4s" repeatCount="indefinite"/></ellipse>';
-        // Shadow
+        // Shadow — AO 3-stack
+        s += '<ellipse cx="48.2" cy="91.35" rx="2" ry="0.32" fill="rgba(40,20,5,0.10)"/>';
         s += '<ellipse cx="48.2" cy="91" rx="1.5" ry="0.4" fill="#0d100c" opacity="0.12"/>';
         s += '<ellipse cx="48.2" cy="91.2" rx="1.7" ry="0.35" fill="rgba(40,20,5,0.25)"/>';
+        s += '<ellipse cx="48.2" cy="91.1" rx="1.0" ry="0.18" fill="rgba(20,12,4,0.42)"/>';
+        // 2x prismatic halo — wide refracted color ring (Rare luminous extra)
+        s += '<ellipse cx="48" cy="90" rx="3.2" ry="2.2" fill="none" stroke="rgba(180,140,220,0.10)" stroke-width="0.25"><animate attributeName="stroke" values="rgba(180,140,220,0.10);rgba(120,200,240,0.14);rgba(220,160,200,0.10);rgba(180,140,220,0.10)" dur="5s" repeatCount="indefinite"/></ellipse>';
         // Opaque base body — dark purple so you can't see through
         s += '<polygon points="48,89.3 46.3,90 46.8,91.1 48,90.9 49.2,91.1 49.7,90 48,89.3" fill="#2A1A3A"/>';
         // Elytra (wing covers) — faceted crystal over opaque base
@@ -34360,6 +34743,10 @@ document.addEventListener('keydown', function(e) {
         s += '<polygon points="47.5,90.5 48,91 47.2,90.8" fill="rgba(120,255,180,0.1)"/>';
         // Center seam line
         s += '<line x1="48" y1="89.5" x2="48" y2="90.8" stroke="rgba(200,180,240,0.3)" stroke-width="0.12"/>';
+        // Specular refraction sliver — cream→cyan→magenta along left facet edge
+        s += '<line x1="46.7" y1="90.05" x2="47.4" y2="90.45" stroke="#fff8e0" stroke-width="0.1" opacity="0.7"/>';
+        s += '<line x1="46.7" y1="90.15" x2="47.4" y2="90.55" stroke="rgba(120,240,255,0.55)" stroke-width="0.08"/>';
+        s += '<line x1="46.7" y1="90.25" x2="47.4" y2="90.65" stroke="rgba(240,140,220,0.5)" stroke-width="0.08"/>';
         // Internal glow — bioluminescence
         s += '<ellipse cx="48" cy="90.2" rx="0.6" ry="0.4" fill="rgba(200,160,255,0.2)"><animate attributeName="opacity" values="0.2;0.4;0.2" dur="2.5s" repeatCount="indefinite"/></ellipse>';
         // Pronotum (thorax)
@@ -34393,6 +34780,10 @@ document.addEventListener('keydown', function(e) {
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;1.2,-1.5;-0.8,0.5;0.5,-0.8;0,0" dur="7s" repeatCount="indefinite"/>';
         // AO drop shadow (warm — wisp casts faint warm ground reflection)
         s += '<ellipse cx="15" cy="46" rx="3.5" ry="0.5" fill="rgba(40,20,5,0.22)"><animate attributeName="opacity" values="0.22;0.32;0.18;0.22" dur="2.5s" repeatCount="indefinite"/></ellipse>';
+        // ── COOL-VIOLET OUTER HAZE (A2 atmospheric) ──
+        s += '<circle cx="15" cy="35" r="9" fill="rgba(140,160,255,0.05)"><animate attributeName="opacity" values="0.05;0.10;0.05" dur="6s" repeatCount="indefinite"/></circle>';
+        // ── 2× HALO RING — wide outer breath ──
+        s += '<circle cx="15" cy="35" r="7" fill="none" stroke="rgba(80,220,210,0.10)" stroke-width="0.4"><animate attributeName="r" values="7;8;7" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.10;0.20;0.10" dur="5s" repeatCount="indefinite"/></circle>';
         // ── OUTER FOG/SMOKE — brighter, more visible ──
         s += '<ellipse cx="15" cy="35" rx="6" ry="4.5" fill="rgba(40,220,200,0.08)" transform="rotate(15,15,35)"><animate attributeName="rx" values="6;7;5.5;6" dur="4s" repeatCount="indefinite"/></ellipse>';
         s += '<ellipse cx="14" cy="36" rx="5" ry="3.5" fill="rgba(60,180,240,0.1)" transform="rotate(-10,14,36)"><animate attributeName="ry" values="3.5;4.5;3;3.5" dur="5s" repeatCount="indefinite"/></ellipse>';
@@ -34401,7 +34792,8 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M12,36 Q10,38 11,40 Q13,42 12,44" fill="none" stroke="rgba(60,220,200,0.15)" stroke-width="1.2" stroke-linecap="round"><animate attributeName="d" values="M12,36 Q10,38 11,40 Q13,42 12,44;M12,36 Q9,38.5 10.5,41 Q13.5,43 11.5,45;M12,36 Q10,38 11,40 Q13,42 12,44" dur="5s" repeatCount="indefinite"/></path>';
         s += '<path d="M18,36 Q20,38 19,40 Q17,42 18,44" fill="none" stroke="rgba(80,180,255,0.12)" stroke-width="1" stroke-linecap="round"><animate attributeName="d" values="M18,36 Q20,38 19,40 Q17,42 18,44;M18,36 Q21,38.5 19.5,41 Q16.5,43 18.5,45;M18,36 Q20,38 19,40 Q17,42 18,44" dur="6s" repeatCount="indefinite"/></path>';
         s += '<path d="M15,37 Q13.5,40 15,43 Q16,44 15,45.5" fill="none" stroke="rgba(100,240,220,0.1)" stroke-width="0.8" stroke-linecap="round"><animate attributeName="d" values="M15,37 Q13.5,40 15,43 Q16,44 15,45.5;M15,37 Q12.5,40.5 14.5,43.5 Q16.5,45 14.5,46.5;M15,37 Q13.5,40 15,43 Q16,44 15,45.5" dur="4.5s" repeatCount="indefinite"/></path>';
-        // ── MIDDLE GLOW — much brighter halo ──
+        // ── MIDDLE GLOW — much brighter halo (with stacked breathing ring) ──
+        s += '<circle cx="15" cy="35" r="4.5" fill="none" stroke="rgba(120,255,240,0.14)" stroke-width="0.3"><animate attributeName="r" values="4.5;5.4;4.5" dur="3.5s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="15" cy="35" r="3.5" fill="rgba(40,220,200,0.18)"><animate attributeName="opacity" values="0.18;0.3;0.15;0.25;0.18" dur="2.5s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="15" cy="35" r="2.2" fill="rgba(60,240,220,0.3)"><animate attributeName="opacity" values="0.3;0.5;0.25;0.4;0.3" dur="2s" repeatCount="indefinite"/></circle>';
         // ── CORE — very bright, vibrant blue-green fire center ──
@@ -34438,6 +34830,11 @@ document.addEventListener('keydown', function(e) {
         s += '<line x1="56" y1="28.5" x2="58.5" y2="26" stroke="rgba(180,170,150,0.15)" stroke-width="0.1"/>';
         s += '<line x1="56" y1="28.5" x2="54" y2="30.5" stroke="rgba(180,170,150,0.12)" stroke-width="0.1"/>';
         s += '<line x1="56" y1="28.5" x2="58" y2="30.5" stroke="rgba(180,170,150,0.12)" stroke-width="0.1"/>';
+        // Cream fold-line highlight ridges (the lit side of each crease)
+        s += '<line x1="56" y1="28.4" x2="53.6" y2="26.1" stroke="#fff8e0" stroke-width="0.06" opacity="0.5"/>';
+        s += '<line x1="56" y1="28.4" x2="58.4" y2="26.1" stroke="#fff8e0" stroke-width="0.06" opacity="0.5"/>';
+        s += '<line x1="56" y1="28.6" x2="54.1" y2="30.4" stroke="#fff8e0" stroke-width="0.05" opacity="0.4"/>';
+        s += '<line x1="56" y1="28.6" x2="57.9" y2="30.4" stroke="#fff8e0" stroke-width="0.05" opacity="0.4"/>';
         // Watercolor wash spots — faint color bleeds like aged ink
         s += '<circle cx="54" cy="26.5" r="0.8" fill="rgba(200,168,120,0.06)"/>';
         s += '<circle cx="58.5" cy="26" r="0.7" fill="rgba(180,140,100,0.05)"/>';
@@ -34457,8 +34854,10 @@ document.addEventListener('keydown', function(e) {
       case 81: // Panda — sitting, facing forward, black and white
         s += '<g opacity="1" transform="translate(56,86) scale(1.5) translate(-56,-86)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.05;0,0" dur="5s" repeatCount="indefinite"/>';
-        // Shadow — warm AO
+        // Shadow — warm AO 3-stack
+        s += '<ellipse cx="56" cy="93.35" rx="4.7" ry="0.6" fill="rgba(40,20,5,0.15)"/>';
         s += '<ellipse cx="56" cy="93.1" rx="4.2" ry="0.65" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="56" cy="92.95" rx="3.0" ry="0.32" fill="rgba(20,12,4,0.45)"/>';
         // ── HIND LEGS — warm-shifted dark, visible below body ──
         s += '<ellipse cx="53.5" cy="91.5" rx="2" ry="1" fill="#1a1208"/>';
         s += '<ellipse cx="58.5" cy="91.5" rx="2" ry="1" fill="#1a1208"/>';
@@ -34467,6 +34866,8 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="56" cy="89" rx="4" ry="3.5" fill="none" stroke="#D0CCC4" stroke-width="0.15"/>';
         // Belly — slightly warmer white
         s += '<ellipse cx="56" cy="90" rx="2.5" ry="2" fill="#F8F4EC" opacity="0.4"/>';
+        // A2 warm cream pickup on white chest fur (warmth on the lit side)
+        s += '<ellipse cx="55.4" cy="87.6" rx="1.0" ry="0.6" fill="#fff8e0" opacity="0.32"/>';
         // ── ARMS — warm-shifted dark, reaching forward ──
         s += '<path d="M52.5,88 Q51,89 50.5,90.5" stroke="#1a1208" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
         s += '<path d="M59.5,88 Q61,89 61.5,90.5" stroke="#1a1208" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
@@ -34476,6 +34877,8 @@ document.addEventListener('keydown', function(e) {
         // ── HEAD — white, round, sitting on body ──
         s += '<circle cx="56" cy="84.5" r="3" fill="#F0ECE4"/>';
         s += '<circle cx="56" cy="84.5" r="3" fill="none" stroke="#D0CCC4" stroke-width="0.12"/>';
+        // A2 warm cream pickup on head crown (lit side warmth)
+        s += '<ellipse cx="55.3" cy="83.0" rx="1.1" ry="0.55" fill="#fff8e0" opacity="0.32"/>';
         // ── EARS — warm-shifted dark, round, on top of head ──
         s += '<circle cx="53.5" cy="82.2" r="1" fill="#1a1208"/>';
         s += '<circle cx="58.5" cy="82.2" r="1" fill="#1a1208"/>';
