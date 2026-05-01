@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2391,6 +2391,8 @@
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Stephen 2026-05-02: counter pulse when fly-to-target rewards land. */
     @keyframes lwCounterPulse{0%{transform:scale(1);}40%{transform:scale(1.22);}100%{transform:scale(1);}}
+    /* Gift-claim reveal pop. */
+    @keyframes lwGiftRevealPop{0%{transform:scale(0.4) rotate(-8deg);opacity:0;}60%{transform:scale(1.12) rotate(2deg);opacity:1;}100%{transform:scale(1) rotate(0deg);opacity:1;}}
     @keyframes spinSlow{from{transform:rotate(0deg) scale(0.9);opacity:0.4;}50%{transform:rotate(540deg) scale(1.2);opacity:1;}to{transform:rotate(1080deg) scale(1);opacity:1;}}
     @keyframes fireflyPulse{0%,100%{opacity:0.85;transform:scale(1);}50%{opacity:1;transform:scale(1.18);}}
     @keyframes fireflyDrift{0%{transform:translate(0,0);}50%{transform:translate(20px,-16px);}100%{transform:translate(-12px,10px);}}
@@ -55878,14 +55880,24 @@ window._lwOpenGiftInbox = function() {
 
 window._lwClaimGift = function(giftId, fromUid){
   if (!window.LW_GIFTS) return;
-  // Stephen 2026-05-02: 10s watchdog — if the claim transaction hangs
-  // (slow network, Firestore unavailable), surface a clear message and
-  // let the player retry instead of leaving them staring at a pending
-  // gift that won't claim.
+  // Find the row up-front via the data attribute (NOT id — the rows
+  // never had ids). Stephen 2026-05-02: this was a real bug — the old
+  // code used getElementById('lw-gift-row-'+giftId) which always
+  // returned null, so successful claims never visibly removed the
+  // row. Players saw the row still there, tapped it again, hit
+  // "already claimed" silently, and concluded "nothing happened."
+  var row = document.querySelector('.lw-gift-row[data-gift-id="' + giftId.replace(/"/g, '\\"') + '"]');
+  // Disable the button immediately so they can't tap-spam.
+  var btn = row ? row.querySelector('.lw-gift-claim-btn') : null;
+  if (btn){ btn.disabled = true; btn.textContent = 'OPENING…'; btn.style.opacity = '0.6'; }
+  // 10s watchdog — if the claim transaction hangs (slow network,
+  // Firestore unavailable), surface a clear message and let the
+  // player retry instead of leaving them staring at OPENING…
   var done = false;
   var watchdog = setTimeout(function(){
     if (done) return;
     done = true;
+    if (btn){ btn.disabled = false; btn.textContent = 'CLAIM'; btn.style.opacity = ''; }
     if (window._toast) window._toast('Claim timed out. Check your connection and tap CLAIM again.');
   }, 10000);
   window.LW_GIFTS.claimGift(giftId, fromUid, function(ok, info){
@@ -55893,17 +55905,73 @@ window._lwClaimGift = function(giftId, fromUid){
     done = true;
     clearTimeout(watchdog);
     if (ok){
+      // Visible reveal: pop a celebration overlay so Jessie knows it
+      // worked. The toast was getting lost under the modal backdrop —
+      // this puts the feedback INSIDE the gift inbox surface.
+      try { window._lwShowGiftReveal(info); } catch(eR){}
+      // Slide the row out, then remove + maybe show empty state.
+      if (row){
+        row.style.transition = 'opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(20px)';
+        setTimeout(function(){
+          try { row.remove(); } catch(e){}
+          var listEl = document.getElementById('lw-gift-inbox-list');
+          if (listEl && !listEl.querySelectorAll('.lw-gift-row').length){
+            listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-style:italic;">No gifts pending. Send some yourself — friendships grow with consistency.</div>';
+          }
+        }, 420);
+      }
       if (window._toast) window._toast('🎁 ' + (info.summary || 'Claimed!') + ' from ' + (info.fromName || 'a keeper'));
-      var row = document.getElementById('lw-gift-row-'+giftId); if (row) row.remove();
-      var listEl = document.getElementById('lw-gift-inbox-list');
-      if (listEl && !listEl.children.length) listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-style:italic;">All caught up.</div>';
     } else {
-      // Friendlier wording — "unknown" was confusing.
+      if (btn){ btn.disabled = false; btn.textContent = 'CLAIM'; btn.style.opacity = ''; }
       var reason = info ? String(info) : 'try again';
-      if (/already.*claim/i.test(reason)) reason = 'already claimed';
+      if (/already.*claim/i.test(reason)) {
+        // Already claimed (probably from another tab). Remove the stale
+        // row so they don't keep tapping it.
+        reason = 'already claimed';
+        if (row){
+          row.style.transition = 'opacity 0.3s';
+          row.style.opacity = '0';
+          setTimeout(function(){ try { row.remove(); } catch(e){} }, 320);
+        }
+      }
       if (window._toast) window._toast('Claim failed: ' + reason);
     }
   });
+};
+
+// Stephen 2026-05-02: gift-claim reveal overlay. Mirrors the mystery box
+// reveal but keyed off the {summary, loot, fromName} info from
+// claimGift. Drops a small painted card in front of the inbox so the
+// claim feedback can't be missed.
+window._lwShowGiftReveal = function(info){
+  if (!info) return;
+  var loot = info.loot || {};
+  var label = info.summary || 'Claimed!';
+  var from = info.fromName || 'a keeper';
+  // Pick an icon image based on loot.kind so the player sees what
+  // they got (Dew vs Fert vs Box vs Item).
+  var iconHtml;
+  if (loot.kind === 'dew')  iconHtml = '<img src="assets/fx/drop-blue.png" alt="" style="width:96px;height:96px;object-fit:contain;" onerror="this.outerHTML=\'💧\';">';
+  else if (loot.kind === 'fert') iconHtml = '<img src="assets/fx/leaf-gold.png" alt="" style="width:96px;height:96px;object-fit:contain;" onerror="this.outerHTML=\'🌿\';">';
+  else if (loot.kind === 'box')  iconHtml = '<img src="assets/mysterybox.png" alt="" style="width:120px;height:120px;object-fit:contain;" onerror="this.outerHTML=\'🎁\';">';
+  else iconHtml = '<img src="assets/fx/sparkle-purple.png" alt="" style="width:96px;height:96px;object-fit:contain;" onerror="this.outerHTML=\'✨\';">';
+  var prev = document.getElementById('lw-gift-reveal'); if (prev) prev.remove();
+  var ov = document.createElement('div');
+  ov.id = 'lw-gift-reveal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100020;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,rgba(28,24,12,0.85),rgba(5,8,4,0.95));backdrop-filter:blur(8px);animation:panelFadeIn 0.3s ease;cursor:pointer;';
+  ov.innerHTML =
+    '<div style="text-align:center;max-width:300px;padding:1.4rem;background:rgba(18,22,16,0.96);border:1.5px solid rgba(200,168,75,0.5);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 28px rgba(200,168,75,0.18);">' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.16em;color:var(--gold);margin-bottom:0.6rem;">A GIFT FROM ' + (from + '').toUpperCase() + '</div>' +
+      '<div style="margin:0.8rem 0;animation:lwGiftRevealPop 0.6s cubic-bezier(0.34,1.56,0.64,1);">' + iconHtml + '</div>' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.06em;color:var(--cream);margin-bottom:0.9rem;">' + label + '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">tap to dismiss</div>' +
+    '</div>';
+  ov.addEventListener('click', function(){ ov.remove(); });
+  document.body.appendChild(ov);
+  try { if (window._haptic) window._haptic('bloom'); } catch(e){}
+  setTimeout(function(){ if (ov && ov.parentNode) ov.remove(); }, 5000);
 };
 
 window._lwNicknameKeeper = function(uid, currentName) {
