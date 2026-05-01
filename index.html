@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.86';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.87';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7158,10 +7158,11 @@ window._addSwitchTabHook = function(fn){
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams-v2.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span><span class="kb-bloom-label">BLOOM</span></div>
       <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew-v2.png" alt="Dew" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
-      <div id="kb-cocoon" title="Cocoonery" onclick="if(window.LW_HUT)LW_HUT.open('cocoonery');" style="display:none;border:2px solid rgba(200,168,75,0.5);position:relative;overflow:hidden;">
-        <img id="kb-cocoon-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;">
-        <div id="kb-cocoon-ring" style="position:absolute;inset:-2px;border-radius:10px;border:3px solid transparent;border-top-color:#c8a84b;transform:rotate(-90deg);pointer-events:none;transition:transform 0.4s ease;"></div>
-      </div>
+      <!-- Stephen 2026-05-01: kb-cocoon moved to backpack only (you walk with -->
+      <!-- cocoons; they belong with what you carry, not on the home screen).  -->
+      <!-- The COCOONS button in the backpack panel (~index.html:69175) is the -->
+      <!-- single access point now. refreshPip in LW_KEEPER (~85720) early-    -->
+      <!-- returns if #kb-cocoon doesn't exist, so this removal is safe.       -->
     </div>
   </div>
   <!-- Book of Secrets — floating button, separate from keeper bar -->
@@ -69173,7 +69174,10 @@ function render(){
   var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
   h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/icons/box.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf81&apos;;">BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
   var _cocoonTotal=0,_cocoonReady=0;try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_cocoonTotal=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_cocoonReady++;}}catch(e){}
-  h+='<button onclick="if(window.LW_COCOONS)LW_COCOONS.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_cocoonReady>0?"#c8a84b":(_cocoonTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_cocoonReady>0?'rgba(200,168,75,0.7)':(_cocoonTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_cocoonReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83e\udd8b&apos;;">COCOONS'+(_cocoonTotal>0?' ('+_cocoonTotal+(_cocoonReady>0?' \u2022 '+_cocoonReady+' READY':'')+')':'')+'</button>';
+  // Stephen 2026-05-01: cocoon access lives only here now (was duplicated on
+  // the keeper bar). Pulse-when-ready keeps the same urgency the home-screen
+  // pip had so the player still notices "something hatched while I walked".
+  h+='<button class="'+(_cocoonReady>0?'lw-pulse-hint':'')+'" onclick="if(window.LW_COCOONS)LW_COCOONS.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_cocoonReady>0?"#c8a84b":(_cocoonTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_cocoonReady>0?'rgba(200,168,75,0.7)':(_cocoonTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_cocoonReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83e\udd8b&apos;;">COCOONS'+(_cocoonTotal>0?' ('+_cocoonTotal+(_cocoonReady>0?' \u2022 '+_cocoonReady+' READY':'')+')':'')+'</button>';
   h+='</div>';
   se.innerHTML=h;
   // dbb badge is owned by FG_Wild._updateUI — do not overwrite here
