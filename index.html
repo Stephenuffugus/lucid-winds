@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.80';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.81';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55106,6 +55106,54 @@ window._lwOpenNearestForage=function(){
 // ═══ FRIEND NICKNAMES ═══
 // Local-only nicknames for other keepers. Stored in localStorage, never
 // synced to cloud. Your labels, your way.
+
+// Friends-list variant — same modal, but refreshes the character-sheet
+// friends list instead of the hex inspector after save. Stephen 2026-05-01 PART 5.
+window._lwEditFriendNick = function(uid, currentName) {
+  if (!uid) return;
+  var nicks = {};
+  try { nicks = JSON.parse(localStorage.getItem('lw_friend_nicks') || '{}'); } catch(e) {}
+  var existing = nicks[uid] || '';
+  var _modal = document.createElement('div');
+  _modal.id = 'lw-nick-modal';
+  _modal.style.cssText = 'position:fixed;inset:0;z-index:100004;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;padding:1rem;';
+  var h = '<div onclick="event.stopPropagation()" style="max-width:320px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.1rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;color:var(--gold);margin-bottom:0.3rem;">NICKNAME</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;">A name only you see for <span style="color:var(--cream);">' + currentName + '</span>.</div>';
+  h += '<input id="lw-nick-input" type="text" maxlength="20" placeholder="Enter nickname..." value="' + existing + '" style="width:100%;box-sizing:border-box;padding:0.5rem;font-family:DM Mono,monospace;font-size:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;color:var(--cream);margin-bottom:0.55rem;min-height:48px;">';
+  h += '<div style="display:flex;gap:0.4rem;">';
+  h += '<button id="lw-nick-save" style="flex:1;padding:0.45rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;">SAVE</button>';
+  h += '<button id="lw-nick-cancel" style="flex:1;padding:0.45rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:rgba(46,60,38,0.15);border:1px solid rgba(122,179,86,0.15);border-radius:8px;color:var(--muted);cursor:pointer;min-height:48px;">CANCEL</button>';
+  h += '</div>';
+  if (existing) {
+    h += '<button id="lw-nick-clear" style="width:100%;margin-top:0.3rem;padding:0.35rem;font-family:DM Mono,monospace;font-size:0.5rem;background:none;border:1px solid rgba(200,80,60,0.25);border-radius:6px;color:rgba(200,80,60,0.7);cursor:pointer;min-height:40px;">Remove nickname</button>';
+  }
+  h += '</div>';
+  _modal.innerHTML = h;
+  _modal.addEventListener('click', function(ev) { if (ev.target === _modal) _modal.remove(); });
+  document.body.appendChild(_modal);
+  var _input = document.getElementById('lw-nick-input');
+  if (_input) _input.focus();
+  var _refreshList = function(){ try { if (window.PW_UI && window.PW_UI.loadFriendsUI) window.PW_UI.loadFriendsUI(); } catch(e){} };
+  document.getElementById('lw-nick-save').onclick = function() {
+    var val = (document.getElementById('lw-nick-input').value || '').trim();
+    if (val) { nicks[uid] = val; } else { delete nicks[uid]; }
+    try { localStorage.setItem('lw_friend_nicks', JSON.stringify(nicks)); } catch(e) {}
+    _modal.remove();
+    if (window._toast) window._toast(val ? '✏️ Nicknamed "' + val + '"' : 'Nickname removed.');
+    _refreshList();
+  };
+  document.getElementById('lw-nick-cancel').onclick = function() { _modal.remove(); };
+  var _clearBtn = document.getElementById('lw-nick-clear');
+  if (_clearBtn) _clearBtn.onclick = function() {
+    delete nicks[uid];
+    try { localStorage.setItem('lw_friend_nicks', JSON.stringify(nicks)); } catch(e) {}
+    _modal.remove();
+    if (window._toast) window._toast('Nickname removed.');
+    _refreshList();
+  };
+};
+
 window._lwNicknameKeeper = function(uid, currentName) {
   if (!uid) return;
   var nicks = {};
@@ -65629,7 +65677,7 @@ function addFriend(){
   PW_Social.lookupFriendCode(input.value.trim(),function(friend,errMsg){
     if(!friend){if(err)err.textContent=errMsg||'Not found.';return;}
     if(err)err.textContent='Found: '+friend.name+' (Lvl '+friend.level+'). Sending...';
-    PW_Social.sendFriendRequest(friend.uid,function(ok,sendErr){
+    PW_Social.sendFriendRequest(friend.uid,friend.name,function(ok,sendErr){
       if(ok){
         if(err)err.textContent='Request sent to '+friend.name+'!';
         if(input)input.value='';
@@ -65655,12 +65703,27 @@ function loadFriendsUI(){
     if(window.LW_ACH)LW_ACH.set('friends_total',friends.length);
     if(!el)return;
     if(friends.length===0){el.innerHTML='<div style="color:var(--muted);font-size:0.42rem;">No friends yet. Share your code!</div>';return;}
+    // Stephen 2026-05-01 PART 5: render with nickname > friendName > senderName > UID slice.
+    // Pencil icon next to each name opens prompt() to set/edit a local nickname,
+    // stored in lw_friend_nicks (already used by wild plant card render at line 54745).
+    var nicks={};try{nicks=JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}');}catch(e){}
     var h='';
     for(var i=0;i<friends.length;i++){
       var f=friends[i];
-      h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid rgba(74,124,53,0.06);">'
-        +'<span style="color:var(--cream);">'+(f.senderName||f.friendUid.slice(0,8))+'</span>'
-        +'<span style="color:var(--gold);font-family:DM Mono,monospace;font-size:0.38rem;">'+(f.pollen||0)+' pollen</span>'
+      var uid=f.friendUid||f.uid||'';
+      var realName=f.friendName||f.senderName||(uid?uid.slice(0,8):'Keeper');
+      var nick=nicks[uid]||'';
+      var displayName=nick||realName;
+      var subline=nick?('aka '+realName):'';
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(74,124,53,0.06);gap:0.4rem;">'
+        +'<div style="flex:1;min-width:0;">'
+          +'<div style="display:flex;align-items:center;gap:0.3rem;">'
+            +'<span style="color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+displayName+'</span>'
+            +'<button onclick="window._lwEditFriendNick(\''+uid+'\',\''+(realName.replace(/\'/g,"&#39;"))+'\')" title="Set nickname" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;font-size:0.65rem;line-height:1;opacity:0.6;">✎</button>'
+          +'</div>'
+          +(subline?'<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--muted);">'+subline+'</div>':'')
+        +'</div>'
+        +'<span style="color:var(--gold);font-family:DM Mono,monospace;font-size:0.38rem;flex-shrink:0;">'+(f.pollen||0)+' pollen</span>'
         +'</div>';
     }
     el.innerHTML=h;
@@ -66691,7 +66754,13 @@ function lookupFriendCode(code,callback){
 }
 
 // ═══ SEND FRIEND REQUEST ═══
-function sendFriendRequest(friendUid,callback){
+function sendFriendRequest(friendUid,friendName,callback){
+  // Stephen 2026-05-01 PART 5: friendName param added so the SENDER's outgoing
+  // record also carries the recipient's display name. Was asymmetric before —
+  // only recipient's record had senderName, so post-accept the sender's friends
+  // list fell back to friendUid.slice(0,8) (the "jumbled bit"). Now both
+  // records carry the OTHER party's name, so the UI never has to guess.
+  if(typeof friendName==='function'){callback=friendName;friendName=null;} // legacy 2-arg call
   var user=firebase.auth().currentUser;
   if(!user){callback(false,'Not logged in');return;}
   if(user.uid===friendUid){callback(false,'That\'s you!');return;}
@@ -66699,14 +66768,15 @@ function sendFriendRequest(friendUid,callback){
   var myName=localStorage.getItem('pw_keeper_name')||'Keeper';
   var batch=db.batch();
   var now=firebase.firestore.FieldValue.serverTimestamp();
+  var theirName=friendName||'Keeper';
 
-  // My record: I sent a request
+  // My record: I sent a request — friendName lets the friends list show their name
   batch.set(db.collection('friends').doc(user.uid).collection('connections').doc(friendUid),{
-    status:'pending_sent',friendUid:friendUid,createdAt:now,pollen:0
+    status:'pending_sent',friendUid:friendUid,friendName:theirName,createdAt:now,pollen:0
   });
   // Their record: they received a request
   batch.set(db.collection('friends').doc(friendUid).collection('connections').doc(user.uid),{
-    status:'pending_received',friendUid:user.uid,senderName:myName,createdAt:now,pollen:0
+    status:'pending_received',friendUid:user.uid,senderName:myName,friendName:myName,createdAt:now,pollen:0
   });
 
   batch.commit().then(function(){
@@ -66718,17 +66788,21 @@ function sendFriendRequest(friendUid,callback){
 
 // ═══ ACCEPT FRIEND REQUEST ═══
 function acceptFriend(friendUid,callback){
+  // Stephen 2026-05-01 PART 5: when Bob accepts Alice's request, we also
+  // backfill friendName onto Alice's outgoing record so her friends list
+  // shows Bob's name (not the UID slice).
   var user=firebase.auth().currentUser;
   if(!user){callback(false);return;}
   var db=firebase.firestore();
   var batch=db.batch();
   var now=firebase.firestore.FieldValue.serverTimestamp();
+  var myName=localStorage.getItem('pw_keeper_name')||'Keeper';
 
   batch.update(db.collection('friends').doc(user.uid).collection('connections').doc(friendUid),{
     status:'accepted',acceptedAt:now
   });
   batch.update(db.collection('friends').doc(friendUid).collection('connections').doc(user.uid),{
-    status:'accepted',acceptedAt:now
+    status:'accepted',acceptedAt:now,friendName:myName
   });
 
   batch.commit().then(function(){callback(true);}).catch(function(e){
