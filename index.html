@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.51';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.52';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -14743,10 +14743,11 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="40.5" cy="81.4" rx="0.65" ry="0.30" fill="#c8a84b"/>';
         s += '<ellipse cx="40.5" cy="81.32" rx="0.38" ry="0.14" fill="#fff8b0" opacity="0.7"/>';
         break;
-      case 28: // War Drum — drum head (top rim) drawn BEFORE stem; body + ropes + lugs stay in renderPot. Front-rim cap added in renderPot to cover stem cap.
-        s += '<ellipse cx="35" cy="78" rx="13" ry="2.5" fill="'+rim+'"/>';
-        s += '<ellipse cx="35" cy="78" rx="13" ry="2.5" fill="none" stroke="#2D1810" stroke-width="0.5"/>';
-        break;
+      // Stephen 2026-05-01: case 28 (War Drum) was DUPLICATED in this same
+      // renderPotBack switch — JS matched this stub first and the proper full
+      // body at line ~15958 was unreachable dead code. That's why War Drum
+      // showed as "just a rim" with no body. Removed this stub so the real
+      // body + ropes + lugs at line ~15958 can render.
       case 2: // Spire Vase — slender ceramic vase with narrow neck. Body + bands + back-arc + brown soil drawn BEFORE stem.
         // Drop shadow + AO 3-stack at base
         s += '<ellipse cx="35" cy="93.7" rx="11.5" ry="0.8" fill="rgba(0,0,0,0.32)"/>';
@@ -15081,40 +15082,18 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="34" cy="78.4" rx="0.35" ry="0.15" fill="#4a3220"/>';
         s += '<ellipse cx="40" cy="78.2" rx="0.4" ry="0.17" fill="#5a4028"/>';
         break;
-      case 16: // Gravestone — vertical stone slab as BACKDROP. Plant grows in front of it. Single render in renderPotBack.
-        // Drop shadow in front of stone
+      // Stephen 2026-05-01: Gravestone moved from renderPotBack to renderPot
+       // so the stone sits IN FRONT of the stem. Now you see the gravestone
+       // with a flower peeking up from BEHIND it — memorial-flower silhouette
+       // instead of plant-growing-in-front-of-stone. Body lives in renderPot
+       // (case 16) below; this slot only renders the ground mound + AO
+       // shadow which DO want to be behind the plant.
+      case 16: // Gravestone — ground mound only here; stone slab in renderPot.
+        // Drop shadow on the ground (behind stone + plant)
         s += '<ellipse cx="35" cy="92.5" rx="16" ry="0.6" fill="rgba(0,0,0,0.32)"/>';
-        // Ground mound
+        // Ground mound (the disturbed earth at the grave)
         s += '<ellipse cx="35" cy="92" rx="18" ry="2" fill="#3a3228"/>';
         s += '<ellipse cx="35" cy="92" rx="16" ry="1.4" fill="rgba(40,20,5,0.5)"/>';
-        // Main stone body
-        s += '<path d="M26,92 L26,80 Q26,75 31,73 Q35,72 39,73 Q44,75 44,78 L44,84 L42,84.5 L44,85 L44,92 Z" fill="#8a8a82"/>';
-        // Form shadow (left side)
-        s += '<path d="M26,92 L26,80 Q26,75 31,73 L31,92 Z" fill="rgba(0,0,0,0.18)"/>';
-        // Big specular cream sliver (upper-right)
-        s += '<path d="M42,75 L42,82" stroke="#f5ecd6" stroke-width="0.4" fill="none" opacity="0.30" stroke-linecap="round"/>';
-        // Broken chunk missing (top-right)
-        s += '<path d="M44,78 L44,80 L42.5,81 L43.5,82 L44,84 L46,83 L47,80 L45.5,77 Z" fill="#0d100c"/>';
-        // Crack running down
-        s += '<path d="M44,84.5 L43,86 L43.8,87.5 L43,89 L43.5,91" stroke="#6a6a62" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M42.5,81 L41.5,82.5 L42,83.5" stroke="#6a6a62" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
-        // Stone weathering lines
-        s += '<path d="M28,80 L42,80" stroke="#7a7a72" stroke-width="0.2" opacity="0.35"/>';
-        s += '<path d="M27,83 L43,83" stroke="#7a7a72" stroke-width="0.15" opacity="0.28"/>';
-        s += '<path d="M27,86 L42.5,86" stroke="#7a7a72" stroke-width="0.15" opacity="0.22"/>';
-        // Moss patches at base
-        s += '<path d="M27,90 Q29,89.2 31,90" stroke="#5a7a3a" stroke-width="0.6" fill="none" opacity="0.5" stroke-linecap="round"/>';
-        s += '<path d="M38,91 Q40,90.3 42,91" stroke="#5a7a3a" stroke-width="0.5" fill="none" opacity="0.45" stroke-linecap="round"/>';
-        // RIP text
-        s += '<text x="35" y="79" text-anchor="middle" font-family="serif" font-size="4.5" font-weight="bold" fill="#6a6a62" opacity="0.75">R.I.P</text>';
-        // Carved border line + cream highlight
-        s += '<path d="M28.5,81 L41,81" stroke="#6a6a62" stroke-width="0.3" opacity="0.45"/>';
-        s += '<path d="M28.5,80.7 L41,80.7" stroke="#f5ecd6" stroke-width="0.18" opacity="0.35"/>';
-        // Cross etching
-        s += '<line x1="35" y1="84" x2="35" y2="89" stroke="#6a6a62" stroke-width="0.4" opacity="0.40"/>';
-        s += '<line x1="33" y1="85.5" x2="37" y2="85.5" stroke="#6a6a62" stroke-width="0.4" opacity="0.40"/>';
-        // Stone left edge cream highlight
-        s += '<path d="M26.5,91 L26.5,80 Q26.5,75.5 31,73.5" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.30"/>';
         break;
       case 17: // Woven Basket — full body + crosshatch + back-arc + brown in renderPotBack BEFORE stem.
         // Drop shadow + AO
@@ -15483,12 +15462,14 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M27,80.5 A8,0.7 0 0,1 43,80.5 Z" fill="#3a2a18"/>';
         s += '<path d="M27,80.5 A8,0.7 0 0,1 43,80.5" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32"/>';
         s += '<path d="M28.5,80.05 Q35,79.8 41.5,80.05" stroke="#f5ecd6" stroke-width="0.18" fill="none" opacity="0.50"/>';
-        // Inner cavity dark
-        s += '<ellipse cx="35" cy="80.6" rx="7.6" ry="0.4" fill="rgba(20,10,2,0.65)"/>';
-        // BROWN soil
-        s += '<ellipse cx="35" cy="80.7" rx="7.0" ry="0.35" fill="#3a2a18"/>';
-        s += '<ellipse cx="32" cy="80.6" rx="0.3" ry="0.13" fill="#5a4028"/>';
-        s += '<ellipse cx="38" cy="80.75" rx="0.3" ry="0.13" fill="#4a3220"/>';
+        // Stephen 2026-05-01: removed the inner-cavity dark ellipse (was a
+        // thin floating black line at y=80.6 between rolled-top and bag
+        // body) + nudged soil up tight against the back arc so it reads as
+        // soil sitting AT the opening rather than hovering in the gap.
+        // BROWN soil — now butts against the back arc at y=80.5
+        s += '<ellipse cx="35" cy="80.55" rx="7.4" ry="0.45" fill="#3a2a18"/>';
+        s += '<ellipse cx="32" cy="80.5" rx="0.3" ry="0.13" fill="#5a4028"/>';
+        s += '<ellipse cx="38" cy="80.6" rx="0.3" ry="0.13" fill="#4a3220"/>';
         break;
       case 45: // Yogurt Cup — translucent tapered plastic cup. Full body + sheen + foil lid back/front + brown.
         // AO 3-stack
@@ -16324,79 +16305,132 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="32.5" cy="78.1" rx="0.3" ry="0.13" fill="#5a4028"/>';
         s += '<ellipse cx="37.5" cy="78.2" rx="0.3" ry="0.13" fill="#4a3220"/>';
         break;
-      case 38: // Disco Ball — chrome sphere with mirror tiles, sparkles, chrome cup stand. Plant emerges from cut top opening.
-        // Drop shadow + AO 3-stack at base contact
-        s += '<ellipse cx="35" cy="92.8" rx="9" ry="0.8" fill="rgba(0,0,0,0.45)"/>';
-        s += '<ellipse cx="35" cy="92.4" rx="7.5" ry="0.4" fill="rgba(0,0,0,0.55)"/>';
-        // CHROME CUP STAND — brushed metal trapezoid w/ banded gradient via stacked strokes
-        s += '<ellipse cx="35" cy="91.6" rx="5.5" ry="0.7" fill="#3a4860"/>';
-        s += '<path d="M30.5,90.5 L31.5,92 L38.5,92 L39.5,90.5 Z" fill="#5a6478"/>';
-        // Brushed chrome bands (5-stop linear gradient simulated)
-        s += '<line x1="31" y1="90.8" x2="39" y2="90.8" stroke="#9aa6b8" stroke-width="0.3"/>';
-        s += '<line x1="31.2" y1="91.2" x2="38.8" y2="91.2" stroke="#e8eef8" stroke-width="0.25" opacity="0.85"/>';
-        s += '<line x1="31.4" y1="91.6" x2="38.6" y2="91.6" stroke="#3a4860" stroke-width="0.3"/>';
-        // Stand top lip (catches light)
-        s += '<ellipse cx="35" cy="90.5" rx="5.5" ry="0.4" fill="#9aa6b8"/>';
-        s += '<ellipse cx="35" cy="90.35" rx="4.8" ry="0.22" fill="#e8eef8" opacity="0.7"/>';
-        // SPHERE BODY — chrome silver base (radius 6, cy=85)
-        s += '<circle cx="35" cy="85" r="6" fill="#9aa6b8"/>';
-        // Form shadow on right + bottom (terminator zone, cool blue-gray)
-        s += '<path d="M40.5,82 A6,6 0 0,1 39,90.5" fill="rgba(20,30,55,0.40)" stroke="none"/>';
-        // Core shadow at silhouette (Hollow Knight terminator double-stroke)
-        s += '<circle cx="35" cy="85" r="6" fill="none" stroke="rgba(10,15,30,0.55)" stroke-width="0.4"/>';
-        s += '<circle cx="35" cy="85" r="5.6" fill="none" stroke="rgba(10,15,30,0.28)" stroke-width="0.25"/>';
-        // MIRROR TILE DIAMONDS — 16 hand-placed tiles across visible hemisphere (rotated 45deg squares, 1.2x1.2)
-        // Row 1 (top of sphere, y=80.7) — 3 tiles
-        s += '<rect x="30.4" y="80.1" width="1.2" height="1.2" transform="rotate(45 31 80.7)" fill="#cdd5e0" opacity="0.85"/>';
-        s += '<rect x="34.4" y="79.9" width="1.2" height="1.2" transform="rotate(45 35 80.5)" fill="#e8eef8" opacity="0.92"/>';
-        s += '<rect x="38.4" y="80.1" width="1.2" height="1.2" transform="rotate(45 39 80.7)" fill="#9aa6b8" opacity="0.7"/>';
-        // Row 2 (upper, y=82.5) — 4 tiles
-        s += '<rect x="29.4" y="81.9" width="1.2" height="1.2" transform="rotate(45 30 82.5)" fill="#9aa6b8" opacity="0.65"/>';
-        s += '<rect x="32.4" y="81.7" width="1.2" height="1.2" transform="rotate(45 33 82.3)" fill="#cdd5e0" opacity="0.85"/>';
-        s += '<rect x="36.4" y="81.7" width="1.2" height="1.2" transform="rotate(45 37 82.3)" fill="#e8eef8" opacity="0.85"/>';
-        s += '<rect x="39.4" y="81.9" width="1.2" height="1.2" transform="rotate(45 40 82.5)" fill="#5a6478" opacity="0.6"/>';
-        // Row 3 (mid, y=84.5) — 4 tiles
-        s += '<rect x="28.4" y="83.9" width="1.2" height="1.2" transform="rotate(45 29 84.5)" fill="#5a6478" opacity="0.65"/>';
-        s += '<rect x="31.4" y="83.9" width="1.2" height="1.2" transform="rotate(45 32 84.5)" fill="#cdd5e0" opacity="0.8"/>';
-        s += '<rect x="35.4" y="83.9" width="1.2" height="1.2" transform="rotate(45 36 84.5)" fill="#9aa6b8" opacity="0.7"/>';
-        s += '<rect x="39.4" y="83.9" width="1.2" height="1.2" transform="rotate(45 40 84.5)" fill="#3a4860" opacity="0.7"/>';
-        // Row 4 (lower, y=86.5) — 4 tiles
-        s += '<rect x="29.4" y="85.9" width="1.2" height="1.2" transform="rotate(45 30 86.5)" fill="#9aa6b8" opacity="0.6"/>';
-        s += '<rect x="32.4" y="85.9" width="1.2" height="1.2" transform="rotate(45 33 86.5)" fill="#cdd5e0" opacity="0.7"/>';
-        s += '<rect x="36.4" y="85.9" width="1.2" height="1.2" transform="rotate(45 37 86.5)" fill="#5a6478" opacity="0.65"/>';
-        s += '<rect x="39.4" y="85.9" width="1.2" height="1.2" transform="rotate(45 40 86.5)" fill="#3a4860" opacity="0.7"/>';
-        // Row 5 (bottom, y=88.5) — 3 tiles
-        s += '<rect x="30.4" y="87.9" width="1.2" height="1.2" transform="rotate(45 31 88.5)" fill="#5a6478" opacity="0.55"/>';
-        s += '<rect x="34.4" y="87.7" width="1.2" height="1.2" transform="rotate(45 35 88.3)" fill="#9aa6b8" opacity="0.6"/>';
-        s += '<rect x="38.4" y="87.9" width="1.2" height="1.2" transform="rotate(45 39 88.5)" fill="#3a4860" opacity="0.7"/>';
-        // HOT TILES — 3 cream-bright "hero" tiles in upper-left where studio light lands
-        s += '<rect x="31.4" y="81.0" width="1.4" height="1.4" transform="rotate(45 32.1 81.7)" fill="#fffceb" opacity="0.95"/>';
-        s += '<rect x="33.5" y="82.5" width="1.0" height="1.0" transform="rotate(45 34 83)" fill="#fffceb" opacity="0.85"/>';
-        s += '<rect x="29.7" y="83.5" width="1.0" height="1.0" transform="rotate(45 30.2 84)" fill="#fffceb" opacity="0.7"/>';
-        // Wraparound hot tile lower-right (sells reflection)
-        s += '<rect x="38.5" y="87.0" width="0.8" height="0.8" transform="rotate(45 38.9 87.4)" fill="#fffceb" opacity="0.55"/>';
-        // BIG diffuse cream specular (soft-box highlight bleeding across multiple tiles, blurred via opacity stack)
-        s += '<ellipse cx="32" cy="82" rx="2.2" ry="2.8" fill="#fff" opacity="0.32"/>';
-        s += '<ellipse cx="31.5" cy="82" rx="1.0" ry="1.6" fill="#fff" opacity="0.45"/>';
+      case 38: // Disco Ball — Stephen 2026-05-01 PARTY REBUILD. Was tiny
+               // (radius 6) and felt like a chrome marble. Now radius 10
+               // with denser tiles (30+), colored disco light dots scattered
+               // around the sphere (red/blue/green/magenta/yellow), 8 light
+               // beams radiating outward, and bigger sparkle bursts.
+               // It's a fucking party.
+        // Drop shadow + AO 3-stack at base contact (wider for the bigger ball)
+        s += '<ellipse cx="35" cy="92.8" rx="11" ry="0.85" fill="rgba(0,0,0,0.50)"/>';
+        s += '<ellipse cx="35" cy="92.4" rx="9" ry="0.42" fill="rgba(0,0,0,0.60)"/>';
+        // CHROME CUP STAND — slightly chunkier base for the bigger sphere
+        s += '<ellipse cx="35" cy="91.7" rx="6" ry="0.75" fill="#3a4860"/>';
+        s += '<path d="M30,90.6 L31,92 L39,92 L40,90.6 Z" fill="#5a6478"/>';
+        // Brushed chrome bands
+        s += '<line x1="30.5" y1="90.9" x2="39.5" y2="90.9" stroke="#9aa6b8" stroke-width="0.3"/>';
+        s += '<line x1="30.7" y1="91.3" x2="39.3" y2="91.3" stroke="#e8eef8" stroke-width="0.28" opacity="0.85"/>';
+        s += '<line x1="30.9" y1="91.7" x2="39.1" y2="91.7" stroke="#3a4860" stroke-width="0.3"/>';
+        // Stand top lip
+        s += '<ellipse cx="35" cy="90.55" rx="6" ry="0.42" fill="#9aa6b8"/>';
+        s += '<ellipse cx="35" cy="90.4" rx="5.2" ry="0.24" fill="#e8eef8" opacity="0.72"/>';
+        // ━━ LIGHT BEAMS — 8 radiating beams behind the sphere (the disco effect) ━━
+        // Drawn here BEFORE the sphere body so beams appear to pass behind it.
+        // Long thin triangles in alternating warm/cool colors, ~30-40 deg apart.
+        var _bcx = 35, _bcy = 80;
+        var _beamColors = ['rgba(255,90,160,0.32)','rgba(120,200,255,0.30)','rgba(255,220,120,0.32)','rgba(180,120,255,0.32)','rgba(120,255,180,0.30)','rgba(255,150,90,0.32)','rgba(150,180,255,0.30)','rgba(255,180,220,0.32)'];
+        for (var _bm = 0; _bm < 8; _bm++) {
+          var _bAng = (_bm / 8) * Math.PI * 2 + 0.39;
+          var _bx1 = _bcx + Math.cos(_bAng) * 9.5;
+          var _by1 = _bcy + Math.sin(_bAng) * 9.5;
+          var _bx2 = _bcx + Math.cos(_bAng) * 22;
+          var _by2 = _bcy + Math.sin(_bAng) * 22;
+          var _bp1x = _bcx + Math.cos(_bAng + 0.085) * 22;
+          var _bp1y = _bcy + Math.sin(_bAng + 0.085) * 22;
+          var _bp2x = _bcx + Math.cos(_bAng - 0.085) * 22;
+          var _bp2y = _bcy + Math.sin(_bAng - 0.085) * 22;
+          s += '<path d="M'+_bx1.toFixed(1)+','+_by1.toFixed(1)+' L'+_bp1x.toFixed(1)+','+_bp1y.toFixed(1)+' L'+_bp2x.toFixed(1)+','+_bp2y.toFixed(1)+' Z" fill="'+_beamColors[_bm]+'"/>';
+        }
+        // ━━ SPHERE BODY — radius 10, cy=80 (raised so sphere is centered higher) ━━
+        s += '<circle cx="35" cy="80" r="10" fill="#9aa6b8"/>';
+        // Form shadow on right + bottom (terminator zone)
+        s += '<path d="M44,77 A10,10 0 0,1 41.5,89" fill="rgba(20,30,55,0.42)" stroke="none"/>';
+        // Core shadow at silhouette
+        s += '<circle cx="35" cy="80" r="10" fill="none" stroke="rgba(10,15,30,0.55)" stroke-width="0.5"/>';
+        s += '<circle cx="35" cy="80" r="9.4" fill="none" stroke="rgba(10,15,30,0.30)" stroke-width="0.3"/>';
+        // ━━ MIRROR TILE GRID — 36 diamond tiles in 7 rows (much denser) ━━
+        // Tiles are 1.4×1.4 rotated 45°. Rows centered around the visible hemisphere.
+        var _tileColors = ['#cdd5e0','#e8eef8','#9aa6b8','#5a6478','#3a4860','#fffceb'];
+        var _tileRows = [
+          {y: 73.5, count: 3, dx: 4},   // top
+          {y: 75.8, count: 5, dx: 3.2},
+          {y: 78.0, count: 6, dx: 3.0},
+          {y: 80.0, count: 7, dx: 2.8}, // equator
+          {y: 82.2, count: 6, dx: 3.0},
+          {y: 84.4, count: 5, dx: 3.2},
+          {y: 86.7, count: 3, dx: 4}    // bottom
+        ];
+        for (var _tr = 0; _tr < _tileRows.length; _tr++) {
+          var _row = _tileRows[_tr];
+          var _startX = 35 - ((_row.count - 1) / 2) * _row.dx;
+          for (var _tc = 0; _tc < _row.count; _tc++) {
+            var _tx = _startX + _tc * _row.dx;
+            // Skew tiles in upper-left brighter (light source at upper-left)
+            var _tcolorIdx = (_tx < 35 && _row.y < 80) ? (Math.floor(Math.random()*3)) : (Math.floor(Math.random()*5)+1);
+            var _topa = (_tx < 35 && _row.y < 80) ? 0.92 : (0.55 + Math.random()*0.30);
+            // Use deterministic-ish pick based on coords so it doesn't twitch
+            _tcolorIdx = ((_tr * 7 + _tc * 3) % _tileColors.length);
+            _topa = ((_tr + _tc) % 4 === 0) ? 0.92 : (0.6 + ((_tr + _tc) % 5) * 0.06);
+            s += '<rect x="'+(_tx-0.7).toFixed(2)+'" y="'+(_row.y-0.7).toFixed(2)+'" width="1.4" height="1.4" transform="rotate(45 '+_tx.toFixed(2)+' '+_row.y.toFixed(2)+')" fill="'+_tileColors[_tcolorIdx]+'" opacity="'+_topa.toFixed(2)+'"/>';
+          }
+        }
+        // HOT TILES — bright cream tiles in upper-left where the studio light hits
+        s += '<rect x="29" y="76" width="1.6" height="1.6" transform="rotate(45 29.8 76.8)" fill="#fffceb" opacity="0.95"/>';
+        s += '<rect x="31" y="78" width="1.4" height="1.4" transform="rotate(45 31.7 78.7)" fill="#fffceb" opacity="0.85"/>';
+        s += '<rect x="33" y="76" width="1.2" height="1.2" transform="rotate(45 33.6 76.6)" fill="#fffceb" opacity="0.78"/>';
+        // BIG diffuse cream specular (soft-box highlight upper-left)
+        s += '<ellipse cx="30" cy="76" rx="3.2" ry="3.8" fill="#fff" opacity="0.32"/>';
+        s += '<ellipse cx="29.5" cy="76" rx="1.4" ry="2.0" fill="#fff" opacity="0.45"/>';
         // Bounce light from below (reflected from the chrome cup)
-        s += '<path d="M31,89.5 Q35,90.5 39,89.5" stroke="#e8eef8" stroke-width="0.5" fill="none" opacity="0.55"/>';
-        // SPARKLE STARS — 3 odd-number cross-paths around the ball (varied sizes, asymmetric placement)
-        s += '<path d="M44,82 Q44.2,80 44.4,82 Q46.4,82.2 44.4,82.4 Q44.2,84.4 44,82.4 Q42,82.2 44,82 Z" fill="#fffceb" opacity="0.85" transform="rotate(15 44.2 82.2)"/>';
-        s += '<path d="M28,87 Q28.13,85.7 28.26,87 Q29.56,87.13 28.26,87.26 Q28.13,88.56 28,87.26 Q26.7,87.13 28,87 Z" fill="#fffceb" opacity="0.7"/>';
-        s += '<path d="M41,79 Q41.08,78.2 41.16,79 Q41.96,79.08 41.16,79.16 Q41.08,79.96 41,79.16 Q40.2,79.08 41,79 Z" fill="#fffceb" opacity="0.6" transform="rotate(22 41.08 79.08)"/>';
-        // BACK ARC of cut-top opening (sweep=1, upper half) — drawn before stem
-        s += '<path d="M30.5,79 A4.5,1.25 0 0,1 39.5,79 Z" fill="#3a4860"/>';
-        s += '<path d="M30.5,79 A4.5,1.25 0 0,1 39.5,79" fill="none" stroke="rgba(10,15,30,0.65)" stroke-width="0.3"/>';
-        // Back rim cream highlight (catches light from above)
-        s += '<path d="M31.5,78.4 Q35,77.85 38.5,78.4" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.7"/>';
-        // Inner cavity darkness (deep navy)
-        s += '<ellipse cx="35" cy="79.0" rx="3.8" ry="0.6" fill="#0a0f1f"/>';
-        // Inner reflected light on far side (S-curve bounce)
-        s += '<path d="M32,78.95 Q35,78.7 38,78.85" stroke="#5a6478" stroke-width="0.25" fill="none" opacity="0.55"/>';
-        // BROWN soil (visible inside opening, drawn before stem so stem lays OVER it)
-        s += '<ellipse cx="35" cy="79.1" rx="3.3" ry="0.5" fill="#3a2a18"/>';
-        s += '<ellipse cx="33.5" cy="79.0" rx="0.3" ry="0.13" fill="#5a4028"/>';
-        s += '<ellipse cx="36.5" cy="79.15" rx="0.3" ry="0.13" fill="#4a3220"/>';
+        s += '<path d="M30,88.5 Q35,90 40,88.5" stroke="#e8eef8" stroke-width="0.6" fill="none" opacity="0.55"/>';
+        // ━━ DISCO COLOR DOTS — colored "light reflections" scattered ON the sphere ━━
+        // These are the colored dots a real disco ball throws when lights hit it.
+        var _discoDots = [
+          {x:31, y:76, r:0.55, c:'#ff6090'},
+          {x:38, y:74, r:0.5,  c:'#60c0ff'},
+          {x:41, y:78, r:0.6,  c:'#ffd866'},
+          {x:43, y:81, r:0.5,  c:'#a060ff'},
+          {x:39, y:84, r:0.55, c:'#60ffb0'},
+          {x:33, y:85, r:0.5,  c:'#ff8c40'},
+          {x:30, y:81, r:0.55, c:'#80a0ff'},
+          {x:34, y:79, r:0.5,  c:'#ffa0d0'},
+          {x:36, y:77, r:0.45, c:'#80ffa0'}
+        ];
+        for (var _dd = 0; _dd < _discoDots.length; _dd++) {
+          var _d = _discoDots[_dd];
+          s += '<circle cx="'+_d.x+'" cy="'+_d.y+'" r="'+(_d.r+0.3).toFixed(2)+'" fill="'+_d.c+'" opacity="0.32"/>';
+          s += '<circle cx="'+_d.x+'" cy="'+_d.y+'" r="'+_d.r.toFixed(2)+'" fill="'+_d.c+'" opacity="0.78"/>';
+        }
+        // ━━ SPARKLE STARS — 5 cross-stars around the ball, larger than before ━━
+        var _sparkles = [
+          {x:46, y:76, sz:0.9, op:0.92},
+          {x:24, y:80, sz:0.7, op:0.78},
+          {x:46, y:84, sz:0.8, op:0.82},
+          {x:26, y:88, sz:0.6, op:0.65},
+          {x:44, y:90, sz:0.55, op:0.6}
+        ];
+        for (var _sp = 0; _sp < _sparkles.length; _sp++) {
+          var _s2 = _sparkles[_sp];
+          // 4-point star via 4 lines
+          s += '<line x1="'+(_s2.x-_s2.sz*1.5)+'" y1="'+_s2.y+'" x2="'+(_s2.x+_s2.sz*1.5)+'" y2="'+_s2.y+'" stroke="#fffceb" stroke-width="'+(_s2.sz*0.4)+'" stroke-linecap="round" opacity="'+_s2.op+'"/>';
+          s += '<line x1="'+_s2.x+'" y1="'+(_s2.y-_s2.sz*1.5)+'" x2="'+_s2.x+'" y2="'+(_s2.y+_s2.sz*1.5)+'" stroke="#fffceb" stroke-width="'+(_s2.sz*0.4)+'" stroke-linecap="round" opacity="'+_s2.op+'"/>';
+          // Center dot
+          s += '<circle cx="'+_s2.x+'" cy="'+_s2.y+'" r="'+(_s2.sz*0.35)+'" fill="#fffceb" opacity="'+_s2.op+'"/>';
+        }
+        // ━━ TOP CUT-OUT OPENING — narrow band where the plant emerges ━━
+        // Smaller than before because the sphere is way bigger now.
+        // BACK ARC of opening (sweep=1, drawn before stem)
+        s += '<path d="M32,72 A3,0.85 0 0,1 38,72 Z" fill="#1a2030"/>';
+        s += '<path d="M32,72 A3,0.85 0 0,1 38,72" fill="none" stroke="rgba(10,15,30,0.7)" stroke-width="0.3"/>';
+        s += '<path d="M32.8,71.5 Q35,71.0 37.2,71.5" stroke="#f5ecd6" stroke-width="0.32" fill="none" opacity="0.72"/>';
+        // Inner cavity darkness
+        s += '<ellipse cx="35" cy="72.3" rx="2.6" ry="0.45" fill="#0a0f1f"/>';
+        // Inner bounce light
+        s += '<path d="M33,72.25 Q35,72.0 37,72.15" stroke="#5a6478" stroke-width="0.25" fill="none" opacity="0.55"/>';
+        // BROWN soil (visible in opening; stem lays OVER it)
+        s += '<ellipse cx="35" cy="72.4" rx="2.2" ry="0.38" fill="#3a2a18"/>';
+        s += '<ellipse cx="33.5" cy="72.3" rx="0.28" ry="0.12" fill="#5a4028"/>';
+        s += '<ellipse cx="36.5" cy="72.45" rx="0.28" ry="0.12" fill="#4a3220"/>';
         break;
       case 1: // Cast Iron Skillet — full body + back arc (sweep=1) + cooking surface + brown soil all in renderPotBack BEFORE stem (stem lays OVER brown, overlays back rim). Front arc in renderPot AFTER stem (stem UNDER front rim).
         // Drop shadow + AO 3-stack at base contact (extended right for handle)
@@ -16604,7 +16638,38 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M20,78 Q18,88 24,90 L46,90 Q52,88 50,78 Z" fill="'+g+'"/>';
         s += '<rect x="20" y="76.5" width="30" height="3" rx="1.5" fill="'+rim+'"/>';
         break;
-      case 16: // Gravestone — full art rendered in renderPotBack (stem grows in front of stone).
+      case 16: // Gravestone — Stephen 2026-05-01: stone slab moved here from
+               // renderPotBack so it sits IN FRONT of the stem. Memorial-flower
+               // silhouette: gravestone visible with the bloom peeking up
+               // behind it instead of plant-growing-in-front-of-stone.
+        // Main stone body
+        s += '<path d="M26,92 L26,80 Q26,75 31,73 Q35,72 39,73 Q44,75 44,78 L44,84 L42,84.5 L44,85 L44,92 Z" fill="#8a8a82"/>';
+        // Form shadow (left side)
+        s += '<path d="M26,92 L26,80 Q26,75 31,73 L31,92 Z" fill="rgba(0,0,0,0.18)"/>';
+        // Big specular cream sliver (upper-right)
+        s += '<path d="M42,75 L42,82" stroke="#f5ecd6" stroke-width="0.4" fill="none" opacity="0.30" stroke-linecap="round"/>';
+        // Broken chunk missing (top-right)
+        s += '<path d="M44,78 L44,80 L42.5,81 L43.5,82 L44,84 L46,83 L47,80 L45.5,77 Z" fill="#0d100c"/>';
+        // Crack running down
+        s += '<path d="M44,84.5 L43,86 L43.8,87.5 L43,89 L43.5,91" stroke="#6a6a62" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
+        s += '<path d="M42.5,81 L41.5,82.5 L42,83.5" stroke="#6a6a62" stroke-width="0.35" fill="none" stroke-linecap="round"/>';
+        // Stone weathering lines
+        s += '<path d="M28,80 L42,80" stroke="#7a7a72" stroke-width="0.2" opacity="0.35"/>';
+        s += '<path d="M27,83 L43,83" stroke="#7a7a72" stroke-width="0.15" opacity="0.28"/>';
+        s += '<path d="M27,86 L42.5,86" stroke="#7a7a72" stroke-width="0.15" opacity="0.22"/>';
+        // Moss patches at base
+        s += '<path d="M27,90 Q29,89.2 31,90" stroke="#5a7a3a" stroke-width="0.6" fill="none" opacity="0.5" stroke-linecap="round"/>';
+        s += '<path d="M38,91 Q40,90.3 42,91" stroke="#5a7a3a" stroke-width="0.5" fill="none" opacity="0.45" stroke-linecap="round"/>';
+        // RIP text
+        s += '<text x="35" y="79" text-anchor="middle" font-family="serif" font-size="4.5" font-weight="bold" fill="#6a6a62" opacity="0.75">R.I.P</text>';
+        // Carved border line + cream highlight
+        s += '<path d="M28.5,81 L41,81" stroke="#6a6a62" stroke-width="0.3" opacity="0.45"/>';
+        s += '<path d="M28.5,80.7 L41,80.7" stroke="#f5ecd6" stroke-width="0.18" opacity="0.35"/>';
+        // Cross etching
+        s += '<line x1="35" y1="84" x2="35" y2="89" stroke="#6a6a62" stroke-width="0.4" opacity="0.40"/>';
+        s += '<line x1="33" y1="85.5" x2="37" y2="85.5" stroke="#6a6a62" stroke-width="0.4" opacity="0.40"/>';
+        // Stone left edge cream highlight
+        s += '<path d="M26.5,91 L26.5,80 Q26.5,75.5 31,73.5" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.30"/>';
         break;
       case 17: // Woven Basket — front-arc covers stem at rim (full body in renderPotBack).
         s += '<path d="M22,78.8 A13,1.7 0 0,0 48,78.8 Z" fill="'+rim+'"/>';
@@ -16967,12 +17032,13 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M39,78.4 L39,80" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
         s += '<path d="M43,78.4 L43,80" stroke="rgba(0,0,0,0.25)" stroke-width="0.3" fill="none"/>';
         break;
-      case 38: // Disco Ball — FRONT portion only. Body + back-arc opening + brown soil all in renderPotBack BEFORE stem. Front-arc here AFTER stem.
+      case 38: // Disco Ball — Stephen 2026-05-01: opening Y moved up to match
+               // the bigger sphere centered at y=80, top opening at y=72.
         // FRONT ARC of opening (lower half via sweep=0, covers stem cap)
-        s += '<path d="M30,79.5 A5,1 0 0,0 40,79.5 Z" fill="#a0a8b8"/>';
-        s += '<path d="M30,79.5 A5,1 0 0,0 40,79.5" fill="none" stroke="rgba(40,40,60,0.55)" stroke-width="0.3"/>';
-        // Front-rim sheen (cream line at the bottom of the front opening edge)
-        s += '<path d="M31,80.2 Q35,80.4 39,80.2" stroke="#f5ecd6" stroke-width="0.3" fill="none" opacity="0.55"/>';
+        s += '<path d="M32,72 A3,0.85 0 0,0 38,72 Z" fill="#3a4860"/>';
+        s += '<path d="M32,72 A3,0.85 0 0,0 38,72" fill="none" stroke="rgba(40,40,60,0.6)" stroke-width="0.3"/>';
+        // Front-rim sheen
+        s += '<path d="M32.6,72.5 Q35,72.7 37.4,72.5" stroke="#f5ecd6" stroke-width="0.28" fill="none" opacity="0.55"/>';
         break;
       case 39: // Paint Can — front-arc covers stem at rim (full body in renderPotBack).
         s += '<path d="M23,79 A12,1.8 0 0,0 47,79 Z" fill="#7a6a52"/>';
