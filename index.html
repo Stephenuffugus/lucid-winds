@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.90';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.91';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7264,7 +7264,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE COMPANION</div><div class="cs-companion-card" onclick="PW_UI.equipCompanion()" style="cursor:pointer;min-height:64px;position:relative;" title="Tap to change"><div class="cs-companion-icon" id="cs-companion-icon">❓</div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-companion-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-companion-buff">Tap to equip a companion</div></div><button id="cs-companion-info" onclick="event.stopPropagation();try{var c=JSON.parse(localStorage.getItem('pw_active_companion')||'{}');if(typeof c.idx==='number'&&window._lwOpenCompanionProfile)_lwOpenCompanionProfile(c.idx);}catch(e){}" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(200,168,75,0.3);background:rgba(13,16,12,0.7);color:var(--gold);font-family:DM Mono,monospace;font-size:0.55rem;font-weight:bold;cursor:pointer;padding:0;z-index:2;" title="View profile">ⓘ</button></div></div>
-    <div class="cs-section" id="cs-cocoon-section" style="display:none;"><div class="cs-section-title">EQUIPPED COCOON</div><div class="cs-companion-card" onclick="if(window.LW_HUT)LW_HUT.open('cocoonery');" style="cursor:pointer;min-height:64px;" title="Tap to manage cocoons"><div class="cs-companion-icon" id="cs-cocoon-icon" style="width:48px;height:48px;border-radius:8px;overflow:hidden;background:rgba(20,18,14,0.5);"></div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-cocoon-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-cocoon-buff">Tap to manage</div></div></div></div>
+    <div class="cs-section" id="cs-cocoon-section" style="display:none;"><div class="cs-section-title">EQUIPPED CURIOSITY</div><div class="cs-companion-card" onclick="if(window._lwOpenCuriosities)window._lwOpenCuriosities();else if(window.LW_HUT)LW_HUT.open('cocoonery');" style="cursor:pointer;min-height:64px;" title="Tap to manage your curiosities"><div class="cs-companion-icon" id="cs-cocoon-icon" style="width:48px;height:48px;border-radius:8px;overflow:hidden;background:rgba(20,18,14,0.5);"></div><div style="flex:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.65rem;color:var(--cream);letter-spacing:0.04em;" id="cs-cocoon-name">None Equipped</div><div style="font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);line-height:1.5;margin-top:2px;" id="cs-cocoon-buff">Tap to manage</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">SHOWCASE</div><div class="cs-showcase-grid"><div class="cs-showcase-slot empty" onclick="PW_UI.editShowcase(0)"><div>+ Add Plant</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div><div class="cs-showcase-slot empty"><div>🔒 Level 10</div></div></div></div>
     <div class="cs-section"><div class="cs-section-title">MILESTONES</div><div id="cs-milestone-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
@@ -55314,8 +55314,11 @@ window._lwRenderCuriosities = function() {
   h += '</div></div>';
 
   // ─── POUCHES SECTION ───
+  // Audit fix 2026-05-01: cocoon-*.png assets don't exist on disk; use
+  // a butterfly icon for the POUCHES section header (matches the
+  // backpack button + falls through cleanly to ✨ if missing).
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;">'+
-       '<img src="assets/cocoons/cocoon-gossamer.png" alt="" style="width:24px;height:24px;object-fit:contain;border-radius:5px;" onerror="this.outerHTML=\'\\u272a\';">'+
+       '<img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=\'\\u2728\';">'+
        '<span>POUCHES</span>'+
        '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">'+pouchSlots.length+' / '+pouchCap+'</span>'+
        '</div>';
@@ -85629,7 +85632,7 @@ window.LW_debug.cleanGhostDrops = function(){
     var s = _load();
     if (!s.slots) s.slots = [];
     if (s.slots.length >= (s.cap || 3)) {
-      if (window._toast) window._toast('\ud83e\uddf5 Cocoon pouch full. Hatch one to make room.');
+      if (window._toast) window._toast('\ud83e\uddf5 Pouch full. Hatch one to make room.');
       return false;
     }
     s.slots.push({ tier:tier, distance:0, target:TIERS[tier].distance, startedAt:Date.now() });
@@ -85646,10 +85649,10 @@ window.LW_debug.cleanGhostDrops = function(){
     if (firstEver && window._toast) {
       // Two-line celebration toast — first line is the discovery, second
       // is the call to action.
-      window._toast(TIERS[tier].icon + ' Your first cocoon. Walk to incubate it. Hatch it for items, Dew, or mystery boxes.');
+      window._toast(TIERS[tier].icon + ' Your first curiosity. Walk to incubate it. Hatch it for items, Dew, or mystery boxes.');
       try { if (window._haptic) window._haptic('bloom'); } catch(e){}
     } else if (window._toast) {
-      window._toast(TIERS[tier].icon + ' ' + TIERS[tier].name + ', a new cocoon. Walk to hatch it.');
+      window._toast(TIERS[tier].icon + ' ' + TIERS[tier].name + ' added to your pouch. Walk to hatch it.');
       try { if (window._haptic) window._haptic('ok'); } catch(e){}
     }
     return true;
@@ -85787,7 +85790,16 @@ window.LW_debug.cleanGhostDrops = function(){
     try { if (window._haptic) window._haptic('bloom'); } catch(e){}
     window.LW_COCOONS._dismiss = function(){
       try { rv.remove(); } catch(e){}
-      // Refresh panel behind
+      // Stephen 2026-05-01 PART 5 audit fix: refresh whichever panel the
+      // player opened the hatch FROM. Was unconditionally calling openPanel()
+      // which reopened the legacy Cocoons-only overlay even when the player
+      // hatched from the unified Curiosities panel — caused two stacked
+      // overlays. Now: prefer the Curiosities panel if it's mounted.
+      var cur = document.getElementById('lw-curiosities-panel');
+      if (cur && window._lwRenderCuriosities) {
+        window._lwRenderCuriosities();
+        return;
+      }
       try { var p=document.getElementById('lw-cocoons-panel'); if(p)p.remove(); } catch(e){}
       openPanel();
     };
