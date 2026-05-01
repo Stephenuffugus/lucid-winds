@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.63';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.64';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -24286,12 +24286,21 @@ document.addEventListener('keydown', function(e) {
                        + ' M'+ox+','+ly+' Q'+((ox+_clOutTipX40)/2-side*ls*0.04).toFixed(1)+','+((ly+_clOutTipY40)/2+ls*0.04).toFixed(1)+' '+_clOutTipX40.toFixed(1)+','+_clOutTipY40.toFixed(1);
             }
             break;
-          case 41: // Coilspring — single subtle helical arc
+          case 41: // Coilspring — vein traces the actual 2.8-turn spiral path
+            // Stephen 2026-05-01 PART 3: single Q-curve was wrong, now multi-step polyline matching body.
             var _csR41 = ls * 0.85;
-            if (chiVar === 0) {
-              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*_csR41*0.4).toFixed(1)+','+(ly-_csR41*0.9).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
-            } else {
-              chiVeinD = 'M'+ox+','+ly+' Q'+(ox-side*_csR41*0.2).toFixed(1)+','+(ly-_csR41*1.1).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            var _csTurns41 = 2.8;
+            var _csAng041 = -0.5;
+            var _csChSteps = (chiVar === 0) ? 12 : 8;
+            var _csChStart = (chiVar === 0) ? 0 : 0.35;
+            chiVeinD = '';
+            for (var _csk = 0; _csk <= _csChSteps; _csk++) {
+              var _csChT = _csChStart + (_csk / _csChSteps) * (1 - _csChStart);
+              var _csChA = _csAng041 + _csChT * _csTurns41 * Math.PI * 2;
+              var _csChRt = _csR41 * _csChT * 0.85;
+              var _csChPx = ox + Math.cos(_csChA) * _csChRt * side;
+              var _csChPy = ly + Math.sin(_csChA) * _csChRt - _csChT * ls * 0.7;
+              chiVeinD += (_csk === 0 ? 'M' : ' L') + _csChPx.toFixed(1) + ',' + _csChPy.toFixed(1);
             }
             break;
           case 42: // Kraken Frond — chimera follows the muscular S-curve spine
@@ -24411,25 +24420,32 @@ document.addEventListener('keydown', function(e) {
               chiVeinD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_sbCV1)*_sbLen*0.42*side).toFixed(1)+','+(ly+Math.sin(_sbCV1)*_sbLen*0.42).toFixed(1)+' '+_sbCV1Tx.toFixed(1)+','+_sbCV1Ty.toFixed(1);
             }
             break;
-          case 52: // Mountain Ash — chimera ghosts along the rachis
+          case 52: // Mountain Ash — chimera ghosts along the rachis (ls-scaled offsets so it stays on rachis at all sizes)
+            // Stephen 2026-05-01 PART 3: was using absolute pixel offsets, now scaled by ls.
             if (chiVar === 0) {
-              chiVeinD = 'M'+(ox+side*0.4).toFixed(1)+','+ly+' Q'+(_cpMidX+side*0.5).toFixed(1)+','+(_cpMidY-0.3).toFixed(1)+' '+(_cpTipX+side*0.3).toFixed(1)+','+_cpTipY.toFixed(1);
+              chiVeinD = 'M'+ox+','+ly+' Q'+_cpMidX.toFixed(1)+','+(_cpMidY-ls*0.04).toFixed(1)+' '+_cpTipX.toFixed(1)+','+_cpTipY.toFixed(1);
             } else {
-              chiVeinD = 'M'+(ox-side*0.5).toFixed(1)+','+ly+' Q'+(_cpMidX-side*0.4).toFixed(1)+','+(_cpMidY+0.4).toFixed(1)+' '+(_cpTipX-side*0.3).toFixed(1)+','+_cpTipY.toFixed(1)+' M'+(ox+side*0.6).toFixed(1)+','+(ly-0.4).toFixed(1)+' Q'+(_cpMidX+side*0.6).toFixed(1)+','+(_cpMidY-0.5).toFixed(1)+' '+(_cpTipX+side*0.4).toFixed(1)+','+(_cpTipY-0.3).toFixed(1);
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_cpMidX-side*ls*0.06).toFixed(1)+','+(_cpMidY+ls*0.05).toFixed(1)+' '+_cpTipX.toFixed(1)+','+_cpTipY.toFixed(1)
+                       + ' M'+(ox+side*ls*0.08).toFixed(1)+','+(ly-ls*0.05).toFixed(1)+' Q'+(_cpMidX+side*ls*0.08).toFixed(1)+','+(_cpMidY-ls*0.07).toFixed(1)+' '+(_cpTipX+side*ls*0.05).toFixed(1)+','+(_cpTipY-ls*0.04).toFixed(1);
             }
             break;
-          case 53: // Tendril Coil — chimera ghosts the spiral path itself
-            var _tcMid1X = ox + Math.cos(_tcBaseAng) * _tcLen * 0.35 * side;
-            var _tcMid1Y = ly + Math.sin(_tcBaseAng) * _tcLen * 0.35;
-            var _tcMid2X = ox + Math.cos(_tcBaseAng) * _tcLen * 0.7 * side;
-            var _tcMid2Y = ly + Math.sin(_tcBaseAng) * _tcLen * 0.7;
-            var _tcEndX = ox + Math.cos(_tcBaseAng) * _tcLen * side;
-            var _tcEndY = ly + Math.sin(_tcBaseAng) * _tcLen;
-            var _tcCPerp = _tcBaseAng + Math.PI * 0.5;
-            if (chiVar === 0) {
-              chiVeinD = 'M'+ox+','+ly+' Q'+(_tcMid1X-Math.cos(_tcCPerp)*ls*0.4*side).toFixed(1)+','+(_tcMid1Y-Math.sin(_tcCPerp)*ls*0.4).toFixed(1)+' '+_tcMid2X.toFixed(1)+','+_tcMid2Y.toFixed(1)+' Q'+(_tcMid2X+Math.cos(_tcCPerp)*ls*0.3*side).toFixed(1)+','+(_tcMid2Y+Math.sin(_tcCPerp)*ls*0.3).toFixed(1)+' '+_tcEndX.toFixed(1)+','+_tcEndY.toFixed(1);
-            } else {
-              chiVeinD = 'M'+ox+','+ly+' Q'+(_tcMid1X+Math.cos(_tcCPerp)*ls*0.5*side).toFixed(1)+','+(_tcMid1Y+Math.sin(_tcCPerp)*ls*0.5).toFixed(1)+' '+_tcMid2X.toFixed(1)+','+_tcMid2Y.toFixed(1);
+          case 53: // Tendril Coil — vein traces SAME 5-coil alternating Q-chain as body, with body's amplitude taper
+            // Stephen 2026-05-01 PART 3: was constant amp, now matches body's tapering [0.8..0.2]*ls.
+            var _tcChCoils = 5;
+            var _tcChAmps = [ls*0.8, ls*0.65, ls*0.5, ls*0.35, ls*0.2];
+            var _tcChPerp = _tcBaseAng + Math.PI * 0.5;
+            var _tcChDirSeed = (chiVar === 0) ? 1 : -1;
+            chiVeinD = 'M'+ox+','+ly;
+            var _tcChPrevX = ox, _tcChPrevY = ly;
+            for (var _tck = 0; _tck < _tcChCoils; _tck++) {
+              var _tcChT = (_tck + 1) / _tcChCoils;
+              var _tcChEndX = ox + Math.cos(_tcBaseAng) * _tcLen * _tcChT * side;
+              var _tcChEndY = ly + Math.sin(_tcBaseAng) * _tcLen * _tcChT;
+              var _tcChDir = ((_tck % 2 === 0) ? 1 : -1) * _tcChDirSeed;
+              var _tcChPeakX = (_tcChPrevX + _tcChEndX) / 2 + Math.cos(_tcChPerp) * _tcChAmps[_tck] * _tcChDir * side;
+              var _tcChPeakY = (_tcChPrevY + _tcChEndY) / 2 + Math.sin(_tcChPerp) * _tcChAmps[_tck] * _tcChDir;
+              chiVeinD += ' Q'+_tcChPeakX.toFixed(1)+','+_tcChPeakY.toFixed(1)+' '+_tcChEndX.toFixed(1)+','+_tcChEndY.toFixed(1);
+              _tcChPrevX = _tcChEndX; _tcChPrevY = _tcChEndY;
             }
             break;
           case 54: // Water Lily — chimera as 2 of the 7 palmate radial veins
@@ -24618,24 +24634,30 @@ document.addEventListener('keydown', function(e) {
                        + ' M'+ox+','+ly+' Q'+(ox+Math.cos(_snAng+0.08)*_snLen*0.5*side+0.3).toFixed(1)+','+(ly+Math.sin(_snAng+0.08)*_snLen*0.5).toFixed(1)+' '+(ox+Math.cos(_snAng+0.08)*_snLen*0.92*side).toFixed(1)+','+(ly+Math.sin(_snAng+0.08)*_snLen*0.92).toFixed(1);
             }
             break;
-          case 65: // Ribbon Curl — wavy vein following spiral
-            if (chiVar === 0) {
-              chiVeinD = 'M'+ox+','+ly
-                       + ' Q'+(ox+Math.cos(_rcAng)*_rcLen*0.18*side+Math.cos(_rcPa)*_rcW*0.9*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.18+Math.sin(_rcPa)*_rcW*0.9).toFixed(1)
-                       +   ' '+(ox+Math.cos(_rcAng)*_rcLen*0.35*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.35).toFixed(1)
-                       + ' Q'+(ox+Math.cos(_rcAng)*_rcLen*0.50*side-Math.cos(_rcPa)*_rcW*1.0*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.50-Math.sin(_rcPa)*_rcW*1.0).toFixed(1)
-                       +   ' '+(ox+Math.cos(_rcAng)*_rcLen*0.68*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.68).toFixed(1)
-                       + ' Q'+(ox+Math.cos(_rcAng)*_rcLen*0.82*side+Math.cos(_rcPa)*_rcW*0.85*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.82+Math.sin(_rcPa)*_rcW*0.85).toFixed(1)
-                       +   ' '+_rcLastX.toFixed(1)+','+_rcLastY.toFixed(1);
-            } else {
-              chiVeinD = 'M'+ox+','+ly
-                       + ' Q'+(ox+Math.cos(_rcAng)*_rcLen*0.18*side-Math.cos(_rcPa)*_rcW*0.9*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.18-Math.sin(_rcPa)*_rcW*0.9).toFixed(1)
-                       +   ' '+(ox+Math.cos(_rcAng)*_rcLen*0.35*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.35).toFixed(1)
-                       + ' Q'+(ox+Math.cos(_rcAng)*_rcLen*0.50*side+Math.cos(_rcPa)*_rcW*1.0*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.50+Math.sin(_rcPa)*_rcW*1.0).toFixed(1)
-                       +   ' '+(ox+Math.cos(_rcAng)*_rcLen*0.68*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.68).toFixed(1)
-                       + ' Q'+(ox+Math.cos(_rcAng)*_rcLen*0.82*side-Math.cos(_rcPa)*_rcW*0.85*side).toFixed(1)+','+(ly+Math.sin(_rcAng)*_rcLen*0.82-Math.sin(_rcPa)*_rcW*0.85).toFixed(1)
-                       +   ' '+_rcLastX.toFixed(1)+','+_rcLastY.toFixed(1);
+          case 65: // Ribbon Curl — vein samples the ACTUAL ribbon centerline using same _rcDrift + 2.5-cycle wave as body
+            // Stephen 2026-05-01 PART 3 PRIORITY FIX: was going opposite spiral direction.
+            // Now uses identical math as body: sin((t + _rcDrift) * PI * 2.5) * _rcW * 1.3
+            var _rcChN = 8;
+            var _rcChPhase = (chiVar === 0) ? 0 : 0.5 / _rcChN;
+            var _rcChPts = [];
+            for (var _rci2 = 0; _rci2 <= _rcChN; _rci2++) {
+              var _rct2 = (_rci2 / _rcChN) + _rcChPhase;
+              if (_rct2 > 1) _rct2 = 1;
+              var _rcCenterX = ox + Math.cos(_rcAng) * _rcLen * _rct2 * side;
+              var _rcCenterY = ly + Math.sin(_rcAng) * _rcLen * _rct2;
+              var _rcWave = Math.sin((_rct2 + _rcDrift) * Math.PI * 2.5) * _rcW * 1.3;
+              _rcChPts.push({
+                x: _rcCenterX + Math.cos(_rcPa) * _rcWave * side,
+                y: _rcCenterY + Math.sin(_rcPa) * _rcWave
+              });
             }
+            chiVeinD = 'M'+_rcChPts[0].x.toFixed(1)+','+_rcChPts[0].y.toFixed(1);
+            for (var _rcj = 1; _rcj < _rcChPts.length - 1; _rcj++) {
+              var _rcMx = (_rcChPts[_rcj].x + _rcChPts[_rcj+1].x) / 2;
+              var _rcMy = (_rcChPts[_rcj].y + _rcChPts[_rcj+1].y) / 2;
+              chiVeinD += ' Q'+_rcChPts[_rcj].x.toFixed(1)+','+_rcChPts[_rcj].y.toFixed(1)+' '+_rcMx.toFixed(1)+','+_rcMy.toFixed(1);
+            }
+            chiVeinD += ' L'+_rcChPts[_rcChPts.length-1].x.toFixed(1)+','+_rcChPts[_rcChPts.length-1].y.toFixed(1);
             break;
           case 66: // Prism Blade — pinnate veins between refraction stripes
             if (chiVar === 0) {
@@ -35264,86 +35286,135 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="58.5" cy="58" rx="1.8" ry="1.5" fill="none" stroke="#C8C4BC" stroke-width="0.15" opacity="0.3"/>';
         s += '</g>';
         break;
-      case 67: // Grey Squirrel — side profile facing left, holding acorn
-        // Sciurus carolinensis. Sitting upright on haunches, bushy tail
-        // curling up behind, clutching an acorn in tiny paws. Side view.
-        s += '<g opacity="0.88" transform="translate(12,86) scale(1.5) translate(-12,-86)">';
-        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.08,-0.05;0,0" dur="4s" repeatCount="indefinite"/>';
-        // Shadow — warm AO 3-stack
-        s += '<ellipse cx="12" cy="92.3" rx="4.6" ry="0.55" fill="rgba(40,20,5,0.16)"/>';
-        s += '<ellipse cx="12" cy="92.1" rx="4.2" ry="0.6" fill="rgba(40,20,5,0.30)"/>';
-        s += '<ellipse cx="12" cy="92.0" rx="3.0" ry="0.32" fill="rgba(20,12,4,0.45)"/>';
-        // ── TAIL — massive bushy S-curve behind body, THE defining feature ──
-        s += '<path d="M14,88 C15,86 16,83 16,81 C16,79.5 16.5,78.5 17,79 C17.5,79.5 17.5,81 17,83 C16.5,85 16,87 15.5,89 C15,90 14,90.5 13,90" fill="#8A7050"/>';
-        // Tail fur texture — wispy lighter strands
-        s += '<path d="M16,81 C16.8,80 17,79.5 17.2,80" fill="none" stroke="#B8A078" stroke-width="0.8" stroke-linecap="round" opacity="0.3"/>';
-        s += '<path d="M16.2,83 C17,82 17.2,81 17.3,81.5" fill="none" stroke="#B8A078" stroke-width="0.6" stroke-linecap="round" opacity="0.25"/>';
-        s += '<path d="M15.8,85 C16.5,84 16.8,83 17,83.5" fill="none" stroke="#B8A078" stroke-width="0.5" stroke-linecap="round" opacity="0.2"/>';
-        s += '<path d="M15.2,87 C16,86 16.5,85 16.5,85.5" fill="none" stroke="#B8A078" stroke-width="0.4" stroke-linecap="round" opacity="0.18"/>';
-        // Extra wispy fluff strands — cream pickup on the lit edge
-        s += '<path d="M16.8,80 C17.4,79.2 17.6,78.8 17.7,79.2" fill="none" stroke="#fff8e0" stroke-width="0.25" stroke-linecap="round" opacity="0.3"/>';
-        s += '<path d="M17,82.5 C17.5,82 17.7,81.7 17.6,82" fill="none" stroke="#fff8e0" stroke-width="0.22" stroke-linecap="round" opacity="0.28"/>';
-        s += '<path d="M16.5,86 C17,85.5 17.2,85.2 17.1,85.5" fill="none" stroke="#fff8e0" stroke-width="0.2" stroke-linecap="round" opacity="0.25"/>';
-        // Tail outline
-        s += '<path d="M14,88 C15,86 16,83 16,81 C16,79.5 16.5,78.5 17,79" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.25"/>';
-        // ── HIND LEG — tucked under body ──
-        s += '<path d="M13,90 Q14,90.5 14,91.5" stroke="#7A6040" stroke-width="0.9" fill="none" stroke-linecap="round"/>';
-        s += '<ellipse cx="14" cy="91.5" rx="0.9" ry="0.35" fill="#8A7050"/>';
-        // ── BODY — sitting upright, pear-shaped, wider at hips ──
-        s += '<path d="M9,86 C8.5,84.5 9,83 10,82.5 C11,82 12.5,82 13.5,83 C14.5,84 14.5,86 14,88 C13.5,90 12.5,91.5 11,91.5 C9.5,91.5 8.5,90.5 8.5,89 C8.5,87.5 9,86.5 9,86 Z" fill="#8A7050"/>';
-        // Belly — lighter cream
-        s += '<path d="M9.5,87 C10,88 10.5,89.5 11,90.5 C11.5,91 12,91 12.5,90" fill="#C8B898" opacity="0.4"/>';
-        // A2 cool-shadow under-belly rim (hue shift toward purple-grey)
-        s += '<path d="M9.6,89 C10,90 11,91 12,91" fill="none" stroke="#5A5060" stroke-width="0.18" opacity="0.22" stroke-linecap="round"/>';
-        // Back fur grizzle
-        s += '<path d="M10,83 C11.5,82.5 13,83 14,84" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.15"/>';
-        s += '<path d="M9,85 C10.5,84.5 12,85 13.5,86" fill="none" stroke="#6A5030" stroke-width="0.2" opacity="0.12"/>';
-        // ── FRONT LEG — reaching down to hold acorn ──
-        s += '<path d="M10,86.5 L9.5,87.5 L9,88" stroke="#8A7050" stroke-width="0.7" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M10.5,86.5 L10,87.5 L9.5,88.2" stroke="#7A6040" stroke-width="0.6" fill="none" stroke-linecap="round"/>';
-        // ── ACORN — held in both paws! ──
-        // Acorn cap
-        s += '<path d="M8.5,87.8 C8.5,87.3 9,87 9.5,87 C10,87 10.5,87.3 10.5,87.8" fill="#6A5030" stroke="#4A3020" stroke-width="0.12"/>';
-        // Cap texture — crosshatch
-        s += '<path d="M8.8,87.5 L9.2,87.7 M9.5,87.3 L9.5,87.7 M10,87.5 L9.8,87.7" fill="none" stroke="#4A3020" stroke-width="0.08" opacity="0.4"/>';
-        // Acorn body — smooth oval nut
-        s += '<ellipse cx="9.5" cy="88.5" rx="1" ry="0.8" fill="#B89060" stroke="#8A6838" stroke-width="0.12"/>';
-        // Acorn AO — warm shadow on bottom
-        s += '<path d="M8.6,88.85 Q9.5,89.4 10.4,88.85" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.18" stroke-linecap="round"/>';
-        // Acorn cream specular — soft pickup
-        s += '<ellipse cx="9.3" cy="88.3" rx="0.42" ry="0.3" fill="#f5ecd6" opacity="0.4"/>';
-        // Acorn cream sharp highlight
-        s += '<circle cx="9.18" cy="88.2" r="0.13" fill="#fff8e0" opacity="0.7"/>';
-        // Acorn tip — warm dark
-        s += '<circle cx="9.5" cy="89.2" r="0.12" fill="#1a1208"/>';
-        // Paws clutching acorn
-        s += '<path d="M8.8,88 C8.5,88.3 8.5,88.8 8.8,89" stroke="#9A8060" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        s += '<path d="M10.2,88 C10.5,88.3 10.5,88.8 10.2,89" stroke="#9A8060" stroke-width="0.4" fill="none" stroke-linecap="round"/>';
-        // Tiny fingers gripping
-        s += '<circle cx="8.8" cy="88.2" r="0.15" fill="#9A8060"/>';
-        s += '<circle cx="10.2" cy="88.2" r="0.15" fill="#9A8060"/>';
+      case 67: // Grey Squirrel — Sciurus carolinensis, side profile facing left, holding acorn
+        // Seated upright on haunches, big bushy S-curve tail arched up
+        // over the back, tufted round ears, tiny paws clutching acorn at chest.
+        // Silvery-grey coat with cream belly, classic eastern grey squirrel.
+        s += '<g opacity="0.94" transform="translate(12,86) scale(1.55) translate(-12,-86)">';
+        s += '<animateTransform attributeName="transform" type="translate" values="0,0;0.06,-0.04;0,0" dur="4s" repeatCount="indefinite"/>';
+        // ── AO ground shadow — warm 3-stack ──
+        s += '<ellipse cx="12" cy="92.5" rx="5.0" ry="0.55" fill="rgba(40,20,5,0.16)"/>';
+        s += '<ellipse cx="12" cy="92.3" rx="4.4" ry="0.6" fill="rgba(40,20,5,0.30)"/>';
+        s += '<ellipse cx="12" cy="92.15" rx="3.1" ry="0.32" fill="rgba(20,12,4,0.45)"/>';
+        // ── TAIL — massive bushy S-curve arching up + over the back (THE feature) ──
+        // Drawn behind body. Base at hip, sweeps DOWN-back, curls UP, arcs OVER head.
+        // Outer silhouette: warm-shifted dark grey
+        s += '<path d="M13.5,90 C16,90 17.8,88 18.2,85 C18.5,82.5 18,80 16.5,78.5 C15,77 13,76.8 11.5,77.5 C10.3,78.1 9.8,79 10.3,80 C10.8,80.8 11.6,80.6 12.2,80 C13,79.2 14,79.4 14.6,80.4 C15.4,81.7 15.4,83.4 14.6,84.8 C13.7,86.5 12.4,87.5 11,88 C10.5,88.2 10.4,89 11,89.4 C11.6,89.8 12.4,89.95 13.5,90 Z" fill="#5A5550"/>';
+        // Inner tail mass — silvery mid-grey for volume
+        s += '<path d="M13.7,89.4 C15.7,89.2 17,87.5 17.4,85 C17.7,82.8 17.3,80.7 16.1,79.4 C14.9,78.2 13.4,78.2 12.4,78.9 C11.7,79.4 11.7,80 12.1,80.2 C12.7,80 13.5,80 14.2,80.6 C15.4,81.7 15.7,83.6 14.9,85.4 C14,87.4 12.6,88.5 11.4,89 C11,89.2 11.1,89.4 11.5,89.5 C12.2,89.5 13,89.5 13.7,89.4 Z" fill="#7A7570"/>';
+        // Tail grizzling — alternating warm-dark + cream tendril strokes (signature ticking)
+        s += '<line x1="17.8" y1="84" x2="18.4" y2="83.2" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.55"/>';
+        s += '<line x1="17.5" y1="86" x2="18.2" y2="86.4" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.55"/>';
+        s += '<line x1="17" y1="87.4" x2="17.7" y2="88.2" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.5"/>';
+        s += '<line x1="15.8" y1="78.5" x2="15.4" y2="77.6" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.5"/>';
+        s += '<line x1="14" y1="77.5" x2="13.4" y2="76.8" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.5"/>';
+        s += '<line x1="12" y1="77.8" x2="11.2" y2="77.3" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.45"/>';
+        s += '<line x1="10.6" y1="78.6" x2="9.8" y2="78.4" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.45"/>';
+        s += '<line x1="10.4" y1="80" x2="9.6" y2="80.2" stroke="#3A3530" stroke-width="0.18" stroke-linecap="round" opacity="0.45"/>';
+        // Cream highlight tendrils on lit (upper) edge of tail
+        s += '<path d="M17.6,82 C18.2,81.4 18.5,80.6 18.3,79.8" fill="none" stroke="#fff8e0" stroke-width="0.22" stroke-linecap="round" opacity="0.5"/>';
+        s += '<path d="M16.8,79.4 C17.2,78.6 17.4,77.8 17,77.2" fill="none" stroke="#fff8e0" stroke-width="0.2" stroke-linecap="round" opacity="0.45"/>';
+        s += '<path d="M14.6,77.4 C14.4,76.8 13.8,76.4 13.2,76.5" fill="none" stroke="#f5ecd6" stroke-width="0.18" stroke-linecap="round" opacity="0.4"/>';
+        s += '<path d="M11.6,77.6 C10.9,77.7 10.3,78 10,78.6" fill="none" stroke="#f5ecd6" stroke-width="0.16" stroke-linecap="round" opacity="0.35"/>';
+        // ── HIND LEG + BIG BACK FOOT — curled under hip ──
+        s += '<path d="M13.8,90.6 C14.6,91 15.2,91.6 14.8,92" fill="none" stroke="#5A5550" stroke-width="0.6" stroke-linecap="round"/>';
+        s += '<ellipse cx="14.4" cy="91.95" rx="1.2" ry="0.45" fill="#6A6560"/>';
+        s += '<ellipse cx="14.6" cy="91.85" rx="0.9" ry="0.3" fill="#857F78" opacity="0.7"/>';
+        // Toe lines on back foot
+        s += '<line x1="13.8" y1="92.2" x2="13.6" y2="92.4" stroke="#3A3530" stroke-width="0.1" stroke-linecap="round" opacity="0.6"/>';
+        s += '<line x1="14.3" y1="92.25" x2="14.2" y2="92.45" stroke="#3A3530" stroke-width="0.1" stroke-linecap="round" opacity="0.55"/>';
+        s += '<line x1="14.8" y1="92.25" x2="14.8" y2="92.45" stroke="#3A3530" stroke-width="0.1" stroke-linecap="round" opacity="0.5"/>';
+        s += '<line x1="15.3" y1="92.2" x2="15.4" y2="92.4" stroke="#3A3530" stroke-width="0.1" stroke-linecap="round" opacity="0.5"/>';
+        // ── BODY — sitting upright, pear-shape (narrow shoulders, broad hips) ──
+        s += '<path d="M9.4,85.2 C8.7,84 8.8,82.4 9.7,81.6 C10.7,80.8 12,80.8 12.9,81.7 C13.9,82.7 14.3,84.4 13.8,86.4 C13.4,88.4 13.6,90 13.2,91 C12.7,91.8 11.5,92 10.5,91.7 C9.4,91.4 8.6,90.4 8.6,89 C8.6,87.6 9.2,86.4 9.4,85.2 Z" fill="#7A7570"/>';
+        // Lit-side highlight along back (silvery-grey grizzle band)
+        s += '<path d="M10.4,82 C11.6,81.4 12.7,82 13.2,83" fill="none" stroke="#A8A29A" stroke-width="0.45" stroke-linecap="round" opacity="0.55"/>';
+        s += '<path d="M9.6,84 C10.8,83.4 12,83.6 13,84.4" fill="none" stroke="#A8A29A" stroke-width="0.35" stroke-linecap="round" opacity="0.4"/>';
+        // Back-fur grizzle hatches — alternating dark + cream
+        s += '<path d="M10.8,83 L11,82.4 M11.8,83.2 L12,82.6 M12.6,83.8 L12.8,83.2 M10.4,84.6 L10.6,84 M11.4,84.8 L11.6,84.3" fill="none" stroke="#3A3530" stroke-width="0.1" opacity="0.45"/>';
+        s += '<path d="M10.7,82.7 L10.85,82.2 M11.7,82.9 L11.85,82.4 M10.3,84.3 L10.45,83.8" fill="none" stroke="#fff8e0" stroke-width="0.08" opacity="0.45"/>';
+        // Belly — cream/pale (eastern grey signature underside)
+        s += '<path d="M9.6,86.2 C9.7,87.6 10.1,89 10.7,90.4 C11.1,91.2 11.8,91.5 12.4,91.2 C12.9,90.9 13,90 12.8,89.2" fill="#E8DDC0" opacity="0.7"/>';
+        // Cream chest pickup — warm A2 shift on lit-side belly
+        s += '<ellipse cx="10.5" cy="87.6" rx="0.85" ry="1.1" fill="#fff8e0" opacity="0.32"/>';
+        // A2 cool shadow rim under belly
+        s += '<path d="M9.7,89.4 C10.2,90.4 11.1,91.2 12.2,91.2" fill="none" stroke="#4A4858" stroke-width="0.18" opacity="0.3" stroke-linecap="round"/>';
+        // ── FRONT LEG — reaching down + forward to hold acorn at chest ──
+        s += '<path d="M10.4,86.4 C9.9,87.2 9.5,88 9.5,88.7" fill="none" stroke="#6A6560" stroke-width="0.85" stroke-linecap="round"/>';
+        s += '<path d="M10.6,86.5 C10.1,87.3 9.7,88.1 9.7,88.7" fill="none" stroke="#857F78" stroke-width="0.45" stroke-linecap="round"/>';
+        // ── ACORN — held at chest in both paws (signature pose) ──
+        // Acorn nut body — warm tan oval
+        s += '<ellipse cx="9.2" cy="88.6" rx="1.05" ry="0.95" fill="#B07840" stroke="#7A4F22" stroke-width="0.14"/>';
+        // Nut warm-shadow (lower hemisphere AO)
+        s += '<path d="M8.3,88.7 Q9.2,89.6 10.15,88.75" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.32" stroke-linecap="round"/>';
+        // Acorn cap — textured brown dome with stem
+        s += '<path d="M8.15,88 C8.15,87.2 8.7,86.85 9.2,86.85 C9.7,86.85 10.25,87.2 10.25,88 C10.25,88.25 10.1,88.4 9.85,88.4 L8.55,88.4 C8.3,88.4 8.15,88.25 8.15,88 Z" fill="#6A4830" stroke="#3A2818" stroke-width="0.12"/>';
+        // Cap stippling — crosshatch dots
+        s += '<circle cx="8.55" cy="87.7" r="0.08" fill="#3A2818" opacity="0.6"/>';
+        s += '<circle cx="8.95" cy="87.45" r="0.08" fill="#3A2818" opacity="0.6"/>';
+        s += '<circle cx="9.35" cy="87.45" r="0.08" fill="#3A2818" opacity="0.6"/>';
+        s += '<circle cx="9.75" cy="87.7" r="0.08" fill="#3A2818" opacity="0.6"/>';
+        s += '<circle cx="8.75" cy="87.95" r="0.07" fill="#3A2818" opacity="0.55"/>';
+        s += '<circle cx="9.55" cy="87.95" r="0.07" fill="#3A2818" opacity="0.55"/>';
+        // Cap stem — tiny twig at top
+        s += '<path d="M9.2,86.85 L9.2,86.3" stroke="#5A3E22" stroke-width="0.18" stroke-linecap="round" fill="none"/>';
+        s += '<circle cx="9.2" cy="86.25" r="0.08" fill="rgba(40,20,5,0.55)"/>';
+        // Cap rim shadow under cap
+        s += '<path d="M8.2,88.05 Q9.2,88.45 10.2,88.05" fill="none" stroke="#3A2818" stroke-width="0.14" opacity="0.5"/>';
+        // Acorn cream diffuse specular (lit upper-left of nut)
+        s += '<ellipse cx="8.85" cy="88.35" rx="0.4" ry="0.32" fill="#f5ecd6" opacity="0.4"/>';
+        // Acorn sharp white pickup
+        s += '<circle cx="8.78" cy="88.25" r="0.14" fill="#fff8e0" opacity="0.85"/>';
+        // Acorn tip terminator (warm dark dot at bottom)
+        s += '<circle cx="9.2" cy="89.4" r="0.13" fill="#1a1208"/>';
+        // ── PAWS — tiny clutching fingers wrapping acorn ──
+        s += '<path d="M8.4,88.5 C8.1,88.7 8.05,89 8.25,89.2" fill="none" stroke="#857F78" stroke-width="0.4" stroke-linecap="round"/>';
+        s += '<path d="M10,88.5 C10.3,88.7 10.35,89 10.15,89.2" fill="none" stroke="#857F78" stroke-width="0.4" stroke-linecap="round"/>';
+        // Finger dots
+        s += '<circle cx="8.3" cy="88.65" r="0.13" fill="#A09890"/>';
+        s += '<circle cx="8.25" cy="89" r="0.12" fill="#A09890"/>';
+        s += '<circle cx="10.1" cy="88.65" r="0.13" fill="#A09890"/>';
+        s += '<circle cx="10.15" cy="89" r="0.12" fill="#A09890"/>';
         // ── HEAD — round, side profile facing left ──
-        s += '<circle cx="9.5" cy="84.5" r="1.8" fill="#8A7050"/>';
-        // Cheek — lighter puff
-        s += '<ellipse cx="9" cy="85" rx="0.8" ry="0.6" fill="#B09A78" opacity="0.3"/>';
-        // ── EARS — small rounded, on top of head ──
-        s += '<ellipse cx="9" cy="83" rx="0.5" ry="0.8" fill="#8A7050"/>';
-        s += '<ellipse cx="9" cy="83" rx="0.25" ry="0.5" fill="#C0A880" opacity="0.3"/>';
-        s += '<ellipse cx="10.2" cy="82.8" rx="0.5" ry="0.75" fill="#7A6040"/>';
-        s += '<ellipse cx="10.2" cy="82.8" rx="0.25" ry="0.45" fill="#B09870" opacity="0.3"/>';
-        // ── EYE — large, warm-shifted dark, alert (side profile = 1 eye) ──
-        s += '<circle cx="8.5" cy="84.5" r="0.55" fill="#1a1208"/>';
-        s += '<circle cx="8.62" cy="84.32" r="0.18" fill="#fff8e0"/>';
-        s += '<circle cx="8.4" cy="84.62" r="0.08" fill="#f5ecd6"/>';
-        // ── NOSE — warm-shifted dark point ──
-        s += '<ellipse cx="8" cy="85.2" rx="0.2" ry="0.15" fill="#1a1208"/>';
-        s += '<circle cx="7.95" cy="85.14" r="0.06" fill="#fff8e0"/>';
-        // Whiskers
-        s += '<line x1="8" y1="85" x2="6.5" y2="84.5" stroke="#B09A78" stroke-width="0.06" opacity="0.35"/>';
-        s += '<line x1="8" y1="85.3" x2="6.5" y2="85.5" stroke="#B09A78" stroke-width="0.06" opacity="0.3"/>';
-        s += '<line x1="8" y1="85.5" x2="6.8" y2="86" stroke="#B09A78" stroke-width="0.05" opacity="0.25"/>';
-        // Hind foot
-        s += '<ellipse cx="10" cy="91.5" rx="0.8" ry="0.3" fill="#8A7050"/>';
+        s += '<circle cx="9.6" cy="84.2" r="1.95" fill="#7A7570"/>';
+        // Lit-side cream pickup on crown (A2 warm)
+        s += '<ellipse cx="9.4" cy="83.1" rx="0.85" ry="0.5" fill="#fff8e0" opacity="0.3"/>';
+        // Cheek puff — slightly lighter
+        s += '<ellipse cx="8.8" cy="84.7" rx="0.7" ry="0.55" fill="#A09890" opacity="0.4"/>';
+        // Snout — short forward muzzle
+        s += '<path d="M8.05,84.6 C7.5,84.7 7.4,85.2 7.7,85.4 C8,85.55 8.5,85.4 8.7,85.1 C8.85,84.85 8.6,84.55 8.05,84.6 Z" fill="#857F78"/>';
+        s += '<ellipse cx="8.1" cy="85.05" rx="0.4" ry="0.18" fill="#fff8e0" opacity="0.35"/>';
+        // ── EARS — round + TUFTED (Sciurus carolinensis tufted ears) ──
+        // Far ear (smaller, warmer-shadowed)
+        s += '<ellipse cx="10.5" cy="82.6" rx="0.5" ry="0.7" fill="#5A5550"/>';
+        s += '<ellipse cx="10.5" cy="82.7" rx="0.25" ry="0.42" fill="#A09890" opacity="0.4"/>';
+        // Near ear (round, prominent)
+        s += '<ellipse cx="9.1" cy="82.5" rx="0.6" ry="0.8" fill="#7A7570"/>';
+        s += '<ellipse cx="9.1" cy="82.6" rx="0.32" ry="0.5" fill="#C8C0B0" opacity="0.45"/>';
+        s += '<ellipse cx="9.05" cy="82.45" rx="0.18" ry="0.3" fill="#1a1208" opacity="0.35"/>';
+        // Ear tufts — gestural cream wisps radiating from top
+        s += '<path d="M9.0,81.85 C8.85,81.5 8.75,81.3 8.8,81.15" fill="none" stroke="#fff8e0" stroke-width="0.16" stroke-linecap="round" opacity="0.55"/>';
+        s += '<path d="M9.15,81.8 C9.15,81.45 9.2,81.2 9.3,81.1" fill="none" stroke="#fff8e0" stroke-width="0.15" stroke-linecap="round" opacity="0.5"/>';
+        s += '<path d="M9.3,81.85 C9.5,81.55 9.6,81.4 9.7,81.35" fill="none" stroke="#f5ecd6" stroke-width="0.13" stroke-linecap="round" opacity="0.45"/>';
+        s += '<path d="M10.4,81.95 C10.3,81.65 10.3,81.5 10.35,81.4" fill="none" stroke="#f5ecd6" stroke-width="0.12" stroke-linecap="round" opacity="0.4"/>';
+        s += '<path d="M10.55,81.95 C10.6,81.65 10.65,81.5 10.7,81.45" fill="none" stroke="#f5ecd6" stroke-width="0.12" stroke-linecap="round" opacity="0.4"/>';
+        // ── EYE — small black bead, side profile (1 eye visible) ──
+        s += '<circle cx="8.55" cy="84.1" r="0.4" fill="#1a1208"/>';
+        s += '<circle cx="8.65" cy="83.95" r="0.14" fill="#fff8e0"/>';
+        s += '<circle cx="8.45" cy="84.22" r="0.06" fill="#f5ecd6"/>';
+        // Eye-ring — pale fur ring around eye (Sciurus signature)
+        s += '<circle cx="8.55" cy="84.1" r="0.55" fill="none" stroke="#C8C0B0" stroke-width="0.1" opacity="0.5"/>';
+        // ── NOSE — pink-brown tip, warm-dark with cream pickup ──
+        s += '<ellipse cx="7.55" cy="85.05" rx="0.22" ry="0.16" fill="#6A3828"/>';
+        s += '<circle cx="7.5" cy="84.98" r="0.07" fill="#fff8e0" opacity="0.85"/>';
+        // Nose-tip terminator
+        s += '<circle cx="7.45" cy="85.1" r="0.06" fill="#1a1208"/>';
+        // Mouth line under nose
+        s += '<path d="M7.7,85.25 C7.85,85.4 8.05,85.42 8.2,85.3" fill="none" stroke="#3A2818" stroke-width="0.1" stroke-linecap="round" opacity="0.55"/>';
+        // ── WHISKERS — fine cream lines fanning forward ──
+        s += '<line x1="7.65" y1="85" x2="6.0" y2="84.4" stroke="#E8DDC0" stroke-width="0.07" opacity="0.5" stroke-linecap="round"/>';
+        s += '<line x1="7.65" y1="85.2" x2="5.9" y2="85.3" stroke="#E8DDC0" stroke-width="0.07" opacity="0.45" stroke-linecap="round"/>';
+        s += '<line x1="7.7" y1="85.4" x2="6.1" y2="85.95" stroke="#E8DDC0" stroke-width="0.06" opacity="0.4" stroke-linecap="round"/>';
         s += '</g>';
         break;
       case 68: // Koala — sitting on pot, front-facing, no branch
