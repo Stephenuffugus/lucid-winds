@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.62';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.63';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -25289,7 +25289,7 @@ document.addEventListener('keydown', function(e) {
               // tepals narrow at base, widen to rounded tops. Stephen called the old
               // version phallic; new one is anchored at fy with petals fanning above.
         (function(){
-          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
+          fy = fy - fs * 0.2; // Stephen 2026-05-01 PART 3: bloom going off-screen, reduced shift
           var _t5dk = _hueShift(fc, parseInt(uid.slice(2,4),16), -14);
           var _t5lt = _hueShift(fc, parseInt(uid.slice(0,2),16), 8);
           var cupH = fs * 1.55;       // overall cup height
@@ -25367,7 +25367,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 6: // Spike — vertical inflorescence with layered florets, master polish
         // AO halo (vertical)
-        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
+        fy = fy - fs * 0.2; // Stephen 2026-05-01 PART 3: bloom going off-screen, reduced shift
         s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy-fs*1.0)+'" rx="'+(fs*0.55)+'" ry="'+(fs*1.30)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Central rachis — warm-shifted dark + cream pair
         s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*2.0)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.75" opacity="'+(0.6*bloomOp)+'" stroke-linecap="round"/>';
@@ -25399,7 +25399,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 7: // Crocus — tall chalice of 6 pointed petals (3 outer + 3 inner) with saffron threads
         // Stephen 2026-05-01: replaces Mandala (mandalas now exclusively auras via Seed of Life).
-        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
+        fy = fy - fs * 0.2; // Stephen 2026-05-01 PART 3: bloom going off-screen, reduced shift
         // Crocus is TALL and NARROW — petals reach up fs*1.85, base barely fs*0.45 wide
         var _cr7H = fs * 1.85;       // total bloom height
         var _cr7W = fs * 0.42;       // base half-width (very narrow)
@@ -26316,7 +26316,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 21: // Bird of Paradise — Strelitzia reginae (orange crest + blue tongue, asymmetric §3.L)
         // Sheath bract underline (warm shadow base — terminator inset §1)
-        fy = fy - fs * 0.7; // Stephen 2026-05-01: shift bloom up (blanket pass)
+        fy = fy - fs * 0.95; // Stephen 2026-05-01 PART 3: nudge up to sit better on stem
         s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy+fs*0.06)+' '+(fx+fs*1.30)+','+(fy-fs*0.28)+' '+(fx+fs*1.78)+','+(fy+fs*0.04)+'" fill="none" stroke="rgba(40,20,5,0.42)" stroke-width="0.7" stroke-linecap="round" opacity="'+(bloomOp*0.7)+'"/>';
         // RIGHT orange crest petal (front, full sat)
         s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+' C'+(fx+fs*1.26)+','+(fy+fs*0.2)+' '+(fx+fs*0.8)+','+(fy+fs*0.28)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.86*bloomOp)+'"/>';
@@ -26779,7 +26779,7 @@ document.addEventListener('keydown', function(e) {
       // ── set-103-8: CORPSE FLOWER BLOOMS (ChatGPT) ─────────────────
       case 35: // Dragon Arum — Dracunculus vulgaris (spiky maroon spadix + curled spathe)
         // Curled spathe (deep maroon, warm-shifted from #1a1d18 → #4A1028)
-        fy = fy - fs * 0.6; // Stephen 2026-05-01: shift bloom up so its base sits at stem tip
+        fy = fy - fs * 0.85; // Stephen 2026-05-01 PART 3: nudge up so top of stem isn't sticking out above
         s += '<path d="M'+(fx-fs*0.22)+','+(fy+fs*1.08)+' C'+(fx-fs*0.78)+','+(fy+fs*0.92)+' '+(fx-fs*1.18)+','+(fy+fs*0.26)+' '+(fx-fs*1.06)+','+(fy-fs*0.64)+' C'+(fx-fs*0.96)+','+(fy-fs*1.42)+' '+(fx-fs*0.36)+','+(fy-fs*2.18)+' '+(fx+fs*0.34)+','+(fy-fs*2.44)+' C'+(fx+fs*0.86)+','+(fy-fs*2.62)+' '+(fx+fs*1.22)+','+(fy-fs*2.48)+' '+(fx+fs*1.34)+','+(fy-fs*2.18)+' C'+(fx+fs*0.98)+','+(fy-fs*2.22)+' '+(fx+fs*0.60)+','+(fy-fs*2.00)+' '+(fx+fs*0.30)+','+(fy-fs*1.50)+' C'+(fx+fs*0.02)+','+(fy-fs*1.04)+' '+(fx+fs*0.00)+','+(fy-fs*0.44)+' '+(fx+fs*0.22)+','+(fy+fs*0.04)+' C'+(fx+fs*0.46)+','+(fy+fs*0.54)+' '+(fx+fs*0.34)+','+(fy+fs*0.94)+' '+(fx+fs*0.02)+','+(fy+fs*1.12)+' C'+(fx-fs*0.08)+','+(fy+fs*1.18)+' '+(fx-fs*0.14)+','+(fy+fs*1.16)+' '+(fx-fs*0.22)+','+(fy+fs*1.08)+' Z" fill="#4A1028" opacity="'+bloomOp+'"/>';
         // Inner spathe lighter wash (warm cream tint instead of pure)
         s += '<path d="M'+(fx-fs*0.04)+','+(fy+fs*0.96)+' C'+(fx-fs*0.44)+','+(fy+fs*0.70)+' '+(fx-fs*0.76)+','+(fy+fs*0.10)+' '+(fx-fs*0.70)+','+(fy-fs*0.62)+' C'+(fx-fs*0.62)+','+(fy-fs*1.28)+' '+(fx-fs*0.18)+','+(fy-fs*1.88)+' '+(fx+fs*0.34)+','+(fy-fs*2.08)+' C'+(fx+fs*0.70)+','+(fy-fs*2.24)+' '+(fx+fs*0.96)+','+(fy-fs*2.20)+' '+(fx+fs*1.10)+','+(fy-fs*2.04)+' C'+(fx+fs*0.72)+','+(fy-fs*2.00)+' '+(fx+fs*0.38)+','+(fy-fs*1.76)+' '+(fx+fs*0.16)+','+(fy-fs*1.34)+' C'+(fx-fs*0.04)+','+(fy-fs*0.96)+' '+(fx-fs*0.06)+','+(fy-fs*0.44)+' '+(fx+fs*0.08)+','+(fy-fs*0.08)+' C'+(fx+fs*0.22)+','+(fy+fs*0.26)+' '+(fx+fs*0.20)+','+(fy+fs*0.62)+' '+(fx-fs*0.04)+','+(fy+fs*0.96)+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.34)+'"/>';
@@ -26840,7 +26840,7 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         break;
       case 37: // Carrion Starfish — Stapelia grandiflora (5-pointed wavy fleshy star, hairy/freckled)
-        fy = fy - fs * 1.0; // Stephen 2026-05-01 PART 2: center-anchor (was base) — flat star attaches at center to top of stem
+        fy = fy - fs * 1.3; // Stephen 2026-05-01 PART 3: nudge further up so star sits at stem tip, not in middle
         s += '<g>';
         // 5-arm wavy fleshy star (warm-shifted maroon, full silhouette preserved)
         s += '<path d="M'+fx+','+(fy-fs*1.74)+' C'+(fx+fs*0.14)+','+(fy-fs*1.34)+' '+(fx+fs*0.22)+','+(fy-fs*0.98)+' '+(fx+fs*0.30)+','+(fy-fs*0.66)+' C'+(fx+fs*0.78)+','+(fy-fs*0.92)+' '+(fx+fs*1.22)+','+(fy-fs*1.10)+' '+(fx+fs*1.68)+','+(fy-fs*1.20)+' C'+(fx+fs*1.34)+','+(fy-fs*0.84)+' '+(fx+fs*1.00)+','+(fy-fs*0.48)+' '+(fx+fs*0.74)+','+(fy-fs*0.12)+' C'+(fx+fs*1.14)+','+(fy-fs*0.00)+' '+(fx+fs*1.52)+','+(fy+fs*0.12)+' '+(fx+fs*1.92)+','+(fy+fs*0.32)+' C'+(fx+fs*1.42)+','+(fy+fs*0.34)+' '+(fx+fs*0.96)+','+(fy+fs*0.32)+' '+(fx+fs*0.50)+','+(fy+fs*0.24)+' C'+(fx+fs*0.58)+','+(fy+fs*0.68)+' '+(fx+fs*0.66)+','+(fy+fs*1.08)+' '+(fx+fs*0.82)+','+(fy+fs*1.52)+' C'+(fx+fs*0.38)+','+(fy+fs*1.22)+' '+fx+','+(fy+fs*0.90)+' '+(fx-fs*0.36)+','+(fy+fs*0.50)+' C'+(fx-fs*0.54)+','+(fy+fs*0.92)+' '+(fx-fs*0.72)+','+(fy+fs*1.28)+' '+(fx-fs*0.92)+','+(fy+fs*1.66)+' C'+(fx-fs*0.94)+','+(fy+fs*1.10)+' '+(fx-fs*0.86)+','+(fy+fs*0.62)+' '+(fx-fs*0.76)+','+(fy+fs*0.20)+' C'+(fx-fs*1.16)+','+(fy+fs*0.32)+' '+(fx-fs*1.58)+','+(fy+fs*0.36)+' '+(fx-fs*2.04)+','+(fy+fs*0.22)+' C'+(fx-fs*1.64)+','+(fy-fs*0.02)+' '+(fx-fs*1.24)+','+(fy-fs*0.26)+' '+(fx-fs*0.88)+','+(fy-fs*0.52)+' C'+(fx-fs*1.22)+','+(fy-fs*0.74)+' '+(fx-fs*1.50)+','+(fy-fs*1.06)+' '+(fx-fs*1.78)+','+(fy-fs*1.44)+' C'+(fx-fs*1.26)+','+(fy-fs*1.24)+' '+(fx-fs*0.82)+','+(fy-fs*1.02)+' '+(fx-fs*0.40)+','+(fy-fs*0.72)+' C'+(fx-fs*0.36)+','+(fy-fs*1.08)+' '+(fx-fs*0.28)+','+(fy-fs*1.42)+' '+fx+','+(fy-fs*1.74)+' Z" fill="#5A2020" opacity="'+bloomOp+'"/>';
