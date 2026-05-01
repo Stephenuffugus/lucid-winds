@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.75';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.76';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -54908,9 +54908,9 @@ function _selectHexPlant(idx,p){
       // Removed onpointerleave: on mobile, slight finger shifts fire leave
       // even with setPointerCapture, which cancelled the hold mid-gesture.
       // pointerup + pointercancel are enough for cleanup.
-      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 sunbeams"><span class="hi-water-fill"></span><span class="hi-water-label"><img src="assets/character-sheet/tools/shears.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'\\u2702\'"> HOLD TO PRUNE (\u22923\u26a1)</span></button>';
+      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 sunbeams"><span class="hi-water-fill"></span><span class="hi-water-label"><img src="assets/wild-prune-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'\\u2702\'"> HOLD TO PRUNE (\u22923\u26a1)</span></button>';
     } else {
-      _pruneBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 3 Sunbeams to prune.\')" title="Need 3 sunbeams to prune"><img src="assets/character-sheet/tools/shears.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'\\u2702\'"> PRUNE (need 3\u26a1)</button>';
+      _pruneBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 3 Sunbeams to prune.\')" title="Need 3 sunbeams to prune"><img src="assets/wild-prune-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'\\u2702\'"> PRUNE (need 3\u26a1)</button>';
     }
   }
   // Phoenix Bloom removed (companion retired). Placeholder kept so downstream
