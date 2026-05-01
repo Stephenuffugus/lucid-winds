@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.68';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.69';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1150,6 +1150,15 @@
     @keyframes wrongFade{0%{border-color:rgba(139,46,46,0.6)}100%{border-color:rgba(74,124,53,0.12)}}
     @keyframes screenShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-3px)}30%{transform:translateX(3px)}45%{transform:translateX(-2px)}60%{transform:translateX(2px)}75%{transform:translateX(-1px)}90%{transform:translateX(1px)}}
     .shake-it{animation:screenShake 0.4s ease;}
+
+    /* ═══ TIP JAR BUTTON ═══ Lantern-glow shimmer for the BoS About tip CTA */
+    @keyframes lwTipGlow{0%,100%{box-shadow:0 0 0 1px rgba(232,210,140,0.18) inset,0 4px 18px rgba(200,140,40,0.22),0 0 22px rgba(232,200,106,0.10);}50%{box-shadow:0 0 0 1px rgba(248,228,160,0.32) inset,0 6px 24px rgba(220,160,60,0.36),0 0 36px rgba(248,220,140,0.22);}}
+    @keyframes lwTipShimmer{0%{transform:translateX(-120%) skewX(-22deg);opacity:0;}30%{opacity:0.55;}70%{opacity:0.55;}100%{transform:translateX(220%) skewX(-22deg);opacity:0;}}
+    .lw-tip-cta{position:relative;display:block;width:100%;padding:0.95rem 1rem;margin-bottom:0.7rem;border:2px solid rgba(232,200,106,0.55);border-radius:14px;background:linear-gradient(180deg,rgba(86,52,18,0.85) 0%,rgba(132,86,32,0.92) 35%,rgba(176,124,52,0.9) 65%,rgba(120,72,24,0.92) 100%);color:#fff5dd;font-family:'Bebas Neue',sans-serif;cursor:pointer;text-align:center;overflow:hidden;-webkit-tap-highlight-color:transparent;animation:lwTipGlow 4.2s ease-in-out infinite;transition:transform 0.12s ease,filter 0.12s ease;}
+    .lw-tip-cta:active{transform:scale(0.97);filter:brightness(1.08);}
+    .lw-tip-cta::before{content:'';position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(90deg,transparent 0%,rgba(255,240,200,0.32) 50%,transparent 100%);pointer-events:none;animation:lwTipShimmer 5.5s ease-in-out infinite;animation-delay:1.5s;}
+    .lw-tip-cta-title{font-size:1.05rem;letter-spacing:0.18em;font-weight:400;line-height:1;text-shadow:0 1px 2px rgba(40,20,4,0.6),0 0 12px rgba(255,220,140,0.18);}
+    .lw-tip-cta-sub{margin-top:0.3rem;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.62rem;color:rgba(255,235,200,0.78);letter-spacing:0.04em;line-height:1.3;}
 
     /* Accessibility color-blind marker — hidden by default, toggle in settings */
     .cb-marker{position:absolute;top:4px;right:5px;opacity:0;pointer-events:none;font-size:0.55rem;line-height:1;font-family:'DM Mono',monospace;color:var(--cream);transition:opacity 0.3s;font-weight:700;}
@@ -80217,7 +80226,10 @@ function _bosAboutContent() {
   // Links for certain categories, so we bypass the dashboard and
   // drive the Checkout API directly.
   if (c.stripeCardEnabled !== false) {
-    h += '<button onclick="window._lwOpenTipModal()" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.34),rgba(46,80,34,0.48));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;text-align:center;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;">\ud83d\udcb3 SUPPORT WITH CARD</button>';
+    h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta" aria-label="Light a lantern \u2014 tip the studio">'+
+           '<div class="lw-tip-cta-title">\u2728 LIGHT A LANTERN \u2728</div>'+
+           '<div class="lw-tip-cta-sub">tips keep this game ad-free \u00b7 anything is appreciated</div>'+
+         '</button>';
   }
   // Fallback: honor a static stripeUrl if someone prefers the old flow
   else if (c.stripeUrl) {
@@ -82051,20 +82063,10 @@ window._lwClaimHerbarium = function(id){
       desc:'A high-quality remote forage in your current biome. Rare floor.',
       lore:'A pilgrim\u2019s lantern. Light it, and the path shows three places worth your attention.',
       usage:'tap USE \u2014 counts 1 of 2 daily remote forages', wired:true },
-    // \u2500\u2500\u2500 UNBUILT (Phase 6 co-op) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-    // Stephen audit 2026-05-01 #15. delegateToken design was lost; this
-    // stub preserves the shape for the future co-op pass. wired:false
-    // means the items panel hides it and LW_BOXES drop pool excludes it
-    // (filter at ~line 80109). When the Firestore co-op flow lands, flip
-    // wired:true and implement useDelegate() following the remote-item
-    // pattern (see useScryProper, useRaven). Cost spec TBD; should not
-    // count toward the 2/day remote cap (it's a social item, not a
-    // forage attempt \u2014 partner does the work).
-    delegateToken: { key:'delegateToken', name:'Delegate Token', category:'remote', rarity:'Epic',
-      art:'assets/items/delegate-token.png', icon:'\ud83e\udd1d',
-      desc:'[Phase 6 co-op] Share a hex with a friend for 24h. Both can forage it.',
-      lore:'A token passed hand to hand. The hex you stand on becomes the hex they stand on, for a day.',
-      usage:'[unbuilt] tap to share with a friend', wired:false }
+    // delegateToken removed 2026-05-01 PART 5 \u2014 Stephen ruling: the
+    // Phase-6 co-op vision was made obsolete by the foraging-as-Mastermind
+    // rebuild on personal hexes. If co-op returns later it will need a
+    // fresh design pass, not this stub.
   };
   window.LW_ITEMS_CATALOG = CATALOG;
 
@@ -83935,7 +83937,7 @@ window._lwClaimHerbarium = function(id){
     var keys = [];
     var CAT = window.LW_ITEMS_CATALOG || {};
     // Skip wired:false items so dead catalog rows can't drop into pouches
-    // and sit there as inert clutter (delegateToken until co-op is built).
+    // and sit there as inert clutter. (Filter retained for future stubs.)
     for (var k in CAT) if (CAT[k].rarity === rarity && CAT[k].wired !== false) keys.push(k);
     if (!keys.length) {
       for (var k2 in CAT) if (CAT[k2].wired !== false) keys.push(k2);
