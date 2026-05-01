@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.96';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.97';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -16889,9 +16889,12 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M30,78 A5,1.0 0 0,0 40,78" fill="none" stroke="rgba(180,200,220,0.55)" stroke-width="0.4"/>';
         s += '<path d="M31,78.6 Q35,79.0 39,78.6" fill="none" stroke="#f5ecd6" stroke-width="0.22" opacity="0.40"/>';
         break;
-      case 19: // Barrel — Stephen 2026-05-01 PART 5: front-strip + front-arc only (was full body redraw, hid bands/staves).
-        // Front-strip overlaps front-arc by 0.4 to kill AA hairline gap
-        s += '<path d="M22.4,77.6 Q23.0,79.6 24.0,79.6 Q35,79.8 46.0,79.6 Q47.0,79.6 47.6,77.6 Z" fill="'+g+'"/>';
+      case 19: // Barrel — Stephen 2026-05-01 PART 5b: strip silhouette now exactly matches
+        // the body's top curve (Q46.0,79.6 35,79.8 Q24.0,79.6 22.4,78). Earlier strip
+        // pinched in to x=24 at y=79.6 while the body bulged out to ~22.3 there, leaving
+        // a hairline sliver where stem could show. Strip is now a flat-topped panel from
+        // y=77.5 down to the body's exact top curve — guaranteed silhouette match.
+        s += '<path d="M22.4,77.5 L47.6,77.5 L47.6,78 Q46.0,79.6 35,79.8 Q24.0,79.6 22.4,78 Z" fill="'+g+'"/>';
         s += '<path d="M22.4,78 A13,1.7 0 0,0 47.6,78 Z" fill="'+rim+'"/>';
         s += '<path d="M22.4,78 A13,1.7 0 0,0 47.6,78" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.4"/>';
         s += '<path d="M24,78.7 Q35,79.3 46,78.7" fill="none" stroke="#f5ecd6" stroke-width="0.25" opacity="0.40"/>';
@@ -17275,14 +17278,18 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M19,78.7 A15.5,1.6 0 0,0 51,78.7" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.4"/>';
         s += '<path d="M21,79.6 Q35,80.0 49,79.6" stroke="#f5ecd6" stroke-width="0.30" fill="none" opacity="0.45"/>';
         break;
-      case 36: // Saucer — Stephen 2026-05-01 PART 5: front lip in renderPot covers stem at rim transition.
-              // Without this, stem trunk sat ON TOP of the dish body. Now front lip occludes the
-              // stem-base flare so the stem visibly enters the saucer.
-        // Front rim arc (sweep 0 = curves up — covers stem at the dish opening)
+      case 36: // Saucer — Stephen 2026-05-01 PART 5b: full dish body REDRAWN in renderPot.
+              // The previous fix only covered the rim opening (y=76-78); the stem-base
+              // flare at y=78-80 was rendering ON TOP of the dish body. Now the body
+              // is drawn AGAIN here so the front of the dish occludes the flare.
+        // Front-half of dish body — same path as renderPotBack, redrawn after stem.
+        s += '<path d="M18,78 Q16,80 20,82 L50,82 Q54,80 52,78 Z" fill="'+g+'"/>';
+        s += '<path d="M18,77.5 Q35,76 52,77.5 L52,78.5 Q35,77 18,78.5 Z" fill="'+rim+'"/>';
+        // Front rim arc — covers the rim opening (sweep 0 = curves up)
         s += '<path d="M30,78 A6,1.0 0 0,0 40,78 Z" fill="'+rim+'"/>';
         s += '<path d="M30,78 A6,1.0 0 0,0 40,78" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.3"/>';
         s += '<path d="M30.5,77.5 Q35,77.2 39.5,77.5" stroke="#f5ecd6" stroke-width="0.22" fill="none" opacity="0.5"/>';
-        // Tiny soil mound peeking inside (visual cue that stem grows from soil here)
+        // Tiny soil mound peeking inside (visual cue that stem grows from soil)
         s += '<ellipse cx="35" cy="77.95" rx="2.4" ry="0.22" fill="#3a2a18"/>';
         // Dish front-edge highlight + shadow
         s += '<path d="M22,79 Q35,80.5 48,79" fill="none" stroke="rgba(240,235,216,0.10)" stroke-width="0.4" stroke-linecap="round"/>';
@@ -17384,14 +17391,23 @@ document.addEventListener('keydown', function(e) {
           s += '<line x1="'+_s2F.x+'" y1="'+(_s2F.y-_s2F.sz*1.5)+'" x2="'+_s2F.x+'" y2="'+(_s2F.y+_s2F.sz*1.5)+'" stroke="#fffceb" stroke-width="'+(_s2F.sz*0.4)+'" stroke-linecap="round" opacity="'+_s2F.op+'"/>';
           s += '<circle cx="'+_s2F.x+'" cy="'+_s2F.y+'" r="'+(_s2F.sz*0.35)+'" fill="#fffceb" opacity="'+_s2F.op+'"/>';
         }
-        // HOLE at top of sphere — Stephen 2026-05-01 PART 5: was at y=72 (mid-face), stem
-        // didn't appear to enter it. Now placed AT the apex (y=70) so the stem above the ball
-        // visibly threads into the hole. Recessed crater illusion via 2 stacked dark ellipses
-        // + a top-edge highlight gives the hole real depth.
-        s += '<ellipse cx="35" cy="70.4" rx="2.4" ry="0.75" fill="#2a3450"/>';
-        s += '<ellipse cx="35" cy="70.55" rx="1.85" ry="0.5" fill="#101620"/>';
-        s += '<path d="M33.0,70.0 Q35,70.3 37.0,70.0" stroke="#5a6478" stroke-width="0.22" fill="none" opacity="0.65" stroke-linecap="round"/>';
-        s += '<path d="M33.5,69.85 Q35,70.05 36.5,69.85" stroke="#e8eef8" stroke-width="0.14" fill="none" opacity="0.65"/>';
+        // HOLE at top of sphere — Stephen 2026-05-01 PART 5b: deeper crater + raised
+        // metallic collar so the stem clearly emerges FROM the sphere, not hovers
+        // ABOVE it. Three-layer build: outer collar rim (chrome lip), recessed
+        // dark ellipse (the actual hole opening), inner shadow gradient (depth).
+        // Plus a tiny stub of stem-color drawn down INTO the hole so the eye
+        // reads "the stem continues into the ball" rather than "stem stops here".
+        // Outer chrome collar (raised lip)
+        s += '<ellipse cx="35" cy="70.3" rx="2.7" ry="0.95" fill="#7a8aa0"/>';
+        s += '<ellipse cx="35" cy="70.05" rx="2.55" ry="0.42" fill="#aab4c8"/>'; // top-lit edge
+        // Hole opening (recessed shadow)
+        s += '<ellipse cx="35" cy="70.55" rx="2.1" ry="0.7" fill="#1a2030"/>';
+        s += '<ellipse cx="35" cy="70.65" rx="1.65" ry="0.45" fill="#080c14"/>'; // deeper inner
+        // Stem-color stub disappearing INTO the hole (uses sage as the universal stem fallback,
+        // visible for ~1px below the rim — enough to read "continues down")
+        s += '<rect x="34.6" y="70.3" width="0.8" height="0.7" fill="#3a5a28" opacity="0.85"/>';
+        // Top-edge cream highlight on collar (where stem-light hits)
+        s += '<path d="M33.0,69.95 Q35,69.7 37.0,69.95" stroke="#e8eef8" stroke-width="0.18" fill="none" opacity="0.85" stroke-linecap="round"/>';
         break;
       case 39: // Paint Can — Stephen 2026-05-01 PART 5: front-strip + arc (was full body redraw, hid drips/handle).
         // Front-strip overlaps front-arc by 0.4 — kills the rim/body AA gap
