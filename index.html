@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.49';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.50';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -24084,64 +24084,53 @@ document.addEventListener('keydown', function(e) {
 
       // AO halo (master pass injection)
       s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
-      case 14: // Cattails (Typha) — brown velvet pill on slender stalk
+      case 14: // Cattails (Typha) — REBUILT 2026-05-01. Single tall slender velvet
+               // brown cylinder on a slim sage stem with a gold pollen-spike tip.
+               // Old version was a 2-3-stalk cluster with overpacked filaments + a
+               // fat oval pollen cap that read as a blob; this is the iconic
+               // hot-dog-on-a-stick silhouette of a real cattail.
         (function(){
-          var ctCount = 2 + (fs > 6 ? 1 : 0);
-          var ctOffsets = ctCount === 3 ? [-5, 0, 5] : [-3.5, 3.5];
-          ctOffsets.forEach(function(ox2, ci){
-            var stx = fx + ox2;
-            var sty = fy + fs * 0.4;
-            var stemTop = fy - fs * 2.8 - ci * 2;
-            // AO shadow of stalk on far side (warm-dark)
-            s += '<line x1="'+(stx+0.5)+'" y1="'+sty+'" x2="'+(stx+0.5)+'" y2="'+stemTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="1.4" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'"/>';
-            // Stem line (sage core)
-            s += '<line x1="'+stx+'" y1="'+sty+'" x2="'+stx+'" y2="'+stemTop+'"'
-               + ' stroke="#5E8550" stroke-width="1.2" stroke-linecap="round" opacity="'+(0.88*bloomOp)+'"/>';
-            // Stem cream rim (silk-snap edge)
-            s += '<line x1="'+(stx-0.4)+'" y1="'+sty+'" x2="'+(stx-0.4)+'" y2="'+stemTop+'"'
-               + ' stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
-            // Cattail head dimensions
-            var hW = 2.6, hH = fs * 0.9;
-            var hY = stemTop + hH * 0.2;
-            // Pill AO drop-shadow (warm-dark, behind body)
-            s += '<rect x="'+(stx-hW+0.4)+'" y="'+(hY+0.4)+'" width="'+(hW*2)+'" height="'+hH+'" rx="'+hW+'" fill="rgba(40,20,5,0.45)" opacity="'+(0.55*bloomOp)+'"/>';
-            // Velvet body — saturated warm-dark brown (focal)
-            s += '<rect x="'+(stx-hW)+'" y="'+hY+'" width="'+(hW*2)+'" height="'+hH+'" rx="'+hW+'"'
-               + ' fill="#5a3010" stroke="rgba(40,20,5,0.6)" stroke-width="0.5" opacity="'+(0.95*bloomOp)+'"/>';
-            // Mid-tone band (lighter brown center, focal warm)
-            s += '<rect x="'+(stx-hW+0.4)+'" y="'+(hY+hH*0.15)+'" width="'+(hW*2-0.8)+'" height="'+(hH*0.5)+'" rx="'+(hW*0.7)+'"'
-               + ' fill="#7a4818" opacity="'+(0.85*bloomOp)+'"/>';
-            // Velvet texture: 6 subtle warm-dark vertical "hair" striations
-            for (var _b14h=0; _b14h<6; _b14h++) {
-              var _b14hx = stx - hW*0.75 + _b14h*(hW*1.5/5);
-              s += '<line x1="'+_b14hx+'" y1="'+(hY+hH*0.1)+'" x2="'+_b14hx+'" y2="'+(hY+hH*0.85)+'" stroke="rgba(40,20,5,0.32)" stroke-width="0.25" stroke-linecap="round" opacity="'+(0.5*bloomOp)+'"/>';
-            }
-            // Diffuse cream highlight (large soft, left flank)
-            s += '<rect x="'+(stx-hW+0.18)+'" y="'+(hY+0.5)+'" width="1.4" height="'+(hH-1)+'" rx="0.7"'
-               + ' fill="#f5ecd6" opacity="'+(0.18*bloomOp)+'"/>';
-            // Sharp cream pickup (silk-snap line)
-            s += '<rect x="'+(stx-hW+0.35)+'" y="'+(hY+0.3)+'" width="0.5" height="'+(hH-0.6)+'" rx="0.25"'
-               + ' fill="#fff8e0" opacity="'+(0.55*bloomOp)+'"/>';
-            // Edge highlight just inside top-left curve
-            s += '<path d="M'+(stx-hW+0.4)+','+(hY+hH*0.15)+' Q'+(stx-hW+0.2)+','+(hY+0.4)+' '+(stx-hW*0.5)+','+(hY+0.15)+'" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.65*bloomOp)+'"/>';
-            // Form shadow on right (shaded half)
-            s += '<rect x="'+(stx+hW*0.2)+'" y="'+(hY+0.3)+'" width="'+(hW*0.7)+'" height="'+(hH-0.6)+'" rx="'+(hW*0.3)+'" fill="rgba(40,20,5,0.25)" opacity="'+(0.6*bloomOp)+'"/>';
-            // Gold pollen tassel cap (top — anther proxy, "life inside")
-            s += '<ellipse cx="'+stx+'" cy="'+hY+'" rx="'+(hW*0.85)+'" ry="'+(hW*0.5)+'"'
-               + ' fill="'+PALETTE.gold+'" opacity="'+(0.82*bloomOp)+'"/>';
-            // Stamen filaments rising from gold cap (cream wisps)
-            for (var _b14f=0; _b14f<5; _b14f++) {
-              var _b14fx = stx + (_b14f-2)*hW*0.3;
-              s += '<line x1="'+_b14fx+'" y1="'+hY+'" x2="'+(_b14fx+(_b14f-2)*0.15)+'" y2="'+(hY-hW*0.55)+'" stroke="#f5ecd6" stroke-width="0.32" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
-              // Anther tip (warm gold pickup)
-              s += '<circle cx="'+(_b14fx+(_b14f-2)*0.15)+'" cy="'+(hY-hW*0.55)+'" r="'+(hW*0.08)+'" fill="'+PALETTE.gold+'" opacity="'+(0.78*bloomOp)+'"/>';
-              // Cream pollen highlight on center filament
-              if (_b14f === 2) s += '<circle cx="'+(_b14fx+(_b14f-2)*0.15-0.1)+'" cy="'+(hY-hW*0.6)+'" r="'+(hW*0.05)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
-            }
-            // Pollen cap sheen
-            s += '<ellipse cx="'+(stx-hW*0.22)+'" cy="'+(hY-hW*0.1)+'" rx="'+(hW*0.36)+'" ry="'+(hW*0.16)+'"'
-               + ' fill="#f5ecd6" opacity="'+(0.45*bloomOp)+'"/>';
-          });
+          var ctW = fs * 0.42;             // pill half-width
+          var ctH = fs * 1.7;              // pill height (vertical, ~4:1 vs width)
+          var headBottom = fy - fs * 0.05;
+          var headTop = headBottom - ctH;
+          var stemBottom = headBottom;
+          var stemBase = stemBottom + fs * 1.4;
+          // Slim sage stem (warm-dark core + sage body + cream rim)
+          s += '<line x1="'+fx+'" y1="'+stemBase+'" x2="'+fx+'" y2="'+stemBottom+'" stroke="rgba(40,20,5,0.5)" stroke-width="1.7" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
+          s += '<line x1="'+fx+'" y1="'+stemBase+'" x2="'+fx+'" y2="'+stemBottom+'" stroke="#5E8550" stroke-width="1.3" stroke-linecap="round" opacity="'+(0.94*bloomOp)+'"/>';
+          s += '<line x1="'+(fx-0.45)+'" y1="'+stemBase+'" x2="'+(fx-0.45)+'" y2="'+stemBottom+'" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.5*bloomOp)+'"/>';
+          // Pill AO drop-shadow (warm-dark, behind body)
+          s += '<rect x="'+(fx-ctW+0.5)+'" y="'+(headTop+0.5)+'" width="'+(ctW*2)+'" height="'+ctH+'" rx="'+ctW+'" fill="rgba(40,20,5,0.5)" opacity="'+(0.65*bloomOp)+'"/>';
+          // Velvet body — saturated warm-dark brown (focal)
+          s += '<rect x="'+(fx-ctW)+'" y="'+headTop+'" width="'+(ctW*2)+'" height="'+ctH+'" rx="'+ctW+'"'
+             + ' fill="#5a3010" stroke="rgba(40,20,5,0.6)" stroke-width="0.5" opacity="'+(0.95*bloomOp)+'"/>';
+          // Mid-tone warm band (lighter brown form-light, vertical)
+          s += '<rect x="'+(fx-ctW+0.45)+'" y="'+(headTop+ctH*0.12)+'" width="'+(ctW*2-0.9)+'" height="'+(ctH*0.6)+'" rx="'+(ctW*0.7)+'"'
+             + ' fill="#7a4818" opacity="'+(0.7*bloomOp)+'"/>';
+          // Velvet vertical hair texture (3 subtle striations, sparser than before)
+          for (var _b14h=0; _b14h<3; _b14h++) {
+            var _b14hx = fx + (_b14h - 1) * ctW * 0.55;
+            s += '<line x1="'+_b14hx+'" y1="'+(headTop+ctH*0.08)+'" x2="'+_b14hx+'" y2="'+(headTop+ctH*0.92)+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.3" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
+          }
+          // Diffuse cream highlight on left flank (form light)
+          s += '<rect x="'+(fx-ctW+0.3)+'" y="'+(headTop+0.6)+'" width="0.85" height="'+(ctH-1.2)+'" rx="0.4"'
+             + ' fill="#f5ecd6" opacity="'+(0.22*bloomOp)+'"/>';
+          // Sharp cream silk-snap pickup (specular highlight line)
+          s += '<rect x="'+(fx-ctW+0.45)+'" y="'+(headTop+0.4)+'" width="0.42" height="'+(ctH-0.8)+'" rx="0.21"'
+             + ' fill="#fff8e0" opacity="'+(0.6*bloomOp)+'"/>';
+          // Form shadow on right (shaded half)
+          s += '<rect x="'+(fx+ctW*0.2)+'" y="'+(headTop+0.3)+'" width="'+(ctW*0.6)+'" height="'+(ctH-0.6)+'" rx="'+(ctW*0.3)+'" fill="rgba(40,20,5,0.28)" opacity="'+(0.65*bloomOp)+'"/>';
+          // Gold male-flower spike at the TOP — slender vertical pill, half the width of the body
+          var mW = ctW * 0.48;
+          var mH = fs * 0.55;
+          var mTop = headTop - mH + 0.3; // slight overlap with brown head
+          s += '<rect x="'+(fx-mW+0.3)+'" y="'+(mTop+0.3)+'" width="'+(mW*2)+'" height="'+mH+'" rx="'+mW+'" fill="rgba(40,20,5,0.45)" opacity="'+(0.55*bloomOp)+'"/>';
+          s += '<rect x="'+(fx-mW)+'" y="'+mTop+'" width="'+(mW*2)+'" height="'+mH+'" rx="'+mW+'" fill="'+PALETTE.gold+'" opacity="'+(0.92*bloomOp)+'"/>';
+          // Cream silk-snap on the gold tip
+          s += '<rect x="'+(fx-mW+0.25)+'" y="'+(mTop+0.25)+'" width="0.32" height="'+(mH-0.5)+'" rx="0.16" fill="#fff8e0" opacity="'+(0.7*bloomOp)+'"/>';
+          // Tiny tip terminator at very top (the male-flower wisp)
+          s += '<circle cx="'+fx+'" cy="'+(mTop-0.15)+'" r="0.35" fill="rgba(40,20,5,0.6)" opacity="'+(0.75*bloomOp)+'"/>';
         })();
         break;
       // AO halo (master pass injection)
@@ -24189,58 +24178,60 @@ document.addEventListener('keydown', function(e) {
         })();
         break;
 
-      case 16: // Fiddlehead Fern — tight logarithmic spiral (preserves weirdness, master strokes)
+      case 16: // Fiddlehead Fern — REBUILT 2026-05-01. Single elegant rolled spiral
+               // (snail-shell silhouette) on slim sage stem. Old version stacked 5
+               // cascading arcs that read as a pile of half-circles, not a tight
+               // crozier. New approach: 50-point parametric spiral with 1.8 turns
+               // and a 0.55-per-turn radius shrink — looks like a real unfurling
+               // frond.
         (function(){
-          // AO shadow of stalk + spiral (warm-dark, behind everything)
-          s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy-fs*0.55)+'" rx="'+(fs*0.95)+'" ry="'+(fs*0.95)+'" fill="rgba(40,20,5,0.22)" opacity="'+(0.55*bloomOp)+'"/>';
-          // Crozier stalk: warm-dark core
-          s += '<line x1="'+fx+'" y1="'+(fy+fs*0.5)+'" x2="'+fx+'" y2="'+fy+'" stroke="rgba(40,20,5,0.4)" stroke-width="2.4" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
-          // Stalk sage body
-          s += '<line x1="'+fx+'" y1="'+(fy+fs*0.5)+'" x2="'+fx+'" y2="'+fy+'" stroke="#5E8550" stroke-width="2.0" stroke-linecap="round" opacity="'+(0.92*bloomOp)+'"/>';
-          // Diffuse cream stalk highlight (large soft)
-          s += '<line x1="'+(fx-0.8)+'" y1="'+(fy+fs*0.5)+'" x2="'+(fx-0.8)+'" y2="'+fy+'" stroke="#f5ecd6" stroke-width="1.2" stroke-linecap="round" opacity="'+(0.22*bloomOp)+'"/>';
-          // Sharp cream pickup (silk-snap edge)
-          s += '<line x1="'+(fx-0.6)+'" y1="'+(fy+fs*0.45)+'" x2="'+(fx-0.6)+'" y2="'+(fy-fs*0.05)+'" stroke="#f5ecd6" stroke-width="0.45" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'"/>';
-          // Specular hot pickup
-          s += '<line x1="'+(fx-0.55)+'" y1="'+(fy+fs*0.08)+'" x2="'+(fx-0.55)+'" y2="'+(fy+fs*0.22)+'" stroke="#fff8e0" stroke-width="0.35" stroke-linecap="round" opacity="'+(0.78*bloomOp)+'"/>';
-          // Logarithmic spiral — 5 cascading arcs (golden-ratio shrink)
-          var spiralR = fs * 0.95, spiralCx = fx, spiralCy = fy - spiralR * 0.6;
-          for (var sp = 0; sp < 5; sp++){
-            var r = spiralR * Math.pow(0.62, sp);
-            // Bezier-pair arc covers ~300deg
-            var r1x = spiralCx + r, r1y = spiralCy;
-            var c1x1 = spiralCx + r, c1y1 = spiralCy - r * 0.55;
-            var c1x2 = spiralCx + r * 0.55, c1y2 = spiralCy - r;
-            var m1x  = spiralCx, m1y = spiralCy - r;
-            var c2x1 = spiralCx - r * 0.55, c2y1 = spiralCy - r;
-            var c2x2 = spiralCx - r, c2y2 = spiralCy - r * 0.55;
-            var e1x  = spiralCx - r, e1y = spiralCy;
-            // Spiral AO shadow (warm-dark, slightly offset)
-            s += '<path d="M'+(r1x+0.3).toFixed(1)+','+(r1y+0.3).toFixed(1)+' C'+(c1x1+0.3).toFixed(1)+','+(c1y1+0.3).toFixed(1)+' '+(c1x2+0.3).toFixed(1)+','+(c1y2+0.3).toFixed(1)+' '+(m1x+0.3).toFixed(1)+','+(m1y+0.3).toFixed(1)+' C'+(c2x1+0.3).toFixed(1)+','+(c2y1+0.3).toFixed(1)+' '+(c2x2+0.3).toFixed(1)+','+(c2y2+0.3).toFixed(1)+' '+(e1x+0.3).toFixed(1)+','+(e1y+0.3).toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="'+(r*0.32).toFixed(2)+'" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
-            // Spiral body (sage)
-            s += '<path d="M'+r1x.toFixed(1)+','+r1y.toFixed(1)+' C'+c1x1.toFixed(1)+','+c1y1.toFixed(1)+' '+c1x2.toFixed(1)+','+c1y2.toFixed(1)+' '+m1x.toFixed(1)+','+m1y.toFixed(1)+' C'+c2x1.toFixed(1)+','+c2y1.toFixed(1)+' '+c2x2.toFixed(1)+','+c2y2.toFixed(1)+' '+e1x.toFixed(1)+','+e1y.toFixed(1)+'"'
-               + ' fill="none" stroke="#5E8550" stroke-width="'+(r*0.28).toFixed(2)+'" stroke-linecap="round" opacity="'+(0.85*bloomOp)+'"/>';
-            // Cream rim highlight on outer arcs (silk-snap)
-            if (sp < 3) {
-              s += '<path d="M'+r1x.toFixed(1)+','+(r1y-r*0.05).toFixed(1)+' C'+c1x1.toFixed(1)+','+(c1y1-r*0.05).toFixed(1)+' '+c1x2.toFixed(1)+','+(c1y2-r*0.05).toFixed(1)+' '+m1x.toFixed(1)+','+(m1y-r*0.05).toFixed(1)+'"'
-                 + ' fill="none" stroke="#f5ecd6" stroke-width="'+Math.max(0.4, r*0.1).toFixed(2)+'" stroke-linecap="round" opacity="'+(0.6*bloomOp)+'"/>';
-            }
-            // Sharp cream pickup on top of largest arc only
-            if (sp === 0) {
-              s += '<path d="M'+(c1x2-r*0.3).toFixed(1)+','+(c1y2-r*0.04).toFixed(1)+' Q'+(m1x+r*0.15).toFixed(1)+','+(m1y-r*0.06).toFixed(1)+' '+(m1x).toFixed(1)+','+(m1y-r*0.04).toFixed(1)+'" fill="none" stroke="#fff8e0" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
-            }
-            spiralCx = e1x - r * Math.pow(0.62, sp+1) * 0.3;
-            spiralCy = spiralCy + r * 0.22;
-            spiralR = r;
+          var stemBottom = fy + fs * 0.7;
+          var stemTop = fy - fs * 0.1;
+          // Stem (warm-dark core + sage body + cream rim)
+          s += '<line x1="'+fx+'" y1="'+stemBottom+'" x2="'+fx+'" y2="'+stemTop+'" stroke="rgba(40,20,5,0.5)" stroke-width="2.0" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
+          s += '<line x1="'+fx+'" y1="'+stemBottom+'" x2="'+fx+'" y2="'+stemTop+'" stroke="#5E8550" stroke-width="1.55" stroke-linecap="round" opacity="'+(0.94*bloomOp)+'"/>';
+          s += '<line x1="'+(fx-0.55)+'" y1="'+stemBottom+'" x2="'+(fx-0.55)+'" y2="'+stemTop+'" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="'+(0.5*bloomOp)+'"/>';
+          // Specular hot pickup on stem
+          s += '<line x1="'+(fx-0.5)+'" y1="'+(fy+fs*0.18)+'" x2="'+(fx-0.5)+'" y2="'+(fy+fs*0.32)+'" stroke="#fff8e0" stroke-width="0.34" stroke-linecap="round" opacity="'+(0.78*bloomOp)+'"/>';
+          // Parametric spiral — 50-point smooth curl, 1.8 turns, golden-ratio shrink
+          var cx = fx, cy = fy - fs * 0.55;
+          var startR = fs * 0.78;
+          var turns = 1.8;
+          var pts = 50;
+          var spiralD = '';
+          for (var p = 0; p <= pts; p++) {
+            var t = p / pts;
+            var ang = -Math.PI / 2 + t * turns * Math.PI * 2;
+            var r = startR * Math.pow(0.55, t * turns);
+            var x = cx + Math.cos(ang) * r;
+            var y = cy + Math.sin(ang) * r;
+            spiralD += (p === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2);
           }
-          // Focal warm pip at the spiral CENTER (innermost point — the read)
-          s += '<circle cx="'+spiralCx.toFixed(1)+'" cy="'+spiralCy.toFixed(1)+'" r="'+(fs*0.1)+'" fill="rgba(40,20,5,0.7)" opacity="'+(0.85*bloomOp)+'"/>';
-          s += '<circle cx="'+(spiralCx-0.2).toFixed(1)+'" cy="'+(spiralCy-0.2).toFixed(1)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
-          // Tiny stamen-kit proxy: 3 cream radial spokes around the center pip ("life inside")
-          for (var _b16k=0; _b16k<3; _b16k++) {
-            var _b16ka = (_b16k*120 + 40)*Math.PI/180;
-            s += '<line x1="'+spiralCx.toFixed(1)+'" y1="'+spiralCy.toFixed(1)+'" x2="'+(spiralCx + Math.cos(_b16ka)*fs*0.13).toFixed(1)+'" y2="'+(spiralCy + Math.sin(_b16ka)*fs*0.13).toFixed(1)+'" stroke="#f5ecd6" stroke-width="0.3" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
+          // AO behind spiral (warm-dark, offset)
+          s += '<path d="'+spiralD+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity="'+(0.55*bloomOp)+'" transform="translate(0.35,0.35)"/>';
+          // Spiral body (sage)
+          s += '<path d="'+spiralD+'" fill="none" stroke="#5E8550" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="'+(0.92*bloomOp)+'"/>';
+          // Lighter sage core highlight (cream-shifted green, runs along center)
+          s += '<path d="'+spiralD+'" fill="none" stroke="#7ab356" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" opacity="'+(0.7*bloomOp)+'"/>';
+          // Cream silk-snap on outer arc (first ~30% of path, slightly offset up)
+          var hiD = '';
+          var hiPts = Math.floor(pts * 0.32);
+          for (var hp = 0; hp <= hiPts; hp++) {
+            var ht = hp / pts;
+            var hang = -Math.PI / 2 + ht * turns * Math.PI * 2;
+            var hr = startR * Math.pow(0.55, ht * turns);
+            var hx = cx + Math.cos(hang) * hr;
+            var hy = cy + Math.sin(hang) * hr - 0.35;
+            hiD += (hp === 0 ? 'M' : 'L') + hx.toFixed(2) + ',' + hy.toFixed(2);
           }
+          s += '<path d="'+hiD+'" fill="none" stroke="#f5ecd6" stroke-width="0.55" stroke-linecap="round" stroke-linejoin="round" opacity="'+(0.55*bloomOp)+'"/>';
+          // Center pip — warm-dark inner-most point with cream specular pickup
+          var lastAng = -Math.PI / 2 + 1.0 * turns * Math.PI * 2;
+          var lastR = startR * Math.pow(0.55, 1.0 * turns);
+          var lastX = cx + Math.cos(lastAng) * lastR;
+          var lastY = cy + Math.sin(lastAng) * lastR;
+          s += '<circle cx="'+lastX.toFixed(2)+'" cy="'+lastY.toFixed(2)+'" r="'+(fs*0.1)+'" fill="rgba(40,20,5,0.75)" opacity="'+(0.85*bloomOp)+'"/>';
+          s += '<circle cx="'+(lastX-0.2).toFixed(2)+'" cy="'+(lastY-0.2).toFixed(2)+'" r="'+(fs*0.04)+'" fill="#fff8e0" opacity="'+(0.85*bloomOp)+'"/>';
         })();
         break;
       case 12: // Carnivorous Flytrap (Dionaea) — hinged jaws with cilia teeth + trigger hairs + interior glow
