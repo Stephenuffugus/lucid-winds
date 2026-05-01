@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.73';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.74';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -4940,9 +4940,10 @@
 .hi-detail-grade{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.16em;margin-bottom:0.5rem;}
 .hi-detail-traits{font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);line-height:1.7;margin-bottom:0.7rem;letter-spacing:0.03em;}
 .hi-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
-.hi-action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:170px;padding:1rem 0.6rem;border-radius:16px;border:1.5px solid rgba(122,179,86,0.4);background:linear-gradient(180deg,rgba(26,36,22,0.6),rgba(18,24,16,0.72));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.14em;cursor:pointer;text-align:center;transition:all 0.15s ease;box-shadow:0 4px 14px rgba(0,0,0,0.45);text-shadow:0 1px 2px rgba(0,0,0,0.5);}
-.hi-action-btn img{width:96px !important;height:96px !important;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5));margin:0 auto !important;display:block !important;vertical-align:middle !important;}
-.hi-action-btn .hi-water-label img{width:96px !important;height:96px !important;}
+.hi-action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:204px;padding:1.1rem 0.6rem 0.9rem;border-radius:16px;border:1.5px solid rgba(122,179,86,0.4);background:linear-gradient(180deg,rgba(26,36,22,0.6),rgba(18,24,16,0.72));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:0.14em;cursor:pointer;text-align:center;transition:all 0.15s ease;box-shadow:0 4px 14px rgba(0,0,0,0.45);text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+.hi-action-btn img{width:128px !important;height:128px !important;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.55));margin:0 auto !important;display:block !important;vertical-align:middle !important;}
+.hi-action-btn .hi-water-label img{width:128px !important;height:128px !important;}
+.hi-action-btn img.lw-mini,.hi-action-btn .hi-water-label img.lw-mini{width:20px !important;height:20px !important;display:inline-block !important;margin:0 !important;vertical-align:-5px !important;filter:none !important;}
 .hi-action-btn.hi-water-hold,.hi-action-btn.hi-prune-hold{flex-direction:column;}
 .hi-vitality{margin:0.5rem 0;padding:0.5rem 0.65rem;background:rgba(13,16,12,0.55);border:1px solid rgba(74,124,53,0.2);border-radius:8px;}
 .hi-vitality-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;}
@@ -41126,7 +41127,7 @@ document.addEventListener('keydown', function(e) {
       if (!localStorage.getItem('lw_tut_dew_intro_v1')) {
         localStorage.setItem('lw_tut_dew_intro_v1', '1');
         setTimeout(function(){
-          if (window._toast) window._toast('<img src="assets/fx/drop-blue.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Tapping a plant earns Dew. Spend it on cuttings, the Hut, and time-skips.', {html:true});
+          if (window._toast) window._toast('<img class="lw-mini" src="assets/fx/drop-blue.png" alt="" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Tapping a plant earns Dew. Spend it on cuttings, the Hut, and time-skips.', {html:true});
         }, 4400);
       }
     } catch(e) {}
@@ -54719,7 +54720,7 @@ function _openHexInspector(zk){
     if(augmented.length>=1&&window.openCarousel){
       var carBtn=document.createElement('button');
       carBtn.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px 18px 18px;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.42);border-radius:16px;background:linear-gradient(180deg,rgba(20,28,18,0.78),rgba(12,16,12,0.92));color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.16em;cursor:pointer;min-height:140px;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:inset 0 0 18px rgba(200,168,75,0.08),0 4px 14px rgba(0,0,0,0.45);';
-      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png" alt="" style="width:84px;height:84px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.35));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="line-height:1.2;text-align:center;">TAKE A CLOSER LOOK<br><span style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
+      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" style="width:108px;height:108px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.35));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="line-height:1.2;text-align:center;">TAKE A CLOSER LOOK<br><span style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
       (function(arr){carBtn.addEventListener('click',function(){
         try{if(typeof closeHI==='function')closeHI();}catch(e){}
         try{if(typeof closeTP==='function')closeTP();}catch(e){}
@@ -54869,7 +54870,7 @@ function _selectHexPlant(idx,p){
   var actions='';
   var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
   var isOwn=p.own||(user&&user.uid&&p.ownerUid===user.uid);
-  var _inspectBtn='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')"><img src="assets/wild-inspect-btn-v2.png" alt="" style="width:40px;height:40px;object-fit:contain;vertical-align:-12px;display:inline-block;margin-right:6px;" onerror="this.outerHTML=\'&#128269;\'"> INSPECT</button>';
+  var _inspectBtn='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')"><img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#128269;\'"> INSPECT</button>';
   // Fertilizer count for the MULCH button gating + tooltip
   var _mInv={};try{_mInv=JSON.parse(localStorage.getItem('sws_inventory')||'{}')||{};}catch(e){}
   var _mFert=_mInv.fertilizer||0;
@@ -54884,7 +54885,7 @@ function _selectHexPlant(idx,p){
   try{var _mcdR=JSON.parse(localStorage.getItem('lw_mulch_cd')||'{}');if(_mcdR[p.hash]&&Date.now()-_mcdR[p.hash]<24*3600000)_mInlineCd=24*3600000-(Date.now()-_mcdR[p.hash]);}catch(e){}
   function _fmtCdHInline(ms){var h=Math.ceil(ms/3600000);if(h>=1)return h+'h';var m=Math.ceil(ms/60000);return m+'m';}
   var _mIco='<img src="assets/mulchward.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#127807;\'">';
-  var _mFertIco='<img src="assets/fx/leaf-gold.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=\'&#127807;\'">';
+  var _mFertIco='<img class="lw-mini" src="assets/fx/leaf-gold.png" alt="" onerror="this.outerHTML=\'&#127807;\'">';
   if(_mInlineCd>0){
     _mulchBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'Already mulched. Returns in '+_fmtCdHInline(_mInlineCd)+'.\')" title="On cooldown">'+_mIco+' MULCHED &middot; '+_fmtCdHInline(_mInlineCd)+'</button>';
   } else if(_mFert>=1){
@@ -54897,7 +54898,7 @@ function _selectHexPlant(idx,p){
   var _blessBtn='';
   var _blessDew=window._canReceiveBlessing?window._canReceiveBlessing(p):0;
   if(_blessDew>0){
-    _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Daily Dew gift from any Rare or rarer plant. Once per plant per day."><img src="assets/fx/praying-hands-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;margin-right:4px;" onerror="this.outerHTML=&apos;\ud83d\ude4f&apos;;"> BLESSING &middot; +'+_blessDew+'<img src="assets/fx/drop-blue.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> daily</button>';
+    _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Daily Dew gift from any Rare or rarer plant. Once per plant per day."><img class="lw-mini" src="assets/fx/praying-hands-gold.png" alt="" onerror="this.outerHTML=&apos;\ud83d\ude4f&apos;;"> BLESSING &middot; +'+_blessDew+'<img src="assets/fx/drop-blue.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> daily</button>';
   }
   // PRUNE button — only when this plant has an active pest. 5s hold + 3 hashes.
   var _pruneBtn='';
@@ -54942,8 +54943,8 @@ function _selectHexPlant(idx,p){
     // OWN: water cost is 5 Dew when fresh; cooldown text when watered.
     var _waterDew=window.getTotalDew?window.getTotalDew():0;
     var _waterLabel,_waterCls,_waterClick;
-    var _wIco='<img src="assets/wild-water-btn.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#128167;\'">';
-    var _wDewIco='<img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=\'&#128167;\'">';
+    var _wIco='<img src="assets/wild-water-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#128167;\'">';
+    var _wDewIco='<img class="lw-mini" src="assets/fx/drop-blue.png" alt="" onerror="this.outerHTML=\'&#128167;\'">';
     if(_waterCdMs>0){_waterLabel=_wIco+' WATERED &middot; '+fmtCdH(_waterCdMs);_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Returns in '+fmtCdH(_waterCdMs)+'.\')';}
     else if(_waterDew<5){_waterLabel=_wIco+' WATER &middot; 5'+_wDewIco;_waterCls=' locked';_waterClick='window._toast&&window._toast(\'Need 5 Dew to water.\')';}
     else{_waterLabel=_wIco+' WATER &middot; 5'+_wDewIco;_waterCls='';_waterClick='window._hexAction(\'water\')';}
@@ -54980,8 +54981,8 @@ function _selectHexPlant(idx,p){
     // tap surfaces the unlock requirement. Was a silent fail before
     // (Stephen 2026-04-19: "nothing seems to happen" on cutting tap).
     // TEND — show 6h cooldown when active, else "+6h · +2💧" reward preview
-    var _tIco='<img src="assets/character-sheet/tools/can.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#127807;\'">';
-    var _tDewIco='<img src="assets/fx/drop-blue.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-4px;display:inline-block;" onerror="this.outerHTML=\'&#128167;\'">';
+    var _tIco='<img src="assets/wild-tend-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#127807;\'">';
+    var _tDewIco='<img class="lw-mini" src="assets/fx/drop-blue.png" alt="" onerror="this.outerHTML=\'&#128167;\'">';
     var _tendLbl,_tendCls,_tendClick;
     if(!_canTend){_tendLbl=_tIco+' TEND &#128274;';_tendCls=' locked';_tendClick='window._toast&&window._toast(\'\\ud83d\\udd12 Tending unlocks at Keeper Level 5.\')';}
     else if(_tendCdMs>0){_tendLbl=_tIco+' TENDED &middot; '+fmtCdH(_tendCdMs);_tendCls=' locked';_tendClick='window._toast&&window._toast(\'Already tended. Returns in '+fmtCdH(_tendCdMs)+'.\')';}
