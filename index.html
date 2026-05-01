@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.24';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -68924,8 +68924,21 @@ function _step28(){
       window.FG_Backpack.toggle();
     }
   }catch(e){}
-  // Overlay tap is a no-op; only the spotlighted backpack advances.
-  _overlay(function(){/* no-op */});
+  // Stephen 2026-05-01: iOS overlay-bounds-check fallback (matches the
+  // step1b + step32 pattern). If iOS Safari traps the backpack icon
+  // inside a parent stacking context, the overlay would intercept the
+  // tap and the player would see the backpack "disappear" or fail to
+  // open. Forward bounds-matching taps to the backpack toggle directly.
+  _overlay(function(ev){
+    try{
+      var r=bpi.getBoundingClientRect();
+      var x=(ev&&typeof ev.clientX==='number')?ev.clientX:-1;
+      var y=(ev&&typeof ev.clientY==='number')?ev.clientY:-1;
+      if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom){
+        try{ if(window.FG_Backpack && window.FG_Backpack.toggle) window.FG_Backpack.toggle(); }catch(e){}
+      }
+    }catch(e){}
+  });
   _spotlight(bpi);
   _dialog(
     'Your <span style="color:var(--gold);">backpack</span> travels with you.<br><br>Tap it to see what you\u2019re carrying.',
@@ -69012,8 +69025,30 @@ function _step32(){
     bos.style.setProperty('pointer-events','auto','important');
     bos.style.setProperty('opacity','1','important');
   }catch(e){}
-  // Overlay tap is a no-op; only the spotlighted Book of Secrets advances.
-  _overlay(function(){/* no-op */});
+  // Stephen 2026-05-01: iOS tester reported the book "disappearing" when
+  // tapped during the tutorial. Same iOS stacking-context bug as step1b
+  // (08d187a): the spotlit element is at z-index 1000012 and the dim
+  // overlay is at 1000010. iOS Safari, if any parent of the BoS button
+  // has transform/will-change/contain/filter/backdrop-filter, traps the
+  // BoS inside that local stacking context and routes the tap to the
+  // overlay instead. The overlay's no-op handler swallows it; visually
+  // the dim overlay paints over what should be the BoS, so it "disappears".
+  // Fix: overlay also accepts taps inside the BoS's bounding rect and
+  // forwards them to the BoS's normal click handler. Desktop/Android
+  // ignore this fallback because z-index resolves correctly there and
+  // the tap reaches the button directly.
+  _overlay(function(ev){
+    try{
+      var r=bos.getBoundingClientRect();
+      var x=(ev&&typeof ev.clientX==='number')?ev.clientX:-1;
+      var y=(ev&&typeof ev.clientY==='number')?ev.clientY:-1;
+      if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom){
+        // Trigger the BoS's natural click handler. The watch loop below
+        // will see bos-overlay appear and advance to step33.
+        try{ if(window._openCompendiumUI) window._openCompendiumUI(); }catch(e){}
+      }
+    }catch(e){}
+  });
   _spotlight(bos);
   _dialog(
     '<div style="display:flex;justify-content:center;margin-bottom:0.5rem;"><img src="assets/btn-compendium.png" alt="" style="width:64px;height:auto;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.4));" onerror="this.outerHTML=&apos;&apos;;"></div>' +
