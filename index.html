@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.69';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.70';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -11778,7 +11778,12 @@ document.addEventListener('keydown', function(e) {
   window._secureGet = _secureGet;
   window._initIntegrity = _initIntegrity;
 
-  var WALLET = '0xba1F63F220DA4d5639c5EB0f7de8A4aFBd46828B';
+  // Project-namespaced identity tag for the local attention payload.
+  // Was Stephen's personal ETH address — replaced 2026-05-01 PART 5 to
+  // decouple personal wallet from analytics scaffolding. The payload
+  // never leaves the device (only its SHA-256 hash is shown in UI), so
+  // the value here is purely cosmetic identity tagging.
+  var WALLET = 'lucidwinds:attention:v1';
   var SCHEMA = 'network.xyo.attention.set';
   var RECORDS_KEY = 'sws_set_records';
 
@@ -13008,7 +13013,7 @@ document.addEventListener('keydown', function(e) {
       schema: SCHEMA,
       version: '1.0.0',
       timestamp: new Date().toISOString(),
-      source: { wallet: WALLET, origin: location.hostname, page: '/focus-grove.html' },
+      source: { wallet: WALLET, origin: location.hostname, page: location.pathname },
       attention: {
         event: event,
         phenos_found: phenosFound,
@@ -41442,7 +41447,7 @@ document.addEventListener('keydown', function(e) {
           var url = URL.createObjectURL(blob);
           var a = document.createElement('a');
           a.href = url;
-          a.download = 'focus-grove-' + plant.hash.substring(0,8) + '.png';
+          a.download = 'lucid-winds-' + plant.hash.substring(0,8) + '.png';
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -41455,7 +41460,7 @@ document.addEventListener('keydown', function(e) {
         var dataUrl = canvas.toDataURL('image/png');
         var a = document.createElement('a');
         a.href = dataUrl;
-        a.download = 'focus-grove-' + plant.hash.substring(0,8) + '.png';
+        a.download = 'lucid-winds-' + plant.hash.substring(0,8) + '.png';
         a.click();
         btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">';
         btn.disabled = false;
