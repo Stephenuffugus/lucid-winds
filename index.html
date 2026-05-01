@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.8';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.9';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -37445,10 +37445,19 @@ document.addEventListener('keydown', function(e) {
     var h = (hash || '00000000000000000000000000000000').toLowerCase();
     var selector = parseInt(h[25], 16) || 0;
     if (selector < 8) {
-      // Pre-composed mode — use curated line banks (highest quality)
-      var i1 = (parseInt(h[26]+h[27], 16) || 0) % HAIKU_A.length;
-      var i2 = (parseInt(h[28]+h[29], 16) || 0) % HAIKU_B.length;
-      var i3 = (parseInt(h[30]+h[31], 16) || 0) % HAIKU_C.length;
+      // Pre-composed mode — use curated line banks (highest quality).
+      // Stephen 2026-05-02: index window widened from 2 hex chars (8 bits,
+      // 256 max) to 3 hex chars (12 bits, 4096 max) so every entry in the
+      // expanded banks (HAIKU_A 1123, HAIKU_B 1100, HAIKU_C 1048) is
+      // reachable. The old window % bank.length capped picks at index 255
+      // — three quarters of the banks were dead. Upper-nibble slots
+      // borrowed from low-load positions: h[35] (byte 17 lo), h[55]
+      // (climate-tolerance overlap, harmless), h[63] (past hashToTraits
+      // usage). This shifts the haiku for some existing pre-launch test
+      // plants, which is the cost of unlocking the back 75% of the bank.
+      var i1 = (parseInt(h[35]+h[26]+h[27], 16) || 0) % HAIKU_A.length;
+      var i2 = (parseInt(h[55]+h[28]+h[29], 16) || 0) % HAIKU_B.length;
+      var i3 = (parseInt(h[63]+h[30]+h[31], 16) || 0) % HAIKU_C.length;
       // Uniqueness pass — advance line2/line3 if a content word repeats from earlier line
       var used1 = {}; _hLineContentSet(HAIKU_A[i1], used1);
       var tries = 0;
@@ -46774,22 +46783,13 @@ document.addEventListener('keydown', function(e) {
         if (window.renderRecords)    renderRecords();
         if (window.PW_Social) PW_Social.ensureProfile(user);
         if (window._checkDailyLogin) _checkDailyLogin();
-        // Stephen 2026-05-02: tell players on app open if someone has
-        // sent them a friend request. Without this, pending requests are
-        // invisible until the player digs into the character sheet's
-        // FRIENDS section — which a tutorial-stuck new player won't do.
-        try {
-          if (window.PW_Social && window.PW_Social.loadPendingRequests) {
-            setTimeout(function(){
-              window.PW_Social.loadPendingRequests(function(reqs){
-                if (!reqs || !reqs.length) return;
-                var who = reqs[0].senderName || 'Someone';
-                var more = reqs.length > 1 ? (' + ' + (reqs.length-1) + ' more') : '';
-                if (window._toast) window._toast('🤝 ' + who + ' wants to be friends' + more + '. Tap your name to accept.');
-              });
-            }, 4500);
-          }
-        } catch(eFR){}
+        // Boot-time pending-request toast removed 2026-05-02 — was adding
+        // a 4th Firestore read to the already-heavy onboard sequence,
+        // contributing to the "sooooo frickin slow" gifting flow Stephen
+        // and Jessie hit. The toast now fires from loadFriendsUI() the
+        // first time the player opens FRIENDS each session, so they still
+        // see "X wants to be friends" but without the boot-time round
+        // trip. See line ~66495 for the new fire site.
         // Daily ecosystem reproduction (runs once per day on any app load)
         setTimeout(function(){
           var _rToday=localStorage.getItem('lw_repro_today');
@@ -55402,7 +55402,21 @@ window._lwSendGiftFlow = function(friendUid, friendName) {
   document.getElementById('lw-gift-cancel').onclick = function(){ ov.remove(); };
   document.getElementById('lw-gift-send').onclick = function(){
     var btn = this; btn.disabled = true; btn.textContent = 'SENDING…';
+    var done = false;
+    // Stephen 2026-05-02: 10s timeout. Was getting stuck on SENDING…
+    // forever when the Firestore promise never resolved (slow network,
+    // hung connection). Reset the button + show error if no response
+    // within 10s — the player can retry instead of being trapped.
+    var watchdog = setTimeout(function(){
+      if (done) return;
+      done = true;
+      btn.disabled = false; btn.textContent = 'SEND · '+cost+'💧';
+      if (window._toast) window._toast('Send timed out. Check your connection and try again.');
+    }, 10000);
     window.LW_GIFTS.sendGift(friendUid, friendName, function(ok, info){
+      if (done) return;
+      done = true;
+      clearTimeout(watchdog);
       if (ok){
         ov.remove();
         // _toast accepts plaintext by default; the gift toast renders as plain
@@ -55411,7 +55425,7 @@ window._lwSendGiftFlow = function(friendUid, friendName) {
         if (window.PW_UI && window.PW_UI.loadFriendsUI) window.PW_UI.loadFriendsUI();
       } else {
         btn.disabled = false; btn.textContent = 'SEND · '+cost+'💧';
-        if (window._toast) window._toast('Gift failed: ' + (info || 'unknown'));
+        if (window._toast) window._toast('Gift failed: ' + (info || 'try again'));
       }
     });
   };
@@ -55513,10 +55527,15 @@ window._lwRenderCuriosities = function() {
       else stateBadge = '<span style="background:rgba(60,60,60,0.3);color:#a89e8a;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">FOR SALE</span>';
 
       h += '<div style="margin-bottom:0.7rem;padding:0.85rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?'rgba(200,168,75,0.7)':(hatched?'rgba(122,179,86,0.4)':'rgba(74,124,53,0.2)'))+';border-radius:14px;'+(ready?'box-shadow:0 0 16px rgba(200,168,75,0.3);':'')+'">';
-      h += '<div style="display:flex;align-items:flex-start;gap:0.85rem;">';
-      h += '<div style="width:80px;height:80px;flex-shrink:0;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.7);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;">';
-      h += '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:cover;'+(owned?'':'filter:grayscale(0.7) opacity(0.55);')+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.4rem;&quot;>'+artFallback+'</div>&apos;;">';
+      // Stephen 2026-05-02: art shows full 3:2 painting at the top of the
+      // card. Was 80×80 cropped square — Stephen: "i spent a long time
+      // making the beautiful rectangles that they are. these should be
+      // large gorgeous pieces of art." Now 100% width, native 3:2,
+      // object-fit:contain, no crop.
+      h += '<div style="width:100%;aspect-ratio:3/2;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.7);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;margin-bottom:0.7rem;">';
+      h += '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:contain;'+(owned?'':'filter:grayscale(0.7) opacity(0.55);')+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:3.5rem;&quot;>'+artFallback+'</div>&apos;;">';
       h += '</div>';
+      h += '<div style="display:flex;align-items:flex-start;gap:0.85rem;">';
       h += '<div style="flex:1;min-width:0;">';
       var displayName = hatched ? spec.hatchedName : spec.cocoonName;
       h += '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.25rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.92rem;color:var(--cream);letter-spacing:0.06em;">'+displayName+'</div>'+stateBadge+'</div>';
@@ -55859,14 +55878,30 @@ window._lwOpenGiftInbox = function() {
 
 window._lwClaimGift = function(giftId, fromUid){
   if (!window.LW_GIFTS) return;
+  // Stephen 2026-05-02: 10s watchdog — if the claim transaction hangs
+  // (slow network, Firestore unavailable), surface a clear message and
+  // let the player retry instead of leaving them staring at a pending
+  // gift that won't claim.
+  var done = false;
+  var watchdog = setTimeout(function(){
+    if (done) return;
+    done = true;
+    if (window._toast) window._toast('Claim timed out. Check your connection and tap CLAIM again.');
+  }, 10000);
   window.LW_GIFTS.claimGift(giftId, fromUid, function(ok, info){
+    if (done) return;
+    done = true;
+    clearTimeout(watchdog);
     if (ok){
       if (window._toast) window._toast('🎁 ' + (info.summary || 'Claimed!') + ' from ' + (info.fromName || 'a keeper'));
       var row = document.getElementById('lw-gift-row-'+giftId); if (row) row.remove();
       var listEl = document.getElementById('lw-gift-inbox-list');
       if (listEl && !listEl.children.length) listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-style:italic;">All caught up.</div>';
     } else {
-      if (window._toast) window._toast('Claim failed: ' + (info||'unknown'));
+      // Friendlier wording — "unknown" was confusing.
+      var reason = info ? String(info) : 'try again';
+      if (/already.*claim/i.test(reason)) reason = 'already claimed';
+      if (window._toast) window._toast('Claim failed: ' + reason);
     }
   });
 };
@@ -58008,7 +58043,14 @@ var _afGameClass={
   recall:'sprint',
   rhythmvine:'standard',
   seedtoss2:'standard',
-  petalblink:'sprint'
+  petalblink:'sprint',
+  // Stephen 2026-05-02: Speed Sort + Stop at Ten + Root Rush were
+  // registered in G[] but never added to _afGameClass or _aw. Result:
+  // every win paid 0 (base lookup defaulted to undefined→0). Jessie
+  // won her first Speed Sort and got nothing. Adding them now.
+  pottingbench:'sprint',
+  stopten:'sprint',
+  rootrush:'standard'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;_afSessionSunbeams=0;}
@@ -58082,7 +58124,11 @@ var _aw={
   recall:{progress:1,milestone:1,game_win:4,default:0},
   rhythmvine:{progress:1,milestone:1,default:0},
   seedtoss2:{progress:1,game_win:4,default:0},
-  petalblink:{progress:1,milestone:1,game_win:4,default:0}
+  petalblink:{progress:1,milestone:1,game_win:4,default:0},
+  // Stephen 2026-05-02 — see _afGameClass note.
+  pottingbench:{progress:1,game_win:4,game_loss:1,default:0},
+  stopten:{progress:1,game_win:3,game_loss:0,default:0},
+  rootrush:{progress:1,milestone:1,game_win:4,game_loss:0,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
@@ -66547,8 +66593,18 @@ function loadFriendsUI(){
   // baseline: 0.75rem heading, 0.7rem name, 0.7rem buttons with 44px
   // touch targets per the 48px-min rule. Also reflects pending count
   // onto the FRIENDS title so the player sees something to act on
-  // even before they expand the section.
+  // even before they expand the section. First time per session that
+  // pending exists, fire a toast so the player notices — the boot-time
+  // toast was removed to cut the onboard Firestore round trips.
   PW_Social.loadPendingRequests(function(reqs){
+    if (reqs && reqs.length && !window._lwPendingToastFired){
+      window._lwPendingToastFired = true;
+      try {
+        var who = reqs[0].senderName || 'Someone';
+        var more = reqs.length > 1 ? (' + ' + (reqs.length-1) + ' more') : '';
+        if (window._toast) window._toast('🤝 ' + who + ' wants to be friends' + more + '. Tap ACCEPT below.');
+      } catch(eT){}
+    }
     var el=document.getElementById('cs-pending-list');if(!el)return;
     var cnt=document.getElementById('cs-friend-count');
     if(reqs.length===0){
@@ -66670,6 +66726,7 @@ function _compPortrait(idx, emoji, sizePx) {
   if (src) {
     return '<img src="'+src+'" alt="" onerror="this.outerHTML=&apos;<span style=&quot;font-size:'+Math.round(sz*0.7)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;&quot;>'+(emoji||'?')+'</span>&apos;" style="width:'+sz+'px;height:'+sz+'px;object-fit:cover;border-radius:'+Math.round(sz*0.18)+'px;border:1px solid rgba(200,168,75,0.35);display:inline-block;vertical-align:middle;">';
   }
+  // Square fallback continues below.
   // Procedural SVG portrait — uses the same renderCompanion the plant uses,
   // cropped to a 30×30 viewBox centered on the companion's anchor point.
   // The anchor is the last translate(X,Y) before scale(N) in the rendered
@@ -66693,6 +66750,34 @@ function _compPortrait(idx, emoji, sizePx) {
   return '<span style="font-size:'+Math.round(sz*0.72)+'px;display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;">'+(emoji||'?')+'</span>';
 }
 window._compPortrait = _compPortrait;
+
+// Stephen 2026-05-02 PART X: companion portraits in showcase contexts
+// (companion picker, Curiosities creature card) were being cropped into
+// squares — Stephen: "i spent a long time making the beautiful
+// rectangles that they are. these should be large gorgeous pieces of
+// art." This helper renders the same source image at the actual
+// 3:2 painting aspect with object-fit:contain so nothing's clipped.
+// Use _compPortrait for tiny circular badges (cs-companion-icon),
+// _compPortraitFull for any panel where the player is supposed to
+// admire the art.
+function _compPortraitFull(idx, emoji, widthPx) {
+  var w = widthPx || 160;
+  var h = Math.round(w * 2 / 3); // 3:2 aspect, height = width × 2/3
+  var src = LW_COMPANION_IMG[idx];
+  if (!src && typeof idx === 'number' && window.TRAIT_BANK && window.TRAIT_BANK.companions && window.TRAIT_BANK.companions[idx]) {
+    var nm = window.TRAIT_BANK.companions[idx].name || '';
+    if (nm && nm !== 'None') {
+      var slug = nm.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+      src = 'assets/companions/'+slug+'.png';
+    }
+  }
+  var fallback = '<div style="width:'+w+'px;height:'+h+'px;display:flex;align-items:center;justify-content:center;font-size:'+Math.round(h*0.5)+'px;background:rgba(13,16,12,0.55);border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);">'+(emoji||'🐾')+'</div>';
+  if (src) {
+    return '<img src="'+src+'" alt="" onerror="this.outerHTML=&apos;'+fallback.replace(/'/g,'&#39;').replace(/"/g,'&quot;')+'&apos;" style="width:'+w+'px;height:'+h+'px;object-fit:contain;border-radius:10px;border:1.5px solid rgba(200,168,75,0.35);background:rgba(13,16,12,0.55);display:block;">';
+  }
+  return fallback;
+}
+window._compPortraitFull = _compPortraitFull;
 
 function _loadCompanion(){
   var activeComp=localStorage.getItem('pw_active_companion');
@@ -66891,8 +66976,9 @@ function equipCompanion(){
     var active2=f.idx===curIdx2;
     var anyActive=active||active2;
     var activeLabel=active?' <span style="color:var(--gold);">\u2605 SLOT 1</span>':(active2?' <span style="color:var(--gold);">\u2605 SLOT 2</span>':'');
-    h+='<div style="display:flex;align-items:center;gap:0.7rem;padding:0.55rem;margin-bottom:5px;background:rgba(18,22,16,'+(anyActive?'0.8':'0.5')+');border:1.5px solid '+(anyActive?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:10px;min-height:96px;">';
-    h+='<div style="width:88px;text-align:center;flex-shrink:0;">'+_compPortrait(f.idx, f.icon, 80)+'</div>';
+    h+='<div style="display:flex;align-items:center;gap:0.8rem;padding:0.55rem;margin-bottom:6px;background:rgba(18,22,16,'+(anyActive?'0.8':'0.5')+');border:1.5px solid '+(anyActive?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:10px;min-height:104px;">';
+    // Stephen 2026-05-02: full 3:2 rectangle, no cover-crop. Was 80×80 sq.
+    h+='<div style="flex-shrink:0;">'+_compPortraitFull(f.idx, f.icon, 144)+'</div>';
     h+='<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:var(--cream);letter-spacing:0.04em;">'+f.name+activeLabel+'</div>';
     if(f.ability)h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--sage);margin-top:3px;line-height:1.4;">'+f.ability+'</div>';
     if(f.temperament)h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-top:2px;">'+f.tempIcon+' '+f.temperament+'</div>';
@@ -84042,16 +84128,33 @@ window.LW_GIFTS = (function(){
       sentAt: firebase.firestore.FieldValue.serverTimestamp(),
       claimed: false
     };
+    // Stephen 2026-05-02: optimistic-mark to prevent duplicate-send when
+    // the Firestore promise hangs. Was: send → wait for promise → mark
+    // local cap. If the network hung but Firestore actually wrote, the
+    // user could re-send (local cap unchanged), creating duplicate gifts
+    // in the recipient's inbox. Stephen sent Jessie 3 mystery boxes by
+    // accident this way.
+    //
+    // Now: mark locally BEFORE the write so the cap holds across retries.
+    // On Firestore catch, roll back the mark + refund the Dew.
+    _markSendDay(friendUid);
     db.collection('friends').doc(friendUid).collection('inbox').doc(giftId).set(giftDoc)
       .then(function(){
-        _markSendDay(friendUid);
         markInteraction(friendUid);
         if (window.LW_ACH){ try { LW_ACH.bump('gifts_sent', 1); LW_ACH.bump('d_gift_send', 1); } catch(e){} }
         callback(true, { tier: tier, loot: loot });
       })
       .catch(function(e){
-        // Refund Dew on Firestore failure
+        // Refund Dew + roll back the local send-mark on Firestore failure
         if (window.earnDew) window.earnDew(cost, 'gift_refund');
+        try {
+          var m = _meta();
+          var f = m[friendUid];
+          if (f && f.dailySendsToday && f.dailySendsToday.date === _today() && f.dailySendsToday.count > 0){
+            f.dailySendsToday.count--;
+            _saveMeta(m);
+          }
+        } catch(eRb){}
         callback(false, e.message || 'Send failed.');
       });
   }
