@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.76';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.77';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -54991,11 +54991,13 @@ function _selectHexPlant(idx,p){
     // CUTTING — lifetime per-plant lock + daily 2/player + 20 Dew. Show all 3 states.
     var _cutLbl,_cutCls,_cutClick;
     var _cutDewBalH=window.getTotalDew?window.getTotalDew():0;
-    if(!_canCut){_cutLbl='&#9986; CUTTING &#128274;';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 5.\')';}
-    else if(_cutTaken){_cutLbl='&#9986; CUTTING &middot; TAKEN';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'You\\u2019ve already taken a cutting from this plant.\')';}
-    else if(_cutDailyLeft<=0){_cutLbl='&#9986; CUTTING &middot; 0/2 today';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'Daily cuttings used (2/2). Resets at midnight.\')';}
-    else if(_cutDewBalH<20){_cutLbl='&#9986; CUTTING &middot; 20&#128167;';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'Need 20 Dew. You have '+_cutDewBalH+'.\')';}
-    else{_cutLbl='&#9986; CUTTING &middot; 20&#128167; &middot; '+_cutDailyLeft+'/2';_cutCls='';_cutClick='window._hexAction(\'cutting\')';}
+    var _cIco='<img src="assets/wild-cutting-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#9986;\'">';
+    var _cutDewMini='<img class="lw-mini" src="assets/fx/drop-blue.png" alt="" onerror="this.outerHTML=\'&#128167;\'">';
+    if(!_canCut){_cutLbl=_cIco+' CUTTING &#128274;';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'\\ud83d\\udd12 Cuttings unlock at Keeper Level 5.\')';}
+    else if(_cutTaken){_cutLbl=_cIco+' CUTTING &middot; TAKEN';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'You\\u2019ve already taken a cutting from this plant.\')';}
+    else if(_cutDailyLeft<=0){_cutLbl=_cIco+' CUTTING &middot; 0/2 today';_cutCls=' locked';_cutClick='window._toast&&window._toast(\'Daily cuttings used (2/2). Resets at midnight.\')';}
+    else if(_cutDewBalH<20){_cutLbl=_cIco+' CUTTING &middot; 20'+_cutDewMini;_cutCls=' locked';_cutClick='window._toast&&window._toast(\'Need 20 Dew. You have '+_cutDewBalH+'.\')';}
+    else{_cutLbl=_cIco+' CUTTING &middot; 20'+_cutDewMini+' &middot; '+_cutDailyLeft+'/2';_cutCls='';_cutClick='window._hexAction(\'cutting\')';}
     actions+='<button class="hi-action-btn gold'+_cutCls+'" onclick="'+_cutClick+'" title="'+(_canCut?'Take a cutting. Costs 20 Dew. Parent unharmed. 2 per day.':'Unlocks at Keeper Level 5')+'">'+_cutLbl+'</button>';
     // NICKNAME button removed 2026-04-26 (Stephen): nicknaming a stranger
     // from their wild plant reads as cross-player tracking. Friend system
