@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.31';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.32';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -62313,7 +62313,7 @@ function _renderToolSection(){
         }
       } catch(e){}
     }
-    h+='<div class="cs-tool-card" onclick="if(window._lwOpenClassManager)_lwOpenClassManager();" style="cursor:pointer;" title="Manage tools in Class Manager">';
+    h+='<div class="cs-tool-card" onclick="if(window._lwShowToolInfo)window._lwShowToolInfo(\''+tid+'\');" style="cursor:pointer;" title="What does this tool do?">';
     h+='<div class="cs-tool-emblem">'+_csArt(artSrc,def.icon,'1.1rem')+'</div>';
     h+='<div class="cs-tool-info">';
     h+='<div class="cs-tool-name">'+def.name+_csPips(true,lvl)+'</div>';
@@ -65459,9 +65459,9 @@ function render(){
       h += '<div style="grid-column:1/-1;margin-top:10px;">';
       h += '<button onclick="if(window.LW_Pi&&LW_Pi.buySeedPouchSlot){LW_Pi.buySeedPouchSlot(function(ok){if(ok&&window.BP)BP.render();});}else if(window.LW_HUT&&LW_HUT.buySeedPouchSlotPi){LW_HUT.buySeedPouchSlotPi();}" style="width:100%;min-height:64px;padding:0.7rem 0.9rem;background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:2px solid rgba(200,168,75,0.55);border-radius:12px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,0.5),0 0 14px rgba(200,168,75,0.18);">';
       h += '<img src="assets/backpackexpansion.png" alt="" style="width:88px;height:88px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\\\"assets/buttons/btn-pi.png\\\" style=\\\"width:48px;height:48px;object-fit:contain;\\\">&apos;;">';
-      h += '<span>+ 5 SEED SLOTS · 1 π</span>';
+      h += '<span>+5 SEED SLOTS · 1π</span>';
       h += '</button>';
-      h += '<div style="text-align:center;margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;">' + _bpCurCap + ' / ' + _bpMaxCap + ' seed slots owned</div>';
+      h += '<div style="text-align:center;margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;">' + _bpCurCap + ' / ' + _bpMaxCap + ' seed slots</div>';
       h += '</div>';
     } else {
       h += '<div style="grid-column:1/-1;margin-top:10px;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">Seed pouch maxed (' + _bpMaxCap + ' slots).</div>';
@@ -65470,11 +65470,11 @@ function render(){
   // ═══ Action row — moved out of the retired plants panel.
   // Container class bp-extra-row so tutorial CSS gating still applies
   // (see index.html:52826 — display:none during early backpack steps).
+  // Stephen 2026-05-01: stripped CLOSE (X already in corner), RETURN
+  // (no-op), and ITEMS (tapping any item already opens the panel)
+  // buttons. Action row is now BOXES + COCOONS only \u2014 those are the
+  // collectible currencies that need their own surface.
   h+='<div class="bp-extra-row" style="grid-column:1/-1;margin-top:10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
-  h+='<button onclick="if(window.BP)BP.close();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--cream);background:linear-gradient(180deg,rgba(60,70,50,0.55),rgba(40,50,32,0.65));border:1.5px solid rgba(180,170,130,0.35);border-radius:10px;cursor:pointer;">\u2715 CLOSE</button>';
-  h+='<button id="bp-rtb-inner" onclick="window.FG_Backpack&&FG_Backpack.returnToBase&&FG_Backpack.returnToBase();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.15),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/house-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udfe0&apos;;"> RETURN</button>';
-  var _itemTotal=0;try{if(window.LW_ITEMS)_itemTotal=window.LW_ITEMS.total();}catch(e){}
-  h+='<button onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--sage);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.05));border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/sprout-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf31&apos;;">ITEMS'+(_itemTotal>0?' ('+_itemTotal+')':'')+'</button>';
   var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
   h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/icons/box.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf81&apos;;">BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
   var _cocoonTotal=0,_cocoonReady=0;try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_cocoonTotal=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_cocoonReady++;}}catch(e){}
@@ -87151,6 +87151,56 @@ function _lwGetToolLevel(toolId){
   return 1;
 }
 window._lwGetToolLevel=_lwGetToolLevel;
+
+// Stephen 2026-05-01: tapping a tool tile in the character sheet did
+// nothing visible — the redirect to Class Manager was confusing. Players
+// don't know what each tool does, where to use it, or how it levels up.
+// This tooltip modal answers all three, then offers MANAGE IN TREE as a
+// secondary action so the Class Manager is still one tap away.
+window._lwShowToolInfo = function(tid){
+  var def = LW_TOOLS[tid]; if(!def)return;
+  var lvl = _lwGetToolLevel(tid);
+  var xpMap = _lwGetToolXP(); var xp = xpMap[tid]||0;
+  var nextThr = lvl===1 ? LW_TOOL_XP_L2 : lvl===2 ? LW_TOOL_XP_L3 : null;
+  var xpRow = nextThr
+    ? '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.5rem;letter-spacing:0.05em;">XP: '+xp+' / '+nextThr+' to L'+(lvl+1)+'</div>'
+    : '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--gold);margin-top:0.5rem;letter-spacing:0.05em;">MAXED · L3</div>';
+  var howToUse = {
+    shears:'Long-press any wild plant to take a cutting. Higher level = shorter cooldown.',
+    can:'Tap WATER ALL on the Wild map to mass-water nearby plants. Unlocks at L2.',
+    pouch:'Passive. More backpack slots automatically. L1: 8 / L2: 12 / L3: 18.',
+    compass:'Tap the wind dial on the Wild map. L2 reveals biome, L3 points to nearest feral.'
+  };
+  var rows = '';
+  for(var L=1;L<=3;L++){
+    var marker = L===lvl ? '<span style="color:var(--gold);">▶</span> ' : '<span style="opacity:0.3;">·</span> ';
+    var label = def.levels && def.levels[L] ? def.levels[L] : '—';
+    var fadeColor = L<=lvl ? 'var(--cream)' : 'var(--muted)';
+    rows += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:'+fadeColor+';margin:0.18rem 0;letter-spacing:0.04em;">'+marker+'L'+L+': '+label+'</div>';
+  }
+  var existing = document.getElementById('lw-tool-info-modal');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'lw-tool-info-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(8,10,6,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:panelFadeIn 0.25s ease;';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  modal.innerHTML =
+    '<div style="background:rgba(18,24,16,0.98);border:1.5px solid rgba(200,168,75,0.5);border-radius:14px;padding:1rem 1.1rem;max-width:min(92vw,360px);width:100%;color:var(--cream);box-shadow:0 8px 36px rgba(0,0,0,0.7);">'
+    + '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">'
+      + '<img src="assets/character-sheet/tools/'+tid+'.png" alt="" style="width:48px;height:48px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.8rem;&quot;>'+(def.icon||'').replace(/'/g,"\\'")+'</span>&apos;;">'
+      + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:0.1em;">'+def.name+' · L'+lvl+'</div>'
+        + '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;">'+(def.desc||'')+'</div>'
+      + '</div>'
+      + '<button onclick="document.getElementById(\'lw-tool-info-modal\').remove();" style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(60,50,30,0.5);color:var(--muted);font-size:0.9rem;cursor:pointer;flex-shrink:0;">&#x2715;</button>'
+    + '</div>'
+    + '<div style="margin:0.6rem 0;">'+rows+'</div>'
+    + xpRow
+    + '<div style="font-family:Playfair Display,serif;font-size:0.78rem;color:var(--cream);line-height:1.45;margin:0.7rem 0 0.5rem;padding:0.55rem 0.7rem;background:rgba(122,179,86,0.08);border-left:2px solid rgba(122,179,86,0.5);border-radius:6px;">'+(howToUse[tid]||'')+'</div>'
+    + '<button onclick="document.getElementById(\'lw-tool-info-modal\').remove();if(window._lwOpenClassManager)_lwOpenClassManager();" style="width:100%;min-height:44px;margin-top:0.4rem;padding:0.45rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.4);background:linear-gradient(180deg,rgba(46,38,18,0.6),rgba(28,24,12,0.7));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;">MANAGE IN KEEPER’S TREE</button>'
+    + '</div>';
+  document.body.appendChild(modal);
+};
 // Refresh keeper-bar avatar AND character-sheet avatar to show chosen class.
 // Both share the same logic: img tag from class PNG, emoji fallback only on
 // 404, never the static 🌱 once a class is picked.
