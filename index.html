@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.88';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.89';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55258,6 +55258,243 @@ window._lwSendGiftFlow = function(friendUid, friendName) {
   };
 };
 
+// ═══ CURIOSITIES — Unified panel for LW_COCOONS + LW_KEEPER ═══
+// Stephen 2026-05-01: replaces the separate "Cocoons" backpack panel +
+// the Hermit Hut "Cocoonery" tab. Both surfaces had different parts of
+// the same conceptual thing — odd objects you carry on walks. The
+// "Cocoons" name was wrong (Gossamer is silk, Amber is a pod) and the
+// caterpillar was buried in a different overlay entirely.
+//
+// Single panel now shows:
+//   • POUCHES   — LW_COCOONS slots (Gossamer / Linen / Amber / Obsidian)
+//   • CREATURES — LW_KEEPER arc (Caterpillar→Wasp / Mudball→Lungfish /
+//                  Meteor→Tardigrade) with state badges + buy/feed/hatch/equip
+//
+// Both data layers untouched — this is purely a UI consolidation. The
+// existing LW_HUT.keeperBuy / keeperFeed / keeperHatch / keeperEquip /
+// keeperUnequip handlers + LW_COCOONS.hatchClick are reused so the
+// game logic doesn't fork.
+window._lwOpenCuriosities = function() {
+  // Toggle: tap the button when open closes it (matches LW_COCOONS pattern)
+  try { var old = document.getElementById('lw-curiosities-panel'); if (old) { old.remove(); return; } } catch(e){}
+
+  var ov = document.createElement('div');
+  ov.id = 'lw-curiosities-panel';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100004;background:rgba(5,8,4,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow-y:auto;padding:1rem;animation:panelFadeIn 0.25s ease;';
+  ov.addEventListener('click', function(ev){ if (ev.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+  _lwRenderCuriosities();
+};
+
+window._lwRenderCuriosities = function() {
+  var ov = document.getElementById('lw-curiosities-panel');
+  if (!ov) return;
+  var pouchSlots = (window.LW_COCOONS && window.LW_COCOONS.slots) ? window.LW_COCOONS.slots() : [];
+  var pouchCap   = (window.LW_COCOONS && window.LW_COCOONS.cap)   ? window.LW_COCOONS.cap()   : 3;
+  var keeperSpecs = (window.LW_KEEPER && window.LW_KEEPER.listSpecs) ? window.LW_KEEPER.listSpecs() : [];
+  var equippedKey = (window.LW_KEEPER && window.LW_KEEPER.equipped) ? window.LW_KEEPER.equipped() : null;
+  var dewBal = (window.getTotalDew && window.getTotalDew()) || 0;
+  var sbBal  = (window.getTotalHashes && window.getTotalHashes()) || 0;
+
+  var h = '<div style="max-width:480px;margin:0 auto;">';
+  // Header
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
+  h += '<div><div style="font-family:Playfair Display,serif;font-size:1.25rem;color:var(--gold);font-style:italic;">Curiosities</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:2px;line-height:1.5;">Odd things you carry on walks. Walking grows them.</div></div>';
+  h += '<button onclick="document.getElementById(\'lw-curiosities-panel\').remove()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">✕</button>';
+  h += '</div>';
+
+  // How this works — covers BOTH systems
+  h += '<div style="padding:0.8rem;margin-bottom:0.9rem;background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(13,16,12,0.7));border:1px solid rgba(122,179,86,0.18);border-radius:10px;">';
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.55rem;">HOW THIS WORKS</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:0.5rem;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.5;">';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Find or buy</b> — pouches drop when plants bloom (free Gossamer daily). Creatures are bought from the hermit and require Dew + Sunbeams.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> — every step credits everything you\'re carrying at once. No equip slot for incubating, no schedule.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — pouches give Dew, items, mystery boxes. Creatures hatch into companions you can equip for ongoing abilities.</span></div>';
+  h += '</div></div>';
+
+  // ─── POUCHES SECTION ───
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;">'+
+       '<img src="assets/cocoons/cocoon-gossamer.png" alt="" style="width:24px;height:24px;object-fit:contain;border-radius:5px;" onerror="this.outerHTML=\'\\u272a\';">'+
+       '<span>POUCHES</span>'+
+       '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">'+pouchSlots.length+' / '+pouchCap+'</span>'+
+       '</div>';
+  if (window.LW_COCOONS_TIERS && (!pouchSlots || !pouchSlots.length)){
+    h += '<div style="padding:1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.7;background:rgba(13,16,12,0.4);border:1px dashed rgba(122,179,86,0.18);border-radius:10px;margin-bottom:0.7rem;">';
+    h += '<div style="font-size:0.7rem;color:var(--cream);margin-bottom:0.4rem;">No pouches in your pocket yet.</div>';
+    h += 'Bloom a plant in the Greenhouse to find one,<br>or come back tomorrow for your daily Gossamer.';
+    h += '</div>';
+  } else if (window.LW_COCOONS_TIERS) {
+    var TIERS = window.LW_COCOONS_TIERS;
+    for (var i=0;i<pouchSlots.length;i++){
+      var c = pouchSlots[i]; var t = TIERS[c.tier] || TIERS.gossamer;
+      var pct = Math.min(100, Math.round(100 * c.distance / c.target));
+      var ready = c.distance >= c.target;
+      var remaining = Math.max(0, c.target - c.distance);
+      h += '<div style="margin-bottom:0.7rem;padding:0.85rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?t.color:'rgba(74,124,53,0.2)')+';border-radius:14px;'+(ready?'box-shadow:0 0 16px '+t.color+'55;':'')+'">';
+      h += '<div style="display:flex;align-items:center;gap:0.85rem;">';
+      h += '<div style="width:80px;height:80px;flex-shrink:0;border-radius:50%;background:rgba(5,8,4,0.7);border:2.5px solid '+t.color+';position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">';
+      h += '<img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.2rem;&quot;>'+t.icon+'</div>&apos;;">';
+      h += '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:'+t.color+';transform:rotate('+(pct*3.6-90)+'deg);transition:transform 0.4s ease;"></div>';
+      h += '</div>';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.92rem;color:var(--cream);letter-spacing:0.06em;">'+t.name+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:3px;line-height:1.5;font-style:italic;">'+t.lore+'</div>';
+      h += '<div style="height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;margin-top:8px;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),'+t.color+');border-radius:3px;"></div></div>';
+      h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:4px;"><span>'+c.distance.toLocaleString()+'m / '+c.target.toLocaleString()+'m</span><span>'+(ready?'<b style="color:'+t.color+';">READY TO HATCH</b>':(remaining.toLocaleString()+'m to go'))+'</span></div>';
+      h += '</div></div>';
+      if (ready) {
+        h += '<button data-pouch-hatch="'+i+'" style="display:block;width:100%;margin-top:0.7rem;padding:14px;border-radius:10px;border:1.5px solid '+t.color+';background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(122,179,86,0.12));color:'+t.color+';font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;"><img src="assets/fx/sparkle-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\\u2728\';"> HATCH</button>';
+      }
+      h += '</div>';
+    }
+  }
+
+  // ─── CREATURES SECTION ───
+  if (keeperSpecs.length) {
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1.3rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;">'+
+         '<img src="assets/companions/parasitic-wasp.png" alt="" style="width:24px;height:24px;object-fit:contain;border-radius:5px;" onerror="this.outerHTML=\'\\ud83d\\udc1b\';">'+
+         '<span>CREATURES</span>'+
+         '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">acquired from the hermit</span>'+
+         '</div>';
+    if (equippedKey){
+      var eqSpec = window.LW_KEEPER.getSpec(equippedKey);
+      if (eqSpec){
+        h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.7rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.08em;">EQUIPPED · '+eqSpec.hatchedName+' <button data-keeper-unequip="1" style="margin-left:0.6rem;background:rgba(200,168,75,0.2);border:1px solid rgba(200,168,75,0.4);color:#e8dcc8;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.6rem;cursor:pointer;">Set aside</button></div>';
+      }
+    }
+    for (var ci=0; ci<keeperSpecs.length; ci++) {
+      var spec = keeperSpecs[ci];
+      var prog = window.LW_KEEPER.progress(spec.key);
+      var owned = prog.state !== 'locked';
+      var hatched = prog.state === 'hatched';
+      var ready = window.LW_KEEPER.isReady(spec.key);
+      var canBuy = window.LW_KEEPER.canPurchase(spec.key);
+      var canAfford = (dewBal >= spec.costDew) && (sbBal >= spec.costSunbeams);
+      var artSrc = hatched ? spec.hatchedArt : spec.cocoonArt;
+      var artFallback = hatched ? '🐛' : '🥚';
+
+      var stateBadge = '';
+      if (hatched && equippedKey === spec.key) stateBadge = '<span style="background:linear-gradient(180deg,#c8a84b,#a08534);color:#1a1208;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">EQUIPPED</span>';
+      else if (hatched) stateBadge = '<span style="background:rgba(122,179,86,0.2);color:#a8d484;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">HATCHED</span>';
+      else if (ready) stateBadge = '<span style="background:rgba(200,168,75,0.3);color:#f0d674;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;animation:lwPulseHint 1.6s ease-in-out infinite;">READY</span>';
+      else if (owned) stateBadge = '<span style="background:rgba(80,140,200,0.2);color:#9ec4ec;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">INCUBATING</span>';
+      else if (!canBuy) stateBadge = '<span style="background:rgba(120,120,120,0.2);color:#9a9a9a;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">LOCKED</span>';
+      else stateBadge = '<span style="background:rgba(60,60,60,0.3);color:#a89e8a;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">FOR SALE</span>';
+
+      h += '<div style="margin-bottom:0.7rem;padding:0.85rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?'rgba(200,168,75,0.7)':(hatched?'rgba(122,179,86,0.4)':'rgba(74,124,53,0.2)'))+';border-radius:14px;'+(ready?'box-shadow:0 0 16px rgba(200,168,75,0.3);':'')+'">';
+      h += '<div style="display:flex;align-items:flex-start;gap:0.85rem;">';
+      h += '<div style="width:80px;height:80px;flex-shrink:0;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.7);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;">';
+      h += '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:cover;'+(owned?'':'filter:grayscale(0.7) opacity(0.55);')+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.4rem;&quot;>'+artFallback+'</div>&apos;;">';
+      h += '</div>';
+      h += '<div style="flex:1;min-width:0;">';
+      var displayName = hatched ? spec.hatchedName : spec.cocoonName;
+      h += '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.25rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.92rem;color:var(--cream);letter-spacing:0.06em;">'+displayName+'</div>'+stateBadge+'</div>';
+      var flavor = hatched ? spec.hatchFlavor : spec.flavor;
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.45;font-style:italic;">'+flavor+'</div>';
+      // State-specific body
+      if (!owned) {
+        if (canBuy) {
+          var dewClass = (dewBal >= spec.costDew) ? '' : 'style="color:#c97a7a;"';
+          var sbClass  = (sbBal  >= spec.costSunbeams) ? '' : 'style="color:#c97a7a;"';
+          h += '<div style="margin-top:0.45rem;display:flex;gap:0.7rem;font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);">';
+          h += '<span '+dewClass+'><b>'+spec.costDew.toLocaleString()+'</b> Dew</span>';
+          h += '<span '+sbClass+'><b>'+spec.costSunbeams+'</b> Sunbeams</span>';
+          h += '</div>';
+          h += '<div style="margin-top:0.2rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+(spec.distanceM/1000)+' km walk to hatch</div>';
+        } else {
+          var req = spec.requires ? window.LW_KEEPER.getSpec(spec.requires) : null;
+          if (req) h += '<div style="margin-top:0.45rem;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">Hatch the <b style="color:var(--gold);">'+req.hatchedName+'</b> first.</div>';
+        }
+      } else if (!hatched) {
+        // Incubating — distance progress
+        var pctD = Math.min(100, Math.round(100 * prog.distance / prog.distanceM));
+        var kmDone = (prog.distance/1000).toFixed(1);
+        var kmTotal = (prog.distanceM/1000);
+        h += '<div style="margin-top:0.45rem;height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pctD+'%;background:linear-gradient(90deg,#7ab356,#c8a84b);"></div></div>';
+        h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:3px;"><span>'+kmDone+' / '+kmTotal+' km</span><span>'+pctD+'%</span></div>';
+        // Lungfish feed
+        if (spec.feedTokensRequired){
+          var pctF = Math.min(100, Math.round(100 * prog.fed / prog.feedRequired));
+          h += '<div style="margin-top:0.4rem;font-family:DM Mono,monospace;font-size:0.58rem;color:#9ec4ec;margin-bottom:3px;">Pour Dew into the mudball</div>';
+          h += '<div style="height:6px;background:rgba(20,18,14,0.6);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pctF+'%;background:linear-gradient(90deg,#5fa3d8,#9ec4ec);"></div></div>';
+          h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:3px;"><span>'+prog.fed+' / '+prog.feedRequired+' pours</span><span>'+prog.tokens+' ready · '+spec.feedAmount+' Dew/pour</span></div>';
+        }
+      }
+      h += '</div></div>';
+      // Action buttons
+      if (!owned && canBuy) {
+        h += '<button data-keeper-buy="'+spec.key+'" '+(canAfford?'':'disabled')+' style="display:block;width:100%;margin-top:0.7rem;padding:14px;border-radius:10px;border:1.5px solid '+(canAfford?'rgba(200,168,75,0.65)':'rgba(120,120,120,0.4)')+';background:'+(canAfford?'linear-gradient(180deg,rgba(200,168,75,0.3),rgba(120,100,40,0.4))':'rgba(40,40,40,0.4)')+';color:'+(canAfford?'var(--gold)':'rgba(180,180,180,0.5)')+';font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:'+(canAfford?'pointer':'not-allowed')+';min-height:52px;">'+(canAfford?'ACQUIRE':'NOT ENOUGH')+'</button>';
+      } else if (owned && !hatched && spec.feedTokensRequired) {
+        var canFeed = prog.tokens > 0 && prog.fed < prog.feedRequired;
+        h += '<button data-keeper-feed="'+spec.key+'" '+(canFeed?'':'disabled')+' style="display:block;width:100%;margin-top:0.7rem;padding:14px;border-radius:10px;border:1.5px solid '+(canFeed?'rgba(91,175,220,0.65)':'rgba(120,120,120,0.4)')+';background:'+(canFeed?'linear-gradient(180deg,#5fa3d8,#3d7aa8)':'rgba(40,40,40,0.4)')+';color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:'+(canFeed?'pointer':'not-allowed')+';min-height:52px;">'+(canFeed?'POUR DEW (1 token)':(prog.tokens>0?'ALREADY FED':'WALK TO EARN POURS'))+'</button>';
+      }
+      if (ready) {
+        h += '<button data-keeper-hatch="'+spec.key+'" style="display:block;width:100%;margin-top:0.55rem;padding:14px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.7);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;animation:lwPulseHint 1.6s ease-in-out infinite;"><img src="assets/fx/sparkle-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\\u2728\';"> HATCH</button>';
+      } else if (hatched && equippedKey !== spec.key) {
+        h += '<button data-keeper-equip="'+spec.key+'" style="display:block;width:100%;margin-top:0.55rem;padding:14px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.6);background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;">EQUIP</button>';
+      }
+      h += '</div>';
+    }
+  }
+
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.6;">Walking credits every curiosity in your pocket at once. Different things grow at different speeds — keep walking.</div>';
+  h += '</div>';
+  ov.innerHTML = h;
+
+  // ─── WIRE BUTTONS ───
+  var rerender = function(){ _lwRenderCuriosities(); };
+  var rows = ov.querySelectorAll('button[data-pouch-hatch]');
+  for (var pi=0; pi<rows.length; pi++) (function(b){
+    b.addEventListener('click', function(){
+      var idx = parseInt(b.getAttribute('data-pouch-hatch'), 10);
+      if (window.LW_COCOONS && window.LW_COCOONS.hatchClick) window.LW_COCOONS.hatchClick(idx);
+      // hatchClick already shows reveal modal + refreshes its own panel; we
+      // also need to refresh THIS panel since it replaced LW_COCOONS' panel.
+      setTimeout(rerender, 100);
+    });
+  })(rows[pi]);
+  var buyBtns = ov.querySelectorAll('button[data-keeper-buy]');
+  for (var bi=0; bi<buyBtns.length; bi++) (function(b){
+    b.addEventListener('click', function(){
+      var key = b.getAttribute('data-keeper-buy');
+      if (window.LW_HUT && window.LW_HUT.keeperBuy) window.LW_HUT.keeperBuy(key);
+      else if (window.LW_KEEPER && window.LW_KEEPER.purchase) window.LW_KEEPER.purchase(key);
+      setTimeout(rerender, 100);
+    });
+  })(buyBtns[bi]);
+  var feedBtns = ov.querySelectorAll('button[data-keeper-feed]');
+  for (var fi=0; fi<feedBtns.length; fi++) (function(b){
+    b.addEventListener('click', function(){
+      var key = b.getAttribute('data-keeper-feed');
+      if (window.LW_KEEPER && window.LW_KEEPER.feed) window.LW_KEEPER.feed(key);
+      setTimeout(rerender, 100);
+    });
+  })(feedBtns[fi]);
+  var hatchBtns = ov.querySelectorAll('button[data-keeper-hatch]');
+  for (var hi=0; hi<hatchBtns.length; hi++) (function(b){
+    b.addEventListener('click', function(){
+      var key = b.getAttribute('data-keeper-hatch');
+      if (window.LW_HUT && window.LW_HUT.keeperHatch) window.LW_HUT.keeperHatch(key);
+      else if (window.LW_KEEPER && window.LW_KEEPER.hatch) window.LW_KEEPER.hatch(key);
+      setTimeout(rerender, 200);
+    });
+  })(hatchBtns[hi]);
+  var equipBtns = ov.querySelectorAll('button[data-keeper-equip]');
+  for (var ei=0; ei<equipBtns.length; ei++) (function(b){
+    b.addEventListener('click', function(){
+      var key = b.getAttribute('data-keeper-equip');
+      if (window.LW_KEEPER && window.LW_KEEPER.equip) window.LW_KEEPER.equip(key);
+      setTimeout(rerender, 100);
+    });
+  })(equipBtns[ei]);
+  var unequipBtn = ov.querySelector('button[data-keeper-unequip]');
+  if (unequipBtn) unequipBtn.addEventListener('click', function(){
+    if (window.LW_KEEPER && window.LW_KEEPER.unequip) window.LW_KEEPER.unequip();
+    rerender();
+  });
+};
+
 // ═══ TWIN BLOOM — Tier 3 cross-distance breeding ═══
 // Two overlays:
 //   _lwOpenTwinBloomPropose(friendUid, friendName)
@@ -69176,11 +69413,14 @@ function render(){
   h+='<div class="bp-extra-row" style="grid-column:1/-1;margin-top:10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
   var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
   h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/icons/box.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf81&apos;;">BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
-  var _cocoonTotal=0,_cocoonReady=0;try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_cocoonTotal=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_cocoonReady++;}}catch(e){}
-  // Stephen 2026-05-01: cocoon access lives only here now (was duplicated on
-  // the keeper bar). Pulse-when-ready keeps the same urgency the home-screen
-  // pip had so the player still notices "something hatched while I walked".
-  h+='<button class="'+(_cocoonReady>0?'lw-pulse-hint':'')+'" onclick="if(window.LW_COCOONS)LW_COCOONS.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_cocoonReady>0?"#c8a84b":(_cocoonTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_cocoonReady>0?'rgba(200,168,75,0.7)':(_cocoonTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_cocoonReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83e\udd8b&apos;;">COCOONS'+(_cocoonTotal>0?' ('+_cocoonTotal+(_cocoonReady>0?' \u2022 '+_cocoonReady+' READY':'')+')':'')+'</button>';
+  // Stephen 2026-05-01: Curiosities = unified panel (LW_COCOONS pouches +
+  // LW_KEEPER creatures). Counts BOTH pouches and incubating creatures so
+  // the badge reflects everything you're carrying. Pulse fires if anything
+  // is ready to hatch on either side.
+  var _curTotal=0,_curReady=0;
+  try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_curTotal+=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_curReady++;}}catch(e){}
+  try{if(window.LW_KEEPER){var _kSpecs=window.LW_KEEPER.listSpecs();for(var _ki=0;_ki<_kSpecs.length;_ki++){var _kp=window.LW_KEEPER.progress(_kSpecs[_ki].key);if(_kp.state==='incubating'||_kp.state==='hatched')_curTotal++;if(window.LW_KEEPER.isReady(_kSpecs[_ki].key))_curReady++;}}}catch(e){}
+  h+='<button class="'+(_curReady>0?'lw-pulse-hint':'')+'" onclick="if(window._lwOpenCuriosities)window._lwOpenCuriosities();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_curReady>0?"#c8a84b":(_curTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_curReady>0?'rgba(200,168,75,0.7)':(_curTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_curReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83e\udd8b&apos;;">CURIOSITIES'+(_curTotal>0?' ('+_curTotal+(_curReady>0?' \u2022 '+_curReady+' READY':'')+')':'')+'</button>';
   h+='</div>';
   se.innerHTML=h;
   // dbb badge is owned by FG_Wild._updateUI — do not overwrite here
@@ -84250,7 +84490,10 @@ window.LW_GIFTS = (function(){
           '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> ALMANAC</button>' +
           '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">SLOTS</button>' +
           '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">TRADE</button>' +
-          '<button class="lwh-tab"        data-tab="cocoonery" onclick="LW_HUT.switchTab(\'cocoonery\')">COCOONERY</button>' +
+          // Stephen 2026-05-01: Cocoonery tab retired — unified into the
+          // Curiosities panel (backpack → CURIOSITIES). The tab is gone but
+          // LW_HUT.open('cocoonery') still works as a deep-link → it now
+          // closes the hut and opens the Curiosities panel directly.
         '</div>' +
         // Scroll region — portrait scrolls off naturally as user reads body
         '<div class="lwh-scroll">' +
@@ -84292,6 +84535,13 @@ window.LW_GIFTS = (function(){
   }
 
   function open(tab){
+    // Stephen 2026-05-01: 'cocoonery' tab retired → deep-link redirects to
+    // the unified Curiosities panel. Keeps existing call sites working
+    // (cs-cocoon-section in character sheet, any "open cocoonery" link).
+    if (tab === 'cocoonery') {
+      if (window._lwOpenCuriosities) window._lwOpenCuriosities();
+      return;
+    }
     ensureOverlay();
     if (tab) currentTab = tab;
     render();
