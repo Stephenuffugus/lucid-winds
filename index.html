@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.71';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.72';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -54609,7 +54609,7 @@ window._lwShowHexHelp=function(){
     ['assets/mulchward.png','🌷','MULCH','Spend 1 fertilizer to give any plant +24h life and +1 EA. Earn fertilizer by composting greenhouse plants. 24h cooldown.'],
     ['assets/fx/praying-hands-gold.png','🙏','BLESSING','A daily Dew gift from any Rare-or-rarer stranger plant. Once per plant per day.'],
     ['assets/character-sheet/tools/shears.png','✂️','CUTTING','Spend 20 Dew to turn this plant into a seed in your nursery. Limit 2 per day, and once per plant ever. Unlocks at Keeper Level 5.'],
-    ['assets/wild-inspect-btn.png','🔍','INSPECT','Open the plant in the carousel to see traits, age, and lineage.'],
+    ['assets/wild-inspect-btn-v2.png','🔍','INSPECT','Open the plant in the carousel to see traits, age, and lineage.'],
     ['assets/splash-seed-v2.png','🌱','SEARCH FOR SEEDS','Once per day per zone, hunt for feral seeds. Difficulty scales with seed rarity.']
   ];
   var html='<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.85rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.14em;color:var(--gold);flex:1;">HEX ACTIONS</div><button id="lw-hex-help-close" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.4);background:rgba(26,36,22,0.6);color:var(--cream);font-size:1rem;cursor:pointer;">&#10005;</button></div>';
@@ -54737,8 +54737,8 @@ function _openHexInspector(zk){
     // the hex without stopping.'
     if(augmented.length>=1&&window.openCarousel){
       var carBtn=document.createElement('button');
-      carBtn.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px 18px 18px;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.5);border-radius:16px;background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.34));color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.16em;cursor:pointer;min-height:140px;text-shadow:0 1px 2px rgba(0,0,0,0.5);';
-      carBtn.innerHTML='<img src="assets/wild-inspect-btn.png" alt="" style="width:84px;height:84px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.35));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="line-height:1.2;text-align:center;">TAKE A CLOSER LOOK<br><span style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
+      carBtn.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px 18px 18px;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.42);border-radius:16px;background:linear-gradient(180deg,rgba(20,28,18,0.78),rgba(12,16,12,0.92));color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.16em;cursor:pointer;min-height:140px;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:inset 0 0 18px rgba(200,168,75,0.08),0 4px 14px rgba(0,0,0,0.45);';
+      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png" alt="" style="width:84px;height:84px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.35));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="line-height:1.2;text-align:center;">TAKE A CLOSER LOOK<br><span style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
       (function(arr){carBtn.addEventListener('click',function(){
         try{if(typeof closeHI==='function')closeHI();}catch(e){}
         try{if(typeof closeTP==='function')closeTP();}catch(e){}
@@ -54888,7 +54888,7 @@ function _selectHexPlant(idx,p){
   var actions='';
   var user=window.firebase&&firebase.auth()&&firebase.auth().currentUser;
   var isOwn=p.own||(user&&user.uid&&p.ownerUid===user.uid);
-  var _inspectBtn='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')"><img src="assets/wild-inspect-btn.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;display:inline-block;margin-right:5px;" onerror="this.outerHTML=\'&#128269;\'"> INSPECT</button>';
+  var _inspectBtn='<button class="hi-action-btn" onclick="window._hexAction(\'inspect\')"><img src="assets/wild-inspect-btn-v2.png" alt="" style="width:40px;height:40px;object-fit:contain;vertical-align:-12px;display:inline-block;margin-right:6px;" onerror="this.outerHTML=\'&#128269;\'"> INSPECT</button>';
   // Fertilizer count for the MULCH button gating + tooltip
   var _mInv={};try{_mInv=JSON.parse(localStorage.getItem('sws_inventory')||'{}')||{};}catch(e){}
   var _mFert=_mInv.fertilizer||0;
