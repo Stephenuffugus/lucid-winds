@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.27';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.28';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69636,6 +69636,23 @@ function _step40Inner(){
   find();
 }
 function _step40Spotlight(forage){
+  // Stephen 2026-05-01 URGENT FIX #5 — FORAGE button shares the SAME iOS
+  // CSS-hide bug as the SOW button (fixed at step 36 in commit 05618b4).
+  // CSS rules at lines 5497-5515 hide #ffb whenever body.lw-bp-open or
+  // body:has(#bpe.open). If the backpack-open class lingered from earlier
+  // play, FORAGE looks invisible/untappable on iOS just like SOW did.
+  // Apply the same belt-and-FOUR-suspenders pattern.
+  try {
+    document.body.classList.remove('lw-bp-open');
+    var _bpe = document.getElementById('bpe');
+    if (_bpe && _bpe.classList.contains('open')) _bpe.classList.remove('open');
+    forage.style.setProperty('display', 'flex', 'important');
+    forage.style.setProperty('visibility', 'visible', 'important');
+    forage.style.setProperty('opacity', '1', 'important');
+    forage.style.setProperty('pointer-events', 'auto', 'important');
+    forage.style.setProperty('z-index', '1000012', 'important');
+    void forage.offsetHeight;
+  } catch(e){}
   try{_spotlight&&_spotlight(forage);}catch(e){}
   // Force the forage button to look ready so the player can tap it.
   try{forage.classList.add('ready');}catch(e){}
@@ -69668,6 +69685,16 @@ function _step40Spotlight(forage){
     if(_getStep()!==40){forage.removeEventListener('click',onForageTap,true);return;}
     var fc=document.getElementById('lw-forage-panel');
     if(fc){_advanced=true;forage.removeEventListener('click',onForageTap,true);_clear();setTimeout(_step41,500);return;}
+    // Re-assert visibility every tick so a stray hide-class re-apply gets
+    // corrected within 500ms (same pattern as step 36).
+    try {
+      document.body.classList.remove('lw-bp-open');
+      var _bpe2 = document.getElementById('bpe');
+      if (_bpe2 && _bpe2.classList.contains('open')) _bpe2.classList.remove('open');
+      forage.style.setProperty('visibility', 'visible', 'important');
+      forage.style.setProperty('opacity', '1', 'important');
+      forage.style.setProperty('pointer-events', 'auto', 'important');
+    } catch(e){}
     if(polls<600){polls++;setTimeout(watch,500);}
     // No fallback advance — require an actual forage round to open.
   };
@@ -69772,6 +69799,7 @@ function _step42(){
   _pulseBpi();
   // Watch for the backpack to open, then pulse the HOLD-TO-SEND button.
   var _htcPulsed=false;
+  var _watchOpenAttempts=0;
   var _watchOpen=function(){
     if(_getStep()!==42)return;
     var bpe=document.getElementById('bpe');
@@ -69791,7 +69819,12 @@ function _step42(){
       pulseHtc();
       return; // stop watching for open; transition handled by bp-seed-to-nursery event
     }
-    setTimeout(_watchOpen,400);
+    // Cap at 750 ticks (5 min). Beyond that we stop polling — the
+    // bp-seed-to-nursery event listener at line ~69830 stays bound and
+    // can still advance if the player eventually opens the backpack.
+    // The mini-prompt + pulse stay visible too. Stranding the polling
+    // is fine; the silent infinite recurse was not.
+    if(_watchOpenAttempts<750){_watchOpenAttempts++;setTimeout(_watchOpen,400);}
   };
   setTimeout(_watchOpen,400);
   var _advanced=false;
@@ -70109,13 +70142,18 @@ function _step48(){
       }
       // Watch for the companion picker opening; when it does, clear the
       // pulse so it doesn't carry into the picker view.
+      var _step48Attempts=0;
       var _step48PickerWatch=function(){
         if(_getStep()!==48)return;
         if(document.getElementById('cs-comp-picker')){
           try{var c=document.getElementById('cs-companion-card')||document.querySelector('.cs-companion-card');if(c)c.classList.remove('lw-pulse-hint');}catch(e){}
           return;
         }
-        setTimeout(_step48PickerWatch,400);
+        // Cap at 150 ticks (60s) — picker is a cosmetic pulse-cleanup, not
+        // a strand point. The NEXT button at line 70151 is the real
+        // advance trigger; this watch just removes a CSS class.
+        if(_step48Attempts<150){_step48Attempts++;setTimeout(_step48PickerWatch,400);return;}
+        try{var c2=document.getElementById('cs-companion-card')||document.querySelector('.cs-companion-card');if(c2)c2.classList.remove('lw-pulse-hint');}catch(e){}
       };
       setTimeout(_step48PickerWatch,800);
       _dialog(
