@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.31';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -70096,6 +70096,9 @@ function _step47(){
         'Forager, Breeder, Cartographer, Tender, or Steward; each shapes how you play. Tap CHOOSE on the one that calls to you.',
         '',null,'top');
       if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+      // Manual escape if Class Manager fails to render or CHOOSE buttons
+      // are off-screen — common iOS overlay risk. 10s window.
+      _lwTutStuckLink(47, function(){setTimeout(_step47b,400);}, 10000);
       var polls=0;
       var watch=function(){
         if(_getStep()!==47)return;
