@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.55';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.56';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -23688,6 +23688,7 @@ document.addEventListener('keydown', function(e) {
     switch(t.flower % 71) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
       case 0: // Bud — tightly closed waxy bud with sepal wrap (precursor)
         // Soft AO halo behind bud
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*0.95)+'" ry="'+(fs*1.25)+'" fill="rgba(40,20,5,0.22)" opacity="'+(0.6*bloomOp)+'"/>';
         // Sepal cup — three sage-green wrapping leaves at base, slightly darker than fc
         var _b0sep = _hueShift(PALETTE.sage, parseInt(uid.slice(0,2),16), -8);
@@ -23722,6 +23723,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 1: // Rose — overlapping cupped petals, 3-ring occlusion sandwich + master polish
         // AO halo behind bloom
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.0)+'" fill="rgba(40,20,5,0.22)" opacity="'+(0.55*bloomOp)+'"/>';
         // Hue-shifted dark for back-petal ring (occlusion sandwich)
         var _b1dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
@@ -23763,6 +23765,7 @@ document.addEventListener('keydown', function(e) {
       case 2: // Hibiscus — 5 wide overlapping petals, stamen column, master polish
         var _h2dark = _hueShift(fc, parseInt(uid.slice(1,3),16), 18);
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.25)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         // Back petal shadows (occlusion sandwich, dimmed darker)
         for (var hi2b=0; hi2b<5; hi2b++) {
@@ -23810,6 +23813,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 3: // Lotus — boat-shaped petals, 2 staggered layers with master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.25)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         var _l3dk = _hueShift(fc, parseInt(uid.slice(2,4),16), -14);
         for (var li=0; li<8; li++) {
@@ -23852,6 +23856,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 4: // Dahlia — three rings of tapered petals, master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.10)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         var _d4dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
         // BACK ring first (dimmed dark, drawn behind)
@@ -23886,6 +23891,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 5: // Tulip — cupped bezier form with layered petals + master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy-fs*0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.20)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         // Back petals (occlusion sandwich, darker hue-shift)
         var _t5dark = _hueShift(fc, parseInt(uid.slice(2,4),16), -14);
@@ -23914,6 +23920,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 6: // Spike — vertical inflorescence with layered florets, master polish
         // AO halo (vertical)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy-fs*1.0)+'" rx="'+(fs*0.55)+'" ry="'+(fs*1.30)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Central rachis — warm-shifted dark + cream pair
         s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+fx+'" y2="'+(fy-fs*2.0)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.75" opacity="'+(0.6*bloomOp)+'" stroke-linecap="round"/>';
@@ -23945,6 +23952,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 7: // Mandala — luminous sacred-geometry centre (Phase 23 halo via renderHalo()), master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" r="'+(fs*0.85)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         // Outer ring of 12 micro-petals (occlusion sandwich back)
         var _m7dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
@@ -23974,6 +23982,7 @@ document.addEventListener('keydown', function(e) {
 
       case 8: // Clover Head — compact spherical cluster of tiny tubular florets, master polish
         // AO halo (warm)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" r="'+(fs*0.85)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         // Cluster of ~14 tiny florets arranged in a hemisphere (Vogel phyllotaxis)
         var _c8hue = _hueShift(fc, parseInt(uid.slice(0,2),16), 10);
@@ -23999,6 +24008,7 @@ document.addEventListener('keydown', function(e) {
 
       case 9: // Bottlebrush (Callistemon) — radial stamen explosion in fuzzy cylinder, no petals
         // Soft fuzzy halo around the cylinder (life-glow)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.6)+'" rx="'+(fs*0.85)+'" ry="'+(fs*1.1)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Central rachis (woody axis), warm-dark
         s += '<line x1="'+fx+'" y1="'+(fy+fs*0.35)+'" x2="'+fx+'" y2="'+(fy-fs*1.6)+'" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.14).toFixed(2)+'" stroke-linecap="round" opacity="'+(0.78*bloomOp)+'"/>';
@@ -24042,6 +24052,7 @@ document.addEventListener('keydown', function(e) {
 
       case 10: // Orchid — complex layered petals with labellum lip, master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+fs*0.3)+'" rx="'+(fs*1.85)+'" ry="'+(fs*1.50)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         var _o10dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
         // Back sepals (3 dimmed darker spears rotated 120°, occlusion sandwich back)
@@ -24090,6 +24101,7 @@ document.addEventListener('keydown', function(e) {
 
       case 11: // Rose+ — concentric spiral petals with inward progressive scaling, master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.05)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
         var _r11dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
         for(var mm=0; mm<8; mm++){
@@ -24124,6 +24136,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 13: // Pitcher Plant — deep tubular trap with overlapping lid
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo (master pass injection)
           s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           var pw = fs * 1.1, ph = fs * 2.2, ptx = fx, pty = fy;
@@ -24225,6 +24238,7 @@ document.addEventListener('keydown', function(e) {
 
       case 15: // Bell Flowers / Lily of the Valley — delicate drooping bells
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           var bellCount = 3 + (fs > 5 ? 1 : 0);
           // Arching main stem
           s += '<path d="M'+fx+','+(fy+fs*0.5)+' C'+(fx-fs*0.8)+','+(fy-fs*0.4)+' '+(fx-fs*0.4)+','+(fy-fs*1.8)+' '+fx+','+(fy-fs*2.2)+'"'
@@ -24359,6 +24373,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 12: // Carnivorous Flytrap (Dionaea) — hinged jaws with cilia teeth + trigger hairs + interior glow
         // Hinge AO at base (warm-dark ink-pool where lobes meet)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(fs*0.32)+'" ry="'+(fs*0.16)+'" fill="rgba(40,20,5,0.55)" opacity="'+(0.85*bloomOp)+'"/>';
         // BACK shadow of jaw silhouette (slightly larger, dimmed pine)
         var _b12dk = _hueShift(PALETTE.pine, parseInt(uid.slice(0,2),16), -12);
@@ -24407,6 +24422,7 @@ document.addEventListener('keydown', function(e) {
       // ═══ set-103: 12 NEW BLOOM TYPES (cases 17-28) ═══════════════════════
       case 17: // Chrysanthemum — Garden Mum (incurved type) — tightly incurved petals making a ball
         // Soft AO halo behind the ball
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.5)+'" cy="'+(fy+0.5)+'" r="'+(fs*1.45)+'" fill="rgba(40,20,5,0.22)" opacity="'+(0.55*bloomOp)+'"/>';
         // Hue-shifted dark for back-petal ring
         var _b17dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
@@ -24457,6 +24473,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 18: // Moon Orchid (Phalaenopsis) — flat moth-wing dish with patterned labellum + pollinia column
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+fs*0.1)+'" rx="'+(fs*1.35)+'" ry="'+(fs*1.15)+'" fill="rgba(40,20,5,0.2)" opacity="'+(0.6*bloomOp)+'"/>';
         // Hue-shifted dark for back-sepal layer (dimmed -8%)
         var _b18dk = _hueShift(fc, parseInt(uid.slice(2,4),16), -10);
@@ -24505,6 +24522,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 19: // Poppy — silken 4-petal cup with dark velvet center, almost-black anther mound
         // AO halo behind cup
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.25)+'" fill="rgba(40,20,5,0.2)" opacity="'+(0.55*bloomOp)+'"/>';
         // BACK pair (dimmer, behind front pair) — draw first
         var _b19dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -12);
@@ -24620,6 +24638,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 21: // Bird of Paradise — Strelitzia reginae (orange crest + blue tongue, asymmetric §3.L)
         // Sheath bract underline (warm shadow base — terminator inset §1)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy+fs*0.06)+' '+(fx+fs*1.30)+','+(fy-fs*0.28)+' '+(fx+fs*1.78)+','+(fy+fs*0.04)+'" fill="none" stroke="rgba(40,20,5,0.42)" stroke-width="0.7" stroke-linecap="round" opacity="'+(bloomOp*0.7)+'"/>';
         // RIGHT orange crest petal (front, full sat)
         s += '<path d="M'+fx+','+fy+' C'+(fx+fs*0.25)+','+(fy-fs*0.2)+' '+(fx+fs*1.45)+','+(fy-fs*0.55)+' '+(fx+fs*1.78)+','+(fy-fs*0.05)+' C'+(fx+fs*1.26)+','+(fy+fs*0.2)+' '+(fx+fs*0.8)+','+(fy+fs*0.28)+' '+fx+','+fy+' Z" fill="'+fc+'" opacity="'+(0.86*bloomOp)+'"/>';
@@ -24642,6 +24661,7 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+fs*1.66)+','+(fy-fs*0.18)+' Q'+(fx+fs*1.78)+','+(fy-fs*0.05)+' '+(fx+fs*1.78)+','+(fy+fs*0.04)+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" opacity="'+(bloomOp*0.6)+'"/>';
         break;
       case 22: // Fire Flower — emberwheel mythic with reflexed flame-tepals (§3.C / §6 throat glow)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         // Outer back ring — dimmed 8-12% (§2 stack ordering)
         for (var efr = 0; efr < 3; efr++) {
           var efRad = fs * (1.0 - efr*0.22);
@@ -24686,6 +24706,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 23: // King Protea — Protea cynaroides (bowl of pointed bracts around fuzzy heart, §3.K cone variant)
         // Receptacle AO base (§2 step 1)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+fx+'" cy="'+(fy+fs*0.05)+'" rx="'+(fs*1.18)+'" ry="'+(fs*0.32)+'" fill="rgba(40,20,5,0.45)" opacity="'+(bloomOp*0.55)+'"/>';
         // 14 pointed bracts — back-to-front: dim outer 8% (§2)
         for (var pr3 = 0; pr3 < 14; pr3++) {
@@ -24722,6 +24743,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 24: // Anthurium — Anthurium andraeanum (lacquered heart-spathe + yellow spadix tail)
         // AO halo (master pass)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.10)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Spathe AO ink-pool at base (§1)
         s += '<path d="M'+fx+','+(fy+fs*0.04)+' C'+(fx-fs*0.46)+','+(fy-fs*0.18)+' '+(fx-fs*0.42)+','+(fy-fs*0.34)+' '+fx+','+(fy-fs*0.34)+' C'+(fx+fs*0.42)+','+(fy-fs*0.34)+' '+(fx+fs*0.46)+','+(fy-fs*0.18)+' '+fx+','+(fy+fs*0.04)+' Z" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.6)+'"/>';
@@ -24746,6 +24768,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 25: // Cherry Blossom — Prunus (5 near-round petals at 72° with notched tips, §3.A textbook)
         // Receptacle AO under center (§2)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.32)+'" fill="rgba(40,20,5,0.4)" opacity="'+(bloomOp*0.55)+'"/>';
         // 5 petals at 72° — round with notched tip
         for (var cb3 = 0; cb3 < 5; cb3++) {
@@ -24780,6 +24803,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 26: // Coneflower — Echinacea purpurea (drooping pink rays + spiny orange cone, §3.K reflexed)
         // Cone AO base shadow (§2)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+fx+'" cy="'+(fy+fs*0.04)+'" rx="'+(fs*0.4)+'" ry="'+(fs*0.58)+'" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.6)+'"/>';
         // 13 reflexed rays drooping outward (§3.K)
         for (var ce3 = 0; ce3 < 13; ce3++) {
@@ -24902,6 +24926,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 30: // Trumpet Vine — Campsis radicans (orange-red trumpet, 5 fused lobes, §3.D throat glow)
         // Trumpet silhouette
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<path d="M'+fx+','+(fy+fs*0.18)+' C'+(fx-fs*0.18)+','+(fy-fs*0.06)+' '+(fx-fs*0.24)+','+(fy-fs*0.52)+' '+(fx-fs*0.20)+','+(fy-fs*1.00)+' C'+(fx-fs*0.18)+','+(fy-fs*1.34)+' '+(fx-fs*0.40)+','+(fy-fs*1.72)+' '+(fx-fs*0.88)+','+(fy-fs*1.96)+' C'+(fx-fs*1.12)+','+(fy-fs*2.08)+' '+(fx-fs*1.28)+','+(fy-fs*2.06)+' '+(fx-fs*1.36)+','+(fy-fs*1.96)+' C'+(fx-fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*0.86)+','+(fy-fs*2.24)+' '+(fx+fs*1.36)+','+(fy-fs*1.96)+' C'+(fx+fs*1.28)+','+(fy-fs*2.06)+' '+(fx+fs*1.12)+','+(fy-fs*2.08)+' '+(fx+fs*0.88)+','+(fy-fs*1.96)+' C'+(fx+fs*0.40)+','+(fy-fs*1.72)+' '+(fx+fs*0.18)+','+(fy-fs*1.34)+' '+(fx+fs*0.20)+','+(fy-fs*1.00)+' C'+(fx+fs*0.24)+','+(fy-fs*0.52)+' '+(fx+fs*0.18)+','+(fy-fs*0.06)+' '+fx+','+(fy+fs*0.18)+' Z" fill="'+fc+'" opacity="'+bloomOp+'"/>';
         // Deep-throat gradient — dark recess at base of mouth (§6 throat glow recipe)
         s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*0.6)+'" rx="'+(fs*0.32)+'" ry="'+(fs*0.86)+'" fill="rgba(40,20,5,0.6)" opacity="'+(bloomOp*0.72)+'"/>';
@@ -24933,6 +24958,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 31: // Delphinium — tall spire of layered cupped florets, graduating upward, master polish
         // AO halo (vertical spire)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy-(fs*1.2))+'" rx="'+(fs*0.65)+'" ry="'+(fs*1.55)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Central rachis
         s += '<line x1="'+fx+'" y1="'+(fy+fs*0.1)+'" x2="'+fx+'" y2="'+(fy-fs*2.5)+'" stroke="'+_hueShift(fc, 88, 20)+'" stroke-width="0.6" opacity="'+(0.45*bloomOp)+'" stroke-linecap="round"/>';
@@ -24961,6 +24987,7 @@ document.addEventListener('keydown', function(e) {
         // Each of 8 primary rays fans out, each tipped with a cluster of 3-4 tiny florets
         var _q32uy = fy - fs * 0.3; // umbel center (slightly above bloom origin)
         // Soft dome behind
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+fx+'" cy="'+_q32uy+'" rx="'+(fs*1.1)+'" ry="'+(fs*0.5)+'" fill="'+bg+'" opacity="'+(bloomOp*0.06)+'"/>';
         for (var _q32i = 0; _q32i < 8; _q32i++) {
           var _q32a = (_q32i * 45 - 90) * Math.PI / 180;
@@ -25169,6 +25196,7 @@ document.addEventListener('keydown', function(e) {
       // ── set-103-8-14: NEW BLOOM TYPES (ChatGPT Art Round) ──────────────
       case 38: // Passionflower — radial filaments with corona, master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" rx="'+(fs*2.1)+'" ry="'+(fs*2.0)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         s += '<path d="M'+fx+','+(fy-(fs*2.2))+' C'+(fx+(fs*0.55))+','+(fy-(fs*1.7))+' '+(fx+(fs*0.95))+','+(fy-(fs*0.7))+' '+fx+','+(fy+(fs*0.15))+' C'+(fx-(fs*0.95))+','+(fy-(fs*0.7))+' '+(fx-(fs*0.55))+','+(fy-(fs*1.7))+' '+fx+','+(fy-(fs*2.2))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.9)+'"/>';
         s += '<path d="M'+(fx+(fs*2.05))+','+(fy-(fs*0.15))+' C'+(fx+(fs*1.35))+','+(fy-(fs*0.7))+' '+(fx+(fs*0.7))+','+(fy-(fs*0.35))+' '+fx+','+(fy+(fs*0.15))+' C'+(fx+(fs*0.7))+','+(fy+(fs*0.65))+' '+(fx+(fs*1.35))+','+(fy+(fs*0.4))+' '+(fx+(fs*2.05))+','+(fy-(fs*0.15))+' Z" fill="'+fc+'" opacity="'+(bloomOp*0.9)+'"/>';
@@ -25213,6 +25241,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 39: // Heliconia (Lobster Claw) — stacked alternating bracts, master polish
         // AO halo (vertical)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+(fs*0.3))+'" rx="'+(fs*1.7)+'" ry="'+(fs*2.5)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         // Central stem with warm-shifted dark AO + cream rim
         s += '<path d="M'+(fx-(fs*0.08))+','+(fy-(fs*1.9))+' Q'+(fx+(fs*0.16))+','+(fy-(fs*0.45))+' '+(fx-(fs*0.05))+','+(fy+(fs*2.45))+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.20)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
@@ -25245,6 +25274,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 40: // Plumeria — 5 waxy spiral petals with golden center, master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" rx="'+(fs*1.85)+'" ry="'+(fs*1.85)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         s += '<path d="M'+fx+','+(fy-(fs*1.95))+' C'+(fx+(fs*0.55))+','+(fy-(fs*1.55))+' '+(fx+(fs*0.95))+','+(fy-(fs*0.78))+' '+(fx+(fs*0.72))+','+(fy-(fs*0.08))+' C'+(fx+(fs*0.22))+','+(fy-(fs*0.22))+' '+(fx-(fs*0.1))+','+(fy-(fs*0.7))+' '+fx+','+(fy-(fs*1.95))+' Z" fill="#F6F2E9" opacity="'+(bloomOp*0.96)+'"/>';
         s += '<path d="M'+(fx+(fs*1.78))+','+(fy-(fs*0.32))+' C'+(fx+(fs*1.15))+','+(fy-(fs*0.82))+' '+(fx+(fs*0.45))+','+(fy-(fs*0.45))+' '+(fx-(fs*0.02))+','+(fy+(fs*0.1))+' C'+(fx+(fs*0.48))+','+(fy+(fs*0.42))+' '+(fx+(fs*1.15))+','+(fy+(fs*0.28))+' '+(fx+(fs*1.78))+','+(fy-(fs*0.32))+' Z" fill="#F5F0E6" opacity="'+(bloomOp*0.95)+'"/>';
@@ -25269,6 +25299,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 41: // Foxglove Bell — tubular spotted bells hanging downward, master polish
         // AO halo (vertical pendant)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.6))+'" rx="'+(fs*1.2)+'" ry="'+(fs*2.2)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         // Stem with warm-shifted dark AO
         s += '<path d="M'+fx+','+(fy-(fs*1.3))+' Q'+(fx+(fs*0.08))+','+(fy+(fs*0.1))+' '+(fx-(fs*0.04))+','+(fy+(fs*2.45))+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.20)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
@@ -25299,6 +25330,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 42: // Magnolia — thick cupped creamy petals, master polish
         // AO halo
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.3)+'" rx="'+(fs*1.85)+'" ry="'+(fs*1.95)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         s += '<path d="M'+fx+','+(fy-(fs*2.05))+' C'+(fx+(fs*0.58))+','+(fy-(fs*1.35))+' '+(fx+(fs*0.72))+','+(fy-(fs*0.42))+' '+fx+','+(fy+(fs*0.18))+' C'+(fx-(fs*0.72))+','+(fy-(fs*0.42))+' '+(fx-(fs*0.58))+','+(fy-(fs*1.35))+' '+fx+','+(fy-(fs*2.05))+' Z" fill="#F6F1E8" opacity="'+(bloomOp*0.9)+'"/>';
         s += '<path d="M'+(fx+(fs*1.58))+','+(fy-(fs*0.92))+' C'+(fx+(fs*1.26))+','+(fy+(fs*0.06))+' '+(fx+(fs*0.82))+','+(fy+(fs*0.88))+' '+(fx+(fs*0.14))+','+(fy+(fs*0.72))+' C'+(fx+(fs*0.26))+','+(fy-(fs*0.04))+' '+(fx+(fs*0.76))+','+(fy-(fs*0.72))+' '+(fx+(fs*1.58))+','+(fy-(fs*0.92))+' Z" fill="#F7F3EC" opacity="'+(bloomOp*0.92)+'"/>';
@@ -25324,6 +25356,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 43: // Wisteria Cascade — hanging grape-like clusters, master polish
         // AO halo (vertical pendant)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.9))+'" rx="'+(fs*1.0)+'" ry="'+(fs*2.4)+'" fill="rgba(40,20,5,0.18)" opacity="'+(bloomOp*0.55)+'"/>';
         // Stem with warm-shifted dark + cream pair
         s += '<path d="M'+fx+','+(fy-(fs*1.35))+' Q'+(fx+(fs*0.18))+','+(fy+(fs*0.28))+' '+(fx-(fs*0.06))+','+(fy+(fs*2.75))+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.18)+'" stroke-linecap="round" opacity="'+(bloomOp*0.55)+'"/>';
@@ -25346,6 +25379,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 44: // Cactus Bloom — wide flat dish, 15 satin petals, dense stamen ring (Echinopsis-style)
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Spiny green cactus base hint
           s += '<ellipse cx="'+fx+'" cy="'+(fy+(fs*0.62))+'" rx="'+(fs*0.9)+'" ry="'+(fs*0.42)+'" fill="#6E8F5B" opacity="'+(bloomOp*0.68)+'"/>';
           s += '<ellipse cx="'+(fx-fs*0.18)+'" cy="'+(fy+fs*0.58)+'" rx="'+(fs*0.5)+'" ry="'+(fs*0.18)+'" fill="rgba(40,20,5,0.22)" opacity="'+bloomOp+'"/>';
@@ -25481,6 +25515,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 50: // Marigold — dense golden ball, 32 petals in 4 concentric rings, master polish
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo (warm)
           s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.65)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
           // Marigold petals are tubular and tightly packed into a sphere.
@@ -25577,6 +25612,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 70: // Prism Bloom — 6 spectral petals, rainbow captured in flower form
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // The grand finale. A rainbow split into flower form.
           // 6 petals, each a different color of the visible spectrum.
           // The ONLY bloom that ignores fc entirely — always the full rainbow.
@@ -25788,6 +25824,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 69: // Clock Flower — 12 precise petals as hour markers, clock hands, tick animation
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // A flower that grew in the shape of time.
           // 12 thin blade-like petals at EXACT 30° intervals — no organic variation.
           // The mathematical precision IS the beauty. This flower doesn't sway.
@@ -25982,6 +26019,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 68: // Void Blossom — space-filled petals, starfield inside, purple core glow
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Each petal is a window into deep space.
           // Near-black fills with tiny white pinpoint stars scattered inside.
           // The petals ARE the void — looking into them, you see infinity.
@@ -26128,6 +26166,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 67: // Ice Rose — frozen crystalline rose, sharp edges, prismatic refractions
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // A rose encased in ice. Every edge is a crystal facet.
           // Translucent ice-blue petals with SHARP white stroke edges (not soft).
           // Internal frost-line veins branching like ice on a window.
@@ -26311,6 +26350,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 66: // Flame Bloom — fire petals with ragged edges, ember core, flicker animation
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Fire doesn't follow the rules of flowers. No smooth beziers here.
           // Each petal is a tongue of flame — jagged upper edge, sharp peaks,
           // wide base tapering to irregular points. Color goes from white-hot
@@ -26444,6 +26484,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 65: // Violet — 5 asymmetric petals with face pattern and guide-line whiskers
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // The viola/pansy face: the most personality of any flower.
           // NOT radially symmetric — each of the 5 petals has a unique role:
           //   2 upper petals (standards) — overlap slightly, rounded, darker
@@ -26638,6 +26679,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 64: // Wisteria V2 — heavy cascade of pea-shaped florets on S-curve rachis
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // The Instagram-famous wisteria tunnel. Heavy pendant cascade.
           // LONGEST downward bloom in the game — reaches fs*3.2 below anchor.
           // 15 pea-shaped florets (banner + wings + keel) on an S-curve rachis.
@@ -26802,6 +26844,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 63: // Lotus V2 — sacred multi-layer bloom with water line + seed pod dome
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // The sacred lotus: enlightenment rising from muddy water.
           // Distinct from Lotus case 3 — this is the full narrative version.
           // 3 petal rings: outer pale pink, mid deeper pink, inner tighter.
@@ -26977,6 +27020,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 62: // Black-Eyed Susan — flat golden rays around dark raised dome center
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // The friendly wildflower. Simpler than Sunflower — fewer petals,
           // flatter profile, elongated elliptical petals, and a more
           // pronounced 3D dome center. Like a small warm sun in a meadow.
@@ -27099,6 +27143,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 61: // Baby's Breath — Vogel-spiral cloud of 40 tiny 5-point star florets (Gypsophila paniculata)
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Ethereal cloud: NOT a single flower. 40 tiny stars at golden-angle Vogel positions
           // over a faint bounding circle. Each star is a 5-pointed micro-floret 1.5-2px wide.
           // Cream highlights (#f5ecd6 / #fff8e0) — never pure white.
@@ -27204,6 +27249,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 60: // Seed Pod — dried split pod revealing seeds (Lunaria-style, post-bloom marker)
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Spent bloom: two curved shell halves hinged at the base, split at top.
           // Warm-shifted darks (rgba(40,20,5,X)) and cream pickups (#f5ecd6).
           // Philosophically: this plant bloomed, lived, and releases the next generation.
@@ -27358,6 +27404,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 59: // Angel's Trumpet — pendant trumpet on arching stem, hangs to side
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo (master pass)
           s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.10)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Brugmansia: trumpet hangs off an arching stem that bends 180°.
@@ -27453,6 +27500,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 58: // Hydrangea Head — dense dome of 20 tiny 4-petal flowers, each a different shade
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Hydrangea: the hallmark is COLOR VARIATION across the dome.
           // Each micro-flower is a slightly different shade of the base fc.
           // 20 tiny 4-petal flowers packed in a spherical dome distribution.
@@ -27575,6 +27623,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 57: // Thistle — armored thorn bracts + soft bristle crown, two textures
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Thistle: dramatic contrast between sharp protective base and soft fuzzy top
           // Bottom: layered rings of pointed thorn bracts in olive-green
           // Middle: dense artichoke-like body with overlapping scales
@@ -27714,6 +27763,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 56: // Bougainvillea — 3 papery translucent bracts with vein networks, tiny true flower
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Bougainvillea: NOT true petals — 3 thin tissue-like bracts
           // Semi-transparent (0.55-0.65 opacity) with visible vein strokes through them
           // Tiny 3-petal true flower at center (white/cream, much smaller)
@@ -27823,6 +27873,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 55: // Lavender Spike — vertical taper of purple buds with calyx lines
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Lavender: 10 bud pairs stacked vertically, each shrinking toward tip
           // Buds alternate left/right of a central stem line
           // Green calyx bracts between each bud pair
@@ -27901,6 +27952,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 54: // Camellia — flat geometric precision: 3 rings, perfectly aligned petals
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Camellia anatomy — the most structured flower:
           // Outer ring: 8 wide flat petals, evenly spaced
           // Inner ring: 5 petals rotated 36° from outer, slightly smaller
@@ -28046,6 +28098,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 53: // Daffodil — 6 flat perianth petals + central trumpet corona
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // Daffodil anatomy:
           // 1. Six flat perianth petals radiating outward (the "star")
           // 2. Central trumpet/corona rising from center (the cup)
@@ -28171,6 +28224,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 52: // Fuchsia Drop — pendant: 4 sepals flare up, 4 petals cascade down, hanging stamen, master polish
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo (vertical pendant)
           s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.9))+'" rx="'+(fs*1.0)+'" ry="'+(fs*1.85)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Fuchsia hangs downward like a ballet tutu.
@@ -28296,6 +28350,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 51: // Iris — Y-shaped: 3 upright standards + 3 drooping falls with beards
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo (master pass)
           s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+(fs*0.3))+'" rx="'+(fs*1.85)+'" ry="'+(fs*2.1)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Iris has a unique dual-direction profile:
@@ -28422,6 +28477,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 49: // Jasmine Cluster — 4 tiny white star flowers + 1 bud, airy spray, master polish
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo (cluster-wide)
           s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy+0.3)+'" rx="'+(fs*1.20)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Jasmine: 3 open flowers, 1 half-open, 1 closed bud
@@ -28541,6 +28597,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 48: // Sunflower — large golden ray petals around dark center disc, master polish
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo (warm)
           s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*2.4)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
           // Sunflower petals are ALWAYS warm golden tones regardless of hash color
@@ -28652,6 +28709,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 46: // Peony — dense layered rosette, 3 rings of ruffled petals, master polish
         (function(){
+          fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
           // AO halo
           s += '<circle cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" r="'+(fs*1.75)+'" fill="rgba(40,20,5,0.20)" opacity="'+(0.55*bloomOp)+'"/>';
           var _pnDk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
@@ -28705,6 +28763,7 @@ document.addEventListener('keydown', function(e) {
         })();
         break;
       case 45: // Ghost Orchid — ethereal trailing tendrils (opaque enough to read)
+        fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<path d="M'+fx+','+(fy-(fs*1.78))+' C'+(fx+(fs*0.34))+','+(fy-(fs*1.12))+' '+(fx+(fs*0.28))+','+(fy-(fs*0.24))+' '+fx+','+(fy-(fs*0.02))+' C'+(fx-(fs*0.28))+','+(fy-(fs*0.24))+' '+(fx-(fs*0.34))+','+(fy-(fs*1.12))+' '+fx+','+(fy-(fs*1.78))+' Z" fill="#F3F7EE" opacity="'+(0.82+bloomOp*0.12)+'"/>';
         s += '<path d="M'+(fx+(fs*1.52))+','+(fy-(fs*0.72))+' C'+(fx+(fs*1.14))+','+(fy-(fs*1.02))+' '+(fx+(fs*0.7))+','+(fy-(fs*0.94))+' '+(fx+(fs*0.26))+','+(fy-(fs*0.16))+' C'+(fx+(fs*0.46))+','+(fy-(fs*0.44))+' '+(fx+(fs*0.86))+','+(fy-(fs*0.92))+' '+(fx+(fs*1.52))+','+(fy-(fs*0.72))+' Z" fill="#F8FBF4" opacity="'+(0.78+bloomOp*0.14)+'"/>';
         s += '<path d="M'+(fx-(fs*1.52))+','+(fy-(fs*0.72))+' C'+(fx-(fs*0.86))+','+(fy-(fs*0.92))+' '+(fx-(fs*0.46))+','+(fy-(fs*0.44))+' '+(fx-(fs*0.26))+','+(fy-(fs*0.16))+' C'+(fx-(fs*0.7))+','+(fy-(fs*0.94))+' '+(fx-(fs*1.14))+','+(fy-(fs*1.02))+' '+(fx-(fs*1.52))+','+(fy-(fs*0.72))+' Z" fill="#F8FBF4" opacity="'+(0.78+bloomOp*0.14)+'"/>';
