@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.66';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.67';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -42145,6 +42145,15 @@ document.addEventListener('keydown', function(e) {
     // Stamp today's date so the daily-login purity-streak heartbeat knows
     // the player composted today; resets days_no_compost to 0 tomorrow.
     try { localStorage.setItem('lw_compost_today', new Date().toISOString().slice(0,10)); } catch(e){}
+    // Mark this ISO week as having a compost so w_no_compost flips off at next login.
+    try {
+      var _nowWeek2 = window._lwIsoWeek ? window._lwIsoWeek() : '';
+      var _ncBag2 = JSON.parse(localStorage.getItem('lw_w_compost_seen')||'{}');
+      if (_ncBag2.week !== _nowWeek2) _ncBag2 = {week:_nowWeek2, has:true};
+      else _ncBag2.has = true;
+      localStorage.setItem('lw_w_compost_seen', JSON.stringify(_ncBag2));
+      if (window.LW_ACH) LW_ACH.set('w_no_compost', 0);
+    } catch(e){}
 
     // Unequip-on-compost guard. If the composted plant carried the
     // currently-equipped companion AND no other plant in the greenhouse
@@ -42820,6 +42829,22 @@ document.addEventListener('keydown', function(e) {
         if (tab === 'wild') LW_ACH.bump('d_wild_check', 1);
         if (tab === 'nursery') LW_ACH.bump('d_nursery', 1);
         if (tab === 'game') LW_ACH.bump('d_first_play', 1);
+        // Distinct-seasons-in-greenhouse check — bump d_season_check once per day
+        // when player holds plants from 2+ different seasons.
+        if (tab === 'greenhouse') {
+          try {
+            var _ghPlants = (window.loadGreenhouse && window.loadGreenhouse()) || [];
+            var _seasonSet = {};
+            for (var _gpi = 0; _gpi < _ghPlants.length; _gpi++) {
+              try {
+                var _gpt = window.hashToTraits(_ghPlants[_gpi].hash);
+                if (_gpt && typeof _gpt.season === 'number') _seasonSet[_gpt.season] = 1;
+              } catch(e){}
+            }
+            var _seasonN = 0; for (var _sk in _seasonSet) _seasonN++;
+            if (_seasonN >= 2) LW_ACH.set('d_season_check', _seasonN);
+          } catch(e){}
+        }
         // Time-of-day session flags
         var _tabHr = new Date().getHours();
         if (_tabHr >= 5 && _tabHr < 8)  LW_ACH.bump('d_dawn', 1);
@@ -73733,6 +73758,13 @@ window._lwWeeklyBumpDay = function(storeKey, achKey, dayStr){
       }
       // Weekly distinct-day counters
       try { if (window._lwWeeklyBumpDay) window._lwWeeklyBumpDay('lw_w_login_days', 'w_login_days', todayStr); } catch(e){}
+      // w_no_compost — set 1 if no compost happened in the current ISO week
+      try {
+        var _nowWeek = window._lwIsoWeek ? window._lwIsoWeek() : '';
+        var _ncBag = JSON.parse(localStorage.getItem('lw_w_compost_seen')||'{}');
+        if (_ncBag.week !== _nowWeek) { _ncBag = {week:_nowWeek, has:false}; localStorage.setItem('lw_w_compost_seen', JSON.stringify(_ncBag)); }
+        if (!_ncBag.has && window.LW_ACH) LW_ACH.set('w_no_compost', 1);
+      } catch(e){}
       try {
         var _hr0 = new Date().getHours();
         if (_hr0 >= 5 && _hr0 < 8 && window._lwWeeklyBumpDay) window._lwWeeklyBumpDay('lw_w_dawn_days', 'w_dawn_days', todayStr);
@@ -74516,7 +74548,38 @@ window.bsExecuteBreed=function(){
             var _tB=window.hashToTraits?window.hashToTraits(_bsM.hash):null;
             if(_tA&&_tB&&typeof _tA.season==='number'&&typeof _tB.season==='number'){
               if(Math.abs(_tA.season-_tB.season)===2)LW_ACH.bump('breed_opposite',1);
+              // Track unique unordered season pair combinations (4 same + 6 cross = 10)
+              try {
+                var _pa = Math.min(_tA.season, _tB.season), _pb = Math.max(_tA.season, _tB.season);
+                var _pairKey = _pa + '_' + _pb;
+                var _pairs = JSON.parse(localStorage.getItem('lw_seen_season_pairs')||'{}');
+                if (!_pairs[_pairKey]) {
+                  _pairs[_pairKey] = 1;
+                  localStorage.setItem('lw_seen_season_pairs', JSON.stringify(_pairs));
+                  var _pairN = 0; for (var _pk in _pairs) _pairN++;
+                  LW_ACH.set('season_pairs', _pairN);
+                }
+              } catch(e){}
             }
+            // Mendelian inheritance: offspring inherits exactly one parent's flower and the other parent's leaf.
+            try {
+              var _tO = window.hashToTraits ? window.hashToTraits(seedHash) : null;
+              if (_tA && _tB && _tO) {
+                var _flowFromA = (_tO.flower === _tA.flower);
+                var _flowFromB = (_tO.flower === _tB.flower);
+                var _leafFromA = (_tO.leafType === _tA.leafType);
+                var _leafFromB = (_tO.leafType === _tB.leafType);
+                if ((_flowFromA && _leafFromB && !_flowFromB && !_leafFromA) || (_flowFromB && _leafFromA && !_flowFromA && !_leafFromB)) {
+                  LW_ACH.bump('breed_mendelian', 1);
+                }
+              }
+              // Climate-divergent breed: parents tolerate very different temp ranges.
+              if (_tA && _tB && typeof _tA.heatMax === 'number' && typeof _tB.heatMax === 'number') {
+                if (Math.abs(_tA.heatMax - _tB.heatMax) >= 8 || Math.abs((_tA.coldMin||0) - (_tB.coldMin||0)) >= 8) {
+                  LW_ACH.bump('breed_climate_div', 1);
+                }
+              }
+            } catch(e){}
           } catch(e){}
           // Second-gen breed: parent A or B was already a chimera
           if(_genA>=2||_genB>=2)LW_ACH.bump('second_gen_breed',1);
@@ -85312,9 +85375,18 @@ window.LW_debug.cleanGhostDrops = function(){
       LW_ACH.bump('hunt_caught', 1);
       LW_ACH.bump('d_hunt', 1);
       LW_ACH.bump('w_hunt', 1);
-      var _hHr = new Date().getHours();
+      var _hNow = new Date();
+      var _hHr = _hNow.getHours();
       if (_hHr >= 22 || _hHr < 4) LW_ACH.bump('hunt_late_night', 1);
       if (_hHr >= 5 && _hHr <= 7) LW_ACH.bump('hunt_dawn', 1);
+      // Date-window bumps — solstice/equinox hunts + birth month
+      var _hM = _hNow.getMonth() + 1, _hD = _hNow.getDate();
+      if ((_hM === 6 && _hD >= 20 && _hD <= 22) || (_hM === 12 && _hD >= 20 && _hD <= 22)) LW_ACH.bump('hunt_solstice', 1);
+      if ((_hM === 3 && _hD >= 19 && _hD <= 21) || (_hM === 9 && _hD >= 21 && _hD <= 23)) LW_ACH.bump('hunt_equinox', 1);
+      try {
+        var _bm = parseInt(localStorage.getItem('lw_birth_month')||'0', 10);
+        if (_bm > 0 && _bm === _hM) LW_ACH.bump('hunt_birth_month', 1);
+      } catch(e){}
       // Hunt streak: count consecutive catches within rolling 7-day window.
       // Reads timestamps from this season's catches and checks how many
       // of the last 3 are within 7 days of each other. Sticky-set the max.
@@ -90744,6 +90816,7 @@ window._LW_classXP=function(source,amount){
   var was=x[cls]||0;
   x[cls]=was+gain;
   _lwSetClassXP(x);
+  if(window.LW_ACH)try{LW_ACH.bump('w_class_use',1);}catch(e){}
   // Level-up toast
   var oldLvl=was>=LW_CLASS_XP_L3?3:was>=LW_CLASS_XP_L2?2:1;
   var newLvl=x[cls]>=LW_CLASS_XP_L3?3:x[cls]>=LW_CLASS_XP_L2?2:1;
