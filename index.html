@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.24';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.25';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -37252,6 +37252,33 @@ document.addEventListener('keydown', function(e) {
       if (plant.mycelialCrown) _t.mycelialCrown = true;
       if (plant.breedLayers) _t.breedLayers = plant.breedLayers;
       if (plant.compostLayers) _t.compostLayers = plant.compostLayers;
+      // Stephen audit 2026-05-01 #18 diagnostic: leaf coloring not
+      // rendering in wild carousel. Logs the resolved leaf colors only
+      // for wild-inspect / wild-place sources so greenhouse renders
+      // don't spam. Reproduce: open wild carousel; copy console output;
+      // paste back to me. Looking for `leafColors`, `mutationName`,
+      // `companion`, and `paletteResolved` to identify whether the
+      // hash returns valid colors that PALETTE then can't resolve.
+      try {
+        var _src = (window._carousel && _carousel.source) ? _carousel.source : '';
+        if (_src === 'wild-inspect' || _src === 'wild-place') {
+          var _PAL_DBG = (window.PALETTE || {});
+          var _resolved = (_t && _t.leafColors) ? _t.leafColors.map(function(k){
+            return k + ' -> ' + (_PAL_DBG[k] || 'UNDEFINED');
+          }) : 'NO_LEAFCOLORS';
+          console.log('[#18-leaf-diag]', {
+            source: _src,
+            hash: plant.hash ? plant.hash.slice(0, 12) + '...' : '?',
+            own: plant.own,
+            leafColors: _t ? _t.leafColors : null,
+            paletteResolved: _resolved,
+            leafType: _t ? _t.leafType : null,
+            mutationName: _t ? _t.mutationName : null,
+            companion: _t ? _t.companion : null,
+            generation: plant.generation || 1
+          });
+        }
+      } catch(_dbg){}
       _season = (_t && typeof _t.season === 'number') ? _t.season % 4 : 0;
       _ea = window.computeEA ? window.computeEA(_t, 0, plant) : 0;
       _tg = getTerraGrade(_t);
