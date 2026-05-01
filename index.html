@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.83';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.84';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39715,6 +39715,10 @@ document.addEventListener('keydown', function(e) {
   // Phase 28 fix: persist earned hashes immediately — force=true bypasses 2s debounce
   function earnHashes(amount) {
     if (window._LW_DEBUG) console.log('[earnHashes] amount:', amount);
+    // Stephen 2026-05-01 PART 5: early-return on falsy/negative — was granting
+    // 1 XP via PW_grantXP(Math.max(1, 0)) for amount=0, and _accumulateHash(amount)
+    // would create a 0-byte Uint8Array which crashes some browsers.
+    if (!amount || amount < 1) return;
     // Tutorial freeze: after First Focus grants the deterministic 30
     // Sunbeams, block every downstream hash grant (quest rewards,
     // box loot, mystery openings) until plant XP unlocks at step 34.
@@ -39774,14 +39778,18 @@ document.addEventListener('keydown', function(e) {
   function spendHashes(amount) {
     // Stephen 2026-05-01 PART 5: this used to ONLY bump ledger.spent, leaving
     // the queue untouched so the player kept their visible balance. Now also
-    // drains the sunbeam queue (the source-of-truth for spendable balance) so
-    // shop/mutation/prune spends actually deduct what the player sees.
+    // drains the sunbeam queue (source-of-truth for spendable balance).
+    // Returns boolean — _castWeather at line 70342 negates the return value
+    // (`if (!window.spendHashes(sbCost))`), so without an explicit return
+    // every Sunbeam-priced weather summon was bricked.
+    if (!amount || amount < 1) return false;
     var ledger = getHashLedger();
     ledger.spent = (ledger.spent || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
     if (typeof window._lwSpendSunbeams === 'function') {
       try { window._lwSpendSunbeams(amount, 'spendHashes'); } catch(e){}
     }
+    return true;
   }
   function getTotalHashes() {
     // Stephen 2026-05-01 PART 5: derive from the SUNBEAM QUEUE (source of truth
@@ -55174,6 +55182,21 @@ window._lwEditFriendNick = function(uid, currentName) {
   };
 };
 
+// ═══ HTML ESCAPE — for all player-controlled strings (display names, etc.) ═══
+// Defense in depth: keeper names are client-set from localStorage, written into
+// Firestore by the other user, and rendered raw in our DOM. Without escaping,
+// a malicious displayName like '<img src=x onerror=alert(1)>' would XSS every
+// player who friends them. Apply to friendName/realName/fromName interpolations.
+window._lwEscapeHTML = function(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 // ═══ GIFT SEND FLOW — confirm modal then call LW_GIFTS.sendGift ═══
 window._lwSendGiftFlow = function(friendUid, friendName) {
   if (!friendUid || !window.LW_GIFTS) return;
@@ -55191,7 +55214,8 @@ window._lwSendGiftFlow = function(friendUid, friendName) {
   ov.style.cssText = 'position:fixed;inset:0;z-index:100005;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);padding:1rem;';
   var h = '<div onclick="event.stopPropagation()" style="max-width:340px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.4);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);color:var(--cream);">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;color:var(--gold);text-align:center;margin-bottom:0.2rem;">SEND GIFT</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.8rem;line-height:1.5;">A surprise drop for <span style="color:var(--cream);">'+friendName+'</span>. They\'ll see it in their inbox next time they open the game.</div>';
+  var _gfEsc = window._lwEscapeHTML || function(s){return String(s||'');};
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.8rem;line-height:1.5;">A surprise drop for <span style="color:var(--cream);">'+_gfEsc(friendName)+'</span>. They\'ll see it in their inbox next time they open the game.</div>';
   h += '<div style="background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.22);border-radius:10px;padding:0.7rem;margin-bottom:0.7rem;">';
   h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;">';
   h += '<span style="color:var(--muted);">Tier</span><span style="color:var(--gold);">T'+tier+' · '+TIER_NAME[tier]+'</span>';
@@ -55218,6 +55242,8 @@ window._lwSendGiftFlow = function(friendUid, friendName) {
     window.LW_GIFTS.sendGift(friendUid, friendName, function(ok, info){
       if (ok){
         ov.remove();
+        // _toast accepts plaintext by default; the gift toast renders as plain
+        // text so the displayName can't inject HTML even if it's hostile.
         if (window._toast) window._toast('🎁 Gift sent to ' + friendName + '!');
         if (window.PW_UI && window.PW_UI.loadFriendsUI) window.PW_UI.loadFriendsUI();
       } else {
@@ -55245,17 +55271,34 @@ window._lwOpenGiftInbox = function() {
     if (!listEl) return;
     if (!gifts || !gifts.length){ listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-style:italic;">No gifts pending. Send some yourself — friendships grow with consistency.</div>'; return; }
     var TIER_NAME = { 1:'Mystery Mailbox', 2:'Crafted Crate', 3:'Heirloom Trunk' };
+    // XSS-hardened: every player-controlled field passes through _lwEscapeHTML;
+    // CLAIM button uses addEventListener via data-* (no inline onclick with
+    // raw fromUid/giftId — fromUid is always a Firestore-issued UID, but we
+    // keep the discipline consistent with the friends-list rewrite).
+    var iEsc = window._lwEscapeHTML || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
     var h = '';
     for (var i=0;i<gifts.length;i++){
       var g = gifts[i];
       var preview = g.tier ? ('T'+g.tier+' · '+TIER_NAME[g.tier]) : 'Mailbox';
-      h += '<div id="lw-gift-row-'+g.id+'" style="background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.22);border-radius:10px;padding:0.7rem;margin-bottom:0.5rem;">';
+      h += '<div class="lw-gift-row" data-gift-id="'+iEsc(g.id)+'" data-from-uid="'+iEsc(g.from||'')+'" style="background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.22);border-radius:10px;padding:0.7rem;margin-bottom:0.5rem;">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.4rem;">';
-      h += '<div style="flex:1;min-width:0;"><div style="color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;">'+(g.fromName||'A keeper')+'</div><div style="color:var(--muted);font-size:0.42rem;font-style:italic;">'+preview+'</div></div>';
-      h += '<button onclick="window._lwClaimGift(\''+g.id+'\',\''+(g.from||'')+'\')" style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;padding:8px 14px;border-radius:8px;border:1.5px solid rgba(200,168,75,0.6);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(120,100,40,0.4));color:var(--cream);cursor:pointer;min-height:40px;flex-shrink:0;">CLAIM</button>';
+      h += '<div style="flex:1;min-width:0;"><div style="color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;">'+iEsc(g.fromName||'A keeper')+'</div><div style="color:var(--muted);font-size:0.42rem;font-style:italic;">'+preview+'</div></div>';
+      h += '<button class="lw-gift-claim-btn" style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;padding:8px 14px;border-radius:8px;border:1.5px solid rgba(200,168,75,0.6);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(120,100,40,0.4));color:var(--cream);cursor:pointer;min-height:40px;flex-shrink:0;">CLAIM</button>';
       h += '</div></div>';
     }
     listEl.innerHTML = h;
+    // Wire CLAIM buttons via addEventListener — never inline onclick.
+    var giftRows = listEl.querySelectorAll('.lw-gift-row');
+    for (var gri=0; gri<giftRows.length; gri++) {
+      (function(row){
+        var giftId = row.getAttribute('data-gift-id') || '';
+        var fromUid = row.getAttribute('data-from-uid') || '';
+        var btn = row.querySelector('.lw-gift-claim-btn');
+        if (btn) btn.addEventListener('click', function(){
+          if (window._lwClaimGift) window._lwClaimGift(giftId, fromUid);
+        });
+      })(giftRows[gri]);
+    }
   });
 };
 
@@ -55898,6 +55941,12 @@ window._hexAction=function(action){
         }
       } catch(e){}
       if(window.LW_Log)window.LW_Log.write('wild_watered_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
+      // Friendship-tier interaction: watering a friend's wild plant counts toward Tier 3.
+      try{
+        if(p.ownerUid && window.isFriend && window.isFriend(p.ownerUid) && window.LW_GIFTS && window.LW_GIFTS.markInteraction){
+          window.LW_GIFTS.markInteraction(p.ownerUid);
+        }
+      }catch(e){}
       _writeWitnessFee(p,'water');
       _toast('<img src="assets/fx/drop-blue.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> Watered a keeper\u2019s plant. +2h \u00b7 +5 XP. '+(5-wb.count)+' left today.', {html:true});
       if(window._haptic)_haptic('bloom');
@@ -55969,6 +56018,14 @@ window._hexAction=function(action){
     if(window.PW_grantXP)PW_grantXP(10,'wild_tend_stranger');
     try{if(window.LW_XP)window.LW_XP.grantOnce('first_tend',15,'first_of_kind','🤝 +15 XP, first stranger tended. You\'re part of something bigger.');}catch(e){}
     if(window.LW_Log)window.LW_Log.write('wild_tended_stranger',{hash:p.hash,ownerName:p.ownerName||'Keeper'});
+    // Friendship-tier interaction: tending a friend's wild plant counts toward
+    // the 90-interaction Tier 3 unlock. Only fires for friends — strangers count
+    // toward d_tend / w_tend etc. but not the friendship counter.
+    try{
+      if(p.ownerUid && window.isFriend && window.isFriend(p.ownerUid) && window.LW_GIFTS && window.LW_GIFTS.markInteraction){
+        window.LW_GIFTS.markInteraction(p.ownerUid);
+      }
+    }catch(e){}
     if(window._lwBumpCompCounter)window._lwBumpCompCounter('tend');
     if(window.LW_ACH){
       LW_ACH.bump('tend_strangers',1);LW_ACH.bump('d_tend',1);LW_ACH.bump('w_tend',1);LW_ACH.bump('d_water_str',1);
@@ -65833,9 +65890,14 @@ function loadFriendsUI(){
     if(friends.length===0){el.innerHTML='<div style="color:var(--muted);font-size:0.42rem;">No friends yet. Share your code!</div>';return;}
     // Stephen 2026-05-01 PART 5: render nickname > friendName > senderName > UID-slice
     // + per-friend GIFT button with tier badge + click-to-nickname pencil.
+    // XSS-hardened: player-controlled names HTML-escaped on text/attr contexts.
+    // Click handlers wired via addEventListener (data-* attrs) — never inline
+    // onclick — because malicious displayNames can break out of inline JS strings
+    // even after HTML escaping (browser decodes entities before JS sees them).
     var nicks={};try{nicks=JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}');}catch(e){}
     var TIER_LABEL = { 1:'T1', 2:'T2', 3:'T3' };
     var TIER_COLOR = { 1:'rgba(122,179,86,0.5)', 2:'rgba(200,168,75,0.7)', 3:'rgba(232,160,191,0.85)' };
+    var esc = window._lwEscapeHTML || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
     var h='';
     for(var i=0;i<friends.length;i++){
       var f=friends[i];
@@ -65852,22 +65914,39 @@ function loadFriendsUI(){
       var giftBtnStyle = giftBtnDisabled
         ? 'opacity:0.45;border:1px dashed rgba(122,179,86,0.25);background:rgba(26,36,22,0.3);color:var(--muted);cursor:not-allowed;'
         : 'border:1px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(120,100,40,0.28));color:var(--gold);cursor:pointer;';
-      var giftClick = giftBtnDisabled
-        ? "window._toast&&window._toast('Daily gift sent to "+realName.replace(/\'/g,"&#39;")+". Resets at midnight.')"
-        : "window._lwSendGiftFlow('"+uid+"','"+realName.replace(/\'/g,"&#39;")+"')";
-      h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0;border-bottom:1px solid rgba(74,124,53,0.06);gap:0.4rem;">'
+      h+='<div class="lw-friend-row" data-uid="'+esc(uid)+'" data-name="'+esc(realName)+'" style="display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0;border-bottom:1px solid rgba(74,124,53,0.06);gap:0.4rem;">'
         +'<div style="flex:1;min-width:0;">'
           +'<div style="display:flex;align-items:center;gap:0.3rem;">'
-            +'<span style="color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+displayName+'</span>'
+            +'<span style="color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(displayName)+'</span>'
             +'<span title="Friendship tier" style="font-family:DM Mono,monospace;font-size:0.36rem;letter-spacing:0.06em;padding:1px 5px;border:1px solid '+TIER_COLOR[tier]+';border-radius:8px;color:'+TIER_COLOR[tier]+';">'+TIER_LABEL[tier]+'</span>'
-            +'<button onclick="window._lwEditFriendNick(\''+uid+'\',\''+(realName.replace(/\'/g,"&#39;"))+'\')" title="Set nickname" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;font-size:0.65rem;line-height:1;opacity:0.6;">✎</button>'
+            +'<button class="lw-friend-nick-btn" title="Set nickname" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;font-size:0.65rem;line-height:1;opacity:0.6;">✎</button>'
           +'</div>'
-          +(subline?'<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--muted);">'+subline+'</div>':'')
+          +(subline?'<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--muted);">'+esc(subline)+'</div>':'')
         +'</div>'
-        +'<button onclick="'+giftClick+'" style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.08em;padding:6px 10px;border-radius:7px;'+giftBtnStyle+'min-height:36px;flex-shrink:0;">'+giftBtnLabel+'</button>'
+        +'<button class="lw-friend-gift-btn" '+(giftBtnDisabled?'data-disabled="1"':'')+' style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.08em;padding:6px 10px;border-radius:7px;'+giftBtnStyle+'min-height:36px;flex-shrink:0;">'+giftBtnLabel+'</button>'
         +'</div>';
     }
     el.innerHTML=h;
+    // Wire click handlers — reads data-uid / data-name from the row, never from raw HTML
+    var rows = el.querySelectorAll('.lw-friend-row');
+    for (var ri=0; ri<rows.length; ri++) {
+      (function(row){
+        var uidVal = row.getAttribute('data-uid') || '';
+        var nameVal = row.getAttribute('data-name') || 'Keeper';
+        var nickBtn = row.querySelector('.lw-friend-nick-btn');
+        var giftBtn = row.querySelector('.lw-friend-gift-btn');
+        if (nickBtn) nickBtn.addEventListener('click', function(){
+          if (window._lwEditFriendNick) window._lwEditFriendNick(uidVal, nameVal);
+        });
+        if (giftBtn) giftBtn.addEventListener('click', function(){
+          if (giftBtn.getAttribute('data-disabled')==='1') {
+            if (window._toast) window._toast('Daily gift sent. Resets at midnight.');
+            return;
+          }
+          if (window._lwSendGiftFlow) window._lwSendGiftFlow(uidVal, nameVal);
+        });
+      })(rows[ri]);
+    }
   });
   // Load pending requests
   PW_Social.loadPendingRequests(function(reqs){
@@ -66961,7 +67040,15 @@ function declineFriend(friendUid,callback){
   batch.delete(db.collection('friends').doc(user.uid).collection('connections').doc(friendUid));
   batch.delete(db.collection('friends').doc(friendUid).collection('connections').doc(user.uid));
 
-  batch.commit().then(function(){callback(true);}).catch(function(){callback(false);});
+  batch.commit().then(function(){
+    // Stephen 2026-05-01 PART 5: wipe per-pair gifts counters when defriending,
+    // so a re-friend doesn't keep tier progress (anti-tier-farm exploit).
+    try {
+      var m = JSON.parse(localStorage.getItem('lw_gifts_meta')||'{}');
+      if (m[friendUid]) { delete m[friendUid]; localStorage.setItem('lw_gifts_meta', JSON.stringify(m)); }
+    } catch(e){}
+    callback(true);
+  }).catch(function(){callback(false);});
 }
 
 // ═══ LOAD FRIENDS LIST ═══
@@ -83276,6 +83363,11 @@ window.LW_GIFTS = (function(){
   }
 
   function claimGift(giftId, fromUid, callback){
+    // Stephen 2026-05-01 PART 5: apply loot ONLY AFTER the update succeeds.
+    // Was applying loot before update, so a failed update (rules reject,
+    // network drop) left loot applied AND gift unclaimed — exploitable on
+    // refresh. Now: get → update → THEN apply loot. Worst case on update
+    // failure: nothing happens, player retries.
     callback = callback || function(){};
     var user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
     if (!user){ callback(false); return; }
@@ -83285,9 +83377,11 @@ window.LW_GIFTS = (function(){
       if (!doc.exists){ callback(false, 'Gift not found'); return; }
       var d = doc.data();
       if (d.claimed){ callback(false, 'Already claimed'); return; }
-      var summary = _applyLoot(d.loot);
       ref.update({ claimed:true, claimedAt: firebase.firestore.FieldValue.serverTimestamp() })
         .then(function(){
+          // Update succeeded — NOW apply loot. Any tab race that double-claims
+          // will fail at this update step (resource.data.claimed === true).
+          var summary = _applyLoot(d.loot);
           if (fromUid) markInteraction(fromUid);
           if (window.LW_ACH){ try { LW_ACH.bump('gifts_received', 1); LW_ACH.bump('d_gift_claim', 1); } catch(e){} }
           callback(true, { loot: d.loot, summary: summary, fromName: d.fromName });

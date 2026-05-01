@@ -282,6 +282,34 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════════════
+    // /friends/{uid}/inbox/{giftId} — Friendship gifting (LW_GIFTS)
+    // Sender writes a gift doc into recipient's inbox. Recipient claims
+    // by flipping claimed:true. Doctrine: NO free-text — fromName is the
+    // sender's display name only (also escaped client-side at render time).
+    // ════════════════════════════════════════════════════════════
+    match /friends/{uid}/inbox/{giftId} {
+      // Recipient reads their own inbox
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Sender creates a gift doc in recipient's inbox
+      allow create: if request.auth != null
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.claimed == false
+        && request.resource.data.keys().hasAll(['from','fromName','tier','loot','sentAt','claimed']);
+
+      // Recipient claims (flips claimed:true). Cannot mutate the loot or sender.
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && resource.data.claimed == false
+        && request.resource.data.claimed == true
+        && request.resource.data.from == resource.data.from
+        && request.resource.data.tier == resource.data.tier;
+
+      // Recipient can delete claimed gifts (cleanup)
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ════════════════════════════════════════════════════════════
     // LEADERBOARDS — read-only for clients, server writes
     // ════════════════════════════════════════════════════════════
     match /leaderboards/{boardId} {
