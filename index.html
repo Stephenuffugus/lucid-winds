@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.12';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55907,6 +55907,10 @@ window._lwClaimGift = function(giftId, fromUid){
     done = true;
     clearTimeout(watchdog);
     if (ok){
+      // Invalidate the badge cache so the next loadFriendsUI re-fetches
+      // the now-correct count (was getting stale + showing N gifts when
+      // really N-1).
+      try { window._lwInboxBadgeAt = 0; } catch(eIB){}
       // Visible reveal: pop a celebration overlay so Jessie knows it
       // worked. The toast was getting lost under the modal backdrop —
       // this puts the feedback INSIDE the gift inbox surface.
@@ -66556,13 +66560,28 @@ function addFriend(){
 // ═══ LOAD FRIENDS INTO CHARACTER SHEET ═══
 function loadFriendsUI(){
   if(!window.PW_Social)return;
-  // Refresh the gift-inbox badge — pings Firestore once per loadFriendsUI call.
+  // Stephen 2026-05-02: gift-inbox badge query was firing on every
+  // loadFriendsUI call — every accept, every gift action, every tab
+  // switch — adding a Firestore round trip each time. The badge is
+  // stale-tolerant (a few-minute delay is fine); cache the result for
+  // 60 seconds so rapid calls don't multiply the network cost.
   try{
     if(window.LW_GIFTS&&window.LW_GIFTS.inboxCount){
-      window.LW_GIFTS.inboxCount(function(n){
+      var nowMs = Date.now();
+      var cacheTs = window._lwInboxBadgeAt || 0;
+      var cacheVal = window._lwInboxBadgeN;
+      if (nowMs - cacheTs < 60000 && typeof cacheVal === 'number'){
+        // Re-paint from cache, skip the Firestore read.
         var b=document.getElementById('cs-gift-inbox-badge');
-        if(b){if(n>0){b.textContent=n;b.style.display='inline-block';}else{b.style.display='none';}}
-      });
+        if(b){if(cacheVal>0){b.textContent=cacheVal;b.style.display='inline-block';}else{b.style.display='none';}}
+      } else {
+        window.LW_GIFTS.inboxCount(function(n){
+          window._lwInboxBadgeN = n;
+          window._lwInboxBadgeAt = Date.now();
+          var b=document.getElementById('cs-gift-inbox-badge');
+          if(b){if(n>0){b.textContent=n;b.style.display='inline-block';}else{b.style.display='none';}}
+        });
+      }
     }
   }catch(e){}
   // Load accepted friends
