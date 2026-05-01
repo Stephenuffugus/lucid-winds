@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.32';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.33';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -65448,21 +65448,29 @@ function render(){
     itemH+='</div>';
     h+=itemH;
   }catch(e){}
-  // ═══ EXPAND SEED POUCH — buy +5 slots for 1 Pi ═══
-  // Stephen 2026-04-30: SEEDS gets its own tab, with the buy-slot CTA
-  // visible right inside that tab so players don't have to find it in
-  // the Hut. Tier: every +5 slots = 1 Pi, capped at 25 base + tools.
+  // ═══ EXPAND SEED POUCH — Pi-purchased upper tiers (seed15, seed20) ═══
+  // Stephen 2026-05-01: ascending price (10 Pi → 20 Pi) reflects the
+  // pouch's importance for wild foraging. Free tiers (seed5, seed10)
+  // are earned by finding ferals — they don't show this button. Cap is
+  // 20 with this button; tools/keeper bonuses can push to 25 separately.
   try {
     var _bpCurCap = cp;
-    var _bpMaxCap = 25;
-    if (_bpCurCap < _bpMaxCap) {
+    var _bpMaxCap = 20;
+    var _bpUnlocks = {};
+    try { var _bpSt = window.FG_Backpack && window.FG_Backpack.getState && window.FG_Backpack.getState(); _bpUnlocks = (_bpSt && _bpSt.unlocks) || {}; } catch(e){}
+    var _nextTier = _bpUnlocks.seed20 ? null : _bpUnlocks.seed15 ? 'seed20' : _bpUnlocks.seed10 ? 'seed15' : null;
+    if (_nextTier) {
+      var _piPrice = _nextTier === 'seed15' ? 10 : 20;
+      var _nextCapShow = _nextTier === 'seed15' ? 15 : 20;
       h += '<div style="grid-column:1/-1;margin-top:10px;">';
       h += '<button onclick="if(window.LW_Pi&&LW_Pi.buySeedPouchSlot){LW_Pi.buySeedPouchSlot(function(ok){if(ok&&window.BP)BP.render();});}else if(window.LW_HUT&&LW_HUT.buySeedPouchSlotPi){LW_HUT.buySeedPouchSlotPi();}" style="width:100%;min-height:64px;padding:0.7rem 0.9rem;background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:2px solid rgba(200,168,75,0.55);border-radius:12px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,0.5),0 0 14px rgba(200,168,75,0.18);">';
       h += '<img src="assets/backpackexpansion.png" alt="" style="width:88px;height:88px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<img src=\\\"assets/buttons/btn-pi.png\\\" style=\\\"width:48px;height:48px;object-fit:contain;\\\">&apos;;">';
-      h += '<span>+5 SEED SLOTS · 1π</span>';
+      h += '<span>+5 SEED SLOTS · ' + _piPrice + 'π</span>';
       h += '</button>';
-      h += '<div style="text-align:center;margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;">' + _bpCurCap + ' / ' + _bpMaxCap + ' seed slots</div>';
+      h += '<div style="text-align:center;margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;">' + _bpCurCap + ' / ' + _bpMaxCap + ' seed slots · expand to ' + _nextCapShow + '</div>';
       h += '</div>';
+    } else if (!_bpUnlocks.seed10) {
+      h += '<div style="grid-column:1/-1;margin-top:10px;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.06em;">' + _bpCurCap + ' slots · find ferals to unlock more.</div>';
     } else {
       h += '<div style="grid-column:1/-1;margin-top:10px;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">Seed pouch maxed (' + _bpMaxCap + ' slots).</div>';
     }
@@ -66408,13 +66416,24 @@ window.LW_Pi={
   buySeedPouchSlot:function(cb){
     var unlocks = {};
     try { var st = window.FG_Backpack && window.FG_Backpack.getState && window.FG_Backpack.getState(); unlocks = (st && st.unlocks) || {}; } catch(e){}
-    var nextTier = unlocks.seed20 ? null : unlocks.seed15 ? 'seed20' : 'seed15';
+    // Stephen 2026-05-01: seed pouch is the player's primary wild-foraging
+    // capacity — not a casual unlock. seed5 + seed10 are earned free by
+    // finding ferals (cu() at line 65544). seed15 and seed20 are the only
+    // paid tiers; price ascends to fit Stephen's "2 Pi/slot ascending"
+    // spec — 10 Pi for the seed15 tier (= 2 Pi/slot) then 20 Pi for the
+    // seed20 tier (= 4 Pi/slot). Total 30 Pi to fully max from 10.
+    var nextTier = unlocks.seed20 ? null : unlocks.seed15 ? 'seed20' : unlocks.seed10 ? 'seed15' : null;
     if (!nextTier){
-      if (window._toast) window._toast('Seed pouch is already at max (20).');
+      if (unlocks.seed20){
+        if (window._toast) window._toast('Seed pouch is already at max (20).');
+      } else {
+        if (window._toast) window._toast('Find more ferals to unlock the next tier.');
+      }
       if (cb) cb(false); return;
     }
     var nextCap = nextTier === 'seed15' ? 15 : 20;
-    createPayment(1,'Seed Pouch +5 ('+nextCap+' total)',{type:'seed_pouch_slot',tier:nextTier},function(){
+    var price = nextTier === 'seed15' ? 10 : 20;
+    createPayment(price,'Seed Pouch +5 ('+nextCap+' total)',{type:'seed_pouch_slot',tier:nextTier,price:price},function(){
       // Deliver: set the unlock flag via FG_Backpack.loadFromCloud — which
       // merges unlocks + re-renders. Avoids touching the IIFE internals.
       try {
@@ -79975,14 +79994,17 @@ window._lwClaimHerbarium = function(id){
         _capFootHtml += ' · <span style="opacity:0.55;">EMERGENCY USED TODAY</span>';
       }
     }
-    // Seed pouch (backpack) expansion — 1 Pi per +5 slots, max 20.
-    // Only render if Pi enabled AND not already at max.
+    // Seed pouch (backpack) expansion — ascending Pi tiers (10/20),
+    // matching the buySeedPouchSlot pricing in createPayment. Only the
+    // PAID upper tiers (seed15, seed20) appear here; seed5 and seed10
+    // are free unlocks earned by finding ferals.
     if (window.LW_PI_ENABLED) {
       var _seedUnlocks = {};
       try { var _bs = window.FG_Backpack && window.FG_Backpack.getState && window.FG_Backpack.getState(); _seedUnlocks = (_bs && _bs.unlocks) || {}; } catch(e){}
-      var _seedCap = _seedUnlocks.seed20 ? 20 : _seedUnlocks.seed15 ? 15 : _seedUnlocks.seed10 ? 10 : _seedUnlocks.seed5 ? 5 : 1;
-      if (_seedCap < 20) {
-        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buySeedPouchSlotPi()" title="Pi expands your backpack seed pouch by 5 slots (max 20).">+5 SEEDS · 1 π</button>';
+      var _seedNextTier = _seedUnlocks.seed20 ? null : _seedUnlocks.seed15 ? 'seed20' : _seedUnlocks.seed10 ? 'seed15' : null;
+      if (_seedNextTier) {
+        var _seedPrice = _seedNextTier === 'seed15' ? 10 : 20;
+        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buySeedPouchSlotPi()" title="Pi expands your backpack seed pouch by 5 slots (max 20).">+5 SEEDS · ' + _seedPrice + ' π</button>';
       }
     }
     html += '<div class="lwh-section-foot">'+_capFootHtml+'</div>';
@@ -80218,7 +80240,7 @@ window._lwClaimHerbarium = function(id){
     var dewBal = (window.getTotalDew && window.getTotalDew()) || 0;
     var sbBal  = (window.getTotalHashes && window.getTotalHashes()) || 0;
 
-    var html = '<div class="lwh-section-text">Three cradles wait beneath the cloth. The hermit only sells one a season, and only to those who walk far enough to deserve them.</div>';
+    var html = '<div class="lwh-section-text">Three cradles wait beneath the cloth. Pick the one that calls to you. The hermit will not say what is inside.</div>';
 
     if (equippedKey){
       var eqSpec = LW_KEEPER.getSpec(equippedKey);
@@ -80487,6 +80509,31 @@ window._lwClaimHerbarium = function(id){
     if (LW_KEEPER.purchase(key)){
       // Auto-equip first cocoon? No — design says player chooses.
       render();
+      // Stephen 2026-05-01: keep the mystery alive. The Keeper's quip
+      // never names the creature; just pretends to second-guess the
+      // hermit. Use the cocoonName ("A Curious Caterpillar") not the
+      // hatchedName, so the surprise is preserved.
+      try {
+        var spec = LW_KEEPER.getSpec(key);
+        var coc = (spec && spec.cocoonName) || 'this thing';
+        var quips = [
+          'You really sure about ' + coc.toLowerCase() + '? Doesn’t look like much.',
+          'The hermit just smiled when I asked. Bad sign or good sign?',
+          'I’m carrying ' + coc.toLowerCase() + ' home. Don’t tell anyone.',
+          'It’s heavier than it should be. Or lighter. I can’t tell.'
+        ];
+        var msg = quips[Math.floor(Math.random()*quips.length)];
+        if (window._lwConfirm){
+          window._lwConfirm({
+            title: '…',
+            body: '<i style="font-family:Playfair Display,serif;color:#c8b888;">' + msg + '</i>',
+            yes: 'TAKE IT HOME',
+            no: ''
+          }, function(){});
+        } else if (window._toast){
+          window._toast(msg);
+        }
+      } catch(e){}
       // Fire hatch ceremony only on hatch, not on purchase.
     }
   }
@@ -81090,6 +81137,13 @@ window.LW_debug.cleanGhostDrops = function(){
   var STORAGE_KEY = 'lw_pcocoons';
   var DAILY_KEY   = 'lw_pcocoons_daily';
   var HATCH_M     = 1000000; // 1000 km in meters
+  // Stephen 2026-05-01: cocoons MUST stay a surprise. Stripped pre-hatch
+  // flavor lines that hinted at the creature inside ("something taking
+  // shape", "breathing slow", "still alive"). Three new lines, all
+  // genuinely ambiguous — the player can't tell what they're going to
+  // get. Also dropped the requires-chain so all three cradles are
+  // available on day 1 — only one can be EQUIPPED at a time, but the
+  // player picks which to start with.
   var KEEPERS = [
     {
       key:'wasp',
@@ -81098,7 +81152,7 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedName:'Parasitic Wasp',
       cocoonArt:'assets/cocoons/keeper-caterpillar.png',
       hatchedArt:'assets/companions/parasitic-wasp.png',
-      flavor:'It eats more than its share. Something is taking shape inside it.',
+      flavor:'The hermit will not say. Tap to bring it home.',
       hatchFlavor:'A wasp emerges, jeweled and watchful. It hunts the pests that visit your wild plants.',
       costDew:30000, costSunbeams:100,
       distanceM:HATCH_M,
@@ -81112,11 +81166,11 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedName:'Lungfish',
       cocoonArt:'assets/cocoons/keeper-mudball.png',
       hatchedArt:'assets/companions/lungfish.png',
-      flavor:'Heavy. Wet. Too warm. Something inside is breathing slow.',
+      flavor:'The hermit will not say. Tap to bring it home.',
       hatchFlavor:'A lungfish surfaces, ancient and patient. It teaches your wild plants to outlast drought.',
       costDew:5000, costSunbeams:600,
       distanceM:HATCH_M,
-      requires:'wasp',
+      requires:null,
       ability:'droughtBreath',
       // Feed mechanics: tap-to-feed during incubation. Walking earns
       // pour tokens (1 per 10 km) that release 100 Dew each into the
@@ -81132,11 +81186,11 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedName:'Tardigrade',
       cocoonArt:'assets/cocoons/keeper-meteor.png',
       hatchedArt:'assets/companions/tardigrade.png',
-      flavor:'Still warm from the fall. Something inside is still alive.',
+      flavor:'The hermit will not say. Tap to bring it home.',
       hatchFlavor:'A tardigrade unfolds, indestructible. It halves the climate damage your wild plants take.',
       costDew:25000, costSunbeams:500,
       distanceM:HATCH_M,
-      requires:'lungfish',
+      requires:null,
       ability:'cryptobiosis'
     }
   ];
@@ -87186,13 +87240,13 @@ window._lwShowToolInfo = function(tid){
   modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
   modal.innerHTML =
     '<div style="background:rgba(18,24,16,0.98);border:1.5px solid rgba(200,168,75,0.5);border-radius:14px;padding:1rem 1.1rem;max-width:min(92vw,360px);width:100%;color:var(--cream);box-shadow:0 8px 36px rgba(0,0,0,0.7);">'
-    + '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">'
-      + '<img src="assets/character-sheet/tools/'+tid+'.png" alt="" style="width:48px;height:48px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.8rem;&quot;>'+(def.icon||'').replace(/'/g,"\\'")+'</span>&apos;;">'
-      + '<div style="flex:1;min-width:0;">'
-        + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:0.1em;">'+def.name+' · L'+lvl+'</div>'
-        + '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;">'+(def.desc||'')+'</div>'
-      + '</div>'
-      + '<button onclick="document.getElementById(\'lw-tool-info-modal\').remove();" style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(60,50,30,0.5);color:var(--muted);font-size:0.9rem;cursor:pointer;flex-shrink:0;">&#x2715;</button>'
+    + '<div style="display:flex;justify-content:flex-end;margin-bottom:0.3rem;">'
+      + '<button onclick="document.getElementById(\'lw-tool-info-modal\').remove();" style="width:40px;height:40px;border-radius:50%;border:none;background:rgba(60,50,30,0.5);color:var(--muted);font-size:1rem;cursor:pointer;">&#x2715;</button>'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:0.5rem;">'
+      + '<img src="assets/character-sheet/tools/'+tid+'.png" alt="" style="width:160px;height:160px;object-fit:contain;flex-shrink:0;margin-bottom:0.4rem;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.55));" onerror="this.outerHTML=&apos;<span style=&quot;font-size:5rem;&quot;>'+(def.icon||'').replace(/'/g,"\\'")+'</span>&apos;;">'
+      + '<div style="font-family:Bebas Neue,sans-serif;font-size:1.25rem;color:var(--gold);letter-spacing:0.12em;">'+def.name+' · L'+lvl+'</div>'
+      + '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.06em;margin-top:0.1rem;">'+(def.desc||'')+'</div>'
     + '</div>'
     + '<div style="margin:0.6rem 0;">'+rows+'</div>'
     + xpRow
@@ -87702,15 +87756,16 @@ var LW_TREE_NODES={
   seedKeeper:     {branch:'longwatch',name:'Seed Keeper',      desc:'The vault fills itself. +0.25% fertilizer return / pt',max:5,per:0.0025}
 };
 var LW_TREE_MILESTONES={
-  // Stephen 2026-04-26: hero-card art reassigned to character classes.
-  // Milestones temporarily render with their emoji + level number until
-  // dedicated milestone art is shipped. Hero PNGs preserved on disk in
-  // assets/hero-cards/ so they can be re-wired here later if needed.
-  10:{name:'Path Opened',desc:'+5 bonus tree points',built:true,hero:'',subtitle:'a way unfolds'},
-  25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)',built:true,hero:'',subtitle:'twin stems find the light'},
-  50:{name:'The Gilding',desc:'Pick 1 hour / day: all bonuses \u00d72',built:true,hero:'',subtitle:'one hour turned to gold'},
-  75:{name:'Near Horizon',desc:'Equip a second companion',built:true,hero:'',subtitle:'the future peers back'},
-  100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:true,hero:'',subtitle:'the keeper who never leaves'}
+  // Stephen 2026-05-01: dedicated milestone art SHIPPED. 5 hi-res PNGs
+  // (~2.5 MB each, hand-crafted) live at assets/milestones/. Renderer at
+  // index.html:62087 already supports the `hero` field. If a card looks
+  // wrong vs the milestone level, just rename the PNG on disk \u2014
+  // mapping is by filename, not by zip-order position.
+  10:{name:'Path Opened',desc:'+5 bonus tree points',built:true,hero:'assets/milestones/path-opened.png',subtitle:'a way unfolds'},
+  25:{name:'Second Bloom',desc:'Guaranteed 1 feral / day (ignores cap)',built:true,hero:'assets/milestones/second-bloom.png',subtitle:'twin stems find the light'},
+  50:{name:'The Gilding',desc:'Pick 1 hour / day: all bonuses \u00d72',built:true,hero:'assets/milestones/the-gilding.png',subtitle:'one hour turned to gold'},
+  75:{name:'Near Horizon',desc:'Equip a second companion',built:true,hero:'assets/milestones/near-horizon.png',subtitle:'the future peers back'},
+  100:{name:'The Long Watch',desc:'Biome match applies everywhere',built:true,hero:'assets/milestones/long-watch.png',subtitle:'the keeper who never leaves'}
 };
 window.LW_TREE_MILESTONES=LW_TREE_MILESTONES;
 
