@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.4';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -85136,9 +85136,27 @@ window.LW_GIFTS = (function(){
     body.innerHTML = html;
   }
   function castWeather(id){
-    if (window._castWeather){
-      window._castWeather(id);
-      setTimeout(render, 100);
+    if (!window._castWeather) return;
+    // Stephen 2026-05-02 fat-finger insurance: confirm before spending Dew
+    // or Sunbeams on a weather cast. Was a one-tap commit which let an
+    // accidental tap drain 50-200 Dew with no recourse.
+    var WT = window.WEATHER_TYPES || {};
+    var t = WT[id];
+    if (!t) { window._castWeather(id); setTimeout(render, 100); return; }
+    var dewCost = t.cost || 0;
+    var sbCost = t.costSunbeams || 0;
+    var costParts = [];
+    if (sbCost > 0) costParts.push(sbCost + ' Sunbeams');
+    if (dewCost > 0) costParts.push(dewCost + ' Dew');
+    var costStr = costParts.length ? costParts.join(' + ') : 'free';
+    var bodyHtml =
+      '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);line-height:1.5;margin-bottom:0.7rem;">'+(t.desc||'')+'</div>'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;">COST: '+costStr+'</div>';
+    if (window._lwConfirm){
+      window._lwConfirm({title:'CAST '+(t.name||'WEATHER').toUpperCase()+'?', body:bodyHtml, yes:'CAST IT', no:'NEVER MIND'},
+        function(){ window._castWeather(id); setTimeout(render, 100); });
+    } else {
+      window._castWeather(id); setTimeout(render, 100);
     }
   }
 
@@ -85218,6 +85236,22 @@ window.LW_GIFTS = (function(){
       if (window._toast) try { window._toast('Pouch full. Use or trade items first.'); } catch(e){}
       return;
     }
+    // Stephen 2026-05-02 fat-finger insurance: confirm before consuming
+    // items in the trade.
+    var cat = window.LW_ITEMS_CATALOG || {};
+    var ask = cat[q.recipe.ask.key] || {}; var give = cat[q.recipe.give.key] || {};
+    var bodyHtml =
+      '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);line-height:1.5;margin-bottom:0.7rem;">"'+q.recipe.text+'"</div>'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;">YOU GIVE: '+q.recipe.ask.n+' '+(ask.name||q.recipe.ask.key)+'</div>'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--sage);letter-spacing:0.1em;margin-top:0.3rem;">YOU GET: '+(q.recipe.give.n>1?q.recipe.give.n+' ':'')+(give.name||q.recipe.give.key)+'</div>';
+    if (window._lwConfirm){
+      window._lwConfirm({title:'COMPLETE THIS TRADE?', body:bodyHtml, yes:'TRADE', no:'NEVER MIND'},
+        function(){ _claimQuestExecute(q); });
+    } else {
+      _claimQuestExecute(q);
+    }
+  }
+  function _claimQuestExecute(q){
     if (window.LW_ITEMS && window.LW_ITEMS.spend){
       for (var i=0;i<q.recipe.ask.n;i++) window.LW_ITEMS.spend(q.recipe.ask.key);
     }
@@ -85252,6 +85286,23 @@ window.LW_GIFTS = (function(){
   // ─── COCOONERY actions ───
   function keeperBuy(key){
     if (!window.LW_KEEPER) return;
+    // Stephen 2026-05-02 fat-finger insurance: confirm before spending
+    // 30K+ Dew + Sunbeams on a keeper creature. Was a one-tap commit.
+    var spec = LW_KEEPER.getSpec && LW_KEEPER.getSpec(key);
+    if (!spec) return _keeperBuyExecute(key);
+    var bodyHtml =
+      '<div style="font-family:Playfair Display,serif;font-size:0.95rem;color:var(--cream);font-style:italic;margin-bottom:0.5rem;">'+(spec.cocoonName||'A Curious Cocoon')+'</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);line-height:1.5;margin-bottom:0.7rem;">'+(spec.flavor||'')+'</div>'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.1em;">COST: '+spec.costDew.toLocaleString()+' Dew + '+spec.costSunbeams+' Sunbeams</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:0.4rem;">Hatches after a '+(spec.distanceM/1000)+' km walk.</div>';
+    if (window._lwConfirm){
+      window._lwConfirm({title:'TAKE THIS CREATURE HOME?', body:bodyHtml, yes:'YES, BUY IT', no:'NEVER MIND'},
+        function(){ _keeperBuyExecute(key); });
+    } else {
+      _keeperBuyExecute(key);
+    }
+  }
+  function _keeperBuyExecute(key){
     if (LW_KEEPER.purchase(key)){
       // Auto-equip first cocoon? No — design says player chooses.
       render();
