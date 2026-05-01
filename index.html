@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.6';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.7';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2389,6 +2389,8 @@
     .grove-panel.active{display:block;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+    /* Stephen 2026-05-02: counter pulse when fly-to-target rewards land. */
+    @keyframes lwCounterPulse{0%{transform:scale(1);}40%{transform:scale(1.22);}100%{transform:scale(1);}}
     @keyframes spinSlow{from{transform:rotate(0deg) scale(0.9);opacity:0.4;}50%{transform:rotate(540deg) scale(1.2);opacity:1;}to{transform:rotate(1080deg) scale(1);opacity:1;}}
     @keyframes fireflyPulse{0%,100%{opacity:0.85;transform:scale(1);}50%{opacity:1;transform:scale(1.18);}}
     @keyframes fireflyDrift{0%{transform:translate(0,0);}50%{transform:translate(20px,-16px);}100%{transform:translate(-12px,10px);}}
@@ -7289,7 +7291,7 @@ window._addSwitchTabHook = function(fn){
     <div class="cs-section"><div class="cs-section-title">FEATURED HAIKU</div><div class="cs-haiku" id="cs-haiku"><em style="color:var(--muted);">Bloom your first plant to feature its haiku here</em></div></div>
     <div class="cs-section"><div class="cs-section-title">KEEPER STATS</div><div class="cs-stats" id="cs-stats"><div>Plants Grown <b id="cs-s-plants">0</b></div><div>Pollen <b id="cs-s-pollen" style="color:var(--gold);">0</b></div><div>Seeds Found <b id="cs-s-seeds">0</b></div><div>Wild Active <b id="cs-s-wild">0</b></div><div>Games Played <b id="cs-s-games">0</b></div><div>Groves <b id="cs-s-groves">0</b></div><div>Compost Made <b id="cs-s-compost">0</b></div><div>Sunbeams <b id="cs-s-dew" style="color:var(--gold);">0</b></div><div>Rarest Grade <b id="cs-s-rarest">—</b></div><div>Creatures <b id="cs-s-creatures">0</b></div><div>Days Active <b id="cs-s-days">1</b></div><div>Friends <b id="cs-s-friends">0</b></div></div></div>
     <div class="cs-section"><div class="cs-section-title">FRIEND CODE</div><div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;"><div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);letter-spacing:0.15em;" id="cs-friend-code">????-????</div><button onclick="PW_UI.copyFriendCode()" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;padding:0.5rem 0.8rem;border-radius:6px;cursor:pointer;min-height:44px;">COPY</button></div><div style="display:flex;gap:0.3rem;align-items:center;"><input type="text" id="cs-add-friend" placeholder="Enter friend code" maxlength="9" style="flex:1;padding:0.4rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.15);border-radius:6px;color:var(--cream);font-family:'DM Mono',monospace;font-size:0.5rem;outline:none;" /><button onclick="PW_UI.addFriend()" style="padding:0.55rem 0.8rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:6px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.5rem;cursor:pointer;min-height:44px;">ADD</button></div><div id="cs-friend-err" style="font-size:0.38rem;color:var(--muted);margin-top:0.25rem;min-height:0.8rem;"></div></div>
-    <div class="cs-section"><div class="cs-section-title" style="display:flex;justify-content:space-between;align-items:center;">FRIENDS <span style="display:flex;align-items:center;gap:0.4rem;"><span id="cs-friend-count" style="color:var(--muted);">(0)</span><button onclick="window._lwOpenGiftInbox&&window._lwOpenGiftInbox()" id="cs-gift-inbox-btn" style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;letter-spacing:0.08em;padding:4px 9px;border-radius:7px;border:1px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(120,100,40,0.28));color:var(--gold);cursor:pointer;min-height:30px;">🎁 INBOX <span id="cs-gift-inbox-badge" style="display:none;background:#d08080;color:#fff;border-radius:8px;padding:0 5px;font-family:DM Mono,monospace;font-size:0.4rem;margin-left:3px;">0</span></button></span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.42rem;color:var(--muted);">No friends yet. Share your code!</div></div>
+    <div class="cs-section"><div class="cs-section-title" style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">FRIENDS <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end;"><span id="cs-friend-count" style="color:var(--muted);font-size:0.7rem;">(0)</span><button onclick="window._lwOpenGiftInbox&&window._lwOpenGiftInbox()" id="cs-gift-inbox-btn" style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.1em;padding:8px 14px;border-radius:9px;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.35));color:var(--gold);cursor:pointer;min-height:44px;display:inline-flex;align-items:center;gap:0.35rem;">🎁 INBOX <span id="cs-gift-inbox-badge" style="display:none;background:#d08080;color:#fff;border-radius:10px;padding:2px 8px;font-family:DM Mono,monospace;font-size:0.6rem;font-weight:700;">0</span></button></span></div><div id="cs-pending-list"></div><div id="cs-friends-list" style="font-size:0.75rem;color:var(--muted);padding:0.6rem 0;">No friends yet. Share your code so other Keepers can add you.</div></div>
     <div style="display:flex;gap:0.4rem;margin-top:0.3rem;flex-wrap:wrap;">
       <button onclick="window._openTitleShop()" style="flex:1 1 30%;padding:0.7rem 0.5rem;border-radius:12px;border:2px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(46,38,18,0.62),rgba(28,24,12,0.78));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:108px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/trophy-rosette.png" alt="" style="width:64px;height:64px;object-fit:contain;display:block;" onerror="this.outerHTML='&#10024;';"> TITLES</button>
       <button onclick="if(window._lwOpenInviteModal)window._lwOpenInviteModal();" style="flex:1 1 30%;padding:0.7rem 0.5rem;border-radius:12px;border:2px solid rgba(232,160,191,0.5);background:linear-gradient(180deg,rgba(40,22,30,0.62),rgba(24,14,18,0.78));color:rgba(232,160,191,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.95rem;cursor:pointer;min-height:108px;letter-spacing:0.12em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);"><img src="assets/fx/figure-gold.png" alt="" style="width:64px;height:64px;object-fit:contain;display:block;" onerror="this.outerHTML='&#128106;';"> INVITE</button>
@@ -58436,7 +58438,14 @@ window.openSunbeamModal=function(){
     try{_ghMax=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10',10)||10;}catch(e){}
     _ghFull=(_ghLen>=_ghMax);
   }
-  var h='<div style="background:rgba(13,16,12,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1.2rem;max-width:320px;width:100%;max-height:80vh;overflow-y:auto;">';
+  var h='<div style="position:relative;background:rgba(13,16,12,0.97);border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:1.2rem;max-width:320px;width:100%;max-height:80vh;overflow-y:auto;">';
+  // Stephen 2026-05-02: top-right X. The bottom CLOSE button only shows
+  // when !_tutMint, AND the current ready===0 path looks like a one-way
+  // "GO PLAY" CTA — Stephen reported "no way to x out without clicking
+  // go play." The X is always visible outside the tutorial-mint flow.
+  if(!_tutMint){
+    h+='<button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" aria-label="Close" style="position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.35);background:rgba(26,36,22,0.7);color:var(--cream);font-size:1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;">✕</button>';
+  }
   h+='<div style="text-align:center;margin-bottom:0.6rem;">';
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.8rem;color:var(--gold);letter-spacing:0.06em;">'+bal+'</div>';
   h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);opacity:0.7;">SUNBEAMS</div>';
@@ -66450,7 +66459,7 @@ function loadFriendsUI(){
     // accepted friend gets removed elsewhere.
     if(window.LW_ACH)LW_ACH.set('friends_total',friends.length);
     if(!el)return;
-    if(friends.length===0){el.innerHTML='<div style="color:var(--muted);font-size:0.42rem;">No friends yet. Share your code!</div>';return;}
+    if(friends.length===0){el.innerHTML='<div style="color:var(--muted);font-size:0.75rem;padding:0.6rem 0;line-height:1.5;">No friends yet. Share your code so other Keepers can add you.</div>';return;}
     // Stephen 2026-05-01 PART 5: render nickname > friendName > senderName > UID-slice
     // + per-friend GIFT button with tier badge + click-to-nickname pencil.
     // XSS-hardened: player-controlled names HTML-escaped on text/attr contexts.
@@ -66486,20 +66495,20 @@ function loadFriendsUI(){
         var twinStyle = twinDisabled
           ? 'opacity:0.45;border:1px dashed rgba(232,160,191,0.3);background:rgba(26,36,22,0.3);color:var(--muted);cursor:not-allowed;'
           : 'border:1px solid rgba(232,160,191,0.55);background:linear-gradient(180deg,rgba(232,160,191,0.18),rgba(180,80,140,0.28));color:#f0a0c0;cursor:pointer;';
-        twinBtn = '<button class="lw-friend-twin-btn" '+(twinDisabled?'data-disabled="1"':'')+' title="Twin Bloom — cross-distance breed" style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.08em;padding:6px 10px;border-radius:7px;'+twinStyle+'min-height:36px;flex-shrink:0;margin-right:0.3rem;">'+twinLabel+'</button>';
+        twinBtn = '<button class="lw-friend-twin-btn" '+(twinDisabled?'data-disabled="1"':'')+' title="Twin Bloom — cross-distance breed" style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.08em;padding:10px 14px;border-radius:9px;'+twinStyle+'min-height:48px;flex-shrink:0;">'+twinLabel+'</button>';
       }
-      h+='<div class="lw-friend-row" data-uid="'+esc(uid)+'" data-name="'+esc(realName)+'" style="display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0;border-bottom:1px solid rgba(74,124,53,0.06);gap:0.4rem;">'
+      h+='<div class="lw-friend-row" data-uid="'+esc(uid)+'" data-name="'+esc(realName)+'" style="display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0;border-bottom:1px solid rgba(74,124,53,0.1);gap:0.5rem;">'
         +'<div style="flex:1;min-width:0;">'
-          +'<div style="display:flex;align-items:center;gap:0.3rem;">'
-            +'<span style="color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(displayName)+'</span>'
-            +'<span title="Friendship tier" style="font-family:DM Mono,monospace;font-size:0.36rem;letter-spacing:0.06em;padding:1px 5px;border:1px solid '+TIER_COLOR[tier]+';border-radius:8px;color:'+TIER_COLOR[tier]+';">'+TIER_LABEL[tier]+'</span>'
-            +'<button class="lw-friend-nick-btn" title="Set nickname" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;font-size:0.65rem;line-height:1;opacity:0.6;">✎</button>'
+          +'<div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">'
+            +'<span style="color:var(--cream);font-family:DM Mono,monospace;font-size:0.85rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(displayName)+'</span>'
+            +'<span title="Friendship tier" style="font-family:DM Mono,monospace;font-size:0.6rem;letter-spacing:0.08em;padding:3px 8px;border:1.5px solid '+TIER_COLOR[tier]+';border-radius:9px;color:'+TIER_COLOR[tier]+';font-weight:600;">'+TIER_LABEL[tier]+'</span>'
+            +'<button class="lw-friend-nick-btn" title="Set nickname" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:6px 6px;font-size:0.95rem;line-height:1;opacity:0.7;min-height:36px;">✎</button>'
           +'</div>'
-          +(subline?'<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--muted);">'+esc(subline)+'</div>':'')
+          +(subline?'<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:3px;">'+esc(subline)+'</div>':'')
         +'</div>'
-        +'<div style="display:flex;align-items:center;flex-shrink:0;">'
+        +'<div style="display:flex;align-items:center;gap:0.35rem;flex-shrink:0;">'
           +twinBtn
-          +'<button class="lw-friend-gift-btn" '+(giftBtnDisabled?'data-disabled="1"':'')+' style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.08em;padding:6px 10px;border-radius:7px;'+giftBtnStyle+'min-height:36px;flex-shrink:0;">'+giftBtnLabel+'</button>'
+          +'<button class="lw-friend-gift-btn" '+(giftBtnDisabled?'data-disabled="1"':'')+' style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.08em;padding:10px 14px;border-radius:9px;'+giftBtnStyle+'min-height:48px;flex-shrink:0;">'+giftBtnLabel+'</button>'
         +'</div>'
         +'</div>';
     }
@@ -69564,7 +69573,7 @@ function render(){
   // collectible currencies that need their own surface.
   h+='<div class="bp-extra-row" style="grid-column:1/-1;margin-top:10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
   var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
-  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/icons/box.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf81&apos;;">BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
+  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" title="Mystery boxes you have earned from gameplay" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/mysterybox.png" alt="" style="width:28px;height:28px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf81&apos;;">MYSTERY BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
   // Stephen 2026-05-01: Curiosities = unified panel (LW_COCOONS pouches +
   // LW_KEEPER creatures). Counts BOTH pouches and incubating creatures so
   // the badge reflects everything you're carrying. Pulse fires if anything
@@ -71172,7 +71181,7 @@ function _ensureMysteryModal() {
     '<div class="my-scrim" onclick="window._closeMystery()"></div>' +
     '<div class="my-panel">' +
       '<div class="my-header">' +
-        '<div class="my-title" style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/box.png" alt="" style="width:36px;height:36px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';"> MYSTERY BOX</div>' +
+        '<div class="my-title" style="display:flex;align-items:center;gap:10px;"><img src="assets/mysterybox.png" alt="" style="width:48px;height:48px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';"> MYSTERY BOX</div>' +
         '<button class="my-close" onclick="window._closeMystery()">\u2715</button>' +
       '</div>' +
       '<div class="my-balance" id="my-balance">Dew: 0</div>' +
@@ -71199,9 +71208,63 @@ window._openMystery = function() {
   if (typeof gtag !== 'undefined') gtag('event', 'mystery_open');
 };
 
+// Stephen 2026-05-02: fly rewards from the modal center to the relevant
+// counter when the player closes the modal. Dew → kb-dew, Sunbeams →
+// kb-sunbeams, Fertilizer → bpi (backpack). Pure visual feedback —
+// the rewards have already been credited to the ledger; this just
+// shows them landing where they live now.
+var _myLastReveal = null;
+
+window._lwFlyReward = function(iconUrl, targetId, srcX, srcY, delay){
+  var target = document.getElementById(targetId);
+  if (!target) return;
+  // Skip if target is hidden (e.g., backpack icon when pouch is empty)
+  var cs = window.getComputedStyle ? window.getComputedStyle(target) : null;
+  if (cs && cs.display === 'none') return;
+  var t = target.getBoundingClientRect();
+  if (t.width === 0 && t.height === 0) return;
+  var sprite = document.createElement('div');
+  sprite.style.cssText = 'position:fixed;left:'+srcX+'px;top:'+srcY+'px;width:54px;height:54px;margin-left:-27px;margin-top:-27px;z-index:100030;pointer-events:none;opacity:0;transform:scale(0.6);transition:transform 0.85s cubic-bezier(0.34,0.05,0.36,1.05),opacity 0.85s ease;';
+  sprite.innerHTML = '<img src="'+iconUrl+'" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.6)) drop-shadow(0 0 8px rgba(255,220,140,0.4));">';
+  document.body.appendChild(sprite);
+  setTimeout(function(){
+    var dx = (t.left + t.width/2) - srcX;
+    var dy = (t.top + t.height/2) - srcY;
+    requestAnimationFrame(function(){
+      sprite.style.opacity = '1';
+      sprite.style.transform = 'scale(1.0)';
+      requestAnimationFrame(function(){
+        sprite.style.transform = 'translate('+dx+'px,'+dy+'px) scale(0.35)';
+        sprite.style.opacity = '0.0';
+      });
+    });
+  }, delay || 0);
+  setTimeout(function(){
+    try { sprite.remove(); } catch(e){}
+    try {
+      target.style.animation = 'lwCounterPulse 0.45s ease';
+      setTimeout(function(){ target.style.animation = ''; }, 460);
+    } catch(e){}
+  }, (delay||0) + 900);
+};
+
 window._closeMystery = function() {
   var m = document.getElementById('mystery-modal');
-  if (m) m.classList.remove('open');
+  if (m) {
+    // Fly the last reveal's rewards to their counters before closing.
+    if (_myLastReveal) {
+      var pEl = document.getElementById('my-prize');
+      var srcRect = pEl ? pEl.getBoundingClientRect() : (m.getBoundingClientRect ? m.getBoundingClientRect() : {left: window.innerWidth/2 - 100, top: window.innerHeight/2 - 100, width: 200, height: 200});
+      var srcX = srcRect.left + srcRect.width/2;
+      var srcY = srcRect.top + srcRect.height/2;
+      var L = _myLastReveal; _myLastReveal = null;
+      var step = 0;
+      if (L.dew) { window._lwFlyReward('assets/fx/drop-blue.png', 'kb-dew', srcX, srcY, step); step += 120; }
+      if (L.sb)  { window._lwFlyReward('assets/fx/bloom-sun.png', 'kb-sunbeams', srcX, srcY, step); step += 120; }
+      if (L.fert){ window._lwFlyReward('assets/fx/leaf-gold.png', 'bpi', srcX, srcY, step); step += 120; }
+    }
+    m.classList.remove('open');
+  }
 };
 
 var _mySpinning = false;
@@ -71244,14 +71307,25 @@ window._openMysteryBox = function() {
     }
     if (loot.sb && typeof window.earnHashes === 'function') window.earnHashes(loot.sb);
     if (loot.dew && typeof window.earnDew === 'function') window.earnDew(loot.dew, 'mystery_box');
+    // Stash for the fly-to-counter animation when the player closes
+    // the modal. Stephen 2026-05-02: "we need to add a little css so
+    // when people get stuff from mystery boxes it shows them where its
+    // going like dew trickles up to dew and items swoop up to the
+    // backpack."
+    _myLastReveal = { dew: loot.dew||0, sb: loot.sb||0, fert: loot.fert||0 };
     // Force a dashboard update so sunbeams bar reflects new balance immediately
     try{if(window.updateDashboard)window.updateDashboard();}catch(e){}
     try{if(window._updateGameDew)window._updateGameDew();}catch(e){}
     // Persist to cloud so rewards survive browser clears
     try{if(window.syncVaultToCloud)setTimeout(window.syncVaultToCloud,400);}catch(e){}
-    // Display
+    // Display \u2014 Stephen 2026-05-02: Dew Pearl was opaque. Was a single
+    // line "Dew Pearl \u00b7 +15 Dew" that read past most players. Now: name
+    // big and bold on its own line, the desc below in gold so the
+    // gain reads like a counter ("+15 Dew" / "+10 Sunbeams").
     if (pEl) {
-      pEl.textContent = loot.name + ' \u00b7 ' + loot.desc;
+      pEl.innerHTML =
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;color:var(--cream);margin-bottom:4px;">'+loot.name+'</div>'+
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.06em;color:var(--gold);">'+loot.desc+'</div>';
       pEl.className = 'my-prize ' + (loot.jackpot ? 'rare' : loot.rare ? 'win' : '');
     }
     // Event log for rare+ only
@@ -79703,12 +79777,12 @@ function _bosItemsContent(){
       var boxN = window.LW_BOXES ? window.LW_BOXES.count() : 0;
       h += '<div style="display:flex;gap:0.6rem;margin-bottom:1rem;">';
       var _pouchIco = '<img src="assets/backpack-64x64.png" alt="" style="width:56px;height:56px;object-fit:contain;display:block;flex-shrink:0;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2.4rem;&quot;>\ud83c\udf31</span>&apos;;">';
-      var _boxIco = '<img src="assets/icons/box.png" alt="" style="width:56px;height:56px;object-fit:contain;display:block;flex-shrink:0;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2.4rem;&quot;>\ud83c\udf81</span>&apos;;">';
+      var _boxIco = '<img src="assets/mysterybox.png" alt="" style="width:64px;height:64px;object-fit:contain;display:block;flex-shrink:0;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2.4rem;&quot;>\ud83c\udf81</span>&apos;;">';
       h += '<button onclick="window.LW_ITEMS.openPanel()" style="flex:1;padding:12px 14px;border-radius:12px;border:2px solid rgba(122,179,86,0.45);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(122,179,86,0.06));color:var(--sage);cursor:pointer;min-height:80px;display:flex;align-items:center;gap:12px;text-align:left;">'+_pouchIco+'<span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.12em;color:var(--sage);line-height:1;">POUCH</span><span style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);">'+pouchN+' item'+(pouchN===1?'':'s')+'</span></span></button>';
       var _boxColor = boxN>0 ? 'rgba(232,160,191,0.9)' : 'rgba(232,160,191,0.5)';
       var _boxBorder = boxN>0 ? 'rgba(232,160,191,0.6)' : 'rgba(232,160,191,0.25)';
       var _boxGlow = boxN>0 ? 'box-shadow:0 0 14px rgba(232,160,191,0.3);' : '';
-      h += '<button onclick="window.LW_BOXES&&window.LW_BOXES.openPanel()" style="flex:1;padding:12px 14px;border-radius:12px;border:2px solid '+_boxBorder+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(232,160,191,0.04));color:'+_boxColor+';cursor:pointer;min-height:80px;display:flex;align-items:center;gap:12px;text-align:left;'+_boxGlow+'">'+_boxIco+'<span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.12em;color:'+_boxColor+';line-height:1;">BOXES</span><span style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);">'+boxN+' to open</span></span></button>';
+      h += '<button onclick="window.LW_BOXES&&window.LW_BOXES.openPanel()" title="Mystery boxes earned from gameplay" style="flex:1;padding:12px 14px;border-radius:12px;border:2px solid '+_boxBorder+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(232,160,191,0.04));color:'+_boxColor+';cursor:pointer;min-height:80px;display:flex;align-items:center;gap:12px;text-align:left;'+_boxGlow+'">'+_boxIco+'<span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;"><span style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.1em;color:'+_boxColor+';line-height:1.05;">MYSTERY<br>BOXES</span><span style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);">'+boxN+' to open</span></span></button>';
       h += '</div>';
     }
   } catch(e){}
@@ -84940,13 +85014,14 @@ window.LW_GIFTS = (function(){
       return;
     }
     if (slot.type === 'mystery'){
-      // Open mystery box modal — its existing flow already deducts 25 Dew
-      // and rolls loot. Mark sold so the slot dims after one purchase.
+      // Open mystery box modal — its existing flow deducts 25 Dew per
+      // open and rolls loot. Stephen 2026-05-02: do NOT mark the slot
+      // sold. The mystery box is an unlimited Dew sink — the modal's
+      // OPEN ANOTHER button already allows infinite buys at 25 Dew
+      // each, so dimming the shop slot after one tap was inconsistent
+      // and read like a bug to Jessie ("greyed out despite having Dew").
       if (window._openMystery){
-        st.purchased[slotIdx] = true;
-        try { localStorage.setItem(SHOP_KEY, JSON.stringify(st)); } catch(e){}
         window._openMystery();
-        // Re-render after the modal opens so the SOLD state is visible
         setTimeout(render, 50);
       }
       return;
@@ -85549,7 +85624,7 @@ window.LW_GIFTS = (function(){
     h += pity.nextLegendIn === 0 ? '\u2605 Your next box guarantees <b style="color:#e8c86b;">Legendary</b>.' : (pity.nextLegendIn === 1 ? '\u2605 Next box guarantees <b style="color:#e8c86b;">Legendary</b>.' : '\u2605 Legendary guaranteed in <b>'+pity.nextLegendIn+'</b> boxes.');
     h += '</div></div>';
     if (n > 0) {
-      h += '<button id="lw-box-open-btn" onclick="window.LW_BOXES.openNext()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:18px;border-radius:14px;border:2px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;cursor:pointer;min-height:64px;box-shadow:0 0 20px rgba(200,168,75,0.3);"><img src="assets/icons/box.png" alt="" style="width:36px;height:36px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';"> OPEN BOX ('+n+')</button>';
+      h += '<button id="lw-box-open-btn" onclick="window.LW_BOXES.openNext()" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:18px;border-radius:14px;border:2px solid var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.14em;cursor:pointer;min-height:72px;box-shadow:0 0 20px rgba(200,168,75,0.3);"><img src="assets/mysterybox.png" alt="" style="width:56px;height:56px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83c\\udf81\';"> OPEN BOX ('+n+')</button>';
       if (n >= 2) h += '<button onclick="window.LW_BOXES.openAll()" style="display:block;width:100%;margin-top:0.6rem;padding:12px;border-radius:12px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(26,36,22,0.5);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">OPEN ALL '+n+'</button>';
     } else {
       h += '<div style="padding:2rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.65rem;color:var(--muted);line-height:1.6;">No boxes yet.<br><br>Earn them from Uncommon+ blooms, step milestones, and login streaks.</div>';
