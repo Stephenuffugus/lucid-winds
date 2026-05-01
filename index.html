@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.98';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.99';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55393,7 +55393,11 @@ window._lwSendGiftFlow = function(friendUid, friendName) {
 // caterpillar was buried in a different overlay entirely.
 //
 // Single panel now shows:
-//   • POUCHES   — LW_COCOONS slots (Gossamer / Linen / Amber / Obsidian)
+//   • FOUND     — LW_COCOONS slots (Gossamer / Linen / Amber / Obsidian)
+//                 dropped from foraging and blooming. Header was "POUCHES"
+//                 until 2026-05-01 — Stephen flagged that only Linen is
+//                 actually a pouch, so the section name no longer doubles
+//                 as a tier label.
 //   • CREATURES — LW_KEEPER arc (Caterpillar→Wasp / Mudball→Lungfish /
 //                  Meteor→Tardigrade) with state badges + buy/feed/hatch/equip
 //
@@ -55435,24 +55439,25 @@ window._lwRenderCuriosities = function() {
   h += '<div style="padding:0.8rem;margin-bottom:0.9rem;background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(13,16,12,0.7));border:1px solid rgba(122,179,86,0.18);border-radius:10px;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.55rem;">HOW THIS WORKS</div>';
   h += '<div style="display:flex;flex-direction:column;gap:0.5rem;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.5;">';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Find or buy</b> — pouches drop when plants bloom (free Gossamer daily). Creatures are bought from the hermit and require Dew + Sunbeams.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Find or buy</b> — cocoons drop while foraging in the Wild and from greenhouse blooms. Creatures are bought from the hermit and require Dew + Sunbeams.</span></div>';
   h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> — every step credits everything you\'re carrying at once. No equip slot for incubating, no schedule.</span></div>';
   h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — pouches give Dew, items, mystery boxes. Creatures hatch into companions you can equip for ongoing abilities.</span></div>';
   h += '</div></div>';
 
-  // ─── POUCHES SECTION ───
-  // Audit fix 2026-05-01: cocoon-*.png assets don't exist on disk; use
-  // a butterfly icon for the POUCHES section header (matches the
-  // backpack button + falls through cleanly to ✨ if missing).
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;">'+
+  // ─── COCOONS SECTION ───
+  // Stephen ruling 2026-05-01: header was "POUCHES" but only one of the
+  // four tiers is a pouch (Gossamer Silk, Linen Pouch, Amber Pod,
+  // Obsidian Shell). Renamed to "FOUND" with a subtitle that names the
+  // sources — parallels CREATURES below ("acquired from the hermit").
+  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">'+
        '<img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=\'\\u2728\';">'+
-       '<span>POUCHES</span>'+
-       '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">'+pouchSlots.length+' / '+pouchCap+'</span>'+
+       '<span>FOUND</span>'+
+       '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">while foraging or blooming · '+pouchSlots.length+' / '+pouchCap+'</span>'+
        '</div>';
   if (window.LW_COCOONS_TIERS && (!pouchSlots || !pouchSlots.length)){
     h += '<div style="padding:1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.7;background:rgba(13,16,12,0.4);border:1px dashed rgba(122,179,86,0.18);border-radius:10px;margin-bottom:0.7rem;">';
-    h += '<div style="font-size:0.7rem;color:var(--cream);margin-bottom:0.4rem;">No pouches in your pocket yet.</div>';
-    h += 'Bloom a plant in the Greenhouse to find one,<br>or come back tomorrow for your daily Gossamer.';
+    h += '<div style="font-size:0.7rem;color:var(--cream);margin-bottom:0.4rem;">Nothing here yet.</div>';
+    h += 'Forage a hex in the Wild,<br>or bloom a plant in the Greenhouse.';
     h += '</div>';
   } else if (window.LW_COCOONS_TIERS) {
     var TIERS = window.LW_COCOONS_TIERS;
@@ -82813,6 +82818,14 @@ window._lwClaimHerbarium = function(id){
           });
         }
       } catch(e) {}
+      // First successful forage of the day drops a Gossamer cocoon.
+      // Stephen ruling 2026-05-01 — replaces the silent dawn auto-grant
+      // so the Gossamer in your pouch always has a reason to be there.
+      try {
+        if (resolved.success && window.LW_COCOONS && window.LW_COCOONS.tryForageDrop) {
+          window.LW_COCOONS.tryForageDrop();
+        }
+      } catch(eFD) {}
       // Bloom Day bonus — if today is a Bloom Day and the forage succeeds,
       // award a RARE wild card (Moonlight / Thunder / Dust) per spec §5.
       // These are universal half-strength counters, only earnable on
@@ -85610,11 +85623,13 @@ window.LW_debug.cleanGhostDrops = function(){
 // Cocoons are NOT seeds (those grow plants in the nursery). They're moth
 // silk bundles you carry — walking warms them, at distance threshold they
 // hatch items, Dew, or boxes. 4 tiers scaled to LW's step milestones.
-// Daily free Gossamer appears at dawn and burns if unclaimed by next dawn.
+// Gossamer drops on the first successful forage of the day (Stephen ruling
+// 2026-05-01: must have a reason to be in the pouch, no more silent dawn
+// gifts).
 (function(){
   'use strict';
   var STORE = 'sws_cocoons';
-  var DAILY = 'sws_cocoons_daily'; // {lastGrantDate:'YYYY-MM-DD'}
+  var DAILY = 'sws_cocoons_forage_daily'; // {lastGrantDate:'YYYY-MM-DD'}
 
   var TIERS = {
     gossamer: { key:'gossamer', name:'Gossamer Silk', distance:1000,  art:'assets/cocoons/cocoon-gossamer.png', icon:'\u272a',
@@ -85732,9 +85747,13 @@ window.LW_debug.cleanGhostDrops = function(){
     return { tier:c.tier, reward:reward };
   }
 
-  // Daily free Gossamer grant on first open per date. If previous day's
-  // grant wasn't caught (pouch was full), it's lost — encourages dailies.
-  function tryDailyGrant(){
+  // Forage drop — first successful forage of the day awards a Gossamer.
+  // Stephen ruling 2026-05-01: cocoons should never just appear; they need
+  // a reason. Tying the daily Gossamer to forage success gives the player
+  // a narrative (it dropped out of a hex they just solved) and rewards
+  // the action. The add() function fires its own "added to your pouch"
+  // toast; we don't queue a second one since the forage context is clear.
+  function tryForageDrop(){
     var today = new Date().toISOString().slice(0,10);
     var d = {}; try { d = JSON.parse(localStorage.getItem(DAILY)||'{}'); } catch(e){}
     if (d.lastGrantDate === today) return false;
@@ -85800,7 +85819,7 @@ window.LW_debug.cleanGhostDrops = function(){
 
   window.LW_COCOONS = {
     TIERS: TIERS, add: add, count: count, cap: cap, slots: slots, setCap: setCap,
-    creditSteps: creditSteps, hatch: hatch, tryDailyGrant: tryDailyGrant,
+    creditSteps: creditSteps, hatch: hatch, tryForageDrop: tryForageDrop,
     openPanel: openPanel, hatchClick: hatchClick, close: close, _dismiss: function(){}
   };
   window.LW_debug = window.LW_debug || {};
@@ -85812,9 +85831,8 @@ window.LW_debug.cleanGhostDrops = function(){
     if (window._lwOpenCuriosities) window._lwOpenCuriosities();
   };
   window.LW_debug.walkCocoons = function(m){ creditSteps(m || 1000); };
-
-  // Daily grant — try once per session load. A dawn cronish.
-  try { setTimeout(tryDailyGrant, 3000); } catch(e){}
+  // No more setTimeout(tryDailyGrant) — the auto-dawn-gift was removed.
+  // Gossamer drops are now hooked to forage success. See tryForageDrop().
 })();
 
 // ═══ LW_KEEPER — Premium Keeper Cocoons (parallel to LW_COCOONS) ═══
