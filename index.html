@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.27';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69379,6 +69379,56 @@ function _step36Retry(n){
   _dialog('The SOW button didn\u2019t load. Tap <b>skip tutorial</b> below, then drop plants in the Wild whenever you\u2019re ready.','',null,'center');
 }
 function _step36Spotlight(sow){
+  // Stephen 2026-05-01 URGENT FIX #4 — iOS tester STILL stuck on SOW
+  // after fixes #1, #2, #3. Belt-and-FOUR-suspenders this time:
+  //   1. Strip every body class + panel class that triggers a hide rule
+  //   2. Force inline `!important` styles that beat every CSS !important
+  //   3. Force a synchronous reflow so iOS Safari flushes its render queue
+  //      (without this, classList.remove() can lag visibly on Safari)
+  //   4. Bind a capture-phase click handler that calls openPicker
+  //      directly. iOS occasionally drops the first inline-onclick tap on
+  //      a freshly-revealed button — the listener catches that case.
+  //   5. Diagnostic console.log so if it STILL fails we have data
+  //      (computed style + body classes at spotlight time).
+  // The watch loop also re-applies the inline overrides every 500ms so
+  // a stray re-add of the hide-class is corrected within one poll tick.
+  try {
+    document.body.classList.remove('lw-bp-open');
+    var _bpe = document.getElementById('bpe');
+    if (_bpe && _bpe.classList.contains('open')) _bpe.classList.remove('open');
+    // Inline `!important` beats every CSS rule with !important on the
+    // same property — that's the spec. setProperty's third arg is the
+    // priority flag.
+    sow.style.setProperty('display', 'flex', 'important');
+    sow.style.setProperty('visibility', 'visible', 'important');
+    sow.style.setProperty('opacity', '1', 'important');
+    sow.style.setProperty('pointer-events', 'auto', 'important');
+    sow.style.setProperty('z-index', '1000012', 'important');
+    // Force iOS Safari to flush layout/paint so the override takes effect
+    // before the next tap arrives. Reading offsetHeight is the standard
+    // sync-reflow trick.
+    void sow.offsetHeight;
+    if (!sow._lwTutClickBound) {
+      sow.addEventListener('click', function(e){
+        try {
+          if (window.FG_Wild && window.FG_Wild.openPicker) window.FG_Wild.openPicker();
+        } catch(err) { try{console.error('[SOW] openPicker err', err);}catch(_){} }
+      }, true);
+      sow._lwTutClickBound = true;
+    }
+    try {
+      var _cs = window.getComputedStyle && window.getComputedStyle(sow);
+      console.log('[step36 dbg]', {
+        display: _cs && _cs.display,
+        visibility: _cs && _cs.visibility,
+        opacity: _cs && _cs.opacity,
+        pointerEvents: _cs && _cs.pointerEvents,
+        zIndex: _cs && _cs.zIndex,
+        bodyClasses: document.body.className,
+        bpeOpen: !!(_bpe && _bpe.classList.contains('open'))
+      });
+    } catch(e){}
+  } catch(e){}
   try{_spotlight&&_spotlight(sow);}catch(e){}
   _dialog(
     'Tap the <span style="color:var(--gold);">SOW</span> button to pick a plant from your greenhouse and place it.',
@@ -69395,6 +69445,17 @@ function _step36Spotlight(sow){
     if(m&&m.classList.contains('open')&&document.body.classList.contains('lw-carousel-wild-mode')){
       _clear();setTimeout(_step37,400);return;
     }
+    // Re-assert visibility every tick. If anything (a stray BP.open
+    // call, a tutorial body-class flip) re-applies a hide rule between
+    // ticks, this catches it within 500ms.
+    try {
+      document.body.classList.remove('lw-bp-open');
+      var _bpe2 = document.getElementById('bpe');
+      if (_bpe2 && _bpe2.classList.contains('open')) _bpe2.classList.remove('open');
+      sow.style.setProperty('visibility', 'visible', 'important');
+      sow.style.setProperty('opacity', '1', 'important');
+      sow.style.setProperty('pointer-events', 'auto', 'important');
+    } catch(e){}
     if(polls<600){polls++;setTimeout(watch,500);}
     // No fallback — if 5 min passes without the carousel opening,
     // just halt. Jumping to step 38 skipped the whole SOW teaching.
