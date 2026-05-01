@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.48';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.49';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -62598,17 +62598,37 @@ function declineReq(uid){if(window.PW_Social)PW_Social.declineFriend(uid,functio
 
 // ═══ EDIT KEEPER NAME ═══
 function editName(){
+  // Stephen 2026-05-01 — anti-shady-shit lock. Once a Keeper has set their
+  // name, it locks. Free name swaps would let bad actors evade bans,
+  // impersonate friends, or rebuild reputation after scamming on the
+  // marketplace. Locked players see a different modal explaining how to
+  // request a change. The lock fires off pw_keeper_name being SET in
+  // localStorage (not the default UI 'Keeper'), so first-time players
+  // still get exactly one free pick.
+  var locked = false;
+  try { locked = !!localStorage.getItem('pw_keeper_name'); } catch(e){}
   var cur=_getName();
   var ov=document.createElement('div');
   ov.id='cs-name-editor';
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(5,8,4,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:panelFadeIn 0.3s ease;';
-  ov.innerHTML='<div style="text-align:center;max-width:280px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">'
-    +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.6rem;">EDIT KEEPER NAME</div>'
-    +'<input type="text" id="cs-name-input" value="'+cur.replace(/"/g,'&quot;')+'" maxlength="20" style="width:100%;padding:0.5rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.2);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;text-align:center;outline:none;margin-bottom:0.6rem;" />'
-    +'<div style="display:flex;gap:0.4rem;">'
-    +'<button onclick="var ne=document.getElementById(\'cs-name-editor\');if(ne)ne.remove();" style="flex:1;padding:0.5rem;border:1.5px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">CANCEL</button>'
-    +'<button onclick="PW_UI._saveName()" style="flex:1;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(74,124,53,0.15);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">SAVE</button>'
-    +'</div></div>';
+  if (locked) {
+    ov.innerHTML='<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.35);border-radius:16px;padding:1.4rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.6rem;">NAME LOCKED</div>'
+      +'<div style="font-family:Cormorant Garamond,serif;font-size:1.2rem;color:var(--cream);font-weight:600;margin-bottom:0.7rem;">'+cur.replace(/[<>&]/g,'')+'</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.7;letter-spacing:0.04em;margin-bottom:0.9rem;">Your Keeper name carries your trade reputation, your wild plants, and your record. To prevent impersonation and scams it stays fixed once chosen.</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.7;letter-spacing:0.04em;margin-bottom:0.9rem;opacity:0.85;">Need a change? Email <b style="color:var(--gold);">support@lucidwinds.com</b> with your current name and the reason. Reviewed manually.</div>'
+      +'<button onclick="var ne=document.getElementById(\'cs-name-editor\');if(ne)ne.remove();" style="width:100%;padding:0.55rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:10px;background:rgba(74,124,53,0.18);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">UNDERSTOOD</button>'
+      +'</div>';
+  } else {
+    ov.innerHTML='<div style="text-align:center;max-width:300px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.3);border-radius:16px;padding:1.2rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.6rem;">CHOOSE YOUR KEEPER NAME</div>'
+      +'<input type="text" id="cs-name-input" value="'+cur.replace(/"/g,'&quot;')+'" maxlength="20" style="width:100%;padding:0.5rem;background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.2);border-radius:8px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.55rem;text-align:center;outline:none;margin-bottom:0.5rem;" />'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:#c8a84b;line-height:1.55;margin-bottom:0.6rem;letter-spacing:0.04em;">⚠ This name is permanent. It carries your reputation across trades and wild plants. Choose with care.</div>'
+      +'<div style="display:flex;gap:0.4rem;">'
+      +'<button onclick="var ne=document.getElementById(\'cs-name-editor\');if(ne)ne.remove();" style="flex:1;padding:0.5rem;border:1.5px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">CANCEL</button>'
+      +'<button onclick="PW_UI._saveName()" style="flex:1;padding:0.5rem;border:1.5px solid rgba(122,179,86,0.3);border-radius:8px;background:rgba(74,124,53,0.15);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;cursor:pointer;min-height:48px;">CLAIM IT</button>'
+      +'</div></div>';
+  }
   document.body.appendChild(ov);
   setTimeout(function(){var inp=document.getElementById('cs-name-input');if(inp)inp.focus();},100);
 }
@@ -62618,10 +62638,21 @@ function _saveName(){
   if(!name||name.length<1){if(window._toast)window._toast('Name cannot be empty.');return;}
   if(name.length>20)name=name.substring(0,20);
   if(window._lwCleanName){var _nc=window._lwCleanName(name);if(!_nc.ok){if(window._toast)window._toast(_nc.reason);return;}name=_nc.cleaned;}
+  // Stephen 2026-05-01: confirm before commit. Lock fires immediately after
+  // this function persists the name; player should know they're claiming it
+  // for keeps. Skip confirm if they're typing the same name they already
+  // have (e.g., re-opening editor in some edge case).
+  var prev = '';
+  try { prev = localStorage.getItem('pw_keeper_name') || ''; } catch(e){}
+  if (!prev && !window._lwNameConfirmed) {
+    var ok = false;
+    try { ok = confirm('Claim "'+name+'" as your Keeper name?\n\nThis is permanent. The name carries your reputation across trades and wild plants. Email support@lucidwinds.com to request a change later.'); } catch(e){ ok = true; }
+    if (!ok) return;
+  }
   localStorage.setItem('pw_keeper_name',name);
   updateKeeperBar();
   var ne=document.getElementById('cs-name-editor');if(ne)ne.remove();
-  if(window._toast)window._toast('Name updated!');
+  if(window._toast)window._toast('Name claimed: ' + name);
   _syncProfileField('displayName',name);
 }
 
