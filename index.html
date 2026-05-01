@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.4';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.5';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -65946,14 +65946,11 @@ function _renderClassSection(){
     // Use canSee.classPick so the tutorial-done / guided-step override is
     // honored here too. Hardcoded curLvl<7 was telling the player "pick
     // a class at L7" even after completing or skipping the tutorial.
-    var curLvl=(window.canSee&&window.canSee.currentLevel)?window.canSee.currentLevel():1;
-    var _canPick=(window.canSee&&window.canSee.classPick)?window.canSee.classPick():(curLvl>=7);
-    if(!_canPick){
-      el.innerHTML='<div class="cs-class-none">Pick a class at Keeper Level 7.<br>(Currently '+curLvl+'.)</div>';
-    } else {
-      el.innerHTML='<div class="cs-class-none">Ready to choose a path.</div>'
-        +'<button class="cs-class-pick-btn" onclick="if(window._lwOpenClassManager)_lwOpenClassManager();else if(window._LW_openClassPicker)window._LW_openClassPicker()">\u270e CHOOSE A CLASS</button>';
-    }
+    // Stephen 2026-05-02: classPick gate is always-open now. Empty-state
+    // copy goes straight to the picker call-to-action \u2014 no more "Pick a
+    // class at L7" branch.
+    el.innerHTML='<div class="cs-class-none">Ready to choose a path.</div>'
+      +'<button class="cs-class-pick-btn" onclick="if(window._lwOpenClassManager)_lwOpenClassManager();else if(window._LW_openClassPicker)window._LW_openClassPicker()">\u270e CHOOSE A CLASS</button>';
     return;
   }
   var def=LW_CLASSES[cls];
@@ -93571,12 +93568,15 @@ window.canSee = {
   // level. Prevents the L7 gate from blocking the guided class-pick
   // step and keeps post-tutorial parity with feral/stranger/nursery/wild.
   classPick: function(){
-    try {
-      var ts = parseInt(localStorage.getItem('lw_tut')||'0',10);
-      if (ts >= 47) return true;
-      if (localStorage.getItem('lw_plant_xp_unlocked') === '1') return true;
-    } catch(e){}
-    return _lwLevel()>=7;
+    // Stephen ruling 2026-05-02: L7 gate dropped. Was producing weird
+    // dead states like Jessie's — tutorial broke on forage step, she
+    // skipped, the lw_tut flag never reached 47, and the gate locked
+    // her out of class pick until L7 even though the tutorial intended
+    // to walk her there much sooner. Class abilities are XP-gated
+    // anyway (L2 at 100 class XP, L3 at 500), so opening the picker
+    // doesn't grant unearned power. Players who pick at L1 just get
+    // their L1 class buff sooner.
+    return true;
   },
   greenhouseBreed: function(){return _lwLevel()>=7;},
   nurseryShopPots: function(){return _lwLevel()>=9;},
