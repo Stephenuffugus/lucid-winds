@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.39';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.40';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -62137,10 +62137,14 @@ function _renderMilestoneSection(){
     } else {
       h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3rem;opacity:'+(unlocked?'1':'0.3')+';">\u2728</div>';
     }
-    h+='<div style="position:absolute;left:0;right:0;bottom:0;padding:18px 6px 6px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0.85) 70%);text-shadow:0 1px 2px rgba(0,0,0,0.9);">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:'+labelColor+';letter-spacing:0.08em;line-height:1.1;">L'+lv+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';line-height:1.1;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+m.name+'</div>';
-    h+='</div>';
+    // Stephen 2026-05-01: stripped the renderer's gradient + L## + name
+    // overlay. The painted milestone art has its own title baked in;
+    // a second text label on top would be redundant and noisy. The
+    // LW_Reader detail view (tap to open) still shows MILESTONE · L##
+    // and the name in eyebrow + title slots, so the level lookup info
+    // isn't lost — it's just deferred to the detail view. Locked
+    // milestones keep the bottom progress bar so players can still see
+    // how close they are.
     if(!unlocked){
       h+='<div style="position:absolute;left:4px;right:4px;bottom:3px;height:3px;background:rgba(122,179,86,0.1);border-radius:2px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.55),rgba(200,168,75,0.6));"></div></div>';
     }
