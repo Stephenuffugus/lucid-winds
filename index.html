@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.82';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.83';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -8749,8 +8749,16 @@ window._addSwitchTabHook = function(fn){
         var s=JSON.stringify(ledger);
         if(window._secureSet)window._secureSet('sws_hash_ledger',s);
         else localStorage.setItem('sws_hash_ledger',s);
+        // Stephen 2026-05-01 PART 5: also push into the sunbeam queue so the
+        // grant actually appears in the player's visible balance. Without this,
+        // dev grants only inflated the legacy ledger total but never made
+        // sunbeams spendable through the queue (post-Apr-16 source of truth).
+        if(window._accumulateHash)try{window._accumulateHash(n);}catch(e){}
+        if(window._updateGameDew)try{window._updateGameDew();}catch(e){}
+        if(window._updateSunbeamBadge)try{window._updateSunbeamBadge();}catch(e){}
         if(window.updateDashboard)updateDashboard();
-        alert('+'+n+' Sunbeams granted! Total earned: '+ledger.earned);
+        var bal=window.getTotalHashes?window.getTotalHashes():ledger.earned;
+        alert('+'+n+' Sunbeams granted! Spendable balance: '+bal);
       }catch(e){alert('Error: '+e.message);}
     },
     replayOnboarding:function(){
@@ -39764,17 +39772,29 @@ document.addEventListener('keydown', function(e) {
   }
   window._updateGameDew = _updateGameDew;
   function spendHashes(amount) {
+    // Stephen 2026-05-01 PART 5: this used to ONLY bump ledger.spent, leaving
+    // the queue untouched so the player kept their visible balance. Now also
+    // drains the sunbeam queue (the source-of-truth for spendable balance) so
+    // shop/mutation/prune spends actually deduct what the player sees.
     var ledger = getHashLedger();
     ledger.spent = (ledger.spent || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
+    if (typeof window._lwSpendSunbeams === 'function') {
+      try { window._lwSpendSunbeams(amount, 'spendHashes'); } catch(e){}
+    }
   }
   function getTotalHashes() {
-    // FIX: read persisted ledger.earned instead of volatile attentionPayloads.length
-    // gh.length * 3 kept for backwards-compat with collections minted before this fix
-    var gh = loadGreenhouse();
-    var ledger = getHashLedger();
-    var earned = (ledger.earned || 0) + (gh.length * 3);
-    return Math.max(0, earned - (ledger.spent || 0));
+    // Stephen 2026-05-01 PART 5: derive from the SUNBEAM QUEUE (source of truth
+    // for spendable sunbeams) rather than the legacy ledger.earned + gh.length*3
+    // formula. The +3-per-plant phantom was a backwards-compat trick from before
+    // the queue system shipped (Apr 16); after that, every earnHashes() call
+    // ALREADY increments both ledger AND queue, so the phantom became a pure
+    // double-count — Stephen reported a ~600 discrepancy on a ~200-plant
+    // collection. Now matches what the player sees in the dashboard.
+    var ready = (typeof window._getMintableCount === 'function') ? window._getMintableCount() : 0;
+    var prog  = (typeof window._getHashProgress  === 'function') ? window._getHashProgress()  : 0;
+    var cost  = (typeof window._getMintCost      === 'function') ? window._getMintCost()      : 30;
+    return (ready * cost) + prog;
   }
   function getShopUnlocks() {
     try { return JSON.parse(localStorage.getItem(SHOP_KEY)) || {}; } catch(e) { return {}; }
