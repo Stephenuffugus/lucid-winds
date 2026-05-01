@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.34';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.35';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -54414,14 +54414,40 @@ window._lwSpendSunbeams=function(amount,reason){
   return true;
 };
 // ═══ MINT FROM QUEUE — player-initiated mint ═══
-window._mintFromQueue=function(){
+// Stephen 2026-05-01 CRITICAL FIX — mint reveal showed the queue hash
+// (client-side _readyHashes pop) but mintPlant() can mutate the hash:
+//   • Server-mint path (added 2026-04-29) generates the hash server-side
+//     for NFT-grade hardening, completely replacing the queue hash.
+//   • First-mint grade cap (mintPlant line ~34556) re-rolls bytes 32-63
+//     until the plant grades Common/Uncommon/Rare. The final hash is
+//     different from the input.
+// Either path produces a hash mismatch: celebration shows plant A,
+// greenhouse stores plant B. Stephen reported this directly: "the plant
+// it showed me was not the plant that was in my greenhouse." Trust-killer.
+//
+// Fix: await mintPlant, then read the LATEST greenhouse entry to get the
+// hash that was actually stored. Use THAT hash for the celebration.
+window._mintFromQueue=async function(){
   if(_readyHashes.length===0){if(window._toast)_toast('No plants ready yet. Keep playing!');return;}
   var hex=_readyHashes.shift();
   _persistHashBuf();
-  if(window._LW_DEBUG)console.log('[_mintFromQueue] minting:',hex,'remaining:',_readyHashes.length);
-  try{if(window.mintPlant)window.mintPlant(hex);}catch(err){console.error('[mintFromQueue] error:',err);}
+  if(window._LW_DEBUG)console.log('[_mintFromQueue] minting queue hash:',hex,'remaining:',_readyHashes.length);
+  var beforeGh=[];try{beforeGh=window.loadGreenhouse?window.loadGreenhouse():[];}catch(e){}
+  var beforeLen=(beforeGh||[]).length;
+  var beforeHashes={};for(var _bi=0;_bi<beforeLen;_bi++){if(beforeGh[_bi]&&beforeGh[_bi].hash)beforeHashes[beforeGh[_bi].hash]=true;}
+  try{if(window.mintPlant)await window.mintPlant(hex);}catch(err){console.error('[mintFromQueue] error:',err);}
+  // Find the new entry — the hash NOT present before mintPlant ran.
+  // Server-mint replaces hex entirely; grade-cap re-roll mutates bytes
+  // 32-63. Either way the final stored hash is the source of truth.
+  var afterGh=[];try{afterGh=window.loadGreenhouse?window.loadGreenhouse():[];}catch(e){}
+  var actualHash=hex; // fallback
+  for(var _ai=afterGh.length-1;_ai>=0;_ai--){
+    var _ah=afterGh[_ai]&&afterGh[_ai].hash;
+    if(_ah&&!beforeHashes[_ah]){actualHash=_ah;break;}
+  }
+  if(window._LW_DEBUG&&actualHash!==hex)console.log('[_mintFromQueue] hash mutated:',hex,'→',actualHash);
   if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
-  _showMintCelebration(hex);
+  _showMintCelebration(actualHash);
   _updateSunbeamBadge();
   if(window._updateGameDew)_updateGameDew();
 };
