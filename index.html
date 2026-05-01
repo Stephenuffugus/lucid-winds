@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.92';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.93';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6297,7 +6297,7 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
   })();
   </script>
   <!-- ═══ OFFLINE WARNING BANNER ═══ -->
-  <div id="lw-offline-banner"><span>Offline &#8212; progress saves locally only</span><button class="lw-ob-x" onclick="document.getElementById('lw-offline-banner').style.display='none';try{sessionStorage.setItem('lw_offline_dismissed','1');localStorage.setItem('lw_offline_dismissed_until',String(Date.now()+86400000));}catch(e){}">&times;</button></div>
+  <div id="lw-offline-banner"><span>Offline &#8212; progress saves locally only</span><button class="lw-ob-x" onclick="document.getElementById('lw-offline-banner').style.display='none';try{sessionStorage.setItem('lw_offline_dismissed','1');localStorage.setItem('lw_offline_dismissed_forever','1');}catch(e){}">&times;</button></div>
 
   <!-- ═══ FLUX TAB BACKGROUNDS (set-38) ═══ -->
   <!-- Tier 3 perf: only the initially active tab's bg is set inline; others
@@ -6389,13 +6389,18 @@ window._addSwitchTabHook = function(fn){
     setTimeout(function() {
       if (!window.firebase || !window.firebase.auth) {
         try {
+          // Stephen 2026-05-01: once dismissed, never show again. The 24h
+          // re-show was triggering on every browser session and felt constant.
           if (sessionStorage.getItem('lw_offline_dismissed') === '1') return;
+          if (localStorage.getItem('lw_offline_dismissed_forever') === '1') return;
+          // Honor the legacy 24h flag for anyone who dismissed it before the
+          // permanent flag existed — same effect for them, just delayed.
           var until = parseInt(localStorage.getItem('lw_offline_dismissed_until') || '0', 10);
           if (until && Date.now() < until) return;
         } catch(e){}
         window._showOfflineBanner();
       }
-    }, 4000);
+    }, 8000); // bumped 4s → 8s so slow-Firebase-init doesn't trip the banner
   });
 })();
 </script>
@@ -65229,9 +65234,17 @@ window._openTitleShop = function(){
 
 // ═══ XP BAR UPDATE ═══
 function updateKeeperBar(){
+  // Stephen 2026-05-01: bar % and the text counter use the SAME level-relative
+  // formula now. Was inconsistent: bar showed (xp - prevThreshold) / span
+  // (correct: 0% on level-up, 100% at next), but text showed total xp / nextXP
+  // (misleading: "240/280" looks like 86% when bar is at 50% within L5).
+  // Now both surfaces report "XP earned this level / XP needed for this level".
   var xp=_getXP(),r=_getRank(xp);
   var p=_getPrestige();
-  var pct=Math.min(100,Math.round(((xp-RANKS[r.level-1].xp)/(r.nextXP-RANKS[r.level-1].xp))*100));
+  var prevThreshold=(RANKS[r.level-1]&&RANKS[r.level-1].xp)||0;
+  var inLevel=xp-prevThreshold;
+  var levelSpan=r.nextXP-prevThreshold;
+  var pct=Math.min(100,Math.round((inLevel/Math.max(1,levelSpan))*100));
   var fill=document.getElementById('kb-xp-fill');if(fill)fill.style.width=pct+'%';
   var rankExtra = '';
   try {
@@ -65243,7 +65256,7 @@ function updateKeeperBar(){
     }
   } catch(e) {}
   var lvlDisplay=_formatLevelDisplay();
-  var rank=document.getElementById('kb-rank');if(rank)rank.textContent=lvlDisplay+' \u00b7 '+r.title+' \u00b7 '+xp+' / '+r.nextXP+' XP'+rankExtra;
+  var rank=document.getElementById('kb-rank');if(rank)rank.textContent=lvlDisplay+' \u00b7 '+r.title+' \u00b7 '+inLevel+' / '+levelSpan+' XP'+rankExtra;
   var name=document.getElementById('kb-name');if(name)name.textContent=_getDisplayName();
   // Ascend button — shows when L100 hit
   _updateAscendBtn();
@@ -65259,7 +65272,7 @@ function updateKeeperBar(){
   }
   try { if (window._lwRefreshAvatar) window._lwRefreshAvatar(); } catch(e) {}
   var cf=document.getElementById('cs-xp-fill');if(cf)cf.style.width=pct+'%';
-  var ct=document.getElementById('cs-xp-text');if(ct)ct.textContent=xp+' / '+r.nextXP+' XP \u2192 Level '+(r.level+1);
+  var ct=document.getElementById('cs-xp-text');if(ct)ct.textContent=inLevel+' / '+levelSpan+' XP \u2192 Level '+(r.level+1);
   var cn=document.getElementById('cs-name');if(cn)cn.textContent=_getDisplayName();
   var prestigePrefix=p>0?(p<=10?'P'+p+' \u00b7 ':''):'';
   var ti=document.getElementById('cs-title');if(ti)ti.textContent='\u25c8 '+prestigePrefix+r.title+' \u00b7 '+lvlDisplay;
@@ -84922,137 +84935,6 @@ window.LW_GIFTS = (function(){
   }
   // The original ~130-line renderCocoonery body is preserved at the bottom
   // of the file as a comment for historical reference if needed.
-  function _renderCocooneryLegacyBodyDead(){
-    var body = document.getElementById('lwh-body');
-    if (!body) return;
-    if (!window.LW_KEEPER){
-      body.innerHTML = '<div class="lwh-section-text">The cocoonery is being prepared. Come back soon.</div>';
-      return;
-    }
-    var specs = LW_KEEPER.listSpecs();
-    var equippedKey = LW_KEEPER.equipped();
-    var dewBal = (window.getTotalDew && window.getTotalDew()) || 0;
-    var sbBal  = (window.getTotalHashes && window.getTotalHashes()) || 0;
-
-    var html = '<div class="lwh-section-text">Three cradles wait beneath the cloth. Pick the one that calls to you. The hermit will not say what is inside.</div>';
-
-    if (equippedKey){
-      var eqSpec = LW_KEEPER.getSpec(equippedKey);
-      if (eqSpec){
-        html += '<div class="lwh-active" style="margin-bottom:0.6rem;">' +
-          '<b style="color:#c8a84b;">EQUIPPED</b> · ' + eqSpec.hatchedName +
-          ' <button onclick="LW_HUT.keeperUnequip()" style="margin-left:0.6rem;background:rgba(200,168,75,0.2);border:1px solid rgba(200,168,75,0.4);color:#e8dcc8;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.7rem;cursor:pointer;">Set aside</button>' +
-        '</div>';
-      }
-    }
-
-    html += '<div class="lwh-shop-grid" style="grid-template-columns:1fr;">';
-    for (var i=0;i<specs.length;i++){
-      var spec = specs[i];
-      var prog = LW_KEEPER.progress(spec.key);
-      var owned = prog.state !== 'locked';
-      var hatched = prog.state === 'hatched';
-      var ready = LW_KEEPER.isReady(spec.key);
-      var canBuy = LW_KEEPER.canPurchase(spec.key);
-      var canAfford = (dewBal >= spec.costDew) && (sbBal >= spec.costSunbeams);
-      var artSrc = hatched ? spec.hatchedArt : spec.cocoonArt;
-      var artFallback = hatched ? '🐛' : '🥚';
-
-      html += '<div class="lwh-shop-card" style="min-height:auto;flex-direction:row;text-align:left;padding:0.7rem;align-items:flex-start;gap:0.7rem;">' +
-        '<div style="width:96px;height:96px;flex:0 0 96px;border-radius:10px;overflow:hidden;background:rgba(20,18,14,0.5);border:1px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;">' +
-          '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:cover;'+(owned?'':'filter:grayscale(0.7) opacity(0.55);')+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.4rem;&quot;>'+artFallback+'</div>&apos;;">' +
-        '</div>' +
-        '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0.35rem;">';
-
-      // Name + state badge
-      var displayName = hatched ? spec.hatchedName : spec.cocoonName;
-      var stateBadge = '';
-      if (hatched && equippedKey === spec.key) stateBadge = '<span style="background:linear-gradient(180deg,#c8a84b,#a08534);color:#1a1208;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">EQUIPPED</span>';
-      else if (hatched) stateBadge = '<span style="background:rgba(122,179,86,0.2);color:#a8d484;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">HATCHED</span>';
-      else if (ready) stateBadge = '<span style="background:rgba(200,168,75,0.3);color:#f0d674;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;animation:lwPulseHint 1.6s ease-in-out infinite;">READY</span>';
-      else if (owned) stateBadge = '<span style="background:rgba(80,140,200,0.2);color:#9ec4ec;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">INCUBATING</span>';
-      else if (!canBuy) stateBadge = '<span style="background:rgba(120,120,120,0.2);color:#9a9a9a;font-size:0.6rem;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;letter-spacing:0.05em;">LOCKED</span>';
-
-      html += '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">' +
-        '<div style="font-weight:700;color:#e8dcc8;font-size:0.95rem;">'+displayName+'</div>' +
-        stateBadge +
-        '</div>';
-
-      // Flavor
-      var flavor = hatched ? spec.hatchFlavor : spec.flavor;
-      html += '<div style="font-size:0.72rem;color:#9aa090;line-height:1.4;font-style:italic;">'+flavor+'</div>';
-
-      // State-specific body
-      if (!owned){
-        // LOCKED — show cost or prereq
-        if (canBuy){
-          var dewClass = (dewBal >= spec.costDew) ? '' : 'style="color:#c97a7a;"';
-          var sbClass  = (sbBal  >= spec.costSunbeams) ? '' : 'style="color:#c97a7a;"';
-          html += '<div style="display:flex;gap:0.7rem;font-size:0.78rem;color:#e8dcc8;margin-top:0.15rem;">' +
-            '<span '+dewClass+'><b>'+spec.costDew.toLocaleString()+'</b> Dew</span>' +
-            '<span '+sbClass+'><b>'+spec.costSunbeams+'</b> Sunbeams</span>' +
-            '</div>';
-          html += '<div style="font-size:0.7rem;color:#8a9178;">'+(spec.distanceM/1000)+' km walk to hatch</div>';
-          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperBuy(\''+spec.key+'\')" '+(canAfford?'':'disabled')+' style="margin-top:0.35rem;">' +
-            (canAfford ? 'ACQUIRE' : 'NOT ENOUGH') + '</button>';
-        } else {
-          var req = spec.requires ? LW_KEEPER.getSpec(spec.requires) : null;
-          if (req){
-            html += '<div style="font-size:0.72rem;color:#8a9178;margin-top:0.15rem;">Hatch the <b style="color:#c8a84b;">'+req.hatchedName+'</b> first.</div>';
-          }
-        }
-      } else if (!hatched){
-        // INCUBATING — progress
-        var pctD = Math.min(100, Math.round(100 * prog.distance / prog.distanceM));
-        var kmDone = (prog.distance/1000).toFixed(1);
-        var kmTotal = (prog.distanceM/1000);
-        html += '<div style="margin-top:0.2rem;">' +
-          '<div style="height:6px;background:rgba(20,18,14,0.6);border-radius:3px;overflow:hidden;">' +
-            '<div style="height:100%;width:'+pctD+'%;background:linear-gradient(90deg,#7ab356,#c8a84b);transition:width 0.4s;"></div>' +
-          '</div>' +
-          '<div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9aa090;margin-top:0.2rem;">' +
-            '<span>'+kmDone+' / '+kmTotal+' km</span>' +
-            '<span>'+pctD+'%</span>' +
-          '</div>' +
-        '</div>';
-        // Lungfish: feed bar + tap-to-feed
-        if (spec.feedTokensRequired){
-          var pctF = Math.min(100, Math.round(100 * prog.fed / prog.feedRequired));
-          html += '<div style="margin-top:0.35rem;">' +
-            '<div style="font-size:0.7rem;color:#9ec4ec;margin-bottom:0.15rem;">Pour Dew into the mudball</div>' +
-            '<div style="height:6px;background:rgba(20,18,14,0.6);border-radius:3px;overflow:hidden;">' +
-              '<div style="height:100%;width:'+pctF+'%;background:linear-gradient(90deg,#5fa3d8,#9ec4ec);transition:width 0.4s;"></div>' +
-            '</div>' +
-            '<div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#9aa090;margin-top:0.2rem;">' +
-              '<span>'+prog.fed+' / '+prog.feedRequired+' pours</span>' +
-              '<span>'+prog.tokens+' ready · '+spec.feedAmount+' Dew/pour</span>' +
-            '</div>';
-          var canFeed = (prog.tokens > 0) && (dewBal >= spec.feedAmount) && (prog.fed < prog.feedRequired);
-          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperFeed(\''+spec.key+'\')" '+(canFeed?'':'disabled')+' style="margin-top:0.35rem;background:linear-gradient(180deg,#5fa3d8,#3d7aa8);">';
-          if (prog.fed >= prog.feedRequired) html += 'FULL';
-          else if (prog.tokens <= 0) html += 'WALK FOR POURS';
-          else if (dewBal < spec.feedAmount) html += 'NEED '+spec.feedAmount+' DEW';
-          else html += 'POUR ('+spec.feedAmount+' DEW)';
-          html += '</button>';
-          html += '</div>';
-        }
-        if (ready){
-          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperHatch(\''+spec.key+'\')" style="margin-top:0.35rem;background:linear-gradient(180deg,#f0d674,#c8a84b);color:#1a1208;font-weight:700;">HATCH NOW</button>';
-        }
-      } else {
-        // HATCHED — equip / unequip
-        if (equippedKey === spec.key){
-          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperUnequip()" style="margin-top:0.35rem;background:rgba(80,80,80,0.4);">SET ASIDE</button>';
-        } else {
-          html += '<button class="lwh-shop-buy" onclick="LW_HUT.keeperEquip(\''+spec.key+'\')" style="margin-top:0.35rem;">EQUIP</button>';
-        }
-      }
-
-      html += '</div></div>';
-    }
-    html += '</div>';
-    body.innerHTML = html;
-  }
 
   // ─── ALMANAC (weather summon) ───
   function renderAlmanac(){
@@ -85728,61 +85610,6 @@ window.LW_debug.cleanGhostDrops = function(){
     // Last-resort fallback — should never fire since _lwOpenCuriosities is
     // defined window-wide before this module renders any UI.
     if (window._toast) window._toast('Open your backpack → Curiosities.');
-  }
-  function _openPanelLegacyBodyDead(){
-    try { var old=document.getElementById('lw-cocoons-panel'); if(old){old.remove();return;} } catch(e){}
-    var s = _load();
-    var ov = document.createElement('div');
-    ov.id = 'lw-cocoons-panel';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:100004;background:rgba(5,8,4,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow-y:auto;padding:1rem;animation:panelFadeIn 0.25s ease;';
-    var h = '<div style="max-width:460px;margin:0 auto;">';
-    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
-    h += '<div><div style="font-family:Playfair Display,serif;font-size:1.15rem;color:var(--gold);font-style:italic;">Cocoons</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">'+(s.slots?s.slots.length:0)+' / '+(s.cap||3)+' carried. Walking hatches them.</div></div>';
-    h += '<button onclick="window.LW_COCOONS.close()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">\u2715</button>';
-    h += '</div>';
-    // How-it-works strip \u2014 visible whether or not the player has cocoons.
-    // Three short rows, no jargon. Doubles as the first-time explainer.
-    h += '<div style="padding:0.8rem;margin-bottom:0.9rem;background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(13,16,12,0.7));border:1px solid rgba(122,179,86,0.18);border-radius:10px;">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.5rem;">HOW THIS WORKS</div>';
-    h += '<div style="display:flex;flex-direction:column;gap:0.45rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.55;">';
-    h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Find</b> \u2014 cocoons drop when plants bloom, and one free <b>Gossamer Silk</b> appears each day. Bigger plants drop fancier cocoons.</span></div>';
-    h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> \u2014 every step you take in the Wild credits all your carried cocoons at once. No equip slot, no incubator to buy. Just walk.</span></div>';
-    h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> \u2014 at distance threshold, tap the cocoon to open it. Dew, items, mystery boxes. Better tiers = better rewards.</span></div>';
-    h += '</div></div>';
-    if (!s.slots || !s.slots.length){
-      h += '<div style="padding:1.5rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.7;background:rgba(13,16,12,0.4);border:1px dashed rgba(122,179,86,0.18);border-radius:10px;">';
-      h += '<div style="font-size:0.65rem;color:var(--cream);margin-bottom:0.5rem;">No cocoons in your pouch yet.</div>';
-      h += 'Bloom a plant in the Greenhouse to find one,<br>or come back tomorrow for your daily Gossamer.';
-      h += '</div>';
-    } else {
-      for (var i=0;i<s.slots.length;i++){
-        var c = s.slots[i]; var t = TIERS[c.tier] || TIERS.gossamer;
-        var pct = Math.min(100, Math.round(100 * c.distance / c.target));
-        var ready = c.distance >= c.target;
-        var remaining = Math.max(0, c.target - c.distance);
-        h += '<div style="margin-bottom:0.7rem;padding:0.9rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?t.color:'rgba(74,124,53,0.2)')+';border-radius:14px;'+(ready?'box-shadow:0 0 16px '+t.color+'55;':'')+'">';
-        h += '<div style="display:flex;align-items:center;gap:0.9rem;">';
-        h += '<div style="width:80px;height:80px;flex-shrink:0;border-radius:50%;background:rgba(5,8,4,0.7);border:2.5px solid '+t.color+';position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">';
-        h += '<img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.2rem;&quot;>'+t.icon+'</div>&apos;;">';
-        h += '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:'+t.color+';transform:rotate('+(pct*3.6-90)+'deg);transition:transform 0.4s ease;"></div>';
-        h += '</div>';
-        h += '<div style="flex:1;min-width:0;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.06em;">'+t.name+'</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);margin-top:3px;line-height:1.5;">'+t.lore+'</div>';
-        h += '<div style="height:5px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;margin-top:6px;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),'+t.color+');border-radius:3px;"></div></div>';
-        h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:3px;"><span>'+c.distance.toLocaleString()+'m / '+c.target.toLocaleString()+'m</span><span>'+(ready?'<b style="color:'+t.color+';">READY TO HATCH</b>':(remaining.toLocaleString()+'m to go'))+'</span></div>';
-        h += '</div></div>';
-        if (ready) {
-          h += '<button onclick="window.LW_COCOONS.hatchClick('+i+')" style="display:block;width:100%;margin-top:0.7rem;padding:12px;border-radius:10px;border:1.5px solid '+t.color+';background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(122,179,86,0.12));color:'+t.color+';font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.12em;cursor:pointer;min-height:50px;"><img src="assets/fx/sparkle-purple.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"> HATCH</button>';
-        }
-        h += '</div>';
-      }
-    }
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.6;">Walking credits every cocoon in your pouch at once. Rare cocoons come from the Wild \u2014 walking, blooms, and the daily dawn grant.</div>';
-    h += '</div>';
-    ov.innerHTML = h;
-    document.body.appendChild(ov);
   }
   function close(){ try { var p=document.getElementById('lw-cocoons-panel'); if(p)p.remove(); } catch(e){} }
   function hatchClick(idx){
