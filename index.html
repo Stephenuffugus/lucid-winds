@@ -65486,15 +65486,15 @@ function render(){
       // Tile bumped 44 → 56 so the art reads. Click still opens the items
       // panel; a future pass can switch to direct activation.
       var _itArtEsc=String(it.icon||'🌿').replace(/'/g,"\\'");
-      var _itArt = it.art ? '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:7px;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.6rem;&quot;>'+_itArtEsc+'</span>&apos;;">' : '<span style="font-size:1.6rem;">'+_itArtEsc+'</span>';
-      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" title="'+(it.name||'')+'" style="width:64px;height:64px;border-radius:8px;border:1px solid rgba(192,122,200,0.3);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;">'+_itArt+'<div style="position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.42rem;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;">'+it.count+'</div></div>';
+      var _itArt = it.art ? '<img src="'+it.art+'?v='+(window.LW_VERSION||'0')+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:7px;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.6rem;&quot;>'+_itArtEsc+'</span>&apos;;">' : '<span style="font-size:1.6rem;">'+_itArtEsc+'</span>';
+      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" title="'+(it.name||'')+'" style="width:96px;height:96px;border-radius:10px;border:1px solid rgba(192,122,200,0.3);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;">'+_itArt+'<div style="position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.42rem;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;">'+it.count+'</div></div>';
     }
     // Pad with empty placeholder tiles so the row looks like a slot row
     for(var ip=show;ip<itemCap;ip++){
-      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:64px;height:64px;border-radius:8px;border:1px dashed rgba(138,145,120,0.2);background:rgba(18,22,16,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.35;font-size:0.9rem;color:var(--muted);">·</div>';
+      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:96px;height:96px;border-radius:10px;border:1px dashed rgba(138,145,120,0.2);background:rgba(18,22,16,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.35;font-size:1.1rem;color:var(--muted);">·</div>';
     }
     if(ownedItems.length>itemCap){
-      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:64px;height:64px;border-radius:8px;border:1px solid rgba(192,122,200,0.45);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);">+'+(ownedItems.length-itemCap)+'</div>';
+      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:96px;height:96px;border-radius:10px;border:1px solid rgba(192,122,200,0.45);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);">+'+(ownedItems.length-itemCap)+'</div>';
     }
     itemH+='</div>';
     h+=itemH;
@@ -75661,7 +75661,7 @@ function _bosItemsContent(){
         h += '<div style="margin-bottom:0.5rem;padding:0.7rem;background:linear-gradient(180deg,rgba(18,22,16,0.8),rgba(13,16,12,0.9));border:1px solid '+rc+'55;border-left:3px solid '+rc+';border-radius:10px;">';
         h += '<div style="display:flex;align-items:flex-start;gap:0.7rem;">';
         h += '<div style="width:56px;height:56px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px solid '+rc+'44;display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>&apos;;">';
+        h += '<img src="'+it.art+'?v='+(window.LW_VERSION||'0')+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:1.8rem;&quot;>'+it.icon+'</div>&apos;;">';
         h += '</div>';
         h += '<div style="flex:1;min-width:0;">';
         h += '<div style="display:flex;align-items:baseline;gap:0.45rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.88rem;color:var(--cream);letter-spacing:0.06em;">'+it.name+'</div>';
@@ -79604,7 +79604,7 @@ window._lwClaimHerbarium = function(id){
         // Hi-res item art renders at 96px so the painted detail reads.
         // Hard floor: never shrink below 88px in this panel.
         h += '<div style="width:96px;height:96px;flex-shrink:0;border-radius:10px;background:rgba(5,8,4,0.6);border:1px solid rgba(122,179,86,0.2);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-        h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.6rem;&quot;>'+it.icon+'</div>&apos;;">';
+        h += '<img src="'+it.art+'?v='+(window.LW_VERSION||'0')+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.6rem;&quot;>'+it.icon+'</div>&apos;;">';
         h += '</div>';
         h += '<div style="flex:1;min-width:0;">';
         h += '<div style="display:flex;align-items:center;gap:0.4rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:'+(disabled?'var(--muted)':'var(--cream)')+';">'+it.name+'</div>';
@@ -80863,7 +80863,7 @@ window._lwClaimHerbarium = function(id){
     var h = '<div style="max-width:320px;text-align:center;">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.2em;color:'+rColor+';margin-bottom:0.6rem;">'+result.rarity.toUpperCase()+'</div>';
     h += '<div style="width:180px;height:180px;margin:0 auto 1rem;border-radius:20px;background:rgba(18,22,16,0.85);border:3px solid '+rColor+';overflow:hidden;box-shadow:0 0 30px '+rColor+';display:flex;align-items:center;justify-content:center;">';
-    h += '<img src="'+it.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:4.5rem;&quot;>'+it.icon+'</div>&apos;;">';
+    h += '<img src="'+it.art+'?v='+(window.LW_VERSION||'0')+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:4.5rem;&quot;>'+it.icon+'</div>&apos;;">';
     h += '</div>';
     h += '<div style="font-family:Playfair Display,serif;font-size:1.3rem;color:var(--cream);font-style:italic;margin-bottom:0.4rem;">'+it.name+'</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;margin-bottom:1.2rem;">'+it.desc+'</div>';
