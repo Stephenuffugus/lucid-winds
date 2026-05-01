@@ -1,7 +1,7 @@
 
 # LUCID WINDS — CLAUDE.md
 # Claude Code reads this file automatically on startup. THIS IS THE SOURCE OF TRUTH.
-# Last updated: April 30, 2026 — Variant F rarity (post-Variant D), Pi sandbox transaction completed, items balance pass, engagement counter wiring
+# Last updated: May 01, 2026 — Variant G rarity (live, doc-aligned), STEM bank 24→28 + FLOWER bank 71→73 (doubled top-tier anchors so no single-point-of-failure)
 
 ---
 
@@ -237,25 +237,25 @@ _TIER_SCORE = { common:0, uncommon:0, rare:1, epic:3, legendary:5, mythic:7, cos
 _TERRA_GRADES thresholds = [ 0, 5, 10, 15, 21, 27, 34 ]
 ```
 
-### Verified first-mint distribution (sim N=200k, Variant G)
+### Verified first-mint distribution (sim N=100k, post-bank-expansion 2026-05-01)
 ```
-Common     30.3%
-Uncommon   37.2%
-Rare       22.5%
-Epic        8.6%
-Legendary   1.4%
-Mythic      0.14%
+Common     26.6%
+Uncommon   36.5%
+Rare       24.4%
+Epic       10.4%
+Legendary   1.85%
+Mythic      0.23%
 Cosmic      0.01%
 ```
 
 ### History
 - Variant D (mid-Apr): too tight, Common only 8%
 - Variant F (late-Apr): Common 36%, Epic 4.8%, Legendary 0.7%, Mythic 0.07% — felt thin on the high end (very few Epic+ drops, almost zero Mythic)
-- **Variant G (live)**: Stephen ruling 2026-05-01: keep G. "It's okay to be a little generous." Player retention research said the Variant F Epic+ rate was too punishing for an audience that already walks every day. Variant G doubles the Epic+ rate without making Common feel cheap. Verdict: keep.
+- **Variant G (Apr 30 + May 01 fragility fix)**: Stephen ruling: keep G. "It's okay to be a little generous." Player retention research said the Variant F Epic+ rate was too punishing for an audience that already walks every day. Variant G doubles the Epic+ rate without making Common feel cheap. **2026-05-01 fragility fix:** STEM bank expanded 24→28 (added Petrified Heart Epic, Thunderscarred Legendary, Mirrorwood Mythic, Worldspine Cosmic). FLOWER bank expanded 71→73 (added Reverie Mythic, Worldbloom Cosmic). Eliminates single-point-of-failure at top tiers (every top tier now has 2 anchors). Slight upward distribution shift (~7% Epic → 10.4%) is intentional — more lore-fit high-tier entries means more chances to hit them.
 
 ### Bugs in scoring still parked (not blocking)
 - Mythic-byte spike still REPLACES companion-tier score (`if (compT && t.mythic < 0xD0)` at line 10478). A Beholder gets +8 spike OR +10 cosmic-tier, never both. Cosmetic; Beholder still grades Cosmic via spike alone.
-- VESSEL/FOLIAGE/AURA banks contribute ~25-28% epic-or-better at the layer level (vs ~13% balanced). Under Variant G the wider thresholds absorb this; under Variant F it would have caused Epic over-shoot. Keeping G means we don't need to prune those banks. Audit memo: `project_rarity_engine_audit_may01.md`.
+- VESSEL/FOLIAGE/AURA banks still contribute ~25-28% epic-or-better at the layer level (vs ~13-15% on STEM/SUBSTRATE/COMPANION/MUTATION). Under Variant G the wider thresholds absorb this; players don't perceive per-layer imbalance, only the aggregate. Audit memo: `project_rarity_engine_audit_may01.md`.
 
 ---
 
@@ -296,14 +296,14 @@ Derived deterministically from 64-char hex hash:
 ```
 pot:         hb(0) % 60          — 60 pot types (TRAIT_BANK.pots)
 potColor:    _PAL[hc(1)]
-stem:        hb(2) % 24           — 24 stem patterns
+stem:        hb(2) % 28           — 28 stem patterns (was 24; expanded May 01 with 4 top-tier anchors)
 stemHeight:  22 + hc(3) * 2.5
 leafType:    hb(4) % 71           — 71 leaf types (TRAIT_BANK.leaves)
 leafCount:   5 + (hc(5) % 6)
 leafSize:    8 + (hc(6) % 7)
 leafColors:  [_PAL[hc(7)], _PAL[hc(8)], _PAL[hc(9)]]
 hasFlower:   hc(10) > 4
-flower:      hb(11) % 71          — 71 flower types
+flower:      hb(11) % 73          — 73 flower types (was 71; +Reverie Mythic 71, +Worldbloom Cosmic 72)
 flowerColor: _PAL[hc(12)]
 flowerSize:  6 + (hc(13) % 7)
 chimerGen:   1 (default; breeding sets to parent max + 1)

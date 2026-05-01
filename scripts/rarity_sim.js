@@ -135,12 +135,12 @@ function hashToTraits(hash) {
 
   return {
     pot:          goldenPot ? 15 : hb(0) % 60,
-    stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 24) === 9 ? 0 : hb(2) % 24),
+    stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 28) === 9 ? 0 : hb(2) % 28),
     leafType:     hb(4) % 71,
     leafCount:    5 + (hc(5) % 6),
     leafSize:     8 + (hc(6) % 7),
     hasFlower:    hc(10) > 4,
-    flower:       glowFlower ? 15 : hb(11) % 71,
+    flower:       glowFlower ? 15 : hb(11) % 73,
     flowerSize:   6 + (hc(13) % 7),
     aura:         hb(15) % 36,
     base:         crystalBase ? 15 : hb(20) % 71,
@@ -178,9 +178,9 @@ function layerTier(cat, t) {
   }
   if (cat === 'FLOWER') {
     if (!t.hasFlower) return null;
-    const _bl = t.flower % 71;
-    if (_bl === 68) return 'cosmic';                              // Void Blossom
-    if (_bl === 70) return 'mythic';                              // Prism Bloom
+    const _bl = t.flower % 73;
+    if (_bl === 68 || _bl === 72) return 'cosmic';                // Void Blossom, Worldbloom
+    if (_bl === 70 || _bl === 71) return 'mythic';                // Prism Bloom, Reverie
     if (_bl === 15 || _bl === 36 || _bl === 37 || _bl === 67) return 'legendary'; // Bell Flowers, Titan Arum, Carrion Starfish, Ice Rose
     if (_bl === 66 || _bl === 69) return 'epic';                  // Flame Bloom, Clock Flower
     if (_bl >= 34 && _bl <= 45) return 'epic';
@@ -235,11 +235,11 @@ function layerTier(cat, t) {
     return 'uncommon';
   }
   if (cat === 'GROWTH PATH' || cat === 'STRUCTURE') {
-    const _st = t.stem % 24;
-    if (_st === 23) return 'cosmic';                              // Iron Trunk — anvil-of-the-world
-    if (_st === 22) return 'mythic';                              // Crystal Spine
-    if (_st === 14) return 'legendary';                           // Hollow Trunk
-    if (_st === 12) return 'epic';                                // Ancient Bark
+    const _st = t.stem % 28;
+    if (_st === 23 || _st === 27) return 'cosmic';                // Iron Trunk, Worldspine
+    if (_st === 22 || _st === 26) return 'mythic';                // Crystal Spine, Mirrorwood
+    if (_st === 14 || _st === 25) return 'legendary';             // Hollow Trunk, Thunderscarred
+    if (_st === 12 || _st === 24) return 'epic';                  // Ancient Bark, Petrified Heart
     if ([5,9,10,11,21].indexOf(_st) >= 0) return 'rare';          // Braided, Coral, Succulent, Twisted Vine, Mushroom Stipe
     if ([6,7,8,13].indexOf(_st) >= 0) return 'uncommon';          // Zigzag, Double, Cactus, Bamboo
     return 'common';
