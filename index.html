@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.0';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.1';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44996,21 +44996,12 @@ document.addEventListener('keydown', function(e) {
         if (Math.random() < _boxChance) window.LW_BOXES.add(1);
       }
     } catch(eB){}
-    // Cocoon drop — bloom rarity picks tier. Uncommon+ at 5% for Gossamer,
-    // scaling up through tiers. Rarer blooms drop rarer cocoons.
-    try {
-      if (window.LW_COCOONS) {
-        var _cocoonRoll = ({
-          Uncommon:  {chance:0.05, tier:'gossamer'},
-          Rare:      {chance:0.15, tier:'gossamer'},
-          Epic:      {chance:0.25, tier:'linen'},
-          Legendary: {chance:0.40, tier:'amber'},
-          Mythic:    {chance:0.60, tier:'amber'},
-          Cosmic:    {chance:0.85, tier:'obsidian'}
-        })[_bloomGradeForDrops];
-        if (_cocoonRoll && Math.random() < _cocoonRoll.chance) window.LW_COCOONS.add(_cocoonRoll.tier);
-      }
-    } catch(eC){}
+    // Cocoon drop on bloom — REMOVED 2026-05-02. Stephen ruling:
+    // "what does the gossamer silk even give us? i dont think we want
+    // it in the game right now? its another feature we dont need with
+    // more moving parts." LW_COCOONS module remains in code so future
+    // re-enable is a UI restore + this call site, but no new cocoons
+    // ever enter circulation now.
 
     // 8. UI refresh then cinematic reveal
     renderNursery();
@@ -48481,8 +48472,7 @@ function _addSteps(meters){
   var el=document.getElementById('w-steps');
   if(el)el.textContent=_metersToSteps(s.today);
   _checkStepMilestone();
-  // Credit the same walked meters to every incubating cocoon.
-  try { if (window.LW_COCOONS && window.LW_COCOONS.creditSteps) window.LW_COCOONS.creditSteps(meters); } catch(e){}
+  // Cocoon walking credit — REMOVED 2026-05-02 (cocoons system shelved).
   // Credit the equipped Keeper Cocoon (parallel premium system).
   try { if (window.LW_KEEPER && window.LW_KEEPER.creditMeters) window.LW_KEEPER.creditMeters(meters); } catch(e){}
   // Engagement counters: meters + steps. _addSteps takes raw meters;
@@ -55420,8 +55410,7 @@ window._lwOpenCuriosities = function() {
 window._lwRenderCuriosities = function() {
   var ov = document.getElementById('lw-curiosities-panel');
   if (!ov) return;
-  var pouchSlots = (window.LW_COCOONS && window.LW_COCOONS.slots) ? window.LW_COCOONS.slots() : [];
-  var pouchCap   = (window.LW_COCOONS && window.LW_COCOONS.cap)   ? window.LW_COCOONS.cap()   : 3;
+  // pouchSlots / pouchCap removed 2026-05-02 (cocoons section deleted).
   var keeperSpecs = (window.LW_KEEPER && window.LW_KEEPER.listSpecs) ? window.LW_KEEPER.listSpecs() : [];
   var equippedKey = (window.LW_KEEPER && window.LW_KEEPER.equipped) ? window.LW_KEEPER.equipped() : null;
   var dewBal = (window.getTotalDew && window.getTotalDew()) || 0;
@@ -55431,61 +55420,25 @@ window._lwRenderCuriosities = function() {
   // Header
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
   h += '<div><div style="font-family:Playfair Display,serif;font-size:1.25rem;color:var(--gold);font-style:italic;">Curiosities</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:2px;line-height:1.5;">Odd things you carry on walks. Walking grows them.</div></div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:2px;line-height:1.5;">Creatures you carry on walks. Walking hatches them.</div></div>';
   h += '<button onclick="document.getElementById(\'lw-curiosities-panel\').remove()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">✕</button>';
   h += '</div>';
 
-  // How this works — covers BOTH systems
+  // How this works — creatures-only since cocoons (Gossamer Silk pouches)
+  // were shelved 2026-05-02 per Stephen.
   h += '<div style="padding:0.8rem;margin-bottom:0.9rem;background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(13,16,12,0.7));border:1px solid rgba(122,179,86,0.18);border-radius:10px;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.55rem;">HOW THIS WORKS</div>';
   h += '<div style="display:flex;flex-direction:column;gap:0.5rem;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.5;">';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Find or buy</b> — cocoons drop while foraging in the Wild and from greenhouse blooms. Creatures are bought from the hermit and require Dew + Sunbeams.</span></div>';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> — every step credits everything you\'re carrying at once. No equip slot for incubating, no schedule.</span></div>';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — pouches give Dew, items, mystery boxes. Creatures hatch into companions you can equip for ongoing abilities.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Buy</b> — visit the hermit. Each creature costs Dew + Sunbeams.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> — every step you take incubates the creatures you own. No equip slot.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — when ready, your creature joins your roster. Equip it for ongoing abilities.</span></div>';
   h += '</div></div>';
 
-  // ─── COCOONS SECTION ───
-  // Stephen ruling 2026-05-01: header was "POUCHES" but only one of the
-  // four tiers is a pouch (Gossamer Silk, Linen Pouch, Amber Pod,
-  // Obsidian Shell). Renamed to "FOUND" with a subtitle that names the
-  // sources — parallels CREATURES below ("acquired from the hermit").
-  h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">'+
-       '<img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=\'\\u2728\';">'+
-       '<span>FOUND</span>'+
-       '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">while foraging or blooming · '+pouchSlots.length+' / '+pouchCap+'</span>'+
-       '</div>';
-  if (window.LW_COCOONS_TIERS && (!pouchSlots || !pouchSlots.length)){
-    h += '<div style="padding:1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.7;background:rgba(13,16,12,0.4);border:1px dashed rgba(122,179,86,0.18);border-radius:10px;margin-bottom:0.7rem;">';
-    h += '<div style="font-size:0.7rem;color:var(--cream);margin-bottom:0.4rem;">Nothing here yet.</div>';
-    h += 'Forage a hex in the Wild,<br>or bloom a plant in the Greenhouse.';
-    h += '</div>';
-  } else if (window.LW_COCOONS_TIERS) {
-    var TIERS = window.LW_COCOONS_TIERS;
-    for (var i=0;i<pouchSlots.length;i++){
-      var c = pouchSlots[i]; var t = TIERS[c.tier] || TIERS.gossamer;
-      var pct = Math.min(100, Math.round(100 * c.distance / c.target));
-      var ready = c.distance >= c.target;
-      var remaining = Math.max(0, c.target - c.distance);
-      h += '<div style="margin-bottom:0.7rem;padding:0.85rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?t.color:'rgba(74,124,53,0.2)')+';border-radius:14px;'+(ready?'box-shadow:0 0 16px '+t.color+'55;':'')+'">';
-      h += '<div style="display:flex;align-items:center;gap:0.85rem;">';
-      h += '<div style="width:80px;height:80px;flex-shrink:0;border-radius:50%;background:rgba(5,8,4,0.7);border:2.5px solid '+t.color+';position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">';
-      h += '<img src="'+t.art+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;<div style=&quot;font-size:2.2rem;&quot;>'+t.icon+'</div>&apos;;">';
-      h += '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:'+t.color+';transform:rotate('+(pct*3.6-90)+'deg);transition:transform 0.4s ease;"></div>';
-      h += '</div>';
-      h += '<div style="flex:1;min-width:0;">';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.92rem;color:var(--cream);letter-spacing:0.06em;">'+t.name+'</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:3px;line-height:1.5;font-style:italic;">'+t.lore+'</div>';
-      h += '<div style="height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;margin-top:8px;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(122,179,86,0.6),'+t.color+');border-radius:3px;"></div></div>';
-      h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:4px;"><span>'+c.distance.toLocaleString()+'m / '+c.target.toLocaleString()+'m</span><span>'+(ready?'<b style="color:'+t.color+';">READY TO HATCH</b>':(remaining.toLocaleString()+'m to go'))+'</span></div>';
-      h += '</div></div>';
-      if (ready) {
-        h += '<button data-pouch-hatch="'+i+'" style="display:block;width:100%;margin-top:0.7rem;padding:14px;border-radius:10px;border:1.5px solid '+t.color+';background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(122,179,86,0.12));color:'+t.color+';font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;"><img src="assets/fx/sparkle-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\\u2728\';"> HATCH</button>';
-      }
-      h += '</div>';
-    }
-  }
-
   // ─── CREATURES SECTION ───
+  // Cocoons section (Gossamer / Linen / Amber / Obsidian) was removed
+  // 2026-05-02 — Stephen shelved that system. LW_COCOONS module remains
+  // in code for future re-enable but no UI surfaces or call sites
+  // reference it now.
   if (keeperSpecs.length) {
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1.3rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;">'+
          '<img src="assets/companions/parasitic-wasp.png" alt="" style="width:24px;height:24px;object-fit:contain;border-radius:5px;" onerror="this.outerHTML=\'\\ud83d\\udc1b\';">'+
@@ -55579,16 +55532,7 @@ window._lwRenderCuriosities = function() {
 
   // ─── WIRE BUTTONS ───
   var rerender = function(){ _lwRenderCuriosities(); };
-  var rows = ov.querySelectorAll('button[data-pouch-hatch]');
-  for (var pi=0; pi<rows.length; pi++) (function(b){
-    b.addEventListener('click', function(){
-      var idx = parseInt(b.getAttribute('data-pouch-hatch'), 10);
-      if (window.LW_COCOONS && window.LW_COCOONS.hatchClick) window.LW_COCOONS.hatchClick(idx);
-      // hatchClick already shows reveal modal + refreshes its own panel; we
-      // also need to refresh THIS panel since it replaced LW_COCOONS' panel.
-      setTimeout(rerender, 100);
-    });
-  })(rows[pi]);
+  // pouch hatch wiring removed 2026-05-02 (cocoons section deleted).
   var buyBtns = ov.querySelectorAll('button[data-keeper-buy]');
   for (var bi=0; bi<buyBtns.length; bi++) (function(b){
     b.addEventListener('click', function(){
@@ -82818,14 +82762,7 @@ window._lwClaimHerbarium = function(id){
           });
         }
       } catch(e) {}
-      // First successful forage of the day drops a Gossamer cocoon.
-      // Stephen ruling 2026-05-01 — replaces the silent dawn auto-grant
-      // so the Gossamer in your pouch always has a reason to be there.
-      try {
-        if (resolved.success && window.LW_COCOONS && window.LW_COCOONS.tryForageDrop) {
-          window.LW_COCOONS.tryForageDrop();
-        }
-      } catch(eFD) {}
+      // Forage cocoon drop — REMOVED 2026-05-02 (cocoons system shelved).
       // Bloom Day bonus — if today is a Bloom Day and the forage succeeds,
       // award a RARE wild card (Moonlight / Thunder / Dust) per spec §5.
       // These are universal half-strength counters, only earnable on
