@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.47';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.48';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -79894,7 +79894,16 @@ window._lwClaimHerbarium = function(id){
     return key.replace(/([A-Z])/g, '-$1').toLowerCase();
   }
   function itemArt(key, fallbackIcon){
-    var src = 'assets/items/' + artFile(key) + '.png';
+    // Stephen 2026-05-01 — was hardcoding 'assets/items/<slug>.png' which
+    // bypassed LW_ITEMS_CATALOG and missed the -r46 rename. Now reads the
+    // catalog's `art` field as authoritative; falls back to the legacy
+    // path generator only for keys not in the catalog. Cache-bust query
+    // appended so renames downstream don't get held in browser/CDN cache.
+    var cat = window.LW_ITEMS_CATALOG;
+    var src = (cat && cat[key] && cat[key].art)
+      ? cat[key].art
+      : ('assets/items/' + artFile(key) + '.png');
+    src += (src.indexOf('?') >= 0 ? '&' : '?') + 'v=' + (window.LW_VERSION || '0');
     return '<img src="'+src+'" alt="" onerror="this.outerHTML=&apos;<div class=&quot;lwh-shop-emoji&quot;>'+(fallbackIcon||'?')+'</div>&apos;;">';
   }
 
