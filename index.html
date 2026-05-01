@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.65';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.66';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -31532,86 +31532,84 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         s += '</g>';
         break;
-      case 18: // Poison Miasma — toxic spore drift + faint oxidation veil + acid weep streaks (Stephen 2026-05-01 PART 4: replaces blob clouds)
+      case 18: // Poison Miasma — dripping ooze strands + bubbling acid pool + sickly halo (Stephen 2026-05-01 PART 4 v2: read POISON not pollen)
         (function(){
           var pSeed = (uid && uid.length) ? (uid.charCodeAt(0) + uid.charCodeAt(uid.length-1)) : 17;
           s += '<defs>';
-          s += '<linearGradient id="auraTox'+uid+'A" x1="0" y1="0" x2="1" y2="0">';
+          // Sickly green-to-yellow swamp mist (vertical fade — heavier at bottom)
+          s += '<linearGradient id="auraTox'+uid+'A" x1="0" y1="0" x2="0" y2="1">';
           s += '<stop offset="0%" stop-color="rgba(155,200,80,0)"/>';
-          s += '<stop offset="50%" stop-color="rgba(155,200,80,0.10)"/>';
-          s += '<stop offset="100%" stop-color="rgba(155,200,80,0)"/>';
+          s += '<stop offset="40%" stop-color="rgba(140,180,70,0.18)"/>';
+          s += '<stop offset="100%" stop-color="rgba(110,150,50,0.32)"/>';
           s += '</linearGradient>';
-          s += '<linearGradient id="auraTox'+uid+'B" x1="0" y1="0" x2="1" y2="0">';
-          s += '<stop offset="0%" stop-color="rgba(200,200,80,0)"/>';
-          s += '<stop offset="50%" stop-color="rgba(200,200,80,0.09)"/>';
-          s += '<stop offset="100%" stop-color="rgba(200,200,80,0)"/>';
+          // Drippy ooze gradient — yellow-bile fading to deep sickly green
+          s += '<linearGradient id="auraToxOoze'+uid+'" x1="0" y1="0" x2="0" y2="1">';
+          s += '<stop offset="0%" stop-color="rgba(180,200,60,0.55)"/>';
+          s += '<stop offset="55%" stop-color="rgba(150,180,55,0.85)"/>';
+          s += '<stop offset="100%" stop-color="rgba(95,130,40,0.95)"/>';
           s += '</linearGradient>';
-          s += '<linearGradient id="auraTox'+uid+'C" x1="0" y1="0" x2="1" y2="0">';
-          s += '<stop offset="0%" stop-color="rgba(138,76,168,0)"/>';
-          s += '<stop offset="50%" stop-color="rgba(138,76,168,0.07)"/>';
-          s += '<stop offset="100%" stop-color="rgba(138,76,168,0)"/>';
-          s += '</linearGradient>';
+          // Sickly halo — yellow-green core fading to bruised violet
+          s += '<radialGradient id="auraToxHalo'+uid+'" cx="0.5" cy="0.85" r="0.9">';
+          s += '<stop offset="0%" stop-color="rgba(170,200,70,0.22)"/>';
+          s += '<stop offset="55%" stop-color="rgba(120,160,50,0.12)"/>';
+          s += '<stop offset="100%" stop-color="rgba(90,40,110,0)"/>';
+          s += '</radialGradient>';
           s += '</defs>';
-          s += '<rect x="-20" y="22" width="110" height="14" fill="url(#auraTox'+uid+'A)" opacity="0.85">';
-          s += '<animateTransform attributeName="transform" type="translate" values="-8,0;8,0;-8,0" dur="13s" repeatCount="indefinite"/>';
-          s += '<animate attributeName="opacity" values="0.55;0.95;0.55" dur="9s" repeatCount="indefinite"/>';
+          // Sickly halo pulse anchored at the base — fumes rising from poisoned soil
+          s += '<rect x="-12" y="38" width="94" height="60" fill="url(#auraToxHalo'+uid+')" opacity="0.85">';
+          s += '<animate attributeName="opacity" values="0.55;0.95;0.55" dur="5.5s" repeatCount="indefinite"/>';
           s += '</rect>';
-          s += '<rect x="-20" y="46" width="110" height="12" fill="url(#auraTox'+uid+'B)" opacity="0.85">';
-          s += '<animateTransform attributeName="transform" type="translate" values="6,0;-6,0;6,0" dur="15s" repeatCount="indefinite"/>';
-          s += '<animate attributeName="opacity" values="0.50;0.90;0.50" dur="10s" repeatCount="indefinite"/>';
+          // Low-clinging swamp mist (2 horizontal bands sliding opposite directions)
+          s += '<rect x="-15" y="58" width="100" height="22" fill="url(#auraTox'+uid+'A)" opacity="0.85">';
+          s += '<animateTransform attributeName="transform" type="translate" values="-4,0;4,0;-4,0" dur="11s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.65;0.95;0.65" dur="6s" repeatCount="indefinite"/>';
           s += '</rect>';
-          s += '<rect x="-20" y="64" width="110" height="10" fill="url(#auraTox'+uid+'C)" opacity="0.75">';
-          s += '<animateTransform attributeName="transform" type="translate" values="-5,0;5,0;-5,0" dur="17s" repeatCount="indefinite"/>';
-          s += '<animate attributeName="opacity" values="0.45;0.80;0.45" dur="11s" repeatCount="indefinite"/>';
+          s += '<rect x="-15" y="70" width="100" height="20" fill="url(#auraTox'+uid+'A)" opacity="0.80">';
+          s += '<animateTransform attributeName="transform" type="translate" values="3,0;-3,0;3,0" dur="13s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.60;0.92;0.60" dur="7s" begin="2s" repeatCount="indefinite"/>';
           s += '</rect>';
-          s += '<g>';
-          var sporeFill = ['#9bc850','#7da838','#c8c850','#b8b840','#9bc850','#5a8020'];
-          var sporeRing = ['rgba(40,30,5,0.42)','rgba(40,20,5,0.48)','rgba(45,35,8,0.45)'];
-          for (var sp = 0; sp < 36; sp++) {
-            var sx = ((pSeed * 7 + sp * 13.7) % 70).toFixed(1);
-            var sy = (8 + ((pSeed * 11 + sp * 19.3) % 80)).toFixed(1);
-            var sr = (0.35 + (sp % 5) * 0.18).toFixed(2);
-            var sop = (0.40 + (sp % 4) * 0.12).toFixed(2);
-            var sdrx = (((sp % 7) - 3) * 0.8).toFixed(1);
-            var sdry = (((sp % 5) - 2) * 0.6).toFixed(1);
-            var sdur = (6 + (sp % 6) * 1.4).toFixed(1);
-            var sdelay = ((sp * 0.31) % 5).toFixed(1);
-            var sfill = sporeFill[sp % 6];
-            if (sp % 3 === 0) {
-              s += '<circle cx="'+sx+'" cy="'+sy+'" r="'+(parseFloat(sr)+0.25).toFixed(2)+'" fill="none" stroke="'+sporeRing[sp%3]+'" stroke-width="0.18" opacity="0.55">';
-              s += '<animateTransform attributeName="transform" type="translate" values="0,0;'+sdrx+','+sdry+';0,0" dur="'+sdur+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
-              s += '</circle>';
-            }
-            s += '<circle cx="'+sx+'" cy="'+sy+'" r="'+sr+'" fill="'+sfill+'" opacity="'+sop+'">';
-            s += '<animateTransform attributeName="transform" type="translate" values="0,0;'+sdrx+','+sdry+';0,0" dur="'+sdur+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
-            s += '<animate attributeName="opacity" values="'+sop+';'+(parseFloat(sop)*0.45).toFixed(2)+';'+sop+'" dur="'+(parseFloat(sdur)*0.55).toFixed(1)+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
-            s += '</circle>';
-            if (sp % 5 === 0) {
-              s += '<circle cx="'+sx+'" cy="'+sy+'" r="'+(parseFloat(sr)*0.45).toFixed(2)+'" fill="#f5ecd6" opacity="0.55">';
-              s += '<animateTransform attributeName="transform" type="translate" values="0,0;'+sdrx+','+sdry+';0,0" dur="'+sdur+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
-              s += '<animate attributeName="opacity" values="0.55;0.20;0.55" dur="'+(parseFloat(sdur)*0.4).toFixed(1)+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
-              s += '</circle>';
-            }
-          }
-          s += '</g>';
-          var weepX = [62, 66, 58];
-          var weepDur = [7.5, 9.2, 8.4];
-          var weepDelay = [0, 2.6, 4.1];
-          var weepLen = [14, 11, 13];
-          for (var wp = 0; wp < 3; wp++) {
-            var wx = weepX[wp];
-            var wd = weepDur[wp];
-            var wdl = weepDelay[wp];
-            var wln = weepLen[wp];
+          // Drippy ooze strands — start near the top, sag and stretch down
+          var oozeX = [12, 24, 38, 48, 56];
+          var oozeStartY = [16, 12, 22, 10, 20];
+          var oozeLen = [24, 30, 20, 34, 26];
+          var oozeDur = [9, 11, 8.5, 12, 10];
+          var oozeDelay = [0, 1.5, 3.2, 0.8, 4.4];
+          for (var op = 0; op < 5; op++) {
+            var ox = oozeX[op];
+            var osy = oozeStartY[op];
+            var oln = oozeLen[op];
+            var od = oozeDur[op];
+            var odel = oozeDelay[op];
             s += '<g opacity="0">';
-            s += '<path d="M'+wx+',0 L'+(wx-0.4)+','+wln+' L'+(wx+0.4)+','+wln+' Z" fill="#9bc850" opacity="0.55"/>';
-            s += '<path d="M'+wx+',2 L'+(wx-0.18)+','+(wln-1)+' L'+(wx+0.18)+','+(wln-1)+' Z" fill="#c8c850" opacity="0.65"/>';
-            s += '<circle cx="'+wx+'" cy="'+wln+'" r="0.85" fill="#9bc850" opacity="0.85"/>';
-            s += '<circle cx="'+wx+'" cy="'+wln+'" r="0.45" fill="#f5ecd6" opacity="0.7"/>';
-            s += '<animateTransform attributeName="transform" type="translate" values="0,-'+wln+';0,'+(95-wln)+'" dur="'+wd+'s" begin="'+wdl+'s" repeatCount="indefinite"/>';
-            s += '<animate attributeName="opacity" values="0;1;0.9;0" keyTimes="0;0.15;0.85;1" dur="'+wd+'s" begin="'+wdl+'s" repeatCount="indefinite"/>';
+            // Tapered teardrop strand with bulb at the bottom
+            s += '<path d="M'+ox+','+osy+' Q'+(ox-0.55)+','+(osy+oln*0.5)+' '+(ox-0.35)+','+(osy+oln-1.5)+' Q'+ox+','+(osy+oln)+' '+(ox+0.35)+','+(osy+oln-1.5)+' Q'+(ox+0.55)+','+(osy+oln*0.5)+' '+ox+','+osy+' Z" fill="url(#auraToxOoze'+uid+')"/>';
+            s += '<circle cx="'+ox+'" cy="'+(osy+oln-0.5)+'" r="1.2" fill="rgba(140,170,50,0.85)"/>';
+            s += '<circle cx="'+(ox-0.35).toFixed(2)+'" cy="'+(osy+oln-0.85).toFixed(2)+'" r="0.42" fill="rgba(200,220,90,0.50)"/>';
+            s += '<animate attributeName="opacity" values="0;0.85;0.85;0" keyTimes="0;0.2;0.85;1" dur="'+od+'s" begin="'+odel+'s" repeatCount="indefinite"/>';
+            s += '<animateTransform attributeName="transform" type="translate" values="0,-2;0,'+(oln*0.35).toFixed(1)+'" dur="'+od+'s" begin="'+odel+'s" repeatCount="indefinite"/>';
             s += '</g>';
           }
+          // Bubbling acid pool at base — small bubbles rise from a low puddle and pop
+          for (var bb = 0; bb < 14; bb++) {
+            var bx = ((pSeed * 5 + bb * 11.3) % 60).toFixed(1);
+            var br = (0.6 + (bb % 4) * 0.35).toFixed(2);
+            var bd = (3.5 + (bb % 5) * 0.9).toFixed(1);
+            var bdl = ((bb * 0.43) % 4).toFixed(1);
+            var bColor = (bb % 3 === 0) ? '#c8d850' : ((bb % 3 === 1) ? '#a8c850' : '#7ba040');
+            s += '<g opacity="0">';
+            s += '<circle cx="'+bx+'" cy="92" r="'+br+'" fill="'+bColor+'" opacity="0.78"/>';
+            s += '<circle cx="'+(parseFloat(bx)-parseFloat(br)*0.35).toFixed(1)+'" cy="'+(92-parseFloat(br)*0.35).toFixed(1)+'" r="'+(parseFloat(br)*0.3).toFixed(2)+'" fill="rgba(210,230,110,0.55)"/>';
+            s += '<animateTransform attributeName="transform" type="translate" values="0,8;0,-14" dur="'+bd+'s" begin="'+bdl+'s" repeatCount="indefinite"/>';
+            s += '<animate attributeName="opacity" values="0;0.85;0.85;0" keyTimes="0;0.18;0.78;1" dur="'+bd+'s" begin="'+bdl+'s" repeatCount="indefinite"/>';
+            s += '</g>';
+          }
+          // Standing acid puddle at the very base — sickly green ellipse with a brighter inner shine
+          s += '<ellipse cx="35" cy="93" rx="32" ry="2" fill="rgba(140,170,50,0.55)">';
+          s += '<animate attributeName="opacity" values="0.40;0.72;0.40" dur="4s" repeatCount="indefinite"/>';
+          s += '</ellipse>';
+          s += '<ellipse cx="35" cy="93" rx="22" ry="1" fill="rgba(180,210,80,0.45)">';
+          s += '<animate attributeName="opacity" values="0.35;0.68;0.35" dur="3.5s" begin="0.8s" repeatCount="indefinite"/>';
+          s += '</ellipse>';
         })();
         break;
       case 19: // Frost Crystal — edge frost branches, diamond crystals, pulsing frost vignette
