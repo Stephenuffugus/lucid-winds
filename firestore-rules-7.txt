@@ -282,10 +282,12 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════════════
-    // /friends/{uid}/inbox/{giftId} — Friendship gifting (LW_GIFTS)
-    // Sender writes a gift doc into recipient's inbox. Recipient claims
-    // by flipping claimed:true. Doctrine: NO free-text — fromName is the
-    // sender's display name only (also escaped client-side at render time).
+    // FRIENDS INBOX — Friendship gifting + Twin Bloom proposals.
+    // Sender writes a gift doc into recipient's inbox; recipient flips
+    // claimed:true to consume. Loot / from / tier are immutable
+    // post-create — recipient cannot rewrite the loot to grant
+    // themselves better gear. Doctrine: NO free-text — fromName is the
+    // sender's display name (also HTML-escaped client-side at render).
     // ════════════════════════════════════════════════════════════
     match /friends/{uid}/inbox/{giftId} {
       // Recipient reads their own inbox
@@ -297,7 +299,7 @@ service cloud.firestore {
         && request.resource.data.claimed == false
         && request.resource.data.keys().hasAll(['from','fromName','tier','loot','sentAt','claimed']);
 
-      // Recipient claims (flips claimed:true). Cannot mutate the loot or sender.
+      // Recipient flips claimed:true. from/tier frozen so loot can't be rewritten.
       allow update: if request.auth != null
         && request.auth.uid == uid
         && resource.data.claimed == false
@@ -305,7 +307,7 @@ service cloud.firestore {
         && request.resource.data.from == resource.data.from
         && request.resource.data.tier == resource.data.tier;
 
-      // Recipient can delete claimed gifts (cleanup)
+      // Recipient can delete (cleanup of claimed gifts, decline of twin bloom proposals)
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
