@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.6';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -82828,6 +82828,27 @@ window._lwClaimHerbarium = function(id){
         }
       } catch(e) {}
       // Forage cocoon drop — REMOVED 2026-05-02 (cocoons system shelved).
+      // Tutorial stuck-state recovery — Stephen 2026-05-02: Jessie got
+      // trapped in the forage tutorial step (39-46), skipped the prompt,
+      // foraged on her own, but the tutorial state stayed numeric so
+      // every downstream gate (class pick, JITs) treated her as still
+      // in tutorial. Heuristic: if forage SUCCEEDS and there's no
+      // active tutorial dialog button, the tutorial is abandoned.
+      // Mark it done so gates open. Active tutorial watches still
+      // advance normally on their own ticks; this only catches the
+      // orphaned case.
+      try {
+        if (resolved.success) {
+          var _tutS = localStorage.getItem('lw_tut');
+          var _tutN = parseInt(_tutS||'',10);
+          var _tutDlgActive = !!document.querySelector('._lw-tut-dlg-btn');
+          if (!isNaN(_tutN) && _tutN >= 39 && _tutS !== 'done' && !_tutDlgActive) {
+            localStorage.setItem('lw_tut','done');
+            localStorage.setItem('lw_plant_xp_unlocked','1');
+            try { var _orphan = document.getElementById('lw-tut-mini-prompt'); if (_orphan) _orphan.remove(); } catch(eMP){}
+          }
+        }
+      } catch(eTR) {}
       // Bloom Day bonus — if today is a Bloom Day and the forage succeeds,
       // award a RARE wild card (Moonlight / Thunder / Dust) per spec §5.
       // These are universal half-strength counters, only earnable on
