@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.67';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.68';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -56114,7 +56114,7 @@ function _autoCarouselFromInspector(){
     window.openCarousel(_hexInspPlants.slice(),0,'wild-inspect');
   },120);
 }
-return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
+return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_forceFallbackCoords:function(){if(!_uLat){_uLat=FALLBACK[0];_uLng=FALLBACK[1];window._uLat=_uLat;window._uLng=_uLng;if(_map){try{_map.setView(FALLBACK,17);_placeUser();_loadAll();}catch(e){}}return true;}return false;},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
@@ -72622,6 +72622,18 @@ function _step36(){
   });
 }
 function _step36Inner(){
+  // iOS GPS-stalled fix (Stephen 2026-05-01 PART 5): if geolocation hasn't
+  // resolved yet, openPicker bails on `!_uLat` and the SOW tap silently
+  // toasts "Getting location..." — the tutorial polls forever for a
+  // carousel that will never open. Force the FALLBACK coords so the
+  // tester can advance even if their permission prompt is still pending
+  // or was denied. Real GPS, when it arrives, will overwrite these.
+  if (!window._uLat && window.FG_Wild && window.FG_Wild._forceFallbackCoords) {
+    try { window.FG_Wild._forceFallbackCoords(); } catch(e){}
+    // Re-run mock injection now that coords are set (step 35 silently
+    // skipped this if _uLat was null).
+    try { _lwTutInjectMockHex(); } catch(e){}
+  }
   var sow = document.getElementById('dfb');
   // If FAB still hidden after _ensureWildActive (rare init race), wait
   // and retry up to 5 times (4s total) before surfacing a skip prompt.
