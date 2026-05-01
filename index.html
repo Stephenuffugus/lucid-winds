@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.64';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.65';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -26864,33 +26864,137 @@ document.addEventListener('keydown', function(e) {
       case 37: // Carrion Starfish — Stapelia grandiflora (5-pointed wavy fleshy star, hairy/freckled)
         fy = fy - fs * 1.3; // Stephen 2026-05-01 PART 3: nudge further up so star sits at stem tip, not in middle
         s += '<g>';
-        // 5-arm wavy fleshy star (warm-shifted maroon, full silhouette preserved)
+        // Arm tip table — actual silhouette has 7 lobes (preserve existing shape)
+        var st37Tips = [
+          [0,      -1.74],
+          [ 1.68,  -1.20],
+          [ 1.92,   0.32],
+          [ 0.82,   1.52],
+          [-0.92,   1.66],
+          [-2.04,   0.22],
+          [-1.78,  -1.44]
+        ];
+        // 7-arm wavy fleshy star (warm-shifted maroon, full silhouette preserved)
         s += '<path d="M'+fx+','+(fy-fs*1.74)+' C'+(fx+fs*0.14)+','+(fy-fs*1.34)+' '+(fx+fs*0.22)+','+(fy-fs*0.98)+' '+(fx+fs*0.30)+','+(fy-fs*0.66)+' C'+(fx+fs*0.78)+','+(fy-fs*0.92)+' '+(fx+fs*1.22)+','+(fy-fs*1.10)+' '+(fx+fs*1.68)+','+(fy-fs*1.20)+' C'+(fx+fs*1.34)+','+(fy-fs*0.84)+' '+(fx+fs*1.00)+','+(fy-fs*0.48)+' '+(fx+fs*0.74)+','+(fy-fs*0.12)+' C'+(fx+fs*1.14)+','+(fy-fs*0.00)+' '+(fx+fs*1.52)+','+(fy+fs*0.12)+' '+(fx+fs*1.92)+','+(fy+fs*0.32)+' C'+(fx+fs*1.42)+','+(fy+fs*0.34)+' '+(fx+fs*0.96)+','+(fy+fs*0.32)+' '+(fx+fs*0.50)+','+(fy+fs*0.24)+' C'+(fx+fs*0.58)+','+(fy+fs*0.68)+' '+(fx+fs*0.66)+','+(fy+fs*1.08)+' '+(fx+fs*0.82)+','+(fy+fs*1.52)+' C'+(fx+fs*0.38)+','+(fy+fs*1.22)+' '+fx+','+(fy+fs*0.90)+' '+(fx-fs*0.36)+','+(fy+fs*0.50)+' C'+(fx-fs*0.54)+','+(fy+fs*0.92)+' '+(fx-fs*0.72)+','+(fy+fs*1.28)+' '+(fx-fs*0.92)+','+(fy+fs*1.66)+' C'+(fx-fs*0.94)+','+(fy+fs*1.10)+' '+(fx-fs*0.86)+','+(fy+fs*0.62)+' '+(fx-fs*0.76)+','+(fy+fs*0.20)+' C'+(fx-fs*1.16)+','+(fy+fs*0.32)+' '+(fx-fs*1.58)+','+(fy+fs*0.36)+' '+(fx-fs*2.04)+','+(fy+fs*0.22)+' C'+(fx-fs*1.64)+','+(fy-fs*0.02)+' '+(fx-fs*1.24)+','+(fy-fs*0.26)+' '+(fx-fs*0.88)+','+(fy-fs*0.52)+' C'+(fx-fs*1.22)+','+(fy-fs*0.74)+' '+(fx-fs*1.50)+','+(fy-fs*1.06)+' '+(fx-fs*1.78)+','+(fy-fs*1.44)+' C'+(fx-fs*1.26)+','+(fy-fs*1.24)+' '+(fx-fs*0.82)+','+(fy-fs*1.02)+' '+(fx-fs*0.40)+','+(fy-fs*0.72)+' C'+(fx-fs*0.36)+','+(fy-fs*1.08)+' '+(fx-fs*0.28)+','+(fy-fs*1.42)+' '+fx+','+(fy-fs*1.74)+' Z" fill="#5A2020" opacity="'+bloomOp+'"/>';
-        // Wrinkle ridges from center toward each arm tip (warm-shifted darker)
+        // Cool-margin overlay (warm-cool A2 hue shift — cooler plum tint at arm edges)
+        s += '<path d="M'+fx+','+(fy-fs*1.74)+' C'+(fx+fs*0.78)+','+(fy-fs*0.92)+' '+(fx+fs*1.22)+','+(fy-fs*1.10)+' '+(fx+fs*1.68)+','+(fy-fs*1.20)+' C'+(fx+fs*1.34)+','+(fy-fs*0.84)+' '+(fx+fs*1.14)+','+(fy-fs*0.00)+' '+(fx+fs*1.92)+','+(fy+fs*0.32)+' C'+(fx+fs*1.42)+','+(fy+fs*0.34)+' '+(fx+fs*0.58)+','+(fy+fs*0.68)+' '+(fx+fs*0.82)+','+(fy+fs*1.52)+' C'+(fx+fs*0.38)+','+(fy+fs*1.22)+' '+(fx-fs*0.54)+','+(fy+fs*0.92)+' '+(fx-fs*0.92)+','+(fy+fs*1.66)+' C'+(fx-fs*0.94)+','+(fy+fs*1.10)+' '+(fx-fs*1.16)+','+(fy+fs*0.32)+' '+(fx-fs*2.04)+','+(fy+fs*0.22)+' C'+(fx-fs*1.64)+','+(fy-fs*0.02)+' '+(fx-fs*1.22)+','+(fy-fs*0.74)+' '+(fx-fs*1.78)+','+(fy-fs*1.44)+' C'+(fx-fs*1.26)+','+(fy-fs*1.24)+' '+(fx-fs*0.36)+','+(fy-fs*1.08)+' '+fx+','+(fy-fs*1.74)+' Z" fill="#3E1838" opacity="'+(bloomOp*0.22)+'"/>';
+        // Concentric ridge arcs per arm — 3 arcs per lobe radiating outward (carved/sculpted look)
+        for (var st37c = 0; st37c < 7; st37c++) {
+          var st37cTx = st37Tips[st37c][0], st37cTy = st37Tips[st37c][1];
+          var st37cTl = Math.sqrt(st37cTx*st37cTx + st37cTy*st37cTy);
+          var st37cAx = st37cTx / st37cTl, st37cAy = st37cTy / st37cTl;
+          var st37cPx = -st37cAy, st37cPy = st37cAx;
+          for (var st37cR = 0; st37cR < 3; st37cR++) {
+            var st37cF = 0.40 + st37cR * 0.28;
+            var st37cW = (0.32 - st37cR * 0.07) * st37cTl;
+            var st37cBx = fx + fs * st37cAx * st37cTl * st37cF;
+            var st37cBy = fy + fs * st37cAy * st37cTl * st37cF;
+            var st37cAxStart = st37cBx + fs * st37cPx * st37cW;
+            var st37cAyStart = st37cBy + fs * st37cPy * st37cW;
+            var st37cAxEnd   = st37cBx - fs * st37cPx * st37cW;
+            var st37cAyEnd   = st37cBy - fs * st37cPy * st37cW;
+            var st37cBowX = st37cBx - fs * st37cAx * 0.12;
+            var st37cBowY = st37cBy - fs * st37cAy * 0.12;
+            s += '<path d="M'+st37cAxStart+','+st37cAyStart+' Q'+st37cBowX+','+st37cBowY+' '+st37cAxEnd+','+st37cAyEnd+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="'+(fs*0.05)+'" opacity="'+(bloomOp*(0.62 - st37cR*0.10))+'" stroke-linecap="round"/>';
+          }
+        }
+        // Wrinkle ridges from center toward each arm tip (warm-shifted darker — original sculpted lines)
         s += '<path d="M'+fx+','+(fy-fs*1.46)+' C'+(fx+fs*0.08)+','+(fy-fs*1.10)+' '+(fx+fs*0.14)+','+(fy-fs*0.80)+' '+(fx+fs*0.20)+','+(fy-fs*0.50)+' M'+(fx+fs*1.32)+','+(fy-fs*0.98)+' C'+(fx+fs*1.00)+','+(fy-fs*0.80)+' '+(fx+fs*0.68)+','+(fy-fs*0.56)+' '+(fx+fs*0.32)+','+(fy-fs*0.26)+' M'+(fx+fs*1.40)+','+(fy+fs*0.22)+' C'+(fx+fs*1.02)+','+(fy+fs*0.16)+' '+(fx+fs*0.64)+','+(fy+fs*0.12)+' '+(fx+fs*0.22)+','+(fy+fs*0.06)+' M'+(fx+fs*0.54)+','+(fy+fs*1.26)+' C'+(fx+fs*0.30)+','+(fy+fs*0.92)+' '+(fx+fs*0.08)+','+(fy+fs*0.56)+' '+(fx-fs*0.16)+','+(fy+fs*0.22)+' M'+(fx-fs*0.62)+','+(fy+fs*1.28)+' C'+(fx-fs*0.40)+','+(fy+fs*0.92)+' '+(fx-fs*0.18)+','+(fy+fs*0.56)+' '+(fx-fs*0.02)+','+(fy+fs*0.20)+' M'+(fx-fs*1.40)+','+(fy+fs*0.08)+' C'+(fx-fs*1.02)+','+(fy-fs*0.00)+' '+(fx-fs*0.64)+','+(fy-fs*0.12)+' '+(fx-fs*0.24)+','+(fy-fs*0.26)+' M'+(fx-fs*1.32)+','+(fy-fs*1.00)+' C'+(fx-fs*0.98)+','+(fy-fs*0.78)+' '+(fx-fs*0.64)+','+(fy-fs*0.54)+' '+(fx-fs*0.30)+','+(fy-fs*0.28)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.32" opacity="'+(bloomOp*0.72)+'" stroke-linecap="round"/>';
-        // Hairy bristles at each arm tip (Stapelia signature)
-        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*1.50)+' L'+(fx-fs*0.26)+','+(fy-fs*1.70)+' M'+(fx+fs*0.20)+','+(fy-fs*1.48)+' L'+(fx+fs*0.28)+','+(fy-fs*1.68)+' M'+(fx+fs*1.18)+','+(fy-fs*1.00)+' L'+(fx+fs*1.34)+','+(fy-fs*1.12)+' M'+(fx+fs*1.46)+','+(fy-fs*0.10)+' L'+(fx+fs*1.66)+','+(fy-fs*0.08)+' M'+(fx+fs*1.18)+','+(fy+fs*0.38)+' L'+(fx+fs*1.36)+','+(fy+fs*0.50)+' M'+(fx+fs*0.36)+','+(fy+fs*1.18)+' L'+(fx+fs*0.46)+','+(fy+fs*1.38)+' M'+(fx-fs*0.30)+','+(fy+fs*1.24)+' L'+(fx-fs*0.38)+','+(fy+fs*1.46)+' M'+(fx-fs*1.20)+','+(fy+fs*0.38)+' L'+(fx-fs*1.42)+','+(fy+fs*0.50)+' M'+(fx-fs*1.46)+','+(fy-fs*0.10)+' L'+(fx-fs*1.68)+','+(fy-fs*0.08)+' M'+(fx-fs*1.22)+','+(fy-fs*1.02)+' L'+(fx-fs*1.38)+','+(fy-fs*1.16)+' M'+(fx-fs*0.38)+','+(fy-fs*1.18)+' L'+(fx-fs*0.46)+','+(fy-fs*1.40)+' M'+(fx+fs*0.40)+','+(fy-fs*1.14)+' L'+(fx+fs*0.50)+','+(fy-fs*1.34)+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="'+(bloomOp*0.7)+'" stroke-linecap="round"/>';
-        // Freckle/spot pattern across arms (carrion fly lure spots, warm dark)
-        for (var st37 = 0; st37 < 14; st37++) {
-          var st37a = (st37 * (360/14) + 12) * Math.PI / 180;
-          var st37r = fs * (0.5 + (st37 % 3) * 0.18);
+        // Dense cilia — long fine hairs along arm margins (Stapelia signature)
+        var st37H = '';
+        for (var st37h = 0; st37h < 7; st37h++) {
+          var st37hTx = st37Tips[st37h][0], st37hTy = st37Tips[st37h][1];
+          var st37hTl = Math.sqrt(st37hTx*st37hTx + st37hTy*st37hTy);
+          var st37hAx = st37hTx / st37hTl, st37hAy = st37hTy / st37hTl;
+          var st37hPx = -st37hAy, st37hPy = st37hAx;
+          for (var st37hI = 0; st37hI < 5; st37hI++) {
+            var st37hF = 0.45 + st37hI * 0.13;
+            var st37hSide = (st37hI % 2 === 0) ? 0.32 : -0.32;
+            var st37hBx = fx + fs * st37hAx * st37hTl * st37hF + fs * st37hPx * st37hSide * st37hTl * 0.5;
+            var st37hBy = fy + fs * st37hAy * st37hTl * st37hF + fs * st37hPy * st37hSide * st37hTl * 0.5;
+            var st37hLen = 0.22 + (st37hI % 2) * 0.06;
+            var st37hEx = st37hBx + fs * (st37hPx * st37hSide * 0.55 + st37hAx * 0.15) * st37hLen;
+            var st37hEy = st37hBy + fs * (st37hPy * st37hSide * 0.55 + st37hAy * 0.15) * st37hLen;
+            st37H += 'M'+st37hBx+','+st37hBy+' L'+st37hEx+','+st37hEy+' ';
+          }
+          var st37hTipBx = fx + fs * st37hTx * 0.94;
+          var st37hTipBy = fy + fs * st37hTy * 0.94;
+          st37H += 'M'+st37hTipBx+','+st37hTipBy+' L'+(fx + fs*(st37hTx + st37hAx*0.18 - st37hPx*0.06))+','+(fy + fs*(st37hTy + st37hAy*0.18 - st37hPy*0.06))+' ';
+          st37H += 'M'+st37hTipBx+','+st37hTipBy+' L'+(fx + fs*(st37hTx + st37hAx*0.18 + st37hPx*0.06))+','+(fy + fs*(st37hTy + st37hAy*0.18 + st37hPy*0.06))+' ';
+        }
+        s += '<path d="'+st37H+'" fill="none" stroke="#c9a47a" stroke-width="0.28" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+        s += '<path d="'+st37H+'" fill="none" stroke="#f5ecd6" stroke-width="0.22" opacity="'+(bloomOp*0.78)+'" stroke-linecap="round" transform="translate(-0.18,-0.18)"/>';
+        // Freckle/spot pattern — dense, varied size, three colors (cream / tan / amber)
+        for (var st37 = 0; st37 < 36; st37++) {
+          var st37a = (st37 * (360/36) + 8 + (st37 % 5) * 3) * Math.PI / 180;
+          var st37r = fs * (0.46 + ((st37 * 7) % 11) * 0.10);
           var st37x = fx + Math.cos(st37a) * st37r;
           var st37y = fy + Math.sin(st37a) * st37r;
-          s += '<circle cx="'+st37x+'" cy="'+st37y+'" r="'+(fs*0.04)+'" fill="rgba(40,20,5,0.7)" opacity="'+(bloomOp*0.78)+'"/>';
+          var st37Sz = fs * (0.030 + ((st37 * 3) % 5) * 0.012);
+          var st37Pal = st37 % 4;
+          var st37Fill = st37Pal === 0 ? 'rgba(40,20,5,0.72)' : (st37Pal === 1 ? '#e6cf94' : (st37Pal === 2 ? '#c9a47a' : '#d68f3a'));
+          var st37Op = (bloomOp * (st37Pal === 0 ? 0.78 : 0.68));
+          s += '<circle cx="'+st37x+'" cy="'+st37y+'" r="'+st37Sz+'" fill="'+st37Fill+'" opacity="'+st37Op+'"/>';
+        }
+        // Fine micro-freckles farther out (denser detail near margins)
+        for (var st37m = 0; st37m < 22; st37m++) {
+          var st37mA = (st37m * (360/22) + 16) * Math.PI / 180;
+          var st37mR = fs * (1.10 + ((st37m * 5) % 7) * 0.08);
+          var st37mX = fx + Math.cos(st37mA) * st37mR;
+          var st37mY = fy + Math.sin(st37mA) * st37mR;
+          s += '<circle cx="'+st37mX+'" cy="'+st37mY+'" r="'+(fs*0.022)+'" fill="#e6cf94" opacity="'+(bloomOp*0.62)+'"/>';
         }
         // Surface streaks (bone-cream highlights along ridge crests §1 silk-snap)
         s += '<path d="M'+(fx-fs*0.06)+','+(fy-fs*0.92)+' C'+(fx+fs*0.20)+','+(fy-fs*0.78)+' '+(fx+fs*0.44)+','+(fy-fs*0.62)+' '+(fx+fs*0.64)+','+(fy-fs*0.36)+' M'+(fx-fs*0.04)+','+(fy-fs*0.20)+' C'+(fx+fs*0.24)+','+(fy-fs*0.10)+' '+(fx+fs*0.50)+','+fy+' '+(fx+fs*0.78)+','+(fy+fs*0.08)+' M'+(fx-fs*0.10)+','+(fy+fs*0.16)+' C'+(fx+fs*0.08)+','+(fy+fs*0.38)+' '+(fx+fs*0.20)+','+(fy+fs*0.58)+' '+(fx+fs*0.30)+','+(fy+fs*0.86)+' M'+(fx-fs*0.12)+','+(fy+fs*0.14)+' C'+(fx-fs*0.26)+','+(fy+fs*0.42)+' '+(fx-fs*0.38)+','+(fy+fs*0.66)+' '+(fx-fs*0.52)+','+(fy+fs*0.94)+' M'+(fx-fs*0.16)+','+(fy-fs*0.20)+' C'+(fx-fs*0.44)+','+(fy-fs*0.06)+' '+(fx-fs*0.72)+','+(fy+fs*0.04)+' '+(fx-fs*1.00)+','+(fy+fs*0.10)+' M'+(fx-fs*0.06)+','+(fy-fs*0.94)+' C'+(fx-fs*0.28)+','+(fy-fs*0.80)+' '+(fx-fs*0.52)+','+(fy-fs*0.62)+' '+(fx-fs*0.74)+','+(fy-fs*0.34)+'" fill="none" stroke="#f5ecd6" stroke-width="0.22" opacity="'+(bloomOp*0.42)+'" stroke-linecap="round"/>';
-        // Center mound (deep pit shadow → warm dark)
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.46)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.7)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.38)+'" fill="#7A3434" opacity="'+(bloomOp*0.96)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.22)+'" fill="#3a1208" opacity="'+bloomOp+'"/>';
-        // Stamen kit — central pollen tuft (cream specks)
-        s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.04)+'" r="'+(fs*0.04)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.85)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.08)+'" cy="'+(fy+fs*0.02)+'" r="'+(fs*0.04)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.8)+'"/>';
-        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.08)+'" r="'+(fs*0.03)+'" fill="#e8b53a" opacity="'+(bloomOp*0.8)+'"/>';
-        // Highlight curl across mound (§9 drip-curl)
-        s += '<path d="M'+(fx-fs*0.16)+','+(fy-fs*0.02)+' C'+(fx-fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.08)+','+(fy-fs*0.14)+' '+(fx+fs*0.20)+','+(fy-fs*0.02)+'" fill="none" stroke="#fff8e0" stroke-width="0.3" stroke-linecap="round" opacity="'+(bloomOp*0.7)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.08)+'" cy="'+(fy-fs*0.08)+'" r="'+(fs*0.06)+'" fill="#fff8e0" opacity="'+(bloomOp*0.65)+'"/>';
+        // Cream specular sliver on lit-edge of each arm (master playbook A3, top-left light)
+        for (var st37s = 0; st37s < 7; st37s++) {
+          var st37sTx = st37Tips[st37s][0], st37sTy = st37Tips[st37s][1];
+          var st37sTl = Math.sqrt(st37sTx*st37sTx + st37sTy*st37sTy);
+          var st37sAx = st37sTx / st37sTl, st37sAy = st37sTy / st37sTl;
+          var st37sPx = -st37sAy, st37sPy = st37sAx;
+          var st37sLit = (st37sPx * (-0.7) + st37sPy * (-0.7));
+          if (st37sLit > 0.05) {
+            var st37sStartX = fx + fs * (st37sAx * st37sTl * 0.32 + st37sPx * st37sTl * 0.22);
+            var st37sStartY = fy + fs * (st37sAy * st37sTl * 0.32 + st37sPy * st37sTl * 0.22);
+            var st37sEndX   = fx + fs * (st37sAx * st37sTl * 0.86 + st37sPx * st37sTl * 0.10);
+            var st37sEndY   = fy + fs * (st37sAy * st37sTl * 0.86 + st37sPy * st37sTl * 0.10);
+            s += '<path d="M'+st37sStartX+','+st37sStartY+' Q'+(fx + fs*(st37sAx*st37sTl*0.6 + st37sPx*st37sTl*0.18))+','+(fy + fs*(st37sAy*st37sTl*0.6 + st37sPy*st37sTl*0.18))+' '+st37sEndX+','+st37sEndY+'" fill="none" stroke="#fff8e0" stroke-width="'+(fs*0.045)+'" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
+          }
+        }
+        // Tip drip-shadow at each arm point (warm-dark dot — stoma + photo terminator)
+        for (var st37t = 0; st37t < 7; st37t++) {
+          var st37tTx = st37Tips[st37t][0], st37tTy = st37Tips[st37t][1];
+          s += '<circle cx="'+(fx + fs * st37tTx * 0.92)+'" cy="'+(fy + fs * st37tTy * 0.92)+'" r="'+(fs*0.045)+'" fill="rgba(40,20,5,0.65)" opacity="'+(bloomOp*0.7)+'"/>';
+        }
+        // Center mound — DEEP corolla well (4 layers, drinks light)
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.52)+'" fill="rgba(40,20,5,0.55)" opacity="'+(bloomOp*0.75)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.42)+'" fill="#7A3434" opacity="'+(bloomOp*0.96)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.30)+'" fill="#3a1208" opacity="'+bloomOp+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.18)+'" fill="#180603" opacity="'+bloomOp+'"/>';
+        // Hairy fringe around the corolla rim (signature dark hairs ringing the well)
+        for (var st37rH = 0; st37rH < 18; st37rH++) {
+          var st37rHA = st37rH * (360/18) * Math.PI / 180;
+          var st37rHbx = fx + Math.cos(st37rHA) * fs * 0.30;
+          var st37rHby = fy + Math.sin(st37rHA) * fs * 0.30;
+          var st37rHex = fx + Math.cos(st37rHA) * fs * 0.46;
+          var st37rHey = fy + Math.sin(st37rHA) * fs * 0.46;
+          s += '<line x1="'+st37rHbx+'" y1="'+st37rHby+'" x2="'+st37rHex+'" y2="'+st37rHey+'" stroke="rgba(40,20,5,0.85)" stroke-width="'+(fs*0.022)+'" opacity="'+(bloomOp*0.78)+'" stroke-linecap="round"/>';
+        }
+        // Pollinia — 5 anther structures around the corolla rim (gold/cream)
+        for (var st37p = 0; st37p < 5; st37p++) {
+          var st37pA = (st37p * 72 - 90) * Math.PI / 180;
+          var st37pX = fx + Math.cos(st37pA) * fs * 0.25;
+          var st37pY = fy + Math.sin(st37pA) * fs * 0.25;
+          s += '<ellipse cx="'+st37pX+'" cy="'+st37pY+'" rx="'+(fs*0.055)+'" ry="'+(fs*0.038)+'" fill="#d8a23a" opacity="'+(bloomOp*0.92)+'" transform="rotate('+(st37p*72)+','+st37pX+','+st37pY+')"/>';
+          s += '<circle cx="'+(st37pX - fs*0.012)+'" cy="'+(st37pY - fs*0.014)+'" r="'+(fs*0.018)+'" fill="#fff8e0" opacity="'+(bloomOp*0.85)+'"/>';
+        }
+        // Stamen kit — central pollen tuft (cream specks above well)
+        s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(fy-fs*0.04)+'" r="'+(fs*0.035)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.88)+'"/>';
+        s += '<circle cx="'+(fx+fs*0.07)+'" cy="'+(fy+fs*0.02)+'" r="'+(fs*0.030)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.82)+'"/>';
+        s += '<circle cx="'+fx+'" cy="'+(fy+fs*0.06)+'" r="'+(fs*0.025)+'" fill="#e8b53a" opacity="'+(bloomOp*0.82)+'"/>';
+        // Highlight curl across mound (§9 drip-curl) + cream specular pickup
+        s += '<path d="M'+(fx-fs*0.18)+','+(fy-fs*0.04)+' C'+(fx-fs*0.10)+','+(fy-fs*0.18)+' '+(fx+fs*0.10)+','+(fy-fs*0.18)+' '+(fx+fs*0.22)+','+(fy-fs*0.04)+'" fill="none" stroke="#fff8e0" stroke-width="0.3" stroke-linecap="round" opacity="'+(bloomOp*0.7)+'"/>';
+        s += '<circle cx="'+(fx-fs*0.10)+'" cy="'+(fy-fs*0.10)+'" r="'+(fs*0.055)+'" fill="#fff8e0" opacity="'+(bloomOp*0.68)+'"/>';
         s += '</g>';
         break;
       // ── set-103-8-14: NEW BLOOM TYPES (ChatGPT Art Round) ──────────────
@@ -30984,9 +31088,14 @@ document.addEventListener('keydown', function(e) {
         s += '<rect x="12" y="20" width="2.5" height="60" fill="url(#auraPillar'+uid+')" opacity="0.5"><animate attributeName="opacity" values="0.25;0.6;0.25" dur="7s" repeatCount="indefinite"/></rect>';
         s += '<rect x="34" y="14" width="2" height="68" fill="url(#auraPillar'+uid+')" opacity="0.4"><animate attributeName="opacity" values="0.2;0.55;0.2" dur="9s" begin="2s" repeatCount="indefinite"/></rect>';
         s += '<rect x="52" y="22" width="2.2" height="58" fill="url(#auraPillar'+uid+')" opacity="0.45"><animate attributeName="opacity" values="0.22;0.58;0.22" dur="8s" begin="4s" repeatCount="indefinite"/></rect>';
-        s += '<path d="M4,6 C14,10 22,10 32,7" fill="none" stroke="#f5ecd6" stroke-width="0.6" stroke-linecap="round"/>';
-        s += '<path d="M25,10 C37,14 48,14 60,10" fill="none" stroke="#f5ecd6" stroke-width="0.6" stroke-linecap="round"/>';
-        s += '<path d="M10,16 C22,18 34,17 46,15" fill="none" stroke="#fff8e0" stroke-width="0.4" stroke-linecap="round" opacity="0.6"/>';
+        // Stephen 2026-05-01 PART 4: removed the 3 white cream stroke lines.
+        // Replaced with vibrant aurora color layers — emerald, electric blue, magenta — drifting at varied tempos.
+        s += '<path d="M-4,12 C12,8 22,16 36,12 C50,8 60,15 76,9 L76,22 C58,28 44,21 30,25 C16,28 4,22 -4,28 Z" fill="rgba(80,220,140,0.10)" opacity="0.8"><animate attributeName="opacity" values="0.50;0.92;0.50" dur="10s" repeatCount="indefinite"/></path>';
+        s += '<path d="M-3,20 C12,17 22,24 36,20 C52,16 64,22 76,17 L76,30 C58,33 44,27 30,30 C18,32 5,29 -3,33 Z" fill="rgba(110,170,255,0.09)" opacity="0.85"><animate attributeName="opacity" values="0.55;0.95;0.55" dur="13s" begin="2s" repeatCount="indefinite"/></path>';
+        s += '<path d="M-5,28 C8,26 21,32 36,28 C52,24 62,30 76,26 L76,40 C58,42 44,36 30,38 C16,40 4,37 -5,42 Z" fill="rgba(220,90,200,0.07)" opacity="0.85"><animate attributeName="opacity" values="0.50;0.90;0.50" dur="16s" begin="4s" repeatCount="indefinite"/></path>';
+        // Hot ribbon highlights — saturated cores threading through the layers
+        s += '<path d="M-2,16 C14,13 28,18 44,15 C60,12 72,16 76,15" fill="none" stroke="rgba(120,255,180,0.30)" stroke-width="0.4" stroke-linecap="round"><animate attributeName="opacity" values="0.20;0.55;0.20" dur="9s" repeatCount="indefinite"/></path>';
+        s += '<path d="M-2,24 C14,22 28,27 44,23 C60,20 72,25 76,22" fill="none" stroke="rgba(150,200,255,0.28)" stroke-width="0.35" stroke-linecap="round"><animate attributeName="opacity" values="0.20;0.55;0.20" dur="11s" begin="3s" repeatCount="indefinite"/></path>';
         s += '</g>';
         break;
       case 6: // Golden Hour — warm amber glow from bottom-left with diagonal rays
@@ -31002,7 +31111,7 @@ document.addEventListener('keydown', function(e) {
         s += '</rect>';
         s += '<path d="M-6,88 L30,58" fill="none" stroke="rgba(200,168,75,0.10)" stroke-width="1.2" stroke-linecap="round"/>';
         s += '<path d="M-2,95 L38,54" fill="none" stroke="rgba(200,168,75,0.08)" stroke-width="0.9" stroke-linecap="round"/>';
-        s += '<path d="M3,95 L46,57" fill="none" stroke="#f5ecd6" stroke-width="0.7" stroke-linecap="round"/>';
+        s += '<path d="M3,95 L46,57" fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round" opacity="0.30"/>';
         s += '<path d="M0,72 C18,64 34,58 55,50" fill="none" stroke="rgba(200,168,75,0.05)" stroke-width="1" stroke-linecap="round"/>';
         // Drifting dust motes — warm cream specks floating through the rays
         s += '<circle cx="14" cy="78" r="0.45" fill="#fff8e0" opacity="0.55"><animate attributeName="cx" values="14;22;14" dur="11s" repeatCount="indefinite"/><animate attributeName="cy" values="78;68;78" dur="11s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.2;0.7;0.2" dur="11s" repeatCount="indefinite"/></circle>';
@@ -31038,7 +31147,7 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="38" cy="22" r="0.35" fill="#f5ecd6" opacity="0.45"><animate attributeName="opacity" values="0.18;0.55;0.18" dur="8s" begin="3s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="20" cy="28" r="0.3" fill="#f5ecd6" opacity="0.4"><animate attributeName="opacity" values="0.15;0.5;0.15" dur="6.5s" begin="0.8s" repeatCount="indefinite"/></circle>';
         s += '<circle cx="44" cy="6" r="0.4" fill="#fff8e0" opacity="0.55"><animate attributeName="opacity" values="0.2;0.65;0.2" dur="7.5s" begin="2.2s" repeatCount="indefinite"/></circle>';
-        s += '<path d="M8,66 C22,61 35,61 50,66" fill="none" stroke="#f5ecd6" stroke-width="0.8" stroke-linecap="round"/>';
+        s += '<path d="M8,66 C22,61 35,61 50,66" fill="none" stroke="rgba(232,240,250,0.22)" stroke-width="0.45" stroke-linecap="round"/>';
         s += '<path d="M14,75 C29,70 43,70 59,75" fill="none" stroke="rgba(91,143,185,0.04)" stroke-width="0.7" stroke-linecap="round"/>';
         s += '</g>';
         break;
@@ -31147,67 +31256,81 @@ document.addEventListener('keydown', function(e) {
         s += '<circle cx="35" cy="40" r="0.9" fill="#fff8e0"><animate attributeName="opacity" values="0.85;1;0.85" dur="3.5s" repeatCount="indefinite"/></circle>';
         s += '</g>';
         break;
-      case 11: // Arch — castle/dungeon stone gate framing the plant
-        s += '<radialGradient id="auraArchInner'+uid+'" cx="0.5" cy="0.45" r="0.5">';
-        s += '<stop offset="0%" stop-color="rgba(40,20,5,0)"/>';
-        s += '<stop offset="100%" stop-color="rgba(40,20,5,0.20)"/>';
+      case 11: // Time Crystal — slowly rotating octahedral chronocrystal behind the plant with refractive light shafts, breathing halo, drifting chronon dust (Stephen 2026-05-01 PART 4: replaces Arch which felt placeholder)
+        s += '<defs>';
+        s += '<radialGradient id="auraTCHalo'+uid+'" cx="0.5" cy="0.46" r="0.55">';
+        s += '<stop offset="0%" stop-color="rgba(245,248,255,0.32)"/>';
+        s += '<stop offset="22%" stop-color="rgba(200,222,235,0.18)"/>';
+        s += '<stop offset="55%" stop-color="rgba(150,180,210,0.08)"/>';
+        s += '<stop offset="80%" stop-color="rgba(120,140,180,0.03)"/>';
+        s += '<stop offset="100%" stop-color="rgba(120,140,180,0)"/>';
         s += '</radialGradient>';
-        s += '<g opacity="0.42">';
-        // Warm shadow inside the arch
-        s += '<path d="M20,38 Q20,15 35,9 Q50,15 50,38 L50,88 L20,88 Z" fill="url(#auraArchInner'+uid+')"/>';
-        // ── THICK STONE COLUMNS — heavy, fortress-like ──
-        // Left column
-        s += '<rect x="4" y="38" width="14" height="57" fill="rgba(90,82,70,0.20)" stroke="rgba(140,130,110,0.32)" stroke-width="0.6"/>';
-        // Right column
-        s += '<rect x="52" y="38" width="14" height="57" fill="rgba(90,82,70,0.20)" stroke="rgba(140,130,110,0.32)" stroke-width="0.6"/>';
-        // Column base blocks — wider at the bottom
-        s += '<rect x="2" y="88" width="18" height="7" rx="0.5" fill="rgba(80,74,62,0.18)" stroke="rgba(130,120,100,0.22)" stroke-width="0.4"/>';
-        s += '<rect x="50" y="88" width="18" height="7" rx="0.5" fill="rgba(80,74,62,0.18)" stroke="rgba(130,120,100,0.22)" stroke-width="0.4"/>';
-        // Column caps — wider stone blocks at top (imposts)
-        s += '<rect x="2" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.24)" stroke="rgba(150,140,118,0.30)" stroke-width="0.5"/>';
-        s += '<rect x="50" y="35" width="18" height="4" rx="0.5" fill="rgba(100,92,78,0.24)" stroke="rgba(150,140,118,0.30)" stroke-width="0.5"/>';
-        // Cream highlights on stone tops — caught light
-        s += '<line x1="3" y1="35.3" x2="19" y2="35.3" stroke="#f5ecd6" stroke-width="0.4" opacity="0.45"/>';
-        s += '<line x1="51" y1="35.3" x2="67" y2="35.3" stroke="#f5ecd6" stroke-width="0.4" opacity="0.45"/>';
-        s += '<line x1="3" y1="88.3" x2="19" y2="88.3" stroke="#f5ecd6" stroke-width="0.35" opacity="0.30"/>';
-        s += '<line x1="51" y1="88.3" x2="67" y2="88.3" stroke="#f5ecd6" stroke-width="0.35" opacity="0.30"/>';
-        // ── POINTED GOTHIC ARCH — the castle gate ──
-        s += '<path d="M18,38 Q18,12 35,6 Q52,12 52,38" fill="none" stroke="rgba(160,148,126,0.38)" stroke-width="2.8" stroke-linecap="round"/>';
-        // Inner arch — slightly narrower, gives depth
-        s += '<path d="M20,38 Q20,15 35,9 Q50,15 50,38" fill="none" stroke="rgba(120,110,92,0.24)" stroke-width="1.2" stroke-linecap="round"/>';
-        // Keystone at apex — trapezoidal
-        s += '<path d="M33,6 L35,3.5 L37,6 L36.5,9 L33.5,9 Z" fill="rgba(140,130,110,0.28)" stroke="rgba(160,148,126,0.32)" stroke-width="0.4"/>';
-        // Cream highlight on keystone — top edge catches the light
-        s += '<path d="M33.4,5.6 L35,3.7 L36.6,5.6" fill="none" stroke="#f5ecd6" stroke-width="0.35" stroke-linecap="round" opacity="0.55"/>';
-        // Keystone face detail
-        s += '<path d="M34.5,5 L35.5,5 M34.2,7 L35.8,7" fill="none" stroke="rgba(90,82,70,0.18)" stroke-width="0.3"/>';
-        // ── STONE BLOCK MORTAR LINES — left column ──
-        s += '<path d="M5,42 L17,42 M5,48 L17,48 M5,54 L17,54 M5,60 L17,60 M5,66 L17,66 M5,72 L17,72 M5,78 L17,78 M5,84 L17,84" fill="none" stroke="rgba(60,54,44,0.20)" stroke-width="0.45"/>';
-        // Vertical mortar — staggered brickwork
-        s += '<path d="M11,38 L11,42 M7,42 L7,48 M12,48 L12,54 M8,54 L8,60 M11,60 L11,66 M7,66 L7,72 M12,72 L12,78 M8,78 L8,84 M11,84 L11,88" fill="none" stroke="rgba(60,54,44,0.14)" stroke-width="0.35"/>';
-        // Stone surface texture — subtle scratch marks on left column
-        s += '<path d="M6,45 L9,44.5 M13,51 L15,52 M7,58 L10,57.5 M14,65 L16,64.5 M6,74 L8,73.5 M12,81 L15,81.5" fill="none" stroke="rgba(130,120,100,0.08)" stroke-width="0.25"/>';
-        // ── STONE BLOCK MORTAR LINES — right column ──
-        s += '<path d="M53,42 L65,42 M53,48 L65,48 M53,54 L65,54 M53,60 L65,60 M53,66 L65,66 M53,72 L65,72 M53,78 L65,78 M53,84 L65,84" fill="none" stroke="rgba(60,54,44,0.20)" stroke-width="0.45"/>';
-        s += '<path d="M59,38 L59,42 M55,42 L55,48 M60,48 L60,54 M56,54 L56,60 M59,60 L59,66 M55,66 L55,72 M60,72 L60,78 M56,78 L56,84 M59,84 L59,88" fill="none" stroke="rgba(60,54,44,0.14)" stroke-width="0.35"/>';
-        // Stone surface texture — right column
-        s += '<path d="M54,44 L57,44.5 M61,52 L63,51 M55,59 L57,58.5 M62,67 L64,66.5 M54,75 L56,74.5 M61,82 L63,82.5" fill="none" stroke="rgba(130,120,100,0.08)" stroke-width="0.25"/>';
-        // ── ARCH VOUSSOIR LINES — wedge-shaped stones in the arch ──
-        s += '<path d="M21,35 L23,17 M26,13 L28,29 M30,10 L31,25 M35,8 L35,22 M39,10 L38,25 M43,13 L41,29 M47,17 L45,33 M49,35 L50,22" fill="none" stroke="rgba(70,64,54,0.16)" stroke-width="0.4"/>';
-        // Arch stone surface texture
-        s += '<path d="M24,20 L26,19 M32,12 L34,13 M38,12 L40,11 M44,19 L46,20" fill="none" stroke="rgba(130,120,100,0.07)" stroke-width="0.2"/>';
-        // ── IRON HINGES — two on each side ──
-        s += '<rect x="17" y="52" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
-        s += '<circle cx="18" cy="52.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
-        s += '<rect x="17" y="75" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
-        s += '<circle cx="18" cy="75.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
-        s += '<rect x="50.5" y="52" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
-        s += '<circle cx="52" cy="52.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
-        s += '<rect x="50.5" y="75" width="2.5" height="1" rx="0.2" fill="rgba(50,45,40,0.25)"/>';
-        s += '<circle cx="52" cy="75.5" r="0.4" fill="rgba(40,35,30,0.30)"/>';
-        // Torch glow on inner column edges
-        s += '<line x1="18" y1="48" x2="18" y2="92" stroke="rgba(255,200,100,0.06)" stroke-width="1.8"><animate attributeName="opacity" values="0.04;0.12;0.04" dur="4s" repeatCount="indefinite"/></line>';
-        s += '<line x1="52" y1="48" x2="52" y2="92" stroke="rgba(255,200,100,0.06)" stroke-width="1.8"><animate attributeName="opacity" values="0.04;0.12;0.04" dur="4s" begin="2s" repeatCount="indefinite"/></line>';
+        s += '<linearGradient id="auraTCLightFA'+uid+'" x1="0.5" y1="0" x2="0.5" y2="1">';
+        s += '<stop offset="0%" stop-color="rgba(255,248,224,0.55)"/>';
+        s += '<stop offset="35%" stop-color="rgba(220,232,248,0.32)"/>';
+        s += '<stop offset="100%" stop-color="rgba(150,170,210,0.10)"/>';
+        s += '</linearGradient>';
+        s += '<linearGradient id="auraTCLightFB'+uid+'" x1="0" y1="0" x2="1" y2="1">';
+        s += '<stop offset="0%" stop-color="rgba(200,222,235,0.32)"/>';
+        s += '<stop offset="50%" stop-color="rgba(140,168,200,0.18)"/>';
+        s += '<stop offset="100%" stop-color="rgba(110,130,170,0.06)"/>';
+        s += '</linearGradient>';
+        s += '<linearGradient id="auraTCLightFC'+uid+'" x1="0" y1="0" x2="0" y2="1">';
+        s += '<stop offset="0%" stop-color="rgba(110,118,160,0.20)"/>';
+        s += '<stop offset="100%" stop-color="rgba(80,86,128,0.04)"/>';
+        s += '</linearGradient>';
+        s += '<linearGradient id="auraTCShaft'+uid+'" x1="0" y1="0" x2="1" y2="0">';
+        s += '<stop offset="0%" stop-color="rgba(220,232,248,0)"/>';
+        s += '<stop offset="50%" stop-color="rgba(245,248,255,0.20)"/>';
+        s += '<stop offset="100%" stop-color="rgba(220,232,248,0)"/>';
+        s += '</linearGradient>';
+        s += '</defs>';
+        s += '<g opacity="0.62">';
+        s += '<circle cx="35" cy="42" r="24" fill="url(#auraTCHalo'+uid+')"><animate attributeName="opacity" values="0.55;0.95;0.55" dur="8s" repeatCount="indefinite"/></circle>';
+        s += '<g transform="translate(35,42)" opacity="0.55">';
+        s += '<animateTransform attributeName="transform" type="rotate" values="0,0,0;-360,0,0" dur="48s" repeatCount="indefinite" additive="sum"/>';
+        s += '<rect x="-32" y="-0.55" width="64" height="1.1" fill="url(#auraTCShaft'+uid+')"/>';
+        s += '<rect x="-32" y="-0.45" width="64" height="0.9" fill="url(#auraTCShaft'+uid+')" transform="rotate(45)"/>';
+        s += '<rect x="-32" y="-0.50" width="64" height="1.0" fill="url(#auraTCShaft'+uid+')" transform="rotate(90)"/>';
+        s += '<rect x="-32" y="-0.40" width="64" height="0.8" fill="url(#auraTCShaft'+uid+')" transform="rotate(135)"/>';
+        s += '</g>';
+        s += '<g transform="translate(35,42)">';
+        s += '<animateTransform attributeName="transform" type="rotate" values="0,0,0;360,0,0" dur="36s" repeatCount="indefinite" additive="sum"/>';
+        s += '<animateTransform attributeName="transform" type="scale" values="1;1.06;1" dur="8s" repeatCount="indefinite" additive="sum"/>';
+        s += '<animate attributeName="opacity" values="0.78;1;0.78" dur="8s" repeatCount="indefinite"/>';
+        s += '<path d="M0,-15 L7.5,0 L0,7 Z" fill="url(#auraTCLightFC'+uid+')" stroke="rgba(120,140,180,0.22)" stroke-width="0.35"/>';
+        s += '<path d="M0,15 L7.5,0 L0,7 Z" fill="url(#auraTCLightFC'+uid+')" stroke="rgba(120,140,180,0.22)" stroke-width="0.35"/>';
+        s += '<path d="M0,-15 L-7.5,0 L0,7 Z" fill="url(#auraTCLightFA'+uid+')" stroke="rgba(220,232,248,0.45)" stroke-width="0.4"/>';
+        s += '<path d="M0,15 L-7.5,0 L0,7 Z" fill="url(#auraTCLightFB'+uid+')" stroke="rgba(200,222,235,0.40)" stroke-width="0.4"/>';
+        s += '<path d="M0,-15 L0,15" fill="none" stroke="rgba(245,248,255,0.50)" stroke-width="0.35" stroke-linecap="round"/>';
+        s += '<path d="M-7.5,0 L7.5,0" fill="none" stroke="rgba(220,232,248,0.30)" stroke-width="0.30" stroke-linecap="round"/>';
+        s += '<circle cx="0" cy="-15" r="0.95" fill="#fff8e0"><animate attributeName="opacity" values="0.65;1;0.65" dur="4s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="0" cy="-15" r="0.45" fill="#ffffff"/>';
+        s += '<circle cx="0" cy="15" r="0.7" fill="#f5ecd6" opacity="0.55"/>';
+        s += '<circle cx="-7.5" cy="0" r="0.55" fill="#f5ecd6" opacity="0.50"/>';
+        s += '<circle cx="7.5" cy="0" r="0.50" fill="rgba(200,222,235,0.55)"/>';
+        s += '<circle cx="0" cy="0" r="2.4" fill="rgba(245,248,255,0.18)"/>';
+        s += '<circle cx="0" cy="0" r="1.2" fill="rgba(255,255,255,0.45)"><animate attributeName="opacity" values="0.30;0.65;0.30" dur="4s" repeatCount="indefinite"/></circle>';
+        s += '<circle cx="0" cy="0" r="0.5" fill="#fff8e0"/>';
+        s += '</g>';
+        var _tcSeed = [t.pot%9, t.stem%9, (t.leafType||0)%9, (t.flower||0)%9, t.aura%9, t.base%9, t.leafCount%9, (t.mythic||0)%9];
+        for (var _tc = 0; _tc < 8; _tc++) {
+          var _tcAng = (_tc * 45) * Math.PI / 180;
+          var _tcStartR = 20 + (_tcSeed[_tc] * 1.4);
+          var _tcSx = (35 + Math.cos(_tcAng) * _tcStartR).toFixed(1);
+          var _tcSy = (42 + Math.sin(_tcAng) * _tcStartR).toFixed(1);
+          var _tcMx = (35 + Math.cos(_tcAng) * 6).toFixed(1);
+          var _tcMy = (42 + Math.sin(_tcAng) * 6).toFixed(1);
+          var _tcDur = (6 + (_tcSeed[(_tc+2)%8] * 0.6)).toFixed(1);
+          var _tcDelay = (_tc * 0.85).toFixed(2);
+          var _tcR = (0.30 + (_tcSeed[_tc] % 3) * 0.10).toFixed(2);
+          var _tcFill = (_tc % 3 === 0) ? '#fff8e0' : 'rgba(220,232,248,0.85)';
+          s += '<circle cx="'+_tcSx+'" cy="'+_tcSy+'" r="'+_tcR+'" fill="'+_tcFill+'" opacity="0">';
+          s += '<animate attributeName="cx" values="'+_tcSx+';'+_tcMx+';35" dur="'+_tcDur+'s" begin="'+_tcDelay+'s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="cy" values="'+_tcSy+';'+_tcMy+';42" dur="'+_tcDur+'s" begin="'+_tcDelay+'s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0;0.55;0.75;0" keyTimes="0;0.25;0.7;1" dur="'+_tcDur+'s" begin="'+_tcDelay+'s" repeatCount="indefinite"/>';
+          s += '</circle>';
+        }
         s += '</g>';
         break;
       case 12: // Moon — crescent glow upper-right with stars
@@ -31233,19 +31356,69 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M48.5,18.5 L48.8,19.2 L49.5,19.5 L48.8,19.8 L48.5,20.5 L48.2,19.8 L47.5,19.5 L48.2,19.2 Z" fill="rgba(245,248,255,0.25)"><animate attributeName="opacity" values="0.12;0.28;0.12" dur="9s" repeatCount="indefinite"/></path>';
         s += '</g>';
         break;
-      case 13: // Rings — planetary ellipses orbiting plant
-        s += '<g opacity="0.38">';
-        s += '<animateTransform attributeName="transform" type="rotate" values="0 35 40;360 35 40" dur="18s" repeatCount="indefinite"/>';
-        s += '<ellipse cx="35" cy="40" rx="24" ry="8.5" fill="none" stroke="rgba(188,196,210,0.35)" stroke-width="0.8" stroke-linecap="round"/>';
-        s += '<ellipse cx="35" cy="40" rx="19" ry="6.2" fill="none" stroke="rgba(214,188,150,0.30)" stroke-width="0.65" stroke-linecap="round" transform="rotate(-14 35 40)"/>';
-        s += '<ellipse cx="35" cy="40" rx="27" ry="10.5" fill="none" stroke="rgba(160,176,194,0.25)" stroke-width="0.6" stroke-linecap="round" transform="rotate(11 35 40)"/>';
-        s += '<path d="M11,40 Q35,31.5 59,40" fill="none" stroke="rgba(245,248,255,0.16)" stroke-width="0.5" stroke-linecap="round"/>';
-        s += '<path d="M16,42 Q35,35.8 54,42" fill="none" stroke="rgba(255,233,200,0.14)" stroke-width="0.4" stroke-linecap="round"/>';
-        s += '<path d="M22,46 Q35,42.8 48,46" fill="none" stroke="rgba(220,230,242,0.12)" stroke-width="0.35" stroke-linecap="round"/>';
-        // Trailing light spots — bright pickups orbiting on each ring
-        s += '<circle cx="59" cy="40" r="0.9" fill="#fff8e0" opacity="0.7"><animateMotion path="M0,0 a24,8.5 0 1,1 -0.001,0" dur="11s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.4;0.85;0.4" dur="3s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="54" cy="40" r="0.7" fill="#f5ecd6" opacity="0.6"><animateMotion path="M0,0 a19,6.2 0 1,1 -0.001,0" dur="13s" repeatCount="indefinite"/></circle>';
-        s += '<circle cx="62" cy="40" r="0.8" fill="rgba(255,233,200,0.7)"><animateMotion path="M0,0 a27,10.5 0 1,1 -0.001,0" dur="15s" repeatCount="indefinite"/></circle>';
+      case 13: // Rings — Saturnine orbital plane: tilted gradient rings + cosmic dust + traveling moon (Stephen 2026-05-01 PART 4 spruce-up)
+        var _orRingCt = 5 + (t.pot % 3);
+        s += '<linearGradient id="auraOrbStroke'+uid+'" x1="0" y1="0" x2="1" y2="0">';
+        s += '<stop offset="0%" stop-color="rgba(74,82,108,0.10)"/>';
+        s += '<stop offset="22%" stop-color="rgba(138,156,196,0.42)"/>';
+        s += '<stop offset="55%" stop-color="rgba(245,236,214,0.78)"/>';
+        s += '<stop offset="78%" stop-color="rgba(168,142,200,0.40)"/>';
+        s += '<stop offset="100%" stop-color="rgba(60,52,90,0.08)"/>';
+        s += '</linearGradient>';
+        s += '<linearGradient id="auraOrbBounce'+uid+'" x1="0.1" y1="1" x2="0.9" y2="0">';
+        s += '<stop offset="0%" stop-color="rgba(255,244,214,0.55)"/>';
+        s += '<stop offset="40%" stop-color="rgba(220,228,244,0.20)"/>';
+        s += '<stop offset="100%" stop-color="rgba(160,176,200,0)"/>';
+        s += '</linearGradient>';
+        s += '<radialGradient id="auraOrbCore'+uid+'" cx="0.5" cy="0.5" r="0.5">';
+        s += '<stop offset="0%" stop-color="rgba(255,236,200,0.42)"/>';
+        s += '<stop offset="35%" stop-color="rgba(190,170,210,0.18)"/>';
+        s += '<stop offset="70%" stop-color="rgba(120,138,180,0.08)"/>';
+        s += '<stop offset="100%" stop-color="rgba(60,52,90,0)"/>';
+        s += '</radialGradient>';
+        s += '<g opacity="0.62">';
+        s += '<circle cx="35" cy="40" r="9" fill="url(#auraOrbCore'+uid+')">';
+        s += '<animate attributeName="opacity" values="0.65;0.95;0.65" dur="7s" repeatCount="indefinite"/>';
+        s += '</circle>';
+        s += '<circle cx="35" cy="40" r="3.2" fill="rgba(245,236,214,0.30)"/>';
+        s += '<circle cx="35" cy="40" r="1.4" fill="#fff8e0" opacity="0.55"><animate attributeName="opacity" values="0.4;0.7;0.4" dur="4.5s" repeatCount="indefinite"/></circle>';
+        var _orTilts  = [-22, 8, 35, -12, 18, -30, 45];
+        var _orRX     = [27, 22, 30, 18, 25, 14, 33];
+        var _orRY     = [9.5, 6.5, 11, 5.2, 8, 4, 12];
+        var _orDurs   = [17, 11, 20, 8, 14, 9, 18];
+        var _orWid    = [0.85, 0.65, 0.95, 0.55, 0.75, 0.5, 1.0];
+        var _orOp     = [0.78, 0.62, 0.55, 0.50, 0.68, 0.45, 0.50];
+        for (var _orI = 0; _orI < _orRingCt; _orI++) {
+          var _orT = _orTilts[_orI], _orRx = _orRX[_orI], _orRy = _orRY[_orI];
+          var _orDur = _orDurs[_orI], _orW = _orWid[_orI], _orO = _orOp[_orI];
+          var _orDir = (_orI % 2 === 0) ? 360 : -360;
+          s += '<g transform="rotate('+_orT+' 35 40)">';
+          s += '<animateTransform attributeName="transform" type="rotate" values="'+_orT+' 35 40;'+(_orT + _orDir)+' 35 40" dur="'+_orDur+'s" repeatCount="indefinite"/>';
+          s += '<ellipse cx="35" cy="40" rx="'+_orRx+'" ry="'+_orRy+'" fill="none" stroke="url(#auraOrbStroke'+uid+')" stroke-width="'+_orW+'" stroke-linecap="round" opacity="'+_orO+'"/>';
+          s += '<path d="M'+(35-_orRx*0.92).toFixed(1)+','+(40+_orRy*0.55).toFixed(1)+' A'+_orRx+','+_orRy+' 0 0,1 '+(35-_orRx*0.20).toFixed(1)+','+(40+_orRy*0.98).toFixed(1)+'" fill="none" stroke="url(#auraOrbBounce'+uid+')" stroke-width="'+(_orW*0.7).toFixed(2)+'" stroke-linecap="round" opacity="0.85"/>';
+          var _orDustDur = (_orDur * 0.85).toFixed(1);
+          var _orPath = 'M'+(35+_orRx)+',40 A'+_orRx+','+_orRy+' 0 1,1 '+(35-_orRx)+',40 A'+_orRx+','+_orRy+' 0 1,1 '+(35+_orRx)+',40';
+          for (var _orD = 0; _orD < 3; _orD++) {
+            var _orDelay = (_orD * (_orDur / 3)).toFixed(1);
+            var _orR = (0.35 + ((_orI + _orD) % 3) * 0.15).toFixed(2);
+            var _orFill = (_orD === 0) ? 'rgba(245,236,214,0.85)' : ((_orD === 1) ? 'rgba(190,210,240,0.70)' : 'rgba(200,180,225,0.65)');
+            s += '<circle r="'+_orR+'" fill="'+_orFill+'">';
+            s += '<animateMotion dur="'+_orDustDur+'s" begin="-'+_orDelay+'s" repeatCount="indefinite" path="'+_orPath+'"/>';
+            s += '</circle>';
+          }
+          s += '</g>';
+        }
+        var _orMoonRx = _orRX[0], _orMoonRy = _orRY[0], _orMoonT = _orTilts[0];
+        var _orMoonPath = 'M'+(35+_orMoonRx)+',40 A'+_orMoonRx+','+_orMoonRy+' 0 1,1 '+(35-_orMoonRx)+',40 A'+_orMoonRx+','+_orMoonRy+' 0 1,1 '+(35+_orMoonRx)+',40';
+        s += '<g transform="rotate('+_orMoonT+' 35 40)">';
+        s += '<circle r="2.2" fill="rgba(255,244,214,0.22)">';
+        s += '<animateMotion dur="26s" repeatCount="indefinite" path="'+_orMoonPath+'"/>';
+        s += '</circle>';
+        s += '<circle r="1.05" fill="#fff8e0">';
+        s += '<animate attributeName="opacity" values="0.85;1;0.85" dur="3.2s" repeatCount="indefinite"/>';
+        s += '<animateMotion dur="26s" repeatCount="indefinite" path="'+_orMoonPath+'"/>';
+        s += '</circle>';
+        s += '</g>';
         s += '</g>';
         break;
       case 14: // Nordic Runes — Elder Futhark glyphs rising from soil, ancient and mystical
@@ -31359,37 +31532,85 @@ document.addEventListener('keydown', function(e) {
         s += '</g>';
         s += '</g>';
         break;
-      case 18: // Poison Miasma — drifting toxic clouds
+      case 18: // Poison Miasma — toxic spore drift + faint oxidation veil + acid weep streaks (Stephen 2026-05-01 PART 4: replaces blob clouds)
         (function(){
-          var miasmaSeeds=[0.21,0.55,0.38,0.72,0.14,0.87];
-          var miasmaSeeds2=[0.44,0.66,0.29,0.81,0.52,0.37];
-          // Color palette varies per cloud — green / yellow-green / sickly olive
-          var miasmaCloud=['#9bc46b','#7ab356','#a8b94a','#7ab356','#94c25a','#a3b540'];
-          var miasmaEdge=['rgba(40,30,5,0.40)','rgba(40,20,5,0.45)','rgba(45,35,8,0.42)','rgba(40,20,5,0.45)','rgba(38,28,5,0.38)','rgba(45,35,8,0.42)'];
-          for(var ppp=0;ppp<6;ppp++){
-            var ppx=(20+miasmaSeeds[ppp]*60).toFixed(1);
-            var ppy=(20+miasmaSeeds2[ppp]*70).toFixed(1);
-            var ppr=(3+miasmaSeeds[ppp]*6).toFixed(1);
-            var pdur=(5+ppp*1.3).toFixed(1);
-            var pdx=(miasmaSeeds[(ppp+2)%6]*6-3).toFixed(1);
-            var pdy=(miasmaSeeds2[(ppp+1)%6]*4-2).toFixed(1);
-            // Warm-shifted dark edge — toxic shadow halo
-            s += '<circle cx="'+ppx+'" cy="'+ppy+'" r="'+(parseFloat(ppr)*1.18).toFixed(1)+'" fill="none" stroke="'+miasmaEdge[ppp]+'" stroke-width="0.6" opacity="0.7">';
-            s += '<animate attributeName="cx" values="'+ppx+';'+(parseFloat(ppx)+parseFloat(pdx)).toFixed(1)+';'+ppx+'" dur="'+pdur+'s" repeatCount="indefinite"/>';
-            s += '<animate attributeName="cy" values="'+ppy+';'+(parseFloat(ppy)+parseFloat(pdy)).toFixed(1)+';'+ppy+'" dur="'+pdur+'s" repeatCount="indefinite"/>';
-            s += '<animate attributeName="r" values="'+(parseFloat(ppr)*1.18).toFixed(1)+';'+(parseFloat(ppr)*1.55).toFixed(1)+';'+(parseFloat(ppr)*1.18).toFixed(1)+'" dur="'+(parseFloat(pdur)*0.7).toFixed(1)+'s" repeatCount="indefinite"/>';
+          var pSeed = (uid && uid.length) ? (uid.charCodeAt(0) + uid.charCodeAt(uid.length-1)) : 17;
+          s += '<defs>';
+          s += '<linearGradient id="auraTox'+uid+'A" x1="0" y1="0" x2="1" y2="0">';
+          s += '<stop offset="0%" stop-color="rgba(155,200,80,0)"/>';
+          s += '<stop offset="50%" stop-color="rgba(155,200,80,0.10)"/>';
+          s += '<stop offset="100%" stop-color="rgba(155,200,80,0)"/>';
+          s += '</linearGradient>';
+          s += '<linearGradient id="auraTox'+uid+'B" x1="0" y1="0" x2="1" y2="0">';
+          s += '<stop offset="0%" stop-color="rgba(200,200,80,0)"/>';
+          s += '<stop offset="50%" stop-color="rgba(200,200,80,0.09)"/>';
+          s += '<stop offset="100%" stop-color="rgba(200,200,80,0)"/>';
+          s += '</linearGradient>';
+          s += '<linearGradient id="auraTox'+uid+'C" x1="0" y1="0" x2="1" y2="0">';
+          s += '<stop offset="0%" stop-color="rgba(138,76,168,0)"/>';
+          s += '<stop offset="50%" stop-color="rgba(138,76,168,0.07)"/>';
+          s += '<stop offset="100%" stop-color="rgba(138,76,168,0)"/>';
+          s += '</linearGradient>';
+          s += '</defs>';
+          s += '<rect x="-20" y="22" width="110" height="14" fill="url(#auraTox'+uid+'A)" opacity="0.85">';
+          s += '<animateTransform attributeName="transform" type="translate" values="-8,0;8,0;-8,0" dur="13s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.55;0.95;0.55" dur="9s" repeatCount="indefinite"/>';
+          s += '</rect>';
+          s += '<rect x="-20" y="46" width="110" height="12" fill="url(#auraTox'+uid+'B)" opacity="0.85">';
+          s += '<animateTransform attributeName="transform" type="translate" values="6,0;-6,0;6,0" dur="15s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.50;0.90;0.50" dur="10s" repeatCount="indefinite"/>';
+          s += '</rect>';
+          s += '<rect x="-20" y="64" width="110" height="10" fill="url(#auraTox'+uid+'C)" opacity="0.75">';
+          s += '<animateTransform attributeName="transform" type="translate" values="-5,0;5,0;-5,0" dur="17s" repeatCount="indefinite"/>';
+          s += '<animate attributeName="opacity" values="0.45;0.80;0.45" dur="11s" repeatCount="indefinite"/>';
+          s += '</rect>';
+          s += '<g>';
+          var sporeFill = ['#9bc850','#7da838','#c8c850','#b8b840','#9bc850','#5a8020'];
+          var sporeRing = ['rgba(40,30,5,0.42)','rgba(40,20,5,0.48)','rgba(45,35,8,0.45)'];
+          for (var sp = 0; sp < 36; sp++) {
+            var sx = ((pSeed * 7 + sp * 13.7) % 70).toFixed(1);
+            var sy = (8 + ((pSeed * 11 + sp * 19.3) % 80)).toFixed(1);
+            var sr = (0.35 + (sp % 5) * 0.18).toFixed(2);
+            var sop = (0.40 + (sp % 4) * 0.12).toFixed(2);
+            var sdrx = (((sp % 7) - 3) * 0.8).toFixed(1);
+            var sdry = (((sp % 5) - 2) * 0.6).toFixed(1);
+            var sdur = (6 + (sp % 6) * 1.4).toFixed(1);
+            var sdelay = ((sp * 0.31) % 5).toFixed(1);
+            var sfill = sporeFill[sp % 6];
+            if (sp % 3 === 0) {
+              s += '<circle cx="'+sx+'" cy="'+sy+'" r="'+(parseFloat(sr)+0.25).toFixed(2)+'" fill="none" stroke="'+sporeRing[sp%3]+'" stroke-width="0.18" opacity="0.55">';
+              s += '<animateTransform attributeName="transform" type="translate" values="0,0;'+sdrx+','+sdry+';0,0" dur="'+sdur+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
+              s += '</circle>';
+            }
+            s += '<circle cx="'+sx+'" cy="'+sy+'" r="'+sr+'" fill="'+sfill+'" opacity="'+sop+'">';
+            s += '<animateTransform attributeName="transform" type="translate" values="0,0;'+sdrx+','+sdry+';0,0" dur="'+sdur+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
+            s += '<animate attributeName="opacity" values="'+sop+';'+(parseFloat(sop)*0.45).toFixed(2)+';'+sop+'" dur="'+(parseFloat(sdur)*0.55).toFixed(1)+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
             s += '</circle>';
-            // Main cloud — drifts and pulses
-            s += '<circle cx="'+ppx+'" cy="'+ppy+'" r="'+ppr+'" fill="'+miasmaCloud[ppp]+'" opacity="0.28">';
-            s += '<animate attributeName="cx" values="'+ppx+';'+(parseFloat(ppx)+parseFloat(pdx)).toFixed(1)+';'+ppx+'" dur="'+pdur+'s" repeatCount="indefinite"/>';
-            s += '<animate attributeName="cy" values="'+ppy+';'+(parseFloat(ppy)+parseFloat(pdy)).toFixed(1)+';'+ppy+'" dur="'+pdur+'s" repeatCount="indefinite"/>';
-            s += '<animate attributeName="r" values="'+ppr+';'+(parseFloat(ppr)*1.3).toFixed(1)+';'+ppr+'" dur="'+(parseFloat(pdur)*0.7).toFixed(1)+'s" repeatCount="indefinite"/>';
-            s += '<animate attributeName="opacity" values="0.25;0.40;0.25" dur="'+(parseFloat(pdur)*0.8).toFixed(1)+'s" repeatCount="indefinite"/>';
-            s += '</circle>';
-            // Inner bright core — sickly cream-yellow, not pure white
-            s += '<circle cx="'+(parseFloat(ppx)+1)+'" cy="'+(parseFloat(ppy)-1)+'" r="'+(parseFloat(ppr)*0.3).toFixed(1)+'" fill="#f5ecd6" opacity="0.5">';
-            s += '<animate attributeName="opacity" values="0.5;0.2;0.5" dur="'+(parseFloat(pdur)*0.6).toFixed(1)+'s" repeatCount="indefinite"/>';
-            s += '</circle>';
+            if (sp % 5 === 0) {
+              s += '<circle cx="'+sx+'" cy="'+sy+'" r="'+(parseFloat(sr)*0.45).toFixed(2)+'" fill="#f5ecd6" opacity="0.55">';
+              s += '<animateTransform attributeName="transform" type="translate" values="0,0;'+sdrx+','+sdry+';0,0" dur="'+sdur+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
+              s += '<animate attributeName="opacity" values="0.55;0.20;0.55" dur="'+(parseFloat(sdur)*0.4).toFixed(1)+'s" begin="'+sdelay+'s" repeatCount="indefinite"/>';
+              s += '</circle>';
+            }
+          }
+          s += '</g>';
+          var weepX = [62, 66, 58];
+          var weepDur = [7.5, 9.2, 8.4];
+          var weepDelay = [0, 2.6, 4.1];
+          var weepLen = [14, 11, 13];
+          for (var wp = 0; wp < 3; wp++) {
+            var wx = weepX[wp];
+            var wd = weepDur[wp];
+            var wdl = weepDelay[wp];
+            var wln = weepLen[wp];
+            s += '<g opacity="0">';
+            s += '<path d="M'+wx+',0 L'+(wx-0.4)+','+wln+' L'+(wx+0.4)+','+wln+' Z" fill="#9bc850" opacity="0.55"/>';
+            s += '<path d="M'+wx+',2 L'+(wx-0.18)+','+(wln-1)+' L'+(wx+0.18)+','+(wln-1)+' Z" fill="#c8c850" opacity="0.65"/>';
+            s += '<circle cx="'+wx+'" cy="'+wln+'" r="0.85" fill="#9bc850" opacity="0.85"/>';
+            s += '<circle cx="'+wx+'" cy="'+wln+'" r="0.45" fill="#f5ecd6" opacity="0.7"/>';
+            s += '<animateTransform attributeName="transform" type="translate" values="0,-'+wln+';0,'+(95-wln)+'" dur="'+wd+'s" begin="'+wdl+'s" repeatCount="indefinite"/>';
+            s += '<animate attributeName="opacity" values="0;1;0.9;0" keyTimes="0;0.15;0.85;1" dur="'+wd+'s" begin="'+wdl+'s" repeatCount="indefinite"/>';
+            s += '</g>';
           }
         })();
         break;
@@ -35777,7 +35998,8 @@ document.addEventListener('keydown', function(e) {
         // mushroom cap. The red-and-white toadstool is the universal symbol
         // of fairy tales and woodland magic. Two dot eyes peer shyly from
         // beneath the cap. Faint luminous glow says "this is alive."
-        s += '<g opacity="0.9" transform="translate(-5,0) translate(30,88) scale(1.8) translate(-30,-88)">';
+        // Stephen 2026-05-01 PART 4: moved further LEFT (-5 → -12).
+        s += '<g opacity="0.9" transform="translate(-12,0) translate(30,88) scale(1.8) translate(-30,-88)">';
         s += '<animateTransform attributeName="transform" type="translate" values="0,0;0,-0.4;0,0;0.15,0;0,0" dur="4s" repeatCount="indefinite"/>';
         // ── WILL-O-WISP STYLE GLOW — white shades ──
         // Outer fog — soft white drifting shapes
@@ -35896,7 +36118,8 @@ document.addEventListener('keydown', function(e) {
       case 75: // Common Raven — realistic, grey body, black outline (Rare)
         // Reference: grey body, darker wing, lighter legs, white eye,
         // curved pointed beak, segmented legs with knobby knees, pointy claws.
-        s += '<g opacity="1" transform="translate(46,8) scale(1.35) translate(-46,-77)">';
+        // Stephen 2026-05-01 PART 4: moved RIGHT and UP (translate(46,8) → (54,-2)).
+        s += '<g opacity="1" transform="translate(54,-2) scale(1.35) translate(-46,-77)">';
         s += '<animateTransform attributeName="transform" type="rotate" values="-1 46 78;2 46 78;-1 46 78" dur="6s" repeatCount="indefinite"/>';
         // Shadow — warm-shifted AO 3-stack
         s += '<ellipse cx="52" cy="81.7" rx="4.0" ry="0.4" fill="rgba(40,20,5,0.12)"/>';
