@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.35';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.36';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -34537,19 +34537,35 @@ document.addEventListener('keydown', function(e) {
       }
       return false;
     }
-    // ── FIRST-MINT GRADE CAP (Stephen 2026-04-26 ruling) ──
-    // First-mints (no breed lineage) are capped at Rare with a 50/35/15
+    // ── FIRST-TWO-MINT GRADE CAP (Stephen 2026-04-26 + 2026-05-01) ──
+    // First two non-cross mints are capped at Rare with a 50/35/15
     // distribution: Common 50%, Uncommon 35%, Rare 15%. Higher grades
     // (Epic, Legendary, Mythic, Cosmic) are reachable ONLY through
-    // breeding. Implementation: if the original hash would grade higher
-    // than the rolled target, re-roll the SEED-zone bytes (positions
-    // 32-63) until a candidate matches. Mendelian zone (0-31) stays
-    // intact so the player's attention still drives the visible plant
-    // (pot/stem/leaf/flower/aura). Substrate, companion, mythic byte,
-    // and mutation byte are in the SEED zone and get adjusted to fit
-    // the target grade.
+    // breeding for the first two mints.
+    //
+    // Stephen 2026-05-01 anti-bot ruling: cap extends to mint #2 because
+    // bot farms could spin up 1000 accounts and rely on the 0.01% Cosmic
+    // odds on the second mint (where the first was capped). Two free
+    // Rare-or-below plants per fresh account; bot farms can't mass-fish
+    // for Cosmics from signups. Third onwards rolls normally.
+    //
+    // Implementation: if the hash would grade higher than the rolled
+    // target, re-roll the SEED-zone bytes (32-63) until a candidate
+    // matches. Mendelian zone (0-31) stays intact so the player's
+    // attention still drives the visible plant (pot/stem/leaf/flower/
+    // aura). Substrate, companion, mythic byte, and mutation byte are
+    // in the SEED zone and get adjusted to fit the target grade.
+    //
+    // Counting: only origin === 'bloom' entries (Sunbeam-mints) count.
+    // Gift plant (origin='gift') uses its own cap logic at line ~63690.
+    // Cross plants (origin='cross') don't count toward the bot cap.
     var _isCross = !!(opts && opts.isCross);
-    if (!_isCross && window.getTerraGrade && window.hashToTraits) {
+    var _bloomCount = 0;
+    for (var _bci = 0; _bci < gh.length; _bci++) {
+      if (gh[_bci] && gh[_bci].origin === 'bloom') _bloomCount++;
+    }
+    var _capActive = !_isCross && _bloomCount < 2 && window.getTerraGrade && window.hashToTraits;
+    if (_capActive) {
       try {
         var _roll = Math.random() * 100;
         var _target = _roll < 50 ? 'Common' : _roll < 85 ? 'Uncommon' : 'Rare';
@@ -66816,28 +66832,46 @@ function _resolveSlotResult(results) {
 'use strict';
 
 var WEATHER_KEY = 'lw_weather_active';
+// Stephen 2026-05-01 ruling on Almanac pricing \u2014 each weather has its own
+// currency profile that matches its lore + power level:
+//   Sun Flare:  pure SUNBEAMS \u2014 sunlight is sun, and a +3 dice bonus on
+//               wild uproots is strong for anyone trying to dominate a
+//               wild zone. Sunbeams are scarce (only earned via games),
+//               so this is a meaningful spend.
+//   Dawn Mist:  small SUNBEAMS + lots of DEW \u2014 mist is mostly water
+//               with a kiss of sun. The 2\u00d7 Dew effect pays itself back
+//               at heavy wild-plant counts, so it must cost real Sunbeams
+//               on top of Dew to prevent infinite-loop farming.
+//   Rain Calling: pure DEW \u2014 rain is water, water is dew. Cheapest
+//               option since the +12h lifespan is incremental, not
+//               game-shaping.
+//   Bloom Chorus: SUNBEAMS only \u2014 Stephen reads 12h of breed-cooldown
+//               halve as moderate value. Sunbeam-only price ties it to
+//               game play, not passive Dew accumulation. Future
+//               iteration: replace currency with "submit a plant to the
+//               chorus" mechanic (Stephen 2026-05-01 design note).
 var WEATHER_TYPES = {
   sun: {
     id: 'sun', name: 'Sun Flare', icon: '\u2600\ufe0f',
-    cost: 60, durationMs: 24 * 3600000,
+    cost: 0, costSunbeams: 30, durationMs: 24 * 3600000,
     desc: '+3 dice bonus on wild uproots for 24h',
     log: 'The grove glows golden. Your plants are emboldened.'
   },
   rain: {
     id: 'rain', name: 'Rain Calling', icon: '\ud83c\udf27\ufe0f',
-    cost: 50, durationMs: 0,  // instant effect
+    cost: 150, costSunbeams: 0, durationMs: 0,  // instant effect
     desc: '+12h lifespan to all your wild plants',
     log: 'Rain falls on your wild plants. Their roots drink deep.'
   },
   mist: {
     id: 'mist', name: 'Dawn Mist', icon: '\ud83c\udf2b\ufe0f',
-    cost: 75, durationMs: 12 * 3600000,
+    cost: 200, costSunbeams: 8, durationMs: 12 * 3600000,
     desc: '2x Dew from wild plants for 12h',
     log: 'Dawn mist envelops the grove. Dew flows doubly.'
   },
   bloom: {
     id: 'bloom', name: 'Bloom Chorus', icon: '\ud83c\udfb6',
-    cost: 90, durationMs: 12 * 3600000,
+    cost: 0, costSunbeams: 20, durationMs: 12 * 3600000,
     desc: 'Breed cooldowns halved for 12h',
     log: 'The grove hums with song. Your plants breed readily.'
   }
@@ -66889,26 +66923,33 @@ function _ensureWeatherModal() {
 function _renderWeatherOpts() {
   var opts = document.getElementById('w-opts'); if (!opts) return;
   var balance = typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0;
+  var sbBalance = typeof window.getTotalHashes === 'function' ? window.getTotalHashes() : 0;
   var active = window.getActiveWeather();
   var html = '';
   for (var key in WEATHER_TYPES) {
     var t = WEATHER_TYPES[key];
-    var affordable = balance >= t.cost;
+    var dewCost = t.cost || 0;
+    var sbCost = t.costSunbeams || 0;
+    var affordable = (dewCost === 0 || balance >= dewCost) && (sbCost === 0 || sbBalance >= sbCost);
     var disabled = !affordable ? ' disabled' : '';
     // Icon slot: try Jessie's weather plate if shipped, fall back to emoji.
     // Convention: assets/weather/weather-{sun,rain,wind,calm}.png
     var _wImgKey = (t.id === 'sun' ? 'sun' : t.id === 'rain' ? 'rain' : t.id === 'wind' ? 'wind' : t.id === 'calm' ? 'calm' : t.id);
     var _wIconHtml = '<img src="assets/weather/weather-' + _wImgKey + '.png" alt="" style="width:56px;height:56px;object-fit:contain;" onerror="this.outerHTML=&apos;<div class=&quot;w-opt-icon&quot;>' + t.icon + '</div>&apos;;">';
+    var costStr = '';
+    if (sbCost > 0) costStr += sbCost + ' \u2600\ufe0f';
+    if (sbCost > 0 && dewCost > 0) costStr += ' \u00b7 ';
+    if (dewCost > 0) costStr += dewCost + ' \ud83d\udca7';
     html += '<button class="w-opt"' + disabled + ' onclick="window._castWeather(\'' + t.id + '\')">' +
       _wIconHtml +
       '<div class="w-opt-name">' + t.name + '</div>' +
       '<div class="w-opt-desc">' + t.desc + '</div>' +
-      '<div class="w-opt-cost">' + t.cost + ' \ud83d\udca7</div>' +
+      '<div class="w-opt-cost">' + costStr + '</div>' +
     '</button>';
   }
   opts.innerHTML = html;
   var bEl = document.getElementById('w-balance');
-  if (bEl) bEl.textContent = 'Dew: ' + balance;
+  if (bEl) bEl.textContent = 'Dew: ' + balance + '  \u00b7  Sunbeams: ' + sbBalance;
   var aEl = document.getElementById('w-active');
   if (aEl) {
     if (active && WEATHER_TYPES[active.type]) {
@@ -66940,13 +66981,32 @@ window._closeWeather = function() {
 window._castWeather = function(typeId) {
   var t = WEATHER_TYPES[typeId];
   if (!t) return;
-  var balance = typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0;
-  if (balance < t.cost) {
-    if (window._toast) _toast('Need ' + t.cost + ' Dew. You have ' + balance + '.');
+  var dewCost = t.cost || 0;
+  var sbCost = t.costSunbeams || 0;
+  var dewBal = typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0;
+  var sbBal = typeof window.getTotalHashes === 'function' ? window.getTotalHashes() : 0;
+  // Pre-flight balance check on BOTH currencies — never half-spend.
+  if (dewCost > 0 && dewBal < dewCost) {
+    if (window._toast) _toast('Need ' + dewCost + ' Dew. You have ' + dewBal + '.');
     return;
   }
-  if (typeof window.spendDew === 'function') {
-    if (!window.spendDew(t.cost)) { if (window._toast) _toast('Not enough Dew.'); return; }
+  if (sbCost > 0 && sbBal < sbCost) {
+    if (window._toast) _toast('Need ' + sbCost + ' Sunbeams. You have ' + sbBal + '.');
+    return;
+  }
+  // Spend Sunbeams first; if Dew spend fails afterward, refund.
+  if (sbCost > 0 && typeof window.spendHashes === 'function') {
+    if (!window.spendHashes(sbCost)) { if (window._toast) _toast('Not enough Sunbeams.'); return; }
+  }
+  if (dewCost > 0 && typeof window.spendDew === 'function') {
+    if (!window.spendDew(dewCost)) {
+      // Refund Sunbeams atomically — never strand the player half-paid.
+      if (sbCost > 0 && typeof window.earnHashes === 'function') {
+        try { window.earnHashes(sbCost, 'weather_refund'); } catch(e){}
+      }
+      if (window._toast) _toast('Not enough Dew. Sunbeams refunded.');
+      return;
+    }
   }
   // Apply effect
   if (t.id === 'rain') {
@@ -80393,6 +80453,7 @@ window._lwClaimHerbarium = function(id){
     var bal = (window.getTotalDew && window.getTotalDew()) || 0;
     var active = (window.getActiveWeather && window.getActiveWeather()) || null;
     var WT = window.WEATHER_TYPES || {};
+    var sbBal = (window.getTotalHashes && window.getTotalHashes()) || 0;
     var html = '<div style="position:relative;width:100%;margin:0 0 0.6rem;border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);border:1px solid rgba(200,168,75,0.32);"><img src="assets/weather-book.png" alt="Weather Almanac" style="display:block;width:100%;height:auto;"></div>';
     html += '<div class="lwh-section-text">Summon weather across your grove.</div>';
     if (active && WT[active.type]){
@@ -80403,13 +80464,21 @@ window._lwClaimHerbarium = function(id){
     html += '<div class="lwh-weather-grid">';
     for (var key in WT){
       var t = WT[key];
-      var afford = bal >= t.cost;
+      var dewCost = t.cost || 0;
+      var sbCost = t.costSunbeams || 0;
+      var afford = (dewCost === 0 || bal >= dewCost) && (sbCost === 0 || sbBal >= sbCost);
       var imgKey = t.id;
+      // Cost row: render whichever currencies this weather uses.
+      var costHtml = '<div class="lwh-weather-cost">';
+      if (sbCost > 0) costHtml += sbCost + ' <span class="lwe lwe-sun"></span>';
+      if (sbCost > 0 && dewCost > 0) costHtml += ' &middot; ';
+      if (dewCost > 0) costHtml += dewCost + ' <span class="lwe lwe-drop"></span>';
+      costHtml += '</div>';
       html += '<button class="lwh-weather-card'+(afford?'':' broke')+'" onclick="LW_HUT.castWeather(\''+t.id+'\')">' +
         '<img src="assets/weather/weather-'+imgKey+'.png" alt="" onerror="this.outerHTML=&apos;<div class=&quot;lwh-weather-emoji&quot;>'+t.icon+'</div>&apos;;">' +
         '<div class="lwh-weather-name">'+t.name+'</div>' +
         '<div class="lwh-weather-desc">'+t.desc+'</div>' +
-        '<div class="lwh-weather-cost">'+t.cost+' <span class="lwe lwe-drop"></span></div>' +
+        costHtml +
         '</button>';
     }
     html += '</div>';
