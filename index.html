@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.99';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.0';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -88551,10 +88551,14 @@ window.LW_FAMILY_T3 = {
     // Derpy SVG always renders below as the baseline identity.
     h+='<div id="lw-cp-photo-wrap" style="margin-bottom:0.6rem;"><img src="assets/companions/photos/'+idx+'.jpg" alt="" onerror="var w=document.getElementById(\'lw-cp-photo-wrap\');if(w)w.style.display=\'none\';" style="width:100%;max-width:320px;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid rgba(200,168,75,0.25);display:block;margin:0 auto;"></div>';
     h+='<div style="display:flex;justify-content:center;align-items:center;min-height:120px;margin-bottom:0.5rem;">'+portrait+'</div>';
-    h+='<div style="font-family:Playfair Display,serif;font-size:1.35rem;color:var(--gold);font-style:italic;margin-bottom:0.15rem;">'+name+'</div>';
-    if(fam)h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.58rem;color:var(--sage);letter-spacing:0.14em;">'+fam.icon+' '+family.toUpperCase()+'</div>';
+    h+='<div style="font-family:Playfair Display,serif;font-size:1.35rem;color:var(--gold);font-style:italic;margin-bottom:0.35rem;">'+name+'</div>';
+    // Stephen 2026-05-01: family/type signal was too small (0.58rem name,
+    // 0.52rem blurb, inline emoji). Now a proper type pill — emoji at
+    // 1.4rem, name at 0.95rem in a bordered chip. Blurb bumped to 0.8rem
+    // and rendered in cream so it actually reads.
+    if(fam)h+='<div style="display:inline-flex;align-items:center;gap:0.55rem;padding:0.4rem 0.85rem;background:rgba(122,179,86,0.12);border:1.5px solid rgba(122,179,86,0.4);border-radius:999px;margin:0 auto;"><span style="font-size:1.4rem;line-height:1;">'+fam.icon+'</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--sage);letter-spacing:0.16em;font-weight:600;">'+family.toUpperCase()+'</span></div>';
     h+='</div>';
-    if(fam)h+='<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);line-height:1.6;text-align:center;margin-bottom:0.8rem;font-style:italic;padding:0 0.4rem;">'+fam.blurb+'</div>';
+    if(fam)h+='<div style="font-family:DM Mono,monospace;font-size:0.8rem;color:var(--cream);line-height:1.55;text-align:center;margin-bottom:0.9rem;font-style:italic;padding:0 0.4rem;font-weight:500;">'+fam.blurb+'</div>';
     // Stephen 2026-05-01: per-companion natural-history blurb + collective
     // noun. Renders in a soft card so the section reads as kid-friendly
     // wonder, not stat-block. About-text in Playfair to feel like prose;
