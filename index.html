@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.85';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.86';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55394,15 +55394,19 @@ window._lwOpenTwinBloomAccept = function(g) {
   document.body.appendChild(ov);
   document.getElementById('lw-twin-decline').onclick = function(){
     ov.remove();
-    // Decline = mark claimed without running the breed (Alice's Dew is left
-    // unrefunded for now; v2 will add a refund-on-decline path).
-    if (window.firebase && firebase.firestore){
-      try {
-        firebase.firestore().collection('friends').doc(firebase.auth().currentUser.uid)
-          .collection('inbox').doc(g.id).delete().catch(function(){});
-      } catch(e){}
+    // Decline now refunds Alice's Dew via a twin_bloom_refund inbox doc.
+    if (window.LW_GIFTS && window.LW_GIFTS.declineTwinBloom){
+      var refundAmt = (window.LW_GIFTS.TWIN_BLOOM_DEW_COST || 30);
+      window.LW_GIFTS.declineTwinBloom(g.id, g.from, refundAmt, function(ok){
+        if (ok && window._toast) window._toast('Twin Bloom declined. ' + (g.fromName || 'They') + ' will be refunded.');
+        else if (window._toast) window._toast('Decline failed — try again.');
+        // Refresh inbox view if open
+        if (document.getElementById('lw-gift-inbox')) {
+          document.getElementById('lw-gift-inbox').remove();
+          setTimeout(function(){ if (window._lwOpenGiftInbox) window._lwOpenGiftInbox(); }, 300);
+        }
+      });
     }
-    if (window._toast) window._toast('Twin Bloom declined.');
   };
   document.getElementById('lw-twin-pick-mine').onclick = function(){
     ov.remove();
@@ -83722,6 +83726,33 @@ window.LW_GIFTS = (function(){
       });
   }
 
+  // Bob declines: post a refund doc to Alice's inbox + delete his proposal.
+  function declineTwinBloom(proposalId, fromUid, refundAmount, callback){
+    callback = callback || function(){};
+    var user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+    if (!user){ callback(false, 'Not logged in'); return; }
+    var db = firebase.firestore();
+    var myName = localStorage.getItem('pw_keeper_name') || 'Keeper';
+    var refundId = user.uid + '_tbd_' + Date.now();
+    var amt = parseInt(refundAmount, 10) || TWIN_BLOOM_DEW_COST;
+    var refundDoc = {
+      from: user.uid,
+      fromName: myName,
+      tier: getTier(fromUid),
+      loot: { kind:'twin_bloom_refund', amount: amt },
+      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+      claimed: false,
+      type: 'twin_bloom_refund'
+    };
+    db.collection('friends').doc(fromUid).collection('inbox').doc(refundId).set(refundDoc)
+      .then(function(){
+        // Now delete Bob's proposal copy (cleanup)
+        return db.collection('friends').doc(user.uid).collection('inbox').doc(proposalId).delete();
+      })
+      .then(function(){ callback(true); })
+      .catch(function(e){ callback(false, e.message || 'Decline failed.'); });
+  }
+
   // Bob accepts: pick his plant, compute offspring, write seed locally,
   // post result back to Alice's inbox.
   function acceptTwinBloom(proposalId, fromUid, fromName, plantA_hash, myPlantHash, callback){
@@ -83856,6 +83887,19 @@ window.LW_GIFTS = (function(){
     var remaining = [];
     for (var i=0;i<gifts.length;i++){
       var g = gifts[i];
+      // Auto-process Twin Bloom REFUNDS — Bob declined, return Alice's Dew.
+      if (g.type === 'twin_bloom_refund' || (g.loot && g.loot.kind === 'twin_bloom_refund')){
+        (function(g){
+          var amt = (g.loot && g.loot.amount) || TWIN_BLOOM_DEW_COST;
+          if (window.earnDew) window.earnDew(amt, 'twin_bloom_decline_refund');
+          db.collection('friends').doc(user.uid).collection('inbox').doc(g.id).update({
+            claimed: true,
+            claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(function(){});
+          if (window._toast) window._toast('🌸 Twin Bloom declined by ' + (g.fromName || 'your friend') + '. ' + amt + ' Dew refunded.');
+        })(g);
+        continue;
+      }
       if (g.type !== 'twin_bloom_result' && (!g.loot || g.loot.kind !== 'twin_bloom_result')){
         remaining.push(g); continue;
       }
@@ -83942,6 +83986,7 @@ window.LW_GIFTS = (function(){
     twinBloomCooldownLeft: twinBloomCooldownLeft,
     proposeTwinBloom: proposeTwinBloom,
     acceptTwinBloom: acceptTwinBloom,
+    declineTwinBloom: declineTwinBloom,
     TWIN_BLOOM_DEW_COST: TWIN_BLOOM_DEW_COST
   };
 })();
