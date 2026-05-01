@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.28';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.29';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -67559,6 +67559,39 @@ function _dialog(text,btnLabel,btnCb,pos){
   return _dlg;
 }
 
+// Stephen 2026-05-01: "nobody is going to wait 5 fucking minutes!" After
+// `delayMs` ms (default 8000) of waiting on a step, fade in a small
+// "stuck? tap to continue →" link inside the active dialog. When tapped
+// it calls `advanceFn` and clears. The watch loop's auto-detection still
+// runs in parallel — this is just the manual escape hatch for users who
+// can't see the spotlit element or whose action isn't being detected.
+// Idempotent: safe to call multiple times per step.
+function _lwTutStuckLink(stepN, advanceFn, delayMs){
+  setTimeout(function(){
+    if(_getStep()!==stepN)return;
+    if(!_dlg||!_dlg.parentNode)return;
+    if(_dlg.querySelector('._lw-tut-stuck'))return;
+    var holder=document.createElement('div');
+    holder.style.cssText='margin-top:0.55rem;opacity:0;transition:opacity 0.4s ease;';
+    holder.innerHTML='<a href="#" class="_lw-tut-stuck" style="font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(200,168,75,0.78);letter-spacing:0.08em;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer;">stuck? tap to continue →</a>';
+    var a=holder.querySelector('a');
+    a.onclick=function(e){
+      e.preventDefault();e.stopPropagation();
+      if(_getStep()!==stepN)return;
+      _clear();
+      try{advanceFn&&advanceFn();}catch(err){}
+    };
+    var skipLink=_dlg.querySelector('._lw-tut-skip');
+    var skipWrap=skipLink&&skipLink.parentNode;
+    if(skipWrap&&skipWrap.parentNode){
+      skipWrap.parentNode.insertBefore(holder, skipWrap);
+    } else {
+      _dlg.appendChild(holder);
+    }
+    requestAnimationFrame(function(){holder.style.opacity='1';});
+  }, (typeof delayMs==='number'?delayMs:8000));
+}
+
 function _overlay(tapCb){
   if(_ov&&_ov.parentNode)_ov.remove();
   _ov=document.createElement('div');
@@ -67783,6 +67816,14 @@ function _step1b(){
   // Desktop / Android path: direct card click still works because z-index
   // resolves correctly there. iOS path falls through to overlay handler.
   firstCard.onclick=_advance;
+  // Manual escape after 8s if the spotlight isn't reading clearly. Step 1b
+  // is the very first interaction — losing the player here is fatal.
+  _lwTutStuckLink(1, function(){
+    firstCard.onclick=origClick;
+    firstCard.style.animation='';
+    var ar=document.getElementById('_lw-tut-arrow');if(ar)ar.remove();
+    setTimeout(_step2,400);
+  }, 8000);
 }
 
 function _waitForCarousel(attempts){
@@ -68981,6 +69022,7 @@ function _step28(){
       _dlg.style.maxWidth='min(260px,62vw)';
     }catch(e){}
   }
+  _lwTutStuckLink(28, function(){setTimeout(_step29,400);}, 8000);
   // Snapshot whether bpe was open at watch-start. Only fire step 29 on
   // a closed→open transition, not on a state that was already open
   // (which would race step 29 against the player tapping anything).
@@ -69091,6 +69133,7 @@ function _step32(){
     '<div style="font-size:0.95rem;margin-top:0.5rem;">Tap it to take a look.</div>',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  _lwTutStuckLink(32, function(){setTimeout(_step33,500);}, 8000);
   var polls=0;
   var watch=function(){
     var ov=document.getElementById('bos-overlay');
@@ -69434,6 +69477,8 @@ function _step36Spotlight(sow){
     'Tap the <span style="color:var(--gold);">SOW</span> button to pick a plant from your greenhouse and place it.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Manual escape after 8s in case the spotlight doesn't read clearly.
+  _lwTutStuckLink(36, function(){setTimeout(_step37,400);}, 8000);
   // Wait for the SOW carousel to open (source = wild-place)
   var polls=0;
   var watch=function(){
@@ -69475,6 +69520,10 @@ function _step37(){
     'Pick a plant and tap the <span style="color:var(--gold);">PLANT HERE</span> button to plant it in the Wild.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Manual escape — placement requires opening the carousel + tapping
+  // PLANT HERE. Give 12s before surfacing the stuck link since the
+  // user has to do two interactions.
+  _lwTutStuckLink(37, function(){setTimeout(_step38,400);}, 12000);
   // Pulse the painted PLANT HERE button so the player sees the target.
   // The button only renders inside the open carousel; re-poll up to ~6s
   // because the player has to tap a plant card first to bring up the
@@ -69542,6 +69591,8 @@ function _step38(){
     'A <span style="color:var(--gold);">contest!</span> The hex is full; pick a defender to challenge. Tap any plant in this hex.<br><br>This will cost <b>1 sow</b>, win or lose.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Manual escape — contest dice may not feel obvious; 10s window.
+  _lwTutStuckLink(38, function(){setTimeout(_step39,400);}, 10000);
   // Wait for the dice modal to open
   var polls=0;
   var watch=function(){
@@ -69660,6 +69711,8 @@ function _step40Spotlight(forage){
     'Plants in the wild create <span style="color:var(--gold);">feral seeds</span> shaped by local DNA + the biome you\'re in.<br><br>Tap the <b>FORAGE</b> button to find one.',
     '',null,'bottom');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  // Manual escape after 8s in case the spotlight doesn't read clearly.
+  _lwTutStuckLink(40, function(){setTimeout(_step41,400);}, 8000);
   // Tear down the dialog the INSTANT the player taps FORAGE — don't
   // wait for the minigame overlay to appear via the poll. Stephen's
   // report: "the stupid prompt is still in the front ruining the
@@ -69887,6 +69940,7 @@ function _step43(){
     'Your seed is in the nursery now. Tap the <span style="color:var(--gold);">NURSERY</span> tab at the bottom.',
     '',null,'top');
   if(_dlg){var btn=_dlg.querySelector('button');if(btn)btn.remove();}
+  _lwTutStuckLink(43, function(){setTimeout(_step44,400);}, 8000);
   var polls=0;
   var watch=function(){
     if(_getStep()!==43)return;
