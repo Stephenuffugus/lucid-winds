@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.91';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.92';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -84534,7 +84534,10 @@ window.LW_GIFTS = (function(){
     else if (currentTab === 'almanac') renderAlmanac();
     else if (currentTab === 'slots')   renderSlots();
     else if (currentTab === 'quests')  renderQuest();
-    else if (currentTab === 'cocoonery') renderCocoonery();
+    // Stephen 2026-05-01: 'cocoonery' dispatch removed; renderCocoonery is
+    // dead code now (open() redirects 'cocoonery' deep-link to Curiosities
+    // before render() is reached). Function body kept defined as a no-op
+    // safety net for anything still holding a stale reference.
   }
 
   function open(tab){
@@ -84905,7 +84908,21 @@ window.LW_GIFTS = (function(){
   }
 
   // ─── COCOONERY (premium Keeper Cocoons) ───
+  // Stephen 2026-05-01: renderCocoonery REPLACED with a redirect.
+  // The cocoonery is now part of the unified Curiosities panel
+  // (backpack → CURIOSITIES). If anything ever switches to this tab
+  // directly, close the hut and open Curiosities.
   function renderCocoonery(){
+    var body = document.getElementById('lwh-body');
+    if (body) body.innerHTML = '<div class="lwh-section-text">Cocoonery has moved.<br>Open your backpack → Curiosities.</div>';
+    setTimeout(function(){
+      try { close(); } catch(e){}
+      if (window._lwOpenCuriosities) window._lwOpenCuriosities();
+    }, 50);
+  }
+  // The original ~130-line renderCocoonery body is preserved at the bottom
+  // of the file as a comment for historical reference if needed.
+  function _renderCocooneryLegacyBodyDead(){
     var body = document.getElementById('lwh-body');
     if (!body) return;
     if (!window.LW_KEEPER){
@@ -85702,7 +85719,17 @@ window.LW_debug.cleanGhostDrops = function(){
   }
 
   // ── Panel ──
+  // Stephen 2026-05-01: openPanel REPLACED with a redirect to the unified
+  // Curiosities panel. The legacy body is kept further down as
+  // _openPanelLegacyBodyDead so nothing breaks if a stale reference lands
+  // here, but no live code path reaches it.
   function openPanel(){
+    if (window._lwOpenCuriosities) { window._lwOpenCuriosities(); return; }
+    // Last-resort fallback — should never fire since _lwOpenCuriosities is
+    // defined window-wide before this module renders any UI.
+    if (window._toast) window._toast('Open your backpack → Curiosities.');
+  }
+  function _openPanelLegacyBodyDead(){
     try { var old=document.getElementById('lw-cocoons-panel'); if(old){old.remove();return;} } catch(e){}
     var s = _load();
     var ov = document.createElement('div');
@@ -85790,18 +85817,14 @@ window.LW_debug.cleanGhostDrops = function(){
     try { if (window._haptic) window._haptic('bloom'); } catch(e){}
     window.LW_COCOONS._dismiss = function(){
       try { rv.remove(); } catch(e){}
-      // Stephen 2026-05-01 PART 5 audit fix: refresh whichever panel the
-      // player opened the hatch FROM. Was unconditionally calling openPanel()
-      // which reopened the legacy Cocoons-only overlay even when the player
-      // hatched from the unified Curiosities panel — caused two stacked
-      // overlays. Now: prefer the Curiosities panel if it's mounted.
-      var cur = document.getElementById('lw-curiosities-panel');
-      if (cur && window._lwRenderCuriosities) {
+      // Refresh the Curiosities panel (the only panel hatchClick is reachable
+      // from now). If somehow the panel isn't mounted, the redirect inside
+      // openPanel will mount it anyway.
+      if (window._lwRenderCuriosities && document.getElementById('lw-curiosities-panel')) {
         window._lwRenderCuriosities();
-        return;
+      } else if (window._lwOpenCuriosities) {
+        window._lwOpenCuriosities();
       }
-      try { var p=document.getElementById('lw-cocoons-panel'); if(p)p.remove(); } catch(e){}
-      openPanel();
     };
   }
 
@@ -85812,7 +85835,12 @@ window.LW_debug.cleanGhostDrops = function(){
   };
   window.LW_debug = window.LW_debug || {};
   window.LW_debug.grantCocoon = function(tier){ return add(tier || 'gossamer'); };
-  window.LW_debug.openCocoons = function(){ openPanel(); };
+  window.LW_debug.openCocoons = function(){
+    if (window._lwOpenCuriosities) window._lwOpenCuriosities();
+  };
+  window.LW_debug.openCuriosities = function(){
+    if (window._lwOpenCuriosities) window._lwOpenCuriosities();
+  };
   window.LW_debug.walkCocoons = function(m){ creditSteps(m || 1000); };
 
   // Daily grant — try once per session load. A dawn cronish.
