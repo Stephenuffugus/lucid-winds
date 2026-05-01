@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.37';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.38';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -81247,12 +81247,27 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedName:'Parasitic Wasp',
       cocoonArt:'assets/cocoons/keeper-caterpillar.png',
       hatchedArt:'assets/companions/parasitic-wasp.png',
-      flavor:'The hermit will not say. Tap to bring it home.',
+      // Stephen 2026-05-01: each cocoon gets its own Keeper-voice quip
+      // that hints at character without spoiling the hatch. Caterpillar
+      // is "are you sure about this?" (caterpillars eat plants — but
+      // this one becomes a pest-killer wasp).
+      flavor:'Why would I want to buy that? Aren’t these usually bad for the garden?',
       hatchFlavor:'A wasp emerges, jeweled and watchful. It hunts the pests that visit your wild plants.',
       costDew:30000, costSunbeams:100,
       distanceM:HATCH_M,
       requires:null,
-      ability:'pestClear'
+      ability:'pestClear',
+      // Walking prompts — fire one at random every 100m of incubation.
+      // Tickles the player into walking more without naming the creature.
+      tickles:[
+        'Something inside the caterpillar squirms.',
+        'The caterpillar wriggles in your pocket.',
+        'You feel the caterpillar shift, as if turning over.',
+        'A tiny pulse from the caterpillar. Hungry?',
+        'It eats more than its share. You can feel it growing.',
+        'The caterpillar is restless tonight.'
+      ],
+      vibrate:[40, 60, 40] // wiggle pattern
     },
     {
       key:'lungfish',
@@ -81261,7 +81276,7 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedName:'Lungfish',
       cocoonArt:'assets/cocoons/keeper-mudball.png',
       hatchedArt:'assets/companions/lungfish.png',
-      flavor:'The hermit will not say. Tap to bring it home.',
+      flavor:'A cracked mudball. Heavy. Why is it warm?',
       hatchFlavor:'A lungfish surfaces, ancient and patient. It teaches your wild plants to outlast drought.',
       costDew:5000, costSunbeams:600,
       distanceM:HATCH_M,
@@ -81272,7 +81287,16 @@ window.LW_debug.cleanGhostDrops = function(){
       // mudball. 300 pours = 30000 Dew total = full incubation feed.
       feedTokensRequired:300,
       feedAmount:100,
-      feedTokenPerKm:10
+      feedTokenPerKm:10,
+      tickles:[
+        'The mudball is breathing. Slowly.',
+        'Something inside the mudball turns over.',
+        'The mudball smells like a riverbank in summer.',
+        'A slow, heavy pulse. Then nothing.',
+        'The crack on the mudball widens by a hair.',
+        'The mudball is too warm to be just earth.'
+      ],
+      vibrate:[120, 200, 120] // slow, heavy
     },
     {
       key:'tardigrade',
@@ -81281,12 +81305,21 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedName:'Tardigrade',
       cocoonArt:'assets/cocoons/keeper-meteor.png',
       hatchedArt:'assets/companions/tardigrade.png',
-      flavor:'The hermit will not say. Tap to bring it home.',
+      flavor:'A meteor fragment, still warm from the fall. The hermit said don’t open it.',
       hatchFlavor:'A tardigrade unfolds, indestructible. It halves the climate damage your wild plants take.',
       costDew:25000, costSunbeams:500,
       distanceM:HATCH_M,
       requires:null,
-      ability:'cryptobiosis'
+      ability:'cryptobiosis',
+      tickles:[
+        'The meteor hums, then goes still.',
+        'A faint pulse from the rock. Alive?',
+        'The meteor is still warm. After all this time.',
+        'Whatever is inside the meteor is patient.',
+        'The fragment vibrates against your hip. Then nothing.',
+        'You catch the meteor catching the light.'
+      ],
+      vibrate:[20, 30, 20, 30, 20] // quick stuttery pulses
     }
   ];
   // Map companionIdx (in TRAIT_BANK.companions) → keeper key. Used by the
@@ -81518,6 +81551,25 @@ window.LW_debug.cleanGhostDrops = function(){
       var nextTokens = Math.floor(nextKm/spec.feedTokenPerKm);
       var earned = nextTokens - prevTokens;
       if(earned>0){ o.tokens = (o.tokens||0) + earned; }
+    }
+    // Stephen 2026-05-01: every 100m of incubation, tickle the player
+    // with a tiny haptic + a one-line prompt that matches the cocoon's
+    // personality. Keeps the walk feeling alive without spoiling the
+    // creature inside. Vibration works on Android Chrome / Pi Browser;
+    // iOS Safari silently ignores navigator.vibrate (no haptic API in
+    // Safari WebKit) — the toast prompt still fires.
+    if (spec.tickles && spec.tickles.length){
+      var prev100 = Math.floor(prev/100);
+      var next100 = Math.floor(next/100);
+      if (next100 > prev100){
+        try {
+          var tickle = spec.tickles[Math.floor(Math.random()*spec.tickles.length)];
+          if (window._toast) window._toast(tickle, {duration:2400});
+        } catch(e){}
+        try {
+          if (navigator.vibrate && spec.vibrate) navigator.vibrate(spec.vibrate);
+        } catch(e){}
+      }
     }
     _save(d);
   }
