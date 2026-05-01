@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.1';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.2';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -46748,6 +46748,22 @@ document.addEventListener('keydown', function(e) {
         if (window.renderRecords)    renderRecords();
         if (window.PW_Social) PW_Social.ensureProfile(user);
         if (window._checkDailyLogin) _checkDailyLogin();
+        // Stephen 2026-05-02: tell players on app open if someone has
+        // sent them a friend request. Without this, pending requests are
+        // invisible until the player digs into the character sheet's
+        // FRIENDS section — which a tutorial-stuck new player won't do.
+        try {
+          if (window.PW_Social && window.PW_Social.loadPendingRequests) {
+            setTimeout(function(){
+              window.PW_Social.loadPendingRequests(function(reqs){
+                if (!reqs || !reqs.length) return;
+                var who = reqs[0].senderName || 'Someone';
+                var more = reqs.length > 1 ? (' + ' + (reqs.length-1) + ' more') : '';
+                if (window._toast) window._toast('🤝 ' + who + ' wants to be friends' + more + '. Tap your name to accept.');
+              });
+            }, 4500);
+          }
+        } catch(eFR){}
         // Daily ecosystem reproduction (runs once per day on any app load)
         setTimeout(function(){
           var _rToday=localStorage.getItem('lw_repro_today');
@@ -66376,9 +66392,14 @@ function addFriend(){
     if(err)err.textContent='Found: '+friend.name+' (Lvl '+friend.level+'). Sending...';
     PW_Social.sendFriendRequest(friend.uid,friend.name,function(ok,sendErr){
       if(ok){
-        if(err)err.textContent='Request sent to '+friend.name+'!';
+        // Stephen 2026-05-02: be honest about the bilateral confirmation.
+        // Earlier wording ("Request sent to X!") let players think they
+        // were instantly friends — when X has to tap Accept on her side
+        // before either friends list updates.
+        if(err)err.textContent='Request sent. '+friend.name+' has to tap Accept on their side before they show up in your friends list.';
+        if(window._toast)window._toast('🤝 Request sent to '+friend.name+'. Ask them to open FRIENDS and accept.');
         if(input)input.value='';
-        setTimeout(function(){if(err)err.textContent='';},3000);
+        setTimeout(function(){if(err)err.textContent='';},6000);
       }else{
         if(err)err.textContent=sendErr||'Request failed.';
       }
@@ -66491,19 +66512,42 @@ function loadFriendsUI(){
       })(rows[ri]);
     }
   });
-  // Load pending requests
+  // Load pending requests — Stephen 2026-05-02 bumped sizes to readable.
+  // Was 0.42rem (line) / 0.38rem (buttons) — basically invisible. New
+  // baseline: 0.75rem heading, 0.7rem name, 0.7rem buttons with 44px
+  // touch targets per the 48px-min rule. Also reflects pending count
+  // onto the FRIENDS title so the player sees something to act on
+  // even before they expand the section.
   PW_Social.loadPendingRequests(function(reqs){
     var el=document.getElementById('cs-pending-list');if(!el)return;
-    if(reqs.length===0){el.innerHTML='';return;}
-    var h='<div style="font-size:0.42rem;color:var(--gold);margin-bottom:0.2rem;">Pending Requests:</div>';
+    var cnt=document.getElementById('cs-friend-count');
+    if(reqs.length===0){
+      el.innerHTML='';
+      if(cnt){
+        // strip any pending tag we added on a previous render
+        var prev=cnt.textContent;
+        cnt.textContent=prev.replace(/\s*•\s*\d+\s*pending/i,'');
+      }
+      return;
+    }
+    if(cnt){
+      var base=cnt.textContent.replace(/\s*•\s*\d+\s*pending/i,'');
+      cnt.innerHTML=base+' <span style="color:var(--gold);font-weight:600;">• '+reqs.length+' pending</span>';
+    }
+    var esc=window._lwEscapeHTML||function(s){return String(s||'').replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+    var h='<div style="margin:0.5rem 0 0.4rem;padding:0.6rem 0.7rem;background:linear-gradient(180deg,rgba(200,168,75,0.16),rgba(122,179,86,0.08));border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.5rem;">PENDING REQUESTS</div>';
     for(var i=0;i<reqs.length;i++){
       var r=reqs[i];
-      h+='<div style="display:flex;align-items:center;gap:0.3rem;padding:0.2rem 0;">'
-        +'<span style="color:var(--cream);font-size:0.42rem;">'+(r.senderName||'Keeper')+'</span>'
-        +'<button onclick="PW_UI.acceptReq(\''+r.uid+'\')" style="padding:0.15rem 0.4rem;border:1px solid rgba(122,179,86,0.3);border-radius:4px;background:rgba(74,124,53,0.1);color:var(--sage);font-size:0.38rem;cursor:pointer;">Accept</button>'
-        +'<button onclick="PW_UI.declineReq(\''+r.uid+'\')" style="padding:0.15rem 0.4rem;border:1px solid rgba(139,46,46,0.2);border-radius:4px;background:none;color:var(--muted);font-size:0.38rem;cursor:pointer;">Decline</button>'
+      var nm=esc(r.senderName||'Keeper');
+      var rid=esc(r.uid||'');
+      h+='<div style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0;border-top:1px solid rgba(122,179,86,0.12);">'
+        +'<span style="color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+nm+' wants to be friends</span>'
+        +'<button onclick="PW_UI.acceptReq(\''+rid+'\')" style="padding:0.4rem 0.7rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:7px;background:linear-gradient(180deg,rgba(122,179,86,0.28),rgba(74,124,53,0.4));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;flex-shrink:0;">ACCEPT</button>'
+        +'<button onclick="PW_UI.declineReq(\''+rid+'\')" style="padding:0.4rem 0.6rem;border:1px solid rgba(139,46,46,0.3);border-radius:7px;background:rgba(30,18,14,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;cursor:pointer;min-height:44px;flex-shrink:0;">SKIP</button>'
         +'</div>';
     }
+    h+='</div>';
     el.innerHTML=h;
   });
 }
