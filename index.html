@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.60';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.61';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -23919,27 +23919,486 @@ document.addEventListener('keydown', function(e) {
           case 5: // Monstera — SPECIAL: handled inside Monstera loop
           case 6: // Fern — SPECIAL: handled inside Fern loop
           case 9: // Needle — SPECIAL: handled inside Needle loop
-          case 10: // Monstera 2 — inline chimera vein
-          case 11: // Compound Fern — inline chimera vein
-          case 12: // Succulent Rosette — inline chimera vein
-          case 13: // Carnivorous Tube — inline chimera vein
-          case 14: // Cactus Pad — inline chimera vein
-          case 15: // Aloe Fan — inline chimera vein
-          case 16: // Berry Cluster — inline chimera vein
-          case 17: // Filange — inline chimera vein (bone line)
-          case 19: // Fiddle Leaf — inline chimera vein
-          case 20: // Palmate Fan — inline chimera vein (per-finger)
-          case 24: // inline chimera vein
-          case 27: // inline chimera vein
-          case 28: // inline chimera vein
-          case 21: case 22: case 25: case 26:
-          case 29: case 30: case 31: case 32:
-          case 33: case 34: case 35: case 36: case 37: case 38:
-          case 39: case 40: case 41: case 42: case 43: case 44:
-          case 45: case 46: case 47: case 48: case 49: case 50:
-          case 51: case 52: case 53: case 54: case 55: case 56:
-          case 57: case 58:
-            chiVeinD = ''; // all have inline chimera vein rendering
+          case 10: // Monstera Variegata — chimera traces midrib + one fenestration rib
+            // Subtle ghost-twin of midrib + a single lateral rib at fenestration band.
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*_mvLen*0.22).toFixed(1)+','+(ly-_mvLen*0.4).toFixed(1)+' '+(ox+(_mvTX-ox)*0.78).toFixed(1)+','+(ly+(_mvTY-ly)*0.78).toFixed(1);
+            } else {
+              chiVeinD = 'M'+(ox+side*_mvWid*0.15).toFixed(1)+','+(ly-_mvLen*0.35).toFixed(1)+' Q'+(ox+(_mvTX-ox)*0.45+side*_mvWid*0.25).toFixed(1)+','+(ly+(_mvTY-ly)*0.45-_mvLen*0.05).toFixed(1)+' '+(ox+(_mvTX-ox)*0.70+side*_mvWid*0.20).toFixed(1)+','+(ly+(_mvTY-ly)*0.70).toFixed(1);
+            }
+            break;
+          case 11: // Maidenhair Fern — chimera follows main rachis curve, ghost-thin
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+_mfCX.toFixed(1)+','+_mfCY.toFixed(1)+' '+_mfTX.toFixed(1)+','+_mfTY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_mfCX+side*ls*0.25).toFixed(1)+','+(_mfCY-ls*0.10).toFixed(1)+' '+(_mfTX-side*ls*0.15).toFixed(1)+','+(_mfTY+ls*0.08).toFixed(1);
+            }
+            break;
+          case 12: // Succulent Rosette — chimera follows the concave channel groove
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*_scLen*0.16).toFixed(1)+','+(ly-_scLen*0.32).toFixed(1)+' '+(_scTX-side*_scWid*0.05).toFixed(1)+','+(_scTY+_scLen*0.05).toFixed(1);
+            } else {
+              chiVeinD = 'M'+(ox+side*_scWid*0.10).toFixed(1)+','+(ly-_scLen*0.05).toFixed(1)+' Q'+(ox+side*_scLen*0.22).toFixed(1)+','+(ly-_scLen*0.45).toFixed(1)+' '+(_scTX+side*_scWid*0.05).toFixed(1)+','+(_scTY+_scLen*0.10).toFixed(1);
+            }
+            break;
+          case 13: // Coral — chimera ghosts main tube curve, then side branch
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+_cMidX.toFixed(1)+','+_cMidY.toFixed(1)+' '+_cTipX.toFixed(1)+','+_cTipY.toFixed(1);
+            } else {
+              var _cbTX13 = _cMidX + side * cLen * 0.45;
+              var _cbTY13 = _cMidY - cLen * 0.4;
+              chiVeinD = 'M'+_cMidX.toFixed(1)+','+_cMidY.toFixed(1)+' Q'+(_cMidX+side*cLen*0.25).toFixed(1)+','+(_cMidY-cLen*0.18).toFixed(1)+' '+_cbTX13.toFixed(1)+','+_cbTY13.toFixed(1);
+            }
+            break;
+          case 14: // Cactus Pad — chimera arcs across paddle following its oval curvature
+            if (chiVar === 0) {
+              chiVeinD = 'M'+padX+','+(padY+padH*0.85).toFixed(1)+' Q'+(padX-padW*0.18).toFixed(1)+','+padY.toFixed(1)+' '+padX+','+(padY-padH*0.85).toFixed(1);
+            } else {
+              chiVeinD = 'M'+(padX-padW*0.55).toFixed(1)+','+(padY+padH*0.30).toFixed(1)+' Q'+padX+','+(padY-padH*0.10).toFixed(1)+' '+(padX+padW*0.55).toFixed(1)+','+(padY-padH*0.40).toFixed(1);
+            }
+            break;
+          case 15: // English Holly — chimera follows midrib, then a single lobe-bay arc
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*ls*0.30).toFixed(1)+','+(ly-ls*0.48).toFixed(1)+' '+(ox+side*ls*0.56).toFixed(1)+','+(ly-ls*0.86).toFixed(1)+' Q'+(ox+side*ls*0.78).toFixed(1)+','+(ly-ls*1.10).toFixed(1)+' '+lx+','+ot;
+            } else {
+              chiVeinD = 'M'+(ox+side*ls*0.20).toFixed(1)+','+(ly-ls*0.30).toFixed(1)+' Q'+(ox+side*ls*0.62).toFixed(1)+','+(ly-ls*0.55).toFixed(1)+' '+(ox+side*ls*0.84).toFixed(1)+','+(ly-ls*1.04).toFixed(1);
+            }
+            break;
+          case 16: // Blackberry Cluster — chimera traces hub-to-tip-berry pedicel
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*ls*0.10).toFixed(1)+','+(ly-ls*0.10).toFixed(1)+' '+_bHub.x.toFixed(1)+','+_bHub.y.toFixed(1)+' Q'+(((_bHub.x+_berries[4].x)/2)+side*ls*0.04).toFixed(1)+','+(((_bHub.y+_berries[4].y)/2)-ls*0.04).toFixed(1)+' '+_berries[4].x.toFixed(1)+','+_berries[4].y.toFixed(1);
+            } else {
+              chiVeinD = 'M'+_bHub.x.toFixed(1)+','+_bHub.y.toFixed(1)+' Q'+(((_bHub.x+_berries[1].x)/2)+side*ls*0.06).toFixed(1)+','+(((_bHub.y+_berries[1].y)/2)-ls*0.05).toFixed(1)+' '+_berries[1].x.toFixed(1)+','+_berries[1].y.toFixed(1);
+            }
+            break;
+          case 17: // Filange — chimera ghost-bone along the phalanx spine
+            if (chiVar === 0) {
+              chiVeinD = 'M'+_fgSevX.toFixed(1)+','+_fgSevY.toFixed(1)+' Q'+_fgJ1X.toFixed(1)+','+_fgJ1Y.toFixed(1)+' '+_fgJ2X.toFixed(1)+','+_fgJ2Y.toFixed(1)+' Q'+((_fgJ2X+_fgTipX)*0.5).toFixed(1)+','+((_fgJ2Y+_fgTipY)*0.5).toFixed(1)+' '+_fgTipX.toFixed(1)+','+_fgTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+_fgStemX.toFixed(1)+','+_fgStemY.toFixed(1)+' Q'+_fgSevX.toFixed(1)+','+_fgSevY.toFixed(1)+' '+_fgJ1X.toFixed(1)+','+_fgJ1Y.toFixed(1)+' Q'+((_fgJ1X+_fgJ2X)*0.5+Math.cos(_fgPerpA)*_fgW*0.3*side).toFixed(1)+','+((_fgJ1Y+_fgJ2Y)*0.5+Math.sin(_fgPerpA)*_fgW*0.3).toFixed(1)+' '+_fgJ2X.toFixed(1)+','+_fgJ2Y.toFixed(1);
+            }
+            break;
+          case 19: // Fiddle-Leaf Fig — chimera ghosts the bold midrib, with one secondary echo
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.25)+','+(ly-ls*0.8)+' '+(ox+side*ls*0.32)+','+(ly-ls*2.1)+' '+(ox+side*ls*0.4)+','+(ly-ls*3.95);
+            } else {
+              chiVeinD = 'M'+(ox+side*ls*0.18).toFixed(1)+','+(ly-ls*1.36).toFixed(1)+' Q'+(ox+side*ls*0.50).toFixed(1)+','+(ly-ls*1.80).toFixed(1)+' '+(ox+side*ls*0.66).toFixed(1)+','+(ly-ls*2.50).toFixed(1);
+            }
+            break;
+          case 20: // Ginkgo — chimera follows two ghost forks tracing the dichotomous fan
+            var _gkBaseX20 = ox + side * ls * 0.62;
+            var _gkBaseY20 = ly - ls * 0.31;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+_gkBaseX20.toFixed(1)+','+_gkBaseY20.toFixed(1)+' '+(ox+side*ls*1.55).toFixed(1)+','+(ly-ls*0.55).toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+_gkBaseX20.toFixed(1)+','+_gkBaseY20.toFixed(1)+' '+(ox+side*ls*1.30).toFixed(1)+','+(ly-ls*1.20).toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_gkBaseX20-side*ls*0.05).toFixed(1)+','+(_gkBaseY20+ls*0.04).toFixed(1)+' '+(ox+side*ls*1.65).toFixed(1)+','+(ly-ls*0.40).toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+_gkBaseX20.toFixed(1)+','+(_gkBaseY20-ls*0.05).toFixed(1)+' '+(ox+side*ls*0.95).toFixed(1)+','+(ly-ls*1.35).toFixed(1);
+            }
+            break;
+          case 21: // Pine Fascicle — chimera follows two ghost needles in the fan
+            var _n21BaseA = -1.26;
+            var _n21cx = ox + Math.cos(_n21BaseA - 0.30) * ls * 1.45 * side;
+            var _n21cy = ly + Math.sin(_n21BaseA - 0.30) * ls * 1.45;
+            var _n21fx = ox + Math.cos(_n21BaseA + 0.20) * ls * 1.55 * side;
+            var _n21fy = ly + Math.sin(_n21BaseA + 0.20) * ls * 1.55;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*ls*0.10).toFixed(1)+','+(ly-ls*0.75).toFixed(1)+' '+_n21cx.toFixed(1)+','+_n21cy.toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+(ox+side*ls*0.20).toFixed(1)+','+(ly-ls*0.70).toFixed(1)+' '+_n21fx.toFixed(1)+','+_n21fy.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox-side*ls*0.05).toFixed(1)+','+(ly-ls*0.80).toFixed(1)+' '+(_n21cx-side*ls*0.10).toFixed(1)+','+(_n21cy+ls*0.05).toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+(ox+side*ls*0.25).toFixed(1)+','+(ly-ls*0.65).toFixed(1)+' '+(_n21fx+side*ls*0.05).toFixed(1)+','+(_n21fy-ls*0.05).toFixed(1);
+            }
+            break;
+          case 22: // Elephant Ear — chimera traces midrib + one palmate spoke
+            var _eeHubX22 = ox + side * ls * 1.7 * 0.45;
+            var _eeHubY22 = ly - ls * 2.4 * 0.20;
+            var _eeTX22 = ox + side * ls * 2.4 * 0.85;
+            var _eeTY22 = ly - ls * 2.4 * 0.55;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+_eeHubX22.toFixed(1)+','+_eeHubY22.toFixed(1)+' Q'+(ox+side*ls*0.72).toFixed(1)+','+(ly-ls*1.20).toFixed(1)+' '+_eeTX22.toFixed(1)+','+_eeTY22.toFixed(1)
+                       + ' M'+_eeHubX22.toFixed(1)+','+_eeHubY22.toFixed(1)+' Q'+(ox+side*ls*1.20).toFixed(1)+','+(ly-ls*0.85).toFixed(1)+' '+(ox+side*ls*1.95).toFixed(1)+','+(ly-ls*1.10).toFixed(1);
+            } else {
+              chiVeinD = 'M'+_eeHubX22.toFixed(1)+','+_eeHubY22.toFixed(1)+' Q'+(ox+side*ls*0.65).toFixed(1)+','+(ly-ls*1.30).toFixed(1)+' '+(_eeTX22-side*ls*0.10).toFixed(1)+','+(_eeTY22+ls*0.08).toFixed(1)
+                       + ' M'+_eeHubX22.toFixed(1)+','+_eeHubY22.toFixed(1)+' Q'+(ox-side*ls*0.20).toFixed(1)+','+(ly-ls*0.95).toFixed(1)+' '+(ox-side*ls*0.90).toFixed(1)+','+(ly-ls*1.30).toFixed(1);
+            }
+            break;
+          case 24: // White Clover — chimera ghost-chevron riding the central (top) leaflet
+            var _clHubX24 = ox + side * ls * 0.20;
+            var _clHubY24 = ly - ls * 1.05;
+            var _clCx24  = ox + side * ls * 0.20;
+            var _clCy24  = ly - ls * 2.10;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+_clHubX24.toFixed(1)+','+_clHubY24.toFixed(1)+' Q'+(_clCx24-side*ls*0.05).toFixed(1)+','+(_clCy24+ls*0.40).toFixed(1)+' '+_clCx24.toFixed(1)+','+(_clCy24-ls*0.40).toFixed(1)
+                       + ' M'+(_clCx24-side*ls*0.30).toFixed(1)+','+(_clCy24-ls*0.05).toFixed(1)+' Q'+_clCx24.toFixed(1)+','+(_clCy24+ls*0.18).toFixed(1)+' '+(_clCx24+side*ls*0.30).toFixed(1)+','+(_clCy24-ls*0.05).toFixed(1);
+            } else {
+              chiVeinD = 'M'+_clHubX24.toFixed(1)+','+_clHubY24.toFixed(1)+' Q'+(_clCx24+side*ls*0.05).toFixed(1)+','+(_clCy24+ls*0.42).toFixed(1)+' '+_clCx24.toFixed(1)+','+(_clCy24-ls*0.45).toFixed(1)
+                       + ' M'+(_clCx24-side*ls*0.28).toFixed(1)+','+(_clCy24-ls*0.02).toFixed(1)+' Q'+_clCx24.toFixed(1)+','+(_clCy24+ls*0.22).toFixed(1)+' '+(_clCx24+side*ls*0.28).toFixed(1)+','+(_clCy24-ls*0.02).toFixed(1);
+            }
+            break;
+          case 25: // Banana — chimera ghost-midrib + one cross-rung
+            var _blTipX25 = ox + side * ls * 2.3 * 0.65;
+            var _blTipY25 = ly - ls * 2.3 * 0.72;
+            var _blM2X25  = ox + side * ls * 2.3 * 0.48;
+            var _blM2Y25  = ly - ls * 2.3 * 0.52;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*ls*0.50).toFixed(1)+','+(ly-ls*0.65).toFixed(1)+' '+_blTipX25.toFixed(1)+','+_blTipY25.toFixed(1)
+                       + ' M'+_blM2X25.toFixed(1)+','+_blM2Y25.toFixed(1)+' Q'+(_blM2X25+side*ls*0.40).toFixed(1)+','+(_blM2Y25+ls*0.05).toFixed(1)+' '+(_blM2X25+side*ls*0.85).toFixed(1)+','+(_blM2Y25+ls*0.10).toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*ls*0.55).toFixed(1)+','+(ly-ls*0.70).toFixed(1)+' '+(_blTipX25-side*ls*0.05).toFixed(1)+','+(_blTipY25+ls*0.05).toFixed(1)
+                       + ' M'+(_blM2X25-side*ls*0.10).toFixed(1)+','+(_blM2Y25+ls*0.10).toFixed(1)+' Q'+(_blM2X25+side*ls*0.30).toFixed(1)+','+(_blM2Y25+ls*0.20).toFixed(1)+' '+(_blM2X25+side*ls*0.75).toFixed(1)+','+(_blM2Y25+ls*0.25).toFixed(1);
+            }
+            break;
+          case 26: // Silver Dollar — chimera ghosts two faint chord arcs inside the orbicular disc
+            var _sdR26  = ls * 0.95;
+            var _sdCx26 = ox + side * _sdR26 * 0.85;
+            var _sdCy26 = ly - _sdR26 * 1.15;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+(_sdCx26-_sdR26*0.75).toFixed(1)+','+(_sdCy26-_sdR26*0.10).toFixed(1)+' Q'+_sdCx26.toFixed(1)+','+(_sdCy26-_sdR26*0.55).toFixed(1)+' '+(_sdCx26+_sdR26*0.75).toFixed(1)+','+(_sdCy26-_sdR26*0.10).toFixed(1)
+                       + ' M'+(_sdCx26-_sdR26*0.65).toFixed(1)+','+(_sdCy26+_sdR26*0.20).toFixed(1)+' Q'+_sdCx26.toFixed(1)+','+(_sdCy26+_sdR26*0.55).toFixed(1)+' '+(_sdCx26+_sdR26*0.65).toFixed(1)+','+(_sdCy26+_sdR26*0.20).toFixed(1);
+            } else {
+              chiVeinD = 'M'+(_sdCx26-_sdR26*0.80).toFixed(1)+','+_sdCy26.toFixed(1)+' Q'+_sdCx26.toFixed(1)+','+(_sdCy26-_sdR26*0.60).toFixed(1)+' '+(_sdCx26+_sdR26*0.80).toFixed(1)+','+_sdCy26.toFixed(1)
+                       + ' M'+(_sdCx26-_sdR26*0.55).toFixed(1)+','+(_sdCy26+_sdR26*0.30).toFixed(1)+' Q'+_sdCx26.toFixed(1)+','+(_sdCy26+_sdR26*0.60).toFixed(1)+' '+(_sdCx26+_sdR26*0.55).toFixed(1)+','+(_sdCy26+_sdR26*0.30).toFixed(1);
+            }
+            break;
+          case 27: // Arrowhead Vine — chimera ghosts central midrib + one basal-lobe vein
+            var _arSinusX27 = ox;
+            var _arSinusY27 = ly - ls * 0.20;
+            var _arTipX27 = ox + side * ls * 0.10;
+            var _arTipY27 = ly - ls * 3.0;
+            var _arRLobeX27 = ox + side * ls * 1.45;
+            var _arRLobeY27 = ly - ls * 0.85;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+_arSinusX27.toFixed(1)+','+_arSinusY27.toFixed(1)+' Q'+(ox+side*ls*0.06).toFixed(1)+','+(ly-ls*1.40).toFixed(1)+' '+_arTipX27.toFixed(1)+','+_arTipY27.toFixed(1)
+                       + ' M'+_arSinusX27.toFixed(1)+','+_arSinusY27.toFixed(1)+' Q'+(ox+side*ls*0.65).toFixed(1)+','+(ly-ls*0.55).toFixed(1)+' '+_arRLobeX27.toFixed(1)+','+_arRLobeY27.toFixed(1);
+            } else {
+              chiVeinD = 'M'+_arSinusX27.toFixed(1)+','+_arSinusY27.toFixed(1)+' Q'+(ox-side*ls*0.04).toFixed(1)+','+(ly-ls*1.50).toFixed(1)+' '+_arTipX27.toFixed(1)+','+_arTipY27.toFixed(1)
+                       + ' M'+_arSinusX27.toFixed(1)+','+_arSinusY27.toFixed(1)+' Q'+(ox+side*ls*0.55).toFixed(1)+','+(ly-ls*0.50).toFixed(1)+' '+(_arRLobeX27-side*ls*0.05).toFixed(1)+','+(_arRLobeY27+ls*0.05).toFixed(1);
+            }
+            break;
+          case 28: // Lacecap Hydrangea — chimera ghosts midrib + one lateral comb-tooth
+            var _lcTipX28 = ox - side*ls*0.10, _lcTipY28 = ly - ls*3.05;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*ls*0.18).toFixed(1)+','+(ly-ls*1.20).toFixed(1)+' '+_lcTipX28.toFixed(1)+','+_lcTipY28.toFixed(1)
+                       + ' M'+(ox+side*ls*0.18).toFixed(1)+','+(ly-ls*1.30).toFixed(1)+' Q'+(ox+side*ls*0.55).toFixed(1)+','+(ly-ls*1.40).toFixed(1)+' '+(ox+side*ls*0.95).toFixed(1)+','+(ly-ls*1.50).toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*ls*0.14).toFixed(1)+','+(ly-ls*1.10).toFixed(1)+' '+_lcTipX28.toFixed(1)+','+_lcTipY28.toFixed(1)
+                       + ' M'+(ox+side*ls*0.16).toFixed(1)+','+(ly-ls*1.95).toFixed(1)+' Q'+(ox+side*ls*0.50).toFixed(1)+','+(ly-ls*2.05).toFixed(1)+' '+(ox+side*ls*0.85).toFixed(1)+','+(ly-ls*2.15).toFixed(1);
+            }
+            break;
+          case 29: // Resurrection Plant — chimera ghosts two of the dichotomous fan branches
+            var _csAng29 = -0.3 - leafFrac * 1.1;
+            var _csA29a = _csAng29 + (-0.5) * 0.95;
+            var _csA29b = _csAng29 + (0.25) * 0.95;
+            var _csL29 = ls * 2.6 * 0.78;
+            var _csForkAx = ox + Math.cos(_csA29a) * _csL29 * 0.65 * side;
+            var _csForkAy = ly + Math.sin(_csA29a) * _csL29 * 0.65;
+            var _csForkBx = ox + Math.cos(_csA29b) * _csL29 * 0.65 * side;
+            var _csForkBy = ly + Math.sin(_csA29b) * _csL29 * 0.65;
+            var _csTipAx = _csForkAx + Math.cos(_csA29a - 0.32) * _csL29 * 0.40 * side;
+            var _csTipAy = _csForkAy + Math.sin(_csA29a - 0.32) * _csL29 * 0.40;
+            var _csTipBx = _csForkBx + Math.cos(_csA29b + 0.32) * _csL29 * 0.40 * side;
+            var _csTipBy = _csForkBy + Math.sin(_csA29b + 0.32) * _csL29 * 0.40;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+((ox+_csForkAx)/2).toFixed(1)+','+((ly+_csForkAy)/2).toFixed(1)+' '+_csForkAx.toFixed(1)+','+_csForkAy.toFixed(1)+' Q'+((_csForkAx+_csTipAx)/2).toFixed(1)+','+((_csForkAy+_csTipAy)/2).toFixed(1)+' '+_csTipAx.toFixed(1)+','+_csTipAy.toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+((ox+_csForkBx)/2).toFixed(1)+','+((ly+_csForkBy)/2).toFixed(1)+' '+_csForkBx.toFixed(1)+','+_csForkBy.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+((ox+_csForkAx)/2-side*ls*0.04).toFixed(1)+','+((ly+_csForkAy)/2+ls*0.05).toFixed(1)+' '+_csForkAx.toFixed(1)+','+_csForkAy.toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+((ox+_csForkBx)/2+side*ls*0.04).toFixed(1)+','+((ly+_csForkBy)/2-ls*0.05).toFixed(1)+' '+_csForkBx.toFixed(1)+','+_csForkBy.toFixed(1)+' Q'+((_csForkBx+_csTipBx)/2).toFixed(1)+','+((_csForkBy+_csTipBy)/2).toFixed(1)+' '+_csTipBx.toFixed(1)+','+_csTipBy.toFixed(1);
+            }
+            break;
+          case 30: // Feather Frond — chimera follows rachis arc
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_ffMidX.toFixed(1)+','+_ffMidY.toFixed(1)+' '+_ffTipX.toFixed(1)+','+_ffTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(_ffMidX+side*0.6).toFixed(1)+','+(_ffMidY-0.4).toFixed(1)+' '+_ffTipX.toFixed(1)+','+_ffTipY.toFixed(1);
+            }
+            break;
+          case 31: // Tropical Drip-Tip — chimera traces midrib through blade into drip-tip
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_dlLen*0.18).toFixed(1)+','+(ly-_dlLen*0.40).toFixed(1)+' '+_dlBlTipX.toFixed(1)+','+_dlBlTipY.toFixed(1)+' L'+_dlTipX.toFixed(1)+','+_dlTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_dlLen*0.30).toFixed(1)+','+(ly-_dlLen*0.30).toFixed(1)+' '+(_dlBlTipX+side*0.5).toFixed(1)+','+(_dlBlTipY+0.3).toFixed(1)+' L'+_dlTipX.toFixed(1)+','+_dlTipY.toFixed(1);
+            }
+            break;
+          case 32: // Spider Plant — chimera follows the longest arching strap
+            var _spChA = _spStraps[0].ang;
+            var _spChL = _spLen * _spStraps[0].len;
+            var _spChTx = ox + Math.cos(_spChA) * _spChL * side;
+            var _spChTy = ly + Math.sin(_spChA) * _spChL + _spChL * _spStraps[0].droop;
+            var _spChMx = ox + Math.cos(_spChA) * _spChL * 0.55 * side;
+            var _spChMy = ly + Math.sin(_spChA) * _spChL * 0.55;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_spChMx.toFixed(1)+','+_spChMy.toFixed(1)+' '+_spChTx.toFixed(1)+','+_spChTy.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(_spChMx-side*0.4).toFixed(1)+','+(_spChMy+0.3).toFixed(1)+' '+_spChTx.toFixed(1)+','+_spChTy.toFixed(1);
+            }
+            break;
+          case 33: // Snapdragon — chimera traces midrib of lanceolate blade
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+((ox+_snTipX)/2).toFixed(1)+','+((ly+_snTipY)/2).toFixed(1)+' '+_snTipX.toFixed(1)+','+_snTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(((ox+_snTipX)/2)+_snWx*0.3).toFixed(1)+','+(((ly+_snTipY)/2)+_snWy*0.3).toFixed(1)+' '+_snTipX.toFixed(1)+','+_snTipY.toFixed(1);
+            }
+            break;
+          case 34: // Moth Wing — chimera follows forewing leading curve
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_mwWid*0.85).toFixed(1)+','+(ly-_mwLen*0.35).toFixed(1)+' '+_mwForeTipX.toFixed(1)+','+_mwForeTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_mwWid*0.65).toFixed(1)+','+(ly-_mwLen*0.50).toFixed(1)+' '+_mwForeTipX.toFixed(1)+','+_mwForeTipY.toFixed(1);
+            }
+            break;
+          case 35: // Prism Shard — angular bevel from base to tip
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_psW*0.20).toFixed(1)+','+(ly-_psH*0.45).toFixed(1)+' '+_psTipX.toFixed(1)+','+_psTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox-side*_psW*0.10).toFixed(1)+','+(ly-_psH*0.50).toFixed(1)+' '+_psTipX.toFixed(1)+','+_psTipY.toFixed(1);
+            }
+            break;
+          case 36: // Batwing — chimera follows the dominant finger bone
+            var _bwChTx = ox + Math.cos(_bwBones[0].ang) * _bwSpan * _bwBones[0].len * side;
+            var _bwChTy = ly + Math.sin(_bwBones[0].ang) * _bwH * _bwBones[0].len;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_bwSpan*0.45).toFixed(1)+','+(ly-_bwH*0.10).toFixed(1)+' '+_bwChTx.toFixed(1)+','+_bwChTy.toFixed(1);
+            } else {
+              var _bwCh2Tx = ox + Math.cos(_bwBones[1].ang) * _bwSpan * _bwBones[1].len * side;
+              var _bwCh2Ty = ly + Math.sin(_bwBones[1].ang) * _bwH * _bwBones[1].len;
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_bwSpan*0.35).toFixed(1)+','+(ly-_bwH*0.25).toFixed(1)+' '+_bwCh2Tx.toFixed(1)+','+_bwCh2Ty.toFixed(1);
+            }
+            break;
+          case 37: // Thorn Crescent — chimera follows the existing midrib through the crescent curve
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+(ox+side*ls*0.24).toFixed(1)+','+(ly-ls*0.72).toFixed(1)+' '+(ox+side*ls*0.30).toFixed(1)+','+(ly-ls*1.44).toFixed(1)+' '+(ox+side*ls*0.16).toFixed(1)+','+(ly-ls*2.28).toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+(ox+side*ls*0.40).toFixed(1)+','+(ly-ls*0.80).toFixed(1)+' '+(ox+side*ls*0.50).toFixed(1)+','+(ly-ls*1.50).toFixed(1)+' '+_thTipX.toFixed(1)+','+_thTipY.toFixed(1);
+            }
+            break;
+          case 38: // Bell Petiole — chimera traces stalk arc, sweeping toward the bell
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_bpLen*0.20).toFixed(1)+','+(ly-_bpLen*0.35).toFixed(1)+' '+_bpStalkX.toFixed(1)+','+_bpStalkY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+(ox+side*_bpLen*0.30).toFixed(1)+','+(ly-_bpLen*0.25).toFixed(1)+' '+(_bpStalkX-side*0.4).toFixed(1)+','+(_bpStalkY+0.3).toFixed(1);
+            }
+            break;
+          case 39: // Ghost Willow — chimera follows the longest cascading tendril
+            var _gwChAng = 0.2;
+            var _gwChLen = _gwBaseLen * 0.9;
+            var _gwChTipX = ox + Math.cos(_gwChAng) * _gwChLen * 0.4 * side;
+            var _gwChTipY = ly + Math.sin(_gwChAng) * _gwChLen;
+            var _gwChMidX = ox + Math.cos(_gwChAng) * _gwChLen * 0.2 * side;
+            var _gwChMidY = ly + Math.sin(_gwChAng) * _gwChLen * 0.5;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+_gwChMidX.toFixed(1)+','+_gwChMidY.toFixed(1)+' '+(_gwChTipX+side*ls*0.1).toFixed(1)+','+(_gwChTipY-_gwChLen*0.15).toFixed(1)+' '+_gwChTipX.toFixed(1)+','+_gwChTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' C'+(_gwChMidX-side*0.5).toFixed(1)+','+(_gwChMidY+0.4).toFixed(1)+' '+(_gwChTipX-side*ls*0.05).toFixed(1)+','+(_gwChTipY-_gwChLen*0.10).toFixed(1)+' '+_gwChTipX.toFixed(1)+','+_gwChTipY.toFixed(1);
+            }
+            break;
+          case 40: // Crown Laurel — chimera follows center-leaflet midrib + outer-leaflet
+            var _clLLen40 = ls * 1.5;
+            var _clOutTipX40 = ox + Math.cos(-0.9) * _clLLen40 * 0.85 * side;
+            var _clOutTipY40 = ly + Math.sin(-0.9) * _clLLen40 * 0.85;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+((ox+tip)/2).toFixed(1)+','+((ly+tipY)/2-ls*0.05).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+((ox+_clOutTipX40)/2).toFixed(1)+','+((ly+_clOutTipY40)/2).toFixed(1)+' '+_clOutTipX40.toFixed(1)+','+_clOutTipY40.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+((ox+tip)/2+side*ls*0.06).toFixed(1)+','+((ly+tipY)/2-ls*0.08).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+((ox+_clOutTipX40)/2-side*ls*0.04).toFixed(1)+','+((ly+_clOutTipY40)/2+ls*0.04).toFixed(1)+' '+_clOutTipX40.toFixed(1)+','+_clOutTipY40.toFixed(1);
+            }
+            break;
+          case 41: // Coilspring — single subtle helical arc
+            var _csR41 = ls * 0.85;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+side*_csR41*0.4).toFixed(1)+','+(ly-_csR41*0.9).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox-side*_csR41*0.2).toFixed(1)+','+(ly-_csR41*1.1).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            }
+            break;
+          case 42: // Kraken Frond — chimera follows the muscular S-curve spine
+            var _kAng42 = -0.15 - leafFrac * 0.38;
+            var _kLen42 = ls * 2.4;
+            var _kMid1X42 = ox + Math.cos(_kAng42) * _kLen42 * 0.35 * side;
+            var _kMid1Y42 = ly + Math.sin(_kAng42) * _kLen42 * 0.35;
+            var _kMid2X42 = ox + Math.cos(_kAng42 - 0.15) * _kLen42 * 0.65 * side;
+            var _kMid2Y42 = ly + Math.sin(_kAng42 - 0.15) * _kLen42 * 0.65;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+_kMid1X42.toFixed(1)+','+_kMid1Y42.toFixed(1)+' '+_kMid2X42.toFixed(1)+','+_kMid2Y42.toFixed(1)+' Q'+((_kMid2X42+tip)/2).toFixed(1)+','+((_kMid2Y42+tipY)/2).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_kMid1X42-side*ls*0.06).toFixed(1)+','+(_kMid1Y42+ls*0.04).toFixed(1)+' '+_kMid2X42.toFixed(1)+','+_kMid2Y42.toFixed(1)+' Q'+((_kMid2X42+tip)/2+side*ls*0.05).toFixed(1)+','+((_kMid2Y42+tipY)/2-ls*0.03).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            }
+            break;
+          case 43: // Lantern Pod — chimera traces 2 of the 5 sepal ribs
+            var _lpH43 = ls * 2.0;
+            var _lpW43 = ls * 0.85;
+            var _lpCx43 = ox + side * _lpW43 * 0.25;
+            var _lpCy43 = ly - _lpH43 * 0.45;
+            var _lpTipX43 = _lpCx43 + side * _lpW43 * 0.05;
+            var _lpTipY43 = ly + _lpH43 * 0.15;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+tip.toFixed(1)+','+tipY.toFixed(1)+' Q'+(_lpCx43+side*_lpW43*0.50).toFixed(1)+','+_lpCy43.toFixed(1)+' '+_lpTipX43.toFixed(1)+','+_lpTipY43.toFixed(1)
+                       + ' M'+tip.toFixed(1)+','+tipY.toFixed(1)+' Q'+(_lpCx43-side*_lpW43*0.05).toFixed(1)+','+_lpCy43.toFixed(1)+' '+_lpTipX43.toFixed(1)+','+_lpTipY43.toFixed(1);
+            } else {
+              chiVeinD = 'M'+tip.toFixed(1)+','+tipY.toFixed(1)+' Q'+(_lpCx43+side*_lpW43*0.40).toFixed(1)+','+(_lpCy43-_lpH43*0.04).toFixed(1)+' '+_lpTipX43.toFixed(1)+','+_lpTipY43.toFixed(1)
+                       + ' M'+tip.toFixed(1)+','+tipY.toFixed(1)+' Q'+(_lpCx43-side*_lpW43*0.15).toFixed(1)+','+(_lpCy43+_lpH43*0.04).toFixed(1)+' '+_lpTipX43.toFixed(1)+','+_lpTipY43.toFixed(1);
+            }
+            break;
+          case 44: // Coral Antler — chimera traces trunk + main prong (Y-fork)
+            var _caAng44 = -0.2 - leafFrac * 0.35;
+            var _caLen44 = ls * 1.9;
+            var _caFkX44 = ox + Math.cos(_caAng44) * _caLen44 * 0.45 * side;
+            var _caFkY44 = ly + Math.sin(_caAng44) * _caLen44 * 0.45;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_caAng44)*_caLen44*0.2*side).toFixed(1)+','+(ly+Math.sin(_caAng44)*_caLen44*0.2).toFixed(1)+' '+_caFkX44.toFixed(1)+','+_caFkY44.toFixed(1)+' Q'+((_caFkX44+tip)/2).toFixed(1)+','+((_caFkY44+tipY)/2).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_caAng44)*_caLen44*0.22*side-side*ls*0.04).toFixed(1)+','+(ly+Math.sin(_caAng44)*_caLen44*0.22+ls*0.04).toFixed(1)+' '+_caFkX44.toFixed(1)+','+_caFkY44.toFixed(1)+' Q'+((_caFkX44+tip)/2+side*ls*0.05).toFixed(1)+','+((_caFkY44+tipY)/2-ls*0.04).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            }
+            break;
+          case 45: // Oracle Eye — chimera follows upper or lower eyelid arc
+            var _oeW45 = ls * 1.8;
+            var _oeH45 = ls * 0.7;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' C'+(ox+side*_oeW45*0.3).toFixed(1)+','+(ly-_oeH45*0.7).toFixed(1)+' '+(ox+side*_oeW45*0.7).toFixed(1)+','+(ly-_oeH45*0.75).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' C'+(ox+side*_oeW45*0.3).toFixed(1)+','+(ly+_oeH45*0.35).toFixed(1)+' '+(ox+side*_oeW45*0.7).toFixed(1)+','+(ly+_oeH45*0.30).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            }
+            break;
+          case 46: // Spiral Shell — chimera traces the outer whorl crown
+            var _ssR46 = ls * 1.1;
+            var _ssCx46 = ox + side * _ssR46 * 0.5;
+            var _ssCy46 = ly - _ssR46 * 0.8;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' C'+(ox+side*_ssR46*1.1).toFixed(1)+','+(ly+_ssR46*0.05).toFixed(1)+' '+(_ssCx46+side*_ssR46*0.95).toFixed(1)+','+(_ssCy46+_ssR46*0.15).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' C'+(ox+side*_ssR46*1.0).toFixed(1)+','+(ly-_ssR46*0.02).toFixed(1)+' '+(_ssCx46+side*_ssR46*0.85).toFixed(1)+','+(_ssCy46+_ssR46*0.08).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            }
+            break;
+          case 47: // Dagger Ivy — chimera traces midrib + first lateral lobe spine
+            var _diAng47 = -0.8 - leafFrac * 0.5;
+            var _diLen47 = ls * 1.7;
+            var _diWid47 = ls * 0.85;
+            var _diPerp47 = _diAng47 + Math.PI * 0.5;
+            var _di1Cx47 = ox + Math.cos(_diAng47) * _diLen47 * 0.22 * side;
+            var _di1Cy47 = ly + Math.sin(_diAng47) * _diLen47 * 0.22;
+            var _di1Sx47 = _di1Cx47 + Math.cos(_diPerp47) * _diWid47 * 0.78 * side;
+            var _di1Sy47 = _di1Cy47 + Math.sin(_diPerp47) * _diWid47 * 0.78;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+((ox+tip)/2).toFixed(1)+','+((ly+tipY)/2).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+_di1Cx47.toFixed(1)+','+_di1Cy47.toFixed(1)+' '+_di1Sx47.toFixed(1)+','+_di1Sy47.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+((ox+tip)/2+side*ls*0.04).toFixed(1)+','+((ly+tipY)/2-ls*0.04).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1)
+                       + ' M'+ox+','+ly+' Q'+(_di1Cx47-side*ls*0.03).toFixed(1)+','+(_di1Cy47+ls*0.03).toFixed(1)+' '+_di1Sx47.toFixed(1)+','+_di1Sy47.toFixed(1);
+            }
+            break;
+          case 48: // Veil Fern — chimera follows the rachis
+            var _vfLen48 = ls * 3.0;
+            var _vfAng48 = -0.15 - leafFrac * 0.4;
+            var _vfMidX48 = ox + Math.cos(_vfAng48) * _vfLen48 * 0.4 * side;
+            var _vfMidY48 = ly + Math.sin(_vfAng48) * _vfLen48 * 0.4;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' C'+_vfMidX48.toFixed(1)+','+_vfMidY48.toFixed(1)+' '+(tip-Math.cos(_vfAng48)*_vfLen48*0.1*side).toFixed(1)+','+(tipY-Math.sin(_vfAng48)*_vfLen48*0.1).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' C'+(_vfMidX48-side*ls*0.08).toFixed(1)+','+(_vfMidY48+ls*0.04).toFixed(1)+' '+(tip-Math.cos(_vfAng48)*_vfLen48*0.12*side).toFixed(1)+','+(tipY-Math.sin(_vfAng48)*_vfLen48*0.12).toFixed(1)+' '+tip.toFixed(1)+','+tipY.toFixed(1);
+            }
+            break;
+          case 49: // Jellyleaf — chimera traces stalk-into-bell + 1 internal bell rib
+            var _jlR49 = ls * 0.9;
+            var _jlCx49 = ox + side * _jlR49 * 0.35;
+            var _jlCy49 = ly - _jlR49 * 0.95;
+            var _jlMargin49 = _jlCy49 + _jlR49 * 0.55;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_jlCx49-side*_jlR49*0.1).toFixed(1)+','+(_jlMargin49+_jlR49*0.1).toFixed(1)+' '+_jlCx49.toFixed(1)+','+_jlMargin49.toFixed(1)+' Q'+(_jlCx49*0.6+(_jlCx49+side*_jlR49*0.25)*0.4).toFixed(1)+','+(_jlCy49-_jlR49*0.05).toFixed(1)+' '+_jlCx49.toFixed(1)+','+(_jlCy49-_jlR49*0.3).toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_jlCx49-side*_jlR49*0.15).toFixed(1)+','+(_jlMargin49+_jlR49*0.12).toFixed(1)+' '+_jlCx49.toFixed(1)+','+_jlMargin49.toFixed(1)+' Q'+(_jlCx49*0.6+(_jlCx49-side*_jlR49*0.25)*0.4).toFixed(1)+','+(_jlCy49-_jlR49*0.05).toFixed(1)+' '+_jlCx49.toFixed(1)+','+(_jlCy49-_jlR49*0.3).toFixed(1);
+            }
+            break;
+          case 50: // Watcher Frond — chimera follows midrib but skips around the embedded eye
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_wfEyeX+side*_wfEyeR*1.6).toFixed(1)+','+(_wfEyeY+_wfLen*0.05).toFixed(1)+' '+_wfTipX.toFixed(1)+','+_wfTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_wfEyeX-side*_wfEyeR*0.4).toFixed(1)+','+(_wfEyeY+_wfEyeR*1.4).toFixed(1)+' '+(_wfEyeX+side*_wfEyeR*0.9).toFixed(1)+','+(_wfEyeY+_wfEyeR*1.1).toFixed(1)+' M'+(_wfEyeX-side*_wfEyeR*0.4).toFixed(1)+','+(_wfEyeY-_wfEyeR*1.3).toFixed(1)+' Q'+(_wfEyeX+side*_wfEyeR*0.6).toFixed(1)+','+(_wfEyeY-_wfEyeR*1.6).toFixed(1)+' '+_wfTipX.toFixed(1)+','+_wfTipY.toFixed(1);
+            }
+            break;
+          case 51: // Stamen Burst — chimera traces 2 of the radial filaments
+            var _sbCV0 = _sbArcCenter - _sbArcSpan * 0.5 + (1 / (_sbCount - 1)) * _sbArcSpan;
+            var _sbCV1 = _sbArcCenter - _sbArcSpan * 0.5 + (5 / (_sbCount - 1)) * _sbArcSpan;
+            var _sbCV0Tx = ox + Math.cos(_sbCV0) * _sbLen * 0.85 * side;
+            var _sbCV0Ty = ly + Math.sin(_sbCV0) * _sbLen * 0.85;
+            var _sbCV1Tx = ox + Math.cos(_sbCV1) * _sbLen * 0.85 * side;
+            var _sbCV1Ty = ly + Math.sin(_sbCV1) * _sbLen * 0.85;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_sbCV0)*_sbLen*0.42*side).toFixed(1)+','+(ly+Math.sin(_sbCV0)*_sbLen*0.42).toFixed(1)+' '+_sbCV0Tx.toFixed(1)+','+_sbCV0Ty.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(ox+Math.cos(_sbCV1)*_sbLen*0.42*side).toFixed(1)+','+(ly+Math.sin(_sbCV1)*_sbLen*0.42).toFixed(1)+' '+_sbCV1Tx.toFixed(1)+','+_sbCV1Ty.toFixed(1);
+            }
+            break;
+          case 52: // Mountain Ash — chimera ghosts along the rachis
+            if (chiVar === 0) {
+              chiVeinD = 'M'+(ox+side*0.4).toFixed(1)+','+ly+' Q'+(_cpMidX+side*0.5).toFixed(1)+','+(_cpMidY-0.3).toFixed(1)+' '+(_cpTipX+side*0.3).toFixed(1)+','+_cpTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+(ox-side*0.5).toFixed(1)+','+ly+' Q'+(_cpMidX-side*0.4).toFixed(1)+','+(_cpMidY+0.4).toFixed(1)+' '+(_cpTipX-side*0.3).toFixed(1)+','+_cpTipY.toFixed(1)+' M'+(ox+side*0.6).toFixed(1)+','+(ly-0.4).toFixed(1)+' Q'+(_cpMidX+side*0.6).toFixed(1)+','+(_cpMidY-0.5).toFixed(1)+' '+(_cpTipX+side*0.4).toFixed(1)+','+(_cpTipY-0.3).toFixed(1);
+            }
+            break;
+          case 53: // Tendril Coil — chimera ghosts the spiral path itself
+            var _tcMid1X = ox + Math.cos(_tcBaseAng) * _tcLen * 0.35 * side;
+            var _tcMid1Y = ly + Math.sin(_tcBaseAng) * _tcLen * 0.35;
+            var _tcMid2X = ox + Math.cos(_tcBaseAng) * _tcLen * 0.7 * side;
+            var _tcMid2Y = ly + Math.sin(_tcBaseAng) * _tcLen * 0.7;
+            var _tcEndX = ox + Math.cos(_tcBaseAng) * _tcLen * side;
+            var _tcEndY = ly + Math.sin(_tcBaseAng) * _tcLen;
+            var _tcCPerp = _tcBaseAng + Math.PI * 0.5;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_tcMid1X-Math.cos(_tcCPerp)*ls*0.4*side).toFixed(1)+','+(_tcMid1Y-Math.sin(_tcCPerp)*ls*0.4).toFixed(1)+' '+_tcMid2X.toFixed(1)+','+_tcMid2Y.toFixed(1)+' Q'+(_tcMid2X+Math.cos(_tcCPerp)*ls*0.3*side).toFixed(1)+','+(_tcMid2Y+Math.sin(_tcCPerp)*ls*0.3).toFixed(1)+' '+_tcEndX.toFixed(1)+','+_tcEndY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_tcMid1X+Math.cos(_tcCPerp)*ls*0.5*side).toFixed(1)+','+(_tcMid1Y+Math.sin(_tcCPerp)*ls*0.5).toFixed(1)+' '+_tcMid2X.toFixed(1)+','+_tcMid2Y.toFixed(1);
+            }
+            break;
+          case 54: // Water Lily — chimera as 2 of the 7 palmate radial veins
+            var _lpvA0 = _lpNotchAng + 0.55 + 1 * (((2*Math.PI) - 2*_lpNotchAng - 0.55) / 6);
+            var _lpvA1 = _lpNotchAng + 0.55 + 4 * (((2*Math.PI) - 2*_lpNotchAng - 0.55) / 6);
+            if (chiVar === 0) {
+              chiVeinD = 'M'+_lpCx2.toFixed(1)+','+_lpCy2.toFixed(1)+' Q'+(_lpCx2+Math.cos(_lpvA0)*_lpR2*0.45).toFixed(1)+','+(_lpCy2+Math.sin(_lpvA0)*_lpR2*0.45).toFixed(1)+' '+(_lpCx2+Math.cos(_lpvA0)*_lpR2*0.83).toFixed(1)+','+(_lpCy2+Math.sin(_lpvA0)*_lpR2*0.83).toFixed(1);
+            } else {
+              chiVeinD = 'M'+_lpCx2.toFixed(1)+','+_lpCy2.toFixed(1)+' Q'+(_lpCx2+Math.cos(_lpvA0)*_lpR2*0.45).toFixed(1)+','+(_lpCy2+Math.sin(_lpvA0)*_lpR2*0.45).toFixed(1)+' '+(_lpCx2+Math.cos(_lpvA0)*_lpR2*0.83).toFixed(1)+','+(_lpCy2+Math.sin(_lpvA0)*_lpR2*0.83).toFixed(1)+' M'+_lpCx2.toFixed(1)+','+_lpCy2.toFixed(1)+' Q'+(_lpCx2+Math.cos(_lpvA1)*_lpR2*0.45).toFixed(1)+','+(_lpCy2+Math.sin(_lpvA1)*_lpR2*0.45).toFixed(1)+' '+(_lpCx2+Math.cos(_lpvA1)*_lpR2*0.83).toFixed(1)+','+(_lpCy2+Math.sin(_lpvA1)*_lpR2*0.83).toFixed(1);
+            }
+            break;
+          case 55: // Dragon Scale Frond — chimera follows the strap midrib
+            var _slMidX = ox + Math.cos(_slAng) * _slLen * 0.42 * side;
+            var _slMidY = ly + Math.sin(_slAng) * _slLen * 0.42;
+            if (chiVar === 0) {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_slMidX+_slPx*0.4*side).toFixed(1)+','+(_slMidY+_slPy*0.4).toFixed(1)+' '+_slTipX.toFixed(1)+','+_slTipY.toFixed(1);
+            } else {
+              chiVeinD = 'M'+ox+','+ly+' Q'+(_slMidX-_slPx*_slWid*0.18*side).toFixed(1)+','+(_slMidY-_slPy*_slWid*0.18).toFixed(1)+' '+(_slMidX+Math.cos(_slAng)*_slLen*0.2*side).toFixed(1)+','+(_slMidY+Math.sin(_slAng)*_slLen*0.2).toFixed(1)+' Q'+(_slMidX+_slPx*_slWid*0.18*side+Math.cos(_slAng)*_slLen*0.3*side).toFixed(1)+','+(_slMidY+_slPy*_slWid*0.18+Math.sin(_slAng)*_slLen*0.3).toFixed(1)+' '+_slTipX.toFixed(1)+','+_slTipY.toFixed(1);
+            }
+            break;
+          case 56: // Tall Fescue — chimera as 1-2 ghost parallel veins
+            if (chiVar === 0) {
+              var _gbCv0 = _gbW * 0.5;
+              chiVeinD = 'M'+(ox-side*_gbCv0).toFixed(1)+','+ly+' Q'+(_gbMidX-side*_gbCv0*0.7).toFixed(1)+','+(_gbMidY-_gbLen*0.05).toFixed(1)+' '+(_gbTipX-side*_gbCv0*0.2).toFixed(1)+','+(_gbTipY+_gbLen*0.02).toFixed(1);
+            } else {
+              var _gbCv1 = _gbW * 0.45;
+              chiVeinD = 'M'+(ox-side*_gbCv1).toFixed(1)+','+ly+' Q'+(_gbMidX-side*_gbCv1*0.7).toFixed(1)+','+(_gbMidY-_gbLen*0.05).toFixed(1)+' '+(_gbTipX-side*_gbCv1*0.2).toFixed(1)+','+(_gbTipY+_gbLen*0.02).toFixed(1)+' M'+(ox+side*_gbCv1).toFixed(1)+','+ly+' Q'+(_gbMidX+side*_gbCv1*0.7).toFixed(1)+','+(_gbMidY-_gbLen*0.05).toFixed(1)+' '+(_gbTipX+side*_gbCv1*0.2).toFixed(1)+','+(_gbTipY+_gbLen*0.02).toFixed(1);
+            }
+            break;
+          case 57: // Venus Flytrap — chimera traces the hinge midrib
+            if (chiVar === 0) {
+              chiVeinD = 'M'+(_vtCx-side*_vtW*0.55).toFixed(1)+','+(_vtCy+0.2).toFixed(1)+' Q'+_vtCx.toFixed(1)+','+(_vtCy+0.4).toFixed(1)+' '+(_vtCx+side*_vtW*0.55).toFixed(1)+','+(_vtCy+0.2).toFixed(1);
+            } else {
+              chiVeinD = 'M'+(_vtCx-side*_vtW*0.5).toFixed(1)+','+_vtCy.toFixed(1)+' Q'+_vtCx.toFixed(1)+','+(_vtCy-0.3).toFixed(1)+' '+(_vtCx+side*_vtW*0.5).toFixed(1)+','+_vtCy.toFixed(1)+' M'+(_vtCx-side*_vtW*0.4).toFixed(1)+','+(_vtCy-_vtH*0.2).toFixed(1)+' Q'+_vtCx.toFixed(1)+','+(_vtCy-_vtH*0.55).toFixed(1)+' '+(_vtCx+side*_vtW*0.4).toFixed(1)+','+(_vtCy-_vtH*0.2).toFixed(1);
+            }
+            break;
+          case 58: // Bird's Nest Fern — chimera as 2 quiet ghost-side-veins
+            var _stCv1T = 0.35;
+            var _stCv2T = 0.62;
+            var _stCv1X = ox + Math.cos(_stAng) * _stLen * _stCv1T * side;
+            var _stCv1Y = ly + Math.sin(_stAng) * _stLen * _stCv1T;
+            var _stCv2X = ox + Math.cos(_stAng) * _stLen * _stCv2T * side;
+            var _stCv2Y = ly + Math.sin(_stAng) * _stLen * _stCv2T;
+            var _stCv1W = _stW * (1 - _stCv1T*0.6);
+            var _stCv2W = _stW * (1 - _stCv2T*0.6);
+            if (chiVar === 0) {
+              chiVeinD = 'M'+_stCv1X.toFixed(1)+','+_stCv1Y.toFixed(1)+' Q'+(_stCv1X+_stPx*_stCv1W*0.4*side).toFixed(1)+','+(_stCv1Y+_stPy*_stCv1W*0.4).toFixed(1)+' '+(_stCv1X+_stPx*_stCv1W*0.8*side).toFixed(1)+','+(_stCv1Y+_stPy*_stCv1W*0.8).toFixed(1);
+            } else {
+              chiVeinD = 'M'+_stCv1X.toFixed(1)+','+_stCv1Y.toFixed(1)+' Q'+(_stCv1X-_stPx*_stCv1W*0.35*side).toFixed(1)+','+(_stCv1Y-_stPy*_stCv1W*0.35).toFixed(1)+' '+(_stCv1X-_stPx*_stCv1W*0.65*side).toFixed(1)+','+(_stCv1Y-_stPy*_stCv1W*0.65).toFixed(1)+' M'+_stCv2X.toFixed(1)+','+_stCv2Y.toFixed(1)+' Q'+(_stCv2X+_stPx*_stCv2W*0.35*side).toFixed(1)+','+(_stCv2Y+_stPy*_stCv2W*0.35).toFixed(1)+' '+(_stCv2X+_stPx*_stCv2W*0.7*side).toFixed(1)+','+(_stCv2Y+_stPy*_stCv2W*0.7).toFixed(1);
+            }
             break;
           case 18: // Snake Plant — vertical sword: chimera veins run as 2 parallel longitudinal stripes
             // Stephen 2026-05-01: replaces Lady Fern. Simulates the cream margin tracks.
