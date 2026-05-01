@@ -672,7 +672,7 @@ Each class has a companion family. Holding any plant with matching companion unl
 ### Active work
 - ~~Items art~~ ✅ DONE 2026-04-24 — 19 PNGs live in `/assets/items/`
 - **delegateToken** — co-op friend-hex share, needs Firestore flow
-- **Balance pass on items** — Mulch Ward auto-win vs Shellgourd 48h-lock (same tier, different power)
+- ~~Balance pass on items~~ ✅ DONE — Mulch Ward (R, 1 charge, 24h) and Shellgourd (E, 1 charge, 48h) are different tiers with different fuse lengths. Audit #4 (commit 2bedec3) rebalanced Shellgourd from "no-op consume" to "Epic single-use ward with a long fuse" — defense ladder is intentional.
 - **Pi SDK integration** — ALL payments through Pi
 - **First-mint Common %** — currently 36% (Variant F), spec 42%. Closing the gap re-grades every plant. Defer until post-Pi-launch unless director calls otherwise.
 
