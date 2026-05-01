@@ -1,0 +1,65 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Cache Nuke</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{background:#0d100c;color:#e8dcc8;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;text-align:center;}
+.box{max-width:420px;}
+h1{color:#c8a84b;font-size:1.4rem;margin:0 0 0.6rem;letter-spacing:0.08em;}
+p{color:#9aa090;line-height:1.6;font-size:0.95rem;margin:0.6rem 0;}
+ul{text-align:left;color:#a8d484;font-family:monospace;font-size:0.85rem;line-height:1.8;list-style:none;padding:0;}
+.go{display:inline-block;margin-top:1rem;padding:14px 28px;background:linear-gradient(180deg,#c8a84b,#a08534);color:#1a1208;border-radius:10px;font-weight:700;text-decoration:none;letter-spacing:0.08em;}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid rgba(200,168,75,.3);border-top-color:#c8a84b;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style></head>
+<body>
+<div class="box">
+<h1>CACHE NUKE</h1>
+<p>Wiping your browser's cached copy of Lucid Winds so you fetch fresh from the server.</p>
+<ul id="log"></ul>
+<p id="status"><span class="spin"></span>working…</p>
+<a class="go" href="/" id="go" style="display:none;">RELOAD GAME</a>
+</div>
+<script>
+(function(){
+  var log = document.getElementById('log');
+  var status = document.getElementById('status');
+  var go = document.getElementById('go');
+  function add(line){ var li=document.createElement('li'); li.textContent='✓ '+line; log.appendChild(li); }
+  var tasks = [];
+
+  // 1. Unregister every service worker
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    tasks.push(navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){ r.unregister(); });
+      add('unregistered '+regs.length+' service worker(s)');
+    }));
+  } else { add('no service worker API'); }
+
+  // 2. Delete every cache
+  if (window.caches && caches.keys) {
+    tasks.push(caches.keys().then(function(ks){
+      return Promise.all(ks.map(function(k){ return caches.delete(k); })).then(function(){
+        add('cleared '+ks.length+' cache(s): '+(ks.join(', ')||'none'));
+      });
+    }));
+  } else { add('no caches API'); }
+
+  // 3. Wipe localStorage version key so the version-check fires next load
+  try {
+    localStorage.removeItem('lw_version');
+    add('cleared lw_version flag');
+  } catch(e){ add('localStorage write failed (private mode?)'); }
+
+  Promise.all(tasks).then(function(){
+    status.innerHTML = 'done. tap below to reload fresh.';
+    go.style.display = 'inline-block';
+    // Auto-reload with cache-bust query after 2.5s
+    setTimeout(function(){
+      location.replace('/?nuked='+Date.now());
+    }, 2500);
+  }).catch(function(err){
+    status.textContent = 'error: '+(err && err.message);
+  });
+})();
+</script>
+</body></html>
