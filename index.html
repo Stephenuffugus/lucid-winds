@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.57';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.58';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -26909,6 +26909,12 @@ document.addEventListener('keydown', function(e) {
             var ocp4x = fx + Math.cos(oAng) * oReach * 0.25 - Math.cos(oPerp) * oPW * 0.6;
             var ocp4y = fy + Math.sin(oAng) * oReach * 0.25 - Math.sin(oPerp) * oPW * 0.6;
 
+            // POLISH: per-petal cast shadow — dark ice-blue copy offset behind the petal body (E3 occlusion)
+            s += '<path d="M'+(fx+fs*0.04)+','+(fy+fs*0.04)
+               + ' C'+(ocp1x+fs*0.04).toFixed(1)+','+(ocp1y+fs*0.04).toFixed(1)+' '+(ocp2x+fs*0.04).toFixed(1)+','+(ocp2y+fs*0.04).toFixed(1)+' '+(oTipX+fs*0.04).toFixed(1)+','+(oTipY+fs*0.04).toFixed(1)
+               + ' C'+(ocp3x+fs*0.04).toFixed(1)+','+(ocp3y+fs*0.04).toFixed(1)+' '+(ocp4x+fs*0.04).toFixed(1)+','+(ocp4y+fs*0.04).toFixed(1)+' '+(fx+fs*0.04)+','+(fy+fs*0.04)+' Z"'
+               + ' fill="rgba(60,90,120,0.18)" opacity="'+bloomOp+'"/>';
+
             // Ice petal body — translucent fill with SHARP crystal-edge stroke + shimmer
             s += '<path d="M'+fx+','+fy
                + ' C'+ocp1x.toFixed(1)+','+ocp1y.toFixed(1)+' '+ocp2x.toFixed(1)+','+ocp2y.toFixed(1)+' '+oTipX.toFixed(1)+','+oTipY.toFixed(1)
@@ -26990,6 +26996,13 @@ document.addEventListener('keydown', function(e) {
             var ifvY = fy + Math.sin(iAng) * iReach * 0.5;
             s += '<line x1="'+fx+'" y1="'+fy+'" x2="'+ifvX.toFixed(1)+'" y2="'+ifvY.toFixed(1)+'"'
                + ' stroke="'+_frostW+'" stroke-width="0.2" opacity="'+(0.3*bloomOp).toFixed(2)+'"/>';
+
+            // POLISH: cream specular pickup at petal mid (A3 + A4 — cream not white for diffuse highlight)
+            var _irSpecX = fx + Math.cos(iAng) * iReach * 0.45 - Math.cos(iPerp) * iPW * 0.18;
+            var _irSpecY = fy + Math.sin(iAng) * iReach * 0.45 - Math.sin(iPerp) * iPW * 0.18;
+            s += '<ellipse cx="'+_irSpecX.toFixed(1)+'" cy="'+_irSpecY.toFixed(1)+'" rx="'+(iPW*0.18).toFixed(2)+'" ry="'+(iReach*0.12).toFixed(2)+'"'
+               + ' fill="#f5ecd6" opacity="'+(0.32*bloomOp).toFixed(2)+'"'
+               + ' transform="rotate('+(iAng*180/Math.PI + 90).toFixed(0)+','+_irSpecX.toFixed(1)+','+_irSpecY.toFixed(1)+')"/>';
           }
 
           // ── CRYSTAL CENTER — faceted ice core ──
@@ -27016,6 +27029,9 @@ document.addEventListener('keydown', function(e) {
           // Center specular — bright white diamond
           s += '<circle cx="'+(fx - _hexR*0.15)+'" cy="'+(fy - _hexR*0.15)+'" r="'+(_hexR*0.25)+'"'
              + ' fill="'+_frostW+'" opacity="'+(0.45*bloomOp).toFixed(2)+'"/>';
+          // POLISH: warm cream pickup on hex (A2 cool→warm hue shift) — small, on the lit side
+          s += '<ellipse cx="'+(fx - _hexR*0.18)+'" cy="'+(fy - _hexR*0.20)+'" rx="'+(_hexR*0.14)+'" ry="'+(_hexR*0.08)+'"'
+             + ' fill="#f5ecd6" opacity="'+(0.55*bloomOp).toFixed(2)+'" transform="rotate(-25,'+(fx-_hexR*0.18).toFixed(1)+','+(fy-_hexR*0.20).toFixed(1)+')"/>';
 
           // ── FROST PARTICLES — tiny ice crystals floating around ──
           var _frostParts = [
@@ -27042,11 +27058,18 @@ document.addEventListener('keydown', function(e) {
                + ' stroke="'+_frostW+'" stroke-width="0.1" opacity="'+(0.2*bloomOp).toFixed(2)+'"/>';
             s += '<line x1="'+fp.x.toFixed(1)+'" y1="'+(fp.y - fpR*1.5).toFixed(1)+'" x2="'+fp.x.toFixed(1)+'" y2="'+(fp.y + fpR*1.5).toFixed(1)+'"'
                + ' stroke="'+_frostW+'" stroke-width="0.1" opacity="'+(0.2*bloomOp).toFixed(2)+'"/>';
+            // POLISH: frost particle glow halo (E4 — 2x radius, 0.25 opacity)
+            s += '<circle cx="'+fp.x.toFixed(1)+'" cy="'+fp.y.toFixed(1)+'" r="'+(fpR*2.2).toFixed(2)+'"'
+               + ' fill="#cfe6f5" opacity="'+(0.22*bloomOp).toFixed(2)+'"/>';
           }
 
-          // ── ICE SHADOW — cold blue reflection beneath ──
-          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.15)+'" rx="'+(_irR*0.6)+'" ry="'+(_irR*0.15)+'"'
-             + ' fill="'+_iceDark+'" opacity="'+(0.1*bloomOp)+'"/>';
+          // ── ICE SHADOW — AO 3-stack contact (A6) — wide soft, mid, narrow dark ──
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.20)+'" rx="'+(_irR*0.75)+'" ry="'+(_irR*0.18)+'"'
+             + ' fill="rgba(20,35,55,0.10)" opacity="'+bloomOp+'"/>';
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.16)+'" rx="'+(_irR*0.55)+'" ry="'+(_irR*0.12)+'"'
+             + ' fill="'+_iceDark+'" opacity="'+(0.18*bloomOp).toFixed(2)+'"/>';
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.13)+'" rx="'+(_irR*0.32)+'" ry="'+(_irR*0.07)+'"'
+             + ' fill="rgba(15,25,45,0.30)" opacity="'+bloomOp+'"/>';
         })();
         break;
       case 66: // Flame Bloom — fire petals with ragged edges, ember core, flicker animation
@@ -27067,9 +27090,19 @@ document.addEventListener('keydown', function(e) {
           var _flOuter = '#A03020';  // deep red
           var _flHot = '#FFD870';    // white-hot center
 
+          // POLISH: cool-violet outer haze (A2 warm/cool hue shift) — sits BEHIND heat haze for contrast
+          s += '<ellipse cx="'+fx+'" cy="'+(fy - fs*0.5)+'" rx="'+(fs*1.55)+'" ry="'+(fs*1.85)+'"'
+             + ' fill="#5a3a78" opacity="'+(0.04*bloomOp).toFixed(2)+'" filter="url(#gc'+uid+')"/>';
+
           // ── HEAT HAZE — subtle glow behind the entire flame ──
           s += '<ellipse cx="'+fx+'" cy="'+(fy - fs*0.4)+'" rx="'+(fs*1.3)+'" ry="'+(fs*1.6)+'"'
              + ' fill="'+_flInner+'" opacity="'+(0.06*bloomOp)+'" filter="url(#gc'+uid+')"/>';
+
+          // POLISH: rear flame silhouette — dark backplane so foreground flames read layered (E3)
+          s += '<path d="M'+(fx - _flBaseR*1.0)+','+fy
+             + ' Q'+(fx - _flBaseR*0.7).toFixed(1)+','+(fy - fs*1.3).toFixed(1)+' '+fx+','+(fy - fs*2.0).toFixed(1)
+             + ' Q'+(fx + _flBaseR*0.7).toFixed(1)+','+(fy - fs*1.3).toFixed(1)+' '+(fx + _flBaseR*1.0)+','+fy+' Z"'
+             + ' fill="rgba(40,10,5,0.28)" opacity="'+bloomOp+'"/>';
 
           // ── OUTER FLAME TONGUES — 9 ragged-edged flame petals ──
           // Each flame has a unique height and jaggedness
@@ -27130,12 +27163,12 @@ document.addEventListener('keydown', function(e) {
                + ' dur="'+(1.8 + Math.sin(fi*3.2)*0.6).toFixed(1)+'s" repeatCount="indefinite"/>';
             s += '</path>';
 
-            // Inner glow core per flame — brighter center stripe
-            if (centerFrac > 0.3) {
-              s += '<path d="M'+fX.toFixed(1)+','+fy
-                 + ' Q'+fX.toFixed(1)+','+(fy - fH*0.5).toFixed(1)+' '+fTipX.toFixed(1)+','+(fTipY + fH*0.1).toFixed(1)+'"'
-                 + ' fill="none" stroke="'+_flHot+'" stroke-width="'+(fW*0.3)+'" stroke-linecap="round" opacity="'+(0.35*centerFrac*bloomOp).toFixed(2)+'"/>';
-            }
+            // POLISH: inner luminous stripe on EVERY flame — color scales by position (A2 + A3)
+            var _flStripeColor = centerFrac > 0.6 ? '#f5ecd6' : (centerFrac > 0.3 ? _flHot : _flInner);
+            var _flStripeOp = (0.30 + centerFrac * 0.20);
+            s += '<path d="M'+fX.toFixed(1)+','+fy
+               + ' Q'+fX.toFixed(1)+','+(fy - fH*0.5).toFixed(1)+' '+fTipX.toFixed(1)+','+(fTipY + fH*0.1).toFixed(1)+'"'
+               + ' fill="none" stroke="'+_flStripeColor+'" stroke-width="'+(fW*0.28)+'" stroke-linecap="round" opacity="'+(_flStripeOp*bloomOp).toFixed(2)+'"/>';
 
             // Flame edge highlight — bright left edge (heat shimmer)
             s += '<path d="M'+fX.toFixed(1)+','+fy
@@ -27152,12 +27185,15 @@ document.addEventListener('keydown', function(e) {
           // Mid ember
           s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.02)+'" rx="'+(_flBaseR*0.45)+'" ry="'+(_flBaseR*0.22)+'"'
              + ' fill="'+_flHot+'" opacity="'+(0.7*bloomOp)+'"/>';
-          // White-hot center
+          // White-hot center — cream diffuse (A4)
           s += '<ellipse cx="'+fx+'" cy="'+fy+'" rx="'+(_flBaseR*0.25)+'" ry="'+(_flBaseR*0.12)+'"'
-             + ' fill="#FFF8E0" opacity="'+(0.85*bloomOp)+'"/>';
-          // Specular spark
-          s += '<circle cx="'+(fx - _flBaseR*0.08)+'" cy="'+(fy - _flBaseR*0.03)+'" r="'+(_flBaseR*0.06)+'"'
-             + ' fill="#fff8e0" opacity="'+bloomOp+'"/>';
+             + ' fill="#f5ecd6" opacity="'+(0.85*bloomOp)+'"/>';
+          // POLISH: small sharp pure-white specular pickup ON TOP of cream diffuse (A3 dual-specular)
+          s += '<ellipse cx="'+(fx - _flBaseR*0.06)+'" cy="'+(fy - _flBaseR*0.04)+'" rx="'+(_flBaseR*0.10)+'" ry="'+(_flBaseR*0.05)+'"'
+             + ' fill="#FFFFFF" opacity="'+(0.75*bloomOp).toFixed(2)+'"/>';
+          // Tiny sub-pixel pickup
+          s += '<circle cx="'+(fx - _flBaseR*0.08)+'" cy="'+(fy - _flBaseR*0.05)+'" r="'+(_flBaseR*0.04)+'"'
+             + ' fill="#FFFFFF" opacity="'+bloomOp+'"/>';
 
           // ── SPARK PARTICLES — tiny bright dots floating above the flames ──
           var _sparks = [
@@ -27169,6 +27205,9 @@ document.addEventListener('keydown', function(e) {
           ];
           for (var si = 0; si < _sparks.length; si++) {
             var sp = _sparks[si];
+            // POLISH: spark halo (E4 — 2x radius, 0.25 opacity) drawn first so the bright spark sits on top
+            s += '<circle cx="'+sp.x.toFixed(1)+'" cy="'+sp.y.toFixed(1)+'" r="'+(fs*sp.r*2.4).toFixed(2)+'"'
+               + ' fill="'+_flInner+'" opacity="'+(sp.op*0.25*bloomOp).toFixed(2)+'"/>';
             s += '<circle cx="'+sp.x.toFixed(1)+'" cy="'+sp.y.toFixed(1)+'" r="'+(fs*sp.r)+'"'
                + ' fill="'+_flHot+'" opacity="'+(sp.op*bloomOp).toFixed(2)+'">';
             // Spark float animation — drifts upward
@@ -27178,9 +27217,13 @@ document.addEventListener('keydown', function(e) {
             s += '</circle>';
           }
 
-          // ── BASE SHADOW — hot glow on the ground beneath ──
-          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.2)+'" rx="'+(_flBaseR*1.1)+'" ry="'+(_flBaseR*0.2)+'"'
-             + ' fill="'+_flOuter+'" opacity="'+(0.15*bloomOp)+'"/>';
+          // ── BASE SHADOW — AO 3-stack (A6): wide warm spill, mid orange, narrow dark contact ──
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.24)+'" rx="'+(_flBaseR*1.35)+'" ry="'+(_flBaseR*0.26)+'"'
+             + ' fill="'+_flOuter+'" opacity="'+(0.12*bloomOp).toFixed(2)+'"/>';
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.20)+'" rx="'+(_flBaseR*1.0)+'" ry="'+(_flBaseR*0.18)+'"'
+             + ' fill="'+_flMid+'" opacity="'+(0.20*bloomOp).toFixed(2)+'"/>';
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + fs*0.16)+'" rx="'+(_flBaseR*0.55)+'" ry="'+(_flBaseR*0.10)+'"'
+             + ' fill="rgba(40,5,5,0.45)" opacity="'+bloomOp+'"/>';
         })();
         break;
       case 65: // Violet — 5 asymmetric petals with face pattern and guide-line whiskers
@@ -27199,6 +27242,22 @@ document.addEventListener('keydown', function(e) {
           // ── BACK SHADOW — soft disc behind the whole face ──
           s += '<ellipse cx="'+(fx+fs*0.03)+'" cy="'+(fy+fs*0.06)+'" rx="'+(_viR*0.8)+'" ry="'+(_viR*0.7)+'"'
              + ' fill="rgba(40,20,5,0.16)" opacity="'+bloomOp+'"/>';
+          // POLISH: AO 3-stack contact at the bottom of the lip (A6) — wide soft, mid, narrow dark
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + _viR*0.95)+'" rx="'+(_viR*0.55)+'" ry="'+(_viR*0.13)+'"'
+             + ' fill="rgba(40,20,5,0.10)" opacity="'+bloomOp+'"/>';
+          s += '<ellipse cx="'+fx+'" cy="'+(fy + _viR*0.92)+'" rx="'+(_viR*0.38)+'" ry="'+(_viR*0.08)+'"'
+             + ' fill="rgba(40,20,5,0.18)" opacity="'+bloomOp+'"/>';
+
+          // POLISH: rear occlusion wedges (E3) — faint dark spokes in the petal gaps so seams read
+          var _viGapAng = [54, 126, -18, -90, -162]; // 5 gaps at petal seams (degrees)
+          for (var _vgi = 0; _vgi < 5; _vgi++) {
+            var _vga = _viGapAng[_vgi] * Math.PI / 180;
+            var _vgx = fx + Math.cos(_vga) * _viR * 0.55;
+            var _vgy = fy + Math.sin(_vga) * _viR * 0.55;
+            s += '<ellipse cx="'+_vgx.toFixed(1)+'" cy="'+_vgy.toFixed(1)+'" rx="'+(_viR*0.06)+'" ry="'+(_viR*0.32)+'"'
+               + ' fill="rgba(30,10,40,0.18)" opacity="'+bloomOp+'"'
+               + ' transform="rotate('+(_viGapAng[_vgi]+90).toFixed(0)+','+_vgx.toFixed(1)+','+_vgy.toFixed(1)+')"/>';
+          }
 
           // ── LOWER LIP PETAL — largest petal, points downward ──
           // This is the "chin" of the face — widest and most prominent
@@ -27357,18 +27416,31 @@ document.addEventListener('keydown', function(e) {
             s += '<path d="M'+fx+','+fy
                + ' C'+scp1x.toFixed(1)+','+scp1y.toFixed(1)+' '+scp2x.toFixed(1)+','+scp2y.toFixed(1)+' '+sTipX.toFixed(1)+','+sTipY.toFixed(1)+'"'
                + ' fill="none" stroke="#fff8e0" stroke-width="0.35" opacity="'+bloomOp+'"/>';
+
+            // POLISH: warm cream specular patch on lit side (A2 cool→warm hue + A3 diffuse)
+            var _viSpecX = fx + sd.xOff * _viR + Math.cos(sAng) * sReach * 0.50 + Math.cos(sPerp) * sW * 0.30;
+            var _viSpecY = fy + Math.sin(sAng) * sReach * 0.50 + Math.sin(sPerp) * sW * 0.30;
+            s += '<ellipse cx="'+_viSpecX.toFixed(1)+'" cy="'+_viSpecY.toFixed(1)+'" rx="'+(sW*0.22).toFixed(2)+'" ry="'+(sReach*0.16).toFixed(2)+'"'
+               + ' fill="#f5ecd6" opacity="'+(0.30*bloomOp).toFixed(2)+'"'
+               + ' transform="rotate('+(sAng*180/Math.PI + 90).toFixed(0)+','+_viSpecX.toFixed(1)+','+_viSpecY.toFixed(1)+')"/>';
           }
 
           // ── THE "EYE" — dark center where all guide lines converge ──
+          // POLISH: pollen-style halo under the eye (E4 — 2x radius, 0.25 opacity)
+          s += '<circle cx="'+fx+'" cy="'+(fy + fs*0.03)+'" r="'+(fs*0.32)+'"'
+             + ' fill="'+PALETTE.gold+'" opacity="'+(0.18*bloomOp).toFixed(2)+'"/>';
           // This is the soul of the viola face
           s += '<circle cx="'+fx+'" cy="'+(fy + fs*0.03)+'" r="'+(fs*0.16)+'"'
              + ' fill="rgba(30,10,40,0.4)" opacity="'+bloomOp+'"/>';
           // Eye inner bright dot — the "pupil" catching light
           s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.08)+'"'
              + ' fill="'+PALETTE.gold+'" opacity="'+(0.85*bloomOp)+'"/>';
-          // Eye specular
+          // Eye specular — cream diffuse (A4)
           s += '<circle cx="'+(fx - fs*0.025)+'" cy="'+(fy - fs*0.025)+'" r="'+(fs*0.03)+'"'
-             + ' fill="#fff8e0" opacity="'+bloomOp+'"/>';
+             + ' fill="#f5ecd6" opacity="'+bloomOp+'"/>';
+          // POLISH: pure-white sub-pixel pickup ON TOP (A3) — the brightest catchlight
+          s += '<circle cx="'+(fx - fs*0.030)+'" cy="'+(fy - fs*0.030)+'" r="'+(fs*0.014)+'"'
+             + ' fill="#FFFFFF" opacity="'+bloomOp+'"/>';
           // Eye shadow ring
           s += '<circle cx="'+fx+'" cy="'+(fy + fs*0.03)+'" r="'+(fs*0.18)+'"'
              + ' fill="none" stroke="rgba(40,20,5,0.13)" stroke-width="0.25" opacity="'+bloomOp+'"/>';
