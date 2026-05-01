@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.25';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.26';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -69309,6 +69309,24 @@ function _ensureWildActive(cb){
   // are definitely visible even if the tab was already marked active
   // but compact-mode was applied earlier.
   try{if(window.FG_Backpack&&window.FG_Backpack.show)window.FG_Backpack.show();}catch(e){}
+  // Stephen 2026-05-01: iOS tester stuck on SOW step "button doesn't do
+  // anything." Root cause likely: the backpack-open body class
+  // (lw-bp-open) and/or bpe.open panel class lingered past step 31
+  // because the tutorial's nudge-close (FG_Backpack.toggle()) fired but
+  // didn't take on iOS for some reason. CSS rules at #dfb explicitly
+  // hide the SOW FAB whenever EITHER class is present (visibility:hidden
+  // + pointer-events:none), so the tester sees no button and taps go
+  // nowhere. Fix: explicitly clear both flags here, close the backpack
+  // if it's still open, before yielding to the next Wild-phase step.
+  try {
+    var _bpe = document.getElementById('bpe');
+    if (_bpe && _bpe.classList.contains('open')) {
+      try { if (window.FG_Backpack && window.FG_Backpack.close) window.FG_Backpack.close(); } catch(e){}
+      // Belt-and-suspenders if .close() didn't fire.
+      try { _bpe.classList.remove('open'); } catch(e){}
+    }
+    document.body.classList.remove('lw-bp-open');
+  } catch(e){}
   // Give the tab a beat to render before running the next step.
   setTimeout(cb||function(){}, onWild?100:700);
 }
