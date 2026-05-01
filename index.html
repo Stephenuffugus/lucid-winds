@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.52';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.53';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -25676,6 +25676,38 @@ document.addEventListener('keydown', function(e) {
                + ' dur="'+(3 + ski*0.8).toFixed(1)+'s" repeatCount="indefinite"/>';
             s += '</circle>';
           }
+          // ── POLISH PASS 2026-05-01: caustic refraction + facet lines + scatter ──
+          // 4 caustic light wave bands sweeping across the bloom (light bending through glass)
+          var _pcx = fx, _pcy = fy;
+          for (var _cw = 0; _cw < 4; _cw++) {
+            var _cwAng = (_cw * Math.PI / 2) + 0.3;
+            var _cwR1 = fs * 0.7;
+            var _cwR2 = fs * 1.4;
+            var _cwx1 = _pcx + Math.cos(_cwAng) * _cwR1;
+            var _cwy1 = _pcy + Math.sin(_cwAng) * _cwR1;
+            var _cwx2 = _pcx + Math.cos(_cwAng + 0.4) * _cwR2;
+            var _cwy2 = _pcy + Math.sin(_cwAng + 0.4) * _cwR2;
+            var _cwx3 = _pcx + Math.cos(_cwAng - 0.4) * _cwR2;
+            var _cwy3 = _pcy + Math.sin(_cwAng - 0.4) * _cwR2;
+            s += '<path d="M' + _cwx1.toFixed(2) + ',' + _cwy1.toFixed(2) + ' Q' + ((_cwx1+_cwx2)/2).toFixed(2) + ',' + ((_cwy1+_cwy2)/2 - 0.3).toFixed(2) + ' ' + _cwx2.toFixed(2) + ',' + _cwy2.toFixed(2) + '" fill="none" stroke="#FFFEF5" stroke-width="0.32" opacity="' + (0.16*bloomOp).toFixed(2) + '" stroke-linecap="round"/>';
+            s += '<path d="M' + _cwx1.toFixed(2) + ',' + _cwy1.toFixed(2) + ' Q' + ((_cwx1+_cwx3)/2).toFixed(2) + ',' + ((_cwy1+_cwy3)/2 + 0.3).toFixed(2) + ' ' + _cwx3.toFixed(2) + ',' + _cwy3.toFixed(2) + '" fill="none" stroke="#FFFEF5" stroke-width="0.28" opacity="' + (0.14*bloomOp).toFixed(2) + '" stroke-linecap="round"/>';
+          }
+          // Bright white core with multi-stop radial halo (4-stop simulation via 3 stacked circles)
+          s += '<circle cx="' + _pcx + '" cy="' + _pcy + '" r="' + (fs*0.45).toFixed(2) + '" fill="#FFFFFF" opacity="' + (0.20*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + _pcx + '" cy="' + _pcy + '" r="' + (fs*0.30).toFixed(2) + '" fill="#FFFFFF" opacity="' + (0.36*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + _pcx + '" cy="' + _pcy + '" r="' + (fs*0.16).toFixed(2) + '" fill="#FFFFFF" opacity="' + (0.65*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + _pcx + '" cy="' + _pcy + '" r="' + (fs*0.08).toFixed(2) + '" fill="#FFFFFF" opacity="' + bloomOp.toFixed(2) + '"/>';
+          // Prismatic scatter — 8 tiny colored dots scattered around the petal edges (light diffusion)
+          var _pScatter = [
+            [-0.95,-0.55,'#FF9999'],[0.85,-0.65,'#FFCC99'],[-1.05,0.15,'#FFFF99'],
+            [0.95,0.35,'#99FF99'],[-0.55,0.85,'#99CCFF'],[0.65,0.85,'#CC99FF'],
+            [-0.35,-1.0,'#FF99CC'],[0.55,-1.0,'#99FFEE']
+          ];
+          for (var _ps = 0; _ps < _pScatter.length; _ps++) {
+            var _psp = _pScatter[_ps];
+            s += '<circle cx="' + (_pcx + fs*_psp[0]).toFixed(2) + '" cy="' + (_pcy + fs*_psp[1]).toFixed(2) + '" r="0.55" fill="' + _psp[2] + '" opacity="' + (0.55*bloomOp).toFixed(2) + '"/>';
+            s += '<circle cx="' + (_pcx + fs*_psp[0]).toFixed(2) + '" cy="' + (_pcy + fs*_psp[1]).toFixed(2) + '" r="0.25" fill="#FFFFFF" opacity="' + (0.85*bloomOp).toFixed(2) + '"/>';
+          }
         })();
         break;
       case 69: // Clock Flower — 12 precise petals as hour markers, clock hands, tick animation
@@ -25851,6 +25883,25 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(fx + _ckR*0.65)+','+(fy + _ckR*0.65)
              + ' A '+(_ckR*0.92)+' '+(_ckR*0.92)+' 0 0 1 '+(fx - _ckR*0.65)+','+(fy + _ckR*0.65)+'"'
              + ' fill="none" stroke="rgba(40,20,5,0.13)" stroke-width="0.35" opacity="'+bloomOp+'"/>';
+          // ── POLISH PASS 2026-05-01: 60 minute ticks + jeweled pivot ──
+          // Minute tick marks (skip every 5th — those are hour positions w/ petals)
+          for (var mt = 0; mt < 60; mt++) {
+            if (mt % 5 === 0) continue;
+            var mtAng = (mt * 6 - 90) * Math.PI / 180;
+            var mtRO = _ckR * 0.86;
+            var mtRI = _ckR * 0.79;
+            var mtX1 = fx + Math.cos(mtAng) * mtRI;
+            var mtY1 = fy + Math.sin(mtAng) * mtRI;
+            var mtX2 = fx + Math.cos(mtAng) * mtRO;
+            var mtY2 = fy + Math.sin(mtAng) * mtRO;
+            s += '<line x1="' + mtX1.toFixed(2) + '" y1="' + mtY1.toFixed(2) + '" x2="' + mtX2.toFixed(2) + '" y2="' + mtY2.toFixed(2) + '" stroke="' + _ckDark + '" stroke-width="0.15" opacity="' + (0.55*bloomOp).toFixed(2) + '"/>';
+          }
+          // Jeweled pivot — concentric gold gem at center, replaces flat pivot
+          var _ckPiv = _ckR * 0.16;
+          s += '<circle cx="' + fx + '" cy="' + fy + '" r="' + (_ckPiv * 1.4).toFixed(2) + '" fill="rgba(40,20,5,0.5)" opacity="' + (0.75*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + fx + '" cy="' + fy + '" r="' + _ckPiv.toFixed(2) + '" fill="#D4AF37" opacity="' + bloomOp.toFixed(2) + '"/>';
+          s += '<circle cx="' + fx + '" cy="' + fy + '" r="' + (_ckPiv*0.65).toFixed(2) + '" fill="#FFE08A" opacity="' + (0.88*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + (fx-_ckPiv*0.32).toFixed(2) + '" cy="' + (fy-_ckPiv*0.32).toFixed(2) + '" r="' + (_ckPiv*0.28).toFixed(2) + '" fill="#FFFCEB" opacity="' + (0.95*bloomOp).toFixed(2) + '"/>';
         })();
         break;
       case 68: // Void Blossom — space-filled petals, starfield inside, purple core glow
@@ -25980,6 +26031,23 @@ document.addEventListener('keydown', function(e) {
                + ' dur="'+(3 + di*1.2).toFixed(1)+'s" repeatCount="indefinite"/>';
             s += '</circle>';
           }
+          // ── POLISH PASS 2026-05-01: nebula swirl + cosmic dust + singularity rings ──
+          // Nebula swirl curves — 3 faint purple cosmic-dust paths sweeping across the bloom
+          var _vcx = fx, _vcy = fy;
+          s += '<path d="M' + (_vcx-fs*1.2) + ',' + (_vcy-fs*0.4) + ' Q' + (_vcx-fs*0.3) + ',' + (_vcy-fs*0.9) + ' ' + (_vcx+fs*0.6) + ',' + (_vcy-fs*0.5) + ' Q' + (_vcx+fs*1.0) + ',' + (_vcy-fs*0.1) + ' ' + (_vcx+fs*1.3) + ',' + (_vcy+fs*0.3) + '" fill="none" stroke="#8B4FB8" stroke-width="0.25" opacity="' + (0.18*bloomOp).toFixed(2) + '" stroke-linecap="round"/>';
+          s += '<path d="M' + (_vcx-fs*0.9) + ',' + (_vcy+fs*0.7) + ' Q' + (_vcx) + ',' + (_vcy+fs*0.3) + ' ' + (_vcx+fs*0.8) + ',' + (_vcy+fs*0.6) + '" fill="none" stroke="#A060C8" stroke-width="0.22" opacity="' + (0.14*bloomOp).toFixed(2) + '" stroke-linecap="round"/>';
+          s += '<path d="M' + (_vcx-fs*0.4) + ',' + (_vcy-fs*1.1) + ' Q' + (_vcx+fs*0.2) + ',' + (_vcy-fs*0.7) + ' ' + (_vcx+fs*0.7) + ',' + (_vcy-fs*1.3) + '" fill="none" stroke="#7040A8" stroke-width="0.2" opacity="' + (0.16*bloomOp).toFixed(2) + '" stroke-linecap="round"/>';
+          // Cosmic dust micro-particles — 14 ultra-tiny white dots scattered for nebula fog
+          var _vDust = [[-0.8,-0.6],[0.5,-0.9],[-1.0,0.2],[0.9,0.4],[-0.3,0.8],[0.7,-0.5],[-0.6,1.0],[1.1,-0.2],[0.2,1.1],[-0.9,-0.9],[1.0,0.9],[0.0,-1.2],[-0.4,0.3],[0.6,0.1]];
+          for (var _vd = 0; _vd < _vDust.length; _vd++) {
+            var _vdp = _vDust[_vd];
+            s += '<circle cx="' + (_vcx + fs*_vdp[0]).toFixed(2) + '" cy="' + (_vcy + fs*_vdp[1]).toFixed(2) + '" r="0.32" fill="#FFFFFF" opacity="' + (0.18*bloomOp).toFixed(2) + '"/>';
+          }
+          // Singularity rings at center — concentric gravitational pull effect
+          s += '<circle cx="' + _vcx + '" cy="' + _vcy + '" r="' + (fs*0.32).toFixed(2) + '" fill="none" stroke="#4A3A70" stroke-width="0.4" opacity="' + (0.5*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + _vcx + '" cy="' + _vcy + '" r="' + (fs*0.20).toFixed(2) + '" fill="none" stroke="#6B3A8F" stroke-width="0.32" opacity="' + (0.7*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + _vcx + '" cy="' + _vcy + '" r="' + (fs*0.10).toFixed(2) + '" fill="#1A0810" opacity="' + (0.85*bloomOp).toFixed(2) + '"/>';
+          s += '<circle cx="' + _vcx + '" cy="' + _vcy + '" r="' + (fs*0.04).toFixed(2) + '" fill="#FFFFFF" opacity="' + (0.9*bloomOp).toFixed(2) + '"/>';
         })();
         break;
       case 67: // Ice Rose — frozen crystalline rose, sharp edges, prismatic refractions
