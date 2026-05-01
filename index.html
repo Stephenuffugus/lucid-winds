@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.84';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.85';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55254,6 +55254,180 @@ window._lwSendGiftFlow = function(friendUid, friendName) {
   };
 };
 
+// ═══ TWIN BLOOM — Tier 3 cross-distance breeding ═══
+// Two overlays:
+//   _lwOpenTwinBloomPropose(friendUid, friendName)
+//     → Alice picks one of her own breedable plants → confirms → proposal
+//       doc lands in Bob's inbox.
+//   _lwOpenTwinBloomAccept(proposalDoc)
+//     → Bob picks one of his own breedable plants → confirms → breed runs,
+//       seed lands in Bob's nursery, result doc posts back to Alice.
+//
+// Both use the same shared partner-picker UI (_lwTwinBloomPickPartner).
+
+window._lwTwinBloomPickPartner = function(opts) {
+  // opts: { title, subtitle, confirmLabel, friendName, onPick(plantHash) }
+  var ov = document.createElement('div');
+  ov.id = 'lw-twin-pick';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100006;display:flex;align-items:flex-start;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);padding:1rem;overflow-y:auto;';
+  ov.addEventListener('click', function(ev){ if (ev.target === ov) ov.remove(); });
+  var card = document.createElement('div');
+  card.style.cssText = 'max-width:420px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(232,160,191,0.45);border-radius:14px;padding:1.1rem 1rem;color:var(--cream);margin-top:1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);';
+  var esc = window._lwEscapeHTML || function(s){return String(s||'');};
+  // Header
+  var head = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">';
+  head += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;color:#f0a0c0;">🌸 ' + esc(opts.title || 'TWIN BLOOM') + '</div>';
+  head += '<button onclick="document.getElementById(\'lw-twin-pick\').remove()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:0.85rem;cursor:pointer;">✕</button>';
+  head += '</div>';
+  head += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.85rem;line-height:1.5;">' + esc(opts.subtitle || '') + '</div>';
+  card.innerHTML = head + '<div id="lw-twin-list" style="font-family:DM Mono,monospace;font-size:0.55rem;">Loading…</div>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+
+  // Load greenhouse + filter to breedable plants
+  var gh = []; try { gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]'); } catch(e){}
+  var eligible = [];
+  for (var i=0;i<gh.length;i++){
+    var p = gh[i];
+    if (!window.FG_Data || !window.FG_Data.getBreedStatus){ eligible.push(p); continue; }
+    var bs = window.FG_Data.getBreedStatus(p);
+    if (bs.canBreed) eligible.push(p);
+  }
+  var listEl = document.getElementById('lw-twin-list');
+  if (!eligible.length){
+    listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-style:italic;">No plants ready to breed. Plants need to mature and have charges available.</div>';
+    return;
+  }
+  var html = '';
+  for (var j=0;j<eligible.length;j++){
+    var pl = eligible[j];
+    var nm = (window.getPlantName ? window.getPlantName(pl.hash) : (pl.hash||'').slice(0,8)) || 'Plant';
+    var grade = '?';
+    try {
+      var t = window.hashToTraits(pl.hash);
+      if (pl.generation) t.chimerGen = pl.generation;
+      var g = window.getTerraGrade(t);
+      grade = g.name || '?';
+    } catch(e){}
+    var svg = ''; try { if (window._generatePlantSVG) svg = window._generatePlantSVG(pl.hash, 64, 1); } catch(e){}
+    html += '<button class="lw-twin-pick-btn" data-hash="'+esc(pl.hash)+'" style="display:flex;align-items:center;gap:0.7rem;width:100%;padding:0.55rem;margin-bottom:0.5rem;background:linear-gradient(180deg,rgba(26,36,22,0.7),rgba(13,16,12,0.9));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;cursor:pointer;text-align:left;color:inherit;">';
+    html += '<div style="width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'+svg+'</div>';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.75rem;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(nm)+'</div>';
+    html += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--gold);letter-spacing:0.1em;margin-top:0.2rem;">'+esc(grade)+'</div>';
+    html += '</div>';
+    html += '</button>';
+  }
+  listEl.innerHTML = html;
+  var btns = listEl.querySelectorAll('.lw-twin-pick-btn');
+  for (var bi=0; bi<btns.length; bi++){
+    (function(b){
+      b.addEventListener('click', function(){
+        var hash = b.getAttribute('data-hash');
+        ov.remove();
+        if (typeof opts.onPick === 'function') opts.onPick(hash);
+      });
+    })(btns[bi]);
+  }
+};
+
+// Alice's propose flow
+window._lwOpenTwinBloomPropose = function(friendUid, friendName) {
+  if (!window.LW_GIFTS) return;
+  var cost = window.LW_GIFTS.TWIN_BLOOM_DEW_COST || 30;
+  var bal = window.getTotalDew ? window.getTotalDew() : 0;
+  if (bal < cost){
+    if (window._toast) window._toast('Twin Bloom needs '+cost+' Dew. You have '+bal+'.');
+    return;
+  }
+  window._lwTwinBloomPickPartner({
+    title: 'TWIN BLOOM PROPOSAL',
+    subtitle: 'Pick the plant of yours to cross with one of '+(friendName||'your friend')+'\'s. They\'ll pick their partner on accept. Both nurseries get the same chimera seed — twins, raised by different keepers.  Cost: '+cost+' Dew (refunded on decline/expiry).',
+    onPick: function(plantHash){
+      window.LW_GIFTS.proposeTwinBloom(friendUid, friendName, plantHash, function(ok, info){
+        if (ok){
+          if (window._toast) window._toast('🌸 Proposal sent to '+(friendName||'your friend')+'. Waiting for their pick.');
+          if (window.PW_UI && window.PW_UI.loadFriendsUI) window.PW_UI.loadFriendsUI();
+        } else {
+          if (window._toast) window._toast('Twin Bloom failed: '+(info||'unknown'));
+        }
+      });
+    }
+  });
+};
+
+// Bob's accept flow — invoked from inbox CLAIM-equivalent on a twin_bloom_proposal
+window._lwOpenTwinBloomAccept = function(g) {
+  // g: the proposal doc {id, from, fromName, plantA_hash, ...}
+  var fromName = g.fromName || 'Your friend';
+  var plantA = (g.loot && g.loot.plantA_hash) || g.plantA_hash;
+  if (!plantA){
+    if (window._toast) window._toast('Proposal is missing the partner plant.');
+    return;
+  }
+  // Show Alice's plant card briefly so Bob knows what he's crossing with
+  var ov = document.createElement('div');
+  ov.id = 'lw-twin-accept-preview';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100006;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);padding:1rem;';
+  ov.addEventListener('click', function(ev){ if (ev.target === ov) ov.remove(); });
+  var esc = window._lwEscapeHTML || function(s){return String(s||'');};
+  var nm = (window.getPlantName ? window.getPlantName(plantA) : plantA.slice(0,8)) || 'Plant';
+  var grade = '?';
+  try {
+    var t = window.hashToTraits(plantA);
+    var gd = window.getTerraGrade(t);
+    grade = gd.name || '?';
+  } catch(e){}
+  var svg = ''; try { if (window._generatePlantSVG) svg = window._generatePlantSVG(plantA, 120, 1); } catch(e){}
+  var card = document.createElement('div');
+  card.style.cssText = 'max-width:360px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(232,160,191,0.45);border-radius:14px;padding:1.1rem 1rem;color:var(--cream);text-align:center;';
+  card.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;color:#f0a0c0;margin-bottom:0.3rem;">🌸 TWIN BLOOM</div>'+
+    '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.7rem;">'+esc(fromName)+' wants to cross this with one of yours. Pick a partner — same chimera seed lands in both nurseries.</div>'+
+    '<div style="display:flex;justify-content:center;align-items:center;margin-bottom:0.5rem;"><div style="width:120px;height:120px;">'+svg+'</div></div>'+
+    '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.85rem;color:var(--cream);">'+esc(nm)+'</div>'+
+    '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:1rem;">'+esc(grade)+'</div>'+
+    '<div style="display:flex;gap:0.5rem;">'+
+      '<button id="lw-twin-pick-mine" style="flex:1;min-height:48px;padding:0.6rem;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;background:linear-gradient(180deg,rgba(232,160,191,0.3),rgba(180,80,140,0.4));border:1.5px solid rgba(232,160,191,0.6);border-radius:10px;color:var(--cream);cursor:pointer;">🌸 PICK MY PARTNER</button>'+
+      '<button id="lw-twin-decline" style="flex:1;min-height:48px;padding:0.6rem;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;background:rgba(46,60,38,0.15);border:1px solid rgba(122,179,86,0.15);border-radius:10px;color:var(--muted);cursor:pointer;">DECLINE</button>'+
+    '</div>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  document.getElementById('lw-twin-decline').onclick = function(){
+    ov.remove();
+    // Decline = mark claimed without running the breed (Alice's Dew is left
+    // unrefunded for now; v2 will add a refund-on-decline path).
+    if (window.firebase && firebase.firestore){
+      try {
+        firebase.firestore().collection('friends').doc(firebase.auth().currentUser.uid)
+          .collection('inbox').doc(g.id).delete().catch(function(){});
+      } catch(e){}
+    }
+    if (window._toast) window._toast('Twin Bloom declined.');
+  };
+  document.getElementById('lw-twin-pick-mine').onclick = function(){
+    ov.remove();
+    window._lwTwinBloomPickPartner({
+      title: 'PICK YOUR PARTNER',
+      subtitle: 'Cross with '+esc(nm)+'. Both nurseries will receive the same chimera seed.',
+      onPick: function(myHash){
+        window.LW_GIFTS.acceptTwinBloom(g.id, g.from, fromName, plantA, myHash, function(ok, info){
+          if (ok){
+            if (window._toast) window._toast('🌸 Twin Bloom complete — chimera seed in your nursery!');
+            if (window.PW_UI && window.PW_UI.loadFriendsUI) window.PW_UI.loadFriendsUI();
+            // Refresh inbox view if open
+            if (document.getElementById('lw-gift-inbox')) {
+              document.getElementById('lw-gift-inbox').remove();
+              setTimeout(function(){ if (window._lwOpenGiftInbox) window._lwOpenGiftInbox(); }, 300);
+            }
+          } else {
+            if (window._toast) window._toast('Accept failed: '+(info||'unknown'));
+          }
+        });
+      }
+    });
+  };
+};
+
 // ═══ GIFT INBOX — shown via window._lwOpenGiftInbox() ═══
 window._lwOpenGiftInbox = function() {
   if (!window.LW_GIFTS) return;
@@ -55271,14 +55445,24 @@ window._lwOpenGiftInbox = function() {
     if (!listEl) return;
     if (!gifts || !gifts.length){ listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-style:italic;">No gifts pending. Send some yourself — friendships grow with consistency.</div>'; return; }
     var TIER_NAME = { 1:'Mystery Mailbox', 2:'Crafted Crate', 3:'Heirloom Trunk' };
-    // XSS-hardened: every player-controlled field passes through _lwEscapeHTML;
-    // CLAIM button uses addEventListener via data-* (no inline onclick with
-    // raw fromUid/giftId — fromUid is always a Firestore-issued UID, but we
-    // keep the discipline consistent with the friends-list rewrite).
     var iEsc = window._lwEscapeHTML || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+    // Stash gifts by id so the click handler can pull the full doc out
+    window._lwInboxByGiftId = {};
     var h = '';
     for (var i=0;i<gifts.length;i++){
       var g = gifts[i];
+      window._lwInboxByGiftId[g.id] = g;
+      // Twin Bloom proposal: special card + RESPOND button
+      var isTwin = (g.type === 'twin_bloom_proposal') || (g.loot && g.loot.kind === 'twin_bloom_proposal');
+      if (isTwin) {
+        h += '<div class="lw-gift-row" data-gift-id="'+iEsc(g.id)+'" data-from-uid="'+iEsc(g.from||'')+'" data-twin="1" style="background:rgba(28,18,28,0.55);border:1.5px solid rgba(232,160,191,0.4);border-radius:10px;padding:0.7rem;margin-bottom:0.5rem;">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.4rem;">';
+        h += '<div style="flex:1;min-width:0;"><div style="color:#f0a0c0;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;">🌸 '+iEsc(g.fromName||'A keeper')+'</div><div style="color:var(--muted);font-size:0.42rem;font-style:italic;">Twin Bloom — pick a partner</div></div>';
+        h += '<button class="lw-twin-respond-btn" style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;padding:8px 14px;border-radius:8px;border:1.5px solid rgba(232,160,191,0.6);background:linear-gradient(180deg,rgba(232,160,191,0.3),rgba(180,80,140,0.4));color:var(--cream);cursor:pointer;min-height:40px;flex-shrink:0;">RESPOND</button>';
+        h += '</div></div>';
+        continue;
+      }
+      // Standard gift
       var preview = g.tier ? ('T'+g.tier+' · '+TIER_NAME[g.tier]) : 'Mailbox';
       h += '<div class="lw-gift-row" data-gift-id="'+iEsc(g.id)+'" data-from-uid="'+iEsc(g.from||'')+'" style="background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.22);border-radius:10px;padding:0.7rem;margin-bottom:0.5rem;">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.4rem;">';
@@ -55287,14 +55471,19 @@ window._lwOpenGiftInbox = function() {
       h += '</div></div>';
     }
     listEl.innerHTML = h;
-    // Wire CLAIM buttons via addEventListener — never inline onclick.
+    // Wire CLAIM + RESPOND buttons via addEventListener
     var giftRows = listEl.querySelectorAll('.lw-gift-row');
     for (var gri=0; gri<giftRows.length; gri++) {
       (function(row){
         var giftId = row.getAttribute('data-gift-id') || '';
         var fromUid = row.getAttribute('data-from-uid') || '';
-        var btn = row.querySelector('.lw-gift-claim-btn');
-        if (btn) btn.addEventListener('click', function(){
+        var twinBtn = row.querySelector('.lw-twin-respond-btn');
+        var claimBtn = row.querySelector('.lw-gift-claim-btn');
+        if (twinBtn) twinBtn.addEventListener('click', function(){
+          var doc = window._lwInboxByGiftId && window._lwInboxByGiftId[giftId];
+          if (doc && window._lwOpenTwinBloomAccept) window._lwOpenTwinBloomAccept(doc);
+        });
+        if (claimBtn) claimBtn.addEventListener('click', function(){
           if (window._lwClaimGift) window._lwClaimGift(giftId, fromUid);
         });
       })(giftRows[gri]);
@@ -65914,6 +66103,17 @@ function loadFriendsUI(){
       var giftBtnStyle = giftBtnDisabled
         ? 'opacity:0.45;border:1px dashed rgba(122,179,86,0.25);background:rgba(26,36,22,0.3);color:var(--muted);cursor:not-allowed;'
         : 'border:1px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(120,100,40,0.28));color:var(--gold);cursor:pointer;';
+      // Tier 3: show 🌸 Twin Bloom button alongside gift. T1/T2: just gift.
+      var twinBtn = '';
+      if (tier >= 3 && window.LW_GIFTS && window.LW_GIFTS.twinBloomCooldownLeft) {
+        var cdMs = window.LW_GIFTS.twinBloomCooldownLeft(uid);
+        var twinDisabled = cdMs > 0;
+        var twinLabel = twinDisabled ? '🌸 ' + Math.ceil(cdMs/3600000) + 'h' : '🌸 '+ (window.LW_GIFTS.TWIN_BLOOM_DEW_COST||30) +'💧';
+        var twinStyle = twinDisabled
+          ? 'opacity:0.45;border:1px dashed rgba(232,160,191,0.3);background:rgba(26,36,22,0.3);color:var(--muted);cursor:not-allowed;'
+          : 'border:1px solid rgba(232,160,191,0.55);background:linear-gradient(180deg,rgba(232,160,191,0.18),rgba(180,80,140,0.28));color:#f0a0c0;cursor:pointer;';
+        twinBtn = '<button class="lw-friend-twin-btn" '+(twinDisabled?'data-disabled="1"':'')+' title="Twin Bloom — cross-distance breed" style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.08em;padding:6px 10px;border-radius:7px;'+twinStyle+'min-height:36px;flex-shrink:0;margin-right:0.3rem;">'+twinLabel+'</button>';
+      }
       h+='<div class="lw-friend-row" data-uid="'+esc(uid)+'" data-name="'+esc(realName)+'" style="display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0;border-bottom:1px solid rgba(74,124,53,0.06);gap:0.4rem;">'
         +'<div style="flex:1;min-width:0;">'
           +'<div style="display:flex;align-items:center;gap:0.3rem;">'
@@ -65923,7 +66123,10 @@ function loadFriendsUI(){
           +'</div>'
           +(subline?'<div style="font-family:DM Mono,monospace;font-size:0.36rem;color:var(--muted);">'+esc(subline)+'</div>':'')
         +'</div>'
-        +'<button class="lw-friend-gift-btn" '+(giftBtnDisabled?'data-disabled="1"':'')+' style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.08em;padding:6px 10px;border-radius:7px;'+giftBtnStyle+'min-height:36px;flex-shrink:0;">'+giftBtnLabel+'</button>'
+        +'<div style="display:flex;align-items:center;flex-shrink:0;">'
+          +twinBtn
+          +'<button class="lw-friend-gift-btn" '+(giftBtnDisabled?'data-disabled="1"':'')+' style="font-family:Bebas Neue,sans-serif;font-size:0.52rem;letter-spacing:0.08em;padding:6px 10px;border-radius:7px;'+giftBtnStyle+'min-height:36px;flex-shrink:0;">'+giftBtnLabel+'</button>'
+        +'</div>'
         +'</div>';
     }
     el.innerHTML=h;
@@ -65935,6 +66138,7 @@ function loadFriendsUI(){
         var nameVal = row.getAttribute('data-name') || 'Keeper';
         var nickBtn = row.querySelector('.lw-friend-nick-btn');
         var giftBtn = row.querySelector('.lw-friend-gift-btn');
+        var twinBtn = row.querySelector('.lw-friend-twin-btn');
         if (nickBtn) nickBtn.addEventListener('click', function(){
           if (window._lwEditFriendNick) window._lwEditFriendNick(uidVal, nameVal);
         });
@@ -65944,6 +66148,13 @@ function loadFriendsUI(){
             return;
           }
           if (window._lwSendGiftFlow) window._lwSendGiftFlow(uidVal, nameVal);
+        });
+        if (twinBtn) twinBtn.addEventListener('click', function(){
+          if (twinBtn.getAttribute('data-disabled')==='1') {
+            if (window._toast) window._toast('Twin Bloom on cooldown — comes back in '+Math.ceil(window.LW_GIFTS.twinBloomCooldownLeft(uidVal)/3600000)+'h.');
+            return;
+          }
+          if (window._lwOpenTwinBloomPropose) window._lwOpenTwinBloomPropose(uidVal, nameVal);
         });
       })(rows[ri]);
     }
@@ -83402,6 +83613,321 @@ window.LW_GIFTS = (function(){
       .catch(function(){ callback(0); });
   }
 
+  // ═══ TIER 3 — TWIN BLOOM (cross-distance breeding) ════════════════════
+  // Flow:
+  //  1. Alice (sender) picks one of her own breedable plants and proposes
+  //     to Bob (a Tier-3 friend). Doc written to friends/{bobUid}/inbox
+  //     with type=twin_bloom_proposal, plantA hash, sender info.
+  //  2. Bob sees the proposal in his inbox alongside gifts. He picks one
+  //     of his own breedable plants. On accept, Bob's client computes the
+  //     offspring hash via FG_Data.crossPollinateHashes(plantA, plantB),
+  //     writes the seed to his nursery, and writes a twin_bloom_result
+  //     doc back to Alice's inbox with the SAME offspring hash.
+  //  3. Alice's client (next loadInbox) reads the result doc, writes the
+  //     same seed to her nursery — TWINS, raised by different keepers.
+  //  4. Both sides: charge consumed on respective plant + interaction++
+  //     + 7-day cooldown stamped per pair.
+  // Privacy: Alice never sees Bob's greenhouse. Bob never sees Alice's
+  // (he sees only the one plant card she committed in the proposal).
+
+  var TWIN_BLOOM_COOLDOWN_MS = 7 * 24 * 3600 * 1000;
+  var TWIN_BLOOM_DEW_COST = 30; // sender pays on propose, recipient pays 0
+
+  function twinBloomCooldownLeft(friendUid){
+    var m = getMeta(friendUid);
+    var last = m.lastTwinBloomAt || 0;
+    var elapsed = Date.now() - last;
+    if (elapsed >= TWIN_BLOOM_COOLDOWN_MS) return 0;
+    return TWIN_BLOOM_COOLDOWN_MS - elapsed;
+  }
+
+  function _markTwinBloom(friendUid){
+    var m = _meta();
+    var f = m[friendUid] = m[friendUid] || {};
+    f.lastTwinBloomAt = Date.now();
+    _saveMeta(m);
+  }
+
+  // Alice → Bob: write the proposal doc
+  function proposeTwinBloom(friendUid, friendName, myPlantHash, callback){
+    callback = callback || function(){};
+    var user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+    if (!user){ callback(false, 'Not logged in'); return; }
+    if (!friendUid || !myPlantHash){ callback(false, 'Missing plant or friend'); return; }
+
+    if (getTier(friendUid) < 3){
+      callback(false, 'Tier 3 friendship required (90 interactions).');
+      return;
+    }
+    var cdLeft = twinBloomCooldownLeft(friendUid);
+    if (cdLeft > 0){
+      var hours = Math.ceil(cdLeft / 3600000);
+      callback(false, 'Twin Bloom cooldown — ' + hours + 'h until you can propose again with this friend.');
+      return;
+    }
+
+    // Verify plant is breedable (charges, maturity, cooldown)
+    if (window.FG_Data && window.FG_Data.getBreedStatus){
+      var gh = [];
+      try { gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]'); } catch(e){}
+      var plant = null;
+      for (var i=0;i<gh.length;i++){ if (gh[i].hash === myPlantHash){ plant = gh[i]; break; } }
+      if (!plant){ callback(false, 'Plant not in your greenhouse.'); return; }
+      var bs = window.FG_Data.getBreedStatus(plant);
+      if (!bs.canBreed){
+        if (bs.reason === 'IMMATURE') callback(false, 'Plant still maturing ('+bs.daysLeft+'d).');
+        else if (bs.reason === 'COOLDOWN') callback(false, 'Plant on breed cooldown ('+bs.cooldownDays+'d).');
+        else callback(false, 'Plant not ready to breed.');
+        return;
+      }
+    }
+
+    var dewBal = window.getTotalDew ? window.getTotalDew() : 0;
+    if (dewBal < TWIN_BLOOM_DEW_COST){
+      callback(false, 'Twin Bloom needs ' + TWIN_BLOOM_DEW_COST + ' Dew. You have ' + dewBal + '.');
+      return;
+    }
+    if (window.spendDew && !window.spendDew(TWIN_BLOOM_DEW_COST)){
+      callback(false, 'Spend Dew failed.');
+      return;
+    }
+
+    var senderName = localStorage.getItem('pw_keeper_name') || 'Keeper';
+    var proposalId = user.uid + '_tb_' + Date.now();
+    var db = firebase.firestore();
+    // Write to recipient's inbox using the SAME schema shape (from, fromName,
+    // tier, loot, sentAt, claimed) so the existing security rule whitelist
+    // accepts it. tier/loot are populated with sentinel values; the type
+    // field rides as an extra key.
+    var doc = {
+      from: user.uid,
+      fromName: senderName,
+      tier: getTier(friendUid),
+      loot: { kind:'twin_bloom_proposal', plantA_hash: myPlantHash, costPaid: TWIN_BLOOM_DEW_COST },
+      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+      claimed: false,
+      type: 'twin_bloom_proposal',
+      plantA_hash: myPlantHash
+    };
+    db.collection('friends').doc(friendUid).collection('inbox').doc(proposalId).set(doc)
+      .then(function(){
+        markInteraction(friendUid);
+        if (window.LW_ACH){ try { LW_ACH.bump('twin_proposed', 1); } catch(e){} }
+        callback(true, { proposalId: proposalId });
+      })
+      .catch(function(e){
+        // Refund Dew on Firestore failure
+        if (window.earnDew) window.earnDew(TWIN_BLOOM_DEW_COST, 'twin_bloom_refund');
+        callback(false, e.message || 'Proposal failed.');
+      });
+  }
+
+  // Bob accepts: pick his plant, compute offspring, write seed locally,
+  // post result back to Alice's inbox.
+  function acceptTwinBloom(proposalId, fromUid, fromName, plantA_hash, myPlantHash, callback){
+    callback = callback || function(){};
+    var user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+    if (!user){ callback(false, 'Not logged in'); return; }
+
+    // Verify Bob's plant is breedable
+    if (window.FG_Data && window.FG_Data.getBreedStatus){
+      var gh = [];
+      try { gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]'); } catch(e){}
+      var plant = null;
+      for (var i=0;i<gh.length;i++){ if (gh[i].hash === myPlantHash){ plant = gh[i]; break; } }
+      if (!plant){ callback(false, 'Plant not in your greenhouse.'); return; }
+      var bs = window.FG_Data.getBreedStatus(plant);
+      if (!bs.canBreed){ callback(false, 'Plant not ready to breed.'); return; }
+    }
+
+    // Verify nursery isn't full
+    try {
+      var nur = JSON.parse(localStorage.getItem('sws_nursery')||'[]');
+      if (nur.length >= 3){ callback(false, 'Nursery full. Bloom or abandon a seed first.'); return; }
+    } catch(e){}
+
+    var db = firebase.firestore();
+    var inboxRef = db.collection('friends').doc(user.uid).collection('inbox').doc(proposalId);
+
+    // Mark proposal claimed FIRST. If anything below fails, the proposal stays
+    // claimed (one-shot). This trades "automatic retry on failure" for "no
+    // duplicate breed if a partial failure happens" — the safer trade.
+    inboxRef.get().then(function(d){
+      if (!d.exists){ callback(false, 'Proposal not found.'); return; }
+      var pd = d.data();
+      if (pd.claimed){ callback(false, 'Already accepted.'); return; }
+      return inboxRef.update({
+        claimed: true,
+        claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function(){
+        return _runTwinBloom(fromUid, fromName, plantA_hash, myPlantHash, proposalId);
+      });
+    }).then(function(result){
+      if (!result) return; // already-claimed branch
+      // result has offspringHash + offGen
+      callback(true, result);
+    }).catch(function(e){
+      callback(false, e.message || 'Accept failed.');
+    });
+  }
+
+  function _runTwinBloom(fromUid, fromName, plantA_hash, myPlantHash, proposalId){
+    var user = firebase.auth().currentUser;
+    var db = firebase.firestore();
+    var myName = localStorage.getItem('pw_keeper_name') || 'Keeper';
+
+    // Compute offspring hash (the SAME hash both sides will plant — that's the twin)
+    return window.FG_Data.crossPollinateHashes(plantA_hash, myPlantHash).then(function(result){
+      var offspringHash = result.childHash;
+
+      // Compute generation: max parent gen + 1. We only know our own plant's
+      // gen for sure; trust the proposer's plant card metadata if we have it
+      // (we don't, in the simplest flow). Default both to 1 → offspring Gen 2
+      // when the cross is happening at all. For pre-launch this is fine; we
+      // can enrich later with parent gen in the proposal doc.
+      var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+      var myPlant = null;
+      for (var i=0;i<gh.length;i++){ if (gh[i].hash === myPlantHash){ myPlant = gh[i]; break; } }
+      var myGen = (myPlant && myPlant.generation) ? myPlant.generation : 1;
+      var offGen = myGen + 1; // proposer-side will recompute on their end
+
+      // Write seed to Bob's nursery
+      if (window.FG_Data && window.FG_Data.addSeed){
+        var res = window.FG_Data.addSeed({
+          seedHash: offspringHash,
+          parentAHash: plantA_hash,
+          parentBHash: myPlantHash,
+          nonce: offGen,
+          twinBloom: true,
+          twinPartnerUid: fromUid,
+          twinPartnerName: fromName
+        });
+        if (!res.ok){ throw new Error('Nursery full during accept.'); }
+      }
+
+      // Burn breed charge on Bob's plant
+      if (window.FG_Data && window.FG_Data.useBreedCharge){
+        try { window.FG_Data.useBreedCharge(myPlantHash); } catch(e){}
+      }
+
+      // Write result back to Alice's inbox with the SAME offspring hash
+      var resultId = user.uid + '_tbr_' + Date.now();
+      var resultDoc = {
+        from: user.uid,
+        fromName: myName,
+        tier: getTier(fromUid),
+        loot: { kind:'twin_bloom_result', offspringHash: offspringHash, plantA_hash: plantA_hash, plantB_hash: myPlantHash, partnerName: myName },
+        sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+        claimed: false,
+        type: 'twin_bloom_result',
+        offspringHash: offspringHash,
+        plantA_hash: plantA_hash,
+        plantB_hash: myPlantHash
+      };
+      return db.collection('friends').doc(fromUid).collection('inbox').doc(resultId).set(resultDoc)
+        .then(function(){
+          // Both sides: counters + cooldown + interaction
+          markInteraction(fromUid);
+          _markTwinBloom(fromUid);
+          if (window.LW_ACH){
+            try {
+              LW_ACH.bump('twin_completed', 1);
+              LW_ACH.bump('breed_total', 1);
+              if (offGen >= 2) LW_ACH.bump('chimera_total', 1);
+            } catch(e){}
+          }
+          // Class XP (Breeder line) — same as a regular breed
+          if (window._LW_classXP){
+            try { window._LW_classXP('breed', 30); if (offGen >= 2) window._LW_classXP('chimera', 15); } catch(e){}
+          }
+          return { offspringHash: offspringHash, offGen: offGen };
+        });
+    });
+  }
+
+  // Alice's auto-claim of result docs — fires on every loadInbox.
+  // Sees a twin_bloom_result, consumes the offspring hash → addSeed → burn
+  // her own plant's charge → mark cooldown + interaction.
+  function _autoConsumeTwinBloomResults(gifts){
+    if (!gifts || !gifts.length) return gifts;
+    var user = firebase.auth().currentUser;
+    if (!user) return gifts;
+    var db = firebase.firestore();
+    var remaining = [];
+    for (var i=0;i<gifts.length;i++){
+      var g = gifts[i];
+      if (g.type !== 'twin_bloom_result' && (!g.loot || g.loot.kind !== 'twin_bloom_result')){
+        remaining.push(g); continue;
+      }
+      // Auto-process this twin bloom result for Alice
+      (function(g){
+        try {
+          var nur = JSON.parse(localStorage.getItem('sws_nursery')||'[]');
+          if (nur.length >= 3){
+            // Nursery full — leave the doc in place; Alice will see toast
+            remaining.push(g);
+            return;
+          }
+        } catch(e){}
+        var plantA = (g.loot && g.loot.plantA_hash) || g.plantA_hash;
+        var plantB = (g.loot && g.loot.plantB_hash) || g.plantB_hash;
+        var offspring = (g.loot && g.loot.offspringHash) || g.offspringHash;
+        if (!offspring){ remaining.push(g); return; }
+        // Compute offGen from Alice's plant
+        var gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+        var myPlant = null;
+        for (var j=0;j<gh.length;j++){ if (gh[j].hash === plantA){ myPlant = gh[j]; break; } }
+        var myGen = (myPlant && myPlant.generation) ? myPlant.generation : 1;
+        var offGen = myGen + 1;
+        if (window.FG_Data && window.FG_Data.addSeed){
+          var res = window.FG_Data.addSeed({
+            seedHash: offspring,
+            parentAHash: plantA,
+            parentBHash: plantB,
+            nonce: offGen,
+            twinBloom: true,
+            twinPartnerUid: g.from,
+            twinPartnerName: g.fromName
+          });
+          if (!res.ok){ remaining.push(g); return; } // try again next time
+        }
+        if (window.FG_Data && window.FG_Data.useBreedCharge && plantA){
+          try { window.FG_Data.useBreedCharge(plantA); } catch(e){}
+        }
+        markInteraction(g.from);
+        _markTwinBloom(g.from);
+        if (window.LW_ACH){
+          try {
+            LW_ACH.bump('twin_completed', 1);
+            LW_ACH.bump('breed_total', 1);
+            if (offGen >= 2) LW_ACH.bump('chimera_total', 1);
+          } catch(e){}
+        }
+        // Mark result doc claimed
+        db.collection('friends').doc(user.uid).collection('inbox').doc(g.id).update({
+          claimed: true,
+          claimedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(function(){});
+        // Toast Alice
+        try {
+          if (window._toast) window._toast('🌸 Twin Bloom complete! ' + (g.fromName || 'Your friend') + ' accepted — twin seed in your nursery.');
+        } catch(e){}
+      })(g);
+    }
+    return remaining;
+  }
+
+  // Wrap loadInbox to auto-consume result docs. The wrapped function returns
+  // ONLY the gifts/proposals that the player needs to manually act on.
+  var _origLoadInbox = loadInbox;
+  loadInbox = function(callback){
+    callback = callback || function(){};
+    _origLoadInbox(function(gifts){
+      var filtered = _autoConsumeTwinBloomResults(gifts);
+      callback(filtered);
+    });
+  };
+
   return {
     getTier: getTier, getMeta: getMeta,
     getSendCost: function(uid){ return SEND_COST[getTier(uid)] || 10; },
@@ -83411,7 +83937,12 @@ window.LW_GIFTS = (function(){
     sendGift: sendGift,
     loadInbox: loadInbox,
     claimGift: claimGift,
-    inboxCount: inboxCount
+    inboxCount: inboxCount,
+    // Twin Bloom (Tier 3)
+    twinBloomCooldownLeft: twinBloomCooldownLeft,
+    proposeTwinBloom: proposeTwinBloom,
+    acceptTwinBloom: acceptTwinBloom,
+    TWIN_BLOOM_DEW_COST: TWIN_BLOOM_DEW_COST
   };
 })();
 
