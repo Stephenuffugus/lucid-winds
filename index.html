@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.01.53';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.01.54';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -17047,9 +17047,24 @@ document.addEventListener('keydown', function(e) {
         break;
 
       // ── BATCH 3: COMMON POTS (cases 40–44) ──────────────────────────
-      case 40: // Coffee Mug — front-arc covers stem at rim (full body in renderPotBack).
+      case 40: // Coffee Mug — Stephen 2026-05-01: front-arc + body-color front
+               // wall strip together cover the stem-base + root-flare. Was
+               // leaving a sliver of stem visible between the rim and the
+               // body top (stem renders at y=78 with root flare ellipse, but
+               // body top is at y=78.5 in renderPotBack — gap exposed the
+               // stem because both pot layers are BEHIND the stem). Adding
+               // a body-color rect in renderPot gives the mug a real "front
+               // wall" that covers the stem inside the rim.
+        // FRONT ARC of opening (rim lip — lower half via sweep=0)
         s += '<path d="M24,77 A11,1.0 0 0,0 46,77 Z" fill="#7a6a52"/>';
         s += '<path d="M24,77 A11,1.0 0 0,0 46,77" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        // Front-wall strip in body color — covers stem from y=78 to y=79
+        s += '<rect x="24" y="78" width="22" height="1.0" fill="'+g+'"/>';
+        // Front-wall outline (matches body outline weight)
+        s += '<line x1="24" y1="79" x2="46" y2="79" stroke="rgba(40,20,5,0.55)" stroke-width="0.4"/>';
+        // Cream sheen on the front wall (matches body vertical sheen)
+        s += '<line x1="25" y1="78.2" x2="45" y2="78.2" stroke="#f5ecd6" stroke-width="0.25" opacity="0.40"/>';
+        // Inner-rim cream highlight (kept from prior version)
         s += '<path d="M25,77.7 Q35,78.0 45,77.7" stroke="#f5ecd6" stroke-width="0.25" fill="none" opacity="0.45"/>';
         break;
       case 41: // Soup Bowl — wide round shallow bowl
