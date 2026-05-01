@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.11';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55537,12 +55537,12 @@ window._lwRenderCuriosities = function() {
       h += '<div style="width:100%;aspect-ratio:3/2;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.7);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;margin-bottom:0.7rem;">';
       h += '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:contain;'+(owned?'':'filter:grayscale(0.7) opacity(0.55);')+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:3.5rem;&quot;>'+artFallback+'</div>&apos;;">';
       h += '</div>';
-      h += '<div style="display:flex;align-items:flex-start;gap:0.85rem;">';
-      h += '<div style="flex:1;min-width:0;">';
+      // Text now spans full width under the hero painting (the old
+      // flex-row left-slot was for the 80px square art that's now gone).
       var displayName = hatched ? spec.hatchedName : spec.cocoonName;
-      h += '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.25rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.92rem;color:var(--cream);letter-spacing:0.06em;">'+displayName+'</div>'+stateBadge+'</div>';
+      h += '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;"><div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.15rem;color:var(--gold);">'+displayName+'</div>'+stateBadge+'</div>';
       var flavor = hatched ? spec.hatchFlavor : spec.flavor;
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.45;font-style:italic;">'+flavor+'</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);line-height:1.55;font-style:italic;margin-bottom:0.4rem;">'+flavor+'</div>';
       // State-specific body
       if (!owned) {
         if (canBuy) {
@@ -55572,7 +55572,9 @@ window._lwRenderCuriosities = function() {
           h += '<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:3px;"><span>'+prog.fed+' / '+prog.feedRequired+' pours</span><span>'+prog.tokens+' ready · '+spec.feedAmount+' Dew/pour</span></div>';
         }
       }
-      h += '</div></div>';
+      // Old flex-row close removed 2026-05-02 — the row is gone since the
+      // hero painting now spans full width. Card closes below with the
+      // single </div> after the action buttons.
       // Action buttons
       if (!owned && canBuy) {
         h += '<button data-keeper-buy="'+spec.key+'" '+(canAfford?'':'disabled')+' style="display:block;width:100%;margin-top:0.7rem;padding:14px;border-radius:10px;border:1.5px solid '+(canAfford?'rgba(200,168,75,0.65)':'rgba(120,120,120,0.4)')+';background:'+(canAfford?'linear-gradient(180deg,rgba(200,168,75,0.3),rgba(120,100,40,0.4))':'rgba(40,40,40,0.4)')+';color:'+(canAfford?'var(--gold)':'rgba(180,180,180,0.5)')+';font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:'+(canAfford?'pointer':'not-allowed')+';min-height:52px;">'+(canAfford?'ACQUIRE':'NOT ENOUGH')+'</button>';
