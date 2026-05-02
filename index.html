@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.14';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38353,16 +38353,34 @@ document.addEventListener('keydown', function(e) {
       return {tier:'common',color:_TIER_COLORS.common};
     }
     if (cat==='COMPANION') {
+      // Stephen 2026-05-02: tier coverage was incomplete. Out of 82
+      // companion slots, many real creatures (Scarab Beetle idx 64,
+      // Cricket 62, Puffin 63, Squirrel 67, Koala 68, Seahorse 70,
+      // Koi 71, Mushroom Sprite 73, Deer Fawn 74, Panda 81, etc.) had
+      // NO tier classification — _layerTier returned null. The DNA
+      // ledger row still rendered but without a color or tier badge,
+      // and any consumer that gated on a non-null tier silently
+      // dropped them. Tier coverage now defaults to common for any
+      // valid named companion, with the specific rare/epic/legendary/
+      // mythic/cosmic anchors above. Unknown indices still null so
+      // they don't fake a tier.
       if (t.companion===38) return {tier:'cosmic',color:_TIER_COLORS.cosmic};
       if (t.companion===37) return {tier:'legendary',color:_TIER_COLORS.legendary};
       if (t.companion>=34&&t.companion<=36) return {tier:'legendary',color:_TIER_COLORS.legendary};
       if (t.companion===33) return {tier:'mythic',color:_TIER_COLORS.mythic};
       if (t.companion===32) return {tier:'mythic',color:_TIER_COLORS.mythic};
-      if (t.companion===69||t.companion===72||t.companion===75||t.companion===78||t.companion===79) return {tier:'rare',color:_TIER_COLORS.rare};
+      if (t.companion===69||t.companion===72||t.companion===75||t.companion===79) return {tier:'rare',color:_TIER_COLORS.rare};
       if (t.companion===40||t.companion===43||t.companion===44||t.companion===46||t.companion===47||t.companion===48) return {tier:'rare',color:_TIER_COLORS.rare};
       if (t.companion===49||t.companion===50) return {tier:'epic',color:_TIER_COLORS.epic};
       if (t.companion===28||t.companion===29||t.companion===39||t.companion===41||t.companion===42||t.companion===45) return {tier:'uncommon',color:_TIER_COLORS.uncommon};
-      if (t.companion>=20&&t.companion<=27) return {tier:'common',color:_TIER_COLORS.common};
+      // Common-tier fallback for any named companion not anchored above.
+      // Guard against TRAIT_BANK gaps (some indices have name:'None').
+      try {
+        var _c = window.TRAIT_BANK && TRAIT_BANK.companions && TRAIT_BANK.companions[t.companion];
+        if (_c && _c.name && _c.name !== 'None') {
+          return _c.rare ? {tier:'rare',color:_TIER_COLORS.rare} : {tier:'common',color:_TIER_COLORS.common};
+        }
+      } catch(eC){}
       return null;
     }
     if (cat==='MUTATION') {
