@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.18';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -37929,6 +37929,10 @@ document.addEventListener('keydown', function(e) {
     }
     // PLANT SEAL — cryptographic signature
     await _sealPlant(entry);
+    // LW_EVENTS — silent cosmetic stamping. No-op when REGISTRY is empty
+    // OR no event window is currently active. Mutates entry to add
+    // eventStamps[] when applicable + grants event title once.
+    try { if (window.LW_EVENTS && LW_EVENTS.tagMintedPlant) LW_EVENTS.tagMintedPlant(entry); } catch(e) {}
     if (isEnhance) {
       // Enhance the bare-bones entry written by _autoMintPlant
       var _existing = gh[existingIdx];
@@ -37937,6 +37941,8 @@ document.addEventListener('keydown', function(e) {
       _existing.phenos = entry.phenos;
       _existing.time = entry.time;
       _existing.seal = entry.seal;
+      // Carry over event stamps onto the enhanced entry too.
+      if (entry.eventStamps && entry.eventStamps.length) _existing.eventStamps = entry.eventStamps.slice();
       if (window._LW_DEBUG) console.log('[mintPlant] enhanced pre-written plant at index', existingIdx);
     } else {
       gh.push(entry);
@@ -39331,10 +39337,26 @@ document.addEventListener('keydown', function(e) {
         // Stephen — UI clutter on greenhouse cards. Lineage origin is
         // still available on the back of the card (DNA ledger).
         var _wildBadge = '';
+        // LW_EVENTS — frame override + stamp overlay. Both no-op when
+        // plant has no eventStamps[] (the common case).
+        var _evFrame = '';
+        var _evStamp = '';
+        try {
+          if (window.LW_EVENTS) {
+            var _evF = LW_EVENTS.frameForPlant(plant);
+            if (_evF) _evFrame = ' style="background-image:url(\'' + _evF + '\');background-size:cover;background-position:center;"';
+            _evStamp = LW_EVENTS.stampHTMLForPlant(plant, 22);
+          }
+        } catch(e) {}
+        if (_evFrame) {
+          // Apply the inline frame override after the className is set
+          // so it wins over .season-* background-image rules.
+          try { el.setAttribute('style', (el.getAttribute('style')||'') + (_evFrame.replace(/^ style="/,'').replace(/"$/,''))); } catch(e) {}
+        }
         if (window._perfLite) {
           el.innerHTML = _wildBadge + plantSvg +
             '<div class="gh-name" style="color:var(--cream);">' + _pName + '</div>' +
-            _breedTxt;
+            _breedTxt + _evStamp;
         } else {
           var _ghTierName = (_ghTG && _ghTG.name) ? _ghTG.name.toLowerCase() : 'common';
           var _ghSymbol = plant.revealed ? '<img class="cf-rarity-symbol cf-rarity-symbol--grid" src="assets/symbols/symbol-' + _ghTierName + '.png" alt="' + _ghTierName + '">' : '';
@@ -39346,7 +39368,8 @@ document.addEventListener('keydown', function(e) {
             '<div class="gh-name" style="color:var(--cream);">' + (typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : _pName) + '</div>' +
             _breedTxt +
             (_sea ? '<div style="display:flex;justify-content:center;gap:3px;margin-top:1px;font-size:0.3rem;align-items:center;"><span>' + _sea.emblem + '</span>' + (function(){ try { var _synIcons = checkSynergies(_ghTraits); if (!_synIcons || _synIcons.length === 0) return ''; var _si = ''; for (var _sj = 0; _sj < Math.min(_synIcons.length, 3); _sj++) _si += '<span title="' + _synIcons[_sj].name + '">' + _synIcons[_sj].emoji + '</span>'; return _si; } catch(e) { return ''; } })() + '</div>' : '') +
-            _ghSymbol;
+            _ghSymbol +
+            _evStamp;
         }
         _ghCardCache[_cacheKey] = el.innerHTML;
       } else {
@@ -39619,6 +39642,131 @@ document.addEventListener('keydown', function(e) {
   };
   window.LW_Log = LW_Log;
   window._logEvent = function(type, data) { return LW_Log.write(type, data); };
+
+  // ═══ LW_EVENTS — silent cosmetics scaffolding ═══
+  // Stephen 2026-05-02: build the seasonal/community-event cosmetics
+  // pipeline DARK so it can't break anything until activated.
+  //
+  // SAFETY GUARANTEES (verify each holds when extending):
+  //   • REGISTRY starts empty → currentActive() returns null → every
+  //     hook is a no-op. Net zero impact on every code path.
+  //   • Existing plants without eventStamps render IDENTICALLY to today.
+  //   • All hooks are ADDITIVE — they augment, never replace.
+  //   • Activation is just dropping an entry in REGISTRY with valid
+  //     start/end dates. No code change required to enable an event.
+  //
+  // ASSET CONVENTION (when populating):
+  //   /assets/events/<event-id>/card-front.png   — frame override
+  //   /assets/events/<event-id>/stamp.png        — corner stamp PNG
+  //
+  // EVENT ENTRY SHAPE:
+  //   id:        unique key, persisted on plants minted during the window
+  //   name:      display name (titles, UI captions)
+  //   start:     'YYYY-MM-DD' UTC midnight (inclusive)
+  //   end:       'YYYY-MM-DD' UTC midnight (exclusive)
+  //   frame:     optional path to card-front PNG override
+  //   stamp:     optional path to corner stamp PNG (~32px)
+  //   stampPos:  'top-left'|'top-right'|'bottom-left'|'bottom-right' (default top-right)
+  //   title:     optional string — auto-grants to lw_titles_owned on first
+  //              event-window mint, idempotent
+  (function(){
+    'use strict';
+
+    var REGISTRY = {
+      // EXAMPLE — uncomment + drop assets in /assets/events/spring2026/ to activate:
+      // 'spring2026': {
+      //   id: 'spring2026',
+      //   name: 'Spring Equinox 2026',
+      //   start: '2026-03-20',
+      //   end:   '2026-03-27',
+      //   frame: 'assets/events/spring2026/card-front.png',
+      //   stamp: 'assets/events/spring2026/stamp.png',
+      //   stampPos: 'top-right',
+      //   title: 'Spring Keeper 2026'
+      // }
+    };
+
+    function _today(){ return new Date().toISOString().slice(0,10); }
+
+    function currentActive(){
+      var t = _today();
+      for (var k in REGISTRY) {
+        if (!REGISTRY.hasOwnProperty(k)) continue;
+        var e = REGISTRY[k];
+        if (!e || !e.start || !e.end) continue;
+        if (t >= e.start && t < e.end) return e;
+      }
+      return null;
+    }
+
+    function getById(id){ return (id && REGISTRY[id]) || null; }
+
+    // Tag a freshly-minted plant with the active event id (if any).
+    // Mutates the plant in place — caller pushes/saves after.
+    // Side effect: grants the event title once per event.
+    function tagMintedPlant(plant){
+      if (!plant) return;
+      var active = currentActive();
+      if (!active) return;
+      if (!plant.eventStamps) plant.eventStamps = [];
+      if (plant.eventStamps.indexOf(active.id) < 0) {
+        plant.eventStamps.push(active.id);
+      }
+      if (active.title) {
+        try {
+          var owned = JSON.parse(localStorage.getItem('lw_titles_owned')||'[]');
+          if (owned.indexOf(active.title) < 0) {
+            owned.push(active.title);
+            localStorage.setItem('lw_titles_owned', JSON.stringify(owned));
+          }
+        } catch(e) {}
+      }
+    }
+
+    // Returns the override frame URL for this plant, or null. Picks the
+    // most recent event stamp on the plant (if any) and returns its frame
+    // — that way a Spring Equinox plant keeps its Spring frame forever
+    // even after the event window closes.
+    function frameForPlant(plant){
+      if (!plant || !plant.eventStamps || !plant.eventStamps.length) return null;
+      for (var i = plant.eventStamps.length - 1; i >= 0; i--) {
+        var ev = REGISTRY[plant.eventStamps[i]];
+        if (ev && ev.frame) return ev.frame;
+      }
+      return null;
+    }
+
+    // Returns stamp <img> overlay HTML (positioned absolute) for plants
+    // that carry event stamps. Empty string if no stamps.
+    // Multiple stamps stack at slight offsets so each remains visible.
+    function stampHTMLForPlant(plant, size){
+      if (!plant || !plant.eventStamps || !plant.eventStamps.length) return '';
+      size = size || 24;
+      var html = '';
+      for (var i = 0; i < plant.eventStamps.length; i++) {
+        var ev = REGISTRY[plant.eventStamps[i]];
+        if (!ev || !ev.stamp) continue;
+        var pos = ev.stampPos || 'top-right';
+        var off = i * (size * 0.6); // stack offset for multiple stamps
+        var posCss = '';
+        if      (pos === 'top-left')     posCss = 'top:6px;left:'   + (6+off) + 'px;';
+        else if (pos === 'bottom-left')  posCss = 'bottom:6px;left:'+ (6+off) + 'px;';
+        else if (pos === 'bottom-right') posCss = 'bottom:6px;right:'+(6+off) + 'px;';
+        else                              posCss = 'top:6px;right:' + (6+off) + 'px;';
+        html += '<img class="lw-event-stamp" src="' + ev.stamp + '" alt="' + (ev.name||'event') + '" style="position:absolute;' + posCss + 'width:' + size + 'px;height:' + size + 'px;object-fit:contain;pointer-events:none;z-index:6;" onerror="this.style.display=\'none\';">';
+      }
+      return html;
+    }
+
+    window.LW_EVENTS = {
+      REGISTRY: REGISTRY,
+      currentActive: currentActive,
+      getById: getById,
+      tagMintedPlant: tagMintedPlant,
+      frameForPlant: frameForPlant,
+      stampHTMLForPlant: stampHTMLForPlant
+    };
+  })();
 
   // ═══ ROOT REPORT — narrative feed over LW_Log ═══
   var _ROOT_READ_KEY = 'lw_root_last_read';
@@ -40666,7 +40814,11 @@ document.addEventListener('keydown', function(e) {
     // ── BUILD FRONT FACE (trading card layout) ──
     var _tierName = (_tg && _tg.name) ? _tg.name.toLowerCase() : 'common';
     var _sNameColor = _seasonColors[_season] || '#d4cfbc';
-    var front = '<div class="cs-card-face cs-card-front" data-season="' + sk + '">';
+    // LW_EVENTS — frame override for the carousel front. No-op when
+    // plant has no eventStamps[] mapping to a registry frame.
+    var _evCsFrame = '';
+    try { if (window.LW_EVENTS) { var _f = LW_EVENTS.frameForPlant(plant); if (_f) _evCsFrame = ' style="background-image:url(\'' + _f + '\') !important;background-size:cover;background-position:center;"'; } } catch(e) {}
+    var front = '<div class="cs-card-face cs-card-front" data-season="' + sk + '"' + _evCsFrame + '>';
     front += '<div class="cf-ea">' + _ea + '</div>';
     var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
     front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
@@ -40679,6 +40831,9 @@ document.addEventListener('keydown', function(e) {
     if (plant.revealed) {
       front += '<img class="cf-rarity-symbol" src="assets/symbols/symbol-' + _tierName + '.png" alt="' + _tierName + '">';
     }
+    // LW_EVENTS — append event stamp(s) to carousel front. No-op when
+    // plant has no eventStamps[]. Stamps render absolute in cs-card-front.
+    try { if (window.LW_EVENTS) front += LW_EVENTS.stampHTMLForPlant(plant, 28); } catch(e) {}
     front += '</div>';
 
     // ── BUILD BACK FACE (lazy, populated on first flip for performance) ──
