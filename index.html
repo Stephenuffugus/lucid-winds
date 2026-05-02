@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.21';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -26151,45 +26151,155 @@ document.addEventListener('keydown', function(e) {
       // AO halo (master pass injection)
       s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
 
-      case 15: // Bell Flowers / Lily of the Valley — delicate drooping bells
+      case 15: // Bell Flowers / Lily of the Valley — REBUILT 2026-05-02:
+               // Stephen ruling "the bell flowers are kind of plain and could
+               // use a lot more detail." Legendary-tier polish: twin arching
+               // stems, basal lance-shaped leaves, scalloped 6-lobe bell rims,
+               // 3 vertical ribs per bell, throat gradient (radial dark at
+               // top of cavity), shoulder specular, AO ground shadow, golden
+               // pollen anthers.
         (function(){
           fy = fy - fs * 0.5; // Stephen 2026-05-01: shift bloom up (blanket pass)
-          var bellCount = 3 + (fs > 5 ? 1 : 0);
-          // Arching main stem
-          s += '<path d="M'+fx+','+(fy+fs*0.5)+' C'+(fx-fs*0.8)+','+(fy-fs*0.4)+' '+(fx-fs*0.4)+','+(fy-fs*1.8)+' '+fx+','+(fy-fs*2.2)+'"'
-             + ' fill="none" stroke="#4A7040" stroke-width="1.4" stroke-linecap="round" opacity="'+(0.75*bloomOp)+'"/>';
-          // Rim on main stem
-          s += '<path d="M'+fx+','+(fy+fs*0.5)+' C'+(fx-fs*0.8)+','+(fy-fs*0.4)+' '+(fx-fs*0.4)+','+(fy-fs*1.8)+' '+fx+','+(fy-fs*2.2)+'"'
-             + ' fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.4*bloomOp)+'"/>';
-          for (var bi2 = 0; bi2 < bellCount; bi2++){
-            var bt = bi2 / (bellCount - 1);
-            // Bell attachment point along arch
-            var bax = fx - fs*(0.75 - bt*0.12), bay = fy - fs*(0.5 + bt*1.55);
-            // Short pedicel droop
-            var pdx = bax - 3, pdy = bay + 5;
-            s += '<line x1="'+bax+'" y1="'+bay+'" x2="'+pdx+'" y2="'+pdy+'"'
-               + ' stroke="#5E8550" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
-            // Bell body — drooping cup
-            var bW = fs * (0.45 - bt*0.04), bH = fs * (0.72 - bt*0.06);
-            s += '<path d="M'+(pdx-bW*0.5)+','+pdy+' C'+(pdx-bW*0.55)+','+(pdy+bH*0.4)+' '+(pdx+bW*0.55)+','+(pdy+bH*0.4)+' '+(pdx+bW*0.5)+','+pdy+' L'+(pdx+bW*0.28)+','+(pdy+bH)+' Q'+pdx+','+(pdy+bH*1.05)+' '+(pdx-bW*0.28)+','+(pdy+bH)+' Z"'
-               + ' fill="'+fc+'" stroke="none" opacity="'+(0.72*bloomOp)+'"/>';
-            // ── THREE-LAYER CATCH-LIGHT: Bell opening rim ──
-            // Layer 1: soft glow
-            s += '<path d="M'+(pdx-bW*0.5)+','+pdy+' C'+(pdx-bW*0.55)+','+(pdy+bH*0.4)+' '+(pdx+bW*0.55)+','+(pdy+bH*0.4)+' '+(pdx+bW*0.5)+','+pdy+'"'
-               + ' fill="none" stroke="rgba(240,235,216,0.15)" stroke-width="2.2" stroke-linecap="round" opacity="'+(0.85*bloomOp)+'"/>';
-            // Layer 2: crisp edge
-            s += '<path d="M'+(pdx-bW*0.5)+','+pdy+' C'+(pdx-bW*0.55)+','+(pdy+bH*0.4)+' '+(pdx+bW*0.55)+','+(pdy+bH*0.4)+' '+(pdx+bW*0.5)+','+pdy+'"'
-               + ' fill="none" stroke="rgba(240,235,216,0.45)" stroke-width="0.8" stroke-linecap="round" opacity="'+(0.75*bloomOp)+'"/>';
-            // Layer 3: specular hot-spot at rim apex
-            s += '<path d="M'+(pdx-bW*0.12)+','+pdy+' Q'+pdx+','+(pdy-bH*0.05)+' '+(pdx+bW*0.12)+','+pdy+'"'
-               + ' fill="none" stroke="rgba(240,235,216,0.88)" stroke-width="0.35" stroke-linecap="round" opacity="'+(0.7*bloomOp)+'"/>';
-            // Inner subsurface glaze — warm highlight inside bell cavity
-            s += '<ellipse cx="'+pdx+'" cy="'+(pdy+bH*0.35)+'" rx="'+(bW*0.32)+'" ry="'+(bH*0.12)+'"'
-               + ' fill="rgba(240,235,216,0.08)" opacity="'+(0.85*bloomOp)+'"/>';
-            // Clapper stamen
-            s += '<line x1="'+pdx+'" y1="'+(pdy+bH*0.55)+'" x2="'+pdx+'" y2="'+(pdy+bH*0.88)+'"'
-               + ' stroke="rgba(240,235,216,0.45)" stroke-width="0.6" stroke-linecap="round" opacity="'+(0.55*bloomOp)+'"/>';
-            s += '<circle cx="'+pdx+'" cy="'+(pdy+bH*0.9)+'" r="'+(bW*0.08)+'" fill="#EAE0C8" opacity="'+(0.65*bloomOp)+'"/>';
+          var bellTotal = 5 + (fs > 5 ? 1 : 0);
+          // Unique gradient IDs scoped to this bell-cluster instance
+          var gid = 'bf' + Math.round(fx * 100) + '_' + Math.round(fy * 100);
+
+          // ── DEFS: throat gradient + bell body 5-stop ──
+          s += '<defs>';
+          s += '<radialGradient id="' + gid + 't" cx="0.5" cy="0.15" r="0.85">'
+             + '<stop offset="0" stop-color="rgba(40,30,20,0.6)"/>'
+             + '<stop offset="0.55" stop-color="rgba(80,60,40,0.2)"/>'
+             + '<stop offset="1" stop-color="rgba(255,250,235,0)"/>'
+             + '</radialGradient>';
+          s += '<linearGradient id="' + gid + 'b" x1="0" y1="0" x2="0" y2="1">'
+             + '<stop offset="0" stop-color="' + fc + '" stop-opacity="0.5"/>'
+             + '<stop offset="0.22" stop-color="rgba(255,250,235,0.22)"/>'
+             + '<stop offset="0.55" stop-color="' + fc + '" stop-opacity="0.82"/>'
+             + '<stop offset="0.82" stop-color="' + fc + '" stop-opacity="0.94"/>'
+             + '<stop offset="1" stop-color="rgba(40,30,20,0.45)"/>'
+             + '</linearGradient>';
+          s += '</defs>';
+
+          // ── BASAL LANCE-SHAPED LEAVES (lily-of-valley signature) ──
+          var lbx = fx, lby = fy + fs * 0.5;
+          // Right leaf — drawn first so left leaf overlaps in front
+          s += '<path d="M' + lbx + ',' + lby
+             + ' Q' + (lbx + fs * 1.2) + ',' + (lby - fs * 0.5) + ' '
+             + (lbx + fs * 1.4) + ',' + (lby - fs * 1.4)
+             + ' Q' + (lbx + fs * 0.3) + ',' + (lby - fs * 0.4) + ' '
+             + lbx + ',' + lby + ' Z"'
+             + ' fill="#365426" stroke="#1f3015" stroke-width="0.4" opacity="' + (0.7 * bloomOp) + '"/>';
+          s += '<path d="M' + lbx + ',' + lby
+             + ' Q' + (lbx + fs * 0.65) + ',' + (lby - fs * 0.9) + ' '
+             + (lbx + fs * 1.35) + ',' + (lby - fs * 1.35) + '"'
+             + ' fill="none" stroke="#5E8550" stroke-width="0.45" opacity="' + (0.55 * bloomOp) + '"/>';
+          // Left leaf — broader, foreground
+          s += '<path d="M' + lbx + ',' + lby
+             + ' Q' + (lbx - fs * 1.4) + ',' + (lby - fs * 0.6) + ' '
+             + (lbx - fs * 1.6) + ',' + (lby - fs * 1.6)
+             + ' Q' + (lbx - fs * 0.4) + ',' + (lby - fs * 0.5) + ' '
+             + lbx + ',' + lby + ' Z"'
+             + ' fill="#3A5C2A" stroke="#1f3015" stroke-width="0.4" opacity="' + (0.82 * bloomOp) + '"/>';
+          s += '<path d="M' + lbx + ',' + lby
+             + ' Q' + (lbx - fs * 0.7) + ',' + (lby - fs * 1.0) + ' '
+             + (lbx - fs * 1.55) + ',' + (lby - fs * 1.55) + '"'
+             + ' fill="none" stroke="#5E8550" stroke-width="0.5" opacity="' + (0.65 * bloomOp) + '"/>';
+          // Cream rim highlight on left leaf
+          s += '<path d="M' + lbx + ',' + lby
+             + ' Q' + (lbx - fs * 1.4) + ',' + (lby - fs * 0.6) + ' '
+             + (lbx - fs * 1.6) + ',' + (lby - fs * 1.6) + '"'
+             + ' fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.35" opacity="' + (0.5 * bloomOp) + '"/>';
+
+          // ── AO GROUND SHADOW under stem base ──
+          s += '<ellipse cx="' + fx + '" cy="' + (fy + fs * 0.58) + '" rx="' + (fs * 0.55) + '" ry="' + (fs * 0.12) + '" fill="rgba(0,0,0,0.4)" opacity="' + (0.42 * bloomOp) + '"/>';
+
+          // ── TWIN ARCHING STEMS — opposing curves ──
+          var stem1 = 'M' + fx + ',' + (fy + fs * 0.5)
+                    + ' C' + (fx - fs * 0.85) + ',' + (fy - fs * 0.4) + ' '
+                    + (fx - fs * 0.45) + ',' + (fy - fs * 1.85) + ' '
+                    + (fx - fs * 0.05) + ',' + (fy - fs * 2.25);
+          var stem2 = 'M' + fx + ',' + (fy + fs * 0.5)
+                    + ' C' + (fx + fs * 0.6) + ',' + (fy - fs * 0.3) + ' '
+                    + (fx + fs * 0.35) + ',' + (fy - fs * 1.55) + ' '
+                    + (fx + fs * 0.55) + ',' + (fy - fs * 1.95);
+          // AO offsets behind stems
+          s += '<path d="' + stem1 + '" fill="none" stroke="rgba(20,12,5,0.55)" stroke-width="2.0" stroke-linecap="round" opacity="' + (0.55 * bloomOp) + '" transform="translate(0.4,0.4)"/>';
+          s += '<path d="' + stem2 + '" fill="none" stroke="rgba(20,12,5,0.55)" stroke-width="1.8" stroke-linecap="round" opacity="' + (0.5 * bloomOp) + '" transform="translate(0.4,0.4)"/>';
+          // Stem bodies (sage)
+          s += '<path d="' + stem1 + '" fill="none" stroke="#4A7040" stroke-width="1.5" stroke-linecap="round" opacity="' + (0.88 * bloomOp) + '"/>';
+          s += '<path d="' + stem2 + '" fill="none" stroke="#4A7040" stroke-width="1.3" stroke-linecap="round" opacity="' + (0.8 * bloomOp) + '"/>';
+          // Cream specular pickup on main stem
+          s += '<path d="' + stem1 + '" fill="none" stroke="rgba(240,235,216,0.4)" stroke-width="0.45" stroke-linecap="round" opacity="' + (0.55 * bloomOp) + '"/>';
+
+          // ── BELLS distributed along both stems ──
+          var stems = [
+            {x0: fx, y0: fy + fs * 0.5, xt: fx - fs * 0.05, yt: fy - fs * 2.25, count: Math.ceil(bellTotal * 0.6), sgn: -1},
+            {x0: fx, y0: fy + fs * 0.5, xt: fx + fs * 0.55, yt: fy - fs * 1.95, count: Math.floor(bellTotal * 0.4), sgn: 1}
+          ];
+          for (var si = 0; si < stems.length; si++) {
+            var stm = stems[si];
+            for (var bi2 = 0; bi2 < stm.count; bi2++) {
+              var bt = (bi2 + 1) / (stm.count + 1);
+              // Position along arch (ease into the curve)
+              var bax = stm.x0 + (stm.xt - stm.x0) * bt + stm.sgn * fs * 0.18 * Math.sin(bt * Math.PI);
+              var bay = stm.y0 + (stm.yt - stm.y0) * bt;
+              // Pedicel droop — short stalk hanging off arch
+              var pdx = bax + stm.sgn * 2.5;
+              var pdy = bay + 5 + bt * 1.8;
+              s += '<line x1="' + bax + '" y1="' + bay + '" x2="' + pdx + '" y2="' + pdy + '"'
+                 + ' stroke="#5E8550" stroke-width="0.85" stroke-linecap="round" opacity="' + (0.78 * bloomOp) + '"/>';
+              // Bell sizing tapers up the arch
+              var bW = fs * (0.5 - bt * 0.08);
+              var bH = fs * (0.78 - bt * 0.1);
+              var rimY = pdy + bH;
+              // ── BELL BODY: 6-lobed scalloped rim path ──
+              var lobes = 6;
+              var bellD = 'M' + (pdx - bW * 0.5) + ',' + pdy
+                        + ' C' + (pdx - bW * 0.6) + ',' + (pdy + bH * 0.45) + ' '
+                        + (pdx - bW * 0.55) + ',' + (pdy + bH * 0.85) + ' '
+                        + (pdx - bW * 0.35) + ',' + rimY;
+              var scalSpan = (bW * 0.7) / lobes;
+              for (var sl = 0; sl < lobes; sl++) {
+                var sxA = pdx - bW * 0.35 + sl * scalSpan;
+                var sxB = sxA + scalSpan;
+                var sxM = (sxA + sxB) / 2;
+                bellD += ' Q' + sxM + ',' + (rimY + bH * 0.09) + ' ' + sxB + ',' + rimY;
+              }
+              bellD += ' C' + (pdx + bW * 0.55) + ',' + (pdy + bH * 0.85) + ' '
+                    + (pdx + bW * 0.6) + ',' + (pdy + bH * 0.45) + ' '
+                    + (pdx + bW * 0.5) + ',' + pdy
+                    + ' Z';
+              // Body fill (gradient)
+              s += '<path d="' + bellD + '" fill="url(#' + gid + 'b)" stroke="rgba(40,30,20,0.4)" stroke-width="0.35" opacity="' + (0.94 * bloomOp) + '"/>';
+              // ── 3 VERTICAL RIBS down the bell ──
+              for (var rb = 0; rb < 3; rb++) {
+                var rbOff = (rb - 1) * bW * 0.3;
+                var rbx1 = pdx + rbOff;
+                var rbx2 = pdx + rbOff * 1.2;
+                s += '<path d="M' + rbx1 + ',' + (pdy + bH * 0.18)
+                   + ' Q' + ((rbx1 + rbx2) / 2 + (rb - 1) * 0.5) + ',' + (pdy + bH * 0.55) + ' '
+                   + rbx2 + ',' + (pdy + bH * 0.92) + '"'
+                   + ' fill="none" stroke="rgba(255,250,235,0.2)" stroke-width="0.4" stroke-linecap="round" opacity="' + (0.6 * bloomOp) + '"/>';
+              }
+              // ── THROAT GRADIENT (dark cavity at top inside) ──
+              s += '<ellipse cx="' + pdx + '" cy="' + (pdy + bH * 0.18) + '" rx="' + (bW * 0.42) + '" ry="' + (bH * 0.2) + '" fill="url(#' + gid + 't)" opacity="' + (0.88 * bloomOp) + '"/>';
+              // ── SHOULDER SPECULAR — bright catch on upper-left curve ──
+              s += '<path d="M' + (pdx - bW * 0.32) + ',' + (pdy + bH * 0.18)
+                 + ' Q' + (pdx - bW * 0.48) + ',' + (pdy + bH * 0.08) + ' '
+                 + (pdx - bW * 0.42) + ',' + (pdy + bH * 0.42) + '"'
+                 + ' fill="none" stroke="rgba(255,250,235,0.6)" stroke-width="0.6" stroke-linecap="round" opacity="' + (0.75 * bloomOp) + '"/>';
+              // ── RIM EDGE crisp lighter line at scalloped opening ──
+              s += '<path d="M' + (pdx - bW * 0.35) + ',' + rimY
+                 + ' Q' + pdx + ',' + (rimY + bH * 0.06) + ' '
+                 + (pdx + bW * 0.35) + ',' + rimY + '"'
+                 + ' fill="none" stroke="rgba(255,250,235,0.45)" stroke-width="0.5" stroke-linecap="round" opacity="' + (0.62 * bloomOp) + '"/>';
+              // ── CLAPPER STAMEN with golden pollen anther ──
+              s += '<line x1="' + pdx + '" y1="' + (pdy + bH * 0.28) + '" x2="' + pdx + '" y2="' + (pdy + bH * 0.95) + '"'
+                 + ' stroke="rgba(255,250,235,0.4)" stroke-width="0.55" stroke-linecap="round" opacity="' + (0.6 * bloomOp) + '"/>';
+              // Anther — gold cap with cream highlight
+              s += '<circle cx="' + pdx + '" cy="' + (pdy + bH * 1.0) + '" r="' + (bW * 0.11) + '" fill="#F0D060" opacity="' + (0.78 * bloomOp) + '"/>';
+              s += '<circle cx="' + (pdx - bW * 0.04) + '" cy="' + (pdy + bH * 0.98) + '" r="' + (bW * 0.05) + '" fill="rgba(255,250,235,0.85)" opacity="' + (0.85 * bloomOp) + '"/>';
+            }
           }
         })();
         break;
