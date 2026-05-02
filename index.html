@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.19';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.20';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7939,7 +7939,12 @@ window._addSwitchTabHook = function(fn){
       ];
       var count=0;
       whales.forEach(function(w){
-        mintPlant(w.hash).then(function(ok){
+        // bypassCap:true so the first-mint cap doesn't re-roll the
+        // hand-crafted mutation/mythic bytes down to Rare (Stephen
+        // 2026-05-02: "the print white whale card gave me a handful
+        // of the exact same epic card" — that was the cap clobbering
+        // chars 32-63 of every whale hash).
+        mintPlant(w.hash,{bypassCap:true}).then(function(ok){
           if(ok!==false)count++;
           if(count===whales.length||w===whales[whales.length-1]){
             alert('Printed '+count+' white whales. Open Greenhouse to inspect.');
@@ -8821,8 +8826,13 @@ window._addSwitchTabHook = function(fn){
         if(window._updateGameDew)try{window._updateGameDew();}catch(e){}
         if(window._updateSunbeamBadge)try{window._updateSunbeamBadge();}catch(e){}
         if(window.updateDashboard)updateDashboard();
+        // Stephen 2026-05-02: force-sync dev grants to cloud so they persist
+        // across refresh. Without this, hydration restored old cloud state +
+        // wiped not just the grant but ANY purchase made with the granted
+        // currency in the same session.
+        if(window.syncVaultToCloud)try{window.syncVaultToCloud();}catch(e){}
         var bal=window.getTotalHashes?window.getTotalHashes():ledger.earned;
-        alert('+'+n+' Sunbeams granted! Spendable balance: '+bal);
+        alert('+'+n+' Sunbeams granted (synced to cloud). Spendable balance: '+bal);
       }catch(e){alert('Error: '+e.message);}
     },
     // Stephen 2026-05-01: friendship-tier fast-forward. Skips the 30-day +
@@ -8880,8 +8890,11 @@ window._addSwitchTabHook = function(fn){
           else localStorage.setItem('sws_dew_ledger', JSON.stringify(l));
         }
         if (window._updateDewDisplay) window._updateDewDisplay();
+        // Stephen 2026-05-02: force-sync so grant + any purchase made with
+        // it survive refresh.
+        if (window.syncVaultToCloud) try { window.syncVaultToCloud(); } catch(e) {}
         var bal = window.getTotalDew ? window.getTotalDew() : '?';
-        alert('+' + n + ' Dew granted. Balance: ' + bal);
+        alert('+' + n + ' Dew granted (synced). Balance: ' + bal);
       } catch(e) { alert('Grant failed: ' + e.message); }
     },
     grantKeeper:function(){
@@ -9101,8 +9114,11 @@ window._addSwitchTabHook = function(fn){
         }
         if(window._updateDewDisplay)window._updateDewDisplay();
         if(window.updateDashboard)updateDashboard();
+        // Stephen 2026-05-02: force-sync so grants survive refresh AND so
+        // any purchase made with the granted Dew also flushes to cloud.
+        if(window.syncVaultToCloud)try{window.syncVaultToCloud();}catch(e){}
         var total=typeof getTotalDew==='function'?getTotalDew():'?';
-        alert('+'+n+' Dew granted! Total: '+total);
+        alert('+'+n+' Dew granted (synced to cloud). Total: '+total);
       }catch(e){alert('Error: '+e.message);}
     },
     spawnChimeras:function(){
@@ -37826,11 +37842,16 @@ document.addEventListener('keydown', function(e) {
     // Gift plant (origin='gift') uses its own cap logic at line ~63690.
     // Cross plants (origin='cross') don't count toward the bot cap.
     var _isCross = !!(opts && opts.isCross);
+    // Stephen 2026-05-02: dev mints (white whales etc.) bypass the cap so
+    // hand-crafted Beholder/Constellation hashes don't get re-rolled
+    // down to Rare. Without this, opts.bypassCap=false treats the mint
+    // like a fresh-account bloom and clobbers chars 32-63 of the hash.
+    var _bypassCap = !!(opts && opts.bypassCap);
     var _bloomCount = 0;
     for (var _bci = 0; _bci < gh.length; _bci++) {
       if (gh[_bci] && gh[_bci].origin === 'bloom') _bloomCount++;
     }
-    var _capActive = !_isCross && _bloomCount < 2 && window.getTerraGrade && window.hashToTraits;
+    var _capActive = !_isCross && !_bypassCap && _bloomCount < 2 && window.getTerraGrade && window.hashToTraits;
     if (_capActive) {
       try {
         var _roll = Math.random() * 100;
