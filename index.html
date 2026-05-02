@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.31';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.32';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -46712,7 +46712,21 @@ document.addEventListener('keydown', function(e) {
     function _ss(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
     _ss('sws_greenhouse', mGH);
     _ss('sws_nursery',    mNur);
-    if (data.sws_inventory  || data.inventory)   _ss('sws_inventory',       data.sws_inventory  || data.inventory);
+    // sws_inventory: shape { dnaFragments:number, substrate:{...} }. The
+    // dnaFragments counter must MAX-merge — a stale cloud read could
+    // otherwise undo earned DNA. Substrate dict union-merges so local-
+    // only acquisitions survive even if cloud sync hadn't fired.
+    if (data.sws_inventory || data.inventory) {
+      var _cloudInv = data.sws_inventory || data.inventory;
+      try {
+        var _localInv = _ls('sws_inventory') || {dnaFragments:0, substrate:{}};
+        var _mergedInv = {
+          dnaFragments: Math.max(_localInv.dnaFragments||0, _cloudInv.dnaFragments||0),
+          substrate: Object.assign({}, _cloudInv.substrate||{}, _localInv.substrate||{})
+        };
+        _ss('sws_inventory', _mergedInv);
+      } catch(e) { _ss('sws_inventory', _cloudInv); }
+    }
     // Hash + Dew ledgers: MAX-merge across local + cloud instead of
     // overwriting local with cloud. Stephen 2026-05-03: 20K Dew dev grant
     // was wiped on close/reopen because the cloud's stale ledger overwrote
@@ -46739,8 +46753,32 @@ document.addEventListener('keydown', function(e) {
     if (data.hashLedger) _maxMergeLedger('sws_hash_ledger', data.hashLedger);
     if (data.dewLedger)  _maxMergeLedger('sws_dew_ledger',  data.dewLedger);
     if (data.records)        _ss('sws_set_records',    data.records);
-    if (data.shopUnlocks)    _ss('sws_shop_unlocks',   data.shopUnlocks);
-    if (data.achievements)   _ss('sws_achievements',   data.achievements);
+    // sws_shop_unlocks: dict of unlocked items. Union-merge — sticky unlocks
+    // must survive even if cloud is stale. Local-only purchases preserved.
+    if (data.shopUnlocks) {
+      try {
+        var _localShop = _ls('sws_shop_unlocks') || {};
+        _ss('sws_shop_unlocks', Object.assign({}, data.shopUnlocks, _localShop));
+      } catch(e) { _ss('sws_shop_unlocks', data.shopUnlocks); }
+    }
+    // sws_achievements: dict of {key: count}. Per-key MAX so stale cloud
+    // can never undo a counter the local copy already bumped past.
+    if (data.achievements) {
+      try {
+        var _localAch = _ls('sws_achievements') || {};
+        var _mergedAch = {};
+        var _achKeys = {};
+        for (var _ak in _localAch) if (_localAch.hasOwnProperty(_ak)) _achKeys[_ak] = 1;
+        for (var _ak2 in data.achievements) if (data.achievements.hasOwnProperty(_ak2)) _achKeys[_ak2] = 1;
+        for (var _ak3 in _achKeys) {
+          var _lv = _localAch[_ak3], _cv = data.achievements[_ak3];
+          // If both are numbers, MAX. Otherwise prefer the truthy value (sticky flags).
+          if (typeof _lv === 'number' && typeof _cv === 'number') _mergedAch[_ak3] = Math.max(_lv, _cv);
+          else _mergedAch[_ak3] = (_lv || _cv);
+        }
+        _ss('sws_achievements', _mergedAch);
+      } catch(e) { _ss('sws_achievements', data.achievements); }
+    }
     if (data.rewardsClaimed) _ss('sws_rewards_claimed',data.rewardsClaimed);
     // Pi-paid nursery slot mirror — added 2026-04-28 alongside the Cloud
     // Function piComplete handler. The function writes the new slot count to
