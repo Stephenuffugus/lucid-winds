@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.32';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.33';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -80338,6 +80338,17 @@ function _bosJournalContent() {
   var h = '';
   try { h += (typeof _bosTodayContent === 'function') ? _bosTodayContent() : ''; } catch(e){}
   try { localStorage.setItem('lw_bos_today_viewed', String(Date.now())); } catch(e){}
+  // Stephen 2026-05-03 — Galaxy tester saw a totally empty JOURNAL pane
+  // (likely _bosTodayContent races with stale cache, or a hidden throw
+  // path inside it). If we end up with no rendered content, surface a
+  // graceful fallback instead of a black void so the player isn't
+  // staring at "is the app broken?" while we figure out the cause.
+  if (!h || h.replace(/\s+/g,'').length === 0) {
+    h = '<div style="padding:1.2rem 1rem;text-align:center;">'
+      + '<div style="font-family:Playfair Display,serif;font-size:1.1rem;color:var(--gold);font-style:italic;margin-bottom:0.6rem;">A quiet page</div>'
+      + '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);line-height:1.6;">The journal is loading. If it stays blank, pull to refresh — the page may be running on an older copy.</div>'
+      + '</div>';
+  }
   return h;
 }
 
