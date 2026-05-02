@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38235,11 +38235,17 @@ document.addEventListener('keydown', function(e) {
     { key: 'COMPANION',   get: function(t) {
         var c = TRAIT_BANK.companions[t.companion];
         if (!c || c.name === 'None') return null;
-        // Include ability + temperament in the name display
+        // Include ability + temperament in the name display.
+        // Temperament is GATED by bloom count (3 default, 1 for Listeners
+        // T3 ritual holders — Stephen ruling 2026-05-02). Until revealed,
+        // show "(?)" so the player knows there's something to discover.
         var _cInfo = window.getCompanionInfo ? window.getCompanionInfo(t) : null;
         var _desc = c.name;
         if (_cInfo && _cInfo.ability) _desc += ' — ' + _cInfo.ability.name;
-        if (_cInfo && _cInfo.temperament) _desc += ' (' + _cInfo.temperament.name + ')';
+        if (_cInfo && _cInfo.temperament) {
+          var _tempRevealed = window._lwCompanionTempRevealed ? window._lwCompanionTempRevealed(t.companion) : true;
+          _desc += _tempRevealed ? (' (' + _cInfo.temperament.name + ')') : ' (?)';
+        }
         return { name: _desc, rare: !!c.rare };
     }},
     { key: 'MUTATION',    get: function(t) {
@@ -38901,7 +38907,7 @@ document.addEventListener('keydown', function(e) {
         var panel = document.getElementById('panel-greenhouse');
         if (panel) panel.insertBefore(_reserveEl, panel.querySelector('.greenhouse-grid') || panel.firstChild);
       }
-      _reserveEl.innerHTML = '<span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--gold);">📦 ' + _reserve.length + ' plant' + (_reserve.length > 1 ? 's' : '') + ' in Reserve</span>' +
+      _reserveEl.innerHTML = '<span style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--gold);display:inline-flex;align-items:center;gap:0.3rem;">'+(window._lwEmojiSprite?window._lwEmojiSprite('📦',14):'📦')+' ' + _reserve.length + ' plant' + (_reserve.length > 1 ? 's' : '') + ' in Reserve</span>' +
         (gh.length < MAX_COLLECTION_SIZE ? '<span style="font-family:Bebas Neue,sans-serif;font-size:0.4rem;color:var(--sage);">TAP TO CLAIM</span>' : '<span style="font-family:DM Mono,monospace;font-size:0.35rem;color:var(--muted);">Expand slots first</span>');
       _reserveEl.style.display = 'flex';
     } else if (_reserveEl) {
@@ -40275,9 +40281,10 @@ document.addEventListener('keydown', function(e) {
     var display = document.getElementById('badge-display');
     if (!display) return;
     var html = '';
-    if (unlocks.master_grower)    html += '<span class="badge-icon" title="Master Grower">🏆</span>';
+    function _bs(emo){ return (window._lwEmojiSprite && window._LW_EMOJI_SPRITES && window._LW_EMOJI_SPRITES[emo]) ? window._lwEmojiSprite(emo, 18) : emo; }
+    if (unlocks.master_grower)    html += '<span class="badge-icon" title="Master Grower">'+_bs('🏆')+'</span>';
     if (unlocks.golden_shears)    html += '<span class="badge-icon" title="Golden Shears">✂️</span>';
-    if (unlocks.apprentice_badge) html += '<span class="badge-icon" title="Apprentice Badge">🥉</span>';
+    if (unlocks.apprentice_badge) html += '<span class="badge-icon" title="Apprentice Badge">'+_bs('🥉')+'</span>';
     display.innerHTML = html;
   }
 
@@ -45382,6 +45389,17 @@ document.addEventListener('keydown', function(e) {
     if (!result.ok) { closeBloomModal(); _setNurMsg('Could not bloom: '+result.reason); return; }
     FG_Data.logAncestry(result.ancestry.parentAHash, result.ancestry.parentBHash, result.ancestry.nonce, result.seedHash);
     mintPlant(result.seedHash, { isCross: true });
+    // Bump bloom counter for this plant's companion idx (Listeners T3
+    // hookable — drops temperament-reveal threshold 3 → 1). Pull traits
+    // from the just-minted hash; null-safe for plants with no companion.
+    try {
+      if (window.hashToTraits && window._lwBumpCompanionBloom) {
+        var _bTraits = window.hashToTraits(result.seedHash);
+        if (_bTraits && typeof _bTraits.companion === 'number') {
+          window._lwBumpCompanionBloom(_bTraits.companion);
+        }
+      }
+    } catch(e) {}
     // Keeper tree node Slow Awakening — patient tending pays out on bloom.
     // +1 Dew per tree pt, max +5. Surfaces as a quiet toast so the player
     // notices the reward without it feeling like a notification.
@@ -52107,8 +52125,11 @@ function _doCrossPollination(wildPlant,matePlant){
       var _lwc=localStorage.getItem('lw_class');
       if(_lwc==='breeder'&&window._lwGetClassLevel&&_lwGetClassLevel('breeder')>=3){
         _spiderFired=true;
-        if(window._LW_hasSynergy&&window._LW_hasSynergy()){_spiderBonus=2;_spiderFull=true;}
-        else _spiderBonus=1.5;
+        // Stephen ruling 2026-05-02: Breeder L3 = 2× base on breed reward
+        // (was ×1.5 with Spider override to ×2). Spider becomes a flavor
+        // signature instead of the only path to ×2.
+        _spiderBonus=2;
+        if(window._LW_hasSynergy&&window._LW_hasSynergy())_spiderFull=true;
       }
     }catch(e){}
     // BREED REWARD stack — pollinators family × weavers family × tree ×
@@ -52139,7 +52160,7 @@ function _doCrossPollination(wildPlant,matePlant){
       rewardMsg='+'+sbBonus+' Sunbeams toward a new plant!';
     }
     if(_spiderFired&&window._toast)setTimeout(function(){
-      window._toast(_spiderFull?'🕷 Web Weaver: Spider doubled the reward.':'🕷 Web Weaver: +50% reward (find a Garden Spider for 2×)');
+      window._toast(_spiderFull?'🕷 Web Weaver: Spider blesses the cross. 2× reward.':'Master Breeder: 2× breed reward.');
     },250);
     if(_twinBloom&&window._toast)setTimeout(function(){window._toast('\ud83c\udf3c Twin Bloom. The ritual doubled your reward.');},500);
     _play('match');
@@ -56176,13 +56197,46 @@ window._lwCompassTap=function(){
       var d=6371000*2*Math.atan2(Math.sqrt(_z),Math.sqrt(1-_z));
       if(d<bestD){bestD=d;best=f;}
     }
-    if(!best){_toast('\ud83e\udded All nearby ferals collected!');return;}
-    // Compute bearing
-    var dy=best.lat-window._uLat,dx=(best.lng-window._uLng)*Math.cos(window._uLat*Math.PI/180);
-    var rad=Math.atan2(dx,dy);var deg=(rad*180/Math.PI+360)%360;
-    var dirs=['N','NE','E','SE','S','SW','W','NW'];
-    var dir=dirs[Math.round(deg/45)%8];
-    _toast('\ud83e\udded '+dir+' \u00b7 '+Math.round(bestD)+'m to nearest feral');
+    // Cartographer L3 ruling 2026-05-02: compass also surfaces the
+    // nearest OWNED wild plant \u2014 the player's "pinned treasure". Spec
+    // shape: pick whichever (feral OR owned) is nearer + show both
+    // distances when both are < 2km. Other classes still see ferals only.
+    var cartoL3=false;
+    try{cartoL3=(_lwGetClass()==='cartographer'&&_lwGetClassLevel('cartographer')>=3);}catch(e){}
+    var ownedBest=null,ownedBestD=Infinity;
+    if(cartoL3){
+      try{
+        var wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');
+        for(var wi=0;wi<wild.length;wi++){
+          var wp=wild[wi];if(!wp||!wp.own||!wp.lat)continue;
+          var _wA=window._uLat,_wB=window._uLng,_wC=wp.lat,_wD=wp.lng;
+          var _wX=(_wC-_wA)*Math.PI/180,_wY=(_wD-_wB)*Math.PI/180;
+          var _wZ=Math.sin(_wX/2)*Math.sin(_wX/2)+Math.cos(_wA*Math.PI/180)*Math.cos(_wC*Math.PI/180)*Math.sin(_wY/2)*Math.sin(_wY/2);
+          var wd=6371000*2*Math.atan2(Math.sqrt(_wZ),Math.sqrt(1-_wZ));
+          if(wd<ownedBestD){ownedBestD=wd;ownedBest=wp;}
+        }
+      }catch(e){}
+    }
+    function _bearing(targetLat,targetLng){
+      var _dy=targetLat-window._uLat,_dx=(targetLng-window._uLng)*Math.cos(window._uLat*Math.PI/180);
+      var _r=Math.atan2(_dx,_dy);var _g=(_r*180/Math.PI+360)%360;
+      var _ds=['N','NE','E','SE','S','SW','W','NW'];
+      return _ds[Math.round(_g/45)%8];
+    }
+    if(!best&&!ownedBest){_toast('\ud83e\udded All nearby ferals collected!');return;}
+    if(cartoL3&&ownedBest){
+      var msgC='\ud83e\udded ';
+      if(best){
+        var feralPart=_bearing(best.lat,best.lng)+' '+Math.round(bestD)+'m feral';
+        var treasurePart=_bearing(ownedBest.lat,ownedBest.lng)+' '+Math.round(ownedBestD)+'m treasure';
+        msgC+=feralPart+' \u00b7 '+treasurePart;
+      } else {
+        msgC+=_bearing(ownedBest.lat,ownedBest.lng)+' \u00b7 '+Math.round(ownedBestD)+'m to your nearest plant';
+      }
+      _toast(msgC);
+    } else {
+      _toast('\ud83e\udded '+_bearing(best.lat,best.lng)+' \u00b7 '+Math.round(bestD)+'m to nearest feral');
+    }
   }catch(e){_toast('\ud83e\udded Compass error.');}
 };
 function _lwCanToolCap(){
@@ -60748,7 +60802,18 @@ function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,prevBd=[];
         d.setAttribute('data-c',c);
         d.onclick=function(){if(over||turn!==1)return;var col=parseInt(this.getAttribute('data-c'));if(bd[col]!==0)return;
           _play('tap');drop(col);mv++;var _cm=document.getElementById('C4m');if(_cm)_cm.textContent=mv;
-          if(check(1)){over=true;_e('game_win');_playWin();sm(_c4Win[Math.floor(Math.random()*_c4Win.length)]);rn();_sr('c4',{w:true,s:mv});return}
+          if(check(1)){over=true;_e('game_win');_playWin();
+            // Sprite-aware win-line write (sm() is textContent only). May 02
+            // emoji sweep — picks the painted PNG when one is mapped, falls
+            // back to raw emoji for the rest.
+            var _wq=_c4Win[Math.floor(Math.random()*_c4Win.length)];
+            try {
+              var _wqHtml=_wq.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]/gu,function(e){
+                return (window._lwEmojiSprite&&window._LW_EMOJI_SPRITES&&window._LW_EMOJI_SPRITES[e])?window._lwEmojiSprite(e,18):e;
+              });
+              var _gm=document.getElementById('_gm'); if(_gm)_gm.innerHTML=_wqHtml;
+            } catch(eW) { sm(_wq); }
+            rn();_sr('c4',{w:true,s:mv});return}
           if(isFull()){over=true;sm('A draw! Well matched \u2014 try again? 🌿');rn();_sr('c4',{w:false,s:mv});return}
           turn=2;sm('AI thinking...');rn();setTimeout(aiMove,300)};
         gd.appendChild(d)}
@@ -62241,7 +62306,7 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
         var big=line.big;
         h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:'+(big?'linear-gradient(180deg,rgba(255,180,90,0.2),rgba(255,180,90,0.05))':'rgba(0,0,0,0.42)')+';border:1px solid '+(big?'#ffb45a':'rgba(232,220,200,0.25)')+';border-radius:8px;font-family:Georgia,serif;animation:fLineIn 0.45s cubic-bezier(.2,1.4,.3,1);">';
         h+='<span style="font-style:italic;font-size:0.78rem;color:#f5ebd0;">'+line.label+'</span>';
-        h+='<span style="font-weight:'+(big?'700':'400')+';font-size:'+(big?'1.5rem':'0.95rem')+';color:'+(line.color||'#f5ebd0')+';">'+line.value+(line.medal?' '+line.medal:'')+'</span>';
+        h+='<span style="font-weight:'+(big?'700':'400')+';font-size:'+(big?'1.5rem':'0.95rem')+';color:'+(line.color||'#f5ebd0')+';">'+line.value+(line.medal?' '+(window._lwEmojiSprite&&window._LW_EMOJI_SPRITES&&window._LW_EMOJI_SPRITES[line.medal]?window._lwEmojiSprite(line.medal,28):line.medal):'')+'</span>';
         h+='</div>';
       }
       h+='</div>';
@@ -62527,7 +62592,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
         var bdr=line.big?'#ffdc70':'rgba(232,220,200,0.25)';
         h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:'+bg+';border:1px solid '+bdr+';border-radius:8px;font-family:Georgia,serif;animation:yLineIn 0.45s cubic-bezier(.2,1.4,.3,1);">';
         h+='<span style="font-style:italic;font-size:0.78rem;color:#f5ebd0;letter-spacing:0.04em;">'+line.label+'</span>';
-        h+='<span style="font-weight:'+weight+';font-size:'+size+';color:'+(line.color||'#f5ebd0')+';text-shadow:0 1px 2px rgba(0,0,0,0.6);">'+line.value+(line.medal?' '+line.medal:'')+'</span>';
+        h+='<span style="font-weight:'+weight+';font-size:'+size+';color:'+(line.color||'#f5ebd0')+';text-shadow:0 1px 2px rgba(0,0,0,0.6);">'+line.value+(line.medal?' '+(window._lwEmojiSprite&&window._LW_EMOJI_SPRITES&&window._LW_EMOJI_SPRITES[line.medal]?window._lwEmojiSprite(line.medal,28):line.medal):'')+'</span>';
         h+='</div>';
       }
       h+='</div>';
@@ -76643,7 +76708,13 @@ window._LW_EMOJI_SPRITES = {
   // toast tier badges — used by engagement.js
   '🥉': 'assets/fx/medal-gold.png',            // bronze medal (toast)
   '🥈': 'assets/fx/medal-gold.png',            // silver medal (toast)
-  '🏆': 'assets/fx/trophy-cup.png'             // trophy (toast)
+  '🏆': 'assets/fx/trophy-cup.png',            // trophy (toast)
+  // ─── 2026-05-02 batch: 5 new mappings using Stephen's uploaded art ───
+  '🌺': 'assets/games/masterpollinator/tier1/hibiscus.png', // hibiscus (Connect Fleur win quotes)
+  '🌻': 'assets/games/masterpollinator/tier1/sunflower.png',// sunflower (Connect Fleur)
+  '🌼': 'assets/fx/bloom-flower.png',          // blossom (alias to bloom-flower)
+  '📜': 'assets/bos/scroll-keeper.png',        // scroll (Wild stat strip rank tile)
+  '📦': 'assets/icons/box.png'                 // package (reserve badge — separate intent from gift but same art)
 };
 // snowflake-blue-v2 is the newer detailed snowflake; keep ❄️ pointed at
 // the original snowflake-blue.png for backward compat with existing inline
@@ -88728,6 +88799,36 @@ window.LW_FAMILY_T3 = {
   listeners:    { name:'Hidden Trait',  desc:'Companion reveal on new plants drops from 3 blooms to 1.' }
 };
 
+// ═══ TEMPERAMENT REVEAL — Listeners T3 hookable ═══
+// Each unique companion the player encounters has its temperament hidden
+// until they accumulate N blooms with that companion. Default N=3.
+// Listeners T3 ritual lowers N to 1 (Stephen ruling 2026-05-02 — finally
+// wires the half-built temperamentsRevealed/bloomsPerCompanion vault shape).
+//
+// Storage: lw_blooms_per_companion = {idx: count}. Local-only (small,
+// rebuildable from greenhouse if lost). Bumped on every nursery bloom.
+var _LW_BPC_KEY = 'lw_blooms_per_companion';
+function _lwGetBloomsPerCompanion(){
+  try { return JSON.parse(localStorage.getItem(_LW_BPC_KEY)||'{}'); } catch(e) { return {}; }
+}
+function _lwSaveBloomsPerCompanion(b){
+  try { localStorage.setItem(_LW_BPC_KEY, JSON.stringify(b)); } catch(e) {}
+}
+window._lwBumpCompanionBloom = function(idx){
+  if (idx == null || idx < 0) return;
+  var b = _lwGetBloomsPerCompanion();
+  b[idx] = (b[idx]||0) + 1;
+  _lwSaveBloomsPerCompanion(b);
+};
+window._lwCompanionTempRevealed = function(idx){
+  if (idx == null || idx < 0) return false;
+  // Listeners T3 lowers threshold 3 → 1.
+  var threshold = 3;
+  try { if (window._LW_hasFamilyRitual && _LW_hasFamilyRitual('listeners')) threshold = 1; } catch(e) {}
+  var b = _lwGetBloomsPerCompanion();
+  return (b[idx]||0) >= threshold;
+};
+
 // ═══ COMPANION T2 ACTIVE ABILITIES ═══
 // Research Team B's key missing piece: T2 should unlock an ACTIVE ability
 // on a cooldown, not just a bigger passive multiplier. One small-but-distinct
@@ -92827,7 +92928,14 @@ window._LW_classBonus=function(kind){
 // Read current tool cooldown modifier
 window._LW_toolMod=function(tool){
   var lvl=_lwGetToolLevel(tool);
-  var biomeBoost=_lwBiomeMatch()?1.5:1;
+  // Biome match boosts every player's tools 1.5×. Forager L3 doubles
+  // that boost to 2× (Stephen ruling 2026-05-02 — Forager Master gets
+  // unique tool-amplification in their home biome). Long Watch (L100)
+  // makes biome match true everywhere, so Forager L3 + L100 combo is
+  // the deep-game peak.
+  var _foragerL3=false;
+  try{_foragerL3=(_lwGetClass()==='forager'&&_lwGetClassLevel('forager')>=3);}catch(e){}
+  var biomeBoost=_lwBiomeMatch()?(_foragerL3?2.0:1.5):1;
   // Keeper L2 Versatile: -10% on every tool cooldown. Stacks with biome match.
   // Only cooldown-bearing tool today is shears; engine is here so future
   // cooldowns inherit it automatically.
@@ -93006,9 +93114,9 @@ var LW_TREE_NODES={
   nurseryGrow:{branch:'keeper',name:'Slow Awakening',desc:'Seeds stretch toward you. +0.25% nursery growth / pt',max:5,per:0.0025},
   // Tools branch — unlocks at class path max
   shearsEdge:{branch:'tools',name:'Sharpened Edge',desc:'Shears remember the whetstone. -0.25% shears cooldown / pt',max:5,per:-0.0025},
-  canFlow:{branch:'tools',name:'Steady Pour',desc:'Not a drop wasted. +0.25% watering effect / pt',max:5,per:0.0025},
-  pouchSpace:{branch:'tools',name:'Bottomless Satchel',desc:'More fits than seems possible. +0.25% pouch auto-sort / pt',max:5,per:0.0025},
-  compassEdge:{branch:'tools',name:'Deadreckon',desc:'The arrow never hesitates. +0.25% compass range / pt',max:5,per:0.0025},
+  // canFlow / pouchSpace / compassEdge REMOVED 2026-05-02: shipped without
+  // consumers, did literally nothing. Migration below auto-refunds any
+  // spent pts back into the available pool.
   // Heartwood — Lv 40. Inner strength, resilience. Universal (any class).
   quietVow:       {branch:'heartwood',name:'Quiet Vow',        desc:'What you carry, carries you. +0.25% pollen rate / pt',max:5,per:0.0025},
   heartsEmber:    {branch:'heartwood',name:'Heart\u2019s Ember',desc:'A small warmth always answers. +0.25% harvest hashes / pt',max:5,per:0.0025},
@@ -93044,6 +93152,25 @@ window.LW_TREE_MILESTONES=LW_TREE_MILESTONES;
 // + 50 localStorage reads just for tree lookups. With cache: one read per alloc.
 // Invalidated by _lwTreeSetPoints below.
 var _lwTreePtsCache=null;
+// May 02 migration: 3 dead Tools nodes (canFlow/pouchSpace/compassEdge)
+// were stripped because they had no consumer code and did nothing. Auto-
+// refund any spent pts in those keys so players don't lose them. Runs
+// once at module load — sets a flag so it doesn't re-run.
+(function _lwTreeMigrateDeadNodes(){
+  try {
+    if (localStorage.getItem('lw_tree_dead_nodes_migrated_v1') === '1') return;
+    var raw = localStorage.getItem('lw_tree_points');
+    if (raw) {
+      var p = JSON.parse(raw) || {};
+      var stripped = false;
+      if (p.canFlow != null)    { delete p.canFlow;    stripped = true; }
+      if (p.pouchSpace != null) { delete p.pouchSpace; stripped = true; }
+      if (p.compassEdge != null){ delete p.compassEdge;stripped = true; }
+      if (stripped) localStorage.setItem('lw_tree_points', JSON.stringify(p));
+    }
+    localStorage.setItem('lw_tree_dead_nodes_migrated_v1','1');
+  } catch(e) {}
+})();
 function _lwTreePoints(){
   if(_lwTreePtsCache)return _lwTreePtsCache;
   try{_lwTreePtsCache=JSON.parse(localStorage.getItem('lw_tree_points')||'{}');}catch(e){_lwTreePtsCache={};}
