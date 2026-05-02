@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5334,7 +5334,10 @@
     #pw-keeper-bar .kb-avatar > img{clip-path:circle(50%);}
     #pw-keeper-bar .kb-info{flex:1;min-width:0;}
     #pw-keeper-bar .kb-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--cream);letter-spacing:0.06em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;}
-    #pw-keeper-bar .kb-xp-wrap{height:7px;background:rgba(42,48,37,0.7);border-radius:4px;margin-top:4px;overflow:hidden;cursor:pointer;border:1px solid rgba(74,124,53,0.2);}
+    /* XP bar — moved BELOW kb-rank 2026-05-02 so it can never visually
+       conflict with the keeper name. Slightly more visible green border
+       so it reads as a UI element rather than a stray brown line at 0%. */
+    #pw-keeper-bar .kb-xp-wrap{height:6px;background:rgba(26,32,22,0.6);border-radius:4px;margin-top:4px;overflow:hidden;cursor:pointer;border:1px solid rgba(122,179,86,0.32);}
     #pw-keeper-bar .kb-xp-fill{height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage));border-radius:3px;transition:width 0.5s ease;}
     #pw-keeper-bar .kb-rank{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--muted);margin-top:3px;letter-spacing:0.03em;}
     /* Currency badges in row 2 — big, readable, thumb-friendly, ready for art drop-in */
@@ -7174,8 +7177,8 @@ window._addSwitchTabHook = function(fn){
           <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
           <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;cursor:pointer;" onclick="(function(){window._lwBetaTaps=(window._lwBetaTaps||0)+1;clearTimeout(window._lwBetaTapT);window._lwBetaTapT=setTimeout(function(){window._lwBetaTaps=0;},2500);if(window._lwBetaTaps>=5){window._lwBetaTaps=0;var pw=prompt('Dev password:');if(pw==='lucid2026')document.getElementById('pw-dev-admin').classList.add('open');}}).call(this);">BETA</span>
         </div>
-        <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 Pollen</div>
+        <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
       </div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install-v2.png?v=apr27" alt="Install" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"></div>
     </div>
@@ -39388,18 +39391,14 @@ document.addEventListener('keydown', function(e) {
             _ghostSvg +
             '<div class="gh-name" style="color:rgba(138,145,120,0.3);font-style:italic;">' + (_ghost.name || 'composted') + '</div>';
         } else if (i < MAX_COLLECTION_SIZE) {
-          // EMPTY SLOT WITHIN CAP — plain placeholder. Stephen
-          // 2026-04-30: "as it sit it looks like i only have 8 slots".
-          // The buy CTAs were rendering in slots 9-10 which are still
-          // inside his cap. Now: empty within cap = regular placeholder
-          // so player sees their actual capacity (e.g. 8 plants in a
-          // 10-slot greenhouse → slots 9 + 10 are empty placeholders).
-          el.className = 'greenhouse-plant gh-slot-empty';
-          el.style.cssText = 'background:rgba(13,16,12,0.4);border:1.5px dashed rgba(122,179,86,0.18);opacity:0.7;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:544/736;cursor:default;';
-          el.innerHTML =
-            '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.08em;margin-bottom:8px;">SLOT #' + (i + 1) + '</div>' +
-            '<div style="font-size:1.4rem;color:rgba(122,179,86,0.35);">·</div>' +
-            '';
+          // EMPTY SLOT WITHIN CAP — accordion design (Stephen 2026-05-02:
+          // "the empty slots in the greenhouse should accordion so at the
+          // bottom of the plants is always the upgrade slots buttons but
+          // it clearly reads how many slots out of how many are full").
+          // Skip rendering individual empty placeholders entirely — plants
+          // stack tight at top, buy CTAs follow immediately, footer status
+          // (appended after the loop) shows the X / Y count clearly.
+          continue;
         } else {
           // BEYOND CAP — buyable expansion CTAs.
           // Slot at MAX_COLLECTION_SIZE   → + 1 SLOT chunky card
@@ -39432,6 +39431,27 @@ document.addEventListener('keydown', function(e) {
 
       grid.appendChild(el);
     }
+
+    // ─── SLOTS-USED FOOTER — accordion partner of the skipped empty slots ───
+    // Stephen ruling 2026-05-02: with empty placeholders gone, the player
+    // needs a CLEAR indicator of how many slots are full vs total. Renders
+    // as a full-width strip below the plant grid, above the lazy SVG init.
+    if (gh.length > 0) {
+      var _footer = document.createElement('div');
+      _footer.className = 'gh-slots-footer';
+      _footer.style.cssText = 'grid-column:1/-1;margin-top:0.6rem;padding:0.7rem 0.9rem;background:linear-gradient(180deg,rgba(36,30,16,0.62),rgba(20,24,16,0.78));border:1.5px solid rgba(200,168,75,0.35);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;box-shadow:inset 0 1px 0 rgba(200,168,75,0.18);';
+      var _emptyCount = Math.max(0, MAX_COLLECTION_SIZE - gh.length);
+      _footer.innerHTML =
+        '<div style="display:flex;flex-direction:column;line-height:1.15;">' +
+          '<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.12em;color:var(--gold);">' + gh.length + ' / ' + MAX_COLLECTION_SIZE + ' SLOTS USED</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.06em;color:var(--muted);margin-top:2px;">' + _emptyCount + ' empty</div>' +
+        '</div>' +
+        '<div style="flex:1;max-width:160px;height:8px;background:rgba(26,32,22,0.6);border-radius:4px;overflow:hidden;border:1px solid rgba(122,179,86,0.25);">' +
+          '<div style="width:' + Math.round((gh.length / MAX_COLLECTION_SIZE) * 100) + '%;height:100%;background:linear-gradient(90deg,rgba(74,124,53,0.7),var(--sage));border-radius:3px;transition:width 0.5s ease;"></div>' +
+        '</div>';
+      grid.appendChild(_footer);
+    }
+
     // New-player hint: pulse the first plant card so they know to tap it.
     // Only fires for 1-plant greenhouses + never repeats (one-shot flag).
     try{
