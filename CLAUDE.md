@@ -499,9 +499,9 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 
 ---
 
-## ITEMS SYSTEM (SHIPPED v1 — 17 items, 16 wired)
+## ITEMS SYSTEM (SHIPPED v1 — 18 items, all wired)
 
-Module: `window.LW_ITEMS` (index.html:62892). Catalog: `window.LW_ITEMS_CATALOG`.
+Module: `window.LW_ITEMS` (index.html:83168). Catalog: `window.LW_ITEMS_CATALOG`.
 
 ### Catalog structure
 Each item has: `key, name, category, rarity, art, icon, desc, lore, usage, wired`. Hidden from UI if `wired:false`.
@@ -509,9 +509,9 @@ Each item has: `key, name, category, rarity, art, icon, desc, lore, usage, wired
 ### Active items by category
 - **Foraging:** foragersLens (C), compassShard (U), tetherMoss (R), divinersGlass (E)
 - **Defense:** moonwake (U), mulchWard (R), brambleThicket (R), shellgourd (E)
-- **Offense:** uprootCharm (U), foragersTorch (R), dustStorm (R)
-- **Remote:** whisperVine (C), scryingStone (U), slowArrow (R), ravenEye (R), wanderersMap (E)
-- **UNBUILT:** delegateToken (E) — co-op hex share, needs Firestore flow
+- **Offense:** uprootCharm (U), foragersTorch (R), dustStorm (R), pollenStorm (E)
+- **Remote:** whisperVine (C), scryingStone (U), slowArrow (R), ravenEye (R), wanderersMap (E), lanternPath (E)
+- delegateToken removed 2026-05-01 (replaced by lanternPath). pollenStorm added same date.
 
 ### Drop sources
 - Mystery boxes (LW_BOXES) — weighted roll
@@ -539,7 +539,7 @@ Three DIFFERENT systems. Don't confuse:
 LW_BOXES is the items path. The first two are pure Dew sinks.
 
 ### LW_BOXES weights
-`Common 48% / Uncommon 30% / Rare 15% / Epic 6% / Legendary 1%`. Pity: 8th box → Rare+ guaranteed, 25th → Epic+ guaranteed. Unwired items (`wired:false`) excluded from pool.
+`Common 48% / Uncommon 30% / Rare 15% / Epic 6% / Legendary 1%`. Pity: 8th box → Rare+ guaranteed, 25th → Epic+ guaranteed, 60th → Legendary guaranteed. Unwired items (`wired:false`) excluded from pool. As of May 02 audit, LW_BOXES.openOne calls LW_ITEMS.add({silent:true}) so the pouch cap (25/40) is respected — direct localStorage write that previously bypassed cap is removed.
 
 ---
 
@@ -596,7 +596,7 @@ Unlock tiers + boosters documented in the prestige_system memory note.
 
 ## KEEPER'S TREE (SHIPPED Apr 15)
 
-100-point passive skill tree. 5 branches × 4 nodes × 5 pts/node = 100. Respec free once per 24h.
+100-point passive skill tree. 5 branches × 4 nodes × 5 pts/node = 100. **No respec** — `_LW_treeCanRespec` returns false permanently ("no respec, no regret" — design call). Older docs claimed "free once per 24h"; the code never shipped that.
 
 ### Branches
 - **Forager** (🍂) — feralRange, rareOdds, feralCd, harvestHash
@@ -671,7 +671,6 @@ Each class has a companion family. Holding any plant with matching companion unl
 
 ### Active work
 - ~~Items art~~ ✅ DONE 2026-04-24 — 19 PNGs live in `/assets/items/`
-- **delegateToken** — co-op friend-hex share, needs Firestore flow
 - ~~Balance pass on items~~ ✅ DONE — Mulch Ward (R, 1 charge, 24h) and Shellgourd (E, 1 charge, 48h) are different tiers with different fuse lengths. Audit #4 (commit 2bedec3) rebalanced Shellgourd from "no-op consume" to "Epic single-use ward with a long fuse" — defense ladder is intentional.
 - **Pi SDK integration** — ALL payments through Pi
 - **First-mint Common %** — currently 36% (Variant F), spec 42%. Closing the gap re-grades every plant. Defer until post-Pi-launch unless director calls otherwise.
