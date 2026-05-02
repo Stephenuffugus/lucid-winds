@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.24';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -55915,7 +55915,7 @@ window._lwRenderCuriosities = function() {
   // Header
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">';
   h += '<div><div style="font-family:Playfair Display,serif;font-size:1.25rem;color:var(--gold);font-style:italic;">Curiosities</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:2px;line-height:1.5;">Creatures you carry on walks. Walking hatches them.</div></div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);margin-top:2px;line-height:1.5;">Curiosities you carry on walks. Walking hatches them.</div></div>';
   h += '<button onclick="document.getElementById(\'lw-curiosities-panel\').remove()" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.5);color:var(--cream);font-size:1rem;cursor:pointer;">✕</button>';
   h += '</div>';
 
@@ -55924,9 +55924,9 @@ window._lwRenderCuriosities = function() {
   h += '<div style="padding:0.8rem;margin-bottom:0.9rem;background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(13,16,12,0.7));border:1px solid rgba(122,179,86,0.18);border-radius:10px;">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin-bottom:0.55rem;">HOW THIS WORKS</div>';
   h += '<div style="display:flex;flex-direction:column;gap:0.5rem;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.5;">';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Buy</b> — visit the hermit. Each creature costs Dew + Sunbeams.</span></div>';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> — every step you take incubates the creatures you own. No equip slot.</span></div>';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — when ready, your creature joins your roster. Equip it for ongoing abilities.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Buy</b> — visit the hermit. Each curiosity costs Dew + Sunbeams.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> — every step you take incubates the curiosities you own. No equip slot.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — when ready, your curiosity joins your roster. Equip it for ongoing abilities.</span></div>';
   h += '</div></div>';
 
   // ─── CREATURES SECTION ───
@@ -55935,9 +55935,14 @@ window._lwRenderCuriosities = function() {
   // in code for future re-enable but no UI surfaces or call sites
   // reference it now.
   if (keeperSpecs.length) {
+    // Stephen 2026-05-02: was hardcoded to parasitic-wasp.png as the section
+    // icon — total spoiler since that's the HATCHED form of the Caterpillar
+    // curiosity. Now uses the generic gold paw sprite. Section header text
+    // also renamed CREATURES → CURIOSITIES for consistency with the page
+    // title + EQUIPPED CURIOSITY label.
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.12em;margin:1.3rem 0 0.55rem;display:flex;align-items:center;gap:0.4rem;">'+
-         '<img src="assets/companions/parasitic-wasp.png" alt="" style="width:24px;height:24px;object-fit:contain;border-radius:5px;" onerror="this.outerHTML=\'\\ud83d\\udc1b\';">'+
-         '<span>CREATURES</span>'+
+         '<img src="assets/fx/paw-gold.png" alt="" style="width:22px;height:22px;object-fit:contain;" onerror="this.outerHTML=\'\\ud83d\\udc3e\';">'+
+         '<span>CURIOSITIES</span>'+
          '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">acquired from the hermit</span>'+
          '</div>';
     if (equippedKey){
@@ -55992,7 +55997,12 @@ window._lwRenderCuriosities = function() {
           h += '<div style="margin-top:0.2rem;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">'+(spec.distanceM/1000)+' km walk to hatch</div>';
         } else {
           var req = spec.requires ? window.LW_KEEPER.getSpec(spec.requires) : null;
-          if (req) h += '<div style="margin-top:0.45rem;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">Hatch the <b style="color:var(--gold);">'+req.hatchedName+'</b> first.</div>';
+          // Stephen 2026-05-02: was leaking req.hatchedName (e.g. "Parasitic
+          // Wasp") which spoiled the previous curiosity's hatched form
+          // before the player had hatched it. Switched to req.cocoonName
+          // ("Caterpillar") so requirements reference what the player
+          // actually sees on the prerequisite curiosity.
+          if (req) h += '<div style="margin-top:0.45rem;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">Hatch the <b style="color:var(--gold);">'+req.cocoonName+'</b> first.</div>';
         }
       } else if (!hatched) {
         // Incubating — distance progress
