@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.33';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.34';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5483,6 +5483,24 @@ body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 124px)!important;righ
 body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 128px)!important;right:74px!important;width:60px!important;height:60px!important;}
 body.tab-wild #kb-compendium #kb-comp-count{top:-4px!important;left:-4px!important;min-width:18px!important;height:18px!important;font-size:0.5rem!important;}
 body.tab-wild #w-stats-bar{padding:14px 10px!important;padding-right:148px!important;}
+/* Narrow Android (Galaxy ≤430px CSS px): the floating BoS book +
+   backpack at right:84 / right:8 overlap kb-row2 (BLOOM/HUT/DEW)
+   because that row's max-width:228 reaches into the floating
+   button zone. Tester reported "the book is overlapping the dew
+   and it looks sloppy". Three-part fix:
+     1. Tighten kb-row2 max-width so the DEW button clears BoS
+     2. Hide kb-install (PWA install — accessible from Chrome menu
+        on Android, doesn't need to live in the bar on narrow phones)
+     3. Slightly shrink the floating buttons so they fit cleanly
+   Above 430px (most iPhones, larger Pixels, tablets) the original
+   layout still applies. */
+@media (max-width: 430px) {
+  #pw-keeper-bar .kb-row2 { max-width: 180px !important; }
+  #pw-keeper-bar .kb-row1 #kb-install { display: none !important; }
+  #kb-compendium { right: 70px !important; width: 60px !important; height: 60px !important; }
+  #kb-compendium img { width: 115% !important; height: 115% !important; }
+  #bpi { right: 4px !important; width: 60px !important; height: 60px !important; }
+}
 body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
 /* Wild secondary actions consolidated into a single menu FAB.
    Stephen 2026-04-26 round 4: 'sow and forage comfortable for players'
