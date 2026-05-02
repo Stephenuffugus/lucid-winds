@@ -226,14 +226,24 @@ var LAYOUTS={
     // Win card
     '.JGwin{margin:14px auto;max-width:340px;padding:18px;background:linear-gradient(180deg,rgba(20,28,18,0.97),rgba(13,16,12,0.98));border:2px solid rgba(200,168,75,0.55);border-radius:14px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.6);animation:jgPop .32s cubic-bezier(.2,1.2,.3,1) both}',
     '.JGwinTitle{font-family:Bebas Neue,sans-serif;font-size:1.55rem;letter-spacing:0.14em;color:#ffdc70;margin-bottom:6px}',
-    '.JGwinStats{font-family:DM Mono,monospace;font-size:0.82rem;color:#e8dcc8;margin-bottom:14px;line-height:1.6}'
+    '.JGwinStats{font-family:DM Mono,monospace;font-size:0.82rem;color:#e8dcc8;margin-bottom:14px;line-height:1.6}',
+    // Stuck banner — fires when no matches are available. Stephen 2026-05-03:
+    // sm() writes to #_gm which is display:none for jade (line 4054 in
+    // index.html), so the existing "no matches" message was invisible.
+    // This banner sits above the board, gold-pulsing, with a SHUFFLE
+    // button right inside it so the player can act immediately.
+    '.JGstuck{margin:10px auto 4px;max-width:340px;padding:12px 16px;background:linear-gradient(180deg,rgba(60,42,18,0.96),rgba(36,26,12,0.98));border:1.5px solid rgba(232,176,80,0.7);border-radius:12px;text-align:center;box-shadow:0 6px 22px rgba(0,0,0,0.55),0 0 18px rgba(232,176,80,0.18);animation:jgStuckPulse 1.6s ease-in-out infinite}',
+    '.JGstuckTitle{font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.16em;color:#ffdc70;margin-bottom:4px}',
+    '.JGstuckSub{font-family:DM Mono,monospace;font-size:0.62rem;color:#d8c8a8;margin-bottom:10px;line-height:1.5}',
+    '.JGstuck .JGbtn{margin:0 auto;max-width:240px}',
+    '@keyframes jgStuckPulse{0%,100%{box-shadow:0 6px 22px rgba(0,0,0,0.55),0 0 18px rgba(232,176,80,0.18)}50%{box-shadow:0 6px 22px rgba(0,0,0,0.55),0 0 28px rgba(232,176,80,0.42)}}'
   ].join('');
   document.head.appendChild(s);
 })();
 
 // ── State ───────────────────────────────────────────────────────────────
 var S=null;
-var hostEl=null, pan=null, topBar=null, boardWrap=null, boardEl=null, ctrlRow=null, winCard=null;
+var hostEl=null, pan=null, topBar=null, boardWrap=null, boardEl=null, ctrlRow=null, winCard=null, stuckBanner=null;
 var topEls={matched:null, timer:null, hints:null, shuffles:null};
 var tileEls={};  // id → DOM node
 var timerInt=null;
@@ -645,6 +655,7 @@ function useHint(){
 
 function shuffleRemaining(){
   if(S.shufflesLeft<=0){ sm('No shuffles left'); return; }
+  hideStuckBanner();
   S.shufflesLeft--;
   S.startTime -= 30000;
   var remainIds=[], remainFaces=[];
@@ -696,12 +707,42 @@ function checkWin(){
   return true;
 }
 function checkStuck(){
-  if(findAnyMatch())return;
+  if(findAnyMatch()){ hideStuckBanner(); return; }
+  // sm() also fires for accessibility / fallback, even though #_gm is
+  // hidden during Jade — the banner is the visible affordance.
   if(S.shufflesLeft>0){
     sm('No matches — use ♻ SHUFFLE ('+S.shufflesLeft+' left)');
   } else {
     sm('No matches and no shuffles left. Tap ← LAYOUTS to try again.');
   }
+  showStuckBanner();
+  try{ if(navigator.vibrate) navigator.vibrate([30,40,30]); }catch(e){}
+}
+function showStuckBanner(){
+  hideStuckBanner();
+  if(!pan) return;
+  stuckBanner=document.createElement('div'); stuckBanner.className='JGstuck';
+  var title='NO MATCHES AVAILABLE';
+  var sub, btnLabel, btnStyle, btnAction;
+  if(S.shufflesLeft>0){
+    sub='Shuffle the remaining tiles to keep playing. '+S.shufflesLeft+' shuffle'+(S.shufflesLeft===1?'':'s')+' left · costs 30 seconds.';
+    btnLabel='♻ SHUFFLE NOW';
+    btnStyle='primary';
+    btnAction=function(){ hideStuckBanner(); shuffleRemaining(); };
+  } else {
+    sub='No shuffles remaining. Pick a fresh layout or restart this one.';
+    btnLabel='← PICK LAYOUT';
+    btnStyle='default';
+    btnAction=function(){ hideStuckBanner(); requestNewGame(); };
+  }
+  stuckBanner.innerHTML='<div class="JGstuckTitle">'+title+'</div><div class="JGstuckSub">'+sub+'</div>';
+  stuckBanner.appendChild(mkBtn(btnLabel, btnStyle, btnAction));
+  // Insert above the board so it's the first thing the player sees.
+  if(boardWrap && boardWrap.parentNode === pan) pan.insertBefore(stuckBanner, boardWrap);
+  else pan.appendChild(stuckBanner);
+}
+function hideStuckBanner(){
+  if(stuckBanner){ try{ stuckBanner.remove(); }catch(e){} stuckBanner=null; }
 }
 
 function fmtTime(s){ return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60); }
@@ -772,6 +813,7 @@ function showLayoutPicker(){
 function requestNewGame(){
   if(timerInt){clearInterval(timerInt);timerInt=null;}
   if(winCard){winCard.remove();winCard=null;}
+  hideStuckBanner();
   showLayoutPicker();
 }
 
