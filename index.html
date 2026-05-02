@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.36';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.37';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5334,7 +5334,9 @@
     #pw-keeper-bar .kb-row1{display:flex;align-items:center;gap:0.6rem;}
     /* Row 2 is now 3 buttons (Sunbeams, Hut, Dew) — Install moved to Row 1.
        Tighter max-width condenses the row so it doesn't sprawl. */
-    #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.45rem;max-width:228px;}
+    /* Stephen 2026-05-03: max-width tightened 228 → 168 in BASE so kb-row2
+       can never reach the floating BoS book regardless of screen width. */
+    #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.45rem;max-width:168px;}
     /* Install button in Row 1: same height as the avatar, sized to fit alongside name+xp */
     #pw-keeper-bar .kb-row1 #kb-install{width:48px;height:48px;border-radius:10px;border:2px solid rgba(200,168,75,0.5);background:rgba(26,36,22,0.6);cursor:pointer;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:0;}
     #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;position:relative;}
@@ -5465,10 +5467,12 @@
    clear the xp and make it feel comfy.' Bumped top 59 → 72 to drop
    below the XP bar in row 1. Image overflow trimmed 120 → 115% so
    BP art doesn't poke up into row 1. */
-#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:8px !important;z-index:998;width:70px;height:70px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:115%;}
-/* Compendium / Book of Secrets — same row, same Y as BP. Image scaled
-   115% (was 130%) so it stops poking up into the XP bar. */
-#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:84px !important;width:70px !important;height:70px !important;}
+#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:6px !important;z-index:998;width:60px;height:60px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:115%;}
+/* Compendium / Book of Secrets — same row, same Y as BP. Stephen 2026-05-03:
+   tester saw BoS pressed against DEW button on Galaxy. Tightened BASE values
+   (no more relying on media query alone) — 70 → 60 and right:84 → 78 so the
+   image's left edge clears kb-row2 even at narrow widths. */
+#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:78px !important;width:60px !important;height:60px !important;}
 #kb-compendium img{width:115% !important;height:115% !important;object-fit:contain !important;margin:-7.5% !important;display:block !important;}
 /* Hide BP during game-active so the game UI gets the full screen
    (kb-compendium is already in the game-active hide list). */
@@ -6338,7 +6342,7 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
     .perf-lite .cf-art-window img { filter: none !important; }
     .perf-lite .cf-art-window img { max-height: 100%; max-width: 80%; height: auto; width: auto; object-fit: contain; }
     /* ── Offline warning banner ────────────────────────────────────── */
-    #lw-offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(30,24,12,0.94);border-bottom:1px solid rgba(200,168,75,0.2);padding:6px 36px 6px 12px;font-family:inherit;font-size:0.58rem;color:var(--muted);text-align:center;letter-spacing:0.03em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+    #lw-offline-banner{display:none !important;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(30,24,12,0.94);border-bottom:1px solid rgba(200,168,75,0.2);padding:6px 36px 6px 12px;font-family:inherit;font-size:0.58rem;color:var(--muted);text-align:center;letter-spacing:0.03em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     #lw-offline-banner .lw-ob-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent;}
     #lw-offline-banner .lw-ob-x:active{background:rgba(200,168,75,0.12);}
   </style>
@@ -6442,14 +6446,26 @@ window._addSwitchTabHook = function(fn){
 <script>
 // ── OFFLINE WARNING BANNER — detect Firebase unavailability ──────────────
 (function(){
-  window._showOfflineBanner = function() {
-    var b = document.getElementById('lw-offline-banner');
-    if (b) b.style.display = 'block';
-  };
+  // Stephen 2026-05-03 (10+ requests): the banner kept reappearing
+  // above the keeper bar — dark green strip with thin gold border
+  // visible at the top of the screen, persisting until reload.
+  // Despite earlier work to "retire" it, _showOfflineBanner() was
+  // still being called from three Firestore .catch() handlers
+  // (around lines 47030, 47163, 47318). Each call did
+  // `b.style.display = 'block'` which inline-overrode the
+  // display:none on the element. Make _showOfflineBanner a hard
+  // no-op so the banner CAN'T render no matter who calls it.
+  window._showOfflineBanner = function() { /* retired — no-op */ };
   window._hideOfflineBanner = function() {
     var b = document.getElementById('lw-offline-banner');
-    if (b) b.style.display = 'none';
+    if (b) { b.style.display = 'none'; b.style.setProperty('display','none','important'); }
   };
+  // Belt-and-suspenders: if the banner element was already shown
+  // by an earlier session before this script loaded, hide it now.
+  try {
+    var _lwOB = document.getElementById('lw-offline-banner');
+    if (_lwOB) { _lwOB.style.display = 'none'; _lwOB.style.setProperty('display','none','important'); }
+  } catch(e){}
   // After page loads, check if Firebase SDK loaded at all. Stephen test
   // 2026-04-30: incognito blocks Firebase init, banner re-fired on every
   // refresh and felt constant. Suppress if dismissed this session OR
