@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.24';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.25';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7952,12 +7952,13 @@ window._addSwitchTabHook = function(fn){
       ];
       var count=0;
       whales.forEach(function(w){
-        // bypassCap:true so the first-mint cap doesn't re-roll the
-        // hand-crafted mutation/mythic bytes down to Rare (Stephen
-        // 2026-05-02: "the print white whale card gave me a handful
-        // of the exact same epic card" — that was the cap clobbering
-        // chars 32-63 of every whale hash).
-        mintPlant(w.hash,{bypassCap:true}).then(function(ok){
+        // bypassServer:true skips the Cloud Function (which generates
+        // its own random hash and would replace the hand-crafted whale).
+        // bypassCap:true skips the first-mint grade cap (which would
+        // re-roll chars 32-63 and kill the Constellation/Beholder bytes).
+        // Both needed — Stephen 2026-05-02 saw the same Epic card
+        // every time because either path alone destroys the whale hash.
+        mintPlant(w.hash,{bypassServer:true,bypassCap:true}).then(function(ok){
           if(ok!==false)count++;
           if(count===whales.length||w===whales[whales.length-1]){
             alert('Printed '+count+' white whales. Open Greenhouse to inspect.');
@@ -39438,7 +39439,7 @@ document.addEventListener('keydown', function(e) {
         // v3 suffix busts the older v2 cache that missed age + revealed + idx.
         var _ghAgeDays = plant.born ? Math.floor((Date.now() - plant.born) / 86400000) : 0;
         var _ghAgeTier = _ghAgeDays >= 90 ? 3 : _ghAgeDays >= 30 ? 2 : _ghAgeDays >= 7 ? 1 : 0;
-        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|' + (plant.wildBorn ? 'w' : 'g') + '|v4';
+        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|' + (plant.wildBorn ? 'w' : 'g') + '|v5'; // v5 (2026-05-02): bell flower rebuild needs fresh SVG render
         if (_ghCardCache[_cacheKey]) {
           el.innerHTML = _ghCardCache[_cacheKey];
           (function(idx) { el.onclick = function() { openCarousel(loadGreenhouse(), idx, 'greenhouse'); }; })(realIdx);
@@ -39720,6 +39721,14 @@ document.addEventListener('keydown', function(e) {
     // Cross-pollination / breeding stays local — parent-hash-derived,
     // not NFT-eligible until server breed lands.
     if (opts && opts.isCross) {
+      return _origMint.apply(this, arguments);
+    }
+    // Stephen 2026-05-02: dev mints (white whales etc.) MUST bypass the
+    // server because the Cloud Function generates its own random hash
+    // and replaces the hand-crafted one. Without this, every dev call
+    // got 5 server-random Commons/Uncommons instead of the 5 distinct
+    // cosmic specimens we crafted.
+    if (opts && opts.bypassServer) {
       return _origMint.apply(this, arguments);
     }
     // Manual mint — try server first
@@ -40947,7 +40956,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '');
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v2'; // v2 (2026-05-02): bell flower rebuild cache bust
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
