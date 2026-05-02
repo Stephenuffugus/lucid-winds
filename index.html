@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.25';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.26';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44029,19 +44029,24 @@ document.addEventListener('keydown', function(e) {
   // Legacy alias so existing onclick handlers keep working
   window._openPotShop = window._openNurseryShop;
 
-  // Pot picker on a single seed — opens an inventory selector
+  // Pot picker on a single seed.
+  // Stephen 2026-05-02: "it should open the pot shop and let me pick a pot.
+  // it only opens the moonstone cradle." The previous picker only showed
+  // pots the player already owned (which for testing was just Moonstone),
+  // so it felt broken. Now the picker shows BOTH owned pots (tap to apply)
+  // AND unowned pots from the catalog (tap to open shop). Player sees all
+  // options at once, can pick any, and gets routed correctly based on
+  // ownership state.
   window._openPotPicker = function(seedId) {
     var inv = loadInventory();
     var pots = inv.pots || {};
-    var owned = [];
     var keys = Object.keys(window.LW_POTS);
+    var owned = [];
+    var unowned = [];
     for (var i = 0; i < keys.length; i++) {
-      if ((pots[keys[i]] || 0) > 0) owned.push(window.LW_POTS[keys[i]]);
-    }
-    if (owned.length === 0) {
-      if (window._toast) _toast('No pots in inventory. Buy some from the Pot Shop.');
-      window._openPotShop();
-      return;
+      var p = window.LW_POTS[keys[i]];
+      if ((pots[keys[i]] || 0) > 0) owned.push(p);
+      else unowned.push(p);
     }
     var existing = document.getElementById('lw-pot-picker');
     if (existing) existing.remove();
@@ -44054,6 +44059,9 @@ document.addEventListener('keydown', function(e) {
     h += '<button onclick="document.getElementById(\'lw-pot-picker\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:0.85rem;">\u2715</button>';
     h += '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.4;">Pots are single-use. Once applied, the buff triggers at bloom and the pot is consumed.</div>';
+    if (owned.length > 0) {
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--sage);margin:0 0 0.35rem;">YOURS</div>';
+    }
     for (var j = 0; j < owned.length; j++) {
       var pp = owned[j];
       var ct = pots[pp.id] || 0;
@@ -44067,6 +44075,22 @@ document.addEventListener('keydown', function(e) {
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.35;margin-top:0.15rem;">' + pp.blurb + '</div>';
       h += '</div>';
       h += '</button>';
+    }
+    // SHOP — unowned pots tappable to open the nursery shop pots tab
+    if (unowned.length > 0) {
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--gold);margin:' + (owned.length > 0 ? '0.7rem' : '0') + ' 0 0.35rem;">SHOP &mdash; tap to browse</div>';
+      for (var k = 0; k < unowned.length; k++) {
+        var up = unowned[k];
+        var _upIcoEsc = String(up.icon || '').replace(/'/g,"\\'");
+        h += '<button onclick="document.getElementById(\'lw-pot-picker\').remove();window._setNurseryShopTab&&window._setNurseryShopTab(\'pots\');" style="display:flex;width:100%;gap:0.7rem;padding:0.7rem 0.6rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.4);border:1px dashed ' + up.color + '55;border-radius:9px;align-items:center;cursor:pointer;text-align:left;opacity:0.85;">';
+        h += '<div style="flex-shrink:0;width:64px;height:64px;border-radius:8px;overflow:hidden;background:rgba(5,8,4,0.5);border:1px solid ' + up.color + '22;display:flex;align-items:center;justify-content:center;filter:grayscale(0.5);"><img src="assets/nursery-pots/' + up.id + '.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2rem;&quot;>' + _upIcoEsc + '</span>&apos;;"></div>';
+        h += '<div style="flex:1;min-width:0;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:' + up.color + ';letter-spacing:0.06em;">' + up.name + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.35;margin-top:0.15rem;">' + up.blurb + '</div>';
+        h += '</div>';
+        h += '<div style="flex-shrink:0;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:var(--gold);padding:0.3rem 0.55rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:6px;">BUY</div>';
+        h += '</button>';
+      }
     }
     h += '</div>';
     modal.innerHTML = h;
