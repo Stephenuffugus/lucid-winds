@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.27';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7951,7 +7951,12 @@ window._addSwitchTabHook = function(fn){
         {name:'MAMMOTH ORIGAMI', hash:'3b001b004660f650000000480000001dfe00f4003c0000080f051e0a00000000'}
       ];
       var count=0;
+      // Diagnostic logging — Stephen 2026-05-02 reported whales still
+      // looked the same on v26. Log each step so we can see whether
+      // bypass flags are being honored and what hash ends up in the GH.
+      console.log('[WHALES] spawnWhiteWhales called. LW_VERSION=', window.LW_VERSION);
       whales.forEach(function(w){
+        console.log('[WHALES] minting', w.name, 'hash=', w.hash.slice(0, 16) + '...');
         // bypassServer:true skips the Cloud Function (which generates
         // its own random hash and would replace the hand-crafted whale).
         // bypassCap:true skips the first-mint grade cap (which would
@@ -7959,6 +7964,13 @@ window._addSwitchTabHook = function(fn){
         // Both needed — Stephen 2026-05-02 saw the same Epic card
         // every time because either path alone destroys the whale hash.
         mintPlant(w.hash,{bypassServer:true,bypassCap:true}).then(function(ok){
+          console.log('[WHALES]', w.name, 'mintPlant returned', ok);
+          // Verify the final greenhouse entry has the original hash
+          try {
+            var _gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
+            var _last = _gh[_gh.length - 1];
+            console.log('[WHALES]', w.name, 'last GH entry hash=', _last && _last.hash && _last.hash.slice(0, 16) + '...', 'origin=', _last && _last.origin);
+          } catch(eL){}
           if(ok!==false)count++;
           if(count===whales.length||w===whales[whales.length-1]){
             alert('Printed '+count+' white whales. Open Greenhouse to inspect.');
@@ -8841,12 +8853,15 @@ window._addSwitchTabHook = function(fn){
         if(window._updateSunbeamBadge)try{window._updateSunbeamBadge();}catch(e){}
         if(window.updateDashboard)updateDashboard();
         // Stephen 2026-05-02: force-sync dev grants to cloud so they persist
-        // across refresh. Without this, hydration restored old cloud state +
-        // wiped not just the grant but ANY purchase made with the granted
-        // currency in the same session.
-        if(window.syncVaultToCloud)try{window.syncVaultToCloud();}catch(e){}
+        // across refresh. Skip if not signed in (incognito etc.) — otherwise
+        // the failed sync triggers the offline banner at the top of the
+        // screen and persists. Local-only grant is fine when there's no
+        // cloud account to sync to.
+        var _sb_signedIn = false;
+        try { _sb_signedIn = !!(window.firebase && firebase.auth && firebase.auth().currentUser); } catch(e){}
+        if(_sb_signedIn && window.syncVaultToCloud) try{window.syncVaultToCloud();}catch(e){}
         var bal=window.getTotalHashes?window.getTotalHashes():ledger.earned;
-        alert('+'+n+' Sunbeams granted (synced to cloud). Spendable balance: '+bal);
+        alert('+'+n+' Sunbeams granted'+(_sb_signedIn?' (synced to cloud)':' (local only — sign in to sync)')+'. Spendable balance: '+bal);
       }catch(e){alert('Error: '+e.message);}
     },
     // Stephen 2026-05-01: friendship-tier fast-forward. Skips the 30-day +
@@ -8904,11 +8919,12 @@ window._addSwitchTabHook = function(fn){
           else localStorage.setItem('sws_dew_ledger', JSON.stringify(l));
         }
         if (window._updateDewDisplay) window._updateDewDisplay();
-        // Stephen 2026-05-02: force-sync so grant + any purchase made with
-        // it survive refresh.
-        if (window.syncVaultToCloud) try { window.syncVaultToCloud(); } catch(e) {}
+        // Stephen 2026-05-02: force-sync only when signed in.
+        var _gbd_signedIn = false;
+        try { _gbd_signedIn = !!(window.firebase && firebase.auth && firebase.auth().currentUser); } catch(e){}
+        if (_gbd_signedIn && window.syncVaultToCloud) try { window.syncVaultToCloud(); } catch(e) {}
         var bal = window.getTotalDew ? window.getTotalDew() : '?';
-        alert('+' + n + ' Dew granted (synced). Balance: ' + bal);
+        alert('+' + n + ' Dew granted' + (_gbd_signedIn ? ' (synced)' : ' (local only)') + '. Balance: ' + bal);
       } catch(e) { alert('Grant failed: ' + e.message); }
     },
     grantKeeper:function(){
@@ -9128,11 +9144,13 @@ window._addSwitchTabHook = function(fn){
         }
         if(window._updateDewDisplay)window._updateDewDisplay();
         if(window.updateDashboard)updateDashboard();
-        // Stephen 2026-05-02: force-sync so grants survive refresh AND so
-        // any purchase made with the granted Dew also flushes to cloud.
-        if(window.syncVaultToCloud)try{window.syncVaultToCloud();}catch(e){}
+        // Stephen 2026-05-02: force-sync only when signed in. In incognito
+        // the failed sync triggers the offline banner that persists at top.
+        var _gd_signedIn = false;
+        try { _gd_signedIn = !!(window.firebase && firebase.auth && firebase.auth().currentUser); } catch(e){}
+        if(_gd_signedIn && window.syncVaultToCloud) try{window.syncVaultToCloud();}catch(e){}
         var total=typeof getTotalDew==='function'?getTotalDew():'?';
-        alert('+'+n+' Dew granted (synced to cloud). Total: '+total);
+        alert('+'+n+' Dew granted'+(_gd_signedIn?' (synced)':' (local only — sign in to sync)')+'. Total: '+total);
       }catch(e){alert('Error: '+e.message);}
     },
     spawnChimeras:function(){
