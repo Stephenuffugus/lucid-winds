@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.31';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -46713,8 +46713,31 @@ document.addEventListener('keydown', function(e) {
     _ss('sws_greenhouse', mGH);
     _ss('sws_nursery',    mNur);
     if (data.sws_inventory  || data.inventory)   _ss('sws_inventory',       data.sws_inventory  || data.inventory);
-    if (data.hashLedger)     _ss('sws_hash_ledger',   data.hashLedger);
-    if (data.dewLedger)      _ss('sws_dew_ledger',     data.dewLedger);
+    // Hash + Dew ledgers: MAX-merge across local + cloud instead of
+    // overwriting local with cloud. Stephen 2026-05-03: 20K Dew dev grant
+    // was wiped on close/reopen because the cloud's stale ledger overwrote
+    // the local fresh grant. The cocoonery union-merge below correctly
+    // preserves local-only purchases; ledgers had no equivalent and lost
+    // any earnings that hadn't reached cloud before close. MAX-merge means
+    // a stale cloud read can never undo earned/spent that the local copy
+    // already records.
+    function _maxMergeLedger(localKey, cloudObj){
+      try {
+        var localRaw = (window._secureGet ? _secureGet(localKey) : null) || localStorage.getItem(localKey);
+        var localObj = localRaw ? JSON.parse(localRaw) : {};
+        var merged = {
+          earned: Math.max(localObj.earned||0, (cloudObj&&cloudObj.earned)||0),
+          spent:  Math.max(localObj.spent||0,  (cloudObj&&cloudObj.spent)||0)
+        };
+        if (window._secureSet) _secureSet(localKey, merged);
+        else _ss(localKey, merged);
+      } catch(e) {
+        // Fall back to overwrite if anything goes sideways
+        if (cloudObj){ if(window._secureSet)_secureSet(localKey,cloudObj); else _ss(localKey,cloudObj); }
+      }
+    }
+    if (data.hashLedger) _maxMergeLedger('sws_hash_ledger', data.hashLedger);
+    if (data.dewLedger)  _maxMergeLedger('sws_dew_ledger',  data.dewLedger);
     if (data.records)        _ss('sws_set_records',    data.records);
     if (data.shopUnlocks)    _ss('sws_shop_unlocks',   data.shopUnlocks);
     if (data.achievements)   _ss('sws_achievements',   data.achievements);
