@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6719,7 +6719,11 @@ window._addSwitchTabHook = function(fn){
       <div class="panel-header-title">PLANTS</div>
       <div class="greenhouse-count" id="gh-count">0 / 10</div>
     </div>
-    <div class="gh-progress">
+    <!-- gh-progress hidden 2026-05-02: the slot-status footer at the bottom
+         of the grid (gold-bordered "X / Y SLOTS USED" + progress bar) shows
+         the same info more prominently. Stephen: "i want to see that bar
+         at the top of my screen that just magically appeared recently gone." -->
+    <div class="gh-progress" style="display:none;">
       <div class="gh-progress-bar"><div class="gh-progress-fill" id="gh-progress-fill" style="width:0%"></div></div>
     </div>
     <div id="gh-next-bloom" style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0.5rem;"></div>
