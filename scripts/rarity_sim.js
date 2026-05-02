@@ -109,7 +109,7 @@ function hashToTraits(hash) {
   else if (mythByte >= 0xFE)  mythName = 'Garden Spider';
   else if (mythByte >= 0xFC)  mythName = 'Great Blue Heron';
   else if (mythByte >= 0xF8)  mythName = 'Raccoon';
-  else if (mythByte >= 0xF4)  mythName = 'Woolly Mammoth';
+  else if (mythByte >= 0xF4)  mythName = 'Baby Mammoth';
   else if (mythByte >= 0xE0)  mythName = 'The Cicada';
   else if (mythByte >= 0xD0)  mythName = 'The Toad';
   else                        mythName = 'None';
@@ -135,7 +135,7 @@ function hashToTraits(hash) {
 
   return {
     pot:          goldenPot ? 15 : hb(0) % 60,
-    stem:         (mythByte >= 0xD0) ? 9 : ((hb(2) % 28) === 9 ? 0 : hb(2) % 28),
+    stem:         hb(2) % 28, // Coral lock dropped 2026-05-02
     leafType:     hb(4) % 71,
     leafCount:    5 + (hc(5) % 6),
     leafSize:     8 + (hc(6) % 7),
@@ -308,12 +308,22 @@ layerCats.forEach(c => {
 });
 
 const mythicHist = {
-  'None': 0, 'The Toad': 0, 'The Cicada': 0, 'Woolly Mammoth': 0,
+  'None': 0, 'The Toad': 0, 'The Cicada': 0, 'Baby Mammoth': 0,
   'Raccoon': 0, 'Great Blue Heron': 0, 'Garden Spider': 0, 'The Beholder': 0
 };
 const mutationHist = {};
 let spikeFired = 0; // mythic >= 0xD0
 let companionScoredAndSpike = 0; // sanity check: should always be 0
+
+// May 02 — combo tracking for blockchain-value analysis
+const comboHist = {};               // "Mutation × Mythic" → count
+let bothFiredCount = 0;             // any visible mutation AND any mythic creature
+let cosmicMutCosmicMyth = 0;        // Constellation × Beholder (white whale)
+let topTierComboCount = 0;          // ULTRA mutation (0xFA-FF) AND legendary+ creature (0xF4+)
+let goldenAndMythic = 0;            // Golden Pot + any mythic creature
+let goldenAndCosmic = 0;            // Golden Pot + Beholder
+let allThreeRare = 0;               // Golden Pot + visible Mutation + Mythic creature
+let cosmicGrade = 0;                // Cosmic-grade plants (3-trait stack would all be cosmic-grade)
 
 for (let i = 0; i < N; i++) {
   const hash = randomHash();
@@ -330,6 +340,23 @@ for (let i = 0; i < N; i++) {
 
   mythicHist[t.mythicName] = (mythicHist[t.mythicName] || 0) + 1;
   mutationHist[t.mutationName] = (mutationHist[t.mutationName] || 0) + 1;
+
+  // Combo tracking
+  const visibleMut = (t.mutationName !== 'None');
+  const hasMyth = (t.mythicName !== 'None');
+  const isGolden = (t.pot === 15);
+  if (visibleMut && hasMyth) {
+    bothFiredCount++;
+    const combo = t.mutationName + ' × ' + t.mythicName;
+    comboHist[combo] = (comboHist[combo] || 0) + 1;
+    if (t.mutationName === 'Constellation' && t.mythicName === 'The Beholder') cosmicMutCosmicMyth++;
+    // ULTRA mutation = bytes 0xFA-FF (top 6); Legendary+ creature = bytes 0xF4+ (top 5 ladder)
+    if (t.mutation >= 0xFA && t.mythic >= 0xF4) topTierComboCount++;
+  }
+  if (isGolden && hasMyth) goldenAndMythic++;
+  if (isGolden && t.mythicName === 'The Beholder') goldenAndCosmic++;
+  if (isGolden && visibleMut && hasMyth) allThreeRare++;
+  if (g.grade === 'Cosmic') cosmicGrade++;
 
   if (t.mythic >= 0xD0) {
     spikeFired++;
@@ -387,7 +414,7 @@ for (const s of sortedScores) {
 console.log('');
 
 console.log('━━━ MYTHIC-BYTE DISTRIBUTION (companion overrides) ━━━');
-const mythOrder = ['None','The Toad','The Cicada','Woolly Mammoth','Raccoon','Great Blue Heron','Garden Spider','The Beholder'];
+const mythOrder = ['None','The Toad','The Cicada','Baby Mammoth','Raccoon','Great Blue Heron','Garden Spider','The Beholder'];
 for (const m of mythOrder) {
   const c = mythicHist[m] || 0;
   console.log(`  ${padR(m,18)} ${pad(c.toLocaleString(),8)}  ${pad(pct(c, N), 8)}`);
@@ -398,6 +425,25 @@ console.log('━━━ MUTATION DISTRIBUTION ━━━');
 const mutPairs = Object.entries(mutationHist).sort((a,b) => b[1] - a[1]);
 for (const [name, c] of mutPairs) {
   console.log(`  ${padR(name, 18)} ${pad(c.toLocaleString(),8)}  ${pad(pct(c, N), 8)}`);
+}
+console.log('');
+
+console.log('━━━ MUTATION × MYTHIC COMBO RATES (blockchain value scarcity) ━━━');
+console.log(`  Any visible mutation:                ${(N - (mutationHist['None']||0)).toLocaleString()}  (${pct(N - (mutationHist['None']||0), N)})`);
+console.log(`  Any mythic creature:                 ${(N - (mythicHist['None']||0)).toLocaleString()}  (${pct(N - (mythicHist['None']||0), N)})`);
+console.log(`  BOTH mutation + mythic creature:     ${bothFiredCount.toLocaleString()}  (${pct(bothFiredCount, N)})`);
+console.log(`  ULTRA mut (0xFA+) × Legendary+ creature: ${topTierComboCount.toLocaleString()}  (${pct(topTierComboCount, N)})`);
+console.log(`  Constellation × Beholder (white whale): ${cosmicMutCosmicMyth.toLocaleString()}  (${pct(cosmicMutCosmicMyth, N)})`);
+console.log(`  Golden Pot + any mythic creature:    ${goldenAndMythic.toLocaleString()}  (${pct(goldenAndMythic, N)})`);
+console.log(`  Golden Pot + Beholder:               ${goldenAndCosmic.toLocaleString()}  (${pct(goldenAndCosmic, N)})`);
+console.log(`  Golden Pot + Mutation + Mythic:      ${allThreeRare.toLocaleString()}  (${pct(allThreeRare, N)})`);
+console.log(`  Cosmic-grade plants (overall score): ${cosmicGrade.toLocaleString()}  (${pct(cosmicGrade, N)})`);
+console.log('');
+
+console.log('━━━ TOP 15 MUTATION × MYTHIC COMBOS (rarest visible pairs) ━━━');
+const comboPairs = Object.entries(comboHist).sort((a,b) => a[1] - b[1]).slice(0, 15);
+for (const [combo, c] of comboPairs) {
+  console.log(`  ${padR(combo, 36)} ${pad(c.toLocaleString(),6)}  ${pad(pct(c, N), 9)}`);
 }
 console.log('');
 
