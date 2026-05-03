@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.42';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.43';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6336,7 +6336,11 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
     .perf-lite .cs-card-face { will-change: auto !important; }
     /* DO NOT override transform on .cs-card-face or .cs-card-back —
        backface-visibility:hidden + rotateY(180deg) is required for the flip */
-    .perf-lite .cs-card-front[data-season] { background-image: none !important; background: #050505 !important; }
+    /* Stephen 2026-05-03: removed perf-lite background-image:none on card
+       fronts. The seasonal Celtic-knot frame PNG IS the card art — without
+       it, cards render as plain black rectangles. iOS Safari was tripping
+       perf-lite (deviceMemory undefined → flaky detection), wiping the
+       border. PNG is loaded once and cached; no real perf cost to keep it. */
     .perf-lite .cf-synergy { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
     .perf-lite .cf-art-window svg,
     .perf-lite .cf-art-window img { filter: none !important; }
