@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.49';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.50';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1319,7 +1319,16 @@
       isolation: isolate;
       position: relative;
     }
-    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100vh - 180px);max-height:600px;margin:0 auto;position:relative;contain:layout style paint;}
+    /* Stephen 2026-05-03: iOS card top was getting cut off. Root cause:
+       100vh on iOS Safari = URL-bar-collapsed viewport (large). When the
+       URL bar is showing (player just entered), actual visible viewport is
+       smaller, so the 100vh-based card was overflowing past the visible
+       bottom and the slot was bottom-aligning the card with its REAL top
+       above the visible area. Fix: 100svh (small viewport height) — that's
+       the SHOWING-URL-bar viewport, which is always the correct ceiling.
+       Plus tighter offsets/cap so the card still has breathing room when
+       safe-area-inset-top + topbar + bottom action buttons are all in. */
+    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 240px);max-height:540px;margin:14px auto 0;position:relative;contain:layout style paint;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
@@ -72612,7 +72621,7 @@ window._checkDailyLogin = function() {
 (function(){
 'use strict';
 var TK='lw_tut';
-var _ov=null,_dlg=null,_spot=null,_spotEl=null,_spotElOrigPos=null;
+var _ov=null,_dlg=null,_spot=null,_spotEl=null,_spotElOrigPos=null,_spotRAF=null,_spotPriorOverflow=null;
 
 function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;return parseInt(s,10)||0;}
 function _setStep(n){localStorage.setItem(TK,String(n));}
@@ -72622,6 +72631,9 @@ function _clear(){
   if(_ov&&_ov.parentNode)_ov.remove();_ov=null;
   if(_dlg&&_dlg.parentNode)_dlg.remove();_dlg=null;
   if(_spot&&_spot.parentNode)_spot.remove();_spot=null;
+  // Stephen 2026-05-03: stop the RAF tracker + restore body scroll lock.
+  if(_spotRAF){try{cancelAnimationFrame(_spotRAF);}catch(e){}_spotRAF=null;}
+  if(_spotPriorOverflow!==null){try{document.body.style.overflow=_spotPriorOverflow;}catch(e){}_spotPriorOverflow=null;}
   // Reset the spotlighted element's inline style so a future render
   // or step doesn't inherit elevated z-index / pointer-events /
   // will-change from a prior tutorial beat.
@@ -72729,6 +72741,8 @@ function _overlay(tapCb){
 function _spotlight(el){
   if(!el)return;
   if(_spot&&_spot.parentNode)_spot.remove();
+  // Cancel any prior tracking RAF before starting a new one.
+  if(_spotRAF){try{cancelAnimationFrame(_spotRAF);}catch(e){}_spotRAF=null;}
   // Stephen 2026-05-03: when a spotlight is active, transparent-out the
   // separate _overlay's dark fill. The spotlight's own outward box-shadow
   // does the dimming and naturally cuts out the spotlit element, so we
@@ -72736,9 +72750,23 @@ function _spotlight(el){
   // card's z-index:1000012 escape fails (parent .greenhouse-plant has
   // contain:layout, sometimes inside a transformed parent), the overlay
   // at z:1000010 sits OVER the card and the spotlit card renders DARK
-  // instead of lit. iOS tester reported step 1 plant card all dark.
+  // instead of lit.
   if(_ov)_ov.style.background='transparent';
-  var r=el.getBoundingClientRect();
+  // Stephen 2026-05-03 PART 2: scroll the target into view first AND lock
+  // body scroll. iOS tester reported the spotlight rect was "not around
+  // the first card at all" — root cause was getBoundingClientRect being
+  // captured before the page settled, then the card moving (URL bar
+  // collapse, late image load, momentum scroll). The combo of:
+  //   1. scrollIntoView({block:'center'}) before measuring
+  //   2. body scroll lock during the spotlight
+  //   3. RAF tracker that re-positions the spotlight every frame
+  // ...keeps the spotlight glued to the element no matter what.
+  try{el.scrollIntoView({block:'center'});}catch(e){}
+  // Lock body scroll. Save prior value so we can restore in _clear.
+  try{
+    if(_spotPriorOverflow===null){_spotPriorOverflow=document.body.style.overflow||'';}
+    document.body.style.overflow='hidden';
+  }catch(e){}
   _spot=document.createElement('div');
   // Spotlight sits at 1000011 — the target MUST be bumped to 1000012
   // so it renders above the mask. iOS Safari also needs willChange to
@@ -72765,6 +72793,21 @@ function _spotlight(el){
   el.style.pointerEvents='auto';
   el.style.willChange='transform';
   _spotEl=el;
+  // RAF tracker — re-position the spotlight every frame to the target's
+  // current bounding rect. Belt-and-suspenders for any late layout shift
+  // (URL bar collapse, image load, transform parents, sub-pixel drift).
+  var _track=function(){
+    if(!_spot||!_spotEl){_spotRAF=null;return;}
+    try{
+      var rr=_spotEl.getBoundingClientRect();
+      _spot.style.top=(rr.top-8)+'px';
+      _spot.style.left=(rr.left-8)+'px';
+      _spot.style.width=(rr.width+16)+'px';
+      _spot.style.height=(rr.height+16)+'px';
+    }catch(e){}
+    _spotRAF=requestAnimationFrame(_track);
+  };
+  _spotRAF=requestAnimationFrame(_track);
 }
 
 // ═══ Find the Game nav button (used by multiple steps) ═══
@@ -92811,7 +92854,11 @@ window._openCompendiumUI=function(){
 
   var ov=document.createElement('div');
   ov.id='bos-overlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:99996;display:flex;flex-direction:column;animation:bosOpen 0.4s cubic-bezier(0.22,0.68,0.36,1);';
+  // Stephen 2026-05-03: respect iOS safe-area on top + bottom. Without
+  // these, the BoS header gets clipped by Dynamic Island and the body
+  // bottom gets clipped by Safari URL bar — tester reported "top and
+  // bottom are cut off a bit". On non-iOS / non-notched, env() = 0.
+  ov.style.cssText='position:fixed;inset:0;z-index:99996;display:flex;flex-direction:column;animation:bosOpen 0.4s cubic-bezier(0.22,0.68,0.36,1);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;';
   ov.innerHTML=
     '<div style="position:absolute;inset:0;background:rgba(5,8,4,0.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);"></div>'+
     '<div style="position:relative;flex:1;display:flex;flex-direction:column;max-width:480px;margin:0 auto;width:100%;overflow:hidden;">'+
