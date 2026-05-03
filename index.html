@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.43';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.44';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6798,6 +6798,13 @@ window._addSwitchTabHook = function(fn){
     <div id="gh-recent-wrap" style="display:none;">
       <div class="gh-recent-label">RECENT BLOOMS</div>
       <div class="gh-recent-strip" id="gh-recent-strip"></div>
+    </div>
+    <!-- Stephen 2026-05-03: prominent slot count above the top-left card.
+         Existing gh-count in the panel header stays for the small persistent
+         signal; this is the medium-sized number players actually notice. -->
+    <div id="gh-slot-banner" style="display:flex;align-items:baseline;justify-content:center;gap:0.5rem;padding:0.4rem 0.7rem 0.55rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.12em;">
+      <span id="gh-slot-banner-num" style="font-size:1.4rem;color:var(--gold);font-weight:600;line-height:1;">0 / 10</span>
+      <span style="font-size:0.65rem;color:var(--muted);line-height:1;">SLOTS</span>
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
@@ -39125,6 +39132,9 @@ document.addEventListener('keydown', function(e) {
     // Progress header
     var pct = Math.round((gh.length / MAX_COLLECTION_SIZE) * 100);
     if (countEl) countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
+    // Stephen 2026-05-03: prominent slot banner above the grid.
+    var slotBannerNum = document.getElementById('gh-slot-banner-num');
+    if (slotBannerNum) slotBannerNum.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
     // Engagement counters: gh_full (1 once you've ever maxed out), gh_max_slots
     // (current slot ceiling), and pots_owned_unique (distinct pot indices in
     // the live greenhouse). Cheap to derive on render — already iterating.
