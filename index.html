@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.71';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.72';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1525,7 +1525,15 @@
       filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));
       -webkit-tap-highlight-color: transparent;
     }
-    .pgm-card-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* Stephen 2026-05-03: object-fit cover→contain. Compost PNG is
+       1122×1402 (aspect 0.80) while share/details/breed are 1024×1536
+       (aspect 0.667). Cover crops differently per aspect — compost's
+       wider art was cropped on the sides, others cropped top/bottom,
+       making the parchments LOOK different sizes despite identical
+       container dimensions. Contain shows each parchment in full
+       (small letterbox/pillarbox) at its natural aspect. Container
+       size stays uniform via flex:1 1 0. No more visual mismatch. */
+    .pgm-card-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .pgm-card-btn:active { transform: scale(0.94); }
     .pgm-act-btn {
       background: rgba(26,36,22,0.7); border: 1.5px solid rgba(74,124,53,0.25);
