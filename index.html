@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.40';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.41';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -72984,32 +72984,25 @@ function _step5(){
     },'top');
 }
 
-// ═══ STEP 6: EA badge pointer — dialog tucked under the EA number ═══
-// Stephen: "the EA description can go up into the corner underneath the
-// number to draw their attention better up there." Anchor the dialog to
-// the EA badge via getBoundingClientRect so it lives right below it.
+// ═══ STEP 6: EA badge pointer — pulse the EA, dialog at bottom ═══
 function _step6(){
   _setStep(6);
   var fw=document.querySelector('.cs-flip-wrap');
   if(fw)fw.classList.add('cs-tut-hi-ea');
-  var badge=document.querySelector('.cs-flip-wrap .cf-ea');
+  // Stephen 2026-05-03: previous re-anchor put the dialog tucked under the EA
+  // badge via getBoundingClientRect, but on phone viewports the 280px-wide
+  // dialog covered the entire upper card region \u2014 name + Terra Grade + EA all
+  // hidden behind it. iOS tester reported "this number is your EA" with no
+  // number visible. Fix: leave the dialog at its default bottom position and
+  // let the cs-tut-hi-ea pulse class draw attention to the EA itself. Copy
+  // updated to point AT the glowing badge so the pairing is unambiguous.
   _dialog(
-    'This number is your plant\u2019s <span style="color:var(--gold);">Evolutionary Advantage</span>. Think of it as its power.',
+    'See the gold number glowing in the top corner? That\u2019s your plant\u2019s <span style="color:var(--gold);">Evolutionary Advantage</span> \u2014 its power.',
     'NEXT',function(){
       var fw2=document.querySelector('.cs-flip-wrap');
       if(fw2)fw2.classList.remove('cs-tut-hi-ea');
       _clear();setTimeout(_step7,300);
     },'bottom');
-  // Re-anchor to the EA badge corner (top-right of the card).
-  if(badge&&_dlg){
-    try{
-      var r=badge.getBoundingClientRect();
-      _dlg.style.left='';_dlg.style.bottom='';_dlg.style.transform='';
-      _dlg.style.top=(r.bottom+12)+'px';
-      _dlg.style.right='12px';
-      _dlg.style.maxWidth='min(280px,70vw)';
-    }catch(e){}
-  }
 }
 
 // ═══ STEP 7: rarity + flip prompt ═══
