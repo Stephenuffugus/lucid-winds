@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.73';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.74';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7086,7 +7086,13 @@ window._addSwitchTabHook = function(fn){
     <!-- STATS STRIP — dedicated bar below the hero banner. -->
     <div id="w-stats-bar">
       <div class="wsb-chip" onclick="if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.');"><div class="wsb-val" style="color:#5baddc" id="w-dew">0</div><div class="wsb-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
-      <div class="wsb-chip" onclick="if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Pollen, your player XP. Walking, planting, and tending all add to it.');"><div class="wsb-val" style="color:var(--gold)" id="w-pollen">0</div><div class="wsb-lbl" style="color:var(--gold);">pollen</div></div>
+      <!-- Stephen 2026-05-03: pollen chip removed. Pollen IS XP — already
+           shown on the keeper bar XP gauge + rank line ("Lvl X · Class ·
+           Y/Z XP"). Showing it again here as a third currency-looking
+           number was confusing players ("does dew and pollen combine
+           for XP?"). Element ID kept as no-op DOM stub so the legacy
+           writers at line 54952 don't error on missing element. -->
+      <div id="w-pollen" style="display:none;">0</div>
       <div class="wsb-chip" onclick="if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Steps walked. Keep moving to find feral seeds!');"><div class="wsb-val" style="color:#c89b68" id="w-steps">0</div><div class="wsb-lbl" style="color:#c89b68;">steps</div></div>
     </div>
     <!-- MAP FRAME PILLARS — thin gold rails down the map's left + right edges. -->
@@ -7292,7 +7298,7 @@ window._addSwitchTabHook = function(fn){
           <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
           <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;cursor:pointer;" onclick="(function(){window._lwBetaTaps=(window._lwBetaTaps||0)+1;clearTimeout(window._lwBetaTapT);window._lwBetaTapT=setTimeout(function(){window._lwBetaTaps=0;},2500);if(window._lwBetaTaps>=5){window._lwBetaTaps=0;var pw=prompt('Dev password:');if(pw==='lucid2026')document.getElementById('pw-dev-admin').classList.add('open');}}).call(this);">BETA</span>
         </div>
-        <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 Pollen</div>
+        <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
       </div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install-v2.png?v=apr27" alt="Install" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"></div>
