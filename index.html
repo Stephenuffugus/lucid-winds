@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.50';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.51';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -72767,6 +72767,9 @@ function _spotlight(el){
     if(_spotPriorOverflow===null){_spotPriorOverflow=document.body.style.overflow||'';}
     document.body.style.overflow='hidden';
   }catch(e){}
+  // Measure rect AFTER scrollIntoView so the spotlight lands on the
+  // post-scroll position, not the pre-scroll one.
+  var r=el.getBoundingClientRect();
   _spot=document.createElement('div');
   // Spotlight sits at 1000011 — the target MUST be bumped to 1000012
   // so it renders above the mask. iOS Safari also needs willChange to
