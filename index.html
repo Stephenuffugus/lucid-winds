@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.60';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.61';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -75142,15 +75142,34 @@ function _step42(){
     if(bpe&&bpe.classList.contains('open')){
       // Stop the bpi pulse — they found the backpack.
       try{var bpi=document.getElementById('bpi');if(bpi)bpi.classList.remove('lw-pulse-hint');}catch(e){}
-      // Update banner copy — they're inside the backpack now.
-      try{var m=document.getElementById('lw-tut-mini-prompt');if(m)m.textContent='HOLD TO SEND THE SEED TO YOUR NURSERY.';}catch(e){}
-      // Pulse HOLD-TO-SEND (re-poll because htc-nur is rendered when a
-      // seed is selected — could be a brief delay).
+      // Stephen 2026-05-03: split into two sub-prompts. Player needs to
+      // tap a seed FIRST to bring up the htc-nur button. Old version
+      // jumped straight to "HOLD TO SEND" but the button isn't even
+      // visible until a seed is selected. Stage A: tap your seed.
+      // Stage B (when htc-nur appears): hold to send.
+      try{var m=document.getElementById('lw-tut-mini-prompt');if(m)m.textContent='TAP A SEED TO SELECT IT.';}catch(e){}
+      // Pulse the first seed tile (.ss element). Re-poll in case render is delayed.
+      var seedPulseAttempts=0;
+      var pulseSeed=function(){
+        var seed=document.querySelector('#bps .ss');
+        if(seed){seed.classList.add('lw-pulse-hint');return;}
+        if(seedPulseAttempts<60){seedPulseAttempts++;setTimeout(pulseSeed,150);}
+      };
+      pulseSeed();
+      // Watch for htc-nur to appear (player tapped a seed). Then transition
+      // to stage B: clear seed pulse, update banner, pulse htc-nur.
       var pollAttempts=0;
       var pulseHtc=function(){
         var htc=document.getElementById('htc-nur');
-        if(htc&&htc.offsetParent!==null){_htcPulsed=true;htc.classList.add('lw-pulse-hint');return;}
-        if(pollAttempts<60){pollAttempts++;setTimeout(pulseHtc,150);}
+        if(htc&&htc.offsetParent!==null){
+          _htcPulsed=true;
+          // Clear stage A's seed pulse — selection visual is enough.
+          try{var s2=document.querySelector('#bps .ss.lw-pulse-hint');if(s2)s2.classList.remove('lw-pulse-hint');}catch(e){}
+          try{var m2=document.getElementById('lw-tut-mini-prompt');if(m2)m2.textContent='HOLD TO SEND THE SEED TO YOUR NURSERY.';}catch(e){}
+          htc.classList.add('lw-pulse-hint');
+          return;
+        }
+        if(pollAttempts<400){pollAttempts++;setTimeout(pulseHtc,150);}
       };
       pulseHtc();
       return; // stop watching for open; transition handled by bp-seed-to-nursery event
@@ -75168,6 +75187,7 @@ function _step42(){
     try{var m=document.getElementById('lw-tut-mini-prompt');if(m)m.remove();}catch(e){}
     try{var bpi=document.getElementById('bpi');if(bpi)bpi.classList.remove('lw-pulse-hint');}catch(e){}
     try{var htc=document.getElementById('htc-nur');if(htc)htc.classList.remove('lw-pulse-hint');}catch(e){}
+    try{var seeds=document.querySelectorAll('#bps .ss.lw-pulse-hint');for(var ci=0;ci<seeds.length;ci++)seeds[ci].classList.remove('lw-pulse-hint');}catch(e){}
   };
   var onSeedSent=function(){
     if(_advanced)return;
