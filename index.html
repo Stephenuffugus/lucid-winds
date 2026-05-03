@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.53';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.54';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39343,10 +39343,15 @@ document.addEventListener('keydown', function(e) {
       _csEl.style.display = 'block';
     } else if (_csEl) { _csEl.style.display = 'none'; }
 
-    // ── Recent Blooms strip ──────────────────────────────────────────
+    // ── Recent Blooms strip — REMOVED 2026-05-03 ─────────────────────
+    // Stephen iOS test: "above the cards in the greenhouse are little
+    // squares of the cards that can be removed." The grid below already
+    // shows everything; the recent-blooms thumbnails were redundant
+    // and stealing vertical space. Wrapper force-hidden, render skipped.
     var _rbWrap = document.getElementById('gh-recent-wrap');
     var _rbStrip = document.getElementById('gh-recent-strip');
-    if (_rbWrap && _rbStrip) {
+    if (_rbWrap) _rbWrap.style.display = 'none';
+    if (false && _rbWrap && _rbStrip) {
       if (gh.length < 2) {
         _rbWrap.style.display = 'none';
       } else {
