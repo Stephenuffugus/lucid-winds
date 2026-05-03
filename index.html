@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.44';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.45';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -6308,20 +6308,12 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
     }
     @media (hover:hover){.perf-lite .greenhouse-plant:hover{box-shadow:none !important;transform:none !important;}}
     .perf-lite .greenhouse-plant.gh-new::after { box-shadow: none !important; }
-    /* Kill season background images — use solid dark instead */
-    .perf-lite .greenhouse-plant.season-spring,
-    .perf-lite .greenhouse-plant.season-summer,
-    .perf-lite .greenhouse-plant.season-autumn,
-    .perf-lite .greenhouse-plant.season-winter {
-      background-image: none !important;
-      background: rgba(13,16,12,0.9) !important;
-      border: 1.5px solid rgba(122,179,86,0.15) !important;
-    }
-    /* Kill dual-season background images too */
-    .perf-lite .greenhouse-plant[class*="dual-"] {
-      background-image: none !important;
-      background: rgba(13,16,12,0.9) !important;
-    }
+    /* Stephen 2026-05-03: removed perf-lite background-image:none on
+       greenhouse-plant cards. Same reasoning as cs-card-front: the
+       seasonal Celtic-knot frame is core game art — without it the grid
+       cards render as plain dark rectangles. iOS Safari was tripping
+       perf-lite (deviceMemory undefined → flaky detection), wiping the
+       border. PNG loads once and caches; no real perf cost to keep it. */
     /* EA knot: hide SVG, keep text-only badge */
     .perf-lite .ea-knot svg { display: none !important; }
     .perf-lite .ea-knot .ea-frost {
