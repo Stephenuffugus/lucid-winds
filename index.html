@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.52';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.53';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1319,13 +1319,11 @@
       isolation: isolate;
       position: relative;
     }
-    /* Stephen 2026-05-03 PART 2: bumped cap 540→600 because 540 made the
-       card too square on phone widths (361×540 = 0.67 aspect = chunky).
-       100svh stays — that's the URL-bar-SHOWING viewport ceiling so card
-       fits. Tighter offset (200 not 240) gives the card more height when
-       svh allows. Net: ~550-600px on most iPhones = aspect 0.60-0.66 =
-       proper portrait card. */
-    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 200px);max-height:600px;margin:14px auto 0;position:relative;contain:layout style paint;}
+    /* Stephen 2026-05-03 PART 3: more breathing room above the card.
+       margin-top 14→24. Smaller action parchments below gave back vertical
+       budget — using it for upper breathing room makes the card the
+       centerpiece. Cap stays 600, offset stays 200 (svh formula). */
+    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 200px);max-height:600px;margin:24px auto 0;position:relative;contain:layout style paint;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
@@ -1491,16 +1489,13 @@
     .pgm-dl-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .pgm-dl-btn:active { transform: scale(0.94); }
     /* Parchment-tall card buttons (share/details/breed/compost) — image
-       IS the face, with the flower illustration up top and the action
-       glyph baked into the bottom medallion. 1024×1536 source (2:3).
-       Flex-fill the row so all 4 fit cleanly side-by-side at any width;
-       aspect-ratio 2/3 keeps them portrait. Min-width 0 lets them
-       shrink as needed; max-width caps so they don't go giant on
-       tablets. (Stephen 2026-04-27 — "all four fit cleanly under the
-       cards in one row".) */
+       IS the face. Stephen 2026-05-03: shrunk down. The plant cards are
+       the centerpiece; these action parchments were taking too much
+       vertical real estate. max-width 135→100, aspect 2/3 → 2/2.5
+       (less tall). Min-width 0 still lets them shrink on narrow phones. */
     .pgm-card-btn {
-      flex: 1 1 0; min-width: 0; max-width: 135px;
-      aspect-ratio: 2 / 3;
+      flex: 1 1 0; min-width: 0; max-width: 100px;
+      aspect-ratio: 2 / 2.5;
       padding: 0; border: none; background: none;
       cursor: pointer; transition: transform 0.15s;
       display: inline-flex; align-items: flex-end; justify-content: center;
