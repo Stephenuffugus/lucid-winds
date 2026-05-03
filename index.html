@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.46';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.47';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -70347,7 +70347,7 @@ var _o=false,_ss=null,_sp=null,_ht=null;
 var SL=[{id:1},{id:2,h:'Harvest 1st plant',k:'slot2'},{id:3,h:'100 pollen',k:'slot3'},{id:4,h:'10 games',k:'slot4'},{id:5,h:'Drop 5 in Wild',k:'slot5'},{id:6,h:'Daily slot',k:'slot6',dy:true}];
 var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:20,k:'seed20'}];
 function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return Math.min(c,25);} // cap at 25 — matches item pouch cap (single mental model). Was 12 when base pouch was 3; balance pass 2026-04-26 bumped base to 8.
-function xc(){var c=1;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;}
+function xc(){var c=5;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;} // Stephen 2026-05-03: default 1→5. Pouch starts at 5; the auto "expand to 5" milestone after first forage was unnecessary text.
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','<img src="assets/backpack-64x64.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
 function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}var bpe=document.getElementById('bpe');bpe.classList.add('open');document.body.classList.add('lw-bp-open');
@@ -70531,7 +70531,7 @@ function hte(){clearTimeout(_ht);document.getElementById('htc-rel').classList.re
 function ap(o){if(st.plants.length>=xp()){toast('Backpack full!');return false;}st.plants.push(o);st.ph++;render();_rtbRender();hap();cu();return true;}
 function as(o){if(st.seeds.length>=xc()){toast('Seed pouch full!');return false;}st.seeds.push(o);st.fc++;render();_rtbRender();hap();cu();return true;}
 function ul(k,m,s){if(st.unlocks[k])return;st.unlocks[k]=true;render();celeb(m,s);}
-function cu(){if(!st.unlocks.slot2&&st.ph>=1)ul('slot2','Second plant slot unlocked!','Harvest plants to fill it.');if(!st.unlocks.slot3&&st.pollen>=100)ul('slot3','Third slot unlocked!','100 pollen reached.');if(!st.unlocks.slot4&&st.gp>=10)ul('slot4','Bonus slot earned!','10 games played.');if(!st.unlocks.slot5&&st.wd>=5)ul('slot5','Fifth slot unlocked!','5 plants in the Wild.');if(!st.unlocks.seed5&&st.fc>=1)ul('seed5','Seed pouch expands to 5!','Find ferals as you walk.');if(!st.unlocks.seed10&&st.fc>=5)ul('seed10','Pouch holds 10!','Your eye sharpens.');}
+function cu(){if(!st.unlocks.slot2&&st.ph>=1)ul('slot2','Second plant slot unlocked!','Harvest plants to fill it.');if(!st.unlocks.slot3&&st.pollen>=100)ul('slot3','Third slot unlocked!','100 pollen reached.');if(!st.unlocks.slot4&&st.gp>=10)ul('slot4','Bonus slot earned!','10 games played.');if(!st.unlocks.slot5&&st.wd>=5)ul('slot5','Fifth slot unlocked!','5 plants in the Wild.');if(!st.unlocks.seed10&&st.fc>=5)ul('seed10','Pouch holds 10!','Your eye sharpens.');} // seed5 milestone removed 2026-05-03: pouch starts at 5 by default.
 // ═══ RETURN TO BASE — unload backpack to greenhouse ═══
 // RTB: 2 free returns/day (base), +2 if extra backpack slots purchased = 4 max
 var RTB_BASE_PER_DAY=3;
