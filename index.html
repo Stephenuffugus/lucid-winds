@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.41';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.42';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -72707,6 +72707,15 @@ function _overlay(tapCb){
 function _spotlight(el){
   if(!el)return;
   if(_spot&&_spot.parentNode)_spot.remove();
+  // Stephen 2026-05-03: when a spotlight is active, transparent-out the
+  // separate _overlay's dark fill. The spotlight's own outward box-shadow
+  // does the dimming and naturally cuts out the spotlit element, so we
+  // don't need the overlay's dim too. Without this, on iOS where the
+  // card's z-index:1000012 escape fails (parent .greenhouse-plant has
+  // contain:layout, sometimes inside a transformed parent), the overlay
+  // at z:1000010 sits OVER the card and the spotlit card renders DARK
+  // instead of lit. iOS tester reported step 1 plant card all dark.
+  if(_ov)_ov.style.background='transparent';
   var r=el.getBoundingClientRect();
   _spot=document.createElement('div');
   // Spotlight sits at 1000011 — the target MUST be bumped to 1000012
