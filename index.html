@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.55';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.56';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -74591,12 +74591,33 @@ function _step36(){
   });
 }
 function _step36Inner(){
-  // iOS GPS-stalled fix (Stephen 2026-05-01 PART 5): if geolocation hasn't
-  // resolved yet, openPicker bails on `!_uLat` and the SOW tap silently
-  // toasts "Getting location..." — the tutorial polls forever for a
-  // carousel that will never open. Force the FALLBACK coords so the
-  // tester can advance even if their permission prompt is still pending
-  // or was denied. Real GPS, when it arrives, will overwrite these.
+  // Stephen 2026-05-03: GPS-denied loop-break. iOS tester clicked "don't
+  // allow" on geolocation, then the SOW → carousel → PLANT flow appeared
+  // to complete but the underlying placement failed silently and step 37's
+  // watch loop bounced him back to step 36 — infinite tutorial loop.
+  // Track attempts; on the 2nd+ entry, give the player an out instead of
+  // making them try the same broken flow again. (Future: replace skip with
+  // a forage demo + starter seed reward — see task #18.)
+  var _sowAttempts = 0;
+  try { _sowAttempts = parseInt(localStorage.getItem('lw_tut_sow_attempts')||'0',10) || 0; } catch(e){}
+  _sowAttempts++;
+  try { localStorage.setItem('lw_tut_sow_attempts', String(_sowAttempts)); } catch(e){}
+  if (_sowAttempts >= 2) {
+    _clear();
+    _dialog(
+      'No problem — you can drop plants in the Wild whenever you’re ready. Tutorial continues.',
+      'CONTINUE',
+      function(){ _clear(); setTimeout(_step39, 400); },
+      'center'
+    );
+    return;
+  }
+  // iOS GPS-stalled fix: if geolocation hasn't resolved yet, openPicker
+  // bails on `!_uLat` and the SOW tap silently toasts "Getting location..."
+  // — the tutorial polls forever for a carousel that will never open. Force
+  // the FALLBACK coords so the tester can advance even if their permission
+  // prompt is still pending or was denied. Real GPS, when it arrives, will
+  // overwrite these.
   if (!window._uLat && window.FG_Wild && window.FG_Wild._forceFallbackCoords) {
     try { window.FG_Wild._forceFallbackCoords(); } catch(e){}
     // Re-run mock injection now that coords are set (step 35 silently
