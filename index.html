@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.68';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.69';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5382,19 +5382,22 @@
     /* Stephen 2026-05-03: max-width tightened 228 → 168 in BASE so kb-row2
        can never reach the floating BoS book regardless of screen width. */
     #pw-keeper-bar .kb-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.45rem;max-width:168px;}
-    /* Install button in Row 1: same height as the avatar, sized to fit alongside name+xp */
-    #pw-keeper-bar .kb-row1 #kb-install{width:48px;height:48px;border-radius:10px;border:2px solid rgba(200,168,75,0.5);background:rgba(26,36,22,0.6);cursor:pointer;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:0;}
+    /* Stephen 2026-05-03: install button bumped 48→56 — was reading too
+       small next to the avatar. Same family of sizes as the keeper-bar
+       currency badges (70×70). */
+    #pw-keeper-bar .kb-row1 #kb-install{width:56px;height:56px;border-radius:10px;border:2px solid rgba(200,168,75,0.5);background:rgba(26,36,22,0.6);cursor:pointer;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:0;}
     #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;position:relative;}
     #pw-keeper-bar .kb-avatar > img,#pw-keeper-bar .kb-avatar > span#kb-avatar-art{border-radius:50%;}
     #pw-keeper-bar .kb-avatar > img{clip-path:circle(50%);}
     #pw-keeper-bar .kb-info{flex:1;min-width:0;}
     #pw-keeper-bar .kb-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--cream);letter-spacing:0.06em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;}
-    /* XP bar HIDDEN 2026-05-02 — Stephen reported a "bar at the top of
-       my screen cutting through my name" that survived the earlier
-       reorder + recolor. Killing it entirely. The XP info is still in
-       the rank line text ("Lvl X · Class · Y/Z XP") so no info is lost. */
-    #pw-keeper-bar .kb-xp-wrap{display:none !important;}
-    #pw-keeper-bar .kb-xp-fill{height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage));border-radius:3px;transition:width 0.5s ease;}
+    /* XP bar restored 2026-05-03 — Stephen flagged it missing. Earlier
+       removal was due to a "band cutting through my name" report, but
+       in the actual DOM the bar lives BELOW the rank line, not crossing
+       the name. Bringing it back at thin 4px height so it's visible
+       without crowding. */
+    #pw-keeper-bar .kb-xp-wrap{display:block;height:4px;background:rgba(74,124,53,0.18);border-radius:2px;margin-top:5px;cursor:pointer;overflow:hidden;}
+    #pw-keeper-bar .kb-xp-fill{height:100%;background:linear-gradient(90deg,var(--leaf),var(--sage));border-radius:2px;transition:width 0.5s ease;box-shadow:0 0 6px rgba(122,179,86,0.35);}
     #pw-keeper-bar .kb-rank{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--muted);margin-top:3px;letter-spacing:0.03em;}
     /* Currency badges in row 2 — big, readable, thumb-friendly, ready for art drop-in */
     /* overflow:hidden was eating the corner mint-pip (positioned at top:-4px, right:-4px).
