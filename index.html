@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.61';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.62';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1490,13 +1490,17 @@
     }
     .pgm-dl-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .pgm-dl-btn:active { transform: scale(0.94); }
-    /* Stephen 2026-05-03 PART 4: parchments shrunk further so card can
-       grow taller (target 0.62 width:height ratio = portrait specimen
-       card). max-width 100→80, aspect 2/2.5 → 2/1.9 (much shorter).
-       Vertical budget freed up here goes into card height. */
+    /* Stephen 2026-05-03 PART 5: Pixel 9 tester reported the parchment
+       buttons looked different sizes and the leftmost (INSPECT) was
+       cut off top + bottom. Root cause: source PNG art is 2:3 portrait
+       but my prev aspect-ratio 2/1.9 (≈ square) made object-fit:cover
+       crop the parchment's top + bottom. Plus they were too small for
+       Stephen's "gorgeous" parchment art to read.
+       Fix: aspect 2/2.6 (much closer to source 2/3, far less crop) and
+       max-width 80→100. flex:1 still distributes evenly. */
     .pgm-card-btn {
-      flex: 1 1 0; min-width: 0; max-width: 80px;
-      aspect-ratio: 2 / 1.9;
+      flex: 1 1 0; min-width: 0; max-width: 100px;
+      aspect-ratio: 2 / 2.6;
       padding: 0; border: none; background: none;
       cursor: pointer; transition: transform 0.15s;
       display: inline-flex; align-items: flex-end; justify-content: center;
