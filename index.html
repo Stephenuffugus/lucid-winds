@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.59';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.60';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -72648,6 +72648,10 @@ function _clear(){
   // Stephen 2026-05-03: stop the RAF tracker + restore body scroll lock.
   if(_spotRAF){try{cancelAnimationFrame(_spotRAF);}catch(e){}_spotRAF=null;}
   if(_spotPriorOverflow!==null){try{document.body.style.overflow=_spotPriorOverflow;}catch(e){}_spotPriorOverflow=null;}
+  // Sweep any tutorial-arrow elements (step 1b first-plant arrow, step 16
+  // sunbeam arrow). Belt for skip-mid-step / step-skip cases.
+  var _arrIds=['_lw-tut-arrow','_lw-tut-sb-arrow'];
+  for(var _ai=0;_ai<_arrIds.length;_ai++){var _ae=document.getElementById(_arrIds[_ai]);if(_ae&&_ae.parentNode)_ae.remove();}
   // Reset the spotlighted element's inline style so a future render
   // or step doesn't inherit elevated z-index / pointer-events /
   // will-change from a prior tutorial beat.
@@ -73459,6 +73463,23 @@ function _step16AfterCelebration(attempts){
     try{document.body.classList.add('lw-tut-mint-only');}catch(e){}
     var kbs=document.getElementById('kb-sunbeams');
     if(kbs){kbs.classList.add('lw-pulse-hint');}
+    // Stephen 2026-05-03: pulse alone wasn't obvious enough. Big gold
+    // upward arrow points at the sunbeam button, anchored beneath it
+    // via getBoundingClientRect so the arrow tracks the button's
+    // actual screen position. Mirror of step 1b's first-plant arrow
+    // pattern. Removed below in _watchMintModal alongside the pulse.
+    var _sbArr=document.getElementById('_lw-tut-sb-arrow');
+    if(_sbArr&&_sbArr.parentNode)_sbArr.remove();
+    if(kbs){
+      try{
+        var _kr=kbs.getBoundingClientRect();
+        _sbArr=document.createElement('div');
+        _sbArr.id='_lw-tut-sb-arrow';
+        _sbArr.style.cssText='position:fixed;left:'+(_kr.left+_kr.width/2)+'px;top:'+(_kr.bottom+24)+'px;transform:translateX(-50%);z-index:1000012;pointer-events:none;font-family:Playfair Display,serif;font-size:clamp(3rem,11vw,4.4rem);color:var(--gold);line-height:1;text-shadow:0 0 18px rgba(200,168,75,0.7),0 0 6px rgba(0,0,0,0.9);animation:_whPulse 1.4s ease-in-out infinite;';
+        _sbArr.textContent='↑';
+        document.body.appendChild(_sbArr);
+      }catch(e){}
+    }
     var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
     // Lean copy: the A PLANT IS READY JIT modal is suppressed during
     // tutorial, and the Keeper already knows they're back in the
@@ -73475,6 +73496,8 @@ function _step16AfterCelebration(attempts){
       setTimeout(function(){
         var kbs2=document.getElementById('kb-sunbeams');
         if(kbs2)kbs2.classList.remove('lw-pulse-hint');
+        var _sbArrZ=document.getElementById('_lw-tut-sb-arrow');
+        if(_sbArrZ&&_sbArrZ.parentNode)_sbArrZ.remove();
         try{document.body.classList.remove('lw-tut-mint-only','lw-tut-sb-on');}catch(e){}
         _done();
       },8000);
@@ -73486,6 +73509,8 @@ function _watchMintModal(attempts){
   if(document.getElementById('lw-sunbeam-modal')){
     var kbs=document.getElementById('kb-sunbeams');
     if(kbs)kbs.classList.remove('lw-pulse-hint');
+    var _sbArrG=document.getElementById('_lw-tut-sb-arrow');
+    if(_sbArrG&&_sbArrG.parentNode)_sbArrG.remove();
     // DO NOT remove lw-tut-mint-only here — keep plant cards locked
     // through step 17 so only BLOOM is reachable. Lock is released in
     // _watchMintComplete when the second mint actually lands.
@@ -73497,6 +73522,8 @@ function _watchMintModal(attempts){
   else {
     var kbs2=document.getElementById('kb-sunbeams');
     if(kbs2)kbs2.classList.remove('lw-pulse-hint');
+    var _sbArrT=document.getElementById('_lw-tut-sb-arrow');
+    if(_sbArrT&&_sbArrT.parentNode)_sbArrT.remove();
     try{document.body.classList.remove('lw-tut-mint-only','lw-tut-sb-on');}catch(e){}
     _done();
   }
