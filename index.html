@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.51';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.52';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1319,16 +1319,13 @@
       isolation: isolate;
       position: relative;
     }
-    /* Stephen 2026-05-03: iOS card top was getting cut off. Root cause:
-       100vh on iOS Safari = URL-bar-collapsed viewport (large). When the
-       URL bar is showing (player just entered), actual visible viewport is
-       smaller, so the 100vh-based card was overflowing past the visible
-       bottom and the slot was bottom-aligning the card with its REAL top
-       above the visible area. Fix: 100svh (small viewport height) — that's
-       the SHOWING-URL-bar viewport, which is always the correct ceiling.
-       Plus tighter offsets/cap so the card still has breathing room when
-       safe-area-inset-top + topbar + bottom action buttons are all in. */
-    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 240px);max-height:540px;margin:14px auto 0;position:relative;contain:layout style paint;}
+    /* Stephen 2026-05-03 PART 2: bumped cap 540→600 because 540 made the
+       card too square on phone widths (361×540 = 0.67 aspect = chunky).
+       100svh stays — that's the URL-bar-SHOWING viewport ceiling so card
+       fits. Tighter offset (200 not 240) gives the card more height when
+       svh allows. Net: ~550-600px on most iPhones = aspect 0.60-0.66 =
+       proper portrait card. */
+    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 200px);max-height:600px;margin:14px auto 0;position:relative;contain:layout style paint;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
