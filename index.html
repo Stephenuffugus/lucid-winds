@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.64';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.65';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -67831,7 +67831,11 @@ function equipCompanion(){
     var activeLabel=active?' <span style="color:var(--gold);">\u2605 SLOT 1</span>':(active2?' <span style="color:var(--gold);">\u2605 SLOT 2</span>':'');
     h+='<div style="display:flex;align-items:center;gap:0.8rem;padding:0.55rem;margin-bottom:6px;background:rgba(18,22,16,'+(anyActive?'0.8':'0.5')+');border:1.5px solid '+(anyActive?'rgba(200,168,75,0.4)':'rgba(122,179,86,0.12)')+';border-radius:10px;min-height:104px;">';
     // Stephen 2026-05-02: full 3:2 rectangle, no cover-crop. Was 80×80 sq.
-    h+='<div style="flex-shrink:0;">'+_compPortraitFull(f.idx, f.icon, 144)+'</div>';
+    // Stephen 2026-05-03: tapping the portrait opens the companion profile.
+    // Picker only lists FOUND companions (already unlocked) so this is safe
+    // — no need to gate on lock state. The slot-equip buttons are still the
+    // primary way to equip; the portrait is now the primary way to read.
+    h+='<div onclick="window._lwOpenCompanionProfile&&_lwOpenCompanionProfile('+f.idx+')" style="flex-shrink:0;cursor:pointer;" title="View companion profile">'+_compPortraitFull(f.idx, f.icon, 144)+'</div>';
     h+='<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:var(--cream);letter-spacing:0.04em;">'+f.name+activeLabel+'</div>';
     if(f.ability)h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--sage);margin-top:3px;line-height:1.4;">'+f.ability+'</div>';
     if(f.temperament)h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-top:2px;">'+f.tempIcon+' '+f.temperament+'</div>';
