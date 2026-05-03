@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.72';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.73';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -86079,10 +86079,10 @@ window.LW_GIFTS = (function(){
           '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> ALMANAC</button>' +
           '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">SLOTS</button>' +
           '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">TRADE</button>' +
-          // Stephen 2026-05-01: Cocoonery tab retired — unified into the
-          // Curiosities panel (backpack → CURIOSITIES). The tab is gone but
-          // LW_HUT.open('cocoonery') still works as a deep-link → it now
-          // closes the hut and opens the Curiosities panel directly.
+          // Stephen 2026-05-03: Curiosities tab restored to the hut as a
+          // browse-and-buy surface (was backpack-only). Full management
+          // still in backpack panel; this tab is the discovery shelf.
+          '<button class="lwh-tab"        data-tab="curiosities" onclick="LW_HUT.switchTab(\'curiosities\')">CURIOSITIES</button>' +
         '</div>' +
         // Scroll region — portrait scrolls off naturally as user reads body
         '<div class="lwh-scroll">' +
@@ -86120,10 +86120,62 @@ window.LW_GIFTS = (function(){
     else if (currentTab === 'almanac') renderAlmanac();
     else if (currentTab === 'slots')   renderSlots();
     else if (currentTab === 'quests')  renderQuest();
-    // Stephen 2026-05-01: 'cocoonery' dispatch removed; renderCocoonery is
-    // dead code now (open() redirects 'cocoonery' deep-link to Curiosities
-    // before render() is reached). Function body kept defined as a no-op
-    // safety net for anything still holding a stale reference.
+    else if (currentTab === 'curiosities') renderCuriosities();
+  }
+
+  // Stephen 2026-05-03: Curiosities browse-and-buy tab in the hut.
+  // Lists the 3 keeper specs (Wasp / Lungfish / Tardigrade) with cost,
+  // state, ability copy. Buy button purchases via LW_KEEPER.purchase
+  // when affordable + walking-distance targets unmet. "OPEN PANEL"
+  // button at bottom routes to the full Curiosities management UI in
+  // the backpack for incubation feed + hatch + equip flows.
+  function renderCuriosities(){
+    var body = document.getElementById('lwh-body');
+    if (!body) return;
+    var specs = (window.LW_KEEPER && window.LW_KEEPER.listSpecs) ? window.LW_KEEPER.listSpecs() : [];
+    if (!specs.length){
+      body.innerHTML = '<div class="lwh-section-text">Curiosities don’t load. Open your backpack → Curiosities for the full panel.</div>';
+      return;
+    }
+    var equippedKey = (window.LW_KEEPER && window.LW_KEEPER.equipped) ? window.LW_KEEPER.equipped() : null;
+    var h = '';
+    h += '<div style="font-family:Playfair Display,serif;font-style:italic;color:var(--cream);font-size:0.85rem;line-height:1.55;margin:0.4rem 0 0.7rem;text-align:center;opacity:0.95;">"Three odd things to keep in your pocket. Each one walks with you, and each becomes something more if you walk far enough."</div>';
+    for (var i=0;i<specs.length;i++){
+      var spec = specs[i];
+      var owned = window.LW_KEEPER.isOwned(spec.key);
+      var hatched = window.LW_KEEPER.isHatched(spec.key);
+      var incubating = window.LW_KEEPER.isIncubating(spec.key);
+      var canBuy = window.LW_KEEPER.canPurchase(spec.key);
+      var isEquipped = (equippedKey === spec.key);
+      var stateLabel = '';
+      if (hatched && isEquipped) stateLabel = '<span style="color:var(--gold);font-weight:600;">EQUIPPED</span>';
+      else if (hatched) stateLabel = '<span style="color:var(--sage);">HATCHED</span>';
+      else if (incubating) {
+        var prog = window.LW_KEEPER.progress(spec.key);
+        var pct = prog && prog.target ? Math.round((prog.distance/prog.target)*100) : 0;
+        stateLabel = '<span style="color:var(--sage);">INCUBATING · ' + pct + '%</span>';
+      }
+      else stateLabel = '<span style="color:var(--muted);">AVAILABLE</span>';
+      h += '<div style="display:flex;gap:0.7rem;align-items:flex-start;padding:0.7rem;margin-bottom:0.7rem;background:rgba(13,16,12,0.6);border:1.5px solid rgba(122,179,86,0.18);border-radius:10px;">';
+      h += '<img src="' + (hatched ? spec.hatchedArt : spec.cocoonArt) + '" alt="" style="width:84px;height:84px;object-fit:contain;flex-shrink:0;border-radius:8px;background:rgba(20,18,14,0.5);">';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.08em;">' + (hatched ? spec.hatchedName : spec.cocoonName) + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">' + stateLabel + '</div>';
+      h += '<div style="font-family:Playfair Display,serif;font-size:0.7rem;color:var(--cream);font-style:italic;line-height:1.45;margin-top:0.45rem;opacity:0.9;">' + (hatched ? spec.hatchFlavor : spec.flavor) + '</div>';
+      if (!owned) {
+        var costStr = '<span class="lwe lwe-drop"></span> ' + spec.costDew + ' · <img src="assets/fx/bloom-sun.png" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;☀&apos;;"> ' + spec.costSunbeams;
+        h += '<button onclick="if(window.LW_KEEPER&&LW_KEEPER.purchase&&LW_KEEPER.purchase(\'' + spec.key + '\')){LW_HUT.switchTab(\'curiosities\');if(window._toast)window._toast(&apos;Adopted. Walk to incubate.&apos;);}else{if(window._toast)window._toast(&apos;Not enough Dew or Sunbeams.&apos;);}" ' + (canBuy ? '' : 'disabled ') + 'style="margin-top:0.55rem;width:100%;padding:0.55rem;border-radius:6px;border:1.5px solid ' + (canBuy?'rgba(200,168,75,0.55)':'rgba(138,145,120,0.25)') + ';background:' + (canBuy?'linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.32))':'rgba(26,36,22,0.4)') + ';color:' + (canBuy?'var(--gold)':'var(--muted)') + ';font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:' + (canBuy?'pointer':'default') + ';min-height:42px;">ADOPT · ' + costStr + '</button>';
+      } else if (incubating) {
+        h += '<div style="margin-top:0.5rem;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--sage);">Walk to feed. Open your backpack → Curiosities to manage.</div>';
+      } else if (hatched && !isEquipped) {
+        h += '<button onclick="if(window.LW_KEEPER&&LW_KEEPER.equip)LW_KEEPER.equip(\'' + spec.key + '\');LW_HUT.switchTab(\'curiosities\');" style="margin-top:0.55rem;width:100%;padding:0.55rem;border-radius:6px;border:1.5px solid rgba(122,179,86,0.4);background:rgba(74,124,53,0.18);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">EQUIP</button>';
+      } else if (hatched && isEquipped) {
+        h += '<div style="margin-top:0.5rem;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--gold);font-weight:500;">Active companion in the wild.</div>';
+      }
+      h += '</div></div>';
+    }
+    h += '<button onclick="if(window._lwOpenCuriosities){var ov=document.getElementById(\'lw-hut-overlay\');if(ov)ov.remove();window._lwOpenCuriosities();}" style="width:100%;padding:0.7rem;margin-top:0.5rem;border-radius:8px;border:1.5px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.5);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.1em;cursor:pointer;min-height:46px;">OPEN FULL CURIOSITIES PANEL</button>';
+    body.innerHTML = h;
   }
 
   function open(tab){
