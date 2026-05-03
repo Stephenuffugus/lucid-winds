@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.39';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.40';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -66768,7 +66768,54 @@ function _renderClassSection(){
   if(lvl>=3){h+='<span class="cs-badge'+(syn?' synergy':'')+'">'+(syn?'SYNERGY ACTIVE':'L3 SYNERGY')+'</span>';}
   h+='</div></div></div>';
   h+='<div class="cs-class-xp"><div class="cs-class-xp-bar"><div class="cs-class-xp-fill" style="width:'+xpBar+'%;"></div></div><div class="cs-class-xp-text">'+xpText+(biomeMatch?' · +25% in biome':'')+'</div></div>';
-  h+='<button onclick="if(window._lwOpenClassManager)_lwOpenClassManager()" style="display:block;width:100%;margin-top:8px;padding:0.5rem;border-radius:8px;border:1.5px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(46,38,18,0.45),rgba(28,24,12,0.6));color:var(--gold);font-family:\'Bebas Neue\',sans-serif;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">☘ KEEPER’S TREE · TOOLS · RESPEC</button>';
+  // Stephen 2026-05-03: tree-progression banner — surface pts available + the
+  // next unlock so the path doesn't feel like a dead-end after class-max.
+  // Tappable; opens the Class Manager. Path strip uses purposefully different
+  // emojis from branch metadata so adjacent leafy icons don't blur together.
+  var keeperLvl = lvl; // class lvl (1-3) — keeper level via canSee.currentLevel
+  try { keeperLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1; } catch(e){}
+  var treeAvail = 0;
+  try { treeAvail = (window._LW_treeAvailable && window._LW_treeAvailable()) || 0; } catch(e){}
+  var classSpentMain = 0, classMaxMain = 0;
+  try {
+    if (window.LW_TREE_NODES && window._LW_treePoints) {
+      var tp = window._LW_treePoints() || {};
+      for (var nk in LW_TREE_NODES) {
+        if (!LW_TREE_NODES.hasOwnProperty(nk)) continue;
+        var nm = LW_TREE_NODES[nk];
+        if (nm && nm.branch === cls) { classSpentMain += tp[nk] || 0; classMaxMain += nm.max || 0; }
+      }
+    }
+  } catch(e){}
+  var classMaxedMain = classMaxMain > 0 && classSpentMain >= classMaxMain;
+  var nextLbl;
+  if (!classMaxedMain) nextLbl = 'Tools at full path · ' + classSpentMain + '/' + classMaxMain;
+  else if (keeperLvl < 40) nextLbl = 'Heartwood at Keeper Lv 40';
+  else if (keeperLvl < 60) nextLbl = 'The Bower at Keeper Lv 60';
+  else if (keeperLvl < 80) nextLbl = 'Eldergrove at Keeper Lv 80';
+  else nextLbl = 'All branches open';
+  var ptsColor = treeAvail > 0 ? 'var(--gold)' : 'var(--muted)';
+  var classEmoji = (def && def.icon) ? def.icon : '🌿';
+  h += '<div onclick="if(window._lwOpenClassManager)_lwOpenClassManager()" style="margin-top:10px;padding:0.6rem 0.75rem;border-radius:9px;border:1.5px solid rgba(122,179,86,0.28);background:linear-gradient(180deg,rgba(26,36,22,0.55),rgba(18,22,16,0.65));cursor:pointer;">';
+  h += '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:0.5rem;">';
+  h += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:0.9rem;color:'+ptsColor+';letter-spacing:0.08em;font-weight:600;">🌳 '+treeAvail+' TREE PT'+(treeAvail===1?'':'S')+'</div>';
+  h += '<div style="font-family:\'DM Mono\',monospace;font-size:0.55rem;color:var(--muted);text-align:right;">'+nextLbl+'</div>';
+  h += '</div>';
+  // Path strip — purposeful icons distinct from branch metadata.
+  h += '<div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:7px;font-size:1.05rem;line-height:1;">';
+  var stages = [
+    { e: classEmoji,         on: !!cls },
+    { e: '🔧',               on: classMaxedMain },
+    { e: '🌳',               on: keeperLvl >= 40 },
+    { e: '🪻',               on: keeperLvl >= 60 },
+    { e: '🌙',               on: keeperLvl >= 80 }
+  ];
+  for (var si = 0; si < stages.length; si++) {
+    if (si > 0) h += '<span style="color:var(--muted);opacity:0.45;font-size:0.7rem;">›</span>';
+    h += '<span style="opacity:'+(stages[si].on?'1':'0.32')+';filter:'+(stages[si].on?'none':'grayscale(0.5)')+';">'+stages[si].e+'</span>';
+  }
+  h += '</div></div>';
+  h+='<button onclick="if(window._lwOpenClassManager)_lwOpenClassManager()" style="display:block;width:100%;margin-top:8px;padding:0.5rem;border-radius:8px;border:1.5px solid rgba(200,168,75,0.35);background:linear-gradient(180deg,rgba(46,38,18,0.45),rgba(28,24,12,0.6));color:var(--gold);font-family:\'Bebas Neue\',sans-serif;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">☘ KEEPER’S TREE · TOOLS</button>';
   el.innerHTML=h;
 }
 function _renderMilestoneSection(){
@@ -80533,7 +80580,7 @@ function _bosTreeContent() {
       h += '</div>';
     }
   }
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin:0.3rem 0 0.8rem;line-height:1.5;text-align:center;">Every point moves the needle. 5 branches \u00b7 5 per node \u00b7 fully maxed at Lv 100.</div>';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin:0.3rem 0 0.8rem;line-height:1.55;text-align:center;">Every point moves the needle. 5 branches \u00b7 5 per node \u00b7 fully maxed at Lv 100.<br><span style="color:var(--gold);opacity:0.75;">No respec. Choose deliberately.</span></div>';
   return h;
 }
 // Render one branch (used for class branch + tools branch)
@@ -93625,7 +93672,7 @@ window._LW_hasSynergy=function(){
 // ═══ KEEPER'S TREE v1 ═══
 // 20 nodes, 5 branches, 5 pts/node, 0.25% per point. Max 100 pts = Lv 100.
 // Every point does SOMETHING (however small) — "every level is active."
-// Respec free once per 24h. Milestones at 10/25/50/75/100 give extras.
+// NO respec — choose deliberately. Milestones at 10/25/50/75/100 give extras.
 var LW_TREE_BRANCHES={
   forager:{name:'Forager',icon:'\ud83c\udf42',color:'#d4842a'},
   breeder:{name:'Breeder',icon:'\ud83e\uddec',color:'#a88fbf'},
@@ -93635,7 +93682,7 @@ var LW_TREE_BRANCHES={
   tools:{name:'Tools',icon:'\ud83d\udd27',color:'#c8a84b',unlockLvl:20,unlockMode:'classmax'},
   heartwood:{name:'Heartwood',icon:'\ud83c\udf33',color:'#d4a843',unlockLvl:40,unlockMode:'level'},
   bower:{name:'The Bower',icon:'\ud83c\udf3f',color:'#c07ac8',unlockLvl:60,unlockMode:'level'},
-  longwatch:{name:'The Long Watch',icon:'\ud83c\udf19',color:'#7ab3d4',unlockLvl:80,unlockMode:'level'}
+  longwatch:{name:'Eldergrove',icon:'\ud83c\udf19',color:'#7ab3d4',unlockLvl:80,unlockMode:'level'}
 };
 var LW_TREE_NODES={
   // Forager — the path-finder's rituals
@@ -93678,7 +93725,9 @@ var LW_TREE_NODES={
   carefulShears:  {branch:'bower',name:'Careful Shears',       desc:'The cut gives more than it takes. +0.25% breed reward / pt',max:5,per:0.0025},
   pouchMemory:    {branch:'bower',name:'Pouch Memory',         desc:'The satchel knows your rhythm. +0.25% feral seed range / pt',max:5,per:0.0025},
   deepFocus:      {branch:'bower',name:'Deep Focus',           desc:'Attention returns compound interest. +0.25% class XP / pt',max:5,per:0.0025},
-  // The Long Watch — Lv 80. Legacy, deep time.
+  // Eldergrove — Lv 80. Legacy, deep time. (Branch renamed 2026-05-03 so it
+  // doesn't collide with the L100 milestone "The Long Watch" — different art,
+  // different meaning. Internal key stays `longwatch` to avoid migration churn.)
   ancestralMemory:{branch:'longwatch',name:'Ancestral Memory', desc:'Older lines shine brighter. +0.25% rare drop odds / pt',max:5,per:0.0025},
   centuryOak:     {branch:'longwatch',name:'Century Oak',      desc:'Your garden outlasts the seasons. +0.25% plant longevity / pt',max:5,per:0.0025},
   generationalBloom:{branch:'longwatch',name:'Generational Bloom',desc:'Each bloom remembers the last. +0.25% chimera purity / pt',max:5,per:0.0025},
