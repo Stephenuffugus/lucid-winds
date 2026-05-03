@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.69';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.70';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1349,7 +1349,14 @@
     .cs-card-front[data-season="spring"]{background-image:url('assets/cards/fronts/front-spring.png');background-size:101.5% 101.5%;}
     .cs-card-front[data-season="summer"]{background-image:url('assets/cards/fronts/front-summer.png');background-size:101.5% 101.5%;}
     .cs-card-front[data-season="summer"] .cf-haiku-zone{padding-top:0;}
-    .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');background-size:101.5% 101.5%;}
+    /* Stephen 2026-05-03: autumn frame's spider-web corner decoration
+       extends diagonally into the upper-middle of the card and was
+       overlapping the plant title (Sarcophagus screenshot). Universal
+       10% padding-top wasn't enough to clear it. Autumn-specific bump
+       to 15% pushes the title below the web. The art window + haiku
+       follow through proportionally because grid-template-rows is
+       defined in % of the content area, which is now smaller. */
+    .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');background-size:101.5% 101.5%;padding-top:15%;}
     .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/front-winter.png');background-size:101.5% 101.5%;}
     .cs-card-back[data-tier="common"]{background-image:url('assets/cards/backs/back-common.png');background-size:112% 101%;}
     .cs-card-back[data-tier="uncommon"]{background-image:url('assets/cards/backs/back-uncommon.png');}
