@@ -73,12 +73,22 @@
       try {
         var r = checkAll();
         if (!r) return;
-        // Daily completions — toast directs player to QUESTS to claim.
+        // Stephen 2026-05-03: toast is now interactive — CLAIM button opens
+        // BoS straight onto the QUESTS tab so players don't have to hunt.
+        // Plain CSS (no class refs) keeps this self-contained inside the
+        // toast's HTML payload. _toClaimToast(...) builds the markup.
+        function _toClaimToast(emoji, name) {
+          var btn = '<button onclick="if(window._toast)window._toast(\'\');if(window._openCompendiumUI)window._openCompendiumUI();setTimeout(function(){if(window._bosSetTab)window._bosSetTab(\'quests\');},220);" '+
+            'style="margin-top:0.5rem;padding:8px 18px;min-height:36px;border:1.5px solid rgba(200,168,75,0.7);border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.45));color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.14em;font-weight:700;cursor:pointer;text-shadow:0 1px 1px rgba(255,240,200,0.4);">CLAIM REWARD</button>';
+          return '<div>'+emoji+' '+name+'</div>'+btn;
+        }
+        var _toastOpts = { html:true, duration:7000, interactive:true };
+        // Daily completions — interactive toast with CLAIM button.
         if (r.newDailyDone && r.newDailyDone.length) {
           for (var di = 0; di < r.newDailyDone.length; di++) {
             var de = null;
             for (var dj = 0; dj < DAILIES.length; dj++) if (DAILIES[dj].id === r.newDailyDone[di]) { de = DAILIES[dj]; break; }
-            if (de && window._toast) window._toast('☀️ Daily complete: ' + de.name + ' — claim in QUESTS');
+            if (de && window._toast) window._toast(_toClaimToast('☀️ Daily complete:', '<b>'+de.name+'</b>'), _toastOpts);
           }
         }
         // Weekly completions — same pattern.
@@ -86,7 +96,7 @@
           for (var wi = 0; wi < r.newWeeklyDone.length; wi++) {
             var we = null;
             for (var wj = 0; wj < WEEKLIES.length; wj++) if (WEEKLIES[wj].id === r.newWeeklyDone[wi]) { we = WEEKLIES[wj]; break; }
-            if (we && window._toast) window._toast('🌙 Weekly complete: ' + we.name + ' — claim in QUESTS');
+            if (we && window._toast) window._toast(_toClaimToast('🌙 Weekly complete:', '<b>'+we.name+'</b>'), _toastOpts);
           }
         }
         // Lifetime achievements — same pattern (bigger moment, but still claim-required).
@@ -95,7 +105,7 @@
             var ae = ACH_BY_ID[r.newAch[ai]];
             if (ae && window._toast) {
               var tierEmoji = { bronze:'🥉', silver:'🥈', gold:'🥇', platinum:'💎', mythic:'✨' }[ae.tier] || '🏆';
-              window._toast(tierEmoji + ' ' + ae.name + ' — claim in QUESTS');
+              window._toast(_toClaimToast(tierEmoji, '<b>'+ae.name+'</b>'), _toastOpts);
             }
             if (ae && ae.tier === 'mythic' && window._haptic) try { window._haptic('bloom'); } catch(e){}
           }

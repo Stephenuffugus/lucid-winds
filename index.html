@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.38';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.39';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -54760,7 +54760,7 @@ function _checkPendingRewards(){
     }).catch(function(e){if(window._swsLog)_swsLog('Pending rewards err: '+e.message,'warn');});
   }catch(e){}
 }
-function _toast(m,opts){var e=document.getElementById('w-toast');if(!e)return;if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';clearTimeout(_tt);_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';},3500);}
+function _toast(m,opts){var e=document.getElementById('w-toast');if(!e)return;if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';if(opts&&opts.interactive)e.style.pointerEvents='auto';else e.style.pointerEvents='none';clearTimeout(_tt);var dur=(opts&&typeof opts.duration==='number')?opts.duration:3500;_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';e.style.pointerEvents='none';},dur);}
 
 // Simulated wind direction retained for dispersal math (_wd is read by
 // reproduction's wind-weighted target selection). The old span-write was
@@ -81989,23 +81989,30 @@ function _bosMementosContent() {
       // in BoS audit.
       // Family order — signature/class-aligned first, universals last
       var FAM_ORDER = ['pollinators','scatterers','weavers','wayfinders','guardians','conduits','mycelium','listeners','unlinked'];
+      // Stephen's custom family markers at /assets/Companion family icon/.
+      // Folder name has spaces — URL-encode in src. onerror falls back to the
+      // old sprite class if the original PNG ever 404s. Render at 36px, no
+      // shrink. Conduits has no custom art yet — keeps the waterdrop sprite.
+      var _famImg = function(file, fallbackClass){
+        return '<img src="assets/Companion%20family%20icon/'+file+'?v='+(window.LW_VERSION||'0')+'" alt="" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;display:inline-block;vertical-align:middle;" onerror="this.outerHTML=&apos;<span class=&quot;lwe '+fallbackClass+'&quot;></span>&apos;;">';
+      };
       var FAM_META = {
-        pollinators:{name:'Pollinators',icon:'<span class="lwe lwe-fam-pollinators"></span>',color:'#e8a843'},
-        scatterers:{name:'Scatterers',icon:'<span class="lwe lwe-fam-scatterers"></span>',color:'#d4842a'},
-        weavers:{name:'Weavers',icon:'<span class="lwe lwe-fam-weavers"></span>',color:'#a88fbf'},
-        wayfinders:{name:'Wayfinders',icon:'<span class="lwe lwe-fam-wayfinders"></span>',color:'#7ab3d4'},
-        guardians:{name:'Guardians',icon:'<span class="lwe lwe-fam-guardians"></span>',color:'#c8a84b'},
-        conduits:{name:'Conduits',icon:'<span class="lwe lwe-drop"></span>',color:'#7ab356'},
-        mycelium:{name:'Mycelium',icon:'<span class="lwe lwe-fam-mycelium"></span>',color:'#c07a9a'},
-        listeners:{name:'Listeners',icon:'<span class="lwe lwe-fam-listeners"></span>',color:'#8a9178'},
-        unlinked:{name:'Unlinked',icon:'<span class="lwe lwe-leaf"></span>',color:'#8a9178'}
+        pollinators:{name:'Pollinators',icon:_famImg('Polinator.png','lwe-fam-pollinators'),color:'#e8a843'},
+        scatterers:{name:'Scatterers',icon:_famImg('Scatterer.png','lwe-fam-scatterers'),color:'#d4842a'},
+        weavers:{name:'Weavers',icon:_famImg('Weaver.png','lwe-fam-weavers'),color:'#a88fbf'},
+        wayfinders:{name:'Wayfinders',icon:_famImg('wayfinder.png','lwe-fam-wayfinders'),color:'#7ab3d4'},
+        guardians:{name:'Guardians',icon:_famImg('Guardian.png','lwe-fam-guardians'),color:'#c8a84b'},
+        conduits:{name:'Conduits',icon:'<span class="lwe lwe-drop" style="width:36px;height:36px;"></span>',color:'#7ab356'},
+        mycelium:{name:'Mycelium',icon:_famImg('Mycelial.png','lwe-fam-mycelium'),color:'#c07a9a'},
+        listeners:{name:'Listeners',icon:_famImg('Listener.png','lwe-fam-listeners'),color:'#8a9178'},
+        unlinked:{name:'Unlinked',icon:'<span class="lwe lwe-leaf" style="width:36px;height:36px;"></span>',color:'#8a9178'}
       };
       for (var fo = 0; fo < FAM_ORDER.length; fo++) {
         var famKey = FAM_ORDER[fo];
         if (!byFamily[famKey] || !byFamily[famKey].length) continue;
         var fm = FAM_META[famKey];
         h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.55rem;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.15);border-radius:9px;">';
-        h += '<div style="display:flex;align-items:center;gap:4px;margin-bottom:0.35rem;"><span style="font-size:0.75rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(fm.icon,22):fm.icon) + '</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:' + fm.color + ';letter-spacing:0.1em;">' + fm.name.toUpperCase() + ' \u00b7 ' + byFamily[famKey].length + '</span></div>';
+        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:0.5rem;">' + fm.icon + '<span style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:' + fm.color + ';letter-spacing:0.12em;font-weight:500;">' + fm.name.toUpperCase() + ' \u00b7 ' + byFamily[famKey].length + '</span></div>';
         h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:5px;">';
         byFamily[famKey].sort(function(a,b){return a-b;});
         for (var bi = 0; bi < byFamily[famKey].length; bi++) {
@@ -89706,7 +89713,7 @@ window._lwCompanionTempRevealed = function(idx){
       h += '<div style="padding:0.7rem 0.8rem;background:rgba(13,16,12,0.6);border:1px solid rgba(74,124,53,0.2);border-radius:10px;margin-bottom:0.8rem;">';
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:0.45rem;text-align:center;">ABOUT THIS CREATURE</div>';
       h += '<div style="font-family:Playfair Display,serif;font-size:0.8rem;color:var(--cream);line-height:1.55;margin-bottom:0.6rem;">' + fact.about + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);line-height:1.5;text-align:center;font-style:italic;border-top:1px solid rgba(122,179,86,0.18);padding-top:0.5rem;">' + fact.group + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.85rem;color:var(--gold);line-height:1.5;text-align:center;font-style:italic;font-weight:500;border-top:1px solid rgba(200,168,75,0.25);padding-top:0.7rem;margin-top:0.2rem;">' + fact.group + '</div>';
       h += '</div>';
     }
     // BRING THIS BUDDY — primary CTA right under the family blurb. Active
