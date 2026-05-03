@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.66';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.67';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -10190,11 +10190,26 @@ document.addEventListener('keydown', function(e) {
     if (traits.aura >= 15) _auraEA = 3; else if (traits.aura >= 8) _auraEA = 2; else if (traits.aura >= 1) _auraEA = 1;
     if (plant && plant.potAuraBoost && _auraEA > 0) _auraEA *= 2;
     ea += _auraEA;
-    // MUTATION: rare ≠ strong
+    // MUTATION: every mutation grants gameplay impact, not just cosmetic.
+    // Stephen 2026-05-03: previously only Wireframe (+1), Glass Stem (-1),
+    // and Glitch (-1) touched EA. The other 16 mutations were purely
+    // visual. Stephen ruling: "do they actually add to card abilities?"
+    // Tier-based: common/rare/legendary +1; ultra +2; Glass Stem and
+    // Glitch keep their intentional -1 trade-off (fragile beauty / chaos).
     var mut = traits.mutationName;
-    if (mut === 'Wireframe') ea += 1;
-    else if (mut === 'Glass Stem') ea -= 1;
-    else if (mut === 'Glitch') ea -= 1;
+    if (mut) {
+      if (mut === 'Glass Stem' || mut === 'Glitch') {
+        ea -= 1;
+      } else if (mut === 'Daguerreotype' || mut === 'Mycelium' ||
+                 mut === 'Verdigris' || mut === 'Stained Glass' ||
+                 mut === 'Origami' || mut === 'Constellation') {
+        ea += 2;
+      } else if (mut !== 'None') {
+        // Fossil, Albino, Pixel Art, Silhouette, Porcelain, Wireframe,
+        // Bioluminescent, Ink Wash, Neon, Golden, Holographic — all +1.
+        ea += 1;
+      }
+    }
     // SUBSTRATE (0-2)
     var base = traits.base % 71;
     // Rare substrates (Crystal=15, Meteorite=28, Mycelium=29): +1 EA
@@ -80259,6 +80274,8 @@ function _bosGetTabRead(tab) { return _bosLoadReads()[tab] || 0; }
 function _bosStampTabRead(tab) { var r = _bosLoadReads(); r[tab] = Date.now(); _bosSaveReads(r); }
 window._bosGetTabUnread = function(tab) {
   try {
+    // Tips tab is reference content — no time-sensitive items, no badge.
+    if (tab === 'tips') return 0;
     // Consolidated 5-tab structure aggregates the legacy per-tab counts.
     // Bundles live in QUESTS now (moved from CODEX), so herbarium counts
     // toward the QUESTS badge.
@@ -80671,6 +80688,7 @@ function _bosSetTab(tab) {
   else if (tab === 'achievements') body.innerHTML = (typeof _bosAchievementsTabContent === 'function') ? _bosAchievementsTabContent() : '';
   else if (tab === 'trophies')     body.innerHTML = (typeof _bosTrophiesTabContent     === 'function') ? _bosTrophiesTabContent()     : '';
   else if (tab === 'about')        body.innerHTML = (typeof _bosAboutContent           === 'function') ? _bosAboutContent()           : '';
+  else if (tab === 'tips')         body.innerHTML = (typeof _bosTipsContent            === 'function') ? _bosTipsContent()            : '';
   var tabs = document.querySelectorAll('.bos-tab');
   for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
   // Update the active style for tabs (override gold for active, muted for inactive)
@@ -82371,6 +82389,89 @@ window.LW_CREATOR = window.LW_CREATOR || {
   stripeUrl:   '',     // Stripe Payment Link URL
   websiteUrl:  'https://lucidwinds.com'
 };
+
+// Stephen 2026-05-03 LATE: TIPS tab — canonical home for "how does X work"
+// content. Replaces inline-tooltip-per-feature approach. One scroll surface,
+// section dividers via _bosSectionHeader. Content is intentionally short
+// per system — players don't read walls of text. If a system grows complex,
+// link from here to the relevant in-game surface for hands-on learning.
+function _bosTipsContent() {
+  var h = '';
+  var sec = function(label){
+    return '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.16em;color:var(--gold);margin:1.4rem 0 0.5rem;padding-bottom:0.35rem;border-bottom:1px solid rgba(200,168,75,0.25);">' + label + '</div>';
+  };
+  var p = function(html){
+    return '<div style="font-family:DM Mono,monospace;font-size:0.78rem;color:var(--cream);line-height:1.6;margin-bottom:0.8rem;font-weight:500;">' + html + '</div>';
+  };
+  var tipBox = function(text){
+    return '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--sage);background:rgba(122,179,86,0.06);border-left:2px solid rgba(122,179,86,0.4);padding:0.5rem 0.7rem;border-radius:4px;margin-bottom:0.9rem;font-style:italic;">' + text + '</div>';
+  };
+  var gold = function(t){return '<span style="color:var(--gold);font-weight:600;">' + t + '</span>';};
+
+  h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.9rem;color:var(--sage);text-align:center;margin:0.4rem 0 0.8rem;line-height:1.55;">"Read what you need. Skip what you know. The garden teaches at its own pace."</div>';
+
+  // ─── CURRENCIES ───────────────────────────────────────────────────────
+  h += sec('CURRENCIES');
+  h += p(gold('Sunbeams') + ' are earned by playing pattern games. Every 30 = one new plant. Tap the glowing sun icon at the top of the screen to bloom when ready. Save up or bloom now — your call.');
+  h += p(gold('Dew') + ' is your time-and-tending currency. Earned passively from your living plants and from waters. Spend on the slot machine, mystery box, nursery skips, and weather summons.');
+  h += p(gold('Pi') + ' is real cryptocurrency from the Pi Network. Used for permanent expansions: greenhouse slots, item-pouch slots, nursery clipping slots. Lucid Winds never custodies your funds — payments go through the Pi SDK.');
+
+  // ─── DAILY ACTIONS ────────────────────────────────────────────────────
+  h += sec('DAILY DEW SINKS');
+  h += p(gold('Slot Machine') + ' (15 Dew/pull): three reels for fertilizer + Dew payouts. Frequent small wins, occasional big ones. Cheap fun.');
+  h += p(gold('Mystery Box') + ' (25 Dew/pull): rolls one of fertilizer / Sunbeams / Dew / DNA pulls. Bigger swings than the slot machine.');
+  h += tipBox('Tip: the Mystery Box and Slot Machine never give items. The backpack BOXES button (separate system) is where painted items come from.');
+  h += p(gold('Daily Login') + ' rewards stack with consecutive days. Streaks get juicier — perfect-month logins drop a Wanderer’s Map.');
+
+  // ─── GROWTH ───────────────────────────────────────────────────────────
+  h += sec('YOUR GROWTH');
+  h += p(gold('Class') + ' picked at Keeper Lv 7. Five paths: Forager (foraging buffs), Breeder (breeding rewards), Cartographer (walking + biome XP), Tender (plant longevity + Dew), Steward/Keeper (universal +5%). Each class has 3 levels via class XP.');
+  h += p(gold('Keeper’s Tree') + ' — passive skill tree. Every Keeper level = 1 point to spend. Class branch (4 nodes × 5 pts) unlocks first; Tools at class-max (~Lv 20); Heartwood at Lv 40; The Bower at Lv 60; Eldergrove at Lv 80. ' + gold('No respec') + '. Choose deliberately.');
+  h += p(gold('Milestones') + ' at Lv 10/25/50/75/100 grant one-time bonuses: extra tree pts, guaranteed feral, Gilding hour, second companion slot, biome match everywhere.');
+  h += p(gold('Prestige') + ' unlocks at Lv 100. Reset your level, keep prestige stacks. P4 grants +1 greenhouse slot per prestige; P6 grants +1 wild drop per day per prestige. (Other prestige slots are narrative-only for now.)');
+
+  // ─── MUTATIONS ────────────────────────────────────────────────────────
+  h += sec('MUTATIONS');
+  h += p('Roughly 1 in 14 plants you mint will have a ' + gold('mutation') + ' — a visible art treatment that also grants gameplay impact. There are 19 mutations across four bands.');
+  h += p(gold('Common-band') + ' (Fossil, Albino, Pixel Art, Silhouette, Porcelain, Wireframe): +1 EA each. Distinctive look, modest power.');
+  h += p(gold('Rare-band') + ' (Bioluminescent, Ink Wash, Neon, Golden): +1 EA each. Bigger visual impact.');
+  h += p(gold('Legendary-band') + ' (Holographic, Glass Stem, Glitch): +1 EA each. Glass Stem trades durability for ritual unlocks.');
+  h += p(gold('Ultra-band') + ' (Daguerreotype, Mycelium, Verdigris, Stained Glass, Origami, Constellation): +1.5 EA each plus rare synergy traits when paired with the right pots, substrates, or companions.');
+  h += tipBox('Mutations are deterministic from your plant’s hash byte 16. They cannot be added or removed. Cherish the rare ones.');
+
+  // ─── COMPOST + BREED ─────────────────────────────────────────────────
+  h += sec('COMPOST & BREED');
+  h += p(gold('Compost') + ' permanently removes a plant from your greenhouse and returns fertilizer by rarity (Common 1 → Cosmic 5). Use it on plants you don’t want to free up slots and grow stronger seeds.');
+  h += p(gold('Breed') + ' crosses two plants into a seed. Water in your nursery 3 times over 3 days to bloom the offspring. Each generation drops EA slightly but gains ' + gold('chimera') + ' immunity. Veins on offspring leaves grow more visible with each cross.');
+  h += p(gold('Cuttings') + ' (in the Wild) take a copy of a plant’s genome only — no pot, substrate, aura, or companion. Single-use. Cross with another plant in the nursery to keep a line going. Cuttings never harm the parent.');
+
+  // ─── HERMIT HUT + CURIOSITIES ────────────────────────────────────────
+  h += sec('THE HERMIT HUT');
+  h += p('Tap the painted hut icon to enter. Inside: ' + gold('Almanac') + ' (seasonal calendar), ' + gold('Slot Machine') + ', ' + gold('Mystery Box') + ', ' + gold('Quests recap') + ', and Pi-paid permanent expansions (greenhouse + pouch slots).');
+  h += p(gold('Curiosities') + ' (formerly Cocoonery) live in your backpack now. Walk 1000 km and one of three creatures hatches: Tardigrade Wasp (heat shield), Lungfish Cocoon (drought relief), Tardigrade Cocoon (cryptobiosis: halves all climate damage). Equip one at a time from your backpack.');
+
+  // ─── BACKPACK SECTIONS ───────────────────────────────────────────────
+  h += sec('YOUR BACKPACK');
+  h += p(gold('Field Pouch') + ' starts at 5 seed slots. Find ferals to unlock 10 (free). Pi expands to 15 then 20.');
+  h += p(gold('Items') + ' pouch holds tools you find: Forager’s Lens, Compass Shard, Diviner’s Glass, Shellgourd, Pollen Storm, more. Cap 25, expandable to 40 with Pi.');
+  h += p(gold('Boxes') + ' is a separate stash from the home-button Mystery Box. Painted boxes drop from milestones, daily streaks, and seasonal hunts. Open one and weighted RNG returns an item with pity timers (8 boxes = guaranteed Rare; 25 = Epic; 60 = Legendary).');
+
+  // ─── SOCIAL ──────────────────────────────────────────────────────────
+  h += sec('FRIENDS & GIFTS');
+  h += p('Add friends by sharing your friend code (in the character sheet). Once you’re friends, you can ' + gold('gift') + ' each other items, seeds, or Sunbeams. Tier up a friendship by repeated gifts; higher tiers unlock more gift options.');
+  h += p('No free-text messaging anywhere — every social action is transactional UI. That’s deliberate; solo-dev moderation answer is to remove the surface entirely.');
+
+  // ─── WILD ────────────────────────────────────────────────────────────
+  h += sec('THE WILD');
+  h += p(gold('SOW') + ' drops a plant from your greenhouse onto your real-world location. Other Keepers can find and water it. ' + gold('Permanent') + ' — there’s no recall. Pick what you place.');
+  h += p(gold('Foraging') + ' for ferals: walk to a feral marker, solve an easy puzzle (one of six challenge types), the seed lands in your field pouch. Hold-to-send-to-nursery to grow it.');
+  h += p(gold('Cross-Pollinate') + ' a wild plant with one of yours from the Wild carousel. 60% pollen / 30% Dew / 10% Sunbeams reward; the wild plant is unaffected.');
+
+  // ─── FOOTER ─────────────────────────────────────────────────────────
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);text-align:center;margin:2rem 0 0.5rem;line-height:1.6;font-style:italic;">More questions? Tap any feature in-game and look for the ' + gold('ⓘ') + ' info button.<br>Or come back here. The pages fill in as the world does.</div>';
+
+  return h;
+}
 
 function _bosAboutContent() {
   var c = window.LW_CREATOR || {};
@@ -92991,6 +93092,7 @@ window._openCompendiumUI=function(){
       '<div id="bos-tabbar" style="display:flex;gap:0.3rem;padding:0.4rem 0.6rem 0.5rem;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;">'+
         '<button class="bos-tab active" data-tab="journal" onclick="_bosSetTab(\'journal\')" title="Everything that has happened in your garden — what is fresh, what is recent, what came before" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(200,168,75,0.5);background:rgba(200,168,75,0.1);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">JOURNAL</button>'+
         '<button class="bos-tab" data-tab="codex" onclick="_bosSetTab(\'codex\')" title="Everything you have discovered: plants, triggers, biomes, companions, items" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">CODEX</button>'+
+        '<button class="bos-tab" data-tab="tips" onclick="_bosSetTab(\'tips\')" title="How systems work — sunbeams, dew, compost, hut, class, tree, mutations, and more" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">TIPS</button>'+
         '<button class="bos-tab" data-tab="companions" onclick="_bosSetTab(\'companions\')" title="Every creature you have met — full Pokedex of painted portraits" style="flex:0 0 auto;padding:0.65rem 1.1rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">COMPANIONS</button>'+
         '<button class="bos-tab" data-tab="quests" onclick="_bosSetTab(\'quests\')" title="Daily and weekly challenges plus bundles" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">QUESTS</button>'+
         '<button class="bos-tab" data-tab="achievements" onclick="_bosSetTab(\'achievements\')" title="The lifetime catalog of achievements you can chase" style="position:relative;flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ACHIEVEMENTS</button>'+
