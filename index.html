@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.56';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.57';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1319,11 +1319,13 @@
       isolation: isolate;
       position: relative;
     }
-    /* Stephen 2026-05-03 PART 3: more breathing room above the card.
-       margin-top 14→24. Smaller action parchments below gave back vertical
-       budget — using it for upper breathing room makes the card the
-       centerpiece. Cap stays 600, offset stays 200 (svh formula). */
-    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 200px);max-height:600px;margin:24px auto 0;position:relative;contain:layout style paint;}
+    /* Stephen 2026-05-03 PART 4: target ~0.62 portrait ratio. Pulled
+       parchments down to ~76px tall (was 125), reclaimed the vertical
+       budget by tightening offset 200→170 and bumping cap 600→620.
+       On iPhone 14 Pro (svh ~744): 744-170=574 → ratio 361:574 ≈ 0.63.
+       margin-top trimmed 24→14 so the breathing room doesn't eat the
+       extra height we just clawed back. */
+    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 170px);max-height:620px;margin:14px auto 0;position:relative;contain:layout style paint;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     .cs-card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;box-sizing:border-box;border-radius:12px;overflow:hidden;will-change:transform;transform:translateZ(0);}
@@ -1488,14 +1490,13 @@
     }
     .pgm-dl-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .pgm-dl-btn:active { transform: scale(0.94); }
-    /* Parchment-tall card buttons (share/details/breed/compost) — image
-       IS the face. Stephen 2026-05-03: shrunk down. The plant cards are
-       the centerpiece; these action parchments were taking too much
-       vertical real estate. max-width 135→100, aspect 2/3 → 2/2.5
-       (less tall). Min-width 0 still lets them shrink on narrow phones. */
+    /* Stephen 2026-05-03 PART 4: parchments shrunk further so card can
+       grow taller (target 0.62 width:height ratio = portrait specimen
+       card). max-width 100→80, aspect 2/2.5 → 2/1.9 (much shorter).
+       Vertical budget freed up here goes into card height. */
     .pgm-card-btn {
-      flex: 1 1 0; min-width: 0; max-width: 100px;
-      aspect-ratio: 2 / 2.5;
+      flex: 1 1 0; min-width: 0; max-width: 80px;
+      aspect-ratio: 2 / 1.9;
       padding: 0; border: none; background: none;
       cursor: pointer; transition: transform 0.15s;
       display: inline-flex; align-items: flex-end; justify-content: center;
