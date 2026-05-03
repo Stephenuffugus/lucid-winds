@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.48';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.49';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3505,14 +3505,16 @@
     .bs-role{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--muted);opacity:0.5;margin-bottom:0.2rem;}
     .bs-head{display:flex;align-items:center;gap:0.35rem;padding-bottom:0.3rem;border-bottom:1px solid rgba(74,124,53,0.06);margin-bottom:0.25rem;}
     .bs-thumb{width:56px;height:72px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.3);border:1px solid rgba(74,124,53,0.08);border-radius:4px;}
-    .bs-name{font-family:'Playfair Display',serif;font-size:0.85rem;font-weight:900;line-height:1.15;overflow:hidden;}
-    .bs-name .np-top{display:inline;font-size:0.5rem;font-style:italic;opacity:0.7;font-weight:400;margin-right:0.15rem;}
-    .bs-name .np-main{font-size:0.8rem;}
-    .bs-name .np-title{display:block;font-size:0.55rem;font-style:italic;opacity:0.75;font-weight:400;}
-    .bs-meta{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.05em;display:flex;gap:0.3rem;margin-top:0.08rem;flex-wrap:wrap;}
-    .bs-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.18rem 0;border-bottom:1px dotted rgba(74,124,53,0.04);}
-    .bs-cat{font-size:0.6rem;color:var(--cream);opacity:0.4;letter-spacing:0.04em;flex-shrink:0;}
-    .bs-val{font-size:0.65rem;color:var(--cream);opacity:0.85;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    /* Stephen 2026-05-03: breed screen text sizes bumped — feedback rule
+       0.7rem+ body. Detail/labels lifted from 0.45-0.65 → 0.7-0.85. */
+    .bs-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;line-height:1.2;overflow:hidden;}
+    .bs-name .np-top{display:inline;font-size:0.7rem;font-style:italic;opacity:0.8;font-weight:400;margin-right:0.2rem;}
+    .bs-name .np-main{font-size:0.95rem;}
+    .bs-name .np-title{display:block;font-size:0.7rem;font-style:italic;opacity:0.8;font-weight:400;}
+    .bs-meta{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.05em;display:flex;gap:0.3rem;margin-top:0.1rem;flex-wrap:wrap;}
+    .bs-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.22rem 0;border-bottom:1px dotted rgba(74,124,53,0.04);}
+    .bs-cat{font-size:0.72rem;color:var(--cream);opacity:0.6;letter-spacing:0.04em;flex-shrink:0;font-weight:500;}
+    .bs-val{font-size:0.78rem;color:var(--cream);opacity:0.92;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
     .bs-val.rare{color:var(--gold)!important;opacity:1!important;}
     .bs-val.mythic{color:var(--cream)!important;text-shadow:0 0 4px rgba(240,235,216,0.3);opacity:1!important;}
     .bs-val.mutation{color:#d4956a!important;opacity:1!important;}
@@ -3520,30 +3522,30 @@
     .bs-row.heritable{background:linear-gradient(90deg,rgba(200,168,75,0.04),rgba(200,168,75,0.02));border-radius:3px;margin:0 -0.1rem;padding:0.12rem;}
     .bs-row.heritable .bs-val{animation:bsGenePulse 3s ease-in-out infinite;}
     @keyframes bsGenePulse{0%,100%{text-shadow:none;}50%{text-shadow:0 0 6px rgba(200,168,75,0.25);}}
-    .bs-tag{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.06em;padding:0.06rem 0.16rem;border-radius:3px;margin-left:0.12rem;display:inline-block;line-height:1;}
+    .bs-tag{font-family:'Bebas Neue',sans-serif;font-size:0.62rem;letter-spacing:0.06em;padding:0.1rem 0.22rem;border-radius:3px;margin-left:0.15rem;display:inline-block;line-height:1;font-weight:500;}
     .bs-tag.tag-dom{background:rgba(122,179,86,0.15);color:var(--sage);border:1px solid rgba(122,179,86,0.2);}
     .bs-tag.tag-mix{background:rgba(200,168,75,0.12);color:var(--gold);border:1px solid rgba(200,168,75,0.18);}
     .bs-tag.tag-risk{background:rgba(200,80,60,0.12);color:#d8a0a0;border:1px solid rgba(200,80,60,0.18);}
     .bs-compat{text-align:center;padding:0.4rem;margin-bottom:0.3rem;border-radius:8px;background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.12);}
     .bs-compat-score{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.08em;}
-    .bs-compat-label{font-family:'DM Mono',monospace;font-size:0.45rem;color:var(--muted);margin-top:0.08rem;}
+    .bs-compat-label{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:0.1rem;font-weight:500;}
     .bs-row.match .bs-cat::after{content:' ═';font-size:0.35rem;color:var(--sage);opacity:0.5;}
     .bs-forecast{background:rgba(26,36,22,0.3);border:1.5px solid rgba(200,168,75,0.15);border-radius:9px;padding:0.6rem 0.65rem 0.55rem;margin-top:0.15rem;}
     .bs-fc-title{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.14em;color:var(--gold);opacity:0.85;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.3rem;}
     .bs-fc-title::after{content:'';flex:1;height:1px;background:rgba(200,168,75,0.1);}
     .bs-meter{display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0;}
-    .bs-ml{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);opacity:0.7;width:80px;flex-shrink:0;}
+    .bs-ml{font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);opacity:0.85;width:90px;flex-shrink:0;font-weight:500;}
     .bs-mt{flex:1;height:10px;background:rgba(74,124,53,0.08);border-radius:5px;overflow:hidden;position:relative;}
     .bs-mf{height:100%;border-radius:5px;transition:width 0.4s ease;}
     .bs-mf.gold{background:linear-gradient(90deg,rgba(200,168,75,0.6),rgba(200,168,75,0.85));}
     .bs-mf.warn{background:linear-gradient(90deg,rgba(212,149,106,0.5),rgba(212,149,106,0.8));}
-    .bs-mv{font-family:'Bebas Neue',sans-serif;font-size:0.8rem;min-width:50px;text-align:right;color:var(--cream);opacity:0.85;}
+    .bs-mv{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;min-width:55px;text-align:right;color:var(--cream);opacity:0.92;}
     .bs-mv.gold{color:var(--gold);}
     .bs-mv.warn{color:#d4956a;}
     .bs-seasons{display:flex;align-items:center;gap:0.3rem;padding:0.2rem 0;flex-wrap:wrap;}
-    .bs-sc{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:4px;border:1px solid rgba(74,124,53,0.1);color:var(--muted);background:rgba(13,16,12,0.2);}
+    .bs-sc{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;padding:0.16rem 0.45rem;border-radius:4px;border:1px solid rgba(74,124,53,0.1);color:var(--muted);background:rgba(13,16,12,0.2);}
     .bs-sc.hot{border-color:rgba(200,168,75,0.25);color:var(--gold);background:rgba(200,168,75,0.04);}
-    .bs-chimera{display:flex;align-items:flex-start;gap:0.25rem;margin-top:0.35rem;font-size:0.6rem;color:#d4956a;opacity:0.8;line-height:1.5;}
+    .bs-chimera{display:flex;align-items:flex-start;gap:0.3rem;margin-top:0.4rem;font-size:0.75rem;color:#d4956a;opacity:0.92;line-height:1.5;font-weight:500;}
     .bs-chimera b{color:var(--cream);}
     .bs-breed-btn{display:block;width:100%;margin-top:0.5rem;padding:0.7rem 1rem;border:2px solid rgba(200,168,75,0.3);border-radius:9px;background:linear-gradient(180deg,rgba(200,168,75,0.07),rgba(200,168,75,0.02));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.15em;cursor:pointer;min-height:56px;box-shadow:0 3px 12px rgba(200,168,75,0.06);}
     .bs-breed-btn:active{transform:scale(0.98);}
@@ -3552,7 +3554,7 @@
     .bs-confirm.open{display:flex;}
     .bs-confirm-card{background:rgba(26,36,22,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;padding:1.4rem 1.6rem;text-align:center;max-width:340px;width:100%;}
     .bs-confirm-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--cream);margin-bottom:0.5rem;}
-    .bs-confirm-text{font-size:0.65rem;color:var(--muted);line-height:1.6;margin-bottom:0.7rem;}
+    .bs-confirm-text{font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:0.7rem;font-weight:500;}
     .bs-confirm-text b{color:var(--cream);}
     .bs-confirm-btns{display:flex;gap:0.5rem;}
     .bs-confirm-btns button{flex:1;min-height:52px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;}
@@ -3562,15 +3564,18 @@
     /* ── P4 · BLOOM REVEAL MODAL ── */
     #bloom-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.9);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);align-items:center;justify-content:center;flex-direction:column;gap:0.55rem;padding:1.5rem 1rem;}
     #bloom-modal.open{display:flex;animation:drawerIn 0.35s ease;}
-    .blm-eyebrow{font-family:'Bebas Neue',sans-serif;font-size:0.5rem;letter-spacing:0.2em;color:var(--muted);text-align:center;}
-    #bloom-plant-name{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:var(--gold);text-align:center;letter-spacing:0.02em;text-shadow:0 2px 14px rgba(200,168,75,0.28);min-height:1.5rem;transition:opacity 0.5s ease;}
-    #bloom-plant-traits{font-family:'DM Mono',monospace;font-size:0.52rem;color:var(--cream);text-align:center;opacity:0.65;max-width:300px;min-height:0.9rem;}
-    #bloom-ancestry-line{font-family:'DM Mono',monospace;font-size:0.38rem;color:var(--muted);text-align:center;opacity:0.4;}
-    #bloom-hint{font-family:'DM Mono',monospace;font-size:0.44rem;color:rgba(122,179,86,0.5);text-align:center;animation:attnPulse 2s ease-in-out infinite;}
-    .blm-confirm{background:linear-gradient(135deg,rgba(122,179,86,0.16),rgba(122,179,86,0.06));border:1px solid rgba(122,179,86,0.38);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.68rem;letter-spacing:0.1em;padding:0.45rem 1.5rem;border-radius:4px;cursor:pointer;transition:all 0.2s;box-shadow:0 3px 0 rgba(0,0,0,0.35);}
+    /* Stephen 2026-05-03: bloom modal text bumped per 0.7rem+ rule. The
+       inherited-traits line and ancestry line were nearly illegible at
+       0.38-0.52rem. Now both meet body-readable size. */
+    .blm-eyebrow{font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.2em;color:var(--muted);text-align:center;}
+    #bloom-plant-name{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:900;color:var(--gold);text-align:center;letter-spacing:0.02em;text-shadow:0 2px 14px rgba(200,168,75,0.28);min-height:1.5rem;transition:opacity 0.5s ease;}
+    #bloom-plant-traits{font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--cream);text-align:center;opacity:0.85;max-width:320px;min-height:1rem;line-height:1.5;font-weight:500;}
+    #bloom-ancestry-line{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--muted);text-align:center;opacity:0.6;font-weight:500;}
+    #bloom-hint{font-family:'DM Mono',monospace;font-size:0.62rem;color:rgba(122,179,86,0.7);text-align:center;animation:attnPulse 2s ease-in-out infinite;font-weight:500;}
+    .blm-confirm{background:linear-gradient(135deg,rgba(122,179,86,0.16),rgba(122,179,86,0.06));border:1px solid rgba(122,179,86,0.38);color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.1em;padding:0.55rem 1.6rem;border-radius:4px;cursor:pointer;transition:all 0.2s;box-shadow:0 3px 0 rgba(0,0,0,0.35);}
     .blm-confirm:hover{background:rgba(122,179,86,0.22);border-color:var(--sage);transform:translateY(-1px);}
     .blm-confirm:active{transform:translateY(2px);box-shadow:none;}
-    .blm-dismiss{background:none;border:none;color:rgba(90,112,80,0.35);font-family:'DM Mono',monospace;font-size:0.44rem;cursor:pointer;transition:color 0.2s;}
+    .blm-dismiss{background:none;border:none;color:rgba(90,112,80,0.55);font-family:'DM Mono',monospace;font-size:0.6rem;cursor:pointer;transition:color 0.2s;}
     .blm-dismiss:hover{color:var(--muted);}
 
     /* ── AUDIO TOGGLE ── */
@@ -9933,16 +9938,20 @@ document.addEventListener('keydown', function(e) {
     var mutByte  = hb(16);
     var mythByte = hb(18);
 
-    // ── MUTATION LADDER (rebalanced 2026-04-26 from 20% → 12.1% total) ──
-    // Stephen call: mutations were too common; cluster into showpiece tiers.
-    // Bands (each value listed is 1/256 = 0.39%):
-    //   ULTRA (new, 6): 0xFA-0xFF — Constellation, Origami, Stained Glass,
-    //                                Verdigris, Mycelium, Daguerreotype
-    //   LEGENDARY (3):  0xF7-0xF9 — Glitch, Glass Stem, Holographic
-    //   RARE (4):       0xF3-0xF6 — Golden, Neon, Ink Wash, Bioluminescent
-    //   COMMON-ISH (6): 0xE1-0xF2 in 3-byte bands (1.17% each) — Wireframe,
-    //                                Porcelain, Silhouette, Pixel Art, Albino, Fossil
-    //   NONE: 0x00-0xE0 (88%)
+    // ── MUTATION LADDER (rebalanced 2026-05-03: 12.1% → ~7.4% total) ──
+    // Stephen ruling: mutations were still too common — got 2 silhouettes
+    // in a row. They should be a fun thing to CHASE. Common-band mutations
+    // (Fossil, Albino, Pixel Art, Silhouette, Porcelain, Wireframe) shifted
+    // from 3-byte bands (1.17% each) to single-byte triggers (0.39% each).
+    // All 19 mutations preserved; each is now properly rare.
+    // Bands (each single-byte = 1/256 = 0.39%):
+    //   ULTRA (6):     0xFA-0xFF (2.34% total) — Constellation, Origami,
+    //                  Stained Glass, Verdigris, Mycelium, Daguerreotype
+    //   LEGENDARY (3): 0xF7-0xF9 (1.17%) — Glitch, Glass Stem, Holographic
+    //   RARE (4):      0xF3-0xF6 (1.56%) — Golden, Neon, Ink Wash, Biolumi
+    //   COMMON-ISH (6): 0xED-0xF2 (2.34%) — Wireframe, Porcelain, Silhouette,
+    //                  Pixel Art, Albino, Fossil (now 0.39% each, was 1.17%)
+    //   NONE: 0x00-0xEC (92.6%)
     var mutName =
       mutByte === 0xFF ? 'Constellation'  :
       mutByte === 0xFE ? 'Origami'        :
@@ -9957,12 +9966,12 @@ document.addEventListener('keydown', function(e) {
       mutByte === 0xF5 ? 'Neon'           :
       mutByte === 0xF4 ? 'Ink Wash'       :
       mutByte === 0xF3 ? 'Bioluminescent' :
-      mutByte >= 0xF0 ? 'Wireframe'       :
-      mutByte >= 0xED ? 'Porcelain'       :
-      mutByte >= 0xEA ? 'Silhouette'      :
-      mutByte >= 0xE7 ? 'Pixel Art'       :
-      mutByte >= 0xE4 ? 'Albino'          :
-      mutByte >= 0xE1 ? 'Fossil'          :
+      mutByte === 0xF2 ? 'Wireframe'      :
+      mutByte === 0xF1 ? 'Porcelain'      :
+      mutByte === 0xF0 ? 'Silhouette'     :
+      mutByte === 0xEF ? 'Pixel Art'      :
+      mutByte === 0xEE ? 'Albino'         :
+      mutByte === 0xED ? 'Fossil'         :
       'None';
 
     // Mythic creature override (mythByte = hb(18)). Source of truth.
