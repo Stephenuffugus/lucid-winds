@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.47';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.02.48';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1231,6 +1231,13 @@
       flex-direction: column;
       align-items: stretch;
       overflow: hidden;
+      /* Stephen 2026-05-03: respect iOS Dynamic Island / notch. Without
+         this, topbar (X close + 1/1 counter) and the card sit right at
+         viewport y=0 underneath the status bar with no breathing room.
+         iOS tester reported the card top "needs to come down a little
+         more". safe-area-inset-top pushes the whole carousel chrome
+         below the system UI on iPhone Pro / Plus / 15+ models. */
+      padding-top: env(safe-area-inset-top, 0px);
     }
     #plant-gallery-modal.open { display: flex; animation: carouselOpen 0.3s cubic-bezier(0.16,1,0.3,1); }
     @keyframes carouselOpen { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
