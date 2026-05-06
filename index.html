@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.05';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7296,7 +7296,7 @@ window._addSwitchTabHook = function(fn){
       <div class="kb-info">
         <div style="display:flex;align-items:center;gap:5px;">
           <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
-          <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;cursor:pointer;" onclick="(function(){window._lwBetaTaps=(window._lwBetaTaps||0)+1;clearTimeout(window._lwBetaTapT);window._lwBetaTapT=setTimeout(function(){window._lwBetaTaps=0;},2500);if(window._lwBetaTaps>=5){window._lwBetaTaps=0;var pw=prompt('Dev password:');if(pw==='lucid2026')document.getElementById('pw-dev-admin').classList.add('open');}}).call(this);">BETA</span>
+          <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;cursor:pointer;" onclick="(function(){window._lwBetaTaps=(window._lwBetaTaps||0)+1;clearTimeout(window._lwBetaTapT);window._lwBetaTapT=setTimeout(function(){window._lwBetaTaps=0;},2500);if(window._lwBetaTaps>=5){window._lwBetaTaps=0;try{if(localStorage.getItem('lw_dev_unlocked')==='1'){document.getElementById('pw-dev-admin').classList.add('open');}}catch(e){}}}).call(this);">BETA</span>
         </div>
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
@@ -7581,7 +7581,17 @@ window._addSwitchTabHook = function(fn){
     }
   }
 
-  window.PW_Dev={
+  // Audit 5 C1: PW_Dev was previously exposed on window unconditionally
+  // at script load, so any user with DevTools could call grantHashes(99999999),
+  // spawnWhiteWhales(), fillGreenhouse() etc and sync the inflated state to
+  // cloud. To enable dev mode now, run in DevTools console:
+  //   localStorage.setItem('lw_dev_unlocked','1'); location.reload();
+  // Production users have no in-app path to set this flag, so PW_Dev never
+  // lands on window for them. Future: replace localStorage gate with a
+  // server-validated dev allowlist via Cloud Function.
+  var _PW_DEV_UNLOCKED = false;
+  try { _PW_DEV_UNLOCKED = (localStorage.getItem('lw_dev_unlocked') === '1'); } catch(e){}
+  var _PW_Dev_methods={
     // ── Class system test helpers ─────────────────────────────────
     classStatus:function(){
       var cls=localStorage.getItem('lw_class')||'(none)';
@@ -9424,6 +9434,10 @@ window._addSwitchTabHook = function(fn){
       modal.style.display='block';
     }
   };
+  // Audit 5 C1: only attach PW_Dev to window when explicitly unlocked.
+  if (_PW_DEV_UNLOCKED) {
+    window.PW_Dev = _PW_Dev_methods;
+  }
 })();
 </script>
 
@@ -38123,7 +38137,8 @@ document.addEventListener('keydown', function(e) {
     // hand-crafted Beholder/Constellation hashes don't get re-rolled
     // down to Rare. Without this, opts.bypassCap=false treats the mint
     // like a fresh-account bloom and clobbers chars 32-63 of the hash.
-    var _bypassCap = !!(opts && opts.bypassCap);
+    // Audit 5 C2: bypassCap flag ONLY honored when PW_Dev is exposed.
+    var _bypassCap = !!(opts && opts.bypassCap && window.PW_Dev);
     var _bloomCount = 0;
     for (var _bci = 0; _bci < gh.length; _bci++) {
       if (gh[_bci] && gh[_bci].origin === 'bloom') _bloomCount++;
@@ -39889,7 +39904,10 @@ document.addEventListener('keydown', function(e) {
     // and replaces the hand-crafted one. Without this, every dev call
     // got 5 server-random Commons/Uncommons instead of the 5 distinct
     // cosmic specimens we crafted.
-    if (opts && opts.bypassServer) {
+    // Audit 5 C2: bypassServer flag is now ONLY honored when window.PW_Dev
+    // is exposed (dev mode unlocked via localStorage flag — see line ~7584).
+    // Production users cannot smuggle this opt past the server-mirror.
+    if (opts && opts.bypassServer && window.PW_Dev) {
       return _origMint.apply(this, arguments);
     }
     // Manual mint — try server first
@@ -40512,6 +40530,14 @@ document.addEventListener('keydown', function(e) {
     // (`if (!window.spendHashes(sbCost))`), so without an explicit return
     // every Sunbeam-priced weather summon was bricked.
     if (!amount || amount < 1) return false;
+    // Audit 5 H1: validate against spendable balance BEFORE bumping ledger.spent.
+    // Cocoonery (87708) and weather summon (72099) call this then proceed
+    // assuming success without re-reading balance. Without the guard, a
+    // console caller (or a race that empties the queue between balance
+    // check and spend) could grant the purchase free. Returns false on
+    // insufficient so callers correctly bail.
+    var _avail = (typeof getTotalHashes === 'function') ? getTotalHashes() : 0;
+    if (amount > _avail) return false;
     var ledger = getHashLedger();
     ledger.spent = (ledger.spent || 0) + amount;
     _secureSet(HASH_LEDGER_KEY, ledger);
@@ -58834,14 +58860,20 @@ return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:show
     _dtt=setTimeout(function(){_dtc=0;},2500);
     if(_dtc>=5){
       _dtc=0;
-      var pw=prompt('Dev password:');
-      if(pw==='lucid2026'){
+      // Audit 5 C1: password prompt + literal removed from source so
+      // production users have no in-app path to enable the dev panel.
+      // Stephen: enable via DevTools:
+      //   localStorage.setItem('lw_dev_unlocked','1'); location.reload();
+      try { if (localStorage.getItem('lw_dev_unlocked')==='1') {
         document.getElementById('pw-dev-admin').classList.add('open');
-      }
+      } } catch(e){}
     }
   });
-  // URL shortcut: ?dev=lucid2026 opens dev panel immediately
-  try{var _devParam=new URLSearchParams(window.location.search).get('dev');if(_devParam==='lucid2026'){document.getElementById('pw-dev-admin').classList.add('open');}}catch(e){}
+  // URL shortcut removed (was '?dev=lucid2026' — password literal in source).
+  // Same gate now applies; the panel only opens if lw_dev_unlocked is set.
+  try { if (localStorage.getItem('lw_dev_unlocked')==='1') {
+    document.getElementById('pw-dev-admin').classList.add('open');
+  } } catch(e){}
 })();
 </script>
 
@@ -76944,6 +76976,14 @@ window.bsConfirmBreed=function(){
 window.bsExecuteBreed=function(){
   document.getElementById('bs-confirm').classList.remove('open');
   if(!_plantA||!_partners[_pIdx])return;
+  // Audit 5 H4: in-flight guard. Async crossPollinateHashes resolves later;
+  // a click-spammer could fire two breed events from one confirm tap. The
+  // nursery cap clamps the second add but the achievement counters still
+  // double-bump. _isBreeding flag clears after the async chain completes
+  // OR after a 4s safety timeout in case the chain throws.
+  if (window._lwIsBreeding) return;
+  window._lwIsBreeding = true;
+  setTimeout(function(){ window._lwIsBreeding = false; }, 4000);
   var mate=_partners[_pIdx];
 
   // Capture clipping-breed flag BEFORE closeBreedScreen clears _plantA.
