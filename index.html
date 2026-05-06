@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.04';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -46810,7 +46810,10 @@ document.addEventListener('keydown', function(e) {
       sws_greenhouse:  gh || _ls('sws_greenhouse') || [],
       sws_nursery:     _ls('sws_nursery')     || [],
       sws_inventory:   _ls('sws_inventory')   || {dnaFragments:0,substrate:{}},
-      hashLedger:      _ls('sws_hash_ledger') || {},
+      // hashLedger is SERVER-ONLY: rules-7 vaultServerFieldsImmutable() blocks
+      // any client write to it. Removed from payload so vault sync stops
+      // silently failing. Server (Cloud Function 'earnHashes') is the only
+      // writer; client still READS it back via _applyCloudData. Audit 4 C1.
       dewLedger:       _ls('sws_dew_ledger')  || {},
       records:         _ls('sws_set_records') || {},
       shopUnlocks:     _ls('sws_shop_unlocks')|| {},
@@ -46847,6 +46850,38 @@ document.addEventListener('keydown', function(e) {
       itemsPending:    _ls('sws_items_pending')  || {},
       boxesCount:      _ls('sws_boxes')          || null,
       boxesPity:       _ls('sws_boxes_pity')     || null,
+      // Audit 1 P3: LW_ACH (engagement) was entirely local-only — 254
+      // achievements + 79 dailies + 51 weeklies all wiped on browser-clear
+      // or device-switch. Largest data-loss surface in the game.
+      achCounters:     _ls('lw_ach_counters')    || {},
+      achProgress:     _ls('lw_ach_progress')    || {},
+      achDaily:        _ls('lw_ach_daily')       || {},
+      achWeekly:       _ls('lw_ach_weekly')      || {},
+      achTrophies:     _ls('lw_ach_trophies')    || [],
+      // Audit 1 C5: free walking cocoons (LW_COCOONS sws_cocoons) — accumulated
+      // walked distance + slot cap, gone on reinstall. Premium variant
+      // lw_pcocoons IS already roundtripped above.
+      cocoons:         _ls('sws_cocoons')        || null,
+      cocoonsDaily:    _ls('sws_cocoons_forage_daily') || null,
+      // Audit 1 C4: ACTION/STREAK/SURVIVAL/WITNESS/KINSHIP archetype counters
+      // for 24+ companions. Drives bond level + L3 ritual unlocks. Time-archetype
+      // (companionTimer) was already roundtripped; this completes coverage.
+      companionXp:     _ls('lw_companion_xp')    || {},
+      // Audit 1 H1+H2+H3: companion mementos / action counters / friendship XP.
+      companionMementos:    _ls('lw_companion_mementos')    || [],
+      companionActionCtrs:  _ls('lw_compaction_counters')   || {},
+      companionFriendship:  _ls('lw_companion_friendship')  || {},
+      // Audit 1 H1: LW_HUNT seasonal scrolls + cosmetics + titles.
+      huntTitles:      _ls('lw_hunt_titles')          || [],
+      huntCosmetics:   _ls('lw_hunt_cosmetics')       || [],
+      huntPartial:     _ls('lw_hunt_partial_scrolls') || [],
+      // Audit 1 H6+H7+H8: bestiary / friend nicks / blessings claimed.
+      bestiary:        _ls('pw_bestiary')        || [],
+      friendNicks:     _ls('lw_friend_nicks')    || {},
+      blessingsClaimed:_ls('lw_blessings_claimed') || {},
+      // Audit 1 H4: L75 second companion equip slot (primary lives in profile;
+      // this slot was local-only).
+      activeCompanion2: localStorage.getItem('pw_active_companion_2') || '',
       lastSync: new Date().toISOString(),
       clientVersion: 'set-40'
     };
@@ -47097,20 +47132,156 @@ document.addEventListener('keydown', function(e) {
         localStorage.setItem('lw_companion_first_equipped', JSON.stringify(_cfMerged));
       } catch(e) {}
     }
-    // Items pouch + mystery box restore (May 02 audit). Cloud-wins per
-    // the sws_inventory convention — the most recent saved state is the
-    // truth on hydrate; throttled save resyncs after any local divergence.
+    // Items pouch + mystery box restore. Audit 1 P1: was blind-overwrite
+    // on cloud read which let a stale empty cloud {} clobber a fresh local
+    // pouch (same shape as the sunbeam queue race patched 2026-05-05).
+    // MAX-merge each item count instead so local can never lose ground to
+    // cloud-stale-on-read.
     if (data.itemsInv && typeof data.itemsInv === 'object') {
-      try { localStorage.setItem('sws_items', JSON.stringify(data.itemsInv)); } catch(e){}
+      try {
+        var _localItems = JSON.parse(localStorage.getItem('sws_items')||'{}');
+        var _cloudItems = data.itemsInv;
+        var _mergedItems = {};
+        var _ikSet = {};
+        for (var _ik in _localItems) if (_localItems.hasOwnProperty(_ik)) _ikSet[_ik]=1;
+        for (var _ik2 in _cloudItems) if (_cloudItems.hasOwnProperty(_ik2)) _ikSet[_ik2]=1;
+        for (var _ik3 in _ikSet) {
+          _mergedItems[_ik3] = Math.max(_localItems[_ik3]||0, _cloudItems[_ik3]||0);
+        }
+        localStorage.setItem('sws_items', JSON.stringify(_mergedItems));
+      } catch(e) { try{localStorage.setItem('sws_items', JSON.stringify(data.itemsInv));}catch(e2){} }
     }
     if (data.itemsPending && typeof data.itemsPending === 'object') {
       try { localStorage.setItem('sws_items_pending', JSON.stringify(data.itemsPending)); } catch(e){}
     }
     if (data.boxesCount && typeof data.boxesCount === 'object') {
-      try { localStorage.setItem('sws_boxes', JSON.stringify(data.boxesCount)); } catch(e){}
+      try {
+        var _lbRaw = localStorage.getItem('sws_boxes');
+        var _lb = _lbRaw ? JSON.parse(_lbRaw) : {count:0};
+        var _cb = data.boxesCount;
+        localStorage.setItem('sws_boxes', JSON.stringify({count: Math.max(_lb.count||0, _cb.count||0)}));
+      } catch(e){ try{localStorage.setItem('sws_boxes', JSON.stringify(data.boxesCount));}catch(e2){} }
     }
     if (data.boxesPity && typeof data.boxesPity === 'object') {
       try { localStorage.setItem('sws_boxes_pity', JSON.stringify(data.boxesPity)); } catch(e){}
+    }
+    // ─── Audit 1 hydrate block — P3/C4/C5/H1-H8 restores ─────────────────
+    // Generic helpers for the merge patterns this block uses.
+    function _audMaxMergeMap(localKey, cloudObj){
+      try {
+        var loc = JSON.parse(localStorage.getItem(localKey)||'{}');
+        var out = {};
+        var keys = {};
+        for (var k1 in loc) if (loc.hasOwnProperty(k1)) keys[k1]=1;
+        for (var k2 in cloudObj) if (cloudObj.hasOwnProperty(k2)) keys[k2]=1;
+        for (var k3 in keys){
+          var lv=loc[k3], cv=cloudObj[k3];
+          if (typeof lv==='number' && typeof cv==='number') out[k3]=Math.max(lv,cv);
+          else if (lv && typeof lv==='object' && cv && typeof cv==='object') {
+            // Nested: union, MAX integers
+            var subOut={}, subKeys={};
+            for (var sk1 in lv) if (lv.hasOwnProperty(sk1)) subKeys[sk1]=1;
+            for (var sk2 in cv) if (cv.hasOwnProperty(sk2)) subKeys[sk2]=1;
+            for (var sk3 in subKeys){
+              var sv1=lv[sk3], sv2=cv[sk3];
+              if (typeof sv1==='number' && typeof sv2==='number') subOut[sk3]=Math.max(sv1,sv2);
+              else subOut[sk3]=(sv1 || sv2);
+            }
+            out[k3]=subOut;
+          }
+          else out[k3]=(lv || cv);
+        }
+        localStorage.setItem(localKey, JSON.stringify(out));
+      } catch(e){
+        try{ localStorage.setItem(localKey, JSON.stringify(cloudObj||{})); } catch(e2){}
+      }
+    }
+    function _audUnionMergeArr(localKey, cloudArr){
+      try {
+        var loc = JSON.parse(localStorage.getItem(localKey)||'[]'); if(!Array.isArray(loc)) loc=[];
+        var arr = Array.isArray(cloudArr) ? cloudArr : [];
+        var seen={};
+        for (var i=0;i<loc.length;i++){ var k=typeof loc[i]==='string'?loc[i]:JSON.stringify(loc[i]); seen[k]=loc[i]; }
+        for (var j=0;j<arr.length;j++){ var k2=typeof arr[j]==='string'?arr[j]:JSON.stringify(arr[j]); if(!seen[k2]) seen[k2]=arr[j]; }
+        var out=[]; for (var sk in seen) out.push(seen[sk]);
+        localStorage.setItem(localKey, JSON.stringify(out));
+      } catch(e){
+        try{ localStorage.setItem(localKey, JSON.stringify(cloudArr||[])); } catch(e2){}
+      }
+    }
+    // LW_ACH (engagement) — 5 keys.
+    if (data.achCounters)  _audMaxMergeMap('lw_ach_counters', data.achCounters);
+    if (data.achProgress)  _audMaxMergeMap('lw_ach_progress', data.achProgress);
+    if (data.achDaily)     _audMaxMergeMap('lw_ach_daily',    data.achDaily);
+    if (data.achWeekly)    _audMaxMergeMap('lw_ach_weekly',   data.achWeekly);
+    if (data.achTrophies)  _audUnionMergeArr('lw_ach_trophies', data.achTrophies);
+    // Free cocoons — store the WHOLE cloud object if local is empty;
+    // otherwise per-slot MAX-merge on distance + cap.
+    if (data.cocoons && typeof data.cocoons === 'object') {
+      try {
+        var _localCoc = JSON.parse(localStorage.getItem('sws_cocoons')||'null');
+        if (!_localCoc) {
+          localStorage.setItem('sws_cocoons', JSON.stringify(data.cocoons));
+        } else {
+          // MAX-merge known scalar fields; let cloud refresh slots if local has none.
+          var merged = {};
+          for (var ck in data.cocoons) merged[ck] = data.cocoons[ck];
+          for (var ck2 in _localCoc) {
+            if (typeof _localCoc[ck2] === 'number' && typeof data.cocoons[ck2] === 'number') {
+              merged[ck2] = Math.max(_localCoc[ck2], data.cocoons[ck2]);
+            } else {
+              merged[ck2] = _localCoc[ck2];
+            }
+          }
+          localStorage.setItem('sws_cocoons', JSON.stringify(merged));
+        }
+      } catch(e){ try{localStorage.setItem('sws_cocoons', JSON.stringify(data.cocoons));}catch(e2){} }
+    }
+    if (data.cocoonsDaily) {
+      try { localStorage.setItem('sws_cocoons_forage_daily', JSON.stringify(data.cocoonsDaily)); } catch(e){}
+    }
+    // Companion XP archetypes (action/streak/survival/witness/kinship counters).
+    if (data.companionXp)  _audMaxMergeMap('lw_companion_xp', data.companionXp);
+    // Companion mementos (sticky list — union).
+    if (data.companionMementos) _audUnionMergeArr('lw_companion_mementos', data.companionMementos);
+    // Per-action × per-companion counters — nested MAX.
+    if (data.companionActionCtrs) _audMaxMergeMap('lw_compaction_counters', data.companionActionCtrs);
+    // Companion friendship XP (Cub/Bonded/Beloved title XP per companion).
+    if (data.companionFriendship) _audMaxMergeMap('lw_companion_friendship', data.companionFriendship);
+    // LW_HUNT seasonal artifacts.
+    if (data.huntTitles)    _audUnionMergeArr('lw_hunt_titles',          data.huntTitles);
+    if (data.huntCosmetics) _audUnionMergeArr('lw_hunt_cosmetics',       data.huntCosmetics);
+    if (data.huntPartial)   _audUnionMergeArr('lw_hunt_partial_scrolls', data.huntPartial);
+    // Bestiary (companions discovered) — sticky union.
+    if (data.bestiary)      _audUnionMergeArr('pw_bestiary', data.bestiary);
+    // Friend nicks — dict-merge (cloud-then-local; local wins).
+    if (data.friendNicks && typeof data.friendNicks === 'object') {
+      try {
+        var _locNicks = JSON.parse(localStorage.getItem('lw_friend_nicks')||'{}');
+        localStorage.setItem('lw_friend_nicks', JSON.stringify(Object.assign({}, data.friendNicks, _locNicks)));
+      } catch(e){ try{localStorage.setItem('lw_friend_nicks', JSON.stringify(data.friendNicks));}catch(e2){} }
+    }
+    // Blessings claimed — union by hash key (sticky to prevent double-spend).
+    if (data.blessingsClaimed && typeof data.blessingsClaimed === 'object') {
+      try {
+        var _locBC = JSON.parse(localStorage.getItem('lw_blessings_claimed')||'{}');
+        var _mergedBC = Object.assign({}, _locBC);
+        for (var _bck in data.blessingsClaimed) {
+          if (data.blessingsClaimed.hasOwnProperty(_bck)) {
+            // Hashes nested: keep union of inner keys
+            if (_bck === 'hashes' && typeof data.blessingsClaimed[_bck] === 'object') {
+              _mergedBC.hashes = Object.assign({}, data.blessingsClaimed.hashes||{}, _locBC.hashes||{});
+            } else if (!_mergedBC.hasOwnProperty(_bck)) {
+              _mergedBC[_bck] = data.blessingsClaimed[_bck];
+            }
+          }
+        }
+        localStorage.setItem('lw_blessings_claimed', JSON.stringify(_mergedBC));
+      } catch(e){ try{localStorage.setItem('lw_blessings_claimed', JSON.stringify(data.blessingsClaimed));}catch(e2){} }
+    }
+    // L75 second companion equip slot.
+    if (typeof data.activeCompanion2 === 'string' && data.activeCompanion2) {
+      try { localStorage.setItem('pw_active_companion_2', data.activeCompanion2); } catch(e){}
     }
     if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
     // Keeper XP — restore from cloud, prefer the higher of cloud vs local so
@@ -51125,6 +51296,11 @@ function _doReproduction(weather, simMode) {
                 amount: _tlAmt,
                 grade: dp.grade || 'Common',
                 plantName: _tlName,
+                // Audit 4 C3: rules-7 requires harvesterUid on every
+                // pendingRewards CREATE. For a takeover-loss it's the
+                // INVADER (the player whose action triggered the reward
+                // doc, even though they're not "harvesting" per se).
+                harvesterUid: dd.ownerUid || '',
                 actorName: _tlInvaderName,
                 action: 'uproot',
                 invaderHash: dd.hash || '',
@@ -54101,6 +54277,9 @@ function _writeWitnessFee(p, actionLabel) {
       grade: grade || 'Common',
       plantHash: p.hash,
       plantName: (window.getPlantName ? window.getPlantName(p.hash) : p.hash.slice(0,8)),
+      // Audit 4 C3: rules-7 requires harvesterUid on every pendingRewards
+      // CREATE. The acting tender IS the "harvester" of this reward chain.
+      harvesterUid: actor.uid,
       actorUid: actor.uid,
       actorName: actorName,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -57623,6 +57802,8 @@ window._hexAction=function(action){
             grade:_bGrade,
             plantHash:p.hash,
             plantName:(window.getPlantName?window.getPlantName(p.hash):p.hash.slice(0,8)),
+            // Audit 4 C3: rules-7 requires harvesterUid on every pendingRewards CREATE.
+            harvesterUid:_bActor.uid,
             actorUid:_bActor.uid,
             actorName:_bActorName,
             timestamp:firebase.firestore.FieldValue.serverTimestamp()
@@ -68544,8 +68725,17 @@ function _createNewProfile(user,db){
   db.runTransaction(function(tx){
     return tx.get(counterRef).then(function(cDoc){
       var num=1;
-      if(cDoc.exists&&cDoc.data().next){num=cDoc.data().next;}
-      tx.update(counterRef,{next:num+1});
+      if(cDoc.exists&&cDoc.data().next){
+        num=cDoc.data().next;
+        tx.update(counterRef,{next:num+1});
+      } else {
+        // Audit 4 C4: fresh Firebase project — counter doc doesn't exist.
+        // tx.update would error; use tx.set instead. NOTE: rules-7 CREATE
+        // rule on meta/accountCounter requires next == 1, so to allow this
+        // bootstrap path on a fresh project the rule must be relaxed to
+        // accept `next == 1 || next == 2`. Without that, first signup fails.
+        tx.set(counterRef,{next:num+1});
+      }
       return num;
     });
   }).then(function(accountNumber){
@@ -68668,6 +68858,13 @@ function sendFriendRequest(friendUid,friendName,callback){
   var batch=db.batch();
   var now=firebase.firestore.FieldValue.serverTimestamp();
   var theirName=friendName||'Keeper';
+  // Audit 4 C2 stale-doc fix: if either connection doc exists from a prior
+  // interaction (legacy schema, decline-then-resend race, half-cleaned state)
+  // the rule-7 cross-write UPDATE check (`resource.data.status == 'pending_sent'`)
+  // rejects every status other than that exact value. Wipe both sides before
+  // re-arming the request. batch.delete on a non-existent doc is a no-op.
+  batch.delete(db.collection('friends').doc(user.uid).collection('connections').doc(friendUid));
+  batch.delete(db.collection('friends').doc(friendUid).collection('connections').doc(user.uid));
 
   // My record: I sent a request — friendName lets the friends list show their name
   batch.set(db.collection('friends').doc(user.uid).collection('connections').doc(friendUid),{
