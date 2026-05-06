@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.16';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -44371,12 +44371,19 @@ document.addEventListener('keydown', function(e) {
     if (existing) existing.remove();
     var modal = document.createElement('div');
     modal.id = 'lw-pot-picker';
+    // Audit 2026-05-06 (Stephen): re-entering after a purchase, the modal
+    // had no scroll and the close X was below the fold. Now the inner
+    // container caps at 85vh and scrolls vertically; the close button
+    // stays sticky at the top so it's always tappable.
     modal.style.cssText = 'position:fixed;inset:0;z-index:100003;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.85);backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;padding:1rem;';
-    var h = '<div style="max-width:340px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1rem;">';
-    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">';
+    // Tap-out close \u2014 matches every other overlay pattern. Outer div click closes.
+    modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+    var h = '<div style="max-width:340px;width:100%;max-height:85vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;">';
+    h += '<div style="position:sticky;top:0;background:rgba(22,28,18,0.99);border-bottom:1px solid rgba(200,168,75,0.18);padding:1rem 1rem 0.6rem;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0;">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);">CHOOSE A POT</div>';
     h += '<button onclick="document.getElementById(\'lw-pot-picker\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:0.85rem;">\u2715</button>';
     h += '</div>';
+    h += '<div style="overflow-y:auto;padding:0.7rem 1rem 1rem;flex:1;">';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-bottom:0.7rem;line-height:1.4;">Pots are single-use. Once applied, the buff triggers at bloom and the pot is consumed.</div>';
     if (owned.length > 0) {
       h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--sage);margin:0 0 0.35rem;">YOURS</div>';
@@ -44407,11 +44414,21 @@ document.addEventListener('keydown', function(e) {
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:' + up.color + ';letter-spacing:0.06em;">' + up.name + '</div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.35;margin-top:0.15rem;">' + up.blurb + '</div>';
         h += '</div>';
-        h += '<div style="flex-shrink:0;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:var(--gold);padding:0.3rem 0.55rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:6px;">BUY</div>';
+        // Show price + level requirement so the player knows what they\'re
+        // about to spend BEFORE jumping to the shop. Audit 2026-05-06
+        // (Stephen): "they have no prices then it takes you to the shop where
+        // they do cost money." Now matches truth.
+        var _priceLine = (up.cost || 0) + ' 💧';
+        if (up.levelRequired && up.levelRequired > 1) _priceLine += ' · L' + up.levelRequired;
+        h += '<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:var(--gold);padding:0.3rem 0.55rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:6px;">' + _priceLine + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">tap to buy</div>';
+        h += '</div>';
         h += '</button>';
       }
     }
-    h += '</div>';
+    h += '</div>'; // close inner scroll wrap
+    h += '</div>'; // close outer card
     modal.innerHTML = h;
     document.body.appendChild(modal);
   };
@@ -44794,7 +44811,28 @@ document.addEventListener('keydown', function(e) {
     if (!bloomReady) {
       var _potOnSeed = seed.pot ? (window.LW_POTS && window.LW_POTS[seed.pot]) : null;
       if (_potOnSeed) {
-        actionBtns += _seedBtn({ cls:'boost', disabled:true, art:'assets/potshop.png', title:_potOnSeed.name+' applied. Triggers at bloom.', label:_potOnSeed.name.split(' ')[0].toUpperCase(), cost:'applied' });
+        // Stephen audit 2026-05-06: use the ACTUAL pot art (the painted PNG)
+        // not generic potshop.png, AND surface the effect in the cost slot
+        // so the player sees what the pot is doing without reading lore.
+        // Effect snippets (short, Bebas-friendly):
+        var _potFx = '';
+        var _bl = (_potOnSeed.blurb || '').toLowerCase();
+        var _pctMatch = _bl.match(/\+\s*(\d+)\s*%/);
+        var _eaMatch  = _bl.match(/\+\s*(\d+)\s*ea/);
+        if (_pctMatch)        _potFx = '+' + _pctMatch[1] + '% rarity';
+        else if (_eaMatch)    _potFx = '+' + _eaMatch[1] + ' EA';
+        else if (_bl.indexOf('chimera') >= 0)  _potFx = 'Chimera reset';
+        else if (_bl.indexOf('immunity') >= 0) _potFx = 'Climate immune';
+        else if (_bl.indexOf('mutation') >= 0) _potFx = '+Mutation odds';
+        else                                   _potFx = 'applied';
+        actionBtns += _seedBtn({
+          cls:'boost', disabled:true,
+          art:'assets/nursery-pots/' + _potOnSeed.id + '.png',
+          artFallback:'<span style=\'font-size:2rem;\'>' + (_potOnSeed.icon||'⚱') + '</span>',
+          title:_potOnSeed.name + ' — ' + _potOnSeed.blurb,
+          label:_potOnSeed.name.split(' ')[0].toUpperCase(),
+          cost:_potFx
+        });
       } else {
         actionBtns += _seedBtn({ cls:'boost', sid:sid, onclick:'window._openPotPicker(this.dataset.sid)', title:'Apply a specialty pot from your inventory', art:'assets/potshop.png', label:'ADD POT' });
       }
