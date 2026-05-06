@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.13';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9080,7 +9080,11 @@ window._addSwitchTabHook = function(fn){
         if (d.owned[key]) { alert('Already owned: ' + key); return; }
         d.owned[key] = { state:'incubating', distance:0, fed:0, tokens:0, purchasedAt:Date.now(), hatchedAt:0 };
         localStorage.setItem('lw_pcocoons', JSON.stringify(d));
-        if (window.syncVaultToCloud) window.syncVaultToCloud();
+        // Force immediate cloud flush (matches grantDew/grantHashes pattern from
+        // May 02 audit). Without it, a refresh within the 5s debounce window
+        // could lose the grant — defeats Stephen's whole "test cocoons" workflow.
+        if (window.syncVaultToCloudNow) window.syncVaultToCloudNow();
+        else if (window.syncVaultToCloud) window.syncVaultToCloud();
         if (window.LW_KEEPER && window.LW_KEEPER.refreshPip) window.LW_KEEPER.refreshPip();
         alert('Granted ' + key + '. Open backpack → Curiosities to see it incubating.');
       } catch(e) { alert('Grant failed: ' + e.message); }
