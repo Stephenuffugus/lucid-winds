@@ -753,11 +753,21 @@
         if (markAchDone(a)) newAch.push(a.id);
       }
     }
-    if (!p['dc_polymath']) {
+    // Polymath: count distinct categories the player has at least one
+    // achievement in. Audit 2026-05-06: cat_completion counter had no
+    // writer, so the BoS display showed 0/9 forever even when the player
+    // had 7+ categories done. Now we write the count so display matches
+    // reality + the achievement still triggers via direct check below.
+    {
       var cats = {};
       var p2 = _read(PROGRESS_KEY, {});
       for (var aid in p2) { var aa = ACH_BY_ID[aid]; if (aa) cats[aa.category] = true; }
-      if (Object.keys(cats).length >= 9) {
+      var catCount = Object.keys(cats).length;
+      if ((c['cat_completion'] || 0) !== catCount) {
+        c['cat_completion'] = catCount;
+        _markCountersDirty();
+      }
+      if (!p['dc_polymath'] && catCount >= 9) {
         if (markAchDone(ACH_BY_ID['dc_polymath'])) newAch.push('dc_polymath');
       }
     }
