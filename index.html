@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.08';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.09';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -928,6 +928,30 @@
     var m = d.getMonth() + 1;
     var dd = d.getDate();
     return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (dd < 10 ? '0' + dd : dd);
+  };
+  // Audit security-deep H1: device-clock daily resets are exploitable
+  // (set OS clock back 24h, get fresh ferals/wild-drops/login-bonus).
+  // _lwServerDay() returns today's date as YYYY-MM-DD using a server-time
+  // offset learned from Firestore reads. Falls back to local time if no
+  // offset has been learned yet (first session, offline, Firebase down).
+  // The offset is updated inside FG_Wild's _afLearnServerTime; we mirror
+  // it to window so the rest of the app can route through this helper.
+  window._lwServerDayOffset = 0;
+  window._lwServerDay = function(){
+    var off = (typeof window._lwServerDayOffset === 'number') ? window._lwServerDayOffset : 0;
+    var d = new Date(Date.now() + off);
+    return d.toISOString().slice(0, 10);  // UTC YYYY-MM-DD
+  };
+  // Bridge: any module that learns server time should call this so the
+  // global helper picks up the offset. Safe to call multiple times.
+  window._lwLearnServerTime = function(timestamp){
+    try {
+      if (timestamp && typeof timestamp.toMillis === 'function') {
+        window._lwServerDayOffset = timestamp.toMillis() - Date.now();
+      } else if (typeof timestamp === 'number') {
+        window._lwServerDayOffset = timestamp - Date.now();
+      }
+    } catch(e){}
   };
   </script>
   <script>(function(){
@@ -9924,8 +9948,11 @@ document.addEventListener('keydown', function(e) {
   function _ls(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
   function _ss(key,val){ try{ localStorage.setItem(key,JSON.stringify(val)); }catch(e){} }
 
-  // ── UTC date string ──
-  function _today(){ return new Date().toISOString().split('T')[0]; }
+  // ── UTC date string ── routed through server-day helper (security-deep H1).
+  function _today(){
+    if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+    return new Date().toISOString().split('T')[0];
+  }
 
   // ── Strip environmental bytes from a hash (for cuttings) ──
   // Zeros out pot (hb0 chars 0-1), aura (hb15 chars 30-31), mythic override
@@ -12173,7 +12200,11 @@ document.addEventListener('keydown', function(e) {
   }
   function saveRecords(r) { localStorage.setItem(RECORDS_KEY, JSON.stringify(r)); }
 
-  function getToday() { return new Date().toISOString().split('T')[0]; }
+  function getToday() {
+    // Audit security-deep H1: server-day routing.
+    if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+    return new Date().toISOString().split('T')[0];
+  }
 
   function checkAndSaveRecord(time, sets) {
     var r = loadRecords();
@@ -37911,23 +37942,38 @@ document.addEventListener('keydown', function(e) {
   var MAX_COLLECTION_SIZE = getGHSlots();
 
   // ══════════════════════════════════════════════════════════════════════
-  // PLANT SEAL — Cryptographic integrity layer
+  // PLANT SEAL — Tamper hint, NOT a security boundary
   // ──────────────────────────────────────────────────────────────────────
-  // Every plant gets a signature at birth. On load, verify all sigs.
-  // Unsigned or bad-sig plants are quarantined. This prevents:
-  //   • DevTools localStorage injection
-  //   • Hash editing / trait manipulation
-  //   • Cross-account plant transfer
-  //   • Casual cheating of any kind
+  // Audit security-deep C2 (2026-05-06): the seal key is fully derivable
+  // from public source. Anyone reading index.html can compute the key
+  // 'fGS4X6RXffa8SWS' and sign any fabricated plant; _verifySeal accepts.
   //
-  // The seal uses SHA-256 HMAC via SubtleCrypto. Key is derived from
-  // multiple sources that require reading the full codebase to locate.
-  // Server-side validation (Firestore rules) can verify the same sig.
+  // What the seal IS:
+  //   • A tamper hint that catches incidental localStorage corruption
+  //     (browser extensions, partial syncs, salt-mismatch on auth changes)
+  //   • A "did this entry pass through our writer" smoke test
+  //   • A speed bump for casual cheaters who don't read source
+  //
+  // What the seal is NOT:
+  //   • A cryptographic security boundary
+  //   • A guard against console-injected forgeries
+  //   • Acceptable provenance for blockchain extraction
+  //
+  // For chain-extraction-grade provenance, the canonical anchor is
+  // mintLog/{uid}/{plantHash} — admin-only-write Firestore docs created
+  // by the mintPlant Cloud Function. The marketplace MUST verify chain
+  // eligibility via mintLog, NEVER via entry.sig.
+  //
+  // The seal scheme stays in code as a tamper hint and to maintain the
+  // grandfather migration for legacy data, but every comment that called
+  // it "cryptographic integrity" was misleading.
   // ══════════════════════════════════════════════════════════════════════
   var _SEAL_VERSION = 1;
-  // Key material is split across the codebase — assembled at runtime
-  var _SK_A = 'fG'; // prefix
-  var _SK_C = 'ff'; // Firebase project fragment
+  // Public key components (audit C2 confirmed all three are reachable
+  // from page source). Renamed from "intentionally scattered" wording
+  // because that was wishful thinking.
+  var _SK_A = 'fG'; // public; documented as part of seal scheme
+  var _SK_C = 'ff'; // public; documented as part of seal scheme
 
   // Async HMAC-SHA256
   async function _hmac256(message, keyStr) {
@@ -37942,9 +37988,14 @@ document.addEventListener('keydown', function(e) {
     }).join('');
   }
 
-  // Assemble signing key — intentionally scattered to resist grep
+  // Assemble signing key. Audit C2 (2026-05-06): every component is
+  // reachable from page source — `_SK_A`, `_SK_C`, `_GA4_TAG` (also in
+  // CLAUDE.md), and the literals 'a8' / 'SWS' all live in this file.
+  // The "intentionally scattered to resist grep" wording was wishful;
+  // grep finds each piece in seconds. This key is PUBLIC. Treat the
+  // resulting sig as a tamper hint, NOT a security boundary. Real
+  // provenance lives in mintLog/{uid}/{plantHash} (server-issued).
   function _assembleSealKey() {
-    // Components: build prefix + GA4 tag fragment + Firebase project + static salt
     var ga = (typeof _GA4_TAG === 'string' ? _GA4_TAG : 'G-XE58S4X6RX').slice(-6);
     return _SK_A + ga + _SK_C + 'a8' + String.fromCharCode(83,87,83);
   }
@@ -37998,16 +38049,31 @@ document.addEventListener('keydown', function(e) {
     var gh = loadGreenhouse();
     if (gh.length === 0) return;
     var clean = [], dirty = [], upgraded = false;
+    // Audit security-deep C4: previously, ANY unsigned greenhouse entry got
+    // auto-signed by this migration. An attacker could inject a fabricated
+    // entry into localStorage.sws_greenhouse, reload, get a "valid" sig.
+    // Now: grandfather runs ONCE per device (one-time flag). After that,
+    // unsigned entries are only auto-signed when origin === 'gift' (the
+    // legit signup gift plant; can't be exploited because each account gets
+    // exactly one). Other unsigned post-migration entries get QUARANTINED.
+    var _grandfatheredOnce = false;
+    try { _grandfatheredOnce = (localStorage.getItem('lw_seal_grandfathered_v1') === '1'); } catch(e){}
     for (var i = 0; i < gh.length; i++) {
       var p = gh[i];
       if (!p.sig) {
-        // LEGACY MIGRATION: plants from before seal system get grandfathered
-        // and signed. This runs ONCE — after this, all plants have sigs.
-        p.born = p.born || Date.now() - 86400000; // approximate
-        p.origin = p.origin || 'legacy';
-        await _sealPlant(p);
-        upgraded = true;
-        clean.push(p);
+        var _isGiftOrigin = (p.origin === 'gift');
+        if (!_grandfatheredOnce || _isGiftOrigin) {
+          // First-run grandfather (legacy data) OR legitimate gift plant. Sign it.
+          p.born = p.born || Date.now() - 86400000; // approximate
+          p.origin = p.origin || 'legacy';
+          await _sealPlant(p);
+          upgraded = true;
+          clean.push(p);
+        } else {
+          // Post-migration unsigned entry with non-gift origin = injection.
+          console.warn('[PlantSeal] QUARANTINED: unsigned post-migration entry: hash ' + (p.hash||'?').slice(0,8) + '… origin=' + (p.origin||'?'));
+          dirty.push(p);
+        }
       } else {
         var valid = await _verifySeal(p);
         if (valid) {
@@ -38017,6 +38083,15 @@ document.addEventListener('keydown', function(e) {
           dirty.push(p);
         }
       }
+    }
+    // Mark grandfather complete after a successful run that included any
+    // legacy migrations. Idempotent — re-marking does no harm.
+    if (upgraded && !_grandfatheredOnce) {
+      try { localStorage.setItem('lw_seal_grandfathered_v1', '1'); } catch(e){}
+    } else if (!_grandfatheredOnce && gh.length > 0) {
+      // No upgrades but greenhouse exists — every plant is already signed,
+      // mark grandfather complete so future unsigned entries are quarantined.
+      try { localStorage.setItem('lw_seal_grandfathered_v1', '1'); } catch(e){}
     }
     if (dirty.length > 0) {
       // Archive fakes
@@ -40049,7 +40124,11 @@ document.addEventListener('keydown', function(e) {
       // }
     };
 
-    function _today(){ return new Date().toISOString().slice(0,10); }
+    function _today(){
+      // Audit security-deep H1: server-day routing.
+      if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+      return new Date().toISOString().slice(0,10);
+    }
 
     function currentActive(){
       var t = _today();
@@ -46920,7 +46999,9 @@ document.addEventListener('keydown', function(e) {
       // this slot was local-only).
       activeCompanion2: localStorage.getItem('pw_active_companion_2') || '',
       lastSync: new Date().toISOString(),
-      clientVersion: 'set-40'
+      // Audit security-deep L4: was hardcoded 'set-40' from set-40 era.
+      // Cloud forensics need to know which client wrote each vault doc.
+      clientVersion: (typeof window.LW_VERSION === 'string') ? window.LW_VERSION : 'unknown'
     };
     if (sess) { if(sess.name) p.name=sess.name; if(sess.email) p.email=sess.email; }
     // Backpack state for cloud sync
@@ -47496,12 +47577,18 @@ document.addEventListener('keydown', function(e) {
         if (window.showHexMsg) showHexMsg('⚠ Cloud save failed: ' + (e.code||e.message));
         if (window._showOfflineBanner) window._showOfflineBanner();
       });
-    // ── Meta state sync (Spec: slots, inventory, hashLedger, streak) ──
+    // ── Meta state sync (Spec: slots, inventory, streak) ──
+    // Audit security-deep H4: hashLedger removed from meta/state mirror.
+    // Was previously written here too, creating two hashLedger sources of
+    // truth: vault root (server-only via rules-7 vaultServerFieldsImmutable)
+    // and meta/state (client-writable, no validation). An attacker could
+    // spoof the local UI sunbeam balance by writing meta/state.hashLedger
+    // directly. The root doc is the canonical source; mintPlant Cloud
+    // Function reads/writes only the root copy. Mirror deleted.
     var metaRef = db.collection('vaults').doc(uid).collection('meta').doc('state');
     metaRef.set({
       slots: parseInt(localStorage.getItem('sws_greenhouse_slots')) || 10,
       inventory: JSON.parse(localStorage.getItem('sws_inventory') || 'null'),
-      hashLedger: JSON.parse(localStorage.getItem('sws_hash_ledger') || 'null'),
       dewLedger: JSON.parse(localStorage.getItem('sws_dew_ledger') || 'null'),
       streak: JSON.parse(localStorage.getItem('sws_streak') || 'null'),
       // Class system persistence — was localStorage-only, wiped on reinstall
@@ -48618,10 +48705,13 @@ function _afGetToday(){
   return serverNow.toISOString().slice(0,10);
 }
 
-// Learn server time offset on first Firestore read
+// Learn server time offset on first Firestore read.
+// Mirrors to window._lwServerDayOffset so app-wide _lwServerDay() helper
+// gets the same offset (security-deep H1).
 function _afLearnServerTime(firestoreTimestamp){
   if(firestoreTimestamp&&firestoreTimestamp.toMillis){
     _serverDayOffset=firestoreTimestamp.toMillis()-Date.now();
+    try { if (window._lwLearnServerTime) window._lwLearnServerTime(firestoreTimestamp); } catch(e){}
   }
 }
 
@@ -72714,11 +72804,18 @@ window._openMysteryBox = function() {
 'use strict';
 var DLK = 'lw_daily_login';
 
-function _today() { return new Date().toISOString().split('T')[0]; }
+// Audit security-deep H1: clock-rollback exploit closed by routing through
+// window._lwServerDay() (uses Firestore-learned offset). Fallback to local
+// device clock if no offset has been learned yet (first session, offline,
+// Firebase down).
+function _today() {
+  if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+  return new Date().toISOString().split('T')[0];
+}
 
 function _yesterday() {
-  var d = new Date(); d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
+  var off = (typeof window._lwServerDayOffset === 'number') ? window._lwServerDayOffset : 0;
+  return new Date(Date.now() + off - 86400000).toISOString().slice(0, 10);
 }
 
 function _loadDaily() {
@@ -76257,13 +76354,18 @@ window._lwWeeklyBumpDay = function(storeKey, achKey, dayStr){
 
 (function _lwDailyLoginStamp(){
   try {
-    var todayStr = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+    // Audit security-deep H1: route through server-day helper so clock
+    // rollback can't farm fresh streak days.
+    var _off = (typeof window._lwServerDayOffset === 'number') ? window._lwServerDayOffset : 0;
+    var todayStr = (typeof window._lwServerDay === 'function')
+      ? window._lwServerDay()
+      : new Date(Date.now() + _off).toISOString().slice(0,10);
     var last = localStorage.getItem('lw_last_login_date') || '';
     if (last !== todayStr) {
       var total = parseInt(localStorage.getItem('lw_login_days_total')||'0',10) + 1;
       var streak = 1;
       if (last) {
-        var yest = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+        var yest = new Date(Date.now() + _off - 86400000).toISOString().slice(0,10);
         if (last === yest) {
           streak = parseInt(localStorage.getItem('lw_login_streak')||'0',10) + 1;
         }
@@ -76278,8 +76380,8 @@ window._lwWeeklyBumpDay = function(storeKey, achKey, dayStr){
       var compostMark = localStorage.getItem('lw_compost_today') || '';
       var witherMark  = localStorage.getItem('lw_wither_today')  || '';
       if (last) {
-        // Compute yesterday string for comparison
-        var _yest = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+        // Compute yesterday string for comparison (server-time aware).
+        var _yest = new Date(Date.now() + _off - 86400000).toISOString().slice(0,10);
         if (compostMark !== _yest) noCompostStreak += 1; else noCompostStreak = 0;
         if (witherMark  !== _yest) noWitherStreak  += 1; else noWitherStreak  = 0;
       } else {
@@ -80139,7 +80241,12 @@ var TEMPLATES=[
   {id:'open_wild',text:'Visit the Wild tab',icon:'🗺️',check:function(s){return(s.wildVisited||0)>=1;}}
 ];
 
-function _today(){return new Date().toISOString().split('T')[0];}
+function _today(){
+  // Audit security-deep H1: server-day routing — closes the clock-rollback
+  // exploit on quest claims (was 30+ daily-reset sites in client clock).
+  if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+  return new Date().toISOString().split('T')[0];
+}
 
 function _loadQuests(){
   try{var d=JSON.parse(localStorage.getItem(QUEST_KEY)||'{}');if(d.date===_today())return d;return null;}catch(e){return null;}
@@ -85605,7 +85712,11 @@ window.LW_GIFTS = (function(){
   function _saveMeta(m){
     try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e){}
   }
-  function _today(){ return new Date().toISOString().slice(0,10); }
+  function _today(){
+    // Audit security-deep H1: server-day routing.
+    if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+    return new Date().toISOString().slice(0,10);
+  }
 
   // ─── COUNTERS / TIER RESOLVER ─────────────────────────────────────
   function getMeta(friendUid){
@@ -86301,7 +86412,12 @@ window.LW_GIFTS = (function(){
   ];
 
   // ─── daily seed + RNG ───
-  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  // Audit security-deep H1: route through server-day helper so clock
+  // rollback can't farm fresh emergency-pouch slots / hut shop daily resets.
+  function todayStr(){
+    if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+    return new Date().toISOString().slice(0,10);
+  }
   function dailySeed(salt){
     var s = (salt||'') + todayStr();
     var h = 0;

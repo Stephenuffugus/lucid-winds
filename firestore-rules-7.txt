@@ -86,12 +86,24 @@ service cloud.firestore {
     //   meta/state.slots ≤ 100
     //   (60 base + 40 prestige headroom — P4 prestige is +1/level so 100
     //    covers prestige 1-40. Tighten when prestige caps elsewhere.)
+    //
+    // Audit security-deep H4 (2026-05-06): explicitly deny hashLedger here.
+    // It was previously accepted because the rule only checked `slots`.
+    // An attacker could write meta/state.hashLedger = {earned:9999999,
+    // spent:0} and the local UI would display 9.9M Sunbeams. mintPlant
+    // Cloud Function reads ROOT vault.hashLedger only (server-only via
+    // vaultServerFieldsImmutable), so the spend ceiling held — but the
+    // local display was misleading. Block client writes to hashLedger on
+    // meta/state too. Client also no longer mirrors it (index.html change).
     function validMetaState(data) {
       return (
-        !('slots' in data)
-        || (data.slots is number
-            && data.slots >= 0
-            && data.slots <= 100)
+        !('hashLedger' in data)
+        && (
+          !('slots' in data)
+          || (data.slots is number
+              && data.slots >= 0
+              && data.slots <= 100)
+        )
       );
     }
 
@@ -203,11 +215,20 @@ service cloud.firestore {
 
     // PENDING REWARDS — other players can CREATE rewards for the vault owner
     // (e.g. harvest Dew Drop payouts), owner can read and delete (claim)
+    //
+    // Audit security-deep M2 (2026-05-06): added `harvesterUid == auth.uid`
+    // check. Client writers (Group C) already populate harvesterUid with the
+    // calling user's uid. This rule prevents identity-spoofing griefing
+    // where attacker writes pendingRewards into someone else's vault with a
+    // fake harvesterUid implicating a third party. Real per-sender
+    // rate-limiting requires a Cloud Function (planned migration); the
+    // amount cap of 40 + this identity check bound damage in the meantime.
     match /vaults/{uid}/pendingRewards/{rewardId} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create: if request.auth != null
         && request.auth.uid != uid  // can't reward yourself
         && request.resource.data.keys().hasAll(['type', 'amount', 'grade', 'plantName', 'harvesterUid', 'timestamp'])
+        && request.resource.data.harvesterUid == request.auth.uid  // no identity spoofing
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
         && request.resource.data.amount <= 40;  // max Cosmic reward
