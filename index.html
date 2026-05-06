@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.08';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -39139,14 +39139,25 @@ document.addEventListener('keydown', function(e) {
       if (_piOn && window.LW_Pi && window.LW_Pi.buySlotBundle) {
         window.LW_Pi.buySlotBundle(qty, cost, function(ok){ if (ok) _apply(); });
       } else if (_piOn && window.LW_Pi && window.LW_Pi.buySlot) {
-        // Fallback: chain single-slot buys. Each one prompts Pi.
-        // Bundle endpoint is the recommended path post-Cloud-Functions.
-        var _i = 0;
-        var _next = function(){
-          if (_i >= qty) { _apply(); return; }
-          window.LW_Pi.buySlot(current + 1 + _i, function(ok){ if (ok) { _i++; _next(); } });
-        };
-        _next();
+        // Audit Pi-SDK C2: previously chained N sequential Pi.createPayment
+        // dialogs which is a UX disaster (reviewer taps once, gets 10 modals).
+        // Until LW_Pi.buySlotBundle ships from Cloud Functions, restrict bulk
+        // to one slot per tap. If qty>1, surface that and buy a single slot.
+        if (qty > 1) {
+          if (window._toast) window._toast('Bulk slot purchase coming soon. Buying 1 slot for ' + Math.round(cost/qty) + ' Pi.');
+        }
+        window.LW_Pi.buySlot(current + 1, function(ok){
+          if (ok) {
+            // Apply just one slot, not the full qty.
+            var newSlots = setGHSlots(current + 1);
+            MAX_COLLECTION_SIZE = newSlots;
+            _haptic('tab');
+            renderGreenhouse();
+            showHexMsg('Greenhouse expanded by 1 to ' + newSlots + ' slots.');
+            try { if (window.LW_ACH) LW_ACH.set('gh_max_slots', newSlots); } catch(e){}
+            _claimFromReserve();
+          }
+        });
       } else {
         _apply();
       }
@@ -71671,12 +71682,27 @@ window.LW_PI_ENABLED=(function(){
 var _piReady=false;
 var _piUser=null;
 
+// Pi SDK sandbox flag. sandbox:true uses Pi testnet (testnet Pi has no real
+// value); sandbox:false uses mainnet. App Studio review can run in sandbox
+// mode initially, then flip to mainnet for production. Override per-device
+// via localStorage 'lw_pi_sandbox' = '0' for mainnet, '1' for sandbox.
+// DEFAULT is sandbox:true until Stephen explicitly flips for mainnet ship.
+// Audit Pi-SDK C1.
+window.LW_PI_SANDBOX = (function(){
+  try {
+    var v = localStorage.getItem('lw_pi_sandbox');
+    if (v === '0') return false;  // explicit mainnet
+    if (v === '1') return true;   // explicit sandbox
+  } catch(e){}
+  return true;  // default = sandbox until mainnet ship
+})();
+
 function _initPi(){
   if(!window.LW_PI_ENABLED){console.log('[Pi] Beta gate engaged (LW_PI_ENABLED=false). SDK init skipped.');return;}
   if(typeof Pi==='undefined'){console.log('[Pi] Not in Pi Browser, payments disabled.');return;}
   try{
-    Pi.init({version:'2.0',sandbox:true}); // sandbox:true for testnet, false for mainnet
-    console.log('[Pi] SDK initialized (sandbox mode).');
+    Pi.init({version:'2.0',sandbox:window.LW_PI_SANDBOX});
+    console.log('[Pi] SDK initialized ('+(window.LW_PI_SANDBOX?'SANDBOX (testnet)':'MAINNET (real Pi)')+' mode).');
     _piReady=true;
   }catch(e){console.log('[Pi] Init failed:',e.message);}
 }
@@ -71728,8 +71754,13 @@ function createPayment(amount,memo,metadata,onSuccess,onCancel){
       _approvePayment(paymentId);
     },
     onReadyForServerCompletion:function(paymentId,txid){
-      _completePayment(paymentId,txid,function(){
-        if(onSuccess)onSuccess(paymentId);
+      // Audit Pi-SDK C3: only fire onSuccess when the server actually
+      // confirmed AND fulfilled. _completePayment's cb now passes a boolean.
+      // ok===false (server rejected, error, or alreadyCompleted) → treat as
+      // cancel so the client doesn't grant the in-game item again.
+      _completePayment(paymentId,txid,function(ok){
+        if (ok) { if(onSuccess) onSuccess(paymentId); }
+        else    { if(onCancel)  onCancel(); }
       });
     },
     onCancel:function(paymentId){
@@ -71766,12 +71797,21 @@ function _approvePayment(paymentId){
   } catch(e){ console.error('[Pi] Approve threw:', e); }
 }
 
-// Server-side completion — same pattern. cb fires regardless of result so
-// the calling flow doesn't stall (Pi SDK requires acknowledging completion).
+// Server-side completion — Cloud Function piComplete confirms the Pi
+// payment + grants the in-game item server-side. The cb is now passed
+// the SUCCESS boolean so callers correctly skip the in-game grant on
+// failure (and skip duplicate-grants on alreadyCompleted). Audit Pi-SDK C3.
+//
+// Caller contract: cb(ok) where ok === true means "the server confirmed
+// the payment AND fulfilled the entitlement; the client should NOT also
+// apply the local grant" (server piComplete already wrote it). On
+// alreadyCompleted, ok === false (server already granted; don't re-grant).
+// On error, ok === false. Wrappers below already trigger their local
+// _apply() only when cb returns truthy from the createPayment onSuccess.
 function _completePayment(paymentId,txid,cb){
   if (typeof firebase === 'undefined' || !firebase.functions) {
     console.error('[Pi] firebase.functions not loaded; payment cannot complete.');
-    if (cb) cb();
+    if (cb) cb(false);
     return;
   }
   try {
@@ -71779,17 +71819,28 @@ function _completePayment(paymentId,txid,cb){
     fn({ paymentId: paymentId, txid: txid })
       .then(function(res){
         var d = (res && res.data) || {};
-        if (d.alreadyCompleted) { console.log('[Pi] Already completed:', paymentId); }
-        else if (d.ok) { console.log('[Pi] Completed:', paymentId, 'fulfillment:', d.fulfillment); }
-        else { console.warn('[Pi] Complete returned non-ok:', d); }
-        if (cb) cb();
+        if (d.alreadyCompleted) {
+          // Server has already granted on a previous call. DO NOT re-grant.
+          console.log('[Pi] Already completed:', paymentId);
+          if (cb) cb(false);
+          return;
+        }
+        if (d.ok) {
+          console.log('[Pi] Completed:', paymentId, 'fulfillment:', d.fulfillment);
+          if (cb) cb(true);
+          return;
+        }
+        // Non-ok and not alreadyCompleted: server rejected.
+        console.warn('[Pi] Complete returned non-ok:', d);
+        if (window._toast) window._toast('Pi payment did not complete. If charged, contact support.');
+        if (cb) cb(false);
       })
       .catch(function(err){
         console.error('[Pi] Complete error:', err && err.code, err && err.message);
         if (window._toast) window._toast('Pi payment failed to finalize. Your purchase may be pending. Contact support if not granted in 5 min.');
-        if (cb) cb();
+        if (cb) cb(false);
       });
-  } catch(e){ console.error('[Pi] Complete threw:', e); if (cb) cb(); }
+  } catch(e){ console.error('[Pi] Complete threw:', e); if (cb) cb(false); }
 }
 
 // ── Payment wrappers for game features ──

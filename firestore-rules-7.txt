@@ -220,10 +220,17 @@ service cloud.firestore {
     // ════════════════════════════════════════════════════════════
     match /meta/accountCounter {
       allow read: if request.auth != null;
-      // Initial seed only — must start at 1, no other fields permitted.
+      // Audit 4 C4 (2026-05-06): bootstrap path. The original rule allowed
+      // CREATE only with next == 1, but the client transaction at
+      // _createNewProfile reads cDoc, sees it doesn't exist (num=1 default),
+      // and writes next=num+1 = 2 to allocate accountNumber 1 to the first
+      // ever player. Pi reviewers on a fresh Firebase project hit this.
+      // Allow `next == 1 || next == 2` on CREATE so either pre-seeded or
+      // bootstrap-on-first-signup works. Subsequent UPDATE still strictly
+      // increments by 1 from the stored value.
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['next'])
-        && request.resource.data.next == 1;
+        && (request.resource.data.next == 1 || request.resource.data.next == 2);
       // Each write increments by exactly 1, only the `next` field allowed.
       allow update: if request.auth != null
         && request.resource.data.keys().hasOnly(['next'])
