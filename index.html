@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.18';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5588,15 +5588,24 @@ body.tab-wild #w-stats-bar{padding:14px 10px!important;padding-right:148px!impor
      3. Shrink floating buttons 70 → 60 + nudge BoS right
      4. Add margin-right buffer on kb-row2 as belt-and-suspenders */
 @media (max-width: 480px) {
-  #pw-keeper-bar .kb-row2 { max-width: 156px !important; margin-right: auto !important; }
+  /* Stephen 2026-05-06 (Galaxy tester): BoS still landed on top of DEW.
+     Root cause: kb-row2 max-width:156 was being IGNORED because the three
+     row-2 buttons were hardcoded width:70 / flex-shrink:0, so grid expanded
+     to min-content (3*70 + 14.4 gap = 224px) regardless of max-width. The
+     row spilled out under BoS. Fix: shrink the row-2 buttons to 56 under
+     this breakpoint so the grid actually honors a tight max-width.
+     On a 360 CSS px Galaxy:
+       kb-row2:   x = 11.2  to 195.2  (3*56 + 14.4 gap = 182.4, +11.2 left pad)
+       BoS img:   x = 219.5 to 288.5  (right:76 width:60, img 115% +/-4.5)
+       backpack:  x = 296   to 356    (right:4 width:60)
+     24px gap between row 2 and BoS, 7px between BoS and backpack. */
+  #pw-keeper-bar .kb-row2 { max-width: 184px !important; margin-right: auto !important; }
+  #pw-keeper-bar #kb-sunbeams,
+  #pw-keeper-bar #kb-hut,
+  #pw-keeper-bar #kb-dew { width: 56px !important; height: 56px !important; }
   /* kb-install kept visible (Stephen v36: "the download button is
      missing now"). Shrunk 48 -> 36 so backpack at right:4 width:60
-     overlaps less. On a 360 CSS px Galaxy:
-       install: x = 360-11-36 = 313 to 349
-       backpack: x = 360-64    = 296 to 356
-     7px overlap on the install left edge — visually fine since the
-     install icon's bg is mostly opaque and sits behind the backpack
-     PNG which has transparent edges. */
+     overlaps less. */
   #pw-keeper-bar .kb-row1 #kb-install { width: 36px !important; height: 36px !important; }
   #kb-compendium { right: 76px !important; width: 60px !important; height: 60px !important; }
   #kb-compendium img { width: 115% !important; height: 115% !important; }
