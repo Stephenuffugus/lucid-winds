@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.11';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -50831,6 +50831,9 @@ function _wildClimateTick(weather) {
       // the cold vector (was the only unprotected vector).
       // Stephen audit 2026-05-01 #14 wired Mammoth — was parked since April.
       if (t.companion === 34) dC = Math.round(dC * 0.5);
+      // Bioluminescent mutation — its own glow keeps it warm, half cold damage.
+      // Audit 2026-05-06 mutation hooks Priority 2.
+      if (t.mutationName === 'Bioluminescent') dC = Math.round(dC * 0.5);
       breaches.push({ kind: 'cold', diff: Math.round(under * 10) / 10, hours: dC });
       damageH += dC;
     }
@@ -50855,6 +50858,10 @@ function _wildClimateTick(weather) {
         // Pangolin (idx 43) Scale Coat signature — armored scales
         // shed wind shear. Halves wind damage. Closes the wind vector.
         if (t.companion === 43) dG = Math.round(dG * 0.5);
+        // Glass Stem mutation — fragile by lore. +50% wind damage so the
+        // "fragile beauty" trade-off is real, not just -1 EA. Reader page
+        // tells the player about this. Audit 2026-05-06 Priority 2.
+        if (t.mutationName === 'Glass Stem') dG = Math.round(dG * 1.5);
         breaches.push({ kind: 'wind', diff: Math.round(overMph * 10) / 10, hours: dG });
         damageH += dG;
       }
@@ -50872,6 +50879,12 @@ function _wildClimateTick(weather) {
         // damage on this plant's drought vector. Closes one of the 5
         // climate-vector signature gaps the Apr 18 session flagged.
         if (t.companion === 52) {
+          dD = Math.round(dD * 0.5);
+        }
+        // Mutation hooks (Audit 2026-05-06 Priority 2):
+        // - Fossil: petrified, drought-resistant, half drought damage.
+        // - Mycelium: networked filaments share water, half drought damage.
+        if (t.mutationName === 'Fossil' || t.mutationName === 'Mycelium') {
           dD = Math.round(dD * 0.5);
         }
         breaches.push({ kind: 'drought', diff: overDry, hours: dD });
@@ -82252,9 +82265,37 @@ var LW_MUTATION_LORE = {
   'Mycelium':       { theme:'nature',    rate:'~0.4%', lore:'Visible fungal filaments thread the substrate and sometimes climb the stem. Not a parasite, a partner. The two of them are a single organism by now, and the plant prefers it that way.' },
   'Daguerreotype':  { theme:'dark',      rate:'~0.4%', lore:'Silver-plate sheen, faint sepia ghosting, the stillness of a 19th-century portrait. The plant looks photographed, not grown. Hold it long enough and you start to feel watched back.' }
 };
+// Mutation mechanical effects table. Audit 2026-05-06 Priority 1: the
+// Reader page used to show only lore + rarity, leaving the player no
+// in-game proof mutations affect anything. Now shows EA delta, Hardiness
+// delta, and a one-line hint per mutation. Numbers MUST stay in sync
+// with computeEA (~10266) and getHardiness (~10783) — those are the
+// authoritative implementations.
+var LW_MUTATION_MECH = {
+  'Glitch':         { ea:-1, hardy:1.5, tier:'Cosmic byte',    hint:'Chaotic beauty. Pairs into Stormborn + Glitched Bone.' },
+  'Glass Stem':     { ea:-1, hardy:1,   tier:'Cosmic byte',    hint:'Fragile. +50% wind damage. Pairs with Obsidian Mirror or Tideglass.' },
+  'Wireframe':      { ea:1,  hardy:1,   tier:'Cosmic byte',    hint:'Architectural geometry — sturdy build.' },
+  'Holographic':    { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Pairs with Needle leaves for Holographic Prism, with Scarab for Prism Scarab.' },
+  'Neon':           { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Pairs into Neon Pulse and Aurora Storm.' },
+  'Ink Wash':       { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Pairs into Inkfall + Inkfall Court.' },
+  'Golden':         { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Old-alchemy gold. Cosmetic flourish.' },
+  'Porcelain':      { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Glazed sculpture finish.' },
+  'Bioluminescent': { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'-50% cold damage (its own glow keeps it warm). Pairs into Bioluminescent Tide.' },
+  'Pixel Art':      { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Pairs into Ember Glacier + Pixel Eclipse.' },
+  'Silhouette':     { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Pairs with Void Petal leaves for Shadow Loom + Silhouette Bind.' },
+  'Albino':         { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'Ghost finish. No pigment.' },
+  'Fossil':         { ea:1,  hardy:0,   tier:'Cosmic byte',    hint:'-50% drought damage (petrified survives). Pairs with Fossil Bed for Fossil Memory.' },
+  'Constellation':  { ea:2,  hardy:1.5, tier:'Mythic byte',    hint:'Cosmic-tier. Bell flower triggers Constellation Bloom.' },
+  'Origami':        { ea:2,  hardy:1.5, tier:'Mythic byte',    hint:'Pairs into Origami Sky Court.' },
+  'Stained Glass':  { ea:2,  hardy:0,   tier:'Mythic byte',    hint:'Cathedral-pane finish.' },
+  'Verdigris':      { ea:2,  hardy:1.5, tier:'Mythic byte',    hint:'Pairs into Verdigris Compact.' },
+  'Mycelium':       { ea:2,  hardy:1.5, tier:'Mythic byte',    hint:'-50% drought damage (network-fed water). Pairs into Mycelium Tomb.' },
+  'Daguerreotype':  { ea:2,  hardy:1.5, tier:'Mythic byte',    hint:'Pairs into Daguerreotype Vigil.' }
+};
 window._lwShowMutationDetail = function(mutName) {
   var m = LW_MUTATION_LORE[mutName];
   if (!m) return;
+  var mech = LW_MUTATION_MECH[mutName] || { ea:0, hardy:0, tier:'Mythic byte', hint:'' };
   // Count your mutated plants of this type
   var myCount = 0;
   try {
@@ -82265,9 +82306,15 @@ window._lwShowMutationDetail = function(mutName) {
   } catch(e){}
   var body = [];
   body.push({type:'quote', text: m.lore});
+  body.push({type:'section-head', text:'Mechanics'});
+  var _eaStr = (mech.ea > 0 ? '+' + mech.ea : String(mech.ea)) + ' EA';
+  body.push({type:'stat', label:'Evolutionary Advantage', value: _eaStr});
+  if (mech.hardy > 0) body.push({type:'stat', label:'Hardiness', value:'+' + mech.hardy});
+  if (mech.hint) body.push({type:'stat', label:'Notes', value: mech.hint});
+  body.push({type:'divider'});
   body.push({type:'section-head', text:'Rarity'});
   body.push({type:'stat', label:'Appearance rate', value: m.rate});
-  body.push({type:'stat', label:'Tier', value:'Mythic byte'});
+  body.push({type:'stat', label:'Tier', value: mech.tier});
   body.push({type:'divider'});
   body.push({type:'section-head', text:'Your collection'});
   body.push({type:'stat', label:'Plants with this mutation', value: myCount});
