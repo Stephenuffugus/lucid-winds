@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.02';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -57432,7 +57432,7 @@ window._hexAction=function(action){
             _saveWild(_ww);
           } catch(e){}
           if (window.earnDew) window.earnDew(2,'wasp_gall');
-          _toast('<img src="assets/companions/parasitic_wasp.png" alt="" style="width:22px;height:22px;vertical-align:-5px;" onerror="this.outerHTML=&apos;\ud83d\udc1d&apos;;"> The wasp struck the pests. +2 Dew (wasp gall).', {html:true});
+          _toast('<img src="assets/companions/parasitic-wasp.png" alt="" style="width:22px;height:22px;vertical-align:-5px;" onerror="this.outerHTML=&apos;\ud83d\udc1d&apos;;"> The wasp struck the pests. +2 Dew (wasp gall).', {html:true});
         }
       } catch(e){}
       };
@@ -57818,7 +57818,7 @@ function _autoCarouselFromInspector(){
     window.openCarousel(_hexInspPlants.slice(),0,'wild-inspect');
   },120);
 }
-return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_forceFallbackCoords:function(){if(!_uLat){_uLat=FALLBACK[0];_uLng=FALLBACK[1];window._uLat=_uLat;window._uLng=_uLng;if(_map){try{_map.setView(FALLBACK,17);_placeUser();_loadAll();}catch(e){}}return true;}return false;},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
+return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_forceFallbackCoords:function(){if(!_uLat){_uLat=FALLBACK[0];_uLng=FALLBACK[1];window._uLat=_uLat;window._uLng=_uLng;if(_map){try{_map.setView(FALLBACK,17);_placeUser();_loadAll();}catch(e){}}}_gpsDenied=false;window._gpsDenied=false;return true;},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
@@ -59465,6 +59465,11 @@ function _showMintCelebration(fullHash){
   h+='<button onclick="_dismissWin();_restartCurrentGame();" style="width:100%;padding:0.45rem;border:1.5px solid rgba(122,179,86,0.25);border-radius:8px;background:rgba(46,60,38,0.3);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;cursor:pointer;min-height:44px;">KEEP PLAYING</button>';
   h+='</div></div>';
   ov.innerHTML=h;document.body.appendChild(ov);
+  // Tap-out dismiss: matches every other overlay pattern in the file.
+  // Without this, iOS reviewers tap outside expecting close and feel the
+  // overlay is broken. Buttons inside `<div style="text-align:center..">`
+  // bubble up but `e.target===ov` is true only on the outer overlay.
+  ov.addEventListener('click',function(e){if(e.target===ov)_dismissWin();});
   // Layered celebration:
   //   - rings burst at t=0 (the moment)
   //   - sparkles burst at t=600ms (when the plant resolves into focus)
@@ -59558,6 +59563,8 @@ function _showWinCelebration(){
   h+='<button onclick="_dismissWin();_openGamePicker();" style="width:100%;padding:0.55rem;margin-bottom:0.3rem;border:1.5px solid rgba(200,168,75,0.2);border-radius:8px;background:rgba(46,40,32,0.4);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.08em;cursor:pointer;min-height:48px;"><span class="lwe lwe-sun"></span> TRY ANOTHER GAME</button>';
   h+='<button onclick="_dismissWin();switchTab(\'greenhouse\');" style="width:100%;padding:0.4rem;border:1px solid rgba(200,188,160,0.08);border-radius:8px;background:none;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.06em;cursor:pointer;min-height:44px;"><span class="lwe lwe-leaf"></span> VIEW GREENHOUSE</button>';
   h+='</div>';ov.innerHTML=h;document.body.appendChild(ov);
+  // Tap-out dismiss (matches mint-win overlay pattern above).
+  ov.addEventListener('click',function(e){if(e.target===ov)_dismissWin();});
   // Layered particle celebration. _winNear gets an extra ring + 50% more
   // sparkles to signal the mint is one game away.
   try{
@@ -69875,9 +69882,15 @@ function _tapMemory(idx){
     _state.revealed[idx]=true;_state.inputIdx++;_renderMemory();
     if(_state.inputIdx>=_state.seq.length)_win();
   }else{
-    _state.revealed={};_state.inputIdx=0;
+    // Wrong tap: reset progress, flash the wrong dot, then RE-SHOW the
+    // sequence (mirrors the init pattern at line ~70374 where phase
+    // starts 'show' then flips to 'input' after 2.5s). Without setting
+    // phase back to 'show' the player retries blind. Audit 6 H1.
+    _state.revealed={};_state.inputIdx=0;_state.phase='show';
     var els=document.querySelectorAll('#fc-board div[onclick]');if(els[idx])els[idx].style.background='#c07070';
-    setTimeout(function(){_renderMemory();},300);try{navigator.vibrate&&navigator.vibrate(50);}catch(e){}
+    setTimeout(function(){if(!_solved)_renderMemory();},300);
+    setTimeout(function(){if(!_solved){_state.phase='input';_renderMemory();}},2500);
+    try{navigator.vibrate&&navigator.vibrate(50);}catch(e){}
   }
 }
 
@@ -72760,7 +72773,7 @@ var _ov=null,_dlg=null,_spot=null,_spotEl=null,_spotElOrigPos=null,_spotRAF=null
 
 function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;return parseInt(s,10)||0;}
 function _setStep(n){localStorage.setItem(TK,String(n));}
-function _done(){_setStep('done');_clear();}
+function _done(){_setStep('done');_clear();try{localStorage.removeItem('lw_tut_sow_attempts');}catch(e){}}
 
 function _clear(){
   if(_ov&&_ov.parentNode)_ov.remove();_ov=null;
@@ -75013,6 +75026,9 @@ function _step38(){
 // ═══ STEP 39: post-contest explanation ═══
 function _step39(){
   _setStep(39);
+  // Audit 2 C3: clear the SOW soft-cap counter on entry so a returning
+  // tutorial player doesn't hit attempt#2 immediately on the next launch.
+  try{localStorage.removeItem('lw_tut_sow_attempts');}catch(e){}
   // Painted icons at 64px (was 32px \u2014 Stephen test pass: "TOO SMALL"). The
   // source assets are 256/64px hi-res; render them so the detail reads.
   var _ic=function(src,fall){return '<img src="'+src+'" alt="" style="width:64px;height:64px;object-fit:contain;vertical-align:middle;display:inline-block;margin-right:14px;flex-shrink:0;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2.4rem;margin-right:14px;&quot;>'+fall+'</span>&apos;;">';};
@@ -75151,6 +75167,11 @@ function _step40Spotlight(forage){
 function _step41(){
   _setStep(41);
   _clear();
+  // Audit 2 critical: step 41 had no stuck-link. If the forage panel
+  // never opens (GPS denied early-return, no nearby foreageable hex,
+  // click swallowed) the watch loop polled 1200×500ms = ~10min then
+  // died silently. 12s stuck-link advances cleanly to step 42.
+  _lwTutStuckLink(41, function(){setTimeout(_step42,400);}, 12000);
   // Stephen 2026-05-02: step 40's _step40Spotlight set inline !important
   // styles on #ffb (z-index:1000012 + display:flex + visibility:visible +
   // opacity:1 + pointer-events:auto) to override the iOS hide-on-bp-open
