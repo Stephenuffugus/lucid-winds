@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.09';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -85359,7 +85359,11 @@ window._lwClaimHerbarium = function(id){
   // ─── Daily remote-forage cap ───
   // Locked design: 2 remote forages / 24h, shared across Scrying, Raven,
   // Slow Arrow, Wanderer. Keeps walking primary.
-  function _remoteTodayKey(){ return new Date().toISOString().slice(0,10); }
+  function _remoteTodayKey(){
+    // Server-day routing (security-deep H1).
+    if (typeof window._lwServerDay === 'function') return window._lwServerDay();
+    return new Date().toISOString().slice(0,10);
+  }
   function _remoteDailyCount(){
     var d={}; try { d = JSON.parse(localStorage.getItem('sws_remote_daily')||'{}'); } catch(e){}
     return (d.date === _remoteTodayKey()) ? (d.count || 0) : 0;
@@ -85396,7 +85400,70 @@ window._lwClaimHerbarium = function(id){
     window.LW_FORAGING.openPanel(zk, grade, function(success){
       window._lastDetectedBiome = prevBiome;
       try { if (window._logWildEvent) window._logWildEvent({type:opts.logType||'remote_forage', item:opts.itemKey, biome:biomeKey, grade:grade, success:!!success}); } catch(e){}
-      if (window._toast) setTimeout(function(){ window._toast(success ? opts.successMsg : opts.failMsg); }, 900);
+      if (success) {
+        // Audit items-functional 2026-05-06: callback used to only toast.
+        // Item was already spent (line 85382), daily slot consumed (85383),
+        // but no seed was ever delivered. Stephen's Raven's Eye bug. Fix:
+        // mint a fresh feral and drop into pouch — same shape _awardFeral
+        // writes for local forages.
+        var feralHash = '';
+        try {
+          var _rb = new Uint8Array(32); crypto.getRandomValues(_rb);
+          feralHash = Array.from(_rb).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+        } catch(e){
+          for (var bi=0;bi<64;bi++) feralHash += Math.floor(Math.random()*16).toString(16);
+        }
+        // Nudge the hash to land near the promised grade. Reroll ≤200 times.
+        try {
+          var _ord = {Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6};
+          var _target = _ord[grade] != null ? _ord[grade] : 0;
+          for (var _try = 0; _try < 200; _try++) {
+            var _t = window.hashToTraits(feralHash);
+            var _g = window.getTerraGrade(_t);
+            var _gn = (_g && _ord[_g.name] != null) ? _ord[_g.name] : 0;
+            if (_gn >= _target) break;
+            var _r2 = new Uint8Array(32); crypto.getRandomValues(_r2);
+            feralHash = Array.from(_r2).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+          }
+        } catch(e){}
+        var feralObj = {
+          hash: feralHash,
+          name: 'Mystery Seed',
+          type: 'feral',
+          grade: '???',
+          mystery: true,
+          parentA: null,
+          parentB: null,
+          zone: zk,
+          date: new Date().toISOString(),
+          origin: opts.itemKey
+        };
+        var added = false;
+        if (window.FG_Backpack && window.FG_Backpack.as) {
+          added = window.FG_Backpack.as(feralObj);
+        }
+        if (!added) {
+          // Pouch full — refund item AND daily slot. Player got nothing.
+          add(opts.itemKey, 1);
+          try {
+            var d2 = JSON.parse(localStorage.getItem('sws_remote_daily')||'{}');
+            if (d2.date === _remoteTodayKey() && d2.count > 0) {
+              d2.count--; localStorage.setItem('sws_remote_daily', JSON.stringify(d2));
+            }
+          } catch(e){}
+          if (window._toast) setTimeout(function(){
+            var _nm = (CATALOG[opts.itemKey] && CATALOG[opts.itemKey].name) || 'Item';
+            window._toast('Pouch full. ' + _nm + ' returned.');
+          }, 900);
+          return;
+        }
+        try { if (window.earnDew) window.earnDew(1, 'remote_feral_collect'); } catch(e){}
+        if (window.LW_Log) try { window.LW_Log.write('feral_collected', { hash:feralHash, grade:'???', name:'Mystery Seed', mystery:true, origin:opts.itemKey }); } catch(e){}
+        if (window.LW_ACH) try { window.LW_ACH.bump('ferals_total',1); window.LW_ACH.bump('d_feral',1); window.LW_ACH.bump('w_feral',1); } catch(e){}
+        if (window._toast) setTimeout(function(){ window._toast(opts.successMsg); }, 900);
+      } else {
+        if (window._toast) setTimeout(function(){ window._toast(opts.failMsg); }, 900);
+      }
     });
     return true;
   }
@@ -85535,7 +85602,60 @@ window._lwClaimHerbarium = function(id){
       }
       window.LW_FORAGING.openPanel(zk, grade, function(success){
         window._lastDetectedBiome = prevBiome;
-        if (window._toast) setTimeout(function(){ window._toast(success ? '\ud83c\udff9 The arrow found moss, a feral held where it fell.' : 'The pin was empty. The arrow returns.'); }, 900);
+        if (success) {
+          // Audit items-functional 2026-05-06: same broken pattern as the
+          // _runRemoteForage callback \u2014 slowArrow used to consume + open
+          // panel + toast, never deliver a seed. Now mints + drops to pouch.
+          var feralHash = '';
+          try {
+            var _rb = new Uint8Array(32); crypto.getRandomValues(_rb);
+            feralHash = Array.from(_rb).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+          } catch(e){
+            for (var bi=0;bi<64;bi++) feralHash += Math.floor(Math.random()*16).toString(16);
+          }
+          // Nudge to promised grade.
+          try {
+            var _ord2 = {Common:0,Uncommon:1,Rare:2,Epic:3,Legendary:4,Mythic:5,Cosmic:6};
+            var _target2 = _ord2[grade] != null ? _ord2[grade] : 0;
+            for (var _try2 = 0; _try2 < 200; _try2++) {
+              var _t2 = window.hashToTraits(feralHash);
+              var _g2 = window.getTerraGrade(_t2);
+              var _gn2 = (_g2 && _ord2[_g2.name] != null) ? _ord2[_g2.name] : 0;
+              if (_gn2 >= _target2) break;
+              var _r3 = new Uint8Array(32); crypto.getRandomValues(_r3);
+              feralHash = Array.from(_r3).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+            }
+          } catch(e){}
+          var feralObj2 = {
+            hash: feralHash,
+            name: 'Mystery Seed',
+            type: 'feral',
+            grade: '???',
+            mystery: true,
+            parentA: null,
+            parentB: null,
+            zone: zk,
+            date: new Date().toISOString(),
+            origin: 'slowArrow'
+          };
+          var added2 = false;
+          if (window.FG_Backpack && window.FG_Backpack.as) {
+            added2 = window.FG_Backpack.as(feralObj2);
+          }
+          if (!added2) {
+            // Pouch full. slowArrow has no daily slot to refund (it's its
+            // own pin), so re-pin for another shot. Restore the pin doc.
+            try { localStorage.setItem('sws_slow_arrow', JSON.stringify(pin)); } catch(e){}
+            if (window._toast) setTimeout(function(){ window._toast('Pouch full. Pin restored \u2014 clear a slot and try again.'); }, 900);
+            return;
+          }
+          try { if (window.earnDew) window.earnDew(1, 'remote_feral_collect'); } catch(e){}
+          if (window.LW_Log) try { window.LW_Log.write('feral_collected', { hash:feralHash, grade:'???', name:'Mystery Seed', mystery:true, origin:'slowArrow' }); } catch(e){}
+          if (window.LW_ACH) try { window.LW_ACH.bump('ferals_total',1); window.LW_ACH.bump('d_feral',1); window.LW_ACH.bump('w_feral',1); } catch(e){}
+          if (window._toast) setTimeout(function(){ window._toast('\ud83c\udff9 The arrow found moss, a feral held where it fell.'); }, 900);
+        } else {
+          if (window._toast) setTimeout(function(){ window._toast('The pin was empty. The arrow returns.'); }, 900);
+        }
       });
     });
   }
