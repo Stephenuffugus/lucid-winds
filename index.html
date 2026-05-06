@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.17';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -59858,7 +59858,14 @@ function _showMintCelebration(fullHash){
   // Phase 1: "FULL BLOOM" header
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.22em;margin-bottom:0.2rem;opacity:0;animation:tierFadeIn 0.5s ease 0.2s forwards;">FULL BLOOM</div>';
   // Phase 2: Plant silhouette → revealed (no rarity — save for inspect)
-  h+='<div id="mint-plant-reveal" style="margin:0.2rem auto;opacity:0;transform:scale(0.3);filter:brightness(0) blur(6px);transition:all 1.4s cubic-bezier(0.16,1,0.3,1);">'+svg+'</div>';
+  // Audit 2026-05-06 (Stephen): every bloom showed plant as wireframe (only
+  // strokes, no fills). The combo of inner filter:brightness(0)+blur(6px)
+  // with the outer modal's backdrop-filter:blur(16px) is a known iOS Safari
+  // compositing trap — fills can fail to repaint after the transition,
+  // leaving the SVG looking like a wireframe. Simplified to opacity+scale
+  // only. Same dramatic reveal beat (silhouette → resolved), no compound
+  // filter stack to glitch on.
+  h+='<div id="mint-plant-reveal" style="margin:0.2rem auto;opacity:0;transform:scale(0.3);transition:opacity 1.4s ease, transform 1.4s cubic-bezier(0.16,1,0.3,1);">'+svg+'</div>';
   // Phase 3: Plant name only — rarity hidden until greenhouse inspect
   h+='<div style="font-family:Playfair Display,serif;font-size:0.8rem;font-weight:700;color:var(--cream);margin-bottom:0.1rem;opacity:0;animation:tierFadeIn 0.5s ease 2.0s forwards;">'+(_plantName||'Unknown Specimen')+'</div>';
   // Phase 4: Mystery hint instead of tier reveal
@@ -59891,7 +59898,7 @@ function _showMintCelebration(fullHash){
     setTimeout(function(){if(window._lwSpawnParticles)window._lwSpawnParticles(ov,{sparkles:22});},600);
   }catch(e){}
   // Phase 2 trigger: plant grows from silhouette
-  setTimeout(function(){var rv=document.getElementById('mint-plant-reveal');if(rv){rv.style.opacity='1';rv.style.transform='scale(1)';rv.style.filter='brightness(1) blur(0px)';}},600);
+  setTimeout(function(){var rv=document.getElementById('mint-plant-reveal');if(rv){rv.style.opacity='1';rv.style.transform='scale(1)';}},600);
   // Haptic + sound at name reveal
   setTimeout(function(){if(window._haptic)_haptic('bloom');if(window._play)_play('match');},2000);
   // Gold radial flash
