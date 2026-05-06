@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.03';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -40120,6 +40120,12 @@ document.addEventListener('keydown', function(e) {
   function _renderEventEntry(e) {
     var d = e.data || {};
     var icon = '\u25cf', body = '', color = 'var(--cream)';
+    // Audit 3 #7: ownerName flows from another player's keeper name into
+    // local LW_Log via wild_watered_stranger / wild_tended_stranger /
+    // wild_cutting_taken. Without escaping, a malicious displayName like
+    // <img src=x onerror=...> implants a payload that fires every time
+    // the victim opens BoS. Use the canonical helper with inline fallback.
+    var _esc = window._lwEscapeHTML || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
     switch (e.type) {
       case 'plant_mint':
         icon = '\ud83c\udf31'; color = 'var(--sage)';
@@ -40162,7 +40168,7 @@ document.addEventListener('keydown', function(e) {
         break;
       case 'wild_watered_stranger':
         icon = '\ud83d\udca7'; color = '#7ab8c8';
-        body = 'You watered <b>' + (d.ownerName || 'a keeper') + '\u2019s</b> wild plant. +2h lifespan.';
+        body = 'You watered <b>' + _esc(d.ownerName || 'a keeper') + '\u2019s</b> wild plant. +2h lifespan.';
         break;
       case 'wild_drop':
         icon = '\ud83c\udf3f'; color = 'var(--sage)';
@@ -40182,11 +40188,11 @@ document.addEventListener('keydown', function(e) {
       case 'wild_cutting_taken':
         icon = '\u2702\ufe0f'; color = '#c88a4a';
         var cutName = d.name || (d.hash && window.getPlantName ? getPlantName(d.hash) : 'a wild plant');
-        body = 'You took a cutting from <b>' + cutName + '</b>' + (d.ownerName ? ' (' + d.ownerName + ')' : '') + '. The clipping is in your nursery.';
+        body = 'You took a cutting from <b>' + cutName + '</b>' + (d.ownerName ? ' (' + _esc(d.ownerName) + ')' : '') + '. The clipping is in your nursery.';
         break;
       case 'wild_tended_stranger':
         icon = '\ud83c\udf3f'; color = 'var(--sage)';
-        body = 'You tended <b>' + (d.ownerName || 'a keeper') + '\u2019s</b> plant in the wild.';
+        body = 'You tended <b>' + _esc(d.ownerName || 'a keeper') + '\u2019s</b> plant in the wild.';
         break;
       case 'level_up':
         icon = '\u2728'; color = 'var(--gold)';
@@ -56072,10 +56078,11 @@ window._lwEditFriendNick = function(uid, currentName) {
   var _modal = document.createElement('div');
   _modal.id = 'lw-nick-modal';
   _modal.style.cssText = 'position:fixed;inset:0;z-index:100004;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;padding:1rem;';
+  var _xsfn=window._lwEscapeHTML||function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
   var h = '<div onclick="event.stopPropagation()" style="max-width:320px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.1rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.14em;color:var(--gold);margin-bottom:0.3rem;">NICKNAME</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;">A name only you see for <span style="color:var(--cream);">' + currentName + '</span>.</div>';
-  h += '<input id="lw-nick-input" type="text" maxlength="20" placeholder="Enter nickname..." value="' + existing + '" style="width:100%;box-sizing:border-box;padding:0.5rem;font-family:DM Mono,monospace;font-size:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;color:var(--cream);margin-bottom:0.55rem;min-height:48px;">';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;">A name only you see for <span style="color:var(--cream);">' + _xsfn(currentName) + '</span>.</div>';
+  h += '<input id="lw-nick-input" type="text" maxlength="20" placeholder="Enter nickname..." value="' + _xsfn(existing) + '" style="width:100%;box-sizing:border-box;padding:0.5rem;font-family:DM Mono,monospace;font-size:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;color:var(--cream);margin-bottom:0.55rem;min-height:48px;">';
   h += '<div style="display:flex;gap:0.4rem;">';
   h += '<button id="lw-nick-save" style="flex:1;padding:0.45rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;">SAVE</button>';
   h += '<button id="lw-nick-cancel" style="flex:1;padding:0.45rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:rgba(46,60,38,0.15);border:1px solid rgba(122,179,86,0.15);border-radius:8px;color:var(--muted);cursor:pointer;min-height:48px;">CANCEL</button>';
@@ -56503,7 +56510,8 @@ window._lwOpenTwinBloomPropose = function(friendUid, friendName) {
     onPick: function(plantHash){
       window.LW_GIFTS.proposeTwinBloom(friendUid, friendName, plantHash, function(ok, info){
         if (ok){
-          if (window._toast) window._toast((window._lwEmojiSprite?window._lwEmojiSprite('🌸',16):'🌸')+' Proposal sent to '+(friendName||'your friend')+'. Waiting for their pick.', {html:true});
+          var _xsfn=window._lwEscapeHTML||function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+          if (window._toast) window._toast((window._lwEmojiSprite?window._lwEmojiSprite('🌸',16):'🌸')+' Proposal sent to '+_xsfn(friendName||'your friend')+'. Waiting for their pick.', {html:true});
           if (window.PW_UI && window.PW_UI.loadFriendsUI) window.PW_UI.loadFriendsUI();
         } else {
           if (window._toast) window._toast('Twin Bloom failed: '+(info||'unknown'));
@@ -56741,7 +56749,7 @@ window._lwShowGiftReveal = function(info){
   ov.style.cssText = 'position:fixed;inset:0;z-index:100020;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,rgba(28,24,12,0.85),rgba(5,8,4,0.95));backdrop-filter:blur(8px);animation:panelFadeIn 0.3s ease;cursor:pointer;';
   ov.innerHTML =
     '<div style="text-align:center;max-width:300px;padding:1.4rem;background:rgba(18,22,16,0.96);border:1.5px solid rgba(200,168,75,0.5);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 28px rgba(200,168,75,0.18);">' +
-      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.16em;color:var(--gold);margin-bottom:0.6rem;">A GIFT FROM ' + (from + '').toUpperCase() + '</div>' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.16em;color:var(--gold);margin-bottom:0.6rem;">A GIFT FROM ' + (window._lwEscapeHTML||function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});})((from + '').toUpperCase()) + '</div>' +
       '<div style="margin:0.8rem 0;animation:lwGiftRevealPop 0.6s cubic-bezier(0.34,1.56,0.64,1);">' + iconHtml + '</div>' +
       '<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.06em;color:var(--cream);margin-bottom:0.9rem;">' + label + '</div>' +
       '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">tap to dismiss</div>' +
@@ -56760,10 +56768,11 @@ window._lwNicknameKeeper = function(uid, currentName) {
   var _modal = document.createElement('div');
   _modal.id = 'lw-nick-modal';
   _modal.style.cssText = 'position:fixed;inset:0;z-index:100004;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;padding:1rem;';
+  var _xsfn=window._lwEscapeHTML||function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
   var h = '<div onclick="event.stopPropagation()" style="max-width:320px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.1rem 1rem;box-shadow:0 16px 50px rgba(0,0,0,0.7);">';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.4rem;">NICKNAME KEEPER</div>';
-  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;">Give <span style="color:var(--cream);">' + currentName + '</span> a nickname you\'ll recognize.</div>';
-  h += '<input id="lw-nick-input" type="text" maxlength="20" placeholder="Enter nickname..." value="' + existing + '" style="width:100%;box-sizing:border-box;padding:0.5rem;font-family:DM Mono,monospace;font-size:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;color:var(--cream);margin-bottom:0.55rem;min-height:48px;">';
+  h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:0.6rem;">Give <span style="color:var(--cream);">' + _xsfn(currentName) + '</span> a nickname you\'ll recognize.</div>';
+  h += '<input id="lw-nick-input" type="text" maxlength="20" placeholder="Enter nickname..." value="' + _xsfn(existing) + '" style="width:100%;box-sizing:border-box;padding:0.5rem;font-family:DM Mono,monospace;font-size:0.6rem;background:rgba(13,16,12,0.7);border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;color:var(--cream);margin-bottom:0.55rem;min-height:48px;">';
   h += '<div style="display:flex;gap:0.4rem;">';
   h += '<button id="lw-nick-save" style="flex:1;padding:0.45rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));border:1.5px solid rgba(122,179,86,0.5);border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;">SAVE</button>';
   h += '<button id="lw-nick-cancel" style="flex:1;padding:0.45rem;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.08em;background:rgba(46,60,38,0.15);border:1px solid rgba(122,179,86,0.15);border-radius:8px;color:var(--muted);cursor:pointer;min-height:48px;">CANCEL</button>';
@@ -80206,23 +80215,27 @@ function _generateReport(){
     lines.push({icon:'💧',text:wCount+' stranger'+(wCount>1?'s':'')+' watered your plants overnight.',color:'rgba(91,175,220,0.9)'});
   }
 
+  // Audit 3 #7b: morning report renders `lines[i].text` via innerHTML.
+  // originName / defenderName / fe.name flow from another player's
+  // wildDrops doc → trustless. Escape on the way in.
+  var _mrEsc = window._lwEscapeHTML || function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
   // Spread stories
   if(spreads.length>0){
     var s=spreads[spreads.length-1];
-    lines.push({icon:'🌿',text:'A descendant of your '+s.originName+' was found '+Math.round(s.distance||0)+'m away.',color:'var(--gold)'});
+    lines.push({icon:'🌿',text:'A descendant of your '+_mrEsc(s.originName)+' was found '+Math.round(s.distance||0)+'m away.',color:'var(--gold)'});
   }
 
   // Invasion stories
   if(invasions.length>0){
     var inv=invasions[0];
-    lines.push({icon:'⚔️',text:'Your '+inv.defenderName+' was outcompeted by a wild seedling (EA '+inv.invaderEA+').',color:'rgba(192,112,112,0.8)'});
+    lines.push({icon:'⚔️',text:'Your '+_mrEsc(inv.defenderName)+' was outcompeted by a wild seedling (EA '+inv.invaderEA+').',color:'rgba(192,112,112,0.8)'});
   }
 
   // Feral decay stories (plant went feral from neglect)
   var feralEvts=recent.filter(function(e){return e.type==='feral';});
   if(feralEvts.length>0){
     var fe=feralEvts[0];
-    lines.push({icon:'💀',text:'Your '+(fe.name||'plant')+' went feral from neglect. Its genetics live on in the wild.',color:'rgba(192,112,112,0.7)'});
+    lines.push({icon:'💀',text:'Your '+_mrEsc(fe.name||'plant')+' went feral from neglect. Its genetics live on in the wild.',color:'rgba(192,112,112,0.7)'});
   }
 
   // Biome-related stories
@@ -85827,7 +85840,8 @@ window.LW_GIFTS = (function(){
             claimed: true,
             claimedAt: firebase.firestore.FieldValue.serverTimestamp()
           }).catch(function(){});
-          if (window._toast) window._toast((window._lwEmojiSprite?window._lwEmojiSprite('🌸',16):'🌸')+' Twin Bloom declined by ' + (g.fromName || 'your friend') + '. ' + amt + ' Dew refunded.', {html:true});
+          var _xsfn=window._lwEscapeHTML||function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+          if (window._toast) window._toast((window._lwEmojiSprite?window._lwEmojiSprite('🌸',16):'🌸')+' Twin Bloom declined by ' + _xsfn(g.fromName || 'your friend') + '. ' + amt + ' Dew refunded.', {html:true});
         })(g);
         continue;
       }
@@ -85885,7 +85899,8 @@ window.LW_GIFTS = (function(){
         }).catch(function(){});
         // Toast Alice
         try {
-          if (window._toast) window._toast((window._lwEmojiSprite?window._lwEmojiSprite('🌸',16):'🌸')+' Twin Bloom complete! ' + (g.fromName || 'Your friend') + ' accepted — twin seed in your nursery.', {html:true});
+          var _xsfn=window._lwEscapeHTML||function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+          if (window._toast) window._toast((window._lwEmojiSprite?window._lwEmojiSprite('🌸',16):'🌸')+' Twin Bloom complete! ' + _xsfn(g.fromName || 'Your friend') + ' accepted — twin seed in your nursery.', {html:true});
         } catch(e){}
       })(g);
     }
@@ -96067,6 +96082,12 @@ window.LW_Comp = (function(){
 
   window._lwCleanName = function(name){
     if(!name||typeof name!=='string')return {ok:false,reason:'Pick a name.'};
+    // Audit 3 M2 (defense in depth): strip HTML/JS metacharacters BEFORE
+    // persisting to Firestore. Even though every render path that's been
+    // patched escapes on output, stripping on write means a malicious
+    // displayName payload never reaches another player's client at all.
+    // The patterns blocked: <, >, &, ", ', backtick.
+    name = name.replace(/[<>&"'`]/g, '');
     var trimmed=name.trim();
     if(!trimmed)return {ok:false,reason:'Pick a name.'};
     if(trimmed.length<2)return {ok:false,reason:'A little longer, Keeper.'};
