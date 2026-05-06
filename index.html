@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.06';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -73907,6 +73907,10 @@ function _watchMintModal(attempts){
 // + pulse the button itself so the target is unambiguous.
 function _step17(){
   _setStep(17);
+  // Audit 2 H1: 240×500ms (~2 min) watch poll then _done() if mint never
+  // completes. Add a 25s stuck-link so a player on a slow connection or
+  // with a missing painted button has a visible escape.
+  _lwTutStuckLink(17, function(){_done();}, 25000);
   _dialog(
     '<span style="color:var(--gold);">Press the button</span> to bring your second plant into being.',
     '',null,'bottom');
@@ -74067,6 +74071,10 @@ function _step18PulseNewTile(attempts){
 function _step19(){
   _setStep(19);
   _clear();
+  // Audit 2 H2: BREED button tap watcher polls 5min then _done(). If the
+  // BREED button is missing/off-screen the player has no manual exit.
+  // 20s stuck-link advances cleanly to step 20.
+  _lwTutStuckLink(19, function(){setTimeout(_step20,400);}, 20000);
   // Release the step-18 newplant lock — the carousel is now open and
   // the greenhouse grid is behind it. Target class cleared so no
   // residual pulse on the tile. Re-engage carousel-lock so every
@@ -74104,6 +74112,11 @@ function _step19(){
 // ═══ STEP 20: inside breed screen — explain + watch for executed breed ═══
 function _step20(){
   _setStep(20);
+  // Audit 2 H3: 5min poll for breed execution. The dialog has an OK
+  // button, but if it's missing or the breed-screen state is wrong
+  // there's no recovery. 25s stuck-link advances directly to step 22
+  // (step 21 is dead per audit; chain goes 19 → 20 → 22).
+  _lwTutStuckLink(20, function(){setTimeout(_step22,400);}, 25000);
   // Release carousel-lock (carousel is now behind the breed-screen
   // overlay) and engage the breed-screen lock so only the CROSS-
   // POLLINATE confirm button is tappable. Close-X, partner arrows,
@@ -75491,6 +75504,10 @@ function _step41(){
 function _step42(){
   _setStep(42);
   _clear();
+  // Audit 2 H8: 750-tick (~5min) poll for bp-seed-to-nursery CustomEvent.
+  // If FG_Data.addSeed silently fails or the event listener doesn't bind,
+  // step 42 strands forever. 15s stuck-link advances to step 43.
+  _lwTutStuckLink(42, function(){setTimeout(_step43,400);}, 15000);
   // Stephen 2026-04-30 LATE LATE LATE: "after CARRY IT HOME nothing
   // happened — we need to open the backpack and send it to nursery,
   // monorail style no diverting." Three-stage spotlight:
