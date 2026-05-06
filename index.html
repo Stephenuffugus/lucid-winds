@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.02.74';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.01';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -40465,6 +40465,12 @@ document.addEventListener('keydown', function(e) {
         window.lwSunbeamRain({variant:_variant,rays:Math.min(12,4+Math.floor(amount/3)),sparkles:Math.min(24,8+Math.floor(amount/2))});
       }
     }catch(e){}
+    // Persist Sunbeams to cloud on every earn. Without this, accrued sunbeams
+    // only reach Firestore when a *different* mutation (mint/compost/breed)
+    // flushes the vault — so a player who earns 240 sunbeams without minting
+    // and then clears their browser loses everything. Stephen 2026-05-05.
+    // Debounced via SYNC_DEBOUNCE_MS (5s) inside _doFlushVaultToCloud.
+    try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
   }
   // Update game tab dew balance + mint progress bar + keeper bar dew
   function _updateGameDew() {
@@ -47395,9 +47401,28 @@ document.addEventListener('keydown', function(e) {
               if (d.secondBloomClaimed) localStorage.setItem('lw_second_bloom_claimed', d.secondBloomClaimed);
               if (d.guardianNextDrop) localStorage.setItem('lw_guardian_next_drop', d.guardianNextDrop);
               if (d.gildingHour) localStorage.setItem('lw_gilding_hour', d.gildingHour);
-              if (d.readyHashes) localStorage.setItem('pw_readyHashes', JSON.stringify(d.readyHashes));
-              if (d.hashBuf) localStorage.setItem('pw_hashBuf', d.hashBuf);
-              if (typeof d.hashFilled === 'number') localStorage.setItem('pw_hashFilled', String(d.hashFilled));
+              // MAX-merge sunbeam queue on cloud read. On a fresh browser the
+              // local queue is empty, so cloud wins; but if local has earned
+              // sunbeams that haven't pushed yet (offline session, or a write
+              // race), don't let a stale cloud copy clobber them. Stephen lost
+              // 240 sunbeams to overwrite-on-read 2026-05-05; this prevents it.
+              try {
+                var _localQ = JSON.parse(localStorage.getItem('pw_readyHashes')||'[]'); if(!Array.isArray(_localQ))_localQ=[];
+                var _cloudQ = Array.isArray(d.readyHashes) ? d.readyHashes : [];
+                var _localHF = parseInt(localStorage.getItem('pw_hashFilled')||'0',10)||0;
+                var _cloudHF = (typeof d.hashFilled === 'number') ? d.hashFilled : 0;
+                var _localTotal = _localQ.length*30 + _localHF;
+                var _cloudTotal = _cloudQ.length*30 + _cloudHF;
+                if (_cloudTotal >= _localTotal) {
+                  localStorage.setItem('pw_readyHashes', JSON.stringify(_cloudQ));
+                  if (d.hashBuf) localStorage.setItem('pw_hashBuf', d.hashBuf);
+                  localStorage.setItem('pw_hashFilled', String(_cloudHF));
+                }
+              } catch(e) {
+                if (d.readyHashes) localStorage.setItem('pw_readyHashes', JSON.stringify(d.readyHashes));
+                if (d.hashBuf) localStorage.setItem('pw_hashBuf', d.hashBuf);
+                if (typeof d.hashFilled === 'number') localStorage.setItem('pw_hashFilled', String(d.hashFilled));
+              }
               // Prestige: take MAX to prevent regression on cross-device merges
               if (typeof d.prestige === 'number') {
                 var _localP = parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0;
@@ -51971,19 +51996,21 @@ function showTP(p,mk){
     else{g.textContent='UNKNOWN';g.style.color='var(--muted)';}
   }
   var ow=document.getElementById('wtp-owner');if(ow){
-    var ownerTxt=p.own?'Your plant':(p.ownerName||'Wild specimen');
+    var _esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+    var ownerHtml=_esc(p.own?'Your plant':(p.ownerName||'Wild specimen'));
     // Friend badge — appears next to owner name when this plant's owner is
     // an explicitly-added friend. Privacy: friending only via char sheet.
     if(!p.own&&p.ownerUid&&window.isFriend&&window.isFriend(p.ownerUid)){
-      ownerTxt+=' · 🌿 FRIEND';
+      var _frLeaf=window._lwEmojiSprite?window._lwEmojiSprite('🌿',16):'🌿';
+      ownerHtml+=' · '+_frLeaf+' FRIEND';
     }
     if(p.wildBorn&&p.originDropperUid&&p.originDropperUid!=='wild'){
-      ownerTxt+=' · Lineage of '+(p.originDropperName||'a keeper');
+      ownerHtml+=' · Lineage of '+_esc(p.originDropperName||'a keeper');
     }
     if(p.wildBorn&&p.generation){
-      ownerTxt+=' · Gen '+p.generation+' wild';
+      ownerHtml+=' · Gen '+_esc(p.generation)+' wild';
     }
-    ow.textContent=ownerTxt;
+    ow.innerHTML=ownerHtml;
   }
   // Rarest traits — hidden for non-owned plants (mystery until harvest)
   var re=document.getElementById('wtp-rarest');
@@ -51993,10 +52020,23 @@ function showTP(p,mk){
   }
   // Stats grid — hide EA and season for non-owned (keep days and status visible)
   var t=p.traits||{};
+  // p.traits is often '' (set in inspector p object) — re-resolve from hash
+  // when possible so getSeasonInfo / computeEA / _lwSeasonEmblem all read
+  // the actual season idx instead of falling back to '?'.
+  if((!t||typeof t!=='object'||t.season==null)&&p.hash&&window.hashToTraits){
+    try{t=window.hashToTraits(p.hash)||t;}catch(e){}
+  }
   var eaScore=window.computeEA?window.computeEA(t,p.days):0;
   var seasonInfo=window.getSeasonInfo?window.getSeasonInfo(t):{name:'?',emblem:'?'};
   var ea=document.getElementById('wtp-ea');if(ea){ea.textContent=p.own?eaScore:'?';ea.style.color=p.own&&eaScore>=15?'var(--gold)':'var(--muted)';}
-  var sn=document.getElementById('wtp-season');if(sn){sn.innerHTML=p.own?seasonInfo.emblem:'?';sn.title=p.own?(seasonInfo.name+(seasonInfo.inPeak?' (Peak!)':'')):'Harvest to reveal';}
+  var sn=document.getElementById('wtp-season');if(sn){
+    var _seasEmb=seasonInfo.emblem||'?';
+    if(p.own&&typeof t.season==='number'&&window._lwSeasonEmblem){
+      _seasEmb=window._lwSeasonEmblem(t.season,22);
+    }
+    sn.innerHTML=p.own?_seasEmb:'?';
+    sn.title=p.own?(seasonInfo.name+(seasonInfo.inPeak?' (Peak!)':'')):'Harvest to reveal';
+  }
   var dy=document.getElementById('wtp-days');if(dy)dy.textContent=p.days+'d';
   var st=document.getElementById('wtp-status');
   if(st){
@@ -52033,17 +52073,20 @@ function showTP(p,mk){
           // Show warning starting at 5d (giving a heads-up before 7d wilt).
           if (_daysSince >= 5) {
             var _negIcon, _negLabel, _negColor;
+            // _lwEmojiSprite returns <img> if mapped, else the raw emoji.
+            // \ud83d\udc80 / \ud83e\udd40 currently have no sprites \u2014 fall through gracefully.
+            var _spr = window._lwEmojiSprite || function(e){return e;};
             if (_daysSince >= 18) {
-              _negIcon = '\ud83d\udc80'; _negLabel = 'Feral in ' + Math.max(1, 21 - _daysSince) + 'd \u2014 water now!';
+              _negIcon = _spr('\ud83d\udc80', 18); _negLabel = 'Feral in ' + Math.max(1, 21 - _daysSince) + 'd \u2014 water now!';
               _negColor = '#d06060';
             } else if (_daysSince >= 14) {
-              _negIcon = '\ud83e\udd40'; _negLabel = 'Critical \u2014 ' + _daysSince + 'd unwatered';
+              _negIcon = _spr('\ud83e\udd40', 18); _negLabel = 'Critical \u2014 ' + _daysSince + 'd unwatered';
               _negColor = '#d06060';
             } else if (_daysSince >= 7) {
-              _negIcon = '\ud83e\udd40'; _negLabel = 'Wilting \u2014 ' + _daysSince + 'd unwatered';
+              _negIcon = _spr('\ud83e\udd40', 18); _negLabel = 'Wilting \u2014 ' + _daysSince + 'd unwatered';
               _negColor = 'var(--gold)';
             } else {
-              _negIcon = '\ud83d\udca7'; _negLabel = 'Thirsty \u2014 ' + _daysSince + 'd since water';
+              _negIcon = _spr('\ud83d\udca7', 18); _negLabel = 'Thirsty \u2014 ' + _daysSince + 'd since water';
               _negColor = 'var(--muted)';
             }
             _negEl.innerHTML = _negIcon + ' <span style="color:' + _negColor + ';font-weight:600;">' + _negLabel + '</span>';
@@ -52073,10 +52116,14 @@ function showTP(p,mk){
       if (!_cb && p.lastClimateBreach) _cb = p.lastClimateBreach;
     } catch (e) {}
     if (_cb && _cb.at && (Date.now() - _cb.at) < 26 * 3600000 && _cb.kinds && _cb.kinds.length) {
-      var _icons = { heat: '\ud83d\udd25', cold: '\u2744\ufe0f', flood: '\ud83d\udca6', wind: '\ud83d\udca8', drought: '\ud83c\udfdc\ufe0f' };
+      // Sprite-substituted icons. _lwEmojiSprite returns <img> tag if the
+      // emoji has hand-painted art mapped, else the raw emoji as fallback.
+      // \ud83d\udca6 / \ud83c\udfdc\ufe0f / \u26c8\ufe0f / \u26a0 have no sprites yet \u2014 they fall through.
+      var _spr2 = window._lwEmojiSprite || function(e){return e;};
+      var _icons = { heat: _spr2('\ud83d\udd25', 18), cold: _spr2('\u2744\ufe0f', 18), flood: _spr2('\ud83d\udca6', 18), wind: _spr2('\ud83d\udca8', 18), drought: _spr2('\ud83c\udfdc\ufe0f', 18) };
       var _labels = { heat: 'Heat-stressed', cold: 'Cold-shocked', flood: 'Flooded', wind: 'Wind-battered', drought: 'Parched' };
       var _multi = _cb.kinds.length > 1;
-      var _icon = _multi ? '\u26c8\ufe0f' : (_icons[_cb.kinds[0]] || '\u26a0');
+      var _icon = _multi ? _spr2('\u26c8\ufe0f', 18) : (_icons[_cb.kinds[0]] || _spr2('\u26a0', 18));
       var _label = _multi ? 'Multi-stress' : (_labels[_cb.kinds[0]] || 'Stress');
       var _col = _cb.damageH >= 18 ? '#c87060' : (_cb.damageH >= 8 ? 'var(--gold)' : 'var(--muted)');
       _climEl.innerHTML = _icon + ' <span style="color:' + _col + ';">' + _label + '</span> <span style="color:var(--muted);">\u00b7 -' + _cb.damageH + 'h today</span>';
@@ -52096,12 +52143,16 @@ function showTP(p,mk){
       var _tt = window.hashToTraits ? window.hashToTraits(p.hash) : null;
       if (_tt && typeof _tt.heatMax === 'number') {
         var _wmph = typeof _tt.windMax === 'number' ? Math.round(_tt.windMax) : '?';
+        // Use sprite map for the trailing icons too \u2014 heat already has an
+        // explicit img path. Cold + wind are sprite-mapped, flood/drought
+        // fall through to raw emoji (no sprite shipped yet).
+        var _sprT = window._lwEmojiSprite || function(e){return e;};
         _tolEl.innerHTML =
           '<img src="assets/fx/compost-flame.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udd25&apos;;"> ' + Math.round(_tt.heatMax) + '\u00b0C \u00b7 ' +
-          '\u2744\ufe0f ' + Math.round(_tt.coldMin) + '\u00b0C \u00b7 ' +
-          '\ud83d\udca6 ' + Math.round(_tt.floodMm) + 'mm \u00b7 ' +
-          '\ud83d\udca8 ' + _wmph + 'mph \u00b7 ' +
-          '\ud83c\udfdc\ufe0f ' + _tt.droughtDays + 'd';
+          _sprT('\u2744\ufe0f', 18) + ' ' + Math.round(_tt.coldMin) + '\u00b0C \u00b7 ' +
+          _sprT('\ud83d\udca6', 18) + ' ' + Math.round(_tt.floodMm) + 'mm \u00b7 ' +
+          _sprT('\ud83d\udca8', 18) + ' ' + _wmph + 'mph \u00b7 ' +
+          _sprT('\ud83c\udfdc\ufe0f', 18) + ' ' + _tt.droughtDays + 'd';
         _tolEl.style.display = 'block';
       } else {
         _tolEl.style.display = 'none';
@@ -52182,7 +52233,8 @@ function showTP(p,mk){
       if(p.droppedAt){
         var _heldMs=Date.now()-new Date(p.droppedAt).getTime();
         var _heldD=Math.floor(_heldMs/86400000);
-        var _heldIcon=_heldD>=7?'\ud83d\udc51':_heldD>=3?'\ud83c\udf3f':'\ud83c\udf31';
+        var _sprH = window._lwEmojiSprite || function(e){return e;};
+        var _heldIcon=_heldD>=7?_sprH('\ud83d\udc51',16):_heldD>=3?_sprH('\ud83c\udf3f',16):_sprH('\ud83c\udf31',16);
         var _heldColor=_heldD>=7?'var(--gold)':_heldD>=3?'var(--sage)':'var(--muted)';
         var _heldLabel=(_heldD===0?'dropped today':('held '+_heldD+' day'+(_heldD===1?'':'s')));
         _heldBadge='<br><span style="color:'+_heldColor+';">'+_heldIcon+' '+_heldLabel+'</span>';
@@ -52192,8 +52244,11 @@ function showTP(p,mk){
     if(waterBtn){
       waterBtn.onclick=function(){_waterOwnPlant(p,mk);};
       waterBtn.disabled=false;
-      // Update label to show cost (5💧) at rest, cooldown when active.
-      // Mirrors the hex inspector pattern so labels stay consistent.
+      // Update label to show cost (5 Dew) at rest, cooldown when active.
+      // Mirrors the hex inspector pattern so labels stay consistent. The
+      // button already has a painted water icon above the label; using a
+      // sprite for the dew drop in this tiny label would be visual noise,
+      // so the label says "Water · 5 Dew" in plain text.
       var _wLbl=waterBtn.querySelector('.wtp2-btn-lbl');
       if(_wLbl){
         var _wAt=p.lastWateredAt||(p.lastWatered?new Date(p.lastWatered).getTime():0);
@@ -52202,7 +52257,7 @@ function showTP(p,mk){
           _wLbl.textContent='Watered '+_wHrLeft+'h';
           _wLbl.style.opacity='0.55';
         } else {
-          _wLbl.textContent='Water · 5💧';
+          _wLbl.textContent='Water · 5 Dew';
           _wLbl.style.opacity='1';
         }
       }
@@ -52220,7 +52275,8 @@ function showTP(p,mk){
         if(window.getMeshBonus){
           var _mb=getMeshBonus(p.hash);
           if(_mb.connections>0){
-            _statusExtra+='<br><span style="color:var(--sage);">\ud83c\udf44 Mesh: '+_mb.stageName+' ('+_mb.connections+' link'+ (_mb.connections>1?'s':'')+')</span>';
+            var _sprM = window._lwEmojiSprite || function(e){return e;};
+            _statusExtra+='<br><span style="color:var(--sage);">'+_sprM('\ud83c\udf44',16)+' Mesh: '+_mb.stageName+' ('+_mb.connections+' link'+ (_mb.connections>1?'s':'')+')</span>';
             // Legend line — explain what the current stage actually
             // does, since "Nutrient Bridge" etc. is opaque.
             var _mbLeg = '';
@@ -52232,7 +52288,7 @@ function showTP(p,mk){
           }
         }
         // Add soil info
-        if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0)_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">\ud83c\udf3f Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}
+        if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0){var _sprS=window._lwEmojiSprite||function(e){return e;};_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">'+_sprS('\ud83c\udf3f',16)+' Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}}
         // Biome info
         if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);var _bIcoH=(window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,28):_bInfo.icon);_statusExtra+='<br><span style="color:'+_bInfo.color+';">'+_bIcoH+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
         if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_statusExtra;ownStatus.style.display='block';}
@@ -56500,7 +56556,7 @@ window._lwOpenTwinBloomAccept = function(g) {
       var refundAmt = (window.LW_GIFTS.TWIN_BLOOM_DEW_COST || 30);
       window.LW_GIFTS.declineTwinBloom(g.id, g.from, refundAmt, function(ok){
         if (ok && window._toast) window._toast('Twin Bloom declined. ' + (g.fromName || 'They') + ' will be refunded.');
-        else if (window._toast) window._toast('Decline failed — try again.');
+        else if (window._toast) window._toast('Decline failed. Try again.');
         // Refresh inbox view if open
         if (document.getElementById('lw-gift-inbox')) {
           document.getElementById('lw-gift-inbox').remove();
@@ -67480,7 +67536,7 @@ function loadFriendsUI(){
         });
         if (twinBtn) twinBtn.addEventListener('click', function(){
           if (twinBtn.getAttribute('data-disabled')==='1') {
-            if (window._toast) window._toast('Twin Bloom on cooldown — comes back in '+Math.ceil(window.LW_GIFTS.twinBloomCooldownLeft(uidVal)/3600000)+'h.');
+            if (window._toast) window._toast('Twin Bloom on cooldown. Comes back in '+Math.ceil(window.LW_GIFTS.twinBloomCooldownLeft(uidVal)/3600000)+'h.');
             return;
           }
           if (window._lwOpenTwinBloomPropose) window._lwOpenTwinBloomPropose(uidVal, nameVal);
@@ -69482,7 +69538,7 @@ function finish(){
     if(!localStorage.getItem('lw_kb_intro_v1')){
       localStorage.setItem('lw_kb_intro_v1','1');
       setTimeout(function(){
-        if(window._toast)window._toast('🪴 The bar at the top is your Keeper Bar. XP, Dew, Sunbeams, Level — everything you build grows these.');
+        if(window._toast)window._toast('🪴 The bar at the top is your Keeper Bar. XP, Dew, Sunbeams, Level. Everything you build grows these.');
       },2200);
     }
   }catch(e){}
@@ -69819,6 +69875,7 @@ function _tapMemory(idx){
     _state.revealed[idx]=true;_state.inputIdx++;_renderMemory();
     if(_state.inputIdx>=_state.seq.length)_win();
   }else{
+    _state.revealed={};_state.inputIdx=0;
     var els=document.querySelectorAll('#fc-board div[onclick]');if(els[idx])els[idx].style.background='#c07070';
     setTimeout(function(){_renderMemory();},300);try{navigator.vibrate&&navigator.vibrate(50);}catch(e){}
   }
@@ -83851,10 +83908,12 @@ window._lwClaimHerbarium = function(id){
         var placedEl = placedCard ? EL[placedCard] : null;
         if (resolved) {
           var r = resolved.reveal[s];
-          // For 'match'/'wild-exact', the reveal shows the hex element the player
-          // got right. For 'counter'/'neutral', show the CARD THEY PLAYED (so
-          // they learn which of their cards missed) plus an ELSEWHERE/MISS tag.
-          var showCardKey = (r.verdict === 'match' || r.verdict === 'wild-exact') ? r.hex : r.card;
+          // Always show the card the player placed. The verdict label
+          // (EXACT / WILD EXACT / ELSEWHERE / MISS) communicates what
+          // happened; swapping the art to the hex element on wild-exact
+          // made a rare wild card visually "turn into" a base element,
+          // which read as a bug. (For 'match', r.card === r.hex anyway.)
+          var showCardKey = r.card;
           var showEl = EL[showCardKey];
           var vColor = resolveVerdictColor(r.verdict);
           var vBg, vBorderW, vShadow;
@@ -84389,9 +84448,18 @@ window._lwClaimHerbarium = function(id){
   window.LW_ITEMS_CATALOG = CATALOG;
 
   function _load(){ try { return JSON.parse(localStorage.getItem(STORE)||'{}'); } catch(e){ return {}; } }
-  function _save(inv){ try { localStorage.setItem(STORE, JSON.stringify(inv)); } catch(e){} }
+  function _save(inv){
+    try { localStorage.setItem(STORE, JSON.stringify(inv)); } catch(e){}
+    // Push to cloud so items survive browser-clear / device switch.
+    // Without this, items only flush when an unrelated mutation (mint/sow/etc)
+    // happens to fire syncVaultToCloud. Stephen 2026-05-05.
+    try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
+  }
   function _loadPending(){ try { return JSON.parse(localStorage.getItem(PENDING)||'{}'); } catch(e){ return {}; } }
-  function _savePending(p){ try { localStorage.setItem(PENDING, JSON.stringify(p)); } catch(e){} }
+  function _savePending(p){
+    try { localStorage.setItem(PENDING, JSON.stringify(p)); } catch(e){}
+    try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
+  }
 
   function count(key){ return _load()[key] || 0; }
   function add(key, n, opts){
@@ -91634,7 +91702,7 @@ window._lwClaimQuest = function(kind, id){
     else if (reward.type === 'trophy' || reward.type === 'lore') summary = (reward.name || 'Trophy');
     else if (reward.type === 'title') summary = 'Title: ' + (reward.name || '');
   }
-  if (window._toast) window._toast('★ Claimed' + (summary ? ' — ' + summary : ''));
+  if (window._toast) window._toast('★ Claimed' + (summary ? ': ' + summary : ''));
   try { if (window._haptic) window._haptic('ok'); } catch(e){}
   // Re-render the open BoS so the card transitions Ready→Claimed without
   // the player having to leave + re-enter the QUESTS tab. Same pattern
