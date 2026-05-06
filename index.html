@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.07';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -70191,11 +70191,13 @@ function _tapGrowth(idx){
     _renderGrowth();
     if(s.picked.length===s.correct.length)_win();
   } else {
+    // Audit 6 medium: wrong tap used to FULL-RESET correct picks so far.
+    // Player lost all progress for one mistake. Now: visual flash only,
+    // wrong tap isn't added to picked anyway (the if-branch above only
+    // pushes on correct), so progress survives.
     var els=document.querySelectorAll('#fc-board div[onclick]');
     if(els[idx])els[idx].style.borderColor='#c07070';
-    setTimeout(function(){
-      s.picked=[];for(var i=0;i<s.remaining.length;i++)s.remaining[i].used=false;_renderGrowth();
-    },400);
+    setTimeout(function(){if(els[idx])els[idx].style.borderColor='';},400);
     try{navigator.vibrate&&navigator.vibrate(50);}catch(e){}
   }
 }
@@ -70294,13 +70296,24 @@ function _tapWord(idx){
   if(_solved)return;var s=_state;
   if(s.remaining[idx].used)return;
   s.remaining[idx].used=true;s.picked.push(s.remaining[idx].letter);
+  // Track the order tiles were used so pop-last can rehydrate correctly.
+  s.usedOrder = s.usedOrder || [];
+  s.usedOrder.push(idx);
   _renderWord();
   if(s.picked.length===s.word.length){
     if(s.picked.join('')===s.word)_win();
     else{
-      // Wrong — reset after flash
+      // Audit 6 medium: was full-reset (clear all picks + unmark every
+      // tile). Now pop-last: remove just the last letter so the player
+      // can try a different end. Iterative correction instead of "guess
+      // the whole word again from scratch."
       setTimeout(function(){
-        s.picked=[];for(var i=0;i<s.remaining.length;i++)s.remaining[i].used=false;_renderWord();
+        if (s.picked.length > 0) {
+          s.picked.pop();
+          var lastIdx = s.usedOrder.pop();
+          if (typeof lastIdx === 'number' && s.remaining[lastIdx]) s.remaining[lastIdx].used=false;
+          _renderWord();
+        }
       },500);
       try{navigator.vibrate&&navigator.vibrate(50);}catch(e){}
     }
