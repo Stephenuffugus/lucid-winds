@@ -119,10 +119,35 @@ corner-ornament-128x128-1.png  — Corner ornament (128px)
 - **Auth:** Email/Password (createUserWithEmailAndPassword / signInWithEmailAndPassword)
 - **Firestore collections:**
   - `vaults/{uid}` — private player data (greenhouse, nursery, wild plants, ferals, pollen, backpack, records)
+  - `vaults/{uid}/meta/state` — slot caps + persisted state (NOT hashLedger anymore — May 06 H4 fix)
+  - `vaults/{uid}/pendingRewards/{rewardId}` — server-issued rewards (consolation Dew, witness fees)
+  - `vaults/{uid}/gameNonces/{nonce}` — proof-of-play nonces (planned, see migration plan)
   - `wildDrops/{ownerUid_hashPrefix}` — shared wild plants visible to all players
+  - `mintLog/{uid}/mints/{plantHash}` — server-issued mint proofs (admin-write only) — chain-extraction anchor
+  - `compostLog/{uid}/composts/{plantHash}` — burn-on-extract primitive (planned)
   - `meta/accountCounter` — Pioneer badge sequencing
-- **Rules:** Deployed from firestore-rules-3.txt. Rules are correct and working.
+  - `piTransactions/{paymentId}` — Pi payment lifecycle
+  - `friends/{uid}/connections/{friendUid}` + `friends/{uid}/inbox/{giftId}` — social
+  - `nftMints/{plantHash}` — Polygon NFT mint records (legacy nftSignMint path)
+- **Rules:** `firestore-rules-7.txt` in repo. Stephen deploys via Firebase Console → Firestore → Rules. Recent updates (2026-05-06) tighten validMetaState (deny hashLedger), pendingRewards (require harvesterUid==auth.uid), accountCounter (allow next==1||2 bootstrap).
 - **Legacy path REMOVED:** Old code tried reading `users/{emailDocId}` — no permission rule. Removed.
+
+## CLOUD FUNCTIONS
+
+- **Location:** `/workspaces/lucid-winds/functions/` (in this repo)
+- **Deployed:** `firebase deploy --only functions` from that directory
+- **Region:** us-central1
+- **Required secrets:** `PI_SERVER_KEY` (set via `firebase functions:secrets:set PI_SERVER_KEY`); `NFT_SIGNER_KEY` + `NFT_CHAIN_ID` only if nftSignMint re-enabled
+- **Live exports** (`functions/index.js`):
+  - `piApprove` — v2 onCall, Pi payment approval handler. Auth check + Pi server lookup + Firestore record before approve. Excellent quality.
+  - `piComplete` — v2 onCall, Pi payment completion + entitlement grant. Re-fetches Pi metadata server-side, atomic transaction, idempotent on `alreadyCompleted`. Cap enforcement on slots/pouches.
+  - `mintPlant` — v2 onCall, server-authoritative plant mint. Server-generated hash from uid + serverNow + crypto random + counter. 60s min interval, 30/day cap. Writes mintLog/{uid}/{plantHash}.
+  - `earnHashes` — v2 onCall, atomic hashLedger.earned increment. 200/call, 300/min, 5000/day caps.
+- **Parked exports:**
+  - `nftSignMint` — Polygon mint voucher signer (commented out in index.js). Re-enable + extend per `project_cloud_function_migration_plan.md` for chain extraction.
+- **Planned migrations** (see `project_cloud_function_migration_plan.md`):
+  - `startGame` + `earnHashes`-with-nonce (proof-of-play)
+  - `breedPlant`, `compostPlant`, `dropToWild`, `harvestWildPlant`, `spendSunbeams`, `nftExtract`
 
 ---
 
@@ -492,8 +517,11 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 ---
 
 ## DEV PANEL
-- Tap Firebase Log button 5x to reveal
-- Password: lucid2026
+- **Unlock workflow changed 2026-05-06 (Audit 5 C1):** `window.PW_Dev` is no longer auto-attached. To enable on a fresh browser run in DevTools console:
+  ```
+  localStorage.setItem('lw_dev_unlocked','1'); location.reload();
+  ```
+  After that, the BETA badge 5-tap opens the dev panel. The literal `lucid2026` password is gone from source. See `reference_dev_mode_unlock.md` in memory.
 - `accelClimate` — fires synthetic extreme weather (50°C/100mm/80kmh) on every local wild plant. Bypassed if `lw_weather_off=1`.
 - `accelKillOldest` — kills + prunes oldest local wild plant
 
