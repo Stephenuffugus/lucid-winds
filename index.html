@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.15';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -41716,6 +41716,10 @@ document.addEventListener('keydown', function(e) {
       var p = _carousel.arr[_carousel.idx];
       if (!p) return;
       window._hexSelPlant = p;
+      // Also set the LOCAL FG_Wild _hexSelPlant — the one _hexAction
+      // actually reads. Audit 2026-05-06: setting only the window
+      // global was a silent no-op for cutting/water from the carousel.
+      try { if (window.FG_Wild && window.FG_Wild._setHexSelPlant) window.FG_Wild._setHexSelPlant(p); } catch(e){}
       if (typeof window._hexAction === 'function') {
         window._hexAction(action);
       }
@@ -58174,7 +58178,15 @@ function _autoCarouselFromInspector(){
     window.openCarousel(_hexInspPlants.slice(),0,'wild-inspect');
   },120);
 }
-return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_forceFallbackCoords:function(){if(!_uLat){_uLat=FALLBACK[0];_uLng=FALLBACK[1];window._uLat=_uLat;window._uLng=_uLng;if(_map){try{_map.setView(FALLBACK,17);_placeUser();_loadAll();}catch(e){}}}_gpsDenied=false;window._gpsDenied=false;return true;},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
+return{activate:activate,deactivate:deactivate,toggleMenu:toggleMenu,showTP:showTP,closeTP:closeTP,useFC:useFC,openPicker:openPicker,closePicker:closePicker,_dropFromBP:_dropFromBP,_pickDefense:_pickDefense,_afMarkWildEntry:_afMarkWildEntry,_unsubShared:_unsubscribeSharedDrops,_startSeasons:_startSeasonalParticles,_stopSeasons:_stopSeasonalParticles,_recenter:_recenter,_logTip:_logTip,_doReproduction:_doReproduction,_wildReproduction:_wildReproduction,_fetchReproWeather:_fetchReproWeather,_openHexInspector:_openHexInspector,_autoCarouselFromInspector:_autoCarouselFromInspector,_drawZoneHexes:_drawZoneHexes,_collectFeralFromZone:_collectFeralFromZone,_getAllZonePlants:_getAllZonePlants,_isSeedAvailable:_isSeedAvailable,_getCollectRange:typeof _getCollectRange==='function'?_getCollectRange:function(){return COLLECT_RANGE;},_getUserPos:function(){return{lat:_uLat,lng:_uLng};},_forceFallbackCoords:function(){if(!_uLat){_uLat=FALLBACK[0];_uLng=FALLBACK[1];window._uLat=_uLat;window._uLng=_uLng;if(_map){try{_map.setView(FALLBACK,17);_placeUser();_loadAll();}catch(e){}}}_gpsDenied=false;window._gpsDenied=false;return true;},
+// Audit 2026-05-06 (Stephen reported): the carousel cutting button set
+// window._hexSelPlant before firing _hexAction, but _hexAction reads the
+// LOCAL FG_Wild _hexSelPlant. Two different variables — carousel-driven
+// actions silently failed because the local was null. Stephen had to
+// "highlight a plant first" in the hex inspector (which sets the local)
+// for the carousel button to work. This setter lets external callers
+// (the carousel) write to the local.
+_setHexSelPlant:function(p){_hexSelPlant=p;},_dist:_dist,panTo:function(lat,lng,zoom){if(_map&&lat!=null&&lng!=null){_map.setView([lat,lng],zoom||17,{animate:true,duration:0.5});}}};
 })();
 </script>
 <!-- DEV: Spawn Mythic+Cosmic (hidden — requires dev panel password) -->
