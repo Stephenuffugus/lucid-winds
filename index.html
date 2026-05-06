@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.12';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -38669,13 +38669,27 @@ document.addEventListener('keydown', function(e) {
         // Include ability + temperament in the name display.
         // Temperament is GATED by bloom count (3 default, 1 for Listeners
         // T3 ritual holders — Stephen ruling 2026-05-02). Until revealed,
-        // show "(?)" so the player knows there's something to discover.
+        // show progress (e.g. "? · 1/3 blooms") so the player knows it's
+        // a deliberate discovery mechanic, not a missing data bug. Stephen
+        // 2026-05-06 reported the bare "(?)" read as broken.
         var _cInfo = window.getCompanionInfo ? window.getCompanionInfo(t) : null;
         var _desc = c.name;
         if (_cInfo && _cInfo.ability) _desc += ' — ' + _cInfo.ability.name;
         if (_cInfo && _cInfo.temperament) {
           var _tempRevealed = window._lwCompanionTempRevealed ? window._lwCompanionTempRevealed(t.companion) : true;
-          _desc += _tempRevealed ? (' (' + _cInfo.temperament.name + ')') : ' (?)';
+          if (_tempRevealed) {
+            _desc += ' (' + _cInfo.temperament.name + ')';
+          } else {
+            // Show bloom progress so the player understands the gate.
+            var _tThreshold = 3;
+            try { if (window._LW_hasFamilyRitual && _LW_hasFamilyRitual('listeners')) _tThreshold = 1; } catch(e){}
+            var _tBloomCt = 0;
+            try {
+              var _bpc = JSON.parse(localStorage.getItem('lw_blooms_per_companion')||'{}');
+              _tBloomCt = _bpc[t.companion] || 0;
+            } catch(e){}
+            _desc += ' (? · ' + _tBloomCt + '/' + _tThreshold + ' blooms)';
+          }
         }
         return { name: _desc, rare: !!c.rare };
     }},
