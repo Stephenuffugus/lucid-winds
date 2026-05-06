@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.06.14';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1558,6 +1558,14 @@
        (small letterbox/pillarbox) at its natural aspect. Container
        size stays uniform via flex:1 1 0. No more visual mismatch. */
     .pgm-card-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    /* wilditems.png is SQUARE (600×600) while the other parchments are
+       portrait (~480×600). With contain, the square art letterboxes
+       vertically inside the portrait button and reads as "smaller than the
+       rest." Scale the image up inside the button so the parchment fills
+       the visual space at the same scale as the others. Button has overflow
+       hidden so the scale doesn't bleed past the border. Stephen 2026-05-06. */
+    .pgm-card-btn { overflow: hidden; }
+    .pgm-card-btn#gallery-items-btn img { transform: scale(1.18); transform-origin: center; }
     .pgm-card-btn:active { transform: scale(0.94); }
     .pgm-act-btn {
       background: rgba(26,36,22,0.7); border: 1.5px solid rgba(74,124,53,0.25);
@@ -80750,22 +80758,26 @@ function _showMorningReport(){
     ov.id='morning-report';
     ov.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(5,8,4,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;animation:panelFadeIn 0.4s ease;';
 
-    var h='<div style="width:88%;max-width:340px;text-align:center;">';
-    // Header
-    h+='<div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--gold);margin-bottom:0.3rem;opacity:0.7;">overnight</div>';
-    h+='<div style="width:40px;height:1px;background:rgba(200,168,75,0.3);margin:0 auto 0.8rem;"></div>';
+    var h='<div style="width:92%;max-width:420px;text-align:center;">';
+    // Header — bumped from 0.9rem to 1.4rem so the eyebrow reads clearly.
+    h+='<div style="font-family:Cormorant Garamond,serif;font-size:1.4rem;color:var(--gold);margin-bottom:0.4rem;opacity:0.8;letter-spacing:0.04em;">overnight</div>';
+    h+='<div style="width:60px;height:1px;background:rgba(200,168,75,0.4);margin:0 auto 1.2rem;"></div>';
 
-    // Lines — staggered fade in
+    // Lines — staggered fade in. Stephen 2026-05-06: art and text were
+    // shrunk too aggressively. Bumps:
+    //   emoji 22px → 44px (was reading as a tiny chip; now a real beat)
+    //   body text 0.42rem → 0.85rem weight 500 (CLAUDE.md min is 0.7rem)
+    //   line-height 1.6 → 1.5 (slightly tighter at the larger size)
     for(var i=0;i<lines.length;i++){
       var l=lines[i];
-      h+='<div style="margin-bottom:0.6rem;opacity:0;animation:tierFadeIn 0.6s ease '+(0.3+i*0.4)+'s forwards;">';
-      h+='<span style="font-size:0.65rem;">'+(window._lwEmojiSprite?_lwEmojiSprite(l.icon,22):l.icon)+'</span>';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:'+l.color+';line-height:1.6;margin-top:0.15rem;">'+l.text+'</div>';
+      h+='<div style="margin-bottom:1rem;opacity:0;animation:tierFadeIn 0.6s ease '+(0.3+i*0.4)+'s forwards;">';
+      h+='<div style="font-size:1.1rem;line-height:1;margin-bottom:0.4rem;">'+(window._lwEmojiSprite?_lwEmojiSprite(l.icon,44):l.icon)+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.85rem;font-weight:500;color:'+l.color+';line-height:1.5;">'+l.text+'</div>';
       h+='</div>';
     }
 
-    // Dismiss
-    h+='<button onclick="var mr=document.getElementById(\'morning-report\');if(mr)mr.remove();" style="margin-top:0.6rem;padding:0.5rem 2rem;border:1.5px solid rgba(122,179,86,0.2);border-radius:8px;background:rgba(26,36,22,0.3);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;opacity:0;animation:tierFadeIn 0.5s ease '+(0.3+lines.length*0.4+0.2)+'s forwards;">TEND YOUR GARDEN</button>';
+    // Dismiss — bumped from 0.55rem to 0.78rem.
+    h+='<button onclick="var mr=document.getElementById(\'morning-report\');if(mr)mr.remove();" style="margin-top:1rem;padding:0.65rem 2.2rem;border:1.5px solid rgba(122,179,86,0.35);border-radius:8px;background:rgba(26,36,22,0.45);color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;opacity:0;animation:tierFadeIn 0.5s ease '+(0.3+lines.length*0.4+0.2)+'s forwards;">TEND YOUR GARDEN</button>';
     h+='</div>';
 
     ov.innerHTML=h;
