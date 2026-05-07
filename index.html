@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.15';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5075,10 +5075,16 @@
 .hi-detail-name{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;font-weight:700;color:#f5e7b8;margin-bottom:0.3rem;}
 .hi-detail-grade{font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:0.16em;margin-bottom:0.5rem;}
 .hi-detail-traits{font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);line-height:1.7;margin-bottom:0.7rem;letter-spacing:0.03em;}
-.hi-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
-.hi-action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:204px;padding:1.1rem 0.6rem 0.9rem;border-radius:16px;border:1.5px solid rgba(122,179,86,0.4);background:linear-gradient(180deg,rgba(26,36,22,0.6),rgba(18,24,16,0.72));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:0.14em;cursor:pointer;text-align:center;transition:all 0.15s ease;box-shadow:0 4px 14px rgba(0,0,0,0.45);text-shadow:0 1px 2px rgba(0,0,0,0.5);}
-.hi-action-btn img{width:128px !important;height:128px !important;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.55));margin:0 auto !important;display:block !important;vertical-align:middle !important;}
-.hi-action-btn .hi-water-label img{width:128px !important;height:128px !important;}
+/* Stephen 2026-05-07: shrunk hex-inspector action grid from 2col×3row
+   towers (204px tall × 128px imagery × 1.05rem font) into 3col×2row
+   compact tiles (108px tall × 64px imagery × 0.72rem font). His
+   words: "i had made those other buttons that look good but theyre
+   almost too much. theyre giant and the writing is giant, they could
+   be fit into two rows of three under the plants." Now they do. */
+.hi-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.hi-action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:108px;padding:0.55rem 0.3rem 0.5rem;border-radius:12px;border:1.5px solid rgba(122,179,86,0.4);background:linear-gradient(180deg,rgba(26,36,22,0.6),rgba(18,24,16,0.72));color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.1em;cursor:pointer;text-align:center;transition:all 0.15s ease;box-shadow:0 3px 10px rgba(0,0,0,0.4);text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+.hi-action-btn img{width:64px !important;height:64px !important;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 3px 7px rgba(0,0,0,0.55));margin:0 auto !important;display:block !important;vertical-align:middle !important;}
+.hi-action-btn .hi-water-label img{width:64px !important;height:64px !important;}
 .hi-action-btn img.lw-mini,.hi-action-btn .hi-water-label img.lw-mini{width:20px !important;height:20px !important;display:inline-block !important;margin:0 !important;vertical-align:-5px !important;filter:none !important;}
 .hi-action-btn.hi-water-hold,.hi-action-btn.hi-prune-hold{flex-direction:column;}
 .hi-vitality{margin:0.5rem 0;padding:0.5rem 0.65rem;background:rgba(13,16,12,0.55);border:1px solid rgba(74,124,53,0.2);border-radius:8px;}
@@ -50578,11 +50584,26 @@ function _drawZoneHexes(_force){
     var wild=_getWild(),hasOwn=false;
     for(var ow=0;ow<wild.length;ow++){if(wild[ow]&&_zoneKey(wild[ow].lat,wild[ow].lng)===zone.key){hasOwn=true;break;}}
     // Compute highest rarity in zone — legendary+ gets a gold tint.
-    // Makes rare plants visually distinct on the map (retention lever).
+    // Stephen 2026-05-07 perf: was recomputing hashToTraits + getTerraGrade
+    // for every plant in every zone on every redraw. With a 4m GPS-jitter
+    // trigger and onSnapshot churn, this thrashed Pixel 9. Now memoized
+    // per-zone keyed by a signature of plant hashes — only recomputes when
+    // the zone's plant set actually changed.
     var _topTier = 0; // 0=common/uncommon/rare/epic, 1=Legendary, 2=Mythic, 3=Cosmic
     try {
-      if (window.hashToTraits && window.getTerraGrade) {
-        var _zp = zones[zone.key] || [];
+      var _zp = zones[zone.key] || [];
+      // Build a stable signature from plant count + first 8 chars of each hash.
+      var _sigParts = [_zp.length];
+      for (var _sigI = 0; _sigI < _zp.length; _sigI++) {
+        if (_zp[_sigI] && _zp[_sigI].hash) _sigParts.push(_zp[_sigI].hash.slice(0,8));
+      }
+      _sigParts.sort();
+      var _zoneSig = _sigParts.join('|');
+      if (!window._zoneTierCache) window._zoneTierCache = {};
+      var _cached = window._zoneTierCache[zone.key];
+      if (_cached && _cached.sig === _zoneSig) {
+        _topTier = _cached.tier;
+      } else if (window.hashToTraits && window.getTerraGrade) {
         for (var _zi = 0; _zi < _zp.length; _zi++) {
           var _tz; try { _tz = window.hashToTraits(_zp[_zi].hash); } catch(e) { continue; }
           if (!_tz) continue;
@@ -50591,6 +50612,7 @@ function _drawZoneHexes(_force){
           var _tier = _tnz === 'Cosmic' ? 3 : _tnz === 'Mythic' ? 2 : _tnz === 'Legendary' ? 1 : 0;
           if (_tier > _topTier) _topTier = _tier;
         }
+        window._zoneTierCache[zone.key] = { sig: _zoneSig, tier: _topTier };
       }
     } catch(e) {}
     // 3-state clarity: bright sage = your hex; warm gold = wild;
@@ -55932,14 +55954,32 @@ function _getVisibleZones(){
   return zones;
 }
 
-// Debounced re-subscribe when map pans/zooms
+// Debounced re-subscribe when map pans/zooms.
+// Stephen 2026-05-07: bumped 800ms → 1500ms + added partial-overlap
+// skip. Listener churned hard on phone map drag — every pan triggered
+// a new onSnapshot which re-delivered the entire zone set as initial
+// load. Now if 80%+ of new zones overlap the previous zoneKey, we
+// skip the re-sub since the data is already in cache.
 function _scheduleResubscribe(){
   if(_snapDebounce)clearTimeout(_snapDebounce);
   _snapDebounce=setTimeout(function(){
     _snapDebounce=null;
-    var newZones=_getVisibleZones().sort().join('|');
-    if(newZones!==_snapZones)_subscribeSharedDrops();
-  },800);
+    var newZonesArr=_getVisibleZones().sort();
+    var newZones=newZonesArr.join('|');
+    if(newZones===_snapZones)return; // identical — skip
+    // Partial-overlap check: if most of the new zones were already
+    // subscribed, skip the re-sub. Cuts churn on small map drags.
+    if (_snapZones) {
+      var prev = _snapZones.split('|');
+      var prevSet = {};
+      for (var pi=0; pi<prev.length; pi++) prevSet[prev[pi]] = 1;
+      var overlap = 0;
+      for (var ni=0; ni<newZonesArr.length; ni++) if (prevSet[newZonesArr[ni]]) overlap++;
+      var overlapPct = newZonesArr.length ? overlap / newZonesArr.length : 0;
+      if (overlapPct >= 0.8) return; // 80%+ overlap — current sub still good
+    }
+    _subscribeSharedDrops();
+  },1500);
 }
 
 // Main subscription — real-time listener for shared drops
@@ -56423,9 +56463,14 @@ function _openHexInspector(zk){
     // request: 'large comfortable and convenient... walking through
     // the hex without stopping.'
     if(augmented.length>=1&&window.openCarousel){
+      // Stephen 2026-05-07: was a 208px tall giant gold button with 108px
+      // image and 1.05rem font \u2014 "almost too much. they're giant and the
+      // writing is giant." Shrunk to a compact horizontal pill so it
+      // takes ~50px instead of ~208px and matches the new compact
+      // 2x3 action grid below.
       var carBtn=document.createElement('button');
-      carBtn.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:100%;padding:18px 18px 20px;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.42);border-radius:16px;background:linear-gradient(180deg,rgba(20,28,18,0.78),rgba(12,16,12,0.92));color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.16em;cursor:pointer;min-height:208px;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:inset 0 0 18px rgba(200,168,75,0.08),0 4px 14px rgba(0,0,0,0.45);';
-      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" style="width:108px;height:108px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.35));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="line-height:1.2;text-align:center;">TAKE A CLOSER LOOK<br><span style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
+      carBtn.style.cssText='display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;width:100%;padding:8px 14px;margin-bottom:0.55rem;border:1.5px solid rgba(200,168,75,0.42);border-radius:10px;background:linear-gradient(180deg,rgba(20,28,18,0.78),rgba(12,16,12,0.92));color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.12em;cursor:pointer;min-height:50px;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 8px rgba(0,0,0,0.4);';
+      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(200,168,75,0.4));" onerror="this.outerHTML=\'<span style=&quot;font-size:1.3rem;&quot;>\u25a6</span>\'"><span style="line-height:1.15;text-align:left;">CLOSER LOOK \u00b7 '+augmented.length+'<span style="font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.06em;color:rgba(245,231,184,0.7);font-weight:400;display:block;">tap to open carousel</span></span>';
       (function(arr){carBtn.addEventListener('click',function(){
         try{if(typeof closeHI==='function')closeHI();}catch(e){}
         try{if(typeof closeTP==='function')closeTP();}catch(e){}
@@ -56608,9 +56653,14 @@ function _selectHexPlant(idx,p){
   } else if(_blessDew>0){
     _blessBtn='<button class="hi-action-btn hi-bless-btn" onclick="window._hexAction(\'blessing\')" title="Daily Dew gift from any Rare or rarer plant. Once per plant per day."><img src="assets/wild-blessing-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=&apos;\ud83d\ude4f&apos;;"> BLESSING &middot; +'+_blessDew+'<img class="lw-mini" src="assets/fx/drop-blue.png" alt="" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> daily</button>';
   }
-  // PRUNE button — only when this plant has an active pest. 5s hold + 3 hashes.
-  // PRUNE — Stephen 2026-05-01 PART 5: always render (locked when no pest)
-  var _pruneBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'✂️ Prune is for plants with an active pest. This one is healthy.\')"><img src="assets/wild-prune-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'\\u2702\'"> PRUNE</button>';
+  // PRUNE button — only when this plant has an active pest. 3 Sunbeams.
+  // Stephen 2026-05-07: was rendering an always-visible LOCKED tile that
+  // burnt a slot in the action grid even though pest-free is the normal
+  // state ~95% of the time. Now PRUNE is OMITTED entirely when healthy
+  // and ONLY appears as a real action when pestStage > 0. Cleans up the
+  // 2x3 grid for 95% of plants. The TEND/MULCH/etc. row keeps its
+  // breathing room.
+  var _pruneBtn='';
   if(p.pestStage>0){
     var _hashesNow=window.getTotalHashes?window.getTotalHashes():0;
     if(_hashesNow>=3){
