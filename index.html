@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.2';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.3';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7341,7 +7341,7 @@ window._addSwitchTabHook = function(fn){
       <div class="kb-info">
         <div style="display:flex;align-items:center;gap:5px;">
           <div class="kb-name" onclick="PW_UI.openCharacter()" id="kb-name">Keeper</div>
-          <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;cursor:pointer;" onclick="(function(){window._lwBetaTaps=(window._lwBetaTaps||0)+1;clearTimeout(window._lwBetaTapT);window._lwBetaTapT=setTimeout(function(){window._lwBetaTaps=0;},2500);if(window._lwBetaTaps>=5){window._lwBetaTaps=0;try{if(localStorage.getItem('lw_dev_unlocked')==='1'){document.getElementById('pw-dev-admin').classList.add('open');}}catch(e){}}}).call(this);">BETA</span>
+          <span id="kb-beta-badge" title="Beta — data may be reset before launch" style="display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(200,168,75,0.12);border:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.45rem;letter-spacing:0.12em;line-height:1.1;cursor:pointer;" onclick="(function(){window._lwBetaTaps=(window._lwBetaTaps||0)+1;clearTimeout(window._lwBetaTapT);window._lwBetaTapT=setTimeout(function(){window._lwBetaTaps=0;},2500);if(window._lwBetaTaps>=5){window._lwBetaTaps=0;try{if(localStorage.getItem('lw_dev_unlocked')==='1'){var _pn=document.getElementById('pw-dev-admin');if(_pn)_pn.classList.add('open');}else{var _pw=prompt('Dev password:');if(_pw&&window._LW_DEV_SECRET&&_pw===window._LW_DEV_SECRET){localStorage.setItem('lw_dev_unlocked','1');location.reload();}else if(_pw){alert('Wrong password.');}}}catch(e){}}}).call(this);">BETA</span>
         </div>
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
@@ -7627,13 +7627,29 @@ window._addSwitchTabHook = function(fn){
   }
 
   // Audit 5 C1: PW_Dev was previously exposed on window unconditionally
-  // at script load, so any user with DevTools could call grantHashes(99999999),
-  // spawnWhiteWhales(), fillGreenhouse() etc and sync the inflated state to
-  // cloud. To enable dev mode now, run in DevTools console:
-  //   localStorage.setItem('lw_dev_unlocked','1'); location.reload();
-  // Production users have no in-app path to set this flag, so PW_Dev never
-  // lands on window for them. Future: replace localStorage gate with a
-  // server-validated dev allowlist via Cloud Function.
+  // at script load. Now it's gated behind a localStorage flag set by:
+  //   (a) 5-tap BETA badge → password prompt → enter window._LW_DEV_SECRET
+  //   (b) URL param ?devmode=<secret> (bookmarkable for phone testing)
+  //   (c) DevTools: localStorage.setItem('lw_dev_unlocked','1'); reload
+  // The secret is in source — anyone reading client code can find it —
+  // so this is "casual obscurity" not "real security." Real security
+  // for dev grants requires a server-validated allowlist via Cloud
+  // Function. Adequate for pre-launch / soft-launch.
+  // Stephen 2026-05-07: change _LW_DEV_SECRET to anything you want.
+  // Memory note saved at reference_dev_mode_unlock.md.
+  window._LW_DEV_SECRET = 'obsidian-fox-2026';
+  // URL-param shortcut: visit https://lucidwinds.com/?devmode=obsidian-fox-2026
+  // and the unlock flag is set silently, then the param is stripped from
+  // the URL bar so the password isn't visible to anyone glancing at the
+  // phone. Bookmark the URL once on each device.
+  try {
+    var _devQs = (typeof URLSearchParams !== 'undefined') ? new URLSearchParams(location.search) : null;
+    var _devParam = _devQs ? _devQs.get('devmode') : null;
+    if (_devParam && _devParam === window._LW_DEV_SECRET) {
+      localStorage.setItem('lw_dev_unlocked', '1');
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch(e){}
+    }
+  } catch(e){}
   var _PW_DEV_UNLOCKED = false;
   try { _PW_DEV_UNLOCKED = (localStorage.getItem('lw_dev_unlocked') === '1'); } catch(e){}
   var _PW_Dev_methods={
