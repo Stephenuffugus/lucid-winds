@@ -865,34 +865,50 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.24';window.LW_VERSION=LW_VERSION;
-  // Stephen 2026-05-07: Pi Browser has fixed bottom chrome that overlays
-  // our nav. Detect early + add body.pi-browser so CSS lifts the nav
-  // (and any other anchored UI) by --pi-chrome-h. Detection: window.Pi
-  // SDK presence OR userAgent contains "PiBrowser".
+  var LW_VERSION='2026.05.07.25';window.LW_VERSION=LW_VERSION;
+  // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
+  // always include "PiBrowser" in its user-agent on Android — the
+  // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
+  // by Pi Browser). But Pi SDK loads asynchronously, so a synchronous
+  // check at script start often misses it. Solution: poll for up to
+  // 8 seconds after page load, and also re-check whenever the Pi SDK
+  // script reports ready. Once detected, add body.pi-browser
+  // (lifts nav above Android system bar via --pi-chrome-h).
+  // Override: localStorage.lw_force_pi_browser='1' forces the class
+  // on for testing. localStorage.lw_pi_chrome_h=<px> overrides height.
   (function(){
-    try {
-      var _piUA = /PiBrowser|Pi Browser/i.test(navigator.userAgent || '');
-      var _piSDK = (typeof Pi !== 'undefined');
-      if (_piUA || _piSDK) {
-        var _applyPiClass = function(){
-          if (document.body) document.body.classList.add('pi-browser');
-        };
-        if (document.body) _applyPiClass();
-        else document.addEventListener('DOMContentLoaded', _applyPiClass);
-        // Per-device override if Pi's chrome height differs.
-        try {
-          var _override = parseInt(localStorage.getItem('lw_pi_chrome_h')||'0', 10);
-          if (_override > 0 && _override < 200) {
-            var _setVar = function(){
-              if (document.body) document.body.style.setProperty('--pi-chrome-h', _override + 'px');
-            };
-            if (document.body) _setVar();
-            else document.addEventListener('DOMContentLoaded', _setVar);
-          }
-        } catch(e){}
-      }
-    } catch(e){}
+    var _piApplied = false;
+    function _applyPiClass(){
+      if (_piApplied || !document.body) return;
+      _piApplied = true;
+      document.body.classList.add('pi-browser');
+      try {
+        var _override = parseInt(localStorage.getItem('lw_pi_chrome_h')||'0', 10);
+        if (_override > 0 && _override < 200) {
+          document.body.style.setProperty('--pi-chrome-h', _override + 'px');
+        }
+      } catch(e){}
+    }
+    function _detect(){
+      try {
+        if (localStorage.getItem('lw_force_pi_browser') === '1') return true;
+        if (typeof Pi !== 'undefined') return true;
+        if (/PiBrowser|Pi Browser|MinePi/i.test(navigator.userAgent || '')) return true;
+      } catch(e){}
+      return false;
+    }
+    function _check(){
+      if (_piApplied) return;
+      if (_detect()) _applyPiClass();
+    }
+    if (document.body) _check(); else document.addEventListener('DOMContentLoaded', _check);
+    // Pi SDK can land late — poll for 8s.
+    var _polls = 0;
+    var _id = setInterval(function(){
+      _polls++;
+      _check();
+      if (_piApplied || _polls > 16) clearInterval(_id);
+    }, 500);
   })();
   (function(){
     var stored=localStorage.getItem('lw_version');
@@ -2090,6 +2106,14 @@
     body.pi-browser{ --pi-chrome-h: 80px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
+    /* Stephen 2026-05-07 round 3: backpack + BoS floating buttons sit
+       slightly higher than the keeper bar row 1 in Pi Browser due to a
+       slight rendering offset. Bump both down 8px on body.pi-browser so
+       they align with the keeper-bar avatar/level row to their left. */
+    body.pi-browser #bpi{ top: calc(env(safe-area-inset-top,0px) + 80px) !important; }
+    body.pi-browser #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 80px) !important; }
+    body.pi-browser.tab-wild #bpi{ top: calc(env(safe-area-inset-top,0px) + 132px) !important; }
+    body.pi-browser.tab-wild #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 136px) !important; }
     .fg-bottomnav.minimized{transform:translateY(calc(100% - 18px));}
     .fg-bottomnav.minimized .fg-nav-btn{pointer-events:none;}
     .fg-nav-min{position:absolute;top:-22px;right:50%;transform:translateX(50%);width:64px;height:22px;background:rgba(10,12,8,0.95);border:1px solid rgba(74,124,53,0.25);border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;-webkit-tap-highlight-color:transparent;z-index:2;}
