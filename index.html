@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.13';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -42921,16 +42921,31 @@ document.addEventListener('keydown', function(e) {
 
   // Buy + apply in one tap from the pot picker. Stephen 2026-05-07:
   // collapses the old two-step flow (picker → shop tab → buy → re-apply).
+  // Stephen 2026-05-07 update #2: confirmation dialog so an accidental
+  // tap can't spend Dew. The pot picker is a tappable list and a stray
+  // finger drag could trigger a row.
   window.lwBuyAndApplyPot = function(seedId, potId) {
     if (!seedId || !potId) return false;
-    var ok = false;
-    try { ok = !!(window.lwBuyPot && window.lwBuyPot(potId)); } catch(e){ ok = false; }
-    if (!ok) return false;
-    try {
-      var _pp = document.getElementById('lw-pot-picker');
-      if (_pp) _pp.remove();
-    } catch(e){}
-    try { if (window.lwApplyPot) window.lwApplyPot(seedId, potId); } catch(e){}
+    var pot = window.LW_POTS && window.LW_POTS[potId];
+    if (!pot) return false;
+    var bal = window.getTotalDew ? window.getTotalDew() : 0;
+    var doIt = function(){
+      var ok = false;
+      try { ok = !!(window.lwBuyPot && window.lwBuyPot(potId)); } catch(e){ ok = false; }
+      if (!ok) return;
+      try { var _pp = document.getElementById('lw-pot-picker'); if (_pp) _pp.remove(); } catch(e){}
+      try { if (window.lwApplyPot) window.lwApplyPot(seedId, potId); } catch(e){}
+    };
+    if (window._lwConfirm) {
+      window._lwConfirm({
+        title: 'BUY ' + (pot.name || 'POT').toUpperCase() + '?',
+        body: '<b>' + pot.name + '</b> — <span style="color:var(--gold);">' + (pot.cost||0) + ' Dew</span> &middot; balance after: <b>' + Math.max(0, bal - (pot.cost||0)) + '</b><br><br><span style="color:var(--muted);font-size:0.65rem;">' + (pot.blurb || '') + '</span><br><br>Applies to your seed immediately.',
+        yes:   'BUY · ' + (pot.cost||0) + ' 💧',
+        no:    'CANCEL'
+      }, doIt);
+    } else {
+      doIt();
+    }
     return true;
   };
 
@@ -47253,6 +47268,13 @@ document.addEventListener('keydown', function(e) {
       mintMilestones:   _ls('lw_mint_milestones')   || null,
       seenCompanions:   _ls('lw_seen_companions')   || null,
       seenMutations:    _ls('lw_seen_mutations')    || null,
+      // Stephen 2026-05-07: lw_event_log (LW_Log) is what BoS Journal
+      // reads. Was local-only, so the Journal looked empty after every
+      // history clear / incognito session / cross-device load. Capped
+      // at 200 entries client-side; trim helper at line ~47880 also
+      // reduces to 50 if vault payload exceeds 500KB. Each entry is
+      // ~200 bytes so 200 × 200 = ~40KB worst case — safe to sync.
+      eventLog:         _ls('lw_event_log')         || null,
       lastSync: new Date().toISOString(),
       // Audit security-deep L4: was hardcoded 'set-40' from set-40 era.
       // Cloud forensics need to know which client wrote each vault doc.
@@ -47717,6 +47739,29 @@ document.addEventListener('keydown', function(e) {
         for (var _smk in data.seenMutations) if (data.seenMutations[_smk]) _locSM[_smk] = data.seenMutations[_smk];
         localStorage.setItem('lw_seen_mutations', JSON.stringify(_locSM));
       } catch(e){ try{localStorage.setItem('lw_seen_mutations', JSON.stringify(data.seenMutations));}catch(e2){} }
+    }
+    // Event log (BoS Journal source). Union by entry id, keep newest 200
+    // by ts. Stephen 2026-05-07: was local-only so the Journal looked
+    // empty after history clear or on a fresh device. Now persists.
+    if (data.eventLog && Array.isArray(data.eventLog) && data.eventLog.length) {
+      try {
+        var _locLog = JSON.parse(localStorage.getItem('lw_event_log')||'[]');
+        if (!Array.isArray(_locLog)) _locLog = [];
+        var _seenLog = {};
+        var _mergedLog = [];
+        function _pushLog(e){
+          if (!e) return;
+          var k = e.id || (e.type + '_' + e.ts);
+          if (_seenLog[k]) return;
+          _seenLog[k] = 1;
+          _mergedLog.push(e);
+        }
+        for (var _li=0; _li<_locLog.length; _li++) _pushLog(_locLog[_li]);
+        for (var _ci=0; _ci<data.eventLog.length; _ci++) _pushLog(data.eventLog[_ci]);
+        _mergedLog.sort(function(a,b){ return (a.ts||0) - (b.ts||0); });
+        if (_mergedLog.length > 200) _mergedLog = _mergedLog.slice(_mergedLog.length - 200);
+        localStorage.setItem('lw_event_log', JSON.stringify(_mergedLog));
+      } catch(e){ try{ localStorage.setItem('lw_event_log', JSON.stringify(data.eventLog)); }catch(e2){} }
     }
     if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
     // Keeper XP — restore from cloud, prefer the higher of cloud vs local so
