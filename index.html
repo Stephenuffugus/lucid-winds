@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.4';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.5';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -8080,7 +8080,18 @@ window._addSwitchTabHook = function(fn){
       if(!window.mintPlant){alert('mintPlant not available');return;}
       var minted=0;
       function _mint(){
-        var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+        // Stephen 2026-05-07: was Math.random which clusters in V8
+        // under same-millisecond rapid calls — Stephen saw the same
+        // leaf type (White Clover, idx 24) repeat across consecutive
+        // dev mints. Production hashes go through crypto already.
+        var h='';
+        try{
+          var _ar=new Uint8Array(32);
+          (window.crypto||window.msCrypto).getRandomValues(_ar);
+          for(var i=0;i<32;i++){var b=_ar[i];h+='0123456789abcdef'[b>>4]+'0123456789abcdef'[b&15];}
+        }catch(e){
+          for(var j=0;j<64;j++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
+        }
         var grade='?';
         try{if(window.hashToTraits&&window.getTerraGrade){grade=window.getTerraGrade(window.hashToTraits(h)).label;}}catch(e){}
         mintPlant(h).then(function(ok){
@@ -20359,32 +20370,49 @@ document.addEventListener('keydown', function(e) {
         leafFrac = Math.max(0.1, (78 - ly) / t.stemHeight);
       }
       if (_stemCase === 7 && t._dblLeft && t._dblRight) {
-        // Double stem: even leaves attach to LEFT branch, odd to RIGHT
-        // Sample the correct branch at the leaf's y height
+        // Double stem: even leaves attach to LEFT branch, odd to RIGHT.
+        // Sample the correct branch at the leaf's y height.
         var _d7prof = (i % 2 === 0) ? t._dblLeft : t._dblRight;
         var _d7side = (i % 2 === 0) ? -1 : 1;
-        // Interpolate branch x at current ly
-        var _d7bx = _d7prof[0].x; // default
+        // Stephen 2026-05-07: clamp ly to the profile's y range BEFORE
+        // interpolation. The phyllotaxis spiral can place leaves above
+        // visibleTop when leafSpread × leafCount runs long; previously
+        // the loop didn't match any segment and _d7bx fell back to the
+        // BASE x value, which made the leaf attach near the pot while
+        // its y-coordinate was up by the canopy — visually detached,
+        // floating above the stem. Clamping snaps the attachment to
+        // the nearest branch point instead.
+        var _d7yMin = _d7prof[_d7prof.length - 1].y; // top (smallest y)
+        var _d7yMax = _d7prof[0].y;                  // base (largest y)
+        var _d7lyClamped = Math.max(_d7yMin, Math.min(_d7yMax, ly));
+        // Interpolate branch x at clamped ly.
+        var _d7bx = _d7prof[0].x; // default = base if no segment matches
         for (var _d7k = 0; _d7k < _d7prof.length - 1; _d7k++) {
-          if (ly <= _d7prof[_d7k].y && ly >= _d7prof[_d7k+1].y) {
-            var _d7f = (_d7prof[_d7k].y - ly) / (_d7prof[_d7k].y - _d7prof[_d7k+1].y);
+          if (_d7lyClamped <= _d7prof[_d7k].y && _d7lyClamped >= _d7prof[_d7k+1].y) {
+            var _d7f = (_d7prof[_d7k].y - _d7lyClamped) / (_d7prof[_d7k].y - _d7prof[_d7k+1].y);
             _d7bx = _d7prof[_d7k].x + (_d7prof[_d7k+1].x - _d7prof[_d7k].x) * _d7f;
             break;
           }
         }
-        // Set stem center to THIS branch
+        // If the leaf was clamped at the top, also pull its rendered y
+        // back into the canopy so the petiole has a visible anchor and
+        // doesn't dangle from empty space above the stem.
+        if (ly < _d7yMin) ly = _d7yMin;
+        // Set stem center to THIS branch.
         _stemCx = _d7bx;
         side = _d7side;
-        // Place leaf extending outward from branch surface (stroke-width 1.5 = ±0.75)
+        // Place leaf extending outward from branch surface (stroke-width 1.5 = ±0.75).
         lx = _d7bx + _d7side * (0.75 + t.leafSpread * 0.4);
-        // Leaf 4 — move left to meet left branch stem
+        // Leaf 4 special — even, on left branch: tighter contact for the
+        // canopy bunch the original render used as a focal cluster.
         if (i === 4) {
-          lx = _d7bx - (0.75 + t.leafSpread * 0.15); // tight left contact
+          lx = _d7bx - (0.75 + t.leafSpread * 0.15);
         }
-        // Leaves 3 and 5 — nudge left slightly toward stem
-        if (i === 3 || i === 5) {
-          lx -= 1.5;
-        }
+        // Stephen 2026-05-07: removed the unconditional `lx -= 1.5` for
+        // leaves 3 & 5. Those are odd → right branch → side +1; the
+        // legacy nudge dragged them left across the branch's centerline
+        // for some leafSpread values, into the gap between branches.
+        // The y-clamp above already handles the actual root cause.
       }
       if (_stemCase === 5) {
         // Braided: two strands weave. Place leaves precisely at strand edges.
@@ -88785,6 +88813,11 @@ window.LW_debug.cleanGhostDrops = function(){
         localStorage.setItem('lw_seen_companions', JSON.stringify(seen));
       }
     } catch(e){}
+    // Stephen 2026-05-07: hatch celebration. Cocoon shakes → cracks →
+    // creature emerges. Player taps to enter the Companions section
+    // where the hatched creature now lives next to the original cocoon
+    // art (idx 82-84 in TRAIT_BANK get a STAGES rail in the profile).
+    try { if (window._lwShowHatchCelebration) window._lwShowHatchCelebration(spec); } catch(e){}
     return true;
   }
   function companionIdxFor(key){
@@ -88882,6 +88915,140 @@ window.LW_debug.cleanGhostDrops = function(){
   window.LW_debug.keeperReset = function(){
     try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(DAILY_KEY); }catch(e){}
     return true;
+  };
+
+  // ═══ HATCH CELEBRATION — cocoon → creature reveal ═══
+  // Full-screen overlay, ~3.5s timeline:
+  //   0ms     cocoon image, soft inner glow, gentle bob
+  //   600ms   shake + cracks scribe across the cocoon
+  //   1500ms  cocoon dissolves, hatched creature pops in with bloom
+  //   2200ms  "X HATCHED!" headline + family blurb appear
+  //   3500ms  CTA appears: "MEET YOUR COMPANION"
+  // Tap anywhere on the overlay (or the CTA) to dismiss. CTA opens the
+  // BoS Companions tab so the player sees the creature next to the
+  // cocoon art it grew from.
+  window._lwShowHatchCelebration = function(spec){
+    if (!spec || !spec.cocoonArt || !spec.hatchedArt) return;
+    var ex = document.getElementById('lw-hatch-overlay'); if (ex) ex.remove();
+    var ov = document.createElement('div');
+    ov.id = 'lw-hatch-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(46,38,18,0.96) 0%,rgba(5,8,4,0.98) 70%);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:1.5rem;animation:hatchOvFadeIn 0.4s ease;';
+    ov.innerHTML =
+      '<style>'+
+      '@keyframes hatchOvFadeIn{from{opacity:0;}to{opacity:1;}}'+
+      '@keyframes hatchBob{0%,100%{transform:translateY(0) rotate(-1deg);}50%{transform:translateY(-6px) rotate(1deg);}}'+
+      '@keyframes hatchShake{0%,100%{transform:translateX(0) rotate(0);}10%{transform:translateX(-6px) rotate(-3deg);}30%{transform:translateX(6px) rotate(3deg);}50%{transform:translateX(-4px) rotate(-2deg);}70%{transform:translateX(4px) rotate(2deg);}90%{transform:translateX(-2px) rotate(-1deg);}}'+
+      '@keyframes hatchCrack{from{stroke-dashoffset:120;opacity:0;}to{stroke-dashoffset:0;opacity:1;}}'+
+      '@keyframes hatchCocoonOut{from{transform:scale(1);opacity:1;filter:brightness(1);}50%{filter:brightness(1.6);}to{transform:scale(1.18);opacity:0;filter:brightness(2);}}'+
+      '@keyframes hatchCreatureIn{0%{transform:scale(0.4);opacity:0;filter:brightness(2.4);}55%{transform:scale(1.08);opacity:1;filter:brightness(1.4);}100%{transform:scale(1);opacity:1;filter:brightness(1);}}'+
+      '@keyframes hatchHeadlineIn{from{transform:translateY(12px);opacity:0;}to{transform:translateY(0);opacity:1;}}'+
+      '@keyframes hatchBurst{0%{transform:scale(0.2);opacity:0;}30%{opacity:1;}100%{transform:scale(2.6);opacity:0;}}'+
+      '#lw-hatch-cocoon{animation:hatchBob 1.6s ease-in-out infinite;}'+
+      '#lw-hatch-cocoon.shaking{animation:hatchShake 0.7s ease-in-out;}'+
+      '#lw-hatch-cocoon.gone{animation:hatchCocoonOut 0.7s ease-in forwards;}'+
+      '#lw-hatch-creature{opacity:0;}'+
+      '#lw-hatch-creature.in{animation:hatchCreatureIn 1.0s cubic-bezier(0.34,1.56,0.64,1) forwards;}'+
+      '#lw-hatch-headline,#lw-hatch-blurb,#lw-hatch-cta{opacity:0;}'+
+      '#lw-hatch-headline.in,#lw-hatch-blurb.in,#lw-hatch-cta.in{animation:hatchHeadlineIn 0.5s ease forwards;}'+
+      '.lw-hatch-crack{stroke-dasharray:120;stroke-dashoffset:120;opacity:0;}'+
+      '.lw-hatch-crack.in{animation:hatchCrack 0.6s ease-out forwards;}'+
+      '.lw-hatch-burst-ring{position:absolute;inset:0;border:3px solid rgba(240,208,144,0.6);border-radius:50%;pointer-events:none;}'+
+      '.lw-hatch-burst-ring.in{animation:hatchBurst 1.0s ease-out forwards;}'+
+      '</style>'+
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.3em;color:rgba(232,220,200,0.6);margin-bottom:1.5rem;">SOMETHING IS HATCHING</div>'+
+      '<div id="lw-hatch-stage" style="position:relative;width:240px;height:240px;display:flex;align-items:center;justify-content:center;margin-bottom:1.6rem;">'+
+        '<img id="lw-hatch-cocoon" src="'+spec.cocoonArt+'" alt="" style="width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 0 24px rgba(240,208,144,0.5));position:absolute;">'+
+        '<svg id="lw-hatch-cracks" viewBox="0 0 200 200" style="position:absolute;width:200px;height:200px;pointer-events:none;">'+
+          '<path class="lw-hatch-crack" d="M100,50 L92,90 L102,118 L88,148" stroke="#0d100c" stroke-width="2.2" fill="none" stroke-linecap="round"/>'+
+          '<path class="lw-hatch-crack" d="M120,70 L115,100 L130,130 L122,162" stroke="#0d100c" stroke-width="2" fill="none" stroke-linecap="round"/>'+
+          '<path class="lw-hatch-crack" d="M80,80 L70,108 L82,140" stroke="#0d100c" stroke-width="1.8" fill="none" stroke-linecap="round"/>'+
+        '</svg>'+
+        '<img id="lw-hatch-creature" src="'+spec.hatchedArt+'" alt="" style="width:220px;height:220px;object-fit:contain;filter:drop-shadow(0 0 28px rgba(122,179,86,0.6));position:absolute;">'+
+      '</div>'+
+      '<div id="lw-hatch-headline" style="font-family:Playfair Display,serif;font-size:1.6rem;color:var(--gold);font-style:italic;text-align:center;margin-bottom:0.4rem;">'+spec.hatchedName+' has hatched.</div>'+
+      '<div id="lw-hatch-blurb" style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);text-align:center;line-height:1.6;max-width:340px;margin-bottom:1.6rem;opacity:0.85;">'+(spec.cocoonName||'Your Curiosity')+' grew into a companion. Both stages now live in your <b style="color:var(--gold);">Book of Secrets · Companions</b>.</div>'+
+      '<button id="lw-hatch-cta" style="padding:0.85rem 2rem;border:2px solid rgba(200,168,75,0.7);border-radius:12px;background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(120,100,40,0.4));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.92rem;letter-spacing:0.16em;cursor:pointer;min-height:52px;box-shadow:0 4px 16px rgba(200,168,75,0.25);">MEET YOUR COMPANION</button>'+
+      '<div style="margin-top:1rem;font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(232,220,200,0.4);">tap anywhere to close</div>';
+    document.body.appendChild(ov);
+
+    // Timeline.
+    setTimeout(function(){
+      var c = document.getElementById('lw-hatch-cocoon'); if (c) c.classList.add('shaking');
+    }, 600);
+    setTimeout(function(){
+      var cracks = ov.querySelectorAll('.lw-hatch-crack');
+      for (var i=0;i<cracks.length;i++){
+        (function(el,d){ setTimeout(function(){ el.classList.add('in'); }, d); })(cracks[i], i*120);
+      }
+      try{ if(window._haptic) window._haptic('tap'); }catch(e){}
+    }, 900);
+    setTimeout(function(){
+      var c = document.getElementById('lw-hatch-cocoon'); if (c) c.classList.add('gone');
+      // Burst rings.
+      var stage = document.getElementById('lw-hatch-stage');
+      if (stage){
+        for (var b=0;b<2;b++){
+          (function(d){
+            setTimeout(function(){
+              var r = document.createElement('div');
+              r.className = 'lw-hatch-burst-ring';
+              stage.appendChild(r);
+              requestAnimationFrame(function(){ r.classList.add('in'); });
+              setTimeout(function(){ r.remove(); }, 1100);
+            }, d);
+          })(b*220);
+        }
+      }
+    }, 1500);
+    setTimeout(function(){
+      var cr = document.getElementById('lw-hatch-creature'); if (cr) cr.classList.add('in');
+      try{ if(window._haptic) window._haptic('bloom'); }catch(e){}
+    }, 1700);
+    setTimeout(function(){
+      var hl = document.getElementById('lw-hatch-headline'); if (hl) hl.classList.add('in');
+      var bl = document.getElementById('lw-hatch-blurb'); if (bl) bl.classList.add('in');
+    }, 2400);
+    setTimeout(function(){
+      var cta = document.getElementById('lw-hatch-cta'); if (cta) cta.classList.add('in');
+    }, 3300);
+
+    // Dismiss handlers.
+    function _close(openBos){
+      var node = document.getElementById('lw-hatch-overlay'); if (!node) return;
+      node.style.transition = 'opacity 0.35s ease';
+      node.style.opacity = '0';
+      setTimeout(function(){ try{ node.remove(); }catch(e){} }, 380);
+      // Refresh the curiosities panel + keeper bar pip so the new state shows.
+      try{ if(window.LW_KEEPER && LW_KEEPER.refreshPip) LW_KEEPER.refreshPip(); }catch(e){}
+      try{ if(window._lwOpenCuriosities && document.getElementById('lw-curiosities-panel')) window._lwOpenCuriosities(); }catch(e){}
+      if (openBos){
+        // Open BoS Companions tab so the hatched creature is the first
+        // thing the player sees. _openCompendiumUI takes no args; use
+        // _bosSetTab after a short delay (the established pattern at
+        // index.html:6767, 67275, 96805).
+        try {
+          if (window._openCompendiumUI) {
+            window._openCompendiumUI();
+            setTimeout(function(){
+              try { if (window._bosSetTab) window._bosSetTab('companions'); } catch(e){}
+              // After the tab switches, open the profile for the hatched
+              // creature so the player lands directly on the STAGES rail.
+              setTimeout(function(){
+                try {
+                  var _idx = (LW_KEEPER && LW_KEEPER.companionIdxFor) ? LW_KEEPER.companionIdxFor(spec.key) : null;
+                  if (_idx !== null && window._lwOpenCompanionProfile) window._lwOpenCompanionProfile(_idx);
+                } catch(e){}
+              }, 320);
+            }, 240);
+          } else if (window._toast) {
+            window._toast('Open Book of Secrets → Companions to see ' + spec.hatchedName + '.');
+          }
+        } catch(e){}
+      }
+    }
+    ov.addEventListener('click', function(e){ if (e.target === ov) _close(false); });
+    var ctaBtn = document.getElementById('lw-hatch-cta');
+    if (ctaBtn) ctaBtn.addEventListener('click', function(e){ e.stopPropagation(); _close(true); });
   };
 })();
 
@@ -91143,6 +91310,44 @@ window._lwCompanionTempRevealed = function(idx){
     // Derpy SVG always renders below as the baseline identity.
     h+='<div id="lw-cp-photo-wrap" style="margin-bottom:0.6rem;"><img src="assets/companions/photos/'+idx+'.jpg" alt="" onerror="var w=document.getElementById(\'lw-cp-photo-wrap\');if(w)w.style.display=\'none\';" style="width:100%;max-width:320px;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid rgba(200,168,75,0.25);display:block;margin:0 auto;"></div>';
     h+='<div style="display:flex;justify-content:center;align-items:center;min-height:120px;margin-bottom:0.5rem;">'+portrait+'</div>';
+    // Stephen 2026-05-07: cocoon-derived companions (Wasp/Lungfish/Tardigrade
+    // at idx 82-84) get a STAGES rail showing both the cocoon-stage art and
+    // the hatched-stage art. Stephen ruling: "the caterpillar image we made
+    // in the companions too because thats the image style it is" — both
+    // paintings live alongside each other in the discovery moment.
+    try {
+      if (window.LW_KEEPER && LW_KEEPER.keyForCompanionIdx) {
+        var _stKey = LW_KEEPER.keyForCompanionIdx(idx);
+        if (_stKey) {
+          var _stSpec = LW_KEEPER.getSpec(_stKey);
+          if (_stSpec && _stSpec.cocoonArt && _stSpec.hatchedArt) {
+            var _stProg = LW_KEEPER.progress(_stKey);
+            var _stHatched = !!(_stProg && _stProg.state === 'hatched');
+            h += '<div style="margin:0.4rem 0 1rem 0;padding:0.7rem 0.6rem;background:rgba(13,16,12,0.55);border:1px solid rgba(74,124,53,0.22);border-radius:10px;">';
+            h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.14em;text-align:center;margin-bottom:0.55rem;">STAGES</div>';
+            h += '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0.5rem;align-items:center;">';
+            // Cocoon stage tile.
+            h += '<div style="text-align:center;">';
+            h += '<img src="' + _stSpec.cocoonArt + '" alt="" style="width:100%;max-width:120px;aspect-ratio:1/1;object-fit:contain;border-radius:8px;background:rgba(20,18,14,0.5);border:1.5px solid rgba(122,179,86,0.3);display:block;margin:0 auto;" onerror="this.style.display=\'none\';">';
+            h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);margin-top:0.3rem;">' + (_stSpec.cocoonName||'Cocoon') + '</div>';
+            h += '</div>';
+            // Arrow / state indicator.
+            h += '<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:' + (_stHatched ? 'var(--gold)' : 'var(--muted)') + ';letter-spacing:0.1em;">→</div>';
+            // Hatched stage tile.
+            var _hatchedFilter = _stHatched ? '' : 'filter:brightness(0.3) saturate(0.4);';
+            h += '<div style="text-align:center;">';
+            h += '<img src="' + _stSpec.hatchedArt + '" alt="" style="width:100%;max-width:120px;aspect-ratio:1/1;object-fit:contain;border-radius:8px;background:rgba(20,18,14,0.5);border:1.5px solid ' + (_stHatched ? 'rgba(200,168,75,0.55)' : 'rgba(74,124,53,0.18)') + ';display:block;margin:0 auto;' + _hatchedFilter + '" onerror="this.style.display=\'none\';">';
+            h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:' + (_stHatched ? 'var(--gold)' : 'var(--muted)') + ';margin-top:0.3rem;">' + (_stHatched ? _stSpec.hatchedName : '???') + '</div>';
+            h += '</div>';
+            h += '</div>';
+            if (!_stHatched) {
+              h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-top:0.55rem;font-style:italic;">Walk to hatch.</div>';
+            }
+            h += '</div>';
+          }
+        }
+      }
+    } catch(e){}
     h+='<div style="font-family:Playfair Display,serif;font-size:1.35rem;color:var(--gold);font-style:italic;margin-bottom:0.35rem;">'+name+'</div>';
     // Stephen 2026-05-01: family/type signal was too small (0.58rem name,
     // 0.52rem blurb, inline emoji). Now a proper type pill — emoji at
