@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.8';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.9';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -8989,24 +8989,48 @@ window._addSwitchTabHook = function(fn){
       alert('Backpack cooldowns cleared!');
     },
     auditTriggers:function(){
-      // 2026-04-27 — Stephen wanted "do we know if events, and everything
-      // else is actually firing properly?" This bundles a one-shot audit:
+      // Stephen 2026-04-27 + 2026-05-07 — full audit so "0 omens found"
+      // is verifiable. Reports:
       //  • TRIGGERS catalog count
-      //  • DISCOVERED count (lw_wild_events) — fired via wild scan
-      //  • GROWN count (lw_triggers_grown) — fired via greenhouse hashes
-      //  • LW_ACH counter sample (random 5 keys + their current values)
-      //  • Forces a fresh greenhouse → grown scan and reports the delta
+      //  • Omens DISCOVERED (lw_triggers_found) — the BoS Codex Omens count
+      //  • GROWN count (lw_triggers_grown) — greenhouse-derived
+      //  • Wild plant count (necessary precondition for trigger firing)
+      //  • LW_ACH counter sample
+      //  • Force greenhouse → grown rescan
       var msg = '';
       try {
         var trigTotal = (window.INTERACTION_TRIGGERS||window.TRIGGERS||[]).length;
         msg += 'TRIGGERS catalog: ' + trigTotal + '\n';
-        var disc = JSON.parse(localStorage.getItem('lw_wild_events')||'[]');
-        if (Array.isArray(disc)) msg += 'Discovered (wild scan): ' + disc.length + '\n';
-        else { var _dc = 0; for (var _dk in disc) if (disc[_dk]) _dc++; msg += 'Discovered (wild scan): ' + _dc + '\n'; }
+        // OMENS — read the ACTUAL key the BoS Codex Omens subtab uses
+        // (lw_triggers_found), not the conflicting lw_wild_events dict.
+        // Stephen 2026-05-07 bug: was reading the wrong key, so the audit
+        // claimed "0 discovered" even when omens had fired.
+        var omens = JSON.parse(localStorage.getItem('lw_triggers_found')||'[]');
+        msg += 'Omens DISCOVERED (BoS Codex): ' + (Array.isArray(omens) ? omens.length : 0) + ' / ' + trigTotal + '\n';
+        // Named-events (separate system — Hour of the Wolf etc.) live in lw_wild_events
+        var named = {};
+        try { named = JSON.parse(localStorage.getItem('lw_wild_events')||'{}'); } catch(_ne){}
+        var namedCt = 0;
+        if (named && typeof named === 'object' && !Array.isArray(named)) {
+          for (var _nk in named) if (named[_nk]) namedCt++;
+        }
+        msg += 'Named events unlocked: ' + namedCt + '\n';
         var grownBefore = JSON.parse(localStorage.getItem('lw_triggers_grown')||'[]');
         msg += 'Grown (greenhouse-derived) before scan: ' + grownBefore.length + '\n';
       } catch(e){ msg += 'Read error: ' + e.message + '\n'; }
-      // Force a fresh scan
+      // Wild plant count — triggers ONLY fire from _doReproduction over
+      // wild plants. Zero wild = zero omens, by design. Surfacing this
+      // so Stephen can rule it in/out as the cause.
+      try {
+        var _wild = JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');
+        var _wildMine = 0, _wildAll = (_wild||[]).length;
+        var _uid = '';
+        try { _uid = (window.firebase && firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid) || ''; } catch(_ue){}
+        for (var _wi=0; _wi<_wildAll; _wi++) if (_wild[_wi] && (!_uid || _wild[_wi].ownerUid === _uid)) _wildMine++;
+        msg += 'Wild plants (yours): ' + _wildMine + ' / total visible: ' + _wildAll + '\n';
+        if (_wildMine === 0) msg += '  ⚠ No wild plants = no omens fire. Drop one from greenhouse.\n';
+      } catch(e){ msg += 'Wild count error: ' + e.message + '\n'; }
+      // Force a fresh greenhouse rescan (grown side)
       try {
         var gh = JSON.parse((window._secureGet?window._secureGet('sws_greenhouse'):localStorage.getItem('sws_greenhouse'))||'[]');
         if (window._lwRecordGrown) for (var i=0;i<gh.length;i++) if (gh[i]&&gh[i].hash) window._lwRecordGrown(gh[i].hash);
@@ -93509,13 +93533,15 @@ function _bosSecretsContent() {
   // there to chase. Each cell is tap-to-jump (anchors below).
   if (_CXOK('atlas')) try {
     var atlasRows = [];
-    // Triggers (BoS Events tab)
+    // Triggers (BoS Codex Omens) — reads lw_triggers_found, the same key
+    // the Omens subtab uses via getCompendium(). Stephen 2026-05-07 bug:
+    // was reading lw_wild_events (named-events DICT, conflicts with the
+    // wild-event LOG array), counted unrelated entries.
     try {
-      var _trigUnlocked = JSON.parse(localStorage.getItem('lw_wild_events') || '{}');
-      var _trigFound = 0;
-      for (var _tk in _trigUnlocked) if (_trigUnlocked[_tk]) _trigFound++;
-      var _trigTotal = window.TRIGGERS ? window.TRIGGERS.length : 0;
-      if (_trigTotal > 0) atlasRows.push({label:'Events', cur:_trigFound, total:_trigTotal, color:'#c8a84b', tab:'events'});
+      var _trigDisc = JSON.parse(localStorage.getItem('lw_triggers_found') || '[]');
+      var _trigFound = Array.isArray(_trigDisc) ? _trigDisc.length : 0;
+      var _trigTotal = (window.INTERACTION_TRIGGERS||window.TRIGGERS||[]).length || 0;
+      if (_trigTotal > 0) atlasRows.push({label:'Omens', cur:_trigFound, total:_trigTotal, color:'#c8a84b', tab:'codex', subtab:'omens'});
     } catch(e){}
     // Synergies (count + total via LW_SYNERGIES)
     if (window.LW_SYNERGIES) {
@@ -93674,28 +93700,31 @@ function _bosSecretsContent() {
       for (var _i = 0; _i < items.length; _i++) {
         var it = items[_i];
         var en = it.entry, found = it.found, isNew = it.isNew;
-        // Prefer the painted theme medallion over the smart-emoji fallback.
-        // 36px is large enough for the gilded frame + glyph to read.
+        // Stephen 2026-05-07: bumped 36px → 72px medallions in 84px → 140px
+        // tiles. He's flagged "synergy images TOO FUCKING SMALL" multiple
+        // times. Painted theme medallions are 512x512 source — they read
+        // beautifully at 72px and there's plenty of room in a 3-column grid
+        // on phone widths.
         var icoHtml;
         if (themeMeta.iconImg) {
-          icoHtml = '<img src="'+themeMeta.iconImg+'" alt="" style="width:36px;height:36px;object-fit:contain;display:inline-block;" onerror="this.outerHTML=&apos;'+(themeMeta.icon||'').replace(/\'/g,'&#39;')+'&apos;;">';
+          icoHtml = '<img src="'+themeMeta.iconImg+'" alt="" style="width:72px;height:72px;object-fit:contain;display:inline-block;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.55));" onerror="this.outerHTML=&apos;'+(themeMeta.icon||'').replace(/\'/g,'&#39;')+'&apos;;">';
         } else {
-          icoHtml = (window._lwEmojiSprite ? window._lwEmojiSprite(themeMeta.icon, 36) : themeMeta.icon);
+          icoHtml = (window._lwEmojiSprite ? window._lwEmojiSprite(themeMeta.icon, 72) : themeMeta.icon);
         }
         if (found) {
           var bd = isNew ? 'var(--gold)' : themeMeta.color + '66';
           var bg = isNew ? 'rgba(200,168,75,0.12)' : themeMeta.color + '14';
-          var sh = isNew ? 'box-shadow:0 0 8px rgba(200,168,75,0.35);' : '';
+          var sh = isNew ? 'box-shadow:0 0 10px rgba(200,168,75,0.4);' : '';
           var nmEsc = en.name.replace(/'/g,"\\'");
-          inner += '<div onclick="window._lwShowSynergyDetail(\''+nmEsc+'\')" style="position:relative;padding:8px 6px;background:'+bg+';border:1px solid '+bd+';border-radius:8px;text-align:center;min-height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:background 0.15s ease;'+sh+'" title="'+en.name+': '+(en.fx||'')+(isNew?' (new)':'')+'">';
-          if (isNew) inner += '<span style="position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(200,168,75,0.9);"></span>';
+          inner += '<div onclick="window._lwShowSynergyDetail(\''+nmEsc+'\')" style="position:relative;padding:10px 6px 8px;background:'+bg+';border:1px solid '+bd+';border-radius:10px;text-align:center;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background 0.15s ease;'+sh+'" title="'+en.name+': '+(en.fx||'')+(isNew?' (new)':'')+'">';
+          if (isNew) inner += '<span style="position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(200,168,75,0.95);"></span>';
           inner += '<div style="line-height:1;">'+icoHtml+'</div>';
-          inner += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:'+(isNew?'var(--gold)':themeMeta.color)+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+en.name+'</div>';
+          inner += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:'+(isNew?'var(--gold)':themeMeta.color)+';line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">'+en.name+'</div>';
           inner += '</div>';
         } else {
-          inner += '<div style="padding:8px 6px;background:rgba(26,36,22,0.3);border:1px dashed '+themeMeta.color+'44;border-radius:8px;text-align:center;min-height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;opacity:0.55;" title="'+themeMeta.hint+'">';
+          inner += '<div style="padding:10px 6px 8px;background:rgba(26,36,22,0.3);border:1px dashed '+themeMeta.color+'44;border-radius:10px;text-align:center;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0.55;" title="'+themeMeta.hint+'">';
           inner += '<div style="line-height:1;opacity:0.7;">'+icoHtml+'</div>';
-          inner += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">locked</div>';
+          inner += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:0.04em;">locked</div>';
           inner += '</div>';
         }
       }
