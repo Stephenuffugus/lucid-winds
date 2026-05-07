@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.19';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -82040,6 +82040,25 @@ function _bosTreeContent() {
     h += '<div style="display:flex;align-items:center;gap:0.4rem;"><span style="font-size:0.9rem;">\ud83d\udd27</span><span style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;">TOOLS \u2014 LOCKED</span></div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);margin-top:3px;line-height:1.4;">Max your ' + (def ? def.name : 'path') + ' path (' + classSpent + '/' + classMax + ') to unlock 4 more tool nodes.</div>';
     h += '</div>';
+  }
+  // Stephen 2026-05-07: when own class branch is maxed, OPEN the four
+  // other class branches as overflow so points stop accruing dead.
+  // Was a 15-level dead zone (L25 -> L40 Heartwood) where points piled
+  // up with nowhere to spend. "by level 25 i have points i cant
+  // seemingly spend... that would make me stop playing right there."
+  if (classMaxed) {
+    var _otherCls = ['forager','breeder','cartographer','tender','keeper'];
+    var _shownOther = false;
+    for (var _ocI = 0; _ocI < _otherCls.length; _ocI++) {
+      var _ocId = _otherCls[_ocI];
+      if (_ocId === cls) continue;
+      if (!_shownOther) {
+        h += '<div style="margin:0.9rem 0 0.4rem;font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--muted);letter-spacing:0.16em;text-align:center;">— OTHER PATHS —</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:0.5rem;text-align:center;line-height:1.5;">Your own path is full. The garden offers more.</div>';
+        _shownOther = true;
+      }
+      h += _bosTreeBranchHtml(_ocId, pts, avail);
+    }
   }
   // Gilding card — Lv 50 milestone. Shows current chosen hour + change button.
   if (lvl >= 50 && window._LW_getGildingHour) {
