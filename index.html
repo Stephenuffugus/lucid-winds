@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.18';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3385,7 +3385,12 @@
        the browser scale from full-resolution PNG. height:auto preserves
        aspect for portrait pieces (milestones are 2:3) AND square pieces
        (companions, biomes). object-fit:contain so nothing crops. */
-    .lw-reader-hero-inline img{width:min(480px,88vw);height:auto;max-height:70vh;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.65)) drop-shadow(0 0 28px var(--reader-accent-soft,rgba(200,168,75,0.25)));}
+    /* Stephen 2026-05-07: was max-height:70vh which on phones left only
+       ~22vh for header + body + actions. Lore body was nearly invisible
+       and the scroll area was too small to reach the cut-off text.
+       Capped at 38vh so the body always has at least ~50% of the panel
+       to show paragraphs + scroll comfortably. */
+    .lw-reader-hero-inline img{width:min(480px,88vw);height:auto;max-height:38vh;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.65)) drop-shadow(0 0 28px var(--reader-accent-soft,rgba(200,168,75,0.25)));}
     .lw-reader-close{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(13,16,12,0.7);color:var(--cream);font-size:0.85rem;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     .lw-reader-head{padding:14px 20px 8px;border-bottom:1px solid var(--reader-accent-soft);}
     .lw-reader-eyebrow{font-family:'Bebas Neue',sans-serif;font-size:0.52rem;letter-spacing:0.22em;color:var(--reader-accent,var(--gold));margin-bottom:3px;}
@@ -5108,25 +5113,27 @@
 .hi-climate-thr{color:var(--muted);text-align:right;}
 .hi-climate-cur{text-align:right;font-weight:600;}
 .hi-climate-dot{width:8px;height:8px;border-radius:50%;justify-self:end;box-shadow:0 0 4px currentColor;}
-.hi-action-btn:active{background:rgba(74,124,53,0.25);border-color:rgba(122,179,86,0.4);}
-.hi-action-btn.danger{border-color:rgba(200,80,60,0.2);color:rgba(200,120,100,0.9);}
-.hi-action-btn.gold{border-color:rgba(200,168,75,0.25);color:var(--gold);}
-.hi-action-btn.locked{opacity:0.45;border-style:dashed;cursor:not-allowed;color:rgba(122,179,86,0.5);}
-.hi-action-btn.hi-water-hold{position:relative;overflow:hidden;border-color:rgba(91,143,185,0.4);color:#7ab3d4;touch-action:none;-webkit-user-select:none;user-select:none;}
-.hi-action-btn.hi-water-hold .hi-water-fill{position:absolute;inset:0;background:linear-gradient(90deg,rgba(91,143,185,0.45),rgba(91,143,185,0.25));width:0%;transition:none;pointer-events:none;}
+/* Stephen 2026-05-07: legacy variant frames removed. Painted parchment
+   buttons (wild-water/tend/mulch/bless/cutting-btn-v2) ship with their
+   own ornate gold frame. The old hi-water-hold / hi-prune-hold /
+   hi-bless-btn rules below were re-adding border + background +
+   overflow:hidden, which clipped the now-full-width image to the
+   button's smaller height — image looked half-size. Now the parchment
+   IS the button across all variants; only state-specific glows kept. */
+.hi-action-btn.danger{color:rgba(200,120,100,0.9);}
+.hi-action-btn.gold{color:var(--gold);}
+.hi-action-btn.hi-water-hold{position:relative;color:#7ab3d4;touch-action:none;-webkit-user-select:none;user-select:none;}
+.hi-action-btn.hi-water-hold .hi-water-fill{display:none;}
 .hi-action-btn.hi-water-hold .hi-water-label{position:relative;z-index:1;}
-.hi-action-btn.hi-water-hold.holding{border-color:rgba(91,143,185,0.85);box-shadow:0 0 18px rgba(91,143,185,0.45);}
-.hi-action-btn.hi-water-hold.holding .hi-water-fill{width:100%;transition:width 10s linear;}
-.hi-action-btn.hi-water-hold.held{border-color:rgba(122,179,86,0.85);box-shadow:0 0 22px rgba(122,179,86,0.6);}
-.hi-action-btn.hi-water-hold.held .hi-water-fill{background:linear-gradient(90deg,rgba(122,179,86,0.65),rgba(122,179,86,0.4));width:100%;transition:none;}
-.hi-action-btn.hi-prune-hold{position:relative;overflow:hidden;border-color:rgba(216,112,96,0.5);color:#e0a090;touch-action:none;-webkit-user-select:none;user-select:none;}
-.hi-action-btn.hi-prune-hold .hi-water-fill{background:linear-gradient(90deg,rgba(216,112,96,0.45),rgba(216,112,96,0.25));}
-.hi-action-btn.hi-prune-hold.holding{border-color:rgba(216,112,96,0.85);box-shadow:0 0 18px rgba(216,112,96,0.5);}
-.hi-action-btn.hi-prune-hold.holding .hi-water-fill{transition:width 5s linear;}
-.hi-action-btn.hi-prune-hold.held{border-color:rgba(122,179,86,0.85);box-shadow:0 0 22px rgba(122,179,86,0.6);}
-.hi-action-btn.hi-bless-btn{border-color:rgba(200,168,75,0.5);color:var(--gold);background:linear-gradient(180deg,rgba(46,38,18,0.6),rgba(28,24,12,0.7));box-shadow:inset 0 0 12px rgba(200,168,75,0.12),0 0 14px rgba(200,168,75,0.2);animation:blessPulse 3s ease-in-out infinite;}
-.hi-action-btn.hi-bless-btn:active{box-shadow:none;transform:translateY(1px);}
-@keyframes blessPulse{0%,100%{box-shadow:inset 0 0 12px rgba(200,168,75,0.12),0 0 14px rgba(200,168,75,0.2);}50%{box-shadow:inset 0 0 18px rgba(200,168,75,0.2),0 0 22px rgba(200,168,75,0.4);}}
+.hi-action-btn.hi-water-hold.holding{filter:drop-shadow(0 0 18px rgba(91,143,185,0.5));}
+.hi-action-btn.hi-water-hold.held{filter:drop-shadow(0 0 22px rgba(122,179,86,0.6));}
+.hi-action-btn.hi-prune-hold{position:relative;color:#e0a090;touch-action:none;-webkit-user-select:none;user-select:none;}
+.hi-action-btn.hi-prune-hold .hi-water-fill{display:none;}
+.hi-action-btn.hi-prune-hold.holding{filter:drop-shadow(0 0 18px rgba(216,112,96,0.5));}
+.hi-action-btn.hi-prune-hold.held{filter:drop-shadow(0 0 22px rgba(122,179,86,0.6));}
+.hi-action-btn.hi-bless-btn{color:var(--gold);animation:blessPulse 3s ease-in-out infinite;}
+.hi-action-btn.hi-bless-btn:active{transform:translateY(1px);}
+@keyframes blessPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(200,168,75,0.25));}50%{filter:drop-shadow(0 0 18px rgba(200,168,75,0.6));}}
 .hi-plant-row.hi-plant-row-pest{border-left:3px solid rgba(216,112,96,0.6);background:linear-gradient(90deg,rgba(216,112,96,0.08),transparent 60%);}
 .hi-plant-row.hi-plant-row-pest .hi-pr-name::after{content:' \01F9A0';font-size:0.8em;}
 .hi-search{padding:0.5rem 1rem 0.3rem;border-top:1px solid rgba(200,168,75,0.06);}
