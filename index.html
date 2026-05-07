@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.39';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.40';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1223,14 +1223,16 @@
     @keyframes screenShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-3px)}30%{transform:translateX(3px)}45%{transform:translateX(-2px)}60%{transform:translateX(2px)}75%{transform:translateX(-1px)}90%{transform:translateX(1px)}}
     .shake-it{animation:screenShake 0.4s ease;}
 
-    /* ═══ TIP JAR BUTTON ═══ Lantern-glow shimmer for the BoS About tip CTA */
-    @keyframes lwTipGlow{0%,100%{box-shadow:0 0 0 1px rgba(232,210,140,0.18) inset,0 4px 18px rgba(200,140,40,0.22),0 0 22px rgba(232,200,106,0.10);}50%{box-shadow:0 0 0 1px rgba(248,228,160,0.32) inset,0 6px 24px rgba(220,160,60,0.36),0 0 36px rgba(248,220,140,0.22);}}
+    /* ═══ TIP JAR BUTTON ═══ 2026-05-07: rebuilt to feature the gold Pi medallion (assets/buttons/btn-pi.png) as the hero. Big on purpose — brand anchor for FB-group share screenshots and the About page. */
+    @keyframes lwTipGlow{0%,100%{box-shadow:0 0 0 1px rgba(232,210,140,0.20) inset,0 4px 22px rgba(200,140,40,0.26),0 0 26px rgba(232,200,106,0.14);}50%{box-shadow:0 0 0 1px rgba(248,228,160,0.36) inset,0 6px 28px rgba(220,160,60,0.42),0 0 42px rgba(248,220,140,0.28);}}
     @keyframes lwTipShimmer{0%{transform:translateX(-120%) skewX(-22deg);opacity:0;}30%{opacity:0.55;}70%{opacity:0.55;}100%{transform:translateX(220%) skewX(-22deg);opacity:0;}}
-    .lw-tip-cta{position:relative;display:block;width:100%;padding:0.95rem 1rem;margin-bottom:0.7rem;border:2px solid rgba(232,200,106,0.55);border-radius:14px;background:linear-gradient(180deg,rgba(86,52,18,0.85) 0%,rgba(132,86,32,0.92) 35%,rgba(176,124,52,0.9) 65%,rgba(120,72,24,0.92) 100%);color:#fff5dd;font-family:'Bebas Neue',sans-serif;cursor:pointer;text-align:center;overflow:hidden;-webkit-tap-highlight-color:transparent;animation:lwTipGlow 4.2s ease-in-out infinite;transition:transform 0.12s ease,filter 0.12s ease;}
+    @keyframes lwTipMedallionFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(-1deg);}}
+    .lw-tip-cta{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.55rem;width:100%;padding:1.4rem 1rem 1.2rem;margin:0.6rem 0 1rem;border:1.5px solid rgba(232,200,106,0.4);border-radius:18px;background:linear-gradient(180deg,rgba(18,14,6,0.62) 0%,rgba(34,24,10,0.86) 100%);color:#fff5dd;font-family:'Bebas Neue',sans-serif;cursor:pointer;text-align:center;overflow:hidden;-webkit-tap-highlight-color:transparent;animation:lwTipGlow 4.2s ease-in-out infinite;transition:transform 0.12s ease,filter 0.12s ease;}
     .lw-tip-cta:active{transform:scale(0.97);filter:brightness(1.08);}
-    .lw-tip-cta::before{content:'';position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(90deg,transparent 0%,rgba(255,240,200,0.32) 50%,transparent 100%);pointer-events:none;animation:lwTipShimmer 5.5s ease-in-out infinite;animation-delay:1.5s;}
-    .lw-tip-cta-title{font-size:1.05rem;letter-spacing:0.18em;font-weight:400;line-height:1;text-shadow:0 1px 2px rgba(40,20,4,0.6),0 0 12px rgba(255,220,140,0.18);}
-    .lw-tip-cta-sub{margin-top:0.3rem;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.62rem;color:rgba(255,235,200,0.78);letter-spacing:0.04em;line-height:1.3;}
+    .lw-tip-cta::before{content:'';position:absolute;top:0;left:-30%;width:50%;height:100%;background:linear-gradient(90deg,transparent 0%,rgba(255,240,200,0.20) 50%,transparent 100%);pointer-events:none;animation:lwTipShimmer 6s ease-in-out infinite;animation-delay:1.5s;}
+    .lw-tip-cta-medallion{width:min(240px,72vw);height:auto;aspect-ratio:1/1;object-fit:contain;filter:drop-shadow(0 6px 22px rgba(255,215,120,0.45)) drop-shadow(0 0 36px rgba(232,200,106,0.32));pointer-events:none;animation:lwTipMedallionFloat 4.8s ease-in-out infinite;}
+    .lw-tip-cta-title{font-size:1.18rem;letter-spacing:0.20em;line-height:1;text-shadow:0 1px 3px rgba(40,20,4,0.7),0 0 14px rgba(255,220,140,0.25);}
+    .lw-tip-cta-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.72rem;color:rgba(255,235,200,0.82);letter-spacing:0.04em;line-height:1.4;max-width:280px;}
 
     /* Accessibility color-blind marker — hidden by default, toggle in settings */
     .cb-marker{position:absolute;top:4px;right:5px;opacity:0;pointer-events:none;font-size:0.55rem;line-height:1;font-family:'DM Mono',monospace;color:var(--cream);transition:opacity 0.3s;font-weight:700;}
@@ -2111,9 +2113,12 @@
        already hides these surfaces via four-signal detection, but if
        JS detection ever fails (Pi SDK fails to load + userAgent
        doesn't match), this CSS catches the leak unconditionally
-       whenever body.pi-browser is set. Belt-and-suspenders. */
+       whenever body.pi-browser is set. Belt-and-suspenders.
+       2026-05-07 evening: gold-Pi-button tip CTA is now Pi-Browser-safe
+       when it carries .lw-tip-cta-pi (Pi-only flow). The .lw-tip-cta-multi
+       variant remains hidden inside Pi Browser. */
     body.pi-browser .lw-non-pi-tips{ display:none !important; }
-    body.pi-browser .lw-tip-cta{ display:none !important; }
+    body.pi-browser .lw-tip-cta-multi{ display:none !important; }
     body.pi-browser{ --pi-chrome-h: 48px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
@@ -84197,19 +84202,33 @@ function _bosAboutContent() {
   // back the URL. Stripe gates "customer chooses price" in Payment
   // Links for certain categories, so we bypass the dashboard and
   // drive the Checkout API directly.
-  // Stephen 2026-05-07: wrap non-Pi tip surfaces in .lw-non-pi-tips so
-  // CSS can hide them as a final safety net even if JS leaked them
-  // through the gate. See "tip-jar safety net" CSS rule.
-  if (!_isPiBrowser) {
+  // Stephen 2026-05-07 evening: the gold Pi medallion is the brand anchor
+  // \u2014 show it in BOTH browser modes. Inside Pi Browser the click opens a
+  // Pi-only tip flow (legal under Pi rules); outside it opens the existing
+  // multi-method modal (Stripe + crypto + Pi). The .lw-tip-cta-multi
+  // variant is CSS-hidden in Pi Browser as a safety net.
+  var _tipMedallionImg = '<img src="assets/buttons/btn-pi.png" alt="" class="lw-tip-cta-medallion" onerror="this.style.display=&apos;none&apos;;">';
+  if (_isPiBrowser) {
+    h += '<button onclick="window._lwOpenPiTipModal&&window._lwOpenPiTipModal()" class="lw-tip-cta lw-tip-cta-pi" aria-label="Tip the studio in Pi">'+
+           _tipMedallionImg +
+           '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
+           '<div class="lw-tip-cta-sub">a small Pi tip keeps the garden ad-free</div>'+
+         '</button>';
+  } else {
     h += '<div class="lw-non-pi-tips">';
     if (c.stripeCardEnabled !== false) {
-      h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta" aria-label="Light a lantern \u2014 tip the studio">'+
-             '<div class="lw-tip-cta-title">\u2728 LIGHT A LANTERN \u2728</div>'+
+      h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta lw-tip-cta-multi" aria-label="Light a lantern \u2014 tip the studio">'+
+             _tipMedallionImg +
+             '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
              '<div class="lw-tip-cta-sub">tips keep this game ad-free \u00b7 anything is appreciated</div>'+
            '</button>';
     }
     else if (c.stripeUrl) {
-      h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
+      h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" class="lw-tip-cta lw-tip-cta-multi" style="text-decoration:none;">'+
+             _tipMedallionImg +
+             '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
+             '<div class="lw-tip-cta-sub">support with card \u00b7 anything is appreciated</div>'+
+           '</a>';
     }
     h += '</div>';
   }
@@ -84343,6 +84362,77 @@ window._lwOpenTipModal = function() {
       go.disabled = false;
       go.textContent = 'CONTINUE TO PAYMENT →';
     });
+  };
+  function close() { try { ov.remove(); } catch(e) {} }
+};
+
+// ═══ PI-ONLY TIP MODAL (Pi Browser only) ═══
+// Pi Network rules forbid Stripe + non-Pi crypto inside Pi Browser, but
+// Pi-to-Pi tipping is exactly the intended use of the SDK. Picker offers
+// 1π / 5π / 10π / 25π presets + custom amount, calls createPayment with
+// metadata.type='tip'. Cloud Function piComplete logs unknown types as
+// "no entitlement applied" — perfect for a tip (no in-game grant needed).
+window._lwOpenPiTipModal = function() {
+  if (!window.LW_PI_ENABLED || typeof createPayment !== 'function') {
+    if (window._toast) window._toast('Pi payments load in a moment. Try again.');
+    return;
+  }
+  var existing = document.getElementById('lw-pi-tip-modal');
+  if (existing) { try { existing.remove(); } catch(e){} return; }
+  var ov = document.createElement('div');
+  ov.id = 'lw-pi-tip-modal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.onclick = function(e) { if (e.target === ov) close(); };
+  var card = document.createElement('div');
+  card.style.cssText = 'max-width:340px;width:100%;padding:1.4rem 1.2rem;background:linear-gradient(180deg,rgba(26,36,22,0.96),rgba(13,16,12,0.98));border:1.5px solid rgba(232,200,106,0.4);border-radius:14px;box-shadow:0 22px 56px rgba(0,0,0,0.65);text-align:center;';
+  var presetBtn = function(amt){
+    return '<button class="lw-pi-tip-preset" data-amt="' + amt + '" style="padding:0.55rem 0.6rem;min-height:44px;min-width:60px;background:rgba(200,168,75,0.14);border:1px solid rgba(200,168,75,0.45);border-radius:8px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;cursor:pointer;">' + amt + ' π</button>';
+  };
+  card.innerHTML =
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:0.16em;margin-bottom:0.3rem;">SUPPORT THE HERMIT</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:rgba(232,220,200,0.7);margin-bottom:1rem;line-height:1.5;">Anything is appreciated. Pi only.</div>' +
+    '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:0.7rem;">' +
+      presetBtn(1) + presetBtn(5) + presetBtn(10) + presetBtn(25) +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:1rem;background:rgba(13,16,12,0.7);border:1px solid rgba(200,168,75,0.32);border-radius:8px;padding:0.55rem 0.8rem;">' +
+      '<span style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--gold);">π</span>' +
+      '<input id="lw-pi-tip-amt" type="number" inputmode="decimal" step="0.01" min="0.1" placeholder="Other amount" style="flex:1;background:none;border:none;color:var(--cream);font-family:DM Mono,monospace;font-size:0.85rem;outline:none;width:100%;">' +
+    '</div>' +
+    '<div id="lw-pi-tip-err" style="font-family:DM Mono,monospace;font-size:0.6rem;color:#e08070;margin-bottom:0.5rem;min-height:0.9rem;"></div>' +
+    '<button id="lw-pi-tip-go" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.5rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(132,86,32,0.42));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.92rem;letter-spacing:0.12em;cursor:pointer;">SEND TIP</button>' +
+    '<button id="lw-pi-tip-cancel" style="display:block;width:100%;padding:0.5rem;border:none;background:none;color:var(--muted);font-family:DM Mono,monospace;font-size:0.58rem;cursor:pointer;letter-spacing:0.08em;">CANCEL</button>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  var input = document.getElementById('lw-pi-tip-amt');
+  var err = document.getElementById('lw-pi-tip-err');
+  var setAmt = function(v) { input.value = v; err.textContent = ''; };
+  var presets = card.querySelectorAll('.lw-pi-tip-preset');
+  for (var i = 0; i < presets.length; i++) {
+    presets[i].onclick = (function(btn){ return function(){ setAmt(btn.dataset.amt); };})(presets[i]);
+  }
+  document.getElementById('lw-pi-tip-cancel').onclick = close;
+  document.getElementById('lw-pi-tip-go').onclick = function() {
+    var v = parseFloat(input.value);
+    if (!(v >= 0.1)) { err.textContent = 'Minimum 0.1 π.'; input.focus(); return; }
+    var go = document.getElementById('lw-pi-tip-go');
+    go.disabled = true;
+    go.textContent = 'OPENING PI...';
+    try {
+      createPayment(v, 'Tip the Studio · ' + v + ' π', { type: 'tip', amount: v },
+        function() { // onSuccess
+          close();
+          if (window._toast) window._toast('Thank you. Seriously.');
+        },
+        function() { // onCancel
+          go.disabled = false;
+          go.textContent = 'SEND TIP';
+        }
+      );
+    } catch (e) {
+      err.textContent = 'Pi error. Try again.';
+      go.disabled = false;
+      go.textContent = 'SEND TIP';
+    }
   };
   function close() { try { ov.remove(); } catch(e) {} }
 };
