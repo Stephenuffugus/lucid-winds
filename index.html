@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.7';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.8';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -78238,18 +78238,22 @@ document.addEventListener('visibilitychange',function(){
 var BIOME_KEY='lw_biome_cache';
 var BIOMES={
   wetland:  {name:'Wetland',   icon:'🌊', iconImg:'assets/wild-biomes/icons/icon-wetland.png',   color:'#5BA0C4', rarityBoost:0.08, spawnMod:1.0, mutation:'Root Rot Resistance', img:'assets/wild-biomes/biome-wetland.png'},
-  riverside:{name:'Riverside', icon:'🏞️', iconImg:'assets/wild-biomes/icons/icon-riverside.png', color:'#6BAFB2', rarityBoost:0.04, spawnMod:1.3, mutation:'Driftwood Stem',     img:'assets/wild-biomes/biome-coastal.png'},
+  riverside:{name:'Riverside', icon:'🏞️', iconImg:'assets/wild-biomes/icons/icon-riverside.png', color:'#6BAFB2', rarityBoost:0.04, spawnMod:1.3, mutation:'Driftwood Stem',     img:'assets/wild-biomes/biome-rainforest.png'},
   coastal:  {name:'Coastal',   icon:'🏖️', iconImg:'assets/wild-biomes/icons/icon-coastal.png',   color:'#A0C4E8', rarityBoost:0.03, spawnMod:0.8, mutation:'Salt Crystal',       img:'assets/wild-biomes/biome-coastal.png'},
   forest:   {name:'Forest',    icon:'🌲', iconImg:'assets/wild-biomes/icons/icon-forest.png',    color:'#4A7C35', rarityBoost:0.05, spawnMod:1.2, mutation:'Moss Veil',          img:'assets/wild-biomes/biome-temperate.png'},
   mountain: {name:'Mountain',  icon:'⛰️', iconImg:'assets/wild-biomes/icons/icon-mountain.png',  color:'#8A9178', rarityBoost:0.10, spawnMod:0.6, mutation:'Alpine Frost',       img:'assets/wild-biomes/biome-mountain.png'},
   desert:   {name:'Desert',    icon:'🏜️', iconImg:'assets/wild-biomes/icons/icon-desert.png',    color:'#D4A843', rarityBoost:0.12, spawnMod:0.4, mutation:'Thorn Crown',        img:'assets/wild-biomes/biome-desert.png'},
-  farmland: {name:'Farmland',  icon:'🌾', iconImg:'assets/wild-biomes/icons/icon-farmland.png',  color:'#A0A060', rarityBoost:0,    spawnMod:1.5, mutation:null,                 img:'assets/wild-biomes/biome-suburban.png'},
-  garden:   {name:'Garden',    icon:'🌷', iconImg:'assets/wild-biomes/icons/icon-garden.png',    color:'#E8A0BF', rarityBoost:0.02, spawnMod:1.4, mutation:'Cultivar Bloom',     img:'assets/wild-biomes/biome-suburban.png'},
-  park:     {name:'Urban Park',icon:'🌳', iconImg:'assets/wild-biomes/icons/icon-park.png',      color:'#7AB356', rarityBoost:0.01, spawnMod:1.0, mutation:null,                 img:'assets/wild-biomes/biome-temperate.png'},
+  farmland: {name:'Farmland',  icon:'🌾', iconImg:'assets/wild-biomes/icons/icon-farmland.png',  color:'#A0A060', rarityBoost:0,    spawnMod:1.5, mutation:null,                 img:'assets/wild-biomes/biome-tundra.png'},
+  garden:   {name:'Garden',    icon:'🌷', iconImg:'assets/wild-biomes/icons/icon-garden.png',    color:'#E8A0BF', rarityBoost:0.02, spawnMod:1.4, mutation:'Cultivar Bloom',     img:'assets/wild-biomes/biome-african.png'},
+  park:     {name:'Urban Park',icon:'🌳', iconImg:'assets/wild-biomes/icons/icon-park.png',      color:'#7AB356', rarityBoost:0.01, spawnMod:1.0, mutation:null,                 img:'assets/wild-biomes/biome-asian.png'},
   suburban: {name:'Suburban',  icon:'🏡', iconImg:'assets/wild-biomes/icons/icon-suburban.png',  color:'#8A9178', rarityBoost:0,    spawnMod:0.8, mutation:null,                 img:'assets/wild-biomes/biome-suburban.png'},
-  // Extra paintings available (Jessie Apr 15): biome-african, biome-asian,
-  // biome-rainforest, biome-tundra. Not wired as standalone biomes yet — OSM
-  // detection rules pending. Stored in assets/wild-biomes/ for future use.
+  // Stephen 2026-05-07: every biome now has a unique painting. Previously
+  // 7 of 10 biomes shared 3 paintings (riverside+coastal, forest+park,
+  // farmland+garden+suburban) so locked tiles in BoS Codex looked identical.
+  // The four previously-unused paintings (african, asian, rainforest,
+  // tundra) are now mapped to garden, park, riverside, farmland respectively.
+  // Farmland↔tundra is the weakest thematic fit — easy swap if better
+  // farmland art arrives later.
 };
 
 function _loadCache(){try{return JSON.parse(localStorage.getItem(BIOME_KEY)||'{}');}catch(e){return{};}}
