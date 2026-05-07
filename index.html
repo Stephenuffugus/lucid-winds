@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.44';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.45';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -69136,32 +69136,46 @@ window._loadKeeperCocoon = function(){
   if (!section) return;
   if (!window.LW_KEEPER) { section.style.display='none'; return; }
   var owned = LW_KEEPER.getAllOwned() || {};
-  var ownedKeys = [];
-  for (var k in owned) if (owned.hasOwnProperty(k)) ownedKeys.push(k);
-  // Hide entire section until player owns at least one keeper cocoon.
-  if (ownedKeys.length === 0) { section.style.display='none'; return; }
+  // Stephen 2026-05-07: Curiosities section is for INCUBATING cocoons
+  // only. Once a cocoon hatches, the creature graduates into the regular
+  // Companion slot (unified via pw_active_companion in LW_KEEPER.equip).
+  // Showing hatched cocoons here was duplicating the equipped companion
+  // — Tardigrade was rendering as both "Active Companion" AND "Equipped
+  // Curiosity" simultaneously.
+  var incubatingKeys = [];
+  for (var k in owned) {
+    if (owned.hasOwnProperty(k) && owned[k] && owned[k].state !== 'hatched') {
+      incubatingKeys.push(k);
+    }
+  }
+  if (incubatingKeys.length === 0) { section.style.display='none'; return; }
   section.style.display = '';
-  var equippedKey = LW_KEEPER.equipped();
+  // Update the section title from "EQUIPPED CURIOSITY" to "INCUBATING"
+  // since this section only shows in-progress cocoons now.
+  var titleEl = section.querySelector('.cs-section-title');
+  if (titleEl) titleEl.textContent = 'INCUBATING';
   var icon = document.getElementById('cs-cocoon-icon');
   var name = document.getElementById('cs-cocoon-name');
   var buff = document.getElementById('cs-cocoon-buff');
-  if (equippedKey){
-    var spec = LW_KEEPER.getSpec(equippedKey);
-    if (spec && icon){
-      icon.innerHTML = '<img src="'+spec.hatchedArt+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;&#x1F41B;&apos;;">';
-    }
-    if (name && spec) name.innerHTML = spec.hatchedName + ' <span style="color:var(--gold);font-family:DM Mono,monospace;font-size:0.4rem;">· EQUIPPED</span>';
-    if (buff && spec){
-      var abilityText = '';
-      if (spec.ability === 'pestClear') abilityText = 'Pest Strike · clears pests on visit · +2 Dew gall';
-      else if (spec.ability === 'droughtBreath') abilityText = 'Drought Breath · +2 day drought tolerance on your wild plants';
-      else if (spec.ability === 'cryptobiosis') abilityText = 'Cryptobiosis · half climate damage on your wild plants';
-      buff.textContent = abilityText || 'Equipped';
-    }
-  } else {
-    if (icon) icon.innerHTML = '<div style="font-size:1.4rem;line-height:48px;text-align:center;color:var(--muted);">✥</div>';
-    if (name) name.textContent = 'None Equipped';
-    if (buff) buff.textContent = ownedKeys.length + ' owned · tap to equip';
+  // Show the most-progressed incubating cocoon.
+  var topKey = incubatingKeys[0];
+  var topProgress = -1;
+  for (var ii = 0; ii < incubatingKeys.length; ii++) {
+    var ok = incubatingKeys[ii];
+    var dist = (owned[ok] && owned[ok].distance) || 0;
+    if (dist > topProgress) { topProgress = dist; topKey = ok; }
+  }
+  var spec = LW_KEEPER.getSpec(topKey);
+  if (spec && icon) {
+    var artSrc = spec.cocoonArt || spec.hatchedArt;
+    icon.innerHTML = '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML=&apos;&#x1F95A;&apos;;">';
+  }
+  if (name && spec) name.innerHTML = (spec.cocoonName || spec.hatchedName) + ' <span style="color:var(--muted);font-family:DM Mono,monospace;font-size:0.4rem;">· INCUBATING</span>';
+  if (buff) {
+    var moreCount = incubatingKeys.length - 1;
+    buff.textContent = (moreCount > 0)
+      ? 'Walk to hatch · ' + (moreCount + 1) + ' incubating · tap to manage'
+      : 'Walk to hatch · tap to manage';
   }
 }
 function equipCompanion(){
