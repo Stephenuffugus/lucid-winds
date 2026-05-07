@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.27';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.28';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2105,14 +2105,23 @@
     body.pi-browser{ --pi-chrome-h: 48px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
-    /* Stephen 2026-05-07 round 3: backpack + BoS floating buttons sit
-       slightly higher than the keeper bar row 1 in Pi Browser due to a
-       slight rendering offset. Bump both down 8px on body.pi-browser so
-       they align with the keeper-bar avatar/level row to their left. */
-    body.pi-browser #bpi{ top: calc(env(safe-area-inset-top,0px) + 80px) !important; }
-    body.pi-browser #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 80px) !important; }
-    body.pi-browser.tab-wild #bpi{ top: calc(env(safe-area-inset-top,0px) + 132px) !important; }
-    body.pi-browser.tab-wild #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 136px) !important; }
+    /* Stephen 2026-05-07: solid black strip BELOW the nav, covering
+       the 48px gap above Pi Browser's system bar. Without this you
+       see app content scrolling through that gap which reads as a
+       visual stutter. ::after on body keeps it scoped to Pi Browser,
+       fixed positioned, z:998 so the nav (z:999) sits on top. No
+       pointer events so it never intercepts taps. */
+    body.pi-browser::after{
+      content:'';position:fixed;left:0;right:0;bottom:0;
+      height:var(--pi-chrome-h);
+      background:rgba(10,12,8,0.98);
+      z-index:998;pointer-events:none;
+    }
+    /* Backpack + BoS bumped down 20px (was 8px) per Stephen iteration. */
+    body.pi-browser #bpi{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
+    body.pi-browser #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
+    body.pi-browser.tab-wild #bpi{ top: calc(env(safe-area-inset-top,0px) + 144px) !important; }
+    body.pi-browser.tab-wild #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 148px) !important; }
     .fg-bottomnav.minimized{transform:translateY(calc(100% - 18px));}
     .fg-bottomnav.minimized .fg-nav-btn{pointer-events:none;}
     .fg-nav-min{position:absolute;top:-22px;right:50%;transform:translateX(50%);width:64px;height:22px;background:rgba(10,12,8,0.95);border:1px solid rgba(74,124,53,0.25);border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;-webkit-tap-highlight-color:transparent;z-index:2;}
