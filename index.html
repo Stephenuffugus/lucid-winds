@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.19';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.20';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1216,7 +1216,7 @@
     .cust-title{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:0.5rem;}
     .cust-row{display:flex;gap:0.5rem;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;}
     .cust-label{font-size:0.5rem;color:var(--muted);font-family:'Bebas Neue',sans-serif;letter-spacing:0.06em;min-width:50px;}
-    .cust-color{width:28px;height:28px;border-radius:50%;border:2px solid rgba(74,124,53,0.3);cursor:pointer;transition:all 0.2s;appearance:none;padding:0;background:none;}
+    .cust-color{width:44px;height:44px;border-radius:50%;border:2px solid rgba(74,124,53,0.3);cursor:pointer;transition:all 0.2s;appearance:none;padding:0;background:none;}
     .cust-color::-webkit-color-swatch-wrapper{padding:0;}
     .cust-color::-webkit-color-swatch{border:none;border-radius:50%;}
     .shape-option{background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.2);border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer;font-size:0.55rem;color:var(--muted);transition:all 0.2s;}
@@ -1805,7 +1805,8 @@
     }
     #pad-drawer-scrim {
       display: none; position: fixed; inset: 0;
-      z-index: 99997; background: transparent;
+      z-index: 99997; background: rgba(5,8,4,0.45);
+      backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
     }
     #pad-drawer-scrim.open { display: block; }
 
@@ -3332,7 +3333,7 @@
     /* Stephen 2026-05-03: backdrop respects iOS safe area so modal isn't
        clipped by Dynamic Island / URL bar. Padding inflates with the
        notch insets where present, falls back to 1.5rem on non-iOS. */
-    .lw-modal-backdrop{position:fixed;inset:0;z-index:1000020;display:flex;align-items:center;justify-content:center;padding:calc(1.5rem + env(safe-area-inset-top,0px)) 1.5rem calc(1.5rem + env(safe-area-inset-bottom,0px));background:rgba(5,8,4,0.88);backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);animation:panelFadeIn 0.3s ease;box-sizing:border-box;}
+    .lw-modal-backdrop{position:fixed;inset:0;z-index:1000020;display:flex;align-items:center;justify-content:center;padding:calc(1.5rem + env(safe-area-inset-top,0px)) 1.5rem calc(1.5rem + env(safe-area-inset-bottom,0px));background:rgba(5,8,4,0.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.3s ease;box-sizing:border-box;}
     /* Stephen 2026-05-03: frame caps at viewport - safe-area + scrolls.
        BoS welcome modal had a 10-bullet list that overflowed past the
        backdrop bounds; on iOS the top + bottom of the modal were
@@ -7308,14 +7309,14 @@ window._addSwitchTabHook = function(fn){
   <!-- bp-rtb removed: return-to-base now lives inside the backpack panel. -->
   <div id="bp-rtb" style="display:none !important;"></div>
   <!-- Plant info card with hold-to-release -->
-  <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onmousedown="BP.hts()" ontouchstart="BP.hts()" onmouseup="BP.hte()" ontouchend="BP.hte()" onmouseleave="BP.hte()"><div class="htc-fill" id="htcf"></div><span class="htc-label">HOLD TO RELEASE TO WILD</span></div></div>
+  <div id="pic"><div class="pic-top"><div class="pic-plant" id="pic-pl"></div><div class="pic-info"><div class="pic-name" id="pic-nm">—</div><div class="pic-grade" id="pic-gr">—</div><div class="pic-origin" id="pic-or">—</div></div><button class="pic-close" onclick="BP.cpi()">✕</button></div><div class="htc" id="htc-rel" onclick="BP.confirmRel()"><div class="htc-fill" id="htcf"></div><span class="htc-label">RELEASE TO WILD</span></div></div>
   <!-- Seed info card with hold-to-send-to-nursery -->
   <!-- Seed info panel: now compact + anchored near the tapped seed.
        Stephen 2026-04-30 LATE: stripped pin/flame metadata rows
        entirely and dropped the hash. Just HOLD button + CANCEL. -->
   <div id="sdi">
     <span id="sdl" style="display:none;"></span><span id="sdc" style="display:none;"></span><span id="sdh" style="display:none;"></span><span id="sdhi" style="display:none;"></span>
-    <div class="htc" id="htc-nur" onmousedown="BP.sns()" ontouchstart="BP.sns()" onmouseup="BP.sne()" ontouchend="BP.sne()" onmouseleave="BP.sne()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">HOLD TO SEND TO NURSERY</span></div>
+    <div class="htc" id="htc-nur" onclick="BP.confirmSns()" style="border-color:rgba(74,124,53,0.2);background:rgba(74,124,53,0.06);color:var(--sage);"><div class="htc-fill" id="htcn" style="background:rgba(74,124,53,0.15);"></div><span class="htc-label">SEND TO NURSERY</span></div>
     <button class="sia" onclick="BP.csi()" style="margin-top:6px;border-color:rgba(74,124,53,0.1);color:var(--muted);">CANCEL</button>
   </div>
   <!-- Harvest Reveal Overlay -->
@@ -41943,7 +41944,7 @@ document.addEventListener('keydown', function(e) {
         var left = 5 - (b.count || 0);
         if (left > 0) {
           label = left + '/5';
-          tip = 'Hold 10s to water · ' + left + ' kindness left today';
+          tip = 'Tap to water · ' + left + ' kindness left today';
         } else {
           ok = false;
           label = '0';
@@ -42503,7 +42504,7 @@ document.addEventListener('keydown', function(e) {
       ctx.fillText('LUCID WINDS', cardW/2, divY + 28);
       ctx.fillStyle = 'rgba(90,112,80,0.2)';
       ctx.font = '400 10px DM Mono, monospace';
-      ctx.fillText('petalwalk.com', cardW/2, divY + 44);
+      ctx.fillText('lucidwinds.com', cardW/2, divY + 44);
 
       // Haiku inscription — bold + glowing
       ctx.fillStyle = 'rgba(240,235,216,0.88)';
@@ -48346,7 +48347,7 @@ document.addEventListener('keydown', function(e) {
         if (err.code === 'auth/unauthorized-domain') {
           _hydrationTriggeredByLogin = false; _loginCallback = null;
           _swsSetSocialLoading(false);
-          _swsSetError('⚠ Domain not authorized. Firebase Console → Authentication → Settings → Authorized domains → Add petalwalk.com');
+          _swsSetError('⚠ Domain not authorized. Firebase Console → Authentication → Settings → Authorized domains → Add lucidwinds.com');
           return;
         }
         // Account exists with different credential
@@ -50650,6 +50651,9 @@ function _drawZoneHexes(_force){
       _sigParts.sort();
       var _zoneSig = _sigParts.join('|');
       if (!window._zoneTierCache) window._zoneTierCache = {};
+      // Stephen 2026-05-07: cap cache at 200 entries with FIFO trim so
+      // long sessions don't accumulate unbounded zone keys.
+      if (!window._zoneTierCacheKeys) window._zoneTierCacheKeys = [];
       var _cached = window._zoneTierCache[zone.key];
       if (_cached && _cached.sig === _zoneSig) {
         _topTier = _cached.tier;
@@ -50663,6 +50667,11 @@ function _drawZoneHexes(_force){
           if (_tier > _topTier) _topTier = _tier;
         }
         window._zoneTierCache[zone.key] = { sig: _zoneSig, tier: _topTier };
+        window._zoneTierCacheKeys.push(zone.key);
+        if (window._zoneTierCacheKeys.length > 200) {
+          var _drop = window._zoneTierCacheKeys.shift();
+          delete window._zoneTierCache[_drop];
+        }
       }
     } catch(e) {}
     // 3-state clarity: bright sage = your hex; warm gold = wild;
@@ -71746,6 +71755,28 @@ if(window.FG_Wild&&window.FG_Wild._dropFromBP){
   toast(p.name+' released, open the map to see it!');
 }}},300);}
 function hte(){clearTimeout(_ht);document.getElementById('htc-rel').classList.remove('holding');document.getElementById('htcf').style.transition='none';document.getElementById('htcf').style.width='0';}
+// Stephen 2026-05-07: tap+confirm replacements for the legacy hold flows
+// above. Mobile long-press (Android Chrome WebView, Pi Browser) hijacks
+// the gesture for context-menu / text-select. Today's hold→tap pass
+// caught water/prune; this catches backpack release/send.
+function confirmRel(){
+  if(_sp===null||_sp>=st.plants.length)return;
+  var p=st.plants[_sp]; var nm=p&&p.name?p.name:'this plant';
+  var doIt=function(){
+    if(_sp===null||_sp>=st.plants.length)return;
+    var pp=st.plants.splice(_sp,1)[0]; cpi(); render(); hap(); st.wd++; cu();
+    if(window.FG_Wild&&window.FG_Wild._dropFromBP) FG_Wild._dropFromBP(pp);
+    else toast(pp.name+' released, open the map to see it!');
+  };
+  if(window._lwConfirm) window._lwConfirm({title:'RELEASE TO WILD',body:'Drop <b>'+nm+'</b> into your current Wild hex? This is permanent — once placed it lives on the map for everyone to see.',yes:'RELEASE',no:'KEEP IT'},doIt);
+  else doIt();
+}
+function confirmSns(){
+  if(_ss===null)return;
+  var doIt=function(){ s2n(); };
+  if(window._lwConfirm) window._lwConfirm({title:'SEND TO NURSERY',body:'Move this seed to your nursery to start the 3-day water cycle?',yes:'SEND',no:'CANCEL'},doIt);
+  else doIt();
+}
 function ap(o){if(st.plants.length>=xp()){toast('Backpack full!');return false;}st.plants.push(o);st.ph++;render();_rtbRender();hap();cu();return true;}
 function as(o){if(st.seeds.length>=xc()){toast('Seed pouch full!');return false;}st.seeds.push(o);st.fc++;render();_rtbRender();hap();cu();return true;}
 function ul(k,m,s){if(st.unlocks[k])return;st.unlocks[k]=true;render();celeb(m,s);}
@@ -71930,7 +71961,7 @@ function setMode(mode){
   // Re-render so the SEEDS panel can include the buy-slot CTA on activation
   render();
 }
-return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,setMode:setMode,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
+return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,confirmRel:confirmRel,confirmSns:confirmSns,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,setMode:setMode,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
 })();
 window.BP=BP;
 window._BP_UI=UI;
@@ -78000,7 +78031,7 @@ window.bsExecuteBreed=function(){
             }
             // Mendelian inheritance: offspring inherits exactly one parent's flower and the other parent's leaf.
             try {
-              var _tO = window.hashToTraits ? window.hashToTraits(seedHash) : null;
+              var _tO = window.hashToTraits ? window.hashToTraits(offHash) : null;
               if (_tA && _tB && _tO) {
                 var _flowFromA = (_tO.flower === _tA.flower);
                 var _flowFromB = (_tO.flower === _tB.flower);
@@ -87926,11 +87957,16 @@ window.LW_GIFTS = (function(){
       return;
     }
     var next = cur < 15 ? 15 : 20;
+    // Stephen 2026-05-07: was hard-coded "1 π" but the real price tiers
+    // are 10π for 5→15 and 20π for 15→20 (per LW_Pi.buySeedPouchSlot
+    // pricing). Confirm dialog must show the price the player will
+    // actually be charged.
+    var price = (cur < 15) ? 10 : 20;
     if (window._lwConfirm){
       window._lwConfirm({
         title: 'EXPAND SEED POUCH',
-        body: 'Buy 5 extra seed slots (now '+cur+'/20 → '+next+'/20). <b>1 π</b>. Permanent.',
-        yes: 'PAY 1 π',
+        body: 'Buy 5 extra seed slots (now '+cur+'/20 → '+next+'/20). <b>'+price+' π</b>. Permanent.',
+        yes: 'PAY '+price+' π',
         no: 'NOT NOW'
       }, function(){
         window.LW_Pi.buySeedPouchSlot(function(ok){
@@ -88264,8 +88300,10 @@ window.LW_GIFTS = (function(){
   function keeperHatch(key){
     if (!window.LW_KEEPER) return;
     if (LW_KEEPER.hatch(key)){
-      // Show hatch ceremony, then re-render.
-      try { _showHatchCeremony(key); } catch(e){}
+      // Stephen 2026-05-07: was firing BOTH _showHatchCeremony here AND
+      // _lwShowHatchCelebration inside LW_KEEPER.hatch — two full-screen
+      // overlays stacked. The new _lwShowHatchCelebration is the
+      // canonical celebration; the legacy _showHatchCeremony is dropped.
       render();
     }
   }
@@ -91758,6 +91796,33 @@ window._lwCompanionTempRevealed = function(idx){
         temperament:_ci&&_ci.temperament?(_ci.temperament.name+' — '+_ci.temperament.desc):'',
         tempIcon:_ci&&_ci.temperament?(_ci.temperament.icon||''):''
       };
+      // Stephen 2026-05-07: cocoon mutex (mirror of _pickCompanion logic
+      // at 69005-69019). Without this, equipping a regular companion via
+      // BoS profile "BRING THIS BUDDY" would leave a hatched cocoon
+      // creature ALSO equipped via lw_pcocoons.equipped — Stephen's
+      // original "Beholder + Wasp both active" bug returning through
+      // this path. If the new idx is itself a cocoon-derived creature
+      // (82-84), sync lw_pcocoons.equipped instead of clearing.
+      try {
+        if (window.LW_KEEPER) {
+          if (compIdx >= 82 && compIdx <= 84) {
+            var _ckey = LW_KEEPER.keyForCompanionIdx ? LW_KEEPER.keyForCompanionIdx(compIdx) : null;
+            if (_ckey && LW_KEEPER.isHatched && LW_KEEPER.isHatched(_ckey)) {
+              var _pcRaw = localStorage.getItem('lw_pcocoons');
+              var _pcD = _pcRaw ? JSON.parse(_pcRaw) : { owned:{}, equipped:null };
+              _pcD.equipped = _ckey;
+              localStorage.setItem('lw_pcocoons', JSON.stringify(_pcD));
+            }
+          } else {
+            var _pcRaw2 = localStorage.getItem('lw_pcocoons');
+            var _pcD2 = _pcRaw2 ? JSON.parse(_pcRaw2) : null;
+            if (_pcD2 && _pcD2.equipped) {
+              _pcD2.equipped = null;
+              localStorage.setItem('lw_pcocoons', JSON.stringify(_pcD2));
+            }
+          }
+        }
+      } catch(e){}
       try{localStorage.setItem('pw_active_companion',JSON.stringify(compData));}catch(e){}
       // Clear slot 2 if same companion was there
       try{var sec=JSON.parse(localStorage.getItem('pw_active_companion_2')||'null');if(sec&&sec.idx===compIdx){localStorage.removeItem('pw_active_companion_2');if(window.LW_COMPANION&&window.LW_COMPANION.pauseActive2)window.LW_COMPANION.pauseActive2();}}catch(e){}
@@ -95941,16 +96006,52 @@ var TREE_CONSUMER_MAP={
   dewRate:['dewRate','slowSpring'],
   plantLongevity:['plantLongevity','steadiness','centuryOak']
 };
+// Tree class branches that map to a player class. When the player has
+// maxed their own class branch, OTHER class branches open as overflow
+// (May 07 fix). _LW_treeBonus must accept those overflow points or the
+// player spends into a black hole. Stephen 2026-05-07 critical fix —
+// the previous version had `cls !== n.branch` which made overflow
+// points completely inert. Now: own-class branch always counts; other
+// class branches count IF the player's own class is at 20/20.
+var CLASS_BRANCHES={forager:1,breeder:1,cartographer:1,tender:1,keeper:1};
+function _lwOwnClassMaxed(){
+  try{
+    var c=_lwGetClass(); if(!c) return false;
+    var pp=_lwTreePoints(); var sp=0,mx=0;
+    for(var k in LW_TREE_NODES){
+      var nn=LW_TREE_NODES[k];
+      if(!nn||nn.branch!==c) continue;
+      sp+=pp[k]||0; mx+=nn.max||0;
+    }
+    return mx>0 && sp>=mx;
+  }catch(e){ return false; }
+}
 window._LW_treeBonus=function(kind){
   var ids=TREE_CONSUMER_MAP[kind]||[kind];
   var p=_lwTreePoints();
   var cls=_lwGetClass();
+  var ownMaxed=_lwOwnClassMaxed();
   var mult=1;
   for(var i=0;i<ids.length;i++){
     var id=ids[i],n=LW_TREE_NODES[id];
     if(!n||!p[id])continue;
-    if(!UNIVERSAL_BRANCHES[n.branch]&&(!cls||cls!==n.branch))continue;
-    mult*=(1+(n.per*p[id]));
+    // Universal branches (tools/heartwood/bower/longwatch) always count.
+    if (UNIVERSAL_BRANCHES[n.branch]) {
+      mult*=(1+(n.per*p[id]));
+      continue;
+    }
+    // Player's own class branch always counts.
+    if (cls && cls === n.branch) {
+      mult*=(1+(n.per*p[id]));
+      continue;
+    }
+    // Other class branches count ONLY when player's own class is maxed
+    // (overflow path). If they spent points there before maxing their
+    // own class somehow, those stay inert until they catch up. This
+    // keeps overflow honest without retroactively buffing legacy data.
+    if (CLASS_BRANCHES[n.branch] && ownMaxed) {
+      mult*=(1+(n.per*p[id]));
+    }
   }
   return mult;
 };
