@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.31';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2106,6 +2106,14 @@
     /* Default 48px — standard Android nav bar height. Override via
        localStorage lw_pi_chrome_h if a particular device renders the
        chrome at a different height. Stephen iterated 56→80→48. */
+    /* Stephen 2026-05-07: tip-jar safety net. Pi App Studio rules
+       forbid fiat + non-Pi crypto in-app. The JS gate at line ~84118
+       already hides these surfaces via four-signal detection, but if
+       JS detection ever fails (Pi SDK fails to load + userAgent
+       doesn't match), this CSS catches the leak unconditionally
+       whenever body.pi-browser is set. Belt-and-suspenders. */
+    body.pi-browser .lw-non-pi-tips{ display:none !important; }
+    body.pi-browser .lw-tip-cta{ display:none !important; }
     body.pi-browser{ --pi-chrome-h: 48px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
@@ -84115,15 +84123,33 @@ function _bosAboutContent() {
   }
   h += '</div>';
 
-  // Stephen 2026-05-07 BLOCKER FIX: Pi App Studio rules forbid fiat
-  // payment paths (Stripe) and non-Pi crypto (BTC/ETH/SOL/USDC) from
-  // showing inside Pi Browser. Detection: window.Pi (SDK injected by
-  // Pi Browser) OR userAgent contains "PiBrowser". Outside Pi Browser
-  // (web visit at lucidwinds.com), full tip jar still shows.
+  // Stephen 2026-05-07: Pi App Studio rules forbid fiat (Stripe) and
+  // non-Pi crypto (BTC/ETH/SOL/USDC) inside Pi Browser. Pi Research
+  // audit flagged this as the #1 submission risk: a UA-detection bug
+  // could leak the tip jar.
+  //
+  // BELT-AND-SUSPENDERS:
+  //   1. JS-side _isPiBrowser uses 4 signals (any one triggers true):
+  //      - Pi SDK present (typeof Pi !== 'undefined')
+  //      - body.pi-browser class set by the polling detector at boot
+  //      - localStorage 'lw_pi_seen' sticky bit (set when Pi SDK was
+  //        ever seen; survives reload even if SDK fails to load)
+  //      - userAgent matches /PiBrowser|MinePi/i
+  //   2. CSS-side body.pi-browser HIDES tip jar elements unconditionally
+  //      via class selectors (search "tip-jar safety net" in CSS) so
+  //      even if JS leaked the elements through the gate, CSS masks them.
   var _isPiBrowser = false;
   try {
-    _isPiBrowser = !!(typeof Pi !== 'undefined') ||
-                   /PiBrowser|Pi Browser/i.test(navigator.userAgent || '');
+    if (typeof Pi !== 'undefined') {
+      _isPiBrowser = true;
+      try { localStorage.setItem('lw_pi_seen','1'); } catch(_e){}
+    } else if (document.body && document.body.classList.contains('pi-browser')) {
+      _isPiBrowser = true;
+    } else if (localStorage.getItem('lw_pi_seen') === '1') {
+      _isPiBrowser = true;
+    } else if (/PiBrowser|Pi Browser|MinePi/i.test(navigator.userAgent || '')) {
+      _isPiBrowser = true;
+    }
   } catch(e){}
   // Tip jar header
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin:0.6rem 0 0.4rem;text-align:center;"><img src="assets/fx/sparkle-pink.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"> TIP JAR <img src="assets/fx/sparkle-pink.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"></div>';
@@ -84134,16 +84160,21 @@ function _bosAboutContent() {
   // back the URL. Stripe gates "customer chooses price" in Payment
   // Links for certain categories, so we bypass the dashboard and
   // drive the Checkout API directly.
-  // Stripe button HIDDEN inside Pi Browser per Pi App Studio rules.
-  if (!_isPiBrowser && c.stripeCardEnabled !== false) {
-    h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta" aria-label="Light a lantern \u2014 tip the studio">'+
-           '<div class="lw-tip-cta-title">\u2728 LIGHT A LANTERN \u2728</div>'+
-           '<div class="lw-tip-cta-sub">tips keep this game ad-free \u00b7 anything is appreciated</div>'+
-         '</button>';
-  }
-  // Fallback: honor a static stripeUrl if someone prefers the old flow
-  else if (!_isPiBrowser && c.stripeUrl) {
-    h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
+  // Stephen 2026-05-07: wrap non-Pi tip surfaces in .lw-non-pi-tips so
+  // CSS can hide them as a final safety net even if JS leaked them
+  // through the gate. See "tip-jar safety net" CSS rule.
+  if (!_isPiBrowser) {
+    h += '<div class="lw-non-pi-tips">';
+    if (c.stripeCardEnabled !== false) {
+      h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta" aria-label="Light a lantern \u2014 tip the studio">'+
+             '<div class="lw-tip-cta-title">\u2728 LIGHT A LANTERN \u2728</div>'+
+             '<div class="lw-tip-cta-sub">tips keep this game ad-free \u00b7 anything is appreciated</div>'+
+           '</button>';
+    }
+    else if (c.stripeUrl) {
+      h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
+    }
+    h += '</div>';
   }
 
   // Crypto tip buttons. Full-row tap target with chain logo on the
@@ -84180,11 +84211,15 @@ function _bosAboutContent() {
     return row;
   }
   h += _addrRow('PI',   c.pi);
-  // Non-Pi crypto rows HIDDEN inside Pi Browser per Pi App Studio rules.
-  if (!_isPiBrowser) h += _addrRow('BTC',  c.btc);
-  if (!_isPiBrowser) h += _addrRow('ETH',  c.eth);
-  if (!_isPiBrowser) h += _addrRow('SOL',  c.sol);
-  if (!_isPiBrowser) h += _addrRow('USDC', c.usdc);
+  // Non-Pi crypto rows wrapped in .lw-non-pi-tips so CSS catches any leak.
+  if (!_isPiBrowser) {
+    h += '<div class="lw-non-pi-tips">';
+    h += _addrRow('BTC',  c.btc);
+    h += _addrRow('ETH',  c.eth);
+    h += _addrRow('SOL',  c.sol);
+    h += _addrRow('USDC', c.usdc);
+    h += '</div>';
+  }
 
   // If everything is blank, show a soft placeholder so the page doesn't look broken
   if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.sol && !c.usdc) {
