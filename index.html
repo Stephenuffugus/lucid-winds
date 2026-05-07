@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.45';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.46';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2150,8 +2150,13 @@
     /* Backpack + BoS bumped down 20px (was 8px) per Stephen iteration. */
     body.pi-browser #bpi{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
     body.pi-browser #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
-    body.pi-browser.tab-wild #bpi{ top: calc(env(safe-area-inset-top,0px) + 144px) !important; }
-    body.pi-browser.tab-wild #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 148px) !important; }
+    /* Stephen 2026-05-07 evening: REMOVED the Pi-browser-tab-wild +20px
+       down-shift on #bpi and #kb-compendium. The Wild stats bar
+       (#w-stats-bar) already reserves the right ~148px for these icons
+       to sit IN the same horizontal row as the dew/steps chips. The
+       earlier override pushed them BELOW that row. Now they fall through
+       to the regular body.tab-wild values (top: 124/128 + safe-area)
+       which align to the stats bar centerline in both browsers. */
     .fg-bottomnav.minimized{transform:translateY(calc(100% - 18px));}
     .fg-bottomnav.minimized .fg-nav-btn{pointer-events:none;}
     .fg-nav-min{position:absolute;top:-22px;right:50%;transform:translateX(50%);width:64px;height:22px;background:rgba(10,12,8,0.95);border:1px solid rgba(74,124,53,0.25);border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;-webkit-tap-highlight-color:transparent;z-index:2;}
@@ -50473,6 +50478,37 @@ function _initCompass(){
   } else {
     // Android / desktop: attach immediately, no permission needed.
     _attachOrientation();
+    // 2026-05-07: Pi Browser on Pixel often doesn't fire ANY
+    // deviceorientation events (neither absolute nor relative). Try the
+    // W3C Generic Sensor API (AbsoluteOrientationSensor) as a fallback —
+    // it asks for sensor permission on first start and gives us a
+    // quaternion we can convert to a heading. Permissions API may also
+    // need a user gesture on some Pi Browser builds, so re-try on tap.
+    var _sensorTried = false;
+    function _trySensor() {
+      if (_sensorTried) return; _sensorTried = true;
+      if (typeof AbsoluteOrientationSensor === 'undefined') return;
+      try {
+        var sensor = new AbsoluteOrientationSensor({ frequency: 10, referenceFrame: 'screen' });
+        sensor.addEventListener('reading', function(){
+          try {
+            var q = sensor.quaternion;
+            if (!q) return;
+            // Convert quaternion to yaw (heading around the Z axis).
+            var yaw = Math.atan2(2 * (q[0]*q[1] + q[2]*q[3]), 1 - 2 * (q[1]*q[1] + q[2]*q[2]));
+            var heading = (yaw * 180 / Math.PI + 360) % 360;
+            _absRx = true;
+            _updateCompass(heading);
+          } catch(e){}
+        });
+        sensor.addEventListener('error', function(){ /* swallow */ });
+        sensor.start();
+      } catch(e){ /* permission denied or sensor unavailable */ }
+    }
+    _trySensor();
+    // Also try once on first compass tap (user gesture context, in case
+    // a permission prompt was suppressed without one).
+    windEl.addEventListener('click', function(){ _trySensor(); }, { once: true });
   }
 }
 
