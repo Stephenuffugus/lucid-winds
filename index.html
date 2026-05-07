@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.17';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -9721,8 +9721,8 @@ window._addSwitchTabHook = function(fn){
         <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()" title="Download plant card" aria-label="Download plant card"><img src="assets/btn-download-v2.png" alt="Download"></button>
       </div>
       <div class="pgm-btn-row">
-        <button class="pgm-card-btn pgm-greenhouse-only" onclick="shareGalleryPlant()" title="Share this plant" aria-label="Share"><img src="assets/btn-share.png" alt="Share"></button>
-        <button class="pgm-card-btn pgm-greenhouse-only" onclick="window._carouselDetails()" title="View details" aria-label="Details"><img src="assets/btn-details.png" alt="Details"></button>
+        <button class="pgm-card-btn" onclick="shareGalleryPlant()" title="Share this plant" aria-label="Share"><img src="assets/btn-share.png" alt="Share"></button>
+        <button class="pgm-card-btn" onclick="window._carouselDetails()" title="View details" aria-label="Details"><img src="assets/btn-details.png" alt="Details"></button>
         <!-- BREED + COMPOST gated to greenhouse-source carousel only. openCarousel
              toggles .pgm-greenhouse-only display:none whenever source is wild-* -->
         <button class="pgm-card-btn pgm-greenhouse-only" onclick="carouselBreed()" title="Breed this plant" aria-label="Breed"><img src="assets/btn-breed.png" alt="Breed"></button>
@@ -9731,7 +9731,7 @@ window._addSwitchTabHook = function(fn){
              openCarousel is called with source='wild-inspect' so players
              walking through a hex can water + take cuttings without
              closing the carousel. -->
-        <button class="pgm-card-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" title="Water this plant" aria-label="Water" style="display:none;"><img src="assets/wild-water-btn-v2.png" alt="Water"></button>
+        <button class="pgm-card-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" title="Water this plant" aria-label="Water" style="display:none;"><img src="assets/water.png" alt="Water"></button>
         <button class="pgm-card-btn pgm-wild-act" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" title="Take a cutting · 20 Dew · 2/day · parent unharmed" aria-label="Cutting" style="display:none;"><img src="assets/cutting.png" alt="Cutting"></button>
         <!-- WILD-PLACE mode: drop the currently-shown plant into the
              player's current hex. Hidden by default; shown in
@@ -42149,15 +42149,54 @@ document.addEventListener('keydown', function(e) {
   // bypasses the wild-mystery design. Block the call and toast.
   window._carouselDetails = function() {
     var plant = _carousel ? _carousel.arr[_carousel.idx] : null;
-    if (plant && _carousel && _carousel.source === 'wild-inspect' && plant.own === false) {
-      if (window._toast) window._toast('A keeper\'s plant keeps its secrets. Take a cutting to learn them.');
+    if (!plant || !plant.hash) { if (window._toast) window._toast('No plant selected.'); return; }
+    // Stranger plants in wild-inspect: show a real info sheet instead
+    // of just a toast. Public info (name, grade, season, age, owner)
+    // + a "Take a Cutting" CTA so the player has somewhere to go.
+    // The mystery rule (no full DNA / haiku / hash) still holds.
+    // Stephen 2026-05-07: was previously a silent toast that read as
+    // "the button does nothing."
+    if (_carousel && _carousel.source === 'wild-inspect' && plant.own === false) {
+      try {
+        var t = window.hashToTraits ? window.hashToTraits(plant.hash) : null;
+        var tg = (t && window.getTerraGrade) ? window.getTerraGrade(t) : null;
+        var grade = (tg && (tg.label || tg.name)) || 'Common';
+        var gColor = (tg && tg.color) || 'var(--cream)';
+        var seasonNames = ['Spring','Summer','Autumn','Winter'];
+        var seasonEmoji = ['🌸','☀️','🍂','❄️'];
+        var seasonIdx = (t && typeof t.season === 'number') ? t.season : 0;
+        var ownerName = plant.ownerName || 'a keeper';
+        var droppedTs = plant.droppedAtMs || (plant.droppedAt ? (typeof plant.droppedAt === 'number' ? plant.droppedAt : new Date(plant.droppedAt).getTime()) : 0);
+        var ageDays = droppedTs ? Math.max(0, Math.floor((Date.now() - droppedTs) / 86400000)) : null;
+        var ex = document.getElementById('lw-wild-info'); if (ex) ex.remove();
+        var ov = document.createElement('div');
+        ov.id = 'lw-wild-info';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:100050;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);padding:1rem;animation:panelFadeIn 0.25s ease;';
+        ov.addEventListener('click', function(e){ if (e.target === ov) ov.remove(); });
+        var h = '<div style="max-width:340px;width:100%;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid ' + gColor + '55;border-radius:14px;padding:1.1rem 1rem 1rem;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--muted);letter-spacing:0.16em;margin-bottom:4px;">WILD PLANT</div>';
+        h += '<div style="font-family:Playfair Display,serif;font-size:1.3rem;color:' + gColor + ';font-style:italic;line-height:1.15;margin-bottom:0.5rem;">' + grade + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);line-height:1.7;">';
+        h += seasonEmoji[seasonIdx] + ' ' + seasonNames[seasonIdx] + ' bloom<br>';
+        h += '🌱 dropped by <b>' + ownerName + '</b>';
+        if (ageDays !== null) h += '<br>⏳ here for ' + ageDays + ' day' + (ageDays === 1 ? '' : 's');
+        h += '</div>';
+        h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.78rem;color:var(--muted);line-height:1.5;margin:0.9rem 0;padding:0.7rem 0.8rem;background:rgba(13,16,12,0.55);border-left:2px solid ' + gColor + '55;border-radius:6px;">A keeper’s plant keeps its secrets. Take a cutting to learn its DNA, haiku, and lineage.</div>';
+        h += '<button onclick="document.getElementById(\'lw-wild-info\').remove();if(window._carouselWildAction)window._carouselWildAction(\'cutting\');" style="width:100%;padding:0.75rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;margin-bottom:0.5rem;">TAKE A CUTTING</button>';
+        h += '<button onclick="document.getElementById(\'lw-wild-info\').remove();" style="width:100%;padding:0.55rem;border:1px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">CLOSE</button>';
+        h += '</div>';
+        ov.innerHTML = h;
+        document.body.appendChild(ov);
+      } catch(e){
+        if (window._toast) window._toast('A keeper\'s plant keeps its secrets. Take a cutting to learn them.');
+      }
       return;
     }
-    if (plant && plant.hash && window._openPlantDetails) {
+    if (window._openPlantDetails) {
       try { window._openPlantDetails(plant.hash); }
       catch (e) { if (window._toast) window._toast('Details failed: ' + (e && e.message ? e.message : '')); }
     } else {
-      if (window._toast) window._toast('No plant selected.');
+      if (window._toast) window._toast('Details unavailable.');
     }
   };
 
@@ -56469,13 +56508,13 @@ function _openHexInspector(zk){
     if(augmented.length>=1&&window.openCarousel){
       // Carousel-view button \u2014 opens all hex plants in a swipeable
       // large-format carousel so players walking through can browse
-      // without stopping. Each list row below still works as the
-      // action surface (water / cutting / defense). Stephen test
-      // request: 'large comfortable and convenient... walking through
-      // the hex without stopping.'
+      // without stopping. Stephen 2026-05-07: was 208px tall with the
+      // image only 108px (1/2 of inner area). Now image fills the
+      // button \u2014 wrapper border/background dropped, parchment IS the
+      // button. Label sits as a compact line below.
       var carBtn=document.createElement('button');
-      carBtn.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:100%;padding:18px 18px 20px;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.42);border-radius:16px;background:linear-gradient(180deg,rgba(20,28,18,0.78),rgba(12,16,12,0.92));color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.16em;cursor:pointer;min-height:208px;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:inset 0 0 18px rgba(200,168,75,0.08),0 4px 14px rgba(0,0,0,0.45);';
-      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" style="width:108px;height:108px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.35));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="line-height:1.2;text-align:center;">TAKE A CLOSER LOOK<br><span style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
+      carBtn.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;width:100%;padding:0;margin-bottom:0.7rem;border:none;background:none;color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,0.85),0 0 8px rgba(0,0,0,0.5);transition:transform 0.12s ease;';
+      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" style="width:60%;max-width:240px;height:auto;aspect-ratio:1;object-fit:contain;display:block;margin:0 auto 4px;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.4));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="display:block;text-align:center;line-height:1.2;">TAKE A CLOSER LOOK<span style="display:block;font-family:DM Mono,monospace;font-size:0.6rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;margin-top:2px;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
       (function(arr){carBtn.addEventListener('click',function(){
         try{if(typeof closeHI==='function')closeHI();}catch(e){}
         try{if(typeof closeTP==='function')closeTP();}catch(e){}
