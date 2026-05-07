@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.6';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.7';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -56902,7 +56902,7 @@ window._lwRenderCuriosities = function() {
   h += '<div style="display:flex;flex-direction:column;gap:0.5rem;font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);line-height:1.5;">';
   h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">1</span><span><b style="color:var(--sage);">Buy</b> — visit the hermit. Each curiosity costs Dew + Sunbeams.</span></div>';
   h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">2</span><span><b style="color:var(--sage);">Walk</b> — every step you take incubates the curiosities you own. No equip slot.</span></div>';
-  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — when ready, your curiosity joins your roster. Equip it for ongoing abilities.</span></div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--sage);width:14px;flex-shrink:0;text-align:center;">3</span><span><b style="color:var(--sage);">Hatch</b> — when it\'s ready, the cocoon graduates into a companion. Equip + level it from the <b style="color:var(--gold);">Companions tab</b>.</span></div>';
   h += '</div></div>';
 
   // ─── CREATURES SECTION ───
@@ -56921,32 +56921,35 @@ window._lwRenderCuriosities = function() {
          '<span>CURIOSITIES</span>'+
          '<span style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);font-weight:400;letter-spacing:0.06em;">acquired from the hermit</span>'+
          '</div>';
-    if (equippedKey){
-      var eqSpec = window.LW_KEEPER.getSpec(equippedKey);
-      if (eqSpec){
-        h += '<div style="margin-bottom:0.7rem;padding:0.5rem 0.7rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.35);border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.08em;">EQUIPPED · '+eqSpec.hatchedName+' <button data-keeper-unequip="1" style="margin-left:0.6rem;background:rgba(200,168,75,0.2);border:1px solid rgba(200,168,75,0.4);color:#e8dcc8;padding:0.2rem 0.55rem;border-radius:6px;font-size:0.6rem;cursor:pointer;">Set aside</button></div>';
-      }
-    }
+    // Stephen 2026-05-07: Curiosities panel = incubating + locked ONLY.
+    // Hatched creatures graduate to the Companions section (BoS) and the
+    // regular companion equip slot. The old EQUIPPED-CURIOSITY top bar
+    // and the in-line EQUIP button on hatched specs were the source of
+    // the "Beholder + Wasp both active" double-equip bug. Both removed.
+    // Hatched specs render as small "graduated" tiles linking to BoS so
+    // the player still sees the chain of progress.
+    var _graduatedSpecs = [];
     for (var ci=0; ci<keeperSpecs.length; ci++) {
       var spec = keeperSpecs[ci];
       var prog = window.LW_KEEPER.progress(spec.key);
       var owned = prog.state !== 'locked';
       var hatched = prog.state === 'hatched';
+      // Hatched creatures graduate OUT of Curiosities. Collect them into
+      // a separate list rendered as compact tiles after the main loop.
+      if (hatched) { _graduatedSpecs.push(spec); continue; }
       var ready = window.LW_KEEPER.isReady(spec.key);
       var canBuy = window.LW_KEEPER.canPurchase(spec.key);
       var canAfford = (dewBal >= spec.costDew) && (sbBal >= spec.costSunbeams);
-      var artSrc = hatched ? spec.hatchedArt : spec.cocoonArt;
-      var artFallback = hatched ? '🐛' : '🥚';
+      var artSrc = spec.cocoonArt;
+      var artFallback = '🥚';
 
       var stateBadge = '';
-      if (hatched && equippedKey === spec.key) stateBadge = '<span style="background:linear-gradient(180deg,#c8a84b,#a08534);color:#1a1208;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">EQUIPPED</span>';
-      else if (hatched) stateBadge = '<span style="background:rgba(122,179,86,0.2);color:#a8d484;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">HATCHED</span>';
-      else if (ready) stateBadge = '<span style="background:rgba(200,168,75,0.3);color:#f0d674;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;animation:lwPulseHint 1.6s ease-in-out infinite;">READY</span>';
+      if (ready) stateBadge = '<span style="background:rgba(200,168,75,0.3);color:#f0d674;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;animation:lwPulseHint 1.6s ease-in-out infinite;">READY</span>';
       else if (owned) stateBadge = '<span style="background:rgba(80,140,200,0.2);color:#9ec4ec;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">INCUBATING</span>';
       else if (!canBuy) stateBadge = '<span style="background:rgba(120,120,120,0.2);color:#9a9a9a;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">LOCKED</span>';
       else stateBadge = '<span style="background:rgba(60,60,60,0.3);color:#a89e8a;font-size:0.5rem;padding:0.18rem 0.5rem;border-radius:5px;font-weight:700;letter-spacing:0.06em;">FOR SALE</span>';
 
-      h += '<div style="margin-bottom:0.7rem;padding:0.85rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?'rgba(200,168,75,0.7)':(hatched?'rgba(122,179,86,0.4)':'rgba(74,124,53,0.2)'))+';border-radius:14px;'+(ready?'box-shadow:0 0 16px rgba(200,168,75,0.3);':'')+'">';
+      h += '<div style="margin-bottom:0.7rem;padding:0.85rem;background:rgba(18,22,16,0.7);border:1.5px solid '+(ready?'rgba(200,168,75,0.7)':'rgba(74,124,53,0.2)')+';border-radius:14px;'+(ready?'box-shadow:0 0 16px rgba(200,168,75,0.3);':'')+'">';
       // Stephen 2026-05-02: art shows full 3:2 painting at the top of the
       // card. Was 80×80 cropped square — Stephen: "i spent a long time
       // making the beautiful rectangles that they are. these should be
@@ -56955,11 +56958,11 @@ window._lwRenderCuriosities = function() {
       h += '<div style="width:100%;aspect-ratio:3/2;border-radius:10px;overflow:hidden;background:rgba(5,8,4,0.7);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;margin-bottom:0.7rem;">';
       h += '<img src="'+artSrc+'" alt="" style="width:100%;height:100%;object-fit:contain;'+(owned?'':'filter:grayscale(0.7) opacity(0.55);')+'" onerror="this.outerHTML=&apos;<div style=&quot;font-size:3.5rem;&quot;>'+artFallback+'</div>&apos;;">';
       h += '</div>';
-      // Text now spans full width under the hero painting (the old
-      // flex-row left-slot was for the 80px square art that's now gone).
-      var displayName = hatched ? spec.hatchedName : spec.cocoonName;
+      // Hatched specs are filtered out at the top of the loop, so this
+      // block always renders the cocoon-stage name + flavor.
+      var displayName = spec.cocoonName;
       h += '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;"><div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.15rem;color:var(--gold);">'+displayName+'</div>'+stateBadge+'</div>';
-      var flavor = hatched ? spec.hatchFlavor : spec.flavor;
+      var flavor = spec.flavor;
       h += '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);line-height:1.55;font-style:italic;margin-bottom:0.4rem;">'+flavor+'</div>';
       // State-specific body
       if (!owned) {
@@ -56980,8 +56983,8 @@ window._lwRenderCuriosities = function() {
           // actually sees on the prerequisite curiosity.
           if (req) h += '<div style="margin-top:0.45rem;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);">Hatch the <b style="color:var(--gold);">'+req.cocoonName+'</b> first.</div>';
         }
-      } else if (!hatched) {
-        // Incubating — distance progress
+      } else {
+        // Incubating — distance progress (hatched filtered above).
         var pctD = Math.min(100, Math.round(100 * prog.distance / prog.distanceM));
         var kmDone = (prog.distance/1000).toFixed(1);
         var kmTotal = (prog.distanceM/1000);
@@ -57007,10 +57010,30 @@ window._lwRenderCuriosities = function() {
       }
       if (ready) {
         h += '<button data-keeper-hatch="'+spec.key+'" style="display:block;width:100%;margin-top:0.55rem;padding:14px;border-radius:10px;border:1.5px solid rgba(200,168,75,0.7);background:linear-gradient(180deg,rgba(200,168,75,0.3),rgba(122,179,86,0.18));color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;animation:lwPulseHint 1.6s ease-in-out infinite;"><img src="assets/fx/sparkle-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\\u2728\';"> HATCH</button>';
-      } else if (hatched && equippedKey !== spec.key) {
-        h += '<button data-keeper-equip="'+spec.key+'" style="display:block;width:100%;margin-top:0.55rem;padding:14px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.6);background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:0.12em;cursor:pointer;min-height:52px;">EQUIP</button>';
       }
+      // No EQUIP button for hatched specs in Curiosities — equip lives
+      // in the Companions slot (PW_UI.equipCompanion picker). Stephen
+      // 2026-05-07: hatched cocoons graduate; Curiosities stops being
+      // their home.
       h += '</div>';
+    }
+
+    // Graduated section — compact tiles for hatched creatures with a
+    // tap-action that opens BoS Companions and the creature's profile.
+    if (_graduatedSpecs.length) {
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.66rem;color:var(--sage);letter-spacing:0.12em;margin:1rem 0 0.45rem;">GRADUATED — now companions</div>';
+      for (var gi=0; gi<_graduatedSpecs.length; gi++) {
+        var gSpec = _graduatedSpecs[gi];
+        var gIdx = (window.LW_KEEPER && LW_KEEPER.companionIdxFor) ? LW_KEEPER.companionIdxFor(gSpec.key) : null;
+        h += '<button data-keeper-graduated-idx="' + (gIdx !== null ? gIdx : '') + '" style="display:flex;width:100%;gap:0.6rem;padding:0.55rem 0.7rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.55);border:1px solid rgba(122,179,86,0.28);border-radius:10px;align-items:center;cursor:pointer;text-align:left;color:var(--cream);">';
+        h += '<div style="flex-shrink:0;width:48px;height:48px;border-radius:6px;overflow:hidden;background:rgba(5,8,4,0.5);border:1px solid rgba(122,179,86,0.25);display:flex;align-items:center;justify-content:center;">';
+        h += '<img src="' + gSpec.cocoonArt + '" alt="" style="width:100%;height:100%;object-fit:contain;opacity:0.8;" onerror="this.style.display=\'none\';">';
+        h += '</div>';
+        h += '<div style="flex:1;min-width:0;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--sage);letter-spacing:0.08em;">' + gSpec.cocoonName + ' &rarr; ' + gSpec.hatchedName + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:2px;">Hatched. Equip + level them in the Companions tab.</div></div>';
+        h += '<div style="flex-shrink:0;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;">VIEW →</div>';
+        h += '</button>';
+      }
     }
   }
 
@@ -57060,6 +57083,27 @@ window._lwRenderCuriosities = function() {
     if (window.LW_KEEPER && window.LW_KEEPER.unequip) window.LW_KEEPER.unequip();
     rerender();
   });
+  // Graduated tile click — close Curiosities, open BoS Companions tab,
+  // then open the creature's profile. Stephen 2026-05-07.
+  var gradBtns = ov.querySelectorAll('button[data-keeper-graduated-idx]');
+  for (var ggi=0; ggi<gradBtns.length; ggi++) (function(b){
+    b.addEventListener('click', function(){
+      var idxStr = b.getAttribute('data-keeper-graduated-idx');
+      var idx = idxStr ? parseInt(idxStr,10) : null;
+      try { var p = document.getElementById('lw-curiosities-panel'); if (p) p.remove(); } catch(e){}
+      try {
+        if (window._openCompendiumUI) {
+          window._openCompendiumUI();
+          setTimeout(function(){
+            try { if (window._bosSetTab) window._bosSetTab('companions'); } catch(e){}
+            setTimeout(function(){
+              try { if (idx !== null && !isNaN(idx) && window._lwOpenCompanionProfile) window._lwOpenCompanionProfile(idx); } catch(e){}
+            }, 320);
+          }, 240);
+        }
+      } catch(e){}
+    });
+  })(gradBtns[ggi]);
 };
 
 // ═══ TWIN BLOOM — Tier 3 cross-distance breeding ═══
