@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.22';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -47345,6 +47345,19 @@ document.addEventListener('keydown', function(e) {
       // reduces to 50 if vault payload exceeds 500KB. Each entry is
       // ~200 bytes so 200 × 200 = ~40KB worst case — safe to sync.
       eventLog:         _ls('lw_event_log')         || null,
+      // Stephen 2026-05-07 round 2: 4 more keys that were local-only.
+      // CRITICAL: lw_pouch_cap is the Pi-purchased pouch upgrade — real
+      // money. Was reading FROM cloud at 47454 but never WRITING to it,
+      // so the Pi spend would survive 1 cycle then evaporate on next
+      // device switch. The other 3 keys are daily-cap state — without
+      // sync, players can switch browser and double-claim daily login
+      // milestones (Forager's Lens / Compass Shard / Mulch Ward etc.).
+      pouchCap:         (function(){ try{ var v=parseInt(localStorage.getItem('lw_pouch_cap')||'25',10); return isNaN(v)?null:v; }catch(e){return null;} })(),
+      remoteDaily:      _ls('sws_remote_daily')     || null,
+      whisperVine:      _ls('sws_whisper_vine')     || null,
+      slowArrowPinDay:  localStorage.getItem('lw_slow_arrow_pin_day') || null,
+      dailyClaimed:     localStorage.getItem('lw_daily_claimed') || null,
+      dailyLogin:       _ls('lw_daily_login')       || null,
       lastSync: new Date().toISOString(),
       // Audit security-deep L4: was hardcoded 'set-40' from set-40 era.
       // Cloud forensics need to know which client wrote each vault doc.
@@ -47832,6 +47845,74 @@ document.addEventListener('keydown', function(e) {
         if (_mergedLog.length > 200) _mergedLog = _mergedLog.slice(_mergedLog.length - 200);
         localStorage.setItem('lw_event_log', JSON.stringify(_mergedLog));
       } catch(e){ try{ localStorage.setItem('lw_event_log', JSON.stringify(data.eventLog)); }catch(e2){} }
+    }
+    // Stephen 2026-05-07 round 2: hydrate the 6 keys added to upload.
+    // pouchCap (Pi-purchased pouch slots) — REAL MONEY. Take MAX of
+    // local vs cloud so a Pi spend on Device A never disappears on
+    // Device B. Clamped 25..40 to match LW_HUT.getPouchCap().
+    if (typeof data.pouchCap === 'number') {
+      try {
+        var _localCap = parseInt(localStorage.getItem('lw_pouch_cap')||'25',10) || 25;
+        var _bestCap = Math.max(_localCap, data.pouchCap);
+        if (_bestCap > 40) _bestCap = 40;
+        if (_bestCap < 25) _bestCap = 25;
+        localStorage.setItem('lw_pouch_cap', String(_bestCap));
+      } catch(e){}
+    }
+    // Daily-cap state — adopt cloud values so multi-device players
+    // can't double-claim daily login milestones or extra remote
+    // forages by switching browsers. If local count is HIGHER (this
+    // device used the cap today), keep it.
+    if (data.remoteDaily && typeof data.remoteDaily === 'object') {
+      try {
+        var _locRD = JSON.parse(localStorage.getItem('sws_remote_daily')||'{}');
+        // Same date → take MAX count. Different date → take cloud.
+        if (_locRD.date && data.remoteDaily.date && _locRD.date === data.remoteDaily.date) {
+          _locRD.count = Math.max(_locRD.count||0, data.remoteDaily.count||0);
+          localStorage.setItem('sws_remote_daily', JSON.stringify(_locRD));
+        } else {
+          localStorage.setItem('sws_remote_daily', JSON.stringify(data.remoteDaily));
+        }
+      } catch(e){}
+    }
+    if (data.whisperVine && typeof data.whisperVine === 'object') {
+      // Whisper Vine: if cloud has an active vine and local doesn't,
+      // adopt cloud. If both, keep the one with the FURTHER expiresAt.
+      try {
+        var _locWV = JSON.parse(localStorage.getItem('sws_whisper_vine')||'null');
+        if (!_locWV || (data.whisperVine.expiresAt && (!_locWV.expiresAt || data.whisperVine.expiresAt > _locWV.expiresAt))) {
+          localStorage.setItem('sws_whisper_vine', JSON.stringify(data.whisperVine));
+        }
+      } catch(e){}
+    }
+    if (typeof data.slowArrowPinDay === 'string' && data.slowArrowPinDay) {
+      // Slow arrow daily pin — accept the more-recent date so cap
+      // stays enforced across devices.
+      try {
+        var _locPD = localStorage.getItem('lw_slow_arrow_pin_day') || '';
+        if (data.slowArrowPinDay > _locPD) localStorage.setItem('lw_slow_arrow_pin_day', data.slowArrowPinDay);
+      } catch(e){}
+    }
+    if (typeof data.dailyClaimed === 'string' && data.dailyClaimed) {
+      try {
+        var _locDC = localStorage.getItem('lw_daily_claimed') || '';
+        if (data.dailyClaimed > _locDC) localStorage.setItem('lw_daily_claimed', data.dailyClaimed);
+      } catch(e){}
+    }
+    if (data.dailyLogin && typeof data.dailyLogin === 'object') {
+      try {
+        var _locDL = JSON.parse(localStorage.getItem('lw_daily_login')||'{}');
+        // Streak counter MAX-merge. lastLogin MAX (most recent date).
+        var _mergedDL = {};
+        for (var _kdl in _locDL) _mergedDL[_kdl] = _locDL[_kdl];
+        for (var _kdl2 in data.dailyLogin) {
+          var _lv = _mergedDL[_kdl2], _cv = data.dailyLogin[_kdl2];
+          if (typeof _lv === 'number' && typeof _cv === 'number') _mergedDL[_kdl2] = Math.max(_lv, _cv);
+          else if (typeof _lv === 'string' && typeof _cv === 'string') _mergedDL[_kdl2] = _lv > _cv ? _lv : _cv;
+          else if (_mergedDL[_kdl2] === undefined) _mergedDL[_kdl2] = _cv;
+        }
+        localStorage.setItem('lw_daily_login', JSON.stringify(_mergedDL));
+      } catch(e){}
     }
     if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
     // Keeper XP — restore from cloud, prefer the higher of cloud vs local so
@@ -60986,8 +61067,17 @@ window._cs=function(){document.getElementById('fg-sc').classList.remove('open')}
 
 // ═══ GAME SHARED API — exposed for lazy-loaded game scripts ═══
 window._gameFns={};
+// Stephen 2026-05-07: was capturing the BARE local `_e` reference,
+// taken BEFORE the streak/variety wrapper IIFE later reassigns
+// window._e (line ~60131). Every external game script destructures
+// `_e=G.e` and fires the BARE version, skipping the streak XP
+// wrapper, "3 different games today" XP, AND the lw_first_game_won
+// flag — which is why the START HERE chip at index.html:60828 never
+// disappears for testers. Now: e is a thunk that resolves to the
+// LATEST window._e at call time, so wrappers always run.
 window._G={
-  e:_e, play:_play, playWin:_playWin, st:_st, xt:_xt, sm:sm,
+  e:function(v){ try{ return window._e(v); }catch(e){ return _e(v); } },
+  play:_play, playWin:_playWin, st:_st, xt:_xt, sm:sm,
   ms:ms, mm:mm, mc:mc, sh:sh, sr:_sr, gr:_gr, setDiff:_setDiff,
   solEnterFS:_solEnterFS, solClearFS:_solClearFS, solExitFS:_solExitFS,
   getM:function(){return _m}, setM:function(v){_m=v}
@@ -83928,6 +84018,16 @@ function _bosAboutContent() {
   }
   h += '</div>';
 
+  // Stephen 2026-05-07 BLOCKER FIX: Pi App Studio rules forbid fiat
+  // payment paths (Stripe) and non-Pi crypto (BTC/ETH/SOL/USDC) from
+  // showing inside Pi Browser. Detection: window.Pi (SDK injected by
+  // Pi Browser) OR userAgent contains "PiBrowser". Outside Pi Browser
+  // (web visit at lucidwinds.com), full tip jar still shows.
+  var _isPiBrowser = false;
+  try {
+    _isPiBrowser = !!(typeof Pi !== 'undefined') ||
+                   /PiBrowser|Pi Browser/i.test(navigator.userAgent || '');
+  } catch(e){}
   // Tip jar header
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin:0.6rem 0 0.4rem;text-align:center;"><img src="assets/fx/sparkle-pink.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"> TIP JAR <img src="assets/fx/sparkle-pink.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"></div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.7rem;line-height:1.6;">If Lucid Winds has given you something, the easiest way to give back is here. Anything is appreciated. Nothing is required, ever.</div>';
@@ -83937,14 +84037,15 @@ function _bosAboutContent() {
   // back the URL. Stripe gates "customer chooses price" in Payment
   // Links for certain categories, so we bypass the dashboard and
   // drive the Checkout API directly.
-  if (c.stripeCardEnabled !== false) {
+  // Stripe button HIDDEN inside Pi Browser per Pi App Studio rules.
+  if (!_isPiBrowser && c.stripeCardEnabled !== false) {
     h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta" aria-label="Light a lantern \u2014 tip the studio">'+
            '<div class="lw-tip-cta-title">\u2728 LIGHT A LANTERN \u2728</div>'+
            '<div class="lw-tip-cta-sub">tips keep this game ad-free \u00b7 anything is appreciated</div>'+
          '</button>';
   }
   // Fallback: honor a static stripeUrl if someone prefers the old flow
-  else if (c.stripeUrl) {
+  else if (!_isPiBrowser && c.stripeUrl) {
     h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" style="display:block;width:100%;padding:0.85rem;margin-bottom:0.7rem;border:1.5px solid rgba(122,179,86,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.32),rgba(46,80,34,0.45));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.12em;text-align:center;text-decoration:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">\ud83d\udcb3 SUPPORT WITH CARD</a>';
   }
 
@@ -83982,10 +84083,11 @@ function _bosAboutContent() {
     return row;
   }
   h += _addrRow('PI',   c.pi);
-  h += _addrRow('BTC',  c.btc);
-  h += _addrRow('ETH',  c.eth);
-  h += _addrRow('SOL',  c.sol);
-  h += _addrRow('USDC', c.usdc);
+  // Non-Pi crypto rows HIDDEN inside Pi Browser per Pi App Studio rules.
+  if (!_isPiBrowser) h += _addrRow('BTC',  c.btc);
+  if (!_isPiBrowser) h += _addrRow('ETH',  c.eth);
+  if (!_isPiBrowser) h += _addrRow('SOL',  c.sol);
+  if (!_isPiBrowser) h += _addrRow('USDC', c.usdc);
 
   // If everything is blank, show a soft placeholder so the page doesn't look broken
   if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.sol && !c.usdc) {
@@ -88489,8 +88591,24 @@ window.LW_GIFTS = (function(){
 
   // Open one box. Applies pity counter, selects an item, grants it.
   // Returns the awarded item key + rarity so the UI can render a reveal.
+  // Stephen 2026-05-07: was decrementing s.count BEFORE checking pouch
+  // cap, so a player at 25/25 (or 40/40) saw the celebratory reveal
+  // for an item that LW_ITEMS.add silently rejected — boxes destroyed
+  // for nothing. Now: pre-check the pouch cap. If full, return a
+  // capped:true result WITHOUT spending the box. Caller surfaces a
+  // "pouch full — open boxes after using/discarding" toast.
   function openOne(){
     var s = _load(); if (!s.count || s.count <= 0) return null;
+    // Pre-check: pouch cap. If at cap, refuse to spend the box.
+    try {
+      if (window.LW_ITEMS && window.LW_ITEMS.count && window.LW_ITEMS.getCap) {
+        var _curCt = window.LW_ITEMS.count();
+        var _capCt = window.LW_ITEMS.getCap();
+        if (typeof _curCt === 'number' && typeof _capCt === 'number' && _curCt >= _capCt) {
+          return { itemKey: null, rarity: null, capped: true, refused: true };
+        }
+      }
+    } catch(e){}
     s.count--; _save(s);
     if (window.LW_ACH) { LW_ACH.bump('boxes_opened', 1); LW_ACH.bump('d_box', 1); LW_ACH.bump('w_box', 1); }
     var p = _loadPity();
@@ -88596,6 +88714,13 @@ window.LW_GIFTS = (function(){
     if (count() <= 0) return;
     var result = openOne();
     if (!result) return;
+    // Stephen 2026-05-07: handle the new refused-because-pouch-full
+    // result. Surface the cap pressure to the player, do NOT show
+    // the celebratory reveal (no item was awarded).
+    if (result.refused) {
+      if (window._toast) window._toast('🎒 Pouch full. Use or discard an item, then open the box.');
+      return;
+    }
     // Re-render panel behind reveal so count updates
     try { var prev = document.getElementById('lw-boxes-panel'); if (prev) prev.remove(); } catch(e){}
     openPanel();
@@ -88604,10 +88729,13 @@ window.LW_GIFTS = (function(){
 
   function openAll(){
     var all = [];
+    var refusedCount = 0;
     while (count() > 0) {
       var r = openOne(); if (!r) break;
+      if (r.refused) { refusedCount++; break; } // pouch is full, stop opening
       all.push(r);
     }
+    if (refusedCount && window._toast) window._toast('🎒 Pouch full — opened '+all.length+' before stopping.');
     if (!all.length) return;
     try { var prev = document.getElementById('lw-boxes-panel'); if (prev) prev.remove(); } catch(e){}
     // Summary modal
