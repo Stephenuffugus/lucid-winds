@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.41';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.42';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -50431,12 +50431,24 @@ function _initCompass(){
     // Prefer absolute orientation when available (true compass heading).
     // Fall back to regular orientation with webkitCompassHeading (iOS) or
     // alpha (Android). alpha is anti-clockwise so subtract from 360.
+    // Track whether ANY orientation event has fired with usable data so we
+    // can fall back to relative alpha when absolute isn't available.
+    // 2026-05-07: on Pi Browser/Pixel, deviceorientationabsolute often
+    // doesn't fire AND deviceorientation events come with absolute=false,
+    // so the prior code silently ignored every event and the compass arrow
+    // stayed stuck at the default rotation.
+    var _absRx=false;
     window.addEventListener('deviceorientationabsolute',function(e){
-      if(e.alpha!==null)_updateCompass((360-e.alpha)%360);
+      if(e.alpha!==null){_absRx=true;_updateCompass((360-e.alpha)%360);}
     },true);
     window.addEventListener('deviceorientation',function(e){
-      if(typeof e.webkitCompassHeading==='number')_updateCompass(e.webkitCompassHeading);
-      else if(e.absolute&&e.alpha!==null)_updateCompass((360-e.alpha)%360);
+      if(typeof e.webkitCompassHeading==='number'){_updateCompass(e.webkitCompassHeading);return;}
+      if(e.absolute&&e.alpha!==null){_absRx=true;_updateCompass((360-e.alpha)%360);return;}
+      // Fallback: relative-only alpha. Arrow rotates with device turning,
+      // even if it can't point to magnetic north. Only used when no
+      // absolute event has arrived (so we don't override real compass data
+      // with relative noise on devices that DO have a magnetometer).
+      if(!_absRx&&e.alpha!==null)_updateCompass((360-e.alpha)%360);
     },true);
   }
   // iOS 13+: must request permission via user gesture. Wrap (don't replace)
