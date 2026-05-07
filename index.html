@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.06.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.2';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1566,6 +1566,10 @@
        hidden so the scale doesn't bleed past the border. Stephen 2026-05-06. */
     .pgm-card-btn { overflow: hidden; }
     .pgm-card-btn#gallery-items-btn img { transform: scale(1.18); transform-origin: center; }
+    /* btn-compost.png has more padding around the parchment than the
+       other action buttons, so it reads ~15% smaller. Scale to match.
+       Stephen 2026-05-07. */
+    .pgm-card-btn[onclick*="carouselCompost"] img { transform: scale(1.15); transform-origin: center; }
     .pgm-card-btn:active { transform: scale(0.94); }
     .pgm-act-btn {
       background: rgba(26,36,22,0.7); border: 1.5px solid rgba(74,124,53,0.25);
@@ -47075,6 +47079,21 @@ document.addEventListener('keydown', function(e) {
       // Audit 1 H4: L75 second companion equip slot (primary lives in profile;
       // this slot was local-only).
       activeCompanion2: localStorage.getItem('pw_active_companion_2') || '',
+      // Stephen audit 2026-05-07: previously local-only.
+      //   forageCards/Decks/DeckActive — wild-foraging mini-game card collection.
+      //   wildPouch — fg_pouch holds harvested wild plants + ferals BEFORE
+      //     they're delivered to greenhouse/nursery. History clear = lost in-flight.
+      //   mintMilestones — mint milestone toast flags (drives titles).
+      //   seenCompanions — Pokedex "discovered" markers. Without this the Pokedex
+      //     shows hatched cocoon creatures (Wasp/Lungfish/Tardigrade) as
+      //     undiscovered after history clear, looking like the cocoon never hatched.
+      forageCards:      _ls('lw_forage_cards')      || null,
+      forageDecks:      _ls('lw_forage_decks')      || null,
+      forageDeckActive: localStorage.getItem('lw_forage_deck_active') || null,
+      wildPouch:        _ls('fg_pouch')             || null,
+      mintMilestones:   _ls('lw_mint_milestones')   || null,
+      seenCompanions:   _ls('lw_seen_companions')   || null,
+      seenMutations:    _ls('lw_seen_mutations')    || null,
       lastSync: new Date().toISOString(),
       // Audit security-deep L4: was hardcoded 'set-40' from set-40 era.
       // Cloud forensics need to know which client wrote each vault doc.
@@ -47477,6 +47496,60 @@ document.addEventListener('keydown', function(e) {
     // L75 second companion equip slot.
     if (typeof data.activeCompanion2 === 'string' && data.activeCompanion2) {
       try { localStorage.setItem('pw_active_companion_2', data.activeCompanion2); } catch(e){}
+    }
+    // Stephen audit 2026-05-07 — restore previously local-only state.
+    // Forage cards: count-per-element object → MAX-merge (sticky higher).
+    if (data.forageCards && typeof data.forageCards === 'object') _audMaxMergeMap('lw_forage_cards', data.forageCards);
+    // Forage decks: array of deck definitions. Replace from cloud only when
+    // local is empty — otherwise keep player's recent edits.
+    if (data.forageDecks && Array.isArray(data.forageDecks)) {
+      try {
+        var _locDecks = JSON.parse(localStorage.getItem('lw_forage_decks')||'[]');
+        if (!_locDecks || !_locDecks.length) localStorage.setItem('lw_forage_decks', JSON.stringify(data.forageDecks));
+      } catch(e){ try{localStorage.setItem('lw_forage_decks', JSON.stringify(data.forageDecks));}catch(e2){} }
+    }
+    if (typeof data.forageDeckActive === 'string' && data.forageDeckActive) {
+      try { if(!localStorage.getItem('lw_forage_deck_active')) localStorage.setItem('lw_forage_deck_active', data.forageDeckActive); } catch(e){}
+    }
+    // Wild pouch — union by hash so cloud doesn't undo a fresh harvest the
+    // player just made on this device. Each entry has a `.hash` (plant) or
+    // `.seedHash` (feral); fall back to JSON-stringify dedup if neither.
+    if (data.wildPouch && Array.isArray(data.wildPouch)) {
+      try {
+        var _locPouch = JSON.parse(localStorage.getItem('fg_pouch')||'[]'); if(!Array.isArray(_locPouch)) _locPouch=[];
+        var _seenP = {};
+        function _pkey(it){ if(!it) return ''; return it.hash || it.seedHash || JSON.stringify(it); }
+        for (var _ip=0;_ip<_locPouch.length;_ip++){ var _kp=_pkey(_locPouch[_ip]); if(_kp) _seenP[_kp]=_locPouch[_ip]; }
+        for (var _jp=0;_jp<data.wildPouch.length;_jp++){ var _kc=_pkey(data.wildPouch[_jp]); if(_kc && !_seenP[_kc]) _seenP[_kc]=data.wildPouch[_jp]; }
+        var _outP=[]; for (var _kk in _seenP) _outP.push(_seenP[_kk]);
+        localStorage.setItem('fg_pouch', JSON.stringify(_outP));
+      } catch(e){ try{localStorage.setItem('fg_pouch', JSON.stringify(data.wildPouch));}catch(e2){} }
+    }
+    // Mint milestones — sticky merge: any flag truthy on either side stays.
+    if (data.mintMilestones && typeof data.mintMilestones === 'object') {
+      try {
+        var _locMM = JSON.parse(localStorage.getItem('lw_mint_milestones')||'{}');
+        for (var _mmk in data.mintMilestones) if (data.mintMilestones[_mmk]) _locMM[_mmk] = data.mintMilestones[_mmk];
+        localStorage.setItem('lw_mint_milestones', JSON.stringify(_locMM));
+      } catch(e){ try{localStorage.setItem('lw_mint_milestones', JSON.stringify(data.mintMilestones));}catch(e2){} }
+    }
+    // Pokedex discovered markers — sticky union (truthy wins). Without
+    // this the BoS Pokedex shows hatched cocoon creatures (Wasp/Lungfish/
+    // Tardigrade) as undiscovered after history clear, which players read
+    // as "the cocoon never hatched".
+    if (data.seenCompanions && typeof data.seenCompanions === 'object') {
+      try {
+        var _locSC = JSON.parse(localStorage.getItem('lw_seen_companions')||'{}');
+        for (var _sck in data.seenCompanions) if (data.seenCompanions[_sck]) _locSC[_sck] = data.seenCompanions[_sck];
+        localStorage.setItem('lw_seen_companions', JSON.stringify(_locSC));
+      } catch(e){ try{localStorage.setItem('lw_seen_companions', JSON.stringify(data.seenCompanions));}catch(e2){} }
+    }
+    if (data.seenMutations && typeof data.seenMutations === 'object') {
+      try {
+        var _locSM = JSON.parse(localStorage.getItem('lw_seen_mutations')||'{}');
+        for (var _smk in data.seenMutations) if (data.seenMutations[_smk]) _locSM[_smk] = data.seenMutations[_smk];
+        localStorage.setItem('lw_seen_mutations', JSON.stringify(_locSM));
+      } catch(e){ try{localStorage.setItem('lw_seen_mutations', JSON.stringify(data.seenMutations));}catch(e2){} }
     }
     if (typeof data.pollen === 'number') { if(window._secureSet){window._secureSet('fg_pollen',String(data.pollen));}else{localStorage.setItem('fg_pollen', String(data.pollen));} }
     // Keeper XP — restore from cloud, prefer the higher of cloud vs local so
@@ -49248,14 +49321,31 @@ function _saveGH(a){if(window.saveGreenhouse)window.saveGreenhouse(a);else local
 function _zoneKey(a,b){return(Math.round(a/ZONE_SIZE)*ZONE_SIZE).toFixed(4)+','+(Math.round(b/ZONE_SIZE)*ZONE_SIZE).toFixed(4);}
 function _dist(a,b,c,d){var x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;var z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return 6371000*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
 
+// Cocoon-credit gate: an incubating Curiosity needs GPS deltas to accrue
+// distance toward hatching. Without this gate the watch dies on tab switch
+// and Stephen 2026-05-07 reported "I still havent seen any of the cocoon
+// items actually hatch" — because real-world walking with the Greenhouse
+// or Game tab focused was crediting nothing. Returns true if at least one
+// cocoon is in 'incubating' state, false otherwise.
+function _anyCocoonIncubating(){
+  try{
+    if(!window.LW_KEEPER||!LW_KEEPER.listSpecs)return false;
+    var specs=LW_KEEPER.listSpecs();
+    for(var i=0;i<specs.length;i++){
+      var p=LW_KEEPER.progress(specs[i].key);
+      if(p&&p.state==='incubating')return true;
+    }
+  }catch(e){}
+  return false;
+}
 function deactivate(){
-  // Stop GPS watch when Wild tab is no longer the active surface — biggest
-  // battery win per the Apr 26 perf audit. _startGeoWatch is idempotent so
-  // the next activate() restores it cleanly.
-  _stopGeoWatch();
-  // Detach Firestore wildDrops listener — kept firing on Greenhouse/Nursery
-  // tabs, burning cellular data + Firestore quota for nothing.
+  // Stop the heavy Wild listener (cellular + Firestore quota) on tab switch
+  // away. The GPS watch itself stays alive ONLY if a cocoon is incubating —
+  // otherwise we kill it for battery (Apr 26 perf audit). The watch
+  // callback's Wild-specific calls (_uM/_scanRing/_tLine) are guarded by
+  // truthy checks so they no-op when Wild isn't mounted.
   try{_unsubscribeSharedDrops();}catch(e){}
+  if(!_anyCocoonIncubating()) _stopGeoWatch();
 }
 var _visListenerWired=false;
 function _wireVisibilityGate(){
@@ -49263,11 +49353,23 @@ function _wireVisibilityGate(){
   _visListenerWired=true;
   try{document.addEventListener('visibilitychange',function(){
     if(document.hidden){_stopGeoWatch();try{_unsubscribeSharedDrops();}catch(e){}return;}
-    // Only restart if Wild is the active panel
     var p=document.getElementById('panel-wild');
-    if(p&&p.classList&&p.classList.contains('active')){_startGeoWatch();try{_subscribeSharedDrops();}catch(e){}}
+    var wildActive=!!(p&&p.classList&&p.classList.contains('active'));
+    // Restart watch if Wild is active OR a cocoon is incubating (so that
+    // walking on Greenhouse/Game/Nursery tabs still credits hatch progress).
+    if(wildActive||_anyCocoonIncubating()) _startGeoWatch();
+    if(wildActive){try{_subscribeSharedDrops();}catch(e){}}
   });}catch(e){}
 }
+// On app boot, if a cocoon is incubating, start a permanent GPS watch
+// independent of the Wild tab. Re-checked on visibilitychange and on
+// every cocoon purchase via LW_KEEPER -> _ensureCocoonGeoWatch.
+window._ensureCocoonGeoWatch=function(){
+  try{
+    if(!_visListenerWired) _wireVisibilityGate();
+    if(_anyCocoonIncubating()) _startGeoWatch();
+  }catch(e){}
+};
 function activate(){
   // Diagnostic: show system status on first Wild visit
   try{
@@ -50451,6 +50553,11 @@ function _spawnFerals() {
 // OLD _drawFeralZones REMOVED — replaced by unified _drawZoneHexes above
 
 function _collectFeralFromZone(zk, zonePlants) {
+  // Stephen audit 2026-05-07: rescue from GPS-pending limbo (the 5s
+  // _gpsFallbackTimer at line 49524 hasn't fired yet). Without this a
+  // first-time tap within ~5s of landing on Wild gets a "Need location."
+  // toast and stays stuck until a manual refresh.
+  if (!_uLat) { try{if(window.FG_Wild&&FG_Wild._forceFallbackCoords)FG_Wild._forceFallbackCoords();}catch(e){} }
   if (!_uLat) { _toast('Need location.'); return; }
   var parts = zk.split(',');
   var cLat = parseFloat(parts[0]), cLng = parseFloat(parts[1]);
@@ -51969,6 +52076,8 @@ function _collectFeral(f,mk){
   if(window.canSee&&window.canSee.feralCollect&&!window.canSee.feralCollect()){
     _toast('🔒 Feral seeds respond to you at Keeper Level 4.');return;
   }
+  // GPS-limbo rescue (Stephen audit 2026-05-07).
+  if(!_uLat){ try{if(window.FG_Wild&&FG_Wild._forceFallbackCoords)FG_Wild._forceFallbackCoords();}catch(e){} }
   if(!_uLat){_toast('Need location.');return;}
   if(_gpsDenied){_toast('\u2316 Demo mode. Enable GPS to collect ferals in your area.');return;}
   var d=_dist(_uLat,_uLng,f.lat,f.lng);
@@ -53394,6 +53503,8 @@ window._doCrossPollination=_doCrossPollination;
 // ═══ PICKER — drop from greenhouse to wild ═══
 function openPicker(){
   if(_speedKmh>25){_toast('\ud83c\udf3f Slow down to plant! Moving too fast.');return;}
+  // GPS-limbo rescue (Stephen audit 2026-05-07).
+  if(!_uLat){ try{if(typeof _forceFallbackCoords==='function')_forceFallbackCoords();else if(window.FG_Wild&&FG_Wild._forceFallbackCoords)FG_Wild._forceFallbackCoords();}catch(e){} }
   if(!_uLat){_toast('Getting location...');return;}
   var _maxD=_getMaxDrops();
   var rem=_maxD-_drops;
@@ -56427,6 +56538,8 @@ window._lwUpdateForageFab=function(){
   }
 };
 window._lwOpenNearestForage=function(){
+  // GPS-limbo rescue (Stephen audit 2026-05-07).
+  if(!_uLat||!_uLng){ try{if(window.FG_Wild&&FG_Wild._forceFallbackCoords)FG_Wild._forceFallbackCoords();}catch(e){} }
   if(!_uLat||!_uLng){if(window._toast)_toast('Need location.');return;}
   if(_gpsDenied){if(window._toast)_toast('Enable GPS to forage.');return;}
   // Tutorial override — step 40 spotlights FORAGE and walks the player
@@ -59666,28 +59779,40 @@ window._lwSpendSunbeams=function(amount,reason){
 // Fix: await mintPlant, then read the LATEST greenhouse entry to get the
 // hash that was actually stored. Use THAT hash for the celebration.
 window._mintFromQueue=async function(){
+  // Rapid-tap guard (Stephen audit 2026-05-07): the modal closes before
+  // mintPlant resolves, so a fast tester could re-open and tap BLOOM
+  // again, firing parallel server mints. Server's 60s min-interval rejects
+  // duplicates but the celebration overlay would still stack and the
+  // local greenhouse-diff lookup would race. Mirror the _lwIsBreeding
+  // pattern (line 77387) — single mint at a time.
+  if(window._lwMintingInFlight)return;
   if(_readyHashes.length===0){if(window._toast)_toast('No plants ready yet. Keep playing!');return;}
-  var hex=_readyHashes.shift();
-  _persistHashBuf();
-  if(window._LW_DEBUG)console.log('[_mintFromQueue] minting queue hash:',hex,'remaining:',_readyHashes.length);
-  var beforeGh=[];try{beforeGh=window.loadGreenhouse?window.loadGreenhouse():[];}catch(e){}
-  var beforeLen=(beforeGh||[]).length;
-  var beforeHashes={};for(var _bi=0;_bi<beforeLen;_bi++){if(beforeGh[_bi]&&beforeGh[_bi].hash)beforeHashes[beforeGh[_bi].hash]=true;}
-  try{if(window.mintPlant)await window.mintPlant(hex);}catch(err){console.error('[mintFromQueue] error:',err);}
-  // Find the new entry — the hash NOT present before mintPlant ran.
-  // Server-mint replaces hex entirely; grade-cap re-roll mutates bytes
-  // 32-63. Either way the final stored hash is the source of truth.
-  var afterGh=[];try{afterGh=window.loadGreenhouse?window.loadGreenhouse():[];}catch(e){}
-  var actualHash=hex; // fallback
-  for(var _ai=afterGh.length-1;_ai>=0;_ai--){
-    var _ah=afterGh[_ai]&&afterGh[_ai].hash;
-    if(_ah&&!beforeHashes[_ah]){actualHash=_ah;break;}
+  window._lwMintingInFlight=true;
+  try{
+    var hex=_readyHashes.shift();
+    _persistHashBuf();
+    if(window._LW_DEBUG)console.log('[_mintFromQueue] minting queue hash:',hex,'remaining:',_readyHashes.length);
+    var beforeGh=[];try{beforeGh=window.loadGreenhouse?window.loadGreenhouse():[];}catch(e){}
+    var beforeLen=(beforeGh||[]).length;
+    var beforeHashes={};for(var _bi=0;_bi<beforeLen;_bi++){if(beforeGh[_bi]&&beforeGh[_bi].hash)beforeHashes[beforeGh[_bi].hash]=true;}
+    try{if(window.mintPlant)await window.mintPlant(hex);}catch(err){console.error('[mintFromQueue] error:',err);}
+    // Find the new entry — the hash NOT present before mintPlant ran.
+    // Server-mint replaces hex entirely; grade-cap re-roll mutates bytes
+    // 32-63. Either way the final stored hash is the source of truth.
+    var afterGh=[];try{afterGh=window.loadGreenhouse?window.loadGreenhouse():[];}catch(e){}
+    var actualHash=hex; // fallback
+    for(var _ai=afterGh.length-1;_ai>=0;_ai--){
+      var _ah=afterGh[_ai]&&afterGh[_ai].hash;
+      if(_ah&&!beforeHashes[_ah]){actualHash=_ah;break;}
+    }
+    if(window._LW_DEBUG&&actualHash!==hex)console.log('[_mintFromQueue] hash mutated:',hex,'→',actualHash);
+    if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
+    _showMintCelebration(actualHash);
+    _updateSunbeamBadge();
+    if(window._updateGameDew)_updateGameDew();
+  } finally {
+    window._lwMintingInFlight=false;
   }
-  if(window._LW_DEBUG&&actualHash!==hex)console.log('[_mintFromQueue] hash mutated:',hex,'→',actualHash);
-  if(window.syncVaultToCloud)setTimeout(syncVaultToCloud,800);
-  _showMintCelebration(actualHash);
-  _updateSunbeamBadge();
-  if(window._updateGameDew)_updateGameDew();
 };
 // ═══ SUNBEAM BADGE — pip on keeper bar icon ═══
 function _updateSunbeamBadge(){
@@ -71899,6 +72024,14 @@ function _initPi(){
     Pi.init({version:'2.0',sandbox:window.LW_PI_SANDBOX});
     console.log('[Pi] SDK initialized ('+(window.LW_PI_SANDBOX?'SANDBOX (testnet)':'MAINNET (real Pi)')+' mode).');
     _piReady=true;
+    // Eager incomplete-payment sweep (Stephen audit 2026-05-07).
+    // Pi.authenticate's onIncompletePaymentFound callback is the ONLY way
+    // to recover an approved-but-not-completed payment from a prior
+    // session. Without an eager call here, a stranded payment sits in
+    // status='approved' until the player initiates ANOTHER payment —
+    // they paid for nothing in the meantime. Fire authenticate(null) so
+    // the SDK delivers any pending payment to _completePayment.
+    setTimeout(function(){ try{ if(typeof authenticate==='function') authenticate(null); }catch(e){} }, 1500);
   }catch(e){console.log('[Pi] Init failed:',e.message);}
 }
 
@@ -72021,6 +72154,19 @@ function _completePayment(paymentId,txid,cb){
           return;
         }
         if (d.ok) {
+          // Cap-rejection guard (Stephen audit 2026-05-07): server may
+          // return ok:true with fulfillment.applied:false when the player
+          // is at cap (e.g. 60 GH slots, 40 item pouch). Pi was charged
+          // but the entitlement wasn't granted. The wrappers below treat
+          // ok=true as "increment local state" — without this gate, local
+          // would diverge from server forever. Surface the issue to the
+          // player so they can contact support BEFORE the wrapper grants.
+          if (d.fulfillment && d.fulfillment.applied === false) {
+            console.warn('[Pi] Completed but fulfillment NOT applied (likely at cap):', d.fulfillment);
+            if (window._toast) window._toast('Pi confirmed but you were at cap. Contact support for refund.');
+            if (cb) cb(false);
+            return;
+          }
           console.log('[Pi] Completed:', paymentId, 'fulfillment:', d.fulfillment);
           if (cb) cb(true);
           return;
@@ -88459,6 +88605,10 @@ window.LW_debug.cleanGhostDrops = function(){
     try{ if(window._haptic) window._haptic('bloom'); }catch(e){}
     _toast(spec.cocoonName+' is yours. Walk a thousand kilometers to hatch.');
     try{ if(window.LW_ACH && LW_ACH.bump) LW_ACH.bump('keeper_purchases',1); }catch(e){}
+    // Wake the cross-tab GPS watch so distance accrues even when the player
+    // is browsing Greenhouse / playing games / etc. Without this hook the
+    // watch only fires on the Wild tab and most cocoons would never hatch.
+    try{ if(window._ensureCocoonGeoWatch) window._ensureCocoonGeoWatch(); }catch(e){}
     return true;
   }
 
@@ -95583,6 +95733,13 @@ window.addEventListener('load',function(){
       document.head.appendChild(link);
     }
   },8000);
+  // Cocoon-incubation GPS watch: if the player has any incubating
+  // Curiosity, start the cross-tab GPS watch on app boot. Without this,
+  // walking would only credit hatch progress while the Wild tab was
+  // visible (the bug Stephen reported 2026-05-07).
+  setTimeout(function(){
+    try{ if(window._ensureCocoonGeoWatch) window._ensureCocoonGeoWatch(); }catch(e){}
+  },4000);
 });
 </script>
 
