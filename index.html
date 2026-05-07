@@ -865,7 +865,35 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.22';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.23';window.LW_VERSION=LW_VERSION;
+  // Stephen 2026-05-07: Pi Browser has fixed bottom chrome that overlays
+  // our nav. Detect early + add body.pi-browser so CSS lifts the nav
+  // (and any other anchored UI) by --pi-chrome-h. Detection: window.Pi
+  // SDK presence OR userAgent contains "PiBrowser".
+  (function(){
+    try {
+      var _piUA = /PiBrowser|Pi Browser/i.test(navigator.userAgent || '');
+      var _piSDK = (typeof Pi !== 'undefined');
+      if (_piUA || _piSDK) {
+        var _applyPiClass = function(){
+          if (document.body) document.body.classList.add('pi-browser');
+        };
+        if (document.body) _applyPiClass();
+        else document.addEventListener('DOMContentLoaded', _applyPiClass);
+        // Per-device override if Pi's chrome height differs.
+        try {
+          var _override = parseInt(localStorage.getItem('lw_pi_chrome_h')||'0', 10);
+          if (_override > 0 && _override < 200) {
+            var _setVar = function(){
+              if (document.body) document.body.style.setProperty('--pi-chrome-h', _override + 'px');
+            };
+            if (document.body) _setVar();
+            else document.addEventListener('DOMContentLoaded', _setVar);
+          }
+        } catch(e){}
+      }
+    } catch(e){}
+  })();
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2047,6 +2075,17 @@
       max-width:680px;margin:0 auto;
       transition:transform 0.3s cubic-bezier(.25,.46,.45,.94);
     }
+    /* Stephen 2026-05-07: Pi Browser has its own bottom chrome (back/
+       forward/home buttons) that does NOT auto-hide and doesn't report
+       via env(safe-area-inset-bottom). Without an offset our nav sits
+       behind it, covering halfway up the nav buttons. The body.pi-browser
+       class is set in a boot script (search _isPiBrowser detection) and
+       lifts the nav by --pi-chrome-h (default 56px). Player can override
+       per-device via localStorage.lw_pi_chrome_h if their device has a
+       different chrome height. */
+    body.pi-browser{ --pi-chrome-h: 56px; }
+    body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
+    body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
     .fg-bottomnav.minimized{transform:translateY(calc(100% - 18px));}
     .fg-bottomnav.minimized .fg-nav-btn{pointer-events:none;}
     .fg-nav-min{position:absolute;top:-22px;right:50%;transform:translateX(50%);width:64px;height:22px;background:rgba(10,12,8,0.95);border:1px solid rgba(74,124,53,0.25);border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;-webkit-tap-highlight-color:transparent;z-index:2;}
