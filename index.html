@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.10';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -3489,7 +3489,15 @@
     .nur-btn.abandon:hover{border-color:rgba(139,46,46,0.5);color:rgba(192,112,112,0.85);}
     .nur-btn.skipday,.nur-btn.boost{font-size:0.7rem;}
     .nur-seed-sprite{position:relative;display:flex;align-items:center;justify-content:center;width:108px;height:144px;}
-    .nur-seed-sprite svg,.nur-seed-sprite img{display:block;width:100%;height:100%;object-fit:contain;}
+    .nur-seed-sprite svg{display:block;width:100%;height:100%;object-fit:contain;}
+    /* Stephen 2026-05-07: seed PNGs ship with hard black square backgrounds
+       (painted that way at source). Clipping to a circle removes the
+       awkward black box and the seed reads as a round mystical object,
+       which matches the in-world fiction (seeds are kernels you carry).
+       Native art is 256×256 square; aspect-ratio:1 + object-fit:cover
+       gives a clean circular thumbnail with no cropping of the centered
+       seed imagery. */
+    .nur-seed-sprite img{display:block;width:100%;aspect-ratio:1;height:auto;border-radius:50%;object-fit:cover;}
     /* Seed effect framework — Stephen 2026-04-30: "we could have a
        multitude of awesome glows and effects radiating around the
        seeds." Each effect is a named class that adds a CSS-only halo
@@ -56540,7 +56548,11 @@ function _selectHexPlant(idx,p){
       // Removed onpointerleave: on mobile, slight finger shifts fire leave
       // even with setPointerCapture, which cancelled the hold mid-gesture.
       // pointerup + pointercancel are enough for cleanup.
-      _pruneBtn='<button class="hi-action-btn hi-prune-hold" data-hold-action="prune" data-hold-ms="5000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)" title="Hold 5 seconds, costs 3 sunbeams"><span class="hi-water-fill"></span><span class="hi-water-label"><img src="assets/wild-prune-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'\\u2702\'"> HOLD TO PRUNE (\u22923\u26a1)</span></button>';
+      // Stephen 2026-05-07: hold-to-prune replaced with tap + confirm.
+      // Mobile long-press triggers the OS text-select / search menu, no
+      // amount of CSS reliably blocks it. Single tap + confirmation
+      // dialog is cleaner UX and works everywhere.
+      _pruneBtn='<button class="hi-action-btn hi-prune-hold" onclick="window._wildConfirmAction&&_wildConfirmAction(\'prune\')" title="Tap to prune. Costs 3 Sunbeams."><span class="hi-water-label"><img src="assets/wild-prune-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'\\u2702\'"> PRUNE (\u22923\u26a1)</span></button>';
     } else {
       _pruneBtn='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'\\ud83d\\udd12 Need 3 Sunbeams to prune.\')" title="Need 3 sunbeams to prune"><img src="assets/wild-prune-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'\\u2702\'"> PRUNE (need 3\u26a1)</button>';
     }
@@ -56609,7 +56621,11 @@ function _selectHexPlant(idx,p){
     var _wTodayH=new Date().toISOString().split('T')[0];
     if(_wBudgetH.date!==_wTodayH){_wBudgetH={date:_wTodayH,count:0};}
     var _wLeftH=Math.max(0,5-(_wBudgetH.count||0));
-    actions+='<button class="hi-action-btn hi-water-hold'+(_wLeftH<=0?' locked':'')+'" '+(_wLeftH>0?'data-hold-action="water" data-hold-ms="4000" onpointerdown="window._waterHoldStart(this,event)" onpointerup="window._waterHoldEnd(this)" onpointercancel="window._waterHoldEnd(this)"':'onclick="window._toast&&window._toast(\'Daily stranger waters used (5/5). Resets at midnight.\')"')+' title="Hold for 4 seconds to water. 5 stranger waters per day."><span class="hi-water-fill"></span><span class="hi-water-label"><img src="assets/wild-water-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#128167;\'"> HOLD TO WATER &middot; '+_wLeftH+'/5</span></button>';
+    // Stephen 2026-05-07: hold-to-water replaced with tap + confirm.
+    // Mobile long-press triggers the OS text-select / search menu and
+    // can't be reliably blocked. Tap → "Water this stranger?" dialog
+    // is the working pattern on phone.
+    actions+='<button class="hi-action-btn hi-water-hold'+(_wLeftH<=0?' locked':'')+'" '+(_wLeftH>0?'onclick="window._wildConfirmAction&&_wildConfirmAction(\'water\')"':'onclick="window._toast&&window._toast(\'Daily stranger waters used (5/5). Resets at midnight.\')"')+' title="Tap to water this stranger. 5 per day."><span class="hi-water-label"><img src="assets/wild-water-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#128167;\'"> WATER &middot; '+_wLeftH+'/5</span></button>';
     actions+=_mulchBtn;
     actions+=_blessBtn;
     actions+=_pruneBtn;
@@ -57967,13 +57983,47 @@ function _lwMassWaterDoIt(eligibleIdx, cost){
 }
 window._lwMassWaterRefresh = _lwMassWaterRefreshButton;
 
-// Generic press-and-hold handlers — used for both water (10s) and prune (5s).
-// The button declares which _hexAction to fire and how long via data attrs:
-//   data-hold-action="water"  data-hold-ms="4000"
-//   data-hold-action="prune"  data-hold-ms="5000"
-// CSS handles the fill bar animation tied to .holding class. Releasing
-// before the threshold cancels with a toast; holding through fires the
-// declared action via _hexAction so cooldowns/budgets stay centralized.
+// Stephen 2026-05-07: tap + confirmation replacement for hold-to-water /
+// hold-to-prune. Mobile long-press triggers the OS text-select / search
+// menu (Android Chrome especially), no amount of CSS or preventDefault
+// reliably blocks it. Tap → confirmation dialog is the only pattern
+// that works on phone. The hold handlers below are kept for any
+// non-stranger-water callers that still use them, but the wild
+// stranger surfaces now route through _wildConfirmAction.
+window._wildConfirmAction = function(action){
+  if (!_hexSelPlant) { if (window._toast) _toast('Select a plant first.'); return; }
+  var p = _hexSelPlant;
+  var title, body, yes;
+  if (action === 'water') {
+    if (p.own) {
+      title = 'WATER YOUR PLANT';
+      body  = 'Restore +12 hours of vitality? <span style="color:var(--muted);">(once per 24h, free.)</span>';
+      yes   = 'WATER';
+    } else {
+      title = 'WATER A STRANGER';
+      body  = 'Spend one of today\'s <b>5 stranger waters</b> on this plant? Tending strangers earns Dew + companion XP.';
+      yes   = 'WATER STRANGER';
+    }
+  } else if (action === 'prune') {
+    title = 'PRUNE THIS PLANT';
+    body  = 'Spend <b>3 Sunbeams</b> to prune? Restores some lifespan and grants a small EA bump.';
+    yes   = 'PRUNE · 3 ⚡';
+  } else {
+    if (window._hexAction) window._hexAction(action);
+    return;
+  }
+  if (!window._lwConfirm) { if (window._hexAction) window._hexAction(action); return; }
+  window._lwConfirm({
+    title: title,
+    body:  body,
+    yes:   yes,
+    no:    'CANCEL'
+  }, function(){ if (window._hexAction) window._hexAction(action); });
+};
+
+// Legacy press-and-hold handlers — preserved for any callers that still
+// declare data-hold-action / data-hold-ms. Stranger water + prune now
+// go through _wildConfirmAction (tap + confirm).
 window._waterHoldStart = function(btn, ev){
   if(!btn||btn._holdActive)return;
   if(ev&&ev.preventDefault)ev.preventDefault();
@@ -71370,7 +71420,7 @@ function render(){
     // if the helper isn't loaded.
     var _bpSeedImg=window._LW_seedImagePath?window._LW_seedImagePath(st.seeds[m]):null;
     var _bpSeedInner=_bpSeedImg
-      ?'<img src="'+_bpSeedImg+'" alt="seed" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:6px;">'
+      ?'<img src="'+_bpSeedImg+'" alt="seed" style="width:100%;aspect-ratio:1;height:auto;object-fit:cover;display:block;border-radius:50%;margin:auto;">'
       :I.seed;
     // Clipping vs seed marker — clippings get a ✂️ corner badge so the
     // player can tell at a glance which entries are clones-from-cuts vs
