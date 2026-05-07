@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.40';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.41';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2122,6 +2122,15 @@
     body.pi-browser{ --pi-chrome-h: 48px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
+    /* Stephen 2026-05-07 evening: Wild tab uses #wild-nav (medallion nav)
+       instead of .fg-bottomnav, so the Pi-chrome lift was missing in the
+       Wild tab. Lift it the same way + bump the wild controls (recenter,
+       my-plants FAB) above the Pi system bar. */
+    body.pi-browser #wild-nav{ bottom: var(--pi-chrome-h) !important; }
+    body.pi-browser #w-recenter{ bottom: calc(108px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
+    body.pi-browser #w-my-plants{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
+    body.pi-browser #w-mass-water{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
+    body.pi-browser #bp-rtb{ bottom: calc(92px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px) + 8px) !important; }
     /* Stephen 2026-05-07: solid black strip BELOW the nav, covering
        the 48px gap above Pi Browser's system bar. Without this you
        see app content scrolling through that gap which reads as a
