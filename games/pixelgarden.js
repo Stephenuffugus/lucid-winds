@@ -263,19 +263,18 @@ window._gameFns.pixelgarden = function PG(a){
     return sc.toDataURL('image/png');
   }
 
-  // Track whether this session has already minted a hash so save can't
-  // be tap-farmed for unlimited Sunbeams.
-  var _pgWonThisSession=false;
   window._PGSV=function(){
     // SAVE = commit current work to the in-app gallery (not a file).
-    // Prompt for a name; empty input → auto-named.
+    if(totalPixels<=0){sm('Paint something first');return;}
+    var g=window._lwArtSaveGate&&window._lwArtSaveGate('pixelgarden');
+    if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     var defName='Garden '+(new Date()).toLocaleDateString();
     var name=(window.prompt&&window.prompt('Name this piece:',defName))||defName;
     name=String(name).slice(0,40);
     var entry=galSaveCurrent(name);
     sm('Saved to Gallery: '+entry.name);
     _playWin();
-    if(!_pgWonThisSession){_pgWonThisSession=true;_e('game_win');_sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});}
+    if(g&&g.firstWin){_e('game_win');_sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});}
     else _e('milestone');
   };
   window._PGExport=function(){
@@ -551,6 +550,8 @@ window._gameFns.pixelgarden = function PG(a){
   };
   window._PGCmpSave=function(){
     if(!_cmpAnyAssigned())return;
+    var g=window._lwArtSaveGate&&window._lwArtSaveGate('pixelgarden_cmp');
+    if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     var built=_cmpBuildPixels();
     var defName='Composition '+(new Date()).toLocaleDateString();
     var name=(window.prompt&&window.prompt('Name this composition:',defName))||defName;
@@ -573,7 +574,7 @@ window._gameFns.pixelgarden = function PG(a){
     galWrite(gal);
     sm('Composition saved: '+name);
     _playWin();
-    _e('milestone');
+    if(g&&g.firstWin)_e('game_win');else _e('milestone');
   };
   window._PGCmpExport=function(){
     if(!_cmpAnyAssigned())return;

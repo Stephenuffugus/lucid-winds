@@ -93,6 +93,8 @@ window._gameFns.storyseeds=function SS(a){
   };
 
   window._SSNew=function(){
+    // _ssWon must NOT reset here — otherwise users can _SSNew()+_SSSave loop
+    // to re-trigger the 10-word game_win every prompt switch.
     currentPrompt=getRandomPrompt();savedMilestone=false;render();
   };
 
@@ -101,15 +103,16 @@ window._gameFns.storyseeds=function SS(a){
     var text=ta.value.trim();
     if(!text){sm('Write something first');return;}
     var n=text.split(/\s+/).length;
+    if(n<10){sm('At least 10 words to save');return;}
+    var g=window._lwArtSaveGate&&window._lwArtSaveGate('storyseeds');
+    if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     try{
       var entries=JSON.parse(localStorage.getItem('sws_storyseeds_entries')||'[]');
       entries.push({date:new Date().toISOString().split('T')[0],prompt:currentPrompt.text,text:text,words:n,timestamp:Date.now()});
       if(entries.length>365)entries=entries.slice(-365);
       localStorage.setItem('sws_storyseeds_entries',JSON.stringify(entries));
     }catch(e){}
-    // First substantial save (≥10 words) per session mints a hash;
-    // additional saves fire milestones for incremental Sunbeams.
-    if(n>=10&&!_ssWon){_ssWon=true;_e('game_win');if(_playWin)_playWin();}
+    if(g&&g.firstWin){_ssWon=true;_e('game_win');if(_playWin)_playWin();}
     else _e('milestone');
     _sr('storyseeds',{w:true,s:n});
     sm('✓ Saved · '+n+' words');

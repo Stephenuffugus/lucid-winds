@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.32';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.33';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -60302,6 +60302,24 @@ function _e(v){
 }
 window._e=_e;
 
+// ═══ ART-GAME SAVE GATE — debounce + once-per-session win flag ═══
+// Stops console-spam exploits on _PGSV/_PGCmpSave/_BWSave/_SSSave/_CGsave.
+// 30s cooldown per art-game key; firstWin true once per page load per key.
+window._lwArtSaveGate=function(key,opts){
+  var COOLDOWN=(opts&&opts.cooldown)||30000;
+  window._lwArtSaveLast=window._lwArtSaveLast||{};
+  window._lwArtWon=window._lwArtWon||{};
+  var nowT=Date.now();
+  var lastT=window._lwArtSaveLast[key]||0;
+  if(nowT-lastT<COOLDOWN){
+    return {allow:false,secs:Math.ceil((COOLDOWN-(nowT-lastT))/1000)};
+  }
+  window._lwArtSaveLast[key]=nowT;
+  var firstWin=!window._lwArtWon[key];
+  if(firstWin)window._lwArtWon[key]=true;
+  return {allow:true,firstWin:firstWin};
+};
+
 // ═══ PATTERN + MASTERY XP — wraps _e to observe game_win/loss ═══
 // 3 different games in one session → +10 XP (daily)
 // Win streak 3 → +5 XP (cooldown 10min)
@@ -66713,14 +66731,16 @@ function GBW(a){
   // be tap-farmed for unlimited Sunbeams. Same pattern as pixelgarden.
   var _bwWonThisSession=false;
   window._BWSave=function(){
+    if(strokes<=0){sm('Draw something first');return;}
+    var g=window._lwArtSaveGate&&window._lwArtSaveGate('bloomwheel');
+    if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     var sc=document.createElement('canvas');sc.width=W*dpr;sc.height=H*dpr;var sx=sc.getContext('2d');sx.setTransform(dpr,0,0,dpr,0,0);
     sx.fillStyle='#0d100c';sx.fillRect(0,0,W,H);sx.save();sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.clip();sx.drawImage(bufC,0,0,W,H);sx.restore();
     sx.beginPath();sx.arc(cx,cy,radius,0,Math.PI*2);sx.strokeStyle='rgba(74,124,53,0.3)';sx.lineWidth=2;sx.stroke();
     sx.fillStyle='rgba(232,220,200,0.2)';sx.font='10px Bebas Neue,sans-serif';sx.textAlign='center';sx.fillText('BLOOM WHEEL, LUCID WINDS',cx,H-10);
     var lk=document.createElement('a');lk.download='bloom-wheel-'+Date.now()+'.png';lk.href=sc.toDataURL('image/png');lk.click();
     _playWin();sm('Mandala saved!');
-    // First save per session mints; subsequent saves only milestone.
-    if(!_bwWonThisSession){_bwWonThisSession=true;_e('game_win');_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});}
+    if(g&&g.firstWin){_e('game_win');_sr('bloomwheel',{w:true,s:Math.round((Date.now()-startT)/1000)});}
     else _e('milestone');
   };
 

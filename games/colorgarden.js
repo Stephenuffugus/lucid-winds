@@ -623,13 +623,19 @@ window._gameFns.colorgarden=function CG(a){
   };
   window._CGclear=function(){if(pages.length)loadPage(currentIdx);};
   window._CGsave=function(){
+    var g=window._lwArtSaveGate&&window._lwArtSaveGate('colorgarden');
+    if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     try{
       // Save the full-resolution source canvas, not the zoomed view
       var link=document.createElement('a');
       link.download='color-garden-page'+(currentIdx+1)+'-'+Date.now()+'.png';
       link.href=srcCanvas.toDataURL('image/png');
       link.click();
-      if(_e)try{_e('milestone');}catch(e){}
+      if(_e){
+        try{
+          if(g&&g.firstWin)_e('game_win');else _e('milestone');
+        }catch(e){}
+      }
       if(_playWin)try{_playWin();}catch(e){}
       sm('💾 Saved.');
       _sr('colorgarden',{w:true,s:currentIdx+1});
