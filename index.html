@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.27';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2099,11 +2099,10 @@
        lifts the nav by --pi-chrome-h (default 56px). Player can override
        per-device via localStorage.lw_pi_chrome_h if their device has a
        different chrome height. */
-    /* Default 80px — sized for Pi Browser on Pixel 9 (Android system
-       nav bar with the gesture pill). Override via localStorage
-       lw_pi_chrome_h if a particular device renders the chrome at a
-       different height. */
-    body.pi-browser{ --pi-chrome-h: 80px; }
+    /* Default 48px — standard Android nav bar height. Override via
+       localStorage lw_pi_chrome_h if a particular device renders the
+       chrome at a different height. Stephen iterated 56→80→48. */
+    body.pi-browser{ --pi-chrome-h: 48px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
     /* Stephen 2026-05-07 round 3: backpack + BoS floating buttons sit
