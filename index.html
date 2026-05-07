@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.14';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -2910,8 +2910,16 @@
     .lw-pressure .lwp-alt:last-of-type{margin-bottom:0.6rem;}
     .lw-pressure .lwp-cancel{width:100%;padding:0.5rem;border:none;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.55rem;cursor:pointer;text-decoration:underline;}
 
-    /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots) */
-    #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:70px;height:70px;flex-shrink:0;overflow:hidden;}
+    /* kb-hut button (replaces kb-mystery / kb-weather / kb-slots).
+       Stephen 2026-05-07: was overflow:hidden which clipped the SHOP
+       label that sits BELOW the button at top:calc(100%+1px). Now
+       matches the kb-sunbeams / kb-dew pattern: button has overflow
+       visible, IMG inside clipped via clip-path to keep the painted
+       art tucked inside the button frame. The IMG is 160% size with
+       margin:-30% so a clip inset of 18.75% maps the inner 62.5% of
+       the IMG to the visible 100% of the parent. */
+    #kb-hut{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:10px;background:none;cursor:pointer;width:70px;height:70px;flex-shrink:0;}
+    #kb-hut>img{clip-path:inset(18.75% round 8px);-webkit-clip-path:inset(18.75% round 8px);}
     #kb-hut:hover{background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(200,168,75,0.08));}
 
     /* ═══ FORAGING PANEL POLISH ═══ */
@@ -9703,8 +9711,8 @@ window._addSwitchTabHook = function(fn){
         <button class="pgm-dl-btn" id="gallery-download-btn" onclick="downloadPlantCard()" title="Download plant card" aria-label="Download plant card"><img src="assets/btn-download-v2.png" alt="Download"></button>
       </div>
       <div class="pgm-btn-row">
-        <button class="pgm-card-btn" onclick="shareGalleryPlant()" title="Share this plant" aria-label="Share"><img src="assets/btn-share.png" alt="Share"></button>
-        <button class="pgm-card-btn" onclick="window._carouselDetails()" title="View details" aria-label="Details"><img src="assets/btn-details.png" alt="Details"></button>
+        <button class="pgm-card-btn pgm-greenhouse-only" onclick="shareGalleryPlant()" title="Share this plant" aria-label="Share"><img src="assets/btn-share.png" alt="Share"></button>
+        <button class="pgm-card-btn pgm-greenhouse-only" onclick="window._carouselDetails()" title="View details" aria-label="Details"><img src="assets/btn-details.png" alt="Details"></button>
         <!-- BREED + COMPOST gated to greenhouse-source carousel only. openCarousel
              toggles .pgm-greenhouse-only display:none whenever source is wild-* -->
         <button class="pgm-card-btn pgm-greenhouse-only" onclick="carouselBreed()" title="Breed this plant" aria-label="Breed"><img src="assets/btn-breed.png" alt="Breed"></button>
@@ -9713,7 +9721,7 @@ window._addSwitchTabHook = function(fn){
              openCarousel is called with source='wild-inspect' so players
              walking through a hex can water + take cuttings without
              closing the carousel. -->
-        <button class="pgm-card-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" title="Water this plant" aria-label="Water" style="display:none;"><img src="assets/water.png" alt="Water"></button>
+        <button class="pgm-card-btn pgm-wild-act" id="gallery-water-btn" onclick="window._carouselWildAction&&_carouselWildAction('water')" title="Water this plant" aria-label="Water" style="display:none;"><img src="assets/wild-water-btn-v2.png" alt="Water"></button>
         <button class="pgm-card-btn pgm-wild-act" id="gallery-cutting-btn" onclick="window._carouselWildAction&&_carouselWildAction('cutting')" title="Take a cutting · 20 Dew · 2/day · parent unharmed" aria-label="Cutting" style="display:none;"><img src="assets/cutting.png" alt="Cutting"></button>
         <!-- WILD-PLACE mode: drop the currently-shown plant into the
              player's current hex. Hidden by default; shown in
