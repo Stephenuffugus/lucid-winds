@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.11';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -82782,21 +82782,24 @@ window._lwShowAchievementDetail = function(achId) {
 };
 
 // ═══ MUTATION DETAIL PAGE via LW_Reader ═══
-// 13 mutations at ~1.6% each. Tap a plant's mutation chip → Reader.
+// 19 mutations, each at 1/256 = ~0.4% (19/256 = 7.4% total fire rate).
+// Stephen 2026-05-07: was '~1.6%' for 13 entries (pre-rebalance copy
+// from when the ladder spanned 3-byte bands). All single-byte since
+// May 03; rate strings now match the actual per-byte 0.39%.
 var LW_MUTATION_LORE = {
-  'Glitch':         { theme:'cosmic',    rate:'~1.6%', lore:'A plant whose textures fracture in motion. Leaves flicker between states, existing in three frames at once. Either a rendering error in the universe or an intentional glimpse behind the veil. The game takes no position.' },
-  'Glass Stem':     { theme:'dark',      rate:'~1.6%', lore:'The stem becomes transparent, literal glass. Brittle, beautiful, and a liability: fragile plants die easier. But the aesthetic is undeniable, and Obsidian Mirror substrate pairs with it into something unforgettable.' },
-  'Wireframe':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant drawn in bright edges, all geometry, no fill. Like a CAD rendering that forgot to become solid. The garden\u2019s way of saying: even architecture is alive if you draw it carefully enough.' },
-  'Holographic':    { theme:'cosmic',    rate:'~1.6%', lore:'Light refracts across every surface, rainbow ghosts chase the plant\u2019s contours whenever the view shifts. Pairs with Needle leaves into Holographic Prism, a full-spectrum spectacle.' },
-  'Neon':           { theme:'cosmic',    rate:'~1.6%', lore:'Stem and petals glow in hot pink or cyan, sometimes both, alternating. An aesthetic choice by the universe. Reads as artificial until you realize it\u2019s been bioluminescing this entire time.' },
-  'Ink Wash':       { theme:'dark',      rate:'~1.6%', lore:'The plant renders in watercolor, soft, bleeding edges, paper texture underneath. An accident that looked so right the universe made it canonical.' },
-  'Golden':         { theme:'mythical',  rate:'~1.6%', lore:'Every surface tinted in warm metallic gold. Not just the color, the sheen, the way it catches light from above. The old alchemists would have called this the final cultivar.' },
-  'Porcelain':      { theme:'nature',    rate:'~1.6%', lore:'The plant looks glazed and fired. Pale, smooth, cool to look at. Like garden sculpture that forgot to be stone. Often mistaken for ceramic by strangers on the wild map.' },
-  'Bioluminescent': { theme:'nature',    rate:'~1.6%', lore:'Leaves and blooms emit their own soft light. Most visible at night, on night-bloom plants. A reminder that the garden doesn\u2019t sleep, some of it simply waits for the sun to leave.' },
-  'Pixel Art':      { theme:'cosmic',    rate:'~1.6%', lore:'A plant rendered in deliberate, chunky pixels, like an old video-game sprite that escaped into three dimensions. The garden has a sense of humor. This is one of its jokes.' },
-  'Silhouette':     { theme:'dark',      rate:'~1.6%', lore:'No interior detail. Just shape, deep void-black against the background, sometimes with a star-field texture where the inside should be. Pairs with Void Petal leaves into Shadow Loom.' },
-  'Albino':         { theme:'nature',    rate:'~1.6%', lore:'No pigment. Pure white stem, pale petals, ghostly leaves. In real botanical terms, albino plants rarely survive, they can\u2019t photosynthesize. In this garden they thrive, and that\u2019s the gift.' },
-  'Fossil':         { theme:'dark',      rate:'~1.6%', lore:'The plant looks petrified, stone-gray, textures hinting at ancient imprint. Pairs with Fossil Bed substrate into Fossil Memory. A living thing remembering the first version of itself.' },
+  'Glitch':         { theme:'cosmic',    rate:'~0.4%', lore:'A plant whose textures fracture in motion. Leaves flicker between states, existing in three frames at once. Either a rendering error in the universe or an intentional glimpse behind the veil. The game takes no position.' },
+  'Glass Stem':     { theme:'dark',      rate:'~0.4%', lore:'The stem becomes transparent, literal glass. Brittle, beautiful, and a liability: fragile plants die easier. But the aesthetic is undeniable, and Obsidian Mirror substrate pairs with it into something unforgettable.' },
+  'Wireframe':      { theme:'cosmic',    rate:'~0.4%', lore:'A plant drawn in bright edges, all geometry, no fill. Like a CAD rendering that forgot to become solid. The garden\u2019s way of saying: even architecture is alive if you draw it carefully enough.' },
+  'Holographic':    { theme:'cosmic',    rate:'~0.4%', lore:'Light refracts across every surface, rainbow ghosts chase the plant\u2019s contours whenever the view shifts. Pairs with Needle leaves into Holographic Prism, a full-spectrum spectacle.' },
+  'Neon':           { theme:'cosmic',    rate:'~0.4%', lore:'Stem and petals glow in hot pink or cyan, sometimes both, alternating. An aesthetic choice by the universe. Reads as artificial until you realize it\u2019s been bioluminescing this entire time.' },
+  'Ink Wash':       { theme:'dark',      rate:'~0.4%', lore:'The plant renders in watercolor, soft, bleeding edges, paper texture underneath. An accident that looked so right the universe made it canonical.' },
+  'Golden':         { theme:'mythical',  rate:'~0.4%', lore:'Every surface tinted in warm metallic gold. Not just the color, the sheen, the way it catches light from above. The old alchemists would have called this the final cultivar.' },
+  'Porcelain':      { theme:'nature',    rate:'~0.4%', lore:'The plant looks glazed and fired. Pale, smooth, cool to look at. Like garden sculpture that forgot to be stone. Often mistaken for ceramic by strangers on the wild map.' },
+  'Bioluminescent': { theme:'nature',    rate:'~0.4%', lore:'Leaves and blooms emit their own soft light. Most visible at night, on night-bloom plants. A reminder that the garden doesn\u2019t sleep, some of it simply waits for the sun to leave.' },
+  'Pixel Art':      { theme:'cosmic',    rate:'~0.4%', lore:'A plant rendered in deliberate, chunky pixels, like an old video-game sprite that escaped into three dimensions. The garden has a sense of humor. This is one of its jokes.' },
+  'Silhouette':     { theme:'dark',      rate:'~0.4%', lore:'No interior detail. Just shape, deep void-black against the background, sometimes with a star-field texture where the inside should be. Pairs with Void Petal leaves into Shadow Loom.' },
+  'Albino':         { theme:'nature',    rate:'~0.4%', lore:'No pigment. Pure white stem, pale petals, ghostly leaves. In real botanical terms, albino plants rarely survive, they can\u2019t photosynthesize. In this garden they thrive, and that\u2019s the gift.' },
+  'Fossil':         { theme:'dark',      rate:'~0.4%', lore:'The plant looks petrified, stone-gray, textures hinting at ancient imprint. Pairs with Fossil Bed substrate into Fossil Memory. A living thing remembering the first version of itself.' },
   'Constellation':  { theme:'cosmic',    rate:'~0.4%', lore:'A pattern of stars climbs the stem and traces every leaf. The pattern is consistent: same stars, same connecting lines, every Constellation plant. Astronomers have noticed. They have not commented.' },
   'Origami':        { theme:'cosmic',    rate:'~0.4%', lore:'Every leaf is folded paper, sharp creases, geometric facets, light catching every fold. The plant breathes anyway, somehow. The folds shift very slowly when no one is looking.' },
   'Stained Glass':  { theme:'cosmic',    rate:'~0.4%', lore:'Translucent leaves and petals laid out like cathedral panels, lead lines tracing every vein. Light passing through casts colored shadows. A church floor lit by a plant.' },
