@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.12';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -49651,11 +49651,27 @@ function activate(){
   var _reproToday=localStorage.getItem('lw_repro_today');
   var _todayStr=new Date().toISOString().split('T')[0];
   if(_reproToday!==_todayStr){
-    localStorage.setItem('lw_repro_today',_todayStr);
-    // _wildReproduction lives inside the FG_Wild IIFE — prefer the
-    // module export, fall back to direct closure call if called from inside.
+    // Stephen 2026-05-07: was setting the day-key BEFORE calling
+    // _wildReproduction. If repro then bailed for a real reason
+    // (no GPS, no map, not signed in), the day was "done" and
+    // wouldn't retry until tomorrow — phantom days where the gate
+    // flipped without anything firing. Now only stamp the day-key
+    // AFTER _wildReproduction successfully reaches _doReproduction.
     setTimeout(function(){
-      if(window.FG_Wild&&FG_Wild._wildReproduction)FG_Wild._wildReproduction();
+      if(window.FG_Wild&&FG_Wild._wildReproduction){
+        // Mark BEFORE call — _wildReproduction itself checks the
+        // day-key inside (it doesn't), so we stamp on the inside-
+        // success path. To avoid double-runs we still pre-set here
+        // but unset on early bail.
+        var _preReason = window._reproLastReason;
+        localStorage.setItem('lw_repro_today',_todayStr);
+        FG_Wild._wildReproduction();
+        // If _wildReproduction bailed (sets _reproLastReason),
+        // unset the day key so the next Wild visit retries.
+        if (window._reproLastReason && window._reproLastReason !== _preReason) {
+          try { localStorage.removeItem('lw_repro_today'); } catch(e){}
+        }
+      }
     },window._perfLite?8000:2000);
   }
   // First-visit onboarding — DEPRECATED. The legacy _showWildOnboard
@@ -79173,7 +79189,7 @@ var TRIGGERS=[
     check:function(c){return c.weather&&c.weather.weathercode&&[95,96,99].indexOf(c.weather.weathercode)>=0&&Math.random()<0.3;},
     effect:'The sky struck. What stands now stands forever, or not at all.',reward:{ea:3}},
   {id:'wind_seed',name:'Wind Seed',riddle:'Strong gusts carry what roots cannot hold.',category:'weather',
-    check:function(c){if(!c.plant||!c.weather)return false;var lt=c.plant.leafType%71;return c.weather.windspeed>30&&[2,7,14,22,35].indexOf(lt)>=0;},
+    check:function(c){if(!c.plant||!c.weather)return false;var lt=c.plant.leafType%71;return c.weather.wind>30&&[2,7,14,22,35].indexOf(lt)>=0;},
     effect:'The wind takes the seed and chooses where to set it down.',reward:{pollen:3}},
   {id:'frost_glass',name:'Frost Glass',riddle:'Cold makes crystal of the morning dew.',category:'weather',
     check:function(c){return c.plant&&c.plant.mutationName==='Glass Stem'&&c.weather&&c.weather.temp<0;},
@@ -80422,7 +80438,23 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
 
   var now=new Date();
   var today=now.toISOString().split('T')[0];
-  var plantAge=Math.floor((Date.now()-(plant.born||plant.mintedAt||Date.now()))/86400000);
+  // Stephen 2026-05-07 ROOT CAUSE FIX of "0 omens found despite 9 wild
+  // plants." Wild plants are pushed at line 55291 with droppedAt /
+  // droppedAtMs / date / decayAt — they NEVER carry a born or mintedAt
+  // field (those are greenhouse-only). The original fallback
+  // `plant.born || plant.mintedAt || Date.now()` therefore always
+  // evaluated to Date.now() for wild plants, making plantAge=0 every
+  // time, which the `if (plantAge < 1) return []` guard then short-
+  // circuited before any TRIGGERS predicate ran. Every wild plant
+  // failed silently. Now reads droppedAtMs / droppedAt / date too so
+  // wild plants resolve a real age.
+  var _bornTs = plant.born
+              || plant.mintedAt
+              || plant.droppedAtMs
+              || (plant.droppedAt ? (typeof plant.droppedAt === 'number' ? plant.droppedAt : new Date(plant.droppedAt).getTime()) : 0)
+              || (plant.date ? new Date(plant.date).getTime() : 0)
+              || Date.now();
+  var plantAge=Math.floor((Date.now()-_bornTs)/86400000);
 
   // Balance rule: min 24h plant age
   if(plantAge<1)return[];
