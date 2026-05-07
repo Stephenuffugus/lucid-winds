@@ -379,7 +379,12 @@ function scoreAndAdvance(clearCount, tSpin){
     score+=pts;
     if(label) showSplash(label, sub, isDifficult);
     _e('milestone');
-    if(clearCount===4 || tSpin) _e('game_win'); // hash reward for big plays
+    // Stephen 2026-05-07: was firing game_win per Tetris/T-spin (mid-
+    // session events) which bumped achievement counters every ~45s
+    // of grinding. Now both clear-types route through `milestone`
+    // (which is +2 weight in _aw vs game_win's +5). True game_win
+    // fires only on game-over via the loss path or session-cap end.
+    if(clearCount===4 || tSpin) _e('milestone');
     _play('snap');
   }
   lines+=clearCount;

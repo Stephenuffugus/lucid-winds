@@ -1314,21 +1314,30 @@ function GCH(a){
     var moves=getLegalMoves(board,turn,castling,epSquare);
     if(!moves.length){
       gameOver=true;
+      // Stephen 2026-05-07: AI checkmate / stalemate / 50-move /
+      // insufficient material / threefold repetition all previously
+      // ended silently with NO _e() call \u2014 player invested 10+ minutes
+      // and walked away with 0 sunbeams. Now every game-end fires
+      // either game_win or game_loss so anti-farm + fairness math
+      // can credit something. game_loss has weight 0 in _aw
+      // (line ~60128) but still trips session caps + completion
+      // cooldown which is the right behavior for "you played a
+      // valid game, here's a small consolation."
       if(inCheck(board,turn)){
-        if(turn===W){sm('Checkmate \u2014 AI wins!');_sr('chess',{w:false,s:moveCount});}
+        if(turn===W){sm('Checkmate \u2014 AI wins!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});}
         else{sm('Checkmate \u2014 You win!');_e('game_win');_playWin();_sr('chess',{w:true,s:moveCount});}
       }else{
-        sm('Stalemate \u2014 Draw!');_sr('chess',{w:false,s:moveCount});
+        sm('Stalemate \u2014 Draw!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
       }
     }else if(halfmove>=100){
-      gameOver=true;sm('Draw \u2014 50-move rule');_sr('chess',{w:false,s:moveCount});
+      gameOver=true;sm('Draw \u2014 50-move rule');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
     }else if(insufficientMaterial(board)){
-      gameOver=true;sm('Draw \u2014 Insufficient material');_sr('chess',{w:false,s:moveCount});
+      gameOver=true;sm('Draw \u2014 Insufficient material');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
     }else{
       // Threefold repetition
       var pk=posKey(board,turn,castling,epSquare);
       if(posHistory[pk]&&posHistory[pk]>=3){
-        gameOver=true;sm('Draw \u2014 Threefold repetition');_sr('chess',{w:false,s:moveCount});
+        gameOver=true;sm('Draw \u2014 Threefold repetition');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
       }else if(inCheck(board,turn)){
         if(turn===W){
           // Player is in check — AI just delivered it. Show AI's comment
