@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.47';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.48';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2127,7 +2127,7 @@
        Wild tab. Lift it the same way + bump the wild controls (recenter,
        my-plants FAB) above the Pi system bar. */
     body.pi-browser #wild-nav{ bottom: var(--pi-chrome-h) !important; }
-    body.pi-browser #w-recenter{ bottom: calc(180px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
+    body.pi-browser #w-recenter{ bottom: calc(200px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-my-plants{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-mass-water{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #bp-rtb{ bottom: calc(92px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px) + 8px) !important; }
@@ -5794,8 +5794,8 @@ body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
 #w-menu-fab{display:none!important;}
 /* Stephen 2026-05-07 evening: recenter button moved above the
    ALL/YOURS/HELP/FORAGE/SOCIAL chip bar (which sits at bottom:110px).
-   Chip bar is ~56px tall + comfortable gap → recenter at 180px. */
-body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(180px + env(safe-area-inset-bottom,0px))!important;}
+   Chip bar is ~56px tall + comfortable gap → recenter at 200px. */
+body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(200px + env(safe-area-inset-bottom,0px))!important;}
 body.tab-wild #w-my-plants{display:flex!important;}
 body.tab-wild #w-mass-water{display:none!important;}
 body:not(.tab-wild) #w-recenter,
@@ -50513,6 +50513,29 @@ function _initCompass(){
     // a permission prompt was suppressed without one).
     windEl.addEventListener('click', function(){ _trySensor(); }, { once: true });
   }
+  // 2026-05-07 evening: graceful degrade for browsers that block all
+  // orientation sources (Pi Browser on Pixel does this — confirmed by
+  // Stephen testing). After 3s with zero events received, swap the
+  // stuck rotating arrow for a static "TAP" indicator so it doesn't
+  // read as a broken compass. The tap action still works.
+  var _eventsRx = false;
+  var _origUpdate = _updateCompass;
+  _updateCompass = function(h){ _eventsRx = true; _origUpdate(h); };
+  setTimeout(function(){
+    if (_eventsRx) return;
+    if (!compassImg) return;
+    // Swap arrow image for a static tap glyph. Keep the cab + click
+    // target intact — only the rotating part is replaced.
+    var parent = compassImg.parentNode;
+    if (!parent) return;
+    var staticGlyph = document.createElement('div');
+    staticGlyph.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.1em;color:rgba(200,168,75,0.85);text-shadow:0 0 8px rgba(200,168,75,0.4);pointer-events:none;';
+    staticGlyph.textContent = 'TAP';
+    compassImg.style.display = 'none';
+    parent.insertBefore(staticGlyph, compassImg);
+    var facing = document.getElementById('w-wind-facing');
+    if (facing) facing.textContent = '·';
+  }, 3000);
 }
 
 var _lantern=null,_scanRing=null;
