@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.6';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -1384,10 +1384,10 @@
     .cs-card-back[data-tier="cosmic"]{background-image:url('assets/cards/backs/back-cosmic.png');background-size:146% 110%;}
     /* Card back nameplate positions from alignment tool (set-39) */
     .cs-card-back[data-tier="common"] .cb-nameplate{left:28.3%!important;top:83%!important;width:44%!important;height:8.9%!important;}
-    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:86%!important;width:31%!important;height:6.3%!important;}
+    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:87.5%!important;width:31%!important;height:6.3%!important;}
     .cs-card-back[data-tier="rare"] .cb-nameplate{left:27.7%!important;top:77.8%!important;width:45.7%!important;height:9.3%!important;}
     .cs-card-back[data-tier="rare"] .cb-name{font-size:0.82rem!important;}
-    .cs-card-back[data-tier="epic"] .cb-nameplate{left:32%!important;top:87%!important;width:36%!important;height:8%!important;}
+    .cs-card-back[data-tier="epic"] .cb-nameplate{left:32%!important;top:88.5%!important;width:36%!important;height:8%!important;}
     .cs-card-back[data-tier="epic"] .cb-name{font-size:0.82rem!important;}
     .cs-card-back[data-tier="legendary"] .cb-nameplate{left:27.7%!important;top:83.3%!important;width:44.3%!important;height:7.7%!important;}
     .cs-card-back[data-tier="common"] .dna-ledger{margin-top:15%;}
@@ -7357,7 +7357,7 @@ window._addSwitchTabHook = function(fn){
     <!-- Row 2: currency + hut (3 buttons) -->
     <div class="kb-row2">
       <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams-v2.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span><span class="kb-static-label">SUN</span><span class="kb-bloom-label">BLOOM</span></div>
-      <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"><span class="kb-static-label">HUT</span></div>
+      <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"><span class="kb-static-label">SHOP</span></div>
       <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew-v2.png" alt="Dew" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span><span class="kb-static-label">DEW</span></div>
       <!-- Stephen 2026-05-01: kb-cocoon moved to backpack only (you walk with -->
       <!-- cocoons; they belong with what you carry, not on the home screen).  -->
@@ -42887,6 +42887,21 @@ document.addEventListener('keydown', function(e) {
     return true;
   };
 
+  // Buy + apply in one tap from the pot picker. Stephen 2026-05-07:
+  // collapses the old two-step flow (picker → shop tab → buy → re-apply).
+  window.lwBuyAndApplyPot = function(seedId, potId) {
+    if (!seedId || !potId) return false;
+    var ok = false;
+    try { ok = !!(window.lwBuyPot && window.lwBuyPot(potId)); } catch(e){ ok = false; }
+    if (!ok) return false;
+    try {
+      var _pp = document.getElementById('lw-pot-picker');
+      if (_pp) _pp.remove();
+    } catch(e){}
+    try { if (window.lwApplyPot) window.lwApplyPot(seedId, potId); } catch(e){}
+    return true;
+  };
+
   window.lwBuyPot = function(potId) {
     var pot = window.LW_POTS[potId];
     if (!pot) return false;
@@ -44509,27 +44524,45 @@ document.addEventListener('keydown', function(e) {
       h += '</div>';
       h += '</button>';
     }
-    // SHOP — unowned pots tappable to open the nursery shop pots tab
+    // SHOP — unowned pots: tap to BUY+APPLY directly (one step). Stephen
+    // 2026-05-07: previously this opened a SECOND list (the nursery shop
+    // pots tab) which forced the player to pick the same pot twice.
+    // Redundant. Now tapping the row buys (level + Dew check) and
+    // immediately applies the pot to the seed. Locked rows (level too
+    // low or insufficient Dew) show why and don't spend.
     if (unowned.length > 0) {
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--gold);margin:' + (owned.length > 0 ? '0.7rem' : '0') + ' 0 0.35rem;">SHOP &mdash; tap to browse</div>';
+      var _curLvl = (window.canSee && window.canSee.currentLevel) ? window.canSee.currentLevel() : 1;
+      var _curDew = window.getTotalDew ? window.getTotalDew() : 0;
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--gold);margin:' + (owned.length > 0 ? '0.7rem' : '0') + ' 0 0.35rem;">SHOP &mdash; tap to buy &amp; apply</div>';
       for (var k = 0; k < unowned.length; k++) {
         var up = unowned[k];
         var _upIcoEsc = String(up.icon || '').replace(/'/g,"\\'");
-        h += '<button onclick="document.getElementById(\'lw-pot-picker\').remove();window._setNurseryShopTab&&window._setNurseryShopTab(\'pots\');" style="display:flex;width:100%;gap:0.7rem;padding:0.7rem 0.6rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.4);border:1px dashed ' + up.color + '55;border-radius:9px;align-items:center;cursor:pointer;text-align:left;opacity:0.85;">';
-        h += '<div style="flex-shrink:0;width:64px;height:64px;border-radius:8px;overflow:hidden;background:rgba(5,8,4,0.5);border:1px solid ' + up.color + '22;display:flex;align-items:center;justify-content:center;filter:grayscale(0.5);"><img src="assets/nursery-pots/' + up.id + '.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2rem;&quot;>' + _upIcoEsc + '</span>&apos;;"></div>';
+        var _lvlReq = up.levelRequired || 1;
+        var _lvlOk = _curLvl >= _lvlReq;
+        var _dewOk = _curDew >= (up.cost || 0);
+        var _canBuy = _lvlOk && _dewOk;
+        var _action = _canBuy
+          ? 'window.lwBuyAndApplyPot(\'' + seedId + '\',\'' + up.id + '\')'
+          : (_lvlOk
+              ? 'if(window._toast)_toast(\'Need ' + (up.cost || 0) + ' Dew (have ' + _curDew + ').\')'
+              : 'if(window._toast)_toast(\'Reach Level ' + _lvlReq + ' to unlock ' + up.name.replace(/'/g,"\\'") + '.\')');
+        var _opacity = _canBuy ? '0.95' : '0.55';
+        var _filter  = _canBuy ? '' : 'filter:grayscale(0.6);';
+        h += '<button onclick="' + _action + '" style="display:flex;width:100%;gap:0.7rem;padding:0.7rem 0.6rem;margin-bottom:0.4rem;background:rgba(13,16,12,0.4);border:1px dashed ' + up.color + '55;border-radius:9px;align-items:center;cursor:pointer;text-align:left;opacity:' + _opacity + ';' + _filter + '">';
+        h += '<div style="flex-shrink:0;width:64px;height:64px;border-radius:8px;overflow:hidden;background:rgba(5,8,4,0.5);border:1px solid ' + up.color + '22;display:flex;align-items:center;justify-content:center;"><img src="assets/nursery-pots/' + up.id + '.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2rem;&quot;>' + _upIcoEsc + '</span>&apos;;"></div>';
         h += '<div style="flex:1;min-width:0;">';
         h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:' + up.color + ';letter-spacing:0.06em;">' + up.name + '</div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.35;margin-top:0.15rem;">' + up.blurb + '</div>';
         h += '</div>';
-        // Show price + level requirement so the player knows what they\'re
-        // about to spend BEFORE jumping to the shop. Audit 2026-05-06
-        // (Stephen): "they have no prices then it takes you to the shop where
-        // they do cost money." Now matches truth.
         var _priceLine = (up.cost || 0) + ' 💧';
-        if (up.levelRequired && up.levelRequired > 1) _priceLine += ' · L' + up.levelRequired;
+        if (_lvlReq > 1) _priceLine += ' · L' + _lvlReq;
+        var _priceColor = _lvlOk ? (_dewOk ? 'var(--gold)' : '#d08080') : 'var(--muted)';
+        var _priceBg    = _lvlOk ? (_dewOk ? 'rgba(200,168,75,0.12)' : 'rgba(208,128,128,0.12)') : 'rgba(138,145,120,0.1)';
+        var _priceBorder= _lvlOk ? (_dewOk ? 'rgba(200,168,75,0.4)' : 'rgba(208,128,128,0.4)') : 'rgba(138,145,120,0.25)';
+        var _hint = _canBuy ? 'tap to buy' : (_lvlOk ? 'low Dew' : 'L' + _lvlReq + ' locked');
         h += '<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:var(--gold);padding:0.3rem 0.55rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:6px;">' + _priceLine + '</div>';
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">tap to buy</div>';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.08em;color:' + _priceColor + ';padding:0.3rem 0.55rem;background:' + _priceBg + ';border:1px solid ' + _priceBorder + ';border-radius:6px;white-space:nowrap;">' + _priceLine + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);">' + _hint + '</div>';
         h += '</div>';
         h += '</button>';
       }
@@ -47405,11 +47438,19 @@ document.addEventListener('keydown', function(e) {
           var _ctTL = (typeof _ctL.totalMs === 'number') ? _ctL.totalMs : 0;
           var _ctTC = (typeof _ctC.totalMs === 'number') ? _ctC.totalMs : 0;
           var _ctMerge = { totalMs: Math.max(_ctTL, _ctTC) };
-          // activeSinceMs: prefer local (the locally-equipped companion is
-          // mid-tick on this device); cloud value is from a different session
-          // and would inflate the elapsed-since-stamp on first read.
+          // activeSinceMs merge:
+          //   - If local has it, prefer local (locally-equipped companion is
+          //     mid-tick on this device).
+          //   - Else if local has NO record at all (history-clear, fresh
+          //     device), adopt cloud's activeSinceMs so the live clock
+          //     resumes from the last upload point. Without this branch
+          //     (the original behavior), every history clear silently lost
+          //     all elapsed time since the last paused snapshot.
+          //     Stephen 2026-05-07 root-cause fix.
           if (typeof _ctL.activeSinceMs === 'number' && _ctL.activeSinceMs > 0) {
             _ctMerge.activeSinceMs = _ctL.activeSinceMs;
+          } else if (!_ctLocal.hasOwnProperty(_ctIdx) && typeof _ctC.activeSinceMs === 'number' && _ctC.activeSinceMs > 0) {
+            _ctMerge.activeSinceMs = _ctC.activeSinceMs;
           }
           _ctMerged[_ctIdx] = _ctMerge;
         }
@@ -68653,6 +68694,43 @@ function _pickCompanion(idx, slot){
         if (window.LW_COMPANION && window.LW_COMPANION.pauseActive2) window.LW_COMPANION.pauseActive2();
       }
     } catch(e) {}
+    // Stephen 2026-05-07: cocoon-companion mutex. Equipping a regular
+    // companion (idx not in 82-84) must unequip any hatched cocoon
+    // creature. Equipping a cocoon idx (82-84) must set lw_pcocoons.
+    // equipped so the cocoon-specific abilities (pestClear / drought
+    // Breath / cryptobiosis) actually fire from activeAbility().
+    try {
+      if (window.LW_KEEPER) {
+        if (f.idx >= 82 && f.idx <= 84) {
+          // Equipping a cocoon-derived creature: sync lw_pcocoons.equipped
+          // by writing directly (avoid LW_KEEPER.equip recursion since it
+          // would write back to pw_active_companion we're about to set).
+          try {
+            var _ckey = LW_KEEPER.keyForCompanionIdx ? LW_KEEPER.keyForCompanionIdx(f.idx) : null;
+            if (_ckey && LW_KEEPER.isHatched && LW_KEEPER.isHatched(_ckey)) {
+              var _pcRaw = localStorage.getItem('lw_pcocoons');
+              var _pcD = _pcRaw ? JSON.parse(_pcRaw) : { owned:{}, equipped:null };
+              _pcD.equipped = _ckey;
+              localStorage.setItem('lw_pcocoons', JSON.stringify(_pcD));
+            }
+          } catch(_kex){}
+        } else {
+          // Equipping a non-cocoon companion: clear lw_pcocoons.equipped
+          // so we never have two creatures active at once.
+          try {
+            var _curEq = LW_KEEPER.equipped ? LW_KEEPER.equipped() : null;
+            if (_curEq) {
+              var _pcRaw2 = localStorage.getItem('lw_pcocoons');
+              var _pcD2 = _pcRaw2 ? JSON.parse(_pcRaw2) : null;
+              if (_pcD2 && _pcD2.equipped) {
+                _pcD2.equipped = null;
+                localStorage.setItem('lw_pcocoons', JSON.stringify(_pcD2));
+              }
+            }
+          } catch(_kex2){}
+        }
+      }
+    } catch(e){}
     localStorage.setItem('pw_active_companion',JSON.stringify(compData));
     if (window.LW_ACH) LW_ACH.bump('d_swap_comp', 1);
     try { if (window.LW_COMPANION && window.LW_COMPANION.onEquip) window.LW_COMPANION.onEquip(f.idx); } catch(e) {}
@@ -88834,12 +88912,55 @@ window.LW_debug.cleanGhostDrops = function(){
     d.equipped = key;
     _save(d);
     var spec=_spec(key);
+    // Stephen 2026-05-07: a hatched cocoon IS a companion. Mirror this
+    // equip into pw_active_companion so the BoS keeper bar, character
+    // sheet, and bond timer all treat it as the single active slot.
+    // Single source of truth = no more "Beholder + Wasp both active."
+    if (spec && spec.companionIdx) {
+      try {
+        var _tbc = (window.TRAIT_BANK && TRAIT_BANK.companions && TRAIT_BANK.companions[spec.companionIdx]) ? TRAIT_BANK.companions[spec.companionIdx] : null;
+        var compData = {
+          idx: spec.companionIdx,
+          name: spec.hatchedName,
+          icon: (_tbc && _tbc.icon) ? _tbc.icon : '🐛',
+          ability: spec.ability,
+          temperament: (_tbc && _tbc.temp) ? _tbc.temp : 'forager',
+          tempIcon: '🍂'
+        };
+        // If a different companion is currently in slot 2, leave it; the
+        // L75 dual-slot rules apply here too. We only own slot 1.
+        localStorage.setItem('pw_active_companion', JSON.stringify(compData));
+        if (window.LW_COMPANION && LW_COMPANION.onEquip) LW_COMPANION.onEquip(spec.companionIdx);
+        // Memento timer first-equip log (mirrors PW_UI._pickCompanion).
+        try {
+          var _eqL = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}');
+          if (!_eqL[spec.companionIdx]) {
+            _eqL[spec.companionIdx] = Date.now();
+            localStorage.setItem('lw_companion_first_equipped', JSON.stringify(_eqL));
+          }
+        } catch(e){}
+        if (window.syncVaultToCloud) try{syncVaultToCloud();}catch(e){}
+      } catch(e){}
+    }
     if(spec) _toast(spec.hatchedName+' equipped.');
     return true;
   }
   function unequip(){
     var d=_load();
     if(!d.equipped) return false;
+    var prevKey = d.equipped;
+    // Stephen 2026-05-07: also clear pw_active_companion if it currently
+    // points at this cocoon creature (single-slot model).
+    try {
+      var _spec0 = _spec(prevKey);
+      if (_spec0 && _spec0.companionIdx) {
+        var _pe = JSON.parse(localStorage.getItem('pw_active_companion')||'null');
+        if (_pe && _pe.idx === _spec0.companionIdx) {
+          if (window.LW_COMPANION && LW_COMPANION.pauseActive) LW_COMPANION.pauseActive();
+          localStorage.removeItem('pw_active_companion');
+        }
+      }
+    } catch(e){}
     d.equipped = null;
     _save(d);
     return true;
@@ -90687,6 +90808,26 @@ window.LW_debug.cleanGhostDrops = function(){
     pauseActive();
     var timer = loadTimer();
     if (!timer[idx]) timer[idx] = { totalMs: 0, activeSinceMs: null };
+    // Stephen 2026-05-07 BUG FIX — root cause of "ive had it equipped
+    // for two weeks and its still saying 3 days to next level":
+    //
+    // pauseActive() reads ACTIVE_KEY (lw_companion_active_idx), but
+    // ACTIVE_KEY is NOT in the cloud-sync payload. After any history
+    // clear, incognito session, or cross-device load, ACTIVE_KEY is
+    // unset even though pw_active_companion + lw_companion_timer
+    // come back from cloud. pauseActive() reads -1, returns without
+    // freezing — then this function used to unconditionally overwrite
+    // timer[idx].activeSinceMs = Date.now(), losing every minute of
+    // live tick that hadn't yet been folded into totalMs.
+    //
+    // Now we ALSO check timer[idx]'s own activeSinceMs and freeze
+    // its live elapsed into totalMs first. Belt-and-suspenders: even
+    // if pauseActive() worked perfectly, this guarantees no double-
+    // count and no loss for the idx we're about to (re)resume.
+    if (timer[idx].activeSinceMs) {
+      var _liveR = Date.now() - timer[idx].activeSinceMs;
+      if (_liveR > 0) timer[idx].totalMs = (timer[idx].totalMs || 0) + _liveR;
+    }
     timer[idx].activeSinceMs = Date.now();
     saveTimer(timer);
     try { localStorage.setItem(ACTIVE_KEY, String(idx)); } catch(e) {}
@@ -90843,6 +90984,12 @@ window.LW_debug.cleanGhostDrops = function(){
     // Don't double-set if this idx is also in slot 1 (only primary counts)
     var primary = getActiveCompanionIdx();
     if (idx === primary) return;
+    // Same fix as resumeActive — freeze any existing live elapsed into
+    // totalMs before resetting activeSinceMs to NOW.
+    if (timer[idx].activeSinceMs) {
+      var _liveR2 = Date.now() - timer[idx].activeSinceMs;
+      if (_liveR2 > 0) timer[idx].totalMs = (timer[idx].totalMs || 0) + _liveR2;
+    }
     timer[idx].activeSinceMs = Date.now();
     saveTimer(timer);
     try { localStorage.setItem(ACTIVE_KEY_2, String(idx)); } catch(e) {}
@@ -90923,6 +91070,40 @@ window.LW_debug.cleanGhostDrops = function(){
     L5_MS: L5_MS,
     L6_MS: L6_MS
   };
+
+  // Boot-time self-heal: ACTIVE_KEY (lw_companion_active_idx) is NOT in
+  // the cloud sync payload, so after a history clear or cross-device load
+  // it can be empty even though pw_active_companion came back from cloud.
+  // pauseActive() reads ACTIVE_KEY to decide which timer to freeze, so
+  // a missing ACTIVE_KEY meant the next equip silently lost elapsed time.
+  // On every page load, derive ACTIVE_KEY (and ACTIVE_KEY_2) from the
+  // surface-level pw_active_companion / pw_active_companion_2 storage —
+  // those ARE cloud-synced. Stephen 2026-05-07 root-cause fix.
+  try {
+    var _heal1 = -1;
+    try {
+      var _ace1 = JSON.parse(localStorage.getItem('pw_active_companion') || '{}');
+      if (_ace1 && typeof _ace1.idx === 'number') _heal1 = _ace1.idx;
+    } catch(e){}
+    if (_heal1 >= 0) {
+      var _existing1 = parseInt(localStorage.getItem(TIMER_KEY) ? '0' : '-1', 10);
+      var _curActive = parseInt(localStorage.getItem(ACTIVE_KEY) || '-1', 10);
+      if (_curActive !== _heal1) {
+        localStorage.setItem(ACTIVE_KEY, String(_heal1));
+      }
+    }
+    var _heal2 = -1;
+    try {
+      var _ace2 = JSON.parse(localStorage.getItem('pw_active_companion_2') || '{}');
+      if (_ace2 && typeof _ace2.idx === 'number') _heal2 = _ace2.idx;
+    } catch(e){}
+    if (_heal2 >= 0) {
+      var _curActive2 = parseInt(localStorage.getItem(ACTIVE_KEY_2) || '-1', 10);
+      if (_curActive2 !== _heal2) {
+        localStorage.setItem(ACTIVE_KEY_2, String(_heal2));
+      }
+    }
+  } catch(e){}
 })();
 
 // ═══ COMPANION T3 SIGNATURE RITUALS ═══
