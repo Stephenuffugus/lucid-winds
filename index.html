@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.35';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.36';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -60640,19 +60640,19 @@ function _showMintCelebration(fullHash){
   else if(gh.length>=5)tip='Collection growing! Check your Terra Grade scores.';
   else if(gh.length>=2)tip='Two plants! Try cross-breeding in the Nursery.';
   var ov=document.createElement('div');ov.id='pw-win-overlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:99997;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.95);backdrop-filter:blur(16px);animation:panelFadeIn 0.4s ease;padding:1.5rem;';
+  // 2026-05-07: dropped backdrop-filter on outer overlay (the prev May 06
+  // fix removed the inner filter:brightness+blur but left this in place,
+  // and Stephen still saw wireframe-look mints). Solid 95% bg looks the
+  // same without the blur. isolation:isolate on the reveal forces its own
+  // compositing layer so iOS Safari paints fills before scaling.
+  ov.style.cssText='position:fixed;inset:0;z-index:99997;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.97);animation:panelFadeIn 0.4s ease;padding:1.5rem;';
   var h='<div style="text-align:center;max-width:340px;">';
   // Phase 1: "FULL BLOOM" header
   h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--sage);letter-spacing:0.22em;margin-bottom:0.2rem;opacity:0;animation:tierFadeIn 0.5s ease 0.2s forwards;">FULL BLOOM</div>';
-  // Phase 2: Plant silhouette → revealed (no rarity — save for inspect)
-  // Audit 2026-05-06 (Stephen): every bloom showed plant as wireframe (only
-  // strokes, no fills). The combo of inner filter:brightness(0)+blur(6px)
-  // with the outer modal's backdrop-filter:blur(16px) is a known iOS Safari
-  // compositing trap — fills can fail to repaint after the transition,
-  // leaving the SVG looking like a wireframe. Simplified to opacity+scale
-  // only. Same dramatic reveal beat (silhouette → resolved), no compound
-  // filter stack to glitch on.
-  h+='<div id="mint-plant-reveal" style="margin:0.2rem auto;opacity:0;transform:scale(0.3);transition:opacity 1.4s ease, transform 1.4s cubic-bezier(0.16,1,0.3,1);">'+svg+'</div>';
+  // Phase 2: Plant silhouette → revealed (no rarity — save for inspect).
+  // isolation:isolate + will-change forces a separate compositing layer
+  // so iOS Safari paints SVG fills correctly before the scale transition.
+  h+='<div id="mint-plant-reveal" style="margin:0.2rem auto;opacity:0;transform:scale(0.3) translateZ(0);transition:opacity 1.4s ease, transform 1.4s cubic-bezier(0.16,1,0.3,1);isolation:isolate;will-change:opacity,transform;">'+svg+'</div>';
   // Phase 3: Plant name only — rarity hidden until greenhouse inspect
   h+='<div style="font-family:Playfair Display,serif;font-size:0.8rem;font-weight:700;color:var(--cream);margin-bottom:0.1rem;opacity:0;animation:tierFadeIn 0.5s ease 2.0s forwards;">'+(_plantName||'Unknown Specimen')+'</div>';
   // Phase 4: Mystery hint instead of tier reveal
@@ -60736,7 +60736,8 @@ function _showWinCelebration(){
   var _winReady=_readyHashes.length;
   var _winBal=_winReady*_winCost+_hashFilled;
   var ov=document.createElement('div');ov.id='pw-win-overlay';
-  ov.style.cssText='position:fixed;inset:0;z-index:999990;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(14px);animation:panelFadeIn 0.4s ease;padding:1.5rem;';
+  // 2026-05-07: dropped backdrop-filter (iOS Safari compositing trap) — bg goes solid.
+  ov.style.cssText='position:fixed;inset:0;z-index:999990;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,4,0.97);animation:panelFadeIn 0.4s ease;padding:1.5rem;';
   _spawnLeafParticles(ov);
   var h='<div style="text-align:center;max-width:340px;">';
   var pct=Math.round((inPlant/_winCost)*100);
