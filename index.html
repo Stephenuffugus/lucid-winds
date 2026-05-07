@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.21';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -7214,7 +7214,7 @@ window._addSwitchTabHook = function(fn){
     <!-- MY PLANTS NAVIGATOR — list view of owned wild plants for fast travel -->
     <button id="w-my-plants" class="lw-mp-fab" onclick="if(window._lwOpenMyPlants)_lwOpenMyPlants();" aria-label="My Plants"><span id="w-my-plants-count">0</span></button>
     <!-- MAP -->
-    <div id="wild-map" style="width:100%;height:100vh;height:100dvh;min-height:250px;"></div>
+    <div id="wild-map" style="width:100%;height:calc(100vh - env(safe-area-inset-bottom,0px));height:calc(100dvh - env(safe-area-inset-bottom,0px));min-height:250px;"></div>
     <!-- Current-hex info pill — what's in the hex you're standing in -->
     <div id="lw-current-hex" style="display:none;position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:998;padding:6px 14px;background:rgba(13,16,12,0.88);border:1px solid rgba(200,168,75,0.35);border-radius:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,0.5);font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.04em;color:var(--cream);white-space:nowrap;pointer-events:none;">—</div>
     <div class="map-hex-overlay"></div>
@@ -41401,7 +41401,9 @@ document.addEventListener('keydown', function(e) {
       // hash returns valid colors that PALETTE then can't resolve.
       try {
         var _src = (window._carousel && _carousel.source) ? _carousel.source : '';
-        if (_src === 'wild-inspect' || _src === 'wild-place') {
+        // Stephen 2026-05-07: gate behind _LW_DEBUG. Was spamming console
+        // on every wild-inspect/wild-place carousel swipe.
+        if (window._LW_DEBUG && (_src === 'wild-inspect' || _src === 'wild-place')) {
           var _PAL_DBG = (window.PALETTE || {});
           var _resolved = (_t && _t.leafColors) ? _t.leafColors.map(function(k){
             return k + ' -> ' + (_PAL_DBG[k] || 'UNDEFINED');
@@ -41939,7 +41941,10 @@ document.addEventListener('keydown', function(e) {
       try {
         var bRaw = localStorage.getItem('lw_water_budget') || '{}';
         var b = JSON.parse(bRaw);
-        var today = new Date().toISOString().split('T')[0];
+        // Stephen 2026-05-07: was UTC, but write side at line 58320
+        // uses _lwLocalDay. Mismatch caused inspector to report
+        // "5/5 used" hours after the actual reset on Pacific time.
+        var today = (window._lwLocalDay?_lwLocalDay():new Date().toISOString().split('T')[0]);
         if (b.date !== today) b = { date: today, count: 0 };
         var left = 5 - (b.count || 0);
         if (left > 0) {
@@ -53141,7 +53146,8 @@ function showTP(p,mk){
     if(waterOtherBtn){
       var _waterKey='lw_water_budget';
       var _wBudget={};try{_wBudget=JSON.parse(localStorage.getItem(_waterKey)||'{}');}catch(e){}
-      var _wToday=new Date().toISOString().split('T')[0];
+      // Stephen 2026-05-07: unified to _lwLocalDay (was UTC mismatch).
+      var _wToday=(window._lwLocalDay?_lwLocalDay():new Date().toISOString().split('T')[0]);
       if(_wBudget.date!==_wToday){_wBudget={date:_wToday,count:0};}
       var _wLeft=5-(_wBudget.count||0);
       if(_tooFar){
@@ -56777,10 +56783,11 @@ function _selectHexPlant(idx,p){
     actions+=_blessBtn;
     actions+=_pruneBtn;
     if(_phxBtn)actions+=_phxBtn;
-    // TEND + CUTTING locked on own plants — Stephen 2026-05-01 PART 5: render
-    // the full 6-button set always, locked with explanation when not applicable.
-    actions+='<button class="hi-action-btn locked" onclick="window._toast&&window._toast(\'🌿 Tend is for stranger plants. You earn Dew for helping other keepers.\')"><img src="assets/wild-tend-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#127807;\'"> TEND &middot; strangers only</button>';
-    actions+='<button class="hi-action-btn gold locked" onclick="window._toast&&window._toast(\'✂️ Cuttings are taken from stranger plants in the wild. To breed your own greenhouse plants, use the BREED action there.\')"><img src="assets/wild-cutting-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" onerror="this.outerHTML=\'&#9986;\'"> CUTTING &middot; strangers only</button>';
+    // Stephen 2026-05-07: dropped the "TEND strangers only" + "CUTTING
+    // strangers only" locked tiles on OWN plants. They burnt 2 of the 6
+    // grid slots on every own-plant inspection with no path forward —
+    // Stephen's "fumble" complaint. Players see only the 5 actions that
+    // ACTUALLY work for them (water/inspect/mulch/bless/prune-when-pest).
     // DEFENSE retired Apr 30 (cascade from harvest retirement). The defender
     // game system existed to make a stranger's HARVEST attempt non-trivial;
     // no harvest action means no challenge to attach. Field stays on plant
@@ -56797,7 +56804,8 @@ function _selectHexPlant(idx,p){
     // HOLD TO WATER (stranger) — surface daily 5/day budget so the player
     // sees how many strangers they can still help today.
     var _wBudgetH={};try{_wBudgetH=JSON.parse(localStorage.getItem('lw_water_budget')||'{}');}catch(e){}
-    var _wTodayH=new Date().toISOString().split('T')[0];
+    // Stephen 2026-05-07: unified to _lwLocalDay across all 4 read sites.
+    var _wTodayH=(window._lwLocalDay?_lwLocalDay():new Date().toISOString().split('T')[0]);
     if(_wBudgetH.date!==_wTodayH){_wBudgetH={date:_wTodayH,count:0};}
     var _wLeftH=Math.max(0,5-(_wBudgetH.count||0));
     // Stephen 2026-05-07: hold-to-water replaced with tap + confirm.
@@ -60219,6 +60227,20 @@ window._mintFromQueue=async function(){
   // pattern (line 77387) — single mint at a time.
   if(window._lwMintingInFlight)return;
   if(_readyHashes.length===0){if(window._toast)_toast('No plants ready yet. Keep playing!');return;}
+  // Stephen 2026-05-07: greenhouse-full guard. Without this the
+  // achievement-claim "BLOOM IT NOW" CTA + win-celebration MINT button
+  // route directly into mintPlant which silently parks the plant in
+  // lw_reserve when no slot exists. Player tapped BLOOM, heard haptic,
+  // saw celebration — and never saw the plant. Now: surface the
+  // GREENHOUSE FULL prompt (with expand option) instead of silent park.
+  try {
+    var _ghCur = (window.loadGreenhouse ? window.loadGreenhouse().length : 0);
+    var _ghMax = (typeof getGHSlots === 'function' ? getGHSlots() : (parseInt(localStorage.getItem('sws_greenhouse_slots')||'10',10)||10));
+    if (_ghCur >= _ghMax && window._lwGreenhouseFullPrompt) {
+      window._lwGreenhouseFullPrompt('Your plant is ready, but the greenhouse is full.', _ghCur, _ghMax);
+      return;
+    }
+  } catch(e){}
   window._lwMintingInFlight=true;
   try{
     var hex=_readyHashes.shift();
@@ -74213,6 +74235,10 @@ function _stepEmpty(){
 // the background and say this is your first plant". Two beats, not one.
 function _step1(retries){
   if(typeof retries==='undefined')retries=0;
+  // Stephen 2026-05-07: was the only tutorial step missing _clear() at
+  // the top. If a stale dialog from a Beat-4 race or from a previous
+  // session left _dlg in DOM, step 1 would stack on top. Now consistent.
+  try{ _clear(); }catch(e){}
   _setStep(1);
   setTimeout(function(){
     var cards=document.querySelectorAll('.greenhouse-plant:not(.undiscovered)');
@@ -75018,11 +75044,39 @@ function _step19(){
 // ═══ STEP 20: inside breed screen — explain + watch for executed breed ═══
 function _step20(){
   _setStep(20);
-  // Audit 2 H3: 5min poll for breed execution. The dialog has an OK
-  // button, but if it's missing or the breed-screen state is wrong
-  // there's no recovery. 25s stuck-link advances directly to step 22
-  // (step 21 is dead per audit; chain goes 19 → 20 → 22).
-  _lwTutStuckLink(20, function(){setTimeout(_step22,400);}, 25000);
+  // Stephen 2026-05-07: stuck-link was advancing to step 22 directly
+  // WITHOUT running BREED, so step 22's nurLen-watch poll waited
+  // forever for a seed that never landed (silent tutorial death).
+  // Now: try to fire the BREED button before advancing. If it fires,
+  // a seed lands and step 22's watch trips correctly. If it doesn't,
+  // we _done() out cleanly instead of getting stuck.
+  _lwTutStuckLink(20, function(){
+    var _bsBtn = document.getElementById('bs-breed-btn');
+    var _nurBefore = (function(){ try{return JSON.parse(localStorage.getItem('sws_nursery')||'[]').length;}catch(e){return 0;} })();
+    if (_bsBtn) {
+      try { _bsBtn.click(); } catch(e){}
+      // Confirm modal opens — try the confirm primary button.
+      setTimeout(function(){
+        var _cf = document.getElementById('bs-confirm');
+        if (_cf && _cf.classList.contains('open')) {
+          var _confirmBtn = _cf.querySelector('button[onclick*="bsExecuteBreed"]') || _cf.querySelector('.bs-confirm-primary, button[data-confirm="primary"]');
+          if (_confirmBtn) try { _confirmBtn.click(); } catch(e){}
+        }
+        // Watch briefly for the seed to actually land before advancing.
+        var _polls = 0;
+        var _wait = function(){
+          var _now = (function(){ try{return JSON.parse(localStorage.getItem('sws_nursery')||'[]').length;}catch(e){return 0;} })();
+          if (_now > _nurBefore) { setTimeout(_step22, 600); return; }
+          if (_polls < 20) { _polls++; setTimeout(_wait, 200); return; }
+          // Could not land a seed — exit cleanly rather than stranding.
+          _done();
+        };
+        _wait();
+      }, 600);
+    } else {
+      _done();
+    }
+  }, 25000);
   // Release carousel-lock (carousel is now behind the breed-screen
   // overlay) and engage the breed-screen lock so only the CROSS-
   // POLLINATE confirm button is tappable. Close-X, partner arrows,
@@ -76599,12 +76653,19 @@ function _step44(){
   var waterBtn=document.querySelector('.nur-btn.water[onclick*="handleWaterSeed"]')
             || document.querySelector('.nur-btn.water');
   if(waterBtn){try{waterBtn.classList.add('lw-pulse-hint');}catch(e){}}
+  // Stephen 2026-05-07: was a CONTINUE button that bypassed watering
+  // entirely. Player taps CONTINUE → step 45 fires "seeds need 3
+  // waterings" copy with a tutorial seed at 0 water entries —
+  // guaranteed confusion. Now: dialog has NO escape button. The watch
+  // poll below detects the actual water action AND auto-advances. If
+  // the player abandons, _lwTutStuckLink (60s) advances on the timer.
   _dialog(
-    'Tap <span style="color:var(--gold);">WATER</span> on your seed.',
-    'CONTINUE',function(){
-      try{var wb2=document.querySelector('.nur-btn.water.lw-pulse-hint');if(wb2)wb2.classList.remove('lw-pulse-hint');}catch(e){}
-      _clear();setTimeout(_step45,400);
-    },'top');
+    'Tap <span style="color:var(--gold);">WATER</span> on your seed.<br><span style="color:var(--muted);font-size:0.55rem;">The seed grows over 3 days, one watering each day.</span>',
+    '',null,'top');
+  _lwTutStuckLink(44, function(){
+    try{var wb3=document.querySelector('.nur-btn.water.lw-pulse-hint');if(wb3)wb3.classList.remove('lw-pulse-hint');}catch(e){}
+    _clear();setTimeout(_step45,400);
+  }, 60000);
   var polls=0;
   var watch=function(){
     if(_getStep()!==44)return;
@@ -96284,7 +96345,7 @@ window._LW_openClassPicker=function(){
     h += '<div style="position:relative;display:flex;flex-direction:column;align-items:center;padding:1rem 1rem 1.1rem;margin-bottom:1rem;background:radial-gradient(ellipse at 50% 20%,rgba(122,179,86,0.08) 0%,rgba(26,36,22,0.4) 60%);border:1.5px dashed rgba(122,179,86,0.3);border-radius:14px;">';
     h += '<div style="width:160px;height:160px;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:center;font-size:4rem;color:var(--muted);opacity:0.6;">\u269c\ufe0f</div>';
     h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1rem;color:var(--sage);margin-bottom:4px;">Choose a path</div>';
-    h += '<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--muted);line-height:1.6;text-align:center;max-width:320px;">Five paths unfold below. Each shapes what the garden rewards you for. You can change later, but only once.</div>';
+    h += '<div style="font-family:DM Sans,sans-serif;font-size:0.6rem;color:var(--muted);line-height:1.6;text-align:center;max-width:320px;">Five paths unfold below. Each shapes what the garden rewards you for. Your XP is kept per-class — walk a new path anytime.</div>';
     h += '</div>';
   }
   h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Choose one path. Each level unlocks an ability. Master rank unlocks companion synergy. Progress is slow, play long-term.</div>';
