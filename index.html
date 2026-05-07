@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.4';window.LW_VERSION=LW_VERSION;
   (function(){
     var stored=localStorage.getItem('lw_version');
     if(stored&&stored!==LW_VERSION){
@@ -5450,7 +5450,17 @@
     #kb-sunbeams>img{clip-path:inset(14.28% round 8px);-webkit-clip-path:inset(14.28% round 8px);}
     #kb-dew>img{clip-path:inset(16.67% round 8px);-webkit-clip-path:inset(16.67% round 8px);}
     #kb-sunbeams .kb-val,#kb-dew .kb-val{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.7);z-index:2;pointer-events:none;}
-    #kb-sunbeams .kb-bloom-label{position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.14em;color:var(--gold);text-shadow:0 1px 3px rgba(0,0,0,0.85);pointer-events:none;white-space:nowrap;}
+    #kb-sunbeams .kb-bloom-label{position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.14em;color:var(--gold);text-shadow:0 1px 3px rgba(0,0,0,0.85);pointer-events:none;white-space:nowrap;display:none;}
+    #kb-sunbeams.has-bloom .kb-bloom-label{display:inline;}
+    /* Stephen 2026-05-07: SUN / HUT / DEW always-on labels under each
+       row-2 button. Earlier rounds had only the conditional BLOOM label
+       on sunbeams; new players couldn't tell what HUT or DEW were.
+       When BLOOM is active on the sunbeam button, hide the static SUN
+       label so they don't stack. */
+    #kb-sunbeams .kb-static-label,
+    #kb-hut .kb-static-label,
+    #kb-dew .kb-static-label{position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.14em;color:var(--cream);opacity:0.78;text-shadow:0 1px 3px rgba(0,0,0,0.9);pointer-events:none;white-space:nowrap;}
+    #kb-sunbeams.has-bloom .kb-static-label{display:none;}
     #kb-dew .kb-icon{font-size:1.15rem;filter:drop-shadow(0 0 4px rgba(91,175,220,0.4));}
     /* Book positioning handled inline on element so nothing overrides it */
     body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 180px)!important;right:10px!important;width:72px!important;height:100px!important;}
@@ -5591,18 +5601,14 @@ body.tab-wild #w-stats-bar{padding:14px 10px!important;padding-right:148px!impor
      2. Hide kb-install (PWA install still works from Chrome menu)
      3. Shrink floating buttons 70 → 60 + nudge BoS right
      4. Add margin-right buffer on kb-row2 as belt-and-suspenders */
-@media (max-width: 480px) {
-  /* Stephen 2026-05-06 (Galaxy tester): BoS still landed on top of DEW.
-     Root cause: kb-row2 max-width:156 was being IGNORED because the three
-     row-2 buttons were hardcoded width:70 / flex-shrink:0, so grid expanded
-     to min-content (3*70 + 14.4 gap = 224px) regardless of max-width. The
-     row spilled out under BoS. Fix: shrink the row-2 buttons to 56 under
-     this breakpoint so the grid actually honors a tight max-width.
-     On a 360 CSS px Galaxy:
-       kb-row2:   x = 11.2  to 195.2  (3*56 + 14.4 gap = 182.4, +11.2 left pad)
-       BoS img:   x = 219.5 to 288.5  (right:76 width:60, img 115% +/-4.5)
-       backpack:  x = 296   to 356    (right:4 width:60)
-     24px gap between row 2 and BoS, 7px between BoS and backpack. */
+@media (max-width: 400px) {
+  /* Stephen 2026-05-06 (Galaxy tester): BoS landed on top of DEW.
+     Shrink row-2 buttons to 56px on truly narrow phones (Galaxy ~360px)
+     so the grid honors a tight max-width.
+     Stephen 2026-05-07: breakpoint tightened 480 → 400. Pixel 9 (412
+     CSS px) was getting the same shrink and felt cramped — the only
+     phones that NEED the 56px squeeze are Galaxy/older Androids at
+     360px or below. Pixel 9 keeps the 70x70 base size from line 5449. */
   #pw-keeper-bar .kb-row2 { max-width: 184px !important; margin-right: auto !important; }
   #pw-keeper-bar #kb-sunbeams,
   #pw-keeper-bar #kb-hut,
@@ -7350,9 +7356,9 @@ window._addSwitchTabHook = function(fn){
     </div>
     <!-- Row 2: currency + hut (3 buttons) -->
     <div class="kb-row2">
-      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams-v2.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span><span class="kb-bloom-label">BLOOM</span></div>
-      <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"></div>
-      <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew-v2.png" alt="Dew" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span></div>
+      <div id="kb-sunbeams" title="Sunbeams" onclick="if(window.openSunbeamModal)openSunbeamModal();else if(window.openEconModal)openEconModal();" style="border:2px solid rgba(200,168,75,0.5);"><img src="assets/btn-sunbeams-v2.png" alt="Sunbeams" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span><span class="kb-static-label">SUN</span><span class="kb-bloom-label">BLOOM</span></div>
+      <div id="kb-hut" onclick="if(window.LW_HUT)LW_HUT.open();" title="Hermit's Hut — shop, almanac, slots, quests" style="border:2px solid rgba(200,168,75,0.55);"><img src="assets/btn-shop-v2.png" alt="Hermit's Hut" style="width:160%;height:160%;object-fit:cover;display:block;margin:-30%;"><span class="kb-static-label">HUT</span></div>
+      <div id="kb-dew" title="Dew" onclick="if(window.openDewModal)openDewModal();" style="border:2px solid rgba(91,175,220,0.5);"><img src="assets/btn-dew-v2.png" alt="Dew" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"><span class="kb-val">0</span><span class="kb-static-label">DEW</span></div>
       <!-- Stephen 2026-05-01: kb-cocoon moved to backpack only (you walk with -->
       <!-- cocoons; they belong with what you carry, not on the home screen).  -->
       <!-- The COCOONS button in the backpack panel (~index.html:69175) is the -->
@@ -9015,6 +9021,14 @@ window._addSwitchTabHook = function(fn){
     },
     grantHashes:function(n){
       n=n||100;
+      // Stephen 2026-05-07: warn loudly if grants won't survive a reload.
+      // The hash ledger is server-only-write per firestore-rules-7
+      // (validMetaState denies hashLedger client writes), so any grant
+      // here is LOCAL ONLY — on next vault hydrate, cloud reverts it.
+      // The Sunbeam QUEUE (pw_readyHashes) IS in cloud sync though, so
+      // _accumulateHash below pushes the ready-hash into the persistent
+      // queue. That's why minting a plant from the grant works after
+      // reload but the raw "earned" count drifts down.
       try{
         var raw=localStorage.getItem('sws_hash_ledger');
         if(window._secureGet)raw=window._secureGet('sws_hash_ledger')||raw;
@@ -9040,7 +9054,19 @@ window._addSwitchTabHook = function(fn){
         try { _sb_signedIn = !!(window.firebase && firebase.auth && firebase.auth().currentUser); } catch(e){}
         if(_sb_signedIn) try{(window.syncVaultToCloudNow||window.syncVaultToCloud)();}catch(e){}
         var bal=window.getTotalHashes?window.getTotalHashes():ledger.earned;
-        alert('+'+n+' Sunbeams granted'+(_sb_signedIn?' (synced to cloud)':' (local only — sign in to sync)')+'. Spendable balance: '+bal);
+        var _msg = '+'+n+' Sunbeams granted. Spendable: '+bal+'\n\n';
+        if(_sb_signedIn){
+          _msg += '✓ Sunbeam QUEUE synced to cloud (will persist).\n';
+          _msg += '⚠ Raw ledger count is server-only and may drift on reload.\n';
+          _msg += '   The QUEUE is what mints plants — that part works.';
+        } else {
+          _msg += '⚠ NOT SIGNED IN — this grant is LOCAL ONLY.\n';
+          _msg += 'On reload (or browser close in incognito) it WILL DISAPPEAR.\n\n';
+          _msg += 'To make grants stick:\n';
+          _msg += '1. Sign in (top of menu, or tap keeper name)\n';
+          _msg += '2. Make sure you\'re NOT in incognito / private mode';
+        }
+        alert(_msg);
       }catch(e){alert('Error: '+e.message);}
     },
     // Stephen 2026-05-01: friendship-tier fast-forward. Skips the 30-day +
@@ -9098,32 +9124,56 @@ window._addSwitchTabHook = function(fn){
           else localStorage.setItem('sws_dew_ledger', JSON.stringify(l));
         }
         if (window._updateDewDisplay) window._updateDewDisplay();
-        // Stephen 2026-05-02: force-sync only when signed in.
         var _gbd_signedIn = false;
         try { _gbd_signedIn = !!(window.firebase && firebase.auth && firebase.auth().currentUser); } catch(e){}
         if (_gbd_signedIn) try { (window.syncVaultToCloudNow||window.syncVaultToCloud)(); } catch(e) {}
         var bal = window.getTotalDew ? window.getTotalDew() : '?';
-        alert('+' + n + ' Dew granted' + (_gbd_signedIn ? ' (synced)' : ' (local only)') + '. Balance: ' + bal);
+        var _msg = '+' + n + ' Dew granted. Balance: ' + bal + '\n\n';
+        if (_gbd_signedIn) _msg += '✓ Synced to cloud — will persist across reloads.';
+        else _msg += '⚠ NOT SIGNED IN — local only. Will disappear on reload.\n   Sign in first, then re-grant for grants that stick.';
+        alert(_msg);
       } catch(e) { alert('Grant failed: ' + e.message); }
     },
     grantKeeper:function(){
       if (!window.LW_KEEPER) { alert('LW_KEEPER not loaded yet.'); return; }
-      var key = prompt('Which creature to grant?\n\nwasp = Caterpillar → Parasitic Wasp\nlungfish = Mudball → Lungfish\ntardigrade = Meteor → Tardigrade\n\nEnter exactly: wasp / lungfish / tardigrade', 'wasp');
+      // Stephen 2026-05-07: choose state too — incubating to test the
+      // walking-progress UI, or hatched to test the equipped-ability UI
+      // without walking 1000 km. Both states cloud-sync via lw_pcocoons.
+      var key = prompt('Which creature?\n\nwasp = Caterpillar → Parasitic Wasp\nlungfish = Mudball → Lungfish\ntardigrade = Meteor → Tardigrade\n\nEnter exactly: wasp / lungfish / tardigrade', 'wasp');
       if (!key || ['wasp','lungfish','tardigrade'].indexOf(key) === -1) { alert('Cancelled.'); return; }
+      var stateChoice = prompt('State?\n\ni = incubating (test the walking UI)\nh = hatched (instant — test the equipped ability)\n\nEnter exactly: i / h', 'h');
+      if (stateChoice !== 'i' && stateChoice !== 'h') { alert('Cancelled.'); return; }
       try {
         var raw = localStorage.getItem('lw_pcocoons');
         var d = raw ? JSON.parse(raw) : { owned:{}, equipped:null };
         if (!d.owned) d.owned = {};
-        if (d.owned[key]) { alert('Already owned: ' + key); return; }
-        d.owned[key] = { state:'incubating', distance:0, fed:0, tokens:0, purchasedAt:Date.now(), hatchedAt:0 };
-        localStorage.setItem('lw_pcocoons', JSON.stringify(d));
-        // Force immediate cloud flush (matches grantDew/grantHashes pattern from
-        // May 02 audit). Without it, a refresh within the 5s debounce window
-        // could lose the grant — defeats Stephen's whole "test cocoons" workflow.
-        if (window.syncVaultToCloudNow) window.syncVaultToCloudNow();
-        else if (window.syncVaultToCloud) window.syncVaultToCloud();
+        if (d.owned[key] && d.owned[key].state === 'hatched') { alert(key + ' is already hatched.'); return; }
+        if (stateChoice === 'h') {
+          // Use LW_debug.keeperHatch — sets state:hatched + max distance + fed.
+          if (window.LW_debug && LW_debug.keeperHatch) LW_debug.keeperHatch(key);
+          else {
+            d.owned[key] = { state:'hatched', distance:1000000, fed:300, tokens:0, purchasedAt:Date.now(), hatchedAt:Date.now() };
+            localStorage.setItem('lw_pcocoons', JSON.stringify(d));
+          }
+        } else {
+          d.owned[key] = { state:'incubating', distance:0, fed:0, tokens:0, purchasedAt:Date.now(), hatchedAt:0 };
+          localStorage.setItem('lw_pcocoons', JSON.stringify(d));
+        }
+        var _gk_signedIn = false;
+        try { _gk_signedIn = !!(window.firebase && firebase.auth && firebase.auth().currentUser); } catch(e){}
+        if (_gk_signedIn) {
+          if (window.syncVaultToCloudNow) window.syncVaultToCloudNow();
+          else if (window.syncVaultToCloud) window.syncVaultToCloud();
+        }
         if (window.LW_KEEPER && window.LW_KEEPER.refreshPip) window.LW_KEEPER.refreshPip();
-        alert('Granted ' + key + '. Open backpack → Curiosities to see it incubating.');
+        // Wake the cocoon GPS watch so incubating cocoons start crediting
+        // distance immediately on the current tab (May 07 fix).
+        try{ if(window._ensureCocoonGeoWatch) window._ensureCocoonGeoWatch(); }catch(e){}
+        var _msg = 'Granted ' + key + ' in state: ' + (stateChoice==='h'?'hatched':'incubating') + '.\n\n';
+        if (_gk_signedIn) _msg += '✓ Synced to cloud — survives reload.';
+        else _msg += '⚠ NOT SIGNED IN — local only. WILL DISAPPEAR on reload.\n   Sign in (top of menu / keeper bar) before granting cocoons.';
+        _msg += '\n\nOpen backpack → Curiosities to see it.';
+        alert(_msg);
       } catch(e) { alert('Grant failed: ' + e.message); }
     },
     fastForwardFriendship:function(){
@@ -59837,6 +59887,9 @@ function _updateSunbeamBadge(){
   var bal=_readyHashes.length*(_getMintCost?_getMintCost():30)+_hashFilled;
   var kbsv=kbs.querySelector('.kb-val');
   if(kbsv)kbsv.textContent=bal;
+  // Toggle .has-bloom so SUN/BLOOM labels swap (Stephen 2026-05-07).
+  if(_readyHashes.length>0) kbs.classList.add('has-bloom');
+  else kbs.classList.remove('has-bloom');
   var pip=kbs.querySelector('.kb-mint-pip');
   if(_readyHashes.length>0){
     if(!pip){pip=document.createElement('span');pip.className='kb-mint-pip';pip.style.cssText='position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:0.6rem;font-weight:700;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3;box-shadow:0 0 12px rgba(240,208,144,0.7),0 2px 6px rgba(0,0,0,0.5);animation:mintPipPulse 1.4s ease infinite;';kbs.appendChild(pip);}
