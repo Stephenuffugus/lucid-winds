@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.46';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.47';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2127,7 +2127,7 @@
        Wild tab. Lift it the same way + bump the wild controls (recenter,
        my-plants FAB) above the Pi system bar. */
     body.pi-browser #wild-nav{ bottom: var(--pi-chrome-h) !important; }
-    body.pi-browser #w-recenter{ bottom: calc(108px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
+    body.pi-browser #w-recenter{ bottom: calc(180px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-my-plants{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-mass-water{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #bp-rtb{ bottom: calc(92px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px) + 8px) !important; }
@@ -5792,7 +5792,10 @@ body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
    the RIGHT, both pinned at the same y-coordinate so they read as a
    matched pair. Mass-water hides for now until Stephen places it. */
 #w-menu-fab{display:none!important;}
-body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(108px + env(safe-area-inset-bottom,0px))!important;}
+/* Stephen 2026-05-07 evening: recenter button moved above the
+   ALL/YOURS/HELP/FORAGE/SOCIAL chip bar (which sits at bottom:110px).
+   Chip bar is ~56px tall + comfortable gap → recenter at 180px. */
+body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(180px + env(safe-area-inset-bottom,0px))!important;}
 body.tab-wild #w-my-plants{display:flex!important;}
 body.tab-wild #w-mass-water{display:none!important;}
 body:not(.tab-wild) #w-recenter,
