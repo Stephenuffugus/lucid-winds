@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.28';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.07.29';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1104,6 +1104,10 @@
     @keyframes vtFadeIn{from{opacity:0;filter:blur(2px);}to{opacity:1;filter:none;}}
     html{background:var(--black);color:var(--cream);scroll-behavior:smooth;overflow-x:hidden;font-size:clamp(18px,4.5vw,22px);}
     body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;min-height:100dvh;overflow-x:hidden;
+      /* Stephen 2026-05-07: was inheriting browser's white default, so
+         tab transitions briefly flashed white between panels. Match
+         html's background so the gap is invisible. */
+      background:var(--black);color:var(--cream);
       -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
     /* ── Smoothness pass (2026-04-24) ─────────────────────────────
        Small touches that make every tap and state-change feel nicer
@@ -10627,7 +10631,11 @@ document.addEventListener('keydown', function(e) {
     if (plant && plant.eaBonus) ea += plant.eaBonus;
     // Mycelium family eaFloor — gently boosts low-EA plants so weaker lines stay viable.
     try{if(window.LW_COMPANION){var _floorMult=window.LW_COMPANION.getCompanionMult('eaFloor');if(_floorMult>1&&ea<8){ea=Math.round(ea*_floorMult);}}}catch(e){}
-    return Math.max(0, ea);
+    // Stephen 2026-05-07: round at return so chimera-purity division
+    // (line ~10618) and any other multiplier paths can't surface
+    // fractional EA like 7.004987531 to the player. Math is tracked
+    // in float internally; only the displayed/used value rounds.
+    return Math.max(0, Math.round(ea));
   };
   window.eaBadge = function(ea, gc) {
     var c = gc || '#8a9a7a';
