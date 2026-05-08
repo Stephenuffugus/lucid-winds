@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.33';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.34';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6739,10 +6739,9 @@ window._addSwitchTabHook = function(fn){
   if (typeof fn === 'function') window._switchTabHooks.push(fn);
 };
 
-// Stephen 2026-05-08 birthday fix v3: defensive sync that handles BOTH the
-// old two-span layout (in case cached HTML is still out there) AND the new
-// single-span layout. Writes the full "X / Y SLOTS USED" string into
-// whatever element it can find.
+// Stephen 2026-05-08 birthday fix v4: write text DIRECTLY to the banner
+// div. No nested spans, no innerHTML, no DOM rebuild. textContent on a
+// flat div is impossible to get wrong.
 window._lwSyncGHSlotCounts = function(){
   try{
     var ghLen = 0;
@@ -6754,21 +6753,10 @@ window._lwSyncGHSlotCounts = function(){
     }catch(e){}
     var fullTxt = ghLen + ' / ' + cap + ' SLOTS USED';
     var chipTxt = ghLen + ' / ' + cap;
-    // Reach the banner container — if old layout, NUKE its inner HTML and
-    // replace with a single bullet-proof child so the missing-number bug
-    // can't recur even on cached HTML.
     var banner = document.getElementById('gh-slot-banner');
-    if (banner) {
-      var num = document.getElementById('gh-slot-banner-num');
-      if (!num || num.children.length || banner.children.length > 1) {
-        // Old layout (or unexpected children) — rebuild with single span.
-        banner.innerHTML = '<span id="gh-slot-banner-num" style="font-size:1.05rem;color:#c8a84b;font-weight:700;line-height:1.2;white-space:nowrap;font-family:Arial,sans-serif;letter-spacing:0.06em;">'+fullTxt+'</span>';
-      } else {
-        num.textContent = fullTxt;
-      }
-    }
+    if (banner) banner.textContent = fullTxt;
     var b = document.getElementById('gh-count'); if (b) b.textContent = chipTxt;
-    try { console.log('[LW] slot count synced:', fullTxt); } catch(e){}
+    try { console.log('[LW] slot count synced:', fullTxt, 'ghLen='+ghLen, 'cap='+cap); } catch(e){}
   }catch(e){ try{ console.log('[LW] slot sync err:', e.message); }catch(_e){} }
 };
 // Run on tab switch to greenhouse + once after DOM is ready + after cloud
@@ -7160,14 +7148,14 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       <div class="gh-recent-label">RECENT BLOOMS</div>
       <div class="gh-recent-strip" id="gh-recent-strip"></div>
     </div>
-    <!-- Stephen 2026-05-08 birthday fix v3: single span, plain Arial font
-         (no Bebas Neue fallback risk), explicit hex color, full string
-         baked in static. Build version stamped tiny on the chip so we
-         can tell from the screenshot whether stale cache is in play. -->
-    <div id="gh-slot-banner" style="display:block !important;text-align:center;margin:0.35rem auto 0.45rem;padding:0.5rem 1rem;background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:1.5px solid rgba(200,168,75,0.55);border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(200,168,75,0.22);width:fit-content;max-width:calc(100% - 12px);">
-      <span id="gh-slot-banner-num" style="font-size:1.05rem;color:#c8a84b;font-weight:700;line-height:1.2;white-space:nowrap;font-family:Arial,sans-serif;letter-spacing:0.06em;">0 / 10 SLOTS USED</span>
-      <span style="font-size:0.4rem;color:#8a9178;font-family:Arial,sans-serif;letter-spacing:0.04em;display:block;margin-top:2px;opacity:0.6;">v32</span>
-    </div>
+    <!-- Stephen 2026-05-08 birthday fix v4: FLAT div, no nested spans,
+         no fit-content, no max-width tricks. Text lives directly in the
+         div. Both writers (renderGreenhouse + _lwSyncGHSlotCounts) write
+         to this div's textContent. There is NO way for the digits to be
+         present in HTML but invisible in render unless something is
+         actively clearing the text — in which case a console.log() in
+         _lwSyncGHSlotCounts will show what's happening. -->
+    <div id="gh-slot-banner" style="display:block;width:auto;text-align:center;margin:8px 12px 10px;padding:8px 12px;color:#c8a84b;font-weight:700;font-size:1rem;font-family:Arial,sans-serif;letter-spacing:0.05em;background:rgba(36,30,16,0.9);border:1.5px solid rgba(200,168,75,0.55);border-radius:10px;">0 / 10 SLOTS USED</div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
     </div>
@@ -39832,10 +39820,9 @@ document.addEventListener('keydown', function(e) {
     // Progress header
     var pct = Math.round((gh.length / MAX_COLLECTION_SIZE) * 100);
     if (countEl) countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
-    // Stephen 2026-05-08: write full "X / Y SLOTS USED" into the single
-    // banner span. Single string = single failure mode.
-    var slotBannerNum = document.getElementById('gh-slot-banner-num');
-    if (slotBannerNum) slotBannerNum.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE + ' SLOTS USED';
+    // Stephen 2026-05-08 v4: flat div, write textContent directly.
+    var slotBanner = document.getElementById('gh-slot-banner');
+    if (slotBanner) slotBanner.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE + ' SLOTS USED';
     // Engagement counters: gh_full (1 once you've ever maxed out), gh_max_slots
     // (current slot ceiling), and pots_owned_unique (distinct pot indices in
     // the live greenhouse). Cheap to derive on render — already iterating.
@@ -40377,8 +40364,8 @@ document.addEventListener('keydown', function(e) {
       var _emptyCount = Math.max(0, MAX_COLLECTION_SIZE - gh.length);
       _footer.innerHTML =
         '<div style="display:flex;flex-direction:column;line-height:1.15;">' +
-          '<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.12em;color:var(--gold);">' + gh.length + ' / ' + MAX_COLLECTION_SIZE + ' SLOTS USED</div>' +
-          '<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.06em;color:var(--muted);margin-top:2px;">' + _emptyCount + ' empty</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.05em;color:#c8a84b;">' + gh.length + ' / ' + MAX_COLLECTION_SIZE + ' SLOTS USED</div>' +
+          '<div style="font-family:Arial,sans-serif;font-size:0.6rem;letter-spacing:0.04em;color:#8a9178;margin-top:2px;">' + _emptyCount + ' empty</div>' +
         '</div>' +
         '<div style="flex:1;max-width:160px;height:8px;background:rgba(26,32,22,0.6);border-radius:4px;overflow:hidden;border:1px solid rgba(122,179,86,0.25);">' +
           '<div style="width:' + Math.round((gh.length / MAX_COLLECTION_SIZE) * 100) + '%;height:100%;background:linear-gradient(90deg,rgba(74,124,53,0.7),var(--sage));border-radius:3px;transition:width 0.5s ease;"></div>' +
