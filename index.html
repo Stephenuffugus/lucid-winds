@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.36';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.37';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1539,12 +1539,16 @@
     .cb-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:1.0rem;color:rgba(212,207,188,0.90);line-height:1.7;text-align:center;}
     .cb-hash{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--sage);opacity:0.5;word-break:break-all;text-align:center;}
     .cb-date{font-family:'DM Mono',monospace;font-size:0.4rem;color:var(--muted);text-align:center;}
-    .cf-name-zone{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;border:none;padding:0 4%;}
-    .cf-name{font-family:'Cormorant Garamond','Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.8);width:100%;line-height:1.15;}
-    .cf-name .np-top{display:block;font-size:0.8rem;font-style:italic;letter-spacing:0.06em;opacity:0.7;font-weight:400;}
-    .cf-name .np-main{display:block;font-size:1.9rem;}
-    .cf-name .np-realm{display:block;font-size:0.72rem;font-style:italic;letter-spacing:0.05em;opacity:0.78;font-weight:400;margin-top:3px;color:rgba(232,220,200,0.85);}
-    .cf-name .np-title{display:block;font-size:0.7rem;font-style:italic;letter-spacing:0.05em;opacity:0.65;font-weight:400;margin-top:2px;}
+    /* Stephen 2026-05-08 v2: align-items:flex-end was clipping 'The [Adj]'
+       off the top whenever a name had a 3rd line. Switched to center so
+       any overflow clips top AND bottom evenly (top still wins because
+       np-top is shortest). Tightened np-* font + margins to fit 3 lines. */
+    .cf-name-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;padding:0 4%;}
+    .cf-name{font-family:'Cormorant Garamond','Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.8);width:100%;line-height:1.1;}
+    .cf-name .np-top{display:block;font-size:0.72rem;font-style:italic;letter-spacing:0.06em;opacity:0.72;font-weight:400;}
+    .cf-name .np-main{display:block;font-size:1.7rem;line-height:1.05;}
+    .cf-name .np-realm{display:block;font-size:0.66rem;font-style:italic;letter-spacing:0.05em;opacity:0.78;font-weight:400;margin-top:1px;color:rgba(232,220,200,0.85);}
+    .cf-name .np-title{display:block;font-size:0.66rem;font-style:italic;letter-spacing:0.05em;opacity:0.7;font-weight:400;margin-top:1px;}
     .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:visible;min-height:0;background:transparent;border:none;padding-bottom:2%;}
     .cf-art-window svg{max-height:100%;max-width:90%;width:auto;height:100%;transform:none;}
     /* Stephen 2026-05-03: haiku gets more breathing room from the plant
@@ -37926,17 +37930,13 @@ document.addEventListener('keydown', function(e) {
     var adj = NAME_ADJ[adjIdx];
     var noun = NAME_NOUN[nounIdx];
 
-    // Stephen 2026-05-08: realm wired into the canonical name. Was a
-    // dead bank for 6+ months — getPlantRealm() existed but no display
-    // surface called it. Wiring it expands name-space from 4.87M base
-    // to 8.4B distinct names (× 1,727 realms). Realm hex window is
-    // h[42-44] to stay decorrelated from adj/noun windows.
-    var realmStr = '';
-    if (NAME_REALM && NAME_REALM.length) {
-      var realmIdx = (parseInt(h[42]+h[43]+h[44], 16) || 0) % NAME_REALM.length;
-      realmStr = ' of ' + NAME_REALM[realmIdx];
-    }
-
+    // Stephen 2026-05-08 v2: realm and mythic suffix are MUTUALLY
+    // EXCLUSIVE. Stacking both produced clunky "of X of the Y" reads
+    // ("Bast of Saturation of the Cicada") that sounded redundant
+    // AND pushed the name to 4 lines, clipping "The [Adj]" off the
+    // top of the card. Mythic always wins — these are the marquee
+    // creatures and deserve the suffix slot. Non-mythic plants get
+    // the realm suffix.
     var TITLES_MYTHIC = {
       'The Toad':             'of the Toad',
       'The Cicada':          'of the Cicada',
@@ -37946,16 +37946,15 @@ document.addEventListener('keydown', function(e) {
       'Great Blue Heron':         'of the Heron',
       'The Beholder':         'of the Beholder'  // set-103-8
     };
-
-    var name = 'The ' + adj + ' ' + noun + realmStr;
-
-    // Mythic suffix appended after realm with comma so "of X, of the Y"
-    // reads naturally instead of "of X of the Y".
-    if (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]) {
-      name += ', ' + TITLES_MYTHIC[t.mythicName];
+    var hasMythic = (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]);
+    var suffix = '';
+    if (hasMythic) {
+      suffix = ' ' + TITLES_MYTHIC[t.mythicName];
+    } else if (NAME_REALM && NAME_REALM.length) {
+      var realmIdx = (parseInt(h[42]+h[43]+h[44], 16) || 0) % NAME_REALM.length;
+      suffix = ' of ' + NAME_REALM[realmIdx];
     }
-
-    return name;
+    return 'The ' + adj + ' ' + noun + suffix;
   }
 
   // ═══ NAMEPLATE — structured HTML for plant names ═══
@@ -37969,30 +37968,27 @@ document.addEventListener('keydown', function(e) {
     var adj = NAME_ADJ[adjIdx];
     var noun = NAME_NOUN[nounIdx];
 
-    // Realm — Stephen 2026-05-08 wired in. Renders as a small italic
-    // line under the main noun so the structure reads:
-    //   The [Adj]
-    //     [Noun]
-    //   of [Realm]
-    //   of the [Mythic]   (only when mythic creature present)
-    var realm = '';
-    if (NAME_REALM && NAME_REALM.length) {
-      var realmIdx = (parseInt(h[42]+h[43]+h[44], 16) || 0) % NAME_REALM.length;
-      realm = 'of ' + NAME_REALM[realmIdx];
-    }
-
+    // Stephen 2026-05-08 v2: realm and mythic are mutually exclusive.
+    // Mythic wins. Non-mythic plants render the realm suffix. Either
+    // way the name stays at 3 lines max so 'The [Adj]' isn't clipped
+    // off the top of the card.
     var TITLES_MYTHIC = {
       'The Toad':'of the Toad','The Cicada':'of the Cicada',
       'Garden Spider':'of the Spider','Baby Mammoth':'of the Mammoth',
       'Raccoon':'of the Raccoon','Great Blue Heron':'of the Heron',
       'The Beholder':'of the Beholder'
     };
-    var title = (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]) ? TITLES_MYTHIC[t.mythicName] : '';
-
+    var hasMythic = (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]);
+    var suffixHtml = '';
+    if (hasMythic) {
+      suffixHtml = '<span class="np-title">' + TITLES_MYTHIC[t.mythicName] + '</span>';
+    } else if (NAME_REALM && NAME_REALM.length) {
+      var realmIdx = (parseInt(h[42]+h[43]+h[44], 16) || 0) % NAME_REALM.length;
+      suffixHtml = '<span class="np-realm">of ' + NAME_REALM[realmIdx] + '</span>';
+    }
     return '<span class="np-top">The ' + adj + '</span>'
       + '<span class="np-main">' + noun + '</span>'
-      + (realm ? '<span class="np-realm">' + realm + '</span>' : '')
-      + (title ? '<span class="np-title">' + title + '</span>' : '');
+      + suffixHtml;
   }
   window.buildNameplate = buildNameplate;
 
