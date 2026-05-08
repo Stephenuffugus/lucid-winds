@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.26';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.27';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -93117,11 +93117,25 @@ function _bosTodayContent() {
     }
   } catch(e){}
   // Card: discoveries — also stash the list for the journal accordion below.
+  // Stephen 2026-05-08 evening: dedupe by name. Wild events like "Chimeras
+  // Wake" / "Neighbor" fire on every triggering action, so raw LW_Log can
+  // hold 60+ entries for the same event. Player only wants ONE row per
+  // unique discovery, with most-recent timestamp + a small ×N count if
+  // it repeated.
   var _discList = [];
   try {
+    var _seenDisc = {};
     for (var x = 0; x < recent.length; x++) {
-      if (recent[x].type === 'event_discovered' || recent[x].type === 'synergy_discovered' || recent[x].type === 'achievement_unlock') {
-        _discList.push(recent[x]);
+      var _re = recent[x];
+      if (!_re || (_re.type !== 'event_discovered' && _re.type !== 'synergy_discovered' && _re.type !== 'achievement_unlock')) continue;
+      var _rk = (_re.data && _re.data.name) ? (_re.type + '|' + _re.data.name) : (_re.type + '|' + (_re.id || x));
+      if (_seenDisc[_rk]) {
+        // Bump count + keep the more recent ts
+        _seenDisc[_rk].count++;
+        if (_re.ts > _seenDisc[_rk].ts) _seenDisc[_rk].ts = _re.ts;
+      } else {
+        _seenDisc[_rk] = { type: _re.type, data: _re.data, ts: _re.ts, count: 1 };
+        _discList.push(_seenDisc[_rk]);
       }
     }
     _discList.sort(function(a,b){return b.ts - a.ts;});
@@ -93191,9 +93205,11 @@ function _bosTodayContent() {
         var _nType = _ne.type === 'event_discovered' ? 'Event' : (_ne.type === 'synergy_discovered' ? 'Synergy' : 'Achievement');
         var _ms = Date.now() - _ne.ts;
         var _agoStr = _ms < 3600000 ? Math.max(1, Math.floor(_ms/60000)) + 'm ago' : (_ms < 86400000 ? Math.floor(_ms/3600000) + 'h ago' : Math.floor(_ms/86400000) + 'd ago');
+        var _nCount = _ne.count || 1;
+        var _nCountTag = _nCount > 1 ? ' <span style="color:rgba(200,168,75,0.7);font-size:0.85em;">× ' + _nCount + '</span>' : '';
         inner += '<div style="padding:0.5rem 0.65rem;margin-bottom:5px;background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.18);border-left:3px solid rgba(200,168,75,0.55);border-radius:6px;">';
-        inner += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.06em;line-height:1.2;">' + _escD(_nName) + '</div>';
-        inner += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:3px;letter-spacing:0.04em;">' + _nType + ' · ' + _agoStr + '</div>';
+        inner += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.06em;line-height:1.2;">' + _escD(_nName) + _nCountTag + '</div>';
+        inner += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:3px;letter-spacing:0.04em;">' + _nType + ' · ' + (_nCount > 1 ? 'most recent ' + _agoStr : _agoStr) + '</div>';
         inner += '</div>';
       }
       if (_discList.length > maxShow) {
