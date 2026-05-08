@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.24';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1543,7 +1543,13 @@
        zone itself taller. */
     .cf-haiku-zone{display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;border:none;padding:5% 4% 0;}
     .cf-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:0.85rem;color:rgba(212,207,188,0.92);text-align:center;line-height:1.45;width:100%;}
-    .cf-ea{position:absolute;top:4%;right:10%;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);background:rgba(10,10,8,0.75);border:1.5px solid rgba(200,168,75,0.3);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;z-index:5;backdrop-filter:blur(4px);}
+    /* Stephen 2026-05-08: dropped backdrop-filter — iOS wireframe-look
+       bug also fires on the carousel front when this badge sits above
+       the plant SVG. Same fix applied to #cinematic-reveal (line 3810)
+       and onboarding gift card (line 5948) on 2026-05-07. The translucent
+       background still gives the badge enough contrast against the
+       seasonal frame without the blur. */
+    .cf-ea{position:absolute;top:4%;right:10%;font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);background:rgba(10,10,8,0.85);border:1.5px solid rgba(200,168,75,0.3);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;z-index:5;}
     .cs-card-front[data-season="spring"] .cf-ea,.cs-card-front[data-season="winter"] .cf-ea{top:4%;right:5%;}
     .cs-card-front[data-season="autumn"] .cf-ea{top:3%;right:5%;}
     /* Stats bar between haiku and plant */
@@ -3235,7 +3241,11 @@
     /* EA knot — pushed further right (-12 vs -6) so it floats in the grid's right gutter, reading clearly outside the card edge. Bigger knot + bolder number for at-a-glance scan. */
     .ea-knot{position:absolute;top:-8px;right:-12px;width:34px;height:34px;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;}
     .ea-knot svg{position:absolute;top:0;left:0;width:100%;height:100%;}
-    .ea-knot .ea-frost{position:relative;z-index:6;display:flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 4px;border-radius:9px;background:rgba(13,16,12,0.82);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:1px solid rgba(200,188,160,0.25);box-shadow:0 1px 3px rgba(0,0,0,0.5);}
+    /* Stephen 2026-05-08: dropped backdrop-filter — iOS wireframe-look
+       trigger. .ea-frost sits directly on the card edge over the plant
+       SVG; on iOS the blur causes the underlying SVG to re-raster as
+       wireframe. Bump background opacity to keep contrast. */
+    .ea-knot .ea-frost{position:relative;z-index:6;display:flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 4px;border-radius:9px;background:rgba(13,16,12,0.92);border:1px solid rgba(200,188,160,0.25);box-shadow:0 1px 3px rgba(0,0,0,0.5);}
     .ea-knot .ea-num{font-family:'Bebas Neue',sans-serif;font-size:0.62rem;font-weight:700;letter-spacing:0.03em;line-height:1;}
     .season-spring .ea-knot .ea-frost{border-color:rgba(232,160,191,0.3);}
     .season-spring .ea-num{color:#E8A0BF;}
