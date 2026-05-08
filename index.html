@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.32';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.33';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -77103,6 +77103,11 @@ function _step42(){
     if(bpe&&bpe.classList.contains('open')){
       // Stop the bpi pulse — they found the backpack.
       try{var bpi=document.getElementById('bpi');if(bpi)bpi.classList.remove('lw-pulse-hint');}catch(e){}
+      // Stephen 2026-05-08: backpack now defaults to ITEMS tab; force
+      // SEEDS so the seed tile we're about to pulse is actually visible.
+      // Without this the seed sits inside #bps which bp-mode-items hides
+      // via display:none !important — tutorial blocked at step 42.
+      try{if(window.BP&&BP.setMode)BP.setMode('seeds');}catch(e){}
       // Stephen 2026-05-03: split into two sub-prompts. Player needs to
       // tap a seed FIRST to bring up the htc-nur button. Old version
       // jumped straight to "HOLD TO SEND" but the button isn't even
