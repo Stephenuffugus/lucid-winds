@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.27';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.28';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -5892,7 +5892,7 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 /* Seed + items panel — sits below the plant section, same centered bag
    width, separate solid surface so the two sections read as distinct
    compartments. Items strip auto-appends inside the seed render. */
-#bps{position:fixed;top:calc(72px + 34vh + 14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(24px);width:min(360px,calc(100vw - 28px));max-height:42vh;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px;align-items:start;padding:14px 14px 14px;z-index:1002;opacity:0;transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;background:linear-gradient(180deg,rgba(20,18,12,0.98),rgba(34,28,18,0.96));border:2px solid rgba(120,90,40,0.55);border-radius:6px 6px 16px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.7),inset 0 -1px 0 rgba(200,168,75,0.18),inset 0 0 0 1px rgba(60,44,22,0.4);}
+#bps{position:fixed;top:calc(72px + 34vh + 14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(24px);width:min(360px,calc(100vw - 28px));max-height:42vh;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:10px;align-items:start;padding:14px 14px 14px;z-index:1002;opacity:0;transition:opacity 0.3s ease 0.15s,transform 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.15s;scrollbar-width:none;pointer-events:none;background:linear-gradient(180deg,rgba(20,18,12,0.98),rgba(34,28,18,0.96));border:2px solid rgba(120,90,40,0.55);border-radius:6px 6px 16px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.7),inset 0 -1px 0 rgba(200,168,75,0.18),inset 0 0 0 1px rgba(60,44,22,0.4);}
 #bps::-webkit-scrollbar{display:none;}
 #bpe.open #bps{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
 /* ── Backpack tab bar — PLANTS / SEEDS toggle (Stephen 2026-04-30) ── */
@@ -5900,11 +5900,15 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 #bpe.open #bpe-tabs{display:flex;}
 .bp-tab{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.12em;color:var(--muted);background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.2);border-radius:9px;padding:0.5rem 1.1rem;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;}
 .bp-tab.active{color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.42));border-color:rgba(200,168,75,0.7);box-shadow:0 0 12px rgba(200,168,75,0.3);}
-/* Tab mode controls panel visibility. PLANTS mode (default): show #bpp,
-   hide #bps. SEEDS mode: hide #bpp, move #bps up to take its place. */
+/* Tab mode controls panel visibility. ITEMS mode: show #bpp (items strip +
+   boxes + curiosities). SEEDS mode: hide #bpp, move #bps up to take its
+   place. bp-mode-plants kept as alias to bp-mode-items for back-compat. */
+#bpe.bp-mode-items #bps,
 #bpe.bp-mode-plants #bps{display:none !important;}
+#bpe.bp-mode-items #bpp,
+#bpe.bp-mode-plants #bpp{top:calc(108px + env(safe-area-inset-top,0px)) !important;max-height:calc(100vh - 140px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) !important;border-radius:16px !important;display:flex !important;}
 #bpe.bp-mode-seeds #bpp{display:none !important;}
-#bpe.bp-mode-seeds #bps{top:calc(72px + env(safe-area-inset-top,0px)) !important;max-height:78vh !important;border-radius:16px !important;}
+#bpe.bp-mode-seeds #bps{top:calc(108px + env(safe-area-inset-top,0px)) !important;max-height:calc(100vh - 140px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) !important;border-radius:16px !important;}
 /* When BP is open, dim the wild FABs + hamburger menu so they read as
    inactive and don't visually compete with the open inventory. The bps
    description panel sits at z 1002 so it's above all FABs. */
@@ -5927,32 +5931,21 @@ body.lw-bp-open #w-menu-fab,
 body.lw-bp-open #w-recenter,
 body.lw-bp-open #w-mass-water,
 body.lw-bp-open #w-my-plants{opacity:0!important;pointer-events:none!important;visibility:hidden!important;transition:opacity 0.2s;}
-/* Comfort pass 2026-04-27: lift the BASE / ITEMS / BOXES / COCOONS /
-   CLOSE row out of the narrow plant column and pin it as a bottom
-   action bar when the backpack is open. Each button gets real width
-   and a thumb-comfortable reach. */
+/* Stephen 2026-05-08: BOXES / CURIOSITIES row used to be a fixed bottom
+   bar; with the new ITEMS / SEEDS tabs it lives inline inside the ITEMS
+   tab content. Inline render gives proper inventory layout, no overlap
+   with the seed grid or the items strip. */
 body.lw-bp-open .bp-extra-row{
-  position:fixed!important;
-  left:8px!important;right:8px!important;
-  bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;
-  margin:0!important;
-  padding:8px 10px!important;
-  background:linear-gradient(180deg,rgba(13,16,12,0.82),rgba(13,16,12,0.95))!important;
-  border:1px solid rgba(122,179,86,0.18)!important;
-  border-radius:14px!important;
-  backdrop-filter:blur(10px)!important;
-  -webkit-backdrop-filter:blur(10px)!important;
-  z-index:1003!important;
-  box-shadow:0 6px 22px rgba(0,0,0,0.55)!important;
-  justify-content:space-around!important;
-  gap:6px!important;
-  flex-wrap:nowrap!important;
-  overflow-x:auto!important;
-  -webkit-overflow-scrolling:touch!important;
-  scrollbar-width:none!important;
+  margin:14px 0 4px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:none!important;
+  box-shadow:none!important;
+  justify-content:center!important;
+  gap:8px!important;
+  flex-wrap:wrap!important;
 }
-body.lw-bp-open .bp-extra-row::-webkit-scrollbar{display:none!important;}
-body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!important;}
+body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
 /* Column section labels — printed above the first plant / seed tile.
    Pure type, low contrast, so they help orient without competing with
    the inventory itself. */
@@ -6008,14 +6001,18 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
 .lk{width:64px;height:64px;flex-shrink:0;border-radius:10px;border:2px dashed rgba(74,124,53,0.12);background:rgba(26,36,22,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;opacity:0.35;}
 .lk .lh{font-family:'DM Mono',monospace;font-size:7px;color:var(--muted);text-align:center;line-height:1.2;padding:0 4px;}
 
-/* Seed slot — 3x the old 42px chip so seeds read as real inventory next to the backpack. */
-.ss{width:100px;height:100px;flex-shrink:0;position:relative;cursor:pointer;transition:transform 0.15s;}
+/* Seed slot — fill grid cell, aspect-ratio 1, capped at 100px so a small
+   pouch reads chunky but a full 25-slot pouch tiles cleanly without
+   overflowing adjacent cells. Stephen 2026-05-08: previously fixed
+   100x100 against minmax(56,1fr) caused horizontal overlap as the pouch
+   grew. */
+.ss{width:100%;aspect-ratio:1;max-width:100px;position:relative;cursor:pointer;transition:transform 0.15s;justify-self:center;}
 .ss:active{transform:scale(0.92);}
-.sd-icon{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(200,168,75,0.3);background:rgba(26,36,22,0.35);box-shadow:0 2px 10px rgba(0,0,0,0.4);}
-.sd-icon svg{width:64px;height:64px;}
+.sd-icon{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(200,168,75,0.3);background:rgba(26,36,22,0.35);box-shadow:0 2px 10px rgba(0,0,0,0.4);}
+.sd-icon svg{width:64%;height:64%;}
 .ss.rare .sd-icon{border-color:rgba(200,168,75,0.6);animation:sg 2s ease-in-out infinite;}
 @keyframes sg{0%,100%{box-shadow:0 0 8px rgba(200,168,75,0.25)}50%{box-shadow:0 0 20px rgba(200,168,75,0.55)}}
-.se{width:100px;height:100px;flex-shrink:0;border-radius:50%;border:2px dashed rgba(200,168,75,0.1);opacity:0.25;}
+.se{width:100%;aspect-ratio:1;max-width:100px;border-radius:50%;border:2px dashed rgba(200,168,75,0.1);opacity:0.25;justify-self:center;}
 
 /* Drop FAB */
 /* Plant FAB sits directly under the backpack on the Wild tab.
@@ -7487,11 +7484,16 @@ window._addSwitchTabHook = function(fn){
   <!-- Backpack icon + badge -->
   <div id="bpi" onclick="BP.toggle()" style="display:none;"><div id="bpb" class="e">0</div></div>
   <!-- Backpack expanded L-shape -->
-  <div id="bpe" class="bp-mode-seeds">
+  <div id="bpe" class="bp-mode-items">
     <div id="bpbk" onclick="BP.close()"></div>
     <div id="bpe-title">BACKPACK</div>
     <button id="bpe-close" onclick="BP.close()" aria-label="Close backpack" type="button">&#x2715;</button>
-    <!-- Tab bar removed 2026-04-30 LATE LATE LATE: backpack carries seeds + items only. Plants section retired. -->
+    <!-- Tab bar restored 2026-05-08: ITEMS / SEEDS split. Stephen: seed-pouch
+         expansion was burying mystery boxes + curiosities under the seed grid. -->
+    <div id="bpe-tabs">
+      <button class="bp-tab active" data-bp-tab="items" onclick="BP.setMode('items')" type="button">ITEMS</button>
+      <button class="bp-tab" data-bp-tab="seeds" onclick="BP.setMode('seeds')" type="button">SEEDS</button>
+    </div>
     <div id="bpp"></div>
     <div id="bps"></div>
   </div>
@@ -72060,6 +72062,13 @@ for(var gi=0;gi<6;gi++){st.gh.push({hash:fh(),name:pk(PN),grade:pk(GS.slice(0,4)
 /* ═══ BACKPACK ═══ */
 var BP=(function(){
 var _o=false,_ss=null,_sp=null,_ht=null;
+// Stephen 2026-05-08: SEEDS tab paginates when cap exceeds page size.
+// 12 per page = 3 cols × 4 rows on a typical 360px panel; max cap is 25
+// so 3 pages covers any tier.
+var SEED_PAGE_SIZE=12;
+var _seedPage=0;
+function _seedPageCount(){var c=xc();return Math.max(1,Math.ceil(c/SEED_PAGE_SIZE));}
+function _seedClampPage(){var pc=_seedPageCount();if(_seedPage>=pc)_seedPage=pc-1;if(_seedPage<0)_seedPage=0;}
 var SL=[{id:1},{id:2,h:'Harvest 1st plant',k:'slot2'},{id:3,h:'100 pollen',k:'slot3'},{id:4,h:'10 games',k:'slot4'},{id:5,h:'Drop 5 in Wild',k:'slot5'},{id:6,h:'Daily slot',k:'slot6',dy:true}];
 var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:20,k:'seed20'}];
 function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return Math.min(c,25);} // cap at 25 — matches item pouch cap (single mental model). Was 12 when base pouch was 3; balance pass 2026-04-26 bumped base to 8.
@@ -72067,22 +72076,78 @@ function xc(){var c=5;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
 function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','<img src="assets/backpack-64x64.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
 function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}var bpe=document.getElementById('bpe');bpe.classList.add('open');document.body.classList.add('lw-bp-open');
-// Backpack now carries seeds + items only. Lock to seeds mode on every open.
-bpe.classList.remove('bp-mode-plants');bpe.classList.add('bp-mode-seeds');render();}
+// 2026-05-08: ITEMS / SEEDS split. Default to ITEMS so mystery boxes +
+// curiosities are visible up-front; SEEDS tab is one tap away.
+bpe.classList.remove('bp-mode-plants','bp-mode-seeds');bpe.classList.add('bp-mode-items');
+// Sync tab active state with the mode.
+var _tabs=document.querySelectorAll('#bpe-tabs .bp-tab');for(var _ti=0;_ti<_tabs.length;_ti++){_tabs[_ti].classList.toggle('active',_tabs[_ti].getAttribute('data-bp-tab')==='items');}
+render();}
 function close(){_o=false;csi();cpi();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-closed-v4.png')";}document.getElementById('bpe').classList.remove('open');document.body.classList.remove('lw-bp-open');}
 function csi(){_ss=null;document.getElementById('sdi').classList.remove('show');}
 function cpi(){_sp=null;document.getElementById('pic').classList.remove('show');}
+// Stephen 2026-05-08: ITEMS tab — owned items grid + Mystery Boxes +
+// Curiosities. Promoted from buried strip to top-level so they can't
+// disappear under a big seed pouch.
+function renderItems(){
+  var pe=document.getElementById('bpp');if(!pe)return;
+  var h='';
+  h+='<div class="bp-col-label" style="grid-column:1/-1;width:100%;">ITEMS</div>';
+  var ownedItems=[];
+  try{
+    if(window.LW_ITEMS&&window.LW_ITEMS.CATALOG){
+      var cat=window.LW_ITEMS.CATALOG;
+      for(var ik in cat){
+        if(!Object.prototype.hasOwnProperty.call(cat,ik))continue;
+        var ct=window.LW_ITEMS.count(ik)||0;
+        if(ct>0)ownedItems.push({key:ik,count:ct,name:cat[ik].name||ik,icon:cat[ik].icon||'🌿',art:cat[ik].art||''});
+      }
+    }
+  }catch(e){}
+  h+='<div class="bp-items-row" style="width:100%;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">';
+  if(ownedItems.length===0){
+    h+='<div style="width:100%;text-align:center;padding:18px 8px;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.06em;line-height:1.5;">No items yet.<br>Find them in the wild or open mystery boxes.</div>';
+  } else {
+    for(var ii=0;ii<ownedItems.length;ii++){
+      var it=ownedItems[ii];
+      var _itArtEsc=String(it.icon||'🌿').replace(/'/g,"\\'");
+      var _itArt=it.art?'<img src="'+it.art+'?v='+(window.LW_VERSION||'0')+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:7px;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.6rem;&quot;>'+_itArtEsc+'</span>&apos;;">':'<span style="font-size:1.6rem;">'+_itArtEsc+'</span>';
+      h+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" title="'+(it.name||'')+'" style="width:96px;height:96px;border-radius:10px;border:1px solid rgba(192,122,200,0.3);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;">'+_itArt+'<div style="position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.42rem;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;">'+it.count+'</div></div>';
+    }
+  }
+  h+='</div>';
+  // Mystery Boxes + Curiosities buttons live at the bottom of ITEMS tab.
+  h+='<div class="bp-extra-row" style="width:100%;margin-top:14px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">';
+  var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
+  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" title="Mystery boxes you have earned from gameplay" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/mysterybox.png" alt="" style="width:28px;height:28px;object-fit:contain;" onerror="this.outerHTML=&apos;🎁&apos;;">MYSTERY BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
+  var _curTotal=0,_curReady=0;
+  try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_curTotal+=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_curReady++;}}catch(e){}
+  try{if(window.LW_KEEPER){var _kSpecs=window.LW_KEEPER.listSpecs();for(var _ki=0;_ki<_kSpecs.length;_ki++){var _kp=window.LW_KEEPER.progress(_kSpecs[_ki].key);if(_kp.state==='incubating'||_kp.state==='hatched')_curTotal++;if(window.LW_KEEPER.isReady(_kSpecs[_ki].key))_curReady++;}}}catch(e){}
+  h+='<button class="'+(_curReady>0?'lw-pulse-hint':'')+'" onclick="if(window._lwOpenCuriosities)window._lwOpenCuriosities();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_curReady>0?"#c8a84b":(_curTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_curReady>0?'rgba(200,168,75,0.7)':(_curTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_curReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;🦋&apos;;">CURIOSITIES'+(_curTotal>0?' ('+_curTotal+(_curReady>0?' • '+_curReady+' READY':'')+')':'')+'</button>';
+  h+='</div>';
+  pe.innerHTML=h;
+}
+function nextSeedPage(){var pc=_seedPageCount();if(_seedPage<pc-1){_seedPage++;render();hap();}}
+function prevSeedPage(){if(_seedPage>0){_seedPage--;render();hap();}}
 function render(){
   var bg=document.getElementById('bpb');var t=st.plants.length+st.seeds.length;bg.textContent=t;bg.classList.toggle('e',t===0);
-  // Plants section retired 2026-04-30 LATE LATE LATE — backpack now
-  // carries seeds + items only. bpp left empty; the previous action
-  // row (CLOSE/RETURN/ITEMS/BOXES/COCOONS) is now appended at the
-  // bottom of the seeds panel below so it stays visible.
-  var pe=document.getElementById('bpp');pe.innerHTML='';
+  // Render the ITEMS tab into #bpp (visible when bp-mode-items).
+  renderItems();
   var se=document.getElementById('bps');var cp=xc();var h='';
-  // Section header — same treatment as the plant column.
+  _seedClampPage();
+  var pc=_seedPageCount();
+  var pageStart=_seedPage*SEED_PAGE_SIZE;
+  var pageEnd=Math.min(cp,pageStart+SEED_PAGE_SIZE);
+  // Section header — total count, not just current page.
   h+='<div class="bp-col-label">SEEDS<span class="cnt">'+st.seeds.length+'/'+cp+'</span></div>';
-  for(var m=0;m<st.seeds.length&&m<cp;m++){
+  // Page nav (only when paginated).
+  if(pc>1){
+    h+='<div class="bp-pager" style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0 2px;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.08em;">';
+    h+='<button onclick="if(window.BP)BP.prevSeedPage();" '+(_seedPage===0?'disabled':'')+' style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.45);background:rgba(13,16,12,0.85);color:var(--gold);cursor:'+(_seedPage===0?'default':'pointer')+';font-size:1rem;display:flex;align-items:center;justify-content:center;'+(_seedPage===0?'opacity:0.3;':'')+'" type="button">‹</button>';
+    h+='<span>PAGE '+(_seedPage+1)+' / '+pc+'</span>';
+    h+='<button onclick="if(window.BP)BP.nextSeedPage();" '+(_seedPage>=pc-1?'disabled':'')+' style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.45);background:rgba(13,16,12,0.85);color:var(--gold);cursor:'+(_seedPage>=pc-1?'default':'pointer')+';font-size:1rem;display:flex;align-items:center;justify-content:center;'+(_seedPage>=pc-1?'opacity:0.3;':'')+'" type="button">›</button>';
+    h+='</div>';
+  }
+  for(var m=pageStart;m<pageEnd&&m<st.seeds.length;m++){
     // Use the same per-seed art image that the nursery uses, so the seed
     // looks consistent across UIs. Falls back to the default I.seed icon
     // if the helper isn't loaded.
@@ -72097,49 +72162,12 @@ function render(){
     var _bpO=st.seeds[m]&&st.seeds[m].origin;
     var _bpIsClip=(_bpO==='clipping'||_bpO==='cutting');
     var _bpBadge=_bpIsClip?'<div style="position:absolute;top:-4px;right:-4px;background:rgba(13,16,12,0.92);border:1px solid var(--gold);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;z-index:3;">✂️</div>':'';
-    h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+(_bpIsClip?' bp-seed-clip':'')+'" onclick="BP.ts('+m+')" style="position:relative;"><div class="sd-icon">'+_bpSeedInner+'</div>'+_bpBadge+'</div>';
+    h+='<div class="ss'+(st.seeds[m].rare?' rare':'')+(_bpIsClip?' bp-seed-clip':'')+'" data-seed-idx="'+m+'" onclick="BP.ts('+m+')" style="position:relative;"><div class="sd-icon">'+_bpSeedInner+'</div>'+_bpBadge+'</div>';
   }
-  for(var n=st.seeds.length;n<cp;n++)h+='<div class="se"></div>';
-  // ═══ Inline items strip — Phase 6b ═══
-  // Stephen: "extra items theyll collect on their quests go in that
-  // other slot we just made or nee to." The LW_ITEMS button still
-  // exists in the plant panel for the full panel; this strip gives a
-  // visible in-backpack home so the 3-section tutorial narration maps
-  // to real UI. Tapping any tile opens the full items panel.
-  try{
-    var itemH='';
-    var ownedItems=[];
-    if(window.LW_ITEMS&&window.LW_ITEMS.CATALOG){
-      var cat=window.LW_ITEMS.CATALOG;
-      for(var ik in cat){
-        if(!Object.prototype.hasOwnProperty.call(cat,ik))continue;
-        var ct=window.LW_ITEMS.count(ik)||0;
-        if(ct>0)ownedItems.push({key:ik,count:ct,name:cat[ik].name||ik,icon:cat[ik].icon||'🌿',art:cat[ik].art||''});
-      }
-    }
-    var itemCap=6;
-    itemH+='<div class="bp-items-row" style="grid-column:1/-1;margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
-    itemH+='<div style="width:100%;font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);letter-spacing:0.12em;text-align:center;margin-bottom:2px;opacity:0.7;">ITEMS</div>';
-    var show=Math.min(ownedItems.length,itemCap);
-    for(var ii=0;ii<show;ii++){
-      var it=ownedItems[ii];
-      // Painted art (assets/items/<key>.png) — emoji fallback if PNG missing.
-      // Tile bumped 44 → 56 so the art reads. Click still opens the items
-      // panel; a future pass can switch to direct activation.
-      var _itArtEsc=String(it.icon||'🌿').replace(/'/g,"\\'");
-      var _itArt = it.art ? '<img src="'+it.art+'?v='+(window.LW_VERSION||'0')+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:7px;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:1.6rem;&quot;>'+_itArtEsc+'</span>&apos;;">' : '<span style="font-size:1.6rem;">'+_itArtEsc+'</span>';
-      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" title="'+(it.name||'')+'" style="width:96px;height:96px;border-radius:10px;border:1px solid rgba(192,122,200,0.3);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;">'+_itArt+'<div style="position:absolute;bottom:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--gold);color:#0d100c;font-family:DM Mono,monospace;font-size:0.42rem;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;">'+it.count+'</div></div>';
-    }
-    // Pad with empty placeholder tiles so the row looks like a slot row
-    for(var ip=show;ip<itemCap;ip++){
-      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:96px;height:96px;border-radius:10px;border:1px dashed rgba(138,145,120,0.2);background:rgba(18,22,16,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.35;font-size:1.1rem;color:var(--muted);">·</div>';
-    }
-    if(ownedItems.length>itemCap){
-      itemH+='<div onclick="if(window.LW_ITEMS)LW_ITEMS.openPanel();" style="width:96px;height:96px;border-radius:10px;border:1px solid rgba(192,122,200,0.45);background:rgba(32,22,38,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);">+'+(ownedItems.length-itemCap)+'</div>';
-    }
-    itemH+='</div>';
-    h+=itemH;
-  }catch(e){}
+  // Empty slots — only those on the current page.
+  var _emptyStart=Math.max(pageStart,st.seeds.length);
+  for(var n=_emptyStart;n<pageEnd;n++)h+='<div class="se"></div>';
+  // Items strip + Mystery Boxes + Curiosities moved to renderItems() (ITEMS tab).
   // ═══ EXPAND SEED POUCH — Pi-purchased upper tiers (seed15, seed20) ═══
   // Stephen 2026-05-01: ascending price (10 Pi → 20 Pi) reflects the
   // pouch's importance for wild foraging. Free tiers (seed5, seed10)
@@ -72172,20 +72200,7 @@ function render(){
   // (see index.html:52826 — display:none during early backpack steps).
   // Stephen 2026-05-01: stripped CLOSE (X already in corner), RETURN
   // (no-op), and ITEMS (tapping any item already opens the panel)
-  // buttons. Action row is now BOXES + COCOONS only \u2014 those are the
-  // collectible currencies that need their own surface.
-  h+='<div class="bp-extra-row" style="grid-column:1/-1;margin-top:10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">';
-  var _boxTotal=0;try{if(window.LW_BOXES)_boxTotal=window.LW_BOXES.count();}catch(e){}
-  h+='<button onclick="if(window.LW_BOXES)LW_BOXES.openPanel();" title="Mystery boxes you have earned from gameplay" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_boxTotal>0?'var(--gold)':'var(--muted)')+';background:linear-gradient(180deg,rgba(232,160,191,0.15),rgba(200,168,75,0.04));border:1.5px solid '+(_boxTotal>0?'rgba(232,160,191,0.6)':'rgba(232,160,191,0.25)')+';border-radius:10px;cursor:pointer;'+(_boxTotal>0?'box-shadow:0 0 10px rgba(232,160,191,0.35);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/mysterybox.png" alt="" style="width:28px;height:28px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf81&apos;;">MYSTERY BOXES'+(_boxTotal>0?' ('+_boxTotal+')':'')+'</button>';
-  // Stephen 2026-05-01: Curiosities = unified panel (LW_COCOONS pouches +
-  // LW_KEEPER creatures). Counts BOTH pouches and incubating creatures so
-  // the badge reflects everything you're carrying. Pulse fires if anything
-  // is ready to hatch on either side.
-  var _curTotal=0,_curReady=0;
-  try{if(window.LW_COCOONS){var _cs=window.LW_COCOONS.slots();_curTotal+=_cs.length;for(var _ci=0;_ci<_cs.length;_ci++)if(_cs[_ci]&&_cs[_ci].distance>=_cs[_ci].target)_curReady++;}}catch(e){}
-  try{if(window.LW_KEEPER){var _kSpecs=window.LW_KEEPER.listSpecs();for(var _ki=0;_ki<_kSpecs.length;_ki++){var _kp=window.LW_KEEPER.progress(_kSpecs[_ki].key);if(_kp.state==='incubating'||_kp.state==='hatched')_curTotal++;if(window.LW_KEEPER.isReady(_kSpecs[_ki].key))_curReady++;}}}catch(e){}
-  h+='<button class="'+(_curReady>0?'lw-pulse-hint':'')+'" onclick="if(window._lwOpenCuriosities)window._lwOpenCuriosities();" style="min-height:48px;padding:10px 14px;font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.1em;color:'+(_curReady>0?"#c8a84b":(_curTotal>0?'var(--sage)':'var(--muted)'))+';background:linear-gradient(180deg,rgba(200,168,75,0.12),rgba(91,143,185,0.08));border:1.5px solid '+(_curReady>0?'rgba(200,168,75,0.7)':(_curTotal>0?'rgba(122,179,86,0.4)':'rgba(122,179,86,0.2)'))+';border-radius:10px;cursor:pointer;'+(_curReady>0?'box-shadow:0 0 12px rgba(200,168,75,0.4);':'')+'display:inline-flex;align-items:center;gap:6px;"><img src="assets/fx/butterfly-purple.png" alt="" style="width:24px;height:24px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83e\udd8b&apos;;">CURIOSITIES'+(_curTotal>0?' ('+_curTotal+(_curReady>0?' \u2022 '+_curReady+' READY':'')+')':'')+'</button>';
-  h+='</div>';
+  // (Mystery Boxes + Curiosities buttons live in renderItems().)
   se.innerHTML=h;
   // dbb badge is owned by FG_Wild._updateUI — do not overwrite here
   uab();
@@ -72207,8 +72222,11 @@ function ts(i){if(i>=st.seeds.length)return;_ss=i;cpi();var s=st.seeds[i];hap();
   if(sdi){
     var tile=null;
     try{
-      var bps=document.getElementById('bps');
-      if(bps){var tiles=bps.querySelectorAll('.ss');if(tiles&&tiles[i])tile=tiles[i];}
+      // 2026-05-08: lookup by data-seed-idx so paginated tiles anchor
+      // correctly. The page-relative position used to break when seed
+      // indices exceeded the visible page slice.
+      tile=document.querySelector('#bps .ss[data-seed-idx="'+i+'"]');
+      if(!tile){var bps=document.getElementById('bps');if(bps){var tiles=bps.querySelectorAll('.ss');if(tiles&&tiles[i])tile=tiles[i];}}
     }catch(e){}
     if(tile){
       try{
@@ -72432,25 +72450,26 @@ function checkMidnightDeliver(){
 // ═══ CLOUD SYNC ═══
 function getState(){return{plants:st.plants,seeds:st.seeds,unlocks:st.unlocks,daily:st.daily,pollen:st.pollen,hashes:st.hashes,steps:st.steps,drops:st.drops,ph:st.ph,gp:st.gp,fc:st.fc,wd:st.wd,lastRTB:_rtbLoadState()};}
 function loadFromCloud(data){if(!data)return;if(data.plants)st.plants=data.plants;if(data.seeds)st.seeds=data.seeds;if(data.unlocks){for(var k in data.unlocks)st.unlocks[k]=data.unlocks[k];}if(typeof data.pollen==='number')st.pollen=data.pollen;if(typeof data.hashes==='number')st.hashes=data.hashes;if(typeof data.steps==='number')st.steps=data.steps;if(typeof data.ph==='number')st.ph=data.ph;if(typeof data.gp==='number')st.gp=data.gp;if(typeof data.fc==='number')st.fc=data.fc;if(typeof data.wd==='number')st.wd=data.wd;if(data.lastRTB)localStorage.setItem(RTB_KEY,String(data.lastRTB));render();_rtbRender();_rtbStartTimer();}
-// PLANTS / SEEDS tab mode (Stephen 2026-04-30 — "needs to be obviously
-// seperate"). Toggles bp-mode-plants / bp-mode-seeds class on #bpe; CSS
-// rules show/hide and reposition the active panel.
+// ITEMS / SEEDS tab mode (Stephen 2026-05-08 — items + boxes + curiosities
+// were getting buried under expanded seed pouches; promoted to top-level
+// tab). 'plants' kept as alias for back-compat and resolves to 'items'.
 function setMode(mode){
-  if (mode !== 'plants' && mode !== 'seeds') mode = 'plants';
+  if (mode === 'plants') mode = 'items';
+  if (mode !== 'items' && mode !== 'seeds') mode = 'items';
   var bpe = document.getElementById('bpe');
   if (!bpe) return;
-  bpe.classList.remove('bp-mode-plants','bp-mode-seeds');
+  // Reset _seedPage when switching INTO seeds so player lands on page 1.
+  if (mode === 'seeds') _seedPage = 0;
+  bpe.classList.remove('bp-mode-plants','bp-mode-items','bp-mode-seeds');
   bpe.classList.add('bp-mode-' + mode);
-  // Update active tab state
   var tabs = document.querySelectorAll('#bpe-tabs .bp-tab');
   for (var i = 0; i < tabs.length; i++) {
     tabs[i].classList.toggle('active', tabs[i].getAttribute('data-bp-tab') === mode);
   }
   if (window._haptic) window._haptic('tab');
-  // Re-render so the SEEDS panel can include the buy-slot CTA on activation
   render();
 }
-return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,confirmRel:confirmRel,confirmSns:confirmSns,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,setMode:setMode,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
+return{init:init,toggle:toggle,open:open,close:close,render:render,tp:tp,ts:ts,s2n:s2n,sns:sns,sne:sne,hts:hts,hte:hte,confirmRel:confirmRel,confirmSns:confirmSns,ap:ap,as:as,cu:cu,cpi:cpi,csi:csi,getState:getState,loadFromCloud:loadFromCloud,returnToBase:returnToBase,setMode:setMode,nextSeedPage:nextSeedPage,prevSeedPage:prevSeedPage,_rtbRender:_rtbRender,_rtbStartTimer:_rtbStartTimer,checkMidnightDeliver:checkMidnightDeliver};
 })();
 window.BP=BP;
 window._BP_UI=UI;
