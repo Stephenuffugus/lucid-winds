@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.34';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.35';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -3582,10 +3582,18 @@
 
     /* ── P3 · 3D CARD FLIP ── */
     .flip-container{perspective:800px;width:160px;aspect-ratio:2.5/3.5;margin:0 auto;}
-    .flip-card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.72s cubic-bezier(0.45,0.05,0.55,0.95);will-change:transform;}
-    .flip-card.flipped{transform:rotateY(180deg);}
-    .flip-card-front,.flip-card-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.55);border:1px solid rgba(74,124,53,0.2);overflow:hidden;}
-    .flip-card-back{transform:rotateY(180deg);}
+    /* Stephen 2026-05-08: replaced 3D rotate-flip with opacity cross-fade.
+       The preserve-3d + rotateY context was making iOS / Pi Browser /
+       Chrome render the plant SVG inside .flip-card-back as wireframe
+       (leaf colors missing). Same root cause as the May 07 wild-carousel
+       wireframe bug — extra compositing/3D layer breaks SVG fill paint.
+       Opacity fade has zero stacking-context risk. */
+    .flip-card{position:relative;width:100%;height:100%;}
+    .flip-card-front,.flip-card-back{position:absolute;inset:0;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(26,36,22,0.55);border:1px solid rgba(74,124,53,0.2);overflow:hidden;transition:opacity 0.55s ease;}
+    .flip-card-front{opacity:1;}
+    .flip-card-back{opacity:0;}
+    .flip-card.flipped .flip-card-front{opacity:0;}
+    .flip-card.flipped .flip-card-back{opacity:1;}
 
     /* ── P4 · NURSERY PANEL ── */
     .nur-streak-strip{display:flex;align-items:center;gap:0.5rem;background:rgba(13,16,12,0.4);border:1px solid rgba(74,124,53,0.1);border-radius:6px;padding:0.28rem 0.6rem;margin-bottom:0.45rem;font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--muted);flex-wrap:wrap;}
@@ -60124,11 +60132,12 @@ _setHexSelPlant:function(p){_hexSelPlant=p;},_dist:_dist,panTo:function(lat,lng,
       } } catch(e){}
     }
   });
-  // URL shortcut removed (was '?dev=lucid2026' — password literal in source).
-  // Same gate now applies; the panel only opens if lw_dev_unlocked is set.
-  try { if (localStorage.getItem('lw_dev_unlocked')==='1') {
-    document.getElementById('pw-dev-admin').classList.add('open');
-  } } catch(e){}
+  // Stephen 2026-05-08: removed auto-open-on-load. Once unlocked, the
+  // panel was opening on EVERY page visit, so anyone who'd ever visited
+  // ?devmode= or 5-tapped BETA was stuck with the panel popping every
+  // time. The 5-tap on the BETA badge (and on sws-debug-toggle above)
+  // is the only intentional opener now. The unlock flag still gates
+  // those — it just doesn't auto-fire.
 })();
 </script>
 
@@ -76583,16 +76592,16 @@ function _step36Inner(){
     );
     return;
   }
-  // iOS GPS-stalled fix: if geolocation hasn't resolved yet, openPicker
-  // bails on `!_uLat` and the SOW tap silently toasts "Getting location..."
-  // — the tutorial polls forever for a carousel that will never open. Force
-  // the FALLBACK coords so the tester can advance even if their permission
-  // prompt is still pending or was denied. Real GPS, when it arrives, will
-  // overwrite these.
-  if (!window._uLat && window.FG_Wild && window.FG_Wild._forceFallbackCoords) {
+  // iOS / Pi Browser GPS-deny fix: ALWAYS call _forceFallbackCoords here,
+  // not just when _uLat is missing. The function is idempotent for coords
+  // (only sets them if absent) but it ALSO clears _gpsDenied=false. Without
+  // this unconditional call, a player who denied GPS at boot has _uLat set
+  // (boot fallback) AND _gpsDenied=true, which blocks _drop() at step 37
+  // ("Demo mode. Enable GPS to plant in the real world."). Pi reviewer
+  // hitting "deny" on the permission prompt was hard-locked at step 36/37.
+  // Stephen 2026-05-08.
+  if (window.FG_Wild && window.FG_Wild._forceFallbackCoords) {
     try { window.FG_Wild._forceFallbackCoords(); } catch(e){}
-    // Re-run mock injection now that coords are set (step 35 silently
-    // skipped this if _uLat was null).
     try { _lwTutInjectMockHex(); } catch(e){}
   }
   var sow = document.getElementById('dfb');
