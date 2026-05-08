@@ -346,6 +346,10 @@ window._gameFns.sprout=function GPW(a){
           done=true;
           recordResult(false,null);
           showResult(false,null);
+          // Stephen 2026-05-08: was missing the game_loss fire, so the
+          // configured 1-Sunbeam time-loss reward never landed for a
+          // failed Wordle. Mirrors chess/c4/mastermind loss credit.
+          if(typeof _e==='function')_e('game_loss');
           _sr('sprout',{w:false,s:answer});
         }else{
           markActive();

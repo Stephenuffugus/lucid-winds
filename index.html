@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.07.48';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.20';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1103,10 +1103,12 @@
     @keyframes vtFadeOut{from{opacity:1;filter:none;}to{opacity:0;filter:blur(2px);}}
     @keyframes vtFadeIn{from{opacity:0;filter:blur(2px);}to{opacity:1;filter:none;}}
     html{background:var(--black);color:var(--cream);scroll-behavior:smooth;overflow-x:hidden;font-size:clamp(18px,4.5vw,22px);}
+    /* html background must be set explicitly — the browser's default white
+       paints during the brief moment between display:none → display:block
+       on tab switches, before body's bg has applied. Especially visible
+       in Pi Browser. */
+    html{background:#0d100c;}
     body{font-family:'DM Mono',monospace;font-size:1rem;line-height:1.6;min-height:100vh;min-height:100dvh;overflow-x:hidden;
-      /* Stephen 2026-05-07: was inheriting browser's white default, so
-         tab transitions briefly flashed white between panels. Match
-         html's background so the gap is invisible. */
       background:var(--black);color:var(--cream);
       -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
     /* ── Smoothness pass (2026-04-24) ─────────────────────────────
@@ -1325,6 +1327,18 @@
     body.lw-carousel-wild-mode #plant-gallery-modal { background: #0d100c url('assets/bg-wild-540x960.jpg') center/cover no-repeat; }
     body.lw-carousel-wild-mode #plant-gallery-modal::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(5,8,4,0.65),rgba(5,8,4,0.92)); pointer-events:none; z-index:0; }
     body.lw-carousel-wild-mode #plant-gallery-modal > * { position:relative; z-index:1; }
+    /* Stephen 2026-05-08: SVG plants in wild carousel were chopping +
+       disappearing — Leaflet's tile/canvas redraws + GPS marker updates
+       were competing with carousel SVG raster on the GPU. Fully hide the
+       map and decorative overlays while the wild carousel is on top so
+       Leaflet stops compositing. Leaflet's tile loop pauses cleanly under
+       display:none and redraws on restore. */
+    body.lw-carousel-wild-mode #wild-map,
+    body.lw-carousel-wild-mode #wild-map-tod,
+    body.lw-carousel-wild-mode .map-fog,
+    body.lw-carousel-wild-mode .map-hex-overlay,
+    body.lw-carousel-wild-mode #wild-frame,
+    body.lw-carousel-wild-mode .pollen-particle { display:none !important; }
 
     /* ── Top bar: name + close + counter ── */
     .pgm-topbar {
@@ -1364,8 +1378,12 @@
       transform: translate3d(-33.333%, 0, 0);
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      contain: layout style paint;
-      transform-style: preserve-3d;
+      /* Stephen 2026-05-08: dropped `contain:paint` and `transform-style:
+         preserve-3d` — both stack with .cs-flip-inner's preserve-3d to
+         create nested 3D contexts. The nested raster bug shows as plant
+         SVG "cutting in half / parts disappearing" mid-swipe. Keep
+         layout+style for selector scoping; let paint flow uncached. */
+      contain: layout style;
     }
     /* Buttery-smooth commit — easeOutCubic-ish curve reads as "glide".
        Duration bumped from 0.28s → 0.34s so the card settles rather than
@@ -1399,7 +1417,7 @@
        On iPhone 14 Pro (svh ~744): 744-170=574 → ratio 361:574 ≈ 0.63.
        margin-top trimmed 24→14 so the breathing room doesn't eat the
        extra height we just clawed back. */
-    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 170px);max-height:620px;margin:14px auto 0;position:relative;contain:layout style paint;}
+    .cs-flip-wrap{perspective:1000px;width:92vw;max-width:460px;height:calc(100svh - 170px);max-height:620px;margin:14px auto 0;position:relative;contain:layout style;}
     .cs-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;transform-style:preserve-3d;will-change:transform;-webkit-backface-visibility:hidden;}
     .cs-flip-wrap.flipped .cs-flip-inner{transform:rotateY(180deg);}
     /* Stephen 2026-05-03: Pixel 9 carousel was flickering + partial SVG
@@ -1517,7 +1535,7 @@
     .cf-name .np-main{display:block;font-size:1.9rem;}
     .cf-name .np-title{display:block;font-size:0.7rem;font-style:italic;letter-spacing:0.05em;opacity:0.65;font-weight:400;margin-top:2px;}
     .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:visible;min-height:0;background:transparent;border:none;padding-bottom:2%;}
-    .cf-art-window svg{max-height:100%;max-width:90%;width:auto;height:100%;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));transform:none;}
+    .cf-art-window svg{max-height:100%;max-width:90%;width:auto;height:100%;transform:none;}
     /* Stephen 2026-05-03: haiku gets more breathing room from the plant
        SVG above. align-items flex-start → center + extra padding-top
        lifts haiku visually away from the art window without making the
@@ -2127,7 +2145,7 @@
        Wild tab. Lift it the same way + bump the wild controls (recenter,
        my-plants FAB) above the Pi system bar. */
     body.pi-browser #wild-nav{ bottom: var(--pi-chrome-h) !important; }
-    body.pi-browser #w-recenter{ bottom: calc(200px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
+    body.pi-browser #w-recenter{ bottom: calc(268px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-my-plants{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-mass-water{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #bp-rtb{ bottom: calc(92px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px) + 8px) !important; }
@@ -2557,7 +2575,7 @@
       border-bottom:2px solid var(--sage);color:var(--cream);
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
-    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(102px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);}
+    .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(102px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);background-color:#0d100c;}
     /* Nursery tight layout — even tighter top so action row sits flush
        under the keeper bar. */
     .grove-panel.nur-tight{padding-top:calc(94px + env(safe-area-inset-top, 0px));}
@@ -2572,7 +2590,7 @@
     /* Greenhouse tight panel-header: smaller padding + tighter gh-progress */
     .grove-panel#panel-greenhouse .panel-header{margin:4px 6px 4px!important;padding:4px 8px!important;min-height:36px;}
     .grove-panel#panel-greenhouse .gh-progress{margin-bottom:0.3rem!important;}
-    .grove-panel.active{display:block;}
+    .grove-panel.active{display:block;animation:panelFadeIn 0.18s ease-out;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
     @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
     /* Stephen 2026-05-02: counter pulse when fly-to-target rewards land. */
@@ -2623,7 +2641,10 @@
     .greenhouse-plant:active{transform:scale(0.97);}
     @media (hover:hover){.greenhouse-plant:hover{box-shadow:0 0 14px rgba(122,179,86,0.2),0 4px 12px rgba(0,0,0,0.5);transform:scale(1.02);}}
     .greenhouse-plant.gh-new{box-shadow:0 0 12px rgba(200,168,75,0.2),0 2px 6px rgba(0,0,0,0.4);}
-    .greenhouse-plant.gh-new::after{content:'NEW';position:absolute;top:4px;left:4px;font-family:'Bebas Neue',sans-serif;font-size:0.25rem;letter-spacing:0.06em;color:#0d100c;background:var(--gold);padding:1px 4px;border-radius:3px;z-index:5;}
+    /* NEW text badge removed 2026-05-08 — was firing on wrong plants
+       (likely cache-key boundary on _ghAgeTier or plant.born path
+       inconsistency between mint sites). Glow stays as the subtle "fresh"
+       cue. Re-add a position-based badge later if the affordance is missed. */
     .greenhouse-plant.season-spring{background-image:url('assets/cards/fronts/card-front-spring.png');}
     .greenhouse-plant.season-summer{background-image:url('assets/cards/fronts/card-front-summer.png');background-size:103% 103%;}
     .greenhouse-plant.season-autumn{background-image:url('assets/cards/fronts/card-front-autumn.png');}
@@ -5792,10 +5813,11 @@ body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
    the RIGHT, both pinned at the same y-coordinate so they read as a
    matched pair. Mass-water hides for now until Stephen places it. */
 #w-menu-fab{display:none!important;}
-/* Stephen 2026-05-07 evening: recenter button moved above the
-   ALL/YOURS/HELP/FORAGE/SOCIAL chip bar (which sits at bottom:110px).
-   Chip bar is ~56px tall + comfortable gap → recenter at 200px. */
-body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(200px + env(safe-area-inset-bottom,0px))!important;}
+/* Stephen 2026-05-08: ALL/YOURS/HELP/FORAGE/SOCIAL chip bar sits at
+   bottom:110px and can wrap to 2 lines on narrow viewports (becoming
+   ~90-100px tall instead of 40px). Pulled recenter higher in
+   iterations 200→210→220→260→268 over the day. */
+body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(268px + env(safe-area-inset-bottom,0px))!important;}
 body.tab-wild #w-my-plants{display:flex!important;}
 body.tab-wild #w-mass-water{display:none!important;}
 body:not(.tab-wild) #w-recenter,
@@ -6228,7 +6250,8 @@ body.lw-bp-open .bp-extra-row > button{flex:0 0 auto!important;min-height:48px!i
 .wtp2-stat-lbl{font-family:'DM Mono',monospace;font-size:clamp(.55rem,1.4vw,.65rem);color:var(--muted);letter-spacing:.12em;margin-top:6px;text-transform:uppercase;}
 
 /* Climate / tolerances readouts get the same bigger type as the rest */
-.wtp2 #wtp-climate,.wtp2 #wtp-tolerances{font-size:clamp(.62rem,1.6vw,.75rem) !important;line-height:1.7 !important;padding:6px 20px !important;}
+.wtp2 #wtp-climate,.wtp2 #wtp-tolerances{font-size:clamp(.78rem,2vw,.92rem) !important;line-height:1.65 !important;padding:8px 20px !important;}
+.wtp2 #wtp-climate img,.wtp2 #wtp-tolerances img{width:26px !important;height:26px !important;object-fit:contain;vertical-align:-7px;display:inline-block;}
 
 /* Action buttons — full painted plaques in a row, big enough to thumb */
 .wtp2-actions{display:flex;gap:10px;padding:18px 18px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));margin-top:auto;flex-shrink:0;flex-wrap:wrap;justify-content:center;}
@@ -7302,7 +7325,7 @@ window._addSwitchTabHook = function(fn){
     </div>
     <!-- STATS STRIP — dedicated bar below the hero banner. -->
     <div id="w-stats-bar">
-      <div class="wsb-chip" onclick="if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.');"><div class="wsb-val" style="color:#5baddc" id="w-dew">0</div><div class="wsb-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.28rem;color:var(--muted);"></span></div></div>
+      <div class="wsb-chip" onclick="if(window.FG_Wild&&FG_Wild._logTip)FG_Wild._logTip('Dew, produced by your wild plants and collected when helping others. Spend on nursery acceleration and on cuttings.');"><div class="wsb-val" style="color:#5baddc" id="w-dew">0</div><div class="wsb-lbl" style="color:#5baddc;">dew <span id="w-dew-rate" style="font-size:0.5rem;color:var(--muted);font-weight:500;"></span></div></div>
       <!-- Stephen 2026-05-03: pollen chip removed. Pollen IS XP — already
            shown on the keeper bar XP gauge + rank line ("Lvl X · Class ·
            Y/Z XP"). Showing it again here as a third currency-looking
@@ -7391,8 +7414,8 @@ window._addSwitchTabHook = function(fn){
            via the carousel inspect path. -->
       <div class="wtp2-actions" id="wtp-other-actions">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-water-other"><div class="wtp2-btn-icon" style="font-size:1.4rem;"><span class="lwe lwe-drop"></span></div><div class="wtp2-btn-lbl">Water</div></button>
-        <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
+        <button class="wtp2-btn" id="wtp-water-other"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" loading="lazy" style="width:64px;height:64px;object-fit:contain;" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn" id="wtp-wild-breed"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-breed-btn-v4.png" loading="lazy" style="width:64px;height:64px;object-fit:contain;" alt=""></div><div class="wtp2-btn-lbl">Breed</div></button>
       </div>
       <!-- Action buttons — your own plant. Defense retired Apr 30. Breed
            (wtp-cross) retired Apr 30 too — director call: 'theres also a
@@ -7401,8 +7424,8 @@ window._addSwitchTabHook = function(fn){
            plant) to breed. _crossPollinate kept as dead JS for legacy. -->
       <div class="wtp2-actions" id="wtp-own-actions" style="display:none">
         <button class="wtp2-btn" onclick="FG_Wild.closeTP()"><div class="wtp2-btn-icon">✕</div><div class="wtp2-btn-lbl">Close</div></button>
-        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
-        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" loading="lazy" style="width:40px;height:40px" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
+        <button class="wtp2-btn" id="wtp-inspect2"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-inspect-btn-v4.png" loading="lazy" style="width:64px;height:64px;object-fit:contain;" alt=""></div><div class="wtp2-btn-lbl">Inspect</div></button>
+        <button class="wtp2-btn" id="wtp-water"><div class="wtp2-btn-icon"><img src="assets/games/wild/wild-water-btn-v4.png" loading="lazy" style="width:64px;height:64px;object-fit:contain;" alt=""></div><div class="wtp2-btn-lbl">Water</div></button>
       </div>
     </div>
     <!-- PICKER -->
@@ -8275,7 +8298,7 @@ window._addSwitchTabHook = function(fn){
       if(!window.mintPlant){alert('mintPlant not available');return;}
       var hashes=[
         {tier:'Mythic',hash:'0717c6d1139407e768d2041ac0dd26dd275f2b83a3fad5fb792316a35ba217d8'},  // Toad (mythByte=0xD2)
-        {tier:'Mythic',hash:'b5de4f83f6ad365885ecc07018e30a1964742e55de539af5a5f650ce5cd4e629'},  // Phoenix (mythByte=0xEC)
+        {tier:'Mythic',hash:'b5de4f83f6ad365885ecc07018e30a1964742e55de539af5a5f650ce5cd4e629'},  // Cicada (mythByte=0xEC; Phoenix retired 2026-04-14)
         {tier:'Cosmic',hash:'98e42ce4fae1a70ea0ff1665ea7e7573e98e6d2c377d16bb893220754a579a4b'},  // Beholder (mythByte=0xFF)
         {tier:'Cosmic',hash:'8c63fd69b9e4dcb5d3ff68bee8d21947af80ae28947b697c3c2469f3f7a01108'}   // Beholder + Albino mutation
       ];
@@ -11769,15 +11792,26 @@ document.addEventListener('keydown', function(e) {
     });
   }
 
+  // Last waterLog entry as ms. Works for legacy date strings ("2026-05-07")
+  // and ISO timestamps. Returns 0 when log is empty or unparseable.
+  function _lastWaterMs(seed){
+    if(!seed||!seed.waterLog||!seed.waterLog.length) return 0;
+    var t=new Date(seed.waterLog[seed.waterLog.length-1]).getTime();
+    return isNaN(t)?0:t;
+  }
+
   function waterSeed(id){
     var nursery=_loadNursery();
     var idx=nursery.findIndex(function(s){return s.id===id;});
     if(idx<0) return {ok:false,reason:'NOT_FOUND'};
     var seed=nursery[idx];
     if(seed.status!=='growing') return {ok:false,reason:'NOT_GROWING'};
-    var today=_today();
-    if(seed.waterLog.indexOf(today)>-1) return {ok:false,reason:'ALREADY_WATERED_TODAY'};
-    seed.waterLog.push(today);
+    // 24h real-time gate — UTC date string would let a 5pm-Pacific water
+    // re-fire at 6pm-Pacific because UTC midnight already rolled.
+    var now=Date.now();
+    var lastMs=_lastWaterMs(seed);
+    if(lastMs && (now-lastMs)<86400000) return {ok:false,reason:'COOLDOWN',cooldownMs:86400000-(now-lastMs)};
+    seed.waterLog.push(new Date(now).toISOString());
     var bloomReady=seed.waterLog.length>=3;
     nursery[idx]=seed;
     _saveNursery(nursery);
@@ -11800,7 +11834,11 @@ document.addEventListener('keydown', function(e) {
   }
 
   function isBloomReady(seed){ return seed&&seed.waterLog.length>=3&&seed.status==='growing'; }
-  function canWaterToday(seed){ return seed&&seed.waterLog.indexOf(_today())<0&&seed.status==='growing'; }
+  function canWaterToday(seed){
+    if(!seed||seed.status!=='growing') return false;
+    var lastMs=_lastWaterMs(seed);
+    return !lastMs || (Date.now()-lastMs)>=86400000;
+  }
 
   function bloomSeed(id){
     var nursery=_loadNursery();
@@ -40034,7 +40072,13 @@ document.addEventListener('keydown', function(e) {
         // v3 suffix busts the older v2 cache that missed age + revealed + idx.
         var _ghAgeDays = plant.born ? Math.floor((Date.now() - plant.born) / 86400000) : 0;
         var _ghAgeTier = _ghAgeDays >= 90 ? 3 : _ghAgeDays >= 30 ? 2 : _ghAgeDays >= 7 ? 1 : 0;
-        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|' + (plant.wildBorn ? 'w' : 'g') + '|v5'; // v5 (2026-05-02): bell flower rebuild needs fresh SVG render
+        // Current calendar season (0=Spring, 1=Summer, 2=Autumn, 3=Winter) —
+        // computeEA folds in season bonus via getSeasonInfo, which flips
+        // every ~90 days. Without this in the cache key, a player who
+        // didn't write the greenhouse across a season transition saw
+        // stale EA on the card. v6 (2026-05-08) adds it; clears stale v5.
+        var _ghCurSeason = (Math.floor(new Date().getMonth() / 3) % 4);
+        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|' + (plant.wildBorn ? 'w' : 'g') + '|s' + _ghCurSeason + '|v6';
         if (_ghCardCache[_cacheKey]) {
           el.innerHTML = _ghCardCache[_cacheKey];
           (function(idx) { el.onclick = function() { openCarousel(loadGreenhouse(), idx, 'greenhouse'); }; })(realIdx);
@@ -41020,7 +41064,10 @@ document.addEventListener('keydown', function(e) {
     try{if(window._LW_classBonus){_dewMult *= window._LW_classBonus('dewRate');}}catch(e){}
     try{if(window.LW_COMPANION){_dewMult *= window.LW_COMPANION.getCompanionMult('dewRate');}}catch(e){}
     try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dewCache'))_dewMult *= 1.5;}catch(e){}
-    try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))_dewMult *= 1.1;}catch(e){}
+    // dawnAnthem dew-rate consumer removed 2026-05-08 — the only purchase
+    // path was the CLASS tab (also removed today), so the booster could
+    // never be activated. Kept the entry in LW_CLASS_ITEMS for future
+    // re-promotion to LW_BOOSTERS.
     if(window._LW_capMultiplier) _dewMult = window._LW_capMultiplier('dewRate', _dewMult);
     amount = Math.ceil(amount * _dewMult);
     // Tender XP: dew income feeds class XP (1 per 4 dew to prevent spam)
@@ -42364,9 +42411,20 @@ document.addEventListener('keydown', function(e) {
   window.closePlantGallery = function() {
     _clearModalHistory('plant-gallery-modal');
     document.getElementById('plant-gallery-modal').classList.remove('open');
+    var _wasWildMode = false;
+    try { _wasWildMode = document.body.classList.contains('lw-carousel-wild-mode'); } catch(e){}
     // Drop the wild-mode backdrop class — restores default greenhouse
     // gallery look on the next non-wild open.
     try { document.body.classList.remove('lw-carousel-wild-mode'); } catch(e){}
+    // If we just closed a wild-inspect/wild-place carousel, the map was
+    // display:none'd. Leaflet listens for window resize and self-recovers
+    // by recalculating dimensions + redrawing tiles. One tick to let the
+    // map element become visible again, then dispatch.
+    if (_wasWildMode) {
+      setTimeout(function(){
+        try { window.dispatchEvent(new Event('resize')); } catch(e){}
+      }, 60);
+    }
     // Unbind touch events
     var vp = document.getElementById('pgm-viewport');
     if (vp) {
@@ -43362,10 +43420,16 @@ document.addEventListener('keydown', function(e) {
     try{if(window.LW_HUNT&&window.LW_HUNT.getUpgrade){var _spB=window.LW_HUNT.getUpgrade('fert_slot_bonus')||0;if(_spB>0)fertReward+=_spB;}}catch(e){}
     // Conduit T3 RITUAL "Compost Song" — Dew refund by Terra Grade tier.
     // Common=1, Uncommon=2, Rare=3, Epic=4, Legendary=5, Mythic=6, Cosmic=7.
+    // Stephen 2026-05-08: was gating on plant.grade truthy + shadowing the
+    // outer `_tg` (the getTerraGrade result used downstream by compost_log
+    // and LW_Log payload). Greenhouse plants don't carry .grade — it's
+    // derived via getTerraGrade — so the ritual NEVER fired for any
+    // conduits-T3 player. Plus the inner var clobbered the outer object
+    // so logged compost tier became undefined for the rest of this fn.
     try{
-      if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('conduits')&&plant&&plant.grade){
-        var _tg={Common:1,Uncommon:2,Rare:3,Epic:4,Legendary:5,Mythic:6,Cosmic:7};
-        var _dr=_tg[plant.grade]||1;
+      if(window._LW_hasFamilyRitual&&window._LW_hasFamilyRitual('conduits')&&_tg&&_tg.name){
+        var _drTbl={Common:1,Uncommon:2,Rare:3,Epic:4,Legendary:5,Mythic:6,Cosmic:7};
+        var _dr=_drTbl[_tg.name]||1;
         // Wet weather amplifies the song — silent bonus, no UI tell. Player
         // notices over time that rainy composts return more.
         try{
@@ -43588,8 +43652,10 @@ document.addEventListener('keydown', function(e) {
     if (_padDrawerCtx === 'nursery') {
       // Mirror the merged primary-action logic from the inline seed card:
       // bloom-ready → BLOOM; else not-watered-today → WATER; else → +1 DAY (21 Dew).
-      var _padToday       = new Date().toISOString().split('T')[0];
-      var _padWateredTdy  = !!(plant.waterLog && plant.waterLog.indexOf(_padToday) > -1);
+      // 24h gate matches handleWaterSeed — UTC date strings would mis-flip.
+      var _padNowMs = Date.now();
+      var _padLastMs = (plant.waterLog && plant.waterLog.length) ? new Date(plant.waterLog[plant.waterLog.length-1]).getTime() : 0;
+      var _padWateredTdy  = !!(_padLastMs && !isNaN(_padLastMs) && (_padNowMs - _padLastMs) < 86400000);
       var _padBloomReady  = !!(plant.waterLog && plant.waterLog.length >= 3);
       if (_padBloomReady) {
         btns += '<button class="pad-btn bloom" onclick="handleBloomBtn(\''+plant.id+'\')">' +
@@ -44380,10 +44446,13 @@ document.addEventListener('keydown', function(e) {
     var _nurBadge = document.getElementById('nav-nur-badge');
     if (_nurBadge) {
       var _nurNeeds = 0;
-      var _nurToday = new Date().toISOString().split('T')[0];
+      var _nurNowMs = Date.now();
       for (var _ni = 0; _ni < nursery.length; _ni++) {
         var _ns = nursery[_ni];
-        if (_ns && _ns.status === 'growing' && _ns.waterLog && _ns.waterLog.indexOf(_nurToday) === -1) _nurNeeds++;
+        if (_ns && _ns.status === 'growing' && _ns.waterLog) {
+          var _nurLt = _ns.waterLog.length ? new Date(_ns.waterLog[_ns.waterLog.length-1]).getTime() : 0;
+          if (!_ns.waterLog.length || isNaN(_nurLt) || (_nurNowMs - _nurLt) >= 86400000) _nurNeeds++;
+        }
         if (_ns && FG_Data.isBloomReady && FG_Data.isBloomReady(_ns)) _nurNeeds++;
       }
       if (_nurNeeds > 0) { _nurBadge.textContent = _nurNeeds; _nurBadge.style.display = 'flex'; } else { _nurBadge.style.display = 'none'; }
@@ -44557,8 +44626,12 @@ document.addEventListener('keydown', function(e) {
   window._openNurseryShop = function() {
     // Default tab fallback: prefer POTS, then BOOSTERS, then CLASS.
     // Demote only if the chosen tab is locked at current level.
+    // Class tab + class-item shop removed 2026-05-08 — 4 of 5 class items
+    // were never wired (forestSight/graftKit/sextantPolish/mistVial took
+    // Dew but did nothing). Tab gone until consumers are properly built.
+    if (_nurseryShopTab === 'class') _nurseryShopTab = 'boosters';
     if (_nurseryShopTab === 'pots' && window.canSee && window.canSee.nurseryShopPots && !window.canSee.nurseryShopPots()) _nurseryShopTab = 'boosters';
-    if (_nurseryShopTab === 'boosters' && window.canSee && window.canSee.nurseryShopBoosters && !window.canSee.nurseryShopBoosters()) _nurseryShopTab = 'class';
+    if (_nurseryShopTab === 'boosters' && window.canSee && window.canSee.nurseryShopBoosters && !window.canSee.nurseryShopBoosters()) _nurseryShopTab = 'pots';
     var inv = loadInventory();
     var dew = window.getTotalDew ? window.getTotalDew() : 0;
     var existing = document.getElementById('lw-pot-shop');
@@ -44574,7 +44647,7 @@ document.addEventListener('keydown', function(e) {
     var h = '<div onclick="event.stopPropagation()" style="max-width:380px;width:100%;max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 16px 50px rgba(0,0,0,0.7);overflow:hidden;">';
     // Sticky header — title + always-visible 48px close button
     h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1rem 0.6rem;border-bottom:1px solid rgba(74,124,53,0.15);flex-shrink:0;background:rgba(13,16,12,0.6);">';
-    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);">\ud83e\udeb4 NURSERY SHOP</div>';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:var(--gold);display:inline-flex;align-items:center;gap:0.45rem;"><img src="assets/fx/nursery-shop-gold.png" alt="" style="width:32px;height:32px;object-fit:contain;display:inline-block;vertical-align:middle;">NURSERY SHOP</div>';
     h += '<button onclick="document.getElementById(\'lw-pot-shop\').remove()" aria-label="Close" style="background:rgba(122,179,86,0.1);border:1.5px solid rgba(122,179,86,0.4);color:var(--cream);width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">\u2715</button>';
     h += '</div>';
     // Tab bar — pots unlock Lv 9, boosters Lv 10, class visible at Lv 7+ or when class picked
@@ -44582,7 +44655,7 @@ document.addEventListener('keydown', function(e) {
     var tabs = [];
     tabs.push({k:'pots', lbl:'POTS', locked: !window.canSee || !window.canSee.nurseryShopPots || !window.canSee.nurseryShopPots(), lvl:9});
     tabs.push({k:'boosters', lbl:'BOOSTERS', locked: !window.canSee || !window.canSee.nurseryShopBoosters || !window.canSee.nurseryShopBoosters(), lvl:10});
-    tabs.push({k:'class', lbl:'CLASS', locked: false});
+    // CLASS tab removed 2026-05-08 — re-add when class items have working consumers.
     h += '<div style="display:flex;gap:0.3rem;padding:0.45rem 0.7rem 0.3rem;flex-shrink:0;">';
     for (var ti=0; ti<tabs.length; ti++){
       var t=tabs[ti]; var act=_nurseryShopTab===t.k;
@@ -44636,43 +44709,11 @@ document.addEventListener('keydown', function(e) {
       document.body.appendChild(modal);
       return;
     }
-    if (_nurseryShopTab === 'class') {
-      var playerClass=localStorage.getItem('lw_class')||null;
-      var classInv={};try{classInv=JSON.parse(localStorage.getItem('lw_class_inventory')||'{}');}catch(e){}
-      if (!playerClass) {
-        h += '<div style="padding:1.5rem 0.5rem;text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;">Choose a class in the Book of Secrets to unlock class-specific items.</div>';
-      } else {
-        h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Items for every class. Each is only usable by its own class, shown here so you can aspire toward other paths.</div>';
-        var cks=Object.keys(window.LW_CLASS_ITEMS);
-        for (var ci=0;ci<cks.length;ci++){
-          var item=window.LW_CLASS_ITEMS[cks[ci]];
-          var mineCls=item.class===playerClass;
-          var canAff=dew>=item.cost; var canB=mineCls&&canAff;
-          var owned=classInv[item.id]||0;
-          var bCol=mineCls?(item.color+'55'):'rgba(122,122,122,0.3)';
-          h += '<div style="display:flex;gap:0.65rem;padding:0.7rem 0.55rem;margin-bottom:0.45rem;background:rgba(13,16,12,0.55);border:1px solid '+bCol+';border-radius:9px;align-items:center;opacity:'+(mineCls?'1':'0.6')+';">';
-          h += '<div style="width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;'+(mineCls?'':'filter:grayscale(0.6);')+'"><img src="assets/class-items/'+item.id+'.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.outerHTML=&apos;<span style=&quot;font-size:2.2rem;&quot;>'+item.icon+'</span>&apos;;"></div>';
-          h += '<div style="flex:1;min-width:0;">';
-          h += '<div style="display:flex;align-items:center;gap:0.3rem;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+(mineCls?item.color:'rgba(180,180,180,0.85)')+';letter-spacing:0.06em;">'+item.name+'</div>';
-          h += '<span onclick="event.stopPropagation();if(window._lwShowShopClassItemDetail)_lwShowShopClassItemDetail(\''+cks[ci]+'\')" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(200,168,75,0.35);color:var(--gold);font-family:DM Mono,monospace;font-size:0.45rem;cursor:pointer;flex-shrink:0;" title="Lore + details">\u2139</span></div>';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.35;margin-top:0.18rem;">'+item.blurb+'</div>';
-          var statusL='Class: <b style="color:'+(mineCls?'var(--sage)':'#d96b4b')+';">'+item.class.toUpperCase()+'</b> \u00b7 Owned: '+owned;
-          if (mineCls && !canAff) statusL += ' \u00b7 <span style="color:var(--gold);">Save '+(item.cost-dew)+' Dew</span>';
-          h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.22rem;">'+statusL+'</div>';
-          h += '</div>';
-          var bBg=!mineCls?'rgba(80,30,30,0.25)':(!canAff?'rgba(46,46,46,0.3)':'linear-gradient(180deg,rgba(74,124,53,0.4),rgba(46,80,34,0.55))');
-          var bBdr=!mineCls?'rgba(217,107,75,0.35)':(!canAff?'rgba(122,122,122,0.3)':'rgba(122,179,86,0.5)');
-          var bCr=!mineCls?'rgba(217,107,75,0.85)':(!canAff?'rgba(160,160,160,0.6)':'var(--cream)');
-          var bLbl=!mineCls?'\ud83d\udd12':(item.cost+'\ud83d\udca7');
-          h += '<button onclick="window.lwBuyClassItem(\''+item.id+'\')" '+(canB?'':'disabled')+' style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.06em;background:'+bBg+';border:1.5px solid '+bBdr+';color:'+bCr+';border-radius:8px;padding:0.5rem 0.65rem;cursor:'+(canB?'pointer':'not-allowed')+';min-height:48px;min-width:68px;flex-shrink:0;">'+bLbl+'</button>';
-          h += '</div>';
-        }
-      }
-      h += '</div></div>';
-      modal.innerHTML = h;
-      document.body.appendChild(modal);
-      return;
-    }
+    // Class-items render branch removed 2026-05-08. The 4 broken consumables
+    // (forestSight, graftKit, sextantPolish, mistVial) all took Dew without
+    // ever firing. Dawn Anthem worked but isn't worth shipping a 1-item tab.
+    // Re-add when class items have real consumers. _setNurseryShopTab still
+    // demotes 'class' \u2192 'boosters' above so any stale onclick is harmless.
     // Default = pots tab
     h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);margin-bottom:0.85rem;line-height:1.5;">Specialty pots are consumable. Apply one to a growing seed and it triggers at bloom. Single use.</div>';
     var keys = Object.keys(window.LW_POTS);
@@ -46293,15 +46334,24 @@ document.addEventListener('keydown', function(e) {
       return;
     }
 
-    var today = new Date().toISOString().split('T')[0];
-    if (seed.waterLog && seed.waterLog.indexOf(today) > -1) {
-      _setNurMsg('✓ Already watered today. Come back tomorrow.');
+    // 24h real-time gate — UTC date strings let a 5pm-Pacific water re-fire
+    // at 6pm-Pacific because UTC midnight already rolled over.
+    var _now = Date.now();
+    var _lastMs = 0;
+    if (seed.waterLog && seed.waterLog.length) {
+      var _last = seed.waterLog[seed.waterLog.length - 1];
+      var _t = new Date(_last).getTime();
+      _lastMs = isNaN(_t) ? 0 : _t;
+    }
+    if (_lastMs && (_now - _lastMs) < 86400000) {
+      var _hrs = Math.ceil((86400000 - (_now - _lastMs)) / 3600000);
+      _setNurMsg('✓ Already watered. Available in ' + _hrs + 'h.');
       return;
     }
 
-    // Push water entry in-memory
+    // Push ISO timestamp so the 24h gate works on next read.
     if (!seed.waterLog) seed.waterLog = [];
-    seed.waterLog.push(today);
+    seed.waterLog.push(new Date(_now).toISOString());
     nur[seedIndex] = seed;
 
     if (typeof gtag !== 'undefined') gtag('event', 'nursery_water', { id: seedId, days: seed.waterLog.length });
@@ -46394,12 +46444,18 @@ document.addEventListener('keydown', function(e) {
     updateDashboard();
     if (typeof gtag !== 'undefined') gtag('event', 'nursery_fertilize', { id: seedId, cost: cost });
 
-    // Calculate the sequential next day from the LAST entry in waterLog —
-    // NOT from Date.now(). Empty log falls back to yesterday so first tap
-    // produces today's date and lands a legitimate entry.
-    var lastDateStr = seed.waterLog.length > 0 ? seed.waterLog[seed.waterLog.length - 1] : new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    // Calculate the sequential next entry from the LAST entry in waterLog
+    // — NOT from Date.now(). Empty log falls back to yesterday so first
+    // tap produces today's entry and lands a legitimate one.
+    // Stephen 2026-05-08: was writing a YYYY-MM-DD string here while
+    // handleWaterSeed (46339) writes a full ISO timestamp. The 24h gate
+    // at _lastWaterMs (11797) parses both, but a date string parses to
+    // UTC midnight so a Pacific-time +1-DAY user saw the next gate
+    // expire at ~5pm same-day instead of 24h later. Use ISO timestamps
+    // throughout so the gate math is consistent.
+    var lastDateStr = seed.waterLog.length > 0 ? seed.waterLog[seed.waterLog.length - 1] : new Date(Date.now() - 86400000).toISOString();
     var lastDate    = new Date(lastDateStr);
-    var nextDate    = new Date(lastDate.getTime() + 86400000).toISOString().split('T')[0];
+    var nextDate    = new Date(lastDate.getTime() + 86400000).toISOString();
     if (seed.waterLog.indexOf(nextDate) < 0) {
       seed.waterLog.push(nextDate);
     }
@@ -49499,7 +49555,10 @@ function _startGeoWatch(){
   if(!navigator.geolocation)return;
   try{_gpsWatchId=navigator.geolocation.watchPosition(function(p){
     var nL=p.coords.latitude,nN=p.coords.longitude;
-    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>0.7&&d<50){_addSteps(Math.round(d));}}
+    // 2026-05-08: bumped 0.7m → 2.5m. GPS jitter on a stationary phone is
+    // typically 1-2m so the old threshold counted phone-jiggle as steps.
+    // Real walking at ~1.4m/s × 3s GPS update ≈ 4m, well above 2.5m.
+    if(_uLat&&_uLng){var d=_dist(_uLat,_uLng,nL,nN);if(d>2.5&&d<50){_addSteps(Math.round(d));}}
     _uLat=nL;_uLng=nN;
     window._uLat=_uLat;window._uLng=_uLng;
     var _now=Date.now();
@@ -50236,6 +50295,11 @@ function _addSteps(meters){
   var _stpMult = 1;
   try{if(window._LW_classBonus){_stpMult *= window._LW_classBonus('stepBonus');}}catch(e){}
   try{if(window.LW_COMPANION){_stpMult *= window.LW_COMPANION.getCompanionMult('stepXp');}}catch(e){}
+  // Stephen 2026-05-08: tree node Long Stride (stepBonus) was allocatable
+  // but its bonus never folded in here — players spent 5 pts in the
+  // Cartographer node and got nothing. _LW_treeBonus('stepBonus') walks
+  // both the node + any aliases via TREE_CONSUMER_MAP/fallback.
+  try{if(window._LW_treeBonus){var _stm=window._LW_treeBonus('stepBonus');if(_stm>1)_stpMult *= _stm;}}catch(e){}
   if(window._LW_capMultiplier) _stpMult = window._LW_capMultiplier('stepBonus', _stpMult);
   meters = meters * _stpMult;
   // Cartographer XP: 1 XP per 10 meters walked
@@ -50513,28 +50577,24 @@ function _initCompass(){
     // a permission prompt was suppressed without one).
     windEl.addEventListener('click', function(){ _trySensor(); }, { once: true });
   }
-  // 2026-05-07 evening: graceful degrade for browsers that block all
-  // orientation sources (Pi Browser on Pixel does this — confirmed by
-  // Stephen testing). After 3s with zero events received, swap the
-  // stuck rotating arrow for a static "TAP" indicator so it doesn't
-  // read as a broken compass. The tap action still works.
+  // 2026-05-08: graceful degrade for browsers that block all orientation
+  // sources (Pi Browser on Pixel). After 3s with zero events received,
+  // dim the static arrow + clear the facing label so it doesn't pretend
+  // to be a working compass. Cab + click target stay live so the keeper-
+  // tree tap actions (L2 biome reveal, L3 feral bearing) still work.
+  // Was showing "TAP" text — read as broken/misleading per Stephen.
   var _eventsRx = false;
   var _origUpdate = _updateCompass;
   _updateCompass = function(h){ _eventsRx = true; _origUpdate(h); };
   setTimeout(function(){
     if (_eventsRx) return;
-    if (!compassImg) return;
-    // Swap arrow image for a static tap glyph. Keep the cab + click
-    // target intact — only the rotating part is replaced.
-    var parent = compassImg.parentNode;
-    if (!parent) return;
-    var staticGlyph = document.createElement('div');
-    staticGlyph.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.1em;color:rgba(200,168,75,0.85);text-shadow:0 0 8px rgba(200,168,75,0.4);pointer-events:none;';
-    staticGlyph.textContent = 'TAP';
-    compassImg.style.display = 'none';
-    parent.insertBefore(staticGlyph, compassImg);
+    if (compassImg) {
+      compassImg.style.opacity = '0.35';
+      compassImg.style.filter = 'grayscale(0.6)';
+      compassImg.style.transform = 'rotate(0deg)';
+    }
     var facing = document.getElementById('w-wind-facing');
-    if (facing) facing.textContent = '·';
+    if (facing) facing.textContent = '';
   }, 3000);
 }
 
@@ -53108,12 +53168,14 @@ function showTP(p,mk){
     if(p.own&&window._generatePlantSVG&&p.hash){try{sv.innerHTML=window._generatePlantSVG(p.hash,48);}catch(e){}}
     else if(!p.own){sv.innerHTML='<img src="assets/games/wild/wild-marker-common-v2.png" style="width:48px;height:48px;filter:drop-shadow(0 0 8px rgba(122,179,86,0.4));" alt="">';}
   }
-  var n=document.getElementById('wtp-name');if(n){n.textContent=p.own?(p.name||'?'):'Wild Specimen';n.style.color=p.own?(p.gc||'var(--cream)'):'var(--cream)';}
+  // Stephen 2026-05-08: per feedback_wild_mystery.md, wild plants show
+  // their rarity, EA, grade, season, and owner OPENLY. The old "Wild
+  // Specimen / UNKNOWN" mask contradicted that rule and made the trait
+  // panel inconsistent with the hex inspector + carousel back-face,
+  // both of which already render the real values.
+  var n=document.getElementById('wtp-name');if(n){n.textContent=(p.name||'?');n.style.color=(p.gc||'var(--cream)');}
   var g=document.getElementById('wtp-grade');
-  if(g){
-    if(p.own){g.textContent=(p.grade||'COMMON').toUpperCase();g.style.color=p.gc;}
-    else{g.textContent='UNKNOWN';g.style.color='var(--muted)';}
-  }
+  if(g){g.textContent=(p.grade||'COMMON').toUpperCase();g.style.color=p.gc||'var(--cream)';}
   var ow=document.getElementById('wtp-owner');if(ow){
     var _esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
     var ownerHtml=_esc(p.own?'Your plant':(p.ownerName||'Wild specimen'));
@@ -53134,7 +53196,7 @@ function showTP(p,mk){
   // Rarest traits — hidden for non-owned plants (mystery until harvest)
   var re=document.getElementById('wtp-rarest');
   if(re){
-    if(p.own&&p.rarities&&p.rarities.length>0){var rh='';for(var i=0;i<p.rarities.length;i++)rh+='<span style="display:inline-block;padding:2px 6px;border-radius:3px;font-size:clamp(.35rem,1vw,.42rem);margin:2px 2px 0 0;background:rgba(0,0,0,0.3);color:'+(p.gc||'var(--gold)')+';border:1px solid '+(p.gc||'var(--gold)')+';">\u2605 '+p.rarities[i]+'</span>';re.innerHTML=rh;re.style.display='block';}
+    if(p.rarities&&p.rarities.length>0){var rh='';for(var i=0;i<p.rarities.length;i++)rh+='<span style="display:inline-block;padding:2px 6px;border-radius:3px;font-size:clamp(.35rem,1vw,.42rem);margin:2px 2px 0 0;background:rgba(0,0,0,0.3);color:'+(p.gc||'var(--gold)')+';border:1px solid '+(p.gc||'var(--gold)')+';">\u2605 '+p.rarities[i]+'</span>';re.innerHTML=rh;re.style.display='block';}
     else re.style.display='none';
   }
   // Stats grid — hide EA and season for non-owned (keep days and status visible)
@@ -53147,14 +53209,15 @@ function showTP(p,mk){
   }
   var eaScore=window.computeEA?window.computeEA(t,p.days):0;
   var seasonInfo=window.getSeasonInfo?window.getSeasonInfo(t):{name:'?',emblem:'?'};
-  var ea=document.getElementById('wtp-ea');if(ea){ea.textContent=p.own?eaScore:'?';ea.style.color=p.own&&eaScore>=15?'var(--gold)':'var(--muted)';}
+  // EA + Season — same rule, show openly for both own and stranger plants.
+  var ea=document.getElementById('wtp-ea');if(ea){ea.textContent=eaScore;ea.style.color=eaScore>=15?'var(--gold)':'var(--cream)';}
   var sn=document.getElementById('wtp-season');if(sn){
     var _seasEmb=seasonInfo.emblem||'?';
-    if(p.own&&typeof t.season==='number'&&window._lwSeasonEmblem){
+    if(typeof t.season==='number'&&window._lwSeasonEmblem){
       _seasEmb=window._lwSeasonEmblem(t.season,22);
     }
-    sn.innerHTML=p.own?_seasEmb:'?';
-    sn.title=p.own?(seasonInfo.name+(seasonInfo.inPeak?' (Peak!)':'')):'Harvest to reveal';
+    sn.innerHTML=_seasEmb;
+    sn.title=seasonInfo.name+(seasonInfo.inPeak?' (Peak!)':'');
   }
   var dy=document.getElementById('wtp-days');if(dy)dy.textContent=p.days+'d';
   var st=document.getElementById('wtp-status');
@@ -53235,14 +53298,19 @@ function showTP(p,mk){
       if (!_cb && p.lastClimateBreach) _cb = p.lastClimateBreach;
     } catch (e) {}
     if (_cb && _cb.at && (Date.now() - _cb.at) < 26 * 3600000 && _cb.kinds && _cb.kinds.length) {
-      // Sprite-substituted icons. _lwEmojiSprite returns <img> tag if the
-      // emoji has hand-painted art mapped, else the raw emoji as fallback.
-      // \ud83d\udca6 / \ud83c\udfdc\ufe0f / \u26c8\ufe0f / \u26a0 have no sprites yet \u2014 they fall through.
-      var _spr2 = window._lwEmojiSprite || function(e){return e;};
-      var _icons = { heat: _spr2('\ud83d\udd25', 18), cold: _spr2('\u2744\ufe0f', 18), flood: _spr2('\ud83d\udca6', 18), wind: _spr2('\ud83d\udca8', 18), drought: _spr2('\ud83c\udfdc\ufe0f', 18) };
+      // Painted PNG icons \u2014 no emoji fallthrough. Stylesheet sizes them
+      // (.wtp2 #wtp-climate img) so font-size doesn't drag them down.
+      function _imgIco(src){ return '<img src="'+src+'" alt="">'; }
+      var _icons = {
+        heat:    _imgIco('assets/fx/compost-flame.png'),
+        cold:    _imgIco('assets/foraging/el-shade.png'),
+        flood:   _imgIco('assets/foraging/el-rain.png'),
+        wind:    _imgIco('assets/foraging/el-wind.png'),
+        drought: _imgIco('assets/foraging/el-dry.png')
+      };
       var _labels = { heat: 'Heat-stressed', cold: 'Cold-shocked', flood: 'Flooded', wind: 'Wind-battered', drought: 'Parched' };
       var _multi = _cb.kinds.length > 1;
-      var _icon = _multi ? _spr2('\u26c8\ufe0f', 18) : (_icons[_cb.kinds[0]] || _spr2('\u26a0', 18));
+      var _icon = _multi ? _imgIco('assets/foraging/el-thunder.png') : (_icons[_cb.kinds[0]] || _imgIco('assets/foraging/el-thunder.png'));
       var _label = _multi ? 'Multi-stress' : (_labels[_cb.kinds[0]] || 'Stress');
       var _col = _cb.damageH >= 18 ? '#c87060' : (_cb.damageH >= 8 ? 'var(--gold)' : 'var(--muted)');
       _climEl.innerHTML = _icon + ' <span style="color:' + _col + ';">' + _label + '</span> <span style="color:var(--muted);">\u00b7 -' + _cb.damageH + 'h today</span>';
@@ -53262,16 +53330,13 @@ function showTP(p,mk){
       var _tt = window.hashToTraits ? window.hashToTraits(p.hash) : null;
       if (_tt && typeof _tt.heatMax === 'number') {
         var _wmph = typeof _tt.windMax === 'number' ? Math.round(_tt.windMax) : '?';
-        // Use sprite map for the trailing icons too \u2014 heat already has an
-        // explicit img path. Cold + wind are sprite-mapped, flood/drought
-        // fall through to raw emoji (no sprite shipped yet).
-        var _sprT = window._lwEmojiSprite || function(e){return e;};
+        // Painted PNG icons across the row (stylesheet sizes them).
         _tolEl.innerHTML =
-          '<img src="assets/fx/compost-flame.png" alt="" style="width:22px;height:22px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udd25&apos;;"> ' + Math.round(_tt.heatMax) + '\u00b0C \u00b7 ' +
-          _sprT('\u2744\ufe0f', 18) + ' ' + Math.round(_tt.coldMin) + '\u00b0C \u00b7 ' +
-          _sprT('\ud83d\udca6', 18) + ' ' + Math.round(_tt.floodMm) + 'mm \u00b7 ' +
-          _sprT('\ud83d\udca8', 18) + ' ' + _wmph + 'mph \u00b7 ' +
-          _sprT('\ud83c\udfdc\ufe0f', 18) + ' ' + _tt.droughtDays + 'd';
+          '<img src="assets/fx/compost-flame.png" alt=""> ' + Math.round(_tt.heatMax) + '\u00b0C \u00b7 ' +
+          '<img src="assets/foraging/el-shade.png" alt=""> ' + Math.round(_tt.coldMin) + '\u00b0C \u00b7 ' +
+          '<img src="assets/foraging/el-rain.png" alt=""> ' + Math.round(_tt.floodMm) + 'mm \u00b7 ' +
+          '<img src="assets/foraging/el-wind.png" alt=""> ' + _wmph + 'mph \u00b7 ' +
+          '<img src="assets/foraging/el-dry.png" alt=""> ' + _tt.droughtDays + 'd';
         _tolEl.style.display = 'block';
       } else {
         _tolEl.style.display = 'none';
@@ -53384,9 +53449,9 @@ function showTP(p,mk){
         var distToPlant=_dist(_uLat,_uLng,p.lat,p.lng);
         if(distToPlant>COLLECT_RANGE){
           waterBtn.disabled=true;
-          if(ownStatus){ownStatus.innerHTML=Math.round(distToPlant)+'m away \u2014 walk within '+Math.round(COLLECT_RANGE)+'m to water<br><span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_heldBadge;ownStatus.style.display='block';}
+          if(ownStatus){ownStatus.innerHTML=Math.round(distToPlant)+'m away \u2014 walk within '+Math.round(COLLECT_RANGE)+'m to water<br><span style="color:var(--gold);">Earning '+_polRate+' Dew/hr</span>'+_heldBadge;ownStatus.style.display='block';}
         } else {
-          if(ownStatus){ownStatus.innerHTML='Close enough to tend this plant<br><span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_heldBadge;ownStatus.style.display='block';}
+          if(ownStatus){ownStatus.innerHTML='Close enough to tend this plant<br><span style="color:var(--gold);">Earning '+_polRate+' Dew/hr</span>'+_heldBadge;ownStatus.style.display='block';}
         }
       } else {
         var _statusExtra=_heldBadge;
@@ -53409,8 +53474,8 @@ function showTP(p,mk){
         // Add soil info
         if(window.getSoilInfo&&p.lat){var _si=getSoilInfo(p.lat,p.lng);if(_si.maturity>0){var _sprS=window._lwEmojiSprite||function(e){return e;};_statusExtra+='<br><span style="color:rgba(200,168,75,0.7);">'+_sprS('\ud83c\udf3f',16)+' Soil: '+_si.name+' ('+_si.maturity+'/100)</span>';}}
         // Biome info
-        if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);var _bIcoH=(window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,28):_bInfo.icon);_statusExtra+='<br><span style="color:'+_bInfo.color+';">'+_bIcoH+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
-        if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' pollen/hr</span>'+_statusExtra;ownStatus.style.display='block';}
+        if(window._lastDetectedBiome&&window.getBiomeInfo){var _bInfo=getBiomeInfo(window._lastDetectedBiome);var _bIcoH=(window._biomeIconHTML?_biomeIconHTML(window._lastDetectedBiome,40):_bInfo.icon);_statusExtra+='<br><span style="color:'+_bInfo.color+';display:inline-flex;align-items:center;gap:6px;">'+_bIcoH+' '+_bInfo.name+(_bInfo.rarityBoost>0?' (+'+Math.round(_bInfo.rarityBoost*100)+'% rare)':'')+'</span>';}
+        if(ownStatus){ownStatus.innerHTML='<span style="color:var(--gold);">Earning '+_polRate+' Dew/hr</span>'+_statusExtra;ownStatus.style.display='block';}
       }
     }
     var crossBtn=document.getElementById('wtp-cross');
@@ -55955,7 +56020,10 @@ function _updateCounts(){
   try{
     var dewBal=(typeof getTotalDew==='function')?getTotalDew():0;
     var dEl=document.getElementById('w-dew');if(dEl)dEl.textContent=dewBal;
-    // Show hourly Dew rate so players see the value of more wild plants
+    // Show hourly Dew rate so players see the value of more wild plants.
+    // Per-minute earn = hourlyTotal/240 (line 56149), so per-hour earn =
+    // hourlyTotal/4. Was dividing by 240 here too — rate showed 0.0/hr
+    // for a normal wild population. Fixed 2026-05-08.
     var rateEl=document.getElementById('w-dew-rate');
     if(rateEl&&w.length>0){
       var _rates={Common:1,Uncommon:2,Rare:4,Epic:6,Legendary:9,Mythic:12,Cosmic:15};
@@ -55965,7 +56033,7 @@ function _updateCounts(){
         try{if(window.hashToTraits&&window.getTerraGrade&&w[_ri2].hash){_rg=window.getTerraGrade(window.hashToTraits(w[_ri2].hash)).label||'Common';}}catch(e){}
         _hrTotal+=(_rates[_rg]||1)*(_ri2<5?1:0.5);
       }
-      var _perHr=(_hrTotal/240).toFixed(1);
+      var _perHr=(_hrTotal/4).toFixed(1);
       rateEl.textContent='(+'+_perHr+'/hr)';
     } else if(rateEl){rateEl.textContent='';}
   }catch(e){}
@@ -56683,8 +56751,8 @@ window._lwShowHexHelp=function(){
   // Apr 30: emoji column replaced with painted assets, defense row dropped
   // (system retired). Each row [iconPath, emojiFallback, label, description].
   var rows=[
-    ['assets/wild-water-btn-v2.png','💧','WATER','Refresh your own plant\'s lifespan. Costs 5 Dew. 12h cooldown.'],
-    ['assets/wild-water-btn-v2.png','💧','HOLD TO WATER','Hold 4 seconds to water a stranger plant. 5 grants per day.'],
+    ['assets/wild-water-btn-v2.png','💧','WATER','Refresh your own plant\'s lifespan. Costs 5 Dew. 24h cooldown.'],
+    ['assets/wild-water-btn-v2.png','💧','HOLD TO WATER','Hold 10 seconds to water a stranger plant. 5 grants per day.'],
     ['assets/wild-tend-btn-v2.png','🌿','TEND','Add 6 hours of life to a stranger plant. You earn 2 Dew. Unlocks at Keeper Level 5. 4h cooldown.'],
     ['assets/wild-mulch-btn-v2.png','🌷','MULCH','Spend 1 fertilizer to give any plant +24h life and +1 EA. Earn fertilizer by composting greenhouse plants. 24h cooldown.'],
     ['assets/wild-blessing-btn-v2.png','🙏','BLESSING','A daily Dew gift from any Rare-or-rarer stranger plant. Once per plant per day.'],
@@ -56823,11 +56891,14 @@ function _openHexInspector(zk){
       // image only 108px (1/2 of inner area). Now image fills the
       // button \u2014 wrapper border/background dropped, parchment IS the
       // button. Label sits as a compact line below.
+      // Stephen 2026-05-08: was 240\u00d7240 square parchment + label below
+      // \u2014 took ~half the hex inspector. Compact horizontal pill: small
+      // parchment icon left, label + count stacked right. ~64px tall.
       var carBtn=document.createElement('button');
-      carBtn.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;width:100%;padding:0;margin-bottom:0.7rem;border:none;background:none;color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.14em;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,0.85),0 0 8px rgba(0,0,0,0.5);transition:transform 0.12s ease;';
-      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" style="width:60%;max-width:240px;height:auto;aspect-ratio:1;object-fit:contain;display:block;margin:0 auto 4px;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.4));" onerror="this.outerHTML=\'<span style=&quot;font-size:3rem;&quot;>\u25a6</span>\'"><span style="display:block;text-align:center;line-height:1.2;">TAKE A CLOSER LOOK<span style="display:block;font-family:DM Mono,monospace;font-size:0.6rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;margin-top:2px;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
+      carBtn.style.cssText='display:flex;flex-direction:row;align-items:center;justify-content:center;gap:0.85rem;width:100%;padding:0.65rem 0.9rem;margin-bottom:0.7rem;border:1.5px solid rgba(200,168,75,0.4);background:linear-gradient(180deg,rgba(40,46,32,0.7),rgba(20,24,16,0.85));border-radius:12px;color:#f5e7b8;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.6);transition:transform 0.12s ease,background 0.15s ease;min-height:64px;-webkit-tap-highlight-color:transparent;';
+      carBtn.innerHTML='<img src="assets/wild-inspect-btn-v2.png?v='+(window.LW_VERSION||"0")+'" alt="" style="width:56px;height:56px;flex:0 0 auto;object-fit:contain;display:block;filter:drop-shadow(0 2px 6px rgba(200,168,75,0.35));"><span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;text-align:left;">TAKE A CLOSER LOOK<span style="font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.08em;color:rgba(245,231,184,0.75);font-weight:400;margin-top:3px;">'+augmented.length+' PLANT'+(augmented.length===1?'':'S')+' IN THIS HEX</span></span>';
       (function(arr){carBtn.addEventListener('click',function(){
-        try{if(typeof closeHI==='function')closeHI();}catch(e){}
+        try{if(window._closeHexInspector)window._closeHexInspector();}catch(e){}
         try{if(typeof closeTP==='function')closeTP();}catch(e){}
         setTimeout(function(){window.openCarousel(arr,0,'wild-inspect');},150);
       });})(augmented.slice());
@@ -60240,7 +60311,7 @@ var _aw={
   doubleshutter:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
   backgammon:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
   bloomwheel:{progress:1,milestone:2,default:0},
-  petalfall:{milestone:2,game_win:3,game_loss:0,default:0},
+  petalfall:{milestone:2,game_loss:0,default:0}, // game_win never fires (endless game, milestone-only)
   cribbage:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
   bowergarden:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
   gardenlines:{progress:1,milestone:2,game_win:5,game_loss:1,default:0},
@@ -67880,7 +67951,8 @@ window.PW_grantXP=function(amount,reason){
   // night + peak season can't push XP throughput past the audited ceiling.
   var _pMult = 1;
   try{if(window.lwIsBoostActive&&window.lwIsBoostActive('pollenRush'))_pMult *= 2;}catch(e){}
-  try{if(window.lwIsBoostActive&&window.lwIsBoostActive('dawnAnthem'))_pMult *= 1.1;}catch(e){}
+  // dawnAnthem XP-rate consumer removed 2026-05-08 — see matching note
+  // in earnDew (~line 41067). Class items shop is gone; booster orphaned.
   try{if(window._LW_treeBonus){var _pm=window._LW_treeBonus('pollenRate');if(_pm>1)_pMult *= _pm;}}catch(e){}
   if(window._LW_capMultiplier) _pMult = window._LW_capMultiplier('pollen', _pMult);
   amount = Math.ceil(amount * _pMult);
@@ -70199,15 +70271,16 @@ window._lwMinutesSinceFirstSignup=function(){
   return Math.round((Date.now()-ts)/60000);
 };
 
-// Generate a gift plant hash — weighted distribution, capped at Rare.
-// 50% Common / 35% Uncommon / 15% Rare. No Epic+ on gift (keeps rarities meaningful
-// — players earn Epic+ through play, never as a freebie).
-// Score bands: Common 0-1, Uncommon 2-3, Rare 4-5.
+// Generate a gift plant hash — weighted distribution, Uncommon+ floor.
+// CLAUDE.md spec + onboarding lore: gift is "guaranteed Uncommon+ (min
+// score 3)". Old roll had 50% Common which broke that promise — fixed
+// 2026-05-08. New roll: 70% Uncommon / 30% Rare. Epic+ still locked
+// behind earned play.
+// Score bands: Uncommon 2-3, Rare 4-5.
 function _genGiftHash(){
   var roll=Math.random();
   var targetMin,targetMax;
-  if(roll<0.50){targetMin=0;targetMax=1;}        // Common
-  else if(roll<0.85){targetMin=2;targetMax=3;}   // Uncommon
+  if(roll<0.70){targetMin=2;targetMax=3;}        // Uncommon
   else{targetMin=4;targetMax=5;}                 // Rare
   var bestHash='',bestMatchScore=-1;
   for(var attempts=0;attempts<500;attempts++){
@@ -70226,8 +70299,10 @@ function _genGiftHash(){
           console.log('[LW] Gift plant: '+g.name+' (score '+g.score+', target '+targetMin+'-'+targetMax+', attempt '+attempts+')');
           return h;
         }
-        // Track best candidate below target (never above — Epic+ never gifted)
-        if(g.score<=targetMax&&g.score>bestMatchScore){bestHash=h;bestMatchScore=g.score;}
+        // Track best candidate within Uncommon+ band (never below 2 — that
+        // would land Common which violates the gift floor). Never above
+        // targetMax either — Epic+ never gifted.
+        if(g.score>=2&&g.score<=targetMax&&g.score>bestMatchScore){bestHash=h;bestMatchScore=g.score;}
       }
     }catch(e){}
   }
@@ -73041,11 +73116,14 @@ window.LW_Pi={
   // Greenhouse slot expansion — 1 Pi per slot
   buySlot:function(slotNum,cb){
     createPayment(1,'Greenhouse Slot '+slotNum,{type:'slot',slot:slotNum},function(){
-      // Deliver: increment slot count
+      // Deliver: increment slot count for instant UX feedback. The
+      // server piComplete already wrote meta/state.slots authoritatively;
+      // hydrate from cloud (NOT upload local) so multi-device users
+      // converge on the server's truth instead of regressing it.
       var slots=parseInt(localStorage.getItem('sws_greenhouse_slots')||'10')+1;
       localStorage.setItem('sws_greenhouse_slots',String(slots));
       if(window.renderGreenhouse)renderGreenhouse();
-      if(window.syncVaultToCloud)syncVaultToCloud();
+      if(window.loadVaultFromCloud)loadVaultFromCloud();
       if(window.showHexMsg)showHexMsg('Slot '+slotNum+' unlocked!');
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
@@ -73091,7 +73169,9 @@ window.LW_Pi={
           window.FG_Backpack.loadFromCloud({unlocks: merged});
         }
       } catch(e){}
-      if (window.syncVaultToCloud) syncVaultToCloud();
+      // Hydrate from cloud — server piComplete already wrote the unlock.
+      // Uploading local would regress server in multi-device usage.
+      if (window.loadVaultFromCloud) loadVaultFromCloud();
       if (window.showHexMsg) showHexMsg('Seed pouch expanded to '+nextCap+'!');
       if (window._toast) window._toast('<img src="assets/backpack-64x64.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> Seed pouch '+nextCap+'/20', {html:true});
       if (cb) cb(true);
@@ -73109,7 +73189,8 @@ window.LW_Pi={
         }
       }catch(e){}
       if(window.renderNursery)renderNursery();
-      if(window.syncVaultToCloud)syncVaultToCloud();
+      // Hydrate from cloud — server already wrote the entitlement.
+      if(window.loadVaultFromCloud)loadVaultFromCloud();
       if(window.showHexMsg)showHexMsg('Clipping slot '+slotNum+' unlocked!');
       if(window._haptic)_haptic('tab');
       if(cb)cb(true);
@@ -73132,7 +73213,8 @@ window.LW_Pi={
         }
       }catch(e){}
       if(window.renderNursery)renderNursery();
-      if(window.syncVaultToCloud)syncVaultToCloud();
+      // Hydrate from cloud — server already wrote the entitlement.
+      if(window.loadVaultFromCloud)loadVaultFromCloud();
       if(window.showHexMsg)showHexMsg('Nursery slot '+slotNum+' unlocked!');
       if(window._haptic)_haptic('tab');
       if(cb)cb(true);
@@ -73152,6 +73234,9 @@ window.LW_Pi={
       var next=Math.min(40,cur2+1);
       try{localStorage.setItem('lw_pouch_cap',String(next));}catch(e){}
       if(window.LW_HUT&&LW_HUT.refresh)LW_HUT.refresh();
+      // Hydrate from cloud — server already wrote lw_pouch_cap. Avoids
+      // multi-device regression where local upload would clobber server.
+      if(window.loadVaultFromCloud)loadVaultFromCloud();
       if(window.showHexMsg)showHexMsg('Item Pouch '+next+'/40 unlocked!');
       if(window._toast)window._toast('<img src="assets/backpack-64x64.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> Pouch '+next+'/40', {html:true});
       if(cb)cb(true);
@@ -73689,14 +73774,14 @@ setInterval(_tickWeather, 60000);
 <!-- ═══ MYSTERY BOX — Dew sink with weighted loot reveal ═══
      25 Dew per pull. Loot table tuned for 80% RTP (meaningful sink
      but meaningful wins). Client-side only, no Firestore.
-     Loot pool:
-       30% Seed Shell  — 3 fertilizer
-       25% Fossil Bit  — 8 DNA fragments
-       20% Sun Drop    — 40 Sunbeams
-       15% Dew Pearl   — 20 Dew (consolation)
-        7% Moon Shard  — 80 Sunbeams + 2 fertilizer
-        2% Starstone   — 200 Sunbeams + 5 fertilizer + 5 DNA
-        1% JACKPOT     — 500 Sunbeams + 10 fertilizer + 15 DNA + 50 Dew -->
+     Loot pool (matches MYSTERY_LOOT array below):
+       30% Seed Shell  — +2 Fertilizer
+       25% Sun Spark   — +10 Sunbeams
+       20% Sun Drop    — +20 Sunbeams
+       15% Dew Pearl   — +15 Dew (consolation)
+        7% Moon Shard  — +40 Sunbeams + 1 Fertilizer
+        2% Starstone   — +120 Sunbeams + 3 Fertilizer
+        1% JACKPOT     — +300 Sunbeams + 5 Fertilizer + 30 Dew -->
 <script>
 (function(){
 'use strict';
@@ -75486,15 +75571,19 @@ function _step22(){
     // "Already watered today" — watch would poll forever waiting for
     // a change that can't happen. Skip straight to step 22b in that
     // case so the tutorial isn't stuck.
-    var _todayStr = new Date().toISOString().split('T')[0];
+    // 24h gate (matches handleWaterSeed) — UTC date string would mis-skip.
     var _alreadyWatered = false;
     try {
       var _nurNow = JSON.parse(localStorage.getItem('sws_nursery')||'[]');
+      var _nowMs = Date.now();
       for (var _ni=0; _ni<_nurNow.length; _ni++) {
         var _s = _nurNow[_ni];
-        if (_s && _s.waterLog && _s.waterLog.indexOf(_todayStr) >= 0) {
-          _alreadyWatered = true;
-          break;
+        if (_s && _s.waterLog && _s.waterLog.length) {
+          var _lt = new Date(_s.waterLog[_s.waterLog.length-1]).getTime();
+          if (!isNaN(_lt) && (_nowMs - _lt) < 86400000) {
+            _alreadyWatered = true;
+            break;
+          }
         }
       }
     } catch(e){}
@@ -75578,13 +75667,15 @@ function _tutFastForwardBloom(){
   if(!nur.length)return;
   var seed=nur[0];
   if(!seed.waterLog)seed.waterLog=[];
-  var lastDateStr=seed.waterLog.length>0?seed.waterLog[seed.waterLog.length-1]:new Date(Date.now()-86400000).toISOString().split('T')[0];
+  // Stephen 2026-05-08: switched to ISO timestamps for waterLog entries
+  // — same fix as handleFertilize. The 24h gate at _lastWaterMs reads
+  // either format but consistency keeps the next gate math correct.
+  var lastDateStr=seed.waterLog.length>0?seed.waterLog[seed.waterLog.length-1]:new Date(Date.now()-86400000).toISOString();
   var lastDate=new Date(lastDateStr);
   while(seed.waterLog.length<3){
     lastDate=new Date(lastDate.getTime()+86400000);
-    var nd=lastDate.toISOString().split('T')[0];
-    if(seed.waterLog.indexOf(nd)<0)seed.waterLog.push(nd);
-    else break;
+    var nd=lastDate.toISOString();
+    seed.waterLog.push(nd);
   }
   nur[0]=seed;
   try{
@@ -75834,17 +75925,21 @@ function _step25(){
 }
 
 // ═══ STEP 27: brief wild-banner numbers callout ═══
-// Pulses the wild-log banner and names what the numbers mean. Quick
-// one-liner so the player isn't wondering what 'pollen' or 'dew' is
+// Pulses the wild stats bar and names what the numbers mean. Quick
+// one-liner so the player isn't wondering what 'dew' or 'steps' is
 // when they look at the top of the screen.
+// Stephen 2026-05-08: was querying '.wild-log' (renamed to #w-stats-bar
+// in the May refactor) so the spotlight silently no-op'd. Also dropped
+// the "pollen" mention since the pollen chip was hidden 2026-05-03 (XP
+// is the same number, just unified into player level).
 function _step27Banner(){
   _setStep(27);
-  var banner=document.querySelector('.wild-log');
+  var banner=document.getElementById('w-stats-bar');
   if(banner&&window._lwPulseHint){
     window._lwPulseHint(banner,15000,'lw_tut_wlog_pulse');
   }
   _dialog(
-    'These numbers up top: your <b style="color:#5baddc;">dew</b>, your <b style="color:var(--gold);">pollen</b> (player XP), and <b style="color:#c89b68;">steps</b> walked. The biome banner above shows where you stand and changes as you move; the compass on the right tracks which way you face.',
+    'These numbers up top: your <b style="color:#5baddc;">dew</b> (the watering currency, with hourly rate from your wild plants) and <b style="color:#c89b68;">steps</b> walked. The biome banner above shows where you stand and changes as you move; the compass on the right tracks which way you face.',
     'GOT IT',function(){_clear();setTimeout(_step28,400);},'bottom');
 }
 
@@ -75996,12 +76091,15 @@ function _step32(){
     '<div style="display:flex;justify-content:center;margin-bottom:0.5rem;"><img src="assets/btn-compendium.png" alt="" style="width:64px;height:auto;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(200,168,75,0.4));" onerror="this.outerHTML=&apos;&apos;;"></div>' +
     '<div style="font-size:1.05rem;line-height:1.55;">Every discovery you make lives in the <span style="color:var(--gold);">Book of Secrets</span>:</div>' +
     '<div style="font-size:0.92rem;line-height:1.85;text-align:left;margin:0.6rem auto 0.2rem;max-width:300px;">' +
-      '<div><span style="color:var(--gold);">Codex</span> &middot; traits, biomes, mythics</div>' +
       '<div><span style="color:var(--gold);">Journal</span> &middot; your daily log</div>' +
+      '<div><span style="color:var(--gold);">Codex</span> &middot; traits, biomes, mythics</div>' +
+      '<div><span style="color:var(--gold);">Tips</span> &middot; how every system works</div>' +
+      '<div><span style="color:var(--gold);">Companions</span> &middot; creatures you have met</div>' +
       '<div><span style="color:var(--gold);">Quests</span> &middot; daily + weekly rewards</div>' +
       '<div><span style="color:var(--gold);">Achievements</span> &middot; lifetime milestones</div>' +
       '<div><span style="color:var(--gold);">Trophies</span> &middot; your cabinet</div>' +
       '<div><span style="color:var(--gold);">Hunt</span> &middot; seasonal scavenger hunt</div>' +
+      '<div><span style="color:var(--gold);">About</span> &middot; the studio and tip jar</div>' +
     '</div>',
     'OK', function(){
       _clear();
@@ -78861,10 +78959,14 @@ function _updateBadge() {
   if (!navigator.setAppBadge) return;
   try {
     var nur = JSON.parse(localStorage.getItem('sws_nursery') || '[]');
-    var today = new Date().toISOString().split('T')[0];
+    var nowMs = Date.now();
     var needsWater = 0;
     for (var i = 0; i < nur.length; i++) {
-      if (nur[i].status === 'growing' && nur[i].waterLog && nur[i].waterLog.indexOf(today) === -1) needsWater++;
+      var s = nur[i];
+      if (s.status !== 'growing' || !s.waterLog) continue;
+      if (!s.waterLog.length) { needsWater++; continue; }
+      var lt = new Date(s.waterLog[s.waterLog.length-1]).getTime();
+      if (isNaN(lt) || (nowMs - lt) >= 86400000) needsWater++;
     }
     if (needsWater > 0) navigator.setAppBadge(needsWater);
     else navigator.clearAppBadge();
@@ -79134,6 +79236,41 @@ window._LW_EMOJI_SPRITES = {
   '🏅': 'assets/fx/medal-gold.png',            // sports medal
   '💨': 'assets/fx/wind-blue.png',             // wind/dash (climate wind label)
   '🌊': 'assets/fx/wave-blue.png',             // water wave (climate flood)
+  // 2026-05-08 Stephen first-batch art (6 painted gold icons)
+  '⚠':  'assets/fx/warn-gold.png',             // warning triangle (errors, recovery banner, factory reset)
+  '⚠️': 'assets/fx/warn-gold.png',             // warning triangle (with VS-16)
+  '⬡':  'assets/fx/hex-gold.png',              // hexagon (UNVERIFIED badge, DOWNLOAD button)
+  '🔒': 'assets/fx/lock-gold.png',             // padlock (gated nav, locked tiles)
+  '🎲': 'assets/fx/dice-gold.png',             // dice (dice game header, roll buttons)
+  '⚔':  'assets/fx/swords-gold.png',           // crossed swords (Defender's Game, EA combat toast)
+  '⚔️': 'assets/fx/swords-gold.png',           // crossed swords (with VS-16)
+  '🤝': 'assets/fx/handshake-gold.png',        // handshake (first-stranger XP, partner rewards)
+  // 2026-05-08 Stephen second-batch art (next 6)
+  '🔄': 'assets/fx/cycle-arrows-gold.png',     // cycle/refresh (replay onboarding, full life cycle)
+  '🍃': 'assets/fx/leaf-soft-green.png',       // soft leaf (Moss Weave synergy, leaf array)
+  '👯': 'assets/fx/twins-pink.png',            // twins (morning report — twin sprouts)
+  '🥶': 'assets/fx/frost-blue.png',            // frost (frost weather event)
+  '🌬': 'assets/fx/wind-soft.png',             // wind face (seed-on-wind report)
+  '🌬️':'assets/fx/wind-soft.png',             // wind face (with VS-16)
+  '🤍': 'assets/fx/heart-white.png',           // white heart (pale seedling report)
+  // 2026-05-08 Stephen third-batch art (last 5)
+  '🍁': 'assets/fx/maple-leaf.png',            // maple leaf (autumn seed-scatter)
+  '🥀': 'assets/fx/wilted-rose.png',           // wilted rose (Mastermind code-fail)
+  '🌫': 'assets/fx/fog-grey.png',              // fog (empty/scanning state)
+  '🌫️':'assets/fx/fog-grey.png',              // fog (with VS-16)
+  '😴': 'assets/fx/zzz-grey.png',              // sleeping (companion-nap event)
+  '🛡': 'assets/fx/shield-gold.png',           // shield (Guardian L3 unlock, defense)
+  '🛡️':'assets/fx/shield-gold.png',           // shield (with VS-16)
+  // Weather/climate fallthrough fixes — were rendering raw emoji
+  '💦': 'assets/foraging/el-rain.png',         // sweat droplets (climate flood label)
+  '🌧️': 'assets/foraging/el-rain.png',        // cloud with rain
+  '🌧': 'assets/foraging/el-rain.png',         // cloud with rain (no VS)
+  '🌦️': 'assets/foraging/el-rain.png',        // sun behind rain cloud
+  '🏜️': 'assets/foraging/el-dry.png',         // desert (climate drought)
+  '🏜': 'assets/foraging/el-dry.png',          // desert (no VS)
+  '⛈️': 'assets/foraging/el-thunder.png',      // cloud with lightning
+  '⛈': 'assets/foraging/el-thunder.png',       // cloud with lightning (no VS)
+  '🌑': 'assets/foraging/el-shade.png',        // new moon (shade tilt)
   '📍': 'assets/fx/pin-gold.png',              // round pushpin / map pin
   // ─── Achievement medallion family — laurel-framed coordinated set.
   // Replaces the earlier single-icon variants (tree-gold / crown-gold /
@@ -81667,7 +81804,7 @@ window._updateBookBadge=function(){
     // 'report' was double-counting the same log entries as 'activity' and
     // never had a UI to clear (JOURNAL tab only stamps 'activity'), so the
     // badge could never drop to zero. Activity alone covers the signal.
-    var tabs = ['activity','secrets','events','mementos','herbarium','quests'];
+    var tabs = ['activity','secrets','events','mementos','herbarium','quests','achievements'];
     for (var i = 0; i < tabs.length; i++) n += window._bosGetTabUnread(tabs[i]);
   } else {
     // Fallback during boot before _bosGetTabUnread is wired
@@ -82363,7 +82500,7 @@ function _bosJournalContent() {
   return h;
 }
 
-function _bosSetTab(tab) {
+function _bosSetTab(tab, opts) {
   // CLASS still hard-redirects to the Class Manager overlay.
   if (tab === 'class') {
     if (window._lwOpenClassManager) window._lwOpenClassManager();
@@ -82376,21 +82513,27 @@ function _bosSetTab(tab) {
   // functions compare against to decide whether to mark an item NEW.
   // Available to any renderer as window._bosPrevReadTs.
   window._bosPrevReadTs = _bosGetTabRead(tab);
-  // Stamp the tab as read the moment it opens — subtle, no confirmation needed.
-  // For consolidated tabs, also stamp the legacy sub-tabs so their badges clear.
-  _bosStampTabRead(tab);
-  if (tab === 'codex') {
-    _bosStampTabRead('secrets');
-    _bosStampTabRead('items');
-  } else if (tab === 'companions') {
-    _bosStampTabRead('mementos');
-  } else if (tab === 'journal') {
-    _bosStampTabRead('today');
-    _bosStampTabRead('activity');
-    _bosStampTabRead('events');
-  } else if (tab === 'quests') {
-    // Bundles moved from CODEX to QUESTS — stamp herbarium read here.
-    _bosStampTabRead('herbarium');
+  // Stamp-on-read only when the tab change came from a user click. The
+  // book-open routine calls this with {silent:true} so the default tab's
+  // legacy keys aren't auto-cleared before the user has even seen the
+  // pills. (Stephen 2026-05-08: outer badge said "60+" but every pill
+  // was 0 because opening the book auto-stamped journal's three keys.)
+  var silent = !!(opts && opts.silent);
+  if (!silent) {
+    _bosStampTabRead(tab);
+    if (tab === 'codex') {
+      _bosStampTabRead('secrets');
+      _bosStampTabRead('items');
+    } else if (tab === 'companions') {
+      _bosStampTabRead('mementos');
+    } else if (tab === 'journal') {
+      _bosStampTabRead('today');
+      _bosStampTabRead('activity');
+      _bosStampTabRead('events');
+    } else if (tab === 'quests') {
+      // Bundles moved from CODEX to QUESTS — stamp herbarium read here.
+      _bosStampTabRead('herbarium');
+    }
   }
   // Engagement counters
   if (window.LW_ACH) {
@@ -84200,7 +84343,7 @@ function _bosTipsContent() {
 
   // ─── GROWTH ───────────────────────────────────────────────────────────
   h += sec('YOUR GROWTH');
-  h += p(gold('Class') + ' picked at Keeper Lv 7. Five paths: Forager (foraging buffs), Breeder (breeding rewards), Cartographer (walking + biome XP), Tender (plant longevity + Dew), Steward/Keeper (universal +5%). Each class has 3 levels via class XP.');
+  h += p(gold('Class') + ' available from Keeper Lv 7, switchable any time. Five paths: Forager (foraging buffs), Breeder (breeding rewards), Cartographer (walking + biome XP), Tender (plant longevity + Dew), Steward/Keeper (universal +5%). Each class has 3 levels via class XP.');
   h += p(gold('Keeper’s Tree') + ' — passive skill tree. Every Keeper level = 1 point to spend. Class branch (4 nodes × 5 pts) unlocks first; Tools at class-max (~Lv 20); Heartwood at Lv 40; The Bower at Lv 60; Eldergrove at Lv 80. ' + gold('No respec') + '. Choose deliberately.');
   h += p(gold('Milestones') + ' arrive every 25 Keeper levels (10, 25, 50, 75, 100). Each one grants a one-time keeper bonus. Find out what when you get there.');
   h += p(gold('Prestige') + ' unlocks at Lv 100. Reset your level, keep prestige stacks. A few prestige tiers grant durable upgrades; the rest are narrative for now.');
@@ -84293,6 +84436,20 @@ function _bosAboutContent() {
       _isPiBrowser = true;
     }
   } catch(e){}
+  // Soundtrack section \u2014 opens LW_MUSIC drawer. Hidden when no tracks loaded.
+  try {
+    if (window.LW_MUSIC && window.LW_MUSIC.tracks && window.LW_MUSIC.tracks.length > 0) {
+      h += '<div style="margin:0.6rem 0 1rem;padding:0.85rem 0.95rem;background:linear-gradient(180deg,rgba(40,28,52,0.55),rgba(20,14,28,0.7));border:1.5px solid rgba(180,140,220,0.35);border-radius:12px;display:flex;align-items:center;gap:0.75rem;">';
+      h += '<div style="flex:0 0 auto;width:48px;height:48px;border-radius:50%;background:rgba(180,140,220,0.18);border:1.5px solid rgba(180,140,220,0.4);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:rgba(220,180,255,0.9);">\u266b</div>';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.1em;color:rgba(220,180,255,0.95);">SOUNDTRACK</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.52rem;color:rgba(232,220,200,0.7);margin-top:0.18rem;line-height:1.5;">Original beats by ' + (c.name || 'Stephen') + '. ' + window.LW_MUSIC.tracks.length + ' track' + (window.LW_MUSIC.tracks.length === 1 ? '' : 's') + '.</div>';
+      h += '</div>';
+      h += '<button onclick="window.LW_MUSIC&&LW_MUSIC.openDrawer()" style="flex-shrink:0;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;background:linear-gradient(180deg,rgba(180,140,220,0.3),rgba(120,80,160,0.45));border:1.5px solid rgba(180,140,220,0.55);color:rgba(240,220,255,0.95);border-radius:8px;padding:0.55rem 0.85rem;cursor:pointer;min-height:48px;">PLAY \u25b6</button>';
+      h += '</div>';
+    }
+  } catch(e){}
+
   // Tip jar header
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.12em;margin:0.6rem 0 0.4rem;text-align:center;"><img src="assets/fx/sparkle-pink.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"> TIP JAR <img src="assets/fx/sparkle-pink.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=\'\u2728\';"></div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;margin-bottom:0.7rem;line-height:1.6;">If Lucid Winds has given you something, the easiest way to give back is here. Anything is appreciated. Nothing is required, ever.</div>';
@@ -89671,6 +89828,22 @@ window.LW_debug.cleanGhostDrops = function(){
     var spec=_spec(key); if(!spec) return false;
     if(isOwned(key)){ _toast('Already owned.'); return false; }
     if(!_prereqMet(key)){ _toast('Hatch the previous cocoon first.'); return false; }
+    // Stephen 2026-05-08: block buying a second cocoon while one is
+    // incubating. creditMeters only credits ONE cocoon at a time (equipped
+    // first, then first-incubating fallback), so without this guard the
+    // player could buy all 3 and watch two of them sit at 0m forever.
+    // Matches the long-stated "chain prereq → at most one incubating" rule.
+    try {
+      var dCheck = _load();
+      if (dCheck && dCheck.owned) {
+        for (var ki in dCheck.owned) {
+          if (dCheck.owned.hasOwnProperty(ki) && dCheck.owned[ki] && dCheck.owned[ki].state === 'incubating') {
+            _toast('Finish hatching ' + ki + ' before adopting another.');
+            return false;
+          }
+        }
+      }
+    } catch(e){}
     var sb = (window.getTotalHashes ? window.getTotalHashes() : 0);
     var dw = (window.getTotalDew ? window.getTotalDew() : 0);
     if(sb < spec.costSunbeams){ _toast('Not enough Sunbeams.'); return false; }
@@ -90959,10 +91132,14 @@ window.LW_debug.cleanGhostDrops = function(){
       'keeper-bar':   function(){ return document.getElementById('pw-keeper-bar'); },
       'backpack-flap':function(){ return document.getElementById('bpi'); },
       'slot-machine': function(){ return document.getElementById('kb-slots'); },
-      'bos-items':    function(){ return document.querySelector('#bos-body button[data-tab="items"]') || document.querySelector('#bos-body'); },
-      'bos-report':   function(){ return document.querySelector('#bos-body button[data-tab="report"]') || document.querySelector('#bos-body'); },
-      'bos-events':   function(){ return document.querySelector('#bos-body button[data-tab="events"]') || document.querySelector('#bos-body'); },
-      'bos-herbarium':function(){ return document.querySelector('#bos-body button[data-tab="herbarium"]') || document.querySelector('#bos-body'); }
+      // Stephen 2026-05-08: anchor IDs kept (firefly catalog data is keyed
+      // on them) but data-tab targets remapped to the live consolidated
+      // tabs. Old keys fell through to #bos-body and every BoS firefly
+      // collapsed onto the same generic body element.
+      'bos-items':    function(){ return document.querySelector('.bos-tab[data-tab="codex"]')   || document.querySelector('#bos-body'); },
+      'bos-report':   function(){ return document.querySelector('.bos-tab[data-tab="journal"]') || document.querySelector('#bos-body'); },
+      'bos-events':   function(){ return document.querySelector('.bos-tab[data-tab="journal"]') || document.querySelector('#bos-body'); },
+      'bos-herbarium':function(){ return document.querySelector('.bos-tab[data-tab="quests"]')  || document.querySelector('#bos-body'); }
     };
     for (var loc in MAP){
       try { _placeOnAnchor(loc, MAP[loc]()); } catch(e){}
@@ -95554,7 +95731,10 @@ window._openCompendiumUI=function(){
   if(!localStorage.getItem('lw_class')&&window.canSee&&window.canSee.classPick&&window.canSee.classPick())_bosTab='class';
   else if(_todayStale)_bosTab='journal';
   else if(window._getBookUnreadCount&&window._getBookUnreadCount()>0)_bosTab='journal';
-  _bosSetTab(_bosTab);
+  // Silent: don't auto-stamp the default tab's keys as read. Pills should
+  // render with their real counts so the user can see what's actually new.
+  // Tapping a tab (which calls _bosSetTab without {silent}) does the stamp.
+  _bosSetTab(_bosTab, {silent:true});
   // Mark report as read
   if(window._setLastRead)_setLastRead(Date.now());
   if(window._updateRootReportBadge)_updateRootReportBadge();
@@ -97047,12 +97227,15 @@ function _getNextStep(){
   // as "sunbeams" — the old "dew" label was a rename-miss from the split.
   var hl={};try{hl=JSON.parse((window._secureGet?window._secureGet('sws_hash_ledger'):localStorage.getItem('sws_hash_ledger'))||'{}');}catch(e){}
   var sunbeams=(hl.earned||0)-(hl.spent||0);
-  var today=new Date().toISOString().split('T')[0];
+  var _nowMsHint=Date.now();
 
-  // 1. Nursery seed needs watering today
+  // 1. Nursery seed needs watering (24h since last water, or never)
   for(var i=0;i<nur.length;i++){
     var s=nur[i];
-    if(s.status==='growing'&&s.waterLog&&s.waterLog.indexOf(today)===-1){
+    if(s.status!=='growing'||!s.waterLog) continue;
+    var _ltHint = s.waterLog.length ? new Date(s.waterLog[s.waterLog.length-1]).getTime() : 0;
+    var _readyHint = !s.waterLog.length || isNaN(_ltHint) || (_nowMsHint - _ltHint) >= 86400000;
+    if(_readyHint){
       var left=3-s.waterLog.length;
       return{icon:'💧',text:'Your seed needs water! '+left+' day'+(left!==1?'s':'')+' until bloom.',action:'nursery',color:'rgba(91,175,220,0.9)'};
     }
@@ -98522,6 +98705,299 @@ window.LW_Comp = (function(){
   // change. switchTab hook still fires refresh on tab change so the
   // pill reflects state immediately where it matters.
   setInterval(_refresh, 45000);
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════
+     LW_MUSIC — soundtrack player
+
+     One global <audio> element + a player drawer. Tracks live in
+     assets/music/<id>.mp3. Manifest is window.LW_MUSIC.tracks below —
+     append entries as Stephen ships MP3s. The "Soundtrack" row in
+     BoS ABOUT is hidden until at least one track is in the manifest.
+
+     AUTO-PAUSE BEHAVIOR
+       Music pauses when ANY mini-game opens (body.game-active class
+       observer — covers Bloom Wheel's _bwAudioCtx, Connect Fleur,
+       every other game). It resumes ONLY if the game open caused
+       the pause; if the user paused manually, game-end leaves it
+       paused. Same path is exposed for any future Music Studio:
+       call LW_MUSIC.pauseFor('studio') on open + .resumeFrom('studio')
+       on close.
+
+     PERSISTENCE
+       Track index, volume, muted survive reloads via localStorage
+       lw_music_state. Playback position is NOT persisted by design —
+       reopening the game shouldn't blast resume mid-bar.
+     ════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+
+  var STATE_KEY = 'lw_music_state';
+
+  // TRACK MANIFEST — Stephen edits this when shipping MP3s.
+  // Each entry: { id, title, artist, src, mood }
+  var TRACKS = [
+    // {id:'lucid-wind', title:'Lucid Wind', artist:'Stephen', src:'assets/music/lucid-wind.mp3', mood:'jazzy hip-hop'},
+  ];
+
+  var state = {
+    currentIdx: -1,
+    playing: false,
+    volume: 0.6,
+    muted: false,
+    pausedBy: null,  // 'game' | 'studio' | 'user' | null
+    drawerOpen: false
+  };
+
+  function loadState(){
+    try {
+      var s = JSON.parse(localStorage.getItem(STATE_KEY) || '{}');
+      if (typeof s.currentIdx === 'number') state.currentIdx = s.currentIdx;
+      if (typeof s.volume === 'number') state.volume = s.volume;
+      if (typeof s.muted === 'boolean') state.muted = s.muted;
+    } catch(e){}
+  }
+
+  function saveState(){
+    try {
+      localStorage.setItem(STATE_KEY, JSON.stringify({
+        currentIdx: state.currentIdx,
+        volume: state.volume,
+        muted: state.muted
+      }));
+    } catch(e){}
+  }
+
+  var audio = null;
+  function ensureAudio(){
+    if (audio) return audio;
+    audio = document.createElement('audio');
+    audio.id = 'lw-music-audio';
+    audio.preload = 'metadata';
+    audio.volume = state.volume;
+    audio.muted = state.muted;
+    audio.addEventListener('ended', function(){ next(); });
+    audio.addEventListener('play', function(){
+      state.playing = true; renderNowPlaying();
+    });
+    audio.addEventListener('pause', function(){
+      state.playing = false; renderNowPlaying();
+    });
+    document.body.appendChild(audio);
+    return audio;
+  }
+
+  function play(idx){
+    if (typeof idx !== 'number') idx = state.currentIdx >= 0 ? state.currentIdx : 0;
+    if (!TRACKS.length) return;
+    if (idx < 0 || idx >= TRACKS.length) idx = 0;
+    var a = ensureAudio();
+    var t = TRACKS[idx];
+    if (state.currentIdx !== idx || (a.src || '').indexOf(t.src) < 0) {
+      a.src = t.src;
+      state.currentIdx = idx;
+      saveState();
+    }
+    state.pausedBy = null;
+    var p = a.play();
+    if (p && p['catch']) p['catch'](function(){
+      // iOS / Pi Browser may reject without user gesture — quiet fail.
+      if (window._toast) _toast('Tap a track to start playback.');
+    });
+    renderTrackList();
+  }
+
+  function pause(){
+    if (audio) audio.pause();
+    state.pausedBy = 'user';
+  }
+
+  function resume(){
+    if (audio && audio.src) {
+      state.pausedBy = null;
+      var p = audio.play();
+      if (p && p['catch']) p['catch'](function(){});
+    }
+  }
+
+  function next(){
+    if (!TRACKS.length) return;
+    play((state.currentIdx + 1) % TRACKS.length);
+  }
+
+  function prev(){
+    if (!TRACKS.length) return;
+    play((state.currentIdx - 1 + TRACKS.length) % TRACKS.length);
+  }
+
+  function setVolume(v){
+    var n = Number(v);
+    if (isNaN(n)) return;
+    state.volume = Math.max(0, Math.min(1, n));
+    if (audio) audio.volume = state.volume;
+    saveState();
+  }
+
+  // Auto-pause helpers — caller specifies a reason. Only resumeFrom(reason)
+  // restores playback if the SAME reason did the pause.
+  function pauseFor(reason){
+    if (audio && state.playing) {
+      audio.pause();
+      state.pausedBy = reason || 'auto';
+    }
+  }
+  function resumeFrom(reason){
+    if (audio && audio.src && state.pausedBy === reason) {
+      state.pausedBy = null;
+      var p = audio.play();
+      if (p && p['catch']) p['catch'](function(){});
+    }
+  }
+
+  // body.game-active observer — pause music whenever any mini-game opens
+  // (Bloom Wheel, Connect Fleur, Mastermind, all of them). Resumes on close.
+  function watchGameActive(){
+    if (!window.MutationObserver) return;
+    var lastActive = document.body.classList.contains('game-active');
+    var obs = new MutationObserver(function(){
+      var nowActive = document.body.classList.contains('game-active');
+      if (nowActive !== lastActive) {
+        lastActive = nowActive;
+        if (nowActive) pauseFor('game');
+        else resumeFrom('game');
+      }
+    });
+    obs.observe(document.body, {attributes:true, attributeFilter:['class']});
+  }
+
+  // ── Drawer UI ──
+  function openDrawer(){
+    closeDrawer();
+    var ov = document.createElement('div');
+    ov.id = 'lw-music-drawer';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100003;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:1rem;';
+    ov.addEventListener('click', function(e){ if (e.target === ov) closeDrawer(); });
+
+    var h = '<div onclick="event.stopPropagation()" style="max-width:400px;width:100%;max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(28,20,38,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(180,140,220,0.4);border-radius:14px;box-shadow:0 16px 50px rgba(0,0,0,0.7);overflow:hidden;">';
+
+    // Header
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1rem 0.6rem;border-bottom:1px solid rgba(180,140,220,0.18);flex-shrink:0;background:rgba(13,16,12,0.6);">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.12em;color:rgba(220,180,255,0.95);">♫ SOUNDTRACK</div>';
+    h += '<button onclick="LW_MUSIC.closeDrawer()" aria-label="Close" style="background:rgba(122,179,86,0.1);border:1.5px solid rgba(122,179,86,0.4);color:var(--cream);width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>';
+    h += '</div>';
+
+    // Now playing
+    h += '<div id="lw-music-now" style="padding:0.9rem 1rem;border-bottom:1px solid rgba(180,140,220,0.12);">' + nowPlayingHTML() + '</div>';
+
+    // Track list
+    h += '<div id="lw-music-list" style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0.5rem 0.6rem;flex:1;">' + trackListHTML() + '</div>';
+
+    // Volume + helper
+    h += '<div style="padding:0.6rem 1rem 0.9rem;border-top:1px solid rgba(180,140,220,0.18);background:rgba(13,16,12,0.6);">';
+    h += '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;">';
+    h += '<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;width:24px;">VOL</span>';
+    h += '<input type="range" min="0" max="100" value="' + Math.round(state.volume*100) + '" oninput="LW_MUSIC.setVolume(this.value/100)" style="flex:1;accent-color:#b48cdc;">';
+    h += '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);text-align:center;letter-spacing:0.04em;line-height:1.5;">Music auto-pauses during games. Original beats by Stephen.</div>';
+    h += '</div>';
+
+    h += '</div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+    state.drawerOpen = true;
+  }
+
+  function closeDrawer(){
+    var ov = document.getElementById('lw-music-drawer');
+    if (ov) ov.remove();
+    state.drawerOpen = false;
+  }
+
+  function nowPlayingHTML(){
+    if (state.currentIdx < 0 || !TRACKS[state.currentIdx]) {
+      return '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;letter-spacing:0.04em;line-height:1.6;">Tap a track to start.</div>';
+    }
+    var t = TRACKS[state.currentIdx];
+    var h = '<div style="display:flex;align-items:center;gap:0.7rem;">';
+    h += '<div style="flex:1;min-width:0;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.06em;color:rgba(220,180,255,0.95);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(t.title) + '</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.2rem;letter-spacing:0.04em;">' + esc(t.artist || 'Stephen') + (t.mood ? ' · ' + esc(t.mood) : '') + '</div>';
+    h += '</div>';
+    h += '<div style="display:flex;gap:0.35rem;flex-shrink:0;">';
+    h += '<button onclick="LW_MUSIC.prev()" aria-label="Previous" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.4);background:rgba(26,36,22,0.6);color:var(--cream);cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;">⏮</button>';
+    if (state.playing) {
+      h += '<button onclick="LW_MUSIC.pause()" aria-label="Pause" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(180,140,220,0.55);background:rgba(180,140,220,0.2);color:rgba(240,220,255,0.95);cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;">⏸</button>';
+    } else {
+      h += '<button onclick="LW_MUSIC.resume()" aria-label="Play" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(180,140,220,0.55);background:rgba(180,140,220,0.2);color:rgba(240,220,255,0.95);cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;">▶</button>';
+    }
+    h += '<button onclick="LW_MUSIC.next()" aria-label="Next" style="width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.4);background:rgba(26,36,22,0.6);color:var(--cream);cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;">⏭</button>';
+    h += '</div>';
+    h += '</div>';
+    return h;
+  }
+
+  function trackListHTML(){
+    if (!TRACKS.length) {
+      return '<div style="padding:2rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.7;">Soundtrack drops here as tracks finish.<br><br>Original beats only — no shop loops, no AI fill.</div>';
+    }
+    var h = '';
+    for (var i = 0; i < TRACKS.length; i++) {
+      var t = TRACKS[i];
+      var active = (i === state.currentIdx);
+      h += '<button onclick="LW_MUSIC.play(' + i + ')" style="display:block;width:100%;text-align:left;padding:0.65rem 0.7rem;margin-bottom:0.35rem;background:' + (active ? 'rgba(180,140,220,0.12)' : 'rgba(13,16,12,0.55)') + ';border:1px solid ' + (active ? 'rgba(180,140,220,0.5)' : 'rgba(74,124,53,0.18)') + ';border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent;">';
+      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:' + (active ? 'rgba(220,180,255,0.95)' : 'var(--cream)') + ';">' + esc(t.title) + (active && state.playing ? '  <span style="font-size:0.55rem;color:rgba(180,140,220,0.85);">▶ PLAYING</span>' : '') + '</div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.18rem;letter-spacing:0.04em;">' + esc(t.artist || 'Stephen') + (t.mood ? ' · ' + esc(t.mood) : '') + '</div>';
+      h += '</button>';
+    }
+    return h;
+  }
+
+  function renderNowPlaying(){
+    if (!state.drawerOpen) return;
+    var el = document.getElementById('lw-music-now');
+    if (el) el.innerHTML = nowPlayingHTML();
+    renderTrackList();
+  }
+
+  function renderTrackList(){
+    if (!state.drawerOpen) return;
+    var el = document.getElementById('lw-music-list');
+    if (el) el.innerHTML = trackListHTML();
+  }
+
+  function esc(s){
+    return String(s||'').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function init(){
+    loadState();
+    try { watchGameActive(); } catch(e){}
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  window.LW_MUSIC = {
+    tracks: TRACKS,
+    play: play,
+    pause: pause,
+    resume: resume,
+    next: next,
+    prev: prev,
+    setVolume: setVolume,
+    pauseFor: pauseFor,
+    resumeFrom: resumeFrom,
+    openDrawer: openDrawer,
+    closeDrawer: closeDrawer,
+    state: state
+  };
 })();
 </script>
 
