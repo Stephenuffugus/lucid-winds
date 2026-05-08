@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.24';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.25';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1324,9 +1324,19 @@
        UX feels uniform with the greenhouse carousel — Stephen test
        request: 'this will let players have a uniform experience
        between the greenhouse and the wild.' */
-    body.lw-carousel-wild-mode #plant-gallery-modal { background: #0d100c url('assets/bg-wild-540x960.jpg') center/cover no-repeat; }
-    body.lw-carousel-wild-mode #plant-gallery-modal::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(5,8,4,0.65),rgba(5,8,4,0.92)); pointer-events:none; z-index:0; }
-    body.lw-carousel-wild-mode #plant-gallery-modal > * { position:relative; z-index:1; }
+    /* Stephen 2026-05-08: was using a ::before pseudo-element to darken
+       the wild background, but the extra paint layer caused iOS/Pi to
+       re-raster carousel SVGs as wireframe (no leaf colors) on wild-mode
+       only. Greenhouse cards rendered fine because greenhouse mode has
+       no ::before overlay. Bake the darkening directly into the modal
+       background via stacked background-images — single paint layer,
+       same visual effect, no SVG re-raster trigger. */
+    body.lw-carousel-wild-mode #plant-gallery-modal {
+      background:
+        linear-gradient(180deg,rgba(5,8,4,0.65),rgba(5,8,4,0.92)),
+        url('assets/bg-wild-540x960.jpg') center/cover no-repeat,
+        #0d100c;
+    }
     /* Stephen 2026-05-08: SVG plants in wild carousel were chopping +
        disappearing — Leaflet's tile/canvas redraws + GPS marker updates
        were competing with carousel SVG raster on the GPU. Fully hide the
