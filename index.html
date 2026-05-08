@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.21';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1576,6 +1576,14 @@
       border-top: 1px solid rgba(74,124,53,0.1);
       background: rgba(10,13,9,0.6);
     }
+    /* Stephen 2026-05-08: in Pi Browser the parchment action row was
+       sitting partially behind Pi's hardware chrome (~56px) because that
+       chrome doesn't report via env(safe-area-inset-bottom). Lift the
+       padding by --pi-chrome-h so buttons clear the chrome. The card
+       area auto-shrinks via flex:1 — no black box, no button bump. */
+    body.pi-browser .pgm-actions {
+      padding-bottom: calc(0.5rem + env(safe-area-inset-bottom,0px) + var(--pi-chrome-h)) !important;
+    }
     /* DOWNLOAD button kept in DOM (JS references gallery-download-btn
        by id) but hidden — Stephen 2026-04-27. The 4 parchment buttons
        are the entire action row; plant-card-download moves to a
@@ -2145,7 +2153,7 @@
        Wild tab. Lift it the same way + bump the wild controls (recenter,
        my-plants FAB) above the Pi system bar. */
     body.pi-browser #wild-nav{ bottom: var(--pi-chrome-h) !important; }
-    body.pi-browser #w-recenter{ bottom: calc(268px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
+    body.pi-browser #w-recenter{ bottom: calc(245px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-my-plants{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-mass-water{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #bp-rtb{ bottom: calc(92px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px) + 8px) !important; }
@@ -5813,11 +5821,10 @@ body.tab-wild #w-stats-bar .wsb-chip{min-height:50px!important;}
    the RIGHT, both pinned at the same y-coordinate so they read as a
    matched pair. Mass-water hides for now until Stephen places it. */
 #w-menu-fab{display:none!important;}
-/* Stephen 2026-05-08: ALL/YOURS/HELP/FORAGE/SOCIAL chip bar sits at
-   bottom:110px and can wrap to 2 lines on narrow viewports (becoming
-   ~90-100px tall instead of 40px). Pulled recenter higher in
-   iterations 200→210→220→260→268 over the day. */
-body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(268px + env(safe-area-inset-bottom,0px))!important;}
+/* Stephen 2026-05-08: chip bar at bottom:110px, can wrap to 2 lines on
+   narrow viewports. Iterated 200→210→220→260→268→245 (overshot 268;
+   245 clears the chip bar with a comfortable but not-too-high gap). */
+body.tab-wild #w-recenter{display:flex!important;left:12px!important;right:auto!important;bottom:calc(245px + env(safe-area-inset-bottom,0px))!important;}
 body.tab-wild #w-my-plants{display:flex!important;}
 body.tab-wild #w-mass-water{display:none!important;}
 body:not(.tab-wild) #w-recenter,
@@ -42383,14 +42390,14 @@ document.addEventListener('keydown', function(e) {
         h += '🌱 dropped by <b>' + ownerName + '</b>';
         if (ageDays !== null) h += '<br>⏳ here for ' + ageDays + ' day' + (ageDays === 1 ? '' : 's');
         h += '</div>';
-        h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.78rem;color:var(--muted);line-height:1.5;margin:0.9rem 0;padding:0.7rem 0.8rem;background:rgba(13,16,12,0.55);border-left:2px solid ' + gColor + '55;border-radius:6px;">A keeper’s plant keeps its secrets. Take a cutting to learn its DNA, haiku, and lineage.</div>';
+        h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.78rem;color:var(--muted);line-height:1.5;margin:0.9rem 0;padding:0.7rem 0.8rem;background:rgba(13,16,12,0.55);border-left:2px solid ' + gColor + '55;border-radius:6px;">A keeper’s plant keeps its secrets. Take a cutting to learn its full DNA + lineage.</div>';
         h += '<button onclick="document.getElementById(\'lw-wild-info\').remove();if(window._carouselWildAction)window._carouselWildAction(\'cutting\');" style="width:100%;padding:0.75rem;border:1.5px solid rgba(122,179,86,0.55);border-radius:10px;background:linear-gradient(180deg,rgba(74,124,53,0.3),rgba(46,80,34,0.4));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.12em;cursor:pointer;min-height:48px;margin-bottom:0.5rem;">TAKE A CUTTING</button>';
         h += '<button onclick="document.getElementById(\'lw-wild-info\').remove();" style="width:100%;padding:0.55rem;border:1px solid rgba(138,145,120,0.25);border-radius:8px;background:transparent;color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.1em;cursor:pointer;min-height:44px;">CLOSE</button>';
         h += '</div>';
         ov.innerHTML = h;
         document.body.appendChild(ov);
       } catch(e){
-        if (window._toast) window._toast('A keeper\'s plant keeps its secrets. Take a cutting to learn them.');
+        if (window._toast) window._toast('A keeper\'s plant keeps its DNA + lineage. Take a cutting to read them.');
       }
       return;
     }
@@ -93073,15 +93080,17 @@ function _bosTodayContent() {
       });
     }
   } catch(e){}
-  // Card: discoveries
+  // Card: discoveries — also stash the list for the journal accordion below.
+  var _discList = [];
   try {
-    var discCount = 0, lastDiscName = null;
     for (var x = 0; x < recent.length; x++) {
       if (recent[x].type === 'event_discovered' || recent[x].type === 'synergy_discovered' || recent[x].type === 'achievement_unlock') {
-        discCount++;
-        if (recent[x].data && recent[x].data.name) lastDiscName = recent[x].data.name;
+        _discList.push(recent[x]);
       }
     }
+    _discList.sort(function(a,b){return b.ts - a.ts;});
+    var discCount = _discList.length;
+    var lastDiscName = (discCount > 0 && _discList[0].data && _discList[0].data.name) ? _discList[0].data.name : null;
     if (discCount >= 1) {
       cards.push({
         glyph: '✧',
@@ -93122,6 +93131,43 @@ function _bosTodayContent() {
   h += '<div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--cream);font-style:italic;line-height:1.3;margin-bottom:6px;">' + card.title + '</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.6;">' + card.body + '</div>';
   h += '</div></div>';
+
+  // ─── NEW SECRETS accordion ───
+  // Stephen 2026-05-08: the highlight card above only shows a count
+  // ("199 new secrets"). Players couldn't actually READ them. This
+  // collapsible accordion lists each discovery with name + when so the
+  // count actually pays off. Open by default if 5 or fewer; otherwise
+  // tap to expand. Caps shown at 30 (anything beyond points to Codex /
+  // Achievements for the full ledger).
+  if (_discList && _discList.length > 0) {
+    var _dCount = _discList.length;
+    var _dLabel = '✦  ' + (_dCount === 1 ? 'NEW SECRET' : 'NEW SECRETS');
+    var _dBadge = (_dCount > 99 ? '99+' : String(_dCount));
+    var _dOpen = (_dCount <= 5);
+    h += '<div style="margin-bottom:0.85rem;border:1.5px solid rgba(200,168,75,0.3);border-radius:12px;overflow:hidden;background:linear-gradient(160deg,rgba(42,54,34,0.4),rgba(18,22,16,0.65));">';
+    h += _bosCollapsible('jrn-disc', _dLabel, _dBadge, _dOpen, function(){
+      var _escD = function(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+      var inner = '<div style="padding:0.55rem 0.6rem 0.7rem;">';
+      var maxShow = Math.min(30, _discList.length);
+      for (var _di = 0; _di < maxShow; _di++) {
+        var _ne = _discList[_di];
+        var _nName = (_ne.data && _ne.data.name) || 'Unnamed';
+        var _nType = _ne.type === 'event_discovered' ? 'Event' : (_ne.type === 'synergy_discovered' ? 'Synergy' : 'Achievement');
+        var _ms = Date.now() - _ne.ts;
+        var _agoStr = _ms < 3600000 ? Math.max(1, Math.floor(_ms/60000)) + 'm ago' : (_ms < 86400000 ? Math.floor(_ms/3600000) + 'h ago' : Math.floor(_ms/86400000) + 'd ago');
+        inner += '<div style="padding:0.5rem 0.65rem;margin-bottom:5px;background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.18);border-left:3px solid rgba(200,168,75,0.55);border-radius:6px;">';
+        inner += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.06em;line-height:1.2;">' + _escD(_nName) + '</div>';
+        inner += '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);margin-top:3px;letter-spacing:0.04em;">' + _nType + ' · ' + _agoStr + '</div>';
+        inner += '</div>';
+      }
+      if (_discList.length > maxShow) {
+        inner += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);text-align:center;font-style:italic;padding:6px 0 2px;">+ ' + (_discList.length - maxShow) + ' more — check Codex / Achievements for the full ledger</div>';
+      }
+      inner += '</div>';
+      return inner;
+    });
+    h += '</div>';
+  }
 
   // ─── NEAR COMPLETION nudges ───
   // Surface up to 3 achievements where the player is within 20% of done.
