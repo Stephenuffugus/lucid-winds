@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.22';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.23';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1533,6 +1533,7 @@
     .cf-name{font-family:'Cormorant Garamond','Playfair Display',serif;font-weight:700;text-align:center;letter-spacing:0.04em;text-shadow:0 2px 8px rgba(0,0,0,0.8);width:100%;line-height:1.15;}
     .cf-name .np-top{display:block;font-size:0.8rem;font-style:italic;letter-spacing:0.06em;opacity:0.7;font-weight:400;}
     .cf-name .np-main{display:block;font-size:1.9rem;}
+    .cf-name .np-realm{display:block;font-size:0.72rem;font-style:italic;letter-spacing:0.05em;opacity:0.78;font-weight:400;margin-top:3px;color:rgba(232,220,200,0.85);}
     .cf-name .np-title{display:block;font-size:0.7rem;font-style:italic;letter-spacing:0.05em;opacity:0.65;font-weight:400;margin-top:2px;}
     .cf-art-window{display:flex;align-items:center;justify-content:center;overflow:visible;min-height:0;background:transparent;border:none;padding-bottom:2%;}
     .cf-art-window svg{max-height:100%;max-width:90%;width:auto;height:100%;transform:none;}
@@ -2706,6 +2707,9 @@
     .greenhouse-plant .gh-name{font-family:'Playfair Display',serif;font-size:0.7rem;font-weight:700;letter-spacing:0.02em;margin-top:0.25rem;line-height:1.2;text-align:center;max-height:2.4em;overflow:hidden;}
     .greenhouse-plant .gh-name .np-top{display:none;}
     .greenhouse-plant .gh-name .np-title{display:none;}
+    /* Grid card stays compact — main noun only. Realm + title visible
+       on the carousel front and breed screen instead. */
+    .greenhouse-plant .gh-name .np-realm{display:none;}
     .gh-grid-selector{display:flex;gap:0.25rem;margin-bottom:0.3rem;}
     .gh-grid-btn{background:linear-gradient(180deg,rgba(60,52,40,0.85) 0%,rgba(38,34,26,0.95) 100%);border:1.5px solid rgba(200,188,160,0.45);color:rgba(232,220,200,0.95);font-family:'Bebas Neue',sans-serif;font-size:0.65rem;letter-spacing:0.06em;padding:0.45rem 0.7rem;border-radius:6px;cursor:pointer;min-height:48px;transition:all 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,235,195,0.08);}
     .gh-grid-btn.active{border-color:var(--sage);color:var(--sage);background:linear-gradient(180deg,rgba(74,124,53,0.35),rgba(46,80,32,0.45));box-shadow:0 0 8px rgba(122,179,86,0.25),inset 0 1px 0 rgba(255,235,195,0.1);}
@@ -3750,6 +3754,7 @@
     .bs-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;line-height:1.2;overflow:hidden;}
     .bs-name .np-top{display:inline;font-size:0.7rem;font-style:italic;opacity:0.8;font-weight:400;margin-right:0.2rem;}
     .bs-name .np-main{font-size:0.95rem;}
+    .bs-name .np-realm{display:block;font-size:0.62rem;font-style:italic;opacity:0.75;font-weight:400;margin-top:1px;}
     .bs-name .np-title{display:block;font-size:0.7rem;font-style:italic;opacity:0.8;font-weight:400;}
     .bs-meta{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.05em;display:flex;gap:0.3rem;margin-top:0.1rem;flex-wrap:wrap;}
     .bs-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.22rem 0;border-bottom:1px dotted rgba(74,124,53,0.04);}
@@ -37804,6 +37809,17 @@ document.addEventListener('keydown', function(e) {
     var adj = NAME_ADJ[adjIdx];
     var noun = NAME_NOUN[nounIdx];
 
+    // Stephen 2026-05-08: realm wired into the canonical name. Was a
+    // dead bank for 6+ months — getPlantRealm() existed but no display
+    // surface called it. Wiring it expands name-space from 4.87M base
+    // to 8.4B distinct names (× 1,727 realms). Realm hex window is
+    // h[42-44] to stay decorrelated from adj/noun windows.
+    var realmStr = '';
+    if (NAME_REALM && NAME_REALM.length) {
+      var realmIdx = (parseInt(h[42]+h[43]+h[44], 16) || 0) % NAME_REALM.length;
+      realmStr = ' of ' + NAME_REALM[realmIdx];
+    }
+
     var TITLES_MYTHIC = {
       'The Toad':             'of the Toad',
       'The Cicada':          'of the Cicada',
@@ -37814,11 +37830,12 @@ document.addEventListener('keydown', function(e) {
       'The Beholder':         'of the Beholder'  // set-103-8
     };
 
-    var name = 'The ' + adj + ' ' + noun;
+    var name = 'The ' + adj + ' ' + noun + realmStr;
 
-    // Mythic suffix
+    // Mythic suffix appended after realm with comma so "of X, of the Y"
+    // reads naturally instead of "of X of the Y".
     if (t.mythicName !== 'None' && TITLES_MYTHIC[t.mythicName]) {
-      name += ' ' + TITLES_MYTHIC[t.mythicName];
+      name += ', ' + TITLES_MYTHIC[t.mythicName];
     }
 
     return name;
@@ -37835,6 +37852,18 @@ document.addEventListener('keydown', function(e) {
     var adj = NAME_ADJ[adjIdx];
     var noun = NAME_NOUN[nounIdx];
 
+    // Realm — Stephen 2026-05-08 wired in. Renders as a small italic
+    // line under the main noun so the structure reads:
+    //   The [Adj]
+    //     [Noun]
+    //   of [Realm]
+    //   of the [Mythic]   (only when mythic creature present)
+    var realm = '';
+    if (NAME_REALM && NAME_REALM.length) {
+      var realmIdx = (parseInt(h[42]+h[43]+h[44], 16) || 0) % NAME_REALM.length;
+      realm = 'of ' + NAME_REALM[realmIdx];
+    }
+
     var TITLES_MYTHIC = {
       'The Toad':'of the Toad','The Cicada':'of the Cicada',
       'Garden Spider':'of the Spider','Baby Mammoth':'of the Mammoth',
@@ -37845,6 +37874,7 @@ document.addEventListener('keydown', function(e) {
 
     return '<span class="np-top">The ' + adj + '</span>'
       + '<span class="np-main">' + noun + '</span>'
+      + (realm ? '<span class="np-realm">' + realm + '</span>' : '')
       + (title ? '<span class="np-title">' + title + '</span>' : '');
   }
   window.buildNameplate = buildNameplate;
@@ -40087,7 +40117,7 @@ document.addEventListener('keydown', function(e) {
         // didn't write the greenhouse across a season transition saw
         // stale EA on the card. v6 (2026-05-08) adds it; clears stale v5.
         var _ghCurSeason = (Math.floor(new Date().getMonth() / 3) % 4);
-        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|' + (plant.wildBorn ? 'w' : 'g') + '|s' + _ghCurSeason + '|v6';
+        var _cacheKey = plant.hash + '|' + (plant.breedCount || 0) + '|' + (plant.mycelialCrown ? 1 : 0) + '|' + (plant.revealed ? 1 : 0) + '|' + realIdx + '|' + _ghAgeTier + '|' + (plant.wildBorn ? 'w' : 'g') + '|s' + _ghCurSeason + '|v7';
         if (_ghCardCache[_cacheKey]) {
           el.innerHTML = _ghCardCache[_cacheKey];
           (function(idx) { el.onclick = function() { openCarousel(loadGreenhouse(), idx, 'greenhouse'); }; })(realIdx);
@@ -41636,7 +41666,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v2'; // v2 (2026-05-02): bell flower rebuild cache bust
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v3'; // v3 (2026-05-08): realm wired into nameplate
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
