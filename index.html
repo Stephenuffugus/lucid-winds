@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.30';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.08.31';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6740,8 +6740,8 @@ window._addSwitchTabHook = function(fn){
 };
 
 // Stephen 2026-05-08 birthday fix: greenhouse slot count was reported missing.
-// Defensive sync that runs independent of renderGreenhouse — reads slot cap
-// + gh length directly from localStorage and writes both counters. Idempotent.
+// v2: single-span layout, write full "X / Y SLOTS USED" string. Defensive
+// — runs independent of renderGreenhouse on multiple triggers.
 window._lwSyncGHSlotCounts = function(){
   try{
     var ghLen = 0;
@@ -6751,15 +6751,20 @@ window._lwSyncGHSlotCounts = function(){
       var stored = parseInt(localStorage.getItem('sws_greenhouse_slots'),10);
       if (stored>=10 && stored<=80) cap = stored;
     }catch(e){}
-    var txt = ghLen + ' / ' + cap;
-    var a = document.getElementById('gh-slot-banner-num'); if (a) a.textContent = txt;
-    var b = document.getElementById('gh-count');           if (b) b.textContent = txt;
+    var bannerTxt = ghLen + ' / ' + cap + ' SLOTS USED';
+    var chipTxt   = ghLen + ' / ' + cap;
+    var a = document.getElementById('gh-slot-banner-num'); if (a) a.textContent = bannerTxt;
+    var b = document.getElementById('gh-count');           if (b) b.textContent = chipTxt;
   }catch(e){}
 };
-// Run on tab switch to greenhouse + once after DOM is ready.
+// Run on tab switch to greenhouse + once after DOM is ready + after cloud
+// vault loads (in case cloud data arrives mid-session).
 window._addSwitchTabHook(function(tab){ if (tab==='greenhouse') window._lwSyncGHSlotCounts(); });
 if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', window._lwSyncGHSlotCounts);
 else setTimeout(window._lwSyncGHSlotCounts, 50);
+// Also re-sync 2s and 5s after load to catch late-arriving cloud data.
+setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 2000);
+setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
 
 // ── WILD EVENT LOG STUB — early buffer so pre-boot events don't vanish ──
 // The real window._logWildEvent installs near the bottom of the file
@@ -7141,12 +7146,12 @@ else setTimeout(window._lwSyncGHSlotCounts, 50);
       <div class="gh-recent-label">RECENT BLOOMS</div>
       <div class="gh-recent-strip" id="gh-recent-strip"></div>
     </div>
-    <!-- Stephen 2026-05-08 birthday fix: gold-bordered chip, defensive
-         display:flex !important so nothing can hide it. Updated by
-         renderGreenhouse AND a direct switchTab hook below. -->
-    <div id="gh-slot-banner" style="display:flex !important;align-items:center;justify-content:center;gap:0.55rem;margin:0.35rem auto 0.45rem;padding:0.45rem 0.95rem 0.5rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.12em;background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:1.5px solid rgba(200,168,75,0.55);border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(200,168,75,0.22);width:fit-content;max-width:calc(100% - 12px);">
-      <span id="gh-slot-banner-num" style="font-size:1.45rem;color:var(--gold);font-weight:600;line-height:1;">0 / 10</span>
-      <span style="font-size:0.62rem;color:var(--cream);line-height:1;opacity:0.78;">SLOTS USED</span>
+    <!-- Stephen 2026-05-08 birthday fix v2: single span. Previous 2-span
+         layout left the label visible while the number span rendered
+         empty for reasons I couldn't reproduce locally. One element =
+         one failure mode. JS writes the FULL string into this span. -->
+    <div id="gh-slot-banner" style="display:block !important;text-align:center;margin:0.35rem auto 0.45rem;padding:0.5rem 1rem;font-family:'Bebas Neue',sans-serif;letter-spacing:0.12em;background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:1.5px solid rgba(200,168,75,0.55);border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(200,168,75,0.22);width:fit-content;max-width:calc(100% - 12px);">
+      <span id="gh-slot-banner-num" style="font-size:1.05rem;color:var(--gold);font-weight:600;line-height:1.2;white-space:nowrap;">0 / 10 SLOTS USED</span>
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
@@ -39812,9 +39817,10 @@ document.addEventListener('keydown', function(e) {
     // Progress header
     var pct = Math.round((gh.length / MAX_COLLECTION_SIZE) * 100);
     if (countEl) countEl.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
-    // Stephen 2026-05-03: prominent slot banner above the grid.
+    // Stephen 2026-05-08: write full "X / Y SLOTS USED" into the single
+    // banner span. Single string = single failure mode.
     var slotBannerNum = document.getElementById('gh-slot-banner-num');
-    if (slotBannerNum) slotBannerNum.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE;
+    if (slotBannerNum) slotBannerNum.textContent = gh.length + ' / ' + MAX_COLLECTION_SIZE + ' SLOTS USED';
     // Engagement counters: gh_full (1 once you've ever maxed out), gh_max_slots
     // (current slot ceiling), and pots_owned_unique (distinct pot indices in
     // the live greenhouse). Cheap to derive on render — already iterating.
