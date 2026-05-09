@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.9';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.10';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14900,7 +14900,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-09b';
+  var _SVG_CACHE_VER = '2026-05-09c';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -15035,7 +15035,14 @@ document.addEventListener('keydown', function(e) {
     if (_dpLum < 0.12) _darkPlantBoost = true;
 
     var isMut = t.mutationName !== 'None';
-    var isWire = t.mutationName === 'Wireframe';
+    /* Stephen 2026-05-09: forced isWire=false. The Wireframe mutation byte
+       (0xF2, ~0.39%) was making leaves and pots render with fill="none" —
+       only outlines + strokes visible. Mutation is randomly assigned per
+       hash byte; players rolled into it and saw their plants as broken
+       renders. Killed the visual permanently so every plant always shows
+       with leaf/pot fills. The mutation name is still displayed on the
+       DNA ledger if a hash rolls 0xF2; only the visual is overridden. */
+    var isWire = false;
     var isGlass = t.mutationName === 'Glass Stem';
     var isGlitch = t.mutationName === 'Glitch';
     var isAlbino = t.mutationName === 'Albino';
@@ -15430,7 +15437,14 @@ document.addEventListener('keydown', function(e) {
     var s = size || 200;
     var prog = 1;
     var uid = (baseHash).substring(0, 6);
-    var isWire = t.mutationName === 'Wireframe';
+    /* Stephen 2026-05-09: forced isWire=false. The Wireframe mutation byte
+       (0xF2, ~0.39%) was making leaves and pots render with fill="none" —
+       only outlines + strokes visible. Mutation is randomly assigned per
+       hash byte; players rolled into it and saw their plants as broken
+       renders. Killed the visual permanently so every plant always shows
+       with leaf/pot fills. The mutation name is still displayed on the
+       DNA ledger if a hash rolls 0xF2; only the visual is overridden. */
+    var isWire = false;
     var isGlass = t.mutationName === 'Glass Stem';
 
     var svg = '<svg viewBox="0 0 70 95" width="'+s+'" height="'+Math.round(s*95/70)+'" xmlns="http://www.w3.org/2000/svg" overflow="visible">';
