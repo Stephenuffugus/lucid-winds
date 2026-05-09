@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.12';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14900,7 +14900,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-09d';
+  var _SVG_CACHE_VER = '2026-05-09e';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -25732,7 +25732,15 @@ document.addEventListener('keydown', function(e) {
     window._lastLeafSizes = _leafSizes;
     window._lastLowestLeaf = _lowestLeaf;
 
-    return s;
+    /* Stephen 2026-05-09: re-apply the leaf drop-shadow as a SINGLE filter
+       on a wrapping <g> instead of per-leaf. Per-leaf filters were each
+       allocating their own iOS/Pi render surface (7-9 surfaces per plant)
+       and blowing the compositing budget — fills dropped on the heavier
+       leaves and the plant rendered as outlines+veins only. One filter on
+       the wrapper = one render surface for the whole foliage cluster.
+       The shadow lands once under all leaves combined rather than per leaf,
+       which reads slightly different but still gives clear depth. */
+    return '<g filter="url(#ds'+uid+')">' + s + '</g>';
   }
 
   // ── set-103-8: MYCELIAL CROWN RENDERER (composted heritage) ──
