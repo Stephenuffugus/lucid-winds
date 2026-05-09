@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.3';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.4';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -3313,6 +3313,16 @@
     .gh-progress-bar{height:5px;background:rgba(42,48,37,0.6);border-radius:3px;overflow:hidden;margin-top:0.3rem;border:1px solid rgba(74,124,53,0.1);}
     .gh-progress-fill{height:100%;background:linear-gradient(90deg,rgba(74,124,53,0.6),var(--sage));border-radius:3px;transition:width 0.5s ease;box-shadow:0 0 6px rgba(122,179,86,0.2);}
     .greenhouse-count{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;font-weight:normal;letter-spacing:0.1em;color:var(--gold);background:rgba(13,16,12,0.55);padding:0.35rem 0.7rem;border-radius:8px;border:1px solid rgba(200,168,75,0.3);}
+    /* Stephen 2026-05-09: bulletproof slot banner. Stephen reported the
+       top banner was selectable but INVISIBLE — text rendering with no
+       visible color, suggesting CSS cascade somewhere was overriding the
+       inline color. Class with !important everywhere kills that path. */
+    .lw-slot-banner{display:flex !important;justify-content:center !important;align-items:center !important;gap:6px !important;width:auto !important;padding:10px 14px !important;color:#f5e7b8 !important;font-weight:700 !important;font-size:1.05rem !important;font-family:Arial,sans-serif !important;letter-spacing:0.04em !important;background-color:#241e10 !important;border:2px solid #c8a84b !important;border-radius:10px !important;visibility:visible !important;opacity:1 !important;text-shadow:0 1px 2px rgba(0,0,0,0.6);}
+    .lw-slot-banner > span{visibility:visible !important;opacity:1 !important;}
+    .lw-slot-banner .lw-sb-label{color:#a89f88 !important;font-size:0.75rem !important;letter-spacing:0.1em !important;}
+    .lw-slot-banner .lw-sb-num{color:#f5e7b8 !important;font-size:1.2rem !important;font-weight:800 !important;}
+    .lw-slot-banner .lw-sb-cap{color:#c8a84b !important;font-size:1.2rem !important;font-weight:800 !important;}
+    .lw-slot-banner .lw-sb-slash{color:#a89f88 !important;font-size:1rem !important;}
 
     /* ── DASHBOARD ── */
     .dash-section{background:rgba(26,36,22,0.5);border:1px solid rgba(74,124,53,0.12);border-radius:8px;padding:0.75rem;margin-bottom:0.6rem;}
@@ -7183,11 +7193,11 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
          write. Even if writes fail, the labels stay visible. Worst case:
          player sees "PLANTS: 0 / 10" with stale values. They never lose
          the layout. -->
-    <div id="gh-slot-banner" style="display:flex;justify-content:center;align-items:center;gap:6px;width:auto;margin:8px 12px 10px;padding:10px 14px;color:#f5e7b8;font-weight:700;font-size:1.05rem;font-family:Arial,sans-serif;letter-spacing:0.04em;background:rgba(36,30,16,0.92);border:2px solid rgba(200,168,75,0.6);border-radius:10px;">
-      <span style="color:#8a9178;font-size:0.7rem;letter-spacing:0.1em;">PLANTS:</span>
-      <span id="gh-slot-count" style="color:#f5e7b8;font-size:1.2rem;font-weight:800;">0</span>
-      <span style="color:#8a9178;font-size:1rem;">/</span>
-      <span id="gh-slot-cap" style="color:#c8a84b;font-size:1.2rem;font-weight:800;">10</span>
+    <div id="gh-slot-banner" class="lw-slot-banner" style="margin:8px 12px 10px;">
+      <span class="lw-sb-label">PLANTS:</span>
+      <span id="gh-slot-count" class="lw-sb-num">0</span>
+      <span class="lw-sb-slash">/</span>
+      <span id="gh-slot-cap" class="lw-sb-cap">10</span>
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
@@ -7195,11 +7205,11 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
     <!-- Stephen 2026-05-09: matching count BELOW the grid. Same structure as
          the banner above so writes only target the count + cap spans; the
          "PLANTS:" label and "/" stay baked in static HTML. -->
-    <div id="gh-slot-banner-bottom" style="display:flex;justify-content:center;align-items:center;gap:6px;width:auto;margin:10px 12px 12px;padding:10px 14px;color:#f5e7b8;font-weight:700;font-size:1.05rem;font-family:Arial,sans-serif;letter-spacing:0.04em;background:rgba(36,30,16,0.92);border:2px solid rgba(200,168,75,0.6);border-radius:10px;">
-      <span style="color:#8a9178;font-size:0.7rem;letter-spacing:0.1em;">PLANTS:</span>
-      <span id="gh-slot-count-bottom" style="color:#f5e7b8;font-size:1.2rem;font-weight:800;">0</span>
-      <span style="color:#8a9178;font-size:1rem;">/</span>
-      <span id="gh-slot-cap-bottom" style="color:#c8a84b;font-size:1.2rem;font-weight:800;">10</span>
+    <div id="gh-slot-banner-bottom" class="lw-slot-banner" style="margin:10px 12px 12px;">
+      <span class="lw-sb-label">PLANTS:</span>
+      <span id="gh-slot-count-bottom" class="lw-sb-num">0</span>
+      <span class="lw-sb-slash">/</span>
+      <span id="gh-slot-cap-bottom" class="lw-sb-cap">10</span>
     </div>
   </div>
   <div class="grove-panel nur-tight" id="panel-nursery">
