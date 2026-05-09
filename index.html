@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.8';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.9';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14900,7 +14900,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-09a';
+  var _SVG_CACHE_VER = '2026-05-09b';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -20282,11 +20282,17 @@ document.addEventListener('keydown', function(e) {
     var wRaw = Math.min(0.35 + idx * 0.20, 0.85) * sizeScale;
     // Opacity: subtle at gen 1, prominent at gen 6. Capped 0.65.
     var oRaw = Math.min(0.40 + idx * 0.10, 0.65);
-    // filterAttr: per playbook §7, gen 3+ adds Gaussian blur; gen 2+ uses screen blend
-    // for the ghost-glow effect. Filter ids defined in defs (added below).
+    // Stephen 2026-05-09: dropped the gen 2+ mix-blend-mode:screen and the
+    // gen 3+ Gaussian-blur filter. Both forced iOS/Pi to allocate a separate
+    // render surface for the chimera-vein layer, and under memory pressure
+    // (complex SVG with breedLayers/compostLayers, especially at carousel +
+    // map-marker sizes simultaneously) the surface allocation failed and the
+    // parent SVG dropped its leaf and pot fills entirely. That's the bug
+    // Stephen kept reporting where bred/own plants rendered as outlines+
+    // shadows+chimera-veins only while gen-1 propagated plants rendered fine.
+    // Veins still show with their neon palette per generation; we lose the
+    // ghost-glow + blur but keep the actual chimera-vein information.
     var filterAttr = '';
-    if (gen >= 3) filterAttr += ' filter="url(#cvb_g'+gen+')"';
-    if (gen >= 2) filterAttr += ' style="mix-blend-mode:screen"';
     return {
       color: CHIMERA_NEON[idx],
       width: wRaw.toFixed(2),
