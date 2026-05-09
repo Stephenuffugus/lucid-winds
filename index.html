@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.08.37';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.1';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6772,6 +6772,11 @@ window._lwSyncGHSlotCounts = function(){
     var capEl   = document.getElementById('gh-slot-cap');
     if (countEl) countEl.textContent = String(ghLen);
     if (capEl)   capEl.textContent   = String(cap);
+    // Matching counter below the grid (Stephen 2026-05-09).
+    var countElB = document.getElementById('gh-slot-count-bottom');
+    var capElB   = document.getElementById('gh-slot-cap-bottom');
+    if (countElB) countElB.textContent = String(ghLen);
+    if (capElB)   capElB.textContent   = String(cap);
     // Old single-element gh-count chip in panel header (legacy).
     var b = document.getElementById('gh-count'); if (b) b.textContent = ghLen + ' / ' + cap;
     try { console.log('[LW] slot count synced. plants='+ghLen+' cap='+cap); } catch(e){}
@@ -7181,6 +7186,15 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
+    </div>
+    <!-- Stephen 2026-05-09: matching count BELOW the grid. Same structure as
+         the banner above so writes only target the count + cap spans; the
+         "PLANTS:" label and "/" stay baked in static HTML. -->
+    <div id="gh-slot-banner-bottom" style="display:flex;justify-content:center;align-items:center;gap:6px;width:auto;margin:10px 12px 12px;padding:10px 14px;color:#f5e7b8;font-weight:700;font-size:1.05rem;font-family:Arial,sans-serif;letter-spacing:0.04em;background:rgba(36,30,16,0.92);border:2px solid rgba(200,168,75,0.6);border-radius:10px;">
+      <span style="color:#8a9178;font-size:0.7rem;letter-spacing:0.1em;">PLANTS:</span>
+      <span id="gh-slot-count-bottom" style="color:#f5e7b8;font-size:1.2rem;font-weight:800;">0</span>
+      <span style="color:#8a9178;font-size:1rem;">/</span>
+      <span id="gh-slot-cap-bottom" style="color:#c8a84b;font-size:1.2rem;font-weight:800;">10</span>
     </div>
   </div>
   <div class="grove-panel nur-tight" id="panel-nursery">
@@ -39441,7 +39455,17 @@ document.addEventListener('keydown', function(e) {
       var tierClass = row.tier === 'mythic' ? 'mythic' : row.tier === 'mutation' ? 'mutation' : row.rare ? 'rare' : '';
       var _lc = row.layerTier;
       var _valColor = _lc ? _lc.color : '';
-      var _tierLabel = _lc && _lc.tier !== 'common' ? '<span style="font-size:0.28rem;opacity:0.7;margin-left:4px;text-transform:uppercase;letter-spacing:0.06em;">' + _lc.tier + '</span>' : '';
+      // Stephen 2026-05-09: tier badge on EVERY layer (was only non-common,
+      // and 0.28rem ≈ 4px so unreadable). Players couldn't see why a plant
+      // with epic/rare layers still graded Common — the badges were invisible.
+      // Now: visible colored pill on every row using the tier's _TIER_COLORS
+      // hue, so the player can read the rarity ladder at a glance and see
+      // exactly what each layer contributed (or didn't).
+      var _tierName = _lc ? _lc.tier : '';
+      var _tierCol  = _lc ? _lc.color : '';
+      var _tierLabel = _tierName ? (
+        '<span style="display:inline-block;font-family:Bebas Neue,sans-serif;font-size:0.5rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:1px 7px;margin-left:6px;border-radius:8px;background:' + _tierCol + '24;border:1px solid ' + _tierCol + '70;color:' + _tierCol + ';vertical-align:middle;line-height:1.2;">' + _tierName + '</span>'
+      ) : '';
       // Tappable rows — each trait layer opens its Reader page
       var _rowAttr = '';
       if (row.cat === 'MUTATION' && row.name && row.name !== 'None') {
@@ -39840,6 +39864,11 @@ document.addEventListener('keydown', function(e) {
     var _ghCapEl   = document.getElementById('gh-slot-cap');
     if (_ghCountEl) _ghCountEl.textContent = String(gh.length);
     if (_ghCapEl)   _ghCapEl.textContent   = String(MAX_COLLECTION_SIZE);
+    // Matching bottom banner (Stephen 2026-05-09).
+    var _ghCountElB = document.getElementById('gh-slot-count-bottom');
+    var _ghCapElB   = document.getElementById('gh-slot-cap-bottom');
+    if (_ghCountElB) _ghCountElB.textContent = String(gh.length);
+    if (_ghCapElB)   _ghCapElB.textContent   = String(MAX_COLLECTION_SIZE);
     // Engagement counters: gh_full (1 once you've ever maxed out), gh_max_slots
     // (current slot ceiling), and pots_owned_unique (distinct pot indices in
     // the live greenhouse). Cheap to derive on render — already iterating.
@@ -40342,6 +40371,26 @@ document.addEventListener('keydown', function(e) {
           // Slot at MAX_COLLECTION_SIZE   → + 1 SLOT chunky card
           // Slot at MAX_COLLECTION_SIZE+1 → + 10 SLOTS bulk card
           var _buyOffset = i - MAX_COLLECTION_SIZE;
+          // Stephen 2026-05-09: empty card slot showing X/Y count BEFORE
+          // the Pi expansion buttons. Mirrors the top banner so the player
+          // sees "17/20" both above the grid and at the end of it. Renders
+          // ONCE on the first beyond-cap iteration. Card aspect matches the
+          // Pi buttons so it sits flush in the grid.
+          if (_buyOffset === 0) {
+            var _xyCard = document.createElement('div');
+            _xyCard.className = 'greenhouse-plant gh-slot-status';
+            _xyCard.style.cssText = 'background:linear-gradient(180deg,rgba(36,30,16,0.7),rgba(20,24,16,0.85));border:2px dashed rgba(200,168,75,0.45);box-shadow:inset 0 1px 0 rgba(200,168,75,0.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;aspect-ratio:544/736;';
+            var _xyEmpty = Math.max(0, MAX_COLLECTION_SIZE - gh.length);
+            _xyCard.innerHTML =
+              '<div style="font-family:Arial,sans-serif;font-size:0.55rem;font-weight:700;color:#8a9178;letter-spacing:0.12em;">SLOTS USED</div>' +
+              '<div style="font-family:Arial,sans-serif;font-weight:800;letter-spacing:0.02em;line-height:1;color:#f5e7b8;font-size:1.6rem;">' +
+                gh.length +
+                '<span style="color:#8a9178;font-weight:600;font-size:1.1rem;margin:0 2px;">/</span>' +
+                '<span style="color:#c8a84b;">' + MAX_COLLECTION_SIZE + '</span>' +
+              '</div>' +
+              '<div style="font-family:Arial,sans-serif;font-size:0.55rem;font-weight:600;color:#8a9178;letter-spacing:0.04em;">' + _xyEmpty + ' empty</div>';
+            grid.appendChild(_xyCard);
+          }
           el.className = 'greenhouse-plant gh-slot-buy';
           el.style.cursor = 'pointer';
           if (_buyOffset === 0) {
@@ -40370,25 +40419,9 @@ document.addEventListener('keydown', function(e) {
       grid.appendChild(el);
     }
 
-    // ─── SLOTS-USED FOOTER — accordion partner of the skipped empty slots ───
-    // Stephen ruling 2026-05-02: with empty placeholders gone, the player
-    // needs a CLEAR indicator of how many slots are full vs total. Renders
-    // as a full-width strip below the plant grid, above the lazy SVG init.
-    if (gh.length > 0) {
-      var _footer = document.createElement('div');
-      _footer.className = 'gh-slots-footer';
-      _footer.style.cssText = 'grid-column:1/-1;margin-top:0.6rem;padding:0.7rem 0.9rem;background:linear-gradient(180deg,rgba(36,30,16,0.62),rgba(20,24,16,0.78));border:1.5px solid rgba(200,168,75,0.35);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;box-shadow:inset 0 1px 0 rgba(200,168,75,0.18);';
-      var _emptyCount = Math.max(0, MAX_COLLECTION_SIZE - gh.length);
-      _footer.innerHTML =
-        '<div style="display:flex;flex-direction:column;line-height:1.15;">' +
-          '<div style="font-family:Arial,sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.05em;color:#c8a84b;">' + gh.length + ' / ' + MAX_COLLECTION_SIZE + ' SLOTS USED</div>' +
-          '<div style="font-family:Arial,sans-serif;font-size:0.6rem;letter-spacing:0.04em;color:#8a9178;margin-top:2px;">' + _emptyCount + ' empty</div>' +
-        '</div>' +
-        '<div style="flex:1;max-width:160px;height:8px;background:rgba(26,32,22,0.6);border-radius:4px;overflow:hidden;border:1px solid rgba(122,179,86,0.25);">' +
-          '<div style="width:' + Math.round((gh.length / MAX_COLLECTION_SIZE) * 100) + '%;height:100%;background:linear-gradient(90deg,rgba(74,124,53,0.7),var(--sage));border-radius:3px;transition:width 0.5s ease;"></div>' +
-        '</div>';
-      grid.appendChild(_footer);
-    }
+    // Slot count summary moved INTO the grid as an empty card slot before
+    // the Pi expansion buttons (Stephen 2026-05-09). Old post-loop footer
+    // strip removed — was redundant with the new in-grid card.
 
     // New-player hint: pulse the first plant card so they know to tap it.
     // Only fires for 1-plant greenhouses + never repeats (one-shot flag).
