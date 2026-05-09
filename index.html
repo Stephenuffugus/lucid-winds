@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.5';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.6';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -3313,16 +3313,39 @@
     .gh-progress-bar{height:5px;background:rgba(42,48,37,0.6);border-radius:3px;overflow:hidden;margin-top:0.3rem;border:1px solid rgba(74,124,53,0.1);}
     .gh-progress-fill{height:100%;background:linear-gradient(90deg,rgba(74,124,53,0.6),var(--sage));border-radius:3px;transition:width 0.5s ease;box-shadow:0 0 6px rgba(122,179,86,0.2);}
     .greenhouse-count{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;font-weight:normal;letter-spacing:0.1em;color:var(--gold);background:rgba(13,16,12,0.55);padding:0.35rem 0.7rem;border-radius:8px;border:1px solid rgba(200,168,75,0.3);}
-    /* Stephen 2026-05-09: bulletproof slot banner. Stephen reported the
-       top banner was selectable but INVISIBLE — text rendering with no
-       visible color, suggesting CSS cascade somewhere was overriding the
-       inline color. Class with !important everywhere kills that path. */
-    .lw-slot-banner{display:flex !important;justify-content:center !important;align-items:center !important;gap:6px !important;width:auto !important;padding:10px 14px !important;color:#f5e7b8 !important;font-weight:700 !important;font-size:1.05rem !important;font-family:Arial,sans-serif !important;letter-spacing:0.04em !important;background-color:#241e10 !important;border:2px solid #c8a84b !important;border-radius:10px !important;visibility:visible !important;opacity:1 !important;text-shadow:0 1px 2px rgba(0,0,0,0.6);}
-    .lw-slot-banner > span{visibility:visible !important;opacity:1 !important;}
-    .lw-slot-banner .lw-sb-label{color:#a89f88 !important;font-size:0.75rem !important;letter-spacing:0.1em !important;}
-    .lw-slot-banner .lw-sb-num{color:#f5e7b8 !important;font-size:1.2rem !important;font-weight:800 !important;}
-    .lw-slot-banner .lw-sb-cap{color:#c8a84b !important;font-size:1.2rem !important;font-weight:800 !important;}
-    .lw-slot-banner .lw-sb-slash{color:#a89f88 !important;font-size:1rem !important;}
+    /* Stephen 2026-05-09 ROUND 2: nuke every metadata strip above the grid
+       with !important so the JS toggles in renderGreenhouse can't flip them
+       back on. Stephen wants the ONLY thing above the grid to be the slot
+       count. The strips render with low-contrast var(--muted) text against
+       the greenhouse panel background and read as invisible/unreadable on
+       device. */
+    #gh-next-bloom,
+    #gh-spotlight,
+    #gh-collection-stats,
+    #gh-season-strip,
+    #gh-recent-wrap,
+    #lw-quest-gh,
+    #gh-reserve-indicator { display: none !important; }
+    /* Bulletproof slot banner — solid pure-black background, bright cream
+       text, gold border, with #fff fallback color. Hardcoded RGB (no var)
+       so theme/CSS variables can't mute it. position+z-index guarantee
+       it's not buried behind another layer. */
+    .lw-slot-banner{
+      display:flex !important;justify-content:center !important;align-items:center !important;
+      gap:8px !important;width:auto !important;padding:12px 14px !important;
+      color:#fff5dd !important;font-weight:800 !important;font-size:1.1rem !important;
+      font-family:Arial,Helvetica,sans-serif !important;letter-spacing:0.06em !important;
+      background-color:#000 !important;background-image:none !important;
+      border:2px solid #c8a84b !important;border-radius:10px !important;
+      visibility:visible !important;opacity:1 !important;
+      text-shadow:0 1px 2px #000 !important;
+      position:relative !important;z-index:10 !important;
+    }
+    .lw-slot-banner > *{visibility:visible !important;opacity:1 !important;color:#fff5dd !important;}
+    .lw-slot-banner .lw-sb-label{color:#c8a84b !important;font-size:0.85rem !important;letter-spacing:0.12em !important;}
+    .lw-slot-banner .lw-sb-num{color:#fff5dd !important;font-size:1.4rem !important;font-weight:900 !important;}
+    .lw-slot-banner .lw-sb-cap{color:#c8a84b !important;font-size:1.4rem !important;font-weight:900 !important;}
+    .lw-slot-banner .lw-sb-slash{color:#c8a84b !important;font-size:1.1rem !important;}
 
     /* ── DASHBOARD ── */
     .dash-section{background:rgba(26,36,22,0.5);border:1px solid rgba(74,124,53,0.12);border-radius:8px;padding:0.75rem;margin-bottom:0.6rem;}
