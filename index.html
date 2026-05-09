@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.1';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.2';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1324,18 +1324,17 @@
        UX feels uniform with the greenhouse carousel — Stephen test
        request: 'this will let players have a uniform experience
        between the greenhouse and the wild.' */
-    /* Stephen 2026-05-08: was using a ::before pseudo-element to darken
-       the wild background, but the extra paint layer caused iOS/Pi to
-       re-raster carousel SVGs as wireframe (no leaf colors) on wild-mode
-       only. Greenhouse cards rendered fine because greenhouse mode has
-       no ::before overlay. Bake the darkening directly into the modal
-       background via stacked background-images — single paint layer,
-       same visual effect, no SVG re-raster trigger. */
+    /* Stephen 2026-05-09: stacked background-images (gradient + url + color)
+       were STILL triggering iOS/Pi SVG raster as outlines+shadows only —
+       the multi-image bg promoted the modal to its own compositor layer,
+       which is enough to break SVG fill paint on Pi Browser even without
+       backdrop-filter or ::before. Reverted to a flat solid color. We
+       lose the wild texture behind the carousel but the SVG renders with
+       full leaf and pot colors, which is what Stephen actually came for.
+       If we want the wild atmosphere back later, paint it on a sibling
+       element (not the modal itself) so the modal stays a flat layer. */
     body.lw-carousel-wild-mode #plant-gallery-modal {
-      background:
-        linear-gradient(180deg,rgba(5,8,4,0.65),rgba(5,8,4,0.92)),
-        url('assets/bg-wild-540x960.jpg') center/cover no-repeat,
-        #0d100c;
+      background: #0a0d08;
     }
     /* Stephen 2026-05-08: SVG plants in wild carousel were chopping +
        disappearing — Leaflet's tile/canvas redraws + GPS marker updates
@@ -5914,8 +5913,9 @@ body:has(#bpe.open) #kb-compendium{display:none !important;}
 /* ── Backpack tab bar — PLANTS / SEEDS toggle (Stephen 2026-04-30) ── */
 #bpe-tabs{position:fixed;top:calc(56px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:1011;display:none;gap:6px;background:rgba(13,16,12,0.85);padding:5px;border-radius:14px;border:1.5px solid rgba(200,168,75,0.45);box-shadow:0 4px 14px rgba(0,0,0,0.6);}
 #bpe.open #bpe-tabs{display:flex;}
-.bp-tab{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.12em;color:var(--muted);background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.2);border-radius:9px;padding:0.5rem 1.1rem;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;}
+.bp-tab{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:0.12em;color:var(--muted);background:rgba(26,36,22,0.4);border:1.5px solid rgba(122,179,86,0.2);border-radius:9px;padding:0.5rem 1.1rem;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent;position:relative;}
 .bp-tab.active{color:var(--gold);background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(120,100,40,0.42));border-color:rgba(200,168,75,0.7);box-shadow:0 0 12px rgba(200,168,75,0.3);}
+.bp-tab-pip{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;background:#c8a84b;color:#0d100c;font-family:Arial,sans-serif;font-size:0.65rem;font-weight:800;letter-spacing:0;border-radius:9px;vertical-align:1px;box-shadow:0 0 8px rgba(200,168,75,0.5);}
 /* Tab mode controls panel visibility. ITEMS mode: show #bpp (items strip +
    boxes + curiosities). SEEDS mode: hide #bpp, move #bps up to take its
    place. bp-mode-plants kept as alias to bp-mode-items for back-compat. */
@@ -7559,7 +7559,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
          expansion was burying mystery boxes + curiosities under the seed grid. -->
     <div id="bpe-tabs">
       <button class="bp-tab active" data-bp-tab="items" onclick="BP.setMode('items')" type="button">ITEMS</button>
-      <button class="bp-tab" data-bp-tab="seeds" onclick="BP.setMode('seeds')" type="button">SEEDS</button>
+      <button class="bp-tab" data-bp-tab="seeds" onclick="BP.setMode('seeds')" type="button">SEEDS<span class="bp-tab-pip" id="bp-tab-pip-seeds" style="display:none;">0</span></button>
     </div>
     <div id="bpp"></div>
     <div id="bps"></div>
@@ -72263,6 +72263,19 @@ function nextSeedPage(){var pc=_seedPageCount();if(_seedPage<pc-1){_seedPage++;r
 function prevSeedPage(){if(_seedPage>0){_seedPage--;render();hap();}}
 function render(){
   var bg=document.getElementById('bpb');var t=st.plants.length+st.seeds.length;bg.textContent=t;bg.classList.toggle('e',t===0);
+  // SEEDS tab pip — backpack opens on ITEMS by default, so without this
+  // players miss that a fresh feral seed is waiting to be sent to the
+  // nursery. Stephen 2026-05-09: pip mirrors the backpack-icon dot but
+  // tells you which tab to switch to. Items tab has its own count
+  // displays inside the tab content (mystery box / curiosities chips
+  // already show counts) so we don't double-count there.
+  try{
+    var _pipS=document.getElementById('bp-tab-pip-seeds');
+    if(_pipS){
+      if(st.seeds.length>0){_pipS.textContent=String(st.seeds.length);_pipS.style.display='inline-flex';}
+      else{_pipS.style.display='none';}
+    }
+  }catch(e){}
   // Render the ITEMS tab into #bpp (visible when bp-mode-items).
   renderItems();
   var se=document.getElementById('bps');var cp=xc();var h='';
