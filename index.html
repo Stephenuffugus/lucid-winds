@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.2';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.3';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1644,7 +1644,12 @@
       padding: 0; border: none; background: none;
       cursor: pointer; transition: transform 0.15s;
       display: inline-flex; align-items: flex-end; justify-content: center;
-      filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));
+      /* Stephen 2026-05-09: dropped filter:drop-shadow. Stranger wild-inspect
+         shows 3 parchment buttons (WATER+CUTTING+ITEMS) vs own's 2 (no CUTTING).
+         The extra drop-shadow filter pushed iOS/Pi compositing over the edge
+         and re-rastered the carousel SVG with no leaf/pot fills. Removing the
+         filter fixes the wireframe-look bug. The PNG art has its own painted
+         shadow baked in, so we lose almost nothing visually. */
       -webkit-tap-highlight-color: transparent;
     }
     /* Stephen 2026-05-03: object-fit cover→contain. Compost PNG is
