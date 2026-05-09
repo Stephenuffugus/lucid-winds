@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.7';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.8';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -7224,15 +7224,6 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
     </div>
     <div class="greenhouse-grid" id="greenhouse-grid">
       <div class="greenhouse-empty" style="text-align:center;padding:2rem 1rem;"><div style="font-size:1.8rem;margin-bottom:0.5rem;opacity:0.4;">&#127793;</div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.3rem;">YOUR GARDEN AWAITS</div><div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;">Complete a pattern game to earn Sunbeams.<br>30 Sunbeams mints your first plant.</div></div>
-    </div>
-    <!-- Stephen 2026-05-09: matching count BELOW the grid. Same structure as
-         the banner above so writes only target the count + cap spans; the
-         "PLANTS:" label and "/" stay baked in static HTML. -->
-    <div id="gh-slot-banner-bottom" class="lw-slot-banner" style="margin:10px 12px 12px;">
-      <span class="lw-sb-label">PLANTS:</span>
-      <span id="gh-slot-count-bottom" class="lw-sb-num">0</span>
-      <span class="lw-sb-slash">/</span>
-      <span id="gh-slot-cap-bottom" class="lw-sb-cap">10</span>
     </div>
   </div>
   <div class="grove-panel nur-tight" id="panel-nursery">
@@ -14909,7 +14900,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-02b';
+  var _SVG_CACHE_VER = '2026-05-09a';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -41852,7 +41843,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v3'; // v3 (2026-05-08): realm wired into nameplate
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v4'; // v4 (2026-05-09): bust stale cached renders that show plants without leaf/pot fills
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
