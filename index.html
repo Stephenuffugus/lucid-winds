@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.6';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.7';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -42220,19 +42220,19 @@ document.addEventListener('keydown', function(e) {
     // Wild modes: 'wild-inspect' (browsing plants in a hex) and
     // 'wild-place' (picking a plant to drop). Both hide the standard
     // greenhouse actions and surface wild-specific buttons + ITEMS
-    // access.
-    // Stephen 2026-05-09: dropped the lw-carousel-wild-mode body class.
-    // Greenhouse carousel renders SVG fills correctly; wild carousel
-    // was rendering plants as outlines+shadows+chimera-veins only.
-    // Three rounds of CSS fixes (kill ::before, kill stacked bg-image,
-    // kill drop-shadow filter) didn't crack it. The simplest fix is to
-    // not toggle the body class at all — the wild carousel now uses the
-    // exact same paint context as the greenhouse carousel. Action
-    // buttons are still gated by JS below (water/cutting/items/place
-    // shown; breed/compost/share/download hidden).
+    // access. The body class is required to hide Leaflet's map tiles
+    // and fog/overlay layers via display:none — without that, Leaflet
+    // keeps redrawing behind the modal and consumes enough GPU that
+    // complex SVGs (own plants with breedLayers) raster as outlines+
+    // shadows+chimera-veins only. Stephen 2026-05-09: removing the
+    // class flipped the bug from "stranger plants broken" to "own
+    // plants broken" — same compositing pressure issue, different
+    // victims. Keep the class on; the remaining wild-mode CSS is just
+    // the flat modal background and the map-hide rules, no filters,
+    // no stacked background-images, no ::before overlays.
     var _isWild = (source === 'wild-inspect' || source === 'wild-place');
     try {
-      document.body.classList.remove('lw-carousel-wild-mode');
+      document.body.classList.toggle('lw-carousel-wild-mode', _isWild);
     } catch(e){}
     var _actRow = document.querySelector('.pgm-actions .pgm-btn-row');
     if (_actRow) {
