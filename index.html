@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.4';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.5';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -42197,11 +42197,19 @@ document.addEventListener('keydown', function(e) {
     // Wild modes: 'wild-inspect' (browsing plants in a hex) and
     // 'wild-place' (picking a plant to drop). Both hide the standard
     // greenhouse actions and surface wild-specific buttons + ITEMS
-    // access. Body class also paints a subtle bg-wild backdrop so the
-    // carousel feels like part of the Wild tab.
+    // access.
+    // Stephen 2026-05-09: dropped the lw-carousel-wild-mode body class.
+    // Greenhouse carousel renders SVG fills correctly; wild carousel
+    // was rendering plants as outlines+shadows+chimera-veins only.
+    // Three rounds of CSS fixes (kill ::before, kill stacked bg-image,
+    // kill drop-shadow filter) didn't crack it. The simplest fix is to
+    // not toggle the body class at all — the wild carousel now uses the
+    // exact same paint context as the greenhouse carousel. Action
+    // buttons are still gated by JS below (water/cutting/items/place
+    // shown; breed/compost/share/download hidden).
     var _isWild = (source === 'wild-inspect' || source === 'wild-place');
     try {
-      document.body.classList.toggle('lw-carousel-wild-mode', _isWild);
+      document.body.classList.remove('lw-carousel-wild-mode');
     } catch(e){}
     var _actRow = document.querySelector('.pgm-actions .pgm-btn-row');
     if (_actRow) {
@@ -42213,21 +42221,13 @@ document.addEventListener('keydown', function(e) {
         }
       }
     }
-    // Toggle wild-inspect-only actions (water / cutting). Cutting is
-    // stranger-plants-only (you can't cut your own — just breed it). Water
-    // works on both own and stranger plants. Audit Apr 30 — the cutting
-    // button was showing on the player's own carousel, then no-op'd.
+    // Toggle wild-inspect-only actions (water / cutting). Both shown on
+    // every plant in wild-inspect mode — Stephen 2026-05-09: cuttings
+    // now allowed from own plants too, so the button shows uniformly.
     var _inspectBtns = document.querySelectorAll('.pgm-wild-act');
-    var _firstPlant = arr[startIdx] || {};
     for (var _wb = 0; _wb < _inspectBtns.length; _wb++) {
       var _btn = _inspectBtns[_wb];
-      var _isCut = _btn.id === 'gallery-cutting-btn';
-      if (source !== 'wild-inspect') { _btn.style.display = 'none'; continue; }
-      if (_isCut) {
-        _btn.style.display = (_firstPlant.own === false) ? '' : 'none';
-      } else {
-        _btn.style.display = '';
-      }
+      _btn.style.display = (source === 'wild-inspect') ? '' : 'none';
     }
     // Toggle wild-place-only action (PLACE HERE).
     var _placeBtns = document.querySelectorAll('.pgm-wild-place');
@@ -59198,7 +59198,9 @@ window._hexAction=function(action){
       return;
     }
     if(_uLat&&p.lat){var _cutDist=_dist(_uLat,_uLng,p.lat,p.lng);if(_cutDist>COLLECT_RANGE){_toast('Walk closer! '+Math.round(_cutDist)+'m away.');return;}}
-    if(p.own){_toast('That\u2019s your own plant. Just breed it in the greenhouse.');return;}
+    // Stephen 2026-05-09: removed own-plant guard. Players can take a
+    // cutting from their own wild plants too, useful when you want a
+    // nursery clipping of a plant you've already dropped to the wild.
     var _cutKey='lw_cuttings_taken',_cutLog={};try{_cutLog=JSON.parse(localStorage.getItem(_cutKey)||'{}');}catch(e){}
     if(_cutLog[p.hash]){_toast('You\u2019ve already taken a cutting from this plant. Each is a lifetime one-shot.');return;}
     // Daily per-player cap: 2 cuttings/day (anti-locust). Resets at local
