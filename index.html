@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.09.11';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14900,7 +14900,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-09c';
+  var _SVG_CACHE_VER = '2026-05-09d';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -19813,7 +19813,7 @@ document.addEventListener('keydown', function(e) {
       case 23: // Iron Trunk — cast-iron filled silhouette, hammered band detail, rivet specular pickup, brass-rail cream pair
         var _it23w = 3.0 + parseFloat(hw) * 0.3;
         // Filled silhouette
-        s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 - _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 - _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 1.5) + ' ' + (35 + _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' C' + (35 + _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 + _it23w - 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 + _it23w) + ',78 Z" fill="#3A3A38" opacity="' + op + '" filter="url(#ds' + uid + ')"/>';
+        s += '<path d="M' + (35 - _it23w) + ',78 C' + (35 - _it23w + 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 - _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 - _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' Q35,' + (parseFloat(visibleTop) - 1.5) + ' ' + (35 + _it23w * 0.55).toFixed(1) + ',' + visibleTop + ' C' + (35 + _it23w * 0.8).toFixed(1) + ',' + (mid - 4).toFixed(1) + ' ' + (35 + _it23w - 0.2).toFixed(1) + ',' + (mid + 2).toFixed(1) + ' ' + (35 + _it23w) + ',78 Z" fill="#3A3A38" opacity="' + op + '"/>';
         // Inner darker terminator (cast-iron 5-stop ramp fake)
         s += '<path d="M' + (35 + _it23w) + ',78 C' + (35 + _it23w - 0.2) + ',' + (mid + 2) + ' ' + (35 + _it23w * 0.8) + ',' + (mid - 4) + ' ' + (35 + _it23w * 0.55) + ',' + visibleTop + '" stroke="rgba(20,12,4,0.7)" stroke-width="0.85" fill="none" stroke-linecap="round" opacity="' + (op * 0.7).toFixed(2) + '"/>';
         // Cream highlight pair (brass-rail look — left lit edge)
@@ -21171,7 +21171,7 @@ document.addEventListener('keydown', function(e) {
           // Charcoal depth border
           s += '<path d="'+bodyD+'" fill="none" stroke="#1a1d18" stroke-width="0.8" opacity="'+(op*0.3).toFixed(2)+'"/>';
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Autumn wash — 2nd color at low opacity
           var _obCol2 = PALETTE[t.leafColors[(i+1) % 3]] || PALETTE.amber;
           s += '<path d="'+bodyD+'" fill="'+_hueShift(_obCol2, i*29, 12)+'" opacity="'+(op*0.08).toFixed(2)+'"/>';
@@ -21319,7 +21319,7 @@ document.addEventListener('keydown', function(e) {
           bodyD = 'M'+ox+','+ly
              + ' C'+_mc1x.toFixed(1)+','+_mc1y.toFixed(1)+' '+_mc2x.toFixed(1)+','+_mc2y.toFixed(1)+' '+_mTipX.toFixed(1)+','+_mTipY.toFixed(1)
              + ' C'+(_mTipX-side*_mWid*0.2).toFixed(1)+','+(_mTipY+_mLen*0.1).toFixed(1)+' '+_mb1x.toFixed(1)+','+_mb1y.toFixed(1)+' '+ox+','+ly+' Z';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+op+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+op+'"/>';
           // Leading edge highlight
           s += '<path d="M'+ox+','+ly+' C'+_mc1x.toFixed(1)+','+_mc1y.toFixed(1)+' '+_mc2x.toFixed(1)+','+_mc2y.toFixed(1)+' '+_mTipX.toFixed(1)+','+_mTipY.toFixed(1)+'"'
              + ' fill="none" stroke="#f5ecd6" stroke-width="0.5" stroke-linecap="round"/>';
@@ -21377,7 +21377,7 @@ document.addEventListener('keydown', function(e) {
                  + ' C'+(_ppTX-side*_fsd*_fps*0.05).toFixed(1)+','+(_ppTY+_fps*0.15).toFixed(1)
                  + ' '+(_fpx+side*_fsd*_fps*0.12).toFixed(1)+','+(_fpy+_fps*0.06).toFixed(1)
                  + ' '+_fpx.toFixed(1)+','+_fpy.toFixed(1)+' Z';
-              s += '<path d="'+_ppD+'" fill="'+_fpFill+'" opacity="'+(op*(0.72-_fp*0.06)).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+              s += '<path d="'+_ppD+'" fill="'+_fpFill+'" opacity="'+(op*(0.72-_fp*0.06)).toFixed(2)+'"/>';
               if (_fsd === side) {
                 s += '<path d="M'+_fpx.toFixed(1)+','+_fpy.toFixed(1)+' C'+(_fpx+side*_fsd*_fps*0.35).toFixed(1)+','+(_fpy-_fps*0.2).toFixed(1)+' '+(_ppTX-side*_fsd*_fps*0.1).toFixed(1)+','+(_ppTY+_fps*0.06).toFixed(1)+' '+_ppTX.toFixed(1)+','+_ppTY.toFixed(1)+'"'
                    + ' fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round"/>';
@@ -21407,7 +21407,7 @@ document.addEventListener('keydown', function(e) {
           // Charcoal depth border
           s += '<path d="'+bodyD+'" fill="none" stroke="#1a1d18" stroke-width="0.9" opacity="'+(op*0.3).toFixed(2)+'"/>';
           // Body fill with drop shadow
-          s += '<path d="' + bodyD + '" fill="'+fill+'" opacity="'+op+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" opacity="'+op+'"/>';
           // Autumn color wash — second color layered at low opacity for depth
           s += '<path d="' + bodyD + '" fill="'+_hueShift(_mpCol2, i*29, 15)+'" opacity="'+(op*0.12).toFixed(2)+'"/>';
           // Leading edge highlight — full outer contour
@@ -21452,7 +21452,7 @@ document.addEventListener('keydown', function(e) {
         case 8: // Hosta — ovate-elliptic, ARCUATE veins (concentric ribs base→tip), entire.
           bodyD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.9)+','+(ly+ls*0.05)+' '+(lx+side*ls*0.85)+','+(ly-ls*1.1)+' '+lx+','+(ly-ls*1.1)
              + ' C'+(lx-side*ls*0.85)+','+(ly-ls*1.1)+' '+(ox-side*ls*0.4)+','+(ly+ls*0.05)+' '+ox+','+ly+'Z';
-          s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" stroke="'+stroke+'" opacity="'+op+'"/>';
           // Cream specular (upper third)
           s += '<ellipse cx="'+(ox+side*ls*0.45).toFixed(1)+'" cy="'+(ly-ls*0.5).toFixed(1)+'" rx="'+(ls*0.18).toFixed(2)+'" ry="'+(ls*0.32).toFixed(2)+'" fill="#f5ecd6" opacity="'+(op*0.40).toFixed(2)+'" transform="rotate('+(side*-15)+' '+(ox+side*ls*0.45).toFixed(1)+' '+(ly-ls*0.5).toFixed(1)+')"/>';
           // Leading edge cream highlight
@@ -21507,7 +21507,7 @@ document.addEventListener('keydown', function(e) {
              + ' C'+_mvc1x.toFixed(1)+','+_mvc1y.toFixed(1)+' '+_mvc2x.toFixed(1)+','+_mvc2y.toFixed(1)+' '+_mvTX.toFixed(1)+','+_mvTY.toFixed(1)
              + ' C'+(_mvTX-side*_mvWid*0.25).toFixed(1)+','+(_mvTY+_mvLen*0.08).toFixed(1)+' '+_mvb1x.toFixed(1)+','+_mvb1y.toFixed(1)+' '+ox+','+ly+' Z';
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92,op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92,op)+'"/>';
           // Form shadow on shaded half (warm-shifted dark wash)
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*_mvWid*0.05).toFixed(1)+','+(ly-_mvLen*0.3).toFixed(1)+' '+(_mvTX-side*_mvWid*0.55).toFixed(1)+','+(_mvTY+_mvLen*0.18).toFixed(1)+' '+_mvTX.toFixed(1)+','+_mvTY.toFixed(1)+' L'+(_mvTX-side*_mvWid*0.25).toFixed(1)+','+(_mvTY+_mvLen*0.08).toFixed(1)+' L'+_mvb1x.toFixed(1)+','+_mvb1y.toFixed(1)+' Z" fill="rgba(40,20,5,0.22)"/>';
           // VARIEGATA SIGNATURE — cream marbling streaks across blade
@@ -21612,7 +21612,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+(ox+side*_scWid*0.15).toFixed(1)+','+(ly-_scLen*0.32).toFixed(1)
              + ' '+ox+','+ly+' Z';
           // Body fill (waxy)
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92,op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92,op)+'"/>';
           // Form shadow on inner/shaded face — gives concave channel volume
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*_scWid*0.05).toFixed(1)+','+(ly-_scLen*0.18).toFixed(1)+' '+(_scTX-side*_scWid*0.15).toFixed(1)+','+(_scTY+_scLen*0.18).toFixed(1)+' '+_scTX.toFixed(1)+','+_scTY.toFixed(1)+' C'+(_scTX-side*_scWid*0.05).toFixed(1)+','+(_scTY-_scLen*0.04).toFixed(1)+' '+(_scTX-side*_scWid*0.18).toFixed(1)+','+(_scTY-_scLen*0.08).toFixed(1)+' '+(ox+side*_scWid*0.15).toFixed(1)+','+(ly-_scLen*0.32).toFixed(1)+' Z" fill="rgba(40,20,5,0.22)"/>';
           // Big diffuse cream highlight (upper face waxy gloss)
@@ -21686,7 +21686,7 @@ document.addEventListener('keydown', function(e) {
           // Drop shadow underneath
           s += '<ellipse cx="'+padX+'" cy="'+(padY+0.5).toFixed(1)+'" rx="'+(padW+0.7).toFixed(2)+'" ry="'+(padH+0.7).toFixed(2)+'" fill="rgba(40,20,5,0.18)"/>';
           // Pad body
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Pad warm-dark rim stroke
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.55" opacity="'+(op*0.7).toFixed(2)+'"/>';
           // Form shadow on shaded (right) half
@@ -21733,7 +21733,7 @@ document.addEventListener('keydown', function(e) {
              + ' L'+(ox+side*ls*0.20)+','+(ly-ls*0.72)
              + ' L'+(ox+side*ls*0.06)+','+(ly-ls*0.42)+' Z';
           // Body — leathery dark green
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.94, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.94, op)+'"/>';
           // Warm-dark border outline (thicker than usual for Ilex leathery look)
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.45" opacity="'+(op*0.7).toFixed(2)+'"/>';
           // Form shadow on shaded half
@@ -21887,7 +21887,7 @@ document.addEventListener('keydown', function(e) {
              + ' C'+(ox-side*_snW*0.10)+','+(ly-ls*2.85)+' '+(ox-side*_snW*0.50)+','+(ly-ls*1.95)+' '+(ox-side*_snW*0.45)+','+(ly-ls*1.20)
              + ' C'+(ox-side*_snW*0.20)+','+(ly-ls*0.55)+' '+(ox-side*_snW*0.20)+','+(ly-ls*0.20)+' '+ox+','+ly+' Z';
           // Body fill — base green
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Form shadow on shaded inboard half (below midrib)
           s += '<path d="M'+ox+','+ly+' C'+(ox-side*_snW*0.20)+','+(ly-ls*0.55)+' '+(ox-side*_snW*0.45)+','+(ly-ls*1.20)+' '+(ox-side*_snW*0.50)+','+(ly-ls*1.95)+' C'+(ox-side*_snW*0.10)+','+(ly-ls*2.85)+' '+_snTopX.toFixed(1)+','+_snTopY.toFixed(1)+' '+_snTopX.toFixed(1)+','+_snTopY.toFixed(1)+' L'+(ox+side*_snW*0.05).toFixed(1)+','+(ly-ls*1.50).toFixed(1)+' Z" fill="rgba(40,20,5,0.22)"/>';
           // ── HORIZONTAL TIGER BANDING — Sansevieria signature, irregular dark green chevrons ──
@@ -21936,7 +21936,7 @@ document.addEventListener('keydown', function(e) {
              + ' C'+(ox+side*ls*0.95)+','+(ly-ls*3.15)+' '+(ox+side*ls*1.55)+','+(ly-ls*3.55)+' '+(ox+side*ls*0.85)+','+(ly-ls*4.2)
              + ' C'+(ox+side*ls*0.18)+','+(ly-ls*3.95)+' '+(ox-side*ls*0.1)+','+(ly-ls*2.55)+' '+ox+','+ly+' Z';
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Form shadow on shaded inboard half
           s += '<path d="M'+ox+','+ly+' C'+(ox-side*ls*0.05)+','+(ly-ls*1.0)+' '+(ox-side*ls*0.1)+','+(ly-ls*2.4)+' '+(ox+side*ls*0.05)+','+(ly-ls*3.6)+' L'+(ox+side*ls*0.85)+','+(ly-ls*4.2)+' L'+(ox+side*ls*0.22)+','+(ly-ls*3.5)+' L'+(ox+side*ls*0.32)+','+(ly-ls*2.1)+' L'+(ox+side*ls*0.25)+','+(ly-ls*0.8)+' Z" fill="rgba(40,20,5,0.22)"/>';
           // Big diffuse cream highlight on upper apex lobe (lit side)
@@ -22008,7 +22008,7 @@ document.addEventListener('keydown', function(e) {
                + ' C'+(_pfTX - Math.cos(_pfAng) * _pfFLen * 0.1 * side).toFixed(1)+','+(_pfTY + _pfFW * 0.3).toFixed(1)
                + ' '+_pfC2X.toFixed(1)+','+(_pfC2Y + _pfFW * 0.6).toFixed(1)
                + ' '+_pfBaseX.toFixed(1)+','+_pfBaseY.toFixed(1)+' Z';
-            s += '<path d="'+_pfD+'" fill="'+_pfFill+'" opacity="'+Math.max(0.85, op)+'" filter="url(#ds'+uid+')"/>';
+            s += '<path d="'+_pfD+'" fill="'+_pfFill+'" opacity="'+Math.max(0.85, op)+'"/>';
             // Overlap highlight — cream edge where segments layer
             if (_pf > 0) {
               s += '<path d="M'+_pfBaseX.toFixed(1)+','+_pfBaseY.toFixed(1)
@@ -22094,7 +22094,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+_eeHubX.toFixed(1)+','+_eeHubY.toFixed(1)+' Z';
           // Form-shadow underglow on shaded half (warm-shifted, not black)
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.42)" transform="translate(0.6,0.8)" opacity="'+(op*0.55).toFixed(2)+'"/>';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // basal-sinus AO ink-pool (darkest point)
           s += '<path d="M'+_eeNotchX.toFixed(1)+','+_eeNotchY.toFixed(1)+' Q'+(ox).toFixed(1)+','+(_eeNotchY-_eeLen*0.03).toFixed(1)+' '+_eeHubX.toFixed(1)+','+_eeHubY.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="1.4" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
           // Margin highlight — cream just inside leading edge
@@ -22154,7 +22154,7 @@ document.addEventListener('keydown', function(e) {
              + ' C'+(ox-side*_caW*0.40)+','+(ly-_caLen*0.20)+' '+(ox-side*_caW*0.20)+','+(ly-_caLen*0.05)+' '+ox+','+ly+' Z';
           // ── DARK FOREST-GREEN BLADE FILL — Calathea has a deep saturated dark base ──
           // First lay shifted-darker fill for the moody Calathea base tone
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Dark wash to deepen base — Calathea is unmistakably dark green
           s += '<path d="'+bodyD+'" fill="rgba(20,40,18,0.28)" opacity="'+(op*0.65).toFixed(2)+'"/>';
           // Form shadow on shaded inboard half
@@ -22253,7 +22253,7 @@ document.addEventListener('keydown', function(e) {
             s += '<line x1="'+_clHubX.toFixed(1)+'" y1="'+_clHubY.toFixed(1)+'" x2="'+_clBaseX.toFixed(1)+'" y2="'+_clBaseY.toFixed(1)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.45" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
             // Form shadow
             s += '<path d="'+_clD+'" fill="rgba(40,20,5,0.32)" transform="translate(0.4,0.5)" opacity="'+(op*0.5).toFixed(2)+'"/>';
-            s += '<path d="'+_clD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+            s += '<path d="'+_clD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
             // Margin highlight
             s += '<path d="'+_clD+'" fill="none" stroke="#f5ecd6" stroke-width="0.3" opacity="0.45"/>';
             // Pale chevron mark — Trifolium repens signature
@@ -22308,7 +22308,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+ox+','+ly+' Z';
           // Form shadow
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.32)" transform="translate(0.6,0.7)" opacity="'+(op*0.55).toFixed(2)+'"/>';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Margin highlight
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*_blWid*1.3).toFixed(1)+','+(ly+_blLen*0.02).toFixed(1)+' '+(_blM1X+side*_blWid*1.20).toFixed(1)+','+(_blM1Y-_blLen*0.08).toFixed(1)+' '+(_blM2X+side*_blWid*0.85).toFixed(1)+','+(_blM2Y).toFixed(1)+' C'+(_blM2X+side*_blWid*0.55).toFixed(1)+','+(_blM2Y-_blLen*0.12).toFixed(1)+' '+(_blTipX+side*_blWid*0.15).toFixed(1)+','+(_blTipY+_blLen*0.06).toFixed(1)+' '+_blTipX.toFixed(1)+','+_blTipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" opacity="0.55" stroke-linecap="round"/>';
           // PROMINENT midrib — bold, the banana signature
@@ -22360,7 +22360,7 @@ document.addEventListener('keydown', function(e) {
           // Form shadow
           s += '<circle cx="'+(_sdCx+0.5).toFixed(1)+'" cy="'+(_sdCy+0.7).toFixed(1)+'" r="'+_sdR.toFixed(1)+'" fill="rgba(40,20,5,0.30)" opacity="'+(op*0.55).toFixed(2)+'"/>';
           // Translucent disc — papery
-          s += '<circle cx="'+_sdCx.toFixed(1)+'" cy="'+_sdCy.toFixed(1)+'" r="'+_sdR.toFixed(1)+'" fill="'+fill+'" opacity="'+Math.max(0.85, op*0.92)+'" filter="url(#ds'+uid+')"/>';
+          s += '<circle cx="'+_sdCx.toFixed(1)+'" cy="'+_sdCy.toFixed(1)+'" r="'+_sdR.toFixed(1)+'" fill="'+fill+'" opacity="'+Math.max(0.85, op*0.92)+'"/>';
           // Inner translucent core — pale
           s += '<circle cx="'+_sdCx.toFixed(1)+'" cy="'+_sdCy.toFixed(1)+'" r="'+(_sdR*0.78).toFixed(1)+'" fill="#f5ecd6" opacity="'+(op*0.18).toFixed(2)+'"/>';
           // RETICULATE NET — fine vein mesh, the Lunaria signature
@@ -22428,7 +22428,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="M'+(ox-0.6)+','+ly+' Q'+(ox+side*0.10).toFixed(1)+','+(ly-ls*0.10).toFixed(1)+' '+(_arSinusX-0.3).toFixed(1)+','+_arSinusY.toFixed(1)+' L'+(_arSinusX+0.3).toFixed(1)+','+_arSinusY.toFixed(1)+' Q'+(ox+side*0.10).toFixed(1)+','+(ly-ls*0.05).toFixed(1)+' '+(ox+0.6)+','+ly+' Z" fill="rgba(40,20,5,0.6)" opacity="'+(op*0.55).toFixed(2)+'"/>';
           // Form shadow
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.32)" transform="translate(0.6,0.7)" opacity="'+(op*0.5).toFixed(2)+'"/>';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Margin highlight on leading edge
           s += '<path d="M'+_arRLobeX.toFixed(1)+','+_arRLobeY.toFixed(1)+' C'+(ox+side*ls*1.05).toFixed(1)+','+(ly-ls*1.45).toFixed(1)+' '+(ox+side*ls*0.55).toFixed(1)+','+(ly-ls*2.30).toFixed(1)+' '+_arTipX.toFixed(1)+','+_arTipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.55" opacity="0.6" stroke-linecap="round"/>';
           // Sinus AO ink-pool — darkest valley behind petiole
@@ -22470,7 +22470,7 @@ document.addEventListener('keydown', function(e) {
           // Form shadow
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.30)" transform="translate(0.5,0.7)" opacity="'+(op*0.5).toFixed(2)+'"/>';
           // Body
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Margin highlight along leading edge
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.45)+','+(ly-ls*0.35)+' '+(ox+side*ls*1.15)+','+(ly-ls*0.82)+' '+(ox+side*ls*1.18)+','+(ly-ls*1.95)+' C'+(ox+side*ls*0.95)+','+(ly-ls*2.15)+' '+(ox+side*ls*0.62)+','+(ly-ls*1.92)+' '+(ox+side*ls*0.42)+','+(ly-ls*2.15)+' C'+(ox+side*ls*0.18)+','+(ly-ls*2.38)+' '+(ox+side*ls*0.15)+','+(ly-ls*2.90)+' '+_lcTipX.toFixed(1)+','+_lcTipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" opacity="0.6" stroke-linecap="round"/>';
           // MIDRIB — prominent
@@ -22562,7 +22562,7 @@ document.addEventListener('keydown', function(e) {
           }
           // Fill pass
           for (var _csa3 = 0; _csa3 < _csPaths.length; _csa3++) {
-            s += '<path d="'+_csPaths[_csa3].d+'" fill="'+fill+'" opacity="'+Math.max(0.90, op)+'" filter="url(#ds'+uid+')"/>';
+            s += '<path d="'+_csPaths[_csa3].d+'" fill="'+fill+'" opacity="'+Math.max(0.90, op)+'"/>';
           }
           // Margin highlight + dichotomous midrib + tip terminators
           for (var _csa4 = 0; _csa4 < _csPaths.length; _csa4++) {
@@ -22672,7 +22672,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+ox+','+ly+' Z';
           // Form shadow
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.32)" transform="translate(0.5,0.7)" opacity="'+(op*0.5).toFixed(2)+'"/>';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Margin highlight
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*_dlWid*1.20).toFixed(1)+','+(ly+_dlLen*0.02).toFixed(1)+' '+(_dlBlTipX+side*_dlWid*0.85).toFixed(1)+','+(_dlBlTipY+_dlLen*0.30).toFixed(1)+' '+(_dlBlTipX+side*_dlWid*0.18).toFixed(1)+','+_dlBlTipY.toFixed(1)+' Q'+(_dlBlTipX+side*_dlWid*0.04).toFixed(1)+','+(((_dlBlTipY+_dlTipY)/2)).toFixed(1)+' '+_dlTipX.toFixed(1)+','+_dlTipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.5" opacity="0.6" stroke-linecap="round"/>';
           // BOLD MIDRIB (Ficus signature)
@@ -22747,7 +22747,7 @@ document.addEventListener('keydown', function(e) {
             // Form shadow (warm-shifted dark) on lower side
             s += '<path d="'+_spD+'" fill="rgba(40,20,5,0.45)"/>';
             // Body fill
-            s += '<path d="'+_spD+'" fill="'+fill+'" opacity="'+Math.max(0.88, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+            s += '<path d="'+_spD+'" fill="'+fill+'" opacity="'+Math.max(0.88, op).toFixed(2)+'"/>';
             // White mid-stripe (Spider Plant signature) — thin cream line down center
             s += '<path d="M'+ox+','+ly+' Q'+_spMx.toFixed(1)+','+_spMy.toFixed(1)+' '+_spTx.toFixed(1)+','+_spTy.toFixed(1)+'"'
                + ' fill="none" stroke="'+_spStripeColor+'" stroke-width="'+(_spW*0.5).toFixed(2)+'" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
@@ -22790,7 +22790,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+(ox-_snWx*0.9).toFixed(1)+','+(ly-_snWy*0.9-_snLen*0.1).toFixed(1)
              + ' '+ox+','+ly+' Z';
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'"/>';
           // Form shadow — darken lower (shaded) half
           s += '<path d="M'+ox+','+ly+' C'+(ox-_snWx*0.9).toFixed(1)+','+(ly-_snWy*0.9-_snLen*0.1).toFixed(1)+' '+(_snTipX-_snWx*0.2).toFixed(1)+','+(_snTipY-_snWy*0.2).toFixed(1)+' '+_snTipX.toFixed(1)+','+_snTipY.toFixed(1)+' L'+ox+','+ly+' Z" fill="rgba(40,20,5,0.20)"/>';
           // Specular lozenge upper-third
@@ -22862,10 +22862,10 @@ document.addEventListener('keydown', function(e) {
              + ' Q'+(ox+side*_mwWid*0.1).toFixed(1)+','+(ly+_mwLen*0.22).toFixed(1)+' '+ox+','+ly+' Z';
           // Hindwing first (behind forewing)
           var _mwHFill = _hueShift(baseColor, 30, 12);
-          s += '<path d="'+_mwHD+'" fill="'+_mwHFill+'" opacity="'+(op*0.85).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+_mwHD+'" fill="'+_mwHFill+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
           s += '<path d="'+_mwHD+'" fill="rgba(40,20,5,0.18)"/>';
           // Forewing fill
-          s += '<path d="'+_mwFD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+_mwFD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'"/>';
           // Form shadow on inner-leading half
           s += '<path d="M'+ox+','+ly+' C'+(ox-side*_mwWid*0.05).toFixed(1)+','+(ly-_mwLen*0.3).toFixed(1)+' '+(ox+side*_mwWid*0.1).toFixed(1)+','+(ly-_mwLen*0.65).toFixed(1)+' '+_mwForeTipX.toFixed(1)+','+_mwForeTipY.toFixed(1)+' L'+ox+','+ly+' Z" fill="rgba(40,20,5,0.22)"/>';
           // Forewing leading edge highlight — cream
@@ -22911,7 +22911,7 @@ document.addEventListener('keydown', function(e) {
              + ' L'+(ox-side*_psW*0.20).toFixed(1)+','+(ly-_psH*0.35).toFixed(1)
              + ' Z';
           // Base fill
-          s += '<path d="'+bodyD+'" fill="'+_hueShift(_psC1, i*31, 10)+'" opacity="'+Math.max(0.88, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+_hueShift(_psC1, i*31, 10)+'" opacity="'+Math.max(0.88, op).toFixed(2)+'"/>';
           // Facet 1 — left-front face (cool color)
           s += '<path d="M'+_psTipX.toFixed(1)+','+_psTipY.toFixed(1)+' L'+(ox-side*_psW*0.30).toFixed(1)+','+(ly-_psH*0.72).toFixed(1)+' L'+(ox-side*_psW*0.20).toFixed(1)+','+(ly-_psH*0.35).toFixed(1)+' L'+ox+','+ly+' L'+(ox+side*_psW*0.10).toFixed(1)+','+(ly-_psH*0.45).toFixed(1)+' Z"'
              + ' fill="'+_hueShift(_psC2, i*23, 12)+'" opacity="'+(op*0.55).toFixed(2)+'"/>';
@@ -22969,7 +22969,7 @@ document.addEventListener('keydown', function(e) {
           _bwD += ' C'+(ox-side*_bwSpan*0.1).toFixed(1)+','+(ly-_bwH*0.3).toFixed(1)+' '+(ox-side*_bwSpan*0.05).toFixed(1)+','+(ly-_bwH*0.1).toFixed(1)+' '+ox+','+ly+' Z';
           bodyD = _bwD;
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.90, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.90, op).toFixed(2)+'"/>';
           // Form shadow on inner half
           s += '<path d="M'+ox+','+ly+' C'+(ox-side*_bwSpan*0.05).toFixed(1)+','+(ly-_bwH*0.1).toFixed(1)+' '+(ox-side*_bwSpan*0.1).toFixed(1)+','+(ly-_bwH*0.3).toFixed(1)+' '+(ox+Math.cos(_bwBones[3].ang)*_bwSpan*_bwBones[3].len*side).toFixed(1)+','+(ly+Math.sin(_bwBones[3].ang)*_bwH*_bwBones[3].len).toFixed(1)+' L'+ox+','+ly+' Z" fill="rgba(40,20,5,0.30)"/>';
           // Leading edge highlight
@@ -23006,7 +23006,7 @@ document.addEventListener('keydown', function(e) {
           tip = _thTipX; tipY = _thTipY;
           bodyD = 'M'+ox+','+ly+' C'+(ox+side*ls*0.70)+','+(ly-ls*0.16)+' '+(ox+side*ls*1.34)+','+(ly-ls*0.96)+' '+(ox+side*ls*1.18)+','+(ly-ls*2.00)+' C'+(ox+side*ls*0.86)+','+(ly-ls*2.60)+' '+(ox+side*ls*0.30)+','+(ly-ls*2.84)+' '+_thTipX+','+_thTipY+' C'+(ox+side*ls*0.34)+','+(ly-ls*2.04)+' '+(ox+side*ls*0.78)+','+(ly-ls*1.54)+' '+(ox+side*ls*0.74)+','+(ly-ls*1.00)+' C'+(ox+side*ls*0.68)+','+(ly-ls*0.52)+' '+(ox+side*ls*0.30)+','+(ly-ls*0.22)+' '+ox+','+ly+' Z';
           // Body fill
-          s += '<path d="' + bodyD + '" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="' + bodyD + '" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'"/>';
           // Form shadow on inner concave half
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*ls*0.30)+','+(ly-ls*0.22)+' '+(ox+side*ls*0.68)+','+(ly-ls*0.52)+' '+(ox+side*ls*0.74)+','+(ly-ls*1.00)+' C'+(ox+side*ls*0.78)+','+(ly-ls*1.54)+' '+(ox+side*ls*0.34)+','+(ly-ls*2.04)+' '+_thTipX+','+_thTipY+' L'+ox+','+ly+' Z" fill="rgba(40,20,5,0.30)"/>';
           // Outer crescent cream highlight
@@ -23073,7 +23073,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+(_bpBellX+side*_bpBellW*0.3).toFixed(1)+','+(_bpStalkY+_bpBellH*0.2).toFixed(1)
              + ' '+_bpStalkX.toFixed(1)+','+_bpStalkY.toFixed(1)+' Z';
           // Bell fill (2nd color for elegance)
-          s += '<path d="'+bodyD+'" fill="'+_hueShift(_bpCol2, i*29, 12)+'" opacity="'+Math.max(0.92, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+_hueShift(_bpCol2, i*29, 12)+'" opacity="'+Math.max(0.92, op).toFixed(2)+'"/>';
           // Form shadow on left/inner side (warm dark)
           s += '<path d="M'+_bpStalkX.toFixed(1)+','+_bpStalkY.toFixed(1)+' C'+(_bpBellX-side*_bpBellW*0.3).toFixed(1)+','+(_bpStalkY+_bpBellH*0.2).toFixed(1)+' '+(_bpBellX-side*_bpBellW*0.9).toFixed(1)+','+(_bpBellY-_bpBellH*0.1).toFixed(1)+' '+(_bpBellX-side*_bpBellW*0.8).toFixed(1)+','+_bpBellY.toFixed(1)+' Q'+(_bpBellX-side*_bpBellW*0.4).toFixed(1)+','+_bpBellRimY.toFixed(1)+' '+_bpBellX.toFixed(1)+','+(_bpBellY+_bpBellH*0.15).toFixed(1)+' L'+_bpStalkX.toFixed(1)+','+_bpStalkY.toFixed(1)+' Z" fill="rgba(40,20,5,0.30)"/>';
           // Right-side highlight (lit side)
@@ -23162,7 +23162,7 @@ document.addEventListener('keydown', function(e) {
                + ' '+(ox+Math.cos(_clA+0.3)*_clW*0.5*side).toFixed(1)+','+(ly+Math.sin(_clA+0.3)*_clW*0.5).toFixed(1)
                + ' '+ox+','+ly+' Z';
             // Body fill
-            s += '<path d="'+_clD+'" fill="'+_clFill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+            s += '<path d="'+_clD+'" fill="'+_clFill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'"/>';
             // Form shadow on lower side
             s += '<path d="M'+ox+','+ly+' C'+(_clTx-Math.cos(_clA+1.5)*_clW*0.3*side).toFixed(1)+','+(_clTy-Math.sin(_clA+1.5)*_clW*0.3).toFixed(1)+' '+(ox+Math.cos(_clA+0.3)*_clW*0.5*side).toFixed(1)+','+(ly+Math.sin(_clA+0.3)*_clW*0.5).toFixed(1)+' '+ox+','+ly+' L'+_clTx.toFixed(1)+','+_clTy.toFixed(1)+' Z" fill="rgba(40,20,5,0.20)"/>';
             // Leading-edge cream highlight
@@ -23269,7 +23269,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+(_kMid1X-_kWx*_kW*0.6*side).toFixed(1)+','+(_kMid1Y-_kWy*_kW*0.6).toFixed(1)
              + ' '+ox+','+ly+' Z';
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.94, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.94, op).toFixed(2)+'"/>';
           // Underside form shadow (warm dark)
           s += '<path d="M'+ox+','+ly+' C'+(_kMid1X-_kWx*_kW*0.6*side).toFixed(1)+','+(_kMid1Y-_kWy*_kW*0.6).toFixed(1)+' '+(_kMid2X-_kWx*_kW*0.4*side).toFixed(1)+','+(_kMid2Y-_kWy*_kW*0.4).toFixed(1)+' '+_kTipX.toFixed(1)+','+_kTipY.toFixed(1)+' L'+ox+','+ly+' Z" fill="rgba(40,20,5,0.32)"/>';
           // 2nd-color belly wash
@@ -23338,7 +23338,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+(_lpTopX-side*_lpW*0.3).toFixed(1)+','+(_lpTopY+_lpH*0.08).toFixed(1)
              + ' '+_lpTopX.toFixed(1)+','+_lpTopY.toFixed(1)+' Z';
           // Translucent membrane fill (lower opacity for paper effect)
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+(op*0.78).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+(op*0.78).toFixed(2)+'"/>';
           // Berry visible inside — warm dark silhouette
           s += '<circle cx="'+_lpCx.toFixed(1)+'" cy="'+(_lpCy+_lpH*0.08).toFixed(1)+'" r="'+(_lpW*0.30).toFixed(2)+'" fill="rgba(40,20,5,0.55)"/>';
           s += '<circle cx="'+_lpCx.toFixed(1)+'" cy="'+(_lpCy+_lpH*0.08).toFixed(1)+'" r="'+(_lpW*0.22).toFixed(2)+'" fill="'+_hueShift(baseColor,-25,15)+'" opacity="'+(op*0.65).toFixed(2)+'"/>';
@@ -23441,7 +23441,7 @@ document.addEventListener('keydown', function(e) {
           var _oeUpD = 'M'+ox+','+ly+' C'+(ox+side*_oeW*0.3).toFixed(1)+','+(ly-_oeH*0.9).toFixed(1)+' '+(ox+side*_oeW*0.7).toFixed(1)+','+(ly-_oeH*0.95).toFixed(1)+' '+_oeOutX.toFixed(1)+','+_oeOutY.toFixed(1);
           bodyD = _oeUpD + ' C'+(ox+side*_oeW*0.7).toFixed(1)+','+(ly+_oeH*0.45).toFixed(1)+' '+(ox+side*_oeW*0.3).toFixed(1)+','+(ly+_oeH*0.5).toFixed(1)+' '+ox+','+ly+' Z';
           // Sclera fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.94, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.94, op).toFixed(2)+'"/>';
           // Sclera cream wash (warmth)
           s += '<path d="'+bodyD+'" fill="#f5ecd6" opacity="'+(op*0.20).toFixed(2)+'"/>';
           // Form shadow on lower half
@@ -23490,7 +23490,7 @@ document.addEventListener('keydown', function(e) {
              + ' '+(ox-side*_ssR*0.15).toFixed(1)+','+(ly-_ssR*0.1).toFixed(1)
              + ' '+ox+','+ly+' Z';
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op).toFixed(2)+'"/>';
           // 2nd color iridescence wash (golden tint)
           s += '<ellipse cx="'+(_ssCx+side*_ssR*0.15).toFixed(1)+'" cy="'+(_ssCy+_ssR*0.05).toFixed(1)+'" rx="'+(_ssR*0.55).toFixed(2)+'" ry="'+(_ssR*0.50).toFixed(2)+'" fill="'+_hueShift(_ssCol2, i*29, 12)+'" opacity="'+(op*0.22).toFixed(2)+'"/>';
           // Form shadow on lower-left curl
@@ -23561,7 +23561,7 @@ document.addEventListener('keydown', function(e) {
           // Warm dark border
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.75" stroke-linejoin="round"/>';
           // Body fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Notch AO ink-pool
           for (var _din = 0; _din < _diSpikes.length - 1; _din++) {
             var _sp1 = _diSpikes[_din];
@@ -23632,7 +23632,7 @@ document.addEventListener('keydown', function(e) {
                  + ' '+(_vfpX+_vfPx*_vfpS*0.1*_vfsd*side).toFixed(1)+','+(_vfpY+_vfPy*_vfpS*0.1*_vfsd+_vfpS*0.04).toFixed(1)
                  + ' '+_vfpX.toFixed(1)+','+_vfpY.toFixed(1)+' Z';
               // Translucent pinna — low opacity is the "veil"
-              s += '<path d="'+_vfpD+'" fill="'+_vfpFill+'" opacity="'+(op*0.5).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+              s += '<path d="'+_vfpD+'" fill="'+_vfpFill+'" opacity="'+(op*0.5).toFixed(2)+'"/>';
               // Margin highlight on leading edge
               if (_vfsd === side) {
                 s += '<path d="M'+_vfpX.toFixed(1)+','+_vfpY.toFixed(1)+' C'+(_vfpX+_vfPx*_vfpS*0.4*_vfsd*side).toFixed(1)+','+(_vfpY+_vfPy*_vfpS*0.4*_vfsd-_vfpS*0.15).toFixed(1)+' '+(_vfpTipX-_vfPx*_vfpS*0.1*_vfsd*side).toFixed(1)+','+(_vfpTipY-_vfPy*_vfpS*0.1*_vfsd-_vfpS*0.04).toFixed(1)+' '+_vfpTipX.toFixed(1)+','+_vfpTipY.toFixed(1)+'"'
@@ -23675,7 +23675,7 @@ document.addEventListener('keydown', function(e) {
           // Bioluminescent halo
           s += '<ellipse cx="'+_jlCx.toFixed(1)+'" cy="'+_jlCy.toFixed(1)+'" rx="'+(_jlR*0.9).toFixed(1)+'" ry="'+(_jlR*0.72).toFixed(1)+'" fill="'+fill+'" opacity="'+(op*0.14).toFixed(2)+'"/>';
           // Bell body
-          s += '<path d="'+_jlBellD+'" fill="'+fill+'" opacity="'+Math.max(0.85, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+_jlBellD+'" fill="'+fill+'" opacity="'+Math.max(0.85, op)+'"/>';
           // Warm dark margin border
           s += '<path d="'+_jlBellD+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.5"/>';
           // Inner luminous core
@@ -23730,7 +23730,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.16)" transform="translate(0.5,0.4)"/>';
           // Warm dark border
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.7"/>';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Leading edge cream highlight
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*_wfWid*0.95).toFixed(1)+','+(ly+_wfLen*0.02).toFixed(1)+' '+(_wfTipX+side*_wfWid*0.65).toFixed(1)+','+(_wfTipY+_wfLen*0.3).toFixed(1)+' '+_wfTipX.toFixed(1)+','+_wfTipY.toFixed(1)+'"'
              + ' fill="none" stroke="#f5ecd6" stroke-width="0.5" opacity="0.55" stroke-linecap="round"/>';
@@ -23851,7 +23851,7 @@ document.addEventListener('keydown', function(e) {
               s += '<ellipse cx="'+_cplOx.toFixed(1)+'" cy="'+(_cplOy+0.3).toFixed(1)+'" rx="'+_cplRx.toFixed(2)+'" ry="'+_cplRy.toFixed(2)+'" fill="rgba(40,20,5,0.18)" transform="rotate('+_cplDeg+','+_cplOx.toFixed(1)+','+_cplOy.toFixed(1)+')"/>';
               // Warm dark border
               s += '<ellipse cx="'+_cplOx.toFixed(1)+'" cy="'+_cplOy.toFixed(1)+'" rx="'+_cplRx.toFixed(2)+'" ry="'+_cplRy.toFixed(2)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.4" transform="rotate('+_cplDeg+','+_cplOx.toFixed(1)+','+_cplOy.toFixed(1)+')"/>';
-              s += '<ellipse cx="'+_cplOx.toFixed(1)+'" cy="'+_cplOy.toFixed(1)+'" rx="'+_cplRx.toFixed(2)+'" ry="'+_cplRy.toFixed(2)+'" fill="'+_cplFill+'" opacity="'+Math.max(0.88, op)+'" filter="url(#ds'+uid+')" transform="rotate('+_cplDeg+','+_cplOx.toFixed(1)+','+_cplOy.toFixed(1)+')"/>';
+              s += '<ellipse cx="'+_cplOx.toFixed(1)+'" cy="'+_cplOy.toFixed(1)+'" rx="'+_cplRx.toFixed(2)+'" ry="'+_cplRy.toFixed(2)+'" fill="'+_cplFill+'" opacity="'+Math.max(0.88, op)+'" transform="rotate('+_cplDeg+','+_cplOx.toFixed(1)+','+_cplOy.toFixed(1)+')"/>';
               // Specular lozenge (cream)
               s += '<ellipse cx="'+(_cplOx+side*_cpls*_cplRx*0.1).toFixed(1)+'" cy="'+(_cplOy-_cplRy*0.35).toFixed(1)+'" rx="'+(_cplRx*0.45).toFixed(2)+'" ry="'+(_cplRy*0.3).toFixed(2)+'" fill="#fff8e0" opacity="'+(op*0.35).toFixed(2)+'" transform="rotate('+_cplDeg+','+_cplOx.toFixed(1)+','+_cplOy.toFixed(1)+')"/>';
               // Midvein (warm dark)
@@ -23932,7 +23932,7 @@ document.addEventListener('keydown', function(e) {
           // Warm dark rim
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.6)" stroke-width="0.7"/>';
           // Pad fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.9, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.9, op)+'"/>';
           // Sinus AO at notch valley
           s += '<path d="M'+(_lpCx2+Math.cos(_lpNotchAng)*_lpR2*0.35).toFixed(1)+','+(_lpCy2+Math.sin(_lpNotchAng)*_lpR2*0.35).toFixed(1)+' L'+_lpCx2.toFixed(1)+','+_lpCy2.toFixed(1)+' L'+(_lpCx2+Math.cos(-_lpNotchAng)*_lpR2*0.35).toFixed(1)+','+(_lpCy2+Math.sin(-_lpNotchAng)*_lpR2*0.35).toFixed(1)+'"'
              + ' fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="0.45" stroke-linecap="round"/>';
@@ -23970,7 +23970,7 @@ document.addEventListener('keydown', function(e) {
           // Form shadow
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.18)" transform="translate(0.4,0.3)"/>';
           // Strap fill
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.88, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.88, op)+'"/>';
           // Warm dark border
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.6"/>';
           // Hammered scale-cell texture — staggered scales
@@ -24023,7 +24023,7 @@ document.addEventListener('keydown', function(e) {
              + ' C'+(_gbMidX-side*_gbW).toFixed(1)+','+(_gbMidY+_gbLen*0.05).toFixed(1)+' '+(ox-side*_gbW).toFixed(1)+','+(ly-_gbLen*0.05).toFixed(1)+' '+ox+','+ly+' Z';
           // Form shadow (drooping side)
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.15)" transform="translate(0.3,0.2)"/>';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.9, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.9, op)+'"/>';
           // Warm dark margin
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.4"/>';
           // 5 parallel veins (no crosslinks)
@@ -24060,7 +24060,7 @@ document.addEventListener('keydown', function(e) {
           var _vtUD = 'M'+(_vtCx-side*_vtW*0.58).toFixed(1)+','+_vtCy.toFixed(1)+' A'+(_vtW*0.58).toFixed(1)+','+(_vtH*0.8).toFixed(1)+' 0 0,1 '+(_vtCx+side*_vtW*0.58).toFixed(1)+','+_vtCy.toFixed(1)+' Z';
           // Form shadow on shaded lobe
           s += '<path d="'+_vtUD+'" fill="rgba(40,20,5,0.18)" transform="translate(0.3,0.2)"/>';
-          s += '<path d="'+_vtUD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+_vtUD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           s += '<path d="'+_vtUD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.6"/>';
           // Inner red-pink tint
           s += '<path d="'+_vtUD+'" fill="'+_hueShift(_vtCol3, i*23, 15)+'" opacity="'+(op*0.28).toFixed(2)+'"/>';
@@ -24076,7 +24076,7 @@ document.addEventListener('keydown', function(e) {
           // Lower lobe
           var _vtLD = 'M'+(_vtCx-side*_vtW*0.52).toFixed(1)+','+_vtCy.toFixed(1)+' A'+(_vtW*0.52).toFixed(1)+','+(_vtH*0.6).toFixed(1)+' 0 0,0 '+(_vtCx+side*_vtW*0.52).toFixed(1)+','+_vtCy.toFixed(1)+' Z';
           s += '<path d="'+_vtLD+'" fill="rgba(40,20,5,0.2)" transform="translate(0.3,0.3)"/>';
-          s += '<path d="'+_vtLD+'" fill="'+fill+'" opacity="'+(op*0.88).toFixed(2)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+_vtLD+'" fill="'+fill+'" opacity="'+(op*0.88).toFixed(2)+'"/>';
           s += '<path d="'+_vtLD+'" fill="none" stroke="rgba(40,20,5,0.5)" stroke-width="0.5"/>';
           s += '<path d="'+_vtLD+'" fill="'+_vtCol2+'" opacity="'+(op*0.32).toFixed(2)+'"/>';
           // Upper teeth — cilia
@@ -24153,7 +24153,7 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+bodyD+'" fill="rgba(40,20,5,0.18)" transform="translate(0.4,0.3)"/>';
           // Warm dark border
           s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.6"/>';
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // BOLD DARK MIDRIB — the Asplenium signature
           s += '<path d="M'+ox+','+ly+' Q'+_stMidX.toFixed(1)+','+_stMidY.toFixed(1)+' '+_stTipX.toFixed(1)+','+_stTipY.toFixed(1)+'"'
              + ' fill="none" stroke="rgba(40,20,5,0.85)" stroke-width="0.95" stroke-linecap="round"/>';
@@ -24203,7 +24203,7 @@ document.addEventListener('keydown', function(e) {
              + ' C'+(_poTipX-side*_poW*0.30)+','+(_poTipY+ls*0.25)+' '+(_poEarInnerX+side*_poW*0.05)+','+(_poEarInnerY-_poLen*0.40)+' '+_poEarInnerX.toFixed(1)+','+_poEarInnerY.toFixed(1)
              + ' C'+(_poEarInnerX-side*0.20)+','+(_poEarInnerY+ls*0.20)+' '+(_poNotchX-side*_poW*0.40)+','+(ly-ls*0.20)+' '+_poNotchX.toFixed(1)+','+_poNotchY.toFixed(1)+' Z';
           // Body fill — glossy mid-green
-          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'" filter="url(#ds'+uid+')"/>';
+          s += '<path d="'+bodyD+'" fill="'+fill+'" opacity="'+Math.max(0.92, op)+'"/>';
           // Form shadow on shaded inboard half
           s += '<path d="M'+_poNotchX.toFixed(1)+','+_poNotchY.toFixed(1)+' C'+(_poNotchX-side*_poW*0.40)+','+(ly-ls*0.20)+' '+(_poEarInnerX-side*0.20)+','+(_poEarInnerY+ls*0.20)+' '+_poEarInnerX.toFixed(1)+','+_poEarInnerY.toFixed(1)+' C'+(_poEarInnerX+side*_poW*0.05)+','+(_poEarInnerY-_poLen*0.40)+' '+(_poTipX-side*_poW*0.30)+','+(_poTipY+ls*0.25)+' '+_poTipX.toFixed(1)+','+_poTipY.toFixed(1)+' L'+(_poTipX-side*_poW*0.10).toFixed(1)+','+(_poTipY+_poLen*0.50).toFixed(1)+' L'+_poNotchX.toFixed(1)+','+_poNotchY.toFixed(1)+' Z" fill="rgba(40,20,5,0.22)"/>';
           // ── CREAM/PALE VARIEGATION FLECKS — Pothos golden / marble pothos signature ──
@@ -25716,7 +25716,7 @@ document.addEventListener('keydown', function(e) {
         if (chiVeinD) {
           var _cvW = _vs2.width;
           var _cvO = _vs2.opacity;
-          s += '<path d="' + chiVeinD + '" fill="none" stroke="' + chiColor + '" stroke-width="' + _cvW + '" opacity="' + _cvO + '"' + (_vs2.glow ? ' filter="url(#ds'+uid+')"' : '') + '/>';
+          s += '<path d="' + chiVeinD + '" fill="none" stroke="' + chiColor + '" stroke-width="' + _cvW + '" opacity="' + _cvO + '"' + (_vs2.glow ? '' : '') + '/>';
         }
         s += '</g>';
       }
