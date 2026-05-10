@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.08';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.09';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1805,6 +1805,33 @@
     /* Omitted (None) row: very dim, skip rendering entirely */
     .dna-val.none { display: none; }
     .dna-cat.none { display: none; }
+    /* Cosmic tier — Stephen 2026-05-10: epic (#9B59B6) and cosmic (#D94FFF)
+       are both purples, too close at a glance. Cosmic rows now animate
+       through the full rarity-color rainbow (magenta → cyan → gold →
+       rose → magenta) so they jump off the page next to a static epic
+       purple. text-shadow tracks the color so the glow shifts with it.
+       6s cycle is slow enough to read each color, fast enough to feel
+       alive. animation:steps(1) on color isn't used — smooth interpolation
+       reads more "iridescent." */
+    @keyframes cosmicShimmer {
+      0%   { color: #D94FFF; text-shadow: 0 0 8px rgba(217,79,255,0.55), 0 0 20px rgba(217,79,255,0.25); }
+      25%  { color: #4FD9FF; text-shadow: 0 0 8px rgba(79,217,255,0.55), 0 0 20px rgba(79,217,255,0.25); }
+      50%  { color: #FFD64F; text-shadow: 0 0 8px rgba(255,214,79,0.6),  0 0 20px rgba(255,214,79,0.3); }
+      75%  { color: #FF6EC7; text-shadow: 0 0 8px rgba(255,110,199,0.55),0 0 20px rgba(255,110,199,0.25); }
+      100% { color: #D94FFF; text-shadow: 0 0 8px rgba(217,79,255,0.55), 0 0 20px rgba(217,79,255,0.25); }
+    }
+    .dna-val.cosmic-tier {
+      animation: cosmicShimmer 6s ease-in-out infinite;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    /* Terra Grade banner (the big top label on the card back) — if the
+       plant itself is Cosmic grade, animate it the same way so the whole
+       card front reads "this is cosmic" before the player even scans the
+       layers. Hooked via a CSS attribute selector on the parent. */
+    .cs-card-back[data-tier="cosmic"] .dna-ledger > div[onclick*="_lwShowGradeDetail"] {
+      animation: cosmicShimmer 6s ease-in-out infinite;
+    }
 
     /* Greenhouse progressive-disclosure collapsed ledger */
     .dna-summary-toggle {
@@ -39717,19 +39744,24 @@ document.addEventListener('keydown', function(e) {
       // Now: visible colored pill on every row using the tier's _TIER_COLORS
       // hue, so the player can read the rarity ladder at a glance and see
       // exactly what each layer contributed (or didn't).
+      // Stephen 2026-05-10: removed the rarity pill chip from each row.
+      // The row text color already conveys the tier (via _valColor below).
+      // Players were reading both the color AND the pill text as the same
+      // signal twice — extra visual noise. Cosmic rows now get a class
+      // that animates the color cycle so they read distinctly from Epic
+      // (both used to be purples — too close at a glance).
       var _tierName = _lc ? _lc.tier : '';
-      var _tierCol  = _lc ? _lc.color : '';
-      var _tierLabel = _tierName ? (
-        '<span style="display:inline-block;font-family:Bebas Neue,sans-serif;font-size:0.5rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:1px 7px;margin-left:6px;border-radius:8px;background:' + _tierCol + '24;border:1px solid ' + _tierCol + '70;color:' + _tierCol + ';vertical-align:middle;line-height:1.2;">' + _tierName + '</span>'
-      ) : '';
+      var _isCosmic = (_tierName === 'cosmic');
       // Tappable rows — each trait layer opens its Reader page
+      var _rowCls = 'dna-val' + (tierClass ? ' '+tierClass : '') + (_isCosmic ? ' cosmic-tier' : '');
+      var _rowStyle = _valColor && !_isCosmic ? 'color:'+_valColor+';' : ''; // cosmic uses keyframes, not inline color
       var _rowAttr = '';
       if (row.cat === 'MUTATION' && row.name && row.name !== 'None') {
-        _rowAttr = ' onclick="event.stopPropagation();if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+row.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;' + (_valColor ? 'color:'+_valColor+';' : '') + '"';
+        _rowAttr = ' onclick="event.stopPropagation();if(window._lwShowMutationDetail)_lwShowMutationDetail(\''+row.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;' + _rowStyle + '"';
       } else if (row.layerKey && row.idx != null) {
-        _rowAttr = ' onclick="event.stopPropagation();if(window._lwShowTraitDetail)_lwShowTraitDetail(\''+row.layerKey+'\','+row.idx+')" style="cursor:pointer;' + (_valColor ? 'color:'+_valColor+';' : '') + '"';
-      } else if (_valColor) {
-        _rowAttr = ' style="color:'+_valColor+';"';
+        _rowAttr = ' onclick="event.stopPropagation();if(window._lwShowTraitDetail)_lwShowTraitDetail(\''+row.layerKey+'\','+row.idx+')" style="cursor:pointer;' + _rowStyle + '"';
+      } else if (_rowStyle) {
+        _rowAttr = ' style="'+_rowStyle+'"';
       }
       var _mutSymbol = '';
       if (row.cat === 'MUTATION' && row.name && row.name !== 'None') {
@@ -39737,8 +39769,8 @@ document.addEventListener('keydown', function(e) {
         _mutSymbol = '<img src="assets/mutations/mutation-'+_mSlug+'.png" onerror="this.style.display=\'none\'" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;margin-right:6px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));">';
       }
       html += '<div class="dna-cat">' + row.cat + '</div>'
-            + '<div class="dna-val' + (tierClass ? ' '+tierClass : '') + '"' + _rowAttr + '>'
-            + _mutSymbol + row.name + _tierLabel + '</div>';
+            + '<div class="' + _rowCls + '"' + _rowAttr + '>'
+            + _mutSymbol + row.name + '</div>';
     });
     html += '</div></div>';
 
