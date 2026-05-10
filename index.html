@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.06';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2176,6 +2176,14 @@
        variant remains hidden inside Pi Browser. */
     body.pi-browser .lw-non-pi-tips{ display:none !important; }
     body.pi-browser .lw-tip-cta-multi{ display:none !important; }
+    /* Pi Browser compass: two prior fixes (relative-alpha fallback, 3s
+       graceful-degrade) didn't take. Memo recommendation was to hide
+       the needle entirely so the cab stops pretending. Cab + tap target
+       stay live for compass tool actions (biome reveal L2, feral bearing
+       L3 from the Keeper's Tree); only the rotating arrow and cardinal
+       label are hidden so nothing reads as "broken." */
+    body.pi-browser .w-compass-arrow{ transform:none !important; opacity:0.55; filter:grayscale(0.7) brightness(0.85); }
+    body.pi-browser .w-compass-facing{ display:none !important; }
     body.pi-browser{ --pi-chrome-h: 48px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
@@ -70497,30 +70505,47 @@ function sendFriendRequest(friendUid,friendName,callback){
   if(user.uid===friendUid){callback(false,'That\'s you!');return;}
   var db=firebase.firestore();
   var myName=localStorage.getItem('pw_keeper_name')||'Keeper';
-  var batch=db.batch();
   var now=firebase.firestore.FieldValue.serverTimestamp();
   var theirName=friendName||'Keeper';
-  // Audit 4 C2 stale-doc fix: if either connection doc exists from a prior
-  // interaction (legacy schema, decline-then-resend race, half-cleaned state)
-  // the rule-7 cross-write UPDATE check (`resource.data.status == 'pending_sent'`)
-  // rejects every status other than that exact value. Wipe both sides before
-  // re-arming the request. batch.delete on a non-existent doc is a no-op.
-  batch.delete(db.collection('friends').doc(user.uid).collection('connections').doc(friendUid));
-  batch.delete(db.collection('friends').doc(friendUid).collection('connections').doc(user.uid));
 
-  // My record: I sent a request — friendName lets the friends list show their name
-  batch.set(db.collection('friends').doc(user.uid).collection('connections').doc(friendUid),{
-    status:'pending_sent',friendUid:friendUid,friendName:theirName,createdAt:now,pollen:0
-  });
-  // Their record: they received a request
-  batch.set(db.collection('friends').doc(friendUid).collection('connections').doc(user.uid),{
-    status:'pending_received',friendUid:user.uid,senderName:myName,friendName:myName,createdAt:now,pollen:0
-  });
+  // Stephen 2026-05-10: stale-doc trap fix v2. The previous batch.delete +
+  // batch.set approach didn't actually defeat the trap because Firestore
+  // evaluates each operation in a batch against the ORIGINAL doc state,
+  // not intermediate batch state. So when a legacy doc existed on the
+  // recipient side, batch.set was treated as UPDATE, and the rules-7
+  // update rule (resource.data.status == "pending_sent") rejected it for
+  // any other status — the whole batch failed silently.
+  //
+  // New flow: delete the recipient's stale doc as a SEPARATE write, await
+  // it, then batch.set both sides. With the recipient doc cleared, the
+  // batch.set hits the CREATE rule (which only checks request.resource
+  // status == "pending_received") and succeeds. We lose atomicity in the
+  // narrow window between delete and set, but the worst case is that the
+  // user retries the request — far better than silent failure.
+  var recipientRef = db.collection('friends').doc(friendUid).collection('connections').doc(user.uid);
+  var senderRef    = db.collection('friends').doc(user.uid).collection('connections').doc(friendUid);
 
-  batch.commit().then(function(){
+  recipientRef.delete().catch(function(){
+    // Delete may fail benignly if doc doesn't exist or rules block it. We
+    // proceed regardless — the worst outcome is the batch.set lands on
+    // existing state and fails like before, falling through to the
+    // callback's error path. Anything we'd surface here would be noise.
+  }).then(function(){
+    var batch = db.batch();
+    // My record: I sent a request. Owner-write, always allowed.
+    batch.set(senderRef, {
+      status:'pending_sent', friendUid:friendUid, friendName:theirName, createdAt:now, pollen:0
+    });
+    // Their record: they received a request. With the prior delete, this
+    // hits the CREATE rule which only checks status == "pending_received".
+    batch.set(recipientRef, {
+      status:'pending_received', friendUid:user.uid, senderName:myName, friendName:myName, createdAt:now, pollen:0
+    });
+    return batch.commit();
+  }).then(function(){
     callback(true);
   }).catch(function(e){
-    callback(false,e.message);
+    callback(false, e && e.message || 'Send failed');
   });
 }
 
