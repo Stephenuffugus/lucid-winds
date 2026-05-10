@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.13';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14600,7 +14600,20 @@ document.addEventListener('keydown', function(e) {
     var _sc = STEM_COLORS[t.stemColor] || STEM_COLORS[0];
     var _scBase = _colorMut ? _mutColor(_sc.base, _mn) : _sc.base;
     var _scLight = _colorMut ? _mutColor(_sc.light, _mn) : _sc.light;
-    d += '<linearGradient id="sg'+uid+'" x1="0" y1="1" x2="0" y2="0">';
+    // Stephen 2026-05-10: stem gradient was using default gradientUnits
+    // (objectBoundingBox). That works fine for FILLED paths but breaks on
+    // STROKED paths in many mobile WebViews including Pi Browser — a
+    // stroked path's bounding box is ambiguous, and url(#sg…) silently
+    // fails to resolve on the stroke. Several renderStem cases (1, 2, 3,
+    // 5, 6, 7, 9, 11, 15-19, etc.) use `stroke="url(#sg<uid>)" fill="none"`
+    // as the main stem body, so the body went invisible while the
+    // RGBA-colored highlight/shadow strokes still rendered — exactly
+    // matching the "highlight + shadow visible, stem missing" symptom.
+    // Switch to userSpaceOnUse with absolute SVG coords (viewBox 0,0,70,95).
+    // The gradient flows from y=78 (stem base) up to y=20 (canopy zone),
+    // dark at bottom, light at top, same visual intent. Resolves
+    // consistently on both fills and strokes across every browser.
+    d += '<linearGradient id="sg'+uid+'" x1="35" y1="78" x2="35" y2="20" gradientUnits="userSpaceOnUse">';
     d += '<stop offset="0%" stop-color="'+_scBase+'" stop-opacity="0.9"/>';
     d += '<stop offset="100%" stop-color="'+_scLight+'" stop-opacity="0.8"/>';
     d += '</linearGradient>';
@@ -14664,7 +14677,9 @@ document.addEventListener('keydown', function(e) {
     d += '<stop offset="100%" stop-color="#C8A84B" stop-opacity="0"/>';
     d += '</radialGradient>';
     // Glass gradient for glass-stem mutation
-    d += '<linearGradient id="gl'+uid+'" x1="0" y1="1" x2="0" y2="0">';
+    // Same userSpaceOnUse fix as sg<uid> above — glass-stem mutation
+    // gradient is also referenced as stroke on stroked stem cases.
+    d += '<linearGradient id="gl'+uid+'" x1="35" y1="78" x2="35" y2="20" gradientUnits="userSpaceOnUse">';
     d += '<stop offset="0%" stop-color="#5b8fb9" stop-opacity="0.25"/>';
     d += '<stop offset="50%" stop-color="#EAE0C8" stop-opacity="0.12"/>';
     d += '<stop offset="100%" stop-color="#5b8fb9" stop-opacity="0.2"/>';
@@ -15272,7 +15287,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-10c';
+  var _SVG_CACHE_VER = '2026-05-10d';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -15438,7 +15453,7 @@ document.addEventListener('keydown', function(e) {
       svg += '<defs>';
       svg += '<linearGradient id="pg'+uid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+_tc+'"/><stop offset="100%" stop-color="'+_tc+'" stop-opacity="0.8"/></linearGradient>';
       svg += '<linearGradient id="pr'+uid+'" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="'+_tc+'" stop-opacity="0.3"/><stop offset="50%" stop-color="#EAE0C8" stop-opacity="0.2"/><stop offset="100%" stop-color="'+_tc+'" stop-opacity="0.3"/></linearGradient>';
-      svg += '<linearGradient id="sg'+uid+'" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="'+_scB+'" stop-opacity="0.9"/><stop offset="100%" stop-color="'+_scL+'" stop-opacity="0.8"/></linearGradient>';
+      svg += '<linearGradient id="sg'+uid+'" x1="35" y1="78" x2="35" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="'+_scB+'" stop-opacity="0.9"/><stop offset="100%" stop-color="'+_scL+'" stop-opacity="0.8"/></linearGradient>';
       svg += '</defs>';
     } else {
       svg += buildDefs(t, uid);
@@ -42277,7 +42292,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v7'; // v7 (2026-05-10): shadow-pass ids scoped to avoid clipPath collisions that hid stems
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v8'; // v8 (2026-05-10): stem gradient switched to userSpaceOnUse for stroke-resolution
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
