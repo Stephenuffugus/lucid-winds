@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14969,7 +14969,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-10a';
+  var _SVG_CACHE_VER = '2026-05-10b';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -15280,8 +15280,28 @@ document.addEventListener('keydown', function(e) {
       svg += '<g clip-path="url(#'+_fClipId+')">';
     }
 
-    // 6. LEAVES
-    if (prog >= 0.15) svg += renderLeaves(t, uid, visibleTop, prog, isWire);
+    // 6. LEAVES — emitted with a painted-path shadow underneath instead
+    // of an SVG <feDropShadow> filter. The filter approach blew the iOS /
+    // Pi Browser GPU surface budget when nested under the wild carousel's
+    // compositing stack (translate3d + preserve-3d + translateZ + sway
+    // transform), making leaves render without fills. Painted shadows are
+    // just extra <path> / <ellipse> elements offset by 1.4px,1.4px with a
+    // dark fill — zero filter primitives, zero render-surface allocations,
+    // identical visual depth. Cost is ~2x leaf path count (5-10 extra
+    // paths per plant) which is negligible in DOM/parse terms.
+    if (prog >= 0.15) {
+      var _leavesOut = renderLeaves(t, uid, visibleTop, prog, isWire);
+      // Build shadow pass: dark-fill every leaf path/shape. The regex
+      // sweeps fill="…" and stroke="…" — including gradient refs like
+      // fill="url(#lg…)" — so the shadow renders as flat dark silhouettes.
+      // Preserves stroke-width and path geometry. Wrapped in a translated
+      // <g> at 0.42 opacity so it reads as a shadow, not a duplicate.
+      var _shadowOut = _leavesOut
+        .replace(/fill="[^"]*"/g, 'fill="#0a0d08"')
+        .replace(/stroke="[^"]*"/g, 'stroke="#0a0d08"');
+      svg += '<g transform="translate(1.4,1.4)" opacity="0.42" style="pointer-events:none;">' + _shadowOut + '</g>';
+      svg += _leavesOut;
+    }
 
     // ── Spec 15: Breed layers after leaves, before bloom ──
     if (t.breedLayers && t.breedLayers.thornedCrown) svg += renderThornedCrown(uid, visibleTop);
@@ -25801,26 +25821,14 @@ document.addEventListener('keydown', function(e) {
     window._lastLeafSizes = _leafSizes;
     window._lastLowestLeaf = _lowestLeaf;
 
-    /* Stephen 2026-05-10: stripped the foliage <g filter> wrapper AGAIN.
-       History:
-       • Apr/May: per-leaf filter="url(#ds…)" emitted 7-9 times per plant.
-         Stephen reported plants rendering as wireframe (line-art only).
-       • 2026-05-09 (commit 43f777c): stripped per-leaf filter entirely.
-         Fixed it.
-       • 2026-05-09 (commit 0a9f53d): re-added the drop-shadow as a single
-         <g filter="url(#ds…)"> wrapper around all leaves. One filter
-         allocation instead of 7-9 — was supposed to give the shadow back
-         without blowing the GPU budget.
-       • 2026-05-10: Stephen reports wild-carousel plants have NO LEAVES
-         again. The single-wrap filter is STILL pushing iOS/Pi compositing
-         over the edge in the wild-carousel context (nested under
-         .pgm-track translate3d + .cs-flip-inner preserve-3d + .cs-card-face
-         translateZ + the SVG's own sway transform). The "single wrapper"
-         theory was right about reducing filter count, wrong about it
-         being enough. The wild carousel just has too many GPU layers.
-       Resolution: ship without the shadow. We had this fix at 43f777c —
-       leaves render flat but always visible across every surface. The
-       shadow re-add experiment cost Stephen days. Don't re-add. */
+    /* Stephen 2026-05-10: leaf drop-shadow is now painted upstream as
+       duplicate dark-fill paths offset by 1.4px,1.4px in generatePlantSVG
+       (search for "6. LEAVES"). renderLeaves itself returns just the real
+       leaves — no <g filter> wrapper, no SVG filter primitive — so the
+       shadow lives at the same DOM tier as the leaves but uses zero GPU
+       surface allocations. This keeps leaves rendering reliably in every
+       compositing context (greenhouse, carousel, bloom modal, wild
+       carousel) while still showing depth. */
     return s;
   }
 
@@ -41952,7 +41960,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v5'; // v5 (2026-05-10): bust cached renders that still wrap leaves in <g filter="url(#ds…)"> (the wireframe-look bug in wild carousel)
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v6'; // v6 (2026-05-10): leaf shadow now painted as duplicate paths (no SVG filter); bust cached renders
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
