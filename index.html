@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.08';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -7191,6 +7191,17 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
 
   <!-- Card Grid -->
   <div class="card-grid" id="card-grid"></div>
+
+  <!-- Rules card UNDER the board — Stephen 2026-05-10: original .rules-strip
+       sits above the grid but reads as decoration. New players didn't know
+       how to play. This block is full-paragraph readable under the board,
+       always visible during a SET round. -->
+  <div id="set-rules-under" style="margin:0.7rem 0.4rem 0.2rem;padding:0.85rem 0.95rem;background:linear-gradient(180deg,rgba(26,36,22,0.7),rgba(18,24,16,0.85));border:1.5px solid rgba(122,179,86,0.28);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.35);font-family:DM Sans,sans-serif;color:var(--cream);line-height:1.55;font-size:0.72rem;">
+    <div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:0.45rem;">HOW TO PLAY</div>
+    <div style="margin-bottom:0.55rem;">Find <strong>3 cards</strong> where every trait — <strong>color</strong>, <strong>shape</strong>, <strong>count</strong>, <strong>shading</strong> — is <strong style="color:var(--gold);">ALL SAME</strong> or <strong style="color:var(--gold);">ALL DIFFERENT</strong> across the three. Two-same-one-different breaks the trio.</div>
+    <div style="margin-bottom:0.55rem;color:rgba(232,220,200,0.85);">If no trio is possible in the visible 12 cards, three more cards appear automatically.</div>
+    <button onclick="if(window._showGameRules)window._showGameRules('set');" style="display:block;width:100%;padding:0.55rem;min-height:44px;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(120,100,40,0.28));border:1.5px solid rgba(200,168,75,0.4);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.14em;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;">📖 SHOW ME THE DEDUCTION TRICK</button>
+  </div>
 
   <!-- Milestone Drop -->
   <div class="milestone-drop" id="milestone-drop">
@@ -13653,13 +13664,63 @@ document.addEventListener('keydown', function(e) {
     R.storyseeds = ''+
       '<p><strong>Pick a path:</strong> Each scene offers choices that branch the story.</p>'+
       '<p><strong>Reach the bloom:</strong> Some endings earn a plant pattern, others reveal a hidden petal.</p>';
+    // Helper: render an SVG card for the deduction mockup. Mirrors the
+    // real game's card layout but at a fixed size so the modal reads as
+    // a worked example. Uses the same blue / gold / rose palette and
+    // solid / striped / empty shadings as the actual game.
+    var _setMockCard = function(n, color, shading, mystery){
+      var COL = { blue:'#5b8fb9', gold:'#C8A84B', rose:'#C07070' };
+      var fill = color === 'mystery' ? '#3a4032' : COL[color] || COL.blue;
+      var pid = 'p_mock_' + n + '_' + color + '_' + shading;
+      var shapeFill;
+      var defs = '';
+      if (mystery) { shapeFill = 'none'; }
+      else if (shading === 'solid') { shapeFill = fill; }
+      else if (shading === 'empty') { shapeFill = 'none'; }
+      else {
+        shapeFill = 'url(#' + pid + ')';
+        defs = '<defs><pattern id="'+pid+'" patternUnits="userSpaceOnUse" width="32" height="4"><line x1="0" y1="0" x2="32" y2="0" stroke="'+fill+'" stroke-width="1.5"/></pattern></defs>';
+      }
+      // Oval shape — simple and clean for the mockup
+      var stroke = mystery ? 'rgba(200,188,160,0.45)' : fill;
+      var oval = '<ellipse cx="16" cy="16" rx="9" ry="11" fill="'+shapeFill+'" stroke="'+stroke+'" stroke-width="1.8"/>';
+      var shapes = '';
+      for (var k = 0; k < (mystery ? 1 : n); k++) {
+        shapes += '<svg viewBox="0 0 32 32" width="22" height="28" style="display:inline-block;vertical-align:middle;margin:0 1px;">'+defs+oval+'</svg>';
+      }
+      if (mystery) {
+        shapes = '<div style="font-family:Playfair Display,serif;font-size:1.6rem;color:rgba(200,168,75,0.85);">?</div>';
+      }
+      var border = mystery ? '1.5px dashed rgba(200,168,75,0.55)' : '1.5px solid rgba(200,188,160,0.22)';
+      return '<div style="flex:1;min-width:0;background:rgba(13,16,12,0.6);border:'+border+';border-radius:8px;padding:0.5rem 0.3rem;text-align:center;display:flex;align-items:center;justify-content:center;min-height:54px;">'+shapes+'</div>';
+    };
+    var _setMockup = ''+
+      '<div style="display:flex;gap:6px;align-items:stretch;margin:0.7rem 0 0.5rem;">'+
+        _setMockCard(2, 'blue', 'solid', false) +
+        _setMockCard(1, 'blue', 'striped', false) +
+        _setMockCard(0, 'mystery', null, true) +
+      '</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;letter-spacing:0.08em;margin-bottom:0.7rem;">CARD 1 · CARD 2 · WHAT COMPLETES IT?</div>';
+
     R.set = ''+
-      '<p><strong>Goal:</strong> Spot a <em>Trio</em>, three cards that work together, and tap them.</p>'+
-      '<p><strong>Each card has four traits:</strong> color, shape, number, and shading. Each trait has three possible values.</p>'+
+      '<p style="margin-top:0;"><strong>Goal:</strong> Spot a <em>Trio</em> — three cards that share a hidden pattern — and tap them in any order.</p>'+
+      '<p><strong>Each card has four traits:</strong> <strong>number</strong> (1/2/3), <strong>color</strong> (blue/gold/rose), <strong>shading</strong> (solid/striped/empty), and <strong>shape</strong>.</p>'+
       '<p><strong>The rule:</strong> For every trait, the three cards must be either <strong style="color:var(--gold);">all the same</strong> or <strong style="color:var(--gold);">all different</strong>. Two-same-one-different breaks the trio.</p>'+
-      '<p><strong>Example trio:</strong> three blue clovers, all solid, with 1 / 2 / 3 shapes. Same color, same shape, same shading, different numbers, all four traits pass.</p>'+
+      '<div style="margin:1rem 0 0.4rem;padding:0.85rem 0.7rem;background:rgba(200,168,75,0.06);border:1.5px solid rgba(200,168,75,0.28);border-radius:10px;">'+
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:0.3rem;text-align:center;">THE DEDUCTION TRICK</div>'+
+        '<p style="margin:0.2rem 0 0;font-size:0.72rem;line-height:1.55;">Pick <strong>any two cards</strong>. There is exactly <strong style="color:var(--gold);">one card</strong> in the deck that completes the trio. Find it by checking each trait — in this order:</p>'+
+        _setMockup +
+        '<div style="display:grid;grid-template-columns:auto 1fr;gap:0.4rem 0.65rem;font-size:0.68rem;line-height:1.55;align-items:start;">'+
+          '<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:0.06em;white-space:nowrap;">1. NUMBER</div><div>You see <strong>2</strong> and <strong>1</strong>. Two-same is impossible (you’d need a 2 or a 1). They must be all-different, so the third is <strong style="color:var(--gold);">3</strong>.</div>'+
+          '<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:0.06em;white-space:nowrap;">2. COLOR</div><div>Both are <strong>blue</strong>. All-same locked in. Third card is <strong style="color:var(--gold);">blue</strong>.</div>'+
+          '<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:0.06em;white-space:nowrap;">3. SHADING</div><div><strong>Solid</strong> and <strong>striped</strong>. Mixed = must be all-different. Third card is <strong style="color:var(--gold);">empty</strong>.</div>'+
+          '<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:0.06em;white-space:nowrap;">4. SHAPE</div><div>Both are <strong>ovals</strong>. All-same again. Third card is an <strong style="color:var(--gold);">oval</strong>.</div>'+
+        '</div>'+
+        '<p style="margin:0.85rem 0 0.1rem;font-size:0.72rem;text-align:center;color:var(--sage);font-style:italic;">Answer: <strong>3 blue empty ovals</strong>. Scan the board for that card.</p>'+
+      '</div>'+
+      '<p style="margin-top:0.9rem;"><strong>No trio?</strong> If none of the 12 visible cards can complete a trio together, three more cards appear automatically. You’ll never get stuck.</p>'+
       '<p><strong>Earn:</strong> Each trio fills your Sunbeam meter. Clear enough trios to bloom a new plant.</p>'+
-      '<p style="color:var(--muted);font-size:0.7rem;font-style:italic;">Need hands-on? Tap PRACTICE MODE below for a no-stakes round.</p>';
+      '<p style="color:var(--muted);font-size:0.7rem;font-style:italic;">Want to try it without stakes? Tap PRACTICE MODE below.</p>';
   })();
 
   // Generic rules modal renderer. Shows registered rules HTML if
