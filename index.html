@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6376,6 +6376,14 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
 /* ── Drop Picker v2 ── */
 .dpk2{position:fixed;bottom:0;left:0;right:0;z-index:99997;background:linear-gradient(0deg,rgba(13,16,12,.98),rgba(13,16,12,.94));border-top:1px solid rgba(74,124,53,.1);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1);max-height:55vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -12px 40px rgba(0,0,0,.5)}
 .dpk2.open{transform:translateY(0)}
+/* Stephen 2026-05-10: SOW-mode picker is full-screen-ish so 40+ plants
+   are actually scannable. The default .dpk2 is a 55vh bottom sheet which
+   crammed 14 rows of 3-column grid into half the screen. .sow-grid takes
+   over the entire viewport (minus a small top inset so the player still
+   knows it's an overlay) and lets the grid scroll naturally. */
+.dpk2.sow-grid{max-height:none;top:env(safe-area-inset-top,0px);bottom:0;border-radius:0;background:linear-gradient(180deg,rgba(13,16,12,.985),rgba(8,10,6,.98));}
+.dpk2.sow-grid .dpk2-head{padding-top:14px;border-bottom:1px solid rgba(122,179,86,.08);}
+.dpk2.sow-grid .dpk2-grid{max-height:none;padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));}
 .dpk2-handle{width:32px;height:4px;background:rgba(122,179,86,.12);border-radius:2px;margin:8px auto 4px}
 .dpk2-head{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px}
 .dpk2-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(.7rem,2vw,.9rem);color:var(--sage);letter-spacing:.1em}
@@ -54555,24 +54563,26 @@ function openPicker(){
   }
   var gh=_getGH();
   if(!gh.length){_toast('No plants in your greenhouse yet. Play a Grove game to earn Sunbeams, then mint your first plant.');return;}
-  // STEPHEN'S DESIGN: drop-plant should feel like the greenhouse
-  // carousel, not a small grid. Players need to flip the card, read
-  // the haiku + DNA + EA + season before committing a real-world drop.
-  // Route through the existing carousel via the new 'wild-place'
-  // source — slides show the standard greenhouse cards but with
-  // greenhouse buttons hidden and a single PLACE HERE button that
-  // calls _drop on the current carousel slide.
-  if(window.openCarousel){
-    window._wildDropList = gh; // referenced by PLACE HERE handler
-    window.openCarousel(gh, 0, 'wild-place');
-    return;
-  }
-  // Legacy fallback — only fires if openCarousel module didn't load
+  // Stephen 2026-05-10: SOW flow is now grid-first. Players with 40+
+  // plants couldn't realistically scan a carousel one-at-a-time to
+  // find what to plant — the old direct-to-carousel design dumped them
+  // on a single card and required swiping through everything. New flow:
+  //   1. SOW button → grid of ALL plants (this function)
+  //   2. Tap a card → opens carousel at that index for full inspect
+  //   3. Carousel close (✕) → returns to the grid (grid stays open
+  //      behind the carousel; we never closed it)
+  //   4. PLACE HERE → drops the plant AND closes the grid
+  // The grid uses the existing .dpk2 picker shell with a fullscreen
+  // modifier (sow-grid) so 40+ plants are actually scannable.
+  window._wildDropList = gh; // referenced by PLACE HERE handler
+  var pk = document.getElementById('w-picker');
+  if(pk) pk.classList.add('sow-grid');
   var title=document.getElementById('wpk-title');
-  if(title){title.textContent='DROP A SPECIMEN';title.style.color='var(--sage)';}
-  document.getElementById('wpk-lim').textContent=rem+' remaining';
+  if(title){title.textContent='SOW A PLANT';title.style.color='var(--sage)';}
+  var limEl = document.getElementById('wpk-lim');
+  if(limEl) limEl.textContent = rem+' drop'+(rem===1?'':'s')+' remaining · tap a plant to inspect';
   var gr=document.getElementById('wpk-grid');gr.innerHTML='';
-  for(var i=0;i<gh.length;i++){(function(pl){
+  for(var i=0;i<gh.length;i++){(function(pl, idx){
     var c=document.createElement('div');
     c.className='dpk2-card';
     var sv='';try{if(window._generatePlantSVG)sv=window._generatePlantSVG(pl.hash,90);}catch(e){}
@@ -54580,9 +54590,19 @@ function openPicker(){
     var info=_buildInfo(pl.hash);
     var gc=GC[info.grade]||'#8a9a7a';
     c.innerHTML='<div class="dpk2-card-svg">'+sv+'</div><div class="dpk2-card-name">'+info.nm+'</div><div class="dpk2-card-grade" style="color:'+gc+';">'+info.grade.toUpperCase()+'</div>';
-    c.onclick=function(e){e.stopPropagation();_drop(pl);};
+    c.onclick=function(e){
+      e.stopPropagation();
+      // Open the carousel at this plant's index. Picker grid stays open
+      // beneath the carousel (lower z-index); when player closes the
+      // carousel they're back on the grid to keep scanning.
+      if(window.openCarousel){
+        window.openCarousel(gh, idx, 'wild-place');
+      } else {
+        _drop(pl); // ancient fallback if carousel module didn't load
+      }
+    };
     gr.appendChild(c);
-  })(gh[i]);}
+  })(gh[i], i);}
   document.getElementById('w-picker').classList.add('open');
 }
 // Window-exposed so the carousel's PLACE HERE button can drop the
@@ -54596,12 +54616,16 @@ window._wildPlaceFromCarousel = function(){
     var idx = (window._carousel && typeof window._carousel.idx === 'number') ? window._carousel.idx : 0;
     var pl = arr[idx];
     if (!pl) return;
-    // Close the carousel first so the drop-target hex is visible.
+    // Close the carousel AND the picker grid so the drop-target hex is
+    // visible. Stephen 2026-05-10: PLACE HERE now exits the whole SOW
+    // flow (was leaving the picker grid mounted underneath).
     if (window.closePlantGallery) window.closePlantGallery();
+    var _pk = document.getElementById('w-picker');
+    if (_pk) { _pk.classList.remove('open'); _pk.classList.remove('sow-grid'); }
     setTimeout(function(){ _drop(pl); }, 200);
   } catch(e) { console.error('[wildPlace]', e); }
 };
-function closePicker(){var pk=document.getElementById('w-picker');if(pk)pk.classList.remove('open');}
+function closePicker(){var pk=document.getElementById('w-picker');if(pk){pk.classList.remove('open');pk.classList.remove('sow-grid');}}
 
 var MAX_PER_ZONE=3;
 // Wild v3 balance: dice-roll takeover. Replaces the deterministic
