@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.09';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.10';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -15106,7 +15106,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-10b';
+  var _SVG_CACHE_VER = '2026-05-10c';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -15423,17 +15423,26 @@ document.addEventListener('keydown', function(e) {
     // compositing stack (translate3d + preserve-3d + translateZ + sway
     // transform), making leaves render without fills. Painted shadows are
     // just extra <path> / <ellipse> elements offset by 1.4px,1.4px with a
-    // dark fill — zero filter primitives, zero render-surface allocations,
-    // identical visual depth. Cost is ~2x leaf path count (5-10 extra
-    // paths per plant) which is negligible in DOM/parse terms.
+    // dark fill — zero filter primitives, zero render-surface allocations.
     if (prog >= 0.15) {
       var _leavesOut = renderLeaves(t, uid, visibleTop, prog, isWire);
-      // Build shadow pass: dark-fill every leaf path/shape. The regex
-      // sweeps fill="…" and stroke="…" — including gradient refs like
-      // fill="url(#lg…)" — so the shadow renders as flat dark silhouettes.
-      // Preserves stroke-width and path geometry. Wrapped in a translated
-      // <g> at 0.42 opacity so it reads as a shadow, not a duplicate.
+      // Stephen 2026-05-10 round 2: stems were going invisible in wild
+      // carousel after the shadow shipped. Root cause was duplicate-ID
+      // collisions — renderLeaves emits inline <defs><clipPath
+      // id="ilc_X"> and <linearGradient id="lg_Y"> blocks for specific
+      // leaf types (Flame Bloom, Phoenix-Feather, certain chimera
+      // patterns). My shadow regex duplicated these defs verbatim,
+      // creating two elements with the same id in the same SVG. Browser
+      // resolved url(#ilc_X) to the FIRST match (the shadow's clipPath,
+      // inside the translated <g>), and the leaf shapes that depend on
+      // clip-path to constrain a large <rect> texture ended up rendering
+      // their <rect> UNCLIPPED — a big dark box that covered the stem
+      // underneath. Fix: rewrite every id in the shadow pass to a
+      // shadow-scoped suffix, and rewrite every url(#) reference inside
+      // the shadow to match. No more duplicate ids in the SVG.
       var _shadowOut = _leavesOut
+        .replace(/id="([^"]+)"/g, 'id="$1_shdw"')
+        .replace(/url\(#([^)]+)\)/g, 'url(#$1_shdw)')
         .replace(/fill="[^"]*"/g, 'fill="#0a0d08"')
         .replace(/stroke="[^"]*"/g, 'stroke="#0a0d08"');
       svg += '<g transform="translate(1.4,1.4)" opacity="0.42" style="pointer-events:none;">' + _shadowOut + '</g>';
@@ -42102,7 +42111,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v6'; // v6 (2026-05-10): leaf shadow now painted as duplicate paths (no SVG filter); bust cached renders
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v7'; // v7 (2026-05-10): shadow-pass ids scoped to avoid clipPath collisions that hid stems
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
