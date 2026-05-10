@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14969,7 +14969,7 @@ document.addEventListener('keydown', function(e) {
   // IndexedDB setup — SVG render cache
   // Bump _SVG_CACHE_VER whenever companion/aura/pot renderer code changes
   // to auto-clear stale cached SVGs on next load.
-  var _SVG_CACHE_VER = '2026-05-09e';
+  var _SVG_CACHE_VER = '2026-05-10a';
   var _idbReady = false;
   var _idb = null;
   (function _initIDB() {
@@ -25801,15 +25801,27 @@ document.addEventListener('keydown', function(e) {
     window._lastLeafSizes = _leafSizes;
     window._lastLowestLeaf = _lowestLeaf;
 
-    /* Stephen 2026-05-09: re-apply the leaf drop-shadow as a SINGLE filter
-       on a wrapping <g> instead of per-leaf. Per-leaf filters were each
-       allocating their own iOS/Pi render surface (7-9 surfaces per plant)
-       and blowing the compositing budget — fills dropped on the heavier
-       leaves and the plant rendered as outlines+veins only. One filter on
-       the wrapper = one render surface for the whole foliage cluster.
-       The shadow lands once under all leaves combined rather than per leaf,
-       which reads slightly different but still gives clear depth. */
-    return '<g filter="url(#ds'+uid+')">' + s + '</g>';
+    /* Stephen 2026-05-10: stripped the foliage <g filter> wrapper AGAIN.
+       History:
+       • Apr/May: per-leaf filter="url(#ds…)" emitted 7-9 times per plant.
+         Stephen reported plants rendering as wireframe (line-art only).
+       • 2026-05-09 (commit 43f777c): stripped per-leaf filter entirely.
+         Fixed it.
+       • 2026-05-09 (commit 0a9f53d): re-added the drop-shadow as a single
+         <g filter="url(#ds…)"> wrapper around all leaves. One filter
+         allocation instead of 7-9 — was supposed to give the shadow back
+         without blowing the GPU budget.
+       • 2026-05-10: Stephen reports wild-carousel plants have NO LEAVES
+         again. The single-wrap filter is STILL pushing iOS/Pi compositing
+         over the edge in the wild-carousel context (nested under
+         .pgm-track translate3d + .cs-flip-inner preserve-3d + .cs-card-face
+         translateZ + the SVG's own sway transform). The "single wrapper"
+         theory was right about reducing filter count, wrong about it
+         being enough. The wild carousel just has too many GPU layers.
+       Resolution: ship without the shadow. We had this fix at 43f777c —
+       leaves render flat but always visible across every surface. The
+       shadow re-add experiment cost Stephen days. Don't re-add. */
+    return s;
   }
 
   // ── set-103-8: MYCELIAL CROWN RENDERER (composted heritage) ──
@@ -41940,7 +41952,7 @@ document.addEventListener('keydown', function(e) {
     var _seasonColors = ['#E8A0BF','#D4A843','#C4763A','#A0C4E8'];
     // Carousel SVG — cached by hash+generation to avoid expensive re-renders on swipe
     var _csOv = (plant.generation && plant.generation > 1) ? {chimerGen: plant.generation} : null;
-    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v4'; // v4 (2026-05-09): bust stale cached renders that show plants without leaf/pot fills
+    var _csCacheKey = plant.hash + '|' + (plant.generation||1) + (window._perfLite ? '|lite' : '') + '|v5'; // v5 (2026-05-10): bust cached renders that still wrap leaves in <g filter="url(#ds…)"> (the wireframe-look bug in wild carousel)
     if (!window._csPlantSvgCache) window._csPlantSvgCache = {};
     var svgHtml = window._csPlantSvgCache[_csCacheKey];
     if (!svgHtml) {
@@ -60199,8 +60211,12 @@ _setHexSelPlant:function(p){_hexSelPlant=p;},_dist:_dist,panTo:function(lat,lng,
     var titleStyle = 'font-family:Bebas Neue,sans-serif;font-size:0.75rem;color:var(--gold,#c8a84b);letter-spacing:0.16em;margin-bottom:0.35rem;';
     var bodyStyle = 'font-family:DM Mono,monospace;font-size:0.6rem;line-height:1.7;color:rgba(232,220,200,0.92);';
     var html = '';
-    // Hero header
-    html += '<div style="padding:calc(env(safe-area-inset-top,0px) + 1.6rem) 1rem 1rem;text-align:center;background:linear-gradient(180deg,rgba(5,8,4,0.85),rgba(5,8,4,0.35));">'+
+    // Hero header \u2014 with a real CLOSE X in the top-right so the player
+    // never feels trapped staring at a wall of text. Stephen 2026-05-10:
+    // first time he visited Wild post-fix, he stared at this for 20s
+    // thinking the map had broken because there was no visible escape.
+    html += '<div style="position:relative;padding:calc(env(safe-area-inset-top,0px) + 1.6rem) 1rem 1rem;text-align:center;background:linear-gradient(180deg,rgba(5,8,4,0.85),rgba(5,8,4,0.35));">'+
+      '<button id="lw-wild-intro-close" aria-label="Close" style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 0.6rem);right:0.6rem;width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(200,168,75,0.45);background:rgba(8,12,8,0.85);color:var(--cream);font-size:1.1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">\u2715</button>'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:rgba(200,168,75,0.7);letter-spacing:0.3em;margin-bottom:0.4rem;">\u2756 LUCID WINDS \u2756</div>'+
       '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:2.3rem;color:var(--cream);text-shadow:0 2px 12px rgba(0,0,0,0.85),0 0 24px rgba(200,168,75,0.25);letter-spacing:0.04em;line-height:1;">The Wild</div>'+
       '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(232,220,200,0.75);letter-spacing:0.16em;margin-top:0.5rem;">THE WORLD UNDER YOUR FEET</div>'+
@@ -60276,17 +60292,18 @@ _setHexSelPlant:function(p){_hexSelPlant=p;},_dist:_dist,panTo:function(lat,lng,
     '</div>';
     ov.innerHTML = html;
     document.body.appendChild(ov);
+    var _closeIntro = function(){
+      ov.style.transition='opacity 0.35s ease';
+      ov.style.opacity='0';
+      setTimeout(function(){
+        if(ov.parentNode)ov.remove();
+        if(typeof onClose==='function')onClose();
+      },360);
+    };
     var btn = document.getElementById('lw-wild-intro-go');
-    if(btn){
-      btn.addEventListener('click',function(){
-        ov.style.transition='opacity 0.45s ease';
-        ov.style.opacity='0';
-        setTimeout(function(){
-          if(ov.parentNode)ov.remove();
-          if(typeof onClose==='function')onClose();
-        },470);
-      });
-    }
+    if(btn)btn.addEventListener('click',_closeIntro);
+    var closeBtn = document.getElementById('lw-wild-intro-close');
+    if(closeBtn)closeBtn.addEventListener('click',_closeIntro);
     try{if(typeof gtag!=='undefined')gtag('event','wild_intro_shown');}catch(e){}
   };
 })();
