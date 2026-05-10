@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.14';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -19266,6 +19266,21 @@ document.addEventListener('keydown', function(e) {
   // ── STEM RENDERER ──
   function renderStem(t, uid, visibleTop, isGlass, prog) {
     var strokeCol = isGlass ? 'url(#gl'+uid+')' : 'url(#sg'+uid+')';
+    // Stephen 2026-05-10 round 4: flat-hex stroke color. Verified via
+    // jsdom that even with gradientUnits=userSpaceOnUse, stroked
+    // <path fill="none" stroke="url(#sg…)"> returns computed
+    // stroke=rgba(0,0,0,0) — transparent. Mobile WebViews (Pi Browser,
+    // older iOS/Android Chromium) silently refuse to resolve url(#)
+    // references on strokes regardless of gradientUnits. Path renders
+    // invisible while the other stem strokes (hardcoded rgba shadow +
+    // cream highlight) still paint, leaving exactly Stephen's reported
+    // symptom: "highlight + shadow visible, stem body missing."
+    // FIX: derive a flat hex color from STEM_COLORS for stroke uses.
+    // FILL uses (closed body paths in cases 0, 4, 12-14, 17-21, etc.)
+    // still get the gradient — gradient-on-fill works fine across
+    // every browser. Glass mutation uses a low-alpha blue.
+    var _stemSc = STEM_COLORS[t.stemColor] || STEM_COLORS[0];
+    var stemStrokeFlat = isGlass ? 'rgba(91,143,185,0.7)' : _stemSc.base;
     var strokeW = isGlass ? '1.5' : '2.5';
     var op = (0.5 + prog * 0.5);
     var cx = 35, mid = 78 - (78 - visibleTop) / 2;
@@ -19323,7 +19338,7 @@ document.addEventListener('keydown', function(e) {
         // BACK shadow — fattened wide stroke creates the "thicker at base" feel
         s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+_s1MidX+','+_s1MidY+' C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+_s1UpX+','+_s1UpY+' C34,30 34.5,27 35,'+visibleTop+'" stroke="rgba(40,20,5,0.50)" stroke-width="'+(_s1wB*2).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.50).toFixed(2)+'"/>';
         // Main body stroke (saturated)
-        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+_s1MidX+','+_s1MidY+' C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+_s1UpX+','+_s1UpY+' C34,30 34.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(_s1wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M35,78 C35,72 '+(33-parseFloat(hw))+',66 '+_s1MidX+','+_s1MidY+' C'+(30-parseFloat(hw))+',50 '+(32-parseFloat(hw2))+',40 '+_s1UpX+','+_s1UpY+' C34,30 34.5,27 35,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="'+(_s1wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         // Warm-shifted core shadow on convex (right) side
         s += '<path d="M35.5,78 C35.5,72 '+(33.5-parseFloat(hw))+',66 '+(_s1MidX+0.5)+','+(_s1MidY+0.3)+' C'+(30.5-parseFloat(hw))+',50 '+(32.5-parseFloat(hw2))+',40 '+(_s1UpX+0.5)+','+(_s1UpY+0.3)+' C34.3,30 34.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.80" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'"/>';
         // Cream highlight pair on concave (left) lit edge
@@ -19357,7 +19372,7 @@ document.addEventListener('keydown', function(e) {
         // BACK shadow — wider stroke for "thicker at base"
         s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+_s2MidX+','+_s2MidY+' C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+_s2UpX+','+_s2UpY+' C36,30 35.5,27 35,'+visibleTop+'" stroke="rgba(40,20,5,0.50)" stroke-width="'+(_s2wB*2).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.50).toFixed(2)+'"/>';
         // Main body stroke
-        s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+_s2MidX+','+_s2MidY+' C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+_s2UpX+','+_s2UpY+' C36,30 35.5,27 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(_s2wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M35,78 C35,72 '+(37+parseFloat(hw))+',66 '+_s2MidX+','+_s2MidY+' C'+(40+parseFloat(hw))+',50 '+(38+parseFloat(hw2))+',40 '+_s2UpX+','+_s2UpY+' C36,30 35.5,27 35,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="'+(_s2wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         // Warm shadow on convex (right, away from light) side
         s += '<path d="M35.5,78 C35.5,72 '+(37.5+parseFloat(hw))+',66 '+(_s2MidX+0.5)+','+(_s2MidY+0.3)+' C'+(40.5+parseFloat(hw))+',50 '+(38.5+parseFloat(hw2))+',40 '+(_s2UpX+0.5)+','+(_s2UpY+0.3)+' C36.3,30 35.7,27 35.2,'+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.80" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'"/>';
         // Cream highlight pair on concave (left, lit) edge
@@ -19391,7 +19406,7 @@ document.addEventListener('keydown', function(e) {
         // BACK shadow — wider stroke for "thicker at base"
         s += '<path d="M35,78 C'+_s3p1x+','+_s3p1y+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="rgba(40,20,5,0.48)" stroke-width="'+(_s3wB*2).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+(op*0.50).toFixed(2)+'"/>';
         // Main body stroke
-        s += '<path d="M35,78 C'+_s3p1x+','+_s3p1y+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+(_s3wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M35,78 C'+_s3p1x+','+_s3p1y+' '+_s3p2x+','+_s3p2y+' 35,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="'+(_s3wB*1.6).toFixed(2)+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         // Warm-shifted shadow on convex (right-then-left) side — single offset
         s += '<path d="M35.4,78 C'+(_s3p1x+0.6)+','+(_s3p1y-0.5)+' '+(_s3p2x+0.5)+','+(_s3p2y+0.5)+' 35.4,'+visibleTop+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.80" fill="none" stroke-linecap="round" opacity="'+(op*0.65).toFixed(2)+'"/>';
         // Cream highlight pair on lit edge
@@ -19472,11 +19487,11 @@ document.addEventListener('keydown', function(e) {
         // Warm-shifted between-strand contact shadow (ink-pool at crossings)
         s += '<path d="M35,78 C35,'+(mid+8)+' 35,'+(mid-6)+' 35,'+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="2.4" fill="none" opacity="0.22"/>';
         // Left strand — slightly thicker at base via stacked taper
-        s += '<path d="M34,78 C'+_s5Lp1x+','+(mid+8)+' '+_s5Lp2x+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.85" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
-        s += '<path d="M34,'+(78-(78-parseFloat(visibleTop))*0.3)+' C'+(_s5Lp1x*0.7+_s5Lp2x*0.3)+','+((mid+8)*0.7+(mid-6)*0.3)+' '+_s5Lp2x+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'"/>';
+        s += '<path d="M34,78 C'+_s5Lp1x+','+(mid+8)+' '+_s5Lp2x+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="1.85" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M34,'+(78-(78-parseFloat(visibleTop))*0.3)+' C'+(_s5Lp1x*0.7+_s5Lp2x*0.3)+','+((mid+8)*0.7+(mid-6)*0.3)+' '+_s5Lp2x+','+(mid-6)+' 34,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.6).toFixed(2)+'"/>';
         // Right strand
-        s += '<path d="M36,78 C'+_s5Rp1x+','+(mid+8)+' '+_s5Rp2x+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.85" fill="none" stroke-linecap="round" opacity="'+(op*0.78).toFixed(2)+'"/>';
-        s += '<path d="M36,'+(78-(78-parseFloat(visibleTop))*0.3)+' C'+(_s5Rp1x*0.7+_s5Rp2x*0.3)+','+((mid+8)*0.7+(mid-6)*0.3)+' '+_s5Rp2x+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.5).toFixed(2)+'"/>';
+        s += '<path d="M36,78 C'+_s5Rp1x+','+(mid+8)+' '+_s5Rp2x+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="1.85" fill="none" stroke-linecap="round" opacity="'+(op*0.78).toFixed(2)+'"/>';
+        s += '<path d="M36,'+(78-(78-parseFloat(visibleTop))*0.3)+' C'+(_s5Rp1x*0.7+_s5Rp2x*0.3)+','+((mid+8)*0.7+(mid-6)*0.3)+' '+_s5Rp2x+','+(mid-6)+' 36,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.5).toFixed(2)+'"/>';
         // Cream highlight pair — left strand lit edge
         s += '<path d="M33.6,77 C'+(_s5Lp1x-0.5)+','+(mid+7)+' '+(_s5Lp2x-0.5)+','+(mid-5)+' 33.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         s += '<path d="M33.6,77 C'+(_s5Lp1x-0.5)+','+(mid+7)+' '+(_s5Lp2x-0.5)+','+(mid-5)+' 33.6,'+(parseFloat(visibleTop)+1)+'" stroke="#f5ecd6" stroke-width="0.35" fill="none" stroke-linecap="round" opacity="0.6" transform="translate(-0.3,-0.1)"/>';
@@ -19522,9 +19537,9 @@ document.addEventListener('keydown', function(e) {
         }
         var _zpD = zpArr.join(' ');
         // Wide base stroke — taper illusion
-        s += '<path d="'+_zpD+'" stroke="'+strokeCol+'" stroke-width="2.3" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="'+_zpD+'" stroke="'+stemStrokeFlat+'" stroke-width="2.3" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         // Inner narrower stroke
-        s += '<path d="'+_zpD+'" stroke="'+strokeCol+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<path d="'+_zpD+'" stroke="'+stemStrokeFlat+'" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Warm-shifted core shadow
         s += '<path d="'+_zpD+'" stroke="rgba(40,20,5,0.4)" stroke-width="1.0" fill="none" stroke-linecap="round" opacity="0.32" transform="translate(0.4,0.3)"/>';
         // Cream highlight pair (lit edge)
@@ -19555,12 +19570,12 @@ document.addEventListener('keydown', function(e) {
         // Warm contact shadow at base junction
         s += '<path d="M35,78 L35,'+visibleTop+'" stroke="rgba(40,20,5,0.35)" stroke-width="2.0" fill="none" opacity="0.2"/>';
         // Left branch — base wider
-        s += '<path d="M34.5,78 C'+(32+parseFloat(hw))+','+(mid+6)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M34.5,78 C'+(32+parseFloat(hw))+','+(mid+6)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         // Left taper inner
-        s += '<path d="M34.5,'+(78-(78-parseFloat(visibleTop))*0.4)+' C'+((32+parseFloat(hw))*0.6+34.5*0.4)+','+((mid+6)*0.6+78*0.4)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
+        s += '<path d="M34.5,'+(78-(78-parseFloat(visibleTop))*0.4)+' C'+((32+parseFloat(hw))*0.6+34.5*0.4)+','+((mid+6)*0.6+78*0.4)+' '+(31+parseFloat(hw2))+','+mid+' 33,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="'+(op*0.55).toFixed(2)+'"/>';
         // Right branch
-        s += '<path d="M35.5,78 C'+(38+parseFloat(hw))+','+(mid+6)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+strokeCol+'" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="'+(op*0.85).toFixed(2)+'"/>';
-        s += '<path d="M35.5,'+(78-(78-parseFloat(visibleTop))*0.4)+' C'+((38+parseFloat(hw))*0.6+35.5*0.4)+','+((mid+6)*0.6+78*0.4)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+strokeCol+'" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="'+(op*0.5).toFixed(2)+'"/>';
+        s += '<path d="M35.5,78 C'+(38+parseFloat(hw))+','+(mid+6)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+stemStrokeFlat+'" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="'+(op*0.85).toFixed(2)+'"/>';
+        s += '<path d="M35.5,'+(78-(78-parseFloat(visibleTop))*0.4)+' C'+((38+parseFloat(hw))*0.6+35.5*0.4)+','+((mid+6)*0.6+78*0.4)+' '+(39+parseFloat(hw2))+','+mid+' 37,'+(visibleTop+2)+'" stroke="'+stemStrokeFlat+'" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="'+(op*0.5).toFixed(2)+'"/>';
         // Cream highlight pair on left branch
         s += '<path d="M34.1,77 C'+(31.5+parseFloat(hw))+','+(mid+5)+' '+(30.5+parseFloat(hw2))+','+(mid-1)+' 32.6,'+(parseFloat(visibleTop)+1)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" fill="none" stroke-linecap="round"/>';
         s += '<path d="M34.1,77 C'+(31.5+parseFloat(hw))+','+(mid+5)+' '+(30.5+parseFloat(hw2))+','+(mid-1)+' 32.6,'+(parseFloat(visibleTop)+1)+'" stroke="#f5ecd6" stroke-width="0.32" fill="none" stroke-linecap="round" opacity="0.55" transform="translate(-0.3,-0.1)"/>';
@@ -19735,9 +19750,9 @@ document.addEventListener('keydown', function(e) {
           }
           _tw11Paths[_tw] = _twD;
           // Wider base stroke
-          s += '<path d="'+_twD+'" fill="none" stroke="'+strokeCol+'" stroke-width="'+(_tw===0?(parseFloat(strokeW)*1.05).toFixed(2):(parseFloat(strokeW)*0.75).toFixed(2))+'" stroke-linecap="round" opacity="'+_twOp+'"/>';
+          s += '<path d="'+_twD+'" fill="none" stroke="'+stemStrokeFlat+'" stroke-width="'+(_tw===0?(parseFloat(strokeW)*1.05).toFixed(2):(parseFloat(strokeW)*0.75).toFixed(2))+'" stroke-linecap="round" opacity="'+_twOp+'"/>';
           // Inner taper stroke
-          s += '<path d="'+_twD+'" fill="none" stroke="'+strokeCol+'" stroke-width="'+(_tw===0?(parseFloat(strokeW)*0.65).toFixed(2):(parseFloat(strokeW)*0.45).toFixed(2))+'" stroke-linecap="round" opacity="'+(_twOp*0.55).toFixed(2)+'"/>';
+          s += '<path d="'+_twD+'" fill="none" stroke="'+stemStrokeFlat+'" stroke-width="'+(_tw===0?(parseFloat(strokeW)*0.65).toFixed(2):(parseFloat(strokeW)*0.45).toFixed(2))+'" stroke-linecap="round" opacity="'+(_twOp*0.55).toFixed(2)+'"/>';
         }
         // Cream highlight pair on dominant strand
         s += '<path d="'+_tw11Paths[0]+'" fill="none" stroke="rgba(40,20,5,0.4)" stroke-width="0.4" stroke-linecap="round"/>';
@@ -20659,7 +20674,7 @@ document.addEventListener('keydown', function(e) {
       }
 
       default: // Fallback — organic straight
-        s += '<path d="M35,78 C'+(35+parseFloat(hw))+','+(mid+8)+' '+(35-parseFloat(hw))+','+(mid-8)+' 35,'+visibleTop+'" stroke="'+strokeCol+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
+        s += '<path d="M35,78 C'+(35+parseFloat(hw))+','+(mid+8)+' '+(35-parseFloat(hw))+','+(mid-8)+' 35,'+visibleTop+'" stroke="'+stemStrokeFlat+'" stroke-width="'+strokeW+'" fill="none" stroke-linecap="round" opacity="'+op+'"/>';
         break;
     } // end switch(t.stem % 28)
 
@@ -44942,11 +44957,21 @@ document.addEventListener('keydown', function(e) {
       document.body.classList.remove('tab-wild');
       if(window._lwDemoBadgeVisibility)window._lwDemoBadgeVisibility(false);
     }
-    // Switch panel — hide all, then render + show target synchronously
-    document.querySelectorAll('.grove-panel').forEach(function(p) {
-      p.classList.remove('active');
-    });
+    // Switch panel — Stephen 2026-05-10 round 4: ROOT-CAUSE FIX for the
+    // white flash. Previously we hid ALL panels first, then ran any
+    // synchronous render work (renderGreenhouse / renderNursery can take
+    // 50-200ms with many plants), then showed the new panel. Between
+    // hide-all and show-new, every panel is display:none — and Pi Browser's
+    // underlying WebView surface is white, so the user saw a white flash
+    // every tab switch.
+    // FIX: add .active to the new panel FIRST (so its dark background-color
+    // is painted immediately), render into it, THEN remove .active from any
+    // other panel. The old panel covers the area until the new one is
+    // ready, eliminating the no-panel gap.
     var _targetPanel = document.getElementById('panel-' + tab);
+    if (_targetPanel) {
+      _targetPanel.classList.add('active');
+    }
     if(window._updateGameDew)_updateGameDew();
     window.scrollTo(0, 0);
     // Game tab: restore #sw / #fg-ag state based on active game
@@ -44980,15 +45005,17 @@ document.addEventListener('keydown', function(e) {
       // First-time tutorial — show on first game tab visit after onboarding
       // First-time tutorial removed — tutorial only via ? button in game header
     }
-    // Render content synchronously BEFORE showing panel (prevents empty flash)
+    // Render content synchronously (target panel is already active from above)
     if (tab === 'greenhouse') { renderGreenhouse(); }
     if (tab === 'dashboard') updateDashboard();
     if (tab === 'nursery') { renderNursery(); if(window.PW_Tutorial)PW_Tutorial.checkNursery(); }
     if (tab === 'binder') renderBinder();
-    // Now show the panel with content already populated
-    if (_targetPanel) {
-      _targetPanel.classList.add('active');
-    }
+    // Now hide every OTHER panel so the new one stands alone. By the time
+    // this runs the new panel is fully rendered + visible, so removing the
+    // old panel can't expose the WebView white surface.
+    document.querySelectorAll('.grove-panel').forEach(function(p) {
+      if (p !== _targetPanel) p.classList.remove('active');
+    });
     if (tab === 'wild') {
       if (window.FG_Wild) FG_Wild.activate();
       if (window._requestWakeLock) _requestWakeLock(); // Keep screen on while exploring
