@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.09.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2629,9 +2629,16 @@
     /* Greenhouse tight panel-header: smaller padding + tighter gh-progress */
     .grove-panel#panel-greenhouse .panel-header{margin:4px 6px 4px!important;padding:4px 8px!important;min-height:36px;}
     .grove-panel#panel-greenhouse .gh-progress{margin-bottom:0.3rem!important;}
-    .grove-panel.active{display:block;animation:panelFadeIn 0.18s ease-out;}
+    .grove-panel.active{display:block;animation:panelFadeIn 0.18s ease-out;background-color:#0d100c;}
     @keyframes _tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes panelFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+    /* Stephen 2026-05-10: dropped the opacity 0→1 fade. Animating the
+       panel's opacity makes the panel's own dark background-color also
+       fade, so during the 0.18s transition the lazy-loaded .tab-bg image
+       is visible WITHOUT the panel's dark backdrop in front — and on
+       Pi Browser / WebView the brief gap paints the WebView's default
+       white. Keeping just the translateY for the subtle slide; the
+       panel's solid bg-color anchors the frame from frame 0. */
+    @keyframes panelFadeIn{from{transform:translateY(4px);}to{transform:translateY(0);}}
     /* Stephen 2026-05-02: counter pulse when fly-to-target rewards land. */
     @keyframes lwCounterPulse{0%{transform:scale(1);}40%{transform:scale(1.22);}100%{transform:scale(1);}}
     /* Gift-claim reveal pop. */
@@ -4050,14 +4057,24 @@
     .records-panel .grove-tabs{margin:0;border-top:1px solid rgba(74,124,53,0.05);border-bottom:none;padding:0.1rem 0 0;}
     /* Nursery wallet balance */
     .wallet-balance{font-family:'Bebas Neue',sans-serif;font-size:0.58rem;color:var(--gold);letter-spacing:0.1em;background:rgba(200,168,75,0.05);border:1px solid rgba(200,168,75,0.18);border-radius:5px;padding:0.15rem 0.45rem;text-align:center;margin-bottom:0.25rem;}
-    /* ===== Phase 17: #cinematic-reveal overlay ===== */
-    /* 2026-05-07: dropped backdrop-filter:blur(32px) — Stephen reported
-       seed-bloom plants rendering as wireframe (line-art only, no fills).
-       The combo of backdrop-filter on the overlay + scale transform
-       animation + opacity-fade on .cr-plant-wrap is the documented iOS
-       Safari compositing trap that strips SVG fills mid-paint. The 97%
-       black gradient bg is already opaque enough that the blur was
-       invisible anyway. Same fix applied to #discovery-overlay below. */
+    /* ===== Phase 17: #cinematic-reveal overlay =====
+       History:
+       • 2026-05-07: dropped backdrop-filter:blur(32px) — Stephen reported
+         seed-bloom plants rendering as wireframe (line-art only, no fills).
+       • 2026-05-10: dropped transform:scale on overlay AND on .cr-plant-wrap.
+         The wireframe-look bug returned in Pi Browser and Chrome. With
+         backdrop-filter gone, the remaining compositing hazard is FOUR
+         nested animated layers on the same plant SVG:
+            #cinematic-reveal.open  — crFadeIn scale + opacity
+            .cr-plant-wrap          — tierFadeIn opacity + translateZ + isolation
+            inner <g style="sway"> — transform:rotate sway animation
+            inner <g filter="ds…">  — drop-shadow filter (May 09 leaf wrap)
+         iOS / Pi WebView GPU surface budget can't carry all four; the
+         foliage filter fails first and drops leaf fills. The fix collapses
+         the overlay animation to opacity-only (no scale) and removes the
+         redundant compositing layer hints on .cr-plant-wrap. Three layers
+         instead of four = comfortable budget. The visual read is nearly
+         unchanged (still a gentle fade-in).                                  */
     #cinematic-reveal{
       display:none; position:fixed; inset:0; z-index:999999;
       background:radial-gradient(ellipse at 50% 42%,
@@ -4067,11 +4084,11 @@
     }
     #cinematic-reveal.open{
       display:flex;
-      animation:crFadeIn 0.5s cubic-bezier(0.16,1,0.3,1) both;
+      animation:crFadeIn 0.4s ease-out both;
     }
     @keyframes crFadeIn{
-      from{opacity:0; transform:scale(0.88)}
-      to  {opacity:1; transform:scale(1)}
+      from{opacity:0}
+      to  {opacity:1}
     }
     .cr-banner{
       font-family:'Bebas Neue',sans-serif; font-size:1.45rem;
@@ -4099,10 +4116,12 @@
       position:relative; display:flex; align-items:center;
       justify-content:center; width:185px; height:185px; flex-shrink:0;
       opacity:0; animation:tierFadeIn 0.8s ease 0.6s forwards;
-      /* Force its own compositing layer so iOS paints SVG fills
-         before the opacity transition runs. */
-      isolation:isolate; will-change:opacity, transform;
-      transform:translateZ(0);
+      /* 2026-05-10: dropped will-change/translateZ/isolation. They were
+         meant to force a compositing layer for SVG fills, but with the
+         leaf <g filter> + sway-animation inside, the extra layer just
+         added one more compositing context for iOS / Pi GPU to juggle.
+         Letting the wrap composite in its parent's layer (overlay) keeps
+         the total layer count low enough that foliage fills don't drop. */
     }
     .cr-plant-wrap::before{
       content:''; position:absolute; inset:-24px; border-radius:50%;
@@ -6489,7 +6508,7 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
        — always the post-collapse value) so the bg image doesn't re-cover
        at a different size when the bar moves. Falls back to 100vh on
        browsers without lvh. */
-    .tab-bg{position:fixed;top:0;left:0;width:100vw;height:100vh;height:100lvh;z-index:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0;pointer-events:none;}
+    .tab-bg{position:fixed;top:0;left:0;width:100vw;height:100vh;height:100lvh;z-index:0;background-color:#0d100c;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0;pointer-events:none;transition:opacity 0.25s ease-out;}
     .tab-bg.active{opacity:1;}
     .tab-bg::after{content:'';position:absolute;inset:0;background:rgba(5,5,5,0.55);pointer-events:none;}
     /* Tier 3 perf: backgrounds are now lazy-loaded via JS in switchTab.
@@ -7874,7 +7893,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button><button class="dev-btn" onclick="PW_Dev.resetTutorial()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">↺ RESET TUTORIAL</button><button class="dev-btn" onclick="PW_Dev.skipAllIntros()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">↷ SKIP ALL INTROS</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
-    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.auditTriggers()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🔬 AUDIT TRIGGERS + LW_ACH</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.fireHuntCapstone)LW_debug.fireHuntCapstone();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">✨ FIRE HUNT CAPSTONE</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.advanceHuntWeek)LW_debug.advanceHuntWeek();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">⏩ ADVANCE HUNT 1 WEEK</button><button class="dev-btn" onclick="PW_Dev.fastForwardFriendship()" style="border-color:rgba(232,160,191,0.5);color:#f0a0c0;">🌸 FAST-FORWARD FRIENDSHIP TIER</button><button class="dev-btn" onclick="PW_Dev.grantBigDew()" style="border-color:rgba(91,175,220,0.5);color:#8bd0e8;">💧 +N DEW (BIG)</button><button class="dev-btn" onclick="PW_Dev.grantKeeper()" style="border-color:rgba(122,179,86,0.5);color:var(--sage);">🐛 GRANT KEEPER (FREE)</button><button class="dev-btn" onclick="PW_Dev.debugSunbeams()" style="border-color:rgba(232,200,106,0.6);color:var(--gold);">🔍 DUMP SUNBEAM STATE</button><button class="dev-btn" onclick="PW_Dev.debugCompanion()" style="border-color:rgba(122,179,86,0.6);color:var(--sage);">🔍 DUMP COMPANION STATE</button></div>
+    <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.auditTriggers()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🔬 AUDIT TRIGGERS + LW_ACH</button><button class="dev-btn" onclick="PW_Dev.forceFireOmens()" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">🔮 FORCE FIRE OMENS NOW</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.fireHuntCapstone)LW_debug.fireHuntCapstone();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">✨ FIRE HUNT CAPSTONE</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.advanceHuntWeek)LW_debug.advanceHuntWeek();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">⏩ ADVANCE HUNT 1 WEEK</button><button class="dev-btn" onclick="PW_Dev.fastForwardFriendship()" style="border-color:rgba(232,160,191,0.5);color:#f0a0c0;">🌸 FAST-FORWARD FRIENDSHIP TIER</button><button class="dev-btn" onclick="PW_Dev.grantBigDew()" style="border-color:rgba(91,175,220,0.5);color:#8bd0e8;">💧 +N DEW (BIG)</button><button class="dev-btn" onclick="PW_Dev.grantKeeper()" style="border-color:rgba(122,179,86,0.5);color:var(--sage);">🐛 GRANT KEEPER (FREE)</button><button class="dev-btn" onclick="PW_Dev.debugSunbeams()" style="border-color:rgba(232,200,106,0.6);color:var(--gold);">🔍 DUMP SUNBEAM STATE</button><button class="dev-btn" onclick="PW_Dev.debugCompanion()" style="border-color:rgba(122,179,86,0.6);color:var(--sage);">🔍 DUMP COMPANION STATE</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.spawnWhiteWhales()" style="border-color:rgba(232,200,106,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🐋 PRINT 5 WHITE WHALES</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
     <div class="dev-section"><div class="dev-section-title">TIME SKIP (WILD SIM)</div>
       <button class="dev-btn" onclick="PW_Dev.backdateWilds(1)">⏩ BACKDATE WILDS 1 DAY</button>
@@ -9207,6 +9226,56 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       } else {
         alert('Marked '+(victim.hash||'').slice(0,8)+' dead. _pruneWild not exposed, switch to Wild tab to prune manually.');
       }
+    },
+    forceFireOmens:function(){
+      // Stephen 2026-05-10: dev tool that bypasses the daily-tick gate
+      // and the per-trigger cooldowns so omens can be tested on demand.
+      // Iterates every wild plant, ages it artificially to 25h so the
+      // min-age gate passes, clears the per-trigger cooldown for that
+      // plant, then calls checkTriggers. Reports per-plant fire count.
+      if(!window.checkTriggers){alert('checkTriggers not loaded yet. Open Wild tab once first.');return;}
+      var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){}
+      if(!wild.length){alert('No local wild plants. Drop one from greenhouse first.');return;}
+      var weather=null;
+      try{weather=window._reproWeather||{temp:20,rain:0,wind:0};}catch(e){weather={temp:20,rain:0,wind:0};}
+      // Clear ALL per-plant per-trigger cooldown entries so today's
+      // 3-per-player cap and 7-day cooldowns don't suppress the force.
+      try{localStorage.removeItem('lw_trigger_cooldowns');}catch(e){}
+      var stats={watersToday:0,midnightWaters:0,samePairBreeds:0};
+      try{
+        if(window.LW_Events&&window.LW_Events.getCounter){
+          stats.watersToday=window.LW_Events.getCounter('rainfall')||0;
+          stats.midnightWaters=window.LW_Events.getCounter('midnightWaters')||0;
+          stats.samePairBreeds=window.LW_Events.getCounter('samePairBreeds')||0;
+        }
+      }catch(e){}
+      stats.ghCount=0;
+      try{stats.ghCount=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
+      stats.wildCount=wild.length;
+      stats.dayCount=new Date().getDate();
+      var perPlant=[];
+      var totalFired=0;
+      var beforeDisc=[];try{beforeDisc=JSON.parse(localStorage.getItem('lw_triggers_found')||'[]');}catch(e){}
+      for(var i=0;i<wild.length;i++){
+        var p=wild[i];if(!p||!p.hash)continue;
+        // Age the plant artificially so the 1h min-age gate passes (clone first).
+        var aged={};for(var k in p)if(p.hasOwnProperty(k))aged[k]=p[k];
+        aged.born=Date.now()-(25*3600000);
+        // Need lat/lng for the zone map; if missing, use a fallback.
+        if(!aged.lat){aged.lat=37.7;aged.lng=-122.4;}
+        var fired=[];
+        try{fired=window.checkTriggers(aged,[],weather,stats)||[];}catch(e){perPlant.push(p.hash.slice(0,8)+' ERROR: '+e.message);continue;}
+        totalFired+=fired.length;
+        if(fired.length)perPlant.push(p.hash.slice(0,8)+' → '+fired.map(function(t){return t.name;}).join(', '));
+      }
+      var afterDisc=[];try{afterDisc=JSON.parse(localStorage.getItem('lw_triggers_found')||'[]');}catch(e){}
+      var newDisc=afterDisc.length-beforeDisc.length;
+      var msg='FORCE FIRE OMENS — '+wild.length+' wild plant(s) tested\n';
+      msg+='Total triggers fired: '+totalFired+'\n';
+      msg+='NEW discoveries: '+newDisc+' (was '+beforeDisc.length+', now '+afterDisc.length+')\n\n';
+      if(perPlant.length)msg+=perPlant.slice(0,12).join('\n');
+      else msg+='No triggers matched any plant. This is expected if your plants do not have rare-enough traits (Glass Stem during rain, Crystal substrate during full moon, etc.). Check BoS → Codex → Omens for the riddle list.';
+      alert(msg);
     },
     accelGerminate:function(){
       // Find all sprout docs and set germinateAt to now so the next
@@ -44576,7 +44645,16 @@ document.addEventListener('keydown', function(e) {
       // Tier 1 perf: stop GPS watch when leaving Wild
       if (window.FG_Wild && FG_Wild.deactivate) try{FG_Wild.deactivate();}catch(e){}
     }
-    if (tab === 'wild') { if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry(); if(window._primeWildWeather)setTimeout(function(){window._primeWildWeather(false);},1500); }
+    if (tab === 'wild') {
+      if(window.FG_Wild&&FG_Wild._afMarkWildEntry)FG_Wild._afMarkWildEntry();
+      if(window._primeWildWeather)setTimeout(function(){window._primeWildWeather(false);},1500);
+      // Stephen 2026-05-10: run trigger check on every Wild entry so omens
+      // are no longer gated behind _wildReproduction's GPS/auth/db chain.
+      // Internal per-plant-per-day cooldown inside checkTriggers handles
+      // spam from rapid tab toggles. Defer 2.5s so fg_wild_plants is
+      // hydrated from the latest cloud snapshot first.
+      if(window._runWildTriggerCheck)setTimeout(function(){try{window._runWildTriggerCheck();}catch(e){}},2500);
+    }
     // First-ever Wild tab entry — explain the map before they stare at it
     // confused. Fires only if they actually have the Wild tab unlocked (L3+).
     if (tab === 'wild') {
@@ -81458,10 +81536,19 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
               || (plant.droppedAt ? (typeof plant.droppedAt === 'number' ? plant.droppedAt : new Date(plant.droppedAt).getTime()) : 0)
               || (plant.date ? new Date(plant.date).getTime() : 0)
               || Date.now();
-  var plantAge=Math.floor((Date.now()-_bornTs)/86400000);
+  var _ageMs = Date.now() - _bornTs;
+  var plantAge=Math.floor(_ageMs/86400000); // kept in days for trigger predicates (evergreen needs 90)
 
-  // Balance rule: min 24h plant age
-  if(plantAge<1)return[];
+  // Stephen 2026-05-10: relaxed the min-age gate from 24h to 1h.
+  // Stephen reported many wild plants for days but zero omens. The
+  // 24h gate combined with the once-per-day _doReproduction tick meant
+  // a plant dropped at any wall-clock time would only become eligible
+  // on the NEXT calendar day's repro tick, then needed to wait through
+  // the daily 3-omens-per-player cap and 7-day-per-trigger cooldown
+  // before any visible discovery. Cutting the floor to 1h means a
+  // plant dropped right before a Wild visit gets a chance on the next
+  // tick, while still keeping insta-omen-on-drop spam off the table.
+  if(_ageMs<3600000)return[];
 
   // Balance rule: max 1 event per plant per day
   var cd=_getCooldowns();
@@ -81606,8 +81693,67 @@ function getCompendiumProgress(){
   return{found:disc.length,total:TRIGGERS.length,pct:Math.round(disc.length/TRIGGERS.length*100)};
 }
 
+// Stephen 2026-05-10: standalone trigger runner so omens fire WITHOUT
+// going through _wildReproduction. Old chain: Wild tab entry → daily
+// throttle → _wildReproduction (needs _uLat + _map + auth + db) →
+// _fetchReproWeather → _doReproduction → trigger loop. Stephen
+// reported plants in the wild for WEEKS and zero omens — likely the
+// chain bailed at GPS / auth / db in Pi Browser even though plants
+// were visible. This function only needs local fg_wild_plants + the
+// already-cached weather (neutral fallback if absent). The internal
+// per-plant-per-day cooldown inside checkTriggers prevents spam from
+// firing it more than once a day per plant.
+function _runWildTriggerCheck(){
+  var wild=[];try{wild=JSON.parse(localStorage.getItem('fg_wild_plants')||'[]');}catch(e){return 0;}
+  if(!wild||!wild.length)return 0;
+  // Reuse cached weather from any source. Neutral fallback otherwise.
+  var weather={temp:20,rain:0,wind:0};
+  try{if(window._reproWeather)weather=window._reproWeather;}catch(e){}
+  // Player stats — same shape the old loop assembled.
+  var stats={ghCount:0,wildCount:wild.length,dayCount:new Date().getDate(),watersToday:0,midnightWaters:0,samePairBreeds:0};
+  try{stats.ghCount=(JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[]).length;}catch(e){}
+  try{
+    if(window.LW_Events&&window.LW_Events.getCounter){
+      stats.watersToday=window.LW_Events.getCounter('rainfall')||0;
+      stats.midnightWaters=window.LW_Events.getCounter('midnightWaters')||0;
+      stats.samePairBreeds=window.LW_Events.getCounter('samePairBreeds')||0;
+    }
+  }catch(e){}
+  // Zone map for nearby-plant predicates. If the wild module isn't loaded
+  // (FG_Wild._getAllZonePlants undefined), build a minimal zone map here.
+  var zoneMap=null;
+  try{
+    if(window.FG_Wild&&window.FG_Wild._getAllZonePlants)zoneMap=window.FG_Wild._getAllZonePlants();
+  }catch(e){}
+  if(!zoneMap){
+    zoneMap={};
+    for(var zi=0;zi<wild.length;zi++){
+      var zp=wild[zi];if(!zp||typeof zp.lat!=='number')continue;
+      var zk=Math.floor(zp.lat*1000)+','+Math.floor(zp.lng*1000);
+      if(!zoneMap[zk])zoneMap[zk]=[];zoneMap[zk].push(zp);
+    }
+  }
+  var totalFired=0;
+  for(var i=0;i<wild.length;i++){
+    var p=wild[i];if(!p||!p.hash)continue;
+    if(typeof p.lat!=='number')continue; // checkTriggers needs lat for zone resolution
+    var zk2=Math.floor(p.lat*1000)+','+Math.floor(p.lng*1000);
+    var near=(zoneMap[zk2]||[]).filter(function(z){return z.hash!==p.hash;});
+    // Enrich nearby with traits cache once
+    for(var ni=0;ni<near.length;ni++){
+      if(!near[ni].traits){try{near[ni].traits=window.hashToTraits?window.hashToTraits(near[ni].hash):null;}catch(e){}}
+    }
+    try{
+      var fired=checkTriggers(p,near,weather,stats);
+      if(fired&&fired.length)totalFired+=fired.length;
+    }catch(e){}
+  }
+  return totalFired;
+}
+
 // Expose
 window.checkTriggers=checkTriggers;
+window._runWildTriggerCheck=_runWildTriggerCheck;
 window.getCompendium=getCompendium;
 window.getCompendiumProgress=getCompendiumProgress;
 window.INTERACTION_TRIGGERS=TRIGGERS;
@@ -93243,11 +93389,17 @@ function _bosTodayContent() {
     var _rk = window._getRank ? window._getRank(_xp) : null;
     var _lvl = _rk ? _rk.level : 1;
     var _title = _rk ? _rk.title : '';
-    // XP within current level: denominator = next threshold - current threshold
+    // XP within current level: denominator = next threshold - current threshold.
+    // Cap _into at _span so the display stays within the visible bar even
+    // for dev-granted XP that overshot the highest rank threshold (Stephen
+    // 2026-05-10 — saw "886,299 / 5,000 XP" because past-L100 XP wasn't
+    // bounded). Max-level players show a clean "100 / 100".
     var _curThr = (window.RANKS && window.RANKS[_lvl-1]) ? window.RANKS[_lvl-1].xp : 0;
     var _nxtThr = (_rk && _rk.nextXP) || (_curThr + 100);
     var _span = Math.max(1, _nxtThr - _curThr);
-    var _into = Math.max(0, _xp - _curThr);
+    var _isMaxLvl = !!(window.RANKS && _lvl >= window.RANKS.length);
+    var _intoRaw = Math.max(0, _xp - _curThr);
+    var _into = _isMaxLvl ? _span : Math.min(_intoRaw, _span);
     var _pct = Math.max(0, Math.min(100, Math.round((_into / _span) * 100)));
     // 2026-04-29 EVE journal slim: NEXT UNLOCKS dropped (lives in QUESTS
     // top tab \u2014 duplicating it here was clutter). DO THIS NEXT button
@@ -93256,7 +93408,7 @@ function _bosTodayContent() {
     h += '<div style="padding:0.85rem 0.9rem 0.95rem;margin-bottom:0.8rem;background:linear-gradient(180deg,rgba(200,168,75,0.08),rgba(18,22,16,0.55));border:1.5px solid rgba(200,168,75,0.38);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.35);">';
     h +=   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">';
     h +=     '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.22em;color:var(--muted);">WHERE YOU ARE</div>';
-    h +=     '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + _into + ' / ' + _span + ' XP</div>';
+    h +=     '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);">' + (_isMaxLvl ? 'Max level' : (_into + ' / ' + _span + ' XP')) + '</div>';
     h +=   '</div>';
     h +=   '<div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--gold);font-style:italic;line-height:1.15;">Lvl ' + _lvl + (_title ? ' &middot; ' + _title : '') + '</div>';
     h +=   '<div style="height:6px;border-radius:3px;background:rgba(13,16,12,0.7);border:1px solid rgba(200,168,75,0.25);overflow:hidden;margin-top:10px;">';
@@ -96044,7 +96196,7 @@ window._openCompendiumUI=function(){
         '<button class="bos-tab" data-tab="about" onclick="_bosSetTab(\'about\')" title="The hermit who keeps this garden, and a tip jar if you\'ve enjoyed yourself" style="flex:0 0 auto;padding:0.55rem 0.7rem;border:1.5px solid rgba(122,179,86,0.2);background:rgba(26,36,22,0.4);color:var(--muted);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.08em;border-radius:8px;cursor:pointer;min-height:44px;white-space:nowrap;">ABOUT</button>'+
       '</div>'+
       // Body
-      '<div id="bos-body" style="flex:1;overflow-y:auto;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;font-size:1.25em;"></div>'+
+      '<div id="bos-body" style="flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0.6rem 1rem 1.5rem;-webkit-overflow-scrolling:touch;"></div>'+
     '</div>';
   document.body.appendChild(ov);
   // Set initial tab content — priority order:
