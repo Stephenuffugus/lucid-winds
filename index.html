@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.10.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.10.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2192,6 +2192,39 @@
        Wild tab. Lift it the same way + bump the wild controls (recenter,
        my-plants FAB) above the Pi system bar. */
     body.pi-browser #wild-nav{ bottom: var(--pi-chrome-h) !important; }
+    /* Stephen 2026-05-10: every mini-game uses 100dvh for its container
+       max-height + just env(safe-area-inset-bottom) for padding-bottom.
+       Pi Browser's bottom chrome (--pi-chrome-h = 48px) sits OVER the
+       bottom of the viewport, so the last 48px of fg-ag is hidden under
+       it. Any sticky/absolute-bottom game UI (CLEAR/SAVE on Bloom Wheel,
+       hint/reset bars, win overlays anchored bottom, etc.) gets eaten.
+       Universal lift: cap fg-ag and panel-game above the chrome AND
+       add the chrome height to padding-bottom so content has breathing
+       room above it. Covers all 67 games at once — including the
+       card-game allowlist (bleedinghearts/cribbage/bowergarden/etc.)
+       that has its own per-game !important rule. */
+    body.pi-browser.game-active #fg-ag,
+    body.pi-browser #fg-ag[data-game="bleedinghearts"],
+    body.pi-browser #fg-ag[data-game="cribbage"],
+    body.pi-browser #fg-ag[data-game="bowergarden"],
+    body.pi-browser #fg-ag[data-game="gardenspades"],
+    body.pi-browser #fg-ag[data-game="juniper"],
+    body.pi-browser #fg-ag[data-game="yahtzee"],
+    body.pi-browser #fg-ag[data-game="farkle"],
+    body.pi-browser #fg-ag[data-game="petalfall"]{
+      max-height: calc(100dvh - var(--pi-chrome-h)) !important;
+      min-height: calc(100dvh - var(--pi-chrome-h)) !important;
+      padding-bottom: calc(env(safe-area-inset-bottom,0px) + var(--pi-chrome-h) + 12px) !important;
+    }
+    body.pi-browser.game-active #panel-game{
+      min-height: calc(100dvh - var(--pi-chrome-h)) !important;
+    }
+    /* Game-completion celebration card (#game-complete-celeb) renders as
+       a fixed overlay — needs its own bottom-clearance lift so the PLAY
+       AGAIN / VIEW MY PLANTS buttons aren't covered by chrome. */
+    body.pi-browser #game-complete-celeb{
+      padding-bottom: calc(env(safe-area-inset-bottom,0px) + var(--pi-chrome-h) + 12px) !important;
+    }
     body.pi-browser #w-recenter{ bottom: calc(245px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-my-plants{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
     body.pi-browser #w-mass-water{ bottom: calc(160px + var(--pi-chrome-h) + env(safe-area-inset-bottom,0px)) !important; }
