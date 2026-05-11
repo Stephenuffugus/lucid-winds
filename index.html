@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -42257,6 +42257,69 @@ document.addEventListener('keydown', function(e) {
     nameEl.style.whiteSpace = 'nowrap';
   }
 
+  // ── SVG-to-PNG rasterizer (Pi Browser perf workaround) ──
+  // Stephen 2026-05-11: visual audit in headless Chromium showed every
+  // plant renders correctly. The bug ("stems + pots missing in wild
+  // carousel") is Pi Browser specifically — its Android WebView drops
+  // paint commits when a complex SVG (~500 path elements per plant,
+  // 3 plants in the carousel = 1500+) lands inside a heavily-composited
+  // parent (cs-flip-wrap perspective + preserve-3d + translateZ). The
+  // SVG paints partially: leaves come through, stems and pots drop.
+  // Fix: rasterize the SVG to a PNG once per plant, cache the data URI,
+  // serve as <img src=…> in the carousel. PNG is 1 GPU surface, not
+  // 500. Pi Browser handles it fine. Fallback to inline SVG if
+  // rasterization fails (non-Pi browsers don't notice the difference).
+  if (!window._plantPngCache) window._plantPngCache = {};
+  function _rasterizeSvgToPng(svgString, size, cacheKey) {
+    return new Promise(function(resolve) {
+      if (!svgString || typeof Image === 'undefined' || typeof document.createElement('canvas').getContext !== 'function') { resolve(null); return; }
+      try {
+        var blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var img = new Image();
+        var w = size, h = Math.round(size * 95 / 70);  // SVG viewBox aspect is 70:95
+        var DPR = Math.min(2, window.devicePixelRatio || 1);  // 2x for crisp on retina
+        var done = false;
+        function cleanup() { try { URL.revokeObjectURL(url); } catch(e){} }
+        img.onload = function() {
+          if (done) return; done = true;
+          try {
+            var canvas = document.createElement('canvas');
+            canvas.width = w * DPR;
+            canvas.height = h * DPR;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            cleanup();
+            var dataUrl = canvas.toDataURL('image/png');
+            if (cacheKey) window._plantPngCache[cacheKey] = dataUrl;
+            resolve(dataUrl);
+          } catch (e) { cleanup(); resolve(null); }
+        };
+        img.onerror = function() { if (done) return; done = true; cleanup(); resolve(null); };
+        img.src = url;
+      } catch (e) { resolve(null); }
+    });
+  }
+  // Hot-swap: when a PNG finishes rasterizing, find any visible carousel
+  // slot still showing this plant's inline SVG and replace it. The slot
+  // is tagged with data-plant-hash so we can match across re-renders.
+  function _hotSwapToPng(plantHash, pngDataUrl) {
+    if (!pngDataUrl) return;
+    try {
+      var slots = document.querySelectorAll('[data-plant-hash="' + plantHash + '"]');
+      for (var i = 0; i < slots.length; i++) {
+        var wrap = slots[i];
+        var svgEl = wrap.querySelector('svg');
+        if (!svgEl) continue;
+        var imgEl = document.createElement('img');
+        imgEl.src = pngDataUrl;
+        imgEl.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+        imgEl.alt = '';
+        svgEl.parentNode.replaceChild(imgEl, svgEl);
+      }
+    } catch (e) {}
+  }
+
   // ── Populate a single slot with plant data ───────────────────────────
   function _populateSlot(slotEl, plant) {
     if (!slotEl) return;
@@ -42335,6 +42398,28 @@ document.addEventListener('keydown', function(e) {
     if (plant.mutated && !window._perfLite) {
       svgHtml = svgHtml.replace('<svg ', '<svg style="filter:drop-shadow(0 0 10px rgba(200,168,75,0.5)) drop-shadow(0 0 20px rgba(200,168,75,0.2));" ');
     }
+    // PNG rasterize: if we already have a cached PNG for this plant, use
+    // <img> instead of inline SVG. PNG = 1 GPU surface, reliable on Pi
+    // Browser. If no PNG yet, render SVG inline (works in most browsers,
+    // partial on Pi) AND kick off async PNG conversion so future renders
+    // — including the SAME slot when the user swipes back, and the
+    // hot-swap below — get the PNG.
+    var _pngCacheKey = plant.hash + '|' + (plant.generation || 1) + '|p1';
+    var _cachedPng = window._plantPngCache && window._plantPngCache[_pngCacheKey];
+    if (_cachedPng) {
+      svgHtml = '<img src="' + _cachedPng + '" style="width:100%;height:100%;object-fit:contain;display:block;" alt=""/>';
+    } else {
+      // First visit to this plant: kick off async rasterization. When the
+      // PNG is ready (~50-150ms), _hotSwapToPng finds any visible slot
+      // tagged with this plant's hash and swaps the inline SVG out for
+      // the <img>. Reliable in Pi Browser; transparent in other browsers.
+      try {
+        var _rasterizeSource = window._csPlantSvgCache[_csCacheKey];  // raw SVG without drop-shadow wrapper
+        _rasterizeSvgToPng(_rasterizeSource, (window._perfLite ? 140 : 200), _pngCacheKey).then(function(uri) {
+          if (uri) _hotSwapToPng(plant.hash, uri);
+        });
+      } catch (e) {}
+    }
     // smallSvg removed — back face is lazy-loaded, no thumbnail needed at creation
 
     // EA knot SVGs
@@ -42360,7 +42445,7 @@ document.addEventListener('keydown', function(e) {
     front += '<div class="cf-ea">' + _ea + '</div>';
     var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
     front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
-    front += '<div class="cf-art-window">' + svgHtml + '</div>';
+    front += '<div class="cf-art-window" data-plant-hash="' + plant.hash + '">' + svgHtml + '</div>';
     // Synergy badge (if any)
     var _syn = window.getSynergy ? window.getSynergy(_t) : null;
     front += '<div class="cf-haiku-zone">';
