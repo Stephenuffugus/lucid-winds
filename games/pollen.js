@@ -382,7 +382,10 @@ window._gameFns.pollen = function PN(a){
       pollinators:pls,
       players:players,activeIdx:0,numPlayers:n,
       selectedTokens:[],action:null,
-      pendingReturn:null // set when someone needs to return tokens before ending turn
+      pendingReturn:null, // set when someone needs to return tokens before ending turn
+      // Stephen 2026-05-11: tabbed market — show one tier at a time so
+      // cards stay full-size on phones. T1 default. Tap a tab to switch.
+      activeTier:1
     };
     setActive(0);
     for(var k=0;k<4;k++){
@@ -984,21 +987,39 @@ window._gameFns.pollen = function PN(a){
       h+='</div>';
     });
     h+='</div>';
-    // Market
-    [[3,GS.market3,GS.deck3],[2,GS.market2,GS.deck2],[1,GS.market1,GS.deck1]].forEach(function(t){
-      h+='<div style="display:flex;align-items:center;gap:6px;margin:6px 0;">';
-      h+='<div style="width:18px;font-family:Bebas Neue,sans-serif;color:var(--muted);text-align:center;font-size:10px;flex-shrink:0;">T'+t[0]+'</div>';
-      // Cards lay out left-to-right. On wide viewports (landscape /
-      // tablet) the row has plenty of space and shows all 4 cards
-      // without scrolling. On narrow phones it falls back to scroll.
-      // justify-content:flex-start aligns the 4th card at the right
-      // end of the row when there are gaps.
-      h+='<div style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:6px;align-items:flex-start;justify-content:flex-start;padding-bottom:2px;">';
-      t[1].forEach(function(c){if(c)h+=renderCard(c,false);});
-      h+='</div>';
-      h+='<div style="width:36px;min-height:48px;background:rgba(26,31,23,0.6);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--cream);flex-shrink:0;font-family:DM Mono,monospace;"><div style="font-size:0.45rem;color:var(--muted);">DECK</div><div style="font-weight:700;">'+t[2].length+'</div></div>';
-      h+='</div>';
+    // Market — tabbed by tier so each tier's full-size cards fit one
+    // screen without horizontal scroll on phone. Stephen 2026-05-11:
+    // restructure was "see board + cards + chips + actions all on one
+    // screen, don't lose image size." Tabs cut market height by ~2/3.
+    var _tiers=[
+      {n:1,name:'SEEDLING',icon:'🌱',mkt:GS.market1,deck:GS.deck1},
+      {n:2,name:'SAPLING', icon:'🌿',mkt:GS.market2,deck:GS.deck2},
+      {n:3,name:'ANCIENT', icon:'🌳',mkt:GS.market3,deck:GS.deck3}
+    ];
+    var _at=GS.activeTier||1;
+    // Tab strip — small chips with tier name + remaining deck count.
+    // Active tier has gold border.
+    h+='<div style="display:flex;gap:4px;justify-content:center;margin:6px 0 4px;">';
+    _tiers.forEach(function(t){
+      var act=(t.n===_at);
+      var bg=act?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.55)';
+      var bd=act?'var(--gold)':'rgba(122,179,86,0.15)';
+      var clr=act?'var(--gold)':'var(--cream)';
+      h+='<button onclick="_PNtier('+t.n+')" '
+        +'style="flex:1;max-width:130px;min-height:42px;padding:6px 4px;background:'+bg+';border:1.5px solid '+bd+';border-radius:8px;color:'+clr+';cursor:pointer;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;-webkit-tap-highlight-color:transparent;">'
+        +'<div style="font-size:0.62rem;">T'+t.n+' '+t.icon+' '+t.name+'</div>'
+        +'<div style="font-size:0.5rem;color:var(--muted);margin-top:1px;">'+t.deck.length+' left</div>'
+        +'</button>';
     });
+    h+='</div>';
+    // Active tier's card row.
+    var _activeT=_tiers[_at-1];
+    h+='<div style="display:flex;align-items:center;gap:6px;margin:4px 0;">';
+    h+='<div style="flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:6px;align-items:flex-start;justify-content:flex-start;padding-bottom:2px;min-height:160px;">';
+    _activeT.mkt.forEach(function(c){if(c)h+=renderCard(c,false);});
+    if(_activeT.mkt.length===0)h+='<div style="flex:1;text-align:center;color:var(--muted);font-size:0.7rem;padding:30px 0;">Tier exhausted</div>';
+    h+='</div>';
+    h+='</div>';
     // Supply
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;">SUPPLY</div>';
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">';
@@ -1056,6 +1077,13 @@ window._gameFns.pollen = function PN(a){
   }
 
   window._PNnew=function(){newGame();};
+  // Stephen 2026-05-11: switch which tier the market displays.
+  window._PNtier=function(n){
+    n=parseInt(n,10);
+    if(!GS||n<1||n>3)return;
+    GS.activeTier=n;
+    render();
+  };
   window._PNtap=function(id,isRes){
     isRes=(isRes===true||isRes==='true');
     if(GS.phase!=='player')return;

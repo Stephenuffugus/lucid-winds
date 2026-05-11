@@ -204,6 +204,13 @@ function GR(a){
 
     busy=true;
 
+    // Stephen 2026-05-11: fire match sound once per move that contained
+    // any merge. Chain merges in one swipe still only ping once — feels
+    // like a "tile success" beat, not a rapid-fire noise.
+    var _anyMerged=false;
+    for(var _mm=0;_mm<allMoves.length;_mm++)if(allMoves[_mm].merge&&!allMoves[_mm].remove){_anyMerged=true;break;}
+    if(_anyMerged)_play('match');
+
     // Animate existing tiles to new positions
     for(var m=0;m<allMoves.length;m++){
       var mv=allMoves[m];

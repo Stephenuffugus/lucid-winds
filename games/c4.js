@@ -21,6 +21,9 @@ if(!document.getElementById('c4-drop-style')){
     '.c4-dropping{animation:c4drop .42s cubic-bezier(.5,.1,.6,1) both}',
     '@keyframes c4hintPulse{0%,100%{box-shadow:inset 0 0 0 2px rgba(200,168,75,0.75),0 0 12px rgba(200,168,75,0.45)}50%{box-shadow:inset 0 0 0 2px rgba(200,168,75,1),0 0 22px rgba(200,168,75,0.85)}}',
     '.c4-hint{animation:c4hintPulse 1.4s ease-in-out infinite}',
+    // Stephen 2026-05-11: gold-pulse the winning 4-in-a-row on game end.
+    '@keyframes c4winpulse{0%,100%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 0 rgba(200,168,75,.65),0 0 18px 4px rgba(200,168,75,.45);transform:scale(1)}50%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 4px rgba(200,168,75,.9),0 0 28px 10px rgba(200,168,75,.7);transform:scale(1.08)}}',
+    '.c4-winline{animation:c4winpulse 1.1s ease-in-out infinite;z-index:2;position:relative}',
     // CSS-based flower placeholders — each is a radial gradient stack
     // plus a thin rim. Meant to read as "distinct petal pair" without
     // full art. Easy to replace with real PNGs later.
@@ -67,7 +70,7 @@ function _saveStats(s){try{localStorage.setItem('lw_c4_stats',JSON.stringify(s))
 
 function GC4(a){
   var ROWS=6,COLS=7;
-  var bd=[],turn=1,over=false,mv=0,_lastDrop=-1;
+  var bd=[],turn=1,over=false,mv=0,_lastDrop=-1,winCells=null;
   var history=[];      // stack of {idx,player} for undo
   var currentTheme=_loadTheme();
   var stats=_loadStats();
@@ -78,9 +81,12 @@ function GC4(a){
   var statsRow=document.createElement('div');statsRow.className='c4-stats';statsRow.id='C4stats';
   a.appendChild(statsRow);
 
-  // Board (pure CSS)
+  // Board (pure CSS).
+  // Stephen 2026-05-11: board width tightened to fill 360-393px Pi Browser
+  // viewport so 7 columns × cell+gap+padding land ≥48px touch targets on
+  // real phones (was clamp(280,88vw,420) → ~39px cells at 360vw).
   var gd=document.createElement('div');gd.id='C4g';
-  gd.style.cssText='display:grid;grid-template-columns:repeat('+COLS+',1fr);grid-template-rows:repeat('+ROWS+',1fr);gap:clamp(3px,1vw,6px);width:clamp(280px,88vw,420px);margin:0 auto;padding:clamp(6px,2vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
+  gd.style.cssText='display:grid;grid-template-columns:repeat('+COLS+',1fr);grid-template-rows:repeat('+ROWS+',1fr);gap:clamp(1px,0.4vw,6px);width:min(calc(100vw - 8px),420px);margin:0 auto;padding:clamp(2px,0.5vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
   a.appendChild(gd);
 
   // Secondary row — Undo / Hint
@@ -110,7 +116,7 @@ function GC4(a){
   // ── state helpers ──
   function init(){
     bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);
-    turn=1;over=false;mv=0;history=[];_lastDrop=-1;
+    turn=1;over=false;mv=0;history=[];_lastDrop=-1;winCells=null;
     var _cm=document.getElementById('C4m');if(_cm)_cm.textContent='0';
   }
   function drop(col){
@@ -132,6 +138,21 @@ function GC4(a){
       if(r+3<ROWS&&c-3>=0&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c-1]===p&&bd[(r+2)*COLS+c-2]===p&&bd[(r+3)*COLS+c-3]===p)return true;
     }
     return false;
+  }
+  // Stephen 2026-05-11: returns the 4 winning cell indices for player p,
+  // or null. Used by rn() to highlight the winning line at game-end.
+  function findWinLine(p){
+    for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+      if(c+3<COLS&&bd[r*COLS+c]===p&&bd[r*COLS+c+1]===p&&bd[r*COLS+c+2]===p&&bd[r*COLS+c+3]===p)
+        return [r*COLS+c,r*COLS+c+1,r*COLS+c+2,r*COLS+c+3];
+      if(r+3<ROWS&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c]===p&&bd[(r+2)*COLS+c]===p&&bd[(r+3)*COLS+c]===p)
+        return [r*COLS+c,(r+1)*COLS+c,(r+2)*COLS+c,(r+3)*COLS+c];
+      if(r+3<ROWS&&c+3<COLS&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c+1]===p&&bd[(r+2)*COLS+c+2]===p&&bd[(r+3)*COLS+c+3]===p)
+        return [r*COLS+c,(r+1)*COLS+c+1,(r+2)*COLS+c+2,(r+3)*COLS+c+3];
+      if(r+3<ROWS&&c-3>=0&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c-1]===p&&bd[(r+2)*COLS+c-2]===p&&bd[(r+3)*COLS+c-3]===p)
+        return [r*COLS+c,(r+1)*COLS+c-1,(r+2)*COLS+c-2,(r+3)*COLS+c-3];
+    }
+    return null;
   }
   function isFull(){for(var c=0;c<COLS;c++)if(bd[c]===0)return false;return true;}
 
@@ -239,7 +260,7 @@ function GC4(a){
     drop(col);_play('drop');mv++;
     var _cm=document.getElementById('C4m');if(_cm)_cm.textContent=mv;
     if(check(2)){
-      over=true;_e('game_loss');_play('lose');
+      over=true;winCells=findWinLine(2);_e('game_loss');_play('lose');
       sm(_c4Enc[Math.floor(Math.random()*_c4Enc.length)]);
       _sr('c4',{w:false,s:mv});
       _recordResult('loss');
@@ -321,7 +342,7 @@ function GC4(a){
           _play('tap');drop(col);mv++;
           var _cm=document.getElementById('C4m');if(_cm)_cm.textContent=mv;
           if(check(1)){
-            over=true;_e('game_win');_playWin();
+            over=true;winCells=findWinLine(1);_e('game_win');_playWin();
             sm(_c4Win[Math.floor(Math.random()*_c4Win.length)]);
             rn();_sr('c4',{w:true,s:mv});_recordResult('win');
             return;
@@ -344,6 +365,9 @@ function GC4(a){
       d.classList.remove('c4-hint');
       if(i===_lastDrop){d.classList.remove('c4-dropping');void d.offsetWidth;d.classList.add('c4-dropping');}
       else{d.classList.remove('c4-dropping');}
+      // Stephen 2026-05-11: highlight the winning 4-in-a-row on game-over.
+      d.classList.remove('c4-winline');
+      if(winCells&&winCells.indexOf(i)!==-1)d.classList.add('c4-winline');
     }
     _lastDrop=-1;
     var ob=document.getElementById('C4ob');
@@ -372,7 +396,7 @@ function GC4(a){
     var h2=history.pop();bd[h2.idx]=0;
     mv=Math.max(0,mv-2);
     var _cm=document.getElementById('C4m');if(_cm)_cm.textContent=mv;
-    turn=1;over=false;_lastDrop=-1;
+    turn=1;over=false;_lastDrop=-1;winCells=null;
     sm('Undone — your turn');
     rn();
   };
