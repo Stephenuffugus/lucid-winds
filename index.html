@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.12';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -4603,28 +4603,38 @@
     /* Back-to-games button inside game area */
     .game-back-btn{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(13,16,12,0.9);border:1px solid rgba(74,124,53,0.25);border-radius:0 0 10px 10px;color:var(--sage);font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.06em;cursor:pointer;width:fit-content;min-height:44px;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
     .game-back-btn:active{transform:scale(0.95);}
-    /* Universal RULES button — fixed top-right during any active game.
-       Single source of truth for "how to play" — opens window._showGameRules(id)
-       which falls back to the catalog blurb when no detailed entry exists.
+    /* Universal game header row — wraps back-btn (left) + rules-btn (right).
+       Sticky together so they share a tap-safe band at top without colliding
+       with game content (sudoku cells, mastermind chips, etc.). */
+    .game-hdr{
+      position:sticky;top:0;z-index:50;
+      display:flex;justify-content:space-between;align-items:flex-start;
+      gap:8px;padding:0;margin-bottom:2px;
+      pointer-events:none;
+    }
+    .game-hdr .game-back-btn,
+    .game-hdr .game-rules-btn{
+      position:static!important;
+      pointer-events:auto;
+    }
+    /* Universal RULES button — opens window._showGameRules(id) which falls
+       back to the catalog blurb when no detailed entry exists.
        Hidden for Three Sisters (it has its own gold pill in #trios-dash). */
-    .game-rules-btn{display:none;}
-    body.game-active .game-rules-btn{
-      display:flex;align-items:center;justify-content:center;
-      position:fixed;
-      top:calc(env(safe-area-inset-top,0px) + 8px);
-      right:10px;
-      z-index:60;
-      min-width:48px;min-height:48px;padding:0 12px;
-      background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(120,100,40,0.38));
-      border:1.5px solid rgba(200,168,75,0.55);
-      border-radius:10px;
+    .game-rules-btn{
+      display:none;align-items:center;justify-content:center;
+      min-width:48px;min-height:44px;padding:8px 14px;
+      background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.32));
+      border:1.5px solid rgba(200,168,75,0.5);
+      border-radius:0 0 10px 10px;border-top:none;
       color:var(--gold);
-      font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.14em;
+      font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.12em;
       cursor:pointer;
       -webkit-tap-highlight-color:transparent;
       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-      box-shadow:0 4px 14px rgba(0,0,0,0.5);
+      box-shadow:0 3px 10px rgba(0,0,0,0.4);
+      width:fit-content;
     }
+    body.game-active .game-rules-btn{display:flex;}
     body.game-active .game-rules-btn:active{transform:scale(0.95);}
     body.game-active.game-set .game-rules-btn{display:none!important;}
     /* Book of Secrets opening animation */
@@ -62562,16 +62572,19 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
     }catch(e){}
     if(window.switchTab)switchTab('greenhouse');
   };
-  ag.appendChild(_backBtn);
-  // Universal RULES button — fixed top-right during play. Opens
-  // _showGameRules(id) which falls back to G[i].r catalog blurb when no
-  // detailed entry exists. CSS hides it for SET (which has its own pill).
+  // Universal RULES button — opens _showGameRules(id) which falls back
+  // to G[i].r catalog blurb when no detailed entry exists. Lives next to
+  // the back button in a sticky header row. Hidden on SET (own pill).
   var _rulesBtn=document.createElement('button');
   _rulesBtn.className='game-rules-btn';
   _rulesBtn.innerHTML='📖 RULES';
   _rulesBtn.setAttribute('aria-label','How to play this game');
   _rulesBtn.onclick=function(){if(window._showGameRules)window._showGameRules(id);};
-  ag.appendChild(_rulesBtn);
+  var _gameHdr=document.createElement('div');
+  _gameHdr.className='game-hdr';
+  _gameHdr.appendChild(_backBtn);
+  _gameHdr.appendChild(_rulesBtn);
+  ag.appendChild(_gameHdr);
   // Mount-time studio-open event for music tools. Fires AFTER ag is
   // populated and the gameFn has run. Background-music handlers
   // subscribe to lw-studio-open to auto-pause, lw-studio-close to
@@ -62600,8 +62613,12 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
         _gameLoading[id]=false;
         if(window._gameFns[id]&&_a===id){
           ag.innerHTML='';
-          ag.appendChild(_backBtn);
-          ag.appendChild(_rulesBtn);
+          // Rebuild header row after innerHTML wipe.
+          var _gh2=document.createElement('div');
+          _gh2.className='game-hdr';
+          _gh2.appendChild(_backBtn);
+          _gh2.appendChild(_rulesBtn);
+          ag.appendChild(_gh2);
           if(gi){var r2=document.createElement('div');r2.className='gr';r2.textContent='📖 '+gi.r;ag.appendChild(r2)}
           try{window._gameFns[id](ag)}catch(e){console.error('[Game '+id+']',e);ag.innerHTML='<div style="padding:2rem;text-align:center;color:#c75050;font-size:16px">ERROR in '+id+': '+e.message+'</div>'}
         }
