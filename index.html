@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.06';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -4785,6 +4785,10 @@
     /* Connect 4 drop animation */
     @keyframes c4Drop{0%{transform:translateY(-300%);opacity:0.4}60%{transform:translateY(8%);opacity:1}80%{transform:translateY(-4%)}100%{transform:translateY(0)}}
     .c4-drop{animation:c4Drop .4s cubic-bezier(.22,.68,.36,1.2)}
+    /* Stephen 2026-05-11: winning 4-in-a-row pulse — gold glow + scale.
+       Applied via .c4-winline on the 4 winning cells when game ends. */
+    @keyframes c4winpulse{0%,100%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 0 rgba(200,168,75,.65),0 0 18px 4px rgba(200,168,75,.45);transform:scale(1)}50%{box-shadow:inset 0 0 4px rgba(0,0,0,.3),0 0 0 4px rgba(200,168,75,.9),0 0 28px 10px rgba(200,168,75,.7);transform:scale(1.08)}}
+    .c4-winline{animation:c4winpulse 1.1s ease-in-out infinite;z-index:2;position:relative}
 
     /* Dice games (Farkle) */
     .fd{display:flex;gap:clamp(8px,3vw,14px);justify-content:center;flex-wrap:wrap;padding:clamp(10px,3vw,16px);animation:boardFadeIn .4s ease}
@@ -62585,6 +62589,9 @@ function GR(a){
     }
   })();
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false;
+  // Stephen 2026-05-11: per-game flag so the 2048 celebration fires once
+  // per fresh board (not once per session). Resets in _RN.
+  var _2048Celebrated=false;
   ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">2</strong>');mm(a);
 
   // Grid container — CSS grid provides the cell positions
@@ -62765,6 +62772,11 @@ function GR(a){
       }
     }
 
+    // Stephen 2026-05-11: track if any merge happened this move to fire
+    // one match sound per move (not one per merge — too noisy on 4-tile lines).
+    var _anyMerged=false;
+    for(var _mm=0;_mm<allMoves.length;_mm++)if(allMoves[_mm].merge&&!allMoves[_mm].remove){_anyMerged=true;break;}
+
     // After animation completes, clean up merges, spawn new, check game over
     setTimeout(function(){
       // Remove merged-away tiles
@@ -62772,6 +62784,7 @@ function GR(a){
         if(tiles[t]._remove)rmTile(tiles[t]);
       }
       // Update surviving tiles: sync value with g[] and refresh visuals
+      var _hit2048=false;
       for(var t=0;t<tiles.length;t++){
         var ti=tiles[t];
         var nv=g[ti.idx];
@@ -62781,9 +62794,30 @@ function GR(a){
           ti.el.querySelector('.ti').innerHTML=ST[Math.min(nv,2048)]||'🔥';
           ti.el.querySelector('.ti').parentNode.lastElementChild.textContent=nv;
           ti.el.classList.add('pop');setTimeout((function(e){return function(){e.classList.remove('pop')}})(ti.el),200);
+          if(nv===2048)_hit2048=true;
         }
       }
       var _rsEl=document.getElementById('Rs');if(_rsEl)_rsEl.textContent=sc;
+
+      // Merge sound — one per move, regardless of merge count. Subtle, not
+      // ear-splitting on chain merges.
+      if(_anyMerged)_play('match');
+
+      // 2048 celebration — first reach this board fires _playWin + toast.
+      // Subsequent 2048 tiles (chain merges, continued play) are silent so
+      // the moment stays special. Reset on _RN.
+      if(_hit2048&&!_2048Celebrated){
+        _2048Celebrated=true;
+        try{_playWin();}catch(e){}
+        sm('🌿 2048! Keep going — see how far you can stretch the chain.');
+        // First-ever 2048 — log to BoS so it shows up as a milestone.
+        try{
+          if(!localStorage.getItem('lw_2048_first')){
+            localStorage.setItem('lw_2048_first','1');
+            if(window.LW_Log)window.LW_Log.write('merge_2048_first',{score:sc});
+          }
+        }catch(e){}
+      }
 
       sp(true);
 
@@ -62809,6 +62843,7 @@ function GR(a){
 
   // New game
   window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;
+    _2048Celebrated=false;
     document.getElementById('Rb').textContent='2';
     for(var t=tiles.length-1;t>=0;t--)rmTile(tiles[t]);
     tiles=[];
@@ -63872,16 +63907,19 @@ function GCH(a){
 }
 
 // ═══ CONNECT FLEUR ═══
-function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,prevBd=[];
+function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,prevBd=[],winCells=null;
   var IMG_P='assets/games/c4/zinnia.png',IMG_A='assets/games/c4/calendula.png';
   ms(a,'Moves: <strong id="C4m">0</strong>');mm(a);
-  // Pure CSS board — no image overlay alignment needed
+  // Pure CSS board — no image overlay alignment needed.
+  // Stephen 2026-05-11: board width tightened to fill 360-393px Pi Browser
+  // viewport so 7 columns × cell+gap+padding lands ≥48px touch targets on
+  // real phones (was clamp(280,88vw,420) → 39px cells at 360vw).
   var gd=document.createElement('div');gd.id='C4g';
-  gd.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:clamp(3px,1vw,6px);width:clamp(280px,88vw,420px);margin:0 auto;padding:clamp(6px,2vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
+  gd.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:clamp(1px,0.4vw,6px);width:min(calc(100vw - 8px),420px);margin:0 auto;padding:clamp(2px,0.5vw,10px);background:linear-gradient(180deg,rgba(48,36,20,.95),rgba(32,24,14,.98));border-radius:clamp(8px,2.5vw,14px);border:2px solid rgba(80,60,30,.4);box-shadow:0 4px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(120,90,40,.15)';
   a.appendChild(gd);
   var obDiv=document.createElement('div');obDiv.id='C4ob';obDiv.style.cssText='text-align:center;min-height:40px;padding:4px 0';a.appendChild(obDiv);
   mc(a).innerHTML='<select class="gsl" id="C4d"><option value="1">Easy</option><option value="2" selected>Medium</option><option value="3">Hard</option></select><button class="gb-new" onclick="_C4N()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
-  function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;var _cm=document.getElementById('C4m');if(_cm)_cm.textContent='0'}
+  function init(){bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);turn=1;over=false;mv=0;winCells=null;var _cm=document.getElementById('C4m');if(_cm)_cm.textContent='0'}
   function drop(col){for(var r=ROWS-1;r>=0;r--){if(bd[r*COLS+col]===0){bd[r*COLS+col]=turn;return r;}}}
   function check(p){
     for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
@@ -63890,6 +63928,20 @@ function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,prevBd=[];
       if(r+3<ROWS&&c+3<COLS&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c+1]===p&&bd[(r+2)*COLS+c+2]===p&&bd[(r+3)*COLS+c+3]===p)return true;
       if(r+3<ROWS&&c-3>=0&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c-1]===p&&bd[(r+2)*COLS+c-2]===p&&bd[(r+3)*COLS+c-3]===p)return true;
     }return false}
+  // Stephen 2026-05-11: returns the 4 winning cell indices for player p, or
+  // null. Separate from check() so check()'s boolean signature stays intact
+  // for the minimax + isFull paths that don't care which cells won.
+  function findWinLine(p){
+    for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
+      if(c+3<COLS&&bd[r*COLS+c]===p&&bd[r*COLS+c+1]===p&&bd[r*COLS+c+2]===p&&bd[r*COLS+c+3]===p)
+        return [r*COLS+c,r*COLS+c+1,r*COLS+c+2,r*COLS+c+3];
+      if(r+3<ROWS&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c]===p&&bd[(r+2)*COLS+c]===p&&bd[(r+3)*COLS+c]===p)
+        return [r*COLS+c,(r+1)*COLS+c,(r+2)*COLS+c,(r+3)*COLS+c];
+      if(r+3<ROWS&&c+3<COLS&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c+1]===p&&bd[(r+2)*COLS+c+2]===p&&bd[(r+3)*COLS+c+3]===p)
+        return [r*COLS+c,(r+1)*COLS+c+1,(r+2)*COLS+c+2,(r+3)*COLS+c+3];
+      if(r+3<ROWS&&c-3>=0&&bd[r*COLS+c]===p&&bd[(r+1)*COLS+c-1]===p&&bd[(r+2)*COLS+c-2]===p&&bd[(r+3)*COLS+c-3]===p)
+        return [r*COLS+c,(r+1)*COLS+c-1,(r+2)*COLS+c-2,(r+3)*COLS+c-3];
+    }return null}
   function isFull(){for(var c=0;c<COLS;c++)if(bd[c]===0)return false;return true}
   // AI — minimax with alpha-beta
   function score(b){
@@ -63913,7 +63965,7 @@ function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,prevBd=[];
     var res=minimax(bd.slice(),dep,-Infinity,Infinity,true);
     if(res.c<0){for(var c=0;c<COLS;c++)if(bd[c]===0){res.c=c;break;}}
     drop(res.c);_play('drop');mv++;document.getElementById('C4m').textContent=mv;
-    if(check(2)){over=true;_e('game_loss');_play('lose');sm(_c4Enc[Math.floor(Math.random()*_c4Enc.length)]);_sr('c4',{w:false,s:mv})}
+    if(check(2)){over=true;winCells=findWinLine(2);_e('game_loss');_play('lose');sm(_c4Enc[Math.floor(Math.random()*_c4Enc.length)]);_sr('c4',{w:false,s:mv})}
     else if(isFull()){over=true;sm('A draw! Well matched \u2014 try again? 🌿');_sr('c4',{w:false,s:mv})}
     else{turn=1;sm('Your turn')}rn()}
   function rn(){var _scrollY=window.scrollY;
@@ -63926,7 +63978,7 @@ function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,prevBd=[];
         d.setAttribute('data-c',c);
         d.onclick=function(){if(over||turn!==1)return;var col=parseInt(this.getAttribute('data-c'));if(bd[col]!==0)return;
           _play('tap');drop(col);mv++;var _cm=document.getElementById('C4m');if(_cm)_cm.textContent=mv;
-          if(check(1)){over=true;_e('game_win');_playWin();
+          if(check(1)){over=true;winCells=findWinLine(1);_e('game_win');_playWin();
             // Sprite-aware win-line write (sm() is textContent only). May 02
             // emoji sweep — picks the painted PNG when one is mapped, falls
             // back to raw emoji for the rest.
@@ -63949,6 +64001,11 @@ function G4(a){var ROWS=6,COLS=7,bd=[],turn=1,over=false,mv=0,prevBd=[];
       else if(v===2){d.style.background='url('+IMG_A+') center/cover';d.style.boxShadow='inset 0 0 4px rgba(0,0,0,.3),0 2px 6px rgba(0,0,0,.25)';}
       else{d.style.background='rgba(10,8,4,.7)';d.style.boxShadow='inset 0 2px 6px rgba(0,0,0,.6)';}
       if(wasNew){d.classList.remove('c4-drop');void d.offsetWidth;d.classList.add('c4-drop');}
+      // Stephen 2026-05-11: highlight the winning 4-in-a-row on game-over.
+      // winCells is set on win/loss to the 4 indices. Class triggers gold
+      // pulse keyframe `c4winpulse`.
+      d.classList.remove('c4-winline');
+      if(winCells&&winCells.indexOf(i)!==-1)d.classList.add('c4-winline');
     }
     prevBd=bd.slice();
     var ob=document.getElementById('C4ob');
