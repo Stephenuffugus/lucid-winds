@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62176,8 +62176,20 @@ var _sfxDef={
   water:   function(){_tone(600,0.1,'sine',0.03);_tone(800,0.08,'sine',0.02,0.06);_tone(700,0.12,'sine',0.03,0.1);}, // water droplet cascade
 };
 
+// Stephen 2026-05-11: SFX duck when music is playing — soundtrack IS the
+// audio bed during music sessions, layered tones/chords on top get muddy.
+// Single gate covers all 67 mini-games + win fanfares + every UI tap.
+// Haptics still fire (they don't fight music). When music is paused or
+// no track is selected, SFX resumes normally.
+function _sfxMuted(){
+  try { return !!(window.LW_MUSIC && window.LW_MUSIC.state && window.LW_MUSIC.state.playing); }
+  catch(e) { return false; }
+}
+window._sfxMuted=_sfxMuted;
+
 function _play(id){
   if(!window.FG_Audio||!FG_Audio.enabled)return;
+  if(_sfxMuted())return;
   var fn=_sfxDef[id];if(fn)try{fn();}catch(e){}
 }
 
@@ -62185,6 +62197,7 @@ window._play=_play;
 
 function _playWin(){
   if(!window.FG_Audio||!FG_Audio.enabled)return;
+  if(_sfxMuted())return;
   try{
     // Victory fanfare: C major 7th arpeggio → resolve
     _tone(523,0.12,'sine',0.05);      // C5
