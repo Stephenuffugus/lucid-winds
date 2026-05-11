@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -11081,6 +11081,64 @@ document.addEventListener('keydown', function(e) {
     return '<span style="display:inline-flex;align-items:center;gap:2px;font-size:0.4rem;color:' + si.color + ';background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:3px;border:1px solid ' + si.color + '33;" title="' + si.name + (si.inPeak ? ' (Peak!)' : '') + '">' + si.emblem + ' ' + si.name + '</span>';
   };
 
+  // ═══ MUTATION EFFECTS TABLE ═══
+  // Stephen 2026-05-11: each mutation now has real mechanical effects, not
+  // just cosmetic visuals. Spec from director: "some good, some not so good,
+  // some parallel effects" — like real-life biological mutations. 19 mutations
+  // total (matches hashToTraits ladder above).
+  //
+  // Schema (all fields optional, default 0/false):
+  //   ea                            integer added to plant's EA
+  //   eaPerChimeraGen              additional EA scaling per chimera generation
+  //   climate                       map of vector -> delta (heat/cold/flood/wind/drought)
+  //                                   +N = N more tolerance points before climate damage
+  //                                   -N = damage starts N points sooner
+  //   lifespanDaysDelta             integer +/- days added to wild plant lifespan
+  //   bloomDayDelta                 integer +/- days added to nursery bloom requirement
+  //   dewYieldDelta                 integer +/- Dew per tend on this plant
+  //   shareBonusDew                 extra Dew kickback when plant is shared/gifted
+  //   nightTendDewBonus             extra Dew per tend if local-time is 19:00-06:00
+  //   bloomXpBonus                  multiplicative bonus to XP earned at this plant's bloom
+  //   luckyMinigameBonus            chance (0-1) that this plant's owned-while-playing minigame win pays extra
+  //   crossPollinateYieldDelta      integer +/- Dew earned when this plant breeds
+  //   crossPollinateCostDelta       integer +/- Dew cost when this plant is a breed parent
+  //   compostYieldMult              multiplicative bonus to compost fertilizer/return
+  //   hiddenInWild                  hides this plant from strangers' wild maps
+  //   blocksStrangerTend            strangers cannot water/tend this plant
+  //   traitLocked                   composting cannot modify this plant's traits
+  //   fertilizerEffectivenessMult   multiplier on nursery fertilizer impact (1.0 = normal)
+  //   firstWeekVigorDelta           integer +/- EA-equivalent during the first 7 days of wild life
+  //   sunToleranceDelta             integer +/- (kept for thematic clarity; mapped to heat under the hood)
+  //
+  // Consumers MUST guard with `(eff && eff.X != null)` so missing entries default to no-op.
+  // Add this to window so every IIFE (computeEA, _wildClimateTick, nursery,
+  // tending handlers, etc.) can read the same source of truth.
+  window.MUTATION_EFFECTS = {
+    'Wireframe':      { ea: -1 },
+    'Glass Stem':     { ea:  0, climate: { cold: +2, wind: -2 } },
+    'Glitch':         { ea: -1, luckyMinigameBonus: 0.10 },
+    'Albino':         { ea:  0, climate: { cold: +2, heat: -2 } },
+    'Silhouette':     { ea:  0, hiddenInWild: true, blocksStrangerTend: true },
+    'Golden':         { ea: +1, dewYieldDelta: +1 },
+    'Neon':           { ea: +1 },
+    'Ink Wash':       { ea:  0, climate: { flood: +2 } },
+    'Fossil':         { ea:  0, climate: { drought: +2 }, lifespanDaysDelta: +5 },
+    'Porcelain':      { ea:  0, climate: { wind: -2 }, shareBonusDew: +1 },
+    'Bioluminescent': { ea: +1, climate: { cold: +2 }, nightTendDewBonus: +1 },
+    'Holographic':    { ea: +2, crossPollinateYieldDelta: +1 },
+    'Pixel Art':      { ea: +1, bloomXpBonus: 0.20 },
+    'Constellation':  { ea:  0, eaPerChimeraGen: +1 },
+    'Origami':        { ea: +1, crossPollinateCostDelta: -1 },
+    'Stained Glass':  { ea: +2, climate: { heat: +1 } },
+    'Verdigris':      { ea: +1, lifespanDaysDelta: +3, firstWeekVigorDelta: -1 },
+    'Mycelium':       { ea: +1, climate: { drought: +2 }, compostYieldMult: 1.5 },
+    'Daguerreotype':  { ea: +1, traitLocked: true, fertilizerEffectivenessMult: 0.5 }
+  };
+  window.getMutationEffect = function(mutName) {
+    if (!mutName || mutName === 'None') return null;
+    return (window.MUTATION_EFFECTS && window.MUTATION_EFFECTS[mutName]) || null;
+  };
+
   // ═══ EVOLUTIONARY ADVANTAGE (EA) SCORE ═══
   // Every trait layer contributes logically: rarity ≠ power
   // Director: "Glass stem would actually be -1 even though it's rare because glass is weak"
@@ -11113,24 +11171,22 @@ document.addEventListener('keydown', function(e) {
     if (traits.aura >= 15) _auraEA = 3; else if (traits.aura >= 8) _auraEA = 2; else if (traits.aura >= 1) _auraEA = 1;
     if (plant && plant.potAuraBoost && _auraEA > 0) _auraEA *= 2;
     ea += _auraEA;
-    // MUTATION: every mutation grants gameplay impact, not just cosmetic.
-    // Stephen 2026-05-03: previously only Wireframe (+1), Glass Stem (-1),
-    // and Glitch (-1) touched EA. The other 16 mutations were purely
-    // visual. Stephen ruling: "do they actually add to card abilities?"
-    // Tier-based: common/rare/legendary +1; ultra +2; Glass Stem and
-    // Glitch keep their intentional -1 trade-off (fragile beauty / chaos).
-    var mut = traits.mutationName;
-    if (mut) {
-      if (mut === 'Glass Stem' || mut === 'Glitch') {
-        ea -= 1;
-      } else if (mut === 'Daguerreotype' || mut === 'Mycelium' ||
-                 mut === 'Verdigris' || mut === 'Stained Glass' ||
-                 mut === 'Origami' || mut === 'Constellation') {
-        ea += 2;
-      } else if (mut !== 'None') {
-        // Fossil, Albino, Pixel Art, Silhouette, Porcelain, Wireframe,
-        // Bioluminescent, Ink Wash, Neon, Golden, Holographic — all +1.
-        ea += 1;
+    // MUTATION: every mutation grants gameplay impact via MUTATION_EFFECTS table.
+    // Stephen 2026-05-11: refactored from inline tier-based bonus to table
+    // lookup. EA contribution comes from eff.ea; chimera-scaling auras
+    // (Constellation) get an extra eff.eaPerChimeraGen × generation bump.
+    // firstWeekVigorDelta applies negatively during the first 7 days of
+    // wild life (Verdigris's "ages well" trade-off).
+    var _mutEff = window.getMutationEffect ? window.getMutationEffect(traits.mutationName) : null;
+    if (_mutEff) {
+      if (typeof _mutEff.ea === 'number') ea += _mutEff.ea;
+      if (typeof _mutEff.eaPerChimeraGen === 'number') {
+        var _chimGen = (traits.chimerGen || (plant && plant.generation) || 1);
+        ea += _mutEff.eaPerChimeraGen * Math.max(0, _chimGen - 1);
+      }
+      if (typeof _mutEff.firstWeekVigorDelta === 'number' && plant && plant.droppedAt) {
+        var _ageMs = Date.now() - (plant.droppedAtMs || (typeof plant.droppedAt === 'number' ? plant.droppedAt : new Date(plant.droppedAt).getTime()));
+        if (_ageMs >= 0 && _ageMs < 7 * 86400000) ea += _mutEff.firstWeekVigorDelta;
       }
     }
     // SUBSTRATE (0-2)
@@ -39489,6 +39545,13 @@ document.addEventListener('keydown', function(e) {
       if(tg&&tg.name==='Legendary')xpAmt=35;
       if(tg&&tg.name==='Mythic')xpAmt=60;
       if(tg&&tg.name==='Cosmic')xpAmt=120;
+      // Pixel Art bloomXpBonus — multiplicative bonus on bloom XP.
+      try{
+        var _pxEff=window.getMutationEffect?window.getMutationEffect(traits.mutationName):null;
+        if(_pxEff&&typeof _pxEff.bloomXpBonus==='number'&&_pxEff.bloomXpBonus>0){
+          xpAmt=Math.ceil(xpAmt*(1+_pxEff.bloomXpBonus));
+        }
+      }catch(e){}
       window.PW_grantXP(xpAmt,'bloom_'+(tg?tg.name:'Common'));
       // First-of-its-kind milestones — now prestige-aware via thesaurus.
       // Each prestige cycle re-earns these under a different name, scaled
@@ -44238,6 +44301,13 @@ document.addEventListener('keydown', function(e) {
     // Spring Hunt capstone — cumulative +N fertilizer per compost.
     // Year 1 completion = +1, Year 2 = +2, etc. (stacking by design).
     try{if(window.LW_HUNT&&window.LW_HUNT.getUpgrade){var _spB=window.LW_HUNT.getUpgrade('fert_slot_bonus')||0;if(_spB>0)fertReward+=_spB;}}catch(e){}
+    // Mycelium mutation — decomposer logic. Reads MUTATION_EFFECTS.compostYieldMult.
+    try{
+      var _mcEff=window.getMutationEffect?window.getMutationEffect(t.mutationName):null;
+      if(_mcEff&&typeof _mcEff.compostYieldMult==='number'&&_mcEff.compostYieldMult>1){
+        fertReward=Math.ceil(fertReward*_mcEff.compostYieldMult);
+      }
+    }catch(e){}
     // Conduit T3 RITUAL "Compost Song" — Dew refund by Terra Grade tier.
     // Common=1, Uncommon=2, Rare=3, Epic=4, Legendary=5, Mythic=6, Cosmic=7.
     // Stephen 2026-05-08: was gating on plant.grade truthy + shadowing the
@@ -44718,6 +44788,13 @@ document.addEventListener('keydown', function(e) {
     var tierName = tg ? tg.name : 'Common';
     var fertTable = {Common:1,Uncommon:1,Rare:2,Epic:2,Legendary:3,Mythic:4,Cosmic:5};
     var fertReward = fertTable[tierName] || 1;
+    // Mycelium mutation preview — match the actual award in compostPlant().
+    try{
+      var _mcPrev=(traits&&window.getMutationEffect)?window.getMutationEffect(traits.mutationName):null;
+      if(_mcPrev&&typeof _mcPrev.compostYieldMult==='number'&&_mcPrev.compostYieldMult>1){
+        fertReward=Math.ceil(fertReward*_mcPrev.compostYieldMult);
+      }
+    }catch(e){}
     var svg = '';try{svg=generatePlantSVG(plant.hash,80);}catch(e){}
     // In-game compost confirmation modal
     var modal = document.createElement('div');
@@ -52568,10 +52645,21 @@ function _wildClimateTick(weather) {
     var t = null; try { t = window.hashToTraits(p.hash); } catch (e) {}
     if (!t) continue;
     if (typeof t.heatMax !== 'number' || typeof t.coldMin !== 'number') continue;
+    // Stephen 2026-05-11: pull mutation climate mods. Positive deltas mean
+    // MORE tolerance. Heat/flood/wind/drought thresholds shift UP (higher
+    // threshold = takes more before breach). Cold threshold shifts DOWN
+    // (lower coldMin = tolerates colder weather).
+    var _mutClimateEff = window.getMutationEffect ? window.getMutationEffect(t.mutationName) : null;
+    var _mutClimate = (_mutClimateEff && _mutClimateEff.climate) ? _mutClimateEff.climate : {};
+    var effHeatMax    = t.heatMax    + (_mutClimate.heat    || 0);
+    var effColdMin    = t.coldMin    - (_mutClimate.cold    || 0);
+    var effFloodMm    = t.floodMm    + (_mutClimate.flood   || 0);
+    var effWindMax    = t.windMax    + (_mutClimate.wind    || 0);
+    var effDroughtDays= t.droughtDays+ (_mutClimate.drought || 0);
     var breaches = [];
     var damageH = 0;
-    if (weather.temp > t.heatMax) {
-      var over = weather.temp - t.heatMax;
+    if (weather.temp > effHeatMax) {
+      var over = weather.temp - effHeatMax;
       var dH = Math.min(30, Math.ceil(over) * 9);
       // Scorpion (idx 48) Heatproof signature — desert specialist.
       // Cicada (idx 33) Sun-singer — sings loudest in summer heat;
@@ -52582,22 +52670,21 @@ function _wildClimateTick(weather) {
       breaches.push({ kind: 'heat', diff: Math.round(over * 10) / 10, hours: dH });
       damageH += dH;
     }
-    if (weather.temp < t.coldMin) {
-      var under = t.coldMin - weather.temp;
+    if (weather.temp < effColdMin) {
+      var under = effColdMin - weather.temp;
       var dC = Math.min(30, Math.ceil(under) * 9);
       // Baby Mammoth (idx 34) Permafrost signature — woolly fur,
       // Ice Age survivor. Halves cold damage on this plant. Closes
       // the cold vector (was the only unprotected vector).
       // Stephen audit 2026-05-01 #14 wired Mammoth — was parked since April.
       if (t.companion === 34) dC = Math.round(dC * 0.5);
-      // Bioluminescent mutation — its own glow keeps it warm, half cold damage.
-      // Audit 2026-05-06 mutation hooks Priority 2.
-      if (t.mutationName === 'Bioluminescent') dC = Math.round(dC * 0.5);
+      // Bioluminescent mutation cold tolerance is now handled via MUTATION_EFFECTS
+      // table (climate.cold +2 shifts coldMin DOWN by 2) — single source of truth.
       breaches.push({ kind: 'cold', diff: Math.round(under * 10) / 10, hours: dC });
       damageH += dC;
     }
-    if (typeof t.floodMm === 'number' && weather.rain > t.floodMm) {
-      var extraMm = weather.rain - t.floodMm;
+    if (typeof t.floodMm === 'number' && weather.rain > effFloodMm) {
+      var extraMm = weather.rain - effFloodMm;
       var dF = Math.min(30, Math.ceil(extraMm) * 6);
       // Koi Fish (idx 71) Flood Born — thrives in water.
       // Toad (idx 32) Rain-caller — amphibian, needs the rain.
@@ -52611,16 +52698,14 @@ function _wildClimateTick(weather) {
     // Wind: Open-Meteo returns km/h, plant.windMax is mph. Convert.
     if (typeof t.windMax === 'number' && typeof weather.wind === 'number') {
       var windMph = weather.wind / 1.609;
-      if (windMph > t.windMax) {
-        var overMph = windMph - t.windMax;
+      if (windMph > effWindMax) {
+        var overMph = windMph - effWindMax;
         var dG = Math.min(30, Math.ceil(overMph / 5) * 9);
         // Pangolin (idx 43) Scale Coat signature — armored scales
         // shed wind shear. Halves wind damage. Closes the wind vector.
         if (t.companion === 43) dG = Math.round(dG * 0.5);
-        // Glass Stem mutation — fragile by lore. +50% wind damage so the
-        // "fragile beauty" trade-off is real, not just -1 EA. Reader page
-        // tells the player about this. Audit 2026-05-06 Priority 2.
-        if (t.mutationName === 'Glass Stem') dG = Math.round(dG * 1.5);
+        // Glass Stem wind fragility is now handled via MUTATION_EFFECTS table
+        // (climate.wind -2 shifts windMax DOWN by 2mph) — single source of truth.
         breaches.push({ kind: 'wind', diff: Math.round(overMph * 10) / 10, hours: dG });
         damageH += dG;
       }
@@ -52628,7 +52713,7 @@ function _wildClimateTick(weather) {
     // Drought: consecutive dry days > plant's droughtDays tolerance.
     // Each day beyond tolerance → -9h, cap -30h (Stephen 2026-04-26 lethality bump).
     if (typeof t.droughtDays === 'number') {
-      var droughtThresh = t.droughtDays;
+      var droughtThresh = effDroughtDays;
       // Lungfish — Drought Breath: +2 day tolerance on equipped player's plants.
       try { if (window.LW_KEEPER && LW_KEEPER.activeAbility && LW_KEEPER.activeAbility() === 'droughtBreath') droughtThresh += 2; } catch(e){}
       if (dryDays > droughtThresh) {
@@ -52640,12 +52725,8 @@ function _wildClimateTick(weather) {
         if (t.companion === 52) {
           dD = Math.round(dD * 0.5);
         }
-        // Mutation hooks (Audit 2026-05-06 Priority 2):
-        // - Fossil: petrified, drought-resistant, half drought damage.
-        // - Mycelium: networked filaments share water, half drought damage.
-        if (t.mutationName === 'Fossil' || t.mutationName === 'Mycelium') {
-          dD = Math.round(dD * 0.5);
-        }
+        // Fossil + Mycelium drought tolerance is now handled via MUTATION_EFFECTS
+        // table (climate.drought +2 raises droughtDays threshold) — single source.
         breaches.push({ kind: 'drought', diff: overDry, hours: dD });
         damageH += dD;
       }
@@ -54918,6 +54999,16 @@ function _doCrossPollination(wildPlant,matePlant){
     } else if(roll<0.9){
       // 30% — Dew reward (spendable on acceleration + cuttings)
       var dewBonus=Math.ceil((2+Math.floor(Math.random()*4))*_spiderBonus*_breedMult);
+      // Holographic crossPollinateYieldDelta — either parent contributes.
+      try{
+        var _hpA=window.hashToTraits?window.hashToTraits(wildPlant.hash):null;
+        var _hpB=window.hashToTraits?window.hashToTraits(matePlant.hash):null;
+        var _hpEffA=(_hpA&&window.getMutationEffect)?window.getMutationEffect(_hpA.mutationName):null;
+        var _hpEffB=(_hpB&&window.getMutationEffect)?window.getMutationEffect(_hpB.mutationName):null;
+        if(_hpEffA&&typeof _hpEffA.crossPollinateYieldDelta==='number')dewBonus+=_hpEffA.crossPollinateYieldDelta;
+        if(_hpEffB&&typeof _hpEffB.crossPollinateYieldDelta==='number')dewBonus+=_hpEffB.crossPollinateYieldDelta;
+        if(dewBonus<1)dewBonus=1;
+      }catch(e){}
       if(window.earnDew)window.earnDew(dewBonus,'cross_pollinate');
       rewardMsg='+'+dewBonus+' Dew!';
     } else {
@@ -56717,6 +56808,15 @@ function _finishDrop(defenderGame){
   var _dropGrade=_plantRarity(pl.hash);
   var _dropNow=Date.now();
   var _dropLife=_lifespanMsFor(_dropGrade);
+  // Stephen 2026-05-11: mutation lifespan bonus (Fossil +5d, Verdigris +3d).
+  // Reads MUTATION_EFFECTS.lifespanDaysDelta from the table.
+  try {
+    var _dropTraits = window.hashToTraits ? window.hashToTraits(pl.hash) : null;
+    var _dropMutEff = (_dropTraits && window.getMutationEffect) ? window.getMutationEffect(_dropTraits.mutationName) : null;
+    if (_dropMutEff && typeof _dropMutEff.lifespanDaysDelta === 'number') {
+      _dropLife += _dropMutEff.lifespanDaysDelta * 86400000;
+    }
+  } catch(_dle){}
   var _newWildIdx=wild.length;
   wild.push({
     lat:la,lng:lo,hash:pl.hash,
