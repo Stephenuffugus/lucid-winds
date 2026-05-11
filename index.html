@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2203,14 +2203,13 @@
        variant remains hidden inside Pi Browser. */
     body.pi-browser .lw-non-pi-tips{ display:none !important; }
     body.pi-browser .lw-tip-cta-multi{ display:none !important; }
-    /* Pi Browser compass: two prior fixes (relative-alpha fallback, 3s
-       graceful-degrade) didn't take. Memo recommendation was to hide
-       the needle entirely so the cab stops pretending. Cab + tap target
-       stay live for compass tool actions (biome reveal L2, feral bearing
-       L3 from the Keeper's Tree); only the rotating arrow and cardinal
-       label are hidden so nothing reads as "broken." */
-    body.pi-browser .w-compass-arrow{ transform:none !important; opacity:0.55; filter:grayscale(0.7) brightness(0.85); }
-    body.pi-browser .w-compass-facing{ display:none !important; }
+    /* Pi Browser compass: 2026-05-11 — GPS-based heading wired in JS,
+       so the compass CAN work while the user is walking. Removed the
+       blanket hide. The JS graceful-degrade (after 3s with no events)
+       still dims the static arrow + clears the label if no GPS heading
+       arrives, so stationary Pi users still see a non-misleading idle
+       state. When GPS reports heading, the dim clears and the needle
+       tracks the walking direction. */
     body.pi-browser{ --pi-chrome-h: 48px; }
     body.pi-browser .fg-bottomnav{ bottom: var(--pi-chrome-h); }
     body.pi-browser .fg-bottomnav.minimized{ transform: translateY(calc(100% - 18px)); }
@@ -51388,7 +51387,67 @@ function _initCompass(){
   // Was showing "TAP" text — read as broken/misleading per Stephen.
   var _eventsRx = false;
   var _origUpdate = _updateCompass;
-  _updateCompass = function(h){ _eventsRx = true; _origUpdate(h); };
+  _updateCompass = function(h){
+    _eventsRx = true;
+    // Clear any dim-fallback styles in case GPS-heading kicks in late
+    if (compassImg) { compassImg.style.opacity = ''; compassImg.style.filter = ''; }
+    _origUpdate(h);
+  };
+
+  // Stephen 2026-05-11: GPS-based compass heading. Works WITHOUT
+  // DeviceOrientation / Sensor APIs — Pi Browser suppresses those but
+  // it lets through geolocation (player can already drop plants). When
+  // the user walks, navigator.geolocation.watchPosition either reports
+  // coords.heading directly OR we compute it from the lat/lng delta
+  // between consecutive samples. Active only while moving (≥0.5 m/s or
+  // ≥3m between samples) so a stationary phone doesn't jitter the
+  // needle. Runs alongside the device-orientation path; whichever
+  // produces data first wins.
+  if (navigator.geolocation && navigator.geolocation.watchPosition) {
+    var _gpsLast = null;
+    function _gpsBearing(lat1, lng1, lat2, lng2) {
+      var toRad = Math.PI / 180;
+      var φ1 = lat1 * toRad, φ2 = lat2 * toRad;
+      var Δλ = (lng2 - lng1) * toRad;
+      var y = Math.sin(Δλ) * Math.cos(φ2);
+      var x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+    function _haversineM(lat1, lng1, lat2, lng2) {
+      var R = 6371000, toRad = Math.PI / 180;
+      var dφ = (lat2 - lat1) * toRad;
+      var dλ = (lng2 - lng1) * toRad;
+      var a = Math.sin(dφ/2) * Math.sin(dφ/2) +
+              Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+              Math.sin(dλ/2) * Math.sin(dλ/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+    try {
+      navigator.geolocation.watchPosition(function(pos) {
+        if (!pos || !pos.coords) return;
+        var c = pos.coords;
+        // Path 1: GPS reports heading directly (most reliable, sub-second).
+        if (typeof c.heading === 'number' && !isNaN(c.heading) && (c.speed == null || c.speed >= 0.3)) {
+          _updateCompass(c.heading);
+          return;
+        }
+        // Path 2: compute bearing from delta to previous sample.
+        if (_gpsLast) {
+          var d = _haversineM(_gpsLast.lat, _gpsLast.lng, c.latitude, c.longitude);
+          if (d >= 3) { // at least 3m moved (filters GPS jitter while standing still)
+            var bearing = _gpsBearing(_gpsLast.lat, _gpsLast.lng, c.latitude, c.longitude);
+            _updateCompass(bearing);
+            _gpsLast = { lat: c.latitude, lng: c.longitude };
+            return;
+          }
+        }
+        // Stash for next delta. Only update _gpsLast when we got a
+        // sample we'd act on; otherwise keep the oldest reference.
+        if (!_gpsLast) _gpsLast = { lat: c.latitude, lng: c.longitude };
+      }, function(){ /* permission denied or GPS unavailable — silent fail */ },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+    } catch (e) {}
+  }
   setTimeout(function(){
     if (_eventsRx) return;
     if (compassImg) {
