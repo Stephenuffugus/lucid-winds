@@ -24,11 +24,10 @@ if(!document.getElementById('STstyle')){
     // sticky band (back-btn + rules-btn) handles its own spacing now. The
     // old 78px override created a dead zone ABOVE the header on this game.
     'body.game-active:has(#fg-ag[data-game="stopten"]) #fg-ag{padding-top:env(safe-area-inset-top,0px)!important;}',
-    // Per-game control-row shrink — the universal .gb-new img clamps up to
-    // 180px wide, which dominates Stop at Ten's tight layout. Scale both the
-    // NEW GAME image and the RULES chip down so they stop covering content.
-    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb-new img{width:clamp(80px,22vw,108px)!important;}',
-    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb{min-height:40px!important;padding:6px 14px!important;font-size:0.68rem!important;letter-spacing:0.08em!important;}',
+    // Universal .gb-new img is now clamp(72,20vw,108) — the old stopten
+    // per-game override that shrunk it from 35vw→22vw is no longer needed.
+    // Keep the .gcr gap/padding tighten since Stop at Ten's row is still dense.
+    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb{min-height:44px!important;padding:8px 14px!important;font-size:0.68rem!important;letter-spacing:0.08em!important;}',
     'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr{gap:6px!important;padding:4px 8px!important;}',
     // Frame + panel
     '#STpan{padding-top:4px;box-sizing:border-box;max-width:100%;overflow-x:hidden;}',
