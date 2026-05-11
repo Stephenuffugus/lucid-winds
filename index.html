@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.08';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -14015,6 +14015,60 @@ document.addEventListener('keydown', function(e) {
       '<p style="margin-top:0.9rem;"><strong>No trio?</strong> If none of the 12 visible cards can complete a trio together, three more cards appear automatically. You’ll never get stuck.</p>'+
       '<p><strong>Earn:</strong> Each trio fills your Sunbeam meter. Clear enough trios to bloom a new plant.</p>'+
       '<p style="color:var(--muted);font-size:0.7rem;font-style:italic;">Want to try it without stakes? Tap PRACTICE MODE below.</p>';
+
+    // ── Stephen 2026-05-11: detailed rules pass for complex games that
+    //    only had short registry blurbs. Pre-Reddit polish.
+    R.backgammon = ''+
+      '<p><strong>Goal:</strong> Be the first to bear off (remove) all 15 of your pieces from the board.</p>'+
+      '<p><strong>Setup:</strong> 15 pieces per side, arranged on points 1, 12, 17, 19 (your side). You move counter-clockwise toward your home board; AI moves the opposite way.</p>'+
+      '<p><strong>Move:</strong> Roll 2 dice. Move one piece by each die value, or one piece using the sum if both legs are legal. Doubles let you play four moves of that value.</p>'+
+      '<p><strong>Blocked points:</strong> You cannot land on a point with 2+ enemy pieces. Single enemy pieces (<em>blots</em>) get sent to the bar.</p>'+
+      '<p><strong>On the bar:</strong> Any piece on the bar must re-enter the opponent\'s home board (points 19-24 for you) before any other move.</p>'+
+      '<p><strong style="color:var(--gold);">Bearing off:</strong> Once ALL your pieces are in your home board (points 1-6), you can remove them. Exact rolls remove the matching point; higher rolls remove the highest occupied point.</p>'+
+      '<p><strong>Tip:</strong> Keep your pieces in pairs to deny the opponent landing spots. Leaving a single piece (a blot) where it can be hit is the most common loss.</p>';
+
+    R.reversi = ''+
+      '<p><strong>Goal:</strong> Have the most pieces on the board when no more moves are possible.</p>'+
+      '<p><strong>Setup:</strong> 8×8 board, 4 pieces in the center (2 black, 2 white, diagonal). Black moves first (you).</p>'+
+      '<p><strong>Move rule:</strong> Place a piece so it <strong style="color:var(--gold);">surrounds</strong> one or more enemy pieces in a straight line (horizontal, vertical, or diagonal). All surrounded enemy pieces flip to your color.</p>'+
+      '<p><strong>Must flip:</strong> Every legal move MUST flip at least one enemy piece. If you have no legal move, your turn is skipped.</p>'+
+      '<p><strong>End:</strong> Game ends when neither player can move (board full or both stuck). Most pieces wins.</p>'+
+      '<p><strong style="color:var(--gold);">Strategy:</strong> Corners can never be flipped — they are the strongest squares. Avoid playing directly adjacent to a corner (gives opponent the corner).</p>';
+
+    R.checkers = ''+
+      '<p><strong>Goal:</strong> Capture all opponent pieces OR block them so they cannot move.</p>'+
+      '<p><strong>Setup:</strong> 12 pieces each, on dark squares of the 3 rows nearest you. You play the bottom side.</p>'+
+      '<p><strong>Move:</strong> One square diagonally forward to an empty dark square. Tap your piece, tap the destination.</p>'+
+      '<p><strong>Capture:</strong> Jump diagonally over an adjacent enemy piece to land on the empty square beyond. The jumped piece is removed.</p>'+
+      '<p><strong style="color:var(--gold);">Mandatory captures:</strong> If a capture is available, you MUST take it. Multi-jumps (jump, land, jump again) must be completed in one turn when possible.</p>'+
+      '<p><strong>Kings:</strong> Reach the opponent\'s back row and your piece is crowned a <strong>King</strong>. Kings move and jump <em>forward OR backward</em> diagonally.</p>'+
+      '<p><strong>Win:</strong> Capture all enemy pieces, or leave them with no legal moves.</p>';
+
+    R.yahtzee = ''+
+      '<p><strong>Goal:</strong> Score the highest total across 13 rounds by filling all 13 categories.</p>'+
+      '<p><strong>Each turn:</strong> Roll 5 dice. Tap any dice to <strong>hold</strong>. Reroll the rest up to 2 more times (3 rolls total). After your final roll, tap a category to score that combination.</p>'+
+      '<p><strong>Upper section</strong> (sum of matching dice):</p>'+
+      '<p style="margin-left:0.6rem;">Ones · Twos · Threes · Fours · Fives · Sixes</p>'+
+      '<p><strong style="color:var(--gold);">Bonus:</strong> Score 63+ across upper section = <strong>+35 bonus</strong>.</p>'+
+      '<p><strong>Lower section:</strong></p>'+
+      '<p style="margin-left:0.6rem;"><strong>3 of a Kind</strong> — 3 matching dice, score sum of all 5 dice<br>'+
+        '<strong>4 of a Kind</strong> — 4 matching dice, score sum of all 5 dice<br>'+
+        '<strong>Full House</strong> — 3 of one + 2 of another = <strong>25</strong><br>'+
+        '<strong>Small Straight</strong> — 4 in sequence = <strong>30</strong><br>'+
+        '<strong>Large Straight</strong> — 5 in sequence = <strong>40</strong><br>'+
+        '<strong>Seed Shaker</strong> (5 of a kind) = <strong>50</strong><br>'+
+        '<strong>Chance</strong> — any 5 dice, score the sum</p>'+
+      '<p><strong>Tip:</strong> Lock in the upper bonus early — three of each number averages exactly 63. Save Chance for a bad roll.</p>';
+
+    R.mastermind = ''+
+      '<p><strong>Goal:</strong> Crack the hidden 4-color code in as few guesses as possible.</p>'+
+      '<p><strong>Each guess:</strong> Pick 4 colors (any order, repeats allowed) and submit. The board scores your guess with up to 4 small pegs:</p>'+
+      '<p><strong style="color:#7ab356;">Green peg</strong> = one of your colors is in the code AND in the correct position.</p>'+
+      '<p><strong style="color:var(--gold);">Gold peg</strong> = one of your colors is in the code but in the wrong position.</p>'+
+      '<p><strong>No peg</strong> = that color isn\'t in the code at all.</p>'+
+      '<p><em>Peg order doesn\'t map to slot order</em> — the pegs only tell you how many of each kind, not which slot they refer to. That ambiguity IS the puzzle.</p>'+
+      '<p><strong style="color:var(--gold);">Deduction trick:</strong> Start with 4 distinct colors (e.g. Red Yellow Blue Green). The peg count tells you exactly how many of those 4 colors are in the code. Your second guess swaps in untested colors. By guess 3, you usually know the palette; the remaining work is figuring out positions.</p>'+
+      '<p><strong>Win:</strong> All 4 green pegs in one row.</p>';
   })();
 
   // Generic rules modal renderer. Shows registered rules HTML if
