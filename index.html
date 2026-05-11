@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.09';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.10';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -7214,8 +7214,9 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       <span id="th-stage" style="font-family:'DM Mono',monospace;font-size:0.45rem;color:#c8a84b;white-space:nowrap;">Seed</span>
     </div>
     <div style="display:flex;gap:6px;flex-shrink:0;">
-      <button onclick="triggerTutorialDemo()" style="width:40px;height:40px;border-radius:8px;border:1px solid rgba(200,188,160,0.15);background:rgba(46,40,32,0.6);color:rgba(240,235,216,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">❓</button>
-      <button onclick="toggleSettingsMenu()" style="width:40px;height:40px;border-radius:8px;border:1px solid rgba(200,188,160,0.15);background:rgba(46,40,32,0.6);color:rgba(240,235,216,0.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">⚙</button>
+      <button onclick="if(window._showGameRules)window._showGameRules('set');" aria-label="How to play" style="min-width:48px;height:48px;padding:0 0.55rem;border-radius:10px;border:1.5px solid rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.32));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:0.14em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.25rem;-webkit-tap-highlight-color:transparent;">📖 RULES</button>
+      <button onclick="triggerTutorialDemo()" aria-label="Interactive tutorial" style="width:48px;height:48px;border-radius:10px;border:1.5px solid rgba(122,179,86,0.45);background:linear-gradient(180deg,rgba(122,179,86,0.18),rgba(58,90,42,0.28));color:var(--sage);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">🎓</button>
+      <button onclick="toggleSettingsMenu()" aria-label="Settings" style="width:48px;height:48px;border-radius:10px;border:1.5px solid rgba(200,188,160,0.3);background:rgba(46,40,32,0.85);color:var(--cream);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">⚙</button>
     </div>
   </div>
 
