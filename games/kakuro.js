@@ -136,8 +136,8 @@ var DIFF_META={
     '.KKcombos{font-family:DM Mono,monospace;font-size:0.6rem;color:#c8a84b;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(200,168,75,0.4);margin-top:2px;padding:1px 4px;border-radius:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}',
     '.KKcombos:active{background:rgba(200,168,75,0.15)}',
     // Grid
-    '.KKboardWrap{display:flex;justify-content:center;padding:4px 0}',
-    '.KKgrid{display:inline-grid;gap:1.5px;background:rgba(74,124,53,0.22);border:2px solid rgba(74,124,53,0.35);border-radius:6px;padding:2px}',
+    '.KKboardWrap{display:flex;justify-content:center;padding:4px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}',
+    '.KKgrid{display:inline-grid;gap:1.5px;background:rgba(74,124,53,0.22);border:2px solid rgba(74,124,53,0.35);border-radius:6px;padding:2px;flex-shrink:0}',
     '.KKcell{box-sizing:border-box;position:relative;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif}',
     '.KKcell.black{background:#14100a}',
     '.KKcell.clue{background:#241a10;position:relative;overflow:hidden}',
@@ -620,6 +620,8 @@ function checkWin(){
   if(isNewBest)try{localStorage.setItem(bestKey,String(elapsed));}catch(e){}
   _sr('kakuro',{w:true,s:Math.max(100,1000-elapsed*2)+stars*100,stars:stars});
   sm('Solved! '+elapsed+'s · '+stars+'⭐');
+  _e('puzzle_solved');_e('game_win');
+  if(_playWin)_playWin();
   showWinCard(elapsed, stars, isNewBest);
 }
 
@@ -686,7 +688,7 @@ function buildGridCells(){
   var availW=Math.min(window.innerWidth-24, 560);
   var gapsAndPad=1.5*(size-1)+8;
   var cellSize=Math.floor((availW-gapsAndPad)/size);
-  if(cellSize<30)cellSize=30;       // minimum legibility
+  if(cellSize<40)cellSize=40;       // 40px min so touch targets feel tappable; .KKboardWrap horizontal-scrolls if grid overflows on narrow phones
   if(cellSize>64)cellSize=64;       // cap on wide screens
   gridEl.style.gridTemplateColumns='repeat('+size+','+cellSize+'px)';
   gridEl.innerHTML='';
