@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.11.18';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.11.19';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -4664,7 +4664,7 @@
     .gm{font-size:clamp(.65rem,1.6vw,.8rem);font-family:'DM Sans',sans-serif;font-weight:500;color:var(--cream);text-align:center;padding:6px clamp(10px,3vw,16px);min-height:0;flex-shrink:0;letter-spacing:.02em;line-height:1.4;transition:color .4s ease,opacity .4s ease;opacity:0.85}
 
     /* Controls bar */
-    .gcr{display:flex;gap:clamp(4px,1.2vw,6px);padding:clamp(2px,1vw,4px) clamp(8px,2vw,12px);flex-wrap:wrap;justify-content:center;flex-shrink:0}
+    .gcr{display:flex;gap:clamp(4px,1.2vw,6px);padding:clamp(2px,1vw,4px) clamp(8px,2vw,12px);flex-wrap:wrap;justify-content:center;align-items:center;flex-shrink:0}
 
     /* Game buttons — organic pill, scaled text, 48px min */
     .gb{background:rgba(26,31,23,.82);border:1.5px solid rgba(74,124,53,.22);color:rgba(122,179,86,.95);font-size:clamp(.72rem,2vw,.88rem);padding:clamp(10px,2.6vw,14px) clamp(16px,4vw,24px);border-radius:24px;cursor:pointer;font-family:'DM Mono',monospace;-webkit-tap-highlight-color:transparent;min-height:48px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .2s cubic-bezier(.25,.46,.45,.94);box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(122,179,86,.03);letter-spacing:.04em;position:relative;overflow:hidden;font-weight:600}
@@ -4673,10 +4673,30 @@
     .gb:active{background:rgba(74,124,53,.18);transform:scale(.95);box-shadow:0 0 10px rgba(74,124,53,.12);transition-duration:.08s}
     .gb.gon{background:rgba(200,168,78,.08);border-color:rgba(200,168,78,.35);color:var(--gold);box-shadow:0 0 14px rgba(200,168,78,.06),inset 0 1px 0 rgba(200,168,78,.05)}
     /* New Game image button — carved wood */
-    .gb-new{background:none;border:none;padding:0;box-shadow:none;min-height:0;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;display:inline-block}
+    /* Painted NEW GAME plaque. Sized to match .gb sibling buttons (which
+       use min-height:48px) so mixed rows are visually even. The PNG asset
+       has dead black space in the right/bottom ~30%; we scale the IMG to
+       77x77 inside a 54x54 container with overflow:hidden, so only the
+       painted top-left fills the visible button area. */
+    .gb-new{
+      background:none;border:none;padding:0;box-shadow:none;
+      min-height:48px;min-width:48px;
+      width:54px;height:54px;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;
+      transition:transform .15s,filter .15s;
+      display:inline-flex;
+      align-items:flex-start;justify-content:flex-start;
+      overflow:hidden;
+      border-radius:10px;
+      vertical-align:middle;
+    }
     .gb-new::before{display:none}
     .gb-new:active{transform:scale(.92);filter:brightness(1.2)}
-    .gb-new img{width:clamp(72px,20vw,108px);height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
+    .gb-new img{
+      width:77px;height:77px;
+      margin:0;display:block;
+      pointer-events:none;-webkit-user-drag:none;
+    }
 
     /* Select dropdowns — matching pills */
     .gsl{background:rgba(20,24,18,.88);color:rgba(122,179,86,.95);border:1.5px solid rgba(74,124,53,.22);border-radius:24px;padding:clamp(10px,2.6vw,14px) clamp(16px,4vw,24px);font-size:clamp(.72rem,2vw,.88rem);font-family:'DM Mono',monospace;min-height:48px;box-shadow:inset 0 2px 8px rgba(0,0,0,.12);-webkit-appearance:none;appearance:none;transition:border-color .2s;font-weight:600;letter-spacing:.04em}

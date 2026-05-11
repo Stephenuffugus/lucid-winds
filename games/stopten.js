@@ -24,11 +24,10 @@ if(!document.getElementById('STstyle')){
     // sticky band (back-btn + rules-btn) handles its own spacing now. The
     // old 78px override created a dead zone ABOVE the header on this game.
     'body.game-active:has(#fg-ag[data-game="stopten"]) #fg-ag{padding-top:env(safe-area-inset-top,0px)!important;}',
-    // Universal .gb-new img is now clamp(72,20vw,108) — the old stopten
-    // per-game override that shrunk it from 35vw→22vw is no longer needed.
-    // Keep the .gcr gap/padding tighten since Stop at Ten's row is still dense.
-    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb{min-height:44px!important;padding:8px 14px!important;font-size:0.68rem!important;letter-spacing:0.08em!important;}',
-    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr{gap:6px!important;padding:4px 8px!important;}',
+    // Universal .gb-new is now 54x54 (matches .gb 48px sibling height).
+    // Keep the .gcr gap/padding tighten since Stop at Ten's row is dense.
+    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr .gb{min-height:48px!important;padding:8px 14px!important;font-size:0.68rem!important;letter-spacing:0.08em!important;}',
+    'body.game-active:has(#fg-ag[data-game="stopten"]) .gcr{gap:6px!important;padding:4px 8px!important;align-items:center!important;}',
     // Frame + panel
     '#STpan{padding-top:4px;box-sizing:border-box;max-width:100%;overflow-x:hidden;}',
     '.st-frame{position:relative;width:calc(100% - 24px);max-width:360px;box-sizing:border-box;margin:8px auto;padding:18px 16px 20px;background:linear-gradient(180deg,rgba(28,34,22,0.9),rgba(16,20,12,0.96));border:3px solid transparent;border-radius:18px;box-shadow:0 14px 36px rgba(0,0,0,0.55),inset 0 2px 0 rgba(255,220,140,0.06),inset 0 -2px 6px rgba(0,0,0,0.3);background-clip:padding-box;}',
