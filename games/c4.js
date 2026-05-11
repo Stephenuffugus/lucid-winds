@@ -111,7 +111,7 @@ function GC4(a){
     +'<option value="3">Grove</option>'
     +'<option value="4">Old Growth</option>'
     +'</select>'
-    +'<button class="gb" onclick="_C4N()">🔄 New</button>';
+    +'<button class="gb-new" onclick="_C4N()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   // ── state helpers ──
   function init(){

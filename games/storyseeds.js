@@ -45,7 +45,7 @@ window._gameFns.storyseeds=function SS(a){
   var pan=document.createElement('div');pan.id='SSpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_SSNew()">🔀 NEW SEED</button> <button class="gb" onclick="_SSSave()">💾 SAVE</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_SSNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_SSSave()">💾 SAVE</button>';
 
   function getDateSeed(){var d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
   function getDailyPrompt(){return PROMPTS[getDateSeed()%PROMPTS.length];}

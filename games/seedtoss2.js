@@ -77,7 +77,7 @@ window._gameFns.seedtoss2=function ST(a){
   var pan=document.createElement('div');pan.id='STpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;text-align:center;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_STN()">🌱 NEW</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_STN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function setup(){
     pan.innerHTML='<canvas id="STc" width="'+W+'" height="'+H+'" style="background:#0d100c;border:1px solid rgba(122,179,86,0.2);border-radius:10px;touch-action:none;max-width:100%;"></canvas><div id="STmsg" style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--cream);min-height:20px;margin-top:6px;"></div>';

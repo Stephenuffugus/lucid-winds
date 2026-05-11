@@ -48,7 +48,7 @@ function GR(a){
   db.style.cssText='display:flex;justify-content:center;gap:clamp(8px,3vw,14px);padding:clamp(10px,3vw,16px)';
   db.innerHTML='<button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'left\')">⬅</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'up\')">⬆</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'down\')">⬇</button><button class="gb" style="min-width:64px;min-height:64px;font-size:1.5rem;padding:12px 18px" onclick="_Rm(\'right\')">➡</button>';
   a.appendChild(db);
-  mc(a).innerHTML='<button class="gb" onclick="_RN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_RN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   // Tile tracking — each active tile is an object {el, val, idx}
   var tiles=[];

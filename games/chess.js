@@ -1487,7 +1487,7 @@ function GCH(a){
   mm(a,'Your move');
   boardEl=document.createElement('div');boardEl.id='CHboard';
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
-  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:160px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth ♛</option><option value="4">Ancient ♛</option></select><button class="gb" onclick="_CHNew()">🔄 New</button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
+  mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:160px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth ♛</option><option value="4">Ancient ♛</option></select><button class="gb-new" onclick="_CHNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
   _setDiff('medium');
   initBoard();render();
 }

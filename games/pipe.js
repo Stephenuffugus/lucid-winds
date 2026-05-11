@@ -10,7 +10,7 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
   var EX_ST=[1,0,1,0],EX_CR=[1,1,0,0],EX_EN=[0,0,0,1];
   ms(a,'<span id="PPc">0</span>/'+SZ*SZ+' vines');mm(a);
   var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
-  mc(a).innerHTML='<button class="gb" onclick="_PPN()">🔄 New</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_PPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function dirOf(f,t){var d=t-f;return d===-SZ?0:d===1?1:d===SZ?2:d===-1?3:-1}
   function adjCnt(ci,vis){var cy=Math.floor(ci/SZ),cx=ci%SZ,c=0;if(cy>0&&!vis[ci-SZ])c++;if(cx<SZ-1&&!vis[ci+1])c++;if(cy<SZ-1&&!vis[ci+SZ])c++;if(cx>0&&!vis[ci-1])c++;return c}
   function makePath(){

@@ -15,7 +15,7 @@ function GPY(a){
   ms(a,'Cleared: <strong id="PYcl">0</strong>/28 · Moves: <strong id="PYmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='PYgd';a.appendChild(gd);
   var _pyStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" id="PYundoBtn" onclick="_PYUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_PYN()">🔄 New</button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.7rem;">'+_pyStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="PYundoBtn" onclick="_PYUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb-new" onclick="_PYN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="PYstyle" onclick="_PYToggleStyle()" style="font-size:0.7rem;">'+_pyStyleLbl+'</button>';
   function snapshot(){
     history.push(JSON.stringify({stock:stock, waste:waste, moves:moves, removed:removed}));
     refreshUndoBtn();

@@ -17,7 +17,7 @@ function GFL(a){
   ms(a,'Moves: <strong id="FFm">0</strong>/'+maxMoves);mm(a);
   var gd=document.createElement('div');gd.className='lg';gd.id='FFg';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
   var pb=document.createElement('div');pb.className='lg';pb.style.gridTemplateColumns='repeat(6,1fr)';pb.style.gap='8px';pb.style.padding='12px';pb.style.width='clamp(300px,92vw,420px)';a.appendChild(pb);
-  mc(a).innerHTML='<button class="gb" onclick="_FFN()">🔄 New</button> <button class="gb" id="FFleafBtn" onclick="_FFleafToggle()">'+(leavesOn?'🍂 Leaves':'⬤ Plain')+'</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_FFN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="FFleafBtn" onclick="_FFleafToggle()">'+(leavesOn?'🍂 Leaves':'⬤ Plain')+'</button>';
 
   function gen(){grid=[];for(var i=0;i<SZ*SZ;i++)grid.push(Math.floor(Math.random()*6));moves=0;}
   function flood(oc,nc){

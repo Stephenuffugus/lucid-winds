@@ -194,7 +194,7 @@ function GU(a){
   _setDiff('medium');ms(a);mm(a);
   var gd=document.createElement('div');gd.className='ug';gd.id='Ug';a.appendChild(gd);
   var pd=document.createElement('div');pd.className='up';pd.id='Upad';a.appendChild(pd);
-  mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="40">Easy</option><option value="32" selected>Medium</option><option value="26">Hard</option></select> <button class="gb" onclick="_UG()">🔄 New</button>';
+  mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="40">Easy</option><option value="32" selected>Medium</option><option value="26">Hard</option></select> <button class="gb-new" onclick="_UG()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function gen(){
     var target=parseInt((document.getElementById('Ud')||{}).value,10)||32;
     _grade=target>=40?'easy':target>=32?'medium':'hard';

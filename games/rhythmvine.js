@@ -34,7 +34,7 @@ window._gameFns.rhythmvine=function RV(a){
   var pan=document.createElement('div');pan.id='RVpan';
   pan.style.cssText='position:relative;max-width:520px;margin:0 auto;padding:0;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_RVN()">🌱 NEW SONG</button> <button class="gb" onclick="_RVCAL()">⚙ CALIBRATE</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_RVN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_RVCAL()">⚙ CALIBRATE</button>';
 
   // ─── Styles (scoped ids only) ─────────────────────────────
   var css=document.createElement('style');

@@ -27,7 +27,7 @@ window._gameFns.recall=function RC(a){
   var pan=document.createElement('div');pan.id='RCpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;min-height:340px;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb" onclick="_RCN()">🧠 NEW</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_RCN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function clearTimers(){for(var i=0;i<timers.length;i++)clearTimeout(timers[i]);timers=[];}
   function shuffle(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}

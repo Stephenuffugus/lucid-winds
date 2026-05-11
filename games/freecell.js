@@ -16,7 +16,7 @@ function GFC(a){
   ms(a,'Moves: <strong id="FCmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='FCgd';a.appendChild(gd);
   var _fcStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" id="FCundoBtn" onclick="_FCUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_FCN()">🔄 New</button> <button class="gb" id="FCstyle" onclick="_FCToggleStyle()" style="font-size:0.7rem;">'+_fcStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="FCundoBtn" onclick="_FCUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb-new" onclick="_FCN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="FCstyle" onclick="_FCToggleStyle()" style="font-size:0.7rem;">'+_fcStyleLbl+'</button>';
   function snapshot(){
     history.push(JSON.stringify({tab:tab, free:free, fnd:fnd, moves:moves}));
     refreshUndoBtn();

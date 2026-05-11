@@ -15,7 +15,7 @@ function GGF(a){
   ms(a,'Left: <strong id="GFsc">35</strong>');mm(a);
   var gd=document.createElement('div');gd.id='GFgd';a.appendChild(gd);
   var _gfStyleLbl='🃏 Style';
-  mc(a).innerHTML='<button class="gb" id="GFundoBtn" onclick="_GFUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb" onclick="_GFN()">🔄 New</button> <button class="gb" id="GFstyle" onclick="_GFToggleStyle()" style="font-size:0.7rem;">'+_gfStyleLbl+'</button>';
+  mc(a).innerHTML='<button class="gb" id="GFundoBtn" onclick="_GFUndo()" disabled style="opacity:0.45;">↶ Undo</button> <button class="gb-new" onclick="_GFN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" id="GFstyle" onclick="_GFToggleStyle()" style="font-size:0.7rem;">'+_gfStyleLbl+'</button>';
   function snapshot(){
     history.push(JSON.stringify({cols:cols, stock:stock, waste:waste, score:score}));
     refreshUndoBtn();

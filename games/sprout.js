@@ -157,7 +157,7 @@ window._gameFns.sprout=function GPW(a){
 
   var resultHost=document.createElement('div');resultHost.id='PWresult';stage.appendChild(resultHost);
 
-  mc(a).innerHTML='<button class="gb" onclick="window._PWNew()">🔄 NEW</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="window._PWNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   function buildKeyboard(){
     kb.innerHTML='';keyButtons={};
