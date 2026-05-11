@@ -20,11 +20,10 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G
 if(!document.getElementById('STstyle')){
   var stStyle=document.createElement('style');stStyle.id='STstyle';
   stStyle.textContent=[
-    // Per-game top-padding override — Stop at Ten's content is small, so the
-    // universal 120px #fg-ag padding read as a giant dead zone above the
-    // frame. Drop it to a more proportionate 78px just for this game; the
-    // GAMES back button still clears fine (it's ~60px tall + 8px inset).
-    'body.game-active:has(#fg-ag[data-game="stopten"]) #fg-ag{padding-top:calc(env(safe-area-inset-top,0px) + 78px)!important;}',
+    // Top-padding: only enough to clear the safe-area inset; the .game-hdr
+    // sticky band (back-btn + rules-btn) handles its own spacing now. The
+    // old 78px override created a dead zone ABOVE the header on this game.
+    'body.game-active:has(#fg-ag[data-game="stopten"]) #fg-ag{padding-top:env(safe-area-inset-top,0px)!important;}',
     // Per-game control-row shrink — the universal .gb-new img clamps up to
     // 180px wide, which dominates Stop at Ten's tight layout. Scale both the
     // NEW GAME image and the RULES chip down so they stop covering content.
@@ -62,8 +61,12 @@ if(!document.getElementById('STstyle')){
     '.st-btn:active{transform:translateY(1px) scale(0.97);}',
     '.st-btn.start{background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.22));border-color:var(--sage);color:var(--sage);}',
     '.st-btn.stop{background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(180,140,50,0.22));border-color:var(--gold);color:var(--gold);box-shadow:0 4px 18px rgba(200,168,75,0.35);}',
-    // Mode tabs — horizontally scroll on narrow screens so all 9 fit
-    '.st-modes{display:flex;gap:4px;padding:2px 6px 10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;}',
+    // Mode tabs — horizontally scroll on narrow screens so all 9 fit.
+    // Width-matched to .st-frame (max-width:360px;margin:0 auto) so the
+    // chip row and frame share the same left/right edges. Without this,
+    // chips spanned the full panel while the frame was inset 360→full —
+    // reads as off-center even though both are technically centered.
+    '.st-modes{display:flex;gap:4px;padding:2px 0 10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;width:calc(100% - 24px);max-width:360px;margin:0 auto;box-sizing:border-box;}',
     '.st-modes::-webkit-scrollbar{display:none;}',
     '.st-mode{padding:6px 12px;min-height:36px;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.08em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;flex:0 0 auto;white-space:nowrap;}',
     '.st-mode.on{background:rgba(200,168,75,0.18);border-color:var(--gold);color:var(--gold);}',
