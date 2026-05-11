@@ -40,9 +40,9 @@ window._gameFns.vinecross=function VC(a){
   // Tools row — Undo / Redo / Hint
   var toolRow=document.createElement('div');
   toolRow.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0;flex-wrap:wrap';
-  toolRow.innerHTML='<button class="gb" id="VCundo" onclick="_VCU()" style="min-height:40px;padding:4px 14px;font-size:0.65rem">↩ UNDO</button>'
-    +'<button class="gb" id="VCredo" onclick="_VCR()" style="min-height:40px;padding:4px 14px;font-size:0.65rem">↪ REDO</button>'
-    +'<button class="gb" id="VChint" onclick="_VCH()" style="min-height:40px;padding:4px 14px;font-size:0.65rem">💡 HINT</button>';
+  toolRow.innerHTML='<button class="gb" id="VCundo" onclick="_VCU()" style="min-height:44px;padding:8px 16px;font-size:0.65rem">↩ UNDO</button>'
+    +'<button class="gb" id="VCredo" onclick="_VCR()" style="min-height:44px;padding:8px 16px;font-size:0.65rem">↪ REDO</button>'
+    +'<button class="gb" id="VChint" onclick="_VCH()" style="min-height:44px;padding:8px 16px;font-size:0.65rem">💡 HINT</button>';
   a.appendChild(toolRow);
   // Diff + size + new game
   mc(a).innerHTML='<select class="gsl" id="VCd" onchange="_VCL(this.value)" style="min-width:140px">'

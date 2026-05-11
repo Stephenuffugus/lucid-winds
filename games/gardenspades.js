@@ -371,15 +371,15 @@ window._gameFns.gardenspades = function GardenSpades(a){
     // ── CONTROLS BAR — top right, matching the other card games ──
     var gsStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
     h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
-    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
+    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-spade.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
     h+='<span>'+gsStyleName+'</span>';
     h+='</button>';
     if(history.length>0){
-      h+='<button class="gb" onclick="_GShist()" title="Score history" style="display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:5px 12px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.3);color:rgba(232,220,200,0.85);font-family:Georgia,serif;font-style:italic;">📜 History</button>';
+      h+='<button class="gb" onclick="_GShist()" title="Score history" style="display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:8px 12px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.3);color:rgba(232,220,200,0.85);font-family:Georgia,serif;font-style:italic;">📜 History</button>';
     }
-    h+='<button class="gb" onclick="_GSN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
+    h+='<button class="gb" onclick="_GSN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:8px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
     // ── SCORE STRIP — twin team strips with bid/taken big numerals + bag pips ──
     h+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
@@ -450,18 +450,18 @@ window._gameFns.gardenspades = function GardenSpades(a){
       h+='<div style="display:flex;flex-direction:column;gap:5px;align-items:center;">';
       // Top row: NIL + 1-6
       h+='<div style="display:flex;gap:4px;justify-content:center;">';
-      h+='<button class="gb" onclick="_GSBN()" style="min-width:50px;min-height:42px;padding:4px 8px;background:linear-gradient(180deg,rgba(180,42,42,0.35),rgba(120,20,20,0.5));border:1.5px solid #e63946;border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.72rem;color:#ffdc70;letter-spacing:0.04em;display:flex;flex-direction:column;align-items:center;line-height:1;">';
+      h+='<button class="gb" onclick="_GSBN()" style="min-width:50px;min-height:46px;padding:6px 8px;background:linear-gradient(180deg,rgba(180,42,42,0.35),rgba(120,20,20,0.5));border:1.5px solid #e63946;border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.72rem;color:#ffdc70;letter-spacing:0.04em;display:flex;flex-direction:column;align-items:center;line-height:1;">';
       h+='NIL<span style="font-size:0.42rem;font-weight:400;color:rgba(245,235,208,0.65);margin-top:2px;">+100/-100</span></button>';
       for(var bi=1;bi<=6;bi++){
         var isS = (bi===suggested);
-        h+='<button class="gb" onclick="_GSB('+bi+')" style="min-width:38px;min-height:42px;padding:4px;background:'+(isS?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isS?'2':'1.5')+'px solid '+(isS?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isS?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bi+'</button>';
+        h+='<button class="gb" onclick="_GSB('+bi+')" style="min-width:38px;min-height:46px;padding:6px 4px;background:'+(isS?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isS?'2':'1.5')+'px solid '+(isS?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isS?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bi+'</button>';
       }
       h+='</div>';
       // Bottom row: 7-13
       h+='<div style="display:flex;gap:4px;justify-content:center;">';
       for(var bj=7;bj<=13;bj++){
         var isSj = (bj===suggested);
-        h+='<button class="gb" onclick="_GSB('+bj+')" style="min-width:38px;min-height:42px;padding:4px;background:'+(isSj?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isSj?'2':'1.5')+'px solid '+(isSj?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isSj?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bj+'</button>';
+        h+='<button class="gb" onclick="_GSB('+bj+')" style="min-width:38px;min-height:46px;padding:6px 4px;background:'+(isSj?'linear-gradient(180deg,rgba(255,220,112,0.25),rgba(200,168,75,0.35))':'rgba(0,0,0,0.4)')+';border:'+(isSj?'2':'1.5')+'px solid '+(isSj?'#ffdc70':'rgba(232,220,200,0.3)')+';border-radius:6px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;'+(isSj?'box-shadow:0 0 12px rgba(255,220,112,0.4);':'')+'">'+bj+'</button>';
       }
       h+='</div>';
       h+='<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.1em;color:rgba(232,220,200,0.4);">'+(suggested>0?'Suggested: '+suggested:'')+'</div>';

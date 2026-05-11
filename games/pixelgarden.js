@@ -518,7 +518,7 @@ window._gameFns.pixelgarden = function PG(a){
         h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--cream);word-break:break-word;">'+e.name+'</div>';
         h+='<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);">'+e.grid+'×'+e.grid+'</div>';
         if(compatible){
-          h+='<button class="gb" onclick="_PGCmpAssign('+r+','+c+',\''+e.id+'\')" style="min-height:40px;padding:6px;font-size:0.58rem;color:var(--sage);border-color:rgba(122,179,86,0.35);">USE</button>';
+          h+='<button class="gb" onclick="_PGCmpAssign('+r+','+c+',\''+e.id+'\')" style="min-height:44px;padding:8px;font-size:0.58rem;color:var(--sage);border-color:rgba(122,179,86,0.35);">USE</button>';
         } else {
           h+='<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;padding:6px;">different size</div>';
         }

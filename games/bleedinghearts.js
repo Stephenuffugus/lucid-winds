@@ -353,12 +353,12 @@ window._gameFns.bleedinghearts = function BH(a){
     // ── CONTROLS BAR — floats above the score strip, small + unobtrusive ──
     var styleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
     h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
-    h+='<button class="gb" onclick="_BHToggleStyle()" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 12px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
+    h+='<button class="gb" onclick="_BHToggleStyle()" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-heart.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
     h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
     h+='<span>'+styleName+'</span>';
     h+='</button>';
-    h+='<button class="gb" onclick="_BHN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:5px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
+    h+='<button class="gb" onclick="_BHN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:8px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
     // ── SCORE STRIP — 4 columns, each with player's identity color ──
     // Lowest running score is 'winning' (Hearts is a lose-to-highest game).
@@ -503,7 +503,7 @@ window._gameFns.bleedinghearts = function BH(a){
     // History button — small 🕐 pinned at the bottom-right of the pan so the
     // player can review the previous trick. Disabled until there is one.
     if(lastTrick){
-      h+='<div style="text-align:right;padding:0 4px 4px;"><button class="gb" onclick="_BHhist()" style="min-height:32px;padding:4px 10px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.25);color:rgba(232,220,200,0.75);font-family:Georgia,serif;font-style:italic;">🕐 Last trick</button></div>';
+      h+='<div style="text-align:right;padding:0 4px 4px;"><button class="gb" onclick="_BHhist()" style="min-height:44px;padding:8px 12px;font-size:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.25);color:rgba(232,220,200,0.75);font-family:Georgia,serif;font-style:italic;">🕐 Last trick</button></div>';
     }
     // Last-trick overlay — a translucent scrim with all four cards laid out.
     if(showingHistory && lastTrick){
