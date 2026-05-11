@@ -325,10 +325,10 @@ window._gameFns.pollen = function PN(a){
       var s=st.seats[i];
       h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:10px;padding:8px 10px;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);width:40px;">P'+(i+1)+'</div>';
-      h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:6px 8px;min-height:40px;">';
-      h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:40px;padding:6px 10px;font-size:0.58rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
-      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:40px;padding:6px 10px;font-size:0.58rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">AI</button>';
-      if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:40px;padding:6px 8px;font-size:0.55rem;color:var(--muted);">✕</button>';
+      h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:8px 10px;min-height:44px;">';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:44px;padding:8px 10px;font-size:0.58rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:44px;padding:8px 10px;font-size:0.58rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">AI</button>';
+      if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:44px;min-width:36px;padding:8px;font-size:0.55rem;color:var(--muted);">✕</button>';
       h+='</div>';
     }
     if(st.seats.length<4){
