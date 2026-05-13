@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.13.08';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -892,7 +892,14 @@
     function _detect(){
       try {
         if (localStorage.getItem('lw_force_pi_browser') === '1') return true;
-        if (typeof Pi !== 'undefined') return true;
+        // 2026-05-13: removed `typeof Pi !== 'undefined'` check. Stephen
+        // reported nav buttons bumped UP on his Pixel (regular Chrome) —
+        // even though all the lift CSS is scoped to body.pi-browser. Cause:
+        // the Pi SDK script (sdk.minepi.com/pi-sdk.js) loads on EVERY
+        // browser and defines `window.Pi` globally, so the "Pi SDK present"
+        // signal misfired on Pixel Chrome and added body.pi-browser → 48px
+        // lift. UA match + manual localStorage flag are the only reliable
+        // signals; SDK presence is not.
         if (/PiBrowser|Pi Browser|MinePi/i.test(navigator.userAgent || '')) return true;
       } catch(e){}
       return false;
@@ -900,9 +907,17 @@
     function _check(){
       if (_piApplied) return;
       if (_detect()) _applyPiClass();
+      // 2026-05-13: deferred Pi check — only apply if the Pi SDK has
+      // ACTUALLY initialized (window._piReady set by _initPi after a
+      // successful Pi.init call). This only happens inside real Pi
+      // Browser; on Pixel Chrome the SDK script either doesn't load
+      // or doesn't init, so _piReady stays false. Catches Pi Browser
+      // builds whose UA doesn't include "PiBrowser" without leaking
+      // to regular Chrome.
+      if (!_piApplied && window._piReady === true) _applyPiClass();
     }
     if (document.body) _check(); else document.addEventListener('DOMContentLoaded', _check);
-    // Pi SDK can land late — poll for 8s.
+    // Pi SDK can land late — poll for 8s waiting for _piReady.
     var _polls = 0;
     var _id = setInterval(function(){
       _polls++;
@@ -74457,6 +74472,11 @@ function _initPi(){
     Pi.init({version:'2.0',sandbox:window.LW_PI_SANDBOX});
     console.log('[Pi] SDK initialized ('+(window.LW_PI_SANDBOX?'SANDBOX (testnet)':'MAINNET (real Pi)')+' mode).');
     _piReady=true;
+    // 2026-05-13: expose on window so the body.pi-browser detector at
+    // line ~907 can use Pi.init success as the deferred Pi-Browser signal
+    // (more reliable than "typeof Pi !== 'undefined'" which can be true
+    // even on Pixel Chrome).
+    window._piReady=true;
     // Eager incomplete-payment sweep (Stephen audit 2026-05-07).
     // Pi.authenticate's onIncompletePaymentFound callback is the ONLY way
     // to recover an approved-but-not-completed payment from a prior
