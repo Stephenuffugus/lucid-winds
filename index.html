@@ -10985,23 +10985,27 @@ document.addEventListener('keydown', function(e) {
       'None';
 
     // Mythic creature override (mythByte = hb(18)). Source of truth.
+    // Stephen ruling 2026-05-13: Cicada was hitting every ~13 mints (7.81%),
+    // way more often than any base companion (~1% each), so "i get a cicada
+    // so frequently." Tightened Cicada + Toad to Legendary-tier rate (0.78%
+    // each) so mythic creatures actually feel mythic. Pre-launch re-skin OK.
     // Tier distribution across 256 values:
     //   0xFF       → The Beholder       (1/256 = 0.39%)   COSMIC
     //   0xFE       → Garden Spider      (1/256 = 0.39%)   LEGENDARY
     //   0xFC-0xFD  → Great Blue Heron   (2/256 = 0.78%)   LEGENDARY
     //   0xF8-0xFB  → Raccoon            (4/256 = 1.56%)   LEGENDARY
-    //   0xF4-0xF7  → Baby Mammoth     (4/256 = 1.56%)   LEGENDARY
-    //   0xE0-0xF3  → The Cicada         (20/256 = 7.81%)  MYTHIC
-    //   0xD0-0xDF  → The Toad           (16/256 = 6.25%)  MYTHIC
-    //   0x00-0xCF  → None               (208/256 = 81.25%)
+    //   0xF4-0xF7  → Baby Mammoth       (4/256 = 1.56%)   LEGENDARY
+    //   0xEE-0xEF  → The Cicada         (2/256 = 0.78%)   MYTHIC-tier creature, legendary rate
+    //   0xDE-0xDF  → The Toad           (2/256 = 0.78%)   MYTHIC-tier creature, legendary rate
+    //   everything else                 → None (base companion via hb(21)%82)
     var mythName =
       mythByte === 0xFF ? 'The Beholder'          :
       mythByte >= 0xFE  ? 'Garden Spider'              :
       mythByte >= 0xFC  ? 'Great Blue Heron'          :
       mythByte >= 0xF8  ? 'Raccoon'    :
       mythByte >= 0xF4  ? 'Baby Mammoth'  :
-      mythByte >= 0xE0  ? 'The Cicada'           :
-      mythByte >= 0xD0  ? 'The Toad'              : 'None';
+      (mythByte === 0xEE || mythByte === 0xEF) ? 'The Cicada' :
+      (mythByte === 0xDE || mythByte === 0xDF) ? 'The Toad'   : 'None';
 
     var goldenPot   = hc(0)  === 15;
     var glowFlower  = hc(11) === 15;
@@ -11890,7 +11894,17 @@ document.addEventListener('keydown', function(e) {
       if (auraT) score += (_TIER_SCORE[auraT.tier] || 0);
 
       var compT = _lt('COMPANION', t);
-      if (compT && t.mythic < 0xD0) score += (_TIER_SCORE[compT.tier] || 0);
+      // Gate must match the creature-override bands in hashToTraits — when
+      // a creature override fires, the companion-tier score is suppressed
+      // so the mythic spike below isn't doubled with the base tier score.
+      // Cicada/Toad tightened 2026-05-13 to 2 bytes each (legendary rate).
+      var _hasMythCreature = (
+        t.mythic === 0xFF ||
+        t.mythic >= 0xF4 ||
+        t.mythic === 0xEE || t.mythic === 0xEF ||
+        t.mythic === 0xDE || t.mythic === 0xDF
+      );
+      if (compT && !_hasMythCreature) score += (_TIER_SCORE[compT.tier] || 0);
 
       var mutT = _lt('MUTATION', t);
       if (mutT) score += (_TIER_SCORE[mutT.tier] || 0);
@@ -11907,15 +11921,15 @@ document.addEventListener('keydown', function(e) {
 
     // ── SPIKE: MYTHIC COMPANION (0-8) ── scored by mythic byte tier.
     // Spike replaces companion-tier score (gated above at line ~10390).
-    // Creature names below match current TRAIT_BANK (Apr 2026). Retired
-    // names — Starfall, Storm Wraith, Biolum Pulse, Ancient Rune, Phoenix —
-    // were aura/event names, never companions; do not search for them.
+    // Bands MUST match the creature-override bands in hashToTraits — if a
+    // plant has no creature override, it should not get the spike. Cicada
+    // + Toad tightened 2026-05-13 to 2 bytes each (legendary rate).
     var _mb = t.mythic;
     if (_mb===0xFF) score += 8;                          // The Beholder       (idx 38, Cosmic)
     else if (_mb>=0xFE) score += 7;                      // Garden Spider      (idx 37, Legendary)
     else if (_mb>=0xFC) score += 6;                      // Great Blue Heron   (idx 36, Legendary)
     else if (_mb>=0xF4&&_mb<0xFC) score += 5;            // Raccoon (idx 35) + Baby Mammoth (idx 34), both Legendary
-    else if (_mb>=0xD0&&_mb<0xF4) score += 4;            // The Cicada (idx 33) + The Toad (idx 32), both Mythic
+    else if (_mb===0xEE||_mb===0xEF||_mb===0xDE||_mb===0xDF) score += 4;  // The Cicada (idx 33) + The Toad (idx 32), Mythic-tier creatures
 
     // ── EARNED LAYERS (breeding, composting, synergies) ──
 

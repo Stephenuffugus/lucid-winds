@@ -345,14 +345,14 @@ season:      hb(22) % 4
 Source of truth: `hashToTraits` in index.html (search for `mythByte ===`).
 Last verified against code: 2026-04-18.
 ```
-hb(18) === 0xFF  → The Beholder       (idx 38)   COSMIC-tier      0.39%
-hb(18) >= 0xFE   → Garden Spider      (idx 37)   LEGENDARY-tier   0.39%
-hb(18) >= 0xFC   → Great Blue Heron   (idx 36)   LEGENDARY-tier   0.78%
-hb(18) >= 0xF8   → Raccoon            (idx 35)   LEGENDARY-tier   1.56%
-hb(18) >= 0xF4   → Baby Mammoth       (idx 34)   LEGENDARY-tier   1.56%
-hb(18) >= 0xE0   → The Cicada         (idx 33)   MYTHIC-tier      7.81%
-hb(18) >= 0xD0   → The Toad           (idx 32)   MYTHIC-tier      6.25%
-else              → hb(21) % 82                  ~41% base creature rate
+hb(18) === 0xFF              → The Beholder       (idx 38)   COSMIC-tier      0.39%
+hb(18) >= 0xFE               → Garden Spider     (idx 37)   LEGENDARY-tier   0.39%
+hb(18) >= 0xFC               → Great Blue Heron  (idx 36)   LEGENDARY-tier   0.78%
+hb(18) >= 0xF8               → Raccoon           (idx 35)   LEGENDARY-tier   1.56%
+hb(18) >= 0xF4               → Baby Mammoth      (idx 34)   LEGENDARY-tier   1.56%
+hb(18) === 0xEE || 0xEF      → The Cicada        (idx 33)   MYTHIC-tier      0.78%  (tightened 2026-05-13 from 7.81%)
+hb(18) === 0xDE || 0xDF      → The Toad          (idx 32)   MYTHIC-tier      0.78%  (tightened 2026-05-13 from 6.25%)
+else                         → hb(21) % 82                  93.8% base creature rate
 ```
 
 Dead names / retired creatures (never reference these in new UI):
