@@ -41009,64 +41009,12 @@ document.addEventListener('keydown', function(e) {
     // shows everything; the recent-blooms thumbnails were redundant
     // and stealing vertical space. Wrapper force-hidden, render skipped.
     var _rbWrap = document.getElementById('gh-recent-wrap');
-    var _rbStrip = document.getElementById('gh-recent-strip');
     if (_rbWrap) _rbWrap.style.display = 'none';
-    if (false && _rbWrap && _rbStrip) {
-      if (gh.length < 2) {
-        _rbWrap.style.display = 'none';
-      } else {
-        _rbWrap.style.display = '';
-        // Sort by born/date descending, take up to 8
-        var _rbSorted = gh.slice().sort(function(a, b) {
-          var aT = a.born || (a.date ? new Date(a.date).getTime() : 0);
-          var bT = b.born || (b.date ? new Date(b.date).getTime() : 0);
-          return bT - aT;
-        });
-        var _rbMax = Math.min(8, _rbSorted.length);
-        _rbStrip.innerHTML = '';
-        for (var _ri = 0; _ri < _rbMax; _ri++) {
-          (function(_ri) {
-            var _rp = _rbSorted[_ri];
-            var _rIdx = gh.indexOf(_rp);
-            var _rCard = document.createElement('div');
-            _rCard.className = 'gh-recent-card';
-            _rCard.onclick = function() { openCarousel(loadGreenhouse(), _rIdx, 'greenhouse'); };
-            // Grade color
-            var _rColor = '#959588';
-            try {
-              var _rt = hashToTraits(_rp.hash);
-              if (_rp.generation) _rt.chimerGen = _rp.generation;
-              if (_rp.breedLayers) _rt.breedLayers = _rp.breedLayers;
-              if (_rp.compostLayers) _rt.compostLayers = _rp.compostLayers;
-              var _rg = getTerraGrade(_rt);
-              _rColor = _rg.color;
-            } catch(e) {}
-            // Plant name
-            var _rName = '';
-            try { _rName = typeof getPlantName === 'function' ? getPlantName(_rp.hash) : _rp.hash.slice(0,8); } catch(e) { _rName = _rp.hash.slice(0,8); }
-            // Time ago
-            var _rBorn = _rp.born || (_rp.date ? new Date(_rp.date).getTime() : 0);
-            var _rAgo = '';
-            if (_rBorn) {
-              var _rDiff = Math.max(0, Date.now() - _rBorn);
-              var _rHrs = Math.floor(_rDiff / 3600000);
-              if (_rHrs < 1) _rAgo = 'now';
-              else if (_rHrs < 24) _rAgo = _rHrs + 'h ago';
-              else _rAgo = Math.floor(_rHrs / 24) + 'd ago';
-            }
-            // SVG (use cache to avoid expensive regen)
-            var _rSvg = '';
-            var _rbCacheKey = 'rb|' + _rp.hash;
-            if (_ghCardCache[_rbCacheKey]) { _rSvg = _ghCardCache[_rbCacheKey]; }
-            else { try { _rSvg = generatePlantSVG(_rp.hash, 28, 1, (_rp.generation && _rp.generation > 1) ? {chimerGen: _rp.generation} : null); _ghCardCache[_rbCacheKey] = _rSvg; } catch(e) {} }
-            _rCard.innerHTML = '<div class="rc-svg">' + _rSvg + '</div>' +
-              '<div class="rc-name">' + _rName + '</div>' +
-              '<div class="rc-meta"><span class="rc-dot" style="background:' + _rColor + ';"></span><span class="rc-time">' + _rAgo + '</span></div>';
-            _rbStrip.appendChild(_rCard);
-          })(_ri);
-        }
-      }
-    }
+    // 2026-05-13: dropped the dead recent-blooms-strip render path that
+    // sat inside `if (false && ...)` here. The strip was removed
+    // 2026-05-03 ("above the cards in the greenhouse are little squares
+    // of the cards that can be removed"); the wrapper is force-hidden
+    // above and the renderer body has been unreachable since.
 
     // Sort plants based on current mode
     var sorted = gh.slice(); // copy so we don't mutate localStorage order
@@ -47420,47 +47368,11 @@ document.addEventListener('keydown', function(e) {
     // Check for first-discovery celebrations — new synergies fire a modal.
     try { if (window._lwCheckSynergyDiscovery) setTimeout(function(){ window._lwCheckSynergyDiscovery(newHash); }, 2500); } catch(e) {}
 
-    // Bloom-gift card grant ripped 2026-04-26 — element cards no longer
-    // collected. Wrapped in `if (false)` to silence without removing the
-    // legacy block (future iteration may convert this to a Dew/Sunbeam reward).
-    try {
-      if (false && window.LW_FORAGING) {
-        var _inv = window.LW_FORAGING.loadInventory();
-        if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
-          // Resolve the bloomed plant's grade so rarer plants have a shot
-          // at dropping a rare wild-card (moonlight / thunder / aurora).
-          var _bloomGrade = 'Common';
-          try {
-            if (window.hashToTraits && window.getTerraGrade && plant && plant.hash) {
-              var _bt = hashToTraits(plant.hash);
-              var _bg = getTerraGrade(_bt);
-              if (_bg && _bg.name) _bloomGrade = _bg.name;
-            }
-          } catch(eG){}
-          // Rare wild-card chance scales with bloom rarity. Roll once — if
-          // it hits we drop a rare; otherwise a basic element card.
-          var _rareChance = ({ Legendary:0.25, Mythic:0.55, Cosmic:0.85 })[_bloomGrade] || 0;
-          var _rolledRare = (Math.random() < _rareChance);
-          var _pick;
-          if (_rolledRare) {
-            var _rarePool = ['moonlight','thunder','aurora'];
-            _pick = _rarePool[Math.floor(Math.random() * _rarePool.length)];
-          } else {
-            var _pool = ['sun','shade','rain','dry','wind','still'];
-            _pick = _pool[Math.floor(Math.random() * _pool.length)];
-          }
-          window.LW_FORAGING.addCard(_pick, 1);
-          if (window.LW_FORAGING.EL[_pick] && window._toast) {
-            var _rareTag = _rolledRare ? ' \u2605 RARE WILD' : '';
-            var _eIc = (window._elIconHTML ? _elIconHTML(_pick, 28) : window.LW_FORAGING.EL[_pick].icon);
-            setTimeout(function(){
-              try { window._toast('<img src="assets/fx/leaf-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> Bloom gift: ' + _eIc + ' ' + window.LW_FORAGING.EL[_pick].label + _rareTag + ' card added to foraging hand.', { html:true }); }
-              catch(e){ window._toast('<img src="assets/fx/leaf-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> Bloom gift: ' + window.LW_FORAGING.EL[_pick].icon + ' ' + window.LW_FORAGING.EL[_pick].label + _rareTag + ' card added to foraging hand.', {html:true}); }
-            }, 2500);
-          }
-        }
-      }
-    } catch(e) {}
+    // 2026-05-13: Bloom-gift element-card grant block removed. It was
+    // ripped 2026-04-26 ("element cards no longer collected") and parked
+    // inside `if (false)`. If a Dew/Sunbeam bloom-gift reward lands later,
+    // write fresh code; this block was tied to the retired card-inventory
+    // surface and would not transplant cleanly.
     // Mystery box drop — Uncommon+ bloom rarity-scaled. Locked spec:
     // Uncommon 8%, Rare 20%, Epic 40%, Legendary 65%, Mythic 85%, Cosmic 100%.
     var _bloomGradeForDrops = 'Common';
@@ -52660,44 +52572,9 @@ function _awardFeral(hash, parentA, parentB, zk, info) {
   // 'Elsewhere Eyes' BoS event — first successful forage of a feral.
   try { if (window.LW_Events) window.LW_Events.fire('Elsewhere Eyes'); } catch(e) {}
 
-  // Foraging success card drops — the hex itself pays out a card scaled
-  // by its grade. Ensures rare wild-cards (moonlight / thunder / aurora)
-  // actually reach the player from the game they came out of, not only
-  // from nursery blooms later. Skips if the hand is already at capacity.
-  try {
-    if (false && window.LW_FORAGING && info && info.grade) {
-      // Forage-success card drop ripped 2026-04-26 — element cards not collected.
-      var _fInv = window.LW_FORAGING.loadInventory();
-      if (window.LW_FORAGING.totalCards(_fInv) < window.LW_FORAGING.cardCapacity()) {
-        var _rareByGrade = {
-          Common:    0,
-          Uncommon:  0.05,
-          Rare:      0.12,
-          Epic:      0.25,
-          Legendary: 0.50,
-          Mythic:    0.80,
-          Cosmic:    1.00
-        };
-        var _chance = _rareByGrade[info.grade] != null ? _rareByGrade[info.grade] : 0;
-        var _drop;
-        if (Math.random() < _chance) {
-          var _rarePool = ['moonlight','thunder','aurora'];
-          _drop = _rarePool[Math.floor(Math.random() * _rarePool.length)];
-        } else {
-          var _basicPool = ['sun','shade','rain','dry','wind','still'];
-          _drop = _basicPool[Math.floor(Math.random() * _basicPool.length)];
-        }
-        window.LW_FORAGING.addCard(_drop, 1);
-        var _elDef = window.LW_FORAGING.EL[_drop];
-        if (_elDef && window._toast) {
-          var _rareTag = _elDef.rare ? ' \u2605 RARE WILD' : '';
-          setTimeout(function(){
-            window._toast('\ud83c\udf3f Forage reward: ' + _elDef.icon + ' ' + _elDef.label + _rareTag);
-          }, 600);
-        }
-      }
-    }
-  } catch(eC) {}
+  // 2026-05-13: Forage-success element-card grant block removed.
+  // Same retirement story as the bloom-gift block above — element
+  // cards no longer collected, parked in `if (false)` since 2026-04-26.
 
   // Event log: a mystery seed joining the pouch is a Root Report entry.
   // The bloom moment reveals it — both beats show up in the journal.
@@ -97596,24 +97473,8 @@ window._lwLevelCeremony=function(newLvl){
   if(window._toast)window._toast(c.icon+' '+c.title+'. '+c.body);
   try{if(window._playWin)window._playWin();}catch(e){}
   try{if(window._haptic)window._haptic('bloom');}catch(e){}
-  // Level-up foraging-card grant ripped 2026-04-26 — element cards no longer collected.
-  try {
-    if (false && window.LW_FORAGING) {
-      var _inv = window.LW_FORAGING.loadInventory();
-      if (window.LW_FORAGING.totalCards(_inv) < window.LW_FORAGING.cardCapacity()) {
-        var _min = Infinity;
-        for (var _ek in _inv) if (_inv[_ek] < _min) _min = _inv[_ek];
-        var _candidates = [];
-        for (var _ek2 in _inv) if (_inv[_ek2] === _min) _candidates.push(_ek2);
-        var _pick = _candidates[Math.floor(Math.random() * _candidates.length)];
-        window.LW_FORAGING.addCard(_pick, 1);
-        var _el = window.LW_FORAGING.EL[_pick];
-        if (_el && window._toast) setTimeout(function(){
-          window._toast('\ud83c\udff5\ufe0f Level-up gift: ' + _el.icon + ' ' + _el.label + ' card added to foraging hand.');
-        }, 2500);
-      }
-    }
-  } catch(e) {}
+  // 2026-05-13: Level-up element-card grant block removed. Same
+  // retirement story as the bloom-gift / forage-success blocks.
 };
 // Initial apply
 setTimeout(function(){try{window._lwApplyGates();}catch(e){}},600);
