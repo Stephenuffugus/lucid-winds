@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.13.11';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6019,12 +6019,16 @@
    clear the xp and make it feel comfy.' Bumped top 59 → 72 to drop
    below the XP bar in row 1. Image overflow trimmed 120 → 115% so
    BP art doesn't poke up into row 1. */
-#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:6px !important;z-index:998;width:60px;height:60px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:115%;}
+/* Stephen 2026-05-13: BoS + BP sat on the very bottom edge of the keeper
+   bar in Chrome — visually not centered against the row they share with
+   currency badges. Nudged top 72 → 64 (-8px) so they sit a hair higher
+   in the bar. */
+#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 64px) !important;right:6px !important;z-index:998;width:60px;height:60px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:115%;}
 /* Compendium / Book of Secrets — same row, same Y as BP. Stephen 2026-05-03:
    tester saw BoS pressed against DEW button on Galaxy. Tightened BASE values
    (no more relying on media query alone) — 70 → 60 and right:84 → 78 so the
    image's left edge clears kb-row2 even at narrow widths. */
-#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 72px) !important;right:78px !important;width:60px !important;height:60px !important;}
+#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 64px) !important;right:78px !important;width:60px !important;height:60px !important;}
 #kb-compendium img{width:115% !important;height:115% !important;object-fit:contain !important;margin:-7.5% !important;display:block !important;}
 /* Hide BP during game-active so the game UI gets the full screen
    (kb-compendium is already in the game-active hide list). */
