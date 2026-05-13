@@ -9214,7 +9214,6 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
         var t=hashToTraits(p.hash);
         var season=t.season%4;
         var seasonKeys=['spring','summer','autumn','winter'];
-        var seasonEmblems=['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
         var sk=seasonKeys[season];
         var ea=window.computeEA?computeEA(t,0):0;
         var tg=getTerraGrade(t);
@@ -13494,7 +13493,11 @@ document.addEventListener('keydown', function(e) {
 
   // ── Properties: 4 dimensions × 3 values each ──
   // 0=color, 1=shape, 2=number(1-3), 3=shading(solid/striped/empty)
-  var COLORS, SHAPES, SHADINGS = ['solid','striped','empty'];
+  // 2026-05-13: dropped `var COLORS, SHAPES,` — both were declared as
+  // undefined and never read. Colors come from getColors() (DOM picker)
+  // and shapes from SHAPE_SETS[activeShapeSet]; the bare COLORS/SHAPES
+  // identifiers were pre-refactor leftovers.
+  var SHADINGS = ['solid','striped','empty'];
   var NUMBERS = [1,2,3];
 
   // Shape sets
@@ -13879,7 +13882,6 @@ document.addEventListener('keydown', function(e) {
 
   // ═══ INTERACTIVE DEMO MODE ═══
   var demoActive = false;
-  var demoPheno = null;
 
   // Per-game rules registry. Games (or callers) populate
   // window._gameRules[id] with detailed HTML strings. The ? button
@@ -14599,7 +14601,6 @@ document.addEventListener('keydown', function(e) {
 
   function exitDemo() {
     demoActive = false;
-    demoPheno = null;
     var cards = document.querySelectorAll('.grove-card');
     cards.forEach(function(card) {
       card.classList.remove('dimmed');
@@ -14822,7 +14823,6 @@ document.addEventListener('keydown', function(e) {
     slate:'#5E7275', rose:'#A87285', teal:'#4A8A78', copper:'#A87850', ash:'#959588',
     violet:'#8860A8'
   };
-  var PAL_KEYS = ['pine','sage','terra','sand','cream','moss','slate','teal','copper','ash','plum','amber','rust','rose','violet','gold'];
 
   var STEM_COLORS = [
     {base:'#3A5C2A', light:'#5E8550'},  // 0: Forest Green (default)
@@ -14969,7 +14969,6 @@ document.addEventListener('keydown', function(e) {
     }
     return '';
   }
-  var LEAF_PALS = ['pine','sage','moss','teal','plum','amber','slate','rose'];
   var BLOOM_PALS = ['gold','terra','plum','cream','rust','amber','rose','copper','violet','teal'];
 
   // ── SVG DEFS — injected once per plant ──
@@ -15652,7 +15651,6 @@ document.addEventListener('keydown', function(e) {
   // Alias: bases → substrates (code reads TRAIT_BANK.bases, expanded data lives in substrates)
   TRAIT_BANK.bases = TRAIT_BANK.substrates;
   window.TRAIT_BANK = TRAIT_BANK;
-  var TOTAL_COMBOS = 16*16*16*16*16*16*16*16; // 4,294,967,296
 
   // ═══ HASH → TRAITS ═══
   // set-103-8-14: UNIFIED — renderer now delegates to the global
@@ -42715,7 +42713,6 @@ document.addEventListener('keydown', function(e) {
     } catch(e) {}
 
     var seasonKeys = ['spring','summer','autumn','winter'];
-    var seasonEmblems = ['\ud83c\udf38','\u2600\ufe0f','\ud83c\udf42','\u2744\ufe0f'];
     var seasonNames = ['Spring','Summer','Autumn','Winter'];
     var sk = seasonKeys[_season];
     var sColor = _tg ? _tg.color : 'var(--cream)';
