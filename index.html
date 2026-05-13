@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.13.13';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6674,6 +6674,18 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
     .ob-beat.show .ob-img-area img{animation:obKenBurns 12s ease-in-out infinite alternate;}
     @keyframes obKenBurns{0%{transform:scale(1.0);}100%{transform:scale(1.06);}}
     #ob-beat3 .ob-img-area img{object-position:center 60%;}
+    /* 2026-05-13: desktop-only intro fit. Source beat images are 540x960
+       portrait; on a landscape desktop, object-fit:cover scales them so
+       width fills, height overflows by ~3x, and object-position:center 30%
+       anchors near the top — user reported they could only see the top
+       third of the image with text + auth + skip controls below the
+       visible viewport. Switch to object-fit:contain at desktop widths
+       and cap the image area to 70vh so the whole frame is visible AND
+       the text/auth area below stays in view. Mobile (<800px) untouched. */
+    @media (min-width: 800px) {
+      .ob-img-area { max-height: 70vh; }
+      .ob-img-area img { object-fit: contain; }
+    }
 
     /* Tab backgrounds */
     /* Stephen 2026-04-26: 'background seems to shift at a point and change
