@@ -42608,41 +42608,6 @@ document.addEventListener('keydown', function(e) {
     if (window.syncVaultToCloud) syncVaultToCloud();
   }
 
-  // ═══ CONSULT CHECKOUT ═══
-  window.openConsultCheckout = function() {
-    var btn = document.getElementById('consult-pay-btn');
-    var subEl = document.getElementById('consult-price-sub');
-    // Calendly removed
-
-    // Disable button, show processing state
-    btn.disabled = true;
-    btn.textContent = 'Processing Web3 Transaction...';
-    btn.style.opacity = '0.5';
-    btn.style.animation = 'attnPulse 1.5s ease-in-out infinite';
-
-    if (typeof gtag !== 'undefined') gtag('event', 'consult_checkout', { price: 10, method: 'web3_sim' });
-
-    // Simulate Web3 transaction (replace with real thirdweb/Helio call)
-    setTimeout(function() {
-      // Payment "confirmed"
-      btn.style.display = 'none';
-      if (subEl) subEl.textContent = 'Payment Verified. Secure your time slot below.';
-      if (subEl) subEl.style.color = 'var(--sage)';
-
-      // Show Calendly inline widget
-      if (calContainer) {
-        calContainer.style.display = 'block';
-        // Calendly removed — dead code cleared (set-51: was causing syntax error that killed switchTab)
-        {
-          // Fallback if Calendly SDK hasn't loaded
-          calContainer.innerHTML = '<div style="text-align:center;padding:2rem;"><p style="color:var(--sage);font-size:0.7rem;margin-bottom:0.5rem;">Payment confirmed.</p><a href="#" target="_blank" style="color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.8rem;text-decoration:none;border:1px solid rgba(200,168,75,0.3);padding:0.5rem 1rem;border-radius:4px;">📅 COMING SOON →</a></div>';
-        }
-      }
-
-      if (typeof gtag !== 'undefined') gtag('event', 'consult_payment_confirmed', { price: 10 });
-    }, 2000);
-  };
-
   // ═══ PHASE 30: HAPTIC CAROUSEL ENGINE ══════════════════════════════════
   // Single entry point: openCarousel(arr, startIdx, source)
   // arr    = context array (gh snapshot or sorted binder array)
@@ -80777,7 +80742,6 @@ window._LW_EMOJI_SPRITES = {
   '🌍': 'assets/fx/planet-blue.png',           // earth
   '🌎': 'assets/fx/planet-blue.png',           // earth americas
   '🌏': 'assets/fx/planet-blue.png',           // earth asia
-  '🐉': 'assets/fx/sparkle-purple.png',         // dragon — placeholder until tier-2 dragon-gold lands
   '🐾': 'assets/fx/paw-gold.png',              // paw prints (companion family)
   '📚': 'assets/fx/book-gold.png',             // books (codex)
   '✦':       'assets/fx/sparkle-pink.png',          // four-pointed star (mythic glyph)
