@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.13.12';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -39343,9 +39343,16 @@ document.addEventListener('keydown', function(e) {
       var stored = parseInt(localStorage.getItem(GH_SLOTS_KEY), 10);
       var base = (stored >= GH_SLOTS_BASE && stored <= GH_SLOTS_MAX) ? stored : GH_SLOTS_BASE;
       if (!(stored >= GH_SLOTS_BASE && stored <= GH_SLOTS_MAX)) {
+        // 2026-05-13: dropped the silent `+2` self-heal that was here.
+        // Previously, a missing/corrupt slot key fell back to ghLen+2 —
+        // which meant the cap silently grew to always be 2 above the
+        // player's current plant count, allowing unlimited blooms (Stephen
+        // 2026-05-13: "it's letting me have as many plants in my greenhouse
+        // as I want"). Recovery preserves any existing plants by setting
+        // cap = max(BASE, ghLen) but doesn't grant a free expansion.
         var ghLen = 0;
         try { ghLen = (JSON.parse(localStorage.getItem('sws_greenhouse')) || []).length; } catch(e2) {}
-        base = Math.max(GH_SLOTS_BASE, Math.min(GH_SLOTS_MAX, ghLen + 2));
+        base = Math.max(GH_SLOTS_BASE, Math.min(GH_SLOTS_MAX, ghLen));
         localStorage.setItem(GH_SLOTS_KEY, String(base));
       }
       // Prestige bonus: P4+ grants +1 slot per additional prestige (P4=+1, P5=+2, ...)
@@ -39591,6 +39598,12 @@ document.addEventListener('keydown', function(e) {
     }
     var isEnhance = existingIdx >= 0 && gh[existingIdx].traits === '';
     if (existingIdx >= 0 && !isEnhance) { console.log('[mintPlant] duplicate hash, skipping'); return false; }
+    // 2026-05-13: read cap fresh instead of using module-level
+    // MAX_COLLECTION_SIZE. The variable is only refreshed on
+    // renderGreenhouse + slot-purchase, so an out-of-band mint
+    // (server callback, cloud-restore, dev tool) could see a stale
+    // value. Always pull current.
+    MAX_COLLECTION_SIZE = getGHSlots();
     if (existingIdx < 0 && gh.length >= MAX_COLLECTION_SIZE) {
       // Greenhouse full — send to reserve instead of losing the plant
       try {
@@ -47719,6 +47732,26 @@ document.addEventListener('keydown', function(e) {
 
   window.confirmBloom = function() {
     if (!_bloomPendingSeed || !window.FG_Data) return;
+    // 2026-05-13: greenhouse-full pre-check. Previously the seed was
+    // consumed by bloomSeed() BEFORE the cap was tested in mintPlant —
+    // when full, the plant went silently to a Reserve queue but the
+    // player just saw their seed disappear. Stephen: "it's letting me
+    // have as many plants in my greenhouse as i want... needs to not
+    // let you finish blooming a seed without an empty slot." Now we
+    // check the cap up front, refuse, and the seed stays in the nursery.
+    try {
+      var _ghPre = (typeof loadGreenhouse === 'function') ? loadGreenhouse() : [];
+      var _capPre = (typeof getGHSlots === 'function') ? getGHSlots() : (typeof MAX_COLLECTION_SIZE === 'number' ? MAX_COLLECTION_SIZE : 60);
+      if (_ghPre.length >= _capPre) {
+        closeBloomModal();
+        if (window._toast) {
+          window._toast('Greenhouse full (' + _ghPre.length + '/' + _capPre + '). Compost a plant or expand slots, then try again.');
+        } else if (typeof _setNurMsg === 'function') {
+          _setNurMsg('Greenhouse full — compost a plant or expand slots, then try again.');
+        }
+        return;
+      }
+    } catch(_capErr) {}
     var result = FG_Data.bloomSeed(_bloomPendingSeed.id);
     if (!result.ok) { closeBloomModal(); _setNurMsg('Could not bloom: '+result.reason); return; }
     FG_Data.logAncestry(result.ancestry.parentAHash, result.ancestry.parentBHash, result.ancestry.nonce, result.seedHash);
