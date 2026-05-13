@@ -54315,44 +54315,14 @@ function _shieldBadge(p){
 
 function _addPlant(p){
   if(!_map)return;
-  // HEX MODE: skip individual markers — only hex polygons render on map
+  // HEX MODE: skip individual markers — only hex polygons render on map.
+  // 2026-05-13: dropped the dead pin-rendering body (~36 lines below this
+  // early return). Stephen confirmed hex mode is integral and permanent;
+  // the old pin code was kept as a fallback that would never fire.
+  // Restoring pin mode later would require re-verifying every dependency
+  // (`_buildInfo`, `_glowRing`, `_shieldBadge`, `showTP`) anyway, so the
+  // archived body wasn't actually useful as a rollback path.
   return null;
-  var sz=p.own?40:26,svg='';
-  if(p.own){
-    if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
-  } else {
-    svg='<img src="assets/games/wild/wild-marker-common-v2.png" style="width:'+sz+'px;height:'+sz+'px;filter:drop-shadow(0 0 4px rgba(122,179,86,0.3));" alt="">';
-  }
-  if(!svg||svg.length<30){var fc=p.own?'#7ab356':'#5a7050';svg='<svg viewBox="0 0 30 40" width="'+sz+'" height="'+Math.round(sz*40/30)+'" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="30" width="14" height="10" rx="2" fill="#5a3a1f"/><line x1="15" y1="30" x2="15" y2="12" stroke="#3A5C2A" stroke-width="3" stroke-linecap="round"/><ellipse cx="8" cy="18" rx="7" ry="5" fill="'+fc+'" opacity="0.85" transform="rotate(-20 8 18)"/><ellipse cx="22" cy="15" rx="7" ry="5" fill="'+fc+'" opacity="0.8" transform="rotate(15 22 15)"/></svg>';}
-  var info=_buildInfo(p.hash);
-  // Own plants: show name in rarity color + season emblem + glow
-  // Wild plants: show name in muted neutral — rarity is a mystery until harvest
-  var tagColor=p.own?info.gc:'var(--muted)';
-  var seasonEmb='';if(p.own&&info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
-  var tagName=p.own?info.nm:'Wild Plant';
-  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+tagName+seasonEmb+'</div>';
-  var th=Math.round(sz*40/30)+14;
-  var glow=_glowRing(info.grade,p.own);
-  var shield=_shieldBadge(p);
-  // Age-based visual for own plants
-  var ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));';
-  if(p.own){
-    var d=p.days||0;
-    if(d<=2)ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 6px rgba(122,179,86,0.4));'; // young — bright green aura
-    else if(d>=7)ageFilter='filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 5px rgba(200,168,75,0.25));'; // established — warm gold
-  }
-  // Wilting visual — neglected plants desaturate + brown ring
-  var wiltStyle='';var wiltRing='';
-  var nd=p.neglectDecay||0;var isWilt=(nd>0||p.status==='Wilting');
-  if(isWilt){
-    wiltStyle='filter:saturate(0.4) brightness(0.7);';
-    wiltRing='<div style="position:absolute;inset:-4px;border:2px solid rgba(139,90,43,0.6);border-radius:50%;pointer-events:none;z-index:0;"></div>';
-    if(nd>10)wiltStyle+='opacity:0.5;';
-  }
-  var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;'+ageFilter+'">'
-    +glow+shield+wiltRing+'<div style="'+wiltStyle+'">'+svg+'</div>'+tag+'</div>';
-  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',neglectDecay:nd,traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
-  var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
 }
 
 // ═══ TRAIT PANEL ═══
@@ -57881,39 +57851,11 @@ function _unsubscribeSharedDrops(){
 // Add a single shared drop marker to the map (returns the Leaflet marker)
 function _addSharedMarker(p){
   if(!_map)return null;
-  // HEX MODE: skip individual markers — hex inspector handles display
+  // HEX MODE: skip individual markers — hex inspector handles display.
+  // 2026-05-13: dropped the dead pin-rendering body (~31 lines). Same
+  // reasoning as _addPlant above — hex mode is permanent, the archived
+  // pin body wasn't a viable rollback path.
   return null;
-  var sz=p.own?40:26,svg='';
-  if(p.own){
-    // Own plants: show the actual procedural SVG
-    if(window._generatePlantSVG&&p.hash){try{svg=window._generatePlantSVG(p.hash,sz);}catch(e){}}
-  } else {
-    // Non-owned: generic leaf icon — rarity is a mystery
-    svg='<img src="assets/games/wild/wild-marker-common-v2.png" style="width:'+sz+'px;height:'+sz+'px;filter:drop-shadow(0 0 4px rgba(122,179,86,0.3));" alt="">';
-  }
-  if(!svg||svg.length<30){var fc=p.own?'#7ab356':'#5a7050';svg='<svg viewBox="0 0 30 40" width="'+sz+'" height="'+Math.round(sz*40/30)+'" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="30" width="14" height="10" rx="2" fill="#5a3a1f"/><line x1="15" y1="30" x2="15" y2="12" stroke="#3A5C2A" stroke-width="3" stroke-linecap="round"/><ellipse cx="8" cy="18" rx="7" ry="5" fill="'+fc+'" opacity="0.85" transform="rotate(-20 8 18)"/><ellipse cx="22" cy="15" rx="7" ry="5" fill="'+fc+'" opacity="0.8" transform="rotate(15 22 15)"/></svg>';}
-  var info=_buildInfo(p.hash);
-  var tagColor=p.own?info.gc:'var(--muted)';
-  var seasonEmb='';if(p.own&&info.t&&window.getSeasonInfo){var si=window.getSeasonInfo(info.t);seasonEmb=' <span style="font-size:0.35rem;">'+si.emblem+'</span>';}
-  // Non-owned plants: hide name, grade, season — mystery until harvest
-  var tagName=p.own?info.nm:'Wild Plant';
-  var tag='<div style="position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:Bebas Neue,sans-serif;font-size:0.35rem;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,0.8);color:'+tagColor+';pointer-events:none;">'+tagName+seasonEmb+'</div>';
-  var th=Math.round(sz*40/30)+14;
-  var glow=_glowRing(info.grade||p.grade,p.own);
-  var shield=_shieldBadge(p);
-  // Wilting visual — neglected plants desaturate + brown ring
-  var wiltStyle2='';var wiltRing2='';
-  var nd2=p.neglectDecay||0;var isWilt2=(nd2>0||p.status==='Wilting');
-  if(isWilt2){
-    wiltStyle2='filter:saturate(0.4) brightness(0.7);';
-    wiltRing2='<div style="position:absolute;inset:-4px;border:2px solid rgba(139,90,43,0.6);border-radius:50%;pointer-events:none;z-index:0;"></div>';
-    if(nd2>10)wiltStyle2+='opacity:0.5;';
-  }
-  var html='<div style="position:relative;width:'+(sz+6)+'px;height:'+th+'px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));">'
-    +glow+shield+wiltRing2+'<div style="'+wiltStyle2+'">'+svg+'</div>'+tag+'</div>';
-  var pd={lat:p.lat,lng:p.lng,hash:p.hash,own:p.own,name:info.nm,grade:info.grade||p.grade,gc:info.gc,days:p.days||0,pollen:p.pollen||0,status:p.status||'Growing',neglectDecay:nd2,traits:info.t,rarities:info.rarities,defenderGame:p.defenderGame||'set',ownerUid:p.ownerUid||'',ownerName:p.ownerName||'Keeper'};
-  var mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:html,iconSize:[sz+6,th],iconAnchor:[(sz+6)/2,th-6]}),zIndexOffset:p.own?500:100}).addTo(_map).on('click',function(){showTP(pd,mk);});
-  return mk;
 }
 
 // Broad fallback — loads all alive drops within range (no zone filter)
