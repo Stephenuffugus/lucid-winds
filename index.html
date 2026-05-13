@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.13.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -3942,7 +3942,10 @@
     .bs-breed-btn{display:block;width:100%;margin-top:0.5rem;padding:0.7rem 1rem;border:2px solid rgba(200,168,75,0.3);border-radius:9px;background:linear-gradient(180deg,rgba(200,168,75,0.07),rgba(200,168,75,0.02));color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.15em;cursor:pointer;min-height:56px;box-shadow:0 3px 12px rgba(200,168,75,0.06);}
     .bs-breed-btn:active{transform:scale(0.98);}
     /* Confirm overlay */
-    .bs-confirm{display:none;position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:0.6rem;padding:1.5rem;}
+    /* 2026-05-13: dropped backdrop-filter:blur(8px). Same issue as compost
+       confirm — multi-second tap latency on Pi Browser, stacked modal layers.
+       Bumped solid-alpha bg from 0.8 to 0.92 to keep the visual occlusion. */
+    .bs-confirm{display:none;position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;flex-direction:column;gap:0.6rem;padding:1.5rem;}
     .bs-confirm.open{display:flex;}
     .bs-confirm-card{background:rgba(26,36,22,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:12px;padding:1.4rem 1.6rem;text-align:center;max-width:340px;width:100%;}
     .bs-confirm-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--cream);margin-bottom:0.5rem;}
@@ -43656,12 +43659,20 @@ document.addEventListener('keydown', function(e) {
   // ── Carousel action wrappers (greenhouse mechanics fix) ──────────────
   window.carouselCompost = function() {
     if (!galleryPlant) { showHexMsg('No plant selected.'); return; }
+    var _gpHash = galleryPlant.hash;
     var idx = galleryPlant.collectionIndex;
+    // 2026-05-13: close the carousel FIRST. Stacking the compost modal on top
+    // of a still-open carousel (each with its own backdrop-filter + SVGs) was
+    // causing multi-second taps on phones — two compositing layers fighting.
+    // Closing the carousel before opening compost confirm keeps the layer
+    // count low. Same fix would apply to any other carousel action that
+    // currently stacks (breed already closes; this brings compost in line).
+    try { closePlantGallery(); } catch(e){}
     // Fallback: if collectionIndex missing, find by hash in greenhouse
     if (typeof idx !== 'number' || idx < 0) {
       var gh2 = loadGreenhouse();
       for (var fi = 0; fi < gh2.length; fi++) {
-        if (gh2[fi].hash === galleryPlant.hash) { idx = fi; break; }
+        if (gh2[fi].hash === _gpHash) { idx = fi; break; }
       }
     }
     if (typeof idx !== 'number' || idx < 0) { showHexMsg('Could not find plant in greenhouse.'); return; }
@@ -45109,7 +45120,14 @@ document.addEventListener('keydown', function(e) {
     // In-game compost confirmation modal
     var modal = document.createElement('div');
     modal.id = 'compost-confirm-modal';
-    modal.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.88) url(assets/screens/compost-screen-v2.png) top center/contain no-repeat;backdrop-filter:blur(12px);animation:panelFadeIn 0.3s ease;padding:1.5rem;';
+    // 2026-05-13: dropped backdrop-filter:blur(12px). It was rendering at
+    // multi-second tap latency on Pi Browser / mobile — backdrop-filter is
+    // notoriously slow there, and stacking it on top of the carousel's own
+    // filter blew compositing budget. Solid-alpha background keeps the same
+    // visual weight (the panel's own opaque box covers most of the viewport
+    // anyway) without the GPU cost. compost-screen-v2.png moved into the
+    // BACKGROUND but the inner card is opaque so it's mostly cosmetic.
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92) url(assets/screens/compost-screen-v2.png) top center/contain no-repeat;animation:panelFadeIn 0.3s ease;padding:1.5rem;';
     var h = '<div style="text-align:center;max-width:320px;background:rgba(18,22,16,0.95);border:1.5px solid rgba(200,168,75,0.25);border-radius:14px;padding:1.2rem 1rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);">';
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.4rem;">RETURN TO EARTH</div>';
     h += '<div style="margin:0 auto 0.3rem;opacity:0.7;">'+svg+'</div>';
@@ -79634,34 +79652,16 @@ function _renderForecast(){
   }
   h+='</div>';
   h+='<div class="bs-chimera">\ud83e\uddec <span>Gen '+offGen+' Chimera, <b>-'+(offGen-1)*2+' EA</b> but <b>2× climate immunity</b>.</span></div>';
-  // Monte Carlo simulation forecast
-  if(window.breedingForecast&&_plantA&&_partners[_pIdx]){
-    var _fc=breedingForecast(_plantA.hash,_partners[_pIdx].hash);
-    if(_fc){
-      h+='<div style="margin-top:0.4rem;padding:0.4rem;background:rgba(18,22,16,0.5);border:1px solid rgba(200,168,75,0.1);border-radius:6px;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION (2000 offspring)</div>';
-      // Grade breakdown bar
-      h+='<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:0.2rem;">';
-      var _gcColors={Common:'rgba(138,145,120,0.6)',Uncommon:'rgba(122,179,86,0.7)',Rare:'rgba(91,175,220,0.8)',Epic:'rgba(153,89,182,0.8)',Legendary:'rgba(200,168,75,0.8)',Mythic:'rgba(232,160,191,0.8)',Cosmic:'rgba(255,110,199,0.9)'};
-      var _gOrder=['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
-      for(var _gi=0;_gi<_gOrder.length;_gi++){
-        var _gPct=_fc.grades[_gOrder[_gi]]||0;
-        if(_gPct>0)h+='<div style="width:'+_gPct+'%;background:'+_gcColors[_gOrder[_gi]]+';"></div>';
-      }
-      h+='</div>';
-      // Grade labels
-      h+='<div style="display:flex;flex-wrap:wrap;gap:4px;font-family:DM Mono,monospace;font-size:0.28rem;">';
-      for(var _gl=0;_gl<_gOrder.length;_gl++){
-        var _glPct=_fc.grades[_gOrder[_gl]]||0;
-        if(_glPct>0)h+='<span style="color:'+_gcColors[_gOrder[_gl]]+';">'+_gOrder[_gl]+' '+_glPct+'%</span>';
-      }
-      h+='</div>';
-      // EA + mutation + flower
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);margin-top:0.15rem;">';
-      h+='EA '+_fc.eaRange[0]+'-'+_fc.eaRange[1]+' · '+_fc.mutationChance+'% mutation · '+_fc.flowerChance+'% bloom';
-      h+='</div></div>';
-    }
-  }
+  // 2026-05-13: Monte Carlo simulation is deferred to a separate render
+  // pass so the breed screen paints immediately on tap. The sim does
+  // hashToTraits + getTerraGrade + computeEA per iteration; with 50+ plants
+  // and any partner swipe firing this, Stephen saw multi-second BREED
+  // delays. Render a placeholder now; schedule the real sim + replacement
+  // after the screen has had a paint frame.
+  h+='<div id="bs-forecast-sim" style="margin-top:0.4rem;padding:0.4rem;background:rgba(18,22,16,0.35);border:1px solid rgba(200,168,75,0.1);border-radius:6px;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--muted);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">Computing offspring distribution…</div>';
+  h+='</div>';
 
   // Inbreeding depression warning
   var _mutA = iA.t.mutationName || 'None';
@@ -79730,6 +79730,45 @@ function _renderForecast(){
   h+='<div style="font-size:0.5rem;color:#d8a0a0;"><span class="bs-tag tag-risk">RISKY</span> Unpredictable, may mutate or vanish</div>';
   h+='</div></div>';
   fc.innerHTML=h;
+  // 2026-05-13: deferred Monte Carlo sim. Schedules after the current
+  // paint frame so the breed screen appears at tap-time instead of waiting
+  // ~600ms for the sim to finish. Cached by hash pair so subsequent swipes
+  // to a partner already simulated are instant.
+  try{
+    var _bsRunSim = function(){
+      if(!window.breedingForecast||!_plantA||!_partners[_pIdx])return;
+      var _simEl = document.getElementById('bs-forecast-sim');
+      if(!_simEl)return;
+      var _fc = breedingForecast(_plantA.hash,_partners[_pIdx].hash);
+      if(!_fc){ _simEl.style.display='none'; return; }
+      var _gcColors={Common:'rgba(138,145,120,0.6)',Uncommon:'rgba(122,179,86,0.7)',Rare:'rgba(91,175,220,0.8)',Epic:'rgba(153,89,182,0.8)',Legendary:'rgba(200,168,75,0.8)',Mythic:'rgba(232,160,191,0.8)',Cosmic:'rgba(255,110,199,0.9)'};
+      var _gOrder=['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
+      var _sh='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION (600 offspring)</div>';
+      _sh+='<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:0.2rem;">';
+      for(var _gi=0;_gi<_gOrder.length;_gi++){
+        var _gPct=_fc.grades[_gOrder[_gi]]||0;
+        if(_gPct>0)_sh+='<div style="width:'+_gPct+'%;background:'+_gcColors[_gOrder[_gi]]+';"></div>';
+      }
+      _sh+='</div>';
+      _sh+='<div style="display:flex;flex-wrap:wrap;gap:4px;font-family:DM Mono,monospace;font-size:0.28rem;">';
+      for(var _gl=0;_gl<_gOrder.length;_gl++){
+        var _glPct=_fc.grades[_gOrder[_gl]]||0;
+        if(_glPct>0)_sh+='<span style="color:'+_gcColors[_gOrder[_gl]]+';">'+_gOrder[_gl]+' '+_glPct+'%</span>';
+      }
+      _sh+='</div>';
+      _sh+='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);margin-top:0.15rem;">';
+      _sh+='EA '+_fc.eaRange[0]+'-'+_fc.eaRange[1]+' · '+_fc.mutationChance+'% mutation · '+_fc.flowerChance+'% bloom';
+      _sh+='</div>';
+      _simEl.style.background='rgba(18,22,16,0.5)';
+      _simEl.innerHTML=_sh;
+    };
+    // Two-frame delay: one for browser paint, one for the user to see the
+    // skeleton before the heavy compute runs. requestAnimationFrame ×2
+    // beats setTimeout(0) for "paint then work" on mobile.
+    if(window.requestAnimationFrame){
+      requestAnimationFrame(function(){ requestAnimationFrame(_bsRunSim); });
+    } else { setTimeout(_bsRunSim, 16); }
+  }catch(_bsErr){}
 }
 
 window.openBreedScreen=function(plantA,context){
@@ -80137,15 +80176,15 @@ window.breedingForecast=function(hashA,hashB){
     return child.join('');
   }
 
-  // Simulate 2000 potential offspring to build probability ranges.
-  // Old N=20 gave 5% display resolution — a single 0.5% Mythic roll in
-  // the sample showed as "5% Mythic" in the UI even though true odds
-  // were ~0.02%. Bumped to 2000 so rare grades show realistic decimals
-  // (or "<0.1%") and the forecast actually predicts what players see.
-  // Real breed layers (chimeraVein etc) also simulated now — they add
-  // 0-6 score that the old forecast ignored, structurally underestimating
-  // grade compared to the actual bloom.
-  var FCAST_N = 2000;
+  // Simulate offspring to build probability ranges.
+  // 2026-05-13: dropped from 2000 → 600. With 50+ plants in the greenhouse,
+  // Stephen reported multi-second taps on BREED. The sim is the long pole:
+  // each iteration does hashToTraits + getTerraGrade + computeEA, so 2000×3
+  // heavy calls = ~6000 trait computations per partner swipe on Pi Browser.
+  // N=600 still distinguishes Mythic ~0.5% from Cosmic ~0.05% well enough
+  // for the UI's rounded display, and runs ~3.3× faster. Forecast is also
+  // deferred via setTimeout at the call site so the screen appears first.
+  var FCAST_N = 600;
   var results={grades:{},seasons:{},companions:{},mutations:0,eaRange:[99,0],hasFlower:0};
   // Realistic breed-layer rates per evaluateBreedLayers (line ~8730).
   // Rates approximate the gate × probability product across random parents.
