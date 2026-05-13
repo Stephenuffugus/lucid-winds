@@ -86996,10 +86996,22 @@ window._lwClaimHerbarium = function(id){
     for (var si = 0; si < seedSrc.length; si++) seed = ((seed<<5) - seed + seedSrc.charCodeAt(si))|0;
     var rng = function(){ seed = (seed * 9301 + 49297) % 233280; return Math.abs(seed) / 233280; };
 
-    // Decide how many rare slots, capped at min(size-2, 3) so hand always
-    // has at least 2 base elements + can never exceed the rare pool length.
+    // Decide how many rare slots. hexComposition constrains its element pool
+    // to the NON-RARE cards in the hand, so the hand must contain strictly
+    // MORE base elements than slots — at minimum `slots + 1`. Otherwise:
+    //   • exactly `slots` base → every base card forced into the hex; the
+    //     puzzle collapses to "guess the order," not a real puzzle.
+    //   • fewer than `slots` base → comp.elements comes back short, and
+    //     resolveAttempt returns null (L87559 crash on resolved.reveal).
+    // Stephen 2026-05-13 ruling: keep wild cards out before keeping rares
+    // in — puzzles must "play right." Effect: common (4-hand, 3-slot) and
+    // rare (5-hand, 4-slot) have no rares; higher tiers still get them.
+    // This naturally lets rare wild cards correlate to higher rarity hexes.
+    var baseSlots = hexDifficulty(g).slots;
+    var rareCap = Math.min(size - baseSlots - 1, RARES.length);
+    if (rareCap < 0) rareCap = 0;
     var rareCount = 0;
-    for (var rc = 0; rc < Math.min(size - 2, RARES.length); rc++) {
+    for (var rc = 0; rc < rareCap; rc++) {
       if (rng() < rareProb) rareCount++;
     }
 
@@ -87533,6 +87545,17 @@ window._lwClaimHerbarium = function(id){
       // selected now holds card IDs directly (change from hand indices).
       var cardsPlayed = selected.slice();
       resolved = resolveAttempt(comp.elements, cardsPlayed, diff.scoreNeeded);
+      // resolveAttempt returns null when hexElements / cardsPlayed lengths
+      // disagree — historically that meant buildHand let too many rares
+      // spawn, shrinking comp.elements below diff.cards. Fixed at the root
+      // (buildHand now uses slots, not size-2), but keep a guard so a
+      // future regression downgrades to a soft toast instead of L87559's
+      // "cannot read properties of null (reading 'reveal')" crash.
+      if (!resolved) {
+        if (window._toast) _toast('Foraging hiccup — try TRY AGAIN.');
+        try { console.warn('[forage] resolveAttempt returned null', { hex: comp.elements, played: cardsPlayed }); } catch(e){}
+        return;
+      }
       // Diviner's Glass — one-shot conversion of MISS → ELSEWHERE for this
       // resolved attempt. Applied BEFORE the learned[] write + score roll-up
       // so counters count.
