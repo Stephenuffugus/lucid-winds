@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.13.06';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -4400,7 +4400,10 @@
     body.game-active .fg-bottomnav,
     body.game-active .rules-strip,
     body.game-active .attn-strip,
-    body.game-active #trios-dash > div:last-child,
+    /* 2026-05-13: removed `body.game-active #trios-dash > div:last-child` rule.
+       The :last-child of #trios-dash is now the buttons row (📖 RULES / 🎓 / ⚙).
+       That rule was hiding the rules button during play. Stephen's "rules button
+       is STILL invisible after a month" — this is why. */
     body.game-active #lw-fb-btn,
     body.game-active #lw-whatnow-btn,
     body.game-active #sws-debug-toggle{display:none!important}
@@ -7460,10 +7463,14 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       </div>
     </div>
 
-    <!-- Phase 28: sws_inventory wallet display row -->
+    <!-- Phase 28: sws_inventory wallet display row.
+         2026-05-13: initial label changed from "DNA" to "FERT" — runtime
+         innerHTML at line ~42289 already renders FERT but the static fallback
+         flashed "0 DNA" on first paint, reinforcing the confusion that DNA
+         is a currency. It isn't. -->
     <div class="inventory-row" id="dash-inventory-row">
       <div class="inventory-label">⬡ INVENTORY</div>
-      <div class="inventory-val" id="dash-inv-dna">0 DNA</div>
+      <div class="inventory-val" id="dash-inv-dna">0 FERT</div>
       <div class="inventory-val" style="color:var(--muted);font-size:0.55rem;" id="dash-inv-sub">· 0 SUBSTRATE</div>
     </div>
 
@@ -39684,11 +39691,22 @@ document.addEventListener('keydown', function(e) {
       rare: traits.isRare,
       traits: getTraitSummary(hash),
       breedCount: 0,
-      generation: 1,
+      // 2026-05-13: accept explicit generation from breed callers.
+      // For isCross plants without explicit gen, default to 2 (parent_max+1
+      // assuming gen-1 parents). This is what _chimeraDualClass needs to
+      // unlock dual-border eval. Non-cross mints stay at gen 1.
+      generation: (opts && typeof opts.generation === 'number')
+        ? opts.generation
+        : ((opts && opts.isCross) ? 2 : 1),
       // Phoenix removed — companion 33 is Cicada now; no suppression gate.
       phoenixSuppressed: false
     };
     if (opts && opts.isCross) entry.isCross = true;
+    // 2026-05-13: persist parent hashes on bred plants so _chimeraDualClass
+    // can run. Without these, every bred plant fell through "no parents"
+    // gate and Stephen's 50+ bred plants showed zero dual borders.
+    if (opts && opts.parentAHash) entry.parentAHash = opts.parentAHash;
+    if (opts && opts.parentBHash) entry.parentBHash = opts.parentBHash;
     // NFT-grade hardening (2026-04-29 EVE): mark whether this plant was
     // server-validated. The future Pi NFT marketplace gates listings on
     // serverSigned===true. Server-mint path sets opts.serverSigned=true;
@@ -45102,7 +45120,10 @@ document.addEventListener('keydown', function(e) {
     h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.3rem;">YOU WILL RECEIVE</div>';
     h += '<div style="display:flex;justify-content:center;gap:0.8rem;">';
     h += '<div style="text-align:center;"><div style="height:32px;display:flex;align-items:center;justify-content:center;"><img src="assets/fx/compost-leaf-green.png" alt="" style="width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));"></div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);">+'+fertReward+'</div><div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">Fertilizer</div></div>';
-    h += '<div style="text-align:center;"><div style="height:32px;display:flex;align-items:center;justify-content:center;"><img src="assets/fx/dna-helix.png" alt="" style="width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));"></div><div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);">+'+fertReward+'</div><div style="font-family:DM Mono,monospace;font-size:0.4rem;color:var(--muted);">DNA</div></div>';
+    // 2026-05-13: dropped phantom "DNA" reward tile. It showed the SAME
+    // fertReward value with a different label, suggesting two rewards
+    // when there's only one. DNA isn't a currency, has no use, adds
+    // confusion (Stephen).
     h += '</div>';
     h += '<div style="font-family:DM Mono,monospace;font-size:0.38rem;color:var(--muted);margin-top:0.3rem;text-align:center;">Fertilizer: +1% rarity per seed (max 25)</div>';
     h += '</div>';
@@ -47793,7 +47814,25 @@ document.addEventListener('keydown', function(e) {
     var result = FG_Data.bloomSeed(_bloomPendingSeed.id);
     if (!result.ok) { closeBloomModal(); _setNurMsg('Could not bloom: '+result.reason); return; }
     FG_Data.logAncestry(result.ancestry.parentAHash, result.ancestry.parentBHash, result.ancestry.nonce, result.seedHash);
-    mintPlant(result.seedHash, { isCross: true });
+    // 2026-05-13: pass parents + computed generation to mintPlant so the
+    // new bred plant gets persisted with the fields _chimeraDualClass needs.
+    // Generation = max(parentA.gen, parentB.gen) + 1. Look up parents
+    // anywhere we can find them (greenhouse, or fall back to gen 1).
+    var _bredGenA = 1, _bredGenB = 1;
+    try {
+      var _bGh = (typeof loadGreenhouse === 'function') ? loadGreenhouse() : [];
+      for (var _bI = 0; _bI < _bGh.length; _bI++) {
+        if (_bGh[_bI].hash === result.ancestry.parentAHash) _bredGenA = _bGh[_bI].generation || 1;
+        if (_bGh[_bI].hash === result.ancestry.parentBHash) _bredGenB = _bGh[_bI].generation || 1;
+      }
+    } catch(_bE) {}
+    var _bredGen = Math.max(_bredGenA, _bredGenB) + 1;
+    mintPlant(result.seedHash, {
+      isCross: true,
+      parentAHash: result.ancestry.parentAHash,
+      parentBHash: result.ancestry.parentBHash,
+      generation: _bredGen
+    });
     // Bump bloom counter for this plant's companion idx (Listeners T3
     // hookable — drops temperament-reveal threshold 3 → 1). Pull traits
     // from the just-minted hash; null-safe for plants with no companion.
@@ -68267,9 +68306,11 @@ function GBW(a){
     +'</div>'
     // Essentials row — CLEAR + SAVE promoted out of the accordion so
     // they're a single tap away. MORE OPTIONS toggle sits with them.
-    // position:sticky keeps this row pinned to the bottom of the game
-    // scroll container even when the canvas pushes other rows off-screen.
-    +'<div style="display:flex;gap:6px;padding:8px 4px;flex-wrap:wrap;justify-content:center;align-items:center;position:sticky;bottom:0;background:rgba(13,16,12,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid rgba(74,124,53,.15);z-index:4;margin:0 -12px">'
+    // 2026-05-13: dropped position:sticky;bottom:0. Stephen: "the clear
+    // button in bloom wheel moves as i scroll so it stacks on other
+    // buttons and looks like shit." The sticky row floated over the
+    // MORE accordion contents on scroll. Now flows inline like the rest.
+    +'<div style="display:flex;gap:6px;padding:8px 4px;flex-wrap:wrap;justify-content:center;align-items:center;background:rgba(13,16,12,.92);border-top:1px solid rgba(74,124,53,.15);margin:0 -12px">'
     +'<button class="gb" style="'+_bbs+';border-color:rgba(217,107,75,0.35);color:#e8a090" onclick="_BWClear()">✕ CLEAR<span style="'+_bls+'">CANVAS</span></button>'
     +'<button class="gb" style="'+_bbs+';border-color:rgba(200,168,75,0.4);color:var(--gold);background:rgba(200,168,75,0.08)" onclick="_BWSave()">💾 SAVE<span style="'+_bls+'">IMAGE</span></button>'
     +'<button class="gb" style="min-height:40px;padding:0.35rem 0.9rem;font-size:0.55rem;letter-spacing:0.1em;background:rgba(26,31,23,.6);border:1px solid rgba(74,124,53,.2);border-radius:8px;" onclick="_BWMore()" id="BWmoreTog">▼ MORE</button>'
@@ -85888,7 +85929,7 @@ function _bosTipsContent() {
   // ─── DAILY ACTIONS ────────────────────────────────────────────────────
   h += sec('DAILY DEW SINKS');
   h += p(gold('Slot Machine') + ' (15 Dew/pull): three reels for fertilizer + Dew payouts. Frequent small wins, occasional big ones. Cheap fun.');
-  h += p(gold('Mystery Box') + ' (25 Dew/pull): rolls one of fertilizer / Sunbeams / Dew / DNA pulls. Bigger swings than the slot machine.');
+  h += p(gold('Mystery Box') + ' (25 Dew/pull): rolls one of fertilizer / Sunbeams / Dew. Bigger swings than the slot machine.');
   h += tipBox('Tip: the Mystery Box and Slot Machine never give items. The backpack BOXES button (separate system) is where painted items come from.');
   h += p(gold('Daily Login') + ' rewards stack with consecutive days. Streaks get juicier the further you go — perfect-month logins drop something rare.');
 
