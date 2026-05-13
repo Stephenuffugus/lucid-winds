@@ -27707,8 +27707,6 @@ document.addEventListener('keydown', function(e) {
         })();
         break;
 
-      // AO halo (master pass injection)
-      s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
       case 14: // Cattails (Typha) — REBUILT 2026-05-01. Single tall slender velvet
                // brown cylinder on a slim sage stem with a gold pollen-spike tip.
                // Old version was a 2-3-stalk cluster with overpacked filaments + a
@@ -27760,8 +27758,6 @@ document.addEventListener('keydown', function(e) {
           s += '<circle cx="'+fx+'" cy="'+(mTop-0.15)+'" r="0.35" fill="rgba(40,20,5,0.6)" opacity="'+(0.75*bloomOp)+'"/>';
         })();
         break;
-      // AO halo (master pass injection)
-      s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
 
       case 15: // Bell Flowers / Lily of the Valley — REBUILT 2026-05-02:
                // Stephen ruling "the bell flowers are kind of plain and could
@@ -50016,7 +50012,6 @@ document.addEventListener('keydown', function(e) {
       btn.style.opacity = '1';
     }
   }
-  _swsSetLoading = _swsSetLoading; // expose for cross-scope access
 
   // ── Helper: disable/enable social buttons ─────────────────────────────────
   function _swsSetSocialLoading(isLoading) {
@@ -50025,14 +50020,12 @@ document.addEventListener('keydown', function(e) {
       if (btn) btn.disabled = isLoading;
     });
   }
-  _swsSetSocialLoading = _swsSetSocialLoading; // expose for OmniSync scope
 
   // ── Helper: show inline error ─────────────────────────────────────────────
   function _swsSetError(msg) {
     var el = document.getElementById('sws-id-error');
     if (el) el.textContent = msg || '';
   }
-  _swsSetError = _swsSetError; // expose for OmniSync scope
 
   // ── submitSWSId (set-94) ──────────────────────────────────────────────────
   // EMAIL/PASSWORD ONLY. Social login is handled by submitSocialLogin().
