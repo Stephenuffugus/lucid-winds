@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.13.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -10229,22 +10229,30 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       }catch(e){alert('Error: '+e.message);}
     },
     auditDualBorders:function(){
-      // Stephen 2026-05-13: diagnostic for "I haven't been seeing duals."
-      // Reads greenhouse, walks every bred plant, reports what each one
-      // would (or wouldn't) get. Logged to console with details so we can
-      // tell if the function is firing or being blocked downstream.
+      // Stephen 2026-05-13: "I just think the probability gate was broken
+      // somehow." Walks every bred plant and reports gen, parent seasons,
+      // and the gate roll byte. If "would pass gate" count is much lower
+      // than 25% of qualifying plants, the gate is biased on real data
+      // (likely parent hash distribution). If it matches ~25%, the gate
+      // is working and Stephen is unlucky.
       try {
         var raw = window._secureGet ? _secureGet('sws_greenhouse') : localStorage.getItem('sws_greenhouse');
         var gh = JSON.parse(raw || '[]');
         var bred = gh.filter(function(p){ return p.parentAHash && p.parentBHash; });
         console.log('=== DUAL BORDER AUDIT ===');
         console.log('Total plants:', gh.length, '| With both parent hashes:', bred.length);
-        var dualCount = 0, sameSeasonCount = 0, gen1Count = 0;
+        var dualCount = 0, sameSeasonCount = 0, gen1Count = 0, qualifyCount = 0, rollSum = 0;
         bred.forEach(function(p, i){
-          var hA = p.parentAHash, hB = p.parentBHash;
+          var hA = p.parentAHash, hB = p.parentBHash, h = p.hash || '';
           var sA = (parseInt(hA[22] + hA[23], 16) || 0) % 4;
           var sB = (parseInt(hB[22] + hB[23], 16) || 0) % 4;
           var gen = p.generation || 1;
+          var roll = h.length >= 18 ? parseInt(h[16] + h[17], 16) : -1;
+          var passesSeason = (sA !== sB);
+          var passesGen    = (gen > 1);
+          var passesRoll   = (roll >= 0 && roll < 0x40);
+          var qualifying   = passesSeason && passesGen;
+          if (qualifying) { qualifyCount++; rollSum += roll; }
           var cls = window._chimeraDualClass ? window._chimeraDualClass(p) : '?';
           if (cls) dualCount++;
           else if (sA === sB) sameSeasonCount++;
@@ -10254,15 +10262,23 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
             'gen:' + gen,
             'sA:' + ['sp','su','au','wi'][sA],
             'sB:' + ['sp','su','au','wi'][sB],
+            'roll:0x' + (roll>=0?roll.toString(16).padStart(2,'0'):'??') +
+              ' (' + (passesRoll?'PASS':'fail') + ' <0x40)',
             'class:', cls || '(none)');
         });
         console.log('---');
         console.log('Got dual border:', dualCount, '/', bred.length);
         console.log('Same-season parents (no dual):', sameSeasonCount);
         console.log('Gen-1 plants (no dual):', gen1Count);
+        console.log('Qualifying for roll (diff-season, gen>1):', qualifyCount);
+        if (qualifyCount > 0) {
+          console.log('Expected ~25% of those to pass gate. Actual:', dualCount, '(=' + (100*dualCount/qualifyCount).toFixed(1) + '%)');
+          console.log('Avg roll byte of qualifying:', (rollSum/qualifyCount).toFixed(1), '(uniform-random expected ~127.5)');
+        }
         alert('Dual border audit logged to console.\n\n' +
               'Bred plants: ' + bred.length + '\n' +
               'Got dual: ' + dualCount + '\n' +
+              'Qualifying for roll: ' + qualifyCount + '\n' +
               'Same season: ' + sameSeasonCount + '\n' +
               'Gen 1: ' + gen1Count);
       } catch(e){ alert('audit failed: ' + e.message); }
@@ -40050,13 +40066,16 @@ document.addEventListener('keydown', function(e) {
       var sA = (parseInt(hA[22]+hA[23],16)||0) % 4;
       var sB = (parseInt(hB[22]+hB[23],16)||0) % 4;
       if (sA === sB) return ''; // same season — no dual border
-      // Stephen 2026-05-13: dropped the 25% probability gate. Sim said
-      // 19% per-breed = ~0.5% chance of seeing zero across 25 breeds, but
-      // Stephen reported "haven't been seeing any" — gate was effectively
-      // hiding the feature. Different-season parents IS the chimera
-      // signature; show the dual border for every one of them. Same-
-      // season pairs still get the standard seasonal frame, so this is
-      // still a meaningful, lineage-driven visual distinction.
+      // Stephen 2026-05-13: keep the 25% roll gate (he wants it to feel
+      // like a roll, not a guarantee). Restored after a short detour where
+      // I dropped it to debug "never see one" — actual fix is the audit
+      // button (PW_Dev.auditDualBorders) so we can confirm the gate is
+      // firing on his real data, not guess at it.
+      var h = plant.hash || '';
+      if (h.length >= 18) {
+        var roll = parseInt(h[16] + h[17], 16);
+        if (roll >= 0x40) return ''; // 75% no dual border, 25% get it
+      }
       return 'chimera-dual dual-' + _SEASON_KEYS[sA] + '-' + _SEASON_KEYS[sB];
     } catch(e) { return ''; }
   }
