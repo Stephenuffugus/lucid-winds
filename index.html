@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -3305,7 +3305,18 @@
        Reusable SVG particle system for level-ups, mints, daily rewards.
        Pure CSS + inline SVG — no image deps, no emoji, GPU-friendly. */
     .lw-fx-layer{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:5;}
-    .lw-fx{position:absolute;top:50%;left:50%;will-change:transform,opacity;pointer-events:none;}
+    /* Stephen 2026-05-14: dropped will-change:transform,opacity. Each .lw-fx
+       was permanently promoted to its own GPU compositing layer; with 14+
+       particles spawned per cinematic-reveal call ON TOP of the 18 inline
+       cr-particle divs, the overlay's tierFadeIn opacity, the SVG's internal
+       sway + filter, total layers blew Pi Browser WebView's ~6-8 budget on
+       first reveal — same class as the May 09 wireframe-look + May 13
+       crPart-transform fixes, but on the spawned particles instead of the
+       inline ones. The browser still composites the running animation on
+       its own layer for the animation's lifetime; we just don't keep it
+       there permanently before/after. Net: Stephen reports pot coloring
+       missing on first reveal. */
+    .lw-fx{position:absolute;top:50%;left:50%;pointer-events:none;}
     .lw-fx svg{display:block;}
     .lw-fx-sparkle{animation:lwFxSparkle 1600ms cubic-bezier(0.18,0.7,0.4,1) forwards;}
     .lw-fx-petal{animation:lwFxPetalFall 2400ms cubic-bezier(0.45,0.05,0.55,0.95) forwards;}
@@ -47089,16 +47100,23 @@ document.addEventListener('keydown', function(e) {
        // sway + overlay opacity, Pi Browser blew its GPU budget and dropped
        // pot/stem/leaf fills. Halved counts keep the celebration visible
        // without overloading the compositor.
-      try{
-        if(window._lwSpawnParticles){
-          window._lwSpawnParticles(ov,{
-            rings:1,
-            sparkles:mutated?10:8,
-            petals:mutated?4:2,
-            leaves:mutated?2:3
-          });
-        }
-      }catch(e){}
+       // Stephen 2026-05-14: defer the spawn by 700ms so the plant SVG paints
+       // a clean first frame BEFORE particles flood the compositor. The
+       // .cr-plant-wrap tierFadeIn opacity completes at 1.4s (0.6s delay +
+       // 0.8s ramp); 700ms is past the .open animation's first paint window
+       // so the player sees the plant resolve cleanly, then the burst lands.
+      setTimeout(function(){
+        try{
+          if(window._lwSpawnParticles){
+            window._lwSpawnParticles(ov,{
+              rings:1,
+              sparkles:mutated?10:8,
+              petals:mutated?4:2,
+              leaves:mutated?2:3
+            });
+          }
+        }catch(e){}
+      }, 700);
 
       var collectBtn = document.getElementById('cr-collect-btn');
       if (collectBtn) {
