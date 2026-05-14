@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.06';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6577,8 +6577,15 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
 .dpk2-lim{font-family:'DM Mono',monospace;font-size:clamp(.35rem,1vw,.42rem);color:var(--muted)}
 .dpk2-close{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(74,124,53,.12);background:rgba(26,36,22,.3);color:var(--muted);font-size:clamp(.6rem,1.6vw,.8rem);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .dpk2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 16px 16px;overflow-y:auto;flex:1;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-.dpk2-card{background:rgba(26,36,22,.3);border-radius:12px;padding:10px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:2px solid rgba(74,124,53,.1);transition:all .15s;-webkit-tap-highlight-color:transparent}
+.dpk2-card{position:relative;background:rgba(26,36,22,.3);border-radius:12px;padding:10px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:2px solid rgba(74,124,53,.1);transition:all .15s;-webkit-tap-highlight-color:transparent;overflow:visible;}
 .dpk2-card:active{border-color:rgba(122,179,86,.4);background:rgba(74,124,53,.1);transform:scale(.96)}
+/* Stephen 2026-05-14: SOW grid cards now show seasonal border tint + EA knot
+   (same as greenhouse cards). Critical info for picking what to plant — without
+   these the player can't see season match or EA at a glance. */
+.dpk2-card.season-spring{border-color:rgba(232,160,191,.45);background:linear-gradient(180deg,rgba(46,32,40,.42),rgba(26,18,24,.36));}
+.dpk2-card.season-summer{border-color:rgba(212,168,67,.45);background:linear-gradient(180deg,rgba(44,38,18,.42),rgba(28,24,12,.36));}
+.dpk2-card.season-autumn{border-color:rgba(212,132,42,.45);background:linear-gradient(180deg,rgba(44,28,16,.42),rgba(28,18,10,.36));}
+.dpk2-card.season-winter{border-color:rgba(160,196,232,.45);background:linear-gradient(180deg,rgba(20,30,42,.42),rgba(12,18,28,.36));}
 .dpk2-card-svg{width:96px;height:108px;display:flex;align-items:center;justify-content:center}
 .dpk2-card-svg svg{width:90px;height:108px}
 .dpk2-card-name{font-family:'Playfair Display',serif;font-size:clamp(.35rem,1vw,.45rem);color:var(--cream);text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -55475,14 +55482,30 @@ function openPicker(){
   var limEl = document.getElementById('wpk-lim');
   if(limEl) limEl.textContent = rem+' drop'+(rem===1?'':'s')+' remaining · tap a plant to inspect';
   var gr=document.getElementById('wpk-grid');gr.innerHTML='';
+  // Stephen 2026-05-14: SOW grid now mirrors greenhouse-card seasonal border
+  // tint + EA knot. Defined once before the loop. EA knot SVGs match the
+  // carousel-front variant (with decorative line accents).
+  var _sowSeasonNames=['spring','summer','autumn','winter'];
+  var _sowEaKnotSvgs=[
+    '<svg viewBox="0 0 48 48"><line x1="0" y1="38" x2="14" y2="28" stroke="#E8A0BF" stroke-width="1.2" opacity="0.45"/><line x1="38" y1="48" x2="28" y2="34" stroke="#E8A0BF" stroke-width="1.2" opacity="0.45"/><g transform="translate(24,24)"><path d="M0,-8 C-5,-12 -12,-8 -10,-2 C-8,4 -3,5 0,2" fill="none" stroke="#E8A0BF" stroke-width="1.5" opacity="0.85"/><path d="M0,2 C3,5 8,4 10,-2 C12,-8 5,-12 0,-8" fill="none" stroke="#E8A0BF" stroke-width="1.5" opacity="0.85"/><path d="M0,2 C-4,6 -3,12 3,12 C8,12 9,6 5,3" fill="none" stroke="#E8A0BF" stroke-width="1.5" opacity="0.85"/></g></svg>',
+    '<svg viewBox="0 0 48 48"><line x1="0" y1="38" x2="13" y2="29" stroke="#D4A843" stroke-width="1.2" opacity="0.45"/><line x1="38" y1="48" x2="29" y2="35" stroke="#D4A843" stroke-width="1.2" opacity="0.45"/><g transform="translate(24,24)"><path d="M-8,-8 C-8,0 0,0 0,-8 C0,0 8,0 8,-8" fill="none" stroke="#D4A843" stroke-width="1.5" opacity="0.85"/><path d="M8,-8 C8,0 0,0 8,8" fill="none" stroke="#D4A843" stroke-width="1.5" opacity="0.85"/><path d="M-8,8 C0,8 0,0 -8,0 C0,0 0,8 8,8" fill="none" stroke="#D4A843" stroke-width="1.5" opacity="0.85"/><path d="M-8,-8 C-8,0 0,0 -8,8" fill="none" stroke="#D4A843" stroke-width="1.5" opacity="0.85"/></g></svg>',
+    '<svg viewBox="0 0 48 48"><line x1="0" y1="38" x2="13" y2="28" stroke="#D4842A" stroke-width="1.2" opacity="0.45"/><line x1="38" y1="48" x2="28" y2="34" stroke="#D4842A" stroke-width="1.2" opacity="0.45"/><g transform="translate(24,24)"><path d="M0,-1 C-1,-4 -4,-9 -9,-7 C-12,-5 -9,0 -5,1" fill="none" stroke="#D4842A" stroke-width="1.5" opacity="0.85" stroke-linecap="round"/><path d="M0,-1 C3,-1 8,-2 9,3 C10,8 5,9 2,6" fill="none" stroke="#D4842A" stroke-width="1.5" opacity="0.85" stroke-linecap="round"/><path d="M0,-1 C-1,2 -3,8 2,10 C6,11 8,6 5,3" fill="none" stroke="#D4842A" stroke-width="1.5" opacity="0.85" stroke-linecap="round"/></g></svg>',
+    '<svg viewBox="0 0 48 48"><line x1="0" y1="38" x2="14" y2="29" stroke="#A0C4E8" stroke-width="1.2" opacity="0.4"/><line x1="38" y1="48" x2="29" y2="35" stroke="#A0C4E8" stroke-width="1.2" opacity="0.4"/><g transform="translate(24,24)"><path d="M0,-11 L8,0 L0,11 L-8,0Z" fill="none" stroke="#A0C4E8" stroke-width="1.4" opacity="0.75"/><path d="M0,-7 L5,0 L0,7 L-5,0Z" fill="none" stroke="#C0D0E0" stroke-width="0.9" opacity="0.5"/><circle cx="0" cy="-11" r="1.2" fill="#A0C4E8" opacity="0.7"/><circle cx="8" cy="0" r="1.2" fill="#A0C4E8" opacity="0.7"/><circle cx="0" cy="11" r="1.2" fill="#A0C4E8" opacity="0.7"/><circle cx="-8" cy="0" r="1.2" fill="#A0C4E8" opacity="0.7"/></g></svg>'
+  ];
   for(var i=0;i<gh.length;i++){(function(pl, idx){
     var c=document.createElement('div');
-    c.className='dpk2-card';
+    var info=_buildInfo(pl.hash);
+    var _sowSeasonIdx=(info.t&&typeof info.t.season==='number')?(info.t.season%4):0;
+    var _sowSeasonName=_sowSeasonNames[_sowSeasonIdx];
+    var _sowEa=0;
+    try{if(window.computeEA&&info.t)_sowEa=window.computeEA(info.t,0,pl);}catch(e){}
+    c.className='dpk2-card season-'+_sowSeasonName;
     var sv='';try{if(window._generatePlantSVG)sv=window._generatePlantSVG(pl.hash,90);}catch(e){}
     if(!sv)sv='<div style="width:90px;height:108px;background:rgba(122,179,86,0.15);border-radius:8px;"></div>';
-    var info=_buildInfo(pl.hash);
     var gc=GC[info.grade]||'#8a9a7a';
-    c.innerHTML='<div class="dpk2-card-svg">'+sv+'</div><div class="dpk2-card-name">'+info.nm+'</div><div class="dpk2-card-grade" style="color:'+gc+';">'+info.grade.toUpperCase()+'</div>';
+    var _sowEaHigh=_sowEa>=15?' ea-high':'';
+    var _sowEaKnot='<div class="ea-knot'+_sowEaHigh+'">'+_sowEaKnotSvgs[_sowSeasonIdx]+'<div class="ea-frost"><span class="ea-num">'+_sowEa+'</span></div></div>';
+    c.innerHTML=_sowEaKnot+'<div class="dpk2-card-svg">'+sv+'</div><div class="dpk2-card-name">'+info.nm+'</div><div class="dpk2-card-grade" style="color:'+gc+';">'+info.grade.toUpperCase()+'</div>';
     c.onclick=function(e){
       e.stopPropagation();
       // Open the carousel at this plant's index. Picker grid stays open
