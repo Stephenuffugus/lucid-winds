@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -77880,6 +77880,16 @@ function _step36Spotlight(sow){
     // past 36 (e.g., we already handed off to step 37), this watch is
     // a leftover and must not fire an advance or re-queue.
     if(_getStep()!==36)return;
+    // Stephen 2026-05-14: SOW flow changed 2026-05-10 to grid-first
+    // (openPicker opens #w-picker, not #plant-gallery-modal). The old
+    // watch only listened for the carousel modal, so the SOW spotlight
+    // stayed lit while the grid was open behind it; players had to tap
+    // a plant blind through the dimmed mask to advance. Detect EITHER
+    // the SOW grid OR the wild-mode carousel as the SOW-tap signal.
+    var pk=document.getElementById('w-picker');
+    if(pk&&pk.classList.contains('open')&&pk.classList.contains('sow-grid')){
+      _clear();setTimeout(_step37,400);return;
+    }
     var m=document.getElementById('plant-gallery-modal');
     if(m&&m.classList.contains('open')&&document.body.classList.contains('lw-carousel-wild-mode')){
       _clear();setTimeout(_step37,400);return;
@@ -77919,14 +77929,14 @@ function _step37(){
   // user has to do two interactions.
   _lwTutStuckLink(37, function(){setTimeout(_step38,400);}, 12000);
   // Pulse the painted PLANT HERE button so the player sees the target.
-  // The button only renders inside the open carousel; re-poll up to ~6s
-  // because the player has to tap a plant card first to bring up the
-  // action bar where the button lives.
+  // The button only renders inside the open carousel; re-poll up to ~30s
+  // because with grid-first SOW the player has to scan the grid + tap a
+  // plant card first to bring up the action bar where the button lives.
   var _phAttempts=0;
   var _addPHPulse=function(){
     var ph=document.getElementById('gallery-place-btn');
     if(ph&&ph.offsetParent!==null){ph.classList.add('lw-pulse-hint');return;}
-    if(_phAttempts<60){_phAttempts++;setTimeout(_addPHPulse,100);}
+    if(_phAttempts<300){_phAttempts++;setTimeout(_addPHPulse,100);}
   };
   _addPHPulse();
   // Snapshot wild plant count so we can detect an ACTUAL placement
