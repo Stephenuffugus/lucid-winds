@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -40235,7 +40235,12 @@ document.addEventListener('keydown', function(e) {
       var h = plant.hash || '';
       if (h.length >= 18) {
         var roll = parseInt(h[16] + h[17], 16);
-        if (roll >= 0x40) { if (d) d.rollFail++; return ''; }
+        // Stephen 2026-05-14: bumped from 0x40 (25%) → 0x80 (50%). At 25%
+        // combined with the ~75% cross-season gate above, only ~19% of
+        // bred chimeras showed the dual border. Stephen had bred ~10
+        // chimeras and never seen one fire. At 50% the realized rate is
+        // ~37% — visible at normal breed volume without making it cheap.
+        if (roll >= 0x80) { if (d) d.rollFail++; return ''; }
       }
       if (d) d.pass++;
       return 'chimera-dual dual-' + _SEASON_KEYS[sA] + '-' + _SEASON_KEYS[sB];
@@ -94655,7 +94660,15 @@ function _bosTodayContent() {
     var _seenDisc = {};
     for (var x = 0; x < recent.length; x++) {
       var _re = recent[x];
-      if (!_re || (_re.type !== 'event_discovered' && _re.type !== 'synergy_discovered' && _re.type !== 'achievement_unlock')) continue;
+      // Stephen 2026-05-14: dropped 'achievement_unlock' from the journal
+      // NEW SECRETS pile. Daily/weekly achievements (79 daily + 51 weekly
+      // per the engagement system) were flooding the feed — badge climbed
+      // to 99+ daily and buried the actually-rare omens + synergies. Real
+      // achievements still live in BoS → ACHIEVEMENTS tab; they don't need
+      // to double-count here. Journal NEW SECRETS now means: omens you've
+      // discovered + synergy events your plants triggered. Both are rare
+      // and meaningful.
+      if (!_re || (_re.type !== 'event_discovered' && _re.type !== 'synergy_discovered')) continue;
       var _rk = (_re.data && _re.data.name) ? (_re.type + '|' + _re.data.name) : (_re.type + '|' + (_re.id || x));
       if (_seenDisc[_rk]) {
         // Bump count + keep the more recent ts
