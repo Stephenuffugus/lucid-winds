@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.08';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.09';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -82739,13 +82739,32 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
           _saveDiscovered(discovered);
           // Engagement: lifetime BoS trigger discovery counter
           try { if (window.LW_ACH) LW_ACH.set('bos_triggers', discovered.length); } catch(e){}
-          // Log discovery for morning report
+          // Log discovery for morning report (lw_wild_evt_buffer → surfaces
+          // in BoS journal "Secret discovered: X" card line at L83417).
           if(window._logWildEvent)window._logWildEvent({
             type:'trigger',triggerId:TRIGGERS[t].id,name:TRIGGERS[t].name,
             category:TRIGGERS[t].category,hash:plant.hash,
             plantName:window.getPlantName?window.getPlantName(plant.hash):'',
             firstDiscovery:true
           });
+          // Stephen 2026-05-14: ALSO write to LW_Log under 'event_discovered'
+          // type so the omen surfaces in the journal NEW SECRETS accordion
+          // (L94720 filter). Two separate storage backends — _logWildEvent
+          // goes to lw_wild_evt_buffer, LW_Log goes to its own key. The
+          // accordion only reads from LW_Log, so omens were silently
+          // dropping from the visible pile. Stephen + Jessie planted many
+          // wild plants and saw zero omens despite triggers firing
+          // correctly. This is the missing route.
+          try {
+            if (window.LW_Log) {
+              window.LW_Log.write('event_discovered', {
+                name: TRIGGERS[t].name,
+                triggerId: TRIGGERS[t].id,
+                category: TRIGGERS[t].category,
+                plantName: window.getPlantName?window.getPlantName(plant.hash):''
+              });
+            }
+          } catch(elw) {}
         }
         // Daily counter for ANY trigger fire (not just first discovery)
         try { if (window.LW_ACH) LW_ACH.bump('d_trigger', 1); } catch(e){}
