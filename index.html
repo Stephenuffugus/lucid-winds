@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.08';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1549,6 +1549,55 @@
     #bos-body [style*="font-size:0.8rem"]{font-size:1.1rem!important;}
     /* Bump line-height for tiny text so the readability boost actually lands */
     #bos-body [style*="font-size:0."]{line-height:1.35!important;}
+
+    /* ════════════════════════════════════════════════════════════════════════
+       GLOBAL TINY-TEXT FLOOR — Stephen 2026-05-14 (Galaxy S23 player report)
+       ════════════════════════════════════════════════════════════════════════
+       Same attribute-selector pattern as the #bos-body rules above, but
+       globalized. Targets inline style="font-size:0.Xrem" declarations across
+       the whole app so dashboard / focus widget / dna ledger / reveal overlay /
+       records views / game mini-UIs all clear ~10px floor on phones.
+
+       Conservative deltas vs the BoS rules — smaller bumps so layouts that
+       depend on tight inline sizes don't shift dramatically. BoS rules are
+       higher specificity (ID selector) so they continue to win inside #bos-body.
+
+       INSTANT KILL-SWITCH if anything looks wrong on a phone:
+         document.body.classList.add('lw-text-floor-off');
+       This disables every rule below with no reload needed. To make it
+       persistent across reloads, set localStorage.setItem('lw_text_floor_off','1')
+       and add a one-liner to boot to apply the class (not wired by default).
+
+       FULL ROLLBACK: git revert the commit that added this block. Single
+       isolated change, no other code touched in the same commit. */
+    body:not(.lw-text-floor-off) [style*="font-size:0.3rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.3rem"]{font-size:0.58rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.32rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.32rem"]{font-size:0.6rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.35rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.35rem"]{font-size:0.6rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.36rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.36rem"]{font-size:0.6rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.38rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.38rem"]{font-size:0.6rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.4rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.4rem"]{font-size:0.62rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.42rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.42rem"]{font-size:0.62rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.44rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.44rem"]{font-size:0.62rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.45rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.45rem"]{font-size:0.64rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.46rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.46rem"]{font-size:0.64rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.48rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.48rem"]{font-size:0.65rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.5rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.5rem"]{font-size:0.65rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.52rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.52rem"]{font-size:0.66rem!important;line-height:1.35!important;}
+    body:not(.lw-text-floor-off) [style*="font-size:0.55rem"],
+    body:not(.lw-text-floor-off) [style*="font-size: 0.55rem"]{font-size:0.66rem!important;line-height:1.35!important;}
     .cb-ledger-label{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;color:var(--muted);}
     .cb-ledger-value{font-family:'Outfit',sans-serif;font-size:0.55rem;font-weight:400;color:var(--cream);}
     .cb-haiku{font-family:'Playfair Display',serif;font-style:italic;font-size:1.0rem;color:rgba(212,207,188,0.90);line-height:1.7;text-align:center;}
