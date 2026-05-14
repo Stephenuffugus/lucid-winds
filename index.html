@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -2290,6 +2290,7 @@
     /* Backpack + BoS bumped down 20px (was 8px) per Stephen iteration. */
     body.pi-browser #bpi{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
     body.pi-browser #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
+    body.pi-browser .game-rules-btn{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
     /* Stephen 2026-05-07 evening: REMOVED the Pi-browser-tab-wild +20px
        down-shift on #bpi and #kb-compendium. The Wild stats bar
        (#w-stats-bar) already reserves the right ~148px for these icons
@@ -4657,23 +4658,31 @@
       gap:8px;padding:0;margin-bottom:2px;
       pointer-events:none;
     }
-    .game-hdr .game-back-btn,
-    .game-hdr .game-rules-btn{
+    .game-hdr .game-back-btn{
       position:static!important;
       pointer-events:auto;
     }
     /* Universal RULES button — opens window._showGameRules(id) which falls
        back to the catalog blurb when no detailed entry exists.
-       Hidden for Three Sisters (it has its own gold pill in #trios-dash). */
+       Hidden for Three Sisters (it has its own gold pill in #trios-dash).
+       Stephen 2026-05-14: pinned to viewport top-right (was sticky inside
+       .game-hdr; on tall scrolling boards like every card game, sticky
+       header glued to top of viewport while the cards scrolled UNDER it,
+       so the rules button overlapped tableau cards on every scroll. Fixed
+       positioning keeps it in one stationary spot, never colliding with
+       scrolling content.) Lives next to back-btn in DOM but escapes flow. */
     .game-rules-btn{
-      display:none;align-items:center;justify-content:center;
+      display:none;position:fixed;
+      top:calc(env(safe-area-inset-top,0px) + 8px);
+      right:8px;z-index:55;
+      align-items:center;justify-content:center;
       min-width:48px;min-height:44px;padding:8px 14px;
       background:linear-gradient(180deg,rgba(200,168,75,0.22),rgba(120,100,40,0.32));
       border:1.5px solid rgba(200,168,75,0.5);
-      border-radius:0 0 10px 10px;border-top:none;
+      border-radius:10px;
       color:var(--gold);
       font-family:'Bebas Neue',sans-serif;font-size:0.72rem;letter-spacing:0.12em;
-      cursor:pointer;
+      cursor:pointer;pointer-events:auto;
       -webkit-tap-highlight-color:transparent;
       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
       box-shadow:0 3px 10px rgba(0,0,0,0.4);
