@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.13.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -76556,12 +76556,14 @@ function _step16AfterCelebration(attempts){
       }catch(e){}
     }
     var ready=(typeof window._getMintableCount==='function')?window._getMintableCount():0;
-    // Lean copy: the A PLANT IS READY JIT modal is suppressed during
-    // tutorial, and the Keeper already knows they're back in the
-    // greenhouse. Straight to the mint prompt.
+    var inGame=document.body.classList.contains('game-active');
     var msg=ready>0
-      ? 'You have <span style="color:var(--gold);">30 Sunbeams</span> ready.<br><br><span style="color:var(--sage);">Tap the glowing Sunbeam icon at the top to bloom a new plant.</span>'
-      : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.';
+      ? (inGame
+          ? 'You have <span style="color:var(--gold);">30 Sunbeams</span> ready.<br><br><span style="color:var(--sage);">Tap \u25c0 GAMES at the top to head back. Then tap the glowing Sunbeam icon to bloom your plant.</span>'
+          : 'You have <span style="color:var(--gold);">30 Sunbeams</span> ready.<br><br><span style="color:var(--sage);">Tap the glowing Sunbeam icon at the top to bloom a new plant.</span>')
+      : (inGame
+          ? 'Good play. Tap \u25c0 GAMES at the top to head back when ready. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.'
+          : 'Good play. Keep earning until the <span style="color:var(--gold);">Sunbeam icon up top glows.</span> That\u2019s 30 Sunbeams, enough for a new plant.<br><br>You can play another game or come back later.');
     // Bottom position so the dialog doesn't cover the sunbeam icon it's
     // telling the player to tap (icon sits at the top of the greenhouse).
     _dialog(msg,'',null,'bottom');
