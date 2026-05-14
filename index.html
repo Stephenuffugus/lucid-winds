@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.14.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -46995,23 +46995,14 @@ document.addEventListener('keydown', function(e) {
         document.body.appendChild(ov);
       }
 
-      var pColNorm = ['rgba(122,179,86,0.75)', 'rgba(212,180,85,0.65)', 'rgba(240,235,216,0.5)', 'rgba(94,133,80,0.8)', 'rgba(140,184,110,0.6)'];
-      var pColMut  = ['rgba(192,112,112,0.75)', 'rgba(139,46,46,0.6)',  'rgba(240,235,216,0.5)', 'rgba(160,80,80,0.8)',  'rgba(200,140,140,0.55)'];
-      var pCol = mutated ? pColMut : pColNorm;
+      // Stephen 2026-05-14: dropped the 18 inline cr-particle decorations.
+      // Each was position:absolute with an opacity animation; iOS Safari
+      // promotes these to per-element compositing layers and the budget
+      // (~6-8 mobile WebView) was still being blown after the May 14
+      // particle/will-change cuts — pot fills coming up outline-only on
+      // first reveal. The deferred _lwSpawnParticles burst (sparkles +
+      // petals + leaves at 700ms) covers the celebration.
       var particles = '';
-      for (var p = 0; p < 18; p++) {
-        particles += '<div class="cr-particle" style="'
-          + 'left:'   + (12 + (p * 41) % 76) + '%;'
-          + 'top:'    + (8  + (p * 57) % 84) + '%;'
-          + 'width:'  + (2  + p % 5) + 'px;'
-          + 'height:' + (2  + p % 5) + 'px;'
-          + 'background:' + pCol[p % 5] + ';'
-          + '--dur:'  + (2.2 + (p % 6) * 0.45).toFixed(1) + 's;'
-          + '--del:'  + ((p * 28) % 280 / 100).toFixed(2) + 's;'
-          + '--dy:'   + (-(35 + (p * 13) % 71)) + 'px;'
-          + '--dx:'   + (((p * 7) % 15 - 7) * 8) + 'px;'
-          + '"></div>';
-      }
 
       var plantSVG = '';
       try { if (typeof generatePlantSVG === 'function') plantSVG = generatePlantSVG(newHash, 172, 1.0); } catch(e) {}
@@ -47099,7 +47090,27 @@ document.addEventListener('keydown', function(e) {
       }, 100);
 
       _pushModal('cinematic-reveal');
-      ov.classList.add('open');
+      // Stephen 2026-05-14: pre-layout the SVG before triggering the
+      // crFadeIn animation. Setting display:flex + opacity:0 inline
+      // forces the browser to lay out + paint the SVG (gradient defs
+      // registered, fills resolved) WITHOUT visibly flashing the
+      // half-rendered state. Then on the next animation frame we clear
+      // the inline styles so the .open class's display:flex + crFadeIn
+      // animation take over with a fully-laid-out SVG underneath. Without
+      // this, display:none → display:flex + animation in the same tick
+      // races SVG layout on iOS WebKit; gradient fills (pg/pr/sg/lf/bg)
+      // miss the first paint and the pot renders as outline-only. Same
+      // bug class as the May 09 wireframe-look + May 13 crPart-transform
+      // fixes, but the contributor here is paint timing, not compositor
+      // budget.
+      ov.style.display = 'flex';
+      ov.style.opacity = '0';
+      void ov.offsetHeight;
+      requestAnimationFrame(function(){
+        ov.style.display = '';
+        ov.style.opacity = '';
+        ov.classList.add('open');
+      });
 
       if (window.FG_Audio && FG_Audio.enabled) { try { FG_Audio.playMintDrone(); } catch(e) {} }
       _haptic('bloom'); // Phase 26: organic triple-pulse — Plant mint event
