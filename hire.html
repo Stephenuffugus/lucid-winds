@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lucid Winds — built solo, ~140k lines, ~60 days</title>
+<meta name="description" content="A game where every plant is a one-of-one SVG generated deterministically from a SHA-256 hash. Built solo in ~60 days. The builder is available for contract work.">
+<meta property="og:title" content="Lucid Winds — built solo, ~140k lines, ~60 days">
+<meta property="og:description" content="Every plant is a one-of-one SVG derived from a SHA-256 hash. No stored assets. The art is the math.">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --bg:#0d100c; --panel:#12150f; --sage:#7ab356; --gold:#c8a84b;
+    --cream:#e8dcc8; --muted:#8a9178; --line:#23281d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);color:var(--cream);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:clamp(28px,6vw,80px) clamp(20px,5vw,40px);
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  .kicker{
+    letter-spacing:.22em;text-transform:uppercase;font-size:12px;
+    color:var(--sage);font-weight:700;margin-bottom:18px;
+  }
+  h1{
+    font-size:clamp(30px,6vw,52px);line-height:1.12;font-weight:800;
+    color:var(--cream);margin-bottom:18px;letter-spacing:-.01em;
+  }
+  h1 .accent{color:var(--gold)}
+  .lede{font-size:clamp(17px,2.6vw,21px);color:var(--cream);max-width:60ch;margin-bottom:14px}
+  .sub{color:var(--muted);font-size:15px;margin-bottom:34px}
+  .sub b{color:var(--cream);font-weight:600}
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:54px}
+  a.btn{
+    display:inline-block;text-decoration:none;font-weight:700;font-size:15px;
+    padding:14px 26px;border-radius:10px;min-height:48px;line-height:1.4;
+    transition:transform .12s ease,opacity .12s ease;
+  }
+  a.btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--gold);color:#1a1505}
+  .btn-primary:hover{opacity:.92}
+  .btn-ghost{background:transparent;color:var(--cream);border:1px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--sage);color:var(--sage)}
+  section{margin-bottom:48px}
+  h2{
+    font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--sage);font-weight:700;margin-bottom:16px;
+  }
+  p.body{color:var(--cream);max-width:64ch}
+  p.body + p.body{margin-top:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px;font-size:15px;color:var(--cream);
+  }
+  .card b{color:var(--gold)}
+  .hire{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:clamp(24px,5vw,40px);text-align:center;
+  }
+  .hire h2{margin-bottom:14px}
+  .hire p{font-size:clamp(17px,2.6vw,20px);color:var(--cream);max-width:48ch;margin:0 auto 24px}
+  .mail{
+    display:inline-block;font-size:clamp(16px,2.4vw,19px);font-weight:700;
+    color:var(--gold);text-decoration:none;border-bottom:1px solid var(--line);
+    padding-bottom:3px;
+  }
+  .mail:hover{border-color:var(--gold)}
+  footer{margin-top:54px;color:var(--muted);font-size:13px;text-align:center}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kicker">Lucid Winds</div>
+  <h1>Every plant is a <span class="accent">one-of-one</span> SVG, derived from a SHA-256 hash.</h1>
+  <p class="lede">No stored assets. The same hash always produces the same plant and the same poem. The art is the math.</p>
+  <p class="sub">Built solo. <b>~140,000 lines.</b> <b>~60 days.</b> No CS background. Patent-pending engine.</p>
+
+  <div class="cta-row">
+    <a class="btn btn-primary" href="https://lucidwinds.com">Play it</a>
+    <a class="btn btn-ghost" href="#hire">Work with me</a>
+  </div>
+
+  <section>
+    <h2>What it is</h2>
+    <p class="body">A single-file, framework-free HTML5/JavaScript game. Eight independent trait layers resolve from hash bytes into a fully rendered SVG plant, each paired with a procedurally generated 7-5-7 haiku unique to that hash. Deterministic end to end.</p>
+  </section>
+
+  <section>
+    <h2>By the numbers</h2>
+    <div class="grid">
+      <div class="card"><b>~140,000 lines</b> single-file ES5, 26 interdependent script blocks</div>
+      <div class="card"><b>67 mini-games</b>, 85 companions, breeding genetics, 100-point skill tree</div>
+      <div class="card"><b>Real-world GPS mode</b> with live weather-driven climate simulation</div>
+      <div class="card"><b>Server-authoritative economy</b> atomic, idempotent, rate-limited Cloud Functions</div>
+      <div class="card"><b>Pi Network payments</b>, Firebase Auth + Firestore</div>
+      <div class="card"><b>Own test harness</b> jsdom smoke suite + lint gate</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it was built</h2>
+    <p class="body">Self-taught, no computer science background. Built by directing AI coding systems with real engineering discipline: decomposing a massive system into executable units, holding an architecture strict enough that 26 interdependent blocks don't collapse, and building a verification harness because the failures were silent.</p>
+    <p class="body">The skill isn't typing. It's decomposition, verification, and debugging at a scale that normally takes a team.</p>
+  </section>
+
+  <section id="hire" class="hire">
+    <h2>Work with me</h2>
+    <p>Available for contract work. I ship production software at team speed, solo. Bring me your stuck project.</p>
+    <a class="mail" href="mailto:stephenfurpahs@gmail.com?subject=Contract%20work">stephenfurpahs@gmail.com</a>
+  </section>
+
+  <footer>
+    <a href="https://lucidwinds.com">lucidwinds.com</a>
+  </footer>
+
+</div>
+</body>
+</html>
