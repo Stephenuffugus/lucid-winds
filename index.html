@@ -76487,7 +76487,13 @@ function _watchGameTabSwitch(attempts){
     return;
   }
   if(attempts<600){setTimeout(function(){_watchGameTabSwitch(attempts+1);},500);}
-  else {_done();}
+  // TIMEOUT FIX (2026-05-15): do NOT _done() here. _done() set lw_tut='done'
+  // permanently; _lwResumeBoot explicitly bails on 'done', so a returning
+  // player who took >5min before tapping GAMES was dropped into the app with
+  // no tutorial and no recovery. Stop polling but leave the numeric step
+  // persisted so _lwResumeBoot re-enters _stepGame on next load. Dialog (with
+  // its skip/stuck escape hatches) stays up for the current session.
+  else { /* stop polling; step stays (13) -> resume hook recovers it */ }
 }
 
 // Watch for body.game-active (user picked a game). No mid-game dialog —
@@ -76500,7 +76506,12 @@ function _watchGameStart(attempts){
     return;
   }
   if(attempts<600){setTimeout(function(){_watchGameStart(attempts+1);},500);}
-  else {/* timed out — tutorial self-heals on next trigger */ _done();}
+  // TIMEOUT FIX (2026-05-15): the old comment claimed "self-heals on next
+  // trigger" but _done() set lw_tut='done' and _lwResumeBoot bails on 'done'
+  // — it never self-healed; the monorail was killed for good. This is the
+  // reported "played first game 5+ min, tutorial didn't pick back up, lost"
+  // bug. Leave step 15 persisted so _lwResumeBoot re-enters _stepGame.
+  else { /* stop polling; step stays (15) -> resume hook recovers it */ }
 }
 
 // Listen for game-completed event (win OR loss) OR the player leaving
