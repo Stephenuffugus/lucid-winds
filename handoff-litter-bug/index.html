@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f3ead4">
+<title>Litter Bug</title>
+
+<style>
+/* ═════════════════════════════════════════════════════════════════════════
+   LITTER BUG — single-file vanilla JS / HTML5 game
+   Aesthetic: cryptid naturalist's field journal. Paper tones, handwritten
+   accents, sketched borders. See HANDOFF.md + CLAUDE.md for project rules.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Nunito:wght@400;600;800&display=swap');
+
+:root {
+  --paper: #f3ead4;
+  --paper-shadow: #e6d9b8;
+  --ink: #2a2018;
+  --ink-soft: #5a4a36;
+  --moss: #4a6741;
+  --moss-deep: #2f4a2a;
+  --rust: #b85433;
+  --rust-deep: #8a3a20;
+  --gold: #c89a3a;
+  --cream: #faf3df;
+}
+
+html, body {
+  margin: 0; padding: 0;
+  font-family: 'Nunito', system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(184,84,51,0.08), transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(74,103,65,0.10), transparent 50%),
+    var(--paper);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, rgba(42,32,24,0.12) 1px, transparent 0);
+  background-size: 4px 4px;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+
+#app { position: relative; z-index: 1; padding: 1.5rem 1rem 4rem; }
+
+.lb-header { text-align: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 2px dashed var(--ink-soft); }
+.lb-title { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(2.2rem, 7vw, 3.4rem); letter-spacing: -0.02em; line-height: 0.95; margin: 0; color: var(--moss-deep); }
+.lb-title em { font-style: italic; color: var(--rust); font-weight: 600; }
+.lb-subtitle { font-family: 'Caveat', cursive; font-size: 1.4rem; color: var(--ink-soft); margin: 0.25rem 0 0; transform: rotate(-1deg); display: inline-block; }
+
+.lb-tabs { display: flex; gap: 0.5rem; justify-content: center; margin: 1rem 0 1.5rem; }
+.lb-tab { font-family: 'Fraunces', serif; font-weight: 600; font-size: 0.95rem; padding: 0.6rem 1.1rem; border: 2px solid var(--ink); background: var(--cream); color: var(--ink); border-radius: 999px; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); min-height: 48px; }
+.lb-tab.active { background: var(--moss); color: var(--cream); border-color: var(--moss-deep); box-shadow: 2px 2px 0 var(--moss-deep); }
+
+.lb-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; max-width: 1100px; margin: 0 auto; }
+@media (min-width: 820px) { .lb-grid { grid-template-columns: 1.1fr 1fr; } }
+
+.lb-panel { background: var(--cream); border: 2px solid var(--ink); border-radius: 12px; padding: 1rem 1.1rem; box-shadow: 4px 4px 0 var(--ink); }
+.lb-panel-title { font-family: 'Fraunces', serif; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.02em; text-transform: uppercase; margin: 0 0 0.75rem; color: var(--moss-deep); }
+.lb-panel-title small { font-family: 'Caveat', cursive; font-weight: 400; font-size: 1.05rem; color: var(--ink-soft); text-transform: none; letter-spacing: 0; margin-left: 0.5rem; }
+
+.lb-forage { width: 100%; font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.05rem; padding: 0.85rem 1rem; background: var(--rust); color: var(--cream); border: 2px solid var(--rust-deep); border-radius: 10px; cursor: pointer; box-shadow: 3px 3px 0 var(--rust-deep); margin-bottom: 1rem; min-height: 52px; }
+.lb-forage:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--rust-deep); }
+
+.lb-inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 0.5rem; }
+.lb-inv-item { background: var(--paper); border: 1.5px solid var(--ink-soft); border-radius: 8px; padding: 0.5rem 0.25rem; cursor: pointer; text-align: center; position: relative; min-height: 80px; }
+.lb-inv-item:disabled { opacity: 0.35; cursor: not-allowed; }
+.lb-inv-icon { font-size: 1.6rem; line-height: 1; }
+.lb-inv-name { font-size: 0.65rem; font-weight: 600; color: var(--ink-soft); margin-top: 0.2rem; line-height: 1.1; }
+.lb-inv-count { position: absolute; top: -6px; right: -6px; background: var(--moss-deep); color: var(--cream); font-family: 'Fraunces', serif; font-weight: 800; font-size: 0.7rem; padding: 0.05rem 0.4rem; border-radius: 999px; border: 1.5px solid var(--cream); }
+
+.lb-incubator { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 1rem 0.5rem; background: repeating-linear-gradient(45deg, var(--paper) 0 8px, var(--paper-shadow) 8px 9px); border-radius: 10px; border: 2px dashed var(--moss-deep); margin-bottom: 0.75rem; }
+.lb-slot { width: 78px; height: 78px; border: 2px dashed var(--ink-soft); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; background: var(--cream); cursor: pointer; }
+.lb-slot.empty { font-family: 'Caveat', cursive; font-size: 1rem; color: var(--ink-soft); }
+.lb-plus { font-family: 'Fraunces', serif; font-weight: 800; font-size: 1.6rem; color: var(--moss-deep); }
+
+.lb-combine { width: 100%; font-family: 'Fraunces', serif; font-weight: 700; font-size: 1rem; padding: 0.75rem; background: var(--moss); color: var(--cream); border: 2px solid var(--moss-deep); border-radius: 10px; cursor: pointer; box-shadow: 3px 3px 0 var(--moss-deep); min-height: 50px; }
+.lb-combine:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.lb-result { margin-top: 1rem; padding: 1rem; background: var(--paper); border: 2px solid var(--gold); border-radius: 10px; text-align: center; }
+.lb-result.new { border-color: var(--rust); background: linear-gradient(135deg, #fff5e0, var(--paper)); }
+.lb-result-svg { width: 120px; height: 120px; margin: 0 auto; display: block; }
+.lb-result-name { font-family: 'Fraunces', serif; font-style: italic; font-weight: 800; font-size: 1.5rem; margin: 0.25rem 0 0; color: var(--moss-deep); }
+.lb-result-desc { font-family: 'Caveat', cursive; font-size: 1.1rem; color: var(--ink-soft); margin: 0.3rem auto 0; max-width: 320px; line-height: 1.3; }
+.lb-result-tag { display: inline-block; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.15rem 0.5rem; border-radius: 999px; margin: 0.5rem 0.3rem 0; }
+.lb-result-tag.new { background: var(--rust); color: var(--cream); }
+.lb-result-tag.dup { background: var(--ink-soft); color: var(--cream); }
+.lb-result-tag.proc { background: var(--gold); color: var(--ink); }
+
+.lb-log { margin-top: 1rem; padding-top: 0.75rem; border-top: 1.5px dashed var(--ink-soft); }
+.lb-log-entry { font-family: 'Caveat', cursive; font-size: 1.05rem; color: var(--ink-soft); margin-bottom: 0.15rem; opacity: 0.7; }
+.lb-log-entry:first-child { opacity: 1; color: var(--ink); }
+.lb-log-entry.discovery { color: var(--rust-deep); font-weight: 700; }
+
+.lb-dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+.lb-dex-card { background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; padding: 0.75rem 0.5rem; text-align: center; position: relative; }
+.lb-dex-card.locked { background: repeating-linear-gradient(45deg, var(--paper) 0 6px, var(--paper-shadow) 6px 7px); opacity: 0.7; }
+.lb-dex-svg { width: 72px; height: 72px; display: block; margin: 0 auto; }
+.lb-dex-svg.locked { filter: blur(6px) grayscale(1); }
+.lb-dex-name { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 0.95rem; margin: 0.25rem 0 0; color: var(--moss-deep); }
+.lb-dex-rarity { font-family: 'Caveat', cursive; font-size: 0.95rem; color: var(--ink-soft); }
+.lb-dex-rarity.rare { color: var(--rust); font-weight: 700; }
+.lb-dex-rarity.uncommon { color: var(--gold); font-weight: 700; }
+.lb-dex-rarity.epic { color: #7a4ba8; font-weight: 700; }
+.lb-dex-rarity.legendary { color: var(--gold); font-weight: 800; }
+.lb-dex-desc { font-family: 'Caveat', cursive; font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.25rem; line-height: 1.15; }
+
+.lb-footer { text-align: center; margin-top: 2rem; font-family: 'Caveat', cursive; font-size: 1.05rem; color: var(--ink-soft); }
+</style>
+</head>
+
+<body>
+
+<div id="app">
+  <header class="lb-header">
+    <h1 class="lb-title">Litter <em>Bug</em></h1>
+    <p class="lb-subtitle">~ a field journal of synthetic entomology ~</p>
+  </header>
+
+  <div class="lb-tabs">
+    <button class="lb-tab active" id="tab-lab" onclick="window.LB.switchTab('lab')">The Lab</button>
+    <button class="lb-tab" id="tab-bugdex" onclick="window.LB.switchTab('bugdex')">Bugdex <span id="dex-count" style="background:var(--cream);color:var(--moss-deep);padding:0 0.4rem;border-radius:999px;font-size:0.75rem;margin-left:4px;">0</span></button>
+  </div>
+
+  <div id="view-lab" class="lb-grid">
+    <section class="lb-panel">
+      <button class="lb-forage" onclick="window.LB.forage()">Scrounge the Alley</button>
+      <h2 class="lb-panel-title">Bin <small id="inv-count">0 pieces</small></h2>
+      <div id="inventory" class="lb-inv"></div>
+      <div id="log" class="lb-log"></div>
+    </section>
+    <section class="lb-panel">
+      <h2 class="lb-panel-title">The Incubator <small>tap two & combine</small></h2>
+      <div class="lb-incubator">
+        <div id="slot-1" class="lb-slot empty" onclick="window.LB.clearSlot(1)">slot 1</div>
+        <div class="lb-plus">+</div>
+        <div id="slot-2" class="lb-slot empty" onclick="window.LB.clearSlot(2)">slot 2</div>
+      </div>
+      <button id="combine-btn" class="lb-combine" onclick="window.LB.combine()" disabled>Incubate</button>
+      <div id="result-area"></div>
+    </section>
+  </div>
+
+  <div id="view-bugdex" style="display:none;max-width:1100px;margin:0 auto;">
+    <section class="lb-panel">
+      <h2 class="lb-panel-title">Signature Species <small id="dex-signature-count">0 / 0 catalogued</small></h2>
+      <div id="dex-signature" class="lb-dex-grid"></div>
+      <h2 class="lb-panel-title" style="margin-top:1.5rem;">Field Hybrids <small>emergent combinations</small></h2>
+      <div id="dex-hybrid" class="lb-dex-grid"></div>
+    </section>
+  </div>
+
+  <p class="lb-footer" id="footer">prototype v0.1</p>
+</div>
+
+<script>
+/* ═════════════════════════════════════════════════════════════════════════
+   LB_VERSION — bump on every deploy. Cache-bust query strings reference it.
+   ═════════════════════════════════════════════════════════════════════════ */
+var LB_VERSION = '0.1.0';
+window.LB_VERSION = LB_VERSION;
+
+/* ═════════════════════════════════════════════════════════════════════════
+   TRAIT_BANK — 8 layers per HANDOFF.md §3.2.
+   Each layer is an array of stub entries. Replace with real art data as you
+   ship. Hash bytes map to indices via modulo (see hashToTraits below).
+
+   IMPORTANT: order within each array is the locked identity of each trait.
+   Adding to the END of an array is safe. Inserting in the middle or
+   reordering will change every existing player's bugs visually — a disaster.
+   ═════════════════════════════════════════════════════════════════════════ */
+window.TRAIT_BANK = {
+  bodies: [
+    { id: 'oval',       name: 'Oval Carapace',  hint: 'beetle' },
+    { id: 'segmented',  name: 'Segmented',      hint: 'worm' },
+    { id: 'rounded',    name: 'Rounded',        hint: 'ladybug' },
+    { id: 'elongated',  name: 'Elongated',      hint: 'mantis' },
+    { id: 'compact',    name: 'Compact',        hint: 'tick' }
+  ],
+  heads: [
+    { id: 'mandible',   name: 'Mandible' },
+    { id: 'proboscis',  name: 'Proboscis' },
+    { id: 'broad',      name: 'Broad' },
+    { id: 'narrow',     name: 'Narrow' },
+    { id: 'crested',    name: 'Crested' }
+  ],
+  wings: [
+    { id: 'none',       name: 'Wingless' },
+    { id: 'membrane',   name: 'Membrane Pair' },
+    { id: 'beetle',     name: 'Hardened Elytra' },
+    { id: 'moth',       name: 'Powdered Moth' },
+    { id: 'lace',       name: 'Lacewing' }
+  ],
+  legs: [
+    { id: 'six',        name: 'Six-Legged' },
+    { id: 'eight',      name: 'Eight-Legged' },
+    { id: 'long',       name: 'Long Stilts' },
+    { id: 'short',      name: 'Short Crawler' },
+    { id: 'jumping',    name: 'Jumping' }
+  ],
+  antennae: [
+    { id: 'thread',     name: 'Threadlike' },
+    { id: 'feather',    name: 'Feathered' },
+    { id: 'club',       name: 'Clubbed' },
+    { id: 'none',       name: 'Vestigial' },
+    { id: 'curled',     name: 'Curled' }
+  ],
+  patterns: [
+    { id: 'plain',      name: 'Plain' },
+    { id: 'spots',      name: 'Spotted' },
+    { id: 'stripes',    name: 'Striped' },
+    { id: 'marbled',    name: 'Marbled' },
+    { id: 'iridescent', name: 'Iridescent' }
+  ],
+  palettes: [
+    { id: 'earth',  colors: ['#6a4f2e', '#3a2a18', '#c89a3a'] },
+    { id: 'rust',   colors: ['#b85433', '#5a2a18', '#e0a070'] },
+    { id: 'moss',   colors: ['#4a6741', '#2f4a2a', '#8aaa6a'] },
+    { id: 'ink',    colors: ['#2a2018', '#1a140e', '#5a4a36'] },
+    { id: 'glint',  colors: ['#c89a3a', '#8a6a20', '#f0d080'] }
+  ],
+  behaviors: [
+    { id: 'skitter',  name: 'Skitterer' },
+    { id: 'glide',    name: 'Glider' },
+    { id: 'crawl',    name: 'Crawler' },
+    { id: 'hop',      name: 'Hopper' },
+    { id: 'burrow',   name: 'Burrower' }
+  ]
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   hashToTraits(hash) — token creator. Locked hash byte assignments per
+   HANDOFF.md §3.3. Returns deterministic trait object from a 64-char hex.
+   ═════════════════════════════════════════════════════════════════════════ */
+window.hashToTraits = function (hash) {
+  var h = String(hash || '').toLowerCase();
+  while (h.length < 64) h += '0';
+  function hb(i) { return parseInt(h.charAt(i*2) + h.charAt(i*2+1), 16) || 0; }
+
+  var TB = window.TRAIT_BANK;
+  var traits = {
+    bodyIdx:     hb(0)  % TB.bodies.length,
+    headIdx:     hb(1)  % TB.heads.length,
+    wingIdx:     hb(2)  % TB.wings.length,
+    legIdx:      hb(3)  % TB.legs.length,
+    antennaIdx:  hb(4)  % TB.antennae.length,
+    patternIdx:  hb(5)  % TB.patterns.length,
+    paletteIdx:  hb(6)  % TB.palettes.length,
+    behaviorIdx: hb(7)  % TB.behaviors.length,
+    mutationByte: hb(16),
+    mythicByte:   hb(18)
+  };
+  // Resolved trait references (handy for renderers).
+  traits.body     = TB.bodies[traits.bodyIdx];
+  traits.head     = TB.heads[traits.headIdx];
+  traits.wing     = TB.wings[traits.wingIdx];
+  traits.leg      = TB.legs[traits.legIdx];
+  traits.antenna  = TB.antennae[traits.antennaIdx];
+  traits.pattern  = TB.patterns[traits.patternIdx];
+  traits.palette  = TB.palettes[traits.paletteIdx];
+  traits.behavior = TB.behaviors[traits.behaviorIdx];
+  return traits;
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   _generateBugSVG — layered renderer stub. Each _renderBugX is a placeholder
+   for the new Claude to replace with real art. ORDER OF LAYERS:
+     1. Background (palette tint)
+     2. Wings (drawn behind body)
+     3. Body
+     4. Legs
+     5. Head
+     6. Antennae
+     7. Pattern overlay
+     8. Mutation overlay (only if mutationByte >= 0xE1)
+   ═════════════════════════════════════════════════════════════════════════ */
+window._generateBugSVG = function (hash, size, opts) {
+  var s = size || 120;
+  var t = window.hashToTraits(hash);
+  var pal = t.palette.colors;
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="' + s + '" height="' + s + '" style="overflow:visible;display:block;">';
+
+  // Layer 0: subtle background tint from palette.
+  svg += '<rect x="0" y="0" width="100" height="100" fill="' + pal[0] + '" opacity="0.05"/>';
+
+  // Layers 1-7: stub renderers. Replace these per HANDOFF.md §9 first 5 steps.
+  svg += window._renderBugWings(t)    || '';
+  svg += window._renderBugBody(t)     || '';
+  svg += window._renderBugLegs(t)     || '';
+  svg += window._renderBugHead(t)     || '';
+  svg += window._renderBugAntennae(t) || '';
+  svg += window._renderBugPattern(t)  || '';
+  svg += window._renderBugMutation(t) || '';
+
+  svg += '</svg>';
+  return svg;
+};
+
+/* Stub layer renderers. Each returns an SVG fragment. Replace with real art. */
+window._renderBugBody = function (t) {
+  var c = t.palette.colors[0];
+  // 5 stub body shapes — discriminated by body.id.
+  switch (t.body.id) {
+    case 'oval':       return '<ellipse cx="50" cy="55" rx="22" ry="14" fill="' + c + '"/>';
+    case 'segmented':  return '<rect x="32" y="46" width="36" height="18" rx="4" fill="' + c + '"/><line x1="44" y1="46" x2="44" y2="64" stroke="#000" stroke-opacity="0.2" stroke-width="0.6"/><line x1="56" y1="46" x2="56" y2="64" stroke="#000" stroke-opacity="0.2" stroke-width="0.6"/>';
+    case 'rounded':    return '<circle cx="50" cy="55" r="18" fill="' + c + '"/>';
+    case 'elongated':  return '<ellipse cx="50" cy="55" rx="28" ry="9" fill="' + c + '"/>';
+    case 'compact':    return '<ellipse cx="50" cy="55" rx="14" ry="12" fill="' + c + '"/>';
+    default: return '<ellipse cx="50" cy="55" rx="20" ry="13" fill="' + c + '"/>';
+  }
+};
+
+window._renderBugHead = function (t) {
+  var c = t.palette.colors[1];
+  var cx = 28; // head sits left of body
+  switch (t.head.id) {
+    case 'mandible':  return '<circle cx="' + cx + '" cy="55" r="8" fill="' + c + '"/><path d="M' + (cx-4) + ',57 L' + (cx-9) + ',60 M' + (cx-4) + ',53 L' + (cx-9) + ',50" stroke="' + c + '" stroke-width="1.5"/>';
+    case 'proboscis': return '<circle cx="' + cx + '" cy="55" r="6" fill="' + c + '"/><line x1="' + (cx-5) + '" y1="55" x2="' + (cx-14) + '" y2="55" stroke="' + c + '" stroke-width="1.5"/>';
+    case 'broad':     return '<ellipse cx="' + cx + '" cy="55" rx="10" ry="7" fill="' + c + '"/>';
+    case 'narrow':    return '<ellipse cx="' + cx + '" cy="55" rx="6" ry="5" fill="' + c + '"/>';
+    case 'crested':   return '<circle cx="' + cx + '" cy="55" r="7" fill="' + c + '"/><path d="M' + (cx-3) + ',48 L' + cx + ',43 L' + (cx+3) + ',48" stroke="' + c + '" stroke-width="2" fill="none"/>';
+    default: return '<circle cx="' + cx + '" cy="55" r="7" fill="' + c + '"/>';
+  }
+};
+
+window._renderBugWings = function (t) {
+  if (t.wing.id === 'none') return '';
+  var c = t.palette.colors[2];
+  var op = (t.wing.id === 'membrane' || t.wing.id === 'lace') ? 0.4 : 0.85;
+  switch (t.wing.id) {
+    case 'membrane': return '<ellipse cx="55" cy="40" rx="18" ry="10" fill="' + c + '" opacity="' + op + '"/><ellipse cx="55" cy="70" rx="18" ry="10" fill="' + c + '" opacity="' + op + '"/>';
+    case 'beetle':   return '<ellipse cx="60" cy="55" rx="24" ry="13" fill="' + c + '" opacity="' + op + '"/><line x1="60" y1="42" x2="60" y2="68" stroke="#000" stroke-opacity="0.3" stroke-width="0.6"/>';
+    case 'moth':     return '<ellipse cx="50" cy="38" rx="22" ry="14" fill="' + c + '" opacity="' + op + '"/><ellipse cx="50" cy="72" rx="22" ry="14" fill="' + c + '" opacity="' + op + '"/>';
+    case 'lace':     return '<path d="M55,42 Q40,30 35,40 Q40,50 55,48 Z" fill="' + c + '" opacity="' + op + '"/><path d="M55,68 Q40,80 35,70 Q40,60 55,62 Z" fill="' + c + '" opacity="' + op + '"/>';
+    default: return '';
+  }
+};
+
+window._renderBugLegs = function (t) {
+  var c = t.palette.colors[1];
+  var pairs = (t.leg.id === 'eight') ? 4 : 3;
+  var out = '';
+  for (var i = 0; i < pairs; i++) {
+    var x = 40 + (i * 8);
+    var len = (t.leg.id === 'long') ? 14 : (t.leg.id === 'short') ? 6 : 10;
+    out += '<line x1="' + x + '" y1="60" x2="' + (x - 5) + '" y2="' + (60 + len) + '" stroke="' + c + '" stroke-width="1.5"/>';
+    out += '<line x1="' + x + '" y1="50" x2="' + (x - 5) + '" y2="' + (50 - len) + '" stroke="' + c + '" stroke-width="1.5"/>';
+  }
+  return out;
+};
+
+window._renderBugAntennae = function (t) {
+  if (t.antenna.id === 'none') return '';
+  var c = t.palette.colors[1];
+  var cx = 28; // anchor to head
+  switch (t.antenna.id) {
+    case 'thread':  return '<line x1="' + (cx-3) + '" y1="50" x2="' + (cx-12) + '" y2="42" stroke="' + c + '" stroke-width="1"/><line x1="' + (cx+3) + '" y1="50" x2="' + (cx-8) + '" y2="38" stroke="' + c + '" stroke-width="1"/>';
+    case 'feather': return '<path d="M' + (cx-3) + ',50 Q' + (cx-12) + ',42 ' + (cx-14) + ',38" stroke="' + c + '" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M' + (cx+3) + ',50 Q' + (cx-8) + ',38 ' + (cx-12) + ',34" stroke="' + c + '" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    case 'club':    return '<line x1="' + (cx-3) + '" y1="50" x2="' + (cx-12) + '" y2="42" stroke="' + c + '" stroke-width="1"/><circle cx="' + (cx-12) + '" cy="42" r="2" fill="' + c + '"/><line x1="' + (cx+3) + '" y1="50" x2="' + (cx-8) + '" y2="38" stroke="' + c + '" stroke-width="1"/><circle cx="' + (cx-8) + '" cy="38" r="2" fill="' + c + '"/>';
+    case 'curled':  return '<path d="M' + (cx-3) + ',50 Q' + (cx-10) + ',45 ' + (cx-11) + ',38 Q' + (cx-7) + ',36 ' + (cx-6) + ',40" stroke="' + c + '" stroke-width="1" fill="none"/>';
+    default: return '';
+  }
+};
+
+window._renderBugPattern = function (t) {
+  var c = t.palette.colors[2];
+  switch (t.pattern.id) {
+    case 'spots':      return '<circle cx="45" cy="52" r="2" fill="' + c + '" opacity="0.8"/><circle cx="58" cy="50" r="2.5" fill="' + c + '" opacity="0.8"/><circle cx="52" cy="60" r="1.8" fill="' + c + '" opacity="0.8"/>';
+    case 'stripes':    return '<line x1="38" y1="55" x2="62" y2="55" stroke="' + c + '" stroke-width="1.5" opacity="0.6"/><line x1="40" y1="50" x2="60" y2="50" stroke="' + c + '" stroke-width="1" opacity="0.5"/>';
+    case 'marbled':    return '<path d="M40,52 Q45,48 50,52 T60,55" stroke="' + c + '" stroke-width="1" fill="none" opacity="0.6"/>';
+    case 'iridescent': return '<ellipse cx="50" cy="55" rx="20" ry="12" fill="url(#irGrad)" opacity="0.3"/><defs><linearGradient id="irGrad"><stop offset="0" stop-color="' + c + '"/><stop offset="0.5" stop-color="#fff"/><stop offset="1" stop-color="' + c + '"/></linearGradient></defs>';
+    default: return '';
+  }
+};
+
+window._renderBugMutation = function (t) {
+  // Only mutationByte >= 0xE1 emits a visible mutation. Tune as needed.
+  if (t.mutationByte < 0xE1) return '';
+  // Stub: a faint glow ring. Replace with real mutation cosmetics.
+  return '<circle cx="50" cy="55" r="32" fill="none" stroke="#c89a3a" stroke-width="0.6" opacity="0.55"/>';
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   getBugGrade(traits) — rarity scoring. Score is the sum of layer tier
+   contributions + mutation bonus + mythic byte spike. Tiers map onto the
+   same ladder as the parent engine: Common → Uncommon → Rare → Epic →
+   Legendary → Mythic → Cosmic.
+   ═════════════════════════════════════════════════════════════════════════ */
+window.getBugGrade = function (traits) {
+  // Each layer contributes a tier score based on index position.
+  // For v1, treat higher index as rarer (you can tune the table later).
+  var TB = window.TRAIT_BANK;
+  function tierScore(idx, total) {
+    var pct = (total > 1) ? (idx / (total - 1)) : 0;
+    if (pct < 0.5) return 0;        // common
+    if (pct < 0.75) return 1;       // uncommon
+    if (pct < 0.9) return 3;        // rare/epic
+    return 5;                        // legendary+
+  }
+  var score = 0;
+  score += tierScore(traits.bodyIdx,    TB.bodies.length);
+  score += tierScore(traits.headIdx,    TB.heads.length);
+  score += tierScore(traits.wingIdx,    TB.wings.length);
+  score += tierScore(traits.legIdx,     TB.legs.length);
+  score += tierScore(traits.antennaIdx, TB.antennae.length);
+  score += tierScore(traits.patternIdx, TB.patterns.length);
+  score += tierScore(traits.paletteIdx, TB.palettes.length);
+
+  // Mutation byte adds 2 if visible.
+  if (traits.mutationByte >= 0xE1) score += 2;
+  // Mythic byte spike: 0xFF cosmic, 0xF0+ legendary, 0xE0+ mythic, 0xD0+ rare.
+  if (traits.mythicByte === 0xFF) score += 10;
+  else if (traits.mythicByte >= 0xF0) score += 6;
+  else if (traits.mythicByte >= 0xE0) score += 4;
+  else if (traits.mythicByte >= 0xD0) score += 2;
+
+  var name, color;
+  if (score >= 34)      { name = 'Cosmic';    color = '#ff6ec7'; }
+  else if (score >= 27) { name = 'Mythic';    color = '#e8a0bf'; }
+  else if (score >= 21) { name = 'Legendary'; color = '#c8a84b'; }
+  else if (score >= 15) { name = 'Epic';      color = '#7a4ba8'; }
+  else if (score >= 10) { name = 'Rare';      color = '#5baee8'; }
+  else if (score >= 5)  { name = 'Uncommon';  color = '#7ab356'; }
+  else                  { name = 'Common';    color = '#8a9178'; }
+  return { name: name, score: score, color: color };
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   SHA-256 helper — browser-native SubtleCrypto. Async. Use this to convert
+   any string input (touch path, barcode, scrounged-item-list) into a hash
+   that can drive hashToTraits. Returns a 64-char hex string.
+   ═════════════════════════════════════════════════════════════════════════ */
+window.sha256Hex = function (input) {
+  return Promise.resolve().then(function () {
+    if (!window.crypto || !window.crypto.subtle) {
+      // Fallback for environments without SubtleCrypto (jsdom older versions).
+      // Returns a deterministic but cryptographically-weak hash. Good enough
+      // for smoke tests; replace with real SHA-256 in production.
+      var h = 0, s = String(input);
+      for (var i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+      var hex = (Math.abs(h)).toString(16);
+      while (hex.length < 64) hex = hex + (hex.charAt(0) || '0');
+      return hex.slice(0, 64);
+    }
+    var enc = new TextEncoder();
+    return window.crypto.subtle.digest('SHA-256', enc.encode(String(input))).then(function (buf) {
+      var bytes = new Uint8Array(buf);
+      var hex = '';
+      for (var i = 0; i < bytes.length; i++) {
+        var b = bytes[i].toString(16);
+        hex += (b.length === 1 ? '0' + b : b);
+      }
+      return hex;
+    });
+  });
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   TRASH_ITEMS, SIGNATURE_RECIPES, SIGNATURE_BUGS — ported from the React
+   prototype. Extend these freely. Adding a trash item is always safe.
+   ═════════════════════════════════════════════════════════════════════════ */
+window.TRASH_ITEMS = {
+  banana_peel:    { name: 'Banana Peel',      icon: '🍌', tags: ['organic', 'soft', 'slippery'] },
+  bottle_cap:     { name: 'Bottle Cap',       icon: '🔘', tags: ['metal', 'small', 'round'] },
+  cig_butt:       { name: 'Cigarette Butt',   icon: '🚬', tags: ['organic', 'smoky', 'tiny'] },
+  pizza_crust:    { name: 'Pizza Crust',      icon: '🍕', tags: ['organic', 'crusty', 'savory'] },
+  coffee_cup:     { name: 'Coffee Cup',       icon: '☕',       tags: ['paper', 'stained', 'warm'] },
+  plastic_straw:  { name: 'Plastic Straw',    icon: '🥤', tags: ['plastic', 'long', 'hollow'] },
+  newspaper:      { name: 'Crumpled News',    icon: '📰', tags: ['paper', 'inky', 'soft'] },
+  broken_bulb:    { name: 'Broken Bulb',      icon: '💡', tags: ['glass', 'sharp', 'electric'] },
+  lone_sock:      { name: 'Lone Sock',        icon: '🧖', tags: ['fabric', 'soft', 'stinky'] },
+  dead_battery:   { name: 'Dead Battery',     icon: '🔋', tags: ['metal', 'electric', 'toxic'] },
+  tin_can:        { name: 'Tin Can',          icon: '🥫', tags: ['metal', 'hollow', 'sharp'] },
+  receipt:        { name: 'Faded Receipt',    icon: '🧾', tags: ['paper', 'inky', 'tiny'] },
+  apple_core:     { name: 'Apple Core',       icon: '🍎', tags: ['organic', 'sweet', 'seedy'] },
+  tea_bag:        { name: 'Used Tea Bag',     icon: '🫖', tags: ['organic', 'wet', 'stained'] },
+  candy_wrapper:  { name: 'Candy Wrapper',    icon: '🍬', tags: ['plastic', 'shiny', 'sweet'] },
+  eggshell:       { name: 'Eggshell',         icon: '🥚', tags: ['organic', 'fragile', 'pale'] },
+  soda_can:       { name: 'Soda Can',         icon: '🥤', tags: ['metal', 'hollow', 'sweet'] },
+  gum_wad:        { name: 'Chewed Gum',       icon: '🧡', tags: ['organic', 'sticky', 'sweet'] },
+  foil_scrap:     { name: 'Foil Scrap',       icon: '✨',       tags: ['metal', 'shiny', 'crinkly'] },
+  cardboard:      { name: 'Wet Cardboard',    icon: '📦', tags: ['paper', 'wet', 'crusty'] }
+};
+
+window.SIGNATURE_RECIPES = [
+  { inputs: ['banana_peel', 'bottle_cap'],   bug: 'slipbeetle' },
+  { inputs: ['cig_butt', 'dead_battery'],    bug: 'smogfly' },
+  { inputs: ['pizza_crust', 'cardboard'],    bug: 'crustcrawler' },
+  { inputs: ['coffee_cup', 'tea_bag'],       bug: 'caffeinemoth' },
+  { inputs: ['plastic_straw', 'gum_wad'],    bug: 'strawworm' },
+  { inputs: ['newspaper', 'receipt'],        bug: 'inkmite' },
+  { inputs: ['broken_bulb', 'foil_scrap'],   bug: 'lampbeetle' },
+  { inputs: ['lone_sock', 'apple_core'],     bug: 'sockroach' },
+  { inputs: ['dead_battery', 'tin_can'],     bug: 'voltworm' },
+  { inputs: ['eggshell', 'candy_wrapper'],   bug: 'yolkmite' },
+  { inputs: ['soda_can', 'plastic_straw'],   bug: 'sodacicada' },
+  { inputs: ['foil_scrap', 'broken_bulb'],   bug: 'glintfly' }
+];
+
+window.SIGNATURE_BUGS = {
+  slipbeetle:    { name: 'Slipbeetle',    rarity: 'common',   desc: 'A nervous fellow with metallic carapace. Skitters on potassium-slick legs.' },
+  smogfly:       { name: 'Smogfly',       rarity: 'uncommon', desc: 'Wings shimmer with battery acid. Leaves a faint tar trail. Cough not at it.' },
+  crustcrawler:  { name: 'Crustcrawler',  rarity: 'common',   desc: 'Lives in the seams of soggy boxes. Surprisingly affectionate. Smells faintly of pepperoni.' },
+  caffeinemoth:  { name: 'Caffeinemoth',  rarity: 'uncommon', desc: 'Vibrates at 4am. Drawn to anything warm and bitter. Powdered with stale espresso.' },
+  strawworm:     { name: 'Strawworm',     rarity: 'common',   desc: 'A tubular grub that breathes through one nostril. Sticky end, hollow middle.' },
+  inkmite:       { name: 'Inkmite',       rarity: 'common',   desc: 'Writes microscopic gossip on leaves. Hates being misquoted.' },
+  lampbeetle:    { name: 'Lampbeetle',    rarity: 'rare',     desc: 'Bioluminescent at the worst times. Shards of bulb form a crown.' },
+  sockroach:     { name: 'Sockroach',     rarity: 'common',   desc: 'You do not want this one. Yes you do. No you do not. Yes.' },
+  voltworm:      { name: 'Voltworm',      rarity: 'rare',     desc: 'A live wire with legs. Tingles to hold. Definitely do not lick.' },
+  yolkmite:      { name: 'Yolkmite',      rarity: 'uncommon', desc: 'A confused baby. Half shell, half candy. Smells like Easter morning.' },
+  sodacicada:    { name: 'Sodacicada',    rarity: 'uncommon', desc: 'Hums at the pitch of a freshly opened can. Carbonated abdomen.' },
+  glintfly:      { name: 'Glintfly',      rarity: 'rare',     desc: 'Pure reflection. You can never see it directly, only its dazzle.' }
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Procedural bug generation — any pair without a signature recipe. Inputs
+   are sorted and hashed deterministically so the same pair always produces
+   the same bug. The deterministic hash drives both the displayed art (via
+   hashToTraits / _generateBugSVG) AND the procedural name.
+   ═════════════════════════════════════════════════════════════════════════ */
+var TAG_PREFIXES = {
+  organic: 'Mold', metal: 'Rust', plastic: 'Synth', paper: 'Pulp', glass: 'Glint',
+  fabric: 'Lint', wet: 'Drip', sharp: 'Spike', soft: 'Squish', shiny: 'Gleam',
+  hollow: 'Echo', tiny: 'Mite', round: 'Orb', long: 'Snake', smoky: 'Ash',
+  electric: 'Volt', toxic: 'Bile', stained: 'Splotch', sweet: 'Sugar',
+  savory: 'Brine', sticky: 'Tack', slippery: 'Slick', crusty: 'Crust',
+  inky: 'Quill', warm: 'Ember', fragile: 'Husk', pale: 'Bone', stinky: 'Whiff',
+  seedy: 'Pip', crinkly: 'Crinkle', small: 'Tick'
+};
+var BUG_SUFFIXES = ['fly', 'beetle', 'mite', 'moth', 'worm', 'roach', 'gnat', 'wasp', 'cicada', 'tick'];
+
+function _quickHashStr(str) {
+  var h = 0;
+  for (var i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+// Pad the quick-hash to 64 chars so it works through hashToTraits.
+function _quickHashHex64(str) {
+  var n = _quickHashStr(str);
+  var hex = n.toString(16);
+  while (hex.length < 64) hex = hex + (hex.charAt(0) || '0');
+  return hex.slice(0, 64);
+}
+
+window.generateProceduralBug = function (id1, id2) {
+  var a, b;
+  if (id1 < id2) { a = id1; b = id2; } else { a = id2; b = id1; }
+  var key = 'proc_' + a + '__' + b;
+  var hex = _quickHashHex64(key);
+  var tags = [];
+  var seen = {};
+  function pushTags(idList) {
+    for (var i = 0; i < idList.length; i++) {
+      var ts = window.TRASH_ITEMS[idList[i]] && window.TRASH_ITEMS[idList[i]].tags || [];
+      for (var j = 0; j < ts.length; j++) if (!seen[ts[j]]) { seen[ts[j]] = 1; tags.push(ts[j]); }
+    }
+  }
+  pushTags([a, b]);
+  var h = _quickHashStr(key);
+  var prefix = TAG_PREFIXES[tags[h % Math.max(1, tags.length)]] || 'Odd';
+  var suffix = BUG_SUFFIXES[h % BUG_SUFFIXES.length];
+  var name = prefix + suffix;
+  var grade = window.getBugGrade(window.hashToTraits(hex));
+  return {
+    id: key,
+    hash: hex,
+    name: name,
+    rarity: grade.name.toLowerCase(),
+    desc: 'An unclassified hybrid born of ' + window.TRASH_ITEMS[a].name.toLowerCase() + ' and ' + window.TRASH_ITEMS[b].name.toLowerCase() + '. Field notes pending.',
+    procedural: true
+  };
+};
+
+window.findBugForCombo = function (id1, id2) {
+  if (!id1 || !id2) return null;
+  var SR = window.SIGNATURE_RECIPES;
+  for (var i = 0; i < SR.length; i++) {
+    var r = SR[i];
+    if ((r.inputs[0] === id1 && r.inputs[1] === id2) ||
+        (r.inputs[0] === id2 && r.inputs[1] === id1)) {
+      var sig = window.SIGNATURE_BUGS[r.bug];
+      // Signature bugs get a deterministic hash so the renderer can still draw them.
+      var sigHash = _quickHashHex64('sig_' + r.bug);
+      return {
+        id: r.bug,
+        hash: sigHash,
+        name: sig.name,
+        rarity: sig.rarity,
+        desc: sig.desc,
+        procedural: false
+      };
+    }
+  }
+  return window.generateProceduralBug(id1, id2);
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   GAME STATE + UI
+   ═════════════════════════════════════════════════════════════════════════ */
+window.LB = (function () {
+  var state = {
+    inventory: { banana_peel: 2, bottle_cap: 2, coffee_cup: 1 },
+    slot1: null,
+    slot2: null,
+    discovered: {},
+    view: 'lab',
+    lastResult: null,
+    log: [{ id: 1, text: 'Begin field study. The alley awaits.', kind: 'note' }]
+  };
+
+  function trashIds() {
+    return Object.keys(window.TRASH_ITEMS);
+  }
+
+  function pushLog(text, kind) {
+    state.log.unshift({ id: Date.now() + Math.random(), text: text, kind: kind || 'note' });
+    if (state.log.length > 6) state.log.length = 6;
+  }
+
+  function render() {
+    renderInventory();
+    renderSlots();
+    renderResult();
+    renderLog();
+    renderDexCount();
+    if (state.view === 'bugdex') renderBugdex();
+  }
+
+  function renderInventory() {
+    var box = document.getElementById('inventory');
+    if (!box) return;
+    var entries = Object.keys(state.inventory).filter(function (k) { return state.inventory[k] > 0; });
+    var total = 0;
+    for (var i = 0; i < entries.length; i++) total += state.inventory[entries[i]];
+    document.getElementById('inv-count').textContent = total + ' pieces';
+    if (!entries.length) {
+      box.innerHTML = '<div style="grid-column:1/-1;padding:1rem;text-align:center;font-family:Caveat,cursive;font-size:1.15rem;color:var(--ink-soft);">Your bin is empty. Go scrounge.</div>';
+      return;
+    }
+    var h = '';
+    for (var j = 0; j < entries.length; j++) {
+      var id = entries[j];
+      var item = window.TRASH_ITEMS[id];
+      var inUse = (state.slot1 === id ? 1 : 0) + (state.slot2 === id ? 1 : 0);
+      var avail = state.inventory[id] - inUse;
+      var disabled = (avail <= 0 || (state.slot1 && state.slot2)) ? ' disabled' : '';
+      h += '<button class="lb-inv-item"' + disabled + ' onclick="window.LB.placeInSlot(\'' + id + '\')" title="' + item.name + '">';
+      h += '<div class="lb-inv-icon">' + item.icon + '</div>';
+      h += '<div class="lb-inv-name">' + item.name + '</div>';
+      h += '<div class="lb-inv-count">' + avail + '</div>';
+      h += '</button>';
+    }
+    box.innerHTML = h;
+  }
+
+  function renderSlots() {
+    var s1 = document.getElementById('slot-1');
+    var s2 = document.getElementById('slot-2');
+    if (state.slot1) {
+      s1.classList.remove('empty');
+      s1.innerHTML = window.TRASH_ITEMS[state.slot1].icon;
+    } else {
+      s1.classList.add('empty');
+      s1.innerHTML = 'slot 1';
+    }
+    if (state.slot2) {
+      s2.classList.remove('empty');
+      s2.innerHTML = window.TRASH_ITEMS[state.slot2].icon;
+    } else {
+      s2.classList.add('empty');
+      s2.innerHTML = 'slot 2';
+    }
+    var btn = document.getElementById('combine-btn');
+    if (btn) btn.disabled = !(state.slot1 && state.slot2);
+  }
+
+  function renderResult() {
+    var box = document.getElementById('result-area');
+    if (!box) return;
+    if (!state.lastResult) { box.innerHTML = ''; return; }
+    var r = state.lastResult;
+    var svg = window._generateBugSVG(r.hash, 120);
+    var h = '<div class="lb-result' + (r.isNew ? ' new' : '') + '">';
+    h += svg;
+    h += '<h3 class="lb-result-name">' + r.name + '</h3>';
+    h += '<p class="lb-result-desc">' + r.desc + '</p>';
+    h += '<span class="lb-result-tag ' + (r.isNew ? 'new' : 'dup') + '">' + (r.isNew ? 'New Species' : 'Already Catalogued') + '</span>';
+    if (r.procedural) h += '<span class="lb-result-tag proc">Hybrid</span>';
+    h += '</div>';
+    box.innerHTML = h;
+  }
+
+  function renderLog() {
+    var box = document.getElementById('log');
+    if (!box) return;
+    var h = '';
+    for (var i = 0; i < state.log.length; i++) {
+      var e = state.log[i];
+      h += '<div class="lb-log-entry ' + e.kind + '">✦ ' + e.text + '</div>';
+    }
+    box.innerHTML = h;
+  }
+
+  function renderDexCount() {
+    var el = document.getElementById('dex-count');
+    if (el) el.textContent = Object.keys(state.discovered).length;
+  }
+
+  function renderBugdex() {
+    var sigBox = document.getElementById('dex-signature');
+    var hybBox = document.getElementById('dex-hybrid');
+    if (!sigBox || !hybBox) return;
+    var SB = window.SIGNATURE_BUGS;
+    var sigIds = Object.keys(SB);
+    var caught = 0;
+    var h = '';
+    for (var i = 0; i < sigIds.length; i++) {
+      var id = sigIds[i];
+      var bug = SB[id];
+      var found = state.discovered[id];
+      if (found) caught++;
+      var locked = found ? '' : ' locked';
+      h += '<div class="lb-dex-card' + locked + '">';
+      if (found) {
+        h += window._generateBugSVG(found.hash, 72).replace('class="lb-result-svg"', 'class="lb-dex-svg"').replace('<svg ', '<svg class="lb-dex-svg" ');
+      } else {
+        h += '<svg class="lb-dex-svg locked" viewBox="0 0 100 100"><circle cx="50" cy="55" r="22" fill="#999"/></svg>';
+      }
+      h += '<h3 class="lb-dex-name">' + (found ? bug.name : '???') + '</h3>';
+      h += '<div class="lb-dex-rarity ' + bug.rarity + '">' + (found ? bug.rarity : 'unknown') + '</div>';
+      if (found) h += '<p class="lb-dex-desc">' + bug.desc + '</p>';
+      h += '</div>';
+    }
+    sigBox.innerHTML = h;
+    document.getElementById('dex-signature-count').textContent = caught + ' / ' + sigIds.length + ' catalogued';
+
+    var hybs = [];
+    var disc = state.discovered;
+    var keys = Object.keys(disc);
+    for (var k = 0; k < keys.length; k++) if (disc[keys[k]].procedural) hybs.push(disc[keys[k]]);
+    if (!hybs.length) {
+      hybBox.innerHTML = '<div style="grid-column:1/-1;padding:1rem;text-align:center;font-family:Caveat,cursive;font-size:1.15rem;color:var(--ink-soft);">No hybrids yet. Combine unusual pairs.</div>';
+      return;
+    }
+    var hh = '';
+    for (var m = 0; m < hybs.length; m++) {
+      var b = hybs[m];
+      hh += '<div class="lb-dex-card">';
+      hh += window._generateBugSVG(b.hash, 72).replace('<svg ', '<svg class="lb-dex-svg" ');
+      hh += '<h3 class="lb-dex-name">' + b.name + '</h3>';
+      hh += '<div class="lb-dex-rarity ' + b.rarity + '">' + b.rarity + '</div>';
+      hh += '<p class="lb-dex-desc">' + b.desc + '</p>';
+      hh += '</div>';
+    }
+    hybBox.innerHTML = hh;
+  }
+
+  // ── Public API (called from inline onclicks) ──
+  return {
+    forage: function () {
+      var drops = 1 + Math.floor(Math.random() * 3);
+      var found = [];
+      var ids = trashIds();
+      for (var i = 0; i < drops; i++) {
+        var id = ids[Math.floor(Math.random() * ids.length)];
+        state.inventory[id] = (state.inventory[id] || 0) + 1;
+        found.push(window.TRASH_ITEMS[id].name);
+      }
+      pushLog('Scrounged: ' + found.join(', '), 'forage');
+      render();
+    },
+    placeInSlot: function (id) {
+      if (!state.inventory[id]) return;
+      if (state.slot1 === null) state.slot1 = id;
+      else if (state.slot2 === null) state.slot2 = id;
+      render();
+    },
+    clearSlot: function (which) {
+      if (which === 1) state.slot1 = null;
+      else state.slot2 = null;
+      render();
+    },
+    combine: function () {
+      if (!state.slot1 || !state.slot2) return;
+      var bug = window.findBugForCombo(state.slot1, state.slot2);
+      var isNew = !state.discovered[bug.id];
+      state.inventory[state.slot1] = Math.max(0, state.inventory[state.slot1] - 1);
+      state.inventory[state.slot2] = Math.max(0, state.inventory[state.slot2] - 1);
+      state.discovered[bug.id] = bug;
+      state.lastResult = Object.assign ? Object.assign({}, bug, { isNew: isNew }) : (function () { var o = {}; for (var k in bug) o[k] = bug[k]; o.isNew = isNew; return o; })();
+      pushLog(isNew ? 'New species! ' + bug.name + ' catalogued.' : 'Bred another ' + bug.name + '.', isNew ? 'discovery' : 'forage');
+      state.slot1 = null;
+      state.slot2 = null;
+      render();
+    },
+    switchTab: function (name) {
+      state.view = name;
+      document.getElementById('tab-lab').classList.toggle('active', name === 'lab');
+      document.getElementById('tab-bugdex').classList.toggle('active', name === 'bugdex');
+      document.getElementById('view-lab').style.display = (name === 'lab') ? '' : 'none';
+      document.getElementById('view-bugdex').style.display = (name === 'bugdex') ? '' : 'none';
+      render();
+    },
+    // For smoke harness + debugging.
+    _state: state
+  };
+})();
+
+// Boot.
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('footer').textContent = 'prototype v' + LB_VERSION + ' · ' + Object.keys(window.TRASH_ITEMS).length + ' trash · ' + Object.keys(window.SIGNATURE_BUGS).length + ' signature bugs · ∞ hybrids';
+  window.LB.switchTab('lab');
+});
+</script>
+
+</body>
+</html>
