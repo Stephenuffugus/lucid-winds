@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.08';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6894,6 +6894,74 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
     }
     window._perfLite = dominated;
     window._perfLiteOverride = override;
+  })();</script>
+
+  <!-- ═══ AUTO-ENGAGE PERF-LITE UNDER FPS PRESSURE ═══
+       Stephen 2026-05-20: "the whole game is running so slow its hard
+       to even play and my phone is getting hot so we need to figure
+       out a better way to have this all function."
+       Static device-tier detection above doesn't catch modern phones
+       that struggle under cumulative load (164 backdrop-filter rules,
+       many concurrent animations, etc.). This monitor samples FPS via
+       requestAnimationFrame; if it drops below 25 FPS for 5+ seconds,
+       perf-lite engages WITHOUT a reload — strips backdrop-filter,
+       glows, animations from the CSS. User can override either way
+       via Settings → Reduce Effects. -->
+  <script>(function(){
+    if (typeof requestAnimationFrame !== 'function') return;
+    var override = null;
+    try { override = localStorage.getItem('lw_perf_lite'); } catch(e){}
+    // If user has explicitly set perf-lite either way, don't auto-toggle.
+    if (override === '0' || override === '1') return;
+    // If already engaged via device-tier detection, no monitoring needed.
+    if (window._perfLite) return;
+    var lastTime = 0;
+    var frames = 0;
+    var slowSeconds = 0;
+    var monitoring = true;
+    function engagePerfLite() {
+      try { document.documentElement.classList.add('perf-lite'); } catch(e){}
+      window._perfLite = true;
+      try { localStorage.setItem('lw_perf_lite_auto', '1'); } catch(e){}
+      monitoring = false;
+      // Stop in-flight particle intervals (they were started before
+      // perf-lite engaged so they're still spawning DOM nodes).
+      try {
+        var win = window;
+        if (win._fireflyTimer) { clearInterval(win._fireflyTimer); win._fireflyTimer = null; }
+        if (win._seasonParticleTimer) { clearInterval(win._seasonParticleTimer); win._seasonParticleTimer = null; }
+        if (win._pollenInterval) { clearInterval(win._pollenInterval); win._pollenInterval = null; }
+      } catch(e){}
+      // Toast the user so they know what changed and how to override.
+      setTimeout(function(){
+        try {
+          if (window._toast) window._toast('⚡ Reduced effects — your phone was working too hard. Toggle in Settings.');
+        } catch(e){}
+      }, 500);
+    }
+    function tick(t) {
+      if (!monitoring) return;
+      if (lastTime === 0) { lastTime = t; requestAnimationFrame(tick); return; }
+      frames++;
+      var dt = t - lastTime;
+      if (dt >= 1000) {
+        var fps = (frames * 1000) / dt;
+        if (fps < 25) {
+          slowSeconds++;
+          if (slowSeconds >= 5) { engagePerfLite(); return; }
+        } else {
+          slowSeconds = 0;
+        }
+        lastTime = t;
+        frames = 0;
+      }
+      requestAnimationFrame(tick);
+    }
+    // Boot warmup: wait 10s past load so initial paint storm + lazy
+    // hydration doesn't trigger a false positive.
+    function start() { lastTime = 0; frames = 0; slowSeconds = 0; requestAnimationFrame(tick); }
+    if (document.readyState === 'complete') setTimeout(start, 10000);
+    else window.addEventListener('load', function(){ setTimeout(start, 10000); });
   })();</script>
 
   <style>
@@ -45411,6 +45479,8 @@ document.addEventListener('keydown', function(e) {
     if (window._perfLite) return;
     // Lighter base pollen (fewer, smaller — seasonal particles carry the theme)
     _pollenInterval = setInterval(function() {
+      // 2026-05-20: self-terminate if perf-lite engaged after start.
+      if (window._perfLite) { clearInterval(_pollenInterval); _pollenInterval = null; return; }
       // Don't spawn particles when the tab is backgrounded — drains battery
       // on old iPads for no visible benefit.
       if (document.hidden) return;
@@ -51559,6 +51629,9 @@ function _spawnFireflies(){
   // Perf-lite: skip fireflies entirely — DOM churn kills old devices
   if(window._perfLite)return;
   _fireflyTimer=setInterval(function(){
+    // 2026-05-20: self-terminate if perf-lite engaged after start (auto-FPS
+    // detector flips this when the device is overworked).
+    if(window._perfLite){clearInterval(_fireflyTimer);_fireflyTimer=null;return;}
     var panel=document.getElementById('panel-wild');if(!panel)return;
     if(!panel.classList.contains('tod-night')){clearInterval(_fireflyTimer);_fireflyTimer=null;return;}
     // Tier 1 perf: gate on Wild active + page visible + hard cap 12 live fireflies
@@ -51591,6 +51664,8 @@ function _startSeasonalParticles(){
   // the slower rate but the layout doesn't thrash.
   var interval=season==='autumn'?2500:season==='spring'?3000:season==='winter'?3500:3200;
   _seasonParticleTimer=setInterval(function(){
+    // 2026-05-20: self-terminate if perf-lite engaged after start.
+    if(window._perfLite){clearInterval(_seasonParticleTimer);_seasonParticleTimer=null;return;}
     var panel=document.getElementById('panel-wild');if(!panel)return;
     // Tier 1 perf: gate on Wild active (was checking style.display which never set)
     // + page visible + hard cap 14 live nodes
