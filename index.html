@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -49668,6 +49668,15 @@ document.addEventListener('keydown', function(e) {
       hashBuf: localStorage.getItem('pw_hashBuf') || '',
       hashFilled: parseInt(localStorage.getItem('pw_hashFilled') || '0', 10) || 0,
       prestige: parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0,
+      // 2026-05-20: omen codex sync. Stephen 2026-05-20: "im not seeing
+      // omens recorded in my codex. maybe they were firing but never
+      // being recorded." The discovered-trigger list was localStorage-
+      // only — any device-switch / reinstall / cache clear wiped the
+      // codex. Now persists alongside other meta state. Union-merge on
+      // load (below in _loadVaultForUser) so devices don't clobber
+      // each other.
+      triggersFound: JSON.parse(localStorage.getItem('lw_triggers_found') || '[]'),
+      triggersGrown: JSON.parse(localStorage.getItem('lw_triggers_grown') || '[]'),
       lastSync: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   }
@@ -49785,6 +49794,27 @@ document.addEventListener('keydown', function(e) {
                 var _localP = parseInt(localStorage.getItem('pw_prestige') || '0', 10) || 0;
                 localStorage.setItem('pw_prestige', String(Math.max(_localP, d.prestige)));
               }
+              // 2026-05-20: omen codex union-merge. Always take the UNION so
+              // discoveries on one device persist to all others. Never
+              // shrinks. Stephen 2026-05-20: was localStorage-only, so the
+              // codex appeared empty after any device-switch / browser
+              // clear / vault reset.
+              try {
+                if (Array.isArray(d.triggersFound)) {
+                  var _localT = []; try { _localT = JSON.parse(localStorage.getItem('lw_triggers_found') || '[]') || []; } catch(_le){}
+                  var _merge = {}; for (var _li=0;_li<_localT.length;_li++) _merge[_localT[_li]] = 1;
+                  for (var _ci=0;_ci<d.triggersFound.length;_ci++) _merge[d.triggersFound[_ci]] = 1;
+                  var _mergedT = []; for (var _mk in _merge) _mergedT.push(_mk);
+                  localStorage.setItem('lw_triggers_found', JSON.stringify(_mergedT));
+                }
+                if (Array.isArray(d.triggersGrown)) {
+                  var _localG = []; try { _localG = JSON.parse(localStorage.getItem('lw_triggers_grown') || '[]') || []; } catch(_lge){}
+                  var _gmerge = {}; for (var _lgi=0;_lgi<_localG.length;_lgi++) _gmerge[_localG[_lgi]] = 1;
+                  for (var _cgi=0;_cgi<d.triggersGrown.length;_cgi++) _gmerge[d.triggersGrown[_cgi]] = 1;
+                  var _mergedG = []; for (var _gmk in _gmerge) _mergedG.push(_gmk);
+                  localStorage.setItem('lw_triggers_grown', JSON.stringify(_mergedG));
+                }
+              } catch(_tmerge) {}
             }
           });
           // Refresh in-memory sunbeam queue now that pw_readyHashes has
@@ -49870,6 +49900,15 @@ document.addEventListener('keydown', function(e) {
             localStorage.setItem('lw_repro_today',_rNow);
             if(window.FG_Wild&&FG_Wild._wildReproduction)FG_Wild._wildReproduction();
             else if(window._wildReproduction)_wildReproduction();
+          }
+          // 2026-05-20: separate, GPS-free daily trigger check so the codex
+          // records omens even when _wildReproduction bails on missing GPS.
+          // Stephen 2026-05-20: codex showed zero discovered despite plants
+          // out for weeks — root cause was GPS gating on the only trigger path.
+          var _tToday=localStorage.getItem('lw_trigger_check_today');
+          if(_tToday!==_rNow){
+            localStorage.setItem('lw_trigger_check_today',_rNow);
+            if(window._runDailyTriggerCheck){try{window._runDailyTriggerCheck();}catch(e){}}
           }
         },5000); // 5s delay to let everything load
         // Force save to cloud after successful auth
@@ -51410,6 +51449,13 @@ function activate(){
         if (window._reproLastReason && window._reproLastReason !== _preReason) {
           try { localStorage.removeItem('lw_repro_today'); } catch(e){}
         }
+      }
+      // 2026-05-20: GPS-free trigger check runs unconditionally so codex
+      // records omens even on bail. Independently day-key gated.
+      var _tToday2=localStorage.getItem('lw_trigger_check_today');
+      if(_tToday2!==_todayStr){
+        localStorage.setItem('lw_trigger_check_today',_todayStr);
+        if(window._runDailyTriggerCheck){try{window._runDailyTriggerCheck();}catch(e){}}
       }
     },window._perfLite?8000:2000);
   }
@@ -82879,8 +82925,11 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
         cd._dayCount=dayCount;
         cd._dayDate=dayDate;
         _saveCooldowns(cd);
+        // Capture first-discovery state BEFORE the push below mutates it,
+        // so the omen_fired log entry can flag NEW vs REPEAT correctly.
+        var _wasFirstDiscovery = (discovered.indexOf(TRIGGERS[t].id) < 0);
         // Mark as discovered (first time only)
-        if(discovered.indexOf(TRIGGERS[t].id)<0){
+        if(_wasFirstDiscovery){
           discovered.push(TRIGGERS[t].id);
           _saveDiscovered(discovered);
           // Engagement: lifetime BoS trigger discovery counter
@@ -82912,6 +82961,28 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
             }
           } catch(elw) {}
         }
+        // 2026-05-20: ALSO log every fire (not just first discovery) as
+        // 'omen_fired'. Stephen 2026-05-20: "I've had a ton of plants out
+        // for weeks now and I've still not had a single omen trigger so
+        // I don't care how many times you tell me you wired it." The
+        // May 14 fix only logged FIRST discoveries to LW_Log — once a
+        // player had discovered everything their plants could match,
+        // repeat fires were silent and journal showed nothing. The
+        // 3-per-player-per-day cap above already throttles to ≤3 entries
+        // per day so no noise. Journal NEW SECRETS reader at L94885
+        // also pulls 'omen_fired' so the activity is visible even when
+        // there's no NEW discovery.
+        try {
+          if (window.LW_Log) {
+            window.LW_Log.write('omen_fired', {
+              name: TRIGGERS[t].name,
+              triggerId: TRIGGERS[t].id,
+              category: TRIGGERS[t].category,
+              plantName: window.getPlantName?window.getPlantName(plant.hash):'',
+              firstDiscovery: _wasFirstDiscovery
+            });
+          }
+        } catch(elwf) {}
         // Daily counter for ANY trigger fire (not just first discovery)
         try { if (window.LW_ACH) LW_ACH.bump('d_trigger', 1); } catch(e){}
         break; // max 1 event per plant per check (priority order)
@@ -82982,6 +83053,55 @@ function _retroScanGrown(){
 }
 // Defer until after main IIFE has had a chance to expose hashToTraits.
 setTimeout(function(){try{_retroScanGrown();}catch(e){}},2500);
+
+// 2026-05-20: GPS-free daily trigger check. The existing path is
+// _wildReproduction → _doReproduction → checkTriggers loop, but
+// _wildReproduction bails on missing GPS or map — meaning Pi Browser
+// players (Stephen) whose GPS doesn't always resolve never get omens
+// fired against their wild plants. Codex stays empty forever despite
+// plants out for weeks. This standalone path runs the trigger loop
+// directly from local wild-plant state + cached weather + LW_Events
+// counters. No map / GPS / Firestore dependency. Day-key gated so
+// it runs once per calendar day per device.
+window._runDailyTriggerCheck = function() {
+  if (!window.checkTriggers) return 0;
+  var wild = [];
+  try {
+    var _wRaw = window._secureGet ? window._secureGet('fg_wild_plants') : localStorage.getItem('fg_wild_plants');
+    wild = JSON.parse(_wRaw || '[]') || [];
+  } catch(e) {}
+  if (!wild.length) return 0;
+  var weather = window._reproWeather || { temp: 20, rain: 0, wind: 0 };
+  var stats = {
+    ghCount: 0,
+    wildCount: wild.length,
+    dayCount: new Date().getDate(),
+    watersToday: 0,
+    midnightWaters: 0,
+    samePairBreeds: 0
+  };
+  try { stats.ghCount = (JSON.parse(localStorage.getItem('sws_greenhouse') || '[]') || []).length; } catch(e) {}
+  try {
+    if (window.LW_Events && window.LW_Events.getCounter) {
+      stats.watersToday = window.LW_Events.getCounter('rainfall') || 0;
+      stats.midnightWaters = window.LW_Events.getCounter('midnightWaters') || 0;
+      stats.samePairBreeds = window.LW_Events.getCounter('samePairBreeds') || 0;
+    }
+  } catch(e) {}
+  var fireCount = 0;
+  for (var i = 0; i < wild.length; i++) {
+    var p = wild[i];
+    if (!p || !p.hash) continue;
+    // Per-player 3/day cap + per-plant 1/day cap + 7-day per-trigger
+    // cooldown all enforced inside checkTriggers. Safe to call on every
+    // plant unconditionally.
+    try {
+      var f = window.checkTriggers(p, [], weather, stats);
+      if (f && f.length) fireCount += f.length;
+    } catch(e) {}
+  }
+  return fireCount;
+};
 
 function getCompendium(){
   var disc=_getDiscovered();
@@ -94882,8 +95002,17 @@ function _bosTodayContent() {
       // to double-count here. Journal NEW SECRETS now means: omens you've
       // discovered + synergy events your plants triggered. Both are rare
       // and meaningful.
-      if (!_re || (_re.type !== 'event_discovered' && _re.type !== 'synergy_discovered')) continue;
-      var _rk = (_re.data && _re.data.name) ? (_re.type + '|' + _re.data.name) : (_re.type + '|' + (_re.id || x));
+      // 2026-05-20: 'omen_fired' added so repeat fires (not just first
+      // discoveries) show in the journal. Stephen reported zero visible
+      // omens despite triggers firing — root cause was that already-
+      // discovered triggers had no surface. Dedup key below collapses
+      // event_discovered + omen_fired with the same name into one row.
+      if (!_re || (_re.type !== 'event_discovered' && _re.type !== 'synergy_discovered' && _re.type !== 'omen_fired')) continue;
+      // Collapse event_discovered + omen_fired (same omen, first vs repeat
+      // fire) into one dedup group so a discovered+re-fired omen shows
+      // once with a ×N count instead of two rows.
+      var _typeGroup = (_re.type === 'omen_fired') ? 'event_discovered' : _re.type;
+      var _rk = (_re.data && _re.data.name) ? (_typeGroup + '|' + _re.data.name) : (_re.type + '|' + (_re.id || x));
       if (_seenDisc[_rk]) {
         // Bump count + keep the more recent ts
         _seenDisc[_rk].count++;
@@ -94957,7 +95086,7 @@ function _bosTodayContent() {
       for (var _di = 0; _di < maxShow; _di++) {
         var _ne = _discList[_di];
         var _nName = (_ne.data && _ne.data.name) || 'Unnamed';
-        var _nType = _ne.type === 'event_discovered' ? 'Event' : (_ne.type === 'synergy_discovered' ? 'Synergy' : 'Achievement');
+        var _nType = _ne.type === 'event_discovered' ? 'Omen' : (_ne.type === 'synergy_discovered' ? 'Synergy' : (_ne.type === 'omen_fired' ? 'Omen' : 'Achievement'));
         var _ms = Date.now() - _ne.ts;
         var _agoStr = _ms < 3600000 ? Math.max(1, Math.floor(_ms/60000)) + 'm ago' : (_ms < 86400000 ? Math.floor(_ms/3600000) + 'h ago' : Math.floor(_ms/86400000) + 'd ago');
         var _nCount = _ne.count || 1;
