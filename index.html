@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.16';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -88068,9 +88068,27 @@ window._lwClaimHerbarium = function(id){
       h += '<div style="max-width:420px;width:100%;margin:0 auto;">';
       // Header
       h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.7rem;">';
-      h += '<div><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Foraging</div>';
+      // 2026-05-20: Stephen reported "I thought it was mythic but I only got
+      // 4 slots." The slot count is fully determined by the hex grade \u2014
+      // mythic=5, legendary/epic/rare=4, common/uncommon=3 (see hexDifficulty).
+      // Surface the grade in the header so the player can confirm what
+      // difficulty they're actually playing instead of guessing from slot
+      // count. Also show slots + score-needed so the puzzle's shape is fully
+      // legible up front. Grade colors mirror the Terra Grade tiers.
+      var _foragingGrade = String(grade || 'Common');
+      var _foragingGradeColor = (function(g){
+        var L = String(g||'').toLowerCase();
+        if (L==='cosmic') return '#ff6ec7';
+        if (L==='mythic') return '#e8a0bf';
+        if (L==='legendary') return '#c8a84b';
+        if (L==='epic') return '#9b59b6';
+        if (L==='rare') return '#5baee8';
+        if (L==='uncommon') return '#7ab356';
+        return 'var(--muted)';
+      })(_foragingGrade);
+      h += '<div><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--gold);font-style:italic;">Foraging <span style="color:' + _foragingGradeColor + ';font-style:normal;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;">' + _foragingGrade.toUpperCase() + ' HEX</span></div>';
       h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:2px;">' + biomeIcon + ' ' + biomeName + ' \u00b7 ' + weatherIcon + ' ' + weatherLbl + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of ' + diff.attempts + '</div></div>';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);margin-top:2px;">Attempt ' + (attempts + 1) + ' of ' + diff.attempts + ' \u00b7 ' + diff.slots + ' slots \u00b7 need ' + diff.scoreNeeded + ' pts</div></div>';
       h += '<button onclick="window._lwForageClose(false)" style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(138,145,120,0.3);background:rgba(26,36,22,0.6);color:var(--cream);font-size:1rem;cursor:pointer;flex-shrink:0;">\u2715</button>';
       h += '</div>';
       // Deck selector ripped 2026-04-26 — hand is auto-built per hex now,
