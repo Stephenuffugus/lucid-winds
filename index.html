@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.17';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -80039,8 +80039,20 @@ function _renderForecast(){
   var sw=[10,10,10,10];sw[sA]+=30;sw[sB]+=30;
   var swTotal=sw[0]+sw[1]+sw[2]+sw[3];
 
+  // 2026-05-20: simulation/grade bar moved from end-of-forecast to here (top),
+  // directly below the two plant cards (bs-card-a / bs-card-b). Stephen
+  // requested: "needs to be moved all the way up above the percent
+  // quality, so it's directly below the two plants you're comparing
+  // and needs all the percents numbers actually written much larger
+  // underneath that bar... It's microscopic." Bar height + percent
+  // font sizes enlarged in _bsRunSim render below.
+  var h='';
+  h+='<div id="bs-forecast-sim" style="margin:0 0 0.7rem 0;padding:0.6rem 0.7rem 0.7rem;background:rgba(18,22,16,0.55);border:1px solid rgba(200,168,75,0.28);border-radius:9px;">';
+  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.35rem;">OFFSPRING RARITY</div>';
+  h+='<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">Computing offspring distribution...</div>';
+  h+='</div>';
   // Compatibility score banner
-  var h='<div class="bs-compat"><div class="bs-compat-score" style="color:'+_clabel.color+';">'+_cscore+'% — '+_clabel.label+'</div><div class="bs-compat-label">Genetic diversity · Trait synergy · Rarity overlap</div></div>';
+  h+='<div class="bs-compat"><div class="bs-compat-score" style="color:'+_clabel.color+';">'+_cscore+'% — '+_clabel.label+'</div><div class="bs-compat-label">Genetic diversity · Trait synergy · Rarity overlap</div></div>';
   h+='<div class="bs-fc-title">\ud83c\udf31 OFFSPRING FORECAST</div>';
   h+='<div class="bs-meter"><div class="bs-ml">EA Range</div><div class="bs-mt"><div class="bs-mf gold" style="width:'+eaPct+'%"></div></div><div class="bs-mv gold">'+eaLow+' — '+eaHigh+'</div></div>';
   h+='<div class="bs-meter"><div class="bs-ml">Rare+</div><div class="bs-mt"><div class="bs-mf gold" style="width:'+rarePct+'%"></div></div><div class="bs-mv gold">'+rarePct+'%</div></div>';
@@ -80053,16 +80065,10 @@ function _renderForecast(){
   }
   h+='</div>';
   h+='<div class="bs-chimera">\ud83e\uddec <span>Gen '+offGen+' Chimera, <b>-'+(offGen-1)*2+' EA</b> but <b>2× climate immunity</b>.</span></div>';
-  // 2026-05-13: Monte Carlo simulation is deferred to a separate render
-  // pass so the breed screen paints immediately on tap. The sim does
-  // hashToTraits + getTerraGrade + computeEA per iteration; with 50+ plants
-  // and any partner swipe firing this, Stephen saw multi-second BREED
-  // delays. Render a placeholder now; schedule the real sim + replacement
-  // after the screen has had a paint frame.
-  h+='<div id="bs-forecast-sim" style="margin-top:0.4rem;padding:0.4rem;background:rgba(18,22,16,0.35);border:1px solid rgba(200,168,75,0.1);border-radius:6px;">';
-  h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--muted);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION</div>';
-  h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--muted);">Computing offspring distribution…</div>';
-  h+='</div>';
+  // 2026-05-20: simulation block MOVED to the top of _renderForecast
+  // (right above bs-compat) so the rarity bar sits directly below
+  // bs-card-a/bs-card-b. Stephen: "needs to be moved all the way up
+  // above the percent quality... percents much larger underneath."
 
   // Inbreeding depression warning
   var _mutA = iA.t.mutationName || 'None';
@@ -80144,23 +80150,28 @@ function _renderForecast(){
       if(!_fc){ _simEl.style.display='none'; return; }
       var _gcColors={Common:'rgba(138,145,120,0.6)',Uncommon:'rgba(122,179,86,0.7)',Rare:'rgba(91,175,220,0.8)',Epic:'rgba(153,89,182,0.8)',Legendary:'rgba(200,168,75,0.8)',Mythic:'rgba(232,160,191,0.8)',Cosmic:'rgba(255,110,199,0.9)'};
       var _gOrder=['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic'];
-      var _sh='<div style="font-family:Bebas Neue,sans-serif;font-size:0.42rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:0.2rem;">SIMULATION (600 offspring)</div>';
-      _sh+='<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:0.2rem;">';
+      // 2026-05-20: Stephen "It's microscopic." Bumped:
+      //   bar height 8px -> 16px (twice as tall, readable on phones)
+      //   percent font 0.28rem -> 0.62rem (more than 2x — was the
+      //     "microscopic" complaint), bold + gap from 4 to 7px
+      //   header label keeps small size to leave room for percents
+      //   EA/mutation/bloom line 0.3rem -> 0.5rem
+      var _sh='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.35rem;">OFFSPRING RARITY (600 sim)</div>';
+      _sh+='<div style="display:flex;height:16px;border-radius:5px;overflow:hidden;margin-bottom:0.5rem;box-shadow:inset 0 1px 2px rgba(0,0,0,0.4);">';
       for(var _gi=0;_gi<_gOrder.length;_gi++){
         var _gPct=_fc.grades[_gOrder[_gi]]||0;
         if(_gPct>0)_sh+='<div style="width:'+_gPct+'%;background:'+_gcColors[_gOrder[_gi]]+';"></div>';
       }
       _sh+='</div>';
-      _sh+='<div style="display:flex;flex-wrap:wrap;gap:4px;font-family:DM Mono,monospace;font-size:0.28rem;">';
+      _sh+='<div style="display:flex;flex-wrap:wrap;gap:7px;font-family:DM Mono,monospace;font-size:0.62rem;font-weight:700;line-height:1.5;">';
       for(var _gl=0;_gl<_gOrder.length;_gl++){
         var _glPct=_fc.grades[_gOrder[_gl]]||0;
         if(_glPct>0)_sh+='<span style="color:'+_gcColors[_gOrder[_gl]]+';">'+_gOrder[_gl]+' '+_glPct+'%</span>';
       }
       _sh+='</div>';
-      _sh+='<div style="font-family:DM Mono,monospace;font-size:0.3rem;color:var(--muted);margin-top:0.15rem;">';
+      _sh+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.45rem;line-height:1.4;">';
       _sh+='EA '+_fc.eaRange[0]+'-'+_fc.eaRange[1]+' · '+_fc.mutationChance+'% mutation · '+_fc.flowerChance+'% bloom';
       _sh+='</div>';
-      _simEl.style.background='rgba(18,22,16,0.5)';
       _simEl.innerHTML=_sh;
     };
     // Two-frame delay: one for browser paint, one for the user to see the
