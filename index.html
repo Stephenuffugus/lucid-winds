@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.21';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -86683,29 +86683,29 @@ function _bosAboutContent() {
   }
   h += '</div>';
 
-  // Stephen 2026-05-07: Pi App Studio rules forbid fiat (Stripe) and
-  // non-Pi crypto (BTC/ETH/SOL/USDC) inside Pi Browser. Pi Research
-  // audit flagged this as the #1 submission risk: a UA-detection bug
-  // could leak the tip jar.
+  // Pi App Studio rules forbid fiat (Stripe) and non-Pi crypto inside
+  // Pi Browser. Two-layer gate: this JS check skips building the
+  // non-Pi tip elements inside Pi Browser; CSS safety net
+  // body.pi-browser .lw-non-pi-tips{display:none !important;}
+  // hides anything that leaks through (line ~2275).
   //
-  // BELT-AND-SUSPENDERS:
-  //   1. JS-side _isPiBrowser uses 4 signals (any one triggers true):
-  //      - Pi SDK present (typeof Pi !== 'undefined')
-  //      - body.pi-browser class set by the polling detector at boot
-  //      - localStorage 'lw_pi_seen' sticky bit (set when Pi SDK was
-  //        ever seen; survives reload even if SDK fails to load)
-  //      - userAgent matches /PiBrowser|MinePi/i
-  //   2. CSS-side body.pi-browser HIDES tip jar elements unconditionally
-  //      via class selectors (search "tip-jar safety net" in CSS) so
-  //      even if JS leaked the elements through the gate, CSS masks them.
+  // 2026-05-20: REMOVED two false-positive signals that were showing
+  // the Pi-only branch on regular Chrome (Stephen "im in chrome
+  // incognito... still just the big pi button"):
+  //   (a) `typeof Pi !== 'undefined'` — the Pi SDK <script> loads on
+  //       EVERY browser (Stephen also tracked this for the body class
+  //       in commit on 2026-05-13). Once loaded it defines window.Pi
+  //       globally, so this signal misfires everywhere.
+  //   (b) `localStorage.lw_pi_seen === '1'` — sticky bit set by (a) on
+  //       any prior visit, so once a Chrome user opened the page they
+  //       were permanently flagged as Pi. The set-site is also removed
+  //       below so the bit never gets set again.
+  // UA regex + body.pi-browser class (which itself is gated on UA match
+  // + manual lw_force_pi_browser flag per the May 13 detector) are
+  // the only reliable signals.
   var _isPiBrowser = false;
   try {
-    if (typeof Pi !== 'undefined') {
-      _isPiBrowser = true;
-      try { localStorage.setItem('lw_pi_seen','1'); } catch(_e){}
-    } else if (document.body && document.body.classList.contains('pi-browser')) {
-      _isPiBrowser = true;
-    } else if (localStorage.getItem('lw_pi_seen') === '1') {
+    if (document.body && document.body.classList.contains('pi-browser')) {
       _isPiBrowser = true;
     } else if (/PiBrowser|Pi Browser|MinePi/i.test(navigator.userAgent || '')) {
       _isPiBrowser = true;
