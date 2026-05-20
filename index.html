@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.15';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -60655,9 +60655,33 @@ window._hexAction=function(action){
     var _clipNow=0;
     try{var _nurFC=window.FG_Data&&window.FG_Data.getNursery?window.FG_Data.getNursery():[];for(var _fcI=0;_fcI<_nurFC.length;_fcI++){if(window.FG_Data.isClippingOrigin&&window.FG_Data.isClippingOrigin(_nurFC[_fcI]&&_nurFC[_fcI].origin))_clipNow++;}}catch(e){}
     if(_clipNow>=_clipMax){_toast('Clipping slots full ('+_clipNow+'/'+_clipMax+'). Cross-pollinate one to free a slot.');return;}
+    // Stephen 2026-05-20: show the player BOTH the parent grade and the
+    // clipping's expected grade, because the clipping is intentionally
+    // stripped of pot / substrate / aura / companion / mythic-byte
+    // (those are "environmental" \u2014 they belong to the parent's growing
+    // spot, not the genome). A Mythic-via-Beholder parent yields a
+    // Legendary clipping when the mythic byte is zeroed, and the player
+    // needs to know that before spending 20 Dew. Confused Jessie: "I
+    // planted a mythic plant and... the plant is a legendary on hers."
+    var _cutParentGrade = '?';
+    var _cutClipGrade = '?';
+    try {
+      if (window.hashToTraits && window.getTerraGrade) {
+        var _ptT = window.hashToTraits(p.hash);
+        var _ptG = window.getTerraGrade(_ptT);
+        _cutParentGrade = (_ptG && (_ptG.name || _ptG.label)) || '?';
+        var _stripped = window._lwStripEnvironmentalTraits ? window._lwStripEnvironmentalTraits(p.hash) : p.hash;
+        var _clT = window.hashToTraits(_stripped);
+        var _clG = window.getTerraGrade(_clT);
+        _cutClipGrade = (_clG && (_clG.name || _clG.label)) || '?';
+      }
+    } catch (_cge) {}
+    var _cutGradeNote = (_cutParentGrade !== _cutClipGrade)
+      ? '<div style="margin-top:0.55rem;padding:0.45rem 0.6rem;background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.28);border-radius:7px;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--cream);line-height:1.6;">Parent: <b style="color:var(--gold);">' + _cutParentGrade + '</b> &nbsp;\u2192&nbsp; clipping will grade as <b style="color:var(--gold);">' + _cutClipGrade + '</b><div style="color:var(--muted);font-size:0.45rem;margin-top:0.2rem;">Mythic creatures, pot, aura, and substrate stay with the parent \u2014 they are environmental. The clipping carries stem, leaf, flower, and season only.</div></div>'
+      : '<div style="margin-top:0.55rem;font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">Clipping grades as <b style="color:var(--gold);">' + _cutClipGrade + '</b>.</div>';
     window._lwConfirm&&window._lwConfirm({
       title:'TAKE A CUTTING',
-      body:'You\u2019ll gain a clipping (Gen 2) carrying this plant\u2019s genetics. Costs <b>20 Dew</b>. The parent is unharmed.',
+      body:'You\u2019ll gain a clipping (Gen 2) carrying this plant\u2019s genetics. Costs <b>20 Dew</b>. The parent is unharmed.' + _cutGradeNote,
       yes:'TAKE CUTTING (20 DEW)',
       no:'LEAVE IT ALONE',
       danger:false
