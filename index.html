@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -80108,9 +80108,25 @@ window.bsExecuteBreed=function(){
           _genGh.forEach(function(p){if(p.hash===_bsA.hash)_genA=p.generation||1;if(p.hash===_bsM.hash)_genB=p.generation||1;});
         }catch(e){}
         var offGen=Math.max(_genA,_genB)+1;
-        // Clipping breed: remove the clipping from nursery FIRST so its
-        // slot is free for the bred offspring. Otherwise addSeed could
-        // bounce on a full nursery (e.g. 3 clippings filling all 3 slots).
+        // Bred seed direct to nursery (Stephen 2026-04-26 round 5).
+        // 2026-05-20: addSeed BEFORE consuming the clipping. The prior
+        // order removed the clipping first on the theory it would "free
+        // a slot" — but clippings and seeds use SPLIT caps (addSeed
+        // split-cap pass 2026-04-26), so removing a clipping does NOT
+        // free a seed slot for the bred offspring (which is a regular
+        // seed, not a clipping). With seed slots full, the clipping was
+        // destroyed AND no seed was created — Stephen 2026-05-20:
+        // "Jessie had a clipping and all of her seed slots were full and
+        // she bred her clipping... it didn't [make a seed] because there
+        // were no open slots and then the clipping also got burned."
+        if(window.FG_Data&&window.FG_Data.addSeed){
+          var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
+          if(!res.ok){
+            if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first — clipping kept.');
+            return;
+          }
+        }
+        // addSeed succeeded — NOW consume the clipping from the nursery.
         if(_clipSidToConsume){
           try{
             var _nurC=JSON.parse(localStorage.getItem('sws_nursery')||'[]');
@@ -80121,11 +80137,6 @@ window.bsExecuteBreed=function(){
             }
           }catch(e){}
           window._lwClippingParentSid=null;
-        }
-        // Bred seed direct to nursery (Stephen 2026-04-26 round 5).
-        if(window.FG_Data&&window.FG_Data.addSeed){
-          var res=window.FG_Data.addSeed({seedHash:offHash,parentAHash:_bsA.hash,parentBHash:_bsM.hash,nonce:offGen});
-          if(!res.ok){if(window._toast)window._toast('Nursery full. Bloom or abandon a seed first.');return;}
         }
         if(window._LW_classXP){window._LW_classXP('breed',30);if(offGen>=2)window._LW_classXP('chimera',15);}
         if(window._lwBumpCompCounter)window._lwBumpCompCounter('cross');
