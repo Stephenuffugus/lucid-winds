@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.14';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -57349,6 +57349,18 @@ function _renderPatternNamer(){
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.16em;color:var(--gold);">A NEW PATTERN HAS FORMED</div>';
   h += '<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-top:0.35rem;">' + (window._lwEmojiSprite?_lwEmojiSprite(meta.icon,18):meta.icon) + ' ' + meta.name + '</div>';
   h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-top:0.2rem;">' + meta.desc + '</div>';
+  h += '</div>';
+  // Stephen 2026-05-20: the trigger conditions + benefits were invisible
+  // ("I'm not sure how the hex naming works, what the point is, what
+  // the conditions to meet to give you the power to do it. If there is
+  // any benefit we need to have all this figured out and articulated").
+  // Spell them out so the player knows what they're getting.
+  h += '<div style="background:rgba(13,16,12,0.55);border:1px solid rgba(122,179,86,0.22);border-radius:9px;padding:0.55rem 0.75rem;margin-bottom:0.85rem;font-family:DM Mono,monospace;font-size:0.5rem;line-height:1.7;color:var(--cream);">';
+  h += '<div style="color:var(--sage);letter-spacing:0.06em;margin-bottom:0.25rem;font-size:0.5rem;">WHY NAME IT</div>';
+  h += '<div>✦ <b style="color:var(--gold);">+15 XP</b> for the keeper who names it</div>';
+  h += '<div>✦ The name shows beside these three plants (gold crown) when other keepers visit the hex</div>';
+  h += '<div>✦ Saved to your records — 7 named patterns earn the <b style="color:var(--gold);">Nameless</b> title</div>';
+  h += '<div style="color:var(--muted);margin-top:0.25rem;font-size:0.45rem;">Skip and this modal returns next time you complete this same shape.</div>';
   h += '</div>';
   // Live preview of the chosen name
   h += '<div style="text-align:center;margin:0.7rem 0 0.9rem 0;padding:0.7rem 0.5rem;background:rgba(13,16,12,0.55);border:1px solid rgba(200,168,75,0.25);border-radius:9px;">';
