@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.14.09';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -39650,6 +39650,49 @@ document.addEventListener('keydown', function(e) {
   // scatter sws_syncToCloud calls across the codebase.
   // Sync is non-blocking: we fire-and-forget the Promise.
   function saveGreenhouse(g) {
+    // 2026-05-20: cap enforcement at the single write intercept.
+    // mintPlant + confirmBloom already check the cap, but several legacy
+    // paths still do `gh.push()` + `saveGreenhouse(gh)` without first
+    // going through mintPlant (FG_Backpack.sendPlantHome was the main
+    // offender — Stephen 2026-05-20 "still able to go over the gap").
+    // Over-cap entries that this write would ADD now divert to the
+    // Reserve queue. Existing over-cap state (cloud restore from a
+    // prior larger cap, etc.) is left alone — we only intervene when
+    // the new array is LONGER than the prior, i.e. this call is
+    // attempting to add plants past the line.
+    try {
+      var _cap = (typeof getGHSlots === 'function') ? getGHSlots() : null;
+      if (_cap && g && g.length > _cap) {
+        var _prior = [];
+        try { _prior = _secureGet(GH_KEY) || []; } catch(_pE) {}
+        if (g.length > _prior.length) {
+          var _priorHashes = {};
+          for (var _pi = 0; _pi < _prior.length; _pi++) {
+            if (_prior[_pi] && _prior[_pi].hash) _priorHashes[_prior[_pi].hash] = 1;
+          }
+          var _fit = [], _overflow = [];
+          for (var _gi = 0; _gi < g.length; _gi++) {
+            var _pl = g[_gi];
+            if (!_pl || !_pl.hash) { _fit.push(_pl); continue; }
+            if (_priorHashes[_pl.hash]) { _fit.push(_pl); continue; }
+            if (_fit.length < _cap) _fit.push(_pl);
+            else _overflow.push(_pl);
+          }
+          if (_overflow.length) {
+            try {
+              var _res = JSON.parse(localStorage.getItem('lw_reserve') || '[]');
+              for (var _oi = 0; _oi < _overflow.length; _oi++) _res.push(_overflow[_oi]);
+              localStorage.setItem('lw_reserve', JSON.stringify(_res));
+              if (window._toast) {
+                window._toast('Greenhouse full (' + _cap + '). ' + _overflow.length +
+                  ' plant' + (_overflow.length > 1 ? 's' : '') + ' sent to Reserve.');
+              }
+            } catch(_resE) {}
+            g = _fit;
+          }
+        }
+      }
+    } catch(_capE) {}
     _ghCardCache = {}; // invalidate card cache on any greenhouse write
     _secureSet(GH_KEY, g);
     _swsCloudWriteTrigger(g);
@@ -41579,6 +41622,7 @@ document.addEventListener('keydown', function(e) {
   window._chimeraDualClass = _chimeraDualClass;
   window.loadGreenhouse = loadGreenhouse;
   window.saveGreenhouse = saveGreenhouse;
+  window.getGHSlots = getGHSlots;
   window.getPlantName = getPlantName;
   window.getTraitSummary = getTraitSummary;
   window._haptic = _haptic;
@@ -73631,10 +73675,36 @@ function ts(i){if(i>=st.seeds.length)return;_ss=i;cpi();var s=st.seeds[i];hap();
     sdi.classList.add('show');
   }
 }
-function s2n(){if(_ss===null)return;var seed=st.seeds[_ss];st.seeds.splice(_ss,1);csi();render();hap();
-// Fire event so the nursery listener picks it up
-if(seed){window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:seed}));}
-if(window._lwSilenceableToast)window._lwSilenceableToast('seed_to_nursery','Seed sent to Nursery!');else toast('Seed sent to Nursery!');}
+function s2n(){
+  if(_ss===null)return;
+  var seed=st.seeds[_ss];
+  if(!seed){_ss=null;return;}
+  // 2026-05-20: pre-check the nursery cap BEFORE splicing the seed out
+  // of the backpack. Previously this fired the event regardless and the
+  // listener toasted "Nursery full" — but the seed was already spliced
+  // out of the bag, so the player just lost it (Stephen 2026-05-20:
+  // "able to send seeds to my nursery without having a spot... got lost").
+  try{
+    var _isClip=!!(seed.origin==='cutting'||seed.origin==='clipping');
+    var _max=(window.FG_Data&&FG_Data.getNurClippingSlots&&_isClip)?FG_Data.getNurClippingSlots()
+            :(window.FG_Data&&FG_Data.getNurSlots&&!_isClip)?FG_Data.getNurSlots():3;
+    var _have=0;
+    var _nur=(window.FG_Data&&FG_Data.getNursery)?FG_Data.getNursery():[];
+    for(var _ni=0;_ni<_nur.length;_ni++){
+      var _o=_nur[_ni]&&_nur[_ni].origin;
+      var _e=(_o==='cutting'||_o==='clipping');
+      if(_e===_isClip)_have++;
+    }
+    if(_have>=_max){
+      toast((_isClip?'Clipping':'Seed')+' slots full ('+_have+'/'+_max+'). Bloom one first — stays in your pouch.');
+      return;
+    }
+  }catch(_se){}
+  st.seeds.splice(_ss,1);csi();render();hap();
+  // Fire event so the nursery listener picks it up
+  if(seed){window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:seed}));}
+  if(window._lwSilenceableToast)window._lwSilenceableToast('seed_to_nursery','Seed sent to Nursery!');else toast('Seed sent to Nursery!');
+}
 var _sht=null;
 function sns(){if(_ss===null)return;document.getElementById('htcn').style.transition='width 0.3s linear';document.getElementById('htc-nur').classList.add('holding');_sht=setTimeout(function(){s2n();},300);}
 function sne(){clearTimeout(_sht);document.getElementById('htc-nur').classList.remove('holding');document.getElementById('htcn').style.transition='none';document.getElementById('htcn').style.width='0';}
@@ -73725,13 +73795,33 @@ function returnToBase(){
   st.plants=deferred;
   if(deferred.length>0)toast(deferred.length+' plant'+(deferred.length>1?'s':'')+' stayed in your backpack: greenhouse is full.');
 
-  // Deliver seeds to nursery
+  // Deliver seeds to nursery. 2026-05-20: addSeed directly so any that
+  // don't fit (nursery full) stay in the backpack rather than vanishing.
   var seedCount=0;
+  var _seedRemain=[];
   for(var j=0;j<seeds.length;j++){
-    window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:seeds[j]}));
-    seedCount++;
+    var _s=seeds[j];
+    var _added=false;
+    if(window.FG_Data&&window.FG_Data.addSeed){
+      try{
+        var _isFer=_s.type==='feral';
+        var _r=window.FG_Data.addSeed({
+          seedHash:_s.hash||'',
+          parentAHash:_s.hash||'',
+          parentBHash:_isFer?('feral_'+Date.now()+'_'+j):(_s.hash||''),
+          nonce:0,
+          mystery:!!_s.mystery||_isFer,
+          origin:_s.origin||(_isFer?'feral':undefined)
+        });
+        if(_r&&_r.ok){_added=true;seedCount++;}
+      }catch(_ae){}
+    }
+    if(!_added)_seedRemain.push(_s);
   }
-  st.seeds=[];
+  st.seeds=_seedRemain;
+  if(_seedRemain.length>0){
+    toast(_seedRemain.length+' seed'+(_seedRemain.length>1?'s':'')+' stayed in your backpack: nursery is full.');
+  }
 
   // Record return time
   var rtbState=_rtbLoadState();rtbState.count++;_rtbSaveState(rtbState);
@@ -73814,12 +73904,31 @@ function checkMidnightDeliver(){
   }
   if(window.saveGreenhouse)window.saveGreenhouse(gh);
   else localStorage.setItem('sws_greenhouse',JSON.stringify(gh));
-  var seedCount=st.seeds.length;
-  for(var j=0;j<st.seeds.length;j++){
-    window.dispatchEvent(new CustomEvent('bp-seed-to-nursery',{detail:st.seeds[j]}));
+  // 2026-05-20: addSeed directly so any that don't fit stay in the bag.
+  var seedCount=0;
+  var _midRemain=[];
+  for(var sj=0;sj<st.seeds.length;sj++){
+    var _ms=st.seeds[sj];
+    var _mAdded=false;
+    if(window.FG_Data&&window.FG_Data.addSeed){
+      try{
+        var _mFer=_ms.type==='feral';
+        var _mr=window.FG_Data.addSeed({
+          seedHash:_ms.hash||'',
+          parentAHash:_ms.hash||'',
+          parentBHash:_mFer?('feral_'+Date.now()+'_'+sj):(_ms.hash||''),
+          nonce:0,
+          mystery:!!_ms.mystery||_mFer,
+          origin:_ms.origin||(_mFer?'feral':undefined)
+        });
+        if(_mr&&_mr.ok){_mAdded=true;seedCount++;}
+      }catch(_mae){}
+    }
+    if(!_mAdded)_midRemain.push(_ms);
   }
-  st.plants=deferred;st.seeds=[];render();
+  st.plants=deferred;st.seeds=_midRemain;render();
   if(deferred.length>0)toast(deferred.length+' plant'+(deferred.length>1?'s':'')+' stayed in your backpack: greenhouse is full.');
+  if(_midRemain.length>0)toast(_midRemain.length+' seed'+(_midRemain.length>1?'s':'')+' stayed in your backpack: nursery is full.');
   if(delivered>0||seedCount>0){
     var msg='Midnight delivery: ';
     if(delivered>0)msg+=delivered+' plant'+(delivered>1?'s':'');
@@ -73993,11 +74102,26 @@ window.FG_Backpack.sendPlantHome = function(idx) {
     else if (window._toast) window._toast('Cooldown: ' + _bpFormatTime(remaining) + ' remaining');
     return;
   }
+  // 2026-05-20: pre-check greenhouse cap BEFORE splicing — this path
+  // bypassed mintPlant and pushed directly into sws_greenhouse, so the
+  // May 13 mintPlant + confirmBloom cap-fix did nothing here (Stephen
+  // 2026-05-20: "still able to go over the gap"). Keep the plant in the
+  // backpack if the greenhouse is full.
+  var _ghPre = [];
+  try { _ghPre = JSON.parse((window._secureGet ? window._secureGet('sws_greenhouse') : localStorage.getItem('sws_greenhouse')) || '[]'); } catch (_pe) {}
+  var _capPre = (typeof window.getGHSlots === 'function')
+    ? window.getGHSlots()
+    : (parseInt(localStorage.getItem('sws_greenhouse_slots'), 10) || 10);
+  if (_ghPre.length >= _capPre) {
+    var _msg = 'Greenhouse full (' + _ghPre.length + '/' + _capPre + '). Compost or expand slots.';
+    if (BP.toast) BP.toast(_msg);
+    else if (window._toast) window._toast(_msg);
+    return;
+  }
   var plant = state.plants.splice(idx, 1)[0];
   if (!plant) return;
   // Add to greenhouse
-  var gh = [];
-  try { gh = JSON.parse((window._secureGet ? window._secureGet('sws_greenhouse') : localStorage.getItem('sws_greenhouse')) || '[]'); } catch (e) {}
+  var gh = _ghPre;
   gh.push({
     hash: plant.hash,
     date: new Date().toISOString().split('T')[0],
