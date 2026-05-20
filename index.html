@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.11';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -991,16 +991,21 @@
   };
   // Audit security-deep H1: device-clock daily resets are exploitable
   // (set OS clock back 24h, get fresh ferals/wild-drops/login-bonus).
-  // _lwServerDay() returns today's date as YYYY-MM-DD using a server-time
-  // offset learned from Firestore reads. Falls back to local time if no
-  // offset has been learned yet (first session, offline, Firebase down).
-  // The offset is updated inside FG_Wild's _afLearnServerTime; we mirror
-  // it to window so the rest of the app can route through this helper.
+  // _lwServerDay() returns today's date as YYYY-MM-DD using the PLAYER'S
+  // LOCAL calendar day, with a server-time offset still applied (anti-
+  // clock-skew). Stephen 2026-05-20: "reset at midnight" means local
+  // midnight in cozy gameplay; the old UTC formatter caused sowing /
+  // daily counters to not roll over for players whose local midnight
+  // wasn't aligned with UTC midnight. Matches the matching fix in
+  // FG_Wild._afGetToday so both helpers agree on what "today" means.
   window._lwServerDayOffset = 0;
   window._lwServerDay = function(){
     var off = (typeof window._lwServerDayOffset === 'number') ? window._lwServerDayOffset : 0;
     var d = new Date(Date.now() + off);
-    return d.toISOString().slice(0, 10);  // UTC YYYY-MM-DD
+    var _y = d.getFullYear();
+    var _m = d.getMonth() + 1; if (_m < 10) _m = '0' + _m;
+    var _d = d.getDate();      if (_d < 10) _d = '0' + _d;
+    return _y + '-' + _m + '-' + _d;
   };
   // Bridge: any module that learns server time should call this so the
   // global helper picks up the offset. Safe to call multiple times.
@@ -50950,10 +50955,23 @@ var AF_HARVEST_KEY='fg_af_harvests';
 var _afCache=null; // in-memory cache of today's stats
 var _serverDayOffset=0; // ms offset: serverTime = Date.now() + _serverDayOffset
 
-// Get server-aligned "today" string (UTC). Uses offset learned from Firestore.
+// Get server-aligned "today" string in the PLAYER'S LOCAL calendar day.
+// Stephen 2026-05-20: "Sowing needs to reset like at midnight because I
+// sewed at 7pm yesterday I came back to the same spot at 6pm and I
+// couldn't sew and that's discouraging." Old code returned UTC date
+// (toISOString().slice(0,10)) — for a US Eastern player sowing at 7pm
+// EDT (= 23:00 UTC), the UTC day didn't roll for another hour, and
+// 23h later at 6pm EDT next day was still the SAME UTC day. Drops
+// stayed maxed out. Now we format the LOCAL date so reset happens at
+// the player's local midnight (which is what "midnight" intuitively
+// means in a cozy daily-loop game). _serverDayOffset still applies so
+// anti-cheat (clock-skew protection) carries through.
 function _afGetToday(){
   var serverNow=new Date(Date.now()+_serverDayOffset);
-  return serverNow.toISOString().slice(0,10);
+  var _y = serverNow.getFullYear();
+  var _m = serverNow.getMonth() + 1; if (_m < 10) _m = '0' + _m;
+  var _d = serverNow.getDate();      if (_d < 10) _d = '0' + _d;
+  return _y + '-' + _m + '-' + _d;
 }
 
 // Learn server time offset on first Firestore read.
