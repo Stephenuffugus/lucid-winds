@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.09';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.10';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1469,7 +1469,7 @@
     .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');background-size:101.5% 101.5%;}
     .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/front-winter.png');background-size:101.5% 101.5%;}
     .cs-card-back[data-tier="common"]{background-image:url('assets/cards/backs/back-common.png');background-size:112% 101%;}
-    .cs-card-back[data-tier="uncommon"]{background-image:url('assets/cards/backs/back-uncommon.png');background-size:180% 110%;}
+    .cs-card-back[data-tier="uncommon"]{background-image:url('assets/cards/backs/back-uncommon.png');background-size:178.5% 119%;}
     .cs-card-back[data-tier="rare"]{background-image:url('assets/cards/backs/back-rare.png');background-size:103% 99%;}
     .cs-card-back[data-tier="epic"]{background-image:url('assets/cards/backs/back-epic.png');background-size:172%;}
     .cs-card-back[data-tier="legendary"]{background-image:url('assets/cards/backs/back-legendary.png');background-size:105% 101%;}
@@ -1477,7 +1477,8 @@
     .cs-card-back[data-tier="cosmic"]{background-image:url('assets/cards/backs/back-cosmic.png');background-size:146% 110%;}
     /* Card back nameplate positions from alignment tool (set-39) */
     .cs-card-back[data-tier="common"] .cb-nameplate{left:28.3%!important;top:83%!important;width:44%!important;height:8.9%!important;}
-    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:91%!important;width:31%!important;height:6.3%!important;}
+    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:11%!important;top:86%!important;width:78%!important;height:8%!important;}
+    .cs-card-back[data-tier="uncommon"] .cb-name{font-size:0.82rem!important;}
     .cs-card-back[data-tier="rare"] .cb-nameplate{left:27.7%!important;top:77.8%!important;width:45.7%!important;height:9.3%!important;}
     .cs-card-back[data-tier="rare"] .cb-name{font-size:0.82rem!important;}
     .cs-card-back[data-tier="epic"] .cb-nameplate{left:32%!important;top:88.5%!important;width:36%!important;height:8%!important;}
@@ -2337,7 +2338,7 @@
       z-index:998;pointer-events:none;
     }
     /* Backpack + BoS bumped down 20px (was 8px) per Stephen iteration. */
-    body.pi-browser #bpi{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
+    body.pi-browser #bpi{ top: calc(env(safe-area-inset-top,0px) + 108px) !important; }
     body.pi-browser #kb-compendium{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
     body.pi-browser .game-rules-btn{ top: calc(env(safe-area-inset-top,0px) + 92px) !important; }
     /* Stephen 2026-05-07 evening: REMOVED the Pi-browser-tab-wild +20px
@@ -6092,12 +6093,12 @@
    bar in Chrome — visually not centered against the row they share with
    currency badges. Nudged top 72 → 64 (-8px) so they sit a hair higher
    in the bar. */
-#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 64px) !important;right:6px !important;z-index:998;width:60px;height:60px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:115%;}
+#bpi{position:fixed !important;top:calc(env(safe-area-inset-top,0px) + 80px) !important;right:6px !important;z-index:998;width:60px;height:60px;cursor:pointer;display:block;transition:transform 0.2s;filter:drop-shadow(0 3px 12px rgba(0,0,0,0.7));background:url('assets/games/wild/backpack-closed-v4.png') center/contain no-repeat;background-size:115%;}
 /* Compendium / Book of Secrets — same row, same Y as BP. Stephen 2026-05-03:
    tester saw BoS pressed against DEW button on Galaxy. Tightened BASE values
    (no more relying on media query alone) — 70 → 60 and right:84 → 78 so the
    image's left edge clears kb-row2 even at narrow widths. */
-#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 64px) !important;right:78px !important;width:60px !important;height:60px !important;}
+#kb-compendium{top:calc(env(safe-area-inset-top,0px) + 80px) !important;right:78px !important;width:60px !important;height:60px !important;}
 #kb-compendium img{width:115% !important;height:115% !important;object-fit:contain !important;margin:-7.5% !important;display:block !important;}
 /* Hide BP during game-active so the game UI gets the full screen
    (kb-compendium is already in the game-active hide list). */
@@ -6108,7 +6109,7 @@ body.game-active #bpi{display:none !important;}
    asked ('book and backpack fit comfortably... backpack a little
    bigger to match the book'). Chips also taller (min-height 50) so
    the dew/pollen/steps numbers feel proportional in the new bar. */
-body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 124px)!important;right:8px!important;width:60px!important;height:60px!important;}
+body.tab-wild #bpi{top:calc(env(safe-area-inset-top,0px) + 140px)!important;right:8px!important;width:60px!important;height:60px!important;}
 body.tab-wild #kb-compendium{top:calc(env(safe-area-inset-top,0px) + 128px)!important;right:74px!important;width:60px!important;height:60px!important;}
 body.tab-wild #kb-compendium #kb-comp-count{top:-4px!important;left:-4px!important;min-width:18px!important;height:18px!important;font-size:0.5rem!important;}
 body.tab-wild #w-stats-bar{padding:14px 10px!important;padding-right:148px!important;}
@@ -6888,6 +6889,18 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
         if (cores <= 2) dominated = true;
       }
       if (/Android/.test(ua) && cores <= 4) dominated = true;
+    }
+    // 2026-05-20: heavy-greenhouse override. Stephen at 49/49 plants
+    // reported "running so slow i cant scroll." 49 plant SVGs × ~100
+    // paths each = a lot of GPU + main-thread work even on a Galaxy
+    // S23. Auto-engage perf-lite when greenhouse plant count > 30,
+    // independent of device tier. Skips the FPS-pressure detection
+    // wait period for accounts that are obviously going to struggle.
+    if (!dominated && override === null) {
+      try {
+        var _ghCount = (JSON.parse(localStorage.getItem('sws_greenhouse')||'[]') || []).length;
+        if (_ghCount > 30) { dominated = true; }
+      } catch(e){}
     }
     if (dominated) {
       document.documentElement.classList.add('perf-lite');
@@ -47431,6 +47444,29 @@ document.addEventListener('keydown', function(e) {
   }
 
   async function _executeBloom(nur, seedIndex, seed) {
+    // 2026-05-20: greenhouse-full gate AT THE BLOOM ENTRY POINT.
+    // Stephen reported: bloomed a seed into a 49/49 greenhouse without
+    // prompting. handleBloomBtn + confirmBloom DO have the gate, but
+    // the auto-bloom paths (3rd watering → "READY TO BLOOM" confirm →
+    // _executeBloom, AND Dew-skip → same) call _executeBloom directly,
+    // bypassing both prior gates. Gating here means EVERY caller is
+    // protected. Surfaces the same compost/expand/wild-place modal as
+    // the sunbeam + handleBloomBtn paths.
+    try {
+      var _ghLen = 0, _ghMax = 10;
+      try { _ghLen = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]').length; } catch(_eg){}
+      try { _ghMax = (typeof getGHSlots === 'function') ? getGHSlots() : (parseInt(localStorage.getItem('sws_greenhouse_slots')||'10', 10) || 10); } catch(_em){}
+      if (_ghLen >= _ghMax) {
+        if (window._lwGreenhouseFullPrompt) {
+          window._lwGreenhouseFullPrompt('Your seed is ready, but the greenhouse is full.', _ghLen, _ghMax);
+        } else if (window._toast) {
+          window._toast('Greenhouse full (' + _ghLen + '/' + _ghMax + ') — compost or expand slots before blooming.');
+        } else if (typeof _setNurMsg === 'function') {
+          _setNurMsg('Greenhouse full — compost or expand slots before blooming.');
+        }
+        return;
+      }
+    } catch(_capErr) {}
     // Memento 83 (Midnight Bloom): if the player was away 6+ hours
     // before this bloom, stamp lw_offline_bloom_at so _lwCheckMementos
     // can award the keepsake on next check. Companion-equipped check
