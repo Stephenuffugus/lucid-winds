@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.18';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -50879,7 +50879,17 @@ window.FG_Wild=(function(){
 function _e(v){if(window._e)window._e(v);}
 function _play(id){if(window._play)window._play(id);}
 var TILES='https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-var MAX_DROPS=3,MAX_POUCH=8,COLLECT_RANGE=75,ZONE_SIZE=0.001;
+// 2026-05-20: COLLECT_RANGE bumped 75 → 200 for accessibility. Stephen:
+// "we need to expand the players distance they can interact from. its
+// too limiting for mobility challenged players. if something is in a
+// player's blue circle they should be able to interact with it. that
+// way people may actively tend their gardens at home." 200m matches
+// the existing _homeZoneCircle radius so the visual language stays
+// consistent (home zone = interactable zone). 700m per-player wild
+// radius cap still bounds where you can DROP plants, so this only
+// affects how far you can reach to water / collect / breed at plants
+// you've already dropped (or strangers' nearby plants).
+var MAX_DROPS=3,MAX_POUCH=8,COLLECT_RANGE=200,ZONE_SIZE=0.001;
 var EXTRA_DROP_SUNBEAM_COST=30;
 // Sunbeam-bought extra drops today. 700m self-radius cap prevents
 // neighborhood domination, so we don't cap how many extras can be bought.
@@ -50955,10 +50965,13 @@ function _getCollectRange(){
   if(window._LW_capMultiplier) _frMult = window._LW_capMultiplier('feralRange', _frMult);
   range = Math.round(range * _frMult);
   // Cat (idx 39) Night Eyes signature — at night (8PM-6AM), extend
-  // the forage range so nearby ferals reveal within 200m instead of
-  // the standard 75m. Additive (not multiplicative) so it doesn't
-  // compound with Beholder's ×2 or class bonuses — bumps the
-  // effective floor during the night-tab window, that's it.
+  // the forage range so nearby ferals reveal further than the standard
+  // base. Additive (not multiplicative) so it doesn't compound with
+  // Beholder's ×2 or class bonuses — bumps the effective floor during
+  // the night-tab window, that's it.
+  // 2026-05-20: bumped night floor 200 → 350 since the base COLLECT_RANGE
+  // grew to 200 (accessibility). Cat night vision was a no-op at the
+  // new base; 350 restores the original ~1.75x night-vs-day boost feel.
   try {
     var _gh = JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');
     var _hasCat = false;
@@ -50968,7 +50981,7 @@ function _getCollectRange(){
     if (_hasCat) {
       var _nightHour = new Date().getHours();
       if (_nightHour >= 20 || _nightHour < 6) {
-        range = Math.max(range, 200);
+        range = Math.max(range, 350);
       }
     }
   } catch(e){}
@@ -52264,8 +52277,14 @@ function _placeUser(){
   if(!_map||!_uLat)return;
   // Player marker — direction arrow (will become chosen avatar later)
   _uM=L.marker([_uLat,_uLng],{icon:L.divIcon({className:'',html:'<div id="lw-player-arrow" style="width:28px;height:28px;position:relative;"><svg viewBox="0 0 28 28" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><defs><filter id="pag"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(74,144,217,0.6)"/></filter></defs><polygon points="14,2 24,22 14,17 4,22" fill="rgba(74,144,217,0.9)" stroke="rgba(200,220,255,0.4)" stroke-width="1" filter="url(#pag)"/></svg></div>',iconSize:[28,28],iconAnchor:[14,14]}),zIndexOffset:1000}).addTo(_map);
-  // Scanner range ring (75m collection radius)
-  _scanRing=L.circle([_uLat,_uLng],{radius:COLLECT_RANGE,className:'scanner-ring',fill:true,stroke:true,weight:2}).addTo(_map);
+  // 2026-05-20: scanner ring now uses _getCollectRange() (with bonuses)
+  // instead of the raw constant so the visible blue circle exactly
+  // matches the player's actual interaction range — Beholder owners
+  // (2x range) and Forager-class players see their bigger ring,
+  // matching Stephen's promise "what's in the circle is interactable."
+  // Base is now 200m (was 75m) per accessibility expansion.
+  var _scanRadius = (typeof _getCollectRange === 'function') ? _getCollectRange() : COLLECT_RANGE;
+  _scanRing=L.circle([_uLat,_uLng],{radius:_scanRadius,className:'scanner-ring',fill:true,stroke:true,weight:2}).addTo(_map);
 }
 
 // ═══ TERRITORY HEXES — show owned zones on map ═══
