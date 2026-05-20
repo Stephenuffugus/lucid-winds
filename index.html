@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.19';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.20';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -86569,15 +86569,17 @@ window.LW_CREATOR = window.LW_CREATOR || {
     'I keep it ad-free. No popups, no tracking-for-sale, no engagement traps. Tips and Pi keep it that way. Anything you give helps me keep building. Nothing is required, ever.'
   ],
   pi:          'GBGJ2BJNGDF2RSUSLMODYMNFMCZZFTCE43L44F53CYWDTFTSAXT65TNI',
-  // Non-Pi addresses zeroed 2026-05-08 — Pi Exclusive Transactions for
-  // Pi App Studio. Original values preserved in git history if you ever
-  // migrate off-Pi; just paste them back to re-enable.
-  btc:         '',
-  eth:         '',
-  sol:         '',
-  usdc:        '',
-  stripeUrl:   '',
-  stripeCardEnabled: false,
+  // 2026-05-20: non-Pi addresses + Stripe restored. Pi App Studio
+  // silence + Reddit launch — Stephen needs tip jar live for non-Pi
+  // visitors. Pi Browser detection (4-signal _isPiBrowser + CSS
+  // .pi-browser .lw-non-pi-tips{display:none} safety net) still hides
+  // everything non-Pi inside Pi Browser, so Pi Exclusive Transactions
+  // compliance is preserved for Pi users.
+  btc:         'bc1q0fjfk3n4mls49glen8sflfhrjxewncd8c9cfpy',
+  eth:         '0xba1F63F220DA4d5639c5EB0f7de8A4aFBd46828B',
+  sol:         'EEBqosHRfRoTM8u6AW3WxDeYvntuDTYeTEN2uVcWbaij',
+  usdc:        '',     // USDC (any chain) — leave blank to skip the row
+  stripeUrl:   '',     // Static Stripe Payment Link fallback (optional)
   websiteUrl:  'https://lucidwinds.com'
 };
 
@@ -86745,10 +86747,27 @@ function _bosAboutContent() {
            '<div class="lw-tip-cta-sub">a small Pi tip keeps the garden ad-free</div>'+
          '</button>';
   } else {
-    // Stephen 2026-05-08: stripped Stripe tip modal entirely. App is
-    // Pi Exclusive Transactions \u2014 no fiat, no non-Pi crypto. Outside
-    // Pi Browser we show a soft instruction directing tips to Pi.
-    h += '<div style="padding:0.7rem 0.9rem;margin:0 auto 0.7rem;max-width:340px;text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.55;background:rgba(13,16,12,0.45);border:1px solid rgba(200,168,75,0.18);border-radius:10px;">Tips supported via Pi Network only. Open Lucid Winds inside <b style="color:var(--gold);">Pi Browser</b> to tip with Pi, or copy the address below.</div>';
+    // 2026-05-20: Stripe custom-amount + crypto wallet rows RESTORED for
+    // Reddit launch (Pi App Studio silence + Stephen needs revenue path).
+    // The .lw-non-pi-tips wrapper is CSS-hidden inside Pi Browser as a
+    // belt-and-suspenders safety net (search "tip-jar safety net" in CSS)
+    // so even if _isPiBrowser leaked a false-negative this stays hidden.
+    h += '<div class="lw-non-pi-tips">';
+    if (c.stripeCardEnabled !== false) {
+      h += '<button onclick="window._lwOpenTipModal()" class="lw-tip-cta lw-tip-cta-multi" aria-label="Light a lantern \u2014 tip the studio">'+
+             _tipMedallionImg +
+             '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
+             '<div class="lw-tip-cta-sub">tips keep this game ad-free \u00b7 anything is appreciated</div>'+
+           '</button>';
+    }
+    else if (c.stripeUrl) {
+      h += '<a href="' + c.stripeUrl + '" target="_blank" rel="noopener noreferrer" class="lw-tip-cta lw-tip-cta-multi" style="text-decoration:none;">'+
+             _tipMedallionImg +
+             '<div class="lw-tip-cta-title">LIGHT A LANTERN</div>'+
+             '<div class="lw-tip-cta-sub">support with card \u00b7 anything is appreciated</div>'+
+           '</a>';
+    }
+    h += '</div>';
   }
 
   // Crypto tip buttons. Full-row tap target with chain logo on the
@@ -86785,10 +86804,21 @@ function _bosAboutContent() {
     return row;
   }
   h += _addrRow('PI',   c.pi);
-  // Non-Pi crypto rows REMOVED 2026-05-08 — Pi Exclusive Transactions.
+  // 2026-05-20: BTC/ETH/SOL/USDC rows RESTORED for Reddit launch.
+  // Wrapped in .lw-non-pi-tips so CSS catches any leak inside Pi
+  // Browser. _addrRow no-ops on blank addresses, so unset chains
+  // (e.g. USDC currently '') just render nothing.
+  if (!_isPiBrowser) {
+    h += '<div class="lw-non-pi-tips">';
+    h += _addrRow('BTC',  c.btc);
+    h += _addrRow('ETH',  c.eth);
+    h += _addrRow('SOL',  c.sol);
+    h += _addrRow('USDC', c.usdc);
+    h += '</div>';
+  }
 
-  // If Pi address is blank, show a soft placeholder.
-  if (!c.pi) {
+  // If every payment route is blank, show a soft placeholder.
+  if (!c.stripeUrl && !c.pi && !c.btc && !c.eth && !c.sol && !c.usdc) {
     h += '<div style="padding:0.8rem;text-align:center;color:var(--muted);font-family:DM Mono,monospace;font-size:0.55rem;line-height:1.6;font-style:italic;">Tip jar coming soon. The creator is setting up payment routes \u2014 check back in the next update.</div>';
   }
 
