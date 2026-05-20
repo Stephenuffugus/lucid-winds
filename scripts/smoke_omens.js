@@ -149,7 +149,7 @@ function runChecks(){
     // Reset everything.
     window.localStorage.removeItem('lw_triggers_found');
     window.localStorage.removeItem('lw_trigger_cooldowns');
-    window.localStorage.removeItem('lw_omen_backfill_v1');
+    window.localStorage.removeItem('lw_omen_backfill_v2');
     // Stage 10 random wild plants — at least SOME should match a trigger.
     var plants = [];
     for (var k = 0; k < 10; k++) {
@@ -163,7 +163,7 @@ function runChecks(){
     window.localStorage.setItem('fg_wild_plants', JSON.stringify(plants));
     var added = window._LW_retroOmenBackfill();
     var disc = []; try { disc = JSON.parse(window.localStorage.getItem('lw_triggers_found') || '[]'); } catch(e){}
-    var done = window.localStorage.getItem('lw_omen_backfill_v1');
+    var done = window.localStorage.getItem('lw_omen_backfill_v2');
     return { ok: added >= 1 && disc.length === added && done === '1', detail: 'added=' + added + ' codex=' + disc.length + ' done=' + done };
   });
 
@@ -178,10 +178,10 @@ function runChecks(){
 
   check('_LW_retroOmenBackfill: empty plant list does NOT mark done', function(){
     if (!window._LW_retroOmenBackfill) return { ok:false, detail:'no fn' };
-    window.localStorage.removeItem('lw_omen_backfill_v1');
+    window.localStorage.removeItem('lw_omen_backfill_v2');
     window.localStorage.setItem('fg_wild_plants', '[]');
     window._LW_retroOmenBackfill();
-    var done = window.localStorage.getItem('lw_omen_backfill_v1');
+    var done = window.localStorage.getItem('lw_omen_backfill_v2');
     return { ok: done === null, detail: 'done flag = ' + done + ' (want null — should defer if no plants)' };
   });
 
