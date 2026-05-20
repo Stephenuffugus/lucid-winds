@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.12';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -16095,7 +16095,13 @@ document.addEventListener('keydown', function(e) {
     }
 
     // 1. AURA
-    if (prog >= 1) svg += renderAura(t, uid);
+    // 2026-05-20: skipAura flag honors caller request to omit the aura
+    // layer. Used by the carousel's rasterize-source so the baked PNG
+    // doesn't freeze the aura's animations; an animated aura overlay
+    // is layered on top of the PNG separately. Stephen: "auras animate
+    // in grid but go static when I click in." Default behavior
+    // unchanged for every other caller.
+    if (prog >= 1 && !(traitOverrides && traitOverrides.skipAura)) svg += renderAura(t, uid);
 
     // 2. SOIL — rendered inside renderPot() with per-pot width (set-103-8)
 
@@ -43036,22 +43042,47 @@ document.addEventListener('keydown', function(e) {
     // partial on Pi) AND kick off async PNG conversion so future renders
     // — including the SAME slot when the user swipes back, and the
     // hot-swap below — get the PNG.
-    var _pngCacheKey = plant.hash + '|' + (plant.generation || 1) + '|p1';
+    //
+    // 2026-05-20: rasterize source EXCLUDES aura. The aura is layered
+    // on top as a separate animated SVG (see _auraOverlayHtml below).
+    // Stephen: "auras animate in grid but go static when I click in" —
+    // root cause was the PNG baking the aura at a single frame.
+    // Cache key bumped (...|p2|noaura) so any older auraful PNGs
+    // already in cache get invalidated.
+    var _pngCacheKey = plant.hash + '|' + (plant.generation || 1) + '|p2|noaura';
     var _cachedPng = window._plantPngCache && window._plantPngCache[_pngCacheKey];
     if (_cachedPng) {
       svgHtml = '<img src="' + _cachedPng + '" style="width:100%;height:100%;object-fit:contain;display:block;" alt=""/>';
     } else {
-      // First visit to this plant: kick off async rasterization. When the
-      // PNG is ready (~50-150ms), _hotSwapToPng finds any visible slot
-      // tagged with this plant's hash and swaps the inline SVG out for
-      // the <img>. Reliable in Pi Browser; transparent in other browsers.
+      // First visit to this plant: kick off async rasterization on an
+      // AURALESS source. Re-generate with skipAura:true (small cost,
+      // one-shot per unique plant — cached in _plantPngCache by hash).
       try {
-        var _rasterizeSource = window._csPlantSvgCache[_csCacheKey];  // raw SVG without drop-shadow wrapper
-        _rasterizeSvgToPng(_rasterizeSource, (window._perfLite ? 140 : 200), _pngCacheKey).then(function(uri) {
+        var _csSizeRP = window._perfLite ? 140 : 200;
+        var _auralessOv = _csOv ? Object.create(null) : {};
+        if (_csOv) for (var _ck in _csOv) _auralessOv[_ck] = _csOv[_ck];
+        _auralessOv.skipAura = true;
+        var _rasterizeSource = generatePlantSVG(plant.hash, _csSizeRP, 1, _auralessOv);
+        _rasterizeSvgToPng(_rasterizeSource, _csSizeRP, _pngCacheKey).then(function(uri) {
           if (uri) _hotSwapToPng(plant.hash, uri);
         });
       } catch (e) {}
     }
+    // 2026-05-20: animated aura overlay. Renders the aura layer as a
+    // separate, transparent SVG positioned over the plant art window so
+    // the <animate>/<animateTransform> elements actually keep ticking
+    // even when the heavy plant body has been swapped to a static PNG.
+    // No-op if the plant's aura idx is below 5 (the "none" range).
+    var _auraOverlayHtml = '';
+    try {
+      if (_t && typeof _t.aura === 'number' && _t.aura >= 5) {
+        var _auraUid = ('cs' + plant.hash.slice(0,8));
+        var _auraInner = renderAura(_t, _auraUid);
+        if (_auraInner) {
+          _auraOverlayHtml = '<svg class="cs-aura-overlay" viewBox="0 0 70 95" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;">' + _auraInner + '</svg>';
+        }
+      }
+    } catch (_aerr) {}
     // smallSvg removed — back face is lazy-loaded, no thumbnail needed at creation
 
     // EA knot SVGs
@@ -43077,7 +43108,7 @@ document.addEventListener('keydown', function(e) {
     front += '<div class="cf-ea">' + _ea + '</div>';
     var _npHtml = typeof buildNameplate === 'function' ? buildNameplate(plant.hash) : name;
     front += '<div class="cf-name-zone"><div class="cf-name" style="color:' + _sNameColor + ';">' + _npHtml + '</div></div>';
-    front += '<div class="cf-art-window" data-plant-hash="' + plant.hash + '">' + svgHtml + '</div>';
+    front += '<div class="cf-art-window" data-plant-hash="' + plant.hash + '" style="position:relative;">' + svgHtml + _auraOverlayHtml + '</div>';
     // Synergy badge (if any)
     var _syn = window.getSynergy ? window.getSynergy(_t) : null;
     front += '<div class="cf-haiku-zone">';
