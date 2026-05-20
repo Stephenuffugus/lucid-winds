@@ -114,6 +114,49 @@ function runChecks(){
     return { ok: beholderC >= 1, detail: 'beholder xp count=' + beholderC };
   });
 
+  check('_LW_passiveWitnessTick retroactive grant: 19d-equipped Beholder reaches L2+', function(){
+    if (!window._LW_passiveWitnessTick) return { ok:false, detail:'no fn' };
+    if (!window.LW_COMPANION || !window.LW_COMPANION.getLevel) return { ok:false, detail:'no LW_COMPANION.getLevel' };
+    // Simulate Stephen's situation: Beholder equipped 19 days ago.
+    var daysAgo = 19;
+    window.localStorage.setItem('lw_companion_active_idx', '38');
+    window.localStorage.removeItem('lw_companion_active_idx_2');
+    var firstAt = Date.now() - daysAgo*86400000;
+    var equipLog = {}; equipLog[38] = firstAt;
+    window.localStorage.setItem('lw_companion_first_equipped', JSON.stringify(equipLog));
+    // Start fresh — no prior XP, no lastPassiveTick.
+    window.localStorage.removeItem('lw_companion_xp');
+    var granted = window._LW_passiveWitnessTick();
+    var xp = {}; try { xp = JSON.parse(window.localStorage.getItem('lw_companion_xp') || '{}'); } catch(e){}
+    var bxp = (xp[38] && xp[38].c) || 0;
+    var lvl = window.LW_COMPANION.getLevel(38);
+    // 19 days = 456 hrs equipped, retro cap 200 → granted=200, witness L3 (≥150 threshold)
+    return { ok: granted === 200 && bxp === 200 && lvl >= 3, detail: 'granted=' + granted + ' xp=' + bxp + ' lvl=' + lvl };
+  });
+
+  check('_LW_passiveWitnessTick ongoing: respects DAILY_CAP after first run', function(){
+    if (!window._LW_passiveWitnessTick) return { ok:false, detail:'no fn' };
+    // Setup: previous tick was 48 hours ago.
+    window.localStorage.setItem('lw_companion_active_idx', '38');
+    window.localStorage.removeItem('lw_companion_active_idx_2');
+    var prev = {}; prev[38] = { c: 30, lastPassiveTick: Date.now() - 48*3600000 };
+    window.localStorage.setItem('lw_companion_xp', JSON.stringify(prev));
+    var granted = window._LW_passiveWitnessTick();
+    // 48 hrs since last → daily cap 24 → granted=24
+    return { ok: granted === 24, detail: 'granted=' + granted + ' (want 24)' };
+  });
+
+  check('_LW_passiveWitnessTick: non-witness companion not affected', function(){
+    if (!window._LW_passiveWitnessTick) return { ok:false, detail:'no fn' };
+    // Equip a TIME-archetype companion (Turtle idx 53)
+    window.localStorage.setItem('lw_companion_active_idx', '53');
+    var equipLog = {}; equipLog[53] = Date.now() - 10*86400000;
+    window.localStorage.setItem('lw_companion_first_equipped', JSON.stringify(equipLog));
+    window.localStorage.removeItem('lw_companion_xp');
+    var granted = window._LW_passiveWitnessTick();
+    return { ok: granted === 0, detail: 'granted=' + granted + ' (want 0 — time archetype)' };
+  });
+
   check('_checkBeholderOmnisight respects the 1h rate limit', function(){
     if (!window._checkBeholderOmnisight) return { ok:false, detail:'no fn' };
     window.localStorage.setItem('lw_companion_active_idx', '38');

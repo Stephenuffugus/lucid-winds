@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1469,7 +1469,7 @@
     .cs-card-front[data-season="autumn"]{background-image:url('assets/cards/fronts/front-autumn.png');background-size:101.5% 101.5%;}
     .cs-card-front[data-season="winter"]{background-image:url('assets/cards/fronts/front-winter.png');background-size:101.5% 101.5%;}
     .cs-card-back[data-tier="common"]{background-image:url('assets/cards/backs/back-common.png');background-size:112% 101%;}
-    .cs-card-back[data-tier="uncommon"]{background-image:url('assets/cards/backs/back-uncommon.png');background-size:170% 105%;}
+    .cs-card-back[data-tier="uncommon"]{background-image:url('assets/cards/backs/back-uncommon.png');background-size:180% 110%;}
     .cs-card-back[data-tier="rare"]{background-image:url('assets/cards/backs/back-rare.png');background-size:103% 99%;}
     .cs-card-back[data-tier="epic"]{background-image:url('assets/cards/backs/back-epic.png');background-size:172%;}
     .cs-card-back[data-tier="legendary"]{background-image:url('assets/cards/backs/back-legendary.png');background-size:105% 101%;}
@@ -1477,7 +1477,7 @@
     .cs-card-back[data-tier="cosmic"]{background-image:url('assets/cards/backs/back-cosmic.png');background-size:146% 110%;}
     /* Card back nameplate positions from alignment tool (set-39) */
     .cs-card-back[data-tier="common"] .cb-nameplate{left:28.3%!important;top:83%!important;width:44%!important;height:8.9%!important;}
-    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:87.5%!important;width:31%!important;height:6.3%!important;}
+    .cs-card-back[data-tier="uncommon"] .cb-nameplate{left:34.7%!important;top:91%!important;width:31%!important;height:6.3%!important;}
     .cs-card-back[data-tier="rare"] .cb-nameplate{left:27.7%!important;top:77.8%!important;width:45.7%!important;height:9.3%!important;}
     .cs-card-back[data-tier="rare"] .cb-name{font-size:0.82rem!important;}
     .cs-card-back[data-tier="epic"] .cb-nameplate{left:32%!important;top:88.5%!important;width:36%!important;height:8%!important;}
@@ -83175,12 +83175,107 @@ function _runWildTriggerCheck(){
   return totalFired;
 }
 
+// ═══ RETROACTIVE OMEN BACKFILL — Stephen 2026-05-20 (Nth attempt) ═══
+// Stephen reports 0/398 in codex despite 19+ days of play with many
+// wild plants. The per-day cap (3 fires/player) + per-trigger cooldown
+// (7d/plant) + first-discovery-only-logs design means a player with
+// a long history can NEVER catch up through the daily trickle.
+//
+// One-time scan: iterate every locally-stored wild plant, run every
+// TRIGGERS predicate, push matches to discovered. Bypasses all
+// cooldown gates (they exist to prevent farming via daily action,
+// which doesn't apply to a retroactive read-only scan). Guarded by
+// lw_omen_backfill_v1 so it runs once per device.
+//
+// Future-safe: as players acquire MORE plants, the daily _runDailyTrigger
+// Check continues to discover new omens normally. This backfill just
+// catches up the existing backlog.
+function _retroOmenBackfill() {
+  if (localStorage.getItem('lw_omen_backfill_v1') === '1') return 0;
+  if (!window.hashToTraits) return 0;
+  var wild = [];
+  try {
+    var _raw = window._secureGet ? window._secureGet('fg_wild_plants') : localStorage.getItem('fg_wild_plants');
+    wild = JSON.parse(_raw || '[]') || [];
+  } catch(e){}
+  if (!wild.length) {
+    // No plants yet — DON'T mark done so future plants get the backfill.
+    return 0;
+  }
+  var discovered = [];
+  try { discovered = JSON.parse(localStorage.getItem(TRIGGER_KEY) || '[]') || []; } catch(e){}
+  var discoveredSet = {};
+  for (var di = 0; di < discovered.length; di++) discoveredSet[discovered[di]] = 1;
+  var weather = window._reproWeather || { temp: 20, rain: 0, wind: 0 };
+  var now = new Date();
+  var added = 0;
+  for (var i = 0; i < wild.length; i++) {
+    var p = wild[i];
+    if (!p || !p.hash) continue;
+    var traits = null;
+    try { traits = window.hashToTraits(p.hash); } catch(e){ continue; }
+    if (!traits) continue;
+    var ea = window.computeEA ? window.computeEA(traits, 0, p) : 0;
+    var bornTs = p.born || p.mintedAt || p.droppedAtMs ||
+      (p.droppedAt ? (typeof p.droppedAt === 'number' ? p.droppedAt : new Date(p.droppedAt).getTime()) : 0) ||
+      (p.date ? new Date(p.date).getTime() : 0) || Date.now();
+    var plantAge = Math.floor((Date.now() - bornTs) / 86400000);
+    var ctx = {
+      plant: traits, plantObj: p, nearbyPlants: [], weather: weather,
+      hour: now.getHours(), month: now.getMonth(),
+      realSeason: now.getMonth() < 3 ? 3 : now.getMonth() < 6 ? 0 : now.getMonth() < 9 ? 1 : 2,
+      moonPhase: (typeof _getMoonPhase === 'function') ? _getMoonPhase() : 'new',
+      playerStats: {}, ea: ea, plantAge: plantAge
+    };
+    for (var t = 0; t < TRIGGERS.length; t++) {
+      try {
+        if (TRIGGERS[t].check(ctx)) {
+          if (!discoveredSet[TRIGGERS[t].id]) {
+            discoveredSet[TRIGGERS[t].id] = 1;
+            discovered.push(TRIGGERS[t].id);
+            added++;
+            try {
+              if (window.LW_Log) {
+                window.LW_Log.write('event_discovered', {
+                  name: TRIGGERS[t].name,
+                  triggerId: TRIGGERS[t].id,
+                  category: TRIGGERS[t].category,
+                  plantName: window.getPlantName ? window.getPlantName(p.hash) : '',
+                  retroactive: true
+                });
+              }
+            } catch(e){}
+          }
+        }
+      } catch(e){}
+    }
+  }
+  if (added > 0) {
+    try { localStorage.setItem(TRIGGER_KEY, JSON.stringify(discovered)); } catch(e){}
+    try { if (window.LW_ACH) LW_ACH.set('bos_triggers', discovered.length); } catch(e){}
+    try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
+  }
+  localStorage.setItem('lw_omen_backfill_v1', '1');
+  return added;
+}
 // Expose
 window.checkTriggers=checkTriggers;
 window._runWildTriggerCheck=_runWildTriggerCheck;
 window.getCompendium=getCompendium;
 window.getCompendiumProgress=getCompendiumProgress;
 window.INTERACTION_TRIGGERS=TRIGGERS;
+window._LW_retroOmenBackfill=_retroOmenBackfill;
+// Defer past cloud-sync hydration (5s flush) so the scan sees the FULL
+// plant list from cloud, not just locally-cached. Toast result so
+// Stephen knows it ran. Re-runs deferred if plant list still empty.
+setTimeout(function(){
+  try {
+    var n = _retroOmenBackfill();
+    if (n > 0 && window._toast) {
+      window._toast('🔮 ' + n + ' omen' + (n>1?'s':'') + ' discovered from your existing plants.');
+    }
+  } catch(e){}
+}, 7000);
 })();
 </script>
 
@@ -94109,6 +94204,83 @@ window.LW_debug.cleanGhostDrops = function(){
       }
     }
   } catch(e){}
+
+  // ═══ PASSIVE WITNESS XP TICK — Stephen 2026-05-20 (Nth attempt) ═══
+  // Beholder (witness archetype) equipped 19+ days but stuck at L1.
+  // Previous fixes patched the BUMP path (May 10 + May 20) but left the
+  // retroactive credit gap: each fix required N more Wild-tab visits to
+  // accumulate XP from zero. Witness L2 needs 10 XP, and the only bump
+  // path (_checkBeholderOmnisight) is rate-limited to once per hour
+  // AND only runs when the Wild tab is opened. Players who don't open
+  // Wild often, or whose ownership check bailed, sat at L1 forever.
+  //
+  // This tick grants witness XP based on equipped time:
+  //   - FIRST RUN per companion (no lastPassiveTick): retroactive grant
+  //     based on lw_companion_first_equipped timestamp, capped at
+  //     RETRO_CAP_HRS so long-equipped players catch up to ~L3
+  //   - SUBSEQUENT runs: +1 XP per hour since last tick, capped at
+  //     DAILY_CAP_HRS so a long absence doesn't fast-forward to L6
+  // Only fires for companions whose archetype is 'witness' AND who are
+  // currently equipped (slot 1 or slot 2). Non-witness companions are
+  // unaffected. Cloud-syncs via syncVaultToCloud since lw_companion_xp
+  // is in the synced meta-state.
+  function _passiveWitnessTick() {
+    var RETRO_CAP_HRS = 200;   // ≈ L3 for a long-equipped companion (witness L3 needs 150 XP)
+    var DAILY_CAP_HRS = 24;    // ongoing per-tick cap
+    var equipped = [];
+    try {
+      var a = parseInt(localStorage.getItem(ACTIVE_KEY) || '-1', 10);
+      var b = parseInt(localStorage.getItem(ACTIVE_KEY_2) || '-1', 10);
+      if (a >= 0) equipped.push(a);
+      if (b >= 0 && b !== a) equipped.push(b);
+    } catch(e){}
+    if (!equipped.length) return 0;
+    var xp = {};
+    try { xp = JSON.parse(localStorage.getItem('lw_companion_xp') || '{}') || {}; } catch(e){}
+    var equipLog = {};
+    try { equipLog = JSON.parse(localStorage.getItem('lw_companion_first_equipped') || '{}') || {}; } catch(e){}
+    var now = Date.now();
+    var dirty = false;
+    var totalGranted = 0;
+    for (var i = 0; i < equipped.length; i++) {
+      var idx = equipped[i];
+      if (COMPANION_ARCHETYPE[idx] !== 'witness') continue;
+      if (!xp[idx]) xp[idx] = { c: 0 };
+      var last = xp[idx].lastPassiveTick || 0;
+      var grantHrs;
+      if (!last) {
+        var firstAt = equipLog[idx] || equipLog[String(idx)] || now;
+        grantHrs = Math.floor((now - firstAt) / 3600000);
+        if (grantHrs > RETRO_CAP_HRS) grantHrs = RETRO_CAP_HRS;
+      } else {
+        grantHrs = Math.floor((now - last) / 3600000);
+        if (grantHrs > DAILY_CAP_HRS) grantHrs = DAILY_CAP_HRS;
+      }
+      if (grantHrs >= 1) {
+        xp[idx].c = (xp[idx].c || 0) + grantHrs;
+        xp[idx].lastPassiveTick = now;
+        totalGranted += grantHrs;
+        dirty = true;
+        try {
+          var _lvl = getLevel(idx);
+          if (window.LW_ACH) {
+            if (_lvl >= 3 && !LW_ACH.get('comp_l3')) LW_ACH.set('comp_l3', 1);
+            if (_lvl >= 5 && !LW_ACH.get('comp_l5')) LW_ACH.set('comp_l5', 1);
+            if (_lvl >= 6 && !LW_ACH.get('comp_l6')) LW_ACH.set('comp_l6', 1);
+          }
+        } catch(e){}
+      }
+    }
+    if (dirty) {
+      try { localStorage.setItem('lw_companion_xp', JSON.stringify(xp)); } catch(e){}
+      try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
+    }
+    return totalGranted;
+  }
+  window._LW_passiveWitnessTick = _passiveWitnessTick;
+  // Defer past the 5s sync flush so cloud-hydrated lw_companion_xp lands
+  // first (otherwise the max-merge could clobber our grant on next sync).
+  setTimeout(function(){ try { _passiveWitnessTick(); } catch(e){} }, 5500);
 })();
 
 // ═══ COMPANION T3 SIGNATURE RITUALS ═══
