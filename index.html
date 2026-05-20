@@ -865,7 +865,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.20.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -93725,6 +93725,14 @@ window.LW_debug.cleanGhostDrops = function(){
   window._LW_companionXpBump = _bumpXp;
   window._LW_companionXpGet  = _getXpCount;
   window._LW_companionKinship = _kinshipCount;
+  // 2026-05-20: expose ownership check so external code (e.g.
+  // _checkBeholderOmnisight) can use the same equipped-aware logic
+  // instead of re-doing a greenhouse-only check that misses equipped
+  // companions. Stephen 2026-05-20: Beholder equipped 18 days but
+  // never leveled — root cause was that the omnisight checker did its
+  // own greenhouse-only check and bailed before reaching the bump
+  // call (which IS equipped-aware via _LW_companionXpBumpIfOwned).
+  window._LW_companionOwned = _ownsCompanion;
 
   // Ownership-gated bump helper. Only bumps the companion XP if the
   // player actually owns one in greenhouse or wild. Prevents "already
@@ -99761,11 +99769,26 @@ window.canSee = {
 // wild plant contests (wired at computeEA via companion check below).
 // Previous 1km range limit removed — this is Cosmic, it sees all.
 window._checkBeholderOmnisight=function(){
-  // Does the player own a Beholder?
-  var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
-  var hasBeholder=false;
-  for(var i=0;i<gh.length;i++){
-    try{var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.companion===38){hasBeholder=true;break;}}catch(e){}
+  // 2026-05-20: ownership check now uses _LW_companionOwned which
+  // treats EQUIPPED as owned (in addition to plant in greenhouse/wild).
+  // Stephen 2026-05-20: "It's telling me I've had my beholder equipped
+  // for 18 days but it hasn't leveled up at all... I've asked this to
+  // be fixed 10 times." Root cause: the legacy greenhouse-only check
+  // bailed before reaching the witness XP bump at the bottom of this
+  // function. Beholder is 0.39% drop — Stephen had it equipped but
+  // didn't have a Beholder PLANT in his greenhouse, so the bump never
+  // ran. Now any of {equipped slot 1, slot 2, legacy pw_active_companion,
+  // greenhouse plant, wild plant} satisfies ownership.
+  var hasBeholder = false;
+  try { hasBeholder = (window._LW_companionOwned && window._LW_companionOwned(38)); } catch(e){}
+  if (!hasBeholder) {
+    // Fallback to legacy greenhouse-only check if _LW_companionOwned
+    // hasn't loaded yet (shouldn't happen — same IIFE timing — but
+    // belt-and-suspenders).
+    var gh=[];try{gh=JSON.parse(localStorage.getItem('sws_greenhouse')||'[]');}catch(e){}
+    for(var i=0;i<gh.length;i++){
+      try{var t=window.hashToTraits?window.hashToTraits(gh[i].hash):null;if(t&&t.companion===38){hasBeholder=true;break;}}catch(e){}
+    }
   }
   if(!hasBeholder)return;
 
