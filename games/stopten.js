@@ -599,15 +599,33 @@ window._gameFns.stopten=function ST(a){
     document.body.appendChild(ov);
   };
 
-  // Cleanup — kill the rAF loop + beats when the panel detaches
+  // Cleanup — kill the rAF loop + beats when the panel detaches.
+  // 2026-05-22 — added hapticTimer + chaosTimer clears + audioCtx.close()
+  // (iPhone thermal audit: AC was leaking across plays).
   var _watchExit=setInterval(function(){
     if(!document.body.contains(pan)){
       running=false;
       if(rafId)cancelAnimationFrame(rafId);
       if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
+      if(hapticTimer){clearInterval(hapticTimer);hapticTimer=0;}
+      if(chaosTimer){clearTimeout(chaosTimer);chaosTimer=0;}
+      try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close();}catch(e){}
+      audioCtx=null;
       clearInterval(_watchExit);
     }
   },1000);
+  // Belt-and-suspenders: engine fires this immediately on _xt() /
+  // _openGamePicker() instead of waiting up to 1s for the poller above.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    running=false;
+    if(rafId){try{cancelAnimationFrame(rafId);}catch(e){}rafId=0;}
+    if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
+    if(hapticTimer){clearInterval(hapticTimer);hapticTimer=0;}
+    if(chaosTimer){clearTimeout(chaosTimer);chaosTimer=0;}
+    try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close();}catch(e){}
+    audioCtx=null;
+    try{clearInterval(_watchExit);}catch(e){}
+  });
 
   renderStats();render();
 };

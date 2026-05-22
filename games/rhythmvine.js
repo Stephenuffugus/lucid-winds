@@ -345,6 +345,7 @@ window._gameFns.rhythmvine=function RV(a){
   // ─── Cleanup hook on game exit ────────────────────────────
   // The global back button removes the game container so listeners die with it,
   // but keydown is on document — remove explicitly.
+  // 2026-05-22 — also close audioCtx (iPhone thermal audit: AC was leaking).
   var origExit=a;
   var _obs=new MutationObserver(function(){
     if(!document.body.contains(stage)){
@@ -352,9 +353,23 @@ window._gameFns.rhythmvine=function RV(a){
       if(rafId)cancelAnimationFrame(rafId);
       if(endTimerId){clearTimeout(endTimerId);endTimerId=0;}
       running=false;
+      try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close();}catch(e){}
+      audioCtx=null;masterGain=null;
       _obs.disconnect();
     }
   });
   _obs.observe(document.body,{childList:true,subtree:true});
+  // Belt-and-suspenders: engine fires this synchronously on _xt() /
+  // _openGamePicker() so AC closes immediately instead of waiting on the
+  // MutationObserver to notice the DOM removal.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    document.removeEventListener('keydown',keyHandler);
+    if(rafId){try{cancelAnimationFrame(rafId);}catch(e){}rafId=0;}
+    if(endTimerId){clearTimeout(endTimerId);endTimerId=0;}
+    running=false;
+    try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close();}catch(e){}
+    audioCtx=null;masterGain=null;
+    try{_obs.disconnect();}catch(e){}
+  });
 };
 })();

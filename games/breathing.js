@@ -576,5 +576,17 @@ window._gameFns.breathing=function BR(a){
     sm('Technique: '+PATTERNS[k].name);
   };
   window._BRCat=function(c){curCat=c;renderAll();};
+
+  // 2026-05-22 — iPhone thermal audit. AudioContext was never .close()'d
+  // when the meditation panel exited. The RAF loop already self-terminates
+  // via the !document.body.contains(pan) check at line ~529, but iOS keeps
+  // the audio graph allocated until the AC is explicitly closed. Register
+  // a cleanup so engine fires it on _xt() / _openGamePicker().
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    stopped=true;
+    if(raf){try{cancelAnimationFrame(raf);}catch(e){}raf=null;}
+    try{if(_ac&&_ac.state!=='closed')_ac.close();}catch(e){}
+    _ac=null;
+  });
 };
 })();

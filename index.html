@@ -868,7 +868,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.05.20.22';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.05.22.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -52118,30 +52118,42 @@ function _initCompass(){
   _updateCompass(0); // default: tip up = north
   if(!window.DeviceOrientationEvent)return;
   var _attached=false;
+  // 2026-05-22 — iPhone thermal audit: listeners + AbsoluteOrientationSensor
+  // were attached once and polled the magnetometer for the entire app
+  // lifetime. Refactored to named handlers + outer-scope sensor reference
+  // so visibilitychange can detach/stop the magnetometer when the user
+  // can't see the screen. Feature behavior is unchanged when visible.
+  // Prefer absolute orientation when available (true compass heading).
+  // Fall back to regular orientation with webkitCompassHeading (iOS) or
+  // alpha (Android). alpha is anti-clockwise so subtract from 360.
+  // Track whether ANY orientation event has fired with usable data so we
+  // can fall back to relative alpha when absolute isn't available.
+  // 2026-05-07: on Pi Browser/Pixel, deviceorientationabsolute often
+  // doesn't fire AND deviceorientation events come with absolute=false,
+  // so the prior code silently ignored every event and the compass arrow
+  // stayed stuck at the default rotation.
+  var _absRx=false;
+  function _onDevOrientAbs(e){
+    if(e.alpha!==null){_absRx=true;_updateCompass((360-e.alpha)%360);}
+  }
+  function _onDevOrient(e){
+    if(typeof e.webkitCompassHeading==='number'){_updateCompass(e.webkitCompassHeading);return;}
+    if(e.absolute&&e.alpha!==null){_absRx=true;_updateCompass((360-e.alpha)%360);return;}
+    // Fallback: relative-only alpha. Arrow rotates with device turning,
+    // even if it can't point to magnetic north. Only used when no
+    // absolute event has arrived (so we don't override real compass data
+    // with relative noise on devices that DO have a magnetometer).
+    if(!_absRx&&e.alpha!==null)_updateCompass((360-e.alpha)%360);
+  }
   function _attachOrientation(){
     if(_attached)return;_attached=true;
-    // Prefer absolute orientation when available (true compass heading).
-    // Fall back to regular orientation with webkitCompassHeading (iOS) or
-    // alpha (Android). alpha is anti-clockwise so subtract from 360.
-    // Track whether ANY orientation event has fired with usable data so we
-    // can fall back to relative alpha when absolute isn't available.
-    // 2026-05-07: on Pi Browser/Pixel, deviceorientationabsolute often
-    // doesn't fire AND deviceorientation events come with absolute=false,
-    // so the prior code silently ignored every event and the compass arrow
-    // stayed stuck at the default rotation.
-    var _absRx=false;
-    window.addEventListener('deviceorientationabsolute',function(e){
-      if(e.alpha!==null){_absRx=true;_updateCompass((360-e.alpha)%360);}
-    },true);
-    window.addEventListener('deviceorientation',function(e){
-      if(typeof e.webkitCompassHeading==='number'){_updateCompass(e.webkitCompassHeading);return;}
-      if(e.absolute&&e.alpha!==null){_absRx=true;_updateCompass((360-e.alpha)%360);return;}
-      // Fallback: relative-only alpha. Arrow rotates with device turning,
-      // even if it can't point to magnetic north. Only used when no
-      // absolute event has arrived (so we don't override real compass data
-      // with relative noise on devices that DO have a magnetometer).
-      if(!_absRx&&e.alpha!==null)_updateCompass((360-e.alpha)%360);
-    },true);
+    window.addEventListener('deviceorientationabsolute',_onDevOrientAbs,true);
+    window.addEventListener('deviceorientation',_onDevOrient,true);
+  }
+  function _detachOrientation(){
+    if(!_attached)return;_attached=false;
+    try{window.removeEventListener('deviceorientationabsolute',_onDevOrientAbs,true);}catch(e){}
+    try{window.removeEventListener('deviceorientation',_onDevOrient,true);}catch(e){}
   }
   // iOS 13+: must request permission via user gesture. Wrap (don't replace)
   // any existing onclick so the compass tool action still fires after
@@ -52169,14 +52181,16 @@ function _initCompass(){
     // quaternion we can convert to a heading. Permissions API may also
     // need a user gesture on some Pi Browser builds, so re-try on tap.
     var _sensorTried = false;
+    // 2026-05-22 — lifted to outer scope so visibilitychange can stop/start it.
+    var _sensorInstance = null;
     function _trySensor() {
       if (_sensorTried) return; _sensorTried = true;
       if (typeof AbsoluteOrientationSensor === 'undefined') return;
       try {
-        var sensor = new AbsoluteOrientationSensor({ frequency: 10, referenceFrame: 'screen' });
-        sensor.addEventListener('reading', function(){
+        _sensorInstance = new AbsoluteOrientationSensor({ frequency: 10, referenceFrame: 'screen' });
+        _sensorInstance.addEventListener('reading', function(){
           try {
-            var q = sensor.quaternion;
+            var q = _sensorInstance.quaternion;
             if (!q) return;
             // Convert quaternion to yaw (heading around the Z axis).
             var yaw = Math.atan2(2 * (q[0]*q[1] + q[2]*q[3]), 1 - 2 * (q[1]*q[1] + q[2]*q[2]));
@@ -52185,8 +52199,8 @@ function _initCompass(){
             _updateCompass(heading);
           } catch(e){}
         });
-        sensor.addEventListener('error', function(){ /* swallow */ });
-        sensor.start();
+        _sensorInstance.addEventListener('error', function(){ /* swallow */ });
+        _sensorInstance.start();
       } catch(e){ /* permission denied or sensor unavailable */ }
     }
     _trySensor();
@@ -52194,6 +52208,24 @@ function _initCompass(){
     // a permission prompt was suppressed without one).
     windEl.addEventListener('click', function(){ _trySensor(); }, { once: true });
   }
+  // 2026-05-22 — iPhone thermal audit. AbsoluteOrientationSensor polls
+  // the magnetometer at 10Hz for the entire app lifetime once started,
+  // and on some Android builds (Pi Browser) deviceorientation listeners
+  // keep firing while the app is backgrounded. Pause both when the user
+  // can't see the screen; resume when they return. Feature behavior is
+  // unchanged for the visible-foreground case.
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) {
+      try { if (_sensorInstance && typeof _sensorInstance.stop === 'function') _sensorInstance.stop(); } catch(e){}
+      try { _detachOrientation(); } catch(e){}
+    } else {
+      // Only re-attach orientation if the original attach path already
+      // ran (i.e., not waiting on iOS requestPermission). Sensor restart
+      // is safe to attempt unconditionally — it no-ops if never started.
+      try { if (_sensorInstance && typeof _sensorInstance.start === 'function') _sensorInstance.start(); } catch(e){}
+      try { _attachOrientation(); } catch(e){}
+    }
+  });
   // 2026-05-08: graceful degrade for browsers that block all orientation
   // sources (Pi Browser on Pixel). After 3s with zero events received,
   // dim the static arrow + clear the facing label so it doesn't pretend
@@ -62703,6 +62735,7 @@ function _openGamePicker(){
   var _rs=document.getElementById('rules-strip');if(_rs)_rs.style.display='';
   var _as=document.querySelector('.attn-strip');if(_as)_as.style.display='';
   _a='';window._a='';
+  if(window._lwRunGameCleanups)window._lwRunGameCleanups();
   var ag=document.getElementById('fg-ag');if(ag){ag.classList.remove('on');ag.innerHTML='';}
   var sw=document.getElementById('sw');if(sw)sw.style.display='none';
   var _td=document.getElementById('trios-dash');if(_td)_td.style.display='none';
@@ -62868,7 +62901,7 @@ function _playWin(){
 }
 window._playWin=_playWin;
 function _st(){_s=Date.now();if(_t)clearInterval(_t);_t=setInterval(function(){var e=document.getElementById('_tt');if(!e)return;var s=Math.floor((Date.now()-_s)/1000);e.textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)},500)}
-function _xt(){if(_t){clearInterval(_t);_t=null}if(window._bwKillAudio)_bwKillAudio()}
+function _xt(){if(_t){clearInterval(_t);_t=null}if(window._bwKillAudio)_bwKillAudio();if(window._lwRunGameCleanups)window._lwRunGameCleanups();}
 function sm(t){var m=document.getElementById('_gm');if(m)m.textContent=t}
 function _solEnterFS(){
   var ag=document.getElementById('fg-ag');
@@ -63070,6 +63103,21 @@ window._cs=function(){document.getElementById('fg-sc').classList.remove('open')}
 
 // ═══ GAME SHARED API — exposed for lazy-loaded game scripts ═══
 window._gameFns={};
+// ═══ GAME CLEANUP REGISTRY (2026-05-22 — iPhone thermal audit) ═══
+// Per-game modules push a cleanup fn here when they init. Engine fires
+// them in _xt() and _openGamePicker() so AudioContexts, RAFs, intervals
+// and listeners release on game exit instead of leaking across plays.
+// iPhone overheat report ("hot during games, kept going after stopping")
+// traced to per-game AudioContexts never being .close()'d.
+window._lwGameCleanups = window._lwGameCleanups || [];
+window._lwRegisterGameCleanup = function(fn){
+  if(typeof fn==='function')window._lwGameCleanups.push(fn);
+};
+window._lwRunGameCleanups = function(){
+  var arr = window._lwGameCleanups || [];
+  window._lwGameCleanups = [];
+  for(var i=0;i<arr.length;i++){try{arr[i]();}catch(e){}}
+};
 // Stephen 2026-05-07: was capturing the BARE local `_e` reference,
 // taken BEFORE the streak/variety wrapper IIFE later reassigns
 // window._e (line ~60131). Every external game script destructures
@@ -87967,6 +88015,12 @@ window._lwClaimHerbarium = function(id){
     return shuffle(picks).slice(0, size);
   }
   function openForagePanel(zoneKey, grade, onDone) {
+    // 2026-05-22 — iPhone thermal audit. Each play of the forage puzzle
+    // adds 3 pointer listeners to document via _lwForageEnsureDocListeners
+    // pointing into this play's closure. Without removing the prior play's
+    // listeners, every Wild→forage cycle stacks dead handlers on document
+    // that still run on every pointermove. Clear before re-entering.
+    try { if (window._lwForageCleanupDrag) window._lwForageCleanupDrag(); } catch(e) {}
     var attempts = getAttempts(zoneKey);
     // Hard cap at the highest-tier attempt allowance so no grade ever gets locked
     // less charitably than Cosmic. Per-grade cap enforced below after effGrade resolves.
@@ -88078,7 +88132,7 @@ window._lwClaimHerbarium = function(id){
         '</div>' +
         '<button onclick="window._lwForageClose(false)" style="margin-top:1.4rem;padding:0.7rem 1.6rem;background:rgba(26,36,22,0.7);border:1.5px solid rgba(122,179,86,0.35);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;border-radius:10px;cursor:pointer;min-height:48px;">CLOSE</button>';
       document.body.appendChild(ovEmpty);
-      window._lwForageClose = function(){ var p=document.getElementById('lw-forage-panel'); if(p) p.remove(); onDone(false); };
+      window._lwForageClose = function(){ try{if(window._lwForageCleanupDrag)window._lwForageCleanupDrag();}catch(e){} var p=document.getElementById('lw-forage-panel'); if(p) p.remove(); onDone(false); };
       return;
     }
     // If the hex composition identified a weather-hint slot, pre-reveal it
@@ -88429,6 +88483,20 @@ window._lwClaimHerbarium = function(id){
       document.addEventListener('pointermove', _lwForageDragMove, { passive: false });
       document.addEventListener('pointerup', _lwForageDragEnd);
       document.addEventListener('pointercancel', _lwForageDragEnd);
+      // 2026-05-22 — expose remover so openForagePanel (next play) and
+      // _lwForageClose can detach these doc-level listeners. Prevents
+      // stacking dead-closure handlers across repeated forage attempts.
+      // Named function expression so we can null only OUR own slot in
+      // case a newer play already overwrote it (FG_Wild IIFE is strict
+      // mode so arguments.callee is unavailable).
+      var _cleanupFn = function _lwForageDragCleanup(){
+        try { document.removeEventListener('pointermove', _lwForageDragMove); } catch(e) {}
+        try { document.removeEventListener('pointerup', _lwForageDragEnd); } catch(e) {}
+        try { document.removeEventListener('pointercancel', _lwForageDragEnd); } catch(e) {}
+        _lwForageDragListenersAdded = false;
+        if (window._lwForageCleanupDrag === _cleanupFn) window._lwForageCleanupDrag = null;
+      };
+      window._lwForageCleanupDrag = _cleanupFn;
     }
     function _lwForageDragStart(e) {
       if (resolved) return;
@@ -88609,6 +88677,9 @@ window._lwClaimHerbarium = function(id){
       render();
     };
     window._lwForageClose = function(awarded) {
+      // 2026-05-22 — detach doc-level pointer listeners attached by
+      // _lwForageEnsureDocListeners so each play closes with no residue.
+      try { if (window._lwForageCleanupDrag) window._lwForageCleanupDrag(); } catch(e) {}
       try { delete window._lwForagePick; delete window._lwForagePlay;
             delete window._lwForageNext; delete window._lwForageClose;
             delete window._lwForageSwapDeck; delete window._lwForageUnplace; } catch(e) {}

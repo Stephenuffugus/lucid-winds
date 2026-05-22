@@ -126,7 +126,14 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
       sm('🍂 Round '+rd+'! Best: '+br+(strong?' ✨':''));
     }
   };
-  window._SN=function(){sq=[];pi=0;rd=0;pl=false;pt=false;var _sr3=document.getElementById('Sr');if(_sr3)_sr3.textContent='0';sm('Watch...');setTimeout(nr,600)};_SN();}
+  window._SN=function(){sq=[];pi=0;rd=0;pl=false;pt=false;var _sr3=document.getElementById('Sr');if(_sr3)_sr3.textContent='0';sm('Watch...');setTimeout(nr,600)};_SN();
+  // 2026-05-22 — release AudioContext on game exit so iOS doesn't keep
+  // audio resources allocated after Simon closes. iPhone thermal audit.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    try{if(ac&&ac.state!=='closed')ac.close();}catch(e){}
+    ac=null;
+  });
+}
 
 window._gameFns.simon=GS;
 })();
