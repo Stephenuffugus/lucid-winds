@@ -101596,5 +101596,47 @@ window.LW_Comp = (function(){
 <!-- Engagement system: lifetime achievements + daily/weekly challenges. Data + tracking only. UI is separate. -->
 <script src="engagement.js"></script>
 
+<!-- ─────────────────────────────────────────────────────────────────────
+     STUDIO DEEP-LINK ROUTER — boot directly into ?game=<id> or #<id>.
+     Additive only; no engine code is touched. Safe to remove this entire
+     <script> block (and its HTML comment) to revert. Idempotent and
+     try/catch wrapped. Game-ID validity is checked against the live G[]
+     registry — any non-matching hash/query value is silently ignored
+     so existing hub behavior is unchanged when no recognized id is
+     present. Director-approved 2026-06-03.
+     ───────────────────────────────────────────────────────────────────── -->
+<script>
+;(function(){
+  if (window.__lwDeepLinkRouted) return;
+  window.__lwDeepLinkRouted = true;
+  try {
+    var p = new URLSearchParams(window.location.search || '');
+    var raw = (p.get('game') || (window.location.hash || '').replace(/^#/, '') || '').trim();
+    if (!raw) return;
+    // Sanitize: only alphanumeric + underscore, max 32 chars. Anything
+    // else is silently ignored — the hub keeps its normal behavior.
+    if (!/^[a-z0-9_]{1,32}$/i.test(raw)) return;
+    var gid = raw.toLowerCase();
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      if (window.G && window._sg && window.switchTab) {
+        var valid = false;
+        for (var i = 0; i < window.G.length; i++) {
+          if (window.G[i] && window.G[i].id === gid) { valid = true; break; }
+        }
+        if (valid) {
+          try { window.switchTab('game'); } catch(e){}
+          try { window._sg(gid); } catch(e){}
+        }
+        clearInterval(iv);
+      } else if (tries > 60) {  // ~15s timeout, bail silently
+        clearInterval(iv);
+      }
+    }, 250);
+  } catch(e){}
+})();
+</script>
+
 </body>
 </html>
