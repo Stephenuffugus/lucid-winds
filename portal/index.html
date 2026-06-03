@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sky Wolf Studios — Play</title>
+<!-- Sunbeam SDK (live). Same-origin when this portal is hosted at lucidwinds.com; cross-origin auth works via Firebase authorized-domains. -->
+<script src="https://lucidwinds.com/sunbeam-sdk.js"></script>
+<style>
+  :root{
+    --bg:#0d1410; --panel:#15201a; --panel2:#1c2a22; --ink:#e8f1e9;
+    --muted:#8fa896; --line:#2a3a30; --sun:#ffce4a; --sun2:#ffb020; --leaf:#5fc08a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#1a2a20 0,var(--bg) 60%);
+       color:var(--ink);font:16px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 18px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0 8px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(145deg,var(--sun),var(--sun2));
+        display:grid;place-items:center;font-size:22px;box-shadow:0 4px 18px rgba(255,176,32,.25)}
+  .brand h1{font-size:20px;margin:0;letter-spacing:.2px}
+  .brand small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+  /* sunbeam wallet */
+  #wallet{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+          border-radius:12px;padding:8px 12px;font-size:14px}
+  #wallet .bal{font-weight:700;color:var(--sun)}
+  #wallet button{cursor:pointer;border:0;border-radius:8px;padding:7px 12px;font-weight:600;
+                background:linear-gradient(145deg,var(--sun),var(--sun2));color:#3a2600}
+  #wallet .pend{color:var(--muted);font-size:12px}
+  .hero{padding:26px 0 10px}
+  .hero p{color:var(--muted);max-width:640px;margin:6px 0 0}
+  h2{font-size:14px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
+     margin:30px 0 12px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+        display:flex;flex-direction:column;transition:transform .12s,border-color .12s}
+  .card:hover{transform:translateY(-3px);border-color:var(--leaf)}
+  .shot{aspect-ratio:16/10;background:linear-gradient(135deg,#26352b,#1a241e);display:grid;place-items:center;
+        color:#3f5547;font-size:30px;position:relative}
+  .shot .ph{opacity:.5}
+  .shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);color:var(--leaf);
+          font-size:11px;padding:3px 8px;border-radius:20px;letter-spacing:.5px}
+  .badge.wip{color:var(--sun)}
+  .card .body{padding:11px 13px 14px}
+  .card .nm{font-weight:700;font-size:15px}
+  .card .ds{color:var(--muted);font-size:12.5px;margin-top:3px;min-height:34px}
+  .feat .card{grid-column:span 1}
+  .feat .shot{font-size:38px}
+  .hubcard{background:linear-gradient(145deg,#1e3326,#152019);border:1px solid var(--leaf)}
+  .hubcard .shot{background:linear-gradient(135deg,#2c4a35,#1a2a20);color:var(--leaf)}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 4px}
+  .tabs button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+               border-radius:20px;padding:6px 14px;font-size:13px}
+  .tabs button.on{background:var(--leaf);color:#08130c;border-color:var(--leaf);font-weight:600}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:40px 0 30px}
+  .note{background:#1a1206;border:1px solid #3a2a0a;color:#e8c878;font-size:12.5px;
+        border-radius:10px;padding:9px 12px;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">🐺</div>
+      <div><h1>Sky Wolf Studios</h1><small>provisional name · one orchard, many games</small></div>
+    </div>
+    <div id="wallet">
+      <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
+      <span class="pend" id="pend"></span>
+      <button id="signin">Sign in to collect</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <p>Play any game, earn <b style="color:var(--sun)">sunbeams</b>, and grow unique living plant art in
+    <a href="https://lucidwinds.com" style="color:var(--leaf)">Lucid Winds</a>. Your sunbeams travel with you across every game in the studio.</p>
+  </section>
+
+  <h2>Featured</h2>
+  <div class="grid feat" id="featured"></div>
+
+  <h2>The Garden — 66 games inside Lucid Winds</h2>
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="garden"></div>
+
+  <div class="note" id="pendingnote">
+    Tap any game to jump straight into it. Sign in once and your sunbeams follow you across every game in the studio.
+  </div>
+
+  <footer>Sky Wolf Studios · SWS Strategic Media LLC · powered by the SWS Proof-of-Attention engine</footer>
+</div>
+
+<script>
+/* ---- Featured satellites (separate standalone games, real live URLs) + the Lucid Winds hub ---- */
+var FEATURED = [
+  {nm:"Lucid Winds", ds:"66 games + grow living, unique plant art. The hub of the whole orchard.", url:"https://lucidwinds.com", hub:true, ic:"🌱"},
+  {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️"},
+  {nm:"Sweet Spot", ds:"One-thumb tennis timing. Nail the gold for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾"},
+  {nm:"Tarot Run", ds:"A fast, spectacular combo card run — a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏"},
+  {nm:"BarBrawl", ds:"Multiplayer mayhem.", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🍺"}
+];
+
+/* ---- The 65 Lucid Winds games (from GAMES_MANIFEST.md) ---- */
+var DEEPLINK = "https://lucidwinds.com/?game="; // confirmed (LW job 4); activates when LW commits the boot-route reader
+var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
+var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",storyseeds:"jpg",stonegarden:"webp"};
+var CATS = [["all","All"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"]];
+var GAMES = [
+ ["song","Music Studio","creative","Layer drums, bass, keys and leads in a full studio."],
+ ["bloomwheel","Bloom Wheel","creative","Draw botanical mandalas on a spinning canvas synced to a beat."],
+ ["breathing","Breathing Garden","creative","Guided breathing, 4 patterns. Bloom with every breath."],
+ ["colorgarden","Color Garden","creative","Tap to fill botanical coloring pages. 23 colors."],
+ ["pixelgarden","Pixel Garden","creative","Pixel-art painter. 24 botanical colors. Save as PNG."],
+ ["seedtoss2","Seed Toss","creative","Flick seeds into the pot. Physics + wind at higher levels."],
+ ["storysseeds","Story Seeds","creative","Daily writing prompts. Save your entries."],
+ ["stonegarden","Stone Garden","creative","Stack stones in zen balance to a target height.","wip"],
+ ["rhythmvine","Rhythm and Vine","creative","Tap to the beat. Perfect / Great / Good timing.","wip"],
+ ["klondike","Klondike","card","The classic. Build four foundations Ace to King."],
+ ["spider","Spider","card","Build King-to-Ace runs by suit. 1, 2 or 4 suits."],
+ ["freecell","FreeCell","card","All cards visible. Four free cells to maneuver."],
+ ["pyramid","Pyramid","card","Remove pairs that sum to 13. Kings remove alone."],
+ ["tripeaks","TriPeaks","card","Build up or down to clear three peaks."],
+ ["golf","Golf Solitaire","card","Move cards one rank up or down to the waste."],
+ ["cribbage","Cribbage","card","Count to 15, peg to 121. Cards + math + strategy."],
+ ["bowergarden","Euchre","card","4-player trick-taking with bowers. You + AI partner."],
+ ["bleedinghearts","Bleeding Hearts","card","Classic Hearts. Dodge hearts and the Queen of Spades."],
+ ["gardenspades","Garden Spades","card","Classic Spades. Bid your tricks, spades is trump."],
+ ["juniper","Juniper","card","Draw, discard, build sets and runs. Go out first."],
+ ["merge","2048","puzzle","Swipe to merge same-number tiles. Reach 2048."],
+ ["lights","Lights Out","puzzle","Tap a light to toggle it and its four neighbors."],
+ ["mines","Minesweeper","puzzle","Dig safely. Numbers show adjacent mines."],
+ ["sudoku","Sudoku","puzzle","Fill every row, column and box with 1-9."],
+ ["wordsearch","Word Search","puzzle","Swipe across letters to spell words. Themed packs."],
+ ["rootrush","Root Rush","puzzle","Slide roots to free a sprouting seed. 65 levels."],
+ ["hanoi","Tower of Hanoi","puzzle","Stack every disc on the far peg."],
+ ["slider","15 Puzzle","puzzle","Slide tiles into the empty space. 3×3 to 5×5."],
+ ["picross","Bloom Grid","puzzle","Fill and cross squares from clues to reveal a picture."],
+ ["colorsort","Bee's Pollen Sort","puzzle","Sort pollen into matching vials. 60 levels."],
+ ["flood","Flood Fill","puzzle","Tap a color to flood from the top-left."],
+ ["pipe","Vine Puzzle","puzzle","Rotate vine tiles to connect the flow."],
+ ["sokoban","Sokoban","puzzle","Push crates onto targets. Crates only push."],
+ ["petalfall","Block Drop","puzzle","Arrange falling blocks to clear rows."],
+ ["gardenlines","Garden Lines","puzzle","Place tiles to build matching lines."],
+ ["kakuro","Garden Sums","puzzle","Fill cells so each run adds to its clue."],
+ ["mosaic","Mosaic Garden","puzzle","Pull colored tiles to fill mosaic rows."],
+ ["rootflow","Root Flow","puzzle","Draw paths to connect matching roots."],
+ ["rootmaze","Root Maze","puzzle","Navigate the shifting maze before the AI."],
+ ["jade","Jade Garden","puzzle","Mahjong: match free pairs to clear the turtle."],
+ ["petalmatch","Petal Match","puzzle","Swap gems to make lines. Chain cascades."],
+ ["sprout","Sprout","puzzle","Find the hidden 5-letter word in 6 guesses."],
+ ["vinewords","Vine Words","puzzle","Connect adjacent letters to find words. 2-min timer."],
+ ["chess","Chess","board","Classic chess vs AI."],
+ ["c4","Connect Fleur","board","Drop pieces to connect four in a row."],
+ ["battleship","Tide Hunt","board","Hunt hidden vessels on a 10×10 grid."],
+ ["mastermind","Seed Code","board","Crack the hidden 4-color code."],
+ ["checkers","Checkers","board","Jump pieces, reach the far side to crown a King."],
+ ["reversi","Reversi","board","Place pieces to surround and flip your opponent."],
+ ["backgammon","Backgammon","board","Roll, move, bear off all 15 first."],
+ ["seedsow","Seed Sow","board","Mancala: sow seeds, capture into your store."],
+ ["vinecross","Vine Cross","board","Get five in a row before the AI."],
+ ["livingstones","Living Stones","board","Go: 24 puzzles + full MCTS play."],
+ ["trellis","Trellis","board","Word-builder on a 15×15 grid vs AI."],
+ ["pollen","Master Pollinator","board","Engine builder: collect pollen, race to 15 Growth."],
+ ["set","Three Sisters","pattern","Tap 3 cards where each trait is all-same or all-different."],
+ ["stopten","Stop at Ten","pattern","Start the clock. Stop it at exactly 10.00s."],
+ ["memory","Memory","pattern","Flip two cards a turn. Match all pairs."],
+ ["simon","Echo","pattern","Watch the pattern flash, then repeat it."],
+ ["dailybloom","Daily Bloom","pattern","Daily cognitive workout. 8 exercises, 4 minutes."],
+ ["numbergarden","Fast Math","pattern","60-second arithmetic drill. Add, subtract, multiply."],
+ ["recall","Memory Meadow","pattern","Watch symbols, count back, tap the ones you saw."],
+ ["pottingbench","Speed Sort","pattern","Speed card sorting. Match any attribute to a pile."],
+ ["yahtzee","Seed Shaker","dice","Five-dice classic. Roll 3 times, fill 13 categories."],
+ ["farkle","Farkle","dice","Roll 6 dice. Keep scoring dice, bank or bust."],
+ ["doubleshutter","Double Shutter","dice","Shut the box twice. Roll 2 dice, shut tiles."]
+];
+
+function card(g, isFeat){
+  var url = isFeat ? g.url : DEEPLINK + g[0];
+  var nm = isFeat ? g.nm : g[1];
+  var ds = isFeat ? g.ds : (g[3] || "");
+  var wip = !isFeat && g[4]==="wip";
+  var hub = isFeat && g.hub;
+  var badge = hub ? '<span class="badge">HUB · 66 games</span>' : (isFeat ? '<span class="badge">PLAY NOW</span>' : (wip ? '<span class="badge wip">WIP</span>' : ''));
+  var shot;
+  if(isFeat){ shot = '<span class="ph">'+(g.ic||"🌿")+'</span>'; }
+  else { var ext = EXT[g[0]] || "png";
+         shot = '<img loading="lazy" alt="'+nm+'" src="'+SHOT+g[0]+'.'+ext+'" onerror="this.style.display=\'none\'"><span class="ph">🌿</span>'; }
+  return '<a class="card'+(hub?' hubcard':'')+'" href="'+url+'">'+
+    '<div class="shot">'+badge+shot+'</div>'+
+    '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div></div></a>';
+}
+
+document.getElementById('featured').innerHTML = FEATURED.map(function(g){return card(g,true);}).join('');
+
+function renderGarden(cat){
+  var list = GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
+  document.getElementById('garden').innerHTML = list.map(function(g){return card(g,false);}).join('');
+}
+document.getElementById('tabs').innerHTML = CATS.map(function(c,i){
+  return '<button class="'+(i===0?'on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>';
+}).join('');
+document.getElementById('tabs').addEventListener('click',function(e){
+  if(e.target.tagName!=='BUTTON')return;
+  [].forEach.call(this.children,function(b){b.classList.remove('on');});
+  e.target.classList.add('on'); renderGarden(e.target.getAttribute('data-c'));
+});
+renderGarden("all");
+
+/* ---- Sunbeam wallet widget (defensive: degrades gracefully if SDK API differs) ---- */
+(function(){
+  var S = window.Sunbeam || window.LucidWindsSunbeams;   // live global is `Sunbeam`; fallback kept defensively
+  var balEl=document.getElementById('bal'), pendEl=document.getElementById('pend'), btn=document.getElementById('signin');
+  function applyBal(b){
+    if(b==null) return;
+    var c = (b.confirmed!=null?b.confirmed:(b.balance!=null?b.balance:(typeof b==='number'?b:null)));
+    if(c!=null) balEl.textContent = c;
+    pendEl.textContent = b.pending ? ('(+'+b.pending+' pending)') : '';
+    if(b.user || c!=null) btn.style.display="none";
+  }
+  function refresh(){ try{ if(S && S.balance){ Promise.resolve(S.balance()).then(applyBal).catch(function(){}); } }catch(e){} }
+  if(!S){ return; }   // SDK not reachable (e.g. offline preview) — leave the default "Sign in to collect" button
+  try{ if(S.init) S.init({ gameId:"portal" }); }catch(e){}
+  try{ if(S.onChange) S.onChange(function(state){ if(state && (state.balance!=null||state.confirmed!=null||state.pending!=null)) applyBal(state); else refresh(); }); }catch(e){}
+  btn.addEventListener('click',function(){
+    try{ if(S.signInWithGoogle) S.signInWithGoogle(); else window.location="https://lucidwinds.com"; }catch(e){ window.location="https://lucidwinds.com"; }
+  });
+  refresh();
+})();
+</script>
+</body>
+</html>
