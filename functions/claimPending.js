@@ -1,65 +1,80 @@
 /**
- * Lucid Winds — Server-authoritative pendingRewards claim.
+ * Sky Wolf Studios — Sunbeam pending → vault claim.
  *
  * Why this exists:
- *   pendingRewards/{rewardId} sit under vaults/{uid}/pendingRewards/ and are
- *   created by OTHER players (harvest rewards when they tend or harvest your
- *   wild plant). The owner can read + delete them per firestore-rules-7.txt
- *   lines 226-236, but the credit-to-hashLedger step is server-only because
- *   hashLedger is locked by vaultServerFieldsImmutable() (rules-7 line 117).
+ *   External constellation games (Sweet Spot, Glyph Forge, etc.) earn
+ *   sunbeams anonymously into a local bucket while the player is signed
+ *   out. When the player signs in (or signs up), the SDK calls this
+ *   function to reconcile the local bucket into the player's server
+ *   ledger. Because anonymous accrual is fundamentally low-trust, the
+ *   server caps how much it will accept and silently discards excess.
  *
- *   Without this function, a claim flow requires the client to write into a
- *   field it cannot legally write. With this function, the client just calls
- *   claimPending() and the server atomically:
- *     1. Reads every pendingRewards doc owned by the caller.
- *     2. Sums hash + dew amounts (by type).
- *     3. Credits vaults/{uid}.hashLedger.earned and (future) dewLedger.earned.
- *     4. Deletes the consumed reward docs.
- *     5. Returns a summary so the client UI can toast.
+ *   The two cap constants are PRIVATE and intentionally not echoed in
+ *   error messages or response payloads — only `credited` and
+ *   `discarded` totals are returned. The portal/SDK should NEVER expose
+ *   the caps to player-facing UI.
  *
- *   The same atomic transaction prevents double-claim races between two
- *   devices the player has open.
+ *   Plant minting stays on the existing `mintPlant` Cloud Function and
+ *   is unchanged.
  *
- * Client flow:
+ * Client call:
  *   const fn = httpsCallable(functions, 'claimPending')
- *   const res = await fn()                        // no input args
- *   // res.data === {
- *   //   ok: true,
- *   //   credited: { hashes: 12, dew: 4 },
- *   //   count: 3,                                 // claimed reward docs
- *   //   items: [                                  // detail for UI toast
- *   //     { type: 'hashes', amount: 8, plantName: 'Crimson Tide', grade: 'Rare' },
- *   //     { type: 'hashes', amount: 4, plantName: 'Foxglove Moon', grade: 'Common' },
- *   //     { type: 'dew',    amount: 4, plantName: 'Foxglove Moon', grade: 'Common' },
- *   //   ],
- *   //   balance: { earned: 1259, spent: 900 }     // new server-side ledger
- *   // }
+ *   await fn({ pending: 42, anonId: 'anon-uuid', gameId: 'glyphforge' })
+ *
+ * Inputs:
+ *   pending  — integer; the local bucket amount the SDK has accumulated.
+ *              Validated 0..200_000 to bound runaway clients.
+ *   anonId   — opaque string the SDK generated on first earn. Used for
+ *              fraud-pattern analysis (repeated anonId across uids, etc.).
+ *              Truncated to 64 chars; treated as untrusted.
+ *   gameId   — short label of the calling game. Truncated to 32 chars.
+ *
+ * Output:
+ *   {
+ *     ok: true,
+ *     credited: <int>,    // sunbeams actually added to hashLedger
+ *     discarded: <int>,   // sunbeams refused by caps
+ *     balance: <int>,     // new vault balance (earned - spent)
+ *     earned: <int>,      // new vault lifetime earned
+ *     anonId: <string>,
+ *     gameId: <string>
+ *   }
  *
  * Errors:
  *   unauthenticated      — caller has no auth context
- *   resource-exhausted   — claim rate exceeds anti-automation heuristic
+ *   invalid-argument     — pending missing / non-integer / negative
+ *   resource-exhausted   — claim cooldown
  *   internal             — Firestore transaction failed
  *
- * Notes:
- *   - amount cap per reward is 40 (enforced by Firestore rules on create);
- *     this function trusts rules to have already validated incoming docs.
- *   - dew credit is wired but the vault.dewLedger shape is still
- *     localStorage-canonical on the client. Server dew ledger lands when the
- *     Cloud Function migration plan ships earnDew / spendDew. Until then the
- *     dew portion is recorded in the result so the client can credit its
- *     local ledger, and the server stub increments the same field shape so
- *     the future migration is a no-op.
- *   - "unknown" type rewards are skipped (not deleted) so a typo doesn't
- *     burn a reward. They'll surface in a future audit pass.
+ * Telemetry:
+ *   Every successful claim logs uid, anonId, gameId, pending, credited,
+ *   discarded. The log is the input to future fraud heuristics (same
+ *   anonId across multiple uids, abnormal claim sizes, etc.).
  */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { logger } from 'firebase-functions/v2'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 
-const CLAIM_COOLDOWN_MS = 2 * 1000      // 2s between claim calls per uid — UI-tolerable, blocks scripted spam
-const MAX_REWARDS_PER_CLAIM = 200       // safety ceiling; legit player rarely above ~20
-const MAX_CREDIT_PER_CLAIM = 8000       // 200 rewards × 40 cap = 8000; mirrors rules-7 amount<=40
+// ─── PRIVATE CAPS — DO NOT ECHO IN RESPONSES OR ERRORS ──────────────────
+//
+// CLAIM_CAP — the maximum a single claim() call can credit. A player who
+// accumulates more than this in one anon session will see the excess
+// silently discarded. Calibrated to "one play session feels worth it"
+// without underwriting hours of unauthenticated grinding.
+//
+// PENDING_DAILY_CAP — the maximum sunbeams a single uid can take in via
+// the claim path over a rolling 24h window. The vast majority of the
+// player's daily sunbeams should come from the signed-in earnHashes path
+// (300/min, 5000/day there). The claim path is for the moment of
+// reconciliation, not as a primary earning channel.
+//
+// Both are tunable here; bump as the studio learns its players.
+const CLAIM_CAP = 100
+const PENDING_DAILY_CAP = 50
+const COOLDOWN_MS = 2 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
+const MAX_INPUT_PENDING = 200_000   // sanity ceiling on declared input
 
 export const claimPending = onCall(
   { region: 'us-central1' },
@@ -70,125 +85,81 @@ export const claimPending = onCall(
     }
     const uid = request.auth.uid
 
+    // 2. Input validation
+    const data = request.data || {}
+    const pending = Number(data.pending)
+    if (!Number.isInteger(pending) || pending < 0) {
+      throw new HttpsError('invalid-argument', 'pending must be a non-negative integer.')
+    }
+    if (pending > MAX_INPUT_PENDING) {
+      // Don't reveal the threshold — just refuse silently-ish.
+      throw new HttpsError('invalid-argument', 'pending exceeds bounds.')
+    }
+    const anonId = (typeof data.anonId === 'string' ? data.anonId : '').slice(0, 64)
+    const gameId = (typeof data.gameId === 'string' ? data.gameId : 'unknown').slice(0, 32)
+
+    if (pending === 0) {
+      const db0 = getFirestore()
+      const snap = await db0.collection('vaults').doc(uid).get()
+      const v = snap.exists ? (snap.data() || {}) : {}
+      const ledger = v.hashLedger || { earned: 0, spent: 0 }
+      return {
+        ok: true,
+        credited: 0,
+        discarded: 0,
+        balance: (ledger.earned || 0) - (ledger.spent || 0),
+        earned: ledger.earned || 0,
+        anonId, gameId,
+      }
+    }
+
     const db = getFirestore()
     const vaultRef = db.collection('vaults').doc(uid)
-    const pendingCol = vaultRef.collection('pendingRewards')
 
-    // 2. Cooldown gate (best-effort; the real lock is the atomic transaction)
-    try {
-      const snap = await vaultRef.get()
-      const vault = snap.exists ? (snap.data() || {}) : {}
-      const lastClaimAt = vault.lastClaimAt || 0
-      if (Date.now() - lastClaimAt < CLAIM_COOLDOWN_MS) {
-        throw new HttpsError(
-          'resource-exhausted',
-          'Slow down — try again in a moment.',
-        )
-      }
-    } catch (err) {
-      if (err instanceof HttpsError) throw err
-      // Read failure is non-fatal; the atomic txn below is the real guard.
-    }
-
-    // 3. Read all pending rewards. We do this OUTSIDE the txn first because
-    // Firestore transactions don't support collection queries (only doc-level
-    // reads). The txn then re-fetches each doc to verify it still exists at
-    // commit time, so a race with a concurrent delete is detected.
-    let pendingDocs
-    try {
-      const pendingSnap = await pendingCol.limit(MAX_REWARDS_PER_CLAIM + 1).get()
-      pendingDocs = pendingSnap.docs
-    } catch (err) {
-      logger.error('[claimPending] uid=%s pending query failed', uid, err)
-      throw new HttpsError('internal', 'Could not read pending rewards.')
-    }
-
-    if (pendingDocs.length === 0) {
-      return { ok: true, credited: { hashes: 0, dew: 0 }, count: 0, items: [], balance: null }
-    }
-
-    if (pendingDocs.length > MAX_REWARDS_PER_CLAIM) {
-      // Process the first MAX; the remainder claims on next call. Better than
-      // a hard error — a backed-up player should not be locked out.
-      pendingDocs = pendingDocs.slice(0, MAX_REWARDS_PER_CLAIM)
-    }
-
-    // 4. Atomic transaction: re-read each doc to confirm it still exists,
-    // sum the credits, write the ledger, delete the docs. If any doc has
-    // been deleted/altered since the query, that doc is skipped and the
-    // others still commit (idempotent claim).
-    let result
+    let result = null
     try {
       result = await db.runTransaction(async (tx) => {
-        const items = []
-        let hashCredit = 0
-        let dewCredit = 0
-        const toDelete = []
+        const snap = await tx.get(vaultRef)
+        const vault = snap.exists ? (snap.data() || {}) : {}
+        const now = Date.now()
 
-        for (const docSnap of pendingDocs) {
-          const ref = pendingCol.doc(docSnap.id)
-          const fresh = await tx.get(ref)
-          if (!fresh.exists) continue   // raced with another claim/delete; skip
-
-          const data = fresh.data() || {}
-          const type = (data.type === 'hashes' || data.type === 'sunbeams') ? 'hashes'
-                     : (data.type === 'dew') ? 'dew'
-                     : 'unknown'
-          if (type === 'unknown') continue  // leave for human audit
-
-          const amount = Number(data.amount)
-          if (!Number.isFinite(amount) || amount <= 0 || amount > 40) continue
-
-          items.push({
-            type,
-            amount,
-            plantName: typeof data.plantName === 'string' ? data.plantName.slice(0, 80) : '',
-            grade: typeof data.grade === 'string' ? data.grade.slice(0, 32) : '',
-          })
-          if (type === 'hashes') hashCredit += amount
-          else if (type === 'dew') dewCredit += amount
-          toDelete.push(ref)
+        // 3. Cooldown
+        const lastClaimAt = vault.lastClaimAt || 0
+        if (now - lastClaimAt < COOLDOWN_MS) {
+          throw new HttpsError('resource-exhausted', 'Slow down — try again in a moment.')
         }
 
-        if (hashCredit + dewCredit > MAX_CREDIT_PER_CLAIM) {
-          throw new HttpsError(
-            'resource-exhausted',
-            'Claim too large; contact support.',
-          )
-        }
+        // 4. Daily-cap accounting (rolling 24h window per uid)
+        const dayBucket = Math.floor(now / DAY_MS)
+        const cd = vault.claimRateDay || { bucket: 0, total: 0 }
+        const dayTotal = (cd.bucket === dayBucket) ? cd.total : 0
+        const dailyHeadroom = Math.max(0, PENDING_DAILY_CAP - dayTotal)
 
-        const vaultSnap = await tx.get(vaultRef)
-        const vault = vaultSnap.exists ? (vaultSnap.data() || {}) : {}
+        // 5. Per-call cap, plus daily-cap intersection
+        const allowedThisCall = Math.min(pending, CLAIM_CAP, dailyHeadroom)
+        const credited = Math.max(0, allowedThisCall)
+        const discarded = Math.max(0, pending - credited)
+
+        // 6. Ledger write
         const ledger = vault.hashLedger || { earned: 0, spent: 0 }
-        const dewLedger = vault.dewLedger || { earned: 0, spent: 0 }
-
-        const newEarned = (ledger.earned || 0) + hashCredit
-        const newDewEarned = (dewLedger.earned || 0) + dewCredit
-
+        const newEarned = (ledger.earned || 0) + credited
         const balance = newEarned - (ledger.spent || 0)
 
         tx.set(
           vaultRef,
           {
             hashLedger: { earned: newEarned, spent: ledger.spent || 0 },
-            dewLedger: { earned: newDewEarned, spent: dewLedger.spent || 0 },
-            lastClaimAt: Date.now(),
-            lastClaimCount: toDelete.length,
-            lastClaimHashes: hashCredit,
-            lastClaimDew: dewCredit,
+            claimRateDay: { bucket: dayBucket, total: dayTotal + credited },
+            lastClaimAt: now,
+            lastClaimCredited: credited,
+            lastClaimDiscarded: discarded,
+            lastClaimAnonId: anonId,
+            lastClaimGameId: gameId,
           },
           { merge: true },
         )
 
-        for (const ref of toDelete) tx.delete(ref)
-
-        return {
-          credited: { hashes: hashCredit, dew: dewCredit },
-          count: toDelete.length,
-          items,
-          balance: { earned: newEarned, spent: ledger.spent || 0 },
-          dewBalance: { earned: newDewEarned, spent: dewLedger.spent || 0 },
-        }
+        return { credited, discarded, newEarned, balance }
       })
     } catch (err) {
       if (err instanceof HttpsError) throw err
@@ -196,10 +167,20 @@ export const claimPending = onCall(
       throw new HttpsError('internal', 'Claim failed; please retry.')
     }
 
+    // 7. Telemetry (input to fraud heuristics)
     logger.info(
-      '[claimPending] uid=%s count=%d hashes=%d dew=%d',
-      uid, result.count, result.credited.hashes, result.credited.dew,
+      '[claimPending] uid=%s anonId=%s gameId=%s pending=%d credited=%d discarded=%d',
+      uid, anonId, gameId, pending, result.credited, result.discarded,
     )
-    return { ok: true, ...result }
+
+    return {
+      ok: true,
+      credited: result.credited,
+      discarded: result.discarded,
+      balance: result.balance,
+      earned: result.newEarned,
+      anonId,
+      gameId,
+    }
   },
 )

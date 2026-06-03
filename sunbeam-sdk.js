@@ -1,257 +1,495 @@
 /* ════════════════════════════════════════════════════════════════════════
- * Lucid Winds — Sunbeam SDK
- *
- * A drop-in JavaScript SDK for external games in the Sky Wolf Studios
- * constellation to earn, claim, and read the shared Sunbeam currency.
+ * Sunbeam SDK — Sky Wolf Studios shared currency
  *
  *   Hosted at: https://lucidwinds.com/sunbeam-sdk.js
- *   Version:   1.0.0
- *   License:   See lucidwinds.com (do not redistribute)
+ *   Version:   2.0.0
  *
- * QUICK INTEGRATION (host page already uses Firebase v8/v9-compat):
+ * Drop-in module for constellation games (Sweet Spot, Glyph Forge, Tarot
+ * Run, Bar Brawl, etc.) to participate in the shared Sunbeam economy.
  *
- *   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
- *   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
- *   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
- *   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
- *   <script src="https://lucidwinds.com/sunbeam-sdk.js"></script>
+ *   <script src="https://lucidwinds.com/sunbeam-sdk.js?v=2"></script>
  *   <script>
- *     firebase.initializeApp({
- *       apiKey:            'AIzaSyBAE_JvPixhHwt4ziu8LdZ7HAszd9T58zY',
- *       authDomain:        'focus-grove-fffa8.firebaseapp.com',
- *       projectId:         'focus-grove-fffa8',
- *       storageBucket:     'focus-grove-fffa8.firebasestorage.app',
- *       messagingSenderId: '739627513827',
- *       appId:             '1:739627513827:web:3d4088a90fd388730652d6'
- *     });
- *     LucidWindsSunbeams.init();        // auto-detects firebase global
- *
- *     LucidWindsSunbeams.onAuthChange(function(user){
- *       if (user) console.log('Signed in as', user.uid, '— begin gameplay');
- *       else      LucidWindsSunbeams.signInWithGoogle();
+ *     Sunbeam.init({ gameId: 'glyphforge' }).then(function(state){
+ *       // state = { ready:true, signedIn:bool, uid:string|null }
  *     });
  *
- *     // Inside your game, on a meaningful event:
- *     LucidWindsSunbeams.earn(3, 'glyphforge:level_complete')
- *       .then(function(r){ updateBalanceUI(r.balance); });
+ *     // On a meaningful in-game event:
+ *     Sunbeam.earn(3, 'glyphforge:level_complete').then(function(r){
+ *       // r = { ok, balance, earned, pending }
+ *     });
+ *
+ *     Sunbeam.onChange(function(state){
+ *       updateBalanceUI(state.confirmed, state.pending);
+ *     });
  *   </script>
  *
- * AUTH:
- *   This SDK does NOT bundle Firebase. The host page is responsible for
- *   loading the Firebase Compat SDK and calling initializeApp() with the
- *   Lucid Winds Firebase config above. The player signs in once (Google,
- *   Facebook, or Email/Password) and the same uid earns sunbeams across
- *   every constellation game on every authorized domain.
+ * IDENTITY MODEL — local-earn + claim-on-signup
+ *   - Anonymous players accumulate sunbeams in localStorage under the key
+ *     'sws_pending_sunbeams' (client-side, untrusted).
+ *   - On Firebase sign-in, Sunbeam.claim() auto-fires and reconciles the
+ *     local pending bucket into the player's vault via the server
+ *     claimPending Cloud Function. Server enforces low-trust caps and
+ *     discards excess.
+ *   - Plant minting (Sunbeam.mintPlant) stays account+server gated. An
+ *     anonymous call returns { needSignIn:true } instead of an error.
  *
- * DOMAIN AUTHORIZATION:
- *   Each constellation domain (e.g. glyphforge.lucidwinds.com,
- *   tarotrun.lucidwinds.com, custom domains) must be added to
- *   Firebase Console → Authentication → Settings → Authorized domains.
- *   Without this, signInWithPopup() will fail with auth/unauthorized-domain.
- *   The earnHashes / claimPending Cloud Functions themselves have no
- *   per-domain restriction — they only require a valid Firebase ID token.
+ * BUNDLED CONFIG
+ *   The Firebase web config for the focus-grove-fffa8 project is bundled
+ *   into this file so host games never see it. Host pages do NOT call
+ *   firebase.initializeApp themselves; Sunbeam.init does that.
  *
- * RATE LIMITS (per uid, enforced by the Cloud Function):
- *   earnHashes:  amount 1..200 per call; 300/min; 5000/day
- *   claimPending: ~2s cooldown between calls; up to 200 rewards per call
+ * AUTO-LOADING
+ *   If window.firebase is not present, the SDK lazy-loads the Firebase
+ *   compat scripts (app + auth + functions + firestore) from gstatic.com
+ *   on first use. Total cold-start cost: ~250 KB gzipped, served from
+ *   Google's CDN with long-tail caching.
+ *
+ * RATE LIMITS (client-side guards on the anon path; server enforces too)
+ *   per-call:     1..200
+ *   per-minute:   100 sunbeams (anon)
+ *   per-day:      500 sunbeams (anon)
+ *   The signed-in path goes straight to the earnHashes Cloud Function
+ *   which enforces its own server limits (300/min, 5000/day per uid).
  *
  * ──────────────────────────────────────────────────────────────────────── */
 
 (function(global){
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '2.0.0';
+
+  // ── Bundled Firebase config (public; only identifies the project) ──
+  var FIREBASE_CONFIG = {
+    apiKey:            'AIzaSyBAE_JvPixhHwt4ziu8LdZ7HAszd9T58zY',
+    authDomain:        'focus-grove-fffa8.firebaseapp.com',
+    projectId:         'focus-grove-fffa8',
+    storageBucket:     'focus-grove-fffa8.firebasestorage.app',
+    messagingSenderId: '739627513827',
+    appId:             '1:739627513827:web:3d4088a90fd388730652d6'
+  };
+  var FUNCTIONS_REGION = 'us-central1';
+  var FIREBASE_COMPAT_VERSION = '10.7.0';
+  var FIREBASE_COMPAT_BASE = 'https://www.gstatic.com/firebasejs/' + FIREBASE_COMPAT_VERSION + '/';
+  var FIREBASE_COMPAT_MODULES = ['firebase-app-compat.js','firebase-auth-compat.js','firebase-functions-compat.js','firebase-firestore-compat.js'];
+
+  // ── Client-side anon guards (server enforces final caps independently) ──
+  var MAX_PER_CALL = 200;
+  var MAX_PER_MINUTE_ANON = 100;
+  var MAX_PER_DAY_ANON = 500;
+
+  // ── localStorage keys ──
+  var KEY_PENDING = 'sws_pending_sunbeams';
+  var KEY_ANON_ID = 'sws_sunbeam_anon_id';
+  var KEY_CONFIRMED_CACHE = 'sws_sunbeam_confirmed_cache';
 
   // ── Internal state ──
-  var _firebase = null;       // firebase compat global
+  var _gameId = null;
+  var _initialized = false;
+  var _initPromise = null;
+  var _firebase = null;
   var _auth = null;
   var _functions = null;
   var _firestore = null;
-  var _region = 'us-central1';
-  var _initialized = false;
   var _earnFn = null;
   var _claimFn = null;
+  var _mintFn = null;
+  var _listeners = [];
+  var _autoClaimInFlight = false;
+
+  function _now(){ return Date.now(); }
+  function _dayBucket(ms){ return Math.floor(ms / 86400000); }
+  function _minuteBucket(ms){ return Math.floor(ms / 60000); }
 
   function _err(code, msg){
-    var e = new Error(msg);
-    e.code = code;
-    return e;
+    var e = new Error(msg); e.code = code; return e;
   }
 
-  function _requireInit(){
-    if (!_initialized) {
-      throw _err('not-initialized',
-        'LucidWindsSunbeams.init() must be called before any API method. ' +
-        'Make sure firebase.initializeApp() has already run.');
+  function _safeGet(key){
+    try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+    catch(e) { return null; }
+  }
+  function _safeSet(key, val){
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch(e) { return false; }
+  }
+  function _safeRemove(key){
+    try { localStorage.removeItem(key); } catch(e) {}
+  }
+
+  function _readPending(){
+    var p = _safeGet(KEY_PENDING);
+    if (!p || typeof p !== 'object') {
+      p = { amount: 0, dailyBucket: { day: 0, earned: 0 }, minuteBucket: { minute: 0, earned: 0 }, lastEarnAt: 0, lastSource: '' };
+    }
+    if (typeof p.amount !== 'number' || !isFinite(p.amount) || p.amount < 0) p.amount = 0;
+    return p;
+  }
+  function _writePending(p){
+    _safeSet(KEY_PENDING, p);
+  }
+
+  function _getOrCreateAnonId(){
+    var id = (_safeGet(KEY_ANON_ID) || {}).id;
+    if (typeof id === 'string' && id.length > 6) return id;
+    // RFC4122-ish v4 (good enough for an opaque correlation id; not security-sensitive)
+    var rnd;
+    try {
+      rnd = new Uint8Array(16);
+      (global.crypto || global.msCrypto).getRandomValues(rnd);
+    } catch (e) {
+      rnd = [];
+      for (var i = 0; i < 16; i++) rnd.push(Math.floor(Math.random() * 256));
+    }
+    rnd[6] = (rnd[6] & 0x0f) | 0x40;
+    rnd[8] = (rnd[8] & 0x3f) | 0x80;
+    var hex = '';
+    for (var j = 0; j < 16; j++) hex += ('0' + rnd[j].toString(16)).slice(-2);
+    id = 'anon-' + hex.slice(0,8) + '-' + hex.slice(8,12) + '-' + hex.slice(12,16) + '-' + hex.slice(16,20) + '-' + hex.slice(20);
+    _safeSet(KEY_ANON_ID, { id: id, createdAt: _now() });
+    return id;
+  }
+
+  function _readConfirmedCache(){
+    var c = _safeGet(KEY_CONFIRMED_CACHE);
+    if (!c || typeof c !== 'object') return { earned: 0, spent: 0, balance: 0, at: 0 };
+    return c;
+  }
+  function _writeConfirmedCache(c){ _safeSet(KEY_CONFIRMED_CACHE, c); }
+
+  function _emit(reason){
+    var snap;
+    try { snap = _snapshotSync(); } catch (e) { return; }
+    snap.lastChange = reason || 'unknown';
+    for (var i = 0; i < _listeners.length; i++) {
+      try { _listeners[i](snap); } catch (e) {}
     }
   }
 
-  function _requireSignedIn(){
-    _requireInit();
-    if (!_auth || !_auth.currentUser) {
-      throw _err('unauthenticated', 'No Firebase user is signed in.');
-    }
+  function _snapshotSync(){
+    var pending = _readPending().amount;
+    var conf = _readConfirmedCache();
+    return {
+      confirmed: conf.balance || 0,
+      pending: pending,
+      uid: (_auth && _auth.currentUser) ? _auth.currentUser.uid : null,
+      signedIn: !!(_auth && _auth.currentUser),
+      gameId: _gameId
+    };
   }
 
-  // ── Public API ──
-
-  /**
-   * Initialize the SDK against a Firebase compat instance.
-   * @param {object} [opts]
-   * @param {object} [opts.firebase]   firebase compat global (defaults to window.firebase)
-   * @param {string} [opts.region]     Cloud Functions region (default: 'us-central1')
-   */
-  function init(opts){
-    opts = opts || {};
-    _firebase = opts.firebase || global.firebase || null;
-    if (!_firebase) {
-      throw _err('no-firebase',
-        'Firebase compat global not found. Load firebase-app-compat.js + ' +
-        'firebase-auth-compat.js + firebase-functions-compat.js before sunbeam-sdk.js, ' +
-        'or pass {firebase: yourFirebase} to init().');
-    }
-    if (typeof _firebase.auth !== 'function') {
-      throw _err('no-firebase-auth',
-        'firebase.auth() is unavailable. Include firebase-auth-compat.js.');
-    }
-    if (typeof _firebase.functions !== 'function') {
-      throw _err('no-firebase-functions',
-        'firebase.functions() is unavailable. Include firebase-functions-compat.js.');
-    }
-    _region = opts.region || _region;
-    _auth = _firebase.auth();
-    _functions = _firebase.functions(undefined, _region) || _firebase.functions();
-    _firestore = (typeof _firebase.firestore === 'function') ? _firebase.firestore() : null;
-    _earnFn = _functions.httpsCallable('earnHashes');
-    _claimFn = _functions.httpsCallable('claimPending');
-    _initialized = true;
-    return { version: VERSION, region: _region };
-  }
-
-  /**
-   * Award sunbeams to the signed-in player. Validated and rate-limited server-side.
-   * @param {number} amount   integer, 1..200
-   * @param {string} source   short label (<=32 chars), recommended "<gameId>:<event>"
-   * @returns {Promise<{ok, balance, earned, source}>}
-   */
-  function earn(amount, source){
-    try { _requireSignedIn(); } catch (e) { return Promise.reject(e); }
-    if (typeof amount !== 'number' || !isFinite(amount) || amount !== Math.floor(amount) || amount < 1) {
-      return Promise.reject(_err('invalid-argument', 'earn(amount) must be a positive integer.'));
-    }
-    if (amount > 200) {
-      return Promise.reject(_err('invalid-argument', 'earn(amount) exceeds per-call cap of 200.'));
-    }
-    var src = (typeof source === 'string' && source) ? source.slice(0, 32) : 'sdk-unknown';
-    return _earnFn({ amount: amount, source: src }).then(function(res){
-      return res && res.data ? res.data : { ok: false };
+  // ── Lazy-load Firebase compat from gstatic if not already loaded ──
+  function _loadScript(src){
+    return new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = src; s.async = false;   // preserve load order
+      s.onload = function(){ resolve(src); };
+      s.onerror = function(){ reject(_err('script-load', 'Failed to load ' + src)); };
+      document.head.appendChild(s);
     });
   }
 
-  /**
-   * Atomically claim every pending reward into the player's hashLedger / dewLedger.
-   * Safe to call when there are zero rewards (returns { count: 0 }).
-   * @returns {Promise<{ok, credited, count, items, balance}>}
-   */
-  function claimPending(){
-    try { _requireSignedIn(); } catch (e) { return Promise.reject(e); }
-    return _claimFn().then(function(res){
-      return res && res.data ? res.data : { ok: false };
+  function _ensureFirebaseCompat(){
+    if (global.firebase && typeof global.firebase.initializeApp === 'function'
+        && typeof global.firebase.auth === 'function'
+        && typeof global.firebase.functions === 'function'
+        && typeof global.firebase.firestore === 'function') {
+      return Promise.resolve(global.firebase);
+    }
+    var chain = Promise.resolve();
+    FIREBASE_COMPAT_MODULES.forEach(function(m){
+      chain = chain.then(function(){ return _loadScript(FIREBASE_COMPAT_BASE + m); });
+    });
+    return chain.then(function(){
+      if (!global.firebase) throw _err('no-firebase', 'firebase global missing after compat load');
+      return global.firebase;
     });
   }
 
-  /**
-   * Read the player's current sunbeam balance directly from Firestore.
-   * Returns { earned, spent, balance } where balance = earned - spent.
-   * Requires Firestore SDK on the host page.
-   * @returns {Promise<{earned:number, spent:number, balance:number}>}
-   */
-  function getBalance(){
-    try { _requireSignedIn(); } catch (e) { return Promise.reject(e); }
-    if (!_firestore) {
-      return Promise.reject(_err('no-firestore',
-        'firebase.firestore() unavailable. Include firebase-firestore-compat.js to use getBalance().'));
-    }
+  // ── Server-side ledger refresh (read-only) ──
+  function _refreshConfirmed(){
+    if (!_auth || !_auth.currentUser || !_firestore) return Promise.resolve(_readConfirmedCache());
     var uid = _auth.currentUser.uid;
     return _firestore.collection('vaults').doc(uid).get().then(function(doc){
       var data = doc.exists ? (doc.data() || {}) : {};
       var ledger = data.hashLedger || { earned: 0, spent: 0 };
+      var snap = {
+        earned: ledger.earned || 0,
+        spent: ledger.spent || 0,
+        balance: (ledger.earned || 0) - (ledger.spent || 0),
+        at: _now()
+      };
+      _writeConfirmedCache(snap);
+      return snap;
+    }).catch(function(){ return _readConfirmedCache(); });
+  }
+
+  // ── Auto-claim hook ──
+  function _maybeAutoClaim(){
+    if (_autoClaimInFlight) return Promise.resolve(null);
+    var p = _readPending();
+    if (!p.amount || p.amount <= 0) return Promise.resolve(null);
+    if (!_auth || !_auth.currentUser) return Promise.resolve(null);
+    _autoClaimInFlight = true;
+    return claim().then(function(r){
+      _autoClaimInFlight = false;
+      return r;
+    }).catch(function(e){
+      _autoClaimInFlight = false;
+      // Silent — manual Sunbeam.claim() still available
+      return null;
+    });
+  }
+
+  // ── Public: init ──
+  function init(opts){
+    opts = opts || {};
+    if (_initialized) return _initPromise || Promise.resolve(_snapshotSync());
+    if (typeof opts.gameId !== 'string' || !opts.gameId) {
+      return Promise.reject(_err('invalid-argument', 'init({gameId}) requires a string gameId.'));
+    }
+    _gameId = opts.gameId.slice(0, 32);
+
+    _initPromise = _ensureFirebaseCompat().then(function(fb){
+      _firebase = fb;
+      // initializeApp is idempotent only if the same name. Use a SDK-specific app name to avoid clobbering host pages that may also use Firebase.
+      var appName = 'sunbeam-sdk';
+      var app;
+      try {
+        app = _firebase.app(appName);
+      } catch (e) {
+        app = _firebase.initializeApp(FIREBASE_CONFIG, appName);
+      }
+      _auth = _firebase.auth(app);
+      _functions = _firebase.functions(app);
+      try { _functions = _firebase.app(appName).functions(FUNCTIONS_REGION) || _functions; } catch(e){}
+      _firestore = _firebase.firestore(app);
+      _earnFn = _functions.httpsCallable('earnHashes');
+      _claimFn = _functions.httpsCallable('claimPending');
+      _mintFn = _functions.httpsCallable('mintPlant');
+
+      _auth.onAuthStateChanged(function(user){
+        _emit('auth');
+        if (user) {
+          _refreshConfirmed().then(_maybeAutoClaim).then(function(r){
+            if (r) _emit('claim');
+          });
+        }
+      });
+
+      _initialized = true;
+
+      return new Promise(function(resolve){
+        // Wait for first auth state resolve (signed-in or not) before reporting ready
+        var unsub = _auth.onAuthStateChanged(function(user){
+          try { unsub(); } catch(e){}
+          var refresh = user ? _refreshConfirmed() : Promise.resolve(null);
+          refresh.then(function(){
+            resolve({
+              ready: true,
+              signedIn: !!user,
+              uid: user ? user.uid : null,
+              gameId: _gameId,
+              version: VERSION,
+              anonId: _getOrCreateAnonId()
+            });
+          });
+        });
+      });
+    });
+    return _initPromise;
+  }
+
+  // ── Public: earn ──
+  function earn(amount, source){
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init({gameId}) first.'));
+
+    // Argument validation
+    if (typeof amount !== 'number' || !isFinite(amount) || amount !== Math.floor(amount) || amount < 1) {
+      return Promise.reject(_err('invalid-argument', 'earn(amount) must be a positive integer.'));
+    }
+    if (amount > MAX_PER_CALL) {
+      return Promise.reject(_err('invalid-argument', 'earn(amount) exceeds per-call cap of ' + MAX_PER_CALL + '.'));
+    }
+    var src = (typeof source === 'string' && source) ? source.slice(0, 32) : (_gameId || 'sdk-unknown');
+
+    if (_auth && _auth.currentUser) {
+      // ── Signed-in path: server is the source of truth ──
+      return _earnFn({ amount: amount, source: src }).then(function(res){
+        var data = res && res.data ? res.data : {};
+        var conf = _readConfirmedCache();
+        if (typeof data.balance === 'number') {
+          conf.balance = data.balance;
+          conf.earned = data.earned || conf.earned;
+          conf.at = _now();
+          _writeConfirmedCache(conf);
+        }
+        _emit('earn');
+        return {
+          ok: !!data.ok,
+          balance: data.balance || conf.balance || 0,
+          earned: data.earned || 0,
+          pending: _readPending().amount
+        };
+      });
+    }
+
+    // ── Anonymous path: increment localStorage pending bucket with guards ──
+    var p = _readPending();
+    var now = _now();
+    var minB = _minuteBucket(now);
+    var dayB = _dayBucket(now);
+    if (p.minuteBucket.minute !== minB) p.minuteBucket = { minute: minB, earned: 0 };
+    if (p.dailyBucket.day !== dayB)     p.dailyBucket  = { day: dayB,  earned: 0 };
+
+    var allowedByMinute = Math.max(0, MAX_PER_MINUTE_ANON - p.minuteBucket.earned);
+    var allowedByDay    = Math.max(0, MAX_PER_DAY_ANON    - p.dailyBucket.earned);
+    var credit = Math.min(amount, allowedByMinute, allowedByDay);
+
+    if (credit > 0) {
+      p.amount += credit;
+      p.minuteBucket.earned += credit;
+      p.dailyBucket.earned += credit;
+      p.lastEarnAt = now;
+      p.lastSource = src;
+      _writePending(p);
+    }
+    _emit('earn');
+
+    return Promise.resolve({
+      ok: credit > 0,
+      balance: _readConfirmedCache().balance || 0,
+      earned: credit,
+      pending: p.amount
+    });
+  }
+
+  // ── Public: balance ──
+  function balance(opts){
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init({gameId}) first.'));
+    var pendingNow = _readPending().amount;
+    if (!_auth || !_auth.currentUser) {
+      return Promise.resolve({ confirmed: 0, pending: pendingNow });
+    }
+    var force = opts && opts.refresh;
+    var cache = _readConfirmedCache();
+    var cacheAge = _now() - (cache.at || 0);
+    if (!force && cacheAge < 60000) {
+      return Promise.resolve({ confirmed: cache.balance || 0, pending: pendingNow });
+    }
+    return _refreshConfirmed().then(function(snap){
+      return { confirmed: snap.balance || 0, pending: _readPending().amount };
+    });
+  }
+
+  // ── Public: claim ──
+  function claim(){
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init({gameId}) first.'));
+    if (!_auth || !_auth.currentUser) return Promise.reject(_err('unauthenticated', 'claim() requires a signed-in user.'));
+
+    var p = _readPending();
+    if (!p.amount || p.amount <= 0) {
+      return Promise.resolve({ ok: true, credited: 0, discarded: 0, balance: _readConfirmedCache().balance || 0, pending: 0 });
+    }
+    var anonId = _getOrCreateAnonId();
+    var pendingToSend = p.amount;
+    return _claimFn({ pending: pendingToSend, anonId: anonId, gameId: _gameId }).then(function(res){
+      var data = res && res.data ? res.data : {};
+      // On success, drain the local bucket regardless of partial credit —
+      // the server has decided how much was creditable; anything beyond
+      // that is discarded per spec.
+      var remaining = _readPending();
+      if (remaining.amount > pendingToSend) {
+        // A race happened — keep the delta that accrued during the request.
+        remaining.amount = remaining.amount - pendingToSend;
+      } else {
+        remaining.amount = 0;
+      }
+      _writePending(remaining);
+      if (typeof data.balance === 'number') {
+        var conf = _readConfirmedCache();
+        conf.balance = data.balance;
+        conf.earned = data.earned || conf.earned;
+        conf.at = _now();
+        _writeConfirmedCache(conf);
+      }
+      _emit('claim');
       return {
-        earned:  ledger.earned || 0,
-        spent:   ledger.spent  || 0,
-        balance: (ledger.earned || 0) - (ledger.spent || 0)
+        ok: !!data.ok,
+        credited: data.credited || 0,
+        discarded: data.discarded || 0,
+        balance: data.balance || 0,
+        pending: _readPending().amount
       };
     });
   }
 
-  /**
-   * Subscribe to auth state. Callback fires immediately with current state,
-   * then on every sign-in / sign-out. Returns the unsubscribe function.
-   * @param {function} cb fn(user|null)
-   * @returns {function} unsubscribe
-   */
-  function onAuthChange(cb){
-    _requireInit();
-    if (typeof cb !== 'function') throw _err('invalid-argument', 'onAuthChange(cb) requires a function.');
-    return _auth.onAuthStateChanged(function(user){
-      cb(user ? {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName
-      } : null);
+  // ── Public: mintPlant ──
+  function mintPlant(opts){
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init({gameId}) first.'));
+    if (!_auth || !_auth.currentUser) {
+      return Promise.resolve({ ok: false, needSignIn: true, reason: 'sign-in-required' });
+    }
+    var src = (opts && typeof opts.source === 'string') ? opts.source.slice(0, 32) : (_gameId || 'sdk-mint');
+    return _mintFn({ source: src }).then(function(res){
+      var data = res && res.data ? res.data : {};
+      // Server has spent 30; refresh local confirmed
+      _refreshConfirmed().then(function(){ _emit('mint'); });
+      return data;
     });
   }
 
-  /** True if there's a currently-signed-in Firebase user. */
-  function isSignedIn(){
-    return !!(_initialized && _auth && _auth.currentUser);
+  // ── Public: onChange ──
+  function onChange(cb){
+    if (typeof cb !== 'function') throw _err('invalid-argument', 'onChange(cb) requires a function.');
+    _listeners.push(cb);
+    // Fire one immediate snapshot so UIs render initial state
+    try { cb(_snapshotSync()); } catch(e){}
+    return function unsubscribe(){
+      var i = _listeners.indexOf(cb);
+      if (i >= 0) _listeners.splice(i, 1);
+    };
   }
 
-  /** Current uid, or null if not signed in. */
-  function getCurrentUid(){
-    return isSignedIn() ? _auth.currentUser.uid : null;
-  }
-
-  /**
-   * Convenience: open the Google sign-in popup. Falls back to redirect
-   * on popup-blocked (mobile Safari, in-app browsers).
-   * @returns {Promise<{uid, email, displayName}>}
-   */
+  // ── Auth helpers (optional but commonly needed by host pages) ──
   function signInWithGoogle(){
-    _requireInit();
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init first.'));
     var p = new _firebase.auth.GoogleAuthProvider();
     p.addScope('email');
-    return _auth.signInWithPopup(p)
-      .then(function(res){
-        var u = res && res.user;
-        return u ? { uid: u.uid, email: u.email, displayName: u.displayName } : null;
-      })
-      .catch(function(err){
-        if (err && err.code === 'auth/popup-blocked') {
-          return _auth.signInWithRedirect(p);
-        }
-        throw err;
-      });
+    return _auth.signInWithPopup(p).catch(function(err){
+      if (err && err.code === 'auth/popup-blocked') return _auth.signInWithRedirect(p);
+      throw err;
+    });
   }
-
-  /** Sign the current player out. */
+  function signInWithEmail(email, password){
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init first.'));
+    return _auth.signInWithEmailAndPassword(email, password);
+  }
+  function createAccount(email, password){
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init first.'));
+    return _auth.createUserWithEmailAndPassword(email, password);
+  }
   function signOut(){
-    _requireInit();
+    if (!_initialized) return Promise.reject(_err('not-initialized', 'Call Sunbeam.init first.'));
     return _auth.signOut();
   }
 
   // ── Export ──
-  global.LucidWindsSunbeams = {
+  global.Sunbeam = {
     VERSION: VERSION,
     init: init,
     earn: earn,
-    claimPending: claimPending,
-    getBalance: getBalance,
-    onAuthChange: onAuthChange,
-    isSignedIn: isSignedIn,
-    getCurrentUid: getCurrentUid,
+    balance: balance,
+    claim: claim,
+    mintPlant: mintPlant,
+    onChange: onChange,
+    // Optional helpers
     signInWithGoogle: signInWithGoogle,
-    signOut: signOut
+    signInWithEmail: signInWithEmail,
+    createAccount: createAccount,
+    signOut: signOut,
+    // Read-only diagnostic
+    _snapshot: _snapshotSync,
+    _getAnonId: _getOrCreateAnonId
   };
 
 })(typeof window !== 'undefined' ? window : this);
