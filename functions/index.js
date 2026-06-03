@@ -6,6 +6,7 @@
  *   - piComplete       (v2 onCall) — Pi payment completion + entitlement grant
  *   - mintPlant        (v2 onCall) — Server-authoritative plant mint (NFT-grade)
  *   - earnHashes       (v2 onCall) — Server-authoritative Sunbeam earn (NFT-grade)
+ *   - claimPending     (v2 onCall) — Atomic claim of pendingRewards into hashLedger
  *
  * Deploy:        firebase deploy --only functions
  * Set secrets:   firebase functions:secrets:set PI_SERVER_KEY
@@ -23,3 +24,4 @@ export { piApprove } from './piApprove.js'
 export { piComplete } from './piComplete.js'
 export { mintPlant } from './mintPlant.js'
 export { earnHashes } from './earnHashes.js'
+export { claimPending } from './claimPending.js'
