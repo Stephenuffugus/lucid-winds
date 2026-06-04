@@ -103,9 +103,13 @@ body { display: flex; flex-direction: column; }
   white-space: nowrap;
 }
 .shell-wallet button#shell-signin:hover { filter: brightness(1.06); }
-.shell-wallet button#shell-signin.shell-cta-mint {
-  background: linear-gradient(145deg, var(--shell-leaf), #46a872);
-  color: #051a0e;
+/* Signed-in state: quieter "visit Lucid Winds" link rather than a hot
+   action button. Plant-minting lives only inside LW. */
+.shell-wallet button#shell-signin.shell-cta-visit {
+  background: transparent;
+  color: var(--shell-leaf);
+  border: 1px solid var(--shell-leaf);
+  font-weight: 600;
 }
 
 /* ── Game mount area ──

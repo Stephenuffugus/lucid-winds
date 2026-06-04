@@ -32,9 +32,10 @@
  *   - Never write to LW's `sws_hash_ledger` localStorage key. Sunbeams
  *     here flow through the Sunbeam SDK only (which uses
  *     `sws_pending_sunbeams` for anon, server `hashLedger` for authed).
- *   - Never call the in-LW `mintPlant` directly from the game module.
- *     Sunbeam.mintPlant() handles the auth gate; anonymous mint shows
- *     the sign-in modal.
+ *   - Plant minting lives only in Lucid Winds. Shells never call
+ *     Sunbeam.mintPlant — signed-in players who want to grow plants
+ *     visit lucidwinds.com directly. The SDK keeps the method
+ *     available so LW itself can use it; shells just don't surface it.
  *   - All utility implementations are TRANSPARENT mirrors of LW's
  *     internals — copying behavior, not pretending to be smarter.
  *
@@ -269,12 +270,18 @@
     if (bal) bal.textContent = state.bal || 0;
     if (pend) pend.textContent = state.pending > 0 ? ('(+' + state.pending + ' pending)') : '';
     if (btn) {
+      // Plant minting lives only inside Lucid Winds. Standalone shells
+      // are the play surface — signed-in players use the link to visit
+      // LW when they want to grow plants. Anonymous players see the
+      // save-your-sunbeams prompt.
       if (state.signedIn) {
-        btn.textContent = '🌱 Grow a plant';
-        btn.classList.add('shell-cta-mint');
+        btn.textContent = '🌿 Lucid Winds →';
+        btn.title = 'Visit Lucid Winds to grow plants from your sunbeams';
+        btn.classList.add('shell-cta-visit');
       } else {
-        btn.textContent = 'Sign in to grow a plant';
-        btn.classList.remove('shell-cta-mint');
+        btn.textContent = 'Sign in to save';
+        btn.title = 'Save your sunbeams across every game in the studio';
+        btn.classList.remove('shell-cta-visit');
       }
     }
   }
@@ -285,8 +292,8 @@
     bd.id = 'shell-modal-backdrop';
     bd.className = 'shell-modal-backdrop';
     bd.innerHTML = '<div class="shell-modal">'
-      + '<h3>🌱 Grow a plant in Lucid Winds</h3>'
-      + '<p>Sign in to save your sunbeams across every game in the studio and grow unique living plant art.</p>'
+      + '<h3>💾 Save your sunbeams</h3>'
+      + '<p>Sign in to keep your studio sunbeams across devices. You can spend them on plants in <b>Lucid Winds</b> or on cosmetics for your favorite games.</p>'
       + '<div class="shell-modal-actions">'
       + '  <button class="shell-secondary" id="shell-modal-cancel">Not now</button>'
       + '  <button class="shell-primary" id="shell-modal-signin">Sign in with Google</button>'
@@ -303,32 +310,17 @@
     };
   }
 
-  function mintPlantFlow() {
-    if (!state.signedIn) { showSignInModal(); return; }
-    if (!global.Sunbeam || !global.Sunbeam.mintPlant) return;
-    global.Sunbeam.mintPlant({ source: 'play:' + LW_PLAY.id }).then(function(r){
-      if (r && r.needSignIn) { showSignInModal(); return; }
-      if (r && r.ok) {
-        showToast('🌱 Plant minted! Visit Lucid Winds to see it.');
-        if (global.Sunbeam.balance) {
-          global.Sunbeam.balance({ refresh: true }).then(function(b){
-            if (b) { state.bal = b.confirmed; state.pending = b.pending; renderWallet(); }
-          });
-        }
-      } else {
-        showToast('Need 30 sunbeams to grow a plant');
-      }
-    }).catch(function(){
-      showToast('Could not mint right now');
-    });
-  }
-
   function wireWalletButton() {
     var btn = document.getElementById('shell-signin');
     if (!btn) return;
     btn.addEventListener('click', function(){
-      if (state.signedIn) mintPlantFlow();
-      else showSignInModal();
+      if (state.signedIn) {
+        // Signed-in players → visit Lucid Winds to spend sunbeams on plants.
+        // (Cosmetic spend will live in each game's own UI once shipped.)
+        try { global.location.href = 'https://lucidwinds.com/'; } catch (e) {}
+      } else {
+        showSignInModal();
+      }
     });
   }
 
@@ -422,6 +414,6 @@
   }
 
   // Expose minimal diagnostic
-  global.SkyWolfShell = { VERSION: VERSION, state: state, mintPlant: mintPlantFlow };
+  global.SkyWolfShell = { VERSION: VERSION, state: state };
 
 })(typeof window !== 'undefined' ? window : this);
