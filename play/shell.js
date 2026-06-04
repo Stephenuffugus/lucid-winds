@@ -270,6 +270,22 @@
   global.openShop            = function(){};
   global._updateGP           = function(){};
 
+  // ── LW context signals that game render loops guard on ──
+  // Many games check `_a === '<their-id>'` on every render frame to
+  // detect "is this game still mounted in LW's game tab?" — bloomwheel
+  // (line 167), petalfall (line 782), sokoban (line 339). And eleven
+  // others check `document.body.classList.contains('game-active')` for
+  // the same purpose — colorsort, mastermind, petalmatch, pottingbench,
+  // recall, rootrush, seedtoss2, sprout, stonegarden, stopten,
+  // vinecross. Without these signals, the render loop early-returns
+  // every frame and nothing draws.
+  //
+  // In a shell, the entire page IS the game. We set both signals once
+  // at boot and never unset them — when the user closes the tab the
+  // process dies. No need for tab-switch teardown the way LW needs it.
+  global._a = LW_PLAY.id;
+  try { document.body.classList.add('game-active'); } catch (e) {}
+
   // ════════════════════════════════════════════════════════════════════
   // ── Shell page chrome lifecycle ──
   // ════════════════════════════════════════════════════════════════════

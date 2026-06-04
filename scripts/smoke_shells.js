@@ -160,6 +160,13 @@ function runShellTest(entry) {
   // Stub LW_PLAY so the shell knows which game this page hosts.
   win.LW_PLAY = { id: gameId, name: gameId };
 
+  // shell.js sets these on its own init(); set them up-front in the
+  // harness too so games that guard render loops on `_a === <id>` or
+  // `document.body.classList.contains('game-active')` see the right
+  // state right when their mount runs (some queue an immediate rAF).
+  win._a = gameId;
+  if (win.document && win.document.body) win.document.body.classList.add('game-active');
+
   // Stub the Sunbeam SDK (so shell.js init() resolves without network).
   win.Sunbeam = {
     VERSION: '2.0.0',
