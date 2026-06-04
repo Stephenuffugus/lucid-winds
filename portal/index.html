@@ -91,7 +91,7 @@
   <div class="grid" id="garden"></div>
 
   <div class="note" id="pendingnote">
-    Tap any game to jump straight into it. Sign in once and your sunbeams follow you across every game in the studio.
+    Featured games launch in their own page. Lucid Winds games open the hub — standalone game pages are coming soon. Sunbeams follow you across every game in the studio once you sign in.
   </div>
 
   <footer>Sky Wolf Studios · SWS Strategic Media LLC · powered by the SWS Proof-of-Attention engine</footer>
@@ -108,7 +108,11 @@ var FEATURED = [
 ];
 
 /* ---- The 65 Lucid Winds games (from GAMES_MANIFEST.md) ---- */
-var DEEPLINK = "https://lucidwinds.com/?game="; // confirmed (LW job 4); activates when LW commits the boot-route reader
+// Per-game deep-link disabled: LW's onboarding overlay covers ?game=<id>
+// for first-time anonymous players (the router fires but the cinematic
+// lands them in the wrong place). LW-game cards route to the hub home
+// for now. When per-game /play/<id>.html shells ship, repoint here.
+var LWHUB = "https://lucidwinds.com/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",storyseeds:"jpg",stonegarden:"webp"};
 var CATS = [["all","All"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"]];
@@ -183,7 +187,7 @@ var GAMES = [
 
 function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
 function card(g, isFeat){
-  var url = isFeat ? g.url : DEEPLINK + g[0];
+  var url = isFeat ? g.url : LWHUB;
   var nm = isFeat ? g.nm : g[1];
   var ds = isFeat ? g.ds : (g[3] || "");
   var wip = !isFeat && g[4]==="wip";
