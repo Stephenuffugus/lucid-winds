@@ -48,7 +48,11 @@ var FIRST_WAVE = [
   ['cribbage',       'games/_cards.js'],
   ['bowergarden',    'games/_cards.js'],
   ['bleedinghearts', 'games/_cards.js'],
-  ['gardenspades',   'games/_cards.js']
+  ['gardenspades',   'games/_cards.js'],
+  // ── Wave 4 — word games ──
+  ['vinewords',  'games/vinewords-dict.js'],
+  'trellis',
+  'wordsearch'
 ];
 
 var REQUIRED_G_KEYS = [
