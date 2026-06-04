@@ -174,11 +174,45 @@ For each new constellation domain (`glyphforge.lucidwinds.com`, `sweetspot.lucid
 3. Enter the bare host (no scheme, no path): e.g. `glyphforge.lucidwinds.com`.
 4. Save — effective immediately.
 
-Already authorized:
+**Already authorized** (do not remove):
 - `focus-grove-fffa8.firebaseapp.com` (Firebase default)
 - `focus-grove-fffa8.web.app` (Firebase default)
 - `lucidwinds.com`
 - `localhost` (Firebase default — useful for dev)
+- `stephenuffugus.github.io` — Stephen's personal GitHub Pages org. Used for satellite GitHub Pages deploys (Shell Shuffle, BarBrawl, Glyph Forge, Sweet Spot, Tarot Run all served from subpaths here). **One entry covers every repo under that org.**
+
+**Satellites hosted on `*.vercel.app` or other PaaS** need their specific subdomain added (HUNCH was `hunch-mauve.vercel.app`). PaaS giveaway URLs are per-deploy; if the partner moves their deploy, the old domain stays authorized harmlessly.
+
+### The cross-origin localStorage gotcha (read this before approving any non-subpath satellite)
+
+Anonymous sunbeams accrue in `localStorage` under the key `sws_pending_sunbeams` **on whichever origin the SDK is running**. `localStorage` is per-origin in every browser. So:
+
+- A player on `stephenuffugus.github.io/shell_shuffle/web/` earning sunbeams anonymously → those sunbeams live in `stephenuffugus.github.io`'s localStorage.
+- The portal + LW (on `lucidwinds.com`) read `lucidwinds.com`'s localStorage. They will **never see** the GitHub Pages sunbeams.
+- The only way to make them visible across the studio is to **sign in inside the satellite**: `Sunbeam.signInWithGoogle()` → `Sunbeam.claim()` auto-fires → server vault now has the sunbeams → portal + LW (which read the same server vault) see them.
+
+This is unavoidable for satellites hosted off-domain. It's not a bug — it's how the browser security model works.
+
+**Two architectures, two trade-offs:**
+
+| Hosting | Anonymous earns visible cross-studio? | What partner needs | Best for |
+|---|---|---|---|
+| **Subpath under lucidwinds.com** (e.g. `lucidwinds.com/shell-shuffle/`) | YES — same origin = same localStorage | Subpath-safe build (all relative paths, no leading `/`) | Studio-controlled satellites; cleanest UX |
+| **Off-domain** (`*.github.io`, `*.vercel.app`, custom domains) | NO — only signed-in earns flow cross-studio | (1) Firebase Auth domain authorization; (2) sign-in UI in the satellite | Partner-owned games; satellites with their own monetization |
+
+For subpath satellites, sign-in is optional (anonymous works fine cross-surface). For off-domain satellites, sign-in is the only way to count their earns.
+
+### Onboarding a new satellite — Stephen's checklist
+
+When a satellite's Claude reports back with `gameId`, live URL, hook, and earn events:
+
+1. **Hit the live URL in DevTools**, confirm the SDK loads and `await Sunbeam.balance()` works.
+2. **Add the satellite's domain** to Firebase Auth authorized domains (above) — even if anonymous-only today, you'll want sign-in working when you decide to ship it.
+3. **Decide hosting:**
+   - If they own the brand → leave them off-domain, plan to enable sign-in UI in their game when cross-studio sunbeam parity matters.
+   - If you want anonymous earns to flow into LW/portal immediately → ask them to ship the subpath-safe build to you, host under `lucidwinds.com/<name>/`. (Most studio satellites should go this route.)
+4. **Wire into the portal** `FEATURED` array in `portal/index.html` with the chosen URL.
+5. **Test:** play a round → check `await Sunbeam.balance()` on the satellite — confirm `pending` rises (anon) or `confirmed` rises (signed-in).
 
 ### Verification recipe (run from any new domain's DevTools)
 
