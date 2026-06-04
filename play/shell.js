@@ -270,6 +270,60 @@
   global.openShop            = function(){};
   global._updateGP           = function(){};
 
+  // ── LW plant renderer stub.
+  // merge (2048) is the only modular game that reads
+  // window._generatePlantSVG directly to render its numbered tiles as
+  // plant art. _generatePlantSVG is defined inside LW's main IIFE in
+  // index.html and isn't exposed for external loads. Without a stub
+  // the tiles render as 🔥 emoji fallbacks (the inline-catch in merge.js
+  // line 28).
+  //
+  // This stub generates a botanical-themed SVG keyed by the hash so
+  // each tile value has a stable, visually distinct render. It is NOT
+  // a faithful copy of LW's renderer — that one builds layered plant
+  // art with companions, mutations, auras, etc. and depends on
+  // hashToTraits + getTerraGrade + many trait banks. Here we just
+  // produce a colored leaf-in-pot that's legible at 56×56.
+  global._generatePlantSVG = function(hash, size){
+    var s = size || 56;
+    var h = String(hash || '');
+    if (h.length < 12) h = (h + '0000000000000000').slice(0, 16);
+    function byte(i){ return parseInt(h.substr(i * 2, 2), 16) || 0; }
+    var leafHue   = Math.floor(byte(0) * 360 / 256);
+    var leafLight = 30 + Math.floor(byte(1) * 30 / 256);
+    var potHue    = Math.floor(byte(2) * 60 / 256) + 20;
+    var stemBend  = (byte(3) - 128) / 256;
+    var flowerOn  = byte(4) > 80;
+    var flowerHue = Math.floor(byte(5) * 360 / 256);
+    var leafColor   = 'hsl(' + leafHue + ',60%,' + leafLight + '%)';
+    var leafColor2  = 'hsl(' + leafHue + ',70%,' + Math.max(20, leafLight - 10) + '%)';
+    var potColor    = 'hsl(' + potHue + ',45%,40%)';
+    var potRim      = 'hsl(' + potHue + ',45%,32%)';
+    var flowerColor = 'hsl(' + flowerHue + ',75%,65%)';
+    var stemX = 16 + stemBend * 4;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="' + s + '" height="' + s + '" style="display:block">';
+    svg += '<defs><linearGradient id="lg' + h.substr(0,6) + '" x1="0" y1="0" x2="0" y2="1">';
+    svg += '<stop offset="0%" stop-color="' + leafColor + '"/>';
+    svg += '<stop offset="100%" stop-color="' + leafColor2 + '"/>';
+    svg += '</linearGradient></defs>';
+    // pot
+    svg += '<path d="M9 24 L23 24 L21 30 L11 30 Z" fill="' + potColor + '" stroke="' + potRim + '" stroke-width="0.8" stroke-linejoin="round"/>';
+    svg += '<path d="M8 22 L24 22 L23.5 24 L8.5 24 Z" fill="' + potRim + '"/>';
+    // stem
+    svg += '<path d="M16 23 Q' + stemX + ' 16 ' + (16 + stemBend * 2) + ' 11" stroke="' + leafColor2 + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+    // left leaf
+    svg += '<ellipse cx="' + (stemX - 3) + '" cy="17" rx="3.5" ry="2" fill="url(#lg' + h.substr(0,6) + ')" transform="rotate(-25 ' + (stemX - 3) + ' 17)"/>';
+    // right leaf
+    svg += '<ellipse cx="' + (stemX + 3) + '" cy="14" rx="3.5" ry="2" fill="url(#lg' + h.substr(0,6) + ')" transform="rotate(25 ' + (stemX + 3) + ' 14)"/>';
+    // optional flower at top
+    if (flowerOn) {
+      svg += '<circle cx="' + (16 + stemBend * 2) + '" cy="10" r="2.2" fill="' + flowerColor + '" stroke="' + leafColor2 + '" stroke-width="0.5"/>';
+      svg += '<circle cx="' + (16 + stemBend * 2) + '" cy="10" r="0.8" fill="hsl(' + flowerHue + ',70%,40%)"/>';
+    }
+    svg += '</svg>';
+    return svg;
+  };
+
   // ── LW context signals that game render loops guard on ──
   // Many games check `_a === '<their-id>'` on every render frame to
   // detect "is this game still mounted in LW's game tab?" — bloomwheel

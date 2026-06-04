@@ -205,6 +205,80 @@
     });
   }
 
+  // ── LW localStorage queue mirror ────────────────────────────────────
+  // LW (lucidwinds.com/) computes its on-screen sunbeam total from
+  // localStorage keys `pw_readyHashes` (queue of pre-minted plant hashes)
+  // and `pw_hashFilled` (progress toward next 30). The SDK lives at the
+  // same origin, so when a signed-in user earns sunbeams via the SDK we
+  // can mirror those into the same keys to keep LW's display in sync.
+  // We never SUBTRACT — only push state up to match the server. LW remains
+  // the authority for mint consumption (which removes from the queue).
+  function _genRandomHash(){
+    var bytes;
+    try {
+      bytes = new Uint8Array(32);
+      (global.crypto || global.msCrypto).getRandomValues(bytes);
+    } catch (e) {
+      bytes = new Array(32);
+      for (var i = 0; i < 32; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    var hex = '';
+    for (var k = 0; k < 32; k++) hex += ('0' + bytes[k].toString(16)).slice(-2);
+    return hex;
+  }
+  function _readLwQueueState(){
+    var ready = [], filled = 0;
+    try {
+      var rRaw = localStorage.getItem('pw_readyHashes');
+      if (rRaw) { var r = JSON.parse(rRaw); if (Array.isArray(r)) ready = r; }
+    } catch (e) {}
+    try {
+      var f = parseInt(localStorage.getItem('pw_hashFilled') || '0', 10);
+      if (Number.isFinite(f) && f >= 0) filled = f;
+    } catch (e) {}
+    return { ready: ready, filled: filled };
+  }
+  function _writeLwQueueState(ready, filled){
+    try { localStorage.setItem('pw_readyHashes', JSON.stringify(ready)); } catch (e) {}
+    try { localStorage.setItem('pw_hashFilled', String(filled)); } catch (e) {}
+  }
+  // Reconcile LW queue UP to the server balance. Called on signed-in
+  // refresh. Never reduces.
+  function _reconcileLwQueueToServer(serverEarned, serverSpent){
+    try {
+      var serverBalance = (serverEarned || 0) - (serverSpent || 0);
+      var st = _readLwQueueState();
+      var localBalance = (st.ready.length * 30) + st.filled;
+      if (serverBalance <= localBalance) return;
+      var target = serverBalance;
+      var targetReady = Math.floor(target / 30);
+      var targetFilled = target - (targetReady * 30);
+      while (st.ready.length < targetReady) st.ready.push(_genRandomHash());
+      _writeLwQueueState(st.ready, targetFilled);
+      // Also sync the legacy hashLedger localStorage key so LW's
+      // getHashLedger() reads consistent values.
+      try {
+        localStorage.setItem('sws_hash_ledger', JSON.stringify({
+          earned: serverEarned || 0,
+          spent: serverSpent || 0
+        }));
+      } catch (e) {}
+    } catch (e) {}
+  }
+  // Mirror a single SDK earn into the LW queue (signed-in only).
+  function _mirrorEarnToLwQueue(amount){
+    if (!amount || amount < 1) return;
+    try {
+      var st = _readLwQueueState();
+      var filled = st.filled + amount;
+      while (filled >= 30) {
+        st.ready.push(_genRandomHash());
+        filled -= 30;
+      }
+      _writeLwQueueState(st.ready, filled);
+    } catch (e) {}
+  }
+
   // ── Server-side ledger refresh (read-only) ──
   function _refreshConfirmed(){
     if (!_auth || !_auth.currentUser || !_firestore) return Promise.resolve(_readConfirmedCache());
@@ -219,6 +293,9 @@
         at: _now()
       };
       _writeConfirmedCache(snap);
+      // Reconcile LW's local queue UP to the server balance. One-way
+      // (never reduces); LW remains authority for mint consumption.
+      _reconcileLwQueueToServer(snap.earned, snap.spent);
       return snap;
     }).catch(function(){ return _readConfirmedCache(); });
   }
@@ -323,6 +400,9 @@
           conf.at = _now();
           _writeConfirmedCache(conf);
         }
+        // Mirror this earn into LW's localStorage queue so LW's
+        // keeper-bar display stays in sync without a vault reload.
+        _mirrorEarnToLwQueue(amount);
         _emit('earn');
         return {
           ok: !!data.ok,
