@@ -1,0 +1,202 @@
+/* ════════════════════════════════════════════════════════════════════
+ * Sky Wolf Studios — /play/ shell stylesheet
+ *
+ * Page chrome (header + back link + wallet + sign-in CTA + footer) for
+ * the per-game standalone shells. Game-internal styling comes from
+ * shared.css (loaded from lucidwinds.com root); this file ONLY styles
+ * the surrounding shell — never any class the game itself uses.
+ *
+ * All shell-specific classes are prefixed `shell-` to avoid collisions.
+ * ════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --shell-bg:     #0d1410;
+  --shell-panel:  #15201a;
+  --shell-line:   #2a3a30;
+  --shell-ink:    #e8f1e9;
+  --shell-muted:  #8fa896;
+  --shell-sun:    #ffce4a;
+  --shell-sun2:   #ffb020;
+  --shell-leaf:   #5fc08a;
+}
+
+html, body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 70% -10%, #1a2a20 0, var(--shell-bg) 60%);
+  color: var(--shell-ink);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+body { display: flex; flex-direction: column; }
+
+/* ── Header ── */
+.shell-hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(13, 20, 16, 0.92);
+  border-bottom: 1px solid var(--shell-line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.shell-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--shell-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: color .12s, border-color .12s;
+}
+.shell-back:hover {
+  color: var(--shell-leaf);
+  border-color: var(--shell-line);
+}
+.shell-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+  text-align: center;
+  letter-spacing: 0.3px;
+  /* Truncate if game name is long */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shell-wallet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shell-ink);
+}
+.shell-wallet strong#shell-bal {
+  color: var(--shell-sun);
+  font-weight: 800;
+  font-size: 14px;
+  min-width: 12px;
+  display: inline-block;
+  text-align: right;
+}
+.shell-wallet #shell-pend {
+  color: var(--shell-muted);
+  font-size: 11.5px;
+}
+.shell-wallet button#shell-signin {
+  cursor: pointer;
+  border: 0;
+  background: linear-gradient(145deg, var(--shell-sun), var(--shell-sun2));
+  color: #3a2600;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.shell-wallet button#shell-signin:hover { filter: brightness(1.06); }
+.shell-wallet button#shell-signin.shell-cta-mint {
+  background: linear-gradient(145deg, var(--shell-leaf), #46a872);
+  color: #051a0e;
+}
+
+/* ── Game mount area ──
+   Reusing the same #fg-ag id that LW uses, so any game that does
+   getElementById('fg-ag') inside its mount (a few do) still finds it.
+   The container fills the remaining viewport height; games render
+   inside.
+   ── */
+.shell-mount {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-height: 0;
+}
+#fg-ag {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  min-height: 0;
+}
+
+/* ── Footer ── */
+.shell-footer {
+  color: var(--shell-muted);
+  font-size: 11.5px;
+  text-align: center;
+  padding: 14px 12px 20px;
+  border-top: 1px solid var(--shell-line);
+}
+
+/* ── Sign-in modal (anonymous-friendly soft prompt) ── */
+.shell-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+.shell-modal {
+  background: var(--shell-panel);
+  border: 1px solid var(--shell-line);
+  border-radius: 14px;
+  max-width: 380px;
+  width: 100%;
+  padding: 22px 22px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+.shell-modal h3 { margin: 0 0 10px; font-size: 17px; color: var(--shell-ink); }
+.shell-modal p  { margin: 0 0 16px; color: var(--shell-muted); font-size: 13.5px; line-height: 1.5; }
+.shell-modal .shell-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.shell-modal button {
+  cursor: pointer; border: 0; border-radius: 8px; font-weight: 600;
+  font-size: 13px; padding: 8px 14px;
+}
+.shell-modal .shell-secondary {
+  background: transparent;
+  color: var(--shell-muted);
+  border: 1px solid var(--shell-line);
+}
+.shell-modal .shell-primary {
+  background: linear-gradient(145deg, var(--shell-sun), var(--shell-sun2));
+  color: #3a2600;
+}
+
+/* ── Toast (for sunbeam earn + status hints) ── */
+.shell-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--shell-sun);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 9px 16px;
+  border-radius: 22px;
+  z-index: 150;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.shell-toast.show { opacity: 1; }
+
+/* Make sure LW's #_h sunbeam counter element (created inside the game's
+   gu-bar) doesn't double-show: hide LW's per-game toolbar when present
+   inside shell, since the shell header already shows the wallet.
+   Games still REFERENCE #_h via getElementById, so we keep the element
+   in DOM but hide the bar visually. */
+#fg-ag .gu-bar { display: none; }
