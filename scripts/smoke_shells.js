@@ -52,7 +52,16 @@ var FIRST_WAVE = [
   // ── Wave 4 — word games ──
   ['vinewords',  'games/vinewords-dict.js'],
   'trellis',
-  'wordsearch'
+  'wordsearch',
+  // ── Wave 5 — audio / canvas / worker (modular) ──
+  'song',          // iframe → /studio.html
+  'breathing',     // Web Audio
+  'rhythmvine',    // Web Audio (synthetic chart, no fetch)
+  'colorgarden',   // canvas + manifest fetch (rejected in smoke)
+  'pixelgarden',   // canvas
+  'storyseeds',    // text editor
+  'stonegarden',   // Matter.js (stubbed in smoke)
+  'livingstones'   // Web Worker (stubbed in smoke)
 ];
 
 var REQUIRED_G_KEYS = [
@@ -101,6 +110,19 @@ function runShellTest(entry) {
     }
   );
   var win = dom.window;
+
+  // Web Worker stub — jsdom doesn't run Workers. Provide a no-op so
+  // livingstones (and any future game that spawns one) can construct
+  // without throwing. We never need the AI to actually respond.
+  win.Worker = function StubWorker(){ this.postMessage = function(){}; this.terminate = function(){}; this.addEventListener = function(){}; this.onmessage = null; this.onerror = null; };
+  // Also stub the Matter.js global stonegarden expects from the CDN
+  // script load (jsdom won't fetch it). Mount can no-op the physics
+  // and we just check the mount itself doesn't throw.
+  win.Matter = win.Matter || { Engine: { create: function(){ return { gravity:{} }; } }, World: { add: function(){}, clear: function(){} }, Bodies: { rectangle: function(){ return {}; }, circle: function(){ return {}; }, fromVertices: function(){ return { position:{x:0,y:0}, angle:0 }; } }, Body: { setPosition: function(){}, setAngle: function(){}, setStatic: function(){} }, Events: { on: function(){} }, Runner: { create: function(){ return {}; }, run: function(){} } };
+  // Stub fetch for colorgarden manifest + similar — jsdom DOES implement
+  // fetch but won't follow external URLs. Provide a guaranteed rejection
+  // so the game's catch block runs cleanly.
+  win.fetch = function(){ return Promise.reject(new Error('jsdom-smoke-fetch-disabled')); };
 
   // Canvas stub — jsdom returns null from getContext('2d') by default.
   // Some games (petalfall, petalmatch, vinecross) draw via canvas and
