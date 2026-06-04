@@ -156,8 +156,13 @@ function wrapAsModule(game, ex) {
   ].join('\n');
 }
 
+// ── SHA-256 helper for the drift watchdog baseline ──────────────────────
+var crypto = require('crypto');
+function sha256(s){ return crypto.createHash('sha256').update(s, 'utf8').digest('hex'); }
+
 // ── Run ─────────────────────────────────────────────────────────────────
 var results = [];
+var sourceHashes = {};
 INLINE_GAMES.forEach(function(game){
   var ex = extractGame(game);
   if (!ex.ok) {
@@ -168,6 +173,11 @@ INLINE_GAMES.forEach(function(game){
   var modSrc = wrapAsModule(game, ex);
   var outPath = path.join(OUT_DIR, game.id + '.js');
   fs.writeFileSync(outPath, modSrc, 'utf8');
+  sourceHashes[game.id] = {
+    sha256: sha256(ex.body),
+    span: ex.startLine + '-' + ex.endLine,
+    bytes: ex.body.length
+  };
   results.push({
     id: game.id,
     ok: true,
@@ -178,7 +188,35 @@ INLINE_GAMES.forEach(function(game){
   console.log('  ✓ ' + game.id + '  (lines ' + ex.startLine + '-' + ex.endLine + ', ' + modSrc.length + ' bytes) → ' + 'games/_inline/' + game.id + '.js');
 });
 
+// Hash the LW_DICE / _LW_tumble block too (lines 65911-66010 in current
+// state — the dice games depend on it via games/_inline/_dice_lib.js).
+var diceBlock;
+try {
+  var allLines = src.split('\n');
+  diceBlock = allLines.slice(65910, 66010).join('\n');
+  sourceHashes['_dice_lib'] = {
+    sha256: sha256(diceBlock),
+    span: '65911-66010',
+    bytes: diceBlock.length
+  };
+} catch (e) { /* best-effort */ }
+
+// Write the drift watchdog baseline. test_inline_drift.js reads this to
+// detect when an inline game in index.html has been edited without the
+// extractor being re-run.
+var hashesPath = path.join(OUT_DIR, '.source_hashes.json');
+fs.writeFileSync(
+  hashesPath,
+  JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    note: 'Baseline hashes of inline-game source regions in index.html. Re-run scripts/extract_inline_games.js after editing any inline game so the shell copies and these hashes stay aligned. scripts/test_inline_drift.js reads this file and fails if the live source diverges.',
+    hashes: sourceHashes
+  }, null, 2) + '\n',
+  'utf8'
+);
+
 var failed = results.filter(function(r){ return !r.ok; });
 console.log('');
 console.log(results.length - failed.length + ' / ' + results.length + ' inline games extracted.');
+console.log('Wrote drift-watchdog baseline to ' + path.relative(ROOT, hashesPath));
 process.exit(failed.length === 0 ? 0 : 1);
