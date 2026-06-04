@@ -74,7 +74,8 @@ var FIRST_WAVE = [
   { id: 'mastermind',    modulePath: 'games/_inline/mastermind.js'    },
   { id: 'sokoban',       modulePath: 'games/_inline/sokoban.js'       },
   { id: 'bloomwheel',    modulePath: 'games/_inline/bloomwheel.js'    },
-  { id: 'backgammon',    modulePath: 'games/_inline/backgammon.js'    }
+  { id: 'backgammon',    modulePath: 'games/_inline/backgammon.js'    },
+  { id: 'set',           modulePath: 'games/_inline/set.js'           }
 ];
 
 var REQUIRED_G_KEYS = [
