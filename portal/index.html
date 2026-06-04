@@ -177,6 +177,7 @@ var GAMES = [
  ["doubleshutter","Double Shutter","dice","Shut the box twice. Roll 2 dice, shut tiles."]
 ];
 
+function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
 function card(g, isFeat){
   var url = isFeat ? g.url : DEEPLINK + g[0];
   var nm = isFeat ? g.nm : g[1];
@@ -187,7 +188,7 @@ function card(g, isFeat){
   var shot;
   if(isFeat){ shot = '<span class="ph">'+(g.ic||"🌿")+'</span>'; }
   else { var ext = EXT[g[0]] || "png";
-         shot = '<img loading="lazy" alt="'+nm+'" src="'+SHOT+g[0]+'.'+ext+'" onerror="this.style.display=\'none\'"><span class="ph">🌿</span>'; }
+         shot = '<img loading="lazy" alt="'+nm+'" src="'+SHOT+g[0]+'.'+ext+'" onerror="_lwPh(this)">'; }
   return '<a class="card'+(hub?' hubcard':'')+'" href="'+url+'">'+
     '<div class="shot">'+badge+shot+'</div>'+
     '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div></div></a>';
