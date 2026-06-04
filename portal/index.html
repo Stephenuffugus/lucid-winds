@@ -91,7 +91,7 @@
   <div class="grid" id="garden"></div>
 
   <div class="note" id="pendingnote">
-    Featured games launch in their own page. Lucid Winds games open the hub — standalone game pages are coming soon. Sunbeams follow you across every game in the studio once you sign in.
+    Tap any game to play. Every card opens its own page — no sign-up required. Sunbeams accrue locally and follow you across the whole studio once you sign in. <i>Three Sisters</i> opens the Lucid Winds hub (it's the canonical entry game).
   </div>
 
   <footer>Sky Wolf Studios · SWS Strategic Media LLC · powered by the SWS Proof-of-Attention engine</footer>
@@ -108,11 +108,14 @@ var FEATURED = [
 ];
 
 /* ---- The 65 Lucid Winds games (from GAMES_MANIFEST.md) ---- */
-// Per-game deep-link disabled: LW's onboarding overlay covers ?game=<id>
-// for first-time anonymous players (the router fires but the cinematic
-// lands them in the wrong place). LW-game cards route to the hub home
-// for now. When per-game /play/<id>.html shells ship, repoint here.
+// 65 of 66 LW games have standalone /play/<id>.html shells. Tap a card
+// and the player lands in that game directly — no onboarding, no
+// signup gate. The single exception is `set` (Three Sisters): its
+// mount is wired into LW's dashboard rather than a self-contained
+// function, so it stays hub-only at lucidwinds.com.
 var LWHUB = "https://lucidwinds.com/";
+var SHELL_BASE = "https://lucidwinds.com/play/";
+var HUB_ONLY = { set: 1 };   // games that don't have a standalone shell
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",storyseeds:"jpg",stonegarden:"webp"};
 var CATS = [["all","All"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"]];
@@ -187,7 +190,7 @@ var GAMES = [
 
 function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
 function card(g, isFeat){
-  var url = isFeat ? g.url : LWHUB;
+  var url = isFeat ? g.url : (HUB_ONLY[g[0]] ? LWHUB : (SHELL_BASE + g[0] + ".html"));
   var nm = isFeat ? g.nm : g[1];
   var ds = isFeat ? g.ds : (g[3] || "");
   var wip = !isFeat && g[4]==="wip";
