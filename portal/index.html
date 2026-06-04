@@ -29,6 +29,33 @@
   #wallet button{cursor:pointer;border:0;border-radius:8px;padding:7px 12px;font-weight:600;
                 background:linear-gradient(145deg,var(--sun),var(--sun2));color:#3a2600}
   #wallet .pend{color:var(--muted);font-size:12px}
+  #wallet .user-chip{display:none;align-items:center;gap:8px;color:var(--ink);font-size:13px}
+  #wallet .user-chip .who{color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #wallet .user-chip button{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500;padding:5px 10px;font-size:12px}
+  #wallet .user-chip button:hover{color:var(--leaf);border-color:var(--leaf)}
+  /* auth modal */
+  .auth-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:center;justify-content:center;padding:18px}
+  .auth-bg.on{display:flex}
+  .auth-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;max-width:380px;width:100%;
+             box-shadow:0 24px 64px rgba(0,0,0,.7);position:relative}
+  .auth-card h3{margin:0 0 6px;font-size:17px}
+  .auth-card .sub{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
+  .auth-card label{display:block;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:10px 0 4px;font-weight:600}
+  .auth-card input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:14px;color:var(--ink);
+                   font-family:inherit;-webkit-appearance:none}
+  .auth-card input:focus{outline:none;border-color:var(--leaf)}
+  .auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .auth-actions button{cursor:pointer;border-radius:8px;padding:9px 12px;font-weight:700;font-size:13px;border:0}
+  .auth-actions .primary{background:linear-gradient(145deg,var(--sun),var(--sun2));color:#3a2600}
+  .auth-actions .secondary{background:transparent;color:var(--leaf);border:1px solid var(--leaf)}
+  .auth-actions button[disabled]{opacity:.55;cursor:wait}
+  .auth-divider{text-align:center;color:var(--muted);font-size:11px;margin:14px 0 10px;letter-spacing:1px}
+  .auth-google{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#fff;color:#222;border:0;border-radius:8px;
+               padding:10px;font-weight:600;font-size:13px;cursor:pointer}
+  .auth-google:hover{filter:brightness(.95)}
+  .auth-err{color:#e88080;font-size:12px;min-height:16px;margin-top:8px;line-height:1.4}
+  .auth-close{position:absolute;top:8px;right:10px;background:transparent;border:0;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;padding:4px 8px}
+  .auth-close:hover{color:var(--ink)}
   .hero{padding:26px 0 10px}
   .hero p{color:var(--muted);max-width:640px;margin:6px 0 0}
   h2{font-size:14px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
@@ -74,7 +101,11 @@
     <div id="wallet">
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
       <span class="pend" id="pend"></span>
-      <button id="signin">Sign in to collect</button>
+      <button id="signin">Sign in</button>
+      <span class="user-chip" id="user-chip">
+        <span class="who" id="user-who"></span>
+        <button id="signout">Sign out</button>
+      </span>
     </div>
   </header>
 
@@ -95,6 +126,26 @@
   </div>
 
   <footer>Sky Wolf Studios · SWS Strategic Media LLC · powered by the SWS Proof-of-Attention engine</footer>
+</div>
+
+<!-- Sign-in / sign-up modal. Hidden until the wallet button fires it. -->
+<div class="auth-bg" id="auth-bg" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+  <div class="auth-card">
+    <button class="auth-close" id="auth-close" aria-label="Close">×</button>
+    <h3 id="auth-title">Save your sunbeams</h3>
+    <p class="sub">Sign in to your studio account, or create one. New accounts get a plant on their first visit to <a href="https://lucidwinds.com" style="color:var(--leaf)">Lucid Winds</a>.</p>
+    <label for="auth-email">Email</label>
+    <input type="email" id="auth-email" autocomplete="email" spellcheck="false">
+    <label for="auth-password">Password</label>
+    <input type="password" id="auth-password" autocomplete="current-password">
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-actions">
+      <button class="primary" id="auth-signin">Sign in</button>
+      <button class="secondary" id="auth-signup">Create account</button>
+    </div>
+    <div class="auth-divider">or</div>
+    <button class="auth-google" id="auth-google">Continue with Google</button>
+  </div>
 </div>
 
 <script>
@@ -218,24 +269,158 @@ document.getElementById('tabs').addEventListener('click',function(e){
 });
 renderGarden("all");
 
-/* ---- Sunbeam wallet widget (defensive: degrades gracefully if SDK API differs) ---- */
+/* ---- Sunbeam wallet + auth widget ----
+   Anonymous players earn sunbeams locally (handled by the SDK). When they
+   sign in OR sign up here, the SDK auto-claims the local pending bucket
+   into the vault. Sign-up is just a Firebase Auth account create — the
+   vault gets created with only hashLedger (no plants, no LW state), so
+   when the player eventually visits lucidwinds.com the LW onboarding
+   cinematic runs normally and the gift plant is minted then. Nothing in
+   LW changes — only where the player fills in the sign-up form.
+   ──────────────────────────────────────────────────────────────────── */
 (function(){
-  var S = window.Sunbeam || window.LucidWindsSunbeams;   // live global is `Sunbeam`; fallback kept defensively
-  var balEl=document.getElementById('bal'), pendEl=document.getElementById('pend'), btn=document.getElementById('signin');
-  function applyBal(b){
+  var S = window.Sunbeam || window.LucidWindsSunbeams;
+  var balEl    = document.getElementById('bal');
+  var pendEl   = document.getElementById('pend');
+  var signinBtn= document.getElementById('signin');
+  var chip     = document.getElementById('user-chip');
+  var whoEl    = document.getElementById('user-who');
+  var signoutBtn = document.getElementById('signout');
+  // Modal handles
+  var modal    = document.getElementById('auth-bg');
+  var modalClose = document.getElementById('auth-close');
+  var emailEl  = document.getElementById('auth-email');
+  var passEl   = document.getElementById('auth-password');
+  var errEl    = document.getElementById('auth-err');
+  var siBtn    = document.getElementById('auth-signin');
+  var suBtn    = document.getElementById('auth-signup');
+  var ggBtn    = document.getElementById('auth-google');
+
+  function setBal(b){
     if(b==null) return;
     var c = (b.confirmed!=null?b.confirmed:(b.balance!=null?b.balance:(typeof b==='number'?b:null)));
     if(c!=null) balEl.textContent = c;
-    pendEl.textContent = b.pending ? ('(+'+b.pending+' pending)') : '';
-    if(b.user || c!=null) btn.style.display="none";
+    pendEl.textContent = (b.pending && b.pending>0) ? ('(+'+b.pending+' pending)') : '';
   }
-  function refresh(){ try{ if(S && S.balance){ Promise.resolve(S.balance()).then(applyBal).catch(function(){}); } }catch(e){} }
-  if(!S){ return; }   // SDK not reachable (e.g. offline preview) — leave the default "Sign in to collect" button
+  function setSignedIn(user){
+    // user is a {uid, email, displayName} or null
+    if(user){
+      signinBtn.style.display = 'none';
+      chip.style.display = 'inline-flex';
+      whoEl.textContent = user.displayName || user.email || ('uid:'+(user.uid||'').slice(0,6));
+    } else {
+      signinBtn.style.display = '';
+      chip.style.display = 'none';
+      whoEl.textContent = '';
+    }
+  }
+  function refresh(){ try{ if(S && S.balance) Promise.resolve(S.balance()).then(setBal).catch(function(){}); }catch(e){} }
+
+  function openModal(){ if(!modal) return; modal.classList.add('on'); setErr(''); setTimeout(function(){ try{ emailEl.focus(); }catch(e){} }, 50); }
+  function closeModal(){ if(!modal) return; modal.classList.remove('on'); setErr(''); }
+  function setErr(msg){ if(errEl) errEl.textContent = msg || ''; }
+  function setBusy(busy){
+    siBtn.disabled = busy;
+    suBtn.disabled = busy;
+    ggBtn.disabled = busy;
+  }
+  function friendlyErr(e){
+    var code = (e && e.code) || '';
+    if(code==='auth/invalid-email')       return 'That email address doesn’t look right.';
+    if(code==='auth/missing-password')    return 'Enter a password.';
+    if(code==='auth/wrong-password' || code==='auth/invalid-credential' || code==='auth/invalid-login-credentials')
+                                          return 'Wrong email or password.';
+    if(code==='auth/user-not-found')      return 'No account with that email — try Create account.';
+    if(code==='auth/email-already-in-use')return 'That email is already registered — try Sign in.';
+    if(code==='auth/weak-password')       return 'Password must be at least 6 characters.';
+    if(code==='auth/popup-closed-by-user')return '';   // user cancelled, no error
+    if(code==='auth/operation-not-allowed')return 'Email sign-in isn’t enabled — try Google.';
+    if(code==='auth/network-request-failed')return 'Network issue — try again.';
+    return (e && e.message) ? e.message : 'Something went wrong. Try again.';
+  }
+  function validate(){
+    var em = (emailEl.value||'').trim();
+    var pw = (passEl.value||'');
+    if(!em){ setErr('Enter your email.'); return null; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ setErr('That email address doesn’t look right.'); return null; }
+    if(!pw){ setErr('Enter a password.'); return null; }
+    if(pw.length<6){ setErr('Password must be at least 6 characters.'); return null; }
+    setErr('');
+    return { email: em, password: pw };
+  }
+
+  // If the SDK isn’t reachable (e.g. offline preview), leave the button alone.
+  if(!S){ signinBtn.addEventListener('click', function(){ window.location='https://lucidwinds.com'; }); return; }
+
   try{ if(S.init) S.init({ gameId:"portal" }); }catch(e){}
-  try{ if(S.onChange) S.onChange(function(state){ if(state && (state.balance!=null||state.confirmed!=null||state.pending!=null)) applyBal(state); else refresh(); }); }catch(e){}
-  btn.addEventListener('click',function(){
-    try{ if(S.signInWithGoogle) S.signInWithGoogle(); else window.location="https://lucidwinds.com"; }catch(e){ window.location="https://lucidwinds.com"; }
+  try{
+    if(S.onChange) S.onChange(function(state){
+      if(state){
+        setBal(state);
+        if(typeof state.signedIn==='boolean'){
+          if(state.signedIn){
+            setSignedIn({ uid: state.uid, email: state.email, displayName: state.displayName });
+            closeModal();
+          } else {
+            setSignedIn(null);
+          }
+        }
+      } else { refresh(); }
+    });
+  }catch(e){}
+
+  signinBtn.addEventListener('click', openModal);
+  if(modalClose) modalClose.addEventListener('click', closeModal);
+  if(modal) modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
+
+  siBtn.addEventListener('click', function(){
+    var v = validate(); if(!v) return;
+    if(!S.signInWithEmail){ setErr('Email sign-in not available — try Google.'); return; }
+    setBusy(true);
+    Promise.resolve(S.signInWithEmail(v.email, v.password))
+      .then(function(){ /* onChange will close the modal */ })
+      .catch(function(err){ setErr(friendlyErr(err)); })
+      .then(function(){ setBusy(false); });
   });
+  suBtn.addEventListener('click', function(){
+    var v = validate(); if(!v) return;
+    if(!S.createAccount){ setErr('Account creation not available — try Google.'); return; }
+    setBusy(true);
+    Promise.resolve(S.createAccount(v.email, v.password))
+      .then(function(){ /* onChange will close the modal */ })
+      .catch(function(err){ setErr(friendlyErr(err)); })
+      .then(function(){ setBusy(false); });
+  });
+  ggBtn.addEventListener('click', function(){
+    if(!S.signInWithGoogle){ setErr('Google sign-in not available.'); return; }
+    setBusy(true); setErr('');
+    Promise.resolve(S.signInWithGoogle())
+      .then(function(){ /* onChange handles UI */ })
+      .catch(function(err){ var m=friendlyErr(err); if(m) setErr(m); })
+      .then(function(){ setBusy(false); });
+  });
+
+  if(signoutBtn){
+    signoutBtn.addEventListener('click', function(){
+      if(!S.signOut) return;
+      Promise.resolve(S.signOut()).then(function(){
+        setSignedIn(null);
+        // Balance will reset to whatever the local cache shows for anon
+        refresh();
+      }).catch(function(){});
+    });
+  }
+
+  // Keyboard: Enter submits sign-in by default (user can tab to "Create account")
+  [emailEl, passEl].forEach(function(el){
+    if(!el) return;
+    el.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ e.preventDefault(); siBtn.click(); }
+    });
+  });
+
+  // Reflect auth state if it's already known on first paint (e.g. SDK pre-initialized).
+  try{ if(S.getCurrentUid && S.getCurrentUid()){ setSignedIn({ uid: S.getCurrentUid() }); } }catch(e){}
   refresh();
 })();
 </script>
