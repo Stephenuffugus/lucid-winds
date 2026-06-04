@@ -23,22 +23,32 @@ var { JSDOM, VirtualConsole } = require('jsdom');
 var ROOT = path.join(__dirname, '..');
 var SHELL_JS = fs.readFileSync(path.join(ROOT, 'play', 'shell.js'), 'utf8');
 
-// Wave 1 (initial 10):
-//   simon, memory, merge, lights, flood, sudoku, stopten, slider, mines, hanoi
-// Wave 2 (24 added): battleship, c4, chess, colorsort, dailybloom, gardenlines,
-//   jade, juniper, kakuro, mosaic, numbergarden, petalfall, petalmatch, pipe,
-//   pollen, pottingbench, recall, rootflow, rootmaze, rootrush, seedsow,
-//   seedtoss2, sprout, vinecross
+// Wave 1 (initial 10), Wave 2 (24), Wave 3 (10 cards), Wave 4 (3 words),
+// Wave 5 (audio/canvas/worker), Wave 6 (inline games copied into shell
+// files). Each entry: either a string (no extra deps) or [id, ...deps]
+// where each dep is the path to a script file (relative to repo root)
+// loaded BEFORE the game module.
 var FIRST_WAVE = [
-  // Wave 1
+  // ── Wave 1 ──
   'simon', 'memory', 'merge', 'lights', 'flood',
   'sudoku', 'stopten', 'slider', 'mines', 'hanoi',
-  // Wave 2
+  // ── Wave 2 ──
   'battleship', 'c4', 'chess', 'colorsort', 'dailybloom',
   'gardenlines', 'jade', 'juniper', 'kakuro', 'mosaic',
   'numbergarden', 'petalfall', 'petalmatch', 'pipe', 'pollen',
   'pottingbench', 'recall', 'rootflow', 'rootmaze', 'rootrush',
-  'seedsow', 'seedtoss2', 'sprout', 'vinecross'
+  'seedsow', 'seedtoss2', 'sprout', 'vinecross',
+  // ── Wave 3 — card games need _cards.js ──
+  ['klondike',       'games/_cards.js'],
+  ['spider',         'games/_cards.js'],
+  ['freecell',       'games/_cards.js'],
+  ['pyramid',        'games/_cards.js'],
+  ['tripeaks',       'games/_cards.js'],
+  ['golf',           'games/_cards.js'],
+  ['cribbage',       'games/_cards.js'],
+  ['bowergarden',    'games/_cards.js'],
+  ['bleedinghearts', 'games/_cards.js'],
+  ['gardenspades',   'games/_cards.js']
 ];
 
 var REQUIRED_G_KEYS = [
@@ -47,8 +57,19 @@ var REQUIRED_G_KEYS = [
   'getM', 'setM'
 ];
 
-function runShellTest(gameId) {
+function runShellTest(entry) {
+  var gameId, depPaths;
+  if (Array.isArray(entry)) {
+    gameId = entry[0];
+    depPaths = entry.slice(1);
+  } else {
+    gameId = entry;
+    depPaths = [];
+  }
   var gameSrc = fs.readFileSync(path.join(ROOT, 'games', gameId + '.js'), 'utf8');
+  var depSrcs = depPaths.map(function(p){
+    return { path: p, src: fs.readFileSync(path.join(ROOT, p), 'utf8') };
+  });
 
   var vConsole = new VirtualConsole();
   var errors = [];
@@ -123,6 +144,17 @@ function runShellTest(gameId) {
     return { ok: false, gameId: gameId, err: 'window._G missing keys: ' + missingG.join(',') };
   }
 
+  // Run any dependency files first (e.g. _cards.js for card games,
+  // vinewords-dict.js for word games).
+  for (var di = 0; di < depSrcs.length; di++) {
+    var dep = depSrcs[di];
+    try { win.eval(dep.src); }
+    catch (e) {
+      dom.window.close();
+      return { ok: false, gameId: gameId, err: 'dep ' + dep.path + ' threw at exec: ' + (e && e.message || e) };
+    }
+  }
+
   // Run the game module.
   try {
     win.eval(gameSrc);
@@ -162,17 +194,18 @@ function runShellTest(gameId) {
 
 console.log('\n=== Sky Wolf Studios — shell smoke ===');
 var failed = 0;
-FIRST_WAVE.forEach(function(gameId){
+FIRST_WAVE.forEach(function(entry){
+  var label = Array.isArray(entry) ? entry[0] : entry;
   try {
-    var r = runShellTest(gameId);
+    var r = runShellTest(entry);
     if (r.ok) {
-      console.log('  ✓ ' + gameId + '  → mount produced ' + r.children + ' children (jsdom errs: ' + r.jsdomErrors + ')');
+      console.log('  ✓ ' + label + '  → mount produced ' + r.children + ' children (jsdom errs: ' + r.jsdomErrors + ')');
     } else {
-      console.log('  ✗ ' + gameId + '  — ' + r.err);
+      console.log('  ✗ ' + label + '  — ' + r.err);
       failed++;
     }
   } catch (e) {
-    console.log('  ✗ ' + gameId + '  — harness threw: ' + (e && e.message || e));
+    console.log('  ✗ ' + label + '  — harness threw: ' + (e && e.message || e));
     failed++;
   }
 });
