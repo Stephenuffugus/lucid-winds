@@ -23,9 +23,22 @@ var { JSDOM, VirtualConsole } = require('jsdom');
 var ROOT = path.join(__dirname, '..');
 var SHELL_JS = fs.readFileSync(path.join(ROOT, 'play', 'shell.js'), 'utf8');
 
+// Wave 1 (initial 10):
+//   simon, memory, merge, lights, flood, sudoku, stopten, slider, mines, hanoi
+// Wave 2 (24 added): battleship, c4, chess, colorsort, dailybloom, gardenlines,
+//   jade, juniper, kakuro, mosaic, numbergarden, petalfall, petalmatch, pipe,
+//   pollen, pottingbench, recall, rootflow, rootmaze, rootrush, seedsow,
+//   seedtoss2, sprout, vinecross
 var FIRST_WAVE = [
+  // Wave 1
   'simon', 'memory', 'merge', 'lights', 'flood',
-  'sudoku', 'stopten', 'slider', 'mines', 'hanoi'
+  'sudoku', 'stopten', 'slider', 'mines', 'hanoi',
+  // Wave 2
+  'battleship', 'c4', 'chess', 'colorsort', 'dailybloom',
+  'gardenlines', 'jade', 'juniper', 'kakuro', 'mosaic',
+  'numbergarden', 'petalfall', 'petalmatch', 'pipe', 'pollen',
+  'pottingbench', 'recall', 'rootflow', 'rootmaze', 'rootrush',
+  'seedsow', 'seedtoss2', 'sprout', 'vinecross'
 ];
 
 var REQUIRED_G_KEYS = [
@@ -63,6 +76,24 @@ function runShellTest(gameId) {
     }
   );
   var win = dom.window;
+
+  // Canvas stub — jsdom returns null from getContext('2d') by default.
+  // Some games (petalfall, petalmatch, vinecross) draw via canvas and
+  // throw when the context is null. Provide a chainable no-op fake so
+  // mount can proceed in the harness.
+  if (win.HTMLCanvasElement && win.HTMLCanvasElement.prototype) {
+    var noopCtx = new Proxy({}, {
+      get: function(target, prop) {
+        if (prop === 'canvas') return null;
+        if (prop === 'createImageData') return function(w, h){ return { data: new Uint8ClampedArray((w||1) * (h||1) * 4), width: w||1, height: h||1 }; };
+        if (prop === 'getImageData')    return function(x, y, w, h){ return { data: new Uint8ClampedArray((w||1) * (h||1) * 4), width: w||1, height: h||1 }; };
+        if (prop === 'measureText')     return function(){ return { width: 0 }; };
+        // Default: no-op chainable function returning the same proxy
+        return function(){ return noopCtx; };
+      }
+    });
+    win.HTMLCanvasElement.prototype.getContext = function(){ return noopCtx; };
+  }
 
   // Stub LW_PLAY so the shell knows which game this page hosts.
   win.LW_PLAY = { id: gameId, name: gameId };

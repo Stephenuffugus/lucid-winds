@@ -8,44 +8,89 @@
 <meta name="description" content="Standalone Sky Wolf Studios games. Sunbeams travel with you across every game in the studio.">
 <link rel="stylesheet" href="/play/shell.css?v=1">
 <style>
-  .play-wrap { max-width: 880px; margin: 0 auto; padding: 32px 18px; }
-  .play-h1   { font-size: 26px; margin: 0 0 6px; }
-  .play-sub  { color: var(--shell-muted); margin: 0 0 24px; font-size: 14px; }
-  .play-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .play-card { background: var(--shell-panel); border: 1px solid var(--shell-line); border-radius: 12px;
-               padding: 14px; text-decoration: none; color: var(--shell-ink);
-               transition: transform .12s, border-color .12s; }
+  .play-wrap  { max-width: 920px; margin: 0 auto; padding: 28px 18px; }
+  .play-h1    { font-size: 24px; margin: 0 0 4px; font-weight: 800; }
+  .play-sub   { color: var(--shell-muted); margin: 0 0 22px; font-size: 13.5px; line-height: 1.5; }
+  .play-cat   { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--shell-muted);
+                margin: 26px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--shell-line); font-weight: 600; }
+  .play-grid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .play-card  { background: var(--shell-panel); border: 1px solid var(--shell-line); border-radius: 10px;
+                padding: 11px 12px; text-decoration: none; color: var(--shell-ink);
+                transition: transform .12s, border-color .12s; display: block; }
   .play-card:hover { transform: translateY(-2px); border-color: var(--shell-leaf); }
-  .play-card .nm  { font-weight: 700; font-size: 14px; }
-  .play-card .ds  { color: var(--shell-muted); font-size: 12px; margin-top: 4px; line-height: 1.4; }
-  .play-back { color: var(--shell-muted); text-decoration: none; font-size: 13px; }
+  .play-card .nm  { font-weight: 700; font-size: 13px; }
+  .play-card .ds  { color: var(--shell-muted); font-size: 11.5px; margin-top: 3px; line-height: 1.35;
+                    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .play-back  { color: var(--shell-muted); text-decoration: none; font-size: 13px; }
   .play-back:hover { color: var(--shell-leaf); }
-  .play-note { background: rgba(95, 192, 138, 0.08); border: 1px solid rgba(95, 192, 138, 0.3);
-               color: var(--shell-leaf); border-radius: 10px; padding: 12px 14px; font-size: 12.5px;
-               margin-top: 24px; }
+  .play-note  { background: rgba(95, 192, 138, 0.08); border: 1px solid rgba(95, 192, 138, 0.3);
+                color: var(--shell-leaf); border-radius: 10px; padding: 12px 14px; font-size: 12.5px;
+                margin-top: 28px; line-height: 1.5; }
+  .play-count { color: var(--shell-leaf); font-weight: 700; }
 </style>
 </head>
 <body>
 <div class="play-wrap">
   <p><a class="play-back" href="/portal/">← Sky Wolf Studios portal</a></p>
   <h1 class="play-h1">Quick play — standalone shells</h1>
-  <p class="play-sub">First-wave games extracted from Lucid Winds. No sign-up required to play. Sunbeams accrue locally and sync to your vault when you sign in.</p>
+  <p class="play-sub"><span class="play-count">34 games</span> from Lucid Winds wrapped as single-page shells. No sign-up required to play. Sunbeams accrue locally; sign in any time to keep them.</p>
 
+  <div class="play-cat">Pattern & memory</div>
   <div class="play-grid">
-    <a class="play-card" href="/play/simon.html">   <div class="nm">Echo</div>            <div class="ds">Repeat the pattern. How far can you go?</div></a>
-    <a class="play-card" href="/play/memory.html">  <div class="nm">Memory</div>          <div class="ds">Flip two cards. Match every pair.</div></a>
-    <a class="play-card" href="/play/merge.html">   <div class="nm">2048</div>            <div class="ds">Swipe to merge same-number tiles.</div></a>
-    <a class="play-card" href="/play/lights.html">  <div class="nm">Lights Out</div>      <div class="ds">Toggle lights + four neighbors.</div></a>
-    <a class="play-card" href="/play/flood.html">   <div class="nm">Flood Fill</div>      <div class="ds">Flood the board in one color.</div></a>
-    <a class="play-card" href="/play/sudoku.html">  <div class="nm">Sudoku</div>          <div class="ds">Fill every row, column and box 1–9.</div></a>
-    <a class="play-card" href="/play/stopten.html"> <div class="nm">Stop at Ten</div>     <div class="ds">Stop the clock at exactly 10.00s.</div></a>
-    <a class="play-card" href="/play/slider.html">  <div class="nm">15 Puzzle</div>       <div class="ds">Slide tiles into the empty space.</div></a>
-    <a class="play-card" href="/play/mines.html">   <div class="nm">Minesweeper</div>     <div class="ds">Dig safely. Numbers show adjacent mines.</div></a>
-    <a class="play-card" href="/play/hanoi.html">   <div class="nm">Tower of Hanoi</div>  <div class="ds">Stack every disc on the far peg.</div></a>
+    <a class="play-card" href="/play/simon.html">       <div class="nm">Echo</div>            <div class="ds">Repeat the pattern.</div></a>
+    <a class="play-card" href="/play/memory.html">      <div class="nm">Memory</div>          <div class="ds">Flip two cards. Match every pair.</div></a>
+    <a class="play-card" href="/play/stopten.html">     <div class="nm">Stop at Ten</div>     <div class="ds">Stop the clock at 10.00s.</div></a>
+    <a class="play-card" href="/play/dailybloom.html">  <div class="nm">Daily Bloom</div>     <div class="ds">8 cognitive exercises, 4 minutes.</div></a>
+    <a class="play-card" href="/play/numbergarden.html"><div class="nm">Fast Math</div>       <div class="ds">60-second arithmetic drill.</div></a>
+    <a class="play-card" href="/play/recall.html">      <div class="nm">Memory Meadow</div>   <div class="ds">Watch, count back, tap what you saw.</div></a>
+    <a class="play-card" href="/play/pottingbench.html"><div class="nm">Speed Sort</div>      <div class="ds">Speed card sorting by attribute.</div></a>
+  </div>
+
+  <div class="play-cat">Puzzles</div>
+  <div class="play-grid">
+    <a class="play-card" href="/play/merge.html">       <div class="nm">2048</div>            <div class="ds">Swipe to merge same-number tiles.</div></a>
+    <a class="play-card" href="/play/lights.html">      <div class="nm">Lights Out</div>      <div class="ds">Toggle lights + four neighbors.</div></a>
+    <a class="play-card" href="/play/flood.html">       <div class="nm">Flood Fill</div>      <div class="ds">Flood the board in one color.</div></a>
+    <a class="play-card" href="/play/sudoku.html">      <div class="nm">Sudoku</div>          <div class="ds">Fill rows, columns and boxes 1–9.</div></a>
+    <a class="play-card" href="/play/slider.html">      <div class="nm">15 Puzzle</div>       <div class="ds">Slide tiles into the empty space.</div></a>
+    <a class="play-card" href="/play/mines.html">       <div class="nm">Minesweeper</div>     <div class="ds">Dig safely. Numbers show mines.</div></a>
+    <a class="play-card" href="/play/hanoi.html">       <div class="nm">Tower of Hanoi</div>  <div class="ds">Stack every disc on the far peg.</div></a>
+    <a class="play-card" href="/play/colorsort.html">   <div class="nm">Bee's Pollen Sort</div><div class="ds">Sort pollen into matching vials.</div></a>
+    <a class="play-card" href="/play/rootrush.html">    <div class="nm">Root Rush</div>       <div class="ds">Slide roots to free a sprouting seed.</div></a>
+    <a class="play-card" href="/play/rootflow.html">    <div class="nm">Root Flow</div>       <div class="ds">Draw paths to connect matching roots.</div></a>
+    <a class="play-card" href="/play/rootmaze.html">    <div class="nm">Root Maze</div>       <div class="ds">Navigate the maze before the AI.</div></a>
+    <a class="play-card" href="/play/pipe.html">        <div class="nm">Vine Puzzle</div>     <div class="ds">Rotate vine tiles to connect the flow.</div></a>
+    <a class="play-card" href="/play/gardenlines.html"> <div class="nm">Garden Lines</div>    <div class="ds">Place tiles to build matching lines.</div></a>
+    <a class="play-card" href="/play/kakuro.html">      <div class="nm">Garden Sums</div>     <div class="ds">Fill cells so each run sums to its clue.</div></a>
+    <a class="play-card" href="/play/mosaic.html">      <div class="nm">Mosaic Garden</div>   <div class="ds">Fill mosaic rows for points.</div></a>
+    <a class="play-card" href="/play/petalfall.html">   <div class="nm">Block Drop</div>      <div class="ds">Arrange falling blocks to clear rows.</div></a>
+    <a class="play-card" href="/play/petalmatch.html">  <div class="nm">Petal Match</div>     <div class="ds">Swap gems. Chain cascades for combos.</div></a>
+    <a class="play-card" href="/play/jade.html">        <div class="nm">Jade Garden</div>     <div class="ds">Mahjong: match free pairs.</div></a>
+    <a class="play-card" href="/play/sprout.html">      <div class="nm">Sprout</div>          <div class="ds">Find the hidden 5-letter word.</div></a>
+  </div>
+
+  <div class="play-cat">Board</div>
+  <div class="play-grid">
+    <a class="play-card" href="/play/chess.html">       <div class="nm">Chess</div>           <div class="ds">Classic chess vs AI.</div></a>
+    <a class="play-card" href="/play/c4.html">          <div class="nm">Connect Fleur</div>   <div class="ds">Drop pieces to connect four.</div></a>
+    <a class="play-card" href="/play/battleship.html">  <div class="nm">Tide Hunt</div>       <div class="ds">Hunt hidden vessels on a 10×10 grid.</div></a>
+    <a class="play-card" href="/play/vinecross.html">   <div class="nm">Vine Cross</div>      <div class="ds">Five in a row before the AI.</div></a>
+    <a class="play-card" href="/play/seedsow.html">     <div class="nm">Seed Sow</div>        <div class="ds">Mancala. Capture into your store.</div></a>
+    <a class="play-card" href="/play/pollen.html">      <div class="nm">Master Pollinator</div><div class="ds">Engine builder. Race to 15 Growth.</div></a>
+  </div>
+
+  <div class="play-cat">Card</div>
+  <div class="play-grid">
+    <a class="play-card" href="/play/juniper.html">     <div class="nm">Juniper</div>         <div class="ds">Draw, discard, build sets and runs.</div></a>
+  </div>
+
+  <div class="play-cat">Skill</div>
+  <div class="play-grid">
+    <a class="play-card" href="/play/seedtoss2.html">   <div class="nm">Seed Toss</div>       <div class="ds">Flick seeds into the pot. Physics + wind.</div></a>
   </div>
 
   <div class="play-note">
-    More games extract next. Heavy-audio and card-deck games stay in <a href="https://lucidwinds.com" style="color:var(--shell-leaf)">Lucid Winds</a> until their shells land.
+    More games extract in follow-on waves. Card-deck games (Klondike, Spider, FreeCell, Pyramid …) need the shared <code>_cards.js</code> dependency loader. Audio-heavy games (Music Studio, Bloom Wheel, Breathing Garden, Rhythm & Vine) and the inline games (Three Sisters, Backgammon, Yahtzee, Farkle, Checkers, Reversi, Sokoban, Bloom Grid, Seed Code) come last.
   </div>
 </div>
 </body>
