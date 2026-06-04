@@ -280,11 +280,12 @@
   // vinecross. Without these signals, the render loop early-returns
   // every frame and nothing draws.
   //
-  // In a shell, the entire page IS the game. We set both signals once
-  // at boot and never unset them — when the user closes the tab the
-  // process dies. No need for tab-switch teardown the way LW needs it.
+  // In a shell, the entire page IS the game. _a can be set immediately
+  // (no DOM needed). The body class has to wait until <body> exists —
+  // shell.js loads in <head>, so document.body is null at this point.
+  // The class-add lives inside init() below, which runs at
+  // DOMContentLoaded when body is guaranteed.
   global._a = LW_PLAY.id;
-  try { document.body.classList.add('game-active'); } catch (e) {}
 
   // ════════════════════════════════════════════════════════════════════
   // ── Shell page chrome lifecycle ──
@@ -402,10 +403,126 @@
   //  2. Sunbeam SDK reachable (or skip if offline)
   //  3. Game module loaded (_gameFns[id] defined)
   //  4. Mount + wire wallet + start refresh loop
+  // ── Per-game "How to play" text. Sourced from portal/index.html's
+  // GAMES array (the same text shown on the portal cards). Single
+  // source: when LW_PLAY.howto is set in a per-game HTML it wins;
+  // otherwise we look it up here. ──
+  var HOWTO = {
+    set:           "Tap 3 cards where each trait — color, shape, count, shading — is ALL same or ALL different. That's a Pheno.",
+    stopten:       "Tap to start the clock. Tap again to stop it. Goal: stop at exactly 10.00 seconds. Closer = better.",
+    memory:        "Flip two cards a turn. When they match, they stay flipped. Clear the board.",
+    simon:         "Watch the lights flash a pattern, then repeat it by tapping the lights in order. The pattern grows.",
+    dailybloom:    "Daily cognitive workout. 8 different exercises across memory, attention, speed, working memory. About 4 minutes total.",
+    numbergarden:  "60-second arithmetic drill. Add, subtract, multiply. Build a streak for bonus points.",
+    recall:        "Watch symbols flash, then count backward, then tap the symbols you saw. Working-memory recall.",
+    pottingbench:  "Speed card sorting. Each card has multiple attributes; send it to whichever pile shares an attribute. Clear the deck fast.",
+    merge:         "Swipe or tap arrows to merge same-number tiles. Reach 2048.",
+    lights:        "Tap a light to toggle it AND its four neighbors. Turn every light off.",
+    flood:         "Tap a color to flood-fill from the top-left corner. Fill the whole board in the fewest moves.",
+    sudoku:        "Fill every row, every column, and every 3×3 box with the digits 1-9. No repeats.",
+    slider:        "Slide tiles into the empty space. Arrange them in numerical order.",
+    mines:         "Tap to dig. Numbers tell you how many mines are adjacent. Long-press to flag a mine. Dig every safe square.",
+    hanoi:         "Move all the discs onto the far peg. Only one disc at a time; a larger disc can never sit on a smaller one.",
+    picross:       "Numbers above each column and beside each row tell you which squares to fill in. Reveal the picture.",
+    sokoban:       "Push crates onto the targets. You can only push — never pull. Plan ahead.",
+    colorsort:     "Pour pollen between vials. Same colors stack. Each vial sorted to one color wins.",
+    rootrush:      "Slide each root tile along its grain to clear a path. Free the sprouting seed through the gap on the right.",
+    rootflow:      "Connect every pair of matching roots. Paths can't cross. Every cell must be filled.",
+    rootmaze:      "Navigate the shifting maze. Reach the treasure before the AI does.",
+    pipe:          "Rotate vine tiles to connect the flow from source to end.",
+    gardenlines:   "Place tiles to build matching lines — same shape OR same color. Score points for longer lines.",
+    kakuro:        "Like a crossword with numbers. Fill cells 1-9 so each run adds to its clue. No repeats within a run.",
+    mosaic:        "Pull colored tiles to fill mosaic rows. Complete rows for points.",
+    petalfall:     "Falling blocks. Arrange them to clear horizontal lines. Speed ramps up.",
+    petalmatch:    "Swap adjacent gems to make a line of 3 or more. Chain cascades for combos.",
+    jade:          "Mahjong-style. Match pairs of free tiles (no tile blocking it on the side) to clear the turtle.",
+    sprout:        "Find the hidden 5-letter word in 6 guesses. Green = right letter, right spot. Gold = right letter, wrong spot.",
+    vinewords:     "Connect adjacent letters (including diagonal) to spell words. 2-minute timer. Longer words score more.",
+    wordsearch:    "Swipe across letters in any direction — forward, backward, diagonal — to find each themed word.",
+    chess:         "Classic chess against the AI. Tap a piece, tap where to move. Check the king, mate it.",
+    checkers:      "Jump opponent pieces to capture. Reach the far side to crown a King — Kings move backward too.",
+    reversi:       "Place a piece to flank opponent pieces between yours; flanked pieces flip to your color. Most territory wins.",
+    backgammon:    "Roll the dice, move your pieces around the board, bear all 15 off before your opponent.",
+    mastermind:    "Crack the hidden 4-color code. Green peg = right color, right slot. Gold peg = right color, wrong slot.",
+    c4:            "Drop pieces into columns. Connect four in a row — horizontal, vertical, or diagonal — to win.",
+    battleship:    "Hunt your opponent's hidden vessels on a 10×10 grid. Sink them all in the fewest shots.",
+    vinecross:     "Get five of your pieces in a row before the AI does. 9, 11, or 13 board sizes.",
+    seedsow:       "Mancala. Sow seeds counter-clockwise around the board. Capture into your store. First to empty wins.",
+    pollen:        "Engine-builder. Collect pollen, plant gardens that produce more pollen, attract pollinators. Race to 15 Growth.",
+    livingstones:  "Go. Place stones on grid intersections to surround opponent stones and capture territory. 24 puzzles + full play vs MCTS AI.",
+    trellis:       "Word-builder on a 15×15 grid. Premium squares double or triple letter/word scores. AI opponent.",
+    klondike:      "Classic solitaire. Build four foundation piles Ace to King by suit. Alternating colors on the tableau.",
+    spider:        "Build complete King-to-Ace runs by suit. 1 suit (easiest), 2 suits, or 4 suits (hardest).",
+    freecell:      "All cards visible. Use the four free cells as temporary holding spots to rearrange runs.",
+    pyramid:       "Remove pairs of cards that sum to 13. Kings (value 13) remove alone. Clear the pyramid.",
+    tripeaks:      "Build up or down by one rank on the waste pile to clear the three peaks.",
+    golf:          "Move cards one rank up or down to the waste pile. Clear the tableau.",
+    cribbage:      "Pegging + counting card combinations. Reach 121 points first.",
+    bowergarden:   "Euchre. 4-player trick-taking with bowers. You + AI partner vs 2 AI opponents. First to 10 points wins.",
+    bleedinghearts:"Hearts. Avoid taking hearts (1 pt each) and the Queen of Spades (13 pts). Lowest score wins. Shoot the moon for the reverse.",
+    gardenspades:  "Spades is always trump. Bid your tricks at the start of each hand; meet or exceed your bid to score.",
+    juniper:       "Draw + discard. Build sets (three of a kind) and runs (three sequential same-suit). First to go out wins.",
+    farkle:        "Roll 6 dice. Keep scoring dice (1s, 5s, three-of-a-kinds). Bank your score or risk another roll. Roll zero scorers = bust.",
+    yahtzee:       "Five dice, three rolls per turn. Hold the dice you want, re-roll the rest. Fill 13 scoring categories.",
+    doubleshutter: "Roll two dice; shut any open tiles that sum to your roll. Once 7/8/9 are down, roll one die. Shut both rows = perfect game.",
+    song:          "Multi-track music studio. Layer drums, bass, keys, leads. Make beats. Earn sunbeams for sustained creation.",
+    bloomwheel:    "Draw on a spinning canvas synced to a generative beat. Mandala mode mirrors your stroke around the wheel.",
+    breathing:     "Guided breathing exercises across 4 patterns. Inhale as the bloom opens, exhale as it closes.",
+    rhythmvine:    "Falling-note rhythm game. Tap each lane as the notes hit the line. Perfect / Great / Good timing windows.",
+    colorgarden:   "Tap to fill botanical coloring pages. 23 colors. Sustained coloring earns sunbeams.",
+    pixelgarden:   "Pixel-art painter. 24 botanical colors. Draw, erase, fill, pick, mirror. Save as PNG.",
+    storyseeds:    "Daily creative-writing prompts. Save your entries; sunbeams reward sustained writing.",
+    stonegarden:   "Stack stones in zen balance toward a target height. Real two-finger multi-touch physics — finger 1 lifts, finger 2 rotates.",
+    seedtoss2:     "Flick the seed into the pot. Drag from the seed, release to throw — speed + angle determine the toss. Wind kicks in at higher levels."
+  };
+
+  function injectHowToButton() {
+    var hdr = document.querySelector('.shell-hdr');
+    if (!hdr) return;
+    if (document.getElementById('shell-howto')) return;  // idempotent
+
+    var howto = (LW_PLAY && LW_PLAY.howto) || HOWTO[LW_PLAY.id] || '';
+    // Insert right after the back link so it's near the top-left chrome
+    // — out of the way of the title + wallet.
+    var btn = document.createElement('button');
+    btn.id = 'shell-howto';
+    btn.className = 'shell-howto';
+    btn.setAttribute('aria-label', 'How to play');
+    btn.title = 'How to play';
+    btn.textContent = '?';
+    btn.addEventListener('click', function(){ showHowToModal(howto); });
+    var back = hdr.querySelector('.shell-back');
+    if (back && back.nextSibling) hdr.insertBefore(btn, back.nextSibling);
+    else hdr.appendChild(btn);
+  }
+
+  function showHowToModal(text) {
+    if (document.getElementById('howto-bd')) return;
+    var bd = document.createElement('div');
+    bd.id = 'howto-bd';
+    bd.className = 'shell-modal-backdrop';
+    bd.innerHTML = '<div class="shell-modal">'
+      + '<h3>How to play — ' + (LW_PLAY.name || LW_PLAY.id) + '</h3>'
+      + '<p>' + (text ? text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : 'No rules description has been written for this game yet.') + '</p>'
+      + '<div class="shell-modal-actions">'
+      + '  <button class="shell-primary" id="howto-close">Got it</button>'
+      + '</div></div>';
+    document.body.appendChild(bd);
+    document.getElementById('howto-close').onclick = function(){ document.body.removeChild(bd); };
+    bd.addEventListener('click', function(e){ if (e.target === bd) document.body.removeChild(bd); });
+  }
+
   function init() {
+    // Body-class signal that 11 games guard their render loops on. Must
+    // wait until body exists (shell.js loads in <head>, so it doesn't at
+    // module-init time). This is THE fix for bloomwheel/seedtoss2/etc
+    // appearing to mount but not animating.
+    try { document.body.classList.add('game-active'); } catch (e) {}
+
     setTitle();
     renderWallet();
     wireWalletButton();
+    injectHowToButton();
 
     // Initialize Sunbeam SDK (auto-loads Firebase compat from gstatic).
     if (global.Sunbeam && global.Sunbeam.init) {

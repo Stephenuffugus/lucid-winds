@@ -53,8 +53,10 @@
   var activeShapeSet = 'grow';
 
   // Shell doesn't ship the LW color-picker UI. Use the trio colors LW
-  // defaults to (cc1/cc2/cc3 initial values in the LW HTML body).
-  var DEFAULT_COLORS = ['#5fb24f', '#c8a84b', '#c47a7a'];
+  // defaults to (cc1/cc2/cc3 initial values in index.html:7523/7525/7527):
+  // blue, gold, rose. Picked specifically for high mutual contrast
+  // (green + yellow read too close together for trait recognition).
+  var DEFAULT_COLORS = ['#5b8fb9', '#c8a84b', '#c07070'];
   function getColors(){ return DEFAULT_COLORS.slice(); }
 
   // ── renderShape (verbatim from index.html:13746-13807) ──
