@@ -61,7 +61,20 @@ var FIRST_WAVE = [
   'pixelgarden',   // canvas
   'storyseeds',    // text editor
   'stonegarden',   // Matter.js (stubbed in smoke)
-  'livingstones'   // Web Worker (stubbed in smoke)
+  'livingstones', // Web Worker (stubbed in smoke)
+  // ── Wave 6 — inline games COPIED from index.html into /games/_inline/ ──
+  // Dice games depend on the shared LW_DICE + _LW_tumble lib (copied
+  // from index.html into games/_inline/_dice_lib.js).
+  { id: 'farkle',        modulePath: 'games/_inline/farkle.js',        deps: ['games/_inline/_dice_lib.js'] },
+  { id: 'yahtzee',       modulePath: 'games/_inline/yahtzee.js',       deps: ['games/_inline/_dice_lib.js'] },
+  { id: 'doubleshutter', modulePath: 'games/_inline/doubleshutter.js', deps: ['games/_inline/_dice_lib.js'] },
+  { id: 'picross',       modulePath: 'games/_inline/picross.js'       },
+  { id: 'checkers',      modulePath: 'games/_inline/checkers.js'      },
+  { id: 'reversi',       modulePath: 'games/_inline/reversi.js'       },
+  { id: 'mastermind',    modulePath: 'games/_inline/mastermind.js'    },
+  { id: 'sokoban',       modulePath: 'games/_inline/sokoban.js'       },
+  { id: 'bloomwheel',    modulePath: 'games/_inline/bloomwheel.js'    },
+  { id: 'backgammon',    modulePath: 'games/_inline/backgammon.js'    }
 ];
 
 var REQUIRED_G_KEYS = [
@@ -71,15 +84,17 @@ var REQUIRED_G_KEYS = [
 ];
 
 function runShellTest(entry) {
-  var gameId, depPaths;
-  if (Array.isArray(entry)) {
-    gameId = entry[0];
-    depPaths = entry.slice(1);
+  var gameId, depPaths, modulePath;
+  if (typeof entry === 'string') {
+    gameId = entry; depPaths = []; modulePath = 'games/' + gameId + '.js';
+  } else if (Array.isArray(entry)) {
+    gameId = entry[0]; depPaths = entry.slice(1); modulePath = 'games/' + gameId + '.js';
   } else {
-    gameId = entry;
-    depPaths = [];
+    gameId = entry.id;
+    depPaths = entry.deps || [];
+    modulePath = entry.modulePath || ('games/' + gameId + '.js');
   }
-  var gameSrc = fs.readFileSync(path.join(ROOT, 'games', gameId + '.js'), 'utf8');
+  var gameSrc = fs.readFileSync(path.join(ROOT, modulePath), 'utf8');
   var depSrcs = depPaths.map(function(p){
     return { path: p, src: fs.readFileSync(path.join(ROOT, p), 'utf8') };
   });
@@ -221,7 +236,10 @@ function runShellTest(entry) {
 console.log('\n=== Sky Wolf Studios — shell smoke ===');
 var failed = 0;
 FIRST_WAVE.forEach(function(entry){
-  var label = Array.isArray(entry) ? entry[0] : entry;
+  var label;
+  if (typeof entry === 'string') label = entry;
+  else if (Array.isArray(entry)) label = entry[0];
+  else label = entry.id;
   try {
     var r = runShellTest(entry);
     if (r.ok) {
