@@ -64,21 +64,46 @@
     signedIn: false
   };
 
-  // ── Per-event earn amounts (mirrors LW's _aw fallback shape).
-  // Conservative defaults — these are the "default game" amounts in
-  // LW's table when no game-specific override exists. Games rarely
-  // need more than what's here for a clean MVP play loop.
+  // ── Per-event earn amounts ──
+  // Calibrated to LW's per-game `_aw` table at index.html:62004-62073.
+  // The shell pays a FLAT amount per event type (no per-game override —
+  // a player gets the same `progress` value in chess and in memory),
+  // but the constants below match LW's *majority* value for each event
+  // so the cross-surface divergence is minimal. See EARN_AUDIT.md §5
+  // Option B for context. When the cosmetics MVP starts, the long-term
+  // answer is to move LW's _aw table into a shared file both surfaces
+  // read (STUDIO_PLAN.md §5 phase 5) — until then, these flat defaults
+  // are the closest parity available without touching index.html.
+  //
+  // Values derived from LW's _aw table:
+  //   progress      → LW majority is 1 (every game using it)
+  //   milestone     → LW majority is 1; a few games use 2
+  //   cleared       → LW mines uses 1
+  //   capture       → LW checkers uses 1
+  //   flip          → LW reversi uses 1
+  //   hit           → LW battleship uses 1
+  //   sequence      → no LW entry; flatten to 1
+  //   pheno         → LW set uses 1 (set is hub-only; this is theoretical)
+  //   puzzle_solved → no LW entry; conservative 3
+  //   game_win      → LW range 2-8 (avg 4.5, median bucket 4-5); pick 4
+  //                   to land at the bottom of the median range so casual
+  //                   shell players are slightly under-paid vs hub on the
+  //                   highest-tuned games (chess, spider — LW pays 8) and
+  //                   slightly over-paid on the cheapest (memory, lights,
+  //                   flood, simon — LW pays 2). Net flat ~= LW median.
+  //   game_loss     → LW majority is 1 (kept — losing all session and
+  //                   earning zero would feel punishing on a casual surface)
   var EARN = {
     progress:      1,
-    milestone:     2,
-    cleared:       2,
-    capture:       2,
+    milestone:     1,   // was 2
+    cleared:       1,   // was 2
+    capture:       1,   // was 2
     flip:          1,
     hit:           1,
-    sequence:      2,
-    pheno:         3,
-    puzzle_solved: 5,
-    game_win:      8,
+    sequence:      1,   // was 2
+    pheno:         1,   // was 3
+    puzzle_solved: 3,   // was 5
+    game_win:      4,   // was 8
     game_loss:     1
   };
 
