@@ -27,11 +27,11 @@ Legend: 🔴 open · 🟢 fixed (delete on next pass) · ❓ needs verification
 - **Source of truth:** `GAMES_MANIFEST.md` for the catalog count; `index.html` Block 12 for engine count.
 - **Status:** open — verify what "implementations" counts, then reconcile.
 
-### 🔴 NEW_GAME_PROMPT earn numbers run ~2× hot
-- **Where:** `NEW_GAME_PROMPT.md` PART A step 3 — "win 5–12, session target 20–60."
-- **Truth:** Live economy pays `game_win:4` (shells, `play/shell.js:106`) / median ~4 (LW `_aw`). Partner spec should be win 3–5, session 15–40, single required hook.
-- **Source of truth:** `EARN_AUDIT.md` + `play/shell.js`.
-- **Status:** open — de-engineer the partner prompt (proposed, pending Stephen's go).
+### 🟢 NEW_GAME_PROMPT earn numbers ran ~2× hot — fixed
+- **Was:** `NEW_GAME_PROMPT.md` PART A step 3 — "win 5–12, session target 20–60."
+- **Now:** win 3–5 (single required hook), optional daily 3–5, session ~15–40, matching live `game_win:4`.
+- **Source of truth:** `EARN_AUDIT.md` + `play/shell.js:106`.
+- **Status:** fixed 2026-06-05.
 
 ### 🔴 MEMORY.md over size limit
 - **Where:** `.claude/.../memory/MEMORY.md` — 37.4KB vs 24.4KB limit; only partially loaded each session.

@@ -34,23 +34,20 @@ Sky Wolf Studios is a constellation of indie games that share one currency: **su
 
    Pick a `gameId` that is short, lowercase, hyphenated, stable, and unique. Examples: `glyph-forge`, `sweet-spot`, `tarot-run`, `bar-brawl`. Max 32 characters. This label persists in studio analytics — pick once, never rename.
 
-3. **Wire `Sunbeam.earn` at meaningful reward moments.** Map onto events that already exist in the game. Don't invent new ones. Common moments:
+3. **Wire `Sunbeam.earn` at reward moments that already exist.** Keep it minimal — most games need a single call. Don't invent events, and don't wire combos / per-tile / per-frame earns.
 
-   | Moment | amount (sunbeams) | source label |
+   | Moment | amount | source label |
    |---|---|---|
-   | Game won / round complete | 5–12 | `<gameId>:win` |
-   | Level / stage cleared | 2–5 | `<gameId>:level_complete` |
-   | Score milestone hit | 1–3 | `<gameId>:milestone` |
-   | Big combo / combo finisher | 1–3 | `<gameId>:combo` |
-   | Daily-bonus tap (if applicable) | 3–8 | `<gameId>:daily` |
+   | Round / game complete (the one required hook) | 3–5 | `<gameId>:win` |
+   | First play of the day — only if the game already has a daily/streak | 3–5 | `<gameId>:daily` |
 
    The call:
 
    ```js
-   Sunbeam.earn(8, "<gameId>:win").catch(function(){});
+   Sunbeam.earn(4, "<gameId>:win").catch(function(){});
    ```
 
-   **Calibrate so a casual single session yields 20–60 sunbeams total.** That's the studio target — under-earning feels invisible, over-earning breaks the cross-game economy.
+   **Calibrate so a casual session yields ~15–40 sunbeams total.** This matches the live studio economy — the hub and the `/play/` shells both pay 4 on a win. Over-earning breaks the cross-game currency; under-earning is invisible.
 
    **Constraints (server-enforced; respect them in your wiring):**
    - `amount`: integer between **1 and 200** per call.
