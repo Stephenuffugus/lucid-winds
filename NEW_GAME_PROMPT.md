@@ -54,6 +54,7 @@ Sky Wolf Studios is a constellation of indie games that share one currency: **su
    - `source`: short ASCII label, **≤32 characters**. Use the `<gameId>:<event>` convention.
    - **No tight loops, no `setInterval`-driven earns, no per-frame calls.** The server rate-caps at 300/min and 5000/day per user. Tight loops trigger throttling and look fraudulent in telemetry.
    - Wrap every `earn` call in `.catch(function(){})` so a failed call (network down, init still pending) never crashes the game.
+   - **If your game is an offline-capable PWA**, also guard the call: `window.Sunbeam && Sunbeam.earn(4, "<gameId>:win").catch(function(){});`. When offline the remote SDK can't load, so a bare call throws a `ReferenceError` *before* the promise exists — which `.catch()` can't trap. The `window.Sunbeam &&` guard keeps offline play clean. Behavior is identical when the SDK is present.
 
 4. **Do not add a sign-in flow.** The SDK handles both anonymous and signed-in players transparently. Anonymous earns accumulate in `localStorage`; on sign-in (from anywhere in the studio), the SDK reconciles them. The studio handles sign-in elsewhere. Your game's job is to *earn*, not to gate.
 
