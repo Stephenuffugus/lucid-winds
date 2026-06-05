@@ -297,7 +297,7 @@ Cosmic      0.01%
 | **Mythic creature** | The Toad (0xD0+) or The Cicada (0xE0+). Render via COMPANION layer at mythic-tier. |
 | **Mythic-tier** | Any LAYER at mythic rarity (e.g., a mythic-tier substrate like Phoenix Ash, a mythic-tier companion). Not the same as Mythic grade. |
 | **Mythic grade** | A PLANT graded Mythic (score 20+). A plant can have mythic-tier layers without being Mythic grade if score is insufficient. |
-| **Mutation byte** | Hash byte 16 (`hb(16)`). Values ≥ 0xE1 produce visible mutations (Fossil, Albino, Wireframe, … Constellation). Effective fire rate ≈ 12.1% of mints. Rendered via MUTATION layer. |
+| **Mutation byte** | Hash byte 16 (`hb(16)`). Values ≥ 0xED produce visible mutations (Fossil, Albino, Wireframe, … Constellation). Effective fire rate ≈ 7.4% of mints (rebalanced 2026-05-03; none band 0x00-0xEC = 92.6%). Rendered via MUTATION layer. |
 | **Sunbeams** | Hash-earning currency. 30 Sunbeams = 1 ready-to-mint plant. Player clicks ☀️ to convert queue into plant. |
 | **Dew** | Secondary currency earned from wild tending. Spent on: slot machine, mystery box, nursery skip, weather summon. |
 
@@ -701,7 +701,7 @@ Each class has a companion family. Holding any plant with matching companion unl
 - ~~Items art~~ ✅ DONE 2026-04-24 — 19 PNGs live in `/assets/items/`
 - ~~Balance pass on items~~ ✅ DONE — Mulch Ward (R, 1 charge, 24h) and Shellgourd (E, 1 charge, 48h) are different tiers with different fuse lengths. Audit #4 (commit 2bedec3) rebalanced Shellgourd from "no-op consume" to "Epic single-use ward with a long fuse" — defense ladder is intentional.
 - **Pi SDK integration** — ALL payments through Pi
-- **First-mint Common %** — currently 36% (Variant F), spec 42%. Closing the gap re-grades every plant. Defer until post-Pi-launch unless director calls otherwise.
+- **First-mint Common %** — live is Variant G (Common 26.6%, verified N=100k). Original spec target was 42%; Stephen ruled "keep G, a little generous." Any move toward 42% re-grades every plant — defer until post-Pi-launch unless director calls otherwise.
 
 ### Parked design (see memory index)
 - EA Takeover spec (15-min async vote)
