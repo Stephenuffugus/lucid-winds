@@ -80,6 +80,9 @@
           font-size:10px;padding:2px 7px;border-radius:20px;letter-spacing:.4px}
   .badge.wip{color:var(--sun)}
   .badge.premium{background:linear-gradient(145deg,var(--sun),var(--sun2));color:#3a2600;font-weight:700;letter-spacing:.5px}
+  .badge.soon{color:#cfd8cf;background:rgba(0,0,0,.62)}
+  .card.soon{opacity:.6;cursor:default;pointer-events:none}
+  .card.soon .shot{filter:grayscale(.45)}
   .card .body{padding:7px 9px 9px}
   .card .nm{font-weight:700;font-size:12.5px;line-height:1.2}
   .card .ds{color:var(--muted);font-size:11px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;
@@ -164,7 +167,7 @@ var FEATURED = [
   {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️"},
   {nm:"Sweet Spot", ds:"One-thumb tennis timing. Nail the gold for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾"},
   {nm:"Tarot Run", ds:"A fast, spectacular combo card run — a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏"},
-  {nm:"BarBrawl", ds:"Multiplayer mayhem.", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🍺"},
+  {nm:"Brawl", ds:"Multiplayer mayhem.", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🍺", soon:true},
   // HUNCH: the studio's premium flagship — drawing-and-guessing game with
   // a Claude vision model + judge call per round (real per-play API cost).
   // Lowered sunbeam yield to respect compute; positioned as PREMIUM to
@@ -193,8 +196,8 @@ var GAMES = [
  ["pixelgarden","Pixel Garden","creative","Pixel-art painter. 24 botanical colors. Save as PNG."],
  ["seedtoss2","Seed Toss","creative","Flick seeds into the pot. Physics + wind at higher levels."],
  ["storysseeds","Story Seeds","creative","Daily writing prompts. Save your entries."],
- ["stonegarden","Stone Garden","creative","Stack stones in zen balance to a target height.","wip"],
- ["rhythmvine","Rhythm and Vine","creative","Tap to the beat. Perfect / Great / Good timing.","wip"],
+ ["stonegarden","Stone Garden","creative","Stack stones in zen balance to a target height.","soon"],
+ ["rhythmvine","Rhythm and Vine","creative","Tap to the beat. Perfect / Great / Good timing.","soon"],
  ["klondike","Klondike","card","The classic. Build four foundations Ace to King."],
  ["spider","Spider","card","Build King-to-Ace runs by suit. 1, 2 or 4 suits."],
  ["freecell","FreeCell","card","All cards visible. Four free cells to maneuver."],
@@ -260,10 +263,12 @@ function card(g, isFeat){
   var nm = isFeat ? g.nm : g[1];
   var ds = isFeat ? g.ds : (g[3] || "");
   var wip = !isFeat && g[4]==="wip";
+  var soon = isFeat ? !!g.soon : g[4]==="soon";
   var hub = isFeat && g.hub;
   var badge = hub ? '<span class="badge">HUB · 66 games</span>'
+            : (soon ? '<span class="badge soon">COMING SOON</span>'
             : (isFeat ? (g.premium ? '<span class="badge premium">PREMIUM</span>' : '<span class="badge">PLAY NOW</span>')
-                      : (wip ? '<span class="badge wip">WIP</span>' : ''));
+                      : (wip ? '<span class="badge wip">WIP</span>' : '')));
   var shot;
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
@@ -272,9 +277,11 @@ function card(g, isFeat){
   }
   else { var ext = EXT[g[0]] || "png";
          shot = '<img loading="lazy" alt="'+nm+'" src="'+SHOT+g[0]+'.'+ext+'" onerror="_lwPh(this)">'; }
-  return '<a class="card'+(hub?' hubcard':'')+'" href="'+url+'">'+
+  var tag = soon ? 'div' : 'a';
+  var attr = soon ? '' : ' href="'+url+'"';
+  return '<'+tag+' class="card'+(hub?' hubcard':'')+(soon?' soon':'')+'"'+attr+'>'+
     '<div class="shot">'+badge+shot+'</div>'+
-    '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div></div></a>';
+    '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div></div></'+tag+'>';
 }
 
 // Hub card (Lucid Winds only — large hero with seed-art thumbnail) renders
