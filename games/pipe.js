@@ -4,7 +4,7 @@
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
-function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
+function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0,won=false;
   var VI='assets/games/pipe/';
   var IMG_ST=VI+'vine-straight.png',IMG_CR=VI+'vine-corner.png',IMG_SR=VI+'vine-source.png',IMG_EN=VI+'vine-end.png';
   var EX_ST=[1,0,1,0],EX_CR=[1,1,0,0],EX_EN=[0,0,0,1];
@@ -89,10 +89,11 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
       if(!g.fixed){
         d.setAttribute('data-i',i);
         d.onclick=function(){
+          if(won)return; // win latch — rotating filler tiles after the solve used to re-fire game_win per tap
           var idx=parseInt(this.getAttribute('data-i'));
           _play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();
           var res=_ppCheck();
-          if(res.won){_e('game_win');_playWin();sm('🌸 Root reached the bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}
+          if(res.won){won=true;_e('game_win');_playWin();sm('🌸 Root reached the bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}
         };
       }
       gd.appendChild(wrap);
@@ -104,7 +105,7 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0;
     _ps.textContent='@keyframes pipeBlink{0%,100%{opacity:1}50%{opacity:0.5}}';
     document.head.appendChild(_ps);
   }
-  window._PPN=function(){gen();sm('Connect root to bloom');rn()};_PPN();}
+  window._PPN=function(){gen();won=false;sm('Connect root to bloom');rn()};_PPN();}
 
 window._gameFns.pipe=GPP;
 })();

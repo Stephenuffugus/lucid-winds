@@ -5,7 +5,7 @@ var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
 function GFL(a){
-  var SZ=8,grid=[],moves=0,maxMoves=22;
+  var SZ=8,grid=[],moves=0,maxMoves=22,over=false;
   var LF=['assets/games/flood/leaf-sage.png','assets/games/flood/leaf-gold.png','assets/games/flood/leaf-slate.png','assets/games/flood/leaf-copper.png','assets/games/flood/leaf-plum.png','assets/games/flood/leaf-crimson.png'];
   var CC=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6','#c75050'];
   // Per-player toggle: leaves art on/off. Persisted so the choice
@@ -61,19 +61,22 @@ function GFL(a){
     }
   }
   window._FFC=function(c){
+    if(over)return; // game-over latch — every tap after the end used to re-fire win/loss + _sr
     if(grid[0]===c)return;
     _play('tap');flood(grid[0],c);moves++;
     document.getElementById('FFm').textContent=moves;
     rn();
     if(grid.every(function(v){return v===grid[0];})){
-      _e('game_win');_playWin();sm((leavesOn?'🍂':'⬤')+' Flooded in '+moves+'!');
+      over=true;
+      _e('game_win');_playWin();sm((leavesOn?'🍂':'⬤')+' Flooded in '+moves+'! Tap NEW for another');
       _sr('flood',{w:true,s:moves});
     } else if(moves>=maxMoves){
-      _e('game_loss');_play('lose');sm('Out of moves!');
+      over=true;
+      _e('game_loss');_play('lose');sm('Out of moves! Tap NEW to retry');
       _sr('flood',{w:false,s:moves});
     }
   };
-  window._FFN=function(){gen();sm('');rn();};
+  window._FFN=function(){gen();over=false;sm('');rn();};
   window._FFleafToggle=function(){
     leavesOn=!leavesOn;
     try{localStorage.setItem('lw_flood_leaves',leavesOn?'on':'off');}catch(e){}
