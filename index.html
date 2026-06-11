@@ -63155,6 +63155,11 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
   document.querySelectorAll('.fg-c').forEach(function(c){c.classList.toggle('on',c.getAttribute('data-g')===id)});
   var sw=document.getElementById('sw'),ag=document.getElementById('fg-ag'),gps=document.getElementById('gp-strip'),ssb=document.getElementById('set-status');
   var _solGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1};
+  // Games that need _cards.js (deck art + style toggle). The multiplayer card
+  // games render their own hands but their "Deck <style>" button calls
+  // _cdToggleStyle — without preloading here it toasted "try again in a sec"
+  // forever unless a solitaire had loaded first.
+  var _cardGames={golf:1,klondike:1,spider:1,freecell:1,pyramid:1,tripeaks:1,cribbage:1,bowergarden:1,bleedinghearts:1,gardenspades:1,juniper:1};
   _solClearFS();
   var _bnav=document.querySelector('.fg-bottomnav');
   var _td=document.getElementById('trios-dash');var _tw=document.getElementById('trios-wrap');
@@ -63228,7 +63233,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
     _gameLoading[id]=true;
     ag.innerHTML+='<div id="_gl" style="padding:3rem;text-align:center;color:var(--muted);font-family:DM Sans,sans-serif"><div style="display:flex;justify-content:center;margin-bottom:8px;"><span class="lwe lwe-bloom" style="width:1.6em;height:1.6em;"></span></div>Loading game...</div>';
     // Card games need shared card utilities loaded first
-    var needCards=!!_solGames[id];
+    var needCards=!!_cardGames[id];
     var needDict=(id==='vinewords');
     var loadGame=function(){
       var s=document.createElement('script');

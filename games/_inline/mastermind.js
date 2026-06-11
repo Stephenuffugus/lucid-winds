@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: mastermind
  *
  * COPY of the inline GMM mount function from index.html
- * lines 67616-68043.
+ * lines 67621-68048.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves

@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: farkle
  *
  * COPY of the inline GF mount function from index.html
- * lines 66021-66365.
+ * lines 66026-66370.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves

@@ -143,7 +143,12 @@ function _cdFit(cols, opts){
   // reported innerWidth is already correct, so no adjustment needed.
   var avail = vw - padPx - (cols - 1) * gapPx;
   var wFromWidth = Math.floor(avail / cols);
-  var w = Math.max(minW, Math.min(maxW, wFromWidth));
+  var w = Math.min(maxW, wFromWidth);
+  // minW protects readability, but honoring it must not overflow the
+  // viewport: 10-col boards (Spider/TriPeaks) on 360-400px phones were
+  // clipped ~7-22px per side with unreachable outer columns (#fg-ag is
+  // overflow-x:hidden). Fit-on-screen wins, with a 30px hard floor.
+  if(w<minW)w=Math.max(30,w);
   var h = Math.round(w * 1.4);           // standard 2.5:3.5 poker aspect
   var peek = Math.max(10, Math.round(h * 0.16));
   var font = Math.max(10, Math.round(w * 0.22));
@@ -205,10 +210,13 @@ function _cdElLW(d,card){
     var pip=_CD_BASE+_SUIT_NAME[card.s]+'.png';
     var art=_cdArt(card.s,card.r);
     d.style.backgroundImage="url('"+art+"')";
-    d.innerHTML='<div style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none">'
+    // Rank + pip live inside .gc-corner-tl — the fan/peek CSS hides every
+    // child EXCEPT that container, so without it buried cards rendered as
+    // blank strips with this deck selected.
+    d.innerHTML='<div class="gc-corner gc-corner-tl" style="position:absolute;top:3px;left:4px;line-height:1;z-index:2;pointer-events:none;display:flex;align-items:center;gap:3px">'
       +'<div style="color:'+clr+';font-size:clamp(.7rem,2.2vw,1rem);font-weight:700;text-shadow:0 1px 3px #000,0 0 8px #000">'+rnk+'</div>'
-      +'</div>'
-      +'<img src="'+pip+'" style="position:absolute;top:3px;right:4px;width:clamp(10px,3vw,18px);height:clamp(10px,3vw,18px);z-index:2;pointer-events:none;filter:drop-shadow(0 1px 3px #000)" alt="">';
+      +'<img src="'+pip+'" style="width:clamp(10px,3vw,16px);height:clamp(10px,3vw,16px);filter:drop-shadow(0 1px 3px #000)" alt="">'
+      +'</div>';
   }else{
     d.className+=' gc-dn';
     _cdBackStyle(d);
