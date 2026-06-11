@@ -77,6 +77,9 @@ function GPY(a){
     if(stock.length>0)return false;
     // Check waste top against exposed pyramid
     var wTop=waste.length>0?waste[waste.length-1]:null;
+    // A King on the waste is removable alone — that's a legal move (this
+    // used to declare a premature loss and lock the game).
+    if(wTop&&isKing(wTop))return false;
     for(var i=0;i<28;i++){
       if(removed[i])continue;
       if(!isExposed(i))continue;
@@ -90,12 +93,17 @@ function GPY(a){
     }
     return true;
   }
+  // Single loss check used after every removal/draw — King removals and
+  // waste pairs used to skip it entirely, silently dead-ending the game.
+  function maybeLoss(){
+    if(!gameOver&&checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});rn();}
+  }
   function tapPyr(idx){
     if(gameOver||removed[idx]||!isExposed(idx))return;
     var card=pyr[idx];
     if(isKing(card)){snapshot();removePyr(idx);moves++;_play('tap');_e('progress');
       if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});}
-      sel=null;upd();rn();refreshUndoBtn();return;
+      sel=null;upd();rn();refreshUndoBtn();maybeLoss();return;
     }
     if(sel){
       if(sel.type==='pyr'&&sel.idx===idx){sel=null;rn();return;}
@@ -107,7 +115,7 @@ function GPY(a){
         moves++;_play('tap');_e('progress');
         if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});}
         sel=null;upd();rn();refreshUndoBtn();
-        if(!gameOver&&checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});}
+        maybeLoss();
         return;
       }
       sel={type:'pyr',idx:idx};rn();return;
@@ -117,13 +125,13 @@ function GPY(a){
   function tapWaste(){
     if(gameOver||waste.length===0)return;
     var card=waste[waste.length-1];
-    if(isKing(card)){snapshot();waste.pop();moves++;_play('tap');_e('progress');sel=null;upd();rn();refreshUndoBtn();return;}
+    if(isKing(card)){snapshot();waste.pop();moves++;_play('tap');_e('progress');sel=null;upd();rn();refreshUndoBtn();maybeLoss();return;}
     if(sel&&sel.type==='pyr'){
       if(canPair(pyr[sel.idx],card)){
         snapshot();
         removePyr(sel.idx);waste.pop();moves++;_play('tap');_e('progress');
         if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});}
-        sel=null;upd();rn();refreshUndoBtn();return;
+        sel=null;upd();rn();refreshUndoBtn();maybeLoss();return;
       }
     }
     sel={type:'waste'};rn();
@@ -132,7 +140,7 @@ function GPY(a){
     if(gameOver||stock.length===0)return;
     snapshot();
     var cd=stock.pop();cd.up=true;waste.push(cd);_play('tap');sel=null;rn();refreshUndoBtn();
-    if(checkLoss()){gameOver=true;mm_up('No moves left');_e('game_loss');_play('lose');_sr('pyramid',{w:false,s:moves});}
+    maybeLoss();
   }
   function rn(){
     var _ag=document.getElementById('fg-ag');
