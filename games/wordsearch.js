@@ -237,6 +237,10 @@ function gen(){
       }
     }
   });
+  // A word that failed all 150 placement attempts has no path on the grid —
+  // leaving it in words[] made the puzzle silently unwinnable (most likely
+  // on Hard 13×13 with 13-letter words like CONSTELLATION).
+  words=words.filter(function(w){return !!wordPaths[w];});
   var A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   for(var i=0;i<SZ*SZ;i++)if(!grid[i])grid[i]=A[Math.floor(Math.random()*26)];
 }
