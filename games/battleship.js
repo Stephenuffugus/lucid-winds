@@ -766,6 +766,15 @@ function GBS(a){
     rn();
     setTimeout(aiTurn,salvoMode?420:650);
   }
+  function endAITurn(){
+    if(gameOver)return;
+    turn='player';
+    pShotsLeft=salvoMode?countAliveShips(eGrid):1;
+    stats.turns++;
+    pendingShot=-1;
+    var ph=document.getElementById('BSph');if(ph)ph.innerHTML='Your turn';
+    rn();
+  }
 
   // ── specials ──
   function fireRadar(center,who){
@@ -802,12 +811,14 @@ function GBS(a){
     if(who==='player'){radarUsedP=true;armedSpecial=null;sm('📡 Radar: '+count+' ship cells in that area');}
     else{radarUsedAI=true;sm('📡 Enemy radar swept your waters');}
     _play('snap');
-    // Radar does NOT consume a shot, ends turn normally
+    // Radar counts as the turn's action (one salvo shot, or the whole turn)
     if(who==='player'){
       if(salvoMode){pShotsLeft--;if(pShotsLeft<=0){endPlayerTurn();return;}}
       else{endPlayerTurn();return;}
+      rn();
+      return;
     }
-    rn();
+    endAITurn();
   }
   function fireTideStrike(center,who){
     var r=Math.floor(center/SZ),c=center%SZ;
@@ -828,7 +839,7 @@ function GBS(a){
     if(who==='ai'&&allSunk(pGrid)){endGame(false);return;}
     // counts as one turn (no salvo stacking)
     if(who==='player'){endPlayerTurn();return;}
-    rn();
+    endAITurn();
   }
 
   // ── AI ──
@@ -994,7 +1005,7 @@ function GBS(a){
         var pl=placements[si];if(!pl)continue;
         for(var k=0;k<SHIPS[si];k++){
           var cr=pl.dir==='h'?pl.r:pl.r+k;
-          var cc=pl.dir==='h'?pl.c:pl.c+k;
+          var cc=pl.dir==='h'?pl.c+k:pl.c;
           cells.push(idx(cr,cc));
         }
       }
