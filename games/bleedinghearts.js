@@ -241,7 +241,7 @@ window._gameFns.bleedinghearts = function BH(a){
       setTimeout(function(){
         if(g!==gen)return;
         lastWinnerSeat=winner;
-        sm(NAMES[winner]+' takes'+(pts>0?' ('+pts+' pts)':''));
+        sm((winner===S?'You take':NAMES[winner]+' takes')+(pts>0?' ('+pts+' pts)':''));
         // Earn when an OPPONENT eats points — that's the favorable outcome.
         if(pts>0&&winner!==S)_e('progress');
         render();

@@ -220,7 +220,7 @@ window._gameFns.gardenspades = function GardenSpades(a){
           sm('NIL BROKEN, '+NAMES[winner]+' took a trick');
           setTimeout(function(){nilBrokenJust=-1;render();},1200);
         }else{
-          sm(NAMES[winner]+' takes the trick');
+          sm(winner===0?'You take the trick':NAMES[winner]+' takes the trick');
         }
         // Earn only when YOUR TEAM (you + North) takes the trick.
         if(winner===0||winner===2)_e('progress');

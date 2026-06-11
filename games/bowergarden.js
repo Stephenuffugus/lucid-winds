@@ -287,7 +287,7 @@ window._gameFns.bowergarden = function BG(a){
   function orderUp(p,goAlone){
     trumpSuit=upcard.suit;callingTeam=p%2;callingSeat=p;
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
-    sm(PLAYER_NAMES[p]+' calls '+_pip(trumpSuit)+' Strong'+(goAlone?' (alone)':''));
+    sm(PLAYER_NAMES[p]+' calls '+SUIT_ICONS[trumpSuit]+' Strong'+(goAlone?' (alone)':''));
     var dh=hands[dealer];dh.push(upcard);
     // Human dealer picks up the turn card and chooses a discard by hand.
     // AI dealer keeps the previous auto-discard-lowest behavior.
@@ -306,7 +306,7 @@ window._gameFns.bowergarden = function BG(a){
     for(var i=0;i<dh.length;i++){
       if(dh[i].rank===card.rank&&dh[i].suit===card.suit){
         dh.splice(i,1);
-        sm('You discard '+card.rank+' '+_pip(card.suit));
+        sm('You discard '+card.rank+' '+SUIT_ICONS[card.suit]);
         pickedUp=null;
         startPlay();
         return;
@@ -316,7 +316,9 @@ window._gameFns.bowergarden = function BG(a){
   function callTrump(p,suit,goAlone){
     trumpSuit=suit;callingTeam=p%2;callingSeat=p;
     if(goAlone){loner=true;sittingOut=(p+2)%4;}
-    sm(PLAYER_NAMES[p]+' calls '+_pip(suit)+' Strong'+(goAlone?' (alone)':''));
+    // SUIT_ICONS (plain ♥♦♣♠), not _pip() — the status line is textContent,
+    // so _pip's floral <img> markup printed as raw HTML every hand.
+    sm(PLAYER_NAMES[p]+' calls '+SUIT_ICONS[suit]+' Strong'+(goAlone?' (alone)':''));
     startPlay();
   }
   function startPlay(){
@@ -348,7 +350,7 @@ window._gameFns.bowergarden = function BG(a){
       // winning card glows via trickWinner state and stays on the table.
       setTimeout(function(){
         trickWinner=winner;
-        sm(PLAYER_NAMES[winner]+' wins the trick');
+        sm(winner===0?'You win the trick':PLAYER_NAMES[winner]+' wins the trick');
         render();
         // Beat 2: 1100ms hold on the winner glow, then sweep-out animation
         // via opacity fade, then clear and proceed.

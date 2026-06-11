@@ -4,7 +4,7 @@
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
-function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
+function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,gen=0;
 
   // ── Chord definitions: semitone intervals from root ──
   var CHORDS={
@@ -89,7 +89,7 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
   }
 
   function fl(i,d){var e=document.getElementById('s'+i);if(!e)return;e.classList.add('lt');tn(FR[i],d);setTimeout(function(){e.classList.remove('lt')},d)}
-  function ps(){pl=true;pt=false;sm('Watch...');var i=0,sp=Math.max(220,480-rd*12);var iv=setInterval(function(){if(i>=sq.length){clearInterval(iv);pl=false;pt=true;pi=0;sm('Your turn!');return}fl(sq[i],sp*.7);i++},sp)}
+  function ps(){pl=true;pt=false;sm('Watch...');var i=0,sp=Math.max(220,480-rd*12),g=gen;var iv=setInterval(function(){if(g!==gen){clearInterval(iv);return}if(i>=sq.length){clearInterval(iv);pl=false;pt=true;pi=0;sm('Your turn!');return}fl(sq[i],sp*.7);i++},sp)}
   // Simon is memory-endurance: play until you forget. Every 5 rounds
   // fires a milestone (caps at progCap per session via _e). No 'game_win'
   // event mid-game — that was kicking up the play-again overlay and
@@ -102,14 +102,14 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
     // Every 5th round completed: fire a milestone tick (capped per
     // session). Silent — no win overlay.
     if(rd>1&&(rd-1)%5===0)_e('milestone');
-    setTimeout(ps,500);
+    var g=gen;setTimeout(function(){if(g===gen)ps();},500);
   }
   window._SP=function(i){
     if(!pt||pl)return;
     fl(i,180);
     if(i===sq[pi]){
       pi++;
-      if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');setTimeout(nr,700);}
+      if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');var g=gen;setTimeout(function(){if(g===gen)nr();},700);}
     } else {
       pt=false;
       if(rd>br){br=rd;var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br;}
@@ -126,7 +126,9 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null;
       sm('🍂 Round '+rd+'! Best: '+br+(strong?' ✨':''));
     }
   };
-  window._SN=function(){sq=[];pi=0;rd=0;pl=false;pt=false;var _sr3=document.getElementById('Sr');if(_sr3)_sr3.textContent='0';sm('Watch...');setTimeout(nr,600)};_SN();
+  // gen++ cancels in-flight playback/next-round timers — New Game within
+  // ~700ms of completing a round used to interleave two playbacks.
+  window._SN=function(){gen++;sq=[];pi=0;rd=0;pl=false;pt=false;var _sr3=document.getElementById('Sr');if(_sr3)_sr3.textContent='0';sm('Watch...');var g=gen;setTimeout(function(){if(g===gen)nr();},600)};_SN();
   // 2026-05-22 — release AudioContext on game exit so iOS doesn't keep
   // audio resources allocated after Simon closes. iPhone thermal audit.
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
