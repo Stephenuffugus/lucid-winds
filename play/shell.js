@@ -629,3 +629,24 @@
   global.SkyWolfShell = { VERSION: VERSION, state: state };
 
 })(typeof window !== 'undefined' ? window : this);
+
+// Art-save gate — same contract as index.html. Without it the portal
+// shells had NO save cooldown (art saves spammable for 1 sunbeam each)
+// and the firstWin game_win path never fired.
+window._lwArtSaveGate=function(key,opts){
+  var COOLDOWN=(opts&&opts.cooldown)||30000;
+  window._lwArtSaveLast=window._lwArtSaveLast||{};
+  window._lwArtWon=window._lwArtWon||{};
+  var nowT=Date.now();
+  var lastT=window._lwArtSaveLast[key]||0;
+  if(nowT-lastT<COOLDOWN){
+    return {allow:false,secs:Math.ceil((COOLDOWN-(nowT-lastT))/1000)};
+  }
+  window._lwArtSaveLast[key]=nowT;
+  var firstWin=!window._lwArtWon[key];
+  if(firstWin)window._lwArtWon[key]=true;
+  return {allow:true,firstWin:firstWin};
+};
+
+// Silence the favicon 404 every shell logged on boot.
+try{var _fl=document.createElement('link');_fl.rel='icon';_fl.href='data:,';document.head.appendChild(_fl);}catch(e){}
