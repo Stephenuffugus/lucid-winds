@@ -32,7 +32,11 @@ window._gameFns.rhythmvine=function RV(a){
   ms(a,'Rhythm Vine · <span id="RVs">0</span> · combo <span id="RVc">0</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='RVpan';
-  pan.style.cssText='position:relative;max-width:520px;margin:0 auto;padding:0;';
+  // width:100% matters: the /play/ shell mounts into a column flexbox and
+  // margin:auto overrides align-items:stretch — without an explicit width
+  // the pan shrank to its (zero-intrinsic-width) absolute children: the
+  // entire stage rendered 2px wide in the portal.
+  pan.style.cssText='position:relative;width:100%;max-width:520px;margin:0 auto;padding:0;box-sizing:border-box;';
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_RVN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_RVCAL()">⚙ CALIBRATE</button>';
 

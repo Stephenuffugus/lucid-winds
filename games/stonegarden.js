@@ -194,11 +194,23 @@ function startGame(pan,a){
     var S=SHAPES[shapeKey];
     var g=S.gen();
     var colors=makeColors(S.tint||'warm');
-    var opts={friction:0.82,frictionStatic:1.1,restitution:0.06,density:0.0022,slop:0.02,sleepThreshold:60};
-    var body=Bodies.fromVertices(x,y,[g.verts],opts,false);
-    // Matter.fromVertices can silently return a body with NaN centroid
-    // if the polygon is degenerate (collinear verts, zero area, etc).
-    // Validate and fall back to an ellipse approximation.
+    var opts={friction:0.82,frictionStatic:1.1,restitution:0.06,density:0.0022,slop:0.02,sleepThreshold:160};
+    // Collision body is a regular 10-gon scaled to the rock's silhouette —
+    // NOT Bodies.fromVertices(g.verts). fromVertices needs poly-decomp
+    // (never shipped) for the concave procedural outlines; without it the
+    // bodies got invalid geometry: stones tunneled through the ground and
+    // matter's _findSupports crashed the tick loop every session (zero
+    // stones ever settled). The DRAWN shape stays the original verts; only
+    // the physics shape is simplified.
+    var pr=Math.max(6,(g.w+g.h)/4);
+    var body=Bodies.polygon(x,y,10,pr,opts);
+    try{
+      // Squash the 10-gon to the rock's real aspect ratio so flat stones
+      // still stack like flat stones.
+      if(Matter.Body&&Matter.Body.scale&&g.w>0&&g.h>0){
+        Matter.Body.scale(body,(g.w/2)/pr,(g.h/2)/pr);
+      }
+    }catch(e){}
     if(!body||!isFinite(body.position.x)||!isFinite(body.position.y)||!isFinite(body.mass)||body.mass===0){
       body=Bodies.rectangle(x,y,Math.max(6,g.w),Math.max(6,g.h),opts);
     }
@@ -297,8 +309,10 @@ function startGame(pan,a){
       var r=trayHit.rock;
       if(trayHit.side==='L')trayL[trayHit.idx]=null;
       else trayR[trayHit.idx]=null;
-      Body.setStatic(r.body,true);
-      // Preserve angle; only move the position to finger
+      // NOTE: no Body.setStatic here. The carried body isn't in the world
+      // (position is driven manually), and Matter 0.19's static toggle
+      // corrupts part mass/inertia on restore — the source of the
+      // Resolver crash that froze every session.
       Body.setPosition(r.body,{x:pt.x,y:pt.y});
       r.body.collisionFilter.group=-1;
       carries[t.identifier]={
@@ -345,9 +359,9 @@ function startGame(pan,a){
     var c=carries[carrierId];
     if(!c)return;
     var r=c.rock;
-    // Restore collision, become dynamic, add to world
+    // Restore collision and add to world (body was never made static — see
+    // onTouchStart note).
     r.body.collisionFilter.group=0;
-    Body.setStatic(r.body,false);
     Body.setVelocity(r.body,{x:0,y:0});
     Body.setAngularVelocity(r.body,0);
     World.add(world,r.body);
@@ -603,7 +617,18 @@ function startGame(pan,a){
     if(!document.body.classList.contains('game-active')){running=false;rafId=null;return;}
     var dt=lastTime?Math.min((ts-lastTime)/1000,0.033):0.016;
     lastTime=ts;
-    Engine.update(engine,dt*1000);
+    try{
+      Engine.update(engine,dt*1000);
+    }catch(err){
+      // A physics-step crash used to kill the rAF loop permanently (frozen
+      // mid-air stone, dead game). Recover: crumble the newest stone — it's
+      // the body the resolver choked on — and keep playing.
+      try{
+        var bad=stones.pop();
+        if(bad&&bad.body)World.remove(world,bad.body);
+        flash('STONE CRUMBLED','#c75050');
+      }catch(e2){}
+    }
     applyWind(dt);
     for(var i=0;i<stones.length;i++){
       if(!stones[i].scoreGiven&&stones[i].body.isSleeping)onStoneSettled(stones[i]);
