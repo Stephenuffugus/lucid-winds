@@ -68835,8 +68835,10 @@ function GBG(a){
     var d1=Math.floor(Math.random()*6)+1,d2=Math.floor(Math.random()*6)+1;
     DICE=[d1,d2];MOVES_LEFT=d1===d2?[d1,d1,d1,d1]:[d1,d2];DICE_USED=[false,false];PHASE='move';SEL=-1;VALID_DESTS=[];
   }
-  function getBar(w){return w==='human'?B[25]:B[0]}
-  function setBar(w,v){if(w==='human')B[25]=v;else B[0]=v}
+  // Bar counts: human stored positive in B[25], AI stored NEGATIVE in B[0].
+  // getBar/setBar speak in positive counts for both sides; only the storage signs differ.
+  function getBar(w){return w==='human'?(B[25]||0):Math.abs(B[0]||0)}
+  function setBar(w,v){if(w==='human')B[25]=v;else B[0]=-v}
   function myCheckers(p,w){return w==='human'?Math.max(0,B[p]):Math.max(0,-B[p])}
   function canLand(p,w){if(p<1||p>24)return false;return w==='human'?B[p]>=-1:B[p]<=1}
   function allInHome(w){
