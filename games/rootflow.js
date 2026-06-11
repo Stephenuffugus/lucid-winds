@@ -307,19 +307,36 @@ function clearColor(color){
   }
 }
 
+// A color counts as solved if the PLAYER's path validly connects its two
+// dots — any route, not just the generator's. The old exact-match check
+// burned hints "fixing" colors the player had already solved another way.
+function colorConnected(c){
+  var pl=S.paths[c];
+  if(!pl||pl.length<2)return false;
+  for(var i=1;i<pl.length;i++){
+    if(Math.abs(pl[i][0]-pl[i-1][0])+Math.abs(pl[i][1]-pl[i-1][1])!==1)return false;
+  }
+  var a=S.cells[pl[0][0]][pl[0][1]],b=S.cells[pl[pl.length-1][0]][pl[pl.length-1][1]];
+  return !!(a&&b&&a.isDot&&b.isDot&&a.color===c&&b.color===c);
+}
+
 function useHint(){
   if(!S||S.hintsLeft<=0){sm('No hints left');return;}
-  // Find a color whose player-path doesn't match the generator's solution,
-  // and auto-complete it from the generator's solution path.
   for(var c=0;c<S.pairs;c++){
-    var pl=S.paths[c];
+    if(colorConnected(c))continue;
     var sol=S.solutionPaths[c];
-    var already = pl.length===sol.length;
-    if(already){
-      // Check exact match (or reverse)
-      var matches = pathsEqual(pl, sol) || pathsEqual(pl, sol.slice().reverse());
-      if(matches) continue;
-    }
+    // Displace any OTHER color occupying the solution cells — the old code
+    // stamped straight through completed paths, visually severing them
+    // while their path arrays still claimed the cells (stale progress).
+    sol.forEach(function(pt){
+      var cell=S.cells[pt[0]][pt[1]];
+      if(cell.color!=null&&cell.color!==c&&!cell.isDot){
+        var oc=cell.color;
+        S.paths[oc]=[];
+        clearColor(oc);
+        refreshColor(oc);
+      }
+    });
     // Rebuild this color from generator's solution
     clearColor(c);
     sol.forEach(function(pt, idx){
