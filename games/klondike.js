@@ -12,6 +12,7 @@ var _SUIT_NAME=window._SUIT_NAME,_CD_BASE=window._CD_BASE,_CD_BACK=window._CD_BA
 function GKL(a){
   var tableau=[],stock=[],waste=[],fnd=[],sel=null,gameOver=false,moves=0,drawCount=1,lastTap=0,lastTapCard=null;
   var history=[]; // LIFO stack of pre-move snapshots for undo
+  var autoGen=0;  // auto-complete cascade generation (cancelled on new deal / exit)
   // sel = {src:'tab'|'waste', col:N, idx:N} or null
   ms(a,'Moves: <strong id="KLmv">0</strong>');mm(a);
   var gd=document.createElement('div');gd.id='KLgd';a.appendChild(gd);
@@ -64,8 +65,13 @@ function GKL(a){
   window._KLAuto=function(){
     if(!autoEligible())return;
     sel=null;
+    // Generation token: bumped by init() and the exit cleanup so a cascade
+    // can't keep chirping/moving (or fire game_win under another game) after
+    // the player leaves or starts a new deal.
+    var g=++autoGen;
+    var drawsSinceMove=0;
     function step(){
-      if(gameOver)return;
+      if(g!==autoGen||gameOver)return;
       // Candidates: waste top, stock top (if we flip it up), each tableau top.
       var best=null; // {src, card, f}
       function consider(card, f, src){
@@ -83,16 +89,29 @@ function GKL(a){
         for(var f2=0;f2<4;f2++)consider(top, f2, 'tab:'+c);
       }
       if(!best){
-        // Nothing more to send. If stock has cards, draw one and try again;
-        // otherwise we're done.
+        // Nothing more to send. If stock has cards, draw one and try again.
         if(stock.length>0){
           var card=stock.pop();card.up=true;waste.push(card);
+          drawsSinceMove++;
+          rn();
+          setTimeout(step, 40);
+          return;
+        }
+        // Stock empty: recycle the waste and keep going — a needed card
+        // buried in the waste used to stall the cascade here. Stop only
+        // after a full fruitless pass (no foundation move in a whole cycle).
+        if(waste.length>0&&drawsSinceMove<waste.length){
+          snapshot();
+          stock=waste.reverse();
+          waste=[];
+          for(var ri=0;ri<stock.length;ri++)stock[ri].up=false;
           rn();
           setTimeout(step, 40);
           return;
         }
         return;
       }
+      drawsSinceMove=0;
       snapshot();
       if(best.src==='waste')waste.pop();
       else{
@@ -125,6 +144,7 @@ function GKL(a){
   window._cdActiveRn=function(){try{rn()}catch(e){}};
   function init(){
     var deck=_cdSh(_cdMk());
+    autoGen++; // cancel any auto-complete cascade from the previous deal
     tableau=[];stock=[];waste=[];sel=null;gameOver=false;moves=0;lastTap=0;lastTapCard=null;
     history=[]; // reset undo stack — each new deal starts fresh
     fnd=[[],[],[],[]];
@@ -547,6 +567,12 @@ function GKL(a){
 
   window._KLN=function(){init()};
   window._KLDraw=function(v){drawCount=parseInt(v)||1;init()};
+  // Exit cleanup: cancel any running auto-complete cascade and drop the
+  // resize-renderer hook so it stops retaining this game's state.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    autoGen++;
+    if(window._cdActiveRn)window._cdActiveRn=null;
+  });
   init();
 }
 
