@@ -620,8 +620,8 @@ function checkWin(){
   if(isNewBest)try{localStorage.setItem(bestKey,String(elapsed));}catch(e){}
   _sr('kakuro',{w:true,s:Math.max(100,1000-elapsed*2)+stars*100,stars:stars});
   sm('Solved! '+elapsed+'s · '+stars+'⭐');
-  _e('puzzle_solved');_e('game_win');
-  if(_playWin)_playWin();
+  // (duplicate game_win/_playWin + a puzzle_solved that isn't in kakuro's
+  // payout row used to fire here — double celebration, wasted cap slot)
   showWinCard(elapsed, stars, isNewBest);
 }
 
