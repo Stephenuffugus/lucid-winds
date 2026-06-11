@@ -1162,7 +1162,7 @@ function GCH(a){
     for(var i=0;i<legal.length;i++){
       var m=legal[i];
       if(m.fr===fr&&m.fc===fc&&m.tr===tr&&m.tc===tc){
-        if(promo)m.promotion=promo;
+        if(promo)m.promo=promo; // makeMove reads m.promo — engine underpromotions were silently queening
         return m;
       }
     }
@@ -1412,6 +1412,7 @@ function GCH(a){
   }
 
   var _chPendingPromo=null;
+  var _chGen=0; // bumped by New Game so a stale "AI thinking" timer can't move on a fresh board
   function _chDoMove(m){
     var wasCapture=!!board[m.tr][m.tc]||m.ep;
     var wasCastle=!!m.castle;
@@ -1424,7 +1425,9 @@ function GCH(a){
     else _play('tap');
     if(isCheck)setTimeout(function(){_play('lose')},200);
     render();
-    if(!gameOver&&turn===B)setTimeout(function(){sm('AI thinking...');render();setTimeout(function(){
+    var g=_chGen;
+    if(!gameOver&&turn===B)setTimeout(function(){if(g!==_chGen)return;sm('AI thinking...');render();setTimeout(function(){
+      if(g!==_chGen)return;
       aiMove();
       var aiCheck=inCheck(board,W);
       if(board._lastCap)_play('dig');else _play('tap');
@@ -1464,6 +1467,8 @@ function GCH(a){
   };
 
   window._CHNew=function(){
+    _chGen++;
+    _chPendingPromo=null;selSq=null;
     initBoard();
     _lastAIComment='';_pieceMovedOnce={};
     sm('Your move');
@@ -1471,7 +1476,9 @@ function GCH(a){
   };
 
   window._CHUndo=function(){
-    if(gameOver||history.length<2)return;
+    // During the promotion picker, Undo just cancels the picker.
+    if(_chPendingPromo){_chPendingPromo=null;selSq=null;render();return;}
+    if(gameOver||turn!==W||history.length<2)return;
     // Undo AI move + player move
     undoMove();undoMove();
     gameOver=false;
@@ -1489,6 +1496,12 @@ function GCH(a){
   boardEl.style.cssText='padding:4px 0';a.appendChild(boardEl);
   mc(a).innerHTML='<select class="gsl" id="CHd" style="max-width:160px" onchange="var v=this.value;_setDiff(v===\'1\'?\'easy\':v===\'2\'?\'medium\':v===\'3\'?\'hard\':\'expert\')"><option value="1">Seedling</option><option value="2" selected>Sapling</option><option value="3">Old Growth ♛</option><option value="4">Ancient ♛</option></select><button class="gb-new" onclick="_CHNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button><button class="gb" onclick="_CHUndo()">↩ Undo</button>';
   _setDiff('medium');
+  // Terminate the Stockfish worker when the player leaves the game —
+  // otherwise it keeps burning CPU until page reload.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    _chGen++;
+    if(_sfWorker){try{_sfWorker.terminate();}catch(e){}_sfWorker=null;_sfReady=false;_sfLoading=false;_sfCallback=null;}
+  });
   initBoard();render();
 }
 
