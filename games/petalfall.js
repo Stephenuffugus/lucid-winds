@@ -588,10 +588,16 @@ function tickParticles(dt){
   }
 }
 
-function gameLoop(ts){
+// Generation token: each newGame bumps loopGen and starts ONE loop carrying
+// its generation. Stale loops (from re-entry, NEW GAME, or game exit via the
+// cleanup registry) see the mismatch and stop — before this, loops stacked
+// on re-entry and kept rendering a detached canvas forever (battery/heat).
+var loopGen=0;
+function gameLoop(ts,gen){
+  if(gen!==loopGen) return;
   if(!pan||!boardCtx) return;
   if(pfOver){ render(); return; }
-  if(paused){ render(); requestAnimationFrame(gameLoop); return; }
+  if(paused){ render(); requestAnimationFrame(function(t){gameLoop(t,gen)}); return; }
   var dt=lastTime? Math.min(0.05, (ts-lastTime)/1000) : 0.016;
   lastTime=ts;
   tickInput(dt);
@@ -607,7 +613,7 @@ function gameLoop(ts){
     if(comboFade<=0 && comboEl){ comboEl.style.display='none'; }
   }
   render();
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(function(t){gameLoop(t,gen)});
 }
 
 // ── Rendering ───────────────────────────────────────────────────────────
@@ -768,6 +774,14 @@ function gameOver(){
   sm('Garden Full , '+score+' pts');
   _sr('petalfall',{w:false,s:score});
   showSplash('GARDEN FULL', score+' pts',false);
+  // Surface NEW GAME after the splash beat — togglePause is blocked while
+  // pfOver, so without this the game-over screen was a dead end.
+  setTimeout(function(){
+    if(!pfOver||!pauseOverlay) return;
+    var t=pauseOverlay.querySelector('.PFpauseTitle'); if(t) t.textContent='GARDEN FULL · '+score+' pts';
+    var rb=pauseOverlay.querySelector('[data-act="resume"]'); if(rb) rb.style.display='none';
+    pauseOverlay.style.display='flex';
+  },1400);
 }
 
 // ── Input wiring ────────────────────────────────────────────────────────
@@ -1054,7 +1068,12 @@ function newGame(){
   combo=-1; back2back=false;
   softDropping=false;
   paused=false;
-  if(pauseOverlay) pauseOverlay.style.display='none';
+  if(pauseOverlay){
+    pauseOverlay.style.display='none';
+    // Restore the overlay from a possible game-over state.
+    var got=pauseOverlay.querySelector('.PFpauseTitle'); if(got) got.textContent='PAUSED';
+    var gor=pauseOverlay.querySelector('[data-act="resume"]'); if(gor) gor.style.display='';
+  }
   if(pauseBtn){
     var pbi=pauseBtn.querySelector('.PFactIcon'); if(pbi) pbi.textContent='⏸';
     var pbl=pauseBtn.querySelector('.PFactLabel'); if(pbl) pbl.textContent='PAUSE';
@@ -1069,13 +1088,20 @@ function newGame(){
   bindKeyboard();
   bindBoardTouch();
   _setDiff('medium');
-  requestAnimationFrame(gameLoop);
+  loopGen++;
+  var g=loopGen;
+  requestAnimationFrame(function(t){gameLoop(t,g)});
 }
 
 function GPF(a){
   ms(a,'Block Drop'); mm(a);
   buildLayout(a);
   mc(a);
+  // Stop the RAF loop + drop input listeners when the player leaves the game.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    loopGen++;
+    cleanupAll();
+  });
   newGame();
 }
 
