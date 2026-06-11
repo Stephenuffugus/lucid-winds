@@ -98,6 +98,18 @@ window._gameFns.vinewords=function VW(a){
   // UI chrome
   ms(a,'<span style="color:var(--gold)">Score <span id="VWs">0</span></span> · <span id="VWwords">0</span> words · <span id="VWt">3:00</span> · best <span id="VWbest">'+stats.best+'</span>');
   mm(a);
+  // The /play/ shell hides the .gu-bar — portal players were on a hard 3:00
+  // clock they could not see, with no score either. If the bar is hidden,
+  // re-home its children (IDs intact, so all updates keep working).
+  try{
+    var _guBar=a.querySelector('.gu-bar');
+    if(_guBar&&getComputedStyle(_guBar).display==='none'){
+      var _hud=document.createElement('div');
+      _hud.style.cssText='display:flex;justify-content:center;gap:6px;padding:6px 0 2px;font-family:DM Mono,monospace;font-size:0.85rem;color:var(--cream,#e8dcc8);';
+      while(_guBar.firstChild)_hud.appendChild(_guBar.firstChild);
+      a.appendChild(_hud);
+    }
+  }catch(e){}
   var pan=document.createElement('div');pan.id='VWpan';
   pan.style.cssText='max-width:460px;margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;';
   a.appendChild(pan);
@@ -403,7 +415,13 @@ window._gameFns.vinewords=function VW(a){
     if(!playing)return;
     paused=!paused;
     this.textContent=paused?'▶ RESUME':'⏸ PAUSE';
-    if(paused){sm('Paused');}else{sm('Go!');}
+    // Cover the letters while paused — a frozen clock over a fully visible
+    // board was free planning time.
+    try{
+      var bw=gridHost||document.getElementById('VWgrid');
+      if(bw){bw.style.filter=paused?'blur(14px)':'';bw.style.pointerEvents=paused?'none':'';}
+    }catch(e){}
+    if(paused){sm('Paused — board hidden');}else{sm('Go!');}
   };
 
   // ── Timer ──
