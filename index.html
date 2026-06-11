@@ -12263,8 +12263,25 @@ document.addEventListener('keydown', function(e) {
   // Void Essence substrate, or Constellation mutation in any combination.
   var _TIER_SCORE = {common:0,uncommon:0,rare:1,epic:3,legendary:5,mythic:7,cosmic:10};
 
+  // Grade memo — grade is recomputed per plant per render (a 60-slot
+  // greenhouse re-grades every card on every renderGreenhouse), and the
+  // score is a pure function of hash + the modifier layers below. Synergy
+  // tests are pure trait functions (audited Jun 11) so the key is complete.
+  var _gradeMemo = {};
+  var _gradeMemoN = 0;
+  function _gradeKey(t){
+    if (!t || !t.hash) return null;
+    var k = t.hash;
+    if (t.chimerGen && t.chimerGen > 1) k += '|g' + t.chimerGen;
+    if (t.mycelialCrown) k += '|mc';
+    if (t.breedLayers) { for (var bk in t.breedLayers) { if (t.breedLayers[bk]) k += '|b' + bk; } }
+    if (t.compostLayers) { for (var ck in t.compostLayers) { if (t.compostLayers[ck]) k += '|c' + ck; } }
+    return k;
+  }
   window.getTerraGrade = function(t) {
     if (!t) return _TERRA_GRADES[0];
+    var _mk = _gradeKey(t);
+    if (_mk && _gradeMemo[_mk]) return _gradeMemo[_mk];
     var score = 0;
     var _lt = window._layerTier;
 
@@ -12371,8 +12388,14 @@ document.addEventListener('keydown', function(e) {
     for (var gi = _TERRA_GRADES.length - 1; gi >= 0; gi--) {
       if (score >= _TERRA_GRADES[gi].minScore) { grade = _TERRA_GRADES[gi]; break; }
     }
-    return { name: grade.name, color: grade.color, icon: grade.icon, score: score, label: grade.name };
+    var _res = { name: grade.name, color: grade.color, icon: grade.icon, score: score, label: grade.name };
+    if (_mk) {
+      if (_gradeMemoN > 800) { _gradeMemo = {}; _gradeMemoN = 0; } // bound memory
+      _gradeMemo[_mk] = _res; _gradeMemoN++;
+    }
+    return _res;
   };
+  window._lwGradeCacheClear = function(){ _gradeMemo = {}; _gradeMemoN = 0; };
 
   // _TERRA_GRADES: internal only — not exposed on window (anti-cheat)
 
@@ -12500,12 +12523,19 @@ document.addEventListener('keydown', function(e) {
       if (SYNERGY_META[i].id === 'cosmicbloom') continue; // post-hoc
       try { if (SYNERGY_META[i].test(t)) active.push(SYNERGY_META[i]); } catch(e) {}
     }
-    // Cosmic Bloom: triggered if score >= 18 AND at least 1 other synergy
-    if (active.length > 0) {
+    // Cosmic Bloom: triggered if score >= 18 AND at least 1 other synergy.
+    // Re-entrancy guard: getTerraGrade calls checkSynergies for its synergy
+    // bonus, and this block calls getTerraGrade — without the guard that
+    // was UNBOUNDED MUTUAL RECURSION, a swallowed stack overflow on every
+    // grade lookup for any plant with ≥1 synergy (~1 in 11 mints), at 100+
+    // call sites. The #1 CPU lag suspect in the Jun 10 perf audit.
+    if (active.length > 0 && !checkSynergies._busy) {
+      checkSynergies._busy = true;
       try {
         var _tg = getTerraGrade(t);
         if (_tg && _tg.score >= 18) active.push(SYNERGY_META[SYNERGY_META.length - 1]);
       } catch(e) {}
+      checkSynergies._busy = false;
     }
     return active;
   }
