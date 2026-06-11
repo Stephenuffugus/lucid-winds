@@ -66,7 +66,7 @@ if(!document.getElementById('STstyle')){
     // reads as off-center even though both are technically centered.
     '.st-modes{display:flex;gap:4px;padding:2px 0 10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;width:calc(100% - 24px);max-width:360px;margin:0 auto;box-sizing:border-box;}',
     '.st-modes::-webkit-scrollbar{display:none;}',
-    '.st-mode{padding:6px 12px;min-height:36px;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.08em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;flex:0 0 auto;white-space:nowrap;}',
+    '.st-mode{padding:10px 14px;min-height:44px;display:inline-flex;align-items:center;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.08em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;flex:0 0 auto;white-space:nowrap;}',
     '.st-mode.on{background:rgba(200,168,75,0.18);border-color:var(--gold);color:var(--gold);}',
     // Result + stats
     '.st-result{min-height:58px;margin-top:14px;}',
@@ -371,6 +371,15 @@ window._gameFns.stopten=function ST(a){
     renderResult(delta,t,autoStop);
     if(autoStop)sm('Auto-stopped at '+AUTO_STOP_AT+'s · '+t.lbl);
     else sm(t.lbl+' · '+elapsed.toFixed(2)+'s (±'+delta.toFixed(2)+' from '+target+')');
+    // Restore START so the next attempt is reachable — the row used to keep
+    // showing the dead STOP button, making attempts 2-3 and the session
+    // summary unreachable (the game was effectively single-attempt).
+    if(attempts<MAX_ATTEMPTS){
+      var brow=document.querySelector('.st-btn-row');
+      if(brow)brow.innerHTML='<button class="st-btn start" onclick="_STS()">▶ START</button>';
+      var attEl=document.querySelector('.st-attempts');
+      if(attEl)attEl.textContent='ATTEMPT '+Math.min(attempts+1,MAX_ATTEMPTS)+' / '+MAX_ATTEMPTS;
+    }
     if(attempts>=MAX_ATTEMPTS){
       sessionDone=true;
       if(isFinite(best)&&best>=0.005){
@@ -468,7 +477,10 @@ window._gameFns.stopten=function ST(a){
     var b=document.getElementById('STbuddy');
     if(b){
       b.classList.remove('focused','happy','sad');
-      b.classList.add(t.face==='happy'?'happy':(t.face==='sad'?'sad':''));
+      // classList.add('') throws — the idle/CLOSE tier used to crash here,
+      // freezing the buddy face and skipping the status line.
+      var faceCls=t.face==='happy'?'happy':(t.face==='sad'?'sad':null);
+      if(faceCls)b.classList.add(faceCls);
       b.innerHTML=BUDDY(autoStop?'sad':t.face);
     }
   }
