@@ -692,6 +692,15 @@ window._gameFns.livingstones = function LS(a){
     aiRender();
   };
 
+  // Terminate the MCTS worker when the player leaves the game — it was only
+  // killed on MENU/new-AI-game, so a worker mid-genmove (up to 5000 playouts)
+  // kept burning CPU until page reload. The May-22 thermal antipattern in
+  // worker form.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(aiWorker){try{aiWorker.terminate();}catch(e){}aiWorker=null;}
+    aiThinking=false;
+  });
+
   renderMenu();
 };
 })();
