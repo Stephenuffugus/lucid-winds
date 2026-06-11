@@ -289,8 +289,12 @@ function endTurn(){
   S.placed=[];
   S.selIdx=-1;
   _play('snap');
-  if(anyQwirkle){ _playWin(); showQwirkleSplash('QWIRKLE +'+breakdown.lines.filter(function(l){return l.qwirkle;}).length*6); _e('game_win'); }
-  else{ _e('milestone'); }
+  // A Qwirkle is a MID-GAME milestone — firing _e('game_win') here triggered
+  // the full win celebration + companion/achievement bumps during play and
+  // double-paid on top of the real end-of-game win (Jun 10 audit).
+  if(anyQwirkle){ _playWin(); showQwirkleSplash('QWIRKLE +'+breakdown.lines.filter(function(l){return l.qwirkle;}).length*6); }
+  _e('milestone');
+  S.passCount=0;
   showBreakdown(breakdown.lines, breakdown.pts);
   // Check game-over
   if(S.pHand.length===0&&S.bag.length===0){
@@ -373,6 +377,9 @@ function aiTurn(){
       sm('Mirror swapped '+n);
     } else {
       sm('Mirror passed');
+      // Two consecutive passes with an empty bag = game over (canonical).
+      S.passCount=(S.passCount||0)+1;
+      if(S.passCount>=2){S.phase='gameover';updateAll();setTimeout(showEnd,500);return;}
     }
     if(S.aHand.length===0&&S.bag.length===0){
       S.aScore+=6; S.phase='gameover'; updateAll(); setTimeout(showEnd,500); return;
@@ -382,6 +389,7 @@ function aiTurn(){
   // Stagger the placements so the player sees each tile drop with the
   // score ticking up, instead of all tiles appearing simultaneously.
   S.placed=[];
+  S.passCount=0;
   var savedAi=S.aScore;
   var moves=best.moves.slice();
   var idx=0;
@@ -665,9 +673,23 @@ function updateControls(){
     ctrlRow.appendChild(makeBtn('END TURN +'+turnPts, 'primary', endTurn));
     ctrlRow.appendChild(makeBtn('↩ UNDO', 'default', undoLastPlacement));
   } else {
-    ctrlRow.appendChild(makeBtn('SWAP TILES', 'default', enterSwapMode));
+    // With an empty bag SWAP is impossible — without PASS, a player holding
+    // only unplayable tiles was softlocked (game over needs an empty hand).
+    if(S.bag.length===0)ctrlRow.appendChild(makeBtn('PASS', 'default', playerPass));
+    else ctrlRow.appendChild(makeBtn('SWAP TILES', 'default', enterSwapMode));
     ctrlRow.appendChild(makeBtn('↻ NEW', 'default', function(){ requestNewGame(); }));
   }
+}
+
+function playerPass(){
+  if(S.phase!=='play'||S.turn!=='player')return;
+  if(S.bag.length>0){sm('Bag still has tiles — play or swap');return;}
+  if(S.placed.length>0){sm('Finish or undo placements first');return;}
+  S.passCount=(S.passCount||0)+1;
+  sm('Passed');
+  if(S.passCount>=2){S.phase='gameover';updateAll();setTimeout(showEnd,500);return;}
+  S.turn='ai';S.selIdx=-1;updateAll();
+  setTimeout(aiTurn,700);
 }
 
 function makeBtn(label, style, onClick, disabled){
