@@ -14,6 +14,7 @@ window._gameFns.pixelgarden = function PG(a){
   var mirrorMode=false,showGrid=true;
   var undoStack=[],maxUndo=30;
   var drawing=false,totalPixels=0;
+  var pixelsSinceSave=0; // fresh strokes since the last paid save — earn gate
   var uniqueChanges=0;        // pixels that actually changed color
   var lastProgressAt=0;       // ms timestamp of last XP award
   var COLORS=[
@@ -148,7 +149,7 @@ window._gameFns.pixelgarden = function PG(a){
     if(tool==='draw'){
       setPixel(r,c,currentColor);
       if(mirrorMode)setPixel(r,GRID-1-c,currentColor);
-      totalPixels++;
+      totalPixels++;pixelsSinceSave++;
     } else if(tool==='erase'){
       setPixel(r,c,null);
       if(mirrorMode)setPixel(r,GRID-1-c,null);
@@ -274,8 +275,13 @@ window._gameFns.pixelgarden = function PG(a){
     var entry=galSaveCurrent(name);
     sm('Saved to Gallery: '+entry.name);
     _playWin();
-    if(g&&g.firstWin){_e('game_win');_sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});}
-    else _e('milestone');
+    // Earn requires fresh work since the last paid save — re-saving the same
+    // single pixel every 30s was a 2-sunbeam/30s trickle farm.
+    if(pixelsSinceSave>=20){
+      pixelsSinceSave=0;
+      if(g&&g.firstWin){_e('game_win');_sr('pixelgarden',{w:true,s:totalPixels,sz:GRID});}
+      else _e('milestone');
+    }
   };
   window._PGExport=function(){
     var link=document.createElement('a');
@@ -353,8 +359,12 @@ window._gameFns.pixelgarden = function PG(a){
     _renderGallery();
   };
   window._PGSZ=function(s){
+    // Switching size wipes the canvas AND the undo stack — confirm when
+    // there's unsaved work (one mis-tap used to destroy a painting).
+    if(totalPixels>0&&window.confirm&&!window.confirm('Switch to '+s+'×'+s+'? Your current canvas will be cleared.'))return;
     GRID=s;
     var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
+    pixelsSinceSave=0;
     initGrid();initCanvas();buildPalette();buildTools();render();
     sm('Canvas: '+GRID+'×'+GRID);
   };
@@ -550,7 +560,9 @@ window._gameFns.pixelgarden = function PG(a){
   };
   window._PGCmpSave=function(){
     if(!_cmpAnyAssigned())return;
-    var g=window._lwArtSaveGate&&window._lwArtSaveGate('pixelgarden_cmp');
+    // Same gate key as the regular save — the separate 'pixelgarden_cmp'
+    // key let alternating save/composition-save double the earn rate.
+    var g=window._lwArtSaveGate&&window._lwArtSaveGate('pixelgarden');
     if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     var built=_cmpBuildPixels();
     var defName='Composition '+(new Date()).toLocaleDateString();
