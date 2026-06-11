@@ -219,7 +219,7 @@ window._gameFns.breathing=function BR(a){
   var phases=PATTERNS[curKey].phases;
   var curCat='all';
   var phaseIdx=0,phaseTimer=0,breathing=false;
-  var breathCount=0,totalTime=0,_brWon=false;
+  var breathCount=0,totalTime=0,_brWon=false,lastMilestoneAt=0;
   var bloomProgress=0.3,targetBloom=0;
   var particles=[];
   var raf=null,lastTime=0,stopped=false;
@@ -443,7 +443,11 @@ window._gameFns.breathing=function BR(a){
       _tone(phases[phaseIdx].name);
       if(phaseIdx===0){
         breathCount++;
-        if(breathCount%5===0){_e('milestone');try{if(window._play)_play('match');}catch(e){}}
+        // Milestones are time-based (one per 60s of breathing) so fast
+        // techniques like Kapalabhati (1.2s cycles) can't outpace slow ones —
+        // before this, idling hands-free minted a milestone every ~6s at the
+        // 'free' class progCap of 99.
+        if(breathCount%5===0&&totalTime-lastMilestoneAt>=60){lastMilestoneAt=totalTime;_e('milestone');try{if(window._play)_play('match');}catch(e){}}
         // Mint a hash after 10 completed breaths. Fires once per launch.
         if(breathCount===10&&!_brWon){_brWon=true;_e('game_win');try{if(window._sr)window._sr('breathing',{w:true,s:breathCount});}catch(e){}}
       }
@@ -561,7 +565,7 @@ window._gameFns.breathing=function BR(a){
     if(audioOn){_getAC();_tone('INHALE');}
   };
   window._BRR=function(){
-    breathing=false;phaseIdx=0;phaseTimer=0;breathCount=0;totalTime=0;bloomProgress=0.3;_brWon=false;
+    breathing=false;phaseIdx=0;phaseTimer=0;breathCount=0;totalTime=0;bloomProgress=0.3;_brWon=false;lastMilestoneAt=0;
     var btn=document.getElementById('BRgo');if(btn)btn.textContent='▶ START';
     var phEl=document.getElementById('BRph');if(phEl)phEl.textContent='READY';
     var ct=document.getElementById('BRct');if(ct)ct.textContent='';
