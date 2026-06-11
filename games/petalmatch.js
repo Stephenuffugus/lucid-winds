@@ -685,6 +685,7 @@ window._gameFns.petalmatch = function PM(a){
     if(isObjComplete()){
       level++;
       var prevLv=level-1;
+      var finalScore=score; // capture BEFORE the reset — _sr recorded 0 for every win
       objective=genLevel(level);
       moves=objective.moves;
       score=0;
@@ -695,8 +696,8 @@ window._gameFns.petalmatch = function PM(a){
       if(level>bestLevel){bestLevel=level;try{localStorage.setItem('lw_pm_level',String(bestLevel));}catch(e){}var bel=document.getElementById('PMbest');if(bel)bel.textContent=bestLevel;}
       if(!won){won=true;_e('game_win');}
       else _e('milestone');
-      _sr('petalmatch',{w:true,s:score,lv:prevLv});
-      initGrid();while(findMatches().length>0)initGrid();
+      _sr('petalmatch',{w:true,s:finalScore,lv:prevLv});
+      initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
       updateHUD();render();return;
     }
     if(moves<=0){
@@ -1133,7 +1134,7 @@ window._gameFns.petalmatch = function PM(a){
     initCanvas();level=bestLevel;score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
     resetObjState();
-    initGrid();while(findMatches().length>0)initGrid();
+    initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
     updateHUD();rafId=requestAnimationFrame(loop);
     sm('Swipe to swap. Match 3+ flowers.');
   };
@@ -1143,7 +1144,7 @@ window._gameFns.petalmatch = function PM(a){
     initCanvas();score=0;won=false;lost=false;animating=false;selected=null;fx=[];
     objective=genLevel(level);moves=objective.moves;
     resetObjState();
-    initGrid();while(findMatches().length>0)initGrid();
+    initGrid();while(findMatches().length>0||!findValidSwap())initGrid();
     updateHUD();rafId=requestAnimationFrame(loop);
     sm('Retrying level '+level);
   };

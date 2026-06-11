@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: sokoban
  *
  * COPY of the inline GSK mount function from index.html
- * lines 68052-68371.
+ * lines 68052-68372.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -296,6 +296,7 @@
     var _skHist=[];
     // 0=floor,1=wall,2=crate,3=target,4=crate-on-target
     function load(){var L=LEVELS[lvl%LEVELS.length];w=L.w;h=L.h;grid=[];
+      _skHist=[]; // clear undo here — the win-screen NEXT path skipped it, so Undo restored the PREVIOUS level's grid into the new level
       for(var i=0;i<L.map.length;i++){var c=L.map[i];if(c==='@'){grid.push(0);px=i%w;py=Math.floor(i/w)}else if(c==='+'){grid.push(3);px=i%w;py=Math.floor(i/w)}else if(c==='O'){grid.push(2)}else if(c==='*'){grid.push(4)}else if(c==='X'){grid.push(3)}else if(c==='#'){grid.push(1)}else grid.push(0)}
       origGrid=grid.slice();moves=0;document.getElementById('SKl').textContent=lvl+1;document.getElementById('SKm').textContent='0'}
     function rn(){gd.style.gridTemplateColumns='repeat('+w+',1fr)';gd.innerHTML='';

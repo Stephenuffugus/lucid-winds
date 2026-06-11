@@ -274,7 +274,11 @@ function placeOnRow(rowIdx){
   var space=maxSize-row.length;
   var tiles=S.selected.tiles;
   var firstPlayer=S.selected.firstPlayer;
-  if(firstPlayer){ if(board.floor.length<7)board.floor.push('first'); else S.discard.push('first');}  // shouldn't happen
+  // The 'first' marker is NOT a tile — pushing it into the discard let the
+  // bag recycle deal it as a broken tile (BG['first'] is undefined). When
+  // the floor is full the marker is simply dropped: the floor penalty is
+  // already maxed and the marker never returns to the bag in real Azul.
+  if(firstPlayer && board.floor.length<7)board.floor.push('first');
   var spilled=0;
   for(var i=0;i<tiles.length;i++){
     if(i<space)row.push(tiles[i]);
