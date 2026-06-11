@@ -11,6 +11,7 @@ window._gameFns.cribbage = function CRIB(a){
   var SUITS=['♠','♥','♦','♣'];
   var VALS=[1,2,3,4,5,6,7,8,9,10,10,10,10];
   var G;
+  var gen=0; // bumped by newGame so stale timers can't touch a fresh deal
 
   ms(a,'<span id="CBheader" style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="CBp" style="font-size:1.2em;color:#e8dcc8;">0</strong> vs AI <strong id="CBa" style="font-size:1.2em;color:#c47a7a;">0</strong></span>');
   mm(a);
@@ -60,6 +61,7 @@ window._gameFns.cribbage = function CRIB(a){
   function isRed(c){return c.suit===1||c.suit===2;}
 
   function newGame(){
+    gen++;
     G={pScore:0,aScore:0,pPrev:0,aPrev:0,dealer:'ai',phase:'deal',deck:[],
        pHand:[],aHand:[],crib:[],starter:null,
        pSelected:[],playArea:[],playCount:0,
@@ -88,7 +90,7 @@ window._gameFns.cribbage = function CRIB(a){
     G.aHand=G.deck.splice(0,6);
     G.crib=[];G.starter=null;G.pSelected=[];
     G.playArea=[];G.playCount=0;G.pPlayed=[];G.aPlayed=[];
-    G.pPass=false;G.aPass=false;G.lastScoreBreakdown='';
+    G.pPass=false;G.aPass=false;G.seqLead=null;G.lastScoreBreakdown='';
     G.dealer=G.dealer==='ai'?'player':'ai';
     G.phase='discard';
     render();
@@ -117,7 +119,7 @@ window._gameFns.cribbage = function CRIB(a){
     G.phase='peg';G.playArea=[];G.playCount=0;
     if(G.dealer==='player'){
       G.aiThinking=true;render();
-      setTimeout(function(){G.aiThinking=false;aiPeg();},900);
+      var g=gen;setTimeout(function(){if(g!==gen)return;G.aiThinking=false;aiPeg();},900);
     }else{
       render();
     }
@@ -157,13 +159,33 @@ window._gameFns.cribbage = function CRIB(a){
     var r=scorePeg(G.playArea,G.playCount);
     if(r.pts>0){addP(r.pts);sm('+'+r.pts);_e('progress');_showBanner(r.callouts,r.pts,'#7ab356');}
     if(checkWin())return;
-    G.pPass=false;G.aPass=false;
+    // Own pass clears (we just played); the AI's "Go" persists for the rest
+    // of this sequence — the count only rises, so it stays unable anyway.
+    G.pPass=false;
     render();
     if(G.playCount===31){
-      setTimeout(function(){G.playCount=0;G.playArea=[];render();checkPegContinue();},800);
+      var g=gen;
+      setTimeout(function(){if(g!==gen)return;G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;G.seqLead='ai';render();checkPegContinue();},800);
       return;
     }
     checkPegContinue();
+  }
+  function canPlaySide(hand,played){
+    for(var i=0;i<hand.length;i++){
+      if(played.indexOf(i)>=0)continue;
+      if(G.playCount+hand[i].val<=31)return true;
+    }
+    return false;
+  }
+  function seqEnd(){
+    // Both sides stuck under 31 — whoever played the LAST card pegs 1 for the Go.
+    var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
+    if(lastWho==='ai')addA(1);else addP(1);
+    sm((lastWho==='ai'?'AI':'You')+' +1 (Go)');
+    G.seqLead=lastWho==='ai'?'player':'ai';
+    G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
+    if(checkWin())return;
+    render();checkPegContinue();
   }
   function aiPeg(){
     if(G.phase!=='peg')return;
@@ -173,28 +195,15 @@ window._gameFns.cribbage = function CRIB(a){
       if(G.playCount+G.aHand[i].val<=31)avail.push(i);
     }
     if(avail.length===0){
-      // AI can't play — say "Go"
+      // AI can't play — say "Go". No point yet: the go point goes to whoever
+      // plays the LAST card of the sequence, once both sides are stuck.
       G.aPass=true;
-      // Check if player also can't play
-      var pCanPlay=false;
-      for(var i2=0;i2<G.pHand.length;i2++){
-        if(G.pPlayed.indexOf(i2)>=0)continue;
-        if(G.playCount+G.pHand[i2].val<=31){pCanPlay=true;break;}
-      }
-      if(!pCanPlay){
-        // Both passed — award last-card point, reset count
-        var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
-        if(lastWho==='ai')addA(1);else addP(1);
-        sm((lastWho==='ai'?'AI':'You')+' +1 (Go)');
-        G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
-        if(checkWin())return;
-        render();checkPegContinue();
-      }else{
-        // AI passes, player keeps playing
-        sm('AI "Go", +1 to you');addP(1);
-        if(checkWin())return;
+      if(canPlaySide(G.pHand,G.pPlayed)){
+        sm('AI says "Go" — keep playing');
         render();
         // Player's turn (no auto-advance — wait for player card tap)
+      }else{
+        seqEnd();
       }
       return;
     }
@@ -214,19 +223,28 @@ window._gameFns.cribbage = function CRIB(a){
     var r=scorePeg(G.playArea,G.playCount);
     if(r.pts>0){addA(r.pts);sm('AI +'+r.pts);_showBanner(r.callouts,r.pts,'#dc8a8a');}
     if(checkWin())return;
+    G.aPass=false;
     if(G.playCount===31){
-      setTimeout(function(){G.playCount=0;G.playArea=[];render();checkPegContinue();},800);
+      var g31=gen;
+      setTimeout(function(){if(g31!==gen)return;G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;G.seqLead='player';render();checkPegContinue();},800);
       return;
     }
     render();checkPegContinue();
   }
   function checkPegContinue(){
     if(G.pPlayed.length>=4&&G.aPlayed.length>=4){
-      var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
-      if(lastWho==='player')addP(1);else addA(1);
-      if(checkWin())return;
-      setTimeout(showPhase,900);return;
+      // Last card of the hand pegs 1 — unless the sequence already settled
+      // via 31 or a Go (playArea was reset, the point is already awarded).
+      if(G.playArea.length>0){
+        var lastWho=G.playArea[G.playArea.length-1].who;
+        if(lastWho==='player')addP(1);else addA(1);
+        sm((lastWho==='player'?'You':'AI')+' +1 (last card)');
+        if(checkWin())return;
+      }
+      var gs=gen;setTimeout(function(){if(gs===gen)showPhase();},900);return;
     }
+    // If neither side can add a card under 31, settle the sequence now.
+    if(!canPlaySide(G.pHand,G.pPlayed)&&!canPlaySide(G.aHand,G.aPlayed)){seqEnd();return;}
     // Turn order based on last card + passes, not brittle parity math
     var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:null;
     var isPlayerNext;
@@ -234,13 +252,16 @@ window._gameFns.cribbage = function CRIB(a){
     else if(G.pPass&&!G.aPass)isPlayerNext=false; // player passed, AI continues
     else if(lastWho==='player')isPlayerNext=false; // player just played, AI's turn
     else if(lastWho==='ai')isPlayerNext=true;     // AI just played, player's turn
-    else isPlayerNext=(G.dealer==='ai');            // fresh sequence: non-dealer leads
+    else if(G.seqLead)isPlayerNext=(G.seqLead==='player'); // fresh sequence after a Go/31: opponent of last-card player leads
+    else isPlayerNext=(G.dealer==='ai');            // first sequence: non-dealer leads
     if(!isPlayerNext){
+      if(G.aiThinking)return; // an AI beat is already scheduled
       // AI "thinking" beat — 800-1200ms random so it feels like a human deciding
       // rather than an instant robot. Indicator shows in the render.
       G.aiThinking=true;render();
       var delay=850+Math.floor(Math.random()*350);
-      setTimeout(function(){G.aiThinking=false;aiPeg();},delay);
+      var g=gen;
+      setTimeout(function(){if(g!==gen)return;G.aiThinking=false;aiPeg();},delay);
     }
   }
   function scorePeg(area,count){
@@ -324,8 +345,12 @@ window._gameFns.cribbage = function CRIB(a){
           setTimeout(function(){stepCombo(i+1)},720);
         }else{
           // Held-beat on the final combo so the total settles.
-          if(result.total>=24)_e('progress');
-          _e('milestone');
+          // Earn only on the PLAYER's scored hands (incl. their crib) —
+          // the AI's big hands shouldn't pay the player.
+          if(scorer==='player'){
+            if(result.total>=24)_e('progress');
+            _e('milestone');
+          }
           if(checkWin())return;
           setTimeout(function(){narrate(whoIdx+1)},1200);
         }
@@ -352,41 +377,32 @@ window._gameFns.cribbage = function CRIB(a){
     // Runs — longest run wins; duplicates multiply. Only one run combo is scored
     // (the length × multiplier), representing the best run in the hand.
     var ranks=all.map(function(c){return c.rank;}).sort(function(a,b){return a-b;});
-    var runFound=false;
-    if(ranks[4]-ranks[0]===4){
-      var uniq={};for(var ri=0;ri<5;ri++)uniq[ranks[ri]]=1;
-      if(Object.keys(uniq).length===5){
-        pts+=5;
-        var allIdx=[0,1,2,3,4];
-        combos.push({type:'run',points:5,label:'Run of five',indices:allIdx});
-        runFound=true;
-      }
+    // Runs — find the consecutive stretch of UNIQUE ranks (min 3) and multiply
+    // by duplicate counts: double run of 4 = 8, double-double run = 12,
+    // triple run = 9. The old sliding-window-with-duplicates approach scored
+    // 2-3-3-4-5 as 6 (should be 8) and 3-3-4-4-5 as 0 (should be 12).
+    var cntByRank={},uniqRanks=[];
+    for(var ri=0;ri<5;ri++){
+      if(cntByRank[ranks[ri]])cntByRank[ranks[ri]]++;
+      else{cntByRank[ranks[ri]]=1;uniqRanks.push(ranks[ri]);}
     }
-    if(!runFound){
-      for(var len=4;len>=3&&!runFound;len--){
-        for(var s=0;s<=5-len;s++){
-          var sub=ranks.slice(s,s+len);
-          var uq={};for(var ui=0;ui<sub.length;ui++)uq[sub[ui]]=1;
-          if(sub[sub.length-1]-sub[0]===len-1&&Object.keys(uq).length===len){
-            var mult=1;
-            var runIdx=[];
-            for(var rk=0;rk<len;rk++){
-              var cnt=0;
-              for(var rnk=0;rnk<ranks.length;rnk++)if(ranks[rnk]===sub[rk])cnt++;
-              mult*=cnt;
-            }
-            // Collect the indices of the run cards in all[]
-            for(var ai=0;ai<all.length;ai++){
-              if(all[ai].rank>=sub[0]&&all[ai].rank<=sub[sub.length-1])runIdx.push(ai);
-            }
-            var runPts=len*mult;
-            pts+=runPts;
-            var runLabel = mult>1 ? ('Run of '+len+' × '+mult) : ('Run of '+len);
-            combos.push({type:'run',points:runPts,label:runLabel,indices:runIdx});
-            runFound=true;break;
-          }
+    for(var s=0;s<uniqRanks.length;s++){
+      var e=s;
+      while(e+1<uniqRanks.length&&uniqRanks[e+1]===uniqRanks[e]+1)e++;
+      var runLen=e-s+1;
+      if(runLen>=3){
+        var mult=1,runIdx=[];
+        for(var rk=s;rk<=e;rk++)mult*=cntByRank[uniqRanks[rk]];
+        for(var ai=0;ai<all.length;ai++){
+          if(all[ai].rank>=uniqRanks[s]&&all[ai].rank<=uniqRanks[e])runIdx.push(ai);
         }
+        var runPts=runLen*mult;
+        pts+=runPts;
+        var runLabel=runLen===5?'Run of five':(mult>1?('Run of '+runLen+' × '+mult):('Run of '+runLen));
+        combos.push({type:'run',points:runPts,label:runLabel,indices:runIdx});
+        break; // two disjoint runs of 3+ can't fit in five cards
       }
+      s=e;
     }
     // Flush — 4 or 5 of same suit. In the crib, must be all 5 (hand+starter).
     var hs=hand.map(function(c){return c.suit;});
@@ -548,7 +564,7 @@ window._gameFns.cribbage = function CRIB(a){
       for(var ci=0;ci<G.pHand.length;ci++){
         if(G.pPlayed.indexOf(ci)<0&&G.playCount+G.pHand[ci].val<=31){canAny=true;break;}
       }
-      if(!canAny&&G.pPlayed.length<4){
+      if(!canAny&&!G.pPass&&G.pPlayed.length<4){
         h+='<button class="gb" onclick="_CBGO()" style="min-height:44px;padding:10px 22px;font-size:0.8rem;background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.6);color:#e8dcc8;font-family:Georgia,serif;font-style:italic;">Say "Go"</button>';
       }
     }
@@ -679,23 +695,17 @@ window._gameFns.cribbage = function CRIB(a){
   window._CBD=confirmDiscard;
   window._CBPC=playCard;
   window._CBGO=function(){
-    // Check if AI still has cards to play
-    var aiHasCard=false;
-    for(var i=0;i<G.aHand.length;i++){
-      if(G.aPlayed.indexOf(i)>=0)continue;
-      if(G.playCount+G.aHand[i].val<=31){aiHasCard=true;break;}
-    }
+    if(G.phase!=='peg'||G.pPass)return;
+    // Saying Go is only legal when you truly can't play (must play if able).
+    if(canPlaySide(G.pHand,G.pPlayed)){sm('You have a playable card');return;}
     G.pPass=true;
-    if(aiHasCard){addA(1);sm('AI +1 (you said Go)');}
-    else{
-      // Both can't play — count resets, last-card point
-      var lastWho=G.playArea.length>0?G.playArea[G.playArea.length-1].who:'player';
-      if(lastWho==='ai')addA(1);else addP(1);
-      sm((lastWho==='ai'?'AI':'You')+' +1 (last card)');
-      G.playCount=0;G.playArea=[];G.pPass=false;G.aPass=false;
+    if(canPlaySide(G.aHand,G.aPlayed)){
+      // AI keeps playing; the go point lands at sequence end via seqEnd().
+      sm('You say "Go" — AI plays on');
+      render();checkPegContinue();
+    }else{
+      seqEnd();
     }
-    if(checkWin())return;
-    render();checkPegContinue();
   };
 
   newGame();
