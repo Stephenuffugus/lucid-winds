@@ -38,7 +38,7 @@ window._gameFns.storyseeds=function SS(a){
     {text:'Describe a place where time moves slowly.',category:'SENSES',icon:'🕰'}
   ];
 
-  var currentPrompt=null,savedMilestone=false,_ssWon=false;
+  var currentPrompt=null,_ssWon=false;
 
   ms(a,'Story Seeds · <span id="SSw">0 words</span>');
   mm(a);
@@ -88,15 +88,25 @@ window._gameFns.storyseeds=function SS(a){
   }
 
   window._SSIn=function(){
-    var n=updateWords();
-    if(n>=10&&!savedMilestone){savedMilestone=true;_e('milestone');}
+    // Typing only updates the word counter. The old instant 10-word
+    // milestone here was an unbounded farm: paste 10 words → New Prompt →
+    // paste again, ~3s per sunbeam at the 'free' class progCap of 99.
+    // All earning now goes through the gated, daily-capped save below.
+    updateWords();
   };
 
   window._SSNew=function(){
     // _ssWon must NOT reset here — otherwise users can _SSNew()+_SSSave loop
     // to re-trigger the 10-word game_win every prompt switch.
-    currentPrompt=getRandomPrompt();savedMilestone=false;render();
+    currentPrompt=getRandomPrompt();render();
   };
+
+  // Paid saves cap out at 3/day — it's a daily journal, not a sunbeam mine.
+  function _ssPaidToday(){
+    var k='lw_ss_paid_'+new Date().toISOString().split('T')[0];
+    var n=0;try{n=parseInt(localStorage.getItem(k)||'0',10)||0;}catch(e){}
+    return {key:k,count:n};
+  }
 
   window._SSSave=function(){
     var ta=document.getElementById('SSta');if(!ta)return;
@@ -112,11 +122,17 @@ window._gameFns.storyseeds=function SS(a){
       if(entries.length>365)entries=entries.slice(-365);
       localStorage.setItem('sws_storyseeds_entries',JSON.stringify(entries));
     }catch(e){}
-    if(g&&g.firstWin){_ssWon=true;_e('game_win');if(_playWin)_playWin();}
-    else _e('milestone');
+    var paid=_ssPaidToday();
+    if(paid.count<3){
+      try{localStorage.setItem(paid.key,String(paid.count+1));}catch(e){}
+      if(g&&g.firstWin){_ssWon=true;_e('game_win');if(_playWin)_playWin();}
+      else _e('milestone');
+      sm('✓ Saved · '+n+' words');
+    }else{
+      sm('✓ Saved · '+n+' words (journal rewards refresh tomorrow)');
+    }
     _sr('storyseeds',{w:true,s:n});
-    sm('✓ Saved · '+n+' words');
-    ta.value='';updateWords();savedMilestone=false;
+    ta.value='';updateWords();
     currentPrompt=getRandomPrompt();render();
   };
 
