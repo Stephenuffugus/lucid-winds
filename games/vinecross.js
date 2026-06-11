@@ -265,8 +265,40 @@ window._gameFns.vinecross=function VC(a){
       if(!c0.length){outer:for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++)if(board[r][c]===0)return [r,c];return null;}
       return c0[Math.floor(Math.random()*c0.length)];
     }
-    var best=null,bestScore=-Infinity;
     var cands=getCandidates(board,who);
+    var opp=(who===1?2:1);
+    // FORCED MOVES first — the eval's horizon can't see an open three
+    // maturing into an unstoppable open four, so Sapling/Grove used to lose
+    // to a plain straight line in 5 moves.
+    // (1) Take an immediate win.
+    for(var f0=0;f0<cands.length;f0++){
+      board[cands[f0][0]][cands[f0][1]]=who;
+      var wNow=checkWinFast(board,cands[f0][0],cands[f0][1],who);
+      board[cands[f0][0]][cands[f0][1]]=0;
+      if(wNow)return cands[f0];
+    }
+    // (2) Block the opponent's immediate win.
+    for(var f1=0;f1<cands.length;f1++){
+      board[cands[f1][0]][cands[f1][1]]=opp;
+      var oWin=checkWinFast(board,cands[f1][0],cands[f1][1],opp);
+      board[cands[f1][0]][cands[f1][1]]=0;
+      if(oWin)return cands[f1];
+    }
+    // (3) Block an open three (0-p-p-p-0): pick the better end by search.
+    var ends=openThreeEnds(opp);
+    if(ends.length){
+      var fb=null,fs=-Infinity;
+      for(var f2=0;f2<ends.length;f2++){
+        var em=ends[f2];
+        board[em[0]][em[1]]=who;
+        var es=-minimax(board,depth-1,false,-Infinity,Infinity,who);
+        board[em[0]][em[1]]=0;
+        if(es>fs){fs=es;fb=em;}
+      }
+      if(fb)return fb;
+    }
+    // Score every candidate WITHOUT jitter first.
+    var scored=[],rawBest=-Infinity;
     for(var i=0;i<cands.length;i++){
       var m=cands[i];
       board[m[0]][m[1]]=who;
@@ -274,12 +306,39 @@ window._gameFns.vinecross=function VC(a){
       if(checkWinFast(board,m[0],m[1],who))sc=1000000;
       else sc=-minimax(board,depth-1,false,-Infinity,Infinity,who);
       board[m[0]][m[1]]=0;
-      if(LVL===2)sc+=Math.random()*60;
-      else if(LVL===3)sc+=Math.random()*20;
-      if(sc>bestScore){bestScore=sc;best=m;}
+      scored.push({m:m,sc:sc});
+      if(sc>rawBest)rawBest=sc;
+    }
+    // Personality jitter only among NEAR-EQUAL candidates. The old code
+    // jittered every score, so Sapling/Grove routinely skipped forced
+    // blocks — an open FOUR went unanswered and a straight line won in 5.
+    var best=null,bestScore=-Infinity,jit=LVL===2?60:LVL===3?20:0;
+    for(var j=0;j<scored.length;j++){
+      var s2=scored[j].sc;
+      if(jit&&s2>=rawBest-50)s2+=Math.random()*jit;
+      if(s2>bestScore){bestScore=s2;best=scored[j].m;}
     }
     if(!best){for(var r2=0;r2<SZ;r2++)for(var c2=0;c2<SZ;c2++)if(board[r2][c2]===0)return [r2,c2];}
     return best;
+  }
+
+  // All 0-p-p-p-0 windows for player p → both open ends (forced block cells).
+  function openThreeEnds(p){
+    var ends=[],seen={},dirs=[[0,1],[1,0],[1,1],[1,-1]];
+    for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++){
+      for(var d=0;d<4;d++){
+        var dr=dirs[d][0],dc=dirs[d][1];
+        var er=r+4*dr,ec=c+4*dc;
+        if(er<0||er>=SZ||ec<0||ec>=SZ)continue;
+        if(board[r][c]!==0||board[er][ec]!==0)continue;
+        if(board[r+dr][c+dc]===p&&board[r+2*dr][c+2*dc]===p&&board[r+3*dr][c+3*dc]===p){
+          var k1=r*SZ+c,k2=er*SZ+ec;
+          if(!seen[k1]){seen[k1]=1;ends.push([r,c]);}
+          if(!seen[k2]){seen[k2]=1;ends.push([er,ec]);}
+        }
+      }
+    }
+    return ends;
   }
 
   function minimax(bd,depth,isMax,alpha,beta,aiP){
