@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: checkers
  *
  * COPY of the inline GCK mount function from index.html
- * lines 66875-67325.
+ * lines 66875-67327.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -394,7 +394,9 @@
     function doMove(m){
       _play('snap');bd[m.t]=bd[m.f];bd[m.f]=0;
       lastFrom=m.f;lastTo=m.t;mv++;
-      if(m.j){bd[m.cap]=0;_e('capture');}
+      // Earn only on the HUMAN's jumps (pieces 1/3) — this used to pay the
+      // player every time the AI captured their pieces.
+      if(m.j){bd[m.cap]=0;if(bd[m.t]===1||bd[m.t]===3)_e('capture');}
     }
     function crown(pos){
       var r=Math.floor(pos/8);

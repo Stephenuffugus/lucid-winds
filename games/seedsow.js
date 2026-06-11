@@ -24,6 +24,7 @@ window._gameFns.seedsow=function SS(a){
   var board=[];
   var turn=0; // 0=player, 1=AI
   var busy=false;
+  var bestStoreEarn=0; // store high-water mark for capture earns (anti undo-refarm)
   var difficulty=2; // 1-4 tier
   try{var _d=parseInt(localStorage.getItem('lw_ss_diff'));if(_d>=1&&_d<=4)difficulty=_d;}catch(e){}
   var stats={w:0,l:0,d:0,streak:0,best:0};
@@ -104,7 +105,7 @@ window._gameFns.seedsow=function SS(a){
 
   function newGame(){
     board=[4,4,4,4,4,4,0,4,4,4,4,4,4,0];
-    turn=0;busy=false;
+    turn=0;busy=false;bestStoreEarn=0;
     undoStack=[];hintPit=-1;lastMovePit=-1;capturedIdx=-1;floatBanner='';
     var dsel=document.getElementById('SSd');if(dsel)dsel.value=String(difficulty);
     sm('Your turn');render();renderStats();
@@ -146,7 +147,9 @@ window._gameFns.seedsow=function SS(a){
             board[myStore]+=captureAmt;
             board[opp]=0;board[idx]=0;
             capturedIdx=opp;
-            _e('progress');
+            // Earn only on PLAYER captures, and only past the previous store
+            // high-water mark — undo+recapture can't re-earn the same seeds.
+            if(side===0&&board[myStore]>bestStoreEarn){bestStoreEarn=board[myStore];_e('progress');}
           }
         }
         render();

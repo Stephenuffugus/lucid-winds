@@ -383,8 +383,10 @@ window._gameFns.bowergarden = function BG(a){
     }
     teamScore[team]+=pts;
     var tn=team===0?'Your team':'Opponents';
-    sm(tn+' +'+pts);_e('milestone');
-    if(ct===5||dt===0)_e('progress');
+    sm(tn+' +'+pts);
+    // Earn only when YOUR team scores the hand (incl. the march bonus) —
+    // getting euchred shouldn't pay you.
+    if(team===0){_e('milestone');if(ct===5||dt===0)_e('progress');}
     if(teamScore[0]>=10||teamScore[1]>=10){
       phase='gameOver';
       setTimeout(function(){

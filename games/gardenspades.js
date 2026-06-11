@@ -222,7 +222,8 @@ window._gameFns.gardenspades = function GardenSpades(a){
         }else{
           sm(NAMES[winner]+' takes the trick');
         }
-        _e('progress');
+        // Earn only when YOUR TEAM (you + North) takes the trick.
+        if(winner===0||winner===2)_e('progress');
         render();
         // Beat 2: 1100ms hold so the win lands. Was 600ms — too quick.
         setTimeout(function(){
