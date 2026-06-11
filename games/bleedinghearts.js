@@ -36,6 +36,7 @@ window._gameFns.bleedinghearts = function BH(a){
   var NAMES=['You','West','North','East'];
 
   var hands=[[],[],[],[]],scores=[0,0,0,0],roundPts=[0,0,0,0];
+  var gen=0; // bumped by _BHN so stale AI/round timers can't touch a fresh game
   var trick=[],trickCards=[null,null,null,null];
   var leader=0,currentPlayer=0,phase='',heartsBroken=false;
   var passDir=0,passSelection=[],roundNum=0,trickNum=0;
@@ -175,6 +176,9 @@ window._gameFns.bleedinghearts = function BH(a){
     roundPts=[0,0,0,0];heartsBroken=false;trick=[];trickCards=[null,null,null,null];
     voids=[{},{},{},{}];lastWinnerSeat=-1;qsInTrick=false;heartsJustBroke=false;
     lastTrick=null;showingHistory=false;moonShot=null;
+    // Reset per-hand trick counter — without this, every round after the
+    // first skipped the 2♣-lead and no-points-on-first-trick rules.
+    trickNum=0;
   }
   function newRound(){
     roundNum++;deal();passDir=(roundNum-1)%4;
@@ -209,7 +213,8 @@ window._gameFns.bleedinghearts = function BH(a){
     currentPlayer=leader;trick=[];trickCards=[null,null,null,null];
     sm(leader===S?'Lead the 2♣':NAMES[leader]+' leads');
     render();
-    if(currentPlayer!==S)setTimeout(function(){doAIPlay(true);},900);
+    var g=gen;
+    if(currentPlayer!==S)setTimeout(function(){if(g===gen)doAIPlay(true);},900);
   }
   function playCard(player,card){
     removeCard(hands[player],card);
@@ -231,28 +236,33 @@ window._gameFns.bleedinghearts = function BH(a){
     if(trick.length===4){
       var winner=trickWinner(trick);var pts=trickPoints(trick);
       roundPts[winner]+=pts;phase='trickDone';
+      var g=gen;
       // Beat 1: hold on the trick with winner glow + optional Q♠ flash.
       setTimeout(function(){
+        if(g!==gen)return;
         lastWinnerSeat=winner;
         sm(NAMES[winner]+' takes'+(pts>0?' ('+pts+' pts)':''));
-        if(pts>0)_e('progress');
+        // Earn when an OPPONENT eats points — that's the favorable outcome.
+        if(pts>0&&winner!==S)_e('progress');
         render();
         // Beat 2: clear after 1100ms. Longer than before so the drama lands.
         setTimeout(function(){
+          if(g!==gen)return;
           // Snapshot the trick so the player can review it via the 🕐 button.
           lastTrick={cards:trick.slice(),winner:winner,pts:pts};
           lastWinnerSeat=-1;qsInTrick=false;
           trick=[];trickCards=[null,null,null,null];trickNum++;
           if(hands[0].length===0){scoreRound();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
-          if(currentPlayer!==S)setTimeout(function(){doAIPlay(false);},750);
+          if(currentPlayer!==S)setTimeout(function(){if(g===gen)doAIPlay(false);},750);
         },1100);
       },450);
       return;
     }
     currentPlayer=(currentPlayer+1)%4;render();
+    var g2=gen;
     // AI pacing bumped 350→800ms so plays read as deliberate.
-    if(currentPlayer!==S)setTimeout(function(){doAIPlay(trickNum===0&&trick.length<4);},800);
+    if(currentPlayer!==S)setTimeout(function(){if(g2===gen)doAIPlay(trickNum===0&&trick.length<4);},800);
   }
   function doAIPlay(isFirst){
     if(phase!=='play'||currentPlayer===S)return;
@@ -272,7 +282,7 @@ window._gameFns.bleedinghearts = function BH(a){
         for(var j=0;j<4;j++)if(j!==moonSeat)roundPts[j]=26;
         roundPts[moonSeat]=0;
         sm(NAMES[moonSeat]+' shot the moon!');
-        _e('milestone');
+        if(moonSeat===S)_e('milestone');
       }
       for(var pp=0;pp<4;pp++)scores[pp]+=roundPts[pp];
       var maxScore=Math.max.apply(null,scores);
@@ -281,17 +291,21 @@ window._gameFns.bleedinghearts = function BH(a){
         if(won){_e('game_win');_playWin();sm('♥ You win! '+scores[S]+' pts');}
         else{_e('game_loss');_play('lose');sm('You lose. '+scores[S]+' pts');}
         _sr('bleedinghearts',{w:won,s:scores[S],r:roundNum});
-        setTimeout(function(){scores=[0,0,0,0];roundNum=0;trickNum=0;newRound();},3000);
+        var gr=gen;
+        setTimeout(function(){if(gr!==gen)return;scores=[0,0,0,0];roundNum=0;trickNum=0;newRound();},3000);
         return;
       }
-      setTimeout(newRound,2000);
+      var gn=gen;
+      setTimeout(function(){if(gn===gen)newRound();},2000);
     }
     if(moonSeat>=0){
       // Full-screen moon takeover — 2.6s of drama before the score posts.
       moonShot={seat:moonSeat,color:PLAYER_COLORS[moonSeat]};
       render();
-      _e('progress');
+      if(moonSeat===S)_e('progress');
+      var gm=gen;
       setTimeout(function(){
+        if(gm!==gen)return;
         moonShot=null;
         finalize();
       },2600);
@@ -546,6 +560,7 @@ window._gameFns.bleedinghearts = function BH(a){
   window._BHN=function(){
     // Reset full state. Was missing phase/passSelection — pressing NEW
     // mid-pass left stale selections that bled into the new round.
+    gen++;
     scores=[0,0,0,0];roundNum=0;trickNum=0;
     phase='';passSelection=[];trick=[];trickCards=[null,null,null,null];
     heartsBroken=false;currentPlayer=0;
