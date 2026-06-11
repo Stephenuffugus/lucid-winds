@@ -56,7 +56,20 @@ function GFC(a){
   function checkWin(){for(var f=0;f<4;f++)if(fnd[f].length<13)return false;return true;}
   function emptyFree(){var n=0;for(var i=0;i<4;i++)if(!free[i])n++;return n;}
   function emptyCols(){var n=0;for(var c=0;c<8;c++)if(tab[c].length===0)n++;return n;}
-  function maxMove(){return (1+emptyFree())*Math.pow(2,emptyCols());}
+  // Supermove capacity. Standard rule: when moving TO an empty column, that
+  // column can't count toward the 2^empties multiplier.
+  function maxMove(toEmpty){
+    var ec=emptyCols();
+    if(toEmpty)ec=Math.max(0,ec-1);
+    return (1+emptyFree())*Math.pow(2,ec);
+  }
+  // A movable stack must be a legal run: descending ranks, alternating colors.
+  function isRun(cards){
+    for(var i=1;i<cards.length;i++){
+      if(_cdIsRed(cards[i].s)===_cdIsRed(cards[i-1].s)||cards[i].r!==cards[i-1].r-1)return false;
+    }
+    return true;
+  }
   function canFnd(card,fi){
     var pile=fnd[fi];
     // Empty foundation slot is suit-locked by its art — only that suit's Ace seeds it.
@@ -67,21 +80,6 @@ function GFC(a){
     var col=tab[ci];if(col.length===0)return true;
     var top=col[col.length-1];
     return _cdIsRed(top.s)!==_cdIsRed(card.s)&&card.r===top.r-1;
-  }
-  function tryAutoFnd(card,src){
-    for(var f=0;f<4;f++){
-      if(canFnd(card,f)){
-        snapshot();
-        fnd[f].push(card);
-        if(src.type==='free')free[src.idx]=null;
-        else if(src.type==='tab')tab[src.idx].pop();
-        else if(src.type==='waste'){}
-        moves++;_e('progress');
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves});}
-        upd();rn();refreshUndoBtn();return true;
-      }
-    }
-    return false;
   }
   // Auto-route a single card from the given source. Tries foundation first,
   // then any empty free cell, then first legal tableau column. Returns true
@@ -171,13 +169,14 @@ function GFC(a){
       }
       if(type==='tab'){
         var cards=getSel();
-        if(cards.length<=maxMove()&&canTab(cards[0],idx)){
+        if(cards.length<=maxMove(tab[idx].length===0)&&isRun(cards)&&canTab(cards[0],idx)){
           snapshot();
           removeSel();for(var i=0;i<cards.length;i++)tab[idx].push(cards[i]);moves++;
           sel=null;upd();rn();refreshUndoBtn();return;
         }
         // Maybe selecting new source
         if(tab[idx].length>0&&tab[idx][cardIdx]&&tab[idx][cardIdx].up){
+          if(!isRun(tab[idx].slice(cardIdx))){sm('Not a movable run');sel=null;rn();return;}
           sel={type:'tab',idx:idx,cardIdx:cardIdx};rn();return;
         }
         sel=null;rn();return;
@@ -188,6 +187,7 @@ function GFC(a){
       if(type==='tab'&&tab[idx].length>0){
         if(cardIdx===undefined)cardIdx=tab[idx].length-1;
         if(!tab[idx][cardIdx].up)return;
+        if(!isRun(tab[idx].slice(cardIdx))){sm('Not a movable run');return;}
         sel={type:'tab',idx:idx,cardIdx:cardIdx};rn();return;
       }
     }
@@ -255,7 +255,7 @@ function GFC(a){
       var colLegal=false;
       if(srcHead && c!==srcTabIdx){
         var runLen = srcIsSingle?1:(tab[srcTabIdx]?tab[srcTabIdx].length-sel.cardIdx:1);
-        if(runLen<=maxMove() && canTab(srcHead,c))colLegal=true;
+        if(runLen<=maxMove(tab[c].length===0) && canTab(srcHead,c))colLegal=true;
       }
       if(tab[c].length===0){
         var em=document.createElement('div');em.className='gc gc-empty';em.style.width=fcW;em.style.height=fcH;
