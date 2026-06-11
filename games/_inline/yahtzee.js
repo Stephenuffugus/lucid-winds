@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: yahtzee
  *
  * COPY of the inline GY mount function from index.html
- * lines 66372-66683.
+ * lines 66372-66689.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -254,8 +254,13 @@
       h+='</div>';
       document.getElementById('Ysc').innerHTML=h;
     }
+    var yRolling=false;
     window._YR=function(){
+      // Roll lock: rapid taps during the 720ms tumble used to burn rolls 2
+      // and 3 with zero chance to set holds (Farkle has this guard; Yahtzee didn't).
+      if(yRolling)return;
       if(rolls>=3){sm('Pick a category to score');return}
+      yRolling=true;
       _play('dice');rolls++;document.getElementById('Yr').textContent=rolls;
       justRolled=new Array(5).fill(false);
       // On first roll, always re-roll all dice (ignore any pre-holds on the display dice)
@@ -269,6 +274,7 @@
         vals.push(dice[k]);
       }
       window._LW_tumble(els,vals,{duration:720,onDone:function(){
+        yRolling=false;
         justRolled=new Array(5).fill(false);
         rn();
       }});

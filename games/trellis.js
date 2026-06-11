@@ -619,7 +619,12 @@ window._gameFns.trellis = function TR(a){
     isPlayerTurn=false;setTimeout(aiTurn,300);
   };
   window._TRrecall=function(){tentativeTiles=[];selectedRackIndex=-1;render();};
-  window._TRshuffle=function(){shuffleArr(playerRack);_play('tap');render();};
+  window._TRshuffle=function(){
+    // Tentative tiles reference the rack by index — shuffling underneath them
+    // made PLAY splice the WRONG letters out of the rack (duplication/loss).
+    if(tentativeTiles.length>0){tentativeTiles=[];selectedRackIndex=-1;sm('Tiles recalled');}
+    shuffleArr(playerRack);_play('tap');render();
+  };
   window._TRpass=function(){
     if(!isPlayerTurn||gameOver)return;
     tentativeTiles=[];selectedRackIndex=-1;consecutivePasses++;

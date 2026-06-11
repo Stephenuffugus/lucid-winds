@@ -66604,8 +66604,13 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     h+='</div>';
     document.getElementById('Ysc').innerHTML=h;
   }
+  var yRolling=false;
   window._YR=function(){
+    // Roll lock: rapid taps during the 720ms tumble used to burn rolls 2
+    // and 3 with zero chance to set holds (Farkle has this guard; Yahtzee didn't).
+    if(yRolling)return;
     if(rolls>=3){sm('Pick a category to score');return}
+    yRolling=true;
     _play('dice');rolls++;document.getElementById('Yr').textContent=rolls;
     justRolled=new Array(5).fill(false);
     // On first roll, always re-roll all dice (ignore any pre-holds on the display dice)
@@ -66619,6 +66624,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
       vals.push(dice[k]);
     }
     window._LW_tumble(els,vals,{duration:720,onDone:function(){
+      yRolling=false;
       justRolled=new Array(5).fill(false);
       rn();
     }});

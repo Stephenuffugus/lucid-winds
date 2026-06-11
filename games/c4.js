@@ -390,6 +390,7 @@ function GC4(a){
   // ── Undo / Hint ──
   document.getElementById('C4undo').onclick=function(){
     if(over)return;
+    if(turn!==1)return; // mid-AI-think the pending aiMove would replay onto the rewound board
     if(history.length<2)return; // need both player + AI move to undo a pair
     // Pop last two entries (AI then player)
     var h1=history.pop();bd[h1.idx]=0;
