@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: bloomwheel
  *
  * COPY of the inline GBW mount function from index.html
- * lines 68506-68795.
+ * lines 68508-68801.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -71,6 +71,10 @@
       var lfG=aCtx.createGain();lfG.gain.value=0.02;lfo.connect(lfG);lfG.connect(pG.gain);
       lfo.start();p1.start();p2.start();p3.start();
       beatInt=60/bpm;nextBT=aCtx.currentTime+0.1;scheduleBeat();
+      // Keep the visibility suspend/resume handler alive — it reads
+      // window._bwAudioCtx, which was assigned ONCE at mount while aCtx was
+      // still null (so backgrounding the tab never suspended the pad).
+      window._bwAudioCtx=aCtx;
     }
     function scheduleBeat(){
       if(!aCtx||!musicOn)return;var now=aCtx.currentTime;
@@ -128,7 +132,7 @@
     // mid-draw.
     function onD(e){var p=gtp(e);
       if(_bwDrawingPath){var r=canvas.getBoundingClientRect();_bwCustomPath=[{x:(p.x-r.left)/W,y:(p.y-r.top)/H}];return}
-      var l=toLocal(p.x,p.y);drawing=true;lastX=l.x;lastY=l.y;strokes++;if(!aCtx)initAudio()}
+      var l=toLocal(p.x,p.y);drawing=true;lastX=l.x;lastY=l.y;strokes++;if(!aCtx&&musicOn)initAudio()}
     function onM(e){var p=gtp(e);
       if(_bwDrawingPath){e.preventDefault();var r=canvas.getBoundingClientRect();_bwCustomPath.push({x:(p.x-r.left)/W,y:(p.y-r.top)/H});return}
       if(!drawing)return;

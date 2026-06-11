@@ -95,7 +95,7 @@ var LAYOUTS={
 
 // Difficulty display + hint/time budget
 var DIFF_META={
-  easy:{label:'EASY',sub:'5×5 with 2-cell runs',hints:3,parTime:180},
+  easy:{label:'EASY',sub:'5×5 · short runs',hints:3,parTime:180},
   medium:{label:'STEADY',sub:'6×6 with 3-cell runs',hints:3,parTime:360},
   hard:{label:'KEEN',sub:'8×8 longer runs',hints:2,parTime:720},
   master:{label:'MASTER',sub:'9×9 dense',hints:2,parTime:1200}
@@ -150,7 +150,7 @@ var DIFF_META={
     '.KKcell.white.highlighted{background:rgba(122,179,86,0.28)}',
     '.KKcell.white.error{background:rgba(224,122,122,0.32);color:#a03030}',
     '.KKcell.white.solved{background:rgba(180,220,150,0.35);color:#1a1f17;animation:kkSolved .5s ease}',
-    '.KKpencils{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-size:0.42rem;color:rgba(74,124,53,0.8);font-family:DM Mono,monospace;font-weight:700;pointer-events:none}',
+    '.KKpencils{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-size:0.56rem;color:rgba(122,179,86,0.95);font-family:DM Mono,monospace;font-weight:700;pointer-events:none}',
     '.KKpencils span{display:flex;align-items:center;justify-content:center}',
     // Numpad
     '.KKnumpad{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px 2px 4px}',

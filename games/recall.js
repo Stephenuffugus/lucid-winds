@@ -61,7 +61,7 @@ window._gameFns.recall=function RC(a){
     h+='<div style="font-size:0.7rem;opacity:0.6;margin:6px 0;">Remember these '+targetCount+' symbols</div>';
     h+='<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:340px;margin:10px auto;">';
     for(var i=0;i<targets.length;i++){
-      h+='<div style="width:70px;height:70px;background:rgba(212,168,67,0.15);border:2px solid var(--gold);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;">';
+      h+='<div style="width:74px;height:86px;background:rgba(212,168,67,0.15);border:2px solid var(--gold);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;">';
       h+='<span style="font-size:1.8rem;">'+targets[i].emoji+'</span>';
       h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;opacity:0.6;letter-spacing:1px;">'+targets[i].name+'</span>';
       h+='</div>';
@@ -103,7 +103,7 @@ window._gameFns.recall=function RC(a){
     h+='<div style="font-size:0.7rem;opacity:0.6;margin:6px 0;">Tap the '+targetCount+' you memorized</div>';
     h+='<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:340px;margin:10px auto;">';
     for(var i=0;i<allChoices.length;i++){
-      h+='<div id="RCc'+i+'" onclick="_RCT('+i+')" style="width:70px;height:70px;background:rgba(26,36,22,0.5);border:2px solid rgba(122,179,86,0.2);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">';
+      h+='<div id="RCc'+i+'" onclick="_RCT('+i+')" style="width:74px;height:86px;background:rgba(26,36,22,0.5);border:2px solid rgba(122,179,86,0.2);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">';
       h+='<span style="font-size:1.8rem;">'+allChoices[i].emoji+'</span>';
       h+='<span style="font-family:Bebas Neue,sans-serif;font-size:0.5rem;opacity:0.6;letter-spacing:1px;">'+allChoices[i].name+'</span>';
       h+='</div>';

@@ -28,6 +28,7 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.
 
 // ── Module state — single active game at a time ────────────────────────────
 var SZ=10,grid=[],words=[],wordPaths={},found=[];
+var boardGen=0; // bumped per gen() — guards the delayed victory overlay
 var dragging=false,startI=-1,endI=-1,currentPath=[];
 var gd=null,wl=null;
 
@@ -150,7 +151,11 @@ function dragEnd(){
     var wf=document.getElementById('Wf');if(wf)wf.textContent=found.length;
     rnW();
     if(found.length>=words.length){
+      // Generation guard: New Game inside this ~1s delay used to pop
+      // "ALL FOUND · 0 words" over the fresh board.
+      var bg=boardGen;
       setTimeout(function(){
+        if(bg!==boardGen)return;
         _e('game_win');if(_playWin)_playWin();_sr('wordsearch',{w:true,s:found.length});
         _wordSearchVictory();
       },pathCopy.length*45+600);
@@ -179,6 +184,7 @@ function _wordSearchVictory(){
 }
 
 function gen(){
+  boardGen++;
   var dv=((document.getElementById('Wd')||{}).value||'10-6').split('-');
   SZ=parseInt(dv[0])||10;
   var wc=parseInt(dv[1])||6;

@@ -44,7 +44,7 @@ window._gameFns.pottingbench=function PB(a){
   var pan=document.createElement('div');pan.id='PBpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;text-align:center;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_PBN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_PBDR()" id="PBdrawBtn">DRAW +2s</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_PBN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_PBDR()" id="PBdrawBtn" style="align-self:center;min-height:48px;max-height:56px;padding:10px 16px;">DRAW +2s</button>';
 
   function cardSVG(card,size){
     var s=size||50;

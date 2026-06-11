@@ -660,23 +660,26 @@ function onBoardTouch(e){
 }
 function handleBoardClick(mx, my){
   if(S.phase==='anim' || S.phase==='ai_shift' || S.phase==='gameover')return;
-  // Edge arrows
-  if(my<PAD){
+  // Edge arrows. During shift phase the inner board is inert, so taps get
+  // a third of a cell of slop INTO the board — the raw arrow strips are
+  // 18-29px on phones, genuine rage territory without forgiveness.
+  var SLOP=(S.phase==='shift')?CELL/3:0;
+  if(my<PAD+SLOP){
     var c=Math.floor((mx-PAD)/CELL);
     if(c>=0&&c<SZ&&c%2===1) startShift('col', c, 1);
     return;
   }
-  if(my>PAD+SZ*CELL){
+  if(my>PAD+SZ*CELL-SLOP){
     var c2=Math.floor((mx-PAD)/CELL);
     if(c2>=0&&c2<SZ&&c2%2===1) startShift('col', c2, -1);
     return;
   }
-  if(mx<PAD){
+  if(mx<PAD+SLOP){
     var r=Math.floor((my-PAD)/CELL);
     if(r>=0&&r<SZ&&r%2===1) startShift('row', r, 1);
     return;
   }
-  if(mx>PAD+SZ*CELL){
+  if(mx>PAD+SZ*CELL-SLOP){
     var r2=Math.floor((my-PAD)/CELL);
     if(r2>=0&&r2<SZ&&r2%2===1) startShift('row', r2, -1);
     return;

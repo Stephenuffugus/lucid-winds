@@ -674,7 +674,10 @@ function updateStatus(){
 function tileHTML(color, extraCls, dataAttrs){
   var cls='MStile'+(extraCls?' '+extraCls:'');
   var attrs=dataAttrs||'';
-  return '<div class="'+cls+'" '+attrs+' style="background:'+BG[color]+';width:24px;height:24px">'+ICONS[color]+'</div>';
+  // 8px transparent padding + background-clip keeps the VISUAL tile 24px
+  // while the tap target becomes 40px — drafting commits on tap with no
+  // undo, so 24px targets punished fat fingers with the rules.
+  return '<div class="'+cls+'" '+attrs+' style="background:'+BG[color]+';background-clip:content-box;-webkit-background-clip:content-box;padding:6px;margin:-6px;width:24px;height:24px;box-sizing:content-box">'+ICONS[color]+'</div>';
 }
 
 function updateFactories(){

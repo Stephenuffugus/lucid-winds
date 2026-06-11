@@ -610,7 +610,10 @@ function GBS(a){
       // player grid). Inner explicitly width:100% + origin fixes that.
       enemyZoomWrap.style.cssText='display:block;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;padding:4px 0;';
       var enemyZoomInner=document.createElement('div');
-      enemyZoomInner.style.cssText='display:block;width:100%;transform:scale('+enemyZoom+');transform-origin:top center;transition:transform 0.2s ease;';
+      // transform-origin top LEFT — with 'top center' the zoomed grid's
+      // left half landed at negative coordinates that overflow:auto can
+      // never scroll to, leaving columns A/B untappable at 1.5×.
+      enemyZoomInner.style.cssText='display:block;width:100%;transform:scale('+enemyZoom+');transform-origin:top left;transition:transform 0.2s ease;';
       enemyZoomWrap.appendChild(enemyZoomInner);
       grids.appendChild(enemyZoomWrap);
       renderGrid(eGrid,enemyZoomInner,'enemy',(turn==='player'&&!gameOver)?function(){

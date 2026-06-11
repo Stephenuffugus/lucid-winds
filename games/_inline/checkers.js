@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: checkers
  *
  * COPY of the inline GCK mount function from index.html
- * lines 66895-67347.
+ * lines 66895-67349.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -367,6 +367,8 @@
           var seqs=allSequences(bd,1);
           var has=false;for(var si=0;si<seqs.length;si++)if(seqs[si][0].f===idx){has=true;break;}
           if(has){sel=idx;_play('tap');rn();}
+          // Forced-capture refusal used to be a silent dead tap.
+          else if(seqs.length&&seqs[0][0].j){sm('Capture available — you must jump');}
         }
       }else{
         var seqs2=allSequences(bd,1);
