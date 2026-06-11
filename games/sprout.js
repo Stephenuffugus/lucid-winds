@@ -28,7 +28,10 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
 (function injectStyle(){
   if(document.getElementById('pw-petal-style'))return;
   var s=document.createElement('style');s.id='pw-petal-style';
-  s.cssText=[
+  // NB: textContent, not cssText — cssText is inert on a <style> node and
+  // left the entire stylesheet empty (unstyled 12px keyboard, invisible
+  // key coloring) since this file shipped.
+  s.textContent=[
     '.pw-stage{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 2px 10px;max-width:540px;margin:0 auto;width:100%;box-sizing:border-box}',
     // Board: compact so the bigger keyboard gets proper space
     '.pw-board{display:grid;grid-template-columns:1fr;gap:4px;padding:2px 0;width:min(260px,70vw);margin:0 auto;box-sizing:border-box}',

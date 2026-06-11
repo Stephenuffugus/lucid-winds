@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: farkle
  *
  * COPY of the inline GF mount function from index.html
- * lines 66026-66370.
+ * lines 66026-66379.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -127,7 +127,7 @@
       h+='<span style="font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.15em;color:rgba(232,220,200,0.55);text-transform:uppercase;">Players</span>';
       for(var n=1;n<=4;n++){
         var on=n===numPlayers;
-        h+='<button onclick="_FNP('+n+')" style="min-width:34px;min-height:30px;padding:4px 10px;border-radius:6px;border:'+(on?'1.5px solid #ffb45a':'1px solid rgba(220,160,90,0.3)')+';background:'+(on?'rgba(255,180,90,0.18)':'rgba(0,0,0,0.35)')+';color:'+(on?'#ffb45a':'#e8dcc8')+';font-family:Georgia,serif;font-weight:700;font-size:0.75rem;cursor:pointer;">'+n+'</button>';
+        h+='<button onclick="_FNP('+n+')" style="min-width:44px;min-height:44px;padding:6px 12px;border-radius:6px;border:'+(on?'1.5px solid #ffb45a':'1px solid rgba(220,160,90,0.3)')+';background:'+(on?'rgba(255,180,90,0.18)':'rgba(0,0,0,0.35)')+';color:'+(on?'#ffb45a':'#e8dcc8')+';font-family:Georgia,serif;font-weight:700;font-size:0.75rem;cursor:pointer;">'+n+'</button>';
       }
       h+='</div>';
       return h;
@@ -311,14 +311,23 @@
       if(!has){
         window._LW_tumble(rolled.els,rolled.vals,{duration:720,onDone:function(){
           busted=true;
-          var lost=turn;
+          // Lost = turn points PLUS kept-dice score — the overlay used to say
+          // "No scoring dice this roll" while 200 sat visibly kept behind it.
+          var lost=(typeof liveTurn==='function')?liveTurn():turn;
           overlay={kind:'farkle',lost:lost};
           _play('lose');_e('game_loss');
           rn();
           setTimeout(function(){
             overlay=null;
             if(players.length>1)nextPlayer();
-            else{turn=0;rolling=false;rn()}
+            else{
+              // Solo bust used to leave busted/kept/dice set — Roll AND Bank
+              // stayed disabled forever and only ↻New (which wipes the bank)
+              // recovered. Reset the turn exactly like nextPlayer does.
+              turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);
+              justRolled=new Array(6).fill(false);busted=false;rolling=false;
+              rn();sm('🎲 Roll');
+            }
           },1700);
           setTimeout(function(){justRolled=new Array(6).fill(false)},420);
         }});

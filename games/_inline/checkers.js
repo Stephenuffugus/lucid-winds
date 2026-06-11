@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: checkers
  *
  * COPY of the inline GCK mount function from index.html
- * lines 66886-67338.
+ * lines 66895-67347.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
