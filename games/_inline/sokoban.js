@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: sokoban
  *
  * COPY of the inline GSK mount function from index.html
- * lines 68037-68356.
+ * lines 68045-68364.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves

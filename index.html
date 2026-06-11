@@ -61971,7 +61971,10 @@ var _afGameClass={
   dailybloom:'sprint',
   jade:'marathon',
   pollen:'marathon',
-  stonegarden:'free',
+  // stonegarden was 'free' (progCap 99) with milestone:2 PER SETTLED STONE —
+  // ~198 sunbeams/session in zen mode, ~6.5 plants of value. 'standard'
+  // caps the session like every other earn game. (Jun 11 audit)
+  stonegarden:'standard',
   livingstones:'sprint',
   trellis:'marathon',
   petalmatch:'standard',
@@ -61991,7 +61994,12 @@ var _afGameClass={
   // won her first Speed Sort and got nothing. Adding them now.
   pottingbench:'sprint',
   stopten:'sprint',
-  rootrush:'standard'
+  rootrush:'standard',
+  // Jun 11 audit: farkle was missing → fell back to 'standard' (progCap 4),
+  // starving a 15-30 bank game; yahtzee already had 'marathon'. slider made
+  // explicit so the Jessie zero-payout omission pattern can't recur.
+  farkle:'marathon',
+  slider:'standard'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;_afSessionSunbeams=0;}
@@ -62002,9 +62010,9 @@ function _afReset(){_afSessionProg=0;_afSessionSunbeams=0;}
 // progress/milestone: capped per session by _afClass
 // _dm (difficulty multiplier) applied: Easy=1.0, Med=1.5, Hard=2.0, Expert=2.5
 var _aw={
-  memory:    {progress:1,game_win:2,game_loss:1,default:0},
+  memory:    {progress:1,milestone:1,game_win:2,game_loss:1,default:0},
   lights:    {puzzle_solved:1,game_win:2,game_loss:0,default:0},
-  simon:     {round:1,game_win:2,game_loss:0,default:0},
+  simon:     {milestone:1,game_win:2,game_loss:0,default:0}, // was 'round' — simon.js fires _e('milestone'), so milestones paid 0 for weeks
   flood:     {game_win:2,game_loss:0,default:0},
   pipe:      {progress:1,game_win:3,game_loss:0,default:0},
   hanoi:     {milestone:1,game_win:3,game_loss:0,default:0},
@@ -62024,7 +62032,7 @@ var _aw={
   tripeaks:  {progress:1,game_win:4,game_loss:1,default:0},
   mastermind:{progress:1,game_win:5,game_loss:1,default:0},
   checkers:{capture:1,game_win:5,game_loss:1,default:0},
-  reversi:{flip:1,game_win:5,game_loss:1,default:0},
+  reversi:{flip:1,milestone:1,game_win:5,game_loss:1,default:0},
   yahtzee:{progress:1,milestone:1,game_win:5,default:0},
   sokoban:{progress:1,game_win:3,default:0},
   colorsort:{progress:1,game_win:4,default:0},
@@ -62034,7 +62042,7 @@ var _aw={
   farkle:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
   doubleshutter:{progress:1,milestone:1,game_win:5,game_loss:0,default:0},
   backgammon:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
-  bloomwheel:{progress:1,milestone:2,default:0},
+  bloomwheel:{progress:1,milestone:2,game_win:2,default:0},
   petalfall:{milestone:2,game_loss:0,default:0}, // game_win never fires (endless game, milestone-only)
   cribbage:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
   bowergarden:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
@@ -62047,8 +62055,8 @@ var _aw={
   juniper:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
   rootmaze:{progress:1,game_win:4,default:0},
   vinecross:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
-  breathing:{milestone:1,default:0},
-  colorgarden:{milestone:1,default:0},
+  breathing:{milestone:1,game_win:2,default:0},
+  colorgarden:{milestone:1,game_win:2,default:0},
   dailybloom:{milestone:1,game_win:4,default:0},
   jade:{progress:1,milestone:1,game_win:5,default:0},
   pollen:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
@@ -62056,19 +62064,19 @@ var _aw={
   livingstones:{progress:1,game_win:4,default:0},
   trellis:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
   petalmatch:{progress:1,milestone:1,game_win:4,game_loss:1,default:0},
-  pixelgarden:{progress:1,milestone:2,default:0},
-  numbergarden:{progress:1,milestone:1,game_win:4,default:0},
-  sprout:{progress:1,game_win:5,game_loss:1,default:0},
+  pixelgarden:{progress:1,milestone:2,game_win:2,default:0},
+  numbergarden:{progress:1,milestone:1,game_win:4,game_loss:1,default:0},
+  sprout:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
   vinewords:{progress:1,milestone:1,game_win:5,default:0},
-  storyseeds:{milestone:1,default:0},
+  storyseeds:{milestone:1,game_win:1,default:0},
   seedsow:{progress:1,milestone:1,game_win:5,game_loss:1,default:0},
-  recall:{progress:1,milestone:1,game_win:4,default:0},
-  rhythmvine:{progress:1,milestone:1,default:0},
-  seedtoss2:{progress:1,game_win:4,default:0},
+  recall:{progress:1,milestone:1,game_win:4,game_loss:1,default:0},
+  rhythmvine:{progress:1,milestone:1,game_win:3,game_loss:0,default:0},
+  seedtoss2:{progress:1,milestone:1,game_win:4,default:0},
   petalblink:{progress:1,milestone:1,game_win:4,default:0},
   // Stephen 2026-05-02 — see _afGameClass note.
-  pottingbench:{progress:1,game_win:4,game_loss:1,default:0},
-  stopten:{progress:1,game_win:3,game_loss:0,default:0},
+  pottingbench:{progress:1,milestone:1,game_win:4,game_loss:1,default:0},
+  stopten:{progress:1,milestone:1,game_win:3,game_loss:0,default:0},
   rootrush:{progress:1,milestone:1,game_win:4,game_loss:0,default:0}
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
