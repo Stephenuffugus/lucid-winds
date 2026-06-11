@@ -133,7 +133,7 @@ function GSP(a){
     // min(100vw,700px) + right padding — the old clamp(...,100vw,...) with a
     // flex:1 spacer pushed the runs counter flush past the right edge
     // ("0/8 ru" at every phone width).
-    topRow.style.cssText='display:flex;gap:clamp(4px,1.2vw,6px);justify-content:center;padding:clamp(2px,1vw,4px) 10px;width:min(100vw,700px);margin:0 auto;align-items:center;box-sizing:border-box';
+    topRow.style.cssText='display:flex;gap:clamp(4px,1.2vw,6px);justify-content:center;padding:clamp(2px,1vw,4px) 12px;width:min(calc(100vw - 8px),700px);max-width:100%;margin:0 auto;align-items:center;box-sizing:border-box';
     var stEl=document.createElement('div');
     if(stock.length>0){stEl.className='gc gc-dn';_cdBackStyle(stEl);stEl.style.cursor='pointer';stEl.innerHTML='<span style="color:rgba(200,168,78,.6);font-size:clamp(.55rem,1.8vw,.75rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.9)">'+Math.ceil(stock.length/10)+'</span>';stEl.onclick=function(){dealStock()};}
     else{stEl.className='gc gc-empty';}
