@@ -547,6 +547,17 @@ window._gameFns.vinewords=function VW(a){
   window._VWN=function(){startRound(false);};
   window._VWreplay=function(){startRound(true);};
 
+  // On game exit: stop the round timer (it used to keep ticking in the
+  // background, eventually running endGame — firing game_win/game_loss
+  // against whatever game was active and running the 168k-word solver
+  // off-screen) and drop this invocation's window listeners.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(timerId){clearInterval(timerId);timerId=0;}
+    playing=false;
+    window.removeEventListener('mouseup',onUp);
+    window.removeEventListener('touchend',onUp);
+  });
+
   _VWN();
 };
 })();
