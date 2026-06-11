@@ -228,7 +228,14 @@ function GFC(a){
     for(var i=0;i<4;i++){
       var el;
       if(free[i]){el=_cdEl(free[i]);if(sel&&sel.type==='free'&&sel.idx===i)el.className+=' gc-sel';}
-      else{el=document.createElement('div');el.className='gc gc-empty';}
+      else{
+        // Empty free cells were near-invisible on the dark felt — a new
+        // player couldn't see the game's namesake mechanic. Brighter dash +
+        // a FREE label.
+        el=document.createElement('div');el.className='gc gc-empty';
+        el.style.border='1.5px dashed rgba(122,179,86,0.55)';
+        el.innerHTML='<span style="display:flex;align-items:center;justify-content:center;height:100%;font-family:DM Mono,monospace;font-size:0.48rem;letter-spacing:0.12em;color:rgba(122,179,86,0.6);pointer-events:none">FREE</span>';
+      }
       el.style.width=fcW;el.style.height=fcH;el.style.fontSize=fcF;
       if(srcHead&&srcIsSingle&&!free[i]&&i!==srcFreeIdx)el.classList.add('gc-legal');
       (function(ii){el.onclick=function(){doSelect('free',ii)}})(i);

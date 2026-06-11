@@ -422,6 +422,9 @@ window._cdPickStyle=function(id){
   _cdSetStyle(id);
   try{document.dispatchEvent(new CustomEvent('lw-card-style-change',{detail:{style:id}}));}catch(e){}
   var ov=document.getElementById('cdStyleOV');if(ov)ov.remove();
+  // Repaint the live table immediately — nothing listens for the event
+  // above, so the new deck only appeared on the player's NEXT move.
+  try{if(typeof window._cdActiveRn==='function')window._cdActiveRn();}catch(e){}
 };
 
 // Expose on window for game scripts
