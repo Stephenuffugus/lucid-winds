@@ -31,6 +31,11 @@ window._gameFns.juniper = function Juniper(a){
   var stock=[],discardPile=[];
   var playerScore=0,aiScore=0,playerWins=0,aiWins=0;
   var phase='',turnCount=0;
+  // Generation token: bumped by New Game so stale AI/overlay timers from the
+  // previous hand can't mutate a fresh deal.
+  var gen=0;
+  // Gin rule: you may not discard the card you just took from the discard pile.
+  var lastDrawnFromDiscard=null;
   // AI feedback state — shown in render so the player sees the AI deciding.
   var aiThinking=false, aiHoverDiscard=false;
   // GIN/knock takeover overlay state. {kind:'gin'|'knock'|'undercut', winner, pts, lines:[]}
@@ -215,30 +220,33 @@ window._gameFns.juniper = function Juniper(a){
   function aiTurn(){
     phase='aiTurn';sm('Juniper is thinking…');
     aiThinking=true;render();
+    var g=gen;
     // Pre-decide so we can stage a discard-pile hover tell when AI considers it.
     var choice=aiDecideDraw();
     var faking = choice==='stock' && Math.random()<0.3 && discardPile.length>0;
     if(faking){
       aiHoverDiscard=true;render();
-      setTimeout(function(){aiHoverDiscard=false;render();},700);
+      setTimeout(function(){if(g!==gen)return;aiHoverDiscard=false;render();},700);
     }
     // Thinking pause: 1200-2000ms before drawing so the AI feels deliberate.
     var thinkMs = 1200 + Math.floor(Math.random()*800);
     setTimeout(function(){
+      if(g!==gen)return;
       aiThinking=false;
       if(choice==='discard'&&discardPile.length>0)aiHand.push(discardPile.pop());
       else{if(stock.length===0){drawRound();return;}aiHand.push(stock.pop());}
       render();
       // Discard pause: 700-1100ms before tossing so the player can read.
       setTimeout(function(){
+        if(g!==gen)return;
         var action=aiShouldKnock();
         if(action==='gin'){
           var di=aiDecideDiscard();var dc=aiHand.splice(di,1)[0];discardPile.push(dc);render();
-          setTimeout(function(){endRound('ai','gin');},600);return;
+          setTimeout(function(){if(g!==gen)return;endRound('ai','gin');},600);return;
         }
         if(action==='knock'&&turnCount>1){
           var di2=aiDecideDiscard();var dc2=aiHand.splice(di2,1)[0];discardPile.push(dc2);render();
-          setTimeout(function(){endRound('ai','knock');},600);return;
+          setTimeout(function(){if(g!==gen)return;endRound('ai','knock');},600);return;
         }
         var di3=aiDecideDiscard();var dc3=aiHand.splice(di3,1)[0];discardPile.push(dc3);
         sm('Your turn, draw a card');phase='draw';turnCount++;
@@ -255,10 +263,12 @@ window._gameFns.juniper = function Juniper(a){
     stock=deck.slice(20);discardPile=[stock.pop()];
     sortBySuit(playerHand);turnCount=0;phase='draw';
   }
-  function newHand(){deal();sm('Your turn, draw a card');render();}
+  function newHand(){deal();lastDrawnFromDiscard=null;sm('Your turn, draw a card');render();}
   function drawRound(){
     sm('Stock empty, round is a draw');
+    var g=gen;
     setTimeout(function(){
+      if(g!==gen)return;
       if(playerScore>=100||aiScore>=100)return;
       newHand();
     },1500);
@@ -306,8 +316,9 @@ window._gameFns.juniper = function Juniper(a){
     winLineIdx=0;
     render();
     // Stage each line in at 750ms intervals for the count-up rhythm.
+    var g=gen;
     function revealNext(){
-      if(!winOverlay)return;
+      if(g!==gen||!winOverlay)return;
       winLineIdx++;
       if(winLineIdx<=lines.length){
         _play('tap');
@@ -316,13 +327,14 @@ window._gameFns.juniper = function Juniper(a){
       } else {
         // All lines shown — hold 1.6s then advance.
         setTimeout(function(){
+          if(g!==gen)return;
           winOverlay=null;
           if(playerScore>=100||aiScore>=100){
             var won=playerScore>=100;
             if(won){_e('game_win');_playWin();sm('🫐 You win! '+playerScore+' vs '+aiScore);}
             else{_e('game_loss');_play('lose');sm('You lose. '+playerScore+' vs '+aiScore);}
             _sr('juniper',{w:won,s:playerScore,r:playerWins+aiWins});
-            setTimeout(function(){playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();},2200);
+            setTimeout(function(){if(g!==gen)return;playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();},2200);
             return;
           }
           newHand();
@@ -335,31 +347,42 @@ window._gameFns.juniper = function Juniper(a){
   function onDrawStock(){
     if(phase!=='draw')return;
     if(stock.length===0){drawRound();return;}
-    playerHand.push(stock.pop());phase='discard';
+    playerHand.push(stock.pop());phase='discard';lastDrawnFromDiscard=null;
     _play('snap');sm('Tap a card to discard');render();
   }
   function onDrawDiscard(){
     if(phase!=='draw'||discardPile.length===0)return;
-    playerHand.push(discardPile.pop());phase='discard';
+    var taken=discardPile.pop();
+    playerHand.push(taken);phase='discard';lastDrawnFromDiscard=taken;
     _play('snap');sm('Tap a card to discard');render();
   }
   function onCardClick(idx){
     if(phase!=='discard')return;
+    if(lastDrawnFromDiscard&&playerHand[idx]===lastDrawnFromDiscard){sm('Can’t discard the card you just picked up');return;}
     var card=playerHand.splice(idx,1)[0];discardPile.push(card);
+    lastDrawnFromDiscard=null;
     _play('snap');
     var dw=getDeadwood(playerHand);
     if(dw===0){endRound('player','gin');return;}
+    // Deadwood low enough to knock: pause for the player's call instead of
+    // rushing into the AI turn (this is the whole decision of gin rummy).
+    if(dw<=10){phase='knockChoice';sm('Deadwood '+dw+' — knock or pass?');render();return;}
+    continueToAI();
+  }
+  function continueToAI(){
     phase='aiTurn';turnCount++;
     render();
     if(stock.length===0){drawRound();return;}
-    setTimeout(aiTurn,300);
+    var g=gen;
+    setTimeout(function(){if(g===gen)aiTurn();},300);
   }
   function onKnock(){
-    if(phase!=='discard')return;
-    if(playerHand.length!==10){sm('Discard first, then knock');return;}
-    var dw=getDeadwood(playerHand);
-    if(dw>10){sm('Deadwood too high');return;}
+    if(phase!=='knockChoice')return;
     endRound('player','knock');
+  }
+  function onPass(){
+    if(phase!=='knockChoice')return;
+    continueToAI();
   }
 
   function render(){
@@ -420,7 +443,7 @@ window._gameFns.juniper = function Juniper(a){
                 : dw<=3 ? '#7ab356'
                 : dw<=10 ? '#ffa040'
                 : '#e63946';
-    var canKnock = phase==='discard' && playerHand.length===10 && dwIsNum && dw<=10;
+    var canKnock = phase==='knockChoice' && dwIsNum && dw<=10;
     var isGin = canKnock && dw===0;
     h+='<div style="display:flex;justify-content:center;align-items:center;gap:10px;padding:4px 8px 8px;flex-wrap:wrap;">';
     h+='<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,70,0.3);border-radius:999px;font-family:Georgia,serif;">';
@@ -431,6 +454,9 @@ window._gameFns.juniper = function Juniper(a){
       h+='<button onclick="_JUG()" class="ju-gin-btn" style="min-height:48px;padding:8px 20px;font-family:Georgia,serif;font-weight:700;font-size:0.95rem;background:linear-gradient(180deg,#ffdc70,#c48f1f);border:2px solid #ffdc70;color:#3a2a08;letter-spacing:0.06em;border-radius:8px;text-shadow:0 1px 0 rgba(255,255,255,0.5);box-shadow:0 0 22px rgba(255,220,112,0.7),inset 0 1px 0 rgba(255,255,255,0.5);cursor:pointer;animation:juGinPulse 0.9s ease-in-out infinite;">GIN!</button>';
     }else{
       h+='<button onclick="_JUK()" '+(canKnock?'':'disabled')+' style="min-height:48px;padding:8px 18px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:'+(canKnock?'linear-gradient(180deg,rgba(255,220,112,0.3),rgba(200,168,75,0.4))':'rgba(0,0,0,0.4)')+';border:'+(canKnock?'2':'1.5')+'px solid '+(canKnock?'#ffdc70':'rgba(232,220,200,0.25)')+';color:'+(canKnock?'#f5ebd0':'rgba(232,220,200,0.4)')+';letter-spacing:0.06em;border-radius:8px;cursor:'+(canKnock?'pointer':'not-allowed')+';'+(canKnock?'box-shadow:0 0 14px rgba(255,220,112,0.45),inset 0 1px 0 rgba(255,255,255,0.15);animation:juKnockPulse 1.4s ease-in-out infinite;':'')+'">KNOCK'+(canKnock&&dwIsNum?' &middot; '+dw:'')+'</button>';
+    }
+    if(phase==='knockChoice'){
+      h+='<button onclick="_JUP()" style="min-height:48px;padding:8px 18px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:rgba(0,0,0,0.45);border:1.5px solid rgba(232,220,200,0.45);color:#f5ebd0;letter-spacing:0.06em;border-radius:8px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">PASS</button>';
     }
     h+='<button onclick="_JUS()" title="Sort hand" style="min-height:44px;padding:8px 14px;font-family:Georgia,serif;font-style:italic;font-size:0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(232,220,200,0.3);color:rgba(232,220,200,0.85);border-radius:8px;cursor:pointer;">↕ Sort</button>';
     h+='</div>';
@@ -514,13 +540,14 @@ window._gameFns.juniper = function Juniper(a){
     +'</div>';
   }
 
-  window._JUN=function(){playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();};
+  window._JUN=function(){gen++;winOverlay=null;winLineIdx=0;aiThinking=false;aiHoverDiscard=false;playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();};
   window._JUDS=function(){onDrawStock();};
   window._JUDD=function(){onDrawDiscard();};
   window._JUCC=function(i){onCardClick(i);};
   window._JUK=function(){onKnock();};
+  window._JUP=function(){onPass();};
   window._JUG=function(){
-    if(phase!=='discard')return;
+    if(phase!=='knockChoice')return;
     if(playerHand.length===10&&getDeadwood(playerHand)===0)endRound('player','gin');
   };
   window._JUS=function(){sortBySuit(playerHand);render();};
