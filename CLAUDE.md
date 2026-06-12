@@ -262,25 +262,29 @@ _TIER_SCORE = { common:0, uncommon:0, rare:1, epic:3, legendary:5, mythic:7, cos
 _TERRA_GRADES thresholds = [ 0, 5, 10, 15, 21, 27, 34 ]
 ```
 
-### Verified first-mint distribution (sim N=100k, post-bank-expansion 2026-05-01)
+### Verified first-mint distribution (LIVE-CODE sim N=200k, 2026-06-12, post mythic-ladder fix)
 ```
-Common     26.6%
-Uncommon   36.5%
-Rare       24.4%
-Epic       10.4%
-Legendary   1.85%
-Mythic      0.23%
-Cosmic      0.01%
+Common     31.5%
+Uncommon   34.0%
+Rare       22.7%
+Epic        9.6%
+Legendary   1.94%
+Mythic      0.30%
+Cosmic      0.02%
 ```
+Measured by scripts/rarity_sim_live.js against the REAL engine in headless
+Chrome (the old scripts/rarity_sim.js had drifted from live code twice and
+was deleted 2026-06-12 — never hand-mirror the scorer again).
 
 ### History
 - Variant D (mid-Apr): too tight, Common only 8%
 - Variant F (late-Apr): Common 36%, Epic 4.8%, Legendary 0.7%, Mythic 0.07% — felt thin on the high end (very few Epic+ drops, almost zero Mythic)
 - **Variant G (Apr 30 + May 01 fragility fix)**: Stephen ruling: keep G. "It's okay to be a little generous." Player retention research said the Variant F Epic+ rate was too punishing for an audience that already walks every day. Variant G doubles the Epic+ rate without making Common feel cheap. **2026-05-01 fragility fix:** STEM bank expanded 24→28 (added Petrified Heart Epic, Thunderscarred Legendary, Mirrorwood Mythic, Worldspine Cosmic). FLOWER bank expanded 71→73 (added Reverie Mythic, Worldbloom Cosmic). Eliminates single-point-of-failure at top tiers (every top tier now has 2 anchors). Slight upward distribution shift (~7% Epic → 10.4%) is intentional — more lore-fit high-tier entries means more chances to hit them.
 
-### Bugs in scoring still parked (not blocking)
-- Mythic-byte spike still REPLACES companion-tier score (`if (compT && t.mythic < 0xD0)` at line 10478). A Beholder gets +8 spike OR +10 cosmic-tier, never both. Cosmetic; Beholder still grades Cosmic via spike alone.
-- VESSEL/FOLIAGE/AURA banks still contribute ~25-28% epic-or-better at the layer level (vs ~13-15% on STEM/SUBSTRATE/COMPANION/MUTATION). Under Variant G the wider thresholds absorb this; players don't perceive per-layer imbalance, only the aggregate. Audit memo: `project_rarity_engine_audit_may01.md`.
+### Scoring bug history (Jun 12 audit — 3-agent, live-code sims)
+- **FIXED 2026-06-12:** the May-13 mythic tightening was only HALF-applied — the companion-index ladder in hashToTraits kept the wide bands, so 12.5% of mints rendered phantom un-titled Cicadas/Toads scoring mythic-tier +7 (Legendary/Mythic/Cosmic ran 1.8-4.5× over the approved distribution; Cicada art on 1 in 12 plants). Ladder narrowed; base roll no longer leaks indices 32-38 (backdoor Beholder killed); the separate mythic "spike" was RETIRED — companions score by layer tier for everyone (Beholder +10 cosmic-tier, titled Cicada/Toad +7).
+- **FIXED 2026-06-12:** gift plant + grade/mutation achievements used stale Variant-D score bands and wrong byte slices (84.5% of "guaranteed Uncommon+" gifts graded Common; "Own a Cosmic" fired on Epics; Beholder achievement could never fire).
+- **STILL OPEN (TUNING — Director call, full numbers in memory project_game_audit_jun11.md):** STEM bank is top-heavy (28 slots uniform → a cosmic-tier stem on ~7% of mints; Worldspine 1-in-29, 44% of carriers below Epic); goldenPot/glowFlower hc()===15 locks force LEGENDARY visuals on ~6-8% of mints; FOLIAGE/AURA generic epic index-bands run ~25% epic+; 37% of ALL plants show a legendary+-colored ledger row while 2% grade Legendary+. Proposed: banded stem roll + lock removal + threshold retune [0,3,7,12,19,26,32] (keeps aggregate Variant-G-generous, makes the NAMES 4-8× scarcer). Also open: progression compression (gen-5 fully-stacked blooms mint Cosmic at ~25% vs 0.02% first-mint — ~1000×).
 
 ---
 
@@ -343,7 +347,9 @@ season:      hb(22) % 4
 
 ### Companion/Mythic Override Table
 Source of truth: `hashToTraits` in index.html (search for `mythByte ===`).
-Last verified against code: 2026-04-18.
+Last verified against code: 2026-06-12 (ladder finally matches this table —
+it was half-applied from 5/13 to 6/12; base roll now remaps indices 32-38
+to None so mythic creatures come ONLY from this ladder).
 ```
 hb(18) === 0xFF              → The Beholder       (idx 38)   COSMIC-tier      0.39%
 hb(18) >= 0xFE               → Garden Spider     (idx 37)   LEGENDARY-tier   0.39%

@@ -11438,15 +11438,21 @@ document.addEventListener('keydown', function(e) {
         if (_mb >= 0xFC) return 36;  // Great Blue Heron (0.78%)
         if (_mb >= 0xF8) return 35;  // Raccoon (1.56%)
         if (_mb >= 0xF4) return 34;  // Baby Mammoth (1.56%)
-        if (_mb >= 0xE0) return 33;  // Cicada (7.81%)
-        if (_mb >= 0xD0) return 32;  // Toad (6.25%)
+        // 2026-06-12: finished the May-13 tightening. The narrow bands had
+        // shipped in mythicName/spike but THIS ladder kept the wide ones —
+        // 12.5% of mints rendered phantom un-titled Cicadas/Toads scoring
+        // mythic-tier +7 (Legendary/Mythic/Cosmic ran 1.8-4.5× over the
+        // approved Variant G distribution).
+        if (_mb === 0xEE || _mb === 0xEF) return 33;  // Cicada (0.78%)
+        if (_mb === 0xDE || _mb === 0xDF) return 32;  // Toad (0.78%)
         // Base roll on a wider pool — only indices 0..81 are real
-        // companion slots; >=82 is None. Pool of 256 → 82/256 = ~32%
-        // of base rolls hit the bank, of which 34/82 = ~41% are real
-        // creatures (others are 'None' entries inside the bank). Net
-        // ~13% base creature rate.
+        // companion slots; >=82 is None. Indices 32-38 are the mythic
+        // creatures: ONLY the byte-18 ladder above may grant them
+        // ("Players must earn these" — the base roll leaked a backdoor
+        // Beholder at ~0.32%, nearly the true 0.39% rate).
         var _r21 = hb(21);
         if (_r21 >= 82) return 0; // None
+        if (_r21 >= 32 && _r21 <= 38) return 0; // mythic slots: ladder-only
         return _r21;
       })(),
       mutation:     mutByte,
@@ -12307,17 +12313,13 @@ document.addEventListener('keydown', function(e) {
       if (auraT) score += (_TIER_SCORE[auraT.tier] || 0);
 
       var compT = _lt('COMPANION', t);
-      // Gate must match the creature-override bands in hashToTraits — when
-      // a creature override fires, the companion-tier score is suppressed
-      // so the mythic spike below isn't doubled with the base tier score.
-      // Cicada/Toad tightened 2026-05-13 to 2 bytes each (legendary rate).
-      var _hasMythCreature = (
-        t.mythic === 0xFF ||
-        t.mythic >= 0xF4 ||
-        t.mythic === 0xEE || t.mythic === 0xEF ||
-        t.mythic === 0xDE || t.mythic === 0xDF
-      );
-      if (compT && !_hasMythCreature) score += (_TIER_SCORE[compT.tier] || 0);
+      // 2026-06-12: companion scores by its LAYER TIER for everyone. The
+      // old "mythic spike replaces tier" split required three band-sites
+      // kept in sync and broke twice: phantom Cicadas scored +7 while
+      // titled ones got +4, and the Beholder capped at +8 instead of its
+      // cosmic-tier +10. _layerTier already encodes the intended ladder
+      // (38 cosmic +10, 34-37 legendary +5, 32/33 mythic +7).
+      if (compT) score += (_TIER_SCORE[compT.tier] || 0);
 
       var mutT = _lt('MUTATION', t);
       if (mutT) score += (_TIER_SCORE[mutT.tier] || 0);
@@ -12332,17 +12334,9 @@ document.addEventListener('keydown', function(e) {
       else if (_mn==='Constellation'||_mn==='Stained Glass'||_mn==='Daguerreotype') score += 5;
     }
 
-    // ── SPIKE: MYTHIC COMPANION (0-8) ── scored by mythic byte tier.
-    // Spike replaces companion-tier score (gated above at line ~10390).
-    // Bands MUST match the creature-override bands in hashToTraits — if a
-    // plant has no creature override, it should not get the spike. Cicada
-    // + Toad tightened 2026-05-13 to 2 bytes each (legendary rate).
-    var _mb = t.mythic;
-    if (_mb===0xFF) score += 8;                          // The Beholder       (idx 38, Cosmic)
-    else if (_mb>=0xFE) score += 7;                      // Garden Spider      (idx 37, Legendary)
-    else if (_mb>=0xFC) score += 6;                      // Great Blue Heron   (idx 36, Legendary)
-    else if (_mb>=0xF4&&_mb<0xFC) score += 5;            // Raccoon (idx 35) + Baby Mammoth (idx 34), both Legendary
-    else if (_mb===0xEE||_mb===0xEF||_mb===0xDE||_mb===0xDF) score += 4;  // The Cicada (idx 33) + The Toad (idx 32), Mythic-tier creatures
+    // (The separate mythic-companion "spike" was retired 2026-06-12 — the
+    // companion layer tier above now scores creatures directly, so there is
+    // no second band table to drift out of sync.)
 
     // ── EARNED LAYERS (breeding, composting, synergies) ──
 
@@ -48451,10 +48445,13 @@ document.addEventListener('keydown', function(e) {
     { id:'half_house',    icon:'🏠', name:'Half House',           desc:'Collect thirty plants. The greenhouse hums.',                    reward:20, check: function(gh){ return gh.length >= 30; } },
     { id:'full_house',    icon:'🏰', name:'Full House',           desc:'Fill all sixty slots. A keeper of gardens.',         reward:30, check: function(gh){ return gh.length >= 60; } },
     // ── Rarity ──
-    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare plant. The math chose you.',                  reward:10, check: function(gh){ return gh.some(function(p){ return p.rare; }); } },
-    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic plant. Three layers of luck align.',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
-    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary plant. Few will see what you keep.',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=12;}catch(e){return false;} }); } },
-    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic plant. The unlikely, witnessed.',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=18;}catch(e){return false;} }); } },
+    // 2026-06-12: grade achievements compare the GRADE NAME — the old raw
+    // score gates were Variant D bands (epic≥8 fired on Uncommons, and
+    // 'Own a Cosmic' fired at score 18, an Epic under live Variant G).
+    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare plant. The math chose you.',                  reward:10, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=10;}catch(e){return false;} }); } },
+    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic plant. Three layers of luck align.',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=15;}catch(e){return false;} }); } },
+    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary plant. Few will see what you keep.',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=21;}catch(e){return false;} }); } },
+    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic plant. The unlikely, witnessed.',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=34;}catch(e){return false;} }); } },
     // ── Breeding ──
     { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a cross-bred plant. Two parents, one new shape.',             reward:10, check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
     { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed five plants. The hybridist begins.',                       reward:10, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
@@ -48476,11 +48473,17 @@ document.addEventListener('keydown', function(e) {
     { id:'all_seasons',   icon:'🌍', name:'Four Seasons',        desc:'Hold all four seasons in one greenhouse. The wheel is whole.',        reward:10, check: function(gh){ var s={};gh.forEach(function(p){try{var t=hashToTraits(p.hash);s[t.season%4]=true;}catch(e){}});return Object.keys(s).length>=4; } },
     // ── Companions ──
     { id:'first_companion',icon:'🐾', name:'Animal Friend',      desc:'Own a plant with a companion. Something chose to stay.',         reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return t.companion<60&&(t.companion%5===0);}catch(e){return false;} }); } },
-    { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada. Mythic creatures answer few.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18>=0xD0;}catch(e){return false;} }); } },
-    { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder. An eye opens that should not exist.',   reward:30, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(36,38),16);return hb18===0xFF;}catch(e){return false;} }); } },
+    // 2026-06-12: byte 18 is hash chars 18-19 (the engine's hb() overlaps:
+    // h[i]+h[i+1]) — slice(36,38) read random chars, so Mythic Bond fired
+    // for ~19% of plants and The Beholder never fired for real owners.
+    { id:'first_mythic_c', icon:'🪲', name:'Mythic Bond',        desc:'Own a Toad or Cicada. Mythic creatures answer few.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(18,20),16);return hb18===0xEE||hb18===0xEF||hb18===0xDE||hb18===0xDF;}catch(e){return false;} }); } },
+    { id:'beholder',       icon:'👁', name:'The Beholder',       desc:'Own The Beholder. An eye opens that should not exist.',   reward:30, check: function(gh){ return gh.some(function(p){ try{var hb18=parseInt(p.hash.slice(18,20),16);return hb18===0xFF;}catch(e){return false;} }); } },
     // ── Mutations ──
-    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated plant. The seed bent the rules in your favor.',              reward:5,  check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xD0;}catch(e){return false;} }); } },
-    { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch. The pixels broke into beauty.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var hb16=parseInt(p.hash.slice(32,34),16);return hb16>=0xF0;}catch(e){return false;} }); } },
+    // 2026-06-12: read mutation through the engine instead of raw bytes —
+    // the old slice(32,34) checks read the wrong chars AND pre-dated the
+    // May-03 mutation rebalance.
+    { id:'first_mutation', icon:'⚡', name:'Mutant',              desc:'Own a mutated plant. The seed bent the rules in your favor.',              reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return !!(t&&t.mutationName&&t.mutationName!=='None');}catch(e){return false;} }); } },
+    { id:'glitch_owner',   icon:'🌀', name:'Glitch in the Matrix',desc:'Own a Glitch. The pixels broke into beauty.',       reward:20, check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);return !!(t&&t.mutationName==='Glitch');}catch(e){return false;} }); } },
     // ── Synergy (Spec 14 — checked after synergy engine lands) ──
     { id:'first_synergy',  icon:'✨', name:'Resonance',           desc:'Own a plant resonating with one synergy. Two truths align.',     reward:5,  check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>0;}catch(e){return false;} }); } },
     { id:'triple_synergy', icon:'🌟', name:'Triple Resonance',   desc:'Own a plant resonating with three synergies. Triple convergence.',        reward:20, check: function(gh){ return gh.some(function(p){ try{var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var syn=window.checkSynergies?window.checkSynergies(t):[];return syn.length>=3;}catch(e){return false;} }); } }
@@ -72191,8 +72194,12 @@ window._lwMinutesSinceFirstSignup=function(){
 function _genGiftHash(){
   var roll=Math.random();
   var targetMin,targetMax;
-  if(roll<0.70){targetMin=2;targetMax=3;}        // Uncommon
-  else{targetMin=4;targetMax=5;}                 // Rare
+  // 2026-06-12: bands rebased to live Variant G thresholds (Uncommon=5,
+  // Rare=10). The old 2-3 / 4-5 targets were Variant D scores — under the
+  // live engine 84.5% of gift plants graded COMMON, breaking the
+  // onboarding "guaranteed Uncommon+" promise for 5 of 6 new players.
+  if(roll<0.70){targetMin=5;targetMax=9;}        // Uncommon
+  else{targetMin=10;targetMax=14;}               // Rare
   var bestHash='',bestMatchScore=-1;
   for(var attempts=0;attempts<500;attempts++){
     var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
@@ -72210,10 +72217,10 @@ function _genGiftHash(){
           console.log('[LW] Gift plant: '+g.name+' (score '+g.score+', target '+targetMin+'-'+targetMax+', attempt '+attempts+')');
           return h;
         }
-        // Track best candidate within Uncommon+ band (never below 2 — that
-        // would land Common which violates the gift floor). Never above
-        // targetMax either — Epic+ never gifted.
-        if(g.score>=2&&g.score<=targetMax&&g.score>bestMatchScore){bestHash=h;bestMatchScore=g.score;}
+        // Track best candidate within Uncommon+ band (never below 5 — the
+        // live Uncommon floor; below that lands Common which violates the
+        // gift promise). Never above targetMax either — Epic+ never gifted.
+        if(g.score>=5&&g.score<=targetMax&&g.score>bestMatchScore){bestHash=h;bestMatchScore=g.score;}
       }
     }catch(e){}
   }
