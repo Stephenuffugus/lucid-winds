@@ -22716,51 +22716,64 @@ document.addEventListener('keydown', function(e) {
           break;
 
         case 11: // Maidenhair Fern — Adiantum bipinnate fan, tiny pinnules each on its own dark wiry rachis (signature).
-          var _mfRL = ls * 3.0;
-          var _mfTX = ox + side * ls * 1.7;
-          var _mfTY = ly - _mfRL * 0.55;
-          var _mfCX = ox + side * ls * 1.0;
-          var _mfCY = ly - _mfRL * 0.32;
+          // Jun-12 art pass: the old control point sat ON the base→tip chord
+          // (collinear), so the "arcing wiry rachis" ruled a straight line,
+          // and pinnules came out ~1.5 units — specks. The rachis now bows
+          // genuinely (control lifted perpendicular off the chord) and the
+          // fan pinnules below are sized to BE the leaf.
+          var _mfTX = ox + side * ls * 1.9;
+          var _mfTY = ly - ls * 1.55;
+          var _mfChDX = _mfTX - ox, _mfChDY = _mfTY - ly;
+          var _mfChL = Math.sqrt(_mfChDX*_mfChDX + _mfChDY*_mfChDY) || 1;
+          var _mfPNX = -_mfChDY / _mfChL, _mfPNY = _mfChDX / _mfChL;
+          if (_mfPNY > 0) { _mfPNX = -_mfPNX; _mfPNY = -_mfPNY; } // bow upward
+          var _mfCX = (ox + _mfTX) * 0.5 + _mfPNX * _mfChL * 0.30;
+          var _mfCY = (ly + _mfTY) * 0.5 + _mfPNY * _mfChL * 0.30;
           tip = _mfTX; tipY = _mfTY;
-          // Generous bodyD envelope so chimera-vein clip captures the whole frond
-          bodyD = 'M'+ox+','+ly
-             + ' C'+(ox+side*ls*0.4).toFixed(1)+','+(ly-ls*0.5).toFixed(1)+' '+(ox+side*ls*1.4).toFixed(1)+','+(ly-_mfRL*0.55).toFixed(1)+' '+_mfTX.toFixed(1)+','+_mfTY.toFixed(1)
-             + ' C'+(ox+side*ls*1.6).toFixed(1)+','+(ly-_mfRL*0.55).toFixed(1)+' '+(ox+side*ls*0.6).toFixed(1)+','+(ly-ls*0.4).toFixed(1)+' '+(ox-side*ls*0.1).toFixed(1)+','+(ly+0.1).toFixed(1)+' Z';
+          // Generous bodyD envelope so the leaf clip captures rachis + fans
+          var _mfEMX = (ox + _mfTX) * 0.5, _mfEMY = (ly + _mfTY) * 0.5;
+          bodyD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)
+             + ' Q'+(_mfEMX + _mfPNX*ls*2.2).toFixed(1)+','+(_mfEMY + _mfPNY*ls*2.2).toFixed(1)+' '+_mfTX.toFixed(1)+','+_mfTY.toFixed(1)
+             + ' Q'+(_mfEMX - _mfPNX*ls*1.6).toFixed(1)+','+(_mfEMY - _mfPNY*ls*1.6).toFixed(1)+' '+ox.toFixed(1)+','+ly.toFixed(1)+' Z';
           // Main rachis — Adiantum's signature DARK WIRY stalk
           var _mfRD = 'M'+ox+','+ly+' Q'+_mfCX.toFixed(1)+','+_mfCY.toFixed(1)+' '+_mfTX.toFixed(1)+','+_mfTY.toFixed(1);
           s += '<path d="'+_mfRD+'" fill="none" stroke="rgba(40,20,5,0.85)" stroke-width="0.7" opacity="'+(op*0.85).toFixed(2)+'" stroke-linecap="round"/>';
           s += '<path d="'+_mfRD+'" fill="none" stroke="#f5ecd6" stroke-width="0.22" opacity="'+(op*0.5).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.25,-0.2)"/>';
-          // 6 fanned pinnule clusters along the rachis — each on its own wiry secondary rachis
-          for (var _mfp = 0; _mfp < 6; _mfp++) {
-            var _mft = (_mfp + 0.55) / 7.0;
-            var _mfBX = (1-_mft)*(1-_mft)*ox + 2*(1-_mft)*_mft*_mfCX + _mft*_mft*_mfTX;
-            var _mfBY = (1-_mft)*(1-_mft)*ly + 2*(1-_mft)*_mft*_mfCY + _mft*_mft*_mfTY;
-            // Secondary wiry rachis perpendicular to main, alternating side per node
+          // Jun-12 art pass: 9 fan pinnules staggered directly along the
+          // arcing rachis (the old 6 secondary-rachis clusters bore ~1.5-unit
+          // speck pinnules — the plant read as bare wire). Adiantum's wedge
+          // fans ARE the leaf; the wiry black rachis just carries them.
+          for (var _mfp = 0; _mfp < 9; _mfp++) {
+            var _mft = 0.14 + _mfp * 0.098;
+            var _mfu = 1 - _mft;
+            var _mfBX = _mfu*_mfu*ox + 2*_mfu*_mft*_mfCX + _mft*_mft*_mfTX;
+            var _mfBY = _mfu*_mfu*ly + 2*_mfu*_mft*_mfCY + _mft*_mft*_mfTY;
+            // local rachis tangent → pinnule branches ±68° off it
+            var _mfTgX = 2*_mfu*(_mfCX-ox) + 2*_mft*(_mfTX-_mfCX);
+            var _mfTgY = 2*_mfu*(_mfCY-ly) + 2*_mft*(_mfTY-_mfCY);
+            var _mfTgA = Math.atan2(_mfTgY, _mfTgX);
             var _mfNS = (_mfp % 2 === 0) ? 1 : -1;
-            var _mfWL = ls * (0.85 - _mfp * 0.07);
-            var _mfWTX = _mfBX + side * _mfNS * _mfWL * 0.95;
-            var _mfWTY = _mfBY - _mfWL * 0.4;
-            s += '<path d="M'+_mfBX.toFixed(1)+','+_mfBY.toFixed(1)+' Q'+(_mfBX+side*_mfNS*_mfWL*0.4).toFixed(1)+','+(_mfBY-_mfWL*0.32).toFixed(1)+' '+_mfWTX.toFixed(1)+','+_mfWTY.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.75)" stroke-width="0.4" opacity="'+(op*0.75).toFixed(2)+'" stroke-linecap="round"/>';
-            // 4-5 tiny fan-shaped pinnules along the secondary rachis
-            for (var _mfPi = 0; _mfPi < 5; _mfPi++) {
-              var _mfPt = 0.3 + _mfPi * 0.18;
-              var _mfPx = _mfBX + (_mfWTX - _mfBX) * _mfPt;
-              var _mfPy = _mfBY + (_mfWTY - _mfBY) * _mfPt;
-              var _mfPs = _mfWL * 0.18;
-              if (_mfPs < 0.4) continue;
-              // Pinnule fan body — small ginkgo-shaped wedge
-              var _mfPF = _hueShift(baseColor, _mfp*23+_mfPi*11, 10);
-              var _mfPa = side * _mfNS * 0.6;
-              var _mfPL = _mfPx + Math.cos(-1.4 + _mfPa) * _mfPs * side;
-              var _mfPLY = _mfPy + Math.sin(-1.4 + _mfPa) * _mfPs;
-              var _mfPR = _mfPx + Math.cos(-1.7 - _mfPa) * _mfPs * side;
-              var _mfPRY = _mfPy + Math.sin(-1.7 - _mfPa) * _mfPs;
-              s += '<path d="M'+_mfPx.toFixed(1)+','+_mfPy.toFixed(1)+' Q'+_mfPL.toFixed(1)+','+(_mfPLY-_mfPs*0.2).toFixed(1)+' '+_mfPR.toFixed(1)+','+_mfPRY.toFixed(1)+' Z" fill="'+_mfPF+'" opacity="'+(op*0.85).toFixed(2)+'"/>';
-              // Cream rim on outer pinnule
-              s += '<path d="M'+_mfPL.toFixed(1)+','+_mfPLY.toFixed(1)+' Q'+(_mfPx+(_mfPL-_mfPx)*0.5+(_mfPR-_mfPx)*0.5).toFixed(1)+','+(_mfPLY-_mfPs*0.18).toFixed(1)+' '+_mfPR.toFixed(1)+','+_mfPRY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.16" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
-            }
-            // Tip terminator on the wiry secondary
-            s += '<circle cx="'+_mfWTX.toFixed(1)+'" cy="'+_mfWTY.toFixed(1)+'" r="0.18" fill="rgba(40,20,5,0.6)"/>';
+            var _mfDirA = _mfTgA + _mfNS * 1.19;
+            var _mfR = ls * (0.46 - _mft * 0.16); // fan radius, tapering tipward
+            // short dark petiolule (wiry, Adiantum signature)
+            var _mfFBX = _mfBX + Math.cos(_mfDirA) * _mfR * 0.55;
+            var _mfFBY = _mfBY + Math.sin(_mfDirA) * _mfR * 0.55;
+            s += '<line x1="'+_mfBX.toFixed(1)+'" y1="'+_mfBY.toFixed(1)+'" x2="'+_mfFBX.toFixed(1)+'" y2="'+_mfFBY.toFixed(1)+'" stroke="rgba(40,20,5,0.8)" stroke-width="0.28" opacity="'+(op*0.8).toFixed(2)+'" stroke-linecap="round"/>';
+            // wedge fan opening away from the rachis, half-angle ~52°
+            var _mfE1A = _mfDirA + 0.91, _mfE2A = _mfDirA - 0.91;
+            var _mfE1X = _mfFBX + Math.cos(_mfE1A) * _mfR;
+            var _mfE1Y = _mfFBY + Math.sin(_mfE1A) * _mfR;
+            var _mfE2X = _mfFBX + Math.cos(_mfE2A) * _mfR;
+            var _mfE2Y = _mfFBY + Math.sin(_mfE2A) * _mfR;
+            var _mfOX = _mfFBX + Math.cos(_mfDirA) * _mfR * 1.32;
+            var _mfOY = _mfFBY + Math.sin(_mfDirA) * _mfR * 1.32;
+            var _mfPF = _hueShift(baseColor, _mfp*29, 10);
+            s += '<path d="M'+_mfFBX.toFixed(1)+','+_mfFBY.toFixed(1)+' L'+_mfE1X.toFixed(1)+','+_mfE1Y.toFixed(1)+' Q'+_mfOX.toFixed(1)+','+_mfOY.toFixed(1)+' '+_mfE2X.toFixed(1)+','+_mfE2Y.toFixed(1)+' Z" fill="'+_mfPF+'" opacity="'+Math.max(0.88, op)+'"/>';
+            // cream rim on the fan's outer arc
+            s += '<path d="M'+_mfE1X.toFixed(1)+','+_mfE1Y.toFixed(1)+' Q'+_mfOX.toFixed(1)+','+_mfOY.toFixed(1)+' '+_mfE2X.toFixed(1)+','+_mfE2Y.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round"/>';
+            // two radial creases inside the fan
+            s += '<line x1="'+_mfFBX.toFixed(1)+'" y1="'+_mfFBY.toFixed(1)+'" x2="'+(_mfFBX+Math.cos(_mfDirA+0.38)*_mfR*0.92).toFixed(1)+'" y2="'+(_mfFBY+Math.sin(_mfDirA+0.38)*_mfR*0.92).toFixed(1)+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.14" opacity="'+(op*0.5).toFixed(2)+'"/>';
+            s += '<line x1="'+_mfFBX.toFixed(1)+'" y1="'+_mfFBY.toFixed(1)+'" x2="'+(_mfFBX+Math.cos(_mfDirA-0.38)*_mfR*0.92).toFixed(1)+'" y2="'+(_mfFBY+Math.sin(_mfDirA-0.38)*_mfR*0.92).toFixed(1)+'" stroke="rgba(40,20,5,0.35)" stroke-width="0.14" opacity="'+(op*0.5).toFixed(2)+'"/>';
           }
           // Tip terminator on main rachis
           s += '<circle cx="'+_mfTX.toFixed(1)+'" cy="'+_mfTY.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.65)"/>';
