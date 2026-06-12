@@ -11403,12 +11403,16 @@ document.addEventListener('keydown', function(e) {
       (mythByte === 0xEE || mythByte === 0xEF) ? 'The Cicada' :
       (mythByte === 0xDE || mythByte === 0xDF) ? 'The Toad'   : 'None';
 
-    var goldenPot   = hc(0)  === 15;
-    var glowFlower  = hc(11) === 15;
-    var crystalBase = hc(20) === 15;
+    // 2026-06-12 (Stephen greenlit): retired the goldenPot/glowFlower/
+    // crystalBase hc()===15 locks — pre-tier-system relics that FORCED the
+    // LEGENDARY Golden Pot onto 6.25% of all mints, legendary Bell Flowers
+    // onto 6.25% of flowering plants, and Crystal substrate onto 6.25%.
+    // ~37% of plants showed a legendary+-colored ledger row largely because
+    // of these. The indices now occur at their natural bank rates
+    // (pot 15: 1/60, flower 15: 1/73, base 15: 1/71).
 
     var _result = {
-      pot:          goldenPot  ? 15 : hb(0) % 60, // 60 pot types (0-59)
+      pot:          hb(0) % 60, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
       // 2026-06-12 stem banding (Stephen greenlit): the 28-slot uniform roll
       // put a COSMIC-tier stem on ~7% of all mints (Worldspine on 1 in 29
@@ -11438,13 +11442,13 @@ document.addEventListener('keydown', function(e) {
       leafSize:     8 + (hc(6) % 7),
       leafColors:   [_PAL[hc(7)],_PAL[hc(8)],_PAL[hc(9)]],
       hasFlower:    hc(10) > 4,
-      flower:       glowFlower ? 15 : hb(11) % 73, // 73 flower types (0-72) — Reverie 71, Worldbloom 72 added 2026-05-01
+      flower:       hb(11) % 73, // 73 flower types (0-72) — Reverie 71, Worldbloom 72 added 2026-05-01
       flowerColor:  _PAL[hc(12)],
       flowerSize:   6 + (hc(13) % 7),
       chimerGen:    1, // default gen 1; breeding sets this to parent max + 1
       leafSpread:   7 + (hc(14) % 6),
       aura:         hb(15) % 36,  // 0-35 aura slots (0-4 = none)
-      base:         crystalBase ? 15 : hb(20) % 71,
+      base:         hb(20) % 71,
       // Companion: base rate ~13% (only roll on first 100 indices of a
       // 256-modulus, with everything ≥ 82 mapped to None). Mythic
       // creature overrides (~18% combined) sit on top via the byte-18
@@ -11479,7 +11483,7 @@ document.addEventListener('keydown', function(e) {
       mutationName: mutName,
       mythic:       mythByte,
       mythicName:   mythName,
-      isRare: goldenPot||glowFlower||crystalBase||mutName!=='None'||mythName!=='None',
+      isRare: (hb(0)%60===15)||(hb(11)%73===15)||(hb(20)%71===15)||mutName!=='None'||mythName!=='None',
       season: hb(22) % 4,  // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
       // Climate resistance profile — deterministic from hash bytes 23-27.
       // Used by the wild climate-damage tick to decide which plants suffer
@@ -12271,7 +12275,7 @@ document.addEventListener('keydown', function(e) {
     { name:'Epic',      minScore:13, color:'#9B59B6', icon:'◇' },
     { name:'Legendary', minScore:19, color:'#C8A84B', icon:'✦' },
     { name:'Mythic',    minScore:25, color:'#A87285', icon:'★' },
-    { name:'Cosmic',    minScore:32, color:'#D94FFF', icon:'✧' }
+    { name:'Cosmic',    minScore:31, color:'#D94FFF', icon:'✧' }
   ];
 
   // ═══ MODEL H SCORING ENGINE — Loot Distribution Master Spec ═══
@@ -48479,7 +48483,7 @@ document.addEventListener('keydown', function(e) {
     { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare plant. The math chose you.',                  reward:10, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
     { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic plant. Three layers of luck align.',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=13;}catch(e){return false;} }); } },
     { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary plant. Few will see what you keep.',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=19;}catch(e){return false;} }); } },
-    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic plant. The unlikely, witnessed.',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=32;}catch(e){return false;} }); } },
+    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic plant. The unlikely, witnessed.',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=31;}catch(e){return false;} }); } },
     // ── Breeding ──
     { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a cross-bred plant. Two parents, one new shape.',             reward:10, check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
     { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed five plants. The hybridist begins.',                       reward:10, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
