@@ -21454,10 +21454,13 @@ document.addEventListener('keydown', function(e) {
     // ls=11 is baseline; small leaves (ls=8) → 0.73x, big leaves (ls=14) → 1.27x.
     // Clamped 0.55..1.5 so very small leaves still show veins and very big don't drown them.
     var sizeScale = (ls && ls > 0) ? Math.max(0.55, Math.min(1.5, ls / 11)) : 1.0;
-    // Width: 0.35 → 0.85 across gens (playbook §7 "0.35 + gen*0.2 capped 0.85"), scaled by leaf size.
-    var wRaw = Math.min(0.35 + idx * 0.20, 0.85) * sizeScale;
-    // Opacity: subtle at gen 1, prominent at gen 6. Capped 0.65.
-    var oRaw = Math.min(0.40 + idx * 0.10, 0.65);
+    // Width: 0.32 → 0.70 across gens, scaled by leaf size. (Jun-12 art
+    // pass: playbook's 0.85 cap assumed ghost-twin offset + blur — as
+    // solid strokes on small blades that flooded; with the hierarchical
+    // painter the spine stays readable at 0.70.)
+    var wRaw = Math.min(0.32 + idx * 0.16, 0.70) * sizeScale;
+    // Opacity: subtle at gen 1, prominent at gen 6. Capped 0.58.
+    var oRaw = Math.min(0.38 + idx * 0.08, 0.58);
     // Stephen 2026-05-09: dropped the gen 2+ mix-blend-mode:screen and the
     // gen 3+ Gaussian-blur filter. Both forced iOS/Pi to allocate a separate
     // render surface for the chimera-vein layer, and under memory pressure
@@ -22232,7 +22235,11 @@ document.addEventListener('keydown', function(e) {
       // set-104: Pre-compute chimera vein style for ALL leaf cases
       // Previously _vs was only defined inside Monstera's IIFE (case 5),
       // but cases 15-29 all reference _vs.width and _vs.opacity.
-      var _vs = _getVeinStyle(_getChimerGen(t));
+      // Jun-12 art pass: pass ls — _getVeinStyle has supported per-leaf
+      // size scaling since set-104 but no call site ever passed it, so
+      // veins rendered the same width on a tiny Boxwood as on an
+      // Elephant Ear (flooding small blades solid at high gens).
+      var _vs = _getVeinStyle(_getChimerGen(t), ls);
 
       // ── ORGANIC ATTACHMENT — pulvinus + petiole + bud-scar + base shadow ──
       // Per reference_svg_leaf_techniques §1: every leaf attaches via a 5-part recipe.
@@ -26087,7 +26094,10 @@ document.addEventListener('keydown', function(e) {
 
       // ── CHIMERA VEIN overlay — per-leaf anatomically traced (cross-pollination heritage) ──
       if (bodyD) { // veins always on
-        var _vs2 = _getVeinStyle(_getChimerGen(t));
+        // Jun-12 art pass: ls finally passed (see _vs above). Cases that
+        // rescale ls internally (e.g. case 0 ×1.35) are reflected here
+        // because this runs after the switch.
+        var _vs2 = _getVeinStyle(_getChimerGen(t), ls);
         var chiColor = _vs2.color;
         var chiVar = (parseInt(uid, 16) + i) % 2; // 0 or 1 — two vein variants per leaf
         var clipVein = 'cv' + uid + i;
@@ -26876,9 +26886,28 @@ document.addEventListener('keydown', function(e) {
         }
 
         if (chiVeinD) {
-          var _cvW = _vs2.width;
-          var _cvO = _vs2.opacity;
-          s += '<path d="' + chiVeinD + '" fill="none" stroke="' + chiColor + '" stroke-width="' + _cvW + '" opacity="' + _cvO + '"' + (_vs2.glow ? '' : '') + '/>';
+          // Jun-12 art pass: HIERARCHICAL vein painting. Every per-leaf
+          // vein network used to paint as one path at one weight, so the
+          // midrib and every secondary hit equally hard — at gen 5 red
+          // that read as a diseased flood on small blades, not the
+          // designed "veins glow". The first M-subpath of every network
+          // is its midrib/primary: full weight. The rest are
+          // secondaries: 55% width, 62% opacity, so the network reads
+          // as anatomy with a bright spine. At gen 5+ (_vs2.glow) the
+          // midrib gets a cream neon-tube core — glow without filters
+          // or blend modes (iOS render-surface budget, May-09 lesson).
+          var _cvW = parseFloat(_vs2.width);
+          var _cvO = parseFloat(_vs2.opacity);
+          var _cvParts = chiVeinD.split(/(?=M)/);
+          var _cvMid = _cvParts[0] || '';
+          var _cvSec = _cvParts.length > 1 ? _cvParts.slice(1).join('') : '';
+          if (_cvSec) {
+            s += '<path d="' + _cvSec + '" fill="none" stroke="' + chiColor + '" stroke-width="' + (_cvW * 0.55).toFixed(2) + '" opacity="' + (_cvO * 0.62).toFixed(2) + '" stroke-linecap="round"/>';
+          }
+          s += '<path d="' + _cvMid + '" fill="none" stroke="' + chiColor + '" stroke-width="' + _cvW.toFixed(2) + '" opacity="' + _cvO.toFixed(2) + '" stroke-linecap="round"/>';
+          if (_vs2.glow) {
+            s += '<path d="' + _cvMid + '" fill="none" stroke="#f5ecd6" stroke-width="' + (_cvW * 0.34).toFixed(2) + '" opacity="' + (_cvO * 0.80).toFixed(2) + '" stroke-linecap="round"/>';
+          }
         }
         s += '</g>';
       }
