@@ -474,16 +474,18 @@
     var pendingToSend = p.amount;
     return _claimFn({ pending: pendingToSend, anonId: anonId, gameId: _gameId }).then(function(res){
       var data = res && res.data ? res.data : {};
-      // On success, drain the local bucket regardless of partial credit —
-      // the server has decided how much was creditable; anything beyond
-      // that is discarded per spec.
+      // Drain only what the server actually credited. Anything refused by
+      // the per-call/daily caps STAYS in the local bucket and rolls over
+      // to a future claim — previously it was silently discarded, so a
+      // 15-40-sunbeam session arriving past the 50/day cap simply
+      // evaporated (Jun-10 audit HIGH). The server re-applies its caps on
+      // every claim, so keeping the remainder client-side grants nothing
+      // by itself.
       var remaining = _readPending();
-      if (remaining.amount > pendingToSend) {
-        // A race happened — keep the delta that accrued during the request.
-        remaining.amount = remaining.amount - pendingToSend;
-      } else {
-        remaining.amount = 0;
-      }
+      var raceDelta = remaining.amount > pendingToSend ? remaining.amount - pendingToSend : 0;
+      var unCredited = pendingToSend - (typeof data.credited === 'number' ? data.credited : 0);
+      if (unCredited < 0) unCredited = 0;
+      remaining.amount = raceDelta + unCredited;
       _writePending(remaining);
       if (typeof data.balance === 'number') {
         var conf = _readConfirmedCache();
