@@ -24337,6 +24337,11 @@ document.addEventListener('keydown', function(e) {
             var _gwTipY = ly + Math.sin(_gwAng) * _gwLen;
             var _gwMidX = ox + Math.cos(_gwAng) * _gwLen * 0.2 * side;
             var _gwMidY = ly + Math.sin(_gwAng) * _gwLen * 0.5;
+            // Jun-12 art pass: low tendrils computed tips down to y≈92 —
+            // straight through the pot face (rim is y≈74). Clamp so wisps
+            // pool just above the soil, drifting a little further sideways.
+            if (_gwTipY > 72.5) { _gwTipX += side * (_gwTipY - 72.5) * 0.25; _gwTipY = 72.5; }
+            if (_gwMidY > 70.5) { _gwMidY = 70.5; }
             var _gwCol = _hueShift(baseColor, _gw * 41, 12);
             var _gwTendD = 'M'+ox+','+ly+' C'+_gwMidX.toFixed(1)+','+_gwMidY.toFixed(1)+' '+(_gwTipX+side*ls*0.1).toFixed(1)+','+(_gwTipY-_gwLen*0.15).toFixed(1)+' '+_gwTipX.toFixed(1)+','+_gwTipY.toFixed(1);
             // Outer glow halo (cream wash, wide)
