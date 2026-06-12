@@ -59,7 +59,25 @@ window._gameFns.trellis = function TR(a){
     for(var i=0;i<WORDS.length;i++){var w=WORDS[i].toUpperCase();if(w.length>=2)wordSet[w]=true;}
     wordSetBuilt=true;
   }
-  function isWord(w){return !!wordSet[w.toUpperCase()];}
+  // Full ENABLE dictionary (168k words, shared with Vine Words) — loaded
+  // lazily by the game loader / shell. Curated WORDS stays as the floor:
+  // it has the 2-letter Scrabble words ENABLE lacks, and the AI plays
+  // from it so the CPU stays beatable.
+  function bigDict(){
+    if(window.LW_VINE_DICT_SET)return window.LW_VINE_DICT_SET;
+    var arr=window.LW_VINE_DICT_ARR||[];
+    if(!arr.length)return null;
+    var st={};
+    for(var i=0;i<arr.length;i++)st[arr[i]]=1;
+    window.LW_VINE_DICT_SET=st;
+    return st;
+  }
+  function isWord(w){
+    w=w.toUpperCase();
+    if(wordSet[w])return true;
+    var big=bigDict();
+    return big?!!big[w.toLowerCase()]:false;
+  }
 
   function initBoard(){board=[];for(var r=0;r<BOARD_SIZE;r++){board[r]=[];for(var c=0;c<BOARD_SIZE;c++)board[r][c]=null;}}
   function isOccupied(r,c){return r>=0&&r<BOARD_SIZE&&c>=0&&c<BOARD_SIZE&&board[r][c]!==null;}
