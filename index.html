@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.18';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -49105,6 +49105,14 @@ document.addEventListener('keydown', function(e) {
 
   // ── Shared state ─────────────────────────────────────────────────────────
   var _vaultHydrated          = false;
+  // Meta/state read-back gate (Jun-12 incognito sunbeam-loss fix). The
+  // meta doc (readyHashes queue, class, tree, …) hydrates in a SEPARATE
+  // async read after the root vault doc. Until it resolves, this
+  // browser's localStorage copies of those fields are whatever this
+  // device had — on a fresh browser, EMPTY. A flush in that window wrote
+  // an empty readyHashes array over the cloud's real queue (merge:true
+  // replaces arrays), permanently destroying banked sunbeams.
+  var _metaHydrated           = false;
   // Expose for dev panel force-sync
   Object.defineProperty(window, '_vaultHydrated', {
     get: function(){ return _vaultHydrated; },
@@ -49890,7 +49898,7 @@ document.addEventListener('keydown', function(e) {
   window._vhoEscape = function(){
     if (_vaultHydrated) return;
     if (window._swsLog) _swsLog('⏱ User escaped hydration overlay, offline mode', 'warn');
-    _vaultHydrated = true;
+    _vaultHydrated = true; _metaHydrated = true;
     _hideOverlay('Offline, local only');
     if (window._showOfflineBanner) window._showOfflineBanner();
     if (window.renderGreenhouse) try{renderGreenhouse();}catch(e){}
@@ -50082,6 +50090,13 @@ document.addEventListener('keydown', function(e) {
     // spoof the local UI sunbeam balance by writing meta/state.hashLedger
     // directly. The root doc is the canonical source; mintPlant Cloud
     // Function reads/writes only the root copy. Mirror deleted.
+    // Jun-12: meta write gated until the meta read-back has resolved —
+    // see _metaHydrated declaration. Skipping is safe: the next debounced
+    // flush after hydration carries current values.
+    if (!_metaHydrated) {
+      if (window._swsLog) _swsLog('meta/state write skipped — meta not hydrated yet', 'warn');
+      return;
+    }
     var metaRef = db.collection('vaults').doc(uid).collection('meta').doc('state');
     metaRef.set({
       slots: parseInt(localStorage.getItem('sws_greenhouse_slots')) || 10,
@@ -50175,11 +50190,15 @@ document.addEventListener('keydown', function(e) {
   function _loadVaultForUser(user, onComplete) {
     if (!user || !user.uid) {
       if (window._swsLog) _swsLog('loadVault: no user/uid, local only', 'warn');
-      _vaultHydrated = true; _hideOverlay('');
+      _vaultHydrated = true; _metaHydrated = true; _hideOverlay('');
       if (onComplete) onComplete({source:'local', plantCount:0});
       return;
     }
     if (window._swsLog) _swsLog('↓ Reading vaults/' + user.uid.slice(0,8) + '…');
+    // Close the meta-write gate for the duration of this load — it
+    // reopens when the meta read-back resolves (or fails, or there is no
+    // cloud doc to read). See _metaHydrated declaration.
+    _metaHydrated = false;
     var localGH=[], localNur=[];
     try{localGH =JSON.parse(localStorage.getItem('sws_greenhouse')||'[]')||[];}catch(e){}
     try{localNur=JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery')   ||'[]')||[];}catch(e){}
@@ -50284,6 +50303,19 @@ document.addEventListener('keydown', function(e) {
                 }
               } catch(_tmerge) {}
             }
+            _metaHydrated = true;
+            // Jun-12: refresh the in-memory sunbeam queue HERE, after the
+            // meta read actually resolved. The older call below this
+            // .then() runs synchronously BEFORE this async read lands, so
+            // a fresh browser (incognito) showed 0 sunbeams until the next
+            // earn/reload even though the queue had been restored to
+            // localStorage moments later.
+            try{if(window._refreshHashState)window._refreshHashState();}catch(e){}
+            try{if(window.updateDashboard)updateDashboard();}catch(e){}
+          }).catch(function(_me){
+            // Fail open — same exposure as before the gate existed.
+            _metaHydrated = true;
+            if (window._swsLog) _swsLog('meta/state read failed: ' + (_me && _me.message), 'err');
           });
           // Refresh in-memory sunbeam queue now that pw_readyHashes has
           // been restored from the cloud. Without this, a cross-device
@@ -50297,7 +50329,7 @@ document.addEventListener('keydown', function(e) {
         } else {
           // New account or first time on this device — push local data up
           if (window._swsLog) _swsLog('No vault doc. New account, pushing ' + localGH.length + ' local plants up.', 'ok');
-          _vaultHydrated = true;
+          _vaultHydrated = true; _metaHydrated = true;
           if (window.renderGreenhouse) renderGreenhouse();
           if (window.updateDashboard)  updateDashboard();
           _hideOverlay(localGH.length ? localGH.length + ' plants secured' : 'Welcome, Keeper');
@@ -50309,7 +50341,7 @@ document.addEventListener('keydown', function(e) {
         if (window._swsLog) _swsLog('✗ VAULT READ FAILED: ' + (e.code||'') + ' — ' + e.message, 'err');
         if (window._swsLog) _swsLog('⚠ Go to Firebase Console → Firestore → Rules → Publish the rules from firestore-rules-3.txt', 'err');
         // Allow local play
-        _vaultHydrated = true;
+        _vaultHydrated = true; _metaHydrated = true;
         _hideOverlay('');
         if (window._showOfflineBanner) window._showOfflineBanner();
         if (window.renderGreenhouse) renderGreenhouse();
@@ -50507,7 +50539,7 @@ document.addEventListener('keydown', function(e) {
       _showOverlay();
       // onAuthStateChanged will fire and complete the hydration
     } else {
-      _vaultHydrated = true; // No session — writes unlocked immediately
+      _vaultHydrated = true; _metaHydrated = true; // No session — writes unlocked immediately
     }
   }
 
