@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: mastermind
  *
  * COPY of the inline GMM mount function from index.html
- * lines 67726-68153.
+ * lines 67726-68166.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -240,7 +240,7 @@
         if(st.streak>st.best)st.best=st.streak;
         if(guesses.length>=1&&guesses.length<=st.byGuesses.length)st.byGuesses[guesses.length-1]++;
         _mmPersistCurrent();_mmRenderStats();
-        if(_mmGameMode==='daily'){_mmDailyDone=true;_mmSaveDailySnap({day:_mmTodayKey(),won:true,guesses:guesses.slice(),code:code.slice()});}
+        if(_mmGameMode==='daily'){_mmDailyDone=true;_mmSaveDailySnap({day:_mmTodayKey(),done:true,won:true,guesses:guesses.slice(),code:code.slice()});}
         _mmShowResult(true,guesses.length);
       }
       else if(guesses.length>=_mmMaxG){
@@ -248,8 +248,13 @@
         _sr('mastermind',{w:false,s:0});
         st.played++;st.streak=0;
         _mmPersistCurrent();_mmRenderStats();
-        if(_mmGameMode==='daily'){_mmDailyDone=true;_mmSaveDailySnap({day:_mmTodayKey(),won:false,guesses:guesses.slice(),code:code.slice()});}
+        if(_mmGameMode==='daily'){_mmDailyDone=true;_mmSaveDailySnap({day:_mmTodayKey(),done:true,won:false,guesses:guesses.slice(),code:code.slice()});}
         _mmShowResult(false,null);
+      }
+      // Abandon-retry guard: persist the daily attempt after EVERY guess,
+      // not just on win/loss — quitting mid-game used to reset the daily.
+      if(_mmGameMode==='daily'&&!_mmDailyDone){
+        _mmSaveDailySnap({day:_mmTodayKey(),done:false,guesses:guesses.slice(),code:code.slice(),hu:_hintUsed,hr:_hintRevealed});
       }
       rn();
     };
@@ -418,10 +423,18 @@
         code=_mmDailyCode();
         var snap=_mmLoadDailySnap();
         if(snap&&snap.day===_mmDailyKey){
-          // Restore completed daily state — board locked, result visible
           guesses=snap.guesses||[];
           code=snap.code||code;
-          _mmDailyDone=true;
+          if(snap.done===false){
+            // Mid-game abandon — resume where they left off (guesses,
+            // code and hint state restored; daily stays winnable)
+            _mmDailyDone=false;
+            _hintUsed=!!snap.hu;
+            _hintRevealed=(typeof snap.hr==='number')?snap.hr:-1;
+          }else{
+            // Completed daily — board locked, result visible
+            _mmDailyDone=true;
+          }
         }
       }else{
         if(_mmNoDupes){
