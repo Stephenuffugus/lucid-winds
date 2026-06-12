@@ -4,9 +4,9 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v8';
-var ASSET_CACHE = 'lw-assets-v8';
-var GAME_CACHE = 'lw-games-v8';
+var CACHE_VERSION = 'lw-v9';
+var ASSET_CACHE = 'lw-assets-v9';
+var GAME_CACHE = 'lw-games-v9';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 
@@ -24,10 +24,15 @@ var PRECACHE = [
 ];
 
 // ── INSTALL: precache critical assets ──
+// Per-file with individual catch — cache.addAll() is atomic, so a single
+// 404 (renamed asset, CDN hiccup) would fail install and the SW would
+// never activate. Precache is an optimization, not a contract.
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(ASSET_CACHE).then(function(cache) {
-      return cache.addAll(PRECACHE);
+      return Promise.all(PRECACHE.map(function(u) {
+        return cache.add(u).catch(function(){});
+      }));
     }).then(function() {
       return self.skipWaiting();
     })
@@ -123,6 +128,9 @@ self.addEventListener('fetch', function(event) {
   }
 
   // ── Game scripts (games/*.js): cache-first, load once ──
+  // Loader stamps ?v=LW_VERSION, so a deploy is a new cache key. On every
+  // fresh cache we evict same-path entries from older versions — with
+  // ~10 deploys/day the cache would otherwise grow without bound.
   if (url.pathname.match(/^\/games\//)) {
     event.respondWith(
       caches.match(event.request).then(function(cached) {
@@ -131,7 +139,16 @@ self.addEventListener('fetch', function(event) {
           if (response.ok) {
             var clone = response.clone();
             caches.open(GAME_CACHE).then(function(cache) {
-              cache.put(event.request, clone);
+              cache.put(event.request, clone).then(function() {
+                cache.keys().then(function(keys) {
+                  for (var i = 0; i < keys.length; i++) {
+                    var ku = new URL(keys[i].url);
+                    if (ku.pathname === url.pathname && keys[i].url !== event.request.url) {
+                      cache.delete(keys[i]);
+                    }
+                  }
+                });
+              });
             });
           }
           return response;
@@ -141,9 +158,27 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // ── Static assets (images, fonts, word-banks.js): cache-first ──
-  if (url.pathname.match(/\.(jpg|jpeg|png|webp|svg|gif|ico|woff2?|ttf|otf|eot)$/) ||
-      url.pathname === '/word-banks.js') {
+  // ── word-banks.js: stale-while-revalidate ──
+  // index.html loads it WITHOUT a ?v= stamp, so cache-first would pin it
+  // forever. Serve cached instantly, refresh in the background — a bank
+  // update lands on the next load.
+  if (url.pathname === '/word-banks.js') {
+    event.respondWith(
+      caches.open(ASSET_CACHE).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          var refresh = fetch(event.request).then(function(response) {
+            if (response && response.ok) cache.put(event.request, response.clone());
+            return response;
+          });
+          return cached || refresh;
+        });
+      })
+    );
+    return;
+  }
+
+  // ── Static assets (images, fonts): cache-first ──
+  if (url.pathname.match(/\.(jpg|jpeg|png|webp|svg|gif|ico|woff2?|ttf|otf|eot)$/)) {
     event.respondWith(
       caches.match(event.request).then(function(cached) {
         if (cached) return cached;

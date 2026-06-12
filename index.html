@@ -849,26 +849,39 @@
   })();
   </script>
   <script>
-  // ═══ EMERGENCY SW NUKE — Stephen 2026-04-30 stuck on stale despite
-  // incognito + history clear. Service worker is sticky. Unconditionally
-  // unregister + flush caches on EVERY load until 2026-05-02 so he can
-  // ship Pi launch. Will be reverted after launch.
+  // ═══ SERVICE WORKER — re-enabled 2026-06-12 (nuke retired) ═══
+  // The Apr-30 EMERGENCY SW NUKE killed all caching for 6 weeks; every
+  // launch re-downloaded + re-parsed the full app (Jun-10 audit perf #3).
+  // Stale-version protections this time:
+  //   1. sw.js network-first for navigations — deploys go live instantly
+  //   2. registered as sw.js?v=LW_VERSION — every deploy re-fetches the
+  //      SW script past browser/CDN caches
+  //   3. kill switch: localStorage.lw_sw_off='1' restores nuke behavior
+  //      (unregister + flush all caches on every load)
   (function(){
     try {
-      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      if (!('serviceWorker' in navigator)) return;
+      if (localStorage.getItem('lw_sw_off') === '1') {
         navigator.serviceWorker.getRegistrations().then(function(regs){
           for (var ri=0; ri<regs.length; ri++) regs[ri].unregister();
         });
+        if (window.caches && caches.keys) {
+          caches.keys().then(function(ks){
+            for (var ki=0; ki<ks.length; ki++) caches.delete(ks[ki]);
+          });
+        }
+        return;
       }
-      if (window.caches && caches.keys) {
-        caches.keys().then(function(ks){
-          for (var ki=0; ki<ks.length; ki++) caches.delete(ks[ki]);
-        });
-      }
+      window.addEventListener('load', function(){
+        try {
+          navigator.serviceWorker.register('sw.js?v=' + (window.LW_VERSION || '0'))
+            .catch(function(e){ console.warn('[SW] register failed:', e && e.message); });
+        } catch(e){}
+      });
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.14';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -48986,6 +48999,7 @@ document.addEventListener('keydown', function(e) {
     'lw_force_pi_browser': 1, // manual Pi Browser override
     'lw_pi_sandbox': 1,       // payment environment flag
     'lw_weather_off': 1,      // climate kill switch
+    'lw_sw_off': 1,           // service-worker kill switch
     'lw_perf_lite': 1,        // device performance flag
     'lw_music_state': 1       // music on/off device pref
   };
