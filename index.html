@@ -29035,23 +29035,27 @@ document.addEventListener('keydown', function(e) {
         s += '<ellipse cx="'+(fx+0.3)+'" cy="'+(fy-(fs*1.2))+'" rx="'+(fs*0.65)+'" ry="'+(fs*1.55)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         // Central rachis
         s += '<line x1="'+fx+'" y1="'+(fy+fs*0.1)+'" x2="'+fx+'" y2="'+(fy-fs*2.5)+'" stroke="'+_hueShift(fc, 88, 20)+'" stroke-width="0.6" opacity="'+(0.45*bloomOp)+'" stroke-linecap="round"/>';
-        // 10 florets graduating smaller toward tip
-        for (var _d31i = 0; _d31i < 10; _d31i++) {
-          var _d31y = fy - _d31i * fs * 0.26;
-          var _d31sz = fs * (0.4 - _d31i * 0.025);
-          var _d31xOff = Math.sin(_d31i * 1.2) * _d31sz * 0.4;
-          var _d31hue = _hueShift(fc, _d31i * 23 + 5, 8);
+        // Jun-12 art pass: 12 dense overlapping florets with 5 elliptical
+        // petals each (the old 4 sliver-cups at fading opacity rendered as
+        // confetti dots — the spire never read as a raceme).
+        for (var _d31i = 0; _d31i < 12; _d31i++) {
+          var _d31y = fy - _d31i * fs * 0.22;
+          var _d31sz = fs * (0.46 - _d31i * 0.022);
+          var _d31xOff = Math.sin(_d31i * 2.1) * fs * 0.16;
+          var _d31cx = fx + _d31xOff;
+          var _d31hue = _hueShift(fc, _d31i * 17 + 5, 8);
           // Shadow behind floret
-          s += '<ellipse cx="'+(fx+_d31xOff+0.2).toFixed(1)+'" cy="'+(_d31y+0.2).toFixed(1)+'" rx="'+_d31sz.toFixed(1)+'" ry="'+(_d31sz*0.55).toFixed(1)+'" fill="#0d100c" opacity="'+(0.06*bloomOp)+'"/>';
-          // 4 cupped petals per floret
-          for (var _d31p = 0; _d31p < 4; _d31p++) {
-            var _d31pa = (_d31p * 90 - 45) * Math.PI / 180;
-            var _d31px = (fx+_d31xOff) + Math.cos(_d31pa) * _d31sz * 0.5;
-            var _d31py = _d31y + Math.sin(_d31pa) * _d31sz * 0.35;
-            s += '<path d="M'+(fx+_d31xOff).toFixed(1)+','+_d31y.toFixed(1)+' Q'+_d31px.toFixed(1)+','+((_d31py - _d31sz*0.3)).toFixed(1)+' '+((fx+_d31xOff) + Math.cos(_d31pa)*_d31sz).toFixed(1)+','+(_d31y + Math.sin(_d31pa)*_d31sz*0.6).toFixed(1)+' Q'+_d31px.toFixed(1)+','+(_d31py + _d31sz*0.15).toFixed(1)+' '+(fx+_d31xOff).toFixed(1)+','+_d31y.toFixed(1)+' Z" fill="'+_d31hue+'" opacity="'+((0.65 - _d31i*0.04)*bloomOp).toFixed(2)+'"/>';
+          s += '<ellipse cx="'+(_d31cx+0.25).toFixed(1)+'" cy="'+(_d31y+0.25).toFixed(1)+'" rx="'+_d31sz.toFixed(1)+'" ry="'+(_d31sz*0.7).toFixed(1)+'" fill="#0d100c" opacity="'+(0.10*bloomOp).toFixed(2)+'"/>';
+          // 5 rounded petals
+          for (var _d31p = 0; _d31p < 5; _d31p++) {
+            var _d31pa = (_d31p * 72 - 90) * Math.PI / 180;
+            var _d31px = _d31cx + Math.cos(_d31pa) * _d31sz * 0.52;
+            var _d31py = _d31y + Math.sin(_d31pa) * _d31sz * 0.42;
+            s += '<ellipse cx="'+_d31px.toFixed(1)+'" cy="'+_d31py.toFixed(1)+'" rx="'+(_d31sz*0.40).toFixed(2)+'" ry="'+(_d31sz*0.26).toFixed(2)+'" fill="'+_d31hue+'" opacity="'+((0.88 - _d31i*0.025)*bloomOp).toFixed(2)+'" transform="rotate('+Math.round(_d31pa*180/Math.PI)+','+_d31px.toFixed(1)+','+_d31py.toFixed(1)+')"/>';
           }
-          // Floret center dot
-          s += '<circle cx="'+(fx+_d31xOff).toFixed(1)+'" cy="'+_d31y.toFixed(1)+'" r="'+(fs*0.05).toFixed(2)+'" fill="'+PALETTE.cream+'" opacity="'+((0.5 - _d31i*0.03)*bloomOp).toFixed(2)+'"/>';
+          // Cream "bee" center (delphinium signature)
+          s += '<circle cx="'+_d31cx.toFixed(1)+'" cy="'+_d31y.toFixed(1)+'" r="'+(_d31sz*0.18).toFixed(2)+'" fill="'+PALETTE.cream+'" opacity="'+((0.75 - _d31i*0.03)*bloomOp).toFixed(2)+'"/>';
+          s += '<circle cx="'+_d31cx.toFixed(1)+'" cy="'+_d31y.toFixed(1)+'" r="'+(_d31sz*0.08).toFixed(2)+'" fill="rgba(40,20,5,0.6)" opacity="'+(0.6*bloomOp).toFixed(2)+'"/>';
         }
         // Top bud — closed point
         s += '<ellipse cx="'+fx+'" cy="'+(fy-fs*2.6)+'" rx="'+(fs*0.1)+'" ry="'+(fs*0.18)+'" fill="'+_hueShift(fc, 44, 6)+'" opacity="'+(0.55*bloomOp)+'"/>';
@@ -29080,29 +29084,24 @@ document.addEventListener('keydown', function(e) {
         // Dark center floret (characteristic of Queen Anne's Lace)
         s += '<circle cx="'+fx+'" cy="'+_q32uy+'" r="'+(fs*0.08)+'" fill="#3A1520" opacity="'+(0.6*bloomOp)+'"/>';
         s += '<circle cx="'+fx+'" cy="'+_q32uy+'" r="'+(fs*0.04)+'" fill="'+PALETTE.cream+'" opacity="'+(0.3*bloomOp)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.78)+'" cy="'+(fy-fs*1.44)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+bloomOp+'"/>';
-        s += '<circle cx="'+(fx-fs*0.84)+'" cy="'+(fy-fs*1.46)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.74)+'" cy="'+(fy-fs*1.54)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.52)+'" cy="'+(fy-fs*1.50)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+(bloomOp*0.90)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.58)+'" cy="'+(fy-fs*1.52)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.48)+'" cy="'+(fy-fs*1.60)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.24)+'" cy="'+(fy-fs*1.46)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+bloomOp+'"/>';
-        s += '<circle cx="'+(fx-fs*0.30)+'" cy="'+(fy-fs*1.48)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.20)+'" cy="'+(fy-fs*1.56)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.02)+'" cy="'+(fy-fs*1.48)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+(bloomOp*0.90)+'"/>';
-        s += '<circle cx="'+(fx-fs*0.04)+'" cy="'+(fy-fs*1.50)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.06)+'" cy="'+(fy-fs*1.58)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.28)+'" cy="'+(fy-fs*1.46)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+bloomOp+'"/>';
-        s += '<circle cx="'+(fx+fs*0.22)+'" cy="'+(fy-fs*1.48)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
-        // AO halo (master pass injection)
-        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(fy+0.4)+'" rx="'+(fs*1.15)+'" ry="'+(fs*1.05)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.32)+'" cy="'+(fy-fs*1.56)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.54)+'" cy="'+(fy-fs*1.50)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+(bloomOp*0.90)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.48)+'" cy="'+(fy-fs*1.52)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.58)+'" cy="'+(fy-fs*1.60)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.76)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.80)+'" cy="'+(fy-fs*1.44)+'" r="'+(fs*0.13)+'" fill="'+fc+'" opacity="'+bloomOp+'"/>';
-        s += '<circle cx="'+(fx+fs*0.74)+'" cy="'+(fy-fs*1.46)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
-        s += '<circle cx="'+(fx+fs*0.84)+'" cy="'+(fy-fs*1.54)+'" r="'+(fs*0.09)+'" fill="'+fc+'" opacity="'+(bloomOp*0.84)+'"/>';
+        // Jun-12 art pass: the old block here was 21 hardcoded circles at
+        // fy-fs*1.44..1.60 — positioned with the post-shift fy while the
+        // umbel uses _q32uy (computed pre-shift), so they rendered as a row
+        // of disconnected beads floating above the flower. Replaced with an
+        // inner ring of 6 short rays so the umbel reads as a dense lace disc.
+        for (var _q32j = 0; _q32j < 6; _q32j++) {
+          var _q32ja = (_q32j * 60 - 60) * Math.PI / 180;
+          var _q32jr = fs * 0.38;
+          var _q32jx = fx + Math.cos(_q32ja) * _q32jr;
+          var _q32jy = _q32uy + Math.sin(_q32ja) * _q32jr * 0.45;
+          s += '<path d="M'+fx+','+_q32uy+' Q'+(fx + Math.cos(_q32ja)*_q32jr*0.5).toFixed(1)+','+(_q32uy + Math.sin(_q32ja)*_q32jr*0.22).toFixed(1)+' '+_q32jx.toFixed(1)+','+_q32jy.toFixed(1)+'" fill="none" stroke="'+_hueShift(fc, _q32j*13, 15)+'" stroke-width="0.26" opacity="'+(0.45*bloomOp).toFixed(2)+'" stroke-linecap="round"/>';
+          for (var _q32g = 0; _q32g < 3; _q32g++) {
+            var _q32ga = (_q32g * 120 + _q32j * 40) * Math.PI / 180;
+            s += '<circle cx="'+(_q32jx + Math.cos(_q32ga)*fs*0.07).toFixed(1)+'" cy="'+(_q32jy + Math.sin(_q32ga)*fs*0.035).toFixed(1)+'" r="'+(fs*0.05).toFixed(2)+'" fill="'+(_q32g === 0 ? PALETTE.cream : _hueShift(fc, _q32j*17, 5))+'" opacity="'+(0.55*bloomOp).toFixed(2)+'"/>';
+          }
+        }
+        // AO halo (master pass injection) — anchored to the umbel disc
+        s += '<ellipse cx="'+(fx+0.4)+'" cy="'+(_q32uy+0.5).toFixed(1)+'" rx="'+(fs*1.15)+'" ry="'+(fs*0.55)+'" fill="rgba(40,20,5,0.18)" opacity="'+(0.55*bloomOp)+'"/>';
         break;
       case 33: // Catkin — Salix/Betula pendant fuzzy "lamb tail" cylinder (§3.G pendant rebuild)
         // AO halo (master pass)
@@ -29547,6 +29546,22 @@ document.addEventListener('keydown', function(e) {
         s += '<path d="M'+(fx+(fs*0.04))+','+(fy+(fs*0.06))+' Q'+(fx+(fs*0.26))+','+(fy+(fs*0.68))+' '+(fx+(fs*0.08))+','+(fy+(fs*1.22))+'" fill="none" stroke="#E7DDF0" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.28)+'"/>';
         s += '<path d="M'+(fx+(fs*0.16))+','+(fy+(fs*0.54))+' Q'+(fx+(fs*0.3))+','+(fy+(fs*1.14))+' '+(fx+(fs*0.08))+','+(fy+(fs*1.64))+'" fill="none" stroke="#E7DDF0" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.24)+'"/>';
         s += '<path d="M'+(fx-(fs*0.08))+','+(fy+(fs*1.02))+' Q'+(fx+(fs*0.06))+','+(fy+(fs*1.58))+' '+(fx-(fs*0.08))+','+(fy+(fs*2.04))+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.40)+'"/>';
+        // Jun-12 art pass: pea-floret texture over the cascade — the five
+        // solid cluster blobs merged into one featureless ball. 16 two-tone
+        // florets (dark notch + cream banner) tapering down the pendant,
+        // plus 3 unopened buds at the tip, make it read as a raceme.
+        for (var _wt43 = 0; _wt43 < 16; _wt43++) {
+          var _wt43t = _wt43 / 15;
+          var _wt43w = fs * (0.62 - _wt43t * 0.38);
+          var _wt43x = fx + Math.sin(_wt43 * 2.4) * _wt43w * 0.8 - fs * 0.18;
+          var _wt43y = fy + fs * (0.15 + _wt43t * 2.25);
+          var _wt43r = fs * (0.17 - _wt43t * 0.055);
+          s += '<ellipse cx="'+_wt43x.toFixed(1)+'" cy="'+_wt43y.toFixed(1)+'" rx="'+_wt43r.toFixed(2)+'" ry="'+(_wt43r*0.78).toFixed(2)+'" fill="rgba(40,20,5,0.30)" opacity="'+(bloomOp*0.55).toFixed(2)+'"/>';
+          s += '<ellipse cx="'+(_wt43x-_wt43r*0.25).toFixed(1)+'" cy="'+(_wt43y-_wt43r*0.25).toFixed(1)+'" rx="'+(_wt43r*0.62).toFixed(2)+'" ry="'+(_wt43r*0.46).toFixed(2)+'" fill="#f5ecd6" opacity="'+(bloomOp*0.40).toFixed(2)+'"/>';
+        }
+        for (var _wb43 = 0; _wb43 < 3; _wb43++) {
+          s += '<ellipse cx="'+(fx-(fs*(0.16+_wb43*0.07))).toFixed(1)+'" cy="'+(fy+(fs*(2.48+_wb43*0.13))).toFixed(1)+'" rx="'+(fs*0.07).toFixed(2)+'" ry="'+(fs*0.10).toFixed(2)+'" fill="'+fc+'" opacity="'+(bloomOp*(0.75-_wb43*0.15)).toFixed(2)+'"/>';
+        }
         // Cream silk-snap on lit side of upper grape cluster
         s += '<path d="M'+fx+','+fy+' C'+(fx+(fs*0.72))+','+(fy+(fs*0.18))+' '+(fx+(fs*0.62))+','+(fy+(fs*0.92))+' '+(fx+(fs*0.18))+','+(fy+(fs*1.18))+'" fill="none" stroke="#f5ecd6" stroke-width="'+(fs*0.06)+'" stroke-linecap="round" opacity="'+(bloomOp*0.50)+'"/>';
         // Anchor cream halo (warm AO + cream catchlight)
