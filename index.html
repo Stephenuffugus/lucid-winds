@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.15';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -49882,6 +49882,53 @@ document.addEventListener('keydown', function(e) {
     setTimeout(function(){ if(ov) ov.classList.add('dismissed'); }, msg ? 600 : 0);
   }
 
+  // ── Claim anonymous satellite sunbeams on login (Jun-12 earn bridge) ──
+  // Satellite games (Hue Match, Shell Shuffle — now hosted same-origin
+  // under /satellites/) write anonymous earns to localStorage
+  // 'sws_pending_sunbeams' via the Sunbeam SDK. The SDK only auto-claims
+  // when signed in on ITS OWN named Firebase app, which satellites never
+  // are (sign-in UI there is forbidden by design). The main game claims
+  // the shared bucket with its own auth instead. Mirrors the SDK's
+  // drain-only-credited rollover: cap-refused remainder stays for a
+  // future login. Server (claimPending) re-applies caps every call.
+  function _claimSunbeamBucket() {
+    try {
+      var raw = localStorage.getItem('sws_pending_sunbeams');
+      if (!raw) return;
+      var p = JSON.parse(raw) || {};
+      if (!p.amount || p.amount <= 0) return;
+      if (!window.firebase || !firebase.functions) return;
+      var toSend = Math.floor(p.amount);
+      var anonId = localStorage.getItem('sws_sunbeam_anon_id') || '';
+      firebase.functions().httpsCallable('claimPending')({ pending: toSend, anonId: anonId, gameId: 'lw-bridge' })
+        .then(function(res) {
+          var data = (res && res.data) || {};
+          var credited = (typeof data.credited === 'number') ? data.credited : 0;
+          var cur = {};
+          try { cur = JSON.parse(localStorage.getItem('sws_pending_sunbeams')||'{}')||{}; } catch(e){}
+          var race = (cur.amount||0) > toSend ? (cur.amount||0) - toSend : 0;
+          var unc = toSend - credited; if (unc < 0) unc = 0;
+          cur.amount = race + unc;
+          localStorage.setItem('sws_pending_sunbeams', JSON.stringify(cur));
+          if (credited > 0) {
+            // Mirror the server's hashLedger.earned increment locally so the
+            // beams show now instead of after the next vault read. The
+            // ledger MAX-merge on hydration reconciles either way.
+            try {
+              var lr = (window._secureGet ? _secureGet('sws_hash_ledger') : localStorage.getItem('sws_hash_ledger'));
+              var ledger = lr ? JSON.parse(lr) : {earned:0, spent:0};
+              ledger.earned = (ledger.earned||0) + credited;
+              if (window._secureSet) _secureSet('sws_hash_ledger', ledger);
+            } catch(e){}
+            if (window.updateDashboard) { try { updateDashboard(); } catch(e){} }
+            if (window._toast) _toast('☀️ +' + credited + ' sunbeams claimed from your portal games!');
+            if (typeof gtag !== 'undefined') gtag('event', 'satellite_claim', { credited: credited });
+          }
+        })
+        .catch(function(e) { console.warn('[SunbeamBridge] claim failed:', e && e.message); });
+    } catch(e){}
+  }
+
   // ── Claim pending rewards on login (harvest, witness fees, blessing kickbacks) ──
   function _claimPendingRewards(uid) {
     if (!uid || !db) return;
@@ -50195,6 +50242,8 @@ document.addEventListener('keydown', function(e) {
           try{if(window._refreshHashState)window._refreshHashState();}catch(e){}
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
           _claimPendingRewards(user.uid);
+          // ── Claim anonymous satellite sunbeams (same-origin bucket) ──
+          _claimSunbeamBucket();
           if (onComplete) onComplete({source:'cloud', plantCount:mGH.length});
         } else {
           // New account or first time on this device — push local data up
