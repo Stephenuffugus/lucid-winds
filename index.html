@@ -19885,15 +19885,22 @@ document.addEventListener('keydown', function(e) {
         break;
       case 57: // The Philosopher\'s Vessel — alchemical flask with animated particles. Vessel shifted -2 in x to align neck precisely with stem at x=35.
         s += '<g transform="translate(-2,0)">';
-        s += '<circle cx="35" cy="86" r="7.5" fill="rgba(180,200,220,0.08)"/>';
-        s += '<circle cx="35" cy="86" r="7.5" fill="none" stroke="rgba(180,200,220,0.45)" stroke-width="0.9"/>';
-        s += '<rect x="33" y="77.5" width="4" height="9" rx="1.5" fill="rgba(180,200,220,0.06)"/>';
-        s += '<rect x="33" y="77.5" width="4" height="9" rx="1.5" fill="none" stroke="rgba(180,200,220,0.4)" stroke-width="0.7"/>';
+        // Jun-12 art pass: every stroke was 0.06-0.45 opacity — the flask was
+        // invisible on the dark bg and the plant looked like it floated.
+        // Outline + fills boosted, amber liquid pool added; ethereal kept.
+        s += '<circle cx="35" cy="86" r="7.5" fill="rgba(180,200,220,0.16)"/>';
+        s += '<path d="M27.5,86 A7.5,7.5 0 0,0 42.5,86 A7.5,7.5 0 0,0 35,78.5 Z" fill="#C8A84B" opacity="0.10"/>';
+        s += '<path d="M28.1,88.5 A7.5,7.5 0 0,0 41.9,88.5 L41.9,88.5 A7.5,7.5 0 0,1 28.1,88.5 Z" fill="#C8A84B" opacity="0.14"/>';
+        s += '<ellipse cx="35" cy="88.5" rx="6.85" ry="0.9" fill="none" stroke="rgba(200,168,75,0.40)" stroke-width="0.35"/>';
+        s += '<circle cx="35" cy="86" r="7.5" fill="none" stroke="rgba(190,210,228,0.78)" stroke-width="1.05"/>';
+        s += '<circle cx="35" cy="86" r="6.7" fill="none" stroke="rgba(190,210,228,0.22)" stroke-width="0.4"/>';
+        s += '<rect x="33" y="77.5" width="4" height="9" rx="1.5" fill="rgba(180,200,220,0.12)"/>';
+        s += '<rect x="33" y="77.5" width="4" height="9" rx="1.5" fill="none" stroke="rgba(190,210,228,0.66)" stroke-width="0.8"/>';
         s += '<rect x="33.2" y="76" width="3.6" height="2.2" rx="0.8" fill="#A08060" opacity="0.6"/>';
         s += '<line x1="33.8" y1="77" x2="36.2" y2="77" stroke="#8A6D48" stroke-width="0.2" opacity="0.3"/>';
         s += '<path d="M33,77.5 L33,85 Q33,93.5 35,93.5 Q37,93.5 37,85 L37,77.5" fill="none" stroke="rgba(180,200,220,0.3)" stroke-width="0.3"/>';
-        s += '<path d="M30,83 Q32,81 33,83.5" fill="none" stroke="rgba(240,235,216,0.35)" stroke-width="0.7" stroke-linecap="round"/>';
-        s += '<path d="M30.5,84.5 Q32,83 33,85" fill="none" stroke="rgba(240,235,216,0.18)" stroke-width="0.35" stroke-linecap="round"/>';
+        s += '<path d="M30,83 Q32,81 33,83.5" fill="none" stroke="rgba(240,235,216,0.60)" stroke-width="0.8" stroke-linecap="round"/>';
+        s += '<path d="M30.5,84.5 Q32,83 33,85" fill="none" stroke="rgba(240,235,216,0.32)" stroke-width="0.4" stroke-linecap="round"/>';
         s += '<ellipse cx="35" cy="92.5" rx="5" ry="1" fill="none" stroke="rgba(240,235,216,0.12)" stroke-width="0.4"/>';
         s += '<circle cx="33" cy="86" r="0.8" fill="#C8A84B" opacity="0.5" filter="url(#gw'+uid+')">';
         s += '<animate attributeName="cy" values="88;83;88" dur="4.5s" repeatCount="indefinite"/>';
@@ -34843,6 +34850,15 @@ document.addEventListener('keydown', function(e) {
     if (ci < 20) return '';
     // Sentinel: -1 = explicitly suppressed companion (Phoenix gating, etc.)
     if (ci === -1) return '';
+    // Jun-12 audit: PHANTOM GUARD — the bank marks 46 (cut Glow Snail),
+    // 76, 77, 78, 80 as None but live SVG cases below still rendered them,
+    // so ~6% of mints showed an untitled creature with no ledger row
+    // (same disease as the phantom Cicadas killed Jun 12). The bank is
+    // the source of truth: if it says None, render nothing. The orphaned
+    // cases (Garden Snake / Centipede / Crystal Beetle / Paper Butterfly /
+    // Glow Snail) stay in code — restoring them is a Stephen design call
+    // (name them in the bank and they come back).
+    if (ci === 46 || ci === 76 || ci === 77 || ci === 78 || ci === 80) return '';
     // set-103-8-14: proxy variables for ChatGPT companion art (cases 16+)
     // which was authored using bloom coordinate conventions
     var fx = 35;
