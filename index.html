@@ -22527,29 +22527,41 @@ document.addEventListener('keydown', function(e) {
              + ' fill="none" stroke="rgba(40,20,5,0.65)" stroke-width="0.70" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
           s += '<path d="M'+ox+','+ly+' Q'+_fCX.toFixed(1)+','+_fCY.toFixed(1)+' '+_fTX.toFixed(1)+','+_fTY.toFixed(1)+'"'
              + ' fill="none" stroke="#f5ecd6" stroke-width="0.30" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
-          // 5 pairs of pinnae along rachis
-          for (var _fp = 0; _fp < 5; _fp++) {
-            var _ft = (_fp + 0.8) / 6.0;
-            // Point on rachis (quadratic bezier)
-            var _fpx = (1-_ft)*(1-_ft)*ox + 2*(1-_ft)*_ft*_fCX + _ft*_ft*_fTX;
-            var _fpy = (1-_ft)*(1-_ft)*ly + 2*(1-_ft)*_ft*_fCY + _ft*_ft*_fTY;
-            var _fps = ls * (1.1 - _fp * 0.16); // taper toward tip — 2x bigger
+          // Jun-12 art pass: 7 pinna pairs (was 5) branching off the LOCAL
+          // rachis tangent with blade width built perpendicular to the chord.
+          // The old fixed near-horizontal lean + slim crescents + a hard
+          // 0.4-width cream edge bar made the frond read as a TV antenna.
+          for (var _fp = 0; _fp < 7; _fp++) {
+            var _ft = (_fp + 0.7) / 8.2;
+            var _fu = 1 - _ft;
+            var _fpx = _fu*_fu*ox + 2*_fu*_ft*_fCX + _ft*_ft*_fTX;
+            var _fpy = _fu*_fu*ly + 2*_fu*_ft*_fCY + _ft*_ft*_fTY;
+            var _fps = ls * (1.0 - _fp * 0.11); // taper toward tip
             var _fpFill = _hueShift(baseColor, _fp * 37 + 20, 10);
-            // Both sides of rachis
+            var _fTgX = 2*_fu*(_fCX-ox) + 2*_ft*(_fTX-_fCX);
+            var _fTgY = 2*_fu*(_fCY-ly) + 2*_ft*(_fTY-_fCY);
+            var _fTgA = Math.atan2(_fTgY, _fTgX);
+            // Both sides of rachis — ±60° off tangent, leaning toward apex
             for (var _fsd = -1; _fsd <= 1; _fsd += 2) {
-              var _ppTX = _fpx + side * _fsd * _fps * 0.9;
-              var _ppTY = _fpy - _fps * 0.35;
+              var _ppA = _fTgA + _fsd * 1.05;
+              var _ppTX = _fpx + Math.cos(_ppA) * _fps;
+              var _ppTY = _fpy + Math.sin(_ppA) * _fps;
+              var _ppDXc = _ppTX - _fpx, _ppDYc = _ppTY - _fpy;
+              var _ppChL = Math.sqrt(_ppDXc*_ppDXc + _ppDYc*_ppDYc) || 1;
+              var _ppNX = -_ppDYc / _ppChL, _ppNY = _ppDXc / _ppChL;
+              if (_ppNY > 0) { _ppNX = -_ppNX; _ppNY = -_ppNY; }
+              var _ppMX = (_fpx + _ppTX) * 0.5, _ppMY = (_fpy + _ppTY) * 0.5;
+              var _ppW = _fps * 0.30;
               var _ppD = 'M'+_fpx.toFixed(1)+','+_fpy.toFixed(1)
-                 + ' C'+(_fpx+side*_fsd*_fps*0.35).toFixed(1)+','+(_fpy-_fps*0.2).toFixed(1)
-                 + ' '+(_ppTX-side*_fsd*_fps*0.1).toFixed(1)+','+(_ppTY+_fps*0.06).toFixed(1)
-                 + ' '+_ppTX.toFixed(1)+','+_ppTY.toFixed(1)
-                 + ' C'+(_ppTX-side*_fsd*_fps*0.05).toFixed(1)+','+(_ppTY+_fps*0.15).toFixed(1)
-                 + ' '+(_fpx+side*_fsd*_fps*0.12).toFixed(1)+','+(_fpy+_fps*0.06).toFixed(1)
-                 + ' '+_fpx.toFixed(1)+','+_fpy.toFixed(1)+' Z';
-              s += '<path d="'+_ppD+'" fill="'+_fpFill+'" opacity="'+(op*(0.72-_fp*0.06)).toFixed(2)+'"/>';
+                 + ' Q'+(_ppMX + _ppNX*_ppW).toFixed(1)+','+(_ppMY + _ppNY*_ppW).toFixed(1)+' '+_ppTX.toFixed(1)+','+_ppTY.toFixed(1)
+                 + ' Q'+(_ppMX - _ppNX*_ppW*0.7).toFixed(1)+','+(_ppMY - _ppNY*_ppW*0.7).toFixed(1)+' '+_fpx.toFixed(1)+','+_fpy.toFixed(1)+' Z';
+              s += '<path d="'+_ppD+'" fill="'+_fpFill+'" opacity="'+(op*(0.80-_fp*0.04)).toFixed(2)+'"/>';
+              // pinna midline hairline
+              s += '<line x1="'+_fpx.toFixed(1)+'" y1="'+_fpy.toFixed(1)+'" x2="'+_ppTX.toFixed(1)+'" y2="'+_ppTY.toFixed(1)+'" stroke="rgba(40,20,5,0.45)" stroke-width="0.16" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
+              // soft cream edge light on the lit side only
               if (_fsd === side) {
-                s += '<path d="M'+_fpx.toFixed(1)+','+_fpy.toFixed(1)+' C'+(_fpx+side*_fsd*_fps*0.35).toFixed(1)+','+(_fpy-_fps*0.2).toFixed(1)+' '+(_ppTX-side*_fsd*_fps*0.1).toFixed(1)+','+(_ppTY+_fps*0.06).toFixed(1)+' '+_ppTX.toFixed(1)+','+_ppTY.toFixed(1)+'"'
-                   + ' fill="none" stroke="#f5ecd6" stroke-width="0.4" stroke-linecap="round"/>';
+                s += '<path d="M'+_fpx.toFixed(1)+','+_fpy.toFixed(1)+' Q'+(_ppMX + _ppNX*_ppW).toFixed(1)+','+(_ppMY + _ppNY*_ppW).toFixed(1)+' '+_ppTX.toFixed(1)+','+_ppTY.toFixed(1)+'"'
+                   + ' fill="none" stroke="#f5ecd6" stroke-width="0.20" opacity="0.45" stroke-linecap="round"/>';
               }
             }
           }
@@ -23359,25 +23371,34 @@ document.addEventListener('keydown', function(e) {
             // Width of leaf at this position — calculates blade margin
             var _caWidth = _caW * (1.10 - Math.abs(_caT - 0.45) * 1.30);
             if (_caWidth < ls*0.15) _caWidth = ls*0.15;
-            // ── OUTER (lit) side vein ──
-            var _caOX = _caBx + side * _caWidth * 0.92;
-            var _caOY = _caBy - _caWidth * 0.18;
-            // Curve outward to margin (loops slightly back)
-            var _caOC1x = _caBx + side * _caWidth * 0.45;
-            var _caOC1y = _caBy - _caWidth * 0.10;
+            // ── OUTER (lit) side vein — Jun-12 art pass: sweeps tipward in a
+            // J-curve (was a near-horizontal rung; real ornata pinstripes
+            // rise 30-45° toward the apex following the pinnate venation) ──
+            var _caOX = _caBx + side * _caWidth * 0.88;
+            var _caOY = _caBy - _caWidth * 0.55;
+            var _caOC1x = _caBx + side * _caWidth * 0.50;
+            var _caOC1y = _caBy - _caWidth * 0.08;
             // Vein shadow (warm-dark, behind cream)
             s += '<path d="M'+_caBx.toFixed(1)+','+_caBy.toFixed(1)+' Q'+_caOC1x.toFixed(1)+','+_caOC1y.toFixed(1)+' '+_caOX.toFixed(1)+','+_caOY.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.45)" stroke-width="'+(ls*0.13).toFixed(2)+'" opacity="'+(op*0.45).toFixed(2)+'" stroke-linecap="round"/>';
             // Vein body — cream-pink (Calathea pink network)
             s += '<path d="M'+_caBx.toFixed(1)+','+_caBy.toFixed(1)+' Q'+_caOC1x.toFixed(1)+','+_caOC1y.toFixed(1)+' '+_caOX.toFixed(1)+','+_caOY.toFixed(1)+'" fill="none" stroke="#f0d4b8" stroke-width="'+(ls*0.085).toFixed(2)+'" opacity="'+(op*0.85).toFixed(2)+'" stroke-linecap="round"/>';
             // Vein cream specular pickup (sharp pickup, top of pair)
             s += '<path d="M'+_caBx.toFixed(1)+','+_caBy.toFixed(1)+' Q'+_caOC1x.toFixed(1)+','+_caOC1y.toFixed(1)+' '+_caOX.toFixed(1)+','+_caOY.toFixed(1)+'" fill="none" stroke="#fff8e0" stroke-width="0.22" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round" transform="translate(-0.20,-0.18)"/>';
-            // ── INNER (shaded) side vein — slightly dimmer ──
-            var _caIX = _caBx - side * _caWidth * 0.65;
-            var _caIY = _caBy - _caWidth * 0.12;
-            var _caIC1x = _caBx - side * _caWidth * 0.30;
-            var _caIC1y = _caBy - _caWidth * 0.06;
-            s += '<path d="M'+_caBx.toFixed(1)+','+_caBy.toFixed(1)+' Q'+_caIC1x.toFixed(1)+','+_caIC1y.toFixed(1)+' '+_caIX.toFixed(1)+','+_caIY.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="'+(ls*0.10).toFixed(2)+'" opacity="'+(op*0.40).toFixed(2)+'" stroke-linecap="round"/>';
-            s += '<path d="M'+_caBx.toFixed(1)+','+_caBy.toFixed(1)+' Q'+_caIC1x.toFixed(1)+','+_caIC1y.toFixed(1)+' '+_caIX.toFixed(1)+','+_caIY.toFixed(1)+'" fill="none" stroke="#e8c4a8" stroke-width="'+(ls*0.065).toFixed(2)+'" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
+            // ── INNER (shaded) side vein — staggered half a node up so the
+            // two sides don't form ladder rungs (subopposite, like the plant)
+            var _caT2 = _caT + 0.39 / (_caN - 1);
+            if (_caT2 > 0.92) _caT2 = 0.92;
+            var _caU2 = 1 - _caT2;
+            var _caBx2 = _caU2*_caU2*ox + 2*_caU2*_caT2*_caMidX + _caT2*_caT2*_caTipX;
+            var _caBy2 = _caU2*_caU2*ly + 2*_caU2*_caT2*_caMidY + _caT2*_caT2*_caTipY;
+            var _caWidth2 = _caW * (1.10 - Math.abs(_caT2 - 0.45) * 1.30);
+            if (_caWidth2 < ls*0.15) _caWidth2 = ls*0.15;
+            var _caIX = _caBx2 - side * _caWidth2 * 0.62;
+            var _caIY = _caBy2 - _caWidth2 * 0.42;
+            var _caIC1x = _caBx2 - side * _caWidth2 * 0.34;
+            var _caIC1y = _caBy2 - _caWidth2 * 0.05;
+            s += '<path d="M'+_caBx2.toFixed(1)+','+_caBy2.toFixed(1)+' Q'+_caIC1x.toFixed(1)+','+_caIC1y.toFixed(1)+' '+_caIX.toFixed(1)+','+_caIY.toFixed(1)+'" fill="none" stroke="rgba(40,20,5,0.40)" stroke-width="'+(ls*0.10).toFixed(2)+'" opacity="'+(op*0.40).toFixed(2)+'" stroke-linecap="round"/>';
+            s += '<path d="M'+_caBx2.toFixed(1)+','+_caBy2.toFixed(1)+' Q'+_caIC1x.toFixed(1)+','+_caIC1y.toFixed(1)+' '+_caIX.toFixed(1)+','+_caIY.toFixed(1)+'" fill="none" stroke="#e8c4a8" stroke-width="'+(ls*0.065).toFixed(2)+'" opacity="'+(op*0.65).toFixed(2)+'" stroke-linecap="round"/>';
           }
           // ── LEADING EDGE OUTLINE — cream silk-snap rim on lit side ──
           s += '<path d="M'+ox+','+ly+' C'+(ox+side*_caW*0.80)+','+(ly-_caLen*0.20)+' '+(ox+side*_caW*1.20)+','+(ly-_caLen*0.50)+' '+(ox+side*_caW*0.95)+','+(ly-_caLen*0.85)+' C'+(ox+side*_caW*0.70)+','+(ly-_caLen*0.97)+' '+(_caTipX+side*0.20)+','+(_caTipY+ls*0.12)+' '+_caTipX.toFixed(1)+','+_caTipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.45" opacity="'+(op*0.55).toFixed(2)+'" stroke-linecap="round"/>';
