@@ -11410,7 +11410,27 @@ document.addEventListener('keydown', function(e) {
     var _result = {
       pot:          goldenPot  ? 15 : hb(0) % 60, // 60 pot types (0-59)
       potColor:     _PAL[hc(1)],
-      stem:         hb(2) % 28, // Stephen ruling 2026-05-02: dropped Coral Stem lock for mythic creatures (was forcing every Toad/Cicada/Mammoth/Raccoon/Heron/Spider/Beholder to stem idx 9, making 3-cicada batches look identical). Maximum diversity, balanced via grade scoring.
+      // 2026-06-12 stem banding (Stephen greenlit): the 28-slot uniform roll
+      // put a COSMIC-tier stem on ~7% of all mints (Worldspine on 1 in 29
+      // plants, 44% of its carriers grading below Epic) — the top-heaviest
+      // bank in the game and ~31% of total score. Top tiers now roll on a
+      // byte ladder like companions; both anchors per tier kept (no single
+      // point of failure). Lower tiers spread over the remaining 20 stems.
+      // (Coral Stem lock history: dropped 2026-05-02, see prior note.)
+      stem:         (function(){
+        var _sb = hb(2);
+        if (_sb === 0xFF) return 27;  // Worldspine      (cosmic,    0.39%)
+        if (_sb === 0xFE) return 23;  // Iron Trunk      (cosmic,    0.39%)
+        if (_sb >= 0xFC) return 26;   // Mirrorwood      (mythic,    0.78%)
+        if (_sb >= 0xFA) return 22;   // Crystal Spine   (mythic,    0.78%)
+        if (_sb >= 0xF7) return 25;   // Thunderscarred  (legendary, 1.17%)
+        if (_sb >= 0xF4) return 14;   // Hollow Trunk    (legendary, 1.17%)
+        if (_sb >= 0xF0) return 24;   // Petrified Heart (epic,      1.56%)
+        if (_sb >= 0xEC) return 12;   // Ancient Bark    (epic,      1.56%)
+        // 0x00-0xEB → the 20 common/uncommon/rare stems
+        var _POOL=[0,1,2,3,4,5,6,7,8,9,10,11,13,15,16,17,18,19,20,21];
+        return _POOL[_sb % 20];
+      })(),
       stemColor:    hb(5) % 12,
       stemHeight:   22 + hc(3) * 2.5,
       leafType:     hb(4) % 71, // 71 leaf types (0-70)
@@ -12237,14 +12257,21 @@ document.addEventListener('keydown', function(e) {
   // 45%, Legendary×Legendary ~35% Legendary instead of 20%) with real
   // Cosmic reach from stacked layers. Re-grades every existing plant
   // on next load — Variant D was designed for this.
+  // 2026-06-12 (with the stem banding, Stephen greenlit): stem top-tiers
+  // moved from a uniform %28 roll (cosmic stem on ~7% of mints) to a byte
+  // ladder (~0.78% cosmic) — that alone would have dropped the aggregate
+  // to the Variant-F-thin curve Stephen rejected in May ("too punishing").
+  // Thresholds re-derived from the post-banding score histogram (N=200k,
+  // live engine) to PRESERVE the approved Variant-G aggregate while the
+  // marquee stem names get 4-9× scarcer. Re-grades every plant on load.
   var _TERRA_GRADES = [
     { name:'Common',    minScore:0,  color:'#959588', icon:'○' },
-    { name:'Uncommon',  minScore:5,  color:'#8CB86E', icon:'◈' },
-    { name:'Rare',      minScore:10, color:'#5b8fb9', icon:'◆' },
-    { name:'Epic',      minScore:15, color:'#9B59B6', icon:'◇' },
-    { name:'Legendary', minScore:21, color:'#C8A84B', icon:'✦' },
-    { name:'Mythic',    minScore:27, color:'#A87285', icon:'★' },
-    { name:'Cosmic',    minScore:34, color:'#D94FFF', icon:'✧' }
+    { name:'Uncommon',  minScore:4,  color:'#8CB86E', icon:'◈' },
+    { name:'Rare',      minScore:8,  color:'#5b8fb9', icon:'◆' },
+    { name:'Epic',      minScore:13, color:'#9B59B6', icon:'◇' },
+    { name:'Legendary', minScore:19, color:'#C8A84B', icon:'✦' },
+    { name:'Mythic',    minScore:25, color:'#A87285', icon:'★' },
+    { name:'Cosmic',    minScore:32, color:'#D94FFF', icon:'✧' }
   ];
 
   // ═══ MODEL H SCORING ENGINE — Loot Distribution Master Spec ═══
@@ -48447,11 +48474,12 @@ document.addEventListener('keydown', function(e) {
     // ── Rarity ──
     // 2026-06-12: grade achievements compare the GRADE NAME — the old raw
     // score gates were Variant D bands (epic≥8 fired on Uncommons, and
-    // 'Own a Cosmic' fired at score 18, an Epic under live Variant G).
-    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare plant. The math chose you.',                  reward:10, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=10;}catch(e){return false;} }); } },
-    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic plant. Three layers of luck align.',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=15;}catch(e){return false;} }); } },
-    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary plant. Few will see what you keep.',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=21;}catch(e){return false;} }); } },
-    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic plant. The unlikely, witnessed.',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=34;}catch(e){return false;} }); } },
+    // 'Own a Cosmic' fired at score 18, an Epic). Gates = live thresholds
+    // (rebased 2026-06-12 with the stem-banding threshold retune).
+    { id:'first_rare',    icon:'⭐', name:'Rare Find',            desc:'Bloom a Rare plant. The math chose you.',                  reward:10, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=8;}catch(e){return false;} }); } },
+    { id:'first_epic',    icon:'💎', name:'Epic Discovery',       desc:'Own an Epic plant. Three layers of luck align.',                   reward:20, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=13;}catch(e){return false;} }); } },
+    { id:'first_legend',  icon:'👑', name:'Living Legend',        desc:'Own a Legendary plant. Few will see what you keep.',               reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=19;}catch(e){return false;} }); } },
+    { id:'first_cosmic',  icon:'🌌', name:'Cosmic Gardener',     desc:'Own a Cosmic plant. The unlikely, witnessed.',                   reward:30, check: function(gh){ return gh.some(function(p){ try{ var t=hashToTraits(p.hash);if(p.generation)t.chimerGen=p.generation;if(p.breedLayers)t.breedLayers=p.breedLayers;if(p.compostLayers)t.compostLayers=p.compostLayers;var g=getTerraGrade(t);return g.score>=32;}catch(e){return false;} }); } },
     // ── Breeding ──
     { id:'first_cross',   icon:'🧬', name:'Hybridist',           desc:'Bloom a cross-bred plant. Two parents, one new shape.',             reward:10, check: function(gh){ return gh.some(function(p){ return p.isCross; }); } },
     { id:'breed_5',       icon:'🧪', name:'Prolific Breeder',    desc:'Breed five plants. The hybridist begins.',                       reward:10, check: function(gh){ return gh.filter(function(p){ return p.isCross; }).length >= 5; } },
@@ -72194,12 +72222,12 @@ window._lwMinutesSinceFirstSignup=function(){
 function _genGiftHash(){
   var roll=Math.random();
   var targetMin,targetMax;
-  // 2026-06-12: bands rebased to live Variant G thresholds (Uncommon=5,
-  // Rare=10). The old 2-3 / 4-5 targets were Variant D scores — under the
-  // live engine 84.5% of gift plants graded COMMON, breaking the
-  // onboarding "guaranteed Uncommon+" promise for 5 of 6 new players.
-  if(roll<0.70){targetMin=5;targetMax=9;}        // Uncommon
-  else{targetMin=10;targetMax=14;}               // Rare
+  // 2026-06-12: bands rebased to the LIVE thresholds (Uncommon=4, Rare=8
+  // after the stem-banding threshold retune). The old 2-3 / 4-5 targets
+  // were Variant D scores — under the live engine 84.5% of gift plants
+  // graded COMMON, breaking the onboarding "guaranteed Uncommon+" promise.
+  if(roll<0.70){targetMin=4;targetMax=7;}        // Uncommon
+  else{targetMin=8;targetMax=12;}                // Rare
   var bestHash='',bestMatchScore=-1;
   for(var attempts=0;attempts<500;attempts++){
     var h='';for(var i=0;i<64;i++)h+='0123456789abcdef'[Math.floor(Math.random()*16)];
@@ -72217,10 +72245,10 @@ function _genGiftHash(){
           console.log('[LW] Gift plant: '+g.name+' (score '+g.score+', target '+targetMin+'-'+targetMax+', attempt '+attempts+')');
           return h;
         }
-        // Track best candidate within Uncommon+ band (never below 5 — the
+        // Track best candidate within Uncommon+ band (never below 4 — the
         // live Uncommon floor; below that lands Common which violates the
         // gift promise). Never above targetMax either — Epic+ never gifted.
-        if(g.score>=5&&g.score<=targetMax&&g.score>bestMatchScore){bestHash=h;bestMatchScore=g.score;}
+        if(g.score>=4&&g.score<=targetMax&&g.score>bestMatchScore){bestHash=h;bestMatchScore=g.score;}
       }
     }catch(e){}
   }

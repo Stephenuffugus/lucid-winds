@@ -259,18 +259,18 @@ Computed from trait rarity score. The grade is the PLANT'S OVERALL rarity. Each 
 ### Variant G scoring (live in index.html:10449, 10419)
 ```
 _TIER_SCORE = { common:0, uncommon:0, rare:1, epic:3, legendary:5, mythic:7, cosmic:10 }
-_TERRA_GRADES thresholds = [ 0, 5, 10, 15, 21, 27, 34 ]
+_TERRA_GRADES thresholds = [ 0, 4, 8, 13, 19, 25, 32 ]  (retuned 2026-06-12 with stem banding — preserves the Variant G aggregate)
 ```
 
-### Verified first-mint distribution (LIVE-CODE sim N=200k, 2026-06-12, post mythic-ladder fix)
+### Verified first-mint distribution (LIVE-CODE sim N=200k, 2026-06-12, post mythic-ladder fix + stem banding + threshold retune)
 ```
-Common     31.5%
-Uncommon   34.0%
-Rare       22.7%
-Epic        9.6%
-Legendary   1.94%
-Mythic      0.30%
-Cosmic      0.02%
+Common     29.9%
+Uncommon   32.1%
+Rare       25.3%
+Epic       10.5%
+Legendary   1.92%
+Mythic      0.29%
+Cosmic      0.015%
 ```
 Measured by scripts/rarity_sim_live.js against the REAL engine in headless
 Chrome (the old scripts/rarity_sim.js had drifted from live code twice and
@@ -284,7 +284,8 @@ was deleted 2026-06-12 — never hand-mirror the scorer again).
 ### Scoring bug history (Jun 12 audit — 3-agent, live-code sims)
 - **FIXED 2026-06-12:** the May-13 mythic tightening was only HALF-applied — the companion-index ladder in hashToTraits kept the wide bands, so 12.5% of mints rendered phantom un-titled Cicadas/Toads scoring mythic-tier +7 (Legendary/Mythic/Cosmic ran 1.8-4.5× over the approved distribution; Cicada art on 1 in 12 plants). Ladder narrowed; base roll no longer leaks indices 32-38 (backdoor Beholder killed); the separate mythic "spike" was RETIRED — companions score by layer tier for everyone (Beholder +10 cosmic-tier, titled Cicada/Toad +7).
 - **FIXED 2026-06-12:** gift plant + grade/mutation achievements used stale Variant-D score bands and wrong byte slices (84.5% of "guaranteed Uncommon+" gifts graded Common; "Own a Cosmic" fired on Epics; Beholder achievement could never fire).
-- **STILL OPEN (TUNING — Director call, full numbers in memory project_game_audit_jun11.md):** STEM bank is top-heavy (28 slots uniform → a cosmic-tier stem on ~7% of mints; Worldspine 1-in-29, 44% of carriers below Epic); goldenPot/glowFlower hc()===15 locks force LEGENDARY visuals on ~6-8% of mints; FOLIAGE/AURA generic epic index-bands run ~25% epic+; 37% of ALL plants show a legendary+-colored ledger row while 2% grade Legendary+. Proposed: banded stem roll + lock removal + threshold retune [0,3,7,12,19,26,32] (keeps aggregate Variant-G-generous, makes the NAMES 4-8× scarcer). Also open: progression compression (gen-5 fully-stacked blooms mint Cosmic at ~25% vs 0.02% first-mint — ~1000×).
+- **FIXED 2026-06-12 (Stephen greenlit):** STEM banding — top-tier stems moved to a byte ladder (Worldspine 3.45%→0.37% of mints, stem epic+ 28%→7.8%) with thresholds retuned [0,4,8,13,19,25,32] to preserve the Variant-G aggregate. Gift bands + achievement gates rebased to the new thresholds.
+- **STILL OPEN (TUNING — Director call, full numbers in memory project_game_audit_jun11.md):** goldenPot/glowFlower hc()===15 locks force LEGENDARY visuals on ~6-8% of mints; FOLIAGE/AURA generic epic index-bands run ~25% epic+; 37% of ALL plants show a legendary+-colored ledger row while 2% grade Legendary+. Proposed: banded stem roll + lock removal + threshold retune [0,3,7,12,19,26,32] (keeps aggregate Variant-G-generous, makes the NAMES 4-8× scarcer). Also open: progression compression (gen-5 fully-stacked blooms mint Cosmic at ~25% vs 0.02% first-mint — ~1000×).
 
 ---
 
@@ -325,7 +326,7 @@ Derived deterministically from 64-char hex hash:
 ```
 pot:         hb(0) % 60          — 60 pot types (TRAIT_BANK.pots)
 potColor:    _PAL[hc(1)]
-stem:        hb(2) % 28           — 28 stem patterns (was 24; expanded May 01 with 4 top-tier anchors)
+stem:        byte ladder on hb(2)  — 28 stems; top tiers banded 2026-06-12 (cosmic 0xFE/0xFF, mythic 0xFA-0xFD, leg 0xF4-0xF9, epic 0xEC-0xF3; else %20 over the common/uncommon/rare pool)
 stemHeight:  22 + hc(3) * 2.5
 leafType:    hb(4) % 71           — 71 leaf types (TRAIT_BANK.leaves)
 leafCount:   5 + (hc(5) % 6)
