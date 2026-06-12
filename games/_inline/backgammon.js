@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: backgammon
  *
  * COPY of the inline GBG mount function from index.html
- * lines 68904-69286.
+ * lines 68904-69335.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -102,7 +102,7 @@
       if(w==='human'){for(var i=7;i<=25;i++)if(B[i]>0)return false;return true}
       for(var i=0;i<=18;i++)if(B[i]<0)return false;if(B[0]<0)return false;return true;
     }
-    function getValidMoves(w){
+    function getRawMoves(w){
       var moves=[],bar=getBar(w);
       if(bar>0){MOVES_LEFT.forEach(function(d,idx){var dest=w==='human'?(25-d):d;if(dest>=1&&dest<=24&&canLand(dest,w))moves.push({from:'bar',to:dest,die:d,dieIdx:idx})});return moves}
       var bo=allInHome(w);
@@ -118,15 +118,64 @@
         }
       });return moves;
     }
-    function applyMove(mv,w){
+    function applyMove(mv,w,sim){
       if(mv.from==='bar'){setBar(w,getBar(w)-1)}else{B[mv.from]+=(w==='human'?-1:1)}
       if(mv.to==='off'){if(w==='human')BO_H++;else BO_A++}
       else{
-        if(w==='human'&&B[mv.to]===-1){B[mv.to]=0;B[0]=(B[0]||0)-1;sm('Hit! Sent to bar')}
-        else if(w==='ai'&&B[mv.to]===1){B[mv.to]=0;B[25]=(B[25]||0)+1;sm('AI hits your seed!')}
+        if(w==='human'&&B[mv.to]===-1){B[mv.to]=0;B[0]=(B[0]||0)-1;if(!sim)sm('Hit! Sent to bar')}
+        else if(w==='ai'&&B[mv.to]===1){B[mv.to]=0;B[25]=(B[25]||0)+1;if(!sim)sm('AI hits your seed!')}
         B[mv.to]+=(w==='human'?1:-1);
       }
       for(var i=0;i<MOVES_LEFT.length;i++){if(MOVES_LEFT[i]===mv.die){MOVES_LEFT.splice(i,1);break}}
+    }
+    // ── Must-use-both-dice / higher-die enforcement ──
+    // maxUse: max number of remaining dice playable from the CURRENT state.
+    // Short-circuits as soon as a sequence using every die is found, so the
+    // common all-dice-playable case costs one greedy descent.
+    function maxUse(w){
+      var raw=getRawMoves(w);
+      if(raw.length===0)return 0;
+      var best=0,seen={};
+      for(var i=0;i<raw.length;i++){
+        if(best>=MOVES_LEFT.length)break;
+        var mv=raw[i],key=mv.from+'|'+mv.to+'|'+mv.die;
+        if(seen[key])continue;seen[key]=1;
+        var snap=snapshotState();
+        applyMove(mv,w,true);
+        var u=1+maxUse(w);
+        restoreState(snap);
+        if(u>best)best=u;
+      }
+      return best;
+    }
+    function getValidMoves(w){
+      var raw=getRawMoves(w);
+      if(raw.length===0||MOVES_LEFT.length<=1)return raw;
+      var total=maxUse(w);
+      // Keep only moves that still allow the maximum number of dice to be
+      // played afterwards (the "must use both dice" rule, and for doubles
+      // "play as many as possible").
+      var legal=[],cache={},emitted={};
+      for(var i=0;i<raw.length;i++){
+        var mv=raw[i],key=mv.from+'|'+mv.to+'|'+mv.die;
+        if(!(key in cache)){
+          var snap=snapshotState();
+          applyMove(mv,w,true);
+          cache[key]=1+maxUse(w);
+          restoreState(snap);
+        }
+        // emitted: doubles generate the same move once per die index — keep one
+        if(cache[key]===total&&!emitted[key]){emitted[key]=1;legal.push(mv);}
+      }
+      // Higher-die rule: when only ONE die can be played and either die has
+      // a legal move on its own, the higher die must be the one played.
+      if(total===1&&MOVES_LEFT.length===2&&MOVES_LEFT[0]!==MOVES_LEFT[1]){
+        var hi=Math.max(MOVES_LEFT[0],MOVES_LEFT[1]);
+        var hiMoves=[];
+        for(var j=0;j<legal.length;j++)if(legal[j].die===hi)hiMoves.push(legal[j]);
+        if(hiMoves.length)legal=hiMoves;
+      }
+      return legal;
     }
     function selectPt(p){
       if(PHASE!=='move'||TURN!=='human')return;
