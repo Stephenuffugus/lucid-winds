@@ -868,7 +868,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.13';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -48972,6 +48972,39 @@ document.addEventListener('keydown', function(e) {
     if (btn) btn.classList.remove('holding');
   };
 
+  // ── Shared player-data purge (Jun-12 account-switch fix) ─────────────
+  // The old 17-key sws_ list left ~250 lw_/fg_/pw_ player keys behind, so
+  // on a shared device the next sign-in MERGED two players' vaults — and
+  // the MAX-merge hydration rules then duplicated paid entitlements
+  // across both accounts, irreversibly. Sweep every player-data key by
+  // prefix; keep only device-level flags. Tutorial progress survives via
+  // meta/state.tut (synced + rehydrated), not via localStorage.
+  var _PURGE_KEEP = {
+    'fg_device_id': 1,        // device fingerprint (anti-farming lock)
+    'lw_ach_dev_counted': 1,  // tied to fg_device_id
+    'lw_dev_unlocked': 1,     // dev-panel gate
+    'lw_force_pi_browser': 1, // manual Pi Browser override
+    'lw_pi_sandbox': 1,       // payment environment flag
+    'lw_weather_off': 1,      // climate kill switch
+    'lw_perf_lite': 1,        // device performance flag
+    'lw_music_state': 1       // music on/off device pref
+  };
+  function _lwPurgePlayerData() {
+    var doomed = [];
+    try {
+      for (var _pi = 0; _pi < localStorage.length; _pi++) {
+        var _pk = localStorage.key(_pi);
+        if (!_pk) continue;
+        if (_PURGE_KEEP[_pk.replace(/_sig$/, '')]) continue;
+        if (/^(lw_|sws_|fg_|pw_|db_level_)/.test(_pk) || _pk === 'sk_lvl' || _pk === 'dailybloom_history') {
+          doomed.push(_pk);
+        }
+      }
+      for (var _pj = 0; _pj < doomed.length; _pj++) localStorage.removeItem(doomed[_pj]);
+    } catch(e){}
+    return doomed.length;
+  }
+
   // ── DISCONNECT (set-102): SCORCHED EARTH ──────────────────────────────
   window.swsDisconnect = function() {
     _closeMiniMenu();
@@ -48982,14 +49015,8 @@ document.addEventListener('keydown', function(e) {
     if (typeof _cancelPendingSaves === 'function') _cancelPendingSaves();
     if (_cloudWriteTimer) { clearTimeout(_cloudWriteTimer); _cloudWriteTimer = null; }
     _cloudWritePending = null;
-    var PURGE_KEYS = [
-      'sws_greenhouse','sws_nursery','sws_hash_ledger','sws_inventory',
-      'sws_set_records','sws_achievements','sws_shop_unlocks',
-      'sws_rewards_claimed','sws_bloom_pending','sws_inventory_pending',
-      'sws_pity','sws_streak','sws_ancestry','sws_pollination_nonce',
-      'sws_greenhouse_quarantine','sws_user_session','sws_user_email'
-    ];
-    PURGE_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+    var _purged = _lwPurgePlayerData();
+    if (window._swsLog) _swsLog('Purged ' + _purged + ' player-data keys.', 'warn');
     _nukeGameUI();
     if (window.auth) { auth.signOut().catch(function(e) { console.warn('[SWS] signOut error:', e.message); }); }
     showHexMsg('⊗ Disconnected. Sign in to restore your collection.');
@@ -49968,6 +49995,11 @@ document.addEventListener('keydown', function(e) {
       secondBloomClaimed: localStorage.getItem('lw_second_bloom_claimed') || null,
       guardianNextDrop: localStorage.getItem('lw_guardian_next_drop') || null,
       gildingHour: localStorage.getItem('lw_gilding_hour') || null,
+      // Tutorial progress — must follow the account: the sign-out purge
+      // (Jun-12 account-switch fix) clears lw_tut, and a tutorial
+      // re-running for an established player has stranded accounts
+      // before (May-14 monorail killbug).
+      tut: localStorage.getItem('lw_tut') || null,
       readyHashes: JSON.parse(localStorage.getItem('pw_readyHashes') || '[]'),
       hashBuf: localStorage.getItem('pw_hashBuf') || '',
       hashFilled: parseInt(localStorage.getItem('pw_hashFilled') || '0', 10) || 0,
@@ -50072,6 +50104,16 @@ document.addEventListener('keydown', function(e) {
               // stale copy that rewound earned-stats on every login.)
               if (d.streak) localStorage.setItem('sws_streak', JSON.stringify(d.streak));
               // Class system rehydration — was wiped on reinstall before
+              // Tutorial progress — 'done' wins; otherwise adopt cloud only
+              // if it's strictly further along (preserves local sub-steps
+              // like '1b' when steps are equal).
+              if (d.tut) {
+                try {
+                  var _locTutRaw = localStorage.getItem('lw_tut') || '';
+                  if (d.tut === 'done' || _locTutRaw === 'done') localStorage.setItem('lw_tut', 'done');
+                  else if ((parseInt(d.tut,10)||0) > (parseInt(_locTutRaw,10)||0)) localStorage.setItem('lw_tut', String(d.tut));
+                } catch(e){}
+              }
               if (d.classChoice) localStorage.setItem('lw_class', d.classChoice);
               if (d.classXP) localStorage.setItem('lw_class_xp', JSON.stringify(d.classXP));
               if (d.toolXP) localStorage.setItem('lw_tool_xp', JSON.stringify(d.toolXP));
@@ -50264,16 +50306,9 @@ document.addEventListener('keydown', function(e) {
     if (typeof _cancelPendingSaves === 'function') _cancelPendingSaves();
     if (_cloudWriteTimer) { clearTimeout(_cloudWriteTimer); _cloudWriteTimer = null; }
     _cloudWritePending = null;
-    var PURGE_KEYS = [
-      'sws_greenhouse','sws_nursery','sws_hash_ledger','sws_inventory',
-      'sws_set_records','sws_achievements','sws_shop_unlocks',
-      'sws_rewards_claimed','sws_bloom_pending','sws_inventory_pending',
-      'sws_pity','sws_streak','sws_ancestry','sws_pollination_nonce',
-      'sws_greenhouse_quarantine','sws_user_session','sws_user_email'
-    ];
-    PURGE_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+    var _purged = _lwPurgePlayerData();
     _nukeGameUI();
-    if (window._swsLog) _swsLog('signOutVault: scorched earth complete', 'warn');
+    if (window._swsLog) _swsLog('signOutVault: scorched earth complete (' + _purged + ' keys)', 'warn');
     auth.signOut()
       .then(function(){ if(window._swsLog) _swsLog('Firebase session cleared.', 'ok'); })
       .catch(function(e){ console.warn('[Auth] signOut error:', e.message); });
