@@ -23751,60 +23751,86 @@ document.addEventListener('keydown', function(e) {
           break;
         case 30: // Feather Frond — bipinnate fern frond, rachis + alternating pinnae each with sub-pinnules
           // Stephen 2026-05-01 PART 2: bump scale + opacity (was almost invisible)
-          var _ffAng = -0.1 - leafFrac * 0.42;
-          var _ffLen = ls * 3.0;
+          // Jun-12 art pass: the frond was drawn ls*3.0 long at -6°..-30°
+          // (nearly horizontal) — it shot straight off the canvas, so the
+          // plant rendered as a bare stem with hairline ghosts. Real fern
+          // feathers arch steeply up. Angle now -41°..-73°, length 2.2x,
+          // and the rachis control point lifts above the chord so the
+          // shaft genuinely arcs instead of ruling a straight line.
+          var _ffAng = -0.72 - leafFrac * 0.55;
+          var _ffLen = ls * 2.2;
           var _ffTipX = ox + Math.cos(_ffAng) * _ffLen * side;
           var _ffTipY = ly + Math.sin(_ffAng) * _ffLen;
           var _ffMidX = ox + Math.cos(_ffAng) * _ffLen * 0.5 * side;
-          var _ffMidY = ly + Math.sin(_ffAng) * _ffLen * 0.5;
+          var _ffMidY = ly + Math.sin(_ffAng) * _ffLen * 0.5 - _ffLen * 0.14;
           tip = _ffTipX; tipY = _ffTipY;
-          bodyD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_ffMidX.toFixed(1)+','+_ffMidY.toFixed(1)+' '+_ffTipX.toFixed(1)+','+_ffTipY.toFixed(1);
+          // Jun-12 art pass ROOT CAUSE: bodyD was the OPEN rachis line. The
+          // set-104 retroactive clip closes open paths chord-wise, so the
+          // whole frond was clipped to the sliver between arc and chord —
+          // this leaf rendered as a bare stem for weeks. bodyD must be a
+          // CLOSED envelope around the feather (same pattern as Maidenhair).
+          var _ffRachD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)+' Q'+_ffMidX.toFixed(1)+','+_ffMidY.toFixed(1)+' '+_ffTipX.toFixed(1)+','+_ffTipY.toFixed(1);
+          var _ffChDX = _ffTipX - ox, _ffChDY = _ffTipY - ly;
+          var _ffChL = Math.sqrt(_ffChDX*_ffChDX + _ffChDY*_ffChDY) || 1;
+          var _ffPNX = -_ffChDY / _ffChL, _ffPNY = _ffChDX / _ffChL;
+          var _ffEnvW = ls * 2.0; // quad ctrl offset → ~ls*1.0 actual half-width
+          var _ffEMX = (ox + _ffTipX) * 0.5, _ffEMY = (ly + _ffTipY) * 0.5;
+          bodyD = 'M'+ox.toFixed(1)+','+ly.toFixed(1)
+             + ' Q'+(_ffEMX + _ffPNX*_ffEnvW).toFixed(1)+','+(_ffEMY + _ffPNY*_ffEnvW).toFixed(1)+' '+_ffTipX.toFixed(1)+','+_ffTipY.toFixed(1)
+             + ' Q'+(_ffEMX - _ffPNX*_ffEnvW).toFixed(1)+','+(_ffEMY - _ffPNY*_ffEnvW).toFixed(1)+' '+ox.toFixed(1)+','+ly.toFixed(1)+' Z';
           // Petiole base shadow
           s += '<ellipse cx="'+ox.toFixed(1)+'" cy="'+(ly+0.4).toFixed(1)+'" rx="1.2" ry="0.4" fill="rgba(40,20,5,0.20)"/>';
-          // RACHIS — woody warm-shifted, with cream highlight pair (opacity bumped 0.7→1.0 for visibility)
-          s += '<path d="'+bodyD+'" fill="none" stroke="rgba(40,20,5,0.95)" stroke-width="1.1" opacity="'+(op*1.0).toFixed(2)+'" stroke-linecap="round"/>';
-          s += '<path d="'+bodyD+'" fill="none" stroke="#f5ecd6" stroke-width="0.32" opacity="0.55" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
-          // PINNAE — 8 alternating, each is a mini-pinnate frond with sub-pinnules (bipinnate)
-          var _ffPerp = _ffAng + Math.PI * 0.5;
-          for (var _fb = 0; _fb < 8; _fb++) {
-            var _fbT = 0.08 + _fb * 0.115;
-            var _fbU = 1 - _fbT;
-            var _fbX = _fbU*_fbU*ox + 2*_fbU*_fbT*_ffMidX + _fbT*_fbT*_ffTipX;
-            var _fbY = _fbU*_fbU*ly + 2*_fbU*_fbT*_ffMidY + _fbT*_fbT*_ffTipY;
-            // Barnsley taper: longest at 1/3 then taper
-            var _fbReach = ls * (0.85 - Math.abs(_fbT - 0.33) * 0.95);
-            if (_fbReach < ls*0.18) _fbReach = ls*0.18;
-            var _fbDir = (_fb % 2 === 0) ? 1 : -1; // alternating
-            var _fbAng = _ffPerp + _fbDir * 0.20;
-            // Pinna rachis end
-            var _fbTipX = _fbX + Math.cos(_fbAng) * _fbReach * side * _fbDir;
-            var _fbTipY = _fbY + Math.sin(_fbAng) * _fbReach * _fbDir;
-            // Adjust to lean upward toward apex
-            _fbTipX = _fbX + side * _fbDir * _fbReach * 0.92;
-            _fbTipY = _fbY - _fbReach * 0.30;
-            // Pinna midrib (filled diamond shape)
-            var _fbPx = _fbX + side * _fbDir * _fbReach * 0.30;
-            var _fbPy = _fbY - _fbReach * 0.10;
-            var _fbDD = 'M'+_fbX.toFixed(1)+','+_fbY.toFixed(1)
-               + ' Q'+(_fbX+side*_fbDir*_fbReach*0.50).toFixed(1)+','+(_fbY-_fbReach*0.30).toFixed(1)+' '+_fbTipX.toFixed(1)+','+_fbTipY.toFixed(1)
-               + ' Q'+(_fbX+side*_fbDir*_fbReach*0.40).toFixed(1)+','+(_fbY+_fbReach*0.05).toFixed(1)+' '+_fbX.toFixed(1)+','+_fbY.toFixed(1)+' Z';
-            s += '<path d="'+_fbDD+'" fill="rgba(40,20,5,0.30)" transform="translate(0.3,0.4)" opacity="'+(op*0.5).toFixed(2)+'"/>';
-            s += '<path d="'+_fbDD+'" fill="'+fill+'" opacity="'+Math.max(0.88, op)+'"/>';
-            // pinna midrib hairline
-            s += '<line x1="'+_fbX.toFixed(1)+'" y1="'+_fbY.toFixed(1)+'" x2="'+_fbTipX.toFixed(1)+'" y2="'+_fbTipY.toFixed(1)+'" stroke="rgba(40,20,5,0.6)" stroke-width="0.22" opacity="'+(op*0.5).toFixed(2)+'" stroke-linecap="round"/>';
-            // SUB-PINNULES — 3 tiny notches along upper edge (bipinnate signature)
-            for (var _ffp = 1; _ffp <= 3; _ffp++) {
-              var _ffpt = _ffp * 0.22;
-              var _ffpBx = _fbX + (_fbTipX - _fbX) * _ffpt;
-              var _ffpBy = _fbY + (_fbTipY - _fbY) * _ffpt;
-              var _ffpTx = _ffpBx + side * _fbDir * _fbReach * 0.16;
-              var _ffpTy = _ffpBy - _fbReach * 0.13;
-              s += '<line x1="'+_ffpBx.toFixed(1)+'" y1="'+_ffpBy.toFixed(1)+'" x2="'+_ffpTx.toFixed(1)+'" y2="'+_ffpTy.toFixed(1)+'" stroke="rgba(40,20,5,0.55)" stroke-width="0.18" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
+          // RACHIS — woody warm-shifted, with cream highlight pair
+          s += '<path d="'+_ffRachD+'" fill="none" stroke="rgba(40,20,5,0.95)" stroke-width="0.85" opacity="'+(op*1.0).toFixed(2)+'" stroke-linecap="round"/>';
+          s += '<path d="'+_ffRachD+'" fill="none" stroke="#f5ecd6" stroke-width="0.28" opacity="0.55" stroke-linecap="round" transform="translate(-0.3,-0.2)"/>';
+          // PINNAE — Jun-12 art pass: 9 nodes x PAIRED blades (subopposite,
+          // like Nephrolepis) instead of 12 alternating singles. Alternating
+          // singles left 4.4-unit same-side gaps between 2-unit blades, so
+          // the frond read as chips on a wire. Pairs overlap into a
+          // continuous feather plane. Dots/notch-lines dropped — at small
+          // scale they read as barbs, not anatomy.
+          for (var _fb = 0; _fb < 9; _fb++) {
+            for (var _fbSi = 0; _fbSi < 2; _fbSi++) {
+              var _fbDir = (_fbSi === 0) ? 1 : -1;
+              // subopposite stagger: the off side sits half a node higher
+              var _fbT = 0.10 + _fb * 0.094 + (_fbSi === 1 ? 0.047 : 0);
+              if (_fbT > 0.97) continue;
+              var _fbU = 1 - _fbT;
+              var _fbX = _fbU*_fbU*ox + 2*_fbU*_fbT*_ffMidX + _fbT*_fbT*_ffTipX;
+              var _fbY = _fbU*_fbU*ly + 2*_fbU*_fbT*_ffMidY + _fbT*_fbT*_ffTipY;
+              // Feather silhouette: longest at 1/3, tapering to a point at apex
+              var _fbReach = ls * (0.80 - Math.abs(_fbT - 0.33) * 0.80);
+              if (_fbReach < ls*0.14) _fbReach = ls*0.14;
+              // Branch off the LOCAL rachis tangent: ±64° with apex bias
+              var _fbTgX = 2*_fbU*(_ffMidX-ox) + 2*_fbT*(_ffTipX-_ffMidX);
+              var _fbTgY = 2*_fbU*(_ffMidY-ly) + 2*_fbT*(_ffTipY-_ffMidY);
+              var _fbTgA = Math.atan2(_fbTgY, _fbTgX);
+              var _fbAng = _fbTgA + _fbDir * 0.91;
+              var _fbTipX = _fbX + Math.cos(_fbAng) * _fbReach;
+              var _fbTipY = _fbY + Math.sin(_fbAng) * _fbReach;
+              // Blade width built perpendicular to the chord so the leaflet
+              // has real body at any lean (old axis-aligned controls made slivers)
+              var _fbDXc = _fbTipX - _fbX, _fbDYc = _fbTipY - _fbY;
+              var _fbChL = Math.sqrt(_fbDXc*_fbDXc + _fbDYc*_fbDYc) || 1;
+              var _fbNX = -_fbDYc / _fbChL, _fbNY = _fbDXc / _fbChL;
+              if (_fbNY > 0) { _fbNX = -_fbNX; _fbNY = -_fbNY; }
+              var _fbMXc = (_fbX + _fbTipX) * 0.5, _fbMYc = (_fbY + _fbTipY) * 0.5;
+              var _fbWid = _fbReach * 0.38;
+              var _fbPx = _fbMXc + _fbNX * _fbWid;
+              var _fbPy = _fbMYc + _fbNY * _fbWid;
+              var _fbFill = _hueShift(baseColor, _fb*17 + _fbSi*31, 8);
+              var _fbDD = 'M'+_fbX.toFixed(1)+','+_fbY.toFixed(1)
+                 + ' Q'+_fbPx.toFixed(1)+','+_fbPy.toFixed(1)+' '+_fbTipX.toFixed(1)+','+_fbTipY.toFixed(1)
+                 + ' Q'+(_fbMXc - _fbNX * _fbWid * 0.7).toFixed(1)+','+(_fbMYc - _fbNY * _fbWid * 0.7).toFixed(1)+' '+_fbX.toFixed(1)+','+_fbY.toFixed(1)+' Z';
+              s += '<path d="'+_fbDD+'" fill="rgba(40,20,5,0.30)" transform="translate(0.25,0.35)" opacity="'+(op*0.3).toFixed(2)+'"/>';
+              s += '<path d="'+_fbDD+'" fill="'+_fbFill+'" opacity="'+Math.max(0.88, op)+'"/>';
+              // pinna midrib hairline
+              s += '<line x1="'+_fbX.toFixed(1)+'" y1="'+_fbY.toFixed(1)+'" x2="'+_fbTipX.toFixed(1)+'" y2="'+_fbTipY.toFixed(1)+'" stroke="rgba(40,20,5,0.6)" stroke-width="0.20" opacity="'+(op*0.4).toFixed(2)+'" stroke-linecap="round"/>';
+              // upper edge cream highlight — lit side only
+              if (_fbSi === 0) {
+                s += '<path d="M'+_fbX.toFixed(1)+','+_fbY.toFixed(1)+' Q'+_fbPx.toFixed(1)+','+(_fbPy-_fbReach*0.06).toFixed(1)+' '+_fbTipX.toFixed(1)+','+_fbTipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.18" opacity="0.40" stroke-linecap="round"/>';
+              }
             }
-            // upper edge cream highlight
-            s += '<path d="M'+_fbX.toFixed(1)+','+_fbY.toFixed(1)+' Q'+_fbPx.toFixed(1)+','+(_fbPy-_fbReach*0.08).toFixed(1)+' '+_fbTipX.toFixed(1)+','+_fbTipY.toFixed(1)+'" fill="none" stroke="#f5ecd6" stroke-width="0.20" opacity="0.45" stroke-linecap="round"/>';
-            // pinna tip terminator
-            s += '<circle cx="'+_fbTipX.toFixed(1)+'" cy="'+_fbTipY.toFixed(1)+'" r="0.22" fill="rgba(40,20,5,0.55)"/>';
           }
           // Terminal pinna
           s += '<circle cx="'+_ffTipX.toFixed(1)+'" cy="'+_ffTipY.toFixed(1)+'" r="0.42" fill="rgba(40,20,5,0.7)"/>';
