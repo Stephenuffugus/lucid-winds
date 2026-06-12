@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.21';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.22';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -40477,6 +40477,20 @@ document.addEventListener('keydown', function(e) {
         if (_atGn === 'Legendary') LW_ACH.bump('mint_legendary', 1);
         if (_atGn === 'Mythic')    LW_ACH.bump('mint_mythic', 1);
         if (_atGn === 'Cosmic')    LW_ACH.bump('mint_cosmic', 1);
+        // Jun-12: w_grade_kinds was never wired (w_grades_3 weekly could
+        // never fire). Distinct grades minted this week, tracked in a
+        // tiny week-keyed localStorage set, mirrored into the counter.
+        try {
+          var _wgD = new Date(); var _wgDay = (_wgD.getDay() + 6) % 7;
+          var _wgMon = new Date(_wgD.getFullYear(), _wgD.getMonth(), _wgD.getDate() - _wgDay);
+          var _wgKey = _wgMon.getFullYear() + '-' + (_wgMon.getMonth()+1) + '-' + _wgMon.getDate();
+          var _wgSt = {}; try { _wgSt = JSON.parse(localStorage.getItem('lw_ach_wgrades') || '{}'); } catch(e2) {}
+          if (_wgSt.week !== _wgKey) _wgSt = { week: _wgKey, g: {} };
+          _wgSt.g[_atGn] = 1;
+          localStorage.setItem('lw_ach_wgrades', JSON.stringify(_wgSt));
+          var _wgN = 0; for (var _wgk in _wgSt.g) _wgN++;
+          LW_ACH.set('w_grade_kinds', _wgN);
+        } catch(e2) {}
         // Time-of-day mint flags
         var _atD = new Date();
         var _atH = _atD.getHours();
@@ -41357,11 +41371,14 @@ document.addEventListener('keydown', function(e) {
         LW_ACH.set('gh_max_slots', MAX_COLLECTION_SIZE);
         if (window.hashToTraits) {
           var _potIdxSet = {};
+          var _subIdxSet = {}; // Jun-12: substrates_seen was never wired (col_disc_sub_all could never fire)
           for (var _gpi = 0; _gpi < gh.length; _gpi++) {
-            try { var _gpt = window.hashToTraits(gh[_gpi].hash); if (_gpt && typeof _gpt.pot === 'number') _potIdxSet[_gpt.pot] = 1; } catch(e){}
+            try { var _gpt = window.hashToTraits(gh[_gpi].hash); if (_gpt && typeof _gpt.pot === 'number') _potIdxSet[_gpt.pot] = 1; if (_gpt && typeof _gpt.base === 'number') _subIdxSet[_gpt.base % 71] = 1; } catch(e){}
           }
           var _potUniq = 0; for (var _pk in _potIdxSet) _potUniq++;
           LW_ACH.set('pots_owned_unique', _potUniq);
+          var _subUniq = 0; for (var _sk in _subIdxSet) _subUniq++;
+          LW_ACH.set('substrates_seen', _subUniq);
         }
       }
     } catch(e){}
@@ -58067,7 +58084,7 @@ function _finishDrop(defenderGame){
   }
   if(window._lwBumpCompCounter)window._lwBumpCompCounter('drop');
   if(window.LW_ACH){
-    LW_ACH.bump('wild_drops',1);LW_ACH.bump('hexes_planted',1);LW_ACH.bump('d_drop',1);LW_ACH.bump('w_drop',1);
+    LW_ACH.bump('wild_drops',1);LW_ACH.bump('hexes_planted',1);LW_ACH.bump('d_drop',1);LW_ACH.bump('w_drop',1);LW_ACH.bump('w_hexes',1);/* Jun-12: w_hexes_10 weekly was never wired */
     LW_ACH.bump('d_hex_drop',1);
     // Takeover: this drop displaced another player's plant
     if(pd&&pd.displaced)LW_ACH.bump('takeovers',1);
@@ -60968,7 +60985,7 @@ window._hexAction=function(action){
     }catch(e){}
     if(window._lwBumpCompCounter)window._lwBumpCompCounter('tend');
     if(window.LW_ACH){
-      LW_ACH.bump('tend_strangers',1);LW_ACH.bump('d_tend',1);LW_ACH.bump('w_tend',1);LW_ACH.bump('d_water_str',1);
+      LW_ACH.bump('tend_strangers',1);LW_ACH.bump('d_tend',1);LW_ACH.bump('w_tend',1);LW_ACH.bump('d_water_str',1);LW_ACH.bump('w_str',1);/* Jun-12: w_strangers_15/50 weeklies were never wired */
       // tend_no_compost — running counter since last own-plant compost. Reset
       // to 0 in confirmCompost. Drives dc_quiet_keeper achievement (50 tends
       // clean of compost, 60 Dew, hidden). May 02 audit: was orphaned counter.
@@ -62591,7 +62608,20 @@ function _e(v){
     }else{
       _afLastComplete=now;
       // Engagement counters fire ONLY after all anti-farm guards pass.
-      if(v==='game_win'&&window.LW_ACH){LW_ACH.bump('games_won_total',1);LW_ACH.bump('d_game_win',1);LW_ACH.bump('w_game_win',1);}
+      if(v==='game_win'&&window.LW_ACH){LW_ACH.bump('games_won_total',1);LW_ACH.bump('d_game_win',1);LW_ACH.bump('w_game_win',1);
+        // Jun-12: d_game_kinds was never wired (d_game_two_kinds /
+        // d_game_five_kinds dailies could never fire). _a = current game
+        // id in this engine IIFE; track distinct ids per day.
+        try{
+          var _gkDay=new Date().toISOString().split('T')[0];
+          var _gkSt={};try{_gkSt=JSON.parse(localStorage.getItem('lw_ach_gamekinds')||'{}');}catch(e2){}
+          if(_gkSt.day!==_gkDay)_gkSt={day:_gkDay,g:{}};
+          if(typeof _a==='string'&&_a)_gkSt.g[_a]=1;
+          localStorage.setItem('lw_ach_gamekinds',JSON.stringify(_gkSt));
+          var _gkN=0;for(var _gkk in _gkSt.g)_gkN++;
+          LW_ACH.set('d_game_kinds',_gkN);
+        }catch(e2){}
+      }
       // Quiet-walk break — any completed game (win or loss) breaks the
       // quiet-walk daily until tomorrow. Used by d_quiet_meters in _addSteps.
       try{localStorage.setItem('lw_quiet_broken', new Date().toISOString().split('T')[0]);}catch(e){}
@@ -80190,6 +80220,20 @@ window._lwWeeklyBumpDay = function(storeKey, achKey, dayStr){
         LW_ACH.set('login_streak', streak);
         LW_ACH.set('days_no_compost', noCompostStreak);
         LW_ACH.set('days_no_wither',  noWitherStreak);
+        // Jun-12: w_login_days was never wired (w_login_7 weekly could
+        // never fire). This block runs once per calendar day, so count
+        // distinct login days per week via a week-keyed set.
+        try {
+          var _wlD = new Date(); var _wlDay = (_wlD.getDay() + 6) % 7;
+          var _wlMon = new Date(_wlD.getFullYear(), _wlD.getMonth(), _wlD.getDate() - _wlDay);
+          var _wlKey = _wlMon.getFullYear() + '-' + (_wlMon.getMonth()+1) + '-' + _wlMon.getDate();
+          var _wlSt = {}; try { _wlSt = JSON.parse(localStorage.getItem('lw_ach_wlogin') || '{}'); } catch(e2) {}
+          if (_wlSt.week !== _wlKey) _wlSt = { week: _wlKey, d: {} };
+          _wlSt.d[_wlD.getDay()] = 1;
+          localStorage.setItem('lw_ach_wlogin', JSON.stringify(_wlSt));
+          var _wlN = 0; for (var _wlk in _wlSt.d) _wlN++;
+          LW_ACH.set('w_login_days', _wlN);
+        } catch(e2) {}
       }
       // Weekly distinct-day counters
       try { if (window._lwWeeklyBumpDay) window._lwWeeklyBumpDay('lw_w_login_days', 'w_login_days', todayStr); } catch(e){}
