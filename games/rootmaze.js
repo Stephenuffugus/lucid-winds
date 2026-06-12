@@ -94,6 +94,7 @@ var hostEl=null, pan=null, topBar=null, questEl=null, statusEl=null, boardCanvas
 var topEls={turn:null, phase:null, difficulty:null};
 var animState=null;  // {axis:'row'|'col', idx, dir, startTime, durationMs}
 var animFrameId=null;
+var aiTimer=null;
 
 // Canvas dimensions — set by sizeCanvas()
 var CELL=60, PAD=26, BOARD_PX=360;
@@ -233,7 +234,7 @@ function movePlayer(r,c){
   S.phase='ai_shift';
   drawAll();
   updateHUD();
-  setTimeout(aiTurn, 500);
+  aiTimer=setTimeout(aiTurn, 500);
 }
 
 // ── AI ──────────────────────────────────────────────────────────────────
@@ -264,7 +265,7 @@ function aiTurn(){
     S.turns++;
     animState=null;
     // AI move phase
-    setTimeout(aiMove, 250);
+    aiTimer=setTimeout(aiMove, 250);
   });
 }
 function aiMove(){
@@ -632,6 +633,7 @@ function buildDOM(host){
     var b=e.target.closest('[data-act="rotate"]');
     if(b) rotateSpare();
   });
+  window.removeEventListener('resize', onResize);
   window.addEventListener('resize', onResize);
 }
 
@@ -912,6 +914,11 @@ window._gameFns.rootmaze = function(a){
   topEls={turns:null, phase:null, difficulty:null, best:null};
   if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null;}
   animState=null;
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null;}
+    if(aiTimer){clearTimeout(aiTimer);aiTimer=null;}
+    window.removeEventListener('resize', onResize);
+  });
   hostEl=a;
   showVariantPicker();
 };

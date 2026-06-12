@@ -420,6 +420,9 @@ function renderBoard(){
 
 function GPS(a){
   _cleanupVictory();
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(timerId){clearInterval(timerId);timerId=null;}
+  });
   ms(a,'Bee’s Pollen Sort');mm(a);
   pan=document.createElement('div');pan.id='PSpan';a.appendChild(pan);
   mc(a);

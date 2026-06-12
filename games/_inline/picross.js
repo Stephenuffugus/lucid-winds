@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: picross
  *
  * COPY of the inline GX mount function from index.html
- * lines 66946-66968.
+ * lines 66949-66971.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves

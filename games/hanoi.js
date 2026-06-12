@@ -330,6 +330,9 @@ function GH(a){
   var diskChoice='<select class="gsl" id="Hd" onchange="_HN()"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select> disks';
   mc(a).innerHTML=pegChoice+' '+diskChoice;
   // Global controls (New / Undo) live inside pan now via render()
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(timerId){clearInterval(timerId);timerId=null;}
+  });
   window._HN();
 }
 

@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: doubleshutter
  *
  * COPY of the inline GDS mount function from index.html
- * lines 66791-66944.
+ * lines 66793-66947.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -171,6 +171,7 @@
       try{rn();}catch(e){}
     };
     window.addEventListener('lw-dice-style-change',_dsStyleListener);
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){window.removeEventListener('lw-dice-style-change',_dsStyleListener);});
     _DSN();
   }
 

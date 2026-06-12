@@ -642,6 +642,10 @@ window._gameFns.seedtoss2=function ST(a){
     rafId=requestAnimationFrame(loop);
     sm(sz.mult>1?'×'+sz.mult+' multiplier · flick it in':'Flick the seed into the pot');
   }
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    running=false;
+    if(rafId){cancelAnimationFrame(rafId);rafId=0;}
+  });
   window._STN=function(){
     // If the size picker is already up, NEW commits to the highlighted
     // tile instead of re-rendering the same picker (that felt

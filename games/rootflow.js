@@ -427,6 +427,9 @@ function buildDOM(host){
   // Board event handlers — we use pointer events for cross-platform
   gridEl.addEventListener('mousedown', onPointerDown);
   gridEl.addEventListener('mousemove', onPointerMove);
+  // buildDOM runs on every tier visit — remove first so the document
+  // handler never stacks (gridEl is rebuilt each time, document is not)
+  document.removeEventListener('mouseup', onPointerUp);
   document.addEventListener('mouseup', onPointerUp);
   gridEl.addEventListener('touchstart', onTouchStart, {passive:false});
   gridEl.addEventListener('touchmove', onTouchMove, {passive:false});
@@ -773,6 +776,10 @@ window._gameFns.rootflow = function(a){
   cellEls={};
   stopTimer();
   if(winCard){winCard.remove();winCard=null;}
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    try{stopTimer();}catch(e){}
+    document.removeEventListener('mouseup', onPointerUp);
+  });
   hostEl=a;
   showTierPicker();
 };

@@ -856,6 +856,9 @@ window._gameFns.jade = function(a){
   topEls={matched:null,timer:null,hints:null,shuffles:null};
   tileEls={};
   if(timerInt){clearInterval(timerInt);timerInt=null;}
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(timerInt){clearInterval(timerInt);timerInt=null;}
+  });
   hostEl=a;
   showLayoutPicker();
 };

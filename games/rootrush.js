@@ -907,6 +907,7 @@ function startDrag(cx,cy,el){
   document.addEventListener('mouseup',onDragEnd);
   document.addEventListener('touchmove',onDragMove,{passive:false});
   document.addEventListener('touchend',onDragEnd);
+  document.addEventListener('touchcancel',onDragEnd);
 }
 
 function onDragMove(e){
@@ -932,6 +933,7 @@ function onDragEnd(e){
   document.removeEventListener('mouseup',onDragEnd);
   document.removeEventListener('touchmove',onDragMove);
   document.removeEventListener('touchend',onDragEnd);
+  document.removeEventListener('touchcancel',onDragEnd);
   var cx=drag.startX,cy=drag.startY;
   if(e.changedTouches&&e.changedTouches[0]){cx=e.changedTouches[0].clientX;cy=e.changedTouches[0].clientY;}
   else if(typeof e.clientX==='number'){cx=e.clientX;cy=e.clientY;}
@@ -1054,6 +1056,18 @@ function renderBoard(){
 
 function GRR(a){
   _cleanupVictory();
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(timerId){clearInterval(timerId);timerId=null;}
+    if(_winTimer){clearTimeout(_winTimer);_winTimer=null;}
+    if(_animTimer){clearTimeout(_animTimer);_animTimer=null;}
+    if(_rrResetT){clearTimeout(_rrResetT);_rrResetT=null;}
+    drag=null;
+    document.removeEventListener('mousemove',onDragMove);
+    document.removeEventListener('mouseup',onDragEnd);
+    document.removeEventListener('touchmove',onDragMove);
+    document.removeEventListener('touchend',onDragEnd);
+    document.removeEventListener('touchcancel',onDragEnd);
+  });
   ms(a,'Root Rush');mm(a);
   pan=document.createElement('div');pan.id='RRpan';a.appendChild(pan);
   mc(a);

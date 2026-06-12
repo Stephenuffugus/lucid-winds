@@ -379,6 +379,9 @@ function GD(a){
   ms(a,'Sliding Puzzle');mm(a);
   pan=document.createElement('div');pan.id='Dpan';a.appendChild(pan);
   mc(a).innerHTML='<select class="gsl" id="Dsize" onchange="_DN()"><option value="3">3×3</option><option value="4" selected>4×4 (15 Puzzle)</option><option value="5">5×5</option></select>';
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    if(timerId){clearInterval(timerId);timerId=null;}
+  });
   window._DN();
 }
 

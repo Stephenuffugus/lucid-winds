@@ -13,6 +13,11 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G
 
 window._gameFns = window._gameFns || {};
 window._gameFns.pollen = function PN(a){
+  var alive=true,aiTimer=null;
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    alive=false;
+    if(aiTimer){clearTimeout(aiTimer);aiTimer=null;}
+  });
   var COLORS=['green','rose','blue','amber','spore'];
   var COLOR_HEX={green:'#7ab356',rose:'#c47a7a',blue:'#5b9bd5',amber:'#c8a84b',spore:'#e8dcc8',gold:'#ffd700'};
   var TIER_ICONS=['🌱','🌿','🌳'];
@@ -395,7 +400,7 @@ window._gameFns.pollen = function PN(a){
     }
     render();
     // If first seat is AI, kick it off after a beat.
-    if(me().isAI)setTimeout(aiTurn,600);
+    if(me().isAI)aiTimer=setTimeout(aiTurn,600);
   }
   function me(){return GS.players[GS.activeIdx];}
   function newGame(){
@@ -476,7 +481,7 @@ window._gameFns.pollen = function PN(a){
     var nxt=me();
     if(nxt.isAI){
       GS.phase='ai';render();
-      setTimeout(aiTurn,700);
+      aiTimer=setTimeout(aiTurn,700);
     } else {
       GS.phase='player';
       // Pass-the-phone curtain only when there's more than one human seat.
@@ -511,6 +516,7 @@ window._gameFns.pollen = function PN(a){
     return n;
   }
   function aiTurn(){
+    if(!alive)return;
     var who=me();if(!who||!who.isAI)return;
     var best=null,bestGP=-1,bm=null,bd=null;
     [[GS.market3,GS.deck3],[GS.market2,GS.deck2],[GS.market1,GS.deck1]].forEach(function(pr){

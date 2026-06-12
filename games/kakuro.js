@@ -1061,6 +1061,9 @@ window._gameFns.kakuro = function(a){
   runEls={h:null,v:null};
   cellEls={};
   stopTimer();
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    try{stopTimer();}catch(e){}
+  });
   hostEl=a;
   showDifficultyPicker();
 };

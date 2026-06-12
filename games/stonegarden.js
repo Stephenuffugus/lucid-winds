@@ -165,6 +165,24 @@ function startGame(pan,a){
   var cameraY=0,viewScale=1;               // zoom-to-fit scale, 1 = no zoom
   var particles=[];
   var running=false,lastTime=0,rafId=null;
+  function onWinMouseMove(e){
+    if(!carries['m'])return;
+    e.preventDefault();
+    var fakeEvt={preventDefault:function(){},changedTouches:[{identifier:'m',clientX:e.clientX,clientY:e.clientY}]};
+    onTouchMove(fakeEvt);
+  }
+  function onWinMouseUp(e){
+    if(!carries['m'])return;
+    e.preventDefault();
+    var fakeEvt={preventDefault:function(){},changedTouches:[{identifier:'m',clientX:e.clientX,clientY:e.clientY}]};
+    onTouchEnd(fakeEvt);
+  }
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    running=false;
+    if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+    window.removeEventListener('mousemove',onWinMouseMove);
+    window.removeEventListener('mouseup',onWinMouseUp);
+  });
   var flashMsg='',flashTimer=0,flashColor='#e8dcc8';
   var spinning=false;                      // true while ROTATE button held
   var TRAY_SPIN_SPEED=1.2;                 // radians/sec
@@ -726,18 +744,12 @@ function startGame(pan,a){
       var fakeEvt={preventDefault:function(){},changedTouches:[{identifier:'m',clientX:e.clientX,clientY:e.clientY}]};
       onTouchStart(fakeEvt);
     });
-    window.addEventListener('mousemove',function(e){
-      if(!carries['m'])return;
-      e.preventDefault();
-      var fakeEvt={preventDefault:function(){},changedTouches:[{identifier:'m',clientX:e.clientX,clientY:e.clientY}]};
-      onTouchMove(fakeEvt);
-    });
-    window.addEventListener('mouseup',function(e){
-      if(!carries['m'])return;
-      e.preventDefault();
-      var fakeEvt={preventDefault:function(){},changedTouches:[{identifier:'m',clientX:e.clientX,clientY:e.clientY}]};
-      onTouchEnd(fakeEvt);
-    });
+    // begin() runs per round — named handlers + remove-before-add so
+    // window listeners never stack across rounds or survive game exit
+    window.removeEventListener('mousemove',onWinMouseMove);
+    window.addEventListener('mousemove',onWinMouseMove);
+    window.removeEventListener('mouseup',onWinMouseUp);
+    window.addEventListener('mouseup',onWinMouseUp);
     running=true;lastTime=0;
     rafId=requestAnimationFrame(tick);
     sm(mode==='zen'?'Zen. Build freely.':'Challenge. Reach '+CHALLENGE_TARGET+'px.');
