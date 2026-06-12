@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.16';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.17';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -12978,6 +12978,23 @@ document.addEventListener('keydown', function(e) {
     return !lastMs || (Date.now()-lastMs)>=86400000;
   }
 
+  // Consumed-seed tombstones (Jun-12 bloom-respawn fix). Bloom/abandon
+  // removes a seed locally, but the cloud write is debounced 5s and the
+  // nursery hydration merge is a UNION — a stale cloud copy resurrected
+  // the just-bloomed seed in its slot. Tombstones (id + seedHash) are
+  // filtered out of every nursery merge and ride the vault payload so
+  // other devices can't resurrect it either.
+  function _tombstoneSeed(seed){
+    if(!seed) return;
+    try{
+      var t=JSON.parse(localStorage.getItem('lw_consumed_seed_ids')||'[]');
+      if(seed.id) t.push(seed.id);
+      if(seed.seedHash) t.push(seed.seedHash);
+      if(t.length>300) t=t.slice(t.length-300);
+      localStorage.setItem('lw_consumed_seed_ids',JSON.stringify(t));
+    }catch(e){}
+  }
+
   function bloomSeed(id){
     var nursery=_loadNursery();
     var idx=nursery.findIndex(function(s){return s.id===id;});
@@ -12987,6 +13004,7 @@ document.addEventListener('keydown', function(e) {
     var result={ok:true,seedHash:seed.seedHash,ancestry:{parentAHash:seed.parentAHash,parentBHash:seed.parentBHash,nonce:seed.nonce}};
     nursery.splice(idx,1);
     _saveNursery(nursery);
+    _tombstoneSeed(seed);
     // A slot just opened — any wilting cuttings get their timer cleared.
     try { _updateCuttingPressure(); } catch(e) {}
     return result;
@@ -12994,6 +13012,8 @@ document.addEventListener('keydown', function(e) {
 
   function removeSeed(id){
     var nursery=_loadNursery();
+    var doomed=nursery.filter(function(s){return s.id===id;});
+    for(var _di=0;_di<doomed.length;_di++) _tombstoneSeed(doomed[_di]);
     _saveNursery(nursery.filter(function(s){return s.id!==id;}));
     try { _updateCuttingPressure(); } catch(e) {}
     return {ok:true};
@@ -48240,6 +48260,11 @@ document.addEventListener('keydown', function(e) {
     }catch(e){}
     closeBloomModal();
     renderNursery();
+    // Flush the seed removal to cloud NOW — the 5s debounced write left a
+    // stale cloud nursery that the union merge could resurrect on the
+    // next hydration (tombstones are the backstop; this closes the
+    // window). Jun-12 bloom-respawn fix.
+    try { if (window.syncVaultToCloudNow && window.auth && auth.currentUser) syncVaultToCloudNow(null, auth.currentUser); } catch(e){}
     if (typeof gtag!=='undefined') gtag('event','nursery_bloom',{ seedHash:result.seedHash.slice(0,8) });
   };
 
@@ -48264,6 +48289,7 @@ document.addEventListener('keydown', function(e) {
       FG_Data.removeSeed(id);
       _haptic('disc');
       renderNursery();
+      try { if (window.syncVaultToCloudNow && window.auth && auth.currentUser) syncVaultToCloudNow(null, auth.currentUser); } catch(e){}
       _setNurMsg('Seed abandoned. Nursery slot freed.');
     });
   };
@@ -49118,6 +49144,10 @@ document.addEventListener('keydown', function(e) {
       // that overflowed into Reserve vanished on reinstall/device
       // switch. Jun-10 audit critical #3.
       reserve:         _ls('lw_reserve')      || [],
+      // Consumed-seed tombstones — see _applyCloudData (Jun-12
+      // bloom-respawn fix). Synced so other devices can't resurrect a
+      // seed bloomed here.
+      consumedSeeds:   _ls('lw_consumed_seed_ids') || [],
       sws_inventory:   _ls('sws_inventory')   || {dnaFragments:0,substrate:{}},
       // hashLedger is SERVER-ONLY: rules-7 vaultServerFieldsImmutable() blocks
       // any client write to it. Removed from payload so vault sync stops
@@ -49241,6 +49271,25 @@ document.addEventListener('keydown', function(e) {
   function _applyCloudData(data, localGH, localNur) {
     var cGH  = data.sws_greenhouse || data.greenhouse || [];
     var cNur = data.sws_nursery    || data.nursery    || [];
+    // Consumed-seed tombstones (Jun-12 bloom-respawn fix): union local +
+    // cloud tombstone lists FIRST, then filter both nursery copies so a
+    // bloomed/abandoned seed can never be resurrected by the union merge
+    // (Stephen: "bloom a seed and another appears in its place").
+    var _tset = {};
+    try {
+      var _tl = JSON.parse(localStorage.getItem('lw_consumed_seed_ids')||'[]')||[];
+      var _tc = Array.isArray(data.consumedSeeds) ? data.consumedSeeds : [];
+      var _tall = _tl.concat(_tc), _tout = [];
+      for (var _ti=0; _ti<_tall.length; _ti++) {
+        var _tv = _tall[_ti];
+        if (_tv && !_tset[_tv]) { _tset[_tv]=1; _tout.push(_tv); }
+      }
+      if (_tout.length > 300) _tout = _tout.slice(_tout.length-300);
+      localStorage.setItem('lw_consumed_seed_ids', JSON.stringify(_tout));
+    } catch(e){}
+    function _notConsumed(s){ return s && !_tset[s.id] && !_tset[s.seedHash]; }
+    cNur = cNur.filter(_notConsumed);
+    localNur = (localNur||[]).filter(_notConsumed);
     var mGH  = _mergeByHash(localGH||[], cGH);
     var mNur = _mergeByHash(localNur||[], cNur);
     function _ss(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
