@@ -659,22 +659,30 @@ window._gameFns.livingstones = function LS(a){
     aiRender();
     setTimeout(aiRequestMove,80);
   };
+  // Rebuild the worker's board from the UI board after an undo. Stones of
+  // a legal position can be replayed in any order without triggering
+  // suicide or captures (a partial position has strictly more liberties),
+  // so clear + replay is exact. Ko memory resets — acceptable, the UI
+  // side owns move validation; the worker only generates.
+  function aiResyncWorker(){
+    if(!aiWorker)return;
+    aiWorker.postMessage({cmd:'clear_board'});
+    for(var r=0;r<aiSize;r++)for(var c=0;c<aiSize;c++){
+      var v=aiBoard[r][c];
+      if(v===BLACK||v===WHITE){
+        aiWorker.postMessage({cmd:'play',color:v===BLACK?'B':'W',move:aiCoordFromRC(r,c)});
+      }
+    }
+  }
   window._LSaiUndo=function(){
     if(aiThinking||aiGameOver)return;
-    // Undo both the player's move and the AI's response (two hops if the
-    // AI has already played). Keeps turn order intact.
     if(!aiUndoMove())return;
-    if(aiMoveHistory.length>0 && aiLastMove && aiLastMove.color===BLACK){
-      // The previous move was also the player's; pop once more to give
-      // them back control.
-    } else if(aiLastMove && aiLastMove.color===WHITE){
-      // Good — now it's player's turn again.
-    }
+    // If the popped move was the AI's response, pop the player's move
+    // too — UNDO means "take back my move", and it's the player's turn.
+    if(aiLastMove && aiLastMove.color===BLACK && aiMoveHistory.length>0)aiUndoMove();
+    aiResyncWorker();
     aiStatus='Undid last move';
     aiRender();
-    // Reset worker state to match
-    // (for simplicity, we just keep worker going; its ko/history may
-    // drift but is only used for move generation, not validation)
   };
   window._LSaiPass=function(){
     if(aiThinking||aiGameOver)return;
