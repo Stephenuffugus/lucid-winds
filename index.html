@@ -44211,13 +44211,30 @@ document.addEventListener('keydown', function(e) {
       ctx.lineTo(cardW*0.8, divY);
       ctx.stroke();
 
-      // Watermark
-      ctx.fillStyle = 'rgba(90,112,80,0.35)';
-      ctx.font = '700 13px Bebas Neue, sans-serif';
-      ctx.fillText('LUCID WINDS', cardW/2, divY + 28);
-      ctx.fillStyle = 'rgba(90,112,80,0.2)';
-      ctx.font = '400 10px DM Mono, monospace';
-      ctx.fillText('lucidwinds.com', cardW/2, divY + 44);
+      // Footer — every shared card is an ad (Jun 12 growth playbook). The
+      // old watermark was 20%-opacity 10px: invisible in a feed. Now: grade
+      // in its tier color + the one-of-one claim + a legible URL.
+      var _ftGrade = null;
+      try {
+        var _ftT = hashToTraits(plant.hash);
+        if (plant.generation) _ftT.chimerGen = plant.generation;
+        if (plant.breedLayers) _ftT.breedLayers = plant.breedLayers;
+        if (plant.compostLayers) _ftT.compostLayers = plant.compostLayers;
+        if (plant.mycelialCrown) _ftT.mycelialCrown = plant.mycelialCrown;
+        _ftGrade = getTerraGrade(_ftT);
+      } catch(e){}
+      ctx.fillStyle = 'rgba(160,180,150,0.55)';
+      ctx.font = '700 14px Bebas Neue, sans-serif';
+      ctx.fillText('LUCID WINDS', cardW/2, divY + 26);
+      if (_ftGrade) {
+        ctx.fillStyle = _ftGrade.color || 'rgba(200,168,75,0.9)';
+        ctx.font = '700 15px Bebas Neue, sans-serif';
+        ctx.fillText(_ftGrade.name.toUpperCase() + '  ·  ONE OF ONE, FOREVER', cardW/2, divY + 46);
+      }
+      // URL sits at the true bottom of the card (the haiku owns divY+76+).
+      ctx.fillStyle = 'rgba(200,168,75,0.85)';
+      ctx.font = '700 15px DM Mono, monospace';
+      ctx.fillText('grow yours at lucidwinds.com', cardW/2, cardH - 40);
 
       // Haiku inscription — bold + glowing
       ctx.fillStyle = 'rgba(240,235,216,0.88)';
