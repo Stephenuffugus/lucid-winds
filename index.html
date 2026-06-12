@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.20';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.21';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -27369,12 +27369,12 @@ document.addEventListener('keydown', function(e) {
     var s = '';
 
     // Glow flower (rare)
-    if (t.flower === 15) {
-      s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*2.5)+'" fill="url(#gp'+uid+')" filter="url(#gw'+uid+')"/>';
-      s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+fs+'" fill="#C8A84B" opacity="'+(0.9*bloomOp)+'"/>';
-      s += '<circle cx="'+fx+'" cy="'+fy+'" r="'+(fs*0.35)+'" fill="#EAE0C8" opacity="'+bloomOp+'"/>';
-      return s;
-    }
+    // Jun-12 art pass: REMOVED the legacy Glow Flower early-return that
+    // intercepted flower 15 and drew a gold orb instead of the switch —
+    // it had been shadowing the full Bell Flowers rebuild (case 15,
+    // Stephen-commissioned 2026-05-02) since the day it shipped. The
+    // Jun-12 lock retirement removed the rarity forcing; this removes
+    // the visual override so the bells finally render.
 
     switch(t.flower % 73) { // set-103-8: expanded → %46 (38 original + 8 ChatGPT art round)
       case 0: // Bud — tightly closed waxy bud with sepal wrap (precursor)
@@ -27698,7 +27698,7 @@ document.addEventListener('keydown', function(e) {
         fy = fy - fs * 0.2; // Stephen 2026-05-01 PART 3: bloom going off-screen, reduced shift
         // Crocus is TALL and NARROW — petals reach up fs*1.85, base barely fs*0.45 wide
         var _cr7H = fs * 1.85;       // total bloom height
-        var _cr7W = fs * 0.42;       // base half-width (very narrow)
+        var _cr7W = fs * 0.56;       // base half-width (Jun-12: 0.42→0.56 — petals had edges but no body; goblet needed volume)
         var _cr7Tip = fy - _cr7H;    // apex y
         var _cr7dk = _hueShift(fc, parseInt(uid.slice(0,2),16), -14);
         var _cr7lt = _hueShift(fc, parseInt(uid.slice(2,4),16), 16);
@@ -28921,20 +28921,28 @@ document.addEventListener('keydown', function(e) {
         fy = fy - fs * 0.7; // Stephen 2026-05-01: shift bloom up so its base sits at stem tip
         s += '<line x1="'+fx+'" y1="'+(fy-fs*1.1)+'" x2="'+fx+'" y2="'+(fy+fs*1.5)+'" stroke="rgba(40,20,5,0.4)" stroke-width="0.5" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
         // 5 stacked dragon mouths — bottom open, top buds (§3.G real spikes bloom bottom-up)
+        // Jun-12 art pass: florets were 0.56fs tall on 0.46fs spacing — they
+        // overlapped into a featureless pancake stack. Now spaced 0.58fs,
+        // alternating left/right off the rachis like a real spike, tapering
+        // toward bud at the top, with a domed hood + deeper mouth shadow.
         for (var sn3 = 0; sn3 < 5; sn3++) {
-          var sn3y = fy - fs*0.9 + sn3 * fs*0.46;
-          // Hood (upper lip) — back petal, dimmed
-          s += '<path d="M'+fx+','+sn3y+' C'+(fx-fs*0.55)+','+(sn3y-fs*0.14)+' '+(fx-fs*0.62)+','+(sn3y+fs*0.36)+' '+fx+','+(sn3y+fs*0.42)+' C'+(fx+fs*0.62)+','+(sn3y+fs*0.36)+' '+(fx+fs*0.55)+','+(sn3y-fs*0.14)+' '+fx+','+sn3y+' Z" fill="'+fc+'" opacity="'+((0.78-sn3*0.06)*bloomOp)+'"/>';
+          var sn3s = fs * (1 - sn3 * 0.10);
+          var sn3x = fx + ((sn3 % 2 === 0) ? -1 : 1) * fs * 0.12;
+          var sn3y = fy - fs*1.05 + sn3 * fs*0.58;
+          // Hood (upper lip) — domed back petal
+          s += '<path d="M'+sn3x+','+sn3y+' C'+(sn3x-sn3s*0.55)+','+(sn3y-sn3s*0.30)+' '+(sn3x-sn3s*0.62)+','+(sn3y+sn3s*0.30)+' '+sn3x+','+(sn3y+sn3s*0.36)+' C'+(sn3x+sn3s*0.62)+','+(sn3y+sn3s*0.30)+' '+(sn3x+sn3s*0.55)+','+(sn3y-sn3s*0.30)+' '+sn3x+','+sn3y+' Z" fill="'+fc+'" opacity="'+((0.85-sn3*0.06)*bloomOp).toFixed(2)+'"/>';
+          // Mouth cavity shadow under the hood (sells the open jaw)
+          s += '<path d="M'+(sn3x-sn3s*0.42)+','+(sn3y+sn3s*0.16)+' Q'+sn3x+','+(sn3y+sn3s*0.34)+' '+(sn3x+sn3s*0.42)+','+(sn3y+sn3s*0.16)+' Q'+sn3x+','+(sn3y+sn3s*0.24)+' '+(sn3x-sn3s*0.42)+','+(sn3y+sn3s*0.16)+' Z" fill="rgba(40,20,5,0.5)" opacity="'+(bloomOp*0.7).toFixed(2)+'"/>';
           // Hinge dark seam (mouth line — warm dark §1)
-          s += '<path d="M'+(fx-fs*0.5)+','+(sn3y+fs*0.14)+' Q'+fx+','+(sn3y+fs*0.22)+' '+(fx+fs*0.5)+','+(sn3y+fs*0.14)+'" fill="none" stroke="rgba(40,20,5,0.55)" stroke-width="0.55" stroke-linecap="round" opacity="'+(bloomOp*0.78)+'"/>';
-          // Lower lip — cream, lighter
-          s += '<path d="M'+fx+','+(sn3y+fs*0.08)+' C'+(fx-fs*0.38)+','+(sn3y+fs*0.16)+' '+(fx-fs*0.42)+','+(sn3y+fs*0.52)+' '+fx+','+(sn3y+fs*0.56)+' C'+(fx+fs*0.42)+','+(sn3y+fs*0.52)+' '+(fx+fs*0.38)+','+(sn3y+fs*0.16)+' '+fx+','+(sn3y+fs*0.08)+' Z" fill="#f5ecd6" opacity="'+(0.42*bloomOp)+'"/>';
+          s += '<path d="M'+(sn3x-sn3s*0.5)+','+(sn3y+sn3s*0.14)+' Q'+sn3x+','+(sn3y+sn3s*0.26)+' '+(sn3x+sn3s*0.5)+','+(sn3y+sn3s*0.14)+'" fill="none" stroke="rgba(40,20,5,0.6)" stroke-width="0.55" stroke-linecap="round" opacity="'+(bloomOp*0.8).toFixed(2)+'"/>';
+          // Lower lip — cream pout, hinged forward
+          s += '<path d="M'+sn3x+','+(sn3y+sn3s*0.16)+' C'+(sn3x-sn3s*0.36)+','+(sn3y+sn3s*0.22)+' '+(sn3x-sn3s*0.34)+','+(sn3y+sn3s*0.52)+' '+sn3x+','+(sn3y+sn3s*0.50)+' C'+(sn3x+sn3s*0.34)+','+(sn3y+sn3s*0.52)+' '+(sn3x+sn3s*0.36)+','+(sn3y+sn3s*0.22)+' '+sn3x+','+(sn3y+sn3s*0.16)+' Z" fill="#f5ecd6" opacity="'+(0.55*bloomOp).toFixed(2)+'"/>';
           // Lower-lip hinge highlight
-          s += '<path d="M'+(fx-fs*0.36)+','+(sn3y+fs*0.18)+' Q'+fx+','+(sn3y+fs*0.1)+' '+(fx+fs*0.36)+','+(sn3y+fs*0.18)+'" fill="none" stroke="#fff8e0" stroke-width="0.32" opacity="'+(bloomOp*0.55)+'" stroke-linecap="round"/>';
-          // Throat dot — didynamous stamen pair peeking
+          s += '<path d="M'+(sn3x-sn3s*0.30)+','+(sn3y+sn3s*0.24)+' Q'+sn3x+','+(sn3y+sn3s*0.16)+' '+(sn3x+sn3s*0.30)+','+(sn3y+sn3s*0.24)+'" fill="none" stroke="#fff8e0" stroke-width="0.32" opacity="'+(bloomOp*0.55).toFixed(2)+'" stroke-linecap="round"/>';
+          // Throat dot — didynamous stamen pair peeking from open mouths
           if (sn3 < 3) {
-            s += '<circle cx="'+(fx-fs*0.06)+'" cy="'+(sn3y+fs*0.26)+'" r="'+(fs*0.04)+'" fill="#3a1208" opacity="'+(bloomOp*0.8)+'"/>';
-            s += '<circle cx="'+(fx+fs*0.06)+'" cy="'+(sn3y+fs*0.28)+'" r="'+(fs*0.04)+'" fill="#3a1208" opacity="'+(bloomOp*0.8)+'"/>';
+            s += '<circle cx="'+(sn3x-sn3s*0.06)+'" cy="'+(sn3y+sn3s*0.24)+'" r="'+(sn3s*0.05).toFixed(2)+'" fill="#3a1208" opacity="'+(bloomOp*0.8).toFixed(2)+'"/>';
+            s += '<circle cx="'+(sn3x+sn3s*0.06)+'" cy="'+(sn3y+sn3s*0.26)+'" r="'+(sn3s*0.05).toFixed(2)+'" fill="#3a1208" opacity="'+(bloomOp*0.8).toFixed(2)+'"/>';
           }
         }
         // Center stamen highlight
@@ -30020,11 +30028,15 @@ document.addEventListener('keydown', function(e) {
         var _rvPearl = '#FFF4F0';
         s += '<defs>';
         s += '<radialGradient id="rvPet'+uid+'" cx="50%" cy="60%" r="60%">';
-        s +=   '<stop offset="0%" stop-color="'+_rvWarm+'" stop-opacity="0.92"/>';
-        s +=   '<stop offset="35%" stop-color="'+_rvWarm+'" stop-opacity="0.78"/>';
-        s +=   '<stop offset="70%" stop-color="'+_rvCool+'" stop-opacity="0.42"/>';
-        s +=   '<stop offset="92%" stop-color="'+_rvCool+'" stop-opacity="0.10"/>';
-        s +=   '<stop offset="100%" stop-color="'+_rvCool+'" stop-opacity="0"/>';
+        // Jun-12 art pass: outer stops were 0.42→0.10→0 — petals vanished
+        // on the midnight bg and the Mythic read as an empty smudge with a
+        // pearl. Petals now hold to the rim; the dream-fade stays but the
+        // flower exists.
+        s +=   '<stop offset="0%" stop-color="'+_rvWarm+'" stop-opacity="0.95"/>';
+        s +=   '<stop offset="35%" stop-color="'+_rvWarm+'" stop-opacity="0.85"/>';
+        s +=   '<stop offset="70%" stop-color="'+_rvCool+'" stop-opacity="0.60"/>';
+        s +=   '<stop offset="92%" stop-color="'+_rvCool+'" stop-opacity="0.34"/>';
+        s +=   '<stop offset="100%" stop-color="'+_rvCool+'" stop-opacity="0.14"/>';
         s += '</radialGradient>';
         s += '<radialGradient id="rvPearl'+uid+'" cx="42%" cy="40%" r="65%">';
         s +=   '<stop offset="0%" stop-color="#FFF8F0" stop-opacity="1"/>';
