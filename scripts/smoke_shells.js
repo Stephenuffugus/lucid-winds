@@ -33,7 +33,7 @@ var FIRST_WAVE = [
   'simon', 'memory', 'merge', 'lights', 'flood',
   'sudoku', 'stopten', 'slider', 'mines', 'hanoi',
   // ── Wave 2 ──
-  'battleship', 'c4', 'chess', 'colorsort', 'dailybloom',
+  'battleship', 'c4', 'chess', 'colorsort', 'dailybloom', 'dewtrail',
   'gardenlines', 'jade', 'juniper', 'kakuro', 'mosaic',
   'numbergarden', 'petalfall', 'petalmatch', 'pipe', 'pollen',
   'pottingbench', 'recall', 'rootflow', 'rootmaze', 'rootrush',

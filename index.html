@@ -61880,7 +61880,8 @@ var G=[
 {id:'recall',n:'Memory Meadow',i:'\ud83e\udde0',r:'Memory recall: watch symbols, count backwards, tap the ones you saw.',cat:'pattern',thumb:'assets/games/thumbs/recall.png'},
 {id:'rhythmvine',n:'Rhythm and Vine',i:'\ud83c\udfb5',r:'Tap to the beat! Perfect, Great, Good timing windows. Level up your rhythm. (A play on rhythm and rhyme.)',cat:'creative',thumb:'assets/games/thumbs/rhythmvine.png',wip:true},
 {id:'seedtoss2',n:'Seed Toss',i:'\ud83c\udf31',r:'Flick seeds into the pot. Physics + wind at higher levels. Hit the bullseye!',cat:'creative',thumb:'assets/games/thumbs/seedtoss2.png'},
-{id:'pottingbench',n:'Speed Sort',i:'\ud83e\udeb4',r:'Speed card sorting. Match any attribute to send a card to either pile. Clear the deck fast!',cat:'pattern',thumb:'assets/games/thumbs/pottingbench.png'}
+{id:'pottingbench',n:'Speed Sort',i:'\ud83e\udeb4',r:'Speed card sorting. Match any attribute to send a card to either pile. Clear the deck fast!',cat:'pattern',thumb:'assets/games/thumbs/pottingbench.png'},
+{id:'dewtrail',n:'Dew Trail',i:'\ud83d\udca7',r:'One unbroken dew trail: drag from 1 through every cell, collecting numbers in order, never crossing. One daily puzzle \u2014 the same trail for every keeper on Earth \u2014 plus endless practice.',cat:'puzzle',thumb:'assets/games/thumbs/dewtrail.png'}
 ];
 window.G=G;          // expose so rules-modal + other helpers can look up game metadata
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
@@ -62064,7 +62065,8 @@ var _afGameClass={
   // starving a 15-30 bank game; yahtzee already had 'marathon'. slider made
   // explicit so the Jessie zero-payout omission pattern can't recur.
   farkle:'marathon',
-  slider:'standard'
+  slider:'standard',
+  dewtrail:'sprint'
 };
 // Reset guards on game switch (called from _sg)
 function _afReset(){_afSessionProg=0;_afSessionSunbeams=0;}
@@ -62141,6 +62143,7 @@ var _aw={
   petalblink:{progress:1,milestone:1,game_win:4,default:0},
   // Stephen 2026-05-02 — see _afGameClass note.
   pottingbench:{progress:1,milestone:1,game_win:4,game_loss:1,default:0},
+  dewtrail:{milestone:1,game_win:3,game_loss:0,default:0},
   stopten:{progress:1,milestone:1,game_win:3,game_loss:0,default:0},
   rootrush:{progress:1,milestone:1,game_win:4,game_loss:0,default:0}
 };

@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: reversi
  *
  * COPY of the inline GRV mount function from index.html
- * lines 67430-67688.
+ * lines 67433-67691.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves

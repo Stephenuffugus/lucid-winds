@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: yahtzee
  *
  * COPY of the inline GY mount function from index.html
- * lines 66446-66763.
+ * lines 66449-66766.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
