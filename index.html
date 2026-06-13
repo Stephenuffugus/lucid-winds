@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.24';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.13.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -12688,7 +12688,7 @@ document.addEventListener('keydown', function(e) {
 
     // Mendelian recessive overrides (non-mythic, non-mutation traits)
     if(a[0]==='f' && b[0]==='f') child[0]='f';   // Golden Pot
-    if(a[11]==='f'&& b[11]==='f') child[11]='f'; // Glow Flower
+    if(a[11]==='f'&& b[11]==='f') child[11]='f'; // Bell Flowers (flower 15, formerly 'Glow Flower')
 
     // ── INBREEDING DEPRESSION (Critical Systems spec) ──────────────
     // Byte positions: mutation = [16,17], mythic = [18,19]
@@ -29083,8 +29083,10 @@ document.addEventListener('keydown', function(e) {
       case 32: // Queen Anne's Lace — flat compound umbel with tiny floret clusters
         // Each of 8 primary rays fans out, each tipped with a cluster of 3-4 tiny florets
         var _q32uy = fy - fs * 0.3; // umbel center (slightly above bloom origin)
+        // (the May-01 blanket fy-shift that lived here was dead code after
+        // the Jun-12 floating-beads fix — every element anchors to _q32uy;
+        // do NOT re-add a post-_q32uy fy shift, it re-creates ghost geometry)
         // Soft dome behind
-        fy = fy - fs * 0.7; // Stephen 2026-05-01: shift bloom up (blanket pass)
         s += '<ellipse cx="'+fx+'" cy="'+_q32uy+'" rx="'+(fs*1.1)+'" ry="'+(fs*0.5)+'" fill="'+bg+'" opacity="'+(bloomOp*0.06)+'"/>';
         for (var _q32i = 0; _q32i < 8; _q32i++) {
           var _q32a = (_q32i * 45 - 90) * Math.PI / 180;
@@ -47544,7 +47546,7 @@ document.addEventListener('keydown', function(e) {
     // Check key trait slots for parent match
     var _checks = [
       { name: 'Golden Pot', child: cT.pot === 15, a: aT.pot === 15, b: bT.pot === 15 },
-      { name: 'Glow Flower', child: cT.flower === 15 && cT.hasFlower, a: aT.flower === 15 && aT.hasFlower, b: bT.flower === 15 && bT.hasFlower },
+      { name: 'Bell Flowers', child: cT.flower === 15 && cT.hasFlower, a: aT.flower === 15 && aT.hasFlower, b: bT.flower === 15 && bT.hasFlower },
       { name: cT.mythicName || 'None', child: cT.companion >= 32 && cT.companion <= 38, a: aT.companion >= 32, b: bT.companion >= 32, mythic: true },
       { name: cT.mutationName || 'None', child: cT.mutationName !== 'None', a: aT.mutationName !== 'None', b: bT.mutationName !== 'None', mutation: true }
     ];
@@ -55178,7 +55180,7 @@ function _buildInfo(hash){
       nm=A[parseInt(hash.substring(0,2),16)%A.length]+' '+N[parseInt(hash.substring(2,4),16)%N.length];
       if(t.mutationName&&t.mutationName!=='None') rarities.push(t.mutationName);
       if(t.mythic>=0xD0){var m=t.mythic===0xFF?'Beholder':t.mythic>=0xFE?'Spider':t.mythic>=0xFC?'Heron':t.mythic>=0xF8?'Raccoon':t.mythic>=0xF4?'Mammoth':t.mythic>=0xE0?'Cicada':'Toad';rarities.push(m);}
-      if(t.hasFlower&&t.flower===15) rarities.push('Glow Flower');
+      if(t.hasFlower&&t.flower===15) rarities.push('Bell Flowers');
       if(t.pot===15) rarities.push('Golden Pot');
       if(t.base===15) rarities.push('Crystal Base');
       if(t.aura>0) rarities.push('Aura');
@@ -76954,6 +76956,29 @@ function _getStep(){var s=localStorage.getItem(TK);if(s==='done')return -1;retur
 function _setStep(n){localStorage.setItem(TK,String(n));}
 function _done(){_setStep('done');_clear();try{localStorage.removeItem('lw_tut_sow_attempts');}catch(e){}}
 
+// TIMEOUT PARK (2026-06-13): the May-15 fix (95e78f1) stopped the two
+// first-game watchers from permanently killing the tutorial on a passive
+// timeout (_done() sets lw_tut='done'; _lwResumeBoot bails on 'done', so
+// the player NEVER gets the tutorial back). The same antipattern lived at
+// 11 later sites. On a passive timeout we now park instead: clear the
+// dialog/spotlight, release every restrictive body lock so the current
+// session is fully usable, but KEEP the numeric step persisted —
+// _lwResumeBoot + _applyResumeBaseClasses + the per-step entry functions
+// re-establish their own locks/watchers cleanly on next load. Nav-unlock
+// classes (lw-tut-nav-*) are deliberately NOT removed: without one the
+// whole nav re-dims. Deliberate exits (stuck-links the player taps, env
+// guards, the final BEGIN button) still call _done().
+function _parkTutOnTimeout(){
+  _clear();
+  try{
+    document.body.classList.remove(
+      'lw-tut-mint-only','lw-tut-sb-on','lw-tut-carousel-lock',
+      'lw-tut-carousel-freeze','lw-tut-carousel-breed-only','lw-tut-breed-only',
+      'lw-tut-limit-actions','lw-tut-water-only','lw-tut-newplant-target',
+      'lw-tut-game-handoff');
+  }catch(e){}
+}
+
 function _clear(){
   if(_ov&&_ov.parentNode)_ov.remove();_ov=null;
   if(_dlg&&_dlg.parentNode)_dlg.remove();_dlg=null;
@@ -77828,8 +77853,9 @@ function _step16AfterCelebration(attempts){
         if(kbs2)kbs2.classList.remove('lw-pulse-hint');
         var _sbArrZ=document.getElementById('_lw-tut-sb-arrow');
         if(_sbArrZ&&_sbArrZ.parentNode)_sbArrZ.remove();
-        try{document.body.classList.remove('lw-tut-mint-only','lw-tut-sb-on');}catch(e){}
-        _done();
+        // No ready sunbeams to mint — park (step 16 stays persisted so the
+        // resume hook re-enters once they've earned some), don't perma-kill.
+        _parkTutOnTimeout();
       },8000);
     }
   },600);
@@ -77854,8 +77880,7 @@ function _watchMintModal(attempts){
     if(kbs2)kbs2.classList.remove('lw-pulse-hint');
     var _sbArrT=document.getElementById('_lw-tut-sb-arrow');
     if(_sbArrT&&_sbArrT.parentNode)_sbArrT.remove();
-    try{document.body.classList.remove('lw-tut-mint-only','lw-tut-sb-on');}catch(e){}
-    _done();
+    _parkTutOnTimeout(); // step 16 stays persisted -> resume re-enters _step16
   }
 }
 
@@ -77901,7 +77926,7 @@ function _watchMintComplete(attempts){
     return;
   }
   if(attempts<240){setTimeout(function(){_watchMintComplete(attempts+1);},500);}
-  else {_done();}
+  else {_parkTutOnTimeout();} // step 17 stays -> resume re-enters _step16 (also releases the mint-only lock for this session)
 }
 
 function _waitForCelebrationDismiss(attempts){
@@ -77939,12 +77964,12 @@ function _step18(){
       return;
     }
     if(polls<1200){polls++;setTimeout(waitForGH,500);} // 10 min grace
-    else {_done();}
+    else {_parkTutOnTimeout();} // step 18 stays -> resume re-enters _step18
   };
   waitForGH();
   // The flip-reveal hook advances to _step19 on first-reveal of any card
   // while at step 18. 10-min safety fallback.
-  setTimeout(function(){if(_getStep()===18)_done();},600000);
+  setTimeout(function(){if(_getStep()===18)_parkTutOnTimeout();},600000);
 }
 
 // Safety net for step 18 → step 19. Two jobs:
@@ -78062,7 +78087,7 @@ function _step19(){
       _clear();setTimeout(_step20,900);return;
     }
     if(polls<300){polls++;setTimeout(watch,500);}
-    else {_done();}
+    else {_parkTutOnTimeout();} // step stays -> resume re-enters _step18
   };
   watch();
 }
@@ -78149,7 +78174,7 @@ function _step20(){
       _clear();setTimeout(_step22,2500);return;
     }
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {_done();}
+    else {_parkTutOnTimeout();} // step stays -> resume re-enters; also unlocks breed-only for this session
   };
   watch();
 }
@@ -78360,7 +78385,7 @@ function _step23WaitForReveal(attempts){
     // register (iOS pointer-events quirks on 3D-transformed children).
     _step23CarouselSafety();
     // 10-min safety fallback.
-    setTimeout(function(){if(_getStep()===23)_done();},600000);
+    setTimeout(function(){if(_getStep()===23)_parkTutOnTimeout();},600000);
   },800);
 }
 
@@ -78494,7 +78519,7 @@ function _step24(){
       return;
     }
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {_done();}
+    else {_parkTutOnTimeout();} // step stays -> resume re-enters
   };
   watch();
 }
@@ -78637,7 +78662,7 @@ function _step28(){
     // open transition to fire. (Player closed it without tapping the pulse.)
     if(!nowOpen)_wasOpen=false;
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {_done();}
+    else {_parkTutOnTimeout();} // step stays -> resume re-enters
   };
   watch();
 }
@@ -78757,7 +78782,7 @@ function _step32b(){
       return;
     }
     if(polls<600){polls++;setTimeout(watch,500);}
-    else {_done();}
+    else {_parkTutOnTimeout();} // step stays -> resume re-enters
   };
   watch();
 }
@@ -81313,7 +81338,7 @@ window.breedingForecast=function(hashA,hashB){
       else if(dom<8){child[mi]=a[mi];}
       else{child[mi]=b[mi];}
     }
-    // Mendelian recessive overrides for Golden Pot + Glow Flower, same
+    // Mendelian recessive overrides for Golden Pot + Bell Flowers, same
     // as the real path — keeps those rare-but-reachable distributions.
     if(a[0]==='f'&&b[0]==='f')child[0]='f';
     if(a[11]==='f'&&b[11]==='f')child[11]='f';
