@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.12.23';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.12.24';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -33885,7 +33885,11 @@ document.addEventListener('keydown', function(e) {
           s += '<path d="'+_nrGlyph+'" fill="none" stroke="rgba(200,168,75,0.7)" stroke-width="0.8" stroke-linecap="round"/>';
           // Cream core — sharp inner light
           s += '<path d="'+_nrGlyph+'" fill="none" stroke="#fff8e0" stroke-width="0.3" stroke-linecap="round"/>';
-          s += '<animateTransform attributeName="transform" type="translate" values="'+_nrx+','+_nry+';'+_nrx+','+(parseFloat(_nry)-90).toFixed(1)+'" dur="'+_nrdur+'s" begin="'+_nrbeg+'s" repeatCount="indefinite" calcMode="linear"/>';
+          // Rise ends just past the viewBox top (-8), not a fixed 90 units —
+          // glyphs were sailing ~58 units above the card at full opacity
+          // (overflow:visible on .greenhouse-plant means they float over
+          // neighboring cards / UI above)
+          s += '<animateTransform attributeName="transform" type="translate" values="'+_nrx+','+_nry+';'+_nrx+',-8" dur="'+_nrdur+'s" begin="'+_nrbeg+'s" repeatCount="indefinite" calcMode="linear"/>';
           s += '<animate attributeName="opacity" values="0;0.65;0.65;0" keyTimes="0;0.12;0.78;1" dur="'+_nrdur+'s" begin="'+_nrbeg+'s" repeatCount="indefinite"/>';
           s += '</g>';
         }
