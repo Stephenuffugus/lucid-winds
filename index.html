@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.13.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.14.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -50631,6 +50631,22 @@ document.addEventListener('keydown', function(e) {
             localStorage.setItem('lw_trigger_check_today',_rNow);
             if(window._runDailyTriggerCheck){try{window._runDailyTriggerCheck();}catch(e){}}
           }
+          // 2026-06-14: GPS-free wild LIFECYCLE heartbeat. The climate tick
+          // + _pruneWild were ONLY reachable from a fully-loaded Wild-tab
+          // visit (activate()/_loadAll, both _uLat+_map gated). Players who
+          // dropped plants and didn't return — or whose GPS never resolved
+          // (common in Pi Browser) — had the intrinsic 3-day lifespan never
+          // evaluated, so wild plants lived forever. Mirror the omen
+          // decouple above: accrue climate damage against cached/neutral
+          // weather, then prune the dead. Runs every boot (both are
+          // self-throttled: climate via per-plant 20h lastClimateTick,
+          // prune is idempotent), so death is enforced promptly even if the
+          // player never opens the Wild tab.
+          try{
+            var _wx=window._reproWeather||{temp:20,rain:0,wind:0};
+            if(window._wildClimateTick){try{window._wildClimateTick(_wx);}catch(e){}}
+            if(window._pruneWild){try{window._pruneWild();}catch(e){}}
+          }catch(e){}
         },5000); // 5s delay to let everything load
         // Force save to cloud after successful auth
         setTimeout(function() {
@@ -54110,6 +54126,15 @@ function _wildClimateTick(weather) {
   }
 }
 window._wildClimateTick = _wildClimateTick;
+// 2026-06-14: expose the prune so the GPS-free boot heartbeat (and the
+// dev "kill oldest" tool at ~9603) can force-evaluate wild-plant death
+// without a fully-loaded Wild-tab visit. A stale comment near 9602 long
+// claimed this was exposed Apr-14; it never actually was, so plants whose
+// intrinsic 3-day lifespan elapsed were never removed unless the player
+// reopened a GPS-resolved Wild tab. That was THE cause of "plants live
+// forever." _pruneWild is idempotent and cheap (filters the local array,
+// deletes only owned dead Firestore docs, respects the 72h dormant grace).
+window._pruneWild = _pruneWild;
 
 function _doReproduction(weather, simMode) {
   var user = firebase.auth().currentUser;
