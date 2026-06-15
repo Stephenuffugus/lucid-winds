@@ -41,6 +41,35 @@
  *
  * ════════════════════════════════════════════════════════════════════ */
 
+/* perf-lite detection — 2026-06-15. The main app (index.html) auto-throttles
+ * low-end devices, but the public portal/shells had NO governor. This mirrors
+ * index.html's detector (cores/mem/old-iOS/Android + the lw_perf_lite override
+ * Stephen's "Reduce Effects" toggle writes) and tags <html> before first paint
+ * so shell.css can drop expensive effects (e.g. the blurred sticky header) on
+ * weak library tablets. Runs first so the class is set before the body renders. */
+(function(){
+  var o = null;
+  try { o = localStorage.getItem('lw_perf_lite'); } catch(e){}
+  var lite = false;
+  if (o === '1') lite = true;
+  else if (o === '0') lite = false;
+  else {
+    var c = navigator.hardwareConcurrency || 2;
+    var m = navigator.deviceMemory || 0;
+    var ua = navigator.userAgent || '';
+    if (c <= 4) lite = true;
+    if (m > 0 && m <= 4) lite = true;
+    if (/iPhone|iPad|iPod/.test(ua)) {
+      var x = ua.match(/OS (\d+)/);
+      if (x && parseInt(x[1], 10) < 16) lite = true;
+      if (c <= 2) lite = true;
+    }
+    if (/Android/.test(ua) && c <= 4) lite = true;
+  }
+  if (lite && document.documentElement) document.documentElement.classList.add('perf-lite');
+  window._perfLite = lite;
+})();
+
 (function(global){
   'use strict';
 
