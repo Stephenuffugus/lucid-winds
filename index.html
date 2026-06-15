@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.15.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.15.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -39789,11 +39789,16 @@ document.addEventListener('keydown', function(e) {
       // (climate-tolerance overlap, harmless), h[63] (past hashToTraits
       // usage). This shifts the haiku for some existing pre-launch test
       // plants, which is the cost of unlocking the back 75% of the bank.
-      // Line 1 = seasonal kigo opener for THIS plant's season (matches the
-      // card; season = parseInt(h[22]+h[23],16)%4, same as hashToTraits).
-      // Falls back to HAIKU_A if a season bank is missing so it can't break.
+      // Line 1: only SOME plants get a seasonal kigo opener (Stephen call —
+      // not every poem should be "about" its season). The rest draw a general
+      // opener from the full HAIKU_A bank, so plenty of poems have no seasonal
+      // tie. season = parseInt(h[22]+h[23],16)%4 (same as hashToTraits). h[24]
+      // picks seasonal-vs-general: `< 8` ≈ 50/50. Tune that threshold (0-16) —
+      // higher = more seasonal, lower = more general. Falls back to HAIKU_A if
+      // a season bank is empty so it can never break.
       var seas = (parseInt(h[22] + h[23], 16) || 0) % 4;
-      var KB = _KIGO[seas]; if (!KB || !KB.length) KB = HAIKU_A;
+      var KS = _KIGO[seas];
+      var KB = (KS && KS.length && (parseInt(h[24], 16) || 0) < 8) ? KS : HAIKU_A;
       var i1 = (parseInt(h[35]+h[26]+h[27], 16) || 0) % KB.length;
       var i2 = (parseInt(h[55]+h[28]+h[29], 16) || 0) % HAIKU_B.length;
       var i3 = (parseInt(h[63]+h[30]+h[31], 16) || 0) % HAIKU_C_POOL.length;
