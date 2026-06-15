@@ -480,10 +480,12 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 ---
 
 ## HAIKU ENGINE
-- 7-5-7 syllable structure (strict, verified)
-- 1,038-word bank (v4.1)
-- Every plant gets a unique procedural haiku from its hash
+- 5-7-5 syllable structure (curated line banks HAIKU_A=5, HAIKU_B=7, HAIKU_C=5; was mislabeled "7-5-7")
+- Curated banks in word-banks.js: HAIKU_A 1123 / HAIKU_B 1100 / HAIKU_C 1048 lines (~1.3B combos)
+- **2026-06-15:** ALL plants route through the curated pre-composed bank (getHaiku gate widened `<8`→`<16`). The old template-builder path (selector ≥ 8, ~50% of plants) produced grammatically broken "word salad" and is now dead code (revert gate to `<8` to re-enable).
+- Every plant gets a unique procedural haiku from its hash (deterministic; indices from h[35]+h[26..31] etc.)
 - `window.getHaiku(hash)` returns `{ line1, line2, line3 }`
+- OPEN ENHANCEMENT (parked): tie haiku to the plant's season (kigo) / traits — currently hash-only, no connection to the actual plant.
 
 ---
 

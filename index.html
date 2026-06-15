@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.15.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.15.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -39763,7 +39763,16 @@ document.addEventListener('keydown', function(e) {
   function getHaiku(hash) {
     var h = (hash || '00000000000000000000000000000000').toLowerCase();
     var selector = parseInt(h[25], 16) || 0;
-    if (selector < 8) {
+    // Stephen 2026-06-15: route ALL plants through the curated pre-composed
+    // bank. The template-builder path below (selector >= 8) produced
+    // grammatically broken "word salad" on ~50% of plants ("Exposes worn den",
+    // "Cairn resonates around slab"), while the curated banks read as real
+    // poetry. PRE alone yields ~1.3B combinations (1123*1100*1048) so variety
+    // is a non-issue. Gate was `< 8` (50/50); `< 16` always fires since
+    // parseInt(h[25],16) maxes at 15. Template code left in place but dead;
+    // revert to `< 8` to re-enable. Re-skins haiku on existing test plants
+    // (accepted pre-launch, same as the 2026-05-02 index widening).
+    if (selector < 16) {
       // Pre-composed mode — use curated line banks (highest quality).
       // Stephen 2026-05-02: index window widened from 2 hex chars (8 bits,
       // 256 max) to 3 hex chars (12 bits, 4096 max) so every entry in the
