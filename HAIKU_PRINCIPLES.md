@@ -33,8 +33,11 @@ state a moral. The 2026-06-15 pass rewrote ~95 abstractions into concrete
 images for exactly this reason (*"Patience made the canyon deep" → "Slow water
 cut the canyon"*).
 
-**No closure.** Great haiku open; they do not wrap up. Avoid tidy conclusions
-(*"Green wins in the end," "And the oak still stands"* — both retired).
+**No closure — used sparingly.** Classical haiku open; they do not wrap up. But
+the Director's taste keeps a place for the gnomic, aphoristic line when it is
+*true and poetic* (*"Patience made the canyon deep"*). These are allowed as a
+minority voice — earn them, keep them resonant, never let them become the
+default register.
 
 **Kigo, lightly.** A seasonal word situates a poem but is not mandatory.
 
@@ -44,9 +47,12 @@ cut the canyon"*).
 
 1. **5–7–5.** HAIKU_A = 5, HAIKU_B = 7, HAIKU_C / KIGO_* = 5. (It was mislabeled
    "7-5-7" in old docs — it is 5-7-5.)
-2. **Show, don't tell.** No abstractions as the subject: *faith, love, proof,
-   gift, truth, hope, grief, joy, patience, fate, mercy, wisdom.* No moral, no
-   aphorism, no "X wins / X is enough / X teaches Y." Concrete image only.
+2. **Mostly show, don't tell — but aphorism is allowed in moderation.** Default
+   to the concrete sensory image (Shiki). Abstract/gnomic lines (*"Patience made
+   the canyon deep"*) are PERMITTED as a minority voice when genuinely true and
+   poetic — DIRECTOR'S RULING 2026-06-15 (the earlier blanket purge of ~95 such
+   lines was reverted; he likes them). The failure mode to avoid is *bulk*
+   abstraction or flat moralizing, not the occasional resonant aphorism.
 3. **Concrete personification is allowed and encouraged** when a *real creature
    or thing* does something *observable* ("the fox knows the path"). Abstract
    personification is not ("the land knows its name" → retired).

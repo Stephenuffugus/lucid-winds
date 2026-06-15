@@ -4,9 +4,9 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v12';
-var ASSET_CACHE = 'lw-assets-v12';
-var GAME_CACHE = 'lw-games-v12';
+var CACHE_VERSION = 'lw-v13';
+var ASSET_CACHE = 'lw-assets-v13';
+var GAME_CACHE = 'lw-games-v13';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 
