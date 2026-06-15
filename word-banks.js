@@ -1780,7 +1780,37 @@
     'The barn owl glides low past field',
     'Tree frogs tune the dim cool dusk',
     'The yew breathes through the long night',
-    'Roots grow in the dark past dusk'
+    'Roots grow in the dark past dusk',
+    'Roots hold the hill through the storm',
+    'Moss seals the crack in the stone',
+    'The slow vine outlasts the wall',
+    'Rain finds the root through deep soil',
+    'Lichen writes slow on the rock',
+    'The seed waits longer than stone',
+    'Bark closes over the wound',
+    'Old wood remembers the drought',
+    'Water carves what will not bend',
+    'The fern unrolls in dim light',
+    'Frost cannot reach the deep root',
+    'Moss greens the trunk on one side',
+    'The crow knows where the corn falls',
+    'Mushrooms ring the fallen oak',
+    'Snow feeds the slow spring beneath',
+    'The river keeps its long road',
+    'Seeds drift far from the bent stalk',
+    'Each ring records a dry year',
+    'The marsh hides what the tide leaves',
+    'Bees map the field by the sun',
+    'Roots drink long after the rain',
+    'The owl waits where the field ends',
+    'Stone gives its warmth to the moss',
+    'The pond keeps the sky face down',
+    'Ants move the hill grain by grain',
+    'Wind plants the seed in the crack',
+    'The vine climbs up to the light',
+    'Old roots feed the young green shoot',
+    'The thaw frees the trapped brown leaf',
+    'Light reaches the forest floor'
   ];
 
   var HAIKU_C = [
@@ -1888,11 +1918,41 @@
     'Privet flowers hum','Ivy grips the stone','Trillium opens','Bloodroot stained the loam','Wood sorrel folds dim','Violet hides in shade','Cattails crown the marsh','Bulrush bends with wind','Sedge holds the bog edge','Cottongrass tufts white',
     'Sphagnum drinks the rain','Cranberry trails low','Watercress fills brook','Arrowhead splits flow','Duckweed greens the still','Reed mace holds the bog','Horsetail rims the wet','Bracken crowds the bank','The barn owl glided','Tree frogs tuned the dusk',
     'The yew breathed all night','Roots grew in the dark','Snails grazed the dusk wall','And the seed held on','And the bloom turned gold','And the moss held fast','And the oak still stands','And the root went deep','And the spore took hold','One root was enough',
-    'One drop fed the moss','One leaf took the sun','One bloom held the bee','And the moss held still','The seed found its dark','The root drank the seep','The dawn warmed the leaf','The dusk cooled the bark'
+    'One drop fed the moss','One leaf took the sun','One bloom held the bee','And the moss held still','The seed found its dark','The root drank the seep','The dawn warmed the leaf','The dusk cooled the bark',
+    'Roots take the long view','Stone outlasts the storm','Moss wins by waiting','The seed keeps its faith','Rain finds every crack','Bark keeps the old scar','Slow growth holds the hill','The dark feeds the seed','Wind scatters the spores','Loam keeps what falls in',
+    'The root finds the spring','Time smooths the rough stone','Rot feeds the new green','Moss covers the loss','The hill keeps its dead','Light returns each year','The bog holds it all','Old growth shades the new','Seeds outwait the snow','The stream knows the way',
+    'Frost yields to the sun','Roots break the hard clay','The moss drinks the fog','Stone holds the day\'s heat','The bloom feeds the bee','Dusk folds the green in','The deep root holds on','Rain mends the dry ground','The husk gives its seed','Green wins in the end'
+  ];
+
+  // ═══ SEASONAL KIGO OPENERS (5-syllable) — 2026-06-15 ═══
+  // Line 1 of every haiku is drawn from the plant's season bank so the poem
+  // reflects the actual plant (season = parseInt(hash[22]+hash[23],16)%4,
+  // matching hashToTraits: 0=Spring 1=Summer 2=Autumn 3=Winter). Each line
+  // is hand-counted to exactly 5 syllables. Banks are meant to keep growing.
+  var KIGO_SPRING = [
+    'Thaw wakes the cold seed','First green splits the bud','Rain softens the thaw','Buds break in pale sun','Snowmelt feeds the root','New shoots pierce the mud','Crocus splits the frost','Birdsong wakes the dawn','Sap rises in birch','Green haze veils the wood',
+    'Melt swells the spring brook','Buds swell on bare twigs','Warm rain wakes the loam','Catkins dust the air','Frost lifts from the field','Fern fronds start to coil','First bee finds the bloom','Mud warms in the light','Pale buds line the branch','Snow shrinks from the root',
+    'Green floods the brown hill','Robins work the thaw','Plum blossom opens','Rain wakes the sleeping','Soft mud holds new tracks','Willows green the bank','Light lengthens the day','Shoots crowd the wet bed','Thaw drips from the eaves','Buds open to rain'
+  ];
+  var KIGO_SUMMER = [
+    'Heat hums in the field','Cicadas drone on','Sun bakes the dry loam','Full bloom weighs the stem','Dust hangs in still air','Long light holds the dusk','Bees crowd the warm bloom','Heat shimmers off stone','Drought cracks the bare ground','Shade pools in deep wood',
+    'Storm builds in the west','Warm rain breaks the heat','Moths circle the lamp','Tall grass goes to seed','Sun dries the cut hay','Crickets pulse at night','Heat presses the leaves','Ripe fruit pulls the bough','Dry wind combs the wheat','Pond shrinks in the sun',
+    'Noon stills the warm air','Clover hums with bees','Thunder rolls far off','Dust films the green leaf','Heat haze blurs the hills','Sun cures the seed heads','Warm dusk slows the day','Bloom peaks in the heat','Stems bend to the light','Dry creek beds bake hard'
+  ];
+  var KIGO_AUTUMN = [
+    'Gold leaves drop at dawn','Frost edges the field','Geese cross the gray sky','Leaves turn on the oak','Cold creeps through the loam','Acorns drum the roof','Mist clings to the vale','Red leaves choke the stream','Dusk comes on too soon','Rot sweetens the air',
+    'Wind strips the bare bough','Fog beads on the web','Seed heads bend and dry','Frost whitens the grass','Gold drifts off the birch','Crows gather at dusk','Late fruit drops and splits','Cold rain rots the leaf','Bare vines clutch the wall','Smoke hangs in the cold',
+    'Leaf fall fills the ditch','Dew turns hard by dawn','Husks rattle in wind','Amber light slants low','The marsh browns and stills','Last bees leave the bloom','Nights bite at the root','Maple bleeds to red','Cold dew sheets the field','Frost fells the late bloom'
+  ];
+  var KIGO_WINTER = [
+    'Snow caps the bare bough','Ice locks the still pond','Frost ferns climb the glass','Bare twigs scrape the wind','Cold stills the deep root','Snow muffles the wood','Ice rims the gray reeds','Dark holds the long night','Frost grips the seed husk','Snow weights the low branch',
+    'Bare hills hold the white','Wind scours the dead field','Ice clamps the still brook','Cold seals the black soil','Frost stars the dim pane','Snow buries the seed','The bare oak holds firm','Long dark slows the sap','Sleet ticks on the glass','White drifts seal the gate',
+    'Cold air bites the lung','Frost hardens the rut','Snow smooths the plowed row','Bare birch creaks with cold','Ice glazes the stem','Still cold holds the seed','Snow light fills the room','The pond locks in gray','Dark comes by four bells','Frost holds the dead leaf'
   ];
 
 window._LW_BANKS = {
   NAME_ADJ: NAME_ADJ, NAME_NOUN: NAME_NOUN, NAME_REALM: NAME_REALM,
-  HAIKU_A: HAIKU_A, HAIKU_B: HAIKU_B, HAIKU_C: HAIKU_C
+  HAIKU_A: HAIKU_A, HAIKU_B: HAIKU_B, HAIKU_C: HAIKU_C,
+  KIGO_SPRING: KIGO_SPRING, KIGO_SUMMER: KIGO_SUMMER, KIGO_AUTUMN: KIGO_AUTUMN, KIGO_WINTER: KIGO_WINTER
 };
 })();

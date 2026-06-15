@@ -481,11 +481,11 @@ window._doCrossPollination(wild, mate) — Wild tab breed execution
 
 ## HAIKU ENGINE
 - 5-7-5 syllable structure (curated line banks HAIKU_A=5, HAIKU_B=7, HAIKU_C=5; was mislabeled "7-5-7")
-- Curated banks in word-banks.js: HAIKU_A 1123 / HAIKU_B 1100 / HAIKU_C 1048 lines (~1.3B combos)
+- Curated banks in word-banks.js: HAIKU_A 1123 / HAIKU_B 1130 / HAIKU_C 1078 + 4 seasonal KIGO banks (30 each, growing)
 - **2026-06-15:** ALL plants route through the curated pre-composed bank (getHaiku gate widened `<8`→`<16`). The old template-builder path (selector ≥ 8, ~50% of plants) produced grammatically broken "word salad" and is now dead code (revert gate to `<8` to re-enable).
 - Every plant gets a unique procedural haiku from its hash (deterministic; indices from h[35]+h[26..31] etc.)
 - `window.getHaiku(hash)` returns `{ line1, line2, line3 }`
-- OPEN ENHANCEMENT (parked): tie haiku to the plant's season (kigo) / traits — currently hash-only, no connection to the actual plant.
+- **DONE 2026-06-15 (seasonal kigo):** line 1 of every haiku is drawn from the plant's season bank (KIGO_SPRING/SUMMER/AUTUMN/WINTER), season = parseInt(h[22]+h[23],16)%4 (matches hashToTraits). Line 3 draws from HAIKU_C_POOL = HAIKU_C.concat(HAIKU_A) (former openers reused → ~2201 closing lines). ~75M combos/season. KIGO banks are small (30 each) by design — meant to keep growing; add lines to word-banks.js KIGO_* arrays anytime.
 
 ---
 

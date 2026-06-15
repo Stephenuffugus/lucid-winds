@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.15.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.15.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -39453,6 +39453,12 @@ document.addEventListener('keydown', function(e) {
   var HAIKU_A = (window._LW_BANKS && window._LW_BANKS.HAIKU_A) ? window._LW_BANKS.HAIKU_A : [];
   var HAIKU_B = (window._LW_BANKS && window._LW_BANKS.HAIKU_B) ? window._LW_BANKS.HAIKU_B : [];
   var HAIKU_C = (window._LW_BANKS && window._LW_BANKS.HAIKU_C) ? window._LW_BANKS.HAIKU_C : [];
+  // 2026-06-15: seasonal kigo openers (line 1, indexed by plant season) +
+  // line-3 pool reusing HAIKU_A (former openers) on top of HAIKU_C — both 5-syl.
+  var _KIGO = window._LW_BANKS
+    ? [window._LW_BANKS.KIGO_SPRING || [], window._LW_BANKS.KIGO_SUMMER || [], window._LW_BANKS.KIGO_AUTUMN || [], window._LW_BANKS.KIGO_WINTER || []]
+    : [[], [], [], []];
+  var HAIKU_C_POOL = HAIKU_C.concat(HAIKU_A);
 
   // ═══ HAIKU ENGINE v4 — Gemini ear-checked banks + Director verified ═══
   // Word banks: 192 n1 + 180 n2 + 55 n3 + 99 v1 + 49 v2 + 14 v3
@@ -39783,11 +39789,16 @@ document.addEventListener('keydown', function(e) {
       // (climate-tolerance overlap, harmless), h[63] (past hashToTraits
       // usage). This shifts the haiku for some existing pre-launch test
       // plants, which is the cost of unlocking the back 75% of the bank.
-      var i1 = (parseInt(h[35]+h[26]+h[27], 16) || 0) % HAIKU_A.length;
+      // Line 1 = seasonal kigo opener for THIS plant's season (matches the
+      // card; season = parseInt(h[22]+h[23],16)%4, same as hashToTraits).
+      // Falls back to HAIKU_A if a season bank is missing so it can't break.
+      var seas = (parseInt(h[22] + h[23], 16) || 0) % 4;
+      var KB = _KIGO[seas]; if (!KB || !KB.length) KB = HAIKU_A;
+      var i1 = (parseInt(h[35]+h[26]+h[27], 16) || 0) % KB.length;
       var i2 = (parseInt(h[55]+h[28]+h[29], 16) || 0) % HAIKU_B.length;
-      var i3 = (parseInt(h[63]+h[30]+h[31], 16) || 0) % HAIKU_C.length;
+      var i3 = (parseInt(h[63]+h[30]+h[31], 16) || 0) % HAIKU_C_POOL.length;
       // Uniqueness pass — advance line2/line3 if a content word repeats from earlier line
-      var used1 = {}; _hLineContentSet(HAIKU_A[i1], used1);
+      var used1 = {}; _hLineContentSet(KB[i1], used1);
       var tries = 0;
       while (tries < HAIKU_B.length && _hLineHasCollision(HAIKU_B[i2], used1)) {
         i2 = (i2 + 1) % HAIKU_B.length; tries++;
@@ -39796,10 +39807,10 @@ document.addEventListener('keydown', function(e) {
       for (var k in used1) { if (used1.hasOwnProperty(k)) used12[k] = 1; }
       _hLineContentSet(HAIKU_B[i2], used12);
       tries = 0;
-      while (tries < HAIKU_C.length && _hLineHasCollision(HAIKU_C[i3], used12)) {
-        i3 = (i3 + 1) % HAIKU_C.length; tries++;
+      while (tries < HAIKU_C_POOL.length && _hLineHasCollision(HAIKU_C_POOL[i3], used12)) {
+        i3 = (i3 + 1) % HAIKU_C_POOL.length; tries++;
       }
-      return { line1: HAIKU_A[i1], line2: HAIKU_B[i2], line3: HAIKU_C[i3] };
+      return { line1: KB[i1], line2: HAIKU_B[i2], line3: HAIKU_C_POOL[i3] };
     }
     // Template-builder mode — select a THEME first, then all words share it
     var seed1 = parseInt(h.slice(26, 30), 16) || 1;
