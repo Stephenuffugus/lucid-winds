@@ -3815,3 +3815,17 @@
     color: var(--muted); letter-spacing: 0.08em; margin-top: 6px;
     opacity: 0.7;
   }
+
+  /* ── TABLET (≥768px) — 2026-06-15 ──────────────────────────────────────
+     Portal/play-shell only (the library deliverable; index.html does NOT load
+     this file). Phone layout is untouched — these rules add at min-width only.
+     Boards were hard-capped at 420-480px and sat tiny on an iPad in a sea of
+     empty space; here they grow with the viewport (height-aware so landscape
+     tablets don't overflow), which also enlarges every cell for easier taps. */
+  @media (min-width: 768px) {
+    .ch-wrap { width: min(92vw, 82vh, 600px); }   /* chess */
+    .ckb     { width: min(92vw, 82vh, 600px); }   /* checkers */
+    .rvb     { width: min(92vw, 82vh, 600px); }   /* reversi */
+    .ug      { width: min(94vw, 82vh, 600px); }   /* sudoku */
+    .skg     { width: min(94vw, 82vh, 640px); }   /* sky/bloom grid */
+  }

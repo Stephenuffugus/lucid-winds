@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.14.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.15.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62722,12 +62722,14 @@ function _e(v){
   // accrue 30+ sunbeams from a single game. Clamp the total to
   // _afSessionCap (20 by default) so endurance games reward skill
   // without breaking the plant-mint economy.
-  if(amt>0){
-    var remaining=_afSessionCap-_afSessionSunbeams;
-    if(remaining<=0){amt=0;}
-    else if(amt>remaining){amt=remaining;}
-    if(amt>0)_afSessionSunbeams+=amt;
-  }
+  // Per-session sunbeam cap REMOVED 2026-06-15 (Stephen call). It walled off
+  // engaged single-game players — e.g. repeated hard-chess wins paying 0 — for
+  // no economic benefit: Sunbeams aren't cashable, so a grinder just earns more
+  // plants and needs to BUY more slots to hold them (revenue, not a leak).
+  // True abuse stays bounded by minTime + the 45s completion cooldown (client,
+  // anti-bot pacing) and the server caps (mintPlant 30/day, earnHashes
+  // 5000/day). progCap still bounds milestone-spam within one endurance game.
+  // Revisit anti-bot economics if/when the marketplace ships.
   if(amt>0){
     var prevFilled=_hashFilled;
     var prevReady=_readyHashes.length;
