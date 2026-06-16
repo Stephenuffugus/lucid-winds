@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.16.06';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -49511,6 +49511,25 @@ document.addEventListener('keydown', function(e) {
       slowArrowPinDay:  localStorage.getItem('lw_slow_arrow_pin_day') || null,
       dailyClaimed:     localStorage.getItem('lw_daily_claimed') || null,
       dailyLogin:       _ls('lw_daily_login')       || null,
+      // 2026-06-16 Gate A: progression keys that were LOCAL-ONLY (lost on any
+      // data clear — the sync-completeness audit). Stored as raw strings so the
+      // round-trip is type-agnostic; restored "if local absent" so a clear
+      // recovers them and a present local value is never clobbered. Counters
+      // (pollinations/mulches) MAX-merge on restore.
+      companionActiveIdx: localStorage.getItem('lw_companion_active_idx'),
+      activeCompanionObj: localStorage.getItem('pw_active_companion'),
+      bloomsPerCompanion: localStorage.getItem('lw_blooms_per_companion'),
+      fieldJournal:       localStorage.getItem('lw_field_journal'),
+      waterStreak:        localStorage.getItem('lw_water_streak'),
+      stewardBadge:       localStorage.getItem('lw_steward_badge'),
+      silenceCounts:      localStorage.getItem('lw_silence_counts'),
+      plantMeta:          localStorage.getItem('lw_plant_meta'),
+      feralCd:            localStorage.getItem('fg_feral_cd'),
+      feralZones:         localStorage.getItem('fg_feral_zones'),
+      tendCaps:           localStorage.getItem('lw_tend_caps'),
+      massWaterLog:       localStorage.getItem('lw_mass_water_log'),
+      pollinations:       parseInt(localStorage.getItem('lw_pollinations')||'0',10)||0,
+      mulchesApplied:     parseInt(localStorage.getItem('lw_mulches_applied')||'0',10)||0,
       lastSync: new Date().toISOString(),
       // Audit security-deep L4: was hardcoded 'set-40' from set-40 era.
       // Cloud forensics need to know which client wrote each vault doc.
@@ -49655,6 +49674,24 @@ document.addEventListener('keydown', function(e) {
     if (typeof data.activeTitle === 'string' && data.activeTitle && !localStorage.getItem('lw_active_title')) {
       try { localStorage.setItem('lw_active_title', data.activeTitle); } catch(e) {}
     }
+    // 2026-06-16 Gate A: restore the previously LOCAL-ONLY progression keys.
+    // restore-if-local-absent → a data clear recovers them; a present local
+    // value is never clobbered (no cross-device data loss). Counters MAX-merge.
+    function _restoreRaw(key, val){ try{ if (typeof val === 'string' && val && localStorage.getItem(key) === null) localStorage.setItem(key, val); }catch(e){} }
+    _restoreRaw('lw_companion_active_idx', data.companionActiveIdx);
+    _restoreRaw('pw_active_companion',     data.activeCompanionObj);
+    _restoreRaw('lw_blooms_per_companion', data.bloomsPerCompanion);
+    _restoreRaw('lw_field_journal',        data.fieldJournal);
+    _restoreRaw('lw_water_streak',         data.waterStreak);
+    _restoreRaw('lw_steward_badge',        data.stewardBadge);
+    _restoreRaw('lw_silence_counts',       data.silenceCounts);
+    _restoreRaw('lw_plant_meta',           data.plantMeta);
+    _restoreRaw('fg_feral_cd',             data.feralCd);
+    _restoreRaw('fg_feral_zones',          data.feralZones);
+    _restoreRaw('lw_tend_caps',            data.tendCaps);
+    _restoreRaw('lw_mass_water_log',       data.massWaterLog);
+    try { if (typeof data.pollinations === 'number') { var _lpol = parseInt(localStorage.getItem('lw_pollinations')||'0',10)||0; if (data.pollinations > _lpol) localStorage.setItem('lw_pollinations', String(data.pollinations)); } } catch(e){}
+    try { if (typeof data.mulchesApplied === 'number') { var _lmul = parseInt(localStorage.getItem('lw_mulches_applied')||'0',10)||0; if (data.mulchesApplied > _lmul) localStorage.setItem('lw_mulches_applied', String(data.mulchesApplied)); } } catch(e){}
     // Named patterns are append-only — union by pattern key
     if (data.namedPatterns && data.namedPatterns.length) {
       try {
