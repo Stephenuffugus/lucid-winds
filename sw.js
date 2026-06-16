@@ -110,20 +110,32 @@ self.addEventListener('fetch', function(event) {
   }
 
   // ── HTML pages: network-first (so deploys go live instantly) ──
+  // 2026-06-16 Gate C: a HANGING navigation fetch (common on an iOS PWA
+  // cold-launch racing the network) never rejects, so the old .catch never
+  // fired and the app hung. Race the network against a 5s timeout: if the
+  // network is too slow AND we have a cached copy, serve it; the late network
+  // response still refreshes the cache for next launch. Normal + offline paths
+  // are unchanged.
   if (event.request.mode === 'navigate' || url.pathname.match(/\.html$/)) {
-    event.respondWith(
+    event.respondWith(new Promise(function(resolve) {
+      var settled = false;
+      function done(r) { if (!settled && r) { settled = true; resolve(r); } }
+      var timer = setTimeout(function() {
+        caches.match(event.request).then(function(c) { done(c); });
+      }, 5000);
       fetch(event.request).then(function(response) {
-        // Cache a copy for offline fallback
+        clearTimeout(timer);
         var clone = response.clone();
-        caches.open(ASSET_CACHE).then(function(cache) {
-          cache.put(event.request, clone);
-        });
-        return response;
+        caches.open(ASSET_CACHE).then(function(cache) { cache.put(event.request, clone); });
+        done(response);
       }).catch(function() {
-        // Offline — serve cached version
-        return caches.match(event.request);
-      })
-    );
+        clearTimeout(timer);
+        caches.match(event.request).then(function(c) {
+          // If there's no cache and the network failed, surface the failure.
+          if (c) done(c); else if (!settled) { settled = true; resolve(Response.error()); }
+        });
+      });
+    }));
     return;
   }
 
