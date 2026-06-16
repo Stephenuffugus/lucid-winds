@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.16.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6658,7 +6658,7 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
 .dpk2-card.season-autumn{border-color:rgba(212,132,42,.45);background:linear-gradient(180deg,rgba(44,28,16,.42),rgba(28,18,10,.36));}
 .dpk2-card.season-winter{border-color:rgba(160,196,232,.45);background:linear-gradient(180deg,rgba(20,30,42,.42),rgba(12,18,28,.36));}
 .dpk2-card-svg{width:96px;height:108px;display:flex;align-items:center;justify-content:center}
-.dpk2-card-svg svg{width:90px;height:108px}
+.dpk2-card-svg svg{width:auto;height:108px;max-width:96px}
 .dpk2-card-name{font-family:'Playfair Display',serif;font-size:clamp(.35rem,1vw,.45rem);color:var(--cream);text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dpk2-card-grade{font-family:'Bebas Neue',sans-serif;font-size:clamp(.3rem,.9vw,.38rem);letter-spacing:.06em}
 
@@ -16039,6 +16039,11 @@ document.addEventListener('keydown', function(e) {
   function _svgCacheGet(key) { return _svgCache[key] || null; }
 
   function _svgCacheSet(key, val) {
+    // 2026-06-16: never cache an empty/broken SVG string. A transient render
+    // failure must not poison the in-memory + IndexedDB cache forever — that
+    // was the root of the "stretched empty boxes" reports. Only store strings
+    // that actually start with <svg and aren't suspiciously short.
+    if (typeof val !== 'string' || val.lastIndexOf('<svg', 0) !== 0 || val.length < 80) return;
     if (!_svgCache[key]) { _svgCacheKeys.push(key); }
     _svgCache[key] = val;
     _idbSet(key, val); // persist to IndexedDB
@@ -16061,7 +16066,8 @@ document.addEventListener('keydown', function(e) {
           if (_svgCache[key]) return; // already warm
           var req = store.get(key);
           req.onsuccess = function() {
-            if (req.result && !_svgCache[key]) {
+            // Ignore any junk/partial entry left in IndexedDB by an older build.
+            if (req.result && typeof req.result === 'string' && req.result.lastIndexOf('<svg', 0) === 0 && !_svgCache[key]) {
               _svgCache[key] = req.result;
               if (_svgCacheKeys.indexOf(key) < 0) _svgCacheKeys.push(key);
             }
@@ -52660,9 +52666,24 @@ function _initCompass(){
   // always points to true north regardless of which way the phone faces.
   // heading=0 (facing N) → rotation 0  → tip up
   // heading=90 (facing E) → rotation -90 → tip points to device's left = world N
+  // 2026-06-16: smoothing + shortest-arc rotation. Raw heading was written
+  // directly to the transform on every event from up to three uncoordinated
+  // sources (magnetometer / AbsoluteOrientationSensor / GPS bearing), so the
+  // needle "jumped all over the place" and spun the long way across 0°/360°.
+  // Low-pass toward the target along the shortest arc; track cumulative degrees
+  // so the CSS transition always animates the short way.
+  var _compRendered=null;
   function _updateCompass(heading){
-    if(compassImg)compassImg.style.transform='rotate('+(180-heading)+'deg)';
-    var idx=Math.round(heading/45)%8;
+    if(typeof heading!=='number'||isNaN(heading))return;
+    var target=180-heading;
+    if(_compRendered===null){_compRendered=target;}
+    else{
+      var d=((target-_compRendered)%360+540)%360-180; // shortest signed arc
+      _compRendered+=d*0.2;                            // ease 20% toward target
+    }
+    if(compassImg)compassImg.style.transform='rotate('+_compRendered+'deg)';
+    var sh=((180-_compRendered)%360+360)%360;          // smoothed heading for label
+    var idx=((Math.round(sh/45)%8)+8)%8;
     var facing=document.getElementById('w-wind-facing');
     if(facing)facing.textContent=cardinals[idx];
   }
@@ -52823,6 +52844,11 @@ function _initCompass(){
     try {
       navigator.geolocation.watchPosition(function(pos) {
         if (!pos || !pos.coords) return;
+        // 2026-06-16: if a real orientation source is delivering data, don't
+        // ALSO drive the needle from GPS bearing — they measure different
+        // things (facing vs direction of travel) and fight, making it jump.
+        // GPS is the fallback only when no sensor exists (Pi Browser).
+        if (_absRx) return;
         var c = pos.coords;
         // Path 1: GPS reports heading directly (most reliable, sub-second).
         if (typeof c.heading === 'number' && !isNaN(c.heading) && (c.speed == null || c.speed >= 0.3)) {
