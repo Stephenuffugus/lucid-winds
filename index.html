@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.16.12';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -3986,7 +3986,7 @@
     .bs-card-nav-btn:active{background:rgba(74,124,53,0.15);transform:scale(0.95);}
     .bs-card-nav-count{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);}
     .bs-pair{display:flex;gap:0.4rem;margin-bottom:0.4rem;position:relative;align-items:flex-start;}
-    .bs-x{position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:10;width:28px;height:28px;border-radius:50%;background:rgba(13,16,12,0.95);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:0.75rem;color:var(--gold);}
+    .bs-x{position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:10;width:44px;height:44px;border-radius:50%;background:rgba(13,16,12,0.95);border:1.5px solid rgba(200,168,75,0.25);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;color:var(--gold);}/* 2026-06-16 Gate D: was 28x28 (below 48px touch min) — the only dismiss on a full-screen overlay. */
     .bs-cb{flex:1;min-width:0;border-radius:9px;padding:0.45rem 0.4rem 0.4rem;display:flex;flex-direction:column;position:relative;overflow:hidden;transition:opacity 0.14s ease,transform 0.14s ease;}
     .bs-cb.spring{background:rgba(26,36,22,0.4);border:2px solid rgba(232,160,191,0.35);box-shadow:0 0 0 2px rgba(13,16,12,0.9),0 0 0 4px rgba(232,160,191,0.3),inset 0 0 14px rgba(232,160,191,0.05),0 3px 12px rgba(0,0,0,0.3);}
     .bs-cb.summer{background:rgba(26,36,22,0.4);border:2px solid rgba(212,168,67,0.35);box-shadow:0 0 0 2px rgba(13,16,12,0.9),0 0 0 4px rgba(212,168,67,0.35),inset 0 0 14px rgba(212,168,67,0.05),0 3px 12px rgba(0,0,0,0.3);}
@@ -5577,7 +5577,7 @@
 .hi-plant-row{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,rgba(26,36,22,0.5),rgba(18,24,16,0.6));border:1.5px solid rgba(74,124,53,0.18);border-radius:16px;padding:16px;cursor:pointer;min-height:104px;}
 .hi-plant-row.selected{border-color:rgba(200,168,75,0.55);background:linear-gradient(135deg,rgba(200,168,75,0.06),rgba(26,36,22,0.5));box-shadow:0 0 18px rgba(200,168,75,0.1);}
 .hi-plant-row .hi-pr-svg{width:80px;height:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(13,16,12,0.5);border-radius:12px;border:1px solid rgba(74,124,53,0.15);}
-.hi-plant-row .hi-pr-svg svg{width:80px;height:80px;}
+.hi-plant-row .hi-pr-svg svg{width:auto;height:80px;max-width:80px;object-fit:contain;}/* 2026-06-16 Gate D: was 80x80 square → squashed the plant; single-axis + contain keeps the 70:95 ratio. */
 .hi-plant-row .hi-pr-info{flex:1;min-width:0;}
 .hi-plant-row .hi-pr-name{font-family:'Playfair Display',serif;font-style:italic;font-size:1.05rem;font-weight:700;color:#f5e7b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
 .hi-plant-row .hi-pr-meta{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);margin-top:6px;letter-spacing:0.04em;}
@@ -6599,7 +6599,7 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
 .wtp2-handle{width:48px;height:5px;background:rgba(200,168,75,.35);border-radius:3px;margin:14px auto 0;flex-shrink:0;}
 .wtp2-hero{display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px 24px 12px;flex-shrink:0;}
 .wtp2-svg{flex-shrink:0;width:min(220px,55vw);height:min(220px,55vw);border-radius:18px;background:radial-gradient(circle at 50% 60%,rgba(122,179,86,0.10),rgba(13,16,12,0.6));border:1.5px solid rgba(122,179,86,.25);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,235,180,.08);}
-.wtp2-svg svg{width:100%;height:100%;}
+.wtp2-svg svg{width:auto;height:100%;max-width:100%;object-fit:contain;}/* 2026-06-16 Gate D: was width+height:100% → squashed the 70:95 plant into a square on the Wild trait panel. Single-axis + contain keeps ratio. */
 .wtp2-info{text-align:center;width:100%;}
 .wtp2-name{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1.4rem,5vw,2.2rem);font-weight:400;color:#f5e7b8;line-height:1.15;text-shadow:0 2px 18px rgba(200,168,75,.35);padding:0 12px;}
 .wtp2-grade{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.6vw,1.05rem);letter-spacing:.18em;margin-top:8px;}
@@ -87346,16 +87346,27 @@ function _bosMementosContent() {
   // equipped/30d state — shows the full bestiary the player has encountered.
   try {
     var rosterIdxs = {};
+    // 2026-06-16: ~10.5% of plants carry a companion index that resolves to
+    // name:'None' in TRAIT_BANK (idx 0-19,46,58,59,76,77,78,80 — the "no
+    // companion" slots, some of which render phantom art). Those must NOT
+    // enter the roster or they render a literal "None" card whose profile
+    // opens titled "None". Match the bestiary grid filter at ~87244.
+    var _rosterReal = function(idx) {
+      try {
+        var _c = window.TRAIT_BANK && TRAIT_BANK.companions && TRAIT_BANK.companions[idx];
+        return !!(_c && _c.name && _c.name !== 'None');
+      } catch(e) { return false; }
+    };
     var gh = [];
     try { gh = JSON.parse(localStorage.getItem('sws_greenhouse') || '[]'); } catch(e) {}
     for (var gi = 0; gi < gh.length; gi++) {
       try {
         var gt = window.hashToTraits ? window.hashToTraits(gh[gi].hash) : null;
-        if (gt && typeof gt.companion === 'number') rosterIdxs[gt.companion] = true;
+        if (gt && typeof gt.companion === 'number' && _rosterReal(gt.companion)) rosterIdxs[gt.companion] = true;
       } catch(e) {}
     }
     // Also include any companion the player has ever equipped (from equipLog)
-    for (var ek in equipLog) { if (equipLog.hasOwnProperty(ek)) rosterIdxs[parseInt(ek, 10)] = true; }
+    for (var ek in equipLog) { if (equipLog.hasOwnProperty(ek) && _rosterReal(parseInt(ek, 10))) rosterIdxs[parseInt(ek, 10)] = true; }
     var rosterList = Object.keys(rosterIdxs).map(function(k){return parseInt(k,10);}).filter(function(n){return !isNaN(n)&&n>=0;});
     if (rosterList.length) {
       // Group by family
@@ -95974,6 +95985,10 @@ window._lwCompanionTempRevealed = function(idx){
   window._lwOpenCompanionProfile=function(idx){
     if(typeof idx!=='number'){idx=parseInt(idx,10);}
     if(isNaN(idx)||idx<0)return;
+    // 2026-06-16: bail on a None/unknown companion slot rather than open a
+    // profile titled "Companion #58". These idx (0-19,46,58,59,76,77,78,80)
+    // are the "no companion" slots \u2014 there's nothing to profile.
+    try{var _pc=window.TRAIT_BANK&&TRAIT_BANK.companions&&TRAIT_BANK.companions[idx];if(!_pc||!_pc.name||_pc.name==='None')return;}catch(e){}
     var ex=document.getElementById('lw-comp-profile');if(ex)ex.remove();
     var name='Companion #'+idx,icon='\ud83d\udc3e';
     try{if(window.TRAIT_BANK&&window.TRAIT_BANK.companions&&window.TRAIT_BANK.companions[idx]){name=window.TRAIT_BANK.companions[idx].name;icon=window.TRAIT_BANK.companions[idx].icon||icon;}}catch(e){}
