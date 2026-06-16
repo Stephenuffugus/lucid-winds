@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.16.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -8273,6 +8273,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
     <div class="dev-section"><div class="dev-section-title">ACCOUNT COUNTER</div><div style="font-size:0.42rem;color:var(--muted);margin-bottom:0.3rem;">Next: <span id="dev-counter-val">?</span></div><button class="dev-btn" onclick="PW_Dev.resetCounter()">↩ RESET TO 1</button></div>
     <div class="dev-section"><div class="dev-section-title">LOCAL STORAGE</div><button class="dev-btn" onclick="PW_Dev.clearLocal()">🧹 CLEAR ALL</button><button class="dev-btn" onclick="PW_Dev.resetTutorial()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">↺ RESET TUTORIAL</button><button class="dev-btn" onclick="PW_Dev.skipAllIntros()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">↷ SKIP ALL INTROS</button></div>
     <div class="dev-section"><div class="dev-section-title">CLOUD SYNC</div><button class="dev-btn" onclick="PW_Dev.forceSync()">☁️ FORCE SYNC NOW</button><button class="dev-btn" onclick="PW_Dev.forceHydrate()">💧 FORCE HYDRATE</button></div>
+    <div class="dev-section"><div class="dev-section-title">RESTORE (DATA-LOSS RECOVERY)</div><button class="dev-btn" onclick="(function(){var n=prompt('Restore how many Sunbeams? (lost to a data clear)','400');if(n===null)return;n=Math.max(0,parseInt(n,10)||0);try{if(n>0&&window.PW_Dev&&PW_Dev.grantHashes)PW_Dev.grantHashes(n);}catch(e){}try{if(window.PW_Dev&&PW_Dev.forceOmenBackfill)PW_Dev.forceOmenBackfill();}catch(e){}try{if(window.PW_Dev&&PW_Dev.forceSync)PW_Dev.forceSync();}catch(e){}alert('Restored '+n+' Sunbeams, ran the omen-codex backfill, and forced a cloud sync.');})()" style="border-color:rgba(232,200,106,0.7);color:var(--gold);background:rgba(200,168,75,0.15);">🛟 RESTORE MY ACCOUNT (Sunbeams + omens)</button></div>
     <div class="dev-section"><div class="dev-section-title">WILD TAB</div><button class="dev-btn" onclick="PW_Dev.resetWild()">🗺 RESET LOCAL WILD</button><button class="dev-btn danger" onclick="PW_Dev.purgeFirestoreDrops()">🔥 PURGE FIRESTORE DROPS</button><button class="dev-btn" onclick="localStorage.removeItem('fg_ferals');localStorage.removeItem('fg_feral_zones');alert('Ferals cleared! Switch tabs to refresh.');">🧹 CLEAR FERALS</button><button class="dev-btn" onclick="PW_Dev.spawnFeral()">🌿 SPAWN FERAL NEAR ME</button><button class="dev-btn" onclick="PW_Dev.dropTestPlants()">📍 DROP 3 NEAR ME</button><button class="dev-btn" onclick="PW_Dev.seedArea()">🌍 SEED 100 (500m radius)</button><button class="dev-btn" onclick="PW_Dev.dropTestPair()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🧬 DROP BREEDING PAIR</button><button class="dev-btn" onclick="PW_Dev.simulateSpread()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌿 SIMULATE SPREAD</button></div>
     <div class="dev-section"><div class="dev-section-title">ACCELERATE (BETA TEST)</div><button class="dev-btn" onclick="PW_Dev.accelFerals()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">⚡ FORCE FERAL SPAWN</button><button class="dev-btn" onclick="PW_Dev.accelRepro()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🌱 FORCE WILD REPRODUCTION</button><button class="dev-btn" onclick="PW_Dev.accelClimate()" style="border-color:rgba(255,120,80,0.4);color:#ff9060;">🔥 FORCE CLIMATE TICK</button><button class="dev-btn" onclick="PW_Dev.accelKillOldest()" style="border-color:rgba(200,90,90,0.4);color:#d08080;">💀 KILL OLDEST (climate)</button><button class="dev-btn" onclick="PW_Dev.accelGerminate()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🌱 INSTANT GERMINATE SPROUTS</button><button class="dev-btn" onclick="PW_Dev.accelFullCycle()" style="border-color:rgba(200,168,75,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🔄 FULL LIFE CYCLE (repro→kill→sprout→germinate)</button><button class="dev-btn" onclick="PW_Dev.accelNursery()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">💧 INSTANT BLOOM ALL SEEDS</button><button class="dev-btn" onclick="PW_Dev.accelBackpack()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🎒 CLEAR BP COOLDOWNS</button><button class="dev-btn" onclick="PW_Dev.auditTriggers()" style="border-color:rgba(122,179,86,0.4);color:var(--sage);">🔬 AUDIT TRIGGERS + LW_ACH</button><button class="dev-btn" onclick="PW_Dev.forceFireOmens()" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">🔮 FORCE FIRE OMENS NOW</button><button class="dev-btn" onclick="PW_Dev.forceOmenBackfill()" style="border-color:rgba(232,200,106,0.5);color:var(--gold);background:rgba(200,168,75,0.12);">📖 FORCE OMEN CODEX BACKFILL</button><button class="dev-btn" onclick="PW_Dev.forceWitnessTick()" style="border-color:rgba(122,179,86,0.5);color:var(--sage);background:rgba(122,179,86,0.10);">👁️ FORCE WITNESS XP TICK</button><button class="dev-btn" onclick="PW_Dev.grantBeholderL3()" style="border-color:rgba(232,200,106,0.6);color:var(--gold);background:rgba(200,168,75,0.18);">🌀 GRANT BEHOLDER L3 (manual)</button><button class="dev-btn" onclick="PW_Dev.auditEverything()" style="border-color:rgba(122,179,86,0.5);color:var(--sage);">🔬 AUDIT EVERYTHING (omens/synergies/companions)</button><button class="dev-btn" onclick="PW_Dev.grantXpToEquipped()" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">⬆️ GRANT XP TO EQUIPPED COMPANION</button><button class="dev-btn" onclick="PW_Dev.dumpStemSVG()" style="border-color:rgba(255,120,80,0.6);color:#ff9060;">🔬 DUMP STEM SVG (wild-carousel debug)</button><button class="dev-btn" onclick="PW_Dev.testCocoonWalk()" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">🐾 TEST COCOON WALK (verify hatch chain)</button><button class="dev-btn" onclick="PW_Dev.grantHashes(100)" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">☀️ +100 SUNBEAMS</button><button class="dev-btn" onclick="PW_Dev.grantDew(100)" style="border-color:rgba(91,175,220,0.4);color:#8bd0e8;">💧 +100 DEW</button><button class="dev-btn" onclick="PW_Dev.accelAll()" style="border-color:rgba(255,110,199,0.4);color:#ff6ec7;">🚀 ACCELERATE EVERYTHING</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.fireHuntCapstone)LW_debug.fireHuntCapstone();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">✨ FIRE HUNT CAPSTONE</button><button class="dev-btn" onclick="if(window.LW_debug&&LW_debug.advanceHuntWeek)LW_debug.advanceHuntWeek();" style="border-color:rgba(232,200,106,0.5);color:var(--gold);">⏩ ADVANCE HUNT 1 WEEK</button><button class="dev-btn" onclick="PW_Dev.fastForwardFriendship()" style="border-color:rgba(232,160,191,0.5);color:#f0a0c0;">🌸 FAST-FORWARD FRIENDSHIP TIER</button><button class="dev-btn" onclick="PW_Dev.grantBigDew()" style="border-color:rgba(91,175,220,0.5);color:#8bd0e8;">💧 +N DEW (BIG)</button><button class="dev-btn" onclick="PW_Dev.grantKeeper()" style="border-color:rgba(122,179,86,0.5);color:var(--sage);">🐛 GRANT KEEPER (FREE)</button><button class="dev-btn" onclick="PW_Dev.debugSunbeams()" style="border-color:rgba(232,200,106,0.6);color:var(--gold);">🔍 DUMP SUNBEAM STATE</button><button class="dev-btn" onclick="PW_Dev.debugCompanion()" style="border-color:rgba(122,179,86,0.6);color:var(--sage);">🔍 DUMP COMPANION STATE</button></div>
     <div class="dev-section"><div class="dev-section-title">TEST PLANTS</div><button class="dev-btn" onclick="PW_Dev.spawnTestPlants()">🌿 SPAWN MYTHIC + COSMIC</button><button class="dev-btn" onclick="PW_Dev.spawnWhiteWhales()" style="border-color:rgba(232,200,106,0.7);color:var(--gold);background:rgba(200,168,75,0.12);">🐋 PRINT 5 WHITE WHALES</button><button class="dev-btn" onclick="PW_Dev.generatePlant()">🌱 GENERATE 1 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(5)">🌿 GENERATE 5 RANDOM</button><button class="dev-btn" onclick="PW_Dev.generatePlant(10)">🌳 GENERATE 10 RANDOM</button><button class="dev-btn" onclick="PW_Dev.fillGreenhouse()">🏡 FILL GREENHOUSE (30)</button><button class="dev-btn" onclick="PW_Dev.spawnChimeras()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🧬 SPAWN 4 CHIMERAS (dual borders)</button><button class="dev-btn" onclick="PW_Dev.auditDualBorders()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🔍 AUDIT DUAL BORDERS</button><button class="dev-btn" onclick="PW_Dev.repairDualBorders()" style="border-color:rgba(200,168,75,0.4);color:var(--gold);">🔧 REPAIR DUAL BORDERS</button><button class="dev-btn" onclick="PW_Dev.grantDew(500)" style="border-color:rgba(91,175,220,0.4);color:rgba(91,175,220,0.9);">💧 +500 DEW DROPS</button></div>
@@ -42661,10 +42662,11 @@ document.addEventListener('keydown', function(e) {
     }catch(e){}
     // Persist Sunbeams to cloud on every earn. Without this, accrued sunbeams
     // only reach Firestore when a *different* mutation (mint/compost/breed)
-    // flushes the vault — so a player who earns 240 sunbeams without minting
-    // and then clears their browser loses everything. Stephen 2026-05-05.
-    // Debounced via SYNC_DEBOUNCE_MS (5s) inside _doFlushVaultToCloud.
-    try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
+    // flushes the vault — so a player who earns sunbeams without minting and
+    // then clears their browser loses everything. Stephen 2026-05-05 / 06-16.
+    // 06-16: throttled-immediate (≤2.5s window) instead of the 5s debounce —
+    // the 5s gap is exactly how Stephen lost 400 box Sunbeams on a data clear.
+    try { if (window._lwFlushVaultSoon) window._lwFlushVaultSoon(); else if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){}
   }
   // Update game tab dew balance + mint progress bar + keeper bar dew
   function _updateGameDew() {
@@ -49357,6 +49359,7 @@ document.addEventListener('keydown', function(e) {
   // an empty readyHashes array over the cloud's real queue (merge:true
   // replaces arrays), permanently destroying banked sunbeams.
   var _metaHydrated           = false;
+  var _metaRetryTimer         = null; // 2026-06-16: retry meta write until hydration resolves (was a silent skip → lost Sunbeams/omens)
   // Expose for dev panel force-sync
   Object.defineProperty(window, '_vaultHydrated', {
     get: function(){ return _vaultHydrated; },
@@ -50338,7 +50341,19 @@ document.addEventListener('keydown', function(e) {
     // see _metaHydrated declaration. Skipping is safe: the next debounced
     // flush after hydration carries current values.
     if (!_metaHydrated) {
-      if (window._swsLog) _swsLog('meta/state write skipped — meta not hydrated yet', 'warn');
+      // 2026-06-16: was a silent skip with no retry — if hydration stalled, the
+      // Sunbeam queue + omens (this doc) NEVER reached the cloud and were lost
+      // on a data clear. Now retry every 1.5s until hydration resolves, then
+      // flush once. Capped so it can't loop forever.
+      if (window._swsLog) _swsLog('meta/state write skipped — not hydrated; retry scheduled', 'warn');
+      if (!_metaRetryTimer) {
+        var _mrTries = 0;
+        _metaRetryTimer = setInterval(function(){
+          _mrTries++;
+          if (_metaHydrated) { clearInterval(_metaRetryTimer); _metaRetryTimer = null; try { if (window.syncVaultToCloudNow) window.syncVaultToCloudNow(); } catch(e){} }
+          else if (_mrTries >= 20) { clearInterval(_metaRetryTimer); _metaRetryTimer = null; }
+        }, 1500);
+      }
       return;
     }
     var metaRef = db.collection('vaults').doc(uid).collection('meta').doc('state');
@@ -50405,6 +50420,23 @@ document.addEventListener('keydown', function(e) {
     if (_syncPendingTimer) { clearTimeout(_syncPendingTimer); _syncPendingTimer = null; }
     _syncPendingArgs = null;
     _doFlushVaultToCloud(gh, fbUser);
+  };
+  // 2026-06-16: throttled-immediate flush for things that MUST NOT be lost in
+  // the 5s debounce window — Sunbeam earns and omen discoveries. Flushes now if
+  // it's been >2.5s since the last forced flush; otherwise schedules a single
+  // trailing flush. Coalesces rapid bursts (many game-wins) into few writes
+  // while keeping the loss window tiny.
+  var _soonLast = 0, _soonTimer = null;
+  window._lwFlushVaultSoon = function(){
+    if (!window.syncVaultToCloudNow) { try { if (window.syncVaultToCloud) window.syncVaultToCloud(); } catch(e){} return; }
+    var now = Date.now();
+    if (now - _soonLast >= 2500) {
+      _soonLast = now;
+      if (_soonTimer) { clearTimeout(_soonTimer); _soonTimer = null; }
+      try { window.syncVaultToCloudNow(); } catch(e){}
+    } else if (!_soonTimer) {
+      _soonTimer = setTimeout(function(){ _soonTimer = null; _soonLast = Date.now(); try { window.syncVaultToCloudNow(); } catch(e){} }, 2500);
+    }
   };
   // Flush on page hide so mobile backgrounding doesn't lose pending writes.
   // iOS Safari is flaky on visibilitychange when the user swipes the tab
@@ -84078,7 +84110,12 @@ function checkTriggers(plant, nearbyPlants, weather, playerStats){
 
 // ── COMPENDIUM DATA ──
 function _getDiscovered(){try{return JSON.parse(localStorage.getItem(TRIGGER_KEY)||'[]');}catch(e){return[];}}
-function _saveDiscovered(arr){localStorage.setItem(TRIGGER_KEY,JSON.stringify(arr));}
+function _saveDiscovered(arr){localStorage.setItem(TRIGGER_KEY,JSON.stringify(arr));
+  // 2026-06-16: omens used to write localStorage ONLY and rely on some OTHER
+  // action triggering a flush — so an omen found and then cleared was lost.
+  // Push to cloud now (throttled-immediate).
+  try{ if(window._lwFlushVaultSoon) window._lwFlushVaultSoon(); }catch(e){}
+}
 
 // GROWN tracker — parallel to DISCOVERED. Records which triggers the
 // player has actually grown a plant matching (vs. merely encountered in
