@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.16.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -42832,19 +42832,39 @@ document.addEventListener('keydown', function(e) {
   // when they shouldn't (rare with rate-limited play).
   (function(){
     var _origEarn = window.earnHashes;
+    // 2026-06-16 Gate A/A2: the server earnHashes call used to silently drop on
+    // failure (offline / unauthed / in-flight), leaving the server ledger behind.
+    // Queue failed/unauthed earns in localStorage and drain on reconnect + auth.
+    var RKEY = 'lw_earn_retry';
+    function _loadRetry(){ try{ var a=JSON.parse(localStorage.getItem(RKEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){return [];} }
+    function _saveRetry(a){ try{ localStorage.setItem(RKEY, JSON.stringify(a.slice(-100))); }catch(e){} }
+    function _queue(amount, source){ if(Number.isInteger(amount)&&amount>0&&amount<=200){ var q=_loadRetry(); q.push({a:amount,s:source||'unknown'}); _saveRetry(q); } }
+    function _drainRetry(){
+      try{
+        if (typeof firebase==='undefined' || !firebase.functions || !firebase.auth || !firebase.auth().currentUser) return;
+        var q=_loadRetry(); if(!q.length) return;
+        _saveRetry([]); // take ownership; failures re-queue below
+        var fn = firebase.functions().httpsCallable('earnHashes');
+        q.forEach(function(item){ fn({ amount:item.a, source:item.s }).catch(function(){ _queue(item.a, item.s); }); });
+      }catch(e){}
+    }
+    window._lwDrainEarnRetry = _drainRetry;
     window.earnHashes = function(amount, source) {
       try { _origEarn.apply(this, arguments); } catch(e) {}
       try {
         if (typeof firebase === 'undefined' || !firebase.functions) return;
-        if (!firebase.auth || !firebase.auth().currentUser) return;
         if (!Number.isInteger(amount) || amount <= 0 || amount > 200) return;
-        var fn = firebase.functions().httpsCallable('earnHashes');
-        fn({ amount: amount, source: source || 'unknown' })
+        if (!firebase.auth || !firebase.auth().currentUser) { _queue(amount, source); return; }
+        firebase.functions().httpsCallable('earnHashes')({ amount: amount, source: source || 'unknown' })
+          .then(function(){ _drainRetry(); })
           .catch(function(err){
-            if (window.console && window._LW_DEBUG) console.warn('[earnHashes server]', err && err.message);
+            _queue(amount, source);
+            if (window.console && window._LW_DEBUG) console.warn('[earnHashes server] queued for retry', err && err.message);
           });
       } catch(e){}
     };
+    try { window.addEventListener('online', _drainRetry); } catch(e){}
+    try { if (firebase && firebase.auth) firebase.auth().onAuthStateChanged(function(u){ if(u) setTimeout(_drainRetry, 1500); }); } catch(e){}
   })();
   // Debounced wrapper — callers fire updateDashboard many times during
   // rapid state changes (plant action, breed, etc). Burst-coalesce to one
