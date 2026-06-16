@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.14';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.16.15';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -45337,6 +45337,15 @@ document.addEventListener('keydown', function(e) {
 
     // Step 6: delete staging key — full commit confirmed
     try { localStorage.removeItem(INV_STAGING); } catch(e) {}
+    // 2026-06-16 Gate C: record a compost tombstone so this hash can't
+    // RESURRECT from a cloud copy on another device. The greenhouse cloud
+    // merge is a union-by-hash with no per-hash delete signal, so without this
+    // a plant composted here reappears when another device's stale vault syncs.
+    // Mirrors the nursery's lw_consumed_seed_ids. Capped at 500.
+    try {
+      var _ct = JSON.parse(localStorage.getItem('lw_composted_ids')||'[]'); if(!Array.isArray(_ct))_ct=[];
+      if (plant.hash && _ct.indexOf(plant.hash) < 0) { _ct.push(plant.hash); if(_ct.length>500)_ct=_ct.slice(-500); localStorage.setItem('lw_composted_ids', JSON.stringify(_ct)); }
+    } catch(e) {}
     // Note: cloud sync fires automatically via saveGreenhouse() interceptor above
     if (window.LW_ACH) {
       LW_ACH.bump('compost_total', 1);
@@ -49444,6 +49453,9 @@ document.addEventListener('keydown', function(e) {
       // bloom-respawn fix). Synced so other devices can't resurrect a
       // seed bloomed here.
       consumedSeeds:   _ls('lw_consumed_seed_ids') || [],
+      // 2026-06-16 Gate C: composted-plant tombstones — prevent cross-device
+      // resurrection of composted greenhouse plants (see _applyCloudData).
+      compostedIds:    _ls('lw_composted_ids') || [],
       sws_inventory:   _ls('sws_inventory')   || {dnaFragments:0,substrate:{}},
       // hashLedger is SERVER-ONLY: rules-7 vaultServerFieldsImmutable() blocks
       // any client write to it. Removed from payload so vault sync stops
@@ -49632,6 +49644,21 @@ document.addEventListener('keydown', function(e) {
     function _notConsumed(s){ return s && !_tset[s.id] && !_tset[s.seedHash]; }
     cNur = cNur.filter(_notConsumed);
     localNur = (localNur||[]).filter(_notConsumed);
+    // 2026-06-16 Gate C: composted-plant tombstones — drop any plant whose hash
+    // was composted (here OR on another device) so the greenhouse union merge
+    // can't resurrect it. Mirrors the nursery consumed-seed tombstone above.
+    var _cset = {};
+    try {
+      var _cl = JSON.parse(localStorage.getItem('lw_composted_ids')||'[]')||[];
+      var _cc = Array.isArray(data.compostedIds) ? data.compostedIds : [];
+      var _call = _cl.concat(_cc), _cout = [];
+      for (var _ci2=0; _ci2<_call.length; _ci2++) { var _cv=_call[_ci2]; if (_cv && !_cset[_cv]) { _cset[_cv]=1; _cout.push(_cv); } }
+      if (_cout.length > 500) _cout = _cout.slice(_cout.length-500);
+      localStorage.setItem('lw_composted_ids', JSON.stringify(_cout));
+    } catch(e){}
+    function _notComposted(p){ return p && !_cset[p.hash]; }
+    cGH = cGH.filter(_notComposted);
+    localGH = (localGH||[]).filter(_notComposted);
     var mGH  = _mergeByHash(localGH||[], cGH);
     var mNur = _mergeByHash(localNur||[], cNur);
     function _ss(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
