@@ -881,7 +881,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.16.11';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62839,6 +62839,9 @@ function _e(v){
     var now=Date.now();
     if(_afLastComplete>0&&(now-_afLastComplete)/1000<_afCompleteCd){
       if(window._LW_DEBUG)console.log('[_e] BLOCKED, completion cooldown ('+Math.round(_afCompleteCd-(now-_afLastComplete)/1000)+'s left)');
+      // 2026-06-16 Gate B: was silently paying 0 with no explanation — looked
+      // broken on a fast second win. Tell the player it's a brief rest.
+      if(v==='game_win')_guardToast('Resting — play again in '+Math.ceil(_afCompleteCd-(now-_afLastComplete)/1000)+'s');
       base=0;
     }else{
       _afLastComplete=now;
@@ -73028,6 +73031,8 @@ function start(){
     if (isStandalone) {
       // Fast-forward into Beat 4 (auth + gift plant) after a beat so the
       // keeper bar / rain have a moment to settle.
+      document.body.classList.add('ob-active'); // hides feedback button until signup
+      var _kbStandalone = document.getElementById('pw-keeper-bar'); if (_kbStandalone) _kbStandalone.style.display = 'none';
       setTimeout(function(){
         try {
           if (!_giftHash) _genGiftHash();
@@ -73037,7 +73042,12 @@ function start(){
           var sk = document.getElementById('ob-skip'); if (sk) sk.style.display = 'none';
         } catch(e){}
       }, 500);
-      // Still return here so the rest of start() doesn't unwind rain etc.
+      try{ if(typeof gtag!=='undefined')gtag('event','onboard_start'); }catch(e){}
+      window._lwOnboardStartTs = Date.now();
+      // 2026-06-16 Gate B: the original comment intended a return here but it
+      // was missing — so installed/PWA users ran the full cinematic (beat-1
+      // flash + rain + a redundant _genGiftHash) before the 500ms cut to beat 4.
+      return;
     }
   } catch(e){}
   document.body.classList.add('ob-active'); // hides feedback button until signup completes
@@ -73560,6 +73570,11 @@ function submitAuth(){
       try{if(typeof gtag!=='undefined')gtag('event','onboard_auth_fail',{code:err.code||'unknown'});}catch(e){}
       if(btn){btn.disabled=false;btn.textContent='\uD83C\uDF31 CLAIM THIS PLANT';}
       var msg=err.message||'Something went wrong.';
+      // 2026-06-16 Gate B: friendly-map the common signup errors (was showing
+      // raw Firebase strings like "The email address is badly formatted.").
+      if(err.code==='auth/invalid-email')msg='That email address looks invalid — please check it.';
+      else if(err.code==='auth/network-request-failed')msg='Network problem — check your connection and try again.';
+      else if(err.code==='auth/weak-password')msg='Password must be at least 6 characters.';
       if(err.code==='auth/email-already-in-use'){
         // Account exists — try signing in (returning player used signup form)
         firebase.auth().signInWithEmailAndPassword(email,pass).then(function(){
@@ -80806,7 +80821,7 @@ var _LAYERS=[
   {key:'BLOOM',get:function(t){if(!t.hasFlower)return 'None';var b=window.TRAIT_BANK;return b&&b.flowers&&b.flowers[t.flower%73]?b.flowers[t.flower%73].name:'Bloom #'+t.flower;},rare:function(t){var b=window.TRAIT_BANK;return t.hasFlower&&b&&b.flowers&&b.flowers[t.flower%73]&&b.flowers[t.flower%73].rare;},inherit:true,tag:function(){return 'MIX';},none:function(t){return !t.hasFlower;}},
   {key:'SUBSTRATE',get:function(t){var b=window.TRAIT_BANK;return b&&b.substrates&&b.substrates[t.base]?b.substrates[t.base].name:'Base #'+t.base;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.substrates&&b.substrates[t.base]&&b.substrates[t.base].rare;},inherit:true,tag:function(t){var b=window.TRAIT_BANK;return(b&&b.substrates&&b.substrates[t.base]&&b.substrates[t.base].rare)?'DOM':'';}},
   {key:'AURA',get:function(t){var b=window.TRAIT_BANK;if(b&&b.auras&&b.auras[t.aura]){var n=b.auras[t.aura].name;return n==='None'?'None':n;}return t.aura>2?'Aura #'+t.aura:'None';},none:function(t){var b=window.TRAIT_BANK;if(b&&b.auras&&b.auras[t.aura])return b.auras[t.aura].name==='None';return t.aura<=4;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.auras&&b.auras[t.aura]&&b.auras[t.aura].rare;}},
-  {key:'COMPANION',get:function(t){var b=window.TRAIT_BANK;if(b&&b.companions&&b.companions[t.companion]){var n=b.companions[t.companion].name;return n==='None'?'None':n;}return t.companion<20?'None':'Creature #'+t.companion;},mythic:function(t){return t.companion>=32&&t.companion<=38;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.companions&&b.companions[t.companion]&&b.companions[t.companion].rare;},none:function(t){var b=window.TRAIT_BANK;if(b&&b.companions&&b.companions[t.companion])return b.companions[t.companion].name==='None';return t.companion<20;}},
+  {key:'COMPANION',get:function(t){var b=window.TRAIT_BANK;if(b&&b.companions&&b.companions[t.companion]){var n=b.companions[t.companion].name;return n==='None'?'None':n;}return 'None';/* 2026-06-16 Gate B: was 'Creature #'+idx for phantom companions 70-81 (~4.7% of plants) — leaked a raw index on the breed screen. Match renderDNALedger: treat unknown as None. */},mythic:function(t){return t.companion>=32&&t.companion<=38;},rare:function(t){var b=window.TRAIT_BANK;return b&&b.companions&&b.companions[t.companion]&&b.companions[t.companion].rare;},none:function(t){var b=window.TRAIT_BANK;if(b&&b.companions&&b.companions[t.companion])return b.companions[t.companion].name==='None';return t.companion<20;}},
   {key:'MUTATION',get:function(t){return t.mutationName||'None';},mutation:function(t){return t.mutationName&&t.mutationName!=='None';},inherit:true,tag:function(t){return(t.mutationName&&t.mutationName!=='None')?'RISK':'';},none:function(t){return !t.mutationName||t.mutationName==='None';}}
 ];
 
@@ -102069,7 +102084,11 @@ window.LW_Comp = (function(){
     if(document.getElementById('lw-beta-modal'))return;
     var ov=document.createElement('div');
     ov.id='lw-beta-modal';
-    ov.style.cssText='position:fixed;inset:0;z-index:1000020;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:panelFadeIn 0.4s ease;';
+    // 2026-06-16 Gate B: z was 1000020 — BELOW the boot/pw splash (2147483646/47),
+    // so the "I UNDERSTAND" button was buried + un-tappable while the splash
+    // showed, and the cinematic (gated on the ack) couldn't start → ~6s dead air
+    // on the first screen. Raised above the splash so it's interactable on sight.
+    ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:1.5rem;animation:panelFadeIn 0.4s ease;';
     ov.innerHTML='<div style="max-width:340px;text-align:center;background:rgba(18,22,16,0.97);border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;padding:1.3rem 1.2rem;box-shadow:0 14px 44px rgba(0,0,0,0.7);">'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:0.2em;margin-bottom:0.5rem;">\u2726 BETA \u2726</div>'+
       '<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--cream);line-height:1.45;margin-bottom:0.5rem;">Welcome, early keeper.</div>'+
