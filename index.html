@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.18.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.18.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62594,38 +62594,70 @@ window.G=G;          // expose so rules-modal + other helpers can look up game m
 function _gHiddenHere(g){return !!(g&&g.ext&&document.body.classList.contains('pi-browser'));}
 // ── Studio earn bridge (cross-origin postMessage) ─────────────────────
 // External studio games (the `ext:` entries) run on their OWN origin, so
-// their Sunbeam SDK earns land in THAT origin's localStorage/auth and the
-// LW wallet never sees them (the cross-origin gotcha in SUNBEAM_SDK.md).
-// Bridge it: the embedded SDK postMessages each earn up to this parent
-// window; we validate origin + shape and credit the signed-in LW player
-// via window.earnHashes (server-capped 200/call · 300/min · 5000/day).
-// Same-origin satellites (/satellites/*) are intentionally NOT allowlisted
-// here — they share this origin's localStorage and are already drained by
-// _claimSunbeamBucket, so crediting their postMessages too would double-count.
+// their Sunbeam SDK earns can't reach this wallet (per-origin localStorage —
+// the cross-origin gotcha in SUNBEAM_SDK.md). Bridge it: the embedded SDK
+// postMessages each earn up to this parent REPORTING AN EVENT ('win'/'combo').
+// Lucid Winds — NOT the game — decides the payout from a central rate card +
+// a daily per-game taper, then credits via window.earnHashes (server-capped
+// 200/call · 300/min · 5000/day). A game can only SAY "win"; it can never set
+// its own amount, so the whole studio economy is balanced in THIS one place.
+// Same-origin satellites (/satellites/*) are intentionally NOT allowlisted —
+// they share this origin's localStorage and are drained by _claimSunbeamBucket
+// (crediting their postMessages too would double-count).
 (function(){
   var STUDIO_ORIGINS = {
-    'https://stephenuffugus.github.io': 1,  // all of Stephen's github.io games share this origin
+    'https://stephenuffugus.github.io': 1,  // every github.io game shares this one origin
     'https://hunch-mauve.vercel.app': 1     // HUNCH (premium, Vercel)
   };
-  var MAX_PER_MSG = 200;   // matches the earnHashes per-call cap
-  var MAX_PER_MIN = 400;   // local throttle; server enforces the real 300/min + 5000/day
-  var _win = -1, _spent = 0;
+  // Payout per (game, event), anchored to the native _aw card (win 2-8, drips 1).
+  // A studio game not listed falls back to _default. THIS is where the studio
+  // economy is tuned — games cannot override it.
+  var STUDIO_RATES = {
+    sixfold:    {win:3, combo:1},   // fast duel — quick-game tier
+    sweetspot:  {win:3, combo:1},   // one-thumb timing — quick-game tier
+    glyphforge: {win:4, combo:1},   // combo hunting — medium tier
+    tarotrun:   {win:4, combo:1},   // combo card run — medium tier
+    _default:   {win:3, combo:1, _default:1}
+  };
+  var WIN_FULL = 8;        // first N win-class rewards / game / day pay full…
+  var TAPER    = 0.8;      // …then each further win pays ×0.8 the last, floor 1.
+  var MAX_PER_MIN = 400;   // backstop; server enforces the real 300/min + 5000/day
+  function _today(){ try{return new Date().toISOString().slice(0,10);}catch(e){return '0';} }
+  function _taper(){ try{var s=JSON.parse(localStorage.getItem('lw_studio_taper')||'{}')||{};if(s.day!==_today())s={day:_today(),wins:{}};if(!s.wins)s.wins={};return s;}catch(e){return {day:_today(),wins:{}};} }
+  var _minW=-1,_minSpent=0;
   window.addEventListener('message', function(ev){
     try{
       if(!ev || !STUDIO_ORIGINS[ev.origin]) return;
       var d = ev.data;
       if(!d || d.source!=='sunbeam-sdk' || d.type!=='earn') return;
-      var amt = d.amount;
-      if(typeof amt!=='number' || !isFinite(amt) || amt!==Math.floor(amt) || amt<1) return;
-      if(amt>MAX_PER_MSG) amt = MAX_PER_MSG;
-      var nowMin = Math.floor(Date.now()/60000);
-      if(nowMin!==_win){_win=nowMin;_spent=0;}
-      if(_spent>=MAX_PER_MIN) return;
-      if(_spent+amt>MAX_PER_MIN) amt = MAX_PER_MIN-_spent;
+      var game = (typeof d.game==='string' && d.game) ? d.game.slice(0,32) : '';
+      var event = (typeof d.event==='string' && d.event) ? d.event
+                : (typeof d.src==='string' && d.src) ? d.src : 'win';
+      event = event.slice(0,32);
+      // Host decides the base payout — the game's reported amount is ignored.
+      var card = STUDIO_RATES[game] || STUDIO_RATES._default;
+      var base = (typeof card[event]==='number') ? card[event]
+               : (typeof card._default==='number') ? card._default
+               : (typeof STUDIO_RATES._default[event]==='number') ? STUDIO_RATES._default[event]
+               : 1;
+      if(base<1) return;
+      var amt = base;
+      // Daily per-game taper on win-class rewards (base>=2). Sub-event drips
+      // (base 1) always pay 1 — never tapered, never counted toward the threshold.
+      if(base>=2){
+        var st=_taper(), key=game||'_', n=st.wins[key]||0;
+        if(n>=WIN_FULL){ amt=Math.round(base*Math.pow(TAPER,n-(WIN_FULL-1))); if(amt<1)amt=1; }
+        st.wins[key]=n+1;
+        try{localStorage.setItem('lw_studio_taper',JSON.stringify(st));}catch(e){}
+      }
+      // Per-minute backstop.
+      var nowMin=Math.floor(Date.now()/60000);
+      if(nowMin!==_minW){_minW=nowMin;_minSpent=0;}
+      if(_minSpent>=MAX_PER_MIN) return;
+      if(_minSpent+amt>MAX_PER_MIN) amt=MAX_PER_MIN-_minSpent;
       if(amt<1) return;
-      _spent += amt;
-      var src = (typeof d.src==='string'&&d.src) ? ('studio:'+d.src).slice(0,32) : 'studio';
-      if(typeof window.earnHashes==='function') window.earnHashes(amt, src);
+      _minSpent+=amt;
+      if(typeof window.earnHashes==='function') window.earnHashes(amt, ('studio:'+(game||'?')+':'+event).slice(0,32));
     }catch(e){}
   }, false);
 })();

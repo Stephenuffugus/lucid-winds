@@ -2,7 +2,19 @@
 
 > **For:** the Claude Code instance working in each studio-game repo
 > (sixfold, glyph_forge, Sweet-Spot, Tarot_Run, HUNCH).
-> **Date:** 2026-06-18 · **Status:** LW host side SHIPPED (LW_VERSION `2026.06.18.03`). Game side TODO.
+> **Date:** 2026-06-18 · **Status:** LW host side SHIPPED (LW_VERSION `2026.06.18.04`). Game side TODO.
+
+> ## ⚠️ Host-authoritative payouts — read this first
+> Lucid Winds decides how many sunbeams each event is worth, from a central
+> rate card + a daily per-game taper in the LW host. **Your game does NOT set
+> the payout.** You just call `Sunbeam.earn(n, '<event>')` where the **second
+> arg is an EVENT LABEL** (`'win'`, `'combo'`) — the host reads that label,
+> ignores `n`, and credits its own amount. (`n` still matters when your game
+> runs *standalone* outside Lucid Winds, so pass a sensible number anyway.)
+> Use stable, lowercase event labels. Current card: `win` (sixfold/sweetspot 3,
+> glyphforge/tarotrun 4; unknown game defaults to 3), `combo` 1. First 8 wins
+> /game/day pay full, then taper ×0.8 → floor 1, daily reset. To change a
+> payout, edit `STUDIO_RATES` in LW `index.html` — not your game.
 
 ## Why this exists
 
@@ -50,17 +62,19 @@ If a game ever moves to a new origin, add it to `STUDIO_ORIGINS` in LW's
    Sunbeam.init({ gameId: 'sixfold' });   // use the game's id
    ```
 
-3. **Call `Sunbeam.earn()` on real scoring events.** This is the part that's
-   currently missing in every game — none of them call `earn()` at all yet:
+3. **Call `Sunbeam.earn(n, '<event>')` on real scoring events**, using an
+   **EVENT LABEL** as the 2nd arg. This is the part that's currently missing in
+   every game — none of them call `earn()` at all yet:
    ```js
-   Sunbeam.earn(5, 'win');        // e.g. on a win
+   Sunbeam.earn(3, 'win');        // 2nd arg is the EVENT — host decides the in-LW payout
    Sunbeam.earn(1, 'combo');      // smaller drips for sub-events
    ```
-   Pick amounts that fit LW's economy: **30 sunbeams = 1 plant.** A casual
-   session should land in the tens, not hundreds. Per-call cap is 200; the LW
-   host additionally throttles to 400/min and the server enforces 300/min +
-   5000/day. Keep per-game yields modest and comparable to the native LW games
-   (a native win is a few sunbeams).
+   **30 sunbeams = 1 plant.** Inside Lucid Winds the host ignores `n` and pays
+   from its rate card based on the event label (see the box at the top), so you
+   don't tune the in-LW amount — just emit clean labels at the right moments.
+   The `n` you pass is still used when the game runs **standalone** outside LW,
+   so keep it sane (a win ≈ a few sunbeams, matching a native LW game). Don't
+   double-fire `earn()` for a single reward.
 
 ## Testing the round-trip
 

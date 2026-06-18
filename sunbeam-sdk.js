@@ -393,12 +393,16 @@
     // When this game is embedded in an iframe by a host on another origin
     // (e.g. Lucid Winds' GAME tab loading a github.io / Vercel game), the
     // local credit paths below land in THIS origin's storage/auth, which
-    // the host wallet can't read (per-origin localStorage). Post the earn
-    // up to the host so it can credit the signed-in host player. Harmless
-    // when not embedded (no parent) or when the host ignores it.
+    // the host wallet can't read (per-origin localStorage). Report the earn
+    // up to the host so it can credit the signed-in host player. We send the
+    // gameId + an EVENT label (the `source` arg, e.g. 'win'/'combo'); the host
+    // is authoritative on the payout — it ignores `amount` and looks the
+    // reward up in its own rate card. Harmless standalone (no parent) or when
+    // the host ignores it. `amount` still drives the local/standalone paths
+    // below, so keep passing a sensible number for when this game runs alone.
     try {
       if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ source: 'sunbeam-sdk', type: 'earn', amount: amount, src: src }, '*');
+        window.parent.postMessage({ source: 'sunbeam-sdk', type: 'earn', game: (_gameId || ''), event: src, amount: amount, src: src }, '*');
       }
     } catch (e) {}
 
