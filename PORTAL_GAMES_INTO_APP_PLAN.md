@@ -1,7 +1,11 @@
 # PLAN — Bring portal-only external games into the main Lucid Winds GAME tab
 
-> **Status:** PROPOSAL — awaiting Stephen's go-ahead on open questions (bottom).
-> **Author:** Claude Code · **Date:** 2026-06-17 · **Branch:** main (plan doc only, no app code changed)
+> **Status:** ✅ BUILT 2026-06-18 (LW_VERSION `2026.06.18.01`) — awaiting Stephen's device test.
+> Stephen's Q-answers: copy-paste template · first batch = Glyph Forge + Sweet Spot + Tarot Run
+> (HUNCH/Brawl deferred) · dedicated `studio` / SKY WOLF STUDIOS 🐺 category (Director left it open;
+> Claude recommended a dedicated section because ext games are network/iframe/Pi-hidden — `cat` is a
+> one-word field so any game can be reassigned to an existing category later).
+> **Author:** Claude Code · **Date:** 2026-06-17 (built 2026-06-18) · **Branch:** main
 > **Goal (Stephen, verbatim):** "make the games that are only in the portal also in the
 > main lucid winds games section too" + "have a simple way for me to do it" so he can add
 > future games himself (he makes the thumbnails) without me hand-integrating each one.

@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.16.15';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.18.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62508,7 +62508,8 @@ var G_CATS=[
   {key:'puzzle',  label:'PUZZLES',        icon:'\ud83e\udde9'},
   {key:'board',   label:'BOARD GAMES',    icon:'\u265f'},
   {key:'pattern', label:'PATTERN & MEMORY',icon:'\ud83e\udde0'},
-  {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'}
+  {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'},
+  {key:'studio',  label:'SKY WOLF STUDIOS',icon:'\ud83d\udc3a'}
 ];
 var G=[
 {id:'set',n:'Three Sisters',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'pattern',thumb:'assets/games/thumbs/threesisters.png'},
@@ -62577,9 +62578,19 @@ var G=[
 {id:'rhythmvine',n:'Rhythm and Vine',i:'\ud83c\udfb5',r:'Tap to the beat! Perfect, Great, Good timing windows. Level up your rhythm. (A play on rhythm and rhyme.)',cat:'creative',thumb:'assets/games/thumbs/rhythmvine.png',wip:true},
 {id:'seedtoss2',n:'Seed Toss',i:'\ud83c\udf31',r:'Flick seeds into the pot. Physics + wind at higher levels. Hit the bullseye!',cat:'creative',thumb:'assets/games/thumbs/seedtoss2.png'},
 {id:'pottingbench',n:'Speed Sort',i:'\ud83e\udeb4',r:'Speed card sorting. Match any attribute to send a card to either pile. Clear the deck fast!',cat:'pattern',thumb:'assets/games/thumbs/pottingbench.png'},
-{id:'dewtrail',n:'Dew Trail',i:'\ud83d\udca7',r:'One unbroken dew trail: drag from 1 through every cell, collecting numbers in order, never crossing. One daily puzzle \u2014 the same trail for every keeper on Earth \u2014 plus endless practice.',cat:'puzzle',thumb:'assets/games/thumbs/dewtrail.png'}
+{id:'dewtrail',n:'Dew Trail',i:'\ud83d\udca7',r:'One unbroken dew trail: drag from 1 through every cell, collecting numbers in order, never crossing. One daily puzzle \u2014 the same trail for every keeper on Earth \u2014 plus endless practice.',cat:'puzzle',thumb:'assets/games/thumbs/dewtrail.png'},
+// \u2500\u2500 SKY WOLF STUDIOS \u2014 external games on their own origins, embedded via
+// iframe (see _sg `ext` branch). To add another: copy one line, change
+// id/n/i/r/ext/thumb, drop the thumbnail PNG. Hidden inside Pi Browser. \u2500\u2500
+{id:'glyphforge',n:'Glyph Forge',i:'\u2692\ufe0f',r:'Forge glyphs, hunt combos, break everything.',cat:'studio',ext:'https://stephenuffugus.github.io/glyph_forge/',thumb:'portal-assets/thumbs/glyph-forge.png'},
+{id:'sweetspot',n:'Sweet Spot',i:'\ud83c\udfbe',r:'One-thumb tennis timing. Nail the gold for an ACE.',cat:'studio',ext:'https://stephenuffugus.github.io/Sweet-Spot/',thumb:'portal-assets/thumbs/sweet-spot.png'},
+{id:'tarotrun',n:'Tarot Run',i:'\ud83c\udccf',r:'A fast, spectacular combo card run \u2014 a reading of blades.',cat:'studio',ext:'https://stephenuffugus.github.io/Tarot_Run/',thumb:'portal-assets/thumbs/tarot-run.png'}
 ];
 window.G=G;          // expose so rules-modal + other helpers can look up game metadata
+// External (iframe) studio games (entries with an `ext:` URL) must NOT show
+// inside Pi Browser — Pi forbids external content / redirects. This predicate
+// hides them there while leaving them visible in the web/PWA build.
+function _gHiddenHere(g){return !!(g&&g.ext&&document.body.classList.contains('pi-browser'));}
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 window._a=_a;        // keep window in sync for external readers (rules modal, switchTab)
 // ═══ HASH ACCUMULATION BUFFER ═══
@@ -63691,7 +63702,20 @@ function _playWin(){
 }
 window._playWin=_playWin;
 function _st(){_s=Date.now();if(_t)clearInterval(_t);_t=setInterval(function(){var e=document.getElementById('_tt');if(!e)return;var s=Math.floor((Date.now()-_s)/1000);e.textContent=Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)},500)}
-function _xt(){if(_t){clearInterval(_t);_t=null}if(window._bwKillAudio)_bwKillAudio();if(window._lwRunGameCleanups)window._lwRunGameCleanups();}
+// External (iframe) studio games earn via the Sunbeam SDK straight into the
+// shared Firebase wallet's server-side hashLedger — NOT the app's local _e().
+// So on leaving one, pull the cloud vault to surface those sunbeams in the
+// header. hashLedger merges MAX (never clobbers local), so this is safe to
+// call on every exit. No-op for native games and when not signed in.
+window._lwExtGameResync=function(gid){
+  try{
+    var g=null;for(var _ri=0;_ri<G.length;_ri++){if(G[_ri].id===gid){g=G[_ri];break;}}
+    if(g&&g.ext&&window.loadVaultFromCloud){
+      window.loadVaultFromCloud(function(){try{if(window.updateFocusPlant)window.updateFocusPlant();if(window.updateDashboard)window.updateDashboard();}catch(e){}});
+    }
+  }catch(e){}
+};
+function _xt(){if(_t){clearInterval(_t);_t=null}if(window._bwKillAudio)_bwKillAudio();if(window._lwRunGameCleanups)window._lwRunGameCleanups();if(_a)window._lwExtGameResync(_a);}
 function sm(t){var m=document.getElementById('_gm');if(m)m.textContent=t}
 function _solEnterFS(){
   var ag=document.getElementById('fg-ag');
@@ -63750,7 +63774,7 @@ function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='
   allBtn.addEventListener('click',_op);p.appendChild(allBtn);
   // Category chips — quick-filter by type
   G_CATS.forEach(function(cat){
-    var count=G.filter(function(g){return g.cat===cat.key}).length;
+    var count=G.filter(function(g){return g.cat===cat.key&&!_gHiddenHere(g)}).length;
     if(!count)return;
     var c=document.createElement('div');c.className='fg-c';
     c.innerHTML='<span class="fi">'+(window._lwEmojiSprite?_lwEmojiSprite(cat.icon,28):cat.icon)+'</span><span class="fn">'+cat.label+'</span>';
@@ -63790,7 +63814,7 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
   // Category accordions
   var gi=0;
   G_CATS.forEach(function(cat){
-    var games=G.filter(function(g){return g.cat===cat.key});
+    var games=G.filter(function(g){return g.cat===cat.key&&!_gHiddenHere(g)});
     if(!games.length)return;
     h+='<div class="gp-cat" data-cat="'+cat.key+'">';
     h+='<button class="gp-cat-hdr" onclick="this.parentElement.classList.toggle(\'open\');this.querySelector(\'.gp-chev\').classList.toggle(\'open\')">';
@@ -63981,6 +64005,7 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
         window.dispatchEvent(new CustomEvent('lw-studio-close',{detail:{from:_a}}));
       }
     }catch(e){}
+    try{if(window._lwExtGameResync)window._lwExtGameResync(_a);}catch(e){}
     if(window.switchTab)switchTab('greenhouse');
   };
   // Universal RULES button — opens _showGameRules(id) which falls back
@@ -64007,6 +64032,25 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
   }
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
   if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
+  // ── External studio game (iframe). Mounts a separate web app on its own
+  // origin that earns via the Sunbeam SDK into the shared wallet. We skip
+  // the native _gameFns/_aw/_e lifecycle (and _st timer) entirely — the
+  // wallet re-syncs on exit via _xt()/back-button → _lwExtGameResync.
+  // Hidden from the picker in Pi Browser; guarded here too for deep-links.
+  if(gi&&gi.ext){
+    if(document.body.classList.contains('pi-browser')){
+      ag.innerHTML+='<div style="padding:2.5rem 1.5rem;text-align:center;color:var(--muted);font-family:DM Sans,sans-serif;line-height:1.5">This studio game opens in the web version of Lucid Winds at <span style="color:var(--gold)">lucidwinds.com</span>.</div>';
+      return;
+    }
+    var _ext=document.createElement('iframe');
+    _ext.src=gi.ext;
+    _ext.setAttribute('loading','lazy');
+    _ext.setAttribute('allow','fullscreen; autoplay; accelerometer; gyroscope; clipboard-write');
+    _ext.setAttribute('title',gi.n);
+    _ext.style.cssText='width:100%;height:calc(100dvh - 110px);border:0;border-radius:8px;background:#060610;';
+    ag.appendChild(_ext);
+    return;
+  }
   // ── Try: 1) already-loaded external, 2) lazy-load from games/ ──
   var gameFn=window._gameFns[id];
   if(gameFn){
