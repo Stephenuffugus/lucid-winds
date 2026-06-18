@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.18.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.18.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62609,17 +62609,22 @@ function _gHiddenHere(g){return !!(g&&g.ext&&document.body.classList.contains('p
     'https://stephenuffugus.github.io': 1,  // every github.io game shares this one origin
     'https://hunch-mauve.vercel.app': 1     // HUNCH (premium, Vercel)
   };
-  // Payout per (game, event), anchored to the native _aw card (win 2-8, drips 1).
-  // A studio game not listed falls back to _default. THIS is where the studio
-  // economy is tuned — games cannot override it.
+  // Payout per (game, event), anchored to the native _aw card. Games may emit
+  // mid-game events ('progress','milestone','combo') as well as 'win', so LONGER
+  // games PAY AS YOU PLAY, not just on completion — mirrors the native progress/
+  // milestone drips. Unlisted events fall back to _default (1). THIS is where the
+  // studio economy is tuned — games report an event but cannot set the amount.
   var STUDIO_RATES = {
-    sixfold:    {win:3, combo:1},   // fast duel — quick-game tier
-    sweetspot:  {win:3, combo:1},   // one-thumb timing — quick-game tier
-    glyphforge: {win:4, combo:1},   // combo hunting — medium tier
-    tarotrun:   {win:4, combo:1},   // combo card run — medium tier
-    _default:   {win:3, combo:1, _default:1}
+    sixfold:    {win:3, combo:1},                            // fast <1min duel — win only
+    sweetspot:  {win:3, combo:1},                            // one-thumb timing
+    glyphforge: {win:4, milestone:1, progress:1, combo:1},   // longer — pays as you play
+    tarotrun:   {win:4, milestone:1, progress:1, combo:1},   // longer — pays as you play
+    _default:   {win:3, milestone:1, progress:1, combo:1, _default:1}
   };
-  var WIN_FULL = 8;        // first N win-class rewards / game / day pay full…
+  // Only repeated COMPLETIONS taper. Mid-game drips (progress/milestone/combo)
+  // always pay full, so one long playthrough keeps earning as you go.
+  var TAPER_EVENTS = {win:1};
+  var WIN_FULL = 8;        // first N wins / game / day pay full…
   var TAPER    = 0.8;      // …then each further win pays ×0.8 the last, floor 1.
   var MAX_PER_MIN = 400;   // backstop; server enforces the real 300/min + 5000/day
   function _today(){ try{return new Date().toISOString().slice(0,10);}catch(e){return '0';} }
@@ -62642,9 +62647,9 @@ function _gHiddenHere(g){return !!(g&&g.ext&&document.body.classList.contains('p
                : 1;
       if(base<1) return;
       var amt = base;
-      // Daily per-game taper on win-class rewards (base>=2). Sub-event drips
-      // (base 1) always pay 1 — never tapered, never counted toward the threshold.
-      if(base>=2){
+      // Taper ONLY repeated completions ('win'); mid-game drips (progress/
+      // milestone/combo) always pay full so longer games pay as you play.
+      if(TAPER_EVENTS[event]){
         var st=_taper(), key=game||'_', n=st.wins[key]||0;
         if(n>=WIN_FULL){ amt=Math.round(base*Math.pow(TAPER,n-(WIN_FULL-1))); if(amt<1)amt=1; }
         st.wins[key]=n+1;

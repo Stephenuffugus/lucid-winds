@@ -64,17 +64,30 @@ If a game ever moves to a new origin, add it to `STUDIO_ORIGINS` in LW's
 
 3. **Call `Sunbeam.earn(n, '<event>')` on real scoring events**, using an
    **EVENT LABEL** as the 2nd arg. This is the part that's currently missing in
-   every game — none of them call `earn()` at all yet:
+   every game — none of them call `earn()` at all yet.
+
+   **Event vocabulary (use these labels):**
+   | label | when | in-LW payout | tapers? |
+   |---|---|---|---|
+   | `win` | game completed / duel won | 3–4 (per game) | yes — repeated wins taper |
+   | `milestone` | a meaningful mid-game checkpoint (level/wave cleared, big combo) | 1 | no |
+   | `progress` | small incremental progress | 1 | no |
+   | `combo` | minor sub-event | 1 | no |
+
    ```js
-   Sunbeam.earn(3, 'win');        // 2nd arg is the EVENT — host decides the in-LW payout
-   Sunbeam.earn(1, 'combo');      // smaller drips for sub-events
+   Sunbeam.earn(4, 'win');         // on completion
+   Sunbeam.earn(1, 'milestone');   // each level/wave cleared  ← PAY AS YOU PLAY
+   Sunbeam.earn(1, 'progress');    // smaller incremental drips
    ```
-   **30 sunbeams = 1 plant.** Inside Lucid Winds the host ignores `n` and pays
-   from its rate card based on the event label (see the box at the top), so you
+
+   **Longer games should pay as you play** — fire `milestone`/`progress` during
+   the run, not just `win` at the end. Those drips **never taper**, so a long
+   single playthrough keeps earning. Only repeated *completions* (`win`) taper
+   (first 8/day full, then down). **30 sunbeams = 1 plant.** Inside Lucid Winds
+   the host ignores `n` and pays from its rate card based on the label, so you
    don't tune the in-LW amount — just emit clean labels at the right moments.
-   The `n` you pass is still used when the game runs **standalone** outside LW,
-   so keep it sane (a win ≈ a few sunbeams, matching a native LW game). Don't
-   double-fire `earn()` for a single reward.
+   The `n` is still used when the game runs **standalone** outside LW, so keep
+   it sane. Don't double-fire `earn()` for a single reward.
 
 ## Testing the round-trip
 
