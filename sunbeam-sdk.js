@@ -389,6 +389,19 @@
     }
     var src = (typeof source === 'string' && source) ? source.slice(0, 32) : (_gameId || 'sdk-unknown');
 
+    // ── Cross-origin host bridge ──────────────────────────────────────
+    // When this game is embedded in an iframe by a host on another origin
+    // (e.g. Lucid Winds' GAME tab loading a github.io / Vercel game), the
+    // local credit paths below land in THIS origin's storage/auth, which
+    // the host wallet can't read (per-origin localStorage). Post the earn
+    // up to the host so it can credit the signed-in host player. Harmless
+    // when not embedded (no parent) or when the host ignores it.
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ source: 'sunbeam-sdk', type: 'earn', amount: amount, src: src }, '*');
+      }
+    } catch (e) {}
+
     if (_auth && _auth.currentUser) {
       // ── Signed-in path: server is the source of truth ──
       return _earnFn({ amount: amount, source: src }).then(function(res){

@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.18.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.18.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62592,6 +62592,43 @@ window.G=G;          // expose so rules-modal + other helpers can look up game m
 // inside Pi Browser — Pi forbids external content / redirects. This predicate
 // hides them there while leaving them visible in the web/PWA build.
 function _gHiddenHere(g){return !!(g&&g.ext&&document.body.classList.contains('pi-browser'));}
+// ── Studio earn bridge (cross-origin postMessage) ─────────────────────
+// External studio games (the `ext:` entries) run on their OWN origin, so
+// their Sunbeam SDK earns land in THAT origin's localStorage/auth and the
+// LW wallet never sees them (the cross-origin gotcha in SUNBEAM_SDK.md).
+// Bridge it: the embedded SDK postMessages each earn up to this parent
+// window; we validate origin + shape and credit the signed-in LW player
+// via window.earnHashes (server-capped 200/call · 300/min · 5000/day).
+// Same-origin satellites (/satellites/*) are intentionally NOT allowlisted
+// here — they share this origin's localStorage and are already drained by
+// _claimSunbeamBucket, so crediting their postMessages too would double-count.
+(function(){
+  var STUDIO_ORIGINS = {
+    'https://stephenuffugus.github.io': 1,  // all of Stephen's github.io games share this origin
+    'https://hunch-mauve.vercel.app': 1     // HUNCH (premium, Vercel)
+  };
+  var MAX_PER_MSG = 200;   // matches the earnHashes per-call cap
+  var MAX_PER_MIN = 400;   // local throttle; server enforces the real 300/min + 5000/day
+  var _win = -1, _spent = 0;
+  window.addEventListener('message', function(ev){
+    try{
+      if(!ev || !STUDIO_ORIGINS[ev.origin]) return;
+      var d = ev.data;
+      if(!d || d.source!=='sunbeam-sdk' || d.type!=='earn') return;
+      var amt = d.amount;
+      if(typeof amt!=='number' || !isFinite(amt) || amt!==Math.floor(amt) || amt<1) return;
+      if(amt>MAX_PER_MSG) amt = MAX_PER_MSG;
+      var nowMin = Math.floor(Date.now()/60000);
+      if(nowMin!==_win){_win=nowMin;_spent=0;}
+      if(_spent>=MAX_PER_MIN) return;
+      if(_spent+amt>MAX_PER_MIN) amt = MAX_PER_MIN-_spent;
+      if(amt<1) return;
+      _spent += amt;
+      var src = (typeof d.src==='string'&&d.src) ? ('studio:'+d.src).slice(0,32) : 'studio';
+      if(typeof window.earnHashes==='function') window.earnHashes(amt, src);
+    }catch(e){}
+  }, false);
+})();
 var _a='set',_m=0,_mTotal=0,_t=null,_s=0,RK='sws_fg_gr3',_dm=1.0;
 window._a=_a;        // keep window in sync for external readers (rules modal, switchTab)
 // ═══ HASH ACCUMULATION BUFFER ═══
