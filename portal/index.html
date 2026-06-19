@@ -199,7 +199,13 @@ var SHELL_BASE = "https://lucidwinds.com/play/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
 var CATS = [["all","All"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"]];
+// External app (opens in a NEW TAB on its own origin, not a /play/ shell):
+// 6th element = external URL, 7th = custom thumbnail URL. card() detects the
+// 6th slot and switches to target=_blank + the custom thumb. Pom Pond uses
+// Google/email sign-in popups + an add-to-home-screen prompt, so it must NOT
+// be iframed or same-tab — a new tab is required. Hosted free on Firebase.
 var GAMES = [
+ ["pompond","Pom Pond","creative","Chore tracker & reward center — kids earn “Poms” for chores, hatch collectible critters into their pond, and fill buckets to unlock rewards a parent picks. Opens in a new tab.","","https://pom-pond.web.app","https://pom-pond.web.app/icons/icon-512.png"],
  ["song","Music Studio","creative","Layer drums, bass, keys and leads in a full studio."],
  ["bloomwheel","Bloom Wheel","creative","Draw botanical mandalas on a spinning canvas synced to a beat."],
  ["breathing","Breathing Garden","creative","Guided breathing, 4 patterns. Bloom with every breath."],
@@ -270,7 +276,10 @@ var GAMES = [
 
 function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
 function card(g, isFeat){
-  var url = isFeat ? g.url : (SHELL_BASE + g[0] + ".html");
+  // Garden games with a 6th array slot are EXTERNAL apps (own origin) that
+  // open in a new tab, not /play/ shells. 7th slot is their custom thumb.
+  var extUrl = (!isFeat && g[5]) ? g[5] : null;
+  var url = isFeat ? g.url : (extUrl || (SHELL_BASE + g[0] + ".html"));
   var nm = isFeat ? g.nm : g[1];
   var ds = isFeat ? g.ds : (g[3] || "");
   var wip = !isFeat && g[4]==="wip";
@@ -279,17 +288,20 @@ function card(g, isFeat){
   var badge = hub ? '<span class="badge">HUB · 66 games</span>'
             : (soon ? '<span class="badge soon">COMING SOON</span>'
             : (isFeat ? (g.premium ? '<span class="badge premium">PREMIUM</span>' : '<span class="badge">PLAY NOW</span>')
-                      : (wip ? '<span class="badge wip">WIP</span>' : '')));
+                      : (extUrl ? '<span class="badge">PLAY NOW</span>' : (wip ? '<span class="badge wip">WIP</span>' : ''))));
   var shot;
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
     if (g.thumb) shot = '<img loading="lazy" alt="'+nm+'" src="'+g.thumb+'" onerror="_lwPh(this)">';
     else         shot = '<span class="ph">'+(g.ic||"🌿")+'</span>';
   }
+  else if(extUrl && g[6]){
+    shot = '<img loading="lazy" alt="'+nm+'" src="'+g[6]+'" onerror="_lwPh(this)">';
+  }
   else { var ext = EXT[g[0]] || "png";
          shot = '<img loading="lazy" alt="'+nm+'" src="'+SHOT+g[0]+'.'+ext+'" onerror="_lwPh(this)">'; }
   var tag = soon ? 'div' : 'a';
-  var attr = soon ? '' : ' href="'+url+'"';
+  var attr = soon ? '' : (' href="'+url+'"' + (extUrl ? ' target="_blank" rel="noopener noreferrer"' : ''));
   return '<'+tag+' class="card'+(hub?' hubcard':'')+(soon?' soon':'')+'"'+attr+'>'+
     '<div class="shot">'+badge+shot+'</div>'+
     '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div></div></'+tag+'>';

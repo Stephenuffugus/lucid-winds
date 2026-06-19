@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.18.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.19.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62579,6 +62579,13 @@ var G=[
 {id:'seedtoss2',n:'Seed Toss',i:'\ud83c\udf31',r:'Flick seeds into the pot. Physics + wind at higher levels. Hit the bullseye!',cat:'creative',thumb:'assets/games/thumbs/seedtoss2.png'},
 {id:'pottingbench',n:'Speed Sort',i:'\ud83e\udeb4',r:'Speed card sorting. Match any attribute to send a card to either pile. Clear the deck fast!',cat:'pattern',thumb:'assets/games/thumbs/pottingbench.png'},
 {id:'dewtrail',n:'Dew Trail',i:'\ud83d\udca7',r:'One unbroken dew trail: drag from 1 through every cell, collecting numbers in order, never crossing. One daily puzzle \u2014 the same trail for every keeper on Earth \u2014 plus endless practice.',cat:'puzzle',thumb:'assets/games/thumbs/dewtrail.png'},
+// Pom Pond \u2014 external chore-tracker / reward app on its own origin. Opens in a
+// NEW TAB (the `newtab:` field, NOT `ext:`) instead of an iframe: it relies on
+// Google/email sign-in popups + an add-to-home-screen prompt, both of which
+// break inside an iframe. `newtab:` routes _sg to an intro screen with an
+// "Open Pom Pond \u2192" launch button. Hidden in Pi Browser like ext games
+// (external redirect). Hosted free on Firebase; we just link out to it.
+{id:'pompond',n:'Pom Pond',sub:'Chore tracker & reward center',i:'\ud83d\udc38',r:'Kids do chores and kind things \u2192 earn \u201cPoms\u201d \u2192 hatch collectible critters into their own pond \u2192 fill buckets to unlock rewards a parent picks. A grown-up signs up first, sets a PIN, and adds the kids; each kid can use it on their own phone, and a partner/grandparent can join as a co-parent.',cat:'creative',newtab:'https://pom-pond.web.app',thumb:'https://pom-pond.web.app/icons/icon-512.png'},
 // \u2500\u2500 SKY WOLF STUDIOS \u2014 external games on their own origins, embedded via
 // iframe (see _sg `ext` branch). To add another: copy one line, change
 // id/n/i/r/ext/thumb, drop the thumbnail PNG. Hidden inside Pi Browser. \u2500\u2500
@@ -62596,7 +62603,7 @@ window.G=G;          // expose so rules-modal + other helpers can look up game m
 // External (iframe) studio games (entries with an `ext:` URL) must NOT show
 // inside Pi Browser — Pi forbids external content / redirects. This predicate
 // hides them there while leaving them visible in the web/PWA build.
-function _gHiddenHere(g){return !!(g&&g.ext&&document.body.classList.contains('pi-browser'));}
+function _gHiddenHere(g){return !!(g&&(g.ext||g.newtab)&&document.body.classList.contains('pi-browser'));}
 // ── Studio earn bridge (cross-origin postMessage) ─────────────────────
 // External studio games (the `ext:` entries) run on their OWN origin, so
 // their Sunbeam SDK earns can't reach this wallet (per-origin localStorage —
@@ -64111,12 +64118,34 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
     },100);
   }
   var gi=null;for(var i=0;i<G.length;i++)if(G[i].id===id){gi=G[i];break}
-  if(gi){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
+  // Skip the top rules strip for newtab games — their intro screen below is
+  // self-contained and already carries the description (avoids duplication).
+  if(gi&&!gi.newtab){var r=document.createElement('div');r.className='gr';r.textContent='📖 '+gi.r;ag.appendChild(r)}
   // ── External studio game (iframe). Mounts a separate web app on its own
   // origin that earns via the Sunbeam SDK into the shared wallet. We skip
   // the native _gameFns/_aw/_e lifecycle (and _st timer) entirely — the
   // wallet re-syncs on exit via _xt()/back-button → _lwExtGameResync.
   // Hidden from the picker in Pi Browser; guarded here too for deep-links.
+  // ── External app that must open in a NEW TAB (the `newtab:` field), not an
+  // iframe — it uses sign-in popups + an add-to-home-screen prompt that an
+  // iframe breaks. We render an intro screen with a launch button instead of
+  // mounting the app inline. Hidden in Pi Browser (external redirect).
+  if(gi&&gi.newtab){
+    if(document.body.classList.contains('pi-browser')){
+      ag.innerHTML+='<div style="padding:2.5rem 1.5rem;text-align:center;color:var(--muted);font-family:DM Sans,sans-serif;line-height:1.5">'+gi.n+' opens in the web version of Lucid Winds at <span style="color:var(--gold)">lucidwinds.com</span>.</div>';
+      return;
+    }
+    var _nt=document.createElement('div');
+    _nt.style.cssText='max-width:420px;margin:0 auto;padding:1.5rem 1.25rem 2.5rem;text-align:center;font-family:DM Sans,sans-serif;color:var(--cream);line-height:1.55;';
+    _nt.innerHTML='<div style="font-size:3rem;line-height:1;margin-bottom:0.4rem;">'+gi.i+'</div>'
+      +'<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:var(--gold);letter-spacing:0.08em;line-height:1;">'+gi.n+'</div>'
+      +(gi.sub?'<div style="font-size:0.8rem;color:var(--muted);margin-top:3px;">'+gi.sub+'</div>':'')
+      +'<div style="font-size:0.9rem;margin:1.1rem 0 1.4rem;">'+gi.r+'</div>'
+      +'<a href="'+gi.newtab+'" target="_blank" rel="noopener noreferrer" style="display:inline-block;min-height:48px;line-height:20px;padding:14px 28px;background:linear-gradient(145deg,rgba(122,179,86,0.95),rgba(74,124,53,0.95));border-radius:12px;color:#fff;font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.06em;text-decoration:none;box-shadow:0 4px 16px rgba(0,0,0,0.4);">Open '+gi.n+' →</a>'
+      +'<div style="font-size:0.72rem;color:var(--muted);margin-top:1.1rem;">Once it opens, tap 📲 Get app to add it to your home screen.</div>';
+    ag.appendChild(_nt);
+    return;
+  }
   if(gi&&gi.ext){
     if(document.body.classList.contains('pi-browser')){
       ag.innerHTML+='<div style="padding:2.5rem 1.5rem;text-align:center;color:var(--muted);font-family:DM Sans,sans-serif;line-height:1.5">This studio game opens in the web version of Lucid Winds at <span style="color:var(--gold)">lucidwinds.com</span>.</div>';
