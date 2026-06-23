@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.19.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.23.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -50370,6 +50370,10 @@ document.addEventListener('keydown', function(e) {
         .catch(function(e) { console.warn('[SunbeamBridge] claim failed:', e && e.message); });
     } catch(e){}
   }
+  // Expose so the in-app studio-exit handler (_lwExtGameResync) can sweep the
+  // same-origin satellite bucket immediately after a session, instead of the
+  // player having to sign out/in to see beams earned inside the GAME tab.
+  try{ window._claimSunbeamBucket = _claimSunbeamBucket; }catch(e){}
 
   // ── Claim pending rewards on login (harvest, witness fees, blessing kickbacks) ──
   function _claimPendingRewards(uid) {
@@ -62593,6 +62597,13 @@ var G=[
 {id:'sweetspot',n:'Sweet Spot',i:'\ud83c\udfbe',r:'One-thumb tennis timing. Nail the gold for an ACE.',cat:'studio',ext:'https://stephenuffugus.github.io/Sweet-Spot/',thumb:'portal-assets/thumbs/sweet-spot.png'},
 {id:'tarotrun',n:'Tarot Run',i:'\ud83c\udccf',r:'A fast, spectacular combo card run \u2014 a reading of blades.',cat:'studio',ext:'https://stephenuffugus.github.io/Tarot_Run/',thumb:'portal-assets/thumbs/tarot-run.png'},
 {id:'sixfold',n:'Sixfold',i:'\u2694\ufe0f',r:'A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.',cat:'studio',ext:'https://stephenuffugus.github.io/sixfold/',thumb:'https://stephenuffugus.github.io/sixfold/icon.svg'},
+// Same-origin satellites: ext starts with '/' so they're FIRST-PARTY content,
+// NOT external. They are NOT hidden in Pi Browser (no redirect), and they earn
+// via the shared-origin localStorage bucket (sws_pending_sunbeams) which
+// _lwExtGameResync sweeps with _claimSunbeamBucket on exit -- NOT the cross-
+// origin postMessage bridge (so no double-count; they're not in STUDIO_ORIGINS).
+{id:'huematch',n:'Hue Match',i:'\ud83c\udf08',r:'Match a target color by feel before the clock runs out.',cat:'studio',ext:'/satellites/hues/',thumb:'portal-assets/thumbs/hues.png'},
+{id:'shellshuffle',n:'Shell Shuffle',i:'\ud83d\udc1a',r:'Watch the cups, find the ball, build a daily streak.',cat:'studio',ext:'/satellites/shell-shuffle/',thumb:'portal-assets/thumbs/shell-shuffle.png'},
 // Brawl: genuinely still in build (portal had soon:true) -- wip = visible SOON badge, non-tappable.
 {id:'brawl',n:'Brawl',i:'\ud83c\udf7a',r:'Multiplayer mayhem.',cat:'studio',ext:'https://stephenuffugus.github.io/BarBrawl/',thumb:'portal-assets/thumbs/brawl.png',wip:true}
 // HUNCH intentionally NOT a Lucid Winds game: every round costs real API $ (Claude vision + judge),
@@ -62603,7 +62614,7 @@ window.G=G;          // expose so rules-modal + other helpers can look up game m
 // External (iframe) studio games (entries with an `ext:` URL) must NOT show
 // inside Pi Browser — Pi forbids external content / redirects. This predicate
 // hides them there while leaving them visible in the web/PWA build.
-function _gHiddenHere(g){return !!(g&&(g.ext||g.newtab)&&document.body.classList.contains('pi-browser'));}
+function _gHiddenHere(g){if(!g)return false;var extExternal=g.ext&&g.ext.charAt(0)!=='/';return !!((extExternal||g.newtab)&&document.body.classList.contains('pi-browser'));}
 // ── Studio earn bridge (cross-origin postMessage) ─────────────────────
 // External studio games (the `ext:` entries) run on their OWN origin, so
 // their Sunbeam SDK earns can't reach this wallet (per-origin localStorage —
@@ -63797,8 +63808,14 @@ function _st(){_s=Date.now();if(_t)clearInterval(_t);_t=setInterval(function(){v
 window._lwExtGameResync=function(gid){
   try{
     var g=null;for(var _ri=0;_ri<G.length;_ri++){if(G[_ri].id===gid){g=G[_ri];break;}}
-    if(g&&g.ext&&window.loadVaultFromCloud){
-      window.loadVaultFromCloud(function(){try{if(window.updateFocusPlant)window.updateFocusPlant();if(window.updateDashboard)window.updateDashboard();}catch(e){}});
+    if(g&&g.ext){
+      // Same-origin satellites (ext '/...') earn into the shared-origin
+      // localStorage bucket (sws_pending_sunbeams). Sweep it into the wallet
+      // NOW so beams land the moment the player exits — not on next sign-in.
+      if(g.ext.charAt(0)==='/'&&window._claimSunbeamBucket){try{window._claimSunbeamBucket();}catch(e){}}
+      if(window.loadVaultFromCloud){
+        window.loadVaultFromCloud(function(){try{if(window.updateFocusPlant)window.updateFocusPlant();if(window.updateDashboard)window.updateDashboard();}catch(e){}});
+      }
     }
   }catch(e){}
 };
@@ -64147,7 +64164,10 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
     return;
   }
   if(gi&&gi.ext){
-    if(document.body.classList.contains('pi-browser')){
+    // Same-origin satellites (ext starts with '/') are first-party content and
+    // run fine in Pi Browser. Only truly-external (http) games are blocked there.
+    var _extExternal=gi.ext.charAt(0)!=='/';
+    if(_extExternal&&document.body.classList.contains('pi-browser')){
       ag.innerHTML+='<div style="padding:2.5rem 1.5rem;text-align:center;color:var(--muted);font-family:DM Sans,sans-serif;line-height:1.5">This studio game opens in the web version of Lucid Winds at <span style="color:var(--gold)">lucidwinds.com</span>.</div>';
       return;
     }
