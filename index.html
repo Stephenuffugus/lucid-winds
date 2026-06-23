@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.23.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.23.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -5774,6 +5774,20 @@
   );
 }
 /* ═══════════════════════════════════════════════════════════════
+   BATTERY — GLOBAL ANIMATION PAUSE (hot-phone / battery fix, 2026-06-23)
+   When the app is backgrounded (document.hidden) a JS handler adds
+   body.lw-anim-paused; this freezes every CSS animation so the GPU stops
+   compositing while the screen is off / app is hidden. SMIL <animate> is
+   paused separately in JS via svg.pauseAnimations(). Fully ADDITIVE — the
+   class is removed the instant the app is visible again, so an active user
+   never sees a difference. Honors the "don't take anything out" rule.
+   ═══════════════════════════════════════════════════════════════ */
+body.lw-anim-paused *,
+body.lw-anim-paused *::before,
+body.lw-anim-paused *::after {
+  animation-play-state: paused !important;
+}
+/* ═══════════════════════════════════════════════════════════════
    4. FLOATING POLLEN PARTICLES
    Spawn these with JS (spawner function below).
    ═══════════════════════════════════════════════════════════════ */
@@ -6929,6 +6943,11 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
         if (cores <= 2) dominated = true;
       }
       if (/Android/.test(ua) && cores <= 4) dominated = true;
+      // OS-level "Reduce Motion" is an explicit user request for less motion
+      // (accessibility + battery). Honor it by engaging perf-lite, which now
+      // also pauses plant SMIL + hides pollen. Still overridable: a user who
+      // set lw_perf_lite='0' lands in the override branch above and skips this.
+      try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) dominated = true; } catch(e){}
     }
     // 2026-05-20: heavy-greenhouse override. Stephen at 49/49 plants
     // reported "running so slow i cant scroll." 49 plant SVGs × ~100
@@ -6985,6 +7004,10 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
         if (win._seasonParticleTimer) { clearInterval(win._seasonParticleTimer); win._seasonParticleTimer = null; }
         if (win._pollenInterval) { clearInterval(win._pollenInterval); win._pollenInterval = null; }
       } catch(e){}
+      // THERMAL: perf-lite engaged mid-session WITHOUT a reload, so plants
+      // already in the DOM are still animating their SMIL halos. Freeze them
+      // now (newly-rendered plants are frozen by the lazy-queue hook).
+      try { if (window._lwPerfPausePlants) window._lwPerfPausePlants(); } catch(e){}
       // Toast the user so they know what changed and how to override.
       setTimeout(function(){
         try {
@@ -7040,6 +7063,11 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
       filter: brightness(0.7) contrast(1.05) !important;
     }
     .perf-lite #wild-map-tod { display: none !important; }
+
+    /* — Hide floating pollen particles in perf-lite (pure decoration; the
+         FPS path clears their spawn timer but already-spawned nodes keep
+         drifting/compositing — this removes them). 2026-06-23 thermal. — */
+    .perf-lite .pollen-particle { display: none !important; }
 
     /* — Kill infinite box-shadow/filter animations — */
     .perf-lite .attn-dot,
@@ -41980,7 +42008,20 @@ document.addEventListener('keydown', function(e) {
       function _processLazyQueue() {
         if (!_lazyQueue.length) { _lazyRunning = false; return; }
         var item = _lazyQueue.shift();
-        try { item.el.outerHTML = generatePlantSVG(item.h, 95, 1, item.ov); } catch(e) {}
+        try {
+          var _parent = item.el.parentNode;
+          item.el.outerHTML = generatePlantSVG(item.h, 95, 1, item.ov);
+          // THERMAL (2026-06-23): in perf-lite, freeze this plant's decorative
+          // SMIL <animate> the instant it renders. CSS animation-play-state
+          // can't touch SMIL, so per-plant <animate> halos kept compositing on
+          // the GPU forever once scrolled into view — the confirmed hot-
+          // greenhouse / battery drain. Additive: full motion when perf-lite
+          // is off (default on capable devices).
+          if (_parent && document.documentElement.classList.contains('perf-lite')) {
+            var _nsvg = _parent.querySelector('svg');
+            if (_nsvg && _nsvg.pauseAnimations) { try { _nsvg.pauseAnimations(); } catch(e){} }
+          }
+        } catch(e) {}
         requestAnimationFrame(_processLazyQueue);
       }
       var _lazyObs = new IntersectionObserver(function(entries) {
@@ -102726,6 +102767,51 @@ window.LW_Comp = (function(){
     closeDrawer: closeDrawer,
     state: state
   };
+})();
+</script>
+
+<!-- ─────────────────────────────────────────────────────────────────────
+     BATTERY — pause ALL animation work when the app is hidden/backgrounded.
+     Pairs with the body.lw-anim-paused CSS rule (freezes CSS animations) and
+     pauses SMIL <animate> on every inline <svg> via pauseAnimations().
+     Root-caused 2026-06-23: a full greenhouse runs up to ~1,100 simultaneous
+     SVG/CSS animations that keep compositing on the GPU even while the screen
+     is off → hot phone + fast battery drain. Fully additive; restores the
+     instant the app returns to the foreground, so an active user sees nothing
+     change. Also covers iOS bfcache via pagehide/pageshow.
+     ───────────────────────────────────────────────────────────────────── -->
+<script>
+(function(){
+  function _smil(pause){
+    try{
+      var svgs=document.getElementsByTagName('svg');
+      for(var i=0;i<svgs.length;i++){
+        var s=svgs[i];
+        try{
+          if(pause){ if(s.pauseAnimations) s.pauseAnimations(); }
+          else { if(s.unpauseAnimations) s.unpauseAnimations(); }
+        }catch(e){}
+      }
+    }catch(e){}
+  }
+  // Re-freeze greenhouse plant SMIL when perf-lite (Reduce Effects) is on —
+  // CSS can't pause SMIL, so after a blanket unpause (foreground return) the
+  // perf-lite plants would otherwise resume animating. Exposed for the
+  // perf-lite engage paths to reuse on already-rendered plants.
+  window._lwPerfPausePlants = function(){
+    try{
+      if(!document.documentElement.classList.contains('perf-lite')) return;
+      var grid=document.getElementById('greenhouse-grid'); if(!grid) return;
+      var svgs=grid.getElementsByTagName('svg');
+      for(var i=0;i<svgs.length;i++){ try{ if(svgs[i].pauseAnimations) svgs[i].pauseAnimations(); }catch(e){} }
+    }catch(e){}
+  };
+  function _pause(){ try{ document.body.classList.add('lw-anim-paused'); _smil(true); }catch(e){} }
+  function _resume(){ try{ document.body.classList.remove('lw-anim-paused'); _smil(false); if(window._lwPerfPausePlants) window._lwPerfPausePlants(); }catch(e){} }
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) _pause(); else _resume(); }, false);
+  // iOS Safari can skip visibilitychange on bfcache freeze / tab close.
+  window.addEventListener('pagehide', _pause, false);
+  window.addEventListener('pageshow', function(){ if(!document.hidden) _resume(); }, false);
 })();
 </script>
 
