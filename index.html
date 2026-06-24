@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.08';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.09';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -103183,29 +103183,103 @@ window.LW_Comp = (function(){
   window._lwOpenGardenPicker=function(){
     var rows=document.querySelectorAll('.lw-friend-row');
     var o=ensureOverlay();
-    document.getElementById('lw-gv-title').textContent='Visit a Garden';
+    document.getElementById('lw-gv-title').textContent='Gardens';
     var body=document.getElementById('lw-gv-body');
-    var h='';
+    var share='<button id="lw-gv-share" style="display:flex;align-items:center;justify-content:center;gap:0.4rem;width:100%;min-height:52px;margin-bottom:16px;padding:12px 16px;border-radius:12px;border:1px solid rgba(200,168,75,0.45);background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(120,100,40,0.28));color:#c8a84b;font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.95rem;cursor:pointer;">&#128247; SHARE MY GARDEN</button>';
+    var h=share;
     if(!rows.length){
-      h='<div style="color:#8a9178;text-align:center;padding:2.5rem 0;font-size:0.8rem;line-height:1.7;">Add a friend to visit their garden.<br>Share your friend code from the FRIENDS panel.</div>';
-      body.innerHTML=h; o.style.display='block'; return;
+      h+='<div style="color:#8a9178;text-align:center;padding:1.5rem 0;font-size:0.78rem;line-height:1.7;">Add a friend to visit their garden too.<br>Share your friend code from the FRIENDS panel.</div>';
+    } else {
+      h+='<div style="color:#8a9178;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.1em;margin-bottom:8px;">VISIT A FRIEND</div>';
+      h+='<div style="display:flex;flex-direction:column;gap:10px;">';
+      for(var i=0;i<rows.length;i++){
+        var uid=rows[i].getAttribute('data-uid')||'';
+        var nm=rows[i].getAttribute('data-name')||'Keeper';
+        if(!uid) continue;
+        h+='<button class="lw-gv-pick" data-uid="'+esc(uid)+'" data-name="'+esc(nm)+'" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;width:100%;min-height:52px;padding:12px 16px;border-radius:12px;border:1px solid rgba(122,179,86,0.3);background:rgba(18,22,16,0.6);color:#e8dcc8;font-family:DM Mono,monospace;font-size:0.85rem;cursor:pointer;text-align:left;">'
+          +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(nm)+'</span>'
+          +'<span style="color:#c8a84b;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;flex-shrink:0;">VISIT &rsaquo;</span>'
+        +'</button>';
+      }
+      h+='</div>';
     }
-    h='<div style="display:flex;flex-direction:column;gap:10px;">';
-    for(var i=0;i<rows.length;i++){
-      var uid=rows[i].getAttribute('data-uid')||'';
-      var nm=rows[i].getAttribute('data-name')||'Keeper';
-      if(!uid) continue;
-      h+='<button class="lw-gv-pick" data-uid="'+esc(uid)+'" data-name="'+esc(nm)+'" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;width:100%;min-height:52px;padding:12px 16px;border-radius:12px;border:1px solid rgba(122,179,86,0.3);background:rgba(18,22,16,0.6);color:#e8dcc8;font-family:DM Mono,monospace;font-size:0.85rem;cursor:pointer;text-align:left;">'
-        +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(nm)+'</span>'
-        +'<span style="color:#c8a84b;font-family:Bebas Neue,sans-serif;letter-spacing:0.08em;flex-shrink:0;">VISIT &rsaquo;</span>'
-      +'</button>';
-    }
-    h+='</div>';
     body.innerHTML=h;
     // Wire safely from data attributes (never interpolate names into onclick).
+    var sb=body.querySelector('#lw-gv-share'); if(sb) sb.addEventListener('click',function(){ window._lwCloseGarden(); window._lwShareMyGarden(); });
     var picks=body.querySelectorAll('.lw-gv-pick');
     for(var k=0;k<picks.length;k++){ (function(b){ b.addEventListener('click',function(){ window._lwCloseGarden(); window._lwVisitGarden(b.getAttribute('data-uid'), b.getAttribute('data-name')); }); })(picks[k]); }
     o.style.display='block';
+  };
+
+  // Share MY garden as one image. Composites my showcased plants (or my first
+  // few greenhouse plants) onto a canvas with the game name + URL, then shares
+  // it (navigator.share) or downloads it. Reuses the SVG->Image->Canvas pattern
+  // from downloadPlantCard. Read-only on local data; no writes, fully additive.
+  window._lwShareMyGarden=function(){
+    try{
+      var hashes=[];
+      try{ var sc=JSON.parse(localStorage.getItem('pw_showcase')||'[]'); for(var i=0;i<sc.length;i++){ if(sc[i]&&sc[i].hash) hashes.push(sc[i].hash); } }catch(e){}
+      if(!hashes.length){
+        try{ var gh=(window._secureGet?window._secureGet('sws_greenhouse'):null)||JSON.parse(localStorage.getItem('sws_greenhouse')||'[]'); if(gh&&gh.length){ for(var j=0;j<gh.length&&hashes.length<6;j++){ if(gh[j]&&gh[j].hash) hashes.push(gh[j].hash); } } }catch(e2){}
+      }
+      if(!hashes.length){ if(window._toast)window._toast('Grow or showcase a plant first, then share your garden.'); return; }
+      if(hashes.length>6) hashes=hashes.slice(0,6);
+      if(window._toast)window._toast('Painting your garden…');
+      var W=1080,H=1350;
+      var canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+      var ctx=canvas.getContext('2d');
+      var g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#111611'); g.addColorStop(0.5,'#0d100c'); g.addColorStop(1,'#0a0d08');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle='rgba(200,168,75,0.25)'; ctx.lineWidth=3; ctx.strokeRect(28,28,W-56,H-56);
+      ctx.textAlign='center';
+      ctx.fillStyle='#7ab356'; ctx.font='700 30px Bebas Neue, sans-serif'; ctx.fillText('LUCID WINDS', W/2, 92);
+      ctx.fillStyle='#C8A84B'; ctx.font='900 48px Playfair Display, serif'; ctx.fillText('My Garden', W/2, 148);
+      var top=210, bottom=H-190;
+      var cols=Math.min(3,hashes.length), rows=Math.ceil(hashes.length/cols);
+      var cellW=(W-180)/cols, cellH=(bottom-top)/rows;
+      var cell=Math.min(cellW,cellH);
+      var imgs=new Array(hashes.length), loaded=0, urls=[];
+      function finish(){
+        for(var k=0;k<hashes.length;k++){
+          if(!imgs[k]) continue;
+          var col=k%cols, row=Math.floor(k/cols);
+          var rowCount=(row===rows-1)?(hashes.length-row*cols):cols;
+          var ph=cell, pw=Math.round(cell*70/95);
+          if(ph>cellH){ ph=cellH; pw=Math.round(ph*70/95); }
+          var gridW=rowCount*cell;
+          var startX=(W-gridW)/2;
+          var cx=startX+col*cell+(cell-pw)/2;
+          var cy=top+row*cellH+(cellH-ph)/2;
+          try{ ctx.drawImage(imgs[k],cx,cy,pw,ph); }catch(e){}
+        }
+        for(var u=0;u<urls.length;u++){ try{URL.revokeObjectURL(urls[u]);}catch(e){} }
+        ctx.textAlign='center';
+        ctx.fillStyle='#e8dcc8'; ctx.font='italic 30px Georgia, serif'; ctx.fillText('Every plant is one of a kind.', W/2, H-126);
+        ctx.fillStyle='#7ab356'; ctx.font='700 32px Bebas Neue, sans-serif'; ctx.fillText('GROW YOURS FREE · lucidwinds.com', W/2, H-74);
+        canvas.toBlob(function(blob){
+          if(!blob){ if(window._toast)window._toast('Could not paint the garden. Try again.'); return; }
+          var file=null; try{ file=new File([blob],'lucid-winds-garden.png',{type:'image/png'}); }catch(e){}
+          if(file && navigator.canShare && navigator.canShare({files:[file]})){
+            navigator.share({files:[file], title:'My Lucid Winds garden', text:'Every plant is one of a kind. Grow yours free at lucidwinds.com'}).catch(function(){});
+          } else {
+            var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='lucid-winds-garden.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            if(window._toast)window._toast('Garden image saved. Share it anywhere!');
+          }
+        },'image/png');
+      }
+      for(var k2=0;k2<hashes.length;k2++){
+        (function(idx){
+          var svg=''; try{ if(window._generatePlantSVG) svg=window._generatePlantSVG(hashes[idx],280); }catch(e){}
+          if(!svg){ loaded++; if(loaded>=hashes.length) finish(); return; }
+          var blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+          var url=URL.createObjectURL(blob); urls.push(url);
+          var im=new Image();
+          im.onload=function(){ imgs[idx]=im; loaded++; if(loaded>=hashes.length) finish(); };
+          im.onerror=function(){ loaded++; if(loaded>=hashes.length) finish(); };
+          im.src=url;
+        })(k2);
+      }
+    }catch(err){ if(window._toast)window._toast('Could not share the garden right now.'); }
   };
 })();
 </script>
