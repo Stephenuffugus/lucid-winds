@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -102522,6 +102522,15 @@ window.LW_Comp = (function(){
   // Each entry: { id, title, artist, src, mood }
   var TRACKS = [
     {id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', src:'assets/music/the-waiting-dojo.mp3'},
+    // ── STREAMED LIBRARY (test) — public-domain classical, linked straight
+    //    from the Internet Archive (Musopen CC0 collection). No repo bloat;
+    //    src is a full URL, the player treats it identically to a local file.
+    //    These need network (background flavor only). License verified CC0:
+    //    archive.org/details/musopen-chopin (licenseurl = publicdomain/zero/1.0).
+    //    If a link ever rots, the 'error' handler below skips to the next track.
+    {id:'chopin-noc-op9-2',  title:'Nocturne Op. 9 No. 2',  artist:'Frédéric Chopin', mood:'Public Domain', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%209%20no.%202%20in%20E%20flat%20major.mp3'},
+    {id:'chopin-noc-op15-1', title:'Nocturne Op. 15 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2015%20no.%201%20In%20F%20major.mp3'},
+    {id:'chopin-noc-op27-1', title:'Nocturne Op. 27 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2027%20no.%201%20in%20C%20sharp%20minor.mp3'},
   ];
 
   var state = {
@@ -102553,6 +102562,7 @@ window.LW_Comp = (function(){
   }
 
   var audio = null;
+  var _errSkips = 0;
   function ensureAudio(){
     if (audio) return audio;
     audio = document.createElement('audio');
@@ -102561,7 +102571,15 @@ window.LW_Comp = (function(){
     audio.volume = state.volume;
     audio.muted = state.muted;
     audio.addEventListener('ended', function(){ next(); });
+    // Link-rot guard: if a (streamed) track fails to load, skip to the next
+    // one. _errSkips caps the cascade at one full pass so a totally-dead
+    // playlist can't spin forever; it resets on any successful play.
+    audio.addEventListener('error', function(){
+      if (_errSkips >= TRACKS.length) { _errSkips = 0; return; }
+      _errSkips++; next();
+    });
     audio.addEventListener('play', function(){
+      _errSkips = 0;
       state.playing = true; renderNowPlaying();
       var b = document.getElementById('kb-music'); if (b) b.classList.add('playing');
     });
