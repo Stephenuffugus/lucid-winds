@@ -772,7 +772,28 @@
     document.head.appendChild(s);
   }
 
+  // True when this shell is running inside the portal's gapless jukebox
+  // iframe (loaded with ?embed=1, or simply not the top frame). In that case
+  // the PORTAL owns the audio — this shell must NOT run its own player (no
+  // double audio / double button) and its back link should close the overlay.
+  function musEmbedded(){
+    try { return /[?&]embed=1/.test(location.search) || (window.self !== window.top); }
+    catch (e) { return true; }   // cross-origin top access throws => we're framed
+  }
+  function wireEmbedBack(){
+    if(!musEmbedded()) return;
+    // Tell the portal jukebox we loaded OK, so it can cancel its fallback
+    // watchdog (which would otherwise navigate directly if framing was blocked).
+    try { window.parent.postMessage({ sws:'ready' }, '*'); } catch(_){}
+    var back = document.querySelector('.shell-back');
+    if(back){ back.addEventListener('click', function(e){
+      e.preventDefault();
+      try { window.parent.postMessage({ sws:'close' }, '*'); } catch(_){}
+    }); }
+  }
+
   function initMusic(){
+    if (musEmbedded()) return;   // portal jukebox owns the audio when embedded
     musLoadState();
     musInjectStyle();
     function go(){
@@ -803,6 +824,7 @@
     wireWalletButton();
     injectHowToButton();
     try { initMusic(); } catch (e) {}
+    try { wireEmbedBack(); } catch (e) {}
 
     // Initialize Sunbeam SDK (auto-loads Firebase compat from gstatic).
     if (global.Sunbeam && global.Sunbeam.init) {

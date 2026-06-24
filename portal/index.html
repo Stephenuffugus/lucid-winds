@@ -38,27 +38,31 @@
   #wallet .user-chip .who{color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #wallet .user-chip button{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500;padding:5px 10px;font-size:12px}
   #wallet .user-chip button:hover{color:var(--leaf);border-color:var(--leaf)}
-  /* Soundtrack button — left of the wallet bar. Opens the soundtrack drawer
-     (same shared library as the Lucid Winds app). Larger + thumbnail-ready:
-     drop a square image at /portal-assets/music-thumb.png and it fills the
-     button; until then the ♫ glyph shows. Higher-specificity selector so it
-     isn't restyled by the generic #wallet button rule. */
-  #wallet #music-btn{position:relative;width:48px;height:48px;padding:0;border-radius:12px;border:1px solid var(--line);
-                     background:var(--panel2);color:var(--leaf);cursor:pointer;overflow:hidden;display:grid;
-                     place-items:center;flex-shrink:0;transition:border-color .12s,box-shadow .12s}
-  #wallet #music-btn:hover{border-color:var(--leaf)}
-  #wallet #music-btn.playing{border-color:var(--leaf);box-shadow:0 0 0 2px rgba(95,192,138,.35),0 0 14px rgba(95,192,138,.45)}
-  #wallet #music-btn img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  #wallet #music-btn .glyph{font-size:21px;line-height:1}
-  #wallet #music-btn .eq{position:absolute;bottom:3px;right:3px;display:none;gap:1.5px;align-items:flex-end;height:9px}
-  #wallet #music-btn.playing .eq{display:flex}
-  #wallet #music-btn .eq i{width:2px;background:var(--leaf);border-radius:1px;animation:sws-eq .9s ease-in-out infinite}
-  #wallet #music-btn .eq i:nth-child(1){height:4px;animation-delay:0s}
-  #wallet #music-btn .eq i:nth-child(2){height:9px;animation-delay:.15s}
-  #wallet #music-btn .eq i:nth-child(3){height:6px;animation-delay:.3s}
+  /* Soundtrack FAB — floats above everything (catalog AND the in-game iframe)
+     so the music control is always reachable. Thumbnail-ready: drop a square
+     image at /portal-assets/music-thumb.png and it fills the button; until
+     then the ♫ glyph shows. */
+  #music-fab{position:fixed;z-index:360;right:16px;bottom:16px;width:56px;height:56px;border-radius:15px;
+             border:1px solid var(--line);background:var(--panel2);color:var(--leaf);cursor:pointer;overflow:hidden;
+             display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.45);transition:border-color .12s,box-shadow .12s}
+  #music-fab:hover{border-color:var(--leaf)}
+  #music-fab.playing{border-color:var(--leaf);box-shadow:0 0 0 2px rgba(95,192,138,.35),0 6px 20px rgba(0,0,0,.45),0 0 16px rgba(95,192,138,.45)}
+  #music-fab img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #music-fab .glyph{font-size:25px;line-height:1}
+  #music-fab .eq{position:absolute;bottom:4px;right:4px;display:none;gap:2px;align-items:flex-end;height:11px}
+  #music-fab.playing .eq{display:flex}
+  #music-fab .eq i{width:2.5px;background:var(--leaf);border-radius:1px;animation:sws-eq .9s ease-in-out infinite}
+  #music-fab .eq i:nth-child(1){height:5px;animation-delay:0s}
+  #music-fab .eq i:nth-child(2){height:11px;animation-delay:.15s}
+  #music-fab .eq i:nth-child(3){height:7px;animation-delay:.3s}
   @keyframes sws-eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+  /* Game jukebox — a clicked game loads in this full-screen iframe instead of
+     navigating away, so the portal (and its audio) never unloads → gapless. */
+  #game-overlay{position:fixed;inset:0;z-index:150;background:var(--bg);display:none}
+  #game-overlay.on{display:block}
+  #game-frame{width:100%;height:100%;border:0;display:block}
   /* Drawer */
-  .sws-music-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;display:none;align-items:flex-end;justify-content:center;padding:0}
+  .sws-music-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:flex-end;justify-content:center;padding:0}
   .sws-music-bg.on{display:flex}
   @media(min-width:560px){.sws-music-bg{align-items:center;padding:18px}}
   .sws-music{background:linear-gradient(180deg,var(--panel),#10180f);border:1px solid var(--line);border-radius:16px 16px 0 0;
@@ -172,11 +176,6 @@
       <div><h1>Sky Wolf Studios</h1><small>provisional name · one orchard, many games</small></div>
     </div>
     <div id="wallet">
-      <button id="music-btn" type="button" title="Soundtrack" aria-label="Open soundtrack">
-        <img src="/portal-assets/music-thumb.png" alt="" onerror="this.remove()">
-        <span class="glyph">&#9835;</span>
-        <span class="eq"><i></i><i></i><i></i></span>
-      </button>
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
       <span class="pend" id="pend"></span>
       <button id="signin">Sign in</button>
@@ -201,10 +200,23 @@
   <div class="grid" id="garden"></div>
 
   <div class="note" id="pendingnote">
-    Tap any game to play. Every card opens its own page — no sign-up required. Sunbeams accrue locally and follow you across the whole studio once you sign in.
+    Tap any game to play — it opens right here and the music keeps playing while you switch games. No sign-up required. Sunbeams accrue locally and follow you across the whole studio once you sign in.
   </div>
 
   <footer>Sky Wolf Studios · SWS Strategic Media LLC · powered by the SWS Proof-of-Attention engine</footer>
+</div>
+
+<!-- Soundtrack FAB — floats over the catalog AND the in-game iframe. -->
+<button id="music-fab" type="button" title="Soundtrack" aria-label="Open soundtrack">
+  <img src="/portal-assets/music-thumb.png" alt="" onerror="this.remove()">
+  <span class="glyph">&#9835;</span>
+  <span class="eq"><i></i><i></i><i></i></span>
+</button>
+
+<!-- Game jukebox — games load in this iframe so the portal never unloads
+     and the soundtrack plays gaplessly across game switches. -->
+<div id="game-overlay" aria-hidden="true">
+  <iframe id="game-frame" title="Game" allow="autoplay; fullscreen; gamepad; accelerometer; gyroscope"></iframe>
 </div>
 
 <!-- Sign-in / sign-up modal. Hidden until the wallet button fires it. -->
@@ -566,7 +578,7 @@ renderGarden("all");
      needs the player added to the game shells too (future). -->
 <script>
 (function(){
-  var btn = document.getElementById('music-btn');
+  var btn = document.getElementById('music-fab');
   if(!btn) return;
   var TRACKS = (window.LW_TRACKS && window.LW_TRACKS.length) ? window.LW_TRACKS
              : [{id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', cat:'Originals', src:'/assets/music/the-waiting-dojo.mp3'}];
@@ -698,6 +710,70 @@ renderGarden("all");
   }
   window.addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') save(); });
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     GAPLESS JUKEBOX — intercept clicks on the internal /play/<game>.html
+     cards and load the game in the full-screen iframe instead of navigating.
+     The portal page never unloads, so the soundtrack (owned by the player
+     above) plays continuously across catalog → game → game. External
+     satellites (target=_blank) and the Lucid Winds hub are untouched — they
+     still open normally. The embedded shell suppresses its own music player
+     and routes its "← All games" back link to close this overlay.
+     ════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  var ov = document.getElementById('game-overlay');
+  var fr = document.getElementById('game-frame');
+  if(!ov || !fr) return;
+  var isOpen = false;
+  var watchdog = null;
+
+  function openGame(url, title){
+    fr.src = url + (url.indexOf('?')>=0?'&':'?') + 'embed=1';
+    ov.classList.add('on'); ov.setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
+    if(title) document.title = title + ' — Sky Wolf Studios';
+    if(!isOpen){ try{ history.pushState({swsGame:1}, '', '#play'); }catch(e){} }
+    isOpen = true;
+    // Fallback: if the embedded shell never reports 'ready' (e.g. framing
+    // blocked), just open the game normally so it's never a dead end.
+    if(watchdog) clearTimeout(watchdog);
+    watchdog = setTimeout(function(){ window.location.href = url; }, 7000);
+  }
+  function closeGame(){
+    if(!isOpen) return;
+    if(watchdog){ clearTimeout(watchdog); watchdog = null; }
+    ov.classList.remove('on'); ov.setAttribute('aria-hidden','true');
+    fr.src = 'about:blank';                 // stop the game; portal audio plays on
+    document.body.style.overflow = '';
+    document.title = 'Sky Wolf Studios — Play';
+    isOpen = false;
+  }
+
+  // Intercept internal game-shell links (delegated, survives grid re-renders).
+  document.addEventListener('click', function(e){
+    var a = e.target && e.target.closest ? e.target.closest('a') : null;
+    if(!a) return;
+    if(a.target === '_blank') return;                       // satellites / external
+    var href = a.getAttribute('href') || '';
+    if(!/\/play\/[^\/]+\.html/.test(href)) return;          // only /play/ game shells
+    e.preventDefault();
+    var nm = a.querySelector('.nm');
+    openGame(href, nm ? nm.textContent : '');
+  });
+
+  // Embedded shell's back link asks to close (postMessage from shell.js).
+  // Pop the pushed history state so the URL/back-stack stays clean; the
+  // popstate handler does the actual close.
+  window.addEventListener('message', function(e){
+    if(!e.data) return;
+    if(e.data.sws === 'ready' && watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked
+    if(e.data.sws === 'close' && isOpen){ try{ history.back(); }catch(_){ closeGame(); } }
+  });
+  // Browser back closes the game instead of leaving the portal.
+  window.addEventListener('popstate', function(){ if(isOpen) closeGame(); });
 })();
 </script>
 </body>
