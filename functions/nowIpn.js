@@ -36,6 +36,13 @@ const SUCCESS_STATUSES = ['finished', 'confirmed']
 /**
  * NOWPayments HMAC scheme: recursively sort object keys, JSON.stringify, then
  * HMAC-SHA512 with the IPN secret. Arrays keep order; only object keys sort.
+ *
+ * VERIFIED 2026-06-24 against NOWPayments' official docs (IPN setup help center):
+ * their Node.js reference is
+ *   crypto.createHmac('sha512', key).update(JSON.stringify(sortObject(params))).digest('hex')
+ * and their Python reference uses json.dumps(msg, separators=(',',':'), sort_keys=True).
+ * This matches us exactly: recursive key-sort + JSON.stringify (no spaces) + SHA-512 hex.
+ * IPN payloads are flat scalar objects, so array handling never differs in practice.
  */
 function sortDeep(obj) {
   if (Array.isArray(obj)) return obj.map(sortDeep)
