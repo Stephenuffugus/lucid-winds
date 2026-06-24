@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -102519,19 +102519,48 @@ window.LW_Comp = (function(){
   var STATE_KEY = 'lw_music_state';
 
   // TRACK MANIFEST — Stephen edits this when shipping MP3s.
-  // Each entry: { id, title, artist, src, mood }
+  // Each entry: { id, title, artist, src, mood, cat }
+  //   cat groups the track into a drawer section. Order is set by CAT_ORDER
+  //   below; unlisted cats append after. Default (no cat) = 'Originals'.
   var TRACKS = [
-    {id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', src:'assets/music/the-waiting-dojo.mp3'},
-    // ── STREAMED LIBRARY (test) — public-domain classical, linked straight
-    //    from the Internet Archive (Musopen CC0 collection). No repo bloat;
-    //    src is a full URL, the player treats it identically to a local file.
-    //    These need network (background flavor only). License verified CC0:
+    {id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', src:'assets/music/the-waiting-dojo.mp3', cat:'Originals'},
+    // ── STREAMED LIBRARY — public-domain classical, linked straight from the
+    //    Internet Archive (Musopen CC0 collection). No repo bloat; src is a
+    //    full URL, the player treats it identically to a local file. These
+    //    need network (background flavor only). License verified CC0:
     //    archive.org/details/musopen-chopin (licenseurl = publicdomain/zero/1.0).
     //    If a link ever rots, the 'error' handler below skips to the next track.
-    {id:'chopin-noc-op9-2',  title:'Nocturne Op. 9 No. 2',  artist:'Frédéric Chopin', mood:'Public Domain', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%209%20no.%202%20in%20E%20flat%20major.mp3'},
-    {id:'chopin-noc-op15-1', title:'Nocturne Op. 15 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2015%20no.%201%20In%20F%20major.mp3'},
-    {id:'chopin-noc-op27-1', title:'Nocturne Op. 27 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2027%20no.%201%20in%20C%20sharp%20minor.mp3'},
+    {id:'chopin-noc-op9-2',  title:'Nocturne Op. 9 No. 2',  artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%209%20no.%202%20in%20E%20flat%20major.mp3'},
+    {id:'chopin-noc-op15-1', title:'Nocturne Op. 15 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2015%20no.%201%20In%20F%20major.mp3'},
+    {id:'chopin-noc-op27-1', title:'Nocturne Op. 27 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2027%20no.%201%20in%20C%20sharp%20minor.mp3'},
+    {id:'chopin-ballade-1',  title:'Ballade No. 1, Op. 23',  artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Ballade%20no.%201%20-%20Op.%2023.mp3'},
+    {id:'chopin-waltz-op64-2', title:'Waltz Op. 64 No. 2',   artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Waltz%20Op.%2064%20no.%202%20in%20C%20sharp%20minor.mp3'},
+    {id:'chopin-prelude-raindrop', title:'Prelude Op. 28 No. 15 “Raindrop”', artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Prelude%20Op.%2028%20no.%2015.mp3'},
   ];
+
+  // Drawer section order. Cats not listed here append after, in first-seen order.
+  var CAT_ORDER = ['Originals','Classical','Ambient','Lo-fi','Nature'];
+
+  // Group TRACKS by cat, preserving each track's real index (needed by play()).
+  // Returns [{cat, items:[{t, i}]}] in CAT_ORDER, unknowns last.
+  function trackGroups(){
+    var map = {}, order = [];
+    for (var i = 0; i < TRACKS.length; i++){
+      var c = TRACKS[i].cat || 'Originals';
+      if (!map[c]){ map[c] = []; order.push(c); }
+      map[c].push({ t: TRACKS[i], i: i });
+    }
+    var firstSeen = {};
+    for (var j = 0; j < order.length; j++) firstSeen[order[j]] = j;
+    order.sort(function(a, b){
+      var ia = CAT_ORDER.indexOf(a); if (ia < 0) ia = 100 + firstSeen[a];
+      var ib = CAT_ORDER.indexOf(b); if (ib < 0) ib = 100 + firstSeen[b];
+      return ia - ib;
+    });
+    var out = [];
+    for (var k = 0; k < order.length; k++) out.push({ cat: order[k], items: map[order[k]] });
+    return out;
+  }
 
   var state = {
     currentIdx: -1,
@@ -102744,14 +102773,25 @@ window.LW_Comp = (function(){
     if (!TRACKS.length) {
       return '<div style="padding:2rem 1rem;text-align:center;font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);line-height:1.7;">Soundtrack drops here as tracks finish.<br><br>Original beats only — no shop loops, no AI fill.</div>';
     }
+    var groups = trackGroups();
     var h = '';
-    for (var i = 0; i < TRACKS.length; i++) {
-      var t = TRACKS[i];
-      var active = (i === state.currentIdx);
-      h += '<button onclick="LW_MUSIC.play(' + i + ')" style="display:block;width:100%;text-align:left;padding:0.65rem 0.7rem;margin-bottom:0.35rem;background:' + (active ? 'rgba(180,140,220,0.12)' : 'rgba(13,16,12,0.55)') + ';border:1px solid ' + (active ? 'rgba(180,140,220,0.5)' : 'rgba(74,124,53,0.18)') + ';border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent;">';
-      h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:' + (active ? 'rgba(220,180,255,0.95)' : 'var(--cream)') + ';">' + esc(t.title) + (active && state.playing ? '  <span style="font-size:0.55rem;color:rgba(180,140,220,0.85);">▶ PLAYING</span>' : '') + '</div>';
-      h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.18rem;letter-spacing:0.04em;">' + esc(t.artist || 'Stephen') + (t.mood ? ' · ' + esc(t.mood) : '') + '</div>';
-      h += '</button>';
+    for (var g = 0; g < groups.length; g++) {
+      var grp = groups[g];
+      // Section header — uppercase cat label, hairline divider, track count.
+      h += '<div style="display:flex;align-items:center;gap:0.5rem;margin:' + (g === 0 ? '0.1rem' : '0.75rem') + ' 0.15rem 0.4rem;">';
+      h += '<span style="font-family:Bebas Neue,sans-serif;font-size:0.64rem;letter-spacing:0.16em;color:rgba(180,140,220,0.88);">' + esc(grp.cat.toUpperCase()) + '</span>';
+      h += '<span style="flex:1;height:1px;background:rgba(180,140,220,0.16);"></span>';
+      h += '<span style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);">' + grp.items.length + '</span>';
+      h += '</div>';
+      for (var m = 0; m < grp.items.length; m++) {
+        var t = grp.items[m].t;
+        var i = grp.items[m].i;
+        var active = (i === state.currentIdx);
+        h += '<button onclick="LW_MUSIC.play(' + i + ')" style="display:block;width:100%;text-align:left;padding:0.65rem 0.7rem;margin-bottom:0.35rem;background:' + (active ? 'rgba(180,140,220,0.12)' : 'rgba(13,16,12,0.55)') + ';border:1px solid ' + (active ? 'rgba(180,140,220,0.5)' : 'rgba(74,124,53,0.18)') + ';border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent;">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:' + (active ? 'rgba(220,180,255,0.95)' : 'var(--cream)') + ';">' + esc(t.title) + (active && state.playing ? '  <span style="font-size:0.55rem;color:rgba(180,140,220,0.85);">▶ PLAYING</span>' : '') + '</div>';
+        h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.18rem;letter-spacing:0.04em;">' + esc(t.artist || 'Stephen') + (t.mood ? ' · ' + esc(t.mood) : '') + '</div>';
+        h += '</button>';
+      }
     }
     return h;
   }
