@@ -80,6 +80,8 @@
   .sws-vol{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
   .sws-vol span{font-size:10px;letter-spacing:1px;color:var(--muted);width:26px}
   .sws-vol input{flex:1;accent-color:var(--leaf)}
+  .sws-rep{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:7px 10px;font-size:11px;cursor:pointer;white-space:nowrap}
+  .sws-rep.act{color:var(--leaf);border-color:var(--leaf)}
   .sws-list{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 10px 16px;flex:1}
   .sws-cat{display:flex;align-items:center;gap:8px;margin:12px 4px 6px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--leaf)}
   .sws-cat:first-child{margin-top:2px}
@@ -569,12 +571,19 @@ renderGarden("all");
   var TRACKS = (window.LW_TRACKS && window.LW_TRACKS.length) ? window.LW_TRACKS
              : [{id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', cat:'Originals', src:'/assets/music/the-waiting-dojo.mp3'}];
   var CATS = (window.LW_TRACK_CATS && window.LW_TRACK_CATS.length) ? window.LW_TRACK_CATS : ['Originals','Classical'];
-  var KEY = 'sws_portal_music';
-  var st = { idx:-1, volume:0.5, playing:false, open:false, errSkips:0 };
+  // Shared state key with the game shells (play/shell.js) so music hands off
+  // both ways: start it on the portal and it keeps going into a game, or come
+  // back from a game and it resumes here.
+  var KEY = 'sws_music_state';
+  var st = { idx:-1, volume:0.5, playing:false, repeat:'all', open:false, errSkips:0, _time:0 };
   try{ var s = JSON.parse(localStorage.getItem(KEY)||'{}');
        if(typeof s.idx==='number') st.idx=s.idx;
-       if(typeof s.volume==='number') st.volume=s.volume; }catch(e){}
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify({idx:st.idx, volume:st.volume})); }catch(e){} }
+       if(typeof s.volume==='number') st.volume=s.volume;
+       if(typeof s.playing==='boolean') st.playing=s.playing;
+       if(typeof s.repeat==='string') st.repeat=s.repeat;
+       if(typeof s.time==='number') st._time=s.time; }catch(e){}
+  var _saveT = 0;
+  function save(){ try{ var t=audio?audio.currentTime:(st._time||0); localStorage.setItem(KEY, JSON.stringify({idx:st.idx, volume:st.volume, playing:st.playing, repeat:st.repeat, time:t})); }catch(e){} }
   function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 
   var audio = null;
@@ -583,13 +592,19 @@ renderGarden("all");
     audio = document.createElement('audio');
     audio.preload = 'none';
     audio.volume = st.volume;
-    audio.addEventListener('ended', next);
+    audio.addEventListener('ended', function(){
+      if(st.repeat==='one'){ audio.currentTime=0; var p=audio.play(); if(p&&p['catch'])p['catch'](function(){}); return; }
+      var n=st.idx+1;
+      if(n>=TRACKS.length){ if(st.repeat==='all'){ play(0); } else { st.playing=false; btn.classList.remove('playing'); save(); } }
+      else play(n);
+    });
     audio.addEventListener('error', function(){
       if(st.errSkips >= TRACKS.length){ st.errSkips=0; return; }
       st.errSkips++; next();
     });
-    audio.addEventListener('play',  function(){ st.errSkips=0; st.playing=true;  btn.classList.add('playing'); render(); });
-    audio.addEventListener('pause', function(){ st.playing=false; btn.classList.remove('playing'); render(); });
+    audio.addEventListener('play',  function(){ st.errSkips=0; st.playing=true;  btn.classList.add('playing'); render(); save(); });
+    audio.addEventListener('pause', function(){ st.playing=false; btn.classList.remove('playing'); render(); save(); });
+    audio.addEventListener('timeupdate', function(){ var now=Date.now(); if(now-_saveT>2000){ _saveT=now; save(); } });
     document.body.appendChild(audio);
     return audio;
   }
@@ -597,7 +612,7 @@ renderGarden("all");
     if(typeof i!=='number') i = st.idx>=0 ? st.idx : 0;
     if(i<0 || i>=TRACKS.length) i = 0;
     var a = ensure(), t = TRACKS[i];
-    if(st.idx!==i || (a.src||'').indexOf(t.src)<0){ a.src = t.src; st.idx=i; save(); }
+    if(st.idx!==i || (a.src||'').indexOf(t.src)<0){ a.src = t.src; st.idx=i; st._time=0; save(); }
     var p = a.play(); if(p && p['catch']) p['catch'](function(){});
     render();
   }
@@ -606,6 +621,7 @@ renderGarden("all");
   function next(){ play(((st.idx<0?0:st.idx)+1)%TRACKS.length); }
   function prev(){ play(((st.idx<0?0:st.idx)-1+TRACKS.length)%TRACKS.length); }
   function setVol(v){ v=Number(v); if(isNaN(v))return; st.volume=Math.max(0,Math.min(1,v)); if(audio)audio.volume=st.volume; save(); }
+  function cycleRepeat(){ st.repeat = st.repeat==='all'?'one':(st.repeat==='one'?'off':'all'); save(); render(); }
 
   // group by cat preserving real index, ordered by CATS, unknowns last
   function groups(){
@@ -642,8 +658,9 @@ renderGarden("all");
                     : '<button class="pp" onclick="SWS_MUSIC.resume()" aria-label="Play">&#9654;</button>';
     h += '<button onclick="SWS_MUSIC.next()" aria-label="Next">&#9197;</button>';
     h += '</div></div>';
-    // volume
-    h += '<div class="sws-vol"><span>VOL</span><input type="range" min="0" max="100" value="'+Math.round(st.volume*100)+'" oninput="SWS_MUSIC.vol(this.value/100)"></div>';
+    // volume + repeat
+    var repLbl = st.repeat==='one'?'&#128258; One':(st.repeat==='all'?'&#128257; All':'&#128257; Off');
+    h += '<div class="sws-vol"><span>VOL</span><input type="range" min="0" max="100" value="'+Math.round(st.volume*100)+'" oninput="SWS_MUSIC.vol(this.value/100)"><button class="sws-rep'+(st.repeat!=='off'?' act':'')+'" onclick="SWS_MUSIC.repeat()">'+repLbl+'</button></div>';
     // categorized list
     h += '<div class="sws-list">';
     var gs = groups();
@@ -665,7 +682,22 @@ renderGarden("all");
 
   btn.addEventListener('click', openDrawer);
 
-  window.SWS_MUSIC = { play:play, pause:pause, resume:resume, next:next, prev:prev, vol:setVol, close:closeDrawer, open:openDrawer };
+  window.SWS_MUSIC = { play:play, pause:pause, resume:resume, next:next, prev:prev, vol:setVol, repeat:cycleRepeat, close:closeDrawer, open:openDrawer };
+
+  // Continue music handed off from a game page — only if it was playing, so a
+  // first-time visitor never gets surprise audio. Re-kicks on first interaction
+  // if the browser blocks autoplay on this fresh load.
+  if(st.playing && st.idx>=0 && TRACKS[st.idx]){
+    var a0 = ensure(); a0.src = TRACKS[st.idx].src;
+    a0.addEventListener('loadedmetadata', function(){ if(st._time>0){ try{ a0.currentTime=st._time; }catch(e){} } }, {once:true});
+    var rp = a0.play();
+    if(rp && rp['catch']) rp['catch'](function(){
+      var onInt=function(){ document.removeEventListener('pointerdown',onInt,true); document.removeEventListener('keydown',onInt,true); var pp=a0.play(); if(pp&&pp['catch'])pp['catch'](function(){}); };
+      document.addEventListener('pointerdown',onInt,true); document.addEventListener('keydown',onInt,true);
+    });
+  }
+  window.addEventListener('pagehide', save);
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') save(); });
 })();
 </script>
 </body>
