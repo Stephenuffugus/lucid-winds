@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.13';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.14';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -7178,10 +7178,18 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
       s.style.pointerEvents='none';
       setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},1300);
     }
-    // Prefer window load (all assets ready). Fallback: hard 4s ceiling.
-    if(document.readyState==='complete'){setTimeout(hide,900);}
-    else{window.addEventListener('load',function(){setTimeout(hide,900);});}
-    setTimeout(hide,4000);
+    // Prefer window load (all assets ready). Fallback: hard ceiling.
+    // Stephen 2026-06-24: hold the splash LONGER on a fresh device/account so the
+    // first-time arrival lands and the soundtrack greeting can come in on the
+    // first onboarding tap (browsers block audio until that first gesture).
+    // Returning players keep the snappy timing.
+    var fresh = false;
+    try { fresh = !localStorage.getItem('pw_keeper_name') && !localStorage.getItem('sws_greenhouse'); } catch(e){}
+    var holdMs = fresh ? 3000 : 900;
+    var ceilMs = fresh ? 6500 : 4000;
+    if(document.readyState==='complete'){setTimeout(hide,holdMs);}
+    else{window.addEventListener('load',function(){setTimeout(hide,holdMs);});}
+    setTimeout(hide,ceilMs);
   })();
   </script>
   <!-- ═══ OFFLINE WARNING BANNER ═══ Stephen 2026-05-01: retired entirely.
@@ -9791,7 +9799,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
         before.push('  ' + k + ' (' + specs[i].cocoonName + '→' + specs[i].hatchedName + '): ' +
           (o ? 'state='+o.state+' dist='+(o.distance||0)+'/'+specs[i].distanceM+'m fed='+(o.fed||0)+'/'+(specs[i].feedTokensRequired||0) : 'NOT OWNED'));
       }
-      var amt = parseInt(prompt('Credit how many meters to the incubating cocoon?\n(Caterpillar needs 8000m, Mudball 12000m, Meteor 20000m)', '5000'), 10);
+      var amt = parseInt(prompt('Credit how many meters to the incubating cocoon?\n(Caterpillar 10000m, Mudball 25000m, Meteor 50000m)', '5000'), 10);
       if (!amt || isNaN(amt)) return;
       window.LW_KEEPER.creditMeters(amt);
       var raw2 = localStorage.getItem('lw_pcocoons') || '';
@@ -52742,6 +52750,25 @@ function _addSteps(meters){
   // Cocoon walking credit — REMOVED 2026-05-02 (cocoons system shelved).
   // Credit the equipped Keeper Cocoon (parallel premium system).
   try { if (window.LW_KEEPER && window.LW_KEEPER.creditMeters) window.LW_KEEPER.creditMeters(meters); } catch(e){}
+  // Light per-km walk reward (Stephen 2026-06-24): +2 Dew per full km walked, so
+  // every walk pays a little. Bucketed so partial km carry over; soft-capped at
+  // 100 Dew/day and reset daily so GPS jitter / spoofing can't farm it.
+  try {
+    var _wkToday = new Date().toISOString().split('T')[0];
+    if (s.kmDewDate !== _wkToday) { s.kmDewDate = _wkToday; s.kmDewToday = 0; s.kmBucket = 0; }
+    s.kmBucket = (s.kmBucket || 0) + meters;
+    var _wkm = Math.floor(s.kmBucket / 1000);
+    if (_wkm > 0) {
+      s.kmBucket -= _wkm * 1000;
+      var _wkAward = Math.min(_wkm * 2, Math.max(0, 100 - (s.kmDewToday || 0)));
+      if (_wkAward > 0 && window.earnDew) {
+        window.earnDew(_wkAward, 'walk_km');
+        s.kmDewToday = (s.kmDewToday || 0) + _wkAward;
+        if (window._toast) window._toast('🚶 +' + _wkAward + ' Dew for walking');
+      }
+      _saveSteps(s);
+    }
+  } catch(e){}
   // Engagement counters: meters + steps. _addSteps takes raw meters;
   // _metersToSteps converts to steps via the existing conversion. Bump
   // both lifetime and per-period (daily/weekly) so distance-based
@@ -93342,8 +93369,8 @@ window.LW_debug.cleanGhostDrops = function(){
       // this one becomes a pest-killer wasp).
       flavor:'Why would I want to buy that? Aren’t these usually bad for the garden?',
       hatchFlavor:'A wasp emerges, jeweled and watchful. It hunts the pests that visit your wild plants.',
-      costDew:30000, costSunbeams:100,
-      distanceM:HATCH_M,
+      costDew:1500, costSunbeams:30,
+      distanceM:10000,
       requires:null,
       ability:'pestClear',
       // Walking prompts — fire one at random every 100m of incubation.
@@ -93367,14 +93394,14 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedArt:'assets/companions/lungfish.png',
       flavor:'A cracked mudball. Heavy. Why is it warm?',
       hatchFlavor:'A lungfish surfaces, ancient and patient. It teaches your wild plants to outlast drought.',
-      costDew:5000, costSunbeams:600,
-      distanceM:HATCH_M,
+      costDew:2500, costSunbeams:60,
+      distanceM:25000,
       requires:null,
       ability:'droughtBreath',
       // Feed mechanics: tap-to-feed during incubation. Walking earns
       // pour tokens (1 per 10 km) that release 100 Dew each into the
       // mudball. 300 pours = 30000 Dew total = full incubation feed.
-      feedTokensRequired:300,
+      feedTokensRequired:0,
       feedAmount:100,
       feedTokenPerKm:10,
       tickles:[
@@ -93396,8 +93423,8 @@ window.LW_debug.cleanGhostDrops = function(){
       hatchedArt:'assets/companions/tardigrade.png',
       flavor:'A meteor fragment, still warm from the fall. The hermit said don’t open it.',
       hatchFlavor:'A tardigrade unfolds, indestructible. It halves the climate damage your wild plants take.',
-      costDew:25000, costSunbeams:500,
-      distanceM:HATCH_M,
+      costDew:4000, costSunbeams:100,
+      distanceM:50000,
       requires:null,
       ability:'cryptobiosis',
       tickles:[
