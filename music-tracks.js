@@ -55,7 +55,13 @@
     {id:'bach-goldberg-aria', title:'Goldberg Variations — Aria', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/Kimiko%20Ishizaka%20-%20J.S.%20Bach-%20-Open-%20Goldberg%20Variations%2C%20BWV%20988%20%28Piano%29%20-%2001%20Aria.mp3'},
     {id:'bach-goldberg-var13', title:'Goldberg Var. 13', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/Kimiko%20Ishizaka%20-%20J.S.%20Bach-%20-Open-%20Goldberg%20Variations%2C%20BWV%20988%20%28Piano%29%20-%2014%20Variatio%2013%20a%202%20Clav..mp3'},
     {id:'bach-goldberg-var25', title:'Goldberg Var. 25 “Black Pearl”', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/KimikoIshizaka-J.s.Bach--open-GoldbergVariationsBwv988piano-26Variatio25A2Clav..mp3'},
-    {id:'bach-goldberg-aria-dacapo', title:'Goldberg — Aria da Capo', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/KimikoIshizaka-J.s.Bach--open-GoldbergVariationsBwv988piano-31AriaDaCapoEFine.mp3'}
+    {id:'bach-goldberg-aria-dacapo', title:'Goldberg — Aria da Capo', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/KimikoIshizaka-J.s.Bach--open-GoldbergVariationsBwv988piano-31AriaDaCapoEFine.mp3'},
+    // Debussy — clean modern CC0 Debussy doesn't reliably exist on the Archive
+    // (the good recordings are copyrighted; the "CC0" modern uploads are
+    // mislabeled rips). This is a GENUINE public-domain-by-age recording: a
+    // documented 1944 performance by pianist Suzanne Gyr (78rpm heritage
+    // collection), so it carries some vintage warmth. mood credits the player.
+    {id:'debussy-fille-flaxen', title:'La Fille aux Cheveux de Lin', artist:'Claude Debussy', mood:'Suzanne Gyr · 1944', cat:'Classical', src:'https://archive.org/download/gyr-la-fille-aux-cheveux-de-lin-debussy/Gyr%20-%20La%20Fille%20aux%20cheveux%20de%20Lin%20%28Debussy%29.mp3'}
   ];
 
   // Drawer section order. Cats not listed here append after, first-seen order.
