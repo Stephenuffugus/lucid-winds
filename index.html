@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -75982,6 +75982,117 @@ function _finish(){
 <!-- ═══ PI NETWORK SDK — optional payment layer ═══ -->
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <script>
+// ── WEB CRYPTO RAIL (NOWPayments) — open-web / PWA only ───────────────────
+// Counterpart to the Pi rail below. Lets a signed-in visitor OUTSIDE Pi
+// Browser pay a USD price in ANY major crypto (~300 coins via NOWPayments).
+// Pi can't run here (window.Pi is injected only in Pi Browser), so this is the
+// ONLY way a normal-browser visitor can buy. Stays HIDDEN inside Pi Browser
+// (Pi forbids non-Pi payment surfaces) via the same body.pi-browser gate the
+// studio games use.
+//
+// Reuses the LW_Pi buy wrappers' onSuccess/onCancel verbatim — the only
+// difference from Pi is timing: crypto confirms async (minutes), so the server
+// nowIpn webhook grants the entitlement and we fire onSuccess when the
+// webOrders/{orderId} doc flips to 'completed' (live onSnapshot).
+(function(){
+'use strict';
+function _wpInPiBrowser(){
+  try { return !!(document.body && document.body.classList.contains('pi-browser')); }
+  catch(e){ return false; }
+}
+function _wpFnsReady(){
+  return typeof firebase !== 'undefined' && firebase.functions && firebase.auth && firebase.firestore;
+}
+function _wpSignedIn(){
+  try { return !!(firebase.auth().currentUser); } catch(e){ return false; }
+}
+function _wpToast(msg, opts){
+  if (window._toast) window._toast(msg, opts);
+  else if (window.showHexMsg) showHexMsg(msg);
+}
+// metadata from an LW_Pi wrapper → {type, tier?, qty?} for nowCreateInvoice.
+// The server re-prices from its own catalog; these fields just select product.
+function _wpToOrder(metadata){
+  var m = metadata || {};
+  var o = { type: m.type ? String(m.type) : '' };
+  if (m.tier) o.tier = String(m.tier);
+  if (m.qty && m.qty > 1) o.qty = m.qty;
+  return o;
+}
+// Rollout gate. Keep OFF until the NOWPayments cloud functions
+// (nowCreateInvoice + nowIpn) are DEPLOYED and the two secrets are set —
+// otherwise a web buy routes to a function that 404s / isn't configured and
+// the player sees "Checkout failed" instead of the (current) "Open in Pi
+// Browser". Flip to true here (or set localStorage.lw_webpay_enabled='1')
+// the moment the backend is live. Default OFF so a client push that lands
+// before the function deploy is harmless.
+window.LW_WEBPAY_ENABLED = (function(){
+  try {
+    var v = localStorage.getItem('lw_webpay_enabled');
+    if (v === '0') return false;
+    if (v === '1') return true;
+  } catch(e){}
+  return false;  // default OFF until backend deployed + secrets set
+})();
+var LW_WebPay = {
+  // True when this rail should intercept a buy (enabled, web context, SDK ready).
+  shouldHandle: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser() && _wpFnsReady(); },
+  available: function(){ return window.LW_WEBPAY_ENABLED && !_wpInPiBrowser() && _wpFnsReady(); },
+  buy: function(metadata, memo, onSuccess, onCancel){
+    if (_wpInPiBrowser()){ if(onCancel)onCancel(); return; }
+    if (!_wpFnsReady()){ _wpToast('Web payments need a moment to load. Try again.'); if(onCancel)onCancel(); return; }
+    if (!_wpSignedIn()){ _wpToast('Sign in first to buy.'); if(onCancel)onCancel(); return; }
+    var order = _wpToOrder(metadata);
+    if (!order.type){ if(onCancel)onCancel(); return; }
+    _wpToast('Opening secure checkout…');
+    var fn;
+    try { fn = firebase.functions().httpsCallable('nowCreateInvoice'); }
+    catch(e){ _wpToast('Web payments unavailable right now.'); if(onCancel)onCancel(); return; }
+    fn(order).then(function(res){
+      var d = (res && res.data) || {};
+      if (!d.ok || !d.orderId || !d.invoiceUrl){ _wpToast('Could not start checkout. Try again.'); if(onCancel)onCancel(); return; }
+      try { window.open(d.invoiceUrl, '_blank', 'noopener'); }
+      catch(e){ try { location.href = d.invoiceUrl; } catch(e2){} }
+      _wpToast('Checkout opened in a new tab. Pick any coin — your item unlocks here automatically once it confirms on-chain (usually a few minutes).', {duration:9000});
+      LW_WebPay._watch(d.orderId, memo, onSuccess, onCancel);
+    }).catch(function(err){
+      console.error('[WebPay] invoice error', err && err.code, err && err.message);
+      _wpToast((err && err.message) || 'Checkout failed. Try again.');
+      if(onCancel)onCancel();
+    });
+  },
+  // Live-watch the order doc until it terminalizes. 30-min safety unsubscribe
+  // so a never-paid invoice doesn't leak a listener; if it confirms after that,
+  // the webhook still granted it and the next vault load reflects it.
+  _watch: function(orderId, memo, onSuccess, onCancel){
+    var ref;
+    try { ref = firebase.firestore().collection('webOrders').doc(orderId); }
+    catch(e){ return; }
+    var done = false, unsub = null;
+    var timer = setTimeout(function(){ if(done) return; done = true; if(unsub) unsub(); }, 30*60*1000);
+    function finish(ok){
+      if (done) return; done = true;
+      clearTimeout(timer); if (unsub) unsub();
+      if (ok){
+        if (window.loadVaultFromCloud) loadVaultFromCloud();
+        if (onSuccess) onSuccess(orderId);
+      } else { if (onCancel) onCancel(); }
+    }
+    try {
+      unsub = ref.onSnapshot(function(snap){
+        if (!snap.exists) return;
+        var s = (snap.data() && snap.data().status) || '';
+        if (s === 'completed') finish(true);
+        else if (s === 'underpaid'){ _wpToast('Payment was short of the amount — not completed. Contact support.'); finish(false); }
+        else if (s === 'failed' || s === 'expired' || s === 'refunded'){ _wpToast('Payment ' + s + '. Item not unlocked.'); finish(false); }
+        // created/invoiced/waiting/confirming → keep watching
+      }, function(err){ console.error('[WebPay] watch error', err); });
+    } catch(e){ console.error('[WebPay] watch threw', e); }
+  }
+};
+window.LW_WebPay = LW_WebPay;
+})();
+
 (function(){
 'use strict';
 // Pi SDK — gracefully degrades outside Pi Browser.
@@ -76061,6 +76172,15 @@ function authenticate(cb){
 }
 
 function createPayment(amount,memo,metadata,onSuccess,onCancel){
+  // WEB CRYPTO RAIL — outside Pi Browser, route this exact buy through
+  // NOWPayments (USD-priced, pay-any-crypto). Pi can't run here, so this is
+  // the only way a normal-browser visitor pays. onSuccess/onCancel are reused
+  // verbatim; LW_WebPay fires onSuccess on async webhook confirmation. Inside
+  // Pi Browser shouldHandle() is false and we fall through to the Pi flow.
+  if (window.LW_WebPay && window.LW_WebPay.shouldHandle()){
+    window.LW_WebPay.buy(metadata, memo, onSuccess, onCancel);
+    return;
+  }
   if(!window.LW_PI_ENABLED){
     if(window._toast)window._toast('Pi payments arrive in the full launch. Thank you for testing.');
     else if(window.showHexMsg)showHexMsg('Payments coming soon');

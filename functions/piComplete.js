@@ -40,34 +40,24 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { logger } from 'firebase-functions/v2'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { piGet, piPost, getPiServerKey } from './piClient.js'
-
-const SLOT_CAP_GREENHOUSE = 60
-const SLOT_CAP_NURSERY = 6
-const SLOT_CAP_NURSERY_CLIPPING = 5
-const SLOT_CAP_POUCH = 40
-const SEED_POUCH_TIERS = ['seed15', 'seed20']  // valid tier flags for seed_pouch_slot
+import { applyFulfillment } from './fulfill.js'
 
 /**
  * Apply fulfillment in a single Firestore transaction so we never double-grant.
  * The piTransactions doc is the lock — once status='completed' we early-return.
  *
+ * The per-type vault writes + caps live in the SHARED ./fulfill.js
+ * applyFulfillment() so the Pi rail and the web (NOWPayments) rail can never
+ * drift. This function only owns the Pi-specific idempotency lock: read the
+ * piTransactions lock doc, call the shared fulfillment, stamp it 'completed'.
+ *
  * Vault structure note: Lucid Winds spreads state across the root vault doc
- * AND a `meta/state` subcollection doc. Slot caps live at:
- *   vaults/{uid}/meta/state.slots               — greenhouse max slots (canonical)
- *   vaults/{uid}.lw_nursery_slots               — nursery slots (mirror, root-doc)
- *   vaults/{uid}.lw_pouch_cap                   — item pouch cap (root-doc)
- *   vaults/{uid}.emergency_pouch_today          — emergency-pouch unlock day
- *   vaults/{uid}.lw_hut_early_opens             — Hut early-open map
- * The client reads `meta/state.slots` on login and copies into localStorage
- * `sws_greenhouse_slots`, then the slot value flows from that. We write to the
- * meta/state doc so the slot survives reinstall + cross-device sync.
+ * AND a `meta/state` subcollection doc. Greenhouse slot cap is the canonical
+ * meta/state.slots field; other entitlements live on the root vault doc. See
+ * ./fulfill.js for the exact field map.
  */
 async function fulfill(db, uid, paymentId, metadata) {
   const txRef = db.collection('piTransactions').doc(paymentId)
-  const vaultRef = db.collection('vaults').doc(uid)
-  const metaRef = vaultRef.collection('meta').doc('state')
-  const type = metadata && metadata.type ? String(metadata.type) : ''
-  const today = new Date().toISOString().split('T')[0]
 
   return db.runTransaction(async (tx) => {
     const txDoc = await tx.get(txRef)
@@ -87,106 +77,9 @@ async function fulfill(db, uid, paymentId, metadata) {
       throw new HttpsError('permission-denied', 'Transaction belongs to another user.')
     }
 
-    // Pre-read whichever docs each branch will need. Firestore txns require
-    // all reads before any writes.
-    const fulfillment = { type, applied: false }
-
-    if (type === 'slot') {
-      // Greenhouse slot cap lives in meta/state.slots (the canonical sync field)
-      const metaDoc = await tx.get(metaRef)
-      const cur = Number((metaDoc.exists && metaDoc.data().slots) || 10)
-      const next = Math.min(SLOT_CAP_GREENHOUSE, cur + 1)
-      tx.set(metaRef, { slots: next }, { merge: true })
-      fulfillment.applied = next > cur
-      fulfillment.before = cur
-      fulfillment.after = next
-    } else if (type === 'nursery_slot') {
-      // Nursery slots: client manages localStorage 'sws_nursery_slots' but we
-      // mirror to vault root doc for cross-device. The client must read this
-      // on login (setNurSlots from cloud) — currently localStorage-only, so
-      // until that wires we record but the client won't see it without a
-      // restore-path code change. Doc'd in submission-prep.md frontend list.
-      const vaultDoc = await tx.get(vaultRef)
-      const cur = Number(
-        (vaultDoc.exists && vaultDoc.data().lw_nursery_slots) || 3,
-      )
-      const next = Math.min(SLOT_CAP_NURSERY, cur + 1)
-      tx.set(vaultRef, { lw_nursery_slots: next }, { merge: true })
-      fulfillment.applied = next > cur
-      fulfillment.before = cur
-      fulfillment.after = next
-    } else if (type === 'item_pouch_slot') {
-      const vaultDoc = await tx.get(vaultRef)
-      const cur = Number((vaultDoc.exists && vaultDoc.data().lw_pouch_cap) || 25)
-      const next = Math.min(SLOT_CAP_POUCH, cur + 1)
-      tx.set(vaultRef, { lw_pouch_cap: next }, { merge: true })
-      fulfillment.applied = next > cur
-      fulfillment.before = cur
-      fulfillment.after = next
-    } else if (type === 'nursery_clipping_slot') {
-      // Nursery clipping slots — separate from seed slots, cap 5.
-      // Mirror to vault root doc for cross-device sync.
-      const vaultDoc = await tx.get(vaultRef)
-      const cur = Number(
-        (vaultDoc.exists && vaultDoc.data().lw_nur_clipping_slots) || 2,
-      )
-      const next = Math.min(SLOT_CAP_NURSERY_CLIPPING, cur + 1)
-      tx.set(vaultRef, { lw_nur_clipping_slots: next }, { merge: true })
-      fulfillment.applied = next > cur
-      fulfillment.before = cur
-      fulfillment.after = next
-    } else if (type === 'seed_pouch_slot') {
-      // Backpack seed pouch tiers (seed15 → 15 slots, seed20 → 20 slots).
-      // The client routes through FG_Backpack.loadFromCloud({unlocks:{...}})
-      // so we write the unlock flag to vault.backpack.unlocks.{tier}.
-      const tier = (metadata && metadata.tier) ? String(metadata.tier) : ''
-      if (SEED_POUCH_TIERS.indexOf(tier) === -1) {
-        logger.warn('[piComplete] seed_pouch_slot with invalid tier=%s payment=%s', tier, paymentId)
-        fulfillment.applied = false
-        fulfillment.note = `Invalid seed pouch tier: ${tier}`
-      } else {
-        const vaultDoc = await tx.get(vaultRef)
-        const bp = (vaultDoc.exists && vaultDoc.data().backpack) || {}
-        const unlocks = (bp.unlocks && typeof bp.unlocks === 'object') ? { ...bp.unlocks } : {}
-        const wasSet = !!unlocks[tier]
-        unlocks[tier] = true
-        tx.set(vaultRef, { backpack: { ...bp, unlocks } }, { merge: true })
-        fulfillment.applied = !wasSet
-        fulfillment.tier = tier
-        fulfillment.cap = (tier === 'seed20') ? 20 : 15
-      }
-    } else if (type === 'emergency_pouch') {
-      tx.set(
-        vaultRef,
-        {
-          emergency_pouch_today: today,
-          emergency_pouch_expires: Date.now() + 24 * 60 * 60 * 1000,
-        },
-        { merge: true },
-      )
-      fulfillment.applied = true
-      fulfillment.expiresInMs = 24 * 60 * 60 * 1000
-    } else if (type === 'early_open_hut' || type === 'hut_early_open') {
-      const itemKey = (metadata && metadata.item) ? String(metadata.item) : 'unknown'
-      const vaultDoc = await tx.get(vaultRef)
-      const existing = (vaultDoc.exists && vaultDoc.data().lw_hut_early_opens) || {
-        date: today,
-        opened: {},
-      }
-      if (existing.date !== today) {
-        existing.date = today
-        existing.opened = {}
-      }
-      existing.opened = { ...(existing.opened || {}), [itemKey]: Date.now() }
-      tx.set(vaultRef, { lw_hut_early_opens: existing }, { merge: true })
-      fulfillment.applied = true
-      fulfillment.itemKey = itemKey
-    } else {
-      // Unknown type — record but don't grant anything. Surface to logs.
-      logger.warn('[piComplete] Unknown fulfillment type=%s paymentId=%s', type, paymentId)
-      fulfillment.applied = false
-      fulfillment.note = 'Unknown metadata.type; no entitlement applied.'
-    }
+    // Shared entitlement logic. Reads the vault/meta doc its branch needs and
+    // writes it — all before we stamp the lock doc below (reads-before-writes).
+    const fulfillment = await applyFulfillment(tx, db, uid, metadata)
 
     tx.set(
       txRef,
@@ -199,7 +92,7 @@ async function fulfill(db, uid, paymentId, metadata) {
       { merge: true },
     )
 
-    return { alreadyCompleted: false, type, fulfillment }
+    return { alreadyCompleted: false, type: fulfillment.type, fulfillment }
   })
 }
 

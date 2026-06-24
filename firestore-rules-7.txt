@@ -537,6 +537,20 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════════════
+    // WEB ORDERS — open-web/PWA crypto rail (NOWPayments).
+    // Mirror of piTransactions for the web rail. nowCreateInvoice (admin
+    // SDK) creates the order; nowIpn (admin SDK, HMAC-verified webhook)
+    // flips it to 'completed' + applies fulfillment. The CLIENT may only
+    // READ its own order (status-poll the pending → confirmed UX);
+    // it can never write — same trust model as Pi entitlements.
+    // ════════════════════════════════════════════════════════════
+    match /webOrders/{orderId} {
+      allow read: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+      allow write: if false;  // Server-only (admin SDK bypasses rules)
+    }
+
+    // ════════════════════════════════════════════════════════════
     // MARKETPLACE LISTINGS
     // Public browse, seller creates/delists, server handles sales
     // ════════════════════════════════════════════════════════════
