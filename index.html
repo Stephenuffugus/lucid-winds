@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.12';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.13';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -102735,7 +102735,9 @@ window.LW_Comp = (function(){
     volume: 0.6,
     muted: false,
     pausedBy: null,  // 'game' | 'studio' | 'user' | null
-    drawerOpen: false
+    drawerOpen: false,
+    playAll: false,  // false = auto-advance stays in the current section; true = whole library
+    excluded: {}     // { trackId: true } — songs the player unchecked (skipped in auto-advance)
   };
 
   function loadState(){
@@ -102744,6 +102746,8 @@ window.LW_Comp = (function(){
       if (typeof s.currentIdx === 'number') state.currentIdx = s.currentIdx;
       if (typeof s.volume === 'number') state.volume = s.volume;
       if (typeof s.muted === 'boolean') state.muted = s.muted;
+      if (typeof s.playAll === 'boolean') state.playAll = s.playAll;
+      if (s.excluded && typeof s.excluded === 'object') state.excluded = s.excluded;
     } catch(e){}
   }
 
@@ -102752,7 +102756,9 @@ window.LW_Comp = (function(){
       localStorage.setItem(STATE_KEY, JSON.stringify({
         currentIdx: state.currentIdx,
         volume: state.volume,
-        muted: state.muted
+        muted: state.muted,
+        playAll: state.playAll,
+        excluded: state.excluded
       }));
     } catch(e){}
   }
@@ -102820,14 +102826,50 @@ window.LW_Comp = (function(){
     }
   }
 
+  // The "active" list for auto-advance: tracks in scope (the CURRENT track's
+  // category, unless Play All is on = whole library), minus any song the player
+  // unchecked. Stephen 2026-06-24: stops the jarring lo-fi -> classical jump —
+  // a section flows within itself; Play All opts back into the full mix; an
+  // unchecked song is never auto-played again. Manual taps still play anything.
+  function trackIncluded(t){ return !!t && !(state.excluded && state.excluded[t.id]); }
+  function activeIndices(){
+    var curCat = (state.currentIdx >= 0 && TRACKS[state.currentIdx]) ? (TRACKS[state.currentIdx].cat || 'Originals') : null;
+    var out = [];
+    for (var i = 0; i < TRACKS.length; i++){
+      var t = TRACKS[i];
+      if (!trackIncluded(t)) continue;
+      if (!state.playAll && curCat && (t.cat || 'Originals') !== curCat) continue;
+      out.push(i);
+    }
+    if (!out.length){ // current section fully unchecked: fall back to any included track
+      for (var j = 0; j < TRACKS.length; j++){ if (trackIncluded(TRACKS[j])) out.push(j); }
+    }
+    return out;
+  }
+
   function next(){
     if (!TRACKS.length) return;
-    play((state.currentIdx + 1) % TRACKS.length);
+    var act = activeIndices(); if (!act.length) return;
+    var pos = act.indexOf(state.currentIdx);
+    play(act[(pos + 1) % act.length]);
   }
 
   function prev(){
     if (!TRACKS.length) return;
-    play((state.currentIdx - 1 + TRACKS.length) % TRACKS.length);
+    var act = activeIndices(); if (!act.length) return;
+    var pos = act.indexOf(state.currentIdx); if (pos < 0) pos = 0;
+    play(act[(pos - 1 + act.length) % act.length]);
+  }
+
+  function toggleExclude(id){
+    if (!id) return;
+    if (!state.excluded) state.excluded = {};
+    if (state.excluded[id]) delete state.excluded[id]; else state.excluded[id] = true;
+    saveState(); renderTrackList();
+  }
+  function togglePlayAll(){
+    state.playAll = !state.playAll;
+    saveState(); renderTrackList();
   }
 
   function setVolume(v){
@@ -102905,7 +102947,7 @@ window.LW_Comp = (function(){
     h += '<span style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.06em;width:24px;">VOL</span>';
     h += '<input type="range" min="0" max="100" value="' + Math.round(state.volume*100) + '" oninput="LW_MUSIC.setVolume(this.value/100)" style="flex:1;accent-color:#b48cdc;">';
     h += '</div>';
-    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);text-align:center;letter-spacing:0.04em;line-height:1.5;">Music auto-pauses during games. Original beats by Stephen.</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);text-align:center;letter-spacing:0.04em;line-height:1.5;">Music keeps playing during games. Originals by Stephen + classical favorites.</div>';
     h += '</div>';
 
     h += '</div>';
@@ -102949,6 +102991,10 @@ window.LW_Comp = (function(){
     }
     var groups = trackGroups();
     var h = '';
+    // Play All toggle + how-it-works note. Kept at the top of the list so a
+    // single renderTrackList() re-render updates them when toggled.
+    h += '<button onclick="LW_MUSIC.togglePlayAll()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.4rem;min-height:46px;padding:0.5rem;border-radius:9px;cursor:pointer;font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.72rem;border:1.5px solid rgba(180,140,220,' + (state.playAll ? '0.6' : '0.35') + ');background:rgba(180,140,220,' + (state.playAll ? '0.28' : '0.08') + ');color:rgba(240,220,255,0.95);margin-bottom:0.4rem;">' + (state.playAll ? '🔀  PLAY ALL · ON (mixing every section)' : '🔀  PLAY ALL · OFF (one section at a time)') + '</button>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;letter-spacing:0.03em;line-height:1.6;margin:0 0.3rem 0.65rem;">Songs flow within one section (your lo-fi, or classical). Tap PLAY ALL to mix them. Untick any song to skip it for good.</div>';
     for (var g = 0; g < groups.length; g++) {
       var grp = groups[g];
       // Section header — uppercase cat label, hairline divider, track count.
@@ -102961,10 +103007,14 @@ window.LW_Comp = (function(){
         var t = grp.items[m].t;
         var i = grp.items[m].i;
         var active = (i === state.currentIdx);
-        h += '<button onclick="LW_MUSIC.play(' + i + ')" style="display:block;width:100%;text-align:left;padding:0.65rem 0.7rem;margin-bottom:0.35rem;background:' + (active ? 'rgba(180,140,220,0.12)' : 'rgba(13,16,12,0.55)') + ';border:1px solid ' + (active ? 'rgba(180,140,220,0.5)' : 'rgba(74,124,53,0.18)') + ';border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent;">';
-        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:' + (active ? 'rgba(220,180,255,0.95)' : 'var(--cream)') + ';">' + esc(t.title) + (active && state.playing ? '  <span style="font-size:0.55rem;color:rgba(180,140,220,0.85);">▶ PLAYING</span>' : '') + '</div>';
+        var skip = !trackIncluded(t);
+        h += '<div style="display:flex;align-items:stretch;gap:6px;margin-bottom:0.35rem;">';
+        h += '<button onclick="LW_MUSIC.play(' + i + ')" style="flex:1;min-width:0;display:block;text-align:left;padding:0.65rem 0.7rem;background:' + (active ? 'rgba(180,140,220,0.12)' : 'rgba(13,16,12,0.55)') + ';border:1px solid ' + (active ? 'rgba(180,140,220,0.5)' : 'rgba(74,124,53,0.18)') + ';border-radius:8px;color:var(--cream);cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent;' + (skip ? 'opacity:0.4;' : '') + '">';
+        h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.06em;color:' + (active ? 'rgba(220,180,255,0.95)' : 'var(--cream)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(t.title) + (active && state.playing ? '  <span style="font-size:0.55rem;color:rgba(180,140,220,0.85);">▶ PLAYING</span>' : '') + '</div>';
         h += '<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-top:0.18rem;letter-spacing:0.04em;">' + esc(t.artist || 'Stephen') + (t.mood ? ' · ' + esc(t.mood) : '') + '</div>';
         h += '</button>';
+        h += '<button onclick="LW_MUSIC.toggleExclude(\'' + t.id + '\')" title="' + (skip ? 'Skipped — tap to add back' : 'Tap to skip this song for good') + '" aria-label="Toggle song" style="flex-shrink:0;width:46px;border-radius:8px;border:1px solid ' + (skip ? 'rgba(122,179,86,0.2)' : 'rgba(180,140,220,0.5)') + ';background:' + (skip ? 'rgba(13,16,12,0.4)' : 'rgba(180,140,220,0.16)') + ';color:' + (skip ? 'var(--muted)' : 'rgba(220,180,255,0.95)') + ';cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;min-height:48px;">' + (skip ? '☐' : '☑') + '</button>';
+        h += '</div>';
       }
     }
     return h;
@@ -103010,6 +103060,8 @@ window.LW_Comp = (function(){
     setVolume: setVolume,
     pauseFor: pauseFor,
     resumeFrom: resumeFrom,
+    toggleExclude: toggleExclude,
+    togglePlayAll: togglePlayAll,
     openDrawer: openDrawer,
     closeDrawer: closeDrawer,
     state: state
