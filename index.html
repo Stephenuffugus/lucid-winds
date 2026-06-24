@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.11';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -102685,8 +102685,12 @@ window.LW_Comp = (function(){
        reopening the game shouldn't blast resume mid-bar.
      ════════════════════════════════════════════════════════════ -->
 <!-- Shared track manifest (single source of truth, also used by the portal).
-     Loaded before LW_MUSIC so window.LW_TRACKS is ready synchronously. -->
-<script src="music-tracks.js"></script>
+     Loaded before LW_MUSIC so window.LW_TRACKS is ready synchronously.
+     Version-stamped with LW_VERSION so a track-list update is NOT held back by
+     the service worker's stale-while-revalidate cache (without the stamp a new
+     track only showed up on the SECOND load). document.write keeps the load
+     synchronous so LW_TRACKS is ready before the LW_MUSIC IIFE below runs. -->
+<script>document.write('<script src="music-tracks.js?v='+(window.LW_VERSION||'0')+'"><\/script>');</script>
 <script>
 (function(){
   'use strict';
@@ -103010,6 +103014,45 @@ window.LW_Comp = (function(){
     closeDrawer: closeDrawer,
     state: state
   };
+})();
+</script>
+
+<!-- ─────────────────────────────────────────────────────────────────────
+     ADDITIVE: greet new players with The Waiting Dojo. Browsers block audio
+     autoplay until a user gesture, so we arm a one-time listener and start the
+     bundled original on the player's FIRST tap (which is the onboarding /
+     sign-up moment). The point is discovery: they see the soundtrack control
+     light up, and if they go to turn it off they find the whole library.
+     Fires ONCE ever (lw_music_greeted flag), then never forces music again, so
+     it never annoys a returning player. Uses only LW_MUSIC's public API; if
+     this block did nothing the player just would not get the auto-greeting.
+     ───────────────────────────────────────────────────────────────────── -->
+<script>
+(function(){
+  'use strict';
+  try{ if(localStorage.getItem('lw_music_greeted')) return; }catch(e){}
+  var done=false;
+  function cleanup(){
+    document.removeEventListener('pointerdown',greet,true);
+    document.removeEventListener('touchstart',greet,true);
+    document.removeEventListener('keydown',greet,true);
+    document.removeEventListener('click',greet,true);
+  }
+  function greet(){
+    if(done) return; done=true; cleanup();
+    try{ localStorage.setItem('lw_music_greeted','1'); }catch(e){}
+    try{
+      if(!window.LW_MUSIC || !LW_MUSIC.play) return;
+      if(LW_MUSIC.state && LW_MUSIC.state.playing) return;  // already playing — leave it
+      var tr=LW_MUSIC.tracks||[], idx=0;
+      for(var i=0;i<tr.length;i++){ if(tr[i] && tr[i].id==='the-waiting-dojo'){ idx=i; break; } }
+      LW_MUSIC.play(idx);
+    }catch(e){}
+  }
+  document.addEventListener('pointerdown',greet,true);
+  document.addEventListener('touchstart',greet,true);
+  document.addEventListener('keydown',greet,true);
+  document.addEventListener('click',greet,true);
 })();
 </script>
 
