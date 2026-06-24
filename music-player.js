@@ -116,7 +116,7 @@
          if(typeof s.pl==='string') st.pl=s.pl; }catch(e){}
     var _saveT = 0;
     function save(){ try{ var t=audio?audio.currentTime:(st._time||0); localStorage.setItem(KEY, JSON.stringify({idx:st.idx, volume:st.volume, playing:st.playing, repeat:st.repeat, time:t, pl:st.pl})); }catch(e){} }
-    function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];}); }
+    function esc(x){ return String(x==null?'':x).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];}); }
 
     // ── Playlists ──
     function plAll(){ try{ return JSON.parse(localStorage.getItem(PL_KEY)||'[]'); }catch(e){ return []; } }
@@ -151,8 +151,14 @@
         if(n>=TRACKS.length){ if(st.repeat==='all'){ play(0); } else { st.playing=false; btn.classList.remove('playing'); save(); } }
         else play(n);
       });
-      audio.addEventListener('error', function(){ if(st.errSkips>=TRACKS.length){ st.errSkips=0; return; } st.errSkips++; next(); });
-      audio.addEventListener('play',  function(){ st.errSkips=0; st.playing=true;  btn.classList.add('playing'); render(); save(); });
+      // Link-rot guard: skip a dead (streamed) track. Debounced so a run of
+      // dead URLs (e.g. offline on a flaky tablet) can't burst-loop the whole
+      // library; capped at one full pass. errSkips resets on REAL playback
+      // ('playing'), not 'play' (which fires before any data is confirmed) —
+      // otherwise one good track between dead ones would re-arm the cap forever.
+      audio.addEventListener('error', function(){ if(st.errSkips>=TRACKS.length){ st.errSkips=0; return; } st.errSkips++; setTimeout(next, 600); });
+      audio.addEventListener('playing', function(){ st.errSkips=0; });
+      audio.addEventListener('play',  function(){ st.playing=true;  btn.classList.add('playing'); render(); save(); });
       audio.addEventListener('pause', function(){ st.playing=false; btn.classList.remove('playing'); render(); save(); });
       audio.addEventListener('timeupdate', function(){ var now=Date.now(); if(now-_saveT>2000){ _saveT=now; save(); } });
       document.body.appendChild(audio);
@@ -269,11 +275,14 @@
       if(!st.playing || st.idx<0 || !TRACKS[st.idx]) return;
       var a = ensure(); a.src = TRACKS[st.idx].src;
       a.addEventListener('loadedmetadata', function(){ if(st._time>0){ try{ a.currentTime=st._time; }catch(e){} } }, {once:true});
+      // If autoplay is blocked on this fresh page, resume on first interaction.
+      // The listeners STAY armed until a play() actually succeeds — so if the
+      // re-kick itself rejects (e.g. a dead stream), we don't silently stall.
+      function disarm(){ document.removeEventListener('pointerdown',onInt,true); document.removeEventListener('keydown',onInt,true); }
+      function onInt(){ var pp=a.play(); if(pp&&pp.then) pp.then(disarm, function(){}); else disarm(); }
+      function arm(){ document.addEventListener('pointerdown',onInt,true); document.addEventListener('keydown',onInt,true); }
       var p = a.play();
-      if(p && p['catch']) p['catch'](function(){
-        var onInt=function(){ document.removeEventListener('pointerdown',onInt,true); document.removeEventListener('keydown',onInt,true); var pp=a.play(); if(pp&&pp['catch'])pp['catch'](function(){}); };
-        document.addEventListener('pointerdown',onInt,true); document.addEventListener('keydown',onInt,true);
-      });
+      if(p && p.then) p.then(function(){}, arm);
       render();
     }
 

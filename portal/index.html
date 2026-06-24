@@ -563,9 +563,12 @@ renderGarden("all");
     if(!isOpen){ try{ history.pushState({swsGame:1}, '', '#play'); }catch(e){} }
     isOpen = true;
     // Fallback: if the embedded shell never reports 'ready' (e.g. framing
-    // blocked), just open the game normally so it's never a dead end.
+    // blocked), just open the game normally so it's never a dead end. 12s of
+    // headroom so a slow cold-loading shell on a weak tablet isn't yanked out
+    // of a perfectly-good frame — only a truly blocked frame (whose JS never
+    // runs, so 'ready' never posts) hits this.
     if(watchdog) clearTimeout(watchdog);
-    watchdog = setTimeout(function(){ window.location.href = url; }, 7000);
+    watchdog = setTimeout(function(){ window.location.href = url; }, 12000);
   }
   function closeGame(){
     if(!isOpen) return;
