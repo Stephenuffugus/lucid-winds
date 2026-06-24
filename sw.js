@@ -174,7 +174,7 @@ self.addEventListener('fetch', function(event) {
   // Shared soundtrack manifest, loaded WITHOUT a ?v= stamp by both index.html
   // and the portal. Same reasoning as word-banks.js below: serve cached
   // instantly, refresh in the background so a new track lands on the next load.
-  if (url.pathname === '/music-tracks.js') {
+  if (url.pathname === '/music-tracks.js' || url.pathname === '/music-player.js') {
     event.respondWith(
       caches.open(ASSET_CACHE).then(function(cache) {
         return cache.match(event.request).then(function(cached) {
