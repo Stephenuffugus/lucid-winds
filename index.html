@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -16318,7 +16318,7 @@ document.addEventListener('keydown', function(e) {
     // pot front covers the threads sitting at/below the rim (y ≥ 78).
     // Only the threads above the rim spill visibly — looks like soil
     // mycelium peeking over the top, instead of layered ON the pot.
-    if (prog >= 0.3) svg += renderMycelialCrown(t);
+    if (prog >= 0.3) svg += renderMycelialCrown(t, uid);
 
     // 5. POT (rim now sits IN FRONT of stem — creates depth)
     svg += renderPot(t, uid);
@@ -27103,9 +27103,15 @@ document.addEventListener('keydown', function(e) {
   }
 
   // ── set-103-8: MYCELIAL CROWN RENDERER (composted heritage) ──
-  function renderMycelialCrown(t) {
+  function renderMycelialCrown(t, uid) {
     if (!t.mycelialCrown) return '';
-    var s = '';
+    // Clip to the soil zone (y<=79) so the threads peek up from INSIDE the pot
+    // instead of dangling down over the pot's front face. The pot front lip
+    // (renderPot, drawn after this) then blends the rim. Soil line is y=78;
+    // 79 leaves a hair of overlap into the lip for an organic edge.
+    var cid = 'mcclip_' + (uid || '0');
+    var s = '<defs><clipPath id="' + cid + '"><rect x="0" y="0" width="70" height="79"/></clipPath></defs>';
+    s += '<g clip-path="url(#' + cid + ')">';
     s += '<path d="M35,76.4 C33.8,76.8 31.8,77.6 29.8,78.8 C28.2,79.8 26.8,80.2 24.8,80.0" stroke="rgba(234,224,200,0.35)" stroke-width="0.4" fill="none"/>';
     s += '<path d="M35.1,76.8 C33.6,77.4 31.2,78.6 28.6,80.2 M31.0,78.8 C30.2,79.8 29.0,80.8 27.2,81.6" stroke="rgba(234,224,200,0.35)" stroke-width="0.4" fill="none"/>';
     s += '<path d="M34.8,77.2 C33.8,77.8 32.4,78.6 31.0,79.8 C29.8,80.8 28.8,81.8 27.8,82.4" stroke="rgba(234,224,200,0.35)" stroke-width="0.4" fill="none"/>';
@@ -27115,6 +27121,7 @@ document.addEventListener('keydown', function(e) {
     s += '<path d="M34.9,77.4 C33.8,78.2 32.8,79.2 31.8,80.6 C31.0,81.8 30.2,82.8 29.2,83.6" stroke="rgba(234,224,200,0.55)" stroke-width="0.35" fill="none"/>';
     s += '<path d="M35.1,77.3 C36.2,77.8 37.6,78.8 39.2,80.2 C40.4,81.2 41.6,81.8 43.0,82.0" stroke="rgba(234,224,200,0.55)" stroke-width="0.35" fill="none"/>';
     s += '<path d="M35.0,76.9 C34.6,77.8 34.0,78.8 33.0,79.8 M34.1,78.0 C35.0,78.8 36.0,79.6 37.2,80.6" stroke="rgba(234,224,200,0.55)" stroke-width="0.35" fill="none"/>';
+    s += '</g>';
     return s;
   }
 
