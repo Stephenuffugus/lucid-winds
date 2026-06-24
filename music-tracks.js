@@ -54,6 +54,7 @@
     // HEAD-verified 200/audio/mpeg. The Aria + its da-capo return are the cozy anchors.
     {id:'bach-goldberg-aria', title:'Goldberg Variations — Aria', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/Kimiko%20Ishizaka%20-%20J.S.%20Bach-%20-Open-%20Goldberg%20Variations%2C%20BWV%20988%20%28Piano%29%20-%2001%20Aria.mp3'},
     {id:'bach-goldberg-var13', title:'Goldberg Var. 13', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/Kimiko%20Ishizaka%20-%20J.S.%20Bach-%20-Open-%20Goldberg%20Variations%2C%20BWV%20988%20%28Piano%29%20-%2014%20Variatio%2013%20a%202%20Clav..mp3'},
+    {id:'bach-goldberg-var25', title:'Goldberg Var. 25 “Black Pearl”', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/KimikoIshizaka-J.s.Bach--open-GoldbergVariationsBwv988piano-26Variatio25A2Clav..mp3'},
     {id:'bach-goldberg-aria-dacapo', title:'Goldberg — Aria da Capo', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/OpenGoldbergVariations/KimikoIshizaka-J.s.Bach--open-GoldbergVariationsBwv988piano-31AriaDaCapoEFine.mp3'}
   ];
 
