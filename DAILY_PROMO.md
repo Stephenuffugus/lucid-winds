@@ -99,18 +99,8 @@ Hi [name], [one warm specific line about their recent video]. I made a free cozy
 
 ---
 
-## ITCH.IO LISTING (publish once, then it works for you)
-- Title: Lucid Winds
-- Short tagline: A cozy garden where no two plants are ever the same.
-- Genre tags: cozy, relaxing, casual, procedural-generation, gardening, browser
-- Pricing: Free (or "free, pay what you want")
-- Play link: point the project to lucidwinds.com/portal/ (or upload an HTML build with index.html at the ZIP root if you want it to run inside itch)
-- Cover image: 630 by 500. (Ask me to generate one from your brand art and a bloom.)
-
-Description:
-Lucid Winds is a cozy botanical game where every plant you grow is one of a kind. Its art, its name, and even its own little haiku are generated just for that plant, so no two are ever the same. Play pattern games to earn your plants, watch them bloom, breed them, and plant them on a real world map for others to find. There is original music throughout, and there is nothing to download and no account to make. Just open it and you are gardening. Made by one person who wanted a gentle place to spend a few quiet minutes.
-
-Note: on itch, "published" is not the same as "searchable" (their indexing is separate), so the listing will not bring its own traffic. Use it as the tidy home you point your videos and posts toward.
+## ITCH.IO — SKIPPED FOR NOW
+itch.io is an indie game website, not an app store, and for an instant-play browser game like ours it does not bring its own traffic. Not worth the time right now. Your funnel is the videos and communities pointing at lucidwinds.com/portal/. We can do a 20-minute itch listing someday if we ever want it.
 
 ---
 
