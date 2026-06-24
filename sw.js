@@ -170,6 +170,25 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
+  // ── music-tracks.js: stale-while-revalidate ──
+  // Shared soundtrack manifest, loaded WITHOUT a ?v= stamp by both index.html
+  // and the portal. Same reasoning as word-banks.js below: serve cached
+  // instantly, refresh in the background so a new track lands on the next load.
+  if (url.pathname === '/music-tracks.js') {
+    event.respondWith(
+      caches.open(ASSET_CACHE).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          var refresh = fetch(event.request).then(function(response) {
+            if (response && response.ok) cache.put(event.request, response.clone());
+            return response;
+          });
+          return cached || refresh;
+        });
+      })
+    );
+    return;
+  }
+
   // ── word-banks.js: stale-while-revalidate ──
   // index.html loads it WITHOUT a ?v= stamp, so cache-first would pin it
   // forever. Serve cached instantly, refresh in the background — a bank

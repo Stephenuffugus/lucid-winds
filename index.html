@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.24.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -102512,34 +102512,25 @@ window.LW_Comp = (function(){
        lw_music_state. Playback position is NOT persisted by design —
        reopening the game shouldn't blast resume mid-bar.
      ════════════════════════════════════════════════════════════ -->
+<!-- Shared track manifest (single source of truth, also used by the portal).
+     Loaded before LW_MUSIC so window.LW_TRACKS is ready synchronously. -->
+<script src="music-tracks.js"></script>
 <script>
 (function(){
   'use strict';
 
   var STATE_KEY = 'lw_music_state';
 
-  // TRACK MANIFEST — Stephen edits this when shipping MP3s.
-  // Each entry: { id, title, artist, src, mood, cat }
-  //   cat groups the track into a drawer section. Order is set by CAT_ORDER
-  //   below; unlisted cats append after. Default (no cat) = 'Originals'.
-  var TRACKS = [
-    {id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', src:'assets/music/the-waiting-dojo.mp3', cat:'Originals'},
-    // ── STREAMED LIBRARY — public-domain classical, linked straight from the
-    //    Internet Archive (Musopen CC0 collection). No repo bloat; src is a
-    //    full URL, the player treats it identically to a local file. These
-    //    need network (background flavor only). License verified CC0:
-    //    archive.org/details/musopen-chopin (licenseurl = publicdomain/zero/1.0).
-    //    If a link ever rots, the 'error' handler below skips to the next track.
-    {id:'chopin-noc-op9-2',  title:'Nocturne Op. 9 No. 2',  artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%209%20no.%202%20in%20E%20flat%20major.mp3'},
-    {id:'chopin-noc-op15-1', title:'Nocturne Op. 15 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2015%20no.%201%20In%20F%20major.mp3'},
-    {id:'chopin-noc-op27-1', title:'Nocturne Op. 27 No. 1', artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Nocturne%20Op.%2027%20no.%201%20in%20C%20sharp%20minor.mp3'},
-    {id:'chopin-ballade-1',  title:'Ballade No. 1, Op. 23',  artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Ballade%20no.%201%20-%20Op.%2023.mp3'},
-    {id:'chopin-waltz-op64-2', title:'Waltz Op. 64 No. 2',   artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Waltz%20Op.%2064%20no.%202%20in%20C%20sharp%20minor.mp3'},
-    {id:'chopin-prelude-raindrop', title:'Prelude Op. 28 No. 15 “Raindrop”', artist:'Frédéric Chopin', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/musopen-chopin/Prelude%20Op.%2028%20no.%2015.mp3'},
+  // TRACK MANIFEST — now lives in the shared /music-tracks.js (window.LW_TRACKS)
+  // so the app and the portal stay in sync from ONE file. If that file fails to
+  // load (e.g. offline before it cached), fall back to just the bundled original
+  // so the app never goes silent — the streamed library needs network anyway.
+  var TRACKS = (window.LW_TRACKS && window.LW_TRACKS.length) ? window.LW_TRACKS : [
+    {id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', src:'/assets/music/the-waiting-dojo.mp3', cat:'Originals'}
   ];
 
   // Drawer section order. Cats not listed here append after, in first-seen order.
-  var CAT_ORDER = ['Originals','Classical','Ambient','Lo-fi','Nature'];
+  var CAT_ORDER = (window.LW_TRACK_CATS && window.LW_TRACK_CATS.length) ? window.LW_TRACK_CATS : ['Originals','Classical','Ambient','Lo-fi','Nature'];
 
   // Group TRACKS by cat, preserving each track's real index (needed by play()).
   // Returns [{cat, items:[{t, i}]}] in CAT_ORDER, unknowns last.
@@ -102687,9 +102678,16 @@ window.LW_Comp = (function(){
     }
   }
 
-  // body.game-active observer — pause music whenever any mini-game opens
-  // (Bloom Wheel, Connect Fleur, Mastermind, all of them). Resumes on close.
+  // body.game-active observer — pause music whenever any mini-game opens.
+  // Stephen 2026-06-24: music now CARRIES INTO games (people want to play
+  // to the classical library), so PAUSE_IN_GAME is false and the soundtrack
+  // keeps going during mini-games. Game SFX already duck under the music
+  // (see the SFX-duck check ~line 63809), so they coexist. Flip PAUSE_IN_GAME
+  // back to true to restore the old pause-during-games behavior; the
+  // pauseFor/resumeFrom('studio') path is unaffected (still used elsewhere).
+  var PAUSE_IN_GAME = false;
   function watchGameActive(){
+    if (!PAUSE_IN_GAME) return;
     if (!window.MutationObserver) return;
     var lastActive = document.body.classList.contains('game-active');
     var obs = new MutationObserver(function(){
