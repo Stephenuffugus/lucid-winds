@@ -67,13 +67,11 @@
     // archive.org/details/bach-well-tempered-clavier-book-1). Clean modern piano.
     {id:'bach-wtc-prelude-c', title:'WTC Prelude No. 1 in C, BWV 846', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/bach-well-tempered-clavier-book-1/Kimiko%20Ishizaka%20-%20Bach-%20Well-Tempered%20Clavier%2C%20Book%201%20-%2001%20Prelude%20No.%201%20in%20C%20major%2C%20BWV%20846.mp3'},
     {id:'bach-wtc-prelude-cmin', title:'WTC Prelude No. 2 in C minor', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/bach-well-tempered-clavier-book-1/Kimiko%20Ishizaka%20-%20Bach-%20Well-Tempered%20Clavier%2C%20Book%201%20-%2003%20Prelude%20No.%202%20in%20C%20minor%2C%20BWV%20847.mp3'},
-    {id:'bach-wtc-prelude-ebmin', title:'WTC Prelude No. 8 in E♭ minor', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/bach-well-tempered-clavier-book-1/Kimiko%20Ishizaka%20-%20Bach-%20Well-Tempered%20Clavier%2C%20Book%201%20-%2015%20Prelude%20No.%208%20in%20E-flat%20minor%2C%20BWV%20853.mp3'},
-    // Debussy — clean modern CC0 Debussy doesn't reliably exist on the Archive
-    // (the good recordings are copyrighted; the "CC0" modern uploads are
-    // mislabeled rips). This is a GENUINE public-domain-by-age recording: a
-    // documented 1944 performance by pianist Suzanne Gyr (78rpm heritage
-    // collection), so it carries some vintage warmth. mood credits the player.
-    {id:'debussy-fille-flaxen', title:'La Fille aux Cheveux de Lin', artist:'Claude Debussy', mood:'Suzanne Gyr · 1944', cat:'Classical', src:'https://archive.org/download/gyr-la-fille-aux-cheveux-de-lin-debussy/Gyr%20-%20La%20Fille%20aux%20cheveux%20de%20Lin%20%28Debussy%29.mp3'}
+    {id:'bach-wtc-prelude-ebmin', title:'WTC Prelude No. 8 in E♭ minor', artist:'J.S. Bach', mood:'Public Domain', cat:'Classical', src:'https://archive.org/download/bach-well-tempered-clavier-book-1/Kimiko%20Ishizaka%20-%20Bach-%20Well-Tempered%20Clavier%2C%20Book%201%20-%2015%20Prelude%20No.%208%20in%20E-flat%20minor%2C%20BWV%20853.mp3'}
+    // Debussy (1944 Suzanne Gyr recording) REMOVED 2026-06-24: lovely piece, but
+    // the vintage recording's volume sits far below everything else, so the jump
+    // to it was jarring/uncomfortable. Pulled per Stephen. (If a clean, level-
+    // matched public-domain Debussy turns up later, re-add it here.)
   ];
 
   // Drawer section order. Cats not listed here append after, first-seen order.
