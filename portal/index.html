@@ -36,6 +36,15 @@
   #wallet .user-chip .who{color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #wallet .user-chip button{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500;padding:5px 10px;font-size:12px}
   #wallet .user-chip button:hover{color:var(--leaf);border-color:var(--leaf)}
+  /* Soundtrack toggle — sits at the left of the wallet bar. Plays the same
+     "The Waiting Dojo" track as the Lucid Winds in-app player. Higher-
+     specificity selector so it isn't styled by the generic #wallet button rule. */
+  #wallet #music-toggle{display:grid;place-items:center;width:36px;height:36px;padding:0;border-radius:9px;
+                        border:1px solid var(--line);background:var(--panel2);color:var(--leaf);font-size:16px;
+                        line-height:1;cursor:pointer;flex-shrink:0;transition:border-color .12s,background .12s}
+  #wallet #music-toggle:hover{border-color:var(--leaf)}
+  #wallet #music-toggle.playing{background:linear-gradient(145deg,var(--leaf),#3f9d6c);color:#08130c;border-color:var(--leaf);
+                                box-shadow:0 0 10px rgba(95,192,138,.4)}
   /* auth modal */
   .auth-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:center;justify-content:center;padding:18px}
   .auth-bg.on{display:flex}
@@ -113,6 +122,7 @@
       <div><h1>Sky Wolf Studios</h1><small>provisional name · one orchard, many games</small></div>
     </div>
     <div id="wallet">
+      <button id="music-toggle" type="button" title="Soundtrack — The Waiting Dojo" aria-label="Play soundtrack">&#9835;</button>
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
       <span class="pend" id="pend"></span>
       <button id="signin">Sign in</button>
@@ -489,6 +499,45 @@ renderGarden("all");
   // Reflect auth state if it's already known on first paint (e.g. SDK pre-initialized).
   try{ if(S.getCurrentUid && S.getCurrentUid()){ setSignedIn({ uid: S.getCurrentUid() }); } }catch(e){}
   refresh();
+})();
+</script>
+
+<!-- Soundtrack toggle — minimal, self-contained. The portal has no LW_MUSIC
+     module, so this is a tiny standalone player for the same track shipped in
+     the Lucid Winds app (assets/music/the-waiting-dojo.mp3). The click is the
+     user gesture browsers require, so playback starts on first tap. Volume +
+     on/off persist in localStorage so a returning visitor keeps their choice. -->
+<script>
+(function(){
+  var btn = document.getElementById('music-toggle');
+  if(!btn) return;
+  var KEY = 'sws_portal_music';
+  var audio = null;
+  function pref(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+  function save(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+  function ensure(){
+    if(audio) return audio;
+    audio = document.createElement('audio');
+    audio.src = '/assets/music/the-waiting-dojo.mp3';
+    audio.preload = 'none';
+    audio.loop = true;
+    audio.volume = (typeof pref().volume === 'number') ? pref().volume : 0.5;
+    audio.addEventListener('play',  function(){ btn.classList.add('playing'); });
+    audio.addEventListener('pause', function(){ btn.classList.remove('playing'); });
+    document.body.appendChild(audio);
+    return audio;
+  }
+  btn.addEventListener('click', function(){
+    var a = ensure();
+    if(a.paused){
+      var p = a.play();
+      if(p && p['catch']) p['catch'](function(){});
+      save({ on: true, volume: a.volume });
+    } else {
+      a.pause();
+      save({ on: false, volume: a.volume });
+    }
+  });
 })();
 </script>
 </body>

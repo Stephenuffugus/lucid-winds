@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.23.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.24.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -4515,6 +4515,7 @@
     body.game-active #kb-cocoon,
     body.game-active #kb-hut,
     body.game-active #kb-install,
+    body.game-active #kb-music,
     body.game-active #pw-lb-toggle,
     body.game-active #kb-compendium,
     body.game-active #kb-compendium.has-entries,
@@ -6004,6 +6005,7 @@ body.lw-anim-paused *::after {
        small next to the avatar. Same family of sizes as the keeper-bar
        currency badges (70×70). */
     #pw-keeper-bar .kb-row1 #kb-install{width:56px;height:56px;border-radius:10px;border:2px solid rgba(200,168,75,0.5);background:rgba(26,36,22,0.6);cursor:pointer;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:0;}
+    #pw-keeper-bar .kb-row1 #kb-music{width:56px;height:56px;}
     #pw-keeper-bar .kb-avatar{width:48px;height:48px;border-radius:50%;border:2px solid rgba(122,179,86,0.35);background:rgba(26,36,22,0.6);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;position:relative;}
     #pw-keeper-bar .kb-avatar > img,#pw-keeper-bar .kb-avatar > span#kb-avatar-art{border-radius:50%;}
     #pw-keeper-bar .kb-avatar > img{clip-path:circle(50%);}
@@ -6049,6 +6051,15 @@ body.lw-anim-paused *::after {
     #kb-install .kb-install-label{font-size:0.6rem;}
     @media (display-mode: standalone) { #kb-install { display: none !important; } }
     @media all and (display-mode: fullscreen) { #kb-install { display: none !important; } }
+    /* SOUNDTRACK button — sits to the LEFT of the download/install button in
+       keeper-bar row 1 (Stephen 2026-06-24: "a small music button to the left
+       of the download button above the xp bar"). Opens the LW_MUSIC drawer.
+       Stays visible in installed-PWA mode (unlike kb-install) so the music
+       control is always reachable; auto-hidden during games via the
+       body.game-active list above. */
+    #kb-music{position:relative;display:flex;align-items:center;justify-content:center;padding:0;border:2px solid rgba(180,140,220,0.45);border-radius:10px;background:linear-gradient(180deg,rgba(180,140,220,0.18),rgba(120,80,160,0.1));cursor:pointer;width:64px;height:64px;flex-shrink:0;overflow:hidden;color:rgba(220,180,255,0.95);font-size:1.55rem;line-height:1;-webkit-tap-highlight-color:transparent;}
+    #kb-music:hover{background:linear-gradient(180deg,rgba(180,140,220,0.3),rgba(120,80,160,0.18));}
+    #kb-music.playing{box-shadow:0 0 10px rgba(180,140,220,0.55);border-color:rgba(180,140,220,0.75);}
     #pw-lb-toggle{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;color:var(--gold);cursor:pointer;display:flex;align-items:center;gap:0.25rem;padding:0.4rem 0.6rem;border:1px solid rgba(200,168,75,0.25);border-radius:8px;background:rgba(200,168,75,0.05);flex-shrink:0;min-height:44px;}
     #pw-lb-dropdown{display:none;position:fixed;top:calc(44px + env(safe-area-inset-top, 0px));right:8px;z-index:9990;width:260px;max-height:50vh;background:rgba(17,22,17,0.98);border:1px solid rgba(200,168,75,0.12);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.6);overflow:hidden;}
     #pw-lb-dropdown.open{display:block;animation:panelFadeIn 0.2s ease;}
@@ -6195,6 +6206,7 @@ body.tab-wild #w-stats-bar{padding:14px 10px!important;padding-right:148px!impor
      missing now"). Shrunk 48 -> 36 so backpack at right:4 width:60
      overlaps less. */
   #pw-keeper-bar .kb-row1 #kb-install { width: 36px !important; height: 36px !important; }
+  #pw-keeper-bar .kb-row1 #kb-music { width: 36px !important; height: 36px !important; font-size: 1.1rem !important; }
   #kb-compendium { right: 76px !important; width: 60px !important; height: 60px !important; }
   #kb-compendium img { width: 115% !important; height: 115% !important; }
   #bpi { right: 4px !important; width: 60px !important; height: 60px !important; }
@@ -8120,6 +8132,7 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
         <div class="kb-rank" id="kb-rank">Lvl 1 · Seedling · 0 / 25 XP</div>
         <div class="kb-xp-wrap" onclick="PW_UI.openCharacter()"><div class="kb-xp-fill" id="kb-xp-fill" style="width:0%;"></div></div>
       </div>
+      <div id="kb-music" onclick="if(window.LW_MUSIC)LW_MUSIC.openDrawer();" title="Soundtrack" aria-label="Soundtrack" role="button">&#9835;</div>
       <div id="kb-install" onclick="if(window.executePWAInstall)executePWAInstall();" title="Install App"><img src="assets/btn-install-v2.png?v=apr27" alt="Install" style="width:140%;height:140%;object-fit:cover;display:block;margin:-20%;border-radius:8px;"></div>
     </div>
     <!-- Row 2: currency + hut (3 buttons) -->
@@ -102550,9 +102563,11 @@ window.LW_Comp = (function(){
     audio.addEventListener('ended', function(){ next(); });
     audio.addEventListener('play', function(){
       state.playing = true; renderNowPlaying();
+      var b = document.getElementById('kb-music'); if (b) b.classList.add('playing');
     });
     audio.addEventListener('pause', function(){
       state.playing = false; renderNowPlaying();
+      var b = document.getElementById('kb-music'); if (b) b.classList.remove('playing');
     });
     document.body.appendChild(audio);
     return audio;
