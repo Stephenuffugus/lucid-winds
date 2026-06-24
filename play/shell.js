@@ -606,8 +606,10 @@
   // Same key + behavior as the portal player, so handoff is continuous.
   // ════════════════════════════════════════════════════════════════════
   var MUS_KEY = 'sws_music_state';
+  // pl = active playlist id (null = full library); queue = track indices in
+  // play order (null = full library); edit = playlist id being edited (UI only).
   var mus = { tracks:null, cats:null, idx:-1, volume:0.5, playing:false, repeat:'all',
-              open:false, errSkips:0, audio:null, bg:null, btn:null, saveT:0, _time:0 };
+              open:false, errSkips:0, audio:null, bg:null, btn:null, saveT:0, _time:0, pl:null, queue:null, edit:null };
 
   function musLoadState(){
     try{ var s = JSON.parse(localStorage.getItem(MUS_KEY) || '{}');
@@ -615,16 +617,34 @@
       if(typeof s.volume==='number') mus.volume = s.volume;
       if(typeof s.playing==='boolean') mus.playing = s.playing;
       if(typeof s.repeat==='string') mus.repeat = s.repeat;
+      if(typeof s.pl==='string') mus.pl = s.pl;
       mus._time = (typeof s.time==='number') ? s.time : 0;
     }catch(e){ mus._time = 0; }
   }
   function musSave(){
     try{
       var t = mus.audio ? mus.audio.currentTime : (mus._time || 0);
-      localStorage.setItem(MUS_KEY, JSON.stringify({ idx:mus.idx, volume:mus.volume, playing:mus.playing, repeat:mus.repeat, time:t }));
+      localStorage.setItem(MUS_KEY, JSON.stringify({ idx:mus.idx, volume:mus.volume, playing:mus.playing, repeat:mus.repeat, time:t, pl:mus.pl }));
     }catch(e){}
   }
   function musEsc(x){ return String(x==null?'':x).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  // ── Playlists (shared with the portal via localStorage 'sws_playlists') ──
+  var PL_KEY = 'sws_playlists';
+  function plAll(){ try{ return JSON.parse(localStorage.getItem(PL_KEY)||'[]'); }catch(e){ return []; } }
+  function plStore(a){ try{ localStorage.setItem(PL_KEY, JSON.stringify(a)); }catch(e){} }
+  function plGet(id){ var a=plAll(); for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i]; return null; }
+  function plMake(name){ var a=plAll(); var id='pl'+Date.now()+Math.floor(Math.random()*1000); a.push({id:id,name:name,ids:[]}); plStore(a); return id; }
+  function plDrop(id){ plStore(plAll().filter(function(p){return p.id!==id;})); }
+  function plToggleMember(id, tid){ var a=plAll(); for(var i=0;i<a.length;i++){ if(a[i].id===id){ var k=a[i].ids.indexOf(tid); if(k>=0)a[i].ids.splice(k,1); else a[i].ids.push(tid); break; } } plStore(a); }
+  function musIdxOfId(tid){ for(var i=0;i<mus.tracks.length;i++) if(mus.tracks[i].id===tid) return i; return -1; }
+  function musBuildQueue(){
+    if(!mus.pl){ mus.queue=null; return; }
+    var p=plGet(mus.pl); if(!p){ mus.pl=null; mus.queue=null; return; }
+    var q=[]; for(var i=0;i<p.ids.length;i++){ var ix=musIdxOfId(p.ids[i]); if(ix>=0) q.push(ix); }
+    mus.queue = q.length ? q : null;
+    if(!mus.queue) mus.pl=null;
+  }
 
   function musEnsure(){
     if(mus.audio) return mus.audio;
@@ -632,6 +652,12 @@
     a.preload = 'none'; a.volume = mus.volume;
     a.addEventListener('ended', function(){
       if(mus.repeat==='one'){ a.currentTime = 0; var p=a.play(); if(p&&p['catch'])p['catch'](function(){}); return; }
+      if(mus.queue && mus.queue.length){
+        var pos=mus.queue.indexOf(mus.idx), np=pos+1;
+        if(np>=mus.queue.length){ if(mus.repeat==='all'){ musPlay(mus.queue[0]); } else { mus.playing=false; musBtnState(); musSave(); } }
+        else musPlay(mus.queue[np]);
+        return;
+      }
       var n = mus.idx + 1;
       if(n >= mus.tracks.length){ if(mus.repeat==='all'){ musPlay(0); } else { mus.playing=false; musBtnState(); musSave(); } }
       else musPlay(n);
@@ -653,10 +679,30 @@
   }
   function musPause(){ if(mus.audio) mus.audio.pause(); }
   function musResume(){ var a=musEnsure(); if(a.src){ var p=a.play(); if(p&&p['catch'])p['catch'](function(){}); } else musPlay(); }
-  function musNext(){ musPlay(((mus.idx<0?0:mus.idx)+1)%mus.tracks.length); }
-  function musPrev(){ musPlay(((mus.idx<0?0:mus.idx)-1+mus.tracks.length)%mus.tracks.length); }
+  function musStep(dir){
+    if(mus.queue && mus.queue.length){
+      var pos=mus.queue.indexOf(mus.idx); if(pos<0) pos = dir>0 ? -1 : 0;
+      var np=pos+dir; if(np<0) np=mus.queue.length-1; if(np>=mus.queue.length) np=0;
+      musPlay(mus.queue[np]);
+    } else {
+      musPlay(((mus.idx<0?0:mus.idx)+dir+mus.tracks.length)%mus.tracks.length);
+    }
+  }
+  function musNext(){ musStep(1); }
+  function musPrev(){ musStep(-1); }
   function musVol(v){ v=Number(v); if(isNaN(v))return; mus.volume=Math.max(0,Math.min(1,v)); if(mus.audio)mus.audio.volume=mus.volume; musSave(); }
   function musCycleRepeat(){ mus.repeat = mus.repeat==='all' ? 'one' : (mus.repeat==='one' ? 'off' : 'all'); musSave(); musRender(); }
+
+  function musTrackTap(i){
+    if(mus.edit){ plToggleMember(mus.edit, mus.tracks[i].id); if(mus.pl===mus.edit) musBuildQueue(); musRender(); return; }
+    if(!(mus.queue && mus.queue.indexOf(i)>=0)){ mus.pl=null; mus.queue=null; }
+    musPlay(i); musSave();
+  }
+  function musPlayPlaylist(id){ mus.pl=id; musBuildQueue(); musSave(); if(mus.queue && mus.queue.length) musPlay(mus.queue[0]); musRender(); }
+  function musClearPlaylist(){ mus.pl=null; mus.queue=null; musSave(); musRender(); }
+  function musPlNew(){ var n=window.prompt('Name this playlist:',''); if(n===null) return; n=(n||'').trim()||'My Mix'; mus.edit=plMake(n); musRender(); }
+  function musPlDelete(id){ if(!window.confirm('Delete this playlist?')) return; plDrop(id); if(mus.pl===id) musClearPlaylist(); if(mus.edit===id) mus.edit=null; musRender(); }
+  function musPlEdit(id){ mus.edit = (mus.edit===id) ? null : id; musRender(); }
 
   // Resume the saved track at its saved position — ONLY if music was playing
   // when the player left the previous page (no surprise audio otherwise).
@@ -691,6 +737,26 @@
 
   function musBtnState(){ if(mus.btn){ if(mus.playing) mus.btn.classList.add('playing'); else mus.btn.classList.remove('playing'); } }
 
+  function musPlSectionHTML(){
+    var pls = plAll();
+    var h = '<div class="swsm-cat" style="margin-top:2px">Playlists<span class="ln"></span><button class="swsm-plnew" onclick="SWS_MUSIC.plNew()">&#43; New</button></div>';
+    if(mus.pl){ var ap=plGet(mus.pl); if(ap){ h += '<div class="swsm-plactive">&#9835; Playing: '+musEsc(ap.name)+' <button onclick="SWS_MUSIC.plClear()">Full library</button></div>'; } }
+    if(!pls.length){
+      h += '<div class="swsm-plempty">No playlists yet. Tap <b>&#43;&nbsp;New</b>, name it, then tap tracks below to add them. Hit <b>Repeat</b> to loop your mix.</div>';
+    } else {
+      for(var i=0;i<pls.length;i++){
+        var p=pls[i], isEd=(mus.edit===p.id), isAct=(mus.pl===p.id);
+        h += '<div class="swsm-plrow'+(isAct?' on':'')+'">';
+        h += '<button class="swsm-plplay" onclick="SWS_MUSIC.plPlay(\''+p.id+'\')"><span class="nm">'+musEsc(p.name)+'</span><span class="ct">'+p.ids.length+' track'+(p.ids.length===1?'':'s')+'</span></button>';
+        h += '<button class="swsm-plbtn'+(isEd?' act':'')+'" title="Edit tracks" onclick="SWS_MUSIC.plEdit(\''+p.id+'\')">&#9998;</button>';
+        h += '<button class="swsm-plbtn" title="Delete" onclick="SWS_MUSIC.plDelete(\''+p.id+'\')">&#128465;</button>';
+        h += '</div>';
+        if(isEd){ h += '<div class="swsm-pledit">Editing <b>'+musEsc(p.name)+'</b> — tap tracks below to add/remove. <button onclick="SWS_MUSIC.plEdit(\''+p.id+'\')">Done</button></div>'; }
+      }
+    }
+    return h;
+  }
+
   function musRender(){
     if(!mus.open || !mus.bg) return;
     var cur = (mus.idx>=0 && mus.tracks[mus.idx]) ? mus.tracks[mus.idx] : null;
@@ -703,15 +769,18 @@
     h += '<button onclick="SWS_MUSIC.next()" aria-label="Next">&#9197;</button></div></div>';
     h += '<div class="swsm-row"><span class="lbl">VOL</span><input type="range" min="0" max="100" value="' + Math.round(mus.volume*100) + '" oninput="SWS_MUSIC.vol(this.value/100)"><button class="swsm-rep' + (mus.repeat!=='off'?' act':'') + '" onclick="SWS_MUSIC.repeat()">' + repLbl + '</button></div>';
     h += '<div class="swsm-list">';
+    h += musPlSectionHTML();
     var gs = musGroups();
+    var editing = mus.edit ? plGet(mus.edit) : null;
     for(var g=0;g<gs.length;g++){
       h += '<div class="swsm-cat">' + musEsc(gs[g].cat) + '<span class="ln"></span><span class="ct">' + gs[g].items.length + '</span></div>';
       for(var m=0;m<gs[g].items.length;m++){
         var t=gs[g].items[m].t, i=gs[g].items[m].i, on=(i===mus.idx);
-        h += '<button class="swsm-trk'+(on?' on':'')+'" onclick="SWS_MUSIC.play('+i+')"><div class="tt">'+musEsc(t.title)+(on&&mus.playing?' &nbsp;<span style="font-size:10px">&#9654; PLAYING</span>':'')+'</div><div class="aa">'+musEsc(t.artist||'Stephen')+(t.mood?' &middot; '+musEsc(t.mood):'')+'</div></button>';
+        var member = editing ? (editing.ids.indexOf(t.id)>=0) : false;
+        h += '<button class="swsm-trk'+(on?' on':'')+(mus.edit?' edit':'')+(member?' member':'')+'" onclick="SWS_MUSIC.trackTap('+i+')"><div class="tt">'+(mus.edit?'<span class="mk">'+(member?'&#10003;':'&#43;')+'</span> ':'')+musEsc(t.title)+(on&&mus.playing&&!mus.edit?' &nbsp;<span style="font-size:10px">&#9654; PLAYING</span>':'')+'</div><div class="aa">'+musEsc(t.artist||'Stephen')+(t.mood?' &middot; '+musEsc(t.mood):'')+'</div></button>';
       }
     }
-    h += '</div><div class="swsm-foot">Music follows you from game to game. Public-domain classical via the Internet Archive.</div></div>';
+    h += '</div><div class="swsm-foot">'+(mus.edit?'Tap tracks above to add them to your playlist.':'Music follows you from game to game. Build a playlist and hit Repeat to loop it.')+'</div></div>';
     mus.bg.innerHTML = h;
   }
   function musOpenDrawer(){
@@ -768,6 +837,18 @@
     + '.swsm-trk{display:block;width:100%;text-align:left;padding:10px 11px;margin-bottom:5px;border-radius:9px;cursor:pointer;background:var(--shell-bg);border:1px solid transparent;color:var(--shell-ink)}'
     + '.swsm-trk:hover{border-color:var(--shell-line)}.swsm-trk.on{background:rgba(95,192,138,.12);border-color:rgba(95,192,138,.45)}'
     + '.swsm-trk .tt{font-weight:700;font-size:13px}.swsm-trk.on .tt{color:var(--shell-leaf)}.swsm-trk .aa{font-size:11px;color:var(--shell-muted);margin-top:2px}'
+    + '.swsm-trk.edit{border-color:rgba(95,192,138,.25)}.swsm-trk.edit.member{background:rgba(95,192,138,.14);border-color:rgba(95,192,138,.5)}'
+    + '.swsm-trk .mk{display:inline-block;min-width:14px;color:var(--shell-leaf);font-weight:700}'
+    + '.swsm-plnew{background:transparent;border:1px solid var(--shell-leaf);color:var(--shell-leaf);border-radius:7px;padding:3px 9px;font-size:10.5px;cursor:pointer;text-transform:none}'
+    + '.swsm-plactive{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--shell-leaf);background:rgba(95,192,138,.1);border:1px solid rgba(95,192,138,.35);border-radius:8px;padding:7px 10px;margin:0 4px 6px}'
+    + '.swsm-plactive button{margin-left:auto;background:transparent;border:1px solid var(--shell-line);color:var(--shell-muted);border-radius:6px;padding:4px 8px;font-size:10.5px;cursor:pointer}'
+    + '.swsm-plempty{font-size:11.5px;color:var(--shell-muted);line-height:1.6;padding:4px 6px 8px;margin:0 2px}'
+    + '.swsm-plrow{display:flex;align-items:stretch;gap:5px;margin:0 4px 5px}.swsm-plrow.on .swsm-plplay{border-color:rgba(95,192,138,.5);background:rgba(95,192,138,.12)}'
+    + '.swsm-plplay{flex:1;text-align:left;background:var(--shell-bg);border:1px solid var(--shell-line);border-radius:9px;padding:9px 11px;cursor:pointer;color:var(--shell-ink);display:flex;flex-direction:column;gap:2px}'
+    + '.swsm-plplay .nm{font-weight:700;font-size:13px}.swsm-plplay .ct{font-size:11px;color:var(--shell-muted)}'
+    + '.swsm-plbtn{width:40px;border:1px solid var(--shell-line);background:var(--shell-bg);color:var(--shell-muted);border-radius:9px;cursor:pointer;font-size:15px}.swsm-plbtn.act{color:var(--shell-leaf);border-color:var(--shell-leaf)}'
+    + '.swsm-pledit{font-size:11.5px;color:var(--shell-leaf);background:rgba(95,192,138,.08);border:1px dashed rgba(95,192,138,.4);border-radius:8px;padding:7px 10px;margin:0 4px 6px;display:flex;align-items:center;gap:8px}'
+    + '.swsm-pledit button{margin-left:auto;background:var(--shell-leaf);border:0;color:#08130c;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer}'
     + '.swsm-foot{padding:9px 16px 14px;font-size:11px;color:var(--shell-muted);text-align:center;line-height:1.5;border-top:1px solid var(--shell-line)}';
     document.head.appendChild(s);
   }
@@ -800,6 +881,7 @@
       mus.tracks = (global.LW_TRACKS && global.LW_TRACKS.length) ? global.LW_TRACKS
                  : [{id:'the-waiting-dojo', title:'The Waiting Dojo', artist:'Stephen', cat:'Originals', src:'/assets/music/the-waiting-dojo.mp3'}];
       mus.cats = (global.LW_TRACK_CATS && global.LW_TRACK_CATS.length) ? global.LW_TRACK_CATS : ['Originals','Classical'];
+      musBuildQueue();   // restore active-playlist queue from saved state
       musInjectButton();
       musTryResume();
     }
@@ -809,7 +891,8 @@
     }
     window.addEventListener('pagehide', musSave);
     document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') musSave(); });
-    global.SWS_MUSIC = { play:musPlay, pause:musPause, resume:musResume, next:musNext, prev:musPrev, vol:musVol, close:musCloseDrawer, open:musOpenDrawer, repeat:musCycleRepeat };
+    global.SWS_MUSIC = { play:musPlay, pause:musPause, resume:musResume, next:musNext, prev:musPrev, vol:musVol, close:musCloseDrawer, open:musOpenDrawer, repeat:musCycleRepeat,
+                         trackTap:musTrackTap, plPlay:musPlayPlaylist, plClear:musClearPlaylist, plNew:musPlNew, plDelete:musPlDelete, plEdit:musPlEdit };
   }
 
   function init() {

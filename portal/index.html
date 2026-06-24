@@ -98,6 +98,23 @@
   .sws-trk .tt{font-weight:700;font-size:13px}
   .sws-trk.on .tt{color:var(--leaf)}
   .sws-trk .aa{font-size:11px;color:var(--muted);margin-top:2px}
+  .sws-trk.edit{border-color:rgba(95,192,138,.25)}
+  .sws-trk.edit.member{background:rgba(95,192,138,.14);border-color:rgba(95,192,138,.5)}
+  .sws-trk .mk{display:inline-block;min-width:14px;color:var(--leaf);font-weight:700}
+  /* Playlists */
+  .sws-plnew{background:transparent;border:1px solid var(--leaf);color:var(--leaf);border-radius:7px;padding:3px 9px;font-size:10.5px;letter-spacing:.5px;cursor:pointer;text-transform:none}
+  .sws-plactive{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--leaf);background:rgba(95,192,138,.1);border:1px solid rgba(95,192,138,.35);border-radius:8px;padding:7px 10px;margin:0 4px 6px}
+  .sws-plactive button{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:4px 8px;font-size:10.5px;cursor:pointer}
+  .sws-plempty{font-size:11.5px;color:var(--muted);line-height:1.6;padding:4px 6px 8px;margin:0 2px}
+  .sws-plrow{display:flex;align-items:stretch;gap:5px;margin:0 4px 5px}
+  .sws-plrow.on .sws-plplay{border-color:rgba(95,192,138,.5);background:rgba(95,192,138,.12)}
+  .sws-plplay{flex:1;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+  .sws-plplay .nm{font-weight:700;font-size:13px}
+  .sws-plplay .ct{font-size:11px;color:var(--muted)}
+  .sws-plbtn{width:40px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:9px;cursor:pointer;font-size:15px}
+  .sws-plbtn.act{color:var(--leaf);border-color:var(--leaf)}
+  .sws-pledit{font-size:11.5px;color:var(--leaf);background:rgba(95,192,138,.08);border:1px dashed rgba(95,192,138,.4);border-radius:8px;padding:7px 10px;margin:0 4px 6px;display:flex;align-items:center;gap:8px}
+  .sws-pledit button{margin-left:auto;background:var(--leaf);border:0;color:#08130c;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer}
   .sws-foot{padding:9px 16px 14px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5;border-top:1px solid var(--line)}
   /* auth modal */
   .auth-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:center;justify-content:center;padding:18px}
@@ -587,16 +604,36 @@ renderGarden("all");
   // both ways: start it on the portal and it keeps going into a game, or come
   // back from a game and it resumes here.
   var KEY = 'sws_music_state';
-  var st = { idx:-1, volume:0.5, playing:false, repeat:'all', open:false, errSkips:0, _time:0 };
+  // pl = active playlist id (or null = full library); queue = TRACKS indices in
+  // play order (null = full library); edit = playlist id being edited (UI only).
+  var st = { idx:-1, volume:0.5, playing:false, repeat:'all', open:false, errSkips:0, _time:0, pl:null, queue:null, edit:null };
   try{ var s = JSON.parse(localStorage.getItem(KEY)||'{}');
        if(typeof s.idx==='number') st.idx=s.idx;
        if(typeof s.volume==='number') st.volume=s.volume;
        if(typeof s.playing==='boolean') st.playing=s.playing;
        if(typeof s.repeat==='string') st.repeat=s.repeat;
-       if(typeof s.time==='number') st._time=s.time; }catch(e){}
+       if(typeof s.time==='number') st._time=s.time;
+       if(typeof s.pl==='string') st.pl=s.pl; }catch(e){}
   var _saveT = 0;
-  function save(){ try{ var t=audio?audio.currentTime:(st._time||0); localStorage.setItem(KEY, JSON.stringify({idx:st.idx, volume:st.volume, playing:st.playing, repeat:st.repeat, time:t})); }catch(e){} }
+  function save(){ try{ var t=audio?audio.currentTime:(st._time||0); localStorage.setItem(KEY, JSON.stringify({idx:st.idx, volume:st.volume, playing:st.playing, repeat:st.repeat, time:t, pl:st.pl})); }catch(e){} }
   function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  // ── Playlists (shared with the game shells via localStorage 'sws_playlists') ──
+  var PL_KEY = 'sws_playlists';
+  function plAll(){ try{ return JSON.parse(localStorage.getItem(PL_KEY)||'[]'); }catch(e){ return []; } }
+  function plStore(a){ try{ localStorage.setItem(PL_KEY, JSON.stringify(a)); }catch(e){} }
+  function plGet(id){ var a=plAll(); for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i]; return null; }
+  function plMake(name){ var a=plAll(); var id='pl'+Date.now()+Math.floor(Math.random()*1000); a.push({id:id,name:name,ids:[]}); plStore(a); return id; }
+  function plDrop(id){ plStore(plAll().filter(function(p){return p.id!==id;})); }
+  function plToggleMember(id, tid){ var a=plAll(); for(var i=0;i<a.length;i++){ if(a[i].id===id){ var k=a[i].ids.indexOf(tid); if(k>=0)a[i].ids.splice(k,1); else a[i].ids.push(tid); break; } } plStore(a); }
+  function idxOfId(tid){ for(var i=0;i<TRACKS.length;i++) if(TRACKS[i].id===tid) return i; return -1; }
+  function buildQueue(){
+    if(!st.pl){ st.queue=null; return; }
+    var p=plGet(st.pl); if(!p){ st.pl=null; st.queue=null; return; }
+    var q=[]; for(var i=0;i<p.ids.length;i++){ var ix=idxOfId(p.ids[i]); if(ix>=0) q.push(ix); }
+    st.queue = q.length ? q : null;
+    if(!st.queue) st.pl=null;     // empty playlist falls back to the full library
+  }
 
   var audio = null;
   function ensure(){
@@ -606,6 +643,12 @@ renderGarden("all");
     audio.volume = st.volume;
     audio.addEventListener('ended', function(){
       if(st.repeat==='one'){ audio.currentTime=0; var p=audio.play(); if(p&&p['catch'])p['catch'](function(){}); return; }
+      if(st.queue && st.queue.length){
+        var pos=st.queue.indexOf(st.idx), np=pos+1;
+        if(np>=st.queue.length){ if(st.repeat==='all'){ play(st.queue[0]); } else { st.playing=false; btn.classList.remove('playing'); save(); } }
+        else play(st.queue[np]);
+        return;
+      }
       var n=st.idx+1;
       if(n>=TRACKS.length){ if(st.repeat==='all'){ play(0); } else { st.playing=false; btn.classList.remove('playing'); save(); } }
       else play(n);
@@ -630,10 +673,33 @@ renderGarden("all");
   }
   function pause(){ if(audio) audio.pause(); }
   function resume(){ if(audio && audio.src){ var p=audio.play(); if(p&&p['catch'])p['catch'](function(){}); } else play(); }
-  function next(){ play(((st.idx<0?0:st.idx)+1)%TRACKS.length); }
-  function prev(){ play(((st.idx<0?0:st.idx)-1+TRACKS.length)%TRACKS.length); }
+  function step(dir){
+    if(st.queue && st.queue.length){
+      var pos=st.queue.indexOf(st.idx); if(pos<0) pos = dir>0 ? -1 : 0;
+      var np=pos+dir; if(np<0) np=st.queue.length-1; if(np>=st.queue.length) np=0;
+      play(st.queue[np]);
+    } else {
+      play(((st.idx<0?0:st.idx)+dir+TRACKS.length)%TRACKS.length);
+    }
+  }
+  function next(){ step(1); }
+  function prev(){ step(-1); }
   function setVol(v){ v=Number(v); if(isNaN(v))return; st.volume=Math.max(0,Math.min(1,v)); if(audio)audio.volume=st.volume; save(); }
   function cycleRepeat(){ st.repeat = st.repeat==='all'?'one':(st.repeat==='one'?'off':'all'); save(); render(); }
+
+  // Tapping a library track: in edit mode it toggles playlist membership;
+  // otherwise it plays — staying in the active playlist if the track is in it,
+  // else dropping back to the full library.
+  function trackTap(i){
+    if(st.edit){ plToggleMember(st.edit, TRACKS[i].id); if(st.pl===st.edit) buildQueue(); render(); return; }
+    if(!(st.queue && st.queue.indexOf(i)>=0)){ st.pl=null; st.queue=null; }
+    play(i); save();
+  }
+  function playPlaylist(id){ st.pl=id; buildQueue(); save(); if(st.queue && st.queue.length) play(st.queue[0]); render(); }
+  function clearPlaylist(){ st.pl=null; st.queue=null; save(); render(); }
+  function plNew(){ var n=window.prompt('Name this playlist:',''); if(n===null) return; n=(n||'').trim()||'My Mix'; st.edit=plMake(n); render(); }
+  function plDelete(id){ if(!window.confirm('Delete this playlist?')) return; plDrop(id); if(st.pl===id) clearPlaylist(); if(st.edit===id) st.edit=null; render(); }
+  function plEdit(id){ st.edit = (st.edit===id) ? null : id; render(); }
 
   // group by cat preserving real index, ordered by CATS, unknowns last
   function groups(){
@@ -655,6 +721,26 @@ renderGarden("all");
   }
   function closeDrawer(){ st.open=false; if(bg) bg.classList.remove('on'); }
 
+  function plSectionHTML(){
+    var pls = plAll();
+    var h = '<div class="sws-cat" style="margin-top:2px">Playlists<span class="ln"></span><button class="sws-plnew" onclick="SWS_MUSIC.plNew()">&#43; New</button></div>';
+    if(st.pl){ var ap=plGet(st.pl); if(ap){ h += '<div class="sws-plactive">&#9835; Playing: '+esc(ap.name)+' <button onclick="SWS_MUSIC.plClear()">Full library</button></div>'; } }
+    if(!pls.length){
+      h += '<div class="sws-plempty">No playlists yet. Tap <b>&#43;&nbsp;New</b>, name it, then tap tracks below to add them. Hit <b>Repeat</b> to loop your mix.</div>';
+    } else {
+      for(var i=0;i<pls.length;i++){
+        var p=pls[i], isEd=(st.edit===p.id), isAct=(st.pl===p.id);
+        h += '<div class="sws-plrow'+(isAct?' on':'')+'">';
+        h += '<button class="sws-plplay" onclick="SWS_MUSIC.plPlay(\''+p.id+'\')"><span class="nm">'+esc(p.name)+'</span><span class="ct">'+p.ids.length+' track'+(p.ids.length===1?'':'s')+'</span></button>';
+        h += '<button class="sws-plbtn'+(isEd?' act':'')+'" title="Edit tracks" onclick="SWS_MUSIC.plEdit(\''+p.id+'\')">&#9998;</button>';
+        h += '<button class="sws-plbtn" title="Delete" onclick="SWS_MUSIC.plDelete(\''+p.id+'\')">&#128465;</button>';
+        h += '</div>';
+        if(isEd){ h += '<div class="sws-pledit">Editing <b>'+esc(p.name)+'</b> — tap tracks below to add/remove. <button onclick="SWS_MUSIC.plEdit(\''+p.id+'\')">Done</button></div>'; }
+      }
+    }
+    return h;
+  }
+
   function render(){
     if(!st.open || !bg) return;
     var cur = (st.idx>=0 && TRACKS[st.idx]) ? TRACKS[st.idx] : null;
@@ -673,28 +759,33 @@ renderGarden("all");
     // volume + repeat
     var repLbl = st.repeat==='one'?'&#128258; One':(st.repeat==='all'?'&#128257; All':'&#128257; Off');
     h += '<div class="sws-vol"><span>VOL</span><input type="range" min="0" max="100" value="'+Math.round(st.volume*100)+'" oninput="SWS_MUSIC.vol(this.value/100)"><button class="sws-rep'+(st.repeat!=='off'?' act':'')+'" onclick="SWS_MUSIC.repeat()">'+repLbl+'</button></div>';
-    // categorized list
+    // playlists + categorized library
     h += '<div class="sws-list">';
+    h += plSectionHTML();
     var gs = groups();
+    var editing = st.edit ? plGet(st.edit) : null;
     for(var g=0;g<gs.length;g++){
       h += '<div class="sws-cat">'+esc(gs[g].cat)+'<span class="ln"></span><span class="ct">'+gs[g].items.length+'</span></div>';
       for(var m=0;m<gs[g].items.length;m++){
         var t=gs[g].items[m].t, i=gs[g].items[m].i, on=(i===st.idx);
-        h += '<button class="sws-trk'+(on?' on':'')+'" onclick="SWS_MUSIC.play('+i+')">';
-        h += '<div class="tt">'+esc(t.title)+(on&&st.playing?' &nbsp;<span style="font-size:10px">&#9654; PLAYING</span>':'')+'</div>';
+        var member = editing ? (editing.ids.indexOf(t.id)>=0) : false;
+        h += '<button class="sws-trk'+(on?' on':'')+(st.edit?' edit':'')+(member?' member':'')+'" onclick="SWS_MUSIC.trackTap('+i+')">';
+        h += '<div class="tt">'+(st.edit?'<span class="mk">'+(member?'&#10003;':'&#43;')+'</span> ':'')+esc(t.title)+(on&&st.playing&&!st.edit?' &nbsp;<span style="font-size:10px">&#9654; PLAYING</span>':'')+'</div>';
         h += '<div class="aa">'+esc(t.artist||'Stephen')+(t.mood?' &middot; '+esc(t.mood):'')+'</div>';
         h += '</button>';
       }
     }
     h += '</div>';
-    h += '<div class="sws-foot">Music keeps playing while you browse the portal. Public-domain classical via the Internet Archive.</div>';
+    h += '<div class="sws-foot">'+(st.edit?'Tap tracks above to add them to your playlist.':'Music keeps playing while you browse the portal. Build a playlist and hit Repeat to loop it.')+'</div>';
     h += '</div>';
     bg.innerHTML = h;
   }
 
   btn.addEventListener('click', openDrawer);
 
-  window.SWS_MUSIC = { play:play, pause:pause, resume:resume, next:next, prev:prev, vol:setVol, repeat:cycleRepeat, close:closeDrawer, open:openDrawer };
+  window.SWS_MUSIC = { play:play, pause:pause, resume:resume, next:next, prev:prev, vol:setVol, repeat:cycleRepeat, close:closeDrawer, open:openDrawer,
+                       trackTap:trackTap, plPlay:playPlaylist, plClear:clearPlaylist, plNew:plNew, plDelete:plDelete, plEdit:plEdit };
+  buildQueue();   // rebuild the active-playlist queue from saved state
 
   // Continue music handed off from a game page — only if it was playing, so a
   // first-time visitor never gets surprise audio. Re-kicks on first interaction
