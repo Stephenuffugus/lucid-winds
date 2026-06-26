@@ -28,9 +28,8 @@
      studio name on a small dark scrim so it reads over any part of the image. */
   .brand-banner{position:relative;flex:1 1 320px;min-width:0;max-width:520px;border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:0 6px 22px rgba(0,0,0,.35)}
   .brand-banner img{display:block;width:100%;height:auto}
-  .brand-banner .bb-name{position:absolute;top:58%;transform:translateY(-50%);background:rgba(8,12,8,0.58);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:6px 14px;border-radius:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.2em;color:#fff;font-size:clamp(15px,2.9vw,24px);line-height:1.05;white-space:nowrap}
-  .brand-banner .bb-left{left:6px}
-  .brand-banner .bb-right{right:6px}
+  .brand-banner .bb-stack{position:absolute;top:58%;left:6px;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .brand-banner .bb-name{background:rgba(8,12,8,0.58);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:6px 14px;border-radius:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.2em;color:#fff;font-size:clamp(15px,2.9vw,24px);line-height:1.05;white-space:nowrap}
   /* sunbeam wallet */
   #wallet{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
           border-radius:12px;padding:8px 12px;font-size:14px}
@@ -148,8 +147,10 @@
   <header>
     <div class="brand-banner">
       <img src="/portal-assets/sky-wolf-banner.png" alt="Sky Wolf Studios">
-      <span class="bb-name bb-left">Sky Wolf</span>
-      <span class="bb-name bb-right">Studios</span>
+      <span class="bb-stack">
+        <span class="bb-name">Sky Wolf</span>
+        <span class="bb-name">Studios</span>
+      </span>
     </div>
     <div id="wallet">
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
