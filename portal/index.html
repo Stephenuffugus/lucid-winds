@@ -29,9 +29,8 @@
   .brand-banner{position:relative;flex:1 1 320px;min-width:0;max-width:520px;border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:0 6px 22px rgba(0,0,0,.35)}
   .brand-banner img{display:block;width:100%;height:auto}
   .brand-banner .bb-name{position:absolute;top:50%;transform:translateY(-50%);background:rgba(8,12,8,0.58);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:6px 14px;border-radius:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.2em;color:#fff;font-size:clamp(15px,2.9vw,24px);line-height:1.05;white-space:nowrap}
-  .brand-banner .bb-left{left:14px}
-  .brand-banner .bb-right{right:14px}
-  .brand-banner .bb-tag{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);background:rgba(8,12,8,0.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:3px 11px;border-radius:8px;font-weight:500;letter-spacing:0.08em;font-size:10px;color:rgba(255,255,255,0.85);white-space:nowrap}
+  .brand-banner .bb-left{left:6px}
+  .brand-banner .bb-right{right:6px}
   /* sunbeam wallet */
   #wallet{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
           border-radius:12px;padding:8px 12px;font-size:14px}
@@ -43,31 +42,32 @@
   #wallet .user-chip .who{color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #wallet .user-chip button{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500;padding:5px 10px;font-size:12px}
   #wallet .user-chip button:hover{color:var(--leaf);border-color:var(--leaf)}
-  /* Soundtrack feature — a real top-of-screen control, not a tiny corner dot.
-     Fixed + high z so it floats above the catalog AND the in-game iframe.
-     Album thumbnail + "Soundtrack" label read as a feature; the ♫ glyph shows
-     if /portal-assets/music-thumb.png is missing. */
-  #music-fab{position:fixed;z-index:360;top:12px;left:50%;transform:translateX(-50%);
-             display:flex;align-items:center;gap:10px;height:54px;padding:7px 18px 7px 7px;
-             border:1px solid var(--line);background:rgba(13,20,16,.86);
-             -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-             color:var(--ink);cursor:pointer;border-radius:16px;
-             box-shadow:0 8px 24px rgba(0,0,0,.5);transition:border-color .15s,box-shadow .15s}
-  #music-fab:hover{border-color:var(--leaf)}
-  #music-fab.playing{border-color:var(--leaf);box-shadow:0 0 0 2px rgba(95,192,138,.32),0 8px 24px rgba(0,0,0,.5),0 0 18px rgba(95,192,138,.4)}
-  #music-fab .mf-thumb{position:relative;width:40px;height:40px;border-radius:10px;overflow:hidden;
+  /* Soundtrack feature — a large, can't-miss button that sits in the page flow
+     right under the Sky Wolf banner. Big album thumbnail + label + subline so
+     music-lovers get excited. The ♫ glyph shows if music-thumb.png is missing. */
+  #music-fab{display:flex;align-items:center;gap:16px;width:100%;max-width:520px;
+             padding:16px 22px;margin:16px 0 6px;text-align:left;
+             border:1px solid var(--line);background:linear-gradient(135deg,rgba(16,24,18,.94),rgba(22,34,24,.94));
+             color:var(--ink);cursor:pointer;border-radius:18px;
+             box-shadow:0 10px 28px rgba(0,0,0,.45);transition:border-color .15s,box-shadow .15s,transform .1s}
+  #music-fab:hover{border-color:var(--leaf);transform:translateY(-1px)}
+  #music-fab.playing{border-color:var(--leaf);box-shadow:0 0 0 2px rgba(95,192,138,.32),0 10px 28px rgba(0,0,0,.5),0 0 26px rgba(95,192,138,.4)}
+  #music-fab .mf-thumb{position:relative;width:60px;height:60px;border-radius:14px;overflow:hidden;
              flex-shrink:0;display:grid;place-items:center;background:rgba(255,255,255,.05);color:var(--leaf)}
   #music-fab .mf-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  #music-fab .mf-label{font-weight:600;font-size:14.5px;letter-spacing:.3px;white-space:nowrap}
-  #music-fab .glyph{font-size:21px;line-height:1}
-  #music-fab .eq{display:none;gap:2.5px;align-items:flex-end;height:13px}
+  #music-fab .mf-text{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+  #music-fab .mf-label{font-weight:800;font-size:19px;letter-spacing:.3px}
+  #music-fab .mf-sub{font-weight:500;font-size:13px;color:var(--muted);line-height:1.35}
+  #music-fab .glyph{font-size:28px;line-height:1}
+  #music-fab .eq{display:none;gap:3px;align-items:flex-end;height:20px;flex-shrink:0}
   #music-fab.playing .eq{display:flex}
-  #music-fab .eq i{width:3px;background:var(--leaf);border-radius:1px;animation:sws-eq .9s ease-in-out infinite}
-  #music-fab .eq i:nth-child(1){height:5px;animation-delay:0s}
-  #music-fab .eq i:nth-child(2){height:13px;animation-delay:.15s}
-  #music-fab .eq i:nth-child(3){height:8px;animation-delay:.3s}
-  @media (max-width:560px){#music-fab{top:8px;height:48px;padding:6px 14px 6px 6px;gap:8px}
-             #music-fab .mf-thumb{width:36px;height:36px}#music-fab .mf-label{font-size:13px}}
+  #music-fab .eq i{width:4px;background:var(--leaf);border-radius:1px;animation:sws-eq .9s ease-in-out infinite}
+  #music-fab .eq i:nth-child(1){height:8px;animation-delay:0s}
+  #music-fab .eq i:nth-child(2){height:20px;animation-delay:.15s}
+  #music-fab .eq i:nth-child(3){height:13px;animation-delay:.3s}
+  @media (max-width:560px){#music-fab{gap:13px;padding:14px 16px}
+             #music-fab .mf-thumb{width:52px;height:52px}#music-fab .mf-label{font-size:17px}
+             #music-fab .mf-sub{font-size:12px}}
   @keyframes sws-eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
   /* Game jukebox — a clicked game loads in this full-screen iframe instead of
      navigating away, so the portal (and its audio) never unloads → gapless. */
@@ -150,7 +150,6 @@
       <img src="/portal-assets/sky-wolf-banner.png" alt="Sky Wolf Studios">
       <span class="bb-name bb-left">Sky Wolf</span>
       <span class="bb-name bb-right">Studios</span>
-      <span class="bb-tag">one orchard, many games</span>
     </div>
     <div id="wallet">
       <span>☀️ <span class="bal" id="bal">—</span> sunbeams</span>
@@ -162,6 +161,16 @@
       </span>
     </div>
   </header>
+
+  <!-- Soundtrack — large, can't-miss button right under the banner. -->
+  <button id="music-fab" type="button" title="Soundtrack" aria-label="Play soundtrack">
+    <span class="mf-thumb"><img src="/portal-assets/music-thumb.png" alt="" onerror="this.remove()"><span class="glyph">&#9835;</span></span>
+    <span class="mf-text">
+      <span class="mf-label">Studio Soundtrack</span>
+      <span class="mf-sub">Tap to play cozy music while you browse and game</span>
+    </span>
+    <span class="eq"><i></i><i></i><i></i></span>
+  </button>
 
   <section class="hero">
     <p>Play any game, earn <b style="color:var(--sun)">sunbeams</b>, and grow unique living plant art in
@@ -182,13 +191,6 @@
 
   <footer>Sky Wolf Studios · SWS Strategic Media LLC · powered by the SWS Proof-of-Attention engine</footer>
 </div>
-
-<!-- Soundtrack feature — fixed top-center, floats over catalog AND in-game iframe. -->
-<button id="music-fab" type="button" title="Soundtrack" aria-label="Open soundtrack">
-  <span class="mf-thumb"><img src="/portal-assets/music-thumb.png" alt="" onerror="this.remove()"><span class="glyph">&#9835;</span></span>
-  <span class="mf-label">Soundtrack</span>
-  <span class="eq"><i></i><i></i><i></i></span>
-</button>
 
 <!-- Game jukebox — games load in this iframe so the portal never unloads
      and the soundtrack plays gaplessly across game switches. -->
