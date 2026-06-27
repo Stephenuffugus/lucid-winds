@@ -121,6 +121,7 @@
   .badge.wip{color:var(--sun)}
   .badge.premium{background:linear-gradient(145deg,var(--sun),var(--sun2));color:#3a2600;font-weight:700;letter-spacing:.5px}
   .badge.soon{color:#cfd8cf;background:rgba(0,0,0,.62)}
+  .badge.beta{color:#bcd99a;background:rgba(0,0,0,.6)}
   .card.soon{opacity:.6;cursor:default;pointer-events:none}
   .card.soon .shot{filter:grayscale(.45)}
   .card .body{padding:7px 9px 9px}
@@ -180,9 +181,8 @@
 
   <h2>Featured</h2>
   <div class="grid hub-grid" id="hub-card"></div>
-  <div class="grid feat" id="featured"></div>
 
-  <h2>The Garden — 66 games inside Lucid Winds</h2>
+  <h2>The Garden — every game in the studio</h2>
   <div class="tabs" id="tabs"></div>
   <div class="grid" id="garden"></div>
 
@@ -223,9 +223,9 @@
 /* ---- Featured satellites (separate standalone games, real live URLs) + the Lucid Winds hub ---- */
 var FEATURED = [
   {nm:"Lucid Winds", ds:"66 games + grow living, unique plant art. The hub of the whole orchard.", url:"https://lucidwinds.com", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
-  {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png"},
+  {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
   {nm:"Sweet Spot", ds:"One-thumb tennis timing. Nail the gold for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png"},
-  {nm:"Tarot Run", ds:"A fast, spectacular combo card run — a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png"},
+  {nm:"Tarot Run", ds:"A fast, spectacular combo card run — a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
   {nm:"Sixfold", ds:"A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.", url:"https://stephenuffugus.github.io/sixfold/", ic:"⚔️", thumb:"/portal-assets/thumbs/sixfold.png"},
   {nm:"Letter Launch", ds:"Plink letter tiles through bumpers, then trace words to score.", url:"https://stephenuffugus.github.io/letter_launch/", ic:"🔤", thumb:"/portal-assets/thumbs/letter-launch.png"},
   {nm:"Brawl", ds:"Multiplayer mayhem.", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🍺", soon:true, thumb:"/portal-assets/thumbs/brawl.png"},
@@ -256,7 +256,7 @@ var LWHUB = "https://lucidwinds.com/";
 var SHELL_BASE = "https://lucidwinds.com/play/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
-var CATS = [["all","All"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"]];
+var CATS = [["all","All"],["new","New"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"]];
 // External app (opens in a NEW TAB on its own origin, not a /play/ shell):
 // 6th element = external URL, 7th = custom thumbnail URL. card() detects the
 // 6th slot and switches to target=_blank + the custom thumb. Pom Pond uses
@@ -342,11 +342,13 @@ function card(g, isFeat){
   var ds = isFeat ? g.ds : (g[3] || "");
   var wip = !isFeat && g[4]==="wip";
   var soon = isFeat ? !!g.soon : g[4]==="soon";
+  var beta = isFeat ? !!g.beta : g[4]==="beta";
   var hub = isFeat && g.hub;
   var badge = hub ? '<span class="badge">HUB · 66 games</span>'
             : (soon ? '<span class="badge soon">COMING SOON</span>'
+            : (beta ? '<span class="badge beta">BETA TESTING</span>'
             : (isFeat ? (g.premium ? '<span class="badge premium">PREMIUM</span>' : '<span class="badge">PLAY NOW</span>')
-                      : (extUrl ? '<span class="badge">PLAY NOW</span>' : (wip ? '<span class="badge wip">WIP</span>' : ''))));
+                      : (extUrl ? '<span class="badge">PLAY NOW</span>' : (wip ? '<span class="badge wip">WIP</span>' : '')))));
   var shot;
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
@@ -366,22 +368,27 @@ function card(g, isFeat){
 }
 
 // Hub card (Lucid Winds only — large hero with seed-art thumbnail) renders
-// separately from the satellites grid so it can be a distinct size. The rest
-// of FEATURED renders in the smaller .feat grid below the hub.
+// at the top. The rest of FEATURED (the studio satellites — the "newest"
+// games) now renders inside the garden under the New tab, not a separate
+// strip, so the newest games are mixed in with the rest (see renderGarden).
 (function(){
-  var hubEntry = null, sats = [];
+  var hubEntry = null;
   for (var i = 0; i < FEATURED.length; i++) {
-    if (FEATURED[i].hub) hubEntry = FEATURED[i];
-    else sats.push(FEATURED[i]);
+    if (FEATURED[i].hub) { hubEntry = FEATURED[i]; break; }
   }
   var hubEl = document.getElementById('hub-card');
   if (hubEl) hubEl.innerHTML = hubEntry ? card(hubEntry, true) : '';
-  document.getElementById('featured').innerHTML = sats.map(function(g){return card(g,true);}).join('');
 })();
 
 function renderGarden(cat){
-  var list = GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
-  document.getElementById('garden').innerHTML = list.map(function(g){return card(g,false);}).join('');
+  // Studio satellites (non-hub FEATURED) are the "newest" games. They show
+  // in the garden under the New tab (and All) instead of a separate strip at
+  // the top, so the newest games mix in with the rest like the rest.
+  var sats = (cat==="all"||cat==="new") ? FEATURED.filter(function(g){return !g.hub;}) : [];
+  var list = (cat==="new") ? [] : GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
+  document.getElementById('garden').innerHTML =
+    sats.map(function(g){return card(g,true);}).join('') +
+    list.map(function(g){return card(g,false);}).join('');
 }
 document.getElementById('tabs').innerHTML = CATS.map(function(c,i){
   return '<button class="'+(i===0?'on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>';

@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.27.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.27.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -5344,6 +5344,9 @@
     .fk2.fk2-wip .fk2-thumb img,.fk2.fk2-wip .fk2-thumb span{filter:grayscale(0.75) brightness(0.65);}
     .fk2.fk2-wip{opacity:0.85;}
     .fk2-soon{position:absolute;top:6px;right:6px;z-index:3;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--gold);background:rgba(13,16,12,0.85);border:1px solid rgba(200,168,75,0.45);border-radius:6px;padding:2px 6px;text-shadow:0 1px 3px rgba(0,0,0,0.6);box-shadow:0 2px 6px rgba(0,0,0,0.4);}
+    /* Beta tag — sage (not gold) so it reads "playable, still polishing"
+       and stays subtle, distinct from the gold SOON badge. */
+    .fk2-beta{position:absolute;top:6px;right:6px;z-index:3;font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--sage);background:rgba(13,16,12,0.82);border:1px solid rgba(122,179,86,0.45);border-radius:6px;padding:2px 6px;text-shadow:0 1px 3px rgba(0,0,0,0.6);box-shadow:0 2px 6px rgba(0,0,0,0.4);}
     .fk2-thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px;}
     /* Inset vignette + slight zoom-in masks the white/light edges that
        several source thumbnails (golf/klondike/freecell/pyramid/spider/
@@ -62730,9 +62733,9 @@ var G=[
 // \u2500\u2500 SKY WOLF STUDIOS \u2014 external games on their own origins, embedded via
 // iframe (see _sg `ext` branch). To add another: copy one line, change
 // id/n/i/r/ext/thumb, drop the thumbnail PNG. Hidden inside Pi Browser. \u2500\u2500
-{id:'glyphforge',n:'Glyph Forge',i:'\u2692\ufe0f',r:'Forge glyphs, hunt combos, break everything.',cat:'studio',ext:'https://stephenuffugus.github.io/glyph_forge/',thumb:'portal-assets/thumbs/glyph-forge.png'},
+{id:'glyphforge',n:'Glyph Forge',i:'\u2692\ufe0f',r:'Forge glyphs, hunt combos, break everything.',cat:'studio',ext:'https://stephenuffugus.github.io/glyph_forge/',thumb:'portal-assets/thumbs/glyph-forge.png',beta:true},
 {id:'sweetspot',n:'Sweet Spot',i:'\ud83c\udfbe',r:'One-thumb tennis timing. Nail the gold for an ACE.',cat:'studio',ext:'https://stephenuffugus.github.io/Sweet-Spot/',thumb:'portal-assets/thumbs/sweet-spot.png'},
-{id:'tarotrun',n:'Tarot Run',i:'\ud83c\udccf',r:'A fast, spectacular combo card run \u2014 a reading of blades.',cat:'studio',ext:'https://stephenuffugus.github.io/Tarot_Run/',thumb:'portal-assets/thumbs/tarot-run.png'},
+{id:'tarotrun',n:'Tarot Run',i:'\ud83c\udccf',r:'A fast, spectacular combo card run \u2014 a reading of blades.',cat:'studio',ext:'https://stephenuffugus.github.io/Tarot_Run/',thumb:'portal-assets/thumbs/tarot-run.png',beta:true},
 {id:'sixfold',n:'Sixfold',i:'\u2694\ufe0f',r:'A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.',cat:'studio',ext:'https://stephenuffugus.github.io/sixfold/',thumb:'portal-assets/thumbs/sixfold.png'},
 {id:'letterlaunch',n:'Letter Launch',i:'\ud83d\udd24',r:'Plink letter tiles through bumpers, then trace words to score.',cat:'studio',ext:'https://stephenuffugus.github.io/letter_launch/',thumb:'portal-assets/thumbs/letter-launch.png'},
 // Same-origin satellites: ext starts with '/' so they're FIRST-PARTY content,
@@ -64076,7 +64079,9 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
       var _wipCls=g.wip?' fk2-wip':'';
       var _wipClick=g.wip
         ? 'event.stopPropagation();if(window._toast)window._toast(\'\u2728 '+g.n.replace(/'/g,"\\'")+' is coming soon. Keep an eye out.\');'
-        : '_lwLaunch(\''+g.id+'\')';
+        : (g.beta
+          ? '_lwLaunchBeta(\''+g.id+'\',\''+g.n.replace(/'/g,"\\'")+'\')'
+          : '_lwLaunch(\''+g.id+'\')');
       h+='<div class="fk2'+_wipCls+'" onclick="'+_wipClick+'" style="animation-delay:'+(gi*20)+'ms;">';
       // Thumbnail or emoji fallback. When the thumb 404s, render the
       // emoji at the SAME size as the thumb (filling the whole cell)
@@ -64091,11 +64096,13 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
       }
       if(g.wip){
         h+='<div class="fk2-soon">SOON</div>';
+      }else if(g.beta){
+        h+='<div class="fk2-beta">BETA</div>';
       }
       h+='<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 4px 5px;background:linear-gradient(transparent,rgba(8,10,6,0.85) 30%,rgba(8,10,6,0.95));border-radius:0 0 clamp(9px,2.8vw,13px) clamp(9px,2.8vw,13px);">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.06em;line-height:1.1;text-shadow:0 1px 4px rgba(0,0,0,0.8);">'+g.n+'</div>';
       if(g.sub)h+='<div style="font-family:DM Mono,monospace;font-size:0.32rem;color:var(--cream);opacity:0.72;letter-spacing:0.04em;margin-top:1px;text-shadow:0 1px 3px rgba(0,0,0,0.85);">'+g.sub+'</div>';
-      h+=(r.p?'<div style="font-size:0.3rem;color:var(--muted);margin-top:1px;text-shadow:0 1px 3px rgba(0,0,0,0.8);">'+r.p+' played'+(r.w?' \u00b7 '+r.w+' won':'')+'</div>':'<div style="font-size:0.28rem;color:var(--gold);margin-top:1px;opacity:0.6;">'+(g.wip?'Coming soon':'Try it!')+'</div>');
+      h+=(r.p?'<div style="font-size:0.3rem;color:var(--muted);margin-top:1px;text-shadow:0 1px 3px rgba(0,0,0,0.8);">'+r.p+' played'+(r.w?' \u00b7 '+r.w+' won':'')+'</div>':'<div style="font-size:0.28rem;color:var(--gold);margin-top:1px;opacity:0.6;">'+(g.wip?'Coming soon':(g.beta?'Beta':'Try it!'))+'</div>');
       h+='</div>';
       h+='</div>';
       gi++;
@@ -64110,6 +64117,21 @@ window._cp=function(){document.getElementById('fg-ov').classList.remove('open')}
 // Modal sets _setDiff(level) -> _dm reward multiplier (1.0/1.5/2.0/2.5)
 // and persists the player's last choice per game in localStorage.
 // Games without `diff` flag launch directly via _sg as before.
+// Beta games launch through a one-time "this is still in beta" notice so
+// players don't expect a finished experience (and know where to send bugs).
+// After they tap Play once, the flag is set and they launch straight in.
+window._lwLaunchBeta=function(id,name){
+  var key='lw_beta_seen_'+id;
+  var seen=false;try{seen=localStorage.getItem(key)==='1';}catch(e){}
+  if(seen){window._lwLaunch(id);return;}
+  if(window._lwConfirm){
+    window._lwConfirm({
+      title:(name||'This game')+' is in beta',
+      body:'Still being polished, so it might have rough edges or not flow perfectly yet. Found a bug or have an idea? We\'d love to hear it — your notes really help us finish it.',
+      yes:'Play',no:'Back'
+    }, function(){ try{localStorage.setItem(key,'1');}catch(e){} window._lwLaunch(id); });
+  } else { try{localStorage.setItem(key,'1');}catch(e){} window._lwLaunch(id); }
+};
 window._lwLaunch=function(id){
   var entry=null;for(var i=0;i<G.length;i++){if(G[i].id===id){entry=G[i];break;}}
   if(!entry||!entry.diff){_sg(id);_cp();return;}
