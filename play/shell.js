@@ -579,6 +579,44 @@
     else hdr.appendChild(btn);
   }
 
+  // Feedback button — "found a bug or have an idea?". Lazily loads the shared
+  // /feedback.js on first tap so standalone shells pay no upfront cost. Only
+  // injected on standalone /play/<game>.html visits; when embedded in the
+  // portal jukebox, the portal's floating button covers it.
+  function openFeedback() {
+    function go() {
+      if (window.LW_Feedback) {
+        window.LW_Feedback.open({ game: (LW_PLAY.name || LW_PLAY.id || ''), surface: 'game' });
+      }
+    }
+    if (window.LW_Feedback) { go(); return; }
+    var s = document.createElement('script');
+    s.src = '/feedback.js';
+    s.onload = go;
+    s.onerror = function () { try { alert('Feedback is unavailable right now.'); } catch (e) {} };
+    document.head.appendChild(s);
+  }
+  function injectFeedbackButton() {
+    var hdr = document.querySelector('.shell-hdr');
+    if (!hdr) return;
+    if (document.getElementById('shell-feedback')) return;  // idempotent
+    var btn = document.createElement('button');
+    btn.id = 'shell-feedback';
+    btn.className = 'shell-howto';                 // reuse the round chrome-button style
+    btn.setAttribute('aria-label', 'Found a bug or have an idea?');
+    btn.title = 'Found a bug or have an idea?';
+    btn.textContent = '🐞';
+    btn.addEventListener('click', openFeedback);
+    var howto = document.getElementById('shell-howto');
+    if (howto && howto.nextSibling) hdr.insertBefore(btn, howto.nextSibling);
+    else if (howto) hdr.appendChild(btn);
+    else {
+      var back = hdr.querySelector('.shell-back');
+      if (back && back.nextSibling) hdr.insertBefore(btn, back.nextSibling);
+      else hdr.appendChild(btn);
+    }
+  }
+
   function showHowToModal(text) {
     if (document.getElementById('howto-bd')) return;
     var bd = document.createElement('div');
@@ -671,6 +709,7 @@
     renderWallet();
     wireWalletButton();
     injectHowToButton();
+    if (!musEmbedded()) { try { injectFeedbackButton(); } catch (e) {} }
     try { initMusic(); } catch (e) {}
     try { wireEmbedBack(); } catch (e) {}
 

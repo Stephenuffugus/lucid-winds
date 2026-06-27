@@ -13,6 +13,7 @@
 <!-- ?v stamp busts the SW stale cache so new tracks show up immediately. Bump this when tracks change. -->
 <script src="/music-tracks.js?v=2026.06.24.17"></script>
 <script src="/music-player.js"></script>
+<script src="/feedback.js"></script>
 <style>
   :root{
     --bg:#0d1410; --panel:#15201a; --panel2:#1c2a22; --ink:#e8f1e9;
@@ -628,6 +629,13 @@ renderGarden("all");
   // Browser back closes the game instead of leaving the portal.
   window.addEventListener('popstate', function(){ if(isOpen) closeGame(); });
 })();
+</script>
+
+<!-- Floating "found a bug or idea?" button for the portal (covers browsing
+     and framed /play/ games). External satellites get covered here too. -->
+<script>
+  window.LW_FB_CONTEXT = { surface: 'portal' };
+  if (window.LW_Feedback) window.LW_Feedback.mountFab({ surface: 'portal' });
 </script>
 </body>
 </html>
