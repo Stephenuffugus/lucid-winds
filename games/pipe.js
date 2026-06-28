@@ -38,8 +38,13 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0,won=false;
     for(var p=0;p<path.length;p++){
       var ci=path[p];
       if(p===0){
+        // Stephen 2026-06-28: the source art (vine-source) read as a 4-way
+        // crossroad, so players couldn't tell which way the vine left the
+        // START. Use the clean single-exit END cap art for the start too
+        // (it has the same one-exit shape, EX_EN), and a big arrow overlay
+        // (added in rn()) makes the exit direction unmistakable.
         var d=dirOf(ci,path[1]);var erm=[1,2,3,0];
-        grid[ci]={img:IMG_SR,ex:EX_EN,rot:erm[d],fixed:true};
+        grid[ci]={img:IMG_EN,ex:EX_EN,rot:erm[d],fixed:true};
       }else if(p===path.length-1){
         var d=dirOf(ci,path[p-1]);var erm=[1,2,3,0];
         grid[ci]={img:IMG_EN,ex:EX_EN,rot:erm[d],fixed:true};
@@ -82,6 +87,10 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0,won=false;
       if(i===srcI){
         var s=document.createElement('div');s.style.cssText='position:absolute;top:1px;left:2px;font-size:0.55rem;font-family:Bebas Neue,sans-serif;color:#7ab356;letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;';
         s.textContent='🌱 START';wrap.appendChild(s);
+        // Big arrow showing exactly which way the vine leaves the start, so
+        // it can never read as an ambiguous crossroad (Stephen 2026-06-28).
+        var _se=pExit(srcI);var _arr=_se[0]?'↑':_se[1]?'→':_se[2]?'↓':_se[3]?'←':'';
+        if(_arr){var ar=document.createElement('div');ar.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;color:#aef08a;text-shadow:0 0 6px #000,0 0 3px #000;pointer-events:none;z-index:2;';ar.textContent=_arr;wrap.appendChild(ar);}
       } else if(i===endI){
         var f=document.createElement('div');f.style.cssText='position:absolute;top:1px;left:2px;font-size:0.55rem;font-family:Bebas Neue,sans-serif;color:'+(st.won?'#c8a84b':'#e8a0bf')+';letter-spacing:0.06em;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;z-index:2;'+(st.won?'':'animation:pipeBlink 1.4s ease-in-out infinite;');
         f.textContent=st.won?'🌸 BLOOM':'🌸 FINISH';wrap.appendChild(f);

@@ -269,11 +269,45 @@
     if (hEl) hEl.textContent = (parseInt(hEl.textContent, 10) || 0) + amt;
   }
 
+  // ── Win celebration (Stephen 2026-06-28). The shell's playWin used to be
+  // a sound only, so portal games "didn't celebrate" at the end (e.g. Vine
+  // Puzzle). This adds a lightweight, non-blocking petal burst + flourish on
+  // every game win, in both standalone and embedded play. Pure DOM/CSS.
+  function _winCelebrate(){
+    try {
+      if (!document.getElementById('sws-win-style')) {
+        var stl = document.createElement('style'); stl.id = 'sws-win-style';
+        stl.textContent = '@keyframes swsPetalFall{0%{transform:translateY(-14vh) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(104vh) rotate(540deg);opacity:0}}@keyframes swsWinPop{0%{transform:scale(0.4);opacity:0}35%{transform:scale(1.15);opacity:1}65%{transform:scale(1)}100%{transform:scale(1);opacity:0}}';
+        document.head.appendChild(stl);
+      }
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:90000;pointer-events:none;overflow:hidden;';
+      var glyphs = ['🌸','🌿','✿','🍃','🌼','✦'];
+      var colors = ['#7ab356','#c8a84b','#e8dcc8','#e8a0bf'];
+      for (var i=0;i<26;i++){
+        var p = document.createElement('div');
+        var left = (i*37+13) % 100;            // deterministic spread across the width
+        var dur = 1.8 + (i%5)*0.35;
+        var delay = (i%7)*0.11;
+        var sz = 14 + (i%4)*6;
+        p.textContent = glyphs[i%glyphs.length];
+        p.style.cssText = 'position:absolute;top:-14vh;left:'+left+'vw;font-size:'+sz+'px;color:'+colors[i%colors.length]+';animation:swsPetalFall '+dur+'s linear '+delay+'s 1 forwards;';
+        ov.appendChild(p);
+      }
+      var burst = document.createElement('div');
+      burst.style.cssText = "position:absolute;top:38%;left:0;right:0;text-align:center;font-family:'Bebas Neue',sans-serif;letter-spacing:0.18em;font-size:2.3rem;color:#c8a84b;text-shadow:0 2px 16px rgba(0,0,0,0.85);animation:swsWinPop 2.2s ease 1 forwards;";
+      burst.textContent = '✿ NICE! ✿';
+      ov.appendChild(burst);
+      document.body.appendChild(ov);
+      setTimeout(function(){ if (ov.parentNode) ov.parentNode.removeChild(ov); }, 2800);
+    } catch (e) {}
+  }
+
   // ── _G — the shared API every modular game destructures.
   global._G = {
     e:           _earn,
     play:        _playSfx,
-    playWin:     function(){ _playSfx('win'); },
+    playWin:     function(){ _playSfx('win'); _winCelebrate(); },
     st:          st,
     xt:          xt,
     sm:          sm,
