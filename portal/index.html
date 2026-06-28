@@ -73,7 +73,14 @@
      navigating away, so the portal (and its audio) never unloads → gapless. */
   #game-overlay{position:fixed;inset:0;z-index:150;background:var(--bg);display:none}
   #game-overlay.on{display:block}
-  #game-frame{width:100%;height:100%;border:0;display:block}
+  #game-frame{width:100%;height:100dvh;border:0;display:block}
+  /* Floating exit — a framed satellite (cross-origin) can't always route its own
+     back link to us, so this guarantees the player is never trapped. */
+  #game-close{position:fixed;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:160;display:none;
+              width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
+              background:rgba(8,12,8,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+              color:#fff;font-size:18px;line-height:1;cursor:pointer;align-items:center;justify-content:center}
+  #game-overlay.on #game-close{display:flex}
   /* auth modal */
   .auth-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:center;justify-content:center;padding:18px}
   .auth-bg.on{display:flex}
@@ -197,7 +204,8 @@
 <!-- Game jukebox — games load in this iframe so the portal never unloads
      and the soundtrack plays gaplessly across game switches. -->
 <div id="game-overlay" aria-hidden="true">
-  <iframe id="game-frame" title="Game" allow="autoplay; fullscreen; gamepad; accelerometer; gyroscope"></iframe>
+  <iframe id="game-frame" title="Game" allow="autoplay; fullscreen; gamepad; accelerometer; gyroscope" allowfullscreen></iframe>
+  <button id="game-close" aria-label="Close game" title="Close">✕</button>
 </div>
 
 <!-- Sign-in / sign-up modal. Hidden until the wallet button fires it. -->
@@ -587,6 +595,9 @@ renderGarden("all");
 
   function openGame(url, title){
     fr.src = url + (url.indexOf('?')>=0?'&':'?') + 'embed=1';
+    // A successful frame load cancels the redirect fallback (works for cross-
+    // origin satellites that don't speak our sws:'ready' protocol).
+    fr.onload = function(){ if(watchdog){ clearTimeout(watchdog); watchdog = null; } };
     ov.classList.add('on'); ov.setAttribute('aria-hidden','false');
     document.body.style.overflow = 'hidden';
     if(title) document.title = title + ' — Sky Wolf Studios';
@@ -614,9 +625,17 @@ renderGarden("all");
   document.addEventListener('click', function(e){
     var a = e.target && e.target.closest ? e.target.closest('a') : null;
     if(!a) return;
-    if(a.target === '_blank') return;                       // satellites / external
+    if(a.target === '_blank') return;                       // new-tab apps (Pom Pond etc.)
     var href = a.getAttribute('href') || '';
-    if(!/\/play\/[^\/]+\.html/.test(href)) return;          // only /play/ game shells
+    // FRAME both internal /play/ shells AND the github.io studio satellites.
+    // Framing a satellite (instead of full-page navigating to it) keeps it under
+    // THIS top-level site, so its localStorage save lands in the SAME
+    // partitioned bucket as the in-app Sky Wolf section — the player's unlocked
+    // skins/worlds then match in both places (same browser). It also keeps the
+    // portal + its music loaded. (Stephen 2026-06-28)
+    var isPlay = /\/play\/[^\/]+\.html/.test(href);
+    var isSat  = /:\/\/stephenuffugus\.github\.io\//.test(href);
+    if(!isPlay && !isSat) return;
     e.preventDefault();
     var nm = a.querySelector('.nm');
     openGame(href, nm ? nm.textContent : '');
@@ -629,7 +648,15 @@ renderGarden("all");
     if(!e.data) return;
     if(e.data.sws === 'ready' && watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked
     if(e.data.sws === 'close' && isOpen){ try{ history.back(); }catch(_){ closeGame(); } }
+    // Studio satellites (e.g. Skitterlings) speak their own protocol.
+    if(e.data.source === 'skitterlings'){
+      if(e.data.type === 'ready' && watchdog){ clearTimeout(watchdog); watchdog = null; }
+      if(e.data.type === 'navigate-back' && isOpen){ try{ history.back(); }catch(_){ closeGame(); } }
+    }
   });
+  // Floating exit button — guaranteed escape for framed (cross-origin) games.
+  var cb = document.getElementById('game-close');
+  if(cb) cb.addEventListener('click', function(){ if(isOpen){ try{ history.back(); }catch(_){ closeGame(); } } });
   // Browser back closes the game instead of leaving the portal.
   window.addEventListener('popstate', function(){ if(isOpen) closeGame(); });
 })();
