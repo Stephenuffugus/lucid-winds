@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: yahtzee
  *
  * COPY of the inline GY mount function from index.html
- * lines 67703-68002.
+ * lines 67703-68028.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -19,7 +19,7 @@
       _solEnterFS=G.solEnterFS, _solClearFS=G.solClearFS, _solExitFS=G.solExitFS;
   window._gameFns=window._gameFns||{};
 
-  function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={},justRolled=new Array(5).fill(false);
+  function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1,scores={},justRolled=new Array(5).fill(false),yBonus=0;
     // Takeover overlay state. {kind:'yahtzee'|'gameover', ...}
     var overlay=null;
     // Inject Yahtzee keyframes once.
@@ -139,8 +139,8 @@
       }
       if(overlay && overlay.kind==='gameover'){
         h+='<div style="position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,'+(overlay.won?'rgba(255,220,112,0.3)':'rgba(60,40,100,0.4)')+' 0%,rgba(10,5,20,0.96) 70%);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:yYahtzeeIn 0.4s ease-out;">';
-        h+='<div style="font-size:'+(overlay.won?'4.5rem':'3rem')+';line-height:1;margin-bottom:10px;animation:yEndPop 0.9s cubic-bezier(.18,1.4,.3,1);filter:drop-shadow(0 0 24px '+(overlay.won?'rgba(255,220,112,0.7)':'rgba(140,100,200,0.6)')+');">'+(overlay.won?'🏆':'🌱')+'</div>';
-        h+='<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:'+(overlay.won?'#ffdc70':'#f5ebd0')+';letter-spacing:0.04em;text-shadow:0 0 22px '+(overlay.won?'rgba(255,220,112,0.7)':'rgba(0,0,0,0.6)')+';margin-bottom:18px;">'+(overlay.won?'GREAT GAME':'GAME OVER')+'</div>';
+        h+='<div style="font-size:4.5rem;line-height:1;margin-bottom:10px;animation:yEndPop 0.9s cubic-bezier(.18,1.4,.3,1);filter:drop-shadow(0 0 24px rgba(255,220,112,0.7));">'+(overlay.medal||'🌿')+'</div>';
+        h+='<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#ffdc70;letter-spacing:0.04em;text-shadow:0 0 22px rgba(255,220,112,0.7);margin-bottom:18px;">'+(overlay.headline||'NICE ROUND')+'</div>';
         h+='<div style="display:flex;flex-direction:column;gap:8px;max-width:340px;width:90%;">';
         for(var li=0;li<overlay.lines.length;li++){
           var line=overlay.lines[li];
@@ -228,7 +228,7 @@
       h+='<div style="margin:10px 0 4px;padding:0 4px;font-family:DM Mono,monospace;font-size:0.55rem;color:#dc8a8a;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Lower</div>';
       for(var i=6;i<13;i++)h+=row(i);
       // ── TOTAL ────────────────────────────────────────────────────
-      var total=bonus;for(var k in scores)total+=scores[k];
+      var total=bonus+yBonus;for(var k in scores)total+=scores[k];
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;margin-top:10px;background:linear-gradient(180deg,rgba(255,220,112,0.18),rgba(200,168,75,0.08));border:2px solid #ffdc70;border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 0 14px rgba(255,220,112,0.25);">';
       h+='<span style="font-family:Georgia,serif;font-weight:700;font-size:0.95rem;color:#f5ebd0;letter-spacing:0.04em;">TOTAL</span>';
       h+='<span style="font-family:Georgia,serif;font-weight:700;font-size:1.6rem;color:#ffdc70;text-shadow:0 1px 3px rgba(0,0,0,0.6);">'+total+'</span>';
@@ -262,8 +262,28 @@
     };
     window._YS=function(cat){
       if(yRolling||!rolls||scores[cat]!==undefined)return;
-      _play('snap');var v=cs(cat);scores[cat]=v;
-      // YAHTZEE moment — five-of-a-kind into the Bloom slot for the full 50.
+      _play('snap');
+      // Detect a five-of-a-kind in the CURRENT roll (for the bonus + joker rules).
+      var _yc=new Array(7).fill(0);for(var _yi=0;_yi<5;_yi++)_yc[dice[_yi]]++;
+      var _fiveKind=false;for(var _yv=1;_yv<=6;_yv++)if(_yc[_yv]===5)_fiveKind=true;
+      var v=cs(cat);
+      // YAHTZEE BONUS + JOKER (real rules): a 2nd+ five-of-a-kind, once Bloom
+      // already holds a real 50, is worth +100 and may go in ANY open category
+      // with joker scoring (Full House=25, Sm Straight=30, Lg Straight=40).
+      var _bonusYahtzee=false;
+      if(_fiveKind && scores[11]===50){
+        yBonus+=100; _bonusYahtzee=true;
+        if(v===0){ if(cat===8)v=25; else if(cat===9)v=30; else if(cat===10)v=40; }
+      }
+      scores[cat]=v;
+      if(_bonusYahtzee){
+        sm('🎉 YAHTZEE BONUS +100!');
+        _e('milestone');_playWin();
+        overlay={kind:'yahtzee',bonus:true};rn();
+        setTimeout(function(){overlay=null;_advanceTurn(cat,v);},2400);
+        return;
+      }
+      // First five-of-a-kind scored into Bloom for the full 50.
       var isYahtzee = (cat===11 && v===50);
       if(isYahtzee){
         _e('milestone');_playWin();
@@ -285,17 +305,23 @@
         var upperSum=0;for(var i=0;i<6;i++)if(scores[i]!==undefined)upperSum+=scores[i];
         var bonus=upperSum>=63?35:0;
         var lowerSum=0;for(var j=6;j<13;j++)if(scores[j]!==undefined)lowerSum+=scores[j];
-        var tot=upperSum+lowerSum+bonus;
-        var won=tot>=150;
-        if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
-        _sr('yahtzee',{w:won,s:tot});
+        var tot=upperSum+lowerSum+bonus+yBonus;
+        // Friendly: Yahtzee is solitaire — every completed round is positive. No
+        // "loss", no sad sound. Tier the celebration by score for flavor, but
+        // never bum the player out (Stephen 2026-06-28).
+        var tier = tot>=250?2 : tot>=150?1 : 0;
+        var medal = tier===2?'🏆' : tier===1?'🌟' : '🌿';
+        var headline = tier===2?'INCREDIBLE!' : tier===1?'GREAT GAME' : 'NICE ROUND';
+        _e('game_win');_playWin();
+        _sr('yahtzee',{w:tot>=150,s:tot});
         var lines=[
           {label:'Upper section',value:upperSum,color:'#7ab356'},
           {label:'Upper bonus',value:bonus?'+35':'—',color:bonus?'#ffdc70':'rgba(232,220,200,0.4)'},
+          {label:'Yahtzee bonus',value:yBonus?'+'+yBonus:'—',color:yBonus?'#ffdc70':'rgba(232,220,200,0.4)'},
           {label:'Lower section',value:lowerSum,color:'#dc8a8a'},
-          {label:'TOTAL',value:tot,color:'#ffdc70',big:true,medal:won?'🏆':null}
+          {label:'TOTAL',value:tot,color:'#ffdc70',big:true,medal:medal}
         ];
-        overlay={kind:'gameover',lines:lines,won:won,tot:tot,lineIdx:0};
+        overlay={kind:'gameover',lines:lines,won:true,medal:medal,headline:headline,tot:tot,lineIdx:0};
         rn();
         function reveal(){
           if(!overlay)return;
