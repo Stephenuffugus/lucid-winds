@@ -167,7 +167,14 @@ function GSP(a){
         // ranks and suits are legible on all but the deepest piles.
         var depth=tab[c].length;
         var depthMult=depth>14?0.5:depth>11?0.65:depth>8?0.8:1.0;
-        var peekOverlap=Math.round(fit.raw.h * (1 - 0.28*depthMult));
+        // Stephen 2026-06-28: deep piles (15+) compressed to a ~14% reveal,
+        // "smooshing" the rank+suit corner so it was both illegible AND too
+        // thin a strip to tap — which is why a full K-to-2 run couldn't be
+        // grabbed by its head card. Floor the reveal at 26% of card height so
+        // the top-left corner stays readable and tappable at any depth. The
+        // column scrolls, so the extra height is fine.
+        var revealFrac=0.28*depthMult; if(revealFrac<0.26)revealFrac=0.26;
+        var peekOverlap=Math.round(fit.raw.h * (1 - revealFrac));
         for(var i=0;i<depth;i++){
           var cd=_cdEl(tab[c][i]);
           cd.style.width=spW;cd.style.height=spH;cd.style.fontSize=spF;

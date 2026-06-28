@@ -72,7 +72,7 @@ window._gameFns.seedtoss2=function ST(a){
   var parallaxT=0;
   var bullseyeFlash=0;              // 0..1, decays after a dead-center toss
 
-  ms(a,'Score <span id="STs">0</span> · Seeds <span id="STq">15</span> · L<span id="STl">1</span>');
+  ms(a,'Score <span id="STs">0</span> · Toss <span id="STq">0</span>/15 · L<span id="STl">1</span>');
   mm(a);
   var pan=document.createElement('div');pan.id='STpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:8px;text-align:center;';
@@ -252,14 +252,17 @@ window._gameFns.seedtoss2=function ST(a){
     var won=totalMade>=8;
     if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
     _sr('seedtoss2',{w:won,s:score,acc:totalThrown?Math.round(totalMade/totalThrown*100):0,st:bestStreak,lv:level});
-    sm('Final: '+score+' · '+totalMade+'/'+totalThrown);
+    // Stephen 2026-06-28: on a loss there's no win overlay, so the round used
+    // to "just stop" with a tiny line. Show a clear game-over summary that
+    // names the result and points at New Game.
+    sm((won?'🌻 Nice round! ':'🌱 Out of seeds. ')+totalMade+'/15 in the pot · Score '+score+' · tap New Game to play again.');
   }
 
   function setMsg(t){var m=document.getElementById('STmsg');if(m){m.textContent=t;setTimeout(function(){if(m.textContent===t)m.textContent='';},1000);}}
 
   function updateHUD(){
     var s=document.getElementById('STs'),q=document.getElementById('STq'),l=document.getElementById('STl');
-    if(s)s.textContent=score;if(q)q.textContent=seedsLeft;if(l)l.textContent=level;
+    if(s)s.textContent=score;if(q)q.textContent=totalThrown;if(l)l.textContent=level;
   }
 
   // ─── WEATHER ──────────────────────────────────────────────────
