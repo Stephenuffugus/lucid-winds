@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.27.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.28.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -49849,8 +49849,30 @@ document.addEventListener('keydown', function(e) {
     if (data.lw_hut_early_opens && !localStorage.getItem('lw_hut_early_opens')) {
       try { localStorage.setItem('lw_hut_early_opens', typeof data.lw_hut_early_opens === 'string' ? data.lw_hut_early_opens : JSON.stringify(data.lw_hut_early_opens)); } catch(e){}
     }
-    // Restore wild tab state from cloud
-    if (data.wildPlants && data.wildPlants.length) { if(window._secureSet){window._secureSet('fg_wild_plants',data.wildPlants);}else{_ss('fg_wild_plants', data.wildPlants);} }
+    // Restore wild tab state from cloud.
+    // 2026-06-28 DATA-LOSS FIX: this was a BLIND OVERWRITE of fg_wild_plants
+    // with the cloud copy. Every wild drop queues its own syncVaultToCloud;
+    // on flaky mobile networks (walking, backgrounded app) a later drop's
+    // sync can fail to land, so the cloud holds an OLDER, shorter wild list.
+    // A subsequent boot/login then overwrote the local list — which DID hold
+    // the freshly-dropped plants (already removed from the greenhouse by the
+    // drop) — wiping them permanently: plant gone from greenhouse, never on
+    // the map, unrecoverable. (Reported: 2 of 3 plants vanished after a walk.)
+    // Greenhouse/nursery/ledgers all UNION-MERGE to survive stale cloud; wild
+    // was the lone overwrite. Mirror the greenhouse union merge — local wins
+    // on hash conflict (it holds the fresher own-plant state), cloud-only
+    // plants (e.g. cross-device drops) are added. Withered/over-cap cleanup
+    // still runs in _pruneWild on the next Wild load.
+    if (data.wildPlants && data.wildPlants.length) {
+      try {
+        var _lwRaw = window._secureGet ? _secureGet('fg_wild_plants') : localStorage.getItem('fg_wild_plants');
+        var _localWild = JSON.parse(_lwRaw || '[]') || [];
+        var _mWild = _mergeByHash(data.wildPlants, _localWild); // _localWild (b) wins on conflict
+        if (window._secureSet) { window._secureSet('fg_wild_plants', _mWild); } else { _ss('fg_wild_plants', _mWild); }
+      } catch (e) {
+        if (window._secureSet) { window._secureSet('fg_wild_plants', data.wildPlants); } else { _ss('fg_wild_plants', data.wildPlants); }
+      }
+    }
     if (data.wildDropState) { if(window._secureSet){window._secureSet('fg_w_d',data.wildDropState);}else{_ss('fg_w_d', data.wildDropState);} }
     if (data.titlesOwned && data.titlesOwned.length) {
       try {
@@ -52292,10 +52314,28 @@ function _pruneWild(){
       if(grp.length<=MAX_PER_ZONE){
         for(var g=0;g<grp.length;g++)pruned.push(grp[g]);
       } else {
-        // Sort by EA descending, keep top MAX_PER_ZONE
-        grp.sort(function(a,b){return _wildEA(b)-_wildEA(a);});
-        for(var g2=0;g2<MAX_PER_ZONE;g2++)pruned.push(grp[g2]);
-        evictCount+=(grp.length-MAX_PER_ZONE);
+        // 2026-06-28 DATA-LOSS FIX: NEVER evict the player's OWN plants here.
+        // This per-zone cap is a SHARED-MAP density rule (and a legacy-zone
+        // migration). Previously it sorted own + mock/stranger plants (both
+        // live in fg_wild_plants, the latter with own:false) together by EA
+        // and silently _saveWild(pruned) — so a real plant the player walked
+        // out and placed could be permanently deleted in favour of a
+        // higher-EA mock, with NO toast. Own plants are the player's property;
+        // keep ALL of them. Only cull non-own (mock/stranger) cache entries
+        // beyond the cap. The intended "EA-weakest eviction" for own placement
+        // is enforced at drop time via the contest dice roll, not here.
+        var _own=[],_other=[];
+        for(var gg=0;gg<grp.length;gg++){ if(grp[gg]&&grp[gg].own===false)_other.push(grp[gg]); else _own.push(grp[gg]); }
+        for(var go=0;go<_own.length;go++)pruned.push(_own[go]);
+        // Fill remaining cap slots with the strongest non-own entries.
+        var _slots=MAX_PER_ZONE-_own.length;
+        if(_slots>0&&_other.length){
+          _other.sort(function(a,b){return _wildEA(b)-_wildEA(a);});
+          for(var go2=0;go2<_slots&&go2<_other.length;go2++)pruned.push(_other[go2]);
+          if(_other.length>_slots)evictCount+=(_other.length-_slots);
+        } else {
+          evictCount+=_other.length; // own already fills the zone — drop mock cache
+        }
       }
     }
     if(evictCount>0){
@@ -58330,7 +58370,18 @@ function _renderPatternNamer(){
 function _finishDrop(defenderGame){
   if(!_pendingDrop)return;
   var pd=_pendingDrop;_pendingDrop=null;
-  var pl=pd.plant,la=pd.lat,lo=pd.lng,wild=pd.wild;
+  // 2026-06-28 DATA-LOSS FIX (primary cause): re-read the wild array FRESH
+  // here instead of trusting pd.wild. pd.wild was captured back in _drop at
+  // drop-START (var wild=_getWild()), and the contest-inspector / dice-roll
+  // animation / overcrowding-confirm / Oracle's-Vow paths defer this
+  // _finishDrop across async user interaction. If a second drop completed
+  // and saved during that gap, the deferred _finishDrop would push onto its
+  // STALE snapshot and _saveWild(wild) would overwrite the whole array —
+  // erasing the intervening plant(s). Three quick SOW taps → the last one to
+  // finish won, the others were silently wiped from local storage (already
+  // gone from the greenhouse, never on the map). Reading current state and
+  // appending to it makes concurrent/interleaved drops additive.
+  var pl=pd.plant,la=pd.lat,lo=pd.lng,wild=_getWild();
 
   // Skip SOW consumption if already charged at contest commit. Without
   // this guard, contest wins would pay double (once at commit, once
