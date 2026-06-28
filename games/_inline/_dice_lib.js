@@ -78,7 +78,12 @@ window._LW_diceSelect=function(k){
 window._LW_tumble=function(elements,finalValues,opts){
   opts=opts||{};
   var duration=opts.duration||720;
-  var faceUrl=opts.face||function(n){return 'assets/dice/d'+n+'.png';};
+  // Stephen 2026-06-28: the default used to hardcode the parchment set, so if
+  // the player picked a different dice style the TUMBLE showed the wrong skin
+  // and only the final settled face matched ("it showed the other kind of dice
+  // rolling before the result"). Default to a LIVE current-style lookup so the
+  // tumbling faces always match the selected set in every dice game.
+  var faceUrl=opts.face||function(n){return (window.LW_DICE&&window.LW_DICE.face)?window.LW_DICE.face(n):'assets/dice/d'+n+'.png';};
   var start=Date.now();
   function setFace(i,val){
     var el=elements[i];if(!el)return;

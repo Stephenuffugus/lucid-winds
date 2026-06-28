@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: farkle
  *
  * COPY of the inline GF mount function from index.html
- * lines 66245-66599.
+ * lines 67364-67701.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -155,52 +155,35 @@
       h+='<button class="gb" onclick="_FN()" title="New game" style="min-height:44px;padding:10px 12px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">↻</button>';
       h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="min-height:44px;padding:10px 12px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">🎲 Style</button>';
       h+='</div></div>';
-      // Roll area — only dice NOT yet kept
+      // Single stable dice grid (Stephen 2026-06-28): all 6 dice ALWAYS occupy
+      // fixed slots. Held dice get a glowing box + lift IN PLACE — no separate,
+      // smaller tray, so holding a die never reflows/resizes the layout.
       h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.45) 100%);border:1px solid rgba(0,0,0,0.55);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.55);min-height:120px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">Roll Area</div>';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;min-height:14px;">';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-transform:uppercase;">'+(turn>0?'Kept dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
+      if(turn>0)h+='<div style="font-family:Georgia,serif;font-size:0.68rem;color:rgba(232,220,200,0.7);flex-shrink:0;">Locked: <strong style="color:#ffdc70;">'+turn+'</strong></div>';
+      h+='</div>';
       h+='<div style="display:flex;gap:clamp(6px,2vw,10px);justify-content:center;flex-wrap:wrap;">';
-      var anyInRoll=false;
       for(var i=0;i<6;i++){
-        if(kept[i])continue;
-        anyInRoll=true;
+        var held=kept[i];
         var roll=justRolled[i];
         var stagger=roll?'animation-delay:'+(i*60)+'ms;':'';
-        h+='<div onclick="_FHold('+i+')" class="fDie'+(roll?' rolling':'')+'" data-i="'+i+'" style="width:clamp(62px,17vw,88px);height:clamp(62px,17vw,88px);display:flex;align-items:center;justify-content:center;border-radius:clamp(8px,2.5vw,12px);cursor:'+(dice[i]?'pointer':'default')+';'+stagger+'">';
+        var heldBox=held?'box-shadow:0 0 0 3px #ffb45a,0 0 14px rgba(255,180,90,0.55),inset 0 0 12px rgba(255,180,90,0.18);background:rgba(255,180,90,0.10);':'';
+        h+='<div onclick="_FHold('+i+')" class="fDie'+(roll?' rolling':'')+(held?' held':'')+'" data-i="'+i+'" style="width:clamp(62px,17vw,88px);height:clamp(62px,17vw,88px);display:flex;align-items:center;justify-content:center;border-radius:clamp(8px,2.5vw,12px);cursor:'+(dice[i]?'pointer':'default')+';'+heldBox+stagger+'">';
         if(dice[i])h+=seedDie(dice[i]);
-        else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">·</span>';
+        else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">\u00b7</span>';
         h+='</div>';
       }
-      if(!anyInRoll)h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.5);align-self:center;padding:24px;">All six kept, roll for 🔥 hot dice</div>';
       h+='</div></div>';
-      // Kept tray
-      var anyHeld=false;for(var hi=0;hi<6;hi++)if(kept[hi]){anyHeld=true;break;}
-      if(anyHeld||turn>0){
-        h+='<div style="background:linear-gradient(180deg,rgba(220,160,90,0.18),rgba(160,110,50,0.25));border:1px solid rgba(255,180,120,0.35);border-radius:8px;padding:8px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,160,0.1),0 2px 4px rgba(0,0,0,0.4);">';
-        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:#ffb45a;text-transform:uppercase;">Kept · '+(anyHeld?'tap to release':'locked points')+'</div>';
-        if(turn>0)h+='<div style="font-family:Georgia,serif;font-size:0.68rem;color:rgba(232,220,200,0.7);">Locked: <strong style="color:#ffdc70;">'+turn+'</strong></div>';
-        h+='</div>';
-        h+='<div style="display:flex;gap:8px;justify-content:center;min-height:52px;align-items:center;flex-wrap:wrap;">';
-        for(var hj=0;hj<6;hj++){
-          if(!kept[hj])continue;
-          h+='<div onclick="_FHold('+hj+')" class="fDie held" style="width:clamp(42px,12vw,56px);height:clamp(42px,12vw,56px);display:flex;align-items:center;justify-content:center;border-radius:clamp(6px,2vw,10px);cursor:pointer;">';
-          h+=seedDie(dice[hj]);
-          h+='</div>';
+      var parts=scoreBreakdown();
+      h+='<div style="min-height:30px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;margin-bottom:8px;">';
+      if(parts.length){
+        for(var bp=0;bp<parts.length;bp++){
+          h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#f5ebd0;background:rgba(0,0,0,0.35);border:1px solid rgba(255,180,120,0.25);border-radius:10px;padding:2px 8px;">'+parts[bp].label+' <strong style="color:#ffdc70;">+'+parts[bp].pts+'</strong></span>';
         }
-        if(!anyHeld)h+='<span style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:rgba(245,235,208,0.5);">none yet</span>';
-        h+='</div>';
-        // Breakdown chips
-        var parts=scoreBreakdown();
-        if(parts.length){
-          h+='<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,180,120,0.18);">';
-          for(var bp=0;bp<parts.length;bp++){
-            h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#f5ebd0;background:rgba(0,0,0,0.35);border:1px solid rgba(255,180,120,0.25);border-radius:10px;padding:2px 8px;">'+parts[bp].label+' <strong style="color:#ffdc70;">+'+parts[bp].pts+'</strong></span>';
-          }
-          h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#fff0d6;background:linear-gradient(180deg,rgba(255,180,90,0.25),rgba(200,130,60,0.25));border:1px solid #ffb45a;border-radius:10px;padding:2px 10px;font-weight:700;">Turn '+liveTurn()+'</span>';
-          h+='</div>';
-        }
-        h+='</div>';
+        h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#fff0d6;background:linear-gradient(180deg,rgba(255,180,90,0.25),rgba(200,130,60,0.25));border:1px solid #ffb45a;border-radius:10px;padding:2px 10px;font-weight:700;">Turn '+liveTurn()+'</span>';
       }
+      h+='</div>';
       // Final round banner
       if(finalRound && !gameOver){
         h+='<div class="fFinal" style="margin-top:6px;padding:7px 12px;background:linear-gradient(180deg,rgba(255,180,90,0.22),rgba(200,130,60,0.18));border:1.5px solid #ffb45a;border-radius:8px;text-align:center;font-family:Georgia,serif;font-size:0.72rem;color:#fff0d6;letter-spacing:0.05em;">⚠ FINAL ROUND · P'+(finalStart+1)+' hit '+target+'</div>';

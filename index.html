@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.28.11';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.28.12';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -67330,7 +67330,7 @@ window._LW_diceSelect=function(k){
 window._LW_tumble=function(elements,finalValues,opts){
   opts=opts||{};
   var duration=opts.duration||720;
-  var faceUrl=opts.face||function(n){return 'assets/dice/d'+n+'.png';};
+  var faceUrl=opts.face||function(n){return (window.LW_DICE&&window.LW_DICE.face)?window.LW_DICE.face(n):'assets/dice/d'+n+'.png';};
   var start=Date.now();
   function setFace(i,val){
     var el=elements[i];if(!el)return;
@@ -67497,52 +67497,35 @@ function GF(a){var dice=[0,0,0,0,0,0],kept=new Array(6).fill(false),turn=0,rolli
     h+='<button class="gb" onclick="_FN()" title="New game" style="min-height:44px;padding:10px 12px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">↻</button>';
     h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="min-height:44px;padding:10px 12px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">🎲 Style</button>';
     h+='</div></div>';
-    // Roll area — only dice NOT yet kept
+    // Single stable dice grid (Stephen 2026-06-28): all 6 dice ALWAYS occupy
+    // fixed slots. Held dice get a glowing box + lift IN PLACE — no separate,
+    // smaller tray, so holding a die never reflows/resizes the layout.
     h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.45) 100%);border:1px solid rgba(0,0,0,0.55);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.55);min-height:120px;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">Roll Area</div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;min-height:14px;">';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-transform:uppercase;">'+(turn>0?'Kept dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
+    if(turn>0)h+='<div style="font-family:Georgia,serif;font-size:0.68rem;color:rgba(232,220,200,0.7);flex-shrink:0;">Locked: <strong style="color:#ffdc70;">'+turn+'</strong></div>';
+    h+='</div>';
     h+='<div style="display:flex;gap:clamp(6px,2vw,10px);justify-content:center;flex-wrap:wrap;">';
-    var anyInRoll=false;
     for(var i=0;i<6;i++){
-      if(kept[i])continue;
-      anyInRoll=true;
+      var held=kept[i];
       var roll=justRolled[i];
       var stagger=roll?'animation-delay:'+(i*60)+'ms;':'';
-      h+='<div onclick="_FHold('+i+')" class="fDie'+(roll?' rolling':'')+'" data-i="'+i+'" style="width:clamp(62px,17vw,88px);height:clamp(62px,17vw,88px);display:flex;align-items:center;justify-content:center;border-radius:clamp(8px,2.5vw,12px);cursor:'+(dice[i]?'pointer':'default')+';'+stagger+'">';
+      var heldBox=held?'box-shadow:0 0 0 3px #ffb45a,0 0 14px rgba(255,180,90,0.55),inset 0 0 12px rgba(255,180,90,0.18);background:rgba(255,180,90,0.10);':'';
+      h+='<div onclick="_FHold('+i+')" class="fDie'+(roll?' rolling':'')+(held?' held':'')+'" data-i="'+i+'" style="width:clamp(62px,17vw,88px);height:clamp(62px,17vw,88px);display:flex;align-items:center;justify-content:center;border-radius:clamp(8px,2.5vw,12px);cursor:'+(dice[i]?'pointer':'default')+';'+heldBox+stagger+'">';
       if(dice[i])h+=seedDie(dice[i]);
-      else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">·</span>';
+      else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">\u00b7</span>';
       h+='</div>';
     }
-    if(!anyInRoll)h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.5);align-self:center;padding:24px;">All six kept, roll for 🔥 hot dice</div>';
     h+='</div></div>';
-    // Kept tray
-    var anyHeld=false;for(var hi=0;hi<6;hi++)if(kept[hi]){anyHeld=true;break;}
-    if(anyHeld||turn>0){
-      h+='<div style="background:linear-gradient(180deg,rgba(220,160,90,0.18),rgba(160,110,50,0.25));border:1px solid rgba(255,180,120,0.35);border-radius:8px;padding:8px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,160,0.1),0 2px 4px rgba(0,0,0,0.4);">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:#ffb45a;text-transform:uppercase;">Kept · '+(anyHeld?'tap to release':'locked points')+'</div>';
-      if(turn>0)h+='<div style="font-family:Georgia,serif;font-size:0.68rem;color:rgba(232,220,200,0.7);">Locked: <strong style="color:#ffdc70;">'+turn+'</strong></div>';
-      h+='</div>';
-      h+='<div style="display:flex;gap:8px;justify-content:center;min-height:52px;align-items:center;flex-wrap:wrap;">';
-      for(var hj=0;hj<6;hj++){
-        if(!kept[hj])continue;
-        h+='<div onclick="_FHold('+hj+')" class="fDie held" style="width:clamp(42px,12vw,56px);height:clamp(42px,12vw,56px);display:flex;align-items:center;justify-content:center;border-radius:clamp(6px,2vw,10px);cursor:pointer;">';
-        h+=seedDie(dice[hj]);
-        h+='</div>';
+    var parts=scoreBreakdown();
+    h+='<div style="min-height:30px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;margin-bottom:8px;">';
+    if(parts.length){
+      for(var bp=0;bp<parts.length;bp++){
+        h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#f5ebd0;background:rgba(0,0,0,0.35);border:1px solid rgba(255,180,120,0.25);border-radius:10px;padding:2px 8px;">'+parts[bp].label+' <strong style="color:#ffdc70;">+'+parts[bp].pts+'</strong></span>';
       }
-      if(!anyHeld)h+='<span style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:rgba(245,235,208,0.5);">none yet</span>';
-      h+='</div>';
-      // Breakdown chips
-      var parts=scoreBreakdown();
-      if(parts.length){
-        h+='<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,180,120,0.18);">';
-        for(var bp=0;bp<parts.length;bp++){
-          h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#f5ebd0;background:rgba(0,0,0,0.35);border:1px solid rgba(255,180,120,0.25);border-radius:10px;padding:2px 8px;">'+parts[bp].label+' <strong style="color:#ffdc70;">+'+parts[bp].pts+'</strong></span>';
-        }
-        h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#fff0d6;background:linear-gradient(180deg,rgba(255,180,90,0.25),rgba(200,130,60,0.25));border:1px solid #ffb45a;border-radius:10px;padding:2px 10px;font-weight:700;">Turn '+liveTurn()+'</span>';
-        h+='</div>';
-      }
-      h+='</div>';
+      h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#fff0d6;background:linear-gradient(180deg,rgba(255,180,90,0.25),rgba(200,130,60,0.25));border:1px solid #ffb45a;border-radius:10px;padding:2px 10px;font-weight:700;">Turn '+liveTurn()+'</span>';
     }
+    h+='</div>';
     // Final round banner
     if(finalRound && !gameOver){
       h+='<div class="fFinal" style="margin-top:6px;padding:7px 12px;background:linear-gradient(180deg,rgba(255,180,90,0.22),rgba(200,130,60,0.18));border:1.5px solid #ffb45a;border-radius:8px;text-align:center;font-family:Georgia,serif;font-size:0.72rem;color:#fff0d6;letter-spacing:0.05em;">⚠ FINAL ROUND · P'+(finalStart+1)+' hit '+target+'</div>';
@@ -67808,42 +67791,23 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:10px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;font-family:Georgia,serif;">🎲 Style</button>';
     h+='</div>';
     h+='</div>';
-    // Roll area — dice that are NOT held. Felted pocket inset.
+    // Single stable dice grid (Stephen 2026-06-28): all 5 dice ALWAYS occupy
+    // fixed slots. Held dice glow + lift IN PLACE instead of moving to a
+    // separate smaller tray, so holding never reflows/resizes the layout.
     h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border:1px solid rgba(0,0,0,0.5);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.5);min-height:120px;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">Roll Area</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">'+(rolls>0?'Held dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
     h+='<div style="display:flex;gap:clamp(6px,2vw,12px);justify-content:center;flex-wrap:wrap;">';
-    var anyRolling=false, anyInRoll=false;
     for(var i=0;i<5;i++){
-      if(kept[i])continue;
-      anyInRoll=true;
+      var held=kept[i];
       var rolling=justRolled[i];
-      if(rolling)anyRolling=true;
       var stagger = rolling ? ('animation-delay:'+(i*60)+'ms;') : '';
-      h+='<div onclick="_YHold('+i+')" class="yDie'+(rolling?' rolling':'')+'" data-i="'+i+'" style="width:clamp(78px,22vw,108px);height:clamp(78px,22vw,108px);display:flex;align-items:center;justify-content:center;border-radius:clamp(10px,3vw,14px);cursor:'+(dice[i]?'pointer':'default')+';'+stagger+'">';
+      var heldBox=held?'box-shadow:0 0 0 3px #ffdc70,0 0 14px rgba(255,200,90,0.5),inset 0 0 12px rgba(255,200,90,0.18);background:rgba(255,200,90,0.10);':'';
+      h+='<div onclick="_YHold('+i+')" class="yDie'+(rolling?' rolling':'')+(held?' held':'')+'" data-i="'+i+'" style="width:clamp(78px,22vw,108px);height:clamp(78px,22vw,108px);display:flex;align-items:center;justify-content:center;border-radius:clamp(10px,3vw,14px);cursor:'+(dice[i]?'pointer':'default')+';'+heldBox+stagger+'">';
       if(dice[i])h+=seedDie(dice[i]);
-      else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">·</span>';
+      else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">\u00b7</span>';
       h+='</div>';
     }
-    if(!anyInRoll){
-      h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.45);align-self:center;padding:30px;">All dice held, score it</div>';
-    }
     h+='</div></div>';
-    // Held tray — dice the player is keeping. Smaller, slightly tinted.
-    var anyHeld=false;
-    for(var hi=0;hi<5;hi++)if(kept[hi]){anyHeld=true;break;}
-    if(anyHeld||rolls>0){
-      h+='<div style="background:linear-gradient(180deg,rgba(180,140,70,0.18),rgba(120,90,40,0.25));border:1px solid rgba(220,180,120,0.3);border-radius:8px;padding:8px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.1),0 2px 4px rgba(0,0,0,0.4);">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:#ffdc70;text-align:center;text-transform:uppercase;margin-bottom:6px;">Held, '+(anyHeld?'tap to release':'tap a die above to keep')+'</div>';
-      h+='<div style="display:flex;gap:8px;justify-content:center;min-height:54px;align-items:center;">';
-      for(var hj=0;hj<5;hj++){
-        if(!kept[hj])continue;
-        h+='<div onclick="_YHold('+hj+')" class="yDie held" style="width:clamp(48px,14vw,64px);height:clamp(48px,14vw,64px);display:flex;align-items:center;justify-content:center;border-radius:clamp(6px,2vw,10px);cursor:pointer;">';
-        h+=seedDie(dice[hj]);
-        h+='</div>';
-      }
-      if(!anyHeld)h+='<span style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:rgba(245,235,208,0.5);">none</span>';
-      h+='</div></div>';
-    }
     // Scorecard
     h+='<div id="Ysc"></div>';
     // ── OVERLAYS ────────────────────────────────────────────────
@@ -67883,7 +67847,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     rnS();
   }
   // Click handler exposed via window for inline onclick.
-  window._YHold=function(x){if(rolls===0||rolls>=3)return;if(!dice[x])return;_play('tap');kept[x]=!kept[x];rn();};
+  window._YHold=function(x){if(yRolling||rolls===0||rolls>=3)return;if(!dice[x])return;_play('tap');kept[x]=!kept[x];rn();};
   function rnS(){
     // Best-play detection — among unfilled cats with rolls>0, find highest score.
     var bestIdx=-1, bestVal=0;
@@ -67978,7 +67942,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     }});
   };
   window._YS=function(cat){
-    if(!rolls||scores[cat]!==undefined)return;
+    if(yRolling||!rolls||scores[cat]!==undefined)return;
     _play('snap');var v=cs(cat);scores[cat]=v;
     // YAHTZEE moment — five-of-a-kind into the Bloom slot for the full 50.
     var isYahtzee = (cat===11 && v===50);
@@ -68026,7 +67990,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
     }else if(turn%3===0)_e('milestone');
     rn();
   }
-  window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};
+  window._YN=function(){dice=[0,0,0,0,0];kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;yRolling=false;justRolled=new Array(5).fill(false);document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};
   // Re-render on dice-style change. Self-unregisters once the game is gone.
   var _yStyleListener=function(){
     if(!document.body.contains(a)){window.removeEventListener('lw-dice-style-change',_yStyleListener);return;}
@@ -68045,6 +68009,7 @@ function GY(a){var dice=[0,0,0,0,0],kept=new Array(5).fill(false),rolls=0,turn=1
 // double, so the optimal play leans front-heavy early.
 function GDS(a){
   var rows,sel,d1,d2,phase,rolls,gameOver,_bestScore;
+  var rollGen=0; // bumped on every roll AND New Game — invalidates a stale tumble onDone
   try{_bestScore=parseInt(localStorage.getItem('lw_ds_best')||'999',10);}catch(e){_bestScore=999;}
   ms(a,'Rolls: <strong id="DSr">0</strong> · Open score: <strong id="DSo">135</strong> · Best: <strong id="DSbest">'+(_bestScore>=999?'—':_bestScore)+'</strong>');mm(a);
   // Directions
@@ -68145,11 +68110,13 @@ function GDS(a){
     rolls++;sel=[];
     // New 'rolling' phase locks taps and ROLL while the tumble plays out.
     phase='rolling';
+    var myRoll=++rollGen; // token: a New Game (or another roll) mid-tumble invalidates this onDone
     rn();
     wrap.classList.add('rolling');
     var dieEls=dz.querySelectorAll('.ds-die');
     var vals=[d1];if(d2)vals.push(d2);
     window._LW_tumble(dieEls,vals,{duration:760,face:function(n){return window.LW_DICE.face(n);},onDone:function(){
+      if(myRoll!==rollGen)return; // stale tumble (board reset/re-rolled) — ignore
       wrap.classList.remove('rolling');
       phase='select';
       var target=d1+d2;
@@ -68185,6 +68152,7 @@ function GDS(a){
     phase='roll';rn();
   };
   window._DSN=function(){
+    rollGen++; // invalidate any in-flight tumble onDone so it can't clobber the fresh board
     rows=[new Array(9).fill(false),new Array(9).fill(false)];
     sel=[];d1=0;d2=0;phase='roll';rolls=0;gameOver=false;
     sm('Roll and shut. Either row, any combo. Front counts double.');rn();

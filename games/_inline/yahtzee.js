@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: yahtzee
  *
  * COPY of the inline GY mount function from index.html
- * lines 66601-66919.
+ * lines 67703-68002.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -110,42 +110,23 @@
       h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:10px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;font-family:Georgia,serif;">🎲 Style</button>';
       h+='</div>';
       h+='</div>';
-      // Roll area — dice that are NOT held. Felted pocket inset.
+      // Single stable dice grid (Stephen 2026-06-28): all 5 dice ALWAYS occupy
+      // fixed slots. Held dice glow + lift IN PLACE instead of moving to a
+      // separate smaller tray, so holding never reflows/resizes the layout.
       h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.4) 100%);border:1px solid rgba(0,0,0,0.5);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.5);min-height:120px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">Roll Area</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-align:center;text-transform:uppercase;margin-bottom:6px;">'+(rolls>0?'Held dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
       h+='<div style="display:flex;gap:clamp(6px,2vw,12px);justify-content:center;flex-wrap:wrap;">';
-      var anyRolling=false, anyInRoll=false;
       for(var i=0;i<5;i++){
-        if(kept[i])continue;
-        anyInRoll=true;
+        var held=kept[i];
         var rolling=justRolled[i];
-        if(rolling)anyRolling=true;
         var stagger = rolling ? ('animation-delay:'+(i*60)+'ms;') : '';
-        h+='<div onclick="_YHold('+i+')" class="yDie'+(rolling?' rolling':'')+'" data-i="'+i+'" style="width:clamp(78px,22vw,108px);height:clamp(78px,22vw,108px);display:flex;align-items:center;justify-content:center;border-radius:clamp(10px,3vw,14px);cursor:'+(dice[i]?'pointer':'default')+';'+stagger+'">';
+        var heldBox=held?'box-shadow:0 0 0 3px #ffdc70,0 0 14px rgba(255,200,90,0.5),inset 0 0 12px rgba(255,200,90,0.18);background:rgba(255,200,90,0.10);':'';
+        h+='<div onclick="_YHold('+i+')" class="yDie'+(rolling?' rolling':'')+(held?' held':'')+'" data-i="'+i+'" style="width:clamp(78px,22vw,108px);height:clamp(78px,22vw,108px);display:flex;align-items:center;justify-content:center;border-radius:clamp(10px,3vw,14px);cursor:'+(dice[i]?'pointer':'default')+';'+heldBox+stagger+'">';
         if(dice[i])h+=seedDie(dice[i]);
-        else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">·</span>';
+        else h+='<span style="font-size:2rem;color:rgba(232,220,200,0.25);">\u00b7</span>';
         h+='</div>';
       }
-      if(!anyInRoll){
-        h+='<div style="font-family:Georgia,serif;font-style:italic;color:rgba(232,220,200,0.45);align-self:center;padding:30px;">All dice held, score it</div>';
-      }
       h+='</div></div>';
-      // Held tray — dice the player is keeping. Smaller, slightly tinted.
-      var anyHeld=false;
-      for(var hi=0;hi<5;hi++)if(kept[hi]){anyHeld=true;break;}
-      if(anyHeld||rolls>0){
-        h+='<div style="background:linear-gradient(180deg,rgba(180,140,70,0.18),rgba(120,90,40,0.25));border:1px solid rgba(220,180,120,0.3);border-radius:8px;padding:8px;margin-bottom:8px;box-shadow:inset 0 1px 0 rgba(255,220,140,0.1),0 2px 4px rgba(0,0,0,0.4);">';
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:#ffdc70;text-align:center;text-transform:uppercase;margin-bottom:6px;">Held, '+(anyHeld?'tap to release':'tap a die above to keep')+'</div>';
-        h+='<div style="display:flex;gap:8px;justify-content:center;min-height:54px;align-items:center;">';
-        for(var hj=0;hj<5;hj++){
-          if(!kept[hj])continue;
-          h+='<div onclick="_YHold('+hj+')" class="yDie held" style="width:clamp(48px,14vw,64px);height:clamp(48px,14vw,64px);display:flex;align-items:center;justify-content:center;border-radius:clamp(6px,2vw,10px);cursor:pointer;">';
-          h+=seedDie(dice[hj]);
-          h+='</div>';
-        }
-        if(!anyHeld)h+='<span style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:rgba(245,235,208,0.5);">none</span>';
-        h+='</div></div>';
-      }
       // Scorecard
       h+='<div id="Ysc"></div>';
       // ── OVERLAYS ────────────────────────────────────────────────
@@ -185,7 +166,7 @@
       rnS();
     }
     // Click handler exposed via window for inline onclick.
-    window._YHold=function(x){if(rolls===0||rolls>=3)return;if(!dice[x])return;_play('tap');kept[x]=!kept[x];rn();};
+    window._YHold=function(x){if(yRolling||rolls===0||rolls>=3)return;if(!dice[x])return;_play('tap');kept[x]=!kept[x];rn();};
     function rnS(){
       // Best-play detection — among unfilled cats with rolls>0, find highest score.
       var bestIdx=-1, bestVal=0;
@@ -280,7 +261,7 @@
       }});
     };
     window._YS=function(cat){
-      if(!rolls||scores[cat]!==undefined)return;
+      if(yRolling||!rolls||scores[cat]!==undefined)return;
       _play('snap');var v=cs(cat);scores[cat]=v;
       // YAHTZEE moment — five-of-a-kind into the Bloom slot for the full 50.
       var isYahtzee = (cat===11 && v===50);
@@ -328,7 +309,7 @@
       }else if(turn%3===0)_e('milestone');
       rn();
     }
-    window._YN=function(){dice=[];for(var _i=0;_i<5;_i++)dice.push(Math.floor(Math.random()*6)+1);kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};
+    window._YN=function(){dice=[0,0,0,0,0];kept=new Array(5).fill(false);rolls=0;turn=1;scores={};overlay=null;yRolling=false;justRolled=new Array(5).fill(false);document.getElementById('Yt').textContent='1';document.getElementById('Yr').textContent='0';sm('Tap ROLL to begin!');rn()};
     // Re-render on dice-style change. Self-unregisters once the game is gone.
     var _yStyleListener=function(){
       if(!document.body.contains(a)){window.removeEventListener('lw-dice-style-change',_yStyleListener);return;}

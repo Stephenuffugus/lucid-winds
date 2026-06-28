@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: doubleshutter
  *
  * COPY of the inline GDS mount function from index.html
- * lines 66927-67081.
+ * lines 68010-68168.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -21,6 +21,7 @@
 
   function GDS(a){
     var rows,sel,d1,d2,phase,rolls,gameOver,_bestScore;
+    var rollGen=0; // bumped on every roll AND New Game — invalidates a stale tumble onDone
     try{_bestScore=parseInt(localStorage.getItem('lw_ds_best')||'999',10);}catch(e){_bestScore=999;}
     ms(a,'Rolls: <strong id="DSr">0</strong> · Open score: <strong id="DSo">135</strong> · Best: <strong id="DSbest">'+(_bestScore>=999?'—':_bestScore)+'</strong>');mm(a);
     // Directions
@@ -121,11 +122,13 @@
       rolls++;sel=[];
       // New 'rolling' phase locks taps and ROLL while the tumble plays out.
       phase='rolling';
+      var myRoll=++rollGen; // token: a New Game (or another roll) mid-tumble invalidates this onDone
       rn();
       wrap.classList.add('rolling');
       var dieEls=dz.querySelectorAll('.ds-die');
       var vals=[d1];if(d2)vals.push(d2);
       window._LW_tumble(dieEls,vals,{duration:760,face:function(n){return window.LW_DICE.face(n);},onDone:function(){
+        if(myRoll!==rollGen)return; // stale tumble (board reset/re-rolled) — ignore
         wrap.classList.remove('rolling');
         phase='select';
         var target=d1+d2;
@@ -161,6 +164,7 @@
       phase='roll';rn();
     };
     window._DSN=function(){
+      rollGen++; // invalidate any in-flight tumble onDone so it can't clobber the fresh board
       rows=[new Array(9).fill(false),new Array(9).fill(false)];
       sel=[];d1=0;d2=0;phase='roll';rolls=0;gameOver=false;
       sm('Roll and shut. Either row, any combo. Front counts double.');rn();
