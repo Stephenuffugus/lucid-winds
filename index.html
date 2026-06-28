@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.28.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.28.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -49730,6 +49730,7 @@ document.addEventListener('keydown', function(e) {
       massWaterLog:       localStorage.getItem('lw_mass_water_log'),
       pollinations:       parseInt(localStorage.getItem('lw_pollinations')||'0',10)||0,
       mulchesApplied:     parseInt(localStorage.getItem('lw_mulches_applied')||'0',10)||0,
+      weatherTokens:      parseInt(localStorage.getItem('lw_weather_tokens')||'0',10)||0,
       lastSync: new Date().toISOString(),
       // Audit security-deep L4: was hardcoded 'set-40' from set-40 era.
       // Cloud forensics need to know which client wrote each vault doc.
@@ -49899,6 +49900,14 @@ document.addEventListener('keydown', function(e) {
     // Pi-paid item pouch cap mirror — same pattern.
     if (typeof data.lw_pouch_cap === 'number' && data.lw_pouch_cap >= 25 && data.lw_pouch_cap <= 40) {
       try { localStorage.setItem('lw_pouch_cap', String(data.lw_pouch_cap)); } catch(e){}
+    }
+    // Weather tokens (mystery-box free-cast tokens). MAX-merge so a stale
+    // cloud read can never erase tokens the local copy already earned. (2026-06-28)
+    if (typeof data.weatherTokens === 'number' && data.weatherTokens >= 0) {
+      try {
+        var _lWT = parseInt(localStorage.getItem('lw_weather_tokens')||'0',10)||0;
+        localStorage.setItem('lw_weather_tokens', String(Math.max(_lWT, data.weatherTokens)));
+      } catch(e){}
     }
     // 2026-06-16 Gate A/A4: Pi-paid Hut early-open map (server-written by
     // piComplete to vaults/{uid}.lw_hut_early_opens). Was never restored, so a
@@ -57017,7 +57026,6 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   var attRoll = opts.attackerTorch ? _dKeepBest(3,6,2)
               : attHasHumming       ? _dRange(2,4,9)
               : attHasSnail         ? _dFloor(2,6,3)
-              : opts.defenderBramble? _d(1,6)
               :                       _d(2,6);
   var defRoll = defHasHumming ? _dRange(2,4,9)
               : defHasSnail   ? _dFloor(2,6,3)
@@ -57025,6 +57033,16 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
   var attComp=_tempBonus(attackerPlant,'attacker');
   // Defender companion bonus zeroed by attacker's Dust Storm.
   var defComp = opts.attackerDustStorm ? 0 : _tempBonus(defenderPlant,'defender');
+  // Stephen 2026-06-28 item buffs:
+  //  • Dust Storm / Pollen Storm used to ONLY zero the defender's companion
+  //    bonus — which is usually already 0, so the item often did nothing.
+  //    They now also add a guaranteed +3 to the attacker total (a real,
+  //    always-felt swing). Pollen Storm applies this on each of its charges.
+  //  • Bramble Thicket was a 1d6 attacker roll that Torch/Hummingbird
+  //    bypassed entirely (so the best-equipped attackers ignored it). It is
+  //    now an UNBYPASSABLE flat +3 to the defender total instead.
+  var attDust = opts.attackerDustStorm ? 3 : 0;
+  var defBramble = opts.defenderBramble ? 3 : 0;
   var attWeather=0;
   try{if(window.isWeatherSun&&window.isWeatherSun())attWeather=3;}catch(e){}
   // Defender: Moonwake → +3 flat EA bonus on this contest.
@@ -57067,8 +57085,8 @@ function _rollTakeover(attackerPlant,defenderPlant,opts){
     if (window._LW_plantHasKeyword && defenderPlant && window._LW_plantHasKeyword(defenderPlant.hash, 'rooted')) defRooted = 2;
     if (window._LW_plantHasKeyword && attackerPlant && window._LW_plantHasKeyword(attackerPlant.hash, 'swift')) attSwift = 2;
   } catch(e){}
-  var attTotal=attEA+attRoll+attComp+attWeather+attHeron+attSwift;
-  var defTotal=defEA+defRoll+defComp+defMoonwake+defHerd+defSilk+defRooted;
+  var attTotal=attEA+attRoll+attComp+attWeather+attHeron+attSwift+attDust;
+  var defTotal=defEA+defRoll+defComp+defMoonwake+defHerd+defSilk+defRooted+defBramble;
   return{
     attEA:attEA,defEA:defEA,
     attRoll:attRoll,defRoll:defRoll,
@@ -76983,10 +77001,10 @@ function _resolveSlotResult(results) {
 var WEATHER_KEY = 'lw_weather_active';
 // Stephen 2026-05-01 ruling on Almanac pricing \u2014 each weather has its own
 // currency profile that matches its lore + power level:
-//   Sun Flare:  pure SUNBEAMS \u2014 sunlight is sun, and a +3 dice bonus on
-//               wild uproots is strong for anyone trying to dominate a
-//               wild zone. Sunbeams are scarce (only earned via games),
-//               so this is a meaningful spend.
+//   Sun Flare:  DEW (repriced 2026-06-28 from 30 Sunbeams). A +3 dice
+//               bonus on wild uproots is a PvP-only perk; charging a whole
+//               plant's worth of Sunbeams for it was a terrible trade, so
+//               it now costs a modest 60 Dew and stays in the Dew economy.
 //   Dawn Mist:  small SUNBEAMS + lots of DEW \u2014 mist is mostly water
 //               with a kiss of sun. The 2\u00d7 Dew effect pays itself back
 //               at heavy wild-plant counts, so it must cost real Sunbeams
@@ -77002,7 +77020,10 @@ var WEATHER_KEY = 'lw_weather_active';
 var WEATHER_TYPES = {
   sun: {
     id: 'sun', name: 'Sun Flare', icon: '\u2600\ufe0f',
-    cost: 0, costSunbeams: 30, durationMs: 24 * 3600000,
+    // Stephen 2026-06-28: was 30 Sunbeams (= a whole plant) for a PvP-only
+    // +3 \u2014 a terrible trade. Repriced to a modest Dew cost so it's no longer
+    // a dud; it stays in the Dew economy like the other casts.
+    cost: 60, costSunbeams: 0, durationMs: 24 * 3600000,
     desc: '+3 dice bonus on wild uproots for 24h',
     log: 'The grove glows golden. Your plants are emboldened.'
   },
@@ -77132,6 +77153,12 @@ window._castWeather = function(typeId) {
   if (!t) return;
   var dewCost = t.cost || 0;
   var sbCost = t.costSunbeams || 0;
+  // Free-cast token (won from the mystery box). If the player holds one, this
+  // cast is free — we consume a token instead of currency. (Stephen 2026-06-28)
+  var _wTok = 0;
+  try { _wTok = parseInt(localStorage.getItem('lw_weather_tokens') || '0', 10) || 0; } catch(e) {}
+  var _usingToken = _wTok > 0;
+  if (_usingToken) { dewCost = 0; sbCost = 0; }
   var dewBal = typeof window.getTotalDew === 'function' ? window.getTotalDew() : 0;
   var sbBal = typeof window.getTotalHashes === 'function' ? window.getTotalHashes() : 0;
   // Pre-flight balance check on BOTH currencies — never half-spend.
@@ -77156,6 +77183,11 @@ window._castWeather = function(typeId) {
       if (window._toast) _toast('Not enough Dew. Sunbeams refunded.');
       return;
     }
+  }
+  // Consume the free-cast token now that the cast is committed.
+  if (_usingToken) {
+    try { localStorage.setItem('lw_weather_tokens', String(_wTok - 1)); } catch(e) {}
+    if (window._toast) _toast('🌦️ Used a free Weather Token (' + (_wTok - 1) + ' left).');
   }
   // Apply effect
   if (t.id === 'rain') {
@@ -77231,16 +77263,10 @@ setInterval(_tickWeather, 60000);
 </script>
 
 <!-- ═══ MYSTERY BOX — Dew sink with weighted loot reveal ═══
-     25 Dew per pull. Loot table tuned for 80% RTP (meaningful sink
-     but meaningful wins). Client-side only, no Firestore.
-     Loot pool (matches MYSTERY_LOOT array below):
-       30% Seed Shell  — +2 Fertilizer
-       25% Sun Spark   — +10 Sunbeams
-       20% Sun Drop    — +20 Sunbeams
-       15% Dew Pearl   — +15 Dew (consolation)
-        7% Moon Shard  — +40 Sunbeams + 1 Fertilizer
-        2% Starstone   — +120 Sunbeams + 3 Fertilizer
-        1% JACKPOT     — +300 Sunbeams + 5 Fertilizer + 30 Dew -->
+     25 Dew per pull. Dew/Fertilizer economy + curated items + a free
+     weather-cast token. NO Sunbeams (removed 2026-06-28 so the box can't
+     bypass earning plants by playing). Client-side only, no Firestore.
+     See the MYSTERY_LOOT array below for the live table + weights. -->
 <script>
 (function(){
 'use strict';
@@ -77252,15 +77278,23 @@ var MYSTERY_COST = 25;
 // sink that mostly returns Fertilizer with a chance at a Dew windfall. (DNA
 // fragments were considered but are never spendable in-game, so they would be
 // a dead reward -- left out on purpose.) Weights sum to 1.00.
+// Stephen 2026-06-28: box now also drops USEFUL ITEMS + a free WEATHER TOKEN
+// (audit: the foraging/remote items are genuinely good but nobody finds them;
+// the box is a great delivery vehicle). item:'common'|'rare'|'premium' grants a
+// random item from a curated GOOD pool (NOT the PvP-dead defense items).
+// weatherToken grants one free weather cast (surfaces the Almanac). Still 100%
+// Dew economy — no Sunbeams, no plants. Weights sum to 1.00.
 var MYSTERY_LOOT = [
-  { weight: 0.27, icon: '\ud83c\udf3e', iconImg: 'assets/fx/bloom-sprout.png',     name: 'Seed Shell',     desc: '+3 Fertilizer',           fert:  3, rare: false },
-  { weight: 0.24, icon: '\ud83d\udca7', iconImg: 'assets/fx/drop-blue.png',         name: 'Dew Pearl',      desc: '+20 Dew',                 dew:  20, rare: false },
-  { weight: 0.20, icon: '\ud83c\udf42', iconImg: 'assets/fx/leaf-gold.png',         name: 'Compost Bundle', desc: '+5 Fertilizer',           fert:  5, rare: false },
-  { weight: 0.14, icon: '\u2728',       iconImg: 'assets/fx/drop-gold.png',         name: 'Dew Cluster',    desc: '+35 Dew',                 dew:  35, rare: false },
-  { weight: 0.08, icon: '\ud83c\udf19', iconImg: 'assets/fx/moon-gold.png',         name: 'Moon Shard',     desc: '+50 Dew +3 Fertilizer',   dew:  50, fert: 3, rare: true },
-  { weight: 0.04, icon: '\ud83c\udf20', iconImg: 'assets/fx/comet-gold.png',        name: 'Starstone',      desc: '+90 Dew +6 Fertilizer',   dew:  90, fert: 6, rare: true },
-  { weight: 0.02, icon: '\ud83c\udf3b', iconImg: 'assets/fx/bloom-sprout.png',      name: 'Bloom Comet',    desc: '+40 Dew +12 Fertilizer',  dew:  40, fert: 12, rare: true },
-  { weight: 0.01, icon: '\ud83d\udc8e', iconImg: 'assets/fx/sparkle-purple.png',    name: 'JACKPOT!',       desc: '+200 Dew +12 Fertilizer', dew: 200, fert: 12, rare: true, jackpot: true }
+  { weight: 0.24, icon: '\ud83c\udf3e', iconImg: 'assets/fx/bloom-sprout.png',     name: 'Seed Shell',     desc: '+3 Fertilizer',           fert:  3, rare: false },
+  { weight: 0.20, icon: '\ud83d\udca7', iconImg: 'assets/fx/drop-blue.png',         name: 'Dew Pearl',      desc: '+20 Dew',                 dew:  20, rare: false },
+  { weight: 0.15, icon: '\ud83c\udf42', iconImg: 'assets/fx/leaf-gold.png',         name: 'Compost Bundle', desc: '+5 Fertilizer',           fert:  5, rare: false },
+  { weight: 0.11, icon: '\u2728',       iconImg: 'assets/fx/drop-gold.png',         name: 'Dew Cluster',    desc: '+35 Dew',                 dew:  35, rare: false },
+  { weight: 0.10, icon: '\ud83c\udf92', iconImg: '',                                name: 'Field Kit',      desc: 'A useful field item — check your pouch!', item: 'common', rare: false },
+  { weight: 0.08, icon: '\ud83c\udf26\ufe0f', iconImg: '',                          name: 'Weather Token',  desc: 'One FREE weather cast — spend it in the Hut WEATHER tab.', weatherToken: 1, rare: false },
+  { weight: 0.05, icon: '\ud83c\udf19', iconImg: 'assets/fx/moon-gold.png',         name: 'Moon Shard',     desc: '+50 Dew +3 Fertilizer',   dew:  50, fert: 3, rare: true },
+  { weight: 0.03, icon: '\ud83d\udce6', iconImg: '',                                name: 'Rare Cache',     desc: 'A RARE field item — check your pouch!', item: 'rare', rare: true },
+  { weight: 0.03, icon: '\ud83c\udf20', iconImg: 'assets/fx/comet-gold.png',        name: 'Starstone',      desc: '+90 Dew +6 Fertilizer',   dew:  90, fert: 6, rare: true },
+  { weight: 0.01, icon: '\ud83d\udc8e', iconImg: 'assets/fx/sparkle-purple.png',    name: 'JACKPOT!',       desc: '+150 Dew +8 Fertilizer + a PREMIUM item!', dew: 150, fert: 8, item: 'premium', rare: true, jackpot: true }
 ];
 
 function _pickLoot() {
@@ -77408,6 +77442,42 @@ window._openMysteryBox = function() {
     }
     if (loot.sb && typeof window.earnHashes === 'function') window.earnHashes(loot.sb);
     if (loot.dew && typeof window.earnDew === 'function') window.earnDew(loot.dew, 'mystery_box');
+    // Stephen 2026-06-28: item drops. Pools are the genuinely-good self-serve
+    // items from the audit (foraging + remote) — NOT the PvP-dead defense
+    // ones. Grants via the same LW_ITEMS.add the shop uses (respects pouch cap).
+    if (loot.item) {
+      var _miPools = {
+        common:  ['foragersLens','compassShard','whisperVine','scryingStone'],
+        rare:    ['tetherMoss','ravenEye','lanternPath'],
+        premium: ['wanderersMap','divinersGlass']
+      };
+      var _miPool = _miPools[loot.item] || _miPools.common;
+      var _miKey = _miPool[Math.floor(Math.random() * _miPool.length)];
+      // {silent:true} so the pouch's own toast/full-modal doesn't stack on the
+      // reveal. add() returns false when the pouch is full — only promise the
+      // item (and refund a little Dew) if it actually landed. (review fix)
+      var _miOk = false;
+      try { if (window.LW_ITEMS && window.LW_ITEMS.add) _miOk = (window.LW_ITEMS.add(_miKey, 1, {silent:true}) !== false); } catch(e) {}
+      if (_miOk) {
+        var _miName = _miKey;
+        try { if (window.LW_ITEMS_CATALOG && window.LW_ITEMS_CATALOG[_miKey]) _miName = window.LW_ITEMS_CATALOG[_miKey].name; } catch(e) {}
+        loot._wonItemName = _miName;  // shown in the reveal below
+      } else {
+        // Pouch full — convert the won item to a Dew consolation so it's never
+        // a "won nothing" feel-bad.
+        var _miDew = (loot.item === 'premium') ? 60 : (loot.item === 'rare') ? 30 : 15;
+        if (typeof window.earnDew === 'function') window.earnDew(_miDew, 'mystery_box_pouchfull');
+        loot.dew = (loot.dew || 0) + _miDew;
+        loot._wonItemName = 'Pouch full → +' + _miDew + ' Dew instead';
+      }
+    }
+    // Free weather cast token — surfaces the Almanac/Weather system.
+    if (loot.weatherToken) {
+      try {
+        var _wtN = parseInt(localStorage.getItem('lw_weather_tokens') || '0', 10) || 0;
+        localStorage.setItem('lw_weather_tokens', String(_wtN + loot.weatherToken));
+      } catch(e) {}
+    }
     // Stash for the fly-to-counter animation when the player closes
     // the modal. Stephen 2026-05-02: "we need to add a little css so
     // when people get stuff from mystery boxes it shows them where its
@@ -77426,7 +77496,8 @@ window._openMysteryBox = function() {
     if (pEl) {
       pEl.innerHTML =
         '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;color:var(--cream);margin-bottom:4px;">'+loot.name+'</div>'+
-        '<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.06em;color:var(--gold);">'+loot.desc+'</div>';
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:1.15rem;letter-spacing:0.06em;color:var(--gold);">'+loot.desc+'</div>'+
+        (loot._wonItemName ? '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.06em;color:var(--sage);margin-top:3px;">→ '+loot._wonItemName+'</div>' : '');
       pEl.className = 'my-prize ' + (loot.jackpot ? 'rare' : loot.rare ? 'win' : '');
     }
     // Event log for rare+ only
@@ -90701,16 +90772,17 @@ window._lwClaimHerbarium = function(id){
     // effectively un-attackable for a week of active play). Mulch Ward is
     // now a single reactive defense.
     //
-    // 2026-04-29 EVE: ward gained a 24h expiry (was permanent-until-consumed).
-    // Pairs Mulch Ward (Rare, 24h reactive) with Bramble (Rare, 24h roll
-    // weakener) at the same time tier; Shellgourd (Epic) keeps the 48h
-    // zone-lock advantage. Stored value is now expiry timestamp, not count.
+    // 2026-06-28 (Stephen): the 24h expiry is RETIRED. Wild PvP attacks are
+    // rare, so a 24h ward almost always dried out unused \u2014 a wasted Rare
+    // item. Mulch Ward is now permanent-until-consumed again (it stays until
+    // it actually blocks an attack). Stored value is a far-future timestamp
+    // so all the existing timestamp-based checks keep working unchanged.
     var cur = p.wards[hash];
     if (cur && cur > Date.now()) {
       if (window._toast) window._toast('\ud83d\udee1\ufe0f This plant already has a Ward. Burns on next attack.');
       return;
     }
-    p.wards[hash] = Date.now() + 86400000; // 24h expiry
+    p.wards[hash] = Date.now() + 3650 * 86400000; // ~10y = effectively permanent until consumed
     _savePending(p);
   }
   function consumeWard(hash){
@@ -90760,12 +90832,8 @@ window._lwClaimHerbarium = function(id){
 
   // Scrying Stone — Phase 1 stub: toasts instruction. Real GPS-bound
   // hex picker lands with Phase 5 remote foraging UI.
-  function useScry(){
-    if (count('scryingStone') <= 0) { if(window._toast)window._toast('No Scrying Stone in your pouch.'); return false; }
-    if (window._toast) window._toast('\ud83d\udd2e Scrying Stone is ready. Tap a hex within 1km on the map to use. (Remote targeting UI lands next patch.)');
-    _closePanel();
-    return false;
-  }
+  // (2026-06-28 cleanup) removed the obsolete `useScry` stub — the panel
+  // handler map routes scryingStone -> useScryProper, which actually delivers.
   // Wanderer's Map — "The wind decides." Pick a random biome from the
   // catalog, run a forage panel over a synthetic zone key. Grade is
   // Rare+ since the item itself is Epic rarity; no point earning a
@@ -91241,7 +91309,7 @@ window._lwClaimHerbarium = function(id){
     useLens: useLens, useShard: useShard, useMoss: useMoss, useGlass: useGlass,
     useWard: useWard, useBramble: useBramble, useShellgourd: useShellgourd, useMoonwake: useMoonwake,
     useTorch: useTorch, useDustStorm: useDustStorm, usePollenStorm: usePollenStorm, useUproot: useUproot,
-    useScry: useScry, useScryProper: useScryProper, useRaven: useRaven, useArrow: useArrow, useVine: useVine, useLantern: useLantern,
+    useScryProper: useScryProper, useRaven: useRaven, useArrow: useArrow, useVine: useVine, useLantern: useLantern,
     useMap: useMap,
     _remoteDailyRemaining: _remoteDailyRemaining,
     _confirmWard: _confirmWard, _commitPick: null,
@@ -92202,7 +92270,7 @@ window.LW_GIFTS = (function(){
         // Tabs — sticky so user can switch sections without scrolling back
         '<div class="lwh-tabs">' +
           '<button class="lwh-tab active" data-tab="shop"    onclick="LW_HUT.switchTab(\'shop\')">SHOP</button>' +
-          '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> ALMANAC</button>' +
+          '<button class="lwh-tab"        data-tab="almanac" onclick="LW_HUT.switchTab(\'almanac\')"><span class="lwe lwe-sun"></span> WEATHER</button>' +
           '<button class="lwh-tab"        data-tab="slots"   onclick="LW_HUT.switchTab(\'slots\')">SLOTS</button>' +
           '<button class="lwh-tab"        data-tab="quests"  onclick="LW_HUT.switchTab(\'quests\')">TRADE</button>' +
           // Stephen 2026-05-03: Curiosities tab restored to the hut as a
@@ -92707,6 +92775,9 @@ window.LW_GIFTS = (function(){
     var sbBal = (window.getTotalHashes && window.getTotalHashes()) || 0;
     var html = '<div style="position:relative;width:100%;margin:0 0 0.6rem;border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.55);border:1px solid rgba(200,168,75,0.32);"><img src="assets/weather-book.png" alt="Weather Almanac" style="display:block;width:100%;height:auto;"></div>';
     html += '<div class="lwh-section-text">Summon weather across your grove.</div>';
+    // Free-cast token banner — shown in the ACTUAL cast UI (review fix). (2026-06-28)
+    var _haWTok = 0; try { _haWTok = parseInt(localStorage.getItem('lw_weather_tokens')||'0',10)||0; } catch(e){}
+    if (_haWTok > 0) html += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.72rem;letter-spacing:0.06em;color:var(--gold);background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:8px;padding:7px 10px;margin-bottom:0.6rem;text-align:center;">🌦️ '+_haWTok+' FREE weather token'+(_haWTok===1?'':'s')+' — your next cast is free.</div>';
     if (active && WT[active.type]){
       var aw = WT[active.type];
       var rem = active.endAt ? Math.max(0, Math.ceil((active.endAt - Date.now())/3600000)) + 'h remaining' : 'one-time effect';
@@ -92745,10 +92816,17 @@ window.LW_GIFTS = (function(){
     if (!t) { window._castWeather(id); setTimeout(render, 100); return; }
     var dewCost = t.cost || 0;
     var sbCost = t.costSunbeams || 0;
-    var costParts = [];
-    if (sbCost > 0) costParts.push(sbCost + ' Sunbeams');
-    if (dewCost > 0) costParts.push(dewCost + ' Dew');
-    var costStr = costParts.length ? costParts.join(' + ') : 'free';
+    // If the player holds a free-cast token, the confirm reflects FREE (review fix).
+    var _cwTok = 0; try { _cwTok = parseInt(localStorage.getItem('lw_weather_tokens')||'0',10)||0; } catch(e){}
+    var costStr;
+    if (_cwTok > 0) {
+      costStr = 'FREE 🌦️ (uses 1 Weather Token, ' + (_cwTok - 1) + ' left)';
+    } else {
+      var costParts = [];
+      if (sbCost > 0) costParts.push(sbCost + ' Sunbeams');
+      if (dewCost > 0) costParts.push(dewCost + ' Dew');
+      costStr = costParts.length ? costParts.join(' + ') : 'free';
+    }
     var bodyHtml =
       '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);line-height:1.5;margin-bottom:0.7rem;">'+(t.desc||'')+'</div>'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--gold);letter-spacing:0.1em;">COST: '+costStr+'</div>';
@@ -99624,7 +99702,12 @@ function _bosSecretsContent() {
       {key:'bloom',name:'Bloom Chorus',icon:'\ud83c\udfb6',col:'#E8A0BF'}
     ];
     h+='<div style="margin-bottom:1rem;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:rgba(91,175,220,0.95);letter-spacing:0.12em;margin-bottom:0.5rem;display:flex;align-items:center;gap:6px;"><img src="assets/weather/weather-sun.png" alt="" style="width:22px;height:22px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf26&apos;;"> WEATHER ALMANAC <span style="color:var(--muted);font-size:0.6rem;letter-spacing:0.06em;margin-left:6px;">'+_castTypes+' / 4 \u00b7 '+_totalCast+' total</span></div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:rgba(91,175,220,0.95);letter-spacing:0.12em;margin-bottom:0.5rem;display:flex;align-items:center;gap:6px;"><img src="assets/weather/weather-sun.png" alt="" style="width:22px;height:22px;object-fit:contain;" onerror="this.outerHTML=&apos;\ud83c\udf26&apos;;"> WEATHER <span style="color:var(--muted);font-size:0.6rem;letter-spacing:0.06em;margin-left:6px;">'+_castTypes+' / 4 \u00b7 '+_totalCast+' total</span></div>';
+    // Plain-language hint \u2014 Stephen 2026-06-28: players never knew what these
+    // do or that free tokens exist. Show both.
+    var _wTokN=0; try{_wTokN=parseInt(localStorage.getItem('lw_weather_tokens')||'0',10)||0;}catch(e){}
+    if (_wTokN>0) h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.06em;color:var(--gold);background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:8px;padding:6px 9px;margin-bottom:0.5rem;">\ud83c\udf26\ufe0f '+_wTokN+' FREE weather token'+(_wTokN===1?'':'s')+' \u2014 your next cast'+(_wTokN===1?' is':'s are')+' free.</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);line-height:1.6;margin-bottom:0.6rem;">Summon weather to help your <b style="color:rgba(91,175,220,0.95);">Wild</b> plants \u2014 extend their life, double their Dew, or win uproot contests. Effects last a set time.</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.55rem;">';
     for (var _wdi=0; _wdi<_wDefs.length; _wdi++) {
       var _wd = _wDefs[_wdi];
