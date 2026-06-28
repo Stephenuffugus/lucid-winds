@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.28.09';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.28.10';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -50907,6 +50907,7 @@ document.addEventListener('keydown', function(e) {
             // earn/reload even though the queue had been restored to
             // localStorage moments later.
             try{if(window._refreshHashState)window._refreshHashState();}catch(e){}
+            try{if(window._lwReconcileQueueToServer)window._lwReconcileQueueToServer();}catch(e){}
             try{if(window.updateDashboard)updateDashboard();}catch(e){}
           }).catch(function(_me){
             // Fail open — same exposure as before the gate existed.
@@ -50917,6 +50918,7 @@ document.addEventListener('keydown', function(e) {
           // been restored from the cloud. Without this, a cross-device
           // login sees a stale empty queue until the next earn.
           try{if(window._refreshHashState)window._refreshHashState();}catch(e){}
+          try{if(window._lwReconcileQueueToServer)window._lwReconcileQueueToServer();}catch(e){}
           // ── Claim pending rewards (harvest rewards from displaced plants) ──
           _claimPendingRewards(user.uid);
           // ── Claim anonymous satellite sunbeams (same-origin bucket) ──
@@ -63072,6 +63074,40 @@ window._refreshHashState=function(){
     if(buf.length===64){
       for(var bi=0;bi<32;bi++)_hashBuf[bi]=parseInt(buf.substr(bi*2,2),16)||0;
     }
+    if(typeof _updateSunbeamBadge==='function')_updateSunbeamBadge();
+    if(typeof _updateGameDew==='function')_updateGameDew();
+  }catch(e){}
+};
+// ═══ SUNBEAM LEDGER UNIFICATION — Stage 1 (2026-06-28, Stephen) ═══
+// The app's spendable balance derives from the QUEUE (_readyHashes + filled).
+// Every app earn ALSO mirrors to the server hashLedger (see the earnHashes
+// wrap), and portal/satellite earns land in that same server ledger via the
+// Sunbeam SDK. So the server hashLedger is the COMPLETE canonical balance, but
+// the app's queue misses earns that happened on the portal side. This pulls
+// the queue UP to the server balance (cached locally in sws_hash_ledger, which
+// is max-merged from the server on every vault load) using the SAME idempotent
+// max-logic the SDK already uses on the portal side: it ONLY adds ready hashes
+// to reach the server balance and NEVER reduces — so it cannot lose or
+// double-count sunbeams. Net effect: the app and the portal show the same
+// number for a signed-in player.
+window._lwReconcileQueueToServer=function(){
+  try{
+    var raw=window._secureGet?(window._secureGet('sws_hash_ledger')||localStorage.getItem('sws_hash_ledger')):localStorage.getItem('sws_hash_ledger');
+    if(!raw)return; var L=JSON.parse(raw); if(!L||typeof L!=='object')return;
+    var serverBalance=Math.max(0,(L.earned||0)-(L.spent||0));
+    try{var r=JSON.parse(localStorage.getItem('pw_readyHashes')||'[]');if(Array.isArray(r))_readyHashes=r;}catch(e){}
+    var hf=parseInt(localStorage.getItem('pw_hashFilled')||'0',10);if(!isNaN(hf))_hashFilled=hf;
+    var queueBalance=(_readyHashes.length*30)+_hashFilled;
+    if(serverBalance<=queueBalance)return; // never reduce — idempotent ceiling
+    var targetReady=Math.floor(serverBalance/30);
+    var targetFilled=serverBalance-(targetReady*30);
+    while(_readyHashes.length<targetReady){
+      var h='';var rb=new Uint8Array(32);crypto.getRandomValues(rb);
+      for(var bi2=0;bi2<32;bi2++)h+=('0'+rb[bi2].toString(16)).slice(-2);
+      _readyHashes.push(h);
+    }
+    _hashFilled=targetFilled;
+    _persistHashBuf();
     if(typeof _updateSunbeamBadge==='function')_updateSunbeamBadge();
     if(typeof _updateGameDew==='function')_updateGameDew();
   }catch(e){}
