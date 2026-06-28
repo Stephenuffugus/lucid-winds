@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.28.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.28.06';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -62870,7 +62870,7 @@ var G=[
 {id:'tarotrun',n:'Tarot Run',i:'\ud83c\udccf',r:'A fast, spectacular combo card run \u2014 a reading of blades.',cat:'studio',ext:'https://stephenuffugus.github.io/Tarot_Run/',thumb:'portal-assets/thumbs/tarot-run.png',beta:true},
 {id:'sixfold',n:'Sixfold',i:'\u2694\ufe0f',r:'A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.',cat:'studio',ext:'https://stephenuffugus.github.io/sixfold/',thumb:'portal-assets/thumbs/sixfold.png'},
 {id:'letterlaunch',n:'Letter Launch',i:'\ud83d\udd24',r:'Plink letter tiles through bumpers, then trace words to score.',cat:'studio',ext:'https://stephenuffugus.github.io/letter_launch/',thumb:'portal-assets/thumbs/letter-launch.png'},
-{id:'skitterlings',n:'Skitterlings',i:'🐾',r:'A one-button runner. Hop your critter through 100 worlds and collect hundreds of skitterlings.',cat:'studio',ext:'/satellites/skitterlings/?v=20260628b',thumb:'portal-assets/thumbs/skitterlings.png'},
+{id:'skitterlings',n:'Skitterlings',i:'🐾',r:'A one-button runner. Hop your critter through 100 worlds and collect hundreds of skitterlings.',cat:'studio',ext:'https://stephenuffugus.github.io/skitterlings/?embed=1&origin=https://lucidwinds.com',thumb:'portal-assets/thumbs/skitterlings.png'},
 // Same-origin satellites: ext starts with '/' so they're FIRST-PARTY content,
 // NOT external. They are NOT hidden in Pi Browser (no redirect), and they earn
 // via the shared-origin localStorage bucket (sws_pending_sunbeams) which
@@ -62927,10 +62927,38 @@ function _gHiddenHere(g){if(!g)return false;var extExternal=g.ext&&g.ext.charAt(
   function _today(){ try{return new Date().toISOString().slice(0,10);}catch(e){return '0';} }
   function _taper(){ try{var s=JSON.parse(localStorage.getItem('lw_studio_taper')||'{}')||{};if(s.day!==_today())s={day:_today(),wins:{}};if(!s.wins)s.wins={};return s;}catch(e){return {day:_today(),wins:{}};} }
   var _minW=-1,_minSpent=0;
+  // ── Skitterlings PROOF-OF-ATTENTION heartbeat (2026-06-28) ──
+  // Skitterlings doesn't use the sunbeam-sdk 'earn' protocol; its in-game
+  // COINS are internal and must NEVER mint sunbeams. Instead it emits an
+  // `active` heartbeat every ~5s ONLY while a run is genuinely playing AND
+  // the iframe is visible. Each heartbeat = ~5s of confirmed human attention.
+  // The host (here) decides the sunbeam cadence — the game never sets it.
+  // TUNABLES (Stephen — adjust freely):
+  var SKIT_HB_PER_SB = 6;     // mint 1 sunbeam per 6 beats (~30s of active play → 2/min)
+  var SKIT_DAILY_CAP = 90;    // …capped at 90 sunbeams/day from Skitterlings (~3 plants)
   window.addEventListener('message', function(ev){
     try{
       if(!ev || !STUDIO_ORIGINS[ev.origin]) return;
       var d = ev.data;
+      // Attention heartbeat path (separate from the sunbeam-sdk earn path).
+      if(d && d.source==='skitterlings'){
+        if(d.type==='active' && d.data && d.data.playing){
+          var _hb; try{ _hb=JSON.parse(localStorage.getItem('lw_skit_hb')||'{}')||{}; }catch(e){ _hb={}; }
+          var _hbDay=_today();
+          if(_hb.day!==_hbDay) _hb={day:_hbDay, beats:0, minted:0};
+          _hb.beats=(_hb.beats||0)+1;
+          if((_hb.beats % SKIT_HB_PER_SB)===0 && (_hb.minted||0)<SKIT_DAILY_CAP){
+            var _hbMin=Math.floor(Date.now()/60000);
+            if(_hbMin!==_minW){_minW=_hbMin;_minSpent=0;}
+            if(_minSpent<MAX_PER_MIN){
+              _hb.minted=(_hb.minted||0)+1; _minSpent+=1;
+              try{ if(typeof window.earnHashes==='function') window.earnHashes(1,'skitterlings_attention'); }catch(e){}
+            }
+          }
+          try{ localStorage.setItem('lw_skit_hb', JSON.stringify(_hb)); }catch(e){}
+        }
+        return; // coins / run-start / game-over etc. never mint sunbeams
+      }
       if(!d || d.source!=='sunbeam-sdk' || d.type!=='earn') return;
       var game = (typeof d.game==='string' && d.game) ? d.game.slice(0,32) : '';
       var event = (typeof d.event==='string' && d.event) ? d.event
