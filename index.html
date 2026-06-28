@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.06.28.10';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.06.28.11';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -64540,9 +64540,27 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
     _ext.src=gi.ext;
     _ext.setAttribute('loading','lazy');
     _ext.setAttribute('allow','fullscreen; autoplay; accelerometer; gyroscope; clipboard-write');
+    _ext.setAttribute('allowfullscreen','');            // older syntax — REQUIRED so the in-game ⛶ button can enter OS fullscreen
     _ext.setAttribute('title',gi.n);
-    _ext.style.cssText='width:100%;height:calc(100dvh - 110px);border:0;border-radius:8px;background:#060610;';
+    // Stephen + Skitterlings 2026-06-28: studio games are WIDE (e.g. a 3.2:1
+    // runner). The old width:100% + height:calc(100dvh-110px) box squished them
+    // into a short strip — brutal in landscape. Give external games a FULL-BLEED
+    // fixed box that fills the viewport in any orientation (no chrome stealing
+    // height); the back/rules header floats on top so the player can still exit.
+    _ext.style.cssText='position:fixed;inset:0;width:100%;height:100dvh;border:0;background:#060610;z-index:9000;';
     ag.appendChild(_ext);
+    // Float the game header (◀ GAMES / 📖 RULES) above the full-bleed iframe so
+    // exiting still works while the game covers the whole screen.
+    try{
+      var _eh=ag.querySelector('.game-hdr');
+      if(_eh){
+        _eh.style.position='fixed'; _eh.style.top='0'; _eh.style.left='0';
+        _eh.style.zIndex='9001'; _eh.style.width='auto';
+        _eh.style.background='rgba(8,10,6,0.5)';
+        _eh.style.backdropFilter='blur(4px)'; _eh.style.webkitBackdropFilter='blur(4px)';
+        _eh.style.borderRadius='0 0 10px 0';
+      }
+    }catch(e){}
     return;
   }
   // ── Try: 1) already-loaded external, 2) lazy-load from games/ ──
