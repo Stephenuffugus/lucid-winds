@@ -352,16 +352,19 @@ function card(g, isFeat){
             : (isFeat ? (g.premium ? '<span class="badge premium">PREMIUM</span>' : '<span class="badge">PLAY NOW</span>')
                       : (extUrl ? '<span class="badge">PLAY NOW</span>' : (wip ? '<span class="badge wip">WIP</span>' : '')))));
   var shot;
+  // Cache-bust stamp — thumbnails/screenshots are served 1-year-immutable, so
+  // bump this when the image files change (2026-06-28: thumbs optimized ~95%).
+  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=20260628b'; });
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
-    if (g.thumb) shot = '<img loading="lazy" alt="'+nm+'" src="'+g.thumb+'" onerror="_lwPh(this)">';
+    if (g.thumb) shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
     else         shot = '<span class="ph">'+(g.ic||"🌿")+'</span>';
   }
   else if(extUrl && g[6]){
-    shot = '<img loading="lazy" alt="'+nm+'" src="'+g[6]+'" onerror="_lwPh(this)">';
+    shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(g[6])+'" onerror="_lwPh(this)">';
   }
   else { var ext = EXT[g[0]] || "png";
-         shot = '<img loading="lazy" alt="'+nm+'" src="'+SHOT+g[0]+'.'+ext+'" onerror="_lwPh(this)">'; }
+         shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(SHOT+g[0]+'.'+ext)+'" onerror="_lwPh(this)">'; }
   var tag = soon ? 'div' : 'a';
   var attr = soon ? '' : (' href="'+url+'"' + (extUrl ? ' target="_blank" rel="noopener noreferrer"' : ''));
   return '<'+tag+' class="card'+(hub?' hubcard':'')+(soon?' soon':'')+'"'+attr+'>'+
