@@ -4,9 +4,9 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v14';
-var ASSET_CACHE = 'lw-assets-v14';
-var GAME_CACHE = 'lw-games-v14';
+var CACHE_VERSION = 'lw-v15';
+var ASSET_CACHE = 'lw-assets-v15';
+var GAME_CACHE = 'lw-games-v15';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 
@@ -20,7 +20,20 @@ var PRECACHE = [
   '/assets/onboarding/cinema-beat1-weight-540x960.jpg',
   '/assets/onboarding/cinema-beat2-glint-540x960.jpg',
   '/assets/onboarding/cinema-beat3-tendril-540x960.jpg',
-  '/word-banks.js'
+  '/word-banks.js',
+  // ── /play/ shell core (2026-06-29) ──
+  // The portal jukebox and standalone /play/<game>.html shells all pull
+  // these four. The big one is shared.css (~315 KB) — render-weight that,
+  // uncached over a weak connection, was the multi-second black screen
+  // before a game drew. Precaching them on install means the SECOND game a
+  // player opens (and every game on a return visit) loads from cache. The
+  // ?v stamps must match the shells' <link>/<script> tags; if they drift,
+  // runtime cache-first below self-heals (just not pre-warmed). Keep in sync
+  // on a shared.css / shell.js / shell.css / sunbeam-sdk.js version bump.
+  '/shared.css?v=20260611',
+  '/play/shell.css?v=6',
+  '/play/shell.js?v=11',
+  '/sunbeam-sdk.js?v=2'
 ];
 
 // ── INSTALL: precache critical assets ──
@@ -139,11 +152,14 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // ── Game scripts (games/*.js): cache-first, load once ──
+  // ── Game scripts (games/*.js) + /play/ shell core JS: cache-first ──
   // Loader stamps ?v=LW_VERSION, so a deploy is a new cache key. On every
   // fresh cache we evict same-path entries from older versions — with
   // ~10 deploys/day the cache would otherwise grow without bound.
-  if (url.pathname.match(/^\/games\//)) {
+  // sunbeam-sdk.js + play/shell.js are ?v-stamped too and load on every
+  // /play/ shell, so they ride the same versioned cache-first + evict path
+  // (2026-06-29 portal-speed fix).
+  if (url.pathname.match(/^\/games\//) || url.pathname === '/sunbeam-sdk.js' || url.pathname === '/play/shell.js') {
     event.respondWith(
       caches.match(event.request).then(function(cached) {
         if (cached) return cached;
@@ -208,8 +224,12 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // ── Static assets (images, fonts): cache-first ──
-  if (url.pathname.match(/\.(jpg|jpeg|png|webp|svg|gif|ico|woff2?|ttf|otf|eot)$/)) {
+  // ── Static assets (CSS, images, fonts): cache-first ──
+  // CSS added 2026-06-29 — shared.css (~315 KB) + play/shell.css are
+  // ?v-stamped, so the full-URL cache key busts on a version bump. Until
+  // now CSS fell through to network-only, so every /play/ shell re-fetched
+  // the whole 315 KB app stylesheet — the core of the portal black screen.
+  if (url.pathname.match(/\.(css|jpg|jpeg|png|webp|svg|gif|ico|woff2?|ttf|otf|eot)$/)) {
     event.respondWith(
       caches.match(event.request).then(function(cached) {
         if (cached) return cached;

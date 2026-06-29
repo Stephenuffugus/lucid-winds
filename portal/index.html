@@ -130,8 +130,19 @@
   .badge.premium{background:linear-gradient(145deg,var(--sun),var(--sun2));color:#3a2600;font-weight:700;letter-spacing:.5px}
   .badge.soon{color:#cfd8cf;background:rgba(0,0,0,.62)}
   .badge.beta{color:#bcd99a;background:rgba(0,0,0,.6)}
-  .card.soon{opacity:.6;cursor:default;pointer-events:none}
-  .card.soon .shot{filter:grayscale(.45)}
+  /* Coming-soon cards are real <button>s now (2026-06-29) — they were dead
+     grayed thumbnails (pointer-events:none) that did nothing on tap, which
+     read as broken. Reset the button chrome so they match the other cards,
+     stay tappable, and show a friendly "still building it" message. */
+  button.card.soon{opacity:.82;cursor:pointer;font:inherit;color:inherit;text-align:left;width:100%;padding:0;margin:0}
+  .card.soon .shot{filter:grayscale(.4)}
+  .soon-cta{display:inline-block;margin-top:6px;background:rgba(255,206,74,.15);color:var(--sun);
+            border:1px solid rgba(255,206,74,.42);border-radius:7px;padding:4px 9px;
+            font-size:10.5px;font-weight:700;letter-spacing:.5px}
+  #sws-soon-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;
+            background:rgba(13,20,16,.97);border:1px solid var(--sun2);color:var(--ink);
+            padding:12px 18px;border-radius:12px;font-size:14px;line-height:1.4;text-align:center;
+            z-index:300;box-shadow:0 12px 34px rgba(0,0,0,.55);opacity:0;transition:opacity .2s;pointer-events:none}
   .card .body{padding:7px 9px 9px}
   .card .nm{font-weight:700;font-size:12.5px;line-height:1.2}
   .card .ds{color:var(--muted);font-size:11px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;
@@ -373,12 +384,28 @@ function card(g, isFeat){
   }
   else { var ext = EXT[g[0]] || "png";
          shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(SHOT+g[0]+'.'+ext)+'" onerror="_lwPh(this)">'; }
-  var tag = soon ? 'div' : 'a';
-  var attr = soon ? '' : (' href="'+url+'"' + (extUrl ? ' target="_blank" rel="noopener noreferrer"' : ''));
-  return '<'+tag+' class="card'+(hub?' hubcard':'')+(soon?' soon':'')+'"'+attr+'>'+
-    '<div class="shot">'+badge+shot+'</div>'+
-    '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div></div></'+tag+'>';
+  var inner = '<div class="shot">'+badge+shot+'</div>'+
+    '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div>'+
+    (soon ? '<div class="soon-cta">COMING SOON</div>' : '')+'</div>';
+  if (soon) {
+    // A real button with a friendly tap response, not a dead grayed tile.
+    return '<button type="button" class="card soon" onclick="swsComingSoon(\''+
+      String(nm).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+inner+'</button>';
+  }
+  var attr = ' href="'+url+'"' + (extUrl ? ' target="_blank" rel="noopener noreferrer"' : '');
+  return '<a class="card'+(hub?' hubcard':'')+'"'+attr+'>'+inner+'</a>';
 }
+// Coming-soon tap response — a small auto-dismissing toast instead of a
+// dead card. Global so the inline onclick above resolves it. (2026-06-29)
+function swsComingSoon(name){
+  var t = document.getElementById('sws-soon-toast');
+  if(!t){ t = document.createElement('div'); t.id='sws-soon-toast'; document.body.appendChild(t); }
+  t.innerHTML = '🌱 <b>'+name+'</b> is still in the workshop — we’re building it now. Check back soon!';
+  t.style.opacity='1';
+  clearTimeout(t._hideT);
+  t._hideT = setTimeout(function(){ t.style.opacity='0'; }, 3200);
+}
+window.swsComingSoon = swsComingSoon;
 
 // Hub card (Lucid Winds only — large hero with seed-art thumbnail) renders
 // at the top. The rest of FEATURED (the studio satellites — the "newest"
@@ -667,6 +694,25 @@ renderGarden("all");
 <script>
   window.LW_FB_CONTEXT = { surface: 'portal' };
   if (window.LW_Feedback) window.LW_Feedback.mountFab({ surface: 'portal' });
+</script>
+
+<!-- Service worker — register it from the portal too (2026-06-29). Portal-
+     first players may never open the main app, so without this they got NO
+     resource cache and every /play/ game loaded fully cold (the 315 KB app
+     stylesheet + shell core re-fetched over the network every single time).
+     Guarded by getRegistration() so it never re-registers over the app's own
+     versioned sw.js — at most a one-time switch, then stable. Registered on
+     load so it never competes with the portal's own first paint. -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      try {
+        navigator.serviceWorker.getRegistration().then(function (reg) {
+          if (!reg) navigator.serviceWorker.register('/sw.js').catch(function () {});
+        }).catch(function () {});
+      } catch (e) {}
+    });
+  }
 </script>
 </body>
 </html>

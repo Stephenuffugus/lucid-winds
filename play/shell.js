@@ -132,6 +132,10 @@
     sequence:      1,   // was 2
     pheno:         1,   // was 3
     puzzle_solved: 3,   // was 5
+    // merge (2048) fires _e('reached_'+target) when you hit a milestone tile;
+    // the resolver strips the _NNNN suffix to 'reached'. Without this key it
+    // paid 0 (Jun-29 portal audit). 2 = a small milestone reward per target.
+    reached:       2,
     game_win:      4,   // was 8
     game_loss:     1
   };
@@ -491,18 +495,23 @@
 
   // ── Mount the game once everything is ready ──
   function tryMount() {
+    // Check the module is registered BEFORE touching the DOM, so the
+    // cold-load placeholder (#shell-loading) stays up until the game is
+    // actually ready to draw — previously #fg-ag was created empty on the
+    // first poll, which would have hidden the placeholder behind a blank box.
+    var fn = global._gameFns[LW_PLAY.id];
+    if (typeof fn !== 'function') return false;
     var mountEl = document.getElementById('fg-ag');
     if (!mountEl) {
       var host = document.getElementById('shell-mount');
       if (!host) return false;
+      host.innerHTML = '';   // drop the loading placeholder, if present
       mountEl = document.createElement('div');
       mountEl.id = 'fg-ag';
       mountEl.className = 'on';
       mountEl.setAttribute('data-game', LW_PLAY.id);
       host.appendChild(mountEl);
     }
-    var fn = global._gameFns[LW_PLAY.id];
-    if (typeof fn !== 'function') return false;
     try {
       mountEl.innerHTML = '';
       fn(mountEl);

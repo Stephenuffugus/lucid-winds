@@ -228,3 +228,34 @@ body { display: flex; flex-direction: column; }
    Games still REFERENCE #_h via getElementById, so we keep the element
    in DOM but hide the bar visually. */
 #fg-ag .gu-bar { display: none; }
+
+/* ── Cold-load placeholder ──
+   Shown inside #shell-mount until the game module finishes loading and
+   mounts. Without it, a slow first paint (mostly the big render-blocking
+   app stylesheet over a weak connection) read as a dead black screen and
+   players backed out before the game ever drew. shell.css is tiny and
+   stays render-blocking, so this paints fast; the heavy shared.css now
+   loads async. shell.js removes this node the instant the game mounts. */
+.shell-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 20px;
+  color: var(--shell-muted);
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+.shell-loading .shell-spin {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(95, 192, 138, 0.22);
+  border-top-color: var(--shell-leaf);
+  border-radius: 50%;
+  animation: shellSpin 0.8s linear infinite;
+}
+@keyframes shellSpin { to { transform: rotate(360deg); } }
+.perf-lite .shell-loading .shell-spin { animation-duration: 1.4s; }
