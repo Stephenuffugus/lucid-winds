@@ -243,6 +243,7 @@
 /* ---- Featured satellites (separate standalone games, real live URLs) + the Lucid Winds hub ---- */
 var FEATURED = [
   {nm:"Lucid Winds", ds:"66 games + grow living, unique plant art. The hub of the whole orchard.", url:"https://lucidwinds.com", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
+  {nm:"Tomato Man", ds:"The sun is death and the shade keeps moving. Dash the shadows, gather aloe, and don't get burned.", url:"https://stephenuffugus.github.io/Tomato_Man/", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
   {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
   {nm:"Sweet Spot", ds:"One-thumb tennis timing. Nail the gold for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png"},
   {nm:"Tarot Run", ds:"A fast, spectacular combo card run — a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
@@ -620,70 +621,115 @@ renderGarden("all");
   var isOpen = false;
   var watchdog = null;
 
-  function openGame(url, title){
-    fr.src = url + (url.indexOf('?')>=0?'&':'?') + 'embed=1';
-    // A successful frame load cancels the redirect fallback (works for cross-
-    // origin satellites that don't speak our sws:'ready' protocol).
+  // ⚠ THE "portal games won't play" FIX (2026-06-30) — and it keeps the music
+  // GAPLESS. Hostinger's LiteSpeed server serves an invisible-reCAPTCHA "Bot
+  // Verification" 403 on every HTML PAGE request (verified: /play/<id>.html =
+  // 403, but /games/*.js + /shared.css = 200). That challenge can't resolve
+  // inside an <iframe>, so framing /play/<id>.html showed the host's robot
+  // block page (the broken "bent corner" error) for EVERY internal game.
+  // Fix: we never request the blocked HTML page. We build the shell document
+  // IN MEMORY (mirroring /play/<id>.html) and hand it to the iframe via
+  // `srcdoc`. srcdoc isn't an HTTP request, and the things it pulls in
+  // (shell.js, the game module, shared.css) are all the unblocked 200 assets.
+  // The portal page never unloads → the soundtrack stays gapless across game
+  // switches, exactly as before. Cross-origin github.io satellites don't hit
+  // our host's challenge, so they still frame their real URL.
+  // (Belt-and-suspenders true fix: turn OFF the LiteSpeed reCAPTCHA bot
+  // challenge for lucidwinds.com in the Hostinger panel — it also stops
+  // serving that 403 to scrapers / social link unfurlers.)
+  //
+  // Per-game module dependencies (mirror the <script> tags in each
+  // /play/<id>.html). Most games just load /games/<id>.js; these sets capture
+  // the exceptions. A NEW internal game with non-default deps must be added to
+  // the matching set; a plain game needs nothing (falls through to default).
+  var SHELL_INLINE={backgammon:1,bloomwheel:1,checkers:1,picross:1,reversi:1,set:1,sokoban:1,mastermind:1};
+  var SHELL_DICE={doubleshutter:1,farkle:1,yahtzee:1};
+  var SHELL_CARD={bleedinghearts:1,bowergarden:1,cribbage:1,freecell:1,gardenspades:1,golf:1,juniper:1,klondike:1,pyramid:1,spider:1,tripeaks:1};
+  var SHELL_WORD={trellis:1,vinewords:1};
+  function shellDeps(id){
+    if(SHELL_INLINE[id]) return ['/games/_inline/'+id+'.js'];
+    if(SHELL_DICE[id])   return ['/games/_inline/_dice_lib.js','/games/_inline/'+id+'.js'];
+    if(SHELL_CARD[id])   return ['/games/_cards.js','/games/'+id+'.js'];
+    if(SHELL_WORD[id])   return ['/games/vinewords-dict.js','/games/'+id+'.js'];
+    return ['/games/'+id+'.js'];
+  }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function buildShellDoc(id,name){
+    var scripts=shellDeps(id).map(function(d){return '<script defer src="'+d+'?v=1"><\/script>';}).join('');
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+      +'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
+      +'<base href="/">'
+      +'<title>'+esc(name)+' — Sky Wolf Studios</title>'
+      +'<link rel="stylesheet" href="/shared.css?v=20260611">'
+      +'<link rel="stylesheet" href="/play/shell.css?v=6">'
+      +'<script>window.LW_PLAY={id:"'+esc(id)+'",name:"'+esc(name)+'"};<\/script>'
+      +'<script defer src="/sunbeam-sdk.js?v=2"><\/script>'
+      +'<script defer src="/play/shell.js?v=11"><\/script>'
+      +scripts
+      +'</head><body>'
+      +'<header class="shell-hdr"><a class="shell-back" href="/portal/">← All games</a>'
+      +'<div class="shell-title" id="shell-title">'+esc(name)+'</div>'
+      +'<div class="shell-wallet" id="shell-wallet"><span>☀ <strong id="shell-bal">—</strong></span>'
+      +'<span id="shell-pend"></span><button id="shell-signin">Sign in to save</button></div></header>'
+      +'<main id="shell-mount" class="shell-mount"><div class="shell-loading" id="shell-loading"><div class="shell-spin"></div><div>Loading…</div></div></main>'
+      +'<footer class="shell-footer">Sky Wolf Studios · sunbeams travel with you across every game in the studio</footer>'
+      +'</body></html>';
+  }
+
+  // opts: { srcdoc, src, title }. srcdoc = internal game (in-memory shell);
+  // src = cross-origin satellite (real URL, framed with ?embed=1).
+  function openGame(opts){
+    if(watchdog){ clearTimeout(watchdog); watchdog = null; }
+    if(opts.srcdoc != null){
+      fr.removeAttribute('src');
+      fr.srcdoc = opts.srcdoc;
+    } else {
+      fr.removeAttribute('srcdoc');
+      fr.src = opts.src + (opts.src.indexOf('?')>=0?'&':'?') + 'embed=1';
+    }
+    // A successful frame load cancels the satellite redirect fallback.
     fr.onload = function(){ if(watchdog){ clearTimeout(watchdog); watchdog = null; } };
     ov.classList.add('on'); ov.setAttribute('aria-hidden','false');
     document.body.style.overflow = 'hidden';
-    if(title) document.title = title + ' — Sky Wolf Studios';
+    if(opts.title) document.title = opts.title + ' — Sky Wolf Studios';
     if(!isOpen){ try{ history.pushState({swsGame:1}, '', '#play'); }catch(e){} }
     isOpen = true;
-    // Fallback: if the embedded shell never reports 'ready' (e.g. framing
-    // blocked), just open the game normally so it's never a dead end. 12s of
-    // headroom so a slow cold-loading shell on a weak tablet isn't yanked out
-    // of a perfectly-good frame — only a truly blocked frame (whose JS never
-    // runs, so 'ready' never posts) hits this.
-    if(watchdog) clearTimeout(watchdog);
-    watchdog = setTimeout(function(){ window.location.href = url; }, 12000);
+    // Watchdog ONLY for cross-origin satellites, whose framing CAN be blocked
+    // (X-Frame-Options / CSP) — fall back to opening their real URL. srcdoc
+    // always renders, so internal games need no fallback (and must NOT fall
+    // back to the /play/ URL — that's the 403'd page we're avoiding).
+    if(opts.src){
+      watchdog = setTimeout(function(){ window.location.href = opts.src; }, 12000);
+    }
   }
   function closeGame(){
     if(!isOpen) return;
     if(watchdog){ clearTimeout(watchdog); watchdog = null; }
     ov.classList.remove('on'); ov.setAttribute('aria-hidden','true');
+    fr.removeAttribute('srcdoc');
     fr.src = 'about:blank';                 // stop the game; portal audio plays on
     document.body.style.overflow = '';
     document.title = 'Sky Wolf Studios — Play';
     isOpen = false;
   }
 
-  // Intercept game-shell links (delegated, survives grid re-renders).
-  //
-  // ⚠ WHY internal /play/ games are NO LONGER framed (2026-06-30 — THE
-  // "portal games won't play" fix):
-  //   Hostinger's LiteSpeed server runs an invisible-reCAPTCHA "Bot
-  //   Verification" challenge on every HTML PAGE request (static .js/.css
-  //   pass through untouched — confirmed: page=403, assets=200). A real
-  //   browser clears that challenge transparently on a TOP-LEVEL navigation
-  //   (which is exactly how the portal itself loads), but the SAME challenge
-  //   cannot resolve inside a cross-context <iframe> — reCAPTCHA can't
-  //   execute in the framed, storage-partitioned context — so the frame just
-  //   renders the host's "Verifying that you are not a robot…" block page
-  //   (the broken bent-corner error). The gapless-jukebox started framing the
-  //   /play/ shells, which silently broke EVERY internal game.
-  //   Letting them navigate top-level restores the working pre-jukebox
-  //   behavior: the browser solves the challenge the same way it did to show
-  //   the portal. The TRUE root fix (which also brings back gapless music for
-  //   internal games) is to turn OFF the LiteSpeed reCAPTCHA "Bot
-  //   Verification" challenge for lucidwinds.com in the Hostinger hPanel
-  //   security settings (or ask Hostinger support to disable it) — without
-  //   that, the page itself still serves a 403 challenge to anything that
-  //   doesn't run JS (scrapers, link unfurlers, the iframe case above).
-  //
-  // Cross-origin satellites (github.io) do NOT hit our host's challenge, so
-  // they STAY framed: that keeps their soundtrack gapless and their save in
-  // this origin's bucket, plus the floating exit guarantees an escape hatch.
+  // Intercept game-card links (delegated, survives grid re-renders).
   document.addEventListener('click', function(e){
     var a = e.target && e.target.closest ? e.target.closest('a') : null;
     if(!a) return;
     if(a.target === '_blank') return;                       // new-tab apps (Pom Pond etc.)
     var href = a.getAttribute('href') || '';
-    var isSat = /:\/\/stephenuffugus\.github\.io\//.test(href);
-    if(!isSat) return;          // internal /play/ shells navigate top-level (see note above)
+    var playM = href.match(/\/play\/([^\/?#]+)\.html/);     // internal LW game
+    var isSat = /:\/\/stephenuffugus\.github\.io\//.test(href);   // studio satellite
+    if(!playM && !isSat) return;
     e.preventDefault();
-    var nm = a.querySelector('.nm');
-    openGame(href, nm ? nm.textContent : '');
+    var nmEl = a.querySelector('.nm');
+    var nm = nmEl ? nmEl.textContent : '';
+    if(playM){
+      openGame({ srcdoc: buildShellDoc(playM[1], nm || playM[1]), title: nm });
+    } else {
+      openGame({ src: href, title: nm });
+    }
   });
 
   // Embedded shell's back link asks to close (postMessage from shell.js).
