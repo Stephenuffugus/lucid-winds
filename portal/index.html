@@ -648,21 +648,39 @@ renderGarden("all");
     isOpen = false;
   }
 
-  // Intercept internal game-shell links (delegated, survives grid re-renders).
+  // Intercept game-shell links (delegated, survives grid re-renders).
+  //
+  // ⚠ WHY internal /play/ games are NO LONGER framed (2026-06-30 — THE
+  // "portal games won't play" fix):
+  //   Hostinger's LiteSpeed server runs an invisible-reCAPTCHA "Bot
+  //   Verification" challenge on every HTML PAGE request (static .js/.css
+  //   pass through untouched — confirmed: page=403, assets=200). A real
+  //   browser clears that challenge transparently on a TOP-LEVEL navigation
+  //   (which is exactly how the portal itself loads), but the SAME challenge
+  //   cannot resolve inside a cross-context <iframe> — reCAPTCHA can't
+  //   execute in the framed, storage-partitioned context — so the frame just
+  //   renders the host's "Verifying that you are not a robot…" block page
+  //   (the broken bent-corner error). The gapless-jukebox started framing the
+  //   /play/ shells, which silently broke EVERY internal game.
+  //   Letting them navigate top-level restores the working pre-jukebox
+  //   behavior: the browser solves the challenge the same way it did to show
+  //   the portal. The TRUE root fix (which also brings back gapless music for
+  //   internal games) is to turn OFF the LiteSpeed reCAPTCHA "Bot
+  //   Verification" challenge for lucidwinds.com in the Hostinger hPanel
+  //   security settings (or ask Hostinger support to disable it) — without
+  //   that, the page itself still serves a 403 challenge to anything that
+  //   doesn't run JS (scrapers, link unfurlers, the iframe case above).
+  //
+  // Cross-origin satellites (github.io) do NOT hit our host's challenge, so
+  // they STAY framed: that keeps their soundtrack gapless and their save in
+  // this origin's bucket, plus the floating exit guarantees an escape hatch.
   document.addEventListener('click', function(e){
     var a = e.target && e.target.closest ? e.target.closest('a') : null;
     if(!a) return;
     if(a.target === '_blank') return;                       // new-tab apps (Pom Pond etc.)
     var href = a.getAttribute('href') || '';
-    // FRAME both internal /play/ shells AND the github.io studio satellites.
-    // Framing a satellite (instead of full-page navigating to it) keeps it under
-    // THIS top-level site, so its localStorage save lands in the SAME
-    // partitioned bucket as the in-app Sky Wolf section — the player's unlocked
-    // skins/worlds then match in both places (same browser). It also keeps the
-    // portal + its music loaded. (Stephen 2026-06-28)
-    var isPlay = /\/play\/[^\/]+\.html/.test(href);
-    var isSat  = /:\/\/stephenuffugus\.github\.io\//.test(href);
-    if(!isPlay && !isSat) return;
+    var isSat = /:\/\/stephenuffugus\.github\.io\//.test(href);
+    if(!isSat) return;          // internal /play/ shells navigate top-level (see note above)
     e.preventDefault();
     var nm = a.querySelector('.nm');
     openGame(href, nm ? nm.textContent : '');
