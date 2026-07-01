@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.01.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.01.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -47260,6 +47260,7 @@ document.addEventListener('keydown', function(e) {
     var waterLabel    = wateredToday ? '✓ WATERED' : '<img src="assets/fx/drop-blue.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> WATER';
     var waterDisabled = (wateredToday || bloomReady) ? 'disabled' : '';
 
+    var _seedFert = seed.fertApplied || 0;
     var _fertMax = 25;
 
     var actionBtns;
@@ -47298,11 +47299,13 @@ document.addEventListener('keydown', function(e) {
     if (_isClipping && !bloomReady) {
       actionBtns += _seedBtn({ cls:'water', sid:sid, onclick:'window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)', title:'Cross this clipping with a greenhouse plant. Consumes the clipping.', art:'assets/icons/dna.png', label:'USE TO BREED' });
     }
-    // Stephen 2026-07-01: plaque reads BOOST / WITH COMPOST and opens the
-    // compost modal (balance + how-to + quantity + confirm) instead of
-    // silently applying 1 per tap. Stays tappable at 0 compost so the
-    // modal can TEACH the recycle loop; only a bloom-ready seed disables it.
-    actionBtns += _seedBtn({ cls:'boost', sid:sid, onclick:'window._openCompostBoost(this.dataset.sid)', title:'Boost with compost — +1% rarity per compost on bloom, max '+_fertMax, disabled:bloomReady, art:'assets/boost.png', label:'BOOST', cost:'WITH COMPOST' });
+    // Stephen 2026-07-01: plaque opens the compost modal (balance + how-to +
+    // quantity + confirm) instead of silently applying 1 per tap. Stays
+    // tappable at 0 compost so the modal can TEACH the recycle loop; only a
+    // bloom-ready seed disables it. Round 2 same day: the X/25 counter IS
+    // the applied-compost indicator — losing it made boosts look like
+    // no-ops. Plaque shows applied/cap + live boost % again.
+    actionBtns += _seedBtn({ cls:'boost', sid:sid, onclick:'window._openCompostBoost(this.dataset.sid)', title:'Boost with compost — +1% rarity per compost on bloom, max '+_fertMax, disabled:bloomReady, art:'assets/boost.png', label:'BOOST', cost:_seedFert + '/' + _fertMax + ' · +' + _seedFert + '%' });
     if (!bloomReady) {
       var _potOnSeed = seed.pot ? (window.LW_POTS && window.LW_POTS[seed.pot]) : null;
       if (_potOnSeed) {
@@ -47381,7 +47384,7 @@ document.addEventListener('keydown', function(e) {
         '<div class="nur-pips">' + pips + '<span class="nur-pip-label">' + dayLabel + '</span></div>' +
         _fertInfo +
         '<div class="nur-actions">' + actionBtns +
-          '<button class="nur-btn abandon" data-sid="' + sid + '" onclick="handleRemoveSeed(this.dataset.sid)" title="Abandon">✕</button>' +
+          '<button class="nur-btn abandon" data-sid="' + sid + '" onclick="handleRemoveSeed(this.dataset.sid)" title="Abandon" style="grid-column:2;">✕</button>' +
         '</div>' +
       '</div>' +
     '</div>';
