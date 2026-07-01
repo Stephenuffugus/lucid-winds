@@ -53,6 +53,26 @@ and every shared thing has to point at it.
   and referral now points at /portal/ instead of the signup wall).
 - A4. Add a QR code to /portal/ onto the plant share card and onto Grow Your Name.
   (Agent build, small, deferred one step because it needs a tiny QR encoder.)
+- A5. Fix the satellite back-button bug (found 2026-07-01, reproduced on Sixfold AND
+  Skitterlings). Symptom: playing a studio game in the portal, you hit the game's
+  own X expecting its menu, land on a black screen, and a second X drops you to the
+  portal. Cause: all the featured studio games (Sixfold, Skitterlings, Glyph Forge,
+  Sweet Spot, Tarot Run, Letter Launch, Tomato Man, Brawl) are separate github
+  projects loaded in a portal window. Their own back button, while embedded,
+  navigates the game to a blank page instead of its menu. The second X is the
+  portal's exit button (the one that actually works). The portal cannot fix a game
+  it only borrows, so:
+    - A5a. Fix the two studio games that DO live in this repo first, as the working
+      reference: satellites/hues/ (Hue Match) and satellites/shell-shuffle/. In
+      embed mode the in-game X should return to that game's own menu, and only an
+      exit-from-menu closes to the portal. Verify before changing (audit first).
+    - A5b. Write one copy-paste snippet + the portal's message protocol so Stephen
+      drops it into each external studio project (sixfold, skitterlings, etc.) so
+      their embedded back button returns to their menu or cleanly exits, never blank.
+    - A5c. Portal polish: make the exit button clearly read "Exit game," and have
+      studio games hide their own X while embedded so there is ONE obvious exit.
+  Why it is in Phase A: a broken back button makes people quit on the first try, so
+  it has to be smooth before we drive traffic here.
 
 ## PHASE B: THE PHYSICAL WORLD PUSH (Stephen's flyer idea)
 - B1. Agent designs a small set of print ready flyers, one per venue type, each with
