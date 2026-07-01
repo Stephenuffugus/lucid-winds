@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.01.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.01.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -47260,11 +47260,7 @@ document.addEventListener('keydown', function(e) {
     var waterLabel    = wateredToday ? '✓ WATERED' : '<img src="assets/fx/drop-blue.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> WATER';
     var waterDisabled = (wateredToday || bloomReady) ? 'disabled' : '';
 
-    var _seedFert = seed.fertApplied || 0;
-    var _invFert = 0;
-    try { _invFert = loadInventory().fertilizer || 0; } catch(e) {}
     var _fertMax = 25;
-    var _canFert = _invFert > 0 && _seedFert < _fertMax && !bloomReady;
 
     var actionBtns;
     // Painted-plaque squares — director Apr 30: "buttons should be full
@@ -47302,7 +47298,11 @@ document.addEventListener('keydown', function(e) {
     if (_isClipping && !bloomReady) {
       actionBtns += _seedBtn({ cls:'water', sid:sid, onclick:'window._nurStartBreed&&window._nurStartBreed(this.dataset.sid)', title:'Cross this clipping with a greenhouse plant. Consumes the clipping.', art:'assets/icons/dna.png', label:'USE TO BREED' });
     }
-    actionBtns += _seedBtn({ cls:'boost', sid:sid, onclick:'handleApplyFertilizer(this.dataset.sid)', title:'Apply 1 compost for +1% rarity boost on bloom', disabled:!_canFert, art:'assets/boost.png', label:'BOOST', cost:_seedFert+' / '+_fertMax });
+    // Stephen 2026-07-01: plaque reads BOOST / WITH COMPOST and opens the
+    // compost modal (balance + how-to + quantity + confirm) instead of
+    // silently applying 1 per tap. Stays tappable at 0 compost so the
+    // modal can TEACH the recycle loop; only a bloom-ready seed disables it.
+    actionBtns += _seedBtn({ cls:'boost', sid:sid, onclick:'window._openCompostBoost(this.dataset.sid)', title:'Boost with compost — +1% rarity per compost on bloom, max '+_fertMax, disabled:bloomReady, art:'assets/boost.png', label:'BOOST', cost:'WITH COMPOST' });
     if (!bloomReady) {
       var _potOnSeed = seed.pot ? (window.LW_POTS && window.LW_POTS[seed.pot]) : null;
       if (_potOnSeed) {
@@ -48589,6 +48589,120 @@ document.addEventListener('keydown', function(e) {
     renderNursery();
     updateDashboard();
     _setNurMsg('<img src="assets/fx/leaf-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> Fertilizer applied. ' + seed.fertApplied + '/25 (+' + seed.fertApplied + '% rarity boost).');
+  };
+
+  // \u2500\u2500 Boost with Compost modal (Stephen 2026-07-01) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // The BOOST plaque used to apply 1 compost per tap with no explanation.
+  // Now it opens a small window: compost balance in the upper right, how
+  // compost is made (recycle plants \u2014 rarer = more), a quantity stepper,
+  // and CONFIRM applying the batch. Mirrors _openPotPicker's create/.remove()
+  // overlay pattern. handleApplyFertilizer stays for single-unit callers.
+  window._openCompostBoost = function(seedId) {
+    var inv = loadInventory();
+    var have = inv.fertilizer || 0;
+    var nur;
+    try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    var seed = null;
+    for (var i = 0; i < nur.length; i++) { if (nur[i].id === seedId) { seed = nur[i]; break; } }
+    if (!seed) { _setNurMsg('Seed not found.'); return; }
+    var applied = seed.fertApplied || 0;
+    var room = Math.max(0, 25 - applied);
+    var maxAdd = Math.min(have, room);
+
+    var existing = document.getElementById('lw-compost-boost');
+    if (existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.id = 'lw-compost-boost';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100003;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.85);backdrop-filter:blur(10px);animation:panelFadeIn 0.25s ease;padding:1rem;';
+    modal.addEventListener('click', function(e){ if (e.target === modal) modal.remove(); });
+
+    var leafImg = '<img src="assets/fx/leaf-gold.png" alt="" style="width:20px;height:20px;object-fit:contain;display:inline-block;vertical-align:-4px;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;">';
+    var h = '<div style="max-width:340px;width:100%;max-height:85vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(22,28,18,0.97),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;">';
+    h += '<div style="position:sticky;top:0;background:rgba(22,28,18,0.99);border-bottom:1px solid rgba(200,168,75,0.18);padding:1rem 1rem 0.6rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;border-radius:14px 14px 0 0;">';
+    h += '<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--gold);flex:1;">BOOST WITH COMPOST</div>';
+    h += '<div title="Your compost" style="display:flex;align-items:center;gap:5px;font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.06em;color:var(--gold);padding:0.3rem 0.6rem;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.4);border-radius:8px;white-space:nowrap;">' + leafImg + ' ' + have + '</div>';
+    h += '<button onclick="document.getElementById(\'lw-compost-boost\').remove()" style="background:none;border:1px solid rgba(122,179,86,0.25);color:var(--muted);width:32px;height:32px;flex-shrink:0;border-radius:50%;cursor:pointer;font-size:0.85rem;">\u2715</button>';
+    h += '</div>';
+    h += '<div style="overflow-y:auto;padding:0.8rem 1rem 1rem;flex:1;">';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--cream);line-height:1.5;margin-bottom:0.7rem;">Compost comes from recycling plants: open a plant in the GREENHOUSE and choose COMPOST from its actions. The rarer the plant, the more compost it returns. Each compost worked into this seed adds +1% rarity boost at bloom, up to 25.</div>';
+    h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);margin-bottom:0.8rem;">This seed: ' + applied + '/25 applied (+' + applied + '% rarity)</div>';
+    if (maxAdd < 1) {
+      var whyNot = room < 1 ? 'This seed is fully boosted (25/25).' : 'You have no compost yet \u2014 recycle a plant to make some.';
+      h += '<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);text-align:center;padding:0.8rem 0.4rem;border:1px dashed rgba(138,145,120,0.35);border-radius:8px;margin-bottom:0.8rem;">' + whyNot + '</div>';
+      h += '<button onclick="document.getElementById(\'lw-compost-boost\').remove()" style="width:100%;min-height:48px;background:rgba(13,16,12,0.55);border:1.5px solid rgba(122,179,86,0.35);border-radius:9px;color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.1em;cursor:pointer;">GOT IT</button>';
+    } else {
+      h += '<div style="display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:0.8rem;">';
+      h += '<button onclick="window._cbAdjust(-1)" style="width:48px;height:48px;flex-shrink:0;background:rgba(13,16,12,0.55);border:1.5px solid rgba(200,168,75,0.35);border-radius:9px;color:var(--gold);font-size:1.3rem;cursor:pointer;">\u2212</button>';
+      h += '<div id="lw-cb-qty" data-val="' + maxAdd + '" data-max="' + maxAdd + '" style="min-width:64px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:1.6rem;color:var(--cream);letter-spacing:0.05em;">' + maxAdd + '</div>';
+      h += '<button onclick="window._cbAdjust(1)" style="width:48px;height:48px;flex-shrink:0;background:rgba(13,16,12,0.55);border:1.5px solid rgba(200,168,75,0.35);border-radius:9px;color:var(--gold);font-size:1.3rem;cursor:pointer;">+</button>';
+      h += '<button onclick="window._cbMax()" style="height:48px;padding:0 0.7rem;flex-shrink:0;background:rgba(200,168,75,0.12);border:1.5px solid rgba(200,168,75,0.4);border-radius:9px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;">MAX</button>';
+      h += '</div>';
+      h += '<button id="lw-cb-confirm" onclick="window._confirmCompostBoost(\'' + seedId + '\')" style="width:100%;min-height:48px;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(200,168,75,0.12));border:1.5px solid var(--gold);border-radius:9px;color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.12em;cursor:pointer;">CONFIRM \u2014 APPLY ' + maxAdd + ' (+' + maxAdd + '%)</button>';
+    }
+    h += '</div></div>';
+    modal.innerHTML = h;
+    document.body.appendChild(modal);
+  };
+
+  window._cbAdjust = function(d) {
+    var el = document.getElementById('lw-cb-qty');
+    if (!el) return;
+    var max = parseInt(el.getAttribute('data-max'), 10) || 1;
+    var v = (parseInt(el.getAttribute('data-val'), 10) || 1) + d;
+    if (v < 1) v = 1;
+    if (v > max) v = max;
+    el.setAttribute('data-val', String(v));
+    el.textContent = String(v);
+    var c = document.getElementById('lw-cb-confirm');
+    if (c) c.textContent = 'CONFIRM \u2014 APPLY ' + v + ' (+' + v + '%)';
+  };
+  window._cbMax = function() {
+    var el = document.getElementById('lw-cb-qty');
+    if (!el) return;
+    window._cbAdjust((parseInt(el.getAttribute('data-max'), 10) || 1) - (parseInt(el.getAttribute('data-val'), 10) || 1));
+  };
+
+  window._confirmCompostBoost = function(seedId) {
+    var qEl = document.getElementById('lw-cb-qty');
+    var n = qEl ? (parseInt(qEl.getAttribute('data-val'), 10) || 0) : 0;
+    if (n < 1) return;
+    var inv = loadInventory();
+    var have = inv.fertilizer || 0;
+    var nur;
+    try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
+    var seedIndex = -1;
+    for (var i = 0; i < nur.length; i++) { if (nur[i].id === seedId) { seedIndex = i; break; } }
+    if (seedIndex < 0) { _setNurMsg('Seed not found.'); return; }
+    var seed = nur[seedIndex];
+    var applied = seed.fertApplied || 0;
+    // Re-clamp against live balances \u2014 the modal could be stale (another
+    // tab spent compost, seed got boosted elsewhere) between open and confirm.
+    if (n > 25 - applied) n = 25 - applied;
+    if (n > have) n = have;
+    if (n < 1) {
+      _setNurMsg(have < 1 ? 'No compost. Recycle plants to earn some.' : 'Max compost reached (25/25).');
+      var m0 = document.getElementById('lw-compost-boost');
+      if (m0) m0.remove();
+      return;
+    }
+    seed.fertApplied = applied + n;
+    if (inv.lastCompostSource) seed.compostSource = inv.lastCompostSource;
+    nur[seedIndex] = seed;
+    inv.fertilizer = Math.max(0, have - n);
+    inv.lastUpdated = new Date().toISOString();
+    try {
+      _secureSet('sws_nursery', nur);
+      localStorage.setItem(INV_KEY, JSON.stringify(inv));
+    } catch(e) {
+      _setNurMsg('Storage error.');
+      return;
+    }
+    var m = document.getElementById('lw-compost-boost');
+    if (m) m.remove();
+    _haptic('tab');
+    renderNursery();
+    updateDashboard();
+    _setNurMsg('<img src="assets/fx/leaf-gold.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf3f&apos;;"> Compost worked in. ' + seed.fertApplied + '/25 (+' + seed.fertApplied + '% rarity boost).');
   };
 
   // ── Bloom Reveal (legacy flip-card — kept for non-nursery hash reveals) ──
