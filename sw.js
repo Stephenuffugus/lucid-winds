@@ -4,9 +4,9 @@
 // Version tag drives cache busting on deploy
 // ═══════════════════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'lw-v15';
-var ASSET_CACHE = 'lw-assets-v15';
-var GAME_CACHE = 'lw-games-v15';
+var CACHE_VERSION = 'lw-v16';
+var ASSET_CACHE = 'lw-assets-v16';
+var GAME_CACHE = 'lw-games-v16';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
 
@@ -30,7 +30,7 @@ var PRECACHE = [
   // ?v stamps must match the shells' <link>/<script> tags; if they drift,
   // runtime cache-first below self-heals (just not pre-warmed). Keep in sync
   // on a shared.css / shell.js / shell.css / sunbeam-sdk.js version bump.
-  '/shared.css?v=20260611',
+  '/shared.css?v=20260701',
   '/play/shell.css?v=6',
   '/play/shell.js?v=11',
   '/sunbeam-sdk.js?v=2'
