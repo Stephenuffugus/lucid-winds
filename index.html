@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.01.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.01.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -82429,10 +82429,14 @@ window.breedingForecast=function(hashA,hashB){
   var _bfResult = {
     grades:gradesPct,
     eaRange:results.eaRange,
-    mutationChance:Math.round(results.mutations/20*100),
-    flowerChance:Math.round(results.hasFlower/20*100),
+    // /20 was a fossil of FCAST_N=2000 (÷2000×100 ≡ ÷20). When N dropped to
+    // 600 (2026-05-13) the grades line switched to ÷FCAST_N but these three
+    // kept ÷20 — inflating the display 30× (Stephen saw "1540% mutation").
+    // Display-only: real breeding never reads these.
+    mutationChance:Math.round(results.mutations/FCAST_N*100),
+    flowerChance:Math.round(results.hasFlower/FCAST_N*100),
     seasonSpread:results.seasons,
-    companionChance:Object.keys(results.companions).length>0?Math.round(Object.keys(results.companions).length/20*100):0
+    companionChance:Object.keys(results.companions).length>0?Math.round(Object.keys(results.companions).length/FCAST_N*100):0
   };
   // Cache the result and prune the oldest if we're over capacity.
   _bfCache[_bfk] = _bfResult;
