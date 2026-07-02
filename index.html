@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.02.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.02.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -44700,9 +44700,12 @@ document.addEventListener('keydown', function(e) {
         ctx.fillText(_ftGrade.name.toUpperCase() + '  ·  ONE OF ONE, FOREVER', cardW/2, divY + 46);
       }
       // URL sits at the true bottom of the card (the haiku owns divY+76+).
+      // Centered in the space LEFT of the QR (which owns the bottom-right
+      // 124px) so the two can never collide, even with fallback fonts.
       ctx.fillStyle = 'rgba(200,168,75,0.85)';
-      ctx.font = '700 15px DM Mono, monospace';
-      ctx.fillText('grow yours free at lucidwinds.com/portal', cardW/2, cardH - 40);
+      ctx.font = '700 14px DM Mono, monospace';
+      ctx.fillText('grow yours free at', (cardW - 124) / 2, cardH - 56);
+      ctx.fillText('lucidwinds.com/portal', (cardW - 124) / 2, cardH - 36);
 
       // Haiku inscription — bold + glowing
       ctx.fillStyle = 'rgba(240,235,216,0.88)';
@@ -44716,12 +44719,14 @@ document.addEventListener('keydown', function(e) {
       ctx.fillText(haiku.line3, cardW/2, haikuY + 52);
       ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
 
-      // Collection number
+      // Collection number — pulled left of the QR so the code corner stays
+      // clean for scanners (even a 12%-opacity glyph inside the quiet zone
+      // costs error-correction headroom).
       if (plant.collectionIndex !== undefined) {
         ctx.fillStyle = 'rgba(200,168,75,0.12)';
         ctx.font = '700 60px Bebas Neue, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText('#' + (plant.collectionIndex + 1), cardW - 40, cardH - 36);
+        ctx.fillText('#' + (plant.collectionIndex + 1), cardW - 140, cardH - 36);
       }
 
       // Hash fingerprint for scanning/sharing (bottom-left)
@@ -44738,7 +44743,9 @@ document.addEventListener('keydown', function(e) {
         }
       }
 
-      // Trigger download
+      // Trigger download — wrapped so the portal QR can draw first (async
+      // image load); the card saves with or without the QR, never hangs.
+      function _finishCard() {
       try {
         canvas.toBlob(function(blob) {
           var url = URL.createObjectURL(blob);
@@ -44762,6 +44769,22 @@ document.addEventListener('keydown', function(e) {
         btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">';
         btn.disabled = false;
       }
+      }
+      // Portal QR (venue/flyer funnel, Jul 02) — static assets/qr-portal.png,
+      // pre-verified to decode to lucidwinds.com/portal/?drop=qr. Bottom-right
+      // inside the corner marks; collection # moved left to keep the quiet
+      // zone clean. Card still saves if the PNG ever fails to load.
+      var _qrDone = false;
+      function _qrFinish(draw) {
+        if (_qrDone) return; _qrDone = true;
+        if (draw) { try { ctx.drawImage(_qrImg, cardW - 124, cardH - 124, 88, 88); } catch(e){} }
+        _finishCard();
+      }
+      var _qrImg = new Image();
+      _qrImg.onload  = function(){ _qrFinish(true);  };
+      _qrImg.onerror = function(){ _qrFinish(false); };
+      setTimeout(function(){ _qrFinish(false); }, 2500);
+      _qrImg.src = 'assets/qr-portal.png?v=' + (window.LW_VERSION || '0');
     };
 
     img.onerror = function() {
