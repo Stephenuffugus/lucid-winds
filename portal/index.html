@@ -622,6 +622,15 @@ renderGarden("all");
   if(!ov || !fr) return;
   var isOpen = false;
   var watchdog = null;
+  // Black-screen recovery for FRAMED (cross-origin) satellites: we can't see
+  // inside the frame, but a game's broken back/X shows up as a SECOND load
+  // event (the frame navigated somewhere). A healthy game announces every
+  // load with {sws:'ready'}; a blank/dead page never will. So on any load
+  // after the first, give the frame a beat to say ready — silence means the
+  // player is staring at the black screen, and we return them to the portal.
+  var satLoads = 0;
+  var recoverTimer = null;
+  function clearRecover(){ if(recoverTimer){ clearTimeout(recoverTimer); recoverTimer = null; } }
   // Guards the close path: the srcdoc back link can emit sws:close twice
   // (inline onclick fallback + shell.js's listener). Without this, two
   // history.back() calls pop past the portal itself.
@@ -700,6 +709,8 @@ renderGarden("all");
   // src = cross-origin satellite (real URL, framed with ?embed=1).
   function openGame(opts){
     if(watchdog){ clearTimeout(watchdog); watchdog = null; }
+    clearRecover(); satLoads = 0;
+    var satMode = opts.src != null;
     if(opts.srcdoc != null){
       fr.removeAttribute('src');
       fr.srcdoc = opts.srcdoc;
@@ -716,6 +727,13 @@ renderGarden("all");
     // portal. Cross-origin satellites throw on the location read — ignored.
     fr.onload = function(){
       if(watchdog){ clearTimeout(watchdog); watchdog = null; }
+      if(satMode && isOpen){
+        satLoads++;
+        if(satLoads > 1){
+          clearRecover();
+          recoverTimer = setTimeout(function(){ closing = false; requestClose(); }, 1600);
+        }
+      }
       try{
         var loc = fr.contentWindow.location;
         var href = (loc && loc.href) || '';
@@ -742,6 +760,7 @@ renderGarden("all");
   function closeGame(){
     if(!isOpen) return;
     if(watchdog){ clearTimeout(watchdog); watchdog = null; }
+    clearRecover(); satLoads = 0;
     ov.classList.remove('on'); ov.setAttribute('aria-hidden','true');
     fr.removeAttribute('srcdoc');
     fr.src = 'about:blank';                 // stop the game; portal audio plays on
@@ -775,11 +794,11 @@ renderGarden("all");
   // popstate handler does the actual close.
   window.addEventListener('message', function(e){
     if(!e.data) return;
-    if(e.data.sws === 'ready' && watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked
+    if(e.data.sws === 'ready'){ clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; } }  // framing worked
     if(e.data.sws === 'close'){ requestClose(); }
     // Studio satellites (e.g. Skitterlings) speak their own protocol.
     if(e.data.source === 'skitterlings'){
-      if(e.data.type === 'ready' && watchdog){ clearTimeout(watchdog); watchdog = null; }
+      if(e.data.type === 'ready'){ clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; } }
       if(e.data.type === 'navigate-back'){ requestClose(); }
     }
   });
