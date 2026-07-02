@@ -227,14 +227,16 @@
       <h1 class="logo">Picnic Panic<span>GARDEN GALAGA</span></h1>
       <div class="stat">Defend the picnic. Your snapdragon vs. the swarm.</div>
       <button class="menu-btn" data-mode="classic">🌱 CLASSIC GARDEN
-        <small>Faithful remake · formations · dives with escorts · pollen-beam captures &amp; rescue · challenge stages</small></button>
+        <small>Faithful Galaga · formations · escort dives · pollen-beam capture &amp; rescue · transform trios · challenge stages</small></button>
       <button class="menu-btn" data-mode="deluxe">🌻 DELUXE SWARM
-        <small>The upgraded version · wasps · twin dives · streak multiplier · bonus blossoms</small></button>
+        <small>Faster &amp; meaner · splitter bugs · twin dives · streak multiplier · Triple Bloom + fighters as armour</small></button>
       <button class="menu-btn" data-mode="power">🍄 POWER BLOOM
-        <small>Classic rules + drops · spread · rapid · pierce · shield · bloom bomb</small></button>
+        <small>Power-up storm · spread · rapid · pierce · homing pollen · time-slow · nullify · bloom bomb</small></button>
+      <button class="menu-btn" data-mode="bloom">🌸 BLOOM RUSH
+        <small>Roguelite · draft a stacking upgrade after every stage · build your run</small></button>
       <button class="menu-btn alt" id="bShop">🍯 SEED SHOP <small><span class="nectar" id="shopBal1">0</span> nectar banked</small></button>
       <button class="menu-btn alt" id="bSettings">⚙ CONTROLS &amp; OPTIONS</button>
-      <div class="stat">Best — Classic <span class="nectar" id="hiC">0</span> · Deluxe <span class="nectar" id="hiD">0</span> · Power <span class="nectar" id="hiP">0</span></div>
+      <div class="stat">Best — C <span class="nectar" id="hiC">0</span> · D <span class="nectar" id="hiD">0</span> · P <span class="nectar" id="hiP">0</span> · R <span class="nectar" id="hiR">0</span></div>
     </div>
 
     <!-- SHOP -->
@@ -290,6 +292,12 @@
       <button class="menu-btn" id="bResume" style="text-align:center">RESUME</button>
       <button class="menu-btn alt" id="bQuit" style="text-align:center">QUIT TO MENU</button>
     </div>
+
+    <!-- BLOOM RUSH upgrade draft -->
+    <div class="overlay hidden" id="mDraft">
+      <h1 class="logo" style="font-size:22px">Choose a Bloom<span>UPGRADE · STACKS THIS RUN</span></h1>
+      <div id="draftRows" style="display:flex;flex-direction:column;gap:10px;width:min(320px,86vw)"></div>
+    </div>
   </div>
 </div>
 
@@ -310,7 +318,7 @@ const CFG={
   diveIntervalBase:2.6, diveIntervalPerStage:0.12, diveIntervalMin:0.8,
   deluxeSpeedMul:1.25, deluxeDiveMul:0.7, deluxeTwinChance:0.45,
   beamChance:0.45, beamDuration:2.4, beamHalfWidth:34,
-  dropChance:0.13, powerDuration:10,
+  dropChance:0.18, powerDuration:10,
   escortChance:0.6,
   extraLifeAt:[20000,70000],
   challengeEvery:4, challengePerfect:10000, challengePerHit:100,
@@ -337,7 +345,7 @@ const DEFAULT_SAVE={
   v:2, nectar:0,
   upgrades:{speed:0,fire:0,life:0,clover:0,magnet:0},
   cosmetics:{pot:'terra',owned:['terra']},
-  highs:{classic:0,deluxe:0,power:0},
+  highs:{classic:0,deluxe:0,power:0,bloom:0},
   stats:{runs:0,kills:0,bestStage:1},
   settings:{controls:'joystick',sfx:true,padSize:'m',swap:false}
 };
@@ -434,8 +442,8 @@ const G={
   mode:null,running:false,paused:false,phase:'idle',introT:0,
   score:0,stage:1,lives:3,
   shots:0,hits:0,
-  player:{x:W/2,y:H-64,vx:0,alive:true,dual:false,respawn:0,inv:0,shield:false},
-  bullets:[],ebullets:[],enemies:[],parts:[],drops:[],pops:[],rings:[],
+  player:{x:W/2,y:H-64,vx:0,alive:true,fighters:1,respawn:0,inv:0,shield:false},
+  bullets:[],ebullets:[],enemies:[],splitlings:[],parts:[],drops:[],pops:[],rings:[],
   stars:[],diveTimer:2.5,spawnQueue:[],spawnT:0,formT:0,
   challenge:false,chalHits:0,chalTotal:40,
   streak:0,mult:1,power:{spread:0,rapid:0,pierce:0},
@@ -454,6 +462,8 @@ const TYPES={
   butterfly:{emoji:'🦋',r:13,pts:130,hp:1,dive:'weave'},      // pairs weave in
   cricket:  {emoji:'🦗',r:12,pts:160,hp:1,dive:'kamikaze'},   // fast straight dive, no return
   spider:   {emoji:'🕷️',r:13,pts:170,hp:1,dive:'drop'},       // drops straight down on a thread
+  puffer:   {emoji:'🐛',r:14,pts:110,hp:1,split:2},           // bursts into 2 sporelings (Deluxe)
+  sporeling:{emoji:'🦠',r:8, pts:40, hp:1},                   // splitling — small, fast, dives
   boss:     {emoji:'🐝',r:15,pts:150,hp:2,boss:true}          // queen: capture beam
 };
 
@@ -525,12 +535,13 @@ function stagePlan(st,mode){
   else if(st>=5 && idx%2===1){ r4='mosq'; }
   rows.push({t:r4, count:8, row:3});
   rows.push({t:'fly', count:8, row:4});                                 // bulk
+  if(mode==='deluxe' && idx%2===0) rows[2].t='puffer';                  // Deluxe signature: splitters
   const multi=(mode==='deluxe')||(st>=8 && idx%3===0);                  // enemies also stream from the top
   return {shape,rows,cols,multi,gim};
 }
 function buildStage(){
-  G.enemies=[];G.spawnQueue=[];G.ebullets=[];G.bullets=[];G.drops=[];
-  G.waveDone=false;G.spawnT=0;G.introT=CFG.introTime;G.phase='intro';
+  G.enemies=[];G.spawnQueue=[];G.ebullets=[];G.bullets=[];G.drops=[];G.splitlings=[];
+  G.waveDone=false;G.spawnT=0;G.introT=CFG.introTime;G.phase='intro';G.transformDone=false;
   const st=G.stage;
   G.challenge=(st%CFG.challengeEvery===CFG.challengeEvery-1);
   if(G.challenge){buildChallenge();showMsg('CHALLENGE STAGE',1.8);sfx('coin');return;}
@@ -585,13 +596,52 @@ function spawnEnemy(q){
 }
 
 /* ---------------- RUN CONTROL ---------------- */
+// Max stacked fighters: Deluxe + Bloom Rush allow Triple (3 shots); others Dual.
+function fCap(){ return (G.mode==='deluxe'||G.mode==='bloom')?3:2; }
+// Bloom Rush run-scoped modifiers (drafted between stages; neutral in other modes).
+function freshMods(){ return {fireMul:1,speedMul:1,extraBullet:0,spread:false,pierce:false,homing:false,nectarMul:1,startShield:false}; }
+// Bloom Rush: the upgrade pool drafted between stages. `once` upgrades leave the
+// pool after being taken; the rest stack.
+const DRAFTS=[
+  {k:'fire',   name:'⚡ Quick Bloom',  desc:'+20% fire rate',        apply:m=>m.fireMul*=1.2},
+  {k:'speed',  name:'🌿 Fast Roots',   desc:'+15% move speed',       apply:m=>m.speedMul*=1.15},
+  {k:'bullet', name:'💥 Extra Volley', desc:'+1 shot on screen',     apply:m=>m.extraBullet+=1},
+  {k:'nectar', name:'🍯 Sweet Nectar', desc:'+30% nectar earned',    apply:m=>m.nectarMul*=1.3},
+  {k:'life',   name:'🌱 Extra Sprout', desc:'+1 life',               apply:()=>{G.lives++;}},
+  {k:'shieldnow',name:'🌸 Shield Petal',desc:'gain a shield now',    apply:()=>{G.player.shield=true;}},
+  {k:'grow',   name:'🌷 Second Bloom',  desc:'gain a fighter now',   apply:()=>{G.player.fighters=Math.min(fCap(),G.player.fighters+1);}},
+  {k:'spread', name:'🌰 Spread Seeds',  desc:'permanent 3-way shot',  once:true, apply:m=>m.spread=true},
+  {k:'pierce', name:'🌵 Pierce Thorn',  desc:'shots pass through',    once:true, apply:m=>m.pierce=true},
+  {k:'homing', name:'🎯 Seeker Pollen', desc:'shots home in',         once:true, apply:m=>m.homing=true}
+];
+function showDraft(){
+  const avail=DRAFTS.filter(d=>!(d.once&&G.draftTaken[d.k]));
+  const pool=avail.slice();
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=pool[i];pool[i]=pool[j];pool[j]=t;}
+  const pick=pool.slice(0,3);
+  const rows=document.getElementById('draftRows');rows.innerHTML='';
+  pick.forEach(d=>{
+    const b=document.createElement('button');b.className='menu-btn';
+    b.innerHTML=d.name+'<small>'+d.desc+'</small>';
+    b.addEventListener('click',()=>chooseDraft(d.k));
+    rows.appendChild(b);
+  });
+  showScreen('mDraft');
+}
+function chooseDraft(k){
+  const d=DRAFTS.find(x=>x.k===k);if(!d)return;
+  d.apply(G.mods);if(d.once)G.draftTaken[k]=true;
+  sfx('pow');showScreen(null);
+  G.stage++;buildStage();updHud();
+}
 function startRun(mode){
   G.mode=mode;G.score=0;G.stage=1;G.shots=0;G.hits=0;
   G.lives=3+SAVE.upgrades.life;
   const P=G.player;
-  P.dual=false;P.alive=true;P.x=W/2;P.vx=0;P.inv=2;P.respawn=0;
+  P.fighters=1;P.alive=true;P.x=W/2;P.vx=0;P.inv=2;P.respawn=0;
   P.shield=SAVE.upgrades.clover>0;
-  G.streak=0;G.mult=1;G.power={spread:0,rapid:0,pierce:0};
+  G.streak=0;G.mult=1;G.power={spread:0,rapid:0,pierce:0,homing:0,slow:0};
+  G.mods=freshMods();G.draftTaken={};
   G.captured=null;G.captureAnim=null;G.rescue=null;
   G.diveTimer=3;G.extraLives=CFG.extraLifeAt.slice();
   G.pops=[];G.rings=[];G.parts=[];
@@ -606,7 +656,7 @@ function endRun(){
   if(!G.running)return;
   G.running=false;
   document.body.classList.remove('playing');
-  const mag=1+SAVE.upgrades.magnet*CFG.magnetPerLevel;
+  const mag=(1+SAVE.upgrades.magnet*CFG.magnetPerLevel)*(G.mods?G.mods.nectarMul:1);
   const earned=Math.floor((G.score*CFG.nectarPerScore+(G.stage-1)*CFG.nectarPerStage)*mag);
   SAVE.nectar+=earned;
   SAVE.stats.runs++;
@@ -615,7 +665,7 @@ function endRun(){
   if(G.score>SAVE.highs[G.mode]){SAVE.highs[G.mode]=G.score;newHi=true;}
   persist();refreshMenus();
   const acc=G.shots?Math.round(G.hits/G.shots*100):0;
-  document.getElementById('ovMode').textContent={classic:'CLASSIC GARDEN',deluxe:'DELUXE SWARM',power:'POWER BLOOM'}[G.mode];
+  document.getElementById('ovMode').textContent={classic:'CLASSIC GARDEN',deluxe:'DELUXE SWARM',power:'POWER BLOOM',bloom:'BLOOM RUSH'}[G.mode];
   document.getElementById('ovScore').textContent=G.score;
   document.getElementById('ovStage').textContent=G.stage;
   document.getElementById('ovAcc').textContent='Shots '+G.shots+' · Hits '+G.hits+' · Accuracy '+acc+'%';
@@ -627,7 +677,7 @@ function endRun(){
 function hi(){document.getElementById('hHi').textContent=SAVE.highs[G.mode]||0;}
 function updHud(){
   document.getElementById('hScore').textContent=G.score;
-  const mag=1+SAVE.upgrades.magnet*CFG.magnetPerLevel;
+  const mag=(1+SAVE.upgrades.magnet*CFG.magnetPerLevel)*(G.mods?G.mods.nectarMul:1);
   document.getElementById('hNectar').textContent=Math.floor((G.score*CFG.nectarPerScore+(G.stage-1)*CFG.nectarPerStage)*mag);
 }
 let msgT=0;
@@ -694,7 +744,8 @@ function applyControlMode(){
 let fireCd=0;
 function update(dt){
   const t=performance.now()/1000;G.formT=t;
-  const spdM=G.mode==='deluxe'?CFG.deluxeSpeedMul:1;
+  let spdM=G.mode==='deluxe'?CFG.deluxeSpeedMul:1;
+  if(G.power.slow>0)spdM*=0.45;   // time-slow power-up drags the whole swarm
   for(const s of G.stars){s.y+=s.v*dt;if(s.y>H){s.y=-2;s.x=Math.random()*W;}}
   if(msgT>0){msgT-=dt;if(msgT<=0)document.getElementById('bigmsg').textContent='';}
   if(G.shake>0)G.shake=Math.max(0,G.shake-dt*26);
@@ -711,7 +762,8 @@ function update(dt){
   }
   if(P.alive){
     if(P.inv>0)P.inv-=dt;
-    const maxV=CFG.playerSpeed+SAVE.upgrades.speed*CFG.speedPerUpgrade;
+    const M=G.mods;
+    const maxV=(CFG.playerSpeed+SAVE.upgrades.speed*CFG.speedPerUpgrade)*M.speedMul;
     let ax=0;
     if(input.left)ax-=1;if(input.right)ax+=1;
     if(Math.abs(input.axis)>.08)ax=input.axis; // smaller deadzone (was .12) → less loose near center
@@ -721,17 +773,18 @@ function update(dt){
     if(P.x<18){P.x=18;P.vx=0;}if(P.x>W-18){P.x=W-18;P.vx=0;}
     fireCd-=dt;
     const rapid=G.power.rapid>0;
-    const rate=(rapid?CFG.rapidCooldown:CFG.fireCooldown)*(1-SAVE.upgrades.fire*CFG.firePerUpgrade);
-    const maxB=(P.dual?CFG.maxBulletsDual:CFG.maxBullets)+(rapid?4:0)+(G.power.spread>0?4:0);
+    const rate=(rapid?CFG.rapidCooldown:CFG.fireCooldown)*(1-SAVE.upgrades.fire*CFG.firePerUpgrade)/M.fireMul;
+    const spread=G.power.spread>0||M.spread, pierce=G.power.pierce>0||M.pierce, homing=G.power.homing>0||M.homing;
+    const heads=P.fighters>=3?[P.x-20,P.x,P.x+20]:P.fighters>=2?[P.x-12,P.x+12]:[P.x];
+    const baseB=P.fighters>=3?CFG.maxBulletsDual+2:P.fighters>=2?CFG.maxBulletsDual:CFG.maxBullets;
+    const maxB=baseB+(rapid?4:0)+(spread?4:0)+M.extraBullet+(homing?2:0);
     if(input.fire&&fireCd<=0&&G.bullets.length<maxB&&G.phase!=='intro'){
       fireCd=rate;
-      const spread=G.power.spread>0,pierce=G.power.pierce>0;
-      const heads=P.dual?[P.x-12,P.x+12]:[P.x];
       for(const sx of heads){
-        G.bullets.push({x:sx,y:P.y-18,vx:0,vy:-CFG.bulletSpeed,pierce});G.shots++;
+        G.bullets.push({x:sx,y:P.y-18,vx:0,vy:-CFG.bulletSpeed,pierce,homing});G.shots++;
         if(spread){
-          G.bullets.push({x:sx,y:P.y-16,vx:-120,vy:-CFG.bulletSpeed+40,pierce});
-          G.bullets.push({x:sx,y:P.y-16,vx:120,vy:-CFG.bulletSpeed+40,pierce});
+          G.bullets.push({x:sx,y:P.y-16,vx:-120,vy:-CFG.bulletSpeed+40,pierce,homing});
+          G.bullets.push({x:sx,y:P.y-16,vx:120,vy:-CFG.bulletSpeed+40,pierce,homing});
           G.shots+=2;
         }
       }
@@ -758,7 +811,7 @@ function update(dt){
     if(P.alive){
       const k=Math.min(1,r.t/1);
       r.x=r.sx+(P.x-r.sx)*k;r.y=r.sy+(P.y-r.sy)*k;
-      if(k>=1){P.dual=true;G.rescue=null;showMsg('DOUBLE BLOOM!',1.4);sfx('rescue');burst(P.x,P.y,'#e77fae',16);}
+      if(k>=1){P.fighters=Math.min(fCap(),P.fighters+1);G.rescue=null;showMsg(P.fighters>=3?'TRIPLE BLOOM!':'DOUBLE BLOOM!',1.4);sfx('rescue');burst(P.x,P.y,'#e77fae',16);}
     } else {r.waiting=true;r.t=0;r.sx=r.x;r.sy=r.y;}
   }
 
@@ -790,6 +843,7 @@ function update(dt){
         const p=bez(e.path,Math.min(1,e.pt));e.x=p.x;e.y=p.y;
         if(e.willBeam&&e.pt>.9&&!e.beamed){e.beamed=true;e.beam={t:0,dur:CFG.beamDuration};sfx('beam');}
         else if(e.pt>=1){
+          if(e.exitTop){e.dead=true;continue;}   // transform trio loops once and leaves for good
           if(e.returnUp){e.state='toslot';continue;}
           if(e.y>H-60&&G.mode==='deluxe'&&G.streak>0){G.streak=0;G.mult=1;}
           e.state='toslot';e.x=Math.max(20,Math.min(W-20,e.x));e.y=-20;
@@ -811,6 +865,11 @@ function update(dt){
     e.ang+=d*Math.min(1,dt*8);
   }
 
+  /* transform trio (Classic, once per stage from st4) */
+  if(G.mode==='classic'&&!G.challenge&&!G.transformDone&&G.stage>=4&&G.phase==='play'&&G.spawnT>4.5){
+    const formed=G.enemies.filter(e=>e.state==='form'&&!e.boss);
+    if(formed.length>=3){ transformTrio(formed); G.transformDone=true; }
+  }
   /* dive scheduler */
   if(!G.challenge&&G.phase==='play'){
     G.diveTimer-=dt*spdM;
@@ -829,8 +888,20 @@ function update(dt){
   }
 
   /* bullets */
-  for(const b of G.bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;}
-  G.bullets=G.bullets.filter(b=>b.y>-20&&b.x>-10&&b.x<W+10&&!b.dead);
+  for(const b of G.bullets){
+    if(b.homing){                                   // pollen seeks the nearest enemy
+      let best=null,bd=1e9;
+      for(const e of G.enemies){ if(e.dead)continue; const d=Math.hypot(e.x-b.x,e.y-b.y); if(d<bd){bd=d;best=e;} }
+      if(best){
+        const sp=Math.hypot(b.vx,b.vy)||CFG.bulletSpeed;
+        const dx=best.x-b.x,dy=best.y-b.y,dd=Math.hypot(dx,dy)||1;
+        b.vx+=(dx/dd*sp-b.vx)*Math.min(1,dt*6);
+        b.vy+=(dy/dd*sp-b.vy)*Math.min(1,dt*6);
+      }
+    }
+    b.x+=b.vx*dt;b.y+=b.vy*dt;
+  }
+  G.bullets=G.bullets.filter(b=>b.y>-20&&b.y<H+20&&b.x>-10&&b.x<W+10&&!b.dead);
   for(const b of G.ebullets){b.x+=b.vx*dt;b.y+=b.vy*dt;}
   G.ebullets=G.ebullets.filter(b=>b.y<H+20&&b.x>-20&&b.x<W+20&&!b.dead);
 
@@ -848,6 +919,7 @@ function update(dt){
     }
   }
   G.enemies=G.enemies.filter(e=>!e.dead);
+  if(G.splitlings.length){for(const sp of G.splitlings)G.enemies.push(sp);G.splitlings.length=0;}
 
   /* enemy fire & bodies vs player */
   if(P.alive&&P.inv<=0&&!G.captureAnim){
@@ -890,16 +962,36 @@ function update(dt){
       showMsg(perfect?'PERFECT! +'+CFG.challengePerfect:'HITS '+G.chalHits+'/'+G.chalTotal+' · +'+bonus,2.2);
       sfx('pow');
     } else sfx('clear');
-    setTimeout(()=>{if(G.running){G.stage++;buildStage();}},1500);
+    // Bloom Rush: draft a stacking upgrade after every (non-challenge) stage.
+    if(G.mode==='bloom'&&!G.challenge){
+      setTimeout(()=>{if(G.running)showDraft();},1100);
+    } else {
+      setTimeout(()=>{if(G.running){G.stage++;buildStage();}},1500);
+    }
   }
   updHud();
 }
 
+// Classic transform trio (Galaga's scorpion/stingray/flagship): once a stage,
+// three formation bugs morph, dive together, loop once and leave — worth a lot.
+const TRANSFORMS=[{e:'🦂',pts:500},{e:'🐍',pts:900},{e:'🦎',pts:1500}];
+function transformTrio(formed){
+  const tier=TRANSFORMS[(G.stage)%TRANSFORMS.length];
+  showMsg('TRANSFORM!',1.2);sfx('coin');
+  const chosen=[];
+  for(let i=0;i<3&&formed.length;i++) chosen.push(formed.splice(Math.floor(Math.random()*formed.length),1)[0]);
+  chosen.forEach((e,i)=>{
+    e.emojiOverride=tier.e;e.pts=tier.pts;e.transform=true;
+    e.state='dive';e.pt=0;e.ptV=.34;e.beam=null;e.beamed=false;e.willBeam=false;e.returnUp=false;e.exitTop=true;e.fireCd=1.2;
+    const s=i===0?-1:i===1?1:0;
+    e.path=[[e.x,e.y],[W/2+s*110,e.y+150],[W/2-s*90,e.y+70],[e.x+s*20,-40]];
+  });
+}
 function launchDive(e){
   e.state='dive';e.pt=0;e.ptV=.32;e.beamed=false;e.beam=null;e.returnUp=false;
   const P=G.player;
   const tx=Math.max(30,Math.min(W-30,P.x+(Math.random()-.5)*80));
-  e.willBeam=e.boss&&!e.carrying&&!P.dual&&!G.captured&&!G.captureAnim&&Math.random()<CFG.beamChance;
+  e.willBeam=e.boss&&!e.carrying&&P.fighters<fCap()&&!G.captured&&!G.captureAnim&&Math.random()<CFG.beamChance;
   if(e.willBeam){
     e.path=[[e.x,e.y],[e.x+(Math.random()<.5?-80:80),e.y+80],[tx,H-215],[tx,H-192]];
     e.ptV=.5;
@@ -932,7 +1024,7 @@ function updateBeam(e,dt){
   e.beam.t+=dt;
   const P=G.player;
   if(P.alive&&P.inv<=0&&!G.captured&&!G.captureAnim&&e.beam.t>.4&&e.beam.t<e.beam.dur-.3
-     &&Math.abs(P.x-e.x)<CFG.beamHalfWidth&&!P.dual){
+     &&Math.abs(P.x-e.x)<CFG.beamHalfWidth&&P.fighters<fCap()){
     G.captured={boss:e};
     G.captureAnim={boss:e,sx:P.x,sy:P.y,x:P.x,y:P.y,t:0};
     P.alive=false;P.vx=0;
@@ -970,17 +1062,35 @@ function killEnemy(e,ram){
     showMsg('PLANT RESCUED!',1.4);
   }
   if(G.mode==='power'&&Math.random()<CFG.dropChance&&!e.chal){
-    const kinds=['spread','rapid','pierce','shield','bomb','nectar'];
+    const kinds=['spread','rapid','pierce','shield','bomb','nectar','homing','slow','nullify'];
     G.drops.push({x:e.x,y:e.y,k:kinds[Math.floor(Math.random()*kinds.length)],rot:0});
   }
   if(G.mode==='deluxe'&&Math.random()<.05&&!e.chal)
     G.drops.push({x:e.x,y:e.y,k:'blossom',rot:0});
+  // Splitter: burst into sporelings that immediately dive. Staged (not pushed to
+  // G.enemies here) so they aren't hit by the same frame's collision pass.
+  if(e.split&&!e.chal&&G.mode==='deluxe'){
+    for(let s=0;s<e.split;s++){
+      const T=TYPES.sporeling, tx=Math.max(20,Math.min(W-20,e.x+(s-(e.split-1)/2)*44));
+      const sp={type:'sporeling',hp:T.hp,r:T.r,pts:T.pts,boss:false,armor:false,
+        state:'dive',pt:0,ptV:.5,beam:null,returnUp:false,beamed:false,willBeam:false,
+        row:0,col:0,chal:false,x:e.x,y:e.y,px:e.x,py:e.y,ang:Math.PI,fireCd:9,carrying:false,bob:0};
+      sp.path=[[e.x,e.y],[e.x+(s-(e.split-1)/2)*30,e.y+130],[tx,H+40]];
+      G.splitlings.push(sp);
+    }
+  }
   if(e.chal)G.chalHits++;
 }
 function playerHit(){
   const P=G.player;
   if(P.shield){P.shield=false;P.inv=1.2;sfx('hit');burst(P.x,P.y,'#7ad0f0',10,120);showMsg('SHIELD PETAL LOST',1);return;}
-  P.alive=false;P.dual=false;P.vx=0;
+  // Step-down damage (Deluxe / Bloom Rush): a hit peels off a stacked fighter
+  // instead of costing a life — the extra blooms act as armour.
+  if((G.mode==='deluxe'||G.mode==='bloom')&&P.fighters>1){
+    P.fighters--;P.inv=1.4;sfx('hit');G.shake=6;burst(P.x,P.y,'#e77fae',12,140);
+    showMsg('FIGHTER LOST',1);return;
+  }
+  P.alive=false;P.fighters=1;P.vx=0;
   sfx('hit');G.shake=8;G.freeze=Math.max(G.freeze,.06);
   burst(P.x,P.y,'#e77fae',20,170);burst(P.x,P.y,'#2f7d4f',14,140);
   G.rings.push({x:P.x,y:P.y,t:0,dur:.45,r:40,col:'rgba(231,127,174,'});
@@ -994,6 +1104,11 @@ function applyDrop(d){
   if(d.k==='nectar'){G.score+=500;G.pops.push({x:d.x,y:d.y,txt:'+500',life:.8,col:'#f2b632'});}
   else if(d.k==='blossom'){G.score+=300;G.pops.push({x:d.x,y:d.y,txt:'🌺+300',life:.9,col:'#e77fae'});}
   else if(d.k==='shield'){G.player.shield=true;showMsg('SHIELD PETAL',1);}
+  else if(d.k==='nullify'){                       // stardust — wipes every enemy bullet on screen
+    showMsg('NULLIFY!',1);G.shake=4;
+    for(const b of G.ebullets)G.rings.push({x:b.x,y:b.y,t:0,dur:.3,r:14,col:'rgba(160,210,255,'});
+    G.ebullets.length=0;
+  }
   else if(d.k==='bomb'){
     showMsg('BLOOM BOMB!',1);G.shake=7;
     G.ebullets.length=0;
@@ -1002,7 +1117,7 @@ function applyDrop(d){
     G.rings.push({x:G.player.x,y:G.player.y,t:0,dur:.6,r:200,col:'rgba(255,220,150,'});
   }
   else{G.power[d.k]=CFG.powerDuration;
-    showMsg({spread:'SPREAD SEEDS',rapid:'RAPID FIRE',pierce:'PIERCE THORN'}[d.k],1);}
+    showMsg({spread:'SPREAD SEEDS',rapid:'RAPID FIRE',pierce:'PIERCE THORN',homing:'SEEKER POLLEN',slow:'TIME SLOW'}[d.k],1);}
 }
 function burst(x,y,col,n,v0){
   for(let i=0;i<n;i++){
@@ -1016,10 +1131,10 @@ function potColors(){
   const p=POTS.find(p=>p.k===SAVE.cosmetics.pot)||POTS[0];
   return p;
 }
-function drawPlant(x,y,dual,inv,shield){
+function drawPlant(x,y,fighters,inv,shield){
   if(inv>0&&Math.floor(inv*10)%2)return;
   const pot=potColors();
-  const heads=dual?[-12,12]:[0];
+  const heads=fighters>=3?[-20,0,20]:fighters>=2?[-12,12]:[0];
   cx.save();
   cx.fillStyle=pot.c1;cx.fillRect(x-14,y+8,28,10);
   cx.fillStyle=pot.c2;cx.fillRect(x-11,y+18,22,4);
@@ -1071,7 +1186,7 @@ function render(){
   for(const d of G.drops){
     cx.save();cx.translate(d.x,d.y);cx.rotate(Math.sin(d.rot)*.4);
     cx.font='18px serif';
-    cx.fillText({spread:'🌰',rapid:'🌶️',pierce:'🌵',shield:'🌸',bomb:'🍄',nectar:'🍯',blossom:'🌺'}[d.k],0,0);
+    cx.fillText({spread:'🌰',rapid:'🌶️',pierce:'🌵',shield:'🌸',bomb:'🍄',nectar:'🍯',blossom:'🌺',homing:'🎯',slow:'⏳',nullify:'💠'}[d.k],0,0);
     cx.restore();
   }
 
@@ -1097,7 +1212,7 @@ function render(){
     cx.font=(e.boss?26:22)+'px serif';
     if(e.boss)cx.scale(1.1,1.1);
     cx.rotate(e.ang);
-    cx.fillText(TYPES[e.type].emoji,0,0);
+    cx.fillText(e.emojiOverride||TYPES[e.type].emoji,0,0);
     cx.restore();
     if((e.boss||e.armor)&&e.hp===1){   // boss enraged / armored shell cracked on first hit
       cx.strokeStyle='rgba('+(e.boss?'231,76,60':'223,223,230')+','+(0.5+0.3*Math.sin(now*8))+')';cx.lineWidth=2;
@@ -1120,7 +1235,7 @@ function render(){
 
   /* player */
   const P=G.player;
-  if(P.alive)drawPlant(P.x,P.y,P.dual,P.inv,P.shield);
+  if(P.alive)drawPlant(P.x,P.y,P.fighters,P.inv,P.shield);
 
   /* particles / rings / popups */
   for(const p of G.parts){
@@ -1161,7 +1276,9 @@ function render(){
     let py=H-42;cx.font='12px serif';
     if(G.power.spread>0){cx.fillText('🌰 '+Math.ceil(G.power.spread),W-8,py);py-=15;}
     if(G.power.rapid>0){cx.fillText('🌶️ '+Math.ceil(G.power.rapid),W-8,py);py-=15;}
-    if(G.power.pierce>0){cx.fillText('🌵 '+Math.ceil(G.power.pierce),W-8,py);}
+    if(G.power.pierce>0){cx.fillText('🌵 '+Math.ceil(G.power.pierce),W-8,py);py-=15;}
+    if(G.power.homing>0){cx.fillText('🎯 '+Math.ceil(G.power.homing),W-8,py);py-=15;}
+    if(G.power.slow>0){cx.fillText('⏳ '+Math.ceil(G.power.slow),W-8,py);}
   }
   cx.textAlign='center';
 
@@ -1188,7 +1305,7 @@ function loop(ts){
 requestAnimationFrame(loop);
 
 /* ---------------- SCREENS / MENUS ---------------- */
-const screens=['mTitle','mShop','mSet','mOver','mPause'];
+const screens=['mTitle','mShop','mSet','mOver','mPause','mDraft'];
 function showScreen(id){for(const s of screens)document.getElementById(s).classList.toggle('hidden',s!==id);}
 function refreshMenus(){
   document.getElementById('shopBal').textContent=SAVE.nectar;
@@ -1196,6 +1313,7 @@ function refreshMenus(){
   document.getElementById('hiC').textContent=SAVE.highs.classic;
   document.getElementById('hiD').textContent=SAVE.highs.deluxe;
   document.getElementById('hiP').textContent=SAVE.highs.power;
+  document.getElementById('hiR').textContent=SAVE.highs.bloom;
   buildShop();
 }
 let shopTab='up';
