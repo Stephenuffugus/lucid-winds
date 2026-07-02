@@ -620,6 +620,18 @@ renderGarden("all");
   if(!ov || !fr) return;
   var isOpen = false;
   var watchdog = null;
+  // Guards the close path: the srcdoc back link can emit sws:close twice
+  // (inline onclick fallback + shell.js's listener). Without this, two
+  // history.back() calls pop past the portal itself.
+  var closing = false;
+  function requestClose(){
+    if(!isOpen || closing) return;
+    closing = true;
+    try{ history.back(); }catch(_){ closeGame(); }
+    // If no popstate lands (nothing to pop — e.g. direct #play load),
+    // close directly so the player is never stuck on the overlay.
+    setTimeout(function(){ if(closing && isOpen) closeGame(); }, 600);
+  }
 
   // ⚠ THE "portal games won't play" FIX (2026-06-30) — and it keeps the music
   // GAPLESS. Hostinger's LiteSpeed server serves an invisible-reCAPTCHA "Bot
@@ -664,10 +676,16 @@ renderGarden("all");
       +'<link rel="stylesheet" href="/play/shell.css?v=6">'
       +'<script>window.LW_PLAY={id:"'+esc(id)+'",name:"'+esc(name)+'"};<\/script>'
       +'<script defer src="/sunbeam-sdk.js?v=2"><\/script>'
-      +'<script defer src="/play/shell.js?v=11"><\/script>'
+      +'<script defer src="/play/shell.js?v=12"><\/script>'
       +scripts
       +'</head><body>'
-      +'<header class="shell-hdr"><a class="shell-back" href="/portal/">← All games</a>'
+      // Inline onclick fallback: if shell.js is stale/dead in this iframe
+      // (cached 403 from the bot-check era, old version without
+      // wireEmbedBack), the raw href would navigate the FRAME to /portal/
+      // — an HTML request the host 403s inside iframes = black screen.
+      // postMessage works with zero dependencies; shell.js's own listener
+      // double-fires harmlessly (portal guards with `closing`).
+      +'<header class="shell-hdr"><a class="shell-back" href="/portal/" onclick="try{parent.postMessage({sws:\'close\'},\'*\');}catch(e){}return false;">← All games</a>'
       +'<div class="shell-title" id="shell-title">'+esc(name)+'</div>'
       +'<div class="shell-wallet" id="shell-wallet"><span>☀ <strong id="shell-bal">—</strong></span>'
       +'<span id="shell-pend"></span><button id="shell-signin">Sign in to save</button></div></header>'
@@ -688,7 +706,24 @@ renderGarden("all");
       fr.src = opts.src + (opts.src.indexOf('?')>=0?'&':'?') + 'embed=1';
     }
     // A successful frame load cancels the satellite redirect fallback.
-    fr.onload = function(){ if(watchdog){ clearTimeout(watchdog); watchdog = null; } };
+    // Same-origin navigation guard: a srcdoc game reports about:srcdoc. If
+    // the frame ever lands on a REAL same-origin page (a stale shell.js let
+    // the raw back link through, or a game link escaped), that HTML request
+    // gets the host's iframe-unresolvable bot-403 — the "black screen".
+    // Never strand the player there: just close the overlay back to the
+    // portal. Cross-origin satellites throw on the location read — ignored.
+    fr.onload = function(){
+      if(watchdog){ clearTimeout(watchdog); watchdog = null; }
+      try{
+        var loc = fr.contentWindow.location;
+        var href = (loc && loc.href) || '';
+        if(href && href.indexOf('about:') !== 0 && isOpen){
+          closing = false;
+          closeGame();
+          try{ if(history.state && history.state.swsGame) history.back(); }catch(_){}
+        }
+      }catch(e){}
+    };
     ov.classList.add('on'); ov.setAttribute('aria-hidden','false');
     document.body.style.overflow = 'hidden';
     if(opts.title) document.title = opts.title + ' — Sky Wolf Studios';
@@ -711,6 +746,7 @@ renderGarden("all");
     document.body.style.overflow = '';
     document.title = 'Sky Wolf Studios — Play';
     isOpen = false;
+    closing = false;
   }
 
   // Intercept game-card links (delegated, survives grid re-renders).
@@ -738,16 +774,16 @@ renderGarden("all");
   window.addEventListener('message', function(e){
     if(!e.data) return;
     if(e.data.sws === 'ready' && watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked
-    if(e.data.sws === 'close' && isOpen){ try{ history.back(); }catch(_){ closeGame(); } }
+    if(e.data.sws === 'close'){ requestClose(); }
     // Studio satellites (e.g. Skitterlings) speak their own protocol.
     if(e.data.source === 'skitterlings'){
       if(e.data.type === 'ready' && watchdog){ clearTimeout(watchdog); watchdog = null; }
-      if(e.data.type === 'navigate-back' && isOpen){ try{ history.back(); }catch(_){ closeGame(); } }
+      if(e.data.type === 'navigate-back'){ requestClose(); }
     }
   });
   // Floating exit button — guaranteed escape for framed (cross-origin) games.
   var cb = document.getElementById('game-close');
-  if(cb) cb.addEventListener('click', function(){ if(isOpen){ try{ history.back(); }catch(_){ closeGame(); } } });
+  if(cb) cb.addEventListener('click', function(){ requestClose(); });
   // Browser back closes the game instead of leaving the portal.
   window.addEventListener('popstate', function(){ if(isOpen) closeGame(); });
 })();
