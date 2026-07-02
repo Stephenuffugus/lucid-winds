@@ -302,9 +302,9 @@ const VERSION='2.0.0';
 
 /* ---------------- CONFIG (balance knobs — safe to tune) ---------------- */
 const CFG={
-  playerSpeed:180, playerAccel:1400, speedPerUpgrade:20,
-  fireCooldown:0.30, rapidCooldown:0.11, firePerUpgrade:0.12, // fraction reduction/level
-  bulletSpeed:470, maxBullets:2, maxBulletsDual:4,
+  playerSpeed:255, playerAccel:2600, speedPerUpgrade:22, // snappier: was 180/1400 (felt loose+slow)
+  fireCooldown:0.22, rapidCooldown:0.10, firePerUpgrade:0.12, // fraction reduction/level (was 0.30)
+  bulletSpeed:620, maxBullets:3, maxBulletsDual:5, // faster shots + one more on screen (was 470/2/4)
   enemyBulletBase:150, enemyBulletPerStage:8, maxEnemyBullets:10,
   diveIntervalBase:2.6, diveIntervalPerStage:0.12, diveIntervalMin:0.8,
   deluxeSpeedMul:1.25, deluxeDiveMul:0.7, deluxeTwinChance:0.45,
@@ -605,8 +605,8 @@ jz.addEventListener('pointerdown',e=>{
 });
 jz.addEventListener('pointermove',e=>{
   if(e.pointerId!==joyId)return;
-  const dx=Math.max(-48,Math.min(48,e.clientX-joyOX));
-  input.axis=dx/48;
+  const dx=Math.max(-34,Math.min(34,e.clientX-joyOX)); // tighter throw (was 48) → full tilt with less thumb travel
+  input.axis=dx/34;
   const r=jz.getBoundingClientRect();
   jk.style.left=(joyOX-r.left+dx-22)+'px';
 });
@@ -653,7 +653,7 @@ function update(dt){
     const maxV=CFG.playerSpeed+SAVE.upgrades.speed*CFG.speedPerUpgrade;
     let ax=0;
     if(input.left)ax-=1;if(input.right)ax+=1;
-    if(Math.abs(input.axis)>.12)ax=input.axis;
+    if(Math.abs(input.axis)>.08)ax=input.axis; // smaller deadzone (was .12) → less loose near center
     if(ax!==0){P.vx+=ax*CFG.playerAccel*dt;P.vx=Math.max(-maxV,Math.min(maxV,P.vx));}
     else{const f=Math.exp(-14*dt);P.vx*=f;if(Math.abs(P.vx)<4)P.vx=0;}
     P.x+=P.vx*dt;
