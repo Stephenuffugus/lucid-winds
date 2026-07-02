@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.02.05';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.02.06';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -44465,14 +44465,13 @@ document.addEventListener('keydown', function(e) {
   };
 
   // ═══ DOWNLOAD PLANT CARD — Canvas Renderer ═══
-  window.downloadPlantCard = function() {
-    if (!galleryPlant) return;
-    try { if (window.LW_ACH) LW_ACH.bump('d_download', 1); } catch(e){}
-    var plant = galleryPlant;
-    var btn = document.getElementById('gallery-download-btn');
-    if (window._toast) window._toast('<img src="assets/fx/clock-gold-v2.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;⏳&apos;;"> Rendering plant card…', {html:true});
-    btn.disabled = true;
-
+  // ── Shared card renderer ─────────────────────────────────────────────
+  // Draws the full 640x960 card (art, ledger, haiku, footer, portal QR)
+  // onto an offscreen canvas and calls done(canvas) — done(null) if the
+  // plant SVG fails to rasterize. Used by BOTH the download path and the
+  // SHARE path so the artifact that leaves the game is identical. Nothing
+  // in-game renders through this; live cards stay pure SVG/DOM.
+  function _renderPlantCard(plant, done) {
     var cardW = 640, cardH = 960;
     var svgMarkup = generatePlantSVG(plant.hash, 280);
     var traits = plant.traits || getTraitSummary(plant.hash);
@@ -44743,9 +44742,41 @@ document.addEventListener('keydown', function(e) {
         }
       }
 
-      // Trigger download — wrapped so the portal QR can draw first (async
-      // image load); the card saves with or without the QR, never hangs.
-      function _finishCard() {
+      // Portal QR (venue/flyer funnel, Jul 02) — static assets/qr-portal.png,
+      // pre-verified to decode to lucidwinds.com/portal/?drop=qr. Bottom-right
+      // inside the corner marks; collection # moved left to keep the quiet
+      // zone clean. The card completes with or without it, never hangs.
+      var _qrDone = false;
+      function _qrFinish(draw) {
+        if (_qrDone) return; _qrDone = true;
+        if (draw) { try { ctx.drawImage(_qrImg, cardW - 124, cardH - 124, 88, 88); } catch(e){} }
+        done(canvas);
+      }
+      var _qrImg = new Image();
+      _qrImg.onload  = function(){ _qrFinish(true);  };
+      _qrImg.onerror = function(){ _qrFinish(false); };
+      setTimeout(function(){ _qrFinish(false); }, 2500);
+      _qrImg.src = 'assets/qr-portal.png?v=' + (window.LW_VERSION || '0');
+    };
+
+    img.onerror = function() {
+      URL.revokeObjectURL(svgUrl);
+      done(null);
+    };
+
+    img.src = svgUrl;
+  }
+
+  window.downloadPlantCard = function() {
+    if (!galleryPlant) return;
+    try { if (window.LW_ACH) LW_ACH.bump('d_download', 1); } catch(e){}
+    var plant = galleryPlant;
+    var btn = document.getElementById('gallery-download-btn');
+    if (window._toast) window._toast('<img src="assets/fx/clock-gold-v2.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;⏳&apos;;"> Rendering plant card…', {html:true});
+    if (btn) btn.disabled = true;
+    function _btnReset() { if (btn) { btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">'; btn.disabled = false; } }
+    _renderPlantCard(plant, function(canvas) {
+      if (!canvas) { _btnReset(); return; }
       try {
         canvas.toBlob(function(blob) {
           var url = URL.createObjectURL(blob);
@@ -44757,43 +44788,18 @@ document.addEventListener('keydown', function(e) {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           if (window._toast) window._toast('✅ Plant card saved!');
-          setTimeout(function() { btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">'; btn.disabled = false; }, 800);
+          setTimeout(_btnReset, 800);
           if (typeof gtag !== 'undefined') gtag('event', 'plant_card_download', { hash: plant.hash.substring(0,16), rare: plant.rare || false });
         }, 'image/png');
       } catch(e) {
         var dataUrl = canvas.toDataURL('image/png');
-        var a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = 'lucid-winds-' + plant.hash.substring(0,8) + '.png';
-        a.click();
-        btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">';
-        btn.disabled = false;
+        var a2 = document.createElement('a');
+        a2.href = dataUrl;
+        a2.download = 'lucid-winds-' + plant.hash.substring(0,8) + '.png';
+        a2.click();
+        _btnReset();
       }
-      }
-      // Portal QR (venue/flyer funnel, Jul 02) — static assets/qr-portal.png,
-      // pre-verified to decode to lucidwinds.com/portal/?drop=qr. Bottom-right
-      // inside the corner marks; collection # moved left to keep the quiet
-      // zone clean. Card still saves if the PNG ever fails to load.
-      var _qrDone = false;
-      function _qrFinish(draw) {
-        if (_qrDone) return; _qrDone = true;
-        if (draw) { try { ctx.drawImage(_qrImg, cardW - 124, cardH - 124, 88, 88); } catch(e){} }
-        _finishCard();
-      }
-      var _qrImg = new Image();
-      _qrImg.onload  = function(){ _qrFinish(true);  };
-      _qrImg.onerror = function(){ _qrFinish(false); };
-      setTimeout(function(){ _qrFinish(false); }, 2500);
-      _qrImg.src = 'assets/qr-portal.png?v=' + (window.LW_VERSION || '0');
-    };
-
-    img.onerror = function() {
-      URL.revokeObjectURL(svgUrl);
-      btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">';
-      btn.disabled = false;
-    };
-
-    img.src = svgUrl;
+    });
   };
 
   document.addEventListener('keydown', function(e) {
@@ -49335,10 +49341,36 @@ document.addEventListener('keydown', function(e) {
   window.shareGalleryPlant = function() {
     if (!galleryPlant) return;
     try { if (window.LW_ACH) { LW_ACH.bump('d_share', 1); LW_ACH.bump('shares_total', 1); } } catch(e){}
-    var name = getPlantName(galleryPlant.hash);
-    var text = 'I just grew "' + name + '" in Lucid Winds. Specimen: ' + galleryPlant.hash.slice(0,16) + '...';
-    if (navigator.share) {
+    var plant = galleryPlant;
+    var name = getPlantName(plant.hash);
+    var text = 'I just grew "' + name + '" in Lucid Winds. Specimen: ' + plant.hash.slice(0,16) + '...';
+    function _textShare() {
       navigator.share({ title: name, text: text, url: 'https://lucidwinds.com/portal/?drop=share' }).catch(function(){});
+    }
+    if (navigator.share) {
+      // Share the rendered CARD IMAGE (with the portal QR) when the device
+      // supports file sharing — the card is the ad, not a text link. Every
+      // failure step falls back to the plain text+link share, so this can
+      // never make sharing worse than it was.
+      if (!navigator.canShare || typeof _renderPlantCard !== 'function') { _textShare(); return; }
+      if (window._toast) window._toast('<img src="assets/fx/clock-gold-v2.png" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px;display:inline-block;" onerror="this.outerHTML=&apos;⏳&apos;;"> Rendering plant card…', {html:true});
+      _renderPlantCard(plant, function(canvas) {
+        if (!canvas) { _textShare(); return; }
+        try {
+          canvas.toBlob(function(blob) {
+            if (!blob) { _textShare(); return; }
+            var file;
+            try { file = new File([blob], 'lucid-winds-' + plant.hash.substring(0,8) + '.png', { type: 'image/png' }); }
+            catch(e) { _textShare(); return; }
+            // URL rides inside text: several share targets reject url+files.
+            var payload = { files: [file], title: name, text: text + ' Grow yours free at lucidwinds.com/portal' };
+            if (navigator.canShare(payload)) {
+              navigator.share(payload).catch(function(){});
+              if (typeof gtag !== 'undefined') gtag('event', 'plant_card_share_image', { hash: plant.hash.substring(0,16) });
+            } else { _textShare(); }
+          }, 'image/png');
+        } catch(e) { _textShare(); }
+      });
     } else {
       // Fallback: copy to clipboard
       if (navigator.clipboard) navigator.clipboard.writeText(text);
