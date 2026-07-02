@@ -243,6 +243,7 @@
     <div class="seg" id="diffSeg"><button data-diff="casual">Casual</button><button data-diff="normal">Normal</button><button data-diff="hard">Hard</button></div>
     <div class="goals-card"><div class="goals-h"><span style="color:var(--ink);font-size:12px;letter-spacing:.04em">TODAY'S GOALS</span><span>resets daily</span></div><div id="missionList"></div></div>
     <button class="shop-link" id="shopLink">🎨 Border Shop</button>
+    <button class="shop-link" id="exitLink" style="opacity:.8">← All Sky Wolf games</button>
   </section>
 
   <!-- GAME -->
@@ -672,6 +673,24 @@ function refreshMenu(){
 if(!Store.g(K.owned))Store.s(K.owned,"hairline");if(!Store.g(K.equip))Store.s(K.equip,"hairline");if(!Store.g(K.diff))Store.s(K.diff,"normal");
 refreshMenu();applyEquippedBorder();
 window.addEventListener("resize",()=>{if(G&&!G.locked)renderControls();});
+
+/* ===== Sky Wolf Studios embed protocol (REFERENCE IMPLEMENTATION) =====
+   The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
+   listens for two messages:
+     {sws:'ready'}  → cancels the portal's 12s framing watchdog
+     {sws:'close'}  → portal closes the game overlay (exit to portal)
+   Rules when embedded:
+     • NEVER history.back() or navigate location — an iframe with no
+       history entry goes blank (the black-screen bug).
+     • Your in-game back/✕ returns to YOUR OWN menu screen.
+     • Only the menu's explicit exit control calls SWS_EXIT(). */
+const SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EXIT=function(){
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+  location.href='https://lucidwinds.com/portal/';
+};
+if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+$("exitLink").onclick=()=>SWS_EXIT();
 /* per-game SW removed for lucidwinds.com hosting — root sw.js handles caching */
 </script>
 </body>
