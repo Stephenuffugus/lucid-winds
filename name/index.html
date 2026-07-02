@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grow a name into a plant — Lucid Winds</title>
+<meta name="description" content="Type any name and watch it grow into a one of a kind plant with its own little poem. Free, no signup.">
+<link rel="canonical" href="https://lucidwinds.com/name/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lucidwinds.com/name/">
+<meta property="og:title" content="Grow a name into a plant">
+<meta property="og:description" content="Type any name and watch it grow into a one of a kind plant with its own poem. Free, no signup.">
+<meta property="og:image" content="https://lucidwinds.com/assets/og-card-1200x630.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0d100c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d100c; --sage:#7ab356; --gold:#c8a84b; --cream:#e8dcc8; --muted:#8a9178;
+    --panel:rgba(20,26,18,0.72);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(120% 90% at 50% -10%, rgba(122,179,86,0.10), transparent 60%),
+      radial-gradient(140% 120% at 50% 120%, rgba(200,168,75,0.08), transparent 55%),
+      var(--bg);
+    color:var(--cream);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:28px 18px calc(28px + env(safe-area-inset-bottom,0px));
+    text-align:center;
+  }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center;}
+  h1{
+    font-family:"Playfair Display",Georgia,serif; font-weight:600; font-style:italic;
+    font-size:1.65rem; line-height:1.25; margin:6px 0 4px; color:var(--cream);
+  }
+  .sub{color:var(--muted); font-size:0.9rem; line-height:1.5; margin:0 0 22px; max-width:340px;}
+  .row{display:flex; gap:8px; width:100%; margin-bottom:8px;}
+  #nameInput{
+    flex:1; min-width:0; min-height:52px; padding:0 16px;
+    background:rgba(13,16,12,0.7); border:1.5px solid rgba(200,168,75,0.38);
+    border-radius:12px; color:var(--cream); font-size:1.05rem; outline:none;
+  }
+  #nameInput::placeholder{color:rgba(138,145,120,0.7);}
+  #nameInput:focus{border-color:var(--sage);}
+  #growBtn{
+    min-height:52px; min-width:88px; padding:0 18px; border:none; border-radius:12px;
+    background:linear-gradient(180deg,#8fc466,#5f8f3f); color:#0d100c;
+    font-family:"Bebas Neue",sans-serif; letter-spacing:0.08em; font-size:1.1rem; cursor:pointer;
+  }
+  #growBtn:active{transform:translateY(1px);}
+  .hint{color:var(--muted); font-size:0.72rem; margin:0 0 8px;}
+  #card{
+    width:100%; margin-top:14px; padding:20px 18px 22px;
+    background:var(--panel); border:1px solid rgba(200,168,75,0.28); border-radius:18px;
+    box-shadow:0 18px 50px rgba(0,0,0,0.45); display:none;
+  }
+  #card.show{display:block; animation:rise .5s ease both;}
+  @keyframes rise{from{opacity:0; transform:translateY(12px);}to{opacity:1; transform:none;}}
+  #plantHolder{width:210px; height:285px; margin:0 auto 6px;}
+  #plantHolder svg{width:100%; height:100%; display:block; overflow:visible;}
+  .whose{font-family:"Playfair Display",Georgia,serif; font-style:italic; font-size:1.25rem; color:var(--cream); margin:6px 0 2px;}
+  .pname{font-family:"Bebas Neue",sans-serif; letter-spacing:0.06em; color:var(--gold); font-size:1.02rem; margin:0 0 12px;}
+  .haiku{font-family:"Playfair Display",Georgia,serif; font-style:italic; font-size:1.02rem; line-height:1.75; color:rgba(240,235,216,0.92); margin:0 0 6px; text-shadow:0 0 10px rgba(200,168,75,0.25);}
+  .exists{color:var(--muted); font-size:0.8rem; margin:8px 0 16px;}
+  .actions{display:flex; gap:8px; justify-content:center;}
+  .actions button{
+    min-height:48px; padding:0 16px; border-radius:10px; cursor:pointer;
+    font-family:"Bebas Neue",sans-serif; letter-spacing:0.07em; font-size:0.92rem;
+    background:rgba(200,168,75,0.14); border:1.5px solid rgba(200,168,75,0.5); color:var(--gold);
+  }
+  .actions button:active{transform:translateY(1px);}
+  .portal{
+    margin-top:26px; display:inline-block; color:var(--sage); text-decoration:none;
+    font-size:0.9rem; border-bottom:1px solid rgba(122,179,86,0.4); padding-bottom:2px;
+  }
+  .foot{margin-top:10px; color:rgba(138,145,120,0.6); font-size:0.68rem; line-height:1.5;}
+  canvas{display:none;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Grow a name into a plant</h1>
+    <p class="sub">Type a name. Yours, your kid's, your mom's, someone you miss. It grows into a one of a kind plant with its own little poem.</p>
+
+    <div class="row">
+      <input id="nameInput" type="text" autocomplete="off" autocapitalize="words" enterkeyhint="go" placeholder="Type a name" maxlength="40" aria-label="Type a name">
+      <button id="growBtn" type="button">Grow</button>
+    </div>
+    <p class="hint">The same name always grows the same plant.</p>
+
+    <div id="card">
+      <div id="plantHolder"></div>
+      <div class="whose" id="whose"></div>
+      <div class="pname" id="pname"></div>
+      <div class="haiku" id="haiku"></div>
+      <div class="exists" id="exists"></div>
+      <div class="actions">
+        <button id="shareBtn" type="button">Share</button>
+        <button id="saveBtn" type="button">Save image</button>
+      </div>
+    </div>
+
+    <a class="portal" id="portalLink" href="https://lucidwinds.com/portal/?drop=name">Play the full free garden at lucidwinds.com</a>
+    <p class="foot">Lucid Winds. Every plant is one of a kind, grown from math. Free, no signup.</p>
+  </div>
+
+  <canvas id="shareCanvas" width="640" height="960"></canvas>
+
+  <script src="word-banks.js"></script>
+  <script src="render-bundle.js"></script>
+  <script>
+  (function(){
+    var input = document.getElementById('nameInput');
+    var growBtn = document.getElementById('growBtn');
+    var card = document.getElementById('card');
+    var holder = document.getElementById('plantHolder');
+    var whoseEl = document.getElementById('whose');
+    var pnameEl = document.getElementById('pname');
+    var haikuEl = document.getElementById('haiku');
+    var existsEl = document.getElementById('exists');
+    var shareBtn = document.getElementById('shareBtn');
+    var saveBtn = document.getElementById('saveBtn');
+    var portalLink = document.getElementById('portalLink');
+
+    // carry a referral code through to the portal CTA + share links
+    var params = new URLSearchParams(location.search);
+    var ref = params.get('ref') || '';
+    if (ref) portalLink.href = 'https://lucidwinds.com/portal/?drop=name&ref=' + encodeURIComponent(ref);
+
+    var current = null; // { display, key, hash, svg, name, haiku }
+
+    function possessive(n){ return /s$/i.test(n) ? (n + "'") : (n + "'s"); }
+    function normKey(n){ return n.trim().replace(/\s+/g,' ').toLowerCase(); }
+
+    async function grow(rawName, push){
+      var display = (rawName||'').trim().replace(/\s+/g,' ');
+      if (!display) { input.focus(); return; }
+      var key = normKey(display);
+      if (typeof window._sha256hex !== 'function') return;
+      var hash = await window._sha256hex('lw-name::' + key); // namespace so it won't collide with plant hashes
+      var svg = window._generatePlantSVG(hash, 300, 1, null);
+      var pName = window.getPlantName(hash);
+      var hk = window.getHaiku(hash);
+
+      holder.innerHTML = svg;
+      whoseEl.textContent = possessive(display) + ' plant';
+      pnameEl.textContent = pName;
+      haikuEl.innerHTML = [hk.line1, hk.line2, hk.line3].join('<br>');
+      existsEl.textContent = 'This is ' + possessive(display) + ' plant, and now it exists.';
+      card.className = 'show';
+
+      current = { display: display, key: key, hash: hash, svg: svg, name: pName, haiku: hk };
+      document.title = possessive(display) + ' plant — Lucid Winds';
+
+      if (push) {
+        var q = '?n=' + encodeURIComponent(display) + (ref ? '&ref=' + encodeURIComponent(ref) : '');
+        try { history.replaceState(null, '', q); } catch(e){}
+      }
+    }
+
+    function deepLink(){
+      var q = '?n=' + encodeURIComponent(current.display) + (ref ? '&ref=' + encodeURIComponent(ref) : '');
+      return 'https://lucidwinds.com/name/' + q;
+    }
+
+    // Paint a 640x960 shareable card (plant + name + poem + CTA) to canvas.
+    function renderShareCard(cb){
+      var c = document.getElementById('shareCanvas');
+      var ctx = c.getContext('2d');
+      var W = c.width, H = c.height;
+      var g = ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0,'#11160e'); g.addColorStop(1,'#0a0c08');
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle = 'rgba(200,168,75,0.35)'; ctx.lineWidth = 3;
+      ctx.strokeRect(16,16,W-32,H-32);
+      ctx.textAlign = 'center';
+
+      // plant image from the svg
+      var svg64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(current.svg)));
+      var img = new Image();
+      img.onload = function(){
+        var pw = 300, ph = Math.round(pw*95/70);
+        ctx.drawImage(img, (W-pw)/2, 120, pw, ph);
+        var y = 120 + ph + 46;
+        ctx.fillStyle = '#e8dcc8'; ctx.font = 'italic 34px Georgia, serif';
+        ctx.fillText(possessive(current.display) + ' plant', W/2, 78);
+        ctx.fillStyle = 'rgba(200,168,75,0.92)'; ctx.font = '700 24px Georgia, serif';
+        ctx.fillText(current.name, W/2, y); y += 46;
+        ctx.fillStyle = 'rgba(240,235,216,0.92)'; ctx.font = 'italic 26px Georgia, serif';
+        ctx.fillText(current.haiku.line1, W/2, y); y += 38;
+        ctx.fillText(current.haiku.line2, W/2, y); y += 38;
+        ctx.fillText(current.haiku.line3, W/2, y);
+        ctx.fillStyle = '#7ab356'; ctx.font = '700 26px Georgia, serif';
+        ctx.fillText('grow yours free at lucidwinds.com', W/2, H-66);
+        ctx.fillStyle = 'rgba(138,145,120,0.8)'; ctx.font = '18px Georgia, serif';
+        ctx.fillText('one of a kind, forever', W/2, H-38);
+        c.toBlob(function(blob){ cb(blob); }, 'image/png');
+      };
+      img.onerror = function(){ cb(null); };
+      img.src = svg64;
+    }
+
+    function doShare(){
+      if (!current) return;
+      var text = possessive(current.display) + ' plant, "' + current.name + '". Grow your own at Lucid Winds.';
+      renderShareCard(function(blob){
+        var file = null;
+        try { if (blob) file = new File([blob], 'lucid-winds-plant.png', {type:'image/png'}); } catch(e){}
+        if (file && navigator.canShare && navigator.canShare({files:[file]})){
+          navigator.share({ files:[file], title:'Lucid Winds', text:text, url: deepLink() }).catch(function(){});
+        } else if (navigator.share){
+          navigator.share({ title:'Lucid Winds', text:text, url: deepLink() }).catch(function(){});
+        } else {
+          downloadBlob(blob);
+        }
+      });
+    }
+
+    function downloadBlob(blob){
+      if (!blob) return;
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (current.display.replace(/[^a-z0-9]+/gi,'-') || 'plant') + '-lucid-winds.png';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    growBtn.addEventListener('click', function(){ grow(input.value, true); });
+    input.addEventListener('keydown', function(e){ if (e.key === 'Enter') grow(input.value, true); });
+    shareBtn.addEventListener('click', doShare);
+    saveBtn.addEventListener('click', function(){ if (current) renderShareCard(downloadBlob); });
+
+    // deep link: ?n=Maria grows on load so shared links reproduce the plant
+    var pre = params.get('n');
+    if (pre){ input.value = pre; grow(pre, false); }
+    input.focus();
+  })();
+  </script>
+</body>
+</html>
