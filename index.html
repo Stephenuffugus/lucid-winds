@@ -5570,9 +5570,11 @@
 .lw-planthere{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;line-height:1;color:rgba(180,220,150,0.95);background:rgba(13,20,12,0.5);border:1.5px dashed rgba(122,179,86,0.65);box-shadow:0 1px 4px rgba(0,0,0,0.4);}
 /* ═══ HEX BADGE SCANNER — divIcon dots floating over hex centers ═══ */
 .lw-badge-icon{background:transparent!important;border:0!important;pointer-events:none;}
-.lw-badge-stack{display:flex;gap:3px;justify-content:center;align-items:center;}
-.lw-badge-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;line-height:1;color:#0d100c;font-weight:700;border:1.5px solid rgba(13,16,12,0.85);box-shadow:0 1px 4px rgba(0,0,0,0.6),0 0 0 1px rgba(232,220,200,0.15);}
-.lw-badge-more{background:rgba(232,220,200,0.92)!important;color:#0d100c;font-family:'DM Mono',monospace;font-size:9px;font-weight:700;}
+.lw-badge-stack{display:flex;gap:4px;justify-content:center;align-items:center;}
+/* Stephen 2026-07-01: badges were 18px dots — unreadable at a glance on the
+   map. Now 30px so the icon art is identifiable without tapping the hex. */
+.lw-badge-dot{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-size:15px;line-height:1;color:#0d100c;font-weight:700;border:1.5px solid rgba(13,16,12,0.85);box-shadow:0 1px 4px rgba(0,0,0,0.6),0 0 0 1px rgba(232,220,200,0.15);}
+.lw-badge-more{background:rgba(232,220,200,0.92)!important;color:#0d100c;font-family:'DM Mono',monospace;font-size:12px;font-weight:700;}
 /* ═══ HEX BADGE FILTER CHIPS ═══ */
 .lw-badge-chips{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom,0px));z-index:996;display:none;gap:6px;padding:6px 8px;background:rgba(13,16,12,0.92);border:1px solid rgba(200,168,75,0.18);border-radius:18px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 24px rgba(0,0,0,0.5);}
 .lw-badge-chips.show{display:flex;}
@@ -53709,11 +53711,11 @@ function _lwAddBadgeMarker(zk,lat,lng){
   var html='<div class="lw-badge-stack">';
   for(var i=0;i<visible.length;i++){
     var b=visible[i];var col=LW_BADGE_COLOR[b.category]||'#fff';
-    html+='<span class="lw-badge-dot" style="background:'+col+';" title="'+b.label+'">'+(window._lwEmojiSprite?_lwEmojiSprite(b.icon,22):b.icon)+'</span>';
+    html+='<span class="lw-badge-dot" style="background:'+col+';" title="'+b.label+'">'+(window._lwEmojiSprite?_lwEmojiSprite(b.icon,24):b.icon)+'</span>';
   }
   if(overflow>0)html+='<span class="lw-badge-dot lw-badge-more">+'+overflow+'</span>';
   html+='</div>';
-  var icon=L.divIcon({className:'lw-badge-icon',html:html,iconSize:[64,16],iconAnchor:[32,-12]});
+  var icon=L.divIcon({className:'lw-badge-icon',html:html,iconSize:[104,32],iconAnchor:[52,-14]});
   var mk=L.marker([lat,lng],{icon:icon,interactive:false,keyboard:false}).addTo(_map);
   _lwBadgeMarkers.push(mk);
 }
@@ -53749,11 +53751,13 @@ function _lwInjectBadgeChips(){
     };})(c.k);
     bar.appendChild(btn);
   }
-  // Legend help button
+  // Legend help button — Stephen 2026-07-01: was a 28px chip with an
+  // off-center glyph, easy to miss. Now a proper 44px gold circle.
   var helpBtn=document.createElement('button');
   helpBtn.className='lw-chip';
   helpBtn.innerHTML='?';
-  helpBtn.style.cssText='min-width:28px;padding:5px 7px;font-weight:700;';
+  helpBtn.setAttribute('aria-label','Map legend');
+  helpBtn.style.cssText='min-width:44px;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;line-height:1;color:var(--gold);border-color:rgba(200,168,75,0.55);background:rgba(200,168,75,0.12);';
   helpBtn.onclick=function(){_lwShowLegend();};
   bar.appendChild(helpBtn);
   document.body.appendChild(bar);
