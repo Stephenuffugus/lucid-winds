@@ -46,7 +46,7 @@
   .swapped #btnL{left:auto;right:calc(24px + var(--pad,72px))}
   .swapped #btnR{left:auto;right:14px}
   .swapped #btnF{right:auto;left:16px}
-  #joyzone{position:absolute;left:0;bottom:0;width:55%;height:138px;display:none}
+  #joyzone{position:absolute;left:0;bottom:0;width:60%;height:240px;display:none}
   .swapped #joyzone{left:auto;right:0}
   #joybase,#joyknob{position:absolute;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .15s}
   #joybase{width:96px;height:96px;border:3px solid rgba(255,255,255,.35);background:rgba(20,50,32,.4)}
@@ -144,7 +144,7 @@
      ⚠ ECONOMY NUMBERS (Director sign-off pending — conservative defaults):
      pay per stage cleared, capped per run and per day. A day's strong play
      tops out at ~1 plant's worth (30). Tune the three constants only. */
-  var EARN_PER_STAGE = 2;    // sunbeams per stage cleared in a run
+  var EARN_PER_STAGE = 1;    // sunbeams per stage cleared (Stephen: 2 was too rich)
   var EARN_RUN_CAP   = 12;   // max sunbeams from a single run
   var EARN_DAY_CAP   = 30;   // max sunbeams per calendar day (= 1 plant)
   var DAY_KEY = "pp_sb_day";
@@ -338,7 +338,7 @@ const DEFAULT_SAVE={
   cosmetics:{pot:'terra',owned:['terra']},
   highs:{classic:0,deluxe:0,power:0},
   stats:{runs:0,kills:0,bestStage:1},
-  settings:{controls:'buttons',sfx:true,padSize:'m',swap:false}
+  settings:{controls:'joystick',sfx:true,padSize:'m',swap:false}
 };
 let SAVE=structuredClone(DEFAULT_SAVE);
 async function loadSave(){
