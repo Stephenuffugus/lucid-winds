@@ -445,18 +445,43 @@ const G={
 for(let i=0;i<CFG.starCount;i++)G.stars.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()<.28?2:1,v:8+Math.random()*24,ph:Math.random()*7});
 
 const TYPES={
-  fly:   {emoji:'🪰',r:12,pts:50, hp:1},
-  mosq:  {emoji:'🦟',r:12,pts:80, hp:1},
-  beetle:{emoji:'🪲',r:13,pts:100,hp:1},
-  wasp:  {emoji:'🐝',r:12,pts:120,hp:1},
-  boss:  {emoji:'🐝',r:15,pts:150,hp:2,boss:true}
+  fly:      {emoji:'🪰',r:12,pts:50, hp:1},
+  ant:      {emoji:'🐜',r:11,pts:60, hp:1},
+  mosq:     {emoji:'🦟',r:12,pts:80, hp:1},
+  beetle:   {emoji:'🪲',r:13,pts:100,hp:1},
+  ladybug:  {emoji:'🐞',r:13,pts:140,hp:2,armor:true},        // armored: 2 hits, shell cracks on first
+  wasp:     {emoji:'🐝',r:12,pts:120,hp:1,dive:'weave'},      // S-weave dive
+  butterfly:{emoji:'🦋',r:13,pts:130,hp:1,dive:'weave'},      // pairs weave in
+  cricket:  {emoji:'🦗',r:12,pts:160,hp:1,dive:'kamikaze'},   // fast straight dive, no return
+  spider:   {emoji:'🕷️',r:13,pts:170,hp:1,dive:'drop'},       // drops straight down on a thread
+  boss:     {emoji:'🐝',r:15,pts:150,hp:2,boss:true}          // queen: capture beam
 };
 
 /* ---------------- FORMATION ---------------- */
-const COLS=8,CW=34,TOPY=66,RH=30;
-function slotPos(row,col,t){
+const COLS=8,CW=34,TOPY=64,RH=28;
+// Base (unswayed) slot position for a formation SHAPE. Each stage picks a shape
+// so the swarm looks and spaces differently level to level.
+function baseSlot(shape,row,col,rows,cols){
+  const midc=(cols-1)/2, tc=cols>1?(col-midc)/midc:0;   // -1..1 across the row
+  const y0=TOPY+row*RH;
+  if(shape==='wedge'){                                   // V — wider toward the bottom
+    return {x:W/2+(col-midc)*CW*(0.55+row*0.14), y:y0};
+  }
+  if(shape==='diamond'){                                 // fat middle, narrow ends
+    const midr=(rows-1)/2, w=1-Math.abs(row-midr)/(midr+1)*0.55;
+    return {x:W/2+(col-midc)*CW*w, y:y0};
+  }
+  if(shape==='arc'){                                     // shallow bowl, edges dip
+    return {x:W/2+(col-midc)*CW, y:y0+tc*tc*24};
+  }
+  if(shape==='columns'){                                 // two blocks with a center gap
+    return {x:W/2+(col-midc)*CW+(col<cols/2?-16:16), y:y0};
+  }
+  return {x:W/2+(col-midc)*CW, y:y0};                    // grid (default)
+}
+function slotPos(e,t){
   const sway=Math.sin(t*.8)*14, breathe=1+Math.sin(t*.5)*.05;
-  return {x:W/2+(col-(COLS-1)/2)*CW*breathe+sway, y:TOPY+row*RH};
+  return {x:W/2+(e.bx-W/2)*breathe+sway, y:e.by};
 }
 function bez(p,t){
   const n=p.length-1;let x=0,y=0;
@@ -468,51 +493,86 @@ function bez(p,t){
 const _bc={};
 function binom(n,k){const q=n+'_'+k;if(_bc[q])return _bc[q];let r=1;for(let i=0;i<k;i++)r=r*(n-i)/(i+1);return _bc[q]=r;}
 
-/* three entry-path archetypes, chosen per squad */
+/* entry-path archetypes, chosen per squad */
 function entryPath(side,arch){
   const s=side, sx=s<0?-30:W+30;
   if(arch===0) // wide loop-in
     return [[sx,120],[W/2-s*150,300],[W/2+s*130,390],[W/2-s*60,200],[W/2,140]];
   if(arch===1) // top-corner spiral
     return [[W/2+s*150,-30],[W/2+s*170,180],[W/2-s*40,320],[W/2-s*150,180],[W/2,120]];
+  if(arch===3) // straight down from the top edge (multi-edge stages)
+    return [[W/2+s*70,-40],[W/2+s*30,130],[W/2-s*50,250],[W/2,180],[W/2,140]];
   // S-weave
   return [[sx,60],[W/2+s*40,160],[W/2-s*140,260],[W/2+s*120,360],[W/2,150]];
 }
 
 /* ---------------- STAGE BUILD ---------------- */
+// Formation shapes + mid-tier enemies rotate by stage so no two consecutive
+// stages look or play the same. New enemy behaviours unlock as you climb.
+const SHAPES=['grid','wedge','arc','diamond','columns'];
+const MIDPOOL=['mosq','wasp','butterfly','cricket'];
+function stagePlan(st,mode){
+  const idx=st-1, cols=8;
+  const shape=SHAPES[idx%SHAPES.length];
+  const rows=[];
+  rows.push({t:'boss',    count:Math.min(6,2+Math.floor(st/3)), row:0}); // queens grow slowly
+  rows.push({t: st>=3?'ladybug':'beetle', count:6, row:1});             // armored shells from st3
+  rows.push({t: MIDPOOL[idx%MIDPOOL.length], count:8, row:2});          // rotating mid-tier
+  // 4th row rotates in the special behaviours as gimmick stages come round
+  let r4='ant', gim=null;
+  if(st>=4 && st%3===0){ r4='cricket'; gim='kamikaze'; }                // fast straight divers
+  else if(st>=6 && st%4===2){ r4='spider'; gim='ambush'; }             // thread-drop ambush
+  else if(st>=5 && idx%2===1){ r4='mosq'; }
+  rows.push({t:r4, count:8, row:3});
+  rows.push({t:'fly', count:8, row:4});                                 // bulk
+  const multi=(mode==='deluxe')||(st>=8 && idx%3===0);                  // enemies also stream from the top
+  return {shape,rows,cols,multi,gim};
+}
 function buildStage(){
   G.enemies=[];G.spawnQueue=[];G.ebullets=[];G.bullets=[];G.drops=[];
   G.waveDone=false;G.spawnT=0;G.introT=CFG.introTime;G.phase='intro';
   const st=G.stage;
   G.challenge=(st%CFG.challengeEvery===CFG.challengeEvery-1);
   if(G.challenge){buildChallenge();showMsg('CHALLENGE STAGE',1.8);sfx('coin');return;}
+  const plan=stagePlan(st,G.mode), rowN=plan.rows.length, cols=plan.cols;
   const layout=[];
-  for(let c=2;c<6;c++)layout.push({t:'boss',r:0,c});
-  for(let c=1;c<7;c++)layout.push({t:'beetle',r:1,c});
-  for(let c=0;c<8;c++)layout.push({t:(G.mode==='deluxe'&&st>1)?'wasp':'mosq',r:2,c});
-  for(let c=0;c<8;c++)layout.push({t:'fly',r:3,c});
-  for(let c=0;c<8;c++)layout.push({t:'fly',r:4,c});
+  for(const R of plan.rows){
+    const start=Math.floor((cols-R.count)/2);         // centre each row
+    for(let k=0;k<R.count;k++){
+      const col=start+k, b=baseSlot(plan.shape,R.row,col,rowN,cols);
+      layout.push({t:R.t,r:R.row,c:col,bx:b.x,by:b.y});
+    }
+  }
   let i=0;
   for(const L of layout){
     const squad=Math.floor(i/8);
-    G.spawnQueue.push({...L,delay:squad*2.1+(i%8)*.15,side:squad%2?1:-1,arch:squad%3});
+    const arch=plan.multi ? [0,1,2,3][squad%4] : squad%3;  // multi-edge adds top-entry squads
+    G.spawnQueue.push({...L,delay:squad*2.0+(i%8)*.14,side:squad%2?1:-1,arch});
     i++;
   }
-  showMsg('STAGE '+st,1.5);
+  const label=plan.gim==='kamikaze'?'STAGE '+st+' — SWARM RUSH'
+            :plan.gim==='ambush'?'STAGE '+st+' — AMBUSH'
+            :'STAGE '+st;
+  showMsg(label,1.5);
 }
+// Challenge (bonus) stages rotate through 3 fly-through patterns so they don't repeat.
 function buildChallenge(){
   G.chalHits=0;G.chalTotal=40;
+  const variant=Math.floor(G.stage/CFG.challengeEvery)%3;
   for(let s=0;s<5;s++){
     const side=s%2?1:-1;
+    const t = variant===0 ? (s<2?'fly':(s<4?'mosq':'butterfly'))
+            : variant===1 ? (s%2?'butterfly':'wasp')
+            : ['fly','ant','mosq','butterfly','wasp'][s];
     for(let j=0;j<8;j++)
-      G.spawnQueue.push({t:s<2?'fly':(s<4?'mosq':'beetle'),chal:true,delay:s*2.3+j*.17,side,arch:s%3});
+      G.spawnQueue.push({t,chal:true,delay:s*2.3+j*.17,side,arch:variant===2?(s%4):(s%3)});
   }
 }
 function spawnEnemy(q){
   const T=TYPES[q.t];
-  const e={type:q.t,hp:T.hp,r:T.r,pts:T.pts,boss:!!T.boss,
+  const e={type:q.t,hp:T.hp,r:T.r,pts:T.pts,boss:!!T.boss,armor:!!T.armor,
     state:'enter',path:null,pt:0,ptV:.34,
-    row:q.r,col:q.c,chal:!!q.chal,
+    row:q.r,col:q.c,bx:q.bx,by:q.by,chal:!!q.chal,
     x:0,y:0,px:0,py:0,ang:Math.PI,fireCd:1+Math.random()*3,
     carrying:false,bob:Math.random()*7};
   if(q.chal){
@@ -716,12 +776,12 @@ function update(dt){
       const p=bez(e.path,Math.min(1,e.pt));e.x=p.x;e.y=p.y;
       if(e.pt>=1){if(e.chal){e.dead=true;continue;}e.state='toslot';}
     } else if(e.state==='toslot'){
-      const s=slotPos(e.row,e.col,G.formT);
+      const s=slotPos(e,G.formT);
       const dx=s.x-e.x,dy=s.y-e.y,d=Math.hypot(dx,dy),v=150*spdM*dt;
       if(d<v){e.x=s.x;e.y=s.y;e.state='form';}
       else{e.x+=dx/d*v;e.y+=dy/d*v;}
     } else if(e.state==='form'){
-      const s=slotPos(e.row,e.col,G.formT);
+      const s=slotPos(e,G.formT);
       e.x=s.x;e.y=s.y+Math.sin(G.formT*2.4+e.bob)*2;
     } else if(e.state==='dive'){
       if(e.beam){updateBeam(e,dt);}
@@ -843,11 +903,20 @@ function launchDive(e){
   if(e.willBeam){
     e.path=[[e.x,e.y],[e.x+(Math.random()<.5?-80:80),e.y+80],[tx,H-215],[tx,H-192]];
     e.ptV=.5;
-  } else if(e.type==='wasp'){
-    const s=Math.random()<.5?-1:1;
-    e.path=[[e.x,e.y],[e.x+s*120,e.y+120],[e.x-s*120,e.y+240],[tx+s*100,H-120],[tx,H+40]];
   } else {
-    e.path=[[e.x,e.y],[e.x+(Math.random()-.5)*180,e.y+100],[tx+(Math.random()-.5)*60,H-160],[tx,H+40]];
+    const beh=TYPES[e.type].dive;
+    if(beh==='weave'){                         // wasp / butterfly — S-curve sweep across
+      const s=Math.random()<.5?-1:1;
+      e.path=[[e.x,e.y],[e.x+s*120,e.y+120],[e.x-s*120,e.y+240],[tx+s*100,H-120],[tx,H+40]];
+    } else if(beh==='kamikaze'){               // cricket — fast, near-straight lunge at the player
+      e.path=[[e.x,e.y],[e.x+(tx-e.x)*.45,e.y+150],[tx,H+40]];
+      e.ptV=.5;
+    } else if(beh==='drop'){                    // spider — plunges straight down on its thread
+      e.path=[[e.x,e.y],[e.x,e.y+170],[e.x+(Math.random()-.5)*46,H+40]];
+      e.ptV=.42;
+    } else {                                    // default arc dive
+      e.path=[[e.x,e.y],[e.x+(Math.random()-.5)*180,e.y+100],[tx+(Math.random()-.5)*60,H-160],[tx,H+40]];
+    }
   }
   /* boss escorts: pull up to 2 flies from lower rows, matching real Galaga */
   if(e.boss&&!e.willBeam&&Math.random()<CFG.escortChance){
@@ -1030,8 +1099,8 @@ function render(){
     cx.rotate(e.ang);
     cx.fillText(TYPES[e.type].emoji,0,0);
     cx.restore();
-    if(e.boss&&e.hp===1){
-      cx.strokeStyle='rgba(231,76,60,'+(0.5+0.3*Math.sin(now*8))+')';cx.lineWidth=2;
+    if((e.boss||e.armor)&&e.hp===1){   // boss enraged / armored shell cracked on first hit
+      cx.strokeStyle='rgba('+(e.boss?'231,76,60':'223,223,230')+','+(0.5+0.3*Math.sin(now*8))+')';cx.lineWidth=2;
       cx.beginPath();cx.arc(e.x,e.y,e.r+3,0,7);cx.stroke();
     }
     if(e.carrying){cx.font='14px serif';cx.fillText('🌷',e.x,e.y-18);}
