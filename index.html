@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.02.06';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.02.07';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -63017,6 +63017,7 @@ var G=[
 {id:'huematch',n:'Hue Match',i:'\ud83c\udf08',r:'Match a target color by feel before the clock runs out.',cat:'studio',ext:'/satellites/hues/',thumb:'portal-assets/thumbs/hues.png'},
 {id:'shellshuffle',n:'Shell Shuffle',i:'\ud83d\udc1a',r:'Watch the cups, find the ball, build a daily streak.',cat:'studio',ext:'/satellites/shell-shuffle/',thumb:'portal-assets/thumbs/shell-shuffle.png'},
 {id:'bloomingwords',n:'Blooming Words',i:'\ud83c\udf38',r:'Trace five letters to spell words and grow an interlocking crossword garden. Any real word becomes a pressing \u2014 extra pollen for your journal. 142 hand-grown gardens.',cat:'studio',ext:'/satellites/blooming-words/',thumb:'portal-assets/thumbs/blooming-words.png'},
+{id:'tally',n:'Tally',i:'\ud83e\uddee',r:'Combine numbers and operators to hit the target \u2014 every puzzle hides several solutions, and collectible pals cheer every one you find. Endless worlds, a daily board, cosmetic-only shop.',cat:'studio',ext:'https://stephenuffugus.github.io/Tally/',thumb:'portal-assets/thumbs/tally.png'},
 // Brawl: genuinely still in build (portal had soon:true) -- wip = visible SOON badge, non-tappable.
 {id:'brawl',n:'Brawl',i:'\ud83c\udf7a',r:'Multiplayer mayhem.',cat:'studio',ext:'https://stephenuffugus.github.io/BarBrawl/',thumb:'portal-assets/thumbs/brawl.png',wip:true}
 // HUNCH intentionally NOT a Lucid Winds game: every round costs real API $ (Claude vision + judge),
@@ -63055,8 +63056,16 @@ function _gHiddenHere(g){if(!g)return false;var extExternal=g.ext&&g.ext.charAt(
     sweetspot:  {win:3, combo:1},                            // one-thumb timing
     glyphforge: {win:4, milestone:1, progress:1, combo:1},   // longer — pays as you play
     tarotrun:   {win:4, milestone:1, progress:1, combo:1},   // longer — pays as you play
+    // NEW_SATELLITE_BRIEF games announce first-time-only moments via
+    // {sws:'earn', moment} — priced under `_moments` (see the handler below).
+    // Tally per its handoff table: ~3-6 level_clears + daily lands 25-45/session.
+    tally:      {_moments:{first_solve:2, level_clear:5, three_star:3, world_clear:8, daily_done:6, streak_milestone:10, pal_unlock:6, skin_unlock:6}},
     _default:   {win:3, milestone:1, progress:1, combo:1, _default:1}
   };
+  // Daily per-game cap for the moment path. Moments are first-time-only in
+  // the GAME's own state, but that's client-claimed — this is the host-side
+  // guard so a lying page still can't farm more than a good honest session.
+  var MOMENT_DAILY_CAP = 60;
   // Only repeated COMPLETIONS taper. Mid-game drips (progress/milestone/combo)
   // always pay full, so one long playthrough keeps earning as you go.
   var TAPER_EVENTS = {win:1};
@@ -63105,6 +63114,31 @@ function _gHiddenHere(g){if(!g)return false;var extExternal=g.ext&&g.ext.charAt(
           }
         }
         return; // coins / ready / world-unlocked / navigate-back never mint
+      }
+      // ── NEW_SATELLITE_BRIEF moment path (Tally + future brief games) ──
+      // Shape: {sws:'earn', moment:'level_clear', detail:{...}}. The message
+      // carries no game id, so it's attributed to the OPEN ext game (_a set
+      // by _sg) — a background frame can't earn for a game you're not in.
+      // Only games with a `_moments` card pay; unlisted moments pay 0.
+      if(d && d.sws==='earn' && typeof d.moment==='string'){
+        var mg = (typeof window._a==='string' && window._a) ? window._a : '';
+        var mCard = STUDIO_RATES[mg];
+        if(!mCard || !mCard._moments) return;
+        var mBase = mCard._moments[d.moment.slice(0,32)];
+        if(typeof mBase!=='number' || mBase<1) return;
+        var mSt; try{ mSt=JSON.parse(localStorage.getItem('lw_studio_moments')||'{}')||{}; }catch(e){ mSt={}; }
+        if(mSt.day!==_today()) mSt={day:_today(), paid:{}};
+        if(!mSt.paid) mSt.paid={};
+        var mPaid = mSt.paid[mg]||0;
+        var mAmt = Math.min(mBase, MOMENT_DAILY_CAP-mPaid);
+        var mMin = Math.floor(Date.now()/60000);
+        if(mMin!==_minW){_minW=mMin;_minSpent=0;}
+        if(_minSpent+mAmt>MAX_PER_MIN) mAmt=MAX_PER_MIN-_minSpent;
+        if(mAmt<1) return;
+        mSt.paid[mg]=mPaid+mAmt; _minSpent+=mAmt;
+        try{ localStorage.setItem('lw_studio_moments', JSON.stringify(mSt)); }catch(e){}
+        if(typeof window.earnHashes==='function') window.earnHashes(mAmt, ('studio:'+mg+':'+d.moment).slice(0,32));
+        return;
       }
       if(!d || d.source!=='sunbeam-sdk' || d.type!=='earn') return;
       var game = (typeof d.game==='string' && d.game) ? d.game.slice(0,32) : '';

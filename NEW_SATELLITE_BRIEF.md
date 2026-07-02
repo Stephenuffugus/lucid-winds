@@ -75,10 +75,14 @@ Give your game its own internal score/currency if it wants one — do NOT
 integrate sunbeams, Firebase, or any SDK yourself. Instead:
 
 - Route all internal earning/spending through ONE small `Wallet`-style object
-  (`earn(n, reason)` / `spend(n, reason)`), clearly marked with a comment,
-  and/or fire a callback at each meaningful moment (word found, level
-  cleared, daily done, win). The Lucid Winds Claude patches sunbeam earns
-  into those exact points.
+  (`earn(n, reason)` / `spend(n, reason)`), clearly marked with a comment.
+- **Announce each first-time-only meaningful moment to the parent frame**
+  (this is the official protocol, adopted from Tally):
+  `parent.postMessage({sws:'earn', moment:'level_clear', detail:{...}}, '*')`
+  — only when embedded. The host prices each moment from its own rate card
+  and enforces its own caps; your message can never set an amount. Keep the
+  moment names short and stable (`level_clear`, `daily_done`, `three_star`,
+  `world_clear`, `streak_milestone`, ...).
 - In your handoff, LIST the earn-worthy moments and roughly how often a
   casual player hits each per session. Balance target on our side is about
   20-40 sunbeams per solid session, anti-farm guarded (first-time-only
