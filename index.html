@@ -774,7 +774,7 @@
   <meta property="og:title" content="Lucid Winds — Botanical Collectible Game">
   <meta property="og:description" content="Earn unique procedural plants by playing games. Every plant is one-of-one. Collect, breed, and grow.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://lucidwinds.com">
+  <meta property="og:url" content="https://lucidwinds.com/portal/">
   <meta property="og:site_name" content="Lucid Winds">
   <meta property="og:image" content="https://lucidwinds.com/assets/og-card-1200x630.jpg">
   <meta property="og:image:secure_url" content="https://lucidwinds.com/assets/og-card-1200x630.jpg">
@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.02.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.02.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -44700,9 +44700,12 @@ document.addEventListener('keydown', function(e) {
         ctx.fillText(_ftGrade.name.toUpperCase() + '  ·  ONE OF ONE, FOREVER', cardW/2, divY + 46);
       }
       // URL sits at the true bottom of the card (the haiku owns divY+76+).
+      // Centered in the space LEFT of the QR (which owns the bottom-right
+      // 124px) so the two can never collide, even with fallback fonts.
       ctx.fillStyle = 'rgba(200,168,75,0.85)';
-      ctx.font = '700 15px DM Mono, monospace';
-      ctx.fillText('grow yours at lucidwinds.com', cardW/2, cardH - 40);
+      ctx.font = '700 14px DM Mono, monospace';
+      ctx.fillText('grow yours free at', (cardW - 124) / 2, cardH - 56);
+      ctx.fillText('lucidwinds.com/portal', (cardW - 124) / 2, cardH - 36);
 
       // Haiku inscription — bold + glowing
       ctx.fillStyle = 'rgba(240,235,216,0.88)';
@@ -44716,19 +44719,21 @@ document.addEventListener('keydown', function(e) {
       ctx.fillText(haiku.line3, cardW/2, haikuY + 52);
       ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
 
-      // Collection number
+      // Collection number — pulled left of the QR so the code corner stays
+      // clean for scanners (even a 12%-opacity glyph inside the quiet zone
+      // costs error-correction headroom).
       if (plant.collectionIndex !== undefined) {
         ctx.fillStyle = 'rgba(200,168,75,0.12)';
         ctx.font = '700 60px Bebas Neue, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText('#' + (plant.collectionIndex + 1), cardW - 40, cardH - 36);
+        ctx.fillText('#' + (plant.collectionIndex + 1), cardW - 140, cardH - 36);
       }
 
       // Hash fingerprint for scanning/sharing (bottom-left)
       ctx.fillStyle = 'rgba(122,179,86,0.25)';
       ctx.font = '400 9px DM Mono, monospace';
       ctx.textAlign = 'left';
-      ctx.fillText('lucidwinds.com/plant/' + plant.hash.slice(0,16), 36, cardH - 24);
+      ctx.fillText('specimen ' + plant.hash.slice(0,16), 36, cardH - 24);
       // Plant song key signature
       if (window.getPlantSong) {
         var _cardSong = getPlantSong(plant.hash);
@@ -44738,7 +44743,9 @@ document.addEventListener('keydown', function(e) {
         }
       }
 
-      // Trigger download
+      // Trigger download — wrapped so the portal QR can draw first (async
+      // image load); the card saves with or without the QR, never hangs.
+      function _finishCard() {
       try {
         canvas.toBlob(function(blob) {
           var url = URL.createObjectURL(blob);
@@ -44762,6 +44769,22 @@ document.addEventListener('keydown', function(e) {
         btn.innerHTML = '<img src="assets/btn-download-v2.png?v=apr27" alt="Download">';
         btn.disabled = false;
       }
+      }
+      // Portal QR (venue/flyer funnel, Jul 02) — static assets/qr-portal.png,
+      // pre-verified to decode to lucidwinds.com/portal/?drop=qr. Bottom-right
+      // inside the corner marks; collection # moved left to keep the quiet
+      // zone clean. Card still saves if the PNG ever fails to load.
+      var _qrDone = false;
+      function _qrFinish(draw) {
+        if (_qrDone) return; _qrDone = true;
+        if (draw) { try { ctx.drawImage(_qrImg, cardW - 124, cardH - 124, 88, 88); } catch(e){} }
+        _finishCard();
+      }
+      var _qrImg = new Image();
+      _qrImg.onload  = function(){ _qrFinish(true);  };
+      _qrImg.onerror = function(){ _qrFinish(false); };
+      setTimeout(function(){ _qrFinish(false); }, 2500);
+      _qrImg.src = 'assets/qr-portal.png?v=' + (window.LW_VERSION || '0');
     };
 
     img.onerror = function() {
@@ -49315,7 +49338,7 @@ document.addEventListener('keydown', function(e) {
     var name = getPlantName(galleryPlant.hash);
     var text = 'I just grew "' + name + '" in Lucid Winds. Specimen: ' + galleryPlant.hash.slice(0,16) + '...';
     if (navigator.share) {
-      navigator.share({ title: name, text: text, url: window.location.href }).catch(function(){});
+      navigator.share({ title: name, text: text, url: 'https://lucidwinds.com/portal/?drop=share' }).catch(function(){});
     } else {
       // Fallback: copy to clipboard
       if (navigator.clipboard) navigator.clipboard.writeText(text);
@@ -69411,7 +69434,7 @@ function GMM(a){
   window._MMShare=function(){
     var modeLbl=_mmGameMode==='daily'?('Daily · '+_mmTodayKey()):'Random';
     var result=guesses.length===0?'?':(guesses[guesses.length-1].exact===4?(''+guesses.length+'/'+_mmMaxG):('X/'+_mmMaxG));
-    var text='SEED CODE · '+modeLbl+' · '+result+'\n\n'+_mmEmojiGrid()+'\n\nlucidwinds.com';
+    var text='SEED CODE · '+modeLbl+' · '+result+'\n\n'+_mmEmojiGrid()+'\n\nlucidwinds.com/portal';
     if(navigator.share){
       navigator.share({text:text}).catch(function(){_mmClipCopy(text);});
     }else{
@@ -89010,7 +89033,7 @@ window._lwOpenInviteModal = function(){
   h +=   '<button onclick="(function(){try{navigator.clipboard.writeText(\'' + myCode + '\').then(function(){if(window._toast)window._toast(\'Code copied!\');});}catch(e){}})();" style="padding:8px 12px;border:1px solid rgba(200,168,75,0.5);border-radius:6px;background:rgba(200,168,75,0.12);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;min-height:40px;">COPY</button>';
   h += '</div>';
   // Share template button
-  var shareText = 'Come grow plants in Lucid Winds with me. Use my code ' + myCode + ' when you sign up and we both get a bonus. https://lucidwinds.com';
+  var shareText = 'Come grow plants in Lucid Winds with me. Play free at https://lucidwinds.com/portal/?ref=' + myCode + ' and use my code ' + myCode + ' when you make an account, so we both get a bonus.';
   var shareTextSafe = shareText.replace(/'/g,'&#39;');
   h += '<button onclick="(function(){try{if(navigator.share){navigator.share({title:\'Lucid Winds\',text:\'' + shareTextSafe + '\'}).catch(function(){});}else{navigator.clipboard.writeText(\'' + shareTextSafe + '\').then(function(){if(window._toast)window._toast(\'Share text copied!\');});}}catch(e){}})();" style="display:block;width:100%;padding:0.7rem;margin-bottom:1rem;border:1.5px solid rgba(232,160,191,0.5);border-radius:10px;background:linear-gradient(180deg,rgba(232,160,191,0.18),rgba(140,80,110,0.28));color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:48px;">\ud83d\udce4 SHARE INVITE</button>';
   // Apply someone else's code
@@ -103831,12 +103854,12 @@ window.LW_Comp = (function(){
         for(var u=0;u<urls.length;u++){ try{URL.revokeObjectURL(urls[u]);}catch(e){} }
         ctx.textAlign='center';
         ctx.fillStyle='#e8dcc8'; ctx.font='italic 30px Georgia, serif'; ctx.fillText('Every plant is one of a kind.', W/2, H-126);
-        ctx.fillStyle='#7ab356'; ctx.font='700 32px Bebas Neue, sans-serif'; ctx.fillText('GROW YOURS FREE · lucidwinds.com', W/2, H-74);
+        ctx.fillStyle='#7ab356'; ctx.font='700 32px Bebas Neue, sans-serif'; ctx.fillText('GROW YOURS FREE · lucidwinds.com/portal', W/2, H-74);
         canvas.toBlob(function(blob){
           if(!blob){ if(window._toast)window._toast('Could not paint the garden. Try again.'); return; }
           var file=null; try{ file=new File([blob],'lucid-winds-garden.png',{type:'image/png'}); }catch(e){}
           if(file && navigator.canShare && navigator.canShare({files:[file]})){
-            navigator.share({files:[file], title:'My Lucid Winds garden', text:'Every plant is one of a kind. Grow yours free at lucidwinds.com'}).catch(function(){});
+            navigator.share({files:[file], title:'My Lucid Winds garden', text:'Every plant is one of a kind. Grow yours free at lucidwinds.com/portal'}).catch(function(){});
           } else {
             var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='lucid-winds-garden.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
             if(window._toast)window._toast('Garden image saved. Share it anywhere!');
