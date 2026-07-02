@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: backgammon
  *
  * COPY of the inline GBG mount function from index.html
- * lines 70125-70556.
+ * lines 70151-70582.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
