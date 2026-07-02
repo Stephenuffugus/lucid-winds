@@ -40,7 +40,8 @@
   .padbtn:active{background:rgba(242,182,50,.45)}
   #btnL,#btnR{width:var(--pad,72px);height:var(--pad,72px);font-size:26px}
   #btnL{left:14px} #btnR{left:calc(24px + var(--pad,72px))}
-  #btnF{right:16px;width:calc(var(--pad,72px) + 20px);height:calc(var(--pad,72px) + 20px);
+  #btnF{right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 4px); /* dropped to the bottom edge (was 16px) so it clears the play area */
+    width:calc(var(--pad,72px) + 8px);height:calc(var(--pad,72px) + 8px); /* trimmed the oversize (was +20) */
     font-size:15px;letter-spacing:2px;color:#ffe9b0;border-color:var(--honey);background:rgba(120,70,10,.5)}
   .pad-s{--pad:60px}.pad-m{--pad:74px}.pad-l{--pad:92px}
   .swapped #btnL{left:auto;right:calc(24px + var(--pad,72px))}
