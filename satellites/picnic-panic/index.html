@@ -234,18 +234,20 @@
         <small>Power-up storm · spread · rapid · pierce · homing pollen · time-slow · nullify · bloom bomb</small></button>
       <button class="menu-btn" data-mode="bloom">🌸 BLOOM RUSH
         <small>Roguelite · draft a stacking upgrade after every stage · build your run</small></button>
-      <button class="menu-btn alt" id="bShop">🍯 SEED SHOP <small><span class="nectar" id="shopBal1">0</span> nectar banked</small></button>
+      <button class="menu-btn alt" id="bShop">🍯 COSMETICS <small><span class="nectar" id="shopBal1">0</span> nectar banked</small></button>
       <button class="menu-btn alt" id="bSettings">⚙ CONTROLS &amp; OPTIONS</button>
       <div class="stat">Best — C <span class="nectar" id="hiC">0</span> · D <span class="nectar" id="hiD">0</span> · P <span class="nectar" id="hiP">0</span> · R <span class="nectar" id="hiR">0</span></div>
     </div>
 
-    <!-- SHOP -->
+    <!-- SHOP (cosmetics only) -->
     <div class="overlay hidden" id="mShop">
-      <h1 class="logo" style="font-size:22px">Seed Shop<span>PERMANENT UPGRADES</span></h1>
+      <h1 class="logo" style="font-size:22px">Cosmetics<span>DRESS UP YOUR GARDEN</span></h1>
       <div class="stat">Nectar banked: <span class="nectar" id="shopBal">0</span> 🍯</div>
       <div class="tabbar">
-        <button id="tabUp" class="on">UPGRADES</button>
-        <button id="tabCos">POTS</button>
+        <button data-cat="pot" class="on">POTS</button>
+        <button data-cat="plant">PLANTS</button>
+        <button data-cat="shot">SHOTS</button>
+        <button data-cat="bg">SCENES</button>
       </div>
       <div id="shopRows" style="display:flex;flex-direction:column;gap:8px;max-height:48vh;overflow-y:auto"></div>
       <button class="menu-btn alt" id="bShopBack" style="text-align:center">◀ BACK</button>
@@ -344,7 +346,8 @@ const Store=(()=> {
 const DEFAULT_SAVE={
   v:2, nectar:0,
   upgrades:{speed:0,fire:0,life:0,clover:0,magnet:0},
-  cosmetics:{pot:'terra',owned:['terra']},
+  cosmetics:{pot:'terra',plant:'snap',shot:'gold',bg:'meadow',
+    owned:{pot:['terra'],plant:['snap'],shot:['gold'],bg:['meadow']}},
   highs:{classic:0,deluxe:0,power:0,bloom:0},
   stats:{runs:0,kills:0,bestStage:1},
   settings:{controls:'joystick',sfx:true,padSize:'m',swap:false}
@@ -356,9 +359,17 @@ async function loadSave(){
     SAVE=Object.assign(structuredClone(DEFAULT_SAVE),d);
     for(const k of ['upgrades','cosmetics','highs','stats','settings'])
       SAVE[k]=Object.assign(structuredClone(DEFAULT_SAVE[k]),d[k]||{});
+    // Migrate old cosmetics (flat owned array + pot only) to the per-category shape.
+    const C=SAVE.cosmetics;
+    if(!C.owned||Array.isArray(C.owned)){
+      const oldOwned=Array.isArray(C.owned)?C.owned:['terra'];
+      C.owned={pot:Array.from(new Set(['terra'].concat(oldOwned))),plant:['snap'],shot:['gold'],bg:['meadow']};
+    }
+    for(const cat of ['pot','plant','shot','bg']) if(!Array.isArray(C.owned[cat])) C.owned[cat]=[DEFAULT_SAVE.cosmetics[cat]];
+    if(!C.plant)C.plant='snap'; if(!C.shot)C.shot='gold'; if(!C.bg)C.bg='meadow'; if(!C.pot)C.pot='terra';
     SAVE.v=2;
   }
-  refreshMenus(); applyControlMode(); emit('loaded',{save:SAVE});
+  refreshMenus(); applyControlMode(); applyCosmetics(); emit('loaded',{save:SAVE});
 }
 let saveTimer=null;
 function persist(){
@@ -389,11 +400,48 @@ const SHOP=[
   {k:'clover',name:'Lucky Clover', desc:'Begin each life with a shield petal', max:1, cost:[850]},
   {k:'magnet',name:'Nectar Magnet', desc:'+25% nectar earned per level', max:2, cost:[300,700]},
 ];
+// ── COSMETICS (nectar sinks; no gameplay effect) ──
 const POTS=[
-  {k:'terra', name:'Terracotta Pot', cost:0,   c1:'#a0522d',c2:'#8b4021'},
-  {k:'ocean', name:'Ocean Glaze',    cost:250, c1:'#2d7ba0',c2:'#215d7a'},
-  {k:'gild',  name:'Gilded Pot',     cost:1000,c1:'#c9a227',c2:'#9a7a17'},
-  {k:'night', name:'Midnight Ceramic',cost:600,c1:'#3d3554',c2:'#2a2440'},
+  {k:'terra', name:'Terracotta',      cost:0,   c1:'#a0522d',c2:'#8b4021'},
+  {k:'sage',  name:'Sage Clay',       cost:120, c1:'#7a8a5f',c2:'#5f6d47'},
+  {k:'ocean', name:'Ocean Glaze',     cost:250, c1:'#2d7ba0',c2:'#215d7a'},
+  {k:'rose',  name:'Rose Quartz',     cost:300, c1:'#c86f8a',c2:'#a04f6a'},
+  {k:'night', name:'Midnight Ceramic',cost:450, c1:'#3d3554',c2:'#2a2440'},
+  {k:'moss',  name:'Mossy Stone',     cost:500, c1:'#4a6a3a',c2:'#33502a'},
+  {k:'ember', name:'Ember Kiln',      cost:650, c1:'#b0492a',c2:'#7a2f17'},
+  {k:'ice',   name:'Frost Porcelain', cost:750, c1:'#7fb0d0',c2:'#5f8aa8'},
+  {k:'gild',  name:'Gilded Pot',      cost:1000,c1:'#c9a227',c2:'#9a7a17'},
+  {k:'obsid', name:'Obsidian',        cost:1400,c1:'#2a2a30',c2:'#151518'}
+];
+const PLANTS=[
+  {k:'snap',  name:'Snapdragon',   cost:0,   stem:'#2f7d4f',leaf:'#3f9a63',petal:'#e77fae',cen:'#f2b632'},
+  {k:'sun',   name:'Sunflower',    cost:200, stem:'#3f7d2f',leaf:'#4faf5f',petal:'#f2c033',cen:'#7a4a17'},
+  {k:'rose',  name:'Wild Rose',    cost:300, stem:'#2f6d4f',leaf:'#3f8a53',petal:'#e0455f',cen:'#f2d24b'},
+  {k:'laven', name:'Lavender',     cost:400, stem:'#4a7d4f',leaf:'#5faf6f',petal:'#9a7fe0',cen:'#e0d24b'},
+  {k:'cactus',name:'Cactus Bloom', cost:500, stem:'#2f8d5f',leaf:'#3faf6f',petal:'#7ad06a',cen:'#f2c84b'},
+  {k:'ember', name:'Firebush',     cost:650, stem:'#5f5d2f',leaf:'#8a7d3f',petal:'#f2622a',cen:'#f2c033'},
+  {k:'ice',   name:'Frostpetal',   cost:800, stem:'#3f7d7a',leaf:'#5fafac',petal:'#a0e0ff',cen:'#e8f6ff'},
+  {k:'gold',  name:'Golden Bloom',  cost:1200,stem:'#7a6d2f',leaf:'#b0a03f',petal:'#f2c84b',cen:'#fff6d0'}
+];
+const SHOTS=[
+  {k:'gold',   name:'Pollen',       cost:0,   col:'#fff3b0',trail:false},
+  {k:'pink',   name:'Petal Shot',   cost:150, col:'#e77fae',trail:false},
+  {k:'lime',   name:'Spore',        cost:200, col:'#b6f24b',trail:false},
+  {k:'ice',    name:'Frost Dart',   cost:350, col:'#a0e0ff',trail:true},
+  {k:'ember',  name:'Ember Bolt',   cost:400, col:'#f2622a',trail:true},
+  {k:'violet', name:'Nightbloom',   cost:550, col:'#b07fe0',trail:true},
+  {k:'crimson',name:'Thornfire',    cost:700, col:'#e0344a',trail:true},
+  {k:'starlit',name:'Starlight',    cost:1000,col:'#fff0a0',trail:true}
+];
+const BGS=[
+  {k:'meadow', name:'Meadow',       cost:0,   top:'#14281c',bot:'#2c5234',star:'#ffffff'},
+  {k:'dusk',   name:'Dusk Garden',  cost:200, top:'#2a1c3a',bot:'#4a2c54',star:'#ffd0e0'},
+  {k:'ocean',  name:'Seaside',      cost:300, top:'#0c2838',bot:'#164054',star:'#a0e0ff'},
+  {k:'sunset', name:'Sunset Picnic',cost:400, top:'#3a1c14',bot:'#7a3c24',star:'#ffe0b0'},
+  {k:'sakura', name:'Sakura Night', cost:550, top:'#2a1420',bot:'#542c3c',star:'#ffd0e0'},
+  {k:'emerald',name:'Emerald Grove',cost:650, top:'#0a2818',bot:'#14503c',star:'#b6f2c4'},
+  {k:'night',  name:'Starfield',    cost:800, top:'#060a14',bot:'#101828',star:'#a0c4e8'},
+  {k:'ash',    name:'Ashen Field',  cost:1000,top:'#1a1a1e',bot:'#303038',star:'#cccccc'}
 ];
 
 /* ---------------- AUDIO ---------------- */
@@ -636,10 +684,10 @@ function chooseDraft(k){
 }
 function startRun(mode){
   G.mode=mode;G.score=0;G.stage=1;G.shots=0;G.hits=0;
-  G.lives=3+SAVE.upgrades.life;
+  G.lives=3;   // paid upgrades removed (cosmetics-only economy)
   const P=G.player;
   P.fighters=1;P.alive=true;P.x=W/2;P.vx=0;P.inv=2;P.respawn=0;
-  P.shield=SAVE.upgrades.clover>0;
+  P.shield=false;
   G.streak=0;G.mult=1;G.power={spread:0,rapid:0,pierce:0,homing:0,slow:0};
   G.mods=freshMods();G.draftTaken={};
   G.captured=null;G.captureAnim=null;G.rescue=null;
@@ -656,7 +704,7 @@ function endRun(){
   if(!G.running)return;
   G.running=false;
   document.body.classList.remove('playing');
-  const mag=(1+SAVE.upgrades.magnet*CFG.magnetPerLevel)*(G.mods?G.mods.nectarMul:1);
+  const mag=(G.mods?G.mods.nectarMul:1);   // nectar-magnet upgrade removed
   const earned=Math.floor((G.score*CFG.nectarPerScore+(G.stage-1)*CFG.nectarPerStage)*mag);
   SAVE.nectar+=earned;
   SAVE.stats.runs++;
@@ -677,7 +725,7 @@ function endRun(){
 function hi(){document.getElementById('hHi').textContent=SAVE.highs[G.mode]||0;}
 function updHud(){
   document.getElementById('hScore').textContent=G.score;
-  const mag=(1+SAVE.upgrades.magnet*CFG.magnetPerLevel)*(G.mods?G.mods.nectarMul:1);
+  const mag=(G.mods?G.mods.nectarMul:1);   // nectar-magnet upgrade removed
   document.getElementById('hNectar').textContent=Math.floor((G.score*CFG.nectarPerScore+(G.stage-1)*CFG.nectarPerStage)*mag);
 }
 let msgT=0;
@@ -757,13 +805,13 @@ function update(dt){
   const P=G.player;
   if(P.respawn>0){
     P.respawn-=dt;
-    if(P.respawn<=0){P.alive=true;P.x=W/2;P.vx=0;P.inv=CFG.invulnTime;P.shield=SAVE.upgrades.clover>0;
+    if(P.respawn<=0){P.alive=true;P.x=W/2;P.vx=0;P.inv=CFG.invulnTime;P.shield=false;
       if(G.rescue&&G.rescue.waiting)G.rescue.waiting=false;}
   }
   if(P.alive){
     if(P.inv>0)P.inv-=dt;
     const M=G.mods;
-    const maxV=(CFG.playerSpeed+SAVE.upgrades.speed*CFG.speedPerUpgrade)*M.speedMul;
+    const maxV=CFG.playerSpeed*M.speedMul;   // speed upgrade removed
     let ax=0;
     if(input.left)ax-=1;if(input.right)ax+=1;
     if(Math.abs(input.axis)>.08)ax=input.axis; // smaller deadzone (was .12) → less loose near center
@@ -773,7 +821,7 @@ function update(dt){
     if(P.x<18){P.x=18;P.vx=0;}if(P.x>W-18){P.x=W-18;P.vx=0;}
     fireCd-=dt;
     const rapid=G.power.rapid>0;
-    const rate=(rapid?CFG.rapidCooldown:CFG.fireCooldown)*(1-SAVE.upgrades.fire*CFG.firePerUpgrade)/M.fireMul;
+    const rate=(rapid?CFG.rapidCooldown:CFG.fireCooldown)/M.fireMul;   // reload upgrade removed
     const spread=G.power.spread>0||M.spread, pierce=G.power.pierce>0||M.pierce, homing=G.power.homing>0||M.homing;
     const heads=P.fighters>=3?[P.x-20,P.x,P.x+20]:P.fighters>=2?[P.x-12,P.x+12]:[P.x];
     const baseB=P.fighters>=3?CFG.maxBulletsDual+2:P.fighters>=2?CFG.maxBulletsDual:CFG.maxBullets;
@@ -1127,26 +1175,27 @@ function burst(x,y,col,n,v0){
 }
 
 /* ---------------- RENDER ---------------- */
-function potColors(){
-  const p=POTS.find(p=>p.k===SAVE.cosmetics.pot)||POTS[0];
-  return p;
-}
+function potColors(){ return POTS.find(p=>p.k===SAVE.cosmetics.pot)||POTS[0]; }
+function curPlant(){ return PLANTS.find(p=>p.k===SAVE.cosmetics.plant)||PLANTS[0]; }
+function curShot(){ return SHOTS.find(s=>s.k===SAVE.cosmetics.shot)||SHOTS[0]; }
+function curBg(){ return BGS.find(b=>b.k===SAVE.cosmetics.bg)||BGS[0]; }
+function applyCosmetics(){ const bg=curBg(); const st=document.getElementById('stage'); if(st)st.style.background='linear-gradient('+bg.top+','+bg.bot+')'; }
 function drawPlant(x,y,fighters,inv,shield){
   if(inv>0&&Math.floor(inv*10)%2)return;
-  const pot=potColors();
+  const pot=potColors(), sk=curPlant();
   const heads=fighters>=3?[-20,0,20]:fighters>=2?[-12,12]:[0];
   cx.save();
   cx.fillStyle=pot.c1;cx.fillRect(x-14,y+8,28,10);
   cx.fillStyle=pot.c2;cx.fillRect(x-11,y+18,22,4);
   for(const h of heads){
-    cx.strokeStyle='#2f7d4f';cx.lineWidth=3;
+    cx.strokeStyle=sk.stem;cx.lineWidth=3;
     cx.beginPath();cx.moveTo(x+h,y+8);cx.quadraticCurveTo(x+h*.4,y-2,x+h,y-10);cx.stroke();
-    cx.fillStyle='#3f9a63';
+    cx.fillStyle=sk.leaf;
     cx.beginPath();cx.ellipse(x+h-7,y+2,6,3,-.5,0,7);cx.fill();
     cx.beginPath();cx.ellipse(x+h+7,y+2,6,3,.5,0,7);cx.fill();
-    cx.fillStyle='#e77fae';
+    cx.fillStyle=sk.petal;
     cx.beginPath();cx.ellipse(x+h,y-14,7,9,0,0,7);cx.fill();
-    cx.fillStyle='#f2b632';
+    cx.fillStyle=sk.cen;
     cx.beginPath();cx.arc(x+h,y-19,3,0,7);cx.fill();
   }
   if(shield){
@@ -1162,16 +1211,18 @@ function drawGhostPlant(x,y,a){
   cx.fillText('🌷',x,y);
   cx.restore();
 }
+function _a2(a){return('0'+Math.round(Math.max(0,Math.min(1,a))*255).toString(16)).slice(-2);} // 0..1 → 2-digit hex alpha
 function render(){
   cx.save();
   cx.clearRect(0,0,W,H);
   if(G.shake>0)cx.translate((Math.random()-.5)*G.shake,(Math.random()-.5)*G.shake);
 
-  /* fireflies */
+  /* fireflies (tinted by the equipped scene) */
   const now=performance.now()/1000;
+  const _stc=curBg().star;
   for(const s of G.stars){
     const tw=.5+.5*Math.sin(now*2+s.ph);
-    cx.fillStyle=s.s>1?'rgba(242,220,140,'+(.25+.3*tw)+')':'rgba(200,230,190,'+(.15+.18*tw)+')';
+    cx.fillStyle=_stc+_a2(s.s>1?(.25+.3*tw):(.15+.18*tw));
     cx.fillRect(s.x,s.y,s.s,s.s);
   }
   /* grass */
@@ -1226,9 +1277,11 @@ function render(){
   if(G.rescue)drawGhostPlant(G.rescue.x,G.rescue.y,.9);
 
   /* bullets */
+  const _sh=curShot();
   for(const b of G.bullets){
-    cx.fillStyle='rgba(234,245,160,.4)';cx.fillRect(b.x-1,b.y-2,2,12);
-    cx.fillStyle='#eaf5a0';cx.fillRect(b.x-1.5,b.y-6,3,9);
+    if(_sh.trail){cx.fillStyle=_sh.col+'44';cx.fillRect(b.x-1.5,b.y-2,3,20);}
+    cx.fillStyle=_sh.col+'66';cx.fillRect(b.x-1,b.y-2,2,12);
+    cx.fillStyle=_sh.col;cx.fillRect(b.x-1.5,b.y-6,3,9);
   }
   cx.fillStyle='#ff8a7a';
   for(const b of G.ebullets){cx.beginPath();cx.arc(b.x,b.y,3,0,7);cx.fill();}
@@ -1316,54 +1369,37 @@ function refreshMenus(){
   document.getElementById('hiR').textContent=SAVE.highs.bloom;
   buildShop();
 }
-let shopTab='up';
+let shopTab='pot';
+const COS_CATS={
+  pot:  {data:POTS,  swatch:p=>p.c1,   note:'pot glaze'},
+  plant:{data:PLANTS,swatch:p=>p.petal,note:'plant skin'},
+  shot: {data:SHOTS, swatch:p=>p.col,  note:'shot style'},
+  bg:   {data:BGS,   swatch:p=>p.bot,  note:'scene'}
+};
 function buildShop(){
   const wrap=document.getElementById('shopRows');wrap.innerHTML='';
-  document.getElementById('tabUp').classList.toggle('on',shopTab==='up');
-  document.getElementById('tabCos').classList.toggle('on',shopTab==='cos');
-  if(shopTab==='up'){
-    for(const it of SHOP){
-      const lvl=SAVE.upgrades[it.k],maxed=lvl>=it.max,cost=maxed?0:it.cost[lvl];
-      const row=document.createElement('div');row.className='shoprow';
-      row.innerHTML=`<div class="nm">${it.name}<small>${it.desc}</small>
-        <span class="pips">${'●'.repeat(lvl)}${'○'.repeat(it.max-lvl)}</span></div>`;
-      const btn=document.createElement('button');btn.className='buy';
-      btn.textContent=maxed?'MAX':cost+' 🍯';
-      btn.disabled=maxed||SAVE.nectar<cost;
-      btn.onclick=()=>{
-        if(SAVE.nectar>=cost&&!maxed){
-          SAVE.nectar-=cost;SAVE.upgrades[it.k]++;
-          persist();refreshMenus();sfx('pow');
-          emit('purchase',{item:it.k,level:SAVE.upgrades[it.k],cost,nectarRemaining:SAVE.nectar});
-        }
-      };
-      row.appendChild(btn);wrap.appendChild(row);
-    }
-  } else {
-    for(const p of POTS){
-      const owned=SAVE.cosmetics.owned.includes(p.k);
-      const equipped=SAVE.cosmetics.pot===p.k;
-      const row=document.createElement('div');row.className='shoprow';
-      row.innerHTML=`<div class="nm">${p.name}
-        <small><span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:${p.c1};vertical-align:-1px"></span>
-        cosmetic pot glaze</small></div>`;
-      const btn=document.createElement('button');btn.className='buy'+(equipped?' equipped':'');
-      btn.textContent=equipped?'WEARING':owned?'WEAR':p.cost+' 🍯';
-      btn.disabled=equipped||(!owned&&SAVE.nectar<p.cost);
-      btn.onclick=()=>{
-        if(!owned){
-          if(SAVE.nectar<p.cost)return;
-          SAVE.nectar-=p.cost;SAVE.cosmetics.owned.push(p.k);
-          emit('purchase',{item:'pot:'+p.k,cost:p.cost,nectarRemaining:SAVE.nectar});
-        }
-        SAVE.cosmetics.pot=p.k;persist();refreshMenus();sfx('coin');
-      };
-      row.appendChild(btn);wrap.appendChild(row);
-    }
+  document.querySelectorAll('#mShop .tabbar button').forEach(b=>b.classList.toggle('on',b.dataset.cat===shopTab));
+  const cat=COS_CATS[shopTab], owned=SAVE.cosmetics.owned[shopTab], equippedK=SAVE.cosmetics[shopTab];
+  for(const it of cat.data){
+    const isOwned=owned.includes(it.k), isEq=(equippedK===it.k);
+    const row=document.createElement('div');row.className='shoprow';
+    row.innerHTML=`<div class="nm">${it.name}
+      <small><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${cat.swatch(it)};vertical-align:-1px"></span> ${it.cost===0?'starter '+cat.note:cat.note}</small></div>`;
+    const btn=document.createElement('button');btn.className='buy'+(isEq?' equipped':'');
+    btn.textContent=isEq?'WEARING':isOwned?'WEAR':it.cost+' 🍯';
+    btn.disabled=isEq||(!isOwned&&SAVE.nectar<it.cost);
+    btn.onclick=()=>{
+      if(!isOwned){
+        if(SAVE.nectar<it.cost)return;
+        SAVE.nectar-=it.cost;owned.push(it.k);
+        emit('purchase',{item:shopTab+':'+it.k,cost:it.cost,nectarRemaining:SAVE.nectar});
+      }
+      SAVE.cosmetics[shopTab]=it.k;persist();applyCosmetics();refreshMenus();buildShop();sfx('coin');
+    };
+    row.appendChild(btn);wrap.appendChild(row);
   }
 }
-document.getElementById('tabUp').onclick=()=>{shopTab='up';buildShop();};
-document.getElementById('tabCos').onclick=()=>{shopTab='cos';buildShop();};
+document.querySelectorAll('#mShop .tabbar button').forEach(b=>b.onclick=()=>{shopTab=b.dataset.cat;buildShop();});
 document.querySelectorAll('#mTitle [data-mode]').forEach(b=>b.addEventListener('click',()=>startRun(b.dataset.mode)));
 document.getElementById('bShop').onclick=()=>{refreshMenus();showScreen('mShop');};
 document.getElementById('bShopBack').onclick=()=>{refreshMenus();showScreen('mTitle');};
