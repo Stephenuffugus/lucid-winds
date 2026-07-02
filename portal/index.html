@@ -74,6 +74,22 @@
   #game-overlay{position:fixed;inset:0;z-index:150;background:var(--bg);display:none}
   #game-overlay.on{display:block}
   #game-frame{width:100%;height:100dvh;border:0;display:block}
+  /* Music-source switch — appears only over satellites that carry their own
+     soundtrack (Sweet Spot, Sixfold). Lets the player keep the studio music
+     or hand the audio to the game. Slim pill, bottom-center, collapses to a
+     ♫ dot after a beat so it never sits on the game's controls. (2026-07-02) */
+  #mus-switch{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+     transform:translateX(-50%);z-index:160;display:none;align-items:center;gap:8px;
+     max-width:calc(100% - 24px);background:rgba(13,20,16,.92);border:1px solid var(--line);
+     border-radius:999px;padding:9px 15px;color:var(--ink);font-size:13px;font-weight:600;
+     cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.55);line-height:1.2;white-space:nowrap;
+     -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:opacity .2s}
+  #mus-switch.on{display:flex}
+  #mus-switch:hover{border-color:var(--leaf)}
+  #mus-switch .ms-ic{font-size:15px;flex-shrink:0}
+  #mus-switch .ms-sw{color:var(--leaf)}
+  #mus-switch.mini{padding:0;width:48px;height:48px;border-radius:50%;justify-content:center;opacity:.85}
+  #mus-switch.mini .ms-label{display:none}
   /* Floating exit REMOVED (Stephen 2026-07-02): it sat on top of games' own
      top-right buttons. Every studio game now carries its own exit (posts
      {sws:'close'}), browser back closes the overlay (popstate), and the
@@ -241,9 +257,9 @@ var FEATURED = [
   {nm:"Lucid Winds", ds:"66 games + grow living, unique plant art. The hub of the whole orchard.", url:"https://lucidwinds.com", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
   {nm:"Tomato Man", ds:"The sun is death and the shade keeps moving. Dash the shadows, gather aloe, and don't get burned.", url:"https://stephenuffugus.github.io/Tomato_Man/", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
   {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
-  {nm:"Sweet Spot", ds:"One-thumb tennis timing. Nail the gold for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png"},
+  {nm:"Sweet Spot", ds:"One-thumb tennis timing. Nail the gold for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png", ownMusic:true},
   {nm:"Tarot Run", ds:"A fast, spectacular combo card run — a reading of blades.", url:"https://stephenuffugus.github.io/Tarot_Run/", ic:"🃏", thumb:"/portal-assets/thumbs/tarot-run.png", beta:true},
-  {nm:"Sixfold", ds:"A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.", url:"https://stephenuffugus.github.io/sixfold/", ic:"⚔️", thumb:"/portal-assets/thumbs/sixfold.png"},
+  {nm:"Sixfold", ds:"A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.", url:"https://stephenuffugus.github.io/sixfold/", ic:"⚔️", thumb:"/portal-assets/thumbs/sixfold.png", ownMusic:true},
   {nm:"Letter Launch", ds:"Plink letter tiles through bumpers, then trace words to score.", url:"https://stephenuffugus.github.io/letter_launch/", ic:"🔤", thumb:"/portal-assets/thumbs/letter-launch.png"},
   {nm:"Skitterlings", ds:"A one-button runner. Hop your critter through 100 worlds and collect hundreds of skitterlings.", url:"https://stephenuffugus.github.io/skitterlings/?embed=1&origin=https://lucidwinds.com", ic:"🐾", thumb:"/portal-assets/thumbs/skitterlings.png"},
   {nm:"Brawl", ds:"Multiplayer mayhem.", url:"https://stephenuffugus.github.io/BarBrawl/", ic:"🍺", soon:true, thumb:"/portal-assets/thumbs/brawl.png"},
@@ -395,6 +411,10 @@ function card(g, isFeat){
       String(nm).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+inner+'</button>';
   }
   var attr = ' href="'+url+'"' + (extUrl ? ' target="_blank" rel="noopener noreferrer"' : '');
+  // Satellites that ship their OWN music get flagged so the jukebox knows to
+  // step aside (pause studio audio) when they open — otherwise both play at
+  // once. The click handler reads this data attr. (2026-07-02)
+  if (isFeat && g.ownMusic) attr += ' data-ownmusic="1"';
   return '<a class="card'+(hub?' hubcard':'')+'"'+attr+'>'+inner+'</a>';
 }
 // Coming-soon tap response — a small auto-dismissing toast instead of a
@@ -643,6 +663,69 @@ renderGarden("all");
     setTimeout(function(){ if(closing && isOpen) closeGame(); }, 600);
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  // MUSIC-SOURCE SWITCH — some satellites (Sweet Spot, Sixfold) ship their
+  // own soundtrack. The portal owns the studio jukebox (top-level audio),
+  // and a cross-origin game's audio can't be reached from here — so without
+  // this, BOTH play at once. When a flagged game opens we default to the
+  // GAME's own music (pausing the studio jukebox so there's no overlap) and
+  // float a pill that lets the player switch to the studio soundtrack. The
+  // choice is remembered. A cooperating game also honours a postMessage
+  // handshake so the switch is clean in both directions even though we can't
+  // touch its audio directly. (2026-07-02)
+  // ════════════════════════════════════════════════════════════════════
+  var curOwnMusic = false;       // is the open game a self-music satellite?
+  var studioWasPlaying = false;  // was the jukebox playing when we entered?
+  var studioPausedByUs = false;  // did WE pause the jukebox for this game?
+  var hostMusicOn = false;       // TRUE = studio soundtrack wins (game muted)
+  var pill = null, pillMiniT = null;
+  function getMusPref(){ try{ return localStorage.getItem('sws_music_pref') === 'studio' ? 'studio' : 'game'; }catch(e){ return 'game'; } }
+  function setMusPref(v){ try{ localStorage.setItem('sws_music_pref', v); }catch(e){} }
+  function musIsPlaying(){ var b=document.getElementById('music-fab'); return !!(b && b.classList.contains('playing')); }
+  function musPause(){ try{ if(window.SWS_MUSIC && SWS_MUSIC.pause) SWS_MUSIC.pause(); }catch(e){} }
+  function musResume(){ try{ if(window.SWS_MUSIC && SWS_MUSIC.resume) SWS_MUSIC.resume(); }catch(e){} }
+  // Tell the framed game whether the studio soundtrack is active. A cooperating
+  // game does Music.setEnabled(!on) so only one soundtrack ever plays.
+  function sendHostMusic(on){ try{ if(fr.contentWindow) fr.contentWindow.postMessage({sws:'host-music', on:!!on}, '*'); }catch(e){} }
+  function pillLabel(){
+    return '<span class="ms-ic">&#9835;</span><span class="ms-label">'
+      + (hostMusicOn ? 'Studio music &middot; <span class="ms-sw">tap for game’s own</span>'
+                     : 'Game’s own music &middot; <span class="ms-sw">tap for studio</span>')
+      + '</span>';
+  }
+  function scheduleMini(){ if(pillMiniT) clearTimeout(pillMiniT); pillMiniT = setTimeout(function(){ if(pill) pill.classList.add('mini'); }, 5000); }
+  function renderPill(){ if(!pill) return; pill.innerHTML = pillLabel(); }
+  function showPill(){
+    if(!pill){
+      pill = document.createElement('div');
+      pill.id = 'mus-switch';
+      pill.setAttribute('role','button');
+      pill.setAttribute('aria-label','Switch music source');
+      pill.addEventListener('click', onPillTap);
+      ov.appendChild(pill);
+    }
+    renderPill();
+    pill.classList.remove('mini');
+    pill.classList.add('on');
+    scheduleMini();
+  }
+  function hidePill(){ if(pill){ pill.classList.remove('on'); } if(pillMiniT){ clearTimeout(pillMiniT); pillMiniT=null; } }
+  function onPillTap(){
+    // Collapsed dot → just expand (don't flip the source on a re-discovery tap).
+    if(pill.classList.contains('mini')){ pill.classList.remove('mini'); scheduleMini(); return; }
+    var toStudio = !hostMusicOn;
+    setMusPref(toStudio ? 'studio' : 'game');
+    applyMusPref(toStudio);
+    renderPill();
+    scheduleMini();
+  }
+  // Apply the chosen source live: studio => resume jukebox + mute the game;
+  // game => pause jukebox + let the game's own music play.
+  function applyMusPref(toStudio){
+    if(toStudio){ musResume(); studioPausedByUs=false; hostMusicOn=true; sendHostMusic(true); }
+    else { if(musIsPlaying()){ musPause(); studioPausedByUs=true; } hostMusicOn=false; sendHostMusic(false); }
+  }
+
   // ⚠ THE "portal games won't play" FIX (2026-06-30) — and it keeps the music
   // GAPLESS. Hostinger's LiteSpeed server serves an invisible-reCAPTCHA "Bot
   // Verification" 403 on every HTML PAGE request (verified: /play/<id>.html =
@@ -710,6 +793,23 @@ renderGarden("all");
     if(watchdog){ clearTimeout(watchdog); watchdog = null; }
     clearRecover(); satLoads = 0;
     var satMode = opts.src != null;
+    // Music-source setup for self-music satellites. Capture the jukebox state
+    // BEFORE we touch it, then apply the remembered preference (default: hand
+    // audio to the game so nothing overlaps). The pill lets the player flip it.
+    curOwnMusic = !!opts.ownMusic;
+    studioWasPlaying = musIsPlaying();
+    studioPausedByUs = false;
+    hostMusicOn = false;
+    if(curOwnMusic){
+      // Studio only "wins" if the player picked it AND it was actually playing;
+      // otherwise the game's own music plays and we hush the jukebox so they
+      // don't overlap.
+      if(getMusPref()==='studio' && studioWasPlaying){ hostMusicOn = true; }
+      else if(studioWasPlaying){ musPause(); studioPausedByUs = true; }
+      showPill();
+    } else {
+      hidePill();
+    }
     if(opts.srcdoc != null){
       fr.removeAttribute('src');
       fr.srcdoc = opts.srcdoc;
@@ -765,6 +865,11 @@ renderGarden("all");
     fr.src = 'about:blank';                 // stop the game; portal audio plays on
     document.body.style.overflow = '';
     document.title = 'Sky Wolf Studios — Play';
+    // If we paused the studio jukebox to make room for a game's own music,
+    // bring it back on the way out — silence on the portal would feel broken.
+    if(studioPausedByUs && studioWasPlaying) musResume();
+    hidePill();
+    curOwnMusic = false; studioPausedByUs = false; studioWasPlaying = false; hostMusicOn = false;
     isOpen = false;
     closing = false;
   }
@@ -784,7 +889,7 @@ renderGarden("all");
     if(playM){
       openGame({ srcdoc: buildShellDoc(playM[1], nm || playM[1]), title: nm });
     } else {
-      openGame({ src: href, title: nm });
+      openGame({ src: href, title: nm, ownMusic: a.getAttribute('data-ownmusic') === '1' });
     }
   });
 
@@ -793,7 +898,12 @@ renderGarden("all");
   // popstate handler does the actual close.
   window.addEventListener('message', function(e){
     if(!e.data) return;
-    if(e.data.sws === 'ready'){ clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; } }  // framing worked
+    if(e.data.sws === 'ready'){ clearRecover(); if(watchdog){ clearTimeout(watchdog); watchdog = null; }  // framing worked
+      // Hand the game our current music state so a cooperating game mutes its
+      // own soundtrack when the player is on studio music (and unmutes when
+      // they hand audio back to the game).
+      if(curOwnMusic) sendHostMusic(hostMusicOn);
+    }
     if(e.data.sws === 'close'){ requestClose(); }
     // Studio satellites (e.g. Skitterlings) speak their own protocol.
     if(e.data.source === 'skitterlings'){

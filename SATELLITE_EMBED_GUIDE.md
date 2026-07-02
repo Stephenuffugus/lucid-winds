@@ -109,12 +109,56 @@ In `portal/index.html`, add one object to the `FEATURED` array:
 ```
 
 - Optional flags: `beta:true` (BETA badge), `soon:true` (COMING SOON,
-  unclickable), `premium:true` (premium styling, used by HUNCH).
+  unclickable), `premium:true` (premium styling, used by HUNCH),
+  `ownMusic:true` (**your game ships its own soundtrack** — see next section).
 - `url` must be the **live Pages URL**, never a codespace URL.
 - Thumbnail: ≤150 KB, ≤480px (the Jun-28 perf rule) into
   `portal-assets/thumbs/`.
 - The click interceptor frames any `stephenuffugus.github.io` link
   automatically — no other wiring needed.
+
+## Games with their own music (the `host-music` handshake)
+
+The portal owns a **studio jukebox** (the ♫ soundtrack that plays gaplessly
+across the whole portal). A cross-origin game's audio can't be reached from
+the portal, so if your game plays its *own* music, both would play at once.
+
+**Two things make this clean:**
+
+1. Flag your game `ownMusic:true` in `FEATURED` (above). When the player opens
+   it, the portal **pauses its own jukebox** and floats a small pill letting
+   the player switch between *the game's own music* (default) and *the studio
+   soundtrack*. The choice is remembered in `localStorage.sws_music_pref`.
+   **This alone fixes the double-audio** — no game change required.
+
+2. To make the "switch to studio music" direction actually **silence your
+   game's music** (instead of both playing when the player picks studio), your
+   game should honor one extra message. The portal posts:
+
+   ```js
+   {sws:'host-music', on:true}   // studio soundtrack is playing → mute yours
+   {sws:'host-music', on:false}  // player handed audio back to you → play yours
+   ```
+
+   Add this listener next to your embed snippet (uses your own music toggle —
+   here `Music.setEnabled`, adapt to your API):
+
+   ```js
+   window.addEventListener('message', function(e){
+     var d = e.data;
+     if(!d || d.sws !== 'host-music') return;
+     try { if (typeof Music !== 'undefined' && Music.setEnabled) Music.setEnabled(!d.on); } catch(_){}
+   });
+   ```
+
+   The portal sends the current state as soon as your game posts `{sws:'ready'}`,
+   and again whenever the player taps the pill — so you don't need to poll.
+
+Without listener #2 the game still works (default = your music, studio paused),
+but a player who explicitly taps "studio music" will hear both until you add it.
+**Sweet Spot and Sixfold are flagged `ownMusic` and need this listener added to
+their repos.** (Sixfold: it already has a `Music` module with `setEnabled` and
+the embed protocol — just drop the listener in beside it.)
 
 ## Sunbeams (optional, later)
 
