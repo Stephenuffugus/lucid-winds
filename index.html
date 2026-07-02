@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.02.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.02.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -47294,6 +47294,11 @@ document.addEventListener('keydown', function(e) {
       '</button>';
     }
 
+    // Assigned BEFORE the plaque block — this used to live ~50 lines down
+    // with the preview plates, so the USE TO BREED gate below read the
+    // hoisted-but-unassigned var (undefined) and the plaque never rendered.
+    var _isClipping = seed.origin === 'cutting' || seed.origin === 'clipping';
+
     if (bloomReady) {
       actionBtns = _seedBtn({ cls:'bloom', sid:sid, onclick:'handleBloomBtn(this.dataset.sid)', art:'assets/fx/bloom-flower.png', label:'BLOOM' });
     } else {
@@ -47353,7 +47358,6 @@ document.addEventListener('keydown', function(e) {
     // surprise (and the user explicitly asked us to kill that preview).
     var _offPreview = '';
     var _isMystery = !!seed.mystery;
-    var _isClipping = seed.origin === 'cutting' || seed.origin === 'clipping';
     if (_isMystery) {
       _offPreview = '<div style="margin-top:4px;padding:3px 8px;background:rgba(200,168,75,0.08);border:1px dashed rgba(200,168,75,0.4);border-radius:6px;font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--gold);text-align:center;">\u2753 MYSTERY SEED</div>';
     } else if (_isClipping) {
