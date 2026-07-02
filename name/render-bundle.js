@@ -6,7 +6,7 @@
   if (typeof window !== "undefined" && !window.LW_VERSION) { window.LW_VERSION = "name-bundle"; }
 
 
-/* ===== TRAITS (index.html lines 11425-11603) ===== */
+/* ===== TRAITS (index.html lines 11427-11605) ===== */
   var _PAL = ['pine','sage','terra','sand','cream','moss','slate','teal','copper','ash','plum','amber','rust','rose','violet','gold'];
 
   var _traitCache = {};
@@ -187,14 +187,14 @@
   ];
   window.SEASON_DATA = SEASON_DATA;
 
-/* ===== SHA256 (index.html lines 12745-12749) ===== */
+/* ===== SHA256 (index.html lines 12747-12751) ===== */
   async function _sha256hex(str){
     var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
   }
 
 
-/* ===== RENDER (index.html lines 15212-39436) ===== */
+/* ===== RENDER (index.html lines 15214-39438) ===== */
   var _darkPlantBoost = false; // shared flag — set by generatePlantSVG, read by renderLeaves
 
   var PALETTE = {
@@ -24421,7 +24421,7 @@
   }
 
 
-/* ===== HAIKU + NAME (index.html lines 39437-39972) ===== */
+/* ===== HAIKU + NAME (index.html lines 39439-39974) ===== */
   // ═══ PROCEDURAL COLLECTIBLE NAMING (set-103: 444×437 = 194,028 combos) ═══
   var NAME_ADJ = (window._LW_BANKS && window._LW_BANKS.NAME_ADJ) ? window._LW_BANKS.NAME_ADJ : [];
   var NAME_NOUN = (window._LW_BANKS && window._LW_BANKS.NAME_NOUN) ? window._LW_BANKS.NAME_NOUN : [];
