@@ -262,11 +262,27 @@
     if (global.Sunbeam && typeof global.Sunbeam.earn === 'function') {
       var source = LW_PLAY.id + ':' + eventName;
       global.Sunbeam.earn(amt, source).then(function(r){
+        // r.ok === false means the SDK's anon rate caps zeroed the credit.
+        // That used to be INVISIBLE (Stephen: "won euchre, got nothing") —
+        // if we pay 0, say why.
+        if (r && r.ok === false) { showToast('☀ sunbeam cap reached — resets soon'); return; }
         if (r && typeof r.balance === 'number') state.bal = r.balance;
         if (r && typeof r.pending === 'number') state.pending = r.pending;
         renderWallet();
         showToast('+' + amt + ' ☀');
-      }).catch(function(){ /* defensive; SDK degrades silently */ });
+      }).catch(function(err){
+        // Silent-swallow was hiding real failures (server reject, SDK not
+        // initialized, offline). Tell the player their win didn't save.
+        try { console.warn('[shell] earn failed', err && err.code, err && err.message); } catch(e){}
+        showToast('☀ +' + amt + ' didn\'t save (' + ((err && err.code) || 'offline') + ')');
+      });
+    } else {
+      // SDK script missing entirely (blocked / stale cache) — surface it
+      // once instead of a completely silent zero.
+      if (!state._sdkMissingToasted) {
+        state._sdkMissingToasted = true;
+        showToast('☀ sunbeams unavailable this session');
+      }
     }
     // Local "_h" badge (the gu-bar progress counter) bumps too if present.
     var hEl = document.getElementById('_h');
