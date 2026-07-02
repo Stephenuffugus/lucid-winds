@@ -236,12 +236,14 @@
     <button class="btn" id="actBtn">Start Game</button>
   </div>
   <div class="hint" id="hint">Each round adds a cup, shuffles faster, and pays more coins.</div>
+  <button id="exitPortal" style="display:block;margin:6px auto 0;min-height:44px;padding:10px 18px;background:none;border:none;color:rgba(255,255,255,.55);font:inherit;font-weight:700;font-size:14px;cursor:pointer;">← All Sky Wolf games</button>
 </div>
 
 <!-- PAUSED -->
 <div class="paused-overlay" id="pausedOv">
   <h2>Paused</h2>
   <button class="btn" id="resumeBtn">Resume</button>
+  <button class="btn" id="pausedExit" style="opacity:.8">← All Sky Wolf games</button>
 </div>
 
 <!-- SHOP -->
@@ -929,6 +931,25 @@
     syncCustomPreview(); save();
   });
   $('useCustom').onclick=()=>{ state.selected='custom'; save(); renderShop(); closeShop(); };
+
+  /* ===== Sky Wolf Studios embed protocol (REFERENCE IMPLEMENTATION) =====
+     The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
+     listens for two messages:
+       {sws:'ready'}  → cancels the portal's 12s framing watchdog
+       {sws:'close'}  → portal closes the game overlay (exit to portal)
+     Rules when embedded:
+       • NEVER history.back() or navigate location — an iframe with no
+         history entry goes blank (the black-screen bug).
+       • Your in-game back/✕ returns to YOUR OWN menu screen.
+       • Only the menu's explicit exit control calls SWS_EXIT(). */
+  const SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EXIT=function(){
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  $('exitPortal').onclick=()=>SWS_EXIT();
+  $('pausedExit').onclick=()=>SWS_EXIT();
 
   // ---------- init ----------
   (async function(){
