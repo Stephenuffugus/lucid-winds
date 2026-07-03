@@ -380,11 +380,13 @@
     if(first && p>0){ p*=2; save.firstRun=todayStr(); }
     return {petals:p, doubled:first};
   }
-  // Studio sunbeams (cross-game currency), daily-capped. ⚠ econ pending Director sign-off.
+  // Studio sunbeams (cross-game currency). Sky Wolf earn standard: 30/day/game
+  // (=1 plant), run cap 12, floor 1 for any real run. See SUNBEAM_EARN_POLICY.md.
   const SB_DAYK='vw_sb_day';
   function sbEarnedToday(){ try{ const s=JSON.parse(localStorage.getItem(SB_DAYK)||'{}'); return s.d===dayNum()?(s.n||0):0; }catch(e){ return 0; } }
   function earnSunbeams(){
-    let amt=Math.min(12, Math.floor(score/6));
+    if(score<=0) return;
+    let amt=Math.min(12, Math.max(1, Math.floor(score/6)));
     amt=Math.min(amt, Math.max(0, 30 - sbEarnedToday()));
     if(amt<=0) return;
     try{ localStorage.setItem(SB_DAYK, JSON.stringify({d:dayNum(), n:sbEarnedToday()+amt})); }catch(e){}

@@ -506,7 +506,7 @@
     state.daily.weekDays=Math.min(7, state.daily.weekDays+1);
     const coins=DAILY_COINS[(state.daily.streak-1)%7];
     state.coins+=coins;
-    if(window.Sunbeam) Sunbeam.earn(5, "shell-shuffle:daily").catch(function(){});
+    window._sbCapEarn&&window._sbCapEarn(5, "shell-shuffle:daily");/* 30/day cap */
     const unlocked=checkUnlocks();
     save(); hud();
     return {coins, unlocked};
@@ -707,7 +707,7 @@
       state.coins+=r; state.streak++;
       if(state.level>state.bestLevel) state.bestLevel=state.level;
       setStatus('Nailed it!  +'+r, 'win'); vibe(35); hud(); save();
-      if(window.Sunbeam) Sunbeam.earn(3, "shell-shuffle:level_complete").catch(function(){});
+      window._sbCapEarn&&window._sbCapEarn(3, "shell-shuffle:level_complete");/* 30/day cap */
       state.level++;
       await delay(1500);
       round();
@@ -967,6 +967,18 @@
     }
   })();
 })();
+</script>
+<script>
+/* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
+window._sbCapEarn=function(n,tag){
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
+    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
+  }catch(e){}
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+};
 </script>
 </body>
 </html>

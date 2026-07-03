@@ -546,7 +546,7 @@ function lockGuess(timeout){if(G.locked)return;G.locked=true;cancelAnimationFram
   const earn=Math.floor(total/CONFIG.coinsPerPoint);G.coinsRun+=earn;G.score+=total;G.level++;G.tiers.push(tierFor(dE));
   G.history.push({t:{...G.cur.target},y:{...G.guess},dE,pts:total});
   missionEvent("rounds",1);if(dE<=CONFIG.perfectDE)missionEvent("perfects",1);
-  window.Sunbeam&&Sunbeam.earn(4,"hues:win").catch(function(){}); /* sunbeam: round complete */
+  window._sbCapEarn&&window._sbCapEarn(4,"hues:win"); /* sunbeam: round complete (30/day cap) */
   if(dE<=fine)yoursFrame.animate([{boxShadow:"0 0 0 0 rgba(126,224,168,0)"},{boxShadow:"0 0 0 5px rgba(126,224,168,.65)"},{boxShadow:"0 0 0 0 rgba(126,224,168,0)"}],{duration:750,easing:"ease-out"});
   if(dE<=CONFIG.perfectDE){beep(784,0.08,0.06);beep(1046,0.13,0.06);}else if(passed){beep(620,0.09,0.05);}else{beep(190,0.2,0.08);buzz(130);}
   const cl=closeness(dE);verdict.textContent=cl.pct+"% match · "+cl.label;verdict.style.color=cl.col;verdict.classList.add("show");
@@ -613,7 +613,7 @@ function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==toda
     streak=last===ymdStr(y)?streak+1:1;Store.s(K.dStreak,streak);Store.s(K.dLast,today);Store.s(K.dDone,today);Store.s(K.dDoneScore,G.score);
     const best=parseInt(Store.g(K.dBest)||"0",10);if(G.score>best)Store.s(K.dBest,G.score);
     bonus=CONFIG.dailyBonus.base+streak*CONFIG.dailyBonus.perStreak;addCoins(bonus);missionEvent("dailyDone",1);
-    window.Sunbeam&&Sunbeam.earn(4,"hues:daily").catch(function(){}); /* sunbeam: first daily of the day */}
+    window._sbCapEarn&&window._sbCapEarn(4,"hues:daily"); /* sunbeam: first daily (30/day cap) */}
   payout();
   const sq=G.tiers.map(t=>SQ[t]).join("");
   $("resKicker").textContent="DAILY #"+dailyNumber();$("resTitle").className="italic";$("resTitle").textContent=firstToday?"Locked in":"Practice";
@@ -692,6 +692,18 @@ window.SWS_EXIT=function(){
 if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 $("exitLink").onclick=()=>SWS_EXIT();
 /* per-game SW removed for lucidwinds.com hosting — root sw.js handles caching */
+</script>
+<script>
+/* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
+window._sbCapEarn=function(n,tag){
+  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'game');
+    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
+    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
+  }catch(e){}
+  if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+};
 </script>
 </body>
 </html>

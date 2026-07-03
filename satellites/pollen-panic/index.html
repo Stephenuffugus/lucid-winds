@@ -971,7 +971,7 @@ document.getElementById("btnGust").onclick=()=>useGust();
   if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 
   // 2. Sunbeam earn — award by run petals (a proxy for how well the run went),
-  //    daily-capped. ⚠ ECONOMY (Director sign-off pending): tune the 3 constants.
+  //    Sky Wolf earn standard (set 2026-07-03): 30/day/game, run cap 12, floor 1.
   var PER=8, RUNCAP=12, DAYCAP=30, DAYK='pp_pol_sb_day';
   function today(){return Math.floor(Date.now()/86400000);}
   function earnedToday(){try{var s=JSON.parse(localStorage.getItem(DAYK)||'{}');return s.d===today()?(s.n||0):0;}catch(e){return 0;}}

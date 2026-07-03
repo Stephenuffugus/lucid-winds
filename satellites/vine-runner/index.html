@@ -1001,7 +1001,8 @@ portalEvent("ready");
   if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
   document.getElementById('lwExit').addEventListener('click',function(){ window.SWS_EXIT(); });
 
-  // ── Sunbeam earn — reward reaching stage clears / victory. ⚠ econ pending sign-off.
+  // ── Sunbeam earn — stage clears / victory. Sky Wolf earn standard: 30/day/game
+  //    (=1 plant), floor 1 per clear. See SUNBEAM_EARN_POLICY.md.
   var DAYK='vr_sb_day';
   function today(){ return Math.floor(Date.now()/86400000); }
   function earnedToday(){ try{ var s=JSON.parse(localStorage.getItem(DAYK)||'{}'); return s.d===today()?(s.n||0):0; }catch(e){ return 0; } }
