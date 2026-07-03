@@ -65,8 +65,23 @@ export const nowCreateInvoice = onCall(
       slotIndex = cur + 1
     }
 
+    // Bloom bundles: ownership is server-derived from the vault. Owning full
+    // blocks both; owning half re-prices full to the $5 completion.
+    let halfOwned = false
+    if (type === 'half_bloom' || type === 'full_bloom') {
+      const vaultDoc = await db.collection('vaults').doc(uid).get()
+      const vd = (vaultDoc.exists && vaultDoc.data()) || {}
+      if (vd.lw_full_bloom) {
+        throw new HttpsError('failed-precondition', 'You already own the Full Bloom upgrade.')
+      }
+      if (type === 'half_bloom' && vd.lw_half_bloom) {
+        throw new HttpsError('failed-precondition', 'You already own the Half Bloom upgrade.')
+      }
+      halfOwned = !!vd.lw_half_bloom
+    }
+
     // SERVER-SIDE price resolution. Throws on bad input / already-maxed slot.
-    const priced = resolveWebPrice(type, { tier, slotIndex })
+    const priced = resolveWebPrice(type, { tier, slotIndex, halfOwned })
     const usd = (priced.cents / 100).toFixed(2)
 
     const apiKey = process.env.NOWPAYMENTS_API_KEY

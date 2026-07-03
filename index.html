@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.03.07';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.03.08';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -41396,6 +41396,12 @@ document.addEventListener('keydown', function(e) {
     var _piOn = !!window.LW_PI_ENABLED;
     var _web = !!(window.LW_WebPay && window.LW_WebPay.active());
     var _wUsd = _web && window.LW_WebPay.priceStr('slot');
+    // Web rail: surface the bundle upgrades alongside the plain 10-pack.
+    // _bloomStoreBypass=1 means the store's own "10 slots" button sent the
+    // player back here for the classic confirm flow.
+    if (_web && !window._bloomStoreBypass && window._openBloomStore &&
+        !(window._lwBloomState && window._lwBloomState.full)) { window._openBloomStore(); return; }
+    window._bloomStoreBypass = 0;
     _lwConfirm({
       title: 'EXPAND GREENHOUSE',
       body: _web
@@ -41440,6 +41446,114 @@ document.addEventListener('keydown', function(e) {
         _apply();
       }
     });
+  };
+
+  // ── BLOOM STORE (web rail) — the $1 / $5 / $10 chooser ──
+  // Stephen 2026-07-03: singles stay cheap, plus a Half ($5) and Full ($10)
+  // bundle so hooked players can bulk-unlock; Full grants the one-of-one
+  // Founder's Bloom. Shown from the greenhouse expand button when the web
+  // rail is active. Server (functions/fulfill.js) is the price + grant truth.
+  window._closeBloomStore = function(){
+    var el = document.getElementById('bloom-store'); if (el) el.remove();
+  };
+  window._openBloomStore = function(){
+    window._closeBloomStore();
+    var st = window._lwBloomState || {};
+    var fullPrice = (window.LW_WebPay && LW_WebPay.priceStr('full_bloom')) || '$10';
+    var rows = '';
+    rows += '<button onclick="window._bloomStoreBypass=1;_closeBloomStore();expandGHSlot10();" style="display:block;width:100%;min-height:52px;margin:0 0 10px;padding:12px 14px;background:rgba(122,179,86,0.08);border:1px solid rgba(122,179,86,0.4);border-radius:12px;color:var(--cream);text-align:left;cursor:pointer;">'
+      + '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;letter-spacing:0.08em;color:var(--sage);">10 GREENHOUSE SLOTS &mdash; $1</span>'
+      + '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">A dollar at a time, whenever you need room.</span></button>';
+    if (!st.half) {
+      rows += '<button onclick="_closeBloomStore();_lwBuyBloom(\'half_bloom\');" style="display:block;width:100%;min-height:52px;margin:0 0 10px;padding:12px 14px;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.45);border-radius:12px;color:var(--cream);text-align:left;cursor:pointer;">'
+        + '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;letter-spacing:0.08em;color:var(--gold);">HALF BLOOM &mdash; $5</span>'
+        + '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">+20 greenhouse slots, +1 nursery, +1 clipping, seed pouch +5, item pouch +5.</span></button>';
+    }
+    rows += '<button onclick="_closeBloomStore();_lwBuyBloom(\'full_bloom\');" style="display:block;width:100%;min-height:52px;margin:0;padding:12px 14px;background:rgba(200,168,75,0.14);border:1px solid var(--gold);border-radius:12px;color:var(--cream);text-align:left;cursor:pointer;">'
+      + '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1rem;letter-spacing:0.08em;color:var(--gold);">FULL BLOOM &mdash; ' + fullPrice + (st.half ? ' <span style="font-size:0.7rem;color:var(--sage);">COMPLETE YOUR UPGRADE</span>' : '') + '</span>'
+      + '<span style="display:block;font-size:0.72rem;color:var(--muted);margin-top:2px;">Every slot maxed: greenhouse 60, nursery, clippings, both pouches &mdash; plus a one-of-one FOUNDER’S BLOOM plant, only for full upgraders.</span></button>';
+    var wrap = document.createElement('div');
+    wrap.id = 'bloom-store';
+    wrap.innerHTML = '<div onclick="_closeBloomStore()" style="position:fixed;inset:0;background:rgba(5,7,4,0.82);z-index:100050;"></div>'
+      + '<div style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,380px);background:#12160f;border:1px solid rgba(200,168,75,0.5);border-radius:16px;padding:18px 16px 14px;z-index:100051;box-shadow:0 12px 40px rgba(0,0,0,0.6);">'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.25rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:2px;">GROW YOUR GARDEN</div>'
+      + '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">Pay in any crypto. Unlocks are permanent and synced to your account.</div>'
+      + rows
+      + '<button onclick="_closeBloomStore()" style="display:block;width:100%;min-height:48px;margin-top:12px;background:transparent;border:1px solid rgba(138,145,120,0.35);border-radius:12px;color:var(--muted);font-family:\'Bebas Neue\',sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;">NOT YET</button>'
+      + '</div>';
+    document.body.appendChild(wrap);
+  };
+  window._lwBuyBloom = function(kind){
+    var label = kind === 'full_bloom' ? 'Full Bloom' : 'Half Bloom';
+    var price = (window.LW_WebPay && LW_WebPay.priceStr(kind)) || (kind === 'full_bloom' ? '$10' : '$5');
+    _lwConfirm({
+      title: label.toUpperCase() + ' UPGRADE',
+      body: 'Unlock the <b>' + label + '</b> upgrade for <b>' + price + '</b> &mdash; pay in any crypto? Your garden expands the moment the payment confirms.',
+      yes: 'PAY ' + price,
+      no: 'NOT YET'
+    }, function(){
+      if (window.LW_Pi && LW_Pi.buyBloom) LW_Pi.buyBloom(kind, function(ok){
+        if (ok && window._claimFromReserve) { for (var k = 0; k < 20; k++) _claimFromReserve(); }
+      });
+    });
+  };
+
+  // ── FOUNDER'S BLOOM — one-time Full Bloom purchase bonus ──
+  // The server arms vaults/{uid}.lw_founder_gift='pending' on a Full Bloom
+  // purchase; _applyCloudData calls this. Mints ONE guaranteed Epic-band
+  // plant (mythic companion overrides blocked, same rule as the onboarding
+  // gift), then stamps 'granted' in the vault so it can never repeat —
+  // including across devices, since the greenhouse itself is checked first.
+  window._lwGrantFounderBloom = function(){
+    if (window._lwFounderMinting) return;
+    window._lwFounderMinting = true;
+    function stamp(){
+      try {
+        var u = firebase.auth().currentUser;
+        if (u) firebase.firestore().collection('vaults').doc(u.uid).set({ lw_founder_gift: 'granted' }, { merge: true });
+      } catch(e){}
+    }
+    var gh = loadGreenhouse();
+    if (gh.some(function(p){ return p && p.origin === 'founder'; })) { stamp(); return; }
+    var hash = '', best = '', bestScore = -1, gradeName = 'Epic';
+    for (var attempts = 0; attempts < 800 && !hash; attempts++) {
+      var h = ''; for (var i = 0; i < 64; i++) h += '0123456789abcdef'[Math.floor(Math.random()*16)];
+      try {
+        var t = window.hashToTraits(h);
+        if (t && t.mythic >= 0xD0) continue;  // mythic creatures stay earned-only
+        var g = window.getTerraGrade(t);
+        if (g.score >= 13 && g.score <= 18) { hash = h; gradeName = g.name || 'Epic'; }
+        else if (g.score >= 8 && g.score > bestScore) { best = h; bestScore = g.score; }
+      } catch(e){}
+    }
+    hash = hash || best;
+    // Engine not ready (fresh boot race) — leave 'pending' so the next cloud
+    // load retries. The minting latch resets so that retry isn't blocked.
+    if (!hash) { window._lwFounderMinting = false; return; }
+    gh.push({
+      hash: hash,
+      date: new Date().toISOString().split('T')[0],
+      born: Date.now(),
+      origin: 'founder',
+      rare: true,
+      traits: null,
+      breedCount: 0,
+      generation: 1
+    });
+    saveGreenhouse(gh);
+    stamp();
+    try {
+      if (window.LW_Log) LW_Log.write('plant_mint', {
+        hash: hash,
+        name: typeof getPlantName === 'function' ? getPlantName(hash) : '',
+        rarity: gradeName, grade: gradeName, isRare: true, origin: 'founder'
+      });
+    } catch(e){}
+    try { renderGreenhouse(); } catch(e){}
+    try { if (window.updateDashboard) updateDashboard(); } catch(e){}
+    if (window._toast) window._toast('🌟 A one-of-one FOUNDER\'S BLOOM has taken root in your greenhouse. Thank you for supporting the garden.', { duration: 9000 });
+    try { if (typeof gtag !== 'undefined') gtag('event', 'founder_bloom_granted', {}); } catch(e){}
+    if (window.syncVaultToCloud) setTimeout(syncVaultToCloud, 800);
   };
 
   // Claim one plant from reserve into greenhouse
@@ -50146,6 +50260,16 @@ document.addEventListener('keydown', function(e) {
     if (typeof data.lw_pouch_cap === 'number' && data.lw_pouch_cap >= 25 && data.lw_pouch_cap <= 40) {
       try { localStorage.setItem('lw_pouch_cap', String(data.lw_pouch_cap)); } catch(e){}
     }
+    // Bloom bundle upgrades (server-granted by the web rail, 2026-07-03).
+    // Kept IN MEMORY only — the server vault is authoritative, so no
+    // localStorage mirror (and no _buildPayload entry) is needed. Drives the
+    // bloom store display + the one-time Founder's Bloom consumption.
+    try {
+      window._lwBloomState = { half: !!data.lw_half_bloom, full: !!data.lw_full_bloom };
+      if (data.lw_founder_gift === 'pending' && window._lwGrantFounderBloom) {
+        setTimeout(function(){ try { window._lwGrantFounderBloom(); } catch(e){} }, 2500);
+      }
+    } catch(e){}
     // Weather tokens (mystery-box free-cast tokens). MAX-merge so a stale
     // cloud read can never erase tokens the local copy already earned. (2026-06-28)
     if (typeof data.weatherTokens === 'number' && data.weatherTokens >= 0) {
@@ -76567,12 +76691,14 @@ var LW_WebPay = {
   // Display-only USD catalog (server functions/fulfill.js is the source of
   // truth; this only drives button labels). Keep in lockstep with LW_WEB_PRICES.
   _usd: {
-    slot:                  { bundle:10, cents:200 },
-    nursery_slot:          { perSlot:{4:100,5:200,6:300} },
+    slot:                  { bundle:10, cents:100 },
+    nursery_slot:          { perSlot:{4:200,5:200,6:200} },
     nursery_clipping_slot: { perSlot:{3:100,4:200,5:300} },
-    seed_pouch_slot:       { tiers:{seed15:300,seed20:400} },
-    item_pouch_slot:       { cents:100 },
-    emergency_pouch:       { cents:300 }
+    seed_pouch_slot:       { tiers:{seed15:100,seed20:100} },
+    item_pouch_slot:       { bundle:5, cents:100 },
+    emergency_pouch:       { cents:300 },
+    half_bloom:            { cents:500 },
+    full_bloom:            { cents:1000, completeCents:500 }
   },
   // Short USD string for a product on the active rail, e.g. "$2" / "$1.50".
   // Returns null if the product isn't web-sellable / opts don't resolve.
@@ -76580,6 +76706,9 @@ var LW_WebPay = {
     opts = opts || {};
     var s = this._usd[type]; if(!s) return null;
     var c = s.bundle ? s.cents : s.tiers ? s.tiers[opts.tier] : s.perSlot ? s.perSlot[opts.slot] : s.cents;
+    // Full bloom completes at half price once half bloom is owned (the server
+    // re-derives this from the vault; _lwBloomState is display-only).
+    if (type === 'full_bloom' && window._lwBloomState && window._lwBloomState.half) c = s.completeCents;
     if (c == null) return null;
     return '$' + (c % 100 === 0 ? (c/100).toFixed(0) : (c/100).toFixed(2));
   },
@@ -76877,6 +77006,23 @@ window.LW_Pi={
       if(window.renderGreenhouse)renderGreenhouse();
       if(window.loadVaultFromCloud)loadVaultFromCloud();
       if(window.showHexMsg)showHexMsg('Slot '+slotNum+' unlocked!');
+      if(cb)cb(true);
+    },function(){if(cb)cb(false);});
+  },
+  // Bloom bundle upgrades (web rail ONLY — no Pi pricing ruled yet).
+  // kind: 'half_bloom' | 'full_bloom'. Server derives the price (full drops
+  // to $5 when half is owned) and grants all slots atomically; the founder
+  // gift arrives via lw_founder_gift:'pending' on the vault.
+  buyBloom:function(kind,cb){
+    if(!(window.LW_WebPay&&window.LW_WebPay.shouldHandle())){
+      if(window._toast)window._toast('Bundle upgrades are available on the web at lucidwinds.com.');
+      if(cb)cb(false);return;
+    }
+    var label=kind==='full_bloom'?'Full Bloom Upgrade':'Half Bloom Upgrade';
+    createPayment(0,label,{type:kind},function(){
+      if(window.loadVaultFromCloud)loadVaultFromCloud();
+      if(window.renderGreenhouse)try{renderGreenhouse();}catch(e){}
+      if(window._toast)window._toast('🌼 '+label+' unlocked! Your garden just grew.');
       if(cb)cb(true);
     },function(){if(cb)cb(false);});
   },

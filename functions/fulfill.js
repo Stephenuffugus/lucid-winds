@@ -41,28 +41,38 @@ export const SEED_POUCH_TIERS = ['seed15', 'seed20']
  * eaten by crypto network fees, so we sell in packs / keep prices low. Pi prices
  * stay where they are in each LW_Pi wrapper — this table is the web (USD) mirror.
  *
- * Pricing model per product (Stephen-approved 2026-06-24):
- *   - bundle  : sell a FIXED pack in one order (greenhouse: 10 slots / $2)
- *   - perSlot : escalating price keyed by the buyer's ACTUAL next slot, which
+ * Pricing model per product (Stephen-approved 2026-07-03 — "$1 for 10
+ * greenhouse slots, $2 per nursery slot, $1 per 5 backpack slots, $5 half /
+ * $10 full bundle with a unique bonus"):
+ *   - bundle  : sell a FIXED pack in one order (greenhouse: 10 slots / $1)
+ *   - perSlot : price keyed by the buyer's ACTUAL next slot, which
  *               nowCreateInvoice derives SERVER-SIDE from the vault count (so a
  *               client can't claim a cheaper early slot). nursery + clipping.
  *   - tiers   : tier-specific unlock price (seed pouch +5 tiers)
- *   - base    : flat single-unit price (item pouch, emergency)
+ *   - base    : flat single-unit price (emergency, bloom bundles)
  *
- *   greenhouse        10 slots / pack   $2.00   (bundle)
- *   nursery slot      +1 (slots 4/5/6)  $1 / $2 / $3   (perSlot)
+ *   greenhouse        10 slots / pack   $1.00   (bundle)
+ *   nursery slot      +1 (slots 4/5/6)  $2 flat        (perSlot)
  *   clipping slot     +1 (slots 3/4/5)  $1 / $2 / $3   (perSlot)
- *   seed pouch        +5 (seed15/20)    $3 / $4        (tiers)
- *   item pouch slot   +1                $1.00          (base)
+ *   seed pouch        +5 (seed15/20)    $1 / $1        (tiers)
+ *   item pouch        +5 slots / pack   $1.00          (bundle)
  *   emergency pouch   24h               $3.00          (base)
+ *   half bloom        bundle            $5.00          (base; +20 GH, +1 nursery,
+ *                                                       +1 clipping, seed15, +5 pouch)
+ *   full bloom        bundle            $10.00 — or $5.00 to COMPLETE if the
+ *                                       buyer already owns half bloom (server-
+ *                                       derived). Maxes every purchasable slot
+ *                                       + grants the one-time Founder's Bloom.
  */
 export const LW_WEB_PRICES = {
-  slot:                  { bundle: 10, cents: 200 },
-  nursery_slot:          { perSlot: { 4: 100, 5: 200, 6: 300 }, countField: 'lw_nursery_slots', base: 3, cap: 6 },
+  slot:                  { bundle: 10, cents: 100 },
+  nursery_slot:          { perSlot: { 4: 200, 5: 200, 6: 200 }, countField: 'lw_nursery_slots', base: 3, cap: 6 },
   nursery_clipping_slot: { perSlot: { 3: 100, 4: 200, 5: 300 }, countField: 'lw_nur_clipping_slots', base: 2, cap: 5 },
-  seed_pouch_slot:       { tiers: { seed15: 300, seed20: 400 } },
-  item_pouch_slot:       { base: 100, qtyMax: 15 },
+  seed_pouch_slot:       { tiers: { seed15: 100, seed20: 100 } },
+  item_pouch_slot:       { bundle: 5, cents: 100 },
   emergency_pouch:       { base: 300 },
+  half_bloom:            { base: 500 },
+  full_bloom:            { base: 1000, completeCents: 500 },
 }
 
 // Human labels for invoice descriptions / order records.
@@ -70,9 +80,11 @@ export const LW_WEB_LABELS = {
   slot: 'Greenhouse Slots',
   nursery_slot: 'Nursery Slot',
   nursery_clipping_slot: 'Nursery Clipping Slot',
-  item_pouch_slot: 'Item Pouch Slot',
+  item_pouch_slot: 'Item Pouch +5',
   seed_pouch_slot: 'Seed Pouch +5',
   emergency_pouch: 'Emergency Pouch (24h)',
+  half_bloom: 'Half Bloom Upgrade',
+  full_bloom: 'Full Bloom Upgrade',
 }
 
 /**
@@ -115,6 +127,11 @@ export function resolveWebPrice(type, opts) {
       throw new HttpsError('failed-precondition', `${label} is already at its maximum.`)
     }
     return { cents: spec.perSlot[idx], qty: 1, tier: null, slotIndex: idx, label }
+  }
+  // Full bloom completes at half price when the buyer already owns half bloom.
+  // opts.halfOwned is SERVER-derived by nowCreateInvoice from the vault doc.
+  if (type === 'full_bloom' && o.halfOwned) {
+    return { cents: spec.completeCents, qty: 1, tier: null, label: label + ' (complete)' }
   }
   // Flat single-unit.
   return { cents: spec.base, qty: 1, tier: null, label }
@@ -204,6 +221,45 @@ export async function applyFulfillment(tx, db, uid, metadata) {
     )
     fulfillment.applied = true
     fulfillment.expiresInMs = 24 * 60 * 60 * 1000
+  } else if (type === 'half_bloom' || type === 'full_bloom') {
+    // Bloom bundle upgrades. Both Firestore reads happen before either write
+    // (transaction ordering requirement). Grants never regress an existing
+    // count, and re-delivery of the same webhook is harmless (idempotent
+    // values, and the caller's lock doc already blocks true double-fulfill).
+    const full = type === 'full_bloom'
+    const metaDoc = await tx.get(metaRef)
+    const vaultDoc = await tx.get(vaultRef)
+    const vd = (vaultDoc.exists && vaultDoc.data()) || {}
+    const curSlots = Number((metaDoc.exists && metaDoc.data().slots) || 10)
+    const curNur = Number(vd.lw_nursery_slots || 3)
+    const curClip = Number(vd.lw_nur_clipping_slots || 2)
+    const curPouch = Number(vd.lw_pouch_cap || 25)
+    const bp = (vd.backpack && typeof vd.backpack === 'object') ? vd.backpack : {}
+    const unlocks = (bp.unlocks && typeof bp.unlocks === 'object') ? { ...bp.unlocks } : {}
+    const nextSlots = full ? SLOT_CAP_GREENHOUSE : Math.min(SLOT_CAP_GREENHOUSE, curSlots + 20)
+    const nextNur = full ? SLOT_CAP_NURSERY : Math.min(SLOT_CAP_NURSERY, curNur + 1)
+    const nextClip = full ? SLOT_CAP_NURSERY_CLIPPING : Math.min(SLOT_CAP_NURSERY_CLIPPING, curClip + 1)
+    const nextPouch = full ? SLOT_CAP_POUCH : Math.min(SLOT_CAP_POUCH, curPouch + 5)
+    unlocks.seed15 = true
+    if (full) unlocks.seed20 = true
+    const vaultWrite = {
+      lw_nursery_slots: Math.max(curNur, nextNur),
+      lw_nur_clipping_slots: Math.max(curClip, nextClip),
+      lw_pouch_cap: Math.max(curPouch, nextPouch),
+      backpack: { ...bp, unlocks },
+      lw_half_bloom: true,
+    }
+    if (full) {
+      vaultWrite.lw_full_bloom = true
+      // One-time purchase bonus: the client mints a unique Founder's Bloom
+      // when it sees 'pending', then stamps 'granted'. Never re-arm.
+      if (vd.lw_founder_gift !== 'granted') vaultWrite.lw_founder_gift = 'pending'
+    }
+    tx.set(metaRef, { slots: Math.max(curSlots, nextSlots) }, { merge: true })
+    tx.set(vaultRef, vaultWrite, { merge: true })
+    fulfillment.applied = true
+    fulfillment.slotsBefore = curSlots
+    fulfillment.slotsAfter = Math.max(curSlots, nextSlots)
   } else if (type === 'early_open_hut' || type === 'hut_early_open') {
     // Pi-only flavor product; kept here so piComplete stays whole. Not sold on web.
     const itemKey = (metadata && metadata.item) ? String(metadata.item) : 'unknown'

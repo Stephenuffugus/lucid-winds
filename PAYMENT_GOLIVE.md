@@ -86,12 +86,16 @@ inside the `window.LW_WEBPAY_ENABLED` block, change it to `return true;`, bump L
 - Payment went through but the item did not unlock: the IPN is not reaching us or the signature check failed. Check that the IPN callback URL in NOWPayments (Step 4) exactly matches the deployed nowIpn URL, and that the IPN secret in Firebase matches the one in the NOWPayments dashboard. Check function logs: `firebase functions:log --only nowIpn`.
 - Underpaid status: NOWPayments reported the buyer paid less than owed. The code deliberately does not grant on underpayment. This is correct.
 
-## THE PRICES (edit anytime in functions/fulfill.js, then redeploy)
-- Greenhouse: 10 slots for $2
-- Nursery slot: $1 then $2 then $3 (escalating)
+## THE PRICES (Stephen-approved 2026-07-03; edit anytime in functions/fulfill.js, then redeploy)
+- Greenhouse: 10 slots for $1
+- Nursery slot: $2 flat each
 - Clipping slot: $1 then $2 then $3
-- Seed pouch: $3 (to 15) then $4 (to 20)
-- Item pouch: $1
+- Seed pouch: $1 per +5 tier (to 15, then to 20)
+- Item pouch: +5 slots for $1
 - Emergency pouch: $3
+- HALF BLOOM bundle: $5 (+20 greenhouse, +1 nursery, +1 clipping, seed pouch +5, item pouch +5)
+- FULL BLOOM bundle: $10 (every slot maxed + the one-of-one Founder's Bloom plant). If the buyer already owns Half Bloom the server auto-prices it at $5 to complete.
+
+The bundle chooser ("GROW YOUR GARDEN") appears from the greenhouse expand button whenever the web rail is on.
 
 To change a price, edit the cents values in LW_WEB_PRICES and the matching display values in LW_WebPay._usd in index.html, then redeploy functions and push index.html.
