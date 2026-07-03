@@ -1120,7 +1120,7 @@ window._RRresetEnd=function(){
   var btn=document.getElementById('RRr');
   if(btn){btn.textContent='↻ Reset';btn.classList.remove('gold');}
 };
-window._RRreset=function(){resetLevel();};
+window._RRreset=function(){won=false;resetLevel();}; // explicit Replay overrides the mid-game won-guard (dead button fix 2026-07-03)
 window._RRprev=function(){if(levelIdx>0){if(timerId)clearInterval(timerId);loadLevel(levelIdx-1,false);}};
 window._RRnext=function(){if(levelIdx<LEVELS.length-1){if(timerId)clearInterval(timerId);loadLevel(levelIdx+1,false);}};
 
