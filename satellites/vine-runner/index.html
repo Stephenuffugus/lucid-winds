@@ -82,7 +82,20 @@ const THEMES=[
  {name:"FROST FERN",   hue:187, nodeHue:165, sat:46, bgTop:"#03141A", bgMid:"#0A2C33", bgBot:"#082530", glow:"#9FE8FF", spore:"#D3F5FF", vista:"170,230,255"},
  {name:"GOLDEN ROOT",  hue:78,  nodeHue:58,  sat:44, bgTop:"#10120A", bgMid:"#262B0E", bgBot:"#1D220B", glow:"#E2E86F", spore:"#F0F5B8", vista:"230,240,150"},
 ];
-function theme(){ return THEMES[(stage-1)%THEMES.length]; }
+// 100-level tower: the 6 hand-tuned palettes cycle so EVERY level is a new colour
+// (the clearest "you levelled up" signal), and each full pass up the tower drifts
+// the tube hue so level 7's VERDANT isn't identical to level 1's — colour keeps
+// evolving all the way to the top.
+function theme(){
+  var base = THEMES[(stage-1)%THEMES.length];
+  var loop = Math.floor((stage-1)/THEMES.length);      // 0,1,2… each lap up the tower
+  var drift = ((loop*29) % 62) - 31;                    // -31..+31° tube-hue rotation per lap
+  return { name:base.name, sat:base.sat,
+           hue:base.hue+drift, nodeHue:base.nodeHue+drift,
+           bgTop:base.bgTop, bgMid:base.bgMid, bgBot:base.bgBot,
+           glow:base.glow, spore:base.spore, vista:base.vista };
+}
+var TOWER_MAX = 100;
 function hexA(hex,a){ const n=parseInt(hex.slice(1),16);
   return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")"; }
 
@@ -117,7 +130,7 @@ let playerZ=0, speed=600, baseSpeed=600;
 let spores=[];
 for(let i=0;i<70;i++) spores.push({z:Math.random()*FAR, ang:Math.random()*6.283, rf:0.25+Math.random()*0.65});
 let ang=0, angV=0, h=0, vh=0, grounded=true;
-let inv=0, hitFlash=0, animT=0, elapsed=0, freezeT=0;
+let inv=0, hitFlash=0, animT=0, elapsed=0, freezeT=0, levelFlash=0;
 // steering sensitivity — player-tunable on the pause screen, persisted
 let sens=(()=>{ try{ const s=parseFloat(localStorage.getItem('vine-runner-sens')); return (s>=0.5&&s<=1.8)?s:1; }catch(e){ return 1; } })();
 function setSens(d){ sens=Math.max(0.5,Math.min(1.8, Math.round((sens+d)*100)/100)); try{localStorage.setItem('vine-runner-sens', sens);}catch(e){} }
@@ -161,14 +174,19 @@ function resetRun(full){
 // and demand 2/3 of it — difficulty is now consistent by construction
 function buildStage(){
   objects=[]; spawnedZ=800;
-  gateZ = 9000 + stage*1500;
-  const density = 1 - Math.min(0.28, (stage-1)*0.045);   // patterns pack tighter each stage
+  var L = Math.min(stage, TOWER_MAX);                    // level 1..100
+  // levels are bite-sized and roughly even in TIME — length grows a little to keep
+  // pace as the vine speeds up the higher you climb.
+  gateZ = 6400 + L*76;                                   // ~6.5k (L1) → ~14k (L100)
+  baseSpeed = 540 + (L-1)*5.6;                           // 540 (L1) → ~1094 (L100): faster + faster
+  var density = 1 - Math.min(0.36, (L-1)*0.006);         // patterns pack tighter across the tower
   while(spawnedZ < gateZ - 700){
     spawnPattern(spawnedZ);
-    spawnedZ += (560 + Math.random()*420) * density;
+    spawnedZ += (540 + Math.random()*400) * density;
   }
+  speed = baseSpeed; speedNow = baseSpeed;
   totalSeeds = objects.filter(o=>o.type==="seed").length;
-  quota = Math.max(12, Math.round(totalSeeds*0.66));
+  quota = Math.max(10, Math.round(totalSeeds*0.66));
   cp1 = Math.round(quota*0.28);
   cp2 = Math.round(quota*0.60);
   cpZ1 = Math.round(gateZ*0.35);
@@ -177,17 +195,17 @@ function buildStage(){
 
 function startGame(full){
   resetRun(full); buildStage(); state="play";
-  bannerMsg="STAGE "+stage+" \u2014 "+theme().name; bannerT=2.2;
+  bannerMsg="LEVEL "+stage+" \u2014 "+theme().name; bannerT=2.0; levelFlash=0.6;
 }
 function nextStage(){
-  stage++; baseSpeed+=50; bestStage=Math.max(bestStage,stage);
+  stage++; bestStage=Math.max(bestStage,stage);          // baseSpeed now derives from level in buildStage
   resetRun(false); buildStage(); state="play";
-  bannerMsg="STAGE "+stage+" \u2014 "+theme().name; bannerT=2.2;
+  bannerMsg="LEVEL "+stage+" \u2014 "+theme().name; bannerT=2.0; levelFlash=0.6;
 }
 
 // ---- spawner ------------------------------------------------------
 function spawnPattern(z){
-  const diff = Math.min(1, (stage-1)/6);         // 0 at stage 1 → 1 by stage 7+
+  const diff = Math.min(1, (stage-1)/34);        // ramps hazard density across the tower (max ~L35)
   const r = Math.random();
   const a0 = (Math.random()*2-1)*1.3;
   const thornP = 0.15 + diff*0.17;               // hazard share grows with stage
@@ -347,6 +365,7 @@ function update(dt){
   elapsed+=dt; animT+=dt;
   if(inv>0) inv-=dt;
   if(hitFlash>0) hitFlash-=dt;
+  if(levelFlash>0) levelFlash-=dt;
   if(shake>0) shake-=dt;
   if(jumpQueue>0) jumpQueue-=dt;
 
@@ -400,14 +419,17 @@ function update(dt){
   //  overs broke the flow. Failure now comes only from running out of vitality on
   //  thorns; reaching the bloom always advances. See vitality + gate below.)
 
-  // seed magnet — near-misses curve into you, keeps whip-speed grabs smooth
+  // seed magnet — a light assist so whip-speed grabs stay smooth, but you have to
+  // actually steer onto the seed now (tighter than before, and it narrows as you
+  // climb the tower so high levels demand real precision).
+  var magArc = 0.50 - Math.min(0.22, (stage-1)*0.003);   // 0.50 (L1) → 0.28 (L100)
   for(const o of objects){
     if(o.type!=="seed") continue;
     const dz=o.z-playerZ;
-    if(dz>-20 && dz<170){
+    if(dz>-10 && dz<118){
       const da=wrapA(ang-o.ang);
-      if(Math.abs(da)<0.75 && Math.abs((o.h||0)-h)<100){
-        o.ang += da*Math.min(1,dt*10);
+      if(Math.abs(da)<magArc && Math.abs((o.h||0)-h)<82){
+        o.ang += da*Math.min(1,dt*9);
         o.h = (o.h||0)+(h-(o.h||0))*Math.min(1,dt*6);
       }
     }
@@ -492,7 +514,7 @@ function burst(o,col,n){
 function updateGate(dt){
   bannerT-=dt;
   if(bannerT<=0){
-    if(stage>=6 && !endless){ state="clear"; bestStage=Math.max(bestStage,stage+1); portalEvent("victory"); return; }
+    if(stage>=TOWER_MAX && !endless){ state="clear"; bestStage=TOWER_MAX+1; portalEvent("victory"); return; }
     nextStage();
   }
 }
@@ -664,6 +686,17 @@ function draw(){
     vg.addColorStop(0,"rgba(0,0,0,0)");
     vg.addColorStop(1,(boostT>0?"rgba(24,84,116,":"rgba(4,18,10,")+(0.10+vg01*0.34)+")");
     g.fillStyle=vg; g.fillRect(0,0,W,H);
+  }
+
+  // level-change bloom — the whole screen pulses in the new garden's colour so a
+  // level-up reads instantly (pairs with the tube recolouring to a fresh palette).
+  if(levelFlash>0){
+    var lf = Math.min(1, levelFlash/0.6);
+    var lg=g.createRadialGradient(W/2,H*0.44,0, W/2,H*0.44,Math.max(W,H)*0.7);
+    lg.addColorStop(0, hexA(T.glow, 0.34*lf));
+    lg.addColorStop(0.5, hexA(T.glow, 0.14*lf));
+    lg.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle=lg; g.fillRect(0,0,W,H);
   }
 
   drawHUD(g);
@@ -896,7 +929,7 @@ function drawHUD(g){
   g.textAlign="right";
   g.font="900 16px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream; g.globalAlpha=0.85;
-  g.fillText("STAGE "+stage, W-16, 32);
+  g.fillText("LEVEL "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX, W-16, 32);
   g.font="900 10px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=T.glow;
   g.fillText(T.name, W-16, 46);
@@ -972,7 +1005,7 @@ function drawTitle(g){
   g.globalAlpha=1;
   if(bestStage>1){
     g.font="900 13px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.pink;
-    g.fillText("BEST RUN · STAGE "+bestStage, W/2, H*0.465);
+    g.fillText(bestStage>TOWER_MAX? "★ TOWER CLEARED ★" : "BEST · LEVEL "+Math.min(bestStage,TOWER_MAX)+"/"+TOWER_MAX, W/2, H*0.465);
   }
   g.fillStyle=C.glow;
   g.font="900 21px 'Titan One','Arial Black',sans-serif";
@@ -990,7 +1023,7 @@ function drawPause(g){
   g.fillStyle=T.glow; g.fillText("PAUSED", W/2, H*0.30);
   g.font="900 15px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText("STAGE "+stage+" — "+T.name, W/2, H*0.37);
+  g.fillText("LEVEL "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+" — "+T.name, W/2, H*0.37);
   g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.6)";
   g.fillText("tap the tunnel to resume", W/2, H*0.415);
   // steering sensitivity  - dots +
@@ -1021,11 +1054,11 @@ function drawClear(g){
   const pulse=1+Math.sin(animT*3)*0.04;
   g.save(); g.translate(W/2,H*0.34); g.scale(pulse,pulse);
   g.font="900 "+Math.min(52,W*0.10)+"px 'Titan One','Arial Black',sans-serif";
-  g.fillStyle=C.pink; g.fillText("THE GARDEN BLOOMS!", 0, 0);
+  g.fillStyle=C.pink; g.fillText("TOWER CLEARED!", 0, 0);
   g.restore();
   g.font="900 18px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText("all six vines cleared", W/2, H*0.43);
+  g.fillText("all 100 levels climbed", W/2, H*0.43);
   g.fillText("best combo x"+bestCombo, W/2, H*0.49);
   g.fillStyle=C.glow;
   if(Math.floor(animT*2)%2===0) g.fillText("TAP FOR THE ENDLESS GARDEN", W/2, H*0.60);
@@ -1038,10 +1071,10 @@ function drawOver(g){
   g.fillStyle=C.thorn; g.fillText(bannerMsg, W/2, H*0.40);
   g.font="900 20px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText(seeds+" seeds   ·   stage "+stage+"   ·   "+Math.floor(playerZ/100)+"m   ·   best combo x"+bestCombo, W/2, H*0.48);
+  g.fillText(seeds+" seeds   ·   level "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+"   ·   best combo x"+bestCombo, W/2, H*0.48);
   g.font="900 15px 'Titan One','Arial Black',sans-serif";
   g.fillStyle="rgba(242,240,220,0.7)";
-  g.fillText("best run: stage "+bestStage, W/2, H*0.54);
+  g.fillText(bestStage>TOWER_MAX? "best: tower cleared" : "best: level "+Math.min(bestStage,TOWER_MAX)+"/"+TOWER_MAX, W/2, H*0.54);
   g.fillStyle=C.glow;
   if(Math.floor(animT*2)%2===0) g.fillText("TAP TO REPLANT", W/2, H*0.60);
 }
@@ -1092,13 +1125,15 @@ portalEvent("ready");
   function today(){ return Math.floor(Date.now()/86400000); }
   function earnedToday(){ try{ var s=JSON.parse(localStorage.getItem(DAYK)||'{}'); return s.d===today()?(s.n||0):0; }catch(e){ return 0; } }
   function bank(n){ try{ localStorage.setItem(DAYK, JSON.stringify({d:today(), n:earnedToday()+n})); }catch(e){} }
+  var runEarned=0;                                    // per-run cap 12 (policy) — one tower climb can't cap the day
   function award(n){
-    n=Math.min(n, Math.max(0, 30-earnedToday()));
-    if(n<=0) return; bank(n);
+    n=Math.min(n, Math.max(0, 30-earnedToday()), Math.max(0, 12-runEarned));
+    if(n<=0) return; runEarned+=n; bank(n);
     if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,'vine-runner:run').catch(function(){});
   }
   window.addEventListener('message', function(e){
     var d=e&&e.data; if(!d||d.game!=='vine-runner') return;
+    if(d.event==='gameover') runEarned=0;             // fresh run resets the per-run allowance
     // persist best run (the game keeps no storage of its own)
     try{
       var bs=JSON.parse(localStorage.getItem('vine-runner-best')||'{}');
@@ -1107,7 +1142,7 @@ portalEvent("ready");
       localStorage.setItem('vine-runner-best', JSON.stringify(bs));
     }catch(_){}
     if(d.event==='stageclear') award(Math.max(1, Math.floor((d.seeds||0)/8)));
-    else if(d.event==='victory') award(6);
+    else if(d.event==='victory'){ award(6); runEarned=0; }
   });
 
   var s=document.createElement('script');
