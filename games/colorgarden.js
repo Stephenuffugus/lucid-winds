@@ -394,9 +394,9 @@ window._gameFns.colorgarden=function CG(a){
     viewCtx.imageSmoothingEnabled=true;
     viewCtx.imageSmoothingQuality='high';
   }
-  window.addEventListener('resize',function(){
-    if(imgW){sizeViewToContainer();renderView();}
-  });
+  var _cgResize=function(){ if(imgW){sizeViewToContainer();renderView();} };
+  window.addEventListener('resize',_cgResize);
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){window.removeEventListener('resize',_cgResize);});
 
   function clampPan(){
     if(!imgW)return;

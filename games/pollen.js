@@ -17,6 +17,10 @@ window._gameFns.pollen = function PN(a){
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     alive=false;
     if(aiTimer){clearTimeout(aiTimer);aiTimer=null;}
+    // body-level overlays must not outlive the game (2026-07-03 fleet audit)
+    ['PNsetupOV','PNrulesOV','PNreturnOV','PNpassOV','PNreserveOV','PNinspectOV'].forEach(function(id){
+      var o=document.getElementById(id);if(o)o.remove();
+    });
   });
   var COLORS=['green','rose','blue','amber','spore'];
   var COLOR_HEX={green:'#7ab356',rose:'#c47a7a',blue:'#5b9bd5',amber:'#c8a84b',spore:'#e8dcc8',gold:'#ffd700'};

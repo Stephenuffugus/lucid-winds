@@ -172,7 +172,9 @@ function dragEnd(){
 }
 
 function _wordSearchVictory(){
-  var ov=document.createElement('div');
+  var _old=document.getElementById('WS-over');if(_old)_old.remove();
+  var ov=document.createElement('div');ov.id='WS-over';
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('WS-over');if(o)o.remove();});
   ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(122,179,86,0.35) 0%,rgba(13,16,12,0.94) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:wsWin .3s ease;font-family:Georgia,serif;';
   ov.innerHTML=
     '<div style="font-size:4.6rem;line-height:1;margin-bottom:12px;filter:drop-shadow(0 0 24px rgba(122,179,86,0.8));animation:wsPop .7s cubic-bezier(.18,1.5,.3,1);">🌿</div>'+

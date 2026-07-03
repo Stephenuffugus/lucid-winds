@@ -42,6 +42,13 @@ if(!document.getElementById('bg-anim-style')){
 
 window._gameFns = window._gameFns || {};
 window._gameFns.bowergarden = function BG(a){
+  // Generation-guarded timers (2026-07-03 audit): New Game during a trick pause
+  // used to let stale timers force phase='play' with no trump onto the fresh
+  // deal (scoreHand then wrote teamScore[2]=NaN), and timers kept firing earns
+  // after leaving the game entirely.
+  var bwGen=0;
+  function bwT(fn,ms){var g=bwGen;setTimeout(function(){if(g===bwGen)fn();},ms);}
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){bwGen++;var o=document.getElementById('BW-over');if(o)o.remove();});
   var SUITS=['hearts','diamonds','clubs','spades'];
   var SUIT_ICONS={hearts:'♥',diamonds:'♦',clubs:'♣',spades:'♠'};
   var RANKS=['9','10','J','Q','K','A'];
@@ -241,7 +248,7 @@ window._gameFns.bowergarden = function BG(a){
   function newHand(){
     roundNum++;dealer=(dealer+1)%4;deal();
     leader=(dealer+1)%4;currentPlayer=leader;phase='call1';render();
-    if(currentPlayer!==SOUTH)setTimeout(aiCall1,600);
+    if(currentPlayer!==SOUTH)bwT(aiCall1,600);
   }
   function aiCall1(){
     if(phase!=='call1')return;
@@ -258,9 +265,9 @@ window._gameFns.bowergarden = function BG(a){
       phase='call2';currentPlayer=leader;
       // Clear pass tags from round 1 so round-2 decisions don't pile up.
       bidDecisions=[null,null,null,null];lastBidSeat=-1;
-      if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);else render();return;
+      if(currentPlayer!==SOUTH)bwT(aiCall2,600);else render();return;
     }
-    render();if(currentPlayer!==SOUTH)setTimeout(aiCall1,600);
+    render();if(currentPlayer!==SOUTH)bwT(aiCall1,600);
   }
   function aiCall2(){
     if(phase!=='call2')return;
@@ -282,7 +289,7 @@ window._gameFns.bowergarden = function BG(a){
     bidDecisions[currentPlayer]='pass';lastBidSeat=currentPlayer;
     sm(PLAYER_NAMES[currentPlayer]+' passes');
     currentPlayer=(currentPlayer+1)%4;render();
-    if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);
+    if(currentPlayer!==SOUTH)bwT(aiCall2,600);
   }
   function orderUp(p,goAlone){
     trumpSuit=upcard.suit;callingTeam=p%2;callingSeat=p;
@@ -327,7 +334,7 @@ window._gameFns.bowergarden = function BG(a){
     // the lead passes to the next live seat instead.
     if(loner&&currentPlayer===sittingOut)currentPlayer=nextSeat(currentPlayer);
     render();
-    if(currentPlayer!==SOUTH)setTimeout(aiPlay,700);
+    if(currentPlayer!==SOUTH)bwT(aiPlay,700);
   }
   function aiPlay(){
     if(phase!=='play'||currentPlayer===SOUTH)return;
@@ -348,24 +355,24 @@ window._gameFns.bowergarden = function BG(a){
       var winner=trickWin(trick,trumpSuit);var wt=winner%2;teamTricks[wt]++;
       // Beat 1: 400ms after the final card lands, declare the winner. The
       // winning card glows via trickWinner state and stays on the table.
-      setTimeout(function(){
+      bwT(function(){
         trickWinner=winner;
         sm(winner===0?'You win the trick':PLAYER_NAMES[winner]+' wins the trick');
         render();
         // Beat 2: 1100ms hold on the winner glow, then sweep-out animation
         // via opacity fade, then clear and proceed.
-        setTimeout(function(){
+        bwT(function(){
           trickWinner=-1;
           trick=[];trickCards=[null,null,null,null];lastPlayed=-1;
           if(teamTricks[0]+teamTricks[1]>=(loner?5:5)){scoreHand();return;}
           leader=winner;currentPlayer=leader;phase='play';render();
-          if(currentPlayer!==SOUTH)setTimeout(aiPlay,700);
+          if(currentPlayer!==SOUTH)bwT(aiPlay,700);
         },1100);
       },400);
       return;
     }
     currentPlayer=nextSeat(currentPlayer);render();
-    if(currentPlayer!==SOUTH)setTimeout(aiPlay,550);
+    if(currentPlayer!==SOUTH)bwT(aiPlay,550);
   }
   function scoreHand(){
     phase='handDone';
@@ -391,15 +398,31 @@ window._gameFns.bowergarden = function BG(a){
     if(team===0){_e('milestone');if(ct===5||dt===0)_e('progress');}
     if(teamScore[0]>=10||teamScore[1]>=10){
       phase='gameOver';
-      setTimeout(function(){
+      bwT(function(){
         var won=teamScore[0]>=10;
         if(won){_e('game_win');_playWin();sm('🃏 You win! '+teamScore[0]+'-'+teamScore[1]);}
         else{_e('game_loss');_play('lose');sm('Garden resting. '+teamScore[0]+'-'+teamScore[1]);}
         _sr('bowergarden',{w:won,s:teamScore[0],r:roundNum});
+        var w=0,l=0;try{w=parseInt(localStorage.getItem('lw_euchre_w'),10)||0;l=parseInt(localStorage.getItem('lw_euchre_l'),10)||0;}catch(e){}
+        if(won)w++;else l++;
+        try{localStorage.setItem('lw_euchre_w',String(w));localStorage.setItem('lw_euchre_l',String(l));}catch(e){}
+        var _o=document.getElementById('BW-over');if(_o)_o.remove();
+        var ov=document.createElement('div');ov.id='BW-over';
+        ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+        ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
+          +'<div style="font-size:1.7rem;font-weight:700;color:'+(won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;">'+(won?'MATCH WON':'MATCH LOST')+'</div>'
+          +'<div style="font-size:0.95rem;color:#e8dcc8;margin-top:10px;">You '+teamScore[0]+' \u00b7 Them '+teamScore[1]+' \u00b7 '+roundNum+' hands</div>'
+          +'<div style="font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:6px;">lifetime '+w+'W / '+l+'L</div>'
+          +'<button id="BW-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb NEW MATCH</button>'
+          +'<button id="BW-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">view the last hand</button>';
+        ov.querySelector('#BW-again').onclick=function(){ov.remove();window._BGN();};
+        ov.querySelector('#BW-view').onclick=function(){ov.remove();};
+        ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+        document.body.appendChild(ov);
       },1000);
       return;
     }
-    setTimeout(newHand,2000);
+    bwT(newHand,2000);
   }
   function onCardClick(card){
     if(phase!=='play'||currentPlayer!==SOUTH)return;
@@ -680,7 +703,7 @@ window._gameFns.bowergarden = function BG(a){
     // animated. The CSS animation runs to completion on the already-mounted
     // DOM node; the next render produces a fresh node without the class.
     if(lastPlayed>=0||lastBidSeat>=0){
-      setTimeout(function(){ lastPlayed=-1; lastBidSeat=-1; }, 50);
+      bwT(function(){ lastPlayed=-1; lastBidSeat=-1; }, 50);
     }
   }
 
@@ -693,7 +716,7 @@ window._gameFns.bowergarden = function BG(a){
     phase='goalone';render();
   }
 
-  window._BGN=function(){teamScore=[0,0];roundNum=0;dealer=EAST;newHand();};
+  window._BGN=function(){bwGen++;var o=document.getElementById('BW-over');if(o)o.remove();teamScore=[0,0];roundNum=0;dealer=EAST;newHand();};
   window._BGCC=function(r,s){onCardClick({rank:r,suit:s});};
   window._BGORD=function(){
     if(phase!=='call1'||currentPlayer!==SOUTH)return;
@@ -712,14 +735,14 @@ window._gameFns.bowergarden = function BG(a){
       bidDecisions=[null,null,null,null];lastBidSeat=-1;
     }
     render();
-    if(currentPlayer!==SOUTH)setTimeout(phase==='call1'?aiCall1:aiCall2,600);
+    if(currentPlayer!==SOUTH)bwT(phase==='call1'?aiCall1:aiCall2,600);
   };
   window._BGP2=function(){
     if(phase!=='call2'||currentPlayer!==SOUTH)return;
     bidDecisions[SOUTH]='pass';lastBidSeat=SOUTH;
     sm('You pass');
     currentPlayer=(currentPlayer+1)%4;render();
-    if(currentPlayer!==SOUTH)setTimeout(aiCall2,600);
+    if(currentPlayer!==SOUTH)bwT(aiCall2,600);
   };
   window._BGCT=function(suit){
     if(phase!=='call2'||currentPlayer!==SOUTH)return;

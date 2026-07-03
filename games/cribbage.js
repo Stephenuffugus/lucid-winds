@@ -12,6 +12,9 @@ window._gameFns.cribbage = function CRIB(a){
   var VALS=[1,2,3,4,5,6,7,8,9,10,10,10,10];
   var G;
   var gen=0; // bumped by newGame so stale timers can't touch a fresh deal
+  // …and bumped on game EXIT too — the show-phase narration chain kept firing
+  // earns into whatever game came next (2026-07-03 fleet audit)
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){gen++;});
 
   ms(a,'<span id="CBheader" style="font-family:Georgia,serif;letter-spacing:.06em;">🃏 <strong id="CBp" style="font-size:1.2em;color:#e8dcc8;">0</strong> vs AI <strong id="CBa" style="font-size:1.2em;color:#c47a7a;">0</strong></span>');
   mm(a);

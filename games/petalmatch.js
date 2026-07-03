@@ -1041,8 +1041,11 @@ window._gameFns.petalmatch = function PM(a){
   }
 
   var rafId=0;
+  var _pmDead=false;
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){_pmDead=true;if(rafId){cancelAnimationFrame(rafId);rafId=0;}});
   function loop(){
     if(!document.body.classList.contains('game-active')){rafId=0;return;}
+    if(_pmDead){rafId=0;return;} // game switched without leaving game-active (2026-07-03)
     render();rafId=requestAnimationFrame(loop);
   }
 

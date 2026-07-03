@@ -103,7 +103,11 @@ window._gameFns.seedsow=function SS(a){
   }
   function saveStats(){try{localStorage.setItem('lw_ss_stats',JSON.stringify(stats));}catch(e){}}
 
+  var ssGen=0;
+  function ssT(fn,ms){var g=ssGen;setTimeout(function(){if(g===ssGen)fn();},ms);}
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){ssGen++;});
   function newGame(){
+    ssGen++; // kill any in-flight sow/AI chain (NEW GAME mid-sow corrupted state)
     board=[4,4,4,4,4,4,0,4,4,4,4,4,4,0];
     turn=0;busy=false;bestStoreEarn=0;
     undoStack=[];hintPit=-1;lastMovePit=-1;capturedIdx=-1;floatBanner='';
@@ -153,7 +157,7 @@ window._gameFns.seedsow=function SS(a){
           }
         }
         render();
-        if(captureAmt>0)setTimeout(function(){capturedIdx=-1;render();},900);
+        if(captureAmt>0)ssT(function(){capturedIdx=-1;render();},900);
         if(checkEnd()){cb(false,captureAmt);return;}
         cb(extraTurn,captureAmt);
         return;
@@ -162,9 +166,9 @@ window._gameFns.seedsow=function SS(a){
       board[idx]++;seeds--;
       _play('tap');
       render();
-      setTimeout(step,delay);
+      ssT(step,delay);
     }
-    setTimeout(step,delay);
+    ssT(step,delay);
   }
 
   function checkEnd(){
@@ -303,7 +307,7 @@ window._gameFns.seedsow=function SS(a){
     busy=true;
     sow(pit,0,function(extra,cap){
       if(cap>0)showBanner('+'+cap+' capture!');
-      if(!extra){turn=1;sm('AI thinking...');setTimeout(aiMove,550);}
+      if(!extra){turn=1;sm('AI thinking...');ssT(aiMove,550);}
       else{showBanner('Free turn');sm('Free turn');busy=false;render();}
     });
   }
@@ -314,13 +318,13 @@ window._gameFns.seedsow=function SS(a){
     sow(pit,1,function(extra,cap){
       if(cap>0)showBanner('AI captures '+cap);
       if(!extra){turn=0;busy=false;sm('Your turn');render();}
-      else{showBanner('AI free turn');sm('AI gets another turn');setTimeout(aiMove,700);}
+      else{showBanner('AI free turn');sm('AI gets another turn');ssT(aiMove,700);}
     });
   }
   function showBanner(text){
     floatBanner=text;
     render();
-    setTimeout(function(){floatBanner='';render();},1400);
+    ssT(function(){floatBanner='';render();},1400);
   }
 
   // Render seed dots inside a pit. Positions cluster around center.
