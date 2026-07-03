@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.03.02';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.03.03';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -63021,7 +63021,7 @@ var G=[
 {id:'picnicpanic',n:'Picnic Panic',i:'\ud83c\udf3c',r:'Garden Galaga \u2014 your snapdragon defends the picnic from the swarm. Four modes, formations, pollen-beam captures, cosmetics.',cat:'studio',ext:'/satellites/picnic-panic/',thumb:'portal-assets/thumbs/picnic-panic.png'},
 {id:'pollenpanic',n:'Pollen Panic',i:'\ud83c\udf38',r:'Botanical maze-chase \u2014 munch every seed, bloom the pests, chase sunberries across shifting gardens.',cat:'studio',ext:'/satellites/pollen-panic/',thumb:'portal-assets/thumbs/pollen-panic.png'},
 {id:'vinewinder',n:'Vinewinder',i:'\ud83d\udc0d',r:'Botanical Snake, fully grown \u2014 steer the vine, build combos, and unlock skins, gardens and daily challenges.',cat:'studio',ext:'/satellites/vinewinder/',thumb:'portal-assets/thumbs/vinewinder.png'},
-{id:'vinerunner',n:'Vine Runner',i:'\ud83c\udf3f',r:'A pseudo-3D halfpipe dash \u2014 run the vine, weave the seeds, and boost through full loops across six worlds.',cat:'studio',ext:'/satellites/vine-runner/',thumb:'portal-assets/thumbs/vine-runner.png'},
+{id:'vinerunner',n:'Vine Runner',i:'\ud83c\udf3f',r:'A pseudo-3D halfpipe dash up a 100-level tower \u2014 weave the seeds, ride the loops, and unlock new runners as you climb.',cat:'studio',ext:'/satellites/vine-runner/',thumb:'portal-assets/thumbs/vine-runner.png'},
 {id:'tally',n:'Tally',i:'\ud83e\uddee',r:'Combine numbers and operators to hit the target \u2014 every puzzle hides several solutions, and collectible pals cheer every one you find. Endless worlds, a daily board, cosmetic-only shop.',cat:'studio',ext:'https://stephenuffugus.github.io/Tally/',thumb:'portal-assets/thumbs/tally.png'},
 // Brawl: genuinely still in build (portal had soon:true) -- wip = visible SOON badge, non-tappable.
 {id:'brawl',n:'Brawl',i:'\ud83c\udf7a',r:'Multiplayer mayhem.',cat:'studio',ext:'https://stephenuffugus.github.io/BarBrawl/',thumb:'portal-assets/thumbs/brawl.png',wip:true}
@@ -64726,7 +64726,9 @@ window._sg=function(id){_cp();if(id===_a)return;_xt();_afReset();_a=id;window._a
       return;
     }
     var _ext=document.createElement('iframe');
-    _ext.src=gi.ext;
+    // same-origin satellites: stamp the app version so a satellite update reaches
+    // returning players (the iframe HTML would otherwise cache). Cross-origin left as-is.
+    _ext.src=(gi.ext.charAt(0)==='/') ? (gi.ext+(gi.ext.indexOf('?')>=0?'&':'?')+'v='+(window.LW_VERSION||'1')) : gi.ext;
     _ext.setAttribute('loading','lazy');
     _ext.setAttribute('allow','fullscreen; autoplay; accelerometer; gyroscope; clipboard-write');
     _ext.setAttribute('allowfullscreen','');            // older syntax — REQUIRED so the in-game ⛶ button can enter OS fullscreen

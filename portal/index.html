@@ -298,7 +298,7 @@ var FEATURED = [
   {nm:"Vinewinder", ds:"Botanical Snake, fully grown — steer the vine, build combos, unlock skins, gardens and daily challenges.", url:"/satellites/vinewinder/", ic:"🐍", thumb:"/portal-assets/thumbs/vinewinder.png"},
   // Vine Runner: Sonic-2-halfpipe-style tube runner, vendored same-origin (Jul 03).
   // Posts its own portal events; bridge awards sunbeams on stage clears.
-  {nm:"Vine Runner", ds:"A pseudo-3D halfpipe dash — run the vine, weave the seeds, boost through loops across six worlds.", url:"/satellites/vine-runner/", ic:"🌿", thumb:"/portal-assets/thumbs/vine-runner.png"}
+  {nm:"Vine Runner", ds:"A pseudo-3D halfpipe dash up a 100-level tower — weave the seeds, ride the loops, and unlock new runners as you climb.", url:"/satellites/vine-runner/", ic:"🌿", thumb:"/portal-assets/thumbs/vine-runner.png"}
 ];
 
 /* ---- The 65 Lucid Winds games (from GAMES_MANIFEST.md) ---- */
@@ -405,7 +405,7 @@ function card(g, isFeat){
   var shot;
   // Cache-bust stamp — thumbnails/screenshots are served 1-year-immutable, so
   // bump this when the image files change (2026-06-28: thumbs optimized ~95%).
-  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=20260702'; });
+  var _tv = (function(u){ return u + (u.indexOf('?')>=0?'&':'?') + 'v=20260703'; });
   if(isFeat){
     // Hub card uses its seed art; other satellites use their icon glyph
     if (g.thumb) shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(g.thumb)+'" onerror="_lwPh(this)">';
@@ -829,7 +829,7 @@ renderGarden("all");
       fr.srcdoc = opts.srcdoc;
     } else {
       fr.removeAttribute('srcdoc');
-      fr.src = opts.src + (opts.src.indexOf('?')>=0?'&':'?') + 'embed=1';
+      fr.src = opts.src + (opts.src.indexOf('?')>=0?'&':'?') + 'embed=1&v=20260703';   // v-stamp so satellite updates reach returning players
     }
     // A successful frame load cancels the satellite redirect fallback.
     // Same-origin navigation guard: a srcdoc game reports about:srcdoc. If
