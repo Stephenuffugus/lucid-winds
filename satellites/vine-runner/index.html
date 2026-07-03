@@ -44,20 +44,36 @@ const ART = {
 //   run.png · lean-l.png · lean-r.png · jump.png · hit.png
 // then add ONE line to SKINS below. That's the whole wiring. Missing poses fall
 // back to the default skin, so a partial skin still plays.
+// Ordered by unlock level — a growth ladder that mirrors climbing the tower.
+// unlock = the best LEVEL you must reach (0 = always available).
 const SKINS = [
-  { id:"sprout", name:"Sprout", dir:"art" },
-  { id:"lily",   name:"Lily",   dir:"art/skins/lily" },   // golden-lily runner (Stephen art 2026-07-03)
-  // { id:"...",  name:"...",   dir:"art/skins/..." },     // ← add more skins here
+  { id:"sprout", name:"Sprout", dir:"art",              unlock:0  },
+  { id:"bud",    name:"Bud",    dir:"art/skins/bud",    unlock:10 },  // Stephen art 2026-07-03
+  { id:"flower", name:"Flower", dir:"art/skins/flower", unlock:25 },  // Stephen art 2026-07-03
+  // { id:"...", name:"...",   dir:"art/skins/...",    unlock:40 },   // ← add more, ordered by unlock
 ];
 let skinIdx = 0;
 try{ var _sk=localStorage.getItem('vine-runner-skin');
   if(_sk!=null){ for(var _i=0;_i<SKINS.length;_i++) if(SKINS[_i].id===_sk){ skinIdx=_i; break; } }
 }catch(e){}
 function curSkin(){ return SKINS[skinIdx] || SKINS[0]; }
-function setSkin(d){
-  skinIdx = (skinIdx + d + SKINS.length) % SKINS.length;
+function skinUnlocked(s){ return bestStage >= (s.unlock||0); }     // bestStage = best LEVEL reached (persisted)
+function setSkin(d){                                               // cycle, skipping still-locked skins
+  var n=skinIdx;
+  for(var g=0; g<SKINS.length; g++){
+    n=(n+d+SKINS.length)%SKINS.length;
+    if(skinUnlocked(SKINS[n])){ skinIdx=n; break; }
+  }
   try{ localStorage.setItem('vine-runner-skin', curSkin().id); }catch(e){}
   if(typeof beep==="function") beep(720,0.06,"sine",0.05);
+}
+function nextLockedSkin(){ for(var i=0;i<SKINS.length;i++) if(!skinUnlocked(SKINS[i])) return SKINS[i]; return null; }
+// returns a skin that JUST unlocked (once), else null — drives the reward toast
+function checkUnlock(){
+  var count=0; for(var i=0;i<SKINS.length;i++) if(skinUnlocked(SKINS[i])) count++;
+  var seen=1; try{ seen=parseInt(localStorage.getItem('vine-runner-unlockseen')||'1',10)||1; }catch(e){}
+  if(count>seen){ try{ localStorage.setItem('vine-runner-unlockseen', String(count)); }catch(e){} return SKINS[count-1]; }
+  return null;
 }
 const _POSE_FILE = { run:"run.png", leanL:"lean-l.png", leanR:"lean-r.png", jump:"jump.png", hit:"hit.png" };
 function skinPose(pose){
@@ -173,7 +189,12 @@ let combo=0, comboT=0, bestCombo=0;
 let boostT=0, slowT=0, speedNow=600;
 let camA=0;   // camera roll — tracks the player so the WORLD rotates, not the sprite
 let cp1=0, cp2=0, cpZ1=0, cpZ2=0, cp1Done=false, cp2Done=false;
-let endless=false, muted=false, bestStage=1, totalSeeds=0;
+// bestStage = best LEVEL ever reached; loaded on boot so skin unlocks persist.
+let bestStage=(function(){ try{ var b=JSON.parse(localStorage.getItem('vine-runner-best')||'{}'); return Math.max(1, b.stage||1); }catch(e){ return 1; } })();
+if(!skinUnlocked(SKINS[skinIdx])) skinIdx=0;          // safety: never boot into a locked skin
+let endless=false, muted=false, totalSeeds=0;
+function saveBest(){ try{ var b=JSON.parse(localStorage.getItem('vine-runner-best')||'{}'); b.stage=Math.max(b.stage||0,bestStage); b.combo=Math.max(b.combo||0,bestCombo); localStorage.setItem('vine-runner-best', JSON.stringify(b)); }catch(e){} }
+let overUnlock=null;   // skin that just unlocked this run → celebrated on the over/clear screen
 // vitality: forgiving health so flow isn't broken by seed-count fail-walls.
 // Thorns cost a leaf; collecting seeds slowly regrows one. Run out = wilt.
 const VIT_MAX=3, VIT_REGEN=40;
@@ -512,7 +533,7 @@ function update(dt){
           for(let i=0;i<lost;i++)  // scattered seeds fly away, Sonic-style
             particles.push({x:0,y:0,o:o,vx:(Math.random()*2-1)*260,vy:-Math.random()*340-80,
                             t:1.1, col:C.seed, seedFly:true, sx:null, sy:null});
-          if(vitality<=0){ state="over"; bannerMsg="THE VINE WILTED..."; bestStage=Math.max(bestStage,stage); portalEvent("gameover"); return; }
+          if(vitality<=0){ state="over"; bannerMsg="THE VINE WILTED..."; bestStage=Math.max(bestStage,stage); saveBest(); overUnlock=checkUnlock(); portalEvent("gameover"); return; }
         }
       } else if(o.type==="thorn" && !o.grazed && inv<=0 && da<HIT_ARC*2.6 && dh<90){
         // near-miss graze — skill reward, no punishment (Subway-Surfers style)
@@ -553,7 +574,7 @@ function burst(o,col,n){
 function updateGate(dt){
   bannerT-=dt;
   if(bannerT<=0){
-    if(stage>=TOWER_MAX && !endless){ state="clear"; bestStage=TOWER_MAX+1; portalEvent("victory"); return; }
+    if(stage>=TOWER_MAX && !endless){ state="clear"; bestStage=TOWER_MAX+1; saveBest(); overUnlock=checkUnlock(); portalEvent("victory"); return; }
     nextStage();
   }
 }
@@ -1049,11 +1070,17 @@ function drawTitle(g){
   // character picker — only shown once more than one skin exists (the live runner
   // is already drawn at the tube floor, so this just labels + flanks it)
   if(SKINS.length>1){
+    var unlockedN=0; for(var _s=0;_s<SKINS.length;_s++) if(skinUnlocked(SKINS[_s])) unlockedN++;
     g.font="900 13px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.glow;
     g.fillText(curSkin().name.toUpperCase(), W/2, H*0.485);
-    g.font="900 32px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.cream;
-    g.globalAlpha=0.85; g.fillText("‹", W/2-96, H*0.545); g.fillText("›", W/2+96, H*0.545);
-    g.globalAlpha=1;
+    if(unlockedN>1){                                   // arrows only if you can actually switch
+      g.font="900 32px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.cream;
+      g.globalAlpha=0.85; g.fillText("‹", W/2-96, H*0.545); g.fillText("›", W/2+96, H*0.545);
+      g.globalAlpha=1;
+    }
+    var nl=nextLockedSkin();                            // motivational teaser for the next unlock
+    if(nl){ g.font="700 11px sans-serif"; g.fillStyle="rgba(242,240,220,0.5)";
+      g.fillText("next runner: "+nl.name+" · reach level "+nl.unlock, W/2, H*0.585); }
   }
   g.fillStyle=C.glow;
   g.font="900 21px 'Titan One','Arial Black',sans-serif";
@@ -1123,8 +1150,19 @@ function drawOver(g){
   g.font="900 15px 'Titan One','Arial Black',sans-serif";
   g.fillStyle="rgba(242,240,220,0.7)";
   g.fillText(bestStage>TOWER_MAX? "best: tower cleared" : "best: level "+Math.min(bestStage,TOWER_MAX)+"/"+TOWER_MAX, W/2, H*0.54);
-  g.fillStyle=C.glow;
-  if(Math.floor(animT*2)%2===0) g.fillText("TAP TO REPLANT", W/2, H*0.60);
+  if(overUnlock){                                      // reward moment — a new runner just unlocked
+    var pulse=1+Math.sin(animT*6)*0.06;
+    g.save(); g.translate(W/2,H*0.605); g.scale(pulse,pulse);
+    g.font="900 17px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.gold||"#E8C86B";
+    g.fillText("★ NEW RUNNER: "+overUnlock.name.toUpperCase()+" ★", 0, 0); g.restore();
+    g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.6)";
+    g.fillText("pick it on the title screen", W/2, H*0.635);
+    g.fillStyle=C.glow;
+    if(Math.floor(animT*2)%2===0) g.fillText("TAP TO REPLANT", W/2, H*0.69);
+  } else {
+    g.fillStyle=C.glow;
+    if(Math.floor(animT*2)%2===0) g.fillText("TAP TO REPLANT", W/2, H*0.60);
+  }
 }
 
 function roundRect(g,x,y,w,hh,r){
