@@ -191,10 +191,26 @@ function genPuzzle(targetClues){
 function GU(a){
   var bd=new Array(81).fill(0),sol=new Array(81).fill(0),fix=new Array(81).fill(false),sel=-1,_fc=0;
   var _grade='medium',_startTs=0,_solvedTs=0,_won=false;
-  _setDiff('medium');ms(a);mm(a);
+  // 2026-07-03 table-stakes pass: pencil marks, visible timer, best time per
+  // difficulty, and the always-on mistake reveal became a toggle.
+  var notes=new Array(81).fill(0),noteMode=false,timerIv=0;
+  var showErr=true;try{showErr=localStorage.getItem('lw_sudoku_err')!=='off';}catch(e){}
+  _setDiff('medium');ms(a,'\u23f1 <strong id="Ut">0:00</strong>');mm(a);
+  if(!document.getElementById('u-notes-style')){var _us=document.createElement('style');_us.id='u-notes-style';
+    _us.textContent='.unwrap{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:100%;height:100%;font-size:clamp(7px,1.9vw,10px);line-height:1;color:var(--sage);opacity:.9;font-family:"DM Mono",monospace;place-items:center;padding:1px;box-sizing:border-box}'
+      +'.utb{display:flex;gap:10px;justify-content:center;width:min(calc(100vw - 32px),400px);margin:clamp(6px,2vw,10px) auto 0}'
+      +'.utbb{flex:1;min-height:48px;border-radius:12px;border:1.5px solid rgba(74,124,53,.25);background:rgba(26,31,23,.65);color:var(--cream);font-family:"DM Mono",monospace;font-size:.72rem;letter-spacing:.05em;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+      +'.utbb.on{border-color:#C8A84B;background:rgba(200,168,75,.16);color:#f0e2c0}';
+    document.head.appendChild(_us);}
   var gd=document.createElement('div');gd.className='ug';gd.id='Ug';a.appendChild(gd);
+  var tb=document.createElement('div');tb.className='utb';
+  tb.innerHTML='<button class="utbb" id="Upen" onclick="_UP()">\u270f\ufe0f NOTES</button><button class="utbb" id="Uerr" onclick="_UE()">\ud83d\udc41 MISTAKES</button>';
+  a.appendChild(tb);
   var pd=document.createElement('div');pd.className='up';pd.id='Upad';a.appendChild(pd);
   mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="40">Easy</option><option value="32" selected>Medium</option><option value="26">Hard</option></select> <button class="gb-new" onclick="_UG()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+  function fmtT(ms2){var t=Math.max(0,Math.floor(ms2/1000)),m=Math.floor(t/60),sx=t%60;return m+':'+(sx<10?'0':'')+sx;}
+  function tick(){if(!a.isConnected){clearInterval(timerIv);timerIv=0;return;}if(_won||!_startTs)return;var el=document.getElementById('Ut');if(el)el.textContent=fmtT(Date.now()-_startTs);}
+  function toolbar(){var pe=document.getElementById('Upen');if(pe)pe.className='utbb'+(noteMode?' on':'');var ee=document.getElementById('Uerr');if(ee){ee.className='utbb'+(showErr?' on':'');ee.innerHTML='\ud83d\udc41 MISTAKES: '+(showErr?'ON':'OFF');}}
   function gen(){
     var target=parseInt((document.getElementById('Ud')||{}).value,10)||32;
     _grade=target>=40?'easy':target>=32?'medium':'hard';
@@ -203,12 +219,15 @@ function GU(a){
     bd=result.puzzle.slice();
     sol=result.solution.slice();
     for(var i=0;i<81;i++)fix[i]=bd[i]!==0;
+    notes=new Array(81).fill(0);
     _fc=0;_won=false;_startTs=Date.now();_solvedTs=0;
+    if(timerIv)clearInterval(timerIv);timerIv=setInterval(tick,500);tick();
   }
-  // Count how many of each digit 1-9 are already correctly placed
+  // Count how many of each digit 1-9 are placed (placement count, not
+  // correctness — a correctness count would leak errors with MISTAKES off)
   function digitCounts(){
     var c=[0,0,0,0,0,0,0,0,0,0];
-    for(var i=0;i<81;i++){if(bd[i]&&bd[i]===sol[i])c[bd[i]]++;}
+    for(var i=0;i<81;i++){if(bd[i])c[bd[i]]++;}
     return c;
   }
   // True if cell j shares row, column, or 3x3 box with cell i
@@ -239,15 +258,19 @@ function GU(a){
       if(sel>=0&&related(sel,i))cls+=' uh';
       if(selVal&&bd[i]===selVal)cls+=' un';
       if(i===sel)cls+=' us';
-      if(bd[i]&&!fix[i]&&bd[i]!==sol[i])cls+=' ue';
+      if(showErr&&bd[i]&&!fix[i]&&bd[i]!==sol[i])cls+=' ue';
       d.className=cls;
-      d.textContent=bd[i]||'';
+      if(!bd[i]&&notes[i]){
+        var nh='<div class="unwrap">';
+        for(var nn=1;nn<=9;nn++)nh+='<span>'+((notes[i]&(1<<nn))?nn:'')+'</span>';
+        d.innerHTML=nh+'</div>';
+      } else d.textContent=bd[i]||'';
       d.setAttribute('data-i',i);
       if(!fix[i])d.onclick=function(){sel=parseInt(this.getAttribute('data-i'),10);rn();};
       else d.onclick=function(){sel=parseInt(this.getAttribute('data-i'),10);rn();}; // fixed cells also select for same-number highlight
       gd.appendChild(d);
     }
-    renderPad();
+    renderPad();toolbar();
     if(_won)return;
     var done=true;
     for(var i=0;i<81;i++)if(bd[i]!==sol[i]){done=false;break;}
@@ -262,6 +285,12 @@ function GU(a){
     var mm=Math.floor(secs/60),ss=secs%60;
     var timeStr=mm+':'+(ss<10?'0':'')+ss;
     var gradeLbl=_grade.charAt(0).toUpperCase()+_grade.slice(1);
+    // best time per difficulty, persisted
+    var bk='lw_sudoku_bt_'+_grade,prevBest=0;
+    try{prevBest=parseInt(localStorage.getItem(bk),10)||0;}catch(e){}
+    var isRecord=!prevBest||secs<prevBest;
+    if(isRecord){try{localStorage.setItem(bk,String(secs));}catch(e){}}
+    var bestStr=(function(v){var m2=Math.floor(v/60),s2=v%60;return m2+':'+(s2<10?'0':'')+s2;})(isRecord?secs:prevBest);
     // Wave-light the board once
     var cells=gd.querySelectorAll('.uc');
     for(var ci=0;ci<cells.length;ci++){
@@ -273,7 +302,7 @@ function GU(a){
       ov.innerHTML=
         '<div style="font-size:5rem;line-height:1;margin-bottom:14px;animation:uSolvePop .7s cubic-bezier(.18,1.5,.3,1);filter:drop-shadow(0 0 24px rgba(122,179,86,0.8));">🌿</div>'+
         '<div style="font-size:2.4rem;font-weight:700;color:#7ab356;letter-spacing:0.06em;text-shadow:0 0 22px rgba(122,179,86,0.7);animation:uSolvePop .7s cubic-bezier(.18,1.5,.3,1);">SOLVED</div>'+
-        '<div style="font-style:italic;font-size:0.9rem;color:#e8dcc8;margin-top:10px;animation:uSolveLine .5s ease-out .4s both;">'+gradeLbl+' · '+timeStr+'</div>'+
+        '<div style="font-style:italic;font-size:0.9rem;color:#e8dcc8;margin-top:10px;animation:uSolveLine .5s ease-out .4s both;">'+gradeLbl+' · '+timeStr+(isRecord?'  ·  <span style="color:#c8a84b;font-style:normal;">\u2605 NEW BEST</span>':'  ·  best '+bestStr)+'</div>'+
         '<button onclick="this.parentElement.remove();_UG()" style="margin-top:26px;min-height:46px;padding:10px 26px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;animation:uSolveLine .5s ease-out .7s both;">↻ Next Puzzle</button>';
       ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
       document.body.appendChild(ov);
@@ -283,10 +312,20 @@ function GU(a){
     if(_won)return;
     if(sel<0||fix[sel])return;
     _play('tap');
+    if(noteMode&&n){                      // pencil in / rub out a candidate
+      if(!bd[sel])notes[sel]^=(1<<n);
+      rn();return;
+    }
     var prev=bd[sel];bd[sel]=n;
+    if(n){
+      notes[sel]=0;
+      for(var j=0;j<81;j++)if(related(sel,j))notes[j]&=~(1<<n);  // auto-erase the digit from related pencil marks
+    } else notes[sel]=0;
     if(n&&n===sol[sel]&&prev!==sol[sel]){_fc++;if(_fc%9===0)_e('progress');}
     rn();
   };
+  window._UP=function(){noteMode=!noteMode;_play('tap');toolbar();};
+  window._UE=function(){showErr=!showErr;try{localStorage.setItem('lw_sudoku_err',showErr?'on':'off');}catch(e){}_play('tap');rn();};
   window._UG=function(){
     sel=-1;_fc=0;_won=false;
     sm('Generating…');
