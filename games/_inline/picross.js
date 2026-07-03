@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: picross
  *
  * COPY of the inline GX mount function from index.html
- * lines 68196-68218.
+ * lines 68531-68592.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -21,16 +21,55 @@
 
   function GX(a){var SZ=5,sol=[],bd=[],rowC=[],colC=[],won=false;ms(a);mm(a);
     if(!document.getElementById('x-anim-style')){var _xs=document.createElement('style');_xs.id='x-anim-style';_xs.textContent='@keyframes xBloomPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}@keyframes xRevealRing{0%{transform:scale(0.6);opacity:0}80%{opacity:1}100%{transform:scale(2.4);opacity:0}}@keyframes xLineIn{0%{transform:translateY(8px);opacity:0}100%{transform:translateY(0);opacity:1}}';document.head.appendChild(_xs);}
-    var w=document.createElement('div');w.id='Xw';w.style.cssText='padding:8px;position:relative';a.appendChild(w);mc(a).innerHTML='<select class="gsl" id="Xd" onchange="_XN()"><option value="5" selected>5×5</option><option value="7">7×7</option><option value="10">10×10</option></select> <button class="gb-new" onclick="_XN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
-    function gen(){sol=[];for(var i=0;i<SZ*SZ;i++)sol.push(Math.random()<.55?1:0);bd=new Array(SZ*SZ).fill(0);won=false;
-      rowC=[];for(var r=0;r<SZ;r++){var s=[],c=0;for(var j=0;j<SZ;j++){if(sol[r*SZ+j])c++;else{if(c)s.push(c);c=0}}if(c)s.push(c);if(!s.length)s=[0];rowC.push(s)}
-      colC=[];for(var c=0;c<SZ;c++){var s=[],n=0;for(var r=0;r<SZ;r++){if(sol[r*SZ+c])n++;else{if(n)s.push(n);n=0}}if(n)s.push(n);if(!s.length)s=[0];colC.push(s)}}
-    function rn(){var h='<table style="border-collapse:collapse;margin:0 auto"><tr><td></td>';
-      for(var c=0;c<SZ;c++)h+='<td style="text-align:center;font-size:.65rem;color:var(--sage);padding:2px;vertical-align:bottom;line-height:1.3;font-family:DM Mono,monospace">'+colC[c].join('<br>')+'</td>';h+='</tr>';
-      for(var r=0;r<SZ;r++){h+='<tr><td style="text-align:right;font-size:.65rem;color:var(--sage);padding:0 6px;font-family:DM Mono,monospace">'+rowC[r].join(' ')+'</td>';
-        for(var c=0;c<SZ;c++){var i=r*SZ+c;h+='<td style="width:52px;height:52px;border:1px solid rgba(74,124,53,.18);text-align:center;cursor:pointer;background:'+(bd[i]===1?'rgba(74,124,53,.4)':bd[i]===2?'rgba(199,80,80,.08)':'rgba(26,31,23,.6)')+';border-radius:3px;font-size:.7rem" onclick="_XT('+i+')">'+(bd[i]===2?'✕':'')+'</td>'}h+='</tr>'}h+='</table>';w.innerHTML=h;
+    var w=document.createElement('div');w.id='Xw';w.style.cssText='padding:8px;position:relative';a.appendChild(w);mc(a).innerHTML='<select class="gsl" id="Xd" onchange="_XN()"><option value="5" selected>5\u00d75</option><option value="7">7\u00d77</option><option value="10">10\u00d710</option><option value="12">12\u00d712</option></select> <button class="gb-new" onclick="_XN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+    function segs(arr){var s=[],c=0,i;for(i=0;i<arr.length;i++){if(arr[i])c++;else{if(c)s.push(c);c=0;}}if(c)s.push(c);if(!s.length)s=[0];return s;}
+    function eqA(x,y){if(x.length!==y.length)return false;for(var i=0;i<x.length;i++)if(x[i]!==y[i])return false;return true;}
+    function rowCells(src,r){var o=[],j;for(j=0;j<SZ;j++)o.push(src[r*SZ+j]===1?1:0);return o;}
+    function colCells(src,c){var o=[],r;for(r=0;r<SZ;r++)o.push(src[r*SZ+c]===1?1:0);return o;}
+    // Organic boards: random seed + two 3\u00d73 majority-smoothing passes so the
+    // hidden picture is blobby and clue sets play fair (was pure noise). Reroll
+    // degenerate fills. 2026-07-03 rebuild.
+    function gen(){var tries=0,fill,interest;
+      do{sol=[];var i;for(i=0;i<SZ*SZ;i++)sol.push(Math.random()<.5?1:0);
+        if(SZ>=10){ // big boards: one smoothing pass for organic blobs; small
+          var nx=[];// boards keep raw texture (smoothing turns 5x5 into one blob)
+          for(var r=0;r<SZ;r++)for(var c=0;c<SZ;c++){var n=0,t=0;
+            for(var dr=-1;dr<=1;dr++)for(var dc=-1;dc<=1;dc++){var rr=r+dr,cc=c+dc;t++;if(rr>=0&&rr<SZ&&cc>=0&&cc<SZ)n+=sol[rr*SZ+cc];}
+            nx.push(n*2>t?1:0);}
+          sol=nx;
+        }
+        fill=0;for(var f=0;f<SZ*SZ;f++)fill+=sol[f];
+        // "interesting" = enough rows AND cols whose clue has 2+ runs; one
+        // smoothing pass keeps texture, this reroll kills the giant-blob boards
+        interest=0;var need=Math.max(2,Math.floor(SZ/3));
+        var ri=0;for(var r5=0;r5<SZ;r5++)if(segs(rowCells(sol,r5)).length>=2)ri++;
+        var ci=0;for(var c5=0;c5<SZ;c5++)if(segs(colCells(sol,c5)).length>=2)ci++;
+        interest=(ri>=need&&ci>=need)?1:0;tries++;
+      }while(tries<40&&(fill<SZ*SZ*0.3||fill>SZ*SZ*0.65||!interest));
+      bd=new Array(SZ*SZ).fill(0);won=false;
+      rowC=[];for(var r2=0;r2<SZ;r2++)rowC.push(segs(rowCells(sol,r2)));
+      colC=[];for(var c2=0;c2<SZ;c2++)colC.push(segs(colCells(sol,c2)));}
+    function rn(){
+      // responsive cells: 52px cap, shrinks so 10\u00d710/12\u00d712 fit a phone (was fixed 52px overflow)
+      var cs=Math.max(22,Math.min(52,Math.floor(((a.clientWidth||window.innerWidth||360)-104)/SZ)));
+      var h='<table style="border-collapse:collapse;margin:0 auto"><tr><td></td>';
+      for(var c=0;c<SZ;c++){var cSat=eqA(segs(colCells(bd,c)),colC[c]);
+        h+='<td style="text-align:center;font-size:.65rem;color:'+(cSat?'rgba(138,145,120,.4)':'var(--sage)')+';padding:2px;vertical-align:bottom;line-height:1.3;font-family:DM Mono,monospace">'+colC[c].join('<br>')+'</td>';}
+      h+='</tr>';
+      for(var r=0;r<SZ;r++){var rSat=eqA(segs(rowCells(bd,r)),rowC[r]);
+        h+='<tr><td style="text-align:right;font-size:.65rem;color:'+(rSat?'rgba(138,145,120,.4)':'var(--sage)')+';padding:0 6px;font-family:DM Mono,monospace;white-space:nowrap">'+rowC[r].join(' ')+'</td>';
+        for(var c3=0;c3<SZ;c3++){var i=r*SZ+c3;
+          h+='<td style="width:'+cs+'px;height:'+cs+'px;border:1px solid rgba(74,124,53,.18);text-align:center;cursor:pointer;background:'+(bd[i]===1?'rgba(74,124,53,.4)':bd[i]===2?'rgba(199,80,80,.08)':'rgba(26,31,23,.6)')+';border-radius:3px;font-size:'+Math.max(10,Math.round(cs*0.42))+'px" onclick="_XT('+i+')">'+(bd[i]===2?'\u2715':'')+'</td>';}
+        h+='</tr>';}
+      h+='</table>';w.innerHTML=h;
       if(won)return;
-      var win=true;for(var i=0;i<SZ*SZ;i++){if(sol[i]===1&&bd[i]!==1||sol[i]===0&&bd[i]===1){win=false;break}}if(win&&bd.some(function(v){return v===1})){won=true;_e('game_win');_playWin();_sr('picross',{w:true,s:SZ*SZ});
+      // WIN = every row and column clue satisfied. ANY valid arrangement counts \u2014
+      // the old exact-picture compare made alternate logical solutions unwinnable
+      // (rigged-feeling; fixed 2026-07-03).
+      var win=bd.some(function(v){return v===1;});
+      if(win)for(var r4=0;r4<SZ&&win;r4++)if(!eqA(segs(rowCells(bd,r4)),rowC[r4]))win=false;
+      if(win)for(var c4=0;c4<SZ&&win;c4++)if(!eqA(segs(colCells(bd,c4)),colC[c4]))win=false;
+      if(win){won=true;_e('game_win');_playWin();_sr('picross',{w:true,s:SZ*SZ});
         // Ceremony — light up every filled cell one-by-one, then overlay
         var cells=w.querySelectorAll('table td');var fillCells=[];for(var ci=0;ci<cells.length;ci++){var style=cells[ci].getAttribute('style')||'';if(style.indexOf('rgba(74,124,53,.4)')>=0)fillCells.push(cells[ci]);}
         fillCells.forEach(function(cell,ii){setTimeout(function(){cell.style.background='rgba(122,179,86,0.7)';cell.style.boxShadow='0 0 10px rgba(122,179,86,0.6)';cell.style.transition='all .3s ease';},ii*40);});
