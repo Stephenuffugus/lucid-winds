@@ -62,6 +62,33 @@ function GFL(a){
   var si=0; try{var s0=parseInt(localStorage.getItem('lw_flood_size'),10);if(s0>=0&&s0<SIZES.length)si=s0;}catch(e){}
   var styleIdx=0; try{var sv=localStorage.getItem('lw_flood_style');for(var q=0;q<STYLES.length;q++)if(STYLES[q].id===sv)styleIdx=q;if(sv==null){var old=localStorage.getItem('lw_flood_leaves');if(old==='off')styleIdx=1;}}catch(e){}
   var packIdx=0; try{var pv=localStorage.getItem('lw_flood_pack');for(var q2=0;q2<PACKS.length;q2++)if(PACKS[q2].id===pv)packIdx=q2;}catch(e){}
+
+  // ── colourblind SYMBOLS (Stephen 2026-07-03: colours alone aren't a
+  // colourblind mode). Six maximally distinct silhouettes — circle, triangle,
+  // square, X, diamond, plus — white with a dark outline so they read on any
+  // cell colour, and bold enough to recognise at ~20px cells on big boards.
+  // Rendered as a background layer on every cell + pad swatch + pack preview
+  // whenever the Colourblind pack is active (Solid & Gem styles; the Leaves
+  // style is already shape-coded by its six distinct leaf sprites).
+  var _SYMS=(function(){
+    var W='#FFFFFF', D='#202318';
+    var bodies=[
+      "<circle cx='12' cy='12' r='7' fill='"+W+"' stroke='"+D+"' stroke-width='2.6'/>",
+      "<path d='M12 3.6 21 20.4 3 20.4Z' fill='"+W+"' stroke='"+D+"' stroke-width='2.6' stroke-linejoin='round'/>",
+      "<rect x='5' y='5' width='14' height='14' fill='"+W+"' stroke='"+D+"' stroke-width='2.6'/>",
+      "<path d='M6 6 18 18M18 6 6 18' stroke='"+D+"' stroke-width='7.4' stroke-linecap='round'/><path d='M6 6 18 18M18 6 6 18' stroke='"+W+"' stroke-width='4' stroke-linecap='round'/>",
+      "<path d='M12 3 21 12 12 21 3 12Z' fill='"+W+"' stroke='"+D+"' stroke-width='2.6' stroke-linejoin='round'/>",
+      "<path d='M12 4.5v15M4.5 12h15' stroke='"+D+"' stroke-width='7.4' stroke-linecap='round'/><path d='M12 4.5v15M4.5 12h15' stroke='"+W+"' stroke-width='4' stroke-linecap='round'/>"
+    ];
+    var out=[];
+    for(var i=0;i<bodies.length;i++){
+      var svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>"+bodies[i]+"</svg>";
+      out.push('url(data:image/svg+xml,'+encodeURIComponent(svg).replace(/'/g,'%27')+')');
+    }
+    return out;
+  })();
+  function cbSyms(){ return PACKS[packIdx].id==='cb'; }
+  function symLayer(k,pct){ return _SYMS[k]+' center/'+(pct||'58%')+' no-repeat'; }
   var showMoves=true, showTime=true;
   try{showMoves=localStorage.getItem('lw_flood_moves')!=='off';showTime=localStorage.getItem('lw_flood_time')!=='off';}catch(e){}
 
@@ -131,11 +158,11 @@ function GFL(a){
   function cellBg(idx){
     var k=grid[idx], s=styleId();
     if(s==='leaves') return 'url('+LF[k]+') center/cover '+AUTUMN[k];
-    var color=COL(k);
-    if(s==='gem') return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),radial-gradient(circle at 72% 82%,rgba(0,0,0,.22),transparent 42%),'+color;
-    return color;
+    var color=COL(k), sym=cbSyms()? symLayer(k)+',' : '';
+    if(s==='gem') return sym+'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),radial-gradient(circle at 72% 82%,rgba(0,0,0,.22),transparent 42%),'+color;
+    return sym? sym+color : color;
   }
-  function cellBg2(c){ var s=styleId(); if(s==='leaves')return 'url('+LF[c]+') center/cover '+AUTUMN[c]; var color=COL(c); if(s==='gem')return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),'+color; return color; }
+  function cellBg2(c){ var s=styleId(); if(s==='leaves')return 'url('+LF[c]+') center/cover '+AUTUMN[c]; var color=COL(c), sym=cbSyms()? symLayer(c,'52%')+',' : ''; if(s==='gem')return sym+'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),'+color; return sym? sym+color : color; }
   function buildGrid(){
     clearFlow();
     gd.classList.toggle('ff-gemgrid', styleId()==='gem');
@@ -273,7 +300,7 @@ function GFL(a){
       packWrap.innerHTML='';
       for(var p=0;p<PACKS.length;p++){(function(idx){
         var row=document.createElement('div'); row.className='ff-pack'+(idx===packIdx?' sel':'');
-        var sw=''; for(var c=0;c<PACKS[idx].cols.length;c++) sw+='<i style="background:'+PACKS[idx].cols[c]+'"></i>';
+        var sw=''; for(var c=0;c<PACKS[idx].cols.length;c++) sw+='<i style="background:'+(PACKS[idx].id==='cb'? symLayer(c,'75%')+',' : '')+PACKS[idx].cols[c]+'"></i>';
         row.innerHTML='<span class="pn">'+PACKS[idx].name+'</span><span class="sw">'+sw+'</span>';
         row.onclick=function(){
           packIdx=idx; try{localStorage.setItem('lw_flood_pack',PACKS[idx].id);}catch(e){}

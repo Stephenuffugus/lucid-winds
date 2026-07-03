@@ -702,7 +702,7 @@ function draw(){
 
   // gate bloom on approach
   const gz = gateZ - playerZ;
-  if(gz>-60 && gz<FAR) drawGate(g, proj(gz,0,0), gz);
+  if(gz>-60 && gz<FAR) drawGateBloom(g, proj(gz,0,0), gz);
 
   // (checkpoint arches removed with the checkpoint mechanic)
 
@@ -870,7 +870,7 @@ function drawCheckpoint(g,p,cz,T){
   g.restore();
 }
 
-function drawGate(g,p,gz){
+function drawGateBloom(g,p,gz){
   const rr=R()*p.s;
   const im=img(ART.gateBloom);
   if(im){
