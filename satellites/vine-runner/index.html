@@ -362,7 +362,7 @@ function update(dt){
   if(steer===0) angV += -Math.sin(ang)*PIPE_G_IDLE*dt;        // whisper settle to the bottom only when idle
   angV  = Math.max(-ANGV_MAX, Math.min(ANGV_MAX, angV));
   ang  += angV*dt;
-  camA += (ang-camA)*(1 - Math.exp(-CAM_LAMBDA*dt));          // camera rolls a beat behind you (slower than the player)
+  camA += ((ang + angV*0.05)-camA)*(1 - Math.exp(-CAM_LAMBDA*dt)); // rolls a beat behind you, with a slight look-ahead lead in the turn direction
 
   // full-loop detection — loops pay SPEED, not seeds (seeds come from seeds)
   const li = Math.floor((ang+Math.PI)/(Math.PI*2));
