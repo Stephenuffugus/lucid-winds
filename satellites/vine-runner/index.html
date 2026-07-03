@@ -123,6 +123,10 @@ let boostT=0, slowT=0, speedNow=600;
 let camA=0;   // camera roll — tracks the player so the WORLD rotates, not the sprite
 let cp1=0, cp2=0, cpZ1=0, cpZ2=0, cp1Done=false, cp2Done=false;
 let endless=false, muted=false, bestStage=1, totalSeeds=0;
+// vitality: forgiving health so flow isn't broken by seed-count fail-walls.
+// Thorns cost a leaf; collecting seeds slowly regrows one. Run out = wilt.
+const VIT_MAX=3, VIT_REGEN=40;
+let vitality=VIT_MAX, vitMark=0;
 
 function wrapA(a){ a=(a+Math.PI)%(Math.PI*2); if(a<0)a+=Math.PI*2; return a-Math.PI; }
 
@@ -143,6 +147,7 @@ function resetRun(full){
   cp1Done=false; cp2Done=false;
   if(full){ stage=1; baseSpeed=600; bestCombo=0; endless=false; }
   speed=baseSpeed; speedNow=baseSpeed; seeds=0;
+  vitality=VIT_MAX; vitMark=0;
 }
 
 // pre-generate the entire stage, count what's actually there,
@@ -380,15 +385,9 @@ function update(dt){
   speed = speedNow;
   playerZ += speed*dt;
 
-  // checkpoints — partial quotas, Sonic 2 style
-  if(!cp1Done && playerZ>=cpZ1){
-    if(seeds>=cp1){ cp1Done=true; sGate(); bannerMsg="CHECKPOINT \u2713"; bannerT=1.2; }
-    else { state="over"; bannerMsg="WILTED AT CHECKPOINT 1..."; bestStage=Math.max(bestStage,stage); portalEvent("gameover"); return; }
-  }
-  if(!cp2Done && playerZ>=cpZ2){
-    if(seeds>=cp2){ cp2Done=true; sGate(); bannerMsg="CHECKPOINT \u2713"; bannerT=1.2; }
-    else { state="over"; bannerMsg="WILTED AT CHECKPOINT 2..."; bestStage=Math.max(bestStage,stage); portalEvent("gameover"); return; }
-  }
+    // (distance checkpoints removed 2026-07-03 — the instant 'not enough seeds' game
+  //  overs broke the flow. Failure now comes only from running out of vitality on
+  //  thorns; reaching the bloom always advances. See vitality + gate below.)
 
   // seed magnet — near-misses curve into you, keeps whip-speed grabs smooth
   for(const o of objects){
@@ -424,36 +423,35 @@ function update(dt){
           burst(o, C.seed, 10);
           floats.push({z:dz, ang:o.ang, h:(o.h||0)+40, t:0.8,
                        txt: combo>=3? "x"+combo : "+1"});
+          // seeds slowly regrow a lost leaf — keeps the run forgiving
+          if(vitality<VIT_MAX && seeds-vitMark>=VIT_REGEN){ vitality++; vitMark=seeds; bannerMsg="LEAF REGROWN"; bannerT=0.9; }
         } else if(o.type==="boost"){
           o.dead=true; boostT=1.7; sBoost();
           burst(o, "#9FE8FF", 14);
           bannerMsg="DEW BOOST!"; bannerT=0.8;
         } else if(o.type==="thorn" && inv<=0){
           o.dead=true; sHit();
-          const lost = Math.min(seeds, 5); seeds -= lost;
-          combo=0; comboT=0; slowT=1.2;
-          inv=1.4; hitFlash=0.4; shake=0.35;
+          vitality--; vitMark=seeds;                 // thorn costs a leaf
+          const lost = Math.min(seeds, 3); seeds -= lost;
+          combo=0; comboT=0; slowT=1.0;
+          inv=1.4; hitFlash=0.4; shake=0.4;
           angV += (ang>=o.ang? 5:-5);
-          burst(o, C.thorn, 8);
+          burst(o, C.thorn, 10);
           for(let i=0;i<lost;i++)  // scattered seeds fly away, Sonic-style
             particles.push({x:0,y:0,o:o,vx:(Math.random()*2-1)*260,vy:-Math.random()*340-80,
                             t:1.1, col:C.seed, seedFly:true, sx:null, sy:null});
+          if(vitality<=0){ state="over"; bannerMsg="THE VINE WILTED..."; bestStage=Math.max(bestStage,stage); portalEvent("gameover"); return; }
         }
       }
     }
   }
   objects = objects.filter(o=>!o.dead);
 
-  // gate check
+  // gate — reaching the bloom ALWAYS advances now (no seed-count fail). Hitting
+  // the quota just makes it a fuller bloom (bonus feel), never a wall.
   if(playerZ >= gateZ){
-    if(seeds >= quota){
-      state="gate"; bannerT=2.2; bannerMsg="BLOOM OPENED!"; sGate();
-      portalEvent("stageclear");
-    } else {
-      state="over"; bannerMsg="THE BLOOM CLOSED...";
-      bestStage=Math.max(bestStage,stage);
-      portalEvent("gameover");
-    }
+    state="gate"; bannerT=2.2; bannerMsg = seeds>=quota? "FULL BLOOM!" : "BLOOM OPENED!"; sGate();
+    portalEvent("stageclear");
   }
 
   // particles / floats
@@ -814,26 +812,28 @@ function drawRunner(g){
 
 function drawHUD(g){
   const T=theme();
-  // current segment target: CP1 -> CP2 -> BLOOM
-  const seg = !cp1Done? 0 : !cp2Done? 1 : 2;
-  const tgt = seg===0? cp1 : seg===1? cp2 : quota;
-  const segName = seg===2? "BLOOM" : "CHECKPOINT "+(seg+1);
-  const met = seeds>=tgt;
   g.textAlign="left";
   g.font="900 22px 'Titan One','Arial Black',sans-serif";
-  // seed counter chip
+  // seed counter + vitality leaves in one chip
   g.fillStyle="rgba(4,18,10,0.6)";
-  roundRect(g, 14, 14, 190, 44, 22); g.fill();
+  roundRect(g, 14, 14, 178, 44, 22); g.fill();
   const hs=img(ART.hudSeed);
-  if(hs) g.drawImage(hs, 24, 20, 32, 32);
-  else { g.fillStyle=C.seed; g.beginPath(); g.ellipse(40,36,11,15,0.3,0,7); g.fill(); }
-  g.fillStyle= met? T.glow : C.cream;
-  g.fillText(seeds+" / "+tgt, 62, 44);
-  g.font="900 10px 'Titan One','Arial Black',sans-serif";
-  g.fillStyle= met? T.glow : "rgba(242,240,220,0.7)";
-  g.fillText((met?"\u2713 ":"")+segName, 64, 68);
+  if(hs) g.drawImage(hs, 22, 20, 32, 32);
+  else { g.fillStyle=C.seed; g.beginPath(); g.ellipse(38,36,11,15,0.3,0,7); g.fill(); }
+  g.fillStyle=C.cream;
+  g.fillText(""+seeds, 58, 44);
+  // vitality leaves (right side of the chip)
+  for(let i=0;i<VIT_MAX;i++){
+    const lx=118+i*22, ly=36;
+    g.globalAlpha = i<vitality? 1 : 0.22;
+    g.fillStyle = i<vitality? T.glow : C.cream;
+    g.beginPath(); g.ellipse(lx, ly, 6.5, 10, -0.5, 0, 7); g.fill();
+    g.globalAlpha = i<vitality? 0.5 : 0.15; g.strokeStyle="#0B2415"; g.lineWidth=1.2;
+    g.beginPath(); g.moveTo(lx-4,ly+4); g.lineTo(lx+3,ly-4); g.stroke();
+  }
+  g.globalAlpha=1;
 
-  // pause button (play only)
+  // pause button (play only) \u2014 hit region matches (36,92) in the input handlers
   if(state==="play"){
     g.globalAlpha=0.45; g.fillStyle="rgba(4,18,10,0.7)";
     g.beginPath(); g.arc(36,92,20,0,7); g.fill();
@@ -842,18 +842,13 @@ function drawHUD(g){
     g.globalAlpha=1;
   }
 
-  // stage progress bar with checkpoint ticks + bloom marker
+  // stage progress bar \u2192 the bloom (no checkpoint ticks anymore)
   if(state==="play"||state==="gate"){
     const bw=Math.min(W*0.34,250), bx=W/2-bw/2, by=14;
     g.fillStyle="rgba(4,18,10,0.55)";
     roundRect(g,bx,by,bw,9,4); g.fill();
     g.fillStyle=hexA(T.glow,0.95);
     roundRect(g,bx+1,by+1,(bw-2)*Math.min(1,playerZ/gateZ),7,3); g.fill();
-    g.fillStyle=C.cream;
-    for(const f of [cpZ1/gateZ, cpZ2/gateZ]){
-      g.globalAlpha=0.9; g.fillRect(bx+bw*f-1, by-3, 2, 15);
-    }
-    g.globalAlpha=1;
     g.fillStyle=C.pink;
     g.beginPath(); g.arc(bx+bw, by+4.5, 6, 0, 7); g.fill();
   }
@@ -884,19 +879,16 @@ function drawHUD(g){
     g.fillText("COMBO x"+combo, W/2, H*0.20);
     g.globalAlpha=1;
   }
-  // next-target reminder \u2014 sits below the top HUD row so it never overlaps the counters
-  if(state==="play" && !met){
-    const nextZ = seg===0? cpZ1 : seg===1? cpZ2 : gateZ;
-    if(nextZ-playerZ<2400){
-      const msg=segName+" \u2014 NEED "+(tgt-seeds)+" MORE";
-      g.textAlign="center";
-      g.font="900 13px 'Titan One','Arial Black',sans-serif";
-      const tw=g.measureText(msg).width;
-      g.fillStyle="rgba(4,18,10,0.55)";
-      roundRect(g, W/2-tw/2-12, 96, tw+24, 26, 13); g.fill();
-      g.fillStyle=C.pink;
-      g.fillText(msg, W/2, 113);
-    }
+  // bloom-ahead cue \u2014 positive, no quota pressure
+  if(state==="play" && gateZ-playerZ<2200){
+    const msg="BLOOM AHEAD";
+    g.textAlign="center";
+    g.font="900 13px 'Titan One','Arial Black',sans-serif";
+    const tw=g.measureText(msg).width;
+    g.fillStyle="rgba(4,18,10,0.5)";
+    roundRect(g, W/2-tw/2-12, 96, tw+24, 26, 13); g.fill();
+    g.fillStyle=C.pink;
+    g.fillText(msg, W/2, 113);
   }
 }
 
@@ -992,7 +984,7 @@ function drawOver(g){
   g.fillStyle=C.thorn; g.fillText(bannerMsg, W/2, H*0.40);
   g.font="900 20px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText("seeds: "+seeds+" / "+quota+"   ·   stage "+stage+"   ·   best combo x"+bestCombo, W/2, H*0.48);
+  g.fillText(seeds+" seeds   ·   stage "+stage+"   ·   "+Math.floor(playerZ/100)+"m   ·   best combo x"+bestCombo, W/2, H*0.48);
   g.font="900 15px 'Titan One','Arial Black',sans-serif";
   g.fillStyle="rgba(242,240,220,0.7)";
   g.fillText("best run: stage "+bestStage, W/2, H*0.54);
