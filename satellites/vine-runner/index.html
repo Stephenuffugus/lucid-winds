@@ -75,7 +75,7 @@ function checkUnlock(){
   if(count>seen){ try{ localStorage.setItem('vine-runner-unlockseen', String(count)); }catch(e){} return SKINS[count-1]; }
   return null;
 }
-const _POSE_FILE = { run:"run.png", leanL:"lean-l.png", leanR:"lean-r.png", jump:"jump.png", hit:"hit.png" };
+const _POSE_FILE = { run:"run.png", run2:"run-2.png", leanL:"lean-l.png", leanR:"lean-r.png", jump:"jump.png", hit:"hit.png" };
 function skinPose(pose){
   var s=curSkin(), f=_POSE_FILE[pose];
   var im=img(s.dir+"/"+f);
@@ -256,12 +256,12 @@ function buildStage(){
   var L = Math.min(stage, TOWER_MAX);                    // level 1..100
   // levels are bite-sized and roughly even in TIME — length grows a little to keep
   // pace as the vine speeds up the higher you climb.
-  gateZ = 6400 + L*76;                                   // ~6.5k (L1) → ~14k (L100)
+  gateZ = 11200 + L*128;                                 // ~11.3k (L1) → ~24k (L100) ≈ 21-22s/level (Stephen 2026-07-03: levels were far too short)
   baseSpeed = 540 + (L-1)*5.6;                           // 540 (L1) → ~1094 (L100): faster + faster
   var density = 1 - Math.min(0.36, (L-1)*0.006);         // patterns pack tighter across the tower
   while(spawnedZ < gateZ - 700){
     spawnPattern(spawnedZ);
-    spawnedZ += (540 + Math.random()*400) * density;
+    spawnedZ += (500 + Math.random()*360) * density;     // tighter packing (2026-07-03 difficulty bump)
   }
   // patterns can extend up to ~1200 past their start; anything that spilled
   // into the final corridor (or past the bloom) is dropped so the last 700
@@ -288,7 +288,7 @@ function spawnPattern(z){
   const diff = Math.min(1, (stage-1)/34);        // ramps hazard density across the tower (max ~L35)
   const r = Math.random();
   const a0 = (Math.random()*2-1)*1.3;
-  const thornP = 0.15 + diff*0.17;               // hazard share grows with stage
+  const thornP = 0.18 + diff*0.20;               // hazard share grows with stage (bumped 2026-07-03: too easy)
 
   if(r < 0.06){                                  // dew boost pod
     objects.push({z, ang:(Math.random()*2-1)*1.2, h:0, type:"boost"}); return;
@@ -912,7 +912,9 @@ function drawRunner(g){
   else if(!grounded) im=skinPose("jump");
   else if(lean<-0.55) im=skinPose("leanL");
   else if(lean> 0.55) im=skinPose("leanR");
-  if(!im) im=skinPose("run");
+  if(!im){                                           // run cycle: alternate run / run-2 at ~9fps when the 2nd frame exists
+    im = (Math.floor(animT*9)%2===1 && skinPose("run2")) || skinPose("run");
+  }
 
   g.save();
   g.translate(p.x, p.y - sz*0.55);
