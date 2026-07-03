@@ -116,6 +116,9 @@ let spores=[];
 for(let i=0;i<70;i++) spores.push({z:Math.random()*FAR, ang:Math.random()*6.283, rf:0.25+Math.random()*0.65});
 let ang=0, angV=0, h=0, vh=0, grounded=true;
 let inv=0, hitFlash=0, animT=0, elapsed=0, freezeT=0;
+// steering sensitivity — player-tunable on the pause screen, persisted
+let sens=(()=>{ try{ const s=parseFloat(localStorage.getItem('vine-runner-sens')); return (s>=0.5&&s<=1.8)?s:1; }catch(e){ return 1; } })();
+function setSens(d){ sens=Math.max(0.5,Math.min(1.8, Math.round((sens+d)*100)/100)); try{localStorage.setItem('vine-runner-sens', sens);}catch(e){} }
 let seeds=0, quota=20, stage=1, gateZ=10500;
 let objects=[], particles=[], floats=[];
 let spawnedZ=800, bannerT=0, bannerMsg="", shake=0;
@@ -253,8 +256,11 @@ cv.addEventListener('touchstart',e=>{
     // pause button (top-left, under seed chip)
     if(state==="play" && Math.hypot(t.clientX-36, t.clientY-92)<28){ state="pause"; return; }
     if(state==="pause"){
-      if(Math.hypot(t.clientX-W/2, t.clientY-H*0.62)<44){ muted=!muted; return; }
-      if(Math.abs(t.clientX-W/2)<92 && Math.abs(t.clientY-H*0.72)<24){ window.SWS_EXIT&&window.SWS_EXIT(); return; }
+      const sy=H*0.55;
+      if(Math.hypot(t.clientX-(W/2-96), t.clientY-sy)<28){ setSens(-0.15); return; }
+      if(Math.hypot(t.clientX-(W/2+96), t.clientY-sy)<28){ setSens(0.15); return; }
+      if(Math.hypot(t.clientX-W/2, t.clientY-H*0.66)<38){ muted=!muted; return; }
+      if(Math.abs(t.clientX-W/2)<92 && Math.abs(t.clientY-H*0.76)<24){ window.SWS_EXIT&&window.SWS_EXIT(); return; }
       state="play"; return;
     }
     if(state!=="play"){ press(); return; }
@@ -286,8 +292,11 @@ cv.addEventListener('touchend',endTouch); cv.addEventListener('touchcancel',endT
 cv.addEventListener('mousedown',e=>{
   if(state==="play" && Math.hypot(e.clientX-36, e.clientY-92)<28){ state="pause"; return; }  // clickable pause on desktop
   if(state==="pause"){
-    if(Math.hypot(e.clientX-W/2, e.clientY-H*0.62)<44){ muted=!muted; return; }
-    if(Math.abs(e.clientX-W/2)<92 && Math.abs(e.clientY-H*0.72)<24){ window.SWS_EXIT&&window.SWS_EXIT(); return; }
+    const sy=H*0.55;
+    if(Math.hypot(e.clientX-(W/2-96), e.clientY-sy)<28){ setSens(-0.15); return; }
+    if(Math.hypot(e.clientX-(W/2+96), e.clientY-sy)<28){ setSens(0.15); return; }
+    if(Math.hypot(e.clientX-W/2, e.clientY-H*0.66)<38){ muted=!muted; return; }
+    if(Math.abs(e.clientX-W/2)<92 && Math.abs(e.clientY-H*0.76)<24){ window.SWS_EXIT&&window.SWS_EXIT(); return; }
     state="play"; return;
   }
   press();
@@ -347,7 +356,7 @@ function update(dt){
   // keep turn rate roughly constant in TRACK-DISTANCE so the tube doesn't feel to
   // narrow at speed (a touch more turn authority as you go faster)
   const spd01 = Math.max(0, Math.min(0.55, (speed-600)/1700));
-  const targetV = steer * TURN_V_MAX * (0.8 + spd01);
+  const targetV = steer * TURN_V_MAX * sens * (0.8 + spd01);
   const kEase = 1 - Math.exp(-STEER_LAMBDA*dt);                // framerate-independent critical damping
   angV += (targetV - angV) * kEase;
   if(steer===0) angV += -Math.sin(ang)*PIPE_G_IDLE*dt;        // whisper settle to the bottom only when idle
@@ -661,7 +670,7 @@ function draw(){
   if(state==="over") drawOver(g);
   if(state==="pause") drawPause(g);
   if(state==="clear") drawClear(g);
-  if(bannerT>0 && state!=="title"){
+  if(bannerT>0 && state!=="title" && state!=="pause"){
     g.font="900 "+Math.min(46,W*0.08)+"px 'Titan One','Arial Black',sans-serif";
     g.textAlign="center";
     g.fillStyle=C.pink; g.globalAlpha=Math.min(1,bannerT);
@@ -961,27 +970,36 @@ function drawTitle(g){
 }
 
 function drawPause(g){
-  g.fillStyle="rgba(4,18,10,0.7)"; g.fillRect(0,0,W,H);
+  g.fillStyle="rgba(4,18,10,0.72)"; g.fillRect(0,0,W,H);
   g.textAlign="center";
   const T=theme();
   g.font="900 "+Math.min(44,W*0.09)+"px 'Titan One','Arial Black',sans-serif";
-  g.fillStyle=T.glow; g.fillText("PAUSED", W/2, H*0.36);
-  g.font="900 16px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=T.glow; g.fillText("PAUSED", W/2, H*0.30);
+  g.font="900 15px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText("STAGE "+stage+" \u2014 "+T.name, W/2, H*0.44);
-  g.fillText("tap anywhere to resume", W/2, H*0.50);
-  // sound toggle
-  g.fillStyle="rgba(242,240,220,0.15)";
-  g.beginPath(); g.arc(W/2, H*0.62, 40, 0, 7); g.fill();
+  g.fillText("STAGE "+stage+" — "+T.name, W/2, H*0.37);
+  g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.6)";
+  g.fillText("tap the tunnel to resume", W/2, H*0.415);
+  // steering sensitivity  - dots +
+  const sy=H*0.55;
+  g.font="900 12px 'Titan One','Arial Black',sans-serif"; g.fillStyle="rgba(242,240,220,0.7)";
+  g.fillText("STEERING SENSITIVITY", W/2, sy-24);
+  for(const b of [[W/2-96,"−"],[W/2+96,"+"]]){
+    g.fillStyle="rgba(242,240,220,0.14)"; g.beginPath(); g.arc(b[0],sy,20,0,7); g.fill();
+    g.fillStyle=C.cream; g.font="900 22px 'Titan One','Arial Black',sans-serif"; g.fillText(b[1],b[0],sy+8);
+  }
+  const pips=5, filled=Math.round((sens-0.5)/(1.8-0.5)*(pips-1))+1;
+  for(let i=0;i<pips;i++){
+    g.fillStyle = i<filled? T.glow : "rgba(242,240,220,0.2)";
+    g.beginPath(); g.arc(W/2-40+i*20, sy, 5.5, 0, 7); g.fill();
+  }
+  g.fillStyle="rgba(242,240,220,0.15)"; g.beginPath(); g.arc(W/2, H*0.66, 34, 0, 7); g.fill();
   g.fillStyle= muted? C.thorn : T.glow;
-  g.font="900 14px 'Titan One','Arial Black',sans-serif";
-  g.fillText(muted? "SOUND OFF":"SOUND ON", W/2, H*0.62+5);
-  // exit to the portal (Lucid Winds bridge provides window.SWS_EXIT)
-  g.fillStyle="rgba(242,240,220,0.12)";
-  roundRect(g, W/2-90, H*0.72-22, 180, 44, 22); g.fill();
-  g.fillStyle=C.cream;
-  g.font="900 14px 'Titan One','Arial Black',sans-serif";
-  g.fillText("← ALL GAMES", W/2, H*0.72+5);
+  g.font="900 13px 'Titan One','Arial Black',sans-serif";
+  g.fillText(muted? "SOUND OFF":"SOUND ON", W/2, H*0.66+5);
+  g.fillStyle="rgba(242,240,220,0.12)"; roundRect(g, W/2-90, H*0.76-22, 180, 44, 22); g.fill();
+  g.fillStyle=C.cream; g.font="900 14px 'Titan One','Arial Black',sans-serif";
+  g.fillText("← ALL GAMES", W/2, H*0.76+5);
 }
 
 function drawClear(g){
