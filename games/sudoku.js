@@ -193,23 +193,35 @@ function GU(a){
   var _grade='medium',_startTs=0,_solvedTs=0,_won=false;
   // 2026-07-03 table-stakes pass: pencil marks, visible timer, best time per
   // difficulty, and the always-on mistake reveal became a toggle.
-  var notes=new Array(81).fill(0),noteMode=false,timerIv=0;
+  var notes=new Array(81).fill(0),noteMode=false,timerIv=0,_lastWipe=null;
   var showErr=true;try{showErr=localStorage.getItem('lw_sudoku_err')!=='off';}catch(e){}
-  _setDiff('medium');ms(a,'\u23f1 <strong id="Ut">0:00</strong>');mm(a);
+  _setDiff('medium');ms(a);mm(a);
   if(!document.getElementById('u-notes-style')){var _us=document.createElement('style');_us.id='u-notes-style';
     _us.textContent='.unwrap{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:100%;height:100%;font-size:clamp(7px,1.9vw,10px);line-height:1;color:var(--sage);opacity:.9;font-family:"DM Mono",monospace;place-items:center;padding:1px;box-sizing:border-box}'
       +'.utb{display:flex;gap:10px;justify-content:center;width:min(calc(100vw - 32px),400px);margin:clamp(6px,2vw,10px) auto 0}'
       +'.utbb{flex:1;min-height:48px;border-radius:12px;border:1.5px solid rgba(74,124,53,.25);background:rgba(26,31,23,.65);color:var(--cream);font-family:"DM Mono",monospace;font-size:.72rem;letter-spacing:.05em;cursor:pointer;-webkit-tap-highlight-color:transparent}'
-      +'.utbb.on{border-color:#C8A84B;background:rgba(200,168,75,.16);color:#f0e2c0}';
+      +'.utbb.on{border-color:#C8A84B;background:rgba(200,168,75,.16);color:#f0e2c0}'
+      // portal parity: shared.css lacks these app-side rules (highlights + done chips)
+      +'.uc.uh{background:rgba(74,124,53,.08)}'
+      +'.uc.un{background:rgba(200,168,75,.16);color:var(--gold);text-shadow:0 0 10px rgba(200,168,75,.25)}'
+      +'.upb.ud{opacity:.3}'
+      +'.upb.ud::after{content:"\u2713";position:absolute;top:2px;right:4px;font-size:.5rem;color:var(--sage);font-family:"DM Mono",monospace}'
+      // done chips stay TAPPABLE (the app rule sets pointer-events:none, which
+      // silently killed penciling a completed digit and gave no feedback when
+      // a 9th copy was wrong with MISTAKES off)
+      +'.up .upb.ud{pointer-events:auto}';
     document.head.appendChild(_us);}
   var gd=document.createElement('div');gd.className='ug';gd.id='Ug';a.appendChild(gd);
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){if(timerIv){clearInterval(timerIv);timerIv=0;}});
   var tb=document.createElement('div');tb.className='utb';
-  tb.innerHTML='<button class="utbb" id="Upen" onclick="_UP()">\u270f\ufe0f NOTES</button><button class="utbb" id="Uerr" onclick="_UE()">\ud83d\udc41 MISTAKES</button>';
+  tb.innerHTML='<div class="utbb" style="flex:0 0 auto;min-width:82px;display:flex;align-items:center;justify-content:center;pointer-events:none;border-color:rgba(74,124,53,.18);">\u23f1\ufe0f&nbsp;<span id="Ut">0:00</span></div><button class="utbb" id="Upen" onclick="_UP()">\u270f\ufe0f NOTES</button><button class="utbb" id="Uerr" onclick="_UE()">\ud83d\udc41 MISTAKES</button>';
   a.appendChild(tb);
   var pd=document.createElement('div');pd.className='up';pd.id='Upad';a.appendChild(pd);
   mc(a).innerHTML='<select class="gsl" id="Ud" onchange="_UG()"><option value="40">Easy</option><option value="32" selected>Medium</option><option value="26">Hard</option></select> <button class="gb-new" onclick="_UG()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function fmtT(ms2){var t=Math.max(0,Math.floor(ms2/1000)),m=Math.floor(t/60),sx=t%60;return m+':'+(sx<10?'0':'')+sx;}
-  function tick(){if(!a.isConnected){clearInterval(timerIv);timerIv=0;return;}if(_won||!_startTs)return;var el=document.getElementById('Ut');if(el)el.textContent=fmtT(Date.now()-_startTs);}
+  // guard on gd (created per-mount, actually disconnected on game switch —
+  // `a` is the app's permanent mount div, so a.isConnected never goes false)
+  function tick(){if(!gd.isConnected){clearInterval(timerIv);timerIv=0;return;}if(_won||!_startTs)return;var el=document.getElementById('Ut');if(el)el.textContent=fmtT(Date.now()-_startTs);}
   function toolbar(){var pe=document.getElementById('Upen');if(pe)pe.className='utbb'+(noteMode?' on':'');var ee=document.getElementById('Uerr');if(ee){ee.className='utbb'+(showErr?' on':'');ee.innerHTML='\ud83d\udc41 MISTAKES: '+(showErr?'ON':'OFF');}}
   function gen(){
     var target=parseInt((document.getElementById('Ud')||{}).value,10)||32;
@@ -318,9 +330,19 @@ function GU(a){
     }
     var prev=bd[sel];bd[sel]=n;
     if(n){
+      // auto-erase the digit from related pencil marks, but keep a one-step
+      // snapshot: erasing this same placement restores the wiped notes
+      var wiped=[];
+      if(notes[sel])wiped.push([sel,notes[sel]]);
       notes[sel]=0;
-      for(var j=0;j<81;j++)if(related(sel,j))notes[j]&=~(1<<n);  // auto-erase the digit from related pencil marks
-    } else notes[sel]=0;
+      for(var j=0;j<81;j++)if(related(sel,j)&&(notes[j]&(1<<n))){wiped.push([j,1<<n]);notes[j]&=~(1<<n);}
+      _lastWipe={cell:sel,digit:n,wiped:wiped};
+    } else {
+      if(_lastWipe&&_lastWipe.cell===sel&&prev===_lastWipe.digit){
+        for(var w=0;w<_lastWipe.wiped.length;w++)notes[_lastWipe.wiped[w][0]]|=_lastWipe.wiped[w][1];
+      } else notes[sel]=0;
+      _lastWipe=null;
+    }
     if(n&&n===sol[sel]&&prev!==sol[sel]){_fc++;if(_fc%9===0)_e('progress');}
     rn();
   };

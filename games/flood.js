@@ -124,7 +124,7 @@ function GFL(a){
   function beginPlay(){
     if(started) return; started=true; _st(); startAt=Date.now(); stopTimer();
     timerIv=setInterval(function(){
-      if(!a.isConnected){ stopTimer(); return; }
+      if(!gd.isConnected){ stopTimer(); return; }  // gd is per-mount; `a` is the app's permanent mount div and never disconnects
       if(over) return;
       elapsed=(Date.now()-startAt)/1000; setTxt('FFtime',fmt(elapsed));
     },500);
@@ -152,6 +152,7 @@ function GFL(a){
 
   // ── board ──
   var gd=document.createElement('div');gd.className='lg';gd.id='FFg';a.appendChild(gd);
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(stopTimer);
   var pb=document.createElement('div');pb.className='lg';pb.style.gap='8px';pb.style.padding='10px';pb.style.width='clamp(300px,92vw,420px)';a.appendChild(pb);
   mm(a);
 

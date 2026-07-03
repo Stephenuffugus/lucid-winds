@@ -31,7 +31,8 @@ function GR(a){
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false,won=false;
   // Best = best SCORE, persisted (2026-07-03: was best-tile-this-session,
   // reset to 2 on every new game — meaningless as a record).
-  var BK='lw_merge_best';
+  var BK='lw_merge_best',_recordThisGame=false;
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('R-over');if(o)o.remove();});
   function gBest(){try{return parseInt(localStorage.getItem(BK),10)||0;}catch(e){return 0;}}
   function sBest(v){try{localStorage.setItem(BK,String(v));}catch(e){}}
   ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">'+gBest()+'</strong>');mm(a);
@@ -248,7 +249,7 @@ function GR(a){
         }
       }
       var _rsEl=document.getElementById('Rs');if(_rsEl)_rsEl.textContent=sc;
-      if(sc>gBest()){sBest(sc);var _rbEl=document.getElementById('Rb');if(_rbEl)_rbEl.textContent=sc;}
+      if(sc>gBest()){_recordThisGame=true;sBest(sc);var _rbEl=document.getElementById('Rb');if(_rbEl)_rbEl.textContent=sc;}
 
       sp(true);
 
@@ -284,7 +285,8 @@ function GR(a){
   // one-tap retry (2026-07-03: game over used to be a status-bar whisper).
   function _RGameOver(){
     var old=document.getElementById('R-over');if(old)old.remove();
-    var isRecord=sc>=gBest()&&sc>0;
+    var isRecord=_recordThisGame&&sc>0;   // strictly beat the old record this game (a tie is not NEW BEST)
+    for(var gi=0;gi<16;gi++)if(g[gi]>bt)bt=g[gi];   // count spawned tiles too, not just merges
     var ovl=document.createElement('div');ovl.id='R-over';
     ovl.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(199,106,48,0.22) 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;';
     ovl.innerHTML='<div style="font-size:3rem;line-height:1;">🍂</div>'
@@ -300,13 +302,13 @@ function GR(a){
   }
 
   // New game
-  window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;won=false;
+  window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;won=false;_recordThisGame=false;
     var _ro=document.getElementById('R-over');if(_ro)_ro.remove();
-    document.getElementById('Rb').textContent=String(gBest());
+    var _rbN=document.getElementById('Rb');if(_rbN)_rbN.textContent=String(gBest());else return;
     for(var t=tiles.length-1;t>=0;t--)rmTile(tiles[t]);
     tiles=[];
     sp(false);sp(false);
-    document.getElementById('Rs').textContent='0';
+    var _rsN=document.getElementById('Rs');if(_rsN)_rsN.textContent='0';
   };
   _RN();
 }

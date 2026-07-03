@@ -115,13 +115,14 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,gen=0;
       if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');var g=gen;setTimeout(function(){if(g===gen)nr();},700);}
     } else {
       pt=false;
-      if(rd>br){br=rd;try{localStorage.setItem('lw_simon_best',String(br));}catch(e){}var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br;}
+      var _isNewBest=rd>br;
+      if(_isNewBest){br=rd;try{localStorage.setItem('lw_simon_best',String(br));}catch(e){}var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br;}
       // Record result on mistake. Any round >= 5 counts as a 'win' for
       // stats so strong runs show up green; short busts still register
       // so stats don't lie. Win celebration only on new personal best.
       var strong=(rd>=5);
       if(strong){
-        if(rd>=br)try{_playWin&&_playWin();}catch(e){}
+        if(_isNewBest)try{_playWin&&_playWin();}catch(e){}
         _e('game_win');_sr('simon',{w:true,s:rd});
       } else {
         _e('game_loss');_play('lose');_sr('simon',{w:false,s:rd});

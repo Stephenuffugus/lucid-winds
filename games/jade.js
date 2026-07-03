@@ -580,8 +580,9 @@ function updateHUD(){
   var matched=Math.floor((S.tiles.length-remain)/2);
   var total=Math.floor(S.tiles.length/2);
   topEls.matched.textContent=matched+'/'+total;
-  // live lookups — the old topEls.hints/shuffles were stub objects, so the
-  // on-button counters never updated after a hint/shuffle (2026-07-03)
+  // top bar (real elements assigned in buildDOM) AND the on-button badges
+  if(topEls.hints)topEls.hints.textContent=S.hintsLeft;
+  if(topEls.shuffles)topEls.shuffles.textContent=S.shufflesLeft;
   var _hc=document.getElementById('JGhCnt'); if(_hc)_hc.textContent=S.hintsLeft;
   var _sc=document.getElementById('JGsCnt'); if(_sc)_sc.textContent=S.shufflesLeft;
 }

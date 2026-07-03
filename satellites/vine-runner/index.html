@@ -80,7 +80,11 @@ function skinPose(pose){
   var s=curSkin(), f=_POSE_FILE[pose];
   var im=img(s.dir+"/"+f);
   if(im) return im;
-  if(s.dir!=="art"){ im=img("art/"+f); if(im) return im; }   // fall back to the base skin
+  // Base-skin fallback for missing poses — EXCEPT run2: mixing another
+  // character's second run frame into this skin's stride would flicker
+  // between two different characters. A skin without run-2.png uses the
+  // mirror-step instead (drawRunner).
+  if(pose!=="run2" && s.dir!=="art"){ im=img("art/"+f); if(im) return im; }
   return null;
 }
 
@@ -914,7 +918,8 @@ function drawRunner(g){
   else if(lean> 0.55) im=skinPose("leanR");
   var flip=false;
   if(!im){                                           // run cycle at ~9fps: use run-2.png when it exists,
-    var stepB=Math.floor(animT*9)%2===1;             // otherwise MIRROR the run frame for the opposite step
+    var striding=(state==="play"||state==="title");  // no jogging-in-place under pause/gate/over overlays
+    var stepB=striding && Math.floor(animT*9)%2===1; // otherwise MIRROR the run frame for the opposite step
     var im2=stepB? skinPose("run2") : null;          // (the pose is asymmetric, so the flip reads as a stride)
     im = im2 || skinPose("run");
     flip = stepB && !im2;
@@ -1297,8 +1302,8 @@ portalEvent("ready");
       if((d.bestCombo||0)>(bs.combo||0)) bs.combo=d.bestCombo;
       localStorage.setItem('vine-runner-best', JSON.stringify(bs));
     }catch(_){}
-    if(d.event==='stageclear') award(Math.max(1, Math.floor((d.seeds||0)/8)));
-    else if(d.event==='victory'){ award(6); runEarned=0; }
+    if(d.event==='stageclear') award(Math.max(1, Math.floor((d.seeds||0)/16)));  // levels are ~2x longer now; /16 spreads the 12/run cap over ~4-6 clears
+    else if(d.event==='victory'){ runEarned=0; award(6); }                       // victory bonus exempt from the per-run cap (still inside 30/day)
   });
 
   var s=document.createElement('script');
