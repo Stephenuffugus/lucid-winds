@@ -117,12 +117,22 @@ function GFL(a){
   function buildGrid(){
     clearFlow();
     gd.classList.toggle('ff-gemgrid', styleId()==='gem');
+    // The board is a fixed SQUARE that always fits the screen; the cells shrink as
+    // the grid grows so the WHOLE board is visible at every size. (.lc ships a
+    // min-height:48px + aspect-ratio:1 — that's what stopped cells shrinking and
+    // made big grids overflow; we override min-* per cell and pin explicit rows.)
+    var side='min(92vw, 52vh)';
+    gd.style.width=side; gd.style.height=side; gd.style.padding='0'; gd.style.margin='0 auto';
     gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';
-    gd.style.gap=SZ>14?'1px':'2px';
-    gd.style.width='clamp(300px,92vw,'+(SZ>14?460:420)+'px)';
+    gd.style.gridTemplateRows='repeat('+SZ+',1fr)';
+    gd.style.gap=SZ>13?'1px':'2px';
+    var rad = SZ>13?'3px':(SZ>10?'5px':'8px');
     gd.innerHTML=''; cells=[];
     for(var i=0;i<SZ*SZ;i++){
-      var d=document.createElement('div');d.className='lc ff-cell';d.style.transition='transform .18s ease';d.style.background=cellBg(i);
+      var d=document.createElement('div');d.className='lc ff-cell';
+      d.style.minHeight='0'; d.style.minWidth='0';
+      d.style.borderRadius = styleId()==='gem'? '' : rad;
+      d.style.transition='transform .18s ease'; d.style.background=cellBg(i);
       gd.appendChild(d); cells.push(d);
     }
   }

@@ -766,11 +766,15 @@ renderGarden("all");
   var SHELL_CARD={bleedinghearts:1,bowergarden:1,cribbage:1,freecell:1,gardenspades:1,golf:1,juniper:1,klondike:1,pyramid:1,spider:1,tripeaks:1};
   var SHELL_WORD={trellis:1,vinewords:1};
   function shellDeps(id){
-    if(SHELL_INLINE[id]) return ['/games/_inline/'+id+'.js'];
-    if(SHELL_DICE[id])   return ['/games/_inline/_dice_lib.js','/games/_inline/'+id+'.js'];
-    if(SHELL_CARD[id])   return ['/games/_cards.js','/games/'+id+'.js'];
-    if(SHELL_WORD[id])   return ['/games/vinewords-dict.js','/games/'+id+'.js'];
-    return ['/games/'+id+'.js'];
+    var deps;
+    if(SHELL_INLINE[id]) deps=['/games/_inline/'+id+'.js'];
+    else if(SHELL_DICE[id])   deps=['/games/_inline/_dice_lib.js','/games/_inline/'+id+'.js'];
+    else if(SHELL_CARD[id])   deps=['/games/_cards.js','/games/'+id+'.js'];
+    else if(SHELL_WORD[id])   deps=['/games/vinewords-dict.js','/games/'+id+'.js'];
+    else deps=['/games/'+id+'.js'];
+    // version-stamp so a pushed game update reaches returning portal players instead
+    // of a cached copy (bump alongside _tv). Keep in sync with _tv's date.
+    return deps.map(function(u){ return u+(u.indexOf('?')>=0?'&':'?')+'v=20260703'; });
   }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function buildShellDoc(id,name){
