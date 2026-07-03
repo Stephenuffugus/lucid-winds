@@ -112,7 +112,7 @@ function GTP(a){
     snapshot();
     waste.push(peaks[idx]);removed[idx]=true;streak++;moves++;_play('tap');_e('progress');
     flipParents();
-    if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('tripeaks',{w:true,s:moves});if(window._lwCardEnd)_lwCardEnd({key:'tripeaks',won:true,title:'THREE PEAKS CLEARED',line:moves+' moves',retry:window._TPN});}
+    if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('tripeaks',{w:true,s:moves,lo:1});if(window._lwCardEnd)_lwCardEnd({key:'tripeaks',won:true,title:'THREE PEAKS CLEARED',line:moves+' moves',retry:window._TPN});}
     upd();rn();refreshUndoBtn();
     if(!gameOver&&checkLoss()){gameOver=true;var left=0;for(var i=0;i<28;i++)if(!removed[i])left++;mm_up(left+' left, stuck');_e('game_loss');_play('lose');_sr('tripeaks',{w:false,s:28-left});if(window._lwCardEnd)_lwCardEnd({key:'tripeaks',won:false,title:'STUCK ON THE SLOPES',line:left+' cards left on the peaks',retry:window._TPN});}
   }

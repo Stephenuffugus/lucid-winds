@@ -109,7 +109,7 @@ function GPP(a){
           var idx=parseInt(this.getAttribute('data-i'));
           _play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();
           var res=_ppCheck();
-          if(res.won){won=true;_e('game_win');_playWin();sm('🌸 Root reached the bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});
+          if(res.won){won=true;_e('game_win');_playWin();sm('🌸 Root reached the bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc,lo:1});
             var rots=_rc,lvlDone=level;
             setTimeout(function(){
               _pKill();

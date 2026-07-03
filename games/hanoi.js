@@ -148,7 +148,7 @@ function checkWin(){
   if(pegs[goal].length===discs){
     won=true;solvedTs=Date.now();
     if(timerId){clearInterval(timerId);timerId=null;}
-    _e('game_win');if(_playWin)_playWin();_sr('hanoi',{w:true,s:moves});
+    _e('game_win');if(_playWin)_playWin();_sr('hanoi',{w:true,s:moves,lo:1});
     setTimeout(hanoiVictory,250);
   }
 }

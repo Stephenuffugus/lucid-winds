@@ -195,7 +195,10 @@
     if (!c[g]) c[g] = { p: 0, w: 0, b: 0 };
     c[g].p++;
     if (r && r.w) c[g].w++;
-    if (r && r.s > c[g].b) c[g].b = r.s;
+    // lo-mode: lower-is-better scores (moves/time) keep a MIN in bl — feeding
+    // them into the max-kept b recorded the WORST win (2026-07-03 fleet audit)
+    if (r && r.lo) { if (r.w && r.s > 0 && (!c[g].bl || r.s < c[g].bl)) c[g].bl = r.s; }
+    else if (r && r.s > c[g].b) c[g].b = r.s;
     try { localStorage.setItem(RK, JSON.stringify(c)); } catch (e) {}
   }
 

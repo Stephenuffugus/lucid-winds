@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: mastermind
  *
  * COPY of the inline GMM mount function from index.html
- * lines 68973-69413.
+ * lines 69348-69788.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -365,7 +365,7 @@
     window._MMShare=function(){
       var modeLbl=_mmGameMode==='daily'?('Daily · '+_mmTodayKey()):'Random';
       var result=guesses.length===0?'?':(guesses[guesses.length-1].exact===4?(''+guesses.length+'/'+_mmMaxG):('X/'+_mmMaxG));
-      var text='SEED CODE · '+modeLbl+' · '+result+'\n\n'+_mmEmojiGrid()+'\n\nlucidwinds.com';
+      var text='SEED CODE · '+modeLbl+' · '+result+'\n\n'+_mmEmojiGrid()+'\n\nlucidwinds.com/portal';
       if(navigator.share){
         navigator.share({text:text}).catch(function(){_mmClipCopy(text);});
       }else{

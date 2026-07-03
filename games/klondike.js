@@ -125,7 +125,7 @@ function GKL(a){
       rn();
       refreshUndoBtn();
       if(checkWin()){
-        gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});
+        gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});
         refreshAutoBtn();
         return;
       }
@@ -268,7 +268,7 @@ function GKL(a){
         waste.pop();
         fnd[fi].push(topCard);
         sel=null;doMove();
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});}
+        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
         rn();lastTap=0;lastTapCard=null;return;
       }
       var tc=autoToTab(topCard);
@@ -294,7 +294,7 @@ function GKL(a){
       if(canPlaceOnFnd(card,fi)){
         snapshot();
         waste.pop();fnd[fi].push(card);sel=null;doMove();
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});}
+        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
         rn();return;
       }
     }else if(sel.src==='tab'){
@@ -306,7 +306,7 @@ function GKL(a){
           col.pop();fnd[fi].push(card);
           if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
           sel=null;doMove();
-          if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});}
+          if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
           rn();return;
         }
       }
@@ -359,7 +359,7 @@ function GKL(a){
         col.pop();fnd[fi].push(tappedCard);
         if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
         sel=null;doMove();
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves});}
+        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
         rn();lastTap=0;lastTapCard=null;return;
       }
       var tc2=autoToTab(tappedCard,ci);

@@ -290,7 +290,7 @@ window._gameFns.bleedinghearts = function BH(a){
         var minScore=Math.min.apply(null,scores);var won=scores[S]===minScore;
         if(won){_e('game_win');_playWin();sm('♥ You win! '+scores[S]+' pts');}
         else{_e('game_loss');_play('lose');sm('You lose. '+scores[S]+' pts');}
-        _sr('bleedinghearts',{w:won,s:scores[S],r:roundNum});
+        _sr('bleedinghearts',{w:won,s:scores[S],r:roundNum,lo:1});
         var gr=gen;
         setTimeout(function(){if(gr!==gen)return;scores=[0,0,0,0];roundNum=0;trickNum=0;newRound();},3000);
         return;

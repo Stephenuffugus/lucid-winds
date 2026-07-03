@@ -358,7 +358,7 @@ window._gameFns.stopten=function ST(a){
     var bb=document.getElementById('STb');if(bb)bb.textContent=isFinite(best)?('±'+best.toFixed(2)+'s'):'—';
     // Reward — drip Sunbeam progress per tier
     if(t.sb>0){for(var i=0;i<t.sb;i++)_e('progress');}
-    if(t.lbl==='PERFECT'){_e('game_win');_playWin();_sr('stopten',{w:true,s:Math.round(delta*1000),mode:mode});}
+    if(t.lbl==='PERFECT'){_e('game_win');_playWin();_sr('stopten',{w:true,s:Math.round(delta*1000),mode:mode,lo:1});}
     else if(t.sb>0){_e('milestone');}
     // Lifetime stats — tier NICE or better counts as a hit
     if(t.sb>0){
@@ -383,7 +383,7 @@ window._gameFns.stopten=function ST(a){
     if(attempts>=MAX_ATTEMPTS){
       sessionDone=true;
       if(isFinite(best)&&best>=0.005){
-        _sr('stopten',{w:false,s:Math.round(best*1000),mode:mode});
+        _sr('stopten',{w:false,s:Math.round(best*1000),mode:mode,lo:1});
       }
       // Daily mode: lock the session for the rest of the day
       if(mode==='daily'&&isFinite(best)){

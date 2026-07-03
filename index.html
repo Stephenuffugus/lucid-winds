@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.03.17';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.03.18';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -63620,7 +63620,7 @@ var _aw={
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
-function _sr(g,r){var c=_gr();if(!c[g])c[g]={p:0,w:0,b:0};c[g].p++;if(r.w)c[g].w++;if(r.s>c[g].b)c[g].b=r.s;try{localStorage.setItem(RK,JSON.stringify(c))}catch(e){}}
+function _sr(g,r){var c=_gr();if(!c[g])c[g]={p:0,w:0,b:0};c[g].p++;if(r.w)c[g].w++;if(r.lo){if(r.w&&r.s>0&&(!c[g].bl||r.s<c[g].bl))c[g].bl=r.s;}else if(r.s>c[g].b)c[g].b=r.s;try{localStorage.setItem(RK,JSON.stringify(c))}catch(e){}}
 function sh(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
 // ═══ WEIGHTED _e() — Core attention hash engine + anti-farm guards ═══
 var _justMinted=false;
@@ -69565,7 +69565,7 @@ function GMM(a){
     if(exact===4){
       _mmOver=true;
       _e('game_win');_playWin();
-      _sr('mastermind',{w:true,s:guesses.length});
+      _sr('mastermind',{w:true,s:guesses.length,lo:1});
       st.played++;st.won++;st.streak++;
       if(st.streak>st.best)st.best=st.streak;
       if(guesses.length>=1&&guesses.length<=st.byGuesses.length)st.byGuesses[guesses.length-1]++;
@@ -70092,7 +70092,7 @@ function GSK(a){
     var won=true;for(var i=0;i<grid.length;i++)if(grid[i]===3)won=false;
     if(!_skWon&&won&&grid.some(function(v){return v===4})){
       _skWon=true;
-      _e('game_win');_sr('sokoban',{w:true,s:moves});
+      _e('game_win');_sr('sokoban',{w:true,s:moves,lo:1});
       if(lvl<LEVELS.length-1){_play('win');_skWinScreen(lvl+1,moves);lvl++;localStorage.setItem('sk_lvl',String(lvl))}
       else{_play('win');_skWinScreen('ALL',moves)}}}
   window._SKM=function(dx,dy){if(_skWon)return;var nx=px+dx,ny=py+dy;if(nx<0||nx>=w||ny<0||ny>=h)return;var ni=ny*w+nx,nv=grid[ni];if(nv===1)return;

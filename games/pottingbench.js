@@ -109,7 +109,7 @@ window._gameFns.pottingbench=function PB(a){
     var bb=document.getElementById('PBb');
     if(bb)bb.textContent=(bestMs/1000).toFixed(2)+'s';
     sm((newBest?'🌟 NEW BEST · ':'✓ Cleared · ')+secs+'s');
-    _sr('pottingbench',{w:true,s:Math.round(elapsedMs)});
+    _sr('pottingbench',{w:true,s:Math.round(elapsedMs),lo:1});
     renderEnd(secs,newBest);
   }
 
@@ -129,7 +129,7 @@ window._gameFns.pottingbench=function PB(a){
     if(timerId){clearInterval(timerId);timerId=0;}
     var secs=(elapsedMs/1000).toFixed(2);
     sm('🍂 Stuck, no matches left in hand. '+secs+'s');
-    _sr('pottingbench',{w:false,s:Math.round(elapsedMs)});
+    _sr('pottingbench',{w:false,s:Math.round(elapsedMs),lo:1});
     renderEnd(secs,false,true);
     return true;
   }

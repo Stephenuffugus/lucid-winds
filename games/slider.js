@@ -195,7 +195,7 @@ function checkWin(){
   if(isWon()){
     won=true;solvedTs=Date.now();
     if(timerId){clearInterval(timerId);timerId=null;}
-    _e('game_win');if(_playWin)_playWin();_sr('slider',{w:true,s:moves});
+    _e('game_win');if(_playWin)_playWin();_sr('slider',{w:true,s:moves,lo:1});
     setTimeout(sliderVictory,300);
   }
 }

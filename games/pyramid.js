@@ -102,7 +102,7 @@ function GPY(a){
     if(gameOver||removed[idx]||!isExposed(idx))return;
     var card=pyr[idx];
     if(isKing(card)){snapshot();removePyr(idx);moves++;_play('tap');_e('progress');
-      if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:true,title:'PYRAMID CLEARED',line:moves+' moves',retry:window._PYN});}
+      if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves,lo:1});if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:true,title:'PYRAMID CLEARED',line:moves+' moves',retry:window._PYN});}
       sel=null;upd();rn();refreshUndoBtn();maybeLoss();return;
     }
     if(sel){
@@ -113,7 +113,7 @@ function GPY(a){
         removePyr(idx);
         if(sel.type==='pyr')removePyr(sel.idx);else waste.pop();
         moves++;_play('tap');_e('progress');
-        if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:true,title:'PYRAMID CLEARED',line:moves+' moves',retry:window._PYN});}
+        if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves,lo:1});if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:true,title:'PYRAMID CLEARED',line:moves+' moves',retry:window._PYN});}
         sel=null;upd();rn();refreshUndoBtn();
         maybeLoss();
         return;
@@ -130,7 +130,7 @@ function GPY(a){
       if(canPair(pyr[sel.idx],card)){
         snapshot();
         removePyr(sel.idx);waste.pop();moves++;_play('tap');_e('progress');
-        if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves});if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:true,title:'PYRAMID CLEARED',line:moves+' moves',retry:window._PYN});}
+        if(checkWin()){gameOver=true;mm_up('🏆 Cleared!');_play('win');_playWin();_e('game_win');_sr('pyramid',{w:true,s:moves,lo:1});if(window._lwCardEnd)_lwCardEnd({key:'pyramid',won:true,title:'PYRAMID CLEARED',line:moves+' moves',retry:window._PYN});}
         sel=null;upd();rn();refreshUndoBtn();maybeLoss();return;
       }
     }

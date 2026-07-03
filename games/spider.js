@@ -74,7 +74,7 @@ function GSP(a){
     for(var i=0;i<13;i++){if(col[st+i].r!==12-i||col[st+i].s!==s||!col[st+i].up)return false;}
     col.splice(st,13);completed++;_e('milestone');
     flipTops();
-    if(completed>=8){gameOver=true;mm_up('🏆 All 8 runs!');_play('win');_playWin();_e('game_win');_sr('spider',{w:true,s:moves});}
+    if(completed>=8){gameOver=true;mm_up('🏆 All 8 runs!');_play('win');_playWin();_e('game_win');_sr('spider',{w:true,s:moves,lo:1});}
     return true;
   }
   function getRunLen(ci,idx){

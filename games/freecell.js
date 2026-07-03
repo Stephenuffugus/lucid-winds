@@ -100,7 +100,7 @@ function GFC(a){
         if(src.type==='free')free[src.idx]=null;
         else tab[src.idx].pop();
         fnd[f].push(card);moves++;_e('progress');
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves});}
+        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves,lo:1});}
         sel=null;upd();rn();refreshUndoBtn();return true;
       }
     }
@@ -153,7 +153,7 @@ function GFC(a){
         if(cards.length===1&&canFnd(cards[0],idx)){
           snapshot();
           removeSel();fnd[idx].push(cards[0]);moves++;_e('progress');
-          if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves});}
+          if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves,lo:1});}
           sel=null;upd();rn();refreshUndoBtn();return;
         }
         sel=null;rn();return;

@@ -341,7 +341,7 @@ window._gameFns.sprout=function GPW(a){
         if(_playWin)_playWin();
         recordResult(true,row+1);
         showResult(true,row+1);
-        _sr('sprout',{w:true,s:row+1});
+        _sr('sprout',{w:true,s:row+1,lo:1});
       }else{
         row++;col=0;
         var gEl=document.getElementById('PWg');if(gEl)gEl.textContent=row;
