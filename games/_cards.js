@@ -4,6 +4,37 @@
 'use strict';
 var G=window._G;
 
+// ── Shared end-of-game overlay + lifetime stats (2026-07-03 campaign) ────
+// The quick solitaires (golf/tripeaks/pyramid) ended with one status-bar
+// line and kept no stats. One consistent celebration + lw_<key>_w/_p/_streak.
+window._lwCardEnd=function(o){
+  var w=0,pl=0,st=0;
+  try{w=parseInt(localStorage.getItem('lw_'+o.key+'_w'),10)||0;
+      pl=parseInt(localStorage.getItem('lw_'+o.key+'_p'),10)||0;
+      st=parseInt(localStorage.getItem('lw_'+o.key+'_streak'),10)||0;}catch(e){}
+  pl++; if(o.won){w++;st++;}else{st=0;}
+  try{localStorage.setItem('lw_'+o.key+'_w',String(w));
+      localStorage.setItem('lw_'+o.key+'_p',String(pl));
+      localStorage.setItem('lw_'+o.key+'_streak',String(st));}catch(e){}
+  setTimeout(function(){
+    var old=document.getElementById('LWCE');if(old)old.remove();
+    var ovl=document.createElement('div');ovl.id='LWCE';
+    ovl.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(o.won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+    ovl.innerHTML='<div style="font-size:3rem;line-height:1;">'+(o.won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
+      +'<div style="font-size:1.7rem;font-weight:700;color:'+(o.won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;text-align:center;">'+o.title+'</div>'
+      +'<div style="font-size:0.95rem;color:#e8dcc8;margin-top:10px;text-align:center;">'+(o.line||'')+'</div>'
+      +'<div style="font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:8px;">'+(st>1?'\ud83d\udd25 '+st+' win streak \u00b7 ':'')+w+' wins / '+pl+' games</div>'
+      +'<button id="LWCE-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb NEW DEAL</button>'
+      +'<button id="LWCE-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">view the table</button>';
+    ovl.querySelector('#LWCE-again').onclick=function(){ovl.remove();if(o.retry)o.retry();};
+    ovl.querySelector('#LWCE-view').onclick=function(){ovl.remove();};
+    ovl.onclick=function(ev){if(ev.target===ovl)ovl.remove();};
+    document.body.appendChild(ovl);
+  }, 380);
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var x=document.getElementById('LWCE');if(x)x.remove();});
+};
+
+
 // Lucid Winds custom: mushroom/flower/bee/bird (Stephen's botanical reskin)
 var _SUIT_SYM=['🍄','🌸','🐝','🐦'];
 var _SUIT_CLR=['#6dbf4a','#daa520','#e8c94a','#48c9a4'];

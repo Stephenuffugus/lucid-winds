@@ -80,6 +80,7 @@ function GGF(a){
       mm_up('🏆 Cleared!');
       _play('win');_playWin();
       _e('game_win');_sr('golf',{w:true,s:35});
+      if(window._lwCardEnd)_lwCardEnd({key:'golf',won:true,title:'COURSE CLEARED',line:'every card sunk',retry:window._GFN});
       return;
     }
     if(stock.length>0)return;
@@ -90,6 +91,7 @@ function GGF(a){
     var left=countLeft();score=left;
     mm_up(left+' left, no moves');
     _e('game_loss');_play('lose');_sr('golf',{w:false,s:35-left});
+    if(window._lwCardEnd)_lwCardEnd({key:'golf',won:false,title:'OUT OF MOVES',line:left+' cards left on the course',retry:window._GFN});
   }
 
   function mm_up(txt){

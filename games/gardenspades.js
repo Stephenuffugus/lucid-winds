@@ -285,7 +285,27 @@ window._gameFns.gardenspades = function GardenSpades(a){
       if(won){_e('game_win');_playWin();sm('♠ You win! '+teamScore[0]);}
       else{_e('game_loss');_play('lose');sm('You lose. '+teamScore[0]+' vs '+teamScore[1]);}
       _sr('gardenspades',{w:won,s:teamScore[0],r:roundNum});
-      setTimeout(function(){teamScore=[0,0];teamBags=[0,0];roundNum=0;newRound();},3000);
+      // Match-end screen (2026-07-03): a ~20-minute match used to flash one
+      // status line and AUTO-WIPE all scores after 3 seconds. The result now
+      // stays on screen until the player chooses to start a new match.
+      var wins=0,losses=0;
+      try{wins=parseInt(localStorage.getItem('lw_spades_w'),10)||0;losses=parseInt(localStorage.getItem('lw_spades_l'),10)||0;}catch(e){}
+      if(won)wins++;else losses++;
+      try{localStorage.setItem('lw_spades_w',String(wins));localStorage.setItem('lw_spades_l',String(losses));}catch(e){}
+      var _old=document.getElementById('GS-over');if(_old)_old.remove();
+      var ovl=document.createElement('div');ovl.id='GS-over';
+      ovl.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(won?'rgba(122,179,86,0.3)':'rgba(199,80,80,0.2)')+' 0%,rgba(13,16,12,0.93) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+      ovl.innerHTML='<div style="font-size:3rem;line-height:1;">'+(won?'\u2660\ufe0f':'\ud83c\udf42')+'</div>'
+        +'<div style="font-size:1.8rem;font-weight:700;color:'+(won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;">'+(won?'MATCH WON':'MATCH LOST')+'</div>'
+        +'<div style="font-size:1.05rem;color:#e8dcc8;margin-top:12px;">You <b style="color:#c8a84b">'+teamScore[0]+'</b> \u00b7 Them <b style="color:#c8a84b">'+teamScore[1]+'</b></div>'
+        +'<div style="font-style:italic;font-size:0.82rem;color:#8a9178;margin-top:6px;">'+roundNum+' rounds \u00b7 lifetime '+wins+'W / '+losses+'L</div>'
+        +'<button id="GS-again" style="margin-top:24px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb NEW MATCH</button>'
+        +'<button id="GS-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">review the last hand</button>';
+      ovl.querySelector('#GS-again').onclick=function(){ovl.remove();teamScore=[0,0];teamBags=[0,0];roundNum=0;newRound();};
+      ovl.querySelector('#GS-view').onclick=function(){ovl.remove();};
+      ovl.onclick=function(ev){if(ev.target===ovl)ovl.remove();};
+      document.body.appendChild(ovl);
+      if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('GS-over');if(o)o.remove();});
       return;
     }
     setTimeout(newRound,2000);
