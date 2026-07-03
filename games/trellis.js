@@ -568,7 +568,7 @@ window._gameFns.trellis = function TR(a){
   }
   function saveStats(){try{localStorage.setItem('lw_tr_stats',JSON.stringify(stats));}catch(e){}}
 
-  ms(a,'<strong id="TRt">Trellis</strong>');
+  ms(a,'<strong id="TRt">Word Trellis</strong>');
   mm(a);
   pan=document.createElement('div');pan.id='TRpan';
   pan.style.cssText='max-width:460px;margin:0 auto;padding:6px 4px;user-select:none;';
@@ -684,7 +684,7 @@ window._gameFns.trellis = function TR(a){
     var ov=document.createElement('div');ov.id='TRrulesOV';
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     var h='<div class="card">';
-    h+='<h2>🌱 Trellis — How to Play</h2>';
+    h+='<h2>🌱 Word Trellis — How to Play</h2>';
     h+='<p>Build words on a 15×15 board. Each tile has a letter and a value. Play words that connect to existing tiles. First word must cross the <strong style="color:#c8a84b">★ center star</strong>.</p>';
     h+='<h2>Your turn — pick ONE</h2>';
     h+='<p><strong style="color:var(--sage)">PLAY</strong> — Drag tiles from your rack onto the board (or tap a rack tile then tap the board). Your tiles must form a single line and connect to existing tiles. Tap <strong>PLAY</strong> to commit.</p>';

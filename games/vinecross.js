@@ -28,7 +28,7 @@ window._gameFns.vinecross=function VC(a){
   var stats={w:0,l:0,d:0,streak:0,best:0};
   try{var _s=localStorage.getItem('lw_vc_stats');if(_s){var _p=JSON.parse(_s);for(var _k in _p)stats[_k]=_p[_k];}}catch(e){}
 
-  ms(a,'<span style="color:#7ab356">●</span> Vine Cross, <strong id="VCst">Your turn</strong>');
+  ms(a,'<span style="color:#7ab356">●</span> Five in a Row, <strong id="VCst">Your turn</strong>');
   mm(a);
   // Stats strip
   var statsRow=document.createElement('div');statsRow.id='VCstats';

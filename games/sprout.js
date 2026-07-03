@@ -414,7 +414,7 @@ window._gameFns.sprout=function GPW(a){
     box.innerHTML='<strong>'+header+'</strong>'+modeLabel+'<br>'+emojiGrid().replace(/\n/g,'<br>');
     var share=document.createElement('button');share.className='pw-share';share.textContent='SHARE';
     share.onclick=function(){
-      var text='SPROUT · '+modeLabel+' · '+(won?guesses+'/6':'X/6')+'\n\n'+emojiGrid()+'\n\nlucidwinds.com';
+      var text='WORD SPROUT · '+modeLabel+' · '+(won?guesses+'/6':'X/6')+'\n\n'+emojiGrid()+'\n\nlucidwinds.com';
       if(navigator.share)navigator.share({text:text}).catch(function(){copyToClip(text);});
       else copyToClip(text);
     };

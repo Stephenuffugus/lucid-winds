@@ -245,7 +245,7 @@ function GC4(a){
 
   // Encouraging copy
   var _c4Enc=['Nice try! Go again 🌱','Almost had it! One more? 🌿','The garden grows through practice 🌻','Every loss plants a seed of wisdom 🍃','You learn more from losses — rematch? 🌸'];
-  var _c4Win=['Brilliant! You bloomed! 🌸','Your garden flourishes! 🌺','Masterful placement! 🌻','The grove is proud! 🌿','Connect Fleur champion! 🏆'];
+  var _c4Win=['Brilliant! You bloomed! 🌸','Your garden flourishes! 🌺','Masterful placement! 🌻','The grove is proud! 🌿','Four in a Row champion! 🏆'];
 
   function _recordResult(kind){
     if(kind==='win'){stats.wins++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;}

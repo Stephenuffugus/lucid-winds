@@ -83,7 +83,7 @@ window._gameFns.seedsow=function SS(a){
     document.head.appendChild(ss);
   }
 
-  ms(a,'Seed Sow · <span id="SSm">Your turn</span>');
+  ms(a,'Mancala · <span id="SSm">Your turn</span>');
   mm(a);
   var statsRow=document.createElement('div');statsRow.className='ss-stats';statsRow.id='SSstats';a.appendChild(statsRow);
   var pan=document.createElement('div');pan.id='SSpan';
@@ -410,7 +410,7 @@ window._gameFns.seedsow=function SS(a){
     var ov=document.createElement('div');ov.id='SSrulesOV';
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     var h='<div class="card">';
-    h+='<h2>🌱 Seed Sow — How to Play</h2>';
+    h+='<h2>🌱 Mancala — How to Play</h2>';
     h+='<p>A classic Kalah-style Mancala. You control the <strong style="color:#8fc57a">bottom row</strong> and the <strong>green store</strong> on the right. The AI owns the top row and the coral store on the left.</p>';
     h+='<h2>Your turn</h2>';
     h+='<p>Tap one of your pits. The seeds inside sow counterclockwise, one per pit: into your row, into your store, into the AI\'s row, past the AI\'s store (skipped!), back to yours.</p>';
