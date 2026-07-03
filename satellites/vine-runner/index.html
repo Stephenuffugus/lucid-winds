@@ -37,6 +37,36 @@ const ART = {
   leaf:        "art/leaf.png",   // NEW — vitality pip icon
 };
 
+// ---- character skins ------------------------------------------------
+// Each skin is the SAME 5 motion poses (Stephen reuses the runner prompts so
+// every skin animates identically). Default = the base art/ folder.
+// TO ADD A SKIN: drop 5 knocked-out PNGs in art/skins/<id>/ named
+//   run.png · lean-l.png · lean-r.png · jump.png · hit.png
+// then add ONE line to SKINS below. That's the whole wiring. Missing poses fall
+// back to the default skin, so a partial skin still plays.
+const SKINS = [
+  { id:"sprout", name:"Sprout", dir:"art" },
+  // { id:"ember",  name:"Ember",  dir:"art/skins/ember" },
+];
+let skinIdx = 0;
+try{ var _sk=localStorage.getItem('vine-runner-skin');
+  if(_sk!=null){ for(var _i=0;_i<SKINS.length;_i++) if(SKINS[_i].id===_sk){ skinIdx=_i; break; } }
+}catch(e){}
+function curSkin(){ return SKINS[skinIdx] || SKINS[0]; }
+function setSkin(d){
+  skinIdx = (skinIdx + d + SKINS.length) % SKINS.length;
+  try{ localStorage.setItem('vine-runner-skin', curSkin().id); }catch(e){}
+  if(typeof beep==="function") beep(720,0.06,"sine",0.05);
+}
+const _POSE_FILE = { run:"run.png", leanL:"lean-l.png", leanR:"lean-r.png", jump:"jump.png", hit:"hit.png" };
+function skinPose(pose){
+  var s=curSkin(), f=_POSE_FILE[pose];
+  var im=img(s.dir+"/"+f);
+  if(im) return im;
+  if(s.dir!=="art"){ im=img("art/"+f); if(im) return im; }   // fall back to the base skin
+  return null;
+}
+
 // ---- image loader -------------------------------------------------
 const IMG = {};
 function img(src){
@@ -257,6 +287,10 @@ let stickX=0, stickActive=false, stickOrigin=null, stickPos=null, stickId=null;
 let jumpQueue=0, jumpHeld=false, jumpId=null;
 const keys={};
 window.addEventListener('keydown',e=>{ keys[e.code]=true;
+  if(state==="title" && SKINS.length>1){
+    if(e.code==="ArrowLeft"){ setSkin(-1); return; }
+    if(e.code==="ArrowRight"){ setSkin(1); return; }
+  }
   if(e.code==="Space"||e.code==="ArrowUp"){ press(); e.preventDefault(); }
   if(e.code==="KeyP" && (state==="play"||state==="pause")) state = state==="play"? "pause":"play";
   if(e.code==="KeyM") muted=!muted;
@@ -282,6 +316,10 @@ cv.addEventListener('touchstart',e=>{
       if(Math.hypot(t.clientX-W/2, t.clientY-H*0.66)<38){ muted=!muted; return; }
       if(Math.abs(t.clientX-W/2)<92 && Math.abs(t.clientY-H*0.76)<24){ window.SWS_EXIT&&window.SWS_EXIT(); return; }
       state="play"; return;
+    }
+    if(state==="title" && SKINS.length>1){                 // character arrows before start-tap
+      if(Math.hypot(t.clientX-(W/2-96), t.clientY-H*0.545)<42){ setSkin(-1); return; }
+      if(Math.hypot(t.clientX-(W/2+96), t.clientY-H*0.545)<42){ setSkin(1);  return; }
     }
     if(state!=="play"){ press(); return; }
     if(t.clientX < W*0.5 && stickId===null){
@@ -836,11 +874,11 @@ function drawRunner(g){
   g.globalAlpha=1;
 
   let im=null;
-  if(hitFlash>0) im=img(ART.runnerHit);
-  else if(!grounded) im=img(ART.runnerJump);
-  else if(lean<-0.55) im=img(ART.runnerLeanL);
-  else if(lean> 0.55) im=img(ART.runnerLeanR);
-  if(!im) im=frameOf(ART.runnerRun, animT, 10);
+  if(hitFlash>0) im=skinPose("hit");
+  else if(!grounded) im=skinPose("jump");
+  else if(lean<-0.55) im=skinPose("leanL");
+  else if(lean> 0.55) im=skinPose("leanR");
+  if(!im) im=skinPose("run");
 
   g.save();
   g.translate(p.x, p.y - sz*0.55);
@@ -1007,9 +1045,18 @@ function drawTitle(g){
     g.font="900 13px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.pink;
     g.fillText(bestStage>TOWER_MAX? "★ TOWER CLEARED ★" : "BEST · LEVEL "+Math.min(bestStage,TOWER_MAX)+"/"+TOWER_MAX, W/2, H*0.465);
   }
+  // character picker — only shown once more than one skin exists (the live runner
+  // is already drawn at the tube floor, so this just labels + flanks it)
+  if(SKINS.length>1){
+    g.font="900 13px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.glow;
+    g.fillText(curSkin().name.toUpperCase(), W/2, H*0.485);
+    g.font="900 32px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.cream;
+    g.globalAlpha=0.85; g.fillText("‹", W/2-96, H*0.545); g.fillText("›", W/2+96, H*0.545);
+    g.globalAlpha=1;
+  }
   g.fillStyle=C.glow;
   g.font="900 21px 'Titan One','Arial Black',sans-serif";
-  if(Math.floor(animT*2)%2===0) g.fillText(IS_TOUCH?"TAP TO GROW":"PRESS SPACE", W/2, H*0.58);
+  if(Math.floor(animT*2)%2===0) g.fillText(IS_TOUCH?"TAP TO GROW":"PRESS SPACE", W/2, H*0.62);
   g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.55)";
   g.fillText(IS_TOUCH?"left half: steer  ·  right: jump":"←→ steer  ·  space jump  ·  P pause  ·  M mute", W/2, H*0.66);
   g.fillText("hold a direction to whip — full loops give a speed surge", W/2, H*0.71);
