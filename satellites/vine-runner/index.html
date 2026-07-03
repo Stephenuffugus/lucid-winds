@@ -180,10 +180,33 @@ let ang=0, angV=0, h=0, vh=0, grounded=true;
 let inv=0, hitFlash=0, animT=0, elapsed=0, freezeT=0, levelFlash=0;
 // steering sensitivity — player-tunable on the pause screen, persisted
 let sens=(()=>{ try{ const s=parseFloat(localStorage.getItem('vine-runner-sens')); return (s>=0.5&&s<=1.8)?s:1; }catch(e){ return 1; } })();
-function setSens(d){ sens=Math.max(0.5,Math.min(1.8, Math.round((sens+d)*100)/100)); try{localStorage.setItem('vine-runner-sens', sens);}catch(e){} }
+function setSens(d){ sens=Math.max(0.5,Math.min(1.8, Math.round((sens+d)*100)/100)); try{localStorage.setItem('vine-runner-sens', sens);}catch(e){} if(typeof beep==="function") beep(660,0.05,"sine",0.05); }
+// ONE layout used by both drawPause and the tap handler so hit zones always match
+// the drawn buttons (the old mismatch + tap-anywhere-resume made +/- feel broken).
+function pauseLayout(){ return {
+  resume:{x:W/2, y:H*0.37, w:200, h:56},
+  minus: {x:W/2-108, y:H*0.55, r:30},
+  plus:  {x:W/2+108, y:H*0.55, r:30},
+  sound: {x:W/2, y:H*0.67, r:34},
+  exit:  {x:W/2, y:H*0.79, w:200, h:48},
+}; }
+function inRect(x,y,r){ return Math.abs(x-r.x)<=r.w/2 && Math.abs(y-r.y)<=r.h/2; }
+function pauseTap(x,y){
+  var L=pauseLayout();
+  if(inRect(x,y,L.resume)){ state="play"; return true; }
+  if(Math.hypot(x-L.minus.x,y-L.minus.y)<L.minus.r+10){ setSens(-0.15); return true; }
+  if(Math.hypot(x-L.plus.x, y-L.plus.y) <L.plus.r+10){ setSens(0.15);  return true; }
+  if(Math.hypot(x-L.sound.x,y-L.sound.y)<L.sound.r+10){ muted=!muted;   return true; }
+  if(inRect(x,y,L.exit)){ if(window.SWS_EXIT) window.SWS_EXIT(); return true; }
+  return false;   // tap elsewhere does NOTHING — resume is the explicit button only
+}
+// level-complete celebration: the run PAUSES at the bloom and waits for the player
+// to press NEXT LEVEL, so the next level never starts before they're ready.
+function gateBtn(){ return {x:W/2, y:H*0.72, w:230, h:62}; }
+function advanceLevel(){ if(state==="gate") nextStage(); }   // victory (L100) handled at gate entry
 let seeds=0, quota=20, stage=1, gateZ=10500;
 let objects=[], particles=[], floats=[];
-let spawnedZ=800, bannerT=0, bannerMsg="", shake=0;
+let spawnedZ=800, bannerT=0, bannerMsg="", shake=0, gateT=0;
 let steerT=0, steerDir=0, loopIdx=0;
 let combo=0, comboT=0, bestCombo=0;
 let boostT=0, slowT=0, speedNow=600;
@@ -322,6 +345,7 @@ window.addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==="Space"||e.
 function press(){
   if(state==="title"||state==="over"){ startGame(true); return; }
   if(state==="clear"){ endless=true; nextStage(); return; }
+  if(state==="gate"){ if(gateT>0.45) advanceLevel(); return; }   // space = next level (after a beat)
   if(state==="pause"){ state="play"; return; }
   jumpQueue=0.12; jumpHeld=true;
 }
@@ -331,14 +355,8 @@ cv.addEventListener('touchstart',e=>{
   for(const t of e.changedTouches){
     // pause button (top-left, under seed chip)
     if(state==="play" && Math.hypot(t.clientX-36, t.clientY-92)<28){ state="pause"; return; }
-    if(state==="pause"){
-      const sy=H*0.55;
-      if(Math.hypot(t.clientX-(W/2-96), t.clientY-sy)<28){ setSens(-0.15); return; }
-      if(Math.hypot(t.clientX-(W/2+96), t.clientY-sy)<28){ setSens(0.15); return; }
-      if(Math.hypot(t.clientX-W/2, t.clientY-H*0.66)<38){ muted=!muted; return; }
-      if(Math.abs(t.clientX-W/2)<92 && Math.abs(t.clientY-H*0.76)<24){ window.SWS_EXIT&&window.SWS_EXIT(); return; }
-      state="play"; return;
-    }
+    if(state==="pause"){ pauseTap(t.clientX, t.clientY); return; }
+    if(state==="gate"){ if(gateT>0.4 && inRect(t.clientX,t.clientY,gateBtn())) advanceLevel(); return; }  // only the button advances
     if(state==="title" && SKINS.length>1){                 // character arrows before start-tap
       if(Math.hypot(t.clientX-(W/2-96), t.clientY-H*0.545)<42){ setSkin(-1); return; }
       if(Math.hypot(t.clientX-(W/2+96), t.clientY-H*0.545)<42){ setSkin(1);  return; }
@@ -371,14 +389,8 @@ function endTouch(e){
 cv.addEventListener('touchend',endTouch); cv.addEventListener('touchcancel',endTouch);
 cv.addEventListener('mousedown',e=>{
   if(state==="play" && Math.hypot(e.clientX-36, e.clientY-92)<28){ state="pause"; return; }  // clickable pause on desktop
-  if(state==="pause"){
-    const sy=H*0.55;
-    if(Math.hypot(e.clientX-(W/2-96), e.clientY-sy)<28){ setSens(-0.15); return; }
-    if(Math.hypot(e.clientX-(W/2+96), e.clientY-sy)<28){ setSens(0.15); return; }
-    if(Math.hypot(e.clientX-W/2, e.clientY-H*0.66)<38){ muted=!muted; return; }
-    if(Math.abs(e.clientX-W/2)<92 && Math.abs(e.clientY-H*0.76)<24){ window.SWS_EXIT&&window.SWS_EXIT(); return; }
-    state="play"; return;
-  }
+  if(state==="pause"){ pauseTap(e.clientX, e.clientY); return; }
+  if(state==="gate"){ if(gateT>0.4 && inRect(e.clientX,e.clientY,gateBtn())) advanceLevel(); return; }
   press();
 });
 cv.addEventListener('mouseup',()=>jumpHeld=false);
@@ -549,8 +561,11 @@ function update(dt){
   // gate — reaching the bloom ALWAYS advances now (no seed-count fail). Hitting
   // the quota just makes it a fuller bloom (bonus feel), never a wall.
   if(playerZ >= gateZ){
-    state="gate"; bannerT=2.2; bannerMsg = seeds>=quota? "FULL BLOOM!" : "BLOOM OPENED!"; sGate();
     portalEvent("stageclear");
+    if(stage>=TOWER_MAX && !endless){        // top of the tower → victory screen
+      state="clear"; bestStage=TOWER_MAX+1; saveBest(); overUnlock=checkUnlock(); portalEvent("victory"); sGate(); return;
+    }
+    state="gate"; gateT=0; bannerMsg = seeds>=quota? "FULL BLOOM!" : "BLOOM OPENED!"; sGate();
   }
 
   // particles / floats
@@ -571,13 +586,7 @@ function burst(o,col,n){
 }
 
 // gate intermission timer
-function updateGate(dt){
-  bannerT-=dt;
-  if(bannerT<=0){
-    if(stage>=TOWER_MAX && !endless){ state="clear"; bestStage=TOWER_MAX+1; saveBest(); overUnlock=checkUnlock(); portalEvent("victory"); return; }
-    nextStage();
-  }
-}
+function updateGate(dt){ gateT+=dt; }   // celebration animates; advance ONLY on NEXT LEVEL / space
 
 // ---- rendering ----------------------------------------------------
 function draw(){
@@ -760,12 +769,13 @@ function draw(){
   }
 
   drawHUD(g);
-  if((state==="play"||state==="gate") && IS_TOUCH) drawControls(g);   // on-screen stick/jump only on touch devices
+  if(state==="play" && IS_TOUCH) drawControls(g);   // on-screen stick/jump only during live play
   if(state==="title") drawTitle(g);
   if(state==="over") drawOver(g);
   if(state==="pause") drawPause(g);
+  if(state==="gate") drawGate(g);
   if(state==="clear") drawClear(g);
-  if(bannerT>0 && state!=="title" && state!=="pause"){
+  if(bannerT>0 && state!=="title" && state!=="pause" && state!=="gate"){
     g.font="900 "+Math.min(46,W*0.08)+"px 'Titan One','Arial Black',sans-serif";
     g.textAlign="center";
     g.fillStyle=C.pink; g.globalAlpha=Math.min(1,bannerT);
@@ -1091,38 +1101,73 @@ function drawTitle(g){
 }
 
 function drawPause(g){
-  g.fillStyle="rgba(4,18,10,0.72)"; g.fillRect(0,0,W,H);
+  g.fillStyle="rgba(4,18,10,0.78)"; g.fillRect(0,0,W,H);
   g.textAlign="center";
-  const T=theme();
+  const T=theme(); const L=pauseLayout();
   g.font="900 "+Math.min(44,W*0.09)+"px 'Titan One','Arial Black',sans-serif";
-  g.fillStyle=T.glow; g.fillText("PAUSED", W/2, H*0.30);
-  g.font="900 15px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=T.glow; g.fillText("PAUSED", W/2, H*0.24);
+  g.font="900 14px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream;
-  g.fillText("LEVEL "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+" — "+T.name, W/2, H*0.37);
-  g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.6)";
-  g.fillText("tap the tunnel to resume", W/2, H*0.415);
-  // steering sensitivity  - dots +
-  const sy=H*0.55;
+  g.fillText("LEVEL "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX+" — "+T.name, W/2, H*0.295);
+
+  // RESUME button (explicit — no more tap-anywhere)
+  g.fillStyle=hexA(T.glow,0.92); roundRect(g, L.resume.x-L.resume.w/2, L.resume.y-L.resume.h/2, L.resume.w, L.resume.h, 28); g.fill();
+  g.fillStyle="#0B2415"; g.font="900 20px 'Titan One','Arial Black',sans-serif"; g.fillText("▶  RESUME", W/2, L.resume.y+7);
+
+  // steering sensitivity:  [ − ]   ●●●○○   [ + ]
   g.font="900 12px 'Titan One','Arial Black',sans-serif"; g.fillStyle="rgba(242,240,220,0.7)";
-  g.fillText("STEERING SENSITIVITY", W/2, sy-24);
-  for(const b of [[W/2-96,"−"],[W/2+96,"+"]]){
-    g.fillStyle="rgba(242,240,220,0.14)"; g.beginPath(); g.arc(b[0],sy,20,0,7); g.fill();
-    g.fillStyle=C.cream; g.font="900 22px 'Titan One','Arial Black',sans-serif"; g.fillText(b[1],b[0],sy+8);
+  g.fillText("STEERING SENSITIVITY", W/2, L.minus.y-46);
+  for(const b of [[L.minus,"−"],[L.plus,"+"]]){
+    g.fillStyle="rgba(242,240,220,0.16)"; g.beginPath(); g.arc(b[0].x,b[0].y,b[0].r,0,7); g.fill();
+    g.strokeStyle=hexA(T.glow,0.55); g.lineWidth=2; g.beginPath(); g.arc(b[0].x,b[0].y,b[0].r,0,7); g.stroke();
+    g.fillStyle=C.cream; g.font="900 30px 'Titan One','Arial Black',sans-serif"; g.fillText(b[1],b[0].x,b[0].y+11);
   }
   const pips=5, filled=Math.round((sens-0.5)/(1.8-0.5)*(pips-1))+1;
   for(let i=0;i<pips;i++){
-    g.fillStyle = i<filled? T.glow : "rgba(242,240,220,0.2)";
-    g.beginPath(); g.arc(W/2-40+i*20, sy, 5.5, 0, 7); g.fill();
+    g.fillStyle = i<filled? T.glow : "rgba(242,240,220,0.22)";
+    g.beginPath(); g.arc(W/2-32+i*16, L.minus.y, 6, 0, 7); g.fill();
   }
-  g.fillStyle="rgba(242,240,220,0.15)"; g.beginPath(); g.arc(W/2, H*0.66, 34, 0, 7); g.fill();
+  // SOUND toggle
+  g.fillStyle="rgba(242,240,220,0.15)"; g.beginPath(); g.arc(L.sound.x,L.sound.y,L.sound.r,0,7); g.fill();
   g.fillStyle= muted? C.thorn : T.glow;
-  g.font="900 13px 'Titan One','Arial Black',sans-serif";
-  g.fillText(muted? "SOUND OFF":"SOUND ON", W/2, H*0.66+5);
-  g.fillStyle="rgba(242,240,220,0.12)"; roundRect(g, W/2-90, H*0.76-22, 180, 44, 22); g.fill();
+  g.font="900 12px 'Titan One','Arial Black',sans-serif";
+  g.fillText(muted? "SOUND OFF":"SOUND ON", L.sound.x, L.sound.y+4);
+  // ALL GAMES
+  g.fillStyle="rgba(242,240,220,0.12)"; roundRect(g, L.exit.x-L.exit.w/2, L.exit.y-L.exit.h/2, L.exit.w, L.exit.h, 24); g.fill();
   g.fillStyle=C.cream; g.font="900 14px 'Titan One','Arial Black',sans-serif";
-  g.fillText("← ALL GAMES", W/2, H*0.76+5);
+  g.fillText("← ALL GAMES", L.exit.x, L.exit.y+5);
 }
 
+function drawGate(g){
+  g.fillStyle="rgba(4,18,10,0.72)"; g.fillRect(0,0,W,H);
+  g.textAlign="center";
+  const T=theme(), t=gateT, ease=Math.min(1,t/0.4), pulse=1+Math.sin(animT*3)*0.05;
+  // bloom flourish
+  const bloom=img(ART.gateBloom);
+  if(bloom){ const bs=Math.min(W*0.42,190)*ease*pulse;
+    g.globalAlpha=ease; g.drawImage(bloom, W/2-bs/2, H*0.30-bs/2, bs, bs); g.globalAlpha=1; }
+  g.globalAlpha=ease;
+  g.save(); g.translate(W/2, H*0.47); g.scale(pulse,pulse);
+  g.font="900 "+Math.min(40,W*0.085)+"px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.pink; g.fillText("LEVEL "+stage+" CLEARED!", 0, 0); g.restore();
+  g.font="900 15px 'Titan One','Arial Black',sans-serif"; g.fillStyle=hexA(T.glow,0.95);
+  g.fillText(bannerMsg, W/2, H*0.515);
+  g.font="900 16px 'Titan One','Arial Black',sans-serif"; g.fillStyle=C.cream;
+  g.fillText(seeds+" / "+totalSeeds+" seeds   ·   combo x"+bestCombo, W/2, H*0.565);
+  const nextName=THEMES[stage%THEMES.length].name;
+  g.font="900 12px 'Titan One','Arial Black',sans-serif"; g.fillStyle="rgba(242,240,220,0.6)";
+  g.fillText("UP NEXT · LEVEL "+(stage+1)+"/"+TOWER_MAX+" · "+nextName, W/2, H*0.62);
+  g.globalAlpha=1;
+  // NEXT LEVEL button — fades in after a beat so a leftover gameplay tap can't skip it
+  const gl=gateBtn(), rdy=Math.min(1,Math.max(0,(t-0.4)/0.3));
+  g.globalAlpha=rdy;
+  g.fillStyle=hexA(T.glow,0.94); roundRect(g, gl.x-gl.w/2, gl.y-gl.h/2, gl.w, gl.h, 30); g.fill();
+  g.fillStyle="#0B2415"; g.font="900 22px 'Titan One','Arial Black',sans-serif";
+  g.fillText("NEXT LEVEL  ▶", gl.x, gl.y+8);
+  g.globalAlpha=1;
+  if(rdy>=1){ g.font="700 11px sans-serif"; g.fillStyle="rgba(242,240,220,0.4)";
+    g.fillText(IS_TOUCH?"tap the button when you're ready":"press space when you're ready", W/2, gl.y+gl.h/2+20); }
+}
 function drawClear(g){
   g.fillStyle="rgba(4,18,10,0.72)"; g.fillRect(0,0,W,H);
   g.textAlign="center";
