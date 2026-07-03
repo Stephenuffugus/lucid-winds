@@ -206,12 +206,11 @@ function gateBtn(){ return {x:W/2, y:H*0.72, w:230, h:62}; }
 function advanceLevel(){ if(state==="gate") nextStage(); }   // victory (L100) handled at gate entry
 let seeds=0, quota=20, stage=1, gateZ=10500;
 let objects=[], particles=[], floats=[];
-let spawnedZ=800, bannerT=0, bannerMsg="", shake=0, gateT=0;
+let spawnedZ=800, bannerT=0, bannerMsg="", shake=0, gateT=0, overT=0, clearT=0;
 let steerT=0, steerDir=0, loopIdx=0;
 let combo=0, comboT=0, bestCombo=0;
 let boostT=0, slowT=0, speedNow=600;
 let camA=0;   // camera roll — tracks the player so the WORLD rotates, not the sprite
-let cp1=0, cp2=0, cpZ1=0, cpZ2=0, cp1Done=false, cp2Done=false;
 // bestStage = best LEVEL ever reached; loaded on boot so skin unlocks persist.
 let bestStage=(function(){ try{ var b=JSON.parse(localStorage.getItem('vine-runner-best')||'{}'); return Math.max(1, b.stage||1); }catch(e){ return 1; } })();
 if(!skinUnlocked(SKINS[skinIdx])) skinIdx=0;          // safety: never boot into a locked skin
@@ -228,10 +227,15 @@ function wrapA(a){ a=(a+Math.PI)%(Math.PI*2); if(a<0)a+=Math.PI*2; return a-Math
 // ---- portal integration: emits game events to a parent frame ------
 function portalEvent(ev){
   try{
-    if(window.parent && window.parent!==window)
-      window.parent.postMessage({game:"vine-runner", event:ev, stage:stage,
+    var payload={game:"vine-runner", event:ev, stage:stage,
         seeds:seeds, quota:quota, bestCombo:bestCombo, bestStage:bestStage,
-        distance:Math.floor(playerZ/100)}, "*");
+        distance:Math.floor(playerZ/100)};
+    // ALWAYS deliver to this window too — the vendored earn bridge listens
+    // here; posting only to the parent starved it of every event (audit
+    // 2026-07-03: the game paid zero sunbeams in every configuration).
+    try{ window.postMessage(payload, "*"); }catch(e2){}
+    if(window.parent && window.parent!==window)
+      window.parent.postMessage(payload, "*");
   }catch(e){}
 }
 
@@ -239,7 +243,7 @@ function resetRun(full){
   playerZ=0; ang=0; angV=0; h=0; vh=0; grounded=true; inv=0; hitFlash=0;
   objects=[]; particles=[]; floats=[]; spawnedZ=800; elapsed=0;
   steerT=0; steerDir=0; loopIdx=0; combo=0; comboT=0; boostT=0; slowT=0; camA=0;
-  cp1Done=false; cp2Done=false;
+  shake=0; freezeT=0;
   if(full){ stage=1; baseSpeed=600; bestCombo=0; endless=false; }
   speed=baseSpeed; speedNow=baseSpeed; seeds=0;
   vitality=VIT_MAX; vitMark=0;
@@ -259,13 +263,14 @@ function buildStage(){
     spawnPattern(spawnedZ);
     spawnedZ += (540 + Math.random()*400) * density;
   }
+  // patterns can extend up to ~1200 past their start; anything that spilled
+  // into the final corridor (or past the bloom) is dropped so the last 700
+  // units are a guaranteed clean glide, and quota math only counts what is
+  // actually collectible (audit 2026-07-03).
+  objects = objects.filter(o=>o.z <= gateZ-700);
   speed = baseSpeed; speedNow = baseSpeed;
   totalSeeds = objects.filter(o=>o.type==="seed").length;
   quota = Math.max(10, Math.round(totalSeeds*0.66));
-  cp1 = Math.round(quota*0.28);
-  cp2 = Math.round(quota*0.60);
-  cpZ1 = Math.round(gateZ*0.35);
-  cpZ2 = Math.round(gateZ*0.68);
 }
 
 function startGame(full){
@@ -328,11 +333,13 @@ function spawnPattern(z){
 
 // ---- input --------------------------------------------------------
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+let usingTouch = IS_TOUCH;   // last-input-wins: touch laptops get whichever they used last
 let stickX=0, stickActive=false, stickOrigin=null, stickPos=null, stickId=null;
 let jumpQueue=0, jumpHeld=false, jumpId=null;
 const keys={};
-window.addEventListener('keydown',e=>{ keys[e.code]=true;
-  if(state==="title" && SKINS.length>1){
+function skinChoices(){ var n=0; for(var i=0;i<SKINS.length;i++) if(skinUnlocked(SKINS[i])) n++; return n; }
+window.addEventListener('keydown',e=>{ keys[e.code]=true; usingTouch=false;
+  if(state==="title" && skinChoices()>1){
     if(e.code==="ArrowLeft"){ setSkin(-1); return; }
     if(e.code==="ArrowRight"){ setSkin(1); return; }
   }
@@ -343,21 +350,25 @@ window.addEventListener('keydown',e=>{ keys[e.code]=true;
 window.addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==="Space"||e.code==="ArrowUp") jumpHeld=false; });
 
 function press(){
-  if(state==="title"||state==="over"){ startGame(true); return; }
-  if(state==="clear"){ endless=true; nextStage(); return; }
-  if(state==="gate"){ if(gateT>0.45) advanceLevel(); return; }   // space = next level (after a beat)
+  if(state==="title"){ startGame(true); return; }
+  // over/clear ignore taps for a beat so a queued gameplay tap can't skip the
+  // recap / unlock toast / TOWER CLEARED moment (audit 2026-07-03).
+  if(state==="over"){ if(overT>0.6) startGame(true); return; }
+  if(state==="clear"){ if(clearT>0.6){ endless=true; nextStage(); } return; }
+  if(state==="gate"){ if(gateT>0.7) advanceLevel(); return; }   // matches the button's full fade-in
   if(state==="pause"){ state="play"; return; }
   jumpQueue=0.12; jumpHeld=true;
 }
 
 cv.addEventListener('touchstart',e=>{
-  e.preventDefault();
+  e.preventDefault(); usingTouch=true;
   for(const t of e.changedTouches){
-    // pause button (top-left, under seed chip)
-    if(state==="play" && Math.hypot(t.clientX-36, t.clientY-92)<28){ state="pause"; return; }
+    // pause button — hit radius matches the drawn 20px (+2 slack) so steer
+    // drags starting near the corner don't false-pause
+    if(state==="play" && Math.hypot(t.clientX-36, t.clientY-92)<22){ state="pause"; return; }
     if(state==="pause"){ pauseTap(t.clientX, t.clientY); return; }
-    if(state==="gate"){ if(gateT>0.4 && inRect(t.clientX,t.clientY,gateBtn())) advanceLevel(); return; }  // only the button advances
-    if(state==="title" && SKINS.length>1){                 // character arrows before start-tap
+    if(state==="gate"){ if(gateT>0.7 && inRect(t.clientX,t.clientY,gateBtn())) advanceLevel(); return; }  // only the button advances
+    if(state==="title" && skinChoices()>1){               // character arrows before start-tap
       if(Math.hypot(t.clientX-(W/2-96), t.clientY-H*0.545)<42){ setSkin(-1); return; }
       if(Math.hypot(t.clientX-(W/2+96), t.clientY-H*0.545)<42){ setSkin(1);  return; }
     }
@@ -388,9 +399,10 @@ function endTouch(e){
 }
 cv.addEventListener('touchend',endTouch); cv.addEventListener('touchcancel',endTouch);
 cv.addEventListener('mousedown',e=>{
+  usingTouch=false;
   if(state==="play" && Math.hypot(e.clientX-36, e.clientY-92)<28){ state="pause"; return; }  // clickable pause on desktop
   if(state==="pause"){ pauseTap(e.clientX, e.clientY); return; }
-  if(state==="gate"){ if(gateT>0.4 && inRect(e.clientX,e.clientY,gateBtn())) advanceLevel(); return; }
+  if(state==="gate"){ if(gateT>0.7 && inRect(e.clientX,e.clientY,gateBtn())) advanceLevel(); return; }
   press();
 });
 cv.addEventListener('mouseup',()=>jumpHeld=false);
@@ -545,7 +557,7 @@ function update(dt){
           for(let i=0;i<lost;i++)  // scattered seeds fly away, Sonic-style
             particles.push({x:0,y:0,o:o,vx:(Math.random()*2-1)*260,vy:-Math.random()*340-80,
                             t:1.1, col:C.seed, seedFly:true, sx:null, sy:null});
-          if(vitality<=0){ state="over"; bannerMsg="THE VINE WILTED..."; bestStage=Math.max(bestStage,stage); saveBest(); overUnlock=checkUnlock(); portalEvent("gameover"); return; }
+          if(vitality<=0){ state="over"; overT=0; bannerT=0; bannerMsg="THE VINE WILTED..."; bestStage=Math.max(bestStage,stage); saveBest(); overUnlock=checkUnlock(); portalEvent("gameover"); return; }
         }
       } else if(o.type==="thorn" && !o.grazed && inv<=0 && da<HIT_ARC*2.6 && dh<90){
         // near-miss graze — skill reward, no punishment (Subway-Surfers style)
@@ -561,10 +573,10 @@ function update(dt){
   // gate — reaching the bloom ALWAYS advances now (no seed-count fail). Hitting
   // the quota just makes it a fuller bloom (bonus feel), never a wall.
   if(playerZ >= gateZ){
-    portalEvent("stageclear");
     if(stage>=TOWER_MAX && !endless){        // top of the tower → victory screen
-      state="clear"; bestStage=TOWER_MAX+1; saveBest(); overUnlock=checkUnlock(); portalEvent("victory"); sGate(); return;
+      state="clear"; clearT=0; bannerT=0; bestStage=TOWER_MAX+1; saveBest(); overUnlock=checkUnlock(); portalEvent("victory"); sGate(); return;
     }
+    portalEvent("stageclear");               // (victory is its own event — no stacking)
     state="gate"; gateT=0; bannerMsg = seeds>=quota? "FULL BLOOM!" : "BLOOM OPENED!"; sGate();
   }
 
@@ -769,19 +781,21 @@ function draw(){
   }
 
   drawHUD(g);
-  if(state==="play" && IS_TOUCH) drawControls(g);   // on-screen stick/jump only during live play
+  if(state==="play" && usingTouch) drawControls(g);  // on-screen stick/jump only during live play
   if(state==="title") drawTitle(g);
   if(state==="over") drawOver(g);
   if(state==="pause") drawPause(g);
   if(state==="gate") drawGate(g);
   if(state==="clear") drawClear(g);
-  if(bannerT>0 && state!=="title" && state!=="pause" && state!=="gate"){
-    g.font="900 "+Math.min(46,W*0.08)+"px 'Titan One','Arial Black',sans-serif";
+  if(bannerT>0 && state==="play"){
+    var bf=Math.min(46,W*0.08);
+    g.font="900 "+bf+"px 'Titan One','Arial Black',sans-serif";
     g.textAlign="center";
+    // fit long banners on narrow screens
+    while(bf>18 && g.measureText(bannerMsg).width > W-24){ bf-=2; g.font="900 "+bf+"px 'Titan One','Arial Black',sans-serif"; }
     g.fillStyle=C.pink; g.globalAlpha=Math.min(1,bannerT);
     g.fillText(bannerMsg, W/2, H*0.30);
     g.globalAlpha=1;
-    if(state==="play") bannerT-=1/60;
   }
 }
 
@@ -855,18 +869,6 @@ function drawBoost(g,p){
   g.fill();
   g.fillStyle="#DFF6FF";
   g.beginPath(); g.ellipse(-sz*0.22,-sz*0.1,sz*0.18,sz*0.34,-0.35,0,7); g.fill();
-  g.restore();
-}
-
-function drawCheckpoint(g,p,cz,T){
-  const rr=R()*p.s;
-  g.save();
-  g.globalAlpha=Math.min(0.9, 0.15+(1-cz/FAR));
-  const pulse=1+Math.sin(animT*5)*0.04;
-  g.strokeStyle=T.glow; g.lineWidth=Math.max(2, 9*p.s);
-  g.beginPath(); g.ellipse(p.cx,p.cy, rr*0.93*pulse, rr*0.93*ASPECT*pulse, 0,0,7); g.stroke();
-  g.strokeStyle=hexA(T.glow,0.4); g.lineWidth=Math.max(1.5, 20*p.s);
-  g.beginPath(); g.ellipse(p.cx,p.cy, rr*0.86, rr*0.86*ASPECT, 0,0,7); g.stroke();
   g.restore();
 }
 
@@ -984,9 +986,13 @@ function drawHUD(g){
     g.globalAlpha=1;
   }
 
-  // stage progress bar \u2192 the bloom (no checkpoint ticks anymore)
+  // stage progress bar \u2192 the bloom. On narrow screens the centered bar
+  // collided with the seed chip (left) and LEVEL text (right) — below ~560px
+  // it gets its own row under the chip instead (audit 2026-07-03).
   if(state==="play"||state==="gate"){
-    const bw=Math.min(W*0.34,250), bx=W/2-bw/2, by=14;
+    const narrow = W<560;
+    const bw = narrow? Math.min(W-128,280) : Math.min(W*0.34,250);
+    const bx = W/2-bw/2, by = narrow? 64 : 14;
     g.fillStyle="rgba(4,18,10,0.55)";
     roundRect(g,bx,by,bw,9,4); g.fill();
     g.fillStyle=hexA(T.glow,0.95);
@@ -999,7 +1005,7 @@ function drawHUD(g){
   g.textAlign="right";
   g.font="900 16px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream; g.globalAlpha=0.85;
-  g.fillText("LEVEL "+Math.min(stage,TOWER_MAX)+"/"+TOWER_MAX, W-16, 32);
+  g.fillText(stage>TOWER_MAX? ("ENDLESS · LV "+stage) : ("LEVEL "+stage+"/"+TOWER_MAX), W-16, 32);
   g.font="900 10px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=T.glow;
   g.fillText(T.name, W-16, 46);
@@ -1027,10 +1033,11 @@ function drawHUD(g){
     g.textAlign="center";
     g.font="900 13px 'Titan One','Arial Black',sans-serif";
     const tw=g.measureText(msg).width;
+    const py=Math.max(150, H*0.24);   // below the combo readout (H*0.20)
     g.fillStyle="rgba(4,18,10,0.5)";
-    roundRect(g, W/2-tw/2-12, 96, tw+24, 26, 13); g.fill();
+    roundRect(g, W/2-tw/2-12, py, tw+24, 26, 13); g.fill();
     g.fillStyle=C.pink;
-    g.fillText(msg, W/2, 113);
+    g.fillText(msg, W/2, py+17);
   }
 }
 
@@ -1094,9 +1101,9 @@ function drawTitle(g){
   }
   g.fillStyle=C.glow;
   g.font="900 21px 'Titan One','Arial Black',sans-serif";
-  if(Math.floor(animT*2)%2===0) g.fillText(IS_TOUCH?"TAP TO GROW":"PRESS SPACE", W/2, H*0.62);
+  if(Math.floor(animT*2)%2===0) g.fillText(usingTouch?"TAP TO GROW":"PRESS SPACE", W/2, H*0.62);
   g.font="700 12px sans-serif"; g.fillStyle="rgba(242,240,220,0.55)";
-  g.fillText(IS_TOUCH?"left half: steer  ·  right: jump":"←→ steer  ·  space jump  ·  P pause  ·  M mute", W/2, H*0.66);
+  g.fillText(usingTouch?"left half: steer  ·  JUMP button: jump":"←→ steer  ·  space jump  ·  P pause  ·  M mute", W/2, H*0.66);
   g.fillText("hold a direction to whip — full loops give a speed surge", W/2, H*0.71);
 }
 
@@ -1156,7 +1163,7 @@ function drawGate(g){
   g.fillText(seeds+" / "+totalSeeds+" seeds   ·   combo x"+bestCombo, W/2, H*0.565);
   const nextName=THEMES[stage%THEMES.length].name;
   g.font="900 12px 'Titan One','Arial Black',sans-serif"; g.fillStyle="rgba(242,240,220,0.6)";
-  g.fillText("UP NEXT · LEVEL "+(stage+1)+"/"+TOWER_MAX+" · "+nextName, W/2, H*0.62);
+  g.fillText(stage+1>TOWER_MAX? ("UP NEXT · ENDLESS LV "+(stage+1)+" · "+nextName) : ("UP NEXT · LEVEL "+(stage+1)+"/"+TOWER_MAX+" · "+nextName), W/2, H*0.62);
   g.globalAlpha=1;
   // NEXT LEVEL button — fades in after a beat so a leftover gameplay tap can't skip it
   const gl=gateBtn(), rdy=Math.min(1,Math.max(0,(t-0.4)/0.3));
@@ -1166,7 +1173,7 @@ function drawGate(g){
   g.fillText("NEXT LEVEL  ▶", gl.x, gl.y+8);
   g.globalAlpha=1;
   if(rdy>=1){ g.font="700 11px sans-serif"; g.fillStyle="rgba(242,240,220,0.4)";
-    g.fillText(IS_TOUCH?"tap the button when you're ready":"press space when you're ready", W/2, gl.y+gl.h/2+20); }
+    g.fillText(usingTouch?"tap the button when you're ready":"press space when you're ready", W/2, gl.y+gl.h/2+20); }
 }
 function drawClear(g){
   g.fillStyle="rgba(4,18,10,0.72)"; g.fillRect(0,0,W,H);
@@ -1180,6 +1187,13 @@ function drawClear(g){
   g.fillStyle=C.cream;
   g.fillText("all 100 levels climbed", W/2, H*0.43);
   g.fillText("best combo x"+bestCombo, W/2, H*0.49);
+  if(overUnlock){                                      // unlock earned on the victory run
+    var vpulse=1+Math.sin(animT*6)*0.06;
+    g.save(); g.translate(W/2,H*0.545); g.scale(vpulse,vpulse);
+    g.font="900 17px 'Titan One','Arial Black',sans-serif"; g.fillStyle="#E8C86B";
+    g.fillText("★ NEW RUNNER: "+overUnlock.name.toUpperCase()+" ★", 0, 0); g.restore();
+    g.font="900 18px 'Titan One','Arial Black',sans-serif";
+  }
   g.fillStyle=C.glow;
   if(Math.floor(animT*2)%2===0) g.fillText("TAP FOR THE ENDLESS GARDEN", W/2, H*0.60);
 }
@@ -1224,6 +1238,9 @@ function loop(now){
   if(freezeT>0){ freezeT-=dt; }                 // hit-stop: freeze the sim for a beat
   else if(state==="play") update(dt);
   if(state==="gate") updateGate(dt);
+  if(state==="over") overT+=dt;
+  if(state==="clear") clearT+=dt;
+  if(bannerT>0 && state==="play") bannerT-=dt;  // real-time decay (was 1/60 per frame)
   draw();
   requestAnimationFrame(loop);
 }
@@ -1245,7 +1262,9 @@ portalEvent("ready");
   // Exit lives on the game's PAUSE screen (see drawPause + the pause tap handler)
   // to avoid colliding with the game's own HUD. SWS_EXIT is the escape.
   window.SWS_EXIT=function(){
-    if(EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
+    // the portal frames with ?embed=1 but the main app frames WITHOUT it —
+    // detect framing directly so exit never loads the portal inside a frame.
+    if(parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
     location.href='/portal/';
   };
   if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
