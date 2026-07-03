@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>VINE RUNNER</title>
+<link href="https://fonts.googleapis.com/css2?family=Titan+One&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;background:#081C10;height:100%;touch-action:none;-webkit-user-select:none;user-select:none;}
+  canvas{display:block;width:100vw;height:100vh;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+/* ============================================================
+   VINE RUNNER — Sonic-2-special-stage-style botanical halfpipe
+   ------------------------------------------------------------
+   ART IMPORT: paste your rendered image URLs (or base64 data
+   URIs) into the ART object below. Any slot left as "" keeps
+   its built-in placeholder. Transparent PNGs, rear-view for
+   the runner. Frame arrays animate in order, ~10fps.
+   ============================================================ */
+const ART = {
+  runnerRun:  [],   // e.g. ["run1.png","run2.png","run3.png","run4.png"]
+  runnerLeanL: "",  // leaning/steering left
+  runnerLeanR: "",  // leaning/steering right
+  runnerJump:  "",  // airborne tuck
+  runnerHit:   "",  // ouch frame
+  seed:        [],  // seed spin frames (or 1 image; code adds bob+glow)
+  thorn:       "",  // bramble/thorn obstacle
+  boostDew:    "",  // glowing dewdrop speed pod
+  gateBloom:   "",  // giant checkpoint flower
+  bgVista:     "",  // soft canopy glow at the vanishing point
+  hudSeed:     "",  // small seed icon for the counter
+};
+
+// ---- image loader -------------------------------------------------
+const IMG = {};
+function img(src){
+  if(!src) return null;
+  if(IMG[src]) return IMG[src].complete && IMG[src].naturalWidth ? IMG[src] : null;
+  const im = new Image(); im.crossOrigin = "anonymous"; im.src = src; IMG[src] = im;
+  return null;
+}
+function frameOf(arr, t, fps){ // returns loaded Image or null
+  if(!arr || !arr.length) return null;
+  return img(arr[Math.floor(t*fps) % arr.length]);
+}
+
+// ---- canvas -------------------------------------------------------
+const cv = document.getElementById('game');
+const cx2d = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W*DPR; cv.height = H*DPR;
+  cx2d.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', resize); resize();
+
+// ---- palette ------------------------------------------------------
+const C = {
+  bgTop:"#04120A", bgBot:"#0B2415",
+  ringDark:"#173D22", ringMid:"#245C33", ringLite:"#3D8A50",
+  rib:"#2F7040", glow:"#B4E36A",
+  seed:"#FFD75E", seedCore:"#FFF3C0",
+  thorn:"#C0402F", thornDark:"#7A2418",
+  cream:"#F2F0DC", pink:"#E86FA4",
+  runner:"#8CCB5E", runnerDark:"#4E8A3A", leaf:"#5FAE49",
+};
+
+// ---- stage themes: 6 gardens, each with its own vine + atmosphere ----
+const THEMES=[
+ {name:"VERDANT VINE", hue:140, nodeHue:100, sat:42, bgTop:"#04120A", bgMid:"#0A2A16", bgBot:"#0B2415", glow:"#B4E36A", spore:"#CFEFA8", vista:"212,240,150"},
+ {name:"SUNSET IVY",   hue:32,  nodeHue:48,  sat:52, bgTop:"#170D03", bgMid:"#33200A", bgBot:"#291505", glow:"#FFC86B", spore:"#FFE0A8", vista:"255,205,130"},
+ {name:"MOONFLOWER",   hue:252, nodeHue:280, sat:44, bgTop:"#0A0716", bgMid:"#171034", bgBot:"#120B28", glow:"#B9A6FF", spore:"#D9CFFF", vista:"190,170,255"},
+ {name:"ROSE BRAMBLE", hue:332, nodeHue:352, sat:46, bgTop:"#160308", bgMid:"#33101C", bgBot:"#270A14", glow:"#FF9EC4", spore:"#FFD3E3", vista:"255,170,200"},
+ {name:"FROST FERN",   hue:187, nodeHue:165, sat:46, bgTop:"#03141A", bgMid:"#0A2C33", bgBot:"#082530", glow:"#9FE8FF", spore:"#D3F5FF", vista:"170,230,255"},
+ {name:"GOLDEN ROOT",  hue:78,  nodeHue:58,  sat:44, bgTop:"#10120A", bgMid:"#262B0E", bgBot:"#1D220B", glow:"#E2E86F", spore:"#F0F5B8", vista:"230,240,150"},
+];
+function theme(){ return THEMES[(stage-1)%THEMES.length]; }
+function hexA(hex,a){ const n=parseInt(hex.slice(1),16);
+  return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")"; }
+
+// ---- tuning -------------------------------------------------------
+const FOV       = 370;      // projection focal length (lower = deeper perspective)
+const R         = () => Math.min(W*0.46, H*0.62);  // tube radius on screen
+const ASPECT    = 0.86;     // vertical squash of the tube
+const FAR       = 3000;     // draw distance
+const RING_GAP  = 170;      // world units between vine bands
+// --- steering: exponential ramp, Sonic-2 special stage feel ---
+const STEER_BASE = 5.2;     // initial nudge (precise taps)
+const STEER_GROW = 2.7;     // exponential growth per second held
+const STEER_MAX  = 6.5;     // ramp cap (~0.7s to full whip)
+const PIPE_G     = 3.4;     // pendulum pull to the bottom of the vine
+const DAMP_HOLD  = 0.55;    // slick while steering — momentum carries
+const DAMP_IDLE  = 3.6;     // grippy on release — precision stops
+const ANGV_MAX   = 11.5;    // terminal whip speed (rad/s)
+const JUMP_V    = 560;      // px/s (in radius-space)
+const GRAV      = 1500;
+const HIT_ARC   = 0.34;     // collision arc tolerance (generous)
+const HIT_Z     = 55;
+
+// vine curvature (screen-space amplitude in px, by world z)
+function curveX(z){ return Math.sin(z*0.00115)*180 + Math.sin(z*0.00043+1.7)*300; }
+function curveY(z){ return Math.sin(z*0.00089+2.4)*95; }
+
+// ---- game state ---------------------------------------------------
+let state="title";            // title | play | gate | over | clear
+let playerZ=0, speed=600, baseSpeed=600;
+let spores=[];
+for(let i=0;i<70;i++) spores.push({z:Math.random()*FAR, ang:Math.random()*6.283, rf:0.25+Math.random()*0.65});
+let ang=0, angV=0, h=0, vh=0, grounded=true;
+let inv=0, hitFlash=0, animT=0, elapsed=0;
+let seeds=0, quota=20, stage=1, gateZ=10500;
+let objects=[], particles=[], floats=[];
+let spawnedZ=800, bannerT=0, bannerMsg="", shake=0;
+let steerT=0, steerDir=0, loopIdx=0;
+let combo=0, comboT=0, bestCombo=0;
+let boostT=0, slowT=0, speedNow=600;
+let camA=0;   // camera roll — tracks the player so the WORLD rotates, not the sprite
+let cp1=0, cp2=0, cpZ1=0, cpZ2=0, cp1Done=false, cp2Done=false;
+let endless=false, muted=false, bestStage=1, totalSeeds=0;
+
+function wrapA(a){ a=(a+Math.PI)%(Math.PI*2); if(a<0)a+=Math.PI*2; return a-Math.PI; }
+
+// ---- portal integration: emits game events to a parent frame ------
+function portalEvent(ev){
+  try{
+    if(window.parent && window.parent!==window)
+      window.parent.postMessage({game:"vine-runner", event:ev, stage:stage,
+        seeds:seeds, quota:quota, bestCombo:bestCombo, bestStage:bestStage,
+        distance:Math.floor(playerZ/100)}, "*");
+  }catch(e){}
+}
+
+function resetRun(full){
+  playerZ=0; ang=0; angV=0; h=0; vh=0; grounded=true; inv=0; hitFlash=0;
+  objects=[]; particles=[]; floats=[]; spawnedZ=800; elapsed=0;
+  steerT=0; steerDir=0; loopIdx=0; combo=0; comboT=0; boostT=0; slowT=0; camA=0;
+  cp1Done=false; cp2Done=false;
+  if(full){ stage=1; baseSpeed=600; bestCombo=0; endless=false; }
+  speed=baseSpeed; speedNow=baseSpeed; seeds=0;
+}
+
+// pre-generate the entire stage, count what's actually there,
+// and demand 2/3 of it — difficulty is now consistent by construction
+function buildStage(){
+  objects=[]; spawnedZ=800;
+  gateZ = 9000 + stage*1500;
+  while(spawnedZ < gateZ - 700){
+    spawnPattern(spawnedZ);
+    spawnedZ += 560 + Math.random()*420;
+  }
+  totalSeeds = objects.filter(o=>o.type==="seed").length;
+  quota = Math.max(12, Math.round(totalSeeds*0.66));
+  cp1 = Math.round(quota*0.28);
+  cp2 = Math.round(quota*0.60);
+  cpZ1 = Math.round(gateZ*0.35);
+  cpZ2 = Math.round(gateZ*0.68);
+}
+
+function startGame(full){
+  resetRun(full); buildStage(); state="play";
+  bannerMsg="STAGE "+stage+" \u2014 "+theme().name; bannerT=2.2;
+}
+function nextStage(){
+  stage++; baseSpeed+=50; bestStage=Math.max(bestStage,stage);
+  resetRun(false); buildStage(); state="play";
+  bannerMsg="STAGE "+stage+" \u2014 "+theme().name; bannerT=2.2;
+}
+
+// ---- spawner ------------------------------------------------------
+function spawnPattern(z){
+  const r = Math.random();
+  const a0 = (Math.random()*2-1)*1.3;
+  if(r<0.15){                              // tight trio on one band (magnet-friendly)
+    for(let i=-1;i<=1;i++) objects.push({z:z, ang:a0*0.4+i*0.30, h:0, type:"seed"});
+  } else if(r<0.38){                       // staircase sweep — hold one direction through it
+    const dir = Math.random()<0.5? -1:1;
+    for(let i=0;i<5;i++)
+      objects.push({z:z+i*RING_GAP, ang:a0*0.4 + dir*(i-2)*0.26, h:0, type:"seed"});
+  } else if(r<0.55){                       // straight line down the vine — one per band
+    for(let i=0;i<5;i++) objects.push({z:z+i*RING_GAP, ang:a0, h:0, type:"seed"});
+  } else if(r<0.65){                       // floating row — jump for these
+    for(let i=0;i<4;i++) objects.push({z:z+i*RING_GAP, ang:a0*0.5, h:120, type:"seed"});
+  } else if(r<0.74){                       // high wall arc — whip up for these
+    const side = Math.random()<0.5? -1:1;
+    for(let i=0;i<4;i++) objects.push({z:z+i*RING_GAP, ang:side*(1.5+i*0.28), h:0, type:"seed"});
+  } else if(r<0.81){                       // spiral around the whole vine — loop it!
+    for(let i=0;i<12;i++)
+      objects.push({z:z+i*110, ang:-Math.PI + i*(Math.PI*2/11), h:0, type:"seed"});
+  } else if(r<0.87){                       // dew boost pod
+    objects.push({z:z, ang:(Math.random()*2-1)*1.2, h:0, type:"boost"});
+  } else if(r<0.95){                       // thorn cluster with a gap
+    const gap = Math.floor(Math.random()*3)-1;
+    for(let i=-1;i<=1;i++) if(i!==gap) objects.push({z:z, ang:i*0.75, h:0, type:"thorn"});
+  } else {                                 // thorn line, weave around it
+    for(let i=0;i<3;i++) objects.push({z:z+i*260, ang:a0, h:0, type:"thorn"});
+  }
+}
+// (stage layouts are pre-generated in buildStage — no streaming spawner)
+
+// ---- input --------------------------------------------------------
+let stickX=0, stickActive=false, stickOrigin=null, stickPos=null, stickId=null;
+let jumpQueue=0, jumpHeld=false, jumpId=null;
+const keys={};
+window.addEventListener('keydown',e=>{ keys[e.code]=true;
+  if(e.code==="Space"||e.code==="ArrowUp"){ press(); e.preventDefault(); }
+  if(e.code==="KeyP" && (state==="play"||state==="pause")) state = state==="play"? "pause":"play";
+  if(e.code==="KeyM") muted=!muted;
+});
+window.addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==="Space"||e.code==="ArrowUp") jumpHeld=false; });
+
+function press(){
+  if(state==="title"||state==="over"){ startGame(true); return; }
+  if(state==="clear"){ endless=true; nextStage(); return; }
+  if(state==="pause"){ state="play"; return; }
+  jumpQueue=0.12; jumpHeld=true;
+}
+
+cv.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    // pause button (top-left, under seed chip)
+    if(state==="play" && Math.hypot(t.clientX-36, t.clientY-92)<28){ state="pause"; return; }
+    if(state==="pause"){
+      if(Math.hypot(t.clientX-W/2, t.clientY-H*0.62)<44){ muted=!muted; return; }
+      state="play"; return;
+    }
+    if(state!=="play"){ press(); return; }
+    if(t.clientX < W*0.5 && stickId===null){
+      stickId=t.identifier; stickActive=true;
+      stickOrigin={x:t.clientX,y:t.clientY}; stickPos={...stickOrigin};
+    } else if(jumpId===null && Math.hypot(t.clientX-W*0.85, t.clientY-H*0.82)<90){
+      // only the jump button jumps — generous 90px hit zone around it
+      jumpId=t.identifier; press();
+    }
+  }
+},{passive:false});
+cv.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.identifier===stickId && stickOrigin){
+      stickPos={x:t.clientX,y:t.clientY};
+      stickX=Math.max(-1,Math.min(1,(stickPos.x-stickOrigin.x)/55));
+    }
+  }
+},{passive:false});
+function endTouch(e){
+  for(const t of e.changedTouches){
+    if(t.identifier===stickId){ stickId=null; stickActive=false; stickX=0; }
+    if(t.identifier===jumpId){ jumpId=null; jumpHeld=false; }
+  }
+}
+cv.addEventListener('touchend',endTouch); cv.addEventListener('touchcancel',endTouch);
+cv.addEventListener('mousedown',()=>press());
+cv.addEventListener('mouseup',()=>jumpHeld=false);
+
+// ---- audio (tiny synth) -------------------------------------------
+let AC=null;
+function beep(f,dur,type,vol){
+  if(muted) return;
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type=type||"square"; o.frequency.value=f;
+    g.gain.setValueAtTime(vol||0.06,AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur);
+    o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);
+  }catch(e){}
+}
+const sCollect=()=>{ beep(920,0.09,"square",0.05); setTimeout(()=>beep(1380,0.12,"square",0.05),50); };
+const sJump   =()=> beep(300,0.18,"triangle",0.07);
+const sHit    =()=>{ beep(140,0.3,"sawtooth",0.09); beep(90,0.4,"sawtooth",0.07); };
+const sGate   =()=>{ [660,830,990,1320].forEach((f,i)=>setTimeout(()=>beep(f,0.18,"square",0.06),i*110)); };
+const sBoost  =()=>{ [420,640,900,1250].forEach((f,i)=>setTimeout(()=>beep(f,0.10,"sawtooth",0.05),i*45)); };
+
+// ---- projection ---------------------------------------------------
+function proj(zRel, a, height){
+  const s = FOV/(FOV+Math.max(zRel,-FOV*0.6));
+  const wz = playerZ + zRel;
+  const dx = (curveX(wz)-curveX(playerZ)) * s;
+  const dy = (curveY(wz)-curveY(playerZ)) * s;
+  const r  = Math.max(R() - (height||0), 20);
+  const ra = a - camA;   // camera-relative angle: player reads as "bottom"
+  return {
+    x: W/2 + dx + Math.sin(ra)*r*s,
+    y: H*0.40 + dy + Math.cos(ra)*r*s*ASPECT,
+    s: s,
+    cx: W/2 + dx,
+    cy: H*0.40 + dy
+  };
+}
+
+// ---- update -------------------------------------------------------
+function update(dt){
+  if(state!=="play") return;
+  elapsed+=dt; animT+=dt;
+  if(inv>0) inv-=dt;
+  if(hitFlash>0) hitFlash-=dt;
+  if(shake>0) shake-=dt;
+  if(jumpQueue>0) jumpQueue-=dt;
+
+  // keyboard steering
+  let kx = (keys["ArrowLeft"]||keys["KeyA"]? -1:0)+(keys["ArrowRight"]||keys["KeyD"]? 1:0);
+  const steer = stickActive? stickX : kx;
+
+  // --- steering: exponential ramp on held input (Sonic 2 whip) ---
+  const sd = Math.sign(steer);
+  if(sd!==0 && sd===steerDir) steerT += dt;
+  else { steerT = sd!==0? dt : 0; steerDir = sd; }
+  const whip = Math.min(Math.exp(steerT*STEER_GROW), STEER_MAX);
+  angV += steer*STEER_BASE*whip*dt;
+  // pendulum gravity — momentum carries you up (and over) the walls
+  angV += -Math.sin(ang)*PIPE_G*dt*(grounded?1:0.55);
+  // friction: slick while steering, grippy the instant you release
+  angV -= angV*(sd!==0? DAMP_HOLD : DAMP_IDLE)*dt;
+  angV  = Math.max(-ANGV_MAX, Math.min(ANGV_MAX, angV));
+  ang  += angV*dt;
+  camA += (ang-camA)*Math.min(1, dt*11);   // camera rolls with you, slight lag for feel
+
+  // full-loop detection — loops pay SPEED, not seeds (seeds come from seeds)
+  const li = Math.floor((ang+Math.PI)/(Math.PI*2));
+  if(li!==loopIdx){
+    if(grounded){
+      boostT=Math.max(boostT,1.25); combo+=2; comboT=1.25; sBoost();
+      bannerMsg="FULL LOOP! SPEED SURGE"; bannerT=1.0;
+      burst({z:playerZ+60, ang:ang, h:h}, C.glow, 16);
+    }
+    loopIdx=li;
+  }
+
+  // jump
+  if(jumpQueue>0 && grounded){ vh=JUMP_V; grounded=false; jumpQueue=0; sJump(); }
+  if(!grounded){
+    h+=vh*dt;
+    vh-= GRAV*dt*(jumpHeld&&vh>0?0.62:1);   // hold jump = float a touch higher
+    if(h<=0){ h=0; vh=0; grounded=true; }
+  }
+
+  // --- forward velocity: ramp + combo momentum + dew boosts ---
+  if(boostT>0) boostT-=dt;
+  if(slowT>0)  slowT-=dt;
+  if(comboT>0){ comboT-=dt; if(comboT<=0) combo=0; }
+  const comboSpd = Math.min(combo*9, 210);
+  const target = baseSpeed + Math.min(elapsed*9, 300) + comboSpd
+               + (boostT>0? 340:0) - (slowT>0? 200:0);
+  speedNow += (target - speedNow)*Math.min(1, dt*3.2);   // eased mach ramp
+  speed = speedNow;
+  playerZ += speed*dt;
+
+  // checkpoints — partial quotas, Sonic 2 style
+  if(!cp1Done && playerZ>=cpZ1){
+    if(seeds>=cp1){ cp1Done=true; sGate(); bannerMsg="CHECKPOINT \u2713"; bannerT=1.2; }
+    else { state="over"; bannerMsg="WILTED AT CHECKPOINT 1..."; bestStage=Math.max(bestStage,stage); portalEvent("gameover"); return; }
+  }
+  if(!cp2Done && playerZ>=cpZ2){
+    if(seeds>=cp2){ cp2Done=true; sGate(); bannerMsg="CHECKPOINT \u2713"; bannerT=1.2; }
+    else { state="over"; bannerMsg="WILTED AT CHECKPOINT 2..."; bestStage=Math.max(bestStage,stage); portalEvent("gameover"); return; }
+  }
+
+  // seed magnet — near-misses curve into you, keeps whip-speed grabs smooth
+  for(const o of objects){
+    if(o.type!=="seed") continue;
+    const dz=o.z-playerZ;
+    if(dz>-20 && dz<170){
+      const da=wrapA(ang-o.ang);
+      if(Math.abs(da)<0.75 && Math.abs((o.h||0)-h)<100){
+        o.ang += da*Math.min(1,dt*10);
+        o.h = (o.h||0)+(h-(o.h||0))*Math.min(1,dt*6);
+      }
+    }
+  }
+
+  // ambient spores fly past — free speed + depth read
+  for(const sp of spores){
+    sp.z -= speed*dt*0.92; sp.ang += dt*0.15;
+    if(sp.z<10){ sp.z += FAR; sp.ang=Math.random()*6.283; sp.rf=0.25+Math.random()*0.65; }
+  }
+
+  // collisions
+  for(const o of objects){
+    if(o.dead) continue;
+    const dz = o.z - playerZ;
+    if(dz < -HIT_Z){ o.dead = true; continue; }
+    if(Math.abs(dz) < HIT_Z){
+      let da = Math.abs(wrapA(o.ang - ang));
+      const dh = Math.abs((o.h||0) - h);
+      if(da < HIT_ARC && dh < 72){
+        if(o.type==="seed"){
+          o.dead=true; seeds++; sCollect();
+          combo++; comboT=1.25; bestCombo=Math.max(bestCombo,combo);
+          burst(o, C.seed, 10);
+          floats.push({z:dz, ang:o.ang, h:(o.h||0)+40, t:0.8,
+                       txt: combo>=3? "x"+combo : "+1"});
+        } else if(o.type==="boost"){
+          o.dead=true; boostT=1.7; sBoost();
+          burst(o, "#9FE8FF", 14);
+          bannerMsg="DEW BOOST!"; bannerT=0.8;
+        } else if(o.type==="thorn" && inv<=0){
+          o.dead=true; sHit();
+          const lost = Math.min(seeds, 5); seeds -= lost;
+          combo=0; comboT=0; slowT=1.2;
+          inv=1.4; hitFlash=0.4; shake=0.35;
+          angV += (ang>=o.ang? 5:-5);
+          burst(o, C.thorn, 8);
+          for(let i=0;i<lost;i++)  // scattered seeds fly away, Sonic-style
+            particles.push({x:0,y:0,o:o,vx:(Math.random()*2-1)*260,vy:-Math.random()*340-80,
+                            t:1.1, col:C.seed, seedFly:true, sx:null, sy:null});
+        }
+      }
+    }
+  }
+  objects = objects.filter(o=>!o.dead);
+
+  // gate check
+  if(playerZ >= gateZ){
+    if(seeds >= quota){
+      state="gate"; bannerT=2.2; bannerMsg="BLOOM OPENED!"; sGate();
+      portalEvent("stageclear");
+    } else {
+      state="over"; bannerMsg="THE BLOOM CLOSED...";
+      bestStage=Math.max(bestStage,stage);
+      portalEvent("gameover");
+    }
+  }
+
+  // particles / floats
+  for(const p of particles){ p.t-=dt;
+    if(p.seedFly){ p.vy+=900*dt; p.ox=(p.ox||0)+p.vx*dt; p.oy=(p.oy||0)+p.vy*dt; }
+    else { p.ox=(p.ox||0)+p.vx*dt; p.oy=(p.oy||0)+p.vy*dt; }
+  }
+  particles = particles.filter(p=>p.t>0);
+  for(const f of floats){ f.t-=dt; f.h+=60*dt; }
+  floats = floats.filter(f=>f.t>0);
+}
+
+function burst(o,col,n){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, v=90+Math.random()*160;
+    particles.push({o:o, vx:Math.cos(a)*v, vy:Math.sin(a)*v, t:0.5+Math.random()*0.3, col:col});
+  }
+}
+
+// gate intermission timer
+function updateGate(dt){
+  bannerT-=dt;
+  if(bannerT<=0){
+    if(stage>=6 && !endless){ state="clear"; bestStage=Math.max(bestStage,stage+1); portalEvent("victory"); return; }
+    nextStage();
+  }
+}
+
+// ---- rendering ----------------------------------------------------
+function draw(){
+  const g = cx2d;
+  // sky / interior gradient
+  const T = theme();
+  const grad = g.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,T.bgTop); grad.addColorStop(0.55,T.bgMid); grad.addColorStop(1,T.bgBot);
+  g.fillStyle=grad; g.fillRect(0,0,W,H);
+
+  g.save();
+  if(shake>0) g.translate((Math.random()*2-1)*shake*22,(Math.random()*2-1)*shake*22);
+
+  // vanishing point glow (or bgVista art)
+  const vp = proj(FAR*0.92, 0, R());
+  const vista = img(Array.isArray(ART.bgVista)? ART.bgVista[(stage-1)%THEMES.length] : ART.bgVista);
+  if(vista){
+    const vw = R()*1.4;
+    g.globalAlpha=0.9;
+    g.drawImage(vista, vp.cx-vw/2, vp.cy-vw/2, vw, vw);
+    g.globalAlpha=1;
+  } else {
+    const rg = g.createRadialGradient(vp.cx,vp.cy,4, vp.cx,vp.cy, R()*0.8);
+    rg.addColorStop(0,"rgba("+T.vista+",0.85)");
+    rg.addColorStop(0.4,"rgba("+T.vista+",0.28)");
+    rg.addColorStop(1,"rgba(0,0,0,0)");
+    g.fillStyle=rg; g.beginPath(); g.arc(vp.cx,vp.cy,R()*0.8,0,7); g.fill();
+  }
+
+  // vine tube: lit checkerboard (bands × sectors) — depth AND roll in one read
+  const firstRing = Math.ceil(playerZ/RING_GAP)*RING_GAP;
+  const bands=[];
+  for(let wz=firstRing; wz<playerZ+FAR; wz+=RING_GAP) bands.push(wz);
+  for(let i=bands.length-1;i>=0;i--){
+    const wz   = bands[i];
+    const zRel = wz-playerZ;
+    const s1 = FOV/(FOV+zRel);
+    const s2 = FOV/(FOV+Math.max(zRel-RING_GAP,-FOV*0.5));
+    const p  = proj(zRel-RING_GAP*0.5, 0, 0);
+    const rMid  = R()*(s1+s2)*0.5;
+    const thick = R()*(s2-s1)*1.15;
+    const idx  = Math.round(wz/RING_GAP);
+    const node = idx%6===0;
+    const fog  = Math.max(0, Math.min(1, 1.25 - (zRel/FAR)*1.35));
+    const wob  = 1 + Math.sin(wz*0.031)*0.02;
+    g.lineWidth = thick;
+    g.globalAlpha = fog;
+    for(let k=0;k<8;k++){
+      // interior lighting: brightest at the running lane, dim overhead
+      const midRel = (k+0.5)*Math.PI/4 - camA;
+      const light  = 0.45 + 0.55*Math.max(0, Math.cos(midRel));
+      const checker= (idx+k)%2;
+      const Lg = node? (checker?34:26)*light + 8 : (checker?26:17)*light + 4;
+      g.strokeStyle = "hsl("+(node?T.nodeHue:T.hue)+", "+(node?T.sat+8:T.sat)+"%, "+Lg.toFixed(1)+"%)";
+      const t1 = Math.PI/2 - (k*Math.PI/4 - camA);
+      g.beginPath();
+      g.ellipse(p.cx, p.cy, rMid*wob, rMid*ASPECT*wob, 0, t1-Math.PI/4-0.02, t1+0.02);
+      g.stroke();
+    }
+    // running-lane seam highlight
+    g.strokeStyle = node? T.glow : hexA(T.glow,0.4);
+    g.lineWidth = Math.max(1,(node?6:2.5)*((s1+s2)*0.5));
+    g.beginPath();
+    g.ellipse(p.cx, p.cy, rMid*wob, rMid*ASPECT*wob, 0, Math.PI*0.3, Math.PI*0.7);
+    g.stroke();
+  }
+  g.globalAlpha=1;
+
+  // ambient spores drifting past the camera
+  g.fillStyle=T.spore;
+  for(const sp of spores){
+    if(sp.z<10||sp.z>FAR) continue;
+    const p = proj(sp.z, sp.ang, R()*(1-sp.rf));
+    g.globalAlpha = 0.10 + Math.max(0,1-sp.z/FAR)*0.42;
+    g.beginPath(); g.arc(p.x, p.y, 1.2+2.6*p.s, 0, 7); g.fill();
+  }
+  g.globalAlpha=1;
+
+  // objects far -> near, with fog + alignment shadows for depth ordering
+  const objs=[...objects].sort((a,b)=>(b.z-playerZ)-(a.z-playerZ));
+  for(const o of objs){
+    const zRel=o.z-playerZ;
+    if(zRel<-40||zRel>FAR) continue;
+    const p=proj(zRel,o.ang,o.h||0);
+    const fog=Math.max(0.15, Math.min(1, 1.3 - (zRel/FAR)*1.5));
+    const aligned = Math.abs(wrapA(o.ang-ang)) < HIT_ARC*1.1;
+    const ps=proj(zRel,o.ang,0);
+    // contact shadow — gold when you're lined up, red warning under thorns
+    g.globalAlpha=(aligned?0.55:0.34)*fog;
+    g.fillStyle = aligned? (o.type==="thorn"? "rgba(255,70,45,0.9)":"rgba(255,215,94,0.9)") : "#000";
+    g.beginPath(); g.ellipse(ps.x, ps.y, (aligned?48:40)*p.s, (aligned?16:13)*p.s, 0, 0, 7); g.fill();
+    // dotted tether pins floating pickups to their band
+    if((o.h||0)>0){
+      g.globalAlpha=0.35*fog;
+      g.strokeStyle="#CFEFA8"; g.lineWidth=1.5; g.setLineDash([4,7]);
+      g.beginPath(); g.moveTo(p.x,p.y); g.lineTo(ps.x,ps.y); g.stroke();
+      g.setLineDash([]);
+    }
+    g.globalAlpha=fog;
+    if(o.type==="seed") drawSeed(g,p,zRel);
+    else if(o.type==="boost") drawBoost(g,p);
+    else drawThorn(g,p);
+    g.globalAlpha=1;
+  }
+
+  // gate bloom on approach
+  const gz = gateZ - playerZ;
+  if(gz>-60 && gz<FAR) drawGate(g, proj(gz,0,0), gz);
+
+  // checkpoint arches
+  if(!cp1Done){ const cz=cpZ1-playerZ; if(cz>-60&&cz<FAR) drawCheckpoint(g, proj(cz,0,0), cz, T); }
+  if(!cp2Done){ const cz=cpZ2-playerZ; if(cz>-60&&cz<FAR) drawCheckpoint(g, proj(cz,0,0), cz, T); }
+
+  // particles
+  for(const p of particles){
+    const base = p.o? proj(p.o.z-playerZ, p.o.ang, p.o.h||0) : null;
+    const px=(base?base.x:W/2)+(p.ox||0), py=(base?base.y:H/2)+(p.oy||0);
+    g.globalAlpha=Math.max(0,p.t*1.6);
+    g.fillStyle=p.col;
+    g.beginPath(); g.arc(px,py, p.seedFly?6:3.2, 0, 7); g.fill();
+  }
+  g.globalAlpha=1;
+
+  // +1 floats
+  g.font="700 16px 'Titan One', 'Arial Black', sans-serif";
+  g.textAlign="center";
+  for(const f of floats){
+    const p=proj(f.z, f.ang, f.h);
+    g.globalAlpha=Math.min(1,f.t*2);
+    g.fillStyle=C.seedCore; g.fillText(f.txt, p.x, p.y);
+  }
+  g.globalAlpha=1;
+
+  // player
+  drawRunner(g);
+
+  // speed streaks — kick in as velocity climbs
+  const spd01 = Math.max(0,(speed-780)/500);
+  if(spd01>0 && (state==="play"||state==="gate")){
+    g.lineWidth=2;
+    g.strokeStyle = boostT>0? "rgba(159,232,255,"+(0.15+spd01*0.3)+")"
+                            : hexA(T.glow, 0.08+spd01*0.25);
+    for(let i=0;i<14;i++){
+      const aa=(i/14)*Math.PI*2 + i*0.618;
+      const r1=R()*(0.55+((animT*(4+spd01*5)+i*0.37)%1)*0.75);
+      const x0=W/2+Math.cos(aa)*r1,            y0=H*0.40+Math.sin(aa)*r1*ASPECT;
+      const x1=W/2+Math.cos(aa)*(r1+40+110*spd01), y1=H*0.40+Math.sin(aa)*(r1+40+110*spd01)*ASPECT;
+      g.beginPath(); g.moveTo(x0,y0); g.lineTo(x1,y1); g.stroke();
+    }
+  }
+
+  g.restore();
+
+  drawHUD(g);
+  if(state==="play"||state==="gate") drawControls(g);
+  if(state==="title") drawTitle(g);
+  if(state==="over") drawOver(g);
+  if(state==="pause") drawPause(g);
+  if(state==="clear") drawClear(g);
+  if(bannerT>0 && state!=="title"){
+    g.font="900 "+Math.min(46,W*0.08)+"px 'Titan One','Arial Black',sans-serif";
+    g.textAlign="center";
+    g.fillStyle=C.pink; g.globalAlpha=Math.min(1,bannerT);
+    g.fillText(bannerMsg, W/2, H*0.30);
+    g.globalAlpha=1;
+    if(state==="play") bannerT-=1/60;
+  }
+}
+
+function drawSeed(g,p,zRel){
+  const bob = Math.sin(animT*4 + zRel*0.02)*5*p.s;
+  const sz = 54*p.s;
+  const y  = p.y+bob;
+  const im = frameOf(ART.seed, animT, 8) || img(ART.seed[0]);
+  // glow halo
+  const rg=g.createRadialGradient(p.x,y,1,p.x,y,sz*1.7);
+  rg.addColorStop(0,"rgba(255,220,110,0.6)"); rg.addColorStop(1,"rgba(255,215,94,0)");
+  g.fillStyle=rg; g.beginPath(); g.arc(p.x,y,sz*1.7,0,7); g.fill();
+  if(im){ g.drawImage(im, p.x-sz, y-sz, sz*2, sz*2); return; }
+  // placeholder: shaded golden teardrop with rim + outline + sparkle
+  const squish = 0.82+Math.sin(animT*6+zRel)*0.18;   // fake spin
+  g.save(); g.translate(p.x,y); g.scale(squish,1);
+  const bg2=g.createRadialGradient(-sz*0.25,-sz*0.3,sz*0.1, 0,0,sz*1.1);
+  bg2.addColorStop(0,"#FFF6CC"); bg2.addColorStop(0.45,"#FFD75E"); bg2.addColorStop(1,"#D2941B");
+  g.fillStyle=bg2;
+  g.beginPath();
+  g.moveTo(0,-sz);
+  g.bezierCurveTo(sz*0.9,-sz*0.2, sz*0.75,sz*0.8, 0,sz);
+  g.bezierCurveTo(-sz*0.75,sz*0.8, -sz*0.9,-sz*0.2, 0,-sz);
+  g.fill();
+  g.lineWidth=Math.max(1,sz*0.09);
+  g.strokeStyle="rgba(28,48,10,0.8)";
+  g.stroke();
+  // twinkle
+  const tw = 0.5+0.5*Math.sin(animT*9+zRel*0.7);
+  g.strokeStyle="rgba(255,255,238,"+(0.45+tw*0.55).toFixed(2)+")";
+  g.lineWidth=Math.max(1,sz*0.07);
+  g.beginPath();
+  g.moveTo(-sz*0.3,-sz*0.45-sz*0.18*tw); g.lineTo(-sz*0.3,-sz*0.45+sz*0.18*tw);
+  g.moveTo(-sz*0.3-sz*0.18*tw,-sz*0.45); g.lineTo(-sz*0.3+sz*0.18*tw,-sz*0.45);
+  g.stroke();
+  g.restore();
+}
+
+function drawThorn(g,p){
+  const sz=52*p.s;
+  const im=img(ART.thorn);
+  if(im){ g.drawImage(im,p.x-sz,p.y-sz*1.4,sz*2,sz*2); return; }
+  g.save(); g.translate(p.x,p.y);
+  g.fillStyle=C.thornDark;
+  g.beginPath(); g.ellipse(0,0,sz*0.8,sz*0.32,0,0,7); g.fill();
+  g.fillStyle=C.thorn;
+  for(let i=0;i<5;i++){
+    const a=-Math.PI*0.9 + i*(Math.PI*0.8/4);
+    g.beginPath();
+    g.moveTo(Math.cos(a)*sz*0.5, Math.sin(a)*sz*0.2);
+    g.lineTo(Math.cos(a)*sz*0.5 + Math.cos(a-0.25)*sz*0.9, Math.sin(a)*sz*0.2 + Math.sin(a)*sz*1.05);
+    g.lineTo(Math.cos(a)*sz*0.5 + Math.cos(a+0.35)*sz*0.3, Math.sin(a)*sz*0.2 + Math.sin(a+0.3)*sz*0.15);
+    g.fill();
+  }
+  g.restore();
+}
+
+function drawBoost(g,p){
+  const sz=50*p.s, pulse=1+Math.sin(animT*7)*0.1;
+  const im=img(ART.boostDew);
+  const rg=g.createRadialGradient(p.x,p.y,1,p.x,p.y,sz*1.6);
+  rg.addColorStop(0,"rgba(159,232,255,0.6)"); rg.addColorStop(1,"rgba(159,232,255,0)");
+  g.fillStyle=rg; g.beginPath(); g.arc(p.x,p.y,sz*1.6,0,7); g.fill();
+  if(im){ g.drawImage(im, p.x-sz*pulse, p.y-sz*pulse, sz*2*pulse, sz*2*pulse); return; }
+  g.save(); g.translate(p.x,p.y); g.scale(pulse,pulse);
+  g.fillStyle="#7FD4F0";
+  g.beginPath();
+  g.moveTo(0,-sz);
+  g.bezierCurveTo(sz*0.85,-sz*0.1, sz*0.7,sz*0.85, 0,sz*0.95);
+  g.bezierCurveTo(-sz*0.7,sz*0.85, -sz*0.85,-sz*0.1, 0,-sz);
+  g.fill();
+  g.fillStyle="#DFF6FF";
+  g.beginPath(); g.ellipse(-sz*0.22,-sz*0.1,sz*0.18,sz*0.34,-0.35,0,7); g.fill();
+  g.restore();
+}
+
+function drawCheckpoint(g,p,cz,T){
+  const rr=R()*p.s;
+  g.save();
+  g.globalAlpha=Math.min(0.9, 0.15+(1-cz/FAR));
+  const pulse=1+Math.sin(animT*5)*0.04;
+  g.strokeStyle=T.glow; g.lineWidth=Math.max(2, 9*p.s);
+  g.beginPath(); g.ellipse(p.cx,p.cy, rr*0.93*pulse, rr*0.93*ASPECT*pulse, 0,0,7); g.stroke();
+  g.strokeStyle=hexA(T.glow,0.4); g.lineWidth=Math.max(1.5, 20*p.s);
+  g.beginPath(); g.ellipse(p.cx,p.cy, rr*0.86, rr*0.86*ASPECT, 0,0,7); g.stroke();
+  g.restore();
+}
+
+function drawGate(g,p,gz){
+  const rr=R()*p.s;
+  const im=img(ART.gateBloom);
+  if(im){
+    g.globalAlpha=Math.min(1, 0.25+ (1-gz/FAR));
+    g.drawImage(im, p.cx-rr, p.cy-rr*ASPECT, rr*2, rr*2*ASPECT);
+    g.globalAlpha=1; return;
+  }
+  g.save();
+  g.globalAlpha=Math.min(0.95, 0.2+(1-gz/FAR));
+  for(let i=0;i<10;i++){
+    const a=i/10*Math.PI*2 + animT*0.4;
+    g.fillStyle=i%2? C.pink : "#F4A9C8";
+    g.beginPath();
+    g.ellipse(p.cx+Math.cos(a)*rr*0.72, p.cy+Math.sin(a)*rr*0.72*ASPECT,
+              rr*0.30, rr*0.14, a, 0, 7);
+    g.fill();
+  }
+  g.fillStyle=C.seed;
+  g.beginPath(); g.ellipse(p.cx,p.cy, rr*0.3, rr*0.3*ASPECT,0,0,7); g.fill();
+  g.restore();
+}
+
+function drawRunner(g){
+  if(inv>0 && Math.floor(animT*14)%2===0) return;  // damage blink
+  const p = proj(60, ang, h);
+  const sz = 66*p.s;
+  const lean = Math.max(-1,Math.min(1, angV*0.35 + (stickActive?stickX*0.4:0)));
+  // shadow on the pipe surface
+  const ps = proj(60, ang, 0);
+  g.globalAlpha=0.35*(1-Math.min(h/220,0.8));
+  g.fillStyle="#000";
+  g.beginPath(); g.ellipse(ps.x, ps.y, sz*0.7, sz*0.22, 0, 0, 7); g.fill();
+  g.globalAlpha=1;
+
+  let im=null;
+  if(hitFlash>0) im=img(ART.runnerHit);
+  else if(!grounded) im=img(ART.runnerJump);
+  else if(lean<-0.55) im=img(ART.runnerLeanL);
+  else if(lean> 0.55) im=img(ART.runnerLeanR);
+  if(!im) im=frameOf(ART.runnerRun, animT, 10);
+
+  g.save();
+  g.translate(p.x, p.y - sz*0.55);
+  // camera rolls with the player, so the sprite stays near-upright;
+  // rotation is just steering lean + a touch of camera lag
+  g.rotate(lean*0.5 + (ang-camA)*0.9);
+  if(im){ g.drawImage(im,-sz,-sz,sz*2,sz*2); g.restore(); return; }
+
+  // ---- placeholder sprout, rear view ----
+  const run = grounded? Math.sin(animT*14):0;
+  // feet
+  g.fillStyle=C.runnerDark;
+  g.beginPath(); g.ellipse(-sz*0.28, sz*0.55+run*sz*0.08, sz*0.16, sz*0.10,0,0,7); g.fill();
+  g.beginPath(); g.ellipse( sz*0.28, sz*0.55-run*sz*0.08, sz*0.16, sz*0.10,0,0,7); g.fill();
+  // body
+  g.fillStyle=C.runner;
+  g.beginPath(); g.ellipse(0, sz*0.12, sz*0.42, sz*0.5,0,0,7); g.fill();
+  // back stripe
+  g.fillStyle=C.runnerDark;
+  g.beginPath(); g.ellipse(0, sz*0.12, sz*0.13, sz*0.44,0,0,7); g.fill();
+  // head
+  g.fillStyle=C.runner;
+  g.beginPath(); g.arc(0,-sz*0.42, sz*0.30, 0, 7); g.fill();
+  // sprout leaves on head
+  g.fillStyle=C.leaf;
+  g.beginPath(); g.ellipse(-sz*0.16,-sz*0.72, sz*0.2, sz*0.09, -0.7+run*0.1,0,7); g.fill();
+  g.beginPath(); g.ellipse( sz*0.16,-sz*0.72, sz*0.2, sz*0.09,  0.7-run*0.1,0,7); g.fill();
+  g.strokeStyle=C.runnerDark; g.lineWidth=sz*0.05;
+  g.beginPath(); g.moveTo(0,-sz*0.66); g.lineTo(0,-sz*0.78); g.stroke();
+  // arms pumping
+  g.fillStyle=C.runner;
+  g.beginPath(); g.ellipse(-sz*0.46, sz*0.05+run*sz*0.12, sz*0.11, sz*0.2, 0.3,0,7); g.fill();
+  g.beginPath(); g.ellipse( sz*0.46, sz*0.05-run*sz*0.12, sz*0.11, sz*0.2,-0.3,0,7); g.fill();
+  g.restore();
+}
+
+function drawHUD(g){
+  const T=theme();
+  // current segment target: CP1 -> CP2 -> BLOOM
+  const seg = !cp1Done? 0 : !cp2Done? 1 : 2;
+  const tgt = seg===0? cp1 : seg===1? cp2 : quota;
+  const segName = seg===2? "BLOOM" : "CHECKPOINT "+(seg+1);
+  const met = seeds>=tgt;
+  g.textAlign="left";
+  g.font="900 22px 'Titan One','Arial Black',sans-serif";
+  // seed counter chip
+  g.fillStyle="rgba(4,18,10,0.6)";
+  roundRect(g, 14, 14, 190, 44, 22); g.fill();
+  const hs=img(ART.hudSeed);
+  if(hs) g.drawImage(hs, 24, 20, 32, 32);
+  else { g.fillStyle=C.seed; g.beginPath(); g.ellipse(40,36,11,15,0.3,0,7); g.fill(); }
+  g.fillStyle= met? T.glow : C.cream;
+  g.fillText(seeds+" / "+tgt, 62, 44);
+  g.font="900 10px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle= met? T.glow : "rgba(242,240,220,0.7)";
+  g.fillText((met?"\u2713 ":"")+segName, 64, 68);
+
+  // pause button (play only)
+  if(state==="play"){
+    g.globalAlpha=0.45; g.fillStyle="rgba(4,18,10,0.7)";
+    g.beginPath(); g.arc(36,92,20,0,7); g.fill();
+    g.globalAlpha=0.85; g.fillStyle=C.cream;
+    g.fillRect(29,84,5,16); g.fillRect(38,84,5,16);
+    g.globalAlpha=1;
+  }
+
+  // stage progress bar with checkpoint ticks + bloom marker
+  if(state==="play"||state==="gate"){
+    const bw=Math.min(W*0.34,250), bx=W/2-bw/2, by=14;
+    g.fillStyle="rgba(4,18,10,0.55)";
+    roundRect(g,bx,by,bw,9,4); g.fill();
+    g.fillStyle=hexA(T.glow,0.95);
+    roundRect(g,bx+1,by+1,(bw-2)*Math.min(1,playerZ/gateZ),7,3); g.fill();
+    g.fillStyle=C.cream;
+    for(const f of [cpZ1/gateZ, cpZ2/gateZ]){
+      g.globalAlpha=0.9; g.fillRect(bx+bw*f-1, by-3, 2, 15);
+    }
+    g.globalAlpha=1;
+    g.fillStyle=C.pink;
+    g.beginPath(); g.arc(bx+bw, by+4.5, 6, 0, 7); g.fill();
+  }
+
+  // stage + distance + garden name
+  g.textAlign="right";
+  g.font="900 16px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.cream; g.globalAlpha=0.85;
+  g.fillText("STAGE "+stage, W-16, 32);
+  g.font="900 10px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=T.glow;
+  g.fillText(T.name, W-16, 46);
+  g.font="900 14px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.cream;
+  g.fillText(Math.floor(playerZ/100)+"m", W-16, 64);
+  g.globalAlpha=1;
+  // speed meter — little vine bar
+  const sp01 = Math.max(0,Math.min(1,(speed-420)/900));
+  g.fillStyle="rgba(4,18,10,0.6)";
+  roundRect(g, W-116, 72, 100, 10, 5); g.fill();
+  g.fillStyle = boostT>0? "#9FE8FF" : T.glow;
+  roundRect(g, W-114, 74, 96*sp01, 6, 3); g.fill();
+  // combo readout
+  if(combo>=3 && state==="play"){
+    g.textAlign="center";
+    g.font="900 "+(24+Math.min(combo,20))+"px 'Titan One','Arial Black',sans-serif";
+    g.fillStyle=C.seed; g.globalAlpha=0.9;
+    g.fillText("COMBO x"+combo, W/2, H*0.20);
+    g.globalAlpha=1;
+  }
+  // next-target reminder near each gate
+  if(state==="play" && !met){
+    const nextZ = seg===0? cpZ1 : seg===1? cpZ2 : gateZ;
+    if(nextZ-playerZ<2400){
+      g.textAlign="center";
+      g.fillStyle=C.pink;
+      g.font="900 15px 'Titan One','Arial Black',sans-serif";
+      g.fillText(segName+" AHEAD \u2014 NEED "+(tgt-seeds)+" MORE!", W/2, 44);
+    }
+  }
+}
+
+function drawControls(g){
+  // stick
+  const bx = stickActive&&stickOrigin? stickOrigin.x : W*0.16;
+  const by = stickActive&&stickOrigin? stickOrigin.y : H*0.82;
+  g.globalAlpha=0.30;
+  g.strokeStyle=C.cream; g.lineWidth=3;
+  g.beginPath(); g.arc(bx,by,52,0,7); g.stroke();
+  g.globalAlpha=0.45;
+  g.fillStyle=C.cream;
+  const nx = bx + stickX*40;
+  g.beginPath(); g.arc(nx,by,26,0,7); g.fill();
+  // jump button
+  g.globalAlpha=0.30;
+  g.fillStyle=C.glow;
+  g.beginPath(); g.arc(W*0.85, H*0.82, 46, 0, 7); g.fill();
+  g.globalAlpha=0.8;
+  g.fillStyle="#0B2415";
+  g.font="900 16px 'Titan One','Arial Black',sans-serif";
+  g.textAlign="center";
+  g.fillText("JUMP", W*0.85, H*0.82+6);
+  g.globalAlpha=1;
+}
+
+function drawTitle(g){
+  g.fillStyle="rgba(4,18,10,0.55)"; g.fillRect(0,0,W,H);
+  g.textAlign="center";
+  g.font="900 "+Math.min(64,W*0.13)+"px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.glow;
+  g.fillText("VINE RUNNER", W/2, H*0.34);
+  g.font="900 18px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.cream;
+  g.fillText("six gardens · gather 2/3 of every vine's seeds", W/2, H*0.42);
+  g.fillText("survive the checkpoints · reach the bloom", W/2, H*0.47);
+  g.fillStyle=C.pink;
+  if(Math.floor(animT*2)%2===0) g.fillText("TAP TO GROW", W/2, H*0.58);
+  g.font="700 13px sans-serif"; g.fillStyle="rgba(242,240,220,0.6)";
+  g.fillText("left: steer stick   ·   right: jump   ·   keys: ←→ + space, P pause, M mute", W/2, H*0.66);
+  g.fillText("hold a direction to whip — momentum carries you all the way around", W/2, H*0.71);
+}
+
+function drawPause(g){
+  g.fillStyle="rgba(4,18,10,0.7)"; g.fillRect(0,0,W,H);
+  g.textAlign="center";
+  const T=theme();
+  g.font="900 "+Math.min(44,W*0.09)+"px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=T.glow; g.fillText("PAUSED", W/2, H*0.36);
+  g.font="900 16px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.cream;
+  g.fillText("STAGE "+stage+" \u2014 "+T.name, W/2, H*0.44);
+  g.fillText("tap anywhere to resume", W/2, H*0.50);
+  // sound toggle
+  g.fillStyle="rgba(242,240,220,0.15)";
+  g.beginPath(); g.arc(W/2, H*0.62, 40, 0, 7); g.fill();
+  g.fillStyle= muted? C.thorn : T.glow;
+  g.font="900 14px 'Titan One','Arial Black',sans-serif";
+  g.fillText(muted? "SOUND OFF":"SOUND ON", W/2, H*0.62+5);
+}
+
+function drawClear(g){
+  g.fillStyle="rgba(4,18,10,0.72)"; g.fillRect(0,0,W,H);
+  g.textAlign="center";
+  const pulse=1+Math.sin(animT*3)*0.04;
+  g.save(); g.translate(W/2,H*0.34); g.scale(pulse,pulse);
+  g.font="900 "+Math.min(52,W*0.10)+"px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.pink; g.fillText("THE GARDEN BLOOMS!", 0, 0);
+  g.restore();
+  g.font="900 18px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.cream;
+  g.fillText("all six vines cleared", W/2, H*0.43);
+  g.fillText("best combo x"+bestCombo, W/2, H*0.49);
+  g.fillStyle=C.glow;
+  if(Math.floor(animT*2)%2===0) g.fillText("TAP FOR THE ENDLESS GARDEN", W/2, H*0.60);
+}
+
+function drawOver(g){
+  g.fillStyle="rgba(4,18,10,0.7)"; g.fillRect(0,0,W,H);
+  g.textAlign="center";
+  g.font="900 "+Math.min(44,W*0.09)+"px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.thorn; g.fillText(bannerMsg, W/2, H*0.40);
+  g.font="900 20px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle=C.cream;
+  g.fillText("seeds: "+seeds+" / "+quota+"   ·   stage "+stage+"   ·   best combo x"+bestCombo, W/2, H*0.48);
+  g.font="900 15px 'Titan One','Arial Black',sans-serif";
+  g.fillStyle="rgba(242,240,220,0.7)";
+  g.fillText("best run: stage "+bestStage, W/2, H*0.54);
+  g.fillStyle=C.glow;
+  if(Math.floor(animT*2)%2===0) g.fillText("TAP TO REPLANT", W/2, H*0.60);
+}
+
+function roundRect(g,x,y,w,hh,r){
+  g.beginPath();
+  g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+hh,r); g.arcTo(x+w,y+hh,x,y+hh,r);
+  g.arcTo(x,y+hh,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+}
+
+// ---- main loop ----------------------------------------------------
+let last=performance.now();
+function loop(now){
+  const dt=Math.min((now-last)/1000, 1/30); last=now;
+  animT+=state==="play"?0:dt;
+  if(state==="play") update(dt);
+  if(state==="gate") updateGate(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+portalEvent("ready");
+</script>
+<!-- ══════════════════════════════════════════════════════════════════════
+     LUCID WINDS BRIDGE (re-apply on re-vendor). Vendored same-origin. The game
+     already posts {game:'vine-runner', event, ...} to window.parent; top-level
+     that's this window, so we listen here. Adds: Sunbeam earn (stageclear/
+     victory, daily-capped), best-run persistence, SWS_EXIT + a corner button,
+     and the SDK. Game body above is byte-identical to the source.
+     ══════════════════════════════════════════════════════════════════════ -->
+<style>
+  #lwExit{position:fixed;top:10px;right:10px;z-index:99999;width:40px;height:40px;border-radius:11px;
+    border:1px solid rgba(255,255,255,.4);background:rgba(20,24,20,.55);color:#fff;font-size:18px;
+    line-height:1;cursor:pointer;display:grid;place-items:center;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+</style>
+<button id="lwExit" type="button" title="All Sky Wolf games" aria-label="Back to games">←</button>
+<script>
+(function(){
+  "use strict";
+  var EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EMBED=EMBED;
+  window.SWS_EXIT=function(){
+    if(EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){}return;}
+    location.href='/portal/';
+  };
+  if(EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+  document.getElementById('lwExit').addEventListener('click',function(){ window.SWS_EXIT(); });
+
+  // ── Sunbeam earn — reward reaching stage clears / victory. ⚠ econ pending sign-off.
+  var DAYK='vr_sb_day';
+  function today(){ return Math.floor(Date.now()/86400000); }
+  function earnedToday(){ try{ var s=JSON.parse(localStorage.getItem(DAYK)||'{}'); return s.d===today()?(s.n||0):0; }catch(e){ return 0; } }
+  function bank(n){ try{ localStorage.setItem(DAYK, JSON.stringify({d:today(), n:earnedToday()+n})); }catch(e){} }
+  function award(n){
+    n=Math.min(n, Math.max(0, 30-earnedToday()));
+    if(n<=0) return; bank(n);
+    if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,'vine-runner:run').catch(function(){});
+  }
+  window.addEventListener('message', function(e){
+    var d=e&&e.data; if(!d||d.game!=='vine-runner') return;
+    // persist best run (the game keeps no storage of its own)
+    try{
+      var bs=JSON.parse(localStorage.getItem('vine-runner-best')||'{}');
+      if((d.bestStage||0)>(bs.stage||0)) bs.stage=d.bestStage;
+      if((d.bestCombo||0)>(bs.combo||0)) bs.combo=d.bestCombo;
+      localStorage.setItem('vine-runner-best', JSON.stringify(bs));
+    }catch(_){}
+    if(d.event==='stageclear') award(Math.max(1, Math.floor((d.seeds||0)/8)));
+    else if(d.event==='victory') award(6);
+  });
+
+  var s=document.createElement('script');
+  s.src='/sunbeam-sdk.js?v=2';
+  s.onload=function(){ try{ if(window.Sunbeam) Sunbeam.init({gameId:'vine-runner'}).catch(function(){}); }catch(e){} };
+  s.onerror=function(){};
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
