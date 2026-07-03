@@ -1,9 +1,9 @@
 // ═══ LUCID WINDS — Autumn Leaves (Flood Fill) ═══
-// Flesh-out 2026-07-03: size tiers (all 6 colours), best-moves + best-TIME per tier,
-// streak, daily seeded board (records move sequence for a future server-verified
-// leaderboard), animated wave flood, star rating, fill styles (leaves/solid/gem),
-// a stat bar ABOVE the board (moves + timer, togglable) and a timer that starts on
-// your first move. One file → in-app GAME tab, /play/ shell, and portal.
+// Flesh-out 2026-07-03: 6-colour size tiers, best-moves + best-time per tier, streak,
+// daily seeded board (records move sequence for a future server-verified leaderboard),
+// animated wave flood, star rating, stat bar above the board (togglable), timer that
+// starts on the first move, matching NEW/STYLE buttons, and an Appearance picker with
+// fill styles (Leaves/Solid/Gem) + colour packs incl. a colourblind-safe pack.
 (function(){
 'use strict';
 var G=window._G;
@@ -16,36 +16,52 @@ if(!document.getElementById('ff-style')){
     +'.ff-gemgrid .lc{border-radius:26%}'
     +'@keyframes ffShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}'
     +'.ff-shake{animation:ffShake .4s ease}'
-    // stat bar — sits ABOVE the board
     +'.ff-stats{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;padding:10px 8px 4px;font-family:"DM Mono",monospace;font-size:clamp(.85rem,3.6vw,1.05rem);color:#e8dcc8;letter-spacing:.03em}'
     +'.ff-stats b{color:#C8A84B;font-weight:700}'
     +'.ff-seg{display:inline-flex;border-radius:9px;overflow:hidden;border:1px solid rgba(122,179,86,.3);vertical-align:middle}'
     +'.ff-seg .ff-sb{padding:9px 12px;min-height:48px;min-width:48px;background:rgba(18,24,16,.6);color:#8a9178;border:none;font:inherit;font-size:.8rem;cursor:pointer}'
     +'.ff-seg .ff-sb.on{background:rgba(122,179,86,.32);color:#e8dcc8;font-weight:700}'
-    // Style button — a COMPACT square (New Game stays the big primary). Swap to
-    // Stephen's universal button art later by pointing this at an <img>.
-    +'.ff-stylebtn{width:clamp(84px,22vw,108px);aspect-ratio:1/1;border-radius:16px;border:2px solid rgba(200,168,75,.34);background:linear-gradient(160deg,rgba(32,40,27,.96),rgba(17,23,15,.96));color:#e8dcc8;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-family:"DM Mono",monospace;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(200,168,75,.1);-webkit-tap-highlight-color:transparent;transition:transform .15s}'
-    +'.ff-stylebtn .ic{font-size:1.5rem;line-height:1}.ff-stylebtn .lb{font-size:.66rem;letter-spacing:.05em;opacity:.85}'
-    +'.ff-stylebtn:active{transform:scale(.94)}'
-    +'.ff-newbtn img{width:clamp(150px,42vw,200px)!important;height:auto}'
-    +'.ff-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center;padding:6px 0}';
+    // matching NEW / STYLE buttons (no image, same size)
+    +'.ff-btn{min-width:clamp(120px,34vw,150px);min-height:60px;padding:10px 16px;border-radius:16px;border:2px solid rgba(122,179,86,.32);background:linear-gradient(160deg,rgba(32,40,27,.96),rgba(17,23,15,.96));color:#e8dcc8;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-family:"DM Mono",monospace;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(200,168,75,.08);-webkit-tap-highlight-color:transparent;transition:transform .15s}'
+    +'.ff-btn .ic{font-size:1.5rem;line-height:1}.ff-btn .lb{font-size:.72rem;letter-spacing:.06em;opacity:.9}'
+    +'.ff-btn:active{transform:scale(.95)}'
+    +'.ff-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center;padding:6px 0}'
+    // appearance modal
+    +'.ff-mbg{position:fixed;inset:0;background:rgba(4,10,6,.74);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px}'
+    +'.ff-modal{background:linear-gradient(160deg,#1a2216,#10160e);border:2px solid rgba(200,168,75,.3);border-radius:20px;padding:20px;max-width:390px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 14px 44px rgba(0,0,0,.6)}'
+    +'.ff-mtitle{font-family:"DM Mono",monospace;font-size:1.15rem;color:#C8A84B;text-align:center;margin-bottom:6px;letter-spacing:.08em}'
+    +'.ff-mlabel{font-family:"DM Mono",monospace;font-size:.7rem;color:#8a9178;letter-spacing:.12em;margin:16px 0 8px}'
+    +'.ff-mrow{display:flex;gap:10px}'
+    +'.ff-opt{flex:1;min-height:52px;padding:10px;border-radius:12px;border:2px solid rgba(122,179,86,.2);background:rgba(18,24,16,.6);color:#c8d0bc;cursor:pointer;font-family:"DM Mono",monospace;font-size:.78rem;display:flex;flex-direction:column;align-items:center;gap:5px}'
+    +'.ff-opt.sel{border-color:#C8A84B;background:rgba(200,168,75,.12);color:#e8dcc8}.ff-opt .ic{font-size:1.4rem}'
+    +'.ff-pack{width:100%;display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:12px;border:2px solid rgba(122,179,86,.2);background:rgba(18,24,16,.6);cursor:pointer;margin-bottom:8px}'
+    +'.ff-pack.sel{border-color:#C8A84B;background:rgba(200,168,75,.12)}'
+    +'.ff-pack .pn{font-family:"DM Mono",monospace;font-size:.8rem;color:#e8dcc8;min-width:96px;text-align:left}'
+    +'.ff-pack .sw{display:flex;gap:4px;flex:1}.ff-pack .sw i{width:20px;height:20px;border-radius:5px;display:block;flex:1;max-width:26px}'
+    +'.ff-done{margin-top:18px;width:100%;min-height:54px;border-radius:14px;border:none;background:linear-gradient(160deg,#7ab356,#5a8f3e);color:#0b2415;font-family:"DM Mono",monospace;font-weight:700;font-size:.95rem;letter-spacing:.06em;cursor:pointer}';
   document.head.appendChild(stl);
 }
 
 function GFL(a){
-  // All tiers use the full 6-colour palette; difficulty comes from SIZE + move cap.
   var SIZES=[
     {id:'cozy',   label:'Cozy',   n:9,  par:19, cap:30},
     {id:'garden', label:'Garden', n:13, par:30, cap:45},
     {id:'wild',   label:'Wild',   n:17, par:42, cap:60}
   ];
   var NCOL=6;
-  var CC=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6','#c75050'];
+  var AUTUMN=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6','#c75050'];
   var LF=['assets/games/flood/leaf-sage.png','assets/games/flood/leaf-gold.png','assets/games/flood/leaf-slate.png','assets/games/flood/leaf-copper.png','assets/games/flood/leaf-plum.png','assets/games/flood/leaf-crimson.png'];
   var STYLES=[{id:'leaves',label:'Leaves',ic:'🍂'},{id:'solid',label:'Solid',ic:'⬤'},{id:'gem',label:'Gem',ic:'◆'}];
+  var PACKS=[
+    {id:'autumn',name:'Autumn',      cols:AUTUMN},
+    {id:'jewel', name:'Jewel',       cols:['#1f9e63','#e8a51e','#3563cc','#d6314a','#8e3fc7','#e5731c']},
+    {id:'candy', name:'Candy',       cols:['#6fd0a0','#f2d24e','#7cc4f2','#f2938a','#c79ae8','#e85d9a']},
+    {id:'cb',    name:'Colourblind', cols:['#E69F00','#56B4E9','#009E73','#F0E442','#0072B2','#D55E00']}  // Wong palette — CVD-safe
+  ];
 
   var si=0; try{var s0=parseInt(localStorage.getItem('lw_flood_size'),10);if(s0>=0&&s0<SIZES.length)si=s0;}catch(e){}
   var styleIdx=0; try{var sv=localStorage.getItem('lw_flood_style');for(var q=0;q<STYLES.length;q++)if(STYLES[q].id===sv)styleIdx=q;if(sv==null){var old=localStorage.getItem('lw_flood_leaves');if(old==='off')styleIdx=1;}}catch(e){}
+  var packIdx=0; try{var pv=localStorage.getItem('lw_flood_pack');for(var q2=0;q2<PACKS.length;q2++)if(PACKS[q2].id===pv)packIdx=q2;}catch(e){}
   var showMoves=true, showTime=true;
   try{showMoves=localStorage.getItem('lw_flood_moves')!=='off';showTime=localStorage.getItem('lw_flood_time')!=='off';}catch(e){}
 
@@ -56,6 +72,7 @@ function GFL(a){
   function tier(){ return daily?SIZES[1]:SIZES[si]; }
   function cap(){ return tier().cap; }
   function styleId(){ return STYLES[styleIdx].id; }
+  function COL(k){ return PACKS[packIdx].cols[k]; }
 
   // ── persistence ──
   function bestKey(){ return 'lw_flood_best_'+(daily?'daily':SIZES[si].id); }
@@ -78,8 +95,7 @@ function GFL(a){
   function fmt(s){ var m=Math.floor(s/60),ss=Math.floor(s%60); return m+':'+(ss<10?'0':'')+ss; }
   function stopTimer(){ if(timerIv){ clearInterval(timerIv); timerIv=0; } }
   function beginPlay(){
-    if(started) return; started=true; _st(); startAt=Date.now();
-    stopTimer();
+    if(started) return; started=true; _st(); startAt=Date.now(); stopTimer();
     timerIv=setInterval(function(){
       if(!a.isConnected){ stopTimer(); return; }
       if(over) return;
@@ -113,12 +129,13 @@ function GFL(a){
   mm(a);
 
   function cellBg(idx){
-    var color=CC[grid[idx]], s=styleId();
-    if(s==='leaves') return 'url('+LF[grid[idx]]+') center/cover '+color;
+    var k=grid[idx], s=styleId();
+    if(s==='leaves') return 'url('+LF[k]+') center/cover '+AUTUMN[k];
+    var color=COL(k);
     if(s==='gem') return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),radial-gradient(circle at 72% 82%,rgba(0,0,0,.22),transparent 42%),'+color;
     return color;
   }
-  function cellBg2(c){ var s=styleId(); if(s==='leaves')return 'url('+LF[c]+') center/cover '+CC[c]; if(s==='gem')return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),'+CC[c]; return CC[c]; }
+  function cellBg2(c){ var s=styleId(); if(s==='leaves')return 'url('+LF[c]+') center/cover '+AUTUMN[c]; var color=COL(c); if(s==='gem')return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),'+color; return color; }
   function buildGrid(){
     clearFlow();
     gd.classList.toggle('ff-gemgrid', styleId()==='gem');
@@ -148,6 +165,12 @@ function GFL(a){
     })(j);}
   }
   function paintPad(){ for(var j=0;j<NCOL;j++){ if(swatches[j]) swatches[j].className='lc'+(grid[0]===j?' lo':''); } }
+  function repaintAll(){
+    gd.classList.toggle('ff-gemgrid', styleId()==='gem');
+    var rad=SZ>13?'3px':(SZ>10?'5px':'8px');
+    for(var i=0;i<cells.length;i++){ cells[i].style.borderRadius = styleId()==='gem'? '' : rad; cells[i].style.background=cellBg(i); }
+    buildPad();
+  }
 
   function floodFill(nc){
     var oc=grid[0],changed=[]; if(oc===nc) return changed;
@@ -180,7 +203,7 @@ function GFL(a){
 
   function pick(c){
     if(over||grid[0]===c) return;
-    beginPlay();                                   // timer + anti-farm clock start on first move
+    beginPlay();
     _play('tap'); if(daily) dailySeq.push(c);
     var changed=floodFill(c); moves++;
     setTxt('FFm',moves); var mEl=document.getElementById('FFm'); if(mEl) mEl.style.color=(cap()-moves)<=3?'#c75050':'';
@@ -227,20 +250,52 @@ function GFL(a){
     daily=!daily; dailyBtn.className='gb'+(daily?' gon':''); dailyBtn.textContent=daily?'📅 Daily ✓':'📅 Daily';
     sizeSeg.style.opacity=daily?'.4':'1'; newGame();
   }
-  function cycleStyle(){
-    styleIdx=(styleIdx+1)%STYLES.length; try{localStorage.setItem('lw_flood_style',styleId());}catch(e){}
-    renderStyleBtn(); gd.classList.toggle('ff-gemgrid', styleId()==='gem');
-    var rad=SZ>13?'3px':(SZ>10?'5px':'8px');
-    for(var i=0;i<cells.length;i++){ cells[i].style.borderRadius = styleId()==='gem'? '' : rad; cells[i].style.background=cellBg(i); }
-    buildPad();
+
+  // ── appearance picker (fill styles + colour packs incl. colourblind) ──
+  function openAppearance(){
+    var bg=document.createElement('div'); bg.className='ff-mbg';
+    var box=document.createElement('div'); box.className='ff-modal'; bg.appendChild(box);
+    box.innerHTML='<div class="ff-mtitle">Appearance</div><div class="ff-mlabel">FILL STYLE</div>';
+    var fillRow=document.createElement('div'); fillRow.className='ff-mrow'; box.appendChild(fillRow);
+    function renderFill(){
+      fillRow.innerHTML='';
+      for(var s=0;s<STYLES.length;s++){(function(idx){
+        var o=document.createElement('div'); o.className='ff-opt'+(idx===styleIdx?' sel':'');
+        o.innerHTML='<span class="ic">'+STYLES[idx].ic+'</span>'+STYLES[idx].label;
+        o.onclick=function(){ styleIdx=idx; try{localStorage.setItem('lw_flood_style',styleId());}catch(e){} renderFill(); repaintAll(); };
+        fillRow.appendChild(o);
+      })(s);}
+    }
+    renderFill();
+    var pl=document.createElement('div'); pl.className='ff-mlabel'; pl.textContent='COLOUR PACK (Solid & Gem)'; box.appendChild(pl);
+    var packWrap=document.createElement('div'); box.appendChild(packWrap);
+    function renderPacks(){
+      packWrap.innerHTML='';
+      for(var p=0;p<PACKS.length;p++){(function(idx){
+        var row=document.createElement('div'); row.className='ff-pack'+(idx===packIdx?' sel':'');
+        var sw=''; for(var c=0;c<PACKS[idx].cols.length;c++) sw+='<i style="background:'+PACKS[idx].cols[c]+'"></i>';
+        row.innerHTML='<span class="pn">'+PACKS[idx].name+'</span><span class="sw">'+sw+'</span>';
+        row.onclick=function(){
+          packIdx=idx; try{localStorage.setItem('lw_flood_pack',PACKS[idx].id);}catch(e){}
+          if(styleId()==='leaves'){ styleIdx=1; try{localStorage.setItem('lw_flood_style','solid');}catch(e){} renderFill(); }  // show the pack
+          renderPacks(); repaintAll();
+        };
+        packWrap.appendChild(row);
+      })(p);}
+    }
+    renderPacks();
+    var done=document.createElement('button'); done.className='ff-done'; done.textContent='Done'; box.appendChild(done);
+    function close(){ if(bg.parentNode) bg.parentNode.removeChild(bg); }
+    done.onclick=close;
+    bg.onclick=function(e){ if(e.target===bg) close(); };
+    document.body.appendChild(bg);
   }
-  function renderStyleBtn(){ var s=STYLES[styleIdx]; styleBtn.innerHTML='<span class="ic">'+s.ic+'</span><span class="lb">'+s.label+'</span>'; }
 
   // ── controls ──
   var cr=mc(a); cr.style.display='flex'; cr.style.flexDirection='column'; cr.style.gap='10px'; cr.style.alignItems='center';
   var row1=document.createElement('div');row1.className='ff-row';
-  var newBtn=document.createElement('button');newBtn.className='gb-new ff-newbtn';newBtn.innerHTML='<img src="assets/games/new-game-btn.png" alt="New Game">';newBtn.onclick=newGame;
-  var styleBtn=document.createElement('button');styleBtn.className='ff-stylebtn';styleBtn.onclick=cycleStyle;
+  var newBtn=document.createElement('button');newBtn.className='ff-btn';newBtn.innerHTML='<span class="ic">🔄</span><span class="lb">NEW GAME</span>';newBtn.onclick=newGame;
+  var styleBtn=document.createElement('button');styleBtn.className='ff-btn';styleBtn.innerHTML='<span class="ic">🎨</span><span class="lb">STYLE</span>';styleBtn.onclick=openAppearance;
   row1.appendChild(newBtn); row1.appendChild(styleBtn); cr.appendChild(row1);
   var row2=document.createElement('div');row2.className='ff-row';
   var sizeSeg=document.createElement('div');sizeSeg.className='ff-seg';
@@ -254,7 +309,6 @@ function GFL(a){
   mBtn.onclick=function(){ showMoves=!showMoves; try{localStorage.setItem('lw_flood_moves',showMoves?'on':'off');}catch(e){} mBtn.className='gb'+(showMoves?' gon':''); applyToggles(); };
   row3.appendChild(tBtn); row3.appendChild(mBtn); cr.appendChild(row3);
 
-  renderStyleBtn();
   newGame();
 }
 
