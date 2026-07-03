@@ -4,11 +4,18 @@
 var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
-function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0,won=false;
+function GPP(a){
+  // LEVEL LADDER (2026-07-03): the game dealt the same 6x6 forever. Levels now
+  // persist (lw_pipe_lvl) and the vine grows with you: 5x5 -> 6x6 -> 7x7 -> 8x8.
+  var level=1;try{level=Math.max(1,parseInt(localStorage.getItem('lw_pipe_lvl'),10)||1);}catch(e){}
+  function sizeFor(L){return L<3?5:L<6?6:L<10?7:8;}
+  var SZ=sizeFor(level),grid=[],_rc=0,srcI=0,endI=0,won=false;
+  function _pKill(){var o=document.getElementById('PP-over');if(o)o.remove();}
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(_pKill);
   var VI='assets/games/pipe/';
   var IMG_ST=VI+'vine-straight.png',IMG_CR=VI+'vine-corner.png',IMG_SR=VI+'vine-source.png',IMG_EN=VI+'vine-end.png';
   var EX_ST=[1,0,1,0],EX_CR=[1,1,0,0],EX_EN=[0,0,0,1];
-  ms(a,'<span id="PPc">0</span>/'+SZ*SZ+' vines');mm(a);
+  ms(a,'\ud83c\udf3f LEVEL <strong id="PPl">'+level+'</strong> \u00b7 <span id="PPc">0</span>/<span id="PPt">'+SZ*SZ+'</span> vines');mm(a);
   var gd=document.createElement('div');gd.className='lg';gd.id='PP';gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';gd.style.gap='2px';gd.style.width='clamp(300px,92vw,420px)';a.appendChild(gd);
   mc(a).innerHTML='<button class="gb-new" onclick="_PPN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   function dirOf(f,t){var d=t-f;return d===-SZ?0:d===1?1:d===SZ?2:d===-1?3:-1}
@@ -102,7 +109,23 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0,won=false;
           var idx=parseInt(this.getAttribute('data-i'));
           _play('click');grid[idx].rot=(grid[idx].rot+1)%4;_rc++;rn();
           var res=_ppCheck();
-          if(res.won){won=true;_e('game_win');_playWin();sm('🌸 Root reached the bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});}
+          if(res.won){won=true;_e('game_win');_playWin();sm('🌸 Root reached the bloom! '+_rc+' rotations');_sr('pipe',{w:true,s:_rc});
+            var rots=_rc,lvlDone=level;
+            setTimeout(function(){
+              _pKill();
+              var ov=document.createElement('div');ov.id='PP-over';
+              ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(122,179,86,0.3) 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+              ov.innerHTML='<div style="font-size:3.2rem;line-height:1;">\ud83c\udf38</div>'
+                +'<div style="font-size:1.7rem;font-weight:700;color:#7ab356;letter-spacing:0.08em;margin-top:10px;">LEVEL '+lvlDone+' BLOOMED</div>'
+                +'<div style="font-size:0.95rem;color:#e8dcc8;margin-top:10px;">'+rots+' rotations \u00b7 '+SZ+'\u00d7'+SZ+' vine</div>'
+                +'<button id="PP-next" style="margin-top:22px;min-height:48px;padding:12px 30px;font-family:Georgia,serif;font-weight:700;font-size:0.92rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">NEXT LEVEL \u25b6</button>'
+                +'<button id="PP-stay" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">admire the vine</button>';
+              ov.querySelector('#PP-next').onclick=function(){ov.remove();level++;try{localStorage.setItem('lw_pipe_lvl',String(level));}catch(e){}window._PPN();};
+              ov.querySelector('#PP-stay').onclick=function(){ov.remove();};
+              ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+              document.body.appendChild(ov);
+            },450);
+          }
         };
       }
       gd.appendChild(wrap);
@@ -114,7 +137,12 @@ function GPP(a){var SZ=6,grid=[],_rc=0,srcI=0,endI=0,won=false;
     _ps.textContent='@keyframes pipeBlink{0%,100%{opacity:1}50%{opacity:0.5}}';
     document.head.appendChild(_ps);
   }
-  window._PPN=function(){gen();won=false;sm('Connect root to bloom');rn()};_PPN();}
+  window._PPN=function(){
+    _pKill();SZ=sizeFor(level);
+    gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';
+    var _pl=document.getElementById('PPl');if(_pl)_pl.textContent=level;
+    var _pt=document.getElementById('PPt');if(_pt)_pt.textContent=SZ*SZ;
+    gen();won=false;sm('Connect root to bloom');rn()};_PPN();}
 
 window._gameFns.pipe=GPP;
 })();
