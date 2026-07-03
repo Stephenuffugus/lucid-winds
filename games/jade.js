@@ -580,8 +580,10 @@ function updateHUD(){
   var matched=Math.floor((S.tiles.length-remain)/2);
   var total=Math.floor(S.tiles.length/2);
   topEls.matched.textContent=matched+'/'+total;
-  topEls.hints.textContent=S.hintsLeft;
-  topEls.shuffles.textContent=S.shufflesLeft;
+  // live lookups — the old topEls.hints/shuffles were stub objects, so the
+  // on-button counters never updated after a hint/shuffle (2026-07-03)
+  var _hc=document.getElementById('JGhCnt'); if(_hc)_hc.textContent=S.hintsLeft;
+  var _sc=document.getElementById('JGsCnt'); if(_sc)_sc.textContent=S.shufflesLeft;
 }
 function countRemaining(){var n=0;for(var i=0;i<S.tiles.length;i++)if(!S.tiles[i].removed)n++;return n;}
 function tickTimer(){
@@ -611,8 +613,6 @@ function mkBtn(label, style, onClick){
   b.addEventListener('click', function(e){ e.preventDefault(); onClick(); });
   return b;
 }
-topEls.hints={textContent:''};  // placeholder until real
-topEls.shuffles={textContent:''};
 
 // ── Actions ─────────────────────────────────────────────────────────────
 function undo(){

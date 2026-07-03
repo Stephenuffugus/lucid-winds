@@ -5,6 +5,9 @@ var G=window._G;
 var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
 function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,gen=0;
+  // best round PERSISTS now (2026-07-03: an endurance game whose record
+  // vanished on every visit)
+  try{br=parseInt(localStorage.getItem('lw_simon_best'),10)||0;}catch(e){}
 
   // ── Chord definitions: semitone intervals from root ──
   var CHORDS={
@@ -32,7 +35,7 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,gen=0;
   }
   var FR=_buildFR();
 
-  ms(a,'Round: <strong id="Sr">0</strong> · Best: <strong id="Sb">0</strong>');mm(a);
+  ms(a,'Round: <strong id="Sr">0</strong> · Best: <strong id="Sb">'+br+'</strong>');mm(a);
 
   // ── Season tiles with artwork ──
   var bd=document.createElement('div');bd.className='sb';
@@ -112,7 +115,7 @@ function GS(a){var sq=[],pi=0,rd=0,br=0,pl=false,pt=false,ac=null,gen=0;
       if(pi>=sq.length){pt=false;sm('✓ Round '+rd+'!');var g=gen;setTimeout(function(){if(g===gen)nr();},700);}
     } else {
       pt=false;
-      if(rd>br){br=rd;var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br;}
+      if(rd>br){br=rd;try{localStorage.setItem('lw_simon_best',String(br));}catch(e){}var _sb2=document.getElementById('Sb');if(_sb2)_sb2.textContent=br;}
       // Record result on mistake. Any round >= 5 counts as a 'win' for
       // stats so strong runs show up green; short busts still register
       // so stats don't lie. Win celebration only on new personal best.
