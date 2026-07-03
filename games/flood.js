@@ -1,13 +1,13 @@
 // ═══ LUCID WINDS — Autumn Leaves (Flood Fill) ═══
-// Flesh-out 2026-07-03: size/colour tiers, best-moves + best-TIME per tier, streak,
-// daily seeded board (records the move sequence for a future server-verified
-// leaderboard), animated wave flood, star rating, multiple FILL STYLES (leaves /
-// solid / gem), and a togglable timer + move counter. One file → in-app GAME tab,
-// /play/ shell, and portal all share it.
+// Flesh-out 2026-07-03: size tiers (all 6 colours), best-moves + best-TIME per tier,
+// streak, daily seeded board (records move sequence for a future server-verified
+// leaderboard), animated wave flood, star rating, fill styles (leaves/solid/gem),
+// a stat bar ABOVE the board (moves + timer, togglable) and a timer that starts on
+// your first move. One file → in-app GAME tab, /play/ shell, and portal.
 (function(){
 'use strict';
 var G=window._G;
-var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr,_st=G.st;
+var _e=G.e,_play=G.play,_playWin=G.playWin,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr,_st=G.st;
 
 if(!document.getElementById('ff-style')){
   var stl=document.createElement('style');stl.id='ff-style';
@@ -16,25 +16,30 @@ if(!document.getElementById('ff-style')){
     +'.ff-gemgrid .lc{border-radius:26%}'
     +'@keyframes ffShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}'
     +'.ff-shake{animation:ffShake .4s ease}'
+    // stat bar — sits ABOVE the board
+    +'.ff-stats{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;padding:10px 8px 4px;font-family:"DM Mono",monospace;font-size:clamp(.85rem,3.6vw,1.05rem);color:#e8dcc8;letter-spacing:.03em}'
+    +'.ff-stats b{color:#C8A84B;font-weight:700}'
     +'.ff-seg{display:inline-flex;border-radius:9px;overflow:hidden;border:1px solid rgba(122,179,86,.3);vertical-align:middle}'
     +'.ff-seg .ff-sb{padding:9px 12px;min-height:48px;min-width:48px;background:rgba(18,24,16,.6);color:#8a9178;border:none;font:inherit;font-size:.8rem;cursor:pointer}'
     +'.ff-seg .ff-sb.on{background:rgba(122,179,86,.32);color:#e8dcc8;font-weight:700}'
-    // square Style button — matches the New Game button footprint (swap to Stephen's
-    // universal button art later by pointing .ff-bigbtn at an <img>)
-    +'.ff-bigbtn{width:clamp(120px,35vw,180px);aspect-ratio:1/1;border-radius:18px;border:2px solid rgba(200,168,75,.38);background:linear-gradient(160deg,rgba(32,40,27,.96),rgba(17,23,15,.96));color:#e8dcc8;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:"DM Mono",monospace;box-shadow:0 3px 10px rgba(0,0,0,.3),inset 0 1px 0 rgba(200,168,75,.1);-webkit-tap-highlight-color:transparent;transition:transform .15s}'
-    +'.ff-bigbtn .ic{font-size:2.1rem;line-height:1}.ff-bigbtn .lb{font-size:.8rem;letter-spacing:.06em;opacity:.85}'
-    +'.ff-bigbtn:active{transform:scale(.94)}'
-    +'.ff-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;padding:6px 0}'
-    +'.ff-hd{white-space:nowrap}';
+    // Style button — a COMPACT square (New Game stays the big primary). Swap to
+    // Stephen's universal button art later by pointing this at an <img>.
+    +'.ff-stylebtn{width:clamp(84px,22vw,108px);aspect-ratio:1/1;border-radius:16px;border:2px solid rgba(200,168,75,.34);background:linear-gradient(160deg,rgba(32,40,27,.96),rgba(17,23,15,.96));color:#e8dcc8;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-family:"DM Mono",monospace;box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(200,168,75,.1);-webkit-tap-highlight-color:transparent;transition:transform .15s}'
+    +'.ff-stylebtn .ic{font-size:1.5rem;line-height:1}.ff-stylebtn .lb{font-size:.66rem;letter-spacing:.05em;opacity:.85}'
+    +'.ff-stylebtn:active{transform:scale(.94)}'
+    +'.ff-newbtn img{width:clamp(150px,42vw,200px)!important;height:auto}'
+    +'.ff-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center;padding:6px 0}';
   document.head.appendChild(stl);
 }
 
 function GFL(a){
+  // All tiers use the full 6-colour palette; difficulty comes from SIZE + move cap.
   var SIZES=[
-    {id:'cozy',   label:'Cozy',   n:9,  colors:4, par:11, cap:24},
-    {id:'garden', label:'Garden', n:13, colors:5, par:22, cap:40},
-    {id:'wild',   label:'Wild',   n:17, colors:6, par:34, cap:56}
+    {id:'cozy',   label:'Cozy',   n:9,  par:19, cap:30},
+    {id:'garden', label:'Garden', n:13, par:30, cap:45},
+    {id:'wild',   label:'Wild',   n:17, par:42, cap:60}
   ];
+  var NCOL=6;
   var CC=['#4a7c35','#C8A84B','#4a7aaa','#c76a30','#9b59b6','#c75050'];
   var LF=['assets/games/flood/leaf-sage.png','assets/games/flood/leaf-gold.png','assets/games/flood/leaf-slate.png','assets/games/flood/leaf-copper.png','assets/games/flood/leaf-plum.png','assets/games/flood/leaf-crimson.png'];
   var STYLES=[{id:'leaves',label:'Leaves',ic:'🍂'},{id:'solid',label:'Solid',ic:'⬤'},{id:'gem',label:'Gem',ic:'◆'}];
@@ -44,13 +49,12 @@ function GFL(a){
   var showMoves=true, showTime=true;
   try{showMoves=localStorage.getItem('lw_flood_moves')!=='off';showTime=localStorage.getItem('lw_flood_time')!=='off';}catch(e){}
 
-  var daily=false, SZ=SIZES[si].n, grid=[], moves=0, over=false;
+  var daily=false, SZ=SIZES[si].n, grid=[], moves=0, over=false, started=false;
   var cells=[], swatches=[], flowTimers=[], flowGen=0;
   var startAt=0, elapsed=0, timerIv=0, dailySeq=[];
 
   function tier(){ return daily?SIZES[1]:SIZES[si]; }
   function cap(){ return tier().cap; }
-  function NC(){ return tier().colors; }
   function styleId(){ return STYLES[styleIdx].id; }
 
   // ── persistence ──
@@ -68,26 +72,27 @@ function GFL(a){
   function seedNum(){ var s=0,d=todayStr(); for(var i=0;i<d.length;i++) s=(s*31+d.charCodeAt(i))|0; return s>>>0; }
   function mkRng(seed){ var s=seed>>>0; return function(){ s=(s+0x6D2B79F5)|0; var t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
   function dailyDone(){ try{var r=JSON.parse(localStorage.getItem('lw_flood_daily')||'{}');return r.d===todayStr()?r:null;}catch(e){return null;} }
-  // stores the move sequence too — the replay a server can re-run to verify the score
   function markDaily(m,t){ try{localStorage.setItem('lw_flood_daily',JSON.stringify({d:todayStr(),m:m,t:Math.round(t),seq:dailySeq.slice()}));}catch(e){} }
 
-  // ── timer ──
+  // ── timer (starts on FIRST move) ──
   function fmt(s){ var m=Math.floor(s/60),ss=Math.floor(s%60); return m+':'+(ss<10?'0':'')+ss; }
   function stopTimer(){ if(timerIv){ clearInterval(timerIv); timerIv=0; } }
-  function startTimer(){
-    stopTimer(); startAt=Date.now(); elapsed=0; setTxt('FFtime','0:00');
+  function beginPlay(){
+    if(started) return; started=true; _st(); startAt=Date.now();
+    stopTimer();
     timerIv=setInterval(function(){
-      if(!a.isConnected){ stopTimer(); return; }   // self-clean when the game is torn down
+      if(!a.isConnected){ stopTimer(); return; }
       if(over) return;
       elapsed=(Date.now()-startAt)/1000; setTxt('FFtime',fmt(elapsed));
     },500);
   }
 
-  // ── header ──
-  ms(a,'<span class="ff-hd" id="FFmoveWrap">Moves <strong id="FFm">0</strong>/<span id="FFcap">'+cap()+'</span></span>'
-    +' <span class="ff-hd" id="FFtimeWrap">· ⏱<strong id="FFtime">0:00</strong></span>'
-    +' · <span class="ff-hd" id="FFmode">🔥<strong id="FFstreak">0</strong></span>');
-  mm(a);
+  // ── stat bar ABOVE the board ──
+  var stats=document.createElement('div'); stats.className='ff-stats';
+  stats.innerHTML='<span id="FFmoveWrap">Moves <b id="FFm">0</b>/<b id="FFcap">'+cap()+'</b></span>'
+    +'<span id="FFtimeWrap">⏱ <b id="FFtime">0:00</b></span>'
+    +'<span>🔥 <b id="FFstreak">0</b></span>';
+  a.appendChild(stats);
   function setTxt(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
   function applyToggles(){
     var mw=document.getElementById('FFmoveWrap'); if(mw) mw.style.display=showMoves?'':'none';
@@ -96,17 +101,16 @@ function GFL(a){
   function updateHeader(){
     setTxt('FFm',moves); setTxt('FFcap',cap()); setTxt('FFstreak',getStreak());
     var mEl=document.getElementById('FFm'); if(mEl) mEl.style.color=(cap()-moves)<=3?'#c75050':'';
-    var modeEl=document.getElementById('FFmode'); if(modeEl) modeEl.style.color=daily?'#C8A84B':'';
   }
   function idleMsg(){
     if(daily){ var dd=dailyDone(); sm(dd?('Today’s garden — your best: '+dd.m+' moves · '+fmt(dd.t)):'Today’s garden. Everyone plays this exact board.'); return; }
-    var b=getBest(),bt=getBT();
-    sm(b?('Best: '+b+' moves'+(bt?(' · '+fmt(bt)):'')):'');
+    var b=getBest(),bt=getBT(); sm(b?('Best: '+b+' moves'+(bt?(' · '+fmt(bt)):'')):'');
   }
 
-  // ── board DOM ──
+  // ── board ──
   var gd=document.createElement('div');gd.className='lg';gd.id='FFg';a.appendChild(gd);
-  var pb=document.createElement('div');pb.className='lg';pb.style.gap='8px';pb.style.padding='12px';pb.style.width='clamp(300px,92vw,420px)';a.appendChild(pb);
+  var pb=document.createElement('div');pb.className='lg';pb.style.gap='8px';pb.style.padding='10px';pb.style.width='clamp(300px,92vw,420px)';a.appendChild(pb);
+  mm(a);
 
   function cellBg(idx){
     var color=CC[grid[idx]], s=styleId();
@@ -114,19 +118,16 @@ function GFL(a){
     if(s==='gem') return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),radial-gradient(circle at 72% 82%,rgba(0,0,0,.22),transparent 42%),'+color;
     return color;
   }
+  function cellBg2(c){ var s=styleId(); if(s==='leaves')return 'url('+LF[c]+') center/cover '+CC[c]; if(s==='gem')return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),'+CC[c]; return CC[c]; }
   function buildGrid(){
     clearFlow();
     gd.classList.toggle('ff-gemgrid', styleId()==='gem');
-    // The board is a fixed SQUARE that always fits the screen; the cells shrink as
-    // the grid grows so the WHOLE board is visible at every size. (.lc ships a
-    // min-height:48px + aspect-ratio:1 — that's what stopped cells shrinking and
-    // made big grids overflow; we override min-* per cell and pin explicit rows.)
     var side='min(92vw, 52vh)';
     gd.style.width=side; gd.style.height=side; gd.style.padding='0'; gd.style.margin='0 auto';
     gd.style.gridTemplateColumns='repeat('+SZ+',1fr)';
     gd.style.gridTemplateRows='repeat('+SZ+',1fr)';
     gd.style.gap=SZ>13?'1px':'2px';
-    var rad = SZ>13?'3px':(SZ>10?'5px':'8px');
+    var rad=SZ>13?'3px':(SZ>10?'5px':'8px');
     gd.innerHTML=''; cells=[];
     for(var i=0;i<SZ*SZ;i++){
       var d=document.createElement('div');d.className='lc ff-cell';
@@ -137,8 +138,8 @@ function GFL(a){
     }
   }
   function buildPad(){
-    pb.innerHTML=''; swatches=[]; pb.style.gridTemplateColumns='repeat('+NC()+',1fr)';
-    for(var j=0;j<NC();j++){(function(c){
+    pb.innerHTML=''; swatches=[]; pb.style.gridTemplateColumns='repeat('+NCOL+',1fr)';
+    for(var j=0;j<NCOL;j++){(function(c){
       var b=document.createElement('div');b.className='lc'+(grid[0]===c?' lo':'');b.style.minHeight='48px';
       if(styleId()==='gem') b.style.borderRadius='26%';
       b.style.background=cellBg2(c);
@@ -146,10 +147,8 @@ function GFL(a){
       pb.appendChild(b); swatches.push(b);
     })(j);}
   }
-  function cellBg2(c){ var s=styleId(); if(s==='leaves')return 'url('+LF[c]+') center/cover '+CC[c]; if(s==='gem')return 'radial-gradient(circle at 34% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 44%),'+CC[c]; return CC[c]; }
-  function paintPad(){ for(var j=0;j<NC();j++){ if(swatches[j]) swatches[j].className='lc'+(grid[0]===j?' lo':''); } }
+  function paintPad(){ for(var j=0;j<NCOL;j++){ if(swatches[j]) swatches[j].className='lc'+(grid[0]===j?' lo':''); } }
 
-  // ── flood w/ BFS depth for the outward wave ──
   function floodFill(nc){
     var oc=grid[0],changed=[]; if(oc===nc) return changed;
     var vis=[]; for(var x=0;x<SZ*SZ;x++) vis.push(false);
@@ -181,6 +180,7 @@ function GFL(a){
 
   function pick(c){
     if(over||grid[0]===c) return;
+    beginPlay();                                   // timer + anti-farm clock start on first move
     _play('tap'); if(daily) dailySeq.push(c);
     var changed=floodFill(c); moves++;
     setTxt('FFm',moves); var mEl=document.getElementById('FFm'); if(mEl) mEl.style.color=(cap()-moves)<=3?'#c75050':'';
@@ -212,12 +212,11 @@ function GFL(a){
   }
 
   function newGame(){
-    clearFlow(); dailySeq=[];
+    clearFlow(); stopTimer(); dailySeq=[]; started=false; elapsed=0;
     var rng = daily ? mkRng(seedNum()) : Math.random;
-    SZ=tier().n; var nc=NC(); grid=[]; for(var i=0;i<SZ*SZ;i++) grid.push(Math.floor(rng()*nc));
+    SZ=tier().n; grid=[]; for(var i=0;i<SZ*SZ;i++) grid.push(Math.floor(rng()*NCOL));
     moves=0; over=false;
-    buildGrid(); buildPad(); updateHeader(); applyToggles();
-    _st(); startTimer(); idleMsg();
+    buildGrid(); buildPad(); setTxt('FFtime','0:00'); updateHeader(); applyToggles(); idleMsg();
   }
   function setSize(idx){
     if(daily) return; si=idx; try{localStorage.setItem('lw_flood_size',String(si));}catch(e){}
@@ -230,27 +229,24 @@ function GFL(a){
   }
   function cycleStyle(){
     styleIdx=(styleIdx+1)%STYLES.length; try{localStorage.setItem('lw_flood_style',styleId());}catch(e){}
-    renderStyleBtn();
-    gd.classList.toggle('ff-gemgrid', styleId()==='gem');
-    for(var i=0;i<cells.length;i++){ if(styleId()==='gem') cells[i].style.borderRadius=''; cells[i].style.background=cellBg(i); }
+    renderStyleBtn(); gd.classList.toggle('ff-gemgrid', styleId()==='gem');
+    var rad=SZ>13?'3px':(SZ>10?'5px':'8px');
+    for(var i=0;i<cells.length;i++){ cells[i].style.borderRadius = styleId()==='gem'? '' : rad; cells[i].style.background=cellBg(i); }
     buildPad();
   }
   function renderStyleBtn(){ var s=STYLES[styleIdx]; styleBtn.innerHTML='<span class="ic">'+s.ic+'</span><span class="lb">'+s.label+'</span>'; }
 
   // ── controls ──
   var cr=mc(a); cr.style.display='flex'; cr.style.flexDirection='column'; cr.style.gap='10px'; cr.style.alignItems='center';
-  // row 1 — two big square buttons, same size
   var row1=document.createElement('div');row1.className='ff-row';
-  var newBtn=document.createElement('button');newBtn.className='gb-new';newBtn.innerHTML='<img src="assets/games/new-game-btn.png" alt="New Game">';newBtn.onclick=newGame;
-  var styleBtn=document.createElement('button');styleBtn.className='ff-bigbtn';styleBtn.onclick=cycleStyle;
+  var newBtn=document.createElement('button');newBtn.className='gb-new ff-newbtn';newBtn.innerHTML='<img src="assets/games/new-game-btn.png" alt="New Game">';newBtn.onclick=newGame;
+  var styleBtn=document.createElement('button');styleBtn.className='ff-stylebtn';styleBtn.onclick=cycleStyle;
   row1.appendChild(newBtn); row1.appendChild(styleBtn); cr.appendChild(row1);
-  // row 2 — size tiers + daily
   var row2=document.createElement('div');row2.className='ff-row';
   var sizeSeg=document.createElement('div');sizeSeg.className='ff-seg';
   for(var z=0;z<SIZES.length;z++){(function(idx){var sb=document.createElement('button');sb.className='ff-sb'+(idx===si?' on':'');sb.textContent=SIZES[idx].label;sb.onclick=function(){setSize(idx);};sizeSeg.appendChild(sb);})(z);}
   var dailyBtn=document.createElement('button');dailyBtn.className='gb';dailyBtn.textContent='📅 Daily';dailyBtn.onclick=toggleDaily;
   row2.appendChild(sizeSeg); row2.appendChild(dailyBtn); cr.appendChild(row2);
-  // row 3 — timer / moves visibility toggles
   var row3=document.createElement('div');row3.className='ff-row';
   var tBtn=document.createElement('button');tBtn.className='gb'+(showTime?' gon':'');tBtn.textContent='⏱ Timer';
   tBtn.onclick=function(){ showTime=!showTime; try{localStorage.setItem('lw_flood_time',showTime?'on':'off');}catch(e){} tBtn.className='gb'+(showTime?' gon':''); applyToggles(); };
