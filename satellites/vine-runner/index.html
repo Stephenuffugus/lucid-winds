@@ -22,17 +22,19 @@
    the runner. Frame arrays animate in order, ~10fps.
    ============================================================ */
 const ART = {
-  runnerRun:  [],   // e.g. ["run1.png","run2.png","run3.png","run4.png"]
-  runnerLeanL: "",  // leaning/steering left
-  runnerLeanR: "",  // leaning/steering right
-  runnerJump:  "",  // airborne tuck
-  runnerHit:   "",  // ouch frame
-  seed:        [],  // seed spin frames (or 1 image; code adds bob+glow)
-  thorn:       "",  // bramble/thorn obstacle
-  boostDew:    "",  // glowing dewdrop speed pod
-  gateBloom:   "",  // giant checkpoint flower
-  bgVista:     "",  // soft canopy glow at the vanishing point
-  hudSeed:     "",  // small seed icon for the counter
+  runnerRun:  ["art/run.png"],   // ChatGPT art, magenta knocked out (2026-07-03)
+  runnerLeanL: "art/lean-l.png",
+  runnerLeanR: "art/lean-r.png",
+  runnerJump:  "art/jump.png",
+  runnerHit:   "art/hit.png",
+  seed:        ["art/seed.png"],
+  thorn:       "art/thorn.png",
+  boostDew:    "art/boost.png",
+  gateBloom:   "art/bloom.png",
+  bgVista:     "art/vista.png",
+  hudSeed:     "art/hud-seed.png",
+  titleLogo:   "art/title.png",  // NEW — title screen logo
+  leaf:        "art/leaf.png",   // NEW — vitality pip icon
 };
 
 // ---- image loader -------------------------------------------------
@@ -854,14 +856,19 @@ function drawHUD(g){
   else { g.fillStyle=C.seed; g.beginPath(); g.ellipse(38,36,11,15,0.3,0,7); g.fill(); }
   g.fillStyle=C.cream;
   g.fillText(""+seeds, 58, 44);
-  // vitality leaves (right side of the chip)
+  // vitality leaves (right side of the chip) — sprite if available, else procedural
+  const leafImg=img(ART.leaf);
   for(let i=0;i<VIT_MAX;i++){
     const lx=118+i*22, ly=36;
-    g.globalAlpha = i<vitality? 1 : 0.22;
-    g.fillStyle = i<vitality? T.glow : C.cream;
-    g.beginPath(); g.ellipse(lx, ly, 6.5, 10, -0.5, 0, 7); g.fill();
-    g.globalAlpha = i<vitality? 0.5 : 0.15; g.strokeStyle="#0B2415"; g.lineWidth=1.2;
-    g.beginPath(); g.moveTo(lx-4,ly+4); g.lineTo(lx+3,ly-4); g.stroke();
+    g.globalAlpha = i<vitality? 1 : 0.25;
+    if(leafImg){
+      g.drawImage(leafImg, lx-12, ly-12, 24, 24);
+    } else {
+      g.fillStyle = i<vitality? T.glow : C.cream;
+      g.beginPath(); g.ellipse(lx, ly, 6.5, 10, -0.5, 0, 7); g.fill();
+      g.globalAlpha = i<vitality? 0.5 : 0.15; g.strokeStyle="#0B2415"; g.lineWidth=1.2;
+      g.beginPath(); g.moveTo(lx-4,ly+4); g.lineTo(lx+3,ly-4); g.stroke();
+    }
   }
   g.globalAlpha=1;
 
@@ -950,9 +957,15 @@ function drawControls(g){
 function drawTitle(g){
   g.fillStyle="rgba(4,18,10,0.58)"; g.fillRect(0,0,W,H);
   g.textAlign="center";
-  g.font="900 "+Math.min(66,W*0.135)+"px 'Titan One','Arial Black',sans-serif";
-  g.fillStyle=C.glow;
-  g.fillText("VINE RUNNER", W/2, H*0.32);
+  const logo=img(ART.titleLogo);
+  if(logo){
+    const lw=Math.min(W*0.86, 440), lh=lw*(logo.naturalHeight/logo.naturalWidth);
+    g.drawImage(logo, W/2-lw/2, H*0.32-lh*0.60, lw, lh);
+  } else {
+    g.font="900 "+Math.min(66,W*0.135)+"px 'Titan One','Arial Black',sans-serif";
+    g.fillStyle=C.glow;
+    g.fillText("VINE RUNNER", W/2, H*0.32);
+  }
   g.font="900 15px 'Titan One','Arial Black',sans-serif";
   g.fillStyle=C.cream; g.globalAlpha=0.92;
   g.fillText("dash the halfpipe · gather seeds · reach the bloom", W/2, H*0.40);
