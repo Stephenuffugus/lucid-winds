@@ -912,8 +912,12 @@ function drawRunner(g){
   else if(!grounded) im=skinPose("jump");
   else if(lean<-0.55) im=skinPose("leanL");
   else if(lean> 0.55) im=skinPose("leanR");
-  if(!im){                                           // run cycle: alternate run / run-2 at ~9fps when the 2nd frame exists
-    im = (Math.floor(animT*9)%2===1 && skinPose("run2")) || skinPose("run");
+  var flip=false;
+  if(!im){                                           // run cycle at ~9fps: use run-2.png when it exists,
+    var stepB=Math.floor(animT*9)%2===1;             // otherwise MIRROR the run frame for the opposite step
+    var im2=stepB? skinPose("run2") : null;          // (the pose is asymmetric, so the flip reads as a stride)
+    im = im2 || skinPose("run");
+    flip = stepB && !im2;
   }
 
   g.save();
@@ -921,7 +925,7 @@ function drawRunner(g){
   // camera rolls with the player, so the sprite stays near-upright;
   // rotation is just steering lean + a touch of camera lag
   g.rotate(lean*0.5 + (ang-camA)*0.9);
-  if(im){ g.drawImage(im,-sz,-sz,sz*2,sz*2); g.restore(); return; }
+  if(im){ if(flip) g.scale(-1,1); g.drawImage(im,-sz,-sz,sz*2,sz*2); g.restore(); return; }
 
   // ---- placeholder sprout, rear view ----
   const run = grounded? Math.sin(animT*14):0;
