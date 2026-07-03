@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.03.08';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.03.09';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -42122,7 +42122,27 @@ document.addEventListener('keydown', function(e) {
           }
           el.className = 'greenhouse-plant gh-slot-buy';
           el.style.cursor = 'pointer';
-          if (_buyOffset === 0) {
+          // Web rail live (outside Pi Browser)? The card FACES must read USD,
+          // not π — the hardcoded Pi faces confused the first web test
+          // (Stephen 2026-07-03). Both web cards route into the bloom store.
+          var _webRail = !!(window.LW_WebPay && window.LW_WebPay.active && window.LW_WebPay.active());
+          if (_buyOffset === 0 && _webRail) {
+            el.style.cssText = 'background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:2px solid rgba(200,168,75,0.55);box-shadow:0 4px 14px rgba(0,0,0,0.55),0 0 16px rgba(200,168,75,0.18);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:544/736;';
+            el.onclick = function(){ if (window.expandGHSlot10) expandGHSlot10(); };
+            el.innerHTML =
+              '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.08em;">EXPAND</div>' +
+              '<div style="font-size:2.6rem;line-height:1;">🌱</div>' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--gold);letter-spacing:0.12em;line-height:1;">+ 10 SLOTS</div>' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;color:var(--cream);letter-spacing:0.1em;">' + ((window.LW_WebPay.priceStr && LW_WebPay.priceStr('slot')) || '$1') + '</div>';
+          } else if (_buyOffset !== 0 && _webRail) {
+            el.style.cssText = 'background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:2px solid var(--gold);box-shadow:0 4px 14px rgba(0,0,0,0.55),0 0 20px rgba(200,168,75,0.3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:544/736;';
+            el.onclick = function(){ if (window._openBloomStore) _openBloomStore(); else if (window.expandGHSlot10) expandGHSlot10(); };
+            el.innerHTML =
+              '<div style="font-family:DM Mono,monospace;font-size:0.45rem;color:var(--gold);letter-spacing:0.08em;">UPGRADE</div>' +
+              '<div style="font-size:2.6rem;line-height:1;">🌼</div>' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:var(--gold);letter-spacing:0.1em;line-height:1.15;text-align:center;">GROW YOUR<br>GARDEN</div>' +
+              '<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--cream);letter-spacing:0.1em;">$5 · $10</div>';
+          } else if (_buyOffset === 0) {
             el.style.cssText = 'background:linear-gradient(180deg,rgba(36,30,16,0.92),rgba(20,24,16,0.95));border:2px solid rgba(200,168,75,0.55);box-shadow:0 4px 14px rgba(0,0,0,0.55),0 0 16px rgba(200,168,75,0.18);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:544/736;';
             el.onclick = function(){ if (window.expandGHSlot) expandGHSlot(); };
             el.innerHTML =
@@ -47616,7 +47636,7 @@ document.addEventListener('keydown', function(e) {
         _lwPressure({
           title: 'NURSERY FULL',
           body: 'Your nursery holds <b>'+nurLen+'/'+nurMax+'</b>. Bloom a seed, abandon one, or expand the nursery.',
-          pi: { label: '+1 SLOT · 1 π', action: function(){ if (window.expandNurSlot) expandNurSlot(); } },
+          pi: { label: (window.LW_WebPay && LW_WebPay.active()) ? ('+1 SLOT · ' + (LW_WebPay.priceStr('nursery_slot',{slot:nurMax+1}) || '$2')) : '+1 SLOT · 1 π', action: function(){ if (window.expandNurSlot) expandNurSlot(); } },
           alts: [
             { label: 'OPEN NURSERY', action: function(){ if (window.switchTab) switchTab('nursery'); } }
           ]
@@ -55992,7 +56012,7 @@ function _doCollectFeral(f,mk){
     _lwPressure({
       title: 'SEED POUCH FULL',
       body: 'Your pouch is full. Send a seed to the nursery to grow it, or expand the pouch.',
-      pi: { label: '+5 SEEDS · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buySeedPouchSlotPi) LW_HUT.buySeedPouchSlotPi(); } },
+      pi: { label: (window.LW_WebPay && LW_WebPay.active()) ? ('+5 SEEDS · ' + (LW_WebPay.priceStr('seed_pouch_slot',{tier:'seed15'}) || '$1')) : '+5 SEEDS · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buySeedPouchSlotPi) LW_HUT.buySeedPouchSlotPi(); } },
       alts: [
         { label: 'OPEN BACKPACK', action: function(){ if (window.FG_Backpack && FG_Backpack.toggle) FG_Backpack.toggle(); } }
       ]
@@ -76681,7 +76701,7 @@ window.LW_WEBPAY_ENABLED = (function(){
     if (v === '0') return false;
     if (v === '1') return true;
   } catch(e){}
-  return false;  // default OFF until backend deployed + secrets set
+  return true;   // WEB RAIL LIVE 2026-07-03 — functions deployed, secrets set, rules published
 })();
 var LW_WebPay = {
   // True when this rail should intercept a buy (enabled, web context, SDK ready).
@@ -90895,7 +90915,7 @@ window._lwClaimHerbarium = function(id){
         _lwPressure({
           title: 'ITEM POUCH FULL',
           body: 'Your item pouch holds <b>'+have+'/'+cap+'</b>. Use an item from your pouch, or expand it.',
-          pi: { label: '+1 SLOT · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buyPouchSlot) LW_HUT.buyPouchSlot(); } },
+          pi: { label: (window.LW_WebPay && LW_WebPay.active()) ? ('+5 SLOTS · ' + (LW_WebPay.priceStr('item_pouch_slot') || '$1')) : '+1 SLOT · 1 π', action: function(){ if (window.LW_HUT && LW_HUT.buyPouchSlot) LW_HUT.buyPouchSlot(); } },
           alts: [
             { label: 'OPEN POUCH', action: function(){ if (window.LW_ITEMS && LW_ITEMS.openPanel) LW_ITEMS.openPanel(); } }
           ]
@@ -92904,7 +92924,7 @@ window.LW_GIFTS = (function(){
         if (s.type === 'mystery' || !s.key || !window.LW_PI_ENABLED){
           html += '<div class="lwh-shop-buy is-locked">LOCKED</div>';
         } else {
-          html += '<button class="lwh-shop-buy is-pi-early" onclick="LW_HUT.earlyOpen('+i+')" title="Skip the wait. Window opens until midnight.">OPEN NOW · 5 π</button>';
+          if (!(window.LW_WebPay && LW_WebPay.active())) html += '<button class="lwh-shop-buy is-pi-early" onclick="LW_HUT.earlyOpen('+i+')" title="Skip the wait. Window opens until midnight.">OPEN NOW · 5 π</button>';
         }
       } else {
         var earlyTag = avail.earlyOpened ? ' · <span style="opacity:0.75;font-size:0.55rem;">EARLY</span>' : '';
@@ -92916,7 +92936,7 @@ window.LW_GIFTS = (function(){
     var _capNow = getPouchCap();
     var _capFootHtml = 'Stock + windows refresh at midnight · pouch cap '+_capNow;
     if (_capNow < 40 && window.LW_PI_ENABLED){
-      _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyPouchSlot()" title="Pi expands your item pouch by 1 slot (max 40).">+1 SLOT · 1 π</button>';
+      _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyPouchSlot()" title="Expand your item pouch (max 40).">' + ((window.LW_WebPay && LW_WebPay.active()) ? ('+5 SLOTS · ' + (LW_WebPay.priceStr('item_pouch_slot') || '$1')) : '+1 SLOT · 1 π') + '</button>';
     } else if (_capNow >= 40) {
       _capFootHtml += ' (max)';
     }
@@ -92926,7 +92946,7 @@ window.LW_GIFTS = (function(){
       var _epToday = '';
       try { _epToday = localStorage.getItem('lw_emergency_pouch_today') || ''; } catch(e){}
       if (_epToday !== todayStr()) {
-        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyEmergencyPouch()" title="One emergency slot for 24 hours. Once per day.">+EMERGENCY · 10 π</button>';
+        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buyEmergencyPouch()" title="One emergency slot for 24 hours. Once per day.">+EMERGENCY · ' + ((window.LW_WebPay && LW_WebPay.active()) ? (LW_WebPay.priceStr('emergency_pouch') || '$3') : '10 π') + '</button>';
       } else {
         _capFootHtml += ' · <span style="opacity:0.55;">EMERGENCY USED TODAY</span>';
       }
@@ -92941,7 +92961,7 @@ window.LW_GIFTS = (function(){
       var _seedNextTier = _seedUnlocks.seed20 ? null : _seedUnlocks.seed15 ? 'seed20' : _seedUnlocks.seed10 ? 'seed15' : null;
       if (_seedNextTier) {
         var _seedPrice = _seedNextTier === 'seed15' ? 10 : 20;
-        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buySeedPouchSlotPi()" title="Pi expands your backpack seed pouch by 5 slots (max 20).">+5 SEEDS · ' + _seedPrice + ' π</button>';
+        _capFootHtml += ' · <button class="lwh-pouch-buy" onclick="LW_HUT.buySeedPouchSlotPi()" title="Expand your backpack seed pouch by 5 slots (max 20).">+5 SEEDS · ' + ((window.LW_WebPay && LW_WebPay.active()) ? (LW_WebPay.priceStr('seed_pouch_slot',{tier:'seed15'}) || '$1') : (_seedPrice + ' π')) + '</button>';
       }
     }
     html += '<div class="lwh-section-foot">'+_capFootHtml+'</div>';
@@ -93162,10 +93182,14 @@ window.LW_GIFTS = (function(){
       return;
     }
     if (window._lwConfirm){
+      var _ipWeb = !!(window.LW_WebPay && LW_WebPay.active());
+      var _ipUsd = _ipWeb && (LW_WebPay.priceStr('item_pouch_slot') || '$1');
       window._lwConfirm({
         title: 'EXPAND POUCH',
-        body: 'Buy 1 extra pouch slot (now '+cur+'/40 → '+(cur+1)+'/40). 1 π. Permanent.',
-        yes: 'PAY 1 π',
+        body: _ipWeb
+          ? ('Buy 5 extra pouch slots (now '+cur+'/40 → '+Math.min(40,cur+5)+'/40) for <b>'+_ipUsd+'</b> — pay in any crypto? Permanent.')
+          : ('Buy 1 extra pouch slot (now '+cur+'/40 → '+(cur+1)+'/40). 1 π. Permanent.'),
+        yes: _ipWeb ? ('PAY '+_ipUsd) : 'PAY 1 π',
         no: 'NOT NOW'
       }, function(){ window.LW_Pi.buyItemPouchSlot(); });
     } else {
