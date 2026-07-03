@@ -29,7 +29,12 @@ function GR(a){
     }
   })();
   var g=new Array(16).fill(0),sc=0,bt=2,ov=false,busy=false,won=false;
-  ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">2</strong>');mm(a);
+  // Best = best SCORE, persisted (2026-07-03: was best-tile-this-session,
+  // reset to 2 on every new game — meaningless as a record).
+  var BK='lw_merge_best';
+  function gBest(){try{return parseInt(localStorage.getItem(BK),10)||0;}catch(e){return 0;}}
+  function sBest(v){try{localStorage.setItem(BK,String(v));}catch(e){}}
+  ms(a,'🏆 <strong id="Rs">0</strong> · Best: <strong id="Rb">'+gBest()+'</strong>');mm(a);
 
   // Grid container — CSS grid provides the cell positions
   var bd=document.createElement('div');bd.className='tb';bd.id='Rb2';
@@ -140,7 +145,7 @@ function GR(a){
         moves.push({from:xi[i],to:indices[ri],val:x[i],merge:true});
         moves.push({from:xi[i+1],to:indices[ri],val:x[i+1],merge:true,remove:true});
         sc+=nv;
-        if(nv>bt){bt=nv;document.getElementById('Rb').textContent=bt;
+        if(nv>bt){bt=nv;
           if([64,128,256,512,1024,2048].indexOf(nv)>-1)_e('reached_'+nv);
           // Reaching 2048 is the canonical win condition. Fire it
           // exactly once per game so the player gets the standard
@@ -243,6 +248,7 @@ function GR(a){
         }
       }
       var _rsEl=document.getElementById('Rs');if(_rsEl)_rsEl.textContent=sc;
+      if(sc>gBest()){sBest(sc);var _rbEl=document.getElementById('Rb');if(_rbEl)_rbEl.textContent=sc;}
 
       sp(true);
 
@@ -251,7 +257,7 @@ function GR(a){
       for(var i=0;i<16;i++){
         if(!g[i]||i%4<3&&g[i]===g[i+1]||i<12&&g[i]===g[i+4]){go=false;break;}
       }
-      if(go){ov=true;_e('game_loss');_play('lose');sm('🍂 No moves! '+sc);_sr('merge',{w:false,s:sc});}
+      if(go){ov=true;_e('game_loss');_play('lose');sm('🍂 No moves! '+sc);_sr('merge',{w:false,s:sc});_RGameOver();}
       busy=false;
     },160);
   };
@@ -274,9 +280,29 @@ function GR(a){
   }
   window._RmergeMove=_Rm;
 
+  // Game-over overlay — a proper ending with the score, the record, and a
+  // one-tap retry (2026-07-03: game over used to be a status-bar whisper).
+  function _RGameOver(){
+    var old=document.getElementById('R-over');if(old)old.remove();
+    var isRecord=sc>=gBest()&&sc>0;
+    var ovl=document.createElement('div');ovl.id='R-over';
+    ovl.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(199,106,48,0.22) 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;';
+    ovl.innerHTML='<div style="font-size:3rem;line-height:1;">🍂</div>'
+      +'<div style="font-family:Georgia,serif;font-size:1.6rem;font-weight:700;color:#c8a84b;letter-spacing:0.08em;margin-top:12px;">GARDEN FULL</div>'
+      +'<div style="font-family:Georgia,serif;font-size:1.05rem;color:#e8dcc8;margin-top:10px;">Score <b style="color:#c8a84b">'+sc+'</b>'+(isRecord?'  ·  <span style="color:#7ab356">★ NEW BEST</span>':'  ·  Best <b style="color:#c8a84b">'+gBest()+'</b>')+'</div>'
+      +'<div style="font-family:Georgia,serif;font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:6px;">biggest bloom: '+bt+'</div>'
+      +'<button id="R-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;letter-spacing:0.05em;cursor:pointer;">↻ PLANT AGAIN</button>'
+      +'<button id="R-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">view the board</button>';
+    ovl.querySelector('#R-again').onclick=function(){ovl.remove();window._RN();};
+    ovl.querySelector('#R-view').onclick=function(){ovl.remove();};
+    ovl.onclick=function(ev){if(ev.target===ovl)ovl.remove();};
+    document.body.appendChild(ovl);
+  }
+
   // New game
   window._RN=function(){g=new Array(16).fill(0);sc=0;bt=2;ov=false;busy=false;won=false;
-    document.getElementById('Rb').textContent='2';
+    var _ro=document.getElementById('R-over');if(_ro)_ro.remove();
+    document.getElementById('Rb').textContent=String(gBest());
     for(var t=tiles.length-1;t>=0;t--)rmTile(tiles[t]);
     tiles=[];
     sp(false);sp(false);
