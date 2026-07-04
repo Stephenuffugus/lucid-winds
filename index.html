@@ -50118,8 +50118,33 @@ document.addEventListener('keydown', function(e) {
     if (sess) { if(sess.name) p.name=sess.name; if(sess.email) p.email=sess.email; }
     // Backpack state for cloud sync
     if (window.FG_Backpack && FG_Backpack.getState) p.backpack = FG_Backpack.getState();
+    // 2026-07-04 game-polish follow-up: aggregated game stats. gr3 is the
+    // shared per-game records store (sws_fg_gr3: {p,w,b,bl} per game); hi/lo
+    // are per-game score keys merged field-wise on apply (hi=max, lo=min) so
+    // a best earned on ANY device survives. Prefs stay device-local.
+    try {
+      var gs = { gr3: _ls('sws_fg_gr3') || {}, hi: {}, lo: {} };
+      window._LW_GAMESTAT_KEYS.hi.forEach(function(k){
+        var v = parseFloat(localStorage.getItem(k)); if (isFinite(v)) gs.hi[k] = v;
+      });
+      window._LW_GAMESTAT_KEYS.lo.forEach(function(k){
+        var v = parseFloat(localStorage.getItem(k)); if (isFinite(v)) gs.lo[k] = v;
+      });
+      p.gameStats = gs;
+    } catch(e){}
     return p;
   }
+  // Canonical merge-mode map for synced per-game stat keys. hi: higher is
+  // better (bests, win/play counters — cross-device MAX undercounts totals
+  // but never loses a record). lo: lower is better (best times/fewest moves).
+  window._LW_GAMESTAT_KEYS = {
+    hi: ['lw_merge_best','lw_simon_best','lw_lights_solved','lw_pipe_lvl','lw_recall_best','lw_seedtoss_best',
+         'lw_bg_w','lw_bg_l','lw_spades_w','lw_spades_l','lw_euchre_w','lw_euchre_l','lw_rummy_w','lw_rummy_l',
+         'lw_golf_w','lw_golf_p','lw_golf_streak','lw_tripeaks_w','lw_tripeaks_p','lw_tripeaks_streak',
+         'lw_pyramid_w','lw_pyramid_p','lw_pyramid_streak'],
+    lo: ['lw_memory_best_6','lw_memory_best_8','lw_memory_best_10','lw_memory_best_12',
+         'lw_sudoku_bt_easy','lw_sudoku_bt_medium','lw_sudoku_bt_hard']
+  };
   window._lwBuildPayload = _buildPayload;
   // 2026-06-16 Gate A/A3: vault-completeness guard. Flags any player-state
   // localStorage key (lw_/sws_/fg_/pw_ prefix) that is NOT covered by the vault
@@ -50135,15 +50160,14 @@ document.addEventListener('keydown', function(e) {
     ['sws_greenhouse_slots','sws_inventory','sws_dew_ledger','sws_streak','lw_class','lw_class_xp','lw_tool_xp','lw_class_inventory','lw_boosters','lw_tree_points','lw_second_bloom_claimed','lw_guardian_next_drop','lw_gilding_hour','lw_tut','pw_readyHashes','pw_hashBuf','pw_hashFilled','pw_prestige','lw_triggers_found','lw_triggers_grown','fg_pollen','pw_xp','lw_nursery_slots','lw_nur_clipping_slots'].forEach(function(k){covered[k]=1;});
     var ignore = {};
     ['lw_version','lw_dev_unlocked','lw_sw_off','lw_weather_off','lw_perf_lite','lw_svg_ver','sws_theme','sws_theme_overlay','sws_holo','sws_cb_mode','pw_onboarded','lw_last_play_day','fg_device_id','sws_user_session','lw_earn_retry','vault_uid','lw_quiet_broken','lw_ach_gamekinds','lw_last_active'].forEach(function(k){ignore[k]=1;})
-    // 2026-07-04 game-polish campaign: per-game stat keys. Device-local for
-    // now; a dedicated aggregated gameStats sync (incl. sws_fg_gr3) is the
-    // planned follow-up — see project_game_polish_campaign memory.
-    ['lw_merge_best','lw_simon_best','lw_lights_solved','lw_pipe_lvl','lw_recall_best','lw_seedtoss_best',
-     'lw_bg_w','lw_bg_l','lw_spades_w','lw_spades_l','lw_euchre_w','lw_euchre_l','lw_rummy_w','lw_rummy_l',
-     'lw_golf_w','lw_golf_p','lw_golf_streak','lw_tripeaks_w','lw_tripeaks_p','lw_tripeaks_streak',
-     'lw_pyramid_w','lw_pyramid_p','lw_pyramid_streak','lw_sudoku_err','lw_flood_pack','lw_flood_style',
-     'lw_memory_best_6','lw_memory_best_8','lw_memory_best_10','lw_memory_best_12',
-     'lw_sudoku_bt_easy','lw_sudoku_bt_medium','lw_sudoku_bt_hard'].forEach(function(k){ignore[k]=1;});
+    // 2026-07-04 game-polish follow-up SHIPPED: per-game stat keys now sync
+    // via payload.gameStats (see _buildPayload / _applyCloudData merge).
+    // Covered = the canonical merge lists + the records store itself.
+    // Only true per-device PREFS stay ignored.
+    (window._LW_GAMESTAT_KEYS.hi.concat(window._LW_GAMESTAT_KEYS.lo))
+      .forEach(function(k){covered[k]=1;});
+    covered['sws_fg_gr3'] = 1;
+    ['lw_sudoku_err','lw_flood_pack','lw_flood_style'].forEach(function(k){ignore[k]=1;});
     var uncovered = [];
     for (var i=0;i<localStorage.length;i++){
       var k = localStorage.key(i);
@@ -50856,6 +50880,32 @@ document.addEventListener('keydown', function(e) {
     if (window.renderRecords)    renderRecords();
     // Hydrate backpack from cloud
     if (data.backpack && window.FG_Backpack && FG_Backpack.loadFromCloud) FG_Backpack.loadFromCloud(data.backpack);
+    // Aggregated game stats: field-wise merge so no device ever loses a
+    // record. Iterates OUR canonical key lists (never arbitrary cloud keys —
+    // a hostile vault doc must not write random localStorage). gr3 fields:
+    // p/w/b max, bl (lower-is-better best) min.
+    if (data.gameStats) { try {
+      var _gsC = data.gameStats;
+      var _gsL = {}; try { _gsL = JSON.parse(localStorage.getItem('sws_fg_gr3')||'{}'); } catch(e){}
+      var _gr3C = _gsC.gr3 || {};
+      Object.keys(_gr3C).forEach(function(g){
+        if (!/^[a-z0-9_\-]{1,40}$/i.test(g)) return;
+        var c = _gr3C[g] || {}, a = _gsL[g] || (_gsL[g] = {p:0,w:0,b:0});
+        a.p = Math.max(a.p||0, c.p||0);
+        a.w = Math.max(a.w||0, c.w||0);
+        a.b = Math.max(a.b||0, c.b||0);
+        if (c.bl != null && isFinite(c.bl)) a.bl = (a.bl == null) ? c.bl : Math.min(a.bl, c.bl);
+      });
+      localStorage.setItem('sws_fg_gr3', JSON.stringify(_gsL));
+      window._LW_GAMESTAT_KEYS.hi.forEach(function(k){
+        var v = parseFloat((_gsC.hi||{})[k]), l = parseFloat(localStorage.getItem(k));
+        if (isFinite(v) && (!isFinite(l) || v > l)) localStorage.setItem(k, String(v));
+      });
+      window._LW_GAMESTAT_KEYS.lo.forEach(function(k){
+        var v = parseFloat((_gsC.lo||{})[k]), l = parseFloat(localStorage.getItem(k));
+        if (isFinite(v) && (!isFinite(l) || v < l)) localStorage.setItem(k, String(v));
+      });
+    } catch(e){ console.warn('[Vault] gameStats merge failed', e); } }
     // Force keeper bar re-render so the just-hydrated XP/level is visible
     if (window.PW_UI && PW_UI.updateKeeperBar) PW_UI.updateKeeperBar();
     // Re-evaluate progressive-disclosure gates now that cloud XP has
