@@ -5,7 +5,7 @@
 // - CLASSIC: visible ticker, stop at 10.00 (original mode)
 // - BLIND: timer hidden while running, internal clock only (Stephen's ask)
 // - HEARTBEAT: audio pulse every second, stop at the 10th beat
-// - LADDER: target climbs 5 → 7 → 10 → 13 → 17 → 20 across 5 attempts
+// - LADDER: target climbs 5 → 7 → 10 across the 3 attempts
 //
 // Framed game area with a decorative border, a cute seed "buddy" that
 // reacts to your result, per-mode stats, and a rules book.
@@ -66,7 +66,7 @@ if(!document.getElementById('STstyle')){
     // reads as off-center even though both are technically centered.
     '.st-modes{display:flex;gap:4px;padding:2px 0 10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;width:calc(100% - 24px);max-width:360px;margin:0 auto;box-sizing:border-box;}',
     '.st-modes::-webkit-scrollbar{display:none;}',
-    '.st-mode{padding:10px 14px;min-height:44px;display:inline-flex;align-items:center;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.08em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;flex:0 0 auto;white-space:nowrap;}',
+    '.st-mode{padding:10px 14px;min-height:48px;display:inline-flex;align-items:center;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;letter-spacing:0.08em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.7);cursor:pointer;transition:background 0.18s,border-color 0.18s,color 0.18s;flex:0 0 auto;white-space:nowrap;}',
     '.st-mode.on{background:rgba(200,168,75,0.18);border-color:var(--gold);color:var(--gold);}',
     // Result + stats
     '.st-result{min-height:58px;margin-top:14px;}',
@@ -74,9 +74,9 @@ if(!document.getElementById('STstyle')){
     '@keyframes stFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}',
     '.st-delta{font-family:DM Mono,monospace;font-size:0.75rem;color:var(--cream);opacity:0.8;margin-top:4px;}',
     '.st-reward{font-family:DM Mono,monospace;font-size:0.68rem;color:var(--gold);margin-top:4px;}',
-    '.st-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em;}',
+    '.st-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.72);letter-spacing:0.06em;flex-wrap:wrap;}',
     '.st-stats strong{color:var(--gold);}',
-    '.st-attempts{font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);letter-spacing:0.08em;margin-bottom:2px;}',
+    '.st-attempts{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);letter-spacing:0.08em;margin-bottom:2px;}',
     '.st-target{font-family:Cormorant Garamond,serif;font-style:italic;font-size:0.88rem;color:rgba(200,168,75,0.88);margin-bottom:4px;}',
     // Rules modal
     '#STrulesOV{position:fixed;inset:0;z-index:200000;background:rgba(5,8,4,0.88);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;animation:stFadeIn 0.25s ease;}',
@@ -144,6 +144,9 @@ window._gameFns.stopten=function ST(a){
   }
   function _saveStats(){try{localStorage.setItem('lw_st_stats',JSON.stringify(stats));}catch(e){}}
 
+  // Sweep any rules overlay left behind by a previous mount.
+  var _staleOV=document.getElementById('STrulesOV');if(_staleOV)_staleOV.remove();
+
   ms(a,'Stop at Ten · <span id="STa">0</span>/'+MAX_ATTEMPTS+' · best <span id="STb">—</span>');
   mm(a);
   var statsRow=document.createElement('div');statsRow.className='st-stats';statsRow.id='STstats';a.appendChild(statsRow);
@@ -162,7 +165,9 @@ window._gameFns.stopten=function ST(a){
   }
   function currentTarget(){
     if(mode==='ladder'){
-      var seq=[5,7,10,13,17,20];
+      // 3 attempts per session, so only 3 rungs — the old 6-rung ladder
+      // advertised targets (13/17/20) that were never reachable.
+      var seq=[5,7,10];
       return seq[attempts%seq.length];
     }
     // twostop shows target 5 for phase 0, 10 for phase 1
@@ -315,7 +320,12 @@ window._gameFns.stopten=function ST(a){
     // cue and stacking chimes would fight.
     if(mode!=='beat')playStartChime();
     if(mode==='beat')startBeats();
-    else if(mode==='heartbeat')startHaptics();
+    else if(mode==='heartbeat'){
+      // iOS Safari (and most desktops) has no navigator.vibrate — without
+      // this fallback the mode silently degraded to BLIND with no pulse.
+      if(navigator.vibrate)startHaptics();
+      else{sm('No vibration on this device, using audio beats instead');startBeats();}
+    }
     else if(mode==='chaos')startChaos();
     render();
     tick();
@@ -389,6 +399,14 @@ window._gameFns.stopten=function ST(a){
       if(mode==='daily'&&isFinite(best)){
         var dTier=tiers(best);
         _dailyLock({best:best,attempts:attempts,tier:dTier.lbl});
+      }
+      // Swap the dead STOP button for NEW SESSION — the summary text
+      // says "Tap NEW SESSION" so that button must actually exist.
+      var brow2=document.querySelector('.st-btn-row');
+      if(brow2){
+        var bh='<button class="st-btn start" onclick="_STN()">▶ NEW SESSION</button>';
+        if(mode==='daily')bh+='<button class="st-btn" onclick="_STshare()" style="background:linear-gradient(180deg,rgba(200,168,75,0.2),rgba(180,140,50,0.12));border-color:var(--gold);color:var(--gold);">📤 SHARE</button>';
+        brow2.innerHTML=bh;
       }
       setTimeout(function(){if(document.body.contains(pan))renderSessionSummary();},900);
     }
@@ -524,7 +542,10 @@ window._gameFns.stopten=function ST(a){
   window._STN=function(){
     if(running){running=false;cancelAnimationFrame(rafId);}
     if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
+    if(hapticTimer){clearInterval(hapticTimer);hapticTimer=0;}
+    if(chaosTimer){clearTimeout(chaosTimer);chaosTimer=0;}
     attempts=0;best=Infinity;elapsed=0;sessionDone=false;
+    twostopPhase=0;twostopDelta1=0;chaosFakeDigit='';
     var ba=document.getElementById('STa');if(ba)ba.textContent=0;
     var bb=document.getElementById('STb');if(bb)bb.textContent='—';
     renderStats();render();
@@ -597,9 +618,9 @@ window._gameFns.stopten=function ST(a){
     h+='<p><strong style="color:var(--gold)">CLASSIC</strong> — visible clock, stop at 10.00s.</p>';
     h+='<p><strong style="color:var(--gold)">BLIND</strong> — clock hidden mid-run. Count in your head. The only feedback is your result.</p>';
     h+='<p><strong style="color:var(--gold)">BEAT</strong> — audio pulse every second. Stop on the 10th beat (the higher-pitch one).</p>';
-    h+='<p><strong style="color:var(--gold)">HEARTBEAT</strong> — silent vibration pulse every second. Play anywhere without audio. Stop on the 10th pulse (the longer one).</p>';
+    h+='<p><strong style="color:var(--gold)">HEARTBEAT</strong> — silent vibration pulse every second. Play anywhere without audio. Stop on the 10th pulse (the longer one). No vibration on your device? It falls back to audio beats.</p>';
     h+='<p><strong style="color:var(--gold)">COUNTDOWN</strong> — clock starts at 10.00 and counts down. Stop when it hits zero. Easier for some, harder for others.</p>';
-    h+='<p><strong style="color:var(--gold)">LADDER</strong> — target climbs across attempts: 5 → 7 → 10 → 13 → 17 → 20. Tests how your rhythm scales.</p>';
+    h+='<p><strong style="color:var(--gold)">LADDER</strong> — target climbs across the 3 attempts: 5 → 7 → 10. Tests how your rhythm scales.</p>';
     h+='<p><strong style="color:var(--gold)">TWO-STOP</strong> — tap STOP once at 5 seconds, then again at 10. The score is the combined drift from both targets.</p>';
     h+='<p><strong style="color:var(--gold)">CHAOS</strong> — visible clock, but the display flashes random fake values and random fake beeps interrupt. Don\'t trust what you see — trust your clock.</p>';
     h+='<p><strong style="color:var(--gold)">📅 DAILY</strong> — one session per day (3 attempts), locked after you play. Result is shareable so you can compare with friends.</p>';
@@ -623,6 +644,7 @@ window._gameFns.stopten=function ST(a){
       if(chaosTimer){clearTimeout(chaosTimer);chaosTimer=0;}
       try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close();}catch(e){}
       audioCtx=null;
+      var ov1=document.getElementById('STrulesOV');if(ov1)ov1.remove();
       clearInterval(_watchExit);
     }
   },1000);
@@ -636,6 +658,7 @@ window._gameFns.stopten=function ST(a){
     if(chaosTimer){clearTimeout(chaosTimer);chaosTimer=0;}
     try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close();}catch(e){}
     audioCtx=null;
+    var ov2=document.getElementById('STrulesOV');if(ov2)ov2.remove();
     try{clearInterval(_watchExit);}catch(e){}
   });
 

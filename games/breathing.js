@@ -215,6 +215,9 @@ function _recommend(answers,n){
 }
 
 window._gameFns.breathing=function BR(a){
+  // Remount hygiene: a quiz overlay from a previous mount lives on
+  // document.body, not in the pan — sweep it before building anew.
+  var _staleQ=document.getElementById('BRquizOV');if(_staleQ)_staleQ.remove();
   var curKey='coherent';
   var phases=PATTERNS[curKey].phases;
   var curCat='all';
@@ -286,13 +289,13 @@ window._gameFns.breathing=function BR(a){
     '<canvas id="BRcv" style="display:block;margin:6px auto;width:100%;max-width:360px;height:260px;background:#0d100c;border-radius:8px;"></canvas>'+
     '<div id="BRph" style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:#e8dcc8;letter-spacing:3px;opacity:.85;margin:4px 0;">READY</div>'+
     '<div id="BRct" style="font-family:Bebas Neue,sans-serif;font-size:2rem;color:rgba(232,220,200,0.35);min-height:2rem;"></div>'+
-    '<div id="BRinfo" style="font-size:.65rem;opacity:.55;margin:4px 0;">Breaths: 0</div>'+
+    '<div id="BRinfo" style="font-size:.7rem;font-weight:500;opacity:.6;margin:4px 0;">Breaths: 0</div>'+
     '<div id="BRname" style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.08em;color:var(--gold);margin-top:6px;"></div>'+
-    '<div id="BRtag"  style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);opacity:0.85;margin:2px 0 0;"></div>'+
-    '<div id="BRorig" style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin:2px 0 4px;"></div>'+
+    '<div id="BRtag"  style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--sage);opacity:0.85;margin:2px 0 0;"></div>'+
+    '<div id="BRorig" style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);margin:2px 0 4px;"></div>'+
     '<div id="BRcue"  style="font-family:Playfair Display,serif;font-size:0.7rem;font-style:italic;color:var(--cream);opacity:0.75;padding:0 10px;line-height:1.35;margin:4px 0 10px;"></div>'+
     // "Not sure" banner
-    '<button class="gb" id="BRquiz" style="padding:8px 14px;font-size:0.65rem;letter-spacing:0.08em;margin:6px auto 12px;background:linear-gradient(135deg,rgba(122,179,86,0.22),rgba(200,168,75,0.18));border:1px solid rgba(200,168,75,0.35);min-height:48px;">🔍 Not sure what you need?</button>'+
+    '<button class="gb" id="BRquiz" style="padding:8px 14px;font-size:0.7rem;letter-spacing:0.08em;margin:6px auto 12px;background:linear-gradient(135deg,rgba(122,179,86,0.22),rgba(200,168,75,0.18));border:1px solid rgba(200,168,75,0.35);min-height:48px;">🔍 Not sure what you need?</button>'+
     // Category chips
     '<div id="BRcats" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:2px 4px 6px;"></div>'+
     // Technique cards container
@@ -312,12 +315,20 @@ window._gameFns.breathing=function BR(a){
     cx=W/2;cy=H/2;
   }
   resize();
+  // Rotation/viewport changes re-fit the canvas; self-unhooks once the
+  // pan is gone (same liveness check the rAF loop uses) and is also
+  // removed by the registered cleanup below.
+  function _onRz(){
+    if(!document.body.contains(pan)){try{window.removeEventListener('resize',_onRz);}catch(e){}return;}
+    resize();
+  }
+  window.addEventListener('resize',_onRz);
 
   function renderCats(){
     var el=document.getElementById('BRcats');if(!el)return;
     el.innerHTML=CATS.map(function(c){
       var sel=c.id===curCat;
-      return '<button class="gb" onclick="_BRCat(\''+c.id+'\')" style="padding:4px 8px;font-size:0.55rem;letter-spacing:0.08em;min-height:44px;'
+      return '<button class="gb" onclick="_BRCat(\''+c.id+'\')" style="padding:4px 10px;font-size:0.7rem;letter-spacing:0.08em;min-height:48px;'
         +(sel?'background:rgba(200,168,75,0.25);border-color:var(--gold);color:var(--gold);':'')+'">'+c.label+'</button>';
     }).join('');
   }
@@ -328,12 +339,12 @@ window._gameFns.breathing=function BR(a){
     });
     el.innerHTML=keys.map(function(k){
       var p=PATTERNS[k];var sel=k===curKey;
-      var adv=p.advanced?'<span style="color:var(--gold);font-size:0.45rem;margin-left:4px;">◆</span>':'';
-      var aud=p.audible?'<span style="color:var(--sage);font-size:0.45rem;margin-left:4px;">🔈</span>':'';
+      var adv=p.advanced?'<span style="color:var(--gold);font-size:0.6rem;margin-left:4px;">◆</span>':'';
+      var aud=p.audible?'<span style="color:var(--sage);font-size:0.6rem;margin-left:4px;">🔈</span>':'';
       return '<button class="gb" onclick="_BRP(\''+k+'\')" style="padding:8px 6px;text-align:left;min-height:64px;display:flex;flex-direction:column;justify-content:center;gap:2px;font-family:inherit;'
         +(sel?'background:rgba(122,179,86,0.22);border-color:var(--sage);':'')+'">'
-        +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.05em;color:var(--cream);">'+p.name+adv+aud+'</div>'
-        +'<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--sage);opacity:0.85;">'+p.tag+'</div>'
+        +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.05em;color:var(--cream);">'+p.name+adv+aud+'</div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--sage);opacity:0.85;">'+p.tag+'</div>'
         +'</button>';
     }).join('');
   }
@@ -369,14 +380,14 @@ window._gameFns.breathing=function BR(a){
     if(quizStep>=QUIZ.length){_renderQuizResult();return;}
     var q=QUIZ[quizStep];
     var h='<div style="max-width:380px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:20px 18px;font-family:DM Mono,monospace;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">STEP '+(quizStep+1)+' / '+QUIZ.length+'</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">STEP '+(quizStep+1)+' / '+QUIZ.length+'</div>';
     h+='<div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--cream);margin-bottom:16px;line-height:1.3;">'+q.q+'</div>';
     h+='<div style="display:flex;flex-direction:column;gap:8px;">';
     for(var i=0;i<q.opts.length;i++){
       h+='<button class="gb" onclick="_BRQuizAns('+i+')" style="text-align:left;padding:12px 14px;font-size:0.7rem;letter-spacing:0.04em;min-height:52px;font-family:inherit;">'+q.opts[i].label+'</button>';
     }
     h+='</div>';
-    h+='<button class="gb" onclick="_BRQuizClose()" style="margin-top:14px;width:100%;padding:8px;font-size:0.55rem;color:var(--muted);border-color:rgba(138,145,120,0.2);min-height:44px;">Cancel</button>';
+    h+='<button class="gb" onclick="_BRQuizClose()" style="margin-top:14px;width:100%;padding:8px;font-size:0.7rem;color:var(--muted);border-color:rgba(138,145,120,0.2);min-height:48px;">Cancel</button>';
     h+='</div>';
     ov.innerHTML=h;
   }
@@ -387,26 +398,26 @@ window._gameFns.breathing=function BR(a){
     var h='<div style="max-width:400px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.45);border-radius:12px;padding:20px 18px;font-family:DM Mono,monospace;">';
     // Headline recommendation
     h+='<div style="text-align:center;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.15em;color:var(--sage);margin-bottom:8px;">BEST FIT</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--sage);margin-bottom:8px;">BEST FIT</div>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:4px;">'+top.name+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--sage);margin-bottom:6px;">'+top.tag+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:10px;">'+top.origin+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--sage);margin-bottom:6px;">'+top.tag+'</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);margin-bottom:10px;">'+top.origin+'</div>';
     h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:0.75rem;color:var(--cream);opacity:0.85;line-height:1.4;margin-bottom:14px;">'+(top.cue||'')+'</div>';
     h+='<button class="gb" onclick="_BRQuizAccept(\''+keys[0]+'\')" style="width:100%;padding:12px;font-size:0.8rem;letter-spacing:0.1em;color:var(--sage);border-color:var(--sage);min-height:52px;margin-bottom:14px;">TRY THIS ONE</button>';
     h+='</div>';
     // Alternate options — give the player agency.
     if(keys.length>1){
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.15em;color:var(--muted);border-top:1px solid rgba(200,168,75,0.2);padding-top:12px;margin-bottom:8px;text-align:center;">OR TRY INSTEAD</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);border-top:1px solid rgba(200,168,75,0.2);padding-top:12px;margin-bottom:8px;text-align:center;">OR TRY INSTEAD</div>';
       for(var i=1;i<keys.length;i++){
         var alt=PATTERNS[keys[i]];if(!alt)continue;
         h+='<button class="gb" onclick="_BRQuizAccept(\''+keys[i]+'\')" '
           +'style="width:100%;padding:10px 12px;margin-bottom:6px;min-height:56px;text-align:left;display:flex;flex-direction:column;gap:2px;font-family:inherit;">'
           +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;letter-spacing:0.06em;color:var(--cream);">'+alt.name+'</div>'
-          +'<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--sage);opacity:0.85;">'+alt.tag+'</div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--sage);opacity:0.85;">'+alt.tag+'</div>'
           +'</button>';
       }
     }
-    h+='<button class="gb" onclick="_BRQuizRetry()" style="width:100%;padding:8px;font-size:0.6rem;color:var(--muted);border-color:rgba(138,145,120,0.25);min-height:44px;margin-top:8px;">Ask again</button>';
+    h+='<button class="gb" onclick="_BRQuizRetry()" style="width:100%;padding:8px;font-size:0.7rem;color:var(--muted);border-color:rgba(138,145,120,0.25);min-height:48px;margin-top:8px;">Ask again</button>';
     h+='</div>';
     ov.innerHTML=h;
   }
@@ -448,8 +459,18 @@ window._gameFns.breathing=function BR(a){
         // before this, idling hands-free minted a milestone every ~6s at the
         // 'free' class progCap of 99.
         if(breathCount%5===0&&totalTime-lastMilestoneAt>=60){lastMilestoneAt=totalTime;_e('milestone');try{if(window._play)_play('match');}catch(e){}}
-        // Mint a hash after 10 completed breaths. Fires once per launch.
-        if(breathCount===10&&!_brWon){_brWon=true;_e('game_win');try{if(window._sr)window._sr('breathing',{w:true,s:breathCount});}catch(e){}}
+        // Mint a hash after 10 completed breaths AND a real minute of
+        // breathing — the time gate keeps Kapalabhati's 1.2s cycles from
+        // clearing the win in 12 seconds, and RESET no longer re-arms it,
+        // so this truly fires once per launch. _sr is the destructured
+        // G.sr (window._sr never existed on either surface — stats were
+        // silently dropped until 2026-07-04).
+        if(breathCount>=10&&totalTime>=60&&!_brWon){
+          _brWon=true;_e('game_win');
+          if(_sr)_sr('breathing',{w:true,s:breathCount});
+          try{if(_playWin)_playWin();}catch(e){}
+          sm(breathCount+' breaths. Sunbeams earned.');
+        }
       }
       try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
     }
@@ -531,9 +552,14 @@ window._gameFns.breathing=function BR(a){
 
   function loop(ts){
     if(stopped||!document.body.contains(pan)){stopped=true;return;}
-    var dt=lastTime?Math.min((ts-lastTime)/1000,0.05):0.016;
+    // Breath clock follows wall time (0.25s clamp only guards a resumed
+    // background tab); the tight 0.05 clamp stays on particle physics —
+    // it used to throttle the pace below 20fps, so a "4-7-8" silently
+    // ran longer than 4-7-8 on thermally-throttled phones.
+    var raw=lastTime?(ts-lastTime)/1000:0.016;
+    var dt=Math.min(raw,0.05);
     lastTime=ts;
-    updateBreath(dt);
+    updateBreath(Math.min(raw,0.25));
     for(var i=particles.length-1;i>=0;i--){
       var p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy-=3*dt;
       p.life-=dt;if(p.life<=0)particles.splice(i,1);
@@ -550,6 +576,10 @@ window._gameFns.breathing=function BR(a){
     var btn=document.getElementById('BRgo');
     if(breathing){
       btn.textContent='⏸ PAUSE';phaseIdx=0;phaseTimer=0;sm('Breathe with the bloom.');
+      // Arm the shell's session clock (6s anti-farm guard on game_win is
+      // dead code while startedAt stays 0). Fresh sessions only, so a
+      // pause/resume doesn't restart the clock.
+      if(totalTime===0&&_st)_st();
       // Unlock audio on user gesture and sound the first phase tone.
       _getAC();_tone(phases[0].name);
     } else {
@@ -565,7 +595,9 @@ window._gameFns.breathing=function BR(a){
     if(audioOn){_getAC();_tone('INHALE');}
   };
   window._BRR=function(){
-    breathing=false;phaseIdx=0;phaseTimer=0;breathCount=0;totalTime=0;bloomProgress=0.3;_brWon=false;lastMilestoneAt=0;
+    // _brWon deliberately NOT reset — the win fires once per launch
+    // (2026-07-04: RESET+restart was a shell earn farm).
+    breathing=false;phaseIdx=0;phaseTimer=0;breathCount=0;totalTime=0;bloomProgress=0.3;lastMilestoneAt=0;
     var btn=document.getElementById('BRgo');if(btn)btn.textContent='▶ START';
     var phEl=document.getElementById('BRph');if(phEl)phEl.textContent='READY';
     var ct=document.getElementById('BRct');if(ct)ct.textContent='';
@@ -591,6 +623,10 @@ window._gameFns.breathing=function BR(a){
     if(raf){try{cancelAnimationFrame(raf);}catch(e){}raf=null;}
     try{if(_ac&&_ac.state!=='closed')_ac.close();}catch(e){}
     _ac=null;
+    try{window.removeEventListener('resize',_onRz);}catch(e){}
+    // The quiz modal lives on document.body, so exiting to the picker
+    // while it was open used to leave a full-screen overlay behind.
+    var qo=document.getElementById('BRquizOV');if(qo)qo.remove();
   });
 };
 })();

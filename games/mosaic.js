@@ -45,11 +45,11 @@ var DIFF_META={
     '.MSdiffBtn{min-height:58px;padding:10px 14px;border-radius:12px;background:rgba(26,36,22,0.85);border:1.5px solid rgba(122,179,86,0.35);color:#e8dcc8;font-family:Georgia,serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;flex-direction:column;align-items:flex-start;gap:2px}',
     '.MSdiffBtn:active{transform:scale(0.98);background:rgba(122,179,86,0.22)}',
     '.MSdiffBtn .MSdlv{font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.18em;color:#c8a84b}',
-    '.MSdiffBtn .MSdsub{font-size:0.68rem;color:rgba(232,220,200,0.75)}',
+    '.MSdiffBtn .MSdsub{font-size:0.7rem;color:rgba(232,220,200,0.75)}',
     // Top bar
     '.MStop{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:8px 10px;margin:2px 0 6px;background:linear-gradient(135deg,rgba(26,31,23,0.88),rgba(13,16,12,0.92));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;font-family:Bebas Neue,sans-serif}',
     '.MStopCell{text-align:center}',
-    '.MStopLbl{font-size:0.58rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55)}',
+    '.MStopLbl{font-size:0.7rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55)}',
     '.MStopVal{font-family:DM Mono,monospace;font-size:0.95rem;color:#c8a84b;font-weight:700;margin-top:1px}',
     '.MSturn{font-size:0.68rem;letter-spacing:0.14em;margin-top:2px}',
     '.MSturn.active{color:#8fc57a}',
@@ -58,21 +58,21 @@ var DIFF_META={
     '.MSstatus{text-align:center;font-family:Georgia,serif;font-size:0.78rem;color:#e8dcc8;padding:4px 0 6px}',
     '.MSstatus em{color:#c8a84b;font-style:normal;font-weight:700}',
     // Bag tracker
-    '.MSbagBar{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;padding:4px 4px 6px;font-family:Georgia,serif;font-size:0.66rem}',
-    '.MSbagLbl{font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55);margin-right:2px}',
+    '.MSbagBar{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;padding:4px 4px 6px;font-family:Georgia,serif;font-size:0.7rem}',
+    '.MSbagLbl{font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55);margin-right:2px}',
     '.MSbagChip{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;border:1px solid;color:#e8dcc8;font-family:DM Mono,monospace}',
     '.MSbagChip b{font-weight:700;color:#e8dcc8}',
-    '.MSbagTotal{font-family:DM Mono,monospace;font-size:0.6rem;color:rgba(232,220,200,0.5);letter-spacing:0.06em;margin-left:4px}',
+    '.MSbagTotal{font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.5);letter-spacing:0.06em;margin-left:4px}',
     // Endgame warning badge
-    '.MSboardTitle .warn{font-family:Bebas Neue,sans-serif;font-size:0.62rem;letter-spacing:0.14em;color:#ffb366;background:rgba(200,100,40,0.18);border:1px solid rgba(255,150,80,0.5);padding:1px 6px;border-radius:6px;margin-left:6px;animation:msFade .3s ease}',
+    '.MSboardTitle .warn{font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.14em;color:#ffb366;background:rgba(200,100,40,0.18);border:1px solid rgba(255,150,80,0.5);padding:1px 6px;border-radius:6px;margin-left:6px;animation:msFade .3s ease}',
     // Factories
     '.MSfactories{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:4px 0}',
     '.MSfac{width:76px;height:76px;border-radius:50%;background:rgba(26,31,23,0.55);border:1.5px solid rgba(74,124,53,0.28);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;padding:10px;box-sizing:border-box;position:relative}',
     '.MSfac.empty{border-style:dashed;opacity:0.35}',
     // Center
-    '.MScenter{padding:8px 10px;background:rgba(26,31,23,0.42);border:1.5px solid rgba(74,124,53,0.22);border-radius:12px;margin:4px 0;min-height:44px;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;align-items:center}',
+    '.MScenter{padding:8px 10px;background:rgba(26,31,23,0.42);border:1.5px solid rgba(74,124,53,0.22);border-radius:12px;margin:4px 0;min-height:48px;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;align-items:center;box-sizing:border-box}',
     '.MScenterEmpty{font-family:DM Mono,monospace;font-size:0.72rem;color:rgba(232,220,200,0.45);letter-spacing:0.08em}',
-    '.MSfirstMarker{width:30px;height:30px;border-radius:5px;border:2px dashed rgba(200,168,75,0.75);display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:0.6rem;color:#c8a84b;letter-spacing:0.04em}',
+    '.MSfirstMarker{width:30px;height:30px;border-radius:5px;border:2px dashed rgba(200,168,75,0.75);display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:#c8a84b;letter-spacing:0.04em}',
     // Tiles
     '.MStile{border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;box-sizing:border-box;border:1px solid rgba(0,0,0,0.3);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),inset 0 -1px 0 rgba(0,0,0,0.22),0 1px 2px rgba(0,0,0,0.4);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .1s ease}',
     '.MStile.focus{outline:2px solid #ffd86a;outline-offset:-2px;transform:scale(1.08);z-index:2;box-shadow:0 0 10px rgba(255,216,106,0.55)}',
@@ -85,25 +85,27 @@ var DIFF_META={
     '.MSboardTitle .pts{font-family:DM Mono,monospace;font-size:0.88rem;color:#c8a84b;font-weight:700}',
     '.MSrows{display:flex;flex-direction:column;gap:3px}',
     '.MSrow{display:grid;grid-template-columns:1fr 14px 1fr;align-items:center;gap:6px;padding:2px}',
-    '.MSstaging{display:flex;gap:2px;justify-content:flex-end;padding:2px 4px;border-radius:5px;transition:background .12s ease}',
+    '.MSstaging{display:flex;gap:2px;justify-content:flex-end;align-items:center;padding:2px 4px;border-radius:5px;transition:background .12s ease}',
+    // Player rows are the placement tap targets — 48px fleet minimum
+    '.MSrow.mine .MSstaging{min-height:48px;box-sizing:border-box}',
     '.MSstaging.compatible{background:rgba(200,168,75,0.18);cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(200,168,75,0.5)}',
     '.MSstaging.compatible:active{transform:scale(0.98);background:rgba(200,168,75,0.3)}',
     '.MSstaging.incompatible{background:rgba(199,80,80,0.06);opacity:0.4}',
     '.MSstageSlot{border-radius:4px;border:1px dashed rgba(74,124,53,0.22)}',
     '.MSarrow{color:rgba(232,220,200,0.4);font-size:0.7rem;text-align:center}',
-    '.MSwall{display:flex;gap:2px;justify-content:flex-start}',
-    '.MSrowGain{position:absolute;right:4px;top:50%;transform:translateY(-50%);font-family:DM Mono,monospace;font-size:0.62rem;color:#ffdc70;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.85);pointer-events:none;background:rgba(0,0,0,0.35);padding:1px 4px;border-radius:3px}',
+    '.MSwall{display:flex;gap:2px;justify-content:flex-start;align-items:center}',
+    '.MSrowGain{position:absolute;right:4px;top:50%;transform:translateY(-50%);font-family:DM Mono,monospace;font-size:0.7rem;color:#ffdc70;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.85);pointer-events:none;background:rgba(0,0,0,0.35);padding:1px 4px;border-radius:3px}',
     '.MSrow{position:relative}',
     // Floor
-    '.MSfloor{display:flex;gap:3px;justify-content:center;margin-top:6px;padding:6px 4px;border-top:1px solid rgba(74,124,53,0.15)}',
+    '.MSfloor{display:flex;gap:3px;justify-content:center;align-items:center;min-height:48px;box-sizing:border-box;margin-top:6px;padding:6px 4px;border-top:1px solid rgba(74,124,53,0.15)}',
     '.MSfloorLbl{font-family:Bebas Neue,sans-serif;font-size:0.68rem;letter-spacing:0.12em;color:rgba(232,220,200,0.6);align-self:center;margin-right:6px}',
     '.MSfloor.dropTarget{background:rgba(199,80,80,0.14);border-radius:6px;cursor:pointer}',
     '.MSfloor.dropTarget:active{background:rgba(199,80,80,0.22)}',
-    '.MSfloorSlot{width:26px;height:26px;border-radius:4px;border:1px solid rgba(74,124,53,0.18);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:rgba(199,80,80,0.55);font-family:DM Mono,monospace}',
+    '.MSfloorSlot{width:26px;height:26px;border-radius:4px;border:1px solid rgba(74,124,53,0.18);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:rgba(199,80,80,0.55);font-family:DM Mono,monospace}',
     '.MSfloorSlot.filled{border-color:rgba(199,80,80,0.5);background:rgba(199,80,80,0.15);color:#e8dcc8}',
     // Controls
     '.MSctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;padding:8px 2px 6px}',
-    '.MSbtn{min-height:46px;padding:8px 10px;font-family:Georgia,serif;font-size:0.76rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
+    '.MSbtn{min-height:48px;padding:8px 10px;font-family:Georgia,serif;font-size:0.76rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
     '.MSbtn:active{transform:scale(0.96);background:rgba(200,168,75,0.22)}',
     '.MSbtn.primary{background:linear-gradient(180deg,rgba(122,179,86,0.32),rgba(74,124,53,0.4));border-color:rgba(122,179,86,0.55);color:#8fc57a;font-weight:700}',
     '.MSbtn.danger{background:rgba(112,40,40,0.42);border-color:rgba(224,122,122,0.5);color:#ffb3b3}',
@@ -133,10 +135,30 @@ var playerBoardEl=null, aiBoardEl=null, ctrlRow=null;
 var topEls={score:null, ai:null, round:null};
 var breakdownEl=null, endEl=null;
 var aiBusy=false;
+// Generation counter — bumped on mount / new game / cleanup so pending
+// setTimeout chains (AI turn, scoring, round transition, endGame) from a
+// dead game can never fire into the picker or a fresh game's S.
+var gen=0;
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function groupCount(arr){var g={};arr.forEach(function(c){g[c]=(g[c]||0)+1;});return g;}
+// Resolve which tile a tap MEANT: the one whose center is nearest the
+// touch point. The 48px tap boxes overlap at factory/pond density, so raw
+// DOM order would steal taps that land on a neighbour's visible pixels.
+// maxDist 0 = no cap (a whole factory circle is one target zone).
+function nearestTile(scope, e, sel, maxDist){
+  var tiles=scope.querySelectorAll(sel);
+  var best=null,bd=Infinity;
+  for(var i=0;i<tiles.length;i++){
+    var r=tiles[i].getBoundingClientRect();
+    var dx=e.clientX-(r.left+r.width/2), dy=e.clientY-(r.top+r.height/2);
+    var d=dx*dx+dy*dy;
+    if(d<bd){bd=d;best=tiles[i];}
+  }
+  if(best&&maxDist&&bd>maxDist*maxDist)return null;
+  return best;
+}
 
 // Check if a player's board can accept `color` on staging row `rowIdx`.
 function canStage(board, rowIdx, color){
@@ -200,6 +222,11 @@ function newBoard(){
 }
 
 function fillFactories(){
+  // Reset the pond + first marker BEFORE filling — the tile-exhaustion
+  // early return below used to skip this, so the '1st' marker never
+  // reappeared and next-round turn order silently stuck.
+  S.center=[];
+  S.firstPlayerTaken=false;
   for(var f=0;f<5;f++){
     S.factories[f]=[];
     for(var i=0;i<4;i++){
@@ -210,8 +237,6 @@ function fillFactories(){
       S.factories[f].push(S.bag.pop());
     }
   }
-  S.center=[];
-  S.firstPlayerTaken=false;
 }
 
 // Select a color from a factory — all tiles of that color to `selected`,
@@ -235,7 +260,7 @@ function selectFromCenter(color){
   var remaining=S.center.filter(function(c){return c!==color;});
   S.center=remaining;
   var firstPlayer=!S.firstPlayerTaken;
-  if(firstPlayer)S.firstPlayerTaken=true;
+  if(firstPlayer){S.firstPlayerTaken=true;S.firstTaker='player';}
   S.selected={source:'center',color:color,tiles:taken,firstPlayer:firstPlayer,restored:{tiles:taken.slice(),firstWasTaken:firstPlayer}};
   _play('tap');
   updateAll();
@@ -258,7 +283,7 @@ function undoSelection(){
   } else {
     // Return tiles back to center; reset first-player taken if we were the one to take it
     S.center=S.center.concat(sel.tiles);
-    if(sel.firstPlayer)S.firstPlayerTaken=false;
+    if(sel.firstPlayer){S.firstPlayerTaken=false;S.firstTaker=null;}
   }
   S.selected=null;
   _play('tap');
@@ -310,7 +335,8 @@ function endPlayerTurn(){
   S.turn='ai';
   updateAll();
   aiBusy=true;
-  setTimeout(aiTurn, 500);
+  var g=gen;
+  setTimeout(function(){if(g!==gen)return;aiTurn();}, 500);
 }
 
 // ── AI ──────────────────────────────────────────────────────────────────
@@ -324,11 +350,13 @@ function aiTurn(){
     plan.rest.forEach(function(c){S.center.push(c);});
   } else {
     S.center=plan.remaining;
-    if(plan.firstPlayer)S.firstPlayerTaken=true;
+    if(plan.firstPlayer){S.firstPlayerTaken=true;S.firstTaker='ai';}
   }
   sm('Mirror took '+plan.count+' '+COLOR_NAMES[plan.color]);
   updateAll();
+  var g=gen;
   setTimeout(function(){
+    if(g!==gen)return;
     var board=S.ai;
     if(plan.target==='floor'){
       if(plan.firstPlayer){ if(board.floor.length<7)board.floor.push('first'); }
@@ -452,7 +480,8 @@ function checkRoundEnd(){
   if(!allEmpty)return false;
   S.phase='score';
   updateAll();
-  setTimeout(scoringPhase, 400);
+  var g=gen;
+  setTimeout(function(){if(g!==gen)return;scoringPhase();}, 400);
   return true;
 }
 function scoringPhase(){
@@ -463,30 +492,38 @@ function scoringPhase(){
   if(pBreak.hadFirst)S.firstPlayerTakenLastRound=true;
   showBreakdown('Round '+S.round+' — you', pBreak.lines, pBreak.net);
   _play('snap');
+  updateAll(); // paint the wall transfers + new scores immediately
+  var g=gen;
   // Check game over
   var gameOver=false;
   for(var r=0;r<5;r++){var full=true;for(var c=0;c<5;c++)if(!S.player.wall[r][c]){full=false;break;}if(full){gameOver=true;break;}}
   if(!gameOver){for(var r2=0;r2<5;r2++){var f2=true;for(var c2=0;c2<5;c2++)if(!S.ai.wall[r2][c2]){f2=false;break;}if(f2){gameOver=true;break;}}}
   if(gameOver){
-    setTimeout(endGame, 1600);
+    setTimeout(function(){if(g!==gen)return;endGame();}, 1600);
     return;
   }
   S.round++;
   S.phase='draft';
-  // Figure out who goes first next round (whoever took first-player marker)
-  // Floor tiles go to discard; first-player marker is re-added to center pool
-  var nextTurn=null;
-  if(S.player.floor.indexOf('first')>=0)nextTurn='player';
-  else if(S.ai.floor.indexOf('first')>=0)nextTurn='ai';
+  // Figure out who goes first next round: whoever took the first-player
+  // marker. S.firstTaker is tracked at take time, so this survives the
+  // marker being dropped on an already-full floor (the floor scan is the
+  // legacy fallback).
+  var nextTurn=S.firstTaker||null;
+  if(!nextTurn){
+    if(S.player.floor.indexOf('first')>=0)nextTurn='player';
+    else if(S.ai.floor.indexOf('first')>=0)nextTurn='ai';
+  }
   if(nextTurn)S.turn=nextTurn;
-  // else stays as-is (shouldn't happen normally)
+  // else stays as-is (whole round drafted without touching the pond)
+  S.firstTaker=null;
   S.player.floor=[]; S.ai.floor=[];
   fillFactories();
   setTimeout(function(){
+    if(g!==gen)return;
     updateAll();
     if(nextTurn==='ai'){ sm('Mirror goes first'); }
     else if(nextTurn==='player'){ sm('You go first'); }
-    if(S.turn==='ai'){ aiBusy=true; setTimeout(aiTurn, 700); }
+    if(S.turn==='ai'){ aiBusy=true; setTimeout(function(){if(g!==gen)return;aiTurn();}, 700); }
   }, 1200);
 }
 function tallyBoard(board){
@@ -523,11 +560,22 @@ function endGame(){
   S.player.score+=pBonus.total;
   S.ai.score+=aBonus.total;
   var won=S.player.score>S.ai.score;
+  var tied=S.player.score===S.ai.score;
   if(won){_e('game_win');_playWin();sm('Mosaic complete! '+S.player.score+' to '+S.ai.score);}
-  else if(S.player.score===S.ai.score){sm('Tied '+S.player.score+' to '+S.ai.score);}
+  else if(tied){sm('Tied '+S.player.score+' to '+S.ai.score);}
   else {_e('game_loss');sm('Mirror wins '+S.ai.score+' to '+S.player.score);}
   _sr('mosaic',{w:won,s:S.player.score});
+  updateAll(); // final scores + 'Game over' HUD + last wall transfers
   showEndCard(pBonus, aBonus, won);
+  if(window._lwGameEnd)window._lwGameEnd({
+    won:won,
+    title:won?'GARDEN COMPLETE':(tied?'GARDEN MIRRORED':'MIRROR WINS'),
+    line:'YOU '+S.player.score+' · MIRROR '+S.ai.score,
+    sub:'+'+pBonus.total+' end bonus · full tally on the board',
+    retry:function(){requestNewGame();},
+    retryLabel:'↻ NEW GARDEN',
+    viewLabel:'view the boards'
+  });
 }
 function endBonus(board){
   var out={rows:0,cols:0,colors:0,total:0};
@@ -559,7 +607,8 @@ function buildDOM(host){
   facRow=document.createElement('div'); facRow.className='MSfactories'; pan.appendChild(facRow);
   facRow.addEventListener('click', function(e){
     if(S.selected || aiBusy || S.turn!=='player') return;
-    var tile=e.target.closest('[data-fi][data-color]');
+    var fac=e.target.closest('.MSfac');
+    var tile=fac?nearestTile(fac, e, '[data-fi][data-color]', 0):e.target.closest('[data-fi][data-color]');
     if(!tile)return;
     var fi=parseInt(tile.getAttribute('data-fi'),10);
     var color=tile.getAttribute('data-color');
@@ -568,7 +617,7 @@ function buildDOM(host){
   centerEl=document.createElement('div'); centerEl.className='MScenter'; pan.appendChild(centerEl);
   centerEl.addEventListener('click', function(e){
     if(S.selected || aiBusy || S.turn!=='player') return;
-    var tile=e.target.closest('[data-color]');
+    var tile=nearestTile(centerEl, e, '[data-color]', 40);
     if(!tile)return;
     selectFromCenter(tile.getAttribute('data-color'));
   });
@@ -674,10 +723,11 @@ function updateStatus(){
 function tileHTML(color, extraCls, dataAttrs){
   var cls='MStile'+(extraCls?' '+extraCls:'');
   var attrs=dataAttrs||'';
-  // 8px transparent padding + background-clip keeps the VISUAL tile 24px
-  // while the tap target becomes 40px — drafting commits on tap with no
-  // undo, so 24px targets punished fat fingers with the rules.
-  return '<div class="'+cls+'" '+attrs+' style="background:'+BG[color]+';background-clip:content-box;-webkit-background-clip:content-box;padding:6px;margin:-6px;width:24px;height:24px;box-sizing:content-box">'+ICONS[color]+'</div>';
+  // 12px transparent padding + background-clip keeps the VISUAL tile 24px
+  // while the tap target becomes 48px (fleet minimum). The boxes overlap
+  // at factory density, so the delegated handlers resolve a tap to the
+  // NEAREST tile center (see nearestTile) instead of DOM paint order.
+  return '<div class="'+cls+'" '+attrs+' style="background:'+BG[color]+';background-clip:content-box;-webkit-background-clip:content-box;padding:12px;margin:-12px;width:24px;height:24px;box-sizing:content-box">'+ICONS[color]+'</div>';
 }
 
 function updateFactories(){
@@ -729,7 +779,7 @@ function updateBoard(el, board, title, isPlayer){
   html+='<div class="MSrows">';
   for(var r=0;r<5;r++){
     var maxSize=r+1;
-    var rowClass='MSrow';
+    var rowClass='MSrow'+(isPlayer?' mine':'');
     // Compatibility for player's row highlight
     var stagingCls='MSstaging';
     var rowGain='';
@@ -808,13 +858,15 @@ function showBreakdown(title, lines, total){
   h+='<div class="MSbreakTotal"><span>TOTAL</span><span>'+(total>0?'+':'')+total+'</span></div>';
   breakdownEl.innerHTML=h;
   document.body.appendChild(breakdownEl);
+  // Capture THIS element — a stale fade timer must never touch a newer
+  // popup (or one already removed by the exit cleanup).
+  var el=breakdownEl;
   setTimeout(function(){
-    if(breakdownEl){
-      breakdownEl.style.transition='opacity .4s ease,transform .4s ease';
-      breakdownEl.style.opacity='0';
-      breakdownEl.style.transform='translateX(-50%) translateY(6px)';
-      setTimeout(function(){if(breakdownEl){breakdownEl.remove();breakdownEl=null;}}, 420);
-    }
+    if(breakdownEl!==el)return;
+    el.style.transition='opacity .4s ease,transform .4s ease';
+    el.style.opacity='0';
+    el.style.transform='translateX(-50%) translateY(6px)';
+    setTimeout(function(){if(breakdownEl===el){el.remove();breakdownEl=null;}}, 420);
   }, 2600);
 }
 
@@ -835,10 +887,13 @@ function showEndCard(pBonus, aBonus, won){
   var btn=mkBtn('↻ NEW GARDEN','primary',function(){ requestNewGame(); });
   endEl.appendChild(btn);
   pan.appendChild(endEl);
+  // The card sits below both boards — bring it into view on phones
+  try{endEl.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e2){if(endEl.scrollIntoView)endEl.scrollIntoView(false);}
 }
 
 // ── Lifecycle ───────────────────────────────────────────────────────────
 function requestNewGame(){
+  gen++; // pending AI/scoring/endGame timers from the old match must die
   if(S)S.phase='idle';
   aiBusy=false;
   if(endEl){endEl.remove();endEl=null;}
@@ -847,6 +902,7 @@ function requestNewGame(){
 }
 
 function startGame(difficulty){
+  gen++; // kill any timers from a previous match
   _setDiff(difficulty==='easy'?'easy':difficulty==='steady'?'medium':'hard');
   var bag=[]; COLORS.forEach(function(c){for(var i=0;i<20;i++)bag.push(c);});shuf(bag);
   S={
@@ -855,6 +911,7 @@ function startGame(difficulty){
     factories:[[],[],[],[],[]],
     center:[],
     firstPlayerTaken:false,
+    firstTaker:null,
     player:newBoard(),
     ai:newBoard(),
     round:1,
@@ -871,6 +928,7 @@ function startGame(difficulty){
 
 window._gameFns = window._gameFns || {};
 window._gameFns.mosaic = function(a){
+  gen++;
   pan=null; topBar=null; statusEl=null; facRow=null; centerEl=null;
   playerBoardEl=null; aiBoardEl=null; ctrlRow=null;
   topEls={score:null,ai:null,round:null,turn:null};
@@ -878,6 +936,13 @@ window._gameFns.mosaic = function(a){
   if(endEl){endEl.remove();endEl=null;}
   aiBusy=false;
   hostEl=a;
+  // On exit: kill all pending timers and pull the body-level popup so it
+  // can't appear over the picker or another game.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    gen++; aiBusy=false;
+    if(breakdownEl){breakdownEl.remove();breakdownEl=null;}
+    if(endEl){endEl.remove();endEl=null;}
+  });
   showDifficultyPicker();
 };
 })();

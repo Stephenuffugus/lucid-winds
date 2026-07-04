@@ -51,6 +51,9 @@ window._gameFns.cribbage = function CRIB(a){
   // mc(a) still runs so downstream code finds the controls container, but
   // we leave it empty — NEW + Style now live inside the pan.
   mc(a);
+  // Style-picker repaint hook — _cdPickStyle calls this after a deck switch
+  // so the felt repaints with the new pips immediately (2026-07-04).
+  window._cdActiveRn=function(){try{render()}catch(e){}};
   window._CBToggleStyle=function(){
     if(typeof window._cdToggleStyle!=='function'){if(window._toast)window._toast('Card styles loading, try again in a sec.');return;}
     var nxt=window._cdToggleStyle();
@@ -153,6 +156,12 @@ window._gameFns.cribbage = function CRIB(a){
   }
   function playCard(idx){
     if(G.phase!=='peg')return;
+    if(G.aiThinking)return; // AI's beat is pending — no out-of-turn dumps
+    // Turn gate (2026-07-04 exploit fix): if we played the last card, we may
+    // only continue once the AI has said "Go" — fast double-taps were letting
+    // players peg PAIR/RUN/FIFTEEN off their own consecutive cards.
+    var lw=G.playArea.length>0?G.playArea[G.playArea.length-1].who:null;
+    if(lw==='player'&&!G.aPass)return;
     var card=G.pHand[idx];
     if(G.pPlayed.indexOf(idx)>=0)return;
     if(G.playCount+card.val>31)return;
@@ -307,7 +316,9 @@ window._gameFns.cribbage = function CRIB(a){
     function narrate(whoIdx){
       if(whoIdx>=order.length){
         // All three hands scored — brief pause, then next deal.
+        var _dg=gen;
         setTimeout(function(){
+          if(_dg!==gen)return; // exited mid-pause — don't deal into a dead pan
           if(G.phase==='show'&&!checkWin()){
             G.narration=null;dealHand();
           }
@@ -329,7 +340,12 @@ window._gameFns.cribbage = function CRIB(a){
       if(result.combos.length===0){
         G.narration.step=0;
         render();
+        var _zg=gen;
         setTimeout(function(){
+          // Gen guard, not just phase — exit leaves phase as 'show', and an
+          // unguarded narrate() here re-captured a FRESH gen so the whole
+          // chain (incl. _e earns) kept firing post-exit (2026-07-04)
+          if(_zg!==gen)return;
           if(G.phase!=='show')return;
           narrate(whoIdx+1);
         },900);
@@ -425,8 +441,28 @@ window._gameFns.cribbage = function CRIB(a){
     return{total:pts,combos:combos};
   }
   function checkWin(){
-    if(G.pScore>=121){G.phase='gameover';render();_e('game_win');_playWin();_sr('cribbage',{w:true,s:G.pScore});var skunk=G.aScore<91;if(skunk)_e('milestone');sm(skunk?'🃏 SKUNK WIN!':'🃏 You win!');return true;}
-    if(G.aScore>=121){G.phase='gameover';render();_e('game_loss');_play('lose');_sr('cribbage',{w:false,s:G.pScore});sm('Garden resting...');return true;}
+    if(G.pScore>=121){
+      G.phase='gameover';render();_e('game_win');_playWin();_sr('cribbage',{w:true,s:G.pScore});
+      var skunk=G.aScore<91;if(skunk)_e('milestone');
+      sm(skunk?'🃏 SKUNK WIN!':'🃏 You win!');
+      if(window._lwGameEnd)window._lwGameEnd({won:true,
+        title:skunk?'🃏 SKUNK WIN!':'You pegged out!',
+        line:G.pScore+' to '+G.aScore+' · '+G.roundNum+' rounds',
+        sub:skunk?'the AI never crossed 91':null,
+        retry:function(){if(window._CBN)window._CBN();},retryLabel:'↻ NEW MATCH',viewLabel:'view the table',delay:900});
+      return true;
+    }
+    if(G.aScore>=121){
+      G.phase='gameover';render();_e('game_loss');_play('lose');_sr('cribbage',{w:false,s:G.pScore});
+      sm('Garden resting...');
+      var pskunk=G.pScore<91;
+      if(window._lwGameEnd)window._lwGameEnd({won:false,
+        title:pskunk?'Skunked...':'AI pegged out',
+        line:G.pScore+' to '+G.aScore+' · '+G.roundNum+' rounds',
+        sub:pskunk?'you never crossed 91':(121-G.pScore)+' short of the finish',
+        retry:function(){if(window._CBN)window._CBN();},retryLabel:'↻ NEW MATCH',viewLabel:'view the table',delay:900});
+      return true;
+    }
     return false;
   }
   function render(){
@@ -436,12 +472,12 @@ window._gameFns.cribbage = function CRIB(a){
     // ── CONTROLS BAR — top right, unobtrusive ──
     var cbStyleName = (window._cdStyleLabel && typeof window._cdStyle==='function') ? window._cdStyleLabel(window._cdStyle()) : 'Floral';
     h+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:6px;">';
-    h+='<button class="gb" onclick="if(window._cdToggleStyle){window._cdToggleStyle();if(typeof render===\'function\')render();}" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;font-size:0.62rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
+    h+='<button class="gb" onclick="_CBToggleStyle()" title="Cycle card style" style="display:inline-flex;align-items:center;gap:6px;min-height:48px;padding:8px 14px;font-size:0.7rem;background:linear-gradient(180deg,rgba(180,140,70,0.25),rgba(120,90,40,0.35));border:1px solid rgba(220,180,120,0.45);color:#f5ebd0;font-family:Georgia,serif;font-style:italic;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">';
     h+='<img src="assets/decks/floral/suit-spade.png" alt="" onerror="this.style.display=\'none\';" style="width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));">';
-    h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
+    h+='<span style="color:rgba(232,220,200,0.6);font-style:normal;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;margin-right:2px;">Deck</span>';
     h+='<span>'+cbStyleName+'</span>';
     h+='</button>';
-    h+='<button class="gb" onclick="_CBN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:8px 14px;font-size:0.65rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
+    h+='<button class="gb" onclick="_CBN()" title="New game" style="display:inline-flex;align-items:center;gap:5px;min-height:48px;padding:8px 14px;font-size:0.7rem;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;font-family:Georgia,serif;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 2px 5px rgba(0,0,0,0.5);">↻ New Game</button>';
     h+='</div>';
     // ── PEG BOARD — wood frame with two felt tracks ──
     h+='<div style="position:relative;background:'
@@ -464,7 +500,7 @@ window._gameFns.cribbage = function CRIB(a){
     else if(G.phase==='peg')st='The play';
     else if(G.phase==='show')st='Scoring';
     else st='Game Over';
-    h+='<div style="display:flex;gap:12px;justify-content:center;align-items:center;padding:4px 4px 10px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;">';
+    h+='<div style="display:flex;gap:12px;justify-content:center;align-items:center;padding:4px 4px 10px;flex-wrap:wrap;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;">';
     h+='<span style="color:#ffdc70;">'+st+'</span>';
     h+='<span style="color:rgba(232,220,200,0.5);">Round <strong style="color:#e8dcc8;">'+G.roundNum+'</strong></span>';
     // Dealer chip — the classic brass "D" token
@@ -482,9 +518,9 @@ window._gameFns.cribbage = function CRIB(a){
     // ── AI HAND ──
     h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(220,138,138,0.25);border-radius:8px;padding:6px 8px;margin-bottom:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;text-transform:uppercase;">AI Hand</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(220,138,138,0.85);letter-spacing:0.14em;text-transform:uppercase;">AI Hand</div>';
     if(G.aiThinking){
-      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.68rem;color:#ffdc70;animation:cbThink 1.2s ease-in-out infinite;">Thinking…</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:#ffdc70;animation:cbThink 1.2s ease-in-out infinite;">Thinking…</div>';
     }
     h+='</div>';
     h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:64px;align-items:center;">';
@@ -493,7 +529,7 @@ window._gameFns.cribbage = function CRIB(a){
     }else{
       for(var i=0;i<G.aHand.length;i++){
         var played=G.aPlayed.indexOf(i)>=0;
-        h+='<div style="width:46px;height:64px;border-radius:6px;background:'
+        h+='<div style="width:48px;height:66px;border-radius:6px;background:'
           +'linear-gradient(135deg,#4A7C35,#2c4d1e);border:2px solid #1a2f12;'
           +'box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 2px 4px rgba(0,0,0,0.4);'
           +(played?'opacity:.35;':'')+'"></div>';
@@ -504,7 +540,7 @@ window._gameFns.cribbage = function CRIB(a){
     if(G.starter){
       h+='<div style="display:flex;gap:8px;justify-content:center;align-items:center;padding:4px 0 6px;">';
       h+='<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:rgba(232,220,200,0.65);letter-spacing:0.18em;text-transform:uppercase;">Starter</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.65);letter-spacing:0.18em;text-transform:uppercase;">Starter</div>';
       h+=_cardHtml(G.starter,false,false,false,true);
       h+='</div>';
       // Giant centered count during peg phase
@@ -513,7 +549,7 @@ window._gameFns.cribbage = function CRIB(a){
         var countColor = c===15||c===31 ? '#ffdc70' : c>=21 ? '#ffb060' : '#f5ebd0';
         h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 10px;">';
         h+='<div id="CBcount" style="font-family:Georgia,serif;font-weight:700;font-size:3.2rem;line-height:1;color:'+countColor+';text-shadow:0 2px 8px rgba(0,0,0,0.6),0 0 24px rgba(255,220,140,0.18);">'+c+'</div>';
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.2em;color:rgba(232,220,200,0.55);margin-top:2px;text-transform:uppercase;">of 31</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.2em;color:rgba(232,220,200,0.55);margin-top:2px;text-transform:uppercase;">of 31</div>';
         h+='</div>';
       }
       h+='</div>';
@@ -548,8 +584,8 @@ window._gameFns.cribbage = function CRIB(a){
     // ── YOUR HAND ──
     h+='<div style="background:rgba(8,35,22,0.45);border:1px solid rgba(122,179,86,0.3);border-radius:8px;padding:6px 8px;margin-top:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:rgba(122,179,86,0.95);letter-spacing:0.14em;text-transform:uppercase;">Your Hand</div>';
-    if(G.phase==='discard')h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.65rem;color:rgba(232,220,200,0.7);">'+(2-G.pSelected.length)+' more for the crib</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(122,179,86,0.95);letter-spacing:0.14em;text-transform:uppercase;">Your Hand</div>';
+    if(G.phase==='discard')h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.7);">'+(2-G.pSelected.length)+' more for the crib</div>';
     h+='</div>';
     h+='<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:72px;align-items:center;">';
     G.pHand.forEach(function(c,i){
@@ -562,7 +598,7 @@ window._gameFns.cribbage = function CRIB(a){
     // ── ACTION BUTTONS ──
     h+='<div style="display:flex;gap:6px;justify-content:center;padding:8px 0 2px;flex-wrap:wrap;">';
     if(G.phase==='discard'&&G.pSelected.length===2){
-      h+='<button class="gb" onclick="_CBD()" style="min-height:44px;padding:10px 22px;font-size:0.8rem;background:rgba(122,179,86,0.2);border-color:rgba(122,179,86,0.6);color:#e8dcc8;">✓ Send to Crib</button>';
+      h+='<button class="gb" onclick="_CBD()" style="min-height:48px;padding:10px 22px;font-size:0.8rem;background:rgba(122,179,86,0.2);border-color:rgba(122,179,86,0.6);color:#e8dcc8;">✓ Send to Crib</button>';
     }
     if(G.phase==='peg'){
       var canAny=false;
@@ -570,7 +606,7 @@ window._gameFns.cribbage = function CRIB(a){
         if(G.pPlayed.indexOf(ci)<0&&G.playCount+G.pHand[ci].val<=31){canAny=true;break;}
       }
       if(!canAny&&!G.pPass&&G.pPlayed.length<4){
-        h+='<button class="gb" onclick="_CBGO()" style="min-height:44px;padding:10px 22px;font-size:0.8rem;background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.6);color:#e8dcc8;font-family:Georgia,serif;font-style:italic;">Say "Go"</button>';
+        h+='<button class="gb" onclick="_CBGO()" style="min-height:48px;padding:10px 22px;font-size:0.8rem;background:rgba(200,168,75,0.2);border-color:rgba(200,168,75,0.6);color:#e8dcc8;font-family:Georgia,serif;font-style:italic;">Say "Go"</button>';
       }
     }
     h+='</div>';
@@ -587,7 +623,7 @@ window._gameFns.cribbage = function CRIB(a){
     var scorerColor = n.scorer==='player' ? '#7ab356' : '#dc8a8a';
     var h='';
     h+='<div style="background:rgba(0,0,0,0.4);border:1.5px solid '+scorerColor+';border-radius:10px;padding:12px 10px;margin:8px 0;box-shadow:0 2px 12px rgba(0,0,0,0.4);">';
-    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.16em;color:'+scorerColor+';text-transform:uppercase;margin-bottom:6px;">'+n.label+'</div>';
+    h+='<div style="text-align:center;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.16em;color:'+scorerColor+';text-transform:uppercase;margin-bottom:6px;">'+n.label+'</div>';
     // Cards row (hand + starter). Highlight contributing cards.
     h+='<div style="display:flex;gap:5px;justify-content:center;margin-bottom:10px;">';
     var all=n.hand.concat([G.starter]);
@@ -601,7 +637,7 @@ window._gameFns.cribbage = function CRIB(a){
       var shadow = hl
         ? 'box-shadow:0 0 0 2px #ffdc70,0 0 18px rgba(255,220,112,0.55);transform:translateY(-6px);'
         : 'box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 4px rgba(0,0,0,0.45);';
-      h+='<div style="width:46px;height:64px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;border:2px solid '+bdr+';background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+color+';position:relative;font-family:Georgia,serif;transition:transform .25s,box-shadow .25s;'+shadow+'">';
+      h+='<div style="width:48px;height:66px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;border:2px solid '+bdr+';background:linear-gradient(180deg,#faf3dd,#f0e7c8);color:'+color+';position:relative;font-family:Georgia,serif;transition:transform .25s,box-shadow .25s;'+shadow+'">';
       h+='<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[card.rank]+'</span>';
       h+='<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+_pip(card.suit)+'</span>';
       h+='<span style="font-size:22px;line-height:1;">'+_pip(card.suit)+'</span>';
@@ -631,7 +667,7 @@ window._gameFns.cribbage = function CRIB(a){
     var prevPct = Math.min(100, prevScore/121*100);
     var h='';
     h+='<div style="display:flex;align-items:center;gap:8px;">';
-    h+='<div style="flex:0 0 auto;font-family:DM Mono,monospace;font-size:0.52rem;letter-spacing:0.18em;color:'+color+';width:24px;font-weight:700;">'+label+'</div>';
+    h+='<div style="flex:0 0 auto;font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.18em;color:'+color+';width:34px;font-weight:700;">'+label+'</div>';
     // Track — subtle gradient on the exposed board surface
     h+='<div style="flex:1;position:relative;height:18px;background:linear-gradient(180deg,#2a1810,#1a0f08);border:1px solid rgba(0,0,0,0.65);border-radius:9px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.65),inset 0 -1px 0 rgba(255,220,140,0.08);">';
     // Hole dots every ~5 points (121/5 ≈ 24 holes) for texture
@@ -672,7 +708,7 @@ window._gameFns.cribbage = function CRIB(a){
     if(isStarter)borderCol='#d4b86a';
     var redCol='#b42a2a', blackCol='#1a1a1a';
     var color=isRed(c)?redCol:blackCol;
-    var style='width:46px;height:64px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;'
+    var style='width:48px;height:66px;border-radius:6px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;'
       +'border:2px solid '+borderCol+';'
       +'background:linear-gradient(180deg,#faf3dd 0%,#f0e7c8 100%);'
       +'color:'+color+';position:relative;vertical-align:middle;'
@@ -686,12 +722,18 @@ window._gameFns.cribbage = function CRIB(a){
     var onclick='';
     if(G.phase==='discard'&&!played&&idx!==undefined)onclick='_CBTS('+idx+')';
     else if(G.phase==='peg'&&canPlay&&idx!==undefined)onclick='_CBPC('+idx+')';
+    // Who-chip on pile cards — colorblind-safe Y/A tag so border tint isn't
+    // the only signal for who played what (2026-07-04 fleet standard).
+    var whoTag='';
+    if(who==='player')whoTag='<span title="You" style="position:absolute;bottom:2px;left:3px;font-size:10px;line-height:1;font-weight:700;font-family:DM Mono,monospace;color:#fff8e0;background:#4a7c35;border-radius:3px;padding:1px 3px;">Y</span>';
+    else if(who==='ai')whoTag='<span title="AI" style="position:absolute;bottom:2px;left:3px;font-size:10px;line-height:1;font-weight:700;font-family:DM Mono,monospace;color:#fff8e0;background:#a04848;border-radius:3px;padding:1px 3px;">A</span>';
     // Rank at top-left, big pip centered, rotated rank at bottom-right.
     return '<div style="'+style+'" '+(onclick?'onclick="'+onclick+'"':'')+'>'
       +'<span style="font-size:12px;position:absolute;top:2px;left:4px;line-height:1;font-weight:700;">'+RANKS[c.rank]+'</span>'
       +'<span style="font-size:10px;position:absolute;top:13px;left:5px;line-height:1;">'+_pip(c.suit)+'</span>'
       +'<span style="font-size:22px;line-height:1;">'+_pip(c.suit)+'</span>'
       +'<span style="font-size:12px;position:absolute;bottom:2px;right:4px;line-height:1;transform:rotate(180deg);transform-origin:center;font-weight:700;">'+RANKS[c.rank]+'</span>'
+      +whoTag
     +'</div>';
   }
 

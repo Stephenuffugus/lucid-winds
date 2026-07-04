@@ -26,6 +26,13 @@ window._gameFns.pixelgarden = function PG(a){
     '#0d100c','#2a2a2a','#808080','#e8dcc8'
   ];
 
+  // Overlay hygiene: gallery/compose modals live on document.body, so a
+  // remount (or exit to the in-app picker) must sweep any stale copies —
+  // their handlers reference a dead instance's state.
+  function killOverlays(){var ids=['PGgalOV','PGcmpOV'],i,x;for(i=0;i<ids.length;i++){x=document.getElementById(ids[i]);if(x)x.remove();}}
+  killOverlays();
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(killOverlays);
+
   ms(a,'PIXEL GARDEN · <span id="PGsz">16×16</span>');
   mm(a);
   var pan=document.createElement('div');
@@ -82,7 +89,8 @@ window._gameFns.pixelgarden = function PG(a){
     var h='';
     for(var i=0;i<COLORS.length;i++){
       var active=COLORS[i]===currentColor;
-      h+='<div onclick="_PGCOL(\''+COLORS[i]+'\')" style="width:26px;height:26px;border-radius:6px;background:'+COLORS[i]+';border:2px solid '+(active?'#e8dcc8':'transparent')+';cursor:pointer;'+(active?'transform:scale(1.1);':'')+'"></div>';
+      // 48px hit box (border-box) with a 40px visible swatch (2px border + 2px padding per side)
+      h+='<div onclick="_PGCOL(\''+COLORS[i]+'\')" style="width:48px;height:48px;padding:2px;background-clip:content-box;border-radius:8px;background:'+COLORS[i]+';border:2px solid '+(active?'#e8dcc8':'transparent')+';cursor:pointer;'+(active?'transform:scale(1.08);':'')+'"></div>';
     }
     palEl.innerHTML=h;
   }
@@ -91,10 +99,10 @@ window._gameFns.pixelgarden = function PG(a){
     var h='';
     for(var i=0;i<tools.length;i++){
       var active=tool===tools[i][0];
-      h+='<button class="gb" onclick="_PGT(\''+tools[i][0]+'\')" style="padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;'+(active?'background:rgba(122,179,86,0.2);border-color:#7ab356;color:#7ab356;':'')+'">'+tools[i][1]+'</button>';
+      h+='<button class="gb" onclick="_PGT(\''+tools[i][0]+'\')" style="min-height:48px;padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;'+(active?'background:rgba(122,179,86,0.2);border-color:#7ab356;color:#7ab356;':'')+'">'+tools[i][1]+'</button>';
     }
-    h+='<button class="gb" onclick="_PGMIR()" style="padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;'+(mirrorMode?'background:rgba(200,168,75,0.2);border-color:#c8a84b;color:#c8a84b;':'')+'">MIRROR</button>';
-    h+='<button class="gb" onclick="_PGGR()" style="padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;">GRID</button>';
+    h+='<button class="gb" onclick="_PGMIR()" style="min-height:48px;padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;'+(mirrorMode?'background:rgba(200,168,75,0.2);border-color:#c8a84b;color:#c8a84b;':'')+'">MIRROR</button>';
+    h+='<button class="gb" onclick="_PGGR()" style="min-height:48px;padding:5px 10px;font-size:0.78rem;letter-spacing:0.05em;">GRID</button>';
     toolEl.innerHTML=h;
   }
   function render(){
@@ -173,8 +181,10 @@ window._gameFns.pixelgarden = function PG(a){
     }
   }
   function saveUndo(){
+    // Snapshot carries its grid size — loading a painting can change GRID,
+    // and popping a mismatched-size pixel array used to brick render().
     var state=[];for(var r=0;r<GRID;r++)state[r]=pixels[r].slice();
-    undoStack.push(state);
+    undoStack.push({grid:GRID,state:state,tp:totalPixels});
     if(undoStack.length>maxUndo)undoStack.shift();
   }
   function getCell(e){
@@ -197,12 +207,23 @@ window._gameFns.pixelgarden = function PG(a){
   window._PGMIR=function(){mirrorMode=!mirrorMode;buildTools();render();};
   window._PGGR=function(){showGrid=!showGrid;render();};
   window._PGCLR=function(){saveUndo();for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++)pixels[r][c]=null;render();sm('Cleared');};
-  window._PGUN=function(){if(undoStack.length===0){sm('Nothing to undo');return;}pixels=undoStack.pop();render();_play('tap');};
+  window._PGUN=function(){
+    if(undoStack.length===0){sm('Nothing to undo');return;}
+    var snap=undoStack.pop();
+    if(snap.grid!==GRID){
+      GRID=snap.grid;
+      var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
+      initCanvas();
+    }
+    pixels=snap.state;totalPixels=snap.tp;render();_play('tap');
+  };
   // ─── IN-APP GALLERY (save + load) ──────────────────────────────────
   // Paintings live in localStorage under GAL_KEY as an array of
   // {id, name, grid, pixels (rows of color strings or null), created}.
   // Capped at GAL_MAX to stay under localStorage quota.
   var GAL_KEY='lw_pixelgarden_gallery', GAL_MAX=24;
+  // User-entered names go into overlay innerHTML — escape them.
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function galLoad(){
     try{return JSON.parse(localStorage.getItem(GAL_KEY)||'[]');}catch(e){return [];}
   }
@@ -267,11 +288,14 @@ window._gameFns.pixelgarden = function PG(a){
   window._PGSV=function(){
     // SAVE = commit current work to the in-app gallery (not a file).
     if(totalPixels<=0){sm('Paint something first');return;}
+    // Prompt BEFORE the gate: _lwArtSaveGate consumes the cooldown + the
+    // one-time firstWin flag on allow, so a cancelled prompt must not burn them.
+    var defName='Garden '+(new Date()).toLocaleDateString();
+    var name=window.prompt?window.prompt('Name this piece:',defName):defName;
+    if(name===null)return; // cancelled — abort the save
+    name=String(name).slice(0,40)||defName;
     var g=window._lwArtSaveGate&&window._lwArtSaveGate('pixelgarden');
     if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
-    var defName='Garden '+(new Date()).toLocaleDateString();
-    var name=(window.prompt&&window.prompt('Name this piece:',defName))||defName;
-    name=String(name).slice(0,40);
     var entry=galSaveCurrent(name);
     sm('Saved to Gallery: '+entry.name);
     _playWin();
@@ -308,12 +332,12 @@ window._gameFns.pixelgarden = function PG(a){
     var h='<div style="max-width:440px;width:100%;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:16px;font-family:DM Mono,monospace;">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.12em;color:var(--gold);">📂 GALLERY</div>';
-    h+='<button class="gb" onclick="document.getElementById(\'PGgalOV\').remove()" style="min-height:44px;padding:6px 14px;">CLOSE</button>';
+    h+='<button class="gb" onclick="document.getElementById(\'PGgalOV\').remove()" style="min-height:48px;padding:6px 14px;">CLOSE</button>';
     h+='</div>';
     if(gal.length===0){
       h+='<div style="text-align:center;padding:40px 10px;color:var(--muted);font-style:italic;font-size:0.75rem;line-height:1.5;">No saved paintings yet.<br>Create something, then hit SAVE to stash it here.</div>';
     } else {
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:8px;">'+gal.length+' / '+GAL_MAX+' saved</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:8px;">'+gal.length+' / '+GAL_MAX+' saved</div>';
       h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
       // Newest first for display
       for(var i=gal.length-1;i>=0;i--){
@@ -321,11 +345,11 @@ window._gameFns.pixelgarden = function PG(a){
         var thumb=thumbDataURL(e,96);
         h+='<div style="background:rgba(26,31,23,0.7);border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:4px;">';
         h+='<img src="'+thumb+'" alt="" style="width:100%;aspect-ratio:1;border-radius:4px;image-rendering:pixelated;background:#0d100c;">';
-        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.04em;word-break:break-word;">'+e.name+'</div>';
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);">'+e.grid+'×'+e.grid+'</div>';
+        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);letter-spacing:0.04em;word-break:break-word;">'+esc(e.name)+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);">'+e.grid+'×'+e.grid+'</div>';
         h+='<div style="display:flex;gap:4px;margin-top:2px;">';
-        h+='<button class="gb" onclick="_PGLoad(\''+e.id+'\')" style="flex:1;min-height:44px;padding:6px;font-size:0.6rem;color:var(--sage);border-color:rgba(122,179,86,0.4);">LOAD</button>';
-        h+='<button class="gb" onclick="_PGDel(\''+e.id+'\')" style="min-height:44px;padding:6px 10px;font-size:0.6rem;color:var(--muted);border-color:rgba(138,145,120,0.25);">🗑</button>';
+        h+='<button class="gb" onclick="_PGLoad(\''+e.id+'\')" style="flex:1;min-height:48px;padding:6px;font-size:0.7rem;color:var(--sage);border-color:rgba(122,179,86,0.4);">LOAD</button>';
+        h+='<button class="gb" onclick="_PGDel(\''+e.id+'\')" style="min-height:48px;padding:6px 10px;font-size:0.7rem;color:var(--muted);border-color:rgba(138,145,120,0.25);">🗑</button>';
         h+='</div>';
         h+='</div>';
       }
@@ -339,14 +363,16 @@ window._gameFns.pixelgarden = function PG(a){
     var entry=null;
     for(var i=0;i<gal.length;i++)if(gal[i].id===id){entry=gal[i];break;}
     if(!entry)return;
-    saveUndo(); // allow UNDO to recover pre-load state
+    saveUndo(); // allow UNDO to recover pre-load state (snapshot keeps its grid)
     GRID=entry.grid;
     var szEl=document.getElementById('PGsz');if(szEl)szEl.textContent=GRID+'×'+GRID;
-    // Reinit with loaded data
-    pixels=[];
+    // Reinit with loaded data. totalPixels recounts from the loaded art;
+    // pixelsSinceSave resets — loading isn't fresh work, so load+SAVE
+    // can't cash in strokes painted before the load.
+    pixels=[];totalPixels=0;pixelsSinceSave=0;
     for(var r=0;r<GRID;r++){
       pixels[r]=[];
-      for(var c=0;c<GRID;c++)pixels[r][c]=(entry.pixels[r]&&entry.pixels[r][c])||null;
+      for(var c=0;c<GRID;c++){pixels[r][c]=(entry.pixels[r]&&entry.pixels[r][c])||null;if(pixels[r][c])totalPixels++;}
     }
     initCanvas();buildPalette();buildTools();render();
     sm('Loaded: '+entry.name);
@@ -374,6 +400,7 @@ window._gameFns.pixelgarden = function PG(a){
   // gallery entries (or null). All squares in a composition must share
   // the same grid size — enforced at assign time with a friendly nudge.
   var cmpRows=2,cmpCols=2,cmpSlots=null,cmpUnit=null;
+  var cmpDirty=false; // slot changed since the last paid compose-save — earn gate
   function _cmpInitSlots(){
     cmpSlots=[];
     for(var r=0;r<cmpRows;r++){cmpSlots[r]=[];for(var c=0;c<cmpCols;c++)cmpSlots[r][c]=null;}
@@ -457,16 +484,16 @@ window._gameFns.pixelgarden = function PG(a){
     var h='<div style="max-width:440px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:16px;font-family:DM Mono,monospace;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:0.12em;color:var(--gold);">🧩 COMPOSE</div>';
-    h+='<button class="gb" onclick="document.getElementById(\'PGcmpOV\').remove()" style="min-height:44px;padding:6px 14px;">CLOSE</button>';
+    h+='<button class="gb" onclick="document.getElementById(\'PGcmpOV\').remove()" style="min-height:48px;padding:6px 14px;">CLOSE</button>';
     h+='</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);line-height:1.5;margin-bottom:10px;">Stitch saved squares into a bigger canvas. All slots must share the same grid size, the first one you drop in locks the size.</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);line-height:1.5;margin-bottom:10px;">Stitch saved squares into a bigger canvas. All slots must share the same grid size, the first one you drop in locks the size.</div>';
     // Layout picker
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:4px;">LAYOUT</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:4px;">LAYOUT</div>';
     var layouts=[[2,2],[3,2],[2,3],[3,3],[4,4]];
     h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">';
     for(var i=0;i<layouts.length;i++){
       var L=layouts[i],sel=(L[0]===cmpCols&&L[1]===cmpRows);
-      h+='<button class="gb" onclick="_PGCmpLay('+L[0]+','+L[1]+')" style="min-height:44px;padding:6px 10px;font-size:0.62rem;letter-spacing:0.05em;'
+      h+='<button class="gb" onclick="_PGCmpLay('+L[0]+','+L[1]+')" style="min-height:48px;padding:6px 10px;font-size:0.7rem;letter-spacing:0.05em;'
         +(sel?'background:rgba(200,168,75,0.25);border-color:var(--gold);color:var(--gold);':'')+'">'+L[0]+'×'+L[1]+'</button>';
     }
     h+='</div>';
@@ -490,7 +517,7 @@ window._gameFns.pixelgarden = function PG(a){
     h+='</div>';
     // Preview render (full composition)
     if(_cmpAnyAssigned()){
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:6px;">PREVIEW '+(cmpUnit?'('+(cmpUnit*cmpCols)+'×'+(cmpUnit*cmpRows)+')':'')+'</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;color:var(--sage);margin-bottom:6px;">PREVIEW '+(cmpUnit?'('+(cmpUnit*cmpCols)+'×'+(cmpUnit*cmpRows)+')':'')+'</div>';
       h+='<img src="'+_cmpThumb()+'" style="display:block;max-width:100%;margin:0 auto 12px;image-rendering:pixelated;border:1px solid rgba(200,168,75,0.2);border-radius:4px;">';
     }
     // Actions
@@ -511,13 +538,13 @@ window._gameFns.pixelgarden = function PG(a){
     var h='<div style="max-width:440px;width:100%;background:rgba(15,20,12,0.96);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:16px;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:DM Mono,monospace;">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:var(--gold);">Pick a square for slot ('+(r+1)+','+(c+1)+')</div>';
-    h+='<button class="gb" onclick="_renderComposeBack()" style="min-height:44px;padding:6px 14px;">BACK</button>';
+    h+='<button class="gb" onclick="_renderComposeBack()" style="min-height:48px;padding:6px 14px;">BACK</button>';
     h+='</div>';
     if(gal.length===0){
       h+='<div style="color:var(--muted);text-align:center;font-style:italic;padding:30px 0;font-size:0.72rem;">No saved squares yet. Paint something, hit SAVE, then come back.</div>';
     } else {
       var locked=cmpUnit; // only allow squares of matching grid once one is picked
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);margin-bottom:6px;">'+(locked?'Must match '+locked+'×'+locked:'First pick locks the grid size')+'</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:6px;">'+(locked?'Must match '+locked+'×'+locked:'First pick locks the grid size')+'</div>';
       h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
       for(var i=gal.length-1;i>=0;i--){
         var e=gal[i];
@@ -525,18 +552,18 @@ window._gameFns.pixelgarden = function PG(a){
         var thumb=thumbDataURL(e,80);
         h+='<div style="background:rgba(26,31,23,0.7);border:1px solid rgba(74,124,53,0.2);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:3px;'+(compatible?'':'opacity:0.35;')+'">';
         h+='<img src="'+thumb+'" style="width:100%;aspect-ratio:1;border-radius:4px;image-rendering:pixelated;background:#0d100c;">';
-        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.62rem;color:var(--cream);word-break:break-word;">'+e.name+'</div>';
-        h+='<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);">'+e.grid+'×'+e.grid+'</div>';
+        h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--cream);word-break:break-word;">'+esc(e.name)+'</div>';
+        h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);">'+e.grid+'×'+e.grid+'</div>';
         if(compatible){
-          h+='<button class="gb" onclick="_PGCmpAssign('+r+','+c+',\''+e.id+'\')" style="min-height:44px;padding:8px;font-size:0.58rem;color:var(--sage);border-color:rgba(122,179,86,0.35);">USE</button>';
+          h+='<button class="gb" onclick="_PGCmpAssign('+r+','+c+',\''+e.id+'\')" style="min-height:48px;padding:8px;font-size:0.7rem;color:var(--sage);border-color:rgba(122,179,86,0.35);">USE</button>';
         } else {
-          h+='<div style="font-family:DM Mono,monospace;font-size:0.46rem;color:var(--muted);text-align:center;padding:6px;">different size</div>';
+          h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);text-align:center;padding:6px;">different size</div>';
         }
         h+='</div>';
       }
       h+='</div>';
       if(locked){
-        h+='<div style="text-align:center;margin-top:10px;"><button class="gb" onclick="_PGCmpClearSlot('+r+','+c+')" style="min-height:44px;color:var(--muted);border-color:rgba(138,145,120,0.25);">CLEAR SLOT</button></div>';
+        h+='<div style="text-align:center;margin-top:10px;"><button class="gb" onclick="_PGCmpClearSlot('+r+','+c+')" style="min-height:48px;color:var(--muted);border-color:rgba(138,145,120,0.25);">CLEAR SLOT</button></div>';
       }
     }
     h+='</div>';
@@ -550,24 +577,29 @@ window._gameFns.pixelgarden = function PG(a){
     if(cmpUnit&&e.grid!==cmpUnit)return;
     if(!cmpUnit)cmpUnit=e.grid;
     cmpSlots[r][c]=e;
+    cmpDirty=true;
     _renderCompose();
   };
   window._PGCmpClearSlot=function(r,c){
     cmpSlots[r][c]=null;
+    cmpDirty=true;
     // If no slots remain, unlock the grid size.
     if(!_cmpAnyAssigned())cmpUnit=null;
     _renderCompose();
   };
   window._PGCmpSave=function(){
     if(!_cmpAnyAssigned())return;
+    // Prompt BEFORE the gate — see _PGSV; a cancelled prompt must not
+    // burn the shared cooldown or the one-time firstWin flag.
+    var defName='Composition '+(new Date()).toLocaleDateString();
+    var name=window.prompt?window.prompt('Name this composition:',defName):defName;
+    if(name===null)return; // cancelled — abort the save
+    name=String(name).slice(0,40)||defName;
     // Same gate key as the regular save — the separate 'pixelgarden_cmp'
     // key let alternating save/composition-save double the earn rate.
     var g=window._lwArtSaveGate&&window._lwArtSaveGate('pixelgarden');
     if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     var built=_cmpBuildPixels();
-    var defName='Composition '+(new Date()).toLocaleDateString();
-    var name=(window.prompt&&window.prompt('Name this composition:',defName))||defName;
-    name=String(name).slice(0,40);
     // Save with a rectangular grid (width!=height). Store pixels as
     // rows of length w. Existing gallery code treats entry.grid as both
     // rows and cols, so we save with grid = max(w,h) and the pixels
@@ -586,7 +618,13 @@ window._gameFns.pixelgarden = function PG(a){
     galWrite(gal);
     sm('Composition saved: '+name);
     _playWin();
-    if(g&&g.firstWin)_e('game_win');else _e('milestone');
+    // Earn requires a slot change since the last paid compose-save —
+    // re-saving the identical composition was a 2-sunbeam/30s trickle farm
+    // (same exploit shape the pixelsSinceSave gate closed for _PGSV).
+    if(cmpDirty){
+      cmpDirty=false;
+      if(g&&g.firstWin)_e('game_win');else _e('milestone');
+    }
   };
   window._PGCmpExport=function(){
     if(!_cmpAnyAssigned())return;

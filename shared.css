@@ -2496,15 +2496,29 @@
     /* ═══ DOUBLE SHUTTER — Strategy Shut the Box ═══ */
     .ds-wrap{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,2vw,14px);padding:clamp(8px,2vw,14px);max-width:min(96vw,460px);margin:0 auto}
     .ds-row{display:grid;grid-template-columns:repeat(9,1fr);gap:clamp(3px,1vw,6px);width:100%}
-    .ds-tile{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(4px,1.5vw,8px);font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.6rem);color:#2C1810;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 6px rgba(0,0,0,0.3);transition:transform .12s,background .15s,opacity .25s;position:relative}
+    .ds-tile{aspect-ratio:1;min-height:48px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#FAF5E8,#E8DCC8);border:2px solid #C4B998;border-radius:clamp(4px,1.5vw,8px);font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.6rem);color:#2C1810;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 6px rgba(0,0,0,0.3);transition:transform .12s,background .15s,opacity .25s;position:relative}
     .ds-tile.shut{background:linear-gradient(180deg,#3a2818,#2a1810);border-color:#5a4530;color:#5a4530;text-shadow:0 1px 0 rgba(0,0,0,0.5);box-shadow:inset 0 2px 6px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.4);cursor:default;opacity:0.55}
     .ds-tile.shut::after{content:'×';position:absolute;font-size:1.6em;color:rgba(200,168,75,0.35);font-weight:800;pointer-events:none}
+    /* Covered = back tile still underneath an un-shut front tile. Darkened,
+       diagonal-hatch pattern reads "in the box, not reachable yet".
+       (Synced from index.html 2026-07-04 — the shell rendered covered backs
+       as blank ivory tiles identical to open ones.) */
+    .ds-tile.covered{background:repeating-linear-gradient(45deg,#1c1a14,#1c1a14 6px,#14120d 6px,#14120d 12px);border-color:#3a3426;color:transparent;cursor:not-allowed;opacity:0.6;box-shadow:inset 0 2px 6px rgba(0,0,0,0.5)}
+    .ds-tile.covered::after{content:'🔒';position:absolute;font-size:0.85em;opacity:0.4;pointer-events:none}
     .ds-tile.sel{background:linear-gradient(180deg,#FFE89A,#D4A843);border-color:var(--gold);transform:translateY(-2px);box-shadow:0 0 14px rgba(200,168,75,0.5),inset 0 1px 0 rgba(255,255,255,0.5)}
     .ds-tile:active:not(.shut){transform:scale(0.94)}
-    .ds-rowlbl{font-family:'Bebas Neue',sans-serif;font-size:0.55rem;letter-spacing:0.12em;color:var(--muted);text-align:center;margin-top:2px}
+    /* FRONT row: heavier ring + ×2 pip to keep the double-score warning visible */
+    .ds-tile.ds-front:not(.shut){border-color:#8a6f3c;box-shadow:inset 0 1px 0 rgba(255,255,255,0.5),0 2px 6px rgba(0,0,0,0.3),0 0 0 1px rgba(200,168,75,0.25)}
+    .ds-tile.ds-front:not(.shut)::before{content:'×2';position:absolute;top:2px;right:3px;font-family:DM Mono,monospace;font-size:0.44rem;color:rgba(139,106,60,0.7);font-weight:700;letter-spacing:0}
+    .ds-rowlbl{font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--muted);text-align:center;margin-top:4px;padding:2px 0}
     .ds-dice{display:flex;gap:clamp(10px,3vw,16px);justify-content:center;align-items:center;padding:clamp(6px,2vw,10px) 0}
-    .ds-die{width:clamp(48px,13vw,64px);height:clamp(48px,13vw,64px);border-radius:clamp(6px,2vw,10px);overflow:hidden;background:rgba(0,0,0,0.2);box-shadow:0 3px 8px rgba(0,0,0,0.4)}
+    /* Double Shutter uses the DARK dice set — ornate gothic peonies, skulls,
+       crescent moons. Sized generously so the source resolution's detail
+       actually reads (full art is 2048×2048, no point hiding it at 55px). */
+    .ds-die{width:clamp(108px,34vw,172px);height:clamp(108px,34vw,172px);border-radius:clamp(10px,3vw,16px);overflow:hidden;background:#0a0c08;box-shadow:0 6px 18px rgba(0,0,0,0.6),0 0 0 1px rgba(200,168,75,0.18)}
     .ds-die img{width:100%;height:100%;object-fit:cover;display:block}
+    @keyframes dsDieRoll{0%{transform:translateY(-8px) rotate(-12deg) scale(0.9)}25%{transform:translateY(-14px) rotate(180deg) scale(1.05)}55%{transform:translateY(-6px) rotate(360deg) scale(1.08)}80%{transform:translateY(-2px) rotate(520deg) scale(1)}100%{transform:translateY(0) rotate(540deg) scale(1)}}
+    .ds-wrap.rolling .ds-die{animation:dsDieRoll 0.76s cubic-bezier(.2,.7,.3,1) both}
     .ds-info{font-family:DM Mono,monospace;font-size:clamp(0.55rem,1.6vw,0.7rem);color:var(--gold);text-align:center;padding:4px 0;min-height:1.2em}
     /* ═══ BACKGAMMON — Garden Gate board CSS ═══ */
     .bg-outer{width:min(98vw,640px);margin:0 auto}
@@ -3538,12 +3552,16 @@
        Caps expensive GPU operations on low-end devices.
        Modern phones/tablets see zero difference. */
 
-    /* — Cap all backdrop-filter blur to 4px — */
+    /* — Kill backdrop-filter blur entirely (matches index.html) —
+       The old "cap at 4px" version FORCED a 4px backdrop blur onto every
+       element that had none, smearing whole game frames on low-end
+       devices and creating hundreds of backdrop roots (far costlier
+       than the few blurs it was capping). */
     .perf-lite *,
     .perf-lite *::before,
     .perf-lite *::after {
-      -webkit-backdrop-filter: blur(4px) !important;
-      backdrop-filter: blur(4px) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
     }
 
     /* — Kill infinite box-shadow/filter animations — */

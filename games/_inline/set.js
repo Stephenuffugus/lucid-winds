@@ -38,7 +38,7 @@
 (function(){
   'use strict';
   var G = window._G;
-  var _e = G.e, _play = G.play, _playWin = G.playWin,
+  var _e = G.e, _play = G.play, _playWin = G.playWin, _st = G.st,
       ms = G.ms, mm = G.mm, mc = G.mc, sm = G.sm, _sr = G.sr;
 
   // ── Constants (copy from index.html:13727-13737) ──
@@ -140,11 +140,23 @@
   window._gameFns = window._gameFns || {};
   window._gameFns.set = function GSET(container) {
     // Build the SET-game DOM inside the container the shell hands us.
-    ms(container,
-      '<span>Trios: <strong id="s-found">0</strong></span> · ' +
-      '<span>Deck: <strong id="s-remain">81</strong></span>'
-    );
+    // 2026-07-04 audit: the gu-bar is display:none shell-wide, so the
+    // Trios/Deck counters live in a visible score row below instead.
+    ms(container);
     mm(container);
+
+    // Colorblind support: every card ships a .cb-marker badge but
+    // shared.css only reveals them under .cb-on (opacity .6 — designed
+    // subtle). Nothing in the shell ever added the class; do it here.
+    container.classList.add('cb-on');
+
+    // Visible score row (replaces the hidden gu-bar counters)
+    var scoreRow = document.createElement('div');
+    scoreRow.style.cssText = 'display:flex;justify-content:center;gap:22px;max-width:540px;margin:10px auto 0;padding:4px 10px;font-family:Georgia,serif;font-size:0.8rem;color:#e8dcc8;';
+    scoreRow.innerHTML =
+      '<span>Trios: <strong id="s-found" style="color:#c8a84b;">0</strong></span>' +
+      '<span>Deck: <strong id="s-remain" style="color:#7ab356;">81</strong></span>';
+    container.appendChild(scoreRow);
 
     // Card grid host
     var gridWrap = document.createElement('div');
@@ -155,15 +167,18 @@
     gridWrap.appendChild(grid);
     container.appendChild(gridWrap);
 
-    // Controls (new game + add 3)
+    // Controls (new game + add 3). NOT class gb-new — shared.css defines
+    // .gb-new as an image-button wrapper (padding:0;min-height:0) which
+    // collapsed these text buttons to 15px tall (2026-07-04 audit).
     mc(container).innerHTML =
-      '<button class="gb-new" onclick="window._setNew()" style="margin-right:8px;">↻ NEW GAME</button>' +
-      '<button class="gb-new" onclick="window._setHint()">+3 CARDS</button>';
+      '<button onclick="window._setNew()" style="min-height:48px;padding:12px 20px;margin-right:8px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1.5px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">↻ NEW GAME</button>' +
+      '<button onclick="window._setHint()" style="min-height:48px;padding:12px 20px;font-family:Georgia,serif;font-weight:700;font-size:0.75rem;letter-spacing:0.05em;background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(160,130,55,0.38));border:1.5px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:8px;cursor:pointer;">+3 CARDS</button>';
 
     // Game state lives inside the mount closure (not on window) so a
     // page-level reload starts fresh.
     var deck = [], board = [], selected = [], phenosFound = 0;
     var locked = false;  // brief lock during animations
+    var won = false;     // latched on board-clear; makes leftover cards inert
 
     function renderBoard() {
       var colors = getColors();
@@ -199,12 +214,24 @@
       var sr = document.getElementById('s-remain');
       if (sr) sr.textContent = deck.length;
 
-      // End check: no pheno + empty deck → game_win
+      // End check: no pheno + empty deck → game_win. Latched via `won` —
+      // renderBoard is structurally unreachable post-win (selectCard's
+      // success branch needs a pheno, _setHint bails on empty deck) but
+      // the flag makes that explicit and keeps leftover cards inert.
       if (!findPheno(board) && deck.length === 0) {
+        if (won) return;
+        won = true;
         _e('game_win');
         _playWin();
         sm('🌿 Board cleared. ' + phenosFound + ' trios found.');
         _sr('set', { w: true, s: phenosFound });
+        if (window._lwGameEnd) window._lwGameEnd({
+          won: true,
+          title: 'BOARD CLEARED',
+          line: phenosFound + ' trios found',
+          sub: 'the whole deck, well seen',
+          retry: window._setNew
+        });
       } else if (!findPheno(board) && deck.length > 0) {
         // No pheno on board but deck has more — auto +3 like LW does.
         window._setHint();
@@ -212,7 +239,7 @@
     }
 
     function selectCard(idx) {
-      if (locked) return;
+      if (locked || won) return;
       var cards = grid.querySelectorAll('.grove-card');
       var el = cards[idx];
       if (!el) return;
@@ -279,6 +306,8 @@
       selected = [];
       phenosFound = 0;
       locked = false;
+      won = false;
+      if (_st) _st();  // start the session clock (anti-farm 6s gate + ⏱)
       var sf = document.getElementById('s-found');
       if (sf) sf.textContent = '0';
       for (var i = 0; i < 12; i++) board.push(deck.pop());

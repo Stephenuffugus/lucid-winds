@@ -11,6 +11,10 @@ var _e=LWG.e,_play=LWG.play,_playWin=LWG.playWin,_setDiff=LWG.setDiff,ms=LWG.ms,
 var SHAPES=['\u{1F338}','\u{1F33F}','\u{1F4A7}','☀️','\u{1F331}','\u{1F344}'];
 var COLORS=['#E07A8A','#6BAD4A','#5B9BD5','#D4A843','#D8C7A8','#A96BB8'];
 var SHAPE_NAMES=['Blossom','Leaf','Drop','Sun','Sprout','Mushroom'];
+// Colorblind support: the color axis gets a per-color corner glyph so a
+// same-shape line never relies on hue alone (red/green pair esp.).
+var COLOR_SYMS=['●','▲','■','★','◆','✚'];
+function csym(t){return '<span class="GLcsym">'+COLOR_SYMS[t.color]+'</span>';}
 
 // ── Styles ──────────────────────────────────────────────────────────────
 (function injectStyle(){
@@ -30,42 +34,44 @@ var SHAPE_NAMES=['Blossom','Leaf','Drop','Sun','Sprout','Mushroom'];
     '.GLdiffBtn{min-height:62px;padding:10px 14px;border-radius:12px;background:rgba(26,36,22,0.85);border:1.5px solid rgba(122,179,86,0.35);color:#e8dcc8;font-family:Georgia,serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;flex-direction:column;align-items:flex-start;gap:2px}',
     '.GLdiffBtn:active{transform:scale(0.98);background:rgba(122,179,86,0.22)}',
     '.GLdiffBtn .GLdlv{font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.18em;color:#c8a84b}',
-    '.GLdiffBtn .GLdsub{font-size:0.68rem;color:rgba(232,220,200,0.75)}',
+    '.GLdiffBtn .GLdsub{font-size:0.7rem;color:rgba(232,220,200,0.75)}',
     // Score banner
     '.GLscore{display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:6px;padding:8px 10px;margin:2px 0 6px;background:linear-gradient(135deg,rgba(26,31,23,0.88),rgba(13,16,12,0.92));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;font-family:Bebas Neue,sans-serif}',
     '.GLscoreCell{text-align:center}',
-    '.GLscoreLbl{font-size:0.6rem;letter-spacing:0.18em;color:rgba(232,220,200,0.55)}',
+    '.GLscoreLbl{font-size:0.7rem;font-weight:500;letter-spacing:0.18em;color:rgba(232,220,200,0.55)}',
     '.GLscoreVal{font-family:DM Mono,monospace;font-size:1.15rem;color:#c8a84b;font-weight:700;margin-top:1px}',
     '.GLscoreMid{text-align:center}',
     '.GLturn{font-size:0.68rem;letter-spacing:0.16em;margin-top:1px}',
     '.GLturn.active{color:#8fc57a}',
     '.GLturn.ai{color:rgba(232,220,200,0.55)}',
-    '.GLbagRow{font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.55);margin-top:2px}',
+    '.GLbagRow{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.55);margin-top:2px}',
     // Board frame
     '.GLboardWrap{position:relative;background:rgba(8,12,6,0.55);border:1.5px solid rgba(74,124,53,0.3);border-radius:10px;padding:4px;margin:4px 0;overflow:auto;-webkit-overflow-scrolling:touch;max-height:56vh;min-height:260px}',
     '.GLboardGrid{display:grid;gap:3px;justify-content:center;padding:2px}',
-    '.GLtile{width:44px;height:44px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;box-sizing:border-box;position:relative;box-shadow:0 1px 3px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 -1px 0 rgba(0,0,0,0.22);border:1.5px solid rgba(0,0,0,0.3)}',
+    '.GLtile{width:48px;height:48px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;box-sizing:border-box;position:relative;box-shadow:0 1px 3px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 -1px 0 rgba(0,0,0,0.22);border:1.5px solid rgba(0,0,0,0.3)}',
     '.GLtile.just{animation:glPop .35s cubic-bezier(.2,1.2,.3,1) both}',
     '.GLtile.tentative{outline:2px solid #ffd86a;outline-offset:-2px;box-shadow:0 0 12px rgba(255,216,106,0.55),0 1px 3px rgba(0,0,0,0.5);z-index:2}',
     '.GLtile.qwirkle-glow{animation:glCellShake .45s ease-in-out;box-shadow:0 0 18px rgba(255,216,106,0.75),inset 0 0 8px rgba(255,216,106,0.4)}',
-    '.GLempty{width:44px;height:44px;border-radius:7px;box-sizing:border-box;position:relative}',
+    '.GLempty{width:48px;height:48px;border-radius:7px;box-sizing:border-box;position:relative}',
     '.GLempty.inbounds{border:1px dashed rgba(74,124,53,0.14)}',
     '.GLempty.valid{border:2px solid rgba(122,179,86,0.55);background:rgba(122,179,86,0.12);cursor:pointer}',
     '.GLempty.valid:active{background:rgba(122,179,86,0.24)}',
-    '.GLprev{position:absolute;bottom:2px;right:3px;font-family:DM Mono,monospace;font-size:0.56rem;font-weight:700;color:#c8a84b;text-shadow:0 1px 2px rgba(0,0,0,0.9);pointer-events:none}',
-    '.GLprev.qwirkle{color:#ffd86a;font-size:0.66rem;text-shadow:0 0 5px rgba(255,216,106,0.8),0 1px 2px rgba(0,0,0,0.9)}',
+    '.GLprev{position:absolute;bottom:2px;right:3px;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:700;color:#c8a84b;text-shadow:0 1px 2px rgba(0,0,0,0.9);pointer-events:none}',
+    '.GLprev.qwirkle{color:#ffd86a;font-size:0.74rem;text-shadow:0 0 5px rgba(255,216,106,0.8),0 1px 2px rgba(0,0,0,0.9)}',
     // Hand + swap mode
     '.GLhandBox{padding:4px 2px 2px}',
-    '.GLhandLbl{font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.16em;color:rgba(232,220,200,0.7);text-align:center;margin-bottom:4px}',
+    '.GLhandLbl{font-family:Bebas Neue,sans-serif;font-size:0.7rem;font-weight:500;letter-spacing:0.16em;color:rgba(232,220,200,0.7);text-align:center;margin-bottom:4px}',
     '.GLhandLbl.swap{color:#ffb3b3}',
     '.GLhand{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:60px}',
     '.GLhandTile{width:52px;height:52px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.55rem;cursor:pointer;box-sizing:border-box;border:2px solid rgba(0,0,0,0.3);box-shadow:0 2px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.14),inset 0 -1px 0 rgba(0,0,0,0.22);transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative}',
     '.GLhandTile.sel{border-color:#ffd86a;transform:translateY(-5px);box-shadow:0 6px 14px rgba(255,216,106,0.5),0 2px 6px rgba(0,0,0,0.4)}',
     '.GLhandTile.marked{border-color:#e07a7a;outline:2px dashed rgba(224,122,122,0.7);outline-offset:2px}',
     '.GLhandTile.marked::after{content:"✕";position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:9px;background:#e07a7a;color:#fff;font-size:0.7rem;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.5)}',
+    // Colorblind corner glyph — one symbol per COLOR index
+    '.GLcsym{position:absolute;top:1px;left:3px;font-size:0.7rem;line-height:1;font-family:Georgia,serif;color:rgba(13,16,12,0.7);text-shadow:0 1px 1px rgba(255,255,255,0.28);pointer-events:none}',
     // Controls
     '.GLctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;padding:8px 2px 6px}',
-    '.GLbtn{min-height:46px;padding:9px 12px;font-family:Georgia,serif;font-size:0.78rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:6px}',
+    '.GLbtn{min-height:48px;padding:9px 12px;font-family:Georgia,serif;font-size:0.78rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:6px}',
     '.GLbtn:active{transform:scale(0.96);background:rgba(200,168,75,0.22)}',
     '.GLbtn.primary{background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.4));border-color:rgba(122,179,86,0.55);color:#8fc57a;font-weight:700}',
     '.GLbtn.danger{background:rgba(112,40,40,0.42);border-color:rgba(224,122,122,0.5);color:#ffb3b3}',
@@ -77,7 +83,7 @@ var SHAPE_NAMES=['Blossom','Leaf','Drop','Sun','Sprout','Mushroom'];
     '#GLbreak{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);z-index:60;background:linear-gradient(180deg,rgba(26,36,22,0.95),rgba(13,16,12,0.96));border:1.5px solid rgba(200,168,75,0.55);border-radius:12px;padding:11px 15px 10px;min-width:220px;max-width:88vw;box-shadow:0 6px 24px rgba(0,0,0,0.7);font-family:Georgia,serif;animation:glPop .32s cubic-bezier(.2,1.2,.3,1) both}',
     '.GLbreakTitle{font-family:Bebas Neue,sans-serif;font-size:0.78rem;letter-spacing:0.18em;color:#c8a84b;text-align:center;margin-bottom:6px}',
     '.GLbreakLine{display:flex;justify-content:space-between;align-items:center;font-family:DM Mono,monospace;font-size:0.72rem;color:#e8dcc8;padding:2px 0;gap:10px}',
-    '.GLbreakLine .qpill{font-family:Bebas Neue,sans-serif;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;padding:1px 6px;border-radius:4px;font-size:0.58rem;letter-spacing:0.1em;font-weight:700}',
+    '.GLbreakLine .qpill{font-family:Bebas Neue,sans-serif;background:linear-gradient(180deg,#f5dc95,#c8a84b);color:#0d100c;padding:1px 6px;border-radius:4px;font-size:0.7rem;letter-spacing:0.1em;font-weight:700}',
     '.GLbreakTotal{display:flex;justify-content:space-between;border-top:1px solid rgba(200,168,75,0.25);margin-top:6px;padding-top:6px;font-family:Bebas Neue,sans-serif;font-size:0.82rem;letter-spacing:0.14em;color:#ffdc70}',
     // Game-over card
     '.GLend{margin:14px auto;max-width:360px;padding:20px;background:linear-gradient(180deg,rgba(20,28,18,0.97),rgba(13,16,12,0.98));border-radius:14px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.6);animation:glFade .3s ease}',
@@ -91,6 +97,7 @@ var SHAPE_NAMES=['Blossom','Leaf','Drop','Sun','Sprout','Mushroom'];
 
 // ── State ───────────────────────────────────────────────────────────────
 var S=null;
+var gen=0; // bumped on mount/new game so stale AI timers can't touch fresh state
 
 // DOM refs — built once, mutated
 var pan=null, diffOverlay=null, scoreBar=null, boardWrap=null, boardGrid=null;
@@ -255,7 +262,8 @@ function placeTile(r,c){
   S.pHand[slotIdx]=null;
   S.selIdx=-1;
   _play('tap');
-  _e('progress');
+  // NOTE: _e('progress') moved to endTurn — paying here let a
+  // place→undo→place loop farm earns for free (Jul 04 audit).
   updateHand();
   updateBoard();
   updateHUD();
@@ -280,6 +288,8 @@ function endTurn(){
   if(S.placed.length===0)return;
   var breakdown=scoreTurn();
   S.pScore+=breakdown.pts;
+  // Pay progress per COMMITTED tile only — undone placements earn nothing.
+  for(var ei=0;ei<S.placed.length;ei++)_e('progress');
   var anyQwirkle=breakdown.lines.some(function(l){return l.qwirkle;});
   // Drop "justPlaced" markers so next render doesn't animate
   S.placed.forEach(function(p){p.justPlaced=false;});
@@ -292,8 +302,9 @@ function endTurn(){
   // A Qwirkle is a MID-GAME milestone — firing _e('game_win') here triggered
   // the full win celebration + companion/achievement bumps during play and
   // double-paid on top of the real end-of-game win (Jun 10 audit).
-  if(anyQwirkle){ _playWin(); showQwirkleSplash('QWIRKLE +'+breakdown.lines.filter(function(l){return l.qwirkle;}).length*6); }
-  _e('milestone');
+  // _e('milestone') is gated on the actual Qwirkle — outside the if it
+  // paid every single turn (Jul 04 audit).
+  if(anyQwirkle){ _playWin(); showQwirkleSplash('QWIRKLE +'+breakdown.lines.filter(function(l){return l.qwirkle;}).length*6); _e('milestone'); }
   S.passCount=0;
   showBreakdown(breakdown.lines, breakdown.pts);
   // Check game-over
@@ -301,12 +312,12 @@ function endTurn(){
     S.pScore+=6; // canonical +6 end bonus
     S.phase='gameover';
     updateAll();
-    setTimeout(showEnd,600);
+    var ge=gen;setTimeout(function(){if(ge===gen)showEnd();},600);
     return;
   }
   S.turn='ai';
   updateAll();
-  setTimeout(aiTurn, 700);
+  var g=gen;setTimeout(function(){if(g===gen)aiTurn();}, 700);
 }
 
 function compactHand(hand){
@@ -351,7 +362,7 @@ function confirmSwap(){
   _play('tap');
   S.turn='ai';
   updateAll();
-  setTimeout(aiTurn, 700);
+  var g=gen;setTimeout(function(){if(g===gen)aiTurn();}, 700);
 }
 
 // ── AI ──────────────────────────────────────────────────────────────────
@@ -364,6 +375,7 @@ function confirmSwap(){
 
 function aiTurn(){
   if(S.phase==='gameover')return;
+  var g=gen; // stale-session guard for the whole staggered chain below
   var depth=(S.difficulty==='easy')?1:(S.difficulty==='medium')?2:6;
   var best=aiFindBest(depth);
   if(!best||best.score<=0){
@@ -379,10 +391,10 @@ function aiTurn(){
       sm('Mirror passed');
       // Two consecutive passes with an empty bag = game over (canonical).
       S.passCount=(S.passCount||0)+1;
-      if(S.passCount>=2){S.phase='gameover';updateAll();setTimeout(showEnd,500);return;}
+      if(S.passCount>=2){S.phase='gameover';updateAll();setTimeout(function(){if(g===gen)showEnd();},500);return;}
     }
     if(S.aHand.length===0&&S.bag.length===0){
-      S.aScore+=6; S.phase='gameover'; updateAll(); setTimeout(showEnd,500); return;
+      S.aScore+=6; S.phase='gameover'; updateAll(); setTimeout(function(){if(g===gen)showEnd();},500); return;
     }
     S.turn='player'; S.placed=[]; S.selIdx=-1; updateAll(); return;
   }
@@ -394,6 +406,7 @@ function aiTurn(){
   var moves=best.moves.slice();
   var idx=0;
   function step(){
+    if(g!==gen)return; // player exited / new game — abandon stale turn
     if(idx>=moves.length){
       var turnScore=scoreTurn();
       // S.aScore already updated incrementally as each placement went down
@@ -406,10 +419,11 @@ function aiTurn(){
       while(S.aHand.length<6&&S.bag.length>0)S.aHand.push(S.bag.pop());
       // Hold the highlight for a beat, then hand off
       setTimeout(function(){
+        if(g!==gen)return;
         S.placed.forEach(function(p){p.justPlaced=false;});
         S.placed=[];
         if(S.aHand.length===0&&S.bag.length===0){
-          S.aScore+=6; S.phase='gameover'; updateAll(); setTimeout(showEnd,500); return;
+          S.aScore+=6; S.phase='gameover'; updateAll(); setTimeout(function(){if(g===gen)showEnd();},500); return;
         }
         S.turn='player'; S.selIdx=-1; updateAll();
       }, 800);
@@ -592,7 +606,7 @@ function updateBoard(){
   var minC=S.bMin.c-pad, maxC=S.bMax.c+pad;
   if(Object.keys(S.board).length===0){minR=-2;maxR=2;minC=-2;maxC=2;}
   var cols=maxC-minC+1;
-  boardGrid.style.gridTemplateColumns='repeat('+cols+',44px)';
+  boardGrid.style.gridTemplateColumns='repeat('+cols+',48px)';
 
   // Precompute valid spots + score delta for current selection
   var showPreview = (S.mode==='play') && S.turn==='player' && S.selIdx>=0 && S.pHand[S.selIdx];
@@ -609,7 +623,7 @@ function updateBoard(){
           if(S.placed[pi].r===r && S.placed[pi].c===c){ placedEntry=S.placed[pi]; break; }
         }
         if(placedEntry){ justCls=placedEntry.justPlaced?' just tentative':' tentative'; }
-        html += '<div class="GLtile'+justCls+'" style="background:'+COLORS[t.color]+'">'+SHAPES[t.shape]+'</div>';
+        html += '<div class="GLtile'+justCls+'" style="background:'+COLORS[t.color]+'">'+csym(t)+SHAPES[t.shape]+'</div>';
       } else {
         var cls='GLempty inbounds';
         var preview='';
@@ -652,7 +666,7 @@ function updateHand(){
     var cls='GLhandTile';
     if(S.mode==='swap' && S.swapMark[i]) cls+=' marked';
     else if(S.selIdx===i) cls+=' sel';
-    html += '<div class="'+cls+'" data-slot="'+i+'" style="background:'+COLORS[t.color]+'">'+SHAPES[t.shape]+'</div>';
+    html += '<div class="'+cls+'" data-slot="'+i+'" style="background:'+COLORS[t.color]+'">'+csym(t)+SHAPES[t.shape]+'</div>';
   }
   handGrid.innerHTML=html;
 }
@@ -687,9 +701,10 @@ function playerPass(){
   if(S.placed.length>0){sm('Finish or undo placements first');return;}
   S.passCount=(S.passCount||0)+1;
   sm('Passed');
-  if(S.passCount>=2){S.phase='gameover';updateAll();setTimeout(showEnd,500);return;}
+  var g=gen;
+  if(S.passCount>=2){S.phase='gameover';updateAll();setTimeout(function(){if(g===gen)showEnd();},500);return;}
   S.turn='ai';S.selIdx=-1;updateAll();
-  setTimeout(aiTurn,700);
+  setTimeout(function(){if(g===gen)aiTurn();},700);
 }
 
 function makeBtn(label, style, onClick, disabled){
@@ -745,9 +760,9 @@ function showEnd(){
   var won=S.pScore>S.aScore;
   var tie=S.pScore===S.aScore;
   if(won){_e('game_win');_playWin();sm('Garden complete '+S.pScore+' to '+S.aScore);}
-  else if(tie){sm('Tied '+S.pScore+' to '+S.aScore);}
+  else if(tie){_e('game_loss');sm('Tied '+S.pScore+' to '+S.aScore);} // draw pays the consolation earn
   else{_e('game_loss');_play('lose');sm('Garden resting '+S.pScore+' to '+S.aScore);}
-  _sr('gardenlines',{w:won,s:S.pScore});
+  _sr('gardenlines',{w:won||tie,s:S.pScore}); // a drawn match doesn't ding win rate
   endEl=document.createElement('div');
   endEl.className='GLend '+(won?'win':'lose');
   endEl.innerHTML=
@@ -762,6 +777,7 @@ function showEnd(){
 var hostEl=null;
 
 function requestNewGame(){
+  gen++; // kill any pending timers from the finished game
   if(endEl){endEl.remove();endEl=null;}
   if(breakdownEl){breakdownEl.remove();breakdownEl=null;}
   // Clear pan and show picker again
@@ -771,6 +787,7 @@ function requestNewGame(){
 }
 
 function startGame(difficulty, host){
+  gen++;
   _setDiff(difficulty);
   var bag=makeBag();
   S={
@@ -796,11 +813,13 @@ function startGame(difficulty, host){
 window._gameFns = window._gameFns || {};
 window._gameFns.gardenlines = function(a){
   // Teardown any stale DOM refs from a previous session
+  gen++;
   pan=null; diffOverlay=null; scoreBar=null; boardWrap=null; boardGrid=null;
-  handBox=null; handLbl=null; handGrid=null; ctrlRow=null;
+  handBox=null; handLbl=null; handGrid=null; ctrlRow=null; qwirkleEl=null;
   scoreEls={you:null,ai:null,bag:null,turn:null,diff:null};
   if(breakdownEl){breakdownEl.remove();breakdownEl=null;}
   if(endEl){endEl.remove();endEl=null;}
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){gen++;if(breakdownEl){breakdownEl.remove();breakdownEl=null;}});
   hostEl=a;
   pan=document.createElement('div'); pan.id='GLpan'; a.appendChild(pan);
   showDifficultyPicker(pan);

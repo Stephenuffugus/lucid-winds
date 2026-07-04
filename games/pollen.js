@@ -18,7 +18,7 @@ window._gameFns.pollen = function PN(a){
     alive=false;
     if(aiTimer){clearTimeout(aiTimer);aiTimer=null;}
     // body-level overlays must not outlive the game (2026-07-03 fleet audit)
-    ['PNsetupOV','PNrulesOV','PNreturnOV','PNpassOV','PNreserveOV','PNinspectOV'].forEach(function(id){
+    ['PNsetupOV','PNrulesOV','PNreturnOV','PNpassOV','PNreserveOV','PNinspectOV','PNendOV'].forEach(function(id){
       var o=document.getElementById(id);if(o)o.remove();
     });
   });
@@ -321,31 +321,37 @@ window._gameFns.pollen = function PN(a){
     var ov=document.getElementById('PNsetupOV');if(ov)ov.remove();
     ov=document.createElement('div');ov.id='PNsetupOV';
     ov.style.cssText='position:fixed;inset:0;z-index:200002;display:flex;align-items:center;justify-content:center;background:rgba(5,8,4,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:16px;animation:pnFadeIn 0.25s ease;';
+    // Tap outside the modal to leave setup — never trap the player
+    // with no path back to the picker (2026-07-04 fleet audit).
+    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     document.body.appendChild(ov);
     _renderSetup(cur);
   }
   function _renderSetup(st){
     var ov=document.getElementById('PNsetupOV');if(!ov)return;
     var h='<div class="pn-modal" style="max-width:420px;width:100%;padding:22px 20px;font-family:DM Mono,monospace;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.16em;color:var(--gold);margin-bottom:4px;">MASTER POLLINATOR</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);margin-bottom:16px;">1, 4 players. Pass-and-play. First to 15 GP wins.</div>';
-    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">SEATS</div>';
+    h+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;letter-spacing:0.16em;color:var(--gold);">MASTER POLLINATOR</div>';
+    h+='<button class="gb" onclick="document.getElementById(\'PNsetupOV\').remove()" aria-label="Close setup" style="min-height:48px;min-width:48px;padding:8px;font-size:0.8rem;color:var(--muted);flex-shrink:0;">✕</button>';
+    h+='</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:16px;">1, 4 players. Pass-and-play. First to 15 GP wins.</div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--sage);margin-bottom:8px;">SEATS</div>';
     for(var i=0;i<st.seats.length;i++){
       var s=st.seats[i];
       h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;background:rgba(26,31,23,0.5);border:1px solid rgba(122,179,86,0.15);border-radius:10px;padding:8px 10px;">';
       h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);width:40px;">P'+(i+1)+'</div>';
-      h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:8px 10px;min-height:44px;">';
-      h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:44px;padding:8px 10px;font-size:0.58rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
-      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:44px;padding:8px 10px;font-size:0.58rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">AI</button>';
-      if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:44px;min-width:36px;padding:8px;font-size:0.55rem;color:var(--muted);">✕</button>';
+      h+='<input type="text" value="'+esc(s.name||'')+'" oninput="_PNsetName('+i+',this.value)" maxlength="12" style="flex:1;min-width:0;background:rgba(13,16,12,0.7);border:1px solid rgba(122,179,86,0.2);border-radius:6px;color:var(--cream);font-family:DM Mono,monospace;font-size:0.7rem;padding:8px 10px;min-height:48px;">';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',false)" style="min-height:48px;padding:8px 10px;font-size:0.7rem;'+(!s.isAI?'background:rgba(122,179,86,0.25);border-color:var(--sage);color:var(--sage);':'')+'">HUMAN</button>';
+      h+='<button class="gb" onclick="_PNsetAI('+i+',true)" style="min-height:48px;padding:8px 10px;font-size:0.7rem;'+(s.isAI?'background:rgba(196,122,122,0.22);border-color:#c47a7a;color:#c47a7a;':'')+'">AI</button>';
+      if(st.seats.length>1)h+='<button class="gb" onclick="_PNdropSeat('+i+')" style="min-height:48px;min-width:48px;padding:8px;font-size:0.7rem;color:var(--muted);">✕</button>';
       h+='</div>';
     }
     if(st.seats.length<4){
-      h+='<button class="gb" onclick="_PNaddSeat()" style="width:100%;margin:4px 0 14px;min-height:44px;font-size:0.65rem;letter-spacing:0.08em;">+ ADD SEAT</button>';
+      h+='<button class="gb" onclick="_PNaddSeat()" style="width:100%;margin:4px 0 14px;min-height:48px;font-size:0.7rem;letter-spacing:0.08em;">+ ADD SEAT</button>';
     }
     // Pool preview
     var pool=poolSize(st.seats.length);
-    h+='<div style="background:rgba(26,31,23,0.5);border-radius:10px;padding:10px 12px;margin:8px 0 14px;font-family:DM Mono,monospace;font-size:0.6rem;line-height:1.7;color:var(--cream);">';
+    h+='<div style="background:rgba(26,31,23,0.5);border-radius:10px;padding:10px 12px;margin:8px 0 14px;font-family:DM Mono,monospace;font-size:0.7rem;line-height:1.7;color:var(--cream);">';
     h+='<div style="color:var(--sage);letter-spacing:0.08em;margin-bottom:2px;">TOKEN POOL · '+st.seats.length+' player'+(st.seats.length===1?'':'s')+'</div>';
     h+='<div>'+pool+' × each color &nbsp;·&nbsp; <span style="color:#ffd700;">5</span> gold</div>';
     h+='</div>';
@@ -508,7 +514,11 @@ window._gameFns.pollen = function PN(a){
     var won=!winner.isAI&&countHumans()>0;
     if(won){_e('game_win');_playWin();}else{_e('game_loss');_play('lose');}
     sm(winner.name+' wins, '+winner.gp+' GP');
-    _sr('pollen',{w:won,s:winner.gp,t:GS.turn,n:GS.numPlayers});
+    // Record the best HUMAN seat's GP — recording the AI winner's score
+    // on a loss polluted the player's best-score stat (2026-07-04 audit).
+    var bestHuman=null;
+    for(var bh=0;bh<GS.players.length;bh++){var hp=GS.players[bh];if(!hp.isAI&&(!bestHuman||hp.gp>bestHuman.gp))bestHuman=hp;}
+    _sr('pollen',{w:won,s:(bestHuman||winner).gp,t:GS.turn,n:GS.numPlayers});
     showEndCard(winner,won);
   }
   function aiNeeded(who){
@@ -568,7 +578,7 @@ window._gameFns.pollen = function PN(a){
     var h='<div class="pn-modal" style="max-width:360px;width:100%;padding:22px 20px;font-family:DM Mono,monospace;text-align:center;">';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.18em;color:var(--muted);">RETURN '+excess+' TOKEN'+(excess===1?'':'S')+'</div>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin:4px 0 6px;">'+esc(who.name)+'</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--cream);opacity:0.8;margin-bottom:16px;line-height:1.5;">You\'re at '+totalTok(who.tokens)+'/10. Tap tokens in your pool to return them to supply until you\'re at 10.</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);opacity:0.8;margin-bottom:16px;line-height:1.5;">You\'re at '+totalTok(who.tokens)+'/10. Tap tokens in your pool to return them to supply until you\'re at 10.</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">';
     COLORS.concat(['gold']).forEach(function(c){
       if((who.tokens[c]||0)<=0)return;
@@ -576,7 +586,7 @@ window._gameFns.pollen = function PN(a){
         +tokDot(c,18)+' <span style="font-size:0.75rem;">'+who.tokens[c]+'</span></button>';
     });
     h+='</div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.56rem;color:var(--sage);">Total: '+totalTok(who.tokens)+' / 10</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--sage);">Total: '+totalTok(who.tokens)+' / 10</div>';
     h+='</div>';
     ov.innerHTML=h;
   }
@@ -603,7 +613,7 @@ window._gameFns.pollen = function PN(a){
       '<div style="text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.75rem;letter-spacing:0.18em;color:var(--muted);">PASS TO</div>'
       +'<div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:0.1em;color:var(--gold);margin:8px 0;">'+esc(nextSeat.name)+'</div>'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.65rem;color:var(--cream);opacity:0.7;margin-bottom:16px;">tap to continue</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);opacity:0.7;margin-bottom:16px;">tap to continue</div>'
       +'<div style="font-size:2.5rem;opacity:0.6;">👆</div>'
       +'</div>';
     ov.addEventListener('click',function(){ov.remove();});
@@ -713,23 +723,23 @@ window._gameFns.pollen = function PN(a){
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     // Token legend row reused across sections
     var legend=''
-      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('green',16)+'<span style="font-size:0.55rem;color:var(--muted)">GREEN</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('rose',16)+'<span style="font-size:0.55rem;color:var(--muted)">ROSE</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('blue',16)+'<span style="font-size:0.55rem;color:var(--muted)">BLUE</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('amber',16)+'<span style="font-size:0.55rem;color:var(--muted)">AMBER</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('spore',16)+'<span style="font-size:0.55rem;color:var(--muted)">SPORE</span></span>'
-      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('gold',16)+'<span style="font-size:0.55rem;color:var(--gold)">GOLD · wild</span></span>';
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('green',16)+'<span style="font-size:0.7rem;color:var(--muted)">GREEN</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('rose',16)+'<span style="font-size:0.7rem;color:var(--muted)">ROSE</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('blue',16)+'<span style="font-size:0.7rem;color:var(--muted)">BLUE</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('amber',16)+'<span style="font-size:0.7rem;color:var(--muted)">AMBER</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('spore',16)+'<span style="font-size:0.7rem;color:var(--muted)">SPORE</span></span>'
+      +'<span style="display:inline-flex;align-items:center;gap:3px">'+tokDot('gold',16)+'<span style="font-size:0.7rem;color:var(--gold)">GOLD · wild</span></span>';
     // Section builder
     function sec(title,body){
       return '<div style="margin:14px 0 8px;font-family:Bebas Neue,sans-serif;font-size:0.9rem;letter-spacing:0.14em;color:var(--gold);border-bottom:1px solid rgba(200,168,75,0.2);padding-bottom:4px;">'+title+'</div>'
-        +'<div style="font-family:DM Mono,monospace;font-size:0.68rem;line-height:1.6;color:var(--cream);">'+body+'</div>';
+        +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;line-height:1.6;color:var(--cream);">'+body+'</div>';
     }
     function b(text){return '<strong style="color:var(--gold);font-weight:700">'+text+'</strong>';}
-    function tip(text){return '<div style="margin-top:6px;padding:6px 10px;background:rgba(122,179,86,0.08);border-left:3px solid var(--sage);font-size:0.62rem;color:rgba(232,220,200,0.85);border-radius:4px;">💡 '+text+'</div>';}
+    function tip(text){return '<div style="margin-top:6px;padding:6px 10px;background:rgba(122,179,86,0.08);border-left:3px solid var(--sage);font-size:0.7rem;color:rgba(232,220,200,0.85);border-radius:4px;">💡 '+text+'</div>';}
     var h='<div class="pn-modal" style="max-width:440px;width:100%;max-height:86vh;overflow-y:auto;padding:20px 18px;">'
       +'<div style="text-align:center;margin-bottom:6px;">'
       +'<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.3rem;color:var(--cream);">Master Pollinator</div>'
-      +'<div style="font-family:DM Mono,monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">An engine-builder for 1-4 players</div>'
+      +'<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">An engine-builder for 1-4 players</div>'
       +'</div>'
       // Tokens legend at the very top — players need this to parse everything below
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:10px;background:rgba(26,31,23,0.55);border-radius:8px;margin:10px 0 4px;">'+legend+'</div>'
@@ -827,14 +837,20 @@ window._gameFns.pollen = function PN(a){
     spore: {top:'#fbf6e6', mid:'#d8c9a8', edge:'#6f6448'},
     gold:  {top:'#fff2a8', mid:'#e0b830', edge:'#8a5a0c'}
   };
+  // Colorblind glyphs — hue alone can't be the only signal (fleet
+  // standard, Flood Fill precedent). Dark letter on the chip face with
+  // a light halo so it reads on every gradient. Gold = ★ (wild).
+  var TOK_GLYPH = {green:'G', rose:'R', blue:'B', amber:'A', spore:'S', gold:'★'};
   function tokDot(c,sz){
     var p = TOK_PALETTE[c] || TOK_PALETTE.spore;
     var rim = sz >= 22 ? 2 : 1;
-    return '<span style="display:inline-block;width:'+sz+'px;height:'+sz+'px;border-radius:50%;'
+    var fs = Math.max(7, Math.round(sz*0.55));
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;border-radius:50%;'
       +'background:radial-gradient(circle at 35% 28%, '+p.top+' 0%, '+p.mid+' 60%, '+p.edge+' 100%);'
       +'border:'+rim+'px solid '+p.edge+';'
       +'box-shadow:inset 0 -1px 2px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.45), 0 1px 2px rgba(0,0,0,0.4);'
-      +'vertical-align:middle;flex-shrink:0;"></span>';
+      +'vertical-align:middle;flex-shrink:0;">'
+      +'<span style="font-family:Arial,sans-serif;font-weight:800;font-size:'+fs+'px;line-height:1;color:'+p.edge+';text-shadow:0 0 2px rgba(255,255,255,0.85),0 1px 1px rgba(255,255,255,0.5);">'+(TOK_GLYPH[c]||'')+'</span></span>';
   }
 
   // Art-first renderer: if assets/games/masterpollinator/<slug>.png loads,
@@ -920,8 +936,8 @@ window._gameFns.pollen = function PN(a){
     for(var i=0;i<standings.length;i++){
       var p=standings[i];
       var isWin=(p.id===winner.id);
-      rows+='<div class="pn-standing" style="display:flex;justify-content:space-between;padding:8px 10px;background:'+(isWin?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.5)')+';border:1px solid '+(isWin?'rgba(200,168,75,0.45)':'rgba(122,179,86,0.1)')+';border-radius:8px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:0.68rem;">'
-        +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+esc(p.name)+(p.isAI?' <span style="color:var(--muted);font-size:0.55rem;">AI</span>':'')+'</span>'
+      rows+='<div class="pn-standing" style="display:flex;justify-content:space-between;padding:8px 10px;background:'+(isWin?'rgba(200,168,75,0.18)':'rgba(26,31,23,0.5)')+';border:1px solid '+(isWin?'rgba(200,168,75,0.45)':'rgba(122,179,86,0.1)')+';border-radius:8px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:0.7rem;">'
+        +'<span style="color:'+(isWin?'var(--gold)':'var(--cream)')+';">'+(isWin?'🏆 ':'')+(i+1)+'. '+esc(p.name)+(p.isAI?' <span style="color:var(--muted);font-size:0.7rem;">AI</span>':'')+'</span>'
         +'<span style="color:'+(isWin?'var(--gold)':'var(--sage)')+';font-weight:700;">'+p.gp+' GP</span>'
         +'</div>';
     }
@@ -929,9 +945,15 @@ window._gameFns.pollen = function PN(a){
       '<div style="font-size:3rem;margin-bottom:0.5rem;">'+(humanWon?'🌸':'🐝')+'</div>'+
       '<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:'+(humanWon?'var(--gold)':'var(--cream)')+';letter-spacing:0.12em;margin-bottom:0.6rem;">'+esc(winner.name.toUpperCase())+' WINS</div>'+
       '<div style="text-align:left;margin:14px 0;">'+rows+'</div>'+
-      '<div style="font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);margin-bottom:14px;">'+GS.turn+' turns played</div>'+
-      '<button onclick="this.parentNode.parentNode.remove();_PNnew();" style="padding:12px 28px;font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:10px;cursor:pointer;min-height:48px;">PLAY AGAIN</button>'+
+      '<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:14px;">'+GS.turn+' turns played</div>'+
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">'+
+      '<button onclick="document.getElementById(\'PNendOV\').remove();_PNnew();" style="padding:12px 28px;font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;background:rgba(122,179,86,0.2);border:1.5px solid var(--sage);color:var(--sage);border-radius:10px;cursor:pointer;min-height:48px;">PLAY AGAIN</button>'+
+      '<button onclick="document.getElementById(\'PNendOV\').remove()" style="padding:12px 22px;font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;background:rgba(26,31,23,0.6);border:1.5px solid rgba(138,145,120,0.4);color:var(--cream);border-radius:10px;cursor:pointer;min-height:48px;">DONE</button>'+
+      '</div>'+
       '</div>';
+    // Tap outside the card to dismiss — never trap the player behind
+    // the result screen (2026-07-04 fleet audit).
+    card.addEventListener('click',function(e){if(e.target===card)card.remove();});
     document.body.appendChild(card);
   }
 
@@ -940,7 +962,7 @@ window._gameFns.pollen = function PN(a){
     var h='';
     // Header + scoreboard row
     h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(26,31,23,0.6);border-radius:8px;margin-bottom:4px;">';
-    h+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:2px;">🐝 MASTER POLLINATOR <span style="font-size:0.65rem;color:var(--muted);">T'+GS.turn+'</span></div>';
+    h+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);letter-spacing:2px;">🐝 MASTER POLLINATOR <span style="font-size:0.7rem;color:var(--muted);">T'+GS.turn+'</span></div>';
     h+='</div>';
     // Per-seat scorebar so every player sees their standing at all times.
     h+='<div style="display:grid;grid-template-columns:repeat('+GS.numPlayers+',1fr);gap:3px;margin-bottom:4px;">';
@@ -950,14 +972,14 @@ window._gameFns.pollen = function PN(a){
       var bd=isActive?'var(--gold)':'rgba(122,179,86,0.15)';
       var nameClr=isActive?'var(--gold)':'var(--cream)';
       h+='<div class="pn-seat'+(isActive?' active':'')+'" style="background:'+bg+';border:1px solid '+bd+';padding:4px 6px;text-align:center;font-family:DM Mono,monospace;">'
-        +'<div style="font-size:0.55rem;color:'+nameClr+';letter-spacing:0.05em;word-break:break-word;">'+esc(p.name)+(p.isAI?' 🤖':'')+'</div>'
+        +'<div style="font-size:0.7rem;color:'+nameClr+';letter-spacing:0.05em;word-break:break-word;">'+esc(p.name)+(p.isAI?' 🤖':'')+'</div>'
         +'<div style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;color:'+nameClr+';">'+p.gp+'</div>'
         +'</div>';
     }
     h+='</div>';
     var active=me();
-    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">, '+esc(active.name)+"'s turn,</div>";
-    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">, '+esc(active.name)+' thinking,</div>';
+    if(GS.phase==='player')h+='<div style="text-align:center;color:var(--sage);font-size:0.7rem;padding:2px;">'+esc(active.name)+"'s turn</div>";
+    else if(GS.phase==='ai')h+='<div style="text-align:center;color:#c47a7a;font-size:0.7rem;padding:2px;">'+esc(active.name)+' is thinking…</div>';
     // Pollinators
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:var(--cream);letter-spacing:0.1em;margin:8px 0 4px;text-align:center;">POLLINATORS</div>';
     h+='<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;justify-content:center;">';
@@ -969,7 +991,7 @@ window._gameFns.pollen = function PN(a){
       var bg,tag='';
       if(claimedBy){
         bg='rgba(200,168,75,0.18);border-color:var(--gold)';
-        tag='<div style="font-size:0.45rem;color:var(--gold);margin-top:2px;">'+esc(claimedBy.name)+'</div>';
+        tag='<div style="font-size:0.7rem;color:var(--gold);margin-top:2px;">'+esc(claimedBy.name)+'</div>';
       } else {
         bg='rgba(26,31,23,0.5);border-color:rgba(122,179,86,0.2)';
       }
@@ -987,14 +1009,14 @@ window._gameFns.pollen = function PN(a){
       h+='<div class="pn-poll" style="position:relative;width:88px;height:108px;background:'+bg+';border:1px solid;border-radius:8px;text-align:center;font-size:10px;flex-shrink:0;overflow:hidden;">';
       h+=pEmoji+pArt;
       // GP badge top-right
-      h+='<div style="position:absolute;top:2px;right:3px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:10px;display:flex;align-items:center;justify-content:center;z-index:3;border:1px solid rgba(120,90,20,0.6);box-shadow:0 1px 3px rgba(0,0,0,0.4);">'+p.gp+'</div>';
+      h+='<div style="position:absolute;top:2px;right:3px;width:20px;height:20px;border-radius:50%;background:linear-gradient(180deg,#fff5d4,#e8c860);color:#2a1f0a;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;z-index:3;border:1px solid rgba(120,90,20,0.6);box-shadow:0 1px 3px rgba(0,0,0,0.4);">'+p.gp+'</div>';
       // Name strip
-      h+='<div style="position:absolute;left:0;right:0;bottom:18px;font-family:DM Mono,monospace;font-size:6.5px;letter-spacing:0.04em;color:var(--cream);text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px;z-index:3;">'+esc(p.name)+'</div>';
+      h+='<div style="position:absolute;left:0;right:0;bottom:30px;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;letter-spacing:0;color:var(--cream);text-shadow:0 1px 2px rgba(0,0,0,0.9);background:rgba(13,16,12,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 3px;z-index:3;">'+esc(p.name)+'</div>';
       // Requirement bar at bottom — bigger so seeds read.
       h+='<div style="position:absolute;left:0;right:0;bottom:0;height:30px;background:linear-gradient(180deg,rgba(13,16,12,0.6),rgba(13,16,12,0.88));display:flex;align-items:center;justify-content:center;gap:6px;z-index:3;border-top:1px solid rgba(122,179,86,0.2);">';
       for(var c in p.req)h+='<span style="display:inline-flex;align-items:center;gap:3px;color:'+COLOR_HEX[c]+';font-weight:800;font-size:13px;">'+tokDot(c,20)+p.req[c]+'</span>';
       h+='</div>';
-      if(tag){h+='<div style="position:absolute;top:2px;left:3px;font-size:0.5rem;color:var(--gold);background:rgba(13,16,12,0.7);border-radius:4px;padding:1px 4px;z-index:3;">'+esc(claimedBy.name)+'</div>';}
+      if(tag){h+='<div style="position:absolute;top:2px;left:3px;font-size:0.7rem;color:var(--gold);background:rgba(13,16,12,0.7);border-radius:4px;padding:1px 4px;z-index:3;max-width:60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(claimedBy.name)+'</div>';}
       h+='</div>';
     });
     h+='</div>';
@@ -1017,9 +1039,9 @@ window._gameFns.pollen = function PN(a){
       var bd=act?'var(--gold)':'rgba(122,179,86,0.15)';
       var clr=act?'var(--gold)':'var(--cream)';
       h+='<button onclick="_PNtier('+t.n+')" '
-        +'style="flex:1;max-width:130px;min-height:42px;padding:6px 4px;background:'+bg+';border:1.5px solid '+bd+';border-radius:8px;color:'+clr+';cursor:pointer;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;-webkit-tap-highlight-color:transparent;">'
-        +'<div style="font-size:0.62rem;">T'+t.n+' '+t.icon+' '+t.name+'</div>'
-        +'<div style="font-size:0.5rem;color:var(--muted);margin-top:1px;">'+t.deck.length+' left</div>'
+        +'style="flex:1;max-width:130px;min-height:48px;padding:6px 4px;background:'+bg+';border:1.5px solid '+bd+';border-radius:8px;color:'+clr+';cursor:pointer;font-family:Bebas Neue,sans-serif;letter-spacing:0.06em;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;-webkit-tap-highlight-color:transparent;">'
+        +'<div style="font-size:0.7rem;">T'+t.n+' '+t.icon+' '+t.name+'</div>'
+        +'<div style="font-size:0.7rem;color:var(--muted);margin-top:1px;">'+t.deck.length+' left</div>'
         +'</button>';
     });
     h+='</div>';
@@ -1054,7 +1076,7 @@ window._gameFns.pollen = function PN(a){
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.8rem;color:var(--cream);letter-spacing:0.1em;">PLANTS</div>';
     h+='<div style="display:flex;gap:2px;flex-wrap:wrap;">';
     COLORS.forEach(function(c){for(var i=0;i<(meRef.production[c]||0);i++)h+=tokDot(c,22);});
-    if(meRef.cards.length===0)h+='<span style="font-size:10px;color:var(--muted);">None yet</span>';
+    if(meRef.cards.length===0)h+='<span style="font-size:0.7rem;color:var(--muted);">None yet</span>';
     h+='</div>';
     if(meRef.reserved.length>0){
       h+='<div class="pn-reserved-band" style="margin-top:8px;">';
@@ -1066,10 +1088,10 @@ window._gameFns.pollen = function PN(a){
     // Actions
     if(GS.phase==='player'){
       h+='<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:4px 0;">';
-      h+='<button class="gb" onclick="_PNact(\'collect3\')" style="min-height:44px;padding:8px;background:'+(GS.action==='collect3'?'rgba(122,179,86,0.3)':'')+';">3 DIFF</button>';
-      h+='<button class="gb" onclick="_PNact(\'collect2\')" style="min-height:44px;padding:8px;background:'+(GS.action==='collect2'?'rgba(122,179,86,0.3)':'')+';">2 SAME</button>';
-      if(GS.selectedTokens.length>0)h+='<button class="gb" onclick="_PNconfirm()" style="min-height:44px;padding:8px;background:rgba(200,168,75,0.2);color:var(--gold);border-color:rgba(200,168,75,0.5);">✓ CONFIRM</button>';
-      if(GS.action)h+='<button class="gb" onclick="_PNcancel()" style="min-height:44px;padding:8px;">✕</button>';
+      h+='<button class="gb" onclick="_PNact(\'collect3\')" style="min-height:48px;padding:8px;background:'+(GS.action==='collect3'?'rgba(122,179,86,0.3)':'')+';">3 DIFF</button>';
+      h+='<button class="gb" onclick="_PNact(\'collect2\')" style="min-height:48px;padding:8px;background:'+(GS.action==='collect2'?'rgba(122,179,86,0.3)':'')+';">2 SAME</button>';
+      if(GS.selectedTokens.length>0)h+='<button class="gb" onclick="_PNconfirm()" style="min-height:48px;padding:8px;background:rgba(200,168,75,0.2);color:var(--gold);border-color:rgba(200,168,75,0.5);">✓ CONFIRM</button>';
+      if(GS.action)h+='<button class="gb" onclick="_PNcancel()" style="min-height:48px;min-width:48px;padding:8px;">✕</button>';
       h+='</div>';
     }
     pan.innerHTML=h;
@@ -1129,11 +1151,11 @@ window._gameFns.pollen = function PN(a){
     h+='<div style="position:absolute;top:8px;left:14px;font-size:40px;font-weight:800;">'+(card.gp>0?card.gp:'')+'</div>';
     h+='<div style="position:absolute;top:14px;right:14px;">'+tokDot(card.produces,32)+'</div>';
     h+='<div style="text-align:center;font-size:80px;margin-top:70px;">'+TIER_ICONS[card.tier-1]+'</div>';
-    h+='<div style="position:absolute;bottom:56px;left:14px;right:14px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.18em;color:#4a7c35;">'+TIER_NAMES[card.tier-1].toUpperCase()+'</div>';
+    h+='<div style="position:absolute;bottom:56px;left:14px;right:14px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.18em;color:#4a7c35;">'+TIER_NAMES[card.tier-1].toUpperCase()+'</div>';
     h+='<div style="position:absolute;bottom:14px;left:14px;right:14px;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">';
     for(var c in card.cost){for(var i=0;i<card.cost[c];i++)h+=tokDot(c,18);}
     h+='</div></div>';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.6rem;color:var(--cream);opacity:0.8;max-width:260px;text-align:center;line-height:1.5;">Reserving holds this card and grants <span style="color:#ffd700;">1 gold</span>. Max 3 reserved at a time.</div>';
+    h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--cream);opacity:0.8;max-width:260px;text-align:center;line-height:1.5;">Reserving holds this card and grants <span style="color:#ffd700;">1 gold</span>. Max 3 reserved at a time.</div>';
     h+='<div style="display:flex;gap:12px;">';
     h+='<button class="gb" onclick="_PNconfirmReserve('+id+')" style="min-height:52px;padding:12px 22px;font-size:0.8rem;letter-spacing:0.1em;color:var(--sage);border-color:var(--sage);background:rgba(122,179,86,0.18);">RESERVE</button>';
     h+='<button class="gb" onclick="document.getElementById(\'PNreserveOV\').remove()" style="min-height:52px;padding:12px 22px;font-size:0.8rem;letter-spacing:0.1em;color:var(--muted);border-color:rgba(138,145,120,0.3);">BACK</button>';
@@ -1198,17 +1220,17 @@ window._gameFns.pollen = function PN(a){
     // Flower name (educational)
     h+='<div style="font-family:Playfair Display,serif;font-style:italic;font-size:1.4rem;color:var(--cream);margin-bottom:4px;">'+displayName+'</div>';
     if(card.hideName){
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);margin-bottom:8px;">, scientific name kept hidden,</div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);margin-bottom:8px;">scientific name kept hidden</div>';
     }
     // Stats row: GP + produces (large)
     h+='<div style="display:flex;gap:18px;justify-content:center;align-items:center;margin:10px 0;font-family:DM Mono,monospace;color:var(--cream);">';
-    if(card.gp>0)h+='<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:var(--gold);font-size:1.4rem;font-weight:800;">'+card.gp+'</span><span style="color:var(--muted);font-size:0.6rem;">GP</span></span>';
-    h+='<span style="display:inline-flex;align-items:center;gap:6px;">'+tokDot(card.produces,28)+'<span style="color:var(--muted);font-size:0.6rem;">produces</span></span>';
+    if(card.gp>0)h+='<span style="display:inline-flex;align-items:center;gap:4px;"><span style="color:var(--gold);font-size:1.4rem;font-weight:800;">'+card.gp+'</span><span style="color:var(--muted);font-size:0.7rem;">GP</span></span>';
+    h+='<span style="display:inline-flex;align-items:center;gap:6px;">'+tokDot(card.produces,28)+'<span style="color:var(--muted);font-size:0.7rem;">produces</span></span>';
     h+='</div>';
     // Cost row — big chips
     if(costRow){
       h+='<div style="background:linear-gradient(180deg,rgba(248,242,224,0.18),rgba(232,222,188,0.12));border:1px solid rgba(200,168,75,0.3);border-radius:10px;padding:10px;margin:10px 0;">';
-      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.65rem;letter-spacing:0.14em;color:var(--muted);margin-bottom:6px;">COST</div>';
+      h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.14em;color:var(--muted);margin-bottom:6px;">COST</div>';
       h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">'+costRow+'</div>';
       h+='</div>';
     }
@@ -1222,7 +1244,7 @@ window._gameFns.pollen = function PN(a){
       h+='<button class="gb" onclick="_PNinspectReserve('+card.id+')" style="flex:1 1 120px;min-height:54px;padding:12px;font-size:0.8rem;letter-spacing:0.1em;color:var(--gold);border-color:var(--gold);background:rgba(200,168,75,0.18);">🔒 RESERVE</button>';
     }
     if(canAct && !aff.affordable && !canRes && !isReserved && me().reserved.length>=3){
-      h+='<div style="flex:1;color:var(--muted);font-size:0.6rem;padding:14px;">Hand is full · buy a reserved card first</div>';
+      h+='<div style="flex:1;color:var(--muted);font-size:0.7rem;padding:14px;">Hand is full · buy a reserved card first</div>';
     }
     h+='<button class="gb" onclick="document.getElementById(\'PNinspectOV\').remove()" style="flex:1 1 100px;min-height:54px;padding:12px;font-size:0.7rem;letter-spacing:0.1em;color:var(--cream);">BACK</button>';
     h+='</div>';

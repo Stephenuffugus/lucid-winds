@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: farkle
  *
  * COPY of the inline GF mount function from index.html
- * lines 67784-68121.
+ * lines 67787-68149.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -23,6 +23,7 @@
     var numPlayers=1,curP=0,players=[{banked:0}],target=10000,gameOver=false,finalRound=false,finalStart=-1;
     var justRolled=new Array(6).fill(false);
     var overlay=null; // {kind:'hot'|'farkle'|'gameover', ...}
+    var fGen=0; // bumped by _FN + exit cleanup — invalidates stale timer chains (2026-07-04 audit)
     // Inject Farkle keyframes once
     if(!document.getElementById('f-anim-style')){
       var _fs=document.createElement('style');_fs.id='f-anim-style';
@@ -123,11 +124,14 @@
       // Only visible before any play in the current match
       if(turn>0||players[0].banked>0||curP>0||gameOver||finalRound)return '';
       for(var pp=1;pp<players.length;pp++)if(players[pp].banked>0)return '';
+      // First roll leaves turn===0 (points live in kept dice) — hide the picker
+      // once any die is on the felt so a mid-turn tap can't wipe the match.
+      for(var dd=0;dd<6;dd++)if(dice[dd])return '';
       var h='<div style="display:flex;gap:6px;justify-content:center;align-items:center;padding:2px 2px 8px;flex-wrap:wrap;">';
-      h+='<span style="font-family:DM Mono,monospace;font-size:0.55rem;letter-spacing:0.15em;color:rgba(232,220,200,0.55);text-transform:uppercase;">Players</span>';
+      h+='<span style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;color:rgba(232,220,200,0.55);text-transform:uppercase;">Players</span>';
       for(var n=1;n<=4;n++){
         var on=n===numPlayers;
-        h+='<button onclick="_FNP('+n+')" style="min-width:44px;min-height:44px;padding:6px 12px;border-radius:6px;border:'+(on?'1.5px solid #ffb45a':'1px solid rgba(220,160,90,0.3)')+';background:'+(on?'rgba(255,180,90,0.18)':'rgba(0,0,0,0.35)')+';color:'+(on?'#ffb45a':'#e8dcc8')+';font-family:Georgia,serif;font-weight:700;font-size:0.75rem;cursor:pointer;">'+n+'</button>';
+        h+='<button onclick="_FNP('+n+')" style="min-width:48px;min-height:48px;padding:6px 12px;border-radius:6px;border:'+(on?'1.5px solid #ffb45a':'1px solid rgba(220,160,90,0.3)')+';background:'+(on?'rgba(255,180,90,0.18)':'rgba(0,0,0,0.35)')+';color:'+(on?'#ffb45a':'#e8dcc8')+';font-family:Georgia,serif;font-weight:700;font-size:0.75rem;cursor:pointer;">'+n+'</button>';
       }
       h+='</div>';
       return h;
@@ -146,22 +150,22 @@
                : 'Tap dice to keep · bank or press your luck';
       var bs=bankStyle();
       var rollDisabled=rolling||busted||gameOver;
-      var bankDisabled=liveTurn()<=0||busted||gameOver;
+      var bankDisabled=rolling||liveTurn()<=0||busted||gameOver;
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">';
-      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.65);flex:1;min-width:0;">'+hint+'</div>';
+      h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.65);flex:1;min-width:110px;">'+hint+'</div>';
       h+='<div style="display:flex;gap:6px;flex-shrink:0;">';
-      h+='<button class="gb" onclick="_FR()" '+(rollDisabled?'disabled':'')+' style="min-height:44px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+(rollDisabled?'rgba(0,0,0,0.4)':'linear-gradient(180deg,rgba(255,180,90,0.3),rgba(200,130,60,0.4))')+';border:'+(rollDisabled?'1px solid rgba(232,220,200,0.25)':'2px solid #ffb45a')+';color:'+(rollDisabled?'rgba(232,220,200,0.4)':'#fff0d6')+';border-radius:6px;cursor:'+(rollDisabled?'not-allowed':'pointer')+';'+(rollDisabled?'':'box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 5px rgba(0,0,0,0.5);')+'">🎲 Roll</button>';
-      h+='<button class="gb" onclick="_FB()" '+(bankDisabled?'disabled':'')+' style="min-height:44px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+bs.bg+';border:2px solid '+bs.bdr+';color:'+bs.col+';border-radius:6px;cursor:'+(bankDisabled?'not-allowed':'pointer')+';'+bs.gl+'">💰 Bank'+(liveTurn()>0?' '+liveTurn():'')+'</button>';
-      h+='<button class="gb" onclick="_FN()" title="New game" style="min-height:44px;padding:10px 12px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">↻</button>';
-      h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="min-height:44px;padding:10px 12px;font-size:0.62rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">🎲 Style</button>';
+      h+='<button class="gb" onclick="_FR()" '+(rollDisabled?'disabled':'')+' style="min-height:48px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+(rollDisabled?'rgba(0,0,0,0.4)':'linear-gradient(180deg,rgba(255,180,90,0.3),rgba(200,130,60,0.4))')+';border:'+(rollDisabled?'1px solid rgba(232,220,200,0.25)':'2px solid #ffb45a')+';color:'+(rollDisabled?'rgba(232,220,200,0.4)':'#fff0d6')+';border-radius:6px;cursor:'+(rollDisabled?'not-allowed':'pointer')+';'+(rollDisabled?'':'box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 5px rgba(0,0,0,0.5);')+'">🎲 Roll</button>';
+      h+='<button class="gb" onclick="_FB()" '+(bankDisabled?'disabled':'')+' style="min-height:48px;padding:10px 14px;font-size:0.7rem;font-family:Georgia,serif;font-weight:700;background:'+bs.bg+';border:2px solid '+bs.bdr+';color:'+bs.col+';border-radius:6px;cursor:'+(bankDisabled?'not-allowed':'pointer')+';'+bs.gl+'">💰 Bank'+(liveTurn()>0?' '+liveTurn():'')+'</button>';
+      h+='<button class="gb" onclick="_FN()" title="New game" style="min-height:48px;padding:10px 12px;font-size:0.7rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border:1px solid rgba(122,179,86,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">↻</button>';
+      h+='<button class="gb" onclick="window._LW_dicePicker()" title="Dice style" style="min-height:48px;padding:10px 12px;font-size:0.7rem;font-family:Georgia,serif;background:linear-gradient(180deg,rgba(200,168,75,0.25),rgba(160,130,55,0.35));border:1px solid rgba(200,168,75,0.55);color:#f5ebd0;border-radius:6px;cursor:pointer;">🎲 Style</button>';
       h+='</div></div>';
       // Single stable dice grid (Stephen 2026-06-28): all 6 dice ALWAYS occupy
       // fixed slots. Held dice get a glowing box + lift IN PLACE — no separate,
       // smaller tray, so holding a die never reflows/resizes the layout.
       h+='<div style="background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.45) 100%);border:1px solid rgba(0,0,0,0.55);border-radius:10px;padding:10px;margin-bottom:6px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.55);min-height:120px;">';
       h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;min-height:14px;">';
-      h+='<div style="font-family:DM Mono,monospace;font-size:0.5rem;letter-spacing:0.18em;color:rgba(232,220,200,0.45);text-transform:uppercase;">'+(turn>0?'Kept dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
-      if(turn>0)h+='<div style="font-family:Georgia,serif;font-size:0.68rem;color:rgba(232,220,200,0.7);flex-shrink:0;">Locked: <strong style="color:#ffdc70;">'+turn+'</strong></div>';
+      h+='<div style="font-family:DM Mono,monospace;font-size:0.7rem;letter-spacing:0.06em;color:rgba(232,220,200,0.5);text-transform:uppercase;">'+(turn>0?'Kept dice glow \u00b7 tap to release':'Roll \u00b7 then tap dice to keep')+'</div>';
+      if(turn>0)h+='<div style="font-family:Georgia,serif;font-size:0.7rem;color:rgba(232,220,200,0.7);flex-shrink:0;">Locked: <strong style="color:#ffdc70;">'+turn+'</strong></div>';
       h+='</div>';
       h+='<div style="display:flex;gap:clamp(6px,2vw,10px);justify-content:center;flex-wrap:wrap;">';
       for(var i=0;i<6;i++){
@@ -179,9 +183,9 @@
       h+='<div style="min-height:30px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;margin-bottom:8px;">';
       if(parts.length){
         for(var bp=0;bp<parts.length;bp++){
-          h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#f5ebd0;background:rgba(0,0,0,0.35);border:1px solid rgba(255,180,120,0.25);border-radius:10px;padding:2px 8px;">'+parts[bp].label+' <strong style="color:#ffdc70;">+'+parts[bp].pts+'</strong></span>';
+          h+='<span style="font-family:Georgia,serif;font-size:0.7rem;color:#f5ebd0;background:rgba(0,0,0,0.35);border:1px solid rgba(255,180,120,0.25);border-radius:10px;padding:2px 8px;">'+parts[bp].label+' <strong style="color:#ffdc70;">+'+parts[bp].pts+'</strong></span>';
         }
-        h+='<span style="font-family:Georgia,serif;font-size:0.62rem;color:#fff0d6;background:linear-gradient(180deg,rgba(255,180,90,0.25),rgba(200,130,60,0.25));border:1px solid #ffb45a;border-radius:10px;padding:2px 10px;font-weight:700;">Turn '+liveTurn()+'</span>';
+        h+='<span style="font-family:Georgia,serif;font-size:0.7rem;color:#fff0d6;background:linear-gradient(180deg,rgba(255,180,90,0.25),rgba(200,130,60,0.25));border:1px solid #ffb45a;border-radius:10px;padding:2px 10px;font-weight:700;">Turn '+liveTurn()+'</span>';
       }
       h+='</div>';
       // Final round banner
@@ -219,7 +223,7 @@
         }
         h+='</div>';
         if(overlay.lineIdx>overlay.lines.length){
-          h+='<button class="gb" onclick="_FN()" style="margin-top:18px;min-height:44px;padding:8px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;animation:fLineIn 0.5s ease-out;">↻ Play Again</button>';
+          h+='<button class="gb" onclick="_FN()" style="margin-top:18px;min-height:48px;padding:8px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;animation:fLineIn 0.5s ease-out;">↻ Play Again</button>';
         }
         h+='</div>';
       }
@@ -232,6 +236,8 @@
       gameOver=true;
       var best=-1,winner=0;for(var i=0;i<players.length;i++)if(players[i].banked>best){best=players[i].banked;winner=i}
       _play('win');try{_playWin()}catch(e){}
+      var prevBest=0;try{prevBest=(_gr()['farkle']||{}).b||0}catch(e){}
+      var recScore=(winner===0)?best:players[0].banked;
       if(winner===0){_e('game_win');_sr('farkle',{w:true,s:best})}else{_e('game_loss');_sr('farkle',{w:false,s:players[0].banked})}
       var lines=[];
       if(players.length>1){
@@ -241,10 +247,14 @@
         }
       }
       lines.push({label:players.length>1?'WINNING SCORE':'FINAL SCORE',value:best,color:'#ffb45a',big:true,medal:winner===0?'🏆':null});
+      var isRec=recScore>prevBest;
+      lines.push({label:isRec?'BEST · NEW RECORD':'BEST',value:isRec?recScore:prevBest,color:isRec?'#ffdc70':'#f5ebd0',medal:isRec?'🌟':null});
       overlay={kind:'gameover',lines:lines,won:winner===0,lineIdx:0};
       rn();
       (function(){
+        var _rg=fGen;
         function reveal(){
+          if(_rg!==fGen)return;
           if(!overlay)return;
           overlay.lineIdx++;
           if(overlay.lineIdx<=lines.length){_play('tap');rn();setTimeout(reveal,700);}
@@ -255,6 +265,7 @@
     }
     window._FR=function(){
       if(rolling||busted||gameOver)return;rolling=true;
+      var _rollG=fGen; // stale after ↻New / exit — kills this roll's whole timer chain
       justRolled=new Array(6).fill(false);
       var any=false;
       for(var i=0;i<6;i++)if(!kept[i]){dice[i]=Math.floor(Math.random()*6)+1;justRolled[i]=true;any=true}
@@ -275,11 +286,12 @@
         rn();
         var hot=collectRolledEls();
         window._LW_tumble(hot.els,hot.vals,{duration:720,onDone:function(){
+          if(_rollG!==fGen)return;
           overlay={kind:'hot',pts:locked};
           _play('win');_e('milestone');
           rn();
-          setTimeout(function(){overlay=null;rolling=false;rn()},1500);
-          setTimeout(function(){justRolled=new Array(6).fill(false)},420);
+          setTimeout(function(){if(_rollG!==fGen)return;overlay=null;rolling=false;rn()},1500);
+          setTimeout(function(){if(_rollG!==fGen)return;justRolled=new Array(6).fill(false)},420);
         }});
         return;
       }
@@ -293,6 +305,7 @@
       var rolled=collectRolledEls();
       if(!has){
         window._LW_tumble(rolled.els,rolled.vals,{duration:720,onDone:function(){
+          if(_rollG!==fGen)return;
           busted=true;
           // Lost = turn points PLUS kept-dice score — the overlay used to say
           // "No scoring dice this roll" while 200 sat visibly kept behind it.
@@ -301,6 +314,7 @@
           _play('lose');_e('game_loss');
           rn();
           setTimeout(function(){
+            if(_rollG!==fGen)return;
             overlay=null;
             if(players.length>1)nextPlayer();
             else{
@@ -312,19 +326,23 @@
               rn();sm('🎲 Roll');
             }
           },1700);
-          setTimeout(function(){justRolled=new Array(6).fill(false)},420);
+          setTimeout(function(){if(_rollG!==fGen)return;justRolled=new Array(6).fill(false)},420);
         }});
         return;
       }
       // Normal branch
       window._LW_tumble(rolled.els,rolled.vals,{duration:720,onDone:function(){
+        if(_rollG!==fGen)return;
         rolling=false;
         justRolled=new Array(6).fill(false);
         rn();
       }});
     };
     window._FB=function(){
-      if(busted||gameOver)return;
+      // rolling in the guard: the bust is decided synchronously in _FR before
+      // the 720ms tumble lands — a Bank tap mid-tumble used to dodge the
+      // farkle and bank the turn anyway (2026-07-04 audit).
+      if(rolling||busted||gameOver)return;
       var ts=score();
       if(ts+turn<=0){sm('Tap dice to keep first');return}
       var gained=ts+turn;players[curP].banked+=gained;_e('progress');
@@ -335,13 +353,20 @@
         if(players.length===1){endGame();return}
         _play('win');
       }
-      if(players.length>1)setTimeout(function(){nextPlayer()},800);
+      if(players.length>1){
+        // Zero the turn + lock input for the handoff — extra Bank taps during
+        // the 800ms window used to re-bank the same turn score. nextPlayer
+        // resets rolling and the rest of the turn state.
+        turn=0;kept=new Array(6).fill(false);rolling=true;rn();
+        var _bg=fGen;setTimeout(function(){if(_bg!==fGen)return;nextPlayer()},800);
+      }
       else{
         turn=0;kept=new Array(6).fill(false);dice=new Array(6).fill(0);justRolled=new Array(6).fill(false);
         if(players[curP].banked>=target)endGame();else rn();
       }
     };
     window._FN=function(){
+      fGen++; // orphan any in-flight tumble/bank/reveal timers
       dice=new Array(6).fill(0);kept=new Array(6).fill(false);justRolled=new Array(6).fill(false);
       turn=0;rolling=false;busted=false;curP=0;gameOver=false;finalRound=false;finalStart=-1;overlay=null;
       players=[];for(var i=0;i<numPlayers;i++)players.push({banked:0});
@@ -354,7 +379,7 @@
       try{rn();}catch(e){}
     };
     window.addEventListener('lw-dice-style-change',_fStyleListener);
-    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){window.removeEventListener('lw-dice-style-change',_fStyleListener);});
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){fGen++;window.removeEventListener('lw-dice-style-change',_fStyleListener);});
     _FN();
   }
 

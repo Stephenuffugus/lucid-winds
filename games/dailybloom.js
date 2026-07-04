@@ -78,11 +78,11 @@ var DOMAINS={
     '.DBhubTitle{font-family:Bebas Neue,sans-serif;font-size:1.8rem;letter-spacing:0.22em;color:#c8a84b;margin-bottom:4px}',
     '.DBhubSub{font-size:0.78rem;color:rgba(232,220,200,0.72);line-height:1.5;margin-bottom:14px;max-width:340px;margin-left:auto;margin-right:auto}',
     '.DBhubRow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}',
-    '.DBhubChip{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:7px;background:rgba(26,36,22,0.6);border:1.5px solid rgba(122,179,86,0.22);font-family:DM Mono,monospace;font-size:0.66rem;color:#e8dcc8}',
-    '.DBhubChip .dom{font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.58rem}',
+    '.DBhubChip{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:7px;background:rgba(26,36,22,0.6);border:1.5px solid rgba(122,179,86,0.22);font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:#e8dcc8}',
+    '.DBhubChip .dom{font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.7rem}',
     '.DBhubStart{min-height:60px;padding:14px 26px;margin-top:14px;border-radius:12px;background:linear-gradient(180deg,rgba(200,168,75,0.32),rgba(160,130,50,0.42));border:1.5px solid #c8a84b;color:#ffdc70;font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.2em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-weight:700;box-shadow:0 4px 14px rgba(200,168,75,0.28)}',
     '.DBhubStart:active{transform:scale(0.98)}',
-    '.DBhubNote{margin-top:14px;padding:9px 12px;font-size:0.66rem;color:rgba(232,220,200,0.65);line-height:1.55;font-style:italic;border-top:1px solid rgba(74,124,53,0.2)}',
+    '.DBhubNote{margin-top:14px;padding:9px 12px;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.65);line-height:1.55;font-style:italic;border-top:1px solid rgba(74,124,53,0.2)}',
     // Progress dots
     '.DBdots{display:flex;gap:6px;justify-content:center;padding:6px 0}',
     '.DBdot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(122,179,86,0.3);background:transparent;transition:all .2s ease}',
@@ -94,17 +94,20 @@ var DOMAINS={
     // Explainer card (shown before each exercise for 2.5s)
     '.DBexplain{background:rgba(26,36,22,0.75);border:1.5px solid rgba(122,179,86,0.28);border-radius:10px;padding:14px 16px;margin:10px auto;max-width:360px;animation:dbPop .3s cubic-bezier(.2,1.2,.3,1) both}',
     '.DBexplainTitle{font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.18em;color:#c8a84b;margin-bottom:4px}',
-    '.DBexplainDom{font-family:Bebas Neue,sans-serif;font-size:0.6rem;letter-spacing:0.16em;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:8px}',
+    '.DBexplainDom{font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.16em;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:8px}',
     '.DBexplainBody{font-size:0.78rem;color:#e8dcc8;line-height:1.5;margin-bottom:8px}',
-    '.DBexplainSrc{font-size:0.6rem;color:rgba(232,220,200,0.45);font-style:italic}',
-    '.DBexplainLevel{margin-top:8px;font-family:DM Mono,monospace;font-size:0.66rem;color:#8fc57a;letter-spacing:0.06em}',
+    '.DBexplainSrc{font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.55);font-style:italic}',
+    '.DBexplainLevel{margin-top:8px;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:#8fc57a;letter-spacing:0.06em}',
     '.DBexplainGo{display:block;margin:14px auto 0;padding:10px 22px;border-radius:9px;background:rgba(122,179,86,0.25);border:1.5px solid rgba(122,179,86,0.5);color:#8fc57a;font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.16em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-weight:700}',
     // Option buttons (word, math, flanker, stroop)
     '.DBopts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}',
-    '.DBopt{min-height:48px;padding:10px 16px;border-radius:10px;background:rgba(26,36,22,0.75);border:1.5px solid rgba(122,179,86,0.3);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.08em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease}',
+    '.DBopt{position:relative;min-height:48px;padding:10px 16px;border-radius:10px;background:rgba(26,36,22,0.75);border:1.5px solid rgba(122,179,86,0.3);color:#e8dcc8;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.08em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease}',
     '.DBopt:active{transform:scale(0.96)}',
     '.DBopt.good{background:rgba(122,179,86,0.3);border-color:#7ab356;color:#7ab356}',
     '.DBopt.bad{background:rgba(199,80,80,0.22);border-color:#c47a7a;color:#c47a7a}',
+    // Colorblind-safe symbol overlays: right/wrong is never color-only
+    '.DBopt.good::after,.DBopt.goodSym::after{content:"\\2713";position:absolute;top:1px;right:4px;font-size:0.75rem;font-weight:700;line-height:1;color:#7ab356;font-family:Georgia,serif}',
+    '.DBopt.bad::after,.DBopt.badSym::after{content:"\\2717";position:absolute;top:1px;right:4px;font-size:0.75rem;font-weight:700;line-height:1;color:#c47a7a;font-family:Georgia,serif}',
     // Big prompt (math, Stroop, flanker)
     '.DBprompt{font-family:Bebas Neue,sans-serif;font-size:2.4rem;margin:14px 0;letter-spacing:0.06em;min-height:3rem;display:flex;align-items:center;justify-content:center}',
     // Reaction disc
@@ -118,6 +121,10 @@ var DOMAINS={
     '.DBgridCell.on{background:rgba(122,179,86,0.6);border:1px solid rgba(122,179,86,0.3)}',
     '.DBgridCell.flash{background:rgba(200,168,75,0.8);border:1px solid #c8a84b;box-shadow:0 0 12px rgba(200,168,75,0.6)}',
     '.DBgridCell.player{background:rgba(91,155,213,0.55);border:1px solid #5b9bd5}',
+    // Colorblind-safe glyphs: sequence flash vs your taps differ by symbol, not just hue
+    '.DBgridCell.flash,.DBgridCell.player{display:flex;align-items:center;justify-content:center;font-family:Georgia,serif}',
+    '.DBgridCell.flash::after{content:"\\2726";font-size:1rem;line-height:1;color:rgba(13,16,12,0.8)}',
+    '.DBgridCell.player::after{content:"\\25CF";font-size:0.8rem;line-height:1;color:#e8dcc8}',
     '.DBgridCell.tap{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}',
     // Flanker arrows
     '.DBflanker{font-family:serif;font-size:3.5rem;letter-spacing:0.05em;margin:20px 0;display:flex;justify-content:center;gap:6px}',
@@ -129,16 +136,16 @@ var DOMAINS={
     // Results
     '.DBresultsTitle{font-family:Bebas Neue,sans-serif;font-size:0.82rem;letter-spacing:0.18em;color:#c8a84b;margin:12px 0 2px}',
     '.DBbigScore{font-family:Bebas Neue,sans-serif;font-size:3.6rem;color:#c8a84b;line-height:1;margin-bottom:4px;animation:dbPop .4s cubic-bezier(.2,1.2,.3,1) both}',
-    '.DBscoreSub{font-family:DM Mono,monospace;font-size:0.66rem;color:rgba(232,220,200,0.55);letter-spacing:0.06em;margin-bottom:14px}',
+    '.DBscoreSub{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.6);letter-spacing:0.06em;margin-bottom:14px}',
     '.DBdomainGrid{margin:12px auto 8px;max-width:340px;font-size:0.72rem;text-align:left}',
     '.DBdomainRow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-family:Georgia,serif}',
     '.DBdomainLbl{font-family:Bebas Neue,sans-serif;letter-spacing:0.1em;font-size:0.72rem}',
     '.DBdomainVal{font-family:DM Mono,monospace;font-weight:700}',
     '.DBbar{height:5px;background:rgba(26,36,22,0.55);border-radius:3px;margin:2px 0 6px;overflow:hidden}',
     '.DBbar .fill{height:100%;border-radius:3px;transition:width .4s ease}',
-    '.DBtrend{display:flex;align-items:center;gap:2px;font-family:DM Mono,monospace;font-size:0.58rem;color:rgba(232,220,200,0.5);margin-left:6px}',
-    '.DBhonest{margin-top:18px;padding:10px 12px;font-size:0.64rem;color:rgba(232,220,200,0.55);line-height:1.55;font-style:italic;border-top:1px solid rgba(74,124,53,0.18)}',
-    '.DBreplay{margin-top:10px;font-family:DM Mono,monospace;font-size:0.58rem;color:rgba(200,168,75,0.75);letter-spacing:0.08em;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:6px;padding:6px 10px;display:inline-block}',
+    '.DBtrend{display:inline-flex;align-items:center;gap:2px;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.5);margin-left:6px}',
+    '.DBhonest{margin-top:18px;padding:10px 12px;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.6);line-height:1.55;font-style:italic;border-top:1px solid rgba(74,124,53,0.18)}',
+    '.DBreplay{margin-top:10px;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(200,168,75,0.8);letter-spacing:0.08em;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.25);border-radius:6px;padding:6px 10px;display:inline-block}',
     '.DBretry{display:block;margin:14px auto 0;padding:10px 22px;border-radius:9px;background:rgba(26,31,23,0.7);border:1.5px solid rgba(220,180,120,0.35);color:#c8a84b;font-family:Bebas Neue,sans-serif;font-size:0.82rem;letter-spacing:0.14em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}'
   ].join('');
   document.head.appendChild(s);
@@ -147,6 +154,15 @@ var DOMAINS={
 // ── State ───────────────────────────────────────────────────────────────
 var S=null;
 var hostEl=null, pan=null;
+// Exercise generation counter — bumped on every exercise start/finish and
+// on remount. Every scheduled advance timer captures it via later() and
+// bails if the generation moved, so a stale timer can never fire into the
+// next exercise and double-advance the 5-exercise session.
+var gen=0;
+function later(fn, ms){
+  var g=gen;
+  return setTimeout(function(){ if(!alive() || gen!==g)return; fn(); }, ms);
+}
 // Adaptive difficulty store: per-exercise level saved in localStorage
 function loadLevel(exKey, dflt){
   try{
@@ -223,8 +239,8 @@ function startWordRecall(){
   for(var w=0;w<target.length;w++)h+='<div style="padding:10px 14px;background:rgba(26,36,22,0.7);border:1px solid rgba(122,179,86,0.3);border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.08em;">'+target[w].toUpperCase()+'</div>';
   h+='</div>'+dots(5, S.exIndex);
   pan.innerHTML=h;
-  setTimeout(function(){
-    if(!alive() || S.exData.phase!=='mem')return;
+  later(function(){
+    if(S.exData.phase!=='mem')return;
     S.exData.phase='recall';
     var all=shuf(S.exData.target.concat(S.exData.distract));
     var h2='<div class="DBexTitle">WORD RECALL</div>';
@@ -243,6 +259,7 @@ function startWordRecall(){
       var msg=pan.querySelector('#DBmsg');
       if(msg)msg.textContent=S.exData.recalled.length+'/'+S.exData.level+' selected';
       if(S.exData.recalled.length>=S.exData.level || S.exData.wrongs>=3){
+        S.exData.phase='done';
         var acc=S.exData.recalled.length/S.exData.level;
         var scoreRaw=Math.round(acc*100);
         adjustLevel('wordRecall', acc, 4, 8);
@@ -300,12 +317,13 @@ function showMath(){
   pan.innerHTML=h;
   pan.querySelector('.DBopts').addEventListener('click', function(e){
     var b=e.target.closest('[data-v]'); if(!b || b.disabled)return;
-    b.disabled=true;
+    var all=this.querySelectorAll('[data-v]');
+    for(var q=0;q<all.length;q++)all[q].disabled=true;
     S.exData.total++;
     var picked=parseInt(b.getAttribute('data-v'),10), correct=parseInt(b.getAttribute('data-a'),10);
     if(picked===correct){S.exData.correct++; b.className='DBopt good'; try{navigator.vibrate&&navigator.vibrate(8);}catch(e){}}
     else b.className='DBopt bad';
-    setTimeout(showMath, 250);
+    later(showMath, 250);
   });
 }
 
@@ -333,8 +351,8 @@ function showReaction(){
   h+='<div class="DBstatus" id="DBrmsg">'+last+'</div>'+dots(5, S.exIndex);
   pan.innerHTML=h;
   var delay=1200+Math.random()*2200;
-  S.exData.timer=setTimeout(function(){
-    if(!alive() || S.exData.phase!=='wait')return;
+  S.exData.timer=later(function(){
+    if(S.exData.phase!=='wait')return;
     S.exData.phase='go'; S.exData.goTime=Date.now();
     var t=pan.querySelector('#DBrt');
     if(t){ t.className='go'; t.textContent='TAP!'; }
@@ -342,9 +360,10 @@ function showReaction(){
   pan.querySelector('#DBrt').addEventListener('click', function(){
     if(S.exData.phase==='wait'){
       clearTimeout(S.exData.timer);
+      S.exData.phase='early';
       var m=pan.querySelector('#DBrmsg');
       if(m){ m.innerHTML='<span style="color:#c47a7a">Too early — wait for green.</span>'; }
-      setTimeout(function(){ if(alive()) showReaction(); }, 700);
+      later(showReaction, 700);
       return;
     }
     if(S.exData.phase==='go'){
@@ -353,7 +372,7 @@ function showReaction(){
       var m2=pan.querySelector('#DBrmsg');
       if(m2){ m2.innerHTML='<span class="ok">'+dt+'ms</span>'; }
       try{navigator.vibrate&&navigator.vibrate(10);}catch(e){}
-      setTimeout(function(){ if(alive()) showReaction(); }, 600);
+      later(showReaction, 600);
     }
   });
 }
@@ -413,7 +432,7 @@ function showPattern(){
   var h='<div class="DBexTitle">PATTERN MATCH</div>';
   h+='<div class="DBexDesc">Which grid matches the original? · '+S.exData.round+'/'+S.exData.max+'</div>';
   h+='<div style="margin:10px 0">'+renderPatternGrid(pat, cellOrig)+'</div>';
-  h+='<div style="font-size:0.55rem;opacity:0.45;margin:4px 0">↑ ORIGINAL ↑</div>';
+  h+='<div style="font-size:0.7rem;font-weight:500;opacity:0.6;margin:4px 0">↑ ORIGINAL ↑</div>';
   h+='<div id="DBpatOpts" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0">';
   for(var k=0;k<opts.length;k++){
     h+='<div class="DBopt" style="padding:6px;min-height:auto" data-i="'+k+'" data-c="'+correctIdx+'">'+renderPatternGrid(opts[k],cellOpt)+'</div>';
@@ -422,12 +441,12 @@ function showPattern(){
   pan.innerHTML=h;
   pan.querySelector('#DBpatOpts').addEventListener('click', function(e){
     var el=e.target.closest('[data-i]');
-    if(!el || el.dataset.done)return;
-    el.dataset.done='1';
+    if(!el || this._done)return;
+    this._done=1;
     var picked=parseInt(el.getAttribute('data-i'),10), correct=parseInt(el.getAttribute('data-c'),10);
     if(picked===correct){S.exData.correct++; el.classList.add('good'); try{navigator.vibrate&&navigator.vibrate(8);}catch(ev){}}
     else el.classList.add('bad');
-    setTimeout(function(){ if(alive()) showPattern(); }, 450);
+    later(showPattern, 450);
   });
 }
 
@@ -459,12 +478,13 @@ function showStroop(){
   pan.innerHTML=h;
   pan.querySelector('.DBopts').addEventListener('click', function(e){
     var b=e.target.closest('[data-v]'); if(!b || b.disabled)return;
-    b.disabled=true;
+    var all=this.querySelectorAll('[data-v]');
+    for(var q=0;q<all.length;q++)all[q].disabled=true;
     S.exData.total++;
     var picked=parseInt(b.getAttribute('data-v'),10), correct=parseInt(b.getAttribute('data-a'),10);
-    if(picked===correct){S.exData.correct++; b.style.background='rgba(122,179,86,0.25)';}
-    else b.style.background='rgba(199,80,80,0.22)';
-    setTimeout(showStroop, 200);
+    if(picked===correct){S.exData.correct++; b.style.background='rgba(122,179,86,0.25)'; b.classList.add('goodSym');}
+    else{ b.style.background='rgba(199,80,80,0.22)'; b.classList.add('badSym'); }
+    later(showStroop, 200);
   });
 }
 
@@ -554,8 +574,7 @@ function nBackTick(){
       try{navigator.vibrate&&navigator.vibrate(correct?8:[6,40,6]);}catch(ev){}
     });
   });
-  setTimeout(function(){
-    if(!alive())return;
+  later(function(){
     // Untimed no-answer = implicit miss (if expected match) or no-op
     if(!d.answered && isMatchTrial && expectMatch) d.misses++;
     d.idx++;
@@ -587,11 +606,12 @@ function nextCorsiRound(){
   d.playerSeq=[];
   d.phase='show';
   d.showIdx=-1;
+  d.locked=false;
   renderCorsi();
   // Animate sequence — slower at higher spans so the sequence stays readable
   var delay = d.level<=4 ? 650 : d.level<=6 ? 750 : 850;
   function step(){
-    if(!alive()||d.phase!=='show')return;
+    if(d.phase!=='show')return;
     d.showIdx++;
     if(d.showIdx>=d.sequence.length){
       d.phase='recall';
@@ -600,9 +620,9 @@ function nextCorsiRound(){
       return;
     }
     renderCorsi();
-    setTimeout(step, delay);
+    later(step, delay);
   }
-  setTimeout(step, 500);
+  later(step, 500);
 }
 function renderCorsi(){
   var d=S.exData;
@@ -620,17 +640,17 @@ function renderCorsi(){
   pan.innerHTML=h;
   if(d.phase==='recall'){
     pan.querySelector('#DBcorsi').addEventListener('click', function(e){
-      var cell=e.target.closest('[data-i]'); if(!cell)return;
+      var cell=e.target.closest('[data-i]'); if(!cell || d.locked)return;
       var idx=parseInt(cell.getAttribute('data-i'),10);
       if(d.playerSeq.indexOf(idx)>=0)return;
       d.playerSeq.push(idx);
       renderCorsi();
       var stepIdx=d.playerSeq.length-1;
       var correct=d.sequence[stepIdx]===idx;
-      if(!correct){ d.failed++; setTimeout(nextCorsiRound, 700); return; }
+      if(!correct){ d.failed++; d.locked=true; later(nextCorsiRound, 700); return; }
       if(d.playerSeq.length===d.sequence.length){
-        d.passed++;
-        setTimeout(nextCorsiRound, 700);
+        d.passed++; d.locked=true;
+        later(nextCorsiRound, 700);
       }
     });
   }
@@ -676,11 +696,12 @@ function nextFlankerTrial(){
   pan.innerHTML=h;
   pan.querySelector('.DBopts').addEventListener('click', function(e){
     var b=e.target.closest('[data-d]'); if(!b || b.disabled)return;
-    b.disabled=true;
+    var all=this.querySelectorAll('[data-d]');
+    for(var q=0;q<all.length;q++)all[q].disabled=true;
     var picked=b.getAttribute('data-d');
     if(picked===d.centerDir){ d.correct++; b.classList.add('good'); try{navigator.vibrate&&navigator.vibrate(8);}catch(e){} }
     else b.classList.add('bad');
-    setTimeout(nextFlankerTrial, 500);
+    later(nextFlankerTrial, 500);
   });
 }
 
@@ -688,6 +709,7 @@ function nextFlankerTrial(){
 function alive(){ return !!pan && document.body.contains(pan); }
 
 function startExerciseByKey(key){
+  gen++;
   S.currentKey=key;
   S.exData={};
   switch(key){
@@ -725,12 +747,13 @@ function showExplainer(key, onStart){
 }
 
 function finishExercise(rawScore, domain){
+  gen++;  // kill any timer still pending from the exercise that just ended
   S.results.push({key:S.currentKey, score:rawScore, domain:domain});
   S.exIndex++;
   if(S.exIndex>=S.exerciseQueue.length){
     showResults();
   } else {
-    setTimeout(function(){ if(alive()) runCurrentExercise(); }, 400);
+    later(runCurrentExercise, 400);
   }
 }
 
@@ -772,6 +795,7 @@ function domainSparkline(domainKey){
 // ── Hub (landing screen) ────────────────────────────────────────────────
 function showHub(){
   if(!hostEl)return;
+  gen++;
   if(!pan){pan=document.createElement('div');pan.id='DBpan';hostEl.appendChild(pan);}
   S={exerciseQueue:null, exIndex:0, results:[], currentKey:null, exData:{}};
   var daily=pickDailyExercises();
@@ -876,6 +900,7 @@ function showResults(){
 // ── Entry point ────────────────────────────────────────────────────────
 window._gameFns = window._gameFns || {};
 window._gameFns.dailybloom = function(a){
+  gen++;
   hostEl=a; pan=null; S=null;
   showHub();
 };

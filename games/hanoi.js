@@ -16,6 +16,7 @@ var startTs=0;
 var solvedTs=0;
 var won=false;
 var timerId=null;
+var winToId=null;         // pending victory-overlay timeout
 var pan=null;
 
 // Frame-Stewart optimal count for 4 pegs (n disks)
@@ -60,7 +61,7 @@ function optimalCount(n,p){return p===4?fsCount(n):(Math.pow(2,n)-1);}
     '.hinfo{display:flex;gap:10px;align-items:center;font-family:Georgia,serif;font-size:0.7rem;color:rgba(232,220,200,0.8);flex-wrap:wrap}',
     '.hinfo strong{color:#c8a84b;font-weight:700}',
     '.hbtn-row{display:flex;gap:6px}',
-    '.hb{min-height:34px;padding:5px 12px;font-size:.68rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
+    '.hb{min-height:48px;padding:8px 16px;font-size:.72rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
     '.hb:active{background:rgba(122,179,86,0.2);transform:scale(.96)}',
     '.hb.gold{border-color:#c8a84b;color:#c8a84b;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(160,130,50,0.22))}',
     '.hb[disabled]{opacity:.35;pointer-events:none}'
@@ -148,8 +149,10 @@ function checkWin(){
   if(pegs[goal].length===discs){
     won=true;solvedTs=Date.now();
     if(timerId){clearInterval(timerId);timerId=null;}
-    _e('game_win');if(_playWin)_playWin();_sr('hanoi',{w:true,s:moves,lo:1});
-    setTimeout(hanoiVictory,250);
+    // Score relative to optimal (100 = perfect) so 3-disk and 8-disk solves
+    // share one comparable lo:1 best instead of raw moves pooling difficulties
+    _e('game_win');if(_playWin)_playWin();_sr('hanoi',{w:true,s:Math.round(100*moves/optimal),lo:1});
+    winToId=setTimeout(hanoiVictory,250);
   }
 }
 
@@ -238,8 +241,9 @@ function bindDrag(){
     if(won)return;
     var p=pegUnder(e.clientX,e.clientY);if(p<0||!pegs[p].length)return;
     dragActive=true;dragFromPeg=p;dragStartX=e.clientX;dragStartY=e.clientY;dragMoved=false;
-    selectedPeg=p;
-    // Visual: show peg as selected
+    // Visual only: show peg as drag source. selectedPeg is NOT touched here —
+    // overwriting it made the click handler's tap logic see its own peg as
+    // already selected and toggle the selection off.
     var n=pan.querySelectorAll('.hpeg');for(var i=0;i<n.length;i++)n[i].classList.remove('sel');
     if(n[p])n[p].classList.add('sel');
   };
@@ -255,7 +259,8 @@ function bindDrag(){
     var p=pegUnder(t.clientX,t.clientY);if(p<0||!pegs[p].length)return;
     e.preventDefault();
     dragActive=true;dragFromPeg=p;dragStartX=t.clientX;dragStartY=t.clientY;dragMoved=false;
-    selectedPeg=p;
+    // Visual only — selectedPeg stays; the tap is resolved in globalRelease
+    // (preventDefault above suppresses the synthetic click on touch)
     var n=pan.querySelectorAll('.hpeg');for(var i=0;i<n.length;i++)n[i].classList.remove('sel');
     if(n[p])n[p].classList.add('sel');
   };
@@ -269,13 +274,19 @@ function bindDrag(){
   };
 }
 
-function globalRelease(clientX,clientY){
+function globalRelease(clientX,clientY,isTouch){
   if(!dragActive)return;
   dragActive=false;
   var targetPeg=pegUnder(clientX,clientY);
   // Clear drop highlights
   if(pan){var all=pan.querySelectorAll('.hpeg');for(var i=0;i<all.length;i++)all[i].classList.remove('drop-ok','drop-bad');}
-  if(!dragMoved){return;} // Treated as a tap — let click handler run
+  if(!dragMoved){
+    // Tap. Touch never gets the synthetic click (touchstart preventDefault),
+    // so run the tap logic here; mouse taps fall through to the click handler.
+    if(isTouch){if(targetPeg>=0)handleTap(targetPeg);else render();}
+    return;
+  }
+  if(isTouch)dragMoved=false; // no click follows a touch drag — clear the flag now
   if(targetPeg<0||targetPeg===dragFromPeg){selectedPeg=-1;render();return;}
   if(doMove(dragFromPeg,targetPeg)){
     selectedPeg=-1;render();
@@ -285,20 +296,24 @@ function globalRelease(clientX,clientY){
   }
 }
 
-document.addEventListener('mouseup',function(e){if(dragActive)globalRelease(e.clientX,e.clientY);});
+document.addEventListener('mouseup',function(e){if(dragActive)globalRelease(e.clientX,e.clientY,false);});
 document.addEventListener('touchend',function(e){
   if(!dragActive)return;
   var t=(e.changedTouches&&e.changedTouches[0])||null;
-  globalRelease(t?t.clientX:-1,t?t.clientY:-1);
+  globalRelease(t?t.clientX:-1,t?t.clientY:-1,true);
 });
 document.addEventListener('touchcancel',function(){if(dragActive){dragActive=false;selectedPeg=-1;if(pan){var all=pan.querySelectorAll('.hpeg');for(var i=0;i<all.length;i++)all[i].classList.remove('drop-ok','drop-bad','sel');}render();}});
 
 // ── Victory overlay ────────────────────────────────────────────────────────
 function hanoiVictory(){
+  winToId=null;
+  if(!pan||!pan.isConnected)return; // player already left the game
+  var old=document.getElementById('HwinOv');if(old)old.remove();
   var secs=Math.max(1,Math.round((solvedTs-startTs)/1000));
   var timeStr=fmtTime(secs);
   var stars=moves===optimal?3:(moves<=Math.round(optimal*1.5)?2:1);
   var ov=document.createElement('div');
+  ov.id='HwinOv';
   ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(200,168,75,0.32) 0%,rgba(13,16,12,0.94) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:hPanIn .3s ease;font-family:Georgia,serif;';
   var starRow='<div style="display:flex;gap:10px;margin:14px 0 12px;">';
   for(var si=0;si<3;si++){
@@ -316,7 +331,7 @@ function hanoiVictory(){
       '<div><span style="color:rgba(232,220,200,0.55);">Disks</span> <strong style="color:#e8dcc8;">'+discs+'</strong></div>'+
     '</div>'+
     '<div style="display:flex;gap:8px;margin-top:22px;animation:hLineIn 0.5s ease-out 0.8s both;">'+
-      '<button onclick="this.parentElement.parentElement.remove();_HN()" style="min-height:46px;padding:10px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;">↻ Next</button>'+
+      '<button onclick="this.parentElement.parentElement.remove();_HN()" style="min-height:48px;padding:10px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;">↻ Next</button>'+
     '</div>';
   ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
   document.body.appendChild(ov);
@@ -324,6 +339,7 @@ function hanoiVictory(){
 
 // ── Game lifecycle ─────────────────────────────────────────────────────────
 function GH(a){
+  var stale=document.getElementById('HwinOv');if(stale)stale.remove(); // remount hygiene
   ms(a,'Tower of Hanoi');mm(a);
   pan=document.createElement('div');pan.id='Hpan';a.appendChild(pan);
   var pegChoice='<select class="gsl" id="Hp4" onchange="_HN()"><option value="3">3 pegs</option><option value="4">4 pegs</option></select>';
@@ -332,11 +348,14 @@ function GH(a){
   // Global controls (New / Undo) live inside pan now via render()
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     if(timerId){clearInterval(timerId);timerId=null;}
+    if(winToId){clearTimeout(winToId);winToId=null;}
+    var ov=document.getElementById('HwinOv');if(ov)ov.remove();
   });
   window._HN();
 }
 
 window._HN=function(){
+  if(!pan||!pan.isConnected)return; // dead mount (e.g. overlay button after exit)
   pegCount=parseInt((document.getElementById('Hp4')||{}).value)||3;
   discs=parseInt((document.getElementById('Hd')||{}).value)||5;
   _setDiff(discs<=3?'easy':discs<=5?'medium':discs<=6?'hard':'expert');

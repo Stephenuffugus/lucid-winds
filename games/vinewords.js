@@ -93,6 +93,8 @@ window._gameFns.vinewords=function VW(a){
   var allWords=null;           // solver result at game end
   var maxScore=0;              // cached from last solve for rank computation
   var draggingFromCanvas=false;
+  var downHandled=false;       // mousedown processed this gesture — swallow the trailing click (desktop double-fire)
+  var replayRound=false;       // replaying a solved board (answer key shown) — practice only, no earns
   var stats=loadStats();
 
   // UI chrome
@@ -124,9 +126,9 @@ window._gameFns.vinewords=function VW(a){
   var btnRow=document.createElement('div');
   btnRow.style.cssText='display:flex;gap:6px;justify-content:center;padding:2px 0 8px;';
   btnRow.innerHTML=''+
-    '<button id="VWsubmit" class="gb" style="min-height:44px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✓ SUBMIT</button>'+
-    '<button id="VWclear" class="gb" style="min-height:44px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✗ CLEAR</button>'+
-    '<button id="VWpause" class="gb" style="min-height:44px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">⏸ PAUSE</button>';
+    '<button id="VWsubmit" class="gb" style="min-height:48px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✓ SUBMIT</button>'+
+    '<button id="VWclear" class="gb" style="min-height:48px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">✗ CLEAR</button>'+
+    '<button id="VWpause" class="gb" style="min-height:48px;padding:8px 18px;font-size:0.82rem;letter-spacing:0.1em;">⏸ PAUSE</button>';
   pan.appendChild(btnRow);
 
   // Board wrapper holds canvas for path drawing + cell grid
@@ -277,7 +279,8 @@ window._gameFns.vinewords=function VW(a){
     if(!el)return;
     var canSubmit=w.length>=3&&DICT[w]&&!foundSet[w];
     el.style.color=canSubmit?'var(--sage)':(w.length>=3&&foundSet[w]?'rgba(200,168,75,0.7)':'var(--cream)');
-    el.textContent=w?w.toUpperCase():'—';
+    // Symbol cue alongside color (fleet colorblind standard): ✓ = submittable word
+    el.textContent=w?(w.toUpperCase()+(canSubmit?' ✓':'')):'—';
     var sb=document.getElementById('VWsubmit');
     if(sb){sb.disabled=!canSubmit;sb.style.opacity=canSubmit?'1':'0.45';}
     var cb=document.getElementById('VWclear');
@@ -312,8 +315,12 @@ window._gameFns.vinewords=function VW(a){
     foundSet[w]=1;foundList.unshift(w);
     var pts=scoreFor(w.length);
     score+=pts;
-    _e('progress');
-    if(foundList.length%5===0)_e('milestone');
+    // Replay rounds show the answer key first (missed-words summary) —
+    // practice only, never re-earn on a board the player has the key to.
+    if(!replayRound){
+      _e('progress');
+      if(foundList.length%5===0)_e('milestone');
+    }
     sm('+'+pts+' '+w.toUpperCase());
     _play('snap');
     haptic(w.length>=6?25:15);
@@ -342,6 +349,12 @@ window._gameFns.vinewords=function VW(a){
   function onDown(e){
     if(!playing||paused)return;
     e.preventDefault();
+    // preventDefault on mousedown does NOT suppress the trailing click event
+    // (unlike touchstart). Without this flag a single mouse click ran onDown
+    // (select cell) AND the gridHost click handler (saw the cell as last-in-
+    // path → submitWord → "3 letter min" shake on every click). Flag is
+    // consumed by the click handler below.
+    downHandled=true;
     // Always enter drag mode so onMove can pick up the first cell even if
     // the initial touch landed in a gap.
     draggingFromCanvas=true;
@@ -397,6 +410,7 @@ window._gameFns.vinewords=function VW(a){
 
   // Also allow tap-cell semantics (for accessibility; user clicks each letter)
   gridHost.addEventListener('click',function(e){
+    if(downHandled){downHandled=false;return;} // gesture already handled by onDown (mouse click / drag release)
     if(!playing||paused)return;
     if(draggingFromCanvas)return;
     var t=e.target;
@@ -480,8 +494,8 @@ window._gameFns.vinewords=function VW(a){
     if(allWords){for(var i=0;i<allWords.length;i++)maxScore+=scoreFor(allWords[i].length);}
     // Win bar scales with board size. 15% of a 600-word board is harder than of a 100-word board.
     var won=score>=Math.max(10,maxScore*0.12);
-    if(won){_e('game_win');if(_playWin)_playWin();}
-    else{_e('game_loss');_play('lose');}
+    if(won){if(!replayRound)_e('game_win');if(_playWin)_playWin();}
+    else{if(!replayRound)_e('game_loss');_play('lose');}
     // Update persisted stats
     stats.gamesPlayed++;
     stats.totalWords+=foundList.length;
@@ -529,8 +543,8 @@ window._gameFns.vinewords=function VW(a){
     html+='<div style="margin:4px 0 10px;height:6px;background:rgba(26,36,22,0.5);border-radius:3px;overflow:hidden;"><div style="height:100%;background:'+rank.color+';width:'+Math.round(pct*100)+'%;"></div></div>';
     // Action buttons at top so they don't get buried under the missed list
     html+='<div style="display:flex;gap:6px;justify-content:center;margin:6px 0 10px;flex-wrap:wrap;">';
-    html+='<button class="gb" onclick="_VWreplay()" style="min-height:44px;padding:8px 14px;background:rgba(200,168,75,0.25);border-color:rgba(200,168,75,0.5);color:#c8a84b;font-size:0.78rem;letter-spacing:0.1em;">↻ REPLAY BOARD</button>';
-    html+='<button class="gb" onclick="_VWN()" style="min-height:44px;padding:8px 14px;background:rgba(122,179,86,0.25);border-color:rgba(122,179,86,0.5);color:#7ab356;font-size:0.78rem;letter-spacing:0.1em;">🌱 NEW BOARD</button>';
+    html+='<button class="gb" onclick="_VWreplay()" style="min-height:48px;padding:8px 14px;background:rgba(200,168,75,0.25);border-color:rgba(200,168,75,0.5);color:#c8a84b;font-size:0.78rem;letter-spacing:0.1em;">↻ REPLAY (PRACTICE)</button>';
+    html+='<button class="gb" onclick="_VWN()" style="min-height:48px;padding:8px 14px;background:rgba(122,179,86,0.25);border-color:rgba(122,179,86,0.5);color:#7ab356;font-size:0.78rem;letter-spacing:0.1em;">🌱 NEW BOARD</button>';
     html+='</div>';
     html+='<div style="font-family:Bebas Neue,sans-serif;color:var(--sage);font-size:0.9rem;letter-spacing:0.1em;margin-top:6px;">YOU FOUND · '+foundList.length+'</div>';
     html+=group(foundList);
@@ -550,7 +564,8 @@ window._gameFns.vinewords=function VW(a){
   function startRound(sameBoard){
     if(timerId)clearInterval(timerId);
     var sumEl=document.getElementById('VWsum');if(sumEl)sumEl.style.display='none';
-    if(sameBoard&&savedBoard)restoreBoard();
+    replayRound=!!(sameBoard&&savedBoard);
+    if(replayRound)restoreBoard();
     else buildGrid();
     path=[];foundSet={};foundList=[];score=0;timeLeft=duration;playing=true;paused=false;
     var pb=document.getElementById('VWpause');if(pb)pb.textContent='⏸ PAUSE';
@@ -560,6 +575,7 @@ window._gameFns.vinewords=function VW(a){
     renderFound();
     rebuildBoardDOM(); // reseat the 16 cell nodes with the new dice faces
     drawPath();updateWordBar();
+    if(replayRound)sm('Replay — practice only, no sunbeam earns');
     timerId=setInterval(tick,1000);
   }
   window._VWN=function(){startRound(false);};

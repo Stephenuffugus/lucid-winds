@@ -20,48 +20,72 @@ function GSG(a){
 
   // ── Sunbeam bridge ──────────────────────────────────────────────────
   var SESSION_CAP=10;          // max pulse earns per mount (farm guard)
+  var RUN_BUDGET=12;           // max sunbeam VALUE per mount (SUNBEAM_EARN_POLICY.md 12/run;
+                               // pulse=1, save/export=3 → save-spam caps at 4 milestones)
   var earned=0;                // pulse earns granted this session
+  var spent=0;                 // sunbeam value paid this mount (budget tracker)
   var interacted=false;        // user touched the studio since last pulse tick
   var lastMilestone=0;         // debounce Save/Export earns
 
   function pulseEarn(){
-    if(earned>=SESSION_CAP) return;
+    if(earned>=SESSION_CAP||spent+1>RUN_BUDGET) return;
     try{ if(_e) _e('milestone'); }catch(e){}     // 1 sunbeam — sustained creation
-    earned++;
+    earned++;spent++;
   }
   function milestoneEarn(){
     var t=Date.now();
     if(t-lastMilestone<15000) return;            // debounce spam-saving
+    if(spent+3>RUN_BUDGET) return;               // run budget spent — save still works, just no earn
     lastMilestone=t;
     try{ if(_e) _e('puzzle_solved'); }catch(e){} // 3 sunbeams — finished a piece
+    spent+=3;
   }
 
   // Poll briefly for the studio's GS object, then hook the real creation
   // actions (Save / Export) and watch for hands-on activity. Same-origin,
   // so reaching into the frame is allowed; everything is guarded.
-  var tries=0;
-  var iv=setInterval(function(){
-    tries++;
-    var w,doc;
-    try{ w=fr.contentWindow; doc=w&&w.document; }catch(e){ clearInterval(iv); return; }
-    if(!w||!doc){ if(tries>40){clearInterval(iv);} return; }
-    if(w._swsStudioBridged){ clearInterval(iv); return; }
-    if(w.GS && (typeof w.GS.save==='function'||typeof w.GS.exportWAV==='function')){
-      w._swsStudioBridged=true;
-      clearInterval(iv);
-      try{
-        if(typeof w.GS.save==='function'){ var _s=w.GS.save; w.GS.save=function(){ milestoneEarn(); return _s.apply(this,arguments); }; }
-        if(typeof w.GS.exportWAV==='function'){ var _x=w.GS.exportWAV; w.GS.exportWAV=function(){ milestoneEarn(); return _x.apply(this,arguments); }; }
-      }catch(e){}
-      try{ doc.addEventListener('pointerdown',function(){ interacted=true; },{passive:true}); }catch(e){}
-      // Per-minute creation pulse — only pays if the player actually did
-      // something since the last tick (so an idle tab earns nothing).
-      var pulse=setInterval(function(){
-        try{ if(!fr.isConnected){ clearInterval(pulse); return; } }catch(e){}
-        if(interacted){ interacted=false; pulseEarn(); }
-      },60000);
-    } else if(tries>40){ clearInterval(iv); }     // give up after ~20s
-  },500);
+  // The bounded poll RESTARTS on the iframe's load event, so a slow
+  // device/network that parses studio.html after the first ~20s window
+  // still gets bridged (Jul-04 triage: bridge silently gave up before).
+  var tries=0,iv=null;
+  function attachHooks(w,doc){
+    w._swsStudioBridged=true;
+    try{
+      if(typeof w.GS.save==='function'){ var _s=w.GS.save; w.GS.save=function(){ milestoneEarn(); return _s.apply(this,arguments); }; }
+      if(typeof w.GS.exportWAV==='function'){ var _x=w.GS.exportWAV; w.GS.exportWAV=function(){ milestoneEarn(); return _x.apply(this,arguments); }; }
+    }catch(e){}
+    try{ doc.addEventListener('pointerdown',function(){ interacted=true; },{passive:true}); }catch(e){}
+  }
+  function startPoll(){
+    if(iv){ clearInterval(iv); iv=null; }
+    tries=0;
+    iv=setInterval(function(){
+      tries++;
+      var w,doc;
+      try{ w=fr.contentWindow; doc=w&&w.document; }catch(e){ clearInterval(iv); iv=null; return; }
+      if(!w||!doc){ if(tries>40){clearInterval(iv);iv=null;} return; }
+      if(w._swsStudioBridged){ clearInterval(iv); iv=null; return; }
+      if(w.GS && (typeof w.GS.save==='function'||typeof w.GS.exportWAV==='function')){
+        clearInterval(iv); iv=null;
+        attachHooks(w,doc);
+      } else if(tries>40){ clearInterval(iv); iv=null; }  // pause; load event re-arms
+    },500);
+  }
+  startPoll();
+  fr.addEventListener('load',function(){
+    // Re-arm on every real studio load (first load, slow load, reload).
+    // Skip about:blank — the hub back button blanks the frame on exit.
+    try{ if(!/studio/.test(fr.contentWindow.location.pathname)) return; }catch(e){}
+    startPoll();
+  });
+  // Per-minute creation pulse — only pays if the player actually did
+  // something since the last tick (so an idle tab earns nothing).
+  // Started once per mount; survives an iframe reload (hooks re-attach).
+  var pulse=setInterval(function(){
+    try{ if(!fr.isConnected){ clearInterval(pulse); if(iv){clearInterval(iv);iv=null;} return; } }catch(e){}
+    if(interacted){ interacted=false; pulseEarn(); }
+  },60000);
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){ if(iv){clearInterval(iv);iv=null;} clearInterval(pulse); });
 }
 
 window._gameFns.song=GSG;
