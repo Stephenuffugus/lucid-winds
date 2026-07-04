@@ -1310,6 +1310,24 @@ function GCH(a){
     render();
   }
 
+  // Proper end screen (campaign leftover: games must not end on a status
+  // line alone — draws especially looked like a freeze). Keeps lifetime
+  // W-L-D and routes PLAY AGAIN through _CHNew.
+  function _chEnd(kind,title){
+    var K='lw_chess_'+(kind==='win'?'w':kind==='loss'?'l':'d');
+    try{localStorage.setItem(K,String((parseInt(localStorage.getItem(K),10)||0)+1));}catch(e){}
+    var w=parseInt(localStorage.getItem('lw_chess_w'),10)||0,
+        l=parseInt(localStorage.getItem('lw_chess_l'),10)||0,
+        d=parseInt(localStorage.getItem('lw_chess_d'),10)||0;
+    if(window._lwGameEnd)window._lwGameEnd({
+      won:kind==='win',
+      title:title,
+      line:moveCount+' moves · lifetime '+w+'W-'+l+'L-'+d+'D',
+      sub:kind==='draw'?'A drawn garden is still a garden.':null,
+      retry:function(){if(window._CHNew)window._CHNew();}
+    });
+  }
+
   function checkGameState(){
     var moves=getLegalMoves(board,turn,castling,epSquare);
     if(!moves.length){
@@ -1324,20 +1342,20 @@ function GCH(a){
       // cooldown which is the right behavior for "you played a
       // valid game, here's a small consolation."
       if(inCheck(board,turn)){
-        if(turn===W){sm('Checkmate \u2014 AI wins!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});}
-        else{sm('Checkmate \u2014 You win!');_e('game_win');_playWin();_sr('chess',{w:true,s:moveCount});}
+        if(turn===W){sm('Checkmate \u2014 AI wins!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('loss','Checkmate \u2014 AI wins');}
+        else{sm('Checkmate \u2014 You win!');_e('game_win');_playWin();_sr('chess',{w:true,s:moveCount});_chEnd('win','Checkmate \u2014 You win!');}
       }else{
-        sm('Stalemate \u2014 Draw!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
+        sm('Stalemate \u2014 Draw!');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('draw','Stalemate \u2014 Draw');
       }
     }else if(halfmove>=100){
-      gameOver=true;sm('Draw \u2014 50-move rule');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
+      gameOver=true;sm('Draw \u2014 50-move rule');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('draw','Draw \u2014 50-move rule');
     }else if(insufficientMaterial(board)){
-      gameOver=true;sm('Draw \u2014 Insufficient material');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
+      gameOver=true;sm('Draw \u2014 Insufficient material');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('draw','Draw \u2014 Insufficient material');
     }else{
       // Threefold repetition
       var pk=posKey(board,turn,castling,epSquare);
       if(posHistory[pk]&&posHistory[pk]>=3){
-        gameOver=true;sm('Draw \u2014 Threefold repetition');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});
+        gameOver=true;sm('Draw \u2014 Threefold repetition');try{_e('game_loss');}catch(e){}_sr('chess',{w:false,s:moveCount});_chEnd('draw','Draw \u2014 Threefold repetition');
       }else if(inCheck(board,turn)){
         if(turn===W){
           // Player is in check — AI just delivered it. Show AI's comment

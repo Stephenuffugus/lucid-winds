@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: sokoban
  *
  * COPY of the inline GSK mount function from index.html
- * lines 69844-70166.
+ * lines 69903-70241.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -328,12 +328,28 @@
     window._SKU=function(){if(_skWon){sm('Solved! Tap Next Level');return;}if(!_skHist.length){sm('Nothing to undo');return;}var s=_skHist.pop();grid=s.g;px=s.px;py=s.py;moves=s.mv;_play('tap');rn();};
     window._SKR=function(){_skHist=[];load();sm('Reset');rn()};
     window._SKN=function(){_skHist=[];lvl=(lvl+1)%LEVELS.length;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();};
+    // Level picker overlay (campaign leftover: prompt() is jarring on mobile
+    // and invisible in some webviews). Tap a level, or tap outside to close.
     window._SKjump=function(){
-      var v=prompt('Jump to level (1-'+LEVELS.length+'):',String(lvl+1));
-      if(v===null)return;
-      var n=parseInt(v,10);
-      if(isNaN(n)||n<1||n>LEVELS.length){sm('Invalid level, must be 1 to '+LEVELS.length);return;}
-      _skHist=[];lvl=n-1;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();
+      var old=document.getElementById('SKJOV');if(old){old.remove();return;}
+      var ov=document.createElement('div');ov.id='SKJOV';
+      ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(13,16,12,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;';
+      var html='<div style="color:var(--gold);font-family:Georgia,serif;font-size:1.05rem;font-weight:700;margin-bottom:12px;">Jump to level</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(5,minmax(48px,1fr));gap:8px;max-width:340px;width:100%;max-height:60vh;overflow-y:auto;padding:2px;">';
+      for(var i=0;i<LEVELS.length;i++){
+        html+='<button class="gb" data-skl="'+i+'" style="min-height:48px;font-size:0.8rem;'
+          +(i===lvl?'background:rgba(200,168,75,0.25);border-color:var(--gold);color:var(--gold);':'')+'">'+(i+1)+'</button>';
+      }
+      html+='</div><button class="gb" id="SKJx" style="margin-top:14px;min-height:48px;padding:8px 26px;">Close</button>';
+      ov.innerHTML=html;
+      ov.onclick=function(ev){
+        var t=ev.target;
+        if(t===ov||t.id==='SKJx'){ov.remove();return;}
+        var n=t.getAttribute&&t.getAttribute('data-skl');
+        if(n!=null){ov.remove();_skHist=[];lvl=parseInt(n,10);localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();}
+      };
+      document.body.appendChild(ov);
+      if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var x=document.getElementById('SKJOV');if(x)x.remove();});
     };
     // Bind keydown only ONCE — was attaching a fresh listener every
     // time GSK was invoked (new game / tab revisit), stacking handlers.

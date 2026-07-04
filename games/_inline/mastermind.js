@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: mastermind
  *
  * COPY of the inline GMM mount function from index.html
- * lines 69394-69840.
+ * lines 69445-69899.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -160,15 +160,15 @@
     // can flip between modes without confusion.
     var _modeTab=document.createElement('div');
     _modeTab.style.cssText='display:flex;gap:6px;justify-content:center;padding:6px 0 4px';
-    _modeTab.innerHTML='<button class="gb" id="MMdaily" style="min-height:38px;padding:4px 16px;font-size:0.68rem">📅 DAILY</button>'
-      +'<button class="gb" id="MMrandom" style="min-height:38px;padding:4px 16px;font-size:0.68rem">🎲 RANDOM</button>';
+    _modeTab.innerHTML='<button class="gb" id="MMdaily" style="min-height:48px;padding:6px 18px;font-size:0.72rem">📅 DAILY</button>'
+      +'<button class="gb" id="MMrandom" style="min-height:48px;padding:6px 18px;font-size:0.72rem">🎲 RANDOM</button>';
     a.insertBefore(_modeTab,_mmStatsRow);
     function _mmSyncModeTabs(){
       var db=document.getElementById('MMdaily'),rb=document.getElementById('MMrandom');
       var activeCss='background:rgba(200,168,75,0.22);border-color:rgba(200,168,75,0.55);color:var(--gold)';
       var inactiveCss='';
-      if(db)db.style.cssText='min-height:38px;padding:4px 16px;font-size:0.68rem;'+(_mmGameMode==='daily'?activeCss:inactiveCss);
-      if(rb)rb.style.cssText='min-height:38px;padding:4px 16px;font-size:0.68rem;'+(_mmGameMode==='random'?activeCss:inactiveCss);
+      if(db)db.style.cssText='min-height:48px;padding:6px 18px;font-size:0.72rem;'+(_mmGameMode==='daily'?activeCss:inactiveCss);
+      if(rb)rb.style.cssText='min-height:48px;padding:6px 18px;font-size:0.72rem;'+(_mmGameMode==='random'?activeCss:inactiveCss);
     }
     document.getElementById('MMdaily').onclick=function(){
       if(_mmGameMode==='daily')return;
@@ -407,13 +407,21 @@
       if(k==='h'||k==='H'){_MMH();e.preventDefault();return;}
     }
     document.addEventListener('keydown',_mmKeyHandler);
-    var _mmWatch=setInterval(function(){
-      if(!document.body.classList.contains('game-active')){
-        document.removeEventListener('keydown',_mmKeyHandler);
-        clearInterval(_mmWatch);
-        if(_mmCountdownIv){clearInterval(_mmCountdownIv);_mmCountdownIv=null;}
-      }
-    },1000);
+    // Deterministic cleanup at unmount (fleet pattern); the 1s game-active
+    // poll stays only as a fallback for surfaces without the hook.
+    var _mmWatch=null;
+    function _mmTeardown(){
+      document.removeEventListener('keydown',_mmKeyHandler);
+      if(_mmWatch){clearInterval(_mmWatch);_mmWatch=null;}
+      if(_mmCountdownIv){clearInterval(_mmCountdownIv);_mmCountdownIv=null;}
+    }
+    if(window._lwRegisterGameCleanup){
+      window._lwRegisterGameCleanup(_mmTeardown);
+    }else{
+      _mmWatch=setInterval(function(){
+        if(!document.body.classList.contains('game-active'))_mmTeardown();
+      },1000);
+    }
   
     window._MMN=function(){
       _mmOver=false;

@@ -74,7 +74,7 @@ function GSP(a){
     for(var i=0;i<13;i++){if(col[st+i].r!==12-i||col[st+i].s!==s||!col[st+i].up)return false;}
     col.splice(st,13);completed++;_e('milestone');
     flipTops();
-    if(completed>=8){gameOver=true;mm_up('🏆 All 8 runs!');_play('win');_playWin();_e('game_win');_sr('spider',{w:true,s:moves,lo:1});}
+    if(completed>=8){gameOver=true;mm_up('\ud83c\udfc6 All 8 runs!');_play('win');_playWin();_e('game_win');_sr('spider',{w:true,s:moves,lo:1});var _spw=(parseInt(localStorage.getItem('lw_spider_w'),10)||0)+1;try{localStorage.setItem('lw_spider_w',String(_spw));}catch(e){}if(window._lwGameEnd)window._lwGameEnd({won:true,title:'All 8 runs!',line:moves+' moves \u00b7 '+_spw+' lifetime wins',retry:function(){if(window._SPN)window._SPN();},retryLabel:'\u21bb NEW DEAL',viewLabel:'view the table',delay:900});}
     return true;
   }
   function getRunLen(ci,idx){

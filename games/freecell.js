@@ -53,6 +53,12 @@ function GFC(a){
   }
   function upd(){var el=document.getElementById('FCmv');if(el)el.textContent=moves;}
   function mm_up(t){var el=document.getElementById('_gm');if(el)el.textContent=t;}
+  function _fcWin(){
+    gameOver=true;mm_up('\ud83c\udfc6 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves,lo:1});
+    var w=(parseInt(localStorage.getItem('lw_freecell_w'),10)||0)+1;
+    try{localStorage.setItem('lw_freecell_w',String(w));}catch(e){}
+    if(window._lwGameEnd)window._lwGameEnd({won:true,title:'Garden cleared!',line:moves+' moves \u00b7 '+w+' lifetime wins',retry:function(){if(window._FCN)window._FCN();},retryLabel:'\u21bb NEW DEAL',viewLabel:'view the table',delay:900});
+  }
   function checkWin(){for(var f=0;f<4;f++)if(fnd[f].length<13)return false;return true;}
   function emptyFree(){var n=0;for(var i=0;i<4;i++)if(!free[i])n++;return n;}
   function emptyCols(){var n=0;for(var c=0;c<8;c++)if(tab[c].length===0)n++;return n;}
@@ -100,7 +106,7 @@ function GFC(a){
         if(src.type==='free')free[src.idx]=null;
         else tab[src.idx].pop();
         fnd[f].push(card);moves++;_e('progress');
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves,lo:1});}
+        if(checkWin()){_fcWin();}
         sel=null;upd();rn();refreshUndoBtn();return true;
       }
     }
@@ -153,7 +159,7 @@ function GFC(a){
         if(cards.length===1&&canFnd(cards[0],idx)){
           snapshot();
           removeSel();fnd[idx].push(cards[0]);moves++;_e('progress');
-          if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('freecell',{w:true,s:moves,lo:1});}
+          if(checkWin()){_fcWin();}
           sel=null;upd();rn();refreshUndoBtn();return;
         }
         sel=null;rn();return;

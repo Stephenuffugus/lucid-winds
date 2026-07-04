@@ -125,7 +125,7 @@ function GKL(a){
       rn();
       refreshUndoBtn();
       if(checkWin()){
-        gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});
+        _kdWin();
         refreshAutoBtn();
         return;
       }
@@ -167,6 +167,15 @@ function GKL(a){
     if(el)el.textContent=txt;
   }
 
+  // Campaign leftover: proper end overlay on top of the engine celebration.
+  // No loss path exists in solitaire (you abandon), so we keep a plain
+  // lifetime-wins counter instead of the W/P/streak triple.
+  function _kdWin(){
+    gameOver=true;mm_up('\ud83c\udfc6 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});
+    var w=(parseInt(localStorage.getItem('lw_klondike_w'),10)||0)+1;
+    try{localStorage.setItem('lw_klondike_w',String(w));}catch(e){}
+    if(window._lwGameEnd)window._lwGameEnd({won:true,title:'Garden cleared!',line:moves+' moves \u00b7 '+w+' lifetime wins',retry:function(){if(window._KLN)window._KLN();},retryLabel:'\u21bb NEW DEAL',viewLabel:'view the table',delay:900});
+  }
   function checkWin(){
     for(var f=0;f<4;f++)if(fnd[f].length<13)return false;
     return true;
@@ -268,7 +277,7 @@ function GKL(a){
         waste.pop();
         fnd[fi].push(topCard);
         sel=null;doMove();
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
+        if(checkWin()){_kdWin();}
         rn();lastTap=0;lastTapCard=null;return;
       }
       var tc=autoToTab(topCard);
@@ -294,7 +303,7 @@ function GKL(a){
       if(canPlaceOnFnd(card,fi)){
         snapshot();
         waste.pop();fnd[fi].push(card);sel=null;doMove();
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
+        if(checkWin()){_kdWin();}
         rn();return;
       }
     }else if(sel.src==='tab'){
@@ -306,7 +315,7 @@ function GKL(a){
           col.pop();fnd[fi].push(card);
           if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
           sel=null;doMove();
-          if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
+          if(checkWin()){_kdWin();}
           rn();return;
         }
       }
@@ -359,7 +368,7 @@ function GKL(a){
         col.pop();fnd[fi].push(tappedCard);
         if(col.length>0&&!col[col.length-1].up)col[col.length-1].up=true;
         sel=null;doMove();
-        if(checkWin()){gameOver=true;mm_up('🏆 You win!');_play('win');_playWin();_e('game_win');_sr('klondike',{w:true,s:moves,lo:1});}
+        if(checkWin()){_kdWin();}
         rn();lastTap=0;lastTapCard=null;return;
       }
       var tc2=autoToTab(tappedCard,ci);

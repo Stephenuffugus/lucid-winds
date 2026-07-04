@@ -50139,6 +50139,7 @@ document.addEventListener('keydown', function(e) {
   // but never loses a record). lo: lower is better (best times/fewest moves).
   window._LW_GAMESTAT_KEYS = {
     hi: ['lw_merge_best','lw_simon_best','lw_lights_solved','lw_pipe_lvl','lw_recall_best','lw_seedtoss_best',
+         'lw_chess_w','lw_chess_l','lw_chess_d','lw_klondike_w','lw_spider_w','lw_freecell_w',
          'lw_bg_w','lw_bg_l','lw_spades_w','lw_spades_l','lw_euchre_w','lw_euchre_l','lw_rummy_w','lw_rummy_l',
          'lw_golf_w','lw_golf_p','lw_golf_streak','lw_tripeaks_w','lw_tripeaks_p','lw_tripeaks_streak',
          'lw_pyramid_w','lw_pyramid_p','lw_pyramid_streak'],
@@ -69582,15 +69583,15 @@ function GMM(a){
   // can flip between modes without confusion.
   var _modeTab=document.createElement('div');
   _modeTab.style.cssText='display:flex;gap:6px;justify-content:center;padding:6px 0 4px';
-  _modeTab.innerHTML='<button class="gb" id="MMdaily" style="min-height:38px;padding:4px 16px;font-size:0.68rem">📅 DAILY</button>'
-    +'<button class="gb" id="MMrandom" style="min-height:38px;padding:4px 16px;font-size:0.68rem">🎲 RANDOM</button>';
+  _modeTab.innerHTML='<button class="gb" id="MMdaily" style="min-height:48px;padding:6px 18px;font-size:0.72rem">📅 DAILY</button>'
+    +'<button class="gb" id="MMrandom" style="min-height:48px;padding:6px 18px;font-size:0.72rem">🎲 RANDOM</button>';
   a.insertBefore(_modeTab,_mmStatsRow);
   function _mmSyncModeTabs(){
     var db=document.getElementById('MMdaily'),rb=document.getElementById('MMrandom');
     var activeCss='background:rgba(200,168,75,0.22);border-color:rgba(200,168,75,0.55);color:var(--gold)';
     var inactiveCss='';
-    if(db)db.style.cssText='min-height:38px;padding:4px 16px;font-size:0.68rem;'+(_mmGameMode==='daily'?activeCss:inactiveCss);
-    if(rb)rb.style.cssText='min-height:38px;padding:4px 16px;font-size:0.68rem;'+(_mmGameMode==='random'?activeCss:inactiveCss);
+    if(db)db.style.cssText='min-height:48px;padding:6px 18px;font-size:0.72rem;'+(_mmGameMode==='daily'?activeCss:inactiveCss);
+    if(rb)rb.style.cssText='min-height:48px;padding:6px 18px;font-size:0.72rem;'+(_mmGameMode==='random'?activeCss:inactiveCss);
   }
   document.getElementById('MMdaily').onclick=function(){
     if(_mmGameMode==='daily')return;
@@ -69829,13 +69830,21 @@ function GMM(a){
     if(k==='h'||k==='H'){_MMH();e.preventDefault();return;}
   }
   document.addEventListener('keydown',_mmKeyHandler);
-  var _mmWatch=setInterval(function(){
-    if(!document.body.classList.contains('game-active')){
-      document.removeEventListener('keydown',_mmKeyHandler);
-      clearInterval(_mmWatch);
-      if(_mmCountdownIv){clearInterval(_mmCountdownIv);_mmCountdownIv=null;}
-    }
-  },1000);
+  // Deterministic cleanup at unmount (fleet pattern); the 1s game-active
+  // poll stays only as a fallback for surfaces without the hook.
+  var _mmWatch=null;
+  function _mmTeardown(){
+    document.removeEventListener('keydown',_mmKeyHandler);
+    if(_mmWatch){clearInterval(_mmWatch);_mmWatch=null;}
+    if(_mmCountdownIv){clearInterval(_mmCountdownIv);_mmCountdownIv=null;}
+  }
+  if(window._lwRegisterGameCleanup){
+    window._lwRegisterGameCleanup(_mmTeardown);
+  }else{
+    _mmWatch=setInterval(function(){
+      if(!document.body.classList.contains('game-active'))_mmTeardown();
+    },1000);
+  }
 
   window._MMN=function(){
     _mmOver=false;
@@ -70200,12 +70209,28 @@ function GSK(a){
   window._SKU=function(){if(_skWon){sm('Solved! Tap Next Level');return;}if(!_skHist.length){sm('Nothing to undo');return;}var s=_skHist.pop();grid=s.g;px=s.px;py=s.py;moves=s.mv;_play('tap');rn();};
   window._SKR=function(){_skHist=[];load();sm('Reset');rn()};
   window._SKN=function(){_skHist=[];lvl=(lvl+1)%LEVELS.length;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();};
+  // Level picker overlay (campaign leftover: prompt() is jarring on mobile
+  // and invisible in some webviews). Tap a level, or tap outside to close.
   window._SKjump=function(){
-    var v=prompt('Jump to level (1-'+LEVELS.length+'):',String(lvl+1));
-    if(v===null)return;
-    var n=parseInt(v,10);
-    if(isNaN(n)||n<1||n>LEVELS.length){sm('Invalid level, must be 1 to '+LEVELS.length);return;}
-    _skHist=[];lvl=n-1;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();
+    var old=document.getElementById('SKJOV');if(old){old.remove();return;}
+    var ov=document.createElement('div');ov.id='SKJOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(13,16,12,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;';
+    var html='<div style="color:var(--gold);font-family:Georgia,serif;font-size:1.05rem;font-weight:700;margin-bottom:12px;">Jump to level</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(5,minmax(48px,1fr));gap:8px;max-width:340px;width:100%;max-height:60vh;overflow-y:auto;padding:2px;">';
+    for(var i=0;i<LEVELS.length;i++){
+      html+='<button class="gb" data-skl="'+i+'" style="min-height:48px;font-size:0.8rem;'
+        +(i===lvl?'background:rgba(200,168,75,0.25);border-color:var(--gold);color:var(--gold);':'')+'">'+(i+1)+'</button>';
+    }
+    html+='</div><button class="gb" id="SKJx" style="margin-top:14px;min-height:48px;padding:8px 26px;">Close</button>';
+    ov.innerHTML=html;
+    ov.onclick=function(ev){
+      var t=ev.target;
+      if(t===ov||t.id==='SKJx'){ov.remove();return;}
+      var n=t.getAttribute&&t.getAttribute('data-skl');
+      if(n!=null){ov.remove();_skHist=[];lvl=parseInt(n,10);localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();}
+    };
+    document.body.appendChild(ov);
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var x=document.getElementById('SKJOV');if(x)x.remove();});
   };
   // Bind keydown only ONCE — was attaching a fresh listener every
   // time GSK was invoked (new game / tab revisit), stacking handlers.
