@@ -197,7 +197,7 @@ function startGame(pan,a){
     if(engine){World.clear(world,false);Engine.clear(engine);engine=null;world=null;}
     stones=[];trayL=[];trayR=[];carries={};rockToCarrier={};touchPos={};particles=[];
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1.5rem;color:var(--sage);letter-spacing:3px;margin:22px 0 6px;">STONE GARDEN</div>'
-      +'<div style="font-style:italic;font-size:0.78rem;color:var(--muted);margin-bottom:18px;line-height:1.45;max-width:320px;margin-left:auto;margin-right:auto;">Pick stones from either tray. Hold with one finger, spin with a second. Use both hands at once to balance two stones.</div>'
+      +'<div style="font-style:italic;font-size:0.78rem;color:var(--muted);margin-bottom:18px;line-height:1.45;max-width:320px;margin-left:auto;margin-right:auto;">Drag stones from either tray and stack them into a cairn. Tap ROTATE to spin the tray pieces before you lift. Steady hands \u2014 the wind has opinions.</div>'
       +'<button class="gb" onclick="_SGbegin(\'zen\')" style="display:block;width:260px;margin:8px auto;padding:14px;min-height:56px;">ZEN MODE<div style="font-size:0.72rem;opacity:0.85;font-style:italic;margin-top:2px;">No fail. Wind gusts shake the stack.</div></button>'
       +'<button class="gb" onclick="_SGbegin(\'challenge\')" style="display:block;width:260px;margin:8px auto;padding:14px;min-height:56px;">CHALLENGE<div style="font-size:0.72rem;opacity:0.85;font-style:italic;margin-top:2px;">Reach '+CHALLENGE_TARGET+'px. 3 topples and out.</div></button>'
       +'<div style="margin-top:18px;font-size:0.72rem;color:var(--muted);line-height:1.8;">'
@@ -246,10 +246,10 @@ function startGame(pan,a){
       trayL.push(createRock(pickShape(),TRAY_W/2,traySlotY(i)));
       trayR.push(createRock(pickShape(),W-TRAY_W/2,traySlotY(i)));
     }
-    // Trays are NOT in the physics world — they're rendered manually.
-    // We still Body.setStatic to keep them sleeping.
-    for(var j=0;j<trayL.length;j++){if(trayL[j])Body.setStatic(trayL[j].body,true);}
-    for(var k=0;k<trayR.length;k++){if(trayR[k])Body.setStatic(trayR[k].body,true);}
+    // Trays are NOT in the physics world — they're rendered manually, so
+    // static flags are unnecessary. They were also FATAL: a picked-up tray
+    // rock kept isStatic through releaseCarry, so every placed stone floated
+    // where dropped (permanently sleeping, no stacking, no wind, no topple).
   }
   function traySlotY(idx){
     var top=22,bot=GROUND_Y-8,span=bot-top;
@@ -404,6 +404,7 @@ function startGame(pan,a){
 
   // ─── PHYSICS LIFECYCLE ─────────────────────────────────────────
   function onStoneSettled(stone){
+    if(state!=='playing')return;
     if(stone.scoreGiven)return;
     stone.scoreGiven=true;
     stone.settled=true;
@@ -421,7 +422,9 @@ function startGame(pan,a){
     if(h>maxHeight)maxHeight=h;
     if(_e)try{_e('milestone');}catch(e){}
     if(mode==='zen'&&stonesPlaced>0&&stonesPlaced%WIND_INTERVAL===0)scheduleWindGust();
-    if(mode==='challenge'&&h>=CHALLENGE_TARGET){setTimeout(function(){win();},900);}
+    if(mode==='challenge'&&h>=CHALLENGE_TARGET&&stonesPlaced>=3){
+      setTimeout(function(){if(state==='playing'&&measureHeight()>=CHALLENGE_TARGET)win();},900);
+    }
   }
 
   function measureHeight(){
@@ -693,8 +696,10 @@ function startGame(pan,a){
     engine.gravity.y=1.0;engine.gravity.scale=0.0018;
     world=engine.world;
     ground=Bodies.rectangle(W/2,GROUND_Y+120,W*4,240,{isStatic:true,friction:0.95,frictionStatic:1.4});
-    wallL=Bodies.rectangle(-120,GROUND_Y-400,40,1600,{isStatic:true});
-    wallR=Bodies.rectangle(W+120,GROUND_Y-400,40,1600,{isStatic:true});
+    // Walls beyond TOPPLE_X_SLACK so stones CAN cross the topple line
+    // (they used to block at +/-140 — challenge lives were unlosable).
+    wallL=Bodies.rectangle(-260,GROUND_Y-400,40,1600,{isStatic:true});
+    wallR=Bodies.rectangle(W+260,GROUND_Y-400,40,1600,{isStatic:true});
     World.add(world,[ground,wallL,wallR]);
   }
   function begin(m){
@@ -728,7 +733,7 @@ function startGame(pan,a){
     rotateBtn.addEventListener('touchend',rotStop,{passive:false});
     rotateBtn.addEventListener('touchcancel',rotStop,{passive:false});
     var tip=document.createElement('div');
-    tip.style.cssText='font-family:DM Mono,monospace;font-size:0.6rem;color:var(--muted);text-align:center;line-height:1.4;margin:0 8px 4px;';
+    tip.style.cssText='font-family:DM Mono,monospace;font-size:0.7rem;color:var(--muted);text-align:center;line-height:1.4;margin:0 8px 4px;';
     tip.innerHTML=mode==='zen'
       ? 'Hold ⟳ to spin tray pieces · grab to freeze · two hands = two stones'
       : 'Reach '+CHALLENGE_TARGET+'px · 3 topples end the run';
@@ -756,23 +761,29 @@ function startGame(pan,a){
   }
 
   function win(){
-    running=false;state='won';
-    if(rafId)cancelAnimationFrame(rafId);
+    if(state!=='playing')return;  // double-settle window / post-exit timers
+    state='won';
     flash('CAIRN COMPLETE','#c8a84b');
     if(_playWin)try{_playWin();}catch(e){}
     if(_e)try{_e('game_win');}catch(e){}
     saveBest();
     _sr('stonegarden',{w:true,s:score,ht:maxHeight,stones:stonesPlaced,mode:mode});
-    setTimeout(showMenu,2200);
+    if(window._lwGameEnd)window._lwGameEnd({won:true,title:'Cairn complete!',
+      line:score+' pts \u00b7 '+maxHeight+'px \u00b7 '+stonesPlaced+' stones',
+      sub:'best '+bestScore+' pts \u00b7 '+bestHeight+'px',
+      retry:function(){begin('challenge');},retryLabel:'\u21bb BUILD AGAIN',viewLabel:'view the cairn'});
   }
   function lose(){
-    running=false;state='gameover';
-    if(rafId)cancelAnimationFrame(rafId);
-    flash('RUN ENDED','#c75050');
+    if(state!=='playing')return;
+    state='gameover';
+    flash('THE CAIRN FELL','#c75050');
     if(_e)try{_e('game_loss');}catch(e){}
     saveBest();
     _sr('stonegarden',{w:false,s:score,ht:maxHeight,stones:stonesPlaced,mode:mode});
-    setTimeout(showMenu,2200);
+    if(window._lwGameEnd)window._lwGameEnd({won:false,title:'The cairn fell',
+      line:score+' pts \u00b7 '+maxHeight+'px \u00b7 '+stonesPlaced+' stones',
+      sub:'best '+bestScore+' pts \u00b7 '+bestHeight+'px',
+      retry:function(){begin('challenge');},retryLabel:'\u21bb BUILD AGAIN',viewLabel:'view the field'});
   }
   function saveBest(){
     if(score>bestScore){bestScore=score;try{localStorage.setItem('lw_sg_best_score',String(bestScore));}catch(e){}}
@@ -780,7 +791,13 @@ function startGame(pan,a){
   }
 
   window._SGbegin=function(m){begin(m);};
-  window._SGmenu=function(){if(state==='playing')saveBest();showMenu();};
+  window._SGmenu=function(){
+    if(state==='playing'){
+      saveBest();
+      if(stonesPlaced>0)_sr('stonegarden',{w:false,s:score,ht:maxHeight,stones:stonesPlaced,mode:mode});
+    }
+    showMenu();
+  };
   window._SGundo=function(){
     if(state!=='playing'||!stones.length)return;
     var last=stones.pop();

@@ -24,6 +24,7 @@ window._gameFns.seedsow=function SS(a){
   var board=[];
   var turn=0; // 0=player, 1=AI
   var busy=false;
+  var gameOver=false; // end latch: undo could replay the winning move and re-earn
   var bestStoreEarn=0; // store high-water mark for capture earns (anti undo-refarm)
   var difficulty=2; // 1-4 tier
   try{var _d=parseInt(localStorage.getItem('lw_ss_diff'));if(_d>=1&&_d<=4)difficulty=_d;}catch(e){}
@@ -41,7 +42,7 @@ window._gameFns.seedsow=function SS(a){
     ss.textContent=[
       '#SSpan{padding-top:6px;}',
       // Wood board
-      '.ss-board{display:grid;grid-template-columns:58px repeat(6,1fr) 58px;gap:4px;align-items:center;margin:8px auto;padding:10px 8px;background:linear-gradient(135deg,#5a3f22,#7a5c3a,#5a3f22);border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,0.5),inset 0 2px 6px rgba(255,220,140,0.08),inset 0 -2px 8px rgba(0,0,0,0.4);border:2px solid #3b2a14;max-width:min(96vw,480px);width:100%;box-sizing:border-box;position:relative;overflow:hidden;}',
+      '.ss-board{display:grid;grid-template-columns:minmax(40px,58px) repeat(6,minmax(0,1fr)) minmax(40px,58px);gap:4px;align-items:center;margin:8px auto;padding:10px 8px;background:linear-gradient(135deg,#5a3f22,#7a5c3a,#5a3f22);border-radius:18px;box-shadow:0 10px 28px rgba(0,0,0,0.5),inset 0 2px 6px rgba(255,220,140,0.08),inset 0 -2px 8px rgba(0,0,0,0.4);border:2px solid #3b2a14;max-width:min(96vw,480px);width:100%;box-sizing:border-box;position:relative;overflow:hidden;}',
       '.ss-board::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 40%,rgba(0,0,0,0.25) 100%);border-radius:18px;}',
       '.ss-store{grid-row:span 2;background:radial-gradient(ellipse at 50% 30%,rgba(32,22,10,0.6),rgba(16,10,4,0.8));border:2px solid rgba(200,168,75,0.3);border-radius:30px;padding:14px 4px;text-align:center;font-family:Bebas Neue,sans-serif;color:var(--cream);min-height:140px;display:flex;flex-direction:column;justify-content:center;align-items:center;box-shadow:inset 0 4px 12px rgba(0,0,0,0.5);position:relative;z-index:2;}',
       '.ss-store .lbl{font-size:0.7rem;letter-spacing:0.14em;margin-bottom:4px;opacity:0.9}',
@@ -70,7 +71,7 @@ window._gameFns.seedsow=function SS(a){
       '.ss-stats strong{color:var(--gold);}',
       // Tools row
       '.ss-tools{display:flex;gap:6px;justify-content:center;padding:4px 0;flex-wrap:wrap;}',
-      '.ss-tools .gb{min-height:40px;padding:6px 12px;font-size:0.65rem;letter-spacing:0.06em;}',
+      '.ss-tools .gb{min-height:48px;padding:6px 14px;font-size:0.68rem;letter-spacing:0.06em;}',
       // Float banner
       '.ss-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(13,16,12,0.9);border:1.5px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:20px;font-family:Bebas Neue,sans-serif;font-size:0.95rem;letter-spacing:0.14em;z-index:100;animation:ssBanner 1.6s ease both;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,0.6);}',
       '@keyframes ssBanner{0%{opacity:0;transform:translate(-50%,-50%) scale(0.7)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}30%,70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}',
@@ -108,6 +109,7 @@ window._gameFns.seedsow=function SS(a){
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){ssGen++;var o=document.getElementById('SSrulesOV');if(o)o.remove();});
   function newGame(){
     ssGen++; // kill any in-flight sow/AI chain (NEW GAME mid-sow corrupted state)
+    gameOver=false;
     board=[4,4,4,4,4,4,0,4,4,4,4,4,4,0];
     turn=0;busy=false;bestStoreEarn=0;
     undoStack=[];hintPit=-1;lastMovePit=-1;capturedIdx=-1;floatBanner='';
@@ -158,7 +160,7 @@ window._gameFns.seedsow=function SS(a){
         }
         render();
         if(captureAmt>0)ssT(function(){capturedIdx=-1;render();},900);
-        if(checkEnd()){cb(false,captureAmt);return;}
+        if(checkEnd()){cb(false,captureAmt,true);return;}
         cb(extraTurn,captureAmt);
         return;
       }
@@ -184,7 +186,12 @@ window._gameFns.seedsow=function SS(a){
       else{sm('Tie. '+pp+' each');stats.d++;stats.streak=0;}
       saveStats();renderStats();
       _sr('seedsow',{w:won,s:pp});
-      busy=true;
+      busy=true;gameOver=true;
+      if(window._lwGameEnd)window._lwGameEnd({won:won,
+        title:won?'You win!':(pp<ap?'AI wins':'A tie'),
+        line:pp+' \u2014 '+ap+' \u00b7 lifetime '+stats.w+'W-'+stats.l+'L-'+stats.d+'D'+(stats.streak>1?' \u00b7 \ud83d\udd25 '+stats.streak+' streak':''),
+        retry:function(){if(window._SSN)window._SSN();},
+        retryLabel:'\u21bb NEW GAME',viewLabel:'view the board'});
       return true;
     }
     return false;
@@ -300,22 +307,24 @@ window._gameFns.seedsow=function SS(a){
 
   // ── Interactions ──
   function playerMove(pit){
-    if(busy||turn!==0)return;
+    if(busy||turn!==0||gameOver)return;
     if(pit<0||pit>5||board[pit]===0)return;
     undoStack.push({board:board.slice(),turn:turn});
     hintPit=-1;
     busy=true;
-    sow(pit,0,function(extra,cap){
+    sow(pit,0,function(extra,cap,ended){
+      if(ended)return; // game just ended — no turn flip, no AI, undo stays locked
       if(cap>0)showBanner('+'+cap+' capture!');
       if(!extra){turn=1;sm('AI thinking...');ssT(aiMove,550);}
       else{showBanner('Free turn');sm('Free turn');busy=false;render();}
     });
   }
   function aiMove(){
-    if(turn!==1)return;
+    if(turn!==1||gameOver)return;
     var pit=bestMoveFor(1);
-    if(pit<0){turn=0;busy=false;sm('Your turn');return;}
-    sow(pit,1,function(extra,cap){
+    if(pit<0){if(!gameOver){turn=0;busy=false;sm('Your turn');}return;}
+    sow(pit,1,function(extra,cap,ended){
+      if(ended)return;
       if(cap>0)showBanner('AI captures '+cap);
       if(!extra){turn=0;busy=false;sm('Your turn');render();}
       else{showBanner('AI free turn');sm('AI gets another turn');ssT(aiMove,700);}
@@ -391,14 +400,14 @@ window._gameFns.seedsow=function SS(a){
     difficulty=n;try{localStorage.setItem('lw_ss_diff',String(n));}catch(e){}
   };
   window._SSU=function(){
-    if(undoStack.length===0||busy||turn!==0)return;
+    if(undoStack.length===0||busy||turn!==0||gameOver)return;
     var s=undoStack.pop();
     board=s.board.slice();turn=s.turn;
     hintPit=-1;lastMovePit=-1;capturedIdx=-1;
     _play('tap');sm('Undone');render();
   };
   window._SSH=function(){
-    if(busy||turn!==0)return;
+    if(busy||turn!==0||gameOver)return;
     var saved=difficulty;difficulty=4;
     var pick=bestMoveFor(0);
     difficulty=saved;
@@ -433,13 +442,13 @@ window._gameFns.seedsow=function SS(a){
     try{localStorage.setItem('lw_ss_rules_seen','1');}catch(e){}
   };
 
-  // First-time auto-open
+  newGame();
+  // First-time rules auto-open — AFTER newGame, whose ssGen bump silently
+  // cancelled the old pre-newGame timer (rules never auto-opened).
   try{
     if(!localStorage.getItem('lw_ss_rules_seen')){
       ssT(function(){if(window._SSR)window._SSR();},700);
     }
   }catch(e){}
-
-  newGame();
 };
 })();
