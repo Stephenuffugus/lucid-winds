@@ -45,7 +45,43 @@ window._gameFns.storyseeds=function SS(a){
   var pan=document.createElement('div');pan.id='SSpan';
   pan.style.cssText='max-width:420px;margin:0 auto;padding:10px;';
   a.appendChild(pan);
-  mc(a).innerHTML='<button class="gb-new" onclick="_SSNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_SSSave()">💾 SAVE</button>';
+  mc(a).innerHTML='<button class="gb-new" onclick="_SSNew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button> <button class="gb" onclick="_SSSave()">💾 SAVE</button> <button class="gb" onclick="_SSJournal()">📖 JOURNAL</button>';
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('SS-journal');if(o)o.remove();});
+  // 2026-07-04: entries were being written into a void — saved forever, viewable
+  // never. The journal is the whole point of a journal.
+  window._SSJournal=function(){
+    var _old=document.getElementById('SS-journal');if(_old){_old.remove();return;}
+    var entries=[];
+    try{entries=JSON.parse(localStorage.getItem('sws_storyseeds_entries')||'[]');}catch(e){}
+    var ov=document.createElement('div');ov.id='SS-journal';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(8,10,6,0.9);display:flex;flex-direction:column;align-items:center;padding:20px 12px;overflow:hidden;';
+    var h='<div style="width:min(94vw,560px);max-height:100%;display:flex;flex-direction:column;background:linear-gradient(160deg,#1a2216,#10160e);border:2px solid rgba(200,168,75,0.3);border-radius:18px;padding:18px;box-shadow:0 14px 44px rgba(0,0,0,0.6);box-sizing:border-box;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+    h+='<div style="font-family:Georgia,serif;font-size:1.15rem;color:#c8a84b;letter-spacing:0.08em;">\ud83d\udcd6 YOUR JOURNAL</div>';
+    h+='<button onclick="document.getElementById(\'SS-journal\').remove()" style="min-height:44px;min-width:44px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.8rem;cursor:pointer;">\u2715</button></div>';
+    if(!entries.length){
+      h+='<div style="font-family:Georgia,serif;font-style:italic;color:#8a9178;text-align:center;padding:30px 10px;">Nothing pressed between these pages yet.<br>Write ten words and tap SAVE \u2014 they\u2019ll live here.</div>';
+    } else {
+      var tw=0;for(var i=0;i<entries.length;i++)tw+=entries[i].words||0;
+      h+='<div style="font-size:0.72rem;color:#8a9178;margin-bottom:10px;">'+entries.length+' entr'+(entries.length===1?'y':'ies')+' \u00b7 '+tw+' words all-time</div>';
+      h+='<div style="overflow-y:auto;flex:1;min-height:0;padding-right:4px;">';
+      for(var j=entries.length-1;j>=0;j--){
+        var en=entries[j];
+        var safe=String(en.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var safeP=String(en.prompt||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        h+='<div style="border:1px solid rgba(122,179,86,0.18);border-radius:12px;padding:12px;margin-bottom:10px;background:rgba(18,24,16,0.6);">';
+        h+='<div style="font-size:0.66rem;color:#c8a84b;letter-spacing:0.06em;margin-bottom:4px;">'+en.date+' \u00b7 '+(en.words||'?')+' words</div>';
+        if(safeP)h+='<div style="font-family:Georgia,serif;font-style:italic;font-size:0.74rem;color:#8a9178;margin-bottom:6px;">\u201c'+safeP+'\u201d</div>';
+        h+='<div style="font-family:Georgia,serif;font-size:0.86rem;color:#e8dcc8;line-height:1.55;white-space:pre-wrap;">'+safe+'</div>';
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+    h+='</div>';
+    ov.innerHTML=h;
+    ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+    document.body.appendChild(ov);
+  };
 
   function getDateSeed(){var d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
   function getDailyPrompt(){return PROMPTS[getDateSeed()%PROMPTS.length];}
@@ -127,9 +163,9 @@ window._gameFns.storyseeds=function SS(a){
       try{localStorage.setItem(paid.key,String(paid.count+1));}catch(e){}
       if(g&&g.firstWin){_ssWon=true;_e('game_win');if(_playWin)_playWin();}
       else _e('milestone');
-      sm('✓ Saved · '+n+' words');
+      sm('✓ Saved · '+n+' words · pressed into your \ud83d\udcd6 JOURNAL');
     }else{
-      sm('✓ Saved · '+n+' words (journal rewards refresh tomorrow)');
+      sm('✓ Saved · '+n+' words · pressed into your \ud83d\udcd6 JOURNAL (rewards refresh tomorrow)');
     }
     _sr('storyseeds',{w:true,s:n});
     ta.value='';updateWords();

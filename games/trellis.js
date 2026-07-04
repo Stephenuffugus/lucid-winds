@@ -565,6 +565,21 @@ window._gameFns.trellis = function TR(a){
     saveStats();
     _sr('trellis',{w:won,s:playerScore});
     render();
+    (function(pw,as2,wn){setTimeout(function(){
+      var _o=document.getElementById('TR-over');if(_o)_o.remove();
+      var ov=document.createElement('div');ov.id='TR-over';
+      ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(wn?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+      ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(wn?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
+        +'<div style="font-size:1.7rem;font-weight:700;color:'+(wn?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;">'+(wn?'YOU WIN THE TRELLIS':(pw===as2?'A DRAW':'THE AI TAKES IT'))+'</div>'
+        +'<div style="font-size:1rem;color:#e8dcc8;margin-top:10px;">You <b style="color:#c8a84b">'+pw+'</b> \u00b7 AI <b style="color:#c8a84b">'+as2+'</b></div>'
+        +'<div style="font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:6px;">'+stats.w+'W / '+stats.l+'L'+(stats.streak>1?' \u00b7 \ud83d\udd25 '+stats.streak+' streak':'')+'</div>'
+        +'<button id="TR-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb NEW GAME</button>'
+        +'<button id="TR-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">view the board</button>';
+      ov.querySelector('#TR-again').onclick=function(){ov.remove();if(window._TRnew)_TRnew();};
+      ov.querySelector('#TR-view').onclick=function(){ov.remove();};
+      ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+      document.body.appendChild(ov);
+    },450);})(playerScore,aiScore,won);
   }
   function saveStats(){try{localStorage.setItem('lw_tr_stats',JSON.stringify(stats));}catch(e){}}
 
@@ -576,6 +591,7 @@ window._gameFns.trellis = function TR(a){
   mc(a).innerHTML='<button class="gb-new" onclick="_TRnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   window._TRnew=function(){
+    var _to=document.getElementById('TR-over');if(_to)_to.remove();
     buildWordSet();
     initBoard();initBag();
     playerRack=[];aiRack=[];refillRack(playerRack);refillRack(aiRack);
@@ -666,7 +682,7 @@ window._gameFns.trellis = function TR(a){
       var idx=rackCopy.indexOf(want);
       if(idx<0){sm('You don\'t have '+ch);return;}
       rackCopy[idx]='#'; // mark consumed
-      swapIdx.push(playerRack.indexOf(want));
+      swapIdx.push(idx);  // rackCopy mirrors playerRack, so idx IS the rack index — indexOf(want) returned the same first slot for duplicates (2026-07-03 fix)
     }
     // Remove and return to bag
     var removed=[];
@@ -680,7 +696,9 @@ window._gameFns.trellis = function TR(a){
     _play('tap');
     isPlayerTurn=false;render();setTimeout(aiTurn,300);
   };
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){['TRrulesOV','TR-over'].forEach(function(id){var o=document.getElementById(id);if(o)o.remove();});});
   window._TRrules=function(){
+    var _ex=document.getElementById('TRrulesOV');if(_ex){_ex.remove();} // repeated RULES taps used to stack duplicate overlays
     var ov=document.createElement('div');ov.id='TRrulesOV';
     ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
     var h='<div class="card">';

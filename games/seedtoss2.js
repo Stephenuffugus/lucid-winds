@@ -256,6 +256,13 @@ window._gameFns.seedtoss2=function ST(a){
     // to "just stop" with a tiny line. Show a clear game-over summary that
     // names the result and points at New Game.
     sm((won?'🌻 Nice round! ':'🌱 Out of seeds. ')+totalMade+'/15 in the pot · Score '+score+' · tap New Game to play again.');
+    var pb=0;try{pb=parseInt(localStorage.getItem('lw_seedtoss_best'),10)||0;}catch(e){}
+    var rec=score>pb; if(rec){try{localStorage.setItem('lw_seedtoss_best',String(score));}catch(e){}}
+    if(window._lwGameEnd)_lwGameEnd({won:won,
+      title:won?'A FINE TOSSING ARM':'OUT OF SEEDS',
+      line:'<b style="color:#c8a84b">'+totalMade+'</b>/15 in the pot \u00b7 score '+score,
+      sub:rec?'\u2b50 NEW BEST':'best '+pb,
+      retry:function(){window._STN();},retryLabel:'\u21bb TOSS AGAIN',viewLabel:'admire the pot'});
   }
 
   function setMsg(t){var m=document.getElementById('STmsg');if(m){m.textContent=t;setTimeout(function(){if(m.textContent===t)m.textContent='';},1000);}}

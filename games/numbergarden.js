@@ -417,6 +417,11 @@ window._gameFns.numbergarden=function NG(a){
     if(won){_playWin();_e('game_win');}else{_play('lose');_e('game_loss');}
     _sr('numbergarden',{w:won,s:correct,acc:accuracy,spd:avgSpeed,st:bestStreak,mode:mode});
     var pe=document.getElementById('NGprob');if(pe)pe.textContent='Done';
+    if(window._lwGameEnd)_lwGameEnd({won:won,
+      title:won?'DRILL COMPLETE':'TIME\u2019S UP',
+      line:'<b style="color:#c8a84b">'+correct+'</b>/'+total+' solved \u00b7 '+accuracy+'% \u00b7 '+avgSpeed+'s avg',
+      sub:(newBest?'\u2b50 NEW BEST':'best '+_loadBest())+' \u00b7 top streak '+bestStreak,
+      retry:function(){window._NGN();},retryLabel:'\u21bb DRILL AGAIN',viewLabel:'rest a moment'});
   }
 
   window._NGK=function(k){

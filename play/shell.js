@@ -847,3 +847,26 @@ window._lwArtSaveGate=function(key,opts){
 
 // Silence the favicon 404 every shell logged on boot.
 try{var _fl=document.createElement('link');_fl.rel='icon';_fl.href='data:,';document.head.appendChild(_fl);}catch(e){}
+
+
+// ── Shared game-end overlay (2026-07-04 campaign): one consistent end moment
+//    for games whose endings were a status-bar line. o = {won, title, line,
+//    sub, retry (function), retryLabel, viewLabel}
+window._lwGameEnd=function(o){
+  setTimeout(function(){
+    var old=document.getElementById('LWGE');if(old)old.remove();
+    var ov=document.createElement('div');ov.id='LWGE';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(o.won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+    ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(o.won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
+      +'<div style="font-size:1.7rem;font-weight:700;color:'+(o.won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;text-align:center;">'+o.title+'</div>'
+      +(o.line?'<div style="font-size:0.98rem;color:#e8dcc8;margin-top:10px;text-align:center;">'+o.line+'</div>':'')
+      +(o.sub?'<div style="font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:6px;text-align:center;">'+o.sub+'</div>':'')
+      +'<button id="LWGE-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">'+(o.retryLabel||'\u21bb PLAY AGAIN')+'</button>'
+      +'<button id="LWGE-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">'+(o.viewLabel||'view the board')+'</button>';
+    ov.querySelector('#LWGE-again').onclick=function(){ov.remove();if(o.retry)o.retry();};
+    ov.querySelector('#LWGE-view').onclick=function(){ov.remove();};
+    ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+    document.body.appendChild(ov);
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var x=document.getElementById('LWGE');if(x)x.remove();});
+  }, o.delay==null?420:o.delay);
+};

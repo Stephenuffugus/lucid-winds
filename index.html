@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.03.19';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.04.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -63622,6 +63622,29 @@ function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
 function _sr(g,r){var c=_gr();if(!c[g])c[g]={p:0,w:0,b:0};c[g].p++;if(r.w)c[g].w++;if(r.lo){if(r.w&&r.s>0&&(!c[g].bl||r.s<c[g].bl))c[g].bl=r.s;}else if(r.s>c[g].b)c[g].b=r.s;try{localStorage.setItem(RK,JSON.stringify(c))}catch(e){}}
 function sh(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+// ── Shared game-end overlay (2026-07-04 campaign): one consistent end moment
+//    for games whose endings were a status-bar line. o = {won, title, line,
+//    sub, retry (function), retryLabel, viewLabel}
+window._lwGameEnd=function(o){
+  setTimeout(function(){
+    var old=document.getElementById('LWGE');if(old)old.remove();
+    var ov=document.createElement('div');ov.id='LWGE';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(o.won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+    ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(o.won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
+      +'<div style="font-size:1.7rem;font-weight:700;color:'+(o.won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;text-align:center;">'+o.title+'</div>'
+      +(o.line?'<div style="font-size:0.98rem;color:#e8dcc8;margin-top:10px;text-align:center;">'+o.line+'</div>':'')
+      +(o.sub?'<div style="font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:6px;text-align:center;">'+o.sub+'</div>':'')
+      +'<button id="LWGE-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">'+(o.retryLabel||'\u21bb PLAY AGAIN')+'</button>'
+      +'<button id="LWGE-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">'+(o.viewLabel||'view the board')+'</button>';
+    ov.querySelector('#LWGE-again').onclick=function(){ov.remove();if(o.retry)o.retry();};
+    ov.querySelector('#LWGE-view').onclick=function(){ov.remove();};
+    ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+    document.body.appendChild(ov);
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var x=document.getElementById('LWGE');if(x)x.remove();});
+  }, o.delay==null?420:o.delay);
+};
+
 // ═══ WEIGHTED _e() — Core attention hash engine + anti-farm guards ═══
 var _justMinted=false;
 function _e(v){
@@ -68490,6 +68513,10 @@ function GDS(a){
         sm('🍂 Stuck on '+target+' · score '+finalScore+' (front ×2)'+(wasBest?' · 🌟 NEW BEST':''));
         _play('lose');_e('game_loss');_sr('doubleshutter',{w:false,s:finalScore});
         phase='done';rn();
+        if(window._lwGameEnd)_lwGameEnd({won:false,title:'STUCK ON '+target,
+          line:'score <b style="color:#c8a84b">'+finalScore+'</b> (front row \u00d72, lower is better)',
+          sub:wasBest?'\u2b50 NEW BEST':'best '+_bestScore,
+          retry:function(){window._DSN();},retryLabel:'\u21bb NEW ROUND',viewLabel:'view the box'});
       }
     }});
   };
@@ -68505,7 +68532,11 @@ function GDS(a){
       try{localStorage.setItem('lw_ds_best','0');}catch(e){}
       _bestScore=0;var be=document.getElementById('DSbest');if(be)be.textContent='0';
       sm('🌿 PERFECT! Every tile shut!');_e('game_win');_playWin();_sr('doubleshutter',{w:true,s:0});
-      phase='done';rn();return;
+      phase='done';rn();
+      if(window._lwGameEnd)_lwGameEnd({won:true,title:'THE BOX IS SHUT',
+        line:'a perfect game \u2014 every tile down, both rows',sub:'score 0 \u00b7 the best there is',
+        retry:function(){window._DSN();},retryLabel:'\u21bb NEW ROUND',viewLabel:'admire the box'});
+      return;
     }
     // Milestone every 6 shut tiles for a little progression dopamine
     var shutCount=0;for(var r=0;r<2;r++)for(var i=0;i<9;i++)if(rows[r][i])shutCount++;

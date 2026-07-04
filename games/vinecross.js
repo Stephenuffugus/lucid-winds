@@ -213,10 +213,12 @@ window._gameFns.vinecross=function VC(a){
       saveStats();renderStats();
     } else if(w===2){
       sm('🌸 The garden overgrew. Try again.');if(st)st.textContent='AI wins';
+      if(window._lwGameEnd)_lwGameEnd({won:false,title:'THE GARDEN OVERGREW',line:'the AI lined up five first',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
       _e('game_loss');try{_play('lose');}catch(e){}_sr('vinecross',{w:false,s:moves});
       stats.l++;stats.streak=0;saveStats();renderStats();
     } else {
       sm('Draw, the board is full.');if(st)st.textContent='Draw';
+      if(window._lwGameEnd)_lwGameEnd({won:false,title:'A FULL BOARD DRAW',line:'nobody found five',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
       _sr('vinecross',{w:false,s:moves});
       stats.d++;stats.streak=0;saveStats();renderStats();
     }

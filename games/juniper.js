@@ -30,6 +30,7 @@ window._gameFns.juniper = function Juniper(a){
   var playerHand=[],aiHand=[];
   var stock=[],discardPile=[];
   var playerScore=0,aiScore=0,playerWins=0,aiWins=0;
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var o=document.getElementById('JU-over');if(o)o.remove();});
   var phase='',turnCount=0;
   // Generation token: bumped by New Game so stale AI/overlay timers from the
   // previous hand can't mutate a fresh deal.
@@ -334,7 +335,24 @@ window._gameFns.juniper = function Juniper(a){
             if(won){_e('game_win');_playWin();sm('🫐 You win! '+playerScore+' vs '+aiScore);}
             else{_e('game_loss');_play('lose');sm('You lose. '+playerScore+' vs '+aiScore);}
             _sr('juniper',{w:won,s:playerScore,r:playerWins+aiWins});
-            setTimeout(function(){if(g!==gen)return;playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();},2200);
+            // Match-end screen (2026-07-03): the result used to auto-wipe after
+            // 2.2s. It now stays until the player chooses a new match.
+            var mw=0,ml=0;try{mw=parseInt(localStorage.getItem('lw_rummy_w'),10)||0;ml=parseInt(localStorage.getItem('lw_rummy_l'),10)||0;}catch(e){}
+            if(won)mw++;else ml++;
+            try{localStorage.setItem('lw_rummy_w',String(mw));localStorage.setItem('lw_rummy_l',String(ml));}catch(e){}
+            var _o=document.getElementById('JU-over');if(_o)_o.remove();
+            var ov=document.createElement('div');ov.id='JU-over';
+            ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+            ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
+              +'<div style="font-size:1.7rem;font-weight:700;color:'+(won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;">'+(won?'MATCH WON':'MATCH LOST')+'</div>'
+              +'<div style="font-size:1rem;color:#e8dcc8;margin-top:10px;">You <b style="color:#c8a84b">'+playerScore+'</b> \u00b7 Juniper <b style="color:#c8a84b">'+aiScore+'</b> \u00b7 hands '+playerWins+'\u2013'+aiWins+'</div>'
+              +'<div style="font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:6px;">lifetime '+mw+'W / '+ml+'L</div>'
+              +'<button id="JU-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb NEW MATCH</button>'
+              +'<button id="JU-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">view the last hand</button>';
+            ov.querySelector('#JU-again').onclick=function(){ov.remove();window._JUN();};
+            ov.querySelector('#JU-view').onclick=function(){ov.remove();};
+            ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+            document.body.appendChild(ov);
             return;
           }
           newHand();
@@ -540,7 +558,7 @@ window._gameFns.juniper = function Juniper(a){
     +'</div>';
   }
 
-  window._JUN=function(){gen++;winOverlay=null;winLineIdx=0;aiThinking=false;aiHoverDiscard=false;playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();};
+  window._JUN=function(){var _jo=document.getElementById('JU-over');if(_jo)_jo.remove();gen++;winOverlay=null;winLineIdx=0;aiThinking=false;aiHoverDiscard=false;playerScore=0;aiScore=0;playerWins=0;aiWins=0;newHand();};
   window._JUDS=function(){onDrawStock();};
   window._JUDD=function(){onDrawDiscard();};
   window._JUCC=function(i){onCardClick(i);};

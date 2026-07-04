@@ -166,6 +166,10 @@ window._gameFns.recall=function RC(a){
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:3rem;color:var(--gold);">'+avg+'%</div>';
     h+='<div style="font-size:0.75rem;opacity:0.6;margin:6px 0;">'+totalRounds+' rounds · Level '+level+'</div>';
     h+='<div style="font-size:0.75rem;margin-top:10px;">'+(avg>=90?'Exceptional memory!':avg>=70?'Strong recall.':avg>=50?'Good effort.':'Keep practicing.')+'</div>';
+    var pb=0;try{pb=parseInt(localStorage.getItem('lw_recall_best'),10)||0;}catch(e){}
+    if(avg>pb){try{localStorage.setItem('lw_recall_best',String(avg));}catch(e){}}
+    h+='<div style="font-size:0.7rem;opacity:0.55;margin-top:6px;">'+(avg>pb?'\u2b50 NEW BEST':'best '+pb+'%')+'</div>';
+    h+='<button onclick="_RCN()" style="margin-top:16px;min-height:48px;padding:12px 26px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb GO AGAIN</button>';
     h+='</div>';
     pan.innerHTML=h;
     _sr('recall',{w:won,s:avg,lv:level});
