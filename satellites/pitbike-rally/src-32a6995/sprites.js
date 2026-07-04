@@ -9,7 +9,7 @@ let map = {};
    even 604800 — players got frozen mixed-version builds), so only unique URLs
    are safe. The vendor script rewrites this to the deploy hash; bump manually
    when releasing from the canonical repo. */
-export const ART_V = '8bcbb67';
+export const ART_V = '32a6995';
 
 export async function loadAtlas() {
   const r = await fetch('assets/atlas.json?v=' + ART_V);
