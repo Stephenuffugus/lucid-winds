@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Pit Bike Rally — Skywolf Studios</title>
-<link rel="stylesheet" href="css/game.css">
+<link rel="stylesheet" href="css/game.css?v=a56bade">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <script>
 (function(){
@@ -35,10 +35,10 @@ if (window.Sunbeam) {
     <button class="icon-btn" id="btn-fs" aria-label="Fullscreen">⛶</button>
   </div>
   <div class="logo-kick banner" id="logo-kick" style="display:none">SKYWOLF STUDIOS PRESENTS</div>
-  <img class="logo-img" src="assets/art/ui/ui_logo_lockup.png" alt="Pit Bike Rally"
+  <img class="logo-img" src="assets/art/ui/ui_logo_lockup.png?v=a56bade" alt="Pit Bike Rally"
        onerror="this.style.display='none';document.getElementById('logo-h1').style.display='';document.getElementById('logo-kick').style.display=''">
   <h1 class="logo banner" id="logo-h1" style="display:none">PIT BIKE<br><b>RALLY</b></h1>
-  <img class="menu-hero" id="menu-hero" src="assets/art/bike/bike_ride_f01.png" alt="">
+  <img class="menu-hero" id="menu-hero" src="assets/art/bike/bike_ride_f01.png?v=a56bade" alt="">
   <div class="logo-sub">4 riders · 1 screen · dirt everywhere</div>
   <div class="menu-btns">
     <button class="plate-btn" id="btn-race">RACE ▸</button>
@@ -72,7 +72,7 @@ if (window.Sunbeam) {
     <div class="garage-grid">
       <div>
         <div class="gcard" style="margin-bottom:14px;">
-          <div class="garage-hero-wrap"><img class="garage-hero" id="garage-hero" src="assets/art/bike/bikeview_ride_a.png" alt=""></div>
+          <div class="garage-hero-wrap"><img class="garage-hero" id="garage-hero" src="assets/art/bike/bikeview_ride_a.png?v=a56bade" alt=""></div>
           <h3>Bike stats</h3>
           <div class="stat"><span>Top speed</span><div class="bar"><i id="st-top"></i></div></div>
           <div class="stat"><span>Accel</span><div class="bar"><i id="st-acc"></i></div></div>
@@ -106,7 +106,7 @@ if (window.Sunbeam) {
 <!-- RESULTS -->
 <div class="screen" id="scr-results">
   <div class="res-card">
-    <img class="res-hero" id="res-hero" src="assets/art/bike/bikeview_victory_f01.png" alt="">
+    <img class="res-hero" id="res-hero" src="assets/art/bike/bikeview_victory_f01.png?v=a56bade" alt="">
     <span class="res-place banner" id="res-place">1st PLACE!</span>
     <div id="res-rows"></div>
     <div class="res-total-row">
@@ -167,6 +167,20 @@ if (window.Sunbeam) {
   <p>Pit Bike Rally races sideways — turn your phone to ride.</p>
 </div>
 
-<script type="module" src="src/main.js"></script>
+<script type="module" src="src-a56bade/main.js?v=a56bade"></script>
+<script>
+/* Dead-module-graph watchdog: if a cache served mixed old/new modules the
+   import graph dies silently and every button is dead. boot() sets __PBR
+   before its first await, so its absence after 7s means a broken load. */
+setTimeout(function () {
+  if (window.__PBR) return;
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;inset:0;z-index:999;background:#101114;color:#e8e9ee;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;padding:24px;gap:16px';
+  d.innerHTML = '<p style="font-size:17px;max-width:420px">The last update did not load cleanly on this device.</p>' +
+    '<button style="font-size:16px;padding:12px 26px;border-radius:12px;border:0;background:#f2c928;font-weight:800" ' +
+    'onclick="location.href=location.pathname+(location.search?location.search+\'&\':\'?\')+\'r=\'+Date.now()">RELOAD FRESH</button>';
+  document.body.appendChild(d);
+}, 7000);
+</script>
 </body>
 </html>
