@@ -29,6 +29,7 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.
 // ── Module state — single active game at a time ────────────────────────────
 var SZ=10,grid=[],words=[],wordPaths={},found=[];
 var boardGen=0; // bumped per gen() — guards the delayed victory overlay
+if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){boardGen++;}); // exit kills the pending victory beat (2026-07-04)
 var dragging=false,startI=-1,endI=-1,currentPath=[];
 var gd=null,wl=null;
 

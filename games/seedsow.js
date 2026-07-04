@@ -105,7 +105,7 @@ window._gameFns.seedsow=function SS(a){
 
   var ssGen=0;
   function ssT(fn,ms){var g=ssGen;setTimeout(function(){if(g===ssGen)fn();},ms);}
-  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){ssGen++;});
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){ssGen++;var o=document.getElementById('SSrulesOV');if(o)o.remove();});
   function newGame(){
     ssGen++; // kill any in-flight sow/AI chain (NEW GAME mid-sow corrupted state)
     board=[4,4,4,4,4,4,0,4,4,4,4,4,4,0];
@@ -406,7 +406,7 @@ window._gameFns.seedsow=function SS(a){
     hintPit=pick;
     _play('tap');
     render();
-    setTimeout(function(){hintPit=-1;render();},3500);
+    ssT(function(){hintPit=-1;render();},3500);
   };
   window._SSR=function(){
     var existing=document.getElementById('SSrulesOV');
@@ -436,7 +436,7 @@ window._gameFns.seedsow=function SS(a){
   // First-time auto-open
   try{
     if(!localStorage.getItem('lw_ss_rules_seen')){
-      setTimeout(function(){if(window._SSR)window._SSR();},700);
+      ssT(function(){if(window._SSR)window._SSR();},700);
     }
   }catch(e){}
 

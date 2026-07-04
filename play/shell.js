@@ -197,7 +197,7 @@
     if (r && r.w) c[g].w++;
     // lo-mode: lower-is-better scores (moves/time) keep a MIN in bl — feeding
     // them into the max-kept b recorded the WORST win (2026-07-03 fleet audit)
-    if (r && r.lo) { if (r.w && r.s > 0 && (!c[g].bl || r.s < c[g].bl)) c[g].bl = r.s; }
+    if (r && r.lo) { if (r.w && typeof r.s === 'number' && r.s >= 0 && (c[g].bl == null || r.s < c[g].bl)) c[g].bl = r.s; }
     else if (r && r.s > c[g].b) c[g].b = r.s;
     try { localStorage.setItem(RK, JSON.stringify(c)); } catch (e) {}
   }
@@ -853,7 +853,10 @@ try{var _fl=document.createElement('link');_fl.rel='icon';_fl.href='data:,';docu
 //    for games whose endings were a status-bar line. o = {won, title, line,
 //    sub, retry (function), retryLabel, viewLabel}
 window._lwGameEnd=function(o){
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){window._lwGameEndDead=true;var x=document.getElementById('LWGE');if(x)x.remove();});
+  window._lwGameEndDead=false;
   setTimeout(function(){
+    if(window._lwGameEndDead)return; // player left the game inside the delay window
     var old=document.getElementById('LWGE');if(old)old.remove();
     var ov=document.createElement('div');ov.id='LWGE';
     ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(o.won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
@@ -867,6 +870,5 @@ window._lwGameEnd=function(o){
     ov.querySelector('#LWGE-view').onclick=function(){ov.remove();};
     ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
     document.body.appendChild(ov);
-    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var x=document.getElementById('LWGE');if(x)x.remove();});
   }, o.delay==null?420:o.delay);
 };

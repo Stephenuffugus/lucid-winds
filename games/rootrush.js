@@ -1009,7 +1009,7 @@ function loadLevel(idx,keepTimer){
   blocks=parseLevel(LEVELS[idx].grid);
   moves=0;history=[];won=false;
   startTs=Date.now();solvedTs=0;
-  if(!keepTimer){
+  if(!keepTimer||!timerId){ // ALSO restart when the clock is dead — Replay after a win kept keepTimer=true with a nulled interval (2026-07-04)
     if(timerId)clearInterval(timerId);
     timerId=setInterval(tickTimer,500);
   }

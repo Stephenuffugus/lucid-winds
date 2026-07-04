@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: doubleshutter
  *
  * COPY of the inline GDS mount function from index.html
- * lines 68371-68529.
+ * lines 68405-68571.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -141,6 +141,10 @@
           sm('🍂 Stuck on '+target+' · score '+finalScore+' (front ×2)'+(wasBest?' · 🌟 NEW BEST':''));
           _play('lose');_e('game_loss');_sr('doubleshutter',{w:false,s:finalScore});
           phase='done';rn();
+          if(window._lwGameEnd)_lwGameEnd({won:false,title:'STUCK ON '+target,
+            line:'score <b style="color:#c8a84b">'+finalScore+'</b> (front row \u00d72, lower is better)',
+            sub:wasBest?'\u2b50 NEW BEST':'best '+_bestScore,
+            retry:function(){window._DSN();},retryLabel:'\u21bb NEW ROUND',viewLabel:'view the box'});
         }
       }});
     };
@@ -156,7 +160,11 @@
         try{localStorage.setItem('lw_ds_best','0');}catch(e){}
         _bestScore=0;var be=document.getElementById('DSbest');if(be)be.textContent='0';
         sm('🌿 PERFECT! Every tile shut!');_e('game_win');_playWin();_sr('doubleshutter',{w:true,s:0});
-        phase='done';rn();return;
+        phase='done';rn();
+        if(window._lwGameEnd)_lwGameEnd({won:true,title:'THE BOX IS SHUT',
+          line:'a perfect game \u2014 every tile down, both rows',sub:'score 0 \u00b7 the best there is',
+          retry:function(){window._DSN();},retryLabel:'\u21bb NEW ROUND',viewLabel:'admire the box'});
+        return;
       }
       // Milestone every 6 shut tiles for a little progression dopamine
       var shutCount=0;for(var r=0;r<2;r++)for(var i=0;i<9;i++)if(rows[r][i])shutCount++;

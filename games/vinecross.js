@@ -208,6 +208,9 @@ window._gameFns.vinecross=function VC(a){
     var st=document.getElementById('VCst');
     if(w===1){
       sm('🟢 Vine complete! 5 in a row.');if(st)st.textContent='You win!';
+      // portal shell: the engine win burst is a 2.8s transient — give the win a
+      // persistent moment too (in-app the engine celebration owns it)
+      if(window._lwGameEnd&&window.LW_PLAY)_lwGameEnd({won:true,title:'FIVE IN A ROW',line:'the vine completed',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
       _e('game_win');try{_playWin();}catch(e){}_sr('vinecross',{w:true,s:moves});
       stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
       saveStats();renderStats();

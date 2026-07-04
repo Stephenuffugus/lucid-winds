@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: sokoban
  *
  * COPY of the inline GSK mount function from index.html
- * lines 69792-70112.
+ * lines 69844-70166.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -20,6 +20,7 @@
   window._gameFns=window._gameFns||{};
 
   function GSK(a){
+    var _skWon=false; // win latch (2026-07-03): moving on a solved board re-fired game_win AND advanced lvl each render
     // ── TILE ART (PNG preferred, SVG fallback) ──
     // Drop PNGs in assets/games/sokoban/ to auto-reskin. See README.txt in that folder.
     var SVG={
@@ -298,7 +299,7 @@
     function load(){var L=LEVELS[lvl%LEVELS.length];w=L.w;h=L.h;grid=[];
       _skHist=[]; // clear undo here — the win-screen NEXT path skipped it, so Undo restored the PREVIOUS level's grid into the new level
       for(var i=0;i<L.map.length;i++){var c=L.map[i];if(c==='@'){grid.push(0);px=i%w;py=Math.floor(i/w)}else if(c==='+'){grid.push(3);px=i%w;py=Math.floor(i/w)}else if(c==='O'){grid.push(2)}else if(c==='*'){grid.push(4)}else if(c==='X'){grid.push(3)}else if(c==='#'){grid.push(1)}else grid.push(0)}
-      origGrid=grid.slice();moves=0;document.getElementById('SKl').textContent=lvl+1;document.getElementById('SKm').textContent='0'}
+      _skWon=false;origGrid=grid.slice();moves=0;document.getElementById('SKl').textContent=lvl+1;document.getElementById('SKm').textContent='0'}
     function rn(){gd.style.gridTemplateColumns='repeat('+w+',1fr)';gd.innerHTML='';
       for(var y=0;y<h;y++)for(var x=0;x<w;x++){var d=document.createElement('div');d.className='skc';d.style.overflow='hidden';
         var v=grid[y*w+x],isTarget=(v===3||v===4),isCrate=(v===2||v===4),isPlayer=(x===px&&y===py);
@@ -312,18 +313,19 @@
         gd.appendChild(d)}
       document.getElementById('SKm').textContent=moves;
       var won=true;for(var i=0;i<grid.length;i++)if(grid[i]===3)won=false;
-      if(won&&grid.some(function(v){return v===4})){
-        _e('game_win');_sr('sokoban',{w:true,s:moves});
+      if(!_skWon&&won&&grid.some(function(v){return v===4})){
+        _skWon=true;
+        _e('game_win');_sr('sokoban',{w:true,s:moves,lo:1});
         if(lvl<LEVELS.length-1){_play('win');_skWinScreen(lvl+1,moves);lvl++;localStorage.setItem('sk_lvl',String(lvl))}
         else{_play('win');_skWinScreen('ALL',moves)}}}
-    window._SKM=function(dx,dy){var nx=px+dx,ny=py+dy;if(nx<0||nx>=w||ny<0||ny>=h)return;var ni=ny*w+nx,nv=grid[ni];if(nv===1)return;
+    window._SKM=function(dx,dy){if(_skWon)return;var nx=px+dx,ny=py+dy;if(nx<0||nx>=w||ny<0||ny>=h)return;var ni=ny*w+nx,nv=grid[ni];if(nv===1)return;
       // Snapshot for undo
       _skHist.push({g:grid.slice(),px:px,py:py,mv:moves});
       if(_skHist.length>200)_skHist.shift();
       if(nv===2||nv===4){var bx=nx+dx,by=ny+dy;if(bx<0||bx>=w||by<0||by>=h){_skHist.pop();return;}var bi=by*w+bx,bv=grid[bi];if(bv===1||bv===2||bv===4){_skHist.pop();return;}
         _play('drop');grid[ni]=(nv===4)?3:0;grid[bi]=(bv===3)?4:2;if(bv===3)_e('progress')}else{_play('tap')}
       px=nx;py=ny;moves++;rn()};
-    window._SKU=function(){if(!_skHist.length){sm('Nothing to undo');return;}var s=_skHist.pop();grid=s.g;px=s.px;py=s.py;moves=s.mv;_play('tap');rn();};
+    window._SKU=function(){if(_skWon){sm('Solved! Tap Next Level');return;}if(!_skHist.length){sm('Nothing to undo');return;}var s=_skHist.pop();grid=s.g;px=s.px;py=s.py;moves=s.mv;_play('tap');rn();};
     window._SKR=function(){_skHist=[];load();sm('Reset');rn()};
     window._SKN=function(){_skHist=[];lvl=(lvl+1)%LEVELS.length;localStorage.setItem('sk_lvl',String(lvl));load();sm('Level '+(lvl+1));rn();};
     window._SKjump=function(){

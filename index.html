@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.04.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.04.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -50134,7 +50134,16 @@ document.addEventListener('keydown', function(e) {
     } catch(e){}
     ['sws_greenhouse_slots','sws_inventory','sws_dew_ledger','sws_streak','lw_class','lw_class_xp','lw_tool_xp','lw_class_inventory','lw_boosters','lw_tree_points','lw_second_bloom_claimed','lw_guardian_next_drop','lw_gilding_hour','lw_tut','pw_readyHashes','pw_hashBuf','pw_hashFilled','pw_prestige','lw_triggers_found','lw_triggers_grown','fg_pollen','pw_xp','lw_nursery_slots','lw_nur_clipping_slots'].forEach(function(k){covered[k]=1;});
     var ignore = {};
-    ['lw_version','lw_dev_unlocked','lw_sw_off','lw_weather_off','lw_perf_lite','lw_svg_ver','sws_theme','sws_theme_overlay','sws_holo','sws_cb_mode','pw_onboarded','lw_last_play_day','fg_device_id','sws_user_session','lw_earn_retry','vault_uid','lw_quiet_broken','lw_ach_gamekinds','lw_last_active'].forEach(function(k){ignore[k]=1;});
+    ['lw_version','lw_dev_unlocked','lw_sw_off','lw_weather_off','lw_perf_lite','lw_svg_ver','sws_theme','sws_theme_overlay','sws_holo','sws_cb_mode','pw_onboarded','lw_last_play_day','fg_device_id','sws_user_session','lw_earn_retry','vault_uid','lw_quiet_broken','lw_ach_gamekinds','lw_last_active'].forEach(function(k){ignore[k]=1;})
+    // 2026-07-04 game-polish campaign: per-game stat keys. Device-local for
+    // now; a dedicated aggregated gameStats sync (incl. sws_fg_gr3) is the
+    // planned follow-up — see project_game_polish_campaign memory.
+    ['lw_merge_best','lw_simon_best','lw_lights_solved','lw_pipe_lvl','lw_recall_best','lw_seedtoss_best',
+     'lw_bg_w','lw_bg_l','lw_spades_w','lw_spades_l','lw_euchre_w','lw_euchre_l','lw_rummy_w','lw_rummy_l',
+     'lw_golf_w','lw_golf_p','lw_golf_streak','lw_tripeaks_w','lw_tripeaks_p','lw_tripeaks_streak',
+     'lw_pyramid_w','lw_pyramid_p','lw_pyramid_streak','lw_sudoku_err','lw_flood_pack','lw_flood_style',
+     'lw_memory_best_6','lw_memory_best_8','lw_memory_best_10','lw_memory_best_12',
+     'lw_sudoku_bt_easy','lw_sudoku_bt_medium','lw_sudoku_bt_hard'].forEach(function(k){ignore[k]=1;});
     var uncovered = [];
     for (var i=0;i<localStorage.length;i++){
       var k = localStorage.key(i);
@@ -63620,14 +63629,17 @@ var _aw={
 };
 function _setDiff(lv){switch(lv){case 'easy':_dm=1.0;break;case 'medium':_dm=1.5;break;case 'hard':_dm=2.0;break;case 'expert':_dm=2.5;break;default:_dm=1.0}}
 function _gr(){try{return JSON.parse(localStorage.getItem(RK))||{}}catch(e){return{}}}
-function _sr(g,r){var c=_gr();if(!c[g])c[g]={p:0,w:0,b:0};c[g].p++;if(r.w)c[g].w++;if(r.lo){if(r.w&&r.s>0&&(!c[g].bl||r.s<c[g].bl))c[g].bl=r.s;}else if(r.s>c[g].b)c[g].b=r.s;try{localStorage.setItem(RK,JSON.stringify(c))}catch(e){}}
+function _sr(g,r){var c=_gr();if(!c[g])c[g]={p:0,w:0,b:0};c[g].p++;if(r.w)c[g].w++;if(r.lo){if(r.w&&typeof r.s==='number'&&r.s>=0&&(c[g].bl==null||r.s<c[g].bl))c[g].bl=r.s;}else if(r.s>c[g].b)c[g].b=r.s;try{localStorage.setItem(RK,JSON.stringify(c))}catch(e){}}
 function sh(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
 
 // ── Shared game-end overlay (2026-07-04 campaign): one consistent end moment
 //    for games whose endings were a status-bar line. o = {won, title, line,
 //    sub, retry (function), retryLabel, viewLabel}
 window._lwGameEnd=function(o){
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){window._lwGameEndDead=true;var x=document.getElementById('LWGE');if(x)x.remove();});
+  window._lwGameEndDead=false;
   setTimeout(function(){
+    if(window._lwGameEndDead)return; // player left the game inside the delay window
     var old=document.getElementById('LWGE');if(old)old.remove();
     var ov=document.createElement('div');ov.id='LWGE';
     ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(o.won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
@@ -63641,7 +63653,6 @@ window._lwGameEnd=function(o){
     ov.querySelector('#LWGE-view').onclick=function(){ov.remove();};
     ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
     document.body.appendChild(ov);
-    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){var x=document.getElementById('LWGE');if(x)x.remove();});
   }, o.delay==null?420:o.delay);
 };
 
@@ -70950,14 +70961,16 @@ function GBG(a){
     h+='</div>'; // close .bg-sidebar
     wrap.innerHTML=h;
   }
-  window._BGR=function(){if(PHASE!=='roll'||TURN!=='human')return;BG_UNDO=[];BG_HINT=null;rollDice();_play('dice');var moves=getValidMoves('human');if(moves.length===0){sm('No valid moves, turn forfeited');MOVES_LEFT=[];rn();setTimeout(endTurn,1000);return}rn()};
+  window._BGR=function(){if(PHASE!=='roll'||TURN!=='human')return;BG_UNDO=[];BG_HINT=null;rollDice();_play('dice');var moves=getValidMoves('human');if(moves.length===0){sm('No valid moves, turn forfeited');MOVES_LEFT=[];rn();var _gF=BG_GEN;setTimeout(function(){if(_gF===BG_GEN)endTurn();},1000);return}rn()};
   window._BGS=function(p){selectPt(p)};
   function _bgGameOver(won){
     PHASE='gameover';SEL=-1;VALID_DESTS=[];BG_UNDO=[];BG_HINT=null;BG_GEN++;
     var w=0,l=0;try{w=parseInt(localStorage.getItem('lw_bg_w'),10)||0;l=parseInt(localStorage.getItem('lw_bg_l'),10)||0;}catch(e){}
     if(won)w++;else l++;
     try{localStorage.setItem('lw_bg_w',String(w));localStorage.setItem('lw_bg_l',String(l));}catch(e){}
+    var _gOv=BG_GEN;
     setTimeout(function(){
+      if(_gOv!==BG_GEN)return; // NEW GAME / exit within the delay — don't pop a stale end screen
       var _o=document.getElementById('BG-over');if(_o)_o.remove();
       var ov=document.createElement('div');ov.id='BG-over';
       ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
@@ -70975,12 +70988,13 @@ function GBG(a){
     if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){BG_GEN++;var o=document.getElementById('BG-over');if(o)o.remove();});
   }
   window._BGB=function(from,die){
+    if(PHASE!=='move'||TURN!=='human')return; // no bear-off outside your move (incl. gameover)
     var moves=getValidMoves('human');var mv=null;
     moves.forEach(function(m){if(m.from===from&&m.die===die&&m.to==='off')mv=m});
     if(!mv)return;
     BG_UNDO.push(snapshotState());BG_HINT=null;
     applyMove(mv,'human');_play('tap');SEL=-1;VALID_DESTS=[];
-    if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});rn();return}
+    if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
     if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){MOVES_LEFT=[];endTurn()}else rn()}
     else endTurn();
   };

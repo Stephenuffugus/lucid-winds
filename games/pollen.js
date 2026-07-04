@@ -811,7 +811,7 @@ window._gameFns.pollen = function PN(a){
   // RULES button whenever they want a refresher.
   try{
     if(!localStorage.getItem('lw_pn_rules_seen')){
-      setTimeout(function(){window._PNrules&&window._PNrules();},700);
+      setTimeout(function(){if(alive&&window._PNrules)window._PNrules();},700);
     }
   }catch(e){}
 
@@ -911,7 +911,8 @@ window._gameFns.pollen = function PN(a){
 
   function showEndCard(winner,humanWon){
     render();
-    var card=document.createElement('div');
+    var _oldEnd=document.getElementById('PNendOV');if(_oldEnd)_oldEnd.remove();
+    var card=document.createElement('div');card.id='PNendOV';
     card.style.cssText='position:fixed;inset:0;background:rgba(8,10,6,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200000;display:flex;align-items:center;justify-content:center;padding:1rem;';
     // Build standings
     var standings=GS.players.slice().sort(function(a,b){if(b.gp!==a.gp)return b.gp-a.gp;return a.cards.length-b.cards.length;});

@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: checkers
  *
  * COPY of the inline GCK mount function from index.html
- * lines 68605-69059.
+ * lines 68647-69104.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -20,6 +20,9 @@
   window._gameFns=window._gameFns||{};
 
   function GCK(a){
+    var ckGen=0; // gen-guarded AI timers (2026-07-03): NEW GAME during an AI multi-jump applied stale steps to the fresh board
+    function ckT(fn,ms){var g=ckGen;setTimeout(function(){if(g===ckGen)fn();},ms);}
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){ckGen++;});
     var bd=new Array(64).fill(0),sel=-1,tn=1,mv=0,lastFrom=-1,lastTo=-1,mustJump=-1,gameOver=false;
     var undoStack=[];      // per-turn snapshots of full state
     var hintSeq=null;      // {from, to, cap:[...]} highlighted for 3s
@@ -406,7 +409,7 @@
       if(bd[pos]===2&&r===7)bd[pos]=4;
     }
     function endHumanTurn(){
-      tn=2;rn();setTimeout(aiTurn,400);
+      tn=2;rn();ckT(aiTurn,400);
     }
   
     // AI plays the full sequence from minimax one step at a time so the
@@ -425,7 +428,7 @@
         doMove(seq[i]);
         crown(seq[i].t);
         i++;
-        if(i<seq.length)setTimeout(step,300);
+        if(i<seq.length)ckT(step,300);
         else{tn=1;rn();}
       }
       step();
@@ -448,7 +451,7 @@
     }
     function saveStats(){try{localStorage.setItem('lw_ck_stats',JSON.stringify(stats));}catch(e){}}
   
-    window._CKN=function(){setup();sm('');renderStats();rn();};
+    window._CKN=function(){ckGen++;setup();sm('');renderStats();rn();};
     window._CKU=function(){
       if(undoStack.length===0||tn!==1||gameOver)return;
       var snap=undoStack.pop();restore(snap);
@@ -466,7 +469,7 @@
       var toR=Math.floor(seq[0].t/8),toC=seq[0].t%8;
       sm('Hint: '+'ABCDEFGH'.charAt(fromC)+(8-fromR)+' → '+'ABCDEFGH'.charAt(toC)+(8-toR));
       rn();
-      setTimeout(function(){hintSeq=null;rn();},3500);
+      ckT(function(){hintSeq=null;rn();},3500);
     };
     window._CKSetDiff=function(v){
       var n=parseInt(v,10);if(isNaN(n)||n<1||n>4)return;

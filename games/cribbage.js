@@ -335,7 +335,9 @@ window._gameFns.cribbage = function CRIB(a){
         },900);
         return;
       }
+      var _ng=gen;
       function stepCombo(i){
+        if(_ng!==gen)return; // exit/new-game killed this narration chain (2026-07-04)
         if(G.phase!=='show'||!G.narration)return;
         G.narration.step=i;
         G.narration.running += result.combos[i].points;
@@ -345,7 +347,7 @@ window._gameFns.cribbage = function CRIB(a){
         _play('tap');
         render();
         if(i+1<result.combos.length){
-          setTimeout(function(){stepCombo(i+1)},720);
+          setTimeout(function(){if(_ng!==gen)return;stepCombo(i+1)},720);
         }else{
           // Held-beat on the final combo so the total settles.
           // Earn only on the PLAYER's scored hands (incl. their crib) —
@@ -358,7 +360,7 @@ window._gameFns.cribbage = function CRIB(a){
           setTimeout(function(){narrate(whoIdx+1)},1200);
         }
       }
-      setTimeout(function(){stepCombo(0)},600);
+      setTimeout(function(){if(_ng!==gen)return;stepCombo(0)},600);
     }
     narrate(0);
   }

@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: mastermind
  *
  * COPY of the inline GMM mount function from index.html
- * lines 69348-69788.
+ * lines 69394-69840.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -23,6 +23,7 @@
     var code=[],guesses=[],cur=[],_mmMode='color';
     var _hintRevealed=-1,_hintUsed=false;
     var _mmGameMode='daily'; // 'daily' | 'random'
+    var _mmOver=false; // round latch (2026-07-03): random mode had no game-over state — re-guessing the solved code re-fired game_win/earn forever
     var _mmDailyKey=''; // YYYY-M-D string for today
     var _mmDailyDone=false; // locked after completing daily
     var LETTERS=['A','B','C','D','E','F'];
@@ -217,11 +218,12 @@
         cur_d.appendChild(d);
       }
     }
-    window._MMA=function(c){if(_mmDailyDone)return;_play('tap');if(cur.length<4)cur.push(c);rnC()};
-    window._MMT=function(i){if(_mmDailyDone)return;if(cur[i]!==undefined){_play('tap');cur[i]=(cur[i]+1)%6;rnC()}};
-    window._MMU=function(){if(_mmDailyDone)return;if(cur.length>0){_play('tap');cur.pop();rnC()}};
+    window._MMA=function(c){if(_mmDailyDone||_mmOver)return;_play('tap');if(cur.length<4)cur.push(c);rnC()};
+    window._MMT=function(i){if(_mmDailyDone||_mmOver)return;if(cur[i]!==undefined){_play('tap');cur[i]=(cur[i]+1)%6;rnC()}};
+    window._MMU=function(){if(_mmDailyDone||_mmOver)return;if(cur.length>0){_play('tap');cur.pop();rnC()}};
     window._MMG=function(){
       if(_mmDailyDone){sm('Come back tomorrow for a new code');return;}
+      if(_mmOver){sm('Round over — tap NEW GAME');return;}
       if(cur.length!==4){sm('Place 4 seeds first');return;}
       _play('snap');
       // Haptic buzz on guess submit \u2014 same feel as Wordle's Enter
@@ -234,8 +236,9 @@
       if(exact>0)_e('progress');
       var st=_mmCurrentStats();
       if(exact===4){
+        _mmOver=true;
         _e('game_win');_playWin();
-        _sr('mastermind',{w:true,s:guesses.length});
+        _sr('mastermind',{w:true,s:guesses.length,lo:1});
         st.played++;st.won++;st.streak++;
         if(st.streak>st.best)st.best=st.streak;
         if(guesses.length>=1&&guesses.length<=st.byGuesses.length)st.byGuesses[guesses.length-1]++;
@@ -244,6 +247,7 @@
         _mmShowResult(true,guesses.length);
       }
       else if(guesses.length>=_mmMaxG){
+        _mmOver=true;
         _e('game_loss');
         _sr('mastermind',{w:false,s:0});
         st.played++;st.streak=0;
@@ -282,6 +286,7 @@
     // hasn't already solved. Costs one guess (bumps the counter toward
     // the max) and can only be used once per game.
     window._MMH=function(){
+      if(_mmDailyDone||_mmOver){sm('Round over');return;}
       if(_hintUsed){sm('Already used your hint');return;}
       if(guesses.length>=_mmMaxG){sm('No guesses left');return;}
       // Find a position the player hasn't correctly placed in cur
@@ -411,6 +416,7 @@
     },1000);
   
     window._MMN=function(){
+      _mmOver=false;
       // Re-read difficulty + refresh mode tabs
       try{_mmDiff=localStorage.getItem('lw_diff_mastermind')||'medium';}catch(e){}
       _mmMaxG={easy:12,medium:10,hard:7,expert:5}[_mmDiff]||10;

@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: backgammon
  *
  * COPY of the inline GBG mount function from index.html
- * lines 70526-70957.
+ * lines 70580-71036.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -192,7 +192,7 @@
         if(!chosen){SEL=-1;VALID_DESTS=[];selectPt(p);return}
         BG_UNDO.push(snapshotState());BG_HINT=null;
         applyMove(chosen,'human');_play('tap');SEL=-1;VALID_DESTS=[];
-        if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});rn();return}
+        if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});_bgGameOver(true);rn();return}
         if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){sm('No more moves');MOVES_LEFT=[];endTurn()}else rn()}
         else endTurn();
       }
@@ -305,7 +305,7 @@
         if(MOVES_LEFT.length===0){endTurn();return}
         var moves=getValidMoves('ai');if(moves.length===0){MOVES_LEFT=[];endTurn();return}
         var best=_bestMoveFor('ai');
-        if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins!');_sr('backgammon',{w:false,s:0});rn();return}}
+        if(best){applyMove(best,'ai');if(BO_A>=15){_e('game_loss');sm('AI wins!');_sr('backgammon',{w:false,s:0});_bgGameOver(false);rn();return}}
         var _g2=BG_GEN;
         if(MOVES_LEFT.length>0)bgSchedule(function(){if(_g2===BG_GEN)aiPlay();},250);
         else bgSchedule(function(){if(_g2===BG_GEN)endTurn();},250);
@@ -403,15 +403,40 @@
       h+='</div>'; // close .bg-sidebar
       wrap.innerHTML=h;
     }
-    window._BGR=function(){if(PHASE!=='roll'||TURN!=='human')return;BG_UNDO=[];BG_HINT=null;rollDice();_play('dice');var moves=getValidMoves('human');if(moves.length===0){sm('No valid moves, turn forfeited');MOVES_LEFT=[];rn();setTimeout(endTurn,1000);return}rn()};
+    window._BGR=function(){if(PHASE!=='roll'||TURN!=='human')return;BG_UNDO=[];BG_HINT=null;rollDice();_play('dice');var moves=getValidMoves('human');if(moves.length===0){sm('No valid moves, turn forfeited');MOVES_LEFT=[];rn();var _gF=BG_GEN;setTimeout(function(){if(_gF===BG_GEN)endTurn();},1000);return}rn()};
     window._BGS=function(p){selectPt(p)};
+    function _bgGameOver(won){
+      PHASE='gameover';SEL=-1;VALID_DESTS=[];BG_UNDO=[];BG_HINT=null;BG_GEN++;
+      var w=0,l=0;try{w=parseInt(localStorage.getItem('lw_bg_w'),10)||0;l=parseInt(localStorage.getItem('lw_bg_l'),10)||0;}catch(e){}
+      if(won)w++;else l++;
+      try{localStorage.setItem('lw_bg_w',String(w));localStorage.setItem('lw_bg_l',String(l));}catch(e){}
+      var _gOv=BG_GEN;
+      setTimeout(function(){
+        if(_gOv!==BG_GEN)return; // NEW GAME / exit within the delay — don't pop a stale end screen
+        var _o=document.getElementById('BG-over');if(_o)_o.remove();
+        var ov=document.createElement('div');ov.id='BG-over';
+        ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(won?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
+        ov.innerHTML='<div style="font-size:3rem;line-height:1;">'+(won?'\ud83c\udfc6':'\ud83c\udf42')+'</div>'
+          +'<div style="font-size:1.7rem;font-weight:700;color:'+(won?'#7ab356':'#c78a50')+';letter-spacing:0.08em;margin-top:12px;">'+(won?'ALL SEEDS HOME':'THE AI BEARS OFF FIRST')+'</div>'
+          +'<div style="font-size:0.95rem;color:#e8dcc8;margin-top:10px;">You '+BO_H+' \u00b7 AI '+BO_A+'</div>'
+          +'<div style="font-style:italic;font-size:0.8rem;color:#8a9178;margin-top:6px;">lifetime '+w+'W / '+l+'L</div>'
+          +'<button id="BG-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb NEW GAME</button>'
+          +'<button id="BG-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">view the board</button>';
+        ov.querySelector('#BG-again').onclick=function(){ov.remove();init();};
+        ov.querySelector('#BG-view').onclick=function(){ov.remove();};
+        ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+        document.body.appendChild(ov);
+      },450);
+      if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){BG_GEN++;var o=document.getElementById('BG-over');if(o)o.remove();});
+    }
     window._BGB=function(from,die){
+      if(PHASE!=='move'||TURN!=='human')return; // no bear-off outside your move (incl. gameover)
       var moves=getValidMoves('human');var mv=null;
       moves.forEach(function(m){if(m.from===from&&m.die===die&&m.to==='off')mv=m});
       if(!mv)return;
       BG_UNDO.push(snapshotState());BG_HINT=null;
       applyMove(mv,'human');_play('tap');SEL=-1;VALID_DESTS=[];
-      if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});rn();return}
+      if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
       if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){MOVES_LEFT=[];endTurn()}else rn()}
       else endTurn();
     };
@@ -448,7 +473,7 @@
       BG_DIFF=n;
       try{localStorage.setItem('lw_bg_diff',String(n));}catch(e){}
     };
-    window._BGN=function(){init()};
+    window._BGN=function(){var _o=document.getElementById('BG-over');if(_o)_o.remove();init()};
     init();
   }
 
