@@ -11,6 +11,21 @@
 var G=window._G;
 var _e=G.e,_play=G.play,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.sh,_sr=G.sr,_st=G.st,_xt=G.xt;
 
+// Persistent per-day Sunbeam cap (30/day/game, SUNBEAM_EARN_POLICY.md). The
+// per-mount RUN_BUDGET/SESSION_CAP below are closure-local and reset every time
+// the player re-selects Song from the picker — a 2-tap re-select cycle used to
+// farm ~12 sunbeams/min. This localStorage backstop survives remounts so the
+// day's total is honored no matter how many times Song is opened (2026-07-05 ruling).
+var SONG_DAILY_CAP=30;
+function _songDayKey(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function _songDaySpent(){
+  try{ var r=localStorage.getItem('lw_song_earn'); if(r){ var p=JSON.parse(r); if(p&&p.day===_songDayKey()) return p.v||0; } }catch(e){}
+  return 0;
+}
+function _songAddDaySpent(n){
+  try{ localStorage.setItem('lw_song_earn', JSON.stringify({day:_songDayKey(), v:_songDaySpent()+n})); }catch(e){}
+}
+
 function GSG(a){
   var fr=document.createElement('iframe');
   fr.src='/studio.html';
@@ -29,16 +44,18 @@ function GSG(a){
 
   function pulseEarn(){
     if(earned>=SESSION_CAP||spent+1>RUN_BUDGET) return;
+    if(_songDaySpent()+1>SONG_DAILY_CAP) return; // persistent daily cap (survives remounts)
     try{ if(_e) _e('milestone'); }catch(e){}     // 1 sunbeam — sustained creation
-    earned++;spent++;
+    earned++;spent++;_songAddDaySpent(1);
   }
   function milestoneEarn(){
     var t=Date.now();
     if(t-lastMilestone<15000) return;            // debounce spam-saving
     if(spent+3>RUN_BUDGET) return;               // run budget spent — save still works, just no earn
+    if(_songDaySpent()+3>SONG_DAILY_CAP) return; // persistent daily cap (survives remounts)
     lastMilestone=t;
     try{ if(_e) _e('puzzle_solved'); }catch(e){} // 3 sunbeams — finished a piece
-    spent+=3;
+    spent+=3;_songAddDaySpent(3);
   }
 
   // Poll briefly for the studio's GS object, then hook the real creation
