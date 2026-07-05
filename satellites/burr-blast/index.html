@@ -155,6 +155,32 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .res-score{ font-size:34px; font-weight:900; color:var(--gold); }
 .res-line{ color:var(--muted); font-size:13px; margin:2px 0; }
 .res-line b{ color:var(--cream); }
+
+/* menu mascot */
+.menu-mascot{ width:min(46vw,190px); height:auto; margin:6px 0 2px; filter:drop-shadow(0 8px 16px rgba(0,0,0,.5)); image-rendering:auto; }
+
+/* story / comic */
+#scr-story{ justify-content:center; padding-top:calc(14px + var(--safe-t)); }
+.comic-stage{ position:relative; width:100%; max-width:440px; aspect-ratio:1/1; border-radius:18px; overflow:hidden;
+  border:1px solid #3a4230; box-shadow:0 10px 40px rgba(0,0,0,.5); background:#0a0d08; }
+.comic-stage canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.comic-cap{ position:absolute; left:0; right:0; bottom:0; padding:16px 16px calc(14px);
+  background:linear-gradient(transparent, rgba(6,8,5,.86) 40%); color:var(--cream);
+  font-size:clamp(15px,4.2vw,19px); font-weight:700; line-height:1.35; text-align:center; letter-spacing:.2px; }
+.comic-dots{ display:flex; gap:7px; justify-content:center; margin:14px 0 4px; }
+.comic-dots .cdot{ width:8px; height:8px; border-radius:50%; background:#3a4230; }
+.comic-dots .cdot.on{ background:var(--gold); }
+.comic-nav{ display:flex; gap:12px; justify-content:center; width:100%; max-width:440px; margin-top:8px; }
+.comic-nav .btn{ flex:1; }
+
+/* world intro card */
+#worldCard{ position:fixed; inset:0; z-index:55; display:none; align-items:center; justify-content:center; pointer-events:none; }
+#worldCard.show{ display:flex; animation:fadein .3s ease; }
+.wc-inner{ text-align:center; padding:22px 30px; background:rgba(13,16,12,.86); border:1px solid var(--gold);
+  border-radius:18px; box-shadow:0 12px 40px rgba(0,0,0,.6); max-width:86%; }
+.wc-inner .wc-w{ font-size:12px; letter-spacing:3px; color:var(--muted); font-weight:800; }
+.wc-inner .wc-n{ font-size:26px; font-weight:900; color:var(--gold); margin:4px 0 8px; letter-spacing:.5px; }
+.wc-inner .wc-t{ font-size:14px; color:var(--cream); font-style:italic; max-width:300px; }
 </style>
 </head>
 <body>
@@ -175,11 +201,13 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   <div class="ability-hint" id="abilityHint">TAP to trigger</div>
 </div>
 <div id="toast"></div>
+<div id="worldCard"><div class="wc-inner"><div class="wc-w" id="wcW"></div><div class="wc-n" id="wcN"></div><div class="wc-t" id="wcT"></div></div></div>
 
 <!-- MENU -->
 <div class="screen" id="scr-menu">
   <div class="title"><span class="l1">BURR</span><span class="l2">BLAST</span></div>
   <div class="tagline">Load the burr, bring the fort down.</div>
+  <img id="menuMascot" class="menu-mascot" alt="" onerror="this.style.display='none';">
   <div class="menu-stats">
     <div class="chip coins"><span class="ico">🪙</span><span id="mCoins">0</span></div>
     <div class="chip stars"><span class="ico">★</span><span id="mStars">0</span></div>
@@ -187,6 +215,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   <button class="btn wide gold" id="btnPlay">PLAY</button>
   <div class="rowbtns">
     <button class="btn ghost sm" id="btnShop">🛒 Shop</button>
+    <button class="btn ghost sm" id="btnStory">📖 Story</button>
     <button class="btn ghost sm" id="btnHow">How to play</button>
     <button class="btn ghost sm" id="btnSettings">⚙ Settings</button>
   </div>
@@ -243,6 +272,19 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
     <span class="amm">💥 Thornpod</span> — explodes on tap or on impact.<br>
     <span class="amm">🪃 Boomerang Pod</span> — tap to curve back around.</p>
     <p><b>Fewer burrs used = more stars.</b> Three stars fills the patch with gold. Blastpod crates chain, so line up your shot and let the fort do the work.</p>
+  </div>
+</div>
+
+<!-- STORY / COMIC -->
+<div class="screen" id="scr-story">
+  <div class="comic-stage">
+    <canvas id="comicCanvas"></canvas>
+    <div class="comic-cap" id="comicCap"></div>
+  </div>
+  <div class="comic-dots" id="comicDots"></div>
+  <div class="comic-nav">
+    <button class="btn ghost sm" id="btnComicSkip">Skip</button>
+    <button class="btn gold sm" id="btnComicNext">Next →</button>
   </div>
 </div>
 
@@ -768,7 +810,7 @@ var MAT = {
            fill:'#8a5a34', edge:'#5f3c20', grain:'#6d4527' },
   stone: { density:2.7,  rest:0.06, fric:0.74, hp:95,  tough:600, score:140, indestruct:false,
            fill:'#6f7566', edge:'#464b3e' },
-  glass: { density:0.7,  rest:0.05, fric:0.36, hp:12,  tough:130, score:340, indestruct:false,
+  glass: { density:0.4,  rest:0.05, fric:0.36, hp:12,  tough:130, score:340, indestruct:false,
            fill:'rgba(120,196,196,.5)', edge:'rgba(190,240,240,.85)' },
   tnt:   { density:1.05, rest:0.18, fric:0.5,  hp:20,  tough:230, score:260, indestruct:false, explosive:true,
            fill:'#2a2320', edge:'#c8482f' },
@@ -856,16 +898,38 @@ var SKINS = {
 };
 
 /* ================================================================
+   ART  (optional PNGs in assets/; every slot falls back to canvas art
+   via onerror, so the game runs fully without a single image.)
+   Filenames match design/ASSET_LIST.md — drop art in and it appears.
+   ================================================================ */
+var ART = {};
+var ART_FILES = {
+  logo:'logo.png', bramble:'bramble.png', 'weevil-king':'weevil-king.png', aphid:'aphid.png',
+  'bg-world1':'bg-world1.jpg', 'bg-world2':'bg-world2.jpg', 'bg-world3':'bg-world3.jpg', 'bg-world4':'bg-world4.jpg',
+  'comic-1':'comic-1.jpg','comic-2':'comic-2.jpg','comic-3':'comic-3.jpg','comic-4':'comic-4.jpg',
+  'comic-5':'comic-5.jpg','comic-6':'comic-6.jpg','comic-end':'comic-end.jpg', 'menu-bg':'menu-bg.jpg'
+};
+function loadArt(){
+  for(var name in ART_FILES){ if(!ART_FILES.hasOwnProperty(name)) continue;
+    (function(nm){ var im=new Image(); ART[nm]={img:im,ok:false};
+      im.onload=function(){ ART[nm].ok=true; }; im.onerror=function(){ ART[nm].ok=false; };
+      im.src='assets/'+ART_FILES[nm]+'?v='+encodeURIComponent(BUILD);
+    })(name);
+  }
+}
+function img(name){ var a=ART[name]; return (a&&a.ok)?a.img:null; }
+
+/* ================================================================
    SAVE  (localStorage lw_burrblast_v1 — LOCAL coins only)
    ================================================================ */
 var SAVE_KEY='lw_burrblast_v1';
 var SAVE = { coins:0, prog:{}, skins:{seed_burr:1, sling_oak:1}, equip:{seed:'seed_burr', sling:'sling_oak'},
-  set:{ sound:1, shake:1, guide:1, reduce:0 }, endlessBest:0 };
+  set:{ sound:1, shake:1, guide:1, reduce:0 }, endlessBest:0, seenStory:0 };
 function loadSave(){
   try{ var s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){
     SAVE.coins=s.coins||0; SAVE.prog=s.prog||{}; SAVE.skins=s.skins||{seed_burr:1,sling_oak:1};
     SAVE.equip=s.equip||{seed:'seed_burr',sling:'sling_oak'};
-    SAVE.set=s.set||SAVE.set; SAVE.endlessBest=s.endlessBest||0;
+    SAVE.set=s.set||SAVE.set; SAVE.endlessBest=s.endlessBest||0; SAVE.seenStory=s.seenStory||0;
     if(!SAVE.skins.seed_burr) SAVE.skins.seed_burr=1;
     if(!SAVE.skins.sling_oak) SAVE.skins.sling_oak=1;
     if(!SAVE.equip.seed) SAVE.equip.seed='seed_burr';
@@ -906,10 +970,10 @@ window._sbCapEarn = window._sbCapEarn || function(n,tag){
    soil (bottom flush to GROUND_Y). x grows rightward; y is the CENTER.
    ================================================================ */
 var WORLDS = [
-  { n:1, name:'Sprout Meadow',   mat:'wood',  sky1:'#2a3a1e', sky2:'#0d1409', hue:'#7ab356' },
-  { n:2, name:'Stoneyard',       mat:'stone', sky1:'#2c2e2a', sky2:'#0b0d0b', hue:'#9aa08c' },
-  { n:3, name:'Dewglass Hollow', mat:'glass', sky1:'#183034', sky2:'#08110f', hue:'#6fc0c8' },
-  { n:4, name:'Blastpod Bog',    mat:'tnt',   sky1:'#31231c', sky2:'#0d0806', hue:'#e0703a' }
+  { n:1, name:'Sprout Meadow',   mat:'wood',  sky1:'#2a3a1e', sky2:'#0d1409', hue:'#7ab356', tag:'"Flimsy little lean-tos. Good. We start easy."' },
+  { n:2, name:'Stoneyard',       mat:'stone', sky1:'#2c2e2a', sky2:'#0b0d0b', hue:'#9aa08c', tag:'"Rocks are heavy. So hit ’em with something heavier."' },
+  { n:3, name:'Dewglass Hollow', mat:'glass', sky1:'#183034', sky2:'#08110f', hue:'#6fc0c8', tag:'"Glass looks tough. Glass is a liar."' },
+  { n:4, name:'Blastpod Bog',    mat:'tnt',   sky1:'#31231c', sky2:'#0d0806', hue:'#e0703a', tag:'"Let the fort blow up the fort."' }
 ];
 var GT = GROUND_Y;
 
@@ -968,7 +1032,9 @@ function buildLevels(){
   add(1,'The Lean-To', ['burr','burr','burr'], hut(680));
   add(1,'Rooftop Sitter', ['burr','burr'], tower(700,'wood',2));
   add(1,'Under the Table', ['burr','burr','burr'], table(700,'wood'));
-  add(1,'Twin Huts', ['burr','burr','burr','burr'], merge(hut(600), hut(820)));
+  add(1,'Twin Huts', ['burr','burr','burr','burr'], merge(
+    {blocks:[ground('wood',590,44,44)], pests:[ pestGround(640,18) ]},
+    {blocks:[ground('wood',760,44,44)], pests:[ pestGround(812,18) ]}));
   add(1,'Little Wall', ['burr','burr','burr'], merge(wall(720,'wood',3), {blocks:[],pests:[ pestGround(830,18) ]}));
   add(1,'Meadow Finale', ['burr','acorn','burr'], merge(hut(620), tower(820,'wood',3)));
 
@@ -988,7 +1054,7 @@ function buildLevels(){
   add(3,'Panes and Posts', ['split','burr','puffball'], merge(hutGlass(620), tower(820,'glass',2)));
   add(3,'Puff the Cluster', ['puffball','burr'], merge({blocks:[],pests:[P(700,GT-16,15),P(740,GT-16,15),P(780,GT-16,15),P(720,GT-52,15)]}));
   add(3,'Greenhouse', ['split','puffball','burr'], merge(wallGlass(620,3), wallGlass(820,3), {blocks:[],pests:[P(720,GT-16,16),P(720,GT-140,16)]}));
-  add(3,'Hanging Garden', ['split','burr','puffball'], merge(table(640,'glass'), table(840,'glass'), {blocks:[],pests:[pestGround(740,16)]}));
+  add(3,'Hanging Garden', ['split','puffball','burr','burr'], merge(table(640,'glass'), table(860,'glass'), {blocks:[],pests:[pestGround(750,16)]}));
   add(3,'Shatterworks', ['puffball','split','burr'], merge(hutGlass(600), wallGlass(760,4), tower(900,'glass',3)));
   add(3,'Hollow Finale', ['split','puffball','burr','split'], merge(hutGlass(600), hutGlass(760), tower(920,'glass',3), {blocks:[],pests:[P(680,GT-140,16)]}));
 
@@ -1055,7 +1121,7 @@ function newState(){
     star2:0, star3:0,
     cam:0, camTarget:0, scale:1, viewW:1300,
     shake:0, particles:[], flashes:[], rings:[],
-    shotTime:0, stillTime:0, resolved:false, tHint:0, exploding:false,
+    shotTime:0, stillTime:0, resolved:false, tHint:0, exploding:false, hitstop:0,
     settleGuard:1.0            // no contact damage while the fort first settles (ends at first shot)
   };
 }
@@ -1230,7 +1296,7 @@ function damageBody(bd, other, speed, pt){
     if(speed<520) return;
     if(G._t - bd.game.dmgCd < 0.32) return;
     bd.game.dmgCd=G._t;
-    bd.game.hp-=1; puff(bd.pos.x,bd.pos.y-bd.radius,'#e0703a',10); SFX.thwackStone(0.8); addShake(6);
+    bd.game.hp-=1; puff(bd.pos.x,bd.pos.y-bd.radius,'#e0703a',10); SFX.thwackStone(0.8); addShake(6); addHitstop(0.05);
     if(bd.game.hp<=0) killPest(bd,pt);
     else G.score+=1500;
   }
@@ -1260,7 +1326,7 @@ function killPest(bd,pt){
   var isBoss=bd.game.kind==='boss';
   G.score += isBoss?12000:4200;
   G.pestsAlive=Math.max(0,G.pestsAlive-1);
-  puff(bd.pos.x,bd.pos.y,'#9ad06a', isBoss?26:16); SFX.squish();
+  puff(bd.pos.x,bd.pos.y,'#9ad06a', isBoss?26:16); SFX.squish(); addHitstop(isBoss?0.09:0.035);
   if(isBoss){ addShake(14); explode(bd.pos, 400, 160); }
   updateHUD();
 }
@@ -1269,7 +1335,7 @@ function killPest(bd,pt){
 function explode(center, power, radius){
   G.flashes.push({ x:center.x, y:center.y, r:radius, life:0.32, max:0.32 });
   G.rings.push({ x:center.x, y:center.y, r:6, max:radius, life:0.4 });
-  addShake(11); SFX.boom(); puff(center.x,center.y,'#ffd07a',22);
+  addShake(11); addHitstop(0.05); SFX.boom(); puff(center.x,center.y,'#ffd07a',22);
   var list=G.world.bodies.slice();
   for(var i=0;i<list.length;i++){
     var bd=list[i]; if(bd.isStatic||bd.dead||!bd.game) continue;
@@ -1303,6 +1369,7 @@ function dust(x,y){ if(RM())return; for(var i=0;i<5;i++){ var a=-1.6+ (Math.rand
 function debris(x,y,color,n){ if(RM())n=Math.min(n,3); for(var i=0;i<n;i++){ var a=Math.random()*6.28,s=60+Math.random()*220; G.particles.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-120,life:0.6+Math.random()*0.6,max:1.2,color:color,r:2+Math.random()*4,grav:520,spin:(Math.random()-0.5)*10,box:true}); } }
 function shards(x,y,color,n){ if(RM())n=Math.min(n,4); for(var i=0;i<n;i++){ var a=Math.random()*6.28,s=90+Math.random()*260; G.particles.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-150,life:0.7,max:0.7,color:color,r:1.5+Math.random()*3,grav:560}); } }
 function addShake(m){ if(SAVE.set.shake && !SAVE.set.reduce) G.shake=Math.min(20,G.shake+m); }
+function addHitstop(sec){ if(!SAVE.set.reduce) G.hitstop=Math.max(G.hitstop||0, sec); }
 
 /* ================================================================
    MAIN UPDATE  (fixed-step accumulator)
@@ -1319,6 +1386,8 @@ function gameLoop(ts){
 }
 function step(dt){
   G._t=(G._t||0)+dt;
+  // hitstop: a crisp micro-freeze on big impacts for punch (skips sim, keeps the frame)
+  if(G.hitstop>0){ G.hitstop-=dt; return; }
   // settle guard: suppress contact damage while the fort first settles; the
   // first launch ends it immediately so the shot lands with full force.
   if(G.settleGuard>0){ if(G.ammoUsed>0) G.settleGuard=0; else G.settleGuard-=dt; }
@@ -1416,6 +1485,7 @@ function computeStars(){
 function winLevel(){
   if(G.state==='won') return;
   G.state='won'; G.resolved=true;
+  _wonBoss = !!G.level.boss;
   // leftover ammo bonus
   var leftover=Math.max(0, G.ammo.length-G.ammoUsed);
   G.score += leftover*9000;
@@ -1431,8 +1501,20 @@ function winLevel(){
     try{ window._sbCapEarn(1+stars, 'burr-blast:level_clear'); }catch(e){}
     if(G.level.boss){ try{ window._sbCapEarn(4, 'burr-blast:boss'); }catch(e){} }
   }
-  SFX.win();
-  showResult(true, stars, coinReward);
+  SFX.win(); celebrate();
+  // let the petals fall + the fort settle for a beat before the results card
+  var st=stars, cr=coinReward;
+  setTimeout(function(){ if(G && G.state==='won') showResult(true, st, cr); }, 950);
+}
+function celebrate(){
+  if(SAVE.set.reduce) return;
+  var cols=['#e8a0bf','#f0c060','#9ad06a','#e8dcc8','#c88bff'];
+  var x0=G.cam, x1=G.cam+G.viewW;
+  for(var i=0;i<40;i++){
+    G.particles.push({ x:x0+Math.random()*(x1-x0), y:-20-Math.random()*160,
+      vx:(Math.random()-0.5)*70, vy:40+Math.random()*90, grav:40,
+      life:1.9+Math.random()*1.3, max:3.2, color:cols[i%cols.length], r:3+Math.random()*3, spin:(Math.random()-0.5)*6, box:true });
+  }
 }
 function loseLevel(){
   if(G.state==='lost') return;
@@ -1539,11 +1621,16 @@ function render(){
   var vw=_canvas.width/dpr, vh=_canvas.height/dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
   var W=WORLDS[(G.level.world||1)-1]||WORLDS[0];
-  // sky
-  var sg=ctx.createLinearGradient(0,0,0,vh); sg.addColorStop(0,W.sky1); sg.addColorStop(1,W.sky2);
-  ctx.fillStyle=sg; ctx.fillRect(0,0,vw,vh);
-  // distant parallax hills (screen space, slow cam)
-  drawHills(ctx,vw,vh,W);
+  var bg=img('bg-world'+(G.level.world||1));
+  if(bg){
+    // painterly backdrop with a gentle parallax pan; tint the base so structures read
+    ctx.fillStyle=W.sky2; ctx.fillRect(0,0,vw,vh);
+    drawCover(ctx,bg,vw,vh, -G.cam*G.scale*0.12);
+  } else {
+    var sg=ctx.createLinearGradient(0,0,0,vh); sg.addColorStop(0,W.sky1); sg.addColorStop(1,W.sky2);
+    ctx.fillStyle=sg; ctx.fillRect(0,0,vw,vh);
+    drawHills(ctx,vw,vh,W);
+  }
 
   // world transform (+shake)
   var sh=G.shake, shx=sh?(Math.random()-0.5)*sh:0, shy=sh?(Math.random()-0.5)*sh:0;
@@ -1587,6 +1674,13 @@ function drawHills(ctx,vw,vh,W){
 }
 function hexA(hex,a){ var n=parseInt(hex.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
 
+function drawCover(ctx, im, vw, vh, offx){
+  var iw=im.naturalWidth||im.width, ih=im.naturalHeight||im.height; if(!iw||!ih)return;
+  var sc=Math.max(vw/iw, vh/ih), dw=iw*sc, dh=ih*sc;
+  var ox=(vw-dw)/2 + (offx||0), oy=(vh-dh)/2;
+  ox=Math.max(vw-dw, Math.min(0, ox));    // clamp parallax to image edges
+  ctx.drawImage(im, ox, oy, dw, dh);
+}
 function drawGround(ctx,W){
   var x0=G.cam-200, x1=G.cam+G.viewW+200;
   var grd=ctx.createLinearGradient(0,GROUND_Y,0,WORLD_H);
@@ -1618,6 +1712,8 @@ function drawBlock(ctx,b){
 function drawPest(ctx,b){
   var r=b.radius, hurt=clamp(1-b.game.hp/b.game.maxHp,0,1);
   ctx.save(); ctx.translate(b.pos.x,b.pos.y); ctx.rotate(b.angle*0.4);
+  var pa=img('aphid');
+  if(pa){ var ps=r*2.8; if(hurt>0.5)ctx.globalAlpha=0.85; ctx.drawImage(pa,-ps/2,-ps/2,ps,ps); ctx.globalAlpha=1; ctx.restore(); return; }
   // body
   var bg=ctx.createRadialGradient(-r*0.3,-r*0.3,r*0.2,0,0,r);
   bg.addColorStop(0, mix('#a6de74','#e0a0a0',hurt*0.5)); bg.addColorStop(1, mix('#5f9c3a','#a05050',hurt*0.5));
@@ -1636,6 +1732,8 @@ function drawPest(ctx,b){
 function drawBoss(ctx,b){
   var r=b.radius;
   ctx.save(); ctx.translate(b.pos.x,b.pos.y); ctx.rotate(b.angle*0.3);
+  var ka=img('weevil-king');
+  if(ka){ var ks=r*3.1; ctx.drawImage(ka,-ks/2,-ks/2,ks,ks); ctx.restore(); drawBossPips(ctx,b); return; }
   var bg=ctx.createRadialGradient(-r*0.3,-r*0.3,r*0.2,0,0,r);
   bg.addColorStop(0,'#c88a4a'); bg.addColorStop(1,'#7a4420');
   ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(0,0,r,0,6.28); ctx.fill();
@@ -1649,9 +1747,11 @@ function drawBoss(ctx,b){
   ctx.fillStyle='#1a1a1a'; ctx.beginPath(); ctx.arc(-r*0.3,-r*0.06,r*0.12,0,6.28); ctx.arc(r*0.38,-r*0.06,r*0.12,0,6.28); ctx.fill();
   ctx.strokeStyle='#2a1a0e'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-r*0.6,-r*0.5); ctx.lineTo(-r*0.15,-r*0.3); ctx.moveTo(r*0.6,-r*0.5); ctx.lineTo(r*0.15,-r*0.3); ctx.stroke();
   ctx.restore();
-  // hp pips above
+  drawBossPips(ctx,b);
+}
+function drawBossPips(ctx,b){
   var mh=b.game.maxHp||5;
-  ctx.save(); ctx.translate(b.pos.x-(mh*9)/2, b.pos.y-r-20);
+  ctx.save(); ctx.translate(b.pos.x-(mh*9)/2, b.pos.y-b.radius-20);
   for(var i=0;i<mh;i++){ ctx.fillStyle=i<b.game.hp?'#e0533a':'rgba(120,120,120,0.4)'; rr(ctx,i*9,0,7,7,2); ctx.fill(); }
   ctx.restore();
 }
@@ -1702,6 +1802,13 @@ function drawSling(ctx){
   // pouch + loaded seed
   if(loaded){
     var spec=AMMO[currentAmmoType()]||AMMO.burr, seedSk=skinById('seed',SAVE.equip.seed);
+    // charge glow — brighter the harder you pull
+    var pullF=Math.min(1, vlen(vsub(v(SLING_X,SLING_Y),G.pouch))/MAX_PULL);
+    if(G.aiming && pullF>0.32 && !SAVE.set.reduce){
+      var gr2=spec.r*(2+pullF*3.2), gg=ctx.createRadialGradient(G.pouch.x,G.pouch.y,0,G.pouch.x,G.pouch.y,gr2);
+      gg.addColorStop(0,'rgba(232,200,106,'+(pullF*0.5)+')'); gg.addColorStop(1,'rgba(232,200,106,0)');
+      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(G.pouch.x,G.pouch.y,gr2,0,6.28); ctx.fill();
+    }
     ctx.save(); ctx.translate(G.pouch.x,G.pouch.y); drawSeedShape(ctx,currentAmmoType(),spec.r,seedSk); ctx.restore();
     // pouch leather
     ctx.strokeStyle='#2a1c10'; ctx.lineWidth=5; ctx.beginPath(); ctx.arc(G.pouch.x,G.pouch.y,spec.r+3, 1.2, 4.1); ctx.stroke();
@@ -1736,7 +1843,7 @@ function mix(c1,c2,t){ var a=parseInt(c1.slice(1),16),b=parseInt(c2.slice(1),16)
 /* ================================================================
    SCREENS + UI WIRING + BOOT
    ================================================================ */
-var _playing=false, _curLevelN=1, _endless=false, _endlessN=0;
+var _playing=false, _curLevelN=1, _endless=false, _endlessN=0, _wonBoss=false;
 function $(id){ return document.getElementById(id); }
 function showScreen(id){
   var scr=document.querySelectorAll('.screen');
@@ -1762,9 +1869,11 @@ function enterLevel(n){
   startLevel(lv);
   _playing=true; _paused=false;
   showScreen(null);
+  if(firstLevelOfWorld(n)) showWorldCard(lv.world);
 }
 function retryLevel(){ if(_endless){ startEndlessLevel(_endlessN); } else enterLevel(_curLevelN); _playing=true; _paused=false; showScreen(null); }
 function nextLevel(){
+  if(_wonBoss){ _wonBoss=false; openStory(COMIC_END, goMenu); return; }
   if(_endless){ _endlessN++; startEndlessLevel(_endlessN); _playing=true; _paused=false; showScreen(null); return; }
   var nn=_curLevelN+1;
   if(levelByN(nn) && isLevelUnlocked(nn)) enterLevel(nn);
@@ -1804,6 +1913,7 @@ function showResult(won, stars, coins){
   $('resBest').textContent = _endless ? ('Best depth: '+SAVE.endlessBest) : ('Best: '+fmt(levelBest(G.level.n)));
   $('resReward').textContent = won ? ('+ '+coins+' 🪙  ·  next patch at '+fmt(G.star2)+' / '+fmt(G.star3)) : 'Give it another go.';
   $('btnNext').style.display = won ? 'block':'none';
+  $('btnNext').textContent = (won && G.level.boss) ? 'The End →' : 'Next patch →';
   if(_endless && won){ if(_endlessN>SAVE.endlessBest){ SAVE.endlessBest=_endlessN; persist(); } try{ window._sbCapEarn(2,'burr-blast:endless'); }catch(e){} }
   showScreen('scr-result');
 }
@@ -1899,7 +2009,7 @@ function resumeGame(){ _paused=false; showScreen(null); }
 /* ---- boot ---- */
 function boot(){
   _canvas=$('game'); _ctx=_canvas.getContext('2d');
-  loadSave(); SFX.setOn(!!SAVE.set.sound);
+  loadSave(); SFX.setOn(!!SAVE.set.sound); loadArt();
   resize(); window.addEventListener('resize',resize); window.addEventListener('orientationchange',function(){ setTimeout(resize,200); });
   bindInput();
   // build stamp
@@ -1910,6 +2020,13 @@ function boot(){
   $('btnShop').onclick=function(){ SFX.click(); openShop(); };
   $('btnHow').onclick=function(){ SFX.click(); showScreen('scr-how'); };
   $('btnSettings').onclick=function(){ SFX.click(); syncToggles(); showScreen('scr-settings'); };
+  $('btnStory').onclick=function(){ SFX.click(); openStory(COMIC, goMenu); };
+  $('menuMascot').src='assets/bramble.png?v='+encodeURIComponent(BUILD);
+  // comic controls
+  $('btnComicNext').onclick=storyNext;
+  $('btnComicSkip').onclick=storyFinish;
+  $('comicCanvas').onclick=storyNext;
+  window.addEventListener('resize', function(){ if($('scr-story').classList.contains('show')) renderStoryPanel(); });
   $('exitBtn').onclick=function(){ try{ window.SWS_EXIT(); }catch(e){} };
   // backs
   $('btnLvBack').onclick=function(){ SFX.click(); goMenu(); };
@@ -1934,10 +2051,57 @@ function boot(){
   $('btnReset').onclick=function(){ if(confirm('Reset ALL progress, coins and skins? This cannot be undone.')){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} SAVE={ coins:0, prog:{}, skins:{seed_burr:1,sling_oak:1}, equip:{seed:'seed_burr',sling:'sling_oak'}, set:{sound:1,shake:1,guide:1,reduce:0}, endlessBest:0 }; persist(); refreshMenu(); toast('Progress reset.'); goMenu(); } };
   // start loop
   _running=true; _lastT=performance.now(); requestAnimationFrame(gameLoop);
-  showScreen('scr-menu');
+  // first-ever run plays the intro comic, then drops into the menu
+  if(!SAVE.seenStory){ SAVE.seenStory=1; persist(); openStory(COMIC, goMenu); }
+  else showScreen('scr-menu');
 }
 function refreshMenu(){ $('mCoins').textContent=SAVE.coins; $('mStars').textContent=totalStars(); }
 function goMenu(){ _playing=false; refreshMenu(); showScreen('scr-menu'); }
+
+/* ---- story / comic (canvas placeholders until art lands in assets/) ---- */
+var COMIC = [
+  {img:'comic-1', cap:'The garden of Lucid Winds. Quiet. Growing.',            c1:'#3a5a30', c2:'#0d1409', glyph:'🌷'},
+  {img:'comic-2', cap:'Until the swarm came, and hoarded every seed.',         c1:'#3a3a2a', c2:'#0b0d08', glyph:'🐛'},
+  {img:'comic-3', cap:'The Weevil King called it his. He called it the Husk.', c1:'#4a3818', c2:'#0d0806', glyph:'👑'},
+  {img:'comic-4', cap:'One sprout disagreed.',                                 c1:'#2a4a20', c2:'#0d1409', glyph:'🌱'},
+  {img:'comic-5', cap:'Bramble. Keeper of the Patch.',                         c1:'#3a5228', c2:'#0d1409', glyph:'🎯'},
+  {img:'comic-6', cap:'One fort at a time.',                                   c1:'#5a3a1c', c2:'#0d0806', glyph:'💥'}
+];
+var COMIC_END = [{img:'comic-end', cap:'The seeds are free. Grow on.',         c1:'#4a6a2a', c2:'#0d1409', glyph:'🌸'}];
+var _storyPanels=[], _storyIdx=0, _storyDone=null;
+function sizeComicCanvas(cv){ var dpr=window.devicePixelRatio||1, r=cv.getBoundingClientRect();
+  cv.width=Math.max(1,Math.round(r.width*dpr)); cv.height=Math.max(1,Math.round(r.height*dpr)); }
+function drawComicPanel(cv,p){
+  sizeComicCanvas(cv); var x=cv.getContext('2d'), w=cv.width, h=cv.height;
+  x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,w,h);
+  var im=img(p.img);
+  if(im){ var iw=im.naturalWidth||im.width, ih=im.naturalHeight||im.height, sc=Math.max(w/iw,h/ih), dw=iw*sc, dh=ih*sc;
+    x.drawImage(im,(w-dw)/2,(h-dh)/2,dw,dh); return; }
+  var g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,p.c1); g.addColorStop(1,p.c2); x.fillStyle=g; x.fillRect(0,0,w,h);
+  var rg=x.createRadialGradient(w*0.7,h*0.3,0,w*0.7,h*0.3,h*0.55); rg.addColorStop(0,'rgba(255,240,200,.22)'); rg.addColorStop(1,'rgba(255,240,200,0)'); x.fillStyle=rg; x.fillRect(0,0,w,h);
+  x.fillStyle='rgba(0,0,0,.42)'; x.beginPath(); x.moveTo(0,h);
+  for(var gx=0;gx<=w;gx+=w/12){ x.lineTo(gx, h*0.72 + Math.sin(gx*0.02)*h*0.045); } x.lineTo(w,h); x.closePath(); x.fill();
+  x.font='bold '+Math.round(h*0.34)+'px sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(p.glyph, w/2, h*0.44);
+  var vg=x.createRadialGradient(w/2,h/2,h*0.28,w/2,h/2,h*0.72); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.5)'); x.fillStyle=vg; x.fillRect(0,0,w,h);
+}
+function openStory(panels,onDone){ _storyPanels=panels; _storyIdx=0; _storyDone=onDone||goMenu; showScreen('scr-story'); setTimeout(renderStoryPanel,40); }
+function renderStoryPanel(){ var cv=$('comicCanvas'); if(!cv)return; var p=_storyPanels[_storyIdx]; drawComicPanel(cv,p);
+  $('comicCap').textContent=p.cap;
+  var d=''; for(var i=0;i<_storyPanels.length;i++) d+='<span class="cdot'+(i===_storyIdx?' on':'')+'"></span>'; $('comicDots').innerHTML=d;
+  $('btnComicNext').textContent=_storyIdx>=_storyPanels.length-1?'Play →':'Next →';
+  $('btnComicSkip').style.visibility=_storyPanels.length>1?'visible':'hidden';
+}
+function storyNext(){ SFX.click(); if(_storyIdx<_storyPanels.length-1){ _storyIdx++; renderStoryPanel(); } else storyFinish(); }
+function storyFinish(){ var f=_storyDone; _storyDone=null; if(f)f(); else goMenu(); }
+
+/* ---- world intro card ---- */
+var _wcTimer=null;
+function showWorldCard(w){ var W=WORLDS[w-1]; if(!W)return;
+  $('wcW').textContent='WORLD '+W.n; $('wcN').textContent=W.name; $('wcT').textContent=W.tag;
+  var el=$('worldCard'); el.classList.add('show'); clearTimeout(_wcTimer);
+  _wcTimer=setTimeout(function(){ el.classList.remove('show'); },2300);
+}
+function firstLevelOfWorld(n){ var lv=levelByN(n); if(!lv)return false; var inW=LEVELS.filter(function(l){return l.world===lv.world;}); return inW.length>0 && inW[0].n===n; }
 
 /* ---- debug hook (read-mostly; used by the headless verifier, harmless in prod) ---- */
 try{ window.BB_DEBUG = {
