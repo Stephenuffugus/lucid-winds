@@ -13979,6 +13979,7 @@ document.addEventListener('keydown', function(e) {
 
   // ── DECK & GAME STATE ──
   var deck = [], board = [], selected = [], phenosFound = 0, startTime = 0, timerInterval = null;
+  var won = false; // win latch — renderBoard re-entry (e.g. Settings updateTheme) must not re-fire game_win
   var attentionPayloads = [];
 
   function createDeck() {
@@ -14054,7 +14055,8 @@ document.addEventListener('keydown', function(e) {
     document.getElementById('s-remain').textContent = deck.length;
     
     // Check if any sets exist
-    if (!findPheno() && deck.length === 0) {
+    if (!won && !findPheno() && deck.length === 0) {
+      won = true; // latch before any earn — settings re-render used to re-fire game_win
       var finalTime = getTimeSec();
       stopTimer();
       var result = checkAndSaveRecord(finalTime, phenosFound);
@@ -14202,6 +14204,7 @@ document.addEventListener('keydown', function(e) {
     board = [];
     selected = [];
     phenosFound = 0;
+    won = false;
     var _sfEl=document.getElementById('s-found');if(_sfEl)_sfEl.textContent='0';
         for (var i = 0; i < 12; i++) board.push(deck.pop());
     startTime = Date.now();
@@ -14456,9 +14459,9 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>SAVE:</strong> Earns a plant pattern and downloads your mandala as a PNG.</p>';
     R.farkle = ''+
       '<p><strong>Goal:</strong> First to 10,000 points wins.</p>'+
-      '<p><strong>Each turn:</strong> Roll 6 dice. Set aside scoring dice (1s, 5s, three-of-a-kinds, runs). RE-ROLL the remaining dice for more points OR BANK to lock in your score this turn.</p>'+
-      '<p><strong>Scoring:</strong> 1 = 100, 5 = 50, three 1s = 1000, three of any other = 100×face, four of a kind = 1000, run 1-6 = 1500, three pairs = 1500.</p>'+
-      '<p><strong>FARKLE:</strong> If a roll has zero scoring dice, you bust, lose this turn\'s points.</p>'+
+      '<p><strong>Each turn:</strong> Roll 6 dice. Set aside scoring dice (1s, 5s, three-of-a-kinds). RE-ROLL the remaining dice for more points OR BANK to lock in your score this turn.</p>'+
+      '<p><strong>Scoring:</strong> single 1 = 100, single 5 = 50, three 1s = 1000, three of any other = 100&times;face (three 6s = 600). Each extra die past three of a kind adds 100 (four 2s = 300, four 1s = 1100).</p>'+
+      '<p><strong>FARKLE:</strong> If a roll has zero scoring dice, you bust and lose this turn\'s points.</p>'+
       '<p><strong>Hot dice:</strong> Use ALL 6 in scoring? Roll all 6 again with stacked points.</p>';
     R.yahtzee = ''+
       '<p><strong>Goal:</strong> Highest total score across 13 rounds.</p>'+
