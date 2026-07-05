@@ -32,7 +32,7 @@ function fakeEl() {
 
 // The internal identifiers we surface for tests. All exist at top-level script scope.
 const EXPORTS = [
-  'RACES','POWERS','AUGMENTS','RARITY','rarByKey','ASCENDANCIES','ASC_BY_KEY','JEWELS','JEWEL_BY_KEY','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
+  'RACES','POWERS','AUGMENTS','RARITY','rarByKey','ASCENDANCIES','ASC_BY_KEY','JEWELS','JEWEL_BY_KEY','ENEMIES','prepEnemy','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
   'BUFF_BASE','NOTABLES','KEYSTONES','PROC_BASE',
   'simulate','deriveCombat','computeFinal','ocStats','aggregateMods','migrateOC','hitDamage',
   'clamp','rand','randInt','pick','tierIndex','tierMult',

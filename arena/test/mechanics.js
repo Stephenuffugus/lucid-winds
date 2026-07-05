@@ -57,5 +57,22 @@ const jn = API.deriveCombat(ocJewel(null)), jc = API.deriveCombat(ocJewel('cosmi
 assert('a Cosmic Focus jewel raises crit vs an empty socket', jc.crit > jn.crit, `empty=${jn.crit.toFixed(3)} cosmic=${jc.crit.toFixed(3)}`);
 assert('jewel-derived crit stays finite + clamped <=1', Number.isFinite(jc.crit) && jc.crit <= 1);
 
+/* Gauntlet: every authored enemy preps, derives combat, and its fights terminate */
+if (API.ENEMIES && API.prepEnemy) {
+  let enemyOK = true, maxR = 0, bad = '';
+  const hero = oc([{ key: 'multistrike', grade: 'rare' }]);
+  for (const e of API.ENEMIES) {
+    try {
+      const foe = API.prepEnemy(e);
+      const F = API.deriveCombat(foe);
+      if (!F || !Number.isFinite(F.maxHp) || F.maxHp <= 0) { enemyOK = false; bad = e.name + ' (bad F)'; break; }
+      const res = API.simulate(hero, foe);
+      if (!res || res.rounds > 200 || !Number.isFinite(res.rounds)) { enemyOK = false; bad = e.name + ' (bad fight)'; break; }
+      maxR = Math.max(maxR, res.rounds);
+    } catch (err) { enemyOK = false; bad = e.name + ': ' + err.message; break; }
+  }
+  assert('every gauntlet enemy preps + derives + fights terminate', enemyOK, bad || `enemies=${API.ENEMIES.length} maxRounds=${maxR}`);
+}
+
 console.log(ok ? '\n✅ mechanics passed' : '\n✗ mechanics FAILED');
 process.exit(ok ? 0 : 1);

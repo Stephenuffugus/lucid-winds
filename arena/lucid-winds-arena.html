@@ -814,7 +814,7 @@ const SAVE_KEY="lucidwinds_arena_v2";
 
 /* ===================== STATE ===================== */
 const state={
-  glory:0, roster:[], alliances:[], ownedAugments:null, ownedJewels:null,
+  glory:0, roster:[], alliances:[], ownedAugments:null, ownedJewels:null, gauntlet:{cleared:-1,champion:null},
   screen:"home", draft:null, battle:null, battleSel:[], tourney:null,
   sheetId:null, sheetTab:"overview", treeSel:null, treeView:{x:0,y:0,scale:1},
   augPick:null, // {ocId, powerKey, slot}
@@ -850,6 +850,7 @@ async function loadState(){
     state.alliances=Array.isArray(s.alliances)?s.alliances:[];
     state.ownedAugments=normalizeOwned(Array.isArray(s.ownedAugments)?s.ownedAugments:STARTER_AUGMENTS);
     state.ownedJewels=normalizeOwnedJewels(Array.isArray(s.ownedJewels)?s.ownedJewels:STARTER_JEWELS);
+    if(s.gauntlet&&typeof s.gauntlet.cleared==="number") state.gauntlet.cleared=s.gauntlet.cleared;
   }else{
     state.ownedAugments=normalizeOwned(STARTER_AUGMENTS);
     state.ownedJewels=normalizeOwnedJewels(STARTER_JEWELS);
@@ -858,7 +859,7 @@ async function loadState(){
 let saveTimer=null;
 function persist(){
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments,ownedJewels:state.ownedJewels}),200);
+  saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments,ownedJewels:state.ownedJewels,gauntlet:{cleared:gauntletCleared()}}),200);
 }
 
 /* ---- augment ownership + loot grades (Phase 2a) ----
@@ -1976,6 +1977,26 @@ function tourneyStage(){
     <div class="center"><button class="btn primary" data-act="newTourney">♛ New Tournament</button></div>`;
 }
 function slotRow(o,win){const r=raceByKey(o.race)||{};return `<div class="m-slot ${win?"win":"lose"}"><span class="dotc" style="--race-color:${r.color}"></span><span class="mn2">${esc(o.name)}</span>${win?`<span style="color:var(--aur-teal);font-size:12px">✦</span>`:""}</div>`;}
+
+/* ===================== GAUNTLET (solo campaign) ===================== */
+// Authored foes, escalating. Each is an OC-shaped object run through migrateOC.
+// Augments carry explicit grades so they never inherit the player's inventory.
+const ENEMIES=[
+  {id:"g0",name:"Straw Sentry",emoji:"🎯",race:"human",level:3,baseStats:{str:22,dur:20,sta:18,int:14,spd:16,cmb:18},powers:[],tree:{allocated:["hub"]}},
+  {id:"g1",name:"Bramble Recruit",emoji:"🌿",race:"human",level:6,baseStats:{str:34,dur:30,sta:28,int:20,spd:26,cmb:30},powers:[{key:"energy_blast",effect:"proc",tier:"novice",augments:[]}],tree:{allocated:["hub"]}},
+  {id:"g2",name:"Ashen Duelist",emoji:"🔥",race:"human",level:10,baseStats:{str:44,dur:40,sta:40,int:36,spd:42,cmb:46},powers:[{key:"energy_blast",effect:"proc",tier:"adept",augments:[{key:"amplify",grade:"common"}]}],tree:{allocated:["hub"]}},
+  {id:"g3",name:"Iron Sentinel",emoji:"🛡️",race:"vultramite",level:14,baseStats:{str:56,dur:66,sta:58,int:38,spd:34,cmb:50},powers:[{key:"fire_breath",effect:"proc",tier:"adept",augments:[{key:"brutality",grade:"uncommon"}]}],tree:{allocated:["hub"]}},
+  {id:"g4",name:"Nightblade Vael",emoji:"🗡️",race:"vampire",level:18,baseStats:{str:58,dur:44,sta:48,int:52,spd:72,cmb:66},powers:[{key:"telekinesis",effect:"proc",tier:"expert",augments:[{key:"crit_infusion",grade:"rare"},{key:"precision",grade:"common"}]}],tree:{allocated:["hub"]}},
+  {id:"g5",name:"Stormcaller Rhea",emoji:"⚡",race:"human",level:22,baseStats:{str:52,dur:54,sta:58,int:76,spd:62,cmb:64},powers:[{key:"energy_blast",effect:"proc",tier:"expert",augments:[{key:"overcharge",grade:"rare"},{key:"chain",grade:"uncommon"}]}],tree:{allocated:["hub"]}},
+  {id:"g6",name:"Bonecrusher Grull",emoji:"💀",race:"vultramite",level:26,baseStats:{str:90,dur:80,sta:76,int:36,spd:48,cmb:78},powers:[{key:"fire_breath",effect:"proc",tier:"expert",augments:[{key:"brutality",grade:"rare"},{key:"multistrike",grade:"uncommon"}]}],tree:{allocated:["hub","a0_r5_0"]}},
+  {id:"g7",name:"Void Seer Nyx",emoji:"🌌",race:"human",level:30,baseStats:{str:56,dur:62,sta:72,int:98,spd:68,cmb:72},powers:[{key:"reality_warp",effect:"proc",tier:"master",augments:[{key:"toxic",grade:"epic"},{key:"amplify",grade:"rare"},{key:"faster",grade:"common"}]}],tree:{allocated:["hub","a1_r5_0"]}},
+  {id:"g8",name:"The Unbroken",emoji:"⛰️",race:"vultramite",level:34,baseStats:{str:84,dur:108,sta:92,int:50,spd:44,cmb:82},powers:[{key:"telekinesis",effect:"proc",tier:"expert",augments:[{key:"brutality",grade:"epic"}]}],tree:{allocated:["hub","a5_r5_0"]},ascendancy:{key:"juggernaut",allocated:["jug_a","jug_b","jug_d"]}},
+  {id:"g9",name:"Crimson Reaper",emoji:"🩸",race:"vampire",level:38,baseStats:{str:92,dur:72,sta:78,int:80,spd:106,cmb:100},powers:[{key:"energy_blast",effect:"proc",tier:"master",augments:[{key:"crit_infusion",grade:"legendary"},{key:"precision",grade:"epic"},{key:"culling",grade:"rare"}]}],tree:{allocated:["hub","a2_r5_0"]},ascendancy:{key:"assassin",allocated:["ass_a","ass_c","ass_d","ass_e"]}},
+  {id:"g10",name:"Doomforge Kael",emoji:"🔨",race:"vultramite",level:42,baseStats:{str:120,dur:100,sta:98,int:66,spd:74,cmb:106},powers:[{key:"fire_breath",effect:"proc",tier:"master",augments:[{key:"volatile",grade:"epic"},{key:"brutality",grade:"legendary"},{key:"ignite",grade:"epic"}]}],tree:{allocated:["hub","a0_r5_0"]},ascendancy:{key:"warlord",allocated:["war_a","war_b","war_c","war_d"]}},
+  {id:"g11",name:"The Ascendant",emoji:"👑",race:"vampire",level:45,baseStats:{str:114,dur:112,sta:110,int:120,spd:114,cmb:122},powers:[{key:"reality_warp",effect:"proc",tier:"master",augments:[{key:"amplify",grade:"cosmic"},{key:"crit_infusion",grade:"mythic"},{key:"faster",grade:"legendary"},{key:"culling",grade:"epic"}]}],tree:{allocated:["hub","a1_r5_0","a2_r5_0"]},ascendancy:{key:"elementalist",allocated:["ele_a","ele_b","ele_c","ele_d","ele_e"]}}
+];
+function prepEnemy(e){ const c=JSON.parse(JSON.stringify(e)); c.record=c.record||{w:0,l:0}; c.xp=c.xp||0; return migrateOC(c); }
+function gauntletCleared(){ return (state.gauntlet&&typeof state.gauntlet.cleared==="number")?state.gauntlet.cleared:-1; }
 
 /* ===================== ALLIANCES ===================== */
 function screenAlliances(){
