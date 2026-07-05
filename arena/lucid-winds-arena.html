@@ -266,6 +266,12 @@
   .aug .ah{display:flex;align-items:center;gap:8px} .aug .ae{font-size:18px} .aug .an{font-weight:700;font-size:13px}
   .aug .ad{font-size:11px;color:var(--mist);margin-top:4px;line-height:1.35}
   .aug .areq{font-family:var(--font-mono);font-size:9px;color:var(--aur-magenta);margin-top:4px;letter-spacing:.06em}
+  /* loot rarity */
+  .gbadge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:999px;border:1px solid;text-transform:uppercase;display:inline-block;vertical-align:middle;margin-left:6px}
+  .aug.graded{border-left-width:3px}
+  .rf-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .grade-legend{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}
+  .grade-legend .gl{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:999px;border:1px solid}
   .modal-back{position:fixed;inset:0;z-index:80;background:rgba(6,5,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px}
   @media(min-width:640px){.modal-back{align-items:center}}
   .modal{background:var(--void-2);border:1px solid var(--line-2);border-radius:var(--r);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:16px}
@@ -760,6 +766,8 @@ function augGradeOf(k){ const g=ownedGem(k); return g?(g.grade||"common"):"commo
 function sockets(p){ return (p.augments||[]).map(x=>{ const k=(x&&x.key)?x.key:x; return {key:k,grade:(x&&x.grade)?x.grade:augGradeOf(k)}; }); }
 function rollGrade(){ let t=0; for(const r of RARITY) t+=r.weight; let x=Math.random()*t; for(const r of RARITY){ x-=r.weight; if(x<=0) return r.key; } return "common"; }
 function reforgeCostG(){ return 90; }
+function gradeBadge(grade){ const R=rarByKey(grade); return `<span class="gbadge" style="color:${R.color};border-color:${R.color}66;background:${R.color}1a">${R.label}</span>`; }
+function gradeLegendHTML(){ return `<div class="grade-legend">${RARITY.map(r=>`<span class="gl" style="color:${r.color};border-color:${r.color}66;background:${r.color}14">${r.label}</span>`).join("")}</div>`; }
 
 /* level / xp */
 function xpNeeded(level){return Math.round(60*Math.pow(level,1.5));}
@@ -1527,10 +1535,12 @@ function tabPowers(oc){
   const others=(oc.powers||[]).filter(p=>!isAugmentable(p.key));
   const activeHtml=actives.length?actives.map(p=>linkPowerHTML(oc,p)).join(""):`<div class="empty" style="padding:22px">No active skills yet. Active skills (Aether Blast, Fire Breath, Telekinesis, Reality Warp, or a Stand) are the ones you socket augments into. Learn one below.</div>`;
   const owned=state.ownedAugments||[];
-  const libHtml=AUGMENTS.map(a=>{const has=ownsAug(a.key);
-    return `<div class="aug ${has?"owned":""}"><div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span></div>
+  const libHtml=AUGMENTS.map(a=>{const has=ownsAug(a.key); const gr=has?augGradeOf(a.key):null; const R=has?rarByKey(gr):null;
+    return `<div class="aug ${has?"owned graded":""}"${has?` style="border-left-color:${R.color}"`:""}>
+      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span>${has?gradeBadge(gr):""}</div>
       <div class="ad">${a.desc}</div>${a.req?`<div class="areq">requires ${a.req} skill</div>`:""}
-      <div style="margin-top:8px">${has?`<span class="mnote">Owned</span>`:`<button class="btn xs ${state.glory>=augCost()?"gold":""}" data-act="buyAug" data-k="${a.key}" ${state.glory>=augCost()?"":"disabled"}>Learn · ◈${augCost()}</button>`}</div></div>`;}).join("");
+      ${has?`<div class="rf-row"><button class="btn xs ${state.glory>=reforgeCostG()?"gold":""}" data-act="reforgeAug" data-k="${a.key}" ${state.glory>=reforgeCostG()?"":"disabled"}>⚒ Reforge · ◈${reforgeCostG()}</button><span class="mnote" style="margin:0">re-roll its grade</span></div>`
+        :`<div style="margin-top:8px"><button class="btn xs ${state.glory>=augCost()?"gold":""}" data-act="buyAug" data-k="${a.key}" ${state.glory>=augCost()?"":"disabled"}>Learn · ◈${augCost()}</button></div>`}</div>`;}).join("");
   // learn powers
   const ownedKeys=new Set((oc.powers||[]).map(p=>p.key));
   const learnable=POWERS.filter(p=>!ownedKeys.has(p.key));
@@ -1543,6 +1553,8 @@ function tabPowers(oc){
     ${activeHtml}
     ${others.length?`<div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Passive &amp; Utility</h2></div><div class="powerchips" style="padding:0">${others.map(p=>{const t=TIERS.find(t=>t.key===p.tier);return `<span class="chip">${powerEmoji(p)} ${esc(powerDisplayName(p))} <span class="m">${t?t.label:""}</span></span>`;}).join("")}</div>`:""}
     <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Augment Library</h2><span class="c">${owned.length}/${AUGMENTS.length} owned</span></div>
+    <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Every gem you learn rolls a rarity — a higher grade hits harder (and Reforge re-rolls it). Grades:</div>
+    ${gradeLegendHTML()}
     <div class="aug-lib">${libHtml}</div>
     <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Learn New Powers</h2></div>
     ${learnable.length?`<div class="aug-lib">${learnHtml}</div>`:`<div class="hint">You've learned every power.</div>`}`;
@@ -1554,7 +1566,8 @@ function linkPowerHTML(oc,p){
   for(let i=0;i<4;i++){
     if(i>=cap){ sockets+=`<div class="socket locked"><span class="locked">🔒 locked</span><span class="empt">tier ${i+1}</span></div>`; continue; }
     const a=augs[i]?augByKey(augs[i]):null;
-    if(a) sockets+=`<div class="socket filled" data-act="openSlot" data-k="${p.key}" data-slot="${i}"><span class="se">${a.emoji} <span class="sn" style="display:inline">${esc(a.name)}</span></span><span class="empt" style="margin-top:3px">tap to change</span></div>`;
+    if(a){ const gr=augGradeOf(augs[i]),R=rarByKey(gr);
+      sockets+=`<div class="socket filled" data-act="openSlot" data-k="${p.key}" data-slot="${i}" style="border-color:${R.color};background:linear-gradient(160deg,${R.color}22,var(--void-2))"><span class="se">${a.emoji} <span class="sn" style="display:inline;color:${R.color}">${esc(a.name)}</span></span><span class="empt" style="margin-top:3px;color:${R.color}bb">${R.label} · tap to change</span></div>`; }
     else sockets+=`<div class="socket" data-act="openSlot" data-k="${p.key}" data-slot="${i}"><span class="empt">＋ empty socket</span><span class="empt" style="margin-top:2px;opacity:.6">tap to add augment</span></div>`;
   }
   const canUp=ti<TIERS.length-1; const upCost=masteryUpCostG(p);
@@ -1574,8 +1587,9 @@ function openSlotPicker(oc,powerKey,slot){
     const inUse=(p.augments||[]).includes(k)&&(p.augments||[])[slot]!==k;
     const reqBad=a.req&&!tags.includes(a.req);
     const dis=inUse||reqBad;
-    return `<div class="aug ${current===k?"owned":""}" style="${dis?"opacity:.45":""}">
-      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span></div><div class="ad">${a.desc}</div>
+    const R=rarByKey(g.grade);
+    return `<div class="aug graded ${current===k?"owned":""}" style="border-left-color:${R.color};${dis?"opacity:.45":""}">
+      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span>${gradeBadge(g.grade)}</div><div class="ad">${a.desc}</div>
       ${reqBad?`<div class="areq">needs ${a.req} — not on this skill</div>`:inUse?`<div class="areq">already socketed here</div>`:""}
       <div style="margin-top:6px">${dis?"":`<button class="btn xs primary" data-act="setAug" data-k="${powerKey}" data-slot="${slot}" data-aug="${k}">${current===k?"Re-slot":"Slot this"}</button>`}</div></div>`;}).join("");
   const emptyLib=owned.length===0?`<div class="hint">You don't own any augments yet. Buy some from the Augment Library.</div>`:"";
