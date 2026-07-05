@@ -337,7 +337,7 @@ var K={ coins:'sproing_coins', best:'sproing_best', book:'sproing_sketchbook',
   acc:'sproing_acc', accs:'sproing_accs', theme:'sproing_theme', themes:'sproing_themes' };
 
 /* ---------- settings ---------- */
-var DEF_SET={ steer:'drag', reduceMotion:'auto', highContrast:false, music:0.6, sfx:0.8,
+var DEF_SET={ steer:'drag', steerSens:1, reduceMotion:'auto', highContrast:false, music:0.6, sfx:0.8,
   muted:false, lefthand:false, glyph:'normal', haptics:true };
 var SET=(function(){ var s=LS.getJSON(K.set,{}); for(var k in DEF_SET) if(!(k in s)) s[k]=DEF_SET[k]; return s; })();
 function saveSet(){ LS.setJSON(K.set,SET); }
@@ -1271,8 +1271,8 @@ function updateGame(dt){
   // ---- steering ----
   var steerMul=game.hopSteerMul;
   if(game.stunT>0){ p.vx*=Math.exp(-9*dt); }
-  else if(INP.dragX!=null){ var desired=clamp((INP.dragX-p.x)*12,-MAXHORIZ,MAXHORIZ); p.vx=desired*steerMul; }
-  else { var ti=INP.tiltInput, sc=(game.parachuteT>0?2:1)*steerMul; if(ti!==0){ p.vx+=ti*3200*sc*dt; p.vx=clamp(p.vx,-MAXHORIZ*sc,MAXHORIZ*sc); } else p.vx*=Math.exp(-9*dt); }
+  else if(INP.dragX!=null){ var ss=SET.steerSens||1; var desired=clamp((INP.dragX-p.x)*12*ss,-MAXHORIZ,MAXHORIZ); p.vx=desired*steerMul; }
+  else { var ti=INP.tiltInput, ss2=SET.steerSens||1, sc=(game.parachuteT>0?2:1)*steerMul; if(ti!==0){ p.vx+=ti*3200*ss2*sc*dt; p.vx=clamp(p.vx,-MAXHORIZ*sc,MAXHORIZ*sc); } else p.vx*=Math.exp(-9*dt); }
   // wind push
   for(var h=0;h<game.hazards.length;h++){ var hz=game.hazards[h]; if(hz.type==='wind' && p.y<=hz.y0 && p.y>=hz.y1){ p.vx=clamp(p.vx+hz.dir*hz.push*dt*6,-MAXHORIZ,MAXHORIZ); } }
   // ---- vertical ----
@@ -1729,10 +1729,11 @@ function segRow(label,vals,labels,cur,fn){ var r=rowEl(label); var seg=document.
     b.onclick=function(){ for(var c=0;c<seg.children.length;c++) seg.children[c].className=''; b.className='sel'; sfx('ui'); fn(v); }; seg.appendChild(b); });
   r.appendChild(seg); return r; }
 function toggleRow(label,cur,fn){ return segRow(label,[true,false],['On','Off'],cur,fn); }
-function sliderRow(label,cur,fn){ var r=rowEl(label); var inp=document.createElement('input'); inp.type='range'; inp.min=0; inp.max=1; inp.step=0.05; inp.value=cur; inp.oninput=function(){ fn(parseFloat(inp.value)); }; r.appendChild(inp); return r; }
+function sliderRow(label,cur,fn,mn,mx,st){ var r=rowEl(label); var inp=document.createElement('input'); inp.type='range'; inp.min=(mn!=null?mn:0); inp.max=(mx!=null?mx:1); inp.step=(st!=null?st:0.05); inp.value=cur; inp.oninput=function(){ fn(parseFloat(inp.value)); }; r.appendChild(inp); return r; }
 function buildSettings(){
   var b=$('set-body'); b.innerHTML='';
   b.appendChild(segRow('Steering',['drag','tilt','both'],['Drag','Tilt','Both'],SET.steer,setSteer));
+  b.appendChild(sliderRow('Steer sensitivity',SET.steerSens||1,function(v){ SET.steerSens=v; saveSet(); },0.5,1.6,0.1));
   b.appendChild(segRow('Reduced motion',['auto','on','off'],['Auto','On','Off'],SET.reduceMotion,function(v){ SET.reduceMotion=v; saveSet(); }));
   b.appendChild(toggleRow('High contrast',SET.highContrast,function(v){ SET.highContrast=v; saveSet(); }));
   b.appendChild(sliderRow('Music',SET.music,function(v){ SET.music=v; saveSet(); applyVolumes(); }));
