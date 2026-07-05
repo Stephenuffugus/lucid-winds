@@ -43,5 +43,19 @@ assert('proc chance stays clamped <=0.9 under stacked cosmic', cap.chance <= 0.9
 /* Every derived value is finite (no NaN leaking from scaling) */
 assert('all derived proc numbers are finite', [cap.extraHits, cap.chance, cap.localInc, cap.localMore, cap.localCrit].every(Number.isFinite));
 
+/* Jewels: a socketed Cosmic Focus jewel folds into the build (raises crit) */
+function ocJewel(grade) {
+  return {
+    id: 'j', name: 'J', race: 'human', emoji: '🌀',
+    baseStats: { str: 50, dur: 50, sta: 50, int: 50, spd: 50, cmb: 50 },
+    powers: [{ key: 'energy_blast', effect: 'proc', tier: 'master', augments: [] }],
+    tree: { allocated: ['hub', 'a0_r1_1', 'a0_r2_0'], jewels: grade ? { a0_r2_0: { key: 'focus', grade } } : {} },
+    ascendancy: { key: null, allocated: [] }, level: 20, xp: 0, record: { w: 0, l: 0 }
+  };
+}
+const jn = API.deriveCombat(ocJewel(null)), jc = API.deriveCombat(ocJewel('cosmic'));
+assert('a Cosmic Focus jewel raises crit vs an empty socket', jc.crit > jn.crit, `empty=${jn.crit.toFixed(3)} cosmic=${jc.crit.toFixed(3)}`);
+assert('jewel-derived crit stays finite + clamped <=1', Number.isFinite(jc.crit) && jc.crit <= 1);
+
 console.log(ok ? '\n✅ mechanics passed' : '\n✗ mechanics FAILED');
 process.exit(ok ? 0 : 1);
