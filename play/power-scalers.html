@@ -527,6 +527,9 @@ const AUGMENTS=[
   {key:"volatile",name:"Volatile Core",emoji:"☢️",mods:{localMore:0.4,localCrit:0.1,procMult:-0.15},desc:"Devastating, high-crit hits — but the skill fires less often."},
   {key:"frostbite",name:"Frostbite",emoji:"❄️",mods:{addDot:{type:"mind",pctOfHit:0.3,turns:3},localCrit:0.04},desc:"Adds a chilling mind damage-over-time."},
   {key:"momentum",name:"Momentum",emoji:"🌊",mods:{secondary:0.45,localInc:0.1},desc:"The skill strikes again for part of its damage, and hits harder."},
+  {key:"riposte",name:"Riposte",emoji:"🤺",mods:{secondary:0.35,localCrit:0.06},desc:"Strikes back for part of the damage, with a better crit chance."},
+  {key:"havoc",name:"Havoc",emoji:"💢",mods:{localInc:0.42,procMult:-0.1},desc:"Big damage boost; the skill triggers a little less often."},
+  {key:"siphon",name:"Siphon",emoji:"🌀",mods:{leechThis:0.12,procMult:0.1},desc:"Leech from the skill and trigger it more often."},
 ];
 const augByKey=k=>AUGMENTS.find(a=>a.key===k);
 const STARTER_AUGMENTS=["multistrike","overcharge","ignite"];
@@ -582,6 +585,13 @@ const ASCENDANCIES=[
     {id:"war_c",name:"Commanding Might",desc:"+12 Strength, +12 Combat.",effect:{stat:{str:12,cmb:12}}},
     {id:"war_d",name:"Endless Assault",desc:"Skills fire more and deal 15% more; but take 8% more damage.",effect:{keystone:"asc_warlord"}},
     {id:"war_e",name:"Last Stand",desc:"The first time you'd die, revive at 40% life.",effect:{keystone:"second_wind"}}
+  ]},
+  {key:"trickster",name:"Trickster",emoji:"🎭",color:"#9d7bff",desc:"Untouchable, precise, and always a step ahead.",nodes:[
+    {id:"tri_a",name:"Evasive",desc:"+12% evasion.",effect:{evasionAdd:0.12}},
+    {id:"tri_b",name:"Quickstep",desc:"+16 Speed.",effect:{stat:{spd:16}}},
+    {id:"tri_c",name:"Sleight",desc:"+10% crit chance and +8% accuracy.",effect:{critChanceAdd:0.1,accuracyAdd:0.08}},
+    {id:"tri_d",name:"Blur",desc:"+18% evasion and +10% attack speed; but your maximum life is reduced 10%.",effect:{keystone:"asc_trickster"}},
+    {id:"tri_e",name:"Opportunist",desc:"Deal more to low-life foes and +10% generic damage.",effect:{execBonus:0.3,incGeneric:0.1}}
   ]}
 ];
 const ASC_BY_KEY={}; ASCENDANCIES.forEach(a=>{ASC_BY_KEY[a.key]=a;});
@@ -602,7 +612,9 @@ const JEWELS=[
   {key:"ferocity",name:"Ferocity",emoji:"🔥",mods:{incTag:{physical:0.16,fire:0.16}},desc:"More physical and fire damage."},
   {key:"bulwark_j",name:"Warding Stone",emoji:"🛡️",mods:{armorFlat:10,lifePct:0.08},desc:"Armor and a little more life."},
   {key:"leeching",name:"Leeching",emoji:"🩸",mods:{leechPct:0.06},desc:"Leech a little life on every hit."},
-  {key:"growth",name:"Growth",emoji:"🌱",mods:{},scalePerNodes:{per:5,pct:0.03},desc:"+3% damage per 5 passive nodes you've allocated."}
+  {key:"growth",name:"Growth",emoji:"🌱",mods:{},scalePerNodes:{per:5,pct:0.03},desc:"+3% damage per 5 passive nodes you've allocated."},
+  {key:"alacrity",name:"Alacrity",emoji:"💨",mods:{atkSpeedAdd:0.1,stat:{spd:6}},desc:"Faster attacks and a little Speed."},
+  {key:"fortress",name:"Fortress",emoji:"🏰",mods:{armorFlat:14,lifePct:0.06},desc:"Solid armor and a little more life."}
 ];
 const JEWEL_BY_KEY={}; JEWELS.forEach(j=>{JEWEL_BY_KEY[j.key]=j;});
 const STARTER_JEWELS=["efficiency","vigor"];
@@ -955,6 +967,7 @@ function applyKeystone(M,k){
     case "asc_assassin": M.critChanceAdd+=0.15; M.accAdd+=0.10; M.lifeMult*=0.85; break;
     case "asc_elementalist": M.dotMore+=0.5; M.abilityMore+=0.2; M.dmgTakenInc+=0.10; break;
     case "asc_warlord": M.abilityProc+=0.10; M.moreGlobal*=1.15; M.dmgTakenInc+=0.08; break;
+    case "asc_trickster": M.evaAdd+=0.18; M.atkSpeedAdd+=0.10; M.lifeMult*=0.9; break;
   }
 }
 function applyNodeEffect(M,e){
