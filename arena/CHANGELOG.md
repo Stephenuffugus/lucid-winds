@@ -3,7 +3,20 @@
 Format: reverse-chronological. This is a single-file app; "version" = the `SAVE_KEY` era + notable
 feature sets. Update this on meaningful changes.
 
-## [2.3.0] — Jewel sockets (current)
+## [2.4.0] — Solo gauntlet (current)
+Save key unchanged; `state.gauntlet` progress persisted.
+
+Added
+- **Gauntlet**: a solo campaign — send a champion up a ladder of **12 authored foes**
+  (Straw Sentry L3 → The Ascendant L45) escalating through keystones, ascendancies, and
+  graded gems. Clear a rung to unlock the next; first-clear wins pay a Glory/XP bonus,
+  replays a smaller one. New nav entry + screen; reuses `simulate`. Gives solo players
+  real progression without needing two of their own characters.
+
+Validated
+- `mechanics` asserts every gauntlet enemy preps, derives combat, and its fights terminate.
+
+## [2.3.0] — Jewel sockets
 Save key unchanged; `oc.tree.jewels` + `state.ownedJewels` backfilled/pruned by migration.
 
 Added

@@ -45,6 +45,11 @@ archetypes), master them, enhance stats, then name and skin the character.
 (4/8), and **Alliances** (factions). Wins pay **Glory** and **XP**; XP grants **levels → passive
 points**.
 
+**Loot & mastery (2.1–2.4)** — every gem and jewel rolls a **rarity** (Common → Cosmic) that scales its
+power, chased via **Reforge**; at level 15 you pick an **Ascendancy** subclass (a 5-node mini-tree); you
+slot rarity-graded **jewels** into skill-web sockets; and you climb a **solo Gauntlet** of 12 escalating
+foes. Your character earns an overall **grade** from its build plus socketed loot.
+
 **Damage tags** (`physical force fire mind void` + `projectile melee area dot`) run through everything,
 so tree nodes and augments scale the right skills — the same power plays very differently depending on
 your tree and links.

@@ -222,3 +222,16 @@ the mods via `scaleEffect` in `aggregateMods`.
   (105/172/0) is unaffected.
 - Jewels are owned globally (`state.ownedJewels`), so one graded jewel can be socketed in one place at a
   time — its grade lives on the owned jewel and a Reforge upgrades it wherever it's slotted.
+
+## Add a gauntlet foe
+
+Foes live in the `ENEMIES` array (near the Alliances section) — plain OC-shaped objects
+`{id,name,emoji,race,level,baseStats,powers,tree?,ascendancy?}`. `prepEnemy` runs them through
+`migrateOC`, so you only supply what you want; the ladder order = array order.
+
+- **Give a foe augments:** always write them as `{key,grade}` (bare keys would inherit the *player's*
+  grade). Keystones: add the node id to `tree.allocated` (`a<arm>_r5_0`, arms 0-5 = Might/Psyche/Ruin/
+  Vitality/Tempo/Aegis). Ascendancy: `{key, allocated:[nodeIds]}` — `aggregateMods` ignores the point
+  budget for foes, so allocate freely.
+- After editing, `npm run mechanics` re-checks that every foe preps, derives combat, and its fights
+  terminate. Keep the difficulty curve smooth (level + build both climb).

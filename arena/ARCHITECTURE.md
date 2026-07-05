@@ -88,6 +88,13 @@ sockets, grade-scaled via `scaleEffect` (node-effect vocab); `growth` scales wit
 socket picker on the node panel (`openJewelPicker`, `socketJewel`/`unsocketJewel`) + `jewelLibraryHTML`
 in the Powers tab. Cyan-diamond nodes in `treeSVG`.
 
+### `ENEMIES[]` — gauntlet foes (2.4)
+Authored OC-shaped foes (escalating) with **explicit-grade** augments so they never read the
+player's inventory. `prepEnemy` clones + `migrateOC`s one into a combat-ready fighter;
+`runGauntlet(rung)` fights it vs the chosen champion (reuses `simulate`), pays Glory/XP
+(first-clear bonus vs replay), and advances `state.gauntlet.cleared`. UI: `screenGauntlet`
+ladder + `gauntletStage` result + the 🐉 nav entry.
+
 ### Global state (`state`)
 `glory, roster[], alliances[], ownedAugments[]` (persisted) and view state
 `screen, draft, battle, battleSel, tourney, sheetId, sheetTab, treeSel, treeView, augPick`
