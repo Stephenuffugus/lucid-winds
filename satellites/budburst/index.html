@@ -171,6 +171,68 @@
   .set-row .icbig{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line2);font-size:12px;font-weight:700;min-height:48px;
     color:var(--ink-dim);display:flex;align-items:center;justify-content:center;gap:6px}
   .set-row .icbig.on{color:var(--ink);border-color:var(--sage)}
+
+  /* ---- v2: currencies, mode grid, loadout, boss bar, trays, shop tabs ---- */
+  .cur-wrap{display:flex;gap:7px}
+  .coins-pill.nectar{color:var(--warn)}
+  .mode-btn.big{width:100%;max-width:330px;margin-top:8px}
+  .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:330px;margin-top:10px}
+  .mode-card{border:1px solid var(--line2);border-radius:15px;background:linear-gradient(180deg,#161d10,#10140d);
+    padding:13px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;min-height:88px;position:relative;transition:transform .12s}
+  .mode-card:active{transform:scale(.96)}
+  .mode-card .mc-ic{font-size:20px;margin-bottom:3px}
+  .mode-card .mc-nm{font-size:15px;font-weight:800}
+  .mode-card small{font-size:10.5px;color:var(--ink-dim)}
+  .mode-card .mc-meta{position:absolute;top:11px;right:12px;font-family:var(--mono);font-size:10px;color:var(--gold)}
+
+  /* loadout */
+  .load-slots{display:flex;gap:10px;justify-content:center;margin:14px 0 6px;width:100%;max-width:330px}
+  .load-slot{flex:1;aspect-ratio:1/1;max-width:92px;border:2px dashed var(--line2);border-radius:15px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;font-size:26px;color:var(--ink-faint)}
+  .load-slot.filled{border-style:solid;border-color:var(--sage);color:var(--ink)}
+  .load-slot small{font-size:9px;color:var(--ink-dim)}
+  .load-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:400px;margin:12px 0}
+  .load-ab{border:1px solid var(--line2);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:flex-start;text-align:left;min-height:64px}
+  .load-ab .la-ic{font-size:22px}
+  .load-ab .la-nm{font-size:13px;font-weight:700}
+  .load-ab .la-ds{font-size:10px;color:var(--ink-dim);line-height:1.25;margin-top:2px}
+  .load-ab.on{border-color:var(--sage);background:linear-gradient(180deg,#1d2814,#141c0d)}
+  .load-ab.locked{opacity:.55}
+  .load-ab .la-lock{font-family:var(--mono);font-size:10px;color:var(--gold);margin-top:3px}
+
+  /* boss bar */
+  .boss-bar{display:flex;align-items:center;gap:9px;padding:6px 16px 2px}
+  .boss-bar .bb-label{font-size:9px;letter-spacing:.2em;color:var(--rose);font-weight:800;white-space:nowrap}
+  .boss-bar .bb-track{flex:1;height:9px;border-radius:6px;background:var(--line);overflow:hidden;border:1px solid var(--line2)}
+  .boss-bar .bb-fill{height:100%;width:100%;background:linear-gradient(90deg,#e07a9a,#c8a84b);transition:width .25s}
+  .boss-bar .bb-hp{font-family:var(--mono);font-size:10px;color:var(--ink-dim);white-space:nowrap}
+  #timerPill.danger .sv{color:var(--bad)}
+
+  /* ability + booster trays (over the arena, above the shooter) */
+  .ability-tray{position:absolute;left:10px;right:10px;bottom:8px;z-index:6;display:flex;gap:8px;justify-content:center;pointer-events:none}
+  .ability-tray .ab-btn{pointer-events:auto;flex:1;max-width:110px;min-height:52px;border:1px solid var(--line2);border-radius:13px;
+    background:rgba(16,20,13,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:.62;transition:.15s}
+  .ability-tray .ab-btn.ready{opacity:1;border-color:var(--gold);box-shadow:0 0 12px -2px var(--gold)}
+  .ability-tray .ab-ic{font-size:20px}
+  .ability-tray .ab-bar{width:80%;height:4px;border-radius:3px;background:var(--line);overflow:hidden}
+  .ability-tray .ab-bar i{display:block;height:100%;background:var(--gold);border-radius:3px}
+  .ability-tray .ab-btn.ready .ab-bar i{background:var(--good)}
+  .booster-tray{position:absolute;right:10px;bottom:10px;z-index:6;display:flex;gap:8px;pointer-events:none}
+  .booster-tray .boost-btn{pointer-events:auto;min-width:48px;min-height:48px;border:1px solid var(--line2);border-radius:12px;
+    background:rgba(16,20,13,.82);display:flex;align-items:center;justify-content:center;gap:3px;font-size:19px;position:relative}
+  .booster-tray .boost-btn .bc{position:absolute;bottom:-4px;right:-4px;background:var(--sage);color:#0d1409;font-size:10px;font-weight:800;
+    font-family:var(--mono);border-radius:20px;padding:1px 5px}
+
+  /* shop tabs + currency */
+  .shop-tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px;scrollbar-width:none}
+  .shop-tabs::-webkit-scrollbar{display:none}
+  .shop-tab{flex:0 0 auto;padding:9px 14px;min-height:44px;border-radius:11px;border:1px solid var(--line2);font-size:12px;font-weight:700;
+    color:var(--ink-dim);white-space:nowrap;display:flex;align-items:center}
+  .shop-tab.on{color:var(--ink);border-color:var(--sage);background:linear-gradient(180deg,#1d2814,#141c0d)}
+  .tile .price-n{color:var(--warn)}
+  .buy.up{border:1px solid var(--gold);color:var(--gold)}
+  .lvl.boss .num{color:var(--rose)}
+  .lvl.boss{border-color:#4a2838}
 </style>
 </head>
 <body>
@@ -180,15 +242,19 @@
   <section class="screen on" id="menu">
     <div class="topbar">
       <button class="icbtn" id="soundBtn">🔊</button>
-      <div class="coins-pill" id="menuCoins">🪙 0</div>
+      <div class="cur-wrap"><div class="coins-pill" id="menuCoins">🪙 0</div><div class="coins-pill nectar" id="menuNectar">🍯 0</div></div>
     </div>
     <div class="wordmark"><span class="l1">BUD</span><span class="l2">burst</span></div>
     <div class="tag">aim · match · bloom</div>
     <div class="bud-row" id="menuBuds"></div>
-    <div class="modes">
-      <button class="mode-btn primary" data-mode="adventure"><span>Adventure<small id="advSub">grow through six gardens</small></span><span class="meta" id="advMeta">—</span></button>
-      <button class="mode-btn" data-mode="endless"><span>Endless<small>survive the falling canopy</small></span><span class="meta" id="endMeta">BEST —</span></button>
-      <button class="mode-btn" data-mode="daily"><span>Daily Bloom<small id="dailySub">one shared puzzle a day</small></span><span class="meta" id="dailyMeta">—</span></button>
+    <button class="mode-btn primary big" data-mode="adventure"><span>Adventure<small id="advSub">144 levels · 12 gardens · bosses</small></span><span class="meta" id="advMeta">—</span></button>
+    <div class="mode-grid">
+      <button class="mode-card" data-mode="arcade"><span class="mc-ic">✦</span><span class="mc-nm">Arcade</span><small>powers &amp; waves</small><span class="mc-meta" id="arcMeta"></span></button>
+      <button class="mode-card" data-mode="blitz"><span class="mc-ic">⏱️</span><span class="mc-nm">Blitz</span><small>90-second rush</small><span class="mc-meta" id="blitzMeta"></span></button>
+      <button class="mode-card" data-mode="puzzle"><span class="mc-ic">🧩</span><span class="mc-nm">Puzzle</span><small>40 brain-teasers</small><span class="mc-meta" id="pzMeta"></span></button>
+      <button class="mode-card" data-mode="endless"><span class="mc-ic">🌀</span><span class="mc-nm">Endless</span><small>survive the canopy</small><span class="mc-meta" id="endMeta"></span></button>
+      <button class="mode-card" data-mode="zen"><span class="mc-ic">🍃</span><span class="mc-nm">Zen</span><small>no fail, just bloom</small><span class="mc-meta"></span></button>
+      <button class="mode-card" data-mode="daily"><span class="mc-ic">📅</span><span class="mc-nm">Daily</span><small>one shared puzzle</small><span class="mc-meta" id="dailyMeta"></span></button>
     </div>
     <div class="set-row">
       <button class="icbig" id="symBtn">◈ Symbols</button>
@@ -197,7 +263,7 @@
     <div class="goals-card"><div class="goals-h"><span style="color:var(--ink);font-size:12px;letter-spacing:.04em">TODAY'S GOALS</span><span>resets daily</span></div><div id="missionList"></div></div>
     <button class="link-btn" id="shopLink">🎨 Bloom Shop</button>
     <button class="link-btn" id="exitLink" style="opacity:.85">← All Sky Wolf games</button>
-    <div class="build-stamp" id="buildStamp">BUDBURST · BUILD 2026-07-05</div>
+    <div class="build-stamp" id="buildStamp">BUDBURST · BUILD 2026-07-05b</div>
   </section>
 
   <!-- MAP -->
@@ -210,18 +276,39 @@
     <div class="map-note" id="mapNote"></div>
   </section>
 
+  <!-- LOADOUT (Arcade) -->
+  <section class="screen" id="loadout">
+    <div class="map-top"><button class="back" id="loadBack">← Menu</button><h2>Powers</h2><div class="cur-wrap"><div class="coins-pill" id="loadCoins">🪙 0</div></div></div>
+    <div class="garden-sub">Equip up to three. They charge as you pop and fire on tap. Unlock &amp; upgrade more in the shop.</div>
+    <div class="load-slots" id="loadSlots"></div>
+    <div class="load-grid" id="loadGrid"></div>
+    <button class="link-btn" id="startArcadeBtn" style="background:var(--sage);color:#0d1409;border:none;font-weight:800">Start Arcade →</button>
+  </section>
+
+  <!-- PUZZLES -->
+  <section class="screen" id="puzzles">
+    <div class="map-top"><button class="back" id="pzBack">← Menu</button><h2>Puzzles</h2><div class="coins-pill" id="pzCoins">🪙 0</div></div>
+    <div class="garden-sub">Forty fixed boards. Clear each in as few shots as you can — three stars for the tight line.</div>
+    <div class="levels" id="pzGrid"></div>
+    <div class="map-note" id="pzNote"></div>
+  </section>
+
   <!-- GAME -->
   <section class="screen" id="game">
     <div class="g-hud">
       <button class="icbtn back" id="gameBack" style="font-size:24px;border:none">‹</button>
       <div class="obj"><span class="oLabel" id="objLabel">CLEAR</span><span class="oText" id="objText">—</span></div>
+      <div class="stat" id="timerPill" style="display:none"><span class="sv" id="timerVal">90s</span><span class="sl">time</span></div>
       <div class="stat"><span class="sv" id="shotsVal">∞</span><span class="sl">shots</span></div>
       <div class="stat"><span class="sv" id="scoreVal">0</span><span class="sl">score</span></div>
     </div>
+    <div class="boss-bar" id="bossBar" style="display:none"><span class="bb-label">BLOOM CORE</span><div class="bb-track"><div class="bb-fill" id="bossFill"></div></div><span class="bb-hp" id="bossHp"></span></div>
     <div class="arena-wrap">
       <canvas id="arena"></canvas>
       <div class="combo-pop" id="comboPop"></div>
       <div id="dangerVig"></div>
+      <div class="ability-tray" id="abilityTray" style="display:none"></div>
+      <div class="booster-tray" id="boosterTray" style="display:none"></div>
     </div>
   </section>
 
@@ -240,8 +327,9 @@
 
   <!-- SHOP -->
   <section class="screen" id="shop">
-    <div class="shop-top"><button class="back" id="shopBack">← Back</button><h2>Bloom Shop</h2><div class="coins-pill" id="shopCoins">🪙 0</div></div>
-    <div class="shop-note">Cosmetic bloom sets — colors and glyphs for the whole board. Earn coins from every level, win or lose. Gameplay is identical for all sets.</div>
+    <div class="shop-top"><button class="back" id="shopBack">← Back</button><h2>Shop</h2><div class="cur-wrap"><div class="coins-pill" id="shopCoins">🪙 0</div><div class="coins-pill nectar" id="shopNectar">🍯 0</div></div></div>
+    <div class="shop-tabs" id="shopTabs"></div>
+    <div class="shop-note" id="shopNote"></div>
     <div class="grid" id="shopGrid"></div>
   </section>
 
@@ -270,14 +358,21 @@ const CONFIG = {
   endlessDescendStart: 6,  // endless: descend one row every N shots...
   endlessDescendMin: 2,    // ...ramping down to this
   endlessColorStart: 4, endlessColorMax: 6,
-  sun: { perStar: 1, base: 2, daily: 4, endlessDiv: 1500, runCap: 12 }
+  sun: { perStar: 1, base: 2, daily: 4, endlessDiv: 1500, runCap: 12 },
+  blitzTime: 90,           // Blitz seconds
+  arcadeWaveShots: 5,      // Arcade: descend + wave up every N shots
+  bossHpBase: 12, bossHpPer: 2,   // boss HP = base + garden*per
+  nectar: { threeStar: 1, boss: 3, dailyStreak5: 2, arcadeWave: 1 } // rare-currency drops
 };
 
 /* ---- persistence -------------------------------------------------------- */
 const Store=(()=>{let mem={},ok=false;try{localStorage.setItem("__bb","1");localStorage.removeItem("__bb");ok=true;}catch(e){}
   return{g(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
          s(k,v){try{ok?localStorage.setItem(k,String(v)):(mem[k]=String(v));}catch(e){mem[k]=String(v);}}};})();
-const K={coins:"bb.coins",owned:"bb.owned",skin:"bb.skin",prog:"bb.prog",endBest:"bb.endless.best",
+const K={coins:"bb.coins",nectar:"bb.nectar",owned:"bb.owned",skin:"bb.skin",
+         lowned:"bb.lowned",launcher:"bb.launcher",bgowned:"bb.bgowned",bg:"bb.bg",
+         prog:"bb.prog",pzProg:"bb.pz.prog",endBest:"bb.endless.best",blitzBest:"bb.blitz.best",arcadeBest:"bb.arcade.best",zenTotal:"bb.zen.total",
+         abil:"bb.abil",loadout:"bb.loadout",boost:"bb.boost",
          dLast:"bb.daily.last",dStreak:"bb.daily.streak",dStars:"bb.daily.stars",sound:"bb.sound",sym:"bb.sym",hap:"bb.hap",miss:"bb.miss"};
 
 /* ---- rng ---------------------------------------------------------------- */
@@ -303,21 +398,33 @@ const SKINS=[
   {id:"ink",     name:"Ink & Bone",price:360, glyphs:GLYPHS_GEO, cols:["#d9d4c4","#a8a294","#7e8a66","#6f97a0","#9a86a8","#c09274"], desc:"Muted, high-contrast glyphs."},
   {id:"neon",    name:"Neon Night",price:420, glyphs:GLYPHS_GEO, cols:["#ff3d8a","#ffe23d","#3dff6a","#3de0ff","#b03dff","#ff7a3d"], desc:"Electric bloom."},
   {id:"harvest", name:"Harvest",   price:480, glyphs:GLYPHS,     cols:["#c85a4a","#d89a3a","#b8a83a","#8a9a3a","#c07a3a","#a85a3a"], desc:"The turning of the year."},
-  {id:"prism",   name:"Prism",     price:900, glyphs:GLYPHS,     cols:["#ff4d6a","#ffd24d","#4dff88","#4dd2ff","#b04dff","#ff944d"], desc:"The full spectrum."}
-];
+  {id:"coral",   name:"Coral Reef",price:520, glyphs:GLYPHS_GEO, cols:["#ff7a8f","#ffc07a","#7ae0c0","#7ac0ff","#c99aff","#ff9a7a"], desc:"Anemone brights."},
+  {id:"lantern", name:"Lantern",   price:560, glyphs:GLYPHS,     cols:["#e86a5a","#e8b84a","#e8d87a","#d0864a","#e89a6a","#c05a4a"], desc:"Paper festival glow."},
+  {id:"orchidea",name:"Orchidea",  price:600, glyphs:GLYPHS,     cols:["#e07ab0","#d09ae0","#9a7ae0","#7a9ae0","#c07ad0","#e0a0c8"], desc:"Deep hothouse orchids."},
+  {id:"moss",    name:"Mossbank",  price:640, glyphs:GLYPHS,     cols:["#8faa5a","#c0b060","#6f9a5a","#5a8a6a","#a0a86a","#7a9a4a"], desc:"Quiet forest floor."},
+  {id:"prism",   name:"Prism",     price:900, glyphs:GLYPHS,     cols:["#ff4d6a","#ffd24d","#4dff88","#4dd2ff","#b04dff","#ff944d"], desc:"The full spectrum."},
+  {id:"aurora-s",name:"Aurora",    price:8,   cur:"nectar", glyphs:GLYPHS_GEO, cols:["#5affc0","#7affa0","#a0ff7a","#7ad0ff","#a07aff","#5affe0"], desc:"Rare nectar shimmer."},
+  {id:"obsidian",name:"Obsidian",  price:10,  cur:"nectar", glyphs:GLYPHS,     cols:["#e89aa8","#e8c87a","#9ad0a8","#7ab8d0","#b89ad8","#e0a888"], desc:"Volcanic glass, gold-veined."}
+].map(s=>Object.assign({cur:"coins"},s));
 const skinById=id=>SKINS.find(s=>s.id===id)||SKINS[0];
 
 /* ---- gardens (adventure worlds) ---------------------------------------- */
 const OBJ_IC={clear:"🌸",drop:"🍂",rescue:"🌰"};
 const GARDENS=[
-  {name:"Meadow",  sub:"Morning grass, three simple blooms.",   colors:3, rows:4, fill:.92, specials:[],                       objs:["clear"]},
-  {name:"Orchard", sub:"Heavy branches, a fourth ripe hue.",    colors:4, rows:5, fill:.90, specials:["rainbow"],              objs:["clear","drop"]},
-  {name:"Wetland", sub:"Still water hides trapped seeds.",      colors:4, rows:5, fill:.88, specials:["rainbow","seed"],       objs:["clear","rescue"]},
-  {name:"Dunes",   sub:"Desert bloom — burst pods help.",       colors:5, rows:6, fill:.86, specials:["rainbow","bomb"],       objs:["clear","drop"]},
-  {name:"Alpine",  sub:"Thin cold air, thorns in the way.",     colors:5, rows:6, fill:.85, specials:["rainbow","bomb","thorn"],objs:["clear","rescue","drop"]},
-  {name:"Moonlit", sub:"Night bloom — every trick at once.",    colors:6, rows:7, fill:.85, specials:["rainbow","bomb","thorn","seed"],objs:["clear","rescue","drop"]}
+  {name:"Meadow",   sub:"Morning grass, three simple blooms.",  colors:3, rows:4, fill:.92, specials:[],                        objs:["clear"],              tint:"#1a2410"},
+  {name:"Orchard",  sub:"Heavy branches, a fourth ripe hue.",   colors:4, rows:5, fill:.90, specials:["rainbow"],               objs:["clear","drop"],       tint:"#241a10"},
+  {name:"Wetland",  sub:"Still water hides trapped seeds.",     colors:4, rows:5, fill:.88, specials:["rainbow","seed"],        objs:["clear","rescue"],     tint:"#101f24"},
+  {name:"Dunes",    sub:"Desert bloom — burst pods help.",      colors:5, rows:6, fill:.86, specials:["rainbow","bomb"],        objs:["clear","drop"],       tint:"#241f10"},
+  {name:"Alpine",   sub:"Thin cold air, thorns in the way.",    colors:5, rows:6, fill:.85, specials:["rainbow","bomb","thorn"],objs:["clear","rescue","drop"],tint:"#161c24"},
+  {name:"Moonlit",  sub:"Night bloom — every trick at once.",   colors:6, rows:7, fill:.85, specials:["rainbow","bomb","thorn","seed"],objs:["clear","rescue","drop"],tint:"#181424"},
+  {name:"Thornwood",sub:"Bramble everywhere — cut it loose.",   colors:5, rows:7, fill:.87, specials:["rainbow","bomb","thorn"],objs:["drop","clear","rescue"],tint:"#20180f"},
+  {name:"Tidepool", sub:"Anemone hues and drifting seeds.",     colors:6, rows:7, fill:.86, specials:["rainbow","seed","bomb"], objs:["rescue","clear","drop"],tint:"#0f2224"},
+  {name:"Emberfield",sub:"Coals under the blossoms.",           colors:6, rows:8, fill:.86, specials:["rainbow","bomb","thorn"],objs:["clear","drop","rescue"],tint:"#241410"},
+  {name:"Frostvale", sub:"Ice locks the petals in place.",      colors:6, rows:8, fill:.87, specials:["rainbow","bomb","thorn","seed"],objs:["rescue","drop","clear"],tint:"#101e26"},
+  {name:"Skyward",  sub:"The high canopy, packed tight.",       colors:6, rows:8, fill:.88, specials:["rainbow","bomb","thorn","seed"],objs:["clear","drop","rescue"],tint:"#141a26"},
+  {name:"Starbloom",sub:"Where the last flowers burn brightest.",colors:6, rows:9, fill:.88, specials:["rainbow","bomb","thorn","seed"],objs:["clear","rescue","drop"],tint:"#1c1226"}
 ];
-const LEVELS_PER=8;
+const LEVELS_PER=12;   // 12 gardens x 12 = 144 adventure levels; level 12 of each is a boss
 
 /* ---- audio + haptics ---------------------------------------------------- */
 let AC=null,soundOn=(Store.g(K.sound)||"1")==="1",hapOn=(Store.g(K.hap)||"1")==="1";
@@ -332,17 +439,92 @@ function buzz(p){if(hapOn&&navigator.vibrate){try{navigator.vibrate(p);}catch(e)
 
 /* ---- dom ---------------------------------------------------------------- */
 const $=id=>document.getElementById(id);
-const screens={menu:$("menu"),map:$("map"),game:$("game"),result:$("result"),shop:$("shop")};
+const screens={menu:$("menu"),map:$("map"),loadout:$("loadout"),puzzles:$("puzzles"),game:$("game"),result:$("result"),shop:$("shop")};
 function show(n){for(const k in screens)screens[k].classList.toggle("on",k===n);curScreen=n;}
 let curScreen="menu";
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1600);}
 
-/* ---- coins / progress --------------------------------------------------- */
+/* ---- currencies / progress ---------------------------------------------- */
 const coins=()=>parseInt(Store.g(K.coins)||"0",10);
 const addCoins=n=>Store.s(K.coins,coins()+n);
+const nectar=()=>parseInt(Store.g(K.nectar)||"0",10);
+const addNectar=n=>{if(n>0)Store.s(K.nectar,nectar()+n);};
 const owned=()=>(Store.g(K.owned)||"meadow").split(",").filter(Boolean);
 const isOwned=id=>owned().includes(id);
 const equippedSkin=()=>skinById(Store.g(K.skin)||"meadow");
+
+/* ---- launcher + background cosmetics ------------------------------------ */
+const LAUNCHERS=[
+  {id:"clay",   name:"Clay Pot",     price:0,   cur:"coins", desc:"The humble beginning."},
+  {id:"brass",  name:"Brass Horn",   price:150,  cur:"coins", desc:"A warm metal flare."},
+  {id:"stone",  name:"Stone Basin",  price:220,  cur:"coins", desc:"Carved and cool."},
+  {id:"crystal",name:"Crystal Bloom",price:340,  cur:"coins", desc:"Refracts the light."},
+  {id:"vine",   name:"Woven Vine",   price:420,  cur:"coins", desc:"Living green launcher."},
+  {id:"gold",   name:"Gilded Cup",   price:6,    cur:"nectar",desc:"Pure nectar-gold."}
+];
+const BGS=[
+  {id:"night",  name:"Deep Night",   price:0,   cur:"coins", top:"#141a10",bot:"#0d100c", desc:"The midnight greenhouse."},
+  {id:"dawn",   name:"Dawn Mist",    price:130,  cur:"coins", top:"#241a1e",bot:"#100c0e", desc:"Rose light at the edge."},
+  {id:"dusk",   name:"Violet Dusk",  price:180,  cur:"coins", top:"#1c1426",bot:"#0e0c12", desc:"The last purple hour."},
+  {id:"tide",   name:"Tidewater",    price:220,  cur:"coins", top:"#0f2226",bot:"#0a1014", desc:"Cool underwater hush."},
+  {id:"ember",  name:"Ember Glow",   price:260,  cur:"coins", top:"#261410",bot:"#120a08", desc:"Coals at the horizon."},
+  {id:"aurora", name:"Aurora",       price:5,    cur:"nectar",top:"#0f2620",bot:"#0a1216", desc:"Ribbons of nectar-light."}
+];
+const launcherById=id=>LAUNCHERS.find(x=>x.id===id)||LAUNCHERS[0];
+const bgById=id=>BGS.find(x=>x.id===id)||BGS[0];
+const ownedL=()=>(Store.g(K.lowned)||"clay").split(",").filter(Boolean);
+const ownedBg=()=>(Store.g(K.bgowned)||"night").split(",").filter(Boolean);
+const equippedLauncher=()=>Store.g(K.launcher)||"clay";
+const equippedBg=()=>bgById(Store.g(K.bg)||"night");
+
+/* ---- abilities (Arcade) ------------------------------------------------- */
+/* need = pop-charge to fill; price = coins to unlock; up = nectar per upgrade
+   (3 levels, each -12% need). kind: 'ammo' modifies the current bud,
+   'state' sets a temporary buff, 'instant' fires immediately. */
+const ABILITIES=[
+  {key:"bomb",    name:"Bomb Shot",   ic:"💥", need:6,  price:0,   up:3, kind:"ammo",   desc:"Your next bud detonates a blast."},
+  {key:"rainbow", name:"Rainbow Shot",ic:"🌈", need:6,  price:0,   up:3, kind:"ammo",   desc:"Your next bud matches any colour."},
+  {key:"recolor", name:"Recolour",    ic:"🎨", need:4,  price:0,   up:2, kind:"instant",desc:"Swap the current bud to another live colour."},
+  {key:"aimline", name:"True Aim",    ic:"🎯", need:6,  price:120, up:3, kind:"state",  desc:"A perfect long sightline for 5 shots."},
+  {key:"uproot",  name:"Uproot",      ic:"🌪️", need:10, price:180, up:3, kind:"instant",desc:"Rip out the lowest row of buds."},
+  {key:"bloom",   name:"Bloom Blast", ic:"✺",  need:14, price:260, up:4, kind:"instant",desc:"Burst every bud of the most common colour."},
+  {key:"freeze",  name:"Time Freeze", ic:"❄️", need:10, price:220, up:3, kind:"state",  desc:"Halt the canopy for 6 seconds."},
+  {key:"shield",  name:"Bulwark",     ic:"🛡️", need:8,  price:200, up:3, kind:"state",  desc:"Block the next canopy descent."}
+];
+const abById=k=>ABILITIES.find(a=>a.key===k);
+function abilData(){try{return JSON.parse(Store.g(K.abil)||"{}");}catch(e){return{};}}
+function abilUnlocked(k){if(abById(k).price===0)return true;const d=abilData();return!!(d[k]&&d[k].un);}
+function abilLevel(k){const d=abilData();return(d[k]&&d[k].lv)||0;}
+function abilNeed(k){return Math.max(3,Math.round(abById(k).need*(1-0.12*abilLevel(k))));}
+function getLoadout(){const raw=(Store.g(K.loadout)||"bomb,rainbow,recolor").split(",").filter(Boolean);
+  return raw.filter(abilUnlocked).slice(0,3);}
+
+/* ---- boosters (consumables for Adventure + Puzzle) ---------------------- */
+const BOOSTERS=[
+  {key:"shots",  name:"+5 Buds",     ic:"➕", price:40,  desc:"Add 5 shots to your budget."},
+  {key:"bomb",   name:"Bomb Pod",    ic:"💥", price:55,  desc:"Turn your current bud into a bomb."},
+  {key:"rainbow",name:"Rainbow Bud", ic:"🌈", price:55,  desc:"Turn your current bud into a wildcard."}
+];
+const boostById=k=>BOOSTERS.find(b=>b.key===k);
+function boostData(){try{return JSON.parse(Store.g(K.boost)||"{}");}catch(e){return{};}}
+function boostCount(k){return boostData()[k]||0;}
+function addBoost(k,n){const d=boostData();d[k]=(d[k]||0)+n;Store.s(K.boost,JSON.stringify(d));}
+
+/* ---- Puzzle pack: 40 fixed seeded boards, tight clear budgets ----------- */
+const PUZZLES=Array.from({length:40},(_,i)=>{
+  const colors=Math.min(6,3+Math.floor(i/8));
+  const rows=Math.min(9,5+Math.floor(i/6));
+  const fill=0.90-(i%6)*0.008;
+  const budEst=Math.round(rows*7.4*fill);
+  const par=Math.max(5,Math.round(budEst/3.0));
+  const shots=Math.ceil(par*3.2)+6;           // generous enough to be winnable; par gates 3★
+  return {seed:((i*2654435761)^0x9e3779b9)>>>0, colors, rows, fill, specials:[], par, shots};
+});
+function pzProg(){try{return JSON.parse(Store.g(K.pzProg)||"{}");}catch(e){return{};}}
+function pzStars(i){return pzProg()[i]||0;}
+function pzSetStars(i,s){const p=pzProg();if((p[i]||0)<s){p[i]=s;Store.s(K.pzProg,JSON.stringify(p));}}
+function pzUnlocked(i){return i===0||pzStars(i-1)>0;}
+function pzTotalStars(){let t=0;for(let i=0;i<PUZZLES.length;i++)t+=pzStars(i);return t;}
 function getProg(){try{return JSON.parse(Store.g(K.prog)||"{}");}catch(e){return{};}}
 function setProg(p){Store.s(K.prog,JSON.stringify(p));}
 const lvlKey=(g,l)=>g+"-"+l;
@@ -424,12 +606,21 @@ function makeGridBud(colorCount,gardenSpecials,rng){
   return {kind:"bud",color:Math.floor((rng?rng():Math.random())*colorCount),wob:Math.random()*Math.PI*2,pop:0};
 }
 
+/* full G factory — every mode field defaulted so mode code can read them safely */
+function mkG(o){return Object.assign({
+  g:-1,l:-1,mode:mode,colorCount:6,specials:[],objective:"clear",objTarget:0,objText:"",par:0,
+  shots:Infinity,shotsMax:Infinity,score:0,dropped:0,removed:0,rescued:0,cleared:false,
+  boss:null,descendEvery:Infinity,depth:0,wave:0,seedTotal:0,timeLeft:0,noFail:false,
+  freeze:0,shield:false,aimBoost:0,charges:[0,0,0],puzzleId:-1,loadout:[]
+},o);}
+
 /* generate one adventure/daily level */
 function buildLevel(g,l,seed,forcedObj){
   const gd=GARDENS[g]||GARDENS[GARDENS.length-1];
   const rng=mulberry32(seed);
   const colorCount=gd.colors;
-  const rows=Math.min(9,gd.rows+Math.floor(l/3));
+  const isBoss=(l===LEVELS_PER-1)&&!forcedObj;   // boss finale in each garden (not for daily)
+  const rows=Math.min(10,gd.rows+Math.floor(l/4));
   grid=[];topParity=0;
   const objPool=forcedObj?[forcedObj]:gd.objs;
   const objective=objPool[Math.floor(rng()*objPool.length)];
@@ -452,7 +643,7 @@ function buildLevel(g,l,seed,forcedObj){
     while(placed<nT&&tries<80){tries++;const r=1+Math.floor(rng()*(grid.length-1));const len=rowLenFor(r);const c=Math.floor(rng()*len);
       if(cellAt(r,c)&&cellAt(r,c).kind==="bud"){grid[r][c]={kind:"thorn",color:-1,wob:0,pop:0};placed++;}}}
   // seeds: rescue objective anchors, placed low with colour support above
-  if(objective==="rescue"){const nS=2+Math.floor(l/3);let placed=0,tries=0;
+  if(objective==="rescue"&&!isBoss){const nS=2+Math.floor(l/3);let placed=0,tries=0;
     const target=Math.min(nS,4);
     while(placed<target&&tries<120){tries++;const r=Math.max(1,grid.length-1-Math.floor(rng()*2));ensureRow(r);const len=rowLenFor(r);const c=Math.floor(rng()*len);
       if(!cellAt(r,c)&&hasFilledNeighbor(r,c)){grid[r][c]={kind:"seed",color:-1,wob:0,pop:0};placed++;}
@@ -460,27 +651,68 @@ function buildLevel(g,l,seed,forcedObj){
     seedTargets=placed;
     if(seedTargets===0){seedTargets=0;} // fall through to clear if none placed
   }
+  // BOSS finale: plant an anchored Bloom Core cluster at top-centre
+  let boss=null;
+  if(isBoss){
+    const cc=Math.floor(rowLenFor(0)/2);
+    for(const[r,c]of [[0,cc],[0,cc-1],[1,cc]]){ensureRow(r);if(c>=0&&c<rowLenFor(r))grid[r][c]={kind:"core",color:-1,wob:0,pop:0};}
+    const hp=CONFIG.bossHpBase+g*CONFIG.bossHpPer;boss={hp,max:hp};
+  }
   const budCount=countKind("bud");
-  const par=Math.max(4,Math.ceil(budCount/3.2));
-  const budget=Math.ceil(par*3.4)+8;   // generous WIN budget; par gates the 3★ chase
-  let objTarget=0,objText="";
-  if(objective==="clear"){objText="Clear every bud";}
+  const par=Math.max(4,Math.ceil(budCount/3.2))+(isBoss?5:0);
+  const budget=Math.ceil(par*3.4)+8+(isBoss?8:0);   // generous WIN budget; par gates the 3★ chase
+  let objTarget=0,objText="",objective2=objective;
+  if(isBoss){objective2="boss";objText="Destroy the Bloom Core";}
+  else if(objective==="clear"){objText="Clear every bud";}
   else if(objective==="drop"){objTarget=Math.max(8,Math.round(budCount*0.5));objText="Harvest "+objTarget+" buds";}
   else if(objective==="rescue"){if(seedTargets<=0){return buildLevel(g,l,seed^0x9e37,"clear");}objTarget=seedTargets;objText="Rescue "+objTarget+" seed"+(objTarget>1?"s":"");}
-  G={g,l,mode:mode,colorCount,specials:gd.specials.slice(),objective,objTarget,objText,par,
-     shots:(mode==="endless"?Infinity:budget),shotsMax:budget,score:0,dropped:0,removed:0,rescued:0,cleared:false,
-     descendEvery:Infinity,depth:0,seedTotal:seedTargets};
+  G=mkG({g,l,mode:mode,colorCount,specials:gd.specials.slice(),objective:objective2,objTarget,objText,par,
+     shots:budget,shotsMax:budget,boss,seedTotal:seedTargets,descendEvery:(isBoss?10:Infinity)});
   return G;
 }
 
 function buildEndless(){
   grid=[];topParity=0;
-  const rng=Math.random;const colorCount=CONFIG.endlessColorStart;
-  const rows=5;
+  const rng=Math.random,colorCount=CONFIG.endlessColorStart,rows=5;
   for(let r=0;r<rows;r++){ensureRow(r);const len=rowLenFor(r);for(let c=0;c<len;c++){if(rng()<0.9)grid[r][c]={kind:"bud",color:Math.floor(rng()*colorCount),wob:rng()*6.28,pop:0};}}
-  G={g:-1,l:-1,mode:"endless",colorCount,specials:["rainbow","bomb"],objective:"survive",objTarget:0,objText:"Survive the falling canopy",
-     par:0,shots:Infinity,shotsMax:Infinity,score:0,dropped:0,removed:0,rescued:0,cleared:false,
-     descendEvery:CONFIG.endlessDescendStart,depth:0,seedTotal:0};
+  G=mkG({mode:"endless",colorCount,specials:["rainbow","bomb"],objective:"survive",objText:"Survive the falling canopy",
+     descendEvery:CONFIG.endlessDescendStart});
+  return G;
+}
+
+/* fill the top `rows` with a fair spread of colours (endless/arcade/blitz/zen) */
+function seedTopRows(rows,colorCount,fillP){
+  for(let r=0;r<rows;r++){ensureRow(r);const len=rowLenFor(r);for(let c=0;c<len;c++){if(Math.random()<(fillP||0.9))grid[r][c]={kind:"bud",color:Math.floor(Math.random()*colorCount),wob:Math.random()*6.28,pop:0};}}
+}
+
+function buildArcade(loadout){
+  grid=[];topParity=0;const colorCount=4;seedTopRows(5,colorCount,0.9);
+  G=mkG({mode:"arcade",colorCount,specials:["rainbow","bomb"],objective:"arcade",objText:"Ride the waves",
+     descendEvery:CONFIG.arcadeWaveShots,wave:1,loadout:loadout.slice(0,3),charges:[0,0,0]});
+  return G;
+}
+function buildBlitz(){
+  grid=[];topParity=0;const colorCount=5;seedTopRows(5,colorCount,0.92);
+  G=mkG({mode:"blitz",colorCount,specials:["rainbow","bomb"],objective:"blitz",objText:"Score in 90 seconds",
+     descendEvery:8,timeLeft:CONFIG.blitzTime});
+  return G;
+}
+function buildZen(){
+  grid=[];topParity=0;const colorCount=5;seedTopRows(5,colorCount,0.9);
+  G=mkG({mode:"zen",colorCount,specials:["rainbow","bomb"],objective:"zen",objText:"No fail — just bloom",
+     descendEvery:7,noFail:true});
+  return G;
+}
+/* Puzzle: fixed seeded layout, clear in a tight shot budget (verified winnable) */
+function buildPuzzle(i){
+  const pz=PUZZLES[i];const rng=mulberry32(pz.seed>>>0);
+  grid=[];topParity=0;const colorCount=pz.colors;
+  for(let r=0;r<pz.rows;r++){ensureRow(r);const len=rowLenFor(r);const fp=Math.max(.5,pz.fill-r*0.05);
+    for(let c=0;c<len;c++)if(rng()<fp)grid[r][c]={kind:"bud",color:Math.floor(rng()*colorCount),wob:rng()*6.28,pop:0};}
+  for(let color=0;color<colorCount;color++){let n=0;for(let r=0;r<grid.length;r++)for(let c=0;c<grid[r].length;c++){const x=grid[r][c];if(x&&x.color===color)n++;}
+    while(n<3){const r=Math.floor(rng()*grid.length),c=Math.floor(rng()*rowLenFor(r));if(!cellAt(r,c)){grid[r][c]={kind:"bud",color,wob:rng()*6.28,pop:0};n++;}else n++;}}
+  G=mkG({mode:"puzzle",colorCount,specials:pz.specials||[],objective:"clear",objText:"Clear the board",
+     par:pz.par,shots:pz.shots,shotsMax:pz.shots,puzzleId:i});
   return G;
 }
 
@@ -504,16 +736,23 @@ function swapAmmo(){if(state!=="aiming")return;const t=cur;cur=next;next=t;beep(
 /* start helpers */
 function startLevel(g,l){mode="adventure";ac();buildLevel(g,l,(g*911+l*131+7)>>>0);ammoRng=null;beginPlay();}
 function startEndless(){mode="endless";ac();buildEndless();ammoRng=null;beginPlay();}
+function startArcade(){const lo=getLoadout();if(!lo.length){toast("Equip at least one power");return;}mode="arcade";ac();buildArcade(lo);ammoRng=null;beginPlay();}
+function startBlitz(){mode="blitz";ac();buildBlitz();ammoRng=null;beginPlay();}
+function startZen(){mode="zen";ac();buildZen();ammoRng=null;beginPlay();}
+function startPuzzle(i){if(!pzUnlocked(i)){toast("Clear the puzzle before it first");return;}mode="puzzle";ac();buildPuzzle(i);ammoRng=null;beginPlay();}
 function startDaily(){mode="daily";ac();
   const seed=dailySeed();ammoRng=mulberry32((seed^0x1234)>>>0);
   const gN=Math.min(3,Math.floor(dailyNumber()/9)%4);const lN=dailyNumber()%LEVELS_PER;
   buildLevel(Math.min(3,gN+1),lN,seed>>>0,"clear");G.mode="daily";beginPlay();}
 
+function applyBg(){const bg=equippedBg();const app=$("app");
+  app.style.background="radial-gradient(125% 80% at 50% -8%,"+bg.top+" 0%,"+bg.bot+" 58%),"+bg.bot;}
+
 function beginPlay(){
   layout();shotsFired=0;stuckStreak=0;runSb=0;proj=null;particles=[];fallers=[];
   cur=null;next=null;refillAmmo();
-  aimAngle=-Math.PI/2;state="aiming";
-  updateHud();show("game");$("dangerVig").style.opacity=0;
+  aimAngle=-Math.PI/2;state="aiming";lastT=0;
+  applyBg();syncModeHud();updateHud();show("game");$("dangerVig").style.opacity=0;
 }
 
 /* ============================================================================
@@ -553,6 +792,7 @@ function fire(){
   proj={x:sx,y:sy,vx:Math.cos(aimAngle)*CONFIG.speed,vy:Math.sin(aimAngle)*CONFIG.speed,kind:cur.kind,color:cur.color,r:R,life:0};
   state="flying";shotsFired++;
   if(G.shots!==Infinity)G.shots--;
+  if(G.aimBoost>0)G.aimBoost--;
   cur=next;next=rollAmmo();
   beep(300,0.05,0.05,"triangle");buzz(10);
   updateHud();
@@ -585,14 +825,15 @@ function landProjectile(){
   if(!cell){ // no valid cell (should not happen) — just re-arm
     finishResolve(0,0,false);return;
   }
-  let gained=0,dropped=0,popped=0;
+  let gained=0,dropped=0,popped=0,bossDmg=0;
   if(kind==="bomb"){
     setCell(cell.r,cell.c,{kind:"bomb",color:-1,wob:0,pop:0});
     const blast=[[cell.r,cell.c],...neighbors(cell.r,cell.c)];
     const rm=[];const seen=new Set();
-    for(const[r,c]of blast){const cel=cellAt(r,c);if(cel&&!seen.has(keyRC(r,c))){seen.add(keyRC(r,c));rm.push([r,c]);}}
+    for(const[r,c]of blast){const cel=cellAt(r,c);if(cel&&cel.kind!=="core"&&!seen.has(keyRC(r,c))){seen.add(keyRC(r,c));rm.push([r,c]);}}
     for(const[r,c]of rm){const cel=grid[r][c];if(cel&&cel.kind==="seed")G.rescued++;burstCell(r,c,true);grid[r][c]=null;popped++;}
     gained+=popped*CONFIG.score.bomb;
+    if(G.boss&&adjToCore(cell.r,cell.c))bossDmg+=Math.max(5,popped);
     chord([440,590,740],0.1,0.05);buzz([20,30]);screenShake(6);
   } else {
     let color=pcolor;
@@ -600,8 +841,10 @@ function landProjectile(){
     setCell(cell.r,cell.c,{kind:"bud",color,wob:Math.random()*6.28,pop:0});
     const group=matchGroup(cell.r,cell.c,color);
     if(group.length>=CONFIG.minGroup){
+      const touch=G.boss&&group.some(g2=>adjToCore(g2[0],g2[1]));  // a pop touching the core damages it by its full size
       for(const[r,c]of group){burstCell(r,c,false);grid[r][c]=null;popped++;}
       const combo=group.length;gained+=CONFIG.score.pop*combo+(combo-CONFIG.minGroup)*CONFIG.score.comboStep*combo;
+      if(touch)bossDmg+=combo;
       if(combo>=5){showCombo(combo);}
       const pitch=520+Math.min(8,combo)*70;chord([pitch,pitch*1.25,pitch*1.5].slice(0,combo>=6?3:2),0.09,0.055);buzz(combo>=6?[15,25,15]:20);
       if(combo>=7){screenShake(5);missionEvent("combo7",1);}
@@ -609,11 +852,12 @@ function landProjectile(){
       beep(250,0.05,0.04,"sine");
     }
   }
-  // gravity — detach floaters
+  // gravity — detach floaters (cores are anchored + immune, never fall)
   const anc=anchoredSet();const floaters=[];
-  for(let r=0;r<grid.length;r++){const row=grid[r];for(let c=0;c<row.length;c++){if(row[c]&&!anc.has(keyRC(r,c))){floaters.push([r,c]);}}}
+  for(let r=0;r<grid.length;r++){const row=grid[r];for(let c=0;c<row.length;c++){if(row[c]&&row[c].kind!=="core"&&!anc.has(keyRC(r,c))){floaters.push([r,c]);}}}
   if(floaters.length){
     for(const[r,c]of floaters){const cel=grid[r][c];const{cx,cy}=cellCenter(r,c);
+      if(G.boss&&adjToCore(r,c))bossDmg++;
       fallers.push({x:cx,y:cy,vy:60+Math.random()*40,vx:(Math.random()-.5)*60,cell:cel,r:R,a:1});
       if(cel.kind==="seed"){G.rescued++;}
       grid[r][c]=null;dropped++;}
@@ -621,8 +865,14 @@ function landProjectile(){
     setTimeout(()=>{beep(660,0.14,0.05);beep(880,0.18,0.045);},60);
   }
   G.dropped+=dropped;G.removed+=popped+dropped;
+  if(G.boss&&bossDmg>0){G.boss.hp-=bossDmg;beep(200,0.09,0.06,"square");screenShake(3);
+    if(G.boss.hp<=0){G.boss.hp=0;burstCores();}}
+  if(G.mode==="arcade")addCharge(popped+dropped);
   finishResolve(gained,popped,popped>0||dropped>0);
 }
+function adjToCore(r,c){for(const[nr,nc]of neighbors(r,c)){const cel=cellAt(nr,nc);if(cel&&cel.kind==="core")return true;}return false;}
+function burstCores(){for(let r=0;r<grid.length;r++)for(let c=0;c<grid[r].length;c++){if(grid[r][c]&&grid[r][c].kind==="core"){burstCell(r,c,true);grid[r][c]=null;}}
+  chord([392,523,659,784,1046],0.18,0.07);screenShake(9);}
 function resolveRainbow(r,c){
   const cols={};for(const[nr,nc]of neighbors(r,c)){const cel=cellAt(nr,nc);if(cel&&cel.kind==="bud")cols[cel.color]=(cols[cel.color]||0)+1;}
   const keys=Object.keys(cols);
@@ -635,39 +885,103 @@ function resolveRainbow(r,c){
 function finishResolve(gained,popped,progressed){
   G.score+=gained;
   if(popped>0||progressed)stuckStreak=0;else stuckStreak++;
-  // remove eliminated colours from pool implicitly (rollAmmo reads grid)
-  // endless: descend
-  if(G.mode==="endless"){
+  const m=G.mode;
+  if(m==="endless"){
     G.descendEvery=Math.max(CONFIG.endlessDescendMin,CONFIG.endlessDescendStart-Math.floor(G.score/2500));
-    if(shotsFired%G.descendEvery===0){descendEndless();}
     G.colorCount=Math.min(CONFIG.endlessColorMax,CONFIG.endlessColorStart+Math.floor(G.score/4000));
+    if(shotsFired%G.descendEvery===0)maybeDescend();
+  } else if(m==="arcade"){
+    G.descendEvery=Math.max(3,CONFIG.arcadeWaveShots-Math.floor(G.wave/6));
+    G.colorCount=Math.min(6,4+Math.floor(G.wave/5));
+    if(shotsFired%G.descendEvery===0){G.wave++;maybeDescend();
+      if(G.wave%5===0){addNectar(CONFIG.nectar.arcadeWave);toast("Wave "+G.wave+" · +"+CONFIG.nectar.arcadeWave+" 🍯");}}
+  } else if(m==="blitz"){
+    G.colorCount=Math.min(6,5+Math.floor(G.score/6000));
+    if(shotsFired%G.descendEvery===0)maybeDescend();
+  } else if(m==="zen"){
+    if(shotsFired%G.descendEvery===0)maybeDescend();
+  } else if(m==="adventure"&&G.boss){
+    if(shotsFired%G.descendEvery===0)maybeDescend();
   }
   updateHud();
-  // win/lose
   const won=checkWin();
-  if(won){state="over";setTimeout(()=>levelWon(),260);return;}
-  if(checkLose()){state="over";setTimeout(()=>levelLost(),160);return;}
+  if(won){state="over";setTimeout(levelWon,300);return;}
+  if(checkLose()){state="over";setTimeout(levelLost,160);return;}
   state="aiming";
-  // safety: if pool empty but cells remain, ensure a bomb is queued
   if(colorsInGrid().size===0&&totalCells()>0){cur={kind:"bomb",color:-1,wob:0};}
 }
-function descendEndless(){
+function maybeDescend(){
+  if(G.freeze>0)return;                                    // frozen: canopy holds
+  if(G.shield){G.shield=false;syncAbilityHud();toast("Bulwark held the line");return;}
+  descendCanopy();
+}
+function descendCanopy(){
   topParity^=1;const len=COLS-rowShift(0);const row=[];
   for(let c=0;c<len;c++){row.push(Math.random()<0.9?{kind:"bud",color:Math.floor(Math.random()*G.colorCount),wob:Math.random()*6.28,pop:0}:null);}
   grid.unshift(row);G.depth++;beep(150,0.14,0.05,"sawtooth");buzz(18);screenShake(4);
 }
 function checkWin(){
+  if(G.objective==="boss")return!!(G.boss&&G.boss.hp<=0);
   if(G.objective==="clear")return totalCells()===0;
   if(G.objective==="drop")return G.removed>=G.objTarget;
   if(G.objective==="rescue")return G.rescued>=G.objTarget||countKind("seed")===0;
-  return false; // survive/endless never "won"
+  return false; // arcade / endless / blitz / zen never "win" — score/survival
 }
 function checkLose(){
-  if(G.mode==="endless"||G.mode==="adventure"||G.mode==="daily"){
-    if(lowestFilledY()+R>deathLineY)return true;
-  }
+  if(G.noFail)return false;                                // zen: no fail
+  if(lowestFilledY()+R>deathLineY)return true;
+  if(G.mode==="blitz"&&G.timeLeft<=0)return true;
   if(G.shots!==Infinity&&G.shots<=0)return true;
   return false;
+}
+
+/* ============================================================================
+   ABILITIES (Arcade) + shared POWER effects (also used by boosters)
+   ========================================================================== */
+function addCharge(n){if(G.mode!=="arcade"||!G.loadout)return;
+  for(let i=0;i<G.loadout.length;i++){const need=abilNeed(G.loadout[i]);G.charges[i]=Math.min(need,(G.charges[i]||0)+n);}
+  syncAbilityHud();}
+function abilityReady(i){const k=G.loadout&&G.loadout[i];if(!k)return false;return(G.charges[i]||0)>=abilNeed(k);}
+function activateAbility(i){
+  if(state!=="aiming")return;const k=G.loadout&&G.loadout[i];if(!k)return;
+  if(!abilityReady(i)){toast("Charge it up with pops");return;}
+  if(applyPower(k,abilLevel(k))){G.charges[i]=0;beep(720,0.1,0.06);beep(960,0.12,0.05);buzz([15,25]);syncAbilityHud();updateHud();}
+}
+/* returns true if the power did something (so the caller can spend the charge/booster) */
+function applyPower(k,lv){
+  lv=lv||0;
+  if(k==="bomb"){cur={kind:"bomb",color:-1,wob:0};toast("Bomb loaded");return true;}
+  if(k==="rainbow"){cur={kind:"rainbow",color:-1,wob:0};toast("Rainbow loaded");return true;}
+  if(k==="recolor"){const present=[...colorsInGrid()];if(present.length<2)return false;
+    let idx=present.indexOf(cur&&cur.kind==="bud"?cur.color:-1);idx=(idx+1)%present.length;cur={kind:"bud",color:present[idx],wob:0};toast("Recoloured");return true;}
+  if(k==="aimline"){G.aimBoost=5+lv;toast("True aim · next "+(5+lv)+" shots");return true;}
+  if(k==="freeze"){G.freeze=6+lv;toast("Canopy frozen");return true;}
+  if(k==="shield"){if(G.shield)return false;G.shield=true;toast("Bulwark raised");return true;}
+  if(k==="uproot"){let lr=-1;for(let r=grid.length-1;r>=0&&lr<0;r--)for(let c=0;c<grid[r].length;c++){if(grid[r][c]&&grid[r][c].kind!=="core"){lr=r;break;}}
+    if(lr<0)return false;let any=false;
+    for(let c=0;c<grid[lr].length;c++){const cel=grid[lr][c];if(cel&&cel.kind!=="core"){const{cx,cy}=cellCenter(lr,c);fallers.push({x:cx,y:cy,vy:80,vx:(Math.random()-.5)*60,cell:cel,r:R,a:1});grid[lr][c]=null;any=true;}}
+    if(any){afterPowerGravity();beep(300,0.14,0.06,"sawtooth");screenShake(4);}return any;}
+  if(k==="bloom"){const cnt={};for(let r=0;r<grid.length;r++)for(let c=0;c<grid[r].length;c++){const x=grid[r][c];if(x&&x.kind==="bud")cnt[x.color]=(cnt[x.color]||0)+1;}
+    let best=-1,bn=0;for(const kk in cnt)if(cnt[kk]>bn){bn=cnt[kk];best=+kk;}
+    if(best<0)return false;let n=0;
+    for(let r=0;r<grid.length;r++)for(let c=0;c<grid[r].length;c++){const x=grid[r][c];if(x&&x.kind==="bud"&&x.color===best){burstCell(r,c,false);grid[r][c]=null;n++;}}
+    if(n){G.score+=n*CONFIG.score.pop;G.removed+=n;afterPowerGravity();chord([523,659,784],0.12,0.06);screenShake(6);}return n>0;}
+  return false;
+}
+function afterPowerGravity(){
+  const anc=anchoredSet();
+  for(let r=0;r<grid.length;r++)for(let c=0;c<grid[r].length;c++){const cel=grid[r][c];
+    if(cel&&cel.kind!=="core"&&!anc.has(keyRC(r,c))){const{cx,cy}=cellCenter(r,c);fallers.push({x:cx,y:cy,vy:70,vx:(Math.random()-.5)*60,cell:cel,r:R,a:1});if(cel.kind==="seed")G.rescued++;G.dropped++;G.removed++;grid[r][c]=null;}}
+  if(colorsInGrid().size===0&&totalCells()>0&&state==="aiming")cur={kind:"bomb",color:-1,wob:0};
+  if(state==="aiming"&&checkWin()){state="over";setTimeout(levelWon,300);}
+}
+/* boosters (Adventure/Puzzle in-level consumables) */
+function useBooster(k){
+  if(state!=="aiming"||boostCount(k)<=0)return;
+  let ok=false;
+  if(k==="shots"){if(G.shots!==Infinity){G.shots+=5;ok=true;toast("+5 buds");}}
+  else ok=applyPower(k,0);
+  if(ok){addBoost(k,-1);beep(680,0.09,0.06);buzz(15);syncBoosterHud();updateHud();}
 }
 
 /* ============================================================================
@@ -684,87 +998,90 @@ function sbGrant(n,tag){if(n<=0)return;n=Math.min(n,CONFIG.sun.runCap-runSb);if(
   if(window._sbCapEarn)window._sbCapEarn(n,tag);}
 
 function levelWon(){
-  const stars=computeStars();
-  let coinE=Math.floor(G.score/CONFIG.coinsPerScore);
-  const R_=$("result");
+  const stars=computeStars();const isBoss=G.objective==="boss";
+  let coinE=Math.floor(G.score/CONFIG.coinsPerScore),nectarE=0;
   chord([523,659,784,1046],0.16,0.06);buzz([20,30,60]);
   if(G.mode==="adventure"){
-    const prevStars=starsOf(G.g,G.l);setStars(G.g,G.l,stars);
-    coinE+=stars*CONFIG.starCoin;
+    setStars(G.g,G.l,stars);coinE+=stars*CONFIG.starCoin;
     sbGrant(CONFIG.sun.base+stars*CONFIG.sun.perStar,"budburst:level_clear");
+    if(stars>=3)nectarE+=CONFIG.nectar.threeStar; if(isBoss)nectarE+=CONFIG.nectar.boss;
     missionEvent("clears",1);missionEvent("stars",stars);
-    $("resKicker").textContent=GARDENS[G.g].name.toUpperCase()+" · LEVEL "+(G.l+1);
+    $("resKicker").textContent=(GARDENS[G.g]?GARDENS[G.g].name.toUpperCase():"ADVENTURE")+(isBoss?" · BOSS":" · LEVEL "+(G.l+1));
+  } else if(G.mode==="puzzle"){
+    pzSetStars(G.puzzleId,stars);coinE+=stars*CONFIG.starCoin;
+    sbGrant(CONFIG.sun.base+stars*CONFIG.sun.perStar,"budburst:puzzle");
+    if(stars>=3)nectarE+=CONFIG.nectar.threeStar;
+    missionEvent("clears",1);missionEvent("stars",stars);
+    $("resKicker").textContent="PUZZLE #"+(G.puzzleId+1);
   } else if(G.mode==="daily"){
     const day=todayStr();
     if(Store.g(K.dLast)!==day){const yest=new Date(Date.now()-86400000);const ys=yest.getFullYear()+"-"+String(yest.getMonth()+1).padStart(2,"0")+"-"+String(yest.getDate()).padStart(2,"0");
       const st=Store.g(K.dLast)===ys?parseInt(Store.g(K.dStreak)||"0",10)+1:1;Store.s(K.dStreak,st);Store.s(K.dLast,day);Store.s(K.dStars,stars);
-      coinE+=20;   // first-of-day bonus only (replays still earn score-based coins)
-      sbGrant(CONFIG.sun.daily,"budburst:daily");}
+      coinE+=20;sbGrant(CONFIG.sun.daily,"budburst:daily");
+      if(st%5===0)nectarE+=CONFIG.nectar.dailyStreak5;}
     missionEvent("clears",1);
     $("resKicker").textContent="DAILY BLOOM #"+dailyNumber();
   }
-  addCoins(coinE);
+  addCoins(coinE);addNectar(nectarE);
   missionEvent("coins",coinE);missionEvent("pops",1);missionEvent("dropRun",G.dropped);
-  R_.querySelector("#resTitle").textContent=stars===3?"Full Bloom!":"Bloom!";
+  $("resTitle").textContent=isBoss?"Core Destroyed!":(stars===3?"Full Bloom!":"Bloom!");
   $("resStars").innerHTML=[0,1,2].map(i=>`<span class="s ${i<stars?"on":""}">★</span>`).join("");
   $("resScore").textContent=G.score.toLocaleString();
-  $("resSub").textContent=G.mode==="endless"?"":"Cleared in "+(G.shotsMax-G.shots)+" shots · par "+G.par;
-  $("resCoins").textContent="+"+coinE+" 🪙";
+  $("resSub").textContent="Cleared in "+(G.shotsMax-G.shots)+" shots · par "+G.par;
+  $("resCoins").textContent="+"+coinE+" 🪙"+(nectarE>0?"   +"+nectarE+" 🍯":"");
   $("resSun").textContent=runSb>0?("+"+runSb+" ☀ sunbeams"):"";
-  if(G.mode==="daily"){
-    const sq="🌸".repeat(stars)+"🌫️".repeat(3-stars);
-    $("resSquares").textContent="Budburst #"+dailyNumber()+"  "+sq;
-  } else $("resSquares").textContent="";
-  buildResultActions(true);
-  show("result");
+  if(G.mode==="daily"){const sq="🌸".repeat(stars)+"🌫️".repeat(3-stars);$("resSquares").textContent="Budburst #"+dailyNumber()+"  "+sq;}
+  else $("resSquares").textContent="";
+  buildResultActions(true);show("result");
 }
 function levelLost(){
   beep(180,0.3,0.07,"sawtooth");buzz([40,60,40]);
   let coinE=Math.floor(G.score/CONFIG.coinsPerScore);addCoins(coinE);
   missionEvent("coins",coinE);missionEvent("pops",1);missionEvent("dropRun",G.dropped);
-  if(G.mode==="endless"){
-    const best=parseInt(Store.g(K.endBest)||"0",10);const rec=G.score>best;if(rec)Store.s(K.endBest,G.score);
-    sbGrant(G.score>0?Math.max(1,Math.min(CONFIG.sun.runCap,Math.floor(G.score/CONFIG.sun.endlessDiv))):0,"budburst:endless"); // no earn for a zero-progress run
-    missionEvent("depth",G.depth);
-    $("resKicker").textContent="ENDLESS";
-    $("resStars").innerHTML="";
-    $("result").querySelector("#resTitle").textContent=rec?"New Best!":"Overgrown";
+  $("resStars").innerHTML="";$("resSquares").textContent="";
+  const m=G.mode;
+  if(m==="endless"||m==="arcade"||m==="blitz"){
+    const key=m==="endless"?K.endBest:m==="arcade"?K.arcadeBest:K.blitzBest;
+    const best=parseInt(Store.g(key)||"0",10);const rec=G.score>best;if(rec)Store.s(key,G.score);
+    const div=m==="blitz"?1100:CONFIG.sun.endlessDiv;
+    sbGrant(G.score>0?Math.max(1,Math.min(CONFIG.sun.runCap,Math.floor(G.score/div))):0,"budburst:"+m);
+    if(m==="endless")missionEvent("depth",G.depth);
+    $("resKicker").textContent=m.toUpperCase();
+    $("resTitle").textContent=rec?"New Best!":(m==="blitz"?"Time's Up!":"Overgrown");
     $("resScore").textContent=G.score.toLocaleString();
-    $("resSub").textContent=(rec?"":"Best "+best.toLocaleString()+" · ")+"Depth "+G.depth;
+    $("resSub").textContent=(rec?"":"Best "+best.toLocaleString()+" · ")+(m==="arcade"?("Wave "+G.wave):m==="blitz"?"90-second blitz":("Depth "+G.depth));
   } else {
-    if(G.removed>0||G.score>0)sbGrant(1,"budburst:try"); // anti-idle: zero-progress runs earn nothing
-    $("resKicker").textContent=G.mode==="daily"?"DAILY BLOOM #"+dailyNumber():GARDENS[G.g].name.toUpperCase()+" · LEVEL "+(G.l+1);
-    $("resStars").innerHTML="";
-    $("result").querySelector("#resTitle").textContent="Out of Buds";
+    if(G.removed>0||G.score>0)sbGrant(1,"budburst:try"); // anti-idle: zero-progress earns nothing
+    $("resKicker").textContent=m==="daily"?"DAILY BLOOM #"+dailyNumber():m==="puzzle"?"PUZZLE #"+(G.puzzleId+1):(GARDENS[G.g]?GARDENS[G.g].name.toUpperCase():"ADVENTURE")+" · LEVEL "+(G.l+1);
+    $("resTitle").textContent="Out of Buds";
     $("resScore").textContent=G.score.toLocaleString();
-    $("resSub").textContent=G.objective==="drop"?("Harvested "+G.removed+" / "+G.objTarget):
+    $("resSub").textContent=G.objective==="boss"?("Core at "+Math.max(0,G.boss?G.boss.hp:0)+" HP"):
+      G.objective==="drop"?("Harvested "+G.removed+" / "+G.objTarget):
       G.objective==="rescue"?("Rescued "+G.rescued+" / "+G.objTarget):"So close — try again";
   }
   $("resCoins").textContent="+"+coinE+" 🪙";
   $("resSun").textContent=runSb>0?("+"+runSb+" ☀ sunbeams"):"";
-  $("resSquares").textContent="";
-  buildResultActions(false);
-  show("result");
+  buildResultActions(false);show("result");
 }
 function buildResultActions(won){
-  const el=$("resActions");el.innerHTML="";
+  const el=$("resActions");el.innerHTML="";const m=G.mode;
   const add=(label,cls,fn)=>{const b=document.createElement("button");b.className=cls;b.textContent=label;b.onclick=fn;el.appendChild(b);};
-  if(G.mode==="adventure"){
+  if(m==="adventure"){
     if(won){const hasNext=G.l+1<LEVELS_PER;
       if(hasNext)add("Next level →","btn-fill",()=>startLevel(G.g,G.l+1));
       else if(G.g+1<GARDENS.length&&gardenUnlocked(G.g+1))add("Next garden →","btn-fill",()=>{mapGarden=G.g+1;openMap();});
-      else add("Back to map","btn-fill",()=>openMap());
+      else add("Back to map","btn-fill",openMap);
       add("Replay","btn-ghost",()=>startLevel(G.g,G.l));
-    } else {add("Try again","btn-fill",()=>startLevel(G.g,G.l));}
-    add("Garden map","btn-ghost",()=>openMap());
-  } else if(G.mode==="endless"){
-    add("Play again","btn-fill",()=>startEndless());
-    add("Menu","btn-ghost",()=>backToMenu());
-  } else { // daily
-    if(won)add("Share result","btn-gold",shareDaily);
-    add("Menu","btn-fill",()=>backToMenu());
-    add("Replay","btn-ghost",()=>startDaily());
-  }
+    } else add("Try again","btn-fill",()=>startLevel(G.g,G.l));
+    add("Garden map","btn-ghost",openMap);
+  } else if(m==="puzzle"){
+    if(won&&G.puzzleId+1<PUZZLES.length)add("Next puzzle →","btn-fill",()=>startPuzzle(G.puzzleId+1));
+    else add("Try again","btn-fill",()=>startPuzzle(G.puzzleId));
+    add("Puzzle list","btn-ghost",openPuzzles);
+  } else if(m==="endless"){add("Play again","btn-fill",startEndless);add("Menu","btn-ghost",backToMenu);}
+  else if(m==="arcade"){add("Play again","btn-fill",startArcade);add("Change powers","btn-ghost",openLoadout);add("Menu","btn-ghost",backToMenu);}
+  else if(m==="blitz"){add("Play again","btn-fill",startBlitz);add("Menu","btn-ghost",backToMenu);}
+  else {if(won)add("Share result","btn-gold",shareDaily);add("Menu","btn-fill",backToMenu);add("Replay","btn-ghost",startDaily);}
 }
 function shareDaily(){const txt=$("resSquares").textContent+"\nlucidwinds.com/portal";
   if(navigator.share){navigator.share({text:txt}).catch(()=>{});return;}
@@ -814,6 +1131,7 @@ function drawBud(cel,x,y,rad,ghost){
   else if(cel.kind==="bomb"){base="#2b2f26";}
   else if(cel.kind==="seed"){base="#d8ad4a";}
   else if(cel.kind==="thorn"){base="#6f7860";}
+  else if(cel.kind==="core"){base="#3a1230";}
   ctx.save();
   if(ghost)ctx.globalAlpha=0.32;
   const grd=ctx.createRadialGradient(x-rad*0.3,y-rad*0.35,rad*0.15,x,y,rad);
@@ -835,6 +1153,13 @@ function drawBud(cel,x,y,rad,ghost){
       ctx.strokeStyle="rgba(56,36,8,0.55)";ctx.lineWidth=Math.max(1.4,rad*0.12);ctx.lineCap="round";
       ctx.beginPath();ctx.moveTo(0,-rad*0.34);ctx.quadraticCurveTo(rad*0.3,-rad*0.5,rad*0.04,-rad*0.66);ctx.stroke();ctx.restore();} // sprout curl
     else if(cel.kind==="thorn"){ctx.save();ctx.translate(x,y);ctx.strokeStyle="rgba(0,0,0,0.4)";ctx.lineWidth=Math.max(1.6,rad*0.14);ctx.beginPath();ctx.moveTo(-rad*0.4,-rad*0.4);ctx.lineTo(rad*0.4,rad*0.4);ctx.moveTo(rad*0.4,-rad*0.4);ctx.lineTo(-rad*0.4,rad*0.4);ctx.stroke();ctx.restore();}
+    else if(cel.kind==="core"){ctx.save();ctx.translate(x,y);
+      const pulse=reduceMotion?0.5:0.5+0.5*Math.abs(Math.sin(performance.now()/300));
+      ctx.fillStyle="rgba(230,90,140,"+(0.45+pulse*0.45).toFixed(2)+")";ctx.beginPath();ctx.arc(0,0,rad*0.42,0,6.28);ctx.fill();
+      ctx.strokeStyle="rgba(255,200,120,0.7)";ctx.lineWidth=Math.max(1.4,rad*0.12);ctx.lineCap="round";
+      const spin=reduceMotion?0:performance.now()/1600;
+      for(let i=0;i<6;i++){const a=i/6*6.28+spin;ctx.beginPath();ctx.moveTo(Math.cos(a)*rad*0.5,Math.sin(a)*rad*0.5);ctx.lineTo(Math.cos(a)*rad*0.82,Math.sin(a)*rad*0.82);ctx.stroke();}
+      ctx.restore();}
   }
   ctx.restore();
 }
@@ -863,6 +1188,12 @@ function frame(t){
   if(curScreen==="game"){
     // physics
     if(state==="flying"){stepProjectile(dt);}
+    // real-time timers (freeze buff + blitz clock)
+    if(G&&(state==="aiming"||state==="flying")){
+      if(G.freeze>0)G.freeze=Math.max(0,G.freeze-dt);
+      if(G.mode==="blitz"&&G.timeLeft>0){G.timeLeft-=dt;updateTimer();
+        if(G.timeLeft<=0&&state==="aiming"){G.timeLeft=0;state="over";setTimeout(levelLost,100);}}
+    }
     // particles
     for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt*1.7;if(p.life<=0){particles.splice(i,1);continue;}
       p.vy+=520*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt;}
@@ -888,14 +1219,13 @@ function render(){
     drawBud(cel,cx,cy+bob,R);}}
   // fallers
   for(const f of fallers){ctx.save();ctx.globalAlpha=Math.max(0,f.a);drawBud(f.cell,f.x,f.y,f.r);ctx.restore();}
-  // aim trajectory
+  // aim trajectory (brighter + tighter dashes while True Aim is active)
   if(state==="aiming"&&cur){
-    const pred=predictPath();
-    ctx.strokeStyle="rgba(236,227,209,0.5)";ctx.lineWidth=2.5;ctx.setLineDash([2,9]);ctx.lineCap="round";
+    const pred=predictPath();const boost=G&&G.aimBoost>0;
+    ctx.strokeStyle=boost?"rgba(180,230,140,0.9)":"rgba(236,227,209,0.5)";ctx.lineWidth=boost?3.2:2.5;ctx.setLineDash(boost?[3,6]:[2,9]);ctx.lineCap="round";
     ctx.beginPath();for(let i=0;i<pred.pts.length;i++){const[px,py]=pred.pts[i];i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.stroke();ctx.setLineDash([]);
-    // landing ghost
     const cell=snapCell(pred.end.x,pred.end.y);if(cell){const{cx,cy}=cellCenter(cell.r,cell.c);
-      ctx.strokeStyle="rgba(236,227,209,0.6)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,R*0.92,0,6.28);ctx.stroke();}
+      ctx.strokeStyle=boost?"rgba(180,230,140,0.95)":"rgba(236,227,209,0.6)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,R*0.92,0,6.28);ctx.stroke();}
   }
   // projectile
   if(proj){drawBud({kind:proj.kind,color:proj.color},proj.x,proj.y,R);}
@@ -904,9 +1234,10 @@ function render(){
     ctx.fillStyle=p.col;ctx.beginPath();ctx.ellipse(0,0,p.size,p.size*0.6,0,0,6.28);ctx.fill();ctx.restore();}
   // shooter + ammo
   const{sx,sy}=shooterOrigin();
-  // launcher base
-  ctx.fillStyle="rgba(30,38,22,0.9)";ctx.beginPath();ctx.arc(sx,sy,R*1.35,Math.PI,0);ctx.fill();
-  ctx.fillStyle="rgba(60,74,40,0.5)";ctx.beginPath();ctx.arc(sx,sy,R*1.35,Math.PI,0);ctx.strokeStyle="rgba(122,179,86,0.35)";ctx.lineWidth=2;ctx.stroke();
+  // launcher base (cosmetic — coloured by equipped launcher)
+  const lbase={clay:"120,74,44",brass:"150,110,50",stone:"90,96,86",crystal:"120,140,180",vine:"70,110,50",gold:"190,150,60"}[equippedLauncher()]||"30,38,22";
+  ctx.fillStyle="rgba("+lbase+",0.92)";ctx.beginPath();ctx.arc(sx,sy,R*1.35,Math.PI,0);ctx.fill();
+  ctx.beginPath();ctx.arc(sx,sy,R*1.35,Math.PI,0);ctx.strokeStyle="rgba(230,220,190,0.35)";ctx.lineWidth=2;ctx.stroke();
   if(cur&&state==="aiming"){drawBud({kind:cur.kind,color:cur.color},sx,sy,R);}
   else if(cur&&state!=="flying"){drawBud({kind:cur.kind,color:cur.color},sx,sy,R);}
   // next preview
@@ -945,18 +1276,44 @@ window.addEventListener("keydown",e=>{if(curScreen!=="game")return;
    HUD
    ========================================================================== */
 function updateHud(){
-  $("scoreVal").textContent=G?G.score.toLocaleString():"0";
-  $("shotsVal").textContent=(!G||G.shots===Infinity)?"∞":G.shots;
-  if(G){$("objLabel").textContent=(G.objective==="drop"?"HARVEST":G.objective.toUpperCase());$("objText").textContent=objProgressText();}
+  if(!G)return;
+  $("scoreVal").textContent=G.score.toLocaleString();
+  $("shotsVal").textContent=(G.shots===Infinity)?"∞":G.shots;
+  const lab={boss:"BOSS",drop:"HARVEST",survive:"ENDLESS",arcade:"ARCADE",blitz:"BLITZ",zen:"ZEN",clear:"CLEAR",rescue:"RESCUE"}[G.objective]||G.objective.toUpperCase();
+  $("objLabel").textContent=lab;$("objText").textContent=objProgressText();
+  if(G.boss){$("bossBar").style.display="";$("bossFill").style.width=Math.max(0,G.boss.hp/G.boss.max*100)+"%";$("bossHp").textContent=Math.max(0,G.boss.hp)+" / "+G.boss.max;}
+  else $("bossBar").style.display="none";
+  updateTimer();
 }
+function updateTimer(){if(!G)return;const p=$("timerPill");
+  if(G.mode==="blitz"){p.style.display="";$("timerVal").textContent=Math.ceil(Math.max(0,G.timeLeft))+"s";p.classList.toggle("danger",G.timeLeft<=10);}
+  else p.style.display="none";}
 function objProgressText(){
-  if(!G)return"";
-  if(G.objective==="clear")return"Clear every bud";
-  if(G.objective==="drop")return"Harvest buds — "+Math.min(G.removed,G.objTarget)+" / "+G.objTarget;
-  if(G.objective==="rescue")return"Rescue seeds — "+Math.min(G.rescued,G.objTarget)+" / "+G.objTarget;
-  if(G.objective==="survive")return"Depth "+G.depth+" · don't cross the line";
+  if(!G)return"";const o=G.objective;
+  if(o==="boss")return"Destroy the Bloom Core";
+  if(o==="clear")return"Clear every bud";
+  if(o==="drop")return"Harvest — "+Math.min(G.removed,G.objTarget)+" / "+G.objTarget;
+  if(o==="rescue")return"Rescue — "+Math.min(G.rescued,G.objTarget)+" / "+G.objTarget;
+  if(o==="survive")return"Depth "+G.depth+" · hold the line";
+  if(o==="arcade")return"Wave "+G.wave+" · survive";
+  if(o==="blitz")return"Pop for score!";
+  if(o==="zen")return"No fail — just bloom";
   return G.objText;
 }
+function syncModeHud(){
+  const ab=!!(G&&G.mode==="arcade");$("abilityTray").style.display=ab?"":"none";if(ab)syncAbilityHud();
+  const bo=!!(G&&(G.mode==="adventure"||G.mode==="puzzle"));if(bo)syncBoosterHud();else $("boosterTray").style.display="none";
+}
+function syncAbilityHud(){const tray=$("abilityTray");tray.innerHTML="";if(!G||!G.loadout)return;
+  G.loadout.forEach((k,i)=>{const a=abById(k),need=abilNeed(k),ch=Math.min(need,G.charges[i]||0),ready=ch>=need;
+    const b=document.createElement("button");b.className="ab-btn"+(ready?" ready":"");
+    b.innerHTML=`<span class="ab-ic">${a.ic}</span><span class="ab-bar"><i style="width:${Math.round(ch/need*100)}%"></i></span>`;
+    b.onclick=()=>activateAbility(i);tray.appendChild(b);});}
+function syncBoosterHud(){const tray=$("boosterTray");tray.innerHTML="";let any=false;
+  BOOSTERS.forEach(b=>{const cnt=boostCount(b.key);if(cnt<=0)return;any=true;
+    const el=document.createElement("button");el.className="boost-btn";el.title=b.name;
+    el.innerHTML=`<span>${b.ic}</span><span class="bc">${cnt}</span>`;el.onclick=()=>useBooster(b.key);tray.appendChild(el);});
+  tray.style.display=any?"":"none";}
 
 /* ============================================================================
    MISSIONS (daily goals — light retention layer)
@@ -1005,15 +1362,51 @@ function renderMap(){
   const gd=GARDENS[mapGarden];$("gardenTitle").textContent=gd.name;$("gardenSub").textContent=gd.sub;
   const grid_=$("levelGrid");grid_.innerHTML="";
   for(let l=0;l<LEVELS_PER;l++){const un=levelUnlocked(mapGarden,l),st=starsOf(mapGarden,l);
+    const isBoss=(l===LEVELS_PER-1);
     const seed=(mapGarden*911+l*131+7)>>>0;const rng=mulberry32(seed);
-    // peek objective (cheap: replicate first pick) — approximate by garden objs
-    const el=document.createElement("button");el.className="lvl"+(un?"":" locked")+(st>0?" cleared":"");
-    const objIc=OBJ_IC[gd.objs[Math.floor(rng()*gd.objs.length)]]||"🌸";
+    const el=document.createElement("button");el.className="lvl"+(un?"":" locked")+(st>0?" cleared":"")+(isBoss?" boss":"");
+    const objIc=isBoss?"👑":(OBJ_IC[gd.objs[Math.floor(rng()*gd.objs.length)]]||"🌸");
     el.innerHTML=`<span class="obj-ic">${objIc}</span><span class="num">${un?(l+1):"🔒"}</span><span class="stars">${st>0?"★".repeat(st):""}</span>`;
     if(un)el.onclick=()=>startLevel(mapGarden,l);
     else el.onclick=()=>toast("Clear the level before it to unlock");
     grid_.appendChild(el);}
-  $("mapNote").textContent="Total ★ "+totalStars()+" / "+(GARDENS.length*LEVELS_PER*3)+"  ·  clear a level (1★+) to unlock the next";
+  $("mapNote").textContent="Total ★ "+totalStars()+" / "+(GARDENS.length*LEVELS_PER*3)+"  ·  👑 = boss finale  ·  clear a level to unlock the next";
+}
+
+/* ============================================================================
+   LOADOUT (Arcade) + PUZZLE ladder
+   ========================================================================== */
+function openLoadout(){renderLoadout();show("loadout");}
+function renderLoadout(){
+  $("loadCoins").textContent="🪙 "+coins().toLocaleString();
+  let lo=(Store.g(K.loadout)||"bomb,rainbow,recolor").split(",").filter(k=>abById(k)&&abilUnlocked(k)).slice(0,3);
+  Store.s(K.loadout,lo.join(","));
+  const slots=$("loadSlots");slots.innerHTML="";
+  for(let i=0;i<3;i++){const k=lo[i];const d=document.createElement("div");d.className="load-slot"+(k?" filled":"");
+    d.innerHTML=k?`<span>${abById(k).ic}</span><small>${abById(k).name}</small>`:`<span>＋</span><small>empty</small>`;
+    if(k)d.onclick=()=>{const nl=lo.filter(x=>x!==k);Store.s(K.loadout,nl.join(","));renderLoadout();};
+    slots.appendChild(d);}
+  const grid_=$("loadGrid");grid_.innerHTML="";
+  ABILITIES.forEach(a=>{const un=abilUnlocked(a.key),eq=lo.includes(a.key),lv=abilLevel(a.key);
+    const el=document.createElement("button");el.className="load-ab"+(eq?" on":"")+(un?"":" locked");
+    el.innerHTML=`<span class="la-ic">${a.ic}</span><span><span class="la-nm">${a.name}${lv>0?" · L"+(lv+1):""}</span><span class="la-ds">${a.desc}</span>${un?"":`<span class="la-lock">🔒 ${a.price} 🪙 — unlock in shop</span>`}</span>`;
+    el.onclick=()=>{if(!un){toast("Unlock it in the Powers shop");return;}
+      let c2=(Store.g(K.loadout)||"").split(",").filter(Boolean);
+      if(c2.includes(a.key))c2=c2.filter(x=>x!==a.key);
+      else{if(c2.length>=3){toast("Three powers max — tap one to remove");return;}c2.push(a.key);}
+      Store.s(K.loadout,c2.join(","));beep(560,0.06,0.05);renderLoadout();};
+    grid_.appendChild(el);});
+}
+function openPuzzles(){renderPuzzles();show("puzzles");}
+function renderPuzzles(){
+  $("pzCoins").textContent="🪙 "+coins().toLocaleString();
+  const grid_=$("pzGrid");grid_.innerHTML="";
+  for(let i=0;i<PUZZLES.length;i++){const un=pzUnlocked(i),st=pzStars(i);
+    const el=document.createElement("button");el.className="lvl"+(un?"":" locked")+(st>0?" cleared":"");
+    el.innerHTML=`<span class="num">${un?(i+1):"🔒"}</span><span class="stars">${st>0?"★".repeat(st):""}</span>`;
+    if(un)el.onclick=()=>startPuzzle(i);else el.onclick=()=>toast("Clear the puzzle before it");
+    grid_.appendChild(el);}
+  $("pzNote").textContent="Total ★ "+pzTotalStars()+" / "+(PUZZLES.length*3);
 }
 
 /* ============================================================================
@@ -1041,35 +1434,83 @@ function _drawGlyphOn(c,g,x,y,rad,col){c.save();c.translate(x,y);c.fillStyle="rg
   else if(g==="penta"){for(let i=0;i<5;i++){const a=i/5*6.28-1.57;i?c.lineTo(Math.cos(a)*s*0.9,Math.sin(a)*s*0.9):c.moveTo(Math.cos(a)*s*0.9,Math.sin(a)*s*0.9);}c.closePath();c.fill();}
   else if(g==="cross"){c.rect(-s*0.28,-s*0.85,s*0.56,s*1.7);c.rect(-s*0.85,-s*0.28,s*1.7,s*0.56);c.fill();}
   c.restore();}
-function openShop(){renderShop();show("shop");}
-function renderShop(){$("shopCoins").textContent="🪙 "+coins().toLocaleString();const grid_=$("shopGrid");grid_.innerHTML="";
-  const eq=equippedSkin().id;
-  SKINS.forEach(sk=>{const own=isOwned(sk.id),isEq=eq===sk.id;
-    const tile=document.createElement("div");tile.className="tile";
-    const cvp=document.createElement("canvas");cvp.width=200;cvp.height=74;
-    let btn;
-    if(isEq)btn=`<div class="buy equipped">Equipped</div>`;
-    else if(own)btn=`<div class="buy owned" data-equip="${sk.id}">Equip</div>`;
-    else if(coins()>=sk.price)btn=`<div class="buy locked" data-buy="${sk.id}">🪙 ${sk.price}</div>`;
-    else btn=`<div class="buy cant">🪙 ${sk.price}</div>`;
-    tile.appendChild(cvp);
-    const info=document.createElement("div");info.innerHTML=`<div class="nm">${sk.name}</div><div class="ds">${sk.desc}</div>${btn}`;
-    tile.appendChild(info);grid_.appendChild(tile);drawSkinPreview(cvp,sk);});
-  grid_.querySelectorAll("[data-buy]").forEach(el=>el.onclick=()=>{const id=el.dataset.buy,sk=skinById(id);
-    if(coins()<sk.price){toast("Not enough coins");return;}addCoins(-sk.price);Store.s(K.owned,owned().concat(id).join(","));Store.s(K.skin,id);toast(sk.name+" equipped");beep(660,0.09,0.06);renderShop();});
-  grid_.querySelectorAll("[data-equip]").forEach(el=>el.onclick=()=>{Store.s(K.skin,el.dataset.equip);toast(skinById(el.dataset.equip).name+" equipped");renderShop();});}
+let shopTab="blooms";
+function openShop(){shopTab="blooms";renderShop();show("shop");}
+function shopCur(){$("shopCoins").textContent="🪙 "+coins().toLocaleString();$("shopNectar").textContent="🍯 "+nectar().toLocaleString();}
+const SHOP_NOTES={blooms:"Bud colours & glyphs for the whole board. Gameplay is identical for every set.",
+  launchers:"A new look for your launcher pot.",backgrounds:"Set the scene behind the garden.",
+  powers:"Unlock powers with 🪙, upgrade them with 🍯. Equip up to three in Arcade.",
+  boosters:"One-shot helpers for Adventure & Puzzle — tap them in-level to use."};
+function canPay(price,cur){return cur==="nectar"?nectar()>=price:coins()>=price;}
+function pay(price,cur){if(cur==="nectar")Store.s(K.nectar,nectar()-price);else addCoins(-price);}
+function priceTag(price,cur){return cur==="nectar"?(price+" 🍯"):("🪙 "+price);}
+function iconPreview(cv,ic){const c=cv.getContext("2d");c.clearRect(0,0,cv.width,cv.height);c.font="34px serif";c.textAlign="center";c.textBaseline="middle";c.fillText(ic,cv.width/2,cv.height/2);}
+function newTile(g){const t=document.createElement("div");t.className="tile";const cvp=document.createElement("canvas");cvp.width=200;cvp.height=74;t.appendChild(cvp);const info=document.createElement("div");t.appendChild(info);g.appendChild(t);return{cvp,info};}
+function renderShopTabs(){const t=$("shopTabs");t.innerHTML="";
+  [["blooms","Blooms"],["launchers","Launchers"],["backgrounds","Scenes"],["powers","Powers"],["boosters","Boosters"]].forEach(a=>{
+    const b=document.createElement("button");b.className="shop-tab"+(shopTab===a[0]?" on":"");b.textContent=a[1];b.onclick=()=>{shopTab=a[0];renderShop();};t.appendChild(b);});}
+function renderShop(){shopCur();renderShopTabs();$("shopNote").textContent=SHOP_NOTES[shopTab];
+  const g=$("shopGrid");g.innerHTML="";
+  if(shopTab==="blooms")renderBlooms(g);
+  else if(shopTab==="launchers")renderCosmetic(g,LAUNCHERS,ownedL,K.lowned,K.launcher,equippedLauncher(),drawLauncherPreview);
+  else if(shopTab==="backgrounds")renderCosmetic(g,BGS,ownedBg,K.bgowned,K.bg,Store.g(K.bg)||"night",drawBgPreview);
+  else if(shopTab==="powers")renderPowers(g);
+  else renderBoosters(g);}
+function drawLauncherPreview(cv,it){const c=cv.getContext("2d"),w=cv.width,h=cv.height;c.clearRect(0,0,w,h);
+  const col={clay:"120,74,44",brass:"150,110,50",stone:"90,96,86",crystal:"120,140,180",vine:"70,110,50",gold:"190,150,60"}[it.id]||"120,74,44";
+  c.fillStyle="rgba("+col+",0.95)";c.beginPath();c.arc(w/2,h*0.74,w*0.15,Math.PI,0);c.fill();
+  c.beginPath();c.arc(w/2,h*0.74,w*0.15,Math.PI,0);c.strokeStyle="rgba(230,220,190,0.4)";c.lineWidth=2;c.stroke();
+  const r=w*0.1,x=w/2,y=h*0.74-r*0.4;const g=c.createRadialGradient(x-r*0.3,y-r*0.35,r*0.15,x,y,r);g.addColorStop(0,"#e6a8b8");g.addColorStop(1,"#a05a70");c.beginPath();c.arc(x,y,r,0,6.28);c.fillStyle=g;c.fill();}
+function drawBgPreview(cv,it){const c=cv.getContext("2d"),w=cv.width,h=cv.height;
+  const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,it.top);g.addColorStop(1,it.bot);c.fillStyle=g;c.fillRect(0,0,w,h);
+  [["#e0728f",0.3],["#7ab356",0.5],["#4fb0d8",0.7]].forEach(a=>{const x=w*a[1],y=h*0.5,r=w*0.06,gg=c.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r);gg.addColorStop(0,shade(a[0],42));gg.addColorStop(1,shade(a[0],-30));c.beginPath();c.arc(x,y,r,0,6.28);c.fillStyle=gg;c.fill();});}
+function renderBlooms(g){const eq=equippedSkin().id;
+  SKINS.forEach(sk=>{const own=isOwned(sk.id),isEq=eq===sk.id;const{cvp,info}=newTile(g);
+    let btn;if(isEq)btn=`<div class="buy equipped">Equipped</div>`;
+    else if(own)btn=`<div class="buy owned" data-skineq="${sk.id}">Equip</div>`;
+    else if(canPay(sk.price,sk.cur))btn=`<div class="buy locked" data-skinbuy="${sk.id}">${priceTag(sk.price,sk.cur)}</div>`;
+    else btn=`<div class="buy cant">${priceTag(sk.price,sk.cur)}</div>`;
+    info.innerHTML=`<div class="nm">${sk.name}</div><div class="ds">${sk.desc}</div>${btn}`;drawSkinPreview(cvp,sk);});
+  g.querySelectorAll("[data-skinbuy]").forEach(el=>el.onclick=()=>{const sk=skinById(el.dataset.skinbuy);if(!canPay(sk.price,sk.cur)){toast("Not enough");return;}pay(sk.price,sk.cur);Store.s(K.owned,owned().concat(sk.id).join(","));Store.s(K.skin,sk.id);toast(sk.name+" equipped");beep(660,0.09,0.06);renderShop();});
+  g.querySelectorAll("[data-skineq]").forEach(el=>el.onclick=()=>{Store.s(K.skin,el.dataset.skineq);toast(skinById(el.dataset.skineq).name+" equipped");renderShop();});}
+function renderCosmetic(g,items,ownedFn,ownedKey,equipKey,equippedId,prev){
+  items.forEach(it=>{const isOwn=ownedFn().includes(it.id),isEq=equippedId===it.id;const{cvp,info}=newTile(g);prev(cvp,it);
+    let btn;if(isEq)btn=`<div class="buy equipped">Equipped</div>`;
+    else if(isOwn)btn=`<div class="buy owned" data-eq="${it.id}">Equip</div>`;
+    else if(canPay(it.price,it.cur))btn=`<div class="buy locked" data-buy="${it.id}">${priceTag(it.price,it.cur)}</div>`;
+    else btn=`<div class="buy cant">${priceTag(it.price,it.cur)}</div>`;
+    info.innerHTML=`<div class="nm">${it.name}</div><div class="ds">${it.desc}</div>${btn}`;});
+  g.querySelectorAll("[data-buy]").forEach(el=>el.onclick=()=>{const it=items.find(x=>x.id===el.dataset.buy);if(!canPay(it.price,it.cur)){toast("Not enough");return;}pay(it.price,it.cur);Store.s(ownedKey,ownedFn().concat(it.id).join(","));Store.s(equipKey,it.id);toast(it.name+" equipped");beep(660,0.09,0.06);renderShop();});
+  g.querySelectorAll("[data-eq]").forEach(el=>el.onclick=()=>{Store.s(equipKey,el.dataset.eq);toast("Equipped");renderShop();});}
+function renderPowers(g){
+  ABILITIES.forEach(a=>{const un=abilUnlocked(a.key),lv=abilLevel(a.key),maxed=lv>=3;const{cvp,info}=newTile(g);iconPreview(cvp,a.ic);
+    let btn;if(!un)btn=coins()>=a.price?`<div class="buy locked" data-unlock="${a.key}">🪙 ${a.price}</div>`:`<div class="buy cant">🪙 ${a.price}</div>`;
+    else if(maxed)btn=`<div class="buy owned">Max level</div>`;
+    else btn=nectar()>=a.up?`<div class="buy up" data-up="${a.key}">Upgrade · ${a.up} 🍯</div>`:`<div class="buy cant">Upgrade · ${a.up} 🍯</div>`;
+    info.innerHTML=`<div class="nm">${a.name}${lv>0?" · L"+(lv+1):""}</div><div class="ds">${a.desc}${un?" · charge "+abilNeed(a.key):""}</div>${btn}`;});
+  g.querySelectorAll("[data-unlock]").forEach(el=>el.onclick=()=>{const a=abById(el.dataset.unlock);if(coins()<a.price){toast("Not enough coins");return;}addCoins(-a.price);const d=abilData();d[a.key]=d[a.key]||{};d[a.key].un=1;Store.s(K.abil,JSON.stringify(d));toast(a.name+" unlocked");beep(660,0.09,0.06);renderShop();});
+  g.querySelectorAll("[data-up]").forEach(el=>el.onclick=()=>{const a=abById(el.dataset.up);if(nectar()<a.up){toast("Not enough nectar");return;}Store.s(K.nectar,nectar()-a.up);const d=abilData();d[a.key]=d[a.key]||{un:1};d[a.key].un=1;d[a.key].lv=(d[a.key].lv||0)+1;Store.s(K.abil,JSON.stringify(d));toast(a.name+" upgraded");beep(720,0.1,0.06);renderShop();});}
+function renderBoosters(g){
+  BOOSTERS.forEach(b=>{const cnt=boostCount(b.key);const{cvp,info}=newTile(g);iconPreview(cvp,b.ic);
+    const btn=coins()>=b.price?`<div class="buy locked" data-boost="${b.key}">🪙 ${b.price}</div>`:`<div class="buy cant">🪙 ${b.price}</div>`;
+    info.innerHTML=`<div class="nm">${b.name}${cnt>0?" ×"+cnt:""}</div><div class="ds">${b.desc}</div>${btn}`;});
+  g.querySelectorAll("[data-boost]").forEach(el=>el.onclick=()=>{const b=boostById(el.dataset.boost);if(coins()<b.price){toast("Not enough coins");return;}addCoins(-b.price);addBoost(b.key,1);toast(b.name+" ×"+boostCount(b.key));beep(660,0.09,0.06);renderShop();});}
 
 /* ============================================================================
    MENU wiring
    ========================================================================== */
 function refreshMenu(){
   $("menuCoins").textContent="🪙 "+coins().toLocaleString();
-  const st=totalStars();$("advMeta").innerHTML="★ "+st+"<br><span style='color:var(--ink-faint);font-size:10px'>"+(GARDENS.length*LEVELS_PER*3)+" total</span>";
-  $("advSub").textContent=st===0?"start in the Meadow":"grow through six gardens";
-  $("endMeta").textContent="BEST "+(parseInt(Store.g(K.endBest)||"0",10).toLocaleString());
-  const done=Store.g(K.dLast)===todayStr(),streak=parseInt(Store.g(K.dStreak)||"0",10);
-  $("dailyMeta").innerHTML="#"+dailyNumber()+(streak>0?`<br><span class="streak-flag">🔥 ${streak}</span>`:"");
-  $("dailySub").textContent=done?("done today · "+(parseInt(Store.g(K.dStars)||"0",10))+"★"):"one shared puzzle a day";
+  $("menuNectar").textContent="🍯 "+nectar().toLocaleString();
+  const st=totalStars();$("advMeta").textContent="★ "+st;
+  $("advSub").textContent=st===0?"144 levels · 12 gardens · bosses":st+" / "+(GARDENS.length*LEVELS_PER*3)+" stars earned";
+  const ab=parseInt(Store.g(K.arcadeBest)||"0",10);$("arcMeta").textContent=ab>0?ab.toLocaleString():"";
+  const bb=parseInt(Store.g(K.blitzBest)||"0",10);$("blitzMeta").textContent=bb>0?bb.toLocaleString():"";
+  $("pzMeta").textContent=pzTotalStars()>0?(pzTotalStars()+"★"):"";
+  $("endMeta").textContent=(parseInt(Store.g(K.endBest)||"0",10)||"")&&"BEST "+parseInt(Store.g(K.endBest)||"0",10).toLocaleString();
+  const streak=parseInt(Store.g(K.dStreak)||"0",10),done=Store.g(K.dLast)===todayStr();
+  $("dailyMeta").textContent=(done?"✓ ":"#"+dailyNumber()+" ")+(streak>0?"🔥"+streak:"");
+  applyBg();
   renderMenuBuds();renderMissions();setSoundIcon();setToggleIcons();
 }
 function renderMenuBuds(){const row=$("menuBuds");row.innerHTML="";const skin=equippedSkin();
@@ -1084,17 +1525,23 @@ $("soundBtn").onclick=()=>{soundOn=!soundOn;Store.s(K.sound,soundOn?"1":"0");set
 $("symBtn").onclick=()=>{const v=(Store.g(K.sym)||"1")==="1"?"0":"1";Store.s(K.sym,v);symBold=(v==="1");setToggleIcons();toast(v==="1"?"High-contrast glyphs on":"Glyphs subtle");};
 $("hapBtn").onclick=()=>{hapOn=!hapOn;Store.s(K.hap,hapOn?"1":"0");setToggleIcons();if(hapOn)buzz(20);};
 document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{const m=b.dataset.mode;
-  if(m==="adventure")openMap();else if(m==="endless")startEndless();else startDaily();}));
+  if(m==="adventure")openMap();else if(m==="arcade")openLoadout();else if(m==="blitz")startBlitz();
+  else if(m==="puzzle")openPuzzles();else if(m==="endless")startEndless();else if(m==="zen")startZen();else startDaily();}));
 $("shopLink").onclick=openShop;
 $("shopBack").onclick=()=>{refreshMenu();show("menu");};
 $("mapBack").onclick=()=>{refreshMenu();show("menu");};
-$("gameBack").onclick=()=>{if(mode==="adventure")openMap();else backToMenu();};
+$("loadBack").onclick=()=>{refreshMenu();show("menu");};
+$("pzBack").onclick=()=>{refreshMenu();show("menu");};
+$("startArcadeBtn").onclick=startArcade;
+$("gameBack").onclick=()=>{if(mode==="adventure")openMap();else if(mode==="puzzle")openPuzzles();else if(mode==="arcade")openLoadout();else backToMenu();};
 function backToMenu(){refreshMenu();show("menu");}
 
 /* ============================================================================
    BOOT
    ========================================================================== */
 if(!Store.g(K.owned))Store.s(K.owned,"meadow");if(!Store.g(K.skin))Store.s(K.skin,"meadow");
+if(!Store.g(K.lowned))Store.s(K.lowned,"clay");if(!Store.g(K.launcher))Store.s(K.launcher,"clay");
+if(!Store.g(K.bgowned))Store.s(K.bgowned,"night");if(!Store.g(K.bg))Store.s(K.bg,"night");
 refreshMenu();
 requestAnimationFrame(frame);
 
