@@ -797,7 +797,11 @@ function updateBoard(el, board, title, isPlayer){
     var row=board.staging[r];
     // Empty slots first, filled tiles on right
     for(var s=0;s<maxSize-row.length;s++) html+='<div class="MStile MSstageSlot" style="width:22px;height:22px;background:transparent"></div>';
-    for(var s2=0;s2<row.length;s2++) html+=tileHTML(row[s2], '', 'style="width:22px;height:22px"');
+    // Build directly (like the wall tiles below) — routing through tileHTML with
+    // a second style="" collided with its hardcoded style attr; the browser kept
+    // the first and DROPPED the tile's background color (2026-07-05 verify). The
+    // .MSstaging row owns the 48px touch box, so these are 22px display tiles.
+    for(var s2=0;s2<row.length;s2++) html+='<div class="MStile" style="background:'+BG[row[s2]]+';width:22px;height:22px">'+ICONS[row[s2]]+'</div>';
     html+='</div>';
     html+='<div class="MSarrow">→</div>';
     html+='<div class="MSwall">';

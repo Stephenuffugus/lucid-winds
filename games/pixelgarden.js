@@ -210,7 +210,7 @@ window._gameFns.pixelgarden = function PG(a){
   window._PGT=function(t){tool=t;buildTools();_play('tap');};
   window._PGMIR=function(){mirrorMode=!mirrorMode;buildTools();render();};
   window._PGGR=function(){showGrid=!showGrid;render();};
-  window._PGCLR=function(){saveUndo();for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++)pixels[r][c]=null;render();sm('Cleared');};
+  window._PGCLR=function(){saveUndo();for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++)pixels[r][c]=null;totalPixels=0;pixelsSinceSave=0;uniqueChanges=0;render();sm('Cleared');};
   window._PGUN=function(){
     if(undoStack.length===0){sm('Nothing to undo');return;}
     var snap=undoStack.pop();

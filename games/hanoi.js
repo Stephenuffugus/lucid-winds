@@ -356,6 +356,7 @@ function GH(a){
 
 window._HN=function(){
   if(!pan||!pan.isConnected)return; // dead mount (e.g. overlay button after exit)
+  if(winToId){clearTimeout(winToId);winToId=null;} // cancel a pending victory overlay (New pressed mid-win = false victory flash)
   pegCount=parseInt((document.getElementById('Hp4')||{}).value)||3;
   discs=parseInt((document.getElementById('Hd')||{}).value)||5;
   _setDiff(discs<=3?'easy':discs<=5?'medium':discs<=6?'hard':'expert');
