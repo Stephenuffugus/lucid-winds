@@ -485,6 +485,22 @@ const AUGMENTS=[
 ];
 const augByKey=k=>AUGMENTS.find(a=>a.key===k);
 const STARTER_AUGMENTS=["multistrike","overcharge","ignite"];
+/* Loot rarity (Phase 2a). Every augment instance carries a grade on the 7-tier
+   Lucid Winds ladder (Common..Cosmic). In enrichProc a grade scales the gem's
+   numeric UPSIDES up and shrinks its DOWNSIDES (so a higher grade is strictly
+   better) and adds `hits` extra strikes to hit-adding gems. Everything still folds
+   through the existing clamps (extraHits<=5, chance<=0.9, damage floor 1), so
+   fights stay finite. `weight` = roll-on-learn odds (see rollGrade). */
+const RARITY=[
+  {key:"common",   label:"Common",    color:"#b8c0cc", mult:1.00, hits:0, weight:45},
+  {key:"uncommon", label:"Uncommon",  color:"#67c98a", mult:1.15, hits:0, weight:27},
+  {key:"rare",     label:"Rare",      color:"#4aa3ff", mult:1.35, hits:0, weight:16},
+  {key:"epic",     label:"Epic",      color:"#b06bff", mult:1.60, hits:1, weight:8},
+  {key:"legendary",label:"Legendary", color:"#ffab3d", mult:1.90, hits:1, weight:3},
+  {key:"mythic",   label:"Mythic",    color:"#ff5db1", mult:2.25, hits:1, weight:0.9},
+  {key:"cosmic",   label:"Cosmic",    color:"#43e8d8", mult:2.75, hits:2, weight:0.1}
+];
+const rarByKey=k=>RARITY.find(r=>r.key===k)||RARITY[0];
 
 /* ===================== SKILL WEB BUILDER ===================== */
 // minor node effect pools per arm (cycled)
@@ -832,24 +848,28 @@ function baseFnFor(kind){
 function enrichProc(name,emoji,kind,tags,m,augKeys,F){
   const A={extraHits:0,localInc:0,localMore:0,localCrit:0,localCritMult:0,procMult:0,addDots:[],leechThis:0,noMiss:false,noAilment:false,secondary:0,knockback:0,cull:0,ruthless:false};
   const powerTags=tags||[];
-  for(const k of (augKeys||[])){
+  for(const entry of (augKeys||[])){
+    const k=(entry&&entry.key)?entry.key:entry;       // entry is a key string OR {key,grade}
     const a=augByKey(k); if(!a) continue;
     if(a.req && !powerTags.includes(a.req)) continue; // req not met -> inert
+    const R=rarByKey((entry&&entry.grade)?entry.grade:"common");
+    const gm=R.mult;
+    const sc=v=> v>=0 ? v*gm : v/gm;                  // grade: scale upsides up, shrink downsides
     const md=a.mods;
-    if(md.extraHits) A.extraHits+=md.extraHits;
-    if(md.localInc) A.localInc+=md.localInc;
-    if(md.localMore) A.localMore+=md.localMore;
-    if(md.localCrit) A.localCrit+=md.localCrit;
-    if(md.localCritMult) A.localCritMult+=md.localCritMult;
-    if(md.procMult) A.procMult+=md.procMult;
-    if(md.leechThis) A.leechThis=Math.max(A.leechThis,md.leechThis);
+    if(md.extraHits) A.extraHits+=md.extraHits+R.hits;
+    if(md.localInc) A.localInc+=sc(md.localInc);
+    if(md.localMore) A.localMore+=sc(md.localMore);
+    if(md.localCrit) A.localCrit+=sc(md.localCrit);
+    if(md.localCritMult) A.localCritMult+=sc(md.localCritMult);
+    if(md.procMult) A.procMult+=sc(md.procMult);
+    if(md.leechThis) A.leechThis=Math.max(A.leechThis,md.leechThis*gm);
     if(md.noMiss) A.noMiss=true;
     if(md.noAilment) A.noAilment=true;
-    if(md.secondary) A.secondary+=md.secondary;
-    if(md.knockback) A.knockback=Math.max(A.knockback,md.knockback);
-    if(md.cull) A.cull=Math.max(A.cull,md.cull);
+    if(md.secondary) A.secondary+=md.secondary*gm;
+    if(md.knockback) A.knockback=Math.max(A.knockback,md.knockback*gm);
+    if(md.cull) A.cull=Math.max(A.cull,md.cull*gm);
     if(md.ruthless) A.ruthless=true;
-    if(md.addDot) A.addDots.push(md.addDot);
+    if(md.addDot) A.addDots.push(gm>1?Object.assign({},md.addDot,{pctOfHit:md.addDot.pctOfHit*gm}):md.addDot);
   }
   // default fire dot
   if(kind==="fire") A.addDots.unshift({type:"fire",pctOfHit:0.25,turns:3});

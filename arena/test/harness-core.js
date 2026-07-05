@@ -32,7 +32,7 @@ function fakeEl() {
 
 // The internal identifiers we surface for tests. All exist at top-level script scope.
 const EXPORTS = [
-  'RACES','POWERS','AUGMENTS','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
+  'RACES','POWERS','AUGMENTS','RARITY','rarByKey','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
   'BUFF_BASE','NOTABLES','KEYSTONES','PROC_BASE',
   'simulate','deriveCombat','computeFinal','ocStats','aggregateMods','migrateOC','hitDamage',
   'clamp','rand','randInt','pick','tierIndex','tierMult',
@@ -108,7 +108,9 @@ function randomOC(API, opts) {
     const aug = [];
     if (p.effect === 'proc') {
       const cap = API.tierIndex(tier) + 1;
-      for (let s = 0; s < cap; s++) if (Math.random() < 0.7) aug.push(API.pick(API.AUGMENTS).key);
+      // Fuzz augment GRADES uniformly (~1/7 Cosmic) so stress hammers the max
+      // rarity-scaling case, not just the realistic weighted odds.
+      for (let s = 0; s < cap; s++) if (Math.random() < 0.7) aug.push({ key: API.pick(API.AUGMENTS).key, grade: API.pick(API.RARITY).key });
     }
     powers.push({ key: p.key, tier, effect: p.effect, augments: aug });
   }
@@ -117,7 +119,7 @@ function randomOC(API, opts) {
     const tier = API.pick(API.TIERS).key;
     const cap = API.tierIndex(tier) + 1;
     const aug = [];
-    for (let s = 0; s < cap; s++) if (Math.random() < 0.6) aug.push(API.pick(API.AUGMENTS).key);
+    for (let s = 0; s < cap; s++) if (Math.random() < 0.6) aug.push({ key: API.pick(API.AUGMENTS).key, grade: API.pick(API.RARITY).key });
     powers.push({ key: 'stand', arch, tier, effect: 'stand', augments: aug });
   }
   const oc = {
