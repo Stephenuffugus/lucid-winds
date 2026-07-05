@@ -306,10 +306,15 @@ var FEATURED = [
   // Landscape-only: portrait shows its rotate prompt.
   {nm:"Pit Bike Rally", ds:"Four pit bikes, one dirt arena — race, jump, grab nitro, then spend your winnings building the ultimate bike.", url:"/satellites/pitbike-rally/", ic:"🏍️", thumb:"/portal-assets/thumbs/pitbike-rally.png"},
   // Power Scalers (Lucid Winds — OC Arena): single-file OC-creator + PoE-style
-  // passive-web auto-battler. Deployed to /play/power-scalers.html (un-framed);
-  // source lives in /arena. Self-contained Aether/Glory/XP economy — no Sunbeam
-  // bridge yet (Jul 05, Stephen's call). Launched with the ⚔️ glyph; thumb TBD.
-  {nm:"Power Scalers", ds:"Forge original characters, grow them on a vast passive skill web, socket rarity-graded augments, then send them to battle in the arena.", url:"/play/power-scalers.html?v=20260705h", ic:"⚔️", thumb:"/portal-assets/thumbs/power-scalers.jpg"},
+  // passive-web auto-battler. FULL self-contained game (186KB) — vendored to
+  // /satellites/power-scalers/ so the portal navigates to it top-level like the
+  // other satellites (Dragon/Bloom/Pitbike). It is NOT a modular /play/<id>.html
+  // shell game — routing it through /play/ made the portal build an in-memory
+  // shell that loaded a nonexistent /games/power-scalers.js → dead spinner
+  // ("won't open"). Fixed Jul 05: moved to /satellites/. Source lives in /arena;
+  // re-vendor with `cp arena/lucid-winds-arena.html satellites/power-scalers/index.html`.
+  // Self-contained Aether/Glory/XP economy — no Sunbeam bridge yet (Stephen's call).
+  {nm:"Power Scalers", ds:"Forge original characters, grow them on a vast passive skill web, socket rarity-graded augments, then send them to battle in the arena.", url:"/satellites/power-scalers/", ic:"⚔️", thumb:"/portal-assets/thumbs/power-scalers.jpg"},
   // Dragon Philosophy (Skywolf Studios): React/Vite shared-market deckbuilder,
   // vendored same-origin (Jul 05). Self-contained — own save + settings +
   // stats in localStorage, no Sunbeam bridge (premium standalone, like Pit

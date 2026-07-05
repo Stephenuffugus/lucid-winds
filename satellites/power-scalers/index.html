@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<title>Lucid Winds — OC Arena</title>
+<style>
+  :root{
+    --void:#0B0A14; --void-2:#13111F; --panel:#181524; --panel-2:#1F1B30;
+    --line:rgba(160,150,210,.14); --line-2:rgba(160,150,210,.28);
+    --mist:#A9A4C7; --mist-dim:#726d90; --ghost:#ECEAF7;
+    --aur-teal:#4FE3C1; --aur-violet:#8B6CF0; --aur-magenta:#F05C9E; --aur-gold:#F5C451;
+    --hp:#FF5A6E; --ok:#4FE3C1;
+    --font-display:"Arial Narrow Bold","Franklin Gothic Bold","Haettenschweiler",Impact,system-ui,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"SF Mono","JetBrains Mono","Consolas",ui-monospace,monospace;
+    --r:16px; --r-sm:10px;
+    /* arm theme colors */
+    --might:#FF7A5C; --aegis:#5C9BFF; --tempo:#4FE3C1; --psyche:#B57CFF; --ruin:#F5C451; --vitality:#7FE04A;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--void);color:var(--ghost);font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;min-height:100dvh;overflow-x:hidden;
+    -webkit-tap-highlight-color:transparent}
+  .aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.5}
+  .aurora::before,.aurora::after{content:"";position:absolute;width:70vmax;height:70vmax;border-radius:50%;filter:blur(90px);opacity:.5;mix-blend-mode:screen}
+  .aurora::before{background:radial-gradient(circle,var(--aur-violet),transparent 62%);top:-25vmax;left:-15vmax;animation:drift1 26s ease-in-out infinite}
+  .aurora::after{background:radial-gradient(circle,var(--aur-teal),transparent 62%);bottom:-28vmax;right:-18vmax;animation:drift2 32s ease-in-out infinite}
+  .aurora .m{position:absolute;width:52vmax;height:52vmax;border-radius:50%;filter:blur(90px);opacity:.3;mix-blend-mode:screen;background:radial-gradient(circle,var(--aur-magenta),transparent 60%);top:30%;left:35%;animation:drift3 40s ease-in-out infinite}
+  @keyframes drift1{50%{transform:translate(14vmax,10vmax) scale(1.1)}}
+  @keyframes drift2{50%{transform:translate(-12vmax,-8vmax) scale(1.15)}}
+  @keyframes drift3{50%{transform:translate(-16vmax,12vmax) scale(1.2)}}
+
+  #app{position:relative;z-index:1;max-width:940px;margin:0 auto;padding:0 16px 130px;min-height:100dvh}
+
+  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:14px 4px 12px;margin-bottom:8px;background:linear-gradient(var(--void) 62%,transparent)}
+  .brand{display:flex;flex-direction:column;line-height:.9;cursor:pointer;user-select:none}
+  .brand .k{font-family:var(--font-display);letter-spacing:.14em;font-size:20px;background:linear-gradient(100deg,var(--aur-teal),var(--aur-violet) 55%,var(--aur-magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .s{font-family:var(--font-mono);font-size:9px;letter-spacing:.34em;color:var(--mist-dim);text-transform:uppercase;margin-top:3px}
+  .spacer{flex:1}
+  .wallet{display:flex;gap:8px}
+  .coin{display:flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-family:var(--font-mono);font-size:13px}
+  .coin .sym{color:var(--aur-gold)}
+
+  button{font-family:inherit;cursor:pointer;color:inherit}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ghost);padding:12px 18px;border-radius:var(--r-sm);font-size:15px;font-weight:600;transition:transform .12s,border-color .2s,background .2s}
+  .btn:hover{transform:translateY(-1px);border-color:var(--aur-violet)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .btn.primary{border:none;color:#0B0A14;font-weight:800;background:linear-gradient(100deg,var(--aur-teal),var(--aur-violet));box-shadow:0 6px 26px -8px var(--aur-violet)}
+  .btn.gold{border:none;color:#1a1405;font-weight:800;background:linear-gradient(100deg,var(--aur-gold),#ff9d4d);box-shadow:0 6px 26px -10px var(--aur-gold)}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:8px 12px;font-size:13px;border-radius:8px}
+  .btn.xs{padding:5px 9px;font-size:12px;border-radius:7px}
+  .btn.block{width:100%}
+  .btn.danger:hover{border-color:var(--hp)}
+
+  .hero{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;padding:26px 22px;margin-bottom:16px;background:radial-gradient(120% 140% at 12% 0%,rgba(139,108,240,.28),transparent 55%),radial-gradient(120% 140% at 90% 20%,rgba(79,227,193,.2),transparent 55%),var(--void-2)}
+  .hero h1{font-family:var(--font-display);font-size:clamp(30px,8vw,52px);line-height:.92;margin:0 0 10px;letter-spacing:.01em}
+  .hero h1 .glow{background:linear-gradient(100deg,var(--aur-teal),var(--aur-magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--mist);max-width:60ch;margin:0 0 18px;font-size:15px}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+  .section-h{display:flex;align-items:baseline;gap:10px;margin:22px 2px 12px}
+  .section-h .n{font-family:var(--font-mono);font-size:11px;color:var(--aur-teal);letter-spacing:.2em}
+  .section-h h2{font-family:var(--font-display);font-size:22px;letter-spacing:.06em;margin:0;text-transform:uppercase}
+  .section-h .c{font-family:var(--font-mono);font-size:11px;color:var(--mist-dim);margin-left:auto}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+  .card{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:linear-gradient(160deg,var(--panel-2),var(--panel));--race-color:#8B6CF0;cursor:pointer}
+  .card .rim{position:absolute;inset:0;border-radius:var(--r);pointer-events:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--race-color) 55%,transparent),inset 0 26px 60px -40px color-mix(in srgb,var(--race-color) 90%,transparent)}
+  .card .holo{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:linear-gradient(115deg,transparent 30%,color-mix(in srgb,var(--race-color) 30%,transparent) 46%,transparent 60%)}
+  .card:hover .holo{opacity:.7}
+  .oc-top{display:flex;gap:12px;padding:14px 14px 10px;align-items:center}
+  .avatar{width:58px;height:58px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;font-size:30px;background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--race-color) 40%,var(--void-2)),var(--void));border:1px solid color-mix(in srgb,var(--race-color) 50%,transparent);overflow:hidden}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .oc-id{min-width:0;flex:1}
+  .oc-name{font-family:var(--font-display);font-size:22px;line-height:1;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .oc-sub{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
+  .race-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--race-color);border:1px solid color-mix(in srgb,var(--race-color) 45%,transparent);padding:2px 7px;border-radius:6px}
+  .lvl-badge{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:6px;border:1px solid var(--line-2);color:var(--aur-gold)}
+  .rec{font-family:var(--font-mono);font-size:11px;color:var(--mist-dim)}
+  .rec .w{color:var(--ok)} .rec .l{color:var(--hp)}
+  .ally-badge{font-family:var(--font-mono);font-size:10px;padding:2px 6px;border-radius:6px;border:1px solid var(--line-2);color:var(--mist)}
+
+  .stats{padding:4px 14px 10px;display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+  .stat{display:flex;align-items:center;gap:8px}
+  .stat .lab{font-family:var(--font-mono);font-size:10px;color:var(--mist-dim);width:34px;letter-spacing:.06em}
+  .stat .bar{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+  .stat .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--race-color),color-mix(in srgb,var(--race-color) 40%,#fff))}
+  .stat .val{font-family:var(--font-mono);font-size:12px;width:26px;text-align:right}
+  .grade{font-family:var(--font-display);font-weight:800;font-size:12px;width:24px;text-align:center;border-radius:5px;padding:1px 0}
+
+  .powerchips{display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 10px}
+  .chip{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:var(--void-2);color:var(--mist);display:inline-flex;gap:5px;align-items:center}
+  .chip .m{font-family:var(--font-mono);font-size:9px;color:var(--aur-gold);letter-spacing:.05em}
+  .chip.passive{border-style:dashed;color:var(--race-color)}
+  .chip.key{border-color:var(--aur-gold);color:var(--aur-gold)}
+  .xpbar-wrap{padding:0 14px 12px}
+  .xpbar{height:5px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+  .xpbar .xpf{height:100%;background:linear-gradient(90deg,var(--aur-violet),var(--aur-magenta))}
+  .card .kill{position:absolute;top:10px;right:10px;z-index:5;width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--mist-dim);font-size:14px;display:grid;place-items:center}
+  .card .kill:hover{color:var(--hp);border-color:var(--hp)}
+  .pts-flag{position:absolute;top:10px;left:10px;z-index:5;font-family:var(--font-mono);font-size:10px;padding:3px 7px;border-radius:999px;background:linear-gradient(100deg,var(--aur-teal),var(--aur-violet));color:#08110f;font-weight:700}
+
+  .empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:40px 20px;text-align:center;color:var(--mist)}
+  .empty .big{font-size:40px;margin-bottom:10px}
+  .hint{font-size:12px;color:var(--mist-dim);margin-top:8px}
+  .center{text-align:center}
+
+  /* creation flow */
+  .creator{border:1px solid var(--line);border-radius:var(--r);background:var(--void-2);overflow:hidden;margin-top:8px}
+  .steps{display:flex;gap:2px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .step{flex:1;text-align:center}
+  .step .dot{width:26px;height:26px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;font-family:var(--font-mono);font-size:12px;border:1px solid var(--line-2);background:var(--panel);color:var(--mist-dim)}
+  .step .t{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--mist-dim);text-transform:uppercase}
+  .step.done .dot{background:var(--aur-teal);border-color:var(--aur-teal);color:#08110f}
+  .step.active .dot{border-color:var(--aur-violet);color:var(--ghost);box-shadow:0 0 0 3px rgba(139,108,240,.25)}
+  .step.active .t{color:var(--ghost)}
+  .step-body{padding:20px 18px}
+  .step-title{font-family:var(--font-display);font-size:26px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px}
+  .step-desc{color:var(--mist);font-size:14px;margin:0 0 18px;max-width:62ch}
+  .flow-nav{display:flex;gap:10px;justify-content:space-between;margin-top:20px}
+
+  .wheel-wrap{position:relative;width:min(340px,82vw);aspect-ratio:1;margin:6px auto 8px}
+  .wheel-pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:6;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:26px solid var(--ghost);filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+  .wheel{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,255,255,.12);transition:transform 4.4s cubic-bezier(.12,.66,.12,1);will-change:transform;box-shadow:0 0 60px -20px var(--aur-violet),inset 0 0 40px rgba(0,0,0,.5)}
+  .wheel .seg-label{position:absolute;left:50%;top:50%;transform-origin:0 0;font-family:var(--font-display);font-size:12px;letter-spacing:.04em;color:#0b0a14;white-space:nowrap;pointer-events:none}
+  .wheel-hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;width:60px;height:60px;border-radius:50%;background:var(--void);border:2px solid var(--line-2);display:grid;place-items:center;font-family:var(--font-display);font-size:18px;color:var(--aur-teal);box-shadow:0 0 30px -6px var(--aur-teal)}
+  .wheel-hub.spin{animation:hubpulse 1s infinite}
+  @keyframes hubpulse{50%{color:var(--aur-magenta);box-shadow:0 0 40px -4px var(--aur-magenta)}}
+  .race-reveal{text-align:center;margin-top:8px}
+  .race-reveal .rr-name{font-family:var(--font-display);font-size:34px;letter-spacing:.03em;text-transform:uppercase}
+  .race-reveal .rr-blurb{color:var(--mist);max-width:52ch;margin:8px auto 0;font-size:14px}
+  .race-mods{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .mod{font-family:var(--font-mono);font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
+  .mod.pos{color:var(--ok)} .mod.neg{color:var(--hp)}
+  .race-passive{margin-top:12px;font-size:13px;color:var(--mist)}
+  .race-passive b{color:var(--race-color,#8B6CF0)}
+
+  .rollboard{display:grid;gap:10px;max-width:520px;margin:0 auto}
+  .roll-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel)}
+  .roll-row .name{font-size:14px;flex:1}
+  .roll-row .sub{font-family:var(--font-mono);font-size:10px;color:var(--mist-dim);display:block;margin-top:2px}
+  .roll-row .bar{width:130px;height:8px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden}
+  .roll-row .fill{height:100%;width:0;background:linear-gradient(90deg,var(--aur-teal),var(--aur-violet));transition:width .5s}
+  .roll-row .num{font-family:var(--font-mono);font-size:20px;width:44px;text-align:right}
+  .roll-total{text-align:center;margin-top:14px;font-family:var(--font-mono);color:var(--mist)}
+  .roll-total b{color:var(--ghost);font-size:16px}
+
+  .aether-hud{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);margin-bottom:14px;position:sticky;top:64px;z-index:12}
+  .aether-hud .big{font-family:var(--font-display);font-size:26px;color:var(--aur-teal)}
+  .aether-hud .lab{font-family:var(--font-mono);font-size:10px;color:var(--mist-dim);letter-spacing:.1em;text-transform:uppercase}
+  .aether-hud .prev{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--mist);text-align:right}
+  .shop-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .shop-tab{font-family:var(--font-mono);font-size:11px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--mist);letter-spacing:.06em}
+  .shop-tab.on{color:#0b0a14;background:var(--aur-teal);border-color:var(--aur-teal)}
+  .pow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+  .pow{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);padding:12px;position:relative;overflow:hidden}
+  .pow.owned{border-color:var(--aur-teal);background:linear-gradient(160deg,rgba(79,227,193,.08),var(--panel))}
+  .pow.aff::after{content:"AFFINITY";position:absolute;top:8px;right:8px;font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;color:var(--aur-gold);border:1px solid color-mix(in srgb,var(--aur-gold) 40%,transparent);padding:1px 5px;border-radius:5px}
+  .pow .ph{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .pow .pe{font-size:20px} .pow .pn{font-weight:700;font-size:14px}
+  .pow .pt{font-family:var(--font-mono);font-size:9px;color:var(--mist-dim);letter-spacing:.1em;text-transform:uppercase}
+  .pow .pd{font-size:12px;color:var(--mist);min-height:32px;line-height:1.35}
+  .tagrow{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}
+  .tag{font-family:var(--font-mono);font-size:9px;padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--mist-dim);text-transform:uppercase;letter-spacing:.06em}
+  .pow .prow{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .pow .cost{font-family:var(--font-mono);font-size:12px;color:var(--aur-teal)}
+  .mastery{margin-top:10px}
+  .mastery .mlab{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--mist);margin-bottom:5px}
+  .mbar{height:7px;border-radius:5px;background:rgba(255,255,255,.06);display:flex;gap:2px;overflow:hidden}
+  .mbar i{flex:1;background:rgba(255,255,255,.08);border-radius:2px}
+  .mbar i.on{background:linear-gradient(90deg,var(--aur-gold),#ff9d4d)}
+  .mnote{font-size:11px;color:var(--mist-dim);margin-top:6px;font-style:italic}
+  .stand-picker{border:1px solid var(--aur-gold);border-radius:var(--r-sm);background:linear-gradient(160deg,rgba(245,196,81,.08),var(--panel));padding:14px;margin-bottom:14px}
+  .stand-picker h4{font-family:var(--font-display);letter-spacing:.06em;margin:0 0 4px;font-size:18px;color:var(--aur-gold)}
+  .stand-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+  .stand-opt{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--void-2);cursor:pointer;transition:border-color .2s}
+  .stand-opt.on{border-color:var(--aur-gold);background:rgba(245,196,81,.12)}
+  .stand-opt .so-n{font-family:var(--font-display);letter-spacing:.04em;font-size:15px}
+  .stand-opt .so-d{font-size:11px;color:var(--mist);margin-top:3px}
+  .enhance{border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;margin-top:14px;background:var(--panel)}
+  .enhance h4{margin:0 0 8px;font-size:13px;font-family:var(--font-mono);letter-spacing:.08em;color:var(--mist);text-transform:uppercase}
+  .enh-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .enh-pill{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-family:var(--font-mono);font-size:12px}
+  .enh-pill button{width:22px;height:22px;border-radius:6px;border:1px solid var(--line-2);background:var(--void-2);color:var(--ghost);font-size:14px;line-height:1}
+
+  .name-stage{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+  @media(min-width:640px){.name-stage{grid-template-columns:300px 1fr}}
+  .name-input-wrap{display:flex;flex-direction:column;gap:12px}
+  .txt{width:100%;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r-sm);color:var(--ghost);font-family:var(--font-display);font-size:24px;letter-spacing:.02em;padding:14px}
+  .txt:focus{outline:none;border-color:var(--aur-violet);box-shadow:0 0 0 3px rgba(139,108,240,.2)}
+  .txt::placeholder{color:var(--mist-dim);font-family:var(--font-body);font-size:16px;letter-spacing:0}
+  .txt.small{font-family:var(--font-body);font-size:15px}
+  .art-hint{font-size:12px;color:var(--mist-dim);line-height:1.5}
+  .emoji-row{display:flex;gap:6px;flex-wrap:wrap}
+  .emoji-pick{width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font-size:20px;display:grid;place-items:center}
+  .emoji-pick.on{border-color:var(--aur-violet);box-shadow:0 0 0 2px rgba(139,108,240,.3)}
+
+  /* character sheet */
+  .sheet-head{display:flex;gap:14px;align-items:center;padding:16px;border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(160deg,var(--panel-2),var(--panel));--race-color:#8B6CF0;position:relative;overflow:hidden}
+  .sheet-head .rim{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 30px 70px -50px color-mix(in srgb,var(--race-color) 90%,transparent)}
+  .sheet-head .sav{width:72px;height:72px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;font-size:38px;background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--race-color) 40%,var(--void-2)),var(--void));border:1px solid color-mix(in srgb,var(--race-color) 50%,transparent);overflow:hidden}
+  .sheet-head .sav img{width:100%;height:100%;object-fit:cover}
+  .sheet-head .sn{font-family:var(--font-display);font-size:30px;line-height:1;letter-spacing:.02em}
+  .sheet-head .ss{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+  .lvl-big{font-family:var(--font-mono);font-size:12px;color:var(--aur-gold)}
+  .sheet-xp{margin-top:10px}
+  .sheet-xp .xpbar{height:8px}
+  .sheet-xp .xptxt{font-family:var(--font-mono);font-size:10px;color:var(--mist-dim);margin-top:4px}
+  .tabbar{display:flex;gap:4px;margin:14px 0;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px;overflow-x:auto}
+  .tabbar button{border:none;background:transparent;color:var(--mist-dim);padding:9px 14px;border-radius:999px;font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;white-space:nowrap;flex:1;min-width:max-content}
+  .tabbar button.on{color:var(--ghost);background:linear-gradient(100deg,rgba(79,227,193,.22),rgba(139,108,240,.22))}
+  .pts-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;padding:6px 12px;border-radius:999px;background:linear-gradient(100deg,var(--aur-teal),var(--aur-violet));color:#08110f;font-weight:700}
+  .breakdown{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;margin-top:6px}
+  .breakdown .bh,.breakdown .br{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr .7fr;gap:6px;padding:9px 12px;align-items:center;font-size:13px}
+  .breakdown .bh{background:var(--panel);font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--mist-dim);text-transform:uppercase}
+  .breakdown .br{border-top:1px solid var(--line)}
+  .breakdown .br .st{color:var(--mist)} .breakdown .br .fin{font-family:var(--font-mono);font-weight:700;text-align:right}
+  .breakdown .br .add{font-family:var(--font-mono);color:var(--aur-teal);text-align:right}
+  .breakdown .br .base{font-family:var(--font-mono);color:var(--mist-dim);text-align:right}
+  .kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px}
+  .kv .cell{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--panel)}
+  .kv .cell .l{font-family:var(--font-mono);font-size:9px;color:var(--mist-dim);letter-spacing:.08em;text-transform:uppercase}
+  .kv .cell .v{font-family:var(--font-mono);font-size:15px;margin-top:2px}
+
+  /* skill web */
+  .web-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .web-toolbar .pts-pill{margin-right:auto}
+  .tree-frame{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(120% 120% at 50% 40%,rgba(139,108,240,.1),transparent 60%),var(--void);height:min(60vh,520px);touch-action:none;user-select:none}
+  .tree-frame svg{width:100%;height:100%;display:block;cursor:grab}
+  .tree-frame svg:active{cursor:grabbing}
+  .tnode{cursor:pointer}
+  .tedge{stroke:rgba(160,150,210,.12);stroke-width:2}
+  .tedge.on{stroke:rgba(139,108,240,.55);stroke-width:3}
+  .zoombtns{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px;z-index:5}
+  .zoombtns button{width:36px;height:36px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ghost);font-size:20px;line-height:1;display:grid;place-items:center}
+  .legend{position:absolute;left:10px;top:10px;z-index:5;display:flex;gap:10px;font-family:var(--font-mono);font-size:9px;color:var(--mist);background:rgba(11,10,20,.6);padding:6px 9px;border-radius:8px;border:1px solid var(--line);flex-wrap:wrap;max-width:70%}
+  .legend .dotm{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px;vertical-align:middle}
+  .node-panel{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);padding:14px;margin-top:10px;min-height:96px}
+  .node-panel .np-name{font-family:var(--font-display);font-size:20px;letter-spacing:.03em}
+  .node-panel .np-type{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist-dim);margin-bottom:6px}
+  .node-panel .np-eff{font-size:14px;color:var(--ghost);line-height:1.5}
+  .node-panel .np-eff .ln2{color:var(--aur-teal)}
+  .node-panel.key{border-color:var(--aur-gold)}
+  .node-panel.key .np-name{color:var(--aur-gold)}
+  .np-actions{margin-top:10px;display:flex;gap:8px}
+
+  /* augments / links */
+  .link-power{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);padding:12px;margin-bottom:10px}
+  .link-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .link-head .pe{font-size:22px}
+  .link-head .pn{font-family:var(--font-display);font-size:18px;letter-spacing:.02em;flex:1}
+  .socket-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
+  .socket{border:1px dashed var(--line-2);border-radius:9px;min-width:120px;min-height:52px;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;background:var(--void-2);cursor:pointer;flex:1;max-width:180px}
+  .socket.filled{border-style:solid;border-color:var(--aur-violet);background:linear-gradient(160deg,rgba(139,108,240,.12),var(--void-2))}
+  .socket .se{font-size:18px} .socket .sn{font-size:12px;font-weight:700;margin-top:2px}
+  .socket .empt{font-family:var(--font-mono);font-size:11px;color:var(--mist-dim)}
+  .socket .locked{font-family:var(--font-mono);font-size:10px;color:var(--mist-dim)}
+  .socket.locked{opacity:.5;cursor:default;border-style:dotted}
+  .aug-lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:9px}
+  .aug{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:10px;position:relative}
+  .aug.owned{border-color:var(--aur-teal)}
+  .aug .ah{display:flex;align-items:center;gap:8px} .aug .ae{font-size:18px} .aug .an{font-weight:700;font-size:13px}
+  .aug .ad{font-size:11px;color:var(--mist);margin-top:4px;line-height:1.35}
+  .aug .areq{font-family:var(--font-mono);font-size:9px;color:var(--aur-magenta);margin-top:4px;letter-spacing:.06em}
+  /* loot rarity */
+  .gbadge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:999px;border:1px solid;text-transform:uppercase;display:inline-block;vertical-align:middle;margin-left:6px}
+  .aug.graded{border-left-width:3px}
+  .rf-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .grade-legend{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}
+  .grade-legend .gl{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:999px;border:1px solid}
+  .ocgrade{font-family:var(--font-display);font-size:12px;font-weight:800;letter-spacing:.12em;padding:1px 9px;border-radius:6px;border:1.5px solid;text-transform:uppercase;line-height:1.5}
+  /* ascendancy */
+  .asc-lock{display:flex;gap:14px;align-items:center;padding:20px;border:1px dashed var(--line-2);border-radius:var(--r);background:var(--void-2)}
+  .asc-lock-i{font-size:34px;opacity:.7}
+  .asc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.asc-grid{grid-template-columns:1fr}}
+  .asc-pick{text-align:left;border:1px solid var(--line);border-left:3px solid var(--asc);border-radius:11px;background:var(--panel);padding:13px;cursor:pointer;color:var(--ink);transition:transform .1s,border-color .12s;display:block;width:100%;-webkit-tap-highlight-color:transparent}
+  .asc-pick:hover{transform:translateY(-2px);border-color:var(--asc)}
+  .asc-pick:active{transform:scale(.98)}
+  .asc-h{display:flex;align-items:center;gap:8px} .asc-e{font-size:22px} .asc-n{font-family:var(--font-display);font-size:17px;color:var(--asc)}
+  .asc-d{font-size:12px;color:var(--mist);margin:5px 0 8px;line-height:1.4}
+  .asc-chips{display:flex;flex-wrap:wrap;gap:4px} .asc-chip{font-size:9.5px;font-family:var(--font-mono);color:var(--mist-dim);border:1px solid var(--line);border-radius:999px;padding:1px 6px}
+  .asc-cta{margin-top:9px;font-size:12px;font-weight:700;color:var(--asc)}
+  .asc-avail{font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--asc);border:1px solid var(--asc);background:color-mix(in srgb,var(--asc) 12%,transparent);border-radius:8px;padding:6px 10px;margin-bottom:10px;display:inline-block}
+  .asc-nodelist{display:flex;flex-direction:column;gap:8px}
+  .asc-node{border:1px solid var(--line);border-left:3px solid var(--line-2);border-radius:10px;background:var(--panel);padding:11px}
+  .asc-node.on{border-left-color:var(--asc);background:linear-gradient(160deg,color-mix(in srgb,var(--asc) 12%,var(--void-2)),var(--void-2))}
+  .asc-node-h{display:flex;align-items:center;justify-content:space-between;gap:8px} .asc-node-n{font-weight:700;font-size:13px}
+  .asc-node.on .asc-node-n{color:var(--asc)}
+  .asc-node-d{font-size:11.5px;color:var(--mist);margin-top:4px;line-height:1.4}
+  .np-jewel{margin-top:10px;border:1px solid var(--line);border-left:3px solid #43e8d8;border-radius:9px;background:var(--void-2);padding:10px}
+  .np-jewel.empty{border-style:dashed;border-left-style:solid}
+  .np-jewel .ah{display:flex;align-items:center;gap:8px} .np-jewel .ae{font-size:17px} .np-jewel .an{font-weight:700;font-size:13px}
+  .np-jewel .ad{font-size:11.5px;color:var(--mist);margin-top:4px;line-height:1.4}
+  /* gauntlet ladder */
+  .grung-list{display:flex;flex-direction:column;gap:8px}
+  .grung{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:11px 12px}
+  .grung.locked{opacity:.5}
+  .grung.cur{border-color:#8b6cf0;background:linear-gradient(160deg,rgba(139,108,240,.12),var(--void-2))}
+  .grung.done{border-left:3px solid #67c98a}
+  .grung-i{width:40px;height:40px;flex:0 0 auto;display:grid;place-items:center;font-size:20px;border-radius:10px;background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--race-color) 40%,var(--void-2)),var(--void));border:1px solid color-mix(in srgb,var(--race-color) 45%,transparent)}
+  .grung-b{flex:1;min-width:0} .grung-n{font-weight:700;font-size:13px} .grung-s{font-size:11px;color:var(--mist);margin-top:2px}
+  .grung-a{flex:0 0 auto}
+  .modal-back{position:fixed;inset:0;z-index:80;background:rgba(6,5,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+  @media(min-width:640px){.modal-back{align-items:center}}
+  .modal{background:var(--void-2);border:1px solid var(--line-2);border-radius:var(--r);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:16px}
+  .modal h3{font-family:var(--font-display);letter-spacing:.04em;margin:0 0 4px;font-size:20px}
+  .modal .sub{color:var(--mist);font-size:13px;margin-bottom:12px}
+
+  .train-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);margin-bottom:10px}
+  .train-opt .ti{font-size:22px;width:30px;text-align:center}
+  .train-opt .tt{flex:1} .train-opt .tt .th{font-weight:700;font-size:14px}
+  .train-opt .tt .ts{font-size:12px;color:var(--mist);margin-top:2px}
+  .train-opt .tc{font-family:var(--font-mono);font-size:13px;color:var(--aur-gold)}
+
+  /* battle */
+  .picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+  .mini{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);padding:10px;cursor:pointer;display:flex;gap:9px;align-items:center;transition:border-color .2s;--race-color:#8B6CF0}
+  .mini:hover{border-color:var(--line-2)}
+  .mini.sel{border-color:var(--aur-teal);box-shadow:0 0 0 2px rgba(79,227,193,.25)}
+  .mini.sel2{border-color:var(--aur-magenta);box-shadow:0 0 0 2px rgba(240,92,158,.25)}
+  .mini .av{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-size:18px;flex:0 0 auto;background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--race-color) 40%,var(--void-2)),var(--void));overflow:hidden}
+  .mini .av img{width:100%;height:100%;object-fit:cover}
+  .mini .mn{font-family:var(--font-display);font-size:15px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini .mr{font-family:var(--font-mono);font-size:9px;color:var(--mist-dim);text-transform:uppercase;margin-top:3px}
+  .pick-slot-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin:14px 2px 8px}
+  .pick-slot-label.a{color:var(--aur-teal)} .pick-slot-label.b{color:var(--aur-magenta)}
+  .vs-stage{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(120% 100% at 50% 0%,rgba(139,108,240,.2),transparent 60%),var(--void-2)}
+  .vs-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:18px 16px}
+  .fighter-head{text-align:center;min-width:0}
+  .fighter-head.right{order:3}
+  .fighter-head .fav{width:64px;height:64px;border-radius:14px;margin:0 auto 8px;display:grid;place-items:center;font-size:32px;background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--race-color) 40%,var(--void-2)),var(--void));border:1px solid color-mix(in srgb,var(--race-color) 50%,transparent);overflow:hidden;--race-color:#8B6CF0}
+  .fighter-head .fav img{width:100%;height:100%;object-fit:cover}
+  .fighter-head .fn{font-family:var(--font-display);font-size:20px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fighter-head .fr{font-family:var(--font-mono);font-size:9px;color:var(--mist-dim);text-transform:uppercase;margin-top:3px}
+  .vs-badge{font-family:var(--font-display);font-size:34px;color:var(--aur-magenta);text-shadow:0 0 20px var(--aur-magenta);order:2}
+  .hpbar{height:12px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden;margin:8px 6px 0;border:1px solid var(--line)}
+  .hpbar .hpf{height:100%;background:linear-gradient(90deg,#ff9d4d,var(--hp));transition:width .35s;width:100%}
+  .log{padding:14px 16px;max-height:46vh;overflow-y:auto;border-top:1px solid var(--line);font-size:14px}
+  .log .ln{padding:6px 0;border-bottom:1px solid rgba(160,150,210,.06);opacity:0;transform:translateY(4px);animation:lnin .28s forwards}
+  @keyframes lnin{to{opacity:1;transform:none}}
+  .log .ln .rn{font-family:var(--font-mono);font-size:10px;color:var(--mist-dim);margin-right:8px}
+  .log .hit{color:var(--ghost)} .log .crit{color:var(--aur-gold);font-weight:700}
+  .log .dodge{color:var(--mist)} .log .power{color:var(--aur-violet)}
+  .log .heal{color:var(--ok)} .log .ko{color:var(--hp);font-weight:800;font-family:var(--font-display);font-size:18px;letter-spacing:.04em}
+  .log .sys{color:var(--mist-dim);font-style:italic}
+  .result-panel{padding:18px 16px;border-top:1px solid var(--line);text-align:center}
+  .result-panel .win-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.24em;color:var(--aur-gold);text-transform:uppercase}
+  .result-panel .win-name{font-family:var(--font-display);font-size:40px;letter-spacing:.03em;margin:4px 0 6px}
+  .reward{display:inline-flex;gap:14px;align-items:center;font-family:var(--font-mono);font-size:13px;color:var(--aur-gold);margin-bottom:14px;flex-wrap:wrap;justify-content:center}
+  .reward .xp{color:var(--aur-violet)}
+
+  .bracket{display:flex;gap:18px;overflow-x:auto;padding:10px 2px 16px}
+  .round-col{display:flex;flex-direction:column;justify-content:space-around;gap:12px;min-width:180px}
+  .round-col .rt{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--mist-dim);text-transform:uppercase;text-align:center;margin-bottom:2px}
+  .match{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+  .match .m-slot{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:13px}
+  .match .m-slot+.m-slot{border-top:1px solid var(--line)}
+  .match .m-slot.win{background:rgba(79,227,193,.1)}
+  .match .m-slot.win .mn2{color:var(--aur-teal)}
+  .match .m-slot.lose{opacity:.45}
+  .m-slot .dotc{width:8px;height:8px;border-radius:50%;background:var(--race-color,#8B6CF0);flex:0 0 auto}
+  .m-slot .mn2{font-family:var(--font-display);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+  .champion{text-align:center;padding:18px;border:1px solid var(--aur-gold);border-radius:var(--r);margin-top:8px;background:radial-gradient(120% 120% at 50% 0%,rgba(245,196,81,.18),transparent 60%),var(--void-2)}
+  .champion .cn{font-family:var(--font-display);font-size:38px;letter-spacing:.03em}
+  .champion .cl{font-family:var(--font-mono);font-size:11px;letter-spacing:.24em;color:var(--aur-gold);text-transform:uppercase}
+
+  .ally-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .ally-card{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);padding:14px;--ac:#8B6CF0}
+  .ally-card .ah{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .ally-card .adot{width:12px;height:12px;border-radius:4px;background:var(--ac)}
+  .ally-card .aname{font-family:var(--font-display);font-size:18px;letter-spacing:.03em}
+  .ally-members{display:flex;flex-wrap:wrap;gap:5px}
+
+  .nav{position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;justify-content:center;background:linear-gradient(transparent,var(--void) 40%);padding:10px 12px calc(12px + env(safe-area-inset-bottom))}
+  .nav-inner{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line-2);border-radius:999px;padding:5px}
+  .nav button{border:none;background:transparent;color:var(--mist-dim);padding:9px 14px;border-radius:999px;font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px}
+  .nav button .ic{font-size:17px}
+  .nav button.on{color:var(--ghost);background:linear-gradient(100deg,rgba(79,227,193,.22),rgba(139,108,240,.22))}
+  .nav button.on .ic{filter:drop-shadow(0 0 6px var(--aur-teal))}
+
+  .toast-wrap{position:fixed;left:0;right:0;bottom:96px;z-index:60;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+  .toast{background:var(--panel-2);border:1px solid var(--line-2);border-radius:999px;padding:10px 18px;font-size:13px;box-shadow:0 10px 30px -10px #000;animation:tin .3s;max-width:88vw}
+  .toast.good{border-color:var(--ok)} .toast.bad{border-color:var(--hp)}
+  @keyframes tin{from{opacity:0;transform:translateY(10px)}}
+  .flag{display:inline-block;padding:2px 8px;border-radius:6px;font-family:var(--font-mono);font-size:10px;border:1px solid var(--line);color:var(--mist);margin-left:8px}
+  select.txt.small option{background:var(--void-2)}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.001s !important;transition-duration:.001s !important}.wheel{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="aurora"><div class="m"></div></div>
+<div id="app"></div>
+<div class="nav"><div class="nav-inner" id="nav"></div></div>
+<div class="toast-wrap" id="toasts"></div>
+<div id="modal-root"></div>
+<script>
+"use strict";
+/* ===================== DATA ===================== */
+const STAT_KEYS=["str","dur","sta","int","spd","cmb"];
+const STAT_LABEL={str:"Strength",dur:"Durability",sta:"Stamina",int:"Intelligence",spd:"Speed",cmb:"Combat"};
+const STAT_ABBR={str:"STR",dur:"DUR",sta:"STA",int:"INT",spd:"SPD",cmb:"CMB"};
+const BASE_AETHER=130;
+const TIERS=[{key:"novice",label:"Novice",mult:0.30},{key:"adept",label:"Adept",mult:0.55},{key:"expert",label:"Expert",mult:0.80},{key:"master",label:"Master",mult:1.05}];
+const tierIndex=k=>TIERS.findIndex(t=>t.key===k);
+const tierMult=k=>(TIERS.find(t=>t.key===k)||TIERS[0]).mult;
+
+// arms: 0 MIGHT,1 PSYCHE,2 RUIN,3 VITALITY,4 TEMPO,5 AEGIS
+const ARMS=[
+  {key:"might",name:"Might",color:"#FF7A5C",angle:-90},
+  {key:"psyche",name:"Psyche",color:"#B57CFF",angle:-30},
+  {key:"ruin",name:"Ruin",color:"#F5C451",angle:30},
+  {key:"vitality",name:"Vitality",color:"#7FE04A",angle:90},
+  {key:"tempo",name:"Tempo",color:"#4FE3C1",angle:150},
+  {key:"aegis",name:"Aegis",color:"#5C9BFF",angle:210},
+];
+
+const RACES=[
+  {key:"human",name:"Human",color:"#C9CBD6",emoji:"🧑",aetherBonus:45,startArm:"hub",
+    blurb:"No gifts, only grit — a blank slate that trades raw talent for freedom. More Aether to spend, and a start at the center of the web with every path open.",
+    mods:{str:0,dur:0,sta:0,int:0,spd:0,cmb:0},affinity:["super_strength","killer_instinct","overmind","shapeshift"],
+    passive:{name:"Adaptable",desc:"Wins pay +25% Glory and +25% XP."}},
+  {key:"vampire",name:"Vampire",color:"#E23A5C",emoji:"🧛",aetherBonus:0,startArm:"tempo",
+    blurb:"Ageless predators of the night. Blistering speed and lethal precision, sustained by the blood of the fallen.",
+    mods:{str:8,dur:-3,sta:5,int:5,spd:15,cmb:12},affinity:["lifedrain","blitz_step","teleport","killer_instinct"],
+    passive:{name:"Bloodthirst",desc:"Heals for a portion of all melee damage dealt."}},
+  {key:"vultramite",name:"Vultramite",color:"#6FE3FF",emoji:"🔷",aetherBonus:0,startArm:"aegis",
+    blurb:"Crystalline apex-conduits born inside collapsing aether storms. Living lattices that drink kinetic force — immense and near-unbreakable, if a touch slow.",
+    mods:{str:14,dur:18,sta:12,int:2,spd:-5,cmb:8},affinity:["energy_blast","iron_body","force_field","deep_reserves"],
+    passive:{name:"Kinetic Lattice",desc:"Chance to fully absorb a hit. Mastery upgrades cost less."}},
+  {key:"stand_user",name:"Stand User",color:"#F5C451",emoji:"👻",aetherBonus:10,startArm:"ruin",
+    blurb:"An ordinary body bound to a Stand — a manifest fighting spirit only worthy foes can see. The Stand is the weapon; the user chooses its nature.",
+    mods:{str:6,dur:2,sta:4,int:8,spd:8,cmb:10},affinity:["targeting_system","blitz_step"],
+    passive:{name:"Stand Rush",desc:"Extra flurry attacks. Unlocks a Stand of your chosen archetype."}},
+  {key:"xenomorph",name:"Xenomorph",color:"#7FE04A",emoji:"👽",aetherBonus:0,startArm:"tempo",
+    blurb:"Perfect organisms — flawless killing biology in a chitin shell. Fast, savage, and hollow of anything like mercy.",
+    mods:{str:12,dur:6,sta:8,int:-20,spd:18,cmb:15},affinity:["blitz_step","killer_instinct","venom_strike","super_strength"],
+    passive:{name:"Acid Blood",desc:"Attackers are seared whenever they land a melee blow."}},
+  {key:"cyborg",name:"Cyborg",color:"#4FA9FF",emoji:"🤖",aetherBonus:5,startArm:"aegis",
+    blurb:"Flesh rebuilt around a war frame. Cold calculation, hardened plating, and an arsenal that never jams.",
+    mods:{str:8,dur:14,sta:10,int:14,spd:2,cmb:10},affinity:["energy_blast","targeting_system","iron_body","regeneration"],
+    passive:{name:"Hardened Chassis",desc:"Reduces all incoming damage by a flat amount."}},
+  {key:"esper",name:"Esper",color:"#B57CFF",emoji:"🔮",aetherBonus:5,startArm:"psyche",
+    blurb:"Minds that bend the world without touching it. Devastating from range and hard to pin — but frail if the psi ward drops.",
+    mods:{str:-8,dur:-5,sta:0,int:22,spd:6,cmb:4},affinity:["telekinesis","precognition","force_field","overmind"],
+    passive:{name:"Psionic Ward",desc:"Intelligence-scaled chance to negate a hit outright."}},
+  {key:"draconid",name:"Draconid",color:"#FF8A3D",emoji:"🐉",aetherBonus:0,startArm:"might",
+    blurb:"Scaled sovereigns of old. Overwhelming power and armor, and a breath that turns a battlefield to glass.",
+    mods:{str:16,dur:16,sta:14,int:4,spd:-6,cmb:8},affinity:["fire_breath","iron_body","flight","super_strength"],
+    passive:{name:"Draconic Fury",desc:"Deals bonus damage while above half health."}},
+  {key:"eldritch",name:"Eldritch",color:"#3FD9C4",emoji:"🐙",aetherBonus:0,startArm:"psyche",
+    blurb:"Voidborn things from the seams of reality. Their mere presence unravels the mind — and on rare turns, the rules themselves.",
+    mods:{str:2,dur:8,sta:12,int:14,spd:4,cmb:10},affinity:["reality_warp","necrotic_touch","regeneration","telekinesis"],
+    passive:{name:"Maddening Presence",desc:"Foes' attacks sometimes miss entirely, lost to confusion."}},
+  {key:"revenant",name:"Revenant",color:"#9FB4B0",emoji:"💀",aetherBonus:0,startArm:"vitality",
+    blurb:"The dead who refused the grave. Endless stamina, grave-cold resilience, and a will that outlasts a first death.",
+    mods:{str:10,dur:14,sta:18,int:-2,spd:-4,cmb:6},affinity:["necrotic_touch","deep_reserves","lifedrain","iron_body"],
+    passive:{name:"Undying Will",desc:"The first killing blow only drops it to a third of its health."}},
+];
+const raceByKey=k=>RACES.find(r=>r.key===k);
+
+const BUFF_BASE={super_strength:26,iron_body:26,deep_reserves:26,overmind:24,blitz_step:26,killer_instinct:24};
+// active (augmentable) powers are those with kind set. tags drive tree/augment scaling.
+const POWERS=[
+  {key:"super_strength",name:"Super Strength",emoji:"⚔️",cat:"buff",effect:"buff_str",base:20,tags:[],desc:"Muscle past mortal limits. Permanently raises Strength."},
+  {key:"iron_body",name:"Iron Body",emoji:"🛡️",cat:"buff",effect:"buff_dur",base:20,tags:[],desc:"Skin like tempered plate. Permanently raises Durability."},
+  {key:"deep_reserves",name:"Deep Reserves",emoji:"🫁",cat:"buff",effect:"buff_sta",base:18,tags:[],desc:"A furnace that never dims. Permanently raises Stamina."},
+  {key:"overmind",name:"Overmind",emoji:"🧠",cat:"buff",effect:"buff_int",base:18,tags:[],desc:"Thought at lightspeed. Permanently raises Intelligence."},
+  {key:"blitz_step",name:"Blitz Step",emoji:"💨",cat:"buff",effect:"buff_spd",base:22,tags:[],desc:"Move before the eye can track. Permanently raises Speed."},
+  {key:"killer_instinct",name:"Killer Instinct",emoji:"🎯",cat:"buff",effect:"buff_cmb",base:20,tags:[],desc:"Every strike finds the gap. Permanently raises Combat."},
+  {key:"energy_blast",name:"Aether Blast",emoji:"🌀",cat:"offense",effect:"proc",kind:"blast",base:26,tags:["force","projectile"],desc:"Fire a lance of raw force. Ranged; pierces some Durability."},
+  {key:"fire_breath",name:"Fire Breath",emoji:"🔥",cat:"offense",effect:"proc",kind:"fire",base:30,tags:["fire","area","dot"],desc:"Exhale a searing cone that also burns over the next few turns."},
+  {key:"telekinesis",name:"Telekinesis",emoji:"🌌",cat:"offense",effect:"proc",kind:"tk",base:24,tags:["mind","force"],desc:"Crush from afar with the mind. Scales hard with Intelligence."},
+  {key:"reality_warp",name:"Reality Warp",emoji:"✴️",cat:"offense",effect:"proc",kind:"warp",base:40,tags:["void","area"],desc:"Rewrite the moment for catastrophic damage. Rare — useless without deep mastery."},
+  {key:"necrotic_touch",name:"Necrotic Touch",emoji:"☠️",cat:"offense",effect:"necrotic",base:22,tags:["void","dot"],desc:"Rot festers in every wound you land, dealing damage over time."},
+  {key:"venom_strike",name:"Venom Strike",emoji:"🐍",cat:"offense",effect:"venom",base:18,tags:["void","dot"],desc:"Toxins that eat away round after round."},
+  {key:"berserk",name:"Berserk",emoji:"😤",cat:"offense",effect:"berserk",base:22,tags:["physical","melee"],desc:"The closer to death you are, the harder you hit."},
+  {key:"flight",name:"Flight",emoji:"🕊️",cat:"utility",effect:"flight",base:22,tags:[],desc:"Take to the air — hard to catch in melee, and you strike first."},
+  {key:"regeneration",name:"Regeneration",emoji:"♻️",cat:"utility",effect:"regen",base:26,tags:[],desc:"Knit yourself back together at the start of every turn."},
+  {key:"lifedrain",name:"Life Drain",emoji:"🩸",cat:"utility",effect:"lifesteal",base:24,tags:[],desc:"Siphon vitality from every foe you strike."},
+  {key:"force_field",name:"Force Field",emoji:"🔰",cat:"utility",effect:"shield",base:24,tags:[],desc:"Open the fight behind a barrier that soaks damage."},
+  {key:"teleport",name:"Teleport",emoji:"🌫️",cat:"utility",effect:"teleport",base:26,tags:[],desc:"Flicker out of reach — evade blows and punish the miss."},
+  {key:"precognition",name:"Precognition",emoji:"👁️",cat:"utility",effect:"precog",base:24,tags:[],desc:"See the blow before it lands. Big boost to dodging."},
+  {key:"targeting_system",name:"Targeting System",emoji:"🔺",cat:"utility",effect:"crit_up",base:20,tags:[],desc:"Lock on for far higher accuracy and critical strikes."},
+  {key:"invisibility",name:"Invisibility",emoji:"🫥",cat:"utility",effect:"invis",base:20,tags:[],desc:"Vanish early and open with near-unavoidable assaults."},
+  {key:"shapeshift",name:"Shapeshift",emoji:"🦎",cat:"utility",effect:"shapeshift",base:22,tags:[],desc:"Adapt your form mid-fight for steadier accuracy and evasion."},
+];
+const powerByKey=k=>POWERS.find(p=>p.key===k);
+const isAugmentable=key=>{const p=powerByKey(key);return p&&p.effect==="proc"||key==="stand";};
+const CATS=[{k:"buff",n:"Buffs"},{k:"offense",n:"Offense"},{k:"utility",n:"Utility"}];
+
+const STAND_ARCHETYPES=[
+  {key:"power",name:"The Fist",desc:"Close-range powerhouse — extra flurry strikes and heavier hits.",effect:"barrage",tags:["physical","melee"]},
+  {key:"time",name:"The Clock",desc:"Bends time — sometimes seizes a free extra action.",effect:"timestop",tags:[]},
+  {key:"ranged",name:"The Arrow",desc:"An automatic ranged attacker that pesters from afar.",effect:"ranged",tags:["force","projectile"]},
+  {key:"guard",name:"The Wall",desc:"A bulwark that shields you and counters when foes miss.",effect:"guard",tags:[]},
+];
+const standByKey=k=>STAND_ARCHETYPES.find(s=>s.key===k);
+
+/* support augments (support gems). mods interpreted per-power in combat. */
+const AUGMENTS=[
+  {key:"multistrike",name:"Multistrike",emoji:"⚡",mods:{extraHits:1,localMore:-0.25},desc:"Skill strikes an extra time, but each hit deals less."},
+  {key:"echo",name:"Echo",emoji:"🔁",mods:{extraHits:1,procMult:0.1},desc:"Skill repeats once more when it fires."},
+  {key:"greater_proj",name:"Greater Projectiles",emoji:"🎇",req:"projectile",mods:{extraHits:2,localMore:-0.2},desc:"Projectile skills fire 2 extra times for a bit less each."},
+  {key:"overcharge",name:"Overcharge",emoji:"🔺",mods:{localMore:0.35,procMult:-0.15},desc:"Big damage boost, but the skill triggers less often."},
+  {key:"concentrated",name:"Concentrated Force",emoji:"🎯",req:"area",mods:{localMore:0.3,procMult:-0.2},desc:"Area skills hit far harder in a tighter, rarer burst."},
+  {key:"amplify",name:"Amplify",emoji:"💠",mods:{localInc:0.35},desc:"Increases the skill's damage."},
+  {key:"brutality",name:"Brutality",emoji:"🩸",mods:{localInc:0.6,noAilment:true},desc:"Huge damage boost, but the skill can't apply damage-over-time."},
+  {key:"ignite",name:"Elemental Ignite",emoji:"🔥",mods:{addDot:{type:"fire",pctOfHit:0.4,turns:3}},desc:"Adds a burning damage-over-time scaling with the hit."},
+  {key:"toxic",name:"Toxic Infusion",emoji:"☠️",mods:{addDot:{type:"void",pctOfHit:0.3,turns:4}},desc:"Adds a lingering poison scaling with the hit."},
+  {key:"precision",name:"Precision Link",emoji:"👁️",mods:{noMiss:true,localCrit:-0.1},desc:"The skill can't miss, but its crit chance is lower."},
+  {key:"crit_infusion",name:"Critical Infusion",emoji:"💥",mods:{localCrit:0.15,localCritMult:0.4},desc:"Higher crit chance and crit damage for this skill."},
+  {key:"life_leech",name:"Life Leech",emoji:"🧛",mods:{leechThis:0.2},desc:"Heals you for part of this skill's damage."},
+  {key:"chain",name:"Chain",emoji:"🔗",mods:{secondary:0.5},desc:"The skill strikes again for half after it hits."},
+  {key:"faster",name:"Faster Casting",emoji:"💨",mods:{procMult:0.25},desc:"The skill triggers noticeably more often."},
+  {key:"culling",name:"Cull",emoji:"🔪",mods:{cull:0.15},desc:"Instantly finishes foes left below 15% life."},
+  {key:"stagger",name:"Stagger",emoji:"🌀",mods:{knockback:0.5},desc:"Chance to stagger the foe, costing them an action."},
+  {key:"arcane",name:"Arcane Surge",emoji:"✨",mods:{localMore:0.2,accAdd:0.05},desc:"More damage and slightly better accuracy."},
+  {key:"ruthless",name:"Ruthless",emoji:"🪓",mods:{ruthless:true},desc:"Some hits land much harder, at random."},
+  {key:"relentless",name:"Relentless",emoji:"🔨",mods:{extraHits:1,localCrit:0.06},desc:"Strikes an extra time with a slightly better crit chance."},
+  {key:"vampiric",name:"Vampiric Edge",emoji:"🦇",mods:{leechThis:0.16,localMore:0.12},desc:"Leeches life from the skill and hits a little harder."},
+  {key:"executioner",name:"Executioner",emoji:"⚰️",mods:{cull:0.2,localCritMult:0.3},desc:"Executes low-life foes sooner and crits for more."},
+  {key:"volatile",name:"Volatile Core",emoji:"☢️",mods:{localMore:0.4,localCrit:0.1,procMult:-0.15},desc:"Devastating, high-crit hits — but the skill fires less often."},
+  {key:"frostbite",name:"Frostbite",emoji:"❄️",mods:{addDot:{type:"mind",pctOfHit:0.3,turns:3},localCrit:0.04},desc:"Adds a chilling mind damage-over-time."},
+  {key:"momentum",name:"Momentum",emoji:"🌊",mods:{secondary:0.45,localInc:0.1},desc:"The skill strikes again for part of its damage, and hits harder."},
+  {key:"riposte",name:"Riposte",emoji:"🤺",mods:{secondary:0.35,localCrit:0.06},desc:"Strikes back for part of the damage, with a better crit chance."},
+  {key:"havoc",name:"Havoc",emoji:"💢",mods:{localInc:0.42,procMult:-0.1},desc:"Big damage boost; the skill triggers a little less often."},
+  {key:"siphon",name:"Siphon",emoji:"🌀",mods:{leechThis:0.12,procMult:0.1},desc:"Leech from the skill and trigger it more often."},
+];
+const augByKey=k=>AUGMENTS.find(a=>a.key===k);
+const STARTER_AUGMENTS=["multistrike","overcharge","ignite"];
+/* Loot rarity (Phase 2a). Every augment instance carries a grade on the 7-tier
+   Lucid Winds ladder (Common..Cosmic). In enrichProc a grade scales the gem's
+   numeric UPSIDES up and shrinks its DOWNSIDES (so a higher grade is strictly
+   better) and adds `hits` extra strikes to hit-adding gems. Everything still folds
+   through the existing clamps (extraHits<=5, chance<=0.9, damage floor 1), so
+   fights stay finite. `weight` = roll-on-learn odds (see rollGrade). */
+const RARITY=[
+  {key:"common",   label:"Common",    color:"#b8c0cc", mult:1.00, hits:0, weight:45},
+  {key:"uncommon", label:"Uncommon",  color:"#67c98a", mult:1.15, hits:0, weight:27},
+  {key:"rare",     label:"Rare",      color:"#4aa3ff", mult:1.35, hits:0, weight:16},
+  {key:"epic",     label:"Epic",      color:"#b06bff", mult:1.60, hits:1, weight:8},
+  {key:"legendary",label:"Legendary", color:"#ffab3d", mult:1.90, hits:1, weight:3},
+  {key:"mythic",   label:"Mythic",    color:"#ff5db1", mult:2.25, hits:1, weight:0.9},
+  {key:"cosmic",   label:"Cosmic",    color:"#43e8d8", mult:2.75, hits:2, weight:0.1}
+];
+const rarByKey=k=>RARITY.find(r=>r.key===k)||RARITY[0];
+
+/* ===================== ASCENDANCIES (subclasses) =====================
+   A second mini-tree unlocked at ASC_UNLOCK_LEVEL. Pick ONE subclass (freely,
+   changeable — changing resets its nodes), spend a small growing point pool on
+   its nodes. Node effects reuse the tree-node vocab (applyNodeEffect); the
+   signature node of each is keystone-like (upside + a real downside via a new
+   asc_* case in applyKeystone). Folded into aggregateMods alongside the tree. */
+const ASC_UNLOCK_LEVEL=15;
+const ASCENDANCIES=[
+  {key:"juggernaut",name:"Juggernaut",emoji:"🛡️",color:"#e0a94b",desc:"An unbreakable wall that grinds foes down.",nodes:[
+    {id:"jug_a",name:"Unstoppable",desc:"+14 armor and +15% maximum life.",effect:{armorFlat:14,lifePct:0.15}},
+    {id:"jug_b",name:"Bulwark",desc:"+12 Durability, +10 Stamina.",effect:{stat:{dur:12,sta:10}}},
+    {id:"jug_c",name:"Crushing Blows",desc:"+30% physical and +20% melee damage.",effect:{incTag:{physical:0.3,melee:0.2}}},
+    {id:"jug_d",name:"Immovable",desc:"You cannot be critically hit and gain 12% block; but −8% attack speed.",effect:{keystone:"asc_juggernaut"}},
+    {id:"jug_e",name:"Momentum",desc:"+10% generic damage and steady regen.",effect:{incGeneric:0.1,regenAdd:2}}
+  ]},
+  {key:"assassin",name:"Assassin",emoji:"🗡️",color:"#ff5db1",desc:"Lethal, precise, and gone before the counter lands.",nodes:[
+    {id:"ass_a",name:"Lethality",desc:"+12% crit chance and +30% crit damage.",effect:{critChanceAdd:0.12,critMultAdd:0.3}},
+    {id:"ass_b",name:"Swiftness",desc:"+14 Speed, +10 Combat.",effect:{stat:{spd:14,cmb:10}}},
+    {id:"ass_c",name:"Exploit Weakness",desc:"+15% generic damage and +20% crit damage.",effect:{incGeneric:0.15,critMultAdd:0.2}},
+    {id:"ass_d",name:"Killing Edge",desc:"+15% crit and +10% accuracy; but your maximum life is reduced 15%.",effect:{keystone:"asc_assassin"}},
+    {id:"ass_e",name:"Execution",desc:"Deal far more to low-life foes.",effect:{execBonus:0.4}}
+  ]},
+  {key:"elementalist",name:"Elementalist",emoji:"🔥",color:"#4aa3ff",desc:"Bends fire, void and mind into lingering ruin.",nodes:[
+    {id:"ele_a",name:"Kindling",desc:"+30% fire and +20% void damage.",effect:{incTag:{fire:0.3,void:0.2}}},
+    {id:"ele_b",name:"Conflagration",desc:"Damage-over-time deals 40% more.",effect:{dotMore:0.4}},
+    {id:"ele_c",name:"Attunement",desc:"+16 Intellect.",effect:{stat:{int:16}}},
+    {id:"ele_d",name:"Elemental Overload",desc:"+50% DoT and +20% ability damage; but take 10% more damage.",effect:{keystone:"asc_elementalist"}},
+    {id:"ele_e",name:"Spreading Flames",desc:"+25% mind damage and steady regen.",effect:{incTag:{mind:0.25},regenAdd:2}}
+  ]},
+  {key:"warlord",name:"Warlord",emoji:"⚔️",color:"#67c98a",desc:"Relentless offense fed by the blood of the fallen.",nodes:[
+    {id:"war_a",name:"Battle Fury",desc:"+20% generic damage and +10% attack speed.",effect:{incGeneric:0.2,atkSpeedAdd:0.1}},
+    {id:"war_b",name:"Bloodthirst",desc:"Leech 8% of damage dealt and +10% maximum life.",effect:{leechPct:0.08,lifePct:0.1}},
+    {id:"war_c",name:"Commanding Might",desc:"+12 Strength, +12 Combat.",effect:{stat:{str:12,cmb:12}}},
+    {id:"war_d",name:"Endless Assault",desc:"Skills fire more and deal 15% more; but take 8% more damage.",effect:{keystone:"asc_warlord"}},
+    {id:"war_e",name:"Last Stand",desc:"The first time you'd die, revive at 40% life.",effect:{keystone:"second_wind"}}
+  ]},
+  {key:"trickster",name:"Trickster",emoji:"🎭",color:"#9d7bff",desc:"Untouchable, precise, and always a step ahead.",nodes:[
+    {id:"tri_a",name:"Evasive",desc:"+12% evasion.",effect:{evasionAdd:0.12}},
+    {id:"tri_b",name:"Quickstep",desc:"+16 Speed.",effect:{stat:{spd:16}}},
+    {id:"tri_c",name:"Sleight",desc:"+10% crit chance and +8% accuracy.",effect:{critChanceAdd:0.1,accuracyAdd:0.08}},
+    {id:"tri_d",name:"Blur",desc:"+18% evasion and +10% attack speed; but your maximum life is reduced 10%.",effect:{keystone:"asc_trickster"}},
+    {id:"tri_e",name:"Opportunist",desc:"Deal more to low-life foes and +10% generic damage.",effect:{execBonus:0.3,incGeneric:0.1}}
+  ]}
+];
+const ASC_BY_KEY={}; ASCENDANCIES.forEach(a=>{ASC_BY_KEY[a.key]=a;});
+const ASC_NODE_BY_ID={}; ASCENDANCIES.forEach(a=>a.nodes.forEach(n=>{ASC_NODE_BY_ID[n.id]=Object.assign({asc:a.key},n);}));
+
+/* ===================== JEWELS (rarity-graded tree sockets) =====================
+   A few tree nodes become jewel sockets (type:"jewel", no base effect). Owning a
+   jewel is like owning a gem: state.ownedJewels=[{key,grade}], learned with Glory
+   (rolls a grade), reforgeable. Socket a jewel into an ALLOCATED socket node and its
+   mods (grade-scaled, node-effect vocab) fold into aggregateMods. `growth` scales
+   with total allocated nodes. Sockets are picked so connectivity is unaffected. */
+const JEWEL_SOCKET_IDS=new Set(["a0_r2_0","a1_r3_4","a2_r2_0","a3_r3_4","a4_r2_0","a5_r3_4"]);
+const JEWELS=[
+  {key:"efficiency",name:"Efficiency",emoji:"🔷",mods:{incGeneric:0.14},desc:"Increased damage."},
+  {key:"vigor",name:"Vigor",emoji:"💚",mods:{lifePct:0.12,regenAdd:2},desc:"More maximum life and steady regeneration."},
+  {key:"focus",name:"Focus",emoji:"🎯",mods:{critChanceAdd:0.07,critMultAdd:0.25},desc:"More crit chance and crit damage."},
+  {key:"wellspring",name:"Wellspring",emoji:"🌀",mods:{stat:{int:8,spd:8}},desc:"+8 Intellect and +8 Speed."},
+  {key:"ferocity",name:"Ferocity",emoji:"🔥",mods:{incTag:{physical:0.16,fire:0.16}},desc:"More physical and fire damage."},
+  {key:"bulwark_j",name:"Warding Stone",emoji:"🛡️",mods:{armorFlat:10,lifePct:0.08},desc:"Armor and a little more life."},
+  {key:"leeching",name:"Leeching",emoji:"🩸",mods:{leechPct:0.06},desc:"Leech a little life on every hit."},
+  {key:"growth",name:"Growth",emoji:"🌱",mods:{},scalePerNodes:{per:5,pct:0.03},desc:"+3% damage per 5 passive nodes you've allocated."},
+  {key:"alacrity",name:"Alacrity",emoji:"💨",mods:{atkSpeedAdd:0.1,stat:{spd:6}},desc:"Faster attacks and a little Speed."},
+  {key:"fortress",name:"Fortress",emoji:"🏰",mods:{armorFlat:14,lifePct:0.06},desc:"Solid armor and a little more life."}
+];
+const JEWEL_BY_KEY={}; JEWELS.forEach(j=>{JEWEL_BY_KEY[j.key]=j;});
+const STARTER_JEWELS=["efficiency","vigor"];
+/* scale a node-effect object's numbers by a grade multiplier */
+function scaleEffect(m,gm){ const e={}; for(const k in m){ const v=m[k];
+  if(k==="stat"){ e.stat={}; for(const kk in v) e.stat[kk]=Math.round(v[kk]*gm); }
+  else if(k==="incTag"){ e.incTag={}; for(const kk in v) e.incTag[kk]=v[kk]*gm; }
+  else if(typeof v==="number") e[k]=v*gm; else e[k]=v; } return e; }
+
+/* ===================== SKILL WEB BUILDER ===================== */
+// minor node effect pools per arm (cycled)
+const MINOR_POOLS={
+  might:[{stat:{str:6}},{incTag:{physical:0.08}},{stat:{str:5},incTag:{melee:0.05}},{critMultAdd:0.10}],
+  aegis:[{stat:{dur:6}},{armorFlat:5},{lifePct:0.05},{blockChance:0.03}],
+  tempo:[{stat:{spd:6}},{evasionAdd:0.04},{atkSpeedAdd:0.05},{stat:{spd:4},atkSpeedAdd:0.03}],
+  psyche:[{stat:{int:6}},{incTag:{mind:0.09}},{stat:{int:5},incTag:{force:0.05}},{incTag:{fire:0.06,void:0.06}}],
+  ruin:[{critChanceAdd:0.03},{stat:{cmb:6}},{accuracyAdd:0.05},{dotMore:0.08}],
+  vitality:[{stat:{sta:6}},{lifePct:0.05},{regenAdd:0.008},{leechPct:0.04}],
+};
+// named notables per arm at (ring center). keystones at rim.
+const NOTABLES={
+  might:[
+    {ring:2,name:"Brute Force",effect:{stat:{str:12},incTag:{physical:0.12}},desc:"+12 Strength and 12% increased Physical damage."},
+    {ring:3,name:"Titan's Grip",effect:{stat:{str:8},incTag:{melee:0.1},atkSpeedAdd:0.06},desc:"+8 STR, 10% Melee damage, 6% attack speed."},
+    {ring:4,name:"Executioner",effect:{execBonus:0.25},desc:"Deal 25% more damage to foes below half life."},
+  ],
+  aegis:[
+    {ring:2,name:"Bulwark",effect:{stat:{dur:12},armorFlat:8},desc:"+12 Durability and +8 flat damage reduction."},
+    {ring:3,name:"Stone Skin",effect:{lifePct:0.12,armorFlat:6},desc:"+12% maximum life and +6 flat damage reduction."},
+    {ring:4,name:"Aegis Discipline",effect:{blockChance:0.1},desc:"+10% chance to fully negate an incoming hit."},
+  ],
+  tempo:[
+    {ring:2,name:"Fleetfoot",effect:{stat:{spd:12},evasionAdd:0.08},desc:"+12 Speed and +8% evasion."},
+    {ring:3,name:"Blur",effect:{evasionAdd:0.1,atkSpeedAdd:0.08},desc:"+10% evasion and +8% attack speed."},
+    {ring:4,name:"Combo Flow",effect:{atkSpeedAdd:0.14},desc:"Greatly increased chance to act an extra time."},
+  ],
+  psyche:[
+    {ring:2,name:"Focused Mind",effect:{stat:{int:12},incTag:{mind:0.12}},desc:"+12 Intelligence and 12% increased Mind damage."},
+    {ring:3,name:"Aether Well",effect:{stat:{int:8},abilityProc:0.06,incTag:{force:0.06}},desc:"+8 INT, ability skills trigger more, +6% Force damage."},
+    {ring:4,name:"Overchannel",effect:{abilityMore:0.14},desc:"Ability skills deal 14% more damage."},
+  ],
+  ruin:[
+    {ring:2,name:"Deadeye",effect:{critChanceAdd:0.1,accuracyAdd:0.06},desc:"+10% critical strike chance and +6% accuracy."},
+    {ring:3,name:"Executioner's Edge",effect:{critMultAdd:0.30},desc:"+30% critical strike multiplier."},
+    {ring:4,name:"Corrosion",effect:{dotMore:0.18},desc:"Damage-over-time effects deal 18% more."},
+  ],
+  vitality:[
+    {ring:2,name:"Ironblood",effect:{stat:{sta:12},lifePct:0.1},desc:"+12 Stamina and +10% maximum life."},
+    {ring:3,name:"Bloodletter",effect:{leechPct:0.08,dotMore:0.1},desc:"+8% life leech and 10% more damage-over-time."},
+    {ring:4,name:"Regenerator",effect:{regenAdd:0.02},desc:"Regenerate an extra 2% of life each turn."},
+  ],
+};
+const KEYSTONES={
+  might:{name:"Berserker's Pact",keystone:"berserkers_pact",desc:"Deal 30% more damage while below half life; but take 20% more damage."},
+  aegis:{name:"Unwavering Stance",keystone:"unwavering",desc:"You cannot be critically hit and gain armor; but −15% attack speed and Speed."},
+  tempo:{name:"Untouchable",keystone:"untouchable",desc:"+25% evasion, but your maximum life is reduced by 20%."},
+  psyche:{name:"Aether Overflow",keystone:"aether_overflow",desc:"Ability skills deal 30% more; basic attacks deal 25% less."},
+  ruin:{name:"Resolute Technique",keystone:"resolute",desc:"Your hits can never miss or be dodged; but you can never deal critical strikes."},
+  vitality:{name:"Undying Rage",keystone:"second_wind",desc:"The first time you'd die, revive at 40% life (stacks with innate revival)."},
+};
+// hybrid keystones (bridge nodes)
+const HYBRID_KEYS=[
+  {id:"ks_glass",name:"Glass Cannon",keystone:"glass_cannon",arms:["ruin","psyche"],desc:"Deal 40% more damage, but your maximum life is halved.",angle:0,radius:660},
+  {id:"ks_blood",name:"Blood Engine",keystone:"blood_engine",arms:["vitality","ruin"],desc:"You leech life on every hit; but you take 15% more damage.",angle:60,radius:660},
+];
+
+const RING_SLOTS=[0,3,5,5,3,1]; // index by ring (1..5); ring0 unused
+const RING_RADIUS=[0,150,275,395,505,595];
+const RING_WIDTH=[0,26,42,46,32,0]; // angular spread deg
+const CENTER_SLOT={1:1,2:2,3:2,4:1,5:0};
+
+function polar(cx,cy,r,deg){const a=deg*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+
+function buildTree(){
+  const nodes=[]; const byId={}; const edges=[];
+  const cx=0, cy=0;
+  const hub={id:"hub",arm:"hub",ring:0,type:"hub",name:"Nexus",desc:"The crossroads of the web.",effect:{},x:cx,y:cy,neighbors:[]};
+  nodes.push(hub); byId.hub=hub;
+  ARMS.forEach((arm,ai)=>{
+    const notablesByRing={}; (NOTABLES[arm.key]||[]).forEach(n=>notablesByRing[n.ring]=n);
+    const perRing={};
+    for(let ring=1;ring<=5;ring++){
+      const S=RING_SLOTS[ring]; const W=RING_WIDTH[ring]; const R=RING_RADIUS[ring];
+      perRing[ring]=[];
+      for(let s=0;s<S;s++){
+        const off = S>1 ? (s-(S-1)/2)*(W/(S-1)) : 0;
+        const deg = arm.angle + off;
+        const [x,y]=polar(cx,cy,R,deg);
+        const id=`a${ai}_r${ring}_${s}`;
+        let node={id,arm:arm.key,ring,type:"minor",x,y,neighbors:[]};
+        // assign minor effect
+        const pool=MINOR_POOLS[arm.key]; const eff=pool[(ring+s)%pool.length];
+        node.effect=JSON.parse(JSON.stringify(eff));
+        node.name="Minor Passive"; node.desc=describeEffect(node.effect);
+        // notable at center slot
+        if(notablesByRing[ring] && s===CENTER_SLOT[ring]){
+          const nb=notablesByRing[ring];
+          node.type="notable"; node.name=nb.name; node.effect=nb.effect; node.desc=nb.desc;
+        }
+        // keystone at rim
+        if(ring===5){
+          const ks=KEYSTONES[arm.key];
+          node.type="keystone"; node.name=ks.name; node.keystone=ks.keystone; node.effect={keystone:ks.keystone}; node.desc=ks.desc;
+        }
+        // jewel socket (replaces a minor; grants no base effect, holds a jewel)
+        if(node.type==="minor" && JEWEL_SOCKET_IDS.has(id)){
+          node.type="jewel"; node.name="Jewel Socket"; node.effect={}; node.desc="Socket a jewel here to gain its modifiers, scaled by the jewel's rarity.";
+        }
+        nodes.push(node); byId[id]=node; perRing[ring].push(node);
+      }
+    }
+    arm._perRing=perRing;
+    // connect within arm
+    for(let ring=1;ring<=5;ring++){
+      const cur=perRing[ring];
+      for(let i=0;i<cur.length-1;i++) addEdge(edges,byId,cur[i].id,cur[i+1].id);
+      if(ring<5){
+        const nxt=perRing[ring+1];
+        nxt.forEach(n=>{ // connect each outer node to nearest inner by angle position
+          let best=null,bd=1e9;
+          cur.forEach(c=>{const d=Math.hypot(c.x-n.x,c.y-n.y); if(d<bd){bd=d;best=c;}});
+          if(best) addEdge(edges,byId,best.id,n.id);
+        });
+      }
+    }
+    // ring1 center to hub
+    const r1=perRing[1]; const r1c=r1[Math.floor(r1.length/2)];
+    addEdge(edges,byId,"hub",r1c.id);
+    arm._start=r1c.id;
+  });
+  // outer connecting loop at ring3 centers
+  ARMS.forEach((arm,ai)=>{
+    const a=arm._perRing[3], b=ARMS[(ai+1)%ARMS.length]._perRing[3];
+    if(a.length&&b.length){
+      const ac=a[a.length-1], bc=b[0];
+      addEdge(edges,byId,ac.id,bc.id);
+    }
+  });
+  // hybrid keystones
+  HYBRID_KEYS.forEach(hk=>{
+    const [x,y]=polar(0,0,hk.radius,hk.angle);
+    const node={id:hk.id,arm:"hybrid",ring:5,type:"keystone",name:hk.name,keystone:hk.keystone,effect:{keystone:hk.keystone},desc:hk.desc,x,y,neighbors:[]};
+    nodes.push(node); byId[hk.id]=node;
+    hk.arms.forEach(armKey=>{
+      const arm=ARMS.find(a=>a.key===armKey);
+      const r4=arm._perRing[4]; const r4c=r4[Math.floor(r4.length/2)];
+      addEdge(edges,byId,r4c.id,node.id);
+    });
+  });
+  // start-by-race
+  const startByRace={};
+  RACES.forEach(r=>{
+    if(r.startArm==="hub") startByRace[r.key]="hub";
+    else{ const arm=ARMS.find(a=>a.key===r.startArm); startByRace[r.key]=arm?arm._start:"hub"; }
+  });
+  return {nodes,byId,edges,startByRace};
+}
+function addEdge(edges,byId,a,b){
+  if(a===b) return;
+  if(byId[a].neighbors.includes(b)) return;
+  byId[a].neighbors.push(b); byId[b].neighbors.push(a);
+  edges.push([a,b]);
+}
+function describeEffect(e){
+  const parts=[];
+  if(e.stat) for(const k in e.stat) parts.push(`+${e.stat[k]} ${STAT_ABBR[k]}`);
+  if(e.incTag) for(const t in e.incTag) parts.push(`+${Math.round(e.incTag[t]*100)}% ${t} dmg`);
+  if(e.critChanceAdd) parts.push(`+${Math.round(e.critChanceAdd*100)}% crit chance`);
+  if(e.critMultAdd) parts.push(`+${Math.round(e.critMultAdd*100)}% crit mult`);
+  if(e.accuracyAdd) parts.push(`+${Math.round(e.accuracyAdd*100)}% accuracy`);
+  if(e.evasionAdd) parts.push(`+${Math.round(e.evasionAdd*100)}% evasion`);
+  if(e.atkSpeedAdd) parts.push(`+${Math.round(e.atkSpeedAdd*100)}% attack speed`);
+  if(e.armorFlat) parts.push(`+${e.armorFlat} flat DR`);
+  if(e.lifePct) parts.push(`+${Math.round(e.lifePct*100)}% max life`);
+  if(e.regenAdd) parts.push(`+${(e.regenAdd*100).toFixed(1)}% life regen/turn`);
+  if(e.leechPct) parts.push(`+${Math.round(e.leechPct*100)}% life leech`);
+  if(e.blockChance) parts.push(`+${Math.round(e.blockChance*100)}% block`);
+  if(e.dotMore) parts.push(`+${Math.round(e.dotMore*100)}% damage over time`);
+  if(e.abilityMore) parts.push(`+${Math.round(e.abilityMore*100)}% ability damage`);
+  if(e.abilityProc) parts.push(`+${Math.round(e.abilityProc*100)}% ability trigger`);
+  if(e.execBonus) parts.push(`+${Math.round(e.execBonus*100)}% dmg vs low-life foes`);
+  return parts.join(", ")||"Minor bonus";
+}
+const TREE=buildTree();
+
+/* ===================== UTIL ===================== */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const randInt=(a,b)=>Math.floor(rand(a,b+1));
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const uid=()=>"oc_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function grade(v){
+  if(v>=100)return{l:"SSS",c:"#ff5cae"}; if(v>=90)return{l:"SS",c:"#ff8a3d"};
+  if(v>=80)return{l:"S",c:"#F5C451"}; if(v>=68)return{l:"A",c:"#8B6CF0"};
+  if(v>=54)return{l:"B",c:"#5ea6ff"}; if(v>=40)return{l:"C",c:"#6fd1e0"};
+  if(v>=26)return{l:"D",c:"#8a8f9e"}; return{l:"F",c:"#6b6b7a"};
+}
+
+/* persistence: artifact storage -> localStorage -> memory. never throws. */
+const Store=(()=>{
+  const mem={};
+  const hasWin=()=>typeof window!=="undefined"&&window.storage&&typeof window.storage.get==="function";
+  const hasLocal=()=>{try{return typeof localStorage!=="undefined"&&!!localStorage;}catch(e){return false;}};
+  async function load(key){
+    if(hasWin()){try{const r=await window.storage.get(key);if(r&&r.value!=null)return JSON.parse(r.value);}catch(e){}}
+    if(hasLocal()){try{const v=localStorage.getItem(key);if(v!=null)return JSON.parse(v);}catch(e){}}
+    return mem[key]!==undefined?mem[key]:null;
+  }
+  async function save(key,val){
+    mem[key]=val;
+    if(hasWin()){try{await window.storage.set(key,JSON.stringify(val));return;}catch(e){}}
+    if(hasLocal()){try{localStorage.setItem(key,JSON.stringify(val));return;}catch(e){}}
+  }
+  return{load,save};
+})();
+const SAVE_KEY="lucidwinds_arena_v2";
+
+/* ===================== STATE ===================== */
+const state={
+  glory:0, roster:[], alliances:[], ownedAugments:null, ownedJewels:null, gauntlet:{cleared:-1,champion:null},
+  screen:"home", draft:null, battle:null, battleSel:[], tourney:null,
+  sheetId:null, sheetTab:"overview", treeSel:null, treeView:{x:0,y:0,scale:1},
+  augPick:null, // {ocId, powerKey, slot}
+};
+const tmp={allyName:"",allyColor:"#4FE3C1"};
+
+function migrateOC(oc){
+  if(oc.level==null) oc.level=1;
+  if(oc.xp==null) oc.xp=0;
+  if(!oc.record) oc.record={w:0,l:0};
+  if(!oc.tree) oc.tree={allocated:[]};
+  if(!Array.isArray(oc.tree.allocated)) oc.tree.allocated=[];
+  const start=TREE.startByRace[oc.race]||"hub";
+  if(!oc.tree.allocated.includes(start)) oc.tree.allocated.unshift(start);
+  // prune invalid node ids
+  oc.tree.allocated=oc.tree.allocated.filter(id=>TREE.byId[id]);
+  if(!oc.tree.jewels||typeof oc.tree.jewels!=="object") oc.tree.jewels={};
+  for(const nid in oc.tree.jewels){ const n=TREE.byId[nid]; const e=oc.tree.jewels[nid]; const jk=(e&&e.key)?e.key:e; if(!n||n.type!=="jewel"||!JEWEL_BY_KEY[jk]) delete oc.tree.jewels[nid]; }
+  (oc.powers||[]).forEach(p=>{ if(!Array.isArray(p.augments)) p.augments=[]; });
+  if(!oc.ascendancy||typeof oc.ascendancy!=="object") oc.ascendancy={key:null,allocated:[]};
+  if(!Array.isArray(oc.ascendancy.allocated)) oc.ascendancy.allocated=[];
+  // keep only valid nodes that belong to the chosen ascendancy
+  oc.ascendancy.allocated=ASC_BY_KEY[oc.ascendancy.key]
+    ? oc.ascendancy.allocated.filter(id=>{const n=ASC_NODE_BY_ID[id];return n&&n.asc===oc.ascendancy.key;})
+    : [];
+  return oc;
+}
+async function loadState(){
+  const s=await Store.load(SAVE_KEY);
+  if(s){
+    state.glory=s.glory||0;
+    state.roster=(Array.isArray(s.roster)?s.roster:[]).map(migrateOC);
+    state.alliances=Array.isArray(s.alliances)?s.alliances:[];
+    state.ownedAugments=normalizeOwned(Array.isArray(s.ownedAugments)?s.ownedAugments:STARTER_AUGMENTS);
+    state.ownedJewels=normalizeOwnedJewels(Array.isArray(s.ownedJewels)?s.ownedJewels:STARTER_JEWELS);
+    if(s.gauntlet&&typeof s.gauntlet.cleared==="number") state.gauntlet.cleared=s.gauntlet.cleared;
+  }else{
+    state.ownedAugments=normalizeOwned(STARTER_AUGMENTS);
+    state.ownedJewels=normalizeOwnedJewels(STARTER_JEWELS);
+  }
+}
+let saveTimer=null;
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments,ownedJewels:state.ownedJewels,gauntlet:{cleared:gauntletCleared()}}),200);
+}
+
+/* ---- augment ownership + loot grades (Phase 2a) ----
+   ownedAugments is [{key,grade}]. The grade lives on the OWNED gem (one per key);
+   sockets store just the key and resolve their grade from the owned gem at combat
+   + render time, so a Reforge upgrades a gem everywhere it's socketed at once. */
+function normalizeOwned(arr){
+  return (Array.isArray(arr)?arr:[]).map(x=> (x&&x.key)?{key:x.key,grade:x.grade||"common"}:{key:x,grade:"common"})
+    .filter(a=>a.key && augByKey(a.key));
+}
+function ownsAug(k){ return (state.ownedAugments||[]).some(a=>a.key===k); }
+function ownedGem(k){ return (state.ownedAugments||[]).find(a=>a.key===k); }
+function augGradeOf(k){ const g=ownedGem(k); return g?(g.grade||"common"):"common"; }
+function sockets(p){ return (p.augments||[]).map(x=>{ const k=(x&&x.key)?x.key:x; return {key:k,grade:(x&&x.grade)?x.grade:augGradeOf(k)}; }); }
+function rollGrade(){ let t=0; for(const r of RARITY) t+=r.weight; let x=Math.random()*t; for(const r of RARITY){ x-=r.weight; if(x<=0) return r.key; } return "common"; }
+function reforgeCostG(){ return 90; }
+/* jewels — owned like gems, rarity-graded */
+function normalizeOwnedJewels(arr){ return (Array.isArray(arr)?arr:[]).map(x=>(x&&x.key)?{key:x.key,grade:x.grade||"common"}:{key:x,grade:"common"}).filter(a=>a.key&&JEWEL_BY_KEY[a.key]); }
+function ownsJewel(k){ return (state.ownedJewels||[]).some(a=>a.key===k); }
+function ownedJewelGem(k){ return (state.ownedJewels||[]).find(a=>a.key===k); }
+function jewelGradeOf(k){ const g=ownedJewelGem(k); return g?(g.grade||"common"):"common"; }
+function jewelCost(){ return 80; }
+function gradeBadge(grade){ const R=rarByKey(grade); return `<span class="gbadge" style="color:${R.color};border-color:${R.color}66;background:${R.color}1a">${R.label}</span>`; }
+function gradeLegendHTML(){ return `<div class="grade-legend">${RARITY.map(r=>`<span class="gl" style="color:${r.color};border-color:${r.color}66;background:${r.color}14">${r.label}</span>`).join("")}</div>`; }
+/* OC overall grade (Phase 2b): a readout of build investment + socketed loot
+   rarity on the same 7-tier ladder. Rare gems literally raise a character's grade.
+   Thresholds are tunable (OC_GRADE_CUT). */
+const OC_GRADE_CUT=[0,14,26,42,62,86,112];
+function ocGradeScore(oc){
+  if(!oc) return 0;
+  const start=TREE.startByRace[oc.race]||"hub";
+  const alloc=(oc.tree&&oc.tree.allocated)||[];
+  let keyN=0,notN=0,pts=0;
+  for(const id of alloc){ if(id===start) continue; const n=TREE.byId[id]; if(!n) continue; pts++; if(n.type==="keystone") keyN++; else if(n.type==="notable") notN++; }
+  let statTotal=0; for(const k of STAT_KEYS) statTotal+=(oc.baseStats&&oc.baseStats[k])||0;
+  let gem=0; (oc.powers||[]).forEach(p=>(p.augments||[]).forEach(x=>{ const gk=(x&&x.key)?x.key:x; const gr=(x&&x.grade)?x.grade:augGradeOf(gk); const idx=RARITY.findIndex(r=>r.key===gr); if(idx>0) gem+=idx; }));
+  // socketed jewels in allocated sockets feed the grade too
+  const jmap=(oc.tree&&oc.tree.jewels)||{}, allocSet=new Set(alloc);
+  for(const nid in jmap){ if(!allocSet.has(nid)) continue; const e=jmap[nid],jk=(e&&e.key)?e.key:e; const gr=(e&&e.grade)?e.grade:jewelGradeOf(jk); const idx=RARITY.findIndex(r=>r.key===gr); if(idx>0) gem+=idx; }
+  return keyN*7 + notN*2.5 + pts*0.5 + statTotal/40 + gem*1.6 + (oc.level||1)*0.35;
+}
+function ocGrade(oc){ const s=ocGradeScore(oc); let gi=0; for(let i=0;i<OC_GRADE_CUT.length;i++){ if(s>=OC_GRADE_CUT[i]) gi=i; } return RARITY[gi].key; }
+function ocGradeBadge(oc){ const R=rarByKey(ocGrade(oc)); return `<span class="ocgrade" style="color:${R.color};border-color:${R.color};background:${R.color}1a" title="Overall grade — keystones, stats, tree and socketed gem rarity">${R.label}</span>`; }
+
+/* level / xp */
+function xpNeeded(level){return Math.round(60*Math.pow(level,1.5));}
+function pointsTotal(oc){return 3+(oc.level-1)+Math.floor(oc.level/10)*2;}
+function pointsSpent(oc){const start=TREE.startByRace[oc.race]||"hub";return oc.tree.allocated.filter(id=>id!==start).length;}
+function pointsAvail(oc){return pointsTotal(oc)-pointsSpent(oc);}
+/* ascendancy points: unlock at ASC_UNLOCK_LEVEL, +1 every 6 levels, cap 5 */
+function ascPointsTotal(oc){ if(!oc||(oc.level||1)<ASC_UNLOCK_LEVEL) return 0; return Math.min(5,1+Math.floor(((oc.level||1)-ASC_UNLOCK_LEVEL)/6)); }
+function ascPointsSpent(oc){ return ((oc.ascendancy&&oc.ascendancy.allocated)||[]).length; }
+function ascPointsAvail(oc){ return Math.max(0,ascPointsTotal(oc)-ascPointsSpent(oc)); }
+function grantXP(oc,amount){
+  oc.xp+=amount; let leveled=0;
+  while(oc.xp>=xpNeeded(oc.level+1)){ oc.xp-=xpNeeded(oc.level+1); oc.level++; leveled++; }
+  return leveled;
+}
+
+/* ===================== MODIFIERS / STATS ===================== */
+function freshM(){
+  return {statAdd:{str:0,dur:0,sta:0,int:0,spd:0,cmb:0},
+    incGeneric:0,incTag:{},critChanceAdd:0,critMultAdd:0,accAdd:0,evaAdd:0,
+    armorFlat:0,lifePct:0,lifeMult:1,spdMult:1,regenAdd:0,leechPct:0,dotMore:0,
+    blockChance:0,atkSpeedAdd:0,abilityMore:0,abilityProc:0,execBonus:0,
+    moreGlobal:1,dmgTakenInc:0,
+    resolute:false,berserkersPact:false,aetherOverflow:false,cannotBeCrit:false,
+    secondWind:false,bloodEngine:false,leechAll:false,
+    keystones:[]};
+}
+function applyKeystone(M,k){
+  M.keystones.push(k);
+  switch(k){
+    case "berserkers_pact": M.berserkersPact=true; M.dmgTakenInc+=0.20; break;
+    case "unwavering": M.cannotBeCrit=true; M.armorFlat+=12; M.atkSpeedAdd-=0.15; M.spdMult*=0.85; break;
+    case "untouchable": M.evaAdd+=0.25; M.lifeMult*=0.8; break;
+    case "aether_overflow": M.aetherOverflow=true; break;
+    case "resolute": M.resolute=true; break;
+    case "second_wind": M.secondWind=true; break;
+    case "glass_cannon": M.moreGlobal*=1.4; M.lifeMult*=0.5; break;
+    case "blood_engine": M.bloodEngine=true; M.leechAll=true; M.leechPct+=0.15; M.dmgTakenInc+=0.15; break;
+    // ascendancy signature keystones (upside + downside)
+    case "asc_juggernaut": M.cannotBeCrit=true; M.blockChance+=0.12; M.atkSpeedAdd-=0.08; break;
+    case "asc_assassin": M.critChanceAdd+=0.15; M.accAdd+=0.10; M.lifeMult*=0.85; break;
+    case "asc_elementalist": M.dotMore+=0.5; M.abilityMore+=0.2; M.dmgTakenInc+=0.10; break;
+    case "asc_warlord": M.abilityProc+=0.10; M.moreGlobal*=1.15; M.dmgTakenInc+=0.08; break;
+    case "asc_trickster": M.evaAdd+=0.18; M.atkSpeedAdd+=0.10; M.lifeMult*=0.9; break;
+  }
+}
+function applyNodeEffect(M,e){
+  if(e.stat) for(const k in e.stat) M.statAdd[k]=(M.statAdd[k]||0)+e.stat[k];
+  if(e.incTag) for(const t in e.incTag) M.incTag[t]=(M.incTag[t]||0)+e.incTag[t];
+  if(e.incGeneric) M.incGeneric+=e.incGeneric;
+  if(e.critChanceAdd) M.critChanceAdd+=e.critChanceAdd;
+  if(e.critMultAdd) M.critMultAdd+=e.critMultAdd;
+  if(e.accuracyAdd) M.accAdd+=e.accuracyAdd;
+  if(e.evasionAdd) M.evaAdd+=e.evasionAdd;
+  if(e.armorFlat) M.armorFlat+=e.armorFlat;
+  if(e.lifePct) M.lifePct+=e.lifePct;
+  if(e.regenAdd) M.regenAdd+=e.regenAdd;
+  if(e.leechPct) M.leechPct+=e.leechPct;
+  if(e.blockChance) M.blockChance+=e.blockChance;
+  if(e.atkSpeedAdd) M.atkSpeedAdd+=e.atkSpeedAdd;
+  if(e.dotMore) M.dotMore+=e.dotMore;
+  if(e.abilityMore) M.abilityMore+=e.abilityMore;
+  if(e.abilityProc) M.abilityProc+=e.abilityProc;
+  if(e.execBonus) M.execBonus+=e.execBonus;
+  if(e.keystone) applyKeystone(M,e.keystone);
+}
+function aggregateMods(oc){
+  const M=freshM();
+  for(const id of (oc.tree&&oc.tree.allocated||[])){ const n=TREE.byId[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
+  for(const id of (oc.ascendancy&&oc.ascendancy.allocated||[])){ const n=ASC_NODE_BY_ID[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
+  // jewels socketed into ALLOCATED jewel-socket nodes (grade-scaled)
+  const jmap=(oc.tree&&oc.tree.jewels)||{};
+  const allocSet=new Set((oc.tree&&oc.tree.allocated)||[]);
+  const nodeCount=((oc.tree&&oc.tree.allocated)||[]).length;
+  for(const nid in jmap){
+    if(!allocSet.has(nid)) continue;
+    const entry=jmap[nid]; const jk=(entry&&entry.key)?entry.key:entry; const j=JEWEL_BY_KEY[jk]; if(!j) continue;
+    const gm=rarByKey((entry&&entry.grade)?entry.grade:jewelGradeOf(jk)).mult;
+    applyNodeEffect(M,scaleEffect(j.mods,gm));
+    if(j.scalePerNodes) M.incGeneric += j.scalePerNodes.pct*Math.floor(nodeCount/j.scalePerNodes.per)*gm;
+  }
+  return M;
+}
+function computeFinal(oc){
+  const base={...oc.baseStats};
+  const buffAdd={str:0,dur:0,sta:0,int:0,spd:0,cmb:0};
+  for(const p of oc.powers||[]){
+    if(p.effect&&p.effect.startsWith("buff_")){ const st=p.effect.slice(5); buffAdd[st]+=Math.round(BUFF_BASE[p.key]*tierMult(p.tier)); }
+  }
+  const M=aggregateMods(oc); const treeAdd=M.statAdd;
+  const final={};
+  for(const k of STAT_KEYS) final[k]=clamp(Math.round((base[k]||0)+(buffAdd[k]||0)+(treeAdd[k]||0)),1,160);
+  return {final,base,buffAdd,treeAdd,M};
+}
+function ocStats(oc){return computeFinal(oc).final;}
+function statTotal(s){return STAT_KEYS.reduce((a,k)=>a+s[k],0);}
+
+/* ===================== COMBAT ===================== */
+function applyRacePassive(F,raceKey){
+  switch(raceKey){
+    case "vampire": F.lifesteal=Math.max(F.lifesteal,0.15); break;
+    case "vultramite": F.negate=Math.min(0.8,F.negate+0.14); break;
+    case "stand_user": F.extraAtk+=0.15; break;
+    case "xenomorph": F.acid=Math.max(F.acid,0.22); break;
+    case "cyborg": F.flatDR+=6; break;
+    case "esper": F.negate=Math.min(0.8,F.negate+clamp(F.int*0.0016,0,0.2)); break;
+    case "draconid": F.dracFury=Math.max(F.dracFury,0.30); break;
+    case "eldritch": F.madden=Math.min(0.4,F.madden+0.14); break;
+    case "revenant": F.revivesLeft+=1; break;
+    case "human": F.gloryBonus=0.25; F.xpBonus=0.25; break;
+  }
+}
+const PROC_BASE={blast:0.35,fire:0.28,tk:0.32,warp:0.10,time:0.14,srange:0.42};
+function baseFnFor(kind){
+  switch(kind){
+    case "blast": return (a,d)=>a.atk*1.35+a.int*0.5;
+    case "fire": return (a,d)=>a.atk*1.5;
+    case "tk": return (a,d)=>a.int*0.9+a.atk*0.4;
+    case "warp": return (a,d)=>d.maxHp*0.22;
+    default: return (a,d)=>a.atk;
+  }
+}
+function enrichProc(name,emoji,kind,tags,m,augKeys,F){
+  const A={extraHits:0,localInc:0,localMore:0,localCrit:0,localCritMult:0,procMult:0,addDots:[],leechThis:0,noMiss:false,noAilment:false,secondary:0,knockback:0,cull:0,ruthless:false};
+  const powerTags=tags||[];
+  for(const entry of (augKeys||[])){
+    const k=(entry&&entry.key)?entry.key:entry;       // entry is a key string OR {key,grade}
+    const a=augByKey(k); if(!a) continue;
+    if(a.req && !powerTags.includes(a.req)) continue; // req not met -> inert
+    const R=rarByKey((entry&&entry.grade)?entry.grade:"common");
+    const gm=R.mult;
+    const sc=v=> v>=0 ? v*gm : v/gm;                  // grade: scale upsides up, shrink downsides
+    const md=a.mods;
+    if(md.extraHits) A.extraHits+=md.extraHits+R.hits;
+    if(md.localInc) A.localInc+=sc(md.localInc);
+    if(md.localMore) A.localMore+=sc(md.localMore);
+    if(md.localCrit) A.localCrit+=sc(md.localCrit);
+    if(md.localCritMult) A.localCritMult+=sc(md.localCritMult);
+    if(md.procMult) A.procMult+=sc(md.procMult);
+    if(md.leechThis) A.leechThis=Math.max(A.leechThis,md.leechThis*gm);
+    if(md.noMiss) A.noMiss=true;
+    if(md.noAilment) A.noAilment=true;
+    if(md.secondary) A.secondary+=md.secondary*gm;
+    if(md.knockback) A.knockback=Math.max(A.knockback,md.knockback*gm);
+    if(md.cull) A.cull=Math.max(A.cull,md.cull*gm);
+    if(md.ruthless) A.ruthless=true;
+    if(md.addDot) A.addDots.push(gm>1?Object.assign({},md.addDot,{pctOfHit:md.addDot.pctOfHit*gm}):md.addDot);
+  }
+  // default fire dot
+  if(kind==="fire") A.addDots.unshift({type:"fire",pctOfHit:0.25,turns:3});
+  if(A.noAilment) A.addDots=[];
+  const pierce = kind==="tk"?0.5:kind==="blast"?0.4:kind==="warp"?0.5:0;
+  const baseCh = PROC_BASE[kind==="srange"?"srange":kind]||0.3;
+  const chance = clamp(baseCh*m*(1+A.procMult)+(kind==="blast"?0.05:0)+F.abilityProc, 0, 0.9);
+  return {name,emoji,kind,tags:powerTags,chance,extraHits:Math.min(A.extraHits,5),
+    localInc:A.localInc,localMore:A.localMore,localCrit:A.localCrit,localCritMult:A.localCritMult,
+    addDots:A.addDots,leechThis:A.leechThis,noMiss:A.noMiss,secondary:Math.min(A.secondary,1),
+    knockback:A.knockback,cull:A.cull,ruthless:A.ruthless,pierceDR:pierce,baseFn:baseFnFor(kind)};
+}
+function deriveCombat(oc){
+  const cf=computeFinal(oc); const s=cf.final; const M=cf.M;
+  const F={name:oc.name,color:(raceByKey(oc.race)||{}).color||"#8B6CF0",race:oc.race,level:oc.level||1,
+    str:s.str,dur:s.dur,sta:s.sta,int:s.int,spd:clamp(Math.round(s.spd*M.spdMult),1,200),cmb:s.cmb,
+    incGeneric:M.incGeneric,incTag:M.incTag,moreGlobal:M.moreGlobal,dmgTakenInc:M.dmgTakenInc,
+    dotMore:M.dotMore,execBonus:M.execBonus,abilityMore:M.abilityMore,abilityProc:M.abilityProc,
+    resolute:M.resolute,aetherOverflow:M.aetherOverflow,berserkersPact:M.berserkersPact,cannotBeCrit:M.cannotBeCrit,
+    lifesteal:0,acid:0,madden:0,dracFury:0,negate:clamp(M.blockChance,0,0.8),dodgeCounter:0,invisTurns:0,flying:false,
+    extraAtk:Math.max(0,M.atkSpeedAdd),regenPct:M.regenAdd,leechGlobal:M.leechPct,
+    procs:[],dots:[],dotOnHit:null,revivesLeft:0,warpMax:3,warpUses:0,timeMax:5,timeUses:0,stun:0,
+    gloryBonus:0,xpBonus:0,shield:0};
+  F.maxHp=Math.max(40,Math.round((180+F.dur*3.5+F.sta*3.0)*(1+M.lifePct)*M.lifeMult));
+  F.hp=F.maxHp;
+  F.atk=Math.round(14+F.str*0.9+F.cmb*0.35);
+  F.crit=M.resolute?0:clamp(0.05+F.cmb*0.0022+F.int*0.0011+M.critChanceAdd,0,0.85);
+  F.critMult=Math.max(1.2,1.85+M.critMultAdd);
+  F.acc=M.resolute?0.999:clamp(0.72+F.cmb*0.0018+F.int*0.0009+M.accAdd,0.45,0.995);
+  F.eva=clamp(0.02+F.spd*0.0016+M.evaAdd,0,0.75);
+  F.flatDR=F.dur*0.5+M.armorFlat;
+
+  for(const p of oc.powers||[]){
+    if(p.effect.startsWith("buff_")) continue;
+    const m=tierMult(p.tier);
+    switch(p.effect){
+      case "flight": F.eva=clamp(F.eva+0.10*m,0,0.8); F.flying=true; break;
+      case "regen": F.regenPct+=0.05*m; break;
+      case "lifesteal": F.lifesteal=Math.max(F.lifesteal,0.30*m); break;
+      case "shield": F.shield+=F.maxHp*0.25*m; break;
+      case "teleport": F.eva=clamp(F.eva+0.09*m,0,0.8); F.dodgeCounter+=0.15*m; break;
+      case "precog": F.eva=clamp(F.eva+0.14*m,0,0.8); break;
+      case "crit_up": F.crit=M.resolute?0:clamp(F.crit+0.14*m,0,0.85); F.acc=clamp(F.acc+0.08*m,0,0.999); break;
+      case "invis": F.invisTurns=Math.max(F.invisTurns,2+(m>0.5?1:0)); break;
+      case "shapeshift": F.acc=clamp(F.acc+0.06*m,0,0.999); F.eva=clamp(F.eva+0.05*m,0,0.8); break;
+      case "berserk": F.berserk=Math.max(F.berserk||0,0.55*m); break;
+      case "necrotic": F.dotOnHit={type:"void",pct:0.03*m,turns:3}; break;
+      case "venom": F.dotOnHit={type:"void",pct:0.025*m,turns:4}; break;
+      case "proc": {
+        const pd=powerByKey(p.key);
+        F.procs.push(enrichProc(pd.name,pd.emoji,pd.kind,pd.tags,m,sockets(p),F));
+        break;
+      }
+      case "stand": {
+        const arch=standByKey(p.arch)||STAND_ARCHETYPES[0];
+        if(arch.effect==="barrage"){ F.extraAtk+=0.55*m; F.atk=Math.round(F.atk*(1+0.10*m)); }
+        else if(arch.effect==="guard"){ F.shield+=F.maxHp*0.30*m; F.dodgeCounter+=0.15*m; }
+        else if(arch.effect==="ranged"){ F.procs.push(enrichProc("Stand Barrage","🏹","srange",["force","projectile"],m,sockets(p),F)); }
+        else if(arch.effect==="time"){ F.procs.push(enrichProc("Time Stop","⏱️","time",[],m,sockets(p),F)); }
+        break;
+      }
+    }
+  }
+  applyRacePassive(F,oc.race);
+  if(M.secondWind) F.revivesLeft+=1;
+  F.negate=clamp(F.negate,0,0.85);
+  F.hp=F.maxHp;
+  return F;
+}
+
+function hitDamage(att,def,base,tags,opts){
+  opts=opts||{};
+  let inc=att.incGeneric+(opts.localInc||0);
+  if(tags) for(const t of tags) inc+=att.incTag[t]||0;
+  let more=att.moreGlobal*(1+(opts.localMore||0));
+  if(att.berserk>0) more*=1+(1-att.hp/att.maxHp)*att.berserk;
+  if(att.dracFury>0 && att.hp>att.maxHp*0.5) more*=1+att.dracFury;
+  if(att.berserkersPact && att.hp<att.maxHp*0.5) more*=1.3;
+  if(opts.isAbility){ if(att.abilityMore>0) more*=(1+att.abilityMore); if(att.aetherOverflow) more*=1.3; }
+  if(opts.isBasic && att.aetherOverflow) more*=0.75;
+  if(att.execBonus>0 && def.hp<def.maxHp*0.5) more*=1+att.execBonus;
+  let dmg=base*(1+Math.max(-0.9,inc))*more;
+  if(opts.crit) dmg*=att.critMult*(1+(opts.localCritMult||0));
+  dmg-=def.flatDR*(1-(opts.pierceDR||0));
+  dmg=Math.max(1,dmg);
+  dmg*=(1+(def.dmgTakenInc||0));
+  return Math.round(dmg);
+}
+
+function simulate(ocA,ocB){
+  const A=deriveCombat(ocA),B=deriveCombat(ocB);
+  const log=[]; const L=(type,round,text)=>log.push({type,round,text});
+  L("sys",0,`${A.name} Lv${A.level} (${(raceByKey(A.race)||{}).name}) faces ${B.name} Lv${B.level} (${(raceByKey(B.race)||{}).name}).`);
+  const iA=A.spd+(A.flying?20:0), iB=B.spd+(B.flying?20:0);
+  let order=iA===iB?(A.cmb>=B.cmb?[A,B]:[B,A]):(iA>iB?[A,B]:[B,A]);
+  L("sys",0,`${order[0].name} is faster and moves first.`);
+  const foeOf=f=>f===A?B:A;
+  const hpTimeline=[{a:1,b:1}];
+
+  function applyDamage(def,dmg){ if(def.shield>0){const ab=Math.min(def.shield,dmg);def.shield-=ab;dmg-=ab;} def.hp-=dmg; }
+  function checkRevive(f,round){
+    if(f.hp<=0 && f.revivesLeft>0){ f.revivesLeft--; f.hp=Math.round(f.maxHp*0.35);
+      L("power",round,`✦ ${f.name} refuses to fall — rising again at ${f.hp} HP!`); return true; }
+    return false;
+  }
+  function tickDots(f,round){
+    if(!f.dots.length) return;
+    let total=0; const keep=[];
+    for(const d of f.dots){ total+=d.dmg; d.turns--; if(d.turns>0) keep.push(d); }
+    f.dots=keep;
+    if(total>0){ f.hp-=Math.round(total); L("heal",round,`${f.name} takes ${Math.round(total)} from lingering wounds.`); }
+  }
+  function pushDot(target,att,type,amount,turns){
+    const dmg=Math.max(1,Math.round(amount*(1+att.dotMore)));
+    target.dots.push({dmg,turns,type});
+  }
+  function basic(att,def,round,tag){
+    let eva=def.eva;
+    if(def.invisTurns>0) eva=clamp(eva+0.35,0,0.9);
+    if(def.flying&&!att.flying) eva=clamp(eva+0.12,0,0.9);
+    if(!att.resolute){
+      if(def.madden>0 && Math.random()<def.madden){ L("dodge",round,`${att.name} lunges but ${def.name}'s presence warps the strike — miss.`); return; }
+      if(Math.random()>(att.acc-eva)){
+        if(def.dodgeCounter>0 && Math.random()<def.dodgeCounter){
+          const cd=Math.max(1,Math.round(def.atk*0.7-att.flatDR));
+          att.hp-=cd; L("dodge",round,`${def.name} slips the blow and counters for ${cd}!`); checkRevive(att,round);
+        } else L("dodge",round,`${def.name} evades ${att.name}'s attack.`);
+        return;
+      }
+    }
+    const crit = !att.resolute && !def.cannotBeCrit && Math.random()<att.crit;
+    const dmg=hitDamage(att,def,att.atk,["physical","melee"],{crit,isBasic:true});
+    if(def.negate>0 && Math.random()<def.negate){ L("dodge",round,`${def.name} nullifies the hit — no damage.`); return; }
+    applyDamage(def,dmg);
+    if(crit) L("crit",round,`💥 CRIT! ${att.name}${tag} smashes ${def.name} for ${dmg}!`);
+    else L("hit",round,`${att.name}${tag} strikes ${def.name} for ${dmg}.`);
+    const leech=Math.max(att.lifesteal,att.leechGlobal);
+    if(leech>0){ const h=Math.round(dmg*leech); if(h>0){ att.hp=Math.min(att.maxHp,att.hp+h); L("heal",round,`${att.name} drains ${h} vitality.`);} }
+    if(def.acid>0){ const ad=Math.max(1,Math.round(att.atk*0.25*(def.acid/0.22))); att.hp-=ad; L("heal",round,`${att.name} is burned by acid blood for ${ad}!`); checkRevive(att,round); }
+    if(att.dotOnHit) pushDot(def,att,att.dotOnHit.type,def.maxHp*att.dotOnHit.pct,att.dotOnHit.turns);
+    checkRevive(def,round);
+  }
+  function firePower(att,def,pe,round){
+    if(pe.kind==="warp" && att.warpUses>=att.warpMax) return false;
+    if(pe.kind==="time"){
+      if(att.timeUses>=att.timeMax) return false;
+      att.timeUses++; L("power",round,`⏱️ ${att.name} freezes the moment and acts again!`); return "extra";
+    }
+    if(pe.kind==="warp") att.warpUses++;
+    const hits=1+(pe.extraHits||0);
+    let dealt=0;
+    for(let h=0;h<hits;h++){
+      if(def.hp<=0) break;
+      const base=pe.baseFn(att,def);
+      const critCh=clamp(att.crit+(pe.localCrit||0),0,0.9);
+      const crit=!att.resolute && !def.cannotBeCrit && Math.random()<critCh;
+      let extraMore=pe.localMore||0;
+      if(pe.ruthless && Math.random()<0.34) extraMore+=0.6;
+      let dmg=hitDamage(att,def,base,pe.tags,{crit,isAbility:true,localInc:pe.localInc,localMore:extraMore,localCritMult:pe.localCritMult,pierceDR:pe.pierceDR});
+      if(def.negate>0 && Math.random()<def.negate*0.6){ L("dodge",round,`${def.name} disperses part of ${att.name}'s ${pe.name}.`); continue; }
+      applyDamage(def,dmg); dealt+=dmg;
+      for(const d of pe.addDots) pushDot(def,att,d.type,dmg*d.pctOfHit,d.turns);
+      if(checkRevive(def,round)){} 
+      if(def.hp<=0) break;
+    }
+    if(pe.secondary>0 && def.hp>0){
+      const base=pe.baseFn(att,def)*pe.secondary;
+      const dmg=hitDamage(att,def,base,pe.tags,{isAbility:true,localInc:pe.localInc,localMore:pe.localMore,pierceDR:pe.pierceDR});
+      applyDamage(def,dmg); dealt+=dmg;
+    }
+    if(dealt>0){
+      if(pe.leechThis>0){ const h=Math.round(dealt*pe.leechThis); att.hp=Math.min(att.maxHp,att.hp+h); }
+      const extra = pe.leechThis>0?` (leeched ${Math.round(dealt*pe.leechThis)})`:"";
+      L("power",round,`${pe.emoji} ${att.name}'s ${pe.name} hits ${def.name} for ${dealt}${hits>1?" ("+hits+" hits)":""}${extra}!`);
+    }
+    if(pe.knockback>0 && Math.random()<pe.knockback && def.hp>0){ def.stun=Math.min(1,def.stun+1); L("sys",round,`${def.name} is staggered!`); }
+    if(pe.cull>0 && def.hp>0 && def.hp<=def.maxHp*pe.cull){ def.hp=0; L("crit",round,`🔪 ${att.name} culls the weakened ${def.name}!`); }
+    checkRevive(def,round);
+    return true;
+  }
+  function act(att,def,round,tag){
+    for(const pe of att.procs){
+      if(Math.random()<pe.chance){
+        const r=firePower(att,def,pe,round);
+        if(r==="extra"){ if(def.hp>0&&att.hp>0) act(att,def,round," again"); return; }
+        if(r) return;
+      }
+    }
+    basic(att,def,round,tag||"");
+  }
+
+  let round=0; const MAX=200;
+  while(A.hp>0 && B.hp>0 && round<MAX){
+    round++;
+    for(const actor of order){
+      if(actor.hp<=0) continue;
+      const target=foeOf(actor);
+      tickDots(actor,round);
+      if(actor.hp<=0){ if(!checkRevive(actor,round)) break; }
+      if(actor.stun>0){ actor.stun--; L("sys",round,`${actor.name} is staggered and loses the turn.`); continue; }
+      if(actor.regenPct>0 && actor.hp<actor.maxHp){ const h=Math.round(actor.maxHp*actor.regenPct); if(h>0){ actor.hp=Math.min(actor.maxHp,actor.hp+h); L("heal",round,`${actor.name} regenerates ${h} HP.`);} }
+      if(actor.invisTurns>0) actor.invisTurns--;
+      act(actor,target,round);
+      let extras=0, ch=clamp((actor.spd-target.spd)/220,0,0.5)+actor.extraAtk;
+      while(target.hp>0 && actor.hp>0 && extras<2 && Math.random()<ch){ extras++; ch*=0.5; act(actor,target,round," in a flurry"); }
+      if(target.hp<=0){ if(!checkRevive(target,round)) break; }
+    }
+    hpTimeline.push({a:clamp(A.hp/A.maxHp,0,1),b:clamp(B.hp/B.maxHp,0,1)});
+  }
+  let winner,loser;
+  if(A.hp>0&&B.hp<=0){winner=A;loser=B;}
+  else if(B.hp>0&&A.hp<=0){winner=B;loser=A;}
+  else{ const ra=A.hp/A.maxHp,rb=B.hp/B.maxHp; if(ra>=rb){winner=A;loser=B;}else{winner=B;loser=A;} L("sys",round,`The clash reaches its limit — judged on who stands stronger.`); }
+  L("ko",round,`${winner.name} stands victorious!`);
+  return {winnerName:winner.name,loserName:loser.name,winnerIsA:winner===A,log,rounds:round,hpTimeline,
+    gloryBonus:winner.gloryBonus||0,xpBonus:winner.xpBonus||0,aName:A.name,bName:B.name};
+}
+
+/* ===================== RENDER CORE ===================== */
+const $app=document.getElementById("app");
+const $nav=document.getElementById("nav");
+const $toasts=document.getElementById("toasts");
+const $modal=document.getElementById("modal-root");
+
+function toast(msg,kind){
+  const t=document.createElement("div"); t.className="toast"+(kind?" "+kind:""); t.textContent=msg;
+  $toasts.appendChild(t);
+  setTimeout(()=>{t.style.transition="opacity .3s";t.style.opacity="0";setTimeout(()=>t.remove(),300);},2400);
+}
+function topbar(){
+  return `<div class="topbar"><div class="brand" data-act="home"><div class="k">LUCID WINDS</div><div class="s">OC ARENA</div></div>
+    <div class="spacer"></div><div class="wallet"><div class="coin"><span class="sym">✦</span><b>${state.glory}</b></div></div></div>`;
+}
+const NAV=[{k:"home",ic:"◈",n:"Roster"},{k:"battle",ic:"⚔",n:"Battle"},{k:"gauntlet",ic:"🐉",n:"Gauntlet"},{k:"tourney",ic:"♛",n:"Tourney"},{k:"alliances",ic:"⛨",n:"Allies"}];
+function renderNav(){
+  const active=(state.screen==="sheet")?"home":state.screen;
+  $nav.innerHTML=NAV.map(n=>`<button data-act="nav" data-k="${n.k}" class="${active===n.k?"on":""}"><span class="ic">${n.ic}</span>${n.n}</button>`).join("");
+}
+function avatarHTML(oc){
+  if(oc.art) return `<img src="${esc(oc.art)}" alt="" onerror="this.style.display='none';this.parentNode.textContent='${oc.emoji||"❔"}'"/>`;
+  return oc.emoji||(raceByKey(oc.race)||{}).emoji||"❔";
+}
+function statMini(stats){
+  return STAT_KEYS.map(k=>{const v=stats[k],g=grade(v);
+    return `<div class="stat"><span class="lab">${STAT_ABBR[k]}</span>
+      <span class="bar"><span class="fill" style="width:${clamp(v/140*100,4,100)}%"></span></span>
+      <span class="grade" style="color:${g.c};border:1px solid ${g.c}55">${g.l}</span><span class="val">${v}</span></div>`;}).join("");
+}
+function keystonesOf(oc){
+  const ks=[]; for(const id of oc.tree.allocated){const n=TREE.byId[id]; if(n&&n.type==="keystone") ks.push(n.name);} return ks;
+}
+function ocCard(oc,opts){
+  opts=opts||{};
+  const race=raceByKey(oc.race)||{}; const stats=ocStats(oc);
+  const ally=state.alliances.find(a=>a.members.includes(oc.id));
+  const avail=pointsAvail(oc);
+  const chips=(oc.powers||[]).map(p=>{const pd=powerByKey(p.key);const t=TIERS.find(t=>t.key===p.tier);
+    let nm=pd?pd.name:p.key; if(p.key==="stand"&&p.arch) nm=(standByKey(p.arch)||{}).name||"Stand";
+    const links=(p.augments&&p.augments.length)?` ⛓${p.augments.length}`:"";
+    return `<span class="chip">${pd?pd.emoji:"◆"} ${esc(nm)} <span class="m">${t?t.label[0]:""}${links}</span></span>`;}).join("");
+  const ks=keystonesOf(oc).map(n=>`<span class="chip key">✦ ${esc(n)}</span>`).join("");
+  const passive=race.passive?`<span class="chip passive">✦ ${esc(race.passive.name)}</span>`:"";
+  const xpPct=clamp(oc.xp/xpNeeded(oc.level+1)*100,0,100);
+  return `<div class="card" style="--race-color:${race.color}" data-act="openSheet" data-id="${oc.id}">
+    <div class="rim"></div><div class="holo"></div>
+    ${avail>0?`<div class="pts-flag">✦ ${avail} pts</div>`:""}
+    ${opts.deletable?`<button class="kill" data-act="delOC" data-id="${oc.id}" title="Delete">✕</button>`:""}
+    <div class="oc-top"><div class="avatar">${avatarHTML(oc)}</div>
+      <div class="oc-id"><div class="oc-name">${esc(oc.name)}</div>
+        <div class="oc-sub">${ocGradeBadge(oc)}<span class="race-tag">${esc(race.name)}</span><span class="lvl-badge">LV ${oc.level}</span>
+          <span class="rec"><span class="w">${oc.record.w}W</span>·<span class="l">${oc.record.l}L</span></span>
+          ${ally?`<span class="ally-badge" style="border-color:${ally.color}66;color:${ally.color}">${esc(ally.name)}</span>`:""}</div></div></div>
+    <div class="stats">${statMini(stats)}</div>
+    <div class="powerchips">${chips||`<span class="chip" style="opacity:.5">No powers</span>`}${ks}${passive}</div>
+    <div class="xpbar-wrap"><div class="xpbar"><div class="xpf" style="width:${xpPct}%"></div></div></div>`;
+}
+function miniOC(o,cls,act){
+  const r=raceByKey(o.race)||{};
+  return `<div class="mini ${cls}" data-act="${act}" data-id="${o.id}" style="--race-color:${r.color}">
+    <div class="av">${avatarHTML(o)}</div>
+    <div style="min-width:0"><div class="mn">${esc(o.name)}</div><div class="mr">${esc(r.name)} · Lv${o.level} · ${o.record.w}-${o.record.l}</div></div></div>`;
+}
+function nameOf(id){const o=state.roster.find(x=>x.id===id);return o?o.name:"?";}
+
+/* ===================== HOME ===================== */
+function screenHome(){
+  const n=state.roster.length;
+  const roster=n?`<div class="grid">${state.roster.map(o=>ocCard(o,{deletable:true})).join("")}</div>`
+    :`<div class="empty"><div class="big">◈</div><div>No characters yet. Spin up your first OC to open the arena.</div></div>`;
+  return `${topbar()}
+    <div class="hero"><h1>Forge a fighter.<br><span class="glow">Master the web.</span></h1>
+      <p>Spin your race, roll your stats, then grow a Path-of-Exile-style skill web, socket support augments into your powers, and throw your originals into the arena. Tap any character to open its sheet.</p>
+      <div class="hero-actions"><button class="btn primary" data-act="startCreate">✦ Create OC</button>
+        ${n>=2?`<button class="btn" data-act="nav" data-k="battle">⚔ Battle</button>`:""}
+        ${n>=4?`<button class="btn" data-act="nav" data-k="tourney">♛ Tournament</button>`:""}</div></div>
+    <div class="section-h"><span class="n">01</span><h2>Your Roster</h2><span class="c">${n} character${n===1?"":"s"}</span></div>
+    ${roster}`;
+}
+
+/* ===================== CREATION ===================== */
+function newDraft(){return {step:0,race:null,spun:false,baseStats:null,rolled:false,powers:[],name:"",art:"",emoji:null,standArch:null,shopCat:"buff",enhance:{}};}
+function draftAetherMax(){const r=raceByKey(state.draft.race);return BASE_AETHER+(r?r.aetherBonus:0);}
+function buyCost(key,race){const p=powerByKey(key);if(!p)return 999;let c=p.base;if(race&&race.affinity.includes(key))c*=0.7;return Math.round(c);}
+function upgradeCost(key,race){const p=powerByKey(key);if(!p)return 999;let c=p.base*0.55;if(race&&race.affinity.includes(key))c*=0.7;if(race&&race.key==="vultramite")c*=0.85;return Math.round(c);}
+function draftSpent(){const d=state.draft,r=raceByKey(d.race);let sp=0;
+  for(const p of d.powers){ if(p.key==="stand")continue; sp+=buyCost(p.key,r); const ti=tierIndex(p.tier); for(let i=1;i<=ti;i++)sp+=upgradeCost(p.key,r); }
+  for(const k in d.enhance) sp+=(d.enhance[k]/2)*6; return Math.round(sp);}
+function draftAether(){return draftAetherMax()-draftSpent();}
+function ownedDraftPower(key){return state.draft.powers.find(p=>p.key===key);}
+function applyEnhance(base,enh){const o={...base};for(const k in enh)o[k]=(o[k]||0)+enh[k];return o;}
+
+function screenCreate(){
+  const d=state.draft; let body;
+  if(d.step===0) body=stepRace(); else if(d.step===1) body=stepStats(); else if(d.step===2) body=stepPowers(); else body=stepName();
+  const labels=["Race","Stats","Powers","Name"];
+  return `${topbar()}
+    <div class="section-h"><span class="n">✦</span><h2>Character Forge</h2><span class="c"><button class="btn sm ghost" data-act="cancelCreate">Cancel</button></span></div>
+    <div class="creator"><div class="steps">${labels.map((l,i)=>`<div class="step ${i<d.step?"done":""} ${i===d.step?"active":""}"><div class="dot">${i<d.step?"✓":i+1}</div><div class="t">${l}</div></div>`).join("")}</div>
+    <div class="step-body">${body}</div></div>`;
+}
+function wheelGradient(){const n=RACES.length,seg=360/n;return `conic-gradient(from 0deg,${RACES.map((r,i)=>`${r.color} ${i*seg}deg ${(i+1)*seg}deg`).join(",")})`;}
+function wheelLabels(){const n=RACES.length,seg=360/n;return RACES.map((r,i)=>{const ang=i*seg+seg/2;return `<div class="seg-label" style="transform:rotate(${ang}deg) translate(0,-42%) rotate(90deg)">${r.name}</div>`;}).join("");}
+function stepRace(){
+  const d=state.draft;
+  if(!d.spun) return `<h3 class="step-title">Spin your race</h3>
+    <p class="step-desc">Your race shapes stat leanings, an innate trait, cheaper affinity powers, and where you begin on the skill web. Give the wheel a pull.</p>
+    <div class="wheel-wrap"><div class="wheel-pointer"></div><div class="wheel" id="wheel" style="background:${wheelGradient()}">${wheelLabels()}</div><div class="wheel-hub" id="hub">✦</div></div>
+    <div class="center" style="margin-top:6px" id="spinzone"><button class="btn primary" data-act="spin">◈ Spin the Wheel</button><div class="hint">${RACES.length} races on the wheel</div></div>`;
+  const r=raceByKey(d.race);
+  const mods=STAT_KEYS.filter(k=>r.mods[k]!==0).map(k=>{const v=r.mods[k];return `<span class="mod ${v>0?"pos":"neg"}">${STAT_ABBR[k]} ${v>0?"+":""}${v}</span>`;}).join("")||`<span class="mod">Balanced — no stat bias</span>`;
+  const arm=r.startArm==="hub"?"the Nexus (center)":(ARMS.find(a=>a.key===r.startArm)||{}).name+" branch";
+  return `<h3 class="step-title">Race locked in</h3><p class="step-desc">The wheel has spoken. Reroll for a different draw, or continue.</p>
+    <div class="wheel-wrap" style="width:min(220px,60vw)"><div class="avatar" style="width:100%;height:100%;font-size:80px;border-radius:50%;--race-color:${r.color}">${r.emoji}</div></div>
+    <div class="race-reveal"><div class="rr-name" style="color:${r.color}">${r.name}</div><div class="rr-blurb">${r.blurb}</div>
+      <div class="race-mods">${mods}</div>
+      <div class="race-passive" style="--race-color:${r.color}">Innate — <b>${r.passive.name}</b>: ${r.passive.desc}</div>
+      <div class="hint">Skill web start: <b>${arm}</b>.${r.aetherBonus?` Bonus: +${r.aetherBonus} Aether.`:""}</div></div>
+    <div class="flow-nav"><button class="btn ghost" data-act="reroll">↺ Reroll race</button><button class="btn primary" data-act="nextStep">Continue → Stats</button></div>`;
+}
+function doSpin(){
+  const d=state.draft,wheel=document.getElementById("wheel"),hub=document.getElementById("hub"),zone=document.getElementById("spinzone");
+  if(!wheel)return; const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const win=randInt(0,RACES.length-1),n=RACES.length,seg=360/n,center=win*seg+seg/2,jitter=rand(-seg*0.32,seg*0.32),spins=reduce?0:5;
+  const rot=spins*360+(360-center)+jitter;
+  if(hub)hub.classList.add("spin"); if(zone)zone.innerHTML=`<div class="hint">Spinning…</div>`;
+  wheel.style.transform="rotate(0deg)"; void wheel.offsetWidth; wheel.style.transform=`rotate(${rot}deg)`;
+  const finish=()=>{if(hub)hub.classList.remove("spin");d.race=RACES[win].key;d.spun=true;render();};
+  setTimeout(finish,reduce?60:4500);
+}
+function stepStats(){
+  const d=state.draft,r=raceByKey(d.race);
+  if(!d.rolled) return `<h3 class="step-title">Roll your stats</h3>
+    <p class="step-desc">Six core stats decide how ${r.name} fights. The roll is random, then your race bias is baked in. Reroll freely before locking.</p>
+    <div class="rollboard">${STAT_KEYS.map(k=>`<div class="roll-row"><div class="name">${STAT_LABEL[k]}<span class="sub">${STAT_ABBR[k]}${r.mods[k]?` · race ${r.mods[k]>0?"+":""}${r.mods[k]}`:""}</span></div><div class="bar"><div class="fill" id="rf_${k}"></div></div><div class="num" id="rn_${k}">—</div></div>`).join("")}</div>
+    <div class="center" style="margin-top:16px"><button class="btn primary" data-act="rollStats">🎲 Roll Stats</button></div>`;
+  const total=statTotal(d.baseStats);
+  return `<h3 class="step-title">Stat line</h3><p class="step-desc">Your draw. You can spend Aether to enhance any stat while buying powers, and grow all of them later on the skill web.</p>
+    <div class="rollboard">${STAT_KEYS.map(k=>{const v=d.baseStats[k],g=grade(v);return `<div class="roll-row"><div class="name">${STAT_LABEL[k]}<span class="sub">${STAT_ABBR[k]}</span></div><div class="bar"><div class="fill" style="width:${clamp(v/140*100,4,100)}%"></div></div><div class="num" style="color:${g.c}">${v}</div></div>`;}).join("")}</div>
+    <div class="roll-total">Total power: <b>${total}</b> · average grade <b>${grade(Math.round(total/6)).l}</b></div>
+    <div class="flow-nav"><button class="btn ghost" data-act="rerollStats">↺ Reroll stats</button><button class="btn primary" data-act="nextStep">Continue → Powers</button></div>`;
+}
+function rollStatsData(){const d=state.draft,r=raceByKey(d.race);const b={};for(const k of STAT_KEYS)b[k]=clamp(randInt(22,58)+r.mods[k],1,140);d.baseStats=b;d.rolled=true;d.enhance={};}
+function animateRoll(){
+  const d=state.draft,reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  rollStatsData(); if(reduce){render();return;}
+  const dur=850,start=performance.now(),targets={...d.baseStats};
+  function frame(now){const t=clamp((now-start)/dur,0,1),e=1-Math.pow(1-t,3);
+    for(const k of STAT_KEYS){const val=Math.round(targets[k]*e),nn=document.getElementById("rn_"+k),rf=document.getElementById("rf_"+k);
+      if(nn){nn.textContent=val;nn.style.color=grade(val).c;} if(rf){rf.style.width=clamp(val/140*100,4,100)+"%";}}
+    if(t<1)requestAnimationFrame(frame); else setTimeout(render,240);}
+  requestAnimationFrame(frame);
+}
+function stepPowers(){
+  const d=state.draft,r=raceByKey(d.race);
+  const preview=computeStats2(applyEnhance(d.baseStats,d.enhance),d.powers);
+  const av=draftAether(),max=draftAetherMax(),isStand=d.race==="stand_user";
+  const list=POWERS.filter(p=>p.cat===d.shopCat);
+  return `<h3 class="step-title">Buy powers &amp; master them</h3>
+    <p class="step-desc">Powers cost Aether. Buying sets a power to <b>Novice</b> — weak until you invest mastery. Mastery tier also sets how many <b>support augments</b> you can later socket. Affinity powers are discounted. You'll unlock the full skill web and augment library on your character sheet after creation.</p>
+    <div class="aether-hud"><div><div class="lab">Aether left</div><div class="big">◈ ${av}</div></div><div class="prev">Spent ${max-av}/${max}<br>Power total ${statTotal(preview)}</div></div>
+    ${isStand?standPickerHTML():""}
+    <div class="shop-tabs">${CATS.map(c=>`<button class="shop-tab ${d.shopCat===c.k?"on":""}" data-act="shopCat" data-k="${c.k}">${c.n}</button>`).join("")}</div>
+    <div class="pow-grid">${list.map(p=>powerCardHTML(p,r,av,d)).join("")}</div>
+    ${enhanceHTML(preview)}
+    <div class="flow-nav"><button class="btn ghost" data-act="prevStep">← Stats</button><button class="btn primary" data-act="nextStep">Continue → Name</button></div>
+    <div class="hint center">Powers are optional, but an OC with none will struggle. Take at least one active skill to socket augments into.</div>`;
+}
+function computeStats2(base,powers){const o={...base};for(const p of powers||[]){if(p.effect&&p.effect.startsWith("buff_")){const st=p.effect.slice(5);o[st]=(o[st]||0)+Math.round(BUFF_BASE[p.key]*tierMult(p.tier));}}for(const k of STAT_KEYS)o[k]=clamp(Math.round(o[k]||0),1,160);return o;}
+function powerCardHTML(p,r,av,d){
+  const owned=ownedDraftPower(p.key),cost=buyCost(p.key,r),aff=r.affinity.includes(p.key),canBuy=av>=cost;
+  const tagrow=p.tags.length?`<div class="tagrow">${p.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>`:"";
+  let mastery="";
+  if(owned){const ti=tierIndex(owned.tier),up=upgradeCost(p.key,r),canUp=ti<TIERS.length-1&&av>=up;
+    mastery=`<div class="mastery"><div class="mlab"><span>Mastery · ${TIERS[ti].label} · ${ti+1} socket${ti?"s":""}</span><span>${Math.round(tierMult(owned.tier)*100)}%</span></div>
+      <div class="mbar">${TIERS.map((t,i)=>`<i class="${i<=ti?"on":""}"></i>`).join("")}</div>
+      ${ti<TIERS.length-1?`<div class="prow"><button class="btn sm gold" data-act="masterUp" data-k="${p.key}" ${canUp?"":"disabled"}>▲ ${TIERS[ti+1].label} · ◈${up}</button><button class="btn sm ghost" data-act="sellPow" data-k="${p.key}">Remove</button></div>`:`<div class="prow"><span class="mnote">Fully mastered.</span><button class="btn sm ghost" data-act="sellPow" data-k="${p.key}">Remove</button></div>`}</div>`;}
+  const buffNote=p.effect.startsWith("buff_")?`<div class="mnote">Raises ${STAT_LABEL[p.effect.slice(5)]} (+${Math.round(BUFF_BASE[p.key]*0.30)}→+${Math.round(BUFF_BASE[p.key]*1.05)} by mastery)</div>`:"";
+  return `<div class="pow ${owned?"owned":""} ${aff?"aff":""}"><div class="ph"><span class="pe">${p.emoji}</span><div><div class="pn">${p.name}</div><div class="pt">${p.cat}${isAugmentable(p.key)?" · active":""}</div></div></div>
+    <div class="pd">${p.desc}</div>${tagrow}${buffNote}
+    ${owned?mastery:`<div class="prow"><button class="btn sm ${canBuy?"primary":""}" data-act="buyPow" data-k="${p.key}" ${canBuy?"":"disabled"}>Buy · ◈${cost}</button>${aff?`<span class="cost">affinity</span>`:""}</div>`}</div>`;
+}
+function standPickerHTML(){
+  const d=state.draft,owned=ownedDraftPower("stand");
+  return `<div class="stand-picker"><h4>👻 Your Stand</h4><div class="pd" style="color:var(--mist);font-size:13px">As a Stand User, your true weapon is a manifest spirit. Pick its archetype — it's your signature active skill (already paid for) and can be augmented later.</div>
+    <div class="stand-opts">${STAND_ARCHETYPES.map(s=>`<div class="stand-opt ${owned&&owned.arch===s.key?"on":""}" data-act="pickStand" data-k="${s.key}"><div class="so-n">${s.name}</div><div class="so-d">${s.desc}</div></div>`).join("")}</div></div>`;
+}
+function enhanceHTML(preview){
+  const d=state.draft,av=draftAether();
+  return `<div class="enhance"><h4>Enhance stats · 6 ◈ = +2 (max +12 each)</h4><div class="enh-row">${STAT_KEYS.map(k=>{const cur=d.enhance[k]||0,canAdd=cur<12&&av>=6;
+    return `<div class="enh-pill"><span>${STAT_ABBR[k]}</span><button data-act="enhMinus" data-k="${k}" ${cur>0?"":"disabled"}>−</button><span style="color:${cur>0?'var(--aur-teal)':'var(--mist)'}">${preview[k]}${cur>0?` (+${cur})`:""}</span><button data-act="enhPlus" data-k="${k}" ${canAdd?"":"disabled"}>+</button></div>`;}).join("")}</div></div>`;
+}
+const NAME_A=["Xal","Vor","Kry","Zeph","Nyx","Dra","Vel","Mor","Kae","Ryn","Sy","Vha","Ael","Gor","Thal","Ix","Zan","Cor","Ur","Sev"];
+const NAME_B=["thar","reth","zil","mora","vex","dros","lira","xis","gorn","vane","quor","aith","mir","dusk","fang","rax","une","oth","yrr","aze"];
+const EPITHETS=["the Undying","Voidfang","the Sundered","Ashborn","the Pale","Riftwalker","the Hollow","Stormcaller","the Nine-Eyed","Gravechild","the Unbound","Embermaw"];
+function randomName(){let n=pick(NAME_A)+pick(NAME_B);if(Math.random()<0.4)n+=" "+pick(EPITHETS);return n.charAt(0).toUpperCase()+n.slice(1);}
+const EMOJI_CHOICES=["❔","😈","👑","🗡️","🔥","⚡","🌙","💀","🐉","👁️","🦂","❄️","☠️","🌀","🩸","🐺","🦅","🔱","💫","🖤"];
+function stepName(){
+  const d=state.draft;
+  const previewOC={name:d.name||"Unnamed",race:d.race,emoji:d.emoji,art:d.art,baseStats:applyEnhance(d.baseStats,d.enhance),powers:d.powers,record:{w:0,l:0},level:1,xp:0,tree:{allocated:[TREE.startByRace[d.race]||"hub"]}};
+  const valid=(d.name||"").trim().length>0;
+  return `<h3 class="step-title">Name your character</h3><p class="step-desc">Last step. Give your OC a name (required), optionally an emoji or Midjourney art URL, then enter the arena. You'll allocate the skill web and augments from the character sheet.</p>
+    <div class="name-stage"><div>${ocCard(previewOC,{})}</div>
+      <div class="name-input-wrap">
+        <div><input class="txt" id="ocName" placeholder="Enter a name…" value="${esc(d.name)}" maxlength="28" data-field="name" autocomplete="off"/><div style="margin-top:8px"><button class="btn sm ghost" data-act="randName">🎲 Random name</button></div></div>
+        <div><div class="art-hint" style="margin-bottom:6px">Avatar emoji</div><div class="emoji-row">${EMOJI_CHOICES.map(e=>`<button class="emoji-pick ${d.emoji===e?"on":""}" data-act="pickEmoji" data-e="${e}">${e}</button>`).join("")}</div></div>
+        <div><div class="art-hint">Optional — paste an image URL (Midjourney / your art pipeline). Overrides the emoji.</div><input class="txt small" id="ocArt" placeholder="https://…" value="${esc(d.art)}" data-field="art" autocomplete="off" style="margin-top:6px"/></div>
+        <div class="flow-nav"><button class="btn ghost" data-act="prevStep">← Powers</button><button class="btn primary" data-act="finalize" ${valid?"":"disabled"}>✦ Enter the Arena</button></div></div></div>`;
+}
+function finalizeOC(){
+  const d=state.draft,name=(d.name||"").trim();
+  if(!name){toast("Your OC needs a name.","bad");return;}
+  const oc={id:uid(),name,race:d.race,emoji:d.emoji||(raceByKey(d.race)||{}).emoji,art:(d.art||"").trim(),
+    baseStats:applyEnhance(d.baseStats,d.enhance),powers:d.powers.map(p=>({...p,augments:p.augments||[]})),
+    record:{w:0,l:0},level:1,xp:0,tree:{allocated:[TREE.startByRace[d.race]||"hub"]},createdAt:Date.now()};
+  state.roster.unshift(oc); persist(); state.draft=null; state.screen="sheet"; state.sheetId=oc.id; state.sheetTab="overview";
+  render(); toast(`${name} has entered the arena!`,"good");
+}
+
+/* ===================== CHARACTER SHEET ===================== */
+function currentOC(){return state.roster.find(o=>o.id===state.sheetId);}
+const SHEET_TABS=[{k:"overview",n:"Overview"},{k:"web",n:"Skill Web"},{k:"powers",n:"Powers"},{k:"ascend",n:"Class"},{k:"train",n:"Train"}];
+function screenSheet(){
+  const oc=currentOC();
+  if(!oc){state.screen="home";return screenHome();}
+  const race=raceByKey(oc.race)||{}; const avail=pointsAvail(oc);
+  const xpPct=clamp(oc.xp/xpNeeded(oc.level+1)*100,0,100);
+  let body;
+  if(state.sheetTab==="overview") body=tabOverview(oc);
+  else if(state.sheetTab==="web") body=tabWeb(oc);
+  else if(state.sheetTab==="powers") body=tabPowers(oc);
+  else if(state.sheetTab==="ascend") body=tabAscend(oc);
+  else body=tabTrain(oc);
+  return `${topbar()}
+    <div class="section-h"><span class="n">✦</span><h2>Character Sheet</h2><span class="c"><button class="btn sm ghost" data-act="home">← Roster</button></span></div>
+    <div class="sheet-head" style="--race-color:${race.color}"><div class="rim"></div>
+      <div class="sav">${avatarHTML(oc)}</div>
+      <div style="flex:1;min-width:0"><div class="sn">${esc(oc.name)}</div>
+        <div class="ss">${ocGradeBadge(oc)}<span class="race-tag">${esc(race.name)}</span><span class="lvl-big">LEVEL ${oc.level}</span>
+          <span class="rec"><span class="w">${oc.record.w}W</span> · <span class="l">${oc.record.l}L</span></span>
+          ${avail>0?`<span class="pts-pill">✦ ${avail} skill point${avail===1?"":"s"}</span>`:""}</div>
+        <div class="sheet-xp"><div class="xpbar"><div class="xpf" style="width:${xpPct}%"></div></div>
+          <div class="xptxt">${oc.xp} / ${xpNeeded(oc.level+1)} XP to level ${oc.level+1}</div></div></div></div>
+    <div class="tabbar">${SHEET_TABS.map(t=>`<button class="${state.sheetTab===t.k?"on":""}" data-act="sheetTab" data-k="${t.k}">${t.n}${t.k==="web"&&avail>0?` (${avail})`:""}${t.k==="ascend"&&ascPointsAvail(oc)>0?` (${ascPointsAvail(oc)})`:""}</button>`).join("")}</div>
+    ${body}`;
+}
+function tabOverview(oc){
+  const cf=computeFinal(oc); const F=deriveCombat(oc); const race=raceByKey(oc.race)||{};
+  const rows=STAT_KEYS.map(k=>{const fin=cf.final[k],base=cf.base[k]||0,tree=cf.treeAdd[k]||0,buff=cf.buffAdd[k]||0,g=grade(fin);
+    return `<div class="br"><span class="st">${STAT_LABEL[k]}</span><span class="base">${base}</span><span class="add">${buff?"+"+buff:"—"}</span><span class="add">${tree?"+"+tree:"—"}</span><span class="fin" style="color:${g.c}">${fin}</span></div>`;}).join("");
+  const ks=keystonesOf(oc);
+  const ksHtml=ks.length?`<div style="margin-top:14px"><div class="art-hint" style="margin-bottom:6px">Active keystones</div>${ks.map(n=>`<span class="chip key" style="margin:0 5px 5px 0">✦ ${esc(n)}</span>`).join("")}</div>`:"";
+  const asc=ASC_BY_KEY[oc.ascendancy&&oc.ascendancy.key];
+  const ascHtml=asc
+    ? `<div style="margin-top:12px"><div class="art-hint" style="margin-bottom:6px">Ascendancy</div><span class="chip" style="border-color:${asc.color}66;color:${asc.color}">${asc.emoji} ${esc(asc.name)}</span> <span class="mnote" style="margin:0 0 0 4px">${ascPointsSpent(oc)}/${ascPointsTotal(oc)} nodes</span></div>`
+    : ((oc.level||1)>=ASC_UNLOCK_LEVEL ? `<div style="margin-top:12px"><button class="btn xs primary" data-act="sheetTab" data-k="ascend">◈ Choose your Ascendancy</button></div>` : "");
+  const notableCount=oc.tree.allocated.filter(id=>{const nn=TREE.byId[id];return nn&&nn.type==="notable";}).length;
+  return `<div class="section-h"><span class="n">02</span><h2>Overview</h2></div>
+    <div style="color:var(--mist);font-size:13px;margin-bottom:10px">Innate — <b style="color:${race.color}">${race.passive.name}</b>: ${race.passive.desc}</div>
+    <div class="breakdown"><div class="bh"><span>Stat</span><span style="text-align:right">Base</span><span style="text-align:right">Powers</span><span style="text-align:right">Web</span><span style="text-align:right">Total</span></div>${rows}</div>
+    ${ksHtml}
+    ${ascHtml}
+    <div class="kv">
+      <div class="cell"><div class="l">Max HP</div><div class="v">${F.maxHp}</div></div>
+      <div class="cell"><div class="l">Attack</div><div class="v">${F.atk}</div></div>
+      <div class="cell"><div class="l">Crit chance</div><div class="v">${Math.round(F.crit*100)}%</div></div>
+      <div class="cell"><div class="l">Crit mult</div><div class="v">${F.critMult.toFixed(2)}×</div></div>
+      <div class="cell"><div class="l">Accuracy</div><div class="v">${Math.round(F.acc*100)}%</div></div>
+      <div class="cell"><div class="l">Evasion</div><div class="v">${Math.round(F.eva*100)}%</div></div>
+      <div class="cell"><div class="l">Flat DR</div><div class="v">${Math.round(F.flatDR)}</div></div>
+      <div class="cell"><div class="l">Block/Negate</div><div class="v">${Math.round(F.negate*100)}%</div></div>
+      <div class="cell"><div class="l">Web nodes</div><div class="v">${pointsSpent(oc)} <span style="color:var(--mist-dim);font-size:11px">(${notableCount} notable)</span></div></div>
+      <div class="cell"><div class="l">Active skills</div><div class="v">${F.procs.length}</div></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn primary" data-act="sheetTab" data-k="web">✦ Skill Web${pointsAvail(oc)>0?` (${pointsAvail(oc)} pts)`:""}</button>
+      <button class="btn" data-act="sheetTab" data-k="powers">⛓ Powers &amp; Augments</button>
+      <button class="btn" data-act="sendBattle" data-id="${oc.id}">⚔ Send to Battle</button>
+    </div>`;
+}
+
+/* ---------- ASCENDANCY (subclass) ---------- */
+function tabAscend(oc){
+  const unlocked=(oc.level||1)>=ASC_UNLOCK_LEVEL;
+  const chosen=ASC_BY_KEY[oc.ascendancy&&oc.ascendancy.key];
+  const avail=ascPointsAvail(oc), total=ascPointsTotal(oc);
+  if(!unlocked){
+    return `<div class="section-h"><span class="n">◈</span><h2>Class Ascendancy</h2></div>
+      <div class="asc-lock"><div class="asc-lock-i">🔒</div><div>
+        <div style="font-weight:800;font-size:15px;margin-bottom:4px">Unlocks at Level ${ASC_UNLOCK_LEVEL}</div>
+        <div style="color:var(--mist);font-size:13px">Choose a subclass — a powerful mini-tree that defines your character's identity. You're level ${oc.level}; win fights and run montages to reach ${ASC_UNLOCK_LEVEL}.</div></div></div>`;
+  }
+  if(!chosen){
+    const cards=ASCENDANCIES.map(a=>`<button class="asc-pick" data-act="chooseAsc" data-k="${a.key}" style="--asc:${a.color}">
+      <div class="asc-h"><span class="asc-e">${a.emoji}</span><span class="asc-n">${esc(a.name)}</span></div>
+      <div class="asc-d">${esc(a.desc)}</div>
+      <div class="asc-chips">${a.nodes.map(n=>`<span class="asc-chip">${esc(n.name)}</span>`).join("")}</div>
+      <div class="asc-cta">Choose ${esc(a.name)} →</div></button>`).join("");
+    return `<div class="section-h"><span class="n">◈</span><h2>Choose your Ascendancy</h2></div>
+      <div style="color:var(--mist);font-size:13px;margin-bottom:12px">Pick one subclass. You can change it later, but changing resets its allocated nodes. You have <b>${total}</b> ascendancy point${total===1?"":"s"} to spend (more at higher levels).</div>
+      <div class="asc-grid">${cards}</div>`;
+  }
+  const nodes=chosen.nodes.map(n=>{
+    const has=(oc.ascendancy.allocated||[]).includes(n.id), canAlloc=!has&&avail>0;
+    return `<div class="asc-node ${has?"on":""}" style="--asc:${chosen.color}">
+      <div class="asc-node-h"><span class="asc-node-n">${esc(n.name)}</span>
+        ${has?`<button class="btn xs ghost" data-act="refundAsc" data-k="${n.id}">refund</button>`:`<button class="btn xs ${canAlloc?"primary":""}" data-act="allocAsc" data-k="${n.id}" ${canAlloc?"":"disabled"}>${avail>0?"allocate":"no points"}</button>`}</div>
+      <div class="asc-node-d">${esc(n.desc)}</div></div>`;
+  }).join("");
+  return `<div class="section-h"><span class="n">◈</span><h2 style="color:${chosen.color}">${chosen.emoji} ${esc(chosen.name)}</h2><span class="c">${ascPointsSpent(oc)}/${total} pts</span></div>
+    <div style="color:var(--mist);font-size:13px;margin-bottom:8px">${esc(chosen.desc)}</div>
+    ${avail>0?`<div class="asc-avail" style="--asc:${chosen.color}">◈ ${avail} ascendancy point${avail===1?"":"s"} to spend</div>`:(total>=5?`<div class="art-hint">All ${total} points allocated.</div>`:`<div class="art-hint">Level up for more ascendancy points — +1 every 6 levels.</div>`)}
+    <div class="asc-nodelist">${nodes}</div>
+    <div style="margin-top:14px"><button class="btn sm ghost" data-act="resetAsc">↺ Change subclass (resets nodes)</button></div>`;
+}
+
+/* ---------- SKILL WEB ---------- */
+let _treeBounds=null;
+function treeBounds(){
+  if(_treeBounds) return _treeBounds;
+  let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(const n of TREE.nodes){ if(n.x<minX)minX=n.x; if(n.y<minY)minY=n.y; if(n.x>maxX)maxX=n.x; if(n.y>maxY)maxY=n.y; }
+  const pad=90; _treeBounds={x:minX-pad,y:minY-pad,w:(maxX-minX)+pad*2,h:(maxY-minY)+pad*2};
+  return _treeBounds;
+}
+function nodeRadius(t){return t==="keystone"?21:t==="notable"?15:t==="jewel"?12:t==="hub"?18:9;}
+function armColor(arm){const a=ARMS.find(x=>x.key===arm);return a?a.color:"#B57CFF";}
+function allocState(oc){
+  const alloc=new Set(oc.tree.allocated); const avail=new Set();
+  for(const id of alloc){ const nn=TREE.byId[id]; if(!nn)continue; for(const nb of nn.neighbors){ if(!alloc.has(nb)) avail.add(nb); } }
+  return {alloc,avail};
+}
+function treeSVG(oc){
+  const {alloc,avail}=allocState(oc); const b=treeBounds(); const tv=state.treeView;
+  let edgeStr="";
+  for(const [a,c] of TREE.edges){ const na=TREE.byId[a],nc=TREE.byId[c]; const on=alloc.has(a)&&alloc.has(c);
+    edgeStr+=`<line class="tedge ${on?"on":""}" x1="${na.x.toFixed(1)}" y1="${na.y.toFixed(1)}" x2="${nc.x.toFixed(1)}" y2="${nc.y.toFixed(1)}"/>`; }
+  let nodeStr="",labelStr="";
+  for(const n of TREE.nodes){
+    const isAlloc=alloc.has(n.id), isAvail=avail.has(n.id), sel=state.treeSel===n.id;
+    const col=(n.type==="keystone")?"#F5C451":(n.type==="jewel")?"#43e8d8":armColor(n.arm);
+    const r=nodeRadius(n.type);
+    let fill,stroke,sw,op;
+    if(isAlloc){fill=col;stroke="#fff";sw=sel?4:2;op=1;}
+    else if(isAvail){fill="rgba(20,18,32,.9)";stroke=col;sw=sel?4:2.5;op=1;}
+    else{fill="rgba(20,18,32,.7)";stroke="rgba(160,150,210,.28)";sw=sel?3:1.5;op=.6;}
+    const shape = (n.type==="keystone"||n.type==="jewel")
+      ? `<rect class="tnode ${sel?"sel":""}" data-node="${n.id}" x="${(n.x-r).toFixed(1)}" y="${(n.y-r).toFixed(1)}" width="${(r*2).toFixed(1)}" height="${(r*2).toFixed(1)}" rx="5" transform="rotate(45 ${n.x.toFixed(1)} ${n.y.toFixed(1)})" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>`
+      : `<circle class="tnode ${sel?"sel":""}" data-node="${n.id}" cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>`;
+    nodeStr+=shape;
+    if(n.type==="keystone"||n.type==="notable"){
+      const fs=n.type==="keystone"?15:12; const dy=r+fs+2;
+      labelStr+=`<text x="${n.x.toFixed(1)}" y="${(n.y+dy).toFixed(1)}" text-anchor="middle" font-family="Arial Narrow,sans-serif" font-weight="bold" font-size="${fs}" fill="${isAlloc||isAvail?"#ECEAF7":"rgba(180,175,205,.55)"}" style="pointer-events:none">${esc(n.name)}</text>`;
+    }
+  }
+  return `<svg viewBox="${b.x.toFixed(0)} ${b.y.toFixed(0)} ${b.w.toFixed(0)} ${b.h.toFixed(0)}" preserveAspectRatio="xMidYMid meet">
+    <g id="treeG" transform="translate(${tv.x} ${tv.y}) scale(${tv.scale})">${edgeStr}${nodeStr}${labelStr}</g></svg>`;
+}
+function nodePanelHTML(oc){
+  const id=state.treeSel;
+  if(!id||!TREE.byId[id]) return `<div class="np-type">Skill node</div><div class="np-eff" style="color:var(--mist)">Tap a node in the web to inspect it. Allocate outward from your glowing start node; each step needs an adjacent allocated node.</div>`;
+  const n=TREE.byId[id]; const {alloc,avail}=allocState(oc); const start=TREE.startByRace[oc.race]||"hub";
+  const isAlloc=alloc.has(id), isAvail=avail.has(id), isKey=n.type==="keystone";
+  const typeLabel=n.type==="keystone"?"Keystone":n.type==="notable"?"Notable":n.type==="jewel"?"Jewel socket":n.type==="hub"?"Nexus":"Minor passive";
+  const arm=ARMS.find(a=>a.key===n.arm); const armLabel=arm?arm.name:(n.arm==="hybrid"?"Hybrid":"Core");
+  let action="";
+  if(id===start) action=`<span class="mnote">Your innate starting node.</span>`;
+  else if(isAlloc){ const canR=canRefund(oc,id); action=`<button class="btn sm ${canR?"":"ghost"}" data-act="refundNode" data-id="${id}" ${canR?"":"disabled"}>↺ Refund point</button>${canR?"":`<span class="mnote">Refunding would disconnect the web.</span>`}`; }
+  else if(isAvail){ const canA=pointsAvail(oc)>0; action=`<button class="btn sm ${canA?"primary":""}" data-act="allocNode" data-id="${id}" ${canA?"":"disabled"}>✦ Allocate${canA?"":" — no points"}</button>`; }
+  else action=`<span class="mnote">Locked — path to an adjacent node first.</span>`;
+  let jewelHtml="";
+  if(n.type==="jewel"){
+    if(isAlloc){
+      const cur=oc.tree.jewels&&oc.tree.jewels[id]; const jk=(cur&&cur.key)?cur.key:cur; const j=jk?JEWEL_BY_KEY[jk]:null;
+      if(j){ const gr=(cur&&cur.grade)?cur.grade:jewelGradeOf(jk); const R=rarByKey(gr);
+        jewelHtml=`<div class="np-jewel" style="border-color:${R.color}66"><div class="ah"><span class="ae">${j.emoji}</span><span class="an" style="color:${R.color}">${esc(j.name)}</span>${gradeBadge(gr)}</div><div class="ad">${esc(j.desc)}</div>
+          <div style="margin-top:7px;display:flex;gap:6px"><button class="btn xs" data-act="openJewelPick" data-node="${id}">Change jewel</button><button class="btn xs ghost" data-act="unsocketJewel" data-node="${id}">Remove</button></div></div>`;
+      } else {
+        jewelHtml=`<div class="np-jewel empty"><span class="mnote" style="margin:0">Empty socket</span><div style="margin-top:7px"><button class="btn xs primary" data-act="openJewelPick" data-node="${id}">◈ Socket a jewel</button></div></div>`;
+      }
+    } else jewelHtml=`<div class="np-jewel empty"><span class="mnote" style="margin:0">Allocate this socket, then slot a jewel from your collection.</span></div>`;
+  }
+  return `<div class="np-type">${typeLabel} · ${armLabel}${isAlloc?" · allocated":isAvail?" · reachable":""}</div>
+    <div class="np-name">${esc(n.name)}</div>
+    <div class="np-eff">${isKey?`<span class="ln2">${esc(n.desc)}</span>`:esc(n.desc)}</div>
+    <div class="np-actions">${action}</div>${jewelHtml}`;
+}
+function openJewelPicker(oc,nid){
+  if(!TREE.byId[nid]||TREE.byId[nid].type!=="jewel") return;
+  const owned=state.ownedJewels||[];
+  const cur=oc.tree.jewels&&oc.tree.jewels[nid]; const curKey=(cur&&cur.key)?cur.key:cur;
+  const opts=owned.map(g=>{const k=g.key,j=JEWEL_BY_KEY[k]; if(!j) return ""; const R=rarByKey(g.grade);
+    return `<div class="aug graded ${curKey===k?"owned":""}" style="border-left-color:${R.color}">
+      <div class="ah"><span class="ae">${j.emoji}</span><span class="an">${esc(j.name)}</span>${gradeBadge(g.grade)}</div><div class="ad">${esc(j.desc)}</div>
+      <div style="margin-top:6px">${curKey===k?`<span class="mnote">Socketed here</span>`:`<button class="btn xs primary" data-act="socketJewel" data-node="${nid}" data-k="${k}">Slot this</button>`}</div></div>`;}).join("");
+  const empty=owned.length===0?`<div class="hint">You don't own any jewels yet. Learn some from the Jewels library in the Powers &amp; Augments tab.</div>`:"";
+  openModal(`<h3>Socket a jewel</h3><div class="sub">Jewel socket · gains the jewel's modifiers scaled by its rarity</div>
+    ${curKey?`<button class="btn sm ghost block" data-act="unsocketJewel" data-node="${nid}" style="margin-bottom:10px">✕ Remove current jewel</button>`:""}
+    ${empty}<div class="aug-lib">${opts}</div>`);
+}
+function jewelLibraryHTML(){
+  const owned=(state.ownedJewels||[]).length;
+  const html=JEWELS.map(j=>{const has=ownsJewel(j.key); const gr=has?jewelGradeOf(j.key):null; const R=has?rarByKey(gr):null;
+    return `<div class="aug ${has?"owned graded":""}"${has?` style="border-left-color:${R.color}"`:""}>
+      <div class="ah"><span class="ae">${j.emoji}</span><span class="an">${esc(j.name)}</span>${has?gradeBadge(gr):""}</div>
+      <div class="ad">${esc(j.desc)}</div>
+      ${has?`<div class="rf-row"><button class="btn xs ${state.glory>=reforgeCostG()?"gold":""}" data-act="reforgeJewel" data-k="${j.key}" ${state.glory>=reforgeCostG()?"":"disabled"}>⚒ Reforge · ◈${reforgeCostG()}</button><span class="mnote" style="margin:0">push grade up</span></div>`
+        :`<div style="margin-top:8px"><button class="btn xs ${state.glory>=jewelCost()?"gold":""}" data-act="buyJewel" data-k="${j.key}" ${state.glory>=jewelCost()?"":"disabled"}>Learn · ◈${jewelCost()}</button></div>`}</div>`;}).join("");
+  return `<div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Jewels</h2><span class="c">${owned}/${JEWELS.length} owned</span></div>
+    <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Jewels slot into the ◈ sockets in your Skill Web — allocate a socket node, then socket a jewel. Same rarity roll + Reforge as gems.</div>
+    <div class="aug-lib">${html}</div>`;
+}
+function tabWeb(oc){
+  const avail=pointsAvail(oc);
+  return `<div class="section-h"><span class="n">02</span><h2>Skill Web</h2><span class="c">${pointsSpent(oc)} allocated</span></div>
+    <div class="web-toolbar"><span class="pts-pill">✦ ${avail} point${avail===1?"":"s"} available</span>
+      <button class="btn sm ghost" data-act="respecTree" data-id="${oc.id}">↺ Respec all (◈${respecCost(oc)})</button></div>
+    <div class="tree-frame" id="treeFrame">
+      <div class="legend"><span><span class="dotm" style="background:#B57CFF"></span>allocated</span><span><span class="dotm" style="background:rgba(20,18,32,.9);border:1px solid #B57CFF"></span>reachable</span><span><span class="dotm" style="background:#F5C451"></span>keystone</span><span>drag to pan · pinch/scroll to zoom</span></div>
+      ${treeSVG(oc)}
+      <div class="zoombtns"><button data-act="zoomIn">+</button><button data-act="zoomOut">−</button><button data-act="zoomReset">⤢</button></div></div>
+    <div class="node-panel ${state.treeSel&&TREE.byId[state.treeSel]&&TREE.byId[state.treeSel].type==="keystone"?"key":""}" id="nodePanel">${nodePanelHTML(oc)}</div>`;
+}
+function respecCost(oc){return 40+pointsSpent(oc)*10;}
+/* allocation logic */
+function canRefund(oc,id){
+  const start=TREE.startByRace[oc.race]||"hub"; if(id===start) return false;
+  if(!oc.tree.allocated.includes(id)) return false;
+  const remain=new Set(oc.tree.allocated.filter(x=>x!==id));
+  if(remain.size===0) return true;
+  // BFS from start over remain
+  const seen=new Set([start]); const q=[start];
+  while(q.length){ const c=q.shift(); const nn=TREE.byId[c]; if(!nn)continue; for(const nb of nn.neighbors){ if(remain.has(nb)&&!seen.has(nb)){ seen.add(nb); q.push(nb); } } }
+  for(const r of remain){ if(!seen.has(r)) return false; }
+  return true;
+}
+function allocNode(oc,id){
+  const {avail}=allocState(oc);
+  if(!avail.has(id)){toast("Path to an adjacent node first.","bad");return;}
+  if(pointsAvail(oc)<=0){toast("No skill points available.","bad");return;}
+  oc.tree.allocated.push(id); state.treeSel=id; persist();
+}
+function refundNode(oc,id){
+  if(!canRefund(oc,id)){toast("Can't refund — would break the web.","bad");return;}
+  oc.tree.allocated=oc.tree.allocated.filter(x=>x!==id); persist();
+}
+function respecTree(oc){
+  const cost=respecCost(oc);
+  if(pointsSpent(oc)===0){toast("Nothing to respec.");return;}
+  if(state.glory<cost){toast(`Need ◈${cost} Glory to respec.`,"bad");return;}
+  state.glory-=cost; const start=TREE.startByRace[oc.race]||"hub"; oc.tree.allocated=[start]; state.treeSel=null; persist();
+  toast("Skill web reset.","good");
+}
+/* interactions bound after render when web tab active */
+function setupTree(){
+  const frame=document.getElementById("treeFrame"); if(!frame) return;
+  const svg=frame.querySelector("svg"); const g=svg.querySelector("#treeG"); if(!svg||!g) return;
+  const vb=svg.viewBox.baseVal;
+  function apply(){ g.setAttribute("transform",`translate(${state.treeView.x} ${state.treeView.y}) scale(${state.treeView.scale})`); }
+  function zoomAt(px,py,factor){ const r=svg.getBoundingClientRect(); const sx=(px-r.left)*(vb.width/r.width), sy=(py-r.top)*(vb.height/r.height);
+    const s0=state.treeView.scale; const s1=clamp(s0*factor,0.5,3.4); const cx=(sx-state.treeView.x)/s0, cy=(sy-state.treeView.y)/s0;
+    state.treeView.x=sx-s1*cx; state.treeView.y=sy-s1*cy; state.treeView.scale=s1; apply(); }
+  let dragging=false,moved=0,lastX=0,lastY=0;
+  svg.addEventListener("pointerdown",e=>{dragging=true;moved=0;lastX=e.clientX;lastY=e.clientY;try{svg.setPointerCapture(e.pointerId);}catch(_){}});
+  svg.addEventListener("pointermove",e=>{ if(!dragging)return; const dx=e.clientX-lastX,dy=e.clientY-lastY; lastX=e.clientX;lastY=e.clientY; moved+=Math.abs(dx)+Math.abs(dy);
+    const r=svg.getBoundingClientRect(); state.treeView.x+=dx*(vb.width/r.width); state.treeView.y+=dy*(vb.height/r.height); apply(); });
+  svg.addEventListener("pointerup",e=>{ dragging=false; if(moved<6){ const t=e.target.closest("[data-node]"); if(t) selectNode(t.getAttribute("data-node")); } });
+  svg.addEventListener("pointercancel",()=>{dragging=false;});
+  svg.addEventListener("wheel",e=>{ e.preventDefault(); zoomAt(e.clientX,e.clientY,e.deltaY<0?1.15:0.87); },{passive:false});
+  const zi=frame.querySelector('[data-act="zoomIn"]'),zo=frame.querySelector('[data-act="zoomOut"]'),zr=frame.querySelector('[data-act="zoomReset"]');
+  if(zi)zi.addEventListener("click",()=>{const r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,1.2);});
+  if(zo)zo.addEventListener("click",()=>{const r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,0.83);});
+  if(zr)zr.addEventListener("click",()=>{state.treeView={x:0,y:0,scale:1};apply();});
+  apply();
+}
+function selectNode(id){
+  state.treeSel=id; const oc=currentOC(); if(!oc) return;
+  const svg=document.querySelector("#treeFrame svg");
+  if(svg){ svg.querySelectorAll(".tnode.sel").forEach(el=>el.classList.remove("sel")); const el=svg.querySelector(`[data-node="${id}"]`); if(el){ el.classList.add("sel"); el.setAttribute("stroke-width",(TREE.byId[id].type==="keystone"?4:4)); } }
+  const panel=document.getElementById("nodePanel");
+  if(panel){ panel.innerHTML=nodePanelHTML(oc); panel.classList.toggle("key",TREE.byId[id]&&TREE.byId[id].type==="keystone"); }
+}
+
+/* ---------- MODAL ---------- */
+function openModal(html){ $modal.innerHTML=`<div class="modal-back" data-act="closeModal"><div class="modal" data-stop="1">${html}</div></div>`; }
+function closeModal(){ $modal.innerHTML=""; }
+
+/* ---------- POWERS & AUGMENTS TAB ---------- */
+function powerTagsFor(p){ if(p.key==="stand") return (standByKey(p.arch)||{}).tags||[]; return (powerByKey(p.key)||{}).tags||[]; }
+function powerDisplayName(p){ if(p.key==="stand") return (standByKey(p.arch)||{}).name||"Stand"; return (powerByKey(p.key)||{}).name||p.key; }
+function powerEmoji(p){ if(p.key==="stand") return "👻"; return (powerByKey(p.key)||{}).emoji||"◆"; }
+function socketCap(p){ return tierIndex(p.tier)+1; }
+function masteryUpCostG(p){ const ti=tierIndex(p.tier); return [70,120,190][ti]||999; }
+function learnCostG(key){ const p=powerByKey(key); return Math.round((p?p.base:20)*4); }
+function augCost(){ return 60; }
+
+function tabPowers(oc){
+  const actives=(oc.powers||[]).filter(p=>isAugmentable(p.key));
+  const others=(oc.powers||[]).filter(p=>!isAugmentable(p.key));
+  const activeHtml=actives.length?actives.map(p=>linkPowerHTML(oc,p)).join(""):`<div class="empty" style="padding:22px">No active skills yet. Active skills (Aether Blast, Fire Breath, Telekinesis, Reality Warp, or a Stand) are the ones you socket augments into. Learn one below.</div>`;
+  const owned=state.ownedAugments||[];
+  const libHtml=AUGMENTS.map(a=>{const has=ownsAug(a.key); const gr=has?augGradeOf(a.key):null; const R=has?rarByKey(gr):null;
+    return `<div class="aug ${has?"owned graded":""}"${has?` style="border-left-color:${R.color}"`:""}>
+      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span>${has?gradeBadge(gr):""}</div>
+      <div class="ad">${a.desc}</div>${a.req?`<div class="areq">requires ${a.req} skill</div>`:""}
+      ${has?`<div class="rf-row"><button class="btn xs ${state.glory>=reforgeCostG()?"gold":""}" data-act="reforgeAug" data-k="${a.key}" ${state.glory>=reforgeCostG()?"":"disabled"}>⚒ Reforge · ◈${reforgeCostG()}</button><span class="mnote" style="margin:0">push grade up</span></div>`
+        :`<div style="margin-top:8px"><button class="btn xs ${state.glory>=augCost()?"gold":""}" data-act="buyAug" data-k="${a.key}" ${state.glory>=augCost()?"":"disabled"}>Learn · ◈${augCost()}</button></div>`}</div>`;}).join("");
+  // learn powers
+  const ownedKeys=new Set((oc.powers||[]).map(p=>p.key));
+  const learnable=POWERS.filter(p=>!ownedKeys.has(p.key));
+  const learnHtml=learnable.map(p=>{const c=learnCostG(p.key),can=state.glory>=c;
+    return `<div class="aug"><div class="ah"><span class="ae">${p.emoji}</span><span class="an">${p.name}</span></div><div class="ad">${p.desc}</div>
+      ${p.tags.length?`<div class="tagrow">${p.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>`:""}
+      <div style="margin-top:6px"><button class="btn xs ${can?"primary":""}" data-act="learnPow" data-k="${p.key}" ${can?"":"disabled"}>Learn · ◈${c}</button></div></div>`;}).join("");
+  return `<div class="section-h"><span class="n">03</span><h2>Powers &amp; Augments</h2></div>
+    <div style="color:var(--mist);font-size:13px;margin-bottom:12px">Socket support augments into active skills to transform how they fight — extra projectiles, ignite, chain, culling and more. A skill's mastery tier sets its socket count (Novice 1 → Master 4).</div>
+    ${activeHtml}
+    ${others.length?`<div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Passive &amp; Utility</h2></div><div class="powerchips" style="padding:0">${others.map(p=>{const t=TIERS.find(t=>t.key===p.tier);return `<span class="chip">${powerEmoji(p)} ${esc(powerDisplayName(p))} <span class="m">${t?t.label:""}</span></span>`;}).join("")}</div>`:""}
+    <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Augment Library</h2><span class="c">${owned.length}/${AUGMENTS.length} owned</span></div>
+    <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Every gem you learn rolls a rarity; a higher grade hits harder. Reforge gambles Glory to push a gem's grade up (it never drops). Grades:</div>
+    ${gradeLegendHTML()}
+    <div class="aug-lib">${libHtml}</div>
+    ${jewelLibraryHTML()}
+    <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Learn New Powers</h2></div>
+    ${learnable.length?`<div class="aug-lib">${learnHtml}</div>`:`<div class="hint">You've learned every power.</div>`}`;
+}
+function linkPowerHTML(oc,p){
+  const cap=socketCap(p),tags=powerTagsFor(p),ti=tierIndex(p.tier);
+  const augs=p.augments||[];
+  let sockets="";
+  for(let i=0;i<4;i++){
+    if(i>=cap){ sockets+=`<div class="socket locked"><span class="locked">🔒 locked</span><span class="empt">tier ${i+1}</span></div>`; continue; }
+    const a=augs[i]?augByKey(augs[i]):null;
+    if(a){ const gr=augGradeOf(augs[i]),R=rarByKey(gr);
+      sockets+=`<div class="socket filled" data-act="openSlot" data-k="${p.key}" data-slot="${i}" style="border-color:${R.color};background:linear-gradient(160deg,${R.color}22,var(--void-2))"><span class="se">${a.emoji} <span class="sn" style="display:inline;color:${R.color}">${esc(a.name)}</span></span><span class="empt" style="margin-top:3px;color:${R.color}bb">${R.label} · tap to change</span></div>`; }
+    else sockets+=`<div class="socket" data-act="openSlot" data-k="${p.key}" data-slot="${i}"><span class="empt">＋ empty socket</span><span class="empt" style="margin-top:2px;opacity:.6">tap to add augment</span></div>`;
+  }
+  const canUp=ti<TIERS.length-1; const upCost=masteryUpCostG(p);
+  return `<div class="link-power"><div class="link-head"><span class="pe">${powerEmoji(p)}</span><span class="pn">${esc(powerDisplayName(p))}</span>
+      <span class="chip">${TIERS[ti].label} · ${cap} socket${cap>1?"s":""}</span></div>
+    ${tags.length?`<div class="tagrow">${tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>`:""}
+    <div class="socket-row">${sockets}</div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      ${canUp?`<button class="btn xs ${state.glory>=upCost?"gold":""}" data-act="masterUpG" data-k="${p.key}" ${state.glory>=upCost?"":"disabled"}>▲ ${TIERS[ti+1].label} (unlock socket) · ◈${upCost}</button>`:`<span class="mnote">Fully mastered — 4 sockets.</span>`}
+    </div></div>`;
+}
+function openSlotPicker(oc,powerKey,slot){
+  const p=oc.powers.find(x=>x.key===powerKey); if(!p) return;
+  const tags=powerTagsFor(p); const owned=state.ownedAugments||[];
+  const current=(p.augments||[])[slot];
+  const opts=owned.map(g=>{const k=g.key,a=augByKey(k);if(!a)return"";
+    const inUse=(p.augments||[]).includes(k)&&(p.augments||[])[slot]!==k;
+    const reqBad=a.req&&!tags.includes(a.req);
+    const dis=inUse||reqBad;
+    const R=rarByKey(g.grade);
+    return `<div class="aug graded ${current===k?"owned":""}" style="border-left-color:${R.color};${dis?"opacity:.45":""}">
+      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span>${gradeBadge(g.grade)}</div><div class="ad">${a.desc}</div>
+      ${reqBad?`<div class="areq">needs ${a.req} — not on this skill</div>`:inUse?`<div class="areq">already socketed here</div>`:""}
+      <div style="margin-top:6px">${dis?"":`<button class="btn xs primary" data-act="setAug" data-k="${powerKey}" data-slot="${slot}" data-aug="${k}">${current===k?"Re-slot":"Slot this"}</button>`}</div></div>`;}).join("");
+  const emptyLib=owned.length===0?`<div class="hint">You don't own any augments yet. Buy some from the Augment Library.</div>`:"";
+  openModal(`<h3>Socket augment</h3><div class="sub">${powerDisplayName(p)} · socket ${slot+1} of ${socketCap(p)}</div>
+    ${current?`<button class="btn sm ghost block" data-act="clearAug" data-k="${powerKey}" data-slot="${slot}" style="margin-bottom:10px">✕ Clear this socket</button>`:""}
+    ${emptyLib}<div class="aug-lib">${opts}</div>`);
+}
+
+/* ---------- TRAIN TAB ---------- */
+function trainStatCostG(oc,k){ return Math.round(24+(oc.baseStats[k]||0)*1.1); }
+function montageCostG(oc){ return 55; }
+function tabTrain(oc){
+  const statRows=STAT_KEYS.map(k=>{const c=trainStatCostG(oc,k),can=state.glory>=c&&(oc.baseStats[k]||0)<140;
+    return `<div class="train-opt"><div class="ti">${["💪","🛡️","🫁","🧠","💨","🎯"][STAT_KEYS.indexOf(k)]}</div>
+      <div class="tt"><div class="th">Condition ${STAT_LABEL[k]} · +2</div><div class="ts">Base ${oc.baseStats[k]||0} → ${Math.min(140,(oc.baseStats[k]||0)+2)} (permanent)</div></div>
+      <button class="btn sm ${can?"gold":""}" data-act="trainStat" data-k="${k}" ${can?"":"disabled"}>◈${c}</button></div>`;}).join("");
+  const mc=montageCostG(oc); const canM=state.glory>=mc;
+  return `<div class="section-h"><span class="n">04</span><h2>Training</h2></div>
+    <div style="color:var(--mist);font-size:13px;margin-bottom:12px">Spend Glory (◈) earned in the arena. Condition core stats directly, or run a training montage to gain XP toward levels — and more skill points for the web.</div>
+    <div class="train-opt" style="border-color:var(--aur-violet)"><div class="ti">🔥</div>
+      <div class="tt"><div class="th">Training Montage · +XP</div><div class="ts">Gain ${Math.round(xpNeeded(oc.level+1)*0.7)} XP toward level ${oc.level+1}. Repeatable.</div></div>
+      <button class="btn sm ${canM?"primary":""}" data-act="montage" data-id="${oc.id}" ${canM?"":"disabled"}>◈${mc}</button></div>
+    <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Condition Stats</h2></div>
+    ${statRows}
+    <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Skill Web</h2></div>
+    <div class="train-opt"><div class="ti">✦</div><div class="tt"><div class="th">Respec skill web</div><div class="ts">Refund every allocated node and start over.</div></div>
+      <button class="btn sm ghost" data-act="respecTree" data-id="${oc.id}">◈${respecCost(oc)}</button></div>`;
+}
+
+/* ===================== BATTLE ===================== */
+function screenBattle(){
+  if(state.roster.length<2) return `${topbar()}<div class="section-h"><span class="n">⚔</span><h2>Arena</h2></div><div class="empty"><div class="big">⚔</div><div>You need at least two characters to battle.</div><div style="margin-top:14px"><button class="btn primary" data-act="startCreate">✦ Create OC</button></div></div>`;
+  if(state.battle) return battleStage();
+  const sel=state.battleSel;
+  const cards=state.roster.map(o=>{let cls="";if(sel[0]===o.id)cls="sel";else if(sel[1]===o.id)cls="sel2";return miniOC(o,cls,"pickFighter");}).join("");
+  const ready=sel[0]&&sel[1]&&sel[0]!==sel[1];
+  return `${topbar()}
+    <div class="section-h"><span class="n">⚔</span><h2>Arena</h2><span class="c">pick two fighters</span></div>
+    <div class="hero" style="padding:18px"><div class="vs-head" style="padding:0">
+      ${slotHead(sel[0],"a","Fighter A")}<div class="vs-badge">VS</div>${slotHead(sel[1],"b","Fighter B")}</div>
+      <div class="center" style="margin-top:16px"><button class="btn primary" data-act="runBattle" ${ready?"":"disabled"}>⚔ Fight!</button>${ready?"":`<div class="hint">Select two different characters below.</div>`}</div></div>
+    <div class="pick-slot-label a">Tap to assign · tap again to swap slot</div>
+    <div class="picker-grid">${cards}</div>`;
+}
+function slotHead(id,side,label){
+  if(!id){return `<div class="fighter-head ${side==="b"?"right":""}"><div class="fav">?</div><div class="fn" style="opacity:.5">${label}</div><div class="fr">empty</div></div>`;}
+  const o=state.roster.find(x=>x.id===id),r=raceByKey(o.race)||{};
+  return `<div class="fighter-head ${side==="b"?"right":""}"><div class="fav" style="--race-color:${r.color}">${avatarHTML(o)}</div><div class="fn">${esc(o.name)}</div><div class="fr">${esc(r.name)} · Lv${o.level}</div></div>`;
+}
+function pickFighter(id){
+  const sel=state.battleSel.slice();
+  if(sel[0]===id){sel[0]=null;}
+  else if(sel[1]===id){sel[1]=null;}
+  else if(!sel[0]){sel[0]=id;}
+  else if(!sel[1]){sel[1]=id;}
+  else {sel[1]=id;}
+  state.battleSel=sel; render();
+}
+function battleRewards(winnerOC,loserOC,res){
+  const winG=Math.round((30+loserOC.level*3)*(1+(res.gloryBonus||0)));
+  const loseG=8;
+  const winXP=Math.round((40+loserOC.level*5)*(1+(res.xpBonus||0)));
+  const loseXP=Math.round(15+winnerOC.level*3);
+  return {winG,loseG,winXP,loseXP};
+}
+function runBattle(){
+  const [aId,bId]=state.battleSel; if(!aId||!bId||aId===bId) return;
+  const A=state.roster.find(o=>o.id===aId),B=state.roster.find(o=>o.id===bId);
+  const res=simulate(A,B);
+  const winnerOC=res.winnerIsA?A:B, loserOC=res.winnerIsA?B:A;
+  const rew=battleRewards(winnerOC,loserOC,res);
+  winnerOC.record.w++; loserOC.record.l++;
+  state.glory+=rew.winG+rew.loseG;
+  const lvW=grantXP(winnerOC,rew.winXP), lvL=grantXP(loserOC,rew.loseXP);
+  persist();
+  state.battle={aId,bId,res,rew,lvW,lvL,winnerId:winnerOC.id};
+  render();
+  if(lvW>0) toast(`${winnerOC.name} reached level ${winnerOC.level}!`,"good");
+}
+function battleStage(){
+  const b=state.battle,A=state.roster.find(o=>o.id===b.aId),B=state.roster.find(o=>o.id===b.bId);
+  const rA=raceByKey(A.race)||{},rB=raceByKey(B.race)||{};
+  const last=b.res.hpTimeline[b.res.hpTimeline.length-1]||{a:0,b:0};
+  const winnerOC=b.res.winnerIsA?A:B;
+  const logHtml=b.res.log.map((l,i)=>`<div class="ln" style="animation-delay:${Math.min(i*0.05,3)}s"><span class="rn">${l.round?"R"+l.round:"◈"}</span><span class="${l.type}">${esc(l.text)}</span></div>`).join("");
+  const rew=b.rew;
+  return `${topbar()}
+    <div class="section-h"><span class="n">⚔</span><h2>Duel</h2><span class="c">${b.res.rounds} rounds</span></div>
+    <div class="vs-stage"><div class="vs-head">
+      <div class="fighter-head" style="--race-color:${rA.color}"><div class="fav" style="--race-color:${rA.color}">${avatarHTML(A)}</div><div class="fn">${esc(A.name)}</div><div class="fr">${esc(rA.name)} · Lv${A.level}</div>
+        <div class="hpbar"><div class="hpf" style="width:${Math.round(last.a*100)}%"></div></div></div>
+      <div class="vs-badge">VS</div>
+      <div class="fighter-head right" style="--race-color:${rB.color}"><div class="fav" style="--race-color:${rB.color}">${avatarHTML(B)}</div><div class="fn">${esc(B.name)}</div><div class="fr">${esc(rB.name)} · Lv${B.level}</div>
+        <div class="hpbar"><div class="hpf" style="width:${Math.round(last.b*100)}%"></div></div></div></div>
+      <div class="log">${logHtml}</div>
+      <div class="result-panel"><div class="win-label">Victory</div><div class="win-name" style="color:${(raceByKey(winnerOC.race)||{}).color}">${esc(winnerOC.name)}</div>
+        <div class="reward"><span>✦ +${rew.winG+rew.loseG} Glory</span><span class="xp">${esc(winnerOC.name)} +${rew.winXP} XP${b.lvW>0?` · LV+${b.lvW}`:""}</span></div><br>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn primary" data-act="rematch">↺ Rematch</button><button class="btn" data-act="newBattle">⚔ New Duel</button></div></div></div>`;
+}
+
+/* ===================== TOURNAMENT ===================== */
+function screenTourney(){
+  if(state.tourney) return tourneyStage();
+  const n=state.roster.length;
+  if(n<4) return `${topbar()}<div class="section-h"><span class="n">♛</span><h2>Tournament</h2></div><div class="empty"><div class="big">♛</div><div>You need at least four characters to run a tournament.</div><div style="margin-top:14px"><button class="btn primary" data-act="startCreate">✦ Create OC</button></div></div>`;
+  const size=n>=8?8:4;
+  return `${topbar()}
+    <div class="section-h"><span class="n">♛</span><h2>Tournament</h2><span class="c">${size}-fighter bracket</span></div>
+    <div class="hero" style="padding:20px"><h1 style="font-size:30px">Single-elimination</h1>
+      <p>${size} fighters are drawn at random from your roster and battle through the bracket. Winners earn Glory and XP each round; the champion takes a bonus.</p>
+      <div class="hero-actions"><button class="btn gold" data-act="runTourney" data-size="${size}">♛ Run ${size}-Fighter Tournament</button>${n>8?`<button class="btn" data-act="runTourney" data-size="8">Use 8</button>`:""}${n>4&&n<8?`<button class="btn" data-act="runTourney" data-size="4">Use 4</button>`:""}</div></div>`;
+}
+function runTournament(size){
+  const pool=state.roster.slice(); for(let i=pool.length-1;i>0;i--){const j=randInt(0,i);[pool[i],pool[j]]=[pool[j],pool[i]];}
+  let contenders=pool.slice(0,size);
+  const rounds=[]; let totalG=0;
+  while(contenders.length>1){
+    const matches=[]; const next=[];
+    for(let i=0;i<contenders.length;i+=2){
+      const A=contenders[i],B=contenders[i+1];
+      const res=simulate(A,B); const winnerOC=res.winnerIsA?A:B,loserOC=res.winnerIsA?B:A;
+      const rew=battleRewards(winnerOC,loserOC,res);
+      winnerOC.record.w++; loserOC.record.l++;
+      totalG+=rew.winG+rew.loseG; grantXP(winnerOC,rew.winXP); grantXP(loserOC,rew.loseXP);
+      matches.push({aId:A.id,bId:B.id,winnerId:winnerOC.id}); next.push(winnerOC);
+    }
+    rounds.push(matches); contenders=next;
+  }
+  const champ=contenders[0]; const champBonus=80; totalG+=champBonus; grantXP(champ,60);
+  state.glory+=totalG; persist();
+  state.tourney={rounds,champId:champ.id,totalG,champBonus}; render();
+  toast(`${champ.name} is the champion! +◈${totalG} Glory`,"good");
+}
+function tourneyStage(){
+  const t=state.tourney; const roundNames=["Quarterfinals","Semifinals","Final"];
+  const nR=t.rounds.length;
+  const cols=t.rounds.map((matches,ri)=>{
+    const rn=nR===2?["Semifinals","Final"][ri]:nR===3?roundNames[ri]:`Round ${ri+1}`;
+    const ms=matches.map(m=>{const A=state.roster.find(o=>o.id===m.aId),B=state.roster.find(o=>o.id===m.bId);
+      const rowA=slotRow(A,m.winnerId===m.aId),rowB=slotRow(B,m.winnerId===m.bId);
+      return `<div class="match">${rowA}${rowB}</div>`;}).join("");
+    return `<div class="round-col"><div class="rt">${rn}</div>${ms}</div>`;
+  }).join("");
+  const champ=state.roster.find(o=>o.id===t.champId),rc=raceByKey(champ.race)||{};
+  return `${topbar()}
+    <div class="section-h"><span class="n">♛</span><h2>Tournament</h2><span class="c">complete</span></div>
+    <div class="champion"><div class="cl">◆ Champion ◆</div><div class="cn" style="color:${rc.color}">${esc(champ.name)}</div>
+      <div class="reward" style="margin-top:8px;justify-content:center"><span>✦ +${t.totalG} Glory awarded</span></div></div>
+    <div class="bracket">${cols}</div>
+    <div class="center"><button class="btn primary" data-act="newTourney">♛ New Tournament</button></div>`;
+}
+function slotRow(o,win){const r=raceByKey(o.race)||{};return `<div class="m-slot ${win?"win":"lose"}"><span class="dotc" style="--race-color:${r.color}"></span><span class="mn2">${esc(o.name)}</span>${win?`<span style="color:var(--aur-teal);font-size:12px">✦</span>`:""}</div>`;}
+
+/* ===================== GAUNTLET (solo campaign) ===================== */
+// Authored foes, escalating. Each is an OC-shaped object run through migrateOC.
+// Augments carry explicit grades so they never inherit the player's inventory.
+const ENEMIES=[
+  {id:"g0",name:"Straw Sentry",emoji:"🎯",race:"human",level:3,baseStats:{str:22,dur:20,sta:18,int:14,spd:16,cmb:18},powers:[],tree:{allocated:["hub"]}},
+  {id:"g1",name:"Bramble Recruit",emoji:"🌿",race:"human",level:6,baseStats:{str:34,dur:30,sta:28,int:20,spd:26,cmb:30},powers:[{key:"energy_blast",effect:"proc",tier:"novice",augments:[]}],tree:{allocated:["hub"]}},
+  {id:"g2",name:"Ashen Duelist",emoji:"🔥",race:"human",level:10,baseStats:{str:44,dur:40,sta:40,int:36,spd:42,cmb:46},powers:[{key:"energy_blast",effect:"proc",tier:"adept",augments:[{key:"amplify",grade:"common"}]}],tree:{allocated:["hub"]}},
+  {id:"g3",name:"Iron Sentinel",emoji:"🛡️",race:"vultramite",level:14,baseStats:{str:56,dur:66,sta:58,int:38,spd:34,cmb:50},powers:[{key:"fire_breath",effect:"proc",tier:"adept",augments:[{key:"brutality",grade:"uncommon"}]}],tree:{allocated:["hub"]}},
+  {id:"g4",name:"Nightblade Vael",emoji:"🗡️",race:"vampire",level:18,baseStats:{str:58,dur:44,sta:48,int:52,spd:72,cmb:66},powers:[{key:"telekinesis",effect:"proc",tier:"expert",augments:[{key:"crit_infusion",grade:"rare"},{key:"precision",grade:"common"}]}],tree:{allocated:["hub"]}},
+  {id:"g5",name:"Stormcaller Rhea",emoji:"⚡",race:"human",level:22,baseStats:{str:52,dur:54,sta:58,int:76,spd:62,cmb:64},powers:[{key:"energy_blast",effect:"proc",tier:"expert",augments:[{key:"overcharge",grade:"rare"},{key:"chain",grade:"uncommon"}]}],tree:{allocated:["hub"]}},
+  {id:"g6",name:"Bonecrusher Grull",emoji:"💀",race:"vultramite",level:26,baseStats:{str:90,dur:80,sta:76,int:36,spd:48,cmb:78},powers:[{key:"fire_breath",effect:"proc",tier:"expert",augments:[{key:"brutality",grade:"rare"},{key:"multistrike",grade:"uncommon"}]}],tree:{allocated:["hub","a0_r5_0"]}},
+  {id:"g7",name:"Void Seer Nyx",emoji:"🌌",race:"human",level:30,baseStats:{str:56,dur:62,sta:72,int:98,spd:68,cmb:72},powers:[{key:"reality_warp",effect:"proc",tier:"master",augments:[{key:"toxic",grade:"epic"},{key:"amplify",grade:"rare"},{key:"faster",grade:"common"}]}],tree:{allocated:["hub","a1_r5_0"]}},
+  {id:"g8",name:"The Unbroken",emoji:"⛰️",race:"vultramite",level:34,baseStats:{str:84,dur:108,sta:92,int:50,spd:44,cmb:82},powers:[{key:"telekinesis",effect:"proc",tier:"expert",augments:[{key:"brutality",grade:"epic"}]}],tree:{allocated:["hub","a5_r5_0"]},ascendancy:{key:"juggernaut",allocated:["jug_a","jug_b","jug_d"]}},
+  {id:"g9",name:"Crimson Reaper",emoji:"🩸",race:"vampire",level:38,baseStats:{str:92,dur:72,sta:78,int:80,spd:106,cmb:100},powers:[{key:"energy_blast",effect:"proc",tier:"master",augments:[{key:"crit_infusion",grade:"legendary"},{key:"precision",grade:"epic"},{key:"culling",grade:"rare"}]}],tree:{allocated:["hub","a2_r5_0"]},ascendancy:{key:"assassin",allocated:["ass_a","ass_c","ass_d","ass_e"]}},
+  {id:"g10",name:"Doomforge Kael",emoji:"🔨",race:"vultramite",level:42,baseStats:{str:120,dur:100,sta:98,int:66,spd:74,cmb:106},powers:[{key:"fire_breath",effect:"proc",tier:"master",augments:[{key:"volatile",grade:"epic"},{key:"brutality",grade:"legendary"},{key:"ignite",grade:"epic"}]}],tree:{allocated:["hub","a0_r5_0"]},ascendancy:{key:"warlord",allocated:["war_a","war_b","war_c","war_d"]}},
+  {id:"g11",name:"The Ascendant",emoji:"👑",race:"vampire",level:45,baseStats:{str:114,dur:112,sta:110,int:120,spd:114,cmb:122},powers:[{key:"reality_warp",effect:"proc",tier:"master",augments:[{key:"amplify",grade:"cosmic"},{key:"crit_infusion",grade:"mythic"},{key:"faster",grade:"legendary"},{key:"culling",grade:"epic"}]}],tree:{allocated:["hub","a1_r5_0","a2_r5_0"]},ascendancy:{key:"elementalist",allocated:["ele_a","ele_b","ele_c","ele_d","ele_e"]}}
+];
+function prepEnemy(e){ const c=JSON.parse(JSON.stringify(e)); c.record=c.record||{w:0,l:0}; c.xp=c.xp||0; return migrateOC(c); }
+function gauntletCleared(){ return (state.gauntlet&&typeof state.gauntlet.cleared==="number")?state.gauntlet.cleared:-1; }
+function screenGauntlet(){
+  if(state.gauntletFight) return gauntletStage();
+  if(state.roster.length<1) return `${topbar()}<div class="section-h"><span class="n">🐉</span><h2>Gauntlet</h2></div><div class="empty"><div class="big">🐉</div><div>Create a character to challenge the gauntlet.</div><div style="margin-top:14px"><button class="btn primary" data-act="startCreate">✦ Create OC</button></div></div>`;
+  const cleared=gauntletCleared();
+  let champ=state.roster.find(o=>o.id===state.gauntlet.champion)||state.roster[0];
+  state.gauntlet.champion=champ.id;
+  const champCards=state.roster.map(o=>miniOC(o,o.id===champ.id?"sel":"","pickChampion")).join("");
+  const rungs=ENEMIES.map((e,i)=>{
+    const done=i<=cleared, cur=i===cleared+1; const st=done?"done":cur?"cur":"locked";
+    const r=raceByKey(e.race)||{}; const asc=e.ascendancy?(ASC_BY_KEY[e.ascendancy.key]||{}).name:"";
+    return `<div class="grung ${st}"><div class="grung-i" style="--race-color:${r.color}">${done?"✓":cur?e.emoji:"🔒"}</div>
+      <div class="grung-b"><div class="grung-n">${i+1}. ${esc(e.name)}</div><div class="grung-s">Lv ${e.level} · ${esc(r.name)}${asc?` · ${esc(asc)}`:""}</div></div>
+      <div class="grung-a">${cur?`<button class="btn sm primary" data-act="fightGauntlet" data-rung="${i}">⚔ Fight</button>`:done?`<button class="btn sm ghost" data-act="fightGauntlet" data-rung="${i}">↺ Replay</button>`:`<span class="mnote" style="margin:0">locked</span>`}</div></div>`;
+  }).join("");
+  const beaten=cleared+1>=ENEMIES.length;
+  return `${topbar()}
+    <div class="section-h"><span class="n">🐉</span><h2>Gauntlet</h2><span class="c">${Math.max(0,cleared+1)}/${ENEMIES.length} cleared</span></div>
+    <div style="color:var(--mist);font-size:13px;margin-bottom:10px">Send a champion up an escalating ladder of authored foes. Clear a rung to unlock the next; wins pay Glory and XP.${beaten?" <b style='color:#43e8d8'>You've conquered the gauntlet — replay any rung for Glory.</b>":""}</div>
+    <div class="art-hint" style="margin-bottom:6px">Your champion</div>
+    <div class="picker-grid" style="margin-bottom:14px">${champCards}</div>
+    <div class="grung-list">${rungs}</div>`;
+}
+function runGauntlet(rung){
+  let champ=state.roster.find(o=>o.id===state.gauntlet.champion)||state.roster[0]; if(!champ) return;
+  const e=ENEMIES[rung]; if(!e) return; const cleared=gauntletCleared(); if(rung>cleared+1) return;
+  const res=simulate(champ, prepEnemy(e)); const win=res.winnerIsA; const newClear=win&&rung>cleared;
+  const glory= win ? Math.round((25+e.level*4)*(newClear?1.6:0.5)) : 6;
+  const xp= win ? Math.round((30+e.level*6)*(newClear?1.4:0.4)) : 12;
+  if(win) champ.record.w++; else champ.record.l++;
+  state.glory+=glory; const lv=grantXP(champ, xp);
+  if(newClear) state.gauntlet.cleared=rung;
+  persist();
+  state.gauntletFight={rung,res,enemy:e,championId:champ.id,win,glory,xp,lv,newClear};
+  render();
+  if(lv>0) toast(`${champ.name} reached level ${champ.level}!`,"good");
+  else if(newClear) toast(`Rung ${rung+1} cleared!`,"gold");
+}
+function gauntletStage(){
+  const b=state.gauntletFight; const A=state.roster.find(o=>o.id===b.championId); if(!A){ state.gauntletFight=null; return screenGauntlet(); }
+  const B=prepEnemy(b.enemy); const rA=raceByKey(A.race)||{}, rB=raceByKey(B.race)||{};
+  const last=b.res.hpTimeline[b.res.hpTimeline.length-1]||{a:0,b:0};
+  const logHtml=b.res.log.map((l,i)=>`<div class="ln" style="animation-delay:${Math.min(i*0.05,3)}s"><span class="rn">${l.round?"R"+l.round:"◈"}</span><span class="${l.type}">${esc(l.text)}</span></div>`).join("");
+  const nextRung=b.win&&b.rung+1<ENEMIES.length;
+  return `${topbar()}
+    <div class="section-h"><span class="n">🐉</span><h2>Gauntlet · Rung ${b.rung+1}</h2><span class="c">${b.res.rounds} rounds</span></div>
+    <div class="vs-stage"><div class="vs-head">
+      <div class="fighter-head" style="--race-color:${rA.color}"><div class="fav" style="--race-color:${rA.color}">${avatarHTML(A)}</div><div class="fn">${esc(A.name)}</div><div class="fr">${esc(rA.name)} · Lv${A.level}</div><div class="hpbar"><div class="hpf" style="width:${Math.round(last.a*100)}%"></div></div></div>
+      <div class="vs-badge">VS</div>
+      <div class="fighter-head right" style="--race-color:${rB.color}"><div class="fav" style="--race-color:${rB.color}">${b.enemy.emoji}</div><div class="fn">${esc(B.name)}</div><div class="fr">${esc(rB.name)} · Lv${B.level}</div><div class="hpbar"><div class="hpf" style="width:${Math.round(last.b*100)}%"></div></div></div></div>
+      <div class="log">${logHtml}</div>
+      <div class="result-panel"><div class="win-label">${b.win?"Victory":"Defeat"}</div><div class="win-name" style="color:${b.win?rA.color:rB.color}">${esc(b.win?A.name:B.name)}</div>
+        <div class="reward"><span>✦ +${b.glory} Glory</span><span class="xp">${esc(A.name)} +${b.xp} XP${b.lv>0?` · LV+${b.lv}`:""}</span>${b.newClear?`<span class="xp" style="color:#43e8d8">◈ Rung ${b.rung+1} cleared!</span>`:""}</div><br>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">${nextRung?`<button class="btn primary" data-act="gauntletNext">⚔ Next rung</button>`:""}<button class="btn" data-act="gauntletBack">← Ladder</button></div></div></div>`;
+}
+
+/* ===================== ALLIANCES ===================== */
+function screenAlliances(){
+  const list=state.alliances.length?`<div class="ally-list">${state.alliances.map(allyCardHTML).join("")}</div>`
+    :`<div class="empty"><div class="big">⛨</div><div>No alliances yet. Forge one to group your characters into factions.</div></div>`;
+  const unassigned=state.roster.filter(o=>!state.alliances.some(a=>a.members.includes(o.id)));
+  return `${topbar()}
+    <div class="section-h"><span class="n">⛨</span><h2>Alliances</h2><span class="c">${state.alliances.length} faction${state.alliances.length===1?"":"s"}</span></div>
+    <div class="enhance" style="margin-top:0"><h4>Forge an alliance</h4>
+      <div class="enh-row"><input class="txt small" id="allyName" placeholder="Alliance name…" value="${esc(tmp.allyName)}" data-field="allyName" style="flex:1;min-width:160px"/>
+        <div class="enh-pill">Color <input type="color" value="${tmp.allyColor}" data-field="allyColor" style="width:34px;height:28px;border:none;background:none"/></div>
+        <button class="btn sm primary" data-act="createAlly">＋ Create</button></div></div>
+    ${list}
+    ${state.roster.length?`<div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Assign Characters</h2></div>
+      <div class="picker-grid">${state.roster.map(o=>assignRow(o)).join("")}</div>`:""}
+    ${unassigned.length?`<div class="hint">${unassigned.length} unassigned character${unassigned.length===1?"":"s"}.</div>`:""}`;
+}
+function allyCardHTML(a){
+  const members=a.members.map(id=>state.roster.find(o=>o.id===id)).filter(Boolean);
+  return `<div class="ally-card" style="--ac:${a.color}"><div class="ah"><span class="adot"></span><span class="aname" style="color:${a.color}">${esc(a.name)}</span>
+    <button class="btn xs ghost" data-act="delAlly" data-id="${a.id}" style="margin-left:auto">✕</button></div>
+    <div class="ally-members">${members.length?members.map(o=>`<span class="chip">${avatarSmall(o)} ${esc(o.name)}</span>`).join(""):`<span class="mnote">No members yet.</span>`}</div></div>`;
+}
+function avatarSmall(o){return o.art?"🖼️":(o.emoji||(raceByKey(o.race)||{}).emoji||"❔");}
+function assignRow(o){
+  const cur=state.alliances.find(a=>a.members.includes(o.id));
+  const opts=`<option value="">— none —</option>`+state.alliances.map(a=>`<option value="${a.id}" ${cur&&cur.id===a.id?"selected":""}>${esc(a.name)}</option>`).join("");
+  const r=raceByKey(o.race)||{};
+  return `<div class="mini" style="--race-color:${r.color};cursor:default"><div class="av">${avatarHTML(o)}</div>
+    <div style="min-width:0;flex:1"><div class="mn">${esc(o.name)}</div>
+      <select class="txt small" data-act="assignAlly" data-id="${o.id}" style="font-size:12px;padding:6px;margin-top:4px;font-family:var(--font-body)">${opts}</select></div></div>`;
+}
+
+/* ===================== RENDER LOOP ===================== */
+let lastSig="";
+function render(){
+  renderNav();
+  let html;
+  switch(state.screen){
+    case "create": html=screenCreate(); break;
+    case "sheet": html=screenSheet(); break;
+    case "battle": html=screenBattle(); break;
+    case "gauntlet": html=screenGauntlet(); break;
+    case "tourney": html=screenTourney(); break;
+    case "alliances": html=screenAlliances(); break;
+    default: html=screenHome();
+  }
+  const y=window.scrollY;
+  const sig=state.screen+"/"+(state.screen==="sheet"?state.sheetTab:"");
+  $app.innerHTML=html;
+  if(sig===lastSig) window.scrollTo(0,y); else window.scrollTo(0,0);
+  lastSig=sig;
+  if(state.screen==="sheet"&&state.sheetTab==="web") setupTree();
+  if(state.screen==="create"&&state.draft&&state.draft.step===1&&!state.draft.rolled){/* wait for roll click */}
+}
+function goto(screen){ state.screen=screen; if(screen!=="sheet"){state.sheetId=null;} render(); }
+
+/* ===================== EVENT DELEGATION ===================== */
+function handleAct(act,el,e){
+  const oc=currentOC();
+  switch(act){
+    case "home": goto("home"); break;
+    case "nav": goto(el.dataset.k); break;
+    case "startCreate": state.draft=newDraft(); state.screen="create"; render(); break;
+    case "cancelCreate": state.draft=null; goto("home"); break;
+    /* creation */
+    case "spin": doSpin(); break;
+    case "reroll": state.draft.spun=false; state.draft.race=null; render(); break;
+    case "nextStep": state.draft.step=Math.min(3,state.draft.step+1); render(); break;
+    case "prevStep": state.draft.step=Math.max(0,state.draft.step-1); render(); break;
+    case "rollStats": animateRoll(); break;
+    case "rerollStats": animateRoll(); break;
+    case "shopCat": state.draft.shopCat=el.dataset.k; render(); break;
+    case "buyPow": { const k=el.dataset.k,r=raceByKey(state.draft.race); if(ownedDraftPower(k))break;
+      if(draftAether()>=buyCost(k,r)){ const pd=powerByKey(k); state.draft.powers.push({key:k,tier:"novice",effect:pd.effect,augments:[]}); render(); } else toast("Not enough Aether.","bad"); break; }
+    case "masterUp": { const k=el.dataset.k,r=raceByKey(state.draft.race),p=ownedDraftPower(k); if(!p)break; const ti=tierIndex(p.tier);
+      if(ti>=TIERS.length-1)break; if(draftAether()>=upgradeCost(k,r)){ p.tier=TIERS[ti+1].key; render(); } else toast("Not enough Aether.","bad"); break; }
+    case "sellPow": state.draft.powers=state.draft.powers.filter(p=>p.key!==el.dataset.k); render(); break;
+    case "pickStand": { const arch=el.dataset.k; let p=ownedDraftPower("stand");
+      if(p){ p.arch=(p.arch===arch?p.arch:arch); } else state.draft.powers.push({key:"stand",arch,tier:"novice",effect:"stand",augments:[]}); render(); break; }
+    case "enhPlus": { const k=el.dataset.k; state.draft.enhance[k]=(state.draft.enhance[k]||0); if(state.draft.enhance[k]<12&&draftAether()>=6){ state.draft.enhance[k]+=2; render(); } break; }
+    case "enhMinus": { const k=el.dataset.k; if(state.draft.enhance[k]>0){ state.draft.enhance[k]-=2; if(state.draft.enhance[k]<=0)delete state.draft.enhance[k]; render(); } break; }
+    case "randName": state.draft.name=randomName(); render(); break;
+    case "pickEmoji": state.draft.emoji=(state.draft.emoji===el.dataset.e?null:el.dataset.e); render(); break;
+    case "finalize": finalizeOC(); break;
+    /* roster / sheet */
+    case "openSheet": state.screen="sheet"; state.sheetId=el.dataset.id; state.sheetTab="overview"; state.treeSel=null; state.treeView={x:0,y:0,scale:1}; render(); break;
+    case "delOC": { const id=el.dataset.id,o=state.roster.find(x=>x.id===id); if(o&&(typeof confirm==="undefined"||confirm(`Delete ${o.name}? This can't be undone.`))){ state.roster=state.roster.filter(x=>x.id!==id); state.alliances.forEach(a=>a.members=a.members.filter(m=>m!==id)); state.battleSel=state.battleSel.map(s=>s===id?null:s); persist(); render(); toast("Character deleted."); } break; }
+    case "sheetTab": state.sheetTab=el.dataset.k; if(el.dataset.k==="web"&&!state.treeSel){/* keep */} render(); break;
+    case "sendBattle": state.battle=null; state.battleSel=[el.dataset.id,null]; goto("battle"); break;
+    /* skill web */
+    case "allocNode": if(oc){ allocNode(oc,el.dataset.id); render(); } break;
+    case "chooseAsc": { if(!oc)break; const k=el.dataset.k; if(!ASC_BY_KEY[k]||(oc.level||1)<ASC_UNLOCK_LEVEL)break; if(!oc.ascendancy) oc.ascendancy={key:null,allocated:[]}; if(oc.ascendancy.key!==k){ oc.ascendancy.key=k; oc.ascendancy.allocated=[]; } persist(); render(); toast(`Ascended: ${ASC_BY_KEY[k].name}.`,"gold"); break; }
+    case "allocAsc": { if(!oc||!oc.ascendancy)break; const id=el.dataset.k,n=ASC_NODE_BY_ID[id]; if(!n||n.asc!==oc.ascendancy.key)break; if((oc.ascendancy.allocated||[]).includes(id))break; if(ascPointsAvail(oc)<=0){toast("No ascendancy points.","bad");break;} oc.ascendancy.allocated.push(id); persist(); render(); break; }
+    case "refundAsc": { if(!oc||!oc.ascendancy)break; const id=el.dataset.k; oc.ascendancy.allocated=(oc.ascendancy.allocated||[]).filter(x=>x!==id); persist(); render(); break; }
+    case "resetAsc": { if(!oc)break; oc.ascendancy={key:null,allocated:[]}; persist(); render(); break; }
+    case "buyJewel": { const k=el.dataset.k; if(ownsJewel(k))break; if(state.glory>=jewelCost()){ state.glory-=jewelCost(); const gr=rollGrade(); state.ownedJewels.push({key:k,grade:gr}); persist(); render(); const R=rarByKey(gr); toast(`Learned jewel ${JEWEL_BY_KEY[k].name} · ${R.label}!`, gr==="common"?"good":"gold"); } else toast("Not enough Glory.","bad"); break; }
+    case "reforgeJewel": { const k=el.dataset.k; const g=ownedJewelGem(k); if(!g)break; if(state.glory>=reforgeCostG()){ state.glory-=reforgeCostG(); const rolled=rollGrade(); const oi=RARITY.findIndex(r=>r.key===g.grade), ni=RARITY.findIndex(r=>r.key===rolled); const up=ni>oi; if(up) g.grade=rolled; persist(); render(); const R=rarByKey(g.grade); toast(up?`${JEWEL_BY_KEY[k].name} reforged UP → ${R.label} ▲`:`No luck — ${JEWEL_BY_KEY[k].name} holds at ${R.label}`, up?"gold":"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "openJewelPick": if(oc) openJewelPicker(oc, el.dataset.node); break;
+    case "socketJewel": { if(!oc)break; const nid=el.dataset.node,jk=el.dataset.k,nn=TREE.byId[nid]; if(!nn||nn.type!=="jewel"){closeModal();break;} if(!(oc.tree.allocated||[]).includes(nid)){toast("Allocate this socket first.","bad");break;} if(!JEWEL_BY_KEY[jk]||!ownsJewel(jk))break; if(!oc.tree.jewels) oc.tree.jewels={}; oc.tree.jewels[nid]=jk; persist(); closeModal(); render(); break; }
+    case "unsocketJewel": { if(!oc)break; const nid=el.dataset.node; if(oc.tree.jewels) delete oc.tree.jewels[nid]; persist(); closeModal(); render(); break; }
+    case "refundNode": if(oc){ refundNode(oc,el.dataset.id); render(); } break;
+    case "respecTree": { const o=state.roster.find(x=>x.id===el.dataset.id)||oc; if(o){ respecTree(o); render(); } break; }
+    /* powers & augments */
+    case "openSlot": if(oc) openSlotPicker(oc,el.dataset.k,parseInt(el.dataset.slot,10)); break;
+    case "setAug": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const slot=parseInt(el.dataset.slot,10);
+      p.augments=p.augments||[]; while(p.augments.length<slot)p.augments.push(null); p.augments[slot]=el.dataset.aug; p.augments=p.augments.filter((v,i)=>i<socketCap(p)); persist(); closeModal(); render(); toast("Augment socketed.","good"); break; }
+    case "clearAug": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const slot=parseInt(el.dataset.slot,10); if(p.augments&&p.augments[slot]!=null){ p.augments[slot]=null; } persist(); closeModal(); render(); break; }
+    case "buyAug": { const k=el.dataset.k; if(ownsAug(k))break; if(state.glory>=augCost()){ state.glory-=augCost(); const gr=rollGrade(); state.ownedAugments.push({key:k,grade:gr}); persist(); render(); const R=rarByKey(gr); toast(`Learned ${augByKey(k).name} · ${R.label}!`, gr==="common"?"good":"gold"); } else toast("Not enough Glory.","bad"); break; }
+    case "reforgeAug": { const k=el.dataset.k; const g=ownedGem(k); if(!g)break; if(state.glory>=reforgeCostG()){ state.glory-=reforgeCostG(); const rolled=rollGrade(); const oi=RARITY.findIndex(r=>r.key===g.grade), ni=RARITY.findIndex(r=>r.key===rolled); const up=ni>oi; if(up) g.grade=rolled; persist(); render(); const R=rarByKey(g.grade); toast(up?`${augByKey(k).name} reforged UP → ${R.label} ▲`:`No luck — ${augByKey(k).name} holds at ${R.label}`, up?"gold":"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "masterUpG": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const ti=tierIndex(p.tier); if(ti>=TIERS.length-1)break; const c=masteryUpCostG(p);
+      if(state.glory>=c){ state.glory-=c; p.tier=TIERS[ti+1].key; persist(); render(); toast(`${powerDisplayName(p)} → ${TIERS[ti+1].label}!`,"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "learnPow": { if(!oc)break; const k=el.dataset.k; if(oc.powers.some(p=>p.key===k))break; const c=learnCostG(k);
+      if(state.glory>=c){ state.glory-=c; const pd=powerByKey(k); oc.powers.push({key:k,tier:"novice",effect:pd.effect,augments:[]}); persist(); render(); toast(`Learned ${pd.name}.`,"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "montage": { const o=state.roster.find(x=>x.id===el.dataset.id)||oc; if(!o)break; const c=montageCostG(o);
+      if(state.glory>=c){ state.glory-=c; const lv=grantXP(o,Math.round(xpNeeded(o.level+1)*0.7)); persist(); render(); toast(lv>0?`${o.name} reached level ${o.level}!`:`${o.name} trained hard. +XP`,"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "trainStat": { if(!oc)break; const k=el.dataset.k,c=trainStatCostG(oc,k); if((oc.baseStats[k]||0)>=140){toast("Stat maxed.");break;}
+      if(state.glory>=c){ state.glory-=c; oc.baseStats[k]=Math.min(140,(oc.baseStats[k]||0)+2); persist(); render(); toast(`${STAT_LABEL[k]} conditioned.`,"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "closeModal": if(e&&e.target&&e.target.classList&&e.target.classList.contains("modal-back")) closeModal(); break;
+    /* battle */
+    case "pickFighter": pickFighter(el.dataset.id); break;
+    case "pickChampion": state.gauntlet.champion=el.dataset.id; render(); break;
+    case "fightGauntlet": runGauntlet(parseInt(el.dataset.rung,10)); break;
+    case "gauntletNext": { const gf=state.gauntletFight; state.gauntletFight=null; if(gf) runGauntlet(gf.rung+1); break; }
+    case "gauntletBack": state.gauntletFight=null; render(); break;
+    case "runBattle": runBattle(); break;
+    case "rematch": { const s=[state.battle.aId,state.battle.bId]; state.battle=null; state.battleSel=s; runBattle(); break; }
+    case "newBattle": state.battle=null; render(); break;
+    /* tourney */
+    case "runTourney": runTournament(parseInt(el.dataset.size,10)||4); break;
+    case "newTourney": state.tourney=null; render(); break;
+    /* alliances */
+    case "createAlly": { const nm=(tmp.allyName||"").trim(); if(!nm){toast("Name your alliance.","bad");break;} state.alliances.push({id:"al_"+Date.now().toString(36),name:nm,color:tmp.allyColor||"#4FE3C1",members:[]}); tmp.allyName=""; persist(); render(); toast("Alliance forged.","good"); break; }
+    case "delAlly": state.alliances=state.alliances.filter(a=>a.id!==el.dataset.id); persist(); render(); break;
+    default: break;
+  }
+}
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]"); if(!el) return;
+  const act=el.dataset.act;
+  if(el.tagName==="SELECT") return; // handled on change
+  handleAct(act,el,e);
+});
+document.addEventListener("input",e=>{
+  const t=e.target; const f=t.dataset&&t.dataset.field; if(!f) return;
+  if(f==="name"&&state.draft){ state.draft.name=t.value; const btn=document.querySelector('[data-act="finalize"]'); if(btn){ if(t.value.trim())btn.removeAttribute("disabled"); else btn.setAttribute("disabled",""); } }
+  else if(f==="art"&&state.draft){ state.draft.art=t.value; }
+  else if(f==="allyName"){ tmp.allyName=t.value; }
+  else if(f==="allyColor"){ tmp.allyColor=t.value; }
+});
+document.addEventListener("change",e=>{
+  const t=e.target; const act=t.dataset&&t.dataset.act;
+  if(act==="assignAlly"){ const id=t.dataset.id,target=t.value;
+    state.alliances.forEach(a=>a.members=a.members.filter(m=>m!==id));
+    if(target){ const a=state.alliances.find(x=>x.id===target); if(a&&!a.members.includes(id)) a.members.push(id); }
+    persist(); render(); return; }
+  if(t.dataset&&t.dataset.field==="allyColor"){ tmp.allyColor=t.value; }
+});
+
+/* ===================== BOOT ===================== */
+async function boot(){
+  try{ await loadState(); }catch(e){ state.ownedAugments=normalizeOwned(state.ownedAugments||STARTER_AUGMENTS); state.ownedJewels=normalizeOwnedJewels(state.ownedJewels||STARTER_JEWELS); }
+  render();
+}
+boot();
+</script>
+</body>
+</html>
