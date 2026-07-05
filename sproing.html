@@ -25,7 +25,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   color:var(--cream); user-select:none; -webkit-user-select:none}
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
   background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
-#stage{position:relative; width:540px; height:960px; transform-origin:center center;
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
   background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
 
@@ -911,7 +911,7 @@ function newGame(){
   game={
     running:true, paused:false, dead:false, t:0, acc:0, last:0,
     player:{x:VW/2,y:startY,vx:0,vy:-HOP,w:38,h:44,scale:1},
-    q:0, qv:0, camY:startY-720, startY:startY, bestY:startY, maxRise:0, meters:0,
+    q:0, qv:0, camY:startY-Math.round(VH*0.75), startY:startY, bestY:startY, maxRise:0, meters:0,
     chain:1, chainTier:0, launchY:startY,
     platforms:[], pests:[], powerups:[], coins:[], hazards:[], particles:[], floats:[],
     topGenY:startY, lastPathX:VW/2, lastPathY:startY, lastSolid:true,
@@ -934,52 +934,51 @@ function newGame(){
 }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 
-function pickPlatType(m){
-  var b=biomeFor(m), r=Math.random();
-  if(r<b.wFidd) return 'fiddlehead';
-  if(r<b.wFidd+0.06) return 'mushroom';
-  r=Math.random();
-  if(r<b.wMove) return 'drifting';
-  if(r<b.wMove+b.wCrumble) return 'crumble';
-  if(r<b.wMove+b.wCrumble+b.wDewy) return 'dewy';
-  if(r<b.wMove+b.wCrumble+b.wDewy+b.wDand) return 'dandelion';
-  if(biomeIdx(m)>=5 && Math.random()<0.04) return 'thornleaf';
+// The guaranteed climb path only ever uses SOLID landable types (broad/drifting/
+// mushroom/fiddlehead) so there is always a clearable route up.
+function pickPathType(m){ var b=biomeFor(m), r=Math.random();
+  if(r<b.wFidd*0.6) return 'fiddlehead';
+  if(r<b.wFidd*0.6+0.05) return 'mushroom';
+  if(r<b.wFidd*0.6+0.05+Math.min(b.wMove,0.26)) return 'drifting';
+  return 'broad';
+}
+// Tricky/timing types (crumble/dewy/dandelion/thorn) live ONLY on optional decoys.
+function pickDecoyType(m){ var b=biomeFor(m), r=Math.random();
+  if(r<b.wCrumble) return 'crumble';
+  if(r<b.wCrumble+b.wDewy) return 'dewy';
+  if(r<b.wCrumble+b.wDewy+b.wDand) return 'dandelion';
+  if(biomeIdx(m)>=4 && r<b.wCrumble+b.wDewy+b.wDand+0.14) return 'thornleaf';
+  if(r<b.wCrumble+b.wDewy+b.wDand+0.30) return 'mushroom';
   return 'broad';
 }
 var SOLID={broad:1,drifting:1,mushroom:1,fiddlehead:1};
 function platWidth(t){ return t==='mushroom'?58:(t==='fiddlehead'?48:(t==='broad'?92:78)); }
 
 function generateUp(){
-  var guard=0;
+  var guard=0, MAXREACH=195;   // every path gap stays < a normal hop's rise (~300px) with margin → always clearable
   while(game.topGenY > game.camY-360 && guard++<200){
-    var m=game.meters;
-    var b=biomeFor(m);
-    var gap=rnd(b.gapMin,b.gapMax);
-    // spring-only gaps in higher biomes: previous platform is a mushroom -> allow a big gap
-    var lastP=game.platforms.length?game.platforms[game.platforms.length-1]:null;
-    var type=pickPlatType(m);
-    if(!game.lastSolid && !SOLID[type]) type='broad';   // never two non-solid path leaves in a row
-    if(biomeIdx(m)>=3 && Math.random()<0.10 && lastP && lastP.type==='mushroom') gap=rnd(220,300); // spring-only reach
+    var m=game.meters, b=biomeFor(m);
+    var gap=rnd(b.gapMin, Math.min(b.gapMax, MAXREACH));
+    var type=pickPathType(m);
     var ny=game.topGenY-gap;
-    var nx=clamp(game.lastPathX+rnd(-230,230),46,VW-46);
-    var p={x:nx,y:ny,w:platWidth(type),type:type,vx:(type==='drifting'?rnd(40,90)*(Math.random()<.5?-1:1):0),dir:1,
+    var nx=clamp(game.lastPathX+rnd(-180,180),46,VW-46);
+    var p={x:nx,y:ny,w:platWidth(type),type:type,vx:(type==='drifting'?rnd(38,78)*(Math.random()<.5?-1:1):0),dir:1,
       alive:true, crumbling:false, crumbleT:0, born:game.t, thorn:0, trapT:rnd(0,2.2), trapOpen:false};
     game.platforms.push(p);
-    game.topGenY=ny; game.lastPathX=nx; game.lastPathY=ny; game.lastSolid=!!SOLID[type];
-    // coin on ~35%
-    if(Math.random()<0.35 && type!=='dandelion') game.coins.push({x:nx,y:ny-24,r:10,got:false,gold:false});
-    // coin arc in the gap sometimes
-    if(Math.random()<0.25){ var ax=clamp(nx+rnd(-90,90),30,VW-30); for(var c=0;c<4;c++) game.coins.push({x:ax+ (c-1.5)*22, y:ny+gap*0.5 - Math.abs(c-1.5)*14, r:9, got:false, gold:false}); }
-    // rare golden coin
+    game.topGenY=ny; game.lastPathX=nx; game.lastPathY=ny;
+    if(Math.random()<0.35) game.coins.push({x:nx,y:ny-24,r:10,got:false,gold:false});
+    if(Math.random()<0.22){ var ax=clamp(nx+rnd(-90,90),30,VW-30); for(var c=0;c<4;c++) game.coins.push({x:ax+(c-1.5)*22, y:ny+gap*0.5-Math.abs(c-1.5)*14, r:9, got:false, gold:false}); }
     if(Math.random()<0.02) game.coins.push({x:clamp(nx+rnd(-40,40),30,VW-30),y:ny-40,r:13,got:false,gold:true});
-    // pest
-    if(Math.random()<b.pest && type!=='dandelion' && type!=='thornleaf'){ spawnPest(pick(b.pests),p); }
-    // decoy platform (extra option)
-    if(Math.random()<0.4){ var dt=pickPlatType(m); var dx=clamp(nx+rnd(-190,190)*(Math.random()<.5?-1:1),46,VW-46); if(Math.abs(dx-nx)>70) game.platforms.push({x:dx,y:ny+rnd(-20,20),w:platWidth(dt),type:dt,vx:(dt==='drifting'?rnd(40,90):0),dir:1,alive:true,crumbling:false,crumbleT:0,born:game.t,thorn:0,trapT:rnd(0,2.2),trapOpen:false}); }
-    // powerup by interval
+    // pest on the path platform (avoidable by landing position / mid-air dodge) — NEVER a flytrap here
+    if(Math.random()<b.pest){ var pe=pick(b.pests); if(pe==='flytrap') pe=pick(['aphid','snail','beetle']); spawnPest(pe,p); }
+    // DECOY: an OPTIONAL side platform where the tricky/timing types (and flytraps) live
+    if(Math.random()<0.55){ var dt=pickDecoyType(m); var dx=clamp(nx+rnd(120,205)*(Math.random()<.5?-1:1),46,VW-46);
+      var dp={x:dx,y:ny+rnd(-30,26),w:platWidth(dt),type:dt,vx:(dt==='drifting'?rnd(38,78):0),dir:1,alive:true,crumbling:false,crumbleT:0,born:game.t,thorn:0,trapT:rnd(0,2.2),trapOpen:false};
+      game.platforms.push(dp);
+      if(biomeIdx(m)>=4 && Math.random()<0.12) spawnPest('flytrap',dp);
+    }
     if(m-game.lastPowM >= b.powInt*(1-0.12*upLvl('charm'))){ game.lastPowM=m; game.powerups.push({x:clamp(nx+rnd(-80,80),40,VW-40),y:ny-rnd(30,80),r:16,id:powForBiome(m),got:false}); }
-    // hazards
-    if(b.haz.length && m-game.lastHazM > 90 && Math.random()<0.5){ game.lastHazM=m; spawnHazard(pick(b.haz),ny,gap); }
+    if(b.haz.length && m-game.lastHazM > 110 && Math.random()<0.45){ game.lastHazM=m; spawnHazard(pick(b.haz),ny,gap); }
   }
 }
 function spawnPest(type,p){
@@ -1499,11 +1498,20 @@ function shareCard(){
 
 /* ============================ FIT / BOOT ================================= */
 var DPR=Math.min(3,window.devicePixelRatio||1);
-function setupCanvas(){ var gc=$('game'); gc.width=Math.round(VW*DPR); gc.height=Math.round(VH*DPR); gc.style.width=VW+'px'; gc.style.height=VH+'px'; GC.setTransform(DPR,0,0,DPR,0,0); GC.imageSmoothingEnabled=true; }
-function fit(){ var s=Math.min(window.innerWidth/VW,(window.innerHeight)/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+// Responsive layout: VW stays 540 (consistent horizontal play + wrap); VH is derived
+// from the real viewport aspect so the game FILLS the screen with no letterbox.
+function layout(){
+  var iw=window.innerWidth||540, ih=window.innerHeight||960;
+  VH=Math.max(700, Math.min(1500, Math.round(VW*ih/iw)));
+  LOCK=Math.round(VH*0.46);
+  var st=$('stage'); st.style.width=VW+'px'; st.style.height=VH+'px';
+  var gc=$('game'); gc.width=Math.round(VW*DPR); gc.height=Math.round(VH*DPR); gc.style.width=VW+'px'; gc.style.height=VH+'px';
+  GC.setTransform(DPR,0,0,DPR,0,0); GC.imageSmoothingEnabled=true;
+  var s=Math.min(iw/VW, ih/VH); st.style.transform='translateZ(0) scale('+s+')';
+}
 function boot(){
-  setupCanvas(); fit();
-  window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+  layout();
+  window.addEventListener('resize',layout); window.addEventListener('orientationchange',function(){ setTimeout(layout,200); });
   var gc=$('game');
   gc.addEventListener('pointerdown',onCanvasDown,{passive:false});
   gc.addEventListener('pointermove',onCanvasMove,{passive:false});
