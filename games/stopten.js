@@ -125,6 +125,7 @@ window._gameFns.stopten=function ST(a){
   var MAX_ATTEMPTS=3,AUTO_STOP_AT=25;
   var startMs=0,elapsed=0,running=false,rafId=0,attempts=0,best=Infinity;
   var sessionDone=false;
+  var stGen=0;          // bumped on every session reset — stale timers bail
   var MODES=['classic','blind','beat','ladder','heartbeat','countdown','twostop','chaos','daily'];
   var mode='classic';
   try{var _m=localStorage.getItem('lw_st_mode');if(MODES.indexOf(_m)>=0)mode=_m;}catch(e){}
@@ -222,7 +223,7 @@ window._gameFns.stopten=function ST(a){
     var ac=ensureAudio();if(!ac)return;
     var t=ac.currentTime;
     var o=ac.createOscillator(),g=ac.createGain();
-    o.type='sine';o.frequency.value=beatCount===9?660:440;
+    o.type='sine';o.frequency.value=beatCount===10?660:440;
     g.gain.setValueAtTime(0,t);
     g.gain.linearRampToValueAtTime(0.22,t+0.01);
     g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
@@ -408,7 +409,8 @@ window._gameFns.stopten=function ST(a){
         if(mode==='daily')bh+='<button class="st-btn" onclick="_STshare()" style="background:linear-gradient(180deg,rgba(200,168,75,0.2),rgba(180,140,50,0.12));border-color:var(--gold);color:var(--gold);">📤 SHARE</button>';
         brow2.innerHTML=bh;
       }
-      setTimeout(function(){if(document.body.contains(pan))renderSessionSummary();},900);
+      var _sg=stGen;
+      setTimeout(function(){if(_sg===stGen&&document.body.contains(pan))renderSessionSummary();},900);
     }
   }
 
@@ -544,6 +546,7 @@ window._gameFns.stopten=function ST(a){
     if(beatTimer){clearInterval(beatTimer);beatTimer=0;}
     if(hapticTimer){clearInterval(hapticTimer);hapticTimer=0;}
     if(chaosTimer){clearTimeout(chaosTimer);chaosTimer=0;}
+    stGen++;
     attempts=0;best=Infinity;elapsed=0;sessionDone=false;
     twostopPhase=0;twostopDelta1=0;chaosFakeDigit='';
     var ba=document.getElementById('STa');if(ba)ba.textContent=0;
@@ -559,6 +562,7 @@ window._gameFns.stopten=function ST(a){
     if(m===mode){return;}
     mode=m;
     try{localStorage.setItem('lw_st_mode',m);}catch(e){}
+    stGen++;
     attempts=0;best=Infinity;elapsed=0;sessionDone=false;
     twostopPhase=0;twostopDelta1=0;chaosFakeDigit='';
     // Daily mode has a special layout (locked recap card vs Start

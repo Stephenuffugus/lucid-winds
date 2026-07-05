@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 var G=window._G;
-var _e=G.e,_play=G.play,_playWin=G.playWin,_setDiff=G.setDiff,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr;
+var _e=G.e,_play=G.play,_playWin=G.playWin,_setDiff=G.setDiff,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,_sr=G.sr,_st=G.st;
 
 // ── State (single-game module) ─────────────────────────────────────────────
 var pegs=[[],[],[],[]];
@@ -365,6 +365,9 @@ window._HN=function(){
   moves=0;selectedPeg=-1;history=[];won=false;
   optimal=optimalCount(discs,pegCount);
   startTs=Date.now();solvedTs=0;
+  // Mark session start so the shell's 6s anti-farm gate applies — without
+  // this, startedAt stayed 0 and a sub-6s optimal solve farmed game_win.
+  if(_st)_st();
   if(timerId){clearInterval(timerId);}
   timerId=setInterval(tickTimer,500);
   sm('');

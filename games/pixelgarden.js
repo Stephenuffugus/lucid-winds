@@ -141,16 +141,17 @@ window._gameFns.pixelgarden = function PG(a){
     pixels[r][c]=color;
   }
   function floodFill(sr,sc,fc){
-    var target=pixels[sr][sc];if(target===fc)return;
-    var stack=[[sr,sc]],visited={};
+    var target=pixels[sr][sc];if(target===fc)return 0;
+    var stack=[[sr,sc]],visited={},changed=0;
     while(stack.length>0){
       var p=stack.pop(),pr=p[0],pc=p[1],key=pr+','+pc;
       if(visited[key])continue;visited[key]=true;
       if(pr<0||pr>=GRID||pc<0||pc>=GRID)continue;
       if(pixels[pr][pc]!==target)continue;
-      pixels[pr][pc]=fc;
+      pixels[pr][pc]=fc;changed++;
       stack.push([pr-1,pc],[pr+1,pc],[pr,pc-1],[pr,pc+1]);
     }
+    return changed;
   }
   function applyTool(r,c){
     if(r<0||r>=GRID||c<0||c>=GRID)return;
@@ -162,8 +163,11 @@ window._gameFns.pixelgarden = function PG(a){
       setPixel(r,c,null);
       if(mirrorMode)setPixel(r,GRID-1-c,null);
     } else if(tool==='fill'){
-      floodFill(r,c,currentColor);
-      if(mirrorMode)floodFill(r,GRID-1-c,currentColor);
+      // Count filled cells so the canvas registers as painted — a filled
+      // board used to have totalPixels===0 and SAVE rejected it as blank.
+      var fn=floodFill(r,c,currentColor);
+      if(mirrorMode)fn+=floodFill(r,GRID-1-c,currentColor);
+      totalPixels+=fn;pixelsSinceSave+=fn;
     } else if(tool==='pick'){
       if(pixels[r][c]){currentColor=pixels[r][c];buildPalette();}
     }
