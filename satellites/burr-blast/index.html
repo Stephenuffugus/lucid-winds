@@ -207,6 +207,21 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .load-seed{ background:var(--coal2); border:1px solid #3a4230; border-radius:12px; padding:10px 4px; color:var(--cream); cursor:pointer; min-height:60px; display:flex; flex-direction:column; align-items:center; gap:2px; }
 .load-seed:active{ transform:scale(.95); }
 .load-seed.on{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; color:var(--gold); background:linear-gradient(160deg,rgba(200,168,75,.14),var(--coal2)); }
+
+/* expedition */
+.exp-relics{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; max-width:420px; margin:4px 0 8px; min-height:20px; }
+.exp-relic{ font-size:20px; }
+.exp-choices{ display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin-top:8px; }
+.exp-node{ background:var(--coal2); border:1px solid #3a4230; border-radius:16px; padding:16px 18px; text-align:left; color:var(--cream); cursor:pointer; display:flex; align-items:center; gap:14px; min-height:74px; }
+.exp-node:active{ transform:scale(.98); } .exp-node:hover{ border-color:var(--gold); }
+.exp-node .en-i{ font-size:34px; flex:0 0 auto; }
+.exp-node .en-n{ font-weight:900; font-size:17px; }
+.exp-node .en-d{ color:var(--muted); font-size:12px; margin-top:2px; line-height:1.35; }
+.draft-card{ background:var(--coal2); border:1px solid #3a4230; border-radius:14px; padding:12px 14px; margin:6px 0; text-align:left; color:var(--cream); cursor:pointer; display:flex; align-items:center; gap:14px; min-height:64px; width:100%; }
+.draft-card:active{ transform:scale(.98); } .draft-card:hover{ border-color:var(--gold); }
+.draft-card .dc-i{ font-size:30px; flex:0 0 auto; }
+.draft-card .dc-n{ font-weight:900; font-size:15px; }
+.draft-card .dc-d{ color:var(--muted); font-size:12px; margin-top:2px; line-height:1.35; }
 </style>
 </head>
 <body>
@@ -284,6 +299,37 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   <h2 class="sh" style="margin-top:12px;">Seed Almanac</h2>
   <div class="sub">Spend Fertilizer to unlock new seeds and graft permanent upgrades. Earn it by clearing patches for new stars.</div>
   <div class="grid" id="almGrid" style="grid-template-columns:repeat(2,1fr);"></div>
+</div>
+
+<!-- EXPEDITION: map / draft / end -->
+<div class="screen" id="scr-expmap">
+  <div class="ls-head">
+    <button class="btn ghost sm" id="btnExpQuit">← Quit run</button>
+    <div class="chip" style="color:#ff8a6a;"><span class="ico">❤</span><span id="expVigor">3</span></div>
+    <div class="chip" style="color:#e8c060;"><span class="ico">🍯</span><span id="expSap">0</span></div>
+  </div>
+  <h2 class="sh" style="margin-top:12px;">Expedition</h2>
+  <div class="sub" id="expDepth">Depth 1 of 8 · choose your path</div>
+  <div class="exp-relics" id="expRelics"></div>
+  <div class="exp-choices" id="expChoices"></div>
+</div>
+<div class="screen" id="scr-draft">
+  <div class="ls-head" style="justify-content:center;"><div class="chip" style="color:#ff8a6a;"><span class="ico">❤</span><span id="draftVigor">3</span></div></div>
+  <h2 class="sh" style="margin-top:16px;" id="draftTitle">Choose a reward</h2>
+  <div class="sub" id="draftSub">Pick one to add to your run.</div>
+  <div class="grid" id="draftGrid" style="grid-template-columns:1fr;max-width:400px;"></div>
+</div>
+<div class="screen" id="scr-expend">
+  <div class="res-card">
+    <h2 class="sh" id="expEndTitle" style="margin:2px 0 4px;">The expedition ends</h2>
+    <div class="res-score" id="expEndDepth">Depth 5</div>
+    <div class="res-line" id="expEndReward"></div>
+    <div class="res-line" id="expEndBest"></div>
+    <div style="margin-top:16px;">
+      <button class="btn wide gold" id="btnExpAgain">New Expedition</button>
+      <button class="btn ghost sm wide" id="btnExpMenu">Main menu</button>
+    </div>
+  </div>
 </div>
 
 <!-- THE GROVE (companions: unlock + equip) -->
@@ -969,10 +1015,10 @@ var COMPANION_CATALOG = [
   { id:'beholder', name:'The Beholder',  icon:'👁️', fam:'Listener',  unlock:40, desc:'Marks every pest with a target ring.', mark:true }
 ];
 function compCat(id){ for(var i=0;i<COMPANION_CATALOG.length;i++) if(COMPANION_CATALOG[i].id===id) return COMPANION_CATALOG[i]; return null; }
-function compOwned(id){ return !!(SAVE.compOwned&&SAVE.compOwned[id]); }
+function compOwned(id){ if(_expedition && EXP && EXP.run.companions.indexOf(id)>=0) return true; return !!(SAVE.compOwned&&SAVE.compOwned[id]); }
 function compBond(id){ return Math.min(3, Math.floor(((SAVE.bonds&&SAVE.bonds[id])||0)/6)); }
 function compSlots(){ return Math.min(3, 1 + Math.floor(totalStars()/25)); }
-function equippedComps(){ return (SAVE.loadout.companions||[]).filter(compOwned); }
+function equippedComps(){ var lo=getActiveLoadout(); return (lo.companions||[]).filter(compOwned); }
 function hasComp(id){ return equippedComps().indexOf(id)>=0; }
 /* neutral loadout — nutrients 0, no companions/grafts/relics = base play unchanged */
 var DEFAULT_LOADOUT = { nutrients:{n:0,p:0,k:0}, companions:[], grafts:{}, relics:[] };
@@ -990,9 +1036,14 @@ function computeSeedStats(type, lo){
   else if(base.ability==='curve'){ ab.accel=base.ab.accel*pMul; }
   var st={ r:base.r, density:base.density*nMul, rest:base.rest, fric:base.fric,
     icon:base.icon, name:base.name, ability:base.ability, impactBoom:!!base.impactBoom, ab:ab };
-  applyCompanionMods(type, base, st, lo);    // no-op until slice 5
-  applyGraftMods(type, base, st, lo);        // no-op until slice 4
+  applyCompanionMods(type, base, st, lo);
+  applyGraftMods(type, base, st, lo);
+  applyRelicMods(type, base, st, lo);        // Expedition relics
   return st;
+}
+function applyRelicMods(type, base, st, lo){
+  if(!(_expedition && EXP && EXP.relics)) return;
+  for(var i=0;i<EXP.relics.length;i++){ var rc=relicCat(EXP.relics[i]); if(rc&&rc.seedMod){ try{ rc.seedMod(type, st); }catch(e){} } }
 }
 function applyCompanionMods(type, base, st, lo){
   var eq=(lo&&lo.companions)||[];
@@ -1003,7 +1054,7 @@ function applyGraftMods(type, base, st, lo){
   var cat=seedCat(type); if(!cat||!cat.grafts)return;
   for(var i=0;i<lvl && i<cat.grafts.length;i++){ try{ cat.grafts[i].m(st); }catch(e){} }
 }
-function getActiveLoadout(){ return (SAVE&&SAVE.loadout) || DEFAULT_LOADOUT; }
+function getActiveLoadout(){ if(_expedition && EXP) return EXP.run; return (SAVE&&SAVE.loadout) || DEFAULT_LOADOUT; }
 function nutrientsUsed(){ var n=SAVE.loadout.nutrients; return (n.n||0)+(n.p||0)+(n.k||0); }
 function nutCap(){ return 8 + Math.floor(totalStars()/5); }   // grows as you earn stars
 function nutrientsLeft(){ return Math.max(0, nutCap() - nutrientsUsed()); }
@@ -1115,7 +1166,7 @@ function loadSave(){
     SAVE.equip=s.equip||{seed:'seed_burr',sling:'sling_oak'};
     SAVE.set=s.set||SAVE.set; SAVE.endlessBest=s.endlessBest||0; SAVE.seenStory=s.seenStory||0;
     SAVE.fert=s.fert||0; SAVE.nutrientCap=s.nutrientCap||8; SAVE.seeds=s.seeds||{}; SAVE.grafts=s.grafts||{};
-    SAVE.compOwned=s.compOwned||{}; SAVE.bonds=s.bonds||{};
+    SAVE.compOwned=s.compOwned||{}; SAVE.bonds=s.bonds||{}; SAVE.expBest=s.expBest||0;
     if(s.loadout){ SAVE.loadout=s.loadout;
       if(!SAVE.loadout.nutrients) SAVE.loadout.nutrients={n:0,p:0,k:0};
       if(!SAVE.loadout.companions) SAVE.loadout.companions=[];
@@ -1370,6 +1421,7 @@ function startLevel(lv){
   for(var _k=0;_k<_kb;_k++) G.ammo.push('burr');
   var _eq=equippedComps();   // Spider companion: +1 seed per fort
   for(var _ci=0;_ci<_eq.length;_ci++){ var _cc=compCat(_eq[_ci]); if(_cc&&_cc.runAmmo){ var _ra=_cc.runAmmo(compBond(_eq[_ci])); for(var _r2=0;_r2<_ra;_r2++) G.ammo.push('burr'); } }
+  if(_expedition && EXP){ for(var _ri=0;_ri<EXP.relics.length;_ri++){ var _rr=relicCat(EXP.relics[_ri]); if(_rr&&_rr.runAmmo){ for(var _rj=0;_rj<_rr.runAmmo;_rj++) G.ammo.push('burr'); } } }
   G.ammoIdx=0;
   loadNextAmmo(true);
 
@@ -1532,15 +1584,16 @@ function damageBody(bd, other, speed, pt){
   if(!bd.game || bd.dead) return;
   if(G.settleGuard>0) return;         // fort is still settling; ignore settling contacts
   var k=bd.game.kind;
+  var _xm=expDmgMul();
   if(k==='block'){
     if(bd.game.indestruct) return;
     if(speed<=bd.game.tough) return;
-    bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.35);
+    bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.35)*_xm;
     bd.game.flash=1;
     if(bd.game.hp<=0) destroyBlock(bd,pt);
   } else if(k==='pest'){
     if(speed<=bd.game.tough) return;
-    bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.45);
+    bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.45)*_xm;
     bd.game.flash=1;
     if(bd.game.hp<=0) killPest(bd,pt);
   } else if(k==='boss'){
@@ -1803,6 +1856,9 @@ function winLevel(){
   // leftover ammo bonus
   var leftover=Math.max(0, G.ammo.length-G.ammoUsed);
   G.score += leftover*9000;
+  SFX.win(); celebrate();
+  // EXPEDITION forts don't touch campaign stars/coins — advance the run after the beat
+  if(_expedition){ setTimeout(function(){ if(G&&G.state==='won') expWinFort(); }, 950); return; }
   var stars=computeStars();
   var already=levelStars(G.level.n)>0;
   var newStars=recordLevel(G.level.n, stars, G.score);
@@ -1825,7 +1881,6 @@ function winLevel(){
     try{ window._sbCapEarn(1+stars, 'burr-blast:level_clear'); }catch(e){}
     if(G.level.boss){ try{ window._sbCapEarn(4, 'burr-blast:boss'); }catch(e){} }
   }
-  SFX.win(); celebrate();
   // let the petals fall + the fort settle for a beat before the results card
   var st=stars, cr=coinReward;
   setTimeout(function(){ if(G && G.state==='won') showResult(true, st, cr); }, 950);
@@ -1843,9 +1898,10 @@ function celebrate(){
 function loseLevel(){
   if(G.state==='lost') return;
   G.state='lost'; G.resolved=true;
+  SFX.lose();
+  if(_expedition){ expLoseFort(); return; }
   var progressed = G.blocksDestroyed>0 || (G.pestsTotal-G.pestsAlive)>0;
   if(progressed){ try{ window._sbCapEarn(1, 'burr-blast:progress'); }catch(e){} }
-  SFX.lose();
   showResult(false, 0, 0);
 }
 
@@ -2201,6 +2257,7 @@ function mix(c1,c2,t){ var a=parseInt(c1.slice(1),16),b=parseInt(c2.slice(1),16)
    SCREENS + UI WIRING + BOOT
    ================================================================ */
 var _playing=false, _curLevelN=1, _endless=false, _endlessN=0, _wonBoss=false;
+var _expedition=false, EXP=null;
 function $(id){ return document.getElementById(id); }
 function showScreen(id){
   var scr=document.querySelectorAll('.screen');
@@ -2366,7 +2423,10 @@ function renderGrove(){
     card.appendChild(act); grid.appendChild(card);
   });
 }
-function retryLevel(){ if(_endless){ startEndlessLevel(_endlessN); _playing=true; _paused=false; showScreen(null); } else beginFort(_curLevelN); }
+function retryLevel(){
+  if(_expedition && EXP){ if(EXP.node){ startLevel(generateFort(EXP.depth, EXP.node.type==='elite', EXP.node.type==='boss')); _playing=true; _paused=false; showScreen(null); } return; }
+  if(_endless){ startEndlessLevel(_endlessN); _playing=true; _paused=false; showScreen(null); } else beginFort(_curLevelN);
+}
 function nextLevel(){
   if(_wonBoss){ _wonBoss=false; openStory(COMIC_END, goMenu); return; }
   if(_endless){ _endlessN++; startEndlessLevel(_endlessN); _playing=true; _paused=false; showScreen(null); return; }
@@ -2396,6 +2456,163 @@ function startEndlessLevel(d){
   startLevel({ n:'E'+d, world:((d-1)%4)+1, worldName:'Endless', name:'Endless · Depth '+d, ammo:ammo, blocks:blocks, pests:pests, endless:true });
 }
 
+/* ================================================================
+   EXPEDITION — the roguelite endgame. A branching climb; draft your
+   build each fort; Vigor is your lives. Uses a per-run loadout + relics.
+   ================================================================ */
+var RELIC_CATALOG = [
+  { id:'secondwind', name:'Second Wind', icon:'🌬️', desc:'+1 Vigor right now.',            onGain:function(){ EXP.vigor++; } },
+  { id:'fatseeds',   name:'Fat Seeds',   icon:'🪨', desc:'Every seed +12% mass.',            seedMod:function(t,st){ st.density*=1.12; } },
+  { id:'splitter',   name:'Splitter',    icon:'🌿', desc:'Splits get +1 pellet.',            seedMod:function(t,st){ if(st.ability==='split') st.ab.pellets+=1; } },
+  { id:'longfuse',   name:'Long Fuse',   icon:'🧨', desc:'Bombs blow +30% harder.',          seedMod:function(t,st){ if(st.ability==='boom'){ if(st.ab.power)st.ab.power*=1.3; if(st.ab.radius)st.ab.radius*=1.12; } } },
+  { id:'featherfall',name:'Featherfall', icon:'🪶', desc:'+1 seed in every fort.',            runAmmo:1 },
+  { id:'brittle',    name:'Brittle Bones',icon:'💀',desc:'Forts take +18% damage.',           dmgMul:1.18 },
+  { id:'prospector', name:'Prospector',  icon:'⛏️', desc:'+60% Sap from forts.',              sapMul:1.6 },
+  { id:'glasscannon',name:'Glass Cannon',icon:'⚡', desc:'+30% trick potency, but -1 Vigor.', onGain:function(){ EXP.vigor=Math.max(1,EXP.vigor-1); }, seedMod:function(t,st){ if(st.ab){ if(st.ab.power)st.ab.power*=1.3; if(st.ab.radius)st.ab.radius*=1.15; if(st.ab.force)st.ab.force*=1.3; } } }
+];
+function relicCat(id){ for(var i=0;i<RELIC_CATALOG.length;i++) if(RELIC_CATALOG[i].id===id) return RELIC_CATALOG[i]; return null; }
+function expDmgMul(){ if(!(_expedition&&EXP))return 1; var m=1; for(var i=0;i<EXP.relics.length;i++){ var r=relicCat(EXP.relics[i]); if(r&&r.dmgMul)m*=r.dmgMul; } return m; }
+
+function startExpedition(){
+  _expedition=true; _endless=false;
+  EXP={ vigor:3, depth:0, maxDepth:8, sap:0, relics:[], cleared:0,
+        run:{ nutrients:{n:0,p:0,k:0}, satchel:[], companions:[] }, offer:null, node:null };
+  expOffer();
+}
+function endExpedition(won){
+  _expedition=false; _playing=false;
+  var depth=EXP.depth, reward=depth*3 + (won?18:0);
+  SAVE.fert += reward;
+  if(depth>(SAVE.expBest||0)) SAVE.expBest=depth;
+  persist();
+  showExpEnd(won, depth, reward);
+  EXP=null;
+}
+function expOffer(){
+  if(EXP.depth>=EXP.maxDepth-1){ EXP.offer=[{type:'boss'}]; renderExpMap(); showScreen('scr-expmap'); return; }
+  var d=EXP.depth, pool = d<2 ? ['fort','cache','fort'] : ['fort','elite','cache','shop'];
+  function pick(){ return pool[Math.floor(Math.random()*pool.length)]; }
+  var a=pick(), b=pick(), guard=0; while(b===a && guard++<8) b=pick();
+  EXP.offer=[{type:a},{type:b}]; renderExpMap(); showScreen('scr-expmap');
+}
+function chooseExpNode(idx){
+  var node=EXP.offer[idx]; if(!node)return; EXP.node=node; SFX.click();
+  if(node.type==='cache'){ EXP.depth++; openDraft(); }
+  else if(node.type==='shop'){ EXP.depth++; openExpShop(); }
+  else { var boss=node.type==='boss', elite=node.type==='elite';
+    startLevel(generateFort(EXP.depth, elite, boss)); _playing=true; _paused=false; showScreen(null);
+    if(EXP.depth===0) toast('Expedition begins — Vigor '+EXP.vigor); }
+}
+function generateFort(depth, elite, boss){
+  var diff=depth + (elite?2:0) + (boss?3:0);
+  var mats=['wood','wood','stone','glass','tnt','steel'];
+  var blocks=[], pests=[], cols=Math.min(2+Math.floor(diff/2), 6), baseX=600;
+  for(var c=0;c<cols;c++){
+    var cx=baseX + c*145;
+    var mat=mats[(c+diff)%(diff<3?3:mats.length)]; if(diff<3&&mat==='tnt')mat='stone';
+    var floors=1+((c+diff)%3);
+    for(var f=0;f<floors;f++) blocks.push(BK(mat,cx, GROUND_Y-24-f*49, 46,46));
+    pests.push(P(cx, GROUND_Y-24-floors*49-16, 16));
+  }
+  var ammoPool=['burr','burr','acorn','split','thornpod','puffball','boomerang'];
+  var ammoN=Math.max(3, cols+1 - (elite?1:0));
+  var ammo=[]; for(var a=0;a<ammoN;a++) ammo.push(ammoPool[(a*3+diff)%ammoPool.length]);
+  var lv={ n:'X'+depth, world:(diff%4)+1, worldName:'Expedition',
+    name:(boss?'The Deep Warden':(elite?'Elite Fort':'Fort'))+' · Depth '+(depth+1),
+    ammo:ammo, blocks:blocks, pests:pests, expedition:true, elite:elite };
+  if(boss){ lv.boss=true; lv.bossPest={ x:baseX+cols*145+30, y:GROUND_Y-40, r:40, hp:5 }; lv.name='The Deep Warden'; }
+  return lv;
+}
+function expWinFort(){
+  _playing=false;
+  var boss=EXP.node&&EXP.node.type==='boss', sapMul=1;
+  for(var i=0;i<EXP.relics.length;i++){ var r=relicCat(EXP.relics[i]); if(r&&r.sapMul)sapMul*=r.sapMul; }
+  EXP.sap += Math.round((5+EXP.depth*2)*sapMul); EXP.cleared++;
+  if(boss){ endExpedition(true); return; }
+  EXP.depth++; openDraft();
+}
+function expLoseFort(){
+  _playing=false; EXP.vigor--;
+  if(EXP.vigor<=0){ endExpedition(false); return; }
+  toast('The fort held. Vigor '+EXP.vigor);
+  expOffer();
+}
+function openDraft(){ EXP.draftOpts=genDraft(); renderDraft(); showScreen('scr-draft'); }
+function genDraft(){
+  var pool=[], opts=[];
+  SEED_CATALOG.forEach(function(c){ if(seedOwned(c.id) && EXP.run.satchel.indexOf(c.id)<0) pool.push({kind:'seed', id:c.id}); });
+  COMPANION_CATALOG.forEach(function(c){ if(EXP.run.companions.indexOf(c.id)<0) pool.push({kind:'comp', id:c.id}); });
+  pool.push({kind:'nut',k:'n'},{kind:'nut',k:'p'},{kind:'nut',k:'k'});
+  RELIC_CATALOG.forEach(function(r){ if(EXP.relics.indexOf(r.id)<0) pool.push({kind:'relic', id:r.id}); });
+  for(var i=0;i<3 && pool.length;i++){ opts.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); }
+  return opts;
+}
+function applyDraft(opt){
+  SFX.coin();
+  if(opt.kind==='seed'){ EXP.run.satchel.push(opt.id); }
+  else if(opt.kind==='comp'){ EXP.run.companions.push(opt.id); }
+  else if(opt.kind==='nut'){ EXP.run.nutrients[opt.k]=(EXP.run.nutrients[opt.k]||0)+2; }
+  else if(opt.kind==='relic'){ EXP.relics.push(opt.id); var rc=relicCat(opt.id); if(rc&&rc.onGain)rc.onGain(); }
+  expOffer();
+}
+function openExpShop(){
+  // simple: spend Sap on a relic or +2 nutrient or a companion
+  EXP.shopOpts=[]; var pool=[];
+  RELIC_CATALOG.forEach(function(r){ if(EXP.relics.indexOf(r.id)<0) pool.push({kind:'relic',id:r.id,cost:12}); });
+  COMPANION_CATALOG.forEach(function(c){ if(EXP.run.companions.indexOf(c.id)<0) pool.push({kind:'comp',id:c.id,cost:10}); });
+  pool.push({kind:'nut',k:'n',cost:6},{kind:'nut',k:'p',cost:6},{kind:'nut',k:'k',cost:6});
+  for(var i=0;i<3 && pool.length;i++) EXP.shopOpts.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  renderExpShop(); showScreen('scr-draft');   // reuse draft screen, shop mode
+}
+var EXP_NODE_META={ fort:{n:'Fort',i:'🏯',d:'A pest fort. Clear it for Sap + a reward.'}, elite:{n:'Elite Fort',i:'⚔️',d:'Tougher, fewer seeds — better loot.'}, cache:{n:'Cache',i:'🎁',d:'A free reward, no fight.'}, shop:{n:'The Shed',i:'🛖',d:'Spend Sap on seeds, companions, relics.'}, boss:{n:'The Deep Warden',i:'👑',d:'The final fort. Win to complete the run.'} };
+function renderExpMap(){
+  $('expVigor').textContent=EXP.vigor; $('expSap').textContent=EXP.sap;
+  $('expDepth').textContent='Depth '+(EXP.depth+1)+' of '+EXP.maxDepth+' · choose your path';
+  var rh=''; EXP.relics.forEach(function(id){ var r=relicCat(id); if(r) rh+='<span class="exp-relic" title="'+r.name+': '+r.desc+'">'+r.icon+'</span>'; }); $('expRelics').innerHTML=rh;
+  var ch=$('expChoices'); ch.innerHTML='';
+  EXP.offer.forEach(function(node,idx){ var m=EXP_NODE_META[node.type]||EXP_NODE_META.fort;
+    var btn=document.createElement('button'); btn.className='exp-node';
+    btn.innerHTML='<div class="en-i">'+m.i+'</div><div><div class="en-n">'+m.n+'</div><div class="en-d">'+m.d+'</div></div>';
+    btn.onclick=function(){ chooseExpNode(idx); }; ch.appendChild(btn);
+  });
+}
+function draftCard(opt, cost, onPick){
+  var d=document.createElement('button'); d.className='draft-card'; var label,icon,desc;
+  if(opt.kind==='seed'){ var s=AMMO[opt.id]||AMMO.burr; icon=s.icon; label=s.name+' seed'; desc='Add this seed to your run satchel.'; }
+  else if(opt.kind==='comp'){ var c=compCat(opt.id); icon=c.icon; label=c.name; desc=c.desc; }
+  else if(opt.kind==='nut'){ icon={n:'🔥',p:'✨',k:'💧'}[opt.k]; label={n:'+2 Nitrogen',p:'+2 Phosphorus',k:'+2 Potassium'}[opt.k]; desc={n:'Heavier seeds — hit harder.',p:'Stronger tricks.',k:'Extra seeds + steadier aim.'}[opt.k]; }
+  else { var r=relicCat(opt.id); icon=r.icon; label=r.name+' (relic)'; desc=r.desc; }
+  d.innerHTML='<div class="dc-i">'+icon+'</div><div><div class="dc-n">'+label+(cost?' · 🍯'+cost:'')+'</div><div class="dc-d">'+desc+'</div></div>';
+  d.onclick=onPick; return d;
+}
+function renderDraft(){
+  $('draftVigor').textContent=EXP.vigor; $('draftTitle').textContent='Choose a reward'; $('draftSub').textContent='Pick one to add to your run.';
+  var grid=$('draftGrid'); grid.innerHTML='';
+  if(!EXP.draftOpts.length){ expOffer(); return; }
+  EXP.draftOpts.forEach(function(opt){ grid.appendChild(draftCard(opt, 0, function(){ applyDraft(opt); })); });
+}
+function applyDraftItem(opt){
+  if(opt.kind==='comp') EXP.run.companions.push(opt.id);
+  else if(opt.kind==='nut') EXP.run.nutrients[opt.k]=(EXP.run.nutrients[opt.k]||0)+2;
+  else if(opt.kind==='relic'){ EXP.relics.push(opt.id); var rc=relicCat(opt.id); if(rc&&rc.onGain)rc.onGain(); }
+  else if(opt.kind==='seed') EXP.run.satchel.push(opt.id);
+  SFX.coin();
+}
+function renderExpShop(){
+  $('draftVigor').textContent=EXP.vigor; $('draftTitle').textContent='The Shed'; $('draftSub').textContent='Spend Sap (🍯 '+EXP.sap+') — or move on.';
+  var grid=$('draftGrid'); grid.innerHTML='';
+  EXP.shopOpts.forEach(function(opt){ var bought=opt._bought; var card=draftCard(opt, opt.cost, function(){ if(opt._bought)return; if(EXP.sap<opt.cost){toast('Not enough Sap.');return;} EXP.sap-=opt.cost; opt._bought=1; applyDraftItem(opt); renderExpShop(); }); if(bought){ card.style.opacity='0.4'; } grid.appendChild(card); });
+  var skip=document.createElement('button'); skip.className='btn wide gold'; skip.textContent='Move on →'; skip.style.marginTop='8px'; skip.onclick=function(){ SFX.click(); expOffer(); }; grid.appendChild(skip);
+}
+function showExpEnd(won, depth, reward){
+  $('expEndTitle').textContent = won ? 'The Deep Warden falls!' : 'The expedition ends';
+  $('expEndDepth').textContent = won ? 'Run complete!' : ('Reached depth '+depth);
+  $('expEndReward').textContent = '+ '+reward+' 🌱 Fertilizer';
+  $('expEndBest').textContent = 'Best depth: '+(SAVE.expBest||0);
+  showScreen('scr-expend');
+}
+function abandonExpedition(){ _expedition=false; EXP=null; _playing=false; }
+
 /* ---- results overlay ---- */
 function showResult(won, stars, coins){
   _playing=false;
@@ -2421,6 +2638,7 @@ function openLevels(){
 }
 function renderLevelMap(){
   var body=$('lsBody'); var h='';
+  h+='<button class="ls-endless" id="lsExped" style="border-color:#c98bff;background:linear-gradient(120deg,rgba(201,139,255,.16),var(--coal2));"><span class="et" style="color:#c98bff;">⚔️ Expedition</span><div class="ed">A roguelite climb — draft seeds, companions &amp; relics; spend your Vigor. Best depth: '+(SAVE.expBest||0)+'</div></button>';
   h+='<button class="ls-endless" id="lsEndless"><span class="et">♾ Endless Patch</span><div class="ed">Ever-deeper forts. Best depth: '+SAVE.endlessBest+'</div></button>';
   for(var w=0;w<WORLDS.length;w++){
     var World=WORLDS[w], wn=World.n;
@@ -2442,6 +2660,7 @@ function renderLevelMap(){
     h+='</div></div>';
   }
   body.innerHTML=h;
+  $('lsExped').onclick=function(){ SFX.click(); startExpedition(); };
   $('lsEndless').onclick=function(){ SFX.click(); startEndless(); };
   var cells=body.querySelectorAll('.ls-cell');
   for(var c=0;c<cells.length;c++){ (function(cell){
@@ -2538,8 +2757,12 @@ function boot(){
   // pause
   $('btnResume').onclick=function(){ SFX.click(); resumeGame(); };
   $('btnPauseRestart').onclick=function(){ SFX.click(); retryLevel(); };
-  $('btnPauseLevels').onclick=function(){ SFX.click(); _playing=false; openLevels(); };
-  $('btnPauseMenu').onclick=function(){ SFX.click(); _playing=false; goMenu(); };
+  $('btnPauseLevels').onclick=function(){ SFX.click(); if(_expedition)abandonExpedition(); _playing=false; openLevels(); };
+  $('btnPauseMenu').onclick=function(){ SFX.click(); if(_expedition)abandonExpedition(); _playing=false; goMenu(); };
+  // expedition
+  $('btnExpQuit').onclick=function(){ SFX.click(); if(confirm('Abandon this expedition? Your run progress is lost.')){ abandonExpedition(); openLevels(); } };
+  $('btnExpAgain').onclick=function(){ SFX.click(); startExpedition(); };
+  $('btnExpMenu').onclick=function(){ SFX.click(); goMenu(); };
   // results
   $('btnNext').onclick=function(){ SFX.click(); nextLevel(); };
   $('btnResRetry').onclick=function(){ SFX.click(); retryLevel(); };
@@ -2629,6 +2852,13 @@ try{ window.BB_DEBUG = {
   unlockSeed:function(id){ SAVE.seeds[id]=1; persist(); },
   equipComp:function(id){ SAVE.compOwned[id]=1; if(SAVE.loadout.companions.indexOf(id)<0)SAVE.loadout.companions.push(id); persist(); },
   clearComps:function(){ SAVE.loadout.companions=[]; persist(); },
+  startExp:function(){ startExpedition(); },
+  expState:function(){ return EXP?{vigor:EXP.vigor,depth:EXP.depth,sap:EXP.sap,relics:EXP.relics.slice(),satchel:EXP.run.satchel.slice(),comps:EXP.run.companions.slice(),offer:(EXP.offer||[]).map(function(o){return o.type;})}:null; },
+  chooseNode:function(i){ chooseExpNode(i); },
+  draftPick:function(i){ if(EXP&&EXP.draftOpts&&EXP.draftOpts[i]) applyDraft(EXP.draftOpts[i]); },
+  exped:function(){ return _expedition; },
+  expAddRelic:function(id){ if(EXP){ EXP.relics.push(id); var r=relicCat(id); if(r&&r.onGain)r.onGain(); } },
+  expPlayFort:function(){ if(EXP){ EXP.node={type:'fort'}; startLevel(generateFort(EXP.depth,false,false)); _playing=true; _paused=false; } },
   advance:function(sec){ // synchronous sim advance (bypasses RAF) for headless solvability tests
     if(!G) return null; var was=_paused; _paused=true;
     var steps=Math.round((sec||6)/(1/120));
