@@ -34,15 +34,20 @@ if(!document.getElementById('c4-drop-style')){
     '.c4-lily{background:radial-gradient(circle at 50% 45%,#ffffff 0%,#e6f0e1 35%,#a8c69e 75%,#4d7345 100%);box-shadow:inset 0 0 4px rgba(255,255,255,0.5),inset 0 -3px 6px rgba(77,115,69,0.5),0 2px 6px rgba(0,0,0,0.3)}',
     '.c4-dahlia{background:radial-gradient(circle at 50% 45%,#ffc9c9 0%,#c72424 35%,#7a0e0e 75%,#3a0404 100%);box-shadow:inset 0 0 4px rgba(255,201,201,0.4),inset 0 -3px 6px rgba(58,4,4,0.55),0 2px 6px rgba(0,0,0,0.3)}',
     // Stats strip styling
-    '.c4-stats{display:flex;justify-content:center;gap:14px;padding:6px 4px 2px;font-family:DM Mono,monospace;font-size:0.64rem;color:rgba(232,220,200,0.75);letter-spacing:0.06em}',
+    '.c4-stats{display:flex;justify-content:center;gap:14px;padding:6px 4px 2px;font-family:DM Mono,monospace;font-size:0.72rem;color:rgba(232,220,200,0.75);letter-spacing:0.06em}',
     '.c4-stats strong{color:var(--gold);font-weight:600}',
     '.c4-toprow{display:flex;justify-content:center;gap:6px;padding:4px 0 6px;flex-wrap:wrap}',
-    '.c4-toprow .gb{min-height:38px;padding:4px 10px;font-size:0.65rem}',
+    '.c4-toprow .gb{min-height:48px;padding:8px 12px;font-size:0.72rem;font-weight:500}',
     '.c4-picker{display:flex;gap:8px;justify-content:center;padding:6px 0;flex-wrap:wrap}',
-    '.c4-swatch{width:34px;height:34px;border-radius:50%;border:2px solid rgba(74,124,53,0.25);cursor:pointer;transition:transform .15s ease,border-color .18s ease}',
+    '.c4-swatch{position:relative;overflow:hidden;width:34px;height:34px;border-radius:50%;border:2px solid rgba(74,124,53,0.25);cursor:pointer;transition:transform .15s ease,border-color .18s ease}',
     '.c4-swatch.on{border-color:var(--gold);transform:scale(1.12);box-shadow:0 0 10px rgba(200,168,75,0.45)}',
-    '.c4-swatch-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}',
-    '.c4-swatch-lbl{font-family:DM Mono,monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase}'
+    '.c4-swatch-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:48px;min-height:48px;padding:4px;cursor:pointer}',
+    '.c4-swatch-lbl{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase}',
+    // Colorblind cue: CSS-placeholder themes are gradient circles that
+    // differ only by hue. Overlay a shape glyph so player vs AI reads
+    // without relying on color (fleet colorblind standard).
+    '.c4-rose::after,.c4-iris::after,.c4-lily::after{content:"✿";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.05em;line-height:1;color:rgba(255,255,255,.55);text-shadow:0 1px 2px rgba(0,0,0,.45);pointer-events:none}',
+    '.c4-sun::after,.c4-tulip::after,.c4-dahlia::after{content:"◆";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.85em;line-height:1;color:rgba(0,0,0,.45);text-shadow:0 1px 1px rgba(255,255,255,.35);pointer-events:none}'
   ].join('');
   document.head.appendChild(_c4s);
 }
@@ -74,6 +79,14 @@ function GC4(a){
   var history=[];      // stack of {idx,player} for undo
   var currentTheme=_loadTheme();
   var stats=_loadStats();
+  // Pending aiMove() timer + generation guard — New Game (or an in-app
+  // exit that tears this instance down) must not let a stale 280ms
+  // "AI thinking" timeout run against the next game's reset board.
+  var _aiT=null,_gen=0;
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    _gen++;
+    if(_aiT){clearTimeout(_aiT);_aiT=null;}
+  });
 
   ms(a,'Moves: <strong id="C4m">0</strong>');mm(a);
 
@@ -115,6 +128,8 @@ function GC4(a){
 
   // ── state helpers ──
   function init(){
+    _gen++; // invalidate any pending aiMove() from the previous game
+    if(_aiT){clearTimeout(_aiT);_aiT=null;}
     bd=[];for(var i=0;i<ROWS*COLS;i++)bd.push(0);
     turn=1;over=false;mv=0;history=[];_lastDrop=-1;winCells=null;
     var _cm=document.getElementById('C4m');if(_cm)_cm.textContent='0';
@@ -202,8 +217,18 @@ function GC4(a){
     if(check(1))return {s:-10000-depth};
     if(isFull())return {s:0};
     if(depth===0)return {s:score(b)};
+    var origAlpha=alpha,origBeta=beta;
     var key=_ttKey(b,depth,isMax);
-    var hit=_tt[key];if(hit)return hit;
+    var hit=_tt[key];
+    if(hit){
+      // Entries written after a beta<=alpha cutoff are BOUNDS, not exact
+      // scores — only 'exact' can be returned outright. 'lower'/'upper'
+      // just tighten this node's window before searching for real.
+      if(hit.flag==='exact')return hit;
+      if(hit.flag==='lower'){if(hit.s>alpha)alpha=hit.s;}
+      else if(hit.flag==='upper'){if(hit.s<beta)beta=hit.s;}
+      if(alpha>=beta)return hit;
+    }
     // Center-first ordering, falls off toward the edges
     var order=[3,2,4,1,5,0,6];
     var best={s:isMax?-Infinity:Infinity,c:-1};
@@ -225,6 +250,9 @@ function GC4(a){
       }
       if(beta<=alpha)break;
     }
+    if(best.s<=origAlpha)best.flag='upper';
+    else if(best.s>=origBeta)best.flag='lower';
+    else best.flag='exact';
     _tt[key]=best;
     return best;
   }
@@ -262,11 +290,11 @@ function GC4(a){
     if(check(2)){
       over=true;winCells=findWinLine(2);_e('game_loss');_play('lose');
       sm(_c4Enc[Math.floor(Math.random()*_c4Enc.length)]);
-      _sr('c4',{w:false,s:mv});
+      _sr('c4',{w:false});
       _recordResult('loss');
     }else if(isFull()){
       over=true;sm('A draw! Well matched — try again? 🌿');
-      _sr('c4',{w:false,s:mv});_recordResult('draw');
+      _sr('c4',{w:false});_recordResult('draw');
     }else{
       turn=1;sm('Your turn');
     }
@@ -313,7 +341,9 @@ function GC4(a){
         var sw=document.createElement('div');sw.className='c4-swatch'+(k===currentTheme?' on':'');
         if(t.playerArt.url){sw.style.background='url('+t.playerArt.url+') center/cover';}
         else{sw.classList.add(t.playerArt.cls);}
-        sw.onclick=function(){
+        // 48px tap target lives on the wrap (swatch chip itself stays a
+        // compact 34px visual) so the whole label+chip column is tappable.
+        wrap.onclick=function(){
           if(k===currentTheme)return;
           currentTheme=k;_saveTheme(k);
           _renderPicker();rn();
@@ -332,7 +362,7 @@ function GC4(a){
       gd.innerHTML='';
       for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){
         var d=document.createElement('div');
-        d.style.cssText='aspect-ratio:1;border-radius:50%;cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent;transition:background .22s ease,box-shadow .22s ease,transform .12s ease;background:rgba(10,8,4,.7);box-shadow:inset 0 2px 6px rgba(0,0,0,.6)';
+        d.style.cssText='position:relative;aspect-ratio:1;border-radius:50%;cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent;transition:background .22s ease,box-shadow .22s ease,transform .12s ease;background:rgba(10,8,4,.7);box-shadow:inset 0 2px 6px rgba(0,0,0,.6)';
         d.setAttribute('data-c',c);
         d.setAttribute('data-r',r);
         d.onclick=function(){
@@ -344,15 +374,16 @@ function GC4(a){
           if(check(1)){
             over=true;winCells=findWinLine(1);_e('game_win');_playWin();
             sm(_c4Win[Math.floor(Math.random()*_c4Win.length)]);
-            rn();_sr('c4',{w:true,s:mv});_recordResult('win');
+            rn();_sr('c4',{w:true,s:mv,lo:1});_recordResult('win');
             return;
           }
           if(isFull()){
             over=true;sm('A draw! Well matched — try again? 🌿');
-            rn();_sr('c4',{w:false,s:mv});_recordResult('draw');
+            rn();_sr('c4',{w:false});_recordResult('draw');
             return;
           }
-          turn=2;sm('AI thinking...');rn();setTimeout(aiMove,280);
+          turn=2;sm('AI thinking...');rn();
+          (function(g){_aiT=setTimeout(function(){_aiT=null;if(g!==_gen)return;aiMove();},280);})(_gen);
         };
         gd.appendChild(d);
       }
@@ -373,14 +404,19 @@ function GC4(a){
     var ob=document.getElementById('C4ob');
     if(ob){
       if(!over){ob.innerHTML='';}
-      else if(check(1)){ob.innerHTML='';}
       else{
-        var isLoss=check(2);
-        var msg=isLoss?_c4Enc[Math.floor(Math.random()*_c4Enc.length)]:'A draw! Well matched.';
+        // Stephen 2026-07-04 polish: winners used to get only the transient
+        // toast + pulsing winline while losses/draws got this full result
+        // card. Win now renders the same card (gold "YOU BLOOMED" title)
+        // so every outcome ends the same way.
+        var isWin=check(1),isLoss=!isWin&&check(2);
+        var title=isWin?'YOU BLOOMED':(isLoss?'GAME OVER':'DRAW');
+        var titleColor=isLoss?'var(--cream)':'var(--gold)';
+        var msg=isWin?_c4Win[Math.floor(Math.random()*_c4Win.length)]:(isLoss?_c4Enc[Math.floor(Math.random()*_c4Enc.length)]:'A draw! Well matched.');
         ob.innerHTML='<div style="text-align:center;padding:clamp(8px,3vw,16px);background:rgba(26,31,23,.85);border:1px solid rgba(74,124,53,.15);border-radius:12px;margin:8px auto;max-width:320px">'
-          +'<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(.8rem,2.5vw,1.1rem);color:'+(isLoss?'var(--cream)':'var(--gold)')+';letter-spacing:.08em;margin-bottom:6px">'+(isLoss?'GAME OVER':'DRAW')+'</div>'
-          +'<div style="font-size:clamp(.45rem,1.3vw,.6rem);color:var(--muted);margin-bottom:10px">'+msg+'</div>'
-          +'<button class="gb" onclick="_C4N()" style="font-size:clamp(.6rem,1.8vw,.8rem);padding:8px 20px;width:100%;min-height:44px">TRY AGAIN</button>'
+          +'<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(.8rem,2.5vw,1.1rem);color:'+titleColor+';letter-spacing:.08em;margin-bottom:6px">'+title+'</div>'
+          +'<div style="font-size:clamp(.7rem,1.6vw,.85rem);color:var(--muted);margin-bottom:10px">'+msg+'</div>'
+          +'<button class="gb" onclick="_C4N()" style="font-size:clamp(.72rem,1.8vw,.88rem);font-weight:500;padding:10px 20px;width:100%;min-height:48px">TRY AGAIN</button>'
           +'</div>';
       }
     }

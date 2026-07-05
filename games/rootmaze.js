@@ -419,7 +419,7 @@ function sizeCanvas(){
   // cell size: avail = (SZ+2*(PAD/CELL))*CELL. We'll set PAD = cell*0.42.
   var cell=Math.floor((avail-40)/(SZ+0.84));
   CELL=Math.max(44, Math.min(cell, 80));
-  PAD=Math.floor(CELL*0.42);
+  PAD=Math.max(24, Math.floor(CELL*0.42));
   BOARD_PX=SZ*CELL+PAD*2;
   if(boardCanvas){
     var dpr=window.devicePixelRatio||1;
@@ -450,6 +450,13 @@ function drawTile(ctx, x, y, tile, opts){
   if(opts.reachable){
     ctx.fillStyle='rgba(122,179,86,0.22)';
     ctx.fillRect(x+1, y+1, CELL-2, CELL-2);
+    // Colorblind-safe cue: dashed ring, not just a color tint
+    ctx.save();
+    ctx.strokeStyle='rgba(232,220,200,0.9)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([4,3]);
+    ctx.strokeRect(x+4, y+4, CELL-8, CELL-8);
+    ctx.restore();
   }
   if(tile.fixed){
     ctx.fillStyle='rgba(200,168,75,0.08)';
@@ -663,9 +670,9 @@ function onBoardTouch(e){
 function handleBoardClick(mx, my){
   if(S.phase==='anim' || S.phase==='ai_shift' || S.phase==='gameover')return;
   // Edge arrows. During shift phase the inner board is inert, so taps get
-  // a third of a cell of slop INTO the board — the raw arrow strips are
-  // 18-29px on phones, genuine rage territory without forgiveness.
-  var SLOP=(S.phase==='shift')?CELL/3:0;
+  // half a cell of slop INTO the board — the raw arrow strips are
+  // 18-33px on phones, genuine rage territory without forgiveness.
+  var SLOP=(S.phase==='shift')?CELL/2:0;
   if(my<PAD+SLOP){
     var c=Math.floor((mx-PAD)/CELL);
     if(c>=0&&c<SZ&&c%2===1) startShift('col', c, 1);
@@ -731,7 +738,7 @@ function updateHUD(){
   // Status line
   var msg, cls;
   if(S.phase==='shift'){ msg='TAP AN EDGE ARROW TO SHIFT'; cls='shift'; }
-  else if(S.phase==='move'){ msg='TAP A GREEN TILE TO MOVE'; cls='move'; }
+  else if(S.phase==='move'){ msg='TAP A MARKED TILE TO MOVE'; cls='move'; }
   else if(S.phase==='ai_shift' || S.phase==='anim'){ msg='MIRROR IS MOVING'; cls='ai'; }
   else { msg='GAME OVER'; cls='over'; }
   statusEl.textContent=msg;

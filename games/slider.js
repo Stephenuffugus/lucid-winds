@@ -35,11 +35,12 @@ var dragStartX=0, dragStartY=0, dragStartCell=-1, dragMoved=false;
     '.Dtile{position:absolute;width:var(--ts);height:var(--ts);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;color:#f5ebd0;background:linear-gradient(180deg,rgba(122,179,86,0.45) 0%,rgba(74,124,53,0.55) 100%);border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),inset 0 -2px 4px rgba(0,0,0,0.25),0 3px 8px rgba(0,0,0,0.4);cursor:pointer;transition:transform .16s cubic-bezier(.2,1.1,.3,1),box-shadow .16s ease,background .16s ease;will-change:transform;text-shadow:0 1px 2px rgba(0,0,0,0.45)}',
     '.Dtile:active{filter:brightness(1.1)}',
     '.Dtile.home{background:linear-gradient(180deg,rgba(200,168,75,0.45) 0%,rgba(160,130,55,0.55) 100%);border-color:rgba(255,220,112,0.55);color:#fff0d6;box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -2px 4px rgba(0,0,0,0.2),0 0 12px rgba(200,168,75,0.35),0 3px 8px rgba(0,0,0,0.4)}',
+    '.Dtile.home::after{content:"\\2713";position:absolute;top:2px;right:4px;font-size:0.6em;color:#fff0d6;opacity:.9;pointer-events:none}',
     '.Dctrl{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 4px 2px;flex-wrap:wrap;position:relative;z-index:1}',
     '.Dinfo{display:flex;gap:10px;align-items:center;font-family:Georgia,serif;font-size:0.72rem;color:rgba(232,220,200,0.82);flex-wrap:wrap}',
     '.Dinfo strong{color:#c8a84b;font-weight:700}',
     '.Dbtn-row{display:flex;gap:6px}',
-    '.Db{min-height:34px;padding:5px 12px;font-size:.68rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
+    '.Db{min-height:48px;padding:8px 14px;font-size:0.72rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
     '.Db:active{background:rgba(122,179,86,0.2);transform:scale(.96)}',
     '.Db.gold{border-color:#c8a84b;color:#c8a84b;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(160,130,50,0.22))}',
     '.Db[disabled]{opacity:.35;pointer-events:none}'
@@ -196,7 +197,7 @@ function checkWin(){
     won=true;solvedTs=Date.now();
     if(timerId){clearInterval(timerId);timerId=null;}
     _e('game_win');if(_playWin)_playWin();_sr('slider',{w:true,s:moves,lo:1});
-    setTimeout(sliderVictory,300);
+    sliderVictory();
   }
 }
 
@@ -359,28 +360,27 @@ document.addEventListener('touchcancel',function(){dragActive=false;dragMoved=fa
 function sliderVictory(){
   var secs=Math.max(1,Math.round((solvedTs-startTs)/1000));
   var timeStr=fmtTime(secs);
-  var ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,rgba(200,168,75,0.32) 0%,rgba(13,16,12,0.94) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;animation:dPanIn .3s ease;font-family:Georgia,serif;';
-  ov.innerHTML=
-    '<div style="font-size:4.2rem;line-height:1;margin-bottom:10px;filter:drop-shadow(0 0 20px rgba(200,168,75,0.7));animation:dPop .7s cubic-bezier(.18,1.4,.3,1);">🧩</div>'+
-    '<div style="font-size:2.1rem;font-weight:700;color:#c8a84b;letter-spacing:0.08em;text-shadow:0 0 18px rgba(200,168,75,0.6);animation:dPop .7s cubic-bezier(.18,1.4,.3,1);">SORTED</div>'+
-    '<div style="display:flex;gap:14px;margin-top:14px;font-family:DM Mono,monospace;font-size:0.72rem;color:#e8dcc8;animation:dLineIn 0.5s ease-out 0.3s both;">'+
-      '<div><span style="color:rgba(232,220,200,0.55);">Moves</span> <strong style="color:#c8a84b;">'+moves+'</strong></div>'+
-      '<div><span style="color:rgba(232,220,200,0.55);">Time</span> <strong style="color:#7ab356;">'+timeStr+'</strong></div>'+
-      '<div><span style="color:rgba(232,220,200,0.55);">Size</span> <strong style="color:#e8dcc8;">'+SZ+'×'+SZ+'</strong></div>'+
-    '</div>'+
-    '<button onclick="this.parentElement.remove();_DN()" style="margin-top:22px;min-height:46px;padding:10px 22px;font-family:Georgia,serif;font-weight:700;font-size:0.85rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:8px;letter-spacing:0.05em;cursor:pointer;animation:dLineIn 0.5s ease-out 0.6s both;">↻ Next Puzzle</button>';
-  ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
-  document.body.appendChild(ov);
+  if(window._lwGameEnd)window._lwGameEnd({
+    won:true,
+    title:'SORTED',
+    line:'<b style="color:#c8a84b">'+moves+'</b> moves · '+timeStr+' · '+SZ+'×'+SZ,
+    retry:function(){window._DN();},
+    retryLabel:'↻ Next Puzzle',
+    viewLabel:'admire the board'
+  });
 }
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
+function onDResize(){positionTiles();}
+
 function GD(a){
   ms(a,'Sliding Puzzle');mm(a);
   pan=document.createElement('div');pan.id='Dpan';a.appendChild(pan);
   mc(a).innerHTML='<select class="gsl" id="Dsize" onchange="_DN()"><option value="3">3×3</option><option value="4" selected>4×4 (15 Puzzle)</option><option value="5">5×5</option></select>';
+  window.addEventListener('resize',onDResize);
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     if(timerId){clearInterval(timerId);timerId=null;}
+    window.removeEventListener('resize',onDResize);
   });
   window._DN();
 }

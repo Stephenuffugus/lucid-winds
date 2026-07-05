@@ -564,11 +564,11 @@ var LEVELS=[
     '.RRinfo{display:flex;gap:10px;align-items:center;font-family:Georgia,serif;font-size:0.72rem;color:rgba(232,220,200,0.85);flex-wrap:wrap}',
     '.RRinfo strong{color:#c8a84b;font-weight:700}',
     '.RRbtn-row{display:flex;gap:6px;flex-wrap:wrap}',
-    '.RRb{min-height:34px;padding:5px 12px;font-size:.68rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
+    '.RRb{min-height:48px;padding:5px 12px;font-size:.7rem;font-family:Georgia,serif;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;transition:all .15s}',
     '.RRb:active{background:rgba(122,179,86,0.2);transform:scale(.96)}',
     '.RRb.gold{border-color:#c8a84b;color:#c8a84b;background:linear-gradient(180deg,rgba(200,168,75,0.18),rgba(160,130,50,0.22))}',
     '.RRb[disabled]{opacity:.35;pointer-events:none}',
-    '.RRlvl{font-family:Georgia,serif;font-style:italic;font-size:0.68rem;color:rgba(232,220,200,0.75);letter-spacing:0.04em}',
+    '.RRlvl{font-family:Georgia,serif;font-style:italic;font-size:0.7rem;color:rgba(232,220,200,0.75);letter-spacing:0.04em}',
     '.RRlvl strong{color:#c8a84b;font-style:normal}'
   ].join('');
   document.head.appendChild(s);
@@ -819,7 +819,7 @@ function checkWin(){
   if(special.orient==='h'&&special.row===EXIT_ROW&&special.col+special.length>=SZ){
     won=true;solvedTs=Date.now();
     if(timerId){clearInterval(timerId);timerId=null;}
-    _e('game_win');if(_playWin)_playWin();_sr('rootrush',{w:true,s:moves,lvl:levelIdx+1});
+    _e('game_win');if(_playWin)_playWin();_sr('rootrush',{w:true,s:moves,lo:1,lvl:levelIdx+1});
     var prog=loadProgress();
     if(levelIdx+1>prog)saveProgress(levelIdx+1);
     _animTimer=setTimeout(function(){_animTimer=null;animateExit();},50);
@@ -999,7 +999,10 @@ function victoryOverlay(){
       next+
       '<button onclick="this.parentElement.parentElement.remove();_RRreset()" style="min-height:46px;padding:10px 20px;font-family:Georgia,serif;font-weight:600;font-size:0.75rem;background:rgba(26,31,23,0.7);border:1.5px solid rgba(122,179,86,0.4);color:#e8dcc8;border-radius:8px;cursor:pointer;">↻ Replay</button>'+
     '</div>';
-  ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+  // No backdrop-dismiss: won stays true after this overlay shows, and Undo/Hint/
+  // hold-Reset are all won-guarded — a backdrop tap that only removed the overlay
+  // used to strand the player on a frozen board. Next Level / Replay are the only
+  // exits, and both properly clear or advance the level.
   document.body.appendChild(ov);
 }
 

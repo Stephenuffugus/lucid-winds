@@ -5248,6 +5248,8 @@
     .checker{width:clamp(14px,3.6vw,22px);height:clamp(14px,3.6vw,22px);border-radius:50%;border:1.5px solid rgba(0,0,0,.4);cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,0.15)}
     .checker.human{background:radial-gradient(circle at 36% 30%,#B8E86A,#4A7C35 65%);border-color:#2e5020}
     .checker.ai{background:radial-gradient(circle at 36% 30%,#F4C0C0,#C47A7A 65%);border-color:#8a4545}
+    .checker.human::after{content:'\2618';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60%;line-height:1;color:rgba(20,40,10,.8);pointer-events:none}
+    .checker.ai::after{content:'\2726';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:55%;line-height:1;color:rgba(80,20,20,.8);pointer-events:none}
     .checker.selected{transform:scale(1.25);box-shadow:0 0 16px rgba(122,185,86,.8),0 0 6px rgba(122,185,86,.5);z-index:10}
     .checker-count{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(9px,2.5vw,13px);font-weight:800;color:var(--cream);text-shadow:0 1px 4px rgba(0,0,0,.9)}
     .point.valid-dest::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:clamp(22px,7vw,30px);height:clamp(22px,7vw,30px);border-radius:50%;background:rgba(122,185,86,.2);border:2.5px solid rgba(122,185,86,.6);z-index:5;animation:bgPulse .8s ease infinite}
@@ -14496,9 +14498,11 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Combos:</strong> Swapping two specials triggers bigger detonations (VV/VB/BB/SV/SB/SS).</p>'+
       '<p><strong>Cascade:</strong> Tiles fall after a pop; new matches chain automatically for bonus score.</p>';
     R.seedtoss2 = ''+
-      '<p><strong>Goal:</strong> Flick seeds into the pot. Score by accuracy, bullseye is worth the most.</p>'+
-      '<p><strong>Toss:</strong> Press, drag back, release. Longer drag = harder throw. Aim with the angle of the drag.</p>'+
-      '<p><strong>Difficulty:</strong> Higher levels add wind drift and smaller targets.</p>';
+      '<p><strong>Goal:</strong> Flick seeds into the pot. Score by accuracy, height, and streaks, bullseye is worth the most.</p>'+
+      '<p><strong>Toss:</strong> Press the seed, drag it, and let go with speed to flick it, a slow release cancels the throw. Aim with the direction of the flick.</p>'+
+      '<p><strong>Height bonus:</strong> The higher the arc, the more it pays, up to +1000 for the loftiest tosses.</p>'+
+      '<p><strong>Pot size:</strong> Pick LARGE, MEDIUM, or SMALL before each round, smaller pots are harder to hit but multiply every point (1×/1.5×/2.5×). MEDIUM unlocks at Lv4, SMALL at Lv8.</p>'+
+      '<p><strong>Difficulty:</strong> Higher levels add wind drift and smaller pot art tiers.</p>';
     // ── Round 2 additions ──
     R.chess = ''+
       '<p><strong>Goal:</strong> Checkmate the enemy king, attack it with no escape.</p>'+
@@ -14562,20 +14566,21 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Goal:</strong> Guess the 5-letter botanical word in 6 tries.</p>'+
       '<p><strong>Each guess:</strong> Must be a real word. Tile colors after submit, <span style="color:#7ab356;">green</span> = right letter, right spot · <span style="color:#c8a84b;">gold</span> = right letter, wrong spot · gray = not in word.</p>';
     R.numbergarden = ''+
-      '<p><strong>Goal:</strong> Match the target number using the dice shown.</p>'+
-      '<p><strong>Tap dice + operators:</strong> Build an expression that evaluates to the target. Use +, −, ×, ÷ and parentheses.</p>'+
-      '<p><strong>Score:</strong> Faster solves and using all dice score higher.</p>';
+      '<p><strong>Goal:</strong> 60-second mental math drill. Solve as many as you can. 10+ correct = win.</p>'+
+      '<p><strong>BASIC:</strong> ADD/SUB/MUL/MIX. <strong>FOCUS:</strong> TABLES, MAKE 10, MAKE 100, DIGIT SPAN. <strong>MASTER:</strong> FLASH ANZAN (sum flashing numbers from memory).</p>'+
+      '<p><strong>Score:</strong> Each mode keeps its own personal best.</p>';
     R.rootflow = ''+
       '<p><strong>Goal:</strong> Connect every pair of matching colored dots with a path that doesn\'t cross any other path.</p>'+
       '<p><strong>Drag:</strong> From a dot to its match. Paths can\'t share a cell.</p>'+
       '<p><strong>Win:</strong> All pairs connected AND every cell of the grid used.</p>';
     R.rootmaze = ''+
-      '<p><strong>Goal:</strong> Guide your sprout from the entrance to the bloom at the exit.</p>'+
-      '<p><strong>Move:</strong> Tap arrows or swipe. Walls block, find the open path.</p>';
+      '<p><strong>Goal:</strong> Collect your queue of treasures before the Mirror collects its own.</p>'+
+      '<p><strong>Shift:</strong> Rotate the spare tile, then tap an edge arrow to push it into the board.</p>'+
+      '<p><strong>Move:</strong> Tap a marked tile to walk there along connected paths.</p>';
     R.colorgarden = ''+
-      '<p><strong>Goal:</strong> Color every region of the page so no two touching regions share a color.</p>'+
-      '<p><strong>Tap a color, then tap a region.</strong> Page complete = no conflicts.</p>'+
-      '<p><strong>Pages:</strong> Use ◀ ▶ to switch botanical pages.</p>';
+      '<p><strong>No win/lose.</strong> A relaxing coloring book — pick a color, tap a region to fill it.</p>'+
+      '<p><strong>Color:</strong> Drag the wheel and brightness slider, or tap a quick-palette swatch.</p>'+
+      '<p><strong>Pages:</strong> 50 hand-drawn scenes. ◀ ▶ to switch, pinch or scroll to zoom, SAVE to download.</p>';
     R.pixelgarden = ''+
       '<p><strong>No win/lose.</strong> A pixel-art studio that earns a plant pattern on your first SAVE per session.</p>'+
       '<p><strong>Tools:</strong> DRAW · ERASE · FILL · PICK. MIRROR doubles strokes across center. GRID toggles overlay.</p>'+
@@ -14597,8 +14602,8 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Daily Bloom:</strong> A rotating challenge that resets every 24 hours.</p>'+
       '<p><strong>Reward:</strong> Completing today\'s bloom earns a plant pattern and grants Sunbeam XP.</p>';
     R.storyseeds = ''+
-      '<p><strong>Pick a path:</strong> Each scene offers choices that branch the story.</p>'+
-      '<p><strong>Reach the bloom:</strong> Some endings earn a plant pattern, others reveal a hidden petal.</p>';
+      '<p><strong>Write:</strong> Read the daily prompt, write at least 10 words about it.</p>'+
+      '<p><strong>Save:</strong> Tap SAVE to press your entry into your JOURNAL. First 3 saves each day earn rewards; the journal keeps every entry after that too.</p>';
     // Helper: render an SVG card for the deduction mockup. Mirrors the
     // real game's card layout but at a fixed size so the modal reads as
     // a worked example. Uses the same blue / gold / rose palette and
@@ -63175,10 +63180,10 @@ var G=[
 {id:'rootflow',n:'Root Flow',i:'\ud83d\udd17',r:'Draw paths to connect matching roots. Fill every cell!',cat:'puzzle',thumb:'assets/games/thumbs/rootflow.png'},
 {id:'gardenspades',n:'Garden Spades',i:'\u2660',r:'Classic Spades. Bid your tricks, spades is trump. Partner play.',cat:'card',thumb:'assets/games/thumbs/gardenspades.png'},
 {id:'juniper',n:'Garden Rummy',i:'\ud83c\udcc1',r:'Draw, discard, build sets and runs. Go out first!',cat:'card',thumb:'assets/games/thumbs/juniper.png'},
-{id:'rootmaze',n:'Root Maze',i:'\ud83c\udf00',r:'Navigate the shifting maze. Reach the treasure before the AI!',cat:'puzzle',thumb:'assets/games/thumbs/rootmaze.png'},
+{id:'rootmaze',n:'Root Maze',i:'\ud83c\udf00',r:'Shift the tiles, walk the paths, beat the Mirror to your treasures.',cat:'puzzle',thumb:'assets/games/thumbs/rootmaze.png'},
 {id:'vinecross',n:'Five in a Row',i:'\u274c',r:'Get five in a row before the AI. 9/11/13 board sizes.',cat:'board',thumb:'assets/games/thumbs/vinecross.png'},
 {id:'breathing',n:'Breathing Garden',i:'\ud83c\udf38',r:'Guided breathing with 4 patterns. Bloom with every breath.',cat:'creative',thumb:'assets/games/thumbs/meditation.jpg'},
-{id:'colorgarden',n:'Color Garden',i:'\ud83c\udfa8',r:'Tap to fill botanical coloring pages. 23 colors, 3 procedural scenes.',cat:'creative',thumb:'assets/games/thumbs/colorgarden.jpg'},
+{id:'colorgarden',n:'Color Garden',i:'\ud83c\udfa8',r:'Tap to fill 50 hand-drawn botanical pages. Full color wheel, pinch to zoom.',cat:'creative',thumb:'assets/games/thumbs/colorgarden.jpg'},
 {id:'dailybloom',n:'Daily Bloom',i:'\ud83c\udf05',r:'Daily cognitive workout. 8 evidence-backed exercises across memory, attention, speed, and working memory. Adaptive difficulty, domain tracking, 4 min.',cat:'pattern',thumb:'assets/games/thumbs/dailybloom.png'},
 {id:'jade',n:'Jade Mahjong',i:'\ud83c\udc04',r:'Match free pairs to clear the turtle. Hint and shuffle if stuck.',cat:'puzzle',thumb:'assets/games/thumbs/jade.png'},
 {id:'pollen',n:'Master Pollinator',sub:'Engine builder',i:'\ud83d\udc1d',r:'Collect pollen, grow plants that produce more pollen. Attract pollinators. Race to 15 Growth!',cat:'board',thumb:'assets/games/thumbs/pollen.png'},
@@ -68730,6 +68735,10 @@ function GCK(a){
   var bd=new Array(64).fill(0),sel=-1,tn=1,mv=0,lastFrom=-1,lastTo=-1,mustJump=-1,gameOver=false;
   var undoStack=[];      // per-turn snapshots of full state
   var hintSeq=null;      // {from, to, cap:[...]} highlighted for 3s
+  var noProgress=0;       // half-moves since last capture/man-advance — 50 = draw
+  // Human capture count survives undo (part of the snapshot); humanCapHW never
+  // decreases, so redoing an already-paid capture after undo does not re-earn.
+  var humanCapCount=0,humanCapHW=0;
   var diff=2;            // 1=seedling, 2=sapling, 3=grove, 4=old growth
   try{var _sd=parseInt(localStorage.getItem('lw_ck_diff'));if(_sd>=1&&_sd<=4)diff=_sd;}catch(e){}
   var stats={w:0,l:0,d:0,streak:0,best:0};
@@ -68744,19 +68753,19 @@ function GCK(a){
   ms(a,'<span style="color:#7ab356">&#9679;</span> You &nbsp; <span style="color:#C8A84B">&#9679;</span> AI');mm(a);
   // Stats strip
   var statsRow=document.createElement('div');statsRow.id='CKstats';
-  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.64rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
+  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
   a.appendChild(statsRow);
   // Directions
   var dir=document.createElement('div');
-  dir.style.cssText='text-align:center;padding:0.35rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.58rem,1.7vw,0.72rem);color:var(--cream);line-height:1.4;opacity:0.78';
+  dir.style.cssText='text-align:center;padding:0.35rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.7rem,1.7vw,0.72rem);color:var(--cream);line-height:1.4;opacity:0.78';
   dir.innerHTML='Tap your <strong style="color:#7ab356">seedling</strong>, then tap where to move. Jump over <strong style="color:#C8A84B">pods</strong> to capture — multi-jumps are forced.';
   a.appendChild(dir);
   var gd=document.createElement('div');gd.className='ckb';gd.id='CK';a.appendChild(gd);
   // Tools: Undo + Hint
   var tools=document.createElement('div');
   tools.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0';
-  tools.innerHTML='<button class="gb" id="CKundo" onclick="_CKU()" style="min-height:44px;padding:8px 14px;font-size:0.65rem">↩ UNDO</button>'
-    +'<button class="gb" id="CKhint" onclick="_CKH()" style="min-height:44px;padding:8px 14px;font-size:0.65rem">💡 HINT</button>';
+  tools.innerHTML='<button class="gb" id="CKundo" onclick="_CKU()" style="min-height:48px;padding:8px 14px;font-size:0.7rem">↩ UNDO</button>'
+    +'<button class="gb" id="CKhint" onclick="_CKH()" style="min-height:48px;padding:8px 14px;font-size:0.7rem">💡 HINT</button>';
   a.appendChild(tools);
   mc(a).innerHTML='<select class="gsl" id="CKd" onchange="_CKSetDiff(this.value)" style="min-width:140px">'
     +'<option value="1">Seedling</option>'
@@ -68770,7 +68779,7 @@ function GCK(a){
     for(var r=0;r<3;r++)for(var c=0;c<8;c++)if((r+c)%2===1)bd[r*8+c]=2;
     for(var r=5;r<8;r++)for(var c=0;c<8;c++)if((r+c)%2===1)bd[r*8+c]=1;
     sel=-1;tn=1;mv=0;lastFrom=-1;lastTo=-1;mustJump=-1;gameOver=false;
-    undoStack=[];hintSeq=null;
+    undoStack=[];hintSeq=null;noProgress=0;humanCapCount=0;humanCapHW=0;
     var dsel=document.getElementById('CKd');if(dsel)dsel.value=String(diff);
   }
 
@@ -69045,10 +69054,11 @@ function GCK(a){
 
   // ── Interactions ──────────────────────────────────────────────
   function snapshot(){
-    return {bd:bd.slice(),sel:sel,tn:tn,mv:mv,lastFrom:lastFrom,lastTo:lastTo,mustJump:mustJump,gameOver:gameOver};
+    return {bd:bd.slice(),sel:sel,tn:tn,mv:mv,lastFrom:lastFrom,lastTo:lastTo,mustJump:mustJump,gameOver:gameOver,noProgress:noProgress,humanCapCount:humanCapCount};
   }
   function restore(s){
     bd=s.bd.slice();sel=s.sel;tn=s.tn;mv=s.mv;lastFrom=s.lastFrom;lastTo=s.lastTo;mustJump=s.mustJump;gameOver=s.gameOver;
+    noProgress=s.noProgress||0;humanCapCount=s.humanCapCount||0; // undo/redo can't re-earn past the HW mark
   }
 
   function onClick(idx){
@@ -69101,11 +69111,20 @@ function GCK(a){
   }
 
   function doMove(m){
+    var movingPiece=bd[m.f],wasMan=(movingPiece===1||movingPiece===2);
     _play('snap');bd[m.t]=bd[m.f];bd[m.f]=0;
     lastFrom=m.f;lastTo=m.t;mv++;
-    // Earn only on the HUMAN's jumps (pieces 1/3) — this used to pay the
-    // player every time the AI captured their pieces.
-    if(m.j){bd[m.cap]=0;if(bd[m.t]===1||bd[m.t]===3)_e('capture');}
+    if(m.j){
+      bd[m.cap]=0;noProgress=0;
+      // Earn only on the HUMAN's jumps (pieces 1/3) — this used to pay the
+      // player every time the AI captured their pieces. High-water mark
+      // (humanCapHW never decreases) means undoing then re-making the SAME
+      // capture does not re-earn, since humanCapCount is restored from the
+      // snapshot too and can't climb past what was already paid.
+      if(bd[m.t]===1||bd[m.t]===3){humanCapCount++;if(humanCapCount>humanCapHW){humanCapHW=humanCapCount;_e('capture');}}
+    } else {
+      noProgress=wasMan?0:noProgress+1; // man advance resets; king shuffle counts up
+    }
   }
   function crown(pos){
     var r=Math.floor(pos/8);
@@ -69144,13 +69163,28 @@ function GCK(a){
     var p1=0,p2=0;for(var i=0;i<64;i++){if(bd[i]===1||bd[i]===3)p1++;if(bd[i]===2||bd[i]===4)p2++;}
     var p1m=allSequences(bd,1).length,p2m=allSequences(bd,2).length;
     if(p2===0||p2m===0){
-      gameOver=true;_e('game_win');_playWin();sm('You win! '+Math.ceil(mv/2)+' rounds');_sr('checkers',{w:true,s:mv});
+      gameOver=true;_e('game_win');_playWin();sm('You win! '+Math.ceil(mv/2)+' rounds');_sr('checkers',{w:true,s:mv,lo:1});
       stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
       saveStats();renderStats();
+      if(window._lwGameEnd)_lwGameEnd({won:true,title:'YOU WIN',
+        line:Math.ceil(mv/2)+' rounds · streak '+stats.streak,sub:'best streak '+stats.best,
+        retry:function(){window._CKN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
     } else if(p1===0||p1m===0){
-      gameOver=true;_e('game_loss');_play('lose');sm('AI wins');_sr('checkers',{w:false,s:0});
+      gameOver=true;_e('game_loss');_play('lose');sm('AI wins');_sr('checkers',{w:false,s:0,lo:1});
       stats.l++;stats.streak=0;
       saveStats();renderStats();
+      if(window._lwGameEnd)_lwGameEnd({won:false,title:'AI WINS',
+        line:Math.ceil(mv/2)+' rounds',sub:'best streak '+stats.best,
+        retry:function(){window._CKN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
+    } else if(noProgress>=50){
+      // 50-half-move no-capture/no-man-advance rule — stops king-vs-king
+      // endgames (and similar) from shuffling forever with no exit.
+      gameOver=true;_play('lose');sm('Draw — 50 moves with no capture');_sr('checkers',{w:false,s:0,lo:1});
+      stats.d++;stats.streak=0;
+      saveStats();renderStats();
+      if(window._lwGameEnd)_lwGameEnd({won:false,title:'DRAW',
+        line:'50 moves with no capture or advance',sub:'best streak '+stats.best,
+        retry:function(){window._CKN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
     }
   }
   function saveStats(){try{localStorage.setItem('lw_ck_stats',JSON.stringify(stats));}catch(e){}}
@@ -69197,18 +69231,26 @@ function GCK(a){
 // - Star-point markers at d4/d5/e4/e5
 // - Turn indicator + mobility counter in score bar
 function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells=[];
+  // Generation guard (2026-07-05): exiting to the picker mid-AI-think or
+  // mid-hint used to leave a stale setTimeout that fired against a
+  // remounted/removed board — rvT() below no-ops once rvGen has moved on.
+  var rvGen=0;
+  function rvT(fn,ms){var g=rvGen;return setTimeout(function(){if(g===rvGen)fn();},ms);}
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){rvGen++;});
   var undoStack=[],hintPos=-1,diff=2;
   try{var _d=parseInt(localStorage.getItem('lw_rv_diff'));if(_d>=1&&_d<=4)diff=_d;}catch(e){}
   var stats={w:0,l:0,d:0,streak:0,best:0};
   try{var _s=localStorage.getItem('lw_rv_stats');if(_s){var _p=JSON.parse(_s);for(var _k in _p)stats[_k]=_p[_k];}}catch(e){}
   // SVG pieces — Player: moss (green), AI: lichen (gold)
-  var SVG_MOSS='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#2a4a1e"/><circle cx="20" cy="20" r="13" fill="#3a6a2a"/><circle cx="20" cy="20" r="10" fill="#4a8a35"/><circle cx="16" cy="16" r="3" fill="#6ab356" opacity="0.6"/><circle cx="24" cy="18" r="2.5" fill="#7ab356" opacity="0.5"/><circle cx="20" cy="24" r="2" fill="#5a9a40" opacity="0.5"/><circle cx="14" cy="22" r="1.5" fill="#7ab356" opacity="0.4"/><circle cx="26" cy="23" r="1.8" fill="#6ab356" opacity="0.35"/></svg>';
-  var SVG_LICHEN='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#5a4520"/><circle cx="20" cy="20" r="13" fill="#7a6530"/><circle cx="20" cy="20" r="10" fill="#9a8040"/><circle cx="17" cy="17" r="3.5" fill="#C8A84B" opacity="0.5"/><circle cx="24" cy="19" r="2.5" fill="#b8984a" opacity="0.45"/><circle cx="20" cy="25" r="2" fill="#C8A84B" opacity="0.4"/><path d="M14 20 Q16 18 18 20 Q16 22 14 20Z" fill="#C8A84B" opacity="0.3"/><path d="M24 24 Q26 22 27 24 Q25 26 24 24Z" fill="#b8984a" opacity="0.3"/></svg>';
+  // Colorblind cue (fleet standard, symbol-not-color): moss carries a leaf
+  // glyph + vein, lichen carries a 4-point star — visible even in grayscale.
+  var SVG_MOSS='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#2a4a1e"/><circle cx="20" cy="20" r="13" fill="#3a6a2a"/><circle cx="20" cy="20" r="10" fill="#4a8a35"/><circle cx="16" cy="16" r="3" fill="#6ab356" opacity="0.6"/><circle cx="24" cy="18" r="2.5" fill="#7ab356" opacity="0.5"/><circle cx="20" cy="24" r="2" fill="#5a9a40" opacity="0.5"/><circle cx="14" cy="22" r="1.5" fill="#7ab356" opacity="0.4"/><circle cx="26" cy="23" r="1.8" fill="#6ab356" opacity="0.35"/><path d="M20 12 Q25 20 20 28 Q15 20 20 12Z" fill="#eaffd8" opacity="0.88" stroke="#2a4a1e" stroke-width="0.6"/><line x1="20" y1="14" x2="20" y2="26" stroke="#2a4a1e" stroke-width="1" opacity="0.55"/></svg>';
+  var SVG_LICHEN='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#5a4520"/><circle cx="20" cy="20" r="13" fill="#7a6530"/><circle cx="20" cy="20" r="10" fill="#9a8040"/><circle cx="17" cy="17" r="3.5" fill="#C8A84B" opacity="0.5"/><circle cx="24" cy="19" r="2.5" fill="#b8984a" opacity="0.45"/><circle cx="20" cy="25" r="2" fill="#C8A84B" opacity="0.4"/><path d="M14 20 Q16 18 18 20 Q16 22 14 20Z" fill="#C8A84B" opacity="0.3"/><path d="M24 24 Q26 22 27 24 Q25 26 24 24Z" fill="#b8984a" opacity="0.3"/><path d="M20 10.5 L22.7 17.3 L29.5 20 L22.7 22.7 L20 29.5 L17.3 22.7 L10.5 20 L17.3 17.3Z" fill="#fff6d8" opacity="0.92" stroke="#5a4520" stroke-width="0.6"/></svg>';
   var SVGS=[null,SVG_MOSS,SVG_LICHEN];
   ms(a,'');mm(a);
   // Stats strip
   var statsRow=document.createElement('div');statsRow.id='RVstats';
-  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.64rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
+  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
   a.appendChild(statsRow);
   // Score bar
   var sb=document.createElement('div');sb.className='rv-score';sb.id='RVs';a.appendChild(sb);
@@ -69233,8 +69275,8 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
   // Tools: Undo + Hint
   var tools=document.createElement('div');
   tools.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0';
-  tools.innerHTML='<button class="gb" id="RVundo" onclick="_RVU()" style="min-height:40px;padding:4px 14px;font-size:0.65rem">↩ UNDO</button>'
-    +'<button class="gb" id="RVhint" onclick="_RVH()" style="min-height:40px;padding:4px 14px;font-size:0.65rem">💡 HINT</button>';
+  tools.innerHTML='<button class="gb" id="RVundo" onclick="_RVU()" style="min-height:48px;padding:4px 14px;font-size:0.7rem">↩ UNDO</button>'
+    +'<button class="gb" id="RVhint" onclick="_RVH()" style="min-height:48px;padding:4px 14px;font-size:0.7rem">💡 HINT</button>';
   a.appendChild(tools);
   mc(a).innerHTML='<select class="gsl" id="RVd" onchange="_RVSetDiff(this.value)" style="min-width:140px">'
     +'<option value="1">Seedling</option><option value="2">Sapling</option><option value="3">Grove</option><option value="4">Old Growth</option>'
@@ -69388,7 +69430,7 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
     if(ub){var cU=undoStack.length>0&&tn===1&&!ov;ub.disabled=!cU;ub.style.opacity=cU?'':'0.4';}
     var hb=document.getElementById('RVhint');
     if(hb){var cH=hintPos<0&&tn===1&&!ov&&vm.length>0;hb.disabled=!cH;hb.style.opacity=cH?'':'0.4';}
-    if(!ov&&!vm.length&&tn===1){sm('No moves, passing');tn=2;setTimeout(aiRV,500);}
+    if(!ov&&!vm.length&&tn===1){sm('No moves, passing');tn=2;rvT(aiRV,500);}
     checkEnd();
   }
 
@@ -69402,7 +69444,7 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
     lastMove=pos;
     if(p===1){
       if(f.length>=3)_e('flip');
-      tn=2;rn();setTimeout(aiRV,400);
+      tn=2;rn();rvT(aiRV,400);
     }else{tn=1;rn();}
   }
   function aiRV(){
@@ -69421,17 +69463,26 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
       _e('game_win');_playWin();sm('You win! '+p1+' – '+p2);_sr('reversi',{w:true,s:p1});
       stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
       saveStats();renderStats();
+      if(window._lwGameEnd)_lwGameEnd({won:true,title:'YOU WIN',
+        line:'moss '+p1+' – lichen '+p2,sub:'best streak '+stats.best,
+        retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
     }else if(p2>p1){
       _e('game_loss');_play('lose');sm('AI wins '+p2+' – '+p1);_sr('reversi',{w:false,s:p1});
       stats.l++;stats.streak=0;saveStats();renderStats();
+      if(window._lwGameEnd)_lwGameEnd({won:false,title:'AI WINS',
+        line:'lichen '+p2+' – moss '+p1,sub:'best streak '+stats.best,
+        retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
     }else{
       _e('milestone');sm('Draw! '+p1+' – '+p2);_sr('reversi',{w:false,s:p1});
       stats.d++;stats.streak=0;saveStats();renderStats();
+      if(window._lwGameEnd)_lwGameEnd({won:false,title:'DRAW',
+        line:'moss '+p1+' – lichen '+p2,sub:'best streak '+stats.best,
+        retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
     }
   }
   function saveStats(){try{localStorage.setItem('lw_rv_stats',JSON.stringify(stats));}catch(e){}}
 
-  window._RVN=function(){setup();sm('');renderStats();rn();};
+  window._RVN=function(){rvGen++;setup();sm('');renderStats();rn();};
   window._RVU=function(){
     if(undoStack.length===0||tn!==1||ov)return;
     var s=undoStack.pop();
@@ -69448,7 +69499,7 @@ function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells
     var r=Math.floor(pick/8),c=pick%8;
     sm('Hint: '+String.fromCharCode(97+c)+(r+1));
     rn();
-    setTimeout(function(){hintPos=-1;rn();},3500);
+    rvT(function(){hintPos=-1;rn();},3500);
   };
   window._RVSetDiff=function(v){
     var n=parseInt(v,10);if(isNaN(n)||n<1||n>4)return;
@@ -70700,7 +70751,7 @@ function GBG(a){
   // opponent's likely rolls).
   var BG_DIFF=2;
   try{BG_DIFF=parseInt(localStorage.getItem('lw_bg_diff'))||2;}catch(e){BG_DIFF=2;}
-  ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
+  ms(a,'<span class="gp-you" style="color:#7AB956">☘ You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">✦ AI: <strong id="BGa">0</strong></span>');mm(a);
   var wrap=document.createElement('div');wrap.id='BGwrap';wrap.className='bg-outer';wrap.style.cssText='user-select:none;-webkit-user-select:none';a.appendChild(wrap);
   mc(a).innerHTML='<select class="gsl" id="BGd" onchange="_BGSetDiff(this.value)" style="min-width:140px;max-width:180px">'
     +'<option value="1">Seedling</option>'
@@ -70853,7 +70904,7 @@ function GBG(a){
       if(!chosen){SEL=-1;VALID_DESTS=[];selectPt(p);return}
       BG_UNDO.push(snapshotState());BG_HINT=null;
       applyMove(chosen,'human');_play('tap');SEL=-1;VALID_DESTS=[];
-      if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});_bgGameOver(true);rn();return}
+      if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
       if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){sm('No more moves');MOVES_LEFT=[];endTurn()}else rn()}
       else endTurn();
     }
@@ -70995,7 +71046,7 @@ function GBG(a){
   function rn(){
     var h='';
     document.getElementById('BGh').textContent=BO_H;document.getElementById('BGa').textContent=BO_A;
-    var st=PHASE==='roll'?(TURN==='human'?'Tap Roll':'AI rolling...'):PHASE==='move'?(TURN==='human'?(SEL!==-1?'Tap where to move':'Tap a seed to move'):'AI thinking...'):'Game Over';
+    var st=BG_HINT?('Hint: '+(BG_HINT.from==='bar'?'bar':('point '+BG_HINT.from))+' → '+(BG_HINT.to==='off'?'off':('point '+BG_HINT.to))+' (die '+BG_HINT.die+')'):(PHASE==='roll'?(TURN==='human'?'Tap Roll':'AI rolling...'):PHASE==='move'?(TURN==='human'?(SEL!==-1?'Tap where to move':'Tap a seed to move'):'AI thinking...'):'Game Over');
     sm(st);
     // Board wrapper (portrait: single column; landscape: left side)
     h+='<div class="bg-wrap">';
@@ -71088,7 +71139,6 @@ function GBG(a){
       ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
       document.body.appendChild(ov);
     },450);
-    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){BG_GEN++;var o=document.getElementById('BG-over');if(o)o.remove();});
   }
   window._BGB=function(from,die){
     if(PHASE!=='move'||TURN!=='human')return; // no bear-off outside your move (incl. gameover)
@@ -71122,10 +71172,7 @@ function GBG(a){
     if(!best){sm('No hint — no valid moves');return;}
     BG_HINT={from:best.from,to:best.to,die:best.die};
     _play('tap');
-    var fromLabel=best.from==='bar'?'bar':('point '+best.from);
-    var toLabel=best.to==='off'?'off':('point '+best.to);
-    sm('Hint: '+fromLabel+' → '+toLabel+' (die '+best.die+')');
-    rn();
+    rn(); // rn() renders the hint status text itself (see st= in rn)
     bgSchedule(function(){BG_HINT=null;rn();},3500);
   };
   // Difficulty selector handler — writes to localStorage + rerenders.
@@ -71135,6 +71182,7 @@ function GBG(a){
     try{localStorage.setItem('lw_bg_diff',String(n));}catch(e){}
   };
   window._BGN=function(){var _o=document.getElementById('BG-over');if(_o)_o.remove();init()};
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){BG_GEN++;bgClearPending();var o=document.getElementById('BG-over');if(o)o.remove();});
   init();
 }
 // ═══ PIPE CONNECT ═══

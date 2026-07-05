@@ -36,21 +36,26 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
     // Board: compact so the bigger keyboard gets proper space
     '.pw-board{display:grid;grid-template-columns:1fr;gap:4px;padding:2px 0;width:min(260px,70vw);margin:0 auto;box-sizing:border-box}',
     '.pw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%;box-sizing:border-box}',
-    '.pw-cell{aspect-ratio:1;width:100%;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1rem,5vw,1.5rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:6px;line-height:1;user-select:none;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3);transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform-style:preserve-3d}',
+    '.pw-cell{position:relative;aspect-ratio:1;width:100%;border:2px solid rgba(74,124,53,.5);background:rgba(13,16,12,.7);color:var(--cream,#e8dcc8);font-family:Bebas Neue,sans-serif;font-size:clamp(1rem,5vw,1.5rem);font-weight:400;display:flex;align-items:center;justify-content:center;text-transform:uppercase;border-radius:6px;line-height:1;user-select:none;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 rgba(0,0,0,.3);transition:background .28s ease,border-color .28s ease,color .28s ease,transform .1s ease;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform-style:preserve-3d}',
     '.pw-cell.pw-typed{border-color:rgba(200,168,75,.8);box-shadow:0 0 10px rgba(200,168,75,.25)}',
     '.pw-cell.pw-active{border-color:rgba(200,168,75,.65);box-shadow:inset 0 0 0 1px rgba(200,168,75,.25)}',
     '.pw-cell.pw-hit{background:var(--sage,#7ab356);border-color:var(--sage,#7ab356);color:#0d100c}',
     '.pw-cell.pw-near{background:var(--gold,#c8a84b);border-color:var(--gold,#c8a84b);color:#0d100c}',
     '.pw-cell.pw-miss{background:rgba(40,44,36,.85);border-color:rgba(60,68,54,.85);color:rgba(232,220,200,.55)}',
+    // Colorblind-safe cue: green/gold read the same to deutan/protan
+    // eyes, so hit/near/miss each get a distinct corner glyph too.
+    '.pw-cell.pw-hit::after{content:"✓";position:absolute;top:1px;right:3px;font-size:.5em;font-weight:900;color:rgba(13,16,12,.55);line-height:1}',
+    '.pw-cell.pw-near::after{content:"≈";position:absolute;top:1px;right:3px;font-size:.55em;font-weight:900;color:rgba(13,16,12,.55);line-height:1}',
+    '.pw-cell.pw-miss::after{content:"×";position:absolute;top:1px;right:3px;font-size:.5em;font-weight:700;color:rgba(232,220,200,.35);line-height:1}',
     '.pw-flip{animation:pwFlip .6s ease both}',
     '@keyframes pwFlip{0%{transform:rotateX(0)}45%{transform:rotateX(90deg)}55%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}',
     '.pw-shake{animation:pwShake .42s ease}',
     '@keyframes pwShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}35%{transform:translateX(6px)}55%{transform:translateX(-3px)}75%{transform:translateX(3px)}}',
     // Modebar + stats + info
     '.pw-modebar{display:flex;justify-content:center;gap:6px;padding:4px 0}',
-    '.pw-modebtn{padding:5px 14px;background:rgba(26,31,23,.7);border:1px solid rgba(122,179,86,.3);border-radius:6px;color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:.75rem;letter-spacing:.12em;cursor:pointer;transition:background .2s ease;min-height:36px}',
+    '.pw-modebtn{padding:5px 14px;background:rgba(26,31,23,.7);border:1px solid rgba(122,179,86,.3);border-radius:6px;color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:.75rem;letter-spacing:.12em;cursor:pointer;transition:background .2s ease;min-height:48px}',
     '.pw-modebtn.active{background:rgba(122,179,86,.25);border-color:rgba(122,179,86,.7);color:#c8e09b}',
-    '.pw-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:.64rem;color:rgba(232,220,200,.72);letter-spacing:.06em}',
+    '.pw-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:.7rem;font-weight:500;color:rgba(232,220,200,.72);letter-spacing:.06em}',
     '.pw-stats strong{color:var(--gold)}',
     '.pw-msg{font-family:DM Mono,monospace;font-size:.72rem;color:var(--gold,#c8a84b);text-align:center;min-height:1.3em;letter-spacing:.06em;padding:0}',
     // Result card
@@ -66,7 +71,7 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
     // width they can.
     '.pw-kb{display:flex;flex-direction:column;gap:8px;padding:10px 2px 8px;max-width:100%;margin:0 auto;width:100%;box-sizing:border-box}',
     '.pw-kb-row{display:flex;gap:5px;justify-content:center;touch-action:manipulation;padding:0 2px}',
-    '.pw-key{flex:1 1 0;min-height:76px;min-width:0;max-width:none;background:rgba(36,42,30,.95);border:1.5px solid rgba(90,130,70,.42);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1.55rem;font-weight:600;border-radius:8px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .08s ease,color .15s ease,opacity .15s ease;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0 2px;letter-spacing:.05em;box-shadow:0 3px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)}',
+    '.pw-key{position:relative;flex:1 1 0;min-height:76px;min-width:0;max-width:none;background:rgba(36,42,30,.95);border:1.5px solid rgba(90,130,70,.42);color:var(--cream);font-family:Bebas Neue,sans-serif;font-size:1.55rem;font-weight:600;border-radius:8px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .08s ease,color .15s ease,opacity .15s ease;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0 2px;letter-spacing:.05em;box-shadow:0 3px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)}',
     '.pw-key:active{transform:scale(.93);background:rgba(74,124,53,.3)}',
     '.pw-key.wide{flex:1.8 1 0;font-size:.85rem;letter-spacing:.1em;font-weight:700}',
     // Colors chosen to read clearly against the dark theme. Miss keys
@@ -74,7 +79,11 @@ var EXTRA_GUESSES=('aahed aalii aargh abaca abaci aback abafts abamp abase abash
     // dark mode's used-letter contrast. Hit/near tint full opacity.
     '.pw-key.pw-hit{background:var(--sage);border-color:var(--sage);color:#0d100c;font-weight:700}',
     '.pw-key.pw-near{background:var(--gold);border-color:var(--gold);color:#0d100c;font-weight:700}',
-    '.pw-key.pw-miss{background:#141814;border-color:rgba(35,40,28,.55);color:rgba(140,130,110,.45);font-weight:400}'
+    '.pw-key.pw-miss{background:#141814;border-color:rgba(35,40,28,.55);color:rgba(140,130,110,.45);font-weight:400}',
+    // Same colorblind-safe corner glyphs as the board cells.
+    '.pw-key.pw-hit::after{content:"✓";position:absolute;top:2px;right:4px;font-size:.45rem;font-weight:900;color:rgba(13,16,12,.6);line-height:1}',
+    '.pw-key.pw-near::after{content:"≈";position:absolute;top:2px;right:4px;font-size:.5rem;font-weight:900;color:rgba(13,16,12,.6);line-height:1}',
+    '.pw-key.pw-miss::after{content:"×";position:absolute;top:2px;right:4px;font-size:.42rem;font-weight:700;color:rgba(140,130,110,.5);line-height:1}'
   ].join('');
   document.head.appendChild(s);
 })();
@@ -124,6 +133,12 @@ window._gameFns=window._gameFns||{};
 window._gameFns.sprout=function GPW(a){
   buildValidSet();
   var answer='',row=0,col=0,grid=[],done=false;
+  // gen: bumped on every _PWNew (new game / mode switch). submitGuess
+  // captures the gen at submit time and every one of its pending
+  // setTimeouts bails if gen has since moved on — otherwise a New Game
+  // or mode switch mid-reveal lets the stale timeout mutate the FRESH
+  // board/keyboard/row-counter with the old guess's results.
+  var gen=0;
   var keyState={}; // letter → 'hit' | 'near' | 'miss'
   var keyButtons={}; // letter → key button element
   var mode='daily';
@@ -308,17 +323,21 @@ window._gameFns.sprout=function GPW(a){
     rowGuesses.push(guess);
     try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
     _animating=true;
-    // Capture the row being revealed so closures can't see a mutated
-    // row counter if anything races (defensive — the guard above
-    // already prevents new input).
+    // Capture the row being revealed AND the current generation. If
+    // New Game / a mode switch runs _PWNew() before these timeouts
+    // fire, gen has moved on — every callback below bails instead of
+    // painting the old guess's results onto the fresh board/keyboard.
     var submittedRow=row;
+    var myGen=++gen;
     for(var c=0;c<5;c++){
       (function(c){
         setTimeout(function(){
+          if(myGen!==gen)return;
           var cell=grid[submittedRow][c];
           cell.classList.add('pw-flip');
           cell.classList.remove('pw-typed','pw-active');
           setTimeout(function(){
+            if(myGen!==gen)return;
             cell.classList.add('pw-'+status[c]);
             applyStatusStyle(cell,status[c]);
             // Update keyboard letter state — upgrade only (hit > near > miss)
@@ -332,6 +351,7 @@ window._gameFns.sprout=function GPW(a){
       })(c);
     }
     setTimeout(function(){
+      if(myGen!==gen)return;
       _animating=false;
       if(guess===answer){
         done=true;
@@ -353,7 +373,7 @@ window._gameFns.sprout=function GPW(a){
           // configured 1-Sunbeam time-loss reward never landed for a
           // failed Wordle. Mirrors chess/c4/mastermind loss credit.
           if(typeof _e==='function')_e('game_loss');
-          _sr('sprout',{w:false,s:answer});
+          _sr('sprout',{w:false,lo:1});
         }else{
           markActive();
         }
@@ -419,6 +439,15 @@ window._gameFns.sprout=function GPW(a){
       else copyToClip(text);
     };
     box.appendChild(share);
+    // Random mode has no daily lockout, so give the result card its own
+    // replay affordance instead of making the player hunt for the
+    // separate NEW GAME image button below the keyboard.
+    if(mode==='random'){
+      var again=document.createElement('button');again.className='pw-share';
+      again.style.marginLeft='8px';again.textContent='PLAY AGAIN';
+      again.onclick=function(){window._PWNew();};
+      box.appendChild(again);
+    }
     host.appendChild(box);
   }
 
@@ -455,6 +484,10 @@ window._gameFns.sprout=function GPW(a){
   },1000);
 
   window._PWNew=function(){
+    // Invalidate any in-flight submitGuess timeouts from the board we're
+    // replacing (see gen comment above) and force _animating off — those
+    // stale timeouts now bail instead of clearing it themselves.
+    gen++;_animating=false;
     answer=pickWord();row=0;col=0;done=false;keyState={};rowStatuses=[];rowGuesses=[];
     var gEl=document.getElementById('PWg');if(gEl)gEl.textContent='0';
     showMsg('');document.getElementById('PWresult').innerHTML='';

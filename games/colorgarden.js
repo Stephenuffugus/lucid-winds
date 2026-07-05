@@ -29,7 +29,9 @@ window._gameFns.colorgarden=function CG(a){
   var srcCanvas,srcCtx;                  // full-res colored state (hidden)
   var imgW=0,imgH=0;                     // source dims
   var zoom=1,panX=0,panY=0;              // pan is source-space center when zoomed
-  var history=[];                        // undo snapshots (source-canvas ImageData)
+  var history=[];                        // undo snapshots (raw Uint8ClampedArray pixel buffers)
+  var HISTORY_CAP=8;                     // capped from 20 — full-res pages are ~5.8MB/snapshot
+  var savesCount=0;                      // pages saved this session — the _sr stat, not the page number
   var dragging=false,dragStart=null,dragMoved=false;
   var pinchStart=null;                   // {d, zoom, panX, panY} at pinch begin
 
@@ -64,7 +66,7 @@ window._gameFns.colorgarden=function CG(a){
   var resetBtn=document.createElement('button');
   resetBtn.textContent='⤢';
   resetBtn.title='Reset zoom';
-  resetBtn.style.cssText='position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:10px;background:rgba(13,16,12,0.78);border:1px solid rgba(200,168,75,0.4);color:var(--cream,#e8dcc8);font-size:1.1rem;cursor:pointer;display:none;z-index:2;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 6px rgba(0,0,0,0.4);';
+  resetBtn.style.cssText='position:absolute;top:6px;right:6px;width:48px;height:48px;border-radius:10px;background:rgba(13,16,12,0.78);border:1px solid rgba(200,168,75,0.4);color:var(--cream,#e8dcc8);font-size:1.1rem;cursor:pointer;display:none;z-index:2;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 6px rgba(0,0,0,0.4);';
   resetBtn.onclick=function(){
     zoom=1;panX=imgW/2;panY=imgH/2;
     renderView();
@@ -153,11 +155,14 @@ window._gameFns.colorgarden=function CG(a){
   quickPalWrap.style.cssText='display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:2px;';
   for(var i=0;i<QUICK_PAL.length;i++){
     (function(c){
+      var hit=document.createElement('div');            // 48px hit area (touch target min)
+      hit.style.cssText='width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;';
       var sw=document.createElement('div');
       sw.className='cg-quick';
-      sw.style.cssText='width:clamp(22px,5.5vw,26px);height:clamp(22px,5.5vw,26px);border-radius:50%;background:'+c+';cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:transform .12s;box-shadow:0 1px 3px rgba(0,0,0,0.3);';
-      sw.onclick=function(){setColorFromHex(c);};
-      quickPalWrap.appendChild(sw);
+      sw.style.cssText='width:clamp(22px,5.5vw,26px);height:clamp(22px,5.5vw,26px);border-radius:50%;background:'+c+';border:2px solid rgba(255,255,255,0.2);transition:transform .12s;box-shadow:0 1px 3px rgba(0,0,0,0.3);pointer-events:none;';
+      hit.appendChild(sw);
+      hit.onclick=function(){setColorFromHex(c);};
+      quickPalWrap.appendChild(hit);
     })(QUICK_PAL[i]);
   }
   rightCol.appendChild(quickPalWrap);
@@ -396,7 +401,17 @@ window._gameFns.colorgarden=function CG(a){
   }
   var _cgResize=function(){ if(imgW){sizeViewToContainer();renderView();} };
   window.addEventListener('resize',_cgResize);
-  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){window.removeEventListener('resize',_cgResize);});
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    window.removeEventListener('resize',_cgResize);
+    // Undo history + the offscreen full-res source canvas are the bulk of
+    // this game's memory (up to HISTORY_CAP snapshots at ~5.8MB each for a
+    // 1200x1200 page). Drop them and the window-exposed handlers so the
+    // whole CG() closure is free to GC once the mount is torn down.
+    history.length=0;
+    if(srcCanvas){srcCanvas.width=0;srcCanvas.height=0;}
+    delete window._CGprev;delete window._CGnext;delete window._CGundo;
+    delete window._CGclear;delete window._CGsave;
+  });
 
   function clampPan(){
     if(!imgW)return;
@@ -421,15 +436,21 @@ window._gameFns.colorgarden=function CG(a){
     return Math.abs(r-sr)<28&&Math.abs(g-sg)<28&&Math.abs(b-sb)<28;
   }
 
+  // Returns null for a no-op tap (off-canvas / on a line / already-filled),
+  // or {painted, snap} where snap is the pre-paint pixel data for undo.
+  // Only one getImageData pass per tap (was two: a snapshot read here plus
+  // this same read again) and the snapshot clone only happens once we know
+  // the tap will actually paint something.
   function floodFill(sx,sy){
-    if(sx<0||sy<0||sx>=imgW||sy>=imgH)return 0;
+    if(sx<0||sy<0||sx>=imgW||sy>=imgH)return null;
     var imd=srcCtx.getImageData(0,0,imgW,imgH);
     var d=imd.data;
     var sIdx=(sy*imgW+sx)*4;
     var sR=d[sIdx],sG=d[sIdx+1],sB=d[sIdx+2];
-    if(isLine(sR,sG,sB))return 0;
+    if(isLine(sR,sG,sB))return null;
     var fill=hexToRgb(currentColor);
-    if(sR===fill[0]&&sG===fill[1]&&sB===fill[2])return 0;
+    if(sR===fill[0]&&sG===fill[1]&&sB===fill[2])return null;
+    var snap=new Uint8ClampedArray(d);   // pre-paint snapshot, for undo
 
     var stack=[[sx,sy]];
     var painted=0;
@@ -466,7 +487,7 @@ window._gameFns.colorgarden=function CG(a){
       if(painted>imgW*imgH)break;
     }
     srcCtx.putImageData(imd,0,0);
-    return painted;
+    return{painted:painted,snap:snap};
   }
 
   // Convert view coords → source coords
@@ -550,11 +571,10 @@ window._gameFns.colorgarden=function CG(a){
     if(dragging&&dragStart&&!dragMoved&&e.touches.length===0){
       // Single tap — flood fill at the source coordinate
       var src=viewToSrc(dragStart.x,dragStart.y);
-      var snap=srcCtx.getImageData(0,0,imgW,imgH);
-      var filled=floodFill(src.x,src.y);
-      if(filled>0){
-        history.push(snap);
-        if(history.length>20)history.shift();
+      var res=floodFill(src.x,src.y);
+      if(res&&res.painted>0){
+        history.push(res.snap);
+        if(history.length>HISTORY_CAP)history.shift();
         updateUndoBtn();
         try{if(navigator.vibrate)navigator.vibrate(8);}catch(e2){}
         if(_play)try{_play('tap');}catch(e2){}
@@ -572,11 +592,10 @@ window._gameFns.colorgarden=function CG(a){
   viewCanvas.addEventListener('click',function(e){
     if(!imgW)return;
     var src=viewToSrc(e.clientX,e.clientY);
-    var snap=srcCtx.getImageData(0,0,imgW,imgH);
-    var filled=floodFill(src.x,src.y);
-    if(filled>0){
-      history.push(snap);
-      if(history.length>20)history.shift();
+    var res=floodFill(src.x,src.y);
+    if(res&&res.painted>0){
+      history.push(res.snap);
+      if(history.length>HISTORY_CAP)history.shift();
       updateUndoBtn();
       if(_play)try{_play('tap');}catch(e2){}
       renderView();
@@ -612,16 +631,27 @@ window._gameFns.colorgarden=function CG(a){
   }
 
   // ─── CONTROL HANDLERS ─────────────────────────────────────────
-  window._CGprev=function(){if(pages.length)loadPage(currentIdx-1);};
-  window._CGnext=function(){if(pages.length)loadPage(currentIdx+1);};
+  // PREV/NEXT/CLEAR all wipe uncolored/unsaved work with no way back
+  // (history is per-page and loadPage resets it) — confirm if there's
+  // anything to lose, same pattern pixelgarden.js uses for its CLEAR.
+  window._CGprev=function(){
+    if(pages.length&&(!history.length||!window.confirm||window.confirm('Leave this page? Unsaved coloring will be lost.')))loadPage(currentIdx-1);
+  };
+  window._CGnext=function(){
+    if(pages.length&&(!history.length||!window.confirm||window.confirm('Leave this page? Unsaved coloring will be lost.')))loadPage(currentIdx+1);
+  };
   window._CGundo=function(){
     if(!history.length)return;
     var snap=history.pop();
-    srcCtx.putImageData(snap,0,0);
+    srcCtx.putImageData(new ImageData(snap,imgW,imgH),0,0);
     renderView();
     updateUndoBtn();
   };
-  window._CGclear=function(){if(pages.length)loadPage(currentIdx);};
+  window._CGclear=function(){
+    if(!pages.length)return;
+    if(history.length&&window.confirm&&!window.confirm('Clear all coloring on this page? This cannot be undone.'))return;
+    loadPage(currentIdx);
+  };
   window._CGsave=function(){
     var g=window._lwArtSaveGate&&window._lwArtSaveGate('colorgarden');
     if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
@@ -638,7 +668,8 @@ window._gameFns.colorgarden=function CG(a){
       }
       if(_playWin)try{_playWin();}catch(e){}
       sm('💾 Saved.');
-      _sr('colorgarden',{w:true,s:currentIdx+1});
+      savesCount++;
+      _sr('colorgarden',{w:true,s:savesCount});
     }catch(e){sm('Save failed.');}
   };
 };

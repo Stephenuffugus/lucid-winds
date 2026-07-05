@@ -29,7 +29,6 @@ var _e=G.e,_play=G.play,_playWin=G.playWin,ms=G.ms,mm=G.mm,mc=G.mc,sm=G.sm,sh=G.
 // ── Module state — single active game at a time ────────────────────────────
 var SZ=10,grid=[],words=[],wordPaths={},found=[];
 var boardGen=0; // bumped per gen() — guards the delayed victory overlay
-if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){boardGen++;}); // exit kills the pending victory beat (2026-07-04)
 var dragging=false,startI=-1,endI=-1,currentPath=[];
 var gd=null,wl=null;
 
@@ -89,6 +88,19 @@ function cellAt(cx,cy){
   if(el&&el.classList&&el.classList.contains('wc')){
     var a=el.getAttribute('data-i');
     if(a!==null)return parseInt(a,10);
+  }
+  // Forgiving hit test — cells shrink below 48px on Medium/Hard, so a
+  // fat-finger drag endpoint can land just outside every .wc. Snap to the
+  // nearest cell center within ~24px instead of dropping the touch (2026-07-04).
+  if(gd){
+    var kids=gd.children,best=-1,bestD=24*24;
+    for(var i=0;i<kids.length;i++){
+      var r=kids[i].getBoundingClientRect();
+      var dx=cx-(r.left+r.width/2),dy=cy-(r.top+r.height/2);
+      var d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i;}
+    }
+    return best;
   }
   return -1;
 }
@@ -152,12 +164,16 @@ function dragEnd(){
     var wf=document.getElementById('Wf');if(wf)wf.textContent=found.length;
     rnW();
     if(found.length>=words.length){
+      // Earn + stat fire synchronously — a legitimately completed puzzle must
+      // never lose its reward just because New Game/difficulty was tapped
+      // during the delayed victory beat below (2026-07-04).
+      _e('game_win');_sr('wordsearch',{w:true,s:found.length});
       // Generation guard: New Game inside this ~1s delay used to pop
       // "ALL FOUND · 0 words" over the fresh board.
       var bg=boardGen;
       setTimeout(function(){
         if(bg!==boardGen)return;
-        _e('game_win');if(_playWin)_playWin();_sr('wordsearch',{w:true,s:found.length});
+        if(_playWin)_playWin();
         _wordSearchVictory();
       },pathCopy.length*45+600);
     } else if(found.length%2===0) _e('milestone');
@@ -297,10 +313,14 @@ document.addEventListener('touchend',function(){if(dragging)dragEnd();});
 document.addEventListener('touchcancel',function(){if(dragging)dragEnd();});
 
 function GW(a){
+  // Re-registered every mount (not once at module scope) — the in-app runner
+  // clears cleanups on every game exit, so a module-scope registration went
+  // dead after the 1st play of the session (2026-07-04).
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){boardGen++;});
   ms(a,'<span id="Wtheme" style="color:var(--gold);font-family:Georgia,serif;font-style:italic;letter-spacing:.06em;">Flora</span> &middot; Found: <strong id="Wf">0</strong>/<strong id="Wt">6</strong>');mm(a);
   gd=document.createElement('div');gd.className='wg';gd.id='Wg';a.appendChild(gd);
   wl=document.createElement('div');wl.id='Wl';
-  wl.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 8px;font-size:.6rem;max-width:min(calc(100vw - 24px),460px);margin:0 auto;';
+  wl.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 8px;font-size:.72rem;max-width:min(calc(100vw - 24px),460px);margin:0 auto;';
   a.appendChild(wl);
   mc(a).innerHTML='<select class="gsl" id="Wd" onchange="_WN()"><option value="8-5">Easy</option><option value="10-6" selected>Medium</option><option value="13-8">Hard</option></select> <button class="gb-new" onclick="_WN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
   window._WN();

@@ -58,7 +58,7 @@ window._gameFns.storyseeds=function SS(a){
     var h='<div style="width:min(94vw,560px);max-height:100%;display:flex;flex-direction:column;background:linear-gradient(160deg,#1a2216,#10160e);border:2px solid rgba(200,168,75,0.3);border-radius:18px;padding:18px;box-shadow:0 14px 44px rgba(0,0,0,0.6);box-sizing:border-box;">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
     h+='<div style="font-family:Georgia,serif;font-size:1.15rem;color:#c8a84b;letter-spacing:0.08em;">\ud83d\udcd6 YOUR JOURNAL</div>';
-    h+='<button onclick="document.getElementById(\'SS-journal\').remove()" style="min-height:44px;min-width:44px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.8rem;cursor:pointer;">\u2715</button></div>';
+    h+='<button onclick="document.getElementById(\'SS-journal\').remove()" style="min-height:48px;min-width:48px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.8rem;cursor:pointer;">\u2715</button></div>';
     if(!entries.length){
       h+='<div style="font-family:Georgia,serif;font-style:italic;color:#8a9178;text-align:center;padding:30px 10px;">Nothing pressed between these pages yet.<br>Write ten words and tap SAVE \u2014 they\u2019ll live here.</div>';
     } else {
@@ -150,22 +150,25 @@ window._gameFns.storyseeds=function SS(a){
     if(!text){sm('Write something first');return;}
     var n=text.split(/\s+/).length;
     if(n<10){sm('At least 10 words to save');return;}
-    var g=window._lwArtSaveGate&&window._lwArtSaveGate('storyseeds');
-    if(g&&!g.allow){sm('Save again in '+g.secs+'s');return;}
     try{
       var entries=JSON.parse(localStorage.getItem('sws_storyseeds_entries')||'[]');
       entries.push({date:new Date().toISOString().split('T')[0],prompt:currentPrompt.text,text:text,words:n,timestamp:Date.now()});
       if(entries.length>365)entries=entries.slice(-365);
       localStorage.setItem('sws_storyseeds_entries',JSON.stringify(entries));
     }catch(e){}
+    // The gate only decides whether a REWARD fires -- the entry above is
+    // always written so a cooldown never eats the player's writing.
+    var g=window._lwArtSaveGate&&window._lwArtSaveGate('storyseeds');
     var paid=_ssPaidToday();
-    if(paid.count<3){
+    if(paid.count>=3){
+      sm('✓ Saved · '+n+' words · pressed into your \ud83d\udcd6 JOURNAL (rewards refresh tomorrow)');
+    }else if(g&&!g.allow){
+      sm('✓ Saved · '+n+' words · pressed into your \ud83d\udcd6 JOURNAL (reward again in '+g.secs+'s)');
+    }else{
       try{localStorage.setItem(paid.key,String(paid.count+1));}catch(e){}
       if(g&&g.firstWin){_ssWon=true;_e('game_win');if(_playWin)_playWin();}
       else _e('milestone');
       sm('✓ Saved · '+n+' words · pressed into your \ud83d\udcd6 JOURNAL');
-    }else{
-      sm('✓ Saved · '+n+' words · pressed into your \ud83d\udcd6 JOURNAL (rewards refresh tomorrow)');
     }
     _sr('storyseeds',{w:true,s:n});
     ta.value='';updateWords();

@@ -121,6 +121,9 @@ function GBS(a){
   var _dragMoveHandler=null,_dragEndHandler=null;
   // pending shot (for confirm-attack)
   var pendingShot=-1;
+  // pending aiTurn() timeout — tracked so an in-app exit mid-turn can
+  // cancel it instead of letting it fire sounds/banners over the picker
+  var aiTimeoutId=0;
   // confirm-attack is auto-suppressed during salvo (would be too many taps)
   function effConfirm(){return confirmAttack&&!salvoMode;}
 
@@ -147,6 +150,27 @@ function GBS(a){
     '<button class="gb" id="BSconfirmBtn" onclick="_BSToggleConfirm()" style="min-width:120px;font-size:0.7rem;letter-spacing:0.06em;">'+(confirmAttack?'✓ CONFIRM ON':'CONFIRM OFF')+'</button> '+
     '<button class="gb" id="BSzoomBtn" onclick="_BSToggleZoom()" style="min-width:80px;font-size:0.7rem;letter-spacing:0.06em;">'+(enemyZoom>1?'🔍 1.5×':'🔍 1×')+'</button> '+
     '<button class="gb-new" onclick="_BSN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
+
+  // Leaving mid-turn (in-app exit, not the standalone shell's full nav):
+  // cancel the pending aiTurn() timeout so it can't fire sounds/banners/
+  // _e()/_sr() over whatever the player switched to, and detach any
+  // document-level drag listeners left over from a mid-drag exit.
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
+    gameOver=true;
+    if(aiTimeoutId){clearTimeout(aiTimeoutId);aiTimeoutId=0;}
+    if(_dragMoveHandler){
+      document.removeEventListener('touchmove',_dragMoveHandler);
+      document.removeEventListener('mousemove',_dragMoveHandler);
+      _dragMoveHandler=null;
+    }
+    if(_dragEndHandler){
+      document.removeEventListener('touchend',_dragEndHandler);
+      document.removeEventListener('touchcancel',_dragEndHandler);
+      document.removeEventListener('mouseup',_dragEndHandler);
+      _dragEndHandler=null;
+    }
+    _dragShip=-1;
+  });
 
   // ── helpers ──
   function mkGrid(){var a=[];for(var i=0;i<SZ*SZ;i++)a.push(0);return a;}
@@ -458,17 +482,22 @@ function GBS(a){
   }
 
   function drawSunkOverlay(tbl,s){
-    // silhouette spanning the ship's cells, positioned absolutely inside the grid
+    // silhouette spanning the ship's cells, positioned absolutely inside the grid.
+    // tbl itself sits inside the 1.5x zoom wrapper on the enemy side, so
+    // getBoundingClientRect() returns already-scaled px — divide back out
+    // to local (unscaled) px, since these styles get scaled AGAIN by the
+    // ancestor transform when rendered (double-scale bug otherwise).
+    var scale=(tbl.getAttribute('data-side')==='enemy')?enemyZoom:1;
     var firstCell=tbl.children[idx(s.r,s.c)];
     if(!firstCell)return;
     var rect=firstCell.getBoundingClientRect();
     var tblRect=tbl.getBoundingClientRect();
-    var cellW=rect.width,cellH=rect.height;
+    var cellW=rect.width/scale,cellH=rect.height/scale;
     if(cellW<2||cellH<2)return;
     var w=s.dir==='h'?cellW*s.len+(s.len-1):cellW;
     var h=s.dir==='v'?cellH*s.len+(s.len-1):cellH;
-    var x=rect.left-tblRect.left;
-    var y=rect.top-tblRect.top;
+    var x=(rect.left-tblRect.left)/scale;
+    var y=(rect.top-tblRect.top)/scale;
     var ov=document.createElement('div');
     ov.className='th-sink-ship';
     ov.style.cssText+='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px;';
@@ -642,6 +671,10 @@ function GBS(a){
 
   // ── banners ──
   function banner(text,kind){
+    // `a` (#fg-ag) is the app's permanent mount and never disconnects —
+    // `wrap` is this game instance's own subtree, torn out via
+    // ag.innerHTML='' on exit/switch, so it's the right isConnected check.
+    if(!wrap||!wrap.isConnected)return;
     var b=document.createElement('div');
     b.className='th-banner'+(kind?' '+kind:'');
     b.textContent=text;
@@ -767,7 +800,7 @@ function GBS(a){
     aiShotsLeft=salvoMode?countAliveShips(pGrid):1;
     stats.turns++;
     rn();
-    setTimeout(aiTurn,salvoMode?420:650);
+    aiTimeoutId=setTimeout(aiTurn,salvoMode?420:650);
   }
   function endAITurn(){
     if(gameOver)return;
@@ -794,13 +827,16 @@ function GBS(a){
     // Visual overlay on enemy (or player) grid
     var tbl=(who==='player')?grids.querySelector('.th-grid[data-side="enemy"]'):grids.querySelector('.th-grid[data-side="you"]');
     if(tbl){
+      // enemy grid may be sitting inside the 1.5x zoom wrapper — see the
+      // matching comment in drawSunkOverlay for why we divide by scale.
+      var scale=(who==='player')?enemyZoom:1;
       var firstCell=tbl.children[idx(r-1,c-1)];
       if(firstCell){
         var rect=firstCell.getBoundingClientRect();
         var tblRect=tbl.getBoundingClientRect();
-        var cellW=rect.width;
-        var x=rect.left-tblRect.left;
-        var y=rect.top-tblRect.top;
+        var cellW=rect.width/scale;
+        var x=(rect.left-tblRect.left)/scale;
+        var y=(rect.top-tblRect.top)/scale;
         var ov=document.createElement('div');
         ov.className='th-radar-overlay';
         ov.style.cssText+='left:'+x+'px;top:'+y+'px;width:'+(cellW*3+2)+'px;height:'+(cellW*3+2)+'px;';
@@ -864,7 +900,7 @@ function GBS(a){
     if(allSunk(pGrid)){endGame(false);return;}
     if(salvoMode){
       aiShotsLeft--;
-      if(aiShotsLeft>0){rn();setTimeout(aiTurn,420);return;}
+      if(aiShotsLeft>0){rn();aiTimeoutId=setTimeout(aiTurn,420);return;}
     }
     turn='player';
     pShotsLeft=salvoMode?countAliveShips(eGrid):1;
@@ -1016,8 +1052,10 @@ function GBS(a){
       while(mem.length>10)mem.pop();
       localStorage.setItem('lw_tidehunt_kraken',JSON.stringify(mem));
     }catch(e){}
-    // save record
-    _sr('battleship',{w:playerWon,s:playerWon?1:0});
+    // save record (lower-is-better: fewer shots to win is the skill signal)
+    _sr('battleship',{w:playerWon,s:stats.playerShots,lo:1});
+    var _bsphEnd=document.getElementById('BSph');
+    if(_bsphEnd)_bsphEnd.innerHTML=playerWon?'Victory':'Defeated';
     if(playerWon){_e('game_win');_playWin();banner('🌿 VICTORY','win');}
     else{_e('game_loss');banner('🍂 DEFEATED','loss');}
     // render stats modal
@@ -1040,6 +1078,7 @@ function GBS(a){
     h+='<div class="th-stats-row"><span>Duration</span><span>'+m+'m '+s+'s</span></div>';
     h+='<div class="th-stats-row"><span>Difficulty</span><span>'+curDiff().n.toUpperCase()+(salvoMode?' • SALVO':'')+'</span></div>';
     h+='</div>';
+    h+='<div style="text-align:center;margin-top:10px"><button class="gb" onclick="_BSN()">⟳ PLAY AGAIN</button></div>';
     var wrap2=document.createElement('div');wrap2.innerHTML=h;
     grids.appendChild(wrap2);
   }

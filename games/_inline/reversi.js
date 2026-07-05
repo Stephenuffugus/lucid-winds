@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: reversi
  *
  * COPY of the inline GRV mount function from index.html
- * lines 69199-69458.
+ * lines 69233-69509.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -20,18 +20,26 @@
   window._gameFns=window._gameFns||{};
 
   function GRV(a){var bd=new Array(64).fill(0),tn=1,ov=false,lastMove=-1,flipCells=[];
+    // Generation guard (2026-07-05): exiting to the picker mid-AI-think or
+    // mid-hint used to leave a stale setTimeout that fired against a
+    // remounted/removed board — rvT() below no-ops once rvGen has moved on.
+    var rvGen=0;
+    function rvT(fn,ms){var g=rvGen;return setTimeout(function(){if(g===rvGen)fn();},ms);}
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){rvGen++;});
     var undoStack=[],hintPos=-1,diff=2;
     try{var _d=parseInt(localStorage.getItem('lw_rv_diff'));if(_d>=1&&_d<=4)diff=_d;}catch(e){}
     var stats={w:0,l:0,d:0,streak:0,best:0};
     try{var _s=localStorage.getItem('lw_rv_stats');if(_s){var _p=JSON.parse(_s);for(var _k in _p)stats[_k]=_p[_k];}}catch(e){}
     // SVG pieces — Player: moss (green), AI: lichen (gold)
-    var SVG_MOSS='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#2a4a1e"/><circle cx="20" cy="20" r="13" fill="#3a6a2a"/><circle cx="20" cy="20" r="10" fill="#4a8a35"/><circle cx="16" cy="16" r="3" fill="#6ab356" opacity="0.6"/><circle cx="24" cy="18" r="2.5" fill="#7ab356" opacity="0.5"/><circle cx="20" cy="24" r="2" fill="#5a9a40" opacity="0.5"/><circle cx="14" cy="22" r="1.5" fill="#7ab356" opacity="0.4"/><circle cx="26" cy="23" r="1.8" fill="#6ab356" opacity="0.35"/></svg>';
-    var SVG_LICHEN='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#5a4520"/><circle cx="20" cy="20" r="13" fill="#7a6530"/><circle cx="20" cy="20" r="10" fill="#9a8040"/><circle cx="17" cy="17" r="3.5" fill="#C8A84B" opacity="0.5"/><circle cx="24" cy="19" r="2.5" fill="#b8984a" opacity="0.45"/><circle cx="20" cy="25" r="2" fill="#C8A84B" opacity="0.4"/><path d="M14 20 Q16 18 18 20 Q16 22 14 20Z" fill="#C8A84B" opacity="0.3"/><path d="M24 24 Q26 22 27 24 Q25 26 24 24Z" fill="#b8984a" opacity="0.3"/></svg>';
+    // Colorblind cue (fleet standard, symbol-not-color): moss carries a leaf
+    // glyph + vein, lichen carries a 4-point star — visible even in grayscale.
+    var SVG_MOSS='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#2a4a1e"/><circle cx="20" cy="20" r="13" fill="#3a6a2a"/><circle cx="20" cy="20" r="10" fill="#4a8a35"/><circle cx="16" cy="16" r="3" fill="#6ab356" opacity="0.6"/><circle cx="24" cy="18" r="2.5" fill="#7ab356" opacity="0.5"/><circle cx="20" cy="24" r="2" fill="#5a9a40" opacity="0.5"/><circle cx="14" cy="22" r="1.5" fill="#7ab356" opacity="0.4"/><circle cx="26" cy="23" r="1.8" fill="#6ab356" opacity="0.35"/><path d="M20 12 Q25 20 20 28 Q15 20 20 12Z" fill="#eaffd8" opacity="0.88" stroke="#2a4a1e" stroke-width="0.6"/><line x1="20" y1="14" x2="20" y2="26" stroke="#2a4a1e" stroke-width="1" opacity="0.55"/></svg>';
+    var SVG_LICHEN='<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#5a4520"/><circle cx="20" cy="20" r="13" fill="#7a6530"/><circle cx="20" cy="20" r="10" fill="#9a8040"/><circle cx="17" cy="17" r="3.5" fill="#C8A84B" opacity="0.5"/><circle cx="24" cy="19" r="2.5" fill="#b8984a" opacity="0.45"/><circle cx="20" cy="25" r="2" fill="#C8A84B" opacity="0.4"/><path d="M14 20 Q16 18 18 20 Q16 22 14 20Z" fill="#C8A84B" opacity="0.3"/><path d="M24 24 Q26 22 27 24 Q25 26 24 24Z" fill="#b8984a" opacity="0.3"/><path d="M20 10.5 L22.7 17.3 L29.5 20 L22.7 22.7 L20 29.5 L17.3 22.7 L10.5 20 L17.3 17.3Z" fill="#fff6d8" opacity="0.92" stroke="#5a4520" stroke-width="0.6"/></svg>';
     var SVGS=[null,SVG_MOSS,SVG_LICHEN];
     ms(a,'');mm(a);
     // Stats strip
     var statsRow=document.createElement('div');statsRow.id='RVstats';
-    statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.64rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
+    statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
     a.appendChild(statsRow);
     // Score bar
     var sb=document.createElement('div');sb.className='rv-score';sb.id='RVs';a.appendChild(sb);
@@ -56,8 +64,8 @@
     // Tools: Undo + Hint
     var tools=document.createElement('div');
     tools.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0';
-    tools.innerHTML='<button class="gb" id="RVundo" onclick="_RVU()" style="min-height:40px;padding:4px 14px;font-size:0.65rem">↩ UNDO</button>'
-      +'<button class="gb" id="RVhint" onclick="_RVH()" style="min-height:40px;padding:4px 14px;font-size:0.65rem">💡 HINT</button>';
+    tools.innerHTML='<button class="gb" id="RVundo" onclick="_RVU()" style="min-height:48px;padding:4px 14px;font-size:0.7rem">↩ UNDO</button>'
+      +'<button class="gb" id="RVhint" onclick="_RVH()" style="min-height:48px;padding:4px 14px;font-size:0.7rem">💡 HINT</button>';
     a.appendChild(tools);
     mc(a).innerHTML='<select class="gsl" id="RVd" onchange="_RVSetDiff(this.value)" style="min-width:140px">'
       +'<option value="1">Seedling</option><option value="2">Sapling</option><option value="3">Grove</option><option value="4">Old Growth</option>'
@@ -211,7 +219,7 @@
       if(ub){var cU=undoStack.length>0&&tn===1&&!ov;ub.disabled=!cU;ub.style.opacity=cU?'':'0.4';}
       var hb=document.getElementById('RVhint');
       if(hb){var cH=hintPos<0&&tn===1&&!ov&&vm.length>0;hb.disabled=!cH;hb.style.opacity=cH?'':'0.4';}
-      if(!ov&&!vm.length&&tn===1){sm('No moves, passing');tn=2;setTimeout(aiRV,500);}
+      if(!ov&&!vm.length&&tn===1){sm('No moves, passing');tn=2;rvT(aiRV,500);}
       checkEnd();
     }
   
@@ -225,7 +233,7 @@
       lastMove=pos;
       if(p===1){
         if(f.length>=3)_e('flip');
-        tn=2;rn();setTimeout(aiRV,400);
+        tn=2;rn();rvT(aiRV,400);
       }else{tn=1;rn();}
     }
     function aiRV(){
@@ -244,17 +252,26 @@
         _e('game_win');_playWin();sm('You win! '+p1+' – '+p2);_sr('reversi',{w:true,s:p1});
         stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
         saveStats();renderStats();
+        if(window._lwGameEnd)_lwGameEnd({won:true,title:'YOU WIN',
+          line:'moss '+p1+' – lichen '+p2,sub:'best streak '+stats.best,
+          retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }else if(p2>p1){
         _e('game_loss');_play('lose');sm('AI wins '+p2+' – '+p1);_sr('reversi',{w:false,s:p1});
         stats.l++;stats.streak=0;saveStats();renderStats();
+        if(window._lwGameEnd)_lwGameEnd({won:false,title:'AI WINS',
+          line:'lichen '+p2+' – moss '+p1,sub:'best streak '+stats.best,
+          retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }else{
         _e('milestone');sm('Draw! '+p1+' – '+p2);_sr('reversi',{w:false,s:p1});
         stats.d++;stats.streak=0;saveStats();renderStats();
+        if(window._lwGameEnd)_lwGameEnd({won:false,title:'DRAW',
+          line:'moss '+p1+' – lichen '+p2,sub:'best streak '+stats.best,
+          retry:function(){window._RVN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }
     }
     function saveStats(){try{localStorage.setItem('lw_rv_stats',JSON.stringify(stats));}catch(e){}}
   
-    window._RVN=function(){setup();sm('');renderStats();rn();};
+    window._RVN=function(){rvGen++;setup();sm('');renderStats();rn();};
     window._RVU=function(){
       if(undoStack.length===0||tn!==1||ov)return;
       var s=undoStack.pop();
@@ -271,7 +288,7 @@
       var r=Math.floor(pick/8),c=pick%8;
       sm('Hint: '+String.fromCharCode(97+c)+(r+1));
       rn();
-      setTimeout(function(){hintPos=-1;rn();},3500);
+      rvT(function(){hintPos=-1;rn();},3500);
     };
     window._RVSetDiff=function(v){
       var n=parseInt(v,10);if(isNaN(n)||n<1||n>4)return;

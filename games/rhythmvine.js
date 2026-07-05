@@ -25,6 +25,7 @@ window._gameFns.rhythmvine=function RV(a){
   var nextNoteIdx=0;
   var rafId=0;
   var endTimerId=0;             // tracked so PLAY-AGAIN doesn't stack timers
+  var songLastNoteTime=0;       // chart.notes[last][0], drives the audio-clock end guard
   var score=0,combo=0,maxCombo=0,hits={p:0,g:0,o:0,m:0};
   var lastResult=null;
 
@@ -183,7 +184,12 @@ window._gameFns.rhythmvine=function RV(a){
       startOv.style.display='none';
       updateHUD();
       rafId=requestAnimationFrame(loop);
+      songLastNoteTime=chart.notes.length?chart.notes[chart.notes.length-1][0]:0;
       var totalSec=chart.notes.length?chart.notes[chart.notes.length-1][0]+2:60;
+      // Wall-clock fallback only — the real end trigger lives in loop() on
+      // the audio clock. If rAF itself never resumes (tab stayed backgrounded
+      // for the whole song) this still fires and endRun's miss-backfill below
+      // grades the unplayed notes as misses instead of just stopping early.
       endTimerId=setTimeout(endRun,(totalSec+0.5)*1000);
     },function(){sm('Audio blocked, tap screen to unlock');});
   }
@@ -191,9 +197,20 @@ window._gameFns.rhythmvine=function RV(a){
   function endRun(){
     if(!running)return;
     running=false;cancelAnimationFrame(rafId);
-    // Clear lane notes visually
-    for(var i=notes.length-1;i>=0;i--){if(notes[i].el&&notes[i].el.parentNode)notes[i].el.parentNode.removeChild(notes[i].el);}
+    if(endTimerId){clearTimeout(endTimerId);endTimerId=0;}
+    // Clear lane notes visually. Anything still unhit here (backgrounded tab
+    // paused rAF so the auto-miss in loop() never ran, or the wall-clock
+    // fallback fired mid-song) counts as a miss — otherwise a player who
+    // backgrounds after the easy opening bars banks a false 100% accuracy.
+    for(var i=notes.length-1;i>=0;i--){
+      var n=notes[i];
+      if(!n.hit){n.hit=true;n.result='m';hits.m++;}
+      if(n.el&&n.el.parentNode)n.el.parentNode.removeChild(n.el);
+    }
     notes.length=0;
+    // Notes that never even spawned (chart still had entries past nextNoteIdx)
+    // are the rest of the unplayed song — also misses.
+    if(chart)hits.m+=Math.max(0,chart.notes.length-nextNoteIdx);
     var total=hits.p+hits.g+hits.o+hits.m;
     var acc=total?((hits.p+hits.g*0.7+hits.o*0.4)/total):0;
     var stars=acc>=0.95?5:acc>=0.85?4:acc>=0.70?3:acc>=0.50?2:acc>=0.30?1:0;
@@ -209,8 +226,10 @@ window._gameFns.rhythmvine=function RV(a){
   function showEnd(stars,sb,acc){
     startOv.style.display='';
     var starStr='';for(var i=0;i<5;i++)starStr+=(i<stars?'★':'☆');
+    var rec=(G.gr?G.gr():{}).rhythmvine||{};
+    var best=Math.max(rec.b||0,score);
     startOv.innerHTML='<div class="t" style="color:var(--gold);">'+starStr+'</div>'
-      +'<div class="s">Score '+score+' · Combo '+maxCombo+' · Accuracy '+(acc*100).toFixed(1)+'%</div>'
+      +'<div class="s">Score '+score+' · Best '+best+' · Combo '+maxCombo+' · Accuracy '+(acc*100).toFixed(1)+'%</div>'
       +'<div class="s" style="color:var(--gold);">+'+sb+' Sunbeam progress</div>'
       +'<button id="RVgo2">↻ PLAY AGAIN</button>';
     document.getElementById('RVgo2').addEventListener('click',function(){startRun();});
@@ -221,6 +240,13 @@ window._gameFns.rhythmvine=function RV(a){
   function loop(){
     if(!running)return;
     var t=songTime();
+    // End from the audio clock, not the wall-clock setTimeout: backgrounding
+    // the tab pauses this rAF loop (no more notes spawn, no auto-misses
+    // accrue) but a setTimeout still fires on real elapsed time, so ending
+    // there would grade only the pre-background notes as if that were the
+    // whole song. Ending here means the run can only finish once the audio
+    // clock itself has actually reached the end (2.5s past the last note).
+    if(chart&&t>songLastNoteTime+2.5){endRun();return;}
     var stageH=stage.clientHeight;
     var hitY=stageH*0.86; // matches bottom:14%
     // Spawn upcoming notes
@@ -237,7 +263,11 @@ window._gameFns.rhythmvine=function RV(a){
       var n=notes[i];
       var dt=n.hitTime-t;
       if(!n.hit){
-        var y=hitY-(dt/(NOTE_FALL_MS/1000))*hitY;
+        // +19 (spawn top -30px minus half the 22px note height) so the note's
+        // CENTER crosses the hit line at dt=0, not its top edge — without
+        // this the note visually sat ~19px above the line at the perfect
+        // moment and players calibrating by eye tapped late.
+        var y=hitY-(dt/(NOTE_FALL_MS/1000))*hitY+19;
         n.el.style.transform='translateY('+y.toFixed(1)+'px)';
         if(-dt>HIT_OK){
           // Auto-miss the moment the hit window closes. Previous threshold

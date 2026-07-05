@@ -96,6 +96,11 @@ window._gameFns.livingstones = function LS(a){
   };
 
   var board=[],puzzleIdx=0,difficulty=0,moveHistory=[],puzzleSolved=false;
+  // Bumped on every view change (menu/learn/puzzle load). Lets the
+  // wrong-move auto-undo timeout (onTap) detect it's stale and no-op
+  // instead of undo()+renderBoard()-ing a puzzle over whatever view the
+  // player has since navigated to.
+  var viewGen=0;
   // Persist solved puzzles across sessions so progress isn't lost on
   // tab close. Keyed by `<difficulty>_<puzzleIdx>` to allow tier
   // segregation. totalSolved is derived on each load.
@@ -194,9 +199,10 @@ window._gameFns.livingstones = function LS(a){
   }
 
   function renderMenu(){
+    viewGen++;
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--sage);letter-spacing:0.22em;margin:12px 0;">LIVING STONES</div>';
     h+='<div style="font-style:italic;font-size:0.76rem;color:var(--muted);margin-bottom:10px;">Go — 围棋 囲碁 바둑 — the 4000-year-old game</div>';
-    h+='<button class="gb" onclick="_LSlearn()" style="display:block;width:220px;margin:6px auto 14px;padding:8px;min-height:40px;background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.5);color:#8fc57a;font-size:0.75rem;letter-spacing:0.1em;">? LEARN THE RULES</button>';
+    h+='<button class="gb" onclick="_LSlearn()" style="display:block;width:220px;margin:6px auto 14px;padding:8px;min-height:48px;background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.5);color:#8fc57a;font-size:0.75rem;letter-spacing:0.1em;">? LEARN THE RULES</button>';
     h+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.16em;margin:8px 0 4px;">PUZZLES · TSUMEGO</div>';
     h+='<div style="font-style:italic;font-size:0.72rem;color:var(--muted);margin-bottom:8px;">12 verified life-and-death problems</div>';
     var diffs=[['BEGINNER','Atari: fill the last liberty',0],['INTERMEDIATE','Line captures & double atari',1],['ADVANCED','Big groups with a single liberty',2]];
@@ -230,12 +236,13 @@ window._gameFns.livingstones = function LS(a){
     h+='<p style="margin:6px 0"><b style="color:#8fc57a">Winning</b> — at game end (both pass), you score the stones you have on the board plus any territory you surround.</p>';
     h+='<p style="margin:8px 0 4px;color:rgba(232,220,200,0.6);font-style:italic;font-size:0.72rem">The puzzles below train your capture sense. Each has a single correct move that wins material.</p>';
     h+='</div>';
-    h+='<button class="gb" onclick="_LSN()" style="min-height:44px;padding:8px 22px;margin:6px auto;display:block;">← BACK</button>';
+    h+='<button class="gb" onclick="_LSN()" style="min-height:48px;padding:8px 22px;margin:6px auto;display:block;">← BACK</button>';
     pan.innerHTML=h;
   };
 
   function loadPuzzle(idx){
     var p=currentPuzzles[idx];if(!p)return;
+    viewGen++;
     boardSize=p.size;
     board=[];for(var r=0;r<boardSize;r++){board[r]=[];for(var c=0;c<boardSize;c++)board[r][c]=EMPTY;}
     for(var i=0;i<p.B.length;i++)board[p.B[i][0]][p.B[i][1]]=BLACK;
@@ -278,10 +285,10 @@ window._gameFns.livingstones = function LS(a){
     }
     h+='<div style="margin:6px 0;">'+dots+'</div>';
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;">';
-    h+='<button class="gb" onclick="_LSundo()" style="min-height:44px;padding:8px 14px;">UNDO</button>';
-    h+='<button class="gb" onclick="_LShint()" style="min-height:44px;padding:8px 14px;">HINT</button>';
-    h+='<button class="gb" onclick="_LSnext()" style="min-height:44px;padding:8px 14px;background:rgba(200,168,75,0.2);color:var(--gold);border-color:rgba(200,168,75,0.5);">NEXT</button>';
-    h+='<button class="gb" onclick="_LSmenu()" style="min-height:44px;padding:8px 14px;">MENU</button>';
+    h+='<button class="gb" onclick="_LSundo()" style="min-height:48px;padding:8px 14px;">UNDO</button>';
+    h+='<button class="gb" onclick="_LShint()" style="min-height:48px;padding:8px 14px;">HINT</button>';
+    h+='<button class="gb" onclick="_LSnext()" style="min-height:48px;padding:8px 14px;background:rgba(200,168,75,0.2);color:var(--gold);border-color:rgba(200,168,75,0.5);">NEXT</button>';
+    h+='<button class="gb" onclick="_LSmenu()" style="min-height:48px;padding:8px 14px;">MENU</button>';
     h+='</div>';
     pan.innerHTML=h;
   }
@@ -316,7 +323,11 @@ window._gameFns.livingstones = function LS(a){
       sm('✓ Solved!');
     }else{
       sm('Not quite, try again');
-      setTimeout(function(){if(!puzzleSolved&&moveHistory.length>0)undo();},1200);
+      // Capture the view generation so this timeout no-ops if the player
+      // has since left this puzzle (menu/next/new puzzle) — otherwise a
+      // stale undo() + renderBoard() overwrites whatever view is now shown.
+      var _myGen=viewGen;
+      setTimeout(function(){if(_myGen===viewGen&&!puzzleSolved&&moveHistory.length>0)undo();},1200);
     }
     renderBoard();
   }
@@ -345,15 +356,30 @@ window._gameFns.livingstones = function LS(a){
   window._LSnext=function(){
     puzzleIdx++;
     if(puzzleIdx>=currentPuzzles.length){
+      var tierKeys=['beginner','intermediate','advanced'];
       _sr('livingstones',{w:totalSolved>0,s:totalSolved,lv:difficulty,tp:currentPuzzles.length});
-      sm('Complete! Solved '+totalSolved+'/'+currentPuzzles.length);
       renderMenu();
+      if(window._lwGameEnd){
+        var _nextTier=(difficulty<2)?difficulty+1:null;
+        window._lwGameEnd({won:totalSolved>=currentPuzzles.length,title:'Tier complete!',
+          line:'Solved '+totalSolved+'/'+currentPuzzles.length+' · '+(tierKeys[difficulty]||'').toUpperCase(),
+          retry:_nextTier!=null?function(){window._LSstart(_nextTier);}:function(){window._LSN();},
+          retryLabel:_nextTier!=null?'↻ NEXT TIER':'↻ PLAY AGAIN',
+          viewLabel:'view puzzles'});
+      }else{
+        sm('Complete! Solved '+totalSolved+'/'+currentPuzzles.length);
+      }
       return;
     }
     loadPuzzle(puzzleIdx);
   };
   window._LSmenu=function(){
-    _sr('livingstones',{w:totalSolved>0,s:totalSolved,lv:difficulty,tp:currentPuzzles.length});
+    // AI results are already recorded by aiEndGame/_LSaiResign — only log a
+    // puzzle-tier stat row when actually leaving puzzle mode (was firing on
+    // every AI-mode MENU press too, polluting stats with tp:0 rows).
+    if(!aiMode&&currentPuzzles&&currentPuzzles.length>0){
+      _sr('livingstones',{w:totalSolved>0,s:totalSolved,lv:difficulty,tp:currentPuzzles.length});
+    }
     if(aiWorker){try{aiWorker.terminate();}catch(e){}aiWorker=null;}
     aiMode=false;
     renderMenu();
@@ -469,11 +495,11 @@ window._gameFns.livingstones = function LS(a){
     h+='<div style="font-style:italic;font-size:0.8rem;color:var(--cream);min-height:1.2em;margin:4px 0;">'+(aiStatus||'')+'</div>';
     h+='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;">';
     if(!aiGameOver){
-      h+='<button class="gb" onclick="_LSaiPass()" style="min-height:44px;padding:8px 14px;"'+(aiThinking?' disabled':'')+'>PASS</button>';
-      h+='<button class="gb" onclick="_LSaiUndo()" style="min-height:44px;padding:8px 14px;"'+((aiThinking||aiMoveHistory.length===0)?' disabled':'')+'>↩ UNDO</button>';
-      h+='<button class="gb" onclick="_LSaiResign()" style="min-height:44px;padding:8px 14px;"'+(aiThinking?' disabled':'')+'>RESIGN</button>';
+      h+='<button class="gb" onclick="_LSaiPass()" style="min-height:48px;padding:8px 14px;"'+(aiThinking?' disabled':'')+'>PASS</button>';
+      h+='<button class="gb" onclick="_LSaiUndo()" style="min-height:48px;padding:8px 14px;"'+((aiThinking||aiMoveHistory.length===0)?' disabled':'')+'>↩ UNDO</button>';
+      h+='<button class="gb" onclick="_LSaiResign()" style="min-height:48px;padding:8px 14px;"'+(aiThinking?' disabled':'')+'>RESIGN</button>';
     }
-    h+='<button class="gb" onclick="_LSmenu()" style="min-height:44px;padding:8px 14px;">MENU</button>';
+    h+='<button class="gb" onclick="_LSmenu()" style="min-height:48px;padding:8px 14px;">MENU</button>';
     h+='</div>';
     pan.innerHTML=h;
   }
@@ -547,6 +573,18 @@ window._gameFns.livingstones = function LS(a){
     else{_play('lose');}
     _sr('livingstones',{w:won,s:s.black,lv:'ai'+aiSize,tp:Math.round(s.white)});
     aiRender();
+    if(window._lwGameEnd){
+      var _rSize=aiSize,_rPlayouts=aiPlayouts,_rHandicap=aiHandicap;
+      // Scoring has no dead-stone removal — a double-pass with unresolved
+      // groups counts them as alive. Be upfront about it rather than let a
+      // wrong "AI wins" read as a bug.
+      var _note=(msg==='Both pass')?'Stones left on the board count as alive — capture dead stones before passing.':undefined;
+      window._lwGameEnd({won:won,title:won?'You win!':'AI wins',
+        line:result+' (komi '+s.komi+')'+(msg?' · '+msg:''),
+        sub:_note,
+        retry:function(){_pendingAI={size:_rSize,playouts:_rPlayouts};window._LSaiStart(_rHandicap);},
+        retryLabel:'↻ REMATCH',viewLabel:'view the board'});
+    }
   }
   function aiRequestMove(){
     if(!aiWorker||aiGameOver)return;
@@ -562,12 +600,12 @@ window._gameFns.livingstones = function LS(a){
     var h='<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:#c8a84b;letter-spacing:0.2em;margin:14px 0 4px;">HANDICAP</div>';
     h+='<div style="font-style:italic;font-size:0.72rem;color:rgba(232,220,200,0.62);margin-bottom:10px;max-width:300px;margin-left:auto;margin-right:auto;line-height:1.5">Handicap gives Black (you) extra stones on the board before White moves. Start even, or choose 2–9 stones for a helping hand.</div>';
     h+='<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:280px;margin:0 auto;">';
-    h+='<button class="gb" onclick="_LSaiStart(0)" style="min-width:72px;min-height:44px;padding:8px 14px;background:rgba(122,179,86,0.22);border-color:rgba(122,179,86,0.5);color:#8fc57a;">EVEN</button>';
+    h+='<button class="gb" onclick="_LSaiStart(0)" style="min-width:72px;min-height:48px;padding:8px 14px;background:rgba(122,179,86,0.22);border-color:rgba(122,179,86,0.5);color:#8fc57a;">EVEN</button>';
     [2,3,4,5,6,7,8,9].forEach(function(n){
-      h+='<button class="gb" onclick="_LSaiStart('+n+')" style="min-width:64px;min-height:44px;padding:8px 12px;">+'+n+'</button>';
+      h+='<button class="gb" onclick="_LSaiStart('+n+')" style="min-width:64px;min-height:48px;padding:8px 12px;">+'+n+'</button>';
     });
     h+='</div>';
-    h+='<button class="gb" onclick="_LSN()" style="display:block;margin:16px auto 6px;min-height:44px;padding:8px 22px;">← BACK</button>';
+    h+='<button class="gb" onclick="_LSN()" style="display:block;margin:16px auto 6px;min-height:48px;padding:8px 22px;">← BACK</button>';
     pan.innerHTML=h;
   };
   window._LSaiStart=function(handicap){
@@ -698,6 +736,12 @@ window._gameFns.livingstones = function LS(a){
     _play('lose');
     _sr('livingstones',{w:false,s:0,lv:'ai'+aiSize,tp:0});
     aiRender();
+    if(window._lwGameEnd){
+      var _rSize=aiSize,_rPlayouts=aiPlayouts,_rHandicap=aiHandicap;
+      window._lwGameEnd({won:false,title:'You resigned',line:'AI wins',
+        retry:function(){_pendingAI={size:_rSize,playouts:_rPlayouts};window._LSaiStart(_rHandicap);},
+        retryLabel:'↻ REMATCH',viewLabel:'view the board'});
+    }
   };
 
   // Terminate the MCTS worker when the player leaves the game — it was only

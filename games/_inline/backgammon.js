@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: backgammon
  *
  * COPY of the inline GBG mount function from index.html
- * lines 70683-71139.
+ * lines 70734-71187.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -39,7 +39,7 @@
     // opponent's likely rolls).
     var BG_DIFF=2;
     try{BG_DIFF=parseInt(localStorage.getItem('lw_bg_diff'))||2;}catch(e){BG_DIFF=2;}
-    ms(a,'<span class="gp-you" style="color:#7AB956">You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">AI: <strong id="BGa">0</strong></span>');mm(a);
+    ms(a,'<span class="gp-you" style="color:#7AB956">☘ You: <strong id="BGh">0</strong></span> · <span class="gp-ai" style="color:#C47A7A">✦ AI: <strong id="BGa">0</strong></span>');mm(a);
     var wrap=document.createElement('div');wrap.id='BGwrap';wrap.className='bg-outer';wrap.style.cssText='user-select:none;-webkit-user-select:none';a.appendChild(wrap);
     mc(a).innerHTML='<select class="gsl" id="BGd" onchange="_BGSetDiff(this.value)" style="min-width:140px;max-width:180px">'
       +'<option value="1">Seedling</option>'
@@ -192,7 +192,7 @@
         if(!chosen){SEL=-1;VALID_DESTS=[];selectPt(p);return}
         BG_UNDO.push(snapshotState());BG_HINT=null;
         applyMove(chosen,'human');_play('tap');SEL=-1;VALID_DESTS=[];
-        if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1});_bgGameOver(true);rn();return}
+        if(BO_H>=15){_e('game_win');_playWin();sm('All seeds home!');_sr('backgammon',{w:true,s:1,lo:1});_bgGameOver(true);rn();return}
         if(MOVES_LEFT.length>0){var rem=getValidMoves('human');if(rem.length===0){sm('No more moves');MOVES_LEFT=[];endTurn()}else rn()}
         else endTurn();
       }
@@ -334,7 +334,7 @@
     function rn(){
       var h='';
       document.getElementById('BGh').textContent=BO_H;document.getElementById('BGa').textContent=BO_A;
-      var st=PHASE==='roll'?(TURN==='human'?'Tap Roll':'AI rolling...'):PHASE==='move'?(TURN==='human'?(SEL!==-1?'Tap where to move':'Tap a seed to move'):'AI thinking...'):'Game Over';
+      var st=BG_HINT?('Hint: '+(BG_HINT.from==='bar'?'bar':('point '+BG_HINT.from))+' → '+(BG_HINT.to==='off'?'off':('point '+BG_HINT.to))+' (die '+BG_HINT.die+')'):(PHASE==='roll'?(TURN==='human'?'Tap Roll':'AI rolling...'):PHASE==='move'?(TURN==='human'?(SEL!==-1?'Tap where to move':'Tap a seed to move'):'AI thinking...'):'Game Over');
       sm(st);
       // Board wrapper (portrait: single column; landscape: left side)
       h+='<div class="bg-wrap">';
@@ -427,7 +427,6 @@
         ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
         document.body.appendChild(ov);
       },450);
-      if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){BG_GEN++;var o=document.getElementById('BG-over');if(o)o.remove();});
     }
     window._BGB=function(from,die){
       if(PHASE!=='move'||TURN!=='human')return; // no bear-off outside your move (incl. gameover)
@@ -461,10 +460,7 @@
       if(!best){sm('No hint — no valid moves');return;}
       BG_HINT={from:best.from,to:best.to,die:best.die};
       _play('tap');
-      var fromLabel=best.from==='bar'?'bar':('point '+best.from);
-      var toLabel=best.to==='off'?'off':('point '+best.to);
-      sm('Hint: '+fromLabel+' → '+toLabel+' (die '+best.die+')');
-      rn();
+      rn(); // rn() renders the hint status text itself (see st= in rn)
       bgSchedule(function(){BG_HINT=null;rn();},3500);
     };
     // Difficulty selector handler — writes to localStorage + rerenders.
@@ -474,6 +470,7 @@
       try{localStorage.setItem('lw_bg_diff',String(n));}catch(e){}
     };
     window._BGN=function(){var _o=document.getElementById('BG-over');if(_o)_o.remove();init()};
+    if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){BG_GEN++;bgClearPending();var o=document.getElementById('BG-over');if(o)o.remove();});
     init();
   }
 

@@ -160,7 +160,7 @@ window._gameFns.numbergarden=function NG(a){
       '.ng-pad button.go{color:#7ab356;background:rgba(122,179,86,0.18);border-color:rgba(122,179,86,0.45);}',
       '.ng-modes{display:flex;gap:4px;padding:4px 4px 8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}',
       '.ng-modes::-webkit-scrollbar{display:none;}',
-      '.ng-mode{padding:6px 12px;min-height:36px;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.06em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.72);cursor:pointer;flex:0 0 auto;white-space:nowrap;transition:background 0.15s,border-color 0.15s,color 0.15s;}',
+      '.ng-mode{padding:6px 12px;min-height:48px;display:flex;align-items:center;font-family:DM Mono,monospace;font-size:0.62rem;letter-spacing:0.06em;background:rgba(26,31,23,0.6);border:1px solid rgba(122,179,86,0.22);border-radius:6px;color:rgba(232,220,200,0.72);cursor:pointer;flex:0 0 auto;white-space:nowrap;transition:background 0.15s,border-color 0.15s,color 0.15s;}',
       '.ng-mode.on{background:rgba(200,168,75,0.2);border-color:var(--gold);color:var(--gold);}',
       '.ng-mode.master.on{background:linear-gradient(135deg,rgba(200,168,75,0.25),rgba(122,179,86,0.2));}',
       '.ng-desc{font-family:Cormorant Garamond,serif;font-style:italic;font-size:0.78rem;color:rgba(232,220,200,0.75);text-align:center;margin:4px auto 8px;max-width:300px;}',
@@ -537,6 +537,8 @@ window._gameFns.numbergarden=function NG(a){
       running=false;
       if(timerInterval){clearInterval(timerInterval);timerInterval=0;}
       if(flashTimer){clearTimeout(flashTimer);flashTimer=0;}
+      if(updateMascot._t){clearTimeout(updateMascot._t);updateMascot._t=0;}
+      var _ngOv=document.getElementById('NGrulesOV');if(_ngOv)_ngOv.remove();
       clearInterval(_watchExit);
     }
   },1000);

@@ -24,6 +24,7 @@ window._gameFns.vinecross=function VC(a){
   var CELL=32,PAD=16;
   var board,turn,moves,hist,redoStack,gameOver,winner,lastMove,winLine;
   var thinking=false,hintPos=null;
+  var aiTimer=null;
   var cvs,ctx;
   var stats={w:0,l:0,d:0,streak:0,best:0};
   try{var _s=localStorage.getItem('lw_vc_stats');if(_s){var _p=JSON.parse(_s);for(var _k in _p)stats[_k]=_p[_k];}}catch(e){}
@@ -32,7 +33,7 @@ window._gameFns.vinecross=function VC(a){
   mm(a);
   // Stats strip
   var statsRow=document.createElement('div');statsRow.id='VCstats';
-  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
+  statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
   a.appendChild(statsRow);
   var pan=document.createElement('div');pan.id='VCpan';
   pan.style.cssText='max-width:560px;margin:0 auto;padding:4px;user-select:none;text-align:center;';
@@ -40,9 +41,9 @@ window._gameFns.vinecross=function VC(a){
   // Tools row — Undo / Redo / Hint
   var toolRow=document.createElement('div');
   toolRow.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0;flex-wrap:wrap';
-  toolRow.innerHTML='<button class="gb" id="VCundo" onclick="_VCU()" style="min-height:44px;padding:8px 16px;font-size:0.65rem">↩ UNDO</button>'
-    +'<button class="gb" id="VCredo" onclick="_VCR()" style="min-height:44px;padding:8px 16px;font-size:0.65rem">↪ REDO</button>'
-    +'<button class="gb" id="VChint" onclick="_VCH()" style="min-height:44px;padding:8px 16px;font-size:0.65rem">💡 HINT</button>';
+  toolRow.innerHTML='<button class="gb" id="VCundo" onclick="_VCU()" style="min-height:48px;padding:8px 16px;font-size:0.7rem">↩ UNDO</button>'
+    +'<button class="gb" id="VCredo" onclick="_VCR()" style="min-height:48px;padding:8px 16px;font-size:0.7rem">↪ REDO</button>'
+    +'<button class="gb" id="VChint" onclick="_VCH()" style="min-height:48px;padding:8px 16px;font-size:0.7rem">💡 HINT</button>';
   a.appendChild(toolRow);
   // Diff + size + new game
   mc(a).innerHTML='<select class="gsl" id="VCd" onchange="_VCL(this.value)" style="min-width:140px">'
@@ -70,6 +71,8 @@ window._gameFns.vinecross=function VC(a){
   function saveStats(){try{localStorage.setItem('lw_vc_stats',JSON.stringify(stats));}catch(e){}}
 
   function init(){
+    if(aiTimer){clearTimeout(aiTimer);aiTimer=null;}
+    if(_st)_st(); // arms the shell's anti-farm min-play-time guard for this attempt
     board=[];for(var r=0;r<SZ;r++){board[r]=[];for(var c=0;c<SZ;c++)board[r][c]=0;}
     turn=1;moves=0;hist=[];redoStack=[];gameOver=false;winner=0;lastMove=null;winLine=null;thinking=false;hintPos=null;
     // Sync UI selects
@@ -158,6 +161,18 @@ window._gameFns.vinecross=function VC(a){
       // Highlight
       ctx.beginPath();ctx.arc(x-rad*0.35,y-rad*0.4,rad*0.22,0,Math.PI*2);
       ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fill();
+      // Colorblind-safe glyph: dot for player, cross for AI (shape, not color)
+      var gm=rad*0.3;
+      if(board[r][c]===1){
+        ctx.beginPath();ctx.arc(x,y,gm*0.55,0,Math.PI*2);
+        ctx.fillStyle='rgba(20,30,10,0.6)';ctx.fill();
+      }else{
+        ctx.strokeStyle='rgba(40,10,10,0.65)';ctx.lineWidth=Math.max(1.4,rad*0.14);
+        ctx.beginPath();
+        ctx.moveTo(x-gm*0.6,y-gm*0.6);ctx.lineTo(x+gm*0.6,y+gm*0.6);
+        ctx.moveTo(x+gm*0.6,y-gm*0.6);ctx.lineTo(x-gm*0.6,y+gm*0.6);
+        ctx.stroke();
+      }
     }
     // Last-move marker — gold ring around the stone
     if(lastMove){
@@ -191,7 +206,7 @@ window._gameFns.vinecross=function VC(a){
     var st=document.getElementById('VCst');if(st)st.textContent='AI thinking...';
     drawBoard();
     try{if(window._play)_play('tap');}catch(e2){}
-    setTimeout(aiMove,220+Math.random()*200);
+    aiTimer=setTimeout(function(){aiTimer=null;aiMove();},220+Math.random()*200);
   }
 
   function placeStone(r,c,who){
@@ -211,20 +226,23 @@ window._gameFns.vinecross=function VC(a){
       // portal shell: the engine win burst is a 2.8s transient — give the win a
       // persistent moment too (in-app the engine celebration owns it)
       if(window._lwGameEnd&&window.LW_PLAY)_lwGameEnd({won:true,title:'FIVE IN A ROW',line:'the vine completed',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
-      _e('game_win');try{_playWin();}catch(e){}_sr('vinecross',{w:true,s:moves});
+      _e('game_win');try{_playWin();}catch(e){}_sr('vinecross',{w:true,s:moves,lo:1});
       stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
       saveStats();renderStats();
     } else if(w===2){
       sm('🌸 The garden overgrew. Try again.');if(st)st.textContent='AI wins';
       if(window._lwGameEnd)_lwGameEnd({won:false,title:'THE GARDEN OVERGREW',line:'the AI lined up five first',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
-      _e('game_loss');try{_play('lose');}catch(e){}_sr('vinecross',{w:false,s:moves});
+      _e('game_loss');try{_play('lose');}catch(e){}_sr('vinecross',{w:false,s:moves,lo:1});
       stats.l++;stats.streak=0;saveStats();renderStats();
     } else {
       sm('Draw, the board is full.');if(st)st.textContent='Draw';
       if(window._lwGameEnd)_lwGameEnd({won:false,title:'A FULL BOARD DRAW',line:'nobody found five',retry:function(){window._VCN();},retryLabel:'\u21bb REMATCH'});
-      _sr('vinecross',{w:false,s:moves});
+      _sr('vinecross',{w:false,s:moves,lo:1});
       stats.d++;stats.streak=0;saveStats();renderStats();
     }
+    // Stop the session timer LAST — running it first zeroed startedAt before
+    // the _e() earn calls, defeating the shell's 6s anti-farm floor.
+    if(_xt)_xt();
     updateButtons();
   }
 

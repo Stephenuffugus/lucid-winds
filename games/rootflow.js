@@ -13,6 +13,9 @@ var COLORS=[
   '#E07A7A','#6BAD4A','#5B9BD5','#D4A843','#E08A4A',
   '#B578C2','#6BC7D4','#E8A0BF','#E8DCC8','#8B5A2B'
 ];
+// Colorblind cue: each color also gets a distinct glyph so twin dots can be
+// matched by shape, not just hue (fleet standard — same fix as Flood Fill).
+var SYMS=['●','▲','■','★','✚','◆','✿','☾','♦','▼'];
 var TIERS={
   seedling:{size:5,pairs:4,label:'SEEDLING',sub:'5×5, 4 paths',hints:3},
   sprout:{size:6,pairs:5,label:'SPROUT',sub:'6×6, 5 paths',hints:3},
@@ -44,12 +47,12 @@ var CANDIDATES_PER_PUZZLE=25;
     '.RFtierBtn{min-height:58px;padding:10px 14px;border-radius:12px;background:rgba(26,36,22,0.85);border:1.5px solid rgba(122,179,86,0.35);color:#e8dcc8;font-family:Georgia,serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;flex-direction:column;align-items:flex-start;gap:2px}',
     '.RFtierBtn:active{transform:scale(0.98);background:rgba(122,179,86,0.22)}',
     '.RFtierBtn .RFtlv{font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.18em;color:#c8a84b;display:flex;justify-content:space-between;width:100%}',
-    '.RFtierBtn .RFtsub{font-size:0.68rem;color:rgba(232,220,200,0.75)}',
-    '.RFtierSolved{font-family:DM Mono,monospace;font-size:0.62rem;color:#8fc57a;letter-spacing:0.04em}',
+    '.RFtierBtn .RFtsub{font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.75)}',
+    '.RFtierSolved{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:#8fc57a;letter-spacing:0.04em}',
     // Top bar
     '.RFtop{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;padding:7px 8px;margin:2px 0 6px;background:linear-gradient(135deg,rgba(26,31,23,0.85),rgba(13,16,12,0.92));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;font-family:Bebas Neue,sans-serif}',
     '.RFtopCell{text-align:center}',
-    '.RFtopLbl{font-size:0.55rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55)}',
+    '.RFtopLbl{font-size:0.7rem;font-weight:500;letter-spacing:0.16em;color:rgba(232,220,200,0.55)}',
     '.RFtopVal{font-family:DM Mono,monospace;font-size:0.82rem;color:#c8a84b;font-weight:700;margin-top:1px}',
     '.RFstatus{text-align:center;font-family:Georgia,serif;font-size:0.78rem;color:#e8dcc8;padding:2px 0 6px}',
     '.RFstatus em{color:#c8a84b;font-style:normal;font-weight:700}',
@@ -66,16 +69,16 @@ var CANDIDATES_PER_PUZZLE=25;
     '.RFarmE{left:40%;right:0;top:28%;bottom:28%}',
     '.RFarmW{left:0;right:40%;top:28%;bottom:28%}',
     '.RFcore{position:absolute;top:28%;bottom:28%;left:28%;right:28%;background:var(--rfc,#888);border-radius:20%;pointer-events:none}',
-    '.RFcore.dot{top:10%;bottom:10%;left:10%;right:10%;border-radius:50%;border:2px solid rgba(0,0,0,0.32);box-shadow:0 0 10px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.22),inset 0 -2px 0 rgba(0,0,0,0.22)}',
+    '.RFcore.dot{top:10%;bottom:10%;left:10%;right:10%;border-radius:50%;border:2px solid rgba(0,0,0,0.32);box-shadow:0 0 10px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.22),inset 0 -2px 0 rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,0.55);line-height:1;text-shadow:0 1px 0 rgba(255,255,255,0.25)}',
     '.RFcell.drawing .RFcore.dot{animation:rfGlow 1s ease-in-out infinite}',
     '.RFcell.connected .RFcore.dot{box-shadow:0 0 14px var(--rfc,transparent),inset 0 2px 0 rgba(255,255,255,0.25),inset 0 -2px 0 rgba(0,0,0,0.22)}',
     // Progress pips
     '.RFprog{display:flex;justify-content:center;gap:6px;padding:4px 0}',
-    '.RFpip{width:14px;height:14px;border-radius:50%;background:rgba(40,48,36,0.8);border:1.5px solid rgba(74,124,53,0.3);transition:transform .2s ease,box-shadow .2s ease}',
-    '.RFpip.on{background:var(--rfc,#8fc57a);border-color:transparent;transform:scale(1.15);box-shadow:0 0 6px var(--rfc,rgba(255,216,106,0.6))}',
+    '.RFpip{width:14px;height:14px;border-radius:50%;background:rgba(40,48,36,0.8);border:1.5px solid rgba(74,124,53,0.3);transition:transform .2s ease,box-shadow .2s ease;display:flex;align-items:center;justify-content:center;font-size:8px;line-height:1;color:rgba(255,255,255,0.35)}',
+    '.RFpip.on{background:var(--rfc,#8fc57a);border-color:transparent;transform:scale(1.15);box-shadow:0 0 6px var(--rfc,rgba(255,216,106,0.6));color:rgba(0,0,0,0.5)}',
     // Controls
     '.RFctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;padding:6px 2px}',
-    '.RFbtn{min-height:44px;padding:8px 10px;font-family:Georgia,serif;font-size:0.74rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
+    '.RFbtn{min-height:48px;padding:8px 10px;font-family:Georgia,serif;font-size:0.74rem;letter-spacing:0.1em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
     '.RFbtn:active{transform:scale(0.96);background:rgba(200,168,75,0.2)}',
     '.RFbtn.primary{background:linear-gradient(180deg,rgba(122,179,86,0.3),rgba(74,124,53,0.4));border-color:rgba(122,179,86,0.55);color:#8fc57a;font-weight:700}',
     '.RFbtn[disabled]{opacity:0.4;pointer-events:none}',
@@ -222,11 +225,11 @@ function startPath(r,c){
   var cell=S.cells[r][c];
   if(!cell || !cell.isDot)return;
   // Clear any existing path of this color
-  clearColor(cell.color);
+  var spCleared=clearColor(cell.color);
   S.drawing={color:cell.color, points:[[r,c]]};
   S.cells[r][c].color=cell.color;
   S.cells[r][c].pathIdx=0;
-  refreshColor(cell.color);
+  refreshColor(cell.color, spCleared);
 }
 
 function extendPath(r,c){
@@ -240,13 +243,15 @@ function extendPath(r,c){
   // Backtrack: revisit within current path truncates
   for(var i=0;i<points.length;i++){
     if(points[i][0]===r&&points[i][1]===c){
+      var btCleared=[];
       for(var j=i+1;j<points.length;j++){
         var p=points[j];
         S.cells[p[0]][p[1]].color=null;
         S.cells[p[0]][p[1]].pathIdx=-1;
+        btCleared.push(p);
       }
       points.length=i+1;
-      refreshColor(S.drawing.color);
+      refreshColor(S.drawing.color, btCleared);
       return;
     }
   }
@@ -256,8 +261,8 @@ function extendPath(r,c){
   // If entering another color's path cells, clear that color's path
   if(target.color!==null && target.color!==S.drawing.color){
     var displaced=target.color;
-    clearColor(displaced);
-    refreshColor(displaced);
+    var dCleared=clearColor(displaced);
+    refreshColor(displaced, dCleared);
   }
   points.push([r,c]);
   S.cells[r][c].color=S.drawing.color;
@@ -284,27 +289,30 @@ function endPath(){
     var last=points[points.length-1];
     var isComplete = S.cells[last[0]][last[1]].isDot;
     if(!isComplete){
-      clearColor(S.drawing.color);
-      refreshColor(S.drawing.color);
+      var epCleared=clearColor(S.drawing.color);
+      refreshColor(S.drawing.color, epCleared);
     }
   } else {
-    clearColor(S.drawing.color);
-    refreshColor(S.drawing.color);
+    var epCleared2=clearColor(S.drawing.color);
+    refreshColor(S.drawing.color, epCleared2);
   }
   S.drawing=null;
   updateProgress();
 }
 
 function clearColor(color){
+  var cleared=[];
   S.paths[color]=[];
   for(var r=0;r<S.size;r++){
     for(var c=0;c<S.size;c++){
       if(S.cells[r][c].color===color && !S.cells[r][c].isDot){
         S.cells[r][c].color=null;
         S.cells[r][c].pathIdx=-1;
+        cleared.push([r,c]);
       }
     }
   }
+  return cleared;
 }
 
 // A color counts as solved if the PLAYER's path validly connects its two
@@ -321,7 +329,8 @@ function colorConnected(c){
 }
 
 function useHint(){
-  if(!S||S.hintsLeft<=0){sm('No hints left');return;}
+  if(!S||S.phase!=='play')return;
+  if(S.hintsLeft<=0){sm('No hints left');return;}
   for(var c=0;c<S.pairs;c++){
     if(colorConnected(c))continue;
     var sol=S.solutionPaths[c];
@@ -332,19 +341,18 @@ function useHint(){
       var cell=S.cells[pt[0]][pt[1]];
       if(cell.color!=null&&cell.color!==c&&!cell.isDot){
         var oc=cell.color;
-        S.paths[oc]=[];
-        clearColor(oc);
-        refreshColor(oc);
+        var ocCleared=clearColor(oc);
+        refreshColor(oc, ocCleared);
       }
     });
     // Rebuild this color from generator's solution
-    clearColor(c);
+    var hCleared=clearColor(c);
     sol.forEach(function(pt, idx){
       S.cells[pt[0]][pt[1]].color=c;
       S.cells[pt[0]][pt[1]].pathIdx=idx;
     });
     S.paths[c]=sol.slice();
-    refreshColor(c);
+    refreshColor(c, hCleared);
     S.hintsLeft--;
     updateHUD();
     updateProgress();
@@ -362,7 +370,7 @@ function pathsEqual(a, b){
 }
 
 function resetPuzzle(){
-  if(!S)return;
+  if(!S||S.phase!=='play')return;
   for(var c=0;c<S.pairs;c++) clearColor(c);
   S.drawing=null;
   refreshAll();
@@ -370,6 +378,7 @@ function resetPuzzle(){
 }
 
 function checkWin(){
+  if(!S||S.phase!=='play')return;
   var connected=0;
   var covered=0;
   for(var c=0;c<S.pairs;c++){
@@ -390,6 +399,7 @@ function checkWin(){
   }
   // Win
   S.phase='won';
+  updateControls();
   stopTimer();
   _e('game_win');_playWin();
   var elapsed=Math.round((Date.now()-S.startTime)/1000);
@@ -482,6 +492,7 @@ function buildGridCells(){
   cellEls={};
   var size=S.size;
   var cellSize = size<=5?54 : size<=6?48 : size<=7?42 : size<=8?37 : 33;
+  S.cellSize=cellSize;
   gridEl.style.gridTemplateColumns='repeat('+size+','+cellSize+'px)';
   gridEl.innerHTML='';
   for(var r=0;r<size;r++){
@@ -502,18 +513,17 @@ function buildGridCells(){
 function refreshAll(){
   for(var r=0;r<S.size;r++) for(var c=0;c<S.size;c++) renderCell(r,c);
 }
-function refreshColor(color){
-  // Re-render every cell of the given color plus its immediate neighbors
-  // so arms pointing into/out of the color are accurate.
+function refreshColor(color, extraCells){
+  // Delta render: re-render every cell currently belonging to this color,
+  // plus any cells the caller just cleared (extraCells) so their DOM resets
+  // to blank. A cell's own arms are derived purely from its path array, so
+  // neighbors never need a re-render for THIS color's change — no full
+  // refreshAll() fallback needed (that used to rebuild all 81 cells on
+  // every drag step on KEEPER tier).
   for(var r=0;r<S.size;r++) for(var c=0;c<S.size;c++){
-    var cell=S.cells[r][c];
-    if(cell.color===color) renderCell(r,c);
-    else if(cell.color===null && (S.cells[r][c].wasColor===color)) renderCell(r,c);
+    if(S.cells[r][c].color===color) renderCell(r,c);
   }
-  // Also re-render any cell whose color we just cleared (wasColor tracking
-  // is overkill; simpler to just re-render every cell whose displayed
-  // state might need to change). Use refreshAll when in doubt.
-  refreshAll();
+  if(extraCells) for(var i=0;i<extraCells.length;i++) renderCell(extraCells[i][0], extraCells[i][1]);
 }
 
 // Is this path fully connecting the two dots?
@@ -574,7 +584,8 @@ function renderCell(r,c){
   // Core: dot circle for endpoints, small square for middle cells
   var coreHTML;
   if(cell.isDot){
-    coreHTML='<span class="RFcore dot"></span>';
+    var glyphFs=Math.round((S.cellSize||40)*0.55);
+    coreHTML='<span class="RFcore dot" style="font-size:'+glyphFs+'px">'+SYMS[color%SYMS.length]+'</span>';
     classes+=' dot';
     if(S.drawing && S.drawing.color===color){
       var p0=S.drawing.points[0];
@@ -608,7 +619,7 @@ function updateProgress(){
       var a=pl[0], b=pl[pl.length-1];
       if(S.cells[a[0]][a[1]].isDot && S.cells[b[0]][b[1]].isDot) connected=true;
     }
-    html+='<div class="RFpip'+(connected?' on':'')+'" style="--rfc:'+col+'"></div>';
+    html+='<div class="RFpip'+(connected?' on':'')+'" style="--rfc:'+col+'">'+SYMS[c%SYMS.length]+'</div>';
   }
   progEl.innerHTML=html;
   // Status: count of connected + fill%

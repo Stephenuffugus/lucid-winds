@@ -2,7 +2,7 @@
  * Sky Wolf Studios — Inline game copy: checkers
  *
  * COPY of the inline GCK mount function from index.html
- * lines 68726-69183.
+ * lines 68731-69217.
  *
  * DUPLICATE, NEVER MOVE. The original code in index.html is the
  * live source of truth for the in-LW play surface. This copy serves
@@ -26,6 +26,10 @@
     var bd=new Array(64).fill(0),sel=-1,tn=1,mv=0,lastFrom=-1,lastTo=-1,mustJump=-1,gameOver=false;
     var undoStack=[];      // per-turn snapshots of full state
     var hintSeq=null;      // {from, to, cap:[...]} highlighted for 3s
+    var noProgress=0;       // half-moves since last capture/man-advance — 50 = draw
+    // Human capture count survives undo (part of the snapshot); humanCapHW never
+    // decreases, so redoing an already-paid capture after undo does not re-earn.
+    var humanCapCount=0,humanCapHW=0;
     var diff=2;            // 1=seedling, 2=sapling, 3=grove, 4=old growth
     try{var _sd=parseInt(localStorage.getItem('lw_ck_diff'));if(_sd>=1&&_sd<=4)diff=_sd;}catch(e){}
     var stats={w:0,l:0,d:0,streak:0,best:0};
@@ -40,19 +44,19 @@
     ms(a,'<span style="color:#7ab356">&#9679;</span> You &nbsp; <span style="color:#C8A84B">&#9679;</span> AI');mm(a);
     // Stats strip
     var statsRow=document.createElement('div');statsRow.id='CKstats';
-    statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.64rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
+    statsRow.style.cssText='display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em';
     a.appendChild(statsRow);
     // Directions
     var dir=document.createElement('div');
-    dir.style.cssText='text-align:center;padding:0.35rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.58rem,1.7vw,0.72rem);color:var(--cream);line-height:1.4;opacity:0.78';
+    dir.style.cssText='text-align:center;padding:0.35rem 0.8rem;margin:0.2rem auto;max-width:400px;font-family:DM Sans,sans-serif;font-size:clamp(0.7rem,1.7vw,0.72rem);color:var(--cream);line-height:1.4;opacity:0.78';
     dir.innerHTML='Tap your <strong style="color:#7ab356">seedling</strong>, then tap where to move. Jump over <strong style="color:#C8A84B">pods</strong> to capture — multi-jumps are forced.';
     a.appendChild(dir);
     var gd=document.createElement('div');gd.className='ckb';gd.id='CK';a.appendChild(gd);
     // Tools: Undo + Hint
     var tools=document.createElement('div');
     tools.style.cssText='display:flex;gap:6px;justify-content:center;padding:4px 0';
-    tools.innerHTML='<button class="gb" id="CKundo" onclick="_CKU()" style="min-height:44px;padding:8px 14px;font-size:0.65rem">↩ UNDO</button>'
-      +'<button class="gb" id="CKhint" onclick="_CKH()" style="min-height:44px;padding:8px 14px;font-size:0.65rem">💡 HINT</button>';
+    tools.innerHTML='<button class="gb" id="CKundo" onclick="_CKU()" style="min-height:48px;padding:8px 14px;font-size:0.7rem">↩ UNDO</button>'
+      +'<button class="gb" id="CKhint" onclick="_CKH()" style="min-height:48px;padding:8px 14px;font-size:0.7rem">💡 HINT</button>';
     a.appendChild(tools);
     mc(a).innerHTML='<select class="gsl" id="CKd" onchange="_CKSetDiff(this.value)" style="min-width:140px">'
       +'<option value="1">Seedling</option>'
@@ -66,7 +70,7 @@
       for(var r=0;r<3;r++)for(var c=0;c<8;c++)if((r+c)%2===1)bd[r*8+c]=2;
       for(var r=5;r<8;r++)for(var c=0;c<8;c++)if((r+c)%2===1)bd[r*8+c]=1;
       sel=-1;tn=1;mv=0;lastFrom=-1;lastTo=-1;mustJump=-1;gameOver=false;
-      undoStack=[];hintSeq=null;
+      undoStack=[];hintSeq=null;noProgress=0;humanCapCount=0;humanCapHW=0;
       var dsel=document.getElementById('CKd');if(dsel)dsel.value=String(diff);
     }
   
@@ -341,10 +345,11 @@
   
     // ── Interactions ──────────────────────────────────────────────
     function snapshot(){
-      return {bd:bd.slice(),sel:sel,tn:tn,mv:mv,lastFrom:lastFrom,lastTo:lastTo,mustJump:mustJump,gameOver:gameOver};
+      return {bd:bd.slice(),sel:sel,tn:tn,mv:mv,lastFrom:lastFrom,lastTo:lastTo,mustJump:mustJump,gameOver:gameOver,noProgress:noProgress,humanCapCount:humanCapCount};
     }
     function restore(s){
       bd=s.bd.slice();sel=s.sel;tn=s.tn;mv=s.mv;lastFrom=s.lastFrom;lastTo=s.lastTo;mustJump=s.mustJump;gameOver=s.gameOver;
+      noProgress=s.noProgress||0;humanCapCount=s.humanCapCount||0; // undo/redo can't re-earn past the HW mark
     }
   
     function onClick(idx){
@@ -397,11 +402,20 @@
     }
   
     function doMove(m){
+      var movingPiece=bd[m.f],wasMan=(movingPiece===1||movingPiece===2);
       _play('snap');bd[m.t]=bd[m.f];bd[m.f]=0;
       lastFrom=m.f;lastTo=m.t;mv++;
-      // Earn only on the HUMAN's jumps (pieces 1/3) — this used to pay the
-      // player every time the AI captured their pieces.
-      if(m.j){bd[m.cap]=0;if(bd[m.t]===1||bd[m.t]===3)_e('capture');}
+      if(m.j){
+        bd[m.cap]=0;noProgress=0;
+        // Earn only on the HUMAN's jumps (pieces 1/3) — this used to pay the
+        // player every time the AI captured their pieces. High-water mark
+        // (humanCapHW never decreases) means undoing then re-making the SAME
+        // capture does not re-earn, since humanCapCount is restored from the
+        // snapshot too and can't climb past what was already paid.
+        if(bd[m.t]===1||bd[m.t]===3){humanCapCount++;if(humanCapCount>humanCapHW){humanCapHW=humanCapCount;_e('capture');}}
+      } else {
+        noProgress=wasMan?0:noProgress+1; // man advance resets; king shuffle counts up
+      }
     }
     function crown(pos){
       var r=Math.floor(pos/8);
@@ -440,13 +454,28 @@
       var p1=0,p2=0;for(var i=0;i<64;i++){if(bd[i]===1||bd[i]===3)p1++;if(bd[i]===2||bd[i]===4)p2++;}
       var p1m=allSequences(bd,1).length,p2m=allSequences(bd,2).length;
       if(p2===0||p2m===0){
-        gameOver=true;_e('game_win');_playWin();sm('You win! '+Math.ceil(mv/2)+' rounds');_sr('checkers',{w:true,s:mv});
+        gameOver=true;_e('game_win');_playWin();sm('You win! '+Math.ceil(mv/2)+' rounds');_sr('checkers',{w:true,s:mv,lo:1});
         stats.w++;stats.streak++;if(stats.streak>stats.best)stats.best=stats.streak;
         saveStats();renderStats();
+        if(window._lwGameEnd)_lwGameEnd({won:true,title:'YOU WIN',
+          line:Math.ceil(mv/2)+' rounds · streak '+stats.streak,sub:'best streak '+stats.best,
+          retry:function(){window._CKN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       } else if(p1===0||p1m===0){
-        gameOver=true;_e('game_loss');_play('lose');sm('AI wins');_sr('checkers',{w:false,s:0});
+        gameOver=true;_e('game_loss');_play('lose');sm('AI wins');_sr('checkers',{w:false,s:0,lo:1});
         stats.l++;stats.streak=0;
         saveStats();renderStats();
+        if(window._lwGameEnd)_lwGameEnd({won:false,title:'AI WINS',
+          line:Math.ceil(mv/2)+' rounds',sub:'best streak '+stats.best,
+          retry:function(){window._CKN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
+      } else if(noProgress>=50){
+        // 50-half-move no-capture/no-man-advance rule — stops king-vs-king
+        // endgames (and similar) from shuffling forever with no exit.
+        gameOver=true;_play('lose');sm('Draw — 50 moves with no capture');_sr('checkers',{w:false,s:0,lo:1});
+        stats.d++;stats.streak=0;
+        saveStats();renderStats();
+        if(window._lwGameEnd)_lwGameEnd({won:false,title:'DRAW',
+          line:'50 moves with no capture or advance',sub:'best streak '+stats.best,
+          retry:function(){window._CKN();},retryLabel:'↻ NEW GAME',viewLabel:'view the board'});
       }
     }
     function saveStats(){try{localStorage.setItem('lw_ck_stats',JSON.stringify(stats));}catch(e){}}

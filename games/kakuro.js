@@ -118,22 +118,22 @@ var DIFF_META={
     '.KKdiffBtn{min-height:58px;padding:10px 14px;border-radius:12px;background:rgba(26,36,22,0.85);border:1.5px solid rgba(122,179,86,0.35);color:#e8dcc8;font-family:Georgia,serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;flex-direction:column;align-items:flex-start;gap:2px}',
     '.KKdiffBtn:active{transform:scale(0.98);background:rgba(122,179,86,0.22)}',
     '.KKdiffBtn .KKdlv{font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.18em;color:#c8a84b;display:flex;justify-content:space-between;width:100%}',
-    '.KKdiffBtn .KKdsub{font-size:0.68rem;color:rgba(232,220,200,0.75)}',
-    '.KKdiffBest{font-family:DM Mono,monospace;font-size:0.62rem;color:#8fc57a;letter-spacing:0.04em}',
+    '.KKdiffBtn .KKdsub{font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.75)}',
+    '.KKdiffBest{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:#8fc57a;letter-spacing:0.04em}',
     // Top bar (difficulty / timer / errors)
     '.KKtop{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:6px 8px;margin:2px 0 6px;background:linear-gradient(135deg,rgba(26,31,23,0.85),rgba(13,16,12,0.92));border:1.5px solid rgba(122,179,86,0.25);border-radius:10px;font-family:Bebas Neue,sans-serif}',
     '.KKtopCell{text-align:center}',
-    '.KKtopLbl{font-size:0.58rem;letter-spacing:0.16em;color:rgba(232,220,200,0.55)}',
+    '.KKtopLbl{font-size:0.7rem;font-weight:500;letter-spacing:0.16em;color:rgba(232,220,200,0.55)}',
     '.KKtopVal{font-family:DM Mono,monospace;font-size:0.95rem;color:#c8a84b;font-weight:700;margin-top:1px}',
     // Active-run readout
     '.KKrun{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px 8px;margin:4px 0;background:rgba(12,16,10,0.55);border:1.5px solid rgba(122,179,86,0.22);border-radius:9px;font-family:Georgia,serif;min-height:48px;align-items:center}',
     '.KKrunCell{text-align:center}',
-    '.KKrunLbl{font-family:Bebas Neue,sans-serif;font-size:0.58rem;letter-spacing:0.14em;color:rgba(232,220,200,0.55)}',
+    '.KKrunLbl{font-family:Bebas Neue,sans-serif;font-size:0.7rem;font-weight:500;letter-spacing:0.14em;color:rgba(232,220,200,0.55)}',
     '.KKrunFrac{font-family:DM Mono,monospace;font-size:0.84rem;color:#e8dcc8;margin-top:2px}',
-    '.KKrunNeed{font-size:0.58rem;color:rgba(232,220,200,0.6);margin-top:2px}',
+    '.KKrunNeed{font-size:0.7rem;font-weight:500;color:rgba(232,220,200,0.6);margin-top:2px}',
     '.KKrunFrac.done{color:#8fc57a}',
     '.KKrunFrac.over{color:#e07a7a}',
-    '.KKcombos{font-family:DM Mono,monospace;font-size:0.6rem;color:#c8a84b;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(200,168,75,0.4);margin-top:2px;padding:1px 4px;border-radius:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}',
+    '.KKcombos{font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:#c8a84b;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(200,168,75,0.4);margin-top:2px;padding:6px 8px;border-radius:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:inline-block}',
     '.KKcombos:active{background:rgba(200,168,75,0.15)}',
     // Grid
     '.KKboardWrap{display:flex;justify-content:center;padding:4px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}',
@@ -149,6 +149,7 @@ var DIFF_META={
     '.KKcell.white.selected{background:rgba(200,168,75,0.42);outline:2px solid #c8a84b;outline-offset:-2px;z-index:3}',
     '.KKcell.white.highlighted{background:rgba(122,179,86,0.28)}',
     '.KKcell.white.error{background:rgba(224,122,122,0.32);color:#a03030}',
+    '.KKcell.white.error::after{content:"!";position:absolute;top:1px;right:3px;font-size:0.55rem;font-weight:700;color:#a03030;line-height:1}',
     '.KKcell.white.solved{background:rgba(180,220,150,0.35);color:#1a1f17;animation:kkSolved .5s ease}',
     '.KKpencils{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-size:0.56rem;color:rgba(122,179,86,0.95);font-family:DM Mono,monospace;font-weight:700;pointer-events:none}',
     '.KKpencils span{display:flex;align-items:center;justify-content:center}',
@@ -162,7 +163,7 @@ var DIFF_META={
     '.KKnumBtn.modeToggle.active{background:rgba(200,168,75,0.22);color:#ffdc70;border-color:#c8a84b}',
     // Controls
     '.KKctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;padding:6px 2px}',
-    '.KKbtn{min-height:44px;padding:8px 10px;font-family:Georgia,serif;font-size:0.74rem;letter-spacing:0.08em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
+    '.KKbtn{min-height:48px;padding:8px 10px;font-family:Georgia,serif;font-size:0.74rem;letter-spacing:0.08em;border-radius:9px;background:rgba(26,31,23,0.8);border:1.5px solid rgba(220,180,120,0.32);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:4px}',
     '.KKbtn:active{transform:scale(0.96);background:rgba(200,168,75,0.22)}',
     '.KKbtn.primary{background:linear-gradient(180deg,rgba(122,179,86,0.34),rgba(74,124,53,0.4));border-color:rgba(122,179,86,0.55);color:#8fc57a;font-weight:700}',
     '.KKbtn.danger{background:rgba(112,40,40,0.35);border-color:rgba(224,122,122,0.42);color:#ffb3b3}',
@@ -453,12 +454,14 @@ function enterDigit(n){
     togglePencil(r,c,n);
     return;
   }
-  if(S.player[r][c]>0&&S.player[r][c]!==n)S.errors++;
+  var kkChanged=S.player[r][c]!==n;
+  var kkConflict=hasConflict(r,c,n);
+  if(kkChanged&&kkConflict)S.errors++;
   S.player[r][c]=n;
   for(var i=0;i<9;i++)S.pencils[r][c][i]=false;
   autoEliminatePencils(r,c,n);
   _play('tap');
-  _e('progress');
+  if(kkChanged&&!kkConflict)_e('progress');
   refreshCells();
   updateRunPanel();
   updateTop();
@@ -485,6 +488,7 @@ function togglePencilMode(){
   updateNumpad();
 }
 function autoPencilAll(){
+  if(!S||S.phase!=='play')return;
   var size=S.grid.length;
   for(var r=0;r<size;r++){
     for(var c=0;c<size;c++){
@@ -533,6 +537,7 @@ function autoEliminatePencils(r,c,n){
 // freeze; if that aborts, reveal from the stored solution anyway with
 // a nudge about the conflict.
 function useHint(){
+  if(!S||S.phase!=='play')return;
   if(S.hints<=0){sm('No hints left');return;}
   if(!S.selected){sm('Tap a cell to hint');return;}
   var r=S.selected[0], c=S.selected[1];
@@ -610,6 +615,7 @@ function checkWin(){
   // Win!
   S.phase='won';
   stopTimer();
+  updateControls();
   _e('game_win'); _playWin();
   var elapsed=Math.round((Date.now()-S.startTime)/1000);
   var stars=(S.errors===0&&S.hints===DIFF_META[S.difficulty].hints)?3:(S.errors===0?2:1);
@@ -981,6 +987,7 @@ function showWinCard(elapsed, stars, isNewBest){
     '<div class="KKwinStats">Time '+fmtTime(elapsed)+(isNewBest?'  <span style="color:#ffdc70">★ new best</span>':'  ·  best '+bestStr)+'<br>Errors '+S.errors+'  ·  Hints used '+(DIFF_META[S.difficulty].hints-S.hints)+'</div>';
   winCard.appendChild(mkBtn('↻ NEXT PUZZLE','primary',function(){ startGame(S.difficulty); }));
   pan.appendChild(winCard);
+  if(winCard.scrollIntoView)winCard.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 // ── Difficulty picker ───────────────────────────────────────────────────
@@ -1042,7 +1049,7 @@ function startGame(difficulty){
       S.pencils[r][c]=[false,false,false,false,false,false,false,false,false];
     }
   }
-  if(pan)pan.innerHTML='';
+  if(pan){pan.remove();pan=null;}
   buildDOM(hostEl);
   buildGridCells();
   updateTop();
@@ -1054,6 +1061,11 @@ function startGame(difficulty){
 
 window._gameFns = window._gameFns || {};
 window._gameFns.kakuro = function(a){
+  // Sweep any stale combos overlay left behind by a previous mount (the
+  // module-level combosModal ref gets wiped below, so id-lookup is the
+  // only way back to an orphan).
+  var kkStaleModal=document.getElementById('KKcombosModal');
+  if(kkStaleModal)kkStaleModal.remove();
   // Reset refs
   pan=null; topBar=null; runPanel=null; gridEl=null; numpad=null; ctrls=null;
   winCard=null; combosModal=null;
@@ -1063,6 +1075,8 @@ window._gameFns.kakuro = function(a){
   stopTimer();
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     try{stopTimer();}catch(e){}
+    try{closeCombosModal();}catch(e){}
+    try{var m=document.getElementById('KKcombosModal'); if(m)m.remove();}catch(e){}
   });
   hostEl=a;
   showDifficultyPicker();

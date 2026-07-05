@@ -21,6 +21,7 @@ window._gameFns.recall=function RC(a){
   var targetCount=3,distractorCount=3,showTime=6000,waitTime=4000;
   var targets=[],allChoices=[],selected={},phase='';
   var timers=[];
+  var intervals=[];
 
   ms(a,'Round <span id="RCr">1</span>/'+totalRounds+' · Score <span id="RCs">0</span>');
   mm(a);
@@ -29,7 +30,7 @@ window._gameFns.recall=function RC(a){
   a.appendChild(pan);
   mc(a).innerHTML='<button class="gb-new" onclick="_RCN()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
-  function clearTimers(){for(var i=0;i<timers.length;i++)clearTimeout(timers[i]);timers=[];}
+  function clearTimers(){for(var i=0;i<timers.length;i++)clearTimeout(timers[i]);timers=[];for(var j=0;j<intervals.length;j++)clearInterval(intervals[j]);intervals=[];}
   function shuffle(ar){for(var i=ar.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ar[i];ar[i]=ar[j];ar[j]=t;}return ar;}
 
   // Wait phases tripled — Stephen wants the count-back portion much
@@ -75,6 +76,7 @@ window._gameFns.recall=function RC(a){
       var t=document.getElementById('RCtm');if(t)t.textContent=Math.max(0,remaining)+'s';
       if(remaining<=0)clearInterval(iv);
     },1000);
+    intervals.push(iv);
     timers.push(setTimeout(function(){clearInterval(iv);phaseWait();},showTime));
   }
 
@@ -93,6 +95,7 @@ window._gameFns.recall=function RC(a){
       var w=document.getElementById('RCwc');if(w)w.textContent=Math.max(0,remaining);
       if(remaining<=0)clearInterval(iv);
     },1000);
+    intervals.push(iv);
     timers.push(setTimeout(function(){clearInterval(iv);phaseRecall();},waitTime));
   }
 
@@ -142,9 +145,11 @@ window._gameFns.recall=function RC(a){
     for(i=0;i<allChoices.length;i++){
       var el=document.getElementById('RCc'+i);if(!el)continue;
       var isT=targetNames[allChoices[i].name],wasS=!!selected[i];
-      if(wasS&&isT){el.style.borderColor='var(--sage)';el.style.background='rgba(122,179,86,0.25)';}
-      else if(wasS&&!isT){el.style.borderColor='#c47a7a';el.style.background='rgba(196,122,122,0.2)';}
-      else if(!wasS&&isT){el.style.borderColor='var(--gold)';el.style.background='rgba(212,168,67,0.15)';}
+      var glyph='',gc='';
+      if(wasS&&isT){el.style.borderColor='var(--sage)';el.style.background='rgba(122,179,86,0.25)';glyph='✓';gc='var(--sage)';}
+      else if(wasS&&!isT){el.style.borderColor='#c47a7a';el.style.background='rgba(196,122,122,0.2)';glyph='✗';gc='#c47a7a';}
+      else if(!wasS&&isT){el.style.borderColor='var(--gold)';el.style.background='rgba(212,168,67,0.15)';glyph='○';gc='var(--gold)';}
+      if(glyph){el.style.position='relative';el.insertAdjacentHTML('beforeend','<span style="position:absolute;top:2px;right:4px;font-size:0.85rem;font-weight:700;color:'+gc+';">'+glyph+'</span>');}
     }
     var pts=Math.round(correct/targetCount*100);
     score+=pts;

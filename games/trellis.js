@@ -45,6 +45,8 @@ window._gameFns.trellis = function TR(a){
 
   var board,bag,playerRack,aiRack,playerScore,aiScore;
   var isPlayerTurn,gameOver,consecutivePasses,tentativeTiles,selectedRackIndex;
+  var TRgen=0; // bumped by New Game / cleanup so a stale AI-turn or overlay timer can't act on a fresh/gone game
+  var trSwapMode=false,trSwapSel=[]; // in-game SWAP tile picker (replaces prompt())
   var wordSet={},wordSetBuilt=false;
   var stats={w:0,l:0,d:0,streak:0,best:0};
   try{var _ss=localStorage.getItem('lw_tr_stats');if(_ss){var _p=JSON.parse(_ss);for(var _k in _p)stats[_k]=_p[_k];}}catch(e){}
@@ -259,25 +261,27 @@ window._gameFns.trellis = function TR(a){
       '.tr-center-star{font-size:clamp(12px,2.8vw,18px);opacity:0.9;}',
       // Rack
       '#TRrack{display:flex;gap:5px;justify-content:center;padding:8px 6px;flex-wrap:wrap;background:linear-gradient(180deg,rgba(42,30,14,0.55),rgba(28,20,10,0.65));border-radius:10px;margin:6px auto;max-width:clamp(280px,94vw,400px);border:1px solid rgba(200,168,75,0.18);box-shadow:inset 0 2px 6px rgba(0,0,0,0.35);}',
-      '.tr-rack-tile{width:44px;height:54px;border-radius:6px;background:linear-gradient(180deg,#fbf6e1,#e8dba8);color:#1a1205;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:grab;font-weight:700;border:2px solid #8a7044;box-shadow:0 3px 6px rgba(0,0,0,0.4),inset 0 -2px 0 rgba(110,80,20,0.4),inset 0 1px 0 rgba(255,255,255,0.6);position:relative;font-family:Bebas Neue,sans-serif;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;}',
+      '.tr-rack-tile{width:48px;height:58px;border-radius:6px;background:linear-gradient(180deg,#fbf6e1,#e8dba8);color:#1a1205;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:grab;font-weight:700;border:2px solid #8a7044;box-shadow:0 3px 6px rgba(0,0,0,0.4),inset 0 -2px 0 rgba(110,80,20,0.4),inset 0 1px 0 rgba(255,255,255,0.6);position:relative;font-family:Bebas Neue,sans-serif;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none;}',
       '.tr-rack-tile:active{cursor:grabbing;transform:translateY(-3px) scale(1.02);box-shadow:0 8px 14px rgba(0,0,0,0.5),inset 0 -2px 0 rgba(110,80,20,0.4);}',
       '.tr-rack-tile.sel{border-color:#c8a84b;transform:translateY(-4px) scale(1.04);box-shadow:0 10px 18px rgba(200,168,75,0.35),inset 0 -2px 0 rgba(110,80,20,0.4);}',
       '.tr-rack-tile .letter{font-size:22px;line-height:1;}',
       '.tr-rack-tile .val{position:absolute;bottom:3px;right:5px;font-family:DM Mono,monospace;font-size:10px;opacity:0.65;}',
-      '.tr-rack-empty{width:44px;height:54px;border-radius:6px;background:rgba(60,50,30,0.3);border:2px dashed rgba(200,168,75,0.3);}',
+      '.tr-rack-empty{width:48px;height:58px;border-radius:6px;background:rgba(60,50,30,0.3);border:2px dashed rgba(200,168,75,0.3);}',
       // Drag ghost
-      '.tr-drag-ghost{position:fixed;pointer-events:none;z-index:200000;width:44px;height:54px;border-radius:6px;background:linear-gradient(180deg,#fff5c4,#e8b830);color:#1a1205;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-family:Bebas Neue,sans-serif;box-shadow:0 14px 30px rgba(0,0,0,0.6),inset 0 -2px 0 rgba(110,80,20,0.4);transform:translate(-50%,-50%) scale(1.15);opacity:0.95;}',
+      '.tr-drag-ghost{position:fixed;pointer-events:none;z-index:200000;width:48px;height:58px;border-radius:6px;background:linear-gradient(180deg,#fff5c4,#e8b830);color:#1a1205;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-family:Bebas Neue,sans-serif;box-shadow:0 14px 30px rgba(0,0,0,0.6),inset 0 -2px 0 rgba(110,80,20,0.4);transform:translate(-50%,-50%) scale(1.15);opacity:0.95;}',
       '.tr-drag-ghost .letter{font-size:22px;line-height:1;}',
       '.tr-drag-ghost .val{position:absolute;bottom:3px;right:5px;font-family:DM Mono,monospace;font-size:10px;opacity:0.7;}',
       // Legend + stats
-      '.tr-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.62rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em;}',
+      '.tr-stats{display:flex;justify-content:center;gap:14px;padding:2px 0;font-family:DM Mono,monospace;font-size:0.7rem;color:rgba(232,220,200,0.72);letter-spacing:0.06em;}',
       '.tr-stats strong{color:var(--gold);}',
       '.tr-score-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-family:Bebas Neue,sans-serif;letter-spacing:1px;background:rgba(26,31,23,0.6);border-radius:8px;margin:4px auto;max-width:clamp(280px,94vw,400px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);}',
       '.tr-score-bar .you{color:#7ab356;font-size:.95rem;}',
-      '.tr-score-bar .bag{color:rgba(232,220,200,0.68);font-size:.65rem;font-family:DM Mono,monospace;}',
+      '.tr-score-bar .bag{color:rgba(232,220,200,0.68);font-size:.7rem;font-family:DM Mono,monospace;}',
       '.tr-score-bar .cpu{color:#c47a7a;font-size:.95rem;}',
       '.tr-btn-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;padding:4px;margin:2px auto;}',
-      '.tr-btn-row .gb{min-height:44px;padding:8px 12px;font-size:0.68rem;}',
+      '.tr-btn-row .gb{min-height:48px;padding:8px 12px;font-size:0.7rem;}',
+      '.tr-swap-hint{text-align:center;font-family:DM Mono,monospace;font-size:0.7rem;color:var(--gold);letter-spacing:0.05em;padding:2px 0;}',
+      '.tr-swap-mark{position:absolute;top:-6px;left:-6px;width:16px;height:16px;border-radius:50%;background:#7ab356;color:#0d100c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.5);}',
       '.tr-btn-row .gb.primary{background:rgba(122,179,86,0.24);color:var(--sage);border-color:rgba(122,179,86,0.55);}',
       '.tr-btn-row .gb.primary:active{background:rgba(122,179,86,0.4);}',
       // Rules modal
@@ -329,27 +333,36 @@ window._gameFns.trellis = function TR(a){
     }
     h+='</div>';
     // Rack
+    if(trSwapMode)h+='<div class="tr-swap-hint">Tap tiles to swap</div>';
     h+='<div id="TRrack">';
     for(var i=0;i<playerRack.length;i++){
       var placed=false;
       for(var t=0;t<tentativeTiles.length;t++)if(tentativeTiles[t].rackIndex===i){placed=true;break;}
       if(placed){h+='<div class="tr-rack-empty"></div>';continue;}
       var L=playerRack[i],isBl=L===' ';
-      var sel=i===selectedRackIndex;
-      h+='<div class="tr-rack-tile'+(sel?' sel':'')+'" data-idx="'+i+'" data-letter="'+L+'"><span class="letter">'+(isBl?'?':L)+'</span><span class="val">'+(isBl?'0':TILE_VALUES[L])+'</span></div>';
+      var sel=trSwapMode?(trSwapSel.indexOf(i)>=0):(i===selectedRackIndex);
+      var mark=(trSwapMode&&sel)?'<span class="tr-swap-mark">✓</span>':'';
+      h+='<div class="tr-rack-tile'+(sel?' sel':'')+'" data-idx="'+i+'" data-letter="'+L+'">'+mark+'<span class="letter">'+(isBl?'?':L)+'</span><span class="val">'+(isBl?'0':TILE_VALUES[L])+'</span></div>';
     }
     h+='</div>';
     // Button rows
-    h+='<div class="tr-btn-row">';
-    h+='<button class="gb primary" onclick="_TRplay()">✓ PLAY</button>';
-    h+='<button class="gb" onclick="_TRrecall()">↩ RECALL</button>';
-    h+='<button class="gb" onclick="_TRshuffle()">🔀 SHUFFLE</button>';
-    h+='</div>';
-    h+='<div class="tr-btn-row">';
-    h+='<button class="gb" onclick="_TRswap()">🔄 SWAP</button>';
-    h+='<button class="gb" onclick="_TRpass()">PASS</button>';
-    h+='<button class="gb" onclick="_TRrules()">📖 RULES</button>';
-    h+='</div>';
+    if(trSwapMode){
+      h+='<div class="tr-btn-row">';
+      h+='<button class="gb primary" onclick="_TRswapConfirm()">✓ CONFIRM SWAP</button>';
+      h+='<button class="gb" onclick="_TRswapCancel()">✕ CANCEL</button>';
+      h+='</div>';
+    }else{
+      h+='<div class="tr-btn-row">';
+      h+='<button class="gb primary" onclick="_TRplay()">✓ PLAY</button>';
+      h+='<button class="gb" onclick="_TRrecall()">↩ RECALL</button>';
+      h+='<button class="gb" onclick="_TRshuffle()">🔀 SHUFFLE</button>';
+      h+='</div>';
+      h+='<div class="tr-btn-row">';
+      h+='<button class="gb" onclick="_TRswap()">🔄 SWAP</button>';
+      h+='<button class="gb" onclick="_TRpass()">PASS</button>';
+      h+='<button class="gb" onclick="_TRrules()">📖 RULES</button>';
+      h+='</div>';
+    }
     pan.innerHTML=h;
     wireInput();
   }
@@ -373,7 +386,9 @@ window._gameFns.trellis = function TR(a){
         if(dragTile)return;
         var tile=e.target.closest('.tr-rack-tile');if(!tile)return;
         var idx=parseInt(tile.getAttribute('data-idx'),10);
-        if(!isNaN(idx))_TRrack(idx);
+        if(isNaN(idx))return;
+        if(trSwapMode){trSwapToggle(idx);return;}
+        _TRrack(idx);
       });
     }
     // Drag start on rack tiles
@@ -393,7 +408,7 @@ window._gameFns.trellis = function TR(a){
   }
 
   function onDragStart(ev,src,el){
-    if(!isPlayerTurn||gameOver)return;
+    if(!isPlayerTurn||gameOver||trSwapMode)return;
     if(dragTile)return;
     ev.preventDefault();
     var info={src:src};
@@ -470,12 +485,18 @@ window._gameFns.trellis = function TR(a){
     if(dragTile.src==='rack'){
       if(cell&&!isNaN(dropR)&&!isNaN(dropC)&&board[dropR][dropC]===null&&!getTentativeAt(dropR,dropC)){
         // Place rack tile onto board
-        var L=dragTile.letter;
+        var L=dragTile.letter,rIdx=dragTile.rackIndex,g=TRgen;
         if(L===' '){
-          var pick=prompt('Choose letter for blank (A-Z):','E');
-          if(pick){pick=pick.toUpperCase().charAt(0);if(/[A-Z]/.test(pick)){tentativeTiles.push({row:dropR,col:dropC,letter:' ',rackIndex:dragTile.rackIndex,isBlank:true,blankLetter:pick});_play('tap');try{if(navigator.vibrate)navigator.vibrate(10);}catch(e){}}}
+          cleanupDrag();
+          openBlankPicker(function(pick){
+            if(g!==TRgen)return; // NEW GAME / exit fired while the picker was open
+            tentativeTiles.push({row:dropR,col:dropC,letter:' ',rackIndex:rIdx,isBlank:true,blankLetter:pick});
+            _play('tap');try{if(navigator.vibrate)navigator.vibrate(10);}catch(e){}
+            render();
+          });
+          return;
         }else{
-          tentativeTiles.push({row:dropR,col:dropC,letter:L,rackIndex:dragTile.rackIndex,isBlank:false,blankLetter:null});
+          tentativeTiles.push({row:dropR,col:dropC,letter:L,rackIndex:rIdx,isBlank:false,blankLetter:null});
           _play('tap');try{if(navigator.vibrate)navigator.vibrate(10);}catch(e){}
         }
       }
@@ -504,9 +525,34 @@ window._gameFns.trellis = function TR(a){
     dragTile=null;
   }
 
-  function aiTurn(){
+  // In-game A-Z picker for blank tiles — replaces window.prompt(), which
+  // webviews/iframes can suppress (returns null → blank became unplaceable).
+  function openBlankPicker(cb){
+    var _ex=document.getElementById('TRblankOV');if(_ex)_ex.remove();
+    var ov=document.createElement('div');ov.id='TRblankOV';
+    ov.style.cssText='position:fixed;inset:0;z-index:200000;background:rgba(5,8,4,0.88);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
+    var h='<div style="max-width:340px;width:100%;padding:18px;background:linear-gradient(180deg,rgba(18,22,14,0.98),rgba(10,12,8,0.98));border:1.5px solid rgba(200,168,75,0.35);border-radius:14px;box-shadow:0 32px 64px rgba(0,0,0,0.7);">';
+    h+='<div style="font-family:Bebas Neue,sans-serif;color:var(--gold);font-size:1rem;letter-spacing:0.1em;text-align:center;margin-bottom:10px;">CHOOSE A LETTER</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">';
+    for(var i=0;i<26;i++){
+      var Lc=String.fromCharCode(65+i);
+      h+='<button class="gb" data-blank-letter="'+Lc+'" style="min-height:48px;min-width:48px;padding:0;font-size:0.85rem;font-weight:700;">'+Lc+'</button>';
+    }
+    h+='</div></div>';
+    ov.innerHTML=h;
+    ov.addEventListener('click',function(e){
+      var btn=e.target.closest&&e.target.closest('[data-blank-letter]');
+      if(btn){ov.remove();cb(btn.getAttribute('data-blank-letter'));return;}
+      if(e.target===ov)ov.remove();
+    });
+    document.body.appendChild(ov);
+  }
+
+  function aiTurn(g){
+    if(g!==TRgen)return;
     sm('CPU thinking...');
     setTimeout(function(){
+      if(g!==TRgen)return;
       var moves=generateAIMoves(aiRack);
       if(moves.length===0){
         if(bag.length>=RACK_SIZE){
@@ -565,7 +611,8 @@ window._gameFns.trellis = function TR(a){
     saveStats();
     _sr('trellis',{w:won,s:playerScore});
     render();
-    (function(pw,as2,wn){setTimeout(function(){
+    (function(pw,as2,wn,g){setTimeout(function(){
+      if(g!==TRgen)return;
       var _o=document.getElementById('TR-over');if(_o)_o.remove();
       var ov=document.createElement('div');ov.id='TR-over';
       ov.style.cssText='position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at 50% 40%,'+(wn?'rgba(122,179,86,0.3)':'rgba(199,138,80,0.16)')+' 0%,rgba(13,16,12,0.92) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;';
@@ -579,7 +626,7 @@ window._gameFns.trellis = function TR(a){
       ov.querySelector('#TR-view').onclick=function(){ov.remove();};
       ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
       document.body.appendChild(ov);
-    },450);})(playerScore,aiScore,won);
+    },450);})(playerScore,aiScore,won,TRgen);
   }
   function saveStats(){try{localStorage.setItem('lw_tr_stats',JSON.stringify(stats));}catch(e){}}
 
@@ -591,7 +638,10 @@ window._gameFns.trellis = function TR(a){
   mc(a).innerHTML='<button class="gb-new" onclick="_TRnew()"><img src="assets/games/new-game-btn.png" alt="New Game"></button>';
 
   window._TRnew=function(){
+    TRgen++; // invalidate any in-flight aiTurn/endGame timers from the previous game
     var _to=document.getElementById('TR-over');if(_to)_to.remove();
+    var _tb=document.getElementById('TRblankOV');if(_tb)_tb.remove();
+    trSwapMode=false;trSwapSel=[];
     buildWordSet();
     initBoard();initBag();
     playerRack=[];aiRack=[];refillRack(playerRack);refillRack(aiRack);
@@ -603,7 +653,7 @@ window._gameFns.trellis = function TR(a){
   // Tap the board with a selected rack tile (tap-to-place) OR tap a
   // tentative tile to pop it back to the rack.
   window._TRcell=function(r,c){
-    if(!isPlayerTurn||gameOver)return;
+    if(!isPlayerTurn||gameOver||trSwapMode)return;
     // Tentative tile tap → remove it
     for(var i=0;i<tentativeTiles.length;i++){
       if(tentativeTiles[i].row===r&&tentativeTiles[i].col===c){
@@ -614,18 +664,21 @@ window._gameFns.trellis = function TR(a){
     if(selectedRackIndex<0||board[r][c]!==null)return;
     var L=playerRack[selectedRackIndex];
     if(L===' '){
-      var pick=prompt('Choose letter for blank (A-Z):','E');
-      if(!pick)return;
-      pick=pick.toUpperCase().charAt(0);
-      if(!/[A-Z]/.test(pick))return;
-      tentativeTiles.push({row:r,col:c,letter:' ',rackIndex:selectedRackIndex,isBlank:true,blankLetter:pick});
+      var rIdx=selectedRackIndex,g=TRgen;
+      selectedRackIndex=-1;render();
+      openBlankPicker(function(pick){
+        if(g!==TRgen)return; // NEW GAME / exit fired while the picker was open
+        tentativeTiles.push({row:r,col:c,letter:' ',rackIndex:rIdx,isBlank:true,blankLetter:pick});
+        _play('tap');render();
+      });
+      return;
     }else{
       tentativeTiles.push({row:r,col:c,letter:L,rackIndex:selectedRackIndex,isBlank:false,blankLetter:null});
     }
     selectedRackIndex=-1;_play('tap');render();
   };
   window._TRrack=function(idx){
-    if(!isPlayerTurn||gameOver)return;
+    if(!isPlayerTurn||gameOver||trSwapMode)return;
     selectedRackIndex=(selectedRackIndex===idx)?-1:idx;
     render();
   };
@@ -650,7 +703,7 @@ window._gameFns.trellis = function TR(a){
     try{if(navigator.vibrate)navigator.vibrate(res.isBingo?[12,30,12]:14);}catch(e){}
     tentativeTiles=[];selectedRackIndex=-1;
     render();checkGameOver();if(gameOver)return;
-    isPlayerTurn=false;setTimeout(aiTurn,300);
+    isPlayerTurn=false;var g1=TRgen;setTimeout(function(){aiTurn(g1);},300);
   };
   window._TRrecall=function(){tentativeTiles=[];selectedRackIndex=-1;render();};
   window._TRshuffle=function(){
@@ -663,40 +716,44 @@ window._gameFns.trellis = function TR(a){
     if(!isPlayerTurn||gameOver)return;
     tentativeTiles=[];selectedRackIndex=-1;consecutivePasses++;
     sm('You passed');checkGameOver();if(gameOver){render();return;}
-    isPlayerTurn=false;render();setTimeout(aiTurn,300);
+    isPlayerTurn=false;render();var g2=TRgen;setTimeout(function(){aiTurn(g2);},300);
   };
+  // SWAP now enters a tap-select mode (matches the existing rack tap-select
+  // interaction) instead of window.prompt(), which webviews/iframes can
+  // suppress (returns null → SWAP became unusable).
   window._TRswap=function(){
     if(!isPlayerTurn||gameOver)return;
     if(bag.length<RACK_SIZE){sm('Not enough tiles in bag to swap');return;}
     if(tentativeTiles.length>0){sm('Recall your tiles first');return;}
-    var pick=prompt('Type the letters to swap (e.g. AEQ) or blank for ?',' ');
-    if(pick==null)return;
-    pick=pick.toUpperCase();
-    if(!pick.length){sm('No tiles chosen');return;}
-    // Validate every requested letter is actually in rack
-    var rackCopy=playerRack.slice();
-    var swapIdx=[];
-    for(var i=0;i<pick.length;i++){
-      var ch=pick.charAt(i);
-      var want=(ch==='?'||ch===' ')?' ':ch;
-      var idx=rackCopy.indexOf(want);
-      if(idx<0){sm('You don\'t have '+ch);return;}
-      rackCopy[idx]='#'; // mark consumed
-      swapIdx.push(idx);  // rackCopy mirrors playerRack, so idx IS the rack index — indexOf(want) returned the same first slot for duplicates (2026-07-03 fix)
-    }
-    // Remove and return to bag
+    trSwapMode=true;trSwapSel=[];selectedRackIndex=-1;
+    sm('Tap tiles to swap, then CONFIRM');
+    render();
+  };
+  function trSwapToggle(idx){
+    var p=trSwapSel.indexOf(idx);
+    if(p>=0)trSwapSel.splice(p,1);else trSwapSel.push(idx);
+    render();
+  }
+  window._TRswapCancel=function(){
+    trSwapMode=false;trSwapSel=[];
+    sm('Swap cancelled');render();
+  };
+  window._TRswapConfirm=function(){
+    if(!trSwapMode)return;
+    if(trSwapSel.length===0){sm('Tap at least one tile first');return;}
+    var swapIdx=trSwapSel.slice().sort(function(a,b){return b-a;});
     var removed=[];
-    swapIdx.sort(function(a,b){return b-a;});
-    for(i=0;i<swapIdx.length;i++){removed.push(playerRack.splice(swapIdx[i],1)[0]);}
+    for(var i=0;i<swapIdx.length;i++){removed.push(playerRack.splice(swapIdx[i],1)[0]);}
     for(i=0;i<removed.length;i++)bag.push(removed[i]);
     shuffleArr(bag);
     refillRack(playerRack);
     consecutivePasses=0; // swap is not a pass
+    trSwapMode=false;trSwapSel=[];
     sm('Swapped '+removed.length+' tile'+(removed.length!==1?'s':''));
     _play('tap');
-    isPlayerTurn=false;render();setTimeout(aiTurn,300);
+    isPlayerTurn=false;render();var g3=TRgen;setTimeout(function(){aiTurn(g3);},300);
   };
-  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){['TRrulesOV','TR-over'].forEach(function(id){var o=document.getElementById(id);if(o)o.remove();});});
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){TRgen++;trSwapMode=false;trSwapSel=[];['TRrulesOV','TR-over','TRblankOV'].forEach(function(id){var o=document.getElementById(id);if(o)o.remove();});});
   window._TRrules=function(){
     var _ex=document.getElementById('TRrulesOV');if(_ex){_ex.remove();} // repeated RULES taps used to stack duplicate overlays
     var ov=document.createElement('div');ov.id='TRrulesOV';
@@ -723,13 +780,17 @@ window._gameFns.trellis = function TR(a){
     try{localStorage.setItem('lw_tr_rules_seen','1');}catch(e){}
   };
 
-  // First-time auto-open
+  _TRnew();
+
+  // First-time auto-open — AFTER _TRnew (which bumps TRgen), so the guard
+  // captures the LIVE generation. Capturing before _TRnew made g0=0 while
+  // _TRnew set TRgen=1, so the guard bailed on every first run and the
+  // rules never opened.
   try{
     if(!localStorage.getItem('lw_tr_rules_seen')){
-      setTimeout(function(){if(window._TRrules)window._TRrules();},700);
+      var g0=TRgen;
+      setTimeout(function(){if(g0!==TRgen)return;if(window._TRrules)window._TRrules();},700);
     }
   }catch(e){}
-
-  _TRnew();
 };
 })();

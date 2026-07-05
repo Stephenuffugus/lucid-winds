@@ -66,6 +66,12 @@ window._gameFns.seedtoss2=function ST(a){
     return POT_SIZES[0];
   })();
   var pickerOpen=false;             // true while the pre-round size modal is showing
+  var runGen=0;                     // bumped on every new run / exit-to-picker so
+                                     // stale scored()/missed() timeouts from a prior
+                                     // round can detect they're dead and no-op
+  var winMouseBound=false;          // mousemove/mouseup are bound to window (once)
+                                     // so a release outside the canvas still ends
+                                     // the aim instead of gluing the seed to the cursor
   // Skin layer state — weather, parallax, pot sway, bullseye flash
   var weatherType=null;             // 'rain' | 'snow' | 'leaves' | 'mist' | null
   var weatherPoints=[];
@@ -87,8 +93,15 @@ window._gameFns.seedtoss2=function ST(a){
     canvas.addEventListener('touchmove',onMove,{passive:false});
     canvas.addEventListener('touchend',onUp,{passive:false});
     canvas.addEventListener('mousedown',onDown);
-    canvas.addEventListener('mousemove',onMove);
-    canvas.addEventListener('mouseup',onUp);
+    // mousemove/mouseup go on window (bound once) so a drag that releases
+    // the button outside the canvas still completes the flick instead of
+    // leaving the seed stuck to the cursor. Canvas is recreated every
+    // beginRun(); window is not, so this only binds on the first setup().
+    if(!winMouseBound){
+      window.addEventListener('mousemove',onMove);
+      window.addEventListener('mouseup',onUp);
+      winMouseBound=true;
+    }
   }
 
   function getPos(e){
@@ -239,12 +252,14 @@ window._gameFns.seedtoss2=function ST(a){
       setMsg(unlockMsg);
     }
     updateHUD();
-    setTimeout(function(){if(seedsLeft>0){genPot();resetSeed();}else endGame();},500);
+    var myGen=runGen;
+    setTimeout(function(){if(myGen!==runGen)return;if(seedsLeft>0){genPot();resetSeed();}else endGame();},500);
   }
 
   function missed(){
     phase='missed';seed.active=false;streak=0;updateHUD();
-    setTimeout(function(){if(seedsLeft>0)resetSeed();else endGame();},350);
+    var myGen=runGen;
+    setTimeout(function(){if(myGen!==runGen)return;if(seedsLeft>0)resetSeed();else endGame();},350);
   }
 
   function endGame(){
@@ -605,7 +620,7 @@ window._gameFns.seedtoss2=function ST(a){
     title.textContent='CHOOSE YOUR POT';
     wrap.appendChild(title);
     var sub=document.createElement('div');
-    sub.style.cssText='font-family:DM Mono,monospace;font-size:0.58rem;color:var(--muted);text-align:center;margin-bottom:14px;letter-spacing:0.05em;line-height:1.5;';
+    sub.style.cssText='font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);text-align:center;margin-bottom:14px;letter-spacing:0.05em;line-height:1.5;';
     sub.textContent='Smaller pots are harder but pay more per seed.';
     wrap.appendChild(sub);
     var grid=document.createElement('div');
@@ -624,7 +639,7 @@ window._gameFns.seedtoss2=function ST(a){
         btn.innerHTML=
           '<div style="font-family:Bebas Neue,sans-serif;font-size:1rem;letter-spacing:0.1em;color:'+(unlocked?'var(--gold)':'var(--muted)')+';">'+sz.name+'</div>'+
           '<div style="font-family:DM Mono,monospace;font-size:1.2rem;color:'+(unlocked?'var(--cream)':'var(--muted)')+';font-weight:700;">'+sz.mult.toFixed(1).replace(/\.0$/,'')+'×</div>'+
-          '<div style="font-family:DM Mono,monospace;font-size:0.48rem;color:var(--muted);line-height:1.35;padding:0 2px;">'+(unlocked?sz.hint:'Reach Lv '+sz.unlockAt+' to unlock')+'</div>';
+          '<div style="font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);line-height:1.35;padding:0 2px;">'+(unlocked?sz.hint:'Reach Lv '+sz.unlockAt+' to unlock')+'</div>';
         if(unlocked){btn.onclick=function(){beginRun(sz);};}
         grid.appendChild(btn);
       })(POT_SIZES[i]);
@@ -633,12 +648,13 @@ window._gameFns.seedtoss2=function ST(a){
     // Subtle hint under the grid so players know the bottom NEW button
     // will launch with the highlighted tile.
     var foot=document.createElement('div');
-    foot.style.cssText='font-family:DM Mono,monospace;font-size:0.52rem;color:var(--muted);text-align:center;margin-top:10px;letter-spacing:0.05em;';
+    foot.style.cssText='font-family:DM Mono,monospace;font-size:0.7rem;font-weight:500;color:var(--muted);text-align:center;margin-top:10px;letter-spacing:0.05em;';
     foot.textContent='Tap a pot or press NEW to play with the gold-highlighted one.';
     wrap.appendChild(foot);
     pan.appendChild(wrap);
   }
   function beginRun(sz){
+    runGen++; // invalidate any scored()/missed() timeout still pending from the last run
     pickerOpen=false;
     currentSize=sz;
     highlightedSize=sz;
@@ -654,7 +670,13 @@ window._gameFns.seedtoss2=function ST(a){
   }
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     running=false;
+    runGen++; // kill any pending scored()/missed() timeout on exit
     if(rafId){cancelAnimationFrame(rafId);rafId=0;}
+    if(winMouseBound){
+      window.removeEventListener('mousemove',onMove);
+      window.removeEventListener('mouseup',onUp);
+      winMouseBound=false;
+    }
   });
   window._STN=function(){
     // If the size picker is already up, NEW commits to the highlighted
@@ -667,6 +689,7 @@ window._gameFns.seedtoss2=function ST(a){
       beginRun(pick);
       return;
     }
+    runGen++; // exiting to the picker invalidates any in-flight round timeout
     if(rafId)cancelAnimationFrame(rafId);
     running=false;
     showSizePicker();
