@@ -1119,7 +1119,7 @@ function newState(){
     state:'aim',                // aim | flight | resolving | won | lost
     score:0, blocksDestroyed:0, pestsTotal:0, pestsAlive:0, ammoUsed:0,
     star2:0, star3:0,
-    cam:0, camTarget:0, scale:1, viewW:1300,
+    cam:0, camTarget:0, scale:1, viewW:1300, viewH:WORLD_H, offY:0,
     shake:0, particles:[], flashes:[], rings:[],
     shotTime:0, stillTime:0, resolved:false, tHint:0, exploding:false, hitstop:0,
     settleGuard:1.0            // no contact damage while the fort first settles (ends at first shot)
@@ -1461,8 +1461,14 @@ function fitCamera(){
   var cw=_canvas?_canvas.width:800, ch=_canvas?_canvas.height:1200;
   var dpr=window.devicePixelRatio||1;
   var vw=cw/dpr, vh=ch/dpr;
-  G.scale = vh/WORLD_H;
+  // Fit so at least TARGET_W world-units of WIDTH are visible (so you can see the
+  // slingshot AND the fort while aiming). On tall/portrait screens this letterboxes
+  // extra height as open sky above; the world is bottom-anchored via G.offY.
+  var TARGET_W=760;
+  G.scale = Math.min(vh/WORLD_H, vw/TARGET_W);
   G.viewW = vw/G.scale;
+  G.viewH = vh/G.scale;
+  G.offY = Math.max(0, G.viewH - WORLD_H);
 }
 function updateCamera(dt){
   if(G.state==='flight' && G.proj && !G.proj.dead){
@@ -1528,7 +1534,7 @@ function loseLevel(){
 /* ================================================================
    INPUT  (drag to aim, tap to trigger ability)
    ================================================================ */
-function screenToWorld(px,py){ return v(px/G.scale + G.cam, py/G.scale); }
+function screenToWorld(px,py){ return v(px/G.scale + G.cam, py/G.scale - (G.offY||0)); }
 function bindInput(){
   var c=_canvas;
   function pos(e){
@@ -1637,7 +1643,7 @@ function render(){
   ctx.save();
   ctx.translate(shx,shy);
   ctx.scale(G.scale,G.scale);
-  ctx.translate(-G.cam,0);
+  ctx.translate(-G.cam, G.offY||0);
 
   drawGround(ctx,W);
   // structures + pests + projectiles
