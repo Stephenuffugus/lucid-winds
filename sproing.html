@@ -108,6 +108,20 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .tag{position:absolute; font-size:10px; padding:2px 6px; border-radius:8px; font-weight:800}
 .rar-Common{color:#cfe0b8} .rar-Rare{color:#8fd0ff} .rar-Epic{color:#e6a3ff}
 .rar-Signature{color:var(--gold)} .rar-Unlock{color:#ffd27a}
+.shoptabs{display:flex; gap:6px; padding:10px 16px 0; max-width:460px; margin:0 auto; width:100%}
+.shoptab{flex:1; min-height:46px; border:1px solid var(--line); border-radius:12px 12px 0 0; background:#0f150c; color:var(--muted); font-size:13px; font-weight:700; cursor:pointer}
+.shoptab.sel{background:#25341c; color:var(--cream); border-color:var(--gold); border-bottom-color:#25341c}
+.grid.list{grid-template-columns:1fr}
+.uprow{background:#0f150c; border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; align-items:center; gap:12px; text-align:left}
+.uprow .ic{font-size:26px; width:34px; text-align:center; flex:none}
+.uprow .body{flex:1; min-width:0}
+.uprow .body .n{font-weight:700; font-size:15px; color:var(--cream)}
+.uprow .body .d{font-size:12px; color:var(--muted)}
+.uprow .pips{margin-top:5px; letter-spacing:3px; color:var(--gold); font-size:13px}
+.uprow button{min-height:48px; min-width:82px; flex:none; border-radius:12px; border:1px solid var(--line); background:#141c10; color:var(--cream); font-weight:700; font-size:13px; cursor:pointer}
+.uprow button.max{color:var(--sage); border-color:var(--sage); background:#182210}
+.uprow.done{border-color:var(--sage); box-shadow:0 0 0 1px #7ab35633}
+.trailprev{width:88px; height:56px; border-radius:12px; background:#10160e; display:flex; align-items:center; justify-content:center; overflow:hidden}
 
 /* ---------- settings ---------- */
 .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 4px; border-bottom:1px solid #1c2416; width:100%; max-width:440px}
@@ -189,9 +203,10 @@ input[type=range]{width:150px; accent-color:var(--sage)}
 
   <!-- shop -->
   <div class="screen" id="s-shop">
-    <div class="hdr"><button class="icobtn" id="shop-back">←</button><h2>Skin Shop</h2>
+    <div class="hdr"><button class="icobtn" id="shop-back">←</button><h2 id="shop-title">Shop</h2>
       <div style="color:var(--gold); font-weight:800">🪙 <span id="shop-coins">0</span></div></div>
-    <div class="pad"><div class="grid" id="shop-grid"></div></div>
+    <div id="shop-tabs" class="shoptabs"></div>
+    <div class="pad" style="padding-top:12px"><div class="grid" id="shop-grid"></div></div>
   </div>
 
   <!-- settings -->
@@ -276,7 +291,9 @@ var LS=(function(){
 })();
 var K={ coins:'sproing_coins', best:'sproing_best', book:'sproing_sketchbook',
   owned:'sproing_owned', equip:'sproing_equip', set:'sproing_settings',
-  bounce:'sproing_bounce_seen', save:'sproing_save', streak:'sproing_streak' };
+  bounce:'sproing_bounce_seen', save:'sproing_save', streak:'sproing_streak',
+  upgrades:'sproing_upgrades', trails:'sproing_trails', trail:'sproing_trail',
+  ach:'sproing_ach', stats:'sproing_stats' };
 
 /* ---------- settings ---------- */
 var DEF_SET={ steer:'both', reduceMotion:'auto', highContrast:false, music:0.6, sfx:0.8,
@@ -290,7 +307,10 @@ function reduceMotion(){ return SET.reduceMotion==='on' || (SET.reduceMotion==='
 /* ---------- persistent economy / progress ---------- */
 var coins=parseInt(LS.get(K.coins)||'0',10)||0;
 var best=parseInt(LS.get(K.best)||'0',10)||0;
-function addCoins(n){ coins+=n; LS.set(K.coins,String(coins)); refreshCoinUI(); }
+function addCoins(n){ coins+=n; if(n>0){ stats.coinsTotal=(stats.coinsTotal||0)+n; saveStats(); } LS.set(K.coins,String(coins)); refreshCoinUI(); }
+// bank a run's uncommitted coins into the wallet exactly once (idempotent via coinsCommitted).
+// Called on game-over AND on any early exit (quit/restart) so run earnings are never lost.
+function commitRun(){ if(!game) return; var g=game.coinsRun-(game.coinsCommitted||0); if(g>0){ addCoins(g); stats.coinsEarned=(stats.coinsEarned||0)+g; } game.coinsCommitted=game.coinsRun; saveStats(); }
 function spendCoins(n){ if(coins<n) return false; coins-=n; LS.set(K.coins,String(coins)); refreshCoinUI(); return true; }
 function refreshCoinUI(){ var e=$('shop-coins'); if(e) e.textContent=coins; }
 
@@ -309,6 +329,12 @@ function show(id){
 }
 function modal(html){ $('modal-card').innerHTML=html; $('modal').classList.add('on'); }
 function closeModal(){ $('modal').classList.remove('on'); }
+var toastQ=[];
+function toast(msg){ toastQ.push(msg); if(toastQ.length===1) runToast(); }
+function runToast(){ if(!toastQ.length) return; var el=$('toast'); if(!el){ el=document.createElement('div'); el.id='toast'; el.style.cssText='position:absolute;top:118px;left:50%;transform:translateX(-50%);z-index:55;background:#0a0d09f0;border:1px solid var(--gold);color:var(--cream);font-weight:700;font-size:15px;padding:11px 18px;border-radius:14px;box-shadow:0 6px 18px #0009;pointer-events:none;max-width:88%;text-align:center;transition:opacity .3s'; $('stage').appendChild(el); }
+  el.textContent=toastQ[0]; el.style.opacity='1';
+  setTimeout(function(){ el.style.opacity='0'; setTimeout(function(){ toastQ.shift(); if(toastQ.length) runToast(); },320); },2000); }
+function checkAch(){ for(var i=0;i<ACHS.length;i++){ var a=ACHS[i]; if(!achDone[a.id] && a.test()){ achDone[a.id]=1; LS.setJSON(K.ach,achDone); addCoins(a.reward); toast('🏆 '+a.name+'  +'+a.reward+' 🪙'); } } }
 
 /* ---------- haptics ---------- */
 function buzz(ms){ if(SET.haptics && navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
@@ -559,6 +585,50 @@ var owned=LS.getJSON(K.owned,[]);           // premade skin ids
 var sketchbook=LS.getJSON(K.book,[]);        // [{png}] player doodles
 var equip=LS.getJSON(K.equip,{type:'default'});
 var equipGen=0;   // token to drop stale async doodle bakes
+
+/* ---------- economy: upgrades, trails, achievements, stats ---------- */
+var upgrades=LS.getJSON(K.upgrades,{});             // id -> level
+var trailsOwned=LS.getJSON(K.trails,['none']);
+var trailEquip=LS.get(K.trail)||'none';
+var achDone=LS.getJSON(K.ach,{});                   // id -> 1
+var stats=LS.getJSON(K.stats,{coinsTotal:0,coinsEarned:0,aphids:0,powerups:0,maxChain:1,runs:0});
+function saveStats(){ LS.setJSON(K.stats,stats); }
+function upLvl(id){ return upgrades[id]||0; }
+
+var UPGRADES=[
+  {id:'lucky', name:'Lucky Bloom', ic:'🍀', desc:'+8% coins earned, per level', max:5, cost:[200,400,700,1100,1600]},
+  {id:'magnet',name:'Nectar Magnet',ic:'🧲', desc:'Passively pulls in nearby coins', max:4, cost:[300,600,1000,1500]},
+  {id:'sprout',name:'Fast Sprout', ic:'🌱', desc:'Start each climb with a burst of spring-hops', max:4, cost:[250,500,900,1400]},
+  {id:'charm', name:'Powerup Charm',ic:'✨', desc:'Power-ups appear more often', max:3, cost:[450,850,1400]},
+  {id:'sturdy',name:'Sturdy Roots',ic:'🛡️', desc:'Auto-saves you from the first fall each climb', max:1, cost:[2200]}
+];
+function upDef(id){ for(var i=0;i<UPGRADES.length;i++) if(UPGRADES[i].id===id) return UPGRADES[i]; return null; }
+
+var TRAILS=[
+  {id:'none',   name:'None',       cost:0,    col:null},
+  {id:'pollen', name:'Pollen',     cost:300,  col:'#f2d24b'},
+  {id:'sparkle',name:'Stardust',   cost:500,  col:'#ffffff'},
+  {id:'leaf',   name:'Leaf Fall',  cost:650,  col:'#7ab356'},
+  {id:'ember',  name:'Ember',      cost:900,  col:'#e8823a'},
+  {id:'petal',  name:'Petal',      cost:1100, col:'#e58fa0'},
+  {id:'rainbow',name:'Rainbow',    cost:1600, col:'rainbow'}
+];
+function trailDef(id){ for(var i=0;i<TRAILS.length;i++) if(TRAILS[i].id===id) return TRAILS[i]; return TRAILS[0]; }
+
+var ACHS=[
+  {id:'draw',    name:'Artist',       desc:'Draw your own climber',   reward:50,   test:function(){return sketchbook.length>0;}},
+  {id:'climb500',name:'Sprout',       desc:'Reach 500 m',             reward:100,  test:function(){return best>=500;}},
+  {id:'climb1500',name:'Canopy',      desc:'Reach 1500 m',            reward:300,  test:function(){return best>=1500;}},
+  {id:'climb3000',name:'Starclimber', desc:'Reach 3000 m',            reward:1000, test:function(){return best>=3000;}},
+  {id:'chain4',  name:'On a Roll',    desc:'Hit a x4 chain',          reward:200,  test:function(){return (stats.maxChain||1)>=35;}},
+  {id:'aphids25',name:'Pest Control', desc:'Stomp 25 aphids',         reward:200,  test:function(){return (stats.aphids||0)>=25;}},
+  {id:'pow20',   name:'Power Player', desc:'Grab 20 power-ups',       reward:150,  test:function(){return (stats.powerups||0)>=20;}},
+  {id:'coins2k', name:'Coin Purse',   desc:'Earn 2,000 coins climbing',  reward:150,  test:function(){return (stats.coinsEarned||0)>=2000;}},
+  {id:'coins15k',name:'Treasurer',    desc:'Earn 15,000 coins climbing', reward:600,  test:function(){return (stats.coinsEarned||0)>=15000;}},
+  {id:'skins5',  name:'Collector',    desc:'Own 5 shop skins',        reward:300,  test:function(){return owned.length>=5;}},
+  {id:'runs30',  name:'Dedicated',    desc:'Climb 30 times',          reward:250,  test:function(){return (stats.runs||0)>=30;}},
+  {id:'streak7', name:'Faithful',     desc:'Reach a 7-day streak',    reward:500,  test:function(){return (ST.count||0)>=7;}}
+];
 var curSprite=bakeSkinFallback();            // baked {cv,footY} used in-game/preview
 var skinCache={};                            // id -> baked sprite
 
@@ -738,8 +808,22 @@ function importPng(){ var inp=document.createElement('input'); inp.type='file'; 
       sketchbook.push({png:c.toDataURL('image/png')}); if(sketchbook.length>9) sketchbook.shift(); LS.setJSON(K.book,sketchbook); renderGallery(); };
     img.src=rd.result; }; rd.readAsDataURL(f); }; inp.click(); }
 
+var shopTab='skins';
+function openShop(tab){ shopTab=tab||shopTab||'skins'; renderShop(); show('s-shop'); }
 function renderShop(){
-  refreshCoinUI(); var g=$('shop-grid'); g.innerHTML='';
+  refreshCoinUI();
+  var TABS=[['skins','Skins'],['trails','Trails'],['upgrades','Upgrades'],['goals','Goals']];
+  var tb=$('shop-tabs'); tb.innerHTML='';
+  TABS.forEach(function(t){ var b=document.createElement('button'); b.className='shoptab'+(shopTab===t[0]?' sel':''); b.textContent=t[1]; b.onclick=function(){ shopTab=t[0]; sfx('ui'); renderShop(); }; tb.appendChild(b); });
+  var titles={skins:'Skin Shop',trails:'Trails',upgrades:'Upgrades',goals:'Goals'}; $('shop-title').textContent=titles[shopTab]||'Shop';
+  var g=$('shop-grid'); g.innerHTML=''; g.classList.toggle('list', shopTab==='upgrades'||shopTab==='goals');
+  if(shopTab==='skins') renderSkins(g);
+  else if(shopTab==='trails') renderTrails(g);
+  else if(shopTab==='upgrades') renderUpgrades(g);
+  else renderGoals(g);
+}
+function notEnough(cost,name){ modal('<h3>Not enough coins</h3><p>You need <b class="gold">'+cost+'</b> 🪙 for '+name+'. Keep climbing to earn more!</p><button class="btn sm primary" id="mx1">OK</button>'); tap('mx1',closeModal); }
+function renderSkins(g){
   SKIN_DEFS.forEach(function(def){
     var cell=document.createElement('div'); cell.className='cell'; var eq=equip.type==='skin'&&equip.id===def.id; if(eq) cell.classList.add('equipped');
     var cv=document.createElement('canvas'); cv.width=88; cv.height=88; var s=bakedSkin(def.id); if(s){ var gg=cv.getContext('2d'); gg.save(); gg.scale(88/SPR,88/SPR); gg.drawImage(s.cv,0,0); gg.restore(); }
@@ -750,19 +834,54 @@ function renderShop(){
     if(def.rarity==='Unlock'){
       if(unlocked) m.appendChild(mini(eq?'Equipped':'Equip',function(){ if(!eq){ setEquip({type:'skin',id:def.id}); renderShop(); } }));
       else { var lk=document.createElement('div'); lk.className='price'; lk.textContent=def.unlock==='alt3000'?'🔒 3000m':'🔒 7-day streak'; m.appendChild(lk); }
-    } else if(unlocked){
-      m.appendChild(mini(eq?'Equipped':'Equip',function(){ if(!eq){ setEquip({type:'skin',id:def.id}); renderShop(); } }));
-    } else {
-      var buy=mini('🪙 '+def.priceCoins,function(){ buySkin(def); });
-      if(coins<def.priceCoins) buy.style.opacity='.55';
-      m.appendChild(buy);
-    }
+    } else if(unlocked){ m.appendChild(mini(eq?'Equipped':'Equip',function(){ if(!eq){ setEquip({type:'skin',id:def.id}); renderShop(); } })); }
+    else { var buy=mini('🪙 '+def.priceCoins,function(){ buySkin(def); }); if(coins<def.priceCoins) buy.style.opacity='.55'; m.appendChild(buy); }
     cell.appendChild(m); g.appendChild(cell);
   });
 }
-function buySkin(def){
-  if(coins<def.priceCoins){ modal('<h3>Not enough coins</h3><p>You need <b class="gold">'+def.priceCoins+'</b> 🪙 for the '+def.name+'. Keep climbing to earn more!</p><button class="btn sm primary" id="mx1">OK</button>'); tap('mx1',closeModal); return; }
-  if(spendCoins(def.priceCoins)){ owned.push(def.id); LS.setJSON(K.owned,owned); setEquip({type:'skin',id:def.id}); sfx('best'); renderShop(); }
+function buySkin(def){ if(coins<def.priceCoins){ notEnough(def.priceCoins,'the '+def.name); return; }
+  if(spendCoins(def.priceCoins)){ owned.push(def.id); LS.setJSON(K.owned,owned); setEquip({type:'skin',id:def.id}); sfx('best'); renderShop(); } }
+function renderTrails(g){
+  TRAILS.forEach(function(t){
+    var cell=document.createElement('div'); cell.className='cell'; var eq=trailEquip===t.id; if(eq) cell.classList.add('equipped');
+    var pv=document.createElement('div'); pv.className='trailprev'; var cv=document.createElement('canvas'); cv.width=88; cv.height=56; var c=cv.getContext('2d');
+    if(t.col){ for(var i=0;i<10;i++){ var col=t.col==='rainbow'?('hsl('+(i*36)+',80%,66%)'):t.col; c.globalAlpha=Math.max(0.1,1-i*0.09); c.fillStyle=col; c.beginPath(); c.arc(72-i*6,28+Math.sin(i*0.8)*5,4.5-i*0.25,0,7); c.fill(); } c.globalAlpha=1; c.fillStyle='#7ab356'; c.strokeStyle='#12160f'; c.lineWidth=2; c.beginPath(); c.arc(76,28,9,0,7); c.fill(); c.stroke(); }
+    else { c.fillStyle='#3a4a30'; c.font='13px sans-serif'; c.textAlign='center'; c.fillText('no trail',44,32); }
+    pv.appendChild(cv); cell.appendChild(pv);
+    var nm=document.createElement('div'); nm.className='nm'; nm.textContent=t.name; cell.appendChild(nm);
+    var have=trailsOwned.indexOf(t.id)>=0 || t.cost===0;
+    var m=document.createElement('div'); m.className='mini';
+    if(have) m.appendChild(mini(eq?'Equipped':'Equip',function(){ if(!eq){ equipTrail(t.id); renderShop(); } }));
+    else { var buy=mini('🪙 '+t.cost,function(){ buyTrail(t); }); if(coins<t.cost) buy.style.opacity='.55'; m.appendChild(buy); }
+    cell.appendChild(m); g.appendChild(cell);
+  });
+}
+function equipTrail(id){ trailEquip=id; LS.set(K.trail,id); }
+function buyTrail(t){ if(coins<t.cost){ notEnough(t.cost,t.name); return; } if(spendCoins(t.cost)){ trailsOwned.push(t.id); LS.setJSON(K.trails,trailsOwned); equipTrail(t.id); sfx('best'); renderShop(); } }
+function renderUpgrades(g){
+  UPGRADES.forEach(function(u){
+    var lvl=upLvl(u.id), row=document.createElement('div'); row.className='uprow';
+    var ic=document.createElement('div'); ic.className='ic'; ic.textContent=u.ic; row.appendChild(ic);
+    var body=document.createElement('div'); body.className='body'; var pips=''; for(var i=0;i<u.max;i++) pips+=(i<lvl?'●':'○');
+    body.innerHTML='<div class="n">'+u.name+'</div><div class="d">'+u.desc+'</div><div class="pips">'+pips+'</div>'; row.appendChild(body);
+    var btn=document.createElement('button');
+    if(lvl>=u.max){ btn.textContent='MAX'; btn.className='max'; }
+    else { var cost=u.cost[lvl]; btn.innerHTML='🪙 '+cost; if(coins<cost) btn.style.opacity='.55'; btn.onclick=function(){ sfx('ui'); buyUpgrade(u); }; }
+    row.appendChild(btn); g.appendChild(row);
+  });
+}
+function buyUpgrade(u){ var lvl=upLvl(u.id); if(lvl>=u.max) return; var cost=u.cost[lvl]; if(coins<cost){ notEnough(cost,u.name); return; }
+  if(spendCoins(cost)){ upgrades[u.id]=lvl+1; LS.setJSON(K.upgrades,upgrades); sfx('best'); renderShop(); } }
+function renderGoals(g){
+  var done=0; ACHS.forEach(function(a){ if(achDone[a.id]) done++; });
+  var head=document.createElement('div'); head.style.cssText='text-align:center;color:var(--muted);font-size:13px;margin:2px 0 6px'; head.textContent=done+' / '+ACHS.length+' goals complete · each pays coins'; g.appendChild(head);
+  ACHS.forEach(function(a){
+    var got=!!achDone[a.id]; var row=document.createElement('div'); row.className='uprow'+(got?' done':'');
+    var ic=document.createElement('div'); ic.className='ic'; ic.textContent=got?'🏆':'🔒'; row.appendChild(ic);
+    var body=document.createElement('div'); body.className='body'; body.innerHTML='<div class="n">'+a.name+'</div><div class="d">'+a.desc+'</div>'; row.appendChild(body);
+    var rw=document.createElement('div'); rw.style.cssText='color:'+(got?'var(--sage)':'var(--gold)')+';font-weight:700;font-size:13px;flex:none'; rw.innerHTML=(got?'✓ ':'')+'🪙 '+a.reward; row.appendChild(rw);
+    g.appendChild(row);
+  });
 }
 
 /* ============================ GAME ENGINE ================================= */
@@ -797,8 +916,9 @@ function newGame(){
     platforms:[], pests:[], powerups:[], coins:[], hazards:[], particles:[], floats:[],
     topGenY:startY, lastPathX:VW/2, lastPathY:startY, lastSolid:true,
     lastPowM:0, lastMilestoneM:0, lastHazM:0,
-    parachuteT:0, magnetT:0, shield:false, propellerT:0, springHops:0, giant:0, shrinkT:0, jetpackT:0, slowT:0, ghostT:0,
+    parachuteT:0, magnetT:0, shield:false, propellerT:0, springHops:([0,3,5,7,9][upLvl('sprout')]||0), giant:0, shrinkT:0, jetpackT:0, slowT:0, ghostT:0,
     invulnT:0, nextSteerMul:1, hopSteerMul:1, stunT:0,
+    luckyMult:1+0.08*upLvl('lucky'), passiveMag:36*upLvl('magnet'), usedSturdy:false, runCounted:false,
     coinsRun:0, coinCombo:1, coinComboT:0, nearMissCd:0, coinsCommitted:0, sunBaseEmitted:0,
     trauma:0, usedSave:false, cause:'', best:best
   };
@@ -857,7 +977,7 @@ function generateUp(){
     // decoy platform (extra option)
     if(Math.random()<0.4){ var dt=pickPlatType(m); var dx=clamp(nx+rnd(-190,190)*(Math.random()<.5?-1:1),46,VW-46); if(Math.abs(dx-nx)>70) game.platforms.push({x:dx,y:ny+rnd(-20,20),w:platWidth(dt),type:dt,vx:(dt==='drifting'?rnd(40,90):0),dir:1,alive:true,crumbling:false,crumbleT:0,born:game.t,thorn:0,trapT:rnd(0,2.2),trapOpen:false}); }
     // powerup by interval
-    if(m-game.lastPowM >= b.powInt){ game.lastPowM=m; game.powerups.push({x:clamp(nx+rnd(-80,80),40,VW-40),y:ny-rnd(30,80),r:16,id:powForBiome(m),got:false}); }
+    if(m-game.lastPowM >= b.powInt*(1-0.12*upLvl('charm'))){ game.lastPowM=m; game.powerups.push({x:clamp(nx+rnd(-80,80),40,VW-40),y:ny-rnd(30,80),r:16,id:powForBiome(m),got:false}); }
     // hazards
     if(b.haz.length && m-game.lastHazM > 90 && Math.random()<0.5){ game.lastHazM=m; spawnHazard(pick(b.haz),ny,gap); }
   }
@@ -889,6 +1009,7 @@ function addFloat(x,y,txt,col){ game.floats.push({x:x,y:y,txt:txt,col:col||PAL.g
 function addTrauma(v){ if(reduceMotion()){ game.trauma=Math.min(game.trauma,0.15); return; } game.trauma=Math.min(1,game.trauma+v); }
 function landFx(pl){ var col=pl.type==='mushroom'?PAL.pink:(pl.type==='fiddlehead'?PAL.deep:PAL.sage); burst(game.player.x,pl.y,pl.type==='mushroom'?12:6,col,pl.type==='mushroom'?260:160); }
 
+function gainCoins(n){ n=Math.round(n*(game.luckyMult||1)); game.coinsRun+=n; return n; }
 function chainMultVal(){ var c=game.chain; return c>=35?4:(c>=20?3:(c>=10?2:(c>=5?1.5:1))); }
 function updateChainTier(){ var m=chainMultVal(); var pill=$('chain'); if(pill){ pill.textContent='x'+m + (game.chain>=5?' · '+game.chain:''); pill.style.opacity=game.chain>=5?'1':'0'; } }
 
@@ -907,6 +1028,7 @@ function applyPowerup(id){
     case 'slow_time_honey': p.slowT=5; break;
     case 'ghost_spores': p.ghostT=4; break;
   }
+  stats.powerups=(stats.powerups||0)+1;
   sfx('power'); addFloat(p.player.x,p.player.y-60, powName(id), PAL.cream); buzz(20);
 }
 function powName(id){ var d=id.replace(/_/g,' '); return d.replace(/\b\w/g,function(c){return c.toUpperCase();}); }
@@ -916,7 +1038,13 @@ function applyHit(cause){
   if(game.shield){ game.shield=false; game.invulnT=0.7; addTrauma(0.3); sfx('hit'); addFloat(game.player.x,game.player.y-50,'Shielded!',PAL.sky); return; }
   die(cause);
 }
-function die(cause){ if(!game.running) return; game.running=false; game.dead=true; game.cause=cause||'fall'; addTrauma(0.8); sfx(cause==='fall'?'fall':'hit'); buzz(60); setTimeout(onGameOver,120); }
+function die(cause){ if(!game||!game.running) return;
+  if(cause==='fall' && upLvl('sturdy')>0 && !game.usedSturdy){ game.usedSturdy=true; sturdySave(); return; }
+  game.running=false; game.dead=true; game.cause=cause||'fall'; addTrauma(0.8); sfx(cause==='fall'?'fall':'hit'); buzz(60); setTimeout(onGameOver,120); }
+function sturdySave(){ var p=game.player; p.y=game.camY+VH-150; p.x=VW/2; p.vy=-1950; p.vx=0; game.q=-0.3; game.chain=1; updateChainTier();
+  game.platforms.push({x:VW/2,y:p.y+44,w:110,type:'broad',vx:0,dir:1,alive:true,born:game.t});
+  game.pests=game.pests.filter(function(pe){ return (pe.y-game.camY)<VH-210; });
+  game.invulnT=1.1; sfx('updraft'); addTrauma(0.5); addFloat(VW/2,p.y-40,'🛡️ Sturdy Roots!',PAL.sage); buzz(30); }
 
 /* ---------- main update ---------- */
 function updateGame(dt){
@@ -972,8 +1100,12 @@ function updateGame(dt){
   updateEntities(dt,slow);
   updatePests(dt,slow);
   updateHazards(dt,slow);
-  if(game.magnetT>0) pullCoins(dt);
+  var _mr=game.magnetT>0?220:(game.passiveMag||0); if(_mr>0) pullCoins(dt,_mr);
   collectItems();
+  // cosmetic trail
+  if(trailEquip!=='none' && !reduceMotion()){ game.trailT=(game.trailT||0)-dt; if(game.trailT<=0){ game.trailT=0.045;
+    var td=trailDef(trailEquip); var col=td.col==='rainbow'?('hsl('+Math.round((game.t*120)%360)+',80%,66%)'):td.col;
+    game.particles.push({x:p.x+rnd(-7,7),y:p.y-6,vx:rnd(-14,14),vy:rnd(-6,10),life:0.5,max:0.5,col:col,size:rnd(2,4.5),t:1}); } }
   refreshHUD();
 }
 
@@ -981,12 +1113,21 @@ function onLand(pl){
   var p=game.player;
   if(pl.type==='flytrap' && pl.trapOpen){ applyHit('flytrap'); return; }
   if(pl.type==='thornleaf' && pl.thornUp){ applyHit('thorn'); return; }
+  // leaf-sitter pests, resolved by where you land: aphid = stomp for coins,
+  // beetle = hurt only if you land ON its horn (land elsewhere on the leaf to pass),
+  // snail = safe shell bounce (harmless obstacle).
+  for(var _pi=0;_pi<game.pests.length;_pi++){ var _pe=game.pests[_pi]; if(!_pe.alive||_pe.leaf!==pl) continue;
+    var _dx=Math.abs(p.x-_pe.x); _dx=Math.min(_dx,VW-_dx);
+    if(_pe.type==='aphid'){ if(_dx<_pe.r+14){ _pe.alive=false; stats.aphids=(stats.aphids||0)+1; var _ag=gainCoins(2); addFloat(_pe.x,_pe.y-18,'+'+_ag+' 🪙',PAL.gold); burst(_pe.x,_pe.y,6,PAL.sage,150); sfx('stomp'); } }
+    else if(_pe.type==='beetle'){ if(_dx<_pe.r+8){ applyHit('beetle'); return; } }
+  }
   var imp=HOP; if(pl.type==='mushroom') imp=SPRING; else if(pl.type==='fiddlehead') imp=MEGA;
   var mul=1; if(game.springHops>0){ mul=1.6; game.springHops--; } if(game.shrinkT>0) mul*=1.1;
   p.y=pl.y; p.vy=-imp*mul; game.q=-0.42; game.qv=0;
   if(pl.y<game.launchY-1) game.chain++;
   else if(pl.y>game.launchY+1){ if(game.chain>=5) sfx('chainbreak'); game.chain=1; }
   game.launchY=pl.y; updateChainTier();
+  if(game.chain>(stats.maxChain||1)) stats.maxChain=game.chain;
   game.hopSteerMul=(pl.type==='dewy')?0.4:1;
   sfx(pl.type==='mushroom'?'spring':(pl.type==='fiddlehead'?'mega':'hop'),Math.min(game.chain,12));
   landFx(pl);
@@ -1000,7 +1141,7 @@ function onLand(pl){
 function onMilestone(){
   var m=game.meters;
   if(m>0 && m-game.lastMilestoneM>=250){ game.lastMilestoneM=Math.floor(m/250)*250; var k=game.lastMilestoneM/250; var reward=8+2*k;
-    game.coinsRun+=reward; addFloat(game.player.x,game.player.y-70,'+'+reward+' 🪙 '+game.lastMilestoneM+'m',PAL.gold); sfx('best'); }
+    var _mr=gainCoins(reward); addFloat(game.player.x,game.player.y-70,'+'+_mr+' 🪙 '+game.lastMilestoneM+'m',PAL.gold); sfx('best'); }
   if(best>0 && game.maxRise>0 && Math.floor(game.startY-game.bestY)===Math.floor(best*PX_PER_M)){ /* passing best line handled visually */ }
 }
 
@@ -1022,7 +1163,7 @@ function updateEntities(dt,slow){
     if(pl.type==='thornleaf'){ var ph=(game.t+pl.trapT)% 1.4; pl.thornUp = ph>0.9; pl.thornTele = ph>0.6 && ph<=0.9; }
     if(pl.type==='flytrap'){ pl.trapT-=dt*slow; if(pl.trapT<=0){ pl.trapOpen=!pl.trapOpen; pl.trapT=pl.trapOpen?0.9:1.3; } }
   }
-  for(i=game.particles.length-1;i>=0;i--){ var pa=game.particles[i]; pa.life-=dt; if(pa.life<=0){ game.particles.splice(i,1); continue; } pa.vy+=600*dt; pa.x+=pa.vx*dt; pa.y+=pa.vy*dt; }
+  for(i=game.particles.length-1;i>=0;i--){ var pa=game.particles[i]; pa.life-=dt; if(pa.life<=0){ game.particles.splice(i,1); continue; } if(!pa.t) pa.vy+=600*dt; pa.x+=pa.vx*dt; pa.y+=pa.vy*dt; }
   for(i=game.floats.length-1;i>=0;i--){ var fl=game.floats[i]; fl.life-=dt; fl.y-=30*dt; if(fl.life<=0) game.floats.splice(i,1); }
 }
 function updatePests(dt,slow){
@@ -1032,15 +1173,18 @@ function updatePests(dt,slow){
       if(pe.leaf&&pe.leaf.alive){ pe.x+=pe.vx*dts; var lo=pe.leaf.x-pe.leaf.w/2+8, hi=pe.leaf.x+pe.leaf.w/2-8; if(pe.x<lo){pe.x=lo;pe.vx*=-1;} else if(pe.x>hi){pe.x=hi;pe.vx*=-1;} pe.y=pe.leaf.y-(pe.type==='aphid'?20:12); } else pe.alive=false;
     } else if(pe.type==='wasp'){ pe.x+=pe.vx*dts; pe.y=pe.baseY+Math.sin(game.t*6+pe.phase)*8; if(pe.x<-40||pe.x>VW+40) pe.alive=false; }
     else if(pe.type==='spider'){ pe.phase+=dt*slow*(Math.PI*2/1.2); var s=(Math.sin(pe.phase)+1)/2; pe.y=pe.top+(pe.bottom-pe.top)*s; pe.atBottom = s>0.92; }
-    // collision
-    var dx=Math.abs(p.x-pe.x); dx=Math.min(dx,VW-dx); var dy=p.y-pe.y; var dist=Math.hypot(dx,dy);
-    var stompable=(pe.type==='aphid')||(pe.type==='spider'&&pe.atBottom);
-    if(dist < pe.r+hw*0.7){
-      var feetAbove = (p.y - p.vy*dt) <= pe.y-2;
-      if(stompable && p.vy>0 && feetAbove){ // stomp
-        pe.alive=false; p.vy=-HOP*0.95; game.q=-0.3; sfx('stomp'); var cn=2; game.coinsRun+=cn; addFloat(pe.x,pe.y-20,'+'+cn+' 🪙',PAL.gold); burst(pe.x,pe.y,6,PAL.sage,150);
-      } else { applyHit(pe.type); }
-    } else if(dist<pe.r+hw*0.7+40 && !pe.nearMissed && game.nearMissCd<=0 && (pe.type==='wasp'||pe.type==='spider')){ pe.nearMissed=true; game.coinsRun+=1; addFloat(p.x,p.y-40,'Close! +1',PAL.cream); game.nearMissCd=0.4; }
+    // MID-AIR pests only (wasp flies, spider yo-yos). Leaf-sitters (aphid/snail/
+    // beetle) are resolved in onLand by WHERE you land, so you can't be killed
+    // from below after bouncing off their leaf.
+    if(pe.type==='wasp'||pe.type==='spider'){
+      var dx=Math.abs(p.x-pe.x); dx=Math.min(dx,VW-dx); var dy=p.y-pe.y; var dist=Math.hypot(dx,dy);
+      var stompable=(pe.type==='spider'&&pe.atBottom);
+      if(dist < pe.r+hw*0.7){
+        var feetAbove = (p.y - p.vy*dt) <= pe.y-2;
+        if(stompable && p.vy>0 && feetAbove){ pe.alive=false; p.vy=-HOP*0.95; game.q=-0.3; sfx('stomp'); var _sg=gainCoins(2); addFloat(pe.x,pe.y-20,'+'+_sg+' 🪙',PAL.gold); burst(pe.x,pe.y,6,PAL.sage,150); }
+        else applyHit(pe.type);
+      } else if(dist<pe.r+hw*0.7+40 && !pe.nearMissed && game.nearMissCd<=0){ pe.nearMissed=true; var _nm=gainCoins(1); addFloat(p.x,p.y-40,'Close! +'+_nm,PAL.cream); game.nearMissCd=0.4; }
+    }
   }
 }
 function updateHazards(dt,slow){
@@ -1052,10 +1196,10 @@ function updateHazards(dt,slow){
       if(hz.ext>0.6 && Math.abs(p.y-hz.y)<14) applyHit('bramble'); }
   }
 }
-function pullCoins(dt){ var p=game.player; for(var i=0;i<game.coins.length;i++){ var c=game.coins[i]; if(c.got) continue; var dx=p.x-c.x, dy=p.y-40-c.y, d=Math.hypot(dx,dy); if(d<220){ c.x+=dx/d*Math.min(d,420)*dt*2; c.y+=dy/d*Math.min(d,420)*dt*2; } } }
+function pullCoins(dt,rad){ var p=game.player; for(var i=0;i<game.coins.length;i++){ var c=game.coins[i]; if(c.got) continue; var dx=p.x-c.x, dy=p.y-40-c.y, d=Math.hypot(dx,dy); if(d<rad){ c.x+=dx/d*Math.min(d,420)*dt*2; c.y+=dy/d*Math.min(d,420)*dt*2; } } }
 function collectItems(){
   var p=game.player, hw=p.w*p.scale/2, cx=p.x, cy=p.y-p.h*p.scale*0.5;
-  for(var i=0;i<game.coins.length;i++){ var c=game.coins[i]; if(c.got) continue; var dx=Math.abs(cx-c.x); dx=Math.min(dx,VW-dx); if(dx<c.r+hw && Math.abs(cy-c.y)<c.r+30){ c.got=true; var val=(c.gold?10:1)*chainMultVal(); val=Math.round(val); game.coinsRun+=val; sfx('coin',0); burst(c.x,c.y,c.gold?10:5,PAL.gold,140); addFloat(c.x,c.y-10,'+'+val,PAL.gold); } }
+  for(var i=0;i<game.coins.length;i++){ var c=game.coins[i]; if(c.got) continue; var dx=Math.abs(cx-c.x); dx=Math.min(dx,VW-dx); if(dx<c.r+hw && Math.abs(cy-c.y)<c.r+30){ c.got=true; var got=gainCoins(Math.round((c.gold?10:1)*chainMultVal())); sfx('coin',0); burst(c.x,c.y,c.gold?10:5,PAL.gold,140); addFloat(c.x,c.y-10,'+'+got,PAL.gold); } }
   for(var j=0;j<game.powerups.length;j++){ var pu=game.powerups[j]; if(pu.got) continue; var pdx=Math.abs(cx-pu.x); pdx=Math.min(pdx,VW-pdx); if(pdx<pu.r+hw && Math.abs(cy-pu.y)<pu.r+30){ pu.got=true; applyPowerup(pu.id); } }
 }
 
@@ -1188,8 +1332,10 @@ function refreshHUD(){
 }
 function besttagUpdate(){ var e=$('besttag'); if(e) e.textContent=best+' m'; }
 
-function startRun(){ ensureAudio(); if(!SET.muted) startMusic(); if(SET.steer!=='drag') enableTilt(true); newGame(); INP.dragX=null; INP.keyL=INP.keyR=false; INP.tiltAxis=0; lastTs=0; show(null); }
-function toTitle(){ game=null; show('s-title'); besttagUpdate(); renderTitlePreview(); }
+function startRun(){ commitRun(); ensureAudio(); if(!SET.muted) startMusic(); if(SET.steer!=='drag') enableTilt(true); newGame(); INP.dragX=null; INP.keyL=INP.keyR=false; INP.tiltAxis=0; lastTs=0;
+  if(ST.coinDay!==dayStr()){ ST.coinDay=dayStr(); saveST(); addCoins(50); toast('☀ Morning Dew  +50 🪙'); }
+  show(null); }
+function toTitle(){ commitRun(); game=null; show('s-title'); besttagUpdate(); renderTitlePreview(); }
 function playPressed(){ if(!LS.get(K.bounce)){ onboarding=true; openStudio(null); } else startRun(); }
 
 function pauseRun(){ if(!game||!game.running||game.paused) return; game.paused=true; $('pause-alt').textContent=game.meters+' m'; $('pause-coins').textContent=game.coinsRun; show('s-pause'); }
@@ -1227,10 +1373,13 @@ function earnSunbeams(m){
 function onGameOver(){
   if(!game) return;                        // guard: rage-quit before the death timeout fires
   var m=game.meters;
-  var gained=game.coinsRun-(game.coinsCommitted||0); if(gained>0) addCoins(gained); game.coinsCommitted=game.coinsRun;
+  commitRun();                             // bank run coins (once, via coinsCommitted) + coinsEarned + saveStats
   updateStreak();
   var isBest=m>best; if(isBest){ best=m; LS.set(K.best,String(best)); }
   var sun=earnSunbeams(m);
+  if(!game.runCounted){ stats.runs=(stats.runs||0)+1; game.runCounted=true; } // once per PHYSICAL run (survives Dandelion Save)
+  if(m>(stats.maxAlt||0)) stats.maxAlt=m; saveStats();
+  checkAch();
   // unlock checks (beholder@3000 / golden acorn@streak7) are read live by isUnlocked
   $('over-alt').innerHTML=m+'<small style="font-size:22px;color:var(--gold)">m</small>';
   $('over-title').textContent=isBest?'New Best!':'You reached';
@@ -1322,11 +1471,14 @@ function applyLefthand(){ var lh=SET.lefthand;
 function coach(){ modal('<h3>How to climb</h3><p style="text-align:left">▲ You auto-hop — never press jump.<br>◀▶ Drag (or tilt / arrow keys) to steer onto leaves.<br>🍄 Springs and 🔥 power-ups fling you higher.<br>Dodge pests, grab 🪙 coins, chase your best height!</p><button class="btn sm primary" id="mx1">Got it</button>'); tap('mx1',closeModal); }
 function confirmReset(){ modal('<h3>Reset everything?</h3><p>Deletes coins, skins, drawings, best score and settings. This cannot be undone.</p><div class="row"><button class="btn sm ghost" id="mx1">Cancel</button><button class="btn sm" id="mx2">Reset</button></div>');
   tap('mx1',closeModal); tap('mx2',function(){
-    [K.coins,K.best,K.book,K.owned,K.equip,K.set,K.bounce,K.save,K.streak].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+    [K.coins,K.best,K.book,K.owned,K.equip,K.set,K.bounce,K.save,K.streak,K.upgrades,K.trails,K.trail,K.ach,K.stats].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
     // reset IN MEMORY (never navigate/reload while embedded — the fleet black-screen rule)
     coins=0; best=0; owned=[]; sketchbook=[]; equip={type:'default'}; skinCache={};
+    upgrades={}; trailsOwned=['none']; trailEquip='none'; achDone={}; stats={coinsTotal:0,coinsEarned:0,aphids:0,powerups:0,maxChain:1,runs:0};
     for(var kk in DEF_SET) SET[kk]=DEF_SET[kk]; saveSet();
-    ST={count:0,last:'',firstDaily:'',saveFreeDay:'',bonus:0};
+    // preserve today's daily-claim flags so a reset can't re-grant the same-day Morning Dew / free save
+    var _cd=(ST&&ST.coinDay)||'', _sf=(ST&&ST.saveFreeDay)||'', _fd=(ST&&ST.firstDaily)||'';
+    ST={count:0,last:'',firstDaily:_fd,saveFreeDay:_sf,bonus:0,coinDay:_cd};
     closeModal(); applyVolumes(); applyLefthand(); refreshCoinUI(); applyEquip(); besttagUpdate(); toTitle();
   }); }
 
@@ -1364,7 +1516,7 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   tap('b-play',playPressed); tap('b-draw',function(){ openStudio(null); });
-  tap('b-shop',function(){ renderShop(); show('s-shop'); });
+  tap('b-shop',function(){ openShop('skins'); });
   tap('b-settings',function(){ settingsFrom='title'; buildSettings(); show('s-settings'); });
   tap('b-exit',function(){ if(window.SWS_EXIT) SWS_EXIT(); });
   tap('draw-back',function(){ if(onboarding){ onboarding=false; LS.set(K.bounce,'1'); } toTitle(); });
@@ -1377,7 +1529,7 @@ function boot(){
   tap('p-resume',resumeRun); tap('p-restart',startRun);
   tap('p-settings',function(){ settingsFrom='pause'; buildSettings(); show('s-settings'); }); tap('p-quit',toTitle);
   tap('o-continue',continueRun); tap('o-retry',startRun);
-  tap('o-shop',function(){ renderShop(); show('s-shop'); }); tap('o-share',shareCard); tap('o-title',toTitle);
+  tap('o-shop',function(){ openShop('skins'); }); tap('o-share',shareCard); tap('o-title',toTitle);
   on('pausebtn','click',function(e){ e.preventDefault(); sfx('ui'); pauseRun(); });
   on('mutebtn','click',function(e){ e.preventDefault(); SET.muted=!SET.muted; saveSet(); applyVolumes(); if(SET.muted) stopMusic(); else if(game) startMusic(); refreshHUD(); });
   applyLefthand(); besttagUpdate(); applyEquip();
@@ -1408,17 +1560,32 @@ if(/[?&]sproingtest=1/.test(location.search)){
   window.SPROING_DEV={
     start:startRun, over:onGameOver, state:function(){ return game; },
     tick:function(n){ if(!game) return; for(var i=0;i<(n||60);i++){ game.t+=DT; updateGame(DT); if(!game.running) break; } },
-    auto:function(n){ if(!game) return 0; var steps=0; for(var i=0;i<(n||600);i++){ if(!game.running) break;
-      // crude autopilot: steer toward nearest platform just above the player
-      var best=null,bd=1e9; for(var j=0;j<game.platforms.length;j++){ var pl=game.platforms[j]; if(!pl.alive) continue; var d=game.player.y-pl.y; if(d>4 && d<260){ var dx=Math.abs(pl.x-game.player.x); dx=Math.min(dx,VW-dx); var score=d*0.3+dx; if(score<bd){ bd=score; best=pl; } } }
-      if(best) INP.dragX=best.x;
-      game.t+=DT; updateGame(DT); steps++; }
+    auto:function(n){ if(!game) return 0; var steps=0;
+      for(var i=0;i<(n||600);i++){ if(!game.running) break;
+        var p=game.player;
+        // where the descending arc will pass: from the apex down to just below the feet.
+        var apexY = p.vy<0 ? p.y - (p.vy*p.vy)/(2*GRAV) : p.y;
+        var best=null,bd=1e9,j,pl,dx;
+        for(j=0;j<game.platforms.length;j++){ pl=game.platforms[j]; if(!pl.alive) continue;
+          if(pl.type==='dandelion'&&pl.faded) continue;
+          if(pl.y>=apexY-8 && pl.y<=p.y+70){                    // on the descent path
+            dx=Math.abs(pl.x-p.x); dx=Math.min(dx,VW-dx);
+            var pen=(pl.type==='broad'||pl.type==='drifting'||pl.type==='mushroom'||pl.type==='fiddlehead')?0:55;
+            var sc=pl.y + dx*0.45 + pen;                         // smaller pl.y = higher = better; minimize
+            if(sc<bd){ bd=sc; best=pl; } } }
+        if(!best){ for(j=0;j<game.platforms.length;j++){ pl=game.platforms[j]; if(!pl.alive||pl.type==='dandelion'&&pl.faded) continue; var d=pl.y-p.y; if(d>0&&d<420){ dx=Math.abs(pl.x-p.x); dx=Math.min(dx,VW-dx); var s2=d+dx*0.4; if(s2<bd){ bd=s2; best=pl; } } } }
+        if(best) INP.dragX=best.x;
+        game.t+=DT; updateGame(DT); steps++; }
       INP.dragX=null; return steps; },
     setMeters:function(m){ if(game){ game.meters=m; game.bestY=game.startY-m*PX_PER_M; game.maxRise=m*PX_PER_M; game.lastMilestoneM=Math.floor(m/250)*250; } },
     addCoins:addCoins, equipSkin:function(id){ setEquip({type:'skin',id:id}); }, equipDefault:function(){ setEquip({type:'default'}); },
     saveDoodle:function(){ openStudio(null); drawDefaultDoodle(padCtx); saveEquip(); },
     render:renderGame, skins:SKIN_DEFS, earn:earnSunbeams, coins:function(){ return coins; }, best:function(){ return best; },
-    hitAll:function(){ if(game) game.pests.forEach(function(p){}); }, die:function(){ die('fall'); }
+    die:function(){ die('fall'); },
+    setUpgrade:function(id,lvl){ upgrades[id]=lvl; LS.setJSON(K.upgrades,upgrades); }, upLvl:upLvl,
+    stats:function(){ return stats; }, checkAch:checkAch, ach:function(){ return achDone; },
+    openShop:openShop, buyUpgrade:function(id){ var u=upDef(id); if(u) buyUpgrade(u); }, buyTrail:function(id){ var t=trailDef(id); if(t) buyTrail(t); },
+    upgradesList:UPGRADES, trailsList:TRAILS, achsList:ACHS
   };
 }
 
