@@ -204,6 +204,9 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .load-ammo .la{ width:38px; height:38px; border-radius:50%; background:var(--coal2); border:2px solid #3a4230; display:flex; align-items:center; justify-content:center; font-size:19px; }
 .load-note{ color:var(--muted); font-size:11.5px; text-align:center; margin:8px 4px; line-height:1.5; }
 .load-soon{ text-align:center; color:var(--muted); font-size:13px; padding:24px 10px; }
+.load-seed{ background:var(--coal2); border:1px solid #3a4230; border-radius:12px; padding:10px 4px; color:var(--cream); cursor:pointer; min-height:60px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.load-seed:active{ transform:scale(.95); }
+.load-seed.on{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; color:var(--gold); background:linear-gradient(160deg,rgba(200,168,75,.14),var(--coal2)); }
 </style>
 </head>
 <body>
@@ -237,9 +240,10 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   </div>
   <button class="btn wide gold" id="btnPlay">PLAY</button>
   <div class="rowbtns">
+    <button class="btn ghost sm" id="btnAlmanac">🌱 Almanac</button>
     <button class="btn ghost sm" id="btnShop">🛒 Shop</button>
     <button class="btn ghost sm" id="btnStory">📖 Story</button>
-    <button class="btn ghost sm" id="btnHow">How to play</button>
+    <button class="btn ghost sm" id="btnHow">How</button>
     <button class="btn ghost sm" id="btnSettings">⚙ Settings</button>
   </div>
   <div class="footer">A Sky Wolf Studios garden.<br><span class="bstamp" id="bstampMenu"></span></div>
@@ -268,6 +272,17 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   <div class="sub" id="loadIntel">Twig fort</div>
   <div class="load-body" id="loadBody"></div>
   <button class="btn wide gold" id="btnLoadPlay" style="margin-top:6px;">PLAY →</button>
+</div>
+
+<!-- SEED ALMANAC (unlock + graft seeds with Fertilizer) -->
+<div class="screen" id="scr-almanac">
+  <div class="ls-head">
+    <button class="btn ghost sm" id="btnAlmBack">← Menu</button>
+    <div class="chip" style="color:#c8a06a;"><span class="ico">🌱</span><span id="almFert">0</span> Fertilizer</div>
+  </div>
+  <h2 class="sh" style="margin-top:12px;">Seed Almanac</h2>
+  <div class="sub">Spend Fertilizer to unlock new seeds and graft permanent upgrades. Earn it by clearing patches for new stars.</div>
+  <div class="grid" id="almGrid" style="grid-template-columns:repeat(2,1fr);"></div>
 </div>
 
 <!-- SHOP -->
@@ -903,8 +918,29 @@ var AMMO = {
   thornpod:  { r:14, density:1.25,rest:0.24, fric:0.5, icon:'💥', name:'Thornpod',      ability:'boom', impactBoom:true,
                ab:{ power:1000, radius:210 } },
   boomerang: { r:14, density:1.1, rest:0.30, fric:0.5, icon:'🪃', name:'Boomerang Pod', ability:'curve',
-               ab:{ accel:4600, dur:0.55, lift:900 } }
+               ab:{ accel:4600, dur:0.55, lift:900 } },
+  // --- unlockable seeds (Seed Almanac) ---
+  gourd:     { r:20, density:3.3, rest:0.08, fric:0.62,icon:'🎃', name:'Gourd',         ability:null },
+  firethorn: { r:15, density:1.3, rest:0.22, fric:0.5, icon:'🔥', name:'Firethorn',     ability:'boom', impactBoom:true,
+               ab:{ power:1300, radius:260 } },
+  dandelion: { r:13, density:1.1, rest:0.30, fric:0.5, icon:'🌼', name:'Dandelion',     ability:'split',
+               ab:{ pellets:4, angle:0.34, perp:130, boost:1.05 } }
 };
+/* Seed Almanac catalog: which seeds start owned, which unlock with Fertilizer, and each
+   seed's permanent graft tiers (mods applied by applyGraftMods via SAVE.grafts). */
+var SEED_CATALOG = [
+  { id:'burr',      start:true, desc:'Steady and true.',        grafts:[ {n:'Denser Core', c:6, e:'+18% mass', m:function(st){st.density*=1.18;}}, {n:'Ironbark', c:14, e:'+18% mass again', m:function(st){st.density*=1.18;}} ] },
+  { id:'split',     start:true, desc:'Bursts into a fan.',      grafts:[ {n:'Fourth Pellet', c:8, e:'+1 pellet', m:function(st){st.ab.pellets+=1;}}, {n:'Wide Burst', c:16, e:'+1 pellet, wider fan', m:function(st){st.ab.pellets+=1; st.ab.angle=(st.ab.angle||0.3)+0.08;}} ] },
+  { id:'acorn',     start:true, desc:'Heavy; slams down.',      grafts:[ {n:'Meteoric', c:10, e:'+25% slam force', m:function(st){st.ab.force=(st.ab.force||2100)*1.25;}}, {n:'Cratermaker', c:18, e:'heavier + harder slam', m:function(st){st.density*=1.15; st.ab.force=(st.ab.force||2100)*1.2;}} ] },
+  { id:'puffball',  start:true, desc:'A lifting spore gust.',   grafts:[ {n:'Bigger Gust', c:8, e:'+30% radius', m:function(st){st.ab.radius=(st.ab.radius||230)*1.3;}}, {n:'Updraft', c:16, e:'stronger lift', m:function(st){st.ab.lift=(st.ab.lift||0.95)*1.35;}} ] },
+  { id:'thornpod',  start:true, desc:'Explodes on impact.',     grafts:[ {n:'Bigger Blast', c:10, e:'+25% blast radius', m:function(st){st.ab.radius=(st.ab.radius||210)*1.25;}}, {n:'Volatile', c:18, e:'+30% blast power', m:function(st){st.ab.power=(st.ab.power||1000)*1.3;}} ] },
+  { id:'boomerang', start:true, desc:'Banks back around.',      grafts:[ {n:'Tight Bank', c:8, e:'sharper curve', m:function(st){st.ab.accel=(st.ab.accel||4600)*1.3;}}, {n:'Long Bank', c:16, e:'longer curve window', m:function(st){st.ab.dur=(st.ab.dur||0.55)+0.2;}} ] },
+  { id:'gourd',     unlock:18, desc:'A heavy roller — bowls straight through low forts.', grafts:[ {n:'Boulder Gourd', c:14, e:'+22% mass', m:function(st){st.density*=1.22;}} ] },
+  { id:'firethorn', unlock:26, desc:'A premium bomb: bigger blast, still detonates on impact.', grafts:[ {n:'Inferno', c:16, e:'+30% blast', m:function(st){st.ab.power=(st.ab.power||1300)*1.3; st.ab.radius=(st.ab.radius||260)*1.15;}} ] },
+  { id:'dandelion', unlock:24, desc:'A four-pellet storm split.', grafts:[ {n:'Storm Seed', c:16, e:'+2 pellets', m:function(st){st.ab.pellets+=2;}} ] }
+];
+function seedCat(id){ for(var i=0;i<SEED_CATALOG.length;i++) if(SEED_CATALOG[i].id===id) return SEED_CATALOG[i]; return null; }
+function seedOwned(id){ var c=seedCat(id); return !!(c&&(c.start||(SAVE.seeds&&SAVE.seeds[id]))); }
 /* neutral loadout — nutrients 0, no companions/grafts/relics = base play unchanged */
 var DEFAULT_LOADOUT = { nutrients:{n:0,p:0,k:0}, companions:[], grafts:{}, relics:[] };
 /* computeSeedStats: the ONE place every build knob folds into a launched seed's stats.
@@ -926,7 +962,11 @@ function computeSeedStats(type, lo){
   return st;
 }
 function applyCompanionMods(type, base, st, lo){ /* slice 5 */ }
-function applyGraftMods(type, base, st, lo){ /* slice 4 */ }
+function applyGraftMods(type, base, st, lo){
+  var lvl=(SAVE.grafts&&SAVE.grafts[type])||0; if(!lvl)return;
+  var cat=seedCat(type); if(!cat||!cat.grafts)return;
+  for(var i=0;i<lvl && i<cat.grafts.length;i++){ try{ cat.grafts[i].m(st); }catch(e){} }
+}
 function getActiveLoadout(){ return (SAVE&&SAVE.loadout) || DEFAULT_LOADOUT; }
 function nutrientsUsed(){ var n=SAVE.loadout.nutrients; return (n.n||0)+(n.p||0)+(n.k||0); }
 function nutCap(){ return 8 + Math.floor(totalStars()/5); }   // grows as you earn stars
@@ -1031,17 +1071,18 @@ function img(name){ var a=ART[name]; return (a&&a.ok)?a.img:null; }
 var SAVE_KEY='lw_burrblast_v1';
 var SAVE = { coins:0, prog:{}, skins:{seed_burr:1, sling_oak:1}, equip:{seed:'seed_burr', sling:'sling_oak'},
   set:{ sound:1, shake:1, guide:1, reduce:0 }, endlessBest:0, seenStory:0,
-  fert:0, nutrientCap:8, loadout:{ nutrients:{n:0,p:0,k:0}, companions:[], grafts:{} } };
+  fert:0, nutrientCap:8, seeds:{}, grafts:{},
+  loadout:{ nutrients:{n:0,p:0,k:0}, companions:[], satchel:[] } };
 function loadSave(){
   try{ var s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){
     SAVE.coins=s.coins||0; SAVE.prog=s.prog||{}; SAVE.skins=s.skins||{seed_burr:1,sling_oak:1};
     SAVE.equip=s.equip||{seed:'seed_burr',sling:'sling_oak'};
     SAVE.set=s.set||SAVE.set; SAVE.endlessBest=s.endlessBest||0; SAVE.seenStory=s.seenStory||0;
-    SAVE.fert=s.fert||0; SAVE.nutrientCap=s.nutrientCap||8;
+    SAVE.fert=s.fert||0; SAVE.nutrientCap=s.nutrientCap||8; SAVE.seeds=s.seeds||{}; SAVE.grafts=s.grafts||{};
     if(s.loadout){ SAVE.loadout=s.loadout;
       if(!SAVE.loadout.nutrients) SAVE.loadout.nutrients={n:0,p:0,k:0};
       if(!SAVE.loadout.companions) SAVE.loadout.companions=[];
-      if(!SAVE.loadout.grafts) SAVE.loadout.grafts={}; }
+      if(!SAVE.loadout.satchel) SAVE.loadout.satchel=[]; }
     if(!SAVE.skins.seed_burr) SAVE.skins.seed_burr=1;
     if(!SAVE.skins.sling_oak) SAVE.skins.sling_oak=1;
     if(!SAVE.equip.seed) SAVE.equip.seed='seed_burr';
@@ -1285,6 +1326,8 @@ function startLevel(lv){
 
   // ammo
   G.ammo = (lv.ammo||['burr']).slice();
+  var _sat=(G.loadout.satchel||[]);   // Satchel: seeds you chose to bring
+  for(var _si=0;_si<_sat.length;_si++){ if(AMMO[_sat[_si]]) G.ammo.push(_sat[_si]); }
   var _kb=Math.floor(((G.loadout.nutrients&&G.loadout.nutrients.k)||0)/3);   // Potassium: extra seeds
   for(var _k=0;_k<_kb;_k++) G.ammo.push('burr');
   G.ammoIdx=0;
@@ -2027,6 +2070,7 @@ function drawProj(ctx,b){
   ctx.restore();
 }
 function drawSeedShape(ctx,type,r,sk){
+  type = ({gourd:'acorn', firethorn:'thornpod', dandelion:'split'})[type] || type;   // new seeds reuse base shapes until art lands
   ctx.fillStyle=sk.c1; ctx.strokeStyle=sk.c2; ctx.lineWidth=2;
   if(type==='acorn'){
     ctx.beginPath(); ctx.arc(0,r*0.15,r*0.9,0,Math.PI); ctx.lineTo(-r*0.9,r*0.15); ctx.fill();
@@ -2170,13 +2214,27 @@ function renderLoadout(){
     h+='<div class="load-note">This fort’s seeds'+(kb?' (+'+kb+' from Potassium)':'')+':</div><div class="load-ammo">'+ah+'</div>';
     h+='<div class="load-note">'+nutPreview(nut)+'</div>';
   } else if(_loadTab==='satchel'){
-    h+='<div class="load-soon">The Seed Almanac — graft and grow your seeds — arrives soon. For now every fort brings its own seeds.</div>';
+    var slots=bringSlots(), sat=SAVE.loadout.satchel||[];
+    h+='<div class="load-note">Bring up to <b style="color:var(--cream)">'+slots+'</b> extra seed'+(slots===1?'':'s')+' from your Almanac into this fort. ('+sat.length+'/'+slots+' packed)</div>';
+    h+='<div class="grid" style="grid-template-columns:repeat(3,1fr);gap:8px;padding-bottom:8px;">';
+    SEED_CATALOG.forEach(function(cat){ if(!seedOwned(cat.id))return; var sp=AMMO[cat.id]||AMMO.burr, inSat=sat.indexOf(cat.id)>=0;
+      h+='<button class="load-seed'+(inSat?' on':'')+'" data-seed="'+cat.id+'"><div style="font-size:25px">'+sp.icon+'</div><div style="font-size:10px;font-weight:800;line-height:1.1">'+sp.name+'</div></button>';
+    });
+    h+='</div><div class="load-note">Unlock + graft more seeds in the 🌱 Almanac.</div>';
   } else {
     h+='<div class="load-soon">Companions — a team of creatures that reshape your seeds — arrive soon.</div>';
   }
   body.innerHTML=h;
   var tabs=body.querySelectorAll('.lt'); for(var t=0;t<tabs.length;t++){ (function(el){ el.onclick=function(){ _loadTab=el.getAttribute('data-t'); SFX.click(); renderLoadout(); }; })(tabs[t]); }
   var steps=body.querySelectorAll('.nstep'); for(var s2=0;s2<steps.length;s2++){ (function(el){ el.onclick=function(){ adjustNutrient(el.getAttribute('data-k'), +el.getAttribute('data-d')); }; })(steps[s2]); }
+  var seedBtns=body.querySelectorAll('.load-seed'); for(var sb=0;sb<seedBtns.length;sb++){ (function(el){ el.onclick=function(){ toggleSatchel(el.getAttribute('data-seed')); }; })(seedBtns[sb]); }
+}
+function bringSlots(){ return 1 + Math.floor(totalStars()/12); }
+function toggleSatchel(id){
+  var sat=SAVE.loadout.satchel, i=sat.indexOf(id);
+  if(i>=0){ sat.splice(i,1); }
+  else { if(sat.length>=bringSlots()){ toast('Satchel full.'); return; } sat.push(id); }
+  persist(); SFX.click(); renderLoadout();
 }
 function nutRow(key,icon,name,desc,val,cap){
   return '<div class="nut-row nut-'+key+'"><div class="nh"><span class="ni">'+icon+'</span><span class="nn">'+name+'</span><span class="nv">'+val+'</span></div>'
@@ -2197,6 +2255,36 @@ function nutPreview(nut){
   if(nut.p>0) parts.push('tricks +'+Math.round(nut.p*7)+'%');
   if(nut.k>0) parts.push('+'+Math.floor(nut.k/3)+' seed'+(Math.floor(nut.k/3)===1?'':'s'));
   return parts.length? ('Your seeds: '+parts.join(' · ')) : 'Allocate nutrients to tune your seeds for this fort.';
+}
+
+/* ---- Seed Almanac (unlock + graft) ---- */
+function openAlmanac(){ renderAlmanac(); showScreen('scr-almanac'); }
+function drawSeedPreview(cv, id){
+  var x=cv.getContext('2d'); x.clearRect(0,0,cv.width,cv.height);
+  x.save(); x.translate(cv.width/2,cv.height/2); x.scale(1.7,1.7);
+  drawSeedShape(x, id, 15, skinById('seed',SAVE.equip.seed)); x.restore();
+}
+function renderAlmanac(){
+  $('almFert').textContent=SAVE.fert;
+  var grid=$('almGrid'); grid.innerHTML='';
+  SEED_CATALOG.forEach(function(cat){
+    var spec=AMMO[cat.id]||AMMO.burr, owned=seedOwned(cat.id), lvl=(SAVE.grafts[cat.id]||0), maxg=(cat.grafts||[]).length;
+    var card=document.createElement('div'); card.className='card'; if(!owned) card.style.opacity='0.9';
+    var cv=document.createElement('canvas'); cv.width=140; cv.height=60; card.appendChild(cv); drawSeedPreview(cv, cat.id);
+    var nm=document.createElement('div'); nm.className='nm'; nm.textContent=spec.name; card.appendChild(nm);
+    var info=document.createElement('div'); info.style.cssText='color:#8a9178;font-size:10.5px;line-height:1.3;font-weight:600;min-height:28px;';
+    info.textContent = !owned ? cat.desc : (lvl<maxg ? ('Graft '+lvl+'/'+maxg+' · Next: '+cat.grafts[lvl].e) : (maxg?('Graft '+lvl+'/'+maxg+' · maxed'):cat.desc));
+    card.appendChild(info);
+    var act=document.createElement('button'); act.className='act';
+    if(!owned){
+      act.className+=' buy'+(SAVE.fert<cat.unlock?' cant':''); act.textContent='Unlock · '+cat.unlock+'🌱';
+      (function(c){ act.onclick=function(){ if(SAVE.fert<c.unlock){toast('Not enough Fertilizer.');return;} SAVE.fert-=c.unlock; SAVE.seeds[c.id]=1; persist(); SFX.coin(); toast(spec.name+' unlocked!'); renderAlmanac(); }; })(cat);
+    } else if(lvl<maxg){
+      var g=cat.grafts[lvl]; act.className+=' buy'+(SAVE.fert<g.c?' cant':''); act.textContent='Graft · '+g.c+'🌱';
+      (function(c,gr,l){ act.onclick=function(){ if(SAVE.fert<gr.c){toast('Not enough Fertilizer.');return;} SAVE.fert-=gr.c; SAVE.grafts[c.id]=l+1; persist(); SFX.coin(); toast(gr.n+'!'); renderAlmanac(); }; })(cat,g,lvl);
+    } else { act.className+=' on'; act.textContent='Grafted'; }
+    card.appendChild(act); grid.appendChild(card);
+  });
 }
 function retryLevel(){ if(_endless){ startEndlessLevel(_endlessN); _playing=true; _paused=false; showScreen(null); } else beginFort(_curLevelN); }
 function nextLevel(){
@@ -2348,6 +2436,8 @@ function boot(){
   $('btnHow').onclick=function(){ SFX.click(); showScreen('scr-how'); };
   $('btnSettings').onclick=function(){ SFX.click(); syncToggles(); showScreen('scr-settings'); };
   $('btnStory').onclick=function(){ SFX.click(); openStory(COMIC, goMenu); };
+  $('btnAlmanac').onclick=function(){ SFX.click(); openAlmanac(); };
+  $('btnAlmBack').onclick=function(){ SFX.click(); goMenu(); };
   $('menuMascot').src='assets/bramble.png?v='+encodeURIComponent(BUILD);
   // comic controls
   $('btnComicNext').onclick=storyNext;
@@ -2378,7 +2468,7 @@ function boot(){
   // settings toggles
   wireToggle('tgSound','sound',function(){ SFX.setOn(!!SAVE.set.sound); });
   wireToggle('tgShake','shake'); wireToggle('tgGuide','guide'); wireToggle('tgReduce','reduce');
-  $('btnReset').onclick=function(){ if(confirm('Reset ALL progress, coins and skins? This cannot be undone.')){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} SAVE={ coins:0, prog:{}, skins:{seed_burr:1,sling_oak:1}, equip:{seed:'seed_burr',sling:'sling_oak'}, set:{sound:1,shake:1,guide:1,reduce:0}, endlessBest:0, seenStory:0, fert:0, nutrientCap:8, loadout:{nutrients:{n:0,p:0,k:0},companions:[],grafts:{}} }; persist(); refreshMenu(); toast('Progress reset.'); goMenu(); } };
+  $('btnReset').onclick=function(){ if(confirm('Reset ALL progress, coins and skins? This cannot be undone.')){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} SAVE={ coins:0, prog:{}, skins:{seed_burr:1,sling_oak:1}, equip:{seed:'seed_burr',sling:'sling_oak'}, set:{sound:1,shake:1,guide:1,reduce:0}, endlessBest:0, seenStory:0, fert:0, nutrientCap:8, seeds:{}, grafts:{}, loadout:{nutrients:{n:0,p:0,k:0},companions:[],satchel:[]} }; persist(); refreshMenu(); toast('Progress reset.'); goMenu(); } };
   // start loop
   _running=true; _lastT=performance.now(); requestAnimationFrame(gameLoop);
   // first-ever run plays the intro comic, then drops into the menu
@@ -2449,6 +2539,12 @@ try{ window.BB_DEBUG = {
     return true;
   },
   tap:function(){ triggerAbility(); },
+  grantFert:function(n){ SAVE.fert=(SAVE.fert||0)+n; persist(); },
+  seedStats:function(type){ return computeSeedStats(type, getActiveLoadout()); },
+  setGraft:function(id,l){ SAVE.grafts[id]=l; persist(); },
+  setNutrient:function(k,v){ SAVE.loadout.nutrients[k]=v; persist(); },
+  setSatchel:function(arr){ SAVE.loadout.satchel=arr.slice(); persist(); },
+  unlockSeed:function(id){ SAVE.seeds[id]=1; persist(); },
   advance:function(sec){ // synchronous sim advance (bypasses RAF) for headless solvability tests
     if(!G) return null; var was=_paused; _paused=true;
     var steps=Math.round((sec||6)/(1/120));
