@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d100c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sprout Dice">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='5' width='22' height='22' rx='5' fill='%23e8dcc8'/%3E%3Ccircle cx='11' cy='11' r='2.4' fill='%237ab356'/%3E%3Ccircle cx='21' cy='21' r='2.4' fill='%237ab356'/%3E%3Cpath d='M16 6 Q22 2 26 6 Q20 8 16 12Z' fill='%23c8a84b'/%3E%3C/svg%3E">
+<title>Sprout Dice — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=2"></script>
+<style>
+:root{
+  --bg:#0d100c; --bg2:#141a12; --panel:#111710; --panel2:#182015; --line:#2a331f;
+  --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8; --muted:#8a9178;
+  --bark:#6b4a2b; --coral:#e8823a; --red:#d8564a; --heal:#7ecb5a; --shield:#6fa8d6;
+  --root:#b07fd0; --wild:#f2d24b; --ink:#12160f;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none; touch-action:manipulation}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #12180f 0%, #080b06 72%, #000 100%)}
+#stage{position:relative; width:min(100vw,540px); height:100%; max-height:960px; overflow:hidden;
+  background:linear-gradient(180deg,#0e140c,#0a0d08); display:flex; flex-direction:column}
+@media(min-width:560px){ #stage{border-radius:20px; box-shadow:0 0 60px #000a, 0 0 0 1px var(--line)} }
+
+/* screens */
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:10; overflow:hidden}
+.screen.on{display:flex}
+.scroll{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:18px}
+.center{align-items:center; justify-content:center; text-align:center}
+.pad{padding:20px}
+
+/* titles */
+.logo{font-weight:900; letter-spacing:1px; text-align:center; line-height:1}
+.logo .l1{display:block; font-size:min(15vw,58px); color:var(--sage); text-shadow:0 3px 0 #14200f,0 0 26px #7ab35633}
+.logo .l2{display:block; font-size:min(15vw,58px); color:var(--gold); text-shadow:0 3px 0 #2a2007}
+.tag{color:var(--muted); font-size:14px; letter-spacing:2px; text-transform:uppercase; text-align:center; margin-top:10px}
+.dieicon{font-size:46px; margin:6px 0}
+
+/* buttons */
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:18px; font-weight:700; cursor:pointer; transition:transform .06s, filter .12s}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
+.btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a; box-shadow:0 4px 0 #3f6b34}
+.btn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a; box-shadow:0 4px 0 #7a5f1f}
+.btn.ghost{background:#0f150c; color:var(--muted); min-height:50px; font-size:15px}
+.btn.sm{min-height:50px; font-size:15px}
+.btn:disabled{opacity:.4; filter:grayscale(.5); pointer-events:none}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+.row{display:flex; gap:10px; width:100%} .row>.btn{flex:1}
+.icobtn{width:50px; height:50px; min-width:50px; border-radius:13px; border:1px solid var(--line);
+  background:#0f150ccc; color:var(--cream); font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.icobtn:active{filter:brightness(1.25)}
+.hdr{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line); flex-shrink:0}
+.hdr h2{font-size:19px; color:var(--sage); font-weight:800}
+.coinpill{color:var(--gold); font-weight:800; font-size:15px; display:flex; gap:5px; align-items:center}
+
+/* MAP / trellis */
+#map-list{display:flex; flex-direction:column-reverse; gap:0; align-items:center; padding:10px 0 20px}
+.mapnode{display:flex; align-items:center; gap:12px; width:100%; max-width:380px; padding:11px 14px; border-radius:15px;
+  border:1px solid var(--line); background:var(--panel); margin:5px 0; position:relative}
+.mapnode.done{opacity:.55; border-color:var(--deep)}
+.mapnode.cur{border-color:var(--gold); box-shadow:0 0 0 2px #c8a84b44; background:linear-gradient(110deg,#1e2612,var(--panel))}
+.mapnode.locked{opacity:.35}
+.mapnode .ico{font-size:26px; width:40px; text-align:center}
+.mapnode .info{flex:1; min-width:0}
+.mapnode .info .t{font-weight:800; font-size:15px}
+.mapnode .info .d{font-size:12px; color:var(--muted)}
+.mapstem{width:3px; height:14px; background:var(--deep); border-radius:2px}
+
+/* COMBAT */
+#combat{display:flex; flex-direction:column; height:100%}
+.c-top{display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); flex-shrink:0}
+.c-floor{font-size:13px; color:var(--muted); font-weight:700}
+.enemies{flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; gap:10px; justify-content:center; padding:14px 12px; overflow-y:auto}
+.enemy{width:132px; background:var(--panel2); border:2px solid var(--line); border-radius:15px; padding:9px; position:relative; transition:transform .1s, border-color .12s}
+.enemy.dead{opacity:.25; filter:grayscale(1)}
+.enemy.targetable{border-color:var(--gold); cursor:pointer; box-shadow:0 0 0 2px #c8a84b33}
+.enemy.hitflash{animation:hitflash .28s}
+@keyframes hitflash{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+.enemy .face{font-size:34px; text-align:center; line-height:1}
+.enemy .en-name{font-size:12px; font-weight:800; text-align:center; margin:2px 0; color:var(--cream)}
+.enemy .intent{position:absolute; top:-9px; right:-6px; background:#1a1410; border:1px solid var(--line); border-radius:12px;
+  padding:2px 8px; font-size:12px; font-weight:800; display:flex; gap:3px; align-items:center}
+.enemy .en-shield{position:absolute; top:-9px; left:-6px; background:#12233a; border:1px solid var(--shield); color:var(--shield); border-radius:12px; padding:2px 7px; font-size:11px; font-weight:800}
+.hpbar{height:12px; border-radius:7px; background:#0a0d08; overflow:hidden; margin-top:4px; border:1px solid #0006; position:relative}
+.hpbar > i{display:block; height:100%; background:linear-gradient(90deg,#d8564a,#e8823a); transition:width .3s}
+.hpbar > span{position:absolute; inset:0; text-align:center; font-size:10px; font-weight:800; color:#fff; line-height:12px; text-shadow:0 1px 2px #000}
+
+/* garden bar */
+.garden{padding:6px 14px 2px; flex-shrink:0}
+.grow{display:flex; align-items:center; gap:10px}
+.gicon{font-size:22px}
+.gbar{flex:1; height:18px; border-radius:10px; background:#0a0d08; overflow:hidden; position:relative; border:1px solid #0006}
+.gbar > i{display:block; height:100%; background:linear-gradient(90deg,#5c8f3f,#7ecb5a); transition:width .3s}
+.gbar > span{position:absolute; inset:0; text-align:center; font-size:11px; font-weight:800; line-height:18px; color:#fff; text-shadow:0 1px 2px #000}
+.blockchip{color:var(--shield); font-weight:800; font-size:14px; min-width:44px; text-align:right}
+.garden.targetable .gbar{box-shadow:0 0 0 2px #7ecb5a66; border-color:var(--heal)}
+.garden.targetable{cursor:pointer}
+
+/* dice tray */
+.tray{flex-shrink:0; padding:8px 12px calc(10px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line); background:var(--panel)}
+.dicerow{display:flex; gap:9px; justify-content:center; flex-wrap:wrap; min-height:66px; align-items:center}
+.die{width:60px; height:60px; border-radius:13px; background:linear-gradient(160deg,#f4efe2,#ddd0b6);
+  border:2px solid #b9a883; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;
+  box-shadow:0 3px 0 #9a8b6a, 0 5px 8px #0005; position:relative; transition:transform .08s}
+.die:active{transform:translateY(2px)}
+.die.sel{border-color:var(--gold); box-shadow:0 0 0 3px #c8a84b, 0 3px 0 #9a8b6a; transform:translateY(-3px)}
+.die.used{opacity:.25; pointer-events:none; transform:none}
+.die.rolling{animation:rolljig .4s}
+@keyframes rolljig{0%{transform:rotate(-8deg) scale(.9)}50%{transform:rotate(8deg) scale(1.05)}100%{transform:none}}
+.die .sym{font-size:24px; line-height:1; font-weight:900}
+.die .val{font-size:13px; font-weight:900; color:var(--ink); margin-top:1px}
+.die .lbl{font-size:8px; color:#5a5238; letter-spacing:.3px; text-transform:uppercase; position:absolute; bottom:3px}
+.t-thorn{color:var(--red)} .t-spread{color:var(--coral)} .t-heal{color:#3f8f3a} .t-bark{color:#3a72a8}
+.t-root{color:#7a3fb0} .t-wild{color:#b8901f} .t-blank{color:#8a8268}
+.tray-ctrl{display:flex; gap:9px; margin-top:9px}
+.tray-ctrl .btn{margin:0}
+.reroll{flex:0 0 auto; min-width:120px}
+.hint{text-align:center; font-size:12px; color:var(--muted); min-height:16px; margin-top:5px}
+
+/* reward */
+.reward-grid{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:14px auto 0}
+.rcard{border:1px solid var(--line); border-radius:16px; background:var(--panel2); padding:14px; cursor:pointer; display:flex; gap:12px; align-items:center; transition:transform .08s, border-color .12s}
+.rcard:active{transform:scale(.98)} .rcard:hover{border-color:var(--gold)}
+.rcard .ri{font-size:34px; width:48px; text-align:center}
+.rcard .rt{font-weight:800; font-size:16px} .rcard .rd{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.35}
+.rar-common{color:var(--cream)} .rar-uncommon{color:#8fd0ff} .rar-rare{color:#e6a3ff}
+
+/* dice sheet (view your dice) */
+.dicesheet{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:8px}
+.relicrow{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:8px}
+.relicchip{background:#1a1410; border:1px solid var(--gold); color:var(--gold); border-radius:10px; padding:4px 9px; font-size:11px; font-weight:700}
+
+/* settings rows */
+.set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 2px; border-bottom:1px solid #1c2416; max-width:420px; margin:0 auto; width:100%}
+.seg{display:flex; border:1px solid var(--line); border-radius:11px; overflow:hidden}
+.seg button{min-height:42px; min-width:56px; background:#0f150c; color:var(--muted); border:0; font-size:13px; font-weight:700; cursor:pointer; padding:0 10px}
+.seg button.sel{background:var(--sage); color:#0c1207}
+
+/* modal / toast */
+#toast{position:absolute; left:50%; bottom:96px; transform:translateX(-50%); background:#1a1410ee; border:1px solid var(--gold);
+  color:var(--cream); padding:9px 16px; border-radius:20px; font-size:13.5px; font-weight:700; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; z-index:40; max-width:88%}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(-6px)}
+.float{position:absolute; font-weight:900; font-size:20px; pointer-events:none; z-index:35; animation:floatup 1s ease-out forwards; text-shadow:0 2px 4px #000}
+@keyframes floatup{0%{opacity:1; transform:translateY(0)}100%{opacity:0; transform:translateY(-46px)}}
+.muted{color:var(--muted)} .gold{color:var(--gold)} .small{font-size:13px}
+.buildstamp{position:absolute; left:8px; bottom:6px; font-size:9px; color:#37432c; z-index:30}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- TITLE -->
+  <div class="screen on center" id="s-title">
+    <div class="pad center" style="width:100%">
+      <div class="dieicon">🎲🌱</div>
+      <div class="logo"><span class="l1">SPROUT</span><span class="l2">DICE</span></div>
+      <div class="tag">a botanical dice roguelike</div>
+      <div style="margin:16px 0 2px" class="small muted">Best climb: <b class="gold" id="besttag">Floor 0</b></div>
+      <div class="stack" style="margin-top:16px">
+        <button class="btn primary" id="b-play">▲ &nbsp;New Climb</button>
+        <button class="btn gold" id="b-daily">☀️ &nbsp;Daily Trellis</button>
+        <div class="row">
+          <button class="btn sm" id="b-endless" disabled>♾️ Endless</button>
+          <button class="btn sm" id="b-garden">🌿 Greenhouse</button>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="b-how">? How to play</button>
+          <button class="btn ghost" id="b-settings">⚙ Settings</button>
+        </div>
+        <button class="btn ghost" id="b-exit">← All Sky Wolf games</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="screen" id="s-map">
+    <div class="hdr"><button class="icobtn" id="map-quit">✕</button><h2 id="map-title">The Trellis</h2>
+      <div class="coinpill">🪙 <span id="map-coins">0</span></div></div>
+    <div class="garden" id="map-garden"></div>
+    <div class="scroll"><div id="map-list"></div></div>
+  </div>
+
+  <!-- COMBAT -->
+  <div class="screen" id="s-combat">
+    <div id="combat">
+      <div class="c-top">
+        <button class="icobtn" id="c-menu" style="width:40px;height:40px;font-size:16px">⏸</button>
+        <div class="c-floor" id="c-floor">Floor 1</div>
+        <div class="coinpill">🪙 <span id="c-coins">0</span></div>
+      </div>
+      <div class="enemies" id="c-enemies"></div>
+      <div class="garden" id="c-garden"></div>
+      <div class="tray">
+        <div class="dicerow" id="c-dice"></div>
+        <div class="hint" id="c-hint">Tap a die, then tap a target</div>
+        <div class="tray-ctrl">
+          <button class="btn gold reroll" id="c-reroll">🎲 Reroll (1)</button>
+          <button class="btn primary" id="c-end">End Turn ▸</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REWARD -->
+  <div class="screen" id="s-reward">
+    <div class="hdr"><span style="width:50px"></span><h2 id="reward-title">Choose a gift</h2><span style="width:50px"></span></div>
+    <div class="scroll center"><div class="reward-grid" id="reward-grid"></div></div>
+  </div>
+
+  <!-- GREENHOUSE / HUB -->
+  <div class="screen" id="s-hub">
+    <div class="hdr"><button class="icobtn" id="hub-back">←</button><h2>Greenhouse</h2>
+      <div class="coinpill">🪙 <span id="hub-coins">0</span></div></div>
+    <div class="scroll" id="hub-body"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set">
+    <div class="hdr"><button class="icobtn" id="set-back">←</button><h2>Settings</h2><span style="width:50px"></span></div>
+    <div class="scroll" id="set-body"></div>
+  </div>
+
+  <!-- HOW TO -->
+  <div class="screen" id="s-how">
+    <div class="hdr"><button class="icobtn" id="how-back">←</button><h2>How to play</h2><span style="width:50px"></span></div>
+    <div class="scroll" id="how-body"></div>
+  </div>
+
+  <!-- PAUSE -->
+  <div class="screen center" id="s-pause">
+    <div class="pad center">
+      <h2 style="color:var(--sage); font-size:28px">Paused</h2>
+      <div class="stack" style="margin-top:20px">
+        <button class="btn primary" id="p-resume">▶ Resume</button>
+        <button class="btn sm" id="p-settings">⚙ Settings</button>
+        <button class="btn ghost" id="p-quit">✕ Abandon climb</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="screen center" id="s-over">
+    <div class="pad center">
+      <div id="over-title" style="font-size:26px; font-weight:900; color:var(--gold)">The garden falls</div>
+      <div style="font-size:52px; font-weight:900; margin:4px 0" id="over-floor">Floor 0</div>
+      <div class="muted small" id="over-sub"></div>
+      <div class="small gold" id="over-earn" style="margin-top:8px"></div>
+      <div class="stack" style="margin-top:20px">
+        <button class="btn primary" id="o-again">↻ New Climb</button>
+        <button class="btn sm" id="o-garden">🌿 Greenhouse</button>
+        <button class="btn ghost" id="o-menu">☰ Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div class="buildstamp" id="buildstamp">v1.0</div>
+</div></div>
+
+<!-- ============================ ENGINE ============================ -->
+<script>
+var SD=(function(){
+'use strict';
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hashSeed(str){ var h=2166136261>>>0; str=String(str); for(var i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function F(t,v){ return {t:t,v:v||0}; }
+var DICE={
+  bramble:{name:'Bramble',rarity:'common',faces:[F('thorn',2),F('thorn',2),F('thorn',3),F('thorn',1),F('spread',1),F('blank')]},
+  fern:{name:'Fern',rarity:'common',faces:[F('heal',2),F('heal',2),F('heal',3),F('bark',1),F('thorn',1),F('blank')]},
+  oak:{name:'Oak',rarity:'common',faces:[F('bark',2),F('bark',2),F('bark',3),F('thorn',1),F('heal',1),F('blank')]},
+  nettle:{name:'Nettle',rarity:'uncommon',faces:[F('thorn',3),F('thorn',3),F('thorn',4),F('spread',2),F('thorn',1),F('blank')]},
+  clover:{name:'Clover',rarity:'uncommon',faces:[F('wild',1),F('wild',2),F('heal',1),F('bark',1),F('thorn',1),F('blank')]},
+  vine:{name:'Vine',rarity:'uncommon',faces:[F('root',2),F('root',1),F('thorn',1),F('spread',1),F('bark',1),F('blank')]},
+  venus:{name:'Venus Trap',rarity:'rare',faces:[F('thorn',4),F('thorn',5),F('thorn',3),F('spread',2),F('blank'),F('blank')]},
+  willow:{name:'Willow',rarity:'rare',faces:[F('heal',3),F('bark',3),F('heal',2),F('bark',2),F('root',1),F('wild',1)]}
+};
+var STARTERS=['bramble','fern','oak'];
+function I(type,v){ return {type:type,v:v||0}; }
+var ENEMIES={
+  aphid:{name:'Aphid',emoji:'🐛',hp:6,pattern:[I('attack',2),I('attack',3)]},
+  locust:{name:'Locust',emoji:'🦗',hp:8,pattern:[I('attack',3),I('buff',2),I('attack',5)]},
+  beetle:{name:'Beetle',emoji:'🪲',hp:11,pattern:[I('attack',4),I('shield',4),I('attack',5)]},
+  slug:{name:'Slug',emoji:'🐌',hp:15,pattern:[I('attack',3),I('heal',4),I('attack',5)]},
+  wasp:{name:'Wasp',emoji:'🐝',hp:9,pattern:[I('attack',5),I('attack',6)]},
+  weevil:{name:'Weevil',emoji:'🪳',hp:20,pattern:[I('shield',5),I('attack',6),I('attack',5)]},
+  blight:{name:'The Blight',emoji:'🍄',hp:72,boss:true,pattern:[I('attack',7),I('summon',0),I('attack',10),I('shield',6),I('attack',12)]}
+};
+var RELICS={
+  regrowth:{name:'Regrowth',emoji:'🌿',desc:'+1 to every heal face',apply:function(s){s.mod.heal+=1;}},
+  deeproots:{name:'Deep Roots',emoji:'🌳',desc:'+6 max Resolve',apply:function(s){s.maxResolve+=6;s.resolve+=6;}},
+  photosyn:{name:'Photosynthesis',emoji:'☀️',desc:'+1 reroll each turn',apply:function(s){s.rerolls+=1;}},
+  ironbark:{name:'Ironbark',emoji:'🛡️',desc:'+1 to every bark face',apply:function(s){s.mod.bark+=1;}},
+  serration:{name:'Serration',emoji:'🗡️',desc:'+1 to every thorn face',apply:function(s){s.mod.thorn+=1;}},
+  thornburst:{name:'Thornburst',emoji:'💥',desc:'thorns pierce pest shields',apply:function(s){s.mod.pierce=true;}},
+  compost:{name:'Compost',emoji:'🍂',desc:'heal 2 when a pest dies',apply:function(s){s.mod.compost=2;}},
+  earlybloom:{name:'Early Bloom',emoji:'🌸',desc:'first die each turn is Wild',apply:function(s){s.mod.firstWild=true;}}
+};
+function poolFor(floor){
+  if(floor<=3) return ['aphid','locust'];
+  if(floor<=6) return ['aphid','locust','beetle'];
+  if(floor<=8) return ['locust','beetle','slug','wasp'];
+  return ['beetle','slug','wasp','weevil'];
+}
+function makeRun(seedStr){
+  var rng=mulberry32(hashSeed(seedStr)), nodes=[], N=12;
+  for(var f=0;f<N;f++){ var floor=f+1, node;
+    if(floor===N) node={type:'boss',enemies:['blight']};
+    else if(floor===4||floor===8) node={type:'rest'};
+    else if(floor===5||floor===11){ node={type:'elite',enemies:[floor<=6?'beetle':'weevil']}; if(floor>=11) node.enemies=['weevil','wasp']; }
+    else { var count=floor<=2?1:floor<=7?2:3, pool=poolFor(floor), ens=[];
+      for(var c=0;c<count;c++) ens.push(pool[Math.floor(rng()*pool.length)]);
+      node={type:'fight',enemies:ens}; }
+    node.floor=floor; nodes.push(node);
+  }
+  return {seed:seedStr,nodes:nodes};
+}
+function newGarden(diceIds){ return { maxResolve:18,resolve:18,block:0, diceIds:(diceIds||STARTERS).slice(),
+  rerolls:1, relics:[], mod:{thorn:0,heal:0,bark:0,pierce:false,compost:0,firstWild:false} }; }
+function applyRelics(g){ /* idempotent: recompute only face-mods + rerolls (maxResolve is one-time at pickup) */
+  g.mod={thorn:0,heal:0,bark:0,pierce:false,compost:0,firstWild:false}; g.rerolls=1;
+  for(var i=0;i<g.relics.length;i++){ var id=g.relics[i];
+    if(id==='regrowth') g.mod.heal+=1; else if(id==='ironbark') g.mod.bark+=1; else if(id==='serration') g.mod.thorn+=1;
+    else if(id==='thornburst') g.mod.pierce=true; else if(id==='compost') g.mod.compost=2; else if(id==='earlybloom') g.mod.firstWild=true;
+    else if(id==='photosyn') g.rerolls+=1; }
+  if(g.resolve>g.maxResolve) g.resolve=g.maxResolve; }
+function startEncounter(g,node,scale){ scale=scale||1; var eliteMul=(node.type==='elite'?1.4:1)*scale;
+  var enemies=node.enemies.map(function(id,i){ var e=ENEMIES[id]; var hp=Math.round(e.hp*eliteMul);
+    return {id:id,name:e.name+(node.type==='elite'?' (Elite)':''),emoji:e.emoji,hp:hp,maxhp:hp,block:0,boss:!!e.boss,intentIdx:i%e.pattern.length,intent:null,buff:0,alive:true,pattern:e.pattern}; });
+  return {g:g,enemies:enemies,node:node,turn:0,over:false,win:false}; }
+function faceValue(g,face){ var t=face.t,v=face.v; if(t==='thorn')v+=g.mod.thorn; else if(t==='heal')v+=g.mod.heal; else if(t==='bark')v+=g.mod.bark; return {t:t,v:v}; }
+function rollDice(cs){ var g=cs.g; cs.dice=g.diceIds.map(function(id,i){ var d=DICE[id], fi=Math.floor(cs.rng()*6), face=d.faces[fi];
+  if(g.mod.firstWild&&i===0) face=F('wild',Math.max(2,face.v||2)); return {id:id,name:d.name,faceIdx:fi,face:face,assigned:false}; }); cs.rerollsLeft=g.rerolls; }
+function newTurn(cs){ cs.turn++; cs.g.block=0; cs.enemies.forEach(function(e){ if(e.alive) e.intent=e.pattern[e.intentIdx%e.pattern.length]; }); rollDice(cs); }
+function reroll(cs,i){ if(cs.rerollsLeft<=0) return false; var die=cs.dice[i]; if(!die||die.assigned) return false; var d=DICE[die.id], fi=Math.floor(cs.rng()*6); die.faceIdx=fi; die.face=d.faces[fi]; cs.rerollsLeft--; return true; }
+function dealTo(cs,e,v){ if(cs.g.mod.pierce){ e.hp-=v; } else { var ab=Math.min(e.block,v); e.block-=ab; e.hp-=(v-ab); } if(e.hp<=0&&e.alive){ e.alive=false; if(cs.g.mod.compost) cs.g.resolve=Math.min(cs.g.maxResolve,cs.g.resolve+cs.g.mod.compost); } }
+function checkDead(cs){ var any=false; cs.enemies.forEach(function(e){ if(e.alive) any=true; }); if(!any){ cs.over=true; cs.win=true; } }
+function assignDie(cs,i,target,wildAs){ var g=cs.g, die=cs.dice[i]; if(!die||die.assigned) return false;
+  var ef=faceValue(g,die.face), t=ef.t, v=ef.v; if(t==='wild'){ t=wildAs||'thorn'; }
+  if(t==='blank'){ die.assigned=true; return true; }
+  if(t==='heal') g.resolve=Math.min(g.maxResolve,g.resolve+v);
+  else if(t==='bark') g.block+=v;
+  else if(t==='spread'){ cs.enemies.forEach(function(e){ if(e.alive) dealTo(cs,e,v); }); }
+  else if(t==='thorn'){ if(target&&target.kind==='enemy'){ var e=cs.enemies[target.idx]; if(e&&e.alive) dealTo(cs,e,v); } }
+  else if(t==='root'){ if(target&&target.kind==='enemy'){ var e2=cs.enemies[target.idx]; if(e2&&e2.alive&&e2.intent) e2.intent={type:e2.intent.type,v:Math.max(0,e2.intent.v-v)}; } }
+  die.assigned=true; checkDead(cs); return true; }
+function endTurn(cs){ if(cs.over) return; var block=cs.g.block;
+  cs.enemies.forEach(function(e){ if(!e.alive||!e.intent) return; var it=e.intent;
+    if(it.type==='attack'){ var dmg=it.v+(e.buff||0)+Math.max(0,cs.turn-8)+(cs.dmgBonus||0); e.buff=0; var ab=Math.min(block,dmg); block-=ab; cs.g.resolve-=(dmg-ab); }
+    else if(it.type==='shield') e.block+=it.v;
+    else if(it.type==='heal') e.hp=Math.min(e.maxhp,e.hp+it.v);
+    else if(it.type==='buff') e.buff=(e.buff||0)+it.v;
+    else if(it.type==='summon'){ if(cs.enemies.filter(function(x){return x.alive;}).length<3){ var a=ENEMIES.aphid; cs.enemies.push({id:'aphid',name:a.name,emoji:a.emoji,hp:a.hp,maxhp:a.hp,block:0,intentIdx:0,intent:null,buff:0,alive:true,pattern:a.pattern}); } }
+    e.intentIdx++; });
+  cs.g.block=0; if(cs.g.resolve<=0){ cs.over=true; cs.win=false; return; } newTurn(cs); }
+function rewardOptions(cs,rng){ var opts=[], dk=Object.keys(DICE);
+  opts.push({kind:'die',id:dk[Math.floor(rng()*dk.length)]});
+  var rk=Object.keys(RELICS).filter(function(k){ return cs.g.relics.indexOf(k)<0; });
+  if(rk.length) opts.push({kind:'relic',id:rk[Math.floor(rng()*rk.length)]});
+  opts.push({kind:'heal',v:8}); opts.push({kind:'maxhp',v:4});
+  for(var i=opts.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)), t=opts[i]; opts[i]=opts[j]; opts[j]=t; }
+  return opts.slice(0,3); }
+function takeReward(g,opt){ if(opt.kind==='die'){ if(g.diceIds.length<6) g.diceIds.push(opt.id); }
+  else if(opt.kind==='relic'){ g.relics.push(opt.id); if(opt.id==='deeproots'){ g.maxResolve+=6; g.resolve+=6; } applyRelics(g); }
+  else if(opt.kind==='heal') g.resolve=Math.min(g.maxResolve,g.resolve+opt.v);
+  else if(opt.kind==='maxhp'){ g.maxResolve+=opt.v; g.resolve+=opt.v; } }
+return {mulberry32:mulberry32,hashSeed:hashSeed,DICE:DICE,ENEMIES:ENEMIES,RELICS:RELICS,STARTERS:STARTERS,
+  makeRun:makeRun,newGarden:newGarden,applyRelics:applyRelics,startEncounter:startEncounter,newTurn:newTurn,
+  rollDice:rollDice,reroll:reroll,assignDie:assignDie,endTurn:endTurn,rewardOptions:rewardOptions,takeReward:takeReward,faceValue:faceValue};
+})();
+</script>
+
+<!-- ============================ GAME (UI + control) ============================ -->
+<script>
+(function(){
+'use strict';
+var $=function(id){ return document.getElementById(id); };
+var SYM={thorn:'⚔',spread:'✸',heal:'♥',bark:'⛨',root:'⊘',wild:'★',blank:'·'};
+var LBL={thorn:'Thorn',spread:'Spread',heal:'Heal',bark:'Bark',root:'Root',wild:'Wild',blank:'—'};
+
+/* ---------- persistence ---------- */
+var LS=(function(){ var mem={},ok=true; try{ localStorage.setItem('sd_t','1'); localStorage.removeItem('sd_t'); }catch(e){ ok=false; }
+  return { get:function(k){ try{ return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){ return mem[k]||null; } },
+    set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } },
+    getJSON:function(k,d){ var v=this.get(k); if(v==null) return d; try{ return JSON.parse(v); }catch(e){ return d; } },
+    setJSON:function(k,o){ this.set(k,JSON.stringify(o)); } }; })();
+var META=LS.getJSON('sd_meta',{ coins:0, best:0, unlocked:{}, endlessUnlocked:false, endlessBest:0, daily:{} });
+if(!META.unlocked) META.unlocked={}; if(META.endlessBest==null) META.endlessBest=0;
+function saveMeta(){ LS.setJSON('sd_meta',META); }
+var SET=LS.getJSON('sd_set',{ sfx:true, reduce:'auto' });
+function saveSet(){ LS.setJSON('sd_set',SET); }
+var mqReduce=false; try{ mqReduce=matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches; }catch(e){}
+function reduced(){ return SET.reduce==='on'||(SET.reduce==='auto'&&mqReduce); }
+
+/* starter-dice unlocks purchasable in the Greenhouse */
+var UNLOCKS=[
+  {id:'nettle',type:'die',cost:120,name:'Nettle',emoji:'🌿',desc:'Aggressive thorn die — added to your starting set.'},
+  {id:'clover',type:'die',cost:120,name:'Clover',emoji:'🍀',desc:'Flexible Wild die for your starting set.'},
+  {id:'vine',type:'die',cost:150,name:'Vine',emoji:'🍃',desc:'Control die (Root) for your starting set.'},
+  {id:'toughroot',type:'buff',cost:200,name:'Hardy Roots',emoji:'💪',desc:'Permanently start every climb with +3 max Resolve.'},
+  {id:'endless',type:'endless',cost:400,name:'Endless Trellis',emoji:'♾️',desc:'Unlock Endless mode — climb forever, scaling harder each floor.'}
+];
+
+/* ---------- audio ---------- */
+var AC=null,gain=null;
+function actx(){ if(AC){ if(AC.state==='suspended') try{AC.resume();}catch(e){} return; } try{ var C=window.AudioContext||window.webkitAudioContext; if(!C) return; AC=new C(); gain=AC.createGain(); gain.gain.value=.5; gain.connect(AC.destination); }catch(e){ AC=null; } }
+function tone(f,d,type,g,slide){ if(!AC||!SET.sfx) return; try{ var o=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime; o.type=type||'triangle'; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,slide),t+d); v.gain.setValueAtTime(.0001,t); v.gain.exponentialRampToValueAtTime(g||.25,t+.01); v.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(v); v.connect(gain); o.start(t); o.stop(t+d+.02); }catch(e){} }
+function noise(d,g,hz){ if(!AC||!SET.sfx) return; try{ var n=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),c=b.getChannelData(0); for(var i=0;i<n;i++)c[i]=(Math.random()*2-1)*(1-i/n); var s=AC.createBufferSource();s.buffer=b; var f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=hz||1400; var v=AC.createGain();v.gain.value=g||.2; s.connect(f);f.connect(v);v.connect(gain); s.start(); }catch(e){} }
+function sfx(n,a){ switch(n){
+  case'roll': noise(.09,.12,2600); tone(420,.06,'square',.08); break;
+  case'sel': tone(680,.05,'sine',.14); break;
+  case'thorn': tone(220,.12,'sawtooth',.2,140); noise(.06,.1,900); break;
+  case'spread': tone(180,.18,'sawtooth',.2,120); noise(.1,.12,700); break;
+  case'heal': tone(520,.14,'sine',.18,780); break;
+  case'bark': tone(300,.12,'triangle',.18,240); break;
+  case'root': tone(160,.16,'sine',.18,90); break;
+  case'hurt': tone(200,.16,'sine',.24,120); noise(.1,.12,500); break;
+  case'die': tone(400,.3,'sine',.2,90); noise(.14,.14,400); break;
+  case'win': tone(523,.1,'sine',.2); setTimeout(function(){tone(659,.1,'sine',.2);},90); setTimeout(function(){tone(784,.16,'sine',.2);},180); break;
+  case'reward': tone(660,.08,'square',.14); setTimeout(function(){tone(990,.1,'square',.14);},70); break;
+  case'coin': tone(1318,.06,'square',.14); setTimeout(function(){tone(1760,.06,'square',.12);},55); break;
+  case'lose': tone(300,.5,'sine',.22,90); break;
+  case'ui': tone(560,.05,'sine',.1); break;
+} }
+
+/* ---------- screen mgmt ---------- */
+var SCREENS=['s-title','s-map','s-combat','s-reward','s-hub','s-set','s-how','s-pause','s-over'];
+function show(id){ for(var i=0;i<SCREENS.length;i++){ var s=$(SCREENS[i]); if(s) s.classList.toggle('on',SCREENS[i]===id); } }
+function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('on'); },1500); }
+function tap(el,fn){ el=(typeof el==='string')?$(el):el; if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); actx(); sfx('ui'); fn(e); }); }
+function floatText(x,y,txt,col){ if(reduced()) return; var f=document.createElement('div'); f.className='float'; f.textContent=txt; f.style.color=col||'#fff'; f.style.left=x+'px'; f.style.top=y+'px'; $('stage').appendChild(f); setTimeout(function(){ f.remove(); },1000); }
+
+/* ---------- run state ---------- */
+var RUN=null, POS=0, MODE='normal', G=null, CS=null, SEL=-1, ANIM=false;
+
+function startingDice(){ var d=SD.STARTERS.slice(); if(META.unlocked.nettle) d.push('nettle'); if(META.unlocked.clover) d.push('clover'); if(META.unlocked.vine) d.push('vine'); return d.slice(0,6); }
+function newRun(mode){ MODE=mode||'normal';
+  var seed = mode==='daily' ? ('daily-'+todayStr()) : ('run-'+Math.floor(rngSeed()));
+  RUN=SD.makeRun(seed); POS=0; RUN.cycle=0; RUN.scale=1; RUN.dmgBonus=0;
+  G=SD.newGarden(startingDice()); SD.applyRelics(G); if(META.unlocked.toughroot){ G.maxResolve+=3; G.resolve+=3; }
+  RUN._combatRng=SD.mulberry32(SD.hashSeed(seed+'#c'));
+  renderMap(); show('s-map');
+}
+function rngSeed(){ try{ return (Date.now()%1e9)+Math.floor(Math.random?Math.random()*1e6:0); }catch(e){ return Date.now()%1e9; } }
+function todayStr(){ try{ return new Date().toISOString().slice(0,10); }catch(e){ return '2026-01-01'; } }
+
+/* ---------- MAP ---------- */
+function nodeInfo(node){ var t=node.type;
+  if(t==='boss') return {ico:'🍄',t:'The Blight',d:'Final boss'};
+  if(t==='rest') return {ico:'⛺',t:'Rest',d:'Heal + a gift'};
+  if(t==='elite') return {ico:'💀',t:'Elite pest',d:node.enemies.map(function(e){return SD.ENEMIES[e].name;}).join(', ')};
+  return {ico:'🐛',t:'Floor '+node.floor,d:node.enemies.map(function(e){return SD.ENEMIES[e].name;}).join(', ')};
+}
+function renderMap(){
+  $('map-coins').textContent=META.coins; $('c-coins').textContent=META.coins;
+  $('map-title').textContent = MODE==='daily'?'Daily Trellis':(MODE==='endless'?('Endless · Trellis '+((RUN.cycle||0)+1)):'The Trellis');
+  renderGardenBar($('map-garden'), false);
+  var list=$('map-list'); list.innerHTML='';
+  RUN.nodes.forEach(function(node,i){
+    var inf=nodeInfo(node), cls='mapnode '+(i<POS?'done':i===POS?'cur':'locked');
+    var el=document.createElement('div'); el.className=cls;
+    el.innerHTML='<div class="ico">'+inf.ico+'</div><div class="info"><div class="t">'+esc(inf.t)+(node.type==='elite'?' <span style="color:var(--gold)">★</span>':'')+'</div><div class="d">'+esc(inf.d)+'</div></div>'+(i<POS?'<div style="color:var(--sage);font-size:18px">✓</div>':i===POS?'<div style="color:var(--gold);font-size:16px;font-weight:800">▶</div>':'<div class="muted" style="font-size:14px">🔒</div>');
+    if(i===POS){ el.addEventListener('click',function(){ actx(); sfx('ui'); enterNode(); }); }
+    var stem=document.createElement('div'); stem.className='mapstem';
+    list.appendChild(el); if(i<RUN.nodes.length-1) list.appendChild(stem);
+  });
+  var curEl=list.querySelector('.mapnode.cur');
+  if(curEl){ setTimeout(function(){ try{ curEl.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'}); }catch(e){ try{ curEl.scrollIntoView(); }catch(e2){} } },30); }
+}
+function enterNode(){ var node=RUN.nodes[POS];
+  if(node.type==='rest'){ var before=G.resolve; G.resolve=Math.min(G.maxResolve,G.resolve+6); toast('Rested — healed '+(G.resolve-before)+' Resolve'); sfx('heal');
+    // rest also gives a small gift
+    openReward(true); return; }
+  CS=SD.startEncounter(G,node,RUN.scale||1); CS.rng=RUN._combatRng; CS.dmgBonus=RUN.dmgBonus||0; SD.newTurn(CS); SEL=-1;
+  var df=(RUN.cycle||0)*12+node.floor;
+  $('c-floor').textContent = node.type==='boss'?('BOSS'+(RUN.cycle>0?' · Trellis '+(RUN.cycle+1):'')):((node.type==='elite'?'ELITE · Floor ':'Floor ')+df);
+  show('s-combat'); renderCombat(); sfx('roll');
+}
+
+/* ---------- COMBAT RENDER ---------- */
+function renderGardenBar(container, targetable){
+  var pct=Math.max(0,Math.round(G.resolve/G.maxResolve*100));
+  container.className='garden'+(targetable?' targetable':'');
+  container.innerHTML='<div class="grow"><span class="gicon">🌱</span><div class="gbar"><i style="width:'+pct+'%"></i><span>'+Math.max(0,G.resolve)+' / '+G.maxResolve+'</span></div><span class="blockchip">'+(G.block>0?('⛨'+G.block):'')+'</span></div>';
+  if(targetable){ container.onclick=function(){ onTarget({kind:'garden'}); }; } else { container.onclick=null; }
+}
+function intentText(e){ if(!e.intent) return ''; var it=e.intent;
+  if(it.type==='attack') return '⚔'+(it.v+(e.buff||0)+Math.max(0,(CS?CS.turn:1)-8)+((CS&&CS.dmgBonus)||0));
+  if(it.type==='shield') return '⛨'+it.v; if(it.type==='heal') return '♥'+it.v; if(it.type==='buff') return '↑'+it.v; if(it.type==='summon') return '✦'; return ''; }
+function renderCombat(){
+  $('c-coins').textContent=META.coins;
+  // enemies
+  var box=$('c-enemies'); box.innerHTML='';
+  CS.enemies.forEach(function(e,i){ if(!e.alive){ return; }
+    var pct=Math.max(0,Math.round(e.hp/e.maxhp*100));
+    var el=document.createElement('div'); el.className='enemy'; el.dataset.idx=i;
+    el.innerHTML='<div class="intent">'+intentText(e)+'</div>'+(e.block>0?'<div class="en-shield">⛨'+e.block+'</div>':'')+
+      '<div class="face">'+e.emoji+'</div><div class="en-name">'+esc(e.name)+'</div>'+
+      '<div class="hpbar"><i style="width:'+pct+'%"></i><span>'+Math.max(0,e.hp)+'/'+e.maxhp+'</span></div>';
+    box.appendChild(el);
+  });
+  renderGardenBar($('c-garden'), false);
+  // dice
+  var row=$('c-dice'); row.innerHTML='';
+  CS.dice.forEach(function(d,i){ var ef=SD.faceValue(G,d.face), t=d.face.t;
+    var el=document.createElement('div'); el.className='die t-'+t+(d.assigned?' used':'')+(i===SEL?' sel':'');
+    var valTxt = (t==='blank')?'':(ef.v);
+    el.innerHTML='<span class="sym">'+SYM[t]+'</span>'+(valTxt!==''?'<span class="val">'+valTxt+'</span>':'')+'<span class="lbl">'+LBL[t]+'</span>';
+    if(!d.assigned){ el.addEventListener('click',function(){ actx(); selectDie(i); }); }
+    row.appendChild(el);
+  });
+  $('c-reroll').textContent='🎲 Reroll ('+CS.rerollsLeft+')';
+  $('c-reroll').disabled = CS.rerollsLeft<=0 || SEL<0 || (CS.dice[SEL]&&CS.dice[SEL].assigned);
+  updateTargets(); updateHint();
+}
+function selectDie(i){ if(CS.dice[i].assigned) return; SEL=(SEL===i?-1:i); sfx('sel'); renderCombat(); }
+function updateHint(){ var h=$('c-hint');
+  if(SEL<0){ var un=CS.dice.filter(function(d){return !d.assigned;}).length; h.textContent = un? 'Tap a die, then a target — or End Turn':'All dice used — End Turn'; return; }
+  var d=CS.dice[SEL], t=d.face.t, ef=SD.faceValue(G,d.face);
+  if(t==='blank') h.textContent='Blank — reroll it, or End Turn';
+  else if(t==='thorn') h.textContent='Thorn '+ef.v+' — tap a pest to strike';
+  else if(t==='spread') h.textContent='Spread '+ef.v+' — tap any pest to hit ALL';
+  else if(t==='root') h.textContent='Root '+ef.v+' — tap a pest to weaken its attack';
+  else if(t==='heal') h.textContent='Heal '+ef.v+' — tap your garden';
+  else if(t==='bark') h.textContent='Bark '+ef.v+' — tap your garden to block';
+  else if(t==='wild') h.textContent='Wild — tap a pest (strike) or your garden (heal/block)';
+}
+function updateTargets(){
+  var d=(SEL>=0)?CS.dice[SEL]:null; var t=d?d.face.t:null;
+  var enemyTgt = t&&(t==='thorn'||t==='spread'||t==='root'||t==='wild');
+  var gardenTgt = t&&(t==='heal'||t==='bark'||t==='wild');
+  [].forEach.call(document.querySelectorAll('#c-enemies .enemy'),function(el){
+    el.classList.toggle('targetable', !!enemyTgt);
+    el.onclick = enemyTgt ? function(){ onTarget({kind:'enemy',idx:parseInt(el.dataset.idx,10)}, el); } : null;
+  });
+  var g=$('c-garden'); g.classList.toggle('targetable', !!gardenTgt);
+  g.onclick = gardenTgt ? function(){ onTarget({kind:'garden'}); } : null;
+}
+function onTarget(target, el){
+  if(SEL<0 || ANIM) return; var d=CS.dice[SEL]; if(!d||d.assigned) return; var t=d.face.t;
+  var wildAs=null;
+  if(t==='wild'){ wildAs = (target.kind==='enemy') ? 'thorn' : 'bark'; /* garden wild → bark by default */ }
+  // sfx + float
+  var ef=SD.faceValue(G,d.face);
+  if(t==='thorn'||(t==='wild'&&target.kind==='enemy')){ sfx('thorn'); if(el){ el.classList.add('hitflash'); } }
+  else if(t==='spread'){ sfx('spread'); }
+  else if(t==='heal'||(t==='wild'&&target.kind==='garden')){ sfx(t==='heal'?'heal':'bark'); }
+  else if(t==='bark'){ sfx('bark'); }
+  else if(t==='root'){ sfx('root'); }
+  SD.assignDie(CS,SEL,target,wildAs); SEL=-1;
+  if(CS.over){ renderCombat(); setTimeout(onWin,420); return; }
+  renderCombat();
+}
+tap('c-reroll',function(){ if(SEL<0||CS.rerollsLeft<=0) return; var d=CS.dice[SEL]; if(d&&!d.assigned){ SD.reroll(CS,SEL); sfx('roll'); var el=document.querySelectorAll('#c-dice .die')[SEL]; if(el&&!reduced()){ el.classList.add('rolling'); } renderCombat(); } });
+tap('c-end',function(){ if(ANIM) return; endTurnFlow(); });
+function endTurnFlow(){
+  var before=G.resolve; ANIM=true;
+  SD.endTurn(CS);
+  var dmg=before-G.resolve;
+  if(dmg>0){ sfx('hurt'); var gb=$('c-garden'); if(gb&&!reduced()){ gb.classList.add('hitflash'); setTimeout(function(){gb.classList.remove('hitflash');},300); }
+    floatText(120,540,'-'+dmg,'#e8823a'); }
+  SEL=-1;
+  if(CS.over){ ANIM=false; if(CS.win) setTimeout(onWin,300); else setTimeout(onLose,300); return; }
+  renderCombat(); sfx('roll'); setTimeout(function(){ ANIM=false; },260);
+}
+
+/* ---------- WIN / REWARD / LOSE ---------- */
+function coinsForFloor(node){ var base = node.type==='boss'?60 : node.type==='elite'?30 : 12+node.floor*2; return Math.round(base*(1+0.4*(RUN&&RUN.cycle||0))); }
+function onWin(){ sfx('win');
+  var node=RUN.nodes[POS]; var earned=coinsForFloor(node); META.coins+=earned;
+  if(MODE==='endless') META.endlessBest=Math.max(META.endlessBest||0,(RUN.cycle||0)*12+node.floor);
+  else META.best=Math.max(META.best,node.floor);
+  saveMeta(); bridgeEarn(node);
+  if(node.type==='boss'){ if(MODE==='endless'){ return endlessCycle(); } POS++; return runComplete(); }
+  openReward(false);
+}
+function endlessCycle(){ RUN.cycle++; RUN.scale=1+0.3*RUN.cycle; RUN.dmgBonus=RUN.cycle;
+  RUN.nodes=SD.makeRun(RUN.seed+'-c'+RUN.cycle).nodes; POS=0;
+  G.resolve=Math.min(G.maxResolve,G.resolve+8);
+  META.endlessBest=Math.max(META.endlessBest||0,RUN.cycle*12); saveMeta();
+  toast('Trellis '+(RUN.cycle+1)+' — climb on! The pests grow fiercer.'); sfx('reward');
+  renderMap(); show('s-map');
+}
+function openReward(isRest){
+  var opts=SD.rewardOptions(CS||{g:G}, RUN._combatRng);
+  var grid=$('reward-grid'); grid.innerHTML=''; $('reward-title').textContent=isRest?'Rest — pick a gift':'Choose a gift';
+  opts.forEach(function(opt){ var card=document.createElement('div'); card.className='rcard';
+    var ri,rt,rd,rar='rar-common';
+    if(opt.kind==='die'){ var d=SD.DICE[opt.id]; ri='🎲'; rt='New die: '+d.name; rar='rar-'+(d.rarity==='rare'?'rare':d.rarity==='uncommon'?'uncommon':'common');
+      rd=faceSummary(d)+(G.diceIds.length>=6?' — (dice full, replaces nothing)':''); }
+    else if(opt.kind==='relic'){ var r=SD.RELICS[opt.id]; ri=r.emoji; rt='Relic: '+r.name; rar='rar-rare'; rd=r.desc; }
+    else if(opt.kind==='heal'){ ri='💚'; rt='Rejuvenate'; rd='Heal '+opt.v+' Resolve now.'; }
+    else if(opt.kind==='maxhp'){ ri='🌳'; rt='Grow'; rd='+'+opt.v+' max Resolve (and heal it).'; }
+    card.innerHTML='<div class="ri">'+ri+'</div><div><div class="rt '+rar+'">'+esc(rt)+'</div><div class="rd">'+esc(rd)+'</div></div>';
+    card.addEventListener('click',function(){ actx(); sfx('reward'); SD.takeReward(G,opt); afterReward(); });
+    grid.appendChild(card);
+  });
+  show('s-reward');
+}
+function faceSummary(d){ var c={}; d.faces.forEach(function(f){ c[f.t]=(c[f.t]||0)+1; }); return Object.keys(c).filter(function(k){return k!=='blank';}).map(function(k){ return c[k]+'× '+LBL[k]; }).join(', '); }
+function afterReward(){ POS++; if(POS>=RUN.nodes.length){ return runComplete(); } renderMap(); show('s-map'); }
+function runComplete(){ // cleared boss
+  META.best=Math.max(META.best,12); saveMeta(); showOver(true);
+}
+function onLose(){ sfx('lose'); var node=RUN.nodes[POS];
+  var earned=Math.floor(coinsForFloor(node)/2); META.coins+=earned;
+  if(MODE==='endless') META.endlessBest=Math.max(META.endlessBest||0,(RUN.cycle||0)*12+node.floor);
+  else META.best=Math.max(META.best,node.floor);
+  saveMeta(); showOver(false, earned);
+}
+function showOver(won, loseCoins){
+  var node=RUN.nodes[POS]||{};
+  if(MODE==='endless'){
+    var depth=(RUN.cycle||0)*12+(node.floor||0);
+    $('over-title').textContent='The garden falls';
+    $('over-floor').textContent='Depth '+depth;
+    $('over-sub').textContent='Best endless depth: '+(META.endlessBest||0);
+    $('over-earn').textContent='🪙 +'+(loseCoins||0)+' coins';
+    show('s-over'); return;
+  }
+  $('over-title').textContent = won?'The garden blooms! 🌸':'The garden falls';
+  $('over-floor').textContent = won?'Cleared!':'Floor '+(node.floor||POS);
+  $('over-sub').textContent = won?'You climbed the whole trellis and felled The Blight.':'Best climb: Floor '+META.best;
+  $('over-earn').textContent = won?('🪙 +'+coinsForFloor({type:'boss'})+' coins banked'):('🪙 +'+(loseCoins||0)+' coins');
+  $('besttag').textContent='Floor '+(META.best>=12?'12 (cleared!)':META.best);
+  show('s-over');
+}
+/* Sunbeam bridge — modest, capped 30/day */
+function bridgeEarn(node){ var n = node.type==='boss'?4 : node.type==='elite'?2 : 1; try{ if(window._sbCapEarn) window._sbCapEarn(n,'sproutdice:floor'); }catch(e){} }
+
+/* ---------- GREENHOUSE / HUB ---------- */
+function renderHub(){ $('hub-coins').textContent=META.coins;
+  var body=$('hub-body'); body.innerHTML='<div class="small muted" style="text-align:center;margin-bottom:10px">Spend coins earned on climbs. Unlocks are permanent.</div>';
+  UNLOCKS.forEach(function(u){ var owned = u.type==='endless'?META.endlessUnlocked:!!META.unlocked[u.id];
+    var card=document.createElement('div'); card.className='rcard'; card.style.cursor=owned?'default':'pointer';
+    card.innerHTML='<div class="ri">'+u.emoji+'</div><div style="flex:1"><div class="rt">'+esc(u.name)+'</div><div class="rd">'+esc(u.desc)+'</div></div><div style="text-align:right">'+(owned?'<span style="color:var(--sage);font-weight:800">Owned ✓</span>':'<span class="gold" style="font-weight:800">🪙 '+u.cost+'</span>')+'</div>';
+    if(!owned){ card.addEventListener('click',function(){ actx(); buyUnlock(u); }); }
+    body.appendChild(card);
+  });
+}
+function buyUnlock(u){ if(META.coins<u.cost){ toast('Not enough coins — keep climbing!'); sfx('lose'); return; }
+  META.coins-=u.cost; if(u.type==='endless'){ META.endlessUnlocked=true; $('b-endless').disabled=false; } else META.unlocked[u.id]=true; saveMeta(); sfx('coin'); toast('Unlocked '+u.name+'!'); renderHub();
+}
+
+/* ---------- SETTINGS / HOW ---------- */
+function renderSet(){ var b=$('set-body'); b.innerHTML='';
+  b.appendChild(segRow('Sound', [['on','On'],['off','Off']], SET.sfx?'on':'off', function(v){ SET.sfx=(v==='on'); saveSet(); if(SET.sfx) sfx('ui'); }));
+  b.appendChild(segRow('Reduced motion', [['auto','Auto'],['on','On'],['off','Off']], SET.reduce, function(v){ SET.reduce=v; saveSet(); }));
+  var reset=document.createElement('button'); reset.className='btn ghost'; reset.style.maxWidth='420px'; reset.style.margin='16px auto 0'; reset.textContent='Reset all progress';
+  reset.addEventListener('click',function(){ if(confirm('Reset ALL coins, unlocks and best climb?')){ META={coins:0,best:0,unlocked:{},endlessUnlocked:false,daily:{}}; saveMeta(); toast('Progress reset'); $('b-endless').disabled=true; } });
+  b.appendChild(reset);
+}
+function segRow(label, opts, cur, fn){ var row=document.createElement('div'); row.className='set-row';
+  var seg='<div class="seg">'+opts.map(function(o){ return '<button data-v="'+o[0]+'" class="'+(o[0]===cur?'sel':'')+'">'+o[1]+'</button>'; }).join('')+'</div>';
+  row.innerHTML='<div>'+label+'</div>'+seg;
+  [].forEach.call(row.querySelectorAll('button'),function(btn){ btn.addEventListener('click',function(){ actx(); sfx('ui'); [].forEach.call(row.querySelectorAll('button'),function(b){b.classList.remove('sel');}); btn.classList.add('sel'); fn(btn.dataset.v); }); });
+  return row;
+}
+function renderHow(){ $('how-body').innerHTML=
+  '<div class="small" style="line-height:1.6;max-width:440px;margin:0 auto">'+
+  '<p><b class="gold">Goal:</b> climb 12 floors of the trellis and fell The Blight. Your garden\'s <b>Resolve</b> (🌱) is your life — if it hits 0, the run ends.</p>'+
+  '<p style="margin-top:12px"><b class="gold">Each turn</b> your plant dice roll. Tap a die, then tap a target:</p>'+
+  '<p style="margin-top:6px"><span class="t-thorn" style="font-weight:800">⚔ Thorn</span> — strike one pest. &nbsp; <span class="t-spread" style="font-weight:800">✸ Spread</span> — hit ALL pests.</p>'+
+  '<p><span class="t-heal" style="font-weight:800">♥ Heal</span> — restore Resolve. &nbsp; <span class="t-bark" style="font-weight:800">⛨ Bark</span> — block damage this turn.</p>'+
+  '<p><span class="t-root" style="font-weight:800">⊘ Root</span> — weaken a pest\'s attack. &nbsp; <span class="t-wild" style="font-weight:800">★ Wild</span> — acts as any of the above.</p>'+
+  '<p style="margin-top:12px">Pests show their <b>intent</b> (top-right). Block or kill before they strike. You get a <b>reroll</b> each turn — select a die and hit Reroll.</p>'+
+  '<p style="margin-top:12px"><b class="gold">After each win</b>, draft a new die, a relic, or healing. Build a wild synergy — then start again. Coins buy permanent unlocks in the Greenhouse.</p>'+
+  '<p style="margin-top:12px" class="muted">Tip: turtling doesn\'t work — after turn 8 the pests grow furious and hit harder every turn. Push the pace.</p>'+
+  '</div>';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- wiring ---------- */
+tap('b-play',function(){ newRun('normal'); });
+tap('b-daily',function(){ newRun('daily'); });
+tap('b-endless',function(){ if(META.endlessUnlocked) newRun('endless'); });
+tap('b-garden',function(){ renderHub(); show('s-hub'); });
+tap('b-how',function(){ renderHow(); show('s-how'); });
+tap('b-settings',function(){ renderSet(); show('s-set'); });
+tap('b-exit',function(){ if(window.SWS_EXIT) window.SWS_EXIT(); else location.href='/portal/'; });
+tap('map-quit',function(){ show('s-title'); refreshTitle(); });
+tap('c-menu',function(){ show('s-pause'); });
+tap('p-resume',function(){ show('s-combat'); });
+tap('p-settings',function(){ renderSet(); show('s-set'); });
+tap('p-quit',function(){ show('s-title'); refreshTitle(); });
+tap('hub-back',function(){ show('s-title'); refreshTitle(); });
+tap('set-back',function(){ show(CS&&$('s-combat')?'s-title':'s-title'); refreshTitle(); });
+tap('how-back',function(){ show('s-title'); refreshTitle(); });
+tap('o-again',function(){ newRun('normal'); });
+tap('o-garden',function(){ renderHub(); show('s-hub'); });
+tap('o-menu',function(){ show('s-title'); refreshTitle(); });
+function refreshTitle(){ $('besttag').textContent='Floor '+(META.best>=12?'12 (cleared!)':META.best); $('b-endless').disabled=!META.endlessUnlocked; }
+
+/* ---------- boot ---------- */
+function boot(){ refreshTitle(); show('s-title');
+  document.addEventListener('pointerdown',function once(){ actx(); document.removeEventListener('pointerdown',once); },{once:true});
+}
+boot();
+
+/* ---------- headless dev hook (inert without ?sdtest=1) ---------- */
+if(/[?&]sdtest=1/.test(location.search)){
+  window.SD_DEV={ SD:SD, newRun:newRun, enter:enterNode, state:function(){ return {RUN:RUN,POS:POS,G:G,CS:CS,META:META,MODE:MODE,cycle:RUN&&RUN.cycle}; },
+    combat:function(){ return CS; }, assign:function(i,tgt,w){ return SD.assignDie(CS,i,tgt,w); }, end:function(){ endTurnFlow(); },
+    forceWin:function(){ if(CS){ CS.enemies.forEach(function(e){ e.alive=false; e.hp=0; }); CS.over=true; CS.win=true; onWin(); } },
+    pos:function(){ return POS; }, mode:function(){ return MODE; }, run:function(){ return RUN; },
+    show:show, meta:META };
+}
+})();
+</script>
+
+<!-- ============================ LUCID WINDS BRIDGE ============================ -->
+<script>
+(function(){
+  var FRAMED = (window.parent && window.parent!==window);
+  window.SWS_EMBED = FRAMED;
+  window.SWS_EXIT=function(){ if(FRAMED){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} } else { location.href='/portal/'; } };
+  if(FRAMED){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+  /* Sky Wolf sunbeam earn standard: 30/day/game cap (SUNBEAM_EARN_POLICY.md) */
+  window._sbCapEarn=function(n,tag){ try{ var k='sw_sb_sproutdice', s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); }catch(e){}
+    if(window.Sunbeam&&window.Sunbeam.earn) window.Sunbeam.earn(n,tag).catch(function(){}); };
+  try{ if(window.Sunbeam&&window.Sunbeam.init) window.Sunbeam.init({gameId:'sproutdice'}).catch(function(){}); }catch(e){}
+})();
+</script>
+</body>
+</html>
