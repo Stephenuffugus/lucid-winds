@@ -39,7 +39,7 @@
   button{font-family:var(--ui);cursor:pointer;border:none;color:inherit;background:none}
   .coins-pill{font-family:var(--mono);font-weight:600;font-size:14px;color:var(--coin);
     border:1px solid var(--line2);border-radius:30px;padding:7px 13px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-  .icbtn{font-size:16px;border:1px solid var(--line2);border-radius:30px;min-width:40px;min-height:40px;
+  .icbtn{font-size:16px;border:1px solid var(--line2);border-radius:30px;min-width:48px;min-height:48px;
     display:inline-flex;align-items:center;justify-content:center;opacity:.85;padding:0 11px}
   .icbtn:active{transform:scale(.94)}
 
@@ -73,7 +73,7 @@
   .mbar{height:5px;border-radius:4px;background:var(--line);overflow:hidden}
   .mbar div{height:100%;background:var(--sage);border-radius:4px;transition:width .3s}
   .mrow.done .mbar div{background:var(--good)}
-  .link-btn{margin-top:12px;width:100%;max-width:330px;padding:14px;border-radius:14px;border:1px solid var(--line2);
+  .link-btn{margin-top:12px;width:100%;max-width:330px;padding:14px;border-radius:14px;border:1px solid var(--line2);min-height:48px;
     font-weight:700;font-size:14px;letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:8px}
   .link-btn:active{transform:scale(.98)}
   .build-stamp{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.14em;margin-top:16px}
@@ -82,11 +82,11 @@
   #map{padding:calc(18px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom))}
   .map-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
   .map-top h2{font-family:var(--serif);font-style:italic;font-size:30px}
-  .back{font-size:13px;color:var(--ink-dim);letter-spacing:.03em;padding:8px 4px}
+  .back{font-size:13px;color:var(--ink-dim);letter-spacing:.03em;padding:8px 10px;min-height:48px;display:inline-flex;align-items:center}
   .garden-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px;scrollbar-width:none}
   .garden-tabs::-webkit-scrollbar{display:none}
   .gtab{flex:0 0 auto;padding:9px 14px;border-radius:12px;border:1px solid var(--line2);font-size:13px;font-weight:700;
-    color:var(--ink-dim);white-space:nowrap;display:flex;flex-direction:column;gap:2px;align-items:flex-start;min-width:96px}
+    color:var(--ink-dim);white-space:nowrap;display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:center;min-width:96px;min-height:48px}
   .gtab.on{color:var(--ink);border-color:var(--sage);background:linear-gradient(180deg,#1d2814,#141c0d)}
   .gtab small{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.1em}
   .gtab.locked{opacity:.45}
@@ -150,7 +150,7 @@
   .tile canvas{width:100%;height:74px;border-radius:12px}
   .tile .nm{font-size:14px;font-weight:700}
   .tile .ds{font-size:10.5px;color:var(--ink-dim);margin-top:-5px;line-height:1.3}
-  .tile .buy{margin-top:auto;padding:9px;border-radius:10px;font-size:13px;font-weight:700;text-align:center}
+  .tile .buy{margin-top:auto;padding:9px;border-radius:10px;font-size:13px;font-weight:700;text-align:center;min-height:48px;display:flex;align-items:center;justify-content:center}
   .buy.locked{background:var(--sage);color:#0d1409}
   .buy.cant{border:1px solid var(--line2);color:var(--ink-faint)}
   .buy.owned{border:1px solid var(--line2);color:var(--ink-dim)}
@@ -161,8 +161,14 @@
     transition:all .3s;pointer-events:none;max-width:90%;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.08s !important}
+    .combo-pop.show{animation:none;opacity:1}
+    .time-num.danger{animation:none}
+  }
+
   .set-row{display:flex;gap:8px;width:100%;max-width:330px;margin-top:12px}
-  .set-row .icbig{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line2);font-size:12px;font-weight:700;
+  .set-row .icbig{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line2);font-size:12px;font-weight:700;min-height:48px;
     color:var(--ink-dim);display:flex;align-items:center;justify-content:center;gap:6px}
   .set-row .icbig.on{color:var(--ink);border-color:var(--sage)}
 </style>
@@ -207,7 +213,7 @@
   <!-- GAME -->
   <section class="screen" id="game">
     <div class="g-hud">
-      <button class="icbut back" id="gameBack" style="font-size:20px;padding:6px 10px 6px 2px">‹</button>
+      <button class="icbtn back" id="gameBack" style="font-size:24px;border:none">‹</button>
       <div class="obj"><span class="oLabel" id="objLabel">CLEAR</span><span class="oText" id="objText">—</span></div>
       <div class="stat"><span class="sv" id="shotsVal">∞</span><span class="sl">shots</span></div>
       <div class="stat"><span class="sv" id="scoreVal">0</span><span class="sl">score</span></div>
@@ -315,6 +321,7 @@ const LEVELS_PER=8;
 
 /* ---- audio + haptics ---------------------------------------------------- */
 let AC=null,soundOn=(Store.g(K.sound)||"1")==="1",hapOn=(Store.g(K.hap)||"1")==="1";
+let symBold=(Store.g(K.sym)||"1")==="1";   // high-contrast glyphs (colorblind boost)
 function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==="suspended")AC.resume();return AC;}
 function beep(freq,dur,vol,type){if(!soundOn)return;const c=ac();if(!c)return;const o=c.createOscillator(),g=c.createGain();
   o.type=type||"sine";o.frequency.value=freq;o.connect(g);g.connect(c.destination);const t=c.currentTime;
@@ -521,11 +528,16 @@ function layout(){
   cv.style.width=arenaW+"px";cv.style.height=arenaH+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
   COLS=CONFIG.cols;
-  const sidePad=10;playW=arenaW-sidePad*2;
-  R=playW/(COLS*2);D=R*2;rowH=R*Math.sqrt(3);
-  ox=sidePad;oy=10;
-  shooterY=arenaH-Math.max(72,R*2.6);
-  deathLineY=shooterY-R*1.4;
+  const sidePad=10,availW=arenaW-sidePad*2,band=94;
+  oy=10;deathLineY=arenaH-band;
+  const hAvail=deathLineY-oy;
+  // radius from width, but capped by height so up to 9 starting rows always fit
+  // above the death line (prevents an instant first-shot loss on short/wide viewports)
+  R=Math.min(availW/(COLS*2), hAvail/(9*Math.sqrt(3)+2));
+  D=R*2;rowH=R*Math.sqrt(3);
+  playW=COLS*D;                 // actual board width
+  ox=(arenaW-playW)/2;          // centre horizontally when height-capped
+  shooterY=arenaH-band/2;
 }
 window.addEventListener("resize",()=>{if(curScreen==="game"){layout();}});
 
@@ -533,10 +545,12 @@ window.addEventListener("resize",()=>{if(curScreen==="game"){layout();}});
    FIRING & RESOLUTION
    ========================================================================== */
 function shooterOrigin(){return{sx:ox+playW/2,sy:shooterY};}
+function clampAim(){const up=-Math.PI/2,maxA=CONFIG.aimClampDeg*Math.PI/180;let rel=aimAngle-up;if(rel>maxA)rel=maxA;if(rel<-maxA)rel=-maxA;aimAngle=up+rel;}
 function fire(){
   if(state!=="aiming"||!cur)return;
+  clampAim(); // guarantee the shot points upward no matter how aimAngle was set (keyboard can nudge past the pointer clamp)
   const{sx,sy}=shooterOrigin();
-  proj={x:sx,y:sy,vx:Math.cos(aimAngle)*CONFIG.speed,vy:Math.sin(aimAngle)*CONFIG.speed,kind:cur.kind,color:cur.color,r:R};
+  proj={x:sx,y:sy,vx:Math.cos(aimAngle)*CONFIG.speed,vy:Math.sin(aimAngle)*CONFIG.speed,kind:cur.kind,color:cur.color,r:R,life:0};
   state="flying";shotsFired++;
   if(G.shots!==Infinity)G.shots--;
   cur=next;next=rollAmmo();
@@ -545,6 +559,8 @@ function fire(){
 }
 function stepProjectile(dt){
   if(!proj)return;
+  proj.life=(proj.life||0)+dt;
+  if(proj.life>4||proj.y>arenaH+R*2){return landProjectile();} // failsafe: never stuck in "flying"
   let remaining=CONFIG.speed*dt;
   const maxStep=R*0.5;
   while(remaining>0){
@@ -679,9 +695,10 @@ function levelWon(){
     missionEvent("clears",1);missionEvent("stars",stars);
     $("resKicker").textContent=GARDENS[G.g].name.toUpperCase()+" · LEVEL "+(G.l+1);
   } else if(G.mode==="daily"){
-    coinE+=20;const day=todayStr();
+    const day=todayStr();
     if(Store.g(K.dLast)!==day){const yest=new Date(Date.now()-86400000);const ys=yest.getFullYear()+"-"+String(yest.getMonth()+1).padStart(2,"0")+"-"+String(yest.getDate()).padStart(2,"0");
       const st=Store.g(K.dLast)===ys?parseInt(Store.g(K.dStreak)||"0",10)+1:1;Store.s(K.dStreak,st);Store.s(K.dLast,day);Store.s(K.dStars,stars);
+      coinE+=20;   // first-of-day bonus only (replays still earn score-based coins)
       sbGrant(CONFIG.sun.daily,"budburst:daily");}
     missionEvent("clears",1);
     $("resKicker").textContent="DAILY BLOOM #"+dailyNumber();
@@ -707,7 +724,7 @@ function levelLost(){
   missionEvent("coins",coinE);missionEvent("pops",1);missionEvent("dropRun",G.dropped);
   if(G.mode==="endless"){
     const best=parseInt(Store.g(K.endBest)||"0",10);const rec=G.score>best;if(rec)Store.s(K.endBest,G.score);
-    sbGrant(Math.max(1,Math.min(CONFIG.sun.runCap,Math.floor(G.score/CONFIG.sun.endlessDiv))),"budburst:endless");
+    sbGrant(G.score>0?Math.max(1,Math.min(CONFIG.sun.runCap,Math.floor(G.score/CONFIG.sun.endlessDiv))):0,"budburst:endless"); // no earn for a zero-progress run
     missionEvent("depth",G.depth);
     $("resKicker").textContent="ENDLESS";
     $("resStars").innerHTML="";
@@ -715,7 +732,7 @@ function levelLost(){
     $("resScore").textContent=G.score.toLocaleString();
     $("resSub").textContent=(rec?"":"Best "+best.toLocaleString()+" · ")+"Depth "+G.depth;
   } else {
-    sbGrant(1,"budburst:try");
+    if(G.removed>0||G.score>0)sbGrant(1,"budburst:try"); // anti-idle: zero-progress runs earn nothing
     $("resKicker").textContent=G.mode==="daily"?"DAILY BLOOM #"+dailyNumber():GARDENS[G.g].name.toUpperCase()+" · LEVEL "+(G.l+1);
     $("resStars").innerHTML="";
     $("result").querySelector("#resTitle").textContent="Out of Buds";
@@ -758,20 +775,23 @@ function shareDaily(){const txt=$("resSquares").textContent+"\nlucidwinds.com/po
    VISUAL FX
    ========================================================================== */
 let shakeT=0,shakeMag=0;
-function screenShake(mag){shakeMag=Math.max(shakeMag,mag);shakeT=1;}
+const reduceMotion=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+function screenShake(mag){if(reduceMotion)return;shakeMag=Math.max(shakeMag,mag);shakeT=1;}
 function burstCell(r,c,bomb){const cel=grid[r][c];if(!cel)return;const{cx,cy}=cellCenter(r,c);
   const skin=equippedSkin();const col=cel.kind==="bud"?skin.cols[cel.color%skin.cols.length]:(cel.kind==="seed"?"#e9c46a":cel.kind==="thorn"?"#7c8468":"#cfc6b0");
   const n=bomb?10:7;for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=60+Math.random()*140;
     particles.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:1,col,size:R*(0.3+Math.random()*0.4),rot:Math.random()*6.28,vr:(Math.random()-.5)*10});}}
-function showCombo(n){const el=$("comboPop");el.textContent=n>=9?"WILD BLOOM ×"+n:"COMBO ×"+n;el.classList.remove("show");void el.offsetWidth;el.classList.add("show");}
+function showCombo(n){const el=$("comboPop");el.textContent=n>=9?"WILD BLOOM ×"+n:"COMBO ×"+n;el.classList.remove("show");void el.offsetWidth;el.classList.add("show");
+  clearTimeout(showCombo._t);showCombo._t=setTimeout(function(){el.classList.remove("show");},reduceMotion?700:850);} // also clears it when animation is disabled
 
 /* ============================================================================
    RENDER
    ========================================================================== */
 function drawGlyph(g,x,y,rad,col){
   ctx.save();ctx.translate(x,y);
-  ctx.fillStyle="rgba(0,0,0,0.32)";ctx.strokeStyle="rgba(0,0,0,0.32)";ctx.lineWidth=Math.max(1.4,rad*0.14);
-  const s=rad*0.5;
+  const op=symBold?"rgba(0,0,0,0.5)":"rgba(0,0,0,0.26)";
+  ctx.fillStyle=op;ctx.strokeStyle=op;ctx.lineWidth=Math.max(1.4,rad*0.14);
+  const s=rad*(symBold?0.56:0.46);
   ctx.beginPath();
   if(g==="flower"){for(let i=0;i<5;i++){const a=i/5*6.28-1.57;const px=Math.cos(a)*s*0.7,py=Math.sin(a)*s*0.7;ctx.moveTo(0,0);ctx.arc(px,py,s*0.42,0,6.28);}ctx.fill();ctx.beginPath();ctx.arc(0,0,s*0.32,0,6.28);ctx.fillStyle="rgba(255,255,255,0.4)";ctx.fill();}
   else if(g==="star"){for(let i=0;i<5;i++){const a=i/5*6.28-1.57,a2=a+0.628;ctx.lineTo(Math.cos(a)*s,Math.sin(a)*s);ctx.lineTo(Math.cos(a2)*s*0.45,Math.sin(a2)*s*0.45);}ctx.closePath();ctx.fill();}
@@ -810,7 +830,10 @@ function drawBud(cel,x,y,rad,ghost){
     ctx.beginPath();ctx.ellipse(x-rad*0.32,y-rad*0.38,rad*0.32,rad*0.2,-0.6,0,6.28);ctx.fillStyle="rgba(255,255,255,0.28)";ctx.fill();
     if(cel.kind==="bud"){const g=skin.glyphs[cel.color%skin.glyphs.length];drawGlyph(g,x,y,rad,base);}
     else if(cel.kind==="bomb"){drawGlyph("star",x,y,rad*1.05,base);ctx.fillStyle="#e0b040";ctx.beginPath();ctx.arc(x,y,rad*0.16,0,6.28);ctx.fill();}
-    else if(cel.kind==="seed"){drawGlyph("drop",x,y,rad,base);}
+    else if(cel.kind==="seed"){ctx.save();ctx.translate(x,y);ctx.fillStyle="rgba(56,36,8,0.55)";
+      ctx.beginPath();ctx.ellipse(0,rad*0.14,rad*0.32,rad*0.48,0,0,6.28);ctx.fill();  // seed body (distinct from the 6 colour glyphs + the droplet)
+      ctx.strokeStyle="rgba(56,36,8,0.55)";ctx.lineWidth=Math.max(1.4,rad*0.12);ctx.lineCap="round";
+      ctx.beginPath();ctx.moveTo(0,-rad*0.34);ctx.quadraticCurveTo(rad*0.3,-rad*0.5,rad*0.04,-rad*0.66);ctx.stroke();ctx.restore();} // sprout curl
     else if(cel.kind==="thorn"){ctx.save();ctx.translate(x,y);ctx.strokeStyle="rgba(0,0,0,0.4)";ctx.lineWidth=Math.max(1.6,rad*0.14);ctx.beginPath();ctx.moveTo(-rad*0.4,-rad*0.4);ctx.lineTo(rad*0.4,rad*0.4);ctx.moveTo(rad*0.4,-rad*0.4);ctx.lineTo(-rad*0.4,rad*0.4);ctx.stroke();ctx.restore();}
   }
   ctx.restore();
@@ -861,7 +884,7 @@ function render(){
   // buds
   const tt=performance.now()/1000;
   for(let r=0;r<grid.length;r++){const row=grid[r];for(let c=0;c<row.length;c++){const cel=row[c];if(!cel)continue;
-    const{cx,cy}=cellCenter(r,c);const bob=cel.kind==="bud"?Math.sin(tt*1.5+cel.wob)*0.6:0;
+    const{cx,cy}=cellCenter(r,c);const bob=(reduceMotion||cel.kind!=="bud")?0:Math.sin(tt*1.5+cel.wob)*0.6;
     drawBud(cel,cx,cy+bob,R);}}
   // fallers
   for(const f of fallers){ctx.save();ctx.globalAlpha=Math.max(0,f.a);drawBud(f.cell,f.x,f.y,f.r);ctx.restore();}
@@ -915,7 +938,7 @@ cv.addEventListener("pointercancel",()=>{aiming=false;});
 // desktop hover-aim
 cv.addEventListener("mousemove",e=>{if(curScreen!=="game"||state!=="aiming"||aiming)return;const p=pointerPos(e);if(p.y<shooterY)setAimFromPoint(p.x,p.y);});
 window.addEventListener("keydown",e=>{if(curScreen!=="game")return;
-  if(e.key==="ArrowLeft"){aimAngle-=0.03;}else if(e.key==="ArrowRight"){aimAngle+=0.03;}
+  if(e.key==="ArrowLeft"){aimAngle-=0.04;clampAim();}else if(e.key==="ArrowRight"){aimAngle+=0.04;clampAim();}
   else if(e.key===" "||e.key==="ArrowUp"){e.preventDefault();fire();}else if(e.key==="Shift"){swapAmmo();}});
 
 /* ============================================================================
@@ -1058,7 +1081,7 @@ function setSoundIcon(){$("soundBtn").textContent=soundOn?"🔊":"🔇";}
 function setToggleIcons(){$("symBtn").classList.toggle("on",(Store.g(K.sym)||"1")==="1");$("hapBtn").classList.toggle("on",hapOn);}
 
 $("soundBtn").onclick=()=>{soundOn=!soundOn;Store.s(K.sound,soundOn?"1":"0");setSoundIcon();if(soundOn){ac();beep(660,0.08,0.06);}};
-$("symBtn").onclick=()=>{const v=(Store.g(K.sym)||"1")==="1"?"0":"1";Store.s(K.sym,v);setToggleIcons();toast(v==="1"?"High-contrast glyphs on":"Glyphs subtle");};
+$("symBtn").onclick=()=>{const v=(Store.g(K.sym)||"1")==="1"?"0":"1";Store.s(K.sym,v);symBold=(v==="1");setToggleIcons();toast(v==="1"?"High-contrast glyphs on":"Glyphs subtle");};
 $("hapBtn").onclick=()=>{hapOn=!hapOn;Store.s(K.hap,hapOn?"1":"0");setToggleIcons();if(hapOn)buzz(20);};
 document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{const m=b.dataset.mode;
   if(m==="adventure")openMap();else if(m==="endless")startEndless();else startDaily();}));
@@ -1097,12 +1120,14 @@ $("exitLink").onclick=()=>SWS_EXIT();
 <script>
 /* Sky Wolf sunbeam earn standard: 30/day/game cap (see SUNBEAM_EARN_POLICY.md). */
 window._sbCapEarn=function(n,tag){
-  try{ var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'budburst');
-    var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
-    var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
-    n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
-    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
-  }catch(e){}
+  var d=Math.floor(Date.now()/864e5), used=0;
+  var k='sw_sb_'+((location.pathname.split('/').filter(Boolean).pop())||'budburst');
+  // read today's total; if storage read fails, fall back to an in-memory counter so the cap STILL holds
+  try{ var s=JSON.parse(localStorage.getItem(k)||'{}'); if(s.d===d)used=s.n||0; }
+  catch(e){ if(window.__bbSb&&window.__bbSb.d===d)used=window.__bbSb.n||0; }
+  n=Math.min(n, Math.max(0, 30-used)); if(n<=0)return;   // never pay out beyond 30/day
+  try{ localStorage.setItem(k, JSON.stringify({d:d,n:used+n})); }
+  catch(e){ window.__bbSb={d:d,n:used+n}; }
   if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
 };
 </script>
