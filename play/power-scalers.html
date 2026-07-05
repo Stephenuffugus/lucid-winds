@@ -895,6 +895,9 @@ function ocGradeScore(oc){
   for(const id of alloc){ if(id===start) continue; const n=TREE.byId[id]; if(!n) continue; pts++; if(n.type==="keystone") keyN++; else if(n.type==="notable") notN++; }
   let statTotal=0; for(const k of STAT_KEYS) statTotal+=(oc.baseStats&&oc.baseStats[k])||0;
   let gem=0; (oc.powers||[]).forEach(p=>(p.augments||[]).forEach(x=>{ const gk=(x&&x.key)?x.key:x; const gr=(x&&x.grade)?x.grade:augGradeOf(gk); const idx=RARITY.findIndex(r=>r.key===gr); if(idx>0) gem+=idx; }));
+  // socketed jewels in allocated sockets feed the grade too
+  const jmap=(oc.tree&&oc.tree.jewels)||{}, allocSet=new Set(alloc);
+  for(const nid in jmap){ if(!allocSet.has(nid)) continue; const e=jmap[nid],jk=(e&&e.key)?e.key:e; const gr=(e&&e.grade)?e.grade:jewelGradeOf(jk); const idx=RARITY.findIndex(r=>r.key===gr); if(idx>0) gem+=idx; }
   return keyN*7 + notN*2.5 + pts*0.5 + statTotal/40 + gem*1.6 + (oc.level||1)*0.35;
 }
 function ocGrade(oc){ const s=ocGradeScore(oc); let gi=0; for(let i=0;i<OC_GRADE_CUT.length;i++){ if(s>=OC_GRADE_CUT[i]) gi=i; } return RARITY[gi].key; }
