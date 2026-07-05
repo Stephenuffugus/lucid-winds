@@ -1469,7 +1469,7 @@ function drawKeeper(){ if(!G.keeper)return; var kp=keeperPos();
   if(G.keeper.aim){ ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle=G.keeper.aim==='flare'?'#e08a3a':'#8fd3ff'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('aim '+(G.keeper.aim==='flare'?'☀️':'💧'), VW/2, 140); ctx.restore(); }
   // art hook: keeper sprite (idle / casting)
   var kk='keeper_'+G.keeper.id + (G.keeper.castT>0 ? (G.keeper.castKind==='flare'?'_sunflare':'_wateringcan') : '');
-  if(spr(ctx, kk, kp.x, kp.y, 1, null) || spr(ctx, 'keeper_'+G.keeper.id, kp.x, kp.y, 1, null)) return;
+  if(spr(ctx, kk, kp.x, kp.y+6, 0.55, null) || spr(ctx, 'keeper_'+G.keeper.id, kp.x, kp.y+6, 0.55, null)) return;
   ctx.save(); ctx.translate(kp.x,kp.y);
   ctx.fillStyle='#3a3324'; ctx.beginPath(); ctx.ellipse(0,15,10,3,0,0,6.283); ctx.fill();
   ctx.fillStyle='#6b7a4a'; roundRect(ctx,-6,-2,12,16,3); ctx.fill();               // apron/body
@@ -1564,13 +1564,10 @@ function drawRangeRing(t,rng,aura){
 /* --- tower drawing (also used for icons) --- */
 function drawTower(c,x,y,id,tier,scale,ang,t,cultivar){
   scale=scale||1; ang=(ang===undefined?-Math.PI/2:ang); tier=tier||1;
-  // art hook: static body (no rotation) + rotating head (per tier / cultivar)
-  if(spr(c, id+'_body', x, y, scale, null)){
-    var cid=(tier>=4 && cultivar && TOWERS[id].fork[cultivar]) ? TOWERS[id].fork[cultivar].id : null;
-    var hk=cid ? (id+'_'+cid) : (id+'_head_t'+Math.min(tier,3));
-    spr(c, hk, x, y-6*scale, scale, ang);
-    return;
-  }
+  // art hook: one complete plant sprite per tier / cultivar (pot at base, no rotation)
+  var cid=(tier>=4 && cultivar && TOWERS[id].fork[cultivar]) ? TOWERS[id].fork[cultivar].id : null;
+  var akey = cid ? (id+'_'+cid) : (tier===1 ? id+'_body' : id+'_head_t'+Math.min(tier,3));
+  if(spr(c, akey, x, y+6*scale, scale*0.62, null)) return;
   var accent=skinTint(TOWERS[id].accent);
   c.save(); c.translate(x,y); c.scale(scale,scale);
   if(id==='marigold'){
@@ -1636,8 +1633,8 @@ function drawEnemy(e,t){
   // flight shadow
   if(e.fly && !save.settings.reducedMotion){ ctx.save(); ctx.globalAlpha=0.25; ctx.fillStyle='#000'; ctx.beginPath(); ctx.ellipse(0,10-bob,e.r*0.8,4,0,0,6.283); ctx.fill(); ctx.restore(); }
   var id=e.tid, col=e.col, r=e.r;
-  var _wk=(e.boss?('boss_'+id):id)+'_walk';
-  if(GGART.ready[_wk]){ spr(ctx,_wk,0,0,1,null,Math.floor(t*5+e.d*0.05)%((GGART.meta[_wk]&&GGART.meta[_wk].frames)||1)); }
+  var _wk = e.boss ? ('boss_'+id) : (id+'_walk');
+  if(GGART.ready[_wk]){ var _fr=(GGART.meta[_wk]&&GGART.meta[_wk].frames)||1; var _es=e.boss?(e.r*2.4/160):(e.r*2.6/48); spr(ctx,_wk,0,0,_es,null,Math.floor(t*5+e.d*0.06)%_fr); }
   else if(id==='aphid'||id==='seedling'){ ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(0,0,r*0.7,r,0,0,6.283); ctx.fill(); ctx.strokeStyle='#6f9a3f'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-r); ctx.lineTo(-3,-r-3); ctx.moveTo(0,-r); ctx.lineTo(3,-r-3); ctx.stroke(); }
   else if(id==='ant'){ ctx.fillStyle=col; [[0,-6,4],[0,0,5],[0,7,5]].forEach(function(b){ ctx.beginPath(); ctx.arc(b[0],b[1],b[2],0,6.283); ctx.fill(); }); ctx.strokeStyle=col; ctx.lineWidth=1.2; for(var l=0;l<3;l++){ var ly=-2+l*4; ctx.beginPath(); ctx.moveTo(-3,ly); ctx.lineTo(-8,ly-2); ctx.moveTo(3,ly); ctx.lineTo(8,ly-2); ctx.stroke(); } }
   else if(id==='grub'){ ctx.fillStyle=col; ctx.strokeStyle='#d8c39a'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(0,0,r,0.3,6.0); ctx.arc(2,-2,r*0.6,3.3,0.2,true); ctx.fill(); ctx.fillStyle='#7a5a3a'; ctx.beginPath(); ctx.arc(r*0.7,-2,3,0,6.283); ctx.fill(); }
