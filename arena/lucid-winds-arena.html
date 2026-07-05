@@ -296,6 +296,15 @@
   .np-jewel.empty{border-style:dashed;border-left-style:solid}
   .np-jewel .ah{display:flex;align-items:center;gap:8px} .np-jewel .ae{font-size:17px} .np-jewel .an{font-weight:700;font-size:13px}
   .np-jewel .ad{font-size:11.5px;color:var(--mist);margin-top:4px;line-height:1.4}
+  /* gauntlet ladder */
+  .grung-list{display:flex;flex-direction:column;gap:8px}
+  .grung{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:11px 12px}
+  .grung.locked{opacity:.5}
+  .grung.cur{border-color:#8b6cf0;background:linear-gradient(160deg,rgba(139,108,240,.12),var(--void-2))}
+  .grung.done{border-left:3px solid #67c98a}
+  .grung-i{width:40px;height:40px;flex:0 0 auto;display:grid;place-items:center;font-size:20px;border-radius:10px;background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--race-color) 40%,var(--void-2)),var(--void));border:1px solid color-mix(in srgb,var(--race-color) 45%,transparent)}
+  .grung-b{flex:1;min-width:0} .grung-n{font-weight:700;font-size:13px} .grung-s{font-size:11px;color:var(--mist);margin-top:2px}
+  .grung-a{flex:0 0 auto}
   .modal-back{position:fixed;inset:0;z-index:80;background:rgba(6,5,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px}
   @media(min-width:640px){.modal-back{align-items:center}}
   .modal{background:var(--void-2);border:1px solid var(--line-2);border-radius:var(--r);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:16px}
@@ -1282,7 +1291,7 @@ function topbar(){
   return `<div class="topbar"><div class="brand" data-act="home"><div class="k">LUCID WINDS</div><div class="s">OC ARENA</div></div>
     <div class="spacer"></div><div class="wallet"><div class="coin"><span class="sym">✦</span><b>${state.glory}</b></div></div></div>`;
 }
-const NAV=[{k:"home",ic:"◈",n:"Roster"},{k:"battle",ic:"⚔",n:"Battle"},{k:"tourney",ic:"♛",n:"Tourney"},{k:"alliances",ic:"⛨",n:"Allies"}];
+const NAV=[{k:"home",ic:"◈",n:"Roster"},{k:"battle",ic:"⚔",n:"Battle"},{k:"gauntlet",ic:"🐉",n:"Gauntlet"},{k:"tourney",ic:"♛",n:"Tourney"},{k:"alliances",ic:"⛨",n:"Allies"}];
 function renderNav(){
   const active=(state.screen==="sheet")?"home":state.screen;
   $nav.innerHTML=NAV.map(n=>`<button data-act="nav" data-k="${n.k}" class="${active===n.k?"on":""}"><span class="ic">${n.ic}</span>${n.n}</button>`).join("");
@@ -1997,6 +2006,60 @@ const ENEMIES=[
 ];
 function prepEnemy(e){ const c=JSON.parse(JSON.stringify(e)); c.record=c.record||{w:0,l:0}; c.xp=c.xp||0; return migrateOC(c); }
 function gauntletCleared(){ return (state.gauntlet&&typeof state.gauntlet.cleared==="number")?state.gauntlet.cleared:-1; }
+function screenGauntlet(){
+  if(state.gauntletFight) return gauntletStage();
+  if(state.roster.length<1) return `${topbar()}<div class="section-h"><span class="n">🐉</span><h2>Gauntlet</h2></div><div class="empty"><div class="big">🐉</div><div>Create a character to challenge the gauntlet.</div><div style="margin-top:14px"><button class="btn primary" data-act="startCreate">✦ Create OC</button></div></div>`;
+  const cleared=gauntletCleared();
+  let champ=state.roster.find(o=>o.id===state.gauntlet.champion)||state.roster[0];
+  state.gauntlet.champion=champ.id;
+  const champCards=state.roster.map(o=>miniOC(o,o.id===champ.id?"sel":"","pickChampion")).join("");
+  const rungs=ENEMIES.map((e,i)=>{
+    const done=i<=cleared, cur=i===cleared+1; const st=done?"done":cur?"cur":"locked";
+    const r=raceByKey(e.race)||{}; const asc=e.ascendancy?(ASC_BY_KEY[e.ascendancy.key]||{}).name:"";
+    return `<div class="grung ${st}"><div class="grung-i" style="--race-color:${r.color}">${done?"✓":cur?e.emoji:"🔒"}</div>
+      <div class="grung-b"><div class="grung-n">${i+1}. ${esc(e.name)}</div><div class="grung-s">Lv ${e.level} · ${esc(r.name)}${asc?` · ${esc(asc)}`:""}</div></div>
+      <div class="grung-a">${cur?`<button class="btn sm primary" data-act="fightGauntlet" data-rung="${i}">⚔ Fight</button>`:done?`<button class="btn sm ghost" data-act="fightGauntlet" data-rung="${i}">↺ Replay</button>`:`<span class="mnote" style="margin:0">locked</span>`}</div></div>`;
+  }).join("");
+  const beaten=cleared+1>=ENEMIES.length;
+  return `${topbar()}
+    <div class="section-h"><span class="n">🐉</span><h2>Gauntlet</h2><span class="c">${Math.max(0,cleared+1)}/${ENEMIES.length} cleared</span></div>
+    <div style="color:var(--mist);font-size:13px;margin-bottom:10px">Send a champion up an escalating ladder of authored foes. Clear a rung to unlock the next; wins pay Glory and XP.${beaten?" <b style='color:#43e8d8'>You've conquered the gauntlet — replay any rung for Glory.</b>":""}</div>
+    <div class="art-hint" style="margin-bottom:6px">Your champion</div>
+    <div class="picker-grid" style="margin-bottom:14px">${champCards}</div>
+    <div class="grung-list">${rungs}</div>`;
+}
+function runGauntlet(rung){
+  let champ=state.roster.find(o=>o.id===state.gauntlet.champion)||state.roster[0]; if(!champ) return;
+  const e=ENEMIES[rung]; if(!e) return; const cleared=gauntletCleared(); if(rung>cleared+1) return;
+  const res=simulate(champ, prepEnemy(e)); const win=res.winnerIsA; const newClear=win&&rung>cleared;
+  const glory= win ? Math.round((25+e.level*4)*(newClear?1.6:0.5)) : 6;
+  const xp= win ? Math.round((30+e.level*6)*(newClear?1.4:0.4)) : 12;
+  if(win) champ.record.w++; else champ.record.l++;
+  state.glory+=glory; const lv=grantXP(champ, xp);
+  if(newClear) state.gauntlet.cleared=rung;
+  persist();
+  state.gauntletFight={rung,res,enemy:e,championId:champ.id,win,glory,xp,lv,newClear};
+  render();
+  if(lv>0) toast(`${champ.name} reached level ${champ.level}!`,"good");
+  else if(newClear) toast(`Rung ${rung+1} cleared!`,"gold");
+}
+function gauntletStage(){
+  const b=state.gauntletFight; const A=state.roster.find(o=>o.id===b.championId); if(!A){ state.gauntletFight=null; return screenGauntlet(); }
+  const B=prepEnemy(b.enemy); const rA=raceByKey(A.race)||{}, rB=raceByKey(B.race)||{};
+  const last=b.res.hpTimeline[b.res.hpTimeline.length-1]||{a:0,b:0};
+  const logHtml=b.res.log.map((l,i)=>`<div class="ln" style="animation-delay:${Math.min(i*0.05,3)}s"><span class="rn">${l.round?"R"+l.round:"◈"}</span><span class="${l.type}">${esc(l.text)}</span></div>`).join("");
+  const nextRung=b.win&&b.rung+1<ENEMIES.length;
+  return `${topbar()}
+    <div class="section-h"><span class="n">🐉</span><h2>Gauntlet · Rung ${b.rung+1}</h2><span class="c">${b.res.rounds} rounds</span></div>
+    <div class="vs-stage"><div class="vs-head">
+      <div class="fighter-head" style="--race-color:${rA.color}"><div class="fav" style="--race-color:${rA.color}">${avatarHTML(A)}</div><div class="fn">${esc(A.name)}</div><div class="fr">${esc(rA.name)} · Lv${A.level}</div><div class="hpbar"><div class="hpf" style="width:${Math.round(last.a*100)}%"></div></div></div>
+      <div class="vs-badge">VS</div>
+      <div class="fighter-head right" style="--race-color:${rB.color}"><div class="fav" style="--race-color:${rB.color}">${b.enemy.emoji}</div><div class="fn">${esc(B.name)}</div><div class="fr">${esc(rB.name)} · Lv${B.level}</div><div class="hpbar"><div class="hpf" style="width:${Math.round(last.b*100)}%"></div></div></div></div>
+      <div class="log">${logHtml}</div>
+      <div class="result-panel"><div class="win-label">${b.win?"Victory":"Defeat"}</div><div class="win-name" style="color:${b.win?rA.color:rB.color}">${esc(b.win?A.name:B.name)}</div>
+        <div class="reward"><span>✦ +${b.glory} Glory</span><span class="xp">${esc(A.name)} +${b.xp} XP${b.lv>0?` · LV+${b.lv}`:""}</span>${b.newClear?`<span class="xp" style="color:#43e8d8">◈ Rung ${b.rung+1} cleared!</span>`:""}</div><br>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">${nextRung?`<button class="btn primary" data-act="gauntletNext">⚔ Next rung</button>`:""}<button class="btn" data-act="gauntletBack">← Ladder</button></div></div></div>`;
+}
 
 /* ===================== ALLIANCES ===================== */
 function screenAlliances(){
@@ -2039,6 +2102,7 @@ function render(){
     case "create": html=screenCreate(); break;
     case "sheet": html=screenSheet(); break;
     case "battle": html=screenBattle(); break;
+    case "gauntlet": html=screenGauntlet(); break;
     case "tourney": html=screenTourney(); break;
     case "alliances": html=screenAlliances(); break;
     default: html=screenHome();
@@ -2117,6 +2181,10 @@ function handleAct(act,el,e){
     case "closeModal": if(e&&e.target&&e.target.classList&&e.target.classList.contains("modal-back")) closeModal(); break;
     /* battle */
     case "pickFighter": pickFighter(el.dataset.id); break;
+    case "pickChampion": state.gauntlet.champion=el.dataset.id; render(); break;
+    case "fightGauntlet": runGauntlet(parseInt(el.dataset.rung,10)); break;
+    case "gauntletNext": { const gf=state.gauntletFight; state.gauntletFight=null; if(gf) runGauntlet(gf.rung+1); break; }
+    case "gauntletBack": state.gauntletFight=null; render(); break;
     case "runBattle": runBattle(); break;
     case "rematch": { const s=[state.battle.aId,state.battle.bId]; state.battle=null; state.battleSel=s; runBattle(); break; }
     case "newBattle": state.battle=null; render(); break;
