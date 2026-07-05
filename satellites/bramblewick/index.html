@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d100c">
+<title>Bramblewick</title>
+<style>
+  :root{ --bg:#0d100c; --sage:#7ab356; --gold:#c8a84b; --cream:#e8dcc8; --muted:#8a9178; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; height:100%; background:#05060a; overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--cream);
+    user-select:none; -webkit-user-select:none; touch-action:none; }
+  #wrap{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000; }
+  canvas{ display:block; touch-action:none; }
+  /* HTML overlays (menus) sit above canvas, sized in CSS px, centered on the letterboxed field */
+  .layer{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; }
+  .layer.on{ display:flex; }
+  .panel{ pointer-events:auto; width:min(88vw,420px); max-height:92vh; overflow-y:auto;
+    background:rgba(13,16,12,0.92); border:1px solid rgba(200,168,75,0.4); border-radius:16px;
+    padding:22px 20px 26px; text-align:center; box-shadow:0 12px 48px rgba(0,0,0,0.6); }
+  h1.logo{ margin:6px 0 2px; font-size:2.1rem; letter-spacing:1px; color:var(--cream);
+    text-shadow:0 0 18px rgba(122,179,86,0.35); }
+  .tag{ color:var(--muted); font-size:0.82rem; margin:0 0 16px; font-style:italic; }
+  .btn{ pointer-events:auto; display:inline-flex; align-items:center; justify-content:center;
+    min-height:48px; padding:12px 22px; margin:6px 4px; border-radius:12px; cursor:pointer;
+    font-size:1rem; font-weight:600; border:1px solid rgba(200,168,75,0.5);
+    background:linear-gradient(180deg,rgba(122,179,86,0.22),rgba(122,179,86,0.08)); color:var(--cream); }
+  .btn.primary{ background:linear-gradient(180deg,var(--sage),#4e7d33); border-color:var(--gold); color:#0d100c; font-size:1.1rem; }
+  .btn:active{ transform:translateY(1px); }
+  .row{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; margin:10px 0; }
+  .seg{ display:inline-flex; border:1px solid rgba(200,168,75,0.4); border-radius:10px; overflow:hidden; }
+  .seg button{ min-height:44px; min-width:44px; padding:8px 12px; border:0; background:transparent; color:var(--cream); font-size:0.95rem; cursor:pointer; }
+  .seg button.sel{ background:rgba(122,179,86,0.35); color:#0d100c; font-weight:700; }
+  .lbl{ font-size:0.8rem; color:var(--muted); margin:12px 0 2px; text-transform:uppercase; letter-spacing:1px; }
+  .toggle{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 4px; border-top:1px solid rgba(255,255,255,0.06); }
+  .toggle span{ font-size:0.9rem; }
+  .sw{ width:52px; height:30px; border-radius:16px; background:rgba(255,255,255,0.14); position:relative; cursor:pointer; flex:0 0 auto; }
+  .sw::after{ content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#cfc7b4; transition:left .12s; }
+  .sw.on{ background:var(--sage); } .sw.on::after{ left:25px; background:#0d100c; }
+  .small{ font-size:0.78rem; color:var(--muted); line-height:1.45; }
+  .how{ text-align:left; font-size:0.82rem; color:var(--cream); line-height:1.5; margin:10px 2px 0; }
+  .how b{ color:var(--gold); }
+  /* level-up draft cards are drawn on canvas; menus only for meta screens */
+  #dev{ position:absolute; left:6px; top:6px; z-index:9; font:11px/1.3 monospace; color:#9fd; background:rgba(0,0,0,0.5); padding:4px 6px; border-radius:6px; display:none; white-space:pre; pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="dev"></div>
+
+<!-- MENU -->
+<div class="layer on" id="menu">
+  <div class="panel">
+    <h1 class="logo">🌿 BRAMBLEWICK</h1>
+    <p class="tag">Wake the garden. Its chemistry does the killing.</p>
+    <div class="lbl">Verdancy (difficulty)</div>
+    <div class="seg" id="verSeg"></div>
+    <div class="small" id="verDesc" style="margin-top:6px"></div>
+    <div class="row"><button class="btn primary" id="playBtn">PLANT &amp; PLAY</button></div>
+    <div class="toggle"><span>Manual aim (advanced routing)</span><div class="sw" id="swAim"></div></div>
+    <div class="toggle"><span>Reduced motion</span><div class="sw" id="swMotion"></div></div>
+    <div class="toggle"><span>Sound</span><div class="sw on" id="swSound"></div></div>
+    <div class="how">
+      <b>Drag</b> anywhere to move your rooted plant. Weapons fire on their own.<br>
+      Your shots barely hurt pests. They <b>paint</b> them with statuses. When two
+      statuses meet on one pest, they <b>react</b> and that is what kills.<br>
+      <b>Pollen</b> supercharges the next reaction. <b>Spore</b> spreads it.
+      <b>Nectar</b> lures swarms into a ball. <b>Frost</b> stores damage for a shatter.<br>
+      Sweep up <b>Loam</b> to level up and draft your build.
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER / WIN -->
+<div class="layer" id="over">
+  <div class="panel">
+    <h1 class="logo" id="overTitle">The garden sleeps</h1>
+    <p class="tag" id="overSub"></p>
+    <div class="small" id="overStats" style="margin:8px 0 4px"></div>
+    <div class="row"><button class="btn primary" id="againBtn">GROW AGAIN</button>
+    <button class="btn" id="menuBtn">MENU</button></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   Sky Wolf Studios embed protocol (copy-verbatim; do not modify)
+   ===================================================================== */
+(function(){
+  var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EMBED=SWS_EMBED;
+  window.SWS_EXIT=function(){
+    if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+    location.href='https://lucidwinds.com/portal/';
+  };
+  if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+})();
+
+/* =====================================================================
+   BRAMBLEWICK — single-file botanical survivor-like
+   All art = Canvas 2D · all sound = WebAudio synthesis · no external assets.
+   Loam is LOCAL-ONLY (localStorage lw_bramblewick_v1); never touches
+   Sunbeams / Dew / Pi / Firestore. Earn moments announced via postMessage
+   only when embedded (host prices & caps them).
+   VERTICAL SLICE build: perf floor + status/reaction engine + 7 weapons
+   + 6 pests + draft loop + 1 boss + dev/embed bridges.
+   ===================================================================== */
+(function(){
+'use strict';
+
+/* ---------------- constants / virtual field ---------------- */
+var VW=540, VH=960;
+var DEV=/[?&]bramblewicktest=1(&|$)/.test(location.search);
+var STORE_KEY='lw_bramblewick_v1';
+
+/* hard entity caps (perf floor) */
+var MAX_PESTS=300, MAX_PROJ=520, MAX_MOTE=260, MAX_FX=340;
+
+/* ---------------- persistent store (local only) ---------------- */
+function defStore(){ return { v:1, loam:0, bestTime:0, bestKills:0, runs:0,
+  settings:{ manualAim:false, reducedMotion:false, sound:true }, maxVerdancy:2 }; }
+var store=defStore();
+(function load(){ try{ var raw=localStorage.getItem(STORE_KEY); if(raw){ var p=JSON.parse(raw);
+  if(p&&p.v===1){ store=Object.assign(defStore(),p); store.settings=Object.assign(defStore().settings,p.settings||{}); } }
+}catch(e){} })();
+var saveT=0;
+function saveSoon(){ saveT=1; }
+function saveNow(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(store)); }catch(e){} saveT=0; }
+
+/* ---------------- canvas + DPR letterbox ---------------- */
+var canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+var view={scale:1, offX:0, offY:0, cssW:0, cssH:0};
+function resize(){
+  var cssW=window.innerWidth, cssH=window.innerHeight;
+  var dpr=Math.min(2, window.devicePixelRatio||1);
+  canvas.width=Math.round(cssW*dpr); canvas.height=Math.round(cssH*dpr);
+  canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
+  var scale=Math.min(cssW/VW, cssH/VH);
+  view.scale=scale; view.cssW=cssW; view.cssH=cssH;
+  view.offX=(cssW-VW*scale)/2; view.offY=(cssH-VH*scale)/2;
+  view.dpr=dpr;
+}
+window.addEventListener('resize', resize); resize();
+/* map a client (css) point into virtual field coords */
+function toField(clientX, clientY){
+  return { x:(clientX-view.offX)/view.scale, y:(clientY-view.offY)/view.scale };
+}
+
+/* ---------------- tiny WebAudio synth ---------------- */
+var AC=null;
+function audio(){ if(!store.settings.sound) return null; if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } return AC; }
+function blip(freq, dur, type, vol){ var ac=audio(); if(!ac) return; try{
+  var o=ac.createOscillator(), g=ac.createGain(); o.type=type||'sine'; o.frequency.value=freq;
+  g.gain.value=0.0001; o.connect(g); g.connect(ac.destination); var t=ac.currentTime;
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime((vol||0.14),t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.12)); o.start(t); o.stop(t+(dur||0.12)+0.02);
+}catch(e){} }
+function sndPickup(){ blip(520+Math.random()*40,0.07,'triangle',0.05); }
+function sndReact(mag){ blip(180+mag*60,0.16,'sawtooth',0.07); blip(360+mag*80,0.12,'sine',0.05); }
+function sndLevel(){ blip(440,0.12,'sine',0.12); setTimeout(function(){blip(660,0.16,'sine',0.12);},90); }
+function sndHurt(){ blip(120,0.14,'square',0.08); }
+function sndBoss(){ blip(80,0.5,'sawtooth',0.12); }
+
+/* ---------------- generic object pool ---------------- */
+function Pool(factory, cap){ this.factory=factory; this.cap=cap; this.a=new Array(cap); this.n=0;
+  for(var i=0;i<cap;i++){ this.a[i]=factory(); this.a[i].active=false; } }
+Pool.prototype.spawn=function(){ if(this.n>=this.cap) return null; // hard cap, no alloc
+  var o=this.a[this.n]; o.active=true; this.n++; return o; };
+Pool.prototype.compact=function(){ // swap-remove inactive; keeps [0..n) active
+  var i=0; while(i<this.n){ if(!this.a[i].active){ this.n--; var tmp=this.a[i]; this.a[i]=this.a[this.n]; this.a[this.n]=tmp; } else i++; } };
+Pool.prototype.clear=function(){ for(var i=0;i<this.n;i++) this.a[i].active=false; this.n=0; };
+
+/* ---------------- spatial hash grid (proximity floor) ---------------- */
+var CELL=60, GW=Math.ceil(VW/CELL)+1, GH=Math.ceil(VH/CELL)+1;
+var grid=new Array(GW*GH); for(var gi=0;gi<grid.length;gi++) grid[gi]=[];
+function gridClear(){ for(var i=0;i<grid.length;i++){ if(grid[i].length) grid[i].length=0; } }
+function gridKey(x,y){ var cx=x<0?0:(x>=VW?GW-1:(x/CELL)|0), cy=y<0?0:(y>=VH?GH-1:(y/CELL)|0); return cy*GW+cx; }
+function gridInsert(o){ grid[gridKey(o.x,o.y)].push(o); }
+/* iterate pests within radius r of (x,y); cb returns nothing */
+function gridQuery(x,y,r,cb){
+  var cx=(x/CELL)|0, cy=(y/CELL)|0, cr=Math.ceil(r/CELL);
+  for(var yy=cy-cr; yy<=cy+cr; yy++){ if(yy<0||yy>=GH) continue;
+    for(var xx=cx-cr; xx<=cx+cr; xx++){ if(xx<0||xx>=GW) continue;
+      var cell=grid[yy*GW+xx]; for(var i=0;i<cell.length;i++){ cb(cell[i]); } } }
+}
+
+/* ---------------- statuses ---------------- */
+/* order matters for glyph layout; 4 marked levers */
+var ST=['pollen','spore','nectar','frost','thorn','sun','sap'];
+var ST_I={}; ST.forEach(function(s,i){ ST_I[s]=i; });
+var ST_META={
+  pollen:{ glyph:'ring', col:'#e8c24b', dot:true },
+  spore: { glyph:'aster',col:'#9b7ad6', dps:2.2 },
+  nectar:{ glyph:'drop', col:'#e79a3a' },
+  frost: { glyph:'snow', col:'#8fd0e8' },
+  thorn: { glyph:'spike',col:'#c65b5b', dps:3.4 },
+  sun:   { glyph:'rays', col:'#e6d24a', dps:2.8 },
+  sap:   { glyph:'sapdr',col:'#b9d24a' }
+};
+/* status decay durations (ms) */
+var ST_LIFE={ pollen:5000, spore:6000, nectar:4000, frost:5000, thorn:5000, sun:4500, sap:5500 };
+
+/* ---------------- reaction matrix (21 pairwise) ----------------
+   key = the two statuses sorted & joined by '|'. Payload for slice:
+   dmg (AoE), rad (px), emit (status seeded to neighbors), special flags. */
+function rkey(a,b){ return a<b ? a+'|'+b : b+'|'+a; }
+var REACT={};
+function R(a,b,o){ REACT[rkey(a,b)]=Object.assign({name:o.name,dmg:o.dmg||10,rad:o.rad||46},o); }
+R('pollen','spore', {name:'Bloomburst', dmg:14, rad:70, emit:'spore'});
+R('pollen','sap',   {name:'Amberglow',  dmg:10, rad:60, pool:'sap', mark:'pollen'});
+R('pollen','nectar',{name:'Goldlure',   dmg:8,  rad:64, markAll:'pollen', lure:1});
+R('pollen','thorn', {name:'Barbflash',  dmg:18, rad:60, bleedx:2});
+R('pollen','sun',   {name:'Ignition',   dmg:26, rad:66, emit:'sun'});
+R('pollen','frost', {name:'Rime Bloom', dmg:16, rad:60, emit:'frost'});
+R('spore','sap',    {name:'Rot',        dmg:12, rad:52, armorbreak:1, dot:'spore'});
+R('spore','nectar', {name:'Plague Swarm',dmg:12, rad:66, emit:'spore', lure:1});
+R('spore','thorn',  {name:'Cordyceps',  dmg:15, rad:54, emit:'spore', bleedx:1});
+R('spore','sun',    {name:'Blight Char',dmg:17, rad:58, emit:'spore'});
+R('spore','frost',  {name:'Coldrot',    dmg:15, rad:56, emit:'spore', slow:1});
+R('sap','nectar',   {name:'Honeytrap',  dmg:8,  rad:60, pool:'sap', lure:1, root:1});
+R('sap','thorn',    {name:'Bramble',    dmg:16, rad:56, root:1, bleedx:2});
+R('sap','sun',      {name:'Resin Boil', dmg:19, rad:54, armorbreak:1, emit:'sun'});
+R('sap','frost',    {name:'Amber Lock', dmg:14, rad:48, freeze:1, brittle:1});
+R('nectar','thorn', {name:'Bleeding Lure',dmg:14,rad:60, pool:'thorn', lure:1});
+R('nectar','sun',   {name:'Caramelize', dmg:20, rad:62, emit:'sun', lure:1});
+R('nectar','frost', {name:'Sugar Frost',dmg:16, rad:60, slow:1, brittle:1, lure:1});
+R('thorn','sun',    {name:'Ashthorn',   dmg:22, rad:54, bleedx:2});
+R('thorn','frost',  {name:'Frostbite',  dmg:20, rad:52, brittle:1});
+R('sun','frost',    {name:'Thermal Shock',dmg:28,rad:60, mark:'pollen'}); // emits steam = airborne pollen
+
+/* triples (v1 ships 4) — fire when 3+ statuses AND pollen catalyst present */
+var TRIPLES={
+  'pollen|spore|sun':  {name:'Wildbloom Nova', dmg:44, rad:96, emit:'spore'},
+  'sap|frost|thorn':   {name:'Glass Bramble',  dmg:40, rad:84, root:1, bleedx:3},
+  'nectar|sap|spore':  {name:'Plague Tide',    dmg:36, rad:100,emit:'spore', pool:'sap', lure:1},
+  'pollen|sun|thorn':  {name:'Sunforge',       dmg:46, rad:92, bleedx:2, emit:'sun'}
+};
+
+/* ---------------- weapons (7 for slice, one per status) ---------------- */
+/* kind: 'proj' (aimed projectile), 'arc' (front sweep), 'cone', 'orbit', 'beam' */
+var WEAPONS={
+  dandelion:{ id:'dandelion', name:'Dandelion Puffer', organ:'crown', status:'pollen', kind:'cone',
+    every:900, speed:200, life:0.9, count:3, spread:0.5, r:7, stacks:1, dmg:1, desc:'Drifting seed cone. Paints Pollen (catalyst).' },
+  nettle:{ id:'nettle', name:'Nettle Lash', organ:'side', status:'thorn', kind:'arc',
+    every:820, reach:150, arcw:1.5, r:0, stacks:1, dmg:1, desc:'Whip arc across the front. Stacks Thorn bleed.' },
+  puffball:{ id:'puffball', name:'Puffball Burst', organ:'base', status:'spore', kind:'lob',
+    every:1500, speed:150, life:1.4, r:9, burstR:44, stacks:2, dmg:1, desc:'Lobbed spore bomb. Spore spreads pest to pest.' },
+  sundew:{ id:'sundew', name:'Sundew Spitter', organ:'side', status:'sap', kind:'proj',
+    every:1050, speed:230, life:1.1, count:1, r:6, stacks:1, dmg:1, desc:'Sticky darts. Sap roots and slows.' },
+  foxglove:{ id:'foxglove', name:'Foxglove Volley', organ:'crown', status:'nectar', kind:'homing',
+    every:1200, speed:190, life:1.6, count:2, r:6, stacks:1, dmg:1, desc:'Homing lure darts. Nectar balls up swarms.' },
+  sunflower:{ id:'sunflower', name:'Sunflower Lance', organ:'crown', status:'sun', kind:'beam',
+    every:60, reach:190, arcw:0.20, r:0, stacks:1, dmg:0.5, spin:0.55, desc:'Slow rotating scorch beam. Sun burns.' },
+  frostfern:{ id:'frostfern', name:'Frostfern Fan', organ:'side', status:'frost', kind:'cone',
+    every:1050, speed:170, life:0.8, count:5, spread:0.7, r:6, stacks:1, dmg:1, desc:'Chilling cone. Frost stores a shatter.' }
+};
+var WEAPON_ORDER=['dandelion','nettle','puffball','sundew','foxglove','sunflower','frostfern'];
+
+/* passives (slice subset) */
+var PASSIVES={
+  goldenhour:{ id:'goldenhour', name:'Golden Hour', desc:'Every reaction you trigger also applies 1 Pollen.' },
+  phyllotaxis:{ id:'phyllotaxis', name:'Phyllotaxis', desc:'+1 projectile and wider spread on all weapons.' },
+  windspores:{ id:'windspores', name:'Windborne Spores', desc:'Spore reactions spread to +2 more pests.' },
+  taproot:{ id:'taproot', name:'Deep Taproot', desc:'+30 max HP. Thorn and Sap stack higher.' },
+  guttation:{ id:'guttation', name:'Guttation', desc:'Heal 2 HP per kill.' },
+  heliotropism:{ id:'heliotropism', name:'Heliotropism', desc:'Weapons bias toward the densest cluster.' }
+};
+
+/* ---------------- pests (6 for slice, shape-coded) ---------------- */
+var PESTS={
+  aphid:{ id:'aphid', name:'Aphid', shape:'teardrop', hp:8, spd:52, r:10, dmg:6, col:'#9ccf6a', armor:0, xp:1, split:0 },
+  beetle:{ id:'beetle', name:'Leaf Beetle', shape:'hex', hp:34, spd:30, r:14, dmg:10, col:'#5a7d3a', armor:0.7, xp:2 },
+  locust:{ id:'locust', name:'Locust', shape:'chevron', hp:16, spd:44, r:12, dmg:9, col:'#b7a24a', armor:0, xp:2, dash:1 },
+  slug:{ id:'slug', name:'Slug', shape:'blob', hp:52, spd:20, r:16, dmg:8, col:'#7a9ba0', armor:0.2, xp:3, sunweak:1 },
+  wasp:{ id:'wasp', name:'Wasp', shape:'diamond', hp:14, spd:66, r:11, dmg:12, col:'#d0b24a', armor:0, xp:2, aerial:1 },
+  mite:{ id:'mite', name:'Spider Mite', shape:'star', hp:10, spd:40, r:9, dmg:5, col:'#c98fd0', armor:0, xp:1, web:1 }
+};
+
+/* ---------------- verdancy tiers (hybrid difficulty dial) ---------------- */
+var VERD=[
+  {name:'Seedling',  hp:0.8, rate:0.85, rcd:120, desc:'Gentle. Reactions rip freely.'},
+  {name:'Sprout',    hp:0.95,rate:1.0,  rcd:150, desc:'Standard garden pressure.'},
+  {name:'Bramble',   hp:1.15,rate:1.15, rcd:200, desc:'Denser swarms. Reactions cool slower.'},
+  {name:'Thicket',   hp:1.35,rate:1.32, rcd:270, desc:'Reaction-resistant pests appear.'},
+  {name:'Wildwood',  hp:1.6, rate:1.5,  rcd:340, desc:'For veterans. Build diversity required.'},
+  {name:'Long Dark', hp:1.9, rate:1.7,  rcd:420, desc:'The deepest night.'}
+];
+
+/* ==================================================================
+   GAME STATE
+   ================================================================== */
+var G=null;
+function newGame(verdancy){
+  var v=VERD[verdancy];
+  G={
+    state:'PLAY', verdancy:verdancy, vd:v,
+    time:0, kills:0, loamRun:0, over:false, win:false,
+    player:{ x:VW/2, y:VH*0.62, r:15, hp:100, maxhp:100, spd:150, iframe:0, hurtFlash:0 },
+    weapons:[], passives:{}, weaponTimers:{},
+    bloom:0, bloomNext:6, level:1,
+    aim:{x:VW/2,y:VH*0.4, active:false},
+    boss:null, bossSpawned:false, bossQueued:false,
+    shake:0, slow:0,
+    draft:null,            // level-up card set
+    spawnAcc:0, phase:0,
+    reactCount:{},         // per-reaction first-trigger tracking (earn moments)
+    milestone:0
+  };
+  // starter kit: Dandelion (Pollen) + Nettle (Thorn) → Barbflash reachable turn 1
+  addWeapon('dandelion'); addWeapon('nettle');
+  pests.clear(); projs.clear(); motes.clear(); fx.clear();
+  return G;
+}
+function addWeapon(id){ if(G.weapons.indexOf(id)>=0){ // level up existing: faster + stronger
+    var w=WEAPONS[id]; return; }
+  G.weapons.push(id); G.weaponTimers[id]=WEAPONS[id].every*Math.random(); }
+
+/* ---------------- pools ---------------- */
+var pests=new Pool(function(){ return { active:false, type:null, x:0,y:0, vx:0,vy:0, hp:0, maxhp:0,
+  r:8, spd:0, dmg:0, armor:0, xp:1, st:new Float32Array(7), stt:new Float32Array(7),
+  rcd:0, slowT:0, rootT:0, freezeT:0, brittle:0, bleedx:1, phase:0, seed:0, boss:false, elite:false,
+  meta:null, aerial:0, sunweak:0, web:0, dash:0, dashT:0 }; }, MAX_PESTS+8);
+var projs=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, life:0, r:5, status:null,
+  stacks:1, dmg:1, homing:0, pierce:1, seed:0, burstR:0 }; }, MAX_PROJ);
+var motes=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, xp:1, t:0 }; }, MAX_MOTE);
+var fx=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, life:0, max:0.4, r:10, kind:'ring', col:'#fff' }; }, MAX_FX);
+
+function spawnFX(x,y,kind,col,r,life){ if(store.settings.reducedMotion && kind==='burst') return;
+  var f=fx.spawn(); if(!f) return; f.x=x; f.y=y; f.kind=kind; f.col=col||'#fff'; f.r=r||14; f.life=life||0.4; f.max=f.life; f.vx=0; f.vy=0; }
+function spawnBurst(x,y,col,n){ if(store.settings.reducedMotion){ spawnFX(x,y,'ring',col,20,0.3); return; }
+  n=n||6; for(var i=0;i<n;i++){ var f=fx.spawn(); if(!f) return; var a=Math.random()*6.28, s=40+Math.random()*90;
+    f.x=x; f.y=y; f.vx=Math.cos(a)*s; f.vy=Math.sin(a)*s; f.kind='spark'; f.col=col; f.r=2+Math.random()*2.5; f.life=0.3+Math.random()*0.3; f.max=f.life; } }
+
+/* ==================================================================
+   SPAWNING
+   ================================================================== */
+function pestPool(t){ // which pests can appear by run time (seconds)
+  if(t<25) return ['aphid','aphid','mite'];
+  if(t<70) return ['aphid','mite','locust','beetle'];
+  if(t<140) return ['aphid','locust','beetle','slug','wasp','mite'];
+  return ['aphid','locust','beetle','slug','wasp','mite','beetle','wasp'];
+}
+function spawnPest(typeId, x, y){
+  if(pests.n>=MAX_PESTS) return null;
+  var base=PESTS[typeId]; var p=pests.spawn(); if(!p) return null;
+  p.type=typeId; p.meta=base; p.boss=false; p.elite=false;
+  var hp=base.hp*G.vd.hp*(1+G.time*0.006);
+  p.hp=hp; p.maxhp=hp; p.r=base.r; p.spd=base.spd; p.dmg=base.dmg; p.armor=base.armor; p.xp=base.xp;
+  p.aerial=base.aerial||0; p.sunweak=base.sunweak||0; p.web=base.web||0; p.dash=base.dash||0;
+  for(var i=0;i<7;i++){ p.st[i]=0; p.stt[i]=0; }
+  p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.dashT=0; p.seed=Math.random()*6.28;
+  if(x==null){ // spawn just off a random edge
+    var edge=(Math.random()*4)|0;
+    if(edge===0){ p.x=Math.random()*VW; p.y=-20; }
+    else if(edge===1){ p.x=VW+20; p.y=Math.random()*VH; }
+    else if(edge===2){ p.x=Math.random()*VW; p.y=VH+20; }
+    else { p.x=-20; p.y=Math.random()*VH; }
+  } else { p.x=x; p.y=y; }
+  return p;
+}
+function runSpawner(dt){
+  if(G.boss) return; // pause the trickle during boss
+  G.spawnAcc+=dt;
+  // spawn interval shrinks over time and with verdancy rate
+  var interval=Math.max(0.14, (1.15 - G.time*0.004)/G.vd.rate);
+  var pool=pestPool(G.time);
+  while(G.spawnAcc>=interval){
+    G.spawnAcc-=interval;
+    var burst=1+((G.time/60)|0);
+    for(var b=0;b<burst && pests.n<MAX_PESTS;b++){ spawnPest(pool[(Math.random()*pool.length)|0]); }
+  }
+  // boss cue at 4:00 (or dev-forced)
+  if(!G.bossSpawned && G.time>=240){ spawnBoss(); }
+}
+
+/* ==================================================================
+   BOSS — Grubfather (slice boss)
+   ================================================================== */
+function spawnBoss(){
+  if(G.bossSpawned) return; G.bossSpawned=true;
+  var p=pests.spawn(); if(!p) return;
+  p.boss=true; p.type='grubfather'; p.meta={name:'Grubfather', shape:'grub', col:'#7a5a3a', armor:0};
+  p.x=VW/2; p.y=-40; p.r=48; p.spd=26; p.dmg=18;
+  var hp=1400*G.vd.hp; p.hp=hp; p.maxhp=hp;
+  for(var i=0;i<7;i++){ p.st[i]=0; p.stt[i]=0; }
+  p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.phase=0; p.armorBack=true; p.burrowT=4; p.seed=0;
+  G.boss=p; sndBoss(); G.shake=0.6;
+  earn('boss_appear',{boss:'grubfather'});
+}
+function updateBoss(p,dt){
+  var pl=G.player;
+  // slow chase; periodically burrow and erupt near player, summoning aphids
+  p.burrowT-=dt;
+  var ang=Math.atan2(pl.y-p.y, pl.x-p.x);
+  var mv=(p.rootT>0||p.freezeT>0)?0:p.spd*(p.slowT>0?0.5:1);
+  p.x+=Math.cos(ang)*mv*dt; p.y+=Math.sin(ang)*mv*dt;
+  if(p.burrowT<=0){ p.burrowT=6.5;
+    // erupt: shockwave + summon 3 aphids
+    spawnFX(pl.x,pl.y,'ring','#c8a84b',90,0.5); G.shake=0.4;
+    for(var i=0;i<3 && pests.n<MAX_PESTS;i++){ var a=spawnPest('aphid', pl.x+(Math.random()*120-60), pl.y+(Math.random()*120-60)); }
+    // damage if close
+    if(dist2(p.x,p.y,pl.x,pl.y) < (120*120)) hurtPlayer(12);
+  }
+  // armored back drops once Rot (armorbreak) has hit it — flagged in reaction handler
+}
+
+/* ==================================================================
+   STATUS + REACTION ENGINE (the spine)
+   ================================================================== */
+function stackCap(status){
+  if(status==='thorn'||status==='sap') return G.passives.taproot?9:6;
+  return 8;
+}
+var _rdepth=0; // cascade recursion guard (perf floor: bounds emit->reaction chains)
+function applyStatus(p, status, stacks){
+  if(!p.active) return;
+  var idx=ST_I[status]; if(idx==null) return;
+  // reaction check BEFORE adding (apply B to a pest already carrying A)
+  var reacted=false;
+  var now=G.time*1000;
+  if(p.rcd<=now && _rdepth<3){
+    // find strongest OTHER status present
+    var bestA=-1, bestN=0;
+    for(var i=0;i<7;i++){ if(i===idx) continue; if(p.st[i]>0 && p.st[i]>=bestN){ bestN=p.st[i]; bestA=i; } }
+    if(bestA>=0){
+      fireReaction(p, ST[bestA], status);
+      reacted=true;
+      p.rcd=now + G.vd.rcd; // per-pest soft cooldown (balance + perf throttle)
+    }
+  }
+  // add the stack (capped)
+  var cap=stackCap(status);
+  p.st[idx]=Math.min(cap, p.st[idx]+(stacks||1));
+  p.stt[idx]=ST_LIFE[status]/1000;
+  return reacted;
+}
+function fireReaction(p, a, b){
+  _rdepth++;
+  try{ _doReaction(p,a,b); } finally { _rdepth--; }
+}
+function _doReaction(p, a, b){
+  // gather all present statuses for possible triple
+  var present=[]; for(var i=0;i<7;i++){ if(p.st[i]>0) present.push(ST[i]); }
+  // ensure a & b are represented even if b not yet added
+  if(present.indexOf(b)<0) present.push(b);
+  var hasPollen = p.st[ST_I.pollen]>0 && a!=='pollen' && b!=='pollen';
+  // TRIPLE: 3+ statuses AND pollen catalyst present
+  var rx=null, triple=false;
+  if(present.length>=3 && p.st[ST_I.pollen]>0){
+    var key3=present.slice().sort().slice(0,3).join('|');
+    // try any triple whose 3 statuses are all present
+    for(var tk in TRIPLES){ var parts=tk.split('|'); if(parts.every(function(s){return present.indexOf(s)>=0;})){ rx=TRIPLES[tk]; triple=true; break; } }
+  }
+  if(!rx){ rx=REACT[rkey(a,b)]; }
+  if(!rx) return;
+  // consume one stack of a and b
+  p.st[ST_I[a]]=Math.max(0,p.st[ST_I[a]]-1);
+  p.st[ST_I[b]]=Math.max(0,p.st[ST_I[b]]-1);
+  // POLLEN NOVA lever: if pollen present (and not the pair), consume it and scale up
+  var nova=false, dmg=rx.dmg, rad=rx.rad;
+  if(hasPollen){ p.st[ST_I.pollen]=Math.max(0,p.st[ST_I.pollen]-1); nova=true; dmg=Math.round(dmg*1.6); rad=Math.round(rad*1.35); }
+  // THORNED lane / bleed multipliers folded later; slice keeps base
+  // deal AoE damage centered on the pest
+  var cx=p.x, cy=p.y;
+  var killedHere=false;
+  damagePest(p, dmg, 'react'); // center pest takes full
+  gridQuery(cx,cy,rad,function(o){ if(o===p||!o.active) return; if(dist2(cx,cy,o.x,o.y)<=rad*rad){ damagePest(o, dmg*0.7, 'react'); } });
+  // SPECIALS
+  if(rx.armorbreak){ if(p.boss){ p.armorBack=false; spawnFX(p.x,p.y,'ring','#e79a3a',60,0.5); } else { p.armor=0; } }
+  if(rx.bleedx){ p.bleedx=Math.max(p.bleedx, rx.bleedx); }
+  if(rx.root){ p.rootT=Math.max(p.rootT,1.4); }
+  if(rx.freeze){ p.freezeT=Math.max(p.freezeT,1.1); }
+  if(rx.slow){ p.slowT=Math.max(p.slowT,1.6); }
+  if(rx.brittle){ p.brittle=1; }
+  if(rx.lure){ nectarLure(cx,cy,rad*1.4); }
+  // FROST SHATTER lever: burst on a brittle/frozen pest cracks for shrapnel
+  if(p.brittle && (rx.dmg>=14)){ p.brittle=0; damagePest(p, 14, 'react');
+    gridQuery(cx,cy,rad*0.9,function(o){ if(o.active&&o!==p) applyStatus(o,'thorn',1); }); spawnFX(cx,cy,'ring','#8fd0e8',rad,0.4); }
+  // EMIT / SPREAD lever: seed a status to nearby pests
+  if(rx.emit){ var spread=(G.passives.windspores?5:3); var seeded=0;
+    gridQuery(cx,cy,rad*1.2,function(o){ if(seeded>=spread||o===p||!o.active) return; if(dist2(cx,cy,o.x,o.y)<=(rad*1.2)*(rad*1.2)){ applyStatus(o, rx.emit, 1); seeded++; } }); }
+  if(rx.mark || rx.markAll){ var mk=rx.mark||rx.markAll; var mr=rx.markAll?rad*1.3:rad*0.6;
+    gridQuery(cx,cy,mr,function(o){ if(o.active&&dist2(cx,cy,o.x,o.y)<=mr*mr){ var mi=ST_I[mk]; o.st[mi]=Math.min(stackCap(mk),o.st[mi]+1); o.stt[mi]=ST_LIFE[mk]/1000; } }); }
+  // GOLDEN HOUR passive: reaction re-applies pollen to center
+  if(G.passives.goldenhour){ var pi=ST_I.pollen; p.st[pi]=Math.min(stackCap('pollen'),p.st[pi]+1); p.stt[pi]=ST_LIFE.pollen/1000; }
+  // feedback
+  var col=triple?'#fff2b0':(nova?'#e8c24b':'#e79a3a');
+  spawnFX(cx,cy, triple?'nova':'react', col, rad, triple?0.6:0.42);
+  if(!store.settings.reducedMotion) spawnBurst(cx,cy,col, triple?12:6);
+  sndReact(triple?3:(nova?2:1));
+  G.shake=Math.min(0.5, G.shake + (triple?0.35:0.12));
+  // earn moment: first time each reaction triggers
+  var nm=rx.name; if(!G.reactCount[nm]){ G.reactCount[nm]=1; earn('first_reaction',{reaction:nm}); if(triple) earn('triple_reaction',{reaction:nm}); }
+}
+/* Nectar lure: pull nectar-marked pests toward a point (clumps the swarm) */
+var lureNodes=[]; // {x,y,t}
+function nectarLure(x,y,r){ lureNodes.push({x:x,y:y,t:2.2,r:r}); if(lureNodes.length>24) lureNodes.shift(); }
+
+function damagePest(p, dmg, src){
+  if(!p.active) return;
+  var d=dmg;
+  if(p.armor>0 && src!=='dot'){ d=dmg*(1-p.armor); }
+  if(p.boss && p.armorBack && src!=='dot'){ d=dmg*0.15; } // armored until Rot
+  p.hp-=d;
+  if(p.hp<=0){ killPest(p); }
+}
+function killPest(p){
+  if(!p.active) return;
+  if(p.boss){ bossDefeated(p); return; }
+  p.active=false; G.kills++;
+  // drop loam mote
+  var m=motes.spawn(); if(m){ m.x=p.x; m.y=p.y; m.xp=p.xp; m.t=12; m.vx=(Math.random()*40-20); m.vy=(Math.random()*40-20); }
+  if(G.passives.guttation && G.player.hp<G.player.maxhp){ G.player.hp=Math.min(G.player.maxhp,G.player.hp+2); }
+  spawnBurst(p.x,p.y,p.meta.col,5);
+}
+function bossDefeated(p){
+  p.active=false; G.boss=null; G.kills++;
+  spawnBurst(p.x,p.y,'#e8c24b',24); G.shake=0.6; sndLevel();
+  earn('boss_down',{boss:'grubfather'});
+  // big loam cache
+  for(var i=0;i<14;i++){ var m=motes.spawn(); if(m){ m.x=p.x+(Math.random()*80-40); m.y=p.y+(Math.random()*80-40); m.xp=3; m.t=14; m.vx=Math.random()*80-40; m.vy=Math.random()*80-40; } }
+  // slice = win on boss down
+  setTimeout(function(){ if(G && !G.over) endRun(true); }, 700);
+}
+
+/* ==================================================================
+   WEAPONS FIRING
+   ================================================================== */
+function nearestPest(x,y,maxd){
+  var best=null, bd=(maxd||9999)*(maxd||9999);
+  for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active) continue; var d=dist2(x,y,p.x,p.y); if(d<bd){ bd=d; best=p; } }
+  return best;
+}
+function densestDir(x,y){ // rough: average direction to pests within 260px
+  var sx=0, sy=0, n=0;
+  gridQuery(x,y,260,function(p){ if(p.active){ sx+=p.x; sy+=p.y; n++; } });
+  if(n===0) return null; var ang=Math.atan2(sy/n - y, sx/n - x); return ang;
+}
+function fireWeapons(dt){
+  var pl=G.player; var extra=(G.passives.phyllotaxis?1:0);
+  for(var wi=0; wi<G.weapons.length; wi++){
+    var id=G.weapons[wi]; var w=WEAPONS[id];
+    G.weaponTimers[id]-=dt*1000;
+    if(w.kind==='beam'){ // continuous rotating beam handled in update; skip timer fire
+      continue;
+    }
+    if(G.weaponTimers[id]>0) continue;
+    G.weaponTimers[id]=w.every;
+    // aim: manual > densest (heliotropism) > nearest
+    var ang;
+    if(store.settings.manualAim && G.aim.active){ ang=Math.atan2(G.aim.y-pl.y, G.aim.x-pl.x); }
+    else if(G.passives.heliotropism){ ang=densestDir(pl.x,pl.y); if(ang==null){ var t=nearestPest(pl.x,pl.y); ang=t?Math.atan2(t.y-pl.y,t.x-pl.x):-Math.PI/2; } }
+    else { var tg=nearestPest(pl.x,pl.y); ang=tg?Math.atan2(tg.y-pl.y,tg.x-pl.x):-Math.PI/2; }
+    fireWeapon(w, pl.x, pl.y, ang, extra);
+  }
+}
+function fireWeapon(w, x, y, ang, extra){
+  if(w.kind==='arc'){ // instantaneous front sweep — hit pests in an arc
+    var reach=w.reach; var half=w.arcw/2;
+    for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active) continue;
+      var d2=dist2(x,y,p.x,p.y); if(d2>reach*reach) continue;
+      var pa=Math.atan2(p.y-y,p.x-x); var da=angDiff(pa,ang); if(Math.abs(da)<=half){ applyStatus(p,w.status,w.stacks); damagePest(p,w.dmg,'hit'); } }
+    spawnFX(x+Math.cos(ang)*reach*0.5, y+Math.sin(ang)*reach*0.5, 'arc', ST_META[w.status].col, reach, 0.16);
+    return;
+  }
+  if(w.kind==='cone'||w.kind==='homing'||w.kind==='proj'||w.kind==='lob'){
+    var count=(w.count||1)+extra; var spread=w.spread||0;
+    for(var c=0;c<count;c++){
+      var a=ang + (count>1? (c/(count-1)-0.5)*spread : 0) + (Math.random()*0.06-0.03);
+      var pr=projs.spawn(); if(!pr) break;
+      pr.x=x; pr.y=y; pr.vx=Math.cos(a)*w.speed; pr.vy=Math.sin(a)*w.speed; pr.life=w.life; pr.r=w.r;
+      pr.status=w.status; pr.stacks=w.stacks; pr.dmg=w.dmg; pr.pierce=(w.kind==='proj'?1:2); pr.burstR=(w.kind==='lob'?w.burstR:0);
+      pr.homing=(w.kind==='homing')?1:0; pr.seed=Math.random()*6.28;
+    }
+    return;
+  }
+}
+function updateBeams(dt){
+  var pl=G.player;
+  for(var wi=0; wi<G.weapons.length; wi++){
+    var id=G.weapons[wi]; var w=WEAPONS[id]; if(w.kind!=='beam') continue;
+    if(G.beamAng==null) G.beamAng=-Math.PI/2;
+    G.beamAng+=w.spin*dt;
+    var ang=G.beamAng; var reach=w.reach; var half=w.arcw/2;
+    for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active) continue;
+      if(dist2(pl.x,pl.y,p.x,p.y)>reach*reach) continue;
+      var pa=Math.atan2(p.y-pl.y,p.x-pl.x); if(Math.abs(angDiff(pa,ang))<=half){
+        // beam tick: apply sun periodically, tiny dmg
+        p._beamT=(p._beamT||0)+dt; if(p._beamT>=0.35){ p._beamT=0; applyStatus(p,'sun',1); } damagePest(p,w.dmg*dt,'hit'); } }
+  }
+}
+
+/* ==================================================================
+   UPDATE
+   ================================================================== */
+function dist2(ax,ay,bx,by){ var dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; }
+function angDiff(a,b){ var d=a-b; while(d>Math.PI)d-=6.283185; while(d<-Math.PI)d+=6.283185; return d; }
+function hurtPlayer(dmg){ var pl=G.player; if(pl.iframe>0) return; pl.hp-=dmg; pl.iframe=0.5; pl.hurtFlash=0.3; G.shake=Math.min(0.6,G.shake+0.2); sndHurt();
+  if(pl.hp<=0){ pl.hp=0; endRun(false); } }
+
+function update(dt){
+  if(G.state!=='PLAY') return;
+  G.time+=dt;
+  if(G.slow>0){ G.slow-=dt; dt*=0.35; } // level-up soft-slow tail
+  var pl=G.player;
+  pl.iframe=Math.max(0,pl.iframe-dt); pl.hurtFlash=Math.max(0,pl.hurtFlash-dt);
+  if(G.shake>0) G.shake=Math.max(0,G.shake-dt*1.6);
+
+  // movement via joystick
+  if(joy.active){ var jx=joy.dx, jy=joy.dy; var mag=Math.hypot(jx,jy);
+    if(mag>4){ var nx=jx/mag, ny=jy/mag; var sp=pl.spd*Math.min(1,mag/60);
+      pl.x+=nx*sp*dt; pl.y+=ny*sp*dt; } }
+  pl.x=Math.max(pl.r,Math.min(VW-pl.r,pl.x)); pl.y=Math.max(pl.r,Math.min(VH-pl.r,pl.y));
+
+  // rebuild spatial hash for pests
+  gridClear();
+  for(var i=0;i<pests.n;i++){ if(pests.a[i].active) gridInsert(pests.a[i]); }
+
+  runSpawner(dt);
+  fireWeapons(dt); updateBeams(dt);
+
+  // lure nodes decay
+  for(var L=lureNodes.length-1;L>=0;L--){ lureNodes[L].t-=dt; if(lureNodes[L].t<=0) lureNodes.splice(L,1); }
+
+  // pests
+  for(i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active) continue;
+    if(p.boss){ updateBoss(p,dt); }
+    else { updatePest(p,dt); }
+    // status decay + DoTs
+    tickStatuses(p,dt);
+    // contact damage — discrete hit gated by player iframe (genre-standard)
+    var rr=(p.r+pl.r); if(dist2(p.x,p.y,pl.x,pl.y) < rr*rr){ hurtPlayer(p.dmg * (p.dash?1.4:1)); }
+  }
+  pests.compact();
+
+  // projectiles
+  for(i=0;i<projs.n;i++){ var pr=projs.a[i]; if(!pr.active) continue;
+    pr.life-=dt; if(pr.life<=0){ if(pr.burstR>0) projBurst(pr); pr.active=false; continue; }
+    if(pr.homing){ var tg=nearestPest(pr.x,pr.y,220); if(tg){ var ha=Math.atan2(tg.y-pr.y,tg.x-pr.x); var cur=Math.atan2(pr.vy,pr.vx); var na=cur+angDiff(ha,cur)*Math.min(1,dt*4); var sp=Math.hypot(pr.vx,pr.vy); pr.vx=Math.cos(na)*sp; pr.vy=Math.sin(na)*sp; } }
+    pr.x+=pr.vx*dt; pr.y+=pr.vy*dt;
+    if(pr.x< -30||pr.x>VW+30||pr.y< -30||pr.y>VH+30){ pr.active=false; continue; }
+    // hit test vs pests (grid)
+    var hit=false;
+    gridQuery(pr.x,pr.y, pr.r+18, function(o){ if(hit||!o.active) return; var rr2=(o.r+pr.r); if(dist2(pr.x,pr.y,o.x,o.y)<=rr2*rr2){
+      applyStatus(o, pr.status, pr.stacks); damagePest(o, pr.dmg, 'hit');
+      pr.pierce--; if(pr.pierce<=0){ if(pr.burstR>0) projBurst(pr); hit=true; pr.active=false; } } });
+  }
+  projs.compact();
+
+  // motes → pickup
+  var pickR=(G.passives.mycorrhizae?70:50);
+  for(i=0;i<motes.n;i++){ var m=motes.a[i]; if(!m.active) continue; m.t-=dt;
+    var dd=dist2(m.x,m.y,pl.x,pl.y);
+    if(dd < (pickR*pickR)*2.4){ // magnet
+      var a=Math.atan2(pl.y-m.y,pl.x-m.x); var pull=180+Math.max(0,260-Math.sqrt(dd)); m.x+=Math.cos(a)*pull*dt; m.y+=Math.sin(a)*pull*dt; }
+    if(dd < (pl.r+8)*(pl.r+8)){ collectMote(m); m.active=false; continue; }
+    if(m.t<=0){ m.active=false; }
+  }
+  motes.compact();
+
+  // fx
+  for(i=0;i<fx.n;i++){ var f=fx.a[i]; if(!f.active) continue; f.life-=dt; if(f.life<=0){ f.active=false; continue; } if(f.kind==='spark'){ f.x+=f.vx*dt; f.y+=f.vy*dt; f.vx*=0.92; f.vy*=0.92; } }
+  fx.compact();
+
+  // milestone earn (every 60s survived)
+  var ms=(G.time/60)|0; if(ms>G.milestone){ G.milestone=ms; earn('milestone_min',{minute:ms}); }
+  if(saveT) saveNow();
+}
+function projBurst(pr){ spawnFX(pr.x,pr.y,'ring',ST_META[pr.status].col, pr.burstR, 0.3);
+  gridQuery(pr.x,pr.y,pr.burstR,function(o){ if(o.active && dist2(pr.x,pr.y,o.x,o.y)<=pr.burstR*pr.burstR){ applyStatus(o,pr.status,1); } }); }
+
+function updatePest(p,dt){
+  var pl=G.player; var tx=pl.x, ty=pl.y;
+  // nectar-lured pests steer toward nearest lure node
+  if(p.st[ST_I.nectar]>0 && lureNodes.length){ var best=null,bd=1e9; for(var L=0;L<lureNodes.length;L++){ var dd=dist2(p.x,p.y,lureNodes[L].x,lureNodes[L].y); if(dd<bd){bd=dd;best=lureNodes[L];} } if(best){ tx=best.x; ty=best.y; } }
+  var ang=Math.atan2(ty-p.y,tx-p.x);
+  var sp=p.spd;
+  if(p.slowT>0) sp*=0.5; if(p.st[ST_I.sap]>0) sp*=0.62; if(p.st[ST_I.frost]>0) sp*=0.7;
+  if(p.rootT>0||p.freezeT>0) sp=0;
+  // dash pest: periodic lunge
+  if(p.dash){ p.dashT-=dt; if(p.dashT<=0){ p.dashT=2.2; sp*=3.2; } }
+  // web pest slows the player when near (mobility denial)
+  p.x+=Math.cos(ang)*sp*dt; p.y+=Math.sin(ang)*sp*dt;
+}
+function tickStatuses(p,dt){
+  for(var i=0;i<7;i++){ if(p.st[i]>0){ p.stt[i]-=dt; if(p.stt[i]<=0){ p.st[i]=0; } } }
+  if(p.slowT>0)p.slowT-=dt; if(p.rootT>0)p.rootT-=dt; if(p.freezeT>0)p.freezeT-=dt;
+  // DoTs
+  var bleed=p.st[ST_I.thorn]; if(bleed>0){ damagePest(p, (ST_META.thorn.dps*bleed*p.bleedx)*dt, 'dot'); }
+  var scorch=p.st[ST_I.sun]; if(scorch>0){ var mult=p.sunweak?2:1; damagePest(p,(ST_META.sun.dps*scorch*mult)*dt,'dot'); if(p.sunweak && p.st[ST_I.sap]>0){ p.st[ST_I.sap]=0; } }
+  var inf=p.st[ST_I.spore]; if(inf>0){ damagePest(p,(ST_META.spore.dps*inf)*dt,'dot');
+    // spore spreads pest-to-pest over frames (capped)
+    if(Math.random()<dt*1.2){ var seeded=0; gridQuery(p.x,p.y,52,function(o){ if(seeded>=1||o===p||!o.active) return; if(o.st[ST_I.spore]<2){ o.st[ST_I.spore]=Math.min(stackCap('spore'),o.st[ST_I.spore]+1); o.stt[ST_I.spore]=ST_LIFE.spore/1000; seeded++; } }); } }
+}
+
+/* ---------------- loam / level-up / draft ---------------- */
+function collectMote(m){ G.bloom+=m.xp; G.loamRun+=m.xp; sndPickup();
+  while(G.bloom>=G.bloomNext){ G.bloom-=G.bloomNext; levelUp(); } }
+function bloomReq(lv){ return Math.round(6 + lv*lv*0.9 + lv*2); }
+function levelUp(){ G.level++; G.bloomNext=bloomReq(G.level); sndLevel();
+  G.draft=buildDraft(); G.state='LEVELUP'; }
+function buildDraft(){
+  // pool: new weapons (not owned), weapon-ups (owned), passives (not owned)
+  var opts=[];
+  WEAPON_ORDER.forEach(function(id){ if(G.weapons.indexOf(id)<0) opts.push({t:'weapon', id:id, name:WEAPONS[id].name, desc:WEAPONS[id].desc, status:WEAPONS[id].status}); });
+  G.weapons.forEach(function(id){ opts.push({t:'wup', id:id, name:WEAPONS[id].name+' +', desc:'Fires faster and applies +1 status stack.', status:WEAPONS[id].status}); });
+  for(var pk in PASSIVES){ if(!G.passives[pk]) opts.push({t:'passive', id:pk, name:PASSIVES[pk].name, desc:PASSIVES[pk].desc}); }
+  // pick 3 without dup
+  var pick=[]; var pool=opts.slice();
+  for(var i=0;i<3 && pool.length;i++){ var k=(Math.random()*pool.length)|0; pick.push(pool.splice(k,1)[0]); }
+  // reaction preview: for weapon/status cards, show what it can react with among owned statuses
+  var owned=ownedStatuses();
+  pick.forEach(function(c){ if(c.status){ c.preview=reactionPreview(c.status, owned); } });
+  return { cards:pick, sel:-1 };
+}
+function ownedStatuses(){ var s={}; G.weapons.forEach(function(id){ s[WEAPONS[id].status]=1; }); return s; }
+function reactionPreview(status, owned){
+  var names=[]; for(var o in owned){ if(o===status) continue; var rx=REACT[rkey(o,status)]; if(rx) names.push(rx.name); }
+  if(!names.length) return 'New status: '+status;
+  return 'Reacts: '+names.slice(0,3).join(', ');
+}
+function chooseDraft(idx){
+  if(G.state!=='LEVELUP'||!G.draft) return; var c=G.draft.cards[idx]; if(!c) return;
+  if(c.t==='weapon'){ addWeapon(c.id); }
+  else if(c.t==='wup'){ var w=WEAPONS[c.id]; w.every=Math.max(60, w.every*0.85); w.stacks=(w.stacks||1)+1; }
+  else if(c.t==='passive'){ G.passives[c.id]=1; if(c.id==='taproot'){ G.player.maxhp+=30; G.player.hp+=30; } }
+  G.draft=null; G.state='PLAY'; G.slow=0.25;
+  earn('draft',{level:G.level});
+}
+
+/* ---------------- end run ---------------- */
+function endRun(win){
+  if(G.over) return; G.over=true; G.win=win; G.state='OVER';
+  store.loam+=G.loamRun; store.runs++;
+  if(G.time>store.bestTime) store.bestTime=G.time;
+  if(G.kills>store.bestKills) store.bestKills=G.kills;
+  saveNow();
+  earn('run_complete',{minutes:Math.floor(G.time/60), kills:G.kills, verdancy:G.verdancy, win:win});
+  var el=document.getElementById('overTitle'); el.textContent=win?'The night is held':'The garden sleeps';
+  document.getElementById('overSub').textContent=win?'You broke the Grubfather.':'Grow again, gardener.';
+  document.getElementById('overStats').innerHTML=
+    'Time survived: <b>'+fmtTime(G.time)+'</b><br>Pests cleared: <b>'+G.kills+'</b><br>Loam banked: <b>'+G.loamRun+'</b> 🌱'+
+    '<br><span class="small">Total Loam: '+store.loam+'</span>';
+  showLayer('over');
+}
+function fmtTime(t){ var m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s; }
+
+/* ==================================================================
+   RENDER
+   ================================================================== */
+function draw(){
+  var W=canvas.width, H=canvas.height;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+  // field transform (dpr * scale, offset), + shake
+  var sh=(G&&G.shake>0 && !store.settings.reducedMotion)? (Math.random()*2-1)*G.shake*8 : 0;
+  var sh2=(G&&G.shake>0 && !store.settings.reducedMotion)? (Math.random()*2-1)*G.shake*8 : 0;
+  ctx.setTransform(view.scale*view.dpr,0,0,view.scale*view.dpr, (view.offX+sh)*view.dpr, (view.offY+sh2)*view.dpr);
+  // background
+  drawBackground();
+  if(!G){ return; }
+  // lure nodes
+  for(var L=0;L<lureNodes.length;L++){ var ln=lureNodes[L]; ctx.globalAlpha=0.14*(ln.t/2.2); ctx.fillStyle='#e79a3a'; ctx.beginPath(); ctx.arc(ln.x,ln.y,ln.r*0.6,0,6.283); ctx.fill(); ctx.globalAlpha=1; }
+  // motes
+  for(var i=0;i<motes.n;i++){ var m=motes.a[i]; if(!m.active) continue; ctx.fillStyle=m.xp>=3?'#e8c24b':'#9ccf6a'; ctx.beginPath(); ctx.arc(m.x,m.y, m.xp>=3?4:3, 0,6.283); ctx.fill(); }
+  // pests
+  for(i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active) continue; drawPest(p); }
+  // projectiles
+  for(i=0;i<projs.n;i++){ var pr=projs.a[i]; if(!pr.active) continue; ctx.fillStyle=ST_META[pr.status].col; ctx.globalAlpha=0.9; ctx.beginPath(); ctx.arc(pr.x,pr.y,pr.r,0,6.283); ctx.fill(); ctx.globalAlpha=1; }
+  // player plant
+  drawPlant();
+  // fx
+  drawFX();
+  // manual aim reticle
+  if(store.settings.manualAim && G.state==='PLAY' && G.aim.active){ ctx.strokeStyle='rgba(232,220,200,0.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(G.aim.x,G.aim.y,16,0,6.283); ctx.moveTo(G.aim.x-22,G.aim.y); ctx.lineTo(G.aim.x+22,G.aim.y); ctx.moveTo(G.aim.x,G.aim.y-22); ctx.lineTo(G.aim.x,G.aim.y+22); ctx.stroke(); }
+  // joystick
+  if(joy.active){ drawJoystick(); }
+  // HUD
+  drawHUD();
+  // level-up draft overlay
+  if(G.state==='LEVELUP' && G.draft){ drawDraft(); }
+}
+function drawBackground(){
+  // midnight greenhouse floor
+  var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#0f150d'); g.addColorStop(1,'#070a06');
+  ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  if(!store.settings.reducedMotion){ ctx.fillStyle='rgba(122,179,86,0.06)';
+    for(var i=0;i<18;i++){ var x=(i*97+31)%VW, y=(i*53+((G?G.time*6:0)))%VH; ctx.fillRect(x,y,2,2); } }
+  // vignette
+  var v=ctx.createRadialGradient(VW/2,VH/2,120,VW/2,VH/2,VH*0.7); v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,0.5)'); ctx.fillStyle=v; ctx.fillRect(0,0,VW,VH);
+}
+function drawPlant(){
+  var pl=G.player; ctx.save(); ctx.translate(pl.x,pl.y);
+  // hurt flash ring
+  if(pl.iframe>0){ ctx.globalAlpha=0.4+0.3*Math.sin(G.time*40); }
+  // roots/base
+  ctx.strokeStyle='#4e7d33'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(0,-14); ctx.stroke();
+  // crown bulb
+  ctx.fillStyle=pl.hurtFlash>0?'#e88':'#7ab356'; ctx.beginPath(); ctx.arc(0,-16,9,0,6.283); ctx.fill();
+  ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(0,-16,4,0,6.283); ctx.fill();
+  // organ glyphs around base per owned weapon (cosmetic build silhouette)
+  var n=G.weapons.length; for(var i=0;i<n;i++){ var a=-Math.PI/2 + (i-(n-1)/2)*0.5; var ox=Math.cos(a)*16, oy=Math.sin(a)*16-6;
+    ctx.fillStyle=ST_META[WEAPONS[G.weapons[i]].status].col; ctx.beginPath(); ctx.arc(ox,oy,3.4,0,6.283); ctx.fill(); }
+  ctx.globalAlpha=1; ctx.restore();
+  // hp ring under plant
+}
+function drawPest(p){
+  var col=p.meta.col; ctx.save(); ctx.translate(p.x,p.y);
+  if(p.freezeT>0) col='#bfe6f2'; else if(p.rootT>0) col='#c9d67a';
+  ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.5;
+  var r=p.r, s=p.meta.shape;
+  ctx.beginPath();
+  if(p.boss){ // grub: big segmented lozenge
+    ctx.fillStyle=p.armorBack?'#8a6a4a':'#7a5a3a'; roundedBlob(0,0,r,r*0.7,7); ctx.fill();
+    ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.arc(-r*0.4,-r*0.2,4,0,6.283); ctx.arc(r*0.4,-r*0.2,4,0,6.283); ctx.fill();
+  }
+  else if(s==='teardrop'){ ctx.moveTo(0,-r); ctx.quadraticCurveTo(r,0,0,r); ctx.quadraticCurveTo(-r,0,0,-r); ctx.fill(); ctx.stroke(); }
+  else if(s==='hex'){ for(var k=0;k<6;k++){ var a=k/6*6.283-Math.PI/2; var fn=k?'lineTo':'moveTo'; ctx[fn](Math.cos(a)*r,Math.sin(a)*r); } ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.arc(0,0,r*0.5,0,6.283); ctx.fill(); }
+  else if(s==='chevron'){ ctx.moveTo(0,-r); ctx.lineTo(r,r*0.5); ctx.lineTo(0,r*0.1); ctx.lineTo(-r,r*0.5); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else if(s==='blob'){ roundedBlob(0,0,r,r*0.8,6); ctx.fill(); ctx.stroke(); }
+  else if(s==='diamond'){ ctx.moveTo(0,-r); ctx.lineTo(r*0.7,0); ctx.lineTo(0,r); ctx.lineTo(-r*0.7,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.moveTo(-r*0.7,0); ctx.lineTo(r*0.7,0); ctx.stroke(); }
+  else if(s==='star'){ for(var j=0;j<10;j++){ var rr=j%2?r*0.45:r; var a2=j/10*6.283-Math.PI/2; var fn2=j?'lineTo':'moveTo'; ctx[fn2](Math.cos(a2)*rr,Math.sin(a2)*rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else { ctx.arc(0,0,r,0,6.283); ctx.fill(); ctx.stroke(); }
+  ctx.restore();
+  // status glyph ring
+  drawStatusGlyphs(p);
+  // hp bar for tanky/boss
+  if(p.boss){ drawBossBar(p); }
+  else if(p.hp<p.maxhp && p.maxhp>16){ ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(p.x-p.r,p.y-p.r-6,p.r*2,3); ctx.fillStyle='#9ccf6a'; ctx.fillRect(p.x-p.r,p.y-p.r-6,p.r*2*(p.hp/p.maxhp),3); }
+}
+function roundedBlob(cx,cy,rx,ry,wob){ var n=12; for(var i=0;i<=n;i++){ var a=i/n*6.283; var w=1+Math.sin(a*wob)*0.06; var x=cx+Math.cos(a)*rx*w, y=cy+Math.sin(a)*ry*w; if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); } }
+function drawStatusGlyphs(p){
+  var active=[]; for(var i=0;i<7;i++){ if(p.st[i]>0) active.push(i); }
+  if(!active.length) return;
+  var ringR=p.r+8; var n=active.length;
+  for(var k=0;k<n;k++){ var idx=active[k]; var a=-Math.PI/2 + (k-(n-1)/2)*0.6; var gx=p.x+Math.cos(a)*ringR, gy=p.y+Math.sin(a)*ringR;
+    var meta=ST_META[ST[idx]]; var cnt=Math.round(p.st[idx]);
+    ctx.fillStyle=meta.col; ctx.strokeStyle=meta.col; ctx.lineWidth=1.4;
+    drawGlyph(meta.glyph, gx, gy, 4.2);
+    if(cnt>3){ ctx.fillStyle='#0d100c'; ctx.font='bold 7px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cnt, gx, gy+0.5); }
+  }
+}
+function drawGlyph(kind,x,y,r){
+  ctx.beginPath();
+  if(kind==='ring'){ ctx.arc(x,y,r,0,6.283); ctx.stroke(); ctx.beginPath(); ctx.arc(x,y,1.2,0,6.283); ctx.fill(); }
+  else if(kind==='aster'){ for(var i=0;i<3;i++){ var a=i/3*Math.PI; ctx.moveTo(x-Math.cos(a)*r,y-Math.sin(a)*r); ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);} ctx.stroke(); }
+  else if(kind==='drop'){ ctx.moveTo(x,y-r); ctx.quadraticCurveTo(x+r,y,x,y+r); ctx.quadraticCurveTo(x-r,y,x,y-r); ctx.fill(); }
+  else if(kind==='snow'){ for(var j=0;j<3;j++){ var b=j/3*Math.PI; ctx.moveTo(x-Math.cos(b)*r,y-Math.sin(b)*r); ctx.lineTo(x+Math.cos(b)*r,y+Math.sin(b)*r);} ctx.stroke(); }
+  else if(kind==='spike'){ ctx.moveTo(x,y-r); ctx.lineTo(x+r*0.7,y+r); ctx.lineTo(x-r*0.7,y+r); ctx.closePath(); ctx.fill(); }
+  else if(kind==='rays'){ ctx.arc(x,y,r*0.5,0,6.283); ctx.fill(); ctx.beginPath(); for(var m=0;m<6;m++){ var c=m/6*6.283; ctx.moveTo(x+Math.cos(c)*r*0.7,y+Math.sin(c)*r*0.7); ctx.lineTo(x+Math.cos(c)*r,y+Math.sin(c)*r);} ctx.stroke(); }
+  else if(kind==='sapdr'){ ctx.moveTo(x,y-r); ctx.lineTo(x,y+r); ctx.moveTo(x-r*0.6,y); ctx.lineTo(x+r*0.6,y); ctx.stroke(); }
+  else { ctx.arc(x,y,r,0,6.283); ctx.stroke(); }
+}
+function drawBossBar(p){ var w=VW*0.7, x=(VW-w)/2, y=54; ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(x-2,y-2,w+4,12);
+  ctx.fillStyle=p.armorBack?'#8a6a4a':'#c65b5b'; ctx.fillRect(x,y,w*Math.max(0,p.hp/p.maxhp),8);
+  ctx.fillStyle='#e8dcc8'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillText('GRUBFATHER'+(p.armorBack?' — break the shell with Rot (Spore+Sap)':''), VW/2, y-6); }
+function drawFX(){
+  for(var i=0;i<fx.n;i++){ var f=fx.a[i]; if(!f.active) continue; var t=f.life/f.max;
+    if(f.kind==='ring'||f.kind==='react'||f.kind==='nova'){ ctx.globalAlpha=t*0.8; ctx.strokeStyle=f.col; ctx.lineWidth=(f.kind==='nova')?4:2.5; ctx.beginPath(); ctx.arc(f.x,f.y, f.r*(1-t*0.5), 0,6.283); ctx.stroke();
+      if(f.kind==='nova'){ ctx.globalAlpha=t*0.25; ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,f.r*(1-t*0.5),0,6.283); ctx.fill(); } }
+    else if(f.kind==='arc'){ ctx.globalAlpha=t*0.5; ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,f.r*0.4,0,6.283); ctx.fill(); }
+    else if(f.kind==='spark'){ ctx.globalAlpha=t; ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,6.283); ctx.fill(); }
+    ctx.globalAlpha=1; }
+}
+function drawHUD(){
+  var pl=G.player;
+  // HP bar top-left
+  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(12,14,150,14);
+  ctx.fillStyle=pl.hp>30?'#7ab356':'#c65b5b'; ctx.fillRect(12,14,150*(pl.hp/pl.maxhp),14);
+  ctx.strokeStyle='rgba(200,168,75,0.5)'; ctx.lineWidth=1; ctx.strokeRect(12,14,150,14);
+  ctx.fillStyle='#e8dcc8'; ctx.font='bold 10px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(Math.ceil(pl.hp)+' HP', 18, 21);
+  // bloom bar (xp) bottom or under hp
+  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(12,32,150,6); ctx.fillStyle='#c8a84b'; ctx.fillRect(12,32,150*(G.bloom/G.bloomNext),6);
+  // level + time + kills top-right
+  ctx.textAlign='right'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 13px sans-serif'; ctx.textBaseline='top';
+  ctx.fillText('Lv '+G.level+'   '+fmtTime(G.time), VW-12, 14);
+  ctx.font='11px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText(G.kills+' cleared   🌱'+G.loamRun, VW-12, 32);
+  // exit hint
+  ctx.textAlign='left';
+}
+function drawJoystick(){ var j=joy; ctx.globalAlpha=0.25; ctx.strokeStyle='#e8dcc8'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(j.ox,j.oy,42,0,6.283); ctx.stroke();
+  ctx.globalAlpha=0.4; ctx.fillStyle='#7ab356'; var mag=Math.min(42,Math.hypot(j.dx,j.dy)); var a=Math.atan2(j.dy,j.dx); ctx.beginPath(); ctx.arc(j.ox+Math.cos(a)*mag, j.oy+Math.sin(a)*mag, 16,0,6.283); ctx.fill(); ctx.globalAlpha=1; }
+function drawDraft(){
+  // dim
+  ctx.fillStyle='rgba(5,7,4,0.72)'; ctx.fillRect(0,0,VW,VH);
+  ctx.fillStyle='#e8dcc8'; ctx.font='bold 20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('LEVEL '+G.level+' — DRAFT', VW/2, VH*0.30);
+  ctx.font='12px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText('Tap a card', VW/2, VH*0.30+22);
+  var cards=G.draft.cards; var cw=VW-64, ch=96, gap=14; var startY=VH*0.38;
+  for(var i=0;i<cards.length;i++){ var c=cards[i]; var x=32, y=startY+i*(ch+gap);
+    c._box={x:x,y:y,w:cw,h:ch};
+    ctx.fillStyle='rgba(13,16,12,0.95)'; ctx.strokeStyle= c.t==='passive'?'#c8a84b':(c.status?ST_META[c.status].col:'#7ab356'); ctx.lineWidth=2;
+    roundRect(x,y,cw,ch,12); ctx.fill(); ctx.stroke();
+    // icon chip
+    ctx.fillStyle=c.status?ST_META[c.status].col:'#c8a84b'; ctx.beginPath(); ctx.arc(x+34,y+ch/2,18,0,6.283); ctx.fill();
+    ctx.fillStyle='#0d100c'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(c.t==='wup'?'+':(c.t==='passive'?'◆':(c.status||'?').slice(0,2)), x+34, y+ch/2);
+    // text
+    ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 15px sans-serif'; ctx.textBaseline='top'; ctx.fillText(c.name, x+62, y+16);
+    ctx.fillStyle='#b9c1a8'; ctx.font='11px sans-serif'; wrapText(c.desc, x+62, y+38, cw-74, 13);
+    if(c.preview){ ctx.fillStyle='#c8a84b'; ctx.font='italic 11px sans-serif'; ctx.fillText(c.preview, x+62, y+ch-20); }
+  }
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function wrapText(text,x,y,maxW,lh){ var words=text.split(' '), line='', yy=y; for(var i=0;i<words.length;i++){ var test=line+words[i]+' '; if(ctx.measureText(test).width>maxW && line){ ctx.fillText(line,x,yy); line=words[i]+' '; yy+=lh; } else line=test; } ctx.fillText(line,x,yy); }
+
+/* ==================================================================
+   INPUT
+   ================================================================== */
+var joy={active:false, id:-1, ox:0,oy:0, dx:0,dy:0, move:false};
+function pointerToField(e){ return toField(e.clientX, e.clientY); }
+function onDown(e){
+  var f=pointerToField(e);
+  if(G && G.state==='LEVELUP' && G.draft){ // card tap
+    for(var i=0;i<G.draft.cards.length;i++){ var b=G.draft.cards[i]._box; if(b && f.x>=b.x&&f.x<=b.x+b.w&&f.y>=b.y&&f.y<=b.y+b.h){ chooseDraft(i); return; } }
+    return;
+  }
+  if(!G || G.state!=='PLAY') return;
+  if(store.settings.manualAim){
+    // first finger = move (left/lower), OR aim. Simplify: if a joystick already owns a finger, this finger aims.
+    if(joy.active && joy.id!==e.pointerId){ G.aim.active=true; G.aim.x=f.x; G.aim.y=f.y; G.aim.id=e.pointerId; return; }
+  }
+  if(!joy.active){ joy.active=true; joy.id=e.pointerId; joy.ox=f.x; joy.oy=f.y; joy.dx=0; joy.dy=0; joy.move=false; }
+  try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+}
+function onMove(e){
+  if(!G) return; var f=pointerToField(e);
+  if(store.settings.manualAim && G.aim.active && G.aim.id===e.pointerId){ G.aim.x=f.x; G.aim.y=f.y; return; }
+  if(joy.active && joy.id===e.pointerId){ joy.dx=f.x-joy.ox; joy.dy=f.y-joy.oy; joy.move=true; }
+}
+function onUp(e){
+  if(joy.active && joy.id===e.pointerId){ joy.active=false; joy.id=-1; joy.dx=0; joy.dy=0; }
+  if(G && G.aim && G.aim.id===e.pointerId){ /* keep last aim; deactivate */ }
+}
+canvas.addEventListener('pointerdown', onDown);
+canvas.addEventListener('pointermove', onMove);
+canvas.addEventListener('pointerup', onUp);
+canvas.addEventListener('pointercancel', onUp);
+window.addEventListener('blur', function(){ joy.active=false; joy.id=-1; });
+
+/* ==================================================================
+   EARN BRIDGE (inert unless embedded) + 30/day local cap helper
+   ================================================================== */
+var EARN_KEY='sw_sb_bramblewick';
+function earn(moment, detail){
+  if(window.SWS_EMBED && parent!==window){ try{ parent.postMessage({sws:'earn',moment:moment,detail:detail||{}},'*'); }catch(e){} }
+  // (host prices & caps; local standalone earns nothing external — Loam is the only in-game reward)
+}
+
+/* ==================================================================
+   MAIN LOOP (fixed-timestep accumulator)
+   ================================================================== */
+var last=0, acc=0, STEP=1/60, MAXACC=0.25;
+var fpsT=0, fpsN=0, fps=0;
+function frame(ts){
+  requestAnimationFrame(frame);
+  if(!last) last=ts; var dt=(ts-last)/1000; last=ts; if(dt>MAXACC) dt=MAXACC;
+  acc+=dt;
+  var steps=0;
+  while(acc>=STEP && steps<6){ if(G && G.state==='PLAY') update(STEP); acc-=STEP; steps++; }
+  if(G && G.state==='LEVELUP'){ /* frozen; still render */ }
+  draw();
+  // fps
+  fpsN++; fpsT+=dt; if(fpsT>=0.5){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DEV) updateDev(); }
+}
+requestAnimationFrame(frame);
+
+/* ==================================================================
+   UI WIRING
+   ================================================================== */
+function showLayer(id){ ['menu','over'].forEach(function(l){ document.getElementById(l).classList.toggle('on', l===id); }); }
+function hideLayers(){ document.getElementById('menu').classList.remove('on'); document.getElementById('over').classList.remove('on'); }
+
+// verdancy segmented control
+var verSeg=document.getElementById('verSeg'), verDesc=document.getElementById('verDesc');
+var selVer=Math.min(1, store.maxVerdancy);
+function renderVerSeg(){ verSeg.innerHTML=''; for(var i=0;i<VERD.length;i++){ (function(i){ var b=document.createElement('button'); b.textContent=VERD[i].name; if(i>store.maxVerdancy){ b.disabled=true; b.style.opacity=0.4; } if(i===selVer) b.className='sel'; b.onclick=function(){ if(i>store.maxVerdancy) return; selVer=i; renderVerSeg(); }; verSeg.appendChild(b); })(i); } verDesc.textContent=VERD[selVer].desc; }
+renderVerSeg();
+
+// toggles
+function bindSw(elId, get, set){ var el=document.getElementById(elId); el.classList.toggle('on', get()); el.onclick=function(){ set(!get()); el.classList.toggle('on', get()); saveNow(); }; }
+bindSw('swAim', function(){return store.settings.manualAim;}, function(v){store.settings.manualAim=v;});
+bindSw('swMotion', function(){return store.settings.reducedMotion;}, function(v){store.settings.reducedMotion=v;});
+bindSw('swSound', function(){return store.settings.sound;}, function(v){store.settings.sound=v; if(v) audio();});
+
+document.getElementById('playBtn').onclick=function(){ audio(); startGame(selVer); };
+document.getElementById('againBtn').onclick=function(){ startGame(G?G.verdancy:selVer); };
+document.getElementById('menuBtn').onclick=function(){ G=null; showLayer('menu'); renderVerSeg(); };
+function startGame(v){ hideLayers(); newGame(v); }
+
+/* ==================================================================
+   DEV BRIDGE (?bramblewicktest=1)
+   ================================================================== */
+function updateDev(){ var d=document.getElementById('dev'); d.style.display='block';
+  d.textContent='fps '+fps+'  pests '+pests.n+'  proj '+projs.n+'  fx '+fx.n+
+    (G?('\nt '+fmtTime(G.time)+'  lv '+G.level+'  kills '+G.kills+'  hp '+Math.ceil(G.player.hp)+'\nweapons '+G.weapons.join(',')):''); }
+if(DEV){
+  window.__bw={
+    start:function(v){ startGame(v||0); return 'started'; },
+    state:function(){ return G?{t:G.time,state:G.state,level:G.level,kills:G.kills,hp:G.player.hp,pests:pests.n,weapons:G.weapons.slice(),passives:Object.keys(G.passives),win:G.win,over:G.over,fps:fps}:null; },
+    spawn:function(type,n){ n=n||1; for(var i=0;i<n;i++) spawnPest(type||'aphid'); return pests.n; },
+    grantStatus:function(status,stacks){ var p=pests.a[0]; if(p&&p.active){ for(var i=0;i<7;i++){} p.st[ST_I[status]]=stacks||3; p.stt[ST_I[status]]=5; return 'ok'; } return 'no pest'; },
+    forceReaction:function(a,b){ var p=spawnPest('slug', G.player.x, G.player.y-80); if(!p) return 'no pest'; applyStatus(p,a,2); applyStatus(p,b,2); return REACT[rkey(a,b)]?REACT[rkey(a,b)].name:'?'; },
+    addWeapon:function(id){ if(WEAPONS[id]){ addWeapon(id); return G.weapons.slice(); } return 'bad id'; },
+    addPassive:function(id){ if(PASSIVES[id]){ G.passives[id]=1; return 'ok'; } return 'bad'; },
+    levelUp:function(){ levelUp(); return G.draft.cards.map(function(c){return c.name;}); },
+    pick:function(i){ chooseDraft(i); return G.weapons.slice(); },
+    skipToBoss:function(){ if(G){ G.time=239; } return 'boss soon'; },
+    hurtBoss:function(d){ if(G&&G.boss){ G.boss.armorBack=false; damagePest(G.boss, d||99999, 'react'); return G.boss?G.boss.hp:'dead'; } return 'no boss'; },
+    bossHP:function(){ return G&&G.boss?Math.round(G.boss.hp):null; },
+    setHP:function(pct){ if(G){ G.player.hp=G.player.maxhp*pct; } return G.player.hp; },
+    killAll:function(){ for(var i=0;i<pests.n;i++){ if(pests.a[i].active&&!pests.a[i].boss) pests.a[i].active=false; } pests.compact(); return pests.n; },
+    reactions:function(){ return Object.keys(REACT).length; },
+    stress:function(n){ n=n||280; for(var i=0;i<n;i++) spawnPest('aphid'); return pests.n; },
+    swarmAt:function(n,type){ n=n||30; var pl=G.player; for(var i=0;i<n;i++){ var a=Math.random()*6.283, rr=20+Math.random()*90; spawnPest(type||'aphid', pl.x+Math.cos(a)*rr, pl.y+Math.sin(a)*rr); } return pests.n; },
+    paint:function(status,stacks){ var pl=G.player; var t=nearestPest(pl.x,pl.y); if(!t) return 'no pest'; applyStatus(t,status,stacks||1); return {hp:Math.round(t.hp),armor:t.armor}; },
+    inspect:function(){ var pl=G.player; var t=nearestPest(pl.x,pl.y); return t?{type:t.type,hp:Math.round(t.hp),armor:t.armor,st:Array.from(t.st)}:'none'; }
+  };
+  updateDev();
+}
+
+/* expose exit for a potential portal back button */
+window.__bwExit=window.SWS_EXIT;
+
+})();
+</script>
+</body>
+</html>
