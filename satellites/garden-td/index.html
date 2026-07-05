@@ -596,7 +596,7 @@ var ENEMIES={
   seedling:{ name:'Seedling', hp:6, spd:70, armor:0, fly:false, bounty:1, leak:1, r:6, col:'#dfeecb', special:null }
 };
 var BOSSES={
-  aphidqueen:{ name:'The Aphid Queen', hp:1200, spd:22, armor:0, fly:false, bounty:120, leak:6, r:40, col:'#a8d878', special:'queen' }
+  aphidqueen:{ name:'The Aphid Queen', hp:1200, spd:22, armor:0, fly:false, bounty:120, leak:6, r:40, col:'#a8d878', special:'queen', hitCap:60 }
 };
 
 /* pest introduction schedule (index = level) */
@@ -819,7 +819,7 @@ function newRun(cfg){
     combo:0, comboT:0, sapEarnedRun:0,
     endless:!!cfg.endless, endlessWave:0, bestWave:0,
     banner:null, slowmo:0, shake:0, bg:{t:0},
-    pollen:0, pollenMax:3, wetVuln:0, teamRateT:0, _reacts:0,
+    pollen:0, pollenMax:3, wetVuln:0, teamRateT:0, teamRateMult:1.5, _reacts:0,
     keeper:makeKeeper(save.keeper||'warden'),
     result:null, waveWasRunning:false
   };
@@ -911,7 +911,7 @@ function spawnEnemy(typeId, boss){
     shield:base.special==='shield'?40:0, shieldT:0,
     regen:base.special==='regen'?base.hp*0.02*hpS:0,
     burstT:0, spawnT:6, healT:0, queenSpawnT:5, queenShieldT:12, queenShieldExpT:0, seg:0,
-    wetT:0, scorchT:0, sporeT:0, rotT:0, nectar:false,
+    wetT:0, scorchT:0, sporeT:0, rotT:0, nectar:false, hitCap:base.hitCap||0,
     hitFlash:0, dead:false
   };
   e.nectar = boss ? true : (typeId!=='seedling' && rnd()<0.08);   // Pollen source (8% of pests, all bosses)
@@ -973,7 +973,7 @@ function checkWaveEnd(){
     var interest=Math.min(20,Math.floor(G.seeds/25));
     addSeeds(bonus+interest, null);
     // compost T3 sap
-    G.towers.forEach(function(t){ if(t.id==='compost'&&t.tier===3){ addSap(2); } });
+    G.towers.forEach(function(t){ if(t.id==='compost'&&t.tier>=3){ addSap(2); } });
     sfx.waveClear();
     if(G.endless){
       G.endlessWave++; G.bestWave=Math.max(G.bestWave,G.endlessWave);
@@ -995,12 +995,13 @@ function checkWaveEnd(){
 function addSeeds(n, at){ G.seeds+=n; if(at)floatText('+'+n,at.x,at.y,COL.gold); updateHUD(); }
 function addSap(n){ G.sapEarnedRun+=n; }
 function loseLeaves(n,e){
+  if(G.gnomeGrace)return;   // gnome absorbed the rest of this update pass
   G.leaves-=n; if(G.leaves<0)G.leaves=0;
   sfx.leaf(); if(!save.settings.reducedMotion)G.shake=Math.min(6,G.shake+3);
   floatText('-'+n+'🍃',e?posAt(G.geom,e.d).x:VW/2, e?posAt(G.geom,e.d).y:VH-60, COL.danger);
   updateHUD();
   if(G.leaves<=0){
-    if(!G.gnomeUsed){ G.gnomeUsed=true; G.leaves=1; updateHUD(); banner('The Guard Gnome saves the garden!',true); toast('🧙 One-time save — hold the line!'); tone('sine',400,700,0.2,0.16); return; }
+    if(!G.gnomeUsed){ G.gnomeUsed=true; G.gnomeGrace=true; G.leaves=1; updateHUD(); banner('The Guard Gnome saves the garden!',true); toast('🧙 One-time save — hold the line!'); tone('sine',400,700,0.2,0.16); return; }
     loseLevel();
   }
 }
@@ -1035,7 +1036,7 @@ function setTowerStat(t){
 }
 function tst(t){ return t.st || t.tiers[t.tier-1]; }
 function towerRange(t){ return tst(t).range*(t.buffRng||1); }
-function towerRate(t){ var m=(t.buffSpd||1); if(G&&G.teamRateT>0)m*=1.5; return tst(t).rate/m; }
+function towerRate(t){ var m=(t.buffSpd||1); if(G&&G.teamRateT>0)m*=(G.teamRateMult||1.5); return tst(t).rate/m; }
 function towerDmg(t){ return (tst(t).dmg||0)*(t.buffPow||1); }
 // what reaction status this tower paints on hit
 function paintOf(t){ return tst(t).status || TOWERS[t.id].status || null; }
@@ -1048,17 +1049,13 @@ function findTarget(t){
     var e=G.enemies[i]; if(e.dead)continue;
     if(!canHit(t,e))continue;
     if(!inRange(t,e,rng))continue;
-    var key;
-    var mode=t.targetMode||'first';
-    if(t.id==='beehive'){ // flyer priority
-      var fkey=(e.fly?1e6:0);
-      key=fkey + (mode==='closest'? -Math.sqrt(dist2(t.x,t.y,posAt(G.geom,e.d).x,posAt(G.geom,e.d).y)) : progressOf(e));
-    } else if(mode==='first'){ key=progressOf(e); }
-    else if(mode==='last'){ key=-progressOf(e); }
+    var key, mode=t.targetMode||'first';
+    if(mode==='last'){ key=-progressOf(e); }
     else if(mode==='closest'){ key=-dist2(t.x,t.y,posAt(G.geom,e.d).x,posAt(G.geom,e.d).y); }
     else if(mode==='strong'){ key=e.hpMax; }
     else if(mode==='ripe'){ key=((e.wetT>0?1:0)+(e.scorchT>0?1:0)+(e.sporeT>0?1:0)+(e.rotT>0?1:0))*1e6 + progressOf(e); }
     else key=progressOf(e);
+    if(t.id==='beehive' && e.fly) key += 1e9;   // beehive prioritizes flyers within the chosen mode
     if(key>bestKey){ bestKey=key; best=e; }
   }
   return best;
@@ -1123,6 +1120,7 @@ function applyStatus(e, kind){
   if(kind==='wet'    && e.sporeT>0){ e.sporeT=0; react(e,'bloomrot'); return; }
   if(kind==='spore'  && e.wetT>0){ e.wetT=0; react(e,'bloomrot'); return; }
   if(kind==='scorch' && e.rotT>0){ react(e,'corrode'); return; }   // Rot persists (it's the vuln)
+  if(kind==='rot'    && e.scorchT>0){ react(e,'corrode'); return; } // symmetric: Corrode fires regardless of paint order
   // else set/refresh the timer
   if(kind==='wet'){ e.wetT=3; e.slowF=Math.min(e.slowF,0.85); e.slowT=Math.max(e.slowT,0.4); }
   else if(kind==='scorch'){ e.scorchT=3; }
@@ -1138,7 +1136,7 @@ function react(e, kind, depth){
   } else if(kind==='wildfire'){
     addDot(e,{d:8,t:3,stk:3},'react'); e.scorchT=3;                 // burning + re-scorched
     if(depth<2){ var r=60; for(var i=0;i<G.enemies.length;i++){ var o=G.enemies[i]; if(o===e||o.dead)continue; var op=posAt(G.geom,o.d);
-      if(dist2(p.x,p.y,op.x,op.y)<=r*r){ if(o.scorchT>0){ o.scorchT=0; react(o,'wildfire',depth+1); } else o.scorchT=3; } } }
+      if(dist2(p.x,p.y,op.x,op.y)<=r*r){ if(o.scorchT>0){ o.scorchT=0; react(o,'wildfire',depth+1); } else applyStatus(o,'scorch'); } } }  // route through reaction table (Wet->Steam, Spore->Wildfire, Rot->Corrode)
   } else if(kind==='bloomrot'){
     addDot(e,{d:6,t:4,stk:3},'react'); e.bloomrot=1;                // on death, paints Spore nearby (killEnemy handles via flag)
   } else if(kind==='corrode'){
@@ -1307,6 +1305,7 @@ function applyBuffs(){
    ENEMY UPDATE
    ===================================================================== */
 function updateEnemies(dt){
+  G.gnomeGrace=false;   // reset per pass; a gnome save absorbs only its own pass's cluster
   for(var i=G.enemies.length-1;i>=0;i--){
     var e=G.enemies[i];
     if(e.dead){ G.enemies.splice(i,1); continue; }
@@ -1424,6 +1423,8 @@ function sparkle(x,y){ for(var i=0;i<8;i++){ var a=i/8*6.28; G.fx.push({kind:'sp
 function fireBloom(t){
   if(!t || (G.pollen||0)<=0 || (t.bloomCd||0)>0) return;
   var def=TOWERS[t.id]; if(!def.bloom) return;
+  // offensive Blooms need targets; the economy Bloom (bumperCrop) works anytime
+  if(def.bloom.id!=='bumperCrop' && !(G.running||G.enemies.length)){ toast('Blooms work during a wave.'); return; }
   G.pollen--; t.bloomCd=def.bloom.cd; updateHUD();
   sfx.upgrade(); banner('🌼 '+def.bloom.name+'!',true); if(!save.settings.reducedMotion)sparkle(t.x,t.y);
   var id=def.bloom.id, i, e, p;
@@ -1435,7 +1436,7 @@ function fireBloom(t){
   else if(id==='swarmCall'){ var live=G.enemies.filter(function(x){return !x.dead;}); for(var b=0;b<12;b++){ var tg=live[b%Math.max(1,live.length)]; if(tg)G.projs.push({kind:'bee',x:t.x,y:t.y,target:tg,dmg:(towerDmg(t)||12),sting:true,speed:360,life:2.5,by:t}); } }
   else if(id==='sporeBloom'){ var ft=findTarget(t); var tp=posAt(G.geom, ft?ft.d:G.geom.total*0.4); G.clouds.push({x:tp.x,y:tp.y,r:120,life:4,tick:0}); for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; p=posAt(G.geom,e.d); if(dist2(tp.x,tp.y,p.x,p.y)<=120*120)applyStatus(e,'spore'); } puffRing(tp.x,tp.y,120); }
   else if(id==='solarLance'){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; applyDamage(e,(towerDmg(t)||120)*1.4,{by:t}); if(!e.dead)applyStatus(e,'scorch'); } beam(t.x,t.y,VW/2,10); }
-  else if(id==='frightNight'){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; e.rootT=Math.max(e.rootT,1.5); } G.teamRateT=5000; }
+  else if(id==='frightNight'){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; e.rootT=Math.max(e.rootT,1.5); } G.teamRateT=5000; G.teamRateMult=1.5; }
   closeManage();
 }
 
@@ -1452,13 +1453,17 @@ function keeperCheckLevel(){ var k=G.keeper; if(!k)return;
   }
 }
 function keeperAim(kind){ var k=G.keeper; if(!k)return false;
+  if(k.aim===kind){ k.aim=null; return false; }   // tap again to cancel
+  if(!(G.running||G.enemies.length)){ toast('Keeper powers work during a wave.'); return false; }
   if(kind==='water'&&k.cdWater>0)return false; if(kind==='flare'&&k.cdFlare>0)return false; if(kind==='sig'&&(k.level<7||k.cdSig>0))return false;
-  k.aim=kind; toast('Tap the garden to aim.'); return true; }
+  k.aim=kind; toast('Tap the garden to aim (tap the button again to cancel).'); return true; }
 function aoe(x,y,r,fn){ for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i]; if(e.dead)continue; var p=posAt(G.geom,e.d); if(dist2(x,y,p.x,p.y)<=r*r)fn(e); } }
-function keeperCast(vx,vy){ var k=G.keeper; if(!k||!k.aim)return false; var kind=k.aim; k.aim=null; k.castT=0.4; k.castKind=kind;
+function keeperCast(vx,vy){ var k=G.keeper; if(!k||!k.aim)return false; var kind=k.aim; k.aim=null;
+  if(!(G.running||G.enemies.length))return false;   // nothing to hit yet
+  k.castT=0.4; k.castKind=kind;
   if(kind==='water'){ k.cdWater=12000; aoe(vx,vy,70,function(e){ applyStatus(e,'wet'); e.slowF=Math.min(e.slowF,0.6); e.slowT=Math.max(e.slowT,1); }); ring(vx,vy,70,'#8fd3ff'); }
   else if(kind==='flare'){ k.cdFlare=18000; aoe(vx,vy,80,function(e){ applyDamage(e,40,{by:null}); if(!e.dead)applyStatus(e,'scorch'); }); ring(vx,vy,80,'#e08a3a'); poof(vx,vy,'#e08a3a'); }
-  else if(kind==='sig'){ k.cdSig=40000; G.teamRateT=6000; banner('Rally!',true); }
+  else if(kind==='sig'){ k.cdSig=40000; G.teamRateT=6000; G.teamRateMult=1.4; banner('Rally!',true); }
   sfx.place(); return true; }
 function drawKeeper(){ if(!G.keeper)return; var kp=keeperPos();
   if(G.keeper.aim){ ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle=G.keeper.aim==='flare'?'#e08a3a':'#8fd3ff'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('aim '+(G.keeper.aim==='flare'?'☀️':'💧'), VW/2, 140); ctx.restore(); }
@@ -1964,6 +1969,7 @@ function loseLevel(){
   if(G.endless){ G.bestWave=Math.max(G.bestWave,G.endlessWave); save.endless.bestWave=Math.max(save.endless.bestWave,G.bestWave); sap=Math.floor(G.bestWave*1.5); }
   else { sap=Math.floor(G.pestsShooed/10)+G.wavesCleared*2; }
   if(G.cfg.diff==='bramble')sap=Math.floor(sap*1.5);
+  sap+=G.sapEarnedRun;   // keep Compost-T3 wave Sap + boss Sap earned before the loss
   save.sap+=sap; save.endless.bestSap=Math.max(save.endless.bestSap,G.endless?sap:save.endless.bestSap); saveGame();
   var snap=runSnapshot(); snap.stars=0;
   var beams=sunbeamsForRun(snap);
