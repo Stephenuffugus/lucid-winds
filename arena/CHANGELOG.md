@@ -19,6 +19,8 @@ Added
   (keystones, notables, tree points, stats, level) **plus socketed gem rarity** — rare loot
   raises your character's grade. Shown on roster cards + the sheet header.
 - Grade-colored gem chips, socket tints, a rarity legend, and grade badges throughout.
+- **+6 support gems** (18 → 24): Relentless, Vampiric Edge, Executioner, Volatile Core, Frostbite,
+  Momentum — more rarity-chase targets, all fuzz-tested at every grade.
 
 Validated
 - 29,000 fights with Cosmic gems fuzzed into every socket: 0 exceptions, 0 NaN, all terminate.
