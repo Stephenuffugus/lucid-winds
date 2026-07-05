@@ -177,6 +177,46 @@ input[type=range]{width:150px; accent-color:var(--sage)}
     </div>
   </div>
 
+  <!-- mode select -->
+  <div class="screen center" id="s-modes">
+    <div class="pad center">
+      <h2 style="color:var(--sage);font-size:26px;margin-bottom:2px">Choose a mode</h2>
+      <div class="stack" style="margin-top:16px">
+        <button class="btn primary" id="m-adventure">🗺 &nbsp;Adventure</button>
+        <button class="btn" id="m-endless">♾️ &nbsp;Endless</button>
+        <button class="btn" id="m-daily">📅 &nbsp;Daily Climb</button>
+        <button class="btn" id="m-zen">🍃 &nbsp;Zen</button>
+        <button class="btn ghost sm" id="modes-back">← Back</button>
+      </div>
+      <div class="ribbon small" id="modes-note" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- level map -->
+  <div class="screen" id="s-map">
+    <div class="hdr"><button class="icobtn" id="map-back">←</button><h2 id="map-title">Adventure</h2><div style="color:var(--gold);font-weight:800">★ <span id="map-stars">0</span></div></div>
+    <div id="world-tabs" class="shoptabs" style="flex-wrap:wrap;gap:5px"></div>
+    <div class="pad" style="padding-top:10px"><div class="grid" id="map-grid" style="grid-template-columns:repeat(5,1fr)"></div></div>
+  </div>
+
+  <!-- level complete -->
+  <div class="screen center" id="s-levelend">
+    <div class="pad center">
+      <div style="color:var(--sage);font-size:15px;letter-spacing:2px">LEVEL COMPLETE</div>
+      <div id="le-title" style="font-size:26px;font-weight:800;color:var(--cream);margin-top:4px">World 1 · Level 1</div>
+      <div id="le-sub" class="muted small"></div>
+      <div id="le-stars" style="margin:16px 0">★★★</div>
+      <div class="ribbon">🪙 +<span id="le-coins">0</span></div>
+      <div class="stack" style="margin-top:18px">
+        <button class="btn primary" id="le-next">▶ Next level</button>
+        <div class="row">
+          <button class="btn sm" id="le-retry">↻ Replay</button>
+          <button class="btn sm" id="le-map">🗺 Map</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- studio -->
   <div class="screen" id="s-studio">
     <div class="hdr"><button class="icobtn" id="draw-back">←</button><h2>Draw your climber</h2><button class="icobtn" id="draw-help">?</button></div>
@@ -293,7 +333,7 @@ var K={ coins:'sproing_coins', best:'sproing_best', book:'sproing_sketchbook',
   owned:'sproing_owned', equip:'sproing_equip', set:'sproing_settings',
   bounce:'sproing_bounce_seen', save:'sproing_save', streak:'sproing_streak',
   upgrades:'sproing_upgrades', trails:'sproing_trails', trail:'sproing_trail',
-  ach:'sproing_ach', stats:'sproing_stats' };
+  ach:'sproing_ach', stats:'sproing_stats', levels:'sproing_levels' };
 
 /* ---------- settings ---------- */
 var DEF_SET={ steer:'both', reduceMotion:'auto', highContrast:false, music:0.6, sfx:0.8,
@@ -320,7 +360,7 @@ function on(el,ev,fn){ if(typeof el==='string') el=$(el); if(el) el.addEventList
 function tap(el,fn){ on(el,'click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
 
 /* ---------- screen manager ---------- */
-var SCREENS=['s-title','s-studio','s-gallery','s-shop','s-settings','s-pause','s-over'];
+var SCREENS=['s-title','s-modes','s-map','s-levelend','s-studio','s-gallery','s-shop','s-settings','s-pause','s-over'];
 var curScreen='s-title';
 function show(id){
   for(var i=0;i<SCREENS.length;i++){ var s=$(SCREENS[i]); if(s) s.classList.toggle('on', SCREENS[i]===id); }
@@ -901,13 +941,54 @@ function biomeIdx(m){ return Math.max(0,Math.min(5,Math.floor(m/500))); }
 function biomeFor(m){ return BIOMES[biomeIdx(Math.min(m,3000))]; }
 function rnd(a,b){ return a+Math.random()*(b-a); }
 function pick(arr){ return arr[(Math.random()*arr.length)|0]; }
+// Seeded generation stream (used ONLY by world-gen so Level/Daily layouts are
+// deterministic). Cosmetic randomness stays on Math.random so it can't desync it.
+var RNG=Math.random;
+function srand(seed){ var s=(seed>>>0)||1; return function(){ s=(s+0x6D2B79F5)|0; var t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+function grnd(a,b){ return a+RNG()*(b-a); }
+function gpick(arr){ return arr[(RNG()*arr.length)|0]; }
 
 var POW_IDS=['dandelion_parachute','nectar_magnet','bubble_shield','propeller_seed','spring_roots','giant_leaf','shrink_bud','pollen_jetpack','slow_time_honey','ghost_spores'];
 var POW_SYM={dandelion_parachute:'☂',nectar_magnet:'🧲',bubble_shield:'○',propeller_seed:'✼',spring_roots:'⇑',giant_leaf:'❦',shrink_bud:'▽',pollen_jetpack:'🔥',slow_time_honey:'⧗',ghost_spores:'༄'};
-function powForBiome(m){ var i=biomeIdx(m); var pool=['dandelion_parachute','nectar_magnet','bubble_shield']; if(i>=1) pool.push('propeller_seed','spring_roots'); if(i>=2) pool.push('giant_leaf','shrink_bud'); if(i>=3) pool.push('pollen_jetpack'); if(i>=4) pool.push('slow_time_honey','ghost_spores'); return pick(pool); }
+function powForBiome(m){ var i=biomeIdx(m); var pool=['dandelion_parachute','nectar_magnet','bubble_shield']; if(i>=1) pool.push('propeller_seed','spring_roots'); if(i>=2) pool.push('giant_leaf','shrink_bud'); if(i>=3) pool.push('pollen_jetpack'); if(i>=4) pool.push('slow_time_honey','ghost_spores'); return gpick(pool); }
 
-function newGame(){
+/* ---------- modes & levels ---------- */
+var WORLDS=12, PER_WORLD=25, LEVEL_COUNT=WORLDS*PER_WORLD;   // 300 levels
+var WORLD_NAMES=['Garden Bed','Hedgerow','The Canopy','The Clouds','Upper Air','Starfield','Moonwake','Aurora','The Verge','Comet Trail','Nebula','The Summit'];
+var LEVEL_MODS=[
+  {id:'calm',   name:'',          pestMul:1,   coinMul:1,   hazMul:1,   gapAdd:0},
+  {id:'swarm',  name:'Swarm',     pestMul:1.6, coinMul:1,   hazMul:1,   gapAdd:0},
+  {id:'windy',  name:'Windy',     pestMul:1,   coinMul:1,   hazMul:1.9, gapAdd:0},
+  {id:'sparse', name:'Sparse',    pestMul:1,   coinMul:1,   hazMul:1,   gapAdd:34},
+  {id:'rush',   name:'Coin Rush', pestMul:0.8, coinMul:2.3, hazMul:1,   gapAdd:0},
+  {id:'gauntlet',name:'Gauntlet', pestMul:1.4, coinMul:1,   hazMul:1.5, gapAdd:14}
+];
+function levelDef(idx){
+  var world=Math.floor(idx/PER_WORLD), lw=idx%PER_WORLD;
+  var targetM=100 + world*80 + lw*10;                     // 100m .. ~1200m
+  var mod=LEVEL_MODS[(idx*3+world*2)%LEVEL_MODS.length];
+  if(world===0 && lw<2) mod=LEVEL_MODS[0];                // gentle intro
+  var seed=((idx+1)*2654435761)>>>0;
+  return {idx:idx, world:world, lw:lw, targetM:targetM, starCoins:Math.round(targetM*0.16), mod:mod, seed:seed};
+}
+var levelProg=LS.getJSON(K.levels,{stars:{}, unlocked:0});   // unlocked = highest playable idx
+function saveLevelProg(){ LS.setJSON(K.levels,levelProg); }
+function levelStars(idx){ return levelProg.stars[idx]||0; }
+function levelUnlocked(idx){ return idx<=(levelProg.unlocked||0); }
+function totalStars(){ var t=0; for(var k in levelProg.stars) t+=levelProg.stars[k]; return t; }
+function dailySeed(){ var d=dayStr(),h=5381; for(var i=0;i<d.length;i++) h=((h*33)^d.charCodeAt(i))>>>0; return h||1; }
+
+var curMode='endless', curLevelIdx=0;
+
+function newGame(opts){
+  opts=opts||{}; var mode=opts.mode||'endless';
   var startY=0;
+  // reset per-run modifiers + seed the generation stream
+  var pestMul=1,coinMul=1,hazMul=1,gapAdd=0,targetM=0,zen=false,level=null;
+  if(mode==='level'){ level=levelDef(opts.levelIdx||0); RNG=srand(level.seed); pestMul=level.mod.pestMul; coinMul=level.mod.coinMul; hazMul=level.mod.hazMul; gapAdd=level.mod.gapAdd; targetM=level.targetM; }
+  else if(mode==='daily'){ RNG=srand(dailySeed()); }
+  else if(mode==='zen'){ RNG=Math.random; pestMul=0; hazMul=0.35; zen=true; }
+  else { RNG=Math.random; }
   game={
     running:true, paused:false, dead:false, t:0, acc:0, last:0,
     player:{x:VW/2,y:startY,vx:0,vy:-HOP,w:38,h:44,scale:1},
@@ -919,6 +1000,7 @@ function newGame(){
     parachuteT:0, magnetT:0, shield:false, propellerT:0, springHops:([0,3,5,7,9][upLvl('sprout')]||0), giant:0, shrinkT:0, jetpackT:0, slowT:0, ghostT:0,
     invulnT:0, nextSteerMul:1, hopSteerMul:1, stunT:0,
     luckyMult:1+0.08*upLvl('lucky'), passiveMag:36*upLvl('magnet'), usedSturdy:false, runCounted:false,
+    mode:mode, level:level, targetM:targetM, pestMul:pestMul, coinMul:coinMul, hazMul:hazMul, gapAdd:gapAdd, zen:zen, won:false, flawless:true,
     coinsRun:0, coinCombo:1, coinComboT:0, nearMissCd:0, coinsCommitted:0, sunBaseEmitted:0,
     trauma:0, usedSave:false, cause:'', best:best
   };
@@ -926,7 +1008,7 @@ function newGame(){
   game.platforms.push({x:VW/2,y:startY,w:96,type:'broad',vx:0,dir:1,alive:true});
   // a few easy leaves above so first hops are gentle
   var gy=startY;
-  for(var i=0;i<9;i++){ gy-=rnd(110,135); var px=clamp(game.lastPathX+rnd(-160,160),50,VW-50);
+  for(var i=0;i<9;i++){ gy-=grnd(110,135); var px=clamp(game.lastPathX+grnd(-160,160),50,VW-50);
     game.platforms.push({x:px,y:gy,w:96,type:'broad',vx:0,dir:1,alive:true}); game.lastPathX=px; game.lastPathY=gy; }
   game.topGenY=gy;
   generateUp();
@@ -936,14 +1018,14 @@ function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 
 // The guaranteed climb path only ever uses SOLID landable types (broad/drifting/
 // mushroom/fiddlehead) so there is always a clearable route up.
-function pickPathType(m){ var b=biomeFor(m), r=Math.random();
+function pickPathType(m){ var b=biomeFor(m), r=RNG();
   if(r<b.wFidd*0.6) return 'fiddlehead';
   if(r<b.wFidd*0.6+0.05) return 'mushroom';
   if(r<b.wFidd*0.6+0.05+Math.min(b.wMove,0.26)) return 'drifting';
   return 'broad';
 }
 // Tricky/timing types (crumble/dewy/dandelion/thorn) live ONLY on optional decoys.
-function pickDecoyType(m){ var b=biomeFor(m), r=Math.random();
+function pickDecoyType(m){ var b=biomeFor(m), r=RNG();
   if(r<b.wCrumble) return 'crumble';
   if(r<b.wCrumble+b.wDewy) return 'dewy';
   if(r<b.wCrumble+b.wDewy+b.wDand) return 'dandelion';
@@ -956,45 +1038,46 @@ function platWidth(t){ return t==='mushroom'?58:(t==='fiddlehead'?48:(t==='broad
 
 function generateUp(){
   var guard=0, MAXREACH=195;   // every path gap stays < a normal hop's rise (~300px) with margin → always clearable
+  var pestMul=game.pestMul||1, coinMul=game.coinMul||1, hazMul=game.hazMul||1;
   while(game.topGenY > game.camY-360 && guard++<200){
     var m=game.meters, b=biomeFor(m);
-    var gap=rnd(b.gapMin, Math.min(b.gapMax, MAXREACH));
+    var gap=grnd(b.gapMin, Math.min(b.gapMax+(game.gapAdd||0), MAXREACH));
     var type=pickPathType(m);
     var ny=game.topGenY-gap;
-    var nx=clamp(game.lastPathX+rnd(-180,180),46,VW-46);
-    var p={x:nx,y:ny,w:platWidth(type),type:type,vx:(type==='drifting'?rnd(38,78)*(Math.random()<.5?-1:1):0),dir:1,
-      alive:true, crumbling:false, crumbleT:0, born:game.t, thorn:0, trapT:rnd(0,2.2), trapOpen:false};
+    var nx=clamp(game.lastPathX+grnd(-180,180),46,VW-46);
+    var p={x:nx,y:ny,w:platWidth(type),type:type,vx:(type==='drifting'?grnd(38,78)*(RNG()<.5?-1:1):0),dir:1,
+      alive:true, crumbling:false, crumbleT:0, born:game.t, thorn:0, trapT:grnd(0,2.2), trapOpen:false};
     game.platforms.push(p);
     game.topGenY=ny; game.lastPathX=nx; game.lastPathY=ny;
-    if(Math.random()<0.35) game.coins.push({x:nx,y:ny-24,r:10,got:false,gold:false});
-    if(Math.random()<0.22){ var ax=clamp(nx+rnd(-90,90),30,VW-30); for(var c=0;c<4;c++) game.coins.push({x:ax+(c-1.5)*22, y:ny+gap*0.5-Math.abs(c-1.5)*14, r:9, got:false, gold:false}); }
-    if(Math.random()<0.02) game.coins.push({x:clamp(nx+rnd(-40,40),30,VW-30),y:ny-40,r:13,got:false,gold:true});
+    if(RNG()<0.35*coinMul) game.coins.push({x:nx,y:ny-24,r:10,got:false,gold:false});
+    if(RNG()<0.22*coinMul){ var ax=clamp(nx+grnd(-90,90),30,VW-30); for(var c=0;c<4;c++) game.coins.push({x:ax+(c-1.5)*22, y:ny+gap*0.5-Math.abs(c-1.5)*14, r:9, got:false, gold:false}); }
+    if(RNG()<0.02*coinMul) game.coins.push({x:clamp(nx+grnd(-40,40),30,VW-30),y:ny-40,r:13,got:false,gold:true});
     // pest on the path platform (avoidable by landing position / mid-air dodge) — NEVER a flytrap here
-    if(Math.random()<b.pest){ var pe=pick(b.pests); if(pe==='flytrap') pe=pick(['aphid','snail','beetle']); spawnPest(pe,p); }
+    if(RNG()<b.pest*pestMul){ var pe=gpick(b.pests); if(pe==='flytrap') pe=gpick(['aphid','snail','beetle']); spawnPest(pe,p); }
     // DECOY: an OPTIONAL side platform where the tricky/timing types (and flytraps) live
-    if(Math.random()<0.55){ var dt=pickDecoyType(m); var dx=clamp(nx+rnd(120,205)*(Math.random()<.5?-1:1),46,VW-46);
-      var dp={x:dx,y:ny+rnd(-30,26),w:platWidth(dt),type:dt,vx:(dt==='drifting'?rnd(38,78):0),dir:1,alive:true,crumbling:false,crumbleT:0,born:game.t,thorn:0,trapT:rnd(0,2.2),trapOpen:false};
+    if(RNG()<0.55){ var dt=pickDecoyType(m); var dx=clamp(nx+grnd(120,205)*(RNG()<.5?-1:1),46,VW-46);
+      var dp={x:dx,y:ny+grnd(-30,26),w:platWidth(dt),type:dt,vx:(dt==='drifting'?grnd(38,78):0),dir:1,alive:true,crumbling:false,crumbleT:0,born:game.t,thorn:0,trapT:grnd(0,2.2),trapOpen:false};
       game.platforms.push(dp);
-      if(biomeIdx(m)>=4 && Math.random()<0.12) spawnPest('flytrap',dp);
+      if(biomeIdx(m)>=4 && RNG()<0.12*pestMul) spawnPest('flytrap',dp);
     }
-    if(m-game.lastPowM >= b.powInt*(1-0.12*upLvl('charm'))){ game.lastPowM=m; game.powerups.push({x:clamp(nx+rnd(-80,80),40,VW-40),y:ny-rnd(30,80),r:16,id:powForBiome(m),got:false}); }
-    if(b.haz.length && m-game.lastHazM > 110 && Math.random()<0.45){ game.lastHazM=m; spawnHazard(pick(b.haz),ny,gap); }
+    if(m-game.lastPowM >= b.powInt*(1-0.12*upLvl('charm'))){ game.lastPowM=m; game.powerups.push({x:clamp(nx+grnd(-80,80),40,VW-40),y:ny-grnd(30,80),r:16,id:powForBiome(m),got:false}); }
+    if(b.haz.length && m-game.lastHazM > 110 && RNG()<0.45*hazMul){ game.lastHazM=m; spawnHazard(gpick(b.haz),ny,gap); }
   }
 }
 function spawnPest(type,p){
-  if(type==='flytrap'){ p.type='flytrap'; p.trapT=rnd(0,2); p.trapOpen=false; p.w=78; return; }
-  var pe={type:type,x:p.x,y:p.y-18,r:15,vx:0,leaf:p,phase:Math.random()*6,alive:true};
-  if(type==='aphid'){ pe.vx=25*(Math.random()<.5?-1:1); pe.y=p.y-20; }
-  else if(type==='snail'){ pe.y=p.y-12; pe.vx=18*(Math.random()<.5?-1:1); }
-  else if(type==='beetle'){ pe.y=p.y-12; pe.vx=55*(Math.random()<.5?-1:1); }
-  else if(type==='wasp'){ pe.leaf=null; pe.x=Math.random()<.5?-20:VW+20; pe.baseY=p.y-46; pe.y=pe.baseY; pe.vx=150*(pe.x<0?1:-1); }
-  else if(type==='spider'){ pe.leaf=null; pe.x=p.x+rnd(-30,30); pe.threadY=p.y-40; pe.y=p.y-40; pe.phase=Math.random()*6; pe.bottom=p.y+90; pe.top=p.y-70; pe.pauseT=0; }
+  if(type==='flytrap'){ p.type='flytrap'; p.trapT=grnd(0,2); p.trapOpen=false; p.w=78; return; }
+  var pe={type:type,x:p.x,y:p.y-18,r:15,vx:0,leaf:p,phase:RNG()*6,alive:true};
+  if(type==='aphid'){ pe.vx=25*(RNG()<.5?-1:1); pe.y=p.y-20; }
+  else if(type==='snail'){ pe.y=p.y-12; pe.vx=18*(RNG()<.5?-1:1); }
+  else if(type==='beetle'){ pe.y=p.y-12; pe.vx=55*(RNG()<.5?-1:1); }
+  else if(type==='wasp'){ pe.leaf=null; pe.x=RNG()<.5?-20:VW+20; pe.baseY=p.y-46; pe.y=pe.baseY; pe.vx=150*(pe.x<0?1:-1); }
+  else if(type==='spider'){ pe.leaf=null; pe.x=p.x+grnd(-30,30); pe.threadY=p.y-40; pe.y=p.y-40; pe.phase=RNG()*6; pe.bottom=p.y+90; pe.top=p.y-70; pe.pauseT=0; }
   game.pests.push(pe);
 }
 function spawnHazard(type,ny,gap){
-  if(type==='wind'){ game.hazards.push({type:'wind',y0:ny-40,y1:ny-40- rnd(180,300),dir:(Math.random()<.5?-1:1),push:120}); }
-  else if(type==='seed'){ for(var i=0;i<2;i++) game.hazards.push({type:'seed',x:rnd(40,VW-40),y:ny-rnd(0,120),vy:rnd(120,180),phase:Math.random()*6,stun:false}); }
-  else if(type==='bramble'){ game.hazards.push({type:'bramble',y:ny-gap*0.5,phase:Math.random()*3,ext:0}); }
+  if(type==='wind'){ game.hazards.push({type:'wind',y0:ny-40,y1:ny-40-grnd(180,300),dir:(RNG()<.5?-1:1),push:120}); }
+  else if(type==='seed'){ for(var i=0;i<2;i++) game.hazards.push({type:'seed',x:grnd(40,VW-40),y:ny-grnd(0,120),vy:grnd(120,180),phase:RNG()*6,stun:false}); }
+  else if(type==='bramble'){ game.hazards.push({type:'bramble',y:ny-gap*0.5,phase:RNG()*3,ext:0}); }
   else if(type==='haze'){ game.hazards.push({type:'haze',y0:ny+20,y1:ny-160}); }
 }
 
@@ -1038,6 +1121,7 @@ function applyHit(cause){
   die(cause);
 }
 function die(cause){ if(!game||!game.running) return;
+  if(game.zen){ sturdySave(); return; }                                   // Zen: never die
   if(cause==='fall' && upLvl('sturdy')>0 && !game.usedSturdy){ game.usedSturdy=true; sturdySave(); return; }
   game.running=false; game.dead=true; game.cause=cause||'fall'; addTrauma(0.8); sfx(cause==='fall'?'fall':'hit'); buzz(60); setTimeout(onGameOver,120); }
 function sturdySave(){ var p=game.player; p.y=game.camY+VH-150; p.x=VW/2; p.vy=-1950; p.vx=0; game.q=-0.3; game.chain=1; updateChainTier();
@@ -1085,6 +1169,8 @@ function updateGame(dt){
   if(p.y-game.camY<lockOff) game.camY=Math.min(game.camY,p.y-lockOff);
   if(p.y<game.bestY){ game.bestY=p.y; game.maxRise=game.startY-game.bestY; var nm=Math.floor(game.maxRise/PX_PER_M);
     if(nm>game.meters){ game.meters=nm; onMilestone(); } }
+  // ---- level goal reached? ----
+  if(game.targetM>0 && game.meters>=game.targetM && !game.won){ game.won=true; onLevelClear(); return; }
   // ---- death ----
   if((p.y-game.camY)>VH+DEATH_MARGIN){ die('fall'); return; }
   // ---- timers ----
@@ -1325,17 +1411,52 @@ function loop(ts){
   if(curScreen===null) renderGame();   // pause screen is opaque; countdown runs with curScreen===null
 }
 function refreshHUD(){
-  var a=$('alt'); if(a) a.innerHTML=(game?game.meters:0)+'<small>m</small>';
+  var a=$('alt'); if(a){ if(game && game.targetM>0) a.innerHTML=game.meters+'<small>/'+game.targetM+'m</small>'; else a.innerHTML=(game?game.meters:0)+'<small>m</small>'; }
   var c=$('coinrun'); if(c) c.textContent=game?game.coinsRun:0;
   var mb=$('mutebtn'); if(mb) mb.textContent=SET.muted?'🔇':'🔊';
 }
 function besttagUpdate(){ var e=$('besttag'); if(e) e.textContent=best+' m'; }
 
-function startRun(){ commitRun(); ensureAudio(); if(!SET.muted) startMusic(); if(SET.steer!=='drag') enableTilt(true); newGame(); INP.dragX=null; INP.keyL=INP.keyR=false; INP.tiltAxis=0; lastTs=0;
+function launch(mode, levelIdx){
+  curMode=mode||'endless'; curLevelIdx=levelIdx||0;
+  commitRun(); ensureAudio(); if(!SET.muted) startMusic(); if(SET.steer!=='drag') enableTilt(true);
+  newGame({mode:curMode, levelIdx:curLevelIdx});
+  INP.dragX=null; INP.keyL=INP.keyR=false; INP.tiltAxis=0; lastTs=0;
   if(ST.coinDay!==dayStr()){ ST.coinDay=dayStr(); saveST(); addCoins(50); toast('☀ Morning Dew  +50 🪙'); }
-  show(null); }
+  show(null);
+}
+function startRun(){ launch(curMode||'endless', curLevelIdx); }   // used by retry/restart
+
+/* ---------- mode select + level map UI ---------- */
+function openModes(){ $('modes-note').textContent='Adventure: '+LEVEL_COUNT+' levels · '+totalStars()+' stars earned'; show('s-modes'); }
+var mapWorld=0;
+function openMap(){ mapWorld=Math.min(WORLDS-1, Math.floor((levelProg.unlocked||0)/PER_WORLD)); renderMap(); show('s-map'); }
+function renderMap(){
+  $('map-stars').textContent=totalStars();
+  var wt=$('world-tabs'); wt.innerHTML='';
+  for(var w=0;w<WORLDS;w++){ (function(w){
+    var uW=(levelProg.unlocked||0)>=w*PER_WORLD;
+    var b=document.createElement('button'); b.className='shoptab'+(mapWorld===w?' sel':''); b.style.minHeight='42px'; b.style.flex='0 0 auto'; b.style.minWidth='42px'; b.style.borderRadius='10px';
+    b.textContent=(w+1); if(!uW) b.style.opacity='.4';
+    b.onclick=function(){ if(uW){ mapWorld=w; sfx('ui'); renderMap(); } };
+    wt.appendChild(b);
+  })(w); }
+  $('map-title').textContent=WORLD_NAMES[mapWorld]||('World '+(mapWorld+1));
+  var g=$('map-grid'); g.innerHTML='';
+  for(var i=0;i<PER_WORLD;i++){ (function(i){
+    var idx=mapWorld*PER_WORLD+i, L=levelDef(idx), st=levelStars(idx), unlocked=levelUnlocked(idx), isNext=(idx===(levelProg.unlocked||0));
+    var cell=document.createElement('button'); cell.className='cell';
+    cell.style.cssText='min-height:76px;padding:6px;cursor:pointer;align-items:center;justify-content:center;'+(unlocked?'':'opacity:.42;')+(isNext?'box-shadow:0 0 0 2px var(--sage);':'');
+    var starTxt = unlocked ? (st>0 ? '★★★☆☆☆'.substr(3-st,3) : (isNext?'▶ play':'· · ·')) : '🔒';
+    var mod = (unlocked && L.mod.name) ? '<div style="font-size:8px;color:var(--gold);margin-top:1px">'+L.mod.name+'</div>' : '';
+    cell.innerHTML='<div style="font-size:18px;font-weight:800;color:'+(unlocked?'var(--cream)':'var(--muted)')+'">'+(i+1)+'</div>'+
+      '<div style="font-size:11px;letter-spacing:1px;color:#f2d24b">'+starTxt+'</div>'+mod;
+    if(unlocked) cell.onclick=function(){ sfx('ui'); launch('level', idx); };
+    g.appendChild(cell);
+  })(i); }
+}
 function toTitle(){ commitRun(); game=null; show('s-title'); besttagUpdate(); renderTitlePreview(); }
-function playPressed(){ if(!LS.get(K.bounce)){ onboarding=true; openStudio(null); } else startRun(); }
+function playPressed(){ if(!LS.get(K.bounce)){ onboarding=true; openStudio(null); } else openModes(); }
 
 function pauseRun(){ if(!game||!game.running||game.paused) return; game.paused=true; $('pause-alt').textContent=game.meters+' m'; $('pause-coins').textContent=game.coinsRun; show('s-pause'); }
 function resumeRun(){
@@ -1369,6 +1490,31 @@ function earnSunbeams(m){
   return granted;                          // post-cap actual (display honesty)
 }
 
+function starRow(n){ var s=''; for(var i=0;i<3;i++) s+='<span style="font-size:46px;line-height:1;color:'+(i<n?'#f2d24b':'#2a331f')+';text-shadow:'+(i<n?'0 0 10px #f2d24b66':'none')+'">★</span>'; return s; }
+function onLevelClear(){
+  if(!game) return; game.running=false; commitRun();
+  var L=game.level, idx=L.idx;
+  var flawless=!game.usedSave && !game.usedSturdy;
+  var stars=1; if(game.coinsRun>=L.starCoins) stars=2; if(stars===2 && flawless) stars=3;
+  var prev=levelStars(idx), best2=Math.max(prev,stars);
+  levelProg.stars[idx]=best2;
+  if(idx+1<LEVEL_COUNT && idx+1>(levelProg.unlocked||0)) levelProg.unlocked=idx+1;
+  saveLevelProg();
+  var reward=40 + L.world*8 + Math.max(0,best2-prev)*30;
+  addCoins(reward);
+  updateStreak();
+  if(!game.runCounted){ stats.runs=(stats.runs||0)+1; game.runCounted=true; }
+  if(game.meters>(stats.maxAlt||0)) stats.maxAlt=game.meters; saveStats();
+  checkAch();
+  $('le-title').textContent='World '+(L.world+1)+' · Level '+(L.lw+1);
+  $('le-sub').textContent=WORLD_NAMES[L.world]||'';
+  $('le-stars').innerHTML=starRow(stars);
+  $('le-coins').textContent=reward;
+  var nextIdx=idx+1;
+  $('le-next').style.display=(nextIdx<LEVEL_COUNT)?'flex':'none';
+  sfx('best'); addTrauma(0.3);
+  show('s-levelend');
+}
 function onGameOver(){
   if(!game) return;                        // guard: rage-quit before the death timeout fires
   var m=game.meters;
@@ -1381,7 +1527,9 @@ function onGameOver(){
   checkAch();
   // unlock checks (beholder@3000 / golden acorn@streak7) are read live by isUnlocked
   $('over-alt').innerHTML=m+'<small style="font-size:22px;color:var(--gold)">m</small>';
-  $('over-title').textContent=isBest?'New Best!':'You reached';
+  $('over-title').textContent = (game.mode==='level'&&game.level) ? ('World '+(game.level.world+1)+'·'+(game.level.lw+1)+' — target '+game.level.targetM+'m') : (isBest?'New Best!':'You reached');
+  $('over-title').style.fontSize = (game.mode==='level')?'19px':'26px';
+  $('o-title').innerHTML = (game.mode==='level') ? '🗺 Levels' : '☰ Menu';
   $('over-best').textContent=best+' m';
   $('over-coins').textContent=game.coinsRun;
   $('over-sun').textContent=sun>0?('☀ +'+sun+' sunbeams'):'';
@@ -1470,10 +1618,11 @@ function applyLefthand(){ var lh=SET.lefthand;
 function coach(){ modal('<h3>How to climb</h3><p style="text-align:left">▲ You auto-hop — never press jump.<br>◀▶ Drag (or tilt / arrow keys) to steer onto leaves.<br>🍄 Springs and 🔥 power-ups fling you higher.<br>Dodge pests, grab 🪙 coins, chase your best height!</p><button class="btn sm primary" id="mx1">Got it</button>'); tap('mx1',closeModal); }
 function confirmReset(){ modal('<h3>Reset everything?</h3><p>Deletes coins, skins, drawings, best score and settings. This cannot be undone.</p><div class="row"><button class="btn sm ghost" id="mx1">Cancel</button><button class="btn sm" id="mx2">Reset</button></div>');
   tap('mx1',closeModal); tap('mx2',function(){
-    [K.coins,K.best,K.book,K.owned,K.equip,K.set,K.bounce,K.save,K.streak,K.upgrades,K.trails,K.trail,K.ach,K.stats].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+    [K.coins,K.best,K.book,K.owned,K.equip,K.set,K.bounce,K.save,K.streak,K.upgrades,K.trails,K.trail,K.ach,K.stats,K.levels].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
     // reset IN MEMORY (never navigate/reload while embedded — the fleet black-screen rule)
     coins=0; best=0; owned=[]; sketchbook=[]; equip={type:'default'}; skinCache={};
     upgrades={}; trailsOwned=['none']; trailEquip='none'; achDone={}; stats={coinsTotal:0,coinsEarned:0,aphids:0,powerups:0,maxChain:1,runs:0};
+    levelProg={stars:{},unlocked:0}; curMode='endless'; curLevelIdx=0;
     for(var kk in DEF_SET) SET[kk]=DEF_SET[kk]; saveSet();
     // preserve today's daily-claim flags so a reset can't re-grant the same-day Morning Dew / free save
     var _cd=(ST&&ST.coinDay)||'', _sf=(ST&&ST.saveFreeDay)||'', _fd=(ST&&ST.firstDaily)||'';
@@ -1524,6 +1673,11 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   tap('b-play',playPressed); tap('b-draw',function(){ openStudio(null); });
+  tap('m-adventure',function(){ openMap(); }); tap('m-endless',function(){ launch('endless'); });
+  tap('m-daily',function(){ launch('daily'); }); tap('m-zen',function(){ launch('zen'); });
+  tap('modes-back',toTitle); tap('map-back',openModes);
+  tap('le-next',function(){ launch('level', Math.min(LEVEL_COUNT-1,curLevelIdx+1)); });
+  tap('le-retry',function(){ launch('level', curLevelIdx); }); tap('le-map',openMap);
   tap('b-shop',function(){ openShop('skins'); });
   tap('b-settings',function(){ settingsFrom='title'; buildSettings(); show('s-settings'); });
   tap('b-exit',function(){ if(window.SWS_EXIT) SWS_EXIT(); });
@@ -1537,7 +1691,8 @@ function boot(){
   tap('p-resume',resumeRun); tap('p-restart',startRun);
   tap('p-settings',function(){ settingsFrom='pause'; buildSettings(); show('s-settings'); }); tap('p-quit',toTitle);
   tap('o-continue',continueRun); tap('o-retry',startRun);
-  tap('o-shop',function(){ openShop('skins'); }); tap('o-share',shareCard); tap('o-title',toTitle);
+  tap('o-shop',function(){ openShop('skins'); }); tap('o-share',shareCard);
+  tap('o-title',function(){ if(curMode==='level') openMap(); else toTitle(); });
   on('pausebtn','click',function(e){ e.preventDefault(); sfx('ui'); pauseRun(); });
   on('mutebtn','click',function(e){ e.preventDefault(); SET.muted=!SET.muted; saveSet(); applyVolumes(); if(SET.muted) stopMusic(); else if(game) startMusic(); refreshHUD(); });
   applyLefthand(); besttagUpdate(); applyEquip();
@@ -1567,6 +1722,8 @@ window._sbCapEarn=function(n,tag){
 if(/[?&]sproingtest=1/.test(location.search)){
   window.SPROING_DEV={
     start:startRun, over:onGameOver, state:function(){ return game; },
+    launch:launch, levelClear:onLevelClear, openMap:openMap, openModes:openModes,
+    levelProgress:function(){ return levelProg; }, levelDef:levelDef, LEVEL_COUNT:LEVEL_COUNT, seeded:function(){ return RNG!==Math.random; },
     tick:function(n){ if(!game) return; for(var i=0;i<(n||60);i++){ game.t+=DT; updateGame(DT); if(!game.running) break; } },
     auto:function(n){ if(!game) return 0; var steps=0;
       for(var i=0;i<(n||600);i++){ if(!game.running) break;
