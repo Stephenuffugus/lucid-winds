@@ -351,7 +351,9 @@ var best=parseInt(LS.get(K.best)||'0',10)||0;
 function addCoins(n){ coins+=n; if(n>0){ stats.coinsTotal=(stats.coinsTotal||0)+n; saveStats(); } LS.set(K.coins,String(coins)); refreshCoinUI(); }
 // bank a run's uncommitted coins into the wallet exactly once (idempotent via coinsCommitted).
 // Called on game-over AND on any early exit (quit/restart) so run earnings are never lost.
-function commitRun(){ if(!game) return; var g=game.coinsRun-(game.coinsCommitted||0); if(g>0){ addCoins(g); stats.coinsEarned=(stats.coinsEarned||0)+g; } game.coinsCommitted=game.coinsRun; saveStats(); }
+function commitRun(){ if(!game) return;
+  if(game.zen){ game.coinsCommitted=game.coinsRun; return; }   // Zen is deathless practice — never banks coins (shown live for flavor only)
+  var g=game.coinsRun-(game.coinsCommitted||0); if(g>0){ addCoins(g); stats.coinsEarned=(stats.coinsEarned||0)+g; } game.coinsCommitted=game.coinsRun; saveStats(); }
 function spendCoins(n){ if(coins<n) return false; coins-=n; LS.set(K.coins,String(coins)); refreshCoinUI(); return true; }
 function refreshCoinUI(){ var e=$('shop-coins'); if(e) e.textContent=coins; }
 
@@ -1163,8 +1165,11 @@ function platWidth(t){ return t==='mushroom'?58:(t==='fiddlehead'?48:(t==='broad
 function generateUp(){
   var guard=0, MAXREACH=195;   // every path gap stays < a normal hop's rise (~300px) with margin → always clearable
   var pestMul=game.pestMul||1, coinMul=game.coinMul||1, hazMul=game.hazMul||1;
+  var charmF=(RNG===Math.random)?(1-0.12*upLvl('charm')):1;   // per-player upgrade kept OUT of the seeded stream (Daily/Level stay identical for everyone)
   while(game.topGenY > game.camY-360 && guard++<200){
-    var m=game.meters, b=biomeFor(m);
+    // biome/difficulty by the GENERATION height (pure function of the seed) — NOT the
+    // player's live position, which varies with skill/powerups/device aspect and would desync a seed.
+    var m=Math.max(0,Math.floor((game.startY-game.topGenY)/PX_PER_M)), b=biomeFor(m);
     var gap=grnd(b.gapMin, Math.min(b.gapMax+(game.gapAdd||0), MAXREACH));
     var type=pickPathType(m);
     var ny=game.topGenY-gap;
@@ -1184,7 +1189,7 @@ function generateUp(){
       game.platforms.push(dp);
       if(biomeIdx(m)>=4 && RNG()<0.12*pestMul) spawnPest('flytrap',dp);
     }
-    if(m-game.lastPowM >= b.powInt*(1-0.12*upLvl('charm'))){ game.lastPowM=m; game.powerups.push({x:clamp(nx+grnd(-80,80),40,VW-40),y:ny-grnd(30,80),r:16,id:powForBiome(m),got:false}); }
+    if(m-game.lastPowM >= b.powInt*charmF){ game.lastPowM=m; game.powerups.push({x:clamp(nx+grnd(-80,80),40,VW-40),y:ny-grnd(30,80),r:16,id:powForBiome(m),got:false}); }
     if(b.haz.length && m-game.lastHazM > 110 && RNG()<0.45*hazMul){ game.lastHazM=m; spawnHazard(gpick(b.haz),ny,gap); }
   }
 }
@@ -1349,7 +1354,7 @@ function onLand(pl){
 
 function onMilestone(){
   var m=game.meters;
-  if(m>0 && m-game.lastMilestoneM>=250){ game.lastMilestoneM=Math.floor(m/250)*250; var k=game.lastMilestoneM/250; var reward=8+2*k;
+  if(m>0 && m-game.lastMilestoneM>=250){ game.lastMilestoneM=Math.floor(m/250)*250; var k=Math.min(game.lastMilestoneM/250,12); var reward=8+2*k;
     var _mr=gainCoins(reward); addFloat(game.player.x,game.player.y-70,'+'+_mr+' 🪙 '+game.lastMilestoneM+'m',PAL.gold); sfx('best'); }
   if(best>0 && game.maxRise>0 && Math.floor(game.startY-game.bestY)===Math.floor(best*PX_PER_M)){ /* passing best line handled visually */ }
 }
@@ -1624,7 +1629,7 @@ function onLevelClear(){
   levelProg.stars[idx]=best2;
   if(idx+1<LEVEL_COUNT && idx+1>(levelProg.unlocked||0)) levelProg.unlocked=idx+1;
   saveLevelProg();
-  var reward=40 + L.world*8 + Math.max(0,best2-prev)*30;
+  var reward=(prev===0 ? 40+L.world*8 : 5) + Math.max(0,best2-prev)*30;   // flat completion bonus only on FIRST clear (+5 token replay); star bonus only on improvement
   addCoins(reward);
   updateStreak();
   if(!game.runCounted){ stats.runs=(stats.runs||0)+1; game.runCounted=true; }
