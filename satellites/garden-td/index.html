@@ -119,7 +119,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .toggle .kn{ position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#6f775f; transition:.15s; }
 .toggle.on{ background:var(--sage2); } .toggle.on .kn{ left:27px; background:#eafbe0; }
 .seg{ display:flex; gap:6px; }
-.seg button{ min-height:48px; min-width:44px; padding:6px 10px; border-radius:10px; border:1px solid #3a4230; background:var(--coal); color:var(--muted); font-weight:700; font-size:12px; cursor:pointer; }
+.seg button{ min-height:48px; min-width:48px; padding:6px 12px; border-radius:10px; border:1px solid #3a4230; background:var(--coal); color:var(--muted); font-weight:700; font-size:12px; cursor:pointer; }
 .seg button.on{ background:var(--gold); color:#241c06; border-color:var(--gold); }
 .slider{ width:150px; }
 
@@ -135,7 +135,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   display:flex; align-items:center; padding:0 12px; font-weight:800; font-size:15px; gap:5px; }
 .hstat.leaves{ color:var(--leaf); } .hstat.seeds{ color:var(--gold); } .hstat.wave{ color:var(--cream); }
 #hbPause{ pointer-events:auto; margin-left:auto; background:rgba(20,24,18,.82); border:1px solid #3a4230;
-  color:var(--cream); width:44px; height:44px; border-radius:12px; font-size:17px; cursor:pointer; }
+  color:var(--cream); width:48px; height:48px; border-radius:12px; font-size:17px; cursor:pointer; }
 
 #hud-bot{ position:fixed; z-index:20; left:0; right:0; bottom:calc(10px + var(--safe-b)); display:none;
   align-items:center; justify-content:center; gap:10px; padding:0 12px; }
@@ -157,7 +157,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 @keyframes slideup{ from{ transform:translateY(24px); opacity:.4 } to{ transform:translateY(0); opacity:1 } }
 .sheet-hd{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .sheet-hd .st{ font-weight:900; font-size:16px; }
-.sheet-hd .sx{ width:40px; height:40px; border-radius:10px; background:var(--coal); border:1px solid #3a4230; color:var(--cream); font-size:16px; cursor:pointer; }
+.sheet-hd .sx{ width:48px; height:48px; border-radius:10px; background:var(--coal); border:1px solid #3a4230; color:var(--cream); font-size:16px; cursor:pointer; }
 .buy-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
 .buy-cell{ background:var(--coal2); border:1px solid #3a4230; border-radius:12px; padding:6px 4px 8px; text-align:center;
   display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; min-height:92px; }
@@ -405,7 +405,7 @@ var COL={ bg:'#0d100c', bg2:'#05060a', sage:'#7ab356', sage2:'#5c8a3f', sage3:'#
    ===================================================================== */
 var TOWERS={
   marigold:{ name:'Marigold', cost:50, role:'single', air:'t3', target:true, accent:'#e08a3a',
-    tiers:[{dmg:8,range:100,rate:900,up:50},{dmg:14,range:115,rate:800,up:45},{dmg:24,range:130,rate:700,up:90}],
+    tiers:[{dmg:8,range:100,rate:900,up:50},{dmg:14,range:115,rate:800,up:90},{dmg:24,range:130,rate:700,up:0}],
     blurb:'Flicks fast seed darts at the first pest. Cheap and steady.' },
   cactus:{ name:'Prickle Cactus', cost:75, role:'ring', air:'no', target:false, accent:'#7ab356',
     tiers:[{dmg:6,range:60,rate:1100,up:65},{dmg:10,range:72,rate:1000,up:130},{dmg:16,range:88,rate:900,up:0}],
@@ -453,7 +453,7 @@ var ENEMIES={
   seedling:{ name:'Seedling', hp:6, spd:70, armor:0, fly:false, bounty:1, leak:1, r:6, col:'#dfeecb', special:null }
 };
 var BOSSES={
-  aphidqueen:{ name:'The Aphid Queen', hp:1200, spd:22, armor:0, fly:false, bounty:120, leak:8, r:40, col:'#a8d878', special:'queen' }
+  aphidqueen:{ name:'The Aphid Queen', hp:1200, spd:22, armor:0, fly:false, bounty:120, leak:6, r:40, col:'#a8d878', special:'queen' }
 };
 
 /* pest introduction schedule (index = level) */
@@ -697,30 +697,42 @@ function buildWaves(level, endless){
       [{t:'aphid',n:20,s:400},{t:'ant',n:12,s:400}]
     ];
   }
-  if(level===13){ // boss level
+  if(level===13){ // boss level: 5 gentle economy-building waves, then the Queen
     var w=[];
+    var heavy13=poolFor(12).filter(function(id){ return ['aphid','ant','moth','wasp','seedling'].indexOf(id)<0; });
     for(var i=0;i<5;i++){
-      var pool=poolFor(12);
-      w.push([{t:pick(pool),n:8,s:650},{t:pick(pool),n:6,s:650}]);
+      var g=[{t:pick(['aphid','ant']), n:8+i*2, s:600}];       // 8..16 chaff (income)
+      if(i>=1) g.push({t:pick(heavy13), n:1+Math.floor(i/2), s:900});  // 1..3 tanks, gentle
+      if(i>=3) g.push({t:'moth', n:2, s:1000});                // a little late air
+      w.push(g);
     }
-    w.push([{t:'aphidqueen',n:1,s:100,boss:true},{t:'ant',n:8,s:1400},{t:'aphid',n:10,s:1200}]);
+    w.push([{t:'aphidqueen',n:1,s:100,boss:true},{t:'ant',n:6,s:1600},{t:'aphid',n:8,s:1400}]);
     return w;
   }
-  // generated level: 10 waves ramping
+  // generated level: 10 waves. The MAIN group is always weak ground chaff
+  // (aphid/ant) so a modest defense can mow the bulk and earn income; the level's
+  // threats (the newest pest, a few tanks, some flyers) arrive as SMALL side
+  // groups that scale up. This keeps early waves survivable and lets the player
+  // build up, while later waves demand real coverage + anti-air.
   var pool=poolFor(level), newest=(UNLOCK[level]&&UNLOCK[level].length)?UNLOCK[level]:null;
+  var mainPool=['aphid','ant'];
+  var LIGHT={aphid:1,ant:1,moth:1,wasp:1,seedling:1};
+  var heavy=pool.filter(function(id){ return !LIGHT[id]; });
+  var hasAir=(pool.indexOf('moth')>=0||pool.indexOf('wasp')>=0);
   var waves=[];
   for(var wv=1;wv<=10;wv++){
-    var groups=[], baseCount=4+Math.floor(level*0.6)+wv;
-    var surge=(wv===10);
-    var g1t = (newest && wv>=3) ? pick(newest) : pick(pool);
-    var g1n = Math.round((baseCount)*(surge?1.5:1));
-    var s1 = clamp(1000-wv*55-level*8, 320, 1000);
-    groups.push({t:g1t,n:g1n,s:s1});
-    if(wv>=4){
-      var g2t=pick(pool);
-      groups.push({t:g2t,n:Math.round(baseCount*0.6*(surge?1.5:1)),s:clamp(s1+120,340,1100)});
+    var groups=[], surge=(wv===10);
+    var n=4+wv*2+Math.floor(level*0.3);
+    if(surge)n=Math.round(n*1.35);
+    var s1=clamp(950-wv*45-level*6, 340, 950);
+    groups.push({t:pick(mainPool), n:n, s:s1});               // bulk = killable chaff
+    if(wv>=3){                                                 // one threat group, small
+      var threat=(newest && wv<=6) ? pick(newest) : (heavy.length?pick(heavy):pick(mainPool));
+      groups.push({t:threat, n:Math.min(1+Math.floor(wv/2),5), s:900});   // gentle debut, ramps to 5
     }
-    if(newest && wv>=6 && level>=5){ groups.push({t:pick(newest),n:2+((level/3)|0),s:900}); }
+    if(wv>=6 && hasAir){                                       // ongoing air harass so Beehive matters
+      groups.push({t:(pool.indexOf('wasp')>=0 && (wv%2))?'wasp':'moth', n:2+Math.floor(wv/4), s:1000});
+    }
     waves.push(groups);
   }
   return waves;
@@ -729,7 +741,7 @@ function buildWaves(level, endless){
 /* =====================================================================
    SCALERS
    ===================================================================== */
-function levelHpScale(L){ return 1+0.12*(L-1); }
+function levelHpScale(L){ return 1+0.10*(L-1); }
 function levelSpeedScale(L){ return Math.min(1.30,1+0.02*(L-1)); }
 function bossHpScale(L){ return Math.min(1.8,levelHpScale(L)); }
 function bountyScale(L){ return 1+0.10*(L-1); }
@@ -748,11 +760,11 @@ function spawnEnemy(typeId, boss){
     hpMax:Math.round(base.hp*hpS), hp:Math.round(base.hp*hpS),
     baseSpd:base.spd*spdS, armor:base.armor||0, fly:base.fly, r:base.r, col:base.col,
     bounty:Math.max(1,Math.round(base.bounty*bountyScale(L))), leak:base.leak, special:base.special,
-    d:-20*0? 0:0, // dist start
+    d:0, // dist along path (set below)
     dots:[], slowT:0, slowF:1, rootT:0, vuln:1, vulnT:0,
     shield:base.special==='shield'?40:0, shieldT:0,
     regen:base.special==='regen'?base.hp*0.02*hpS:0,
-    burstT:0, spawnT:0, healT:0, queenSpawnT:5, queenShieldT:12, seg:0,
+    burstT:0, spawnT:6, healT:0, queenSpawnT:5, queenShieldT:12, queenShieldExpT:0, seg:0,
     hitFlash:0, dead:false
   };
   e.d=0;
@@ -768,12 +780,12 @@ function currentWaveGroups(){
   return G.waves[G.waveIdx];
 }
 function buildEndlessWave(w){
-  // new pest every 5 waves, expanding pool
-  var order=['aphid','ant','grub','slug','moth','beetle','snail','dandelion','wasp','ladybug','caterpillar','thornvine'];
-  var avail=order.slice(0, Math.min(order.length, 2+Math.floor(w/5)*2+2));
-  var groups=[{t:pick(avail),n:6+w,s:clamp(800-w*12,300,800)}];
-  if(w>=2)groups.push({t:pick(avail),n:4+((w/2)|0),s:clamp(700-w*10,320,900)});
-  if(w>0 && w%5===0)groups.push({t:pick(avail),n:3,s:800});
+  // main = chaff; threats (heavies/flyers) escalate. new heavy type unlocked every 5 waves.
+  var order=['grub','slug','moth','beetle','snail','dandelion','wasp','ladybug','caterpillar','thornvine'];
+  var avail=order.slice(0, Math.min(order.length, 2+Math.floor(w/4)));
+  var groups=[{t:pick(['aphid','ant']), n:8+Math.round(w*1.5), s:clamp(800-w*12,300,800)}];
+  if(w>=1 && avail.length)groups.push({t:pick(avail), n:Math.min(2+Math.floor(w/2),8), s:850});
+  if(w>=3 && avail.length)groups.push({t:pick(avail), n:2+Math.floor(w/4), s:950});
   return groups;
 }
 function startWave(){
@@ -788,7 +800,7 @@ function startWave(){
     // groups play sequentially by default (offset advances)
     offset+=g.n*g.s;
   });
-  G.spawnT=0; G._earlyBonus=Math.max(0,G._nextEarlyBonus||0); G._nextEarlyBonus=0;
+  G.spawnT=0;
   banner((G.endless?'Wave '+(G.endlessWave+1):'Wave '+(G.waveIdx+1)+'/'+G.waveTotal), false);
   var isBoss=groups.some(function(g){return g.boss;});
   if(isBoss){ banner('The Aphid Queen approaches',true); sfx.horn(); G.slowmo=save.settings.reducedMotion?0:0.4; }
@@ -809,7 +821,7 @@ function checkWaveEnd(){
     G.wavesCleared++;
     // wave-clear rewards
     var wn=(G.endless?G.endlessWave+1:G.waveIdx+1);
-    var bonus=10+2*wn;
+    var bonus=15+2*wn;   // wave-clear (10) + last-pest bounty (5), per spec
     var interest=Math.min(20,Math.floor(G.seeds/25));
     addSeeds(bonus+interest, null);
     // compost T3 sap
@@ -893,10 +905,14 @@ function applyDamage(e, amount, opts){
   e.hp-=amt; e.shieldT=0; e.hitFlash=0.06;
   if(e.hp<=0) killEnemy(e, opts.by);
 }
-function addDot(e, d){ // d={d,t,stk} => per-0.5s dmg d, duration t, max stacks stk
-  e.dots.push({ dmg:d.d, interval:0.5, acc:0, remain:d.t });
-  // cap stacks
-  var max=d.stk||99; if(e.dots.length>max) e.dots.splice(0,e.dots.length-max);
+function addDot(e, d, src){ // d={d,t,stk} => per-0.5s dmg d, duration t, max stacks stk; src caps stacks PER SOURCE
+  src=src||'x';
+  e.dots.push({ dmg:d.d, interval:0.5, acc:0, remain:d.t, src:src });
+  // cap stacks for THIS source only (so a Cactus barb never evicts Pitcher acid, etc.)
+  var max=d.stk||99, over=0, i;
+  for(i=0;i<e.dots.length;i++) if(e.dots[i].src===src) over++;
+  over-=max;
+  for(i=0; i<e.dots.length && over>0; ){ if(e.dots[i].src===src){ e.dots.splice(i,1); over--; } else i++; }
 }
 function killEnemy(e, by){
   if(e.dead)return; e.dead=true;
@@ -920,7 +936,7 @@ function towerFire(t, dt){
     // slow aura every frame; chip damage on rate
     var rng=towerRange(t), root=(t.tier===3);
     for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i]; if(e.dead)continue; if(!inRange(t,e,rng))continue;
-      if(e.special!=='noslow'){ e.slowF=Math.min(e.slowF, 1-st.slow); e.slowT=Math.max(e.slowT, 1.5); }
+      if(e.special!=='noslow'){ e.slowF=Math.min(e.slowF, 1-st.slow); e.slowT=Math.max(e.slowT, t.tier===3?1.5:0.12); }  // sticky residue only at T3
     }
     if(t.cd<=0){ t.cd=towerRate(t);
       var strong=null,sk=-1;
@@ -934,7 +950,7 @@ function towerFire(t, dt){
     return;
   }
   if(t.id==='scarecrow' || t.id==='compost') { // handled elsewhere (buff/econ)
-    if(t.id==='compost'){ if(t.cd<=0){ t.cd=towerRate(t); addSeeds(st.seeds,{x:t.x,y:t.y-14}); } }
+    if(t.id==='compost'){ if(G.running && t.cd<=0){ t.cd=towerRate(t); addSeeds(st.seeds,{x:t.x,y:t.y-14}); } }
     if(t.id==='scarecrow' && t.tier===3){ // periodic freeze
       if(t.cd<=0){ t.cd=towerRate(t); var rr=towerRange(t);
         for(var f=0;f<G.enemies.length;f++){ var ef=G.enemies[f]; if(ef.dead||ef.fly)continue; if(inRange(t,ef,rr))ef.rootT=Math.max(ef.rootT,0.8); }
@@ -947,7 +963,7 @@ function towerFire(t, dt){
     if(t.cd<=0){ t.cd=towerRate(t); var rc=towerRange(t), hitAny=false;
       for(var c=0;c<G.enemies.length;c++){ var ec=G.enemies[c]; if(ec.dead||ec.fly)continue; if(!inRange(t,ec,rc))continue;
         applyDamage(ec, towerDmg(t), {by:t}); hitAny=true;
-        if(t.tier===3) addDot(ec,{d:2,t:1.5,stk:3});
+        if(t.tier===3) addDot(ec,{d:2,t:1.5,stk:3},'cactus');
       }
       if(hitAny){ ring(t.x,t.y,rc,'#e8dcc8'); }
     }
@@ -969,7 +985,7 @@ function towerFire(t, dt){
     } else applyDamage(tgt,dmgS,{by:t});
     beam(t.x,t.y,tp.x,tp.y); tone('sine',700,500,0.18,0.12);
   } else if(t.id==='pitcher'){
-    applyDamage(tgt, towerDmg(t), {by:t}); addDot(tgt, st.dot);
+    applyDamage(tgt, towerDmg(t), {by:t}); addDot(tgt, st.dot, 'pitcher');
     if(st.vuln){ tgt.vuln=Math.max(tgt.vuln,1+st.vuln); tgt.vulnT=3; }
     acidDrip(t.x,t.y,tp.x,tp.y);
   } else if(t.id==='beehive'){
@@ -997,7 +1013,7 @@ function updateProjectiles(dt){
       }
       var pt=posAt(G.geom,tg.d), ang=Math.atan2(pt.y-p.y,pt.x-p.x);
       p.x+=Math.cos(ang)*p.speed*dt; p.y+=Math.sin(ang)*p.speed*dt;
-      if(dist2(p.x,p.y,pt.x,pt.y)<14*14){ applyDamage(tg,p.dmg,{by:p.by}); if(p.sting)addDot(tg,{d:3,t:1,stk:3}); G.projs.splice(i,1); }
+      if(dist2(p.x,p.y,pt.x,pt.y)<14*14){ applyDamage(tg,p.dmg,{by:p.by}); if(p.sting)addDot(tg,{d:3,t:1,stk:3},'bee'); G.projs.splice(i,1); }
     } else if(p.kind==='spore'){
       p.t+=dt; var k=p.t/p.dur;
       if(k>=1){ // land: splash
@@ -1057,12 +1073,12 @@ function updateEnemies(dt){
     if(e.special==='spawn'){ e.spawnT-=dt; if(e.spawnT<=0){ e.spawnT=6; for(var q=0;q<2;q++){ var a=spawnEnemy('aphid'); a.d=Math.max(0,e.d-4); } } }
     // speed burst (wasp)
     var spd=e.baseSpd;
-    if(e.special==='burst'){ e.burstT-=dt; if(e.burstT<=-2.5){ e.burstT=1.2; } if(e.burstT>0)spd*=1.7; }
+    if(e.special==='burst'){ e.burstT-=dt; if(e.burstT<=-1.3){ e.burstT=1.2; } if(e.burstT>0)spd*=2.0; }  // 110px/s (base 55) for 1.2s every 2.5s
     // boss queen
     if(e.special==='queen'){
-      e.queenSpawnT-=dt; if(e.queenSpawnT<=0){ e.queenSpawnT=5; for(var qs=0;qs<6;qs++){ var qa=spawnEnemy('aphid'); qa.d=Math.max(0,e.d-8+qs*3); } }
-      e.queenShieldT-=dt; if(e.queenShieldT<=0){ e.queenShieldT=12; e.shield=Math.max(e.shield,150); e.shieldGlow=2; }
-      if(e.shieldGlow>0)e.shieldGlow-=dt;
+      e.queenSpawnT-=dt; if(e.queenSpawnT<=0){ e.queenSpawnT=6.5; for(var qs=0;qs<4;qs++){ var qa=spawnEnemy('aphid'); qa.d=Math.max(0,e.d-8+qs*3); } }
+      e.queenShieldT-=dt; if(e.queenShieldT<=0){ e.queenShieldT=12; e.shield=Math.max(e.shield,150); e.queenShieldExpT=2; }
+      if(e.queenShieldExpT>0){ e.queenShieldExpT-=dt; if(e.queenShieldExpT<=0)e.shield=0; }  // 2s window then it drops (burst-between-shields counterplay)
     }
     // slow / root
     var eff=spd*e.slowF; if(e.special==='noslow')eff=spd; if(e.rootT>0)eff=0;
@@ -1083,11 +1099,12 @@ function acidDrip(x,y,tx,ty){ G.fx.push({kind:'drip',x:x,y:y,tx:tx,ty:ty,life:0.
 function ring(x,y,r,col){ if(save.settings.reducedMotion){ G.fx.push({kind:'ringstatic',x:x,y:y,r:r,col:col,life:0.12}); } else G.fx.push({kind:'ring',x:x,y:y,r:r,col:col,life:0.28}); }
 function puffRing(x,y,r){ G.fx.push({kind:'puff',x:x,y:y,r:r,life:0.35}); }
 function updateFX(dt){
+  if(G.fx.length>160)G.fx.splice(0,G.fx.length-160);   // cap particle pool (mirror the floats cap)
   for(var i=G.fx.length-1;i>=0;i--){ var f=G.fx[i]; f.life-=dt; if(f.kind==='p'){ f.x+=f.vx*dt; f.y+=f.vy*dt; f.vy+=140*dt; } if(f.life<=0)G.fx.splice(i,1); }
   for(var j=G.floats.length-1;j>=0;j--){ var fl=G.floats[j]; fl.life-=dt; fl.y-=30*dt; if(fl.life<=0)G.floats.splice(j,1); }
   if(G.comboT>0){ G.comboT-=dt; if(G.comboT<=0)G.combo=0; }
   if(G.shake>0)G.shake=Math.max(0,G.shake-dt*18);
-  if(G.slowmo>0)G.slowmo=Math.max(0,G.slowmo-dt);
+  // NOTE: G.slowmo is decremented in frame()'s game branch only (not here) to avoid double-draining
   if(G.banner){ G.banner.life-=dt; if(G.banner.life<=0)G.banner=null; }
 }
 function banner(txt,gold){ G.banner={txt:txt,gold:!!gold,life:1.4}; }
@@ -1103,7 +1120,7 @@ function placeTower(plotIdx, id){
   var pl=G.geom.plots[plotIdx];
   G.seeds-=def.cost;
   var t={ id:id, plot:plotIdx, x:pl.x,y:pl.y, tier:1, tiers:def.tiers, cd:0, ang:-Math.PI/2, invested:def.cost,
-    targetMode:def.role==='dot'||def.role==='snipe'?'strong':'first', buffSpd:1,buffRng:1,buffPow:1, placeT:0.18, rootCd:0 };
+    targetMode:def.role==='dot'||def.role==='snipe'?'strong':'first', buffSpd:1,buffRng:1,buffPow:1, placeT:save.settings.reducedMotion?0:0.18, rootCd:0 };
   G.towers.push(t); G.towersPlaced++;
   sfx.place(); if(!save.settings.reducedMotion){}
   closeBuy(); updateHUD();
@@ -1215,7 +1232,7 @@ function drawTower(c,x,y,id,tier,scale,ang,t){
     c.fillStyle=bg; c.beginPath(); c.moveTo(-15,14); c.lineTo(15,14); c.lineTo(11,-4); c.quadraticCurveTo(0,-20,-11,-4); c.closePath(); c.fill();
     c.strokeStyle='#a8863a'; c.lineWidth=2; for(var bb=0;bb<4;bb++){ var yy=8-bb*6; c.beginPath(); c.moveTo(-13+bb*1.5,yy); c.lineTo(13-bb*1.5,yy); c.stroke(); }
     c.fillStyle='#241c06'; c.beginPath(); c.ellipse(0,10,4,3,0,0,6.283); c.fill();
-    for(var be=0;be<3;be++){ var ab=t? (t*3+be*2):be*2; c.fillStyle=COL.gold; c.beginPath(); c.arc(Math.cos(ab)*18,Math.sin(ab)*12-4,2.2,0,6.283); c.fill(); }
+    for(var be=0;be<3;be++){ var ab=(t&&!save.settings.reducedMotion)? (t*3+be*2):be*2; c.fillStyle=COL.gold; c.beginPath(); c.arc(Math.cos(ab)*18,Math.sin(ab)*12-4,2.2,0,6.283); c.fill(); }
   } else if(id==='pitcher'){
     var pg=c.createLinearGradient(0,-22,0,14); pg.addColorStop(0,'#6a4a6a'); pg.addColorStop(1,COL.sage);
     c.fillStyle=pg; c.beginPath(); c.moveTo(-7,14); c.lineTo(-5,-18); c.lineTo(5,-18); c.lineTo(7,14); c.closePath(); c.fill();
@@ -1330,12 +1347,13 @@ function drawBanner(){
 }
 function drawMascot(t){
   var m=save.cosmetics.mascot; if(m==='none')return;
-  var x=(t*20)%(VW+60)-30, y=VH-24;
+  var rm=save.settings.reducedMotion;
+  var x=rm?VW*0.5:((t*20)%(VW+60)-30), y=VH-24;   // static resting position under reduced motion
   ctx.save(); ctx.translate(x,y);
   if(m==='ladybug'){ ctx.fillStyle=COL.danger; ctx.beginPath(); ctx.arc(0,0,7,0,6.283); ctx.fill(); ctx.fillStyle='#2b2620'; ctx.fillRect(-1,-7,2,14); }
   else if(m==='snail'){ ctx.fillStyle='#e8dcc8'; roundRect(ctx,-6,2,10,4,2); ctx.fill(); ctx.strokeStyle='#b5763f'; ctx.lineWidth=2; ctx.beginPath(); for(var s=0;s<14;s++){ var a=s*0.6,r=1+s*0.4; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r-2); } ctx.stroke(); }
   else if(m==='hummingbird'){ ctx.fillStyle=COL.sage; ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(6,4); ctx.lineTo(-6,4); ctx.fill(); }
-  else if(m==='firefly'){ for(var f=0;f<5;f++){ var a=t*2+f; ctx.fillStyle='rgba(200,168,75,'+(save.settings.reducedMotion?0.4:(0.4+0.3*Math.sin(t*4+f)))+')'; ctx.beginPath(); ctx.arc(Math.cos(a)*8,Math.sin(a)*6,2,0,6.283); ctx.fill(); } }
+  else if(m==='firefly'){ for(var f=0;f<5;f++){ var a=rm?f*1.3:t*2+f; ctx.fillStyle='rgba(200,168,75,'+(rm?0.4:(0.4+0.3*Math.sin(t*4+f)))+')'; ctx.beginPath(); ctx.arc(Math.cos(a)*8,Math.sin(a)*6,2,0,6.283); ctx.fill(); } }
   else if(m==='gnome'){ ctx.fillStyle=COL.danger; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(-6,0); ctx.lineTo(6,0); ctx.fill(); ctx.fillStyle='#e8dcc8'; ctx.beginPath(); ctx.arc(0,3,5,0,6.283); ctx.fill(); }
   else if(m==='crane'){ ctx.fillStyle='#cdd6e0'; ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(0,-6); ctx.lineTo(8,0); ctx.lineTo(0,4); ctx.fill(); }
   ctx.restore();
@@ -1485,16 +1503,20 @@ function highestUnlocked(diff){ var h=1; for(var L=1;L<=13;L++){ if(save.levels[
 function startLevel(diff,level){
   audioInit(); audioResume();
   var d=DIFFS[diff], mapIdx=levelMap(level);
+  var already=!!(save.levels[diff+'-'+level]&&save.levels[diff+'-'+level].cleared);
+  // start Seeds scale with level (HP ramps ~2.4x by L13, so the opening budget must too)
+  // + a one-time "fresh level" boon the first time you attempt a level (spec first-clear +40).
+  var startSeeds=d.seeds + Math.round((level-1)*20) + (already?0:40);
   var cfg={ diff:diff, level:level, mapIdx:mapIdx, hpMult:d.hpMult, speedMult:d.speedMult,
-    startLeaves:d.leaves, startSeeds:d.seeds, waves:buildWaves(level,false), endless:false, levelKey:diff+'-'+level,
-    alreadyCleared:!!(save.levels[diff+'-'+level]&&save.levels[diff+'-'+level].cleared) };
+    startLeaves:d.leaves, startSeeds:startSeeds, waves:buildWaves(level,false), endless:false, levelKey:diff+'-'+level,
+    alreadyCleared:already };
   G=newRun(cfg); UIState='GAME'; show(null); showHUD(true); updateHUD(); updateWaveBtn(); setSpeedBtn();
   if(!save.tut.done && level===1){ showTip('Pests are coming for your garden. Tap a dashed soil spot to plant a friend.'); }
 }
 function startEndless(diff){
   audioInit(); audioResume();
   var d=DIFFS[diff];
-  var cfg={ diff:diff, level:12, mapIdx:3, hpMult:d.hpMult, speedMult:d.speedMult, startLeaves:d.leaves, startSeeds:d.seeds, waves:[], endless:true, levelKey:'endless' };
+  var cfg={ diff:diff, level:12, mapIdx:3, hpMult:d.hpMult, speedMult:d.speedMult, startLeaves:d.leaves, startSeeds:d.seeds+180, waves:[], endless:true, levelKey:'endless' };
   G=newRun(cfg); UIState='GAME'; show(null); showHUD(true); updateHUD(); updateWaveBtn(); setSpeedBtn();
   banner('The Long Weed',true);
 }
@@ -1523,7 +1545,7 @@ function winLevel(){
   // sunbeams
   var snap=runSnapshot(); snap.stars=stars;
   var beams=sunbeamsForRun(snap);
-  if(beams>0 && window._sbCapEarn)window._sbCapEarn(beams,'garden-td:win');
+  var granted=(beams>0 && window._sbCapEarn)?window._sbCapEarn(beams,'garden-td:win'):0;
   sfx.levelClear();
   // fill win screen
   el('winTitle').textContent=(G.cfg.level===13?'The Queen is defeated!':'Level Cleared!');
@@ -1531,7 +1553,7 @@ function winLevel(){
   el('winPests').textContent=G.pestsShooed;
   el('winLeaves').textContent=G.leaves+' / '+G.leavesMax;
   el('winSap').textContent=sap;
-  el('winBeams').textContent=beams>0?('☀️ +'+beams+' sunbeams'):'☀️ daily sunbeams maxed';
+  el('winBeams').textContent = granted>0?('☀️ +'+granted+' sunbeams') : (beams>0?'☀️ daily sunbeams maxed':'☀️ no sunbeams this run');
   var nextBtn=el('btnWinNext'); nextBtn.style.display=(G.cfg.level<13)?'block':'none';
   UIState='WIN'; showHUD(false); el('buySheet').classList.remove('show'); el('mngSheet').classList.remove('show');
   if(!save.tut.done && G.cfg.level===1){ save.tut.done=true; saveGame(); }
@@ -1547,10 +1569,10 @@ function loseLevel(){
   save.sap+=sap; save.endless.bestSap=Math.max(save.endless.bestSap,G.endless?sap:save.endless.bestSap); saveGame();
   var snap=runSnapshot(); snap.stars=0;
   var beams=sunbeamsForRun(snap);
-  if(beams>0 && window._sbCapEarn)window._sbCapEarn(beams,'garden-td:run');
+  var granted=(beams>0 && window._sbCapEarn)?window._sbCapEarn(beams,'garden-td:run'):0;
   el('loseWaves').textContent=G.endless?G.endlessWave:G.wavesCleared;
   el('loseSap').textContent=sap;
-  el('loseBeams').textContent=beams>0?('☀️ +'+beams+' sunbeams'):'☀️ daily sunbeams maxed';
+  el('loseBeams').textContent = granted>0?('☀️ +'+granted+' sunbeams') : (beams>0?'☀️ daily sunbeams maxed':'☀️ no sunbeams this run');
   el('loseSub').textContent=G.endless?('You reached wave '+G.endlessWave+'.'):'Your garden was overrun. Try a new plan.';
   UIState='LOSE'; showHUD(false); el('buySheet').classList.remove('show'); el('mngSheet').classList.remove('show');
   show('scr-lose');
@@ -1611,10 +1633,7 @@ el('btnLevelsBack').onclick=openDiff;
 Array.prototype.forEach.call(document.querySelectorAll('.diff-card'),function(c){ c.onclick=function(){ if(c.classList.contains('locked')){ toast('Clear the Garden boss to unlock Bramble.'); return; } openLevels(c.getAttribute('data-diff')); }; });
 
 el('hbPause').onclick=function(){ pauseGame(); };
-el('btnWave').onclick=function(){ if(!G)return; if(G.running)return; audioResume();
-  // early-call bonus: reward pressing next early (only meaningful mid-level)
-  startWave();
-};
+el('btnWave').onclick=function(){ if(!G)return; if(G.running)return; audioResume(); startWave(); };
 el('btnSpeed').onclick=function(){ if(!G)return; G.speed=G.speed>=3?1:G.speed+1; setSpeedBtn(); };
 function setSpeedBtn(){ if(G)el('btnSpeed').textContent=G.speed+'×'; }
 
@@ -1714,7 +1733,7 @@ function refreshSettings(){
 function applyTextScale(){ document.documentElement.style.fontSize=(16*save.settings.textScale)+'px'; }
 el('setSfx').addEventListener('input',function(){ save.settings.sfx=this.value/100; audioInit(); audioResume(); if(this.value>0)sfx.pickup(); saveSoon(); });
 el('setMusic').addEventListener('input',function(){ save.settings.music=this.value/100; saveSoon(); });
-Array.prototype.forEach.call(document.querySelectorAll('#scr-settings .toggle[data-set]'),function(tg){ tg.onclick=function(){ var k=tg.getAttribute('data-set'); save.settings[k]=!save.settings[k]; refreshSettings(); saveSoon(); }; });
+Array.prototype.forEach.call(document.querySelectorAll('#scr-settings .toggle[data-set]'),function(tg){ var row=tg.closest('.setrow')||tg; row.style.cursor='pointer'; row.onclick=function(){ var k=tg.getAttribute('data-set'); save.settings[k]=!save.settings[k]; refreshSettings(); saveSoon(); }; });
 Array.prototype.forEach.call(el('setText').children,function(b){ b.onclick=function(){ save.settings.textScale=parseFloat(b.getAttribute('data-t')); refreshSettings(); saveSoon(); }; });
 Array.prototype.forEach.call(el('setSpeed').children,function(b){ b.onclick=function(){ save.settings.speedDefault=parseInt(b.getAttribute('data-s')); refreshSettings(); saveSoon(); }; });
 el('btnSettingsBack').onclick=function(){ if(settingsFrom==='pause'){ show('scr-pause'); } else gotoMenu(); };
@@ -1786,13 +1805,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 (function(){
   /* Sky Wolf sunbeam earn standard: 30/day/game cap (SUNBEAM_EARN_POLICY.md). */
   window._sbCapEarn=function(n,tag){
+    var grant=0;
     try{ var k='sw_sb_garden-td';
       var s={}; try{s=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
       var d=Math.floor(Date.now()/864e5); if(s.d!==d)s={d:d,n:0};
-      n=Math.min(n, Math.max(0, 30-(s.n||0))); if(n<=0)return;
-      s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s));
+      grant=Math.min(n, Math.max(0, 30-(s.n||0)));
+      if(grant>0){ s.n=(s.n||0)+grant; localStorage.setItem(k,JSON.stringify(s)); }
     }catch(e){}
-    if(window.Sunbeam&&window.Sunbeam.earn) window.Sunbeam.earn(n,tag).catch(function(){});
+    if(grant>0 && window.Sunbeam&&window.Sunbeam.earn) window.Sunbeam.earn(grant,tag).catch(function(){});
+    return grant;   // actually-granted amount so the UI can show the real number
   };
   var sc=document.createElement('script'); sc.src='/sunbeam-sdk.js?v=2';
   sc.onload=function(){try{if(window.Sunbeam)window.Sunbeam.init({gameId:'garden-td'}).catch(function(){});}catch(e){}};
