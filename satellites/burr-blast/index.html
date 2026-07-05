@@ -181,6 +181,29 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .wc-inner .wc-w{ font-size:12px; letter-spacing:3px; color:var(--muted); font-weight:800; }
 .wc-inner .wc-n{ font-size:26px; font-weight:900; color:var(--gold); margin:4px 0 8px; letter-spacing:.5px; }
 .wc-inner .wc-t{ font-size:14px; color:var(--cream); font-style:italic; max-width:300px; }
+
+/* loadout screen */
+.load-body{ width:100%; max-width:420px; padding-bottom:10px; }
+.load-tabs{ display:flex; gap:6px; margin:6px 0 4px; }
+.load-tabs .lt{ flex:1; min-height:44px; border-radius:10px; border:1px solid #3a4230; background:var(--coal); color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
+.load-tabs .lt.on{ background:var(--sage2); color:#0d1409; border-color:var(--sage); }
+.nut-row{ background:var(--coal2); border:1px solid #3a4230; border-radius:14px; padding:11px 13px; margin:8px 0; }
+.nut-row .nh{ display:flex; align-items:center; gap:8px; }
+.nut-row .nh .ni{ font-size:19px; } .nut-row .nh .nn{ font-weight:900; font-size:14px; letter-spacing:.3px; }
+.nut-row .nh .nv{ margin-left:auto; font-weight:900; font-size:17px; min-width:22px; text-align:right; }
+.nut-row .nd{ color:var(--muted); font-size:11.5px; margin:3px 0 8px; line-height:1.4; }
+.nut-row .nc{ display:flex; align-items:center; gap:10px; }
+.nut-row .nbar{ flex:1; height:8px; background:#12140f; border-radius:99px; overflow:hidden; }
+.nut-row .nbar i{ display:block; height:100%; border-radius:99px; transition:width .12s; }
+.nstep{ width:44px; height:44px; min-height:44px; border-radius:12px; border:1px solid #3a4230; background:var(--coal); color:var(--cream); font-size:22px; font-weight:900; cursor:pointer; flex:0 0 auto; }
+.nstep:active{ transform:scale(.92); } .nstep:disabled{ opacity:.28; }
+.nut-n .nn,.nut-n .ni{ color:#e0703a; } .nut-n .nbar i{ background:#e0703a; }
+.nut-p .nn,.nut-p .ni{ color:#c98bff; } .nut-p .nbar i{ background:#c98bff; }
+.nut-k .nn,.nut-k .ni{ color:#67b0ff; } .nut-k .nbar i{ background:#67b0ff; }
+.load-ammo{ display:flex; gap:7px; justify-content:center; margin:10px 0 2px; flex-wrap:wrap; }
+.load-ammo .la{ width:38px; height:38px; border-radius:50%; background:var(--coal2); border:2px solid #3a4230; display:flex; align-items:center; justify-content:center; font-size:19px; }
+.load-note{ color:var(--muted); font-size:11.5px; text-align:center; margin:8px 4px; line-height:1.5; }
+.load-soon{ text-align:center; color:var(--muted); font-size:13px; padding:24px 10px; }
 </style>
 </head>
 <body>
@@ -231,6 +254,20 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   </div>
   <h2 class="sh" style="margin-top:14px;">Choose a Patch</h2>
   <div class="ls-body" id="lsBody"></div>
+</div>
+
+<!-- LOADOUT (pre-fort: tune nutrients, later companions + satchel) -->
+<div class="screen" id="scr-loadout">
+  <div class="ls-head">
+    <button class="btn ghost sm" id="btnLoadBack">← Patches</button>
+    <div class="chip" style="color:#a0d0e8;"><span class="ico">🧪</span><span id="loadLeft">0</span> left</div>
+    <div class="chip" style="color:#c8a06a;"><span class="ico">🌱</span><span id="loadFert">0</span></div>
+  </div>
+  <div class="hl-n" id="loadNum" style="color:var(--muted);letter-spacing:1px;font-weight:700;margin-top:10px;">LEVEL 1</div>
+  <h2 class="sh" id="loadTitle" style="margin:2px 0 2px;">First Sprout</h2>
+  <div class="sub" id="loadIntel">Twig fort</div>
+  <div class="load-body" id="loadBody"></div>
+  <button class="btn wide gold" id="btnLoadPlay" style="margin-top:6px;">PLAY →</button>
 </div>
 
 <!-- SHOP -->
@@ -857,12 +894,43 @@ var MAT = {
    ================================================================ */
 var AMMO = {
   burr:      { r:15, density:1.5, rest:0.28, fric:0.5, icon:'🌰', name:'Burr',          ability:null },
-  split:     { r:13, density:1.15,rest:0.30, fric:0.5, icon:'🍃', name:'Split Seed',    ability:'split' },
-  acorn:     { r:19, density:2.7, rest:0.16, fric:0.55,icon:'🌳', name:'Acorn',         ability:'slam' },
-  puffball:  { r:16, density:0.72,rest:0.34, fric:0.4, icon:'🍄', name:'Puffball',      ability:'spore' },
-  thornpod:  { r:14, density:1.25,rest:0.24, fric:0.5, icon:'💥', name:'Thornpod',      ability:'boom', impactBoom:true },
-  boomerang: { r:14, density:1.1, rest:0.30, fric:0.5, icon:'🪃', name:'Boomerang Pod', ability:'curve' }
+  split:     { r:13, density:1.15,rest:0.30, fric:0.5, icon:'🍃', name:'Split Seed',    ability:'split',
+               ab:{ pellets:2, angle:0.30, perp:120, boost:1.05 } },
+  acorn:     { r:19, density:2.7, rest:0.16, fric:0.55,icon:'🌳', name:'Acorn',         ability:'slam',
+               ab:{ force:2100, drift:0.35 } },
+  puffball:  { r:16, density:0.72,rest:0.34, fric:0.4, icon:'🍄', name:'Puffball',      ability:'spore',
+               ab:{ power:600, radius:230, lift:0.95, radial:0.5 } },
+  thornpod:  { r:14, density:1.25,rest:0.24, fric:0.5, icon:'💥', name:'Thornpod',      ability:'boom', impactBoom:true,
+               ab:{ power:1000, radius:210 } },
+  boomerang: { r:14, density:1.1, rest:0.30, fric:0.5, icon:'🪃', name:'Boomerang Pod', ability:'curve',
+               ab:{ accel:4600, dur:0.55, lift:900 } }
 };
+/* neutral loadout — nutrients 0, no companions/grafts/relics = base play unchanged */
+var DEFAULT_LOADOUT = { nutrients:{n:0,p:0,k:0}, companions:[], grafts:{}, relics:[] };
+/* computeSeedStats: the ONE place every build knob folds into a launched seed's stats.
+   Nutrients scale here; companions + grafts + relics hook in via the stubs (slices 4-6). */
+function computeSeedStats(type, lo){
+  lo = lo || (G&&G.loadout) || DEFAULT_LOADOUT;
+  var base=AMMO[type]||AMMO.burr, nut=lo.nutrients||{}, n=nut.n||0, p=nut.p||0;
+  var nMul=1+n*0.05, pMul=1+p*0.07;          // 0 points => 1.0 (identical to base play)
+  var ab={}; if(base.ab){ for(var k in base.ab) if(base.ab.hasOwnProperty(k)) ab[k]=base.ab[k]; }
+  if(base.ability==='split'){ ab.pellets = base.ab.pellets + Math.round(p*0.25); }
+  else if(base.ability==='slam'){ ab.force = base.ab.force*pMul; }
+  else if(base.ability==='spore'){ ab.power=base.ab.power*pMul; ab.radius=base.ab.radius*(1+(pMul-1)*0.7); }
+  else if(base.ability==='boom'){ ab.power=base.ab.power*pMul; ab.radius=base.ab.radius*(1+(pMul-1)*0.6); }
+  else if(base.ability==='curve'){ ab.accel=base.ab.accel*pMul; }
+  var st={ r:base.r, density:base.density*nMul, rest:base.rest, fric:base.fric,
+    icon:base.icon, name:base.name, ability:base.ability, impactBoom:!!base.impactBoom, ab:ab };
+  applyCompanionMods(type, base, st, lo);    // no-op until slice 5
+  applyGraftMods(type, base, st, lo);        // no-op until slice 4
+  return st;
+}
+function applyCompanionMods(type, base, st, lo){ /* slice 5 */ }
+function applyGraftMods(type, base, st, lo){ /* slice 4 */ }
+function getActiveLoadout(){ return (SAVE&&SAVE.loadout) || DEFAULT_LOADOUT; }
+function nutrientsUsed(){ var n=SAVE.loadout.nutrients; return (n.n||0)+(n.p||0)+(n.k||0); }
+function nutCap(){ return 8 + Math.floor(totalStars()/5); }   // grows as you earn stars
+function nutrientsLeft(){ return Math.max(0, nutCap() - nutrientsUsed()); }
 
 /* ================================================================
    AUDIO  (WebAudio synthesis; no assets)
@@ -962,12 +1030,18 @@ function img(name){ var a=ART[name]; return (a&&a.ok)?a.img:null; }
    ================================================================ */
 var SAVE_KEY='lw_burrblast_v1';
 var SAVE = { coins:0, prog:{}, skins:{seed_burr:1, sling_oak:1}, equip:{seed:'seed_burr', sling:'sling_oak'},
-  set:{ sound:1, shake:1, guide:1, reduce:0 }, endlessBest:0, seenStory:0 };
+  set:{ sound:1, shake:1, guide:1, reduce:0 }, endlessBest:0, seenStory:0,
+  fert:0, nutrientCap:8, loadout:{ nutrients:{n:0,p:0,k:0}, companions:[], grafts:{} } };
 function loadSave(){
   try{ var s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){
     SAVE.coins=s.coins||0; SAVE.prog=s.prog||{}; SAVE.skins=s.skins||{seed_burr:1,sling_oak:1};
     SAVE.equip=s.equip||{seed:'seed_burr',sling:'sling_oak'};
     SAVE.set=s.set||SAVE.set; SAVE.endlessBest=s.endlessBest||0; SAVE.seenStory=s.seenStory||0;
+    SAVE.fert=s.fert||0; SAVE.nutrientCap=s.nutrientCap||8;
+    if(s.loadout){ SAVE.loadout=s.loadout;
+      if(!SAVE.loadout.nutrients) SAVE.loadout.nutrients={n:0,p:0,k:0};
+      if(!SAVE.loadout.companions) SAVE.loadout.companions=[];
+      if(!SAVE.loadout.grafts) SAVE.loadout.grafts={}; }
     if(!SAVE.skins.seed_burr) SAVE.skins.seed_burr=1;
     if(!SAVE.skins.sling_oak) SAVE.skins.sling_oak=1;
     if(!SAVE.equip.seed) SAVE.equip.seed='seed_burr';
@@ -1184,6 +1258,7 @@ function makePestBody(pd, boss){
 function startLevel(lv){
   G = newState();
   G.level = lv;
+  G.loadout = getActiveLoadout();
   var W = new PHYS.World({ gravity:GRAVITY, iterations:13 });
   W.onContact = handleContact;
   G.world = W;
@@ -1209,7 +1284,10 @@ function startLevel(lv){
   G.pestsTotal=G.pests.length; G.pestsAlive=G.pests.length;
 
   // ammo
-  G.ammo = (lv.ammo||['burr']).slice(); G.ammoIdx=0;
+  G.ammo = (lv.ammo||['burr']).slice();
+  var _kb=Math.floor(((G.loadout.nutrients&&G.loadout.nutrients.k)||0)/3);   // Potassium: extra seeds
+  for(var _k=0;_k<_kb;_k++) G.ammo.push('burr');
+  G.ammoIdx=0;
   loadNextAmmo(true);
 
   // score thresholds (auto-derived; refined by playtest later)
@@ -1244,13 +1322,14 @@ function currentAmmoType(){ return G.ammo[G.ammoIdx]||'burr'; }
 function launch(){
   var type=currentAmmoType();
   var spec=AMMO[type]||AMMO.burr;
+  var st=computeSeedStats(type, G.loadout);
   var pull=vsub(v(SLING_X,SLING_Y), G.pouch);
   var speed=Math.min(vlen(pull)*LAUNCH_POWER, MAX_LAUNCH);
   if(speed<60){ G.aiming=false; G.pouch=v(SLING_X,SLING_Y); return; } // too soft — reset
   var dir=vnorm(pull);
-  var body=new PHYS.Body({ shape:'circle', radius:spec.r, x:G.pouch.x, y:G.pouch.y,
-    density:spec.density, restitution:spec.rest, friction:spec.fric, canSleep:false, mat:'proj',
-    game:{ kind:'proj', ammo:type } });
+  var body=new PHYS.Body({ shape:'circle', radius:st.r, x:G.pouch.x, y:G.pouch.y,
+    density:st.density, restitution:st.rest, friction:st.fric, canSleep:false, mat:'proj',
+    game:{ kind:'proj', ammo:type, stats:st } });
   body.vel=vmul(dir,speed);
   body.angVel=(Math.random()-0.5)*6;
   G.world.add(body);
@@ -1274,41 +1353,41 @@ function hideHint(){ var el=document.getElementById('abilityHint'); if(el) el.cl
 /* ---- ability trigger (mid-flight tap) ---- */
 function triggerAbility(){
   if(G.state!=='flight' || !G.proj || G.abilityUsed) return;
-  var p=G.proj, type=p.game.ammo, ab=(AMMO[type]||{}).ability;
+  var p=G.proj, type=p.game.ammo, s=p.game.stats||computeSeedStats(type,G.loadout), ab=s.ability, A=s.ab||{};
   if(!ab) return;
   G.abilityUsed=true; hideHint();
-  var pr=AMMO[type].r;
+  var pr=s.r;
   if(ab==='split'){
-    // clean 3-pellet fan: boost the center, splay two offset pellets (no birth jitter)
-    var ang=Math.atan2(p.vel.y,p.vel.x), spd=vlen(p.vel);
-    p.vel=vmul(vnorm(p.vel), spd*1.05);
-    [-0.30,0.30].forEach(function(off){
-      var h=v(Math.cos(ang+off), Math.sin(ang+off)), perp=vperp(h), sign=(off>0?1:-1);
+    // fan: boost the center, splay `pellets` offset pellets (no birth jitter). Phosphorus adds pellets.
+    var ang=Math.atan2(p.vel.y,p.vel.x), spd=vlen(p.vel), count=Math.max(1,A.pellets||2), spread=A.angle||0.30, perpk=A.perp||120;
+    p.vel=vmul(vnorm(p.vel), spd*(A.boost||1.05));
+    for(var i=0;i<count;i++){
+      var off = count<=1 ? 0 : (-spread + 2*spread*i/(count-1));
+      var h=v(Math.cos(ang+off), Math.sin(ang+off)), perp=vperp(h), sign=(off>=0?1:-1);
       var nb=new PHYS.Body({ shape:'circle', radius:pr, x:p.pos.x+h.x*pr*1.6, y:p.pos.y+h.y*pr*1.6,
-        density:AMMO[type].density, restitution:AMMO[type].rest, friction:AMMO[type].fric, canSleep:false, mat:'proj',
+        density:s.density, restitution:s.rest, friction:s.fric, canSleep:false, mat:'proj',
         game:{ kind:'proj', ammo:'burr' } });
-      nb.vel=v(h.x*spd + perp.x*120*sign, h.y*spd + perp.y*120*sign);
+      nb.vel=v(h.x*spd + perp.x*perpk*sign, h.y*spd + perp.y*perpk*sign);
       G.world.add(nb);
-    });
+    }
     puff(p.pos.x,p.pos.y,'#bfe08a',12); SFX.crackle();
   } else if(ab==='slam'){
-    // meteor: bleed horizontal, plunge straight down, armed to thump on landing
-    p.vel=v(p.vel.x*0.35+60, Math.abs(p.vel.y)+2100);
+    p.vel=v(p.vel.x*(A.drift||0.35)+60, Math.abs(p.vel.y)+(A.force||2100));
     p.game.slamArm=1; addHitstop(0.04); addShake(4); SFX.whoosh(); puff(p.pos.x,p.pos.y,'#c8a84b',8);
   } else if(ab==='spore'){
-    sporeBurst(p.pos); p.vel=v(p.vel.x*0.35, -300);   // gentle self-lift, don't die
+    sporeBurst(p.pos, A); p.vel=v(p.vel.x*0.35, -300);
   } else if(ab==='boom'){
-    explode(p.pos, 1000, 210); p.dead=true; G.proj=null;
+    explode(p.pos, A.power||1000, A.radius||210); p.dead=true; G.proj=null;
   } else if(ab==='curve'){
-    // real steering: bank back over ~0.55s (steer by WHEN you tap)
-    p.game.curveT=0.55; p.game.curveDir=(G.launchVx>=0?-1:1);
+    p.game.curveT=A.dur||0.55; p.game.curveDir=(G.launchVx>=0?-1:1);
+    p.game.curveAccel=A.accel||4600; p.game.curveLift=A.lift||900;
     puff(p.pos.x,p.pos.y,'#8fd06a',8); SFX.whirl();
   }
 }
 /* puffball spore — a wide, UP-biased gust: lifts the roof + pops pests skyward,
    low structural damage. Mass-scaled so light things fly and stone barely moves. */
-function sporeBurst(center){
-  var power=600, radius=230;
+function sporeBurst(center, A){
+  A=A||{}; var power=A.power||600, radius=A.radius||230, lift=A.lift||0.95, radial=A.radial||0.5;
   G.flashes.push({ x:center.x, y:center.y, r:radius*0.7, life:0.28, max:0.28 });
   G.rings.push({ x:center.x, y:center.y, r:6, max:radius, life:0.36 });
   addShake(5); addHitstop(0.03); SFX.fwump(); puff(center.x,center.y,'#cfe8a0',18);
@@ -1318,8 +1397,8 @@ function sporeBurst(center){
     var d=vsub(bd.pos,center), dist=vlen(d); if(dist>radius) continue;
     var fall=1-(dist/radius), nn=dist>1e-3?vmul(d,1/dist):v(0,-1);
     bd.wake();
-    bd.applyImpulse(vmul(nn, power*fall*REF_MASS*0.5), bd.pos);
-    bd.applyImpulse(v(0, -power*fall*REF_MASS*0.95), bd.pos);   // strong UP lift
+    bd.applyImpulse(vmul(nn, power*fall*REF_MASS*radial), bd.pos);
+    bd.applyImpulse(v(0, -power*fall*REF_MASS*lift), bd.pos);   // strong UP lift
     if(bd.game.kind==='pest'){ bd.game.hp-=power*fall*DMG_K*0.7; if(bd.game.hp<=0) killPest(bd,bd.pos); }
   }
 }
@@ -1328,8 +1407,8 @@ function applyProjSteering(sdt){
   var p=G.proj; if(!p||p.dead||!p.game) return;
   if(p.game.curveT>0){
     p.game.curveT-=sdt;
-    p.vel.x += p.game.curveDir*4600*sdt;   // bank sideways
-    p.vel.y -= 900*sdt;                     // mild lift so it sweeps rather than dives
+    p.vel.x += p.game.curveDir*(p.game.curveAccel||4600)*sdt;   // bank sideways
+    p.vel.y -= (p.game.curveLift||900)*sdt;                     // mild lift so it sweeps not dives
   }
 }
 
@@ -1357,7 +1436,8 @@ function projImpact(bd, other, speed, pt){
   var spec=AMMO[bd.game.ammo]; if(!spec) return;
   // thornpod detonates on a real impact even with no tap (impactBoom was dead code)
   if(spec.impactBoom && !bd.game.boomed && speed>250){
-    bd.game.boomed=true; explode(bd.pos, 1000, 210); bd.dead=true; if(bd===G.proj)G.proj=null; return;
+    var st=bd.game.stats, ab=(st&&st.ab)||{};
+    bd.game.boomed=true; explode(bd.pos, ab.power||1000, ab.radius||210); bd.dead=true; if(bd===G.proj)G.proj=null; return;
   }
   // acorn slam: a ground shockwave when the plunging acorn lands hard
   if(bd.game.slamArm && speed>420){
@@ -1645,7 +1725,9 @@ function winLevel(){
   var newStars=recordLevel(G.level.n, stars, G.score);
   var coinReward = stars*18 + Math.floor(G.score/2400);
   if(already) coinReward=Math.floor(coinReward*0.28);
-  SAVE.coins += coinReward; persist();
+  SAVE.coins += coinReward;
+  if(newStars>0) SAVE.fert += 2*newStars;   // Fertilizer for new stars (spent in the Almanac)
+  persist();
   // sunbeams: only pay for NEW progress (first clear or a star improvement) so a
   // trivial replay of an easy patch can't farm toward the daily cap. (30/day still enforced inside.)
   if(newStars>0){
@@ -2044,7 +2126,8 @@ function resize(){
 }
 
 /* ---- level flow ---- */
-function enterLevel(n){
+function enterLevel(n){ var lv=levelByN(n); if(!lv) return; _endless=false; _curLevelN=n; openLoadout(n); }
+function beginFort(n){
   var lv=levelByN(n); if(!lv) return;
   _endless=false; _curLevelN=n;
   startLevel(lv);
@@ -2052,7 +2135,70 @@ function enterLevel(n){
   showScreen(null);
   if(firstLevelOfWorld(n)) showWorldCard(lv.world);
 }
-function retryLevel(){ if(_endless){ startEndlessLevel(_endlessN); } else enterLevel(_curLevelN); _playing=true; _paused=false; showScreen(null); }
+
+/* ---- loadout screen (pre-fort tuning) ---- */
+var _loadTab='nutrients';
+function openLoadout(n){
+  var lv=levelByN(n); if(!lv) return;
+  _loadTab='nutrients';
+  $('loadNum').textContent = lv.boss?'BOSS':('LEVEL '+lv.n);
+  $('loadTitle').textContent = lv.name;
+  $('loadIntel').textContent = fortIntel(lv);
+  renderLoadout();
+  showScreen('scr-loadout');
+}
+function fortIntel(lv){
+  var mats={}; (lv.blocks||[]).forEach(function(b){ mats[b.t]=1; });
+  var mn={wood:'twig',stone:'stone',glass:'dewglass',tnt:'blastpod',steel:'iron'}, ms=[];
+  for(var k in mats) if(mats.hasOwnProperty(k)) ms.push(mn[k]||k);
+  var pc=(lv.pests||[]).length + (lv.bossPest?1:0);
+  return (ms.length? ms.join(' + ')+' fort' : 'open ground')+' · '+pc+' pest'+(pc===1?'':'s');
+}
+function renderLoadout(){
+  $('loadLeft').textContent=nutrientsLeft(); $('loadFert').textContent=SAVE.fert;
+  var body=$('loadBody'), lv=levelByN(_curLevelN), nut=SAVE.loadout.nutrients, cap=nutCap();
+  var h='<div class="load-tabs">'
+    +'<button class="lt'+(_loadTab==='nutrients'?' on':'')+'" data-t="nutrients">🧪 Nutrients</button>'
+    +'<button class="lt'+(_loadTab==='satchel'?' on':'')+'" data-t="satchel">🎒 Satchel</button>'
+    +'<button class="lt'+(_loadTab==='companions'?' on':'')+'" data-t="companions">🐾 Team</button></div>';
+  if(_loadTab==='nutrients'){
+    h+=nutRow('n','🔥','Nitrogen','Heavier seeds — hit harder, break tougher blocks, carry through.', nut.n, cap);
+    h+=nutRow('p','✨','Phosphorus','Stronger tricks — bigger splits, blasts, spore gusts, sharper curves.', nut.p, cap);
+    h+=nutRow('k','💧','Potassium','Utility — an extra seed every 3 points, and a steadier aim guide.', nut.k, cap);
+    var ammo=(lv.ammo||[]).slice(), kb=Math.floor((nut.k||0)/3); for(var i=0;i<kb;i++)ammo.push('burr');
+    var ah=''; ammo.forEach(function(t){ ah+='<div class="la">'+((AMMO[t]||AMMO.burr).icon)+'</div>'; });
+    h+='<div class="load-note">This fort’s seeds'+(kb?' (+'+kb+' from Potassium)':'')+':</div><div class="load-ammo">'+ah+'</div>';
+    h+='<div class="load-note">'+nutPreview(nut)+'</div>';
+  } else if(_loadTab==='satchel'){
+    h+='<div class="load-soon">The Seed Almanac — graft and grow your seeds — arrives soon. For now every fort brings its own seeds.</div>';
+  } else {
+    h+='<div class="load-soon">Companions — a team of creatures that reshape your seeds — arrive soon.</div>';
+  }
+  body.innerHTML=h;
+  var tabs=body.querySelectorAll('.lt'); for(var t=0;t<tabs.length;t++){ (function(el){ el.onclick=function(){ _loadTab=el.getAttribute('data-t'); SFX.click(); renderLoadout(); }; })(tabs[t]); }
+  var steps=body.querySelectorAll('.nstep'); for(var s2=0;s2<steps.length;s2++){ (function(el){ el.onclick=function(){ adjustNutrient(el.getAttribute('data-k'), +el.getAttribute('data-d')); }; })(steps[s2]); }
+}
+function nutRow(key,icon,name,desc,val,cap){
+  return '<div class="nut-row nut-'+key+'"><div class="nh"><span class="ni">'+icon+'</span><span class="nn">'+name+'</span><span class="nv">'+val+'</span></div>'
+    +'<div class="nd">'+desc+'</div>'
+    +'<div class="nc"><button class="nstep" data-k="'+key+'" data-d="-1"'+(val>0?'':' disabled')+'>−</button>'
+    +'<div class="nbar"><i style="width:'+Math.round(val/cap*100)+'%"></i></div>'
+    +'<button class="nstep" data-k="'+key+'" data-d="1"'+(nutrientsLeft()>0?'':' disabled')+'>+</button></div></div>';
+}
+function adjustNutrient(key,d){
+  var nut=SAVE.loadout.nutrients;
+  if(d>0 && nutrientsLeft()<=0) return;
+  if(d<0 && nut[key]<=0) return;
+  nut[key]=Math.max(0, (nut[key]||0)+d); persist(); SFX.click(); renderLoadout();
+}
+function nutPreview(nut){
+  var parts=[];
+  if(nut.n>0) parts.push('mass +'+Math.round(nut.n*5)+'%');
+  if(nut.p>0) parts.push('tricks +'+Math.round(nut.p*7)+'%');
+  if(nut.k>0) parts.push('+'+Math.floor(nut.k/3)+' seed'+(Math.floor(nut.k/3)===1?'':'s'));
+  return parts.length? ('Your seeds: '+parts.join(' · ')) : 'Allocate nutrients to tune your seeds for this fort.';
+}
+function retryLevel(){ if(_endless){ startEndlessLevel(_endlessN); _playing=true; _paused=false; showScreen(null); } else beginFort(_curLevelN); }
 function nextLevel(){
   if(_wonBoss){ _wonBoss=false; openStory(COMIC_END, goMenu); return; }
   if(_endless){ _endlessN++; startEndlessLevel(_endlessN); _playing=true; _paused=false; showScreen(null); return; }
@@ -2226,10 +2372,13 @@ function boot(){
   $('btnNext').onclick=function(){ SFX.click(); nextLevel(); };
   $('btnResRetry').onclick=function(){ SFX.click(); retryLevel(); };
   $('btnResLevels').onclick=function(){ SFX.click(); openLevels(); };
+  // loadout
+  $('btnLoadPlay').onclick=function(){ SFX.unlock(); SFX.click(); beginFort(_curLevelN); };
+  $('btnLoadBack').onclick=function(){ SFX.click(); openLevels(); };
   // settings toggles
   wireToggle('tgSound','sound',function(){ SFX.setOn(!!SAVE.set.sound); });
   wireToggle('tgShake','shake'); wireToggle('tgGuide','guide'); wireToggle('tgReduce','reduce');
-  $('btnReset').onclick=function(){ if(confirm('Reset ALL progress, coins and skins? This cannot be undone.')){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} SAVE={ coins:0, prog:{}, skins:{seed_burr:1,sling_oak:1}, equip:{seed:'seed_burr',sling:'sling_oak'}, set:{sound:1,shake:1,guide:1,reduce:0}, endlessBest:0 }; persist(); refreshMenu(); toast('Progress reset.'); goMenu(); } };
+  $('btnReset').onclick=function(){ if(confirm('Reset ALL progress, coins and skins? This cannot be undone.')){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} SAVE={ coins:0, prog:{}, skins:{seed_burr:1,sling_oak:1}, equip:{seed:'seed_burr',sling:'sling_oak'}, set:{sound:1,shake:1,guide:1,reduce:0}, endlessBest:0, seenStory:0, fert:0, nutrientCap:8, loadout:{nutrients:{n:0,p:0,k:0},companions:[],grafts:{}} }; persist(); refreshMenu(); toast('Progress reset.'); goMenu(); } };
   // start loop
   _running=true; _lastT=performance.now(); requestAnimationFrame(gameLoop);
   // first-ever run plays the intro comic, then drops into the menu
@@ -2287,15 +2436,16 @@ function firstLevelOfWorld(n){ var lv=levelByN(n); if(!lv)return false; var inW=
 /* ---- debug hook (read-mostly; used by the headless verifier, harmless in prod) ---- */
 try{ window.BB_DEBUG = {
   levels:function(){ return LEVELS; },
-  enter:function(n){ enterLevel(n); },
+  enter:function(n){ beginFort(n); },
   startEndless:startEndless,
   fire:function(vx,vy){ // bypass the pouch: spawn the current ammo with an explicit velocity
     if(!G||G.state!=='aim') return false;
-    var type=currentAmmoType(), spec=AMMO[type]||AMMO.burr;
-    var body=new PHYS.Body({ shape:'circle', radius:spec.r, x:SLING_X, y:SLING_Y, density:spec.density,
-      restitution:spec.rest, friction:spec.fric, canSleep:false, mat:'proj', game:{kind:'proj',ammo:type} });
+    var type=currentAmmoType(), spec=AMMO[type]||AMMO.burr, st=computeSeedStats(type,G.loadout);
+    var body=new PHYS.Body({ shape:'circle', radius:st.r, x:SLING_X, y:SLING_Y, density:st.density,
+      restitution:st.rest, friction:st.fric, canSleep:false, mat:'proj', game:{kind:'proj',ammo:type,stats:st} });
     body.vel=v(vx,vy); G.world.add(body); G.proj=body; G.launchVx=vx;
-    G.state='flight'; G.abilityUsed=false; G.shotTime=0; G.stillTime=0; G.resolved=false; G.ammoIdx++; G.ammoUsed++;
+    G.state='flight'; G.abilityUsed=false; G.shotTime=0; G.stillTime=0; G.resolved=false;
+    G.slowBudget = spec.ability?1.0:0; G.ammoIdx++; G.ammoUsed++;
     return true;
   },
   tap:function(){ triggerAbility(); },
