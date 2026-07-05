@@ -126,7 +126,7 @@
   .wheel-wrap{position:relative;width:min(340px,82vw);aspect-ratio:1;margin:6px auto 8px}
   .wheel-pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:6;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:26px solid var(--ghost);filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
   .wheel{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,255,255,.12);transition:transform 4.4s cubic-bezier(.12,.66,.12,1);will-change:transform;box-shadow:0 0 60px -20px var(--aur-violet),inset 0 0 40px rgba(0,0,0,.5)}
-  .wheel .seg-label{position:absolute;left:50%;top:50%;transform-origin:0 0;font-family:var(--font-display);font-size:12px;letter-spacing:.04em;color:#0b0a14;white-space:nowrap;pointer-events:none}
+  .wheel .seg-label{position:absolute;left:50%;top:50%;transform-origin:center center;font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:.02em;color:#0b0a14;white-space:nowrap;pointer-events:none;text-shadow:0 1px 1px rgba(255,255,255,.45)}
   .wheel-hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;width:60px;height:60px;border-radius:50%;background:var(--void);border:2px solid var(--line-2);display:grid;place-items:center;font-family:var(--font-display);font-size:18px;color:var(--aur-teal);box-shadow:0 0 30px -6px var(--aur-teal)}
   .wheel-hub.spin{animation:hubpulse 1s infinite}
   @keyframes hubpulse{50%{color:var(--aur-magenta);box-shadow:0 0 40px -4px var(--aur-magenta)}}
@@ -1392,7 +1392,7 @@ function screenCreate(){
     <div class="step-body">${body}</div></div>`;
 }
 function wheelGradient(){const n=RACES.length,seg=360/n;return `conic-gradient(from 0deg,${RACES.map((r,i)=>`${r.color} ${i*seg}deg ${(i+1)*seg}deg`).join(",")})`;}
-function wheelLabels(){const n=RACES.length,seg=360/n;return RACES.map((r,i)=>{const ang=i*seg+seg/2;return `<div class="seg-label" style="transform:rotate(${ang}deg) translate(0,-42%) rotate(90deg)">${r.name}</div>`;}).join("");}
+function wheelLabels(){const n=RACES.length,seg=360/n;return RACES.map((r,i)=>{const ang=i*seg+seg/2;const flip=(ang<180)?180:0;return `<div class="seg-label" style="transform:translate(-50%,-50%) rotate(${ang}deg) translate(0,calc(-1 * min(112px,27vw))) rotate(${90+flip}deg)">${r.name}</div>`;}).join("");}
 function stepRace(){
   const d=state.draft;
   if(!d.spun) return `<h3 class="step-title">Spin your race</h3>
