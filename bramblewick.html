@@ -266,6 +266,67 @@ var PASSIVES={
   guttation:{ id:'guttation', name:'Guttation', desc:'Heal 2 HP per kill.' },
   heliotropism:{ id:'heliotropism', name:'Heliotropism', desc:'Weapons bias toward the densest cluster.' }
 };
+var PASSIVE_LANES={ taproot:['rooted'], guttation:['lush'] };
+
+/* ---------------- companions as familiars (24 for slice; roster is 85) ----------------
+   family + keywords are REAL Lucid Winds canon. keywords ARE the lanes.
+   kit: dive | lob | aura | mark | markAll | orbit | shock | heal | trail  */
+var COMPANIONS={
+  ladybug:{ id:'ladybug', name:'Ladybug', family:'pollinators', keywords:['restless','thorned'], status:'thorn', kit:'dive', every:900, desc:'Dives the nearest pest and stings Thorn.' },
+  firefly:{ id:'firefly', name:'Firefly', family:'listeners', keywords:['lush'], status:'pollen', kit:'mark', every:1400, desc:'Pollen-marks the densest cluster (catalyst).' },
+  bee:{ id:'bee', name:'Bee', family:'pollinators', keywords:['restless','lush'], status:'nectar', kit:'aura', every:700, auraR:70, desc:'Short-range Nectar lure pulses.' },
+  butterfly:{ id:'butterfly', name:'Butterfly', family:'pollinators', keywords:['swift'], status:'nectar', kit:'aura', every:1100, auraR:120, desc:'Wide slow Nectar lure.' },
+  hummingbird:{ id:'hummingbird', name:'Hummingbird', family:'pollinators', keywords:['swift'], status:'nectar', kit:'dive', every:600, desc:'Fast Nectar dart across the screen.' },
+  spider:{ id:'spider', name:'Garden Spider', family:'weavers', keywords:['thorned'], status:'sap', kit:'aura', every:900, auraR:90, desc:'Silk that Saps a nearby lane.' },
+  mantis:{ id:'mantis', name:'Praying Mantis', family:'weavers', keywords:['swift','thorned'], status:'thorn', kit:'dive', every:1000, elite:1, desc:'Lunges at the biggest pest, deep Thorn.' },
+  seahorse:{ id:'seahorse', name:'Seahorse', family:'weavers', keywords:['hardy','lush'], status:'sap', kit:'aura', every:1000, auraR:80, desc:'Drifting Sap aura.' },
+  toad:{ id:'toad', name:'Toad', family:'guardians', keywords:['rooted'], status:'sap', kit:'lob', every:1200, desc:'Tongue-snipes the farthest pest with Sap.' },
+  mammoth:{ id:'mammoth', name:'Baby Mammoth', family:'wayfinders', keywords:['rooted'], status:'frost', kit:'shock', every:2000, shockR:120, desc:'Stomp shockwave, Frost + knockback.' },
+  scorpion:{ id:'scorpion', name:'Scorpion', family:'guardians', keywords:['swift','thorned'], status:'sun', kit:'dive', every:1000, desc:'Scorch sting on the nearest pest.' },
+  pangolin:{ id:'pangolin', name:'Pangolin', family:'guardians', keywords:['hardy'], status:'sap', kit:'orbit', desc:'Rolls a Sap arc around you.' },
+  hedgehog:{ id:'hedgehog', name:'Hedgehog', family:'guardians', keywords:['rooted','thorned'], status:'thorn', kit:'orbit', desc:'Contact-quill ring stacks Thorn.' },
+  snail:{ id:'snail', name:'Snail', family:'guardians', keywords:['hardy'], status:'sap', kit:'aura', every:1300, auraR:70, desc:'Slow shell aura, Sap + armor.' },
+  worm:{ id:'worm', name:'Worm', family:'conduits', keywords:['lush','rooted'], status:'spore', kit:'trail', every:600, desc:'Tills a Spore trail underfoot.' },
+  koi:{ id:'koi', name:'Koi', family:'conduits', keywords:['lush','hardy'], status:'frost', kit:'aura', every:1000, auraR:90, desc:'Drifting chill pool, Frost.' },
+  jellyfish:{ id:'jellyfish', name:'Jellyfish', family:'conduits', keywords:['swift','thorned'], status:'sun', kit:'aura', every:900, auraR:85, desc:'Roaming scorch aura.' },
+  koala:{ id:'koala', name:'Koala', family:'conduits', keywords:['hardy','lush'], status:null, kit:'heal', every:1600, desc:'Regen aura. Fills the Lush lane.' },
+  sprite:{ id:'sprite', name:'Mushroom Sprite', family:'mycelium', keywords:['restless','lush'], status:'spore', kit:'aura', every:1100, auraR:75, desc:'Puffs Spore on the swarm.' },
+  fawn:{ id:'fawn', name:'Deer Fawn', family:'mycelium', keywords:['hardy','swift'], status:'nectar', kit:'dive', every:900, desc:'Skittish fast Nectar lure.' },
+  raccoon:{ id:'raccoon', name:'Raccoon', family:'scatterers', keywords:['swift'], status:'spore', kit:'dive', every:1000, desc:'Grabs a pest and Spores it.' },
+  owl:{ id:'owl', name:'Owl', family:'listeners', keywords:['hardy','swift'], status:'frost', kit:'lob', every:1100, desc:'Snipes the toughest pest with Frost.' },
+  cicada:{ id:'cicada', name:'Cicada', family:'listeners', keywords:['hardy'], status:'sun', kit:'aura', every:1200, auraR:80, desc:'Herd song: Sun aura, buffs familiars.' },
+  beholder:{ id:'beholder', name:'The Beholder', family:'listeners', keywords:['hardy','swift'], status:'pollen', kit:'markAll', every:2600, rare:1, desc:'Omnisight: Pollen-marks EVERY pest on screen.' }
+};
+
+/* ---------------- keyword lanes + family tiers (recomputed only on build change) ---------------- */
+function recompute(){
+  var L={swift:0,thorned:0,rooted:0,lush:0,hardy:0,restless:0};
+  G.companions.forEach(function(c){ (c.def.keywords||[]).forEach(function(k){ if(L[k]!=null) L[k]++; }); });
+  for(var pk in G.passives){ var kw=PASSIVE_LANES[pk]; if(kw) kw.forEach(function(k){ if(L[k]!=null) L[k]++; }); }
+  G.lanes=L;
+  G.laneMul={
+    reactDmg: 1 + L.thorned*0.12,
+    reactRad: 1 + L.rooted*0.06,
+    fireRate: 1 + L.swift*0.08,
+    moveSpd:  1 + L.restless*0.05,
+    pickup:   1 + L.restless*0.10,
+    regen:    L.lush*0.6,
+    lifesteal: L.lush>=2,
+    sapLife:  1
+  };
+  var base=100 + (G.passives.taproot?30:0) + L.hardy*12;
+  var ratio=G.player.maxhp? (G.player.hp/G.player.maxhp) : 1;
+  G.player.maxhp=base; G.player.hp=Math.min(base, Math.max(1, ratio*base));
+  G.player.armorBonus=Math.min(0.4, L.hardy*0.03);
+  // family tiers
+  var fam={}; G.companions.forEach(function(c){ fam[c.def.family]=(fam[c.def.family]||0)+1; });
+  G.familyCount=fam; G.familyTier={};
+  for(var f in fam){ G.familyTier[f]= fam[f]>=4?3:(fam[f]>=2?2:0); }
+  if(G.familyTier.weavers>=2) G.laneMul.sapLife=1.3; // Weavers T2
+}
+function hasCompanion(id){ for(var i=0;i<G.companions.length;i++){ if(G.companions[i].def.id===id) return true; } return false; }
+function addCompanion(id){ if(hasCompanion(id)) return; var def=COMPANIONS[id]; if(!def) return;
+  G.companions.push({ def:def, angle:Math.random()*6.283, timer:(def.every||1200)*Math.random(), x:G.player.x, y:G.player.y }); }
 
 /* ---------------- pests (6 for slice, shape-coded) ---------------- */
 var PESTS={
@@ -297,7 +358,7 @@ function newGame(verdancy){
     state:'PLAY', verdancy:verdancy, vd:v,
     time:0, kills:0, loamRun:0, over:false, win:false,
     player:{ x:VW/2, y:VH*0.62, r:15, hp:100, maxhp:100, spd:150, iframe:0, hurtFlash:0 },
-    weapons:[], passives:{}, weaponTimers:{},
+    weapons:[], passives:{}, weaponTimers:{}, weaponLevel:{},
     bloom:0, bloomNext:6, level:1,
     aim:{x:VW/2,y:VH*0.4, active:false},
     boss:null, bossSpawned:false, bossQueued:false,
@@ -305,16 +366,18 @@ function newGame(verdancy){
     draft:null,            // level-up card set
     spawnAcc:0, phase:0,
     reactCount:{},         // per-reaction first-trigger tracking (earn moments)
-    milestone:0
+    milestone:0,
+    companions:[], lanes:{swift:0,thorned:0,rooted:0,lush:0,hardy:0,restless:0}, laneMul:null,
+    familyCount:{}, familyTier:{}, listenerTimer:0
   };
   // starter kit: Dandelion (Pollen) + Nettle (Thorn) → Barbflash reachable turn 1
   addWeapon('dandelion'); addWeapon('nettle');
+  recompute();
   pests.clear(); projs.clear(); motes.clear(); fx.clear();
   return G;
 }
-function addWeapon(id){ if(G.weapons.indexOf(id)>=0){ // level up existing: faster + stronger
-    var w=WEAPONS[id]; return; }
-  G.weapons.push(id); G.weaponTimers[id]=WEAPONS[id].every*Math.random(); }
+function addWeapon(id){ if(G.weapons.indexOf(id)>=0){ G.weaponLevel[id]=(G.weaponLevel[id]||1)+1; return; }
+  G.weapons.push(id); G.weaponLevel[id]=1; G.weaponTimers[id]=WEAPONS[id].every*Math.random(); }
 
 /* ---------------- pools ---------------- */
 var pests=new Pool(function(){ return { active:false, type:null, x:0,y:0, vx:0,vy:0, hp:0, maxhp:0,
@@ -432,7 +495,7 @@ function applyStatus(p, status, stacks){
   // add the stack (capped)
   var cap=stackCap(status);
   p.st[idx]=Math.min(cap, p.st[idx]+(stacks||1));
-  p.stt[idx]=ST_LIFE[status]/1000;
+  p.stt[idx]=ST_LIFE[status]/1000 * (status==='sap'&&G.laneMul?G.laneMul.sapLife:1); // Weavers T2 extends Sap
   return reacted;
 }
 function fireReaction(p, a, b){
@@ -458,7 +521,8 @@ function _doReaction(p, a, b){
   p.st[ST_I[a]]=Math.max(0,p.st[ST_I[a]]-1);
   p.st[ST_I[b]]=Math.max(0,p.st[ST_I[b]]-1);
   // POLLEN NOVA lever: if pollen present (and not the pair), consume it and scale up
-  var nova=false, dmg=rx.dmg, rad=rx.rad;
+  // (Thorned lane multiplies reaction damage; Rooted lane widens radius)
+  var nova=false, dmg=rx.dmg*(G.laneMul?G.laneMul.reactDmg:1), rad=rx.rad*(G.laneMul?G.laneMul.reactRad:1);
   if(hasPollen){ p.st[ST_I.pollen]=Math.max(0,p.st[ST_I.pollen]-1); nova=true; dmg=Math.round(dmg*1.6); rad=Math.round(rad*1.35); }
   // THORNED lane / bleed multipliers folded later; slice keeps base
   // deal AoE damage centered on the pest
@@ -495,7 +559,7 @@ function _doReaction(p, a, b){
 }
 /* Nectar lure: pull nectar-marked pests toward a point (clumps the swarm) */
 var lureNodes=[]; // {x,y,t}
-function nectarLure(x,y,r){ lureNodes.push({x:x,y:y,t:2.2,r:r}); if(lureNodes.length>24) lureNodes.shift(); }
+function nectarLure(x,y,r){ var rr=r*(G.familyTier&&G.familyTier.pollinators>=3?1.5:1); lureNodes.push({x:x,y:y,t:2.2,r:rr}); if(lureNodes.length>24) lureNodes.shift(); } // Pollinators T3: wider lures
 
 function damagePest(p, dmg, src){
   if(!p.active) return;
@@ -511,7 +575,8 @@ function killPest(p){
   p.active=false; G.kills++;
   // drop loam mote
   var m=motes.spawn(); if(m){ m.x=p.x; m.y=p.y; m.xp=p.xp; m.t=12; m.vx=(Math.random()*40-20); m.vy=(Math.random()*40-20); }
-  if(G.passives.guttation && G.player.hp<G.player.maxhp){ G.player.hp=Math.min(G.player.maxhp,G.player.hp+2); }
+  if((G.passives.guttation||(G.laneMul&&G.laneMul.lifesteal)) && G.player.hp<G.player.maxhp){ G.player.hp=Math.min(G.player.maxhp,G.player.hp+2); }
+  if(G.familyTier.mycelium>=3){ gridQuery(p.x,p.y,40,function(o){ if(o.active) applyStatus(o,'spore',1); }); } // Mycelium T3: spore puff on kill
   spawnBurst(p.x,p.y,p.meta.col,5);
 }
 function bossDefeated(p){
@@ -546,21 +611,23 @@ function fireWeapons(dt){
       continue;
     }
     if(G.weaponTimers[id]>0) continue;
-    G.weaponTimers[id]=w.every;
+    var lvl=G.weaponLevel[id]||1;
+    var fireRate=(G.laneMul?G.laneMul.fireRate:1);
+    G.weaponTimers[id]=w.every*Math.pow(0.86,lvl-1)/fireRate;
     // aim: manual > densest (heliotropism) > nearest
     var ang;
     if(store.settings.manualAim && G.aim.active){ ang=Math.atan2(G.aim.y-pl.y, G.aim.x-pl.x); }
     else if(G.passives.heliotropism){ ang=densestDir(pl.x,pl.y); if(ang==null){ var t=nearestPest(pl.x,pl.y); ang=t?Math.atan2(t.y-pl.y,t.x-pl.x):-Math.PI/2; } }
     else { var tg=nearestPest(pl.x,pl.y); ang=tg?Math.atan2(tg.y-pl.y,tg.x-pl.x):-Math.PI/2; }
-    fireWeapon(w, pl.x, pl.y, ang, extra);
+    fireWeapon(w, pl.x, pl.y, ang, extra, (w.stacks||1)+(lvl-1));
   }
 }
-function fireWeapon(w, x, y, ang, extra){
+function fireWeapon(w, x, y, ang, extra, stacks){
   if(w.kind==='arc'){ // instantaneous front sweep — hit pests in an arc
     var reach=w.reach; var half=w.arcw/2;
     for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active) continue;
       var d2=dist2(x,y,p.x,p.y); if(d2>reach*reach) continue;
-      var pa=Math.atan2(p.y-y,p.x-x); var da=angDiff(pa,ang); if(Math.abs(da)<=half){ applyStatus(p,w.status,w.stacks); damagePest(p,w.dmg,'hit'); } }
+      var pa=Math.atan2(p.y-y,p.x-x); var da=angDiff(pa,ang); if(Math.abs(da)<=half){ applyStatus(p,w.status,stacks); damagePest(p,w.dmg,'hit'); } }
     spawnFX(x+Math.cos(ang)*reach*0.5, y+Math.sin(ang)*reach*0.5, 'arc', ST_META[w.status].col, reach, 0.16);
     return;
   }
@@ -570,7 +637,7 @@ function fireWeapon(w, x, y, ang, extra){
       var a=ang + (count>1? (c/(count-1)-0.5)*spread : 0) + (Math.random()*0.06-0.03);
       var pr=projs.spawn(); if(!pr) break;
       pr.x=x; pr.y=y; pr.vx=Math.cos(a)*w.speed; pr.vy=Math.sin(a)*w.speed; pr.life=w.life; pr.r=w.r;
-      pr.status=w.status; pr.stacks=w.stacks; pr.dmg=w.dmg; pr.pierce=(w.kind==='proj'?1:2); pr.burstR=(w.kind==='lob'?w.burstR:0);
+      pr.status=w.status; pr.stacks=stacks; pr.dmg=w.dmg; pr.pierce=(w.kind==='proj'?1:2); pr.burstR=(w.kind==='lob'?w.burstR:0);
       pr.homing=(w.kind==='homing')?1:0; pr.seed=Math.random()*6.28;
     }
     return;
@@ -591,12 +658,40 @@ function updateBeams(dt){
   }
 }
 
+/* ---------------- companions as familiars ---------------- */
+function strongestPest(x,y,maxd){ var best=null,bh=-1,md=(maxd||9999)*(maxd||9999); for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active||p.boss) continue; if(dist2(x,y,p.x,p.y)>md) continue; if(p.hp>bh){ bh=p.hp; best=p; } } return best; }
+function densestPoint(x,y,r){ var sx=0,sy=0,n=0; gridQuery(x,y,r,function(p){ if(p.active){ sx+=p.x; sy+=p.y; n++; } }); return n?{x:sx/n,y:sy/n}:null; }
+function updateCompanions(dt){
+  var pl=G.player;
+  for(var i=0;i<G.companions.length;i++){ var c=G.companions[i];
+    c.angle+=dt*(c.def.orbitSpd||1.3);
+    var orbitR=38+i*6; c.x=pl.x+Math.cos(c.angle)*orbitR; c.y=pl.y+Math.sin(c.angle)*orbitR;
+    if(c.def.kit==='orbit'){ (function(cc){ gridQuery(cc.x,cc.y,15,function(o){ if(o.active){ applyStatus(o,cc.def.status,1); damagePest(o,2,'hit'); } }); })(c); }
+    c.timer-=dt*1000; if(c.timer<=0){ c.timer=c.def.every||1200; companionAction(c,pl); }
+  }
+}
+function companionAction(c,pl){
+  var k=c.def.kit, st=c.def.status;
+  if(k==='dive'){ var t=c.def.elite?strongestPest(pl.x,pl.y,340):nearestPest(pl.x,pl.y,340); if(t){ applyStatus(t,st,2); damagePest(t,3,'hit'); spawnFX(t.x,t.y,'react',ST_META[st].col,18,0.22); } }
+  else if(k==='lob'){ var t2=c.def.id==='owl'?strongestPest(pl.x,pl.y,380):nearestPest(pl.x,pl.y,380); if(t2){ applyStatus(t2,st,2); spawnFX(t2.x,t2.y,'ring',ST_META[st].col,24,0.3); gridQuery(t2.x,t2.y,34,function(o){ if(o.active&&o!==t2) applyStatus(o,st,1); }); } }
+  else if(k==='mark'){ var d=densestPoint(pl.x,pl.y,260); if(d){ var seeded=0; gridQuery(d.x,d.y,64,function(o){ if(o.active&&seeded<6){ applyStatus(o,st,2); seeded++; } }); spawnFX(d.x,d.y,'ring',ST_META[st].col,64,0.35); } }
+  else if(k==='markAll'){ var n=0; for(var i=0;i<pests.n&&n<120;i++){ var o=pests.a[i]; if(o.active){ applyStatus(o,st,1); n++; } } spawnFX(pl.x,pl.y,'nova','#e8c24b',130,0.5); }
+  else if(k==='aura'){ var r=c.def.auraR||80, seed=0; gridQuery(c.x,c.y,r,function(o){ if(o.active&&seed<5&&dist2(c.x,c.y,o.x,o.y)<=r*r){ applyStatus(o,st,1); seed++; } }); }
+  else if(k==='shock'){ var r2=c.def.shockR||110; spawnFX(pl.x,pl.y,'ring',ST_META[st].col,r2,0.4); gridQuery(pl.x,pl.y,r2,function(o){ if(o.active&&dist2(pl.x,pl.y,o.x,o.y)<=r2*r2){ applyStatus(o,st,1); damagePest(o,5,'hit'); var a=Math.atan2(o.y-pl.y,o.x-pl.x); o.x+=Math.cos(a)*14; o.y+=Math.sin(a)*14; } }); }
+  else if(k==='heal'){ if(pl.hp<pl.maxhp) pl.hp=Math.min(pl.maxhp,pl.hp+3); }
+  else if(k==='trail'){ gridQuery(pl.x,pl.y,26,function(o){ if(o.active) applyStatus(o,st,1); }); }
+}
+function drawCompanions(){ for(var i=0;i<G.companions.length;i++){ var c=G.companions[i]; var col=c.def.status?ST_META[c.def.status].col:'#9ccf6a';
+  ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.45)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(c.x,c.y,4.6,0,6.283); ctx.fill(); ctx.stroke();
+  if(c.def.rare){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(c.x,c.y,7.5,0,6.283); ctx.stroke(); } } }
+
 /* ==================================================================
    UPDATE
    ================================================================== */
 function dist2(ax,ay,bx,by){ var dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; }
 function angDiff(a,b){ var d=a-b; while(d>Math.PI)d-=6.283185; while(d<-Math.PI)d+=6.283185; return d; }
-function hurtPlayer(dmg){ var pl=G.player; if(pl.iframe>0) return; pl.hp-=dmg; pl.iframe=0.5; pl.hurtFlash=0.3; G.shake=Math.min(0.6,G.shake+0.2); sndHurt();
+function hurtPlayer(dmg){ var pl=G.player; if(pl.iframe>0) return; dmg*=(1-(pl.armorBonus||0)); pl.hp-=dmg; pl.iframe=0.5; pl.hurtFlash=0.3; G.shake=Math.min(0.6,G.shake+0.2); sndHurt();
+  if(G.familyTier&&G.familyTier.guardians>=3){ gridQuery(pl.x,pl.y,60,function(o){ if(o.active) applyStatus(o,'thorn',2); }); } // Guardians T3: thorn reflect
   if(pl.hp<=0){ pl.hp=0; endRun(false); } }
 
 function update(dt){
@@ -609,7 +704,7 @@ function update(dt){
 
   // movement via joystick
   if(joy.active){ var jx=joy.dx, jy=joy.dy; var mag=Math.hypot(jx,jy);
-    if(mag>4){ var nx=jx/mag, ny=jy/mag; var sp=pl.spd*Math.min(1,mag/60);
+    if(mag>4){ var nx=jx/mag, ny=jy/mag; var sp=pl.spd*(G.laneMul?G.laneMul.moveSpd:1)*Math.min(1,mag/60);
       pl.x+=nx*sp*dt; pl.y+=ny*sp*dt; } }
   pl.x=Math.max(pl.r,Math.min(VW-pl.r,pl.x)); pl.y=Math.max(pl.r,Math.min(VH-pl.r,pl.y));
 
@@ -618,7 +713,12 @@ function update(dt){
   for(var i=0;i<pests.n;i++){ if(pests.a[i].active) gridInsert(pests.a[i]); }
 
   runSpawner(dt);
-  fireWeapons(dt); updateBeams(dt);
+  fireWeapons(dt); updateBeams(dt); updateCompanions(dt);
+
+  // lush regen
+  if(G.laneMul&&G.laneMul.regen>0&&pl.hp<pl.maxhp) pl.hp=Math.min(pl.maxhp,pl.hp+G.laneMul.regen*dt);
+  // Listeners T3 ritual: auto-Pollen the densest cluster
+  if(G.familyTier.listeners>=3){ G.listenerTimer-=dt; if(G.listenerTimer<=0){ G.listenerTimer=2.5; var dp=densestPoint(pl.x,pl.y,300); if(dp) gridQuery(dp.x,dp.y,70,function(o){ if(o.active) applyStatus(o,'pollen',1); }); } }
 
   // lure nodes decay
   for(var L=lureNodes.length-1;L>=0;L--){ lureNodes[L].t-=dt; if(lureNodes[L].t<=0) lureNodes.splice(L,1); }
@@ -649,7 +749,7 @@ function update(dt){
   projs.compact();
 
   // motes → pickup
-  var pickR=(G.passives.mycorrhizae?70:50);
+  var pickR=(G.passives.mycorrhizae?70:50)*(G.laneMul?G.laneMul.pickup:1);
   for(i=0;i<motes.n;i++){ var m=motes.a[i]; if(!m.active) continue; m.t-=dt;
     var dd=dist2(m.x,m.y,pl.x,pl.y);
     if(dd < (pickR*pickR)*2.4){ // magnet
@@ -706,14 +806,18 @@ function buildDraft(){
   WEAPON_ORDER.forEach(function(id){ if(G.weapons.indexOf(id)<0) opts.push({t:'weapon', id:id, name:WEAPONS[id].name, desc:WEAPONS[id].desc, status:WEAPONS[id].status}); });
   G.weapons.forEach(function(id){ opts.push({t:'wup', id:id, name:WEAPONS[id].name+' +', desc:'Fires faster and applies +1 status stack.', status:WEAPONS[id].status}); });
   for(var pk in PASSIVES){ if(!G.passives[pk]) opts.push({t:'passive', id:pk, name:PASSIVES[pk].name, desc:PASSIVES[pk].desc}); }
-  // pick 3 without dup
+  for(var ck in COMPANIONS){ var cd=COMPANIONS[ck]; if(hasCompanion(ck)) continue;
+    if(cd.rare && !(G.level>=6 && Math.random()<0.28)) continue; // Beholder: rare, gated
+    opts.push({t:'companion', id:ck, name:cd.name, desc:cd.desc, status:cd.status, fam:cd.family, kw:cd.keywords, rare:cd.rare}); }
+  // pick 3 without dup; nudge a companion into the offer so the menagerie grows
   var pick=[]; var pool=opts.slice();
   for(var i=0;i<3 && pool.length;i++){ var k=(Math.random()*pool.length)|0; pick.push(pool.splice(k,1)[0]); }
-  // reaction preview: for weapon/status cards, show what it can react with among owned statuses
   var owned=ownedStatuses();
-  pick.forEach(function(c){ if(c.status){ c.preview=reactionPreview(c.status, owned); } });
+  pick.forEach(function(c){ if(c.status){ c.preview=reactionPreview(c.status, owned); }
+    if(c.t==='companion'){ var fc=(G.familyCount[c.fam]||0)+1; var fp=capW(c.fam)+' '+fc+'/4'+(fc===2?' (T2)':fc>=4?' (T3!)':''); c.preview=(c.preview&&c.preview.indexOf('New')<0?c.preview+'  ·  ':'')+fp; } });
   return { cards:pick, sel:-1 };
 }
+function capW(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 function ownedStatuses(){ var s={}; G.weapons.forEach(function(id){ s[WEAPONS[id].status]=1; }); return s; }
 function reactionPreview(status, owned){
   var names=[]; for(var o in owned){ if(o===status) continue; var rx=REACT[rkey(o,status)]; if(rx) names.push(rx.name); }
@@ -723,8 +827,10 @@ function reactionPreview(status, owned){
 function chooseDraft(idx){
   if(G.state!=='LEVELUP'||!G.draft) return; var c=G.draft.cards[idx]; if(!c) return;
   if(c.t==='weapon'){ addWeapon(c.id); }
-  else if(c.t==='wup'){ var w=WEAPONS[c.id]; w.every=Math.max(60, w.every*0.85); w.stacks=(w.stacks||1)+1; }
-  else if(c.t==='passive'){ G.passives[c.id]=1; if(c.id==='taproot'){ G.player.maxhp+=30; G.player.hp+=30; } }
+  else if(c.t==='wup'){ G.weaponLevel[c.id]=(G.weaponLevel[c.id]||1)+1; }
+  else if(c.t==='passive'){ G.passives[c.id]=1; }
+  else if(c.t==='companion'){ addCompanion(c.id); if(c.rare) earn('beholder',{}); }
+  recompute(); // build changed → refresh lanes / family tiers / maxhp
   G.draft=null; G.state='PLAY'; G.slow=0.25;
   earn('draft',{level:G.level});
 }
@@ -768,8 +874,9 @@ function draw(){
   for(i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active) continue; drawPest(p); }
   // projectiles
   for(i=0;i<projs.n;i++){ var pr=projs.a[i]; if(!pr.active) continue; ctx.fillStyle=ST_META[pr.status].col; ctx.globalAlpha=0.9; ctx.beginPath(); ctx.arc(pr.x,pr.y,pr.r,0,6.283); ctx.fill(); ctx.globalAlpha=1; }
-  // player plant
+  // player plant + familiars
   drawPlant();
+  drawCompanions();
   // fx
   drawFX();
   // manual aim reticle
@@ -879,6 +986,12 @@ function drawHUD(){
   ctx.textAlign='right'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 13px sans-serif'; ctx.textBaseline='top';
   ctx.fillText('Lv '+G.level+'   '+fmtTime(G.time), VW-12, 14);
   ctx.font='11px sans-serif'; ctx.fillStyle='#8a9178'; ctx.fillText(G.kills+' cleared   🌱'+G.loamRun, VW-12, 32);
+  // lane chips (only nonzero) — the six keyword lanes feeding your reactions
+  var lx=12, ly=46; ctx.font='bold 9px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  var LN=[['Sw','swift','#8fd0e8'],['Th','thorned','#c65b5b'],['Ro','rooted','#b9d24a'],['Lu','lush','#7ab356'],['Ha','hardy','#c8a84b'],['Re','restless','#e79a3a']];
+  for(var li=0;li<LN.length;li++){ var v=G.lanes[LN[li][1]]||0; if(v>0){ ctx.fillStyle=LN[li][2]; var txt=LN[li][0]+v; ctx.fillText(txt, lx, ly); lx+=ctx.measureText(txt).width+7; } }
+  // active family tier badges
+  for(var f in G.familyTier){ if(G.familyTier[f]>=2){ ctx.fillStyle=G.familyTier[f]>=3?'#e8c24b':'#8a9178'; ctx.fillText(capW(f).slice(0,3)+'·T'+G.familyTier[f], lx, ly); lx+=ctx.measureText(capW(f).slice(0,3)+'·T'+G.familyTier[f]).width+7; } }
   // exit hint
   ctx.textAlign='left';
 }
@@ -1007,7 +1120,10 @@ if(DEV){
     grantStatus:function(status,stacks){ var p=pests.a[0]; if(p&&p.active){ for(var i=0;i<7;i++){} p.st[ST_I[status]]=stacks||3; p.stt[ST_I[status]]=5; return 'ok'; } return 'no pest'; },
     forceReaction:function(a,b){ var p=spawnPest('slug', G.player.x, G.player.y-80); if(!p) return 'no pest'; applyStatus(p,a,2); applyStatus(p,b,2); return REACT[rkey(a,b)]?REACT[rkey(a,b)].name:'?'; },
     addWeapon:function(id){ if(WEAPONS[id]){ addWeapon(id); return G.weapons.slice(); } return 'bad id'; },
-    addPassive:function(id){ if(PASSIVES[id]){ G.passives[id]=1; return 'ok'; } return 'bad'; },
+    addPassive:function(id){ if(PASSIVES[id]){ G.passives[id]=1; recompute(); return 'ok'; } return 'bad'; },
+    addCompanion:function(id){ if(COMPANIONS[id]){ addCompanion(id); recompute(); return G.companions.map(function(c){return c.def.id;}); } return 'bad'; },
+    lanes:function(){ return {lanes:G.lanes, mul:G.laneMul, familyCount:G.familyCount, familyTier:G.familyTier, companions:G.companions.map(function(c){return c.def.id;})}; },
+    companionCount:function(){ return Object.keys(COMPANIONS).length; },
     levelUp:function(){ levelUp(); return G.draft.cards.map(function(c){return c.name;}); },
     pick:function(i){ chooseDraft(i); return G.weapons.slice(); },
     skipToBoss:function(){ if(G){ G.time=239; } return 'boss soon'; },
