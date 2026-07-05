@@ -80,6 +80,14 @@ signature nodes are keystone-like via `asc_*` cases in `applyKeystone`. `oc.asce
 Unlock `ASC_UNLOCK_LEVEL`; point pool `ascPointsTotal` (1 at unlock, +1/6 levels, cap 5). UI is the
 `tabAscend` "Class" sheet tab (`chooseAsc`/`allocAsc`/`refundAsc`/`resetAsc`).
 
+### `JEWELS[]` — rarity-graded tree sockets (2.3)
+`JEWEL_SOCKET_IDS` marks a few `buildTree` minors as `type:"jewel"` (same position/edges → connectivity
+unchanged). Jewels are owned like gems (`state.ownedJewels=[{key,grade}]`; `buyJewel`/`reforgeJewel`
+reuse `rollGrade`); `oc.tree.jewels={nodeId:jewelKey}`. `aggregateMods` folds jewels in ALLOCATED
+sockets, grade-scaled via `scaleEffect` (node-effect vocab); `growth` scales with allocated count. UI:
+socket picker on the node panel (`openJewelPicker`, `socketJewel`/`unsocketJewel`) + `jewelLibraryHTML`
+in the Powers tab. Cyan-diamond nodes in `treeSVG`.
+
 ### Global state (`state`)
 `glory, roster[], alliances[], ownedAugments[]` (persisted) and view state
 `screen, draft, battle, battleSel, tourney, sheetId, sheetTab, treeSel, treeView, augPick`

@@ -3,7 +3,21 @@
 Format: reverse-chronological. This is a single-file app; "version" = the `SAVE_KEY` era + notable
 feature sets. Update this on meaningful changes.
 
-## [2.2.0] — Ascendancies (current)
+## [2.3.0] — Jewel sockets (current)
+Save key unchanged; `oc.tree.jewels` + `state.ownedJewels` backfilled/pruned by migration.
+
+Added
+- **Jewel sockets**: 6 tree nodes (one per arm) become jewel sockets (cyan diamonds). Allocate a
+  socket, then slot a rarity-graded **jewel**. 8 jewels (incl. **Growth**, which scales with your
+  allocated node count). Owned like gems (`ownedJewels`; learn rolls a grade, Reforge pushes it up);
+  grade-scaled mods fold into `aggregateMods`, and socketed jewel rarity feeds your OC grade. Socket
+  picker on the node panel + a **Jewels** library in the Powers tab.
+
+Validated
+- 29k fights with jewels + gems + ascendancies fuzzed at all grades: 0 crash / 0 NaN, all terminate;
+  tree connectivity (105/172/0) + refund invariant intact. `mechanics` asserts a Cosmic jewel folds.
+
+## [2.2.0] — Ascendancies
 Save key unchanged; `oc.ascendancy` backfilled + pruned by `migrateOC`.
 
 Added

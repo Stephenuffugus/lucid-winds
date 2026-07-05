@@ -207,3 +207,18 @@ for a keystone-like node (upside + downside) set `effect:{keystone:"asc_<key>"}`
 - **Tune unlock / pace:** `ASC_UNLOCK_LEVEL` and `ascPointsTotal` (1 at unlock, +1 every 6 levels, cap 5).
 - Give every keystone-like node a real downside (life/damage-taken/speed) — the stress cap-hit rate is a
   good smell test that defensive stacks still terminate.
+
+## Add a jewel / jewel socket
+
+Jewels live in the `JEWELS` table (near `ASCENDANCIES`): `{key,name,emoji,desc,mods}` where `mods` is
+node-effect vocab (`incGeneric`, `incTag`, `stat`, `critChanceAdd`, `leechPct`, `armorFlat`…); optional
+`scalePerNodes:{per,pct}` scales with allocated node count. `JEWEL_BY_KEY` is auto-built; a grade scales
+the mods via `scaleEffect` in `aggregateMods`.
+
+- **New jewel:** add a `JEWELS` entry (unique key). It flows through learn/reforge/socket + grade
+  scaling automatically. `npm run stress` (harness fuzzes jewels) + `npm run mechanics`.
+- **Move/add a socket:** edit `JEWEL_SOCKET_IDS` (node ids like `a<arm>_r<ring>_<slot>`; pick non-center,
+  non-ring-5 minors so you don't overwrite a notable/keystone). `npm run validate` confirms connectivity
+  (105/172/0) is unaffected.
+- Jewels are owned globally (`state.ownedJewels`), so one graded jewel can be socketed in one place at a
+  time — its grade lives on the owned jewel and a Reforge upgrades it wherever it's slotted.

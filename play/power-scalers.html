@@ -292,6 +292,10 @@
   .asc-node-h{display:flex;align-items:center;justify-content:space-between;gap:8px} .asc-node-n{font-weight:700;font-size:13px}
   .asc-node.on .asc-node-n{color:var(--asc)}
   .asc-node-d{font-size:11.5px;color:var(--mist);margin-top:4px;line-height:1.4}
+  .np-jewel{margin-top:10px;border:1px solid var(--line);border-left:3px solid #43e8d8;border-radius:9px;background:var(--void-2);padding:10px}
+  .np-jewel.empty{border-style:dashed;border-left-style:solid}
+  .np-jewel .ah{display:flex;align-items:center;gap:8px} .np-jewel .ae{font-size:17px} .np-jewel .an{font-weight:700;font-size:13px}
+  .np-jewel .ad{font-size:11.5px;color:var(--mist);margin-top:4px;line-height:1.4}
   .modal-back{position:fixed;inset:0;z-index:80;background:rgba(6,5,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px}
   @media(min-width:640px){.modal-back{align-items:center}}
   .modal{background:var(--void-2);border:1px solid var(--line-2);border-radius:var(--r);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:16px}
@@ -574,6 +578,31 @@ const ASCENDANCIES=[
 const ASC_BY_KEY={}; ASCENDANCIES.forEach(a=>{ASC_BY_KEY[a.key]=a;});
 const ASC_NODE_BY_ID={}; ASCENDANCIES.forEach(a=>a.nodes.forEach(n=>{ASC_NODE_BY_ID[n.id]=Object.assign({asc:a.key},n);}));
 
+/* ===================== JEWELS (rarity-graded tree sockets) =====================
+   A few tree nodes become jewel sockets (type:"jewel", no base effect). Owning a
+   jewel is like owning a gem: state.ownedJewels=[{key,grade}], learned with Glory
+   (rolls a grade), reforgeable. Socket a jewel into an ALLOCATED socket node and its
+   mods (grade-scaled, node-effect vocab) fold into aggregateMods. `growth` scales
+   with total allocated nodes. Sockets are picked so connectivity is unaffected. */
+const JEWEL_SOCKET_IDS=new Set(["a0_r2_0","a1_r3_4","a2_r2_0","a3_r3_4","a4_r2_0","a5_r3_4"]);
+const JEWELS=[
+  {key:"efficiency",name:"Efficiency",emoji:"🔷",mods:{incGeneric:0.14},desc:"Increased damage."},
+  {key:"vigor",name:"Vigor",emoji:"💚",mods:{lifePct:0.12,regenAdd:2},desc:"More maximum life and steady regeneration."},
+  {key:"focus",name:"Focus",emoji:"🎯",mods:{critChanceAdd:0.07,critMultAdd:0.25},desc:"More crit chance and crit damage."},
+  {key:"wellspring",name:"Wellspring",emoji:"🌀",mods:{stat:{int:8,spd:8}},desc:"+8 Intellect and +8 Speed."},
+  {key:"ferocity",name:"Ferocity",emoji:"🔥",mods:{incTag:{physical:0.16,fire:0.16}},desc:"More physical and fire damage."},
+  {key:"bulwark_j",name:"Warding Stone",emoji:"🛡️",mods:{armorFlat:10,lifePct:0.08},desc:"Armor and a little more life."},
+  {key:"leeching",name:"Leeching",emoji:"🩸",mods:{leechPct:0.06},desc:"Leech a little life on every hit."},
+  {key:"growth",name:"Growth",emoji:"🌱",mods:{},scalePerNodes:{per:5,pct:0.03},desc:"+3% damage per 5 passive nodes you've allocated."}
+];
+const JEWEL_BY_KEY={}; JEWELS.forEach(j=>{JEWEL_BY_KEY[j.key]=j;});
+const STARTER_JEWELS=["efficiency","vigor"];
+/* scale a node-effect object's numbers by a grade multiplier */
+function scaleEffect(m,gm){ const e={}; for(const k in m){ const v=m[k];
+  if(k==="stat"){ e.stat={}; for(const kk in v) e.stat[kk]=Math.round(v[kk]*gm); }
+  else if(k==="incTag"){ e.incTag={}; for(const kk in v) e.incTag[kk]=v[kk]*gm; }
+  else if(typeof v==="number") e[k]=v*gm; else e[k]=v; } return e; }
+
 /* ===================== SKILL WEB BUILDER ===================== */
 // minor node effect pools per arm (cycled)
 const MINOR_POOLS={
@@ -668,6 +697,10 @@ function buildTree(){
         if(ring===5){
           const ks=KEYSTONES[arm.key];
           node.type="keystone"; node.name=ks.name; node.keystone=ks.keystone; node.effect={keystone:ks.keystone}; node.desc=ks.desc;
+        }
+        // jewel socket (replaces a minor; grants no base effect, holds a jewel)
+        if(node.type==="minor" && JEWEL_SOCKET_IDS.has(id)){
+          node.type="jewel"; node.name="Jewel Socket"; node.effect={}; node.desc="Socket a jewel here to gain its modifiers, scaled by the jewel's rarity.";
         }
         nodes.push(node); byId[id]=node; perRing[ring].push(node);
       }
@@ -781,7 +814,7 @@ const SAVE_KEY="lucidwinds_arena_v2";
 
 /* ===================== STATE ===================== */
 const state={
-  glory:0, roster:[], alliances:[], ownedAugments:null,
+  glory:0, roster:[], alliances:[], ownedAugments:null, ownedJewels:null,
   screen:"home", draft:null, battle:null, battleSel:[], tourney:null,
   sheetId:null, sheetTab:"overview", treeSel:null, treeView:{x:0,y:0,scale:1},
   augPick:null, // {ocId, powerKey, slot}
@@ -798,6 +831,8 @@ function migrateOC(oc){
   if(!oc.tree.allocated.includes(start)) oc.tree.allocated.unshift(start);
   // prune invalid node ids
   oc.tree.allocated=oc.tree.allocated.filter(id=>TREE.byId[id]);
+  if(!oc.tree.jewels||typeof oc.tree.jewels!=="object") oc.tree.jewels={};
+  for(const nid in oc.tree.jewels){ const n=TREE.byId[nid]; const e=oc.tree.jewels[nid]; const jk=(e&&e.key)?e.key:e; if(!n||n.type!=="jewel"||!JEWEL_BY_KEY[jk]) delete oc.tree.jewels[nid]; }
   (oc.powers||[]).forEach(p=>{ if(!Array.isArray(p.augments)) p.augments=[]; });
   if(!oc.ascendancy||typeof oc.ascendancy!=="object") oc.ascendancy={key:null,allocated:[]};
   if(!Array.isArray(oc.ascendancy.allocated)) oc.ascendancy.allocated=[];
@@ -814,14 +849,16 @@ async function loadState(){
     state.roster=(Array.isArray(s.roster)?s.roster:[]).map(migrateOC);
     state.alliances=Array.isArray(s.alliances)?s.alliances:[];
     state.ownedAugments=normalizeOwned(Array.isArray(s.ownedAugments)?s.ownedAugments:STARTER_AUGMENTS);
+    state.ownedJewels=normalizeOwnedJewels(Array.isArray(s.ownedJewels)?s.ownedJewels:STARTER_JEWELS);
   }else{
     state.ownedAugments=normalizeOwned(STARTER_AUGMENTS);
+    state.ownedJewels=normalizeOwnedJewels(STARTER_JEWELS);
   }
 }
 let saveTimer=null;
 function persist(){
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments}),200);
+  saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments,ownedJewels:state.ownedJewels}),200);
 }
 
 /* ---- augment ownership + loot grades (Phase 2a) ----
@@ -838,6 +875,12 @@ function augGradeOf(k){ const g=ownedGem(k); return g?(g.grade||"common"):"commo
 function sockets(p){ return (p.augments||[]).map(x=>{ const k=(x&&x.key)?x.key:x; return {key:k,grade:(x&&x.grade)?x.grade:augGradeOf(k)}; }); }
 function rollGrade(){ let t=0; for(const r of RARITY) t+=r.weight; let x=Math.random()*t; for(const r of RARITY){ x-=r.weight; if(x<=0) return r.key; } return "common"; }
 function reforgeCostG(){ return 90; }
+/* jewels — owned like gems, rarity-graded */
+function normalizeOwnedJewels(arr){ return (Array.isArray(arr)?arr:[]).map(x=>(x&&x.key)?{key:x.key,grade:x.grade||"common"}:{key:x,grade:"common"}).filter(a=>a.key&&JEWEL_BY_KEY[a.key]); }
+function ownsJewel(k){ return (state.ownedJewels||[]).some(a=>a.key===k); }
+function ownedJewelGem(k){ return (state.ownedJewels||[]).find(a=>a.key===k); }
+function jewelGradeOf(k){ const g=ownedJewelGem(k); return g?(g.grade||"common"):"common"; }
+function jewelCost(){ return 80; }
 function gradeBadge(grade){ const R=rarByKey(grade); return `<span class="gbadge" style="color:${R.color};border-color:${R.color}66;background:${R.color}1a">${R.label}</span>`; }
 function gradeLegendHTML(){ return `<div class="grade-legend">${RARITY.map(r=>`<span class="gl" style="color:${r.color};border-color:${r.color}66;background:${r.color}14">${r.label}</span>`).join("")}</div>`; }
 /* OC overall grade (Phase 2b): a readout of build investment + socketed loot
@@ -925,6 +968,17 @@ function aggregateMods(oc){
   const M=freshM();
   for(const id of (oc.tree&&oc.tree.allocated||[])){ const n=TREE.byId[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
   for(const id of (oc.ascendancy&&oc.ascendancy.allocated||[])){ const n=ASC_NODE_BY_ID[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
+  // jewels socketed into ALLOCATED jewel-socket nodes (grade-scaled)
+  const jmap=(oc.tree&&oc.tree.jewels)||{};
+  const allocSet=new Set((oc.tree&&oc.tree.allocated)||[]);
+  const nodeCount=((oc.tree&&oc.tree.allocated)||[]).length;
+  for(const nid in jmap){
+    if(!allocSet.has(nid)) continue;
+    const entry=jmap[nid]; const jk=(entry&&entry.key)?entry.key:entry; const j=JEWEL_BY_KEY[jk]; if(!j) continue;
+    const gm=rarByKey((entry&&entry.grade)?entry.grade:jewelGradeOf(jk)).mult;
+    applyNodeEffect(M,scaleEffect(j.mods,gm));
+    if(j.scalePerNodes) M.incGeneric += j.scalePerNodes.pct*Math.floor(nodeCount/j.scalePerNodes.per)*gm;
+  }
   return M;
 }
 function computeFinal(oc){
@@ -1535,7 +1589,7 @@ function treeBounds(){
   const pad=90; _treeBounds={x:minX-pad,y:minY-pad,w:(maxX-minX)+pad*2,h:(maxY-minY)+pad*2};
   return _treeBounds;
 }
-function nodeRadius(t){return t==="keystone"?21:t==="notable"?15:t==="hub"?18:9;}
+function nodeRadius(t){return t==="keystone"?21:t==="notable"?15:t==="jewel"?12:t==="hub"?18:9;}
 function armColor(arm){const a=ARMS.find(x=>x.key===arm);return a?a.color:"#B57CFF";}
 function allocState(oc){
   const alloc=new Set(oc.tree.allocated); const avail=new Set();
@@ -1550,13 +1604,13 @@ function treeSVG(oc){
   let nodeStr="",labelStr="";
   for(const n of TREE.nodes){
     const isAlloc=alloc.has(n.id), isAvail=avail.has(n.id), sel=state.treeSel===n.id;
-    const col=(n.type==="keystone")?"#F5C451":armColor(n.arm);
+    const col=(n.type==="keystone")?"#F5C451":(n.type==="jewel")?"#43e8d8":armColor(n.arm);
     const r=nodeRadius(n.type);
     let fill,stroke,sw,op;
     if(isAlloc){fill=col;stroke="#fff";sw=sel?4:2;op=1;}
     else if(isAvail){fill="rgba(20,18,32,.9)";stroke=col;sw=sel?4:2.5;op=1;}
     else{fill="rgba(20,18,32,.7)";stroke="rgba(160,150,210,.28)";sw=sel?3:1.5;op=.6;}
-    const shape = n.type==="keystone"
+    const shape = (n.type==="keystone"||n.type==="jewel")
       ? `<rect class="tnode ${sel?"sel":""}" data-node="${n.id}" x="${(n.x-r).toFixed(1)}" y="${(n.y-r).toFixed(1)}" width="${(r*2).toFixed(1)}" height="${(r*2).toFixed(1)}" rx="5" transform="rotate(45 ${n.x.toFixed(1)} ${n.y.toFixed(1)})" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>`
       : `<circle class="tnode ${sel?"sel":""}" data-node="${n.id}" cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>`;
     nodeStr+=shape;
@@ -1573,17 +1627,54 @@ function nodePanelHTML(oc){
   if(!id||!TREE.byId[id]) return `<div class="np-type">Skill node</div><div class="np-eff" style="color:var(--mist)">Tap a node in the web to inspect it. Allocate outward from your glowing start node; each step needs an adjacent allocated node.</div>`;
   const n=TREE.byId[id]; const {alloc,avail}=allocState(oc); const start=TREE.startByRace[oc.race]||"hub";
   const isAlloc=alloc.has(id), isAvail=avail.has(id), isKey=n.type==="keystone";
-  const typeLabel=n.type==="keystone"?"Keystone":n.type==="notable"?"Notable":n.type==="hub"?"Nexus":"Minor passive";
+  const typeLabel=n.type==="keystone"?"Keystone":n.type==="notable"?"Notable":n.type==="jewel"?"Jewel socket":n.type==="hub"?"Nexus":"Minor passive";
   const arm=ARMS.find(a=>a.key===n.arm); const armLabel=arm?arm.name:(n.arm==="hybrid"?"Hybrid":"Core");
   let action="";
   if(id===start) action=`<span class="mnote">Your innate starting node.</span>`;
   else if(isAlloc){ const canR=canRefund(oc,id); action=`<button class="btn sm ${canR?"":"ghost"}" data-act="refundNode" data-id="${id}" ${canR?"":"disabled"}>↺ Refund point</button>${canR?"":`<span class="mnote">Refunding would disconnect the web.</span>`}`; }
   else if(isAvail){ const canA=pointsAvail(oc)>0; action=`<button class="btn sm ${canA?"primary":""}" data-act="allocNode" data-id="${id}" ${canA?"":"disabled"}>✦ Allocate${canA?"":" — no points"}</button>`; }
   else action=`<span class="mnote">Locked — path to an adjacent node first.</span>`;
+  let jewelHtml="";
+  if(n.type==="jewel"){
+    if(isAlloc){
+      const cur=oc.tree.jewels&&oc.tree.jewels[id]; const jk=(cur&&cur.key)?cur.key:cur; const j=jk?JEWEL_BY_KEY[jk]:null;
+      if(j){ const gr=(cur&&cur.grade)?cur.grade:jewelGradeOf(jk); const R=rarByKey(gr);
+        jewelHtml=`<div class="np-jewel" style="border-color:${R.color}66"><div class="ah"><span class="ae">${j.emoji}</span><span class="an" style="color:${R.color}">${esc(j.name)}</span>${gradeBadge(gr)}</div><div class="ad">${esc(j.desc)}</div>
+          <div style="margin-top:7px;display:flex;gap:6px"><button class="btn xs" data-act="openJewelPick" data-node="${id}">Change jewel</button><button class="btn xs ghost" data-act="unsocketJewel" data-node="${id}">Remove</button></div></div>`;
+      } else {
+        jewelHtml=`<div class="np-jewel empty"><span class="mnote" style="margin:0">Empty socket</span><div style="margin-top:7px"><button class="btn xs primary" data-act="openJewelPick" data-node="${id}">◈ Socket a jewel</button></div></div>`;
+      }
+    } else jewelHtml=`<div class="np-jewel empty"><span class="mnote" style="margin:0">Allocate this socket, then slot a jewel from your collection.</span></div>`;
+  }
   return `<div class="np-type">${typeLabel} · ${armLabel}${isAlloc?" · allocated":isAvail?" · reachable":""}</div>
     <div class="np-name">${esc(n.name)}</div>
     <div class="np-eff">${isKey?`<span class="ln2">${esc(n.desc)}</span>`:esc(n.desc)}</div>
-    <div class="np-actions">${action}</div>`;
+    <div class="np-actions">${action}</div>${jewelHtml}`;
+}
+function openJewelPicker(oc,nid){
+  if(!TREE.byId[nid]||TREE.byId[nid].type!=="jewel") return;
+  const owned=state.ownedJewels||[];
+  const cur=oc.tree.jewels&&oc.tree.jewels[nid]; const curKey=(cur&&cur.key)?cur.key:cur;
+  const opts=owned.map(g=>{const k=g.key,j=JEWEL_BY_KEY[k]; if(!j) return ""; const R=rarByKey(g.grade);
+    return `<div class="aug graded ${curKey===k?"owned":""}" style="border-left-color:${R.color}">
+      <div class="ah"><span class="ae">${j.emoji}</span><span class="an">${esc(j.name)}</span>${gradeBadge(g.grade)}</div><div class="ad">${esc(j.desc)}</div>
+      <div style="margin-top:6px">${curKey===k?`<span class="mnote">Socketed here</span>`:`<button class="btn xs primary" data-act="socketJewel" data-node="${nid}" data-k="${k}">Slot this</button>`}</div></div>`;}).join("");
+  const empty=owned.length===0?`<div class="hint">You don't own any jewels yet. Learn some from the Jewels library in the Powers &amp; Augments tab.</div>`:"";
+  openModal(`<h3>Socket a jewel</h3><div class="sub">Jewel socket · gains the jewel's modifiers scaled by its rarity</div>
+    ${curKey?`<button class="btn sm ghost block" data-act="unsocketJewel" data-node="${nid}" style="margin-bottom:10px">✕ Remove current jewel</button>`:""}
+    ${empty}<div class="aug-lib">${opts}</div>`);
+}
+function jewelLibraryHTML(){
+  const owned=(state.ownedJewels||[]).length;
+  const html=JEWELS.map(j=>{const has=ownsJewel(j.key); const gr=has?jewelGradeOf(j.key):null; const R=has?rarByKey(gr):null;
+    return `<div class="aug ${has?"owned graded":""}"${has?` style="border-left-color:${R.color}"`:""}>
+      <div class="ah"><span class="ae">${j.emoji}</span><span class="an">${esc(j.name)}</span>${has?gradeBadge(gr):""}</div>
+      <div class="ad">${esc(j.desc)}</div>
+      ${has?`<div class="rf-row"><button class="btn xs ${state.glory>=reforgeCostG()?"gold":""}" data-act="reforgeJewel" data-k="${j.key}" ${state.glory>=reforgeCostG()?"":"disabled"}>⚒ Reforge · ◈${reforgeCostG()}</button><span class="mnote" style="margin:0">push grade up</span></div>`
+        :`<div style="margin-top:8px"><button class="btn xs ${state.glory>=jewelCost()?"gold":""}" data-act="buyJewel" data-k="${j.key}" ${state.glory>=jewelCost()?"":"disabled"}>Learn · ◈${jewelCost()}</button></div>`}</div>`;}).join("");
+  return `<div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Jewels</h2><span class="c">${owned}/${JEWELS.length} owned</span></div>
+    <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Jewels slot into the ◈ sockets in your Skill Web — allocate a socket node, then socket a jewel. Same rarity roll + Reforge as gems.</div>
+    <div class="aug-lib">${html}</div>`;
 }
 function tabWeb(oc){
   const avail=pointsAvail(oc);
@@ -1695,6 +1786,7 @@ function tabPowers(oc){
     <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Every gem you learn rolls a rarity; a higher grade hits harder. Reforge gambles Glory to push a gem's grade up (it never drops). Grades:</div>
     ${gradeLegendHTML()}
     <div class="aug-lib">${libHtml}</div>
+    ${jewelLibraryHTML()}
     <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Learn New Powers</h2></div>
     ${learnable.length?`<div class="aug-lib">${learnHtml}</div>`:`<div class="hint">You've learned every power.</div>`}`;
 }
@@ -1976,6 +2068,11 @@ function handleAct(act,el,e){
     case "allocAsc": { if(!oc||!oc.ascendancy)break; const id=el.dataset.k,n=ASC_NODE_BY_ID[id]; if(!n||n.asc!==oc.ascendancy.key)break; if((oc.ascendancy.allocated||[]).includes(id))break; if(ascPointsAvail(oc)<=0){toast("No ascendancy points.","bad");break;} oc.ascendancy.allocated.push(id); persist(); render(); break; }
     case "refundAsc": { if(!oc||!oc.ascendancy)break; const id=el.dataset.k; oc.ascendancy.allocated=(oc.ascendancy.allocated||[]).filter(x=>x!==id); persist(); render(); break; }
     case "resetAsc": { if(!oc)break; oc.ascendancy={key:null,allocated:[]}; persist(); render(); break; }
+    case "buyJewel": { const k=el.dataset.k; if(ownsJewel(k))break; if(state.glory>=jewelCost()){ state.glory-=jewelCost(); const gr=rollGrade(); state.ownedJewels.push({key:k,grade:gr}); persist(); render(); const R=rarByKey(gr); toast(`Learned jewel ${JEWEL_BY_KEY[k].name} · ${R.label}!`, gr==="common"?"good":"gold"); } else toast("Not enough Glory.","bad"); break; }
+    case "reforgeJewel": { const k=el.dataset.k; const g=ownedJewelGem(k); if(!g)break; if(state.glory>=reforgeCostG()){ state.glory-=reforgeCostG(); const rolled=rollGrade(); const oi=RARITY.findIndex(r=>r.key===g.grade), ni=RARITY.findIndex(r=>r.key===rolled); const up=ni>oi; if(up) g.grade=rolled; persist(); render(); const R=rarByKey(g.grade); toast(up?`${JEWEL_BY_KEY[k].name} reforged UP → ${R.label} ▲`:`No luck — ${JEWEL_BY_KEY[k].name} holds at ${R.label}`, up?"gold":"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "openJewelPick": if(oc) openJewelPicker(oc, el.dataset.node); break;
+    case "socketJewel": { if(!oc)break; const nid=el.dataset.node,jk=el.dataset.k,nn=TREE.byId[nid]; if(!nn||nn.type!=="jewel"){closeModal();break;} if(!(oc.tree.allocated||[]).includes(nid)){toast("Allocate this socket first.","bad");break;} if(!JEWEL_BY_KEY[jk]||!ownsJewel(jk))break; if(!oc.tree.jewels) oc.tree.jewels={}; oc.tree.jewels[nid]=jk; persist(); closeModal(); render(); break; }
+    case "unsocketJewel": { if(!oc)break; const nid=el.dataset.node; if(oc.tree.jewels) delete oc.tree.jewels[nid]; persist(); closeModal(); render(); break; }
     case "refundNode": if(oc){ refundNode(oc,el.dataset.id); render(); } break;
     case "respecTree": { const o=state.roster.find(x=>x.id===el.dataset.id)||oc; if(o){ respecTree(o); render(); } break; }
     /* powers & augments */
@@ -2032,7 +2129,7 @@ document.addEventListener("change",e=>{
 
 /* ===================== BOOT ===================== */
 async function boot(){
-  try{ await loadState(); }catch(e){ state.ownedAugments=normalizeOwned(state.ownedAugments||STARTER_AUGMENTS); }
+  try{ await loadState(); }catch(e){ state.ownedAugments=normalizeOwned(state.ownedAugments||STARTER_AUGMENTS); state.ownedJewels=normalizeOwnedJewels(state.ownedJewels||STARTER_JEWELS); }
   render();
 }
 boot();
