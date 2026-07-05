@@ -63,6 +63,16 @@ Projectiles needs `projectile`; inert if socketed on a skill lacking it). `mods`
 `extraHits, localInc, localMore, localCrit, localCritMult, procMult, addDot{type,pctOfHit,turns},
 leechThis, noMiss, noAilment, secondary, knockback, cull, ruthless`.
 
+### `RARITY[]` — loot grades (rarity 2.1)
+7 grades (Common→Cosmic) with `{mult,hits,color,weight}`. Ownership carries the grade:
+`ownedAugments = [{key,grade}]` (one gem per key); sockets store just the key and resolve the grade
+via `sockets(p)`/`augGradeOf` at combat + render time (so a Reforge upgrades a gem everywhere). In
+`enrichProc` a grade scales numeric upsides ×`mult` and downsides ÷`mult`, and adds `hits` strikes to
+hit-adding gems — always inside the existing clamps. `rollGrade` (weighted) picks a grade on learn;
+`reforgeAug` gambles Glory to push an owned gem's grade **up** (keeps the higher). **OC grade:**
+`ocGradeScore`/`ocGrade` fold build investment + socketed gem rarity into a Common→Cosmic badge
+(`OC_GRADE_CUT` thresholds). See `RARITY_DESIGN.md`.
+
 ### Global state (`state`)
 `glory, roster[], alliances[], ownedAugments[]` (persisted) and view state
 `screen, draft, battle, battleSel, tourney, sheetId, sheetTab, treeSel, treeView, augPick`

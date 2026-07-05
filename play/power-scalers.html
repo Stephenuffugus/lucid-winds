@@ -266,6 +266,13 @@
   .aug .ah{display:flex;align-items:center;gap:8px} .aug .ae{font-size:18px} .aug .an{font-weight:700;font-size:13px}
   .aug .ad{font-size:11px;color:var(--mist);margin-top:4px;line-height:1.35}
   .aug .areq{font-family:var(--font-mono);font-size:9px;color:var(--aur-magenta);margin-top:4px;letter-spacing:.06em}
+  /* loot rarity */
+  .gbadge{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:999px;border:1px solid;text-transform:uppercase;display:inline-block;vertical-align:middle;margin-left:6px}
+  .aug.graded{border-left-width:3px}
+  .rf-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .grade-legend{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}
+  .grade-legend .gl{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:999px;border:1px solid}
+  .ocgrade{font-family:var(--font-display);font-size:12px;font-weight:800;letter-spacing:.12em;padding:1px 9px;border-radius:6px;border:1.5px solid;text-transform:uppercase;line-height:1.5}
   .modal-back{position:fixed;inset:0;z-index:80;background:rgba(6,5,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px}
   @media(min-width:640px){.modal-back{align-items:center}}
   .modal{background:var(--void-2);border:1px solid var(--line-2);border-radius:var(--r);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:16px}
@@ -485,6 +492,22 @@ const AUGMENTS=[
 ];
 const augByKey=k=>AUGMENTS.find(a=>a.key===k);
 const STARTER_AUGMENTS=["multistrike","overcharge","ignite"];
+/* Loot rarity (Phase 2a). Every augment instance carries a grade on the 7-tier
+   Lucid Winds ladder (Common..Cosmic). In enrichProc a grade scales the gem's
+   numeric UPSIDES up and shrinks its DOWNSIDES (so a higher grade is strictly
+   better) and adds `hits` extra strikes to hit-adding gems. Everything still folds
+   through the existing clamps (extraHits<=5, chance<=0.9, damage floor 1), so
+   fights stay finite. `weight` = roll-on-learn odds (see rollGrade). */
+const RARITY=[
+  {key:"common",   label:"Common",    color:"#b8c0cc", mult:1.00, hits:0, weight:45},
+  {key:"uncommon", label:"Uncommon",  color:"#67c98a", mult:1.15, hits:0, weight:27},
+  {key:"rare",     label:"Rare",      color:"#4aa3ff", mult:1.35, hits:0, weight:16},
+  {key:"epic",     label:"Epic",      color:"#b06bff", mult:1.60, hits:1, weight:8},
+  {key:"legendary",label:"Legendary", color:"#ffab3d", mult:1.90, hits:1, weight:3},
+  {key:"mythic",   label:"Mythic",    color:"#ff5db1", mult:2.25, hits:1, weight:0.9},
+  {key:"cosmic",   label:"Cosmic",    color:"#43e8d8", mult:2.75, hits:2, weight:0.1}
+];
+const rarByKey=k=>RARITY.find(r=>r.key===k)||RARITY[0];
 
 /* ===================== SKILL WEB BUILDER ===================== */
 // minor node effect pools per arm (cycled)
@@ -719,9 +742,9 @@ async function loadState(){
     state.glory=s.glory||0;
     state.roster=(Array.isArray(s.roster)?s.roster:[]).map(migrateOC);
     state.alliances=Array.isArray(s.alliances)?s.alliances:[];
-    state.ownedAugments=Array.isArray(s.ownedAugments)?s.ownedAugments:STARTER_AUGMENTS.slice();
+    state.ownedAugments=normalizeOwned(Array.isArray(s.ownedAugments)?s.ownedAugments:STARTER_AUGMENTS);
   }else{
-    state.ownedAugments=STARTER_AUGMENTS.slice();
+    state.ownedAugments=normalizeOwned(STARTER_AUGMENTS);
   }
 }
 let saveTimer=null;
@@ -729,6 +752,39 @@ function persist(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments}),200);
 }
+
+/* ---- augment ownership + loot grades (Phase 2a) ----
+   ownedAugments is [{key,grade}]. The grade lives on the OWNED gem (one per key);
+   sockets store just the key and resolve their grade from the owned gem at combat
+   + render time, so a Reforge upgrades a gem everywhere it's socketed at once. */
+function normalizeOwned(arr){
+  return (Array.isArray(arr)?arr:[]).map(x=> (x&&x.key)?{key:x.key,grade:x.grade||"common"}:{key:x,grade:"common"})
+    .filter(a=>a.key && augByKey(a.key));
+}
+function ownsAug(k){ return (state.ownedAugments||[]).some(a=>a.key===k); }
+function ownedGem(k){ return (state.ownedAugments||[]).find(a=>a.key===k); }
+function augGradeOf(k){ const g=ownedGem(k); return g?(g.grade||"common"):"common"; }
+function sockets(p){ return (p.augments||[]).map(x=>{ const k=(x&&x.key)?x.key:x; return {key:k,grade:(x&&x.grade)?x.grade:augGradeOf(k)}; }); }
+function rollGrade(){ let t=0; for(const r of RARITY) t+=r.weight; let x=Math.random()*t; for(const r of RARITY){ x-=r.weight; if(x<=0) return r.key; } return "common"; }
+function reforgeCostG(){ return 90; }
+function gradeBadge(grade){ const R=rarByKey(grade); return `<span class="gbadge" style="color:${R.color};border-color:${R.color}66;background:${R.color}1a">${R.label}</span>`; }
+function gradeLegendHTML(){ return `<div class="grade-legend">${RARITY.map(r=>`<span class="gl" style="color:${r.color};border-color:${r.color}66;background:${r.color}14">${r.label}</span>`).join("")}</div>`; }
+/* OC overall grade (Phase 2b): a readout of build investment + socketed loot
+   rarity on the same 7-tier ladder. Rare gems literally raise a character's grade.
+   Thresholds are tunable (OC_GRADE_CUT). */
+const OC_GRADE_CUT=[0,14,26,42,62,86,112];
+function ocGradeScore(oc){
+  if(!oc) return 0;
+  const start=TREE.startByRace[oc.race]||"hub";
+  const alloc=(oc.tree&&oc.tree.allocated)||[];
+  let keyN=0,notN=0,pts=0;
+  for(const id of alloc){ if(id===start) continue; const n=TREE.byId[id]; if(!n) continue; pts++; if(n.type==="keystone") keyN++; else if(n.type==="notable") notN++; }
+  let statTotal=0; for(const k of STAT_KEYS) statTotal+=(oc.baseStats&&oc.baseStats[k])||0;
+  let gem=0; (oc.powers||[]).forEach(p=>(p.augments||[]).forEach(x=>{ const gk=(x&&x.key)?x.key:x; const gr=(x&&x.grade)?x.grade:augGradeOf(gk); const idx=RARITY.findIndex(r=>r.key===gr); if(idx>0) gem+=idx; }));
+  return keyN*7 + notN*2.5 + pts*0.5 + statTotal/40 + gem*1.6 + (oc.level||1)*0.35;
+}
+function ocGrade(oc){ const s=ocGradeScore(oc); let gi=0; for(let i=0;i<OC_GRADE_CUT.length;i++){ if(s>=OC_GRADE_CUT[i]) gi=i; } return RARITY[gi].key; }
+function ocGradeBadge(oc){ const R=rarByKey(ocGrade(oc)); return `<span class="ocgrade" style="color:${R.color};border-color:${R.color};background:${R.color}1a" title="Overall grade — keystones, stats, tree and socketed gem rarity">${R.label}</span>`; }
 
 /* level / xp */
 function xpNeeded(level){return Math.round(60*Math.pow(level,1.5));}
@@ -832,24 +888,28 @@ function baseFnFor(kind){
 function enrichProc(name,emoji,kind,tags,m,augKeys,F){
   const A={extraHits:0,localInc:0,localMore:0,localCrit:0,localCritMult:0,procMult:0,addDots:[],leechThis:0,noMiss:false,noAilment:false,secondary:0,knockback:0,cull:0,ruthless:false};
   const powerTags=tags||[];
-  for(const k of (augKeys||[])){
+  for(const entry of (augKeys||[])){
+    const k=(entry&&entry.key)?entry.key:entry;       // entry is a key string OR {key,grade}
     const a=augByKey(k); if(!a) continue;
     if(a.req && !powerTags.includes(a.req)) continue; // req not met -> inert
+    const R=rarByKey((entry&&entry.grade)?entry.grade:"common");
+    const gm=R.mult;
+    const sc=v=> v>=0 ? v*gm : v/gm;                  // grade: scale upsides up, shrink downsides
     const md=a.mods;
-    if(md.extraHits) A.extraHits+=md.extraHits;
-    if(md.localInc) A.localInc+=md.localInc;
-    if(md.localMore) A.localMore+=md.localMore;
-    if(md.localCrit) A.localCrit+=md.localCrit;
-    if(md.localCritMult) A.localCritMult+=md.localCritMult;
-    if(md.procMult) A.procMult+=md.procMult;
-    if(md.leechThis) A.leechThis=Math.max(A.leechThis,md.leechThis);
+    if(md.extraHits) A.extraHits+=md.extraHits+R.hits;
+    if(md.localInc) A.localInc+=sc(md.localInc);
+    if(md.localMore) A.localMore+=sc(md.localMore);
+    if(md.localCrit) A.localCrit+=sc(md.localCrit);
+    if(md.localCritMult) A.localCritMult+=sc(md.localCritMult);
+    if(md.procMult) A.procMult+=sc(md.procMult);
+    if(md.leechThis) A.leechThis=Math.max(A.leechThis,md.leechThis*gm);
     if(md.noMiss) A.noMiss=true;
     if(md.noAilment) A.noAilment=true;
-    if(md.secondary) A.secondary+=md.secondary;
-    if(md.knockback) A.knockback=Math.max(A.knockback,md.knockback);
-    if(md.cull) A.cull=Math.max(A.cull,md.cull);
+    if(md.secondary) A.secondary+=md.secondary*gm;
+    if(md.knockback) A.knockback=Math.max(A.knockback,md.knockback*gm);
+    if(md.cull) A.cull=Math.max(A.cull,md.cull*gm);
     if(md.ruthless) A.ruthless=true;
-    if(md.addDot) A.addDots.push(md.addDot);
+    if(md.addDot) A.addDots.push(gm>1?Object.assign({},md.addDot,{pctOfHit:md.addDot.pctOfHit*gm}):md.addDot);
   }
   // default fire dot
   if(kind==="fire") A.addDots.unshift({type:"fire",pctOfHit:0.25,turns:3});
@@ -900,15 +960,15 @@ function deriveCombat(oc){
       case "venom": F.dotOnHit={type:"void",pct:0.025*m,turns:4}; break;
       case "proc": {
         const pd=powerByKey(p.key);
-        F.procs.push(enrichProc(pd.name,pd.emoji,pd.kind,pd.tags,m,p.augments,F));
+        F.procs.push(enrichProc(pd.name,pd.emoji,pd.kind,pd.tags,m,sockets(p),F));
         break;
       }
       case "stand": {
         const arch=standByKey(p.arch)||STAND_ARCHETYPES[0];
         if(arch.effect==="barrage"){ F.extraAtk+=0.55*m; F.atk=Math.round(F.atk*(1+0.10*m)); }
         else if(arch.effect==="guard"){ F.shield+=F.maxHp*0.30*m; F.dodgeCounter+=0.15*m; }
-        else if(arch.effect==="ranged"){ F.procs.push(enrichProc("Stand Barrage","🏹","srange",["force","projectile"],m,p.augments,F)); }
-        else if(arch.effect==="time"){ F.procs.push(enrichProc("Time Stop","⏱️","time",[],m,p.augments,F)); }
+        else if(arch.effect==="ranged"){ F.procs.push(enrichProc("Stand Barrage","🏹","srange",["force","projectile"],m,sockets(p),F)); }
+        else if(arch.effect==="time"){ F.procs.push(enrichProc("Time Stop","⏱️","time",[],m,sockets(p),F)); }
         break;
       }
     }
@@ -1119,7 +1179,7 @@ function ocCard(oc,opts){
     ${opts.deletable?`<button class="kill" data-act="delOC" data-id="${oc.id}" title="Delete">✕</button>`:""}
     <div class="oc-top"><div class="avatar">${avatarHTML(oc)}</div>
       <div class="oc-id"><div class="oc-name">${esc(oc.name)}</div>
-        <div class="oc-sub"><span class="race-tag">${esc(race.name)}</span><span class="lvl-badge">LV ${oc.level}</span>
+        <div class="oc-sub">${ocGradeBadge(oc)}<span class="race-tag">${esc(race.name)}</span><span class="lvl-badge">LV ${oc.level}</span>
           <span class="rec"><span class="w">${oc.record.w}W</span>·<span class="l">${oc.record.l}L</span></span>
           ${ally?`<span class="ally-badge" style="border-color:${ally.color}66;color:${ally.color}">${esc(ally.name)}</span>`:""}</div></div></div>
     <div class="stats">${statMini(stats)}</div>
@@ -1306,7 +1366,7 @@ function screenSheet(){
     <div class="sheet-head" style="--race-color:${race.color}"><div class="rim"></div>
       <div class="sav">${avatarHTML(oc)}</div>
       <div style="flex:1;min-width:0"><div class="sn">${esc(oc.name)}</div>
-        <div class="ss"><span class="race-tag">${esc(race.name)}</span><span class="lvl-big">LEVEL ${oc.level}</span>
+        <div class="ss">${ocGradeBadge(oc)}<span class="race-tag">${esc(race.name)}</span><span class="lvl-big">LEVEL ${oc.level}</span>
           <span class="rec"><span class="w">${oc.record.w}W</span> · <span class="l">${oc.record.l}L</span></span>
           ${avail>0?`<span class="pts-pill">✦ ${avail} skill point${avail===1?"":"s"}</span>`:""}</div>
         <div class="sheet-xp"><div class="xpbar"><div class="xpf" style="width:${xpPct}%"></div></div>
@@ -1492,10 +1552,12 @@ function tabPowers(oc){
   const others=(oc.powers||[]).filter(p=>!isAugmentable(p.key));
   const activeHtml=actives.length?actives.map(p=>linkPowerHTML(oc,p)).join(""):`<div class="empty" style="padding:22px">No active skills yet. Active skills (Aether Blast, Fire Breath, Telekinesis, Reality Warp, or a Stand) are the ones you socket augments into. Learn one below.</div>`;
   const owned=state.ownedAugments||[];
-  const libHtml=AUGMENTS.map(a=>{const has=owned.includes(a.key);
-    return `<div class="aug ${has?"owned":""}"><div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span></div>
+  const libHtml=AUGMENTS.map(a=>{const has=ownsAug(a.key); const gr=has?augGradeOf(a.key):null; const R=has?rarByKey(gr):null;
+    return `<div class="aug ${has?"owned graded":""}"${has?` style="border-left-color:${R.color}"`:""}>
+      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span>${has?gradeBadge(gr):""}</div>
       <div class="ad">${a.desc}</div>${a.req?`<div class="areq">requires ${a.req} skill</div>`:""}
-      <div style="margin-top:8px">${has?`<span class="mnote">Owned</span>`:`<button class="btn xs ${state.glory>=augCost()?"gold":""}" data-act="buyAug" data-k="${a.key}" ${state.glory>=augCost()?"":"disabled"}>Learn · ◈${augCost()}</button>`}</div></div>`;}).join("");
+      ${has?`<div class="rf-row"><button class="btn xs ${state.glory>=reforgeCostG()?"gold":""}" data-act="reforgeAug" data-k="${a.key}" ${state.glory>=reforgeCostG()?"":"disabled"}>⚒ Reforge · ◈${reforgeCostG()}</button><span class="mnote" style="margin:0">push grade up</span></div>`
+        :`<div style="margin-top:8px"><button class="btn xs ${state.glory>=augCost()?"gold":""}" data-act="buyAug" data-k="${a.key}" ${state.glory>=augCost()?"":"disabled"}>Learn · ◈${augCost()}</button></div>`}</div>`;}).join("");
   // learn powers
   const ownedKeys=new Set((oc.powers||[]).map(p=>p.key));
   const learnable=POWERS.filter(p=>!ownedKeys.has(p.key));
@@ -1508,6 +1570,8 @@ function tabPowers(oc){
     ${activeHtml}
     ${others.length?`<div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Passive &amp; Utility</h2></div><div class="powerchips" style="padding:0">${others.map(p=>{const t=TIERS.find(t=>t.key===p.tier);return `<span class="chip">${powerEmoji(p)} ${esc(powerDisplayName(p))} <span class="m">${t?t.label:""}</span></span>`;}).join("")}</div>`:""}
     <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Augment Library</h2><span class="c">${owned.length}/${AUGMENTS.length} owned</span></div>
+    <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Every gem you learn rolls a rarity; a higher grade hits harder. Reforge gambles Glory to push a gem's grade up (it never drops). Grades:</div>
+    ${gradeLegendHTML()}
     <div class="aug-lib">${libHtml}</div>
     <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Learn New Powers</h2></div>
     ${learnable.length?`<div class="aug-lib">${learnHtml}</div>`:`<div class="hint">You've learned every power.</div>`}`;
@@ -1519,7 +1583,8 @@ function linkPowerHTML(oc,p){
   for(let i=0;i<4;i++){
     if(i>=cap){ sockets+=`<div class="socket locked"><span class="locked">🔒 locked</span><span class="empt">tier ${i+1}</span></div>`; continue; }
     const a=augs[i]?augByKey(augs[i]):null;
-    if(a) sockets+=`<div class="socket filled" data-act="openSlot" data-k="${p.key}" data-slot="${i}"><span class="se">${a.emoji} <span class="sn" style="display:inline">${esc(a.name)}</span></span><span class="empt" style="margin-top:3px">tap to change</span></div>`;
+    if(a){ const gr=augGradeOf(augs[i]),R=rarByKey(gr);
+      sockets+=`<div class="socket filled" data-act="openSlot" data-k="${p.key}" data-slot="${i}" style="border-color:${R.color};background:linear-gradient(160deg,${R.color}22,var(--void-2))"><span class="se">${a.emoji} <span class="sn" style="display:inline;color:${R.color}">${esc(a.name)}</span></span><span class="empt" style="margin-top:3px;color:${R.color}bb">${R.label} · tap to change</span></div>`; }
     else sockets+=`<div class="socket" data-act="openSlot" data-k="${p.key}" data-slot="${i}"><span class="empt">＋ empty socket</span><span class="empt" style="margin-top:2px;opacity:.6">tap to add augment</span></div>`;
   }
   const canUp=ti<TIERS.length-1; const upCost=masteryUpCostG(p);
@@ -1535,12 +1600,13 @@ function openSlotPicker(oc,powerKey,slot){
   const p=oc.powers.find(x=>x.key===powerKey); if(!p) return;
   const tags=powerTagsFor(p); const owned=state.ownedAugments||[];
   const current=(p.augments||[])[slot];
-  const opts=owned.map(k=>{const a=augByKey(k);if(!a)return"";
+  const opts=owned.map(g=>{const k=g.key,a=augByKey(k);if(!a)return"";
     const inUse=(p.augments||[]).includes(k)&&(p.augments||[])[slot]!==k;
     const reqBad=a.req&&!tags.includes(a.req);
     const dis=inUse||reqBad;
-    return `<div class="aug ${current===k?"owned":""}" style="${dis?"opacity:.45":""}">
-      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span></div><div class="ad">${a.desc}</div>
+    const R=rarByKey(g.grade);
+    return `<div class="aug graded ${current===k?"owned":""}" style="border-left-color:${R.color};${dis?"opacity:.45":""}">
+      <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span>${gradeBadge(g.grade)}</div><div class="ad">${a.desc}</div>
       ${reqBad?`<div class="areq">needs ${a.req} — not on this skill</div>`:inUse?`<div class="areq">already socketed here</div>`:""}
       <div style="margin-top:6px">${dis?"":`<button class="btn xs primary" data-act="setAug" data-k="${powerKey}" data-slot="${slot}" data-aug="${k}">${current===k?"Re-slot":"Slot this"}</button>`}</div></div>`;}).join("");
   const emptyLib=owned.length===0?`<div class="hint">You don't own any augments yet. Buy some from the Augment Library.</div>`:"";
@@ -1791,7 +1857,8 @@ function handleAct(act,el,e){
     case "setAug": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const slot=parseInt(el.dataset.slot,10);
       p.augments=p.augments||[]; while(p.augments.length<slot)p.augments.push(null); p.augments[slot]=el.dataset.aug; p.augments=p.augments.filter((v,i)=>i<socketCap(p)); persist(); closeModal(); render(); toast("Augment socketed.","good"); break; }
     case "clearAug": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const slot=parseInt(el.dataset.slot,10); if(p.augments&&p.augments[slot]!=null){ p.augments[slot]=null; } persist(); closeModal(); render(); break; }
-    case "buyAug": { const k=el.dataset.k; if((state.ownedAugments||[]).includes(k))break; if(state.glory>=augCost()){ state.glory-=augCost(); state.ownedAugments.push(k); persist(); render(); toast(`Learned ${augByKey(k).name}.`,"good"); } else toast("Not enough Glory.","bad"); break; }
+    case "buyAug": { const k=el.dataset.k; if(ownsAug(k))break; if(state.glory>=augCost()){ state.glory-=augCost(); const gr=rollGrade(); state.ownedAugments.push({key:k,grade:gr}); persist(); render(); const R=rarByKey(gr); toast(`Learned ${augByKey(k).name} · ${R.label}!`, gr==="common"?"good":"gold"); } else toast("Not enough Glory.","bad"); break; }
+    case "reforgeAug": { const k=el.dataset.k; const g=ownedGem(k); if(!g)break; if(state.glory>=reforgeCostG()){ state.glory-=reforgeCostG(); const rolled=rollGrade(); const oi=RARITY.findIndex(r=>r.key===g.grade), ni=RARITY.findIndex(r=>r.key===rolled); const up=ni>oi; if(up) g.grade=rolled; persist(); render(); const R=rarByKey(g.grade); toast(up?`${augByKey(k).name} reforged UP → ${R.label} ▲`:`No luck — ${augByKey(k).name} holds at ${R.label}`, up?"gold":"good"); } else toast("Not enough Glory.","bad"); break; }
     case "masterUpG": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const ti=tierIndex(p.tier); if(ti>=TIERS.length-1)break; const c=masteryUpCostG(p);
       if(state.glory>=c){ state.glory-=c; p.tier=TIERS[ti+1].key; persist(); render(); toast(`${powerDisplayName(p)} → ${TIERS[ti+1].label}!`,"good"); } else toast("Not enough Glory.","bad"); break; }
     case "learnPow": { if(!oc)break; const k=el.dataset.k; if(oc.powers.some(p=>p.key===k))break; const c=learnCostG(k);
@@ -1839,7 +1906,7 @@ document.addEventListener("change",e=>{
 
 /* ===================== BOOT ===================== */
 async function boot(){
-  try{ await loadState(); }catch(e){ state.ownedAugments=state.ownedAugments||STARTER_AUGMENTS.slice(); }
+  try{ await loadState(); }catch(e){ state.ownedAugments=normalizeOwned(state.ownedAugments||STARTER_AUGMENTS); }
   render();
 }
 boot();

@@ -178,3 +178,18 @@ combat-affecting effects — `npm run stress`.
 
 If a balance change is intentional and trips a *threshold* assertion in `test/validate.js` (e.g. the
 non-degenerate balance spread), update that assertion and note it in `CHANGELOG.md`.
+
+## Tune loot rarity
+
+Rarity is data-driven from the `RARITY` table (near `AUGMENTS`): each grade has `mult` (scales a
+gem's numeric mods — upsides ×mult, downsides ÷mult in `enrichProc`), `hits` (extra strikes added to
+hit-adding gems), `color`, and `weight` (roll-on-learn odds; `rollGrade` picks weighted).
+
+- **Make rarity hit harder / softer:** edit `mult`/`hits` in `RARITY`. Keep the aggregate clamps
+  (`extraHits ≤ 5`, `chance ≤ 0.9`) intact — then `npm run stress` (must stay 0 NaN / all terminate)
+  and `npm run mechanics` (Cosmic must still beat Common; clamps hold).
+- **Change drop odds:** edit `weight`. **Reforge cost:** `reforgeCostG()`. **Learn cost:** `augCost()`.
+- **OC grade feel:** `ocGradeScore` weights + the `OC_GRADE_CUT` thresholds. Rare socketed gems feed
+  the score (that's the “rare loot raises your grade” link) — re-run `npm run mechanics` after edits.
+- Grade lives on the **owned** gem (`ownedAugments = [{key,grade}]`); sockets resolve it via
+  `sockets(p)`/`augGradeOf` at combat + render time, so a Reforge upgrades a gem everywhere at once.

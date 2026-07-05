@@ -3,7 +3,30 @@
 Format: reverse-chronological. This is a single-file app; "version" = the `SAVE_KEY` era + notable
 feature sets. Update this on meaningful changes.
 
-## [2.0.0] — Path-of-Exile expansion (current)
+## [2.1.0] — Loot rarity + OC grade (current)
+Save key unchanged (`lucidwinds_arena_v2`); shape is additive and migrates forward
+(`normalizeOwned` upgrades pre-rarity saves; every legacy gem becomes Common).
+
+Added
+- **Loot rarity**: every augment carries one of 7 grades on the shared Lucid Winds ladder
+  (Common → Uncommon → Rare → Epic → Legendary → Mythic → Cosmic). A grade scales the gem's
+  numeric upsides up and shrinks its downsides (so a higher grade is strictly better) and adds
+  extra strikes to hit-adding gems at the top tiers. `RARITY` table + `enrichProc` scaling.
+- **Roll-on-learn + Reforge**: learning a gem rolls a weighted grade; the **Reforge** Glory sink
+  gambles to push an owned gem's grade **up** (never down). Grade lives on the owned gem, so a
+  reforge upgrades it everywhere it's socketed.
+- **OC overall grade**: each character gets a Common→Cosmic grade from build investment
+  (keystones, notables, tree points, stats, level) **plus socketed gem rarity** — rare loot
+  raises your character's grade. Shown on roster cards + the sheet header.
+- Grade-colored gem chips, socket tints, a rarity legend, and grade badges throughout.
+
+Validated
+- 29,000 fights with Cosmic gems fuzzed into every socket: 0 exceptions, 0 NaN, all terminate.
+  Clamps (extraHits ≤ 5, proc chance ≤ 0.9) hold at max grade.
+- `test/mechanics.js` locks the grade-scaling contract (Cosmic strictly > Common; clamps survive
+  stacked Cosmic). jsdom render smoke confirms the grade UI boots + renders.
+
+## [2.0.0] — Path-of-Exile expansion
 Save key: `lucidwinds_arena_v2`. Old v1 saves auto-migrate via `migrateOC`.
 
 Added

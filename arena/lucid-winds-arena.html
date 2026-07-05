@@ -1556,7 +1556,7 @@ function tabPowers(oc){
     return `<div class="aug ${has?"owned graded":""}"${has?` style="border-left-color:${R.color}"`:""}>
       <div class="ah"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span>${has?gradeBadge(gr):""}</div>
       <div class="ad">${a.desc}</div>${a.req?`<div class="areq">requires ${a.req} skill</div>`:""}
-      ${has?`<div class="rf-row"><button class="btn xs ${state.glory>=reforgeCostG()?"gold":""}" data-act="reforgeAug" data-k="${a.key}" ${state.glory>=reforgeCostG()?"":"disabled"}>⚒ Reforge · ◈${reforgeCostG()}</button><span class="mnote" style="margin:0">re-roll its grade</span></div>`
+      ${has?`<div class="rf-row"><button class="btn xs ${state.glory>=reforgeCostG()?"gold":""}" data-act="reforgeAug" data-k="${a.key}" ${state.glory>=reforgeCostG()?"":"disabled"}>⚒ Reforge · ◈${reforgeCostG()}</button><span class="mnote" style="margin:0">push grade up</span></div>`
         :`<div style="margin-top:8px"><button class="btn xs ${state.glory>=augCost()?"gold":""}" data-act="buyAug" data-k="${a.key}" ${state.glory>=augCost()?"":"disabled"}>Learn · ◈${augCost()}</button></div>`}</div>`;}).join("");
   // learn powers
   const ownedKeys=new Set((oc.powers||[]).map(p=>p.key));
@@ -1570,7 +1570,7 @@ function tabPowers(oc){
     ${activeHtml}
     ${others.length?`<div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Passive &amp; Utility</h2></div><div class="powerchips" style="padding:0">${others.map(p=>{const t=TIERS.find(t=>t.key===p.tier);return `<span class="chip">${powerEmoji(p)} ${esc(powerDisplayName(p))} <span class="m">${t?t.label:""}</span></span>`;}).join("")}</div>`:""}
     <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Augment Library</h2><span class="c">${owned.length}/${AUGMENTS.length} owned</span></div>
-    <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Every gem you learn rolls a rarity — a higher grade hits harder (and Reforge re-rolls it). Grades:</div>
+    <div style="color:var(--mist);font-size:12px;margin-bottom:8px">Every gem you learn rolls a rarity; a higher grade hits harder. Reforge gambles Glory to push a gem's grade up (it never drops). Grades:</div>
     ${gradeLegendHTML()}
     <div class="aug-lib">${libHtml}</div>
     <div class="section-h"><span class="n">·</span><h2 style="font-size:18px">Learn New Powers</h2></div>
@@ -1858,7 +1858,7 @@ function handleAct(act,el,e){
       p.augments=p.augments||[]; while(p.augments.length<slot)p.augments.push(null); p.augments[slot]=el.dataset.aug; p.augments=p.augments.filter((v,i)=>i<socketCap(p)); persist(); closeModal(); render(); toast("Augment socketed.","good"); break; }
     case "clearAug": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const slot=parseInt(el.dataset.slot,10); if(p.augments&&p.augments[slot]!=null){ p.augments[slot]=null; } persist(); closeModal(); render(); break; }
     case "buyAug": { const k=el.dataset.k; if(ownsAug(k))break; if(state.glory>=augCost()){ state.glory-=augCost(); const gr=rollGrade(); state.ownedAugments.push({key:k,grade:gr}); persist(); render(); const R=rarByKey(gr); toast(`Learned ${augByKey(k).name} · ${R.label}!`, gr==="common"?"good":"gold"); } else toast("Not enough Glory.","bad"); break; }
-    case "reforgeAug": { const k=el.dataset.k; const g=ownedGem(k); if(!g)break; if(state.glory>=reforgeCostG()){ state.glory-=reforgeCostG(); const gr=rollGrade(); const up=RARITY.findIndex(r=>r.key===gr)>RARITY.findIndex(r=>r.key===g.grade); g.grade=gr; persist(); render(); const R=rarByKey(gr); toast(`${augByKey(k).name} reforged · ${R.label}${up?" ▲":""}`, gr==="common"?"good":"gold"); } else toast("Not enough Glory.","bad"); break; }
+    case "reforgeAug": { const k=el.dataset.k; const g=ownedGem(k); if(!g)break; if(state.glory>=reforgeCostG()){ state.glory-=reforgeCostG(); const rolled=rollGrade(); const oi=RARITY.findIndex(r=>r.key===g.grade), ni=RARITY.findIndex(r=>r.key===rolled); const up=ni>oi; if(up) g.grade=rolled; persist(); render(); const R=rarByKey(g.grade); toast(up?`${augByKey(k).name} reforged UP → ${R.label} ▲`:`No luck — ${augByKey(k).name} holds at ${R.label}`, up?"gold":"good"); } else toast("Not enough Glory.","bad"); break; }
     case "masterUpG": { if(!oc)break; const p=oc.powers.find(x=>x.key===el.dataset.k); if(!p)break; const ti=tierIndex(p.tier); if(ti>=TIERS.length-1)break; const c=masteryUpCostG(p);
       if(state.glory>=c){ state.glory-=c; p.tier=TIERS[ti+1].key; persist(); render(); toast(`${powerDisplayName(p)} → ${TIERS[ti+1].label}!`,"good"); } else toast("Not enough Glory.","bad"); break; }
     case "learnPow": { if(!oc)break; const k=el.dataset.k; if(oc.powers.some(p=>p.key===k))break; const c=learnCostG(k);
