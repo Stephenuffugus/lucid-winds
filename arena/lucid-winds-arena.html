@@ -515,6 +515,46 @@ const RARITY=[
 ];
 const rarByKey=k=>RARITY.find(r=>r.key===k)||RARITY[0];
 
+/* ===================== ASCENDANCIES (subclasses) =====================
+   A second mini-tree unlocked at ASC_UNLOCK_LEVEL. Pick ONE subclass (freely,
+   changeable — changing resets its nodes), spend a small growing point pool on
+   its nodes. Node effects reuse the tree-node vocab (applyNodeEffect); the
+   signature node of each is keystone-like (upside + a real downside via a new
+   asc_* case in applyKeystone). Folded into aggregateMods alongside the tree. */
+const ASC_UNLOCK_LEVEL=15;
+const ASCENDANCIES=[
+  {key:"juggernaut",name:"Juggernaut",emoji:"🛡️",color:"#e0a94b",desc:"An unbreakable wall that grinds foes down.",nodes:[
+    {id:"jug_a",name:"Unstoppable",desc:"+14 armor and +15% maximum life.",effect:{armorFlat:14,lifePct:0.15}},
+    {id:"jug_b",name:"Bulwark",desc:"+12 Durability, +10 Stamina.",effect:{stat:{dur:12,sta:10}}},
+    {id:"jug_c",name:"Crushing Blows",desc:"+30% physical and +20% melee damage.",effect:{incTag:{physical:0.3,melee:0.2}}},
+    {id:"jug_d",name:"Immovable",desc:"You cannot be critically hit and gain 12% block; but −8% attack speed.",effect:{keystone:"asc_juggernaut"}},
+    {id:"jug_e",name:"Momentum",desc:"+10% generic damage and steady regen.",effect:{incGeneric:0.1,regenAdd:2}}
+  ]},
+  {key:"assassin",name:"Assassin",emoji:"🗡️",color:"#ff5db1",desc:"Lethal, precise, and gone before the counter lands.",nodes:[
+    {id:"ass_a",name:"Lethality",desc:"+12% crit chance and +30% crit damage.",effect:{critChanceAdd:0.12,critMultAdd:0.3}},
+    {id:"ass_b",name:"Swiftness",desc:"+14 Speed, +10 Combat.",effect:{stat:{spd:14,cmb:10}}},
+    {id:"ass_c",name:"Exploit Weakness",desc:"+15% generic damage and +20% crit damage.",effect:{incGeneric:0.15,critMultAdd:0.2}},
+    {id:"ass_d",name:"Killing Edge",desc:"+15% crit and +10% accuracy; but your maximum life is reduced 15%.",effect:{keystone:"asc_assassin"}},
+    {id:"ass_e",name:"Execution",desc:"Deal far more to low-life foes.",effect:{execBonus:0.4}}
+  ]},
+  {key:"elementalist",name:"Elementalist",emoji:"🔥",color:"#4aa3ff",desc:"Bends fire, void and mind into lingering ruin.",nodes:[
+    {id:"ele_a",name:"Kindling",desc:"+30% fire and +20% void damage.",effect:{incTag:{fire:0.3,void:0.2}}},
+    {id:"ele_b",name:"Conflagration",desc:"Damage-over-time deals 40% more.",effect:{dotMore:0.4}},
+    {id:"ele_c",name:"Attunement",desc:"+16 Intellect.",effect:{stat:{int:16}}},
+    {id:"ele_d",name:"Elemental Overload",desc:"+50% DoT and +20% ability damage; but take 10% more damage.",effect:{keystone:"asc_elementalist"}},
+    {id:"ele_e",name:"Spreading Flames",desc:"+25% mind damage and steady regen.",effect:{incTag:{mind:0.25},regenAdd:2}}
+  ]},
+  {key:"warlord",name:"Warlord",emoji:"⚔️",color:"#67c98a",desc:"Relentless offense fed by the blood of the fallen.",nodes:[
+    {id:"war_a",name:"Battle Fury",desc:"+20% generic damage and +10% attack speed.",effect:{incGeneric:0.2,atkSpeedAdd:0.1}},
+    {id:"war_b",name:"Bloodthirst",desc:"Leech 8% of damage dealt and +10% maximum life.",effect:{leechPct:0.08,lifePct:0.1}},
+    {id:"war_c",name:"Commanding Might",desc:"+12 Strength, +12 Combat.",effect:{stat:{str:12,cmb:12}}},
+    {id:"war_d",name:"Endless Assault",desc:"Skills fire more and deal 15% more; but take 8% more damage.",effect:{keystone:"asc_warlord"}},
+    {id:"war_e",name:"Last Stand",desc:"The first time you'd die, revive at 40% life.",effect:{keystone:"second_wind"}}
+  ]}
+];
+const ASC_BY_KEY={}; ASCENDANCIES.forEach(a=>{ASC_BY_KEY[a.key]=a;});
+const ASC_NODE_BY_ID={}; ASCENDANCIES.forEach(a=>a.nodes.forEach(n=>{ASC_NODE_BY_ID[n.id]=Object.assign({asc:a.key},n);}));
+
 /* ===================== SKILL WEB BUILDER ===================== */
 // minor node effect pools per arm (cycled)
 const MINOR_POOLS={
@@ -740,6 +780,12 @@ function migrateOC(oc){
   // prune invalid node ids
   oc.tree.allocated=oc.tree.allocated.filter(id=>TREE.byId[id]);
   (oc.powers||[]).forEach(p=>{ if(!Array.isArray(p.augments)) p.augments=[]; });
+  if(!oc.ascendancy||typeof oc.ascendancy!=="object") oc.ascendancy={key:null,allocated:[]};
+  if(!Array.isArray(oc.ascendancy.allocated)) oc.ascendancy.allocated=[];
+  // keep only valid nodes that belong to the chosen ascendancy
+  oc.ascendancy.allocated=ASC_BY_KEY[oc.ascendancy.key]
+    ? oc.ascendancy.allocated.filter(id=>{const n=ASC_NODE_BY_ID[id];return n&&n.asc===oc.ascendancy.key;})
+    : [];
   return oc;
 }
 async function loadState(){
@@ -797,6 +843,10 @@ function xpNeeded(level){return Math.round(60*Math.pow(level,1.5));}
 function pointsTotal(oc){return 3+(oc.level-1)+Math.floor(oc.level/10)*2;}
 function pointsSpent(oc){const start=TREE.startByRace[oc.race]||"hub";return oc.tree.allocated.filter(id=>id!==start).length;}
 function pointsAvail(oc){return pointsTotal(oc)-pointsSpent(oc);}
+/* ascendancy points: unlock at ASC_UNLOCK_LEVEL, +1 every 6 levels, cap 5 */
+function ascPointsTotal(oc){ if(!oc||(oc.level||1)<ASC_UNLOCK_LEVEL) return 0; return Math.min(5,1+Math.floor(((oc.level||1)-ASC_UNLOCK_LEVEL)/6)); }
+function ascPointsSpent(oc){ return ((oc.ascendancy&&oc.ascendancy.allocated)||[]).length; }
+function ascPointsAvail(oc){ return Math.max(0,ascPointsTotal(oc)-ascPointsSpent(oc)); }
 function grantXP(oc,amount){
   oc.xp+=amount; let leveled=0;
   while(oc.xp>=xpNeeded(oc.level+1)){ oc.xp-=xpNeeded(oc.level+1); oc.level++; leveled++; }
@@ -825,6 +875,11 @@ function applyKeystone(M,k){
     case "second_wind": M.secondWind=true; break;
     case "glass_cannon": M.moreGlobal*=1.4; M.lifeMult*=0.5; break;
     case "blood_engine": M.bloodEngine=true; M.leechAll=true; M.leechPct+=0.15; M.dmgTakenInc+=0.15; break;
+    // ascendancy signature keystones (upside + downside)
+    case "asc_juggernaut": M.cannotBeCrit=true; M.blockChance+=0.12; M.atkSpeedAdd-=0.08; break;
+    case "asc_assassin": M.critChanceAdd+=0.15; M.accAdd+=0.10; M.lifeMult*=0.85; break;
+    case "asc_elementalist": M.dotMore+=0.5; M.abilityMore+=0.2; M.dmgTakenInc+=0.10; break;
+    case "asc_warlord": M.abilityProc+=0.10; M.moreGlobal*=1.15; M.dmgTakenInc+=0.08; break;
   }
 }
 function applyNodeEffect(M,e){
@@ -850,6 +905,7 @@ function applyNodeEffect(M,e){
 function aggregateMods(oc){
   const M=freshM();
   for(const id of (oc.tree&&oc.tree.allocated||[])){ const n=TREE.byId[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
+  for(const id of (oc.ascendancy&&oc.ascendancy.allocated||[])){ const n=ASC_NODE_BY_ID[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
   return M;
 }
 function computeFinal(oc){

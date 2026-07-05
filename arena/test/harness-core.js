@@ -32,7 +32,7 @@ function fakeEl() {
 
 // The internal identifiers we surface for tests. All exist at top-level script scope.
 const EXPORTS = [
-  'RACES','POWERS','AUGMENTS','RARITY','rarByKey','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
+  'RACES','POWERS','AUGMENTS','RARITY','rarByKey','ASCENDANCIES','ASC_BY_KEY','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
   'BUFF_BASE','NOTABLES','KEYSTONES','PROC_BASE',
   'simulate','deriveCombat','computeFinal','ocStats','aggregateMods','migrateOC','hitDamage',
   'clamp','rand','randInt','pick','tierIndex','tierMult',
@@ -128,6 +128,12 @@ function randomOC(API, opts) {
     level: opts.level || API.randInt(1, 50), xp: 0, tree: { allocated: [] },
   };
   API.migrateOC(oc);
+  // fuzz an ascendancy (subclass + a random subset of its nodes) to stress the
+  // ascendancy effects incl. their keystone downsides
+  if (API.ASCENDANCIES && Math.random() < 0.5) {
+    const asc = API.pick(API.ASCENDANCIES);
+    oc.ascendancy = { key: asc.key, allocated: asc.nodes.filter(() => Math.random() < 0.6).map(n => n.id) };
+  }
   if (!opts.noTree) randomAlloc(API, oc);
   return oc;
 }
