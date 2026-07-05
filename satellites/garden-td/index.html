@@ -133,7 +133,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 #hud-top.show{ display:flex; }
 .hstat{ background:rgba(20,24,18,.82); border:1px solid #3a4230; border-radius:12px; min-height:44px;
   display:flex; align-items:center; padding:0 12px; font-weight:800; font-size:15px; gap:5px; }
-.hstat.leaves{ color:var(--leaf); } .hstat.seeds{ color:var(--gold); } .hstat.wave{ color:var(--cream); }
+.hstat.leaves{ color:var(--leaf); } .hstat.seeds{ color:var(--gold); } .hstat.wave{ color:var(--cream); } .hstat.pollen{ color:var(--gold2); }
 #hbPause{ pointer-events:auto; margin-left:auto; background:rgba(20,24,18,.82); border:1px solid #3a4230;
   color:var(--cream); width:48px; height:48px; border-radius:12px; font-size:17px; cursor:pointer; }
 
@@ -147,6 +147,15 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 #btnWave.go{ background:linear-gradient(#7ab356,#5c8a3f); box-shadow:0 4px 0 #3f6129; color:#0d1409; }
 #btnSpeed{ min-width:64px; min-height:56px; border:1px solid #3a4230; border-radius:16px; cursor:pointer;
   background:var(--coal2); color:var(--gold); font-weight:900; font-size:16px; }
+
+/* keeper power bar (left side, above bottom bar) */
+#keeper-bar{ position:fixed; z-index:20; left:10px; bottom:calc(78px + var(--safe-b)); display:none; flex-direction:column; gap:8px; align-items:center; }
+#keeper-bar.show{ display:flex; }
+.kbtn{ width:54px; height:54px; border-radius:50%; border:1px solid #3a4230; background:rgba(20,24,18,.85); color:var(--cream); font-size:22px; cursor:pointer; }
+.kbtn:active{ transform:scale(.94); }
+.kbtn.cd{ opacity:.35; }
+.kbtn.aiming{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.5); }
+.klvl{ font-size:10px; color:var(--muted); font-weight:700; background:rgba(20,24,18,.7); padding:2px 6px; border-radius:8px; }
 
 /* bottom sheets (buy + manage) */
 .sheet{ position:fixed; z-index:26; left:0; right:0; bottom:0; display:none; flex-direction:column;
@@ -175,6 +184,18 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .mng-pips i.on{ background:var(--gold); }
 .mng-stats{ font-size:12px; color:var(--muted); margin-top:3px; }
 .mng-eff{ font-size:11.5px; color:var(--sage3); margin-top:3px; line-height:1.35; }
+.mng-bloom{ display:none; width:100%; min-height:48px; border:none; border-radius:12px; margin-bottom:8px; font-weight:900; font-size:15px; cursor:pointer;
+  background:linear-gradient(#e0c366,#b8912f); color:#241c06; box-shadow:0 3px 0 #7a5f18; }
+.mng-bloom.show{ display:block; }
+.mng-bloom:active{ transform:translateY(2px); box-shadow:0 1px 0 #7a5f18; }
+.mng-choose{ display:none; gap:8px; margin-bottom:8px; }
+.mng-choose.show{ display:flex; }
+.mng-choose .cc{ flex:1 1 0; width:0; background:var(--coal2); border:1px solid #3a4230; border-radius:12px; padding:9px 8px; cursor:pointer; text-align:center; }
+.mng-choose .cc:active{ transform:scale(.97); }
+.mng-choose .cc .cn{ font-weight:900; font-size:13px; color:var(--sage3); line-height:1.1; }
+.mng-choose .cc .cd{ font-size:11px; color:var(--muted); margin:5px 0 7px; line-height:1.35; }
+.mng-choose .cc .ccost{ font-weight:900; font-size:14px; color:var(--gold); }
+.mng-choose .cc.cant{ opacity:.5; }
 .mng-btns{ display:flex; gap:8px; }
 .mng-btns button{ flex:1 1 0; min-height:52px; border:none; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer; position:relative; overflow:hidden; }
 .mng-up{ background:var(--sage2); color:#0d1409; } .mng-up[disabled]{ background:#3a3f30; color:#6f775f; }
@@ -210,12 +231,19 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <div id="hud-top">
   <div class="hstat leaves" id="hLeaves">🍃 20</div>
   <div class="hstat seeds" id="hSeeds">🌱 150</div>
+  <div class="hstat pollen" id="hPollen" style="display:none">🌼 0</div>
   <div class="hstat wave" id="hWave">Wave 1/10</div>
   <button id="hbPause">❚❚</button>
 </div>
 <div id="hud-bot">
   <button id="btnWave" class="go">START WAVE</button>
   <button id="btnSpeed">1×</button>
+</div>
+<div id="keeper-bar">
+  <button class="kbtn" id="kWater" title="Watering Can (Wet)">💧</button>
+  <button class="kbtn" id="kFlare" title="Sun Flare (Scorch)">☀️</button>
+  <button class="kbtn" id="kSig" style="display:none" title="Rally">✨</button>
+  <div class="klvl" id="kLvl">Keeper Lv1</div>
 </div>
 
 <!-- buy sheet -->
@@ -230,11 +258,13 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
     <canvas id="mngIcon" width="104" height="104"></canvas>
     <div class="mng-info">
       <div class="mn" id="mngName">Name</div>
-      <div class="mng-pips" id="mngPips"><i></i><i></i><i></i></div>
+      <div class="mng-pips" id="mngPips"><i></i><i></i><i></i><i></i><i></i></div>
       <div class="mng-stats" id="mngStats"></div>
       <div class="mng-eff" id="mngEff"></div>
     </div>
   </div>
+  <button class="mng-bloom" id="mngBloom">✨ BLOOM</button>
+  <div class="mng-choose" id="mngChoose"></div>
   <div class="mng-btns">
     <button class="mng-up" id="mngUp">Upgrade</button>
     <button class="mng-tgt" id="mngTgt">First</button>
@@ -383,7 +413,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
    ===================================================================== */
 (function(){
 'use strict';
-var BUILD='v1.0 · 2026-07-05';
+var BUILD='v2.0 · 2026-07-05';
 
 /* ---------------- virtual field ---------------- */
 var VW=540, VH=960;
@@ -403,34 +433,146 @@ var COL={ bg:'#0d100c', bg2:'#05060a', sage:'#7ab356', sage2:'#5c8a3f', sage3:'#
 /* =====================================================================
    TOWER DATA (from the design spec, canonical tiers)
    ===================================================================== */
+// v2: each tower has base `status` (reaction paint), a `bloom` (pollen super),
+// and `fork{a,b}` cultivars. Cultivar = { name, up(=T3->T4 cost), t5up(=T4->T5 cost),
+// passive, t4, t5, active|null, graft:[rider,rider] }. graft.mods = {range,rate,dmg
+// multipliers, and/or set:{field:val}}. tiers[2].up stays 0 (T3->T4 uses fork.up).
 var TOWERS={
-  marigold:{ name:'Marigold', cost:50, role:'single', air:'t3', target:true, accent:'#e08a3a',
+  marigold:{ name:'Marigold', cost:50, role:'single', air:'t3', target:true, accent:'#e08a3a', status:'scorch',
+    blurb:'Flicks fast seed darts at the first pest. Cheap and steady.',
+    bloom:{id:'goldenHour', name:'Golden Hour', cd:22000},
     tiers:[{dmg:8,range:100,rate:900,up:50},{dmg:14,range:115,rate:800,up:90},{dmg:24,range:130,rate:700,up:0}],
-    blurb:'Flicks fast seed darts at the first pest. Cheap and steady.' },
-  cactus:{ name:'Prickle Cactus', cost:75, role:'ring', air:'no', target:false, accent:'#7ab356',
+    fork:{
+      a:{id:'marks', name:'Marksmarigold', up:170, t5up:150, passive:'Deadhead: long range, every 5th shot crits ×3. A single-target killer.',
+        t4:{dmg:34,range:210,rate:650,status:'scorch',crit:{every:5,mult:3}},
+        t5:{dmg:48,range:235,rate:600,status:'scorch',crit:{every:5,mult:3}},
+        active:null,
+        graft:[{id:'roots',label:'Deep Roots',mods:{range:1.2}},{id:'eagle',label:'Eagle Eye',mods:{set:{crit:{every:3,mult:3}}}}]},
+      b:{id:'wild', name:'Wildflower Spray', up:170, t5up:150, passive:'Pollen Cloud: fires a 3-way spread; hits leave a brief slow. Sweeps swarms.',
+        t4:{dmg:18,range:120,rate:600,status:'scorch',spread:3,hitSlow:0.20},
+        t5:{dmg:26,range:130,rate:520,status:'scorch',spread:3,hitSlow:0.25},
+        active:{id:'petalStorm',name:'Petal Storm',cd:14000},
+        graft:[{id:'wide',label:'Wide Bloom',mods:{range:1.2}},{id:'quick',label:'Quick Bloom',mods:{rate:0.8}}]} } },
+  cactus:{ name:'Prickle Cactus', cost:75, role:'ring', air:'no', target:false, accent:'#7ab356', status:null,
+    blurb:'Bursts a ring of needles, hitting every ground pest around it.',
+    bloom:{id:'brambleBurst', name:'Bramble Burst', cd:20000},
     tiers:[{dmg:6,range:60,rate:1100,up:65},{dmg:10,range:72,rate:1000,up:130},{dmg:16,range:88,rate:900,up:0}],
-    blurb:'Bursts a ring of needles, hitting every ground pest around it.' },
-  puffball:{ name:'Puffball', cost:110, role:'splash', air:'low', target:true, accent:'#8a9178',
+    fork:{
+      a:{id:'ironbarb', name:'Ironbarb Cactus', up:170, t5up:150, passive:'Ironbarb: harder needles + a long armor-bypass bleed. Grinds tanks.',
+        t4:{dmg:24,range:92,rate:850,bleed:{d:3,t:2.5,stk:3}},
+        t5:{dmg:32,range:96,rate:800,bleed:{d:4,t:3,stk:3}},
+        active:null,
+        graft:[{id:'sharp',label:'Sharper Barbs',mods:{dmg:1.2}},{id:'rapid',label:'Rapid Bristle',mods:{rate:0.8}}]},
+      b:{id:'sporespike', name:'Sporespike Cactus', up:170, t5up:150, passive:'Sporespike: wider ring, and every needle paints Spore for reactions.',
+        t4:{dmg:16,range:108,rate:900,status:'spore'},
+        t5:{dmg:22,range:124,rate:850,status:'spore'},
+        active:null,
+        graft:[{id:'wide',label:'Wide Ring',mods:{range:1.25}},{id:'dense',label:'Dense Spores',mods:{rate:0.8}}]} } },
+  puffball:{ name:'Puffball', cost:110, role:'splash', air:'low', target:true, accent:'#8a9178', status:'spore',
+    blurb:'Lobs a spore bomb that bursts over a cluster. Paints Spore.',
+    bloom:{id:'sporeBloom', name:'Spore Bloom', cd:22000},
     tiers:[{dmg:12,range:120,rate:1500,up:95,splash:45},{dmg:20,range:130,rate:1400,up:180,splash:55},{dmg:32,range:145,rate:1300,up:0,splash:70}],
-    blurb:'Lobs a spore bomb that bursts over a cluster. T3 leaves a cloud.' },
-  sundew:{ name:'Sundew', cost:90, role:'slow', air:'aura', target:false, accent:'#e0533a',
+    fork:{
+      a:{id:'bombardier', name:'Bombardier Puffball', up:220, t5up:190, passive:'Bombardier: heavier bombs, bigger splash, a lingering spore cloud.',
+        t4:{dmg:46,range:150,rate:1250,splash:85,cloud:true,status:'spore'},
+        t5:{dmg:64,range:160,rate:1200,splash:100,cloud:true,status:'spore'},
+        active:null,
+        graft:[{id:'big',label:'Big Bang',mods:{set:{splash:120}}},{id:'rapid',label:'Rapid Lob',mods:{rate:0.8}}]},
+      b:{id:'sporecaster', name:'Sporecaster', up:220, t5up:190, passive:'Sporecaster: wide, frequent bursts that blanket a crowd in Spore.',
+        t4:{dmg:26,range:155,rate:1050,splash:80,status:'spore'},
+        t5:{dmg:36,range:170,rate:950,splash:92,status:'spore'},
+        active:null,
+        graft:[{id:'wide',label:'Wide Cast',mods:{range:1.25}},{id:'fast',label:'Fast Cast',mods:{rate:0.8}}]} } },
+  sundew:{ name:'Sundew', cost:90, role:'slow', air:'aura', target:false, accent:'#e0533a', status:'wet',
+    blurb:'Slows everything in reach and leaves it Wet. Doubles your uptime.',
+    bloom:{id:'amberFreeze', name:'Amber Freeze', cd:26000},
     tiers:[{dmg:2,range:90,rate:600,up:80,slow:0.25},{dmg:3,range:100,rate:600,up:150,slow:0.40},{dmg:4,range:115,rate:600,up:0,slow:0.55}],
-    blurb:'Slows everything in reach. Almost no damage, but doubles your uptime.' },
-  beehive:{ name:'Beehive', cost:120, role:'bee', air:'yes', target:true, accent:'#c8a84b',
+    fork:{
+      a:{id:'tar', name:'Tar Sundew', up:180, t5up:160, passive:'Lockdown: deep slow, and every few seconds it roots the strongest bug.',
+        t4:{dmg:5,range:120,rate:600,slow:0.65,status:'wet',rootEvery:5000,rootDur:1.0},
+        t5:{dmg:6,range:130,rate:550,slow:0.70,status:'wet',rootEvery:4000,rootDur:1.2},
+        active:null,
+        graft:[{id:'wideweb',label:'Wide Web',mods:{range:1.3}},{id:'deepgum',label:'Deep Gum',mods:{set:{slow:0.75}}}]},
+      b:{id:'nectar', name:'Nectar Sundew', up:180, t5up:160, passive:'Support: lighter slow, but nearby plants fire faster and Wet bugs take more damage from everyone.',
+        t4:{dmg:3,range:120,rate:600,slow:0.20,status:'wet',allyRate:0.15,wetVuln:0.25},
+        t5:{dmg:3,range:135,rate:600,slow:0.20,status:'wet',allyRate:0.20,wetVuln:0.30},
+        active:null,
+        graft:[{id:'openhive',label:'Open Nectar',mods:{range:1.3}},{id:'richsap',label:'Rich Sap',mods:{set:{allyRate:0.30}}}]} } },
+  beehive:{ name:'Beehive', cost:120, role:'bee', air:'yes', target:true, accent:'#c8a84b', status:null,
+    blurb:'Sends homing bees after flyers. Your dedicated answer to the sky.',
+    bloom:{id:'swarmCall', name:'Swarm Call', cd:20000},
     tiers:[{dmg:7,range:130,rate:700,up:100,bees:1},{dmg:9,range:145,rate:650,up:190,bees:2},{dmg:12,range:160,rate:600,up:0,bees:3}],
-    blurb:'Sends homing bees after flyers. Your dedicated answer to the sky.' },
-  pitcher:{ name:'Pitcher Plant', cost:85, role:'dot', air:'yes', target:true, accent:'#6a4a6a',
+    fork:{
+      a:{id:'hunter', name:'Hunter Hive', up:230, t5up:200, passive:'Hunter: a bigger swarm with stinging venom. Shreds flyers and elites.',
+        t4:{dmg:16,range:170,rate:550,bees:4,sting:true},
+        t5:{dmg:22,range:185,rate:500,bees:5,sting:true},
+        active:null,
+        graft:[{id:'more',label:'Bigger Swarm',mods:{set:{bees:6}}},{id:'rapid',label:'Rapid Wings',mods:{rate:0.8}}]},
+      b:{id:'dustbee', name:'Dustbees', up:230, t5up:200, passive:'Dustbees: bees dust their targets with Spore, delivering reactions to the air.',
+        t4:{dmg:12,range:165,rate:600,bees:3,status:'spore'},
+        t5:{dmg:16,range:180,rate:560,bees:4,status:'spore'},
+        active:null,
+        graft:[{id:'wide',label:'Wide Patrol',mods:{range:1.25}},{id:'more',label:'More Bees',mods:{set:{bees:5}}}]} } },
+  pitcher:{ name:'Pitcher Plant', cost:85, role:'dot', air:'yes', target:true, accent:'#6a4a6a', status:'rot',
+    blurb:'Drools stacking acid and leaves bugs Rotting. Melts armor and elites.',
+    bloom:{id:'acidFlood', name:'Acid Flood', cd:22000},
     tiers:[{dmg:4,range:95,rate:1200,up:90,dot:{d:4,t:3,stk:2}},{dmg:6,range:105,rate:1200,up:170,dot:{d:6,t:3,stk:3}},{dmg:9,range:120,rate:1100,up:0,dot:{d:9,t:4,stk:4},vuln:0.15}],
-    blurb:'Drools stacking acid onto tough pests. Melts armor and elites.' },
-  scarecrow:{ name:'Scarecrow', cost:100, role:'buff', air:'no', target:false, accent:'#b3a077',
+    fork:{
+      a:{id:'acidwell', name:'Acid Well', up:190, t5up:170, passive:'Acid Well: deeper acid stacks and a heavier melt. The elite-killer.',
+        t4:{dmg:12,range:125,rate:1050,dot:{d:12,t:4,stk:5},vuln:0.20,status:'rot'},
+        t5:{dmg:16,range:135,rate:1000,dot:{d:16,t:4,stk:6},vuln:0.25,status:'rot'},
+        active:null,
+        graft:[{id:'deep',label:'Deep Well',mods:{dmg:1.2}},{id:'potent',label:'Potent Acid',mods:{set:{vuln:0.35}}}]},
+      b:{id:'corroder', name:'Corroder', up:190, t5up:170, passive:'Corroder: acid splashes to nearby bugs and spreads Rot across the crowd.',
+        t4:{dmg:9,range:120,rate:1100,dot:{d:9,t:4,stk:4},vuln:0.15,status:'rot',splashN:2},
+        t5:{dmg:12,range:130,rate:1050,dot:{d:11,t:4,stk:4},vuln:0.18,status:'rot',splashN:3},
+        active:null,
+        graft:[{id:'wide',label:'Wide Splash',mods:{range:1.25}},{id:'potent',label:'Potent Acid',mods:{set:{vuln:0.30}}}]} } },
+  scarecrow:{ name:'Scarecrow', cost:100, role:'buff', air:'no', target:false, accent:'#b3a077', status:null,
+    blurb:'No damage. Speeds up and extends the plants around it.',
+    bloom:{id:'frightNight', name:'Fright Night', cd:20000},
     tiers:[{dmg:0,range:100,rate:8000,up:100,spd:0.15},{dmg:0,range:115,rate:8000,up:200,spd:0.25,rng:0.10},{dmg:0,range:130,rate:8000,up:0,spd:0.35,rng:0.15,pow:0.10,freeze:true}],
-    blurb:'No damage. Speeds up and extends the towers around it.' },
-  compost:{ name:'Compost Bin', cost:130, role:'econ', air:'no', target:false, accent:'#5a4a2a',
+    fork:{
+      a:{id:'watchcrow', name:'Watchcrow', up:220, t5up:190, passive:'Watchcrow: a stronger, wider buff aura and a periodic freeze on the crowd.',
+        t4:{dmg:0,range:150,rate:7000,spd:0.40,rng:0.18,pow:0.12,freeze:true},
+        t5:{dmg:0,range:170,rate:6000,spd:0.50,rng:0.20,pow:0.15,freeze:true},
+        active:null,
+        graft:[{id:'wide',label:'Wide Watch',mods:{range:1.3}},{id:'potent',label:'Louder Caw',mods:{set:{spd:0.60}}}]},
+      b:{id:'trickster', name:'Trickster', up:220, t5up:190, passive:'Trickster: a wider fear that leaves spooked bugs Wet, priming reactions.',
+        t4:{dmg:0,range:150,rate:6000,spd:0.25,rng:0.12,fearWet:true,fearEvery:5000},
+        t5:{dmg:0,range:170,rate:5500,spd:0.30,rng:0.12,fearWet:true,fearEvery:4000},
+        active:null,
+        graft:[{id:'wide',label:'Wide Trick',mods:{range:1.3}},{id:'often',label:'Trickier',mods:{set:{fearEvery:3000}}}]} } },
+  compost:{ name:'Compost Bin', cost:130, role:'econ', air:'no', target:false, accent:'#5a4a2a', status:null,
+    blurb:'Turns scraps into Seeds over time. A long-game investment.',
+    bloom:{id:'bumperCrop', name:'Bumper Crop', cd:24000},
     tiers:[{dmg:0,range:80,rate:5000,up:110,seeds:8},{dmg:0,range:80,rate:5000,up:210,seeds:14},{dmg:0,range:90,rate:4500,up:0,seeds:22,sap:2}],
-    blurb:'Turns scraps into Seeds over time. A long game investment.' },
-  sunflower:{ name:'Sunflower', cost:200, role:'snipe', air:'yes', target:true, accent:'#e0c366',
+    fork:{
+      a:{id:'worm', name:'Worm Bin', up:210, t5up:190, passive:'Steady: more Seeds per tick, and bugs composted nearby drop extra Seeds.',
+        t4:{dmg:0,range:95,rate:4500,seeds:32,killBonus:0.25},
+        t5:{dmg:0,range:100,rate:4000,seeds:40,killBonus:0.35},
+        active:null,
+        graft:[{id:'mulch',label:'Deep Mulch',mods:{set:{seeds:52}}},{id:'fast',label:'Fast Compost',mods:{rate:0.7}}]},
+      b:{id:'myco', name:'Mycelium Network', up:210, t5up:190, passive:'Network: fewer Seeds, but linked nearby plants hit harder AND paint Rot. A reaction engine.',
+        t4:{dmg:0,range:110,rate:4500,seeds:12,linkDmg:0.10,grantStatus:'rot'},
+        t5:{dmg:0,range:125,rate:4500,seeds:14,linkDmg:0.15,grantStatus:'rot'},
+        active:null,
+        graft:[{id:'reach',label:'Deep Roots',mods:{range:1.3}},{id:'potent',label:'Potent Spores',mods:{set:{linkDmg:0.25}}}]} } },
+  sunflower:{ name:'Sunflower', cost:200, role:'snipe', air:'yes', target:true, accent:'#e0c366', status:'scorch',
+    blurb:'Charges a long sunbeam that Scorches the biggest threat. Boss answer.',
+    bloom:{id:'solarLance', name:'Solar Lance', cd:24000},
     tiers:[{dmg:45,range:200,rate:2000,up:160},{dmg:75,range:220,rate:1900,up:300,vsStrong:0.5},{dmg:120,range:250,rate:1800,up:0,vsStrong:0.5,pierce:true}],
-    blurb:'Charges a long sunbeam and blasts the biggest threat. Boss answer.' }
+    fork:{
+      a:{id:'solar', name:'Solar Lance', up:330, t5up:290, passive:'Solar Lance: a piercing beam that carves a whole column and melts bosses.',
+        t4:{dmg:175,range:270,rate:1700,vsStrong:0.6,pierce:true,status:'scorch'},
+        t5:{dmg:245,range:300,rate:1600,vsStrong:0.6,pierce:true,status:'scorch'},
+        active:null,
+        graft:[{id:'reach',label:'Far Reach',mods:{range:1.2}},{id:'rapid',label:'Fast Charge',mods:{rate:0.8}}]},
+      b:{id:'radiant', name:'Radiant Bloom', up:330, t5up:290, passive:'Radiant Bloom: shorter reach, but each blast Scorches a small area of bugs.',
+        t4:{dmg:95,range:200,rate:1450,splash:55,status:'scorch'},
+        t5:{dmg:135,range:210,rate:1350,splash:66,status:'scorch'},
+        active:null,
+        graft:[{id:'wide',label:'Wide Bloom',mods:{set:{splash:88}}},{id:'rapid',label:'Fast Bloom',mods:{rate:0.8}}]} } }
 };
 var TOWER_IDS=['marigold','cactus','puffball','sundew','beehive','pitcher','scarecrow','compost','sunflower'];
 
@@ -450,6 +592,7 @@ var ENEMIES={
   ladybug:{ name:'Nurse Ladybug', hp:45, spd:44, armor:0, fly:false, bounty:12, leak:1, r:12, col:'#e0533a', special:'heal' },
   caterpillar:{ name:'Loop Caterpillar', hp:90, spd:32, armor:0, fly:false, bounty:9, leak:2, r:13, col:'#7ab356', special:'noslow' },
   thornvine:{ name:'Creeping Weed', hp:150, spd:20, armor:2, fly:false, bounty:14, leak:3, r:15, col:'#4f6b34', special:'spawn' },
+  glasswing:{ name:'Glass-wing Beetle', hp:75, spd:44, armor:0, fly:false, bounty:11, leak:1, r:13, col:'#bfe6f5', special:'glass' },
   seedling:{ name:'Seedling', hp:6, spd:70, armor:0, fly:false, bounty:1, leak:1, r:6, col:'#dfeecb', special:null }
 };
 var BOSSES={
@@ -459,7 +602,7 @@ var BOSSES={
 /* pest introduction schedule (index = level) */
 var UNLOCK={
   1:['aphid','ant'], 2:['grub'], 3:['slug'], 4:['moth'], 5:['beetle'], 6:['snail'],
-  7:['dandelion'], 8:['wasp'], 9:['ladybug'], 10:['caterpillar'], 11:['thornvine'], 12:[], 13:[]
+  7:['dandelion'], 8:['wasp'], 9:['ladybug','glasswing'], 10:['caterpillar'], 11:['thornvine'], 12:[], 13:[]
 };
 function poolFor(level){
   var p=[]; for(var L=1;L<=Math.min(level,12);L++){ (UNLOCK[L]||[]).forEach(function(id){ if(p.indexOf(id)<0)p.push(id); }); }
@@ -676,9 +819,12 @@ function newRun(cfg){
     combo:0, comboT:0, sapEarnedRun:0,
     endless:!!cfg.endless, endlessWave:0, bestWave:0,
     banner:null, slowmo:0, shake:0, bg:{t:0},
+    pollen:0, pollenMax:3, wetVuln:0, teamRateT:0, _reacts:0,
+    keeper:makeKeeper(save.keeper||'warden'),
     result:null, waveWasRunning:false
   };
 }
+function makeKeeper(id){ return { id:id, xp:0, level:1, cdWater:0, cdFlare:0, cdSig:0, aim:null, castT:0, castKind:null }; }
 
 /* build a wave list for a level */
 function buildWaves(level, endless){
@@ -765,8 +911,10 @@ function spawnEnemy(typeId, boss){
     shield:base.special==='shield'?40:0, shieldT:0,
     regen:base.special==='regen'?base.hp*0.02*hpS:0,
     burstT:0, spawnT:6, healT:0, queenSpawnT:5, queenShieldT:12, queenShieldExpT:0, seg:0,
+    wetT:0, scorchT:0, sporeT:0, rotT:0, nectar:false,
     hitFlash:0, dead:false
   };
+  e.nectar = boss ? true : (typeId!=='seedling' && rnd()<0.08);   // Pollen source (8% of pests, all bosses)
   e.d=0;
   G.enemies.push(e);
   return e;
@@ -851,7 +999,10 @@ function loseLeaves(n,e){
   sfx.leaf(); if(!save.settings.reducedMotion)G.shake=Math.min(6,G.shake+3);
   floatText('-'+n+'🍃',e?posAt(G.geom,e.d).x:VW/2, e?posAt(G.geom,e.d).y:VH-60, COL.danger);
   updateHUD();
-  if(G.leaves<=0){ loseLevel(); }
+  if(G.leaves<=0){
+    if(!G.gnomeUsed){ G.gnomeUsed=true; G.leaves=1; updateHUD(); banner('The Guard Gnome saves the garden!',true); toast('🧙 One-time save — hold the line!'); tone('sine',400,700,0.2,0.16); return; }
+    loseLevel();
+  }
 }
 
 /* =====================================================================
@@ -868,9 +1019,28 @@ function canHit(t,e){
   if(air==='t3') return t.tier>=3;
   return false;
 }
-function towerRange(t){ var rng=t.tiers[t.tier-1].range; return rng*(t.buffRng||1); }
-function towerRate(t){ var r=t.tiers[t.tier-1].rate; return r/(t.buffSpd||1); }
-function towerDmg(t){ return t.tiers[t.tier-1].dmg*(t.buffPow||1); }
+// v2: resolve the active stat block (tier 1-3 = tiers[]; tier 4 = cultivar t4; tier 5 = t5 + graft mods)
+function setTowerStat(t){
+  var d=TOWERS[t.id];
+  if(t.tier<=3){ t.st=d.tiers[t.tier-1]; return; }
+  var fk=d.fork[t.path];
+  if(t.tier===4){ t.st=fk.t4; return; }
+  var s={}; for(var k in fk.t5) s[k]=fk.t5[k];
+  if(t.graft!=null && fk.graft[t.graft]){ var mods=fk.graft[t.graft].mods||{};
+    if(mods.range) s.range=Math.round((s.range||0)*mods.range);
+    if(mods.rate)  s.rate =Math.round((s.rate ||0)*mods.rate);
+    if(mods.dmg)   s.dmg  =Math.round((s.dmg  ||0)*mods.dmg);
+    if(mods.set)   for(var m in mods.set) s[m]=mods.set[m]; }
+  t.st=s;
+}
+function tst(t){ return t.st || t.tiers[t.tier-1]; }
+function towerRange(t){ return tst(t).range*(t.buffRng||1); }
+function towerRate(t){ var m=(t.buffSpd||1); if(G&&G.teamRateT>0)m*=1.5; return tst(t).rate/m; }
+function towerDmg(t){ return (tst(t).dmg||0)*(t.buffPow||1); }
+// what reaction status this tower paints on hit
+function paintOf(t){ return tst(t).status || TOWERS[t.id].status || null; }
+// paint this tower's status(es) onto an enemy it just hit (+ Rot if linked to a Mycelium)
+function hitStatus(e,t){ if(e.dead)return; var s=paintOf(t); if(s)applyStatus(e,s); if(t.grantRot)applyStatus(e,'rot'); }
 
 function findTarget(t){
   var rng=towerRange(t), best=null, bestKey=-1e9, wantAir=(t.id==='beehive');
@@ -887,6 +1057,7 @@ function findTarget(t){
     else if(mode==='last'){ key=-progressOf(e); }
     else if(mode==='closest'){ key=-dist2(t.x,t.y,posAt(G.geom,e.d).x,posAt(G.geom,e.d).y); }
     else if(mode==='strong'){ key=e.hpMax; }
+    else if(mode==='ripe'){ key=((e.wetT>0?1:0)+(e.scorchT>0?1:0)+(e.sporeT>0?1:0)+(e.rotT>0?1:0))*1e6 + progressOf(e); }
     else key=progressOf(e);
     if(key>bestKey){ bestKey=key; best=e; }
   }
@@ -898,7 +1069,9 @@ function applyDamage(e, amount, opts){
   if(e.dead)return;
   var amt=amount;
   if(!opts.dot && e.armor){ amt=Math.max(0, amt-e.armor); }
+  if(!opts.dot && e.special==='glass') amt*=0.4;  // Glass-wing shrugs off direct hits; DoT/reactions hit full
   amt*=e.vuln;
+  if(e.wetT>0 && G.wetVuln) amt*=(1+G.wetVuln);   // Nectar Sundew: Wet bugs take more
   if(amt<=0)return;
   // shield first
   if(e.shield>0){ var ab=Math.min(e.shield,amt); e.shield-=ab; amt-=ab; e.shieldT=0; if(amt<=0){ e.hitFlash=0.06; return; } }
@@ -917,7 +1090,11 @@ function addDot(e, d, src){ // d={d,t,stk} => per-0.5s dmg d, duration t, max st
 function killEnemy(e, by){
   if(e.dead)return; e.dead=true;
   var p=posAt(G.geom,e.d);
-  addSeeds(e.bounty,{x:p.x,y:p.y});
+  var bounty=e.bounty;   // Worm Bin: +Seeds for kills in its radius
+  for(var wi=0;wi<G.towers.length;wi++){ var wt=G.towers[wi]; if(wt.killBonus>0){ var wr=towerRange(wt); if(dist2(wt.x,wt.y,p.x,p.y)<=wr*wr){ bounty=Math.round(bounty*(1+wt.killBonus)); break; } } }
+  addSeeds(bounty,{x:p.x,y:p.y});
+  if(e.nectar){ G.pollen=Math.min(G.pollenMax,(G.pollen||0)+1); floatText('+1 🌼',p.x,p.y-8,COL.gold2); updateHUD(); }
+  if(G.keeper){ G.keeper.xp+=e.bounty; keeperCheckLevel(); }
   G.pestsShooed++;
   G.combo++; G.comboT=1.2;
   poof(p.x,p.y,e.col);
@@ -926,78 +1103,153 @@ function killEnemy(e, by){
   if(e.special==='split' && e.tid!=='seedling'){
     for(var i=0;i<3;i++){ var s=spawnEnemy('seedling'); s.d=Math.max(0,e.d-6+i*4); }
   }
+  if(e.bloomrot){ for(var bi=0;bi<G.enemies.length;bi++){ var bo=G.enemies[bi]; if(bo===e||bo.dead)continue; var bop=posAt(G.geom,bo.d); if(dist2(p.x,p.y,bop.x,bop.y)<50*50) applyStatus(bo,'spore'); } }
 }
 
+/* =====================================================================
+   GARDEN REACTIONS (v2 signature) — statuses combine into named reactions
+   Wet 💧 + Scorch 🔥 = Steam · Spore 🍄 + Scorch = Wildfire ·
+   Wet + Spore = Bloom-Rot · Scorch onto Rot 🟣 = Corrode
+   ===================================================================== */
+var REACT_INFO={ steam:{t:'STEAM!',c:'#bfe6f5'}, wildfire:{t:'WILDFIRE!',c:'#e08a3a'},
+  bloomrot:{t:'BLOOM-ROT!',c:'#c98bff'}, corrode:{t:'CORRODE!',c:'#9fd06a'} };
+function applyStatus(e, kind){
+  if(!e||e.dead||!kind) return;
+  // a NEW status meeting a compatible existing one detonates (consume both)
+  if(kind==='scorch' && e.wetT>0){ e.wetT=0; react(e,'steam'); return; }
+  if(kind==='wet'    && e.scorchT>0){ e.scorchT=0; react(e,'steam'); return; }
+  if(kind==='scorch' && e.sporeT>0){ e.sporeT=0; react(e,'wildfire'); return; }
+  if(kind==='spore'  && e.scorchT>0){ e.scorchT=0; react(e,'wildfire'); return; }
+  if(kind==='wet'    && e.sporeT>0){ e.sporeT=0; react(e,'bloomrot'); return; }
+  if(kind==='spore'  && e.wetT>0){ e.wetT=0; react(e,'bloomrot'); return; }
+  if(kind==='scorch' && e.rotT>0){ react(e,'corrode'); return; }   // Rot persists (it's the vuln)
+  // else set/refresh the timer
+  if(kind==='wet'){ e.wetT=3; e.slowF=Math.min(e.slowF,0.85); e.slowT=Math.max(e.slowT,0.4); }
+  else if(kind==='scorch'){ e.scorchT=3; }
+  else if(kind==='spore'){ e.sporeT=3; }
+  else if(kind==='rot'){ e.rotT=4; e.vuln=Math.max(e.vuln,1.3); e.vulnT=Math.max(e.vulnT,4); }
+}
+function react(e, kind, depth){
+  if(!e||e.dead) return; depth=depth||0;
+  var cap=e.hitCap||Infinity, p=posAt(G.geom,e.d);
+  if(kind==='steam'){
+    applyDamage(e, Math.min(cap, 18 + e.hpMax*0.12), {dot:true});   // bypass armor, %HP vs tanks
+    e.slowF=Math.min(e.slowF,0.4); e.slowT=Math.max(e.slowT,1.2);
+  } else if(kind==='wildfire'){
+    addDot(e,{d:8,t:3,stk:3},'react'); e.scorchT=3;                 // burning + re-scorched
+    if(depth<2){ var r=60; for(var i=0;i<G.enemies.length;i++){ var o=G.enemies[i]; if(o===e||o.dead)continue; var op=posAt(G.geom,o.d);
+      if(dist2(p.x,p.y,op.x,op.y)<=r*r){ if(o.scorchT>0){ o.scorchT=0; react(o,'wildfire',depth+1); } else o.scorchT=3; } } }
+  } else if(kind==='bloomrot'){
+    addDot(e,{d:6,t:4,stk:3},'react'); e.bloomrot=1;                // on death, paints Spore nearby (killEnemy handles via flag)
+  } else if(kind==='corrode'){
+    applyDamage(e, Math.min(cap, 20), {dot:true}); e.vuln=Math.max(e.vuln,1.4); e.vulnT=Math.max(e.vulnT,3);
+  }
+  G._reacts=(G._reacts||0)+1;
+  reactFX(p.x,p.y,kind);
+}
+function reactFX(x,y,kind){
+  var info=REACT_INFO[kind]||{t:'!',c:'#fff'};
+  floatText(info.t, x, y-14, info.c);
+  if(!save.settings.reducedMotion){ ring(x,y,34,info.c); poof(x,y,info.c); } else G.fx.push({kind:'flash',x:x,y:y,col:info.c,life:0.2});
+  tone('sine', 520, 760, 0.10, 0.10);
+}
+
+function nearestTargets(t,n){ var rng=towerRange(t),arr=[];
+  for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i]; if(e.dead||!canHit(t,e))continue; if(inRange(t,e,rng))arr.push(e); }
+  arr.sort(function(a,b){return progressOf(b)-progressOf(a);}); return arr.slice(0,n);
+}
 function towerFire(t, dt){
-  var st=t.tiers[t.tier-1];
+  var st=tst(t);
   t.cd-=dt*1000;
-  // aura / passive towers act on their own cadence
+  if(t.bloomCd>0)t.bloomCd-=dt*1000;
+  // ----- SUNDEW: slow aura + Wet paint + chip; Tar root -----
   if(t.id==='sundew'){
-    // slow aura every frame; chip damage on rate
-    var rng=towerRange(t), root=(t.tier===3);
+    var rng=towerRange(t);
     for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i]; if(e.dead)continue; if(!inRange(t,e,rng))continue;
-      if(e.special!=='noslow'){ e.slowF=Math.min(e.slowF, 1-st.slow); e.slowT=Math.max(e.slowT, t.tier===3?1.5:0.12); }  // sticky residue only at T3
+      if(e.special!=='noslow'){ e.slowF=Math.min(e.slowF, 1-(st.slow||0.25)); e.slowT=Math.max(e.slowT, t.tier>=3?1.5:0.12); }
     }
     if(t.cd<=0){ t.cd=towerRate(t);
       var strong=null,sk=-1;
       for(var j=0;j<G.enemies.length;j++){ var e2=G.enemies[j]; if(e2.dead)continue; if(!inRange(t,e2,rng))continue;
-        applyDamage(e2, st.dmg, {by:t});
-        if(root && e2.hpMax>sk){ sk=e2.hpMax; strong=e2; }
+        applyDamage(e2,(st.dmg||2),{by:t}); hitStatus(e2,t);
+        if(e2.hpMax>sk){ sk=e2.hpMax; strong=e2; }
       }
-      if(root && strong){ if(!t.rootCd||t.rootCd<=0){ strong.rootT=0.5; t.rootCd=4000; } }
+      if(st.rootEvery && strong){ if(!t.rootCd||t.rootCd<=0){ strong.rootT=Math.max(strong.rootT,st.rootDur||1); t.rootCd=st.rootEvery; } }
     }
     if(t.rootCd>0)t.rootCd-=dt*1000;
     return;
   }
-  if(t.id==='scarecrow' || t.id==='compost') { // handled elsewhere (buff/econ)
-    if(t.id==='compost'){ if(G.running && t.cd<=0){ t.cd=towerRate(t); addSeeds(st.seeds,{x:t.x,y:t.y-14}); } }
-    if(t.id==='scarecrow' && t.tier===3){ // periodic freeze
-      if(t.cd<=0){ t.cd=towerRate(t); var rr=towerRange(t);
-        for(var f=0;f<G.enemies.length;f++){ var ef=G.enemies[f]; if(ef.dead||ef.fly)continue; if(inRange(t,ef,rr))ef.rootT=Math.max(ef.rootT,0.8); }
-        ring(t.x,t.y,rr,'#b3a077');
-      }
-    }
+  // ----- SCARECROW: buff (applyBuffs) + Watchcrow freeze / Trickster fear-Wet -----
+  if(t.id==='scarecrow'){
+    if(st.freeze){ if(t.cd<=0){ t.cd=towerRate(t); var rr=towerRange(t);
+      for(var f=0;f<G.enemies.length;f++){ var ef=G.enemies[f]; if(ef.dead||ef.fly)continue; if(inRange(t,ef,rr))ef.rootT=Math.max(ef.rootT,0.8); }
+      ring(t.x,t.y,rr,'#b3a077'); } }
+    if(st.fearWet){ if(!t.fearCd||t.fearCd<=0){ t.fearCd=st.fearEvery||5000; var rw=towerRange(t);
+      for(var fw=0;fw<G.enemies.length;fw++){ var ew=G.enemies[fw]; if(ew.dead)continue; if(inRange(t,ew,rw)){ ew.rootT=Math.max(ew.rootT,0.3); applyStatus(ew,'wet'); } }
+      ring(t.x,t.y,rw,'#8fd3ff'); }
+      if(t.fearCd>0)t.fearCd-=dt*1000; }
     return;
   }
+  // ----- COMPOST: economy (Worm killBonus read in killEnemy; Myco link in applyBuffs) -----
+  if(t.id==='compost'){
+    t.killBonus=st.killBonus||0;
+    if(G.running && t.cd<=0){ t.cd=towerRate(t); addSeeds(st.seeds||8,{x:t.x,y:t.y-14}); }
+    return;
+  }
+  // ----- CACTUS: ring AoE (+bleed / +Spore per cultivar) -----
   if(t.id==='cactus'){
     if(t.cd<=0){ t.cd=towerRate(t); var rc=towerRange(t), hitAny=false;
       for(var c=0;c<G.enemies.length;c++){ var ec=G.enemies[c]; if(ec.dead||ec.fly)continue; if(!inRange(t,ec,rc))continue;
-        applyDamage(ec, towerDmg(t), {by:t}); hitAny=true;
-        if(t.tier===3) addDot(ec,{d:2,t:1.5,stk:3},'cactus');
+        applyDamage(ec, towerDmg(t), {by:t}); hitStatus(ec,t);
+        if(st.bleed) addDot(ec,{d:st.bleed.d,t:st.bleed.t,stk:st.bleed.stk},'cactus');
+        else if(t.tier===3) addDot(ec,{d:2,t:1.5,stk:3},'cactus');
+        hitAny=true;
       }
-      if(hitAny){ ring(t.x,t.y,rc,'#e8dcc8'); }
+      if(hitAny) ring(t.x,t.y,rc,'#e8dcc8');
     }
     return;
   }
-  // targeted towers
+  // ----- targeted towers -----
   if(t.cd>0) return;
   var tgt=findTarget(t); if(!tgt) return;
   t.cd=towerRate(t);
   var tp=posAt(G.geom,tgt.d); t.ang=Math.atan2(tp.y-t.y,tp.x-t.x);
   if(t.id==='marigold'){
-    var darts=t.tier; for(var d=0;d<darts;d++){ var dmg=towerDmg(t); if(t.tier===3&&rnd()<0.12)dmg*=2; applyDamage(tgt,dmg,{by:t}); }
+    var targets = st.spread ? nearestTargets(t, st.spread) : [tgt];
+    if(!targets.length) targets=[tgt];
+    var shots = st.spread ? targets.length : Math.min(t.tier,3);
+    for(var mi=0; mi<shots; mi++){ var tg=targets[mi % targets.length];
+      t.shotCount=(t.shotCount||0)+1;
+      var dmg=towerDmg(t);
+      if(st.crit){ if(t.shotCount % st.crit.every === 0) dmg*=st.crit.mult; }
+      else if(t.tier===3 && rnd()<0.12) dmg*=2;
+      applyDamage(tg,dmg,{by:t}); hitStatus(tg,t);
+      if(st.hitSlow && !tg.dead){ tg.slowF=Math.min(tg.slowF,1-st.hitSlow); tg.slowT=Math.max(tg.slowT,1); }
+    }
     tracer(t.x,t.y,tp.x,tp.y,'#e08a3a'); sfx.shoot();
   } else if(t.id==='sunflower'){
     var dmgS=towerDmg(t); if(st.vsStrong && (t.targetMode||'first')==='strong')dmgS*=(1+st.vsStrong); else if(st.vsStrong)dmgS*=(1+st.vsStrong*0.5);
-    if(st.pierce){ // hit all along line to target
-      G.enemies.forEach(function(e){ if(e.dead)return; if(!canHit(t,e))return; var p=posAt(G.geom,e.d);
-        if(distToSeg(p.x,p.y,t.x,t.y,tp.x,tp.y)<20) applyDamage(e,dmgS,{by:t}); });
-    } else applyDamage(tgt,dmgS,{by:t});
+    if(st.pierce){ G.enemies.forEach(function(e){ if(e.dead)return; if(!canHit(t,e))return; var p=posAt(G.geom,e.d);
+        if(distToSeg(p.x,p.y,t.x,t.y,tp.x,tp.y)<20){ applyDamage(e,dmgS,{by:t}); hitStatus(e,t); } }); }
+    else if(st.splash){ G.enemies.forEach(function(e){ if(e.dead)return; if(!canHit(t,e))return; var p=posAt(G.geom,e.d);
+        if(dist2(tp.x,tp.y,p.x,p.y)<=st.splash*st.splash){ applyDamage(e,dmgS,{by:t}); hitStatus(e,t); } }); puffRing(tp.x,tp.y,st.splash); }
+    else { applyDamage(tgt,dmgS,{by:t}); hitStatus(tgt,t); }
     beam(t.x,t.y,tp.x,tp.y); tone('sine',700,500,0.18,0.12);
   } else if(t.id==='pitcher'){
-    applyDamage(tgt, towerDmg(t), {by:t}); addDot(tgt, st.dot, 'pitcher');
+    applyDamage(tgt, towerDmg(t), {by:t}); if(st.dot)addDot(tgt, st.dot, 'pitcher'); hitStatus(tgt,t);
     if(st.vuln){ tgt.vuln=Math.max(tgt.vuln,1+st.vuln); tgt.vulnT=3; }
+    if(st.splashN){ var got=0; for(var pi=0;pi<G.enemies.length && got<st.splashN;pi++){ var pe=G.enemies[pi]; if(pe===tgt||pe.dead)continue; var pp=posAt(G.geom,pe.d);
+      if(dist2(tp.x,tp.y,pp.x,pp.y)<60*60){ applyDamage(pe, towerDmg(t)*0.6, {by:t}); if(st.dot)addDot(pe,st.dot,'pitcher'); hitStatus(pe,t); got++; } } }
     acidDrip(t.x,t.y,tp.x,tp.y);
   } else if(t.id==='beehive'){
     for(var b=0;b<(st.bees||1);b++){ spawnBee(t,tgt); }
   } else if(t.id==='puffball'){
-    G.projs.push({ kind:'spore', x:t.x,y:t.y, tx:tp.x,ty:tp.y, vx:0,vy:0, t:0, dur:0.55, dmg:towerDmg(t), splash:st.splash, cloud:t.tier===3, by:t });
+    G.projs.push({ kind:'spore', x:t.x,y:t.y, tx:tp.x,ty:tp.y, sx:t.x,sy:t.y, t:0, dur:0.55, dmg:towerDmg(t), splash:st.splash, cloud:(!!st.cloud||t.tier===3), by:t });
     tone('sine',300,220,0.12,0.10);
   }
 }
-function spawnBee(t,tgt){
-  var st=t.tiers[t.tier-1];
-  G.projs.push({ kind:'bee', x:t.x,y:t.y, target:tgt, dmg:st.dmg, sting:(t.tier===3), speed:340, life:2.2, by:t });
+function spawnBee(t,tgt){ var st=tst(t);
+  G.projs.push({ kind:'bee', x:t.x,y:t.y, target:tgt, dmg:towerDmg(t), sting:!!st.sting, speed:340, life:2.2, by:t });
 }
 function distToSeg(px,py,ax,ay,bx,by){ var dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy||1,tt=clamp(((px-ax)*dx+(py-ay)*dy)/L2,0,1); var cx=ax+dx*tt,cy=ay+dy*tt; return Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy)); }
 
@@ -1013,13 +1265,13 @@ function updateProjectiles(dt){
       }
       var pt=posAt(G.geom,tg.d), ang=Math.atan2(pt.y-p.y,pt.x-p.x);
       p.x+=Math.cos(ang)*p.speed*dt; p.y+=Math.sin(ang)*p.speed*dt;
-      if(dist2(p.x,p.y,pt.x,pt.y)<14*14){ applyDamage(tg,p.dmg,{by:p.by}); if(p.sting)addDot(tg,{d:3,t:1,stk:3},'bee'); G.projs.splice(i,1); }
+      if(dist2(p.x,p.y,pt.x,pt.y)<14*14){ applyDamage(tg,p.dmg,{by:p.by}); if(p.sting)addDot(tg,{d:3,t:1,stk:3},'bee'); if(p.by)hitStatus(tg,p.by); G.projs.splice(i,1); }
     } else if(p.kind==='spore'){
       p.t+=dt; var k=p.t/p.dur;
       if(k>=1){ // land: splash
         var r=p.splash;
         for(var s=0;s<G.enemies.length;s++){ var es=G.enemies[s]; if(es.dead)continue; var ep=posAt(G.geom,es.d);
-          if(dist2(p.tx,p.ty,ep.x,ep.y)<=r*r){ if(!es.fly||true){ applyDamage(es,p.dmg,{by:p.by}); } } }
+          if(dist2(p.tx,p.ty,ep.x,ep.y)<=r*r){ applyDamage(es,p.dmg,{by:p.by}); if(p.by)hitStatus(es,p.by); } }
         puffRing(p.tx,p.ty,r);
         if(p.cloud){ G.clouds.push({x:p.tx,y:p.ty,r:r,life:1.5,tick:0}); }
         G.projs.splice(i,1);
@@ -1035,12 +1287,20 @@ function updateProjectiles(dt){
 
 /* scarecrow buffs: recompute each frame */
 function applyBuffs(){
-  for(var i=0;i<G.towers.length;i++){ var t=G.towers[i]; t.buffSpd=1; t.buffRng=1; t.buffPow=1; }
-  for(var s=0;s<G.towers.length;s++){ var sc=G.towers[s]; if(sc.id!=='scarecrow')continue; var st=sc.tiers[sc.tier-1], rng=st.range;
-    for(var j=0;j<G.towers.length;j++){ var t2=G.towers[j]; if(t2===sc)continue; if(dist2(sc.x,sc.y,t2.x,t2.y)<=rng*rng){
-      t2.buffSpd=Math.max(t2.buffSpd,1+(st.spd||0)); t2.buffRng=Math.max(t2.buffRng,1+(st.rng||0)); t2.buffPow=Math.max(t2.buffPow,1+(st.pow||0));
-    } }
+  for(var i=0;i<G.towers.length;i++){ var t=G.towers[i]; t.buffSpd=1; t.buffRng=1; t.buffPow=1; t.grantRot=false; }
+  G.wetVuln=0;
+  for(var s=0;s<G.towers.length;s++){ var src=G.towers[s], st=tst(src);
+    if(src.id==='scarecrow'){ var rng=towerRange(src);
+      for(var j=0;j<G.towers.length;j++){ var t2=G.towers[j]; if(t2===src)continue; if(dist2(src.x,src.y,t2.x,t2.y)<=rng*rng){
+        t2.buffSpd=Math.max(t2.buffSpd,1+(st.spd||0)); t2.buffRng=Math.max(t2.buffRng,1+(st.rng||0)); t2.buffPow=Math.max(t2.buffPow,1+(st.pow||0)); } }
+    } else if(src.id==='sundew'){
+      if(st.allyRate){ var rn=towerRange(src); for(var k=0;k<G.towers.length;k++){ var t3=G.towers[k]; if(t3===src)continue; if(dist2(src.x,src.y,t3.x,t3.y)<=rn*rn) t3.buffSpd=Math.max(t3.buffSpd,1+st.allyRate); } }
+      if(st.wetVuln) G.wetVuln=Math.max(G.wetVuln,st.wetVuln);
+    } else if(src.id==='compost' && (st.linkDmg||st.grantStatus)){ var rm=towerRange(src);
+      for(var m=0;m<G.towers.length;m++){ var t4=G.towers[m]; if(t4===src)continue; if(dist2(src.x,src.y,t4.x,t4.y)<=rm*rm){ if(st.linkDmg)t4.buffPow=Math.max(t4.buffPow,1+st.linkDmg); if(st.grantStatus==='rot')t4.grantRot=true; } }
+    }
   }
+  if(G.keeper && G.keeper.level>=3) for(var g=0;g<G.towers.length;g++) G.towers[g].buffRng=Math.max(G.towers[g].buffRng,1.08); // Keeper L3 Green Thumb
 }
 
 /* =====================================================================
@@ -1055,6 +1315,7 @@ function updateEnemies(dt){
     if(e.slowT>0){ e.slowT-=dt; if(e.slowT<=0)e.slowF=1; }
     if(e.rootT>0)e.rootT-=dt;
     if(e.vulnT>0){ e.vulnT-=dt; if(e.vulnT<=0)e.vuln=1; }
+    if(e.wetT>0)e.wetT-=dt; if(e.scorchT>0)e.scorchT-=dt; if(e.sporeT>0)e.sporeT-=dt; if(e.rotT>0)e.rotT-=dt;  // reaction statuses
     // dots (bypass armor)
     for(var d=e.dots.length-1;d>=0;d--){ var dt2=e.dots[d]; dt2.acc+=dt; dt2.remain-=dt;
       while(dt2.acc>=dt2.interval){ dt2.acc-=dt2.interval; applyDamage(e, dt2.dmg, {dot:true}); if(e.dead)break; }
@@ -1120,19 +1381,35 @@ function placeTower(plotIdx, id){
   var pl=G.geom.plots[plotIdx];
   G.seeds-=def.cost;
   var t={ id:id, plot:plotIdx, x:pl.x,y:pl.y, tier:1, tiers:def.tiers, cd:0, ang:-Math.PI/2, invested:def.cost,
-    targetMode:def.role==='dot'||def.role==='snipe'?'strong':'first', buffSpd:1,buffRng:1,buffPow:1, placeT:save.settings.reducedMotion?0:0.18, rootCd:0 };
+    targetMode:def.role==='dot'||def.role==='snipe'?'strong':'first', buffSpd:1,buffRng:1,buffPow:1, placeT:save.settings.reducedMotion?0:0.18, rootCd:0,
+    path:null, graft:null, st:null, shotCount:0, killBonus:0, grantRot:false, bloomCd:0 };
+  setTowerStat(t);
   G.towers.push(t); G.towersPlaced++;
   sfx.place(); if(!save.settings.reducedMotion){}
   closeBuy(); updateHUD();
   if(!save.tut.done && G.cfg.level===1){ if(G.towersPlaced===1) showTip('Pests follow the path to the compost bin. Stop them before the end. Tap START to send a wave.'); }
 }
 function upgradeTower(t){
-  if(t.tier>=3){ return; }
+  if(t.tier>=3){ return; }   // T3->T4 uses forkTower; T4->T5 uses graftTower
   var cost=t.tiers[t.tier-1].up;
   if(G.seeds<cost){ toast('Not enough Seeds.'); sfx.bad(); return; }
-  G.seeds-=cost; t.invested+=cost; t.tier++; sfx.upgrade();
+  G.seeds-=cost; t.invested+=cost; t.tier++; setTowerStat(t); sfx.upgrade();
   if(!save.settings.reducedMotion)sparkle(t.x,t.y);
   updateHUD(); openManage(t); // refresh
+}
+function forkTower(t, path){
+  if(t.tier!==3)return; var fk=TOWERS[t.id].fork[path], cost=fk.up;
+  if(G.seeds<cost){ toast('Not enough Seeds.'); sfx.bad(); return; }
+  G.seeds-=cost; t.invested+=cost; t.path=path; t.tier=4; setTowerStat(t); sfx.upgrade();
+  if(!save.settings.reducedMotion)sparkle(t.x,t.y);
+  toast('Grew into '+fk.name+'!'); updateHUD(); openManage(t);
+}
+function graftTower(t, gi){
+  if(t.tier!==4)return; var fk=TOWERS[t.id].fork[t.path], cost=fk.t5up;
+  if(G.seeds<cost){ toast('Not enough Seeds.'); sfx.bad(); return; }
+  G.seeds-=cost; t.invested+=cost; t.graft=gi; t.tier=5; setTowerStat(t); sfx.upgrade();
+  if(!save.settings.reducedMotion)sparkle(t.x,t.y);
+  toast('Grafted '+fk.graft[gi].label+'!'); updateHUD(); openManage(t);
 }
 function sellTower(t){
   var refund=Math.floor(t.invested*0.7);
@@ -1143,11 +1420,89 @@ function sellTower(t){
 }
 function sparkle(x,y){ for(var i=0;i<8;i++){ var a=i/8*6.28; G.fx.push({kind:'spark',x:x,y:y,a:a,col:COL.gold,life:0.5}); } }
 
+/* ===== BLOOMS (Pollen supers) — one dramatic verb per plant ===== */
+function fireBloom(t){
+  if(!t || (G.pollen||0)<=0 || (t.bloomCd||0)>0) return;
+  var def=TOWERS[t.id]; if(!def.bloom) return;
+  G.pollen--; t.bloomCd=def.bloom.cd; updateHUD();
+  sfx.upgrade(); banner('🌼 '+def.bloom.name+'!',true); if(!save.settings.reducedMotion)sparkle(t.x,t.y);
+  var id=def.bloom.id, i, e, p;
+  if(id==='goldenHour'){ var r=towerRange(t)*1.6; for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; p=posAt(G.geom,e.d); if(dist2(t.x,t.y,p.x,p.y)<=r*r){ for(var q=0;q<3;q++){ applyDamage(e,(towerDmg(t)||24)*1.5,{by:t}); if(!e.dead)applyStatus(e,'scorch'); } } } ring(t.x,t.y,r,'#e08a3a'); }
+  else if(id==='amberFreeze'){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; e.rootT=Math.max(e.rootT,2.5); applyStatus(e,'wet'); e.vuln=Math.max(e.vuln,1.4); e.vulnT=Math.max(e.vulnT,3); } }
+  else if(id==='bumperCrop'){ addSeeds(120,{x:t.x,y:t.y-14}); }
+  else if(id==='brambleBurst'){ var rc=towerRange(t)*1.4; for(var n=0;n<3;n++){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead||e.fly)continue; p=posAt(G.geom,e.d); if(dist2(t.x,t.y,p.x,p.y)<=rc*rc){ applyDamage(e,(towerDmg(t)||16),{by:t}); if(!e.dead)addDot(e,{d:4,t:3,stk:3},'cactus'); } } } ring(t.x,t.y,rc,'#e8dcc8'); }
+  else if(id==='acidFlood'){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; applyStatus(e,'rot'); addDot(e,{d:10,t:4,stk:4},'react'); } }
+  else if(id==='swarmCall'){ var live=G.enemies.filter(function(x){return !x.dead;}); for(var b=0;b<12;b++){ var tg=live[b%Math.max(1,live.length)]; if(tg)G.projs.push({kind:'bee',x:t.x,y:t.y,target:tg,dmg:(towerDmg(t)||12),sting:true,speed:360,life:2.5,by:t}); } }
+  else if(id==='sporeBloom'){ var ft=findTarget(t); var tp=posAt(G.geom, ft?ft.d:G.geom.total*0.4); G.clouds.push({x:tp.x,y:tp.y,r:120,life:4,tick:0}); for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; p=posAt(G.geom,e.d); if(dist2(tp.x,tp.y,p.x,p.y)<=120*120)applyStatus(e,'spore'); } puffRing(tp.x,tp.y,120); }
+  else if(id==='solarLance'){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; applyDamage(e,(towerDmg(t)||120)*1.4,{by:t}); if(!e.dead)applyStatus(e,'scorch'); } beam(t.x,t.y,VW/2,10); }
+  else if(id==='frightNight'){ for(i=0;i<G.enemies.length;i++){ e=G.enemies[i]; if(e.dead)continue; e.rootT=Math.max(e.rootT,1.5); } G.teamRateT=5000; }
+  closeManage();
+}
+
+/* ===== THE KEEPER (in-match hero at the bin; two aimed powers + levels) ===== */
+function keeperPos(){ var pts=G.map.path, last=pts[pts.length-1]; return { x:clamp(last[0]-32,20,VW-20), y:VH-72 }; }
+function keeperTick(dt){ var k=G.keeper; if(!k)return; var ms=dt*1000;
+  if(k.cdWater>0)k.cdWater-=ms; if(k.cdFlare>0)k.cdFlare-=ms; if(k.cdSig>0)k.cdSig-=ms; if(k.castT>0)k.castT-=dt; }
+function keeperCheckLevel(){ var k=G.keeper; if(!k)return;
+  var lv=1, need=45, acc=0; while(lv<10 && k.xp>=acc+need){ acc+=need; lv++; need=Math.round(need*1.5); }
+  if(lv!==k.level){ k.level=lv;
+    if(lv===3)toast('Keeper Lv3 · Green Thumb (+range to all plants)');
+    if(lv===7){ var kb=el('kSig'); if(kb)kb.style.display='flex'; toast('Keeper Lv7 · Rally unlocked!'); }
+    var le=el('kLvl'); if(le)le.textContent='Keeper Lv'+lv;
+  }
+}
+function keeperAim(kind){ var k=G.keeper; if(!k)return false;
+  if(kind==='water'&&k.cdWater>0)return false; if(kind==='flare'&&k.cdFlare>0)return false; if(kind==='sig'&&(k.level<7||k.cdSig>0))return false;
+  k.aim=kind; toast('Tap the garden to aim.'); return true; }
+function aoe(x,y,r,fn){ for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i]; if(e.dead)continue; var p=posAt(G.geom,e.d); if(dist2(x,y,p.x,p.y)<=r*r)fn(e); } }
+function keeperCast(vx,vy){ var k=G.keeper; if(!k||!k.aim)return false; var kind=k.aim; k.aim=null; k.castT=0.4; k.castKind=kind;
+  if(kind==='water'){ k.cdWater=12000; aoe(vx,vy,70,function(e){ applyStatus(e,'wet'); e.slowF=Math.min(e.slowF,0.6); e.slowT=Math.max(e.slowT,1); }); ring(vx,vy,70,'#8fd3ff'); }
+  else if(kind==='flare'){ k.cdFlare=18000; aoe(vx,vy,80,function(e){ applyDamage(e,40,{by:null}); if(!e.dead)applyStatus(e,'scorch'); }); ring(vx,vy,80,'#e08a3a'); poof(vx,vy,'#e08a3a'); }
+  else if(kind==='sig'){ k.cdSig=40000; G.teamRateT=6000; banner('Rally!',true); }
+  sfx.place(); return true; }
+function drawKeeper(){ if(!G.keeper)return; var kp=keeperPos();
+  if(G.keeper.aim){ ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle=G.keeper.aim==='flare'?'#e08a3a':'#8fd3ff'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('aim '+(G.keeper.aim==='flare'?'☀️':'💧'), VW/2, 140); ctx.restore(); }
+  // art hook: keeper sprite (idle / casting)
+  var kk='keeper_'+G.keeper.id + (G.keeper.castT>0 ? (G.keeper.castKind==='flare'?'_sunflare':'_wateringcan') : '');
+  if(spr(ctx, kk, kp.x, kp.y, 1, null) || spr(ctx, 'keeper_'+G.keeper.id, kp.x, kp.y, 1, null)) return;
+  ctx.save(); ctx.translate(kp.x,kp.y);
+  ctx.fillStyle='#3a3324'; ctx.beginPath(); ctx.ellipse(0,15,10,3,0,0,6.283); ctx.fill();
+  ctx.fillStyle='#6b7a4a'; roundRect(ctx,-6,-2,12,16,3); ctx.fill();               // apron/body
+  ctx.fillStyle='#d8c3a0'; ctx.beginPath(); ctx.arc(0,-7,6,0,6.283); ctx.fill();    // head
+  ctx.fillStyle=COL.sage2; ctx.beginPath(); ctx.moveTo(-10,-11); ctx.lineTo(10,-11); ctx.lineTo(0,-20); ctx.closePath(); ctx.fill(); // straw hat
+  ctx.fillStyle='#2b2620'; ctx.beginPath(); ctx.arc(-2,-7,0.9,0,6.283); ctx.arc(2,-7,0.9,0,6.283); ctx.fill();
+  if(G.keeper.castT>0){ ctx.globalAlpha=G.keeper.castT*2; ctx.fillStyle=G.keeper.castKind==='flare'?'#e08a3a':'#8fd3ff'; ctx.beginPath(); ctx.arc(8,-4,4,0,6.283); ctx.fill(); }
+  ctx.restore();
+}
+
 /* =====================================================================
    RENDER
    ===================================================================== */
+/* ===== DROP-IN ART LOADER (optional PNGs; canvas fallback if absent) =====
+   Art lives in assets/gg/ per ART_ASSETS.md. manifest.json lists each key's
+   path + frame metadata. Missing/empty manifest => 100% canvas fallback, no errors. */
+var ART_VER='1';
+var GGART={ ready:{}, img:{}, meta:{} };
+function loadArt(){
+  fetch('assets/gg/manifest.json?v='+ART_VER).then(function(r){ return r.ok?r.json():{}; }).then(function(m){
+    for(var key in m){ (function(k,def){ GGART.meta[k]=def; var im=new Image();
+      im.onload=function(){ GGART.img[k]=im; GGART.ready[k]=true; };
+      im.onerror=function(){ GGART.ready[k]=false; };
+      im.src='assets/gg/'+def.path+'?v='+ART_VER; })(key,m[key]); }
+  }).catch(function(){});
+}
+function spr(c,key,x,y,scale,ang,frame){
+  if(!GGART.ready[key]) return false;
+  var d=GGART.meta[key], im=GGART.img[key], f=frame||0;
+  c.save(); c.translate(x,y); if(ang!=null)c.rotate(ang+Math.PI/2); if(scale)c.scale(scale,scale);
+  var fw=d.fw||im.width, fh=d.fh||im.height, ax=(d.anchorX!=null?d.anchorX:fw/2), ay=(d.anchorY!=null?d.anchorY:fh/2);
+  c.drawImage(im, f*fw,0,fw,fh, -ax,-ay,fw,fh); c.restore(); return true;
+}
+var MAP_ARTKEY=['w1_kitchen','w1_herbspiral','w1_pond','w1_trellis'];
 function bgTheme(){ return save.cosmetics.map; }
 function drawBackground(t){
+  // art hook: full-map background painting (per map)
+  if(G && spr(ctx, 'map_'+MAP_ARTKEY[G.cfg.mapIdx], VW/2, VH/2, 1, null)) return;
   var theme=bgTheme();
   var g;
   if(theme==='dawn'){ g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#3a2a3a'); g.addColorStop(0.5,'#5a4030'); g.addColorStop(1,'#2a2418'); }
@@ -1202,8 +1557,15 @@ function drawRangeRing(t,rng,aura){
 }
 
 /* --- tower drawing (also used for icons) --- */
-function drawTower(c,x,y,id,tier,scale,ang,t){
+function drawTower(c,x,y,id,tier,scale,ang,t,cultivar){
   scale=scale||1; ang=(ang===undefined?-Math.PI/2:ang); tier=tier||1;
+  // art hook: static body (no rotation) + rotating head (per tier / cultivar)
+  if(spr(c, id+'_body', x, y, scale, null)){
+    var cid=(tier>=4 && cultivar && TOWERS[id].fork[cultivar]) ? TOWERS[id].fork[cultivar].id : null;
+    var hk=cid ? (id+'_'+cid) : (id+'_head_t'+Math.min(tier,3));
+    spr(c, hk, x, y-6*scale, scale, ang);
+    return;
+  }
   var accent=skinTint(TOWERS[id].accent);
   c.save(); c.translate(x,y); c.scale(scale,scale);
   if(id==='marigold'){
@@ -1269,7 +1631,9 @@ function drawEnemy(e,t){
   // flight shadow
   if(e.fly && !save.settings.reducedMotion){ ctx.save(); ctx.globalAlpha=0.25; ctx.fillStyle='#000'; ctx.beginPath(); ctx.ellipse(0,10-bob,e.r*0.8,4,0,0,6.283); ctx.fill(); ctx.restore(); }
   var id=e.tid, col=e.col, r=e.r;
-  if(id==='aphid'||id==='seedling'){ ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(0,0,r*0.7,r,0,0,6.283); ctx.fill(); ctx.strokeStyle='#6f9a3f'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-r); ctx.lineTo(-3,-r-3); ctx.moveTo(0,-r); ctx.lineTo(3,-r-3); ctx.stroke(); }
+  var _wk=(e.boss?('boss_'+id):id)+'_walk';
+  if(GGART.ready[_wk]){ spr(ctx,_wk,0,0,1,null,Math.floor(t*5+e.d*0.05)%((GGART.meta[_wk]&&GGART.meta[_wk].frames)||1)); }
+  else if(id==='aphid'||id==='seedling'){ ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(0,0,r*0.7,r,0,0,6.283); ctx.fill(); ctx.strokeStyle='#6f9a3f'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-r); ctx.lineTo(-3,-r-3); ctx.moveTo(0,-r); ctx.lineTo(3,-r-3); ctx.stroke(); }
   else if(id==='ant'){ ctx.fillStyle=col; [[0,-6,4],[0,0,5],[0,7,5]].forEach(function(b){ ctx.beginPath(); ctx.arc(b[0],b[1],b[2],0,6.283); ctx.fill(); }); ctx.strokeStyle=col; ctx.lineWidth=1.2; for(var l=0;l<3;l++){ var ly=-2+l*4; ctx.beginPath(); ctx.moveTo(-3,ly); ctx.lineTo(-8,ly-2); ctx.moveTo(3,ly); ctx.lineTo(8,ly-2); ctx.stroke(); } }
   else if(id==='grub'){ ctx.fillStyle=col; ctx.strokeStyle='#d8c39a'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(0,0,r,0.3,6.0); ctx.arc(2,-2,r*0.6,3.3,0.2,true); ctx.fill(); ctx.fillStyle='#7a5a3a'; ctx.beginPath(); ctx.arc(r*0.7,-2,3,0,6.283); ctx.fill(); }
   else if(id==='slug'){ ctx.fillStyle=col; roundRect(ctx,-r*1.2,-r*0.5,r*2.4,r,r*0.5); ctx.fill(); ctx.fillStyle='#a89f8e'; ctx.beginPath(); ctx.ellipse(-r*0.6,-r*0.4,r*0.7,3,0,0,6.283); ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(r,-r*0.4); ctx.lineTo(r+4,-r); ctx.moveTo(r-3,-r*0.4); ctx.lineTo(r,-r-2); ctx.stroke(); }
@@ -1280,6 +1644,7 @@ function drawEnemy(e,t){
   else if(id==='wasp'){ ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(0,3,5,8,0,0,6.283); ctx.fill(); ctx.fillStyle='#2b2620'; ctx.fillRect(-5,0,10,2); ctx.fillRect(-5,4,10,2); ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.ellipse(-6,-3,6,3,-0.5,0,6.283); ctx.ellipse(6,-3,6,3,0.5,0,6.283); ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,11); ctx.lineTo(0,14); ctx.stroke(); }
   else if(id==='ladybug'){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,0,r,0,6.283); ctx.fill(); ctx.fillStyle='#2b2620'; ctx.fillRect(-1,-r,2,r*2); ctx.beginPath(); ctx.arc(-r*0.4,-r*0.2,1.8,0,6.283); ctx.arc(r*0.4,-r*0.2,1.8,0,6.283); ctx.arc(-r*0.4,r*0.3,1.8,0,6.283); ctx.arc(r*0.4,r*0.3,1.8,0,6.283); ctx.fill(); }
   else if(id==='caterpillar'){ ctx.fillStyle=col; for(var cp=0;cp<6;cp++){ ctx.beginPath(); ctx.arc(-r+cp*(r*0.42),Math.sin(cp*1.2)*2,r*0.42,0,6.283); ctx.fill(); } ctx.strokeStyle='#56813a'; ctx.lineWidth=1; }
+  else if(id==='glasswing'){ ctx.globalAlpha=0.55; ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(-5,0,7,9,0.4,0,6.283); ctx.ellipse(5,0,7,9,-0.4,0,6.283); ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle='#8aa6b8'; ctx.beginPath(); ctx.ellipse(0,0,3.5,r,0,0,6.283); ctx.fill(); ctx.strokeStyle='#eaf6ff'; ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(-9,-3); ctx.lineTo(9,-3); ctx.stroke(); }
   else if(id==='thornvine'){ ctx.strokeStyle=col; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-r,r); ctx.lineTo(-r*0.3,-r*0.4); ctx.lineTo(r*0.3,r*0.3); ctx.lineTo(r,-r*0.6); ctx.stroke(); ctx.fillStyle=col; for(var tv=0;tv<3;tv++){ ctx.beginPath(); ctx.moveTo(-r+tv*r,0); ctx.lineTo(-r+tv*r+3,-8); ctx.lineTo(-r+tv*r+6,0); ctx.fill(); } ctx.fillStyle='#3a4f24'; ctx.beginPath(); ctx.arc(0,r,4,0,6.283); ctx.fill(); }
   else if(id==='aphidqueen'){ ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(0,4,r*0.8,r,0,0,6.283); ctx.fill(); ctx.strokeStyle='#7fae5a'; ctx.lineWidth=2; for(var qr=0;qr<4;qr++){ ctx.beginPath(); ctx.ellipse(0,4,r*0.8-qr*7,r-qr*8,0,0,6.283); ctx.stroke(); } ctx.fillStyle='rgba(160,220,120,0.5)'; ctx.beginPath(); ctx.arc(0,r*0.9,r*0.5,0,6.283); ctx.fill(); ctx.fillStyle=COL.gold; for(var cw=0;cw<5;cw++){ var acw=-1.6+cw*0.8; ctx.beginPath(); ctx.moveTo(Math.cos(acw)*r*0.6,-r*0.7); ctx.lineTo(Math.cos(acw)*r*0.6-3,-r*1.1); ctx.lineTo(Math.cos(acw)*r*0.6+3,-r*1.1); ctx.fill(); } }
   else { ctx.fillStyle=col; ctx.beginPath(); ctx.arc(0,0,r,0,6.283); ctx.fill(); }
@@ -1294,6 +1659,10 @@ function drawEnemy(e,t){
     if(e.special==='heal'){ ctx.fillStyle='#9fd06a'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText('✚',x,gy-2); }
     if(e.special==='noslow'&&(e.slowF<1)){ /* immune shown by never slowing */ }
   }
+  // reaction statuses (core info — always shown, shape-distinct emoji)
+  var sg=''; if(e.wetT>0)sg+='💧'; if(e.scorchT>0)sg+='🔥'; if(e.sporeT>0)sg+='🍄'; if(e.rotT>0)sg+='🟣';
+  if(sg){ ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText(sg, x, gy-9); }
+  if(e.nectar){ ctx.strokeStyle='rgba(200,168,75,0.8)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y+bob,r+4,0,6.283); ctx.stroke(); }
   if(e.shield>0){ ctx.strokeStyle='rgba(140,200,255,0.7)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y+bob,r+3,Math.PI*1.1,Math.PI*1.9); ctx.stroke(); }
   // hp bar
   if(e.hp<e.hpMax){ var w=Math.max(14,r*1.8), hx=x-w/2, hy=y+bob-r-3;
@@ -1306,7 +1675,7 @@ function drawTowers(t){
   for(var i=0;i<G.towers.length;i++){ var tw=G.towers[i];
     if(tw.placeT>0){ tw.placeT-=(1/60); }
     var yoff=tw.placeT>0?tw.placeT*40:0, sc=tw.placeT>0?(1-tw.placeT):1;
-    drawTower(ctx,tw.x,tw.y+yoff,tw.id,tw.tier,sc,tw.ang,t);
+    drawTower(ctx,tw.x,tw.y+yoff,tw.id,tw.tier,sc,tw.ang,t,tw.path);
     // tier pips
     for(var p=0;p<tw.tier;p++){ ctx.fillStyle=COL.gold; ctx.beginPath(); ctx.arc(tw.x-6+p*6,tw.y+20,2,0,6.283); ctx.fill(); }
     if(G.selTower===tw){ drawRangeRing(tw, towerRange(tw), TOWERS[tw.id].role==='slow'||TOWERS[tw.id].role==='buff'||TOWERS[tw.id].role==='econ'); }
@@ -1375,6 +1744,7 @@ function render(){
     drawPlots();
     for(var i=0;i<G.enemies.length;i++)drawEnemy(G.enemies[i],t);
     drawTowers(t);
+    drawKeeper();
     drawFX(t);
     drawMascot(t);
     drawBanner();
@@ -1389,6 +1759,7 @@ function updateHUD(){
   if(!G)return;
   el('hLeaves').textContent='🍃 '+G.leaves;
   el('hSeeds').textContent='🌱 '+Math.floor(G.seeds);
+  var pe=el('hPollen'); if((G.pollen||0)>0){ pe.style.display='flex'; pe.textContent='🌼 '+G.pollen; } else pe.style.display='none';
   el('hWave').textContent=G.endless?('Wave '+(G.endlessWave+1)):('Wave '+Math.min(G.waveIdx+1,G.waveTotal)+'/'+G.waveTotal);
 }
 function updateWaveBtn(){
@@ -1396,7 +1767,13 @@ function updateWaveBtn(){
   if(G.running){ b.textContent='Wave in progress'; b.classList.remove('go'); b.disabled=false; b.style.opacity=0.7; }
   else { b.disabled=false; b.style.opacity=1; b.classList.add('go'); b.textContent=(G.endless||G.waveIdx>0)?'▶ NEXT WAVE':'▶ START WAVE'; }
 }
-function showHUD(on){ el('hud-top').classList.toggle('show',on); el('hud-bot').classList.toggle('show',on); el('exitBtn').style.display=on?'none':'flex'; }
+function showHUD(on){ el('hud-top').classList.toggle('show',on); el('hud-bot').classList.toggle('show',on); el('keeper-bar').classList.toggle('show',on); el('exitBtn').style.display=on?'none':'flex'; if(on&&G&&G.keeper){ el('kSig').style.display=G.keeper.level>=7?'flex':'none'; el('kLvl').textContent='Keeper Lv'+G.keeper.level; } }
+function refreshKeeperUI(){ if(!G||!G.keeper)return; var k=G.keeper;
+  var w=el('kWater'),f=el('kFlare'),s=el('kSig');
+  w.classList.toggle('cd',k.cdWater>0); w.classList.toggle('aiming',k.aim==='water');
+  f.classList.toggle('cd',k.cdFlare>0); f.classList.toggle('aiming',k.aim==='flare');
+  s.classList.toggle('cd',k.cdSig>0); s.classList.toggle('aiming',k.aim==='sig');
+}
 
 /* buy sheet */
 var buyBuilt=false, previewTower=null;
@@ -1426,26 +1803,47 @@ function openBuy(plotIdx){
 function closeBuy(){ el('buySheet').classList.remove('show'); if(G)G.selPlot=-1; previewTower=null; }
 
 /* manage sheet */
+var STAGE_NAME=['Sprout','Growing','Mature','Flowering','Ancient'];
 function openManage(t){
   G.selTower=t; G.selPlot=-1; el('buySheet').classList.remove('show');
-  el('mngTitle').textContent=TOWERS[t.id].name;
-  el('mngName').textContent=TOWERS[t.id].name+' · T'+t.tier;
+  var def=TOWERS[t.id];
+  var name=(t.tier>=4&&t.path)?def.fork[t.path].name:def.name;
+  el('mngTitle').textContent=name;
+  el('mngName').textContent=name+' · '+STAGE_NAME[t.tier-1];
   var ic=el('mngIcon').getContext('2d'); ic.setTransform(1,0,0,1,0,0); ic.clearRect(0,0,104,104); ic.setTransform(2,0,0,2,52,58); drawTower(ic,0,0,t.id,t.tier,1.7,-Math.PI/2,0);
-  var pips=el('mngPips').children; for(var p=0;p<3;p++)pips[p].classList.toggle('on',p<t.tier);
-  var st=t.tiers[t.tier-1];
-  var stats=[];
-  if(st.dmg>0)stats.push('DMG '+st.dmg); stats.push('RNG '+st.range);
+  var pips=el('mngPips').children; for(var p=0;p<5;p++)pips[p].classList.toggle('on',p<t.tier);
+  var st=tst(t);
+  var stats=[]; if(st.dmg>0)stats.push('DMG '+st.dmg); stats.push('RNG '+st.range);
   if(t.id!=='compost'&&t.id!=='scarecrow'&&st.dmg>0)stats.push('every '+(st.rate/1000).toFixed(1)+'s');
   el('mngStats').textContent=stats.join(' · ');
-  el('mngEff').textContent=TOWERS[t.id].blurb;
-  var up=el('mngUp');
-  if(t.tier>=3){ up.textContent='Max Tier'; up.disabled=true; }
-  else { var cost=st.up; up.textContent='Upgrade 🌱'+cost; up.disabled=(G.seeds<cost); }
+  el('mngEff').textContent=(t.tier>=4&&t.path)?def.fork[t.path].passive:def.blurb;
+  var up=el('mngUp'), ch=el('mngChoose'); ch.classList.remove('show'); ch.innerHTML='';
+  if(t.tier<3){ var cost=t.tiers[t.tier-1].up; up.style.display='block'; up.textContent='Upgrade 🌱'+cost; up.disabled=(G.seeds<cost); }
+  else if(t.tier===3){ up.style.display='none'; buildChooser(t,'fork'); }
+  else if(t.tier===4){ up.style.display='none'; buildChooser(t,'graft'); }
+  else { up.style.display='block'; up.textContent='Ancient (max)'; up.disabled=true; }
+  var bl=el('mngBloom');
+  if(def.bloom && (G.pollen||0)>0 && (t.bloomCd||0)<=0){ bl.classList.add('show'); bl.textContent='✨ '+def.bloom.name+' (1🌼)'; }
+  else bl.classList.remove('show');
   var tgt=el('mngTgt');
-  if(TOWERS[t.id].target){ tgt.style.display='block'; tgt.textContent=({first:'First',last:'Last',closest:'Closest',strong:'Strongest'})[t.targetMode]; }
+  if(def.target){ tgt.style.display='block'; tgt.textContent=({first:'First',last:'Last',closest:'Closest',strong:'Strongest',ripe:'Ripest'})[t.targetMode]||'First'; }
   else tgt.style.display='none';
   el('mngSheet').classList.add('show');
 }
+function buildChooser(t, mode){
+  var ch=el('mngChoose'); ch.innerHTML=''; ch.classList.add('show'); var def=TOWERS[t.id];
+  if(mode==='fork'){
+    ['a','b'].forEach(function(pk){ var fk=def.fork[pk], cell=document.createElement('div'); cell.className='cc'+(G.seeds<fk.up?' cant':'');
+      cell.innerHTML='<div class="cn">🌸 '+fk.name+'</div><div class="cd">'+fk.passive+'</div><div class="ccost">🌱'+fk.up+'</div>';
+      cell.onclick=function(){ forkTower(t,pk); }; ch.appendChild(cell); });
+  } else {
+    var fk=def.fork[t.path];
+    fk.graft.forEach(function(gr,gi){ var cell=document.createElement('div'); cell.className='cc'+(G.seeds<fk.t5up?' cant':'');
+      cell.innerHTML='<div class="cn">🌿 '+gr.label+'</div><div class="cd">'+graftDesc(gr)+'</div><div class="ccost">🌱'+fk.t5up+'</div>';
+      cell.onclick=function(){ graftTower(t,gi); }; ch.appendChild(cell); });
+  }
+}
+function graftDesc(gr){ var m=gr.mods||{}; if(m.range)return '+'+Math.round((m.range-1)*100)+'% range'; if(m.rate)return '+'+Math.round((1-m.rate)*100)+'% fire rate'; if(m.dmg)return '+'+Math.round((m.dmg-1)*100)+'% damage'; if(m.set){ var k=Object.keys(m.set)[0]; return 'Stronger '+({bees:'swarm',slow:'slow',splash:'blast',vuln:'melt',allyRate:'boost',linkDmg:'link',crit:'crits',spd:'aura',seeds:'yield',fearEvery:'fear'}[k]||k); } return 'Upgrade'; }
 function closeManage(){ el('mngSheet').classList.remove('show'); if(G)G.selTower=null; }
 
 /* toast + tip */
@@ -1597,7 +1995,7 @@ function sunbeamsForRun(run){
    ===================================================================== */
 function fieldTap(vx,vy){
   if(!G||G.state==='DONE')return;
-  // if a sheet is open and tap is on field, ignore (sheet has its own buttons)
+  if(G.keeper && G.keeper.aim){ keeperCast(vx,vy); return; }   // aiming a Keeper power
   // tower hit?
   for(var i=0;i<G.towers.length;i++){ var t=G.towers[i]; if(dist2(vx,vy,t.x,t.y)<22*22){ openManage(t); return; } }
   // plot hit?
@@ -1640,7 +2038,11 @@ function setSpeedBtn(){ if(G)el('btnSpeed').textContent=G.speed+'×'; }
 el('buyX').onclick=function(){ closeBuy(); };
 el('mngX').onclick=function(){ closeManage(); };
 el('mngUp').onclick=function(){ if(G&&G.selTower)upgradeTower(G.selTower); };
-el('mngTgt').onclick=function(){ if(!G||!G.selTower)return; var modes=['first','last','closest','strong']; var t=G.selTower; var i=modes.indexOf(t.targetMode); t.targetMode=modes[(i+1)%modes.length]; openManage(t); };
+el('mngBloom').onclick=function(){ if(G&&G.selTower)fireBloom(G.selTower); };
+el('mngTgt').onclick=function(){ if(!G||!G.selTower)return; var modes=['first','last','closest','strong','ripe']; var t=G.selTower; var i=modes.indexOf(t.targetMode); if(i<0)i=0; t.targetMode=modes[(i+1)%modes.length]; openManage(t); };
+el('kWater').onclick=function(){ audioResume(); keeperAim('water'); };
+el('kFlare').onclick=function(){ audioResume(); keeperAim('flare'); };
+el('kSig').onclick=function(){ audioResume(); keeperAim('sig'); };
 // sell hold-to-confirm
 (function(){ var btn=el('mngSell'), fill=btn.querySelector('.fill'), timer=null, start=0;
   function down(){ if(!G||!G.selTower)return; start=now(); fill.style.transition='width .4s linear'; fill.style.width='100%';
@@ -1757,10 +2159,13 @@ function frame(ts){
       for(var s=0;s<n;s++){ stepSim(sdt); if(G.state==='DONE')break; }
     }
     updateFX(real);
+    if(UIState==='GAME')refreshKeeperUI();
   }
   render();
 }
 function stepSim(dt){
+  if(G.teamRateT>0)G.teamRateT-=dt*1000;
+  keeperTick(dt);
   waveSpawnTick(dt);
   for(var i=0;i<G.towers.length;i++)towerFire(G.towers[i],dt);
   updateProjectiles(dt);
@@ -1777,16 +2182,19 @@ document.addEventListener('visibilitychange',function(){ if(document.hidden && U
 window.__GTD={
   get G(){ return G; }, TOWERS:TOWERS, ENEMIES:ENEMIES, MAPS:MAPS, save:function(){return save;},
   start:startLevel, startEndless:startEndless, place:placeTower, upgrade:function(i){ upgradeTower(G.towers[i]); },
-  startWave:startWave, step:function(sec){ var dt=1/60,t=0; applyBuffs(); while(t<sec&&G&&G.state!=='DONE'){ stepSim(dt); t+=dt; } },
+  fork:function(i,path){ forkTower(G.towers[i],path); }, graft:function(i,gi){ graftTower(G.towers[i],gi); },
+  bloom:function(i){ fireBloom(G.towers[i]); }, keeperPower:function(k){ return keeperAim(k); }, keeperCast:function(x,y){ return keeperCast(x,y); }, tst:function(i){ return tst(G.towers[i]); },
+  startWave:startWave, step:function(sec){ var dt=1/60,t=0; while(t<sec&&G&&G.state!=='DONE'){ applyBuffs(); stepSim(dt); t+=dt; } },
   buildWaves:buildWaves, sunbeamsForRun:sunbeamsForRun, geom:function(){return G?G.geom:null;},
-  addSeeds:function(n){ if(G){G.seeds+=n;updateHUD();} }, state:function(){ return G?{state:G.state,leaves:G.leaves,seeds:G.seeds,enemies:G.enemies.length,towers:G.towers.length,wave:G.waveIdx,pests:G.pestsShooed}:null; }
+  addSeeds:function(n){ if(G){G.seeds+=n;updateHUD();} }, addPollen:function(n){ if(G){G.pollen=Math.min(G.pollenMax,(G.pollen||0)+n);} },
+  state:function(){ return G?{state:G.state,leaves:G.leaves,seeds:G.seeds,enemies:G.enemies.length,towers:G.towers.length,wave:G.waveIdx,pests:G.pestsShooed,reacts:G._reacts||0,pollen:G.pollen||0,keeperLv:G.keeper?G.keeper.level:0}:null; }
 };
 
 /* =====================================================================
    BOOT
    ===================================================================== */
 function boot(){
-  loadSave(); resize(); applyTextScale();
+  loadSave(); resize(); applyTextScale(); loadArt();
   el('menuSap').textContent=save.sap; el('menuStars').textContent=totalStars();
   el('stampMenu').textContent='Garden Guard '+BUILD;
   requestAnimationFrame(frame);
