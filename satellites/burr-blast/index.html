@@ -632,8 +632,9 @@ var PHYS = (function(){
     if(this.onContact){
       for(var c=0;c<manifolds.length;c++){
         var mf=manifolds[c];
-        if(mf._impulse>0.001){
-          this.onContact(mf.a, mf.b, mf._impulse, mf.contacts[0]);
+        // report by CLOSING SPEED (0 at rest) so resting support never reads as a hit
+        if(mf._approach>36){
+          this.onContact(mf.a, mf.b, mf._approach, mf._impulse, mf.contacts[0]);
         }
       }
     }
@@ -649,6 +650,7 @@ var PHYS = (function(){
     m.e=Math.min(a.restitution,b.restitution);
     m.df=Math.sqrt(a.friction*b.friction);
     m._impulse=0;
+    m._approach=0;      // fastest closing speed among contacts (0 at rest)
     m._c=[];
     // wake sleeping bodies that are being touched by an awake body
     if(a.awake && !b.awake) b.wake();
@@ -665,6 +667,7 @@ var PHYS = (function(){
       // relative velocity for restitution bias
       var rv=vsub( vadd(b.vel, vcrossSV(b.angVel,rb)), vadd(a.vel, vcrossSV(a.angVel,ra)) );
       var vn=vdot(rv,m.normal);
+      if(-vn > m._approach) m._approach = -vn;   // closing speed for damage gauge
       // restitution: extra separating velocity, only on a fast approach (vn<0)
       var restBias = (vn < -200) ? -m.e*vn : 0;
       // Baumgarte: positive bias when penetrating, pushes bodies apart
@@ -758,16 +761,18 @@ var KILL_Y = WORLD_H + 260;         // below this, a body has fallen off the pat
    MATERIALS  (physics + render + destructibility)
    dmg: normal-impulse over `tough` chips hp; break at hp<=0.
    ================================================================ */
+/* `tough` is now an IMPACT-SPEED threshold (px/s): a contact closing faster
+   than this chips hp. Resting/settling contacts (~0 closing speed) never damage. */
 var MAT = {
-  wood:  { density:0.85, rest:0.10, fric:0.62, hp:36,  tough:820,  score:200, indestruct:false,
+  wood:  { density:0.85, rest:0.10, fric:0.62, hp:30,  tough:260, score:200, indestruct:false,
            fill:'#8a5a34', edge:'#5f3c20', grain:'#6d4527' },
-  stone: { density:2.7,  rest:0.06, fric:0.74, hp:150, tough:2900, score:140, indestruct:false,
+  stone: { density:2.7,  rest:0.06, fric:0.74, hp:95,  tough:600, score:140, indestruct:false,
            fill:'#6f7566', edge:'#464b3e' },
-  glass: { density:0.7,  rest:0.05, fric:0.36, hp:12,  tough:340,  score:340, indestruct:false,
+  glass: { density:0.7,  rest:0.05, fric:0.36, hp:12,  tough:130, score:340, indestruct:false,
            fill:'rgba(120,196,196,.5)', edge:'rgba(190,240,240,.85)' },
-  tnt:   { density:1.05, rest:0.18, fric:0.5,  hp:22,  tough:520,  score:260, indestruct:false, explosive:true,
+  tnt:   { density:1.05, rest:0.18, fric:0.5,  hp:20,  tough:230, score:260, indestruct:false, explosive:true,
            fill:'#2a2320', edge:'#c8482f' },
-  steel: { density:7.5,  rest:0.08, fric:0.6,  hp:1e9, tough:1e12, score:0,   indestruct:true,
+  steel: { density:7.5,  rest:0.08, fric:0.6,  hp:1e9, tough:1e12, score:0,  indestruct:true,
            fill:'#3b4148', edge:'#20242a' }
 };
 /* ================================================================
@@ -971,7 +976,7 @@ function buildLevels(){
   add(2,'Mixed Masonry', ['burr','acorn','burr','acorn'], merge(hut(600), wall(800,'stone',3), {blocks:[],pests:[P(800,GT-140,17)]}));
   add(2,'The Overhang', ['acorn','burr','acorn'], merge(table(650,'stone'), tower(860,'wood',2)));
   add(2,'Fortress Row', ['acorn','acorn','burr','burr'], merge(hut(600), hut(760), tower(920,'stone',2)));
-  add(2,'Balanced Beam', ['burr','acorn','burr'], merge(plankOnPost(720,'stone'), {blocks:[BK('stone',660,GT-108,40,40),BK('stone',780,GT-108,40,40)],pests:[P(720,GT-150,16)]}));
+  add(2,'Balanced Beam', ['burr','acorn','burr'], merge(plankOnPost(720,'stone'), {blocks:[BK('stone',660,GT-113,40,40),BK('stone',780,GT-113,40,40)],pests:[P(720,GT-109,16)]}));
   add(2,'Stoneyard Finale', ['acorn','acorn','burr','acorn'], merge(table(600,'stone'), wall(780,'stone',4), tower(920,'stone',3)));
 
   /* ---------- WORLD 3 · Dewglass Hollow (glass shatters; Split + Puffball) ---------- */
@@ -988,8 +993,8 @@ function buildLevels(){
   add(4,'First Spark', ['thornpod','burr'], merge({blocks:[ground('tnt',700,44,44)],pests:[pestGround(640,16),pestGround(760,16)]}));
   add(4,'Chain Reaction', ['burr','thornpod'], merge({blocks:[ground('tnt',640,44,44),ground('tnt',700,44,44),ground('tnt',760,44,44)],pests:[P(640,GT-60,15),P(700,GT-60,15),P(760,GT-60,15)]}));
   add(4,'Around the Corner', ['boomerang','burr'], merge(steelWall(720,4), {blocks:[],pests:[pestGround(820,17)]}));
-  add(4,'Bunker', ['thornpod','boomerang','burr'], merge(steelWall(640,4), {blocks:[ground('tnt',760,44,44)],pests:[pestGround(760,16),pestGround(840,16)]}));
-  add(4,'Powder Keg', ['thornpod','acorn','burr'], merge(hut(640), {blocks:[ground('tnt',760,44,44),ground('tnt',800,44,44)],pests:[P(760,GT-60,15),P(800,GT-60,15),pestGround(900,16)]}));
+  add(4,'Bunker', ['thornpod','boomerang','burr'], merge(steelWall(680,4), {blocks:[ground('tnt',800,44,44)],pests:[pestGround(864,16),pestGround(934,16)]}));
+  add(4,'Powder Keg', ['thornpod','acorn','burr'], merge(hut(640), {blocks:[ground('tnt',756,44,44),ground('tnt',806,44,44)],pests:[P(756,GT-60,15),P(806,GT-60,15),pestGround(900,16)]}));
   add(4,'The Redoubt', ['boomerang','thornpod','acorn','burr'], merge(steelWall(600,5), tower(820,'tnt',2), {blocks:[],pests:[pestGround(700,16),pestGround(920,16)]}));
   add(4,'Bogworks', ['thornpod','boomerang','acorn','burr'], merge(hut(600), {blocks:[ground('tnt',740,44,44),ground('tnt',784,44,44)],pests:[P(740,GT-60,15),P(784,GT-60,15)]}, steelWall(900,4), {blocks:[],pests:[pestGround(1000,17)]}));
 
@@ -998,8 +1003,9 @@ function buildLevels(){
     ammo:['thornpod','acorn','boomerang','thornpod','acorn','burr'],
     blocks:[].concat(
       steelWall(760,5).blocks,
-      [ground('tnt',700,44,44), ground('tnt',920,44,44), ground('stone',860,48,48), BK('stone',860,GT-48-24,90,20)]),
-    pests:[ pestGround(680,16), pestGround(980,16) ],
+      [ ground('tnt',680,44,44), ground('tnt',1020,44,44),
+        ground('stone',620,46,46), BK('stone',620,GT-46-23,90,20) ]),
+    pests:[ pestGround(560,16), pestGround(1090,16) ],
     bossPest:{ x:900, y:GT-40, r:40, hp:5 } });
 
   return L;
@@ -1030,7 +1036,7 @@ function isLevelUnlocked(n){
 /* ================================================================
    GAME STATE + SIMULATION
    ================================================================ */
-var DMG_K = 0.020;          // impulse->damage scale
+var DMG_K = 0.045;          // (closingSpeed - tough) * DMG_K * massFactor = hp lost
 var SETTLE_SPEED = 46;      // below this a body counts as "still"
 var G = null;               // live game state
 var endlessMode = false, endlessLevel = 0;
@@ -1046,7 +1052,8 @@ function newState(){
     star2:0, star3:0,
     cam:0, camTarget:0, scale:1, viewW:1300,
     shake:0, particles:[], flashes:[], rings:[],
-    shotTime:0, stillTime:0, resolved:false, tHint:0, exploding:false
+    shotTime:0, stillTime:0, resolved:false, tHint:0, exploding:false,
+    settleGuard:1.0            // no contact damage while the fort first settles (ends at first shot)
   };
 }
 
@@ -1062,7 +1069,7 @@ function makePestBody(pd, boss){
   var r=pd.r||17;
   var body=new PHYS.Body({ shape:'circle', radius:r, x:pd.x, y:pd.y,
     density:0.6, restitution:0.2, friction:0.7, canSleep:true, mat:'pest',
-    game:{ kind:boss?'boss':'pest', hp:boss?(pd.hp||5):14, tough:boss?900:220, r:r, dmgCd:0, maxHp:boss?(pd.hp||5):14 } });
+    game:{ kind:boss?'boss':'pest', hp:boss?(pd.hp||5):14, tough:boss?520:200, r:r, dmgCd:0, maxHp:boss?(pd.hp||5):14 } });
   return body;
 }
 
@@ -1184,33 +1191,35 @@ function triggerAbility(){
    CONTACT / DAMAGE  (called by the physics world each step)
    ================================================================ */
 var _lastThwack=0;
-function handleContact(a,b,impulse,pt){
-  damageBody(a,b,impulse,pt);
-  damageBody(b,a,impulse,pt);
-  // impact SFX / dust for solid hits
-  if(impulse>1400){
-    var now=G.world? (G._t||0):0;
+/* speed = closing speed at impact (px/s); massFactor from the striking body */
+function handleContact(a,b,speed,impulse,pt){
+  damageBody(a,b,speed,pt);
+  damageBody(b,a,speed,pt);
+  // impact SFX / dust for solid hits (throttled so a multi-contact hit is one thwack)
+  if(speed>320 && (G._t-_lastThwack)>0.045){
+    _lastThwack=G._t;
     var mat=(a.game&&a.game.mat)||(b.game&&b.game.mat);
-    if(mat==='stone') SFX.thwackStone(Math.min(1,impulse/6000));
-    else if(mat==='glass'){ /* handled on break */ }
-    else SFX.thwackWood(Math.min(1,impulse/6000));
-    if(impulse>2600){ dust(pt.x,pt.y); addShake(Math.min(7,impulse/2600)); }
+    if(mat==='stone'||mat==='steel') SFX.thwackStone(Math.min(1,speed/1300));
+    else if(mat!=='glass') SFX.thwackWood(Math.min(1,speed/1300));
+    if(speed>640){ dust(pt.x,pt.y); addShake(Math.min(7,speed/750)); }
   }
 }
-function damageBody(bd, other, impulse, pt){
+function massFactor(other, lo){ var m=(other&&isFinite(other.mass))?other.mass:2600; return clamp(m/900, lo||0.35, 3); }
+function damageBody(bd, other, speed, pt){
   if(!bd.game || bd.dead) return;
+  if(G.settleGuard>0) return;         // fort is still settling; ignore settling contacts
   var k=bd.game.kind;
   if(k==='block'){
     if(bd.game.indestruct) return;
-    if(impulse<=bd.game.tough) return;
-    bd.game.hp -= (impulse-bd.game.tough)*DMG_K;
+    if(speed<=bd.game.tough) return;
+    bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.35);
     if(bd.game.hp<=0) destroyBlock(bd,pt);
   } else if(k==='pest'){
-    if(impulse<=bd.game.tough) return;
-    bd.game.hp -= (impulse-bd.game.tough)*DMG_K;
+    if(speed<=bd.game.tough) return;
+    bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.45);
     if(bd.game.hp<=0) killPest(bd,pt);
   } else if(k==='boss'){
-    if(impulse<1100) return;
+    if(speed<520) return;
     if(G._t - bd.game.dmgCd < 0.32) return;
     bd.game.dmgCd=G._t;
     bd.game.hp-=1; puff(bd.pos.x,bd.pos.y-bd.radius,'#e0703a',10); SFX.thwackStone(0.8); addShake(6);
@@ -1292,6 +1301,9 @@ function gameLoop(ts){
 }
 function step(dt){
   G._t=(G._t||0)+dt;
+  // settle guard: suppress contact damage while the fort first settles; the
+  // first launch ends it immediately so the shot lands with full force.
+  if(G.settleGuard>0){ if(G.ammoUsed>0) G.settleGuard=0; else G.settleGuard-=dt; }
   // physics substeps for stability
   var sub=2, sdt=dt/sub;
   for(var s=0;s<sub;s++) G.world.step(sdt);
