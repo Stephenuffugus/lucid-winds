@@ -3,7 +3,23 @@
 Format: reverse-chronological. This is a single-file app; "version" = the `SAVE_KEY` era + notable
 feature sets. Update this on meaningful changes.
 
-## [2.1.0] — Loot rarity + OC grade (current)
+## [2.2.0] — Ascendancies (current)
+Save key unchanged; `oc.ascendancy` backfilled + pruned by `migrateOC`.
+
+Added
+- **Ascendancies (subclasses)**: unlock at level 15; choose one of 4 subclasses
+  (Juggernaut / Assassin / Elementalist / Warlord), each a 5-node mini-tree with a
+  keystone-like signature node (upside + a real downside). Point pool grows with level
+  (1 at L15, +1 every 6 levels, cap 5). Folded into `aggregateMods` alongside the tree.
+  New **Class** sheet tab (choose → allocate/refund → change subclass); the Overview
+  tab surfaces the active subclass.
+
+Validated
+- 29k fights with ascendancies + graded gems fuzzed: 0 crash / 0 NaN, all terminate
+  (defensive subclasses push the cap-hit rate to ~1.4%, still all resolve). `mechanics`
+  + `validate` intact.
+
+## [2.1.0] — Loot rarity + OC grade
 Save key unchanged (`lucidwinds_arena_v2`); shape is additive and migrates forward
 (`normalizeOwned` upgrades pre-rarity saves; every legacy gem becomes Common).
 

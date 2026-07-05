@@ -193,3 +193,17 @@ hit-adding gems), `color`, and `weight` (roll-on-learn odds; `rollGrade` picks w
   the score (that's the “rare loot raises your grade” link) — re-run `npm run mechanics` after edits.
 - Grade lives on the **owned** gem (`ownedAugments = [{key,grade}]`); sockets resolve it via
   `sockets(p)`/`augGradeOf` at combat + render time, so a Reforge upgrades a gem everywhere at once.
+
+## Add / tune an ascendancy (subclass)
+
+Subclasses live in the `ASCENDANCIES` table (near `RARITY`). Each is `{key,name,emoji,color,desc,
+nodes:[{id,name,desc,effect}]}`. Node `effect` uses the **same vocab as tree nodes** (`applyNodeEffect`);
+for a keystone-like node (upside + downside) set `effect:{keystone:"asc_<key>"}` and add a `case` in
+`applyKeystone`. `ASC_NODE_BY_ID` is built automatically; `aggregateMods` folds allocated nodes.
+
+- **New subclass:** add an `ASCENDANCIES` entry (keep node ids globally unique, prefixed like `jug_`),
+  plus any new `asc_*` keystone cases. `migrateOC` prunes nodes to the chosen subclass, so no other
+  wiring is needed. Then `npm run stress` (the harness fuzzes subclasses) + `npm run mechanics`.
+- **Tune unlock / pace:** `ASC_UNLOCK_LEVEL` and `ascPointsTotal` (1 at unlock, +1 every 6 levels, cap 5).
+- Give every keystone-like node a real downside (life/damage-taken/speed) — the stress cap-hit rate is a
+  good smell test that defensive stacks still terminate.

@@ -73,6 +73,13 @@ hit-adding gems — always inside the existing clamps. `rollGrade` (weighted) pi
 `ocGradeScore`/`ocGrade` fold build investment + socketed gem rarity into a Common→Cosmic badge
 (`OC_GRADE_CUT` thresholds). See `RARITY_DESIGN.md`.
 
+### `ASCENDANCIES[]` — subclasses (2.2)
+4 subclasses, each a `nodes[]` mini-tree; node effects reuse the tree-node vocab (`applyNodeEffect`),
+signature nodes are keystone-like via `asc_*` cases in `applyKeystone`. `oc.ascendancy = {key,allocated}`
+(migrated + pruned in `migrateOC`); `aggregateMods` folds allocated ascendancy nodes alongside the tree.
+Unlock `ASC_UNLOCK_LEVEL`; point pool `ascPointsTotal` (1 at unlock, +1/6 levels, cap 5). UI is the
+`tabAscend` "Class" sheet tab (`chooseAsc`/`allocAsc`/`refundAsc`/`resetAsc`).
+
 ### Global state (`state`)
 `glory, roster[], alliances[], ownedAugments[]` (persisted) and view state
 `screen, draft, battle, battleSel, tourney, sheetId, sheetTab, treeSel, treeView, augPick`

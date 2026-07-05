@@ -1462,11 +1462,16 @@ function tabOverview(oc){
     return `<div class="br"><span class="st">${STAT_LABEL[k]}</span><span class="base">${base}</span><span class="add">${buff?"+"+buff:"—"}</span><span class="add">${tree?"+"+tree:"—"}</span><span class="fin" style="color:${g.c}">${fin}</span></div>`;}).join("");
   const ks=keystonesOf(oc);
   const ksHtml=ks.length?`<div style="margin-top:14px"><div class="art-hint" style="margin-bottom:6px">Active keystones</div>${ks.map(n=>`<span class="chip key" style="margin:0 5px 5px 0">✦ ${esc(n)}</span>`).join("")}</div>`:"";
+  const asc=ASC_BY_KEY[oc.ascendancy&&oc.ascendancy.key];
+  const ascHtml=asc
+    ? `<div style="margin-top:12px"><div class="art-hint" style="margin-bottom:6px">Ascendancy</div><span class="chip" style="border-color:${asc.color}66;color:${asc.color}">${asc.emoji} ${esc(asc.name)}</span> <span class="mnote" style="margin:0 0 0 4px">${ascPointsSpent(oc)}/${ascPointsTotal(oc)} nodes</span></div>`
+    : ((oc.level||1)>=ASC_UNLOCK_LEVEL ? `<div style="margin-top:12px"><button class="btn xs primary" data-act="sheetTab" data-k="ascend">◈ Choose your Ascendancy</button></div>` : "");
   const notableCount=oc.tree.allocated.filter(id=>{const nn=TREE.byId[id];return nn&&nn.type==="notable";}).length;
   return `<div class="section-h"><span class="n">02</span><h2>Overview</h2></div>
     <div style="color:var(--mist);font-size:13px;margin-bottom:10px">Innate — <b style="color:${race.color}">${race.passive.name}</b>: ${race.passive.desc}</div>
     <div class="breakdown"><div class="bh"><span>Stat</span><span style="text-align:right">Base</span><span style="text-align:right">Powers</span><span style="text-align:right">Web</span><span style="text-align:right">Total</span></div>${rows}</div>
     ${ksHtml}
+    ${ascHtml}
     <div class="kv">
       <div class="cell"><div class="l">Max HP</div><div class="v">${F.maxHp}</div></div>
       <div class="cell"><div class="l">Attack</div><div class="v">${F.atk}</div></div>
