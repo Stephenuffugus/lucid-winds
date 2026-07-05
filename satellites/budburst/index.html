@@ -182,8 +182,8 @@
   .mode-card:active{transform:scale(.96)}
   .mode-card .mc-ic{font-size:20px;margin-bottom:3px}
   .mode-card .mc-nm{font-size:15px;font-weight:800}
-  .mode-card small{font-size:10.5px;color:var(--ink-dim)}
-  .mode-card .mc-meta{position:absolute;top:11px;right:12px;font-family:var(--mono);font-size:10px;color:var(--gold)}
+  .mode-card small{font-size:11px;color:var(--ink-dim)}
+  .mode-card .mc-meta{position:absolute;top:11px;right:12px;font-family:var(--mono);font-size:11px;color:var(--gold)}
 
   /* loadout */
   .load-slots{display:flex;gap:10px;justify-content:center;margin:14px 0 6px;width:100%;max-width:330px}
@@ -202,32 +202,35 @@
 
   /* boss bar */
   .boss-bar{display:flex;align-items:center;gap:9px;padding:6px 16px 2px}
-  .boss-bar .bb-label{font-size:9px;letter-spacing:.2em;color:var(--rose);font-weight:800;white-space:nowrap}
-  .boss-bar .bb-track{flex:1;height:9px;border-radius:6px;background:var(--line);overflow:hidden;border:1px solid var(--line2)}
+  .boss-bar .bb-label{font-size:11px;letter-spacing:.1em;color:var(--rose);font-weight:800;white-space:nowrap}
+  .boss-bar .bb-track{flex:1;height:10px;border-radius:6px;background:var(--line);overflow:hidden;border:1px solid var(--line2)}
   .boss-bar .bb-fill{height:100%;width:100%;background:linear-gradient(90deg,#e07a9a,#c8a84b);transition:width .25s}
-  .boss-bar .bb-hp{font-family:var(--mono);font-size:10px;color:var(--ink-dim);white-space:nowrap}
+  .boss-bar .bb-hp{font-family:var(--mono);font-size:11px;color:var(--ink-dim);white-space:nowrap}
   #timerPill.danger .sv{color:var(--bad)}
 
-  /* ability + booster trays (over the arena, above the shooter) */
-  .ability-tray{position:absolute;left:10px;right:10px;bottom:8px;z-index:6;display:flex;gap:8px;justify-content:center;pointer-events:none}
-  .ability-tray .ab-btn{pointer-events:auto;flex:1;max-width:110px;min-height:52px;border:1px solid var(--line2);border-radius:13px;
-    background:rgba(16,20,13,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:.62;transition:.15s}
+  /* ability + booster trays — a strip ABOVE the arena (never over the launcher/aim) */
+  .tray-strip{display:flex;gap:8px;align-items:center;justify-content:center;padding:0 10px}
+  .tray-strip:empty{display:none}
+  .ability-tray{flex:1;display:flex;gap:8px;justify-content:center}
+  .ability-tray .ab-btn{flex:1;max-width:120px;min-height:48px;border:1px solid var(--line2);border-radius:13px;
+    background:linear-gradient(180deg,#161d10,#10140d);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:.7;transition:.15s;padding:6px 4px}
   .ability-tray .ab-btn.ready{opacity:1;border-color:var(--gold);box-shadow:0 0 12px -2px var(--gold)}
   .ability-tray .ab-ic{font-size:20px}
   .ability-tray .ab-bar{width:80%;height:4px;border-radius:3px;background:var(--line);overflow:hidden}
   .ability-tray .ab-bar i{display:block;height:100%;background:var(--gold);border-radius:3px}
   .ability-tray .ab-btn.ready .ab-bar i{background:var(--good)}
-  .booster-tray{position:absolute;right:10px;bottom:10px;z-index:6;display:flex;gap:8px;pointer-events:none}
-  .booster-tray .boost-btn{pointer-events:auto;min-width:48px;min-height:48px;border:1px solid var(--line2);border-radius:12px;
-    background:rgba(16,20,13,.82);display:flex;align-items:center;justify-content:center;gap:3px;font-size:19px;position:relative}
+  .booster-tray{display:flex;gap:8px}
+  .booster-tray .boost-btn{min-width:48px;min-height:48px;border:1px solid var(--line2);border-radius:12px;
+    background:linear-gradient(180deg,#161d10,#10140d);display:flex;align-items:center;justify-content:center;gap:3px;font-size:19px;position:relative}
   .booster-tray .boost-btn .bc{position:absolute;bottom:-4px;right:-4px;background:var(--sage);color:#0d1409;font-size:10px;font-weight:800;
     font-family:var(--mono);border-radius:20px;padding:1px 5px}
 
   /* shop tabs + currency */
   .shop-tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px;scrollbar-width:none}
   .shop-tabs::-webkit-scrollbar{display:none}
-  .shop-tab{flex:0 0 auto;padding:9px 14px;min-height:44px;border-radius:11px;border:1px solid var(--line2);font-size:12px;font-weight:700;
+  .shop-tab{flex:0 0 auto;padding:9px 14px;min-height:48px;border-radius:11px;border:1px solid var(--line2);font-size:12px;font-weight:700;
     color:var(--ink-dim);white-space:nowrap;display:flex;align-items:center}
+  #loadout,#puzzles{padding:calc(18px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom))}
   .shop-tab.on{color:var(--ink);border-color:var(--sage);background:linear-gradient(180deg,#1d2814,#141c0d)}
   .tile .price-n{color:var(--warn)}
   .buy.up{border:1px solid var(--gold);color:var(--gold)}
@@ -303,12 +306,14 @@
       <div class="stat"><span class="sv" id="scoreVal">0</span><span class="sl">score</span></div>
     </div>
     <div class="boss-bar" id="bossBar" style="display:none"><span class="bb-label">BLOOM CORE</span><div class="bb-track"><div class="bb-fill" id="bossFill"></div></div><span class="bb-hp" id="bossHp"></span></div>
+    <div class="tray-strip">
+      <div class="ability-tray" id="abilityTray" style="display:none"></div>
+      <div class="booster-tray" id="boosterTray" style="display:none"></div>
+    </div>
     <div class="arena-wrap">
       <canvas id="arena"></canvas>
       <div class="combo-pop" id="comboPop"></div>
       <div id="dangerVig"></div>
-      <div class="ability-tray" id="abilityTray" style="display:none"></div>
-      <div class="booster-tray" id="boosterTray" style="display:none"></div>
     </div>
   </section>
 
@@ -512,12 +517,12 @@ function addBoost(k,n){const d=boostData();d[k]=(d[k]||0)+n;Store.s(K.boost,JSON
 
 /* ---- Puzzle pack: 40 fixed seeded boards, tight clear budgets ----------- */
 const PUZZLES=Array.from({length:40},(_,i)=>{
-  const colors=Math.min(6,3+Math.floor(i/8));
-  const rows=Math.min(9,5+Math.floor(i/6));
+  const colors=Math.min(5,3+Math.floor(i/12));  // cap 5 — 6 colours is too match-starved for a tight clear
+  const rows=Math.min(8,5+Math.floor(i/7));
   const fill=0.90-(i%6)*0.008;
   const budEst=Math.round(rows*7.4*fill);
-  const par=Math.max(5,Math.round(budEst/3.0));
-  const shots=Math.ceil(par*3.2)+6;           // generous enough to be winnable; par gates 3★
+  const par=Math.max(5,Math.round(budEst/2.8));
+  const shots=Math.ceil(par*3.6)+8;             // generous enough to be winnable; par gates 3★
   return {seed:((i*2654435761)^0x9e3779b9)>>>0, colors, rows, fill, specials:[], par, shots};
 });
 function pzProg(){try{return JSON.parse(Store.g(K.pzProg)||"{}");}catch(e){return{};}}
@@ -894,7 +899,8 @@ function finishResolve(gained,popped,progressed){
     G.descendEvery=Math.max(3,CONFIG.arcadeWaveShots-Math.floor(G.wave/6));
     G.colorCount=Math.min(6,4+Math.floor(G.wave/5));
     if(shotsFired%G.descendEvery===0){G.wave++;maybeDescend();
-      if(G.wave%5===0){addNectar(CONFIG.nectar.arcadeWave);toast("Wave "+G.wave+" · +"+CONFIG.nectar.arcadeWave+" 🍯");}}
+      if(G.wave%5===0&&(G.arcadeNectar||0)<3){G.arcadeNectar=(G.arcadeNectar||0)+CONFIG.nectar.arcadeWave;addNectar(CONFIG.nectar.arcadeWave);toast("Wave "+G.wave+" · +"+CONFIG.nectar.arcadeWave+" 🍯");}
+      else if(G.wave%5===0)toast("Wave "+G.wave+"!");}
   } else if(m==="blitz"){
     G.colorCount=Math.min(6,5+Math.floor(G.score/6000));
     if(shotsFired%G.descendEvery===0)maybeDescend();
@@ -998,19 +1004,21 @@ function sbGrant(n,tag){if(n<=0)return;n=Math.min(n,CONFIG.sun.runCap-runSb);if(
   if(window._sbCapEarn)window._sbCapEarn(n,tag);}
 
 function levelWon(){
+  if(state!=="over")return; // stale scheduled callback (a new run already started) — ignore
   const stars=computeStars();const isBoss=G.objective==="boss";
   let coinE=Math.floor(G.score/CONFIG.coinsPerScore),nectarE=0;
   chord([523,659,784,1046],0.16,0.06);buzz([20,30,60]);
   if(G.mode==="adventure"){
-    setStars(G.g,G.l,stars);coinE+=stars*CONFIG.starCoin;
+    const prior=starsOf(G.g,G.l);setStars(G.g,G.l,stars);coinE+=stars*CONFIG.starCoin;
     sbGrant(CONFIG.sun.base+stars*CONFIG.sun.perStar,"budburst:level_clear");
-    if(stars>=3)nectarE+=CONFIG.nectar.threeStar; if(isBoss)nectarE+=CONFIG.nectar.boss;
+    if(stars>=3&&prior<3)nectarE+=CONFIG.nectar.threeStar;   // rare nectar: first 3★ only (no replay farm)
+    if(isBoss&&prior===0)nectarE+=CONFIG.nectar.boss;         // first boss clear only
     missionEvent("clears",1);missionEvent("stars",stars);
     $("resKicker").textContent=(GARDENS[G.g]?GARDENS[G.g].name.toUpperCase():"ADVENTURE")+(isBoss?" · BOSS":" · LEVEL "+(G.l+1));
   } else if(G.mode==="puzzle"){
-    pzSetStars(G.puzzleId,stars);coinE+=stars*CONFIG.starCoin;
+    const prior=pzStars(G.puzzleId);pzSetStars(G.puzzleId,stars);coinE+=stars*CONFIG.starCoin;
     sbGrant(CONFIG.sun.base+stars*CONFIG.sun.perStar,"budburst:puzzle");
-    if(stars>=3)nectarE+=CONFIG.nectar.threeStar;
+    if(stars>=3&&prior<3)nectarE+=CONFIG.nectar.threeStar;    // first 3★ only
     missionEvent("clears",1);missionEvent("stars",stars);
     $("resKicker").textContent="PUZZLE #"+(G.puzzleId+1);
   } else if(G.mode==="daily"){
@@ -1035,6 +1043,7 @@ function levelWon(){
   buildResultActions(true);show("result");
 }
 function levelLost(){
+  if(state!=="over")return; // stale scheduled callback — ignore
   beep(180,0.3,0.07,"sawtooth");buzz([40,60,40]);
   let coinE=Math.floor(G.score/CONFIG.coinsPerScore);addCoins(coinE);
   missionEvent("coins",coinE);missionEvent("pops",1);missionEvent("dropRun",G.dropped);
@@ -1533,7 +1542,15 @@ $("mapBack").onclick=()=>{refreshMenu();show("menu");};
 $("loadBack").onclick=()=>{refreshMenu();show("menu");};
 $("pzBack").onclick=()=>{refreshMenu();show("menu");};
 $("startArcadeBtn").onclick=startArcade;
-$("gameBack").onclick=()=>{if(mode==="adventure")openMap();else if(mode==="puzzle")openPuzzles();else if(mode==="arcade")openLoadout();else backToMenu();};
+$("gameBack").onclick=()=>{
+  if(mode==="zen"&&G&&state!=="over"){endZenRun();return;}
+  if(mode==="adventure")openMap();else if(mode==="puzzle")openPuzzles();else if(mode==="arcade")openLoadout();else backToMenu();};
+function endZenRun(){state="over";
+  const coinE=Math.floor(G.score/CONFIG.coinsPerScore);addCoins(coinE);
+  Store.s(K.zenTotal,parseInt(Store.g(K.zenTotal)||"0",10)+G.removed);
+  if(G.score>0){sbGrant(Math.max(1,Math.min(CONFIG.sun.runCap,Math.floor(G.score/CONFIG.sun.endlessDiv))),"budburst:zen");
+    missionEvent("coins",coinE);missionEvent("pops",1);toast("Zen · +"+coinE+" 🪙 · "+G.removed+" bloomed");}
+  backToMenu();}
 function backToMenu(){refreshMenu();show("menu");}
 
 /* ============================================================================
