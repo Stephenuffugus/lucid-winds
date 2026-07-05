@@ -272,12 +272,16 @@ window._gameFns.pollen = function PN(a){
     who.gp+=card.gp;
   }
   function checkPollinators(who){
-    GS.pollinators.forEach(function(p){
-      if(p.claimedBy)return;
+    // Only ONE pollinator visits per turn — the rules say "the game picks the
+    // first matching pollinator if multiple qualify". forEach used to claim
+    // every qualifying one in a single buy (2026-07-05 verify).
+    for(var i=0;i<GS.pollinators.length;i++){
+      var p=GS.pollinators[i];
+      if(p.claimedBy)continue;
       var ok=true;
       for(var c in p.req)if((who.production[c]||0)<p.req[c]){ok=false;break;}
-      if(ok){p.claimedBy=who.id;who.gp+=p.gp;sm(p.icon+' '+p.name+' visits '+who.name+'!');}
-    });
+      if(ok){p.claimedBy=who.id;who.gp+=p.gp;sm(p.icon+' '+p.name+' visits '+who.name+'!');return;}
+    }
   }
 
   // ─── TOKEN-POOL SCALING BY PLAYER COUNT ──────────────────────────────
@@ -371,6 +375,7 @@ window._gameFns.pollen = function PN(a){
   };
 
   function startGame(setup){
+    if(aiTimer){clearTimeout(aiTimer);aiTimer=null;} // kill any stale AI turn from a prior game
     var all=generateCards();
     var n=setup.seats.length;
     var pool=poolSize(n);
@@ -414,6 +419,10 @@ window._gameFns.pollen = function PN(a){
   }
   function me(){return GS.players[GS.activeIdx];}
   function newGame(){
+    // Kill any pending AI turn — tapping NEW GAME mid-AI-turn used to leave
+    // aiTimer armed; it fired aiTurn() against stale GS behind the setup
+    // overlay (2026-07-05 verify).
+    if(aiTimer){clearTimeout(aiTimer);aiTimer=null;}
     // Clear the multiplayer lock on any exit back to setup, covers
     // tapping NEW GAME or MENU mid-run. The flag re-arms in startGame
     // if the player picks another multi-human config.

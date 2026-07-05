@@ -87,7 +87,8 @@ window._gameFns.cribbage = function CRIB(a){
     G.banner={text:callouts.join(' · '),pts:pts,color:color};
     render();
     if(_bannerTimer)clearTimeout(_bannerTimer);
-    _bannerTimer=setTimeout(function(){G.banner=null;render();},1100);
+    var _bg=gen;
+    _bannerTimer=setTimeout(function(){if(_bg!==gen)return;G.banner=null;render();},1100);
   }
   function dealHand(){
     G.roundNum++;
@@ -373,7 +374,7 @@ window._gameFns.cribbage = function CRIB(a){
             _e('milestone');
           }
           if(checkWin())return;
-          setTimeout(function(){narrate(whoIdx+1)},1200);
+          setTimeout(function(){if(_ng!==gen)return;narrate(whoIdx+1)},1200);
         }
       }
       setTimeout(function(){if(_ng!==gen)return;stepCombo(0)},600);

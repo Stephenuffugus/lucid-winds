@@ -526,7 +526,11 @@ function aiFindBest(maxDepth){
 // ── Rendering ───────────────────────────────────────────────────────────
 // Build DOM once; update functions mutate only what changed.
 function buildDOM(host){
-  pan=document.createElement('div'); pan.id='GLpan'; host.appendChild(pan);
+  // Reuse the host — it IS the #GLpan container (from mount / requestNewGame,
+  // and showDifficultyPicker passes it straight through to startGame). Creating
+  // a fresh nested #GLpan here stacked an empty <div id=GLpan> inside the last
+  // one on every game + replay (duplicate IDs, unbounded growth) — 2026-07-05 verify.
+  pan=host; pan.id='GLpan'; pan.innerHTML='';
   // Score bar
   scoreBar=document.createElement('div'); scoreBar.className='GLscore'; pan.appendChild(scoreBar);
   scoreBar.innerHTML=
