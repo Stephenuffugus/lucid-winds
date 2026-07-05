@@ -272,6 +272,7 @@
   .rf-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
   .grade-legend{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 12px}
   .grade-legend .gl{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:999px;border:1px solid}
+  .ocgrade{font-family:var(--font-display);font-size:12px;font-weight:800;letter-spacing:.12em;padding:1px 9px;border-radius:6px;border:1.5px solid;text-transform:uppercase;line-height:1.5}
   .modal-back{position:fixed;inset:0;z-index:80;background:rgba(6,5,12,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px}
   @media(min-width:640px){.modal-back{align-items:center}}
   .modal{background:var(--void-2);border:1px solid var(--line-2);border-radius:var(--r);max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:16px}
@@ -768,6 +769,22 @@ function rollGrade(){ let t=0; for(const r of RARITY) t+=r.weight; let x=Math.ra
 function reforgeCostG(){ return 90; }
 function gradeBadge(grade){ const R=rarByKey(grade); return `<span class="gbadge" style="color:${R.color};border-color:${R.color}66;background:${R.color}1a">${R.label}</span>`; }
 function gradeLegendHTML(){ return `<div class="grade-legend">${RARITY.map(r=>`<span class="gl" style="color:${r.color};border-color:${r.color}66;background:${r.color}14">${r.label}</span>`).join("")}</div>`; }
+/* OC overall grade (Phase 2b): a readout of build investment + socketed loot
+   rarity on the same 7-tier ladder. Rare gems literally raise a character's grade.
+   Thresholds are tunable (OC_GRADE_CUT). */
+const OC_GRADE_CUT=[0,14,26,42,62,86,112];
+function ocGradeScore(oc){
+  if(!oc) return 0;
+  const start=TREE.startByRace[oc.race]||"hub";
+  const alloc=(oc.tree&&oc.tree.allocated)||[];
+  let keyN=0,notN=0,pts=0;
+  for(const id of alloc){ if(id===start) continue; const n=TREE.byId[id]; if(!n) continue; pts++; if(n.type==="keystone") keyN++; else if(n.type==="notable") notN++; }
+  let statTotal=0; for(const k of STAT_KEYS) statTotal+=(oc.baseStats&&oc.baseStats[k])||0;
+  let gem=0; (oc.powers||[]).forEach(p=>(p.augments||[]).forEach(x=>{ const gk=(x&&x.key)?x.key:x; const gr=(x&&x.grade)?x.grade:augGradeOf(gk); const idx=RARITY.findIndex(r=>r.key===gr); if(idx>0) gem+=idx; }));
+  return keyN*7 + notN*2.5 + pts*0.5 + statTotal/40 + gem*1.6 + (oc.level||1)*0.35;
+}
+function ocGrade(oc){ const s=ocGradeScore(oc); let gi=0; for(let i=0;i<OC_GRADE_CUT.length;i++){ if(s>=OC_GRADE_CUT[i]) gi=i; } return RARITY[gi].key; }
+function ocGradeBadge(oc){ const R=rarByKey(ocGrade(oc)); return `<span class="ocgrade" style="color:${R.color};border-color:${R.color};background:${R.color}1a" title="Overall grade — keystones, stats, tree and socketed gem rarity">${R.label}</span>`; }
 
 /* level / xp */
 function xpNeeded(level){return Math.round(60*Math.pow(level,1.5));}
@@ -1162,7 +1179,7 @@ function ocCard(oc,opts){
     ${opts.deletable?`<button class="kill" data-act="delOC" data-id="${oc.id}" title="Delete">✕</button>`:""}
     <div class="oc-top"><div class="avatar">${avatarHTML(oc)}</div>
       <div class="oc-id"><div class="oc-name">${esc(oc.name)}</div>
-        <div class="oc-sub"><span class="race-tag">${esc(race.name)}</span><span class="lvl-badge">LV ${oc.level}</span>
+        <div class="oc-sub">${ocGradeBadge(oc)}<span class="race-tag">${esc(race.name)}</span><span class="lvl-badge">LV ${oc.level}</span>
           <span class="rec"><span class="w">${oc.record.w}W</span>·<span class="l">${oc.record.l}L</span></span>
           ${ally?`<span class="ally-badge" style="border-color:${ally.color}66;color:${ally.color}">${esc(ally.name)}</span>`:""}</div></div></div>
     <div class="stats">${statMini(stats)}</div>
@@ -1349,7 +1366,7 @@ function screenSheet(){
     <div class="sheet-head" style="--race-color:${race.color}"><div class="rim"></div>
       <div class="sav">${avatarHTML(oc)}</div>
       <div style="flex:1;min-width:0"><div class="sn">${esc(oc.name)}</div>
-        <div class="ss"><span class="race-tag">${esc(race.name)}</span><span class="lvl-big">LEVEL ${oc.level}</span>
+        <div class="ss">${ocGradeBadge(oc)}<span class="race-tag">${esc(race.name)}</span><span class="lvl-big">LEVEL ${oc.level}</span>
           <span class="rec"><span class="w">${oc.record.w}W</span> · <span class="l">${oc.record.l}L</span></span>
           ${avail>0?`<span class="pts-pill">✦ ${avail} skill point${avail===1?"":"s"}</span>`:""}</div>
         <div class="sheet-xp"><div class="xpbar"><div class="xpf" style="width:${xpPct}%"></div></div>
