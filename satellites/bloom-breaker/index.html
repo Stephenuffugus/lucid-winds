@@ -67,6 +67,32 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .diff-card.chill h3{ color:#8fd3ff } .diff-card.normal h3{ color:var(--sage) } .diff-card.hard h3{ color:var(--danger) }
 .diff-card p{ color:var(--muted); font-size:13px; margin-top:4px; }
 
+/* level select / world map */
+.ls-head{ display:flex; align-items:center; justify-content:space-between; width:100%; max-width:460px; }
+.ls-pace{ font-weight:800; color:var(--sage); font-size:14px; }
+.ls-body{ width:100%; max-width:460px; padding-bottom:24px; }
+.ls-endless{ display:block; width:100%; margin:8px 0 4px; border:1px solid var(--gold); border-radius:14px;
+  background:linear-gradient(120deg,rgba(200,168,75,.14),var(--coal2)); padding:14px; text-align:left; color:var(--cream); }
+.ls-endless:active{ transform:scale(.98); }
+.ls-endless .et{ font-size:16px; font-weight:900; color:var(--gold); }
+.ls-endless .ed{ font-size:12px; color:var(--muted); margin-top:3px; }
+.ls-world{ margin-top:18px; }
+.ls-world h3{ font-size:14px; font-weight:900; color:var(--gold); letter-spacing:.03em; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.ls-world h3 .wnum{ background:var(--coal2); border:1px solid #3a4230; border-radius:6px; padding:1px 7px; font-size:10px; color:var(--muted); font-weight:700; }
+.ls-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.ls-cell{ aspect-ratio:1/1; min-height:48px; border-radius:12px; border:1px solid #3a4230; background:var(--coal2);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--cream); position:relative; padding:2px; }
+.ls-cell .lnum{ font-size:17px; font-weight:900; line-height:1; }
+.ls-cell .lnm{ font-size:8px; color:var(--muted); text-align:center; line-height:1.05; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ls-cell.locked{ opacity:.4; }
+.ls-cell.done{ border-color:var(--sage); background:linear-gradient(160deg,rgba(122,179,86,.14),var(--coal2)); }
+.ls-cell.done .lnm{ color:var(--sage); }
+.ls-cell.cur{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.4); }
+.ls-cell:not(.locked):active{ transform:scale(.93); }
+.ls-cell.boss{ grid-column:1/-1; aspect-ratio:auto; flex-direction:row; gap:10px; padding:12px 14px; justify-content:flex-start; }
+.ls-cell.boss .lnum{ font-size:24px; }
+.ls-cell.boss .lnm{ font-size:13px; white-space:normal; text-align:left; }
+
 /* shop */
 .tabs{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; width:100%; max-width:420px; }
 .tab{ flex:1 1 auto; min-height:48px; min-width:64px; border-radius:12px; border:1px solid #3a4230;
@@ -152,6 +178,17 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   <div class="diff-card normal" data-diff="normal"><h3>🍃 Normal</h3><p>The intended tuning — 3 lives, standard paddle.</p></div>
   <div class="diff-card hard" data-diff="hard"><h3>🔥 Hard</h3><p>Fast ball, 2 lives, a narrow paddle. For the bold.</p></div>
   <button class="btn ghost sm" id="btnDiffBack" style="margin-top:14px">← Back</button>
+</div>
+
+<!-- LEVEL SELECT / WORLD MAP -->
+<div class="screen" id="scr-levels">
+  <div class="ls-head">
+    <button class="btn ghost sm" id="btnLevelsBack">← Back</button>
+    <div class="ls-pace" id="lsPace">🍃 Normal</div>
+  </div>
+  <h2 class="sh" style="margin:4px 0 2px">SELECT A LEVEL</h2>
+  <div class="sub" style="margin-bottom:4px">Tap any unlocked level to jump in.</div>
+  <div class="ls-body" id="lsBody"></div>
 </div>
 
 <!-- SHOP -->
@@ -319,24 +356,76 @@ var POWERUPS = [
 ];
 var PU_BY_ID = {}; for(var i=0;i<POWERUPS.length;i++) PU_BY_ID[POWERUPS[i].id]=POWERUPS[i];
 
-/* ---------------- levels (16) ---------------- */
+/* ---------------- levels (60 across 6 worlds + The Warden boss) ---------------- */
 var LEVELS = [
-  { n:1,  name:'First Light',   grid:['....###....','...#####...','..#######..','.#########.'] },
-  { n:2,  name:'Double Skin',   grid:['.#########.','.=========.','.#########.','.=========.'] },
-  { n:3,  name:'Treasure Row',  grid:['.#########.','.#$#$#$#$#.','.#########.','.$$$$$$$$$.'] },
-  { n:4,  name:'Iron Fence',    grid:['.#########.','.X.X.X.X.X.','.#########.','.X.X.X.X.X.','.#########.'] },
-  { n:5,  name:'Lucky Dip',     grid:['....###....','...#?#?#...','..#######..','.##?###?##.','.#########.'] },
-  { n:6,  name:'Powder Trail',  grid:['.#######*#.','.######*##.','.#####*###.','.####*####.','.###*#####.','.##*######.'] },
-  { n:7,  name:'Fortress',      grid:['.X#######X.','.X=======X.','.X=#$#$#=X.','.X=======X.','.X#######X.'] },
-  { n:8,  name:'The Overgrowth',grid:['.~~~~~~~~~.','.~#~#~#~#~.','.~~~~~~~~~.','.~#~#~#~#~.','.~~~~~~~~~.'] },
-  { n:9,  name:'Conveyor',      grid:['.XX.....XX.','.OOOOOOOOO.','.XX.....XX.','.OOOOOOOOO.','.XX.....XX.'] },
-  { n:10, name:'Crosscut',      grid:['.#X#X#X#X#.','.#$#$#$#$#.','.X#X#X#X#X.','.#$#$#$#$#.','.#X#X#X#X#.'] },
-  { n:11, name:'Chain Reaction',grid:['***.***.***','***.***.***','***.***.***','...........','*#*#*#*#*#*','#*#*#*#*#*#','*#*#*#*#*#*'] },
-  { n:12, name:'Mirror Hall',   grid:['.#.#.X.#.#.','.=.#.X.#.=.','.?#..X..#?.','.=.#.X.#.=.','.#.#.X.#.#.'] },
-  { n:13, name:'Living Wall',   grid:['.X~=~=~=~X.','.X=~#~#~=X.','.X~=~=~=~X.','.X=~#~#~=X.','.X~=~=~=~X.'] },
-  { n:14, name:'Gauntlet',      grid:['OOOOOOOOOOO','X.X.X.X.X.X','OOOOOOOOOOO','.X.X.X.X.X.','OOOOOOOOOOO'] },
-  { n:15, name:'The Vault',     grid:['.XX#####XX.','.X=?=$=?=X.','.#~*#*~#*#.','.X=$=?=$=X.','.XX#####XX.'] },
-  { n:16, name:'The Warden', boss:true,
+  // ── World 1: Seedbed ──
+  { n:1, world:1, worldName:'Seedbed', name:'First Sprout', grid:['...........','...#####...','...#####...','...........'] },
+  { n:2, world:1, worldName:'Seedbed', name:'Twin Cotyledon', grid:['..##...##..','..##...##..','...........','..##...##..','..##...##..'] },
+  { n:3, world:1, worldName:'Seedbed', name:'Garden Row', grid:['...........','#.#.#.#.#.#','.#.#.#.#.#.','#.#.#.#.#.#','...........'] },
+  { n:4, world:1, worldName:'Seedbed', name:'Petal Diamond', grid:['.....#.....','....###....','...#####...','....###....','.....#.....'] },
+  { n:5, world:1, worldName:'Seedbed', name:'Little Chevron', grid:['#.........#','##.......##','.##.....##.','..##...##..','...##.##...','....###....'] },
+  { n:6, world:1, worldName:'Seedbed', name:'Trellis Fence', grid:['#.#.#.#.#.#','#.#.#.#.#.#','#.#.#.#.#.#','.#.#.#.#.#.','#.#.#.#.#.#'] },
+  { n:7, world:1, worldName:'Seedbed', name:'Tough Bud', grid:['...=====...','..=#####=..','..=#####=..','...=====...'] },
+  { n:8, world:1, worldName:'Seedbed', name:'Steel Arch', grid:['XX.......XX','X..###..X.X','...#####...','..#######..','.#########.'] },
+  { n:9, world:1, worldName:'Seedbed', name:'Iron Blossom', grid:['....#X#....','...#####...','..##X#X##..','...#####...','..#.#X#.#..','.#..###..#.'] },
+  { n:10, world:1, worldName:'Seedbed', name:'Seedbed Crown', grid:['=.=.=.=.=.=','.#.#.#.#.#.','=.=.=.=.=.=','#.#.#.#.#.#','X.#.#.#.#.X','.####.####.'] },
+  // ── World 2: Ironworks ──
+  { n:11, world:2, worldName:'Ironworks', name:'Steel Pickets', grid:['#.#X#.#X#.#','#.#X#.#X#.#','#.#X#.#X#.#','#.#X#.#X#.#','#.#.#.#.#.#'] },
+  { n:12, world:2, worldName:'Ironworks', name:'Iron Gate', grid:['...XXXXX...','..X#####X..','.X#######X.','X####.####X','.#########.','.#.#.#.#.#.'] },
+  { n:13, world:2, worldName:'Ironworks', name:'Channel Run', grid:['#=#X#=#X#=#','#.#X#.#X#.#','#=#X#=#X#=#','#=#.#=#.#=#'] },
+  { n:14, world:2, worldName:'Ironworks', name:'Chevron Forge', grid:['##.......##','###.....###','=###...###=','X=###.###=X','.X=#####=X.','..X=###=X..','...X###X...'] },
+  { n:15, world:2, worldName:'Ironworks', name:'Steel Diamond', grid:['###..X..###','##..X=X..##','#..X=#=X..#','..X=#$#=X..','#..=#$#=..#','##..#$#..##','###..#..###'] },
+  { n:16, world:2, worldName:'Ironworks', name:'Riveted Fence', grid:['#=#=#=#=#=#','XXXXX.XXXXX','#=#=#=#=#=#','XX.XXXXX.XX','#=#=#=#=#=#','XXXXX.XXXXX','#=#=#=#=#=#'] },
+  { n:17, world:2, worldName:'Ironworks', name:'Piston Hall', grid:['#*#.#*#.#*#','#O#X#O#X#O#','#=#X#=#X#=#','#O#X#O#X#O#','#=#.#=#.#=#'] },
+  { n:18, world:2, worldName:'Ironworks', name:'Furnace Grate', grid:['=#=#=#=#=#=','#~#~#~#~#~#','X.X.X.X.X.X','#~#~#~#~#~#','=#=#=#=#=#='] },
+  { n:19, world:2, worldName:'Ironworks', name:'Ironbloom Lattice', grid:['....=#=....','..=#*#*#=..','.#=X#$#X=#.','#*#=#$#=#*#','.#=X#$#X=#.','..=#*#*#=..','....=#=....'] },
+  { n:20, world:2, worldName:'Ironworks', name:'The Great Forge', grid:['.=#*?$?*#=.','XXXX.X.XXXX','.#~#O$O#~#.','X.XXXXXXX.X','.=*#~#~#*=.','XXXX.X.XXXX','.#~#O$O#~#.','.=#*?$?*#=.'] },
+  // ── World 3: Wildgrowth ──
+  { n:21, world:3, worldName:'Wildgrowth', name:'Seedling Sprawl', grid:['...#####...','.#########.','.##~###~##.','.#########.','...#####...'] },
+  { n:22, world:3, worldName:'Wildgrowth', name:'Creeping Ivy', grid:['..#=###=#..','.#~#####~#.','.#########.','.#~#####~#.','..#=###=#..'] },
+  { n:23, world:3, worldName:'Wildgrowth', name:'Slither Fence', grid:['#.#.#.#.#.#','###########','.O.O.O.O.O.','###########','#.#.#.#.#.#'] },
+  { n:24, world:3, worldName:'Wildgrowth', name:'Wandering Rows', grid:['#=#=#=#=#=#','O.O.O.O.O.O','#=#=#=#=#=#','O.O.O.O.O.O','#=#=#=#=#=#'] },
+  { n:25, world:3, worldName:'Wildgrowth', name:'Thorn Lattice', grid:['X#~#~#~#~#X','.#########.','.O.O.O.O.O.','.#########.','X#~#~#~#~#X'] },
+  { n:26, world:3, worldName:'Wildgrowth', name:'Steel Trellis', grid:['X=#=#=#=#=X','#~#~#~#~#~#','O.O.O.O.O.O','#~#~#~#~#~#','X=#=#=#=#=X'] },
+  { n:27, world:3, worldName:'Wildgrowth', name:'Overgrowth Bastion', grid:['X#~#~#~#~#X','.#.#.#.#.#.','.O.O.O.O.O.','#=#*#=#*#=#','.O.O.O.O.O.','.#.#.#.#.#.','X#~#~#~#~#X'] },
+  { n:28, world:3, worldName:'Wildgrowth', name:'Bramble Diamond', grid:['.....#.....','....#~#....','...#~#~#...','..#~###~#..','.#~#####~#.','..#~###~#..','...#~#~#...','....#~#....','.....#.....'] },
+  { n:29, world:3, worldName:'Wildgrowth', name:'Creeping Spearhead', grid:['###########','.#~#~#~#~#.','..#O###O#..','...#~#~#...','....#~#....','.....#.....'] },
+  { n:30, world:3, worldName:'Wildgrowth', name:'Wildfire Bloom', grid:['...#~#~#...','..#*###*#..','.#~#O#O#~#.','#~#=#=#=#~#','..#*###*#..','...#~#~#...'] },
+  // ── World 4: Fortune Vaults ──
+  { n:31, world:4, worldName:'Fortune Vaults', name:'Coin Sprout', grid:['.#?#?#?#?#.','.$#$#$#$#$.','..#######..','...#####...'] },
+  { n:32, world:4, worldName:'Fortune Vaults', name:'Gilded Trellis', grid:['=.=.=.=.=.=','.#?#?#?#?#.','.$$$$$$$$$.','...#####...'] },
+  { n:33, world:4, worldName:'Fortune Vaults', name:'Vault Keyhole', grid:['X.X.X.X.X.X','.=#?#?#?#=.','.=$?$?$?$=.','.=$$$$$$$=.','..#.....#..','...#####...'] },
+  { n:34, world:4, worldName:'Fortune Vaults', name:'Treasure Coffer', grid:['.XX#####XX.','.X$?$?$?$X.','.X$#$#$#$X.','.X$?$?$?$X.','..#######..'] },
+  { n:35, world:4, worldName:'Fortune Vaults', name:'Lucky Diamond', grid:['.....$.....','....=$=....','...=$?$=...','..=$?$?$=..','.$?$$$$$?$.','..=$?$?$=..','...=$?$=...','....=$=....','.....$.....'] },
+  { n:36, world:4, worldName:'Fortune Vaults', name:'Iron Bramble', grid:['X.X.X.X.X.X','=#=#=#=#=#=','.$?$?$?$?$.','X.X.X.X.X.X','.#?#?#?#?#.','..$$$$$$$..'] },
+  { n:37, world:4, worldName:'Fortune Vaults', name:'Regrowth Reliquary', grid:['.=$?~?$~$=.','.=~$?$?$~=.','.=$?$?$?$=.','X..#####..X','..$?$?$?$..','...O.O.O...'] },
+  { n:38, world:4, worldName:'Fortune Vaults', name:'Bomb Bullion', grid:['X#X#X#X#X#X','.$*$*$*$*$.','.=$$$$$$$=.','.$*$*$*$*$.','.=$$$$$$$=.','..#*#*#*#..','X.X.X.X.X.X'] },
+  { n:39, world:4, worldName:'Fortune Vaults', name:'Sliding Strongbox', grid:['X#=#=#=#=#X','.$?$?$?$?$.','.O$O$O$O$O.','=.=.=.=.=.=','..$?$?$?$..','...#####...'] },
+  { n:40, world:4, worldName:'Fortune Vaults', name:'The Grand Vault', grid:['X=X=X=X=X=X','.$*$~$*$~$.','X.$$$$$$$.X','.~$?$?$?$~.','X.$$$$$$$.X','..O.O.O.O..','...#=#=#...','....$?$....'] },
+  // ── World 5: Demolition ──
+  { n:41, world:5, worldName:'Demolition', name:'Sparkseed Row', grid:['###########','#.#*#.#*#.#','#*#.#.#.#*#','###########'] },
+  { n:42, world:5, worldName:'Demolition', name:'Ember Diamond', grid:['....#*#....','...#####...','..##*#*##..','.####*####.','..##*#*##..','...#####...','....#*#....'] },
+  { n:43, world:5, worldName:'Demolition', name:'Cinder Chevron', grid:['##.......##','###.....###','*###...###*','.*###.###*.','..*#####*..','...*###*...'] },
+  { n:44, world:5, worldName:'Demolition', name:'Bramble Fence', grid:['#=#=#=#=#=#','X#*#=X=#*#X','X=#*#X#*#=X','#*#*#*#*#*#'] },
+  { n:45, world:5, worldName:'Demolition', name:'Blast Lattice', grid:['*#.#*.*#.#*','##.##.##.##','*#.##.##.#*','##.##.##.##','*#.#*.*#.#*'] },
+  { n:46, world:5, worldName:'Demolition', name:'Bleeding Heart', grid:['.###...###.','=#########=','=#*#####*#=','.####*####.','..###*###..','...##*##...','....#*#....'] },
+  { n:47, world:5, worldName:'Demolition', name:'Barbed Arches', grid:['###########','#*#.#*#.#*#','X.#.#.#.#.X','X.#.#.#.#.X','X.#.#.#.#.X','#*#.#*#.#*#'] },
+  { n:48, world:5, worldName:'Demolition', name:'Regen Bramble', grid:['X#*#=#=#*#X','#~#~#~#~#~#','#*#*#*#*#*#','#~#~#~#~#~#','###########'] },
+  { n:49, world:5, worldName:'Demolition', name:'Slider Thicket', grid:['=#$#.#.#$#=','#*#O#*#O#*#','?#*#*#*#*#?','#O#*#*#*#O#','X#*#X#X#*#X','###########'] },
+  { n:50, world:5, worldName:'Demolition', name:'The Detonation Garden', grid:['....#*#....','...=#*#=...','..=#*#*#=..','.=#*#*#*#=.','X#*#***#*#X','.=#*#*#*#=.','..=#*#*#=..','...=#*#=...'] },
+  // ── World 6: The Long Watch ──
+  { n:51, world:6, worldName:'The Long Watch', name:'Thornfield Gate', grid:['=#=#?#=#=#=','#=#=#=#=#=#','=#=#=#=#=#=','#.#.#.#.#.#','...#.$.#...'] },
+  { n:52, world:6, worldName:'The Long Watch', name:'Ironvine Trellis', grid:['#=#=#=#=#=#','X.#.#.#.#.X','#=#=#=#=#=#','X.$.#.$.#.X','#=#=#=#=#=#'] },
+  { n:53, world:6, worldName:'The Long Watch', name:'Regen Bramble II', grid:['~#~#~#~#~#~','#=#=#=#=#=#','=#=#=#=#=#=','#.~.#.~.#.#','.=.=.=.=.=.'] },
+  { n:54, world:6, worldName:'The Long Watch', name:'Bomb Orchard', grid:['#=#=#=#=#=#','=*=#=#=#=*=','#=#=*=*=#=#','X.#.#.#.#.X','#=#=#=#=#=#','.#.#.#.#.#.'] },
+  { n:55, world:6, worldName:'The Long Watch', name:'Slider Maze', grid:['=#=#=#=#=#=','XO#.#.#.#OX','#=#=#=#=#=#','X.O.#.O.#.X','=#=#=#=#=#=','.O.#.#.#.O.'] },
+  { n:56, world:6, worldName:'The Long Watch', name:'The Iron Bloom', grid:['.....#.....','....=#=....','...=#$#=...','..=#?#?#=..','.=#$#X#$#=.','..=#?#?#=..','...=#$#=...','....=#=....','.....#.....'] },
+  { n:57, world:6, worldName:'The Long Watch', name:'Steel Labyrinth', grid:['#=#=#=#=#=#','#X#X#X#X#X#','~.~.~.~.~.~','#X#X#X#X#X#','#.*.#.#.*.#','=#=#=#=#=#='] },
+  { n:58, world:6, worldName:'The Long Watch', name:'Chimera\'s Cage', grid:['=$=#=#=#=$=','#~#~#~#~#~#','=#=#=#=#=#=','X#..*.*..#X','~=~=~=~=~=~','#.O.#.#.O.#','#=#=#?#=#=#'] },
+  { n:59, world:6, worldName:'The Long Watch', name:'The Warden\'s Wall', grid:['=#=#$#$#=#=','#=#=#=#=#=#','X#X.#~#.X#X','#=#=#=#=#=#','X.#~#~#~#.X','#=#=#=#=#=#','X#X.*#*.X#X','.#.#.#.#.#.'] },
+  { n:60, world:6, worldName:'The Long Watch', name:'The Long Watch', grid:['$=#=#=#=#=$','#X#.~.~.#X#','=#*#.#.#*#=','X.O.#?#.O.X','#=#.X.X.#=#','X.O.#*#.O.X','=#*#.#.#*#=','#X#.~.~.#X#','.#=#=#=#=#.'] },
+  // ── BOSS: The Warden ──
+  { n:61, world:7, worldName:'The Warden', name:'The Warden', boss:true,
     grid:['...XXXXX...','..X=====X..','.X=#~#~#=X.','.X~#*#*#~X.','XX#*#$#*#XX','XX#*#$#*#XX','.X~#*#*#~X.','.X=#~#~#=X.','..X=====X..','...X?X?X...'] }
 ];
 
@@ -409,7 +498,7 @@ function defaultStore(){
   SKIN_CATS.forEach(function(c){ owned[c]=[SKINS[c][0].id]; equipped[c]=SKINS[c][0].id; });
   var rm = false;
   try{ rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
-  return { v:1, coins:0, owned:owned, equipped:equipped, highScore:0, unlockedLevel:1,
+  return { v:1, coins:0, owned:owned, equipped:equipped, highScore:0, unlockedLevel:1, endlessBest:0, lastDiff:'normal',
     settings:{ sound:true, music:false, haptics:true, reducedMotion:!!rm, cb:'default' }, updatedAt:0 };
 }
 function loadStore(){
@@ -421,6 +510,8 @@ function loadStore(){
       if(typeof p.coins==='number') d.coins=Math.max(0,Math.floor(p.coins));
       if(typeof p.highScore==='number') d.highScore=Math.max(0,Math.floor(p.highScore));
       if(typeof p.unlockedLevel==='number') d.unlockedLevel=clamp(Math.floor(p.unlockedLevel),1,LEVELS.length);
+      if(typeof p.endlessBest==='number') d.endlessBest=Math.max(0,Math.floor(p.endlessBest));
+      if(typeof p.lastDiff==='string' && DIFF[p.lastDiff]) d.lastDiff=p.lastDiff;
       if(p.settings){ for(var k in d.settings){ if(k in p.settings) d.settings[k]=p.settings[k]; } }
       // merge owned: keep valid ids + always include the free default
       SKIN_CATS.forEach(function(c){
@@ -766,6 +857,61 @@ function parseLevel(level){
 }
 function brickRect(b){ return { x:b.bx+b.ox, y:b.by, w:b.w, h:b.h }; }
 function brickAt(c,r){ return S.grid[r*100+c]||null; }
+/* winnability: every non-steel brick must be reachable by a 4-connected flood
+   from the open bottom through non-steel cells (steel 'X' is the only wall).
+   Same model the offline validator uses to gate every campaign level. */
+function isWinnable(grid){
+  var COLS=GRID_COLS, rows=grid.length, r, c, k;
+  var G=grid.map(function(line){ var a=String(line).split(''); while(a.length<COLS)a.push('.'); return a.slice(0,COLS); });
+  var reach=[]; for(r=0;r<=rows;r++) reach.push(new Array(COLS));
+  var stack=[]; for(c=0;c<COLS;c++){ reach[rows][c]=true; stack.push([rows,c]); }
+  while(stack.length){ var cell=stack.pop(), cr=cell[0], cc=cell[1];
+    var nb=[[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]];
+    for(k=0;k<4;k++){ var nr=nb[k][0], nc=nb[k][1];
+      if(nr<0||nr>rows||nc<0||nc>=COLS||reach[nr][nc]) continue;
+      if(nr<rows && G[nr][nc]==='X') continue;
+      reach[nr][nc]=true; stack.push([nr,nc]); } }
+  var any=false;
+  for(r=0;r<rows;r++) for(c=0;c<COLS;c++){ var ch=G[r][c];
+    if(ch!=='.'&&ch!==' '&&ch!=='X'){ any=true; if(!reach[r][c]) return false; } }
+  return any;
+}
+/* Endless mode: symmetric procedurally-generated levels, difficulty scaling
+   with run count n, every one validated winnable (fallback = solid block). */
+function genEndlessLevel(n){
+  var COLS=GRID_COLS, half=Math.floor(COLS/2);
+  var rows=Math.min(9, 4+Math.floor(n/2));
+  var density=Math.min(0.9, 0.5+n*0.02);
+  var steelChance = n>=3 ? Math.min(0.12, 0.03+(n-3)*0.01) : 0;
+  function pickChar(){
+    var pool=[['#',6]];
+    if(n>=1) pool.push(['=', 2+Math.min(3,n*0.2)]);
+    if(n>=2) pool.push(['*', 1+Math.min(2,n*0.15)]);
+    if(n>=4) pool.push(['~', 1+Math.min(2,(n-4)*0.2)]);
+    if(n>=5) pool.push(['O', 1+Math.min(2,(n-5)*0.2)]);
+    pool.push(['$',0.6]); pool.push(['?',0.9]);
+    var tot=0,i; for(i=0;i<pool.length;i++) tot+=pool[i][1];
+    var t=rng()*tot; for(i=0;i<pool.length;i++){ t-=pool[i][1]; if(t<=0) return pool[i][0]; }
+    return '#';
+  }
+  for(var attempt=0; attempt<50; attempt++){
+    var grid=[], r, c;
+    for(r=0;r<rows;r++){
+      var row=new Array(COLS).fill('.');
+      for(c=0;c<=half;c++){
+        if(rng()<density){
+          var ch=(rng()<steelChance && r<rows-1) ? 'X' : pickChar();
+          row[c]=ch; row[COLS-1-c]=ch; // mirror for symmetry
+        }
+      }
+      grid.push(row.join(''));
+    }
+    var count=0; grid.forEach(function(l){ for(var i=0;i<l.length;i++){ var ch=l[i]; if(ch!=='.'&&ch!=='X') count++; } });
+    if(count>=6 && isWinnable(grid)) return { name:'Wild Bloom '+(n+1), grid:grid, endless:true };
+  }
+  var fb=[], fr=Math.min(6,rows); for(var q=0;q<fr;q++) fb.push('.#########.');
+  return { name:'Wild Bloom '+(n+1), grid:fb, endless:true };
+}
 function destructibleAlive(){
   var n=0; for(var i=0;i<S.bricks.length;i++){ var b=S.bricks[i];
     if(b.type==='steel') continue;
@@ -1103,12 +1249,19 @@ function bankCoins(){ var delta=S.coinsRun-(S.coinsBanked||0); if(delta>0){ stor
 function earnMoment(moment,detail){ if(window.SWS_EMBED && parent!==window){ try{ parent.postMessage({sws:'earn',moment:moment,detail:detail||{}},'*'); }catch(e){} } }
 
 /* ---------------- run / level flow ---------------- */
-function newRun(diff){ S.diff=diff; S.baseSpeed=DIFF[diff].base; S.lives=DIFF[diff].lives;
-  S.score=0; S.coinsRun=0; S.coinsBanked=0; S.comboMax=0; S.combo=0; S.coinsAtLevel=0; S.scoreAtLevel=0; FX.reset(); loadLevel(0); }
-function loadLevel(idx){ S.levelIndex=idx; var lvl=LEVELS[idx]; parseLevel(lvl);
-  S.levelRamp=1+DIFF[S.diff].ramp*idx; S.perfectLevel=true; S.rampHits=0;
+function newRun(diff, startIdx){ S.diff=diff; S.mode='campaign'; S.baseSpeed=DIFF[diff].base; S.lives=DIFF[diff].lives;
+  S.score=0; S.coinsRun=0; S.coinsBanked=0; S.comboMax=0; S.combo=0; S.coinsAtLevel=0; S.scoreAtLevel=0; FX.reset(); loadLevel(startIdx||0); }
+function startEndless(diff){ S.diff=diff; S.mode='endless'; S.endlessN=0; S.baseSpeed=DIFF[diff].base; S.lives=DIFF[diff].lives;
+  S.score=0; S.coinsRun=0; S.coinsBanked=0; S.comboMax=0; S.combo=0; S.coinsAtLevel=0; S.scoreAtLevel=0; FX.reset(); show(null); loadEndless(); }
+// shared level setup; rampIdx drives the speed ramp (level index in campaign, run count in endless)
+function loadLevelObj(lvl, rampIdx){ S.curLevel=lvl; parseLevel(lvl);
+  S.levelRamp=1+DIFF[S.diff].ramp*rampIdx; S.perfectLevel=true; S.rampHits=0;
   S.caps=[]; S.lasers=[]; S.bumpers=[]; initFX(); if(lvl.boss) initBoss(); else S.boss=null;
   S.paddle=makePaddle(); setServe(); updateHUD(); }
+function loadLevel(idx){ S.levelIndex=idx; loadLevelObj(LEVELS[idx], idx); }
+function loadEndless(){ loadLevelObj(genEndlessLevel(S.endlessN), S.endlessN); }
+function reloadCurrent(){ if(S.mode==='endless') loadLevelObj(S.curLevel, S.endlessN); else loadLevel(S.levelIndex); }
+function curLevelName(){ return S.curLevel?S.curLevel.name:''; }
 function setServe(){ S.state='SERVE'; var b=newBall(S.paddle.cx,PADDLE_Y-BALL_R-1,0,0); b.stuck=true; b.stickOff=0; b.stuckAt=nowMs()+9e8; S.balls=[b]; S.serveHint=1; syncMusic(); }
 function launchServe(){ var b=S.balls[0]; if(!b){ b=newBall(S.paddle.cx,PADDLE_Y-BALL_R-1,0,0); S.balls=[b]; }
   b.stuck=false; var sp=targetSpeed(), ang=(rng()*0.3-0.15); b.vx=Math.sin(ang)*sp; b.vy=-Math.cos(ang)*sp; clampBallDir(b); S.state='PLAY'; syncMusic(); }
@@ -1129,20 +1282,28 @@ function levelClear(){
   FX.hitstop(180); sfxClear(); haptic([20,40,20,40,20,40,120]);
   FX.pop((S.perfectLevel?'PERFECT!  ':'')+'CLEAR  +'+bonus+' 🪙', VW/2, VH*0.42, 30);
   bankCoins();
-  var reached=Math.min(LEVELS.length, S.levelIndex+2);
-  if(reached>store.unlockedLevel){ store.unlockedLevel=reached; }
+  if(S.mode!=='endless'){
+    var reached=Math.min(LEVELS.length, S.levelIndex+2);
+    if(reached>store.unlockedLevel){ store.unlockedLevel=reached; }
+  } else {
+    if((S.endlessN+1)>(store.endlessBest||0)){ store.endlessBest=S.endlessN+1; }
+  }
   saveStoreNow();
   earnMoment('level_clear',{level:lvl,perfect:S.perfectLevel});
   updateHUD();
 }
-function advanceLevel(){ if(S.levelIndex+1>=LEVELS.length) winGame(); else { S.coinsAtLevel=S.coinsRun; S.scoreAtLevel=S.score; loadLevel(S.levelIndex+1); } }
+function advanceLevel(){
+  if(S.mode==='endless'){ S.endlessN++; S.coinsAtLevel=S.coinsRun; S.scoreAtLevel=S.score; loadEndless(); return; }
+  if(S.levelIndex+1>=LEVELS.length) winGame();
+  else { S.coinsAtLevel=S.coinsRun; S.scoreAtLevel=S.score; loadLevel(S.levelIndex+1); }
+}
 function winGame(){ S.state='WIN'; bankCoins(); if(S.score>store.highScore) store.highScore=store.highScore=S.score; store.highScore=Math.max(store.highScore,S.score); saveStoreNow(); earnMoment('world_clear',{score:S.score});
   document.getElementById('winScore').textContent=S.score.toLocaleString(); document.getElementById('winCoins').textContent=S.coinsRun; musicStop(); show('scr-win'); updateHUD(); }
 function gameOver(){ S.state='OVER'; bankCoins(); var nb=S.score>store.highScore; if(nb) store.highScore=S.score; saveStoreNow(); musicStop();
   document.getElementById('overScore').textContent=S.score.toLocaleString();
   document.getElementById('overCoins').textContent=S.coinsRun;
   document.getElementById('overBest').textContent='🏆 Best '+store.highScore.toLocaleString();
-  document.getElementById('overSub').textContent=nb?'New personal best!':('You reached '+LEVELS[S.levelIndex].name+'.');
+  document.getElementById('overSub').textContent=nb?'New personal best!':(S.mode==='endless'?('You reached Endless '+(S.endlessN+1)+'.'):('You reached '+curLevelName()+'.'));
   show('scr-over'); updateHUD(); }
 
 /* ---------------- main loop ---------------- */
@@ -1255,7 +1416,9 @@ function drawHUD(t){
   // score
   ctx.fillStyle='#e8dcc8'; ctx.font='800 15px sans-serif'; ctx.fillText(S.score.toLocaleString(), VW-14, 50);
   // level
-  ctx.textAlign='center'; ctx.fillStyle='#8a9178'; ctx.font='700 13px sans-serif'; var lvl=LEVELS[S.levelIndex]; ctx.fillText((S.levelIndex+1)+'/'+LEVELS.length+' · '+(lvl?lvl.name:''), VW/2, 20);
+  ctx.textAlign='center'; ctx.fillStyle='#8a9178'; ctx.font='700 13px sans-serif';
+  var hudLabel = (S.mode==='endless') ? ('∞ Endless '+(S.endlessN+1)+' · '+curLevelName()) : ((S.levelIndex+1)+'/'+LEVELS.length+' · '+curLevelName());
+  ctx.fillText(hudLabel, VW/2, 20);
   // active powerup icons
   var f=S.fx, act=[]; if(f.wideT>0)act.push('↔'); if(f.laserT>0)act.push('🔫'); if(f.stickyT>0)act.push('🧲'); if(f.slowT>0)act.push('🐌'); if(f.fastT>0)act.push('⏩'); if(f.fireT>0)act.push('🔥'); if(f.gravT>0)act.push('🌀'); if(f.portalT>0)act.push('🌐'); if(f.chainT>0)act.push('⚡'); if(f.surgeT>0)act.push('⭐'); if(f.megaT>0)act.push('⬤'); if(f.reverseT>0)act.push('🔄'); if(f.curseT>0)act.push('💀'); if(f.blackoutT>0)act.push('🌑');
   if(f.net>0)act.push('🛡'+f.net); if(f.shock>0)act.push('💥'+f.shock); if(f.bloom>0)act.push('🌸'+f.bloom);
@@ -1282,7 +1445,45 @@ function refreshControls(){
 
 /* ---------------- navigation ---------------- */
 function gotoMenu(){ S.state='MENU'; musicStop(); show('scr-menu'); updateHUD(); }
-function startGame(diff){ show(null); newRun(diff); }
+function startGame(diff, startIdx){ show(null); newRun(diff, startIdx); }
+
+/* ---------------- level select / world map ---------------- */
+var pendingDiff='normal';
+var DIFF_LABEL={ chill:'🌿 Chill', normal:'🍃 Normal', hard:'🔥 Hard' };
+function openLevelSelect(diff){ pendingDiff=diff; store.lastDiff=diff; saveStoreDebounced(); S.state='LEVELS'; renderLevels(); show('scr-levels'); }
+function renderLevels(){
+  el('lsPace').textContent=DIFF_LABEL[pendingDiff]||pendingDiff;
+  var body=el('lsBody'); body.innerHTML='';
+  var end=document.createElement('button'); end.className='ls-endless';
+  end.innerHTML='<div class="et">♾️ Endless Bloom</div><div class="ed">Infinite procedurally-grown levels that never stop climbing.'
+    +(store.endlessBest?(' Best reached: '+store.endlessBest+'.'):' Break bricks as deep as you can.')+'</div>';
+  end.onclick=function(){ audioInit(); audioResume(); startEndless(pendingDiff); };
+  body.appendChild(end);
+  var worlds={}, order=[];
+  LEVELS.forEach(function(lv,i){ var w=lv.boss?99:(lv.world||1); if(!worlds[w]){ worlds[w]=[]; order.push(w); } worlds[w].push({lv:lv,i:i}); });
+  order.sort(function(a,b){ return a-b; });
+  order.forEach(function(w){
+    var sec=document.createElement('div'); sec.className='ls-world';
+    var wname=(w===99)?'The Warden':(worlds[w][0].lv.worldName||('World '+w));
+    var h=document.createElement('h3');
+    h.innerHTML=(w===99?'👑 ':'🌱 ')+esc(wname)+' <span class="wnum">'+(w===99?'BOSS':('World '+w))+'</span>';
+    sec.appendChild(h);
+    var grid=document.createElement('div'); grid.className='ls-grid';
+    worlds[w].forEach(function(o){
+      var i=o.i, lv=o.lv;
+      var unlocked=(i<store.unlockedLevel), done=((i+1)<store.unlockedLevel), cur=(i===store.unlockedLevel-1);
+      var cell=document.createElement('button');
+      cell.className='ls-cell'+(unlocked?'':' locked')+(done?' done':'')+(cur?' cur':'')+(lv.boss?' boss':'');
+      var numTxt=lv.boss?'👑':(unlocked?String(i+1):'🔒');
+      cell.innerHTML='<div class="lnum">'+numTxt+'</div><div class="lnm">'+(done?'✓ ':'')+esc(lv.name)+'</div>';
+      if(unlocked){ (function(idx){ cell.onclick=function(){ audioInit(); audioResume(); startGame(pendingDiff, idx); }; })(i); }
+      else cell.disabled=true;
+      grid.appendChild(cell);
+    });
+    sec.appendChild(grid); body.appendChild(sec);
+  });
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ---------------- shop ---------------- */
 var shopCat='paddle';
@@ -1359,15 +1560,16 @@ el('btnHowBack').onclick=gotoMenu;
 el('btnDiffBack').onclick=gotoMenu;
 el('btnShopBack').onclick=gotoMenu;
 el('btnSettingsBack').onclick=function(){ if(settingsFromPause){ show('scr-pause'); S.state='PAUSE'; } else gotoMenu(); };
-Array.prototype.forEach.call(document.querySelectorAll('.diff-card'),function(c){ c.onclick=function(){ startGame(c.getAttribute('data-diff')); }; });
+Array.prototype.forEach.call(document.querySelectorAll('.diff-card'),function(c){ c.onclick=function(){ openLevelSelect(c.getAttribute('data-diff')); }; });
+el('btnLevelsBack').onclick=function(){ S.state='DIFF'; show('scr-diff'); };
 el('exitBtn').onclick=function(){ window.SWS_EXIT(); };
 el('pauseBtn').onclick=pauseGame;
 el('actionBtn').onclick=function(){ doAction(); };
 el('btnResume').onclick=resumeGame;
-el('btnRestart').onclick=function(){ show(null); S.coinsRun=S.coinsAtLevel||0; S.score=S.scoreAtLevel||0; S.combo=0; loadLevel(S.levelIndex); };
+el('btnRestart').onclick=function(){ show(null); S.coinsRun=S.coinsAtLevel||0; S.score=S.scoreAtLevel||0; S.combo=0; reloadCurrent(); };
 el('btnPauseSettings').onclick=function(){ settingsFromPause=true; S.state='SETTINGS'; refreshSettingsUI(); show('scr-settings'); };
 el('btnQuit').onclick=function(){ musicStop(); gotoMenu(); };
-el('btnRetry').onclick=function(){ startGame(S.diff); };
+el('btnRetry').onclick=function(){ if(S.mode==='endless') startEndless(S.diff); else startGame(S.diff, S.levelIndex); };
 el('btnOverMenu').onclick=gotoMenu;
 el('btnWinMenu').onclick=gotoMenu;
 Array.prototype.forEach.call(document.querySelectorAll('.setrow'),function(row){ var tg=row.querySelector('.toggle[data-set]'); if(!tg) return; row.style.cursor='pointer'; row.onclick=function(){ var k=tg.getAttribute('data-set'); setSetting(k,!store.settings[k]); refreshSettingsUI(); if(k==='music'){ audioInit(); audioResume(); syncMusic(); } if(k==='sound'){ audioInit(); audioResume(); } }; });
@@ -1385,6 +1587,9 @@ if(/[?&]bbtest=1/.test(location.search) && (location.protocol==='file:' || /^(lo
     start:function(d){ startGame(d||'normal'); }, launch:launchServe, action:doAction,
     apply:function(id){ applyPowerup(id); }, spawnCap:spawnCap,
     loadLevel:loadLevel,
+    startEndless:function(d){ startEndless(d||'normal'); }, advanceLevel:advanceLevel,
+    openLevelSelect:function(d){ openLevelSelect(d||'normal'); },
+    isWinnable:isWinnable, genEndlessLevel:genEndlessLevel,
     detonateFirstBomb:function(){ for(var i=0;i<S.bricks.length;i++){ if(S.bricks[i].type==='bomb'&&!S.bricks[i].dead){ destroyBrick(S.bricks[i],'ball'); return true; } } return false; },
     hitFirstHeart:function(){ for(var i=0;i<S.bricks.length;i++){ if(S.bricks[i].boss&&!S.bricks[i].dead){ damageBrick(S.bricks[i],1,'ball'); return true; } } return false; },
     clearLevel:function(){ for(var i=0;i<S.bricks.length;i++){ var b=S.bricks[i]; if(b.type!=='steel'){ b.dead=true; if(b.type==='regen'){ b.starved=true; b.regenAt=0; } } } },
