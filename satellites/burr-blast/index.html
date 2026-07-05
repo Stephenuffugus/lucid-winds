@@ -387,7 +387,7 @@ var PHYS = (function(){
     this.isStatic = !!opts.isStatic;
     this.restitution = (opts.restitution!=null)?opts.restitution:0.1;
     this.friction = (opts.friction!=null)?opts.friction:0.5;
-    this.radius = opts.radius||0;            // circle
+    this.radius = Math.max(0.5, opts.radius||0);   // circle (floor avoids degenerate 0-mass anchors)
     this.verts = opts.verts||null;           // poly local verts (CCW)
     this.normals = null;                     // poly face normals (local)
     this.w = opts.w||0; this.h = opts.h||0;  // render helpers for boxes
@@ -431,6 +431,9 @@ var PHYS = (function(){
       I=Math.abs(I)*density;
       this.inertia=I; this.invInertia=I>0?1/I:0;
     }
+    // guard degenerate (near-zero-area) dynamic bodies from becoming immovable anchors
+    if(this.mass>0 && this.mass<0.02){ this.mass=0.02; this.invMass=50; }
+    if(this.inertia>0 && this.inertia<0.02){ this.inertia=0.02; this.invInertia=50; }
   };
 
   Body.prototype._buildNormals = function(){
@@ -518,11 +521,13 @@ var PHYS = (function(){
       var d1=vdot(vsub(local,va), vsub(vb,va));
       var d2=vdot(vsub(local,vb), vsub(va,vb));
       if(d1<=0){
-        if(vlen2(vsub(local,va))>c.radius*c.radius) return null;
-        normalLocal=vnorm(vsub(local,va)); pen=c.radius-vlen(vsub(local,va)); contactLocal=va;
+        var dva=vsub(local,va); if(vlen2(dva)>c.radius*c.radius) return null;
+        normalLocal = vlen2(dva)>1e-9 ? vnorm(dva) : ns[best];   // guard exact-vertex zero normal
+        pen=c.radius-vlen(dva); contactLocal=va;
       } else if(d2<=0){
-        if(vlen2(vsub(local,vb))>c.radius*c.radius) return null;
-        normalLocal=vnorm(vsub(local,vb)); pen=c.radius-vlen(vsub(local,vb)); contactLocal=vb;
+        var dvb=vsub(local,vb); if(vlen2(dvb)>c.radius*c.radius) return null;
+        normalLocal = vlen2(dvb)>1e-9 ? vnorm(dvb) : ns[best];
+        pen=c.radius-vlen(dvb); contactLocal=vb;
       } else {
         normalLocal=ns[best]; pen=c.radius-sep;
         contactLocal=vsub(local, vmul(normalLocal, c.radius));
@@ -617,7 +622,7 @@ var PHYS = (function(){
     this.iterations = opts.iterations||10;
     this.onContact = null;   // callback(a,b,impulseMag,contactPt)
     this._slop = 0.05;
-    this._baumgarte = 0.2;
+    this._warm = {};         // per-pair impulse cache for warm-starting the solver
   }
   World.prototype.add = function(body){ this.bodies.push(body); return body; };
   World.prototype.remove = function(body){
@@ -656,10 +661,16 @@ var PHYS = (function(){
       }
     }
 
-    // solve velocity constraints
+    // solve velocity constraints (warm-started via cache seeded in prestep)
     for(var it=0; it<this.iterations; it++){
       for(var k=0;k<manifolds.length;k++) solveManifold(manifolds[k]);
     }
+    // write accumulated impulses back for next-frame warm start (purges untouched pairs)
+    var warmNew={};
+    for(var w=0;w<manifolds.length;w++){ var mf0=manifolds[w], arr=[];
+      for(var ci=0;ci<mf0._c.length;ci++) arr.push(mf0._c[ci].pn);
+      warmNew[mf0._key]=arr; }
+    this._warm=warmNew;
 
     // integrate velocities into positions
     for(i=0;i<n;i++){
@@ -669,6 +680,10 @@ var PHYS = (function(){
       b2.angle += b2.angVel*dt;
       b2.force=v(0,0); b2.torque=0;
     }
+
+    // positional correction — a SEPARATE position-only pass (no velocity change) so the
+    // Baumgarte bias never inflates restitution; this is what makes contacts thud + settle.
+    for(var pc=0;pc<manifolds.length;pc++) positionalCorrection(manifolds[pc], this);
 
     // report contact impulses to game layer + wake pairs
     if(this.onContact){
@@ -688,35 +703,49 @@ var PHYS = (function(){
   function aabbOverlap(a,b){ return a.minx<=b.maxx && a.maxx>=b.minx && a.miny<=b.maxy && a.maxy>=b.miny; }
 
   function prestep(m,world,dt){
-    var a=m.a,b=m.b;
+    var a=m.a,b=m.b, t=vperp(m.normal);
     m.e=Math.min(a.restitution,b.restitution);
     m.df=Math.sqrt(a.friction*b.friction);
     m._impulse=0;
     m._approach=0;      // fastest closing speed among contacts (0 at rest)
     m._c=[];
+    m._key = (a.id<b.id ? a.id+'_'+b.id : b.id+'_'+a.id);
+    var cached = world._warm[m._key];
     // wake sleeping bodies that are being touched by an awake body
     if(a.awake && !b.awake) b.wake();
     if(b.awake && !a.awake) a.wake();
     for(var i=0;i<m.contacts.length;i++){
       var cp=m.contacts[i];
       var ra=vsub(cp,a.pos), rb=vsub(cp,b.pos);
-      // effective normal mass
       var rnA=vcross(ra,m.normal), rnB=vcross(rb,m.normal);
       var kn=a.invMass+b.invMass + a.invInertia*rnA*rnA + b.invInertia*rnB*rnB;
-      var t=vperp(m.normal);
       var rtA=vcross(ra,t), rtB=vcross(rb,t);
       var kt=a.invMass+b.invMass + a.invInertia*rtA*rtA + b.invInertia*rtB*rtB;
-      // relative velocity for restitution bias
       var rv=vsub( vadd(b.vel, vcrossSV(b.angVel,rb)), vadd(a.vel, vcrossSV(a.angVel,ra)) );
       var vn=vdot(rv,m.normal);
       if(-vn > m._approach) m._approach = -vn;   // closing speed for damage gauge
-      // restitution: extra separating velocity, only on a fast approach (vn<0)
+      // restitution ONLY (no Baumgarte here — penetration is fixed by positionalCorrection)
       var restBias = (vn < -200) ? -m.e*vn : 0;
-      // Baumgarte: positive bias when penetrating, pushes bodies apart
-      var posBias = world._baumgarte*(1/dt)*Math.max(0, m.penetration-world._slop);
-      m._c.push({ ra:ra, rb:rb, mn:kn>0?1/kn:0, mt:kt>0?1/kt:0, pn:0, pt:0,
-        bias: posBias + restBias });
+      // warm start the NORMAL impulse only (order-insensitive for a stack). Warm-starting
+      // friction too kicks tall stacks sideways when the contact-point order swaps frames.
+      var pn0=0;
+      if(cached && cached[i]!=null) pn0=cached[i];
+      a.applyImpulse(vmul(m.normal,-pn0), cp);
+      b.applyImpulse(vmul(m.normal, pn0), cp);
+      m._c.push({ ra:ra, rb:rb, mn:kn>0?1/kn:0, mt:kt>0?1/kt:0, pn:pn0, pt:0, bias: restBias });
     }
+  }
+
+  // position-only de-penetration (Randy-Gaul style): keeps restitution honest + stacks stable
+  function positionalCorrection(m, world){
+    var a=m.a, b=m.b;
+    var corr = Math.min(m.penetration, 12) - world._slop;
+    if(corr<=0) return;
+    var im = a.invMass + b.invMass; if(im<=0) return;
+    var scalar = (corr / im) * 0.4;                 // 40% per step
+    var moveA = Math.min(scalar*a.invMass, 4), moveB = Math.min(scalar*b.invMass, 4);
+    if(a.invMass>0) a.pos = vsub(a.pos, vmul(m.normal, moveA));
+    if(b.invMass>0) b.pos = vadd(b.pos, vmul(m.normal, moveB));
   }
 
   function solveManifold(m){
@@ -748,16 +777,20 @@ var PHYS = (function(){
   }
 
   World.prototype._updateSleep = function(dt){
-    var linTol=8*8, angTol=0.12*0.12;
+    // hysteresis: settle below 12 px/s, only fully wake above 20 px/s — stops solver
+    // jitter from repeatedly crossing a single threshold and never letting a stack rest.
+    var sleepLo=12*12, wakeHi=20*20, angLo=0.14*0.14;
     for(var i=0;i<this.bodies.length;i++){
       var b=this.bodies[i];
       if(b.isStatic) continue;
       if(!b.canSleep){ b.awake=true; continue; }
-      if(vlen2(b.vel)>linTol || b.angVel*b.angVel>angTol){
+      if(vlen2(b.vel)>wakeHi || b.angVel*b.angVel>0.6*0.6){
         b.sleepTime=0; b.awake=true;
-      } else {
+      } else if(vlen2(b.vel)<sleepLo && b.angVel*b.angVel<angLo){
         b.sleepTime+=dt;
         if(b.sleepTime>0.6){ b.awake=false; b.vel=v(0,0); b.angVel=0; }
+      } else {
+        b.awake=true; b.sleepTime=0;
       }
     }
   };
@@ -785,6 +818,7 @@ var PHYS = window.BB_PHYS;
 var BUILD = window.BB_BUILD || 'dev';
 if(!PHYS){ try{ document.getElementById('scr-menu').innerHTML='<p style="margin-top:40vh;color:#e0a0a0">Physics engine failed to load.</p>'; }catch(e){} return; }
 var v=PHYS.v, vadd=PHYS.vadd, vsub=PHYS.vsub, vmul=PHYS.vmul, vlen=PHYS.vlen, vnorm=PHYS.vnorm;
+function vperp(a){ return {x:-a.y, y:a.x}; }
 function clamp(x,lo,hi){ return x<lo?lo:(x>hi?hi:x); }
 
 /* ================================================================
@@ -794,9 +828,9 @@ var WORLD_H = 900;
 var GROUND_Y = 762;                 // top of soil
 var GRAVITY = 1950;
 var SLING_X = 150, SLING_Y = 548;   // pouch rest anchor (fork of the slingshot)
-var MAX_PULL = 130;                 // px of drag before it caps
-var LAUNCH_POWER = 12.4;            // pull px -> launch speed multiplier
-var MAX_LAUNCH = 1650;              // speed cap
+var MAX_PULL = 165;                 // px of drag before it caps (longer, finer draw)
+var LAUNCH_POWER = 9.8;             // pull px -> launch speed multiplier (165*9.8 ≈ 1617)
+var MAX_LAUNCH = 1620;              // speed cap
 var KILL_Y = WORLD_H + 260;         // below this, a body has fallen off the patch
 
 /* ================================================================
@@ -806,9 +840,9 @@ var KILL_Y = WORLD_H + 260;         // below this, a body has fallen off the pat
 /* `tough` is now an IMPACT-SPEED threshold (px/s): a contact closing faster
    than this chips hp. Resting/settling contacts (~0 closing speed) never damage. */
 var MAT = {
-  wood:  { density:0.85, rest:0.10, fric:0.62, hp:30,  tough:260, score:200, indestruct:false,
+  wood:  { density:0.85, rest:0.10, fric:0.62, hp:40,  tough:260, score:200, indestruct:false,
            fill:'#8a5a34', edge:'#5f3c20', grain:'#6d4527' },
-  stone: { density:2.7,  rest:0.06, fric:0.74, hp:95,  tough:600, score:140, indestruct:false,
+  stone: { density:2.7,  rest:0.06, fric:0.74, hp:80,  tough:540, score:140, indestruct:false,
            fill:'#6f7566', edge:'#464b3e' },
   glass: { density:0.4,  rest:0.05, fric:0.36, hp:12,  tough:130, score:340, indestruct:false,
            fill:'rgba(120,196,196,.5)', edge:'rgba(190,240,240,.85)' },
@@ -872,7 +906,11 @@ var SFX = (function(){
     win:function(){ [523,659,784,1046].forEach(function(f,i){ setTimeout(function(){ tone(f,0.30,'triangle',0.22); },i*120); }); },
     lose:function(){ tone(300,0.4,'sawtooth',0.18,120); },
     click:function(){ tone(520,0.05,'square',0.10); },
-    coin:function(){ tone(880,0.10,'square',0.14,1320); }
+    coin:function(){ tone(880,0.10,'square',0.14,1320); },
+    crackle:function(){ tone(760,0.05,'square',0.10,940); noise(0.06,0.10,3000); tone(900,0.05,'square',0.08,1200); },
+    whoosh:function(){ tone(150,0.20,'sawtooth',0.16,46); noise(0.16,0.14,700); },
+    fwump:function(){ noise(0.26,0.26,520); tone(120,0.16,'sine',0.14,60); },
+    whirl:function(){ tone(360,0.22,'triangle',0.14,720); }
   };
 })();
 
@@ -1106,6 +1144,7 @@ function isLevelUnlocked(n){
    GAME STATE + SIMULATION
    ================================================================ */
 var DMG_K = 0.045;          // (closingSpeed - tough) * DMG_K * massFactor = hp lost
+var REF_MASS = 1800;        // ~ a 46px wood block; blast impulses scale to this
 var SETTLE_SPEED = 46;      // below this a body counts as "still"
 var G = null;               // live game state
 var endlessMode = false, endlessLevel = 0;
@@ -1120,8 +1159,8 @@ function newState(){
     score:0, blocksDestroyed:0, pestsTotal:0, pestsAlive:0, ammoUsed:0,
     star2:0, star3:0,
     cam:0, camTarget:0, scale:1, viewW:1300, viewH:WORLD_H, offY:0,
-    shake:0, particles:[], flashes:[], rings:[],
-    shotTime:0, stillTime:0, resolved:false, tHint:0, exploding:false, hitstop:0,
+    shake:0, particles:[], flashes:[], rings:[], pops:[], zoom:1, zoomFocus:null, combo:0, comboT:0, scoreShown:0,
+    shotTime:0, stillTime:0, resolved:false, tHint:0, exploding:false, hitstop:0, slowBudget:0,
     settleGuard:1.0            // no contact damage while the fort first settles (ends at first shot)
   };
 }
@@ -1138,14 +1177,14 @@ function makePestBody(pd, boss){
   var r=pd.r||17;
   var body=new PHYS.Body({ shape:'circle', radius:r, x:pd.x, y:pd.y,
     density:0.6, restitution:0.2, friction:0.7, canSleep:true, mat:'pest',
-    game:{ kind:boss?'boss':'pest', hp:boss?(pd.hp||5):14, tough:boss?520:200, r:r, dmgCd:0, maxHp:boss?(pd.hp||5):14 } });
+    game:{ kind:boss?'boss':'pest', hp:boss?(pd.hp||5):14, tough:boss?520:165, r:r, dmgCd:0, maxHp:boss?(pd.hp||5):14 } });
   return body;
 }
 
 function startLevel(lv){
   G = newState();
   G.level = lv;
-  var W = new PHYS.World({ gravity:GRAVITY, iterations:11 });
+  var W = new PHYS.World({ gravity:GRAVITY, iterations:13 });
   W.onContact = handleContact;
   G.world = W;
 
@@ -1217,6 +1256,7 @@ function launch(){
   G.world.add(body);
   G.proj=body; G.launchVx=body.vel.x;
   G.aiming=false; G.state='flight'; G.abilityUsed=false; G.shotTime=0; G.stillTime=0; G.resolved=false;
+  G.slowBudget = spec.ability ? 1.0 : 0;   // bullet-time beat only for trick seeds
   G.ammoIdx++; G.ammoUsed++;
   SFX.launch();
   showAbilityHint(spec);
@@ -1237,27 +1277,59 @@ function triggerAbility(){
   var p=G.proj, type=p.game.ammo, ab=(AMMO[type]||{}).ability;
   if(!ab) return;
   G.abilityUsed=true; hideHint();
+  var pr=AMMO[type].r;
   if(ab==='split'){
-    var base=p.vel, ang=Math.atan2(base.y,base.x), spd=vlen(base);
-    [-0.28,0.28].forEach(function(off){
-      var nb=new PHYS.Body({ shape:'circle', radius:AMMO[type].r, x:p.pos.x, y:p.pos.y,
+    // clean 3-pellet fan: boost the center, splay two offset pellets (no birth jitter)
+    var ang=Math.atan2(p.vel.y,p.vel.x), spd=vlen(p.vel);
+    p.vel=vmul(vnorm(p.vel), spd*1.05);
+    [-0.30,0.30].forEach(function(off){
+      var h=v(Math.cos(ang+off), Math.sin(ang+off)), perp=vperp(h), sign=(off>0?1:-1);
+      var nb=new PHYS.Body({ shape:'circle', radius:pr, x:p.pos.x+h.x*pr*1.6, y:p.pos.y+h.y*pr*1.6,
         density:AMMO[type].density, restitution:AMMO[type].rest, friction:AMMO[type].fric, canSleep:false, mat:'proj',
         game:{ kind:'proj', ammo:'burr' } });
-      nb.vel=v(Math.cos(ang+off)*spd, Math.sin(ang+off)*spd);
+      nb.vel=v(h.x*spd + perp.x*120*sign, h.y*spd + perp.y*120*sign);
       G.world.add(nb);
     });
-    puff(p.pos.x,p.pos.y,'#bfe08a',10);
-    SFX.stretch();
+    puff(p.pos.x,p.pos.y,'#bfe08a',12); SFX.crackle();
   } else if(ab==='slam'){
-    p.vel=v(p.vel.x*1.1+240, Math.abs(p.vel.y)+1500);
-    puff(p.pos.x,p.pos.y,'#c8a84b',8); SFX.stretch();
+    // meteor: bleed horizontal, plunge straight down, armed to thump on landing
+    p.vel=v(p.vel.x*0.35+60, Math.abs(p.vel.y)+2100);
+    p.game.slamArm=1; addHitstop(0.04); addShake(4); SFX.whoosh(); puff(p.pos.x,p.pos.y,'#c8a84b',8);
   } else if(ab==='spore'){
-    explode(p.pos, 560, 150); p.vel=v(p.vel.x*0.4, -420);
+    sporeBurst(p.pos); p.vel=v(p.vel.x*0.35, -300);   // gentle self-lift, don't die
   } else if(ab==='boom'){
-    explode(p.pos, 900, 200); p.dead=true; G.proj=null;
+    explode(p.pos, 1000, 210); p.dead=true; G.proj=null;
   } else if(ab==='curve'){
-    p.vel=v(-Math.abs(G.launchVx)*0.82, p.vel.y*0.5-120);
-    puff(p.pos.x,p.pos.y,'#8fd06a',8); SFX.stretch();
+    // real steering: bank back over ~0.55s (steer by WHEN you tap)
+    p.game.curveT=0.55; p.game.curveDir=(G.launchVx>=0?-1:1);
+    puff(p.pos.x,p.pos.y,'#8fd06a',8); SFX.whirl();
+  }
+}
+/* puffball spore — a wide, UP-biased gust: lifts the roof + pops pests skyward,
+   low structural damage. Mass-scaled so light things fly and stone barely moves. */
+function sporeBurst(center){
+  var power=600, radius=230;
+  G.flashes.push({ x:center.x, y:center.y, r:radius*0.7, life:0.28, max:0.28 });
+  G.rings.push({ x:center.x, y:center.y, r:6, max:radius, life:0.36 });
+  addShake(5); addHitstop(0.03); SFX.fwump(); puff(center.x,center.y,'#cfe8a0',18);
+  var list=G.world.bodies.slice();
+  for(var i=0;i<list.length;i++){
+    var bd=list[i]; if(bd.isStatic||bd.dead||!bd.game||bd.game.kind==='ground') continue;
+    var d=vsub(bd.pos,center), dist=vlen(d); if(dist>radius) continue;
+    var fall=1-(dist/radius), nn=dist>1e-3?vmul(d,1/dist):v(0,-1);
+    bd.wake();
+    bd.applyImpulse(vmul(nn, power*fall*REF_MASS*0.5), bd.pos);
+    bd.applyImpulse(v(0, -power*fall*REF_MASS*0.95), bd.pos);   // strong UP lift
+    if(bd.game.kind==='pest'){ bd.game.hp-=power*fall*DMG_K*0.7; if(bd.game.hp<=0) killPest(bd,bd.pos); }
+  }
+}
+/* boomerang steering — a sustained lateral bank while curveT>0 (per substep) */
+function applyProjSteering(sdt){
+  var p=G.proj; if(!p||p.dead||!p.game) return;
+  if(p.game.curveT>0){
+    p.game.curveT-=sdt;
+    p.vel.x += p.game.curveDir*4600*sdt;   // bank sideways
+    p.vel.y -= 900*sdt;                     // mild lift so it sweeps rather than dives
   }
 }
 
@@ -1269,6 +1341,7 @@ var _lastThwack=0;
 function handleContact(a,b,speed,impulse,pt){
   damageBody(a,b,speed,pt);
   damageBody(b,a,speed,pt);
+  projImpact(a,b,speed,pt); projImpact(b,a,speed,pt);
   // impact SFX / dust for solid hits (throttled so a multi-contact hit is one thwack)
   if(speed>320 && (G._t-_lastThwack)>0.045){
     _lastThwack=G._t;
@@ -1278,7 +1351,20 @@ function handleContact(a,b,speed,impulse,pt){
     if(speed>640){ dust(pt.x,pt.y); addShake(Math.min(7,speed/750)); }
   }
 }
-function massFactor(other, lo){ var m=(other&&isFinite(other.mass))?other.mass:2600; return clamp(m/900, lo||0.35, 3); }
+function massFactor(other, lo){ var m=(other&&isFinite(other.mass))?other.mass:2600; return clamp(m/900, lo||0.35, 4.5); }
+function projImpact(bd, other, speed, pt){
+  if(!bd.game || bd.dead || bd.game.kind!=='proj') return;
+  var spec=AMMO[bd.game.ammo]; if(!spec) return;
+  // thornpod detonates on a real impact even with no tap (impactBoom was dead code)
+  if(spec.impactBoom && !bd.game.boomed && speed>250){
+    bd.game.boomed=true; explode(bd.pos, 1000, 210); bd.dead=true; if(bd===G.proj)G.proj=null; return;
+  }
+  // acorn slam: a ground shockwave when the plunging acorn lands hard
+  if(bd.game.slamArm && speed>420){
+    bd.game.slamArm=0; addShake(9); addHitstop(0.05); SFX.whoosh(); dust(bd.pos.x,bd.pos.y);
+    explode(bd.pos, 470, 145);
+  }
+}
 function damageBody(bd, other, speed, pt){
   if(!bd.game || bd.dead) return;
   if(G.settleGuard>0) return;         // fort is still settling; ignore settling contacts
@@ -1287,10 +1373,12 @@ function damageBody(bd, other, speed, pt){
     if(bd.game.indestruct) return;
     if(speed<=bd.game.tough) return;
     bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.35);
+    bd.game.flash=1;
     if(bd.game.hp<=0) destroyBlock(bd,pt);
   } else if(k==='pest'){
     if(speed<=bd.game.tough) return;
     bd.game.hp -= (speed-bd.game.tough)*DMG_K*massFactor(other,0.45);
+    bd.game.flash=1;
     if(bd.game.hp<=0) killPest(bd,pt);
   } else if(k==='boss'){
     if(speed<520) return;
@@ -1314,28 +1402,54 @@ function destroyBlock(bd,pt){
   wakeNear(bd.pos, 150);
   var mat=MAT[bd.game.mat]||MAT.wood;
   G.score += mat.score; G.blocksDestroyed++;
+  var big=clamp(Math.max(bd.w,bd.h)/60,0,1);
   if(bd.game.mat==='glass'){ SFX.shatter(); shards(bd.pos.x,bd.pos.y,'rgba(190,240,240,.9)',14); }
-  else { debris(bd.pos.x,bd.pos.y, mat.fill, 9); }
+  else {
+    debris(bd.pos.x,bd.pos.y, mat.fill, 9);
+    addShake(2+big*5); if(big>0.6) addHitstop(0.03);
+    // physical crush chunks — a collapsing roof now actually squashes the pest below it
+    if(!mat.explosive && Math.min(bd.w,bd.h)>=24) spawnCrushChunks(bd, mat);
+  }
   if(mat.explosive){ explode(bd.pos, 820, 190); }
+  if(bd.pos.y > GROUND_Y-60 && !RM()) dust(bd.pos.x, GROUND_Y);  // soil kick at the base
   updateHUD();
+}
+function spawnCrushChunks(bd, mat){
+  var cw=bd.w*0.5, ch=bd.h*0.5, n=(Math.max(bd.w,bd.h)>=80)?2:1;
+  for(var k=0;k<n;k++){
+    var ox=(n===1?0:(k===0?-1:1))*bd.w*0.22;
+    var chunk=new PHYS.Body({ shape:'poly', verts:PHYS.boxVerts(cw,ch), x:bd.pos.x+ox, y:bd.pos.y, angle:bd.angle,
+      w:cw, h:ch, density:mat.density*0.9, restitution:0.08, friction:mat.fric, mat:bd.game.mat, canSleep:true,
+      game:{ kind:'debris', mat:bd.game.mat, ttl:1.9 } });
+    chunk.vel=v(bd.vel.x*0.6 + (Math.random()-0.5)*140, bd.vel.y*0.6 - 30 - Math.random()*70);
+    chunk.angVel=(Math.random()-0.5)*8;
+    G.world.add(chunk);
+  }
 }
 function killPest(bd,pt){
   if(bd.dead) return;
   bd.dead=true;
   wakeNear(bd.pos, 130);
   var isBoss=bd.game.kind==='boss';
-  G.score += isBoss?12000:4200;
   G.pestsAlive=Math.max(0,G.pestsAlive-1);
-  puff(bd.pos.x,bd.pos.y,'#9ad06a', isBoss?26:16); SFX.squish(); addHitstop(isBoss?0.09:0.035);
+  // chunky death poof + a neighbour flinch
+  puff(bd.pos.x,bd.pos.y,'#9ad06a', isBoss?30:20); puff(bd.pos.x,bd.pos.y,'#e8f0d0', isBoss?12:7);
+  SFX.squish(); addHitstop(isBoss?0.09:0.04); addZoom(isBoss?0.10:0.05, bd.pos);
+  flinchNear(bd.pos, 120);
+  killScore(bd, isBoss?12000:4200);
   if(isBoss){ addShake(14); explode(bd.pos, 400, 160); }
-  updateHUD();
+}
+function flinchNear(center, radius){
+  var bs=G.world.bodies, r2=radius*radius;
+  for(var i=0;i<bs.length;i++){ var b=bs[i]; if(b.dead||!b.game||(b.game.kind!=='pest'&&b.game.kind!=='boss'))continue;
+    var dx=b.pos.x-center.x, dy=b.pos.y-center.y; if(dx*dx+dy*dy<=r2) b.game.flinch=0.35; }
 }
 
 /* ---- explosion: radial impulse + damage; chains through TNT ---- */
 function explode(center, power, radius){
   G.flashes.push({ x:center.x, y:center.y, r:radius, life:0.32, max:0.32 });
   G.rings.push({ x:center.x, y:center.y, r:6, max:radius, life:0.4 });
-  addShake(11); addHitstop(0.05); SFX.boom(); puff(center.x,center.y,'#ffd07a',22);
+  addShake(11); addHitstop(0.05); addZoom(0.08, center); SFX.boom(); puff(center.x,center.y,'#ffd07a',22);
   var list=G.world.bodies.slice();
   for(var i=0;i<list.length;i++){
     var bd=list[i]; if(bd.isStatic||bd.dead||!bd.game) continue;
@@ -1344,8 +1458,10 @@ function explode(center, power, radius){
     var fall=1-(dist/radius);
     var n=dist>1e-3?vmul(d,1/dist):v(0,-1);
     bd.wake();
-    bd.applyImpulse(vmul(n, power*fall*bd.mass*0.9), bd.pos);
-    bd.vel.y -= power*fall*0.25;               // extra pop upward
+    // blast is a mass-INDEPENDENT impulse (REF_MASS), so delta-v scales 1/mass: pests +
+    // glass rocket, wood tumbles, stone lurches, steel barely shrugs — readable weight.
+    bd.applyImpulse(vmul(n, power*fall*REF_MASS*0.9), bd.pos);
+    bd.applyImpulse(v(0, -power*fall*REF_MASS*0.28), bd.pos);   // upward pop, also mass-scaled
     // damage from blast
     var dmg=power*fall;
     if(bd.game.kind==='pest'){ bd.game.hp-=dmg*DMG_K*2.2; if(bd.game.hp<=0) killPest(bd,bd.pos); }
@@ -1370,6 +1486,17 @@ function debris(x,y,color,n){ if(RM())n=Math.min(n,3); for(var i=0;i<n;i++){ var
 function shards(x,y,color,n){ if(RM())n=Math.min(n,4); for(var i=0;i<n;i++){ var a=Math.random()*6.28,s=90+Math.random()*260; G.particles.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-150,life:0.7,max:0.7,color:color,r:1.5+Math.random()*3,grav:560}); } }
 function addShake(m){ if(SAVE.set.shake && !SAVE.set.reduce) G.shake=Math.min(20,G.shake+m); }
 function addHitstop(sec){ if(!SAVE.set.reduce) G.hitstop=Math.max(G.hitstop||0, sec); }
+function addZoom(mag, pt){ if(SAVE.set.reduce) return; G.zoom=Math.min(1.11,(G.zoom||1)+mag); if(pt) G.zoomFocus={x:pt.x,y:pt.y}; }
+function scorePop(x,y,amount,big){ G.pops.push({x:x,y:y,vy:-72,life:0.9,max:0.9,txt:'+'+fmt(amount),big:!!big}); }
+/* a pest kill scores with an escalating combo (rising chime + bonus) within a 1.2s window */
+function killScore(bd, base){
+  G.combo = (G.comboT>0) ? G.combo+1 : 1; G.comboT=1.2;
+  var amt=Math.round(base*(1+(G.combo-1)*0.2));
+  G.score+=amt;
+  scorePop(bd.pos.x, bd.pos.y-(bd.radius||16)-6, amt, G.combo>1);
+  SFX.star(Math.min(6,G.combo-1));
+  updateHUD();
+}
 
 /* ================================================================
    MAIN UPDATE  (fixed-step accumulator)
@@ -1393,16 +1520,24 @@ function step(dt){
   if(G.settleGuard>0){ if(G.ammoUsed>0) G.settleGuard=0; else G.settleGuard-=dt; }
   // adaptive substeps: keep the fastest body's per-substep travel under ~8px so a
   // fast burr can't tunnel through a thin plank (thinnest block ~20px).
+  // aim slow-mo: a short bullet-time beat while an ability seed is airborne + untriggered,
+  // so tap-timed tricks are reliable and dramatic (budget-capped so flight still resolves).
+  var slow=1;
+  if(G.state==='flight' && G.proj && !G.proj.dead && !G.abilityUsed && (AMMO[G.proj.game.ammo]||{}).ability && G.slowBudget>0){ slow=0.5; G.slowBudget-=dt; }
+  var pdt=dt*slow;
   var maxv=0, sb=G.world.bodies, q;
   for(q=0;q<sb.length;q++){ if(sb[q].isStatic||sb[q].dead)continue; var sp=PHYS.vlen(sb[q].vel); if(sp>maxv)maxv=sp; }
-  var sub=Math.max(2, Math.min(8, Math.ceil(maxv*dt/8)));
-  var sdt=dt/sub;
-  for(var s=0;s<sub;s++) G.world.step(sdt);
+  // keep per-substep travel under the smallest projectile radius (5px) so nothing tunnels
+  var sub=Math.max(2, Math.min(24, Math.ceil(maxv*pdt/5)));
+  var sdt=pdt/sub;
+  for(var s=0;s<sub;s++){ applyProjSteering(sdt); G.world.step(sdt); }
 
   // fall-off cleanup
   var bs=G.world.bodies, i;
   for(i=0;i<bs.length;i++){
     var bd=bs[i]; if(bd.isStatic||bd.dead) continue;
+    if(bd.game.flash>0) bd.game.flash=Math.max(0, bd.game.flash - dt*6);   // hit-flash decay
+    if(bd.game.kind==='debris'){ bd.game.ttl-=dt; if(bd.game.ttl<=0){ bd.dead=true; continue; } }
     if(bd.pos.y>KILL_Y){
       if(bd.game.kind==='pest'||bd.game.kind==='boss'){ killPest(bd,bd.pos); }
       else if(bd.game.kind==='proj'){ if(bd===G.proj){ G.proj=null; } bd.dead=true; }
@@ -1417,11 +1552,21 @@ function step(dt){
   }
   for(i=G.flashes.length-1;i>=0;i--){ G.flashes[i].life-=dt; if(G.flashes[i].life<=0)G.flashes.splice(i,1); }
   for(i=G.rings.length-1;i>=0;i--){ var rg=G.rings[i]; rg.life-=dt; rg.r+=(rg.max-rg.r)*Math.min(1,dt*8); if(rg.life<=0)G.rings.splice(i,1); }
+  for(i=G.pops.length-1;i>=0;i--){ var po=G.pops[i]; po.life-=dt; if(po.life<=0){G.pops.splice(i,1);continue;} po.y+=po.vy*dt; po.vy*=1/(1+dt*2); }
   if(G.shake>0){ G.shake=Math.max(0,G.shake-dt*38); }
+  G.zoom += (1-(G.zoom||1))*Math.min(1,dt*7);              // zoom-punch decays back
+  if(G.comboT>0){ G.comboT-=dt; if(G.comboT<=0) G.combo=0; }
+  G.scoreShown += (G.score-(G.scoreShown||0))*Math.min(1,dt*6);   // HUD count-up (also fixes boss-hit refresh)
+  var _hs=document.getElementById('hudScore'); if(_hs) _hs.textContent=fmt(Math.round(G.scoreShown||0));
+  // pest flinch decay
+  for(i=0;i<G.world.bodies.length;i++){ var fb=G.world.bodies[i]; if(fb.game&&fb.game.flinch>0) fb.game.flinch=Math.max(0,fb.game.flinch-dt*3); }
   if(G.tHint>0){ G.tHint-=dt; if(G.tHint<=0) hideHint(); }
 
   // camera
   updateCamera(dt);
+
+  // projectile motion trail
+  if(G.proj && !G.proj.dead){ var tr=G.proj.game.trail||(G.proj.game.trail=[]); tr.push({x:G.proj.pos.x,y:G.proj.pos.y}); if(tr.length>16)tr.shift(); }
 
   // turn resolution
   if(G.state==='flight'){
@@ -1638,18 +1783,21 @@ function render(){
     drawHills(ctx,vw,vh,W);
   }
 
-  // world transform (+shake)
+  // world transform (+shake +zoom-punch). Zoom lunges toward the last impact focus and
+  // decays back; at zoom==1 this is identical to the plain transform (so aim input stays exact).
   var sh=G.shake, shx=sh?(Math.random()-0.5)*sh:0, shy=sh?(Math.random()-0.5)*sh:0;
+  var zoom=G.zoom||1, off=G.offY||0;
+  var fx=G.zoomFocus?G.zoomFocus.x:(G.cam+G.viewW*0.5), fy=G.zoomFocus?G.zoomFocus.y:(WORLD_H*0.55);
   ctx.save();
-  ctx.translate(shx,shy);
-  ctx.scale(G.scale,G.scale);
-  ctx.translate(-G.cam, G.offY||0);
+  ctx.translate(shx + (fx-G.cam)*G.scale, shy + (fy+off)*G.scale);
+  ctx.scale(G.scale*zoom, G.scale*zoom);
+  ctx.translate(-fx, -fy);
 
   drawGround(ctx,W);
   // structures + pests + projectiles
   var bs=G.world.bodies, i;
   for(i=0;i<bs.length;i++){ var b=bs[i]; if(b.dead||b.game.kind==='ground')continue;
-    if(b.game.kind==='block') drawBlock(ctx,b);
+    if(b.game.kind==='block'||b.game.kind==='debris') drawBlock(ctx,b);
   }
   for(i=0;i<bs.length;i++){ var b2=bs[i]; if(b2.dead)continue;
     if(b2.game.kind==='pest') drawPest(ctx,b2);
@@ -1664,7 +1812,16 @@ function render(){
   // fx
   drawParticles(ctx);
   drawExplosions(ctx);
+  drawPops(ctx);
   ctx.restore();
+}
+function drawPops(ctx){
+  for(var i=0;i<G.pops.length;i++){ var p=G.pops[i], a=clamp(p.life/p.max,0,1);
+    ctx.globalAlpha=a; ctx.font='900 '+(p.big?48:36)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.lineWidth=6; ctx.strokeStyle='rgba(0,0,0,0.55)'; ctx.strokeText(p.txt,p.x,p.y);
+    ctx.fillStyle=p.big?'#f0c060':'#e8dcc8'; ctx.fillText(p.txt,p.x,p.y);
+  }
+  ctx.globalAlpha=1;
 }
 
 function drawHills(ctx,vw,vh,W){
@@ -1701,7 +1858,7 @@ function drawGround(ctx,W){
 function drawBlock(ctx,b){
   var mat=MAT[b.game.mat]||MAT.wood, w=b.w,h=b.h;
   ctx.save(); ctx.translate(b.pos.x,b.pos.y); ctx.rotate(b.angle);
-  var dmg = mat.indestruct?0:clamp(1-b.game.hp/mat.hp,0,1);
+  var dmg = (mat.indestruct||b.game.hp==null)?0:clamp(1-b.game.hp/mat.hp,0,1);
   ctx.fillStyle=mat.fill; ctx.strokeStyle=mat.edge; ctx.lineWidth=3;
   rr(ctx,-w/2,-h/2,w,h,Math.min(6,Math.min(w,h)/4)); ctx.fill(); ctx.stroke();
   if(b.game.mat==='wood'){ ctx.strokeStyle=mat.grain; ctx.lineWidth=1.5; ctx.globalAlpha=0.6;
@@ -1711,13 +1868,23 @@ function drawBlock(ctx,b){
   else if(b.game.mat==='glass'){ ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-w/2+5,-h/2+5); ctx.lineTo(-w/2+w*0.4,-h/2+5); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-w/2+5,-h/2+5); ctx.lineTo(-w/2+5,-h/2+h*0.4); ctx.stroke(); }
   else if(b.game.mat==='tnt'){ ctx.fillStyle=mat.edge; rr(ctx,-w/2+4,-4,w-8,8,2); ctx.fill(); ctx.fillStyle='#e0c366'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('✸',0,0); }
   else if(b.game.mat==='steel'){ ctx.fillStyle='rgba(255,255,255,0.10)'; var rv=[[-1,-1],[1,-1],[1,1],[-1,1]]; for(var r2=0;r2<4;r2++){ ctx.beginPath(); ctx.arc(rv[r2][0]*(w/2-7), rv[r2][1]*(h/2-7),2.4,0,6.28); ctx.fill(); } }
-  if(dmg>0.15){ ctx.strokeStyle='rgba(0,0,0,'+(0.25+dmg*0.4)+')'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(-w/2+w*0.3,-h/2+3); ctx.lineTo(-w/2+w*0.45,h*0.1); ctx.lineTo(-w/2+w*0.3,h/2-3); ctx.stroke(); }
+  // progressive multi-stage cracks so you can read "one more hit"
+  if(dmg>0.25){
+    ctx.strokeStyle='rgba(0,0,0,'+(0.3+dmg*0.45)+')'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(-w*0.2,-h/2+2); ctx.lineTo(-w*0.05,h*0.08); ctx.lineTo(-w*0.18,h/2-2); ctx.stroke();
+    if(dmg>0.55){ ctx.beginPath(); ctx.moveTo(w*0.28,-h/2+2); ctx.lineTo(w*0.1,-h*0.05); ctx.lineTo(w*0.24,h/2-2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-w*0.05,h*0.08); ctx.lineTo(w*0.1,-h*0.05); ctx.stroke(); }
+    if(dmg>0.82){ ctx.fillStyle='rgba(0,0,0,'+((dmg-0.82)*1.4)+')'; rr(ctx,-w/2,-h/2,w,h,4); ctx.fill(); }
+  }
+  // white hit-flash pop
+  if(b.game.flash>0){ ctx.globalAlpha=b.game.flash*0.55; ctx.fillStyle='#fff'; rr(ctx,-w/2,-h/2,w,h,4); ctx.fill(); ctx.globalAlpha=1; }
   ctx.restore();
 }
 
 function drawPest(ctx,b){
   var r=b.radius, hurt=clamp(1-b.game.hp/b.game.maxHp,0,1);
   ctx.save(); ctx.translate(b.pos.x,b.pos.y); ctx.rotate(b.angle*0.4);
+  var fl=b.game.flinch||0; if(fl>0) ctx.scale(1+fl*0.25, 1-fl*0.35);   // neighbour-death flinch
   var pa=img('aphid');
   if(pa){ var ps=r*2.8; if(hurt>0.5)ctx.globalAlpha=0.85; ctx.drawImage(pa,-ps/2,-ps/2,ps,ps); ctx.globalAlpha=1; ctx.restore(); return; }
   // body
@@ -1765,6 +1932,14 @@ function drawBossPips(ctx,b){
 function drawProj(ctx,b){
   var type=b.game.ammo, spec=AMMO[type]||AMMO.burr, r=b.radius;
   var sk=skinById('seed',SAVE.equip.seed);
+  // fading, tapering motion trail
+  var tr=b.game.trail;
+  if(tr && tr.length>1 && !SAVE.set.reduce){
+    for(var i=1;i<tr.length;i++){ var a=i/tr.length;
+      ctx.strokeStyle=sk.c1; ctx.globalAlpha=a*0.5; ctx.lineWidth=r*1.6*a; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(tr[i-1].x,tr[i-1].y); ctx.lineTo(tr[i].x,tr[i].y); ctx.stroke(); }
+    ctx.globalAlpha=1;
+  }
   ctx.save(); ctx.translate(b.pos.x,b.pos.y); ctx.rotate(b.angle);
   drawSeedShape(ctx,type,r,sk);
   ctx.restore();
