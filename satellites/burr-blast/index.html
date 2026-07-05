@@ -1293,20 +1293,20 @@ function buildLevels(){
   add(3,'Glass House', ['burr','split'], hutGlass(700));
   add(3,'Spread the Seed', ['split','split'], merge({blocks:[],pests:[pestGround(600,16),pestGround(700,16),pestGround(800,16)]}));
   add(3,'Panes and Posts', ['split','burr','puffball'], merge(hutGlass(620), tower(820,'glass',2)));
-  add(3,'Puff the Cluster', ['puffball','burr'], merge({blocks:[],pests:[P(700,GT-16,15),P(740,GT-16,15),P(780,GT-16,15),P(720,GT-52,15)]}));
+  add(3,'Puff the Cluster', ['split','puffball','burr'], merge({blocks:[],pests:[P(700,GT-16,15),P(740,GT-16,15),P(780,GT-16,15),P(720,GT-52,15)]}));
   add(3,'Greenhouse', ['split','puffball','burr'], merge(wallGlass(620,3), wallGlass(820,3), {blocks:[],pests:[P(720,GT-16,16),P(720,GT-140,16)]}));
-  add(3,'Hanging Garden', ['split','puffball','burr','burr'], merge(table(640,'glass'), table(860,'glass'), {blocks:[],pests:[pestGround(750,16)]}));
+  add(3,'Hanging Garden', ['split','acorn','puffball','burr','burr'], merge(table(640,'glass'), table(860,'glass'), {blocks:[],pests:[pestGround(750,16)]}));
   add(3,'Shatterworks', ['puffball','split','burr'], merge(hutGlass(600), wallGlass(760,4), tower(900,'glass',3)));
   add(3,'Hollow Finale', ['split','puffball','burr','split'], merge(hutGlass(600), hutGlass(760), tower(920,'glass',3), {blocks:[],pests:[P(680,GT-140,16)]}));
 
   /* ---------- WORLD 4 · Blastpod Bog (TNT chains + steel; Thornpod/Boomerang) ---------- */
   add(4,'First Spark', ['thornpod','burr'], merge({blocks:[ground('tnt',700,44,44)],pests:[pestGround(640,16),pestGround(760,16)]}));
   add(4,'Chain Reaction', ['burr','thornpod'], merge({blocks:[ground('tnt',640,44,44),ground('tnt',700,44,44),ground('tnt',760,44,44)],pests:[P(640,GT-60,15),P(700,GT-60,15),P(760,GT-60,15)]}));
-  add(4,'Around the Corner', ['boomerang','burr'], merge(steelWall(720,4), {blocks:[],pests:[pestGround(820,17)]}));
+  add(4,'Around the Corner', ['boomerang','burr','burr'], merge(steelWall(720,3), {blocks:[],pests:[pestGround(800,17)]}));
   add(4,'Bunker', ['thornpod','boomerang','burr'], merge(steelWall(680,4), {blocks:[ground('tnt',800,44,44)],pests:[pestGround(864,16),pestGround(934,16)]}));
   add(4,'Powder Keg', ['thornpod','acorn','burr'], merge(hut(640), {blocks:[ground('tnt',756,44,44),ground('tnt',806,44,44)],pests:[P(756,GT-60,15),P(806,GT-60,15),pestGround(900,16)]}));
   add(4,'The Redoubt', ['boomerang','thornpod','acorn','burr'], merge(steelWall(600,5), tower(820,'tnt',2), {blocks:[],pests:[pestGround(700,16),pestGround(920,16)]}));
-  add(4,'Bogworks', ['thornpod','boomerang','acorn','burr'], merge(hut(600), {blocks:[ground('tnt',740,44,44),ground('tnt',784,44,44)],pests:[P(740,GT-60,15),P(784,GT-60,15)]}, steelWall(900,4), {blocks:[],pests:[pestGround(1000,17)]}));
+  add(4,'Bogworks', ['thornpod','boomerang','acorn','burr','burr'], merge(hut(600), {blocks:[ground('tnt',740,44,44),ground('tnt',784,44,44)],pests:[P(740,GT-60,15),P(784,GT-60,15)]}, steelWall(900,3), {blocks:[],pests:[pestGround(958,17)]}));
 
   /* ---------- BOSS · The Weevil King ---------- */
   n++; L.push({ n:n, world:4, worldName:WORLDS[3].name, name:'The Weevil King', boss:true,
@@ -1534,7 +1534,7 @@ function sporeBurst(center, A){
     bd.wake();
     bd.applyImpulse(vmul(nn, power*fall*REF_MASS*radial), bd.pos);
     bd.applyImpulse(v(0, -power*fall*REF_MASS*lift), bd.pos);   // strong UP lift
-    if(bd.game.kind==='pest'){ bd.game.hp-=power*fall*DMG_K*0.7; if(bd.game.hp<=0) killPest(bd,bd.pos); }
+    if(bd.game.kind==='pest'){ bd.game.hp-=power*fall*DMG_K*1.3*expDmgMul(); if(bd.game.hp<=0) killPest(bd,bd.pos); }
   }
 }
 /* boomerang steering — a sustained lateral bank while curveT>0 (per substep) */

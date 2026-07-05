@@ -98,3 +98,39 @@ Best shot: Bramble mid-pull with the trajectory arc curving toward a toppling fo
 - Any size is fine to hand me — I resize/optimize on wiring.
 - Batch or one-at-a-time both work. Ping me per batch and I wire + cache-bust
   (`?v=` stamp) and verify against the live URL.
+
+=====================================================
+V2 — the deckbuilding meta (art for the build layer)
+=====================================================
+All canvas-drawn / emoji now; art is pure upgrade (onerror fallback everywhere).
+
+### The 3 new seeds (256x256, transparent — match the 6 seed icons above)
+- seed-gourd.png     — a fat orange gourd / pumpkin-seed (heavy roller)
+- seed-firethorn.png — a dark thorny pod wreathed in a small flame (premium bomb)
+- seed-dandelion.png — a puff of four pale dandelion seeds fanning out
+
+### Nutrient icons (128x128, transparent) — N/P/K, bold + readable at 20px
+- nutrient-n.png — Nitrogen: a warm orange flame / fist (power)
+- nutrient-p.png — Phosphorus: a violet spark / burst (ability potency)
+- nutrient-k.png — Potassium: a blue water drop (utility)
+
+### Companion portraits (10) — 256x256, transparent, cozy storybook creatures
+bee, mammoth (baby), worm, koi, pangolin, firefly, spider (garden), raccoon, scarab, beholder.
+Filenames: companion-<id>.png (e.g. companion-bee.png). Big friendly faces; they sit in
+the Grove grid + the loadout Team row. The Beholder is the rare one — a floating eye, more
+mysterious than cute.
+
+### Relic icons (8) — 96x96, transparent, little talisman/charm objects
+relic-secondwind, relic-fatseeds, relic-splitter, relic-longfuse, relic-featherfall,
+relic-brittle, relic-prospector, relic-glasscannon.
+
+### Currency + run icons (64x64, transparent)
+- fertilizer.png (🌱 a seed/sprout — the build currency)
+- sap.png (🍯 a golden drop — Expedition spend)
+- vigor.png (❤ a leaf-heart — Expedition lives)
+
+### Expedition node art (optional, 128x128) — the map choices
+node-fort, node-elite, node-cache, node-shed, node-boss (The Deep Warden).
+
+Priority for the meta: nutrient icons + companion portraits first (most on-screen), then
+the 3 new seeds, then relics, then node art.
