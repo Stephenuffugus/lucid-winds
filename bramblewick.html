@@ -335,7 +335,13 @@ var PESTS={
   locust:{ id:'locust', name:'Locust', shape:'chevron', hp:16, spd:44, r:12, dmg:9, col:'#b7a24a', armor:0, xp:2, dash:1 },
   slug:{ id:'slug', name:'Slug', shape:'blob', hp:52, spd:20, r:16, dmg:8, col:'#7a9ba0', armor:0.2, xp:3, sunweak:1 },
   wasp:{ id:'wasp', name:'Wasp', shape:'diamond', hp:14, spd:66, r:11, dmg:12, col:'#d0b24a', armor:0, xp:2, aerial:1 },
-  mite:{ id:'mite', name:'Spider Mite', shape:'star', hp:10, spd:40, r:9, dmg:5, col:'#c98fd0', armor:0, xp:1, web:1 }
+  mite:{ id:'mite', name:'Spider Mite', shape:'star', hp:10, spd:40, r:9, dmg:5, col:'#c98fd0', armor:0, xp:1, web:1 },
+  weevil:{ id:'weevil', name:'Weevil', shape:'pear', hp:20, spd:34, r:12, dmg:11, col:'#8a7a4a', armor:0, xp:2, dash:1 },
+  scale:{ id:'scale', name:'Scale Insect', shape:'limpet', hp:30, spd:0, r:13, dmg:0, col:'#b0885a', armor:0.5, xp:3 },
+  mealybug:{ id:'mealybug', name:'Mealybug', shape:'fuzz', hp:22, spd:34, r:12, dmg:8, col:'#d8d0c0', armor:0, xp:2, firstImmune:1 },
+  cutworm:{ id:'cutworm', name:'Cutworm', shape:'crescent', hp:32, spd:40, r:13, dmg:12, col:'#9a8a5a', armor:0.1, xp:3 },
+  thrip:{ id:'thrip', name:'Thrip', shape:'sliver', hp:6, spd:54, r:8, dmg:4, col:'#c0b8a0', armor:0, xp:1 },
+  vineborer:{ id:'vineborer', name:'Vine Borer', shape:'drill', hp:240, spd:32, r:22, dmg:16, col:'#6a8a4a', armor:0.2, xp:8, elite:1 }
 };
 
 /* ---------------- verdancy tiers (hybrid difficulty dial) ---------------- */
@@ -361,7 +367,7 @@ function newGame(verdancy){
     weapons:[], passives:{}, weaponTimers:{}, weaponLevel:{},
     bloom:0, bloomNext:6, level:1,
     aim:{x:VW/2,y:VH*0.4, active:false},
-    boss:null, bossSpawned:false, bossQueued:false,
+    boss:null, grubSpawned:false, stormSpawned:false, grubDone:false, grubDoneTime:0, toast:null, bossesDown:0,
     shake:0, slow:0,
     draft:null,            // level-up card set
     spawnAcc:0, phase:0,
@@ -373,7 +379,7 @@ function newGame(verdancy){
   // starter kit: Dandelion (Pollen) + Nettle (Thorn) → Barbflash reachable turn 1
   addWeapon('dandelion'); addWeapon('nettle');
   recompute();
-  pests.clear(); projs.clear(); motes.clear(); fx.clear();
+  pests.clear(); projs.clear(); motes.clear(); fx.clear(); hazards.clear(); lureNodes.length=0;
   return G;
 }
 function addWeapon(id){ if(G.weapons.indexOf(id)>=0){ G.weaponLevel[id]=(G.weaponLevel[id]||1)+1; return; }
@@ -388,6 +394,7 @@ var projs=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, life:0
   stacks:1, dmg:1, homing:0, pierce:1, seed:0, burstR:0 }; }, MAX_PROJ);
 var motes=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, xp:1, t:0 }; }, MAX_MOTE);
 var fx=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, life:0, max:0.4, r:10, kind:'ring', col:'#fff' }; }, MAX_FX);
+var hazards=new Pool(function(){ return { active:false, x:0,y:0, vx:0,vy:0, life:0, r:6 }; }, 240); // enemy bullets (Stormwing)
 
 function spawnFX(x,y,kind,col,r,life){ if(store.settings.reducedMotion && kind==='burst') return;
   var f=fx.spawn(); if(!f) return; f.x=x; f.y=y; f.kind=kind; f.col=col||'#fff'; f.r=r||14; f.life=life||0.4; f.max=f.life; f.vx=0; f.vy=0; }
@@ -399,18 +406,18 @@ function spawnBurst(x,y,col,n){ if(store.settings.reducedMotion){ spawnFX(x,y,'r
    SPAWNING
    ================================================================== */
 function pestPool(t){ // which pests can appear by run time (seconds)
-  if(t<25) return ['aphid','aphid','mite'];
-  if(t<70) return ['aphid','mite','locust','beetle'];
-  if(t<140) return ['aphid','locust','beetle','slug','wasp','mite'];
-  return ['aphid','locust','beetle','slug','wasp','mite','beetle','wasp'];
+  if(t<25) return ['aphid','aphid','mite','thrip'];
+  if(t<70) return ['aphid','mite','locust','beetle','thrip','weevil'];
+  if(t<140) return ['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug'];
+  return ['aphid','locust','beetle','slug','wasp','mite','weevil','mealybug','scale','cutworm','beetle','wasp'];
 }
 function spawnPest(typeId, x, y){
   if(pests.n>=MAX_PESTS) return null;
   var base=PESTS[typeId]; var p=pests.spawn(); if(!p) return null;
-  p.type=typeId; p.meta=base; p.boss=false; p.elite=false;
+  p.type=typeId; p.meta=base; p.boss=false; p.elite=base.elite?true:false;
   var hp=base.hp*G.vd.hp*(1+G.time*0.006);
   p.hp=hp; p.maxhp=hp; p.r=base.r; p.spd=base.spd; p.dmg=base.dmg; p.armor=base.armor; p.xp=base.xp;
-  p.aerial=base.aerial||0; p.sunweak=base.sunweak||0; p.web=base.web||0; p.dash=base.dash||0;
+  p.aerial=base.aerial||0; p.sunweak=base.sunweak||0; p.web=base.web||0; p.dash=base.dash||0; p.firstImmuneUsed=0;
   for(var i=0;i<7;i++){ p.st[i]=0; p.stt[i]=0; }
   p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.dashT=0; p.seed=Math.random()*6.28;
   if(x==null){ // spawn just off a random edge
@@ -433,25 +440,58 @@ function runSpawner(dt){
     var burst=1+((G.time/60)|0);
     for(var b=0;b<burst && pests.n<MAX_PESTS;b++){ spawnPest(pool[(Math.random()*pool.length)|0]); }
   }
-  // boss cue at 4:00 (or dev-forced)
-  if(!G.bossSpawned && G.time>=240){ spawnBoss(); }
+  // periodic Vine Borer elite (anti-turtle; drops a Loam cache)
+  G.eliteAcc=(G.eliteAcc||0)+dt; if(G.time>55 && G.eliteAcc>=72){ G.eliteAcc=0; if(pests.n<MAX_PESTS-2) spawnPest('vineborer'); }
+  // boss timeline: Grubfather (mid ~2:30) -> First Light surge -> Stormwing (final)
+  if(!G.grubSpawned && G.time>=150){ spawnGrubfather(); }
+  if(G.grubDone && !G.stormSpawned && G.time>=G.grubDoneTime+45){ spawnStormwing(); }
 }
 
 /* ==================================================================
    BOSS — Grubfather (slice boss)
    ================================================================== */
-function spawnBoss(){
-  if(G.bossSpawned) return; G.bossSpawned=true;
+function spawnGrubfather(){
+  if(G.grubSpawned) return; G.grubSpawned=true;
   var p=pests.spawn(); if(!p) return;
   p.boss=true; p.type='grubfather'; p.meta={name:'Grubfather', shape:'grub', col:'#7a5a3a', armor:0};
   p.x=VW/2; p.y=-40; p.r=48; p.spd=26; p.dmg=18;
-  var hp=1400*G.vd.hp; p.hp=hp; p.maxhp=hp;
+  var hp=1300*G.vd.hp; p.hp=hp; p.maxhp=hp;
   for(var i=0;i<7;i++){ p.st[i]=0; p.stt[i]=0; }
   p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.phase=0; p.armorBack=true; p.burrowT=4; p.seed=0;
-  G.boss=p; sndBoss(); G.shake=0.6;
+  G.boss=p; sndBoss(); G.shake=0.6; toast('GRUBFATHER — break the shell with Rot (Spore + Sap)');
   earn('boss_appear',{boss:'grubfather'});
 }
+function spawnStormwing(){
+  if(G.stormSpawned) return; G.stormSpawned=true;
+  var p=pests.spawn(); if(!p) return;
+  p.boss=true; p.type='stormwing'; p.meta={name:'Stormwing', shape:'wing', col:'#d0b24a'};
+  p.x=VW/2; p.y=-40; p.r=42; p.spd=72; p.dmg=16;
+  var hp=1900*G.vd.hp; p.hp=hp; p.maxhp=hp;
+  for(var i=0;i<7;i++){ p.st[i]=0; p.stt[i]=0; }
+  p.rcd=0; p.slowT=0; p.rootT=0; p.freezeT=0; p.brittle=0; p.bleedx=1; p.armorBack=false; p.seed=0; p.fireT=2.2; p.addT=4.5; p.burstN=0;
+  G.boss=p; sndBoss(); G.shake=0.6; toast('STORMWING, the Locust Queen — dodge the volleys, chain her down');
+  earn('boss_appear',{boss:'stormwing'});
+}
+function updateStormwing(p,dt){
+  var pl=G.player;
+  p.seed+=dt;
+  var tx=VW/2+Math.cos(p.seed*0.6)*145, ty=175+Math.sin(p.seed*0.9)*55;
+  var ang=Math.atan2(ty-p.y,tx-p.x); var mv=(p.rootT>0||p.freezeT>0)?0:p.spd*(p.slowT>0?0.5:1)*(p.st[ST_I.sap]>0?0.62:1);
+  p.x+=Math.cos(ang)*mv*dt; p.y+=Math.sin(ang)*mv*dt;
+  p.fireT-=dt; if(p.fireT<=0){ p.fireT=1.7; stormBurst(p,pl); }
+  p.addT-=dt; if(p.addT<=0){ p.addT=5.5; for(var i=0;i<3&&pests.n<MAX_PESTS;i++) spawnPest('locust'); }
+}
+function stormBurst(p,pl){
+  p.burstN=(p.burstN||0)+1;
+  if(p.burstN%2===0){ // full ring
+    var n=14; for(var i=0;i<n;i++){ var a=i/n*6.283 + p.seed; var h=hazards.spawn(); if(!h) break; h.x=p.x; h.y=p.y; h.vx=Math.cos(a)*130; h.vy=Math.sin(a)*130; h.life=6; h.r=6; }
+  } else { // aimed 5-shot spread at the player
+    var base=Math.atan2(pl.y-p.y,pl.x-p.x); for(var j=-2;j<=2;j++){ var a2=base+j*0.22; var h2=hazards.spawn(); if(!h2) break; h2.x=p.x; h2.y=p.y; h2.vx=Math.cos(a2)*170; h2.vy=Math.sin(a2)*170; h2.life=5; h2.r=6; }
+  }
+  sndReact(1);
+}
 function updateBoss(p,dt){
+  if(p.type==='stormwing') return updateStormwing(p,dt);
   var pl=G.player;
   // slow chase; periodically burrow and erupt near player, summoning aphids
   p.burrowT-=dt;
@@ -479,6 +519,8 @@ var _rdepth=0; // cascade recursion guard (perf floor: bounds emit->reaction cha
 function applyStatus(p, status, stacks){
   if(!p.active) return;
   var idx=ST_I[status]; if(idx==null) return;
+  // Mealybug: immune to the FIRST status applied (forces a throwaway lead)
+  if(p.meta && p.meta.firstImmune && !p.firstImmuneUsed){ p.firstImmuneUsed=1; return; }
   // reaction check BEFORE adding (apply B to a pest already carrying A)
   var reacted=false;
   var now=G.time*1000;
@@ -573,21 +615,24 @@ function killPest(p){
   if(!p.active) return;
   if(p.boss){ bossDefeated(p); return; }
   p.active=false; G.kills++;
-  // drop loam mote
-  var m=motes.spawn(); if(m){ m.x=p.x; m.y=p.y; m.xp=p.xp; m.t=12; m.vx=(Math.random()*40-20); m.vy=(Math.random()*40-20); }
+  // drop loam mote(s) — elites drop a cache
+  var drops=p.elite?6:1;
+  for(var di=0;di<drops;di++){ var m=motes.spawn(); if(m){ m.x=p.x+(drops>1?Math.random()*44-22:0); m.y=p.y+(drops>1?Math.random()*44-22:0); m.xp=p.elite?3:p.xp; m.t=13; m.vx=(Math.random()*60-30); m.vy=(Math.random()*60-30); } }
+  if(p.elite) earn('elite_down',{});
   if((G.passives.guttation||(G.laneMul&&G.laneMul.lifesteal)) && G.player.hp<G.player.maxhp){ G.player.hp=Math.min(G.player.maxhp,G.player.hp+2); }
   if(G.familyTier.mycelium>=3){ gridQuery(p.x,p.y,40,function(o){ if(o.active) applyStatus(o,'spore',1); }); } // Mycelium T3: spore puff on kill
   spawnBurst(p.x,p.y,p.meta.col,5);
 }
 function bossDefeated(p){
-  p.active=false; G.boss=null; G.kills++;
+  var type=p.type; p.active=false; G.boss=null; G.kills++; G.bossesDown++;
   spawnBurst(p.x,p.y,'#e8c24b',24); G.shake=0.6; sndLevel();
-  earn('boss_down',{boss:'grubfather'});
+  earn('boss_down',{boss:type});
   // big loam cache
   for(var i=0;i<14;i++){ var m=motes.spawn(); if(m){ m.x=p.x+(Math.random()*80-40); m.y=p.y+(Math.random()*80-40); m.xp=3; m.t=14; m.vx=Math.random()*80-40; m.vy=Math.random()*80-40; } }
-  // slice = win on boss down
-  setTimeout(function(){ if(G && !G.over) endRun(true); }, 700);
+  if(type==='grubfather'){ G.grubDone=true; G.grubDoneTime=G.time; toast('The Grubfather falls. First Light nears...'); }
+  else { for(var h=0;h<hazards.n;h++) hazards.a[h].active=false; hazards.compact(); toast('STORMWING FALLS — the night is held.'); setTimeout(function(){ if(G && !G.over) endRun(true); }, 900); }
 }
+function toast(txt){ if(G) G.toast={ text:txt, t:3.4 }; }
 
 /* ==================================================================
    WEAPONS FIRING
@@ -763,6 +808,14 @@ function update(dt){
   for(i=0;i<fx.n;i++){ var f=fx.a[i]; if(!f.active) continue; f.life-=dt; if(f.life<=0){ f.active=false; continue; } if(f.kind==='spark'){ f.x+=f.vx*dt; f.y+=f.vy*dt; f.vx*=0.92; f.vy*=0.92; } }
   fx.compact();
 
+  // enemy bullets (Stormwing)
+  for(i=0;i<hazards.n;i++){ var hz=hazards.a[i]; if(!hz.active) continue; hz.life-=dt; if(hz.life<=0){ hz.active=false; continue; }
+    hz.x+=hz.vx*dt; hz.y+=hz.vy*dt;
+    if(hz.x<-24||hz.x>VW+24||hz.y<-24||hz.y>VH+24){ hz.active=false; continue; }
+    if(dist2(hz.x,hz.y,pl.x,pl.y) < (pl.r+hz.r)*(pl.r+hz.r)){ hurtPlayer(12); hz.active=false; } }
+  hazards.compact();
+  if(G.toast){ G.toast.t-=dt; if(G.toast.t<=0) G.toast=null; }
+
   // milestone earn (every 60s survived)
   var ms=(G.time/60)|0; if(ms>G.milestone){ G.milestone=ms; earn('milestone_min',{minute:ms}); }
   if(saveT) saveNow();
@@ -877,8 +930,9 @@ function draw(){
   // player plant + familiars
   drawPlant();
   drawCompanions();
-  // fx
+  // fx + enemy bullets
   drawFX();
+  drawHazards();
   // manual aim reticle
   if(store.settings.manualAim && G.state==='PLAY' && G.aim.active){ ctx.strokeStyle='rgba(232,220,200,0.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(G.aim.x,G.aim.y,16,0,6.283); ctx.moveTo(G.aim.x-22,G.aim.y); ctx.lineTo(G.aim.x+22,G.aim.y); ctx.moveTo(G.aim.x,G.aim.y-22); ctx.lineTo(G.aim.x,G.aim.y+22); ctx.stroke(); }
   // joystick
@@ -918,9 +972,17 @@ function drawPest(p){
   ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.5;
   var r=p.r, s=p.meta.shape;
   ctx.beginPath();
-  if(p.boss){ // grub: big segmented lozenge
-    ctx.fillStyle=p.armorBack?'#8a6a4a':'#7a5a3a'; roundedBlob(0,0,r,r*0.7,7); ctx.fill();
-    ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.arc(-r*0.4,-r*0.2,4,0,6.283); ctx.arc(r*0.4,-r*0.2,4,0,6.283); ctx.fill();
+  if(p.boss){
+    if(p.type==='stormwing'){ // winged locust queen
+      ctx.fillStyle='rgba(208,178,74,0.5)'; ctx.beginPath();
+      ctx.moveTo(0,-r*0.2); ctx.lineTo(-r*1.4,-r*0.7); ctx.lineTo(-r*0.5,r*0.5); ctx.closePath();
+      ctx.moveTo(0,-r*0.2); ctx.lineTo(r*1.4,-r*0.7); ctx.lineTo(r*0.5,r*0.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#d0b24a'; ctx.beginPath(); roundedBlob(0,0,r*0.55,r*0.85,6); ctx.fill();
+      ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.arc(-r*0.2,-r*0.3,3.5,0,6.283); ctx.arc(r*0.2,-r*0.3,3.5,0,6.283); ctx.fill();
+    } else { // grub: big segmented lozenge
+      ctx.fillStyle=p.armorBack?'#8a6a4a':'#7a5a3a'; roundedBlob(0,0,r,r*0.7,7); ctx.fill();
+      ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.arc(-r*0.4,-r*0.2,4,0,6.283); ctx.arc(r*0.4,-r*0.2,4,0,6.283); ctx.fill();
+    }
   }
   else if(s==='teardrop'){ ctx.moveTo(0,-r); ctx.quadraticCurveTo(r,0,0,r); ctx.quadraticCurveTo(-r,0,0,-r); ctx.fill(); ctx.stroke(); }
   else if(s==='hex'){ for(var k=0;k<6;k++){ var a=k/6*6.283-Math.PI/2; var fn=k?'lineTo':'moveTo'; ctx[fn](Math.cos(a)*r,Math.sin(a)*r); } ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -930,8 +992,15 @@ function drawPest(p){
   else if(s==='diamond'){ ctx.moveTo(0,-r); ctx.lineTo(r*0.7,0); ctx.lineTo(0,r); ctx.lineTo(-r*0.7,0); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.moveTo(-r*0.7,0); ctx.lineTo(r*0.7,0); ctx.stroke(); }
   else if(s==='star'){ for(var j=0;j<10;j++){ var rr=j%2?r*0.45:r; var a2=j/10*6.283-Math.PI/2; var fn2=j?'lineTo':'moveTo'; ctx[fn2](Math.cos(a2)*rr,Math.sin(a2)*rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else if(s==='pear'){ ctx.moveTo(0,-r); ctx.bezierCurveTo(r,-r*0.4,r*0.95,r,0,r); ctx.bezierCurveTo(-r*0.95,r,-r,-r*0.4,0,-r); ctx.fill(); ctx.stroke(); ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(0,-r*0.4,r*0.18,0,6.283); ctx.fill(); }
+  else if(s==='limpet'){ ctx.arc(0,r*0.35,r,Math.PI,0); ctx.lineTo(-r,r*0.45); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=1; for(var q=1;q<3;q++){ ctx.beginPath(); ctx.arc(0,r*0.35,r*q/3,Math.PI,0); ctx.stroke(); } }
+  else if(s==='fuzz'){ ctx.arc(0,0,r*0.68,0,6.283); ctx.fill(); ctx.beginPath(); for(var z=0;z<12;z++){ var az=z/12*6.283; ctx.moveTo(Math.cos(az)*r*0.68,Math.sin(az)*r*0.68); ctx.lineTo(Math.cos(az)*r,Math.sin(az)*r); } ctx.stroke(); }
+  else if(s==='crescent'){ ctx.arc(0,0,r,Math.PI*0.28,Math.PI*1.72); ctx.arc(r*0.42,0,r*0.7,Math.PI*1.72,Math.PI*0.28,true); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  else if(s==='sliver'){ ctx.ellipse(0,0,r*0.34,r,0,0,6.283); ctx.fill(); ctx.stroke(); }
+  else if(s==='drill'){ ctx.moveTo(0,-r); ctx.lineTo(r*0.5,-r*0.2); ctx.lineTo(r*0.38,r); ctx.lineTo(-r*0.38,r); ctx.lineTo(-r*0.5,-r*0.2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.strokeStyle='rgba(0,0,0,0.35)'; for(var d2=-1;d2<=1;d2++){ ctx.beginPath(); ctx.moveTo(-r*0.4,d2*r*0.35); ctx.lineTo(r*0.4,d2*r*0.35); ctx.stroke(); } }
   else { ctx.arc(0,0,r,0,6.283); ctx.fill(); ctx.stroke(); }
   ctx.restore();
+  if(p.elite && !p.boss){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,p.r+4,0,6.283); ctx.stroke(); }
   // status glyph ring
   drawStatusGlyphs(p);
   // hp bar for tanky/boss
@@ -964,7 +1033,7 @@ function drawGlyph(kind,x,y,r){
 function drawBossBar(p){ var w=VW*0.7, x=(VW-w)/2, y=54; ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(x-2,y-2,w+4,12);
   ctx.fillStyle=p.armorBack?'#8a6a4a':'#c65b5b'; ctx.fillRect(x,y,w*Math.max(0,p.hp/p.maxhp),8);
   ctx.fillStyle='#e8dcc8'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillText('GRUBFATHER'+(p.armorBack?' — break the shell with Rot (Spore+Sap)':''), VW/2, y-6); }
+  ctx.fillText(p.meta.name.toUpperCase()+(p.type==='grubfather'&&p.armorBack?' — shell up, use Rot':''), VW/2, y-6); }
 function drawFX(){
   for(var i=0;i<fx.n;i++){ var f=fx.a[i]; if(!f.active) continue; var t=f.life/f.max;
     if(f.kind==='ring'||f.kind==='react'||f.kind==='nova'){ ctx.globalAlpha=t*0.8; ctx.strokeStyle=f.col; ctx.lineWidth=(f.kind==='nova')?4:2.5; ctx.beginPath(); ctx.arc(f.x,f.y, f.r*(1-t*0.5), 0,6.283); ctx.stroke();
@@ -973,6 +1042,9 @@ function drawFX(){
     else if(f.kind==='spark'){ ctx.globalAlpha=t; ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,6.283); ctx.fill(); }
     ctx.globalAlpha=1; }
 }
+function drawHazards(){ for(var i=0;i<hazards.n;i++){ var h=hazards.a[i]; if(!h.active) continue;
+  ctx.fillStyle='#e85b5b'; ctx.strokeStyle='#ffd0d0'; ctx.lineWidth=1; ctx.beginPath();
+  for(var k=0;k<4;k++){ var a=k/4*6.283+0.785; var fn=k?'lineTo':'moveTo'; ctx[fn](h.x+Math.cos(a)*h.r,h.y+Math.sin(a)*h.r); } ctx.closePath(); ctx.fill(); ctx.stroke(); } }
 function drawHUD(){
   var pl=G.player;
   // HP bar top-left
@@ -992,6 +1064,8 @@ function drawHUD(){
   for(var li=0;li<LN.length;li++){ var v=G.lanes[LN[li][1]]||0; if(v>0){ ctx.fillStyle=LN[li][2]; var txt=LN[li][0]+v; ctx.fillText(txt, lx, ly); lx+=ctx.measureText(txt).width+7; } }
   // active family tier badges
   for(var f in G.familyTier){ if(G.familyTier[f]>=2){ ctx.fillStyle=G.familyTier[f]>=3?'#e8c24b':'#8a9178'; ctx.fillText(capW(f).slice(0,3)+'·T'+G.familyTier[f], lx, ly); lx+=ctx.measureText(capW(f).slice(0,3)+'·T'+G.familyTier[f]).width+7; } }
+  // toast line (boss cues, phase transitions)
+  if(G.toast){ ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,200,'+Math.min(1,G.toast.t)+')'; ctx.font='bold 12px sans-serif'; ctx.textBaseline='middle'; ctx.fillText(G.toast.text, VW/2, 112); }
   // exit hint
   ctx.textAlign='left';
 }
@@ -1126,7 +1200,8 @@ if(DEV){
     companionCount:function(){ return Object.keys(COMPANIONS).length; },
     levelUp:function(){ levelUp(); return G.draft.cards.map(function(c){return c.name;}); },
     pick:function(i){ chooseDraft(i); return G.weapons.slice(); },
-    skipToBoss:function(){ if(G){ G.time=239; } return 'boss soon'; },
+    skipToBoss:function(){ if(G){ G.time=148; } return 'grubfather soon'; },
+    skipToFinal:function(){ if(G){ G.grubSpawned=true; G.grubDone=true; G.grubDoneTime=G.time; spawnStormwing(); } return 'stormwing'; },
     hurtBoss:function(d){ if(G&&G.boss){ G.boss.armorBack=false; damagePest(G.boss, d||99999, 'react'); return G.boss?G.boss.hp:'dead'; } return 'no boss'; },
     bossHP:function(){ return G&&G.boss?Math.round(G.boss.hp):null; },
     setHP:function(pct){ if(G){ G.player.hp=G.player.maxhp*pct; } return G.player.hp; },
