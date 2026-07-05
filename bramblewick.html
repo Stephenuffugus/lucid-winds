@@ -373,6 +373,7 @@ function graftHint(g){ var w=g.when||{};
 function nextGraft(){ var best=null,bestD=1e9;
   for(var bk in GRAFTS_BY_BASE){ if(G.weapons.indexOf(bk)<0||G.grafts[bk]) continue; var arr=GRAFTS_BY_BASE[bk];
     for(var i=0;i<arr.length;i++){ var g=arr[i]; if(graftMet(g)) continue; var w=g.when||{};
+      if(w.season!=null && w.season!==G.season) continue; // impossible this run — don't advertise
       var d= w.lane? Math.max(0,w.min-(G.lanes[w.lane]||0)) : (w.gate==='overgrown'? Math.max(0,35-G.kills)/10 : 2);
       if(d<bestD){ bestD=d; best=g; } } }
   return best;
@@ -430,6 +431,7 @@ function newGame(verdancy){
   addWeapon('dandelion'); addWeapon('nettle');
   recompute();
   pests.clear(); projs.clear(); motes.clear(); fx.clear(); hazards.clear(); lureNodes.length=0;
+  joy.active=false; joy.id=-1; joy.dx=0; joy.dy=0;
   return G;
 }
 function addWeapon(id){ if(G.weapons.indexOf(id)>=0){ G.weaponLevel[id]=(G.weaponLevel[id]||1)+1; return; }
@@ -602,8 +604,7 @@ function _doReaction(p, a, b){
   var hasPollen = p.st[ST_I.pollen]>0 && a!=='pollen' && b!=='pollen';
   // TRIPLE: 3+ statuses AND pollen catalyst present
   var rx=null, triple=false;
-  if(present.length>=3 && p.st[ST_I.pollen]>0){
-    var key3=present.slice().sort().slice(0,3).join('|');
+  if(present.length>=3 && present.indexOf('pollen')>=0){
     // try any triple whose 3 statuses are all present
     for(var tk in TRIPLES){ var parts=tk.split('|'); if(parts.every(function(s){return present.indexOf(s)>=0;})){ rx=TRIPLES[tk]; triple=true; break; } }
   }
@@ -619,7 +620,7 @@ function _doReaction(p, a, b){
   // THORNED lane / bleed multipliers folded later; slice keeps base
   // deal AoE damage centered on the pest
   var cx=p.x, cy=p.y;
-  var killedHere=false;
+  var wasBrittle=p.brittle; // captured before this reaction may (re)set brittle
   damagePest(p, dmg, 'react'); // center pest takes full
   gridQuery(cx,cy,rad,function(o){ if(o===p||!o.active) return; if(dist2(cx,cy,o.x,o.y)<=rad*rad){ damagePest(o, dmg*0.7, 'react'); } });
   // SPECIALS
@@ -630,8 +631,8 @@ function _doReaction(p, a, b){
   if(rx.slow){ p.slowT=Math.max(p.slowT,1.6); }
   if(rx.brittle){ p.brittle=1; }
   if(rx.lure){ nectarLure(cx,cy,rad*1.4); }
-  // FROST SHATTER lever: burst on a brittle/frozen pest cracks for shrapnel
-  if(p.brittle && (rx.dmg>=14)){ p.brittle=0; damagePest(p, 14, 'react');
+  // FROST SHATTER lever: a strong reaction cracks a pest made brittle by an EARLIER Frost reaction
+  if(wasBrittle && (rx.dmg>=14)){ if(!rx.brittle) p.brittle=0; damagePest(p, 14, 'react');
     gridQuery(cx,cy,rad*0.9,function(o){ if(o.active&&o!==p) applyStatus(o,'thorn',1); }); spawnFX(cx,cy,'ring','#8fd0e8',rad,0.4); }
   // EMIT / SPREAD lever: seed a status to nearby pests
   if(rx.emit){ var spread=(G.passives.windspores?5:3); var seeded=0;
@@ -680,7 +681,7 @@ function bossDefeated(p){
   // big loam cache
   for(var i=0;i<14;i++){ var m=motes.spawn(); if(m){ m.x=p.x+(Math.random()*80-40); m.y=p.y+(Math.random()*80-40); m.xp=3; m.t=14; m.vx=Math.random()*80-40; m.vy=Math.random()*80-40; } }
   if(type==='grubfather'){ G.grubDone=true; G.grubDoneTime=G.time; toast('The Grubfather falls. First Light nears...'); }
-  else { for(var h=0;h<hazards.n;h++) hazards.a[h].active=false; hazards.compact(); toast('STORMWING FALLS — the night is held.'); setTimeout(function(){ if(G && !G.over) endRun(true); }, 900); }
+  else { for(var h=0;h<hazards.n;h++) hazards.a[h].active=false; hazards.compact(); endRun(true); }
 }
 function toast(txt){ if(G) G.toast={ text:txt, t:3.4 }; }
 
@@ -760,12 +761,15 @@ function updateBeams(dt){
 /* ---------------- companions as familiars ---------------- */
 function strongestPest(x,y,maxd){ var best=null,bh=-1,md=(maxd||9999)*(maxd||9999); for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(!p.active||p.boss) continue; if(dist2(x,y,p.x,p.y)>md) continue; if(p.hp>bh){ bh=p.hp; best=p; } } return best; }
 function densestPoint(x,y,r){ var sx=0,sy=0,n=0; gridQuery(x,y,r,function(p){ if(p.active){ sx+=p.x; sy+=p.y; n++; } }); return n?{x:sx/n,y:sy/n}:null; }
+var _nnX,_nnY,_nnD,_nnBest; function _nnHit(o){ if(o.active){ var d=dist2(_nnX,_nnY,o.x,o.y); if(d<_nnD){ _nnD=d; _nnBest=o; } } }
+function gridNearest(x,y,r){ _nnX=x; _nnY=y; _nnD=r*r; _nnBest=null; gridQuery(x,y,r,_nnHit); return _nnBest; }
+var _orbC=null; function _orbHit(o){ if(o.active){ applyStatus(o,_orbC.def.status,1); damagePest(o,40*STEP,'hit'); } }
 function updateCompanions(dt){
   var pl=G.player;
   for(var i=0;i<G.companions.length;i++){ var c=G.companions[i];
     c.angle+=dt*(c.def.orbitSpd||1.3);
     var orbitR=38+i*6; c.x=pl.x+Math.cos(c.angle)*orbitR; c.y=pl.y+Math.sin(c.angle)*orbitR;
-    if(c.def.kit==='orbit'){ (function(cc){ gridQuery(cc.x,cc.y,15,function(o){ if(o.active){ applyStatus(o,cc.def.status,1); damagePest(o,2,'hit'); } }); })(c); }
+    if(c.def.kit==='orbit'){ _orbC=c; gridQuery(c.x,c.y,15,_orbHit); }
     c.timer-=dt*1000; if(c.timer<=0){ c.timer=c.def.every||1200; companionAction(c,pl); }
   }
 }
@@ -829,14 +833,14 @@ function update(dt){
     // status decay + DoTs
     tickStatuses(p,dt);
     // contact damage — discrete hit gated by player iframe (genre-standard)
-    var rr=(p.r+pl.r); if(dist2(p.x,p.y,pl.x,pl.y) < rr*rr){ hurtPlayer(p.dmg * (p.dash?1.4:1)); }
+    if(p.active){ var rr=(p.r+pl.r); if(dist2(p.x,p.y,pl.x,pl.y) < rr*rr){ hurtPlayer(p.dmg * (p.dash?1.4:1)); } }
   }
   pests.compact();
 
   // projectiles
   for(i=0;i<projs.n;i++){ var pr=projs.a[i]; if(!pr.active) continue;
     pr.life-=dt; if(pr.life<=0){ if(pr.burstR>0) projBurst(pr); pr.active=false; continue; }
-    if(pr.homing){ var tg=nearestPest(pr.x,pr.y,220); if(tg){ var ha=Math.atan2(tg.y-pr.y,tg.x-pr.x); var cur=Math.atan2(pr.vy,pr.vx); var na=cur+angDiff(ha,cur)*Math.min(1,dt*4); var sp=Math.hypot(pr.vx,pr.vy); pr.vx=Math.cos(na)*sp; pr.vy=Math.sin(na)*sp; } }
+    if(pr.homing){ var tg=gridNearest(pr.x,pr.y,220); if(tg){ var ha=Math.atan2(tg.y-pr.y,tg.x-pr.x); var cur=Math.atan2(pr.vy,pr.vx); var na=cur+angDiff(ha,cur)*Math.min(1,dt*4); var sp=Math.hypot(pr.vx,pr.vy); pr.vx=Math.cos(na)*sp; pr.vy=Math.sin(na)*sp; } }
     pr.x+=pr.vx*dt; pr.y+=pr.vy*dt;
     if(pr.x< -30||pr.x>VW+30||pr.y< -30||pr.y>VH+30){ pr.active=false; continue; }
     // hit test vs pests (grid)
@@ -875,7 +879,7 @@ function update(dt){
   if(saveT) saveNow();
 }
 function projBurst(pr){ spawnFX(pr.x,pr.y,'ring',ST_META[pr.status].col, pr.burstR, 0.3);
-  gridQuery(pr.x,pr.y,pr.burstR,function(o){ if(o.active && dist2(pr.x,pr.y,o.x,o.y)<=pr.burstR*pr.burstR){ applyStatus(o,pr.status,1); } }); }
+  gridQuery(pr.x,pr.y,pr.burstR,function(o){ if(o.active && dist2(pr.x,pr.y,o.x,o.y)<=pr.burstR*pr.burstR){ applyStatus(o,pr.status,1); if(pr.status2) applyStatus(o,pr.status2,1); } }); }
 
 function updatePest(p,dt){
   var pl=G.player; var tx=pl.x, ty=pl.y;
@@ -1184,13 +1188,13 @@ function onMove(e){
 }
 function onUp(e){
   if(joy.active && joy.id===e.pointerId){ joy.active=false; joy.id=-1; joy.dx=0; joy.dy=0; }
-  if(G && G.aim && G.aim.id===e.pointerId){ /* keep last aim; deactivate */ }
+  if(G && G.aim && G.aim.id===e.pointerId){ G.aim.active=false; G.aim.id=-1; }
 }
 canvas.addEventListener('pointerdown', onDown);
 canvas.addEventListener('pointermove', onMove);
 canvas.addEventListener('pointerup', onUp);
 canvas.addEventListener('pointercancel', onUp);
-window.addEventListener('blur', function(){ joy.active=false; joy.id=-1; });
+window.addEventListener('blur', function(){ joy.active=false; joy.id=-1; if(G&&G.aim){ G.aim.active=false; G.aim.id=-1; } });
 
 /* ==================================================================
    EARN BRIDGE (inert unless embedded) + 30/day local cap helper
