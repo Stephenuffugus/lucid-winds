@@ -32,7 +32,7 @@ function fakeEl() {
 
 // The internal identifiers we surface for tests. All exist at top-level script scope.
 const EXPORTS = [
-  'RACES','POWERS','AUGMENTS','RARITY','rarByKey','ASCENDANCIES','ASC_BY_KEY','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
+  'RACES','POWERS','AUGMENTS','RARITY','rarByKey','ASCENDANCIES','ASC_BY_KEY','JEWELS','JEWEL_BY_KEY','TREE','STAND_ARCHETYPES','STAT_KEYS','TIERS','ARMS',
   'BUFF_BASE','NOTABLES','KEYSTONES','PROC_BASE',
   'simulate','deriveCombat','computeFinal','ocStats','aggregateMods','migrateOC','hitDamage',
   'clamp','rand','randInt','pick','tierIndex','tierMult',
@@ -135,6 +135,16 @@ function randomOC(API, opts) {
     oc.ascendancy = { key: asc.key, allocated: asc.nodes.filter(() => Math.random() < 0.6).map(n => n.id) };
   }
   if (!opts.noTree) randomAlloc(API, oc);
+  // fuzz jewels into allocated jewel-socket nodes (random jewel + grade)
+  if (API.JEWELS && oc.tree.allocated) {
+    oc.tree.jewels = oc.tree.jewels || {};
+    for (const id of oc.tree.allocated) {
+      const n = API.TREE.byId[id];
+      if (n && n.type === 'jewel' && Math.random() < 0.7) {
+        oc.tree.jewels[id] = { key: API.pick(API.JEWELS).key, grade: API.pick(API.RARITY).key };
+      }
+    }
+  }
   return oc;
 }
 

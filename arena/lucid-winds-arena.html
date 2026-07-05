@@ -574,6 +574,31 @@ const ASCENDANCIES=[
 const ASC_BY_KEY={}; ASCENDANCIES.forEach(a=>{ASC_BY_KEY[a.key]=a;});
 const ASC_NODE_BY_ID={}; ASCENDANCIES.forEach(a=>a.nodes.forEach(n=>{ASC_NODE_BY_ID[n.id]=Object.assign({asc:a.key},n);}));
 
+/* ===================== JEWELS (rarity-graded tree sockets) =====================
+   A few tree nodes become jewel sockets (type:"jewel", no base effect). Owning a
+   jewel is like owning a gem: state.ownedJewels=[{key,grade}], learned with Glory
+   (rolls a grade), reforgeable. Socket a jewel into an ALLOCATED socket node and its
+   mods (grade-scaled, node-effect vocab) fold into aggregateMods. `growth` scales
+   with total allocated nodes. Sockets are picked so connectivity is unaffected. */
+const JEWEL_SOCKET_IDS=new Set(["a0_r2_0","a1_r3_4","a2_r2_0","a3_r3_4","a4_r2_0","a5_r3_4"]);
+const JEWELS=[
+  {key:"efficiency",name:"Efficiency",emoji:"🔷",mods:{incGeneric:0.14},desc:"Increased damage."},
+  {key:"vigor",name:"Vigor",emoji:"💚",mods:{lifePct:0.12,regenAdd:2},desc:"More maximum life and steady regeneration."},
+  {key:"focus",name:"Focus",emoji:"🎯",mods:{critChanceAdd:0.07,critMultAdd:0.25},desc:"More crit chance and crit damage."},
+  {key:"wellspring",name:"Wellspring",emoji:"🌀",mods:{stat:{int:8,spd:8}},desc:"+8 Intellect and +8 Speed."},
+  {key:"ferocity",name:"Ferocity",emoji:"🔥",mods:{incTag:{physical:0.16,fire:0.16}},desc:"More physical and fire damage."},
+  {key:"bulwark_j",name:"Warding Stone",emoji:"🛡️",mods:{armorFlat:10,lifePct:0.08},desc:"Armor and a little more life."},
+  {key:"leeching",name:"Leeching",emoji:"🩸",mods:{leechPct:0.06},desc:"Leech a little life on every hit."},
+  {key:"growth",name:"Growth",emoji:"🌱",mods:{},scalePerNodes:{per:5,pct:0.03},desc:"+3% damage per 5 passive nodes you've allocated."}
+];
+const JEWEL_BY_KEY={}; JEWELS.forEach(j=>{JEWEL_BY_KEY[j.key]=j;});
+const STARTER_JEWELS=["efficiency","vigor"];
+/* scale a node-effect object's numbers by a grade multiplier */
+function scaleEffect(m,gm){ const e={}; for(const k in m){ const v=m[k];
+  if(k==="stat"){ e.stat={}; for(const kk in v) e.stat[kk]=Math.round(v[kk]*gm); }
+  else if(k==="incTag"){ e.incTag={}; for(const kk in v) e.incTag[kk]=v[kk]*gm; }
+  else if(typeof v==="number") e[k]=v*gm; else e[k]=v; } return e; }
+
 /* ===================== SKILL WEB BUILDER ===================== */
 // minor node effect pools per arm (cycled)
 const MINOR_POOLS={
@@ -668,6 +693,10 @@ function buildTree(){
         if(ring===5){
           const ks=KEYSTONES[arm.key];
           node.type="keystone"; node.name=ks.name; node.keystone=ks.keystone; node.effect={keystone:ks.keystone}; node.desc=ks.desc;
+        }
+        // jewel socket (replaces a minor; grants no base effect, holds a jewel)
+        if(node.type==="minor" && JEWEL_SOCKET_IDS.has(id)){
+          node.type="jewel"; node.name="Jewel Socket"; node.effect={}; node.desc="Socket a jewel here to gain its modifiers, scaled by the jewel's rarity.";
         }
         nodes.push(node); byId[id]=node; perRing[ring].push(node);
       }
@@ -781,7 +810,7 @@ const SAVE_KEY="lucidwinds_arena_v2";
 
 /* ===================== STATE ===================== */
 const state={
-  glory:0, roster:[], alliances:[], ownedAugments:null,
+  glory:0, roster:[], alliances:[], ownedAugments:null, ownedJewels:null,
   screen:"home", draft:null, battle:null, battleSel:[], tourney:null,
   sheetId:null, sheetTab:"overview", treeSel:null, treeView:{x:0,y:0,scale:1},
   augPick:null, // {ocId, powerKey, slot}
@@ -798,6 +827,8 @@ function migrateOC(oc){
   if(!oc.tree.allocated.includes(start)) oc.tree.allocated.unshift(start);
   // prune invalid node ids
   oc.tree.allocated=oc.tree.allocated.filter(id=>TREE.byId[id]);
+  if(!oc.tree.jewels||typeof oc.tree.jewels!=="object") oc.tree.jewels={};
+  for(const nid in oc.tree.jewels){ const n=TREE.byId[nid]; const e=oc.tree.jewels[nid]; const jk=(e&&e.key)?e.key:e; if(!n||n.type!=="jewel"||!JEWEL_BY_KEY[jk]) delete oc.tree.jewels[nid]; }
   (oc.powers||[]).forEach(p=>{ if(!Array.isArray(p.augments)) p.augments=[]; });
   if(!oc.ascendancy||typeof oc.ascendancy!=="object") oc.ascendancy={key:null,allocated:[]};
   if(!Array.isArray(oc.ascendancy.allocated)) oc.ascendancy.allocated=[];
@@ -814,14 +845,16 @@ async function loadState(){
     state.roster=(Array.isArray(s.roster)?s.roster:[]).map(migrateOC);
     state.alliances=Array.isArray(s.alliances)?s.alliances:[];
     state.ownedAugments=normalizeOwned(Array.isArray(s.ownedAugments)?s.ownedAugments:STARTER_AUGMENTS);
+    state.ownedJewels=normalizeOwnedJewels(Array.isArray(s.ownedJewels)?s.ownedJewels:STARTER_JEWELS);
   }else{
     state.ownedAugments=normalizeOwned(STARTER_AUGMENTS);
+    state.ownedJewels=normalizeOwnedJewels(STARTER_JEWELS);
   }
 }
 let saveTimer=null;
 function persist(){
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments}),200);
+  saveTimer=setTimeout(()=>Store.save(SAVE_KEY,{glory:state.glory,roster:state.roster,alliances:state.alliances,ownedAugments:state.ownedAugments,ownedJewels:state.ownedJewels}),200);
 }
 
 /* ---- augment ownership + loot grades (Phase 2a) ----
@@ -838,6 +871,12 @@ function augGradeOf(k){ const g=ownedGem(k); return g?(g.grade||"common"):"commo
 function sockets(p){ return (p.augments||[]).map(x=>{ const k=(x&&x.key)?x.key:x; return {key:k,grade:(x&&x.grade)?x.grade:augGradeOf(k)}; }); }
 function rollGrade(){ let t=0; for(const r of RARITY) t+=r.weight; let x=Math.random()*t; for(const r of RARITY){ x-=r.weight; if(x<=0) return r.key; } return "common"; }
 function reforgeCostG(){ return 90; }
+/* jewels — owned like gems, rarity-graded */
+function normalizeOwnedJewels(arr){ return (Array.isArray(arr)?arr:[]).map(x=>(x&&x.key)?{key:x.key,grade:x.grade||"common"}:{key:x,grade:"common"}).filter(a=>a.key&&JEWEL_BY_KEY[a.key]); }
+function ownsJewel(k){ return (state.ownedJewels||[]).some(a=>a.key===k); }
+function ownedJewelGem(k){ return (state.ownedJewels||[]).find(a=>a.key===k); }
+function jewelGradeOf(k){ const g=ownedJewelGem(k); return g?(g.grade||"common"):"common"; }
+function jewelCost(){ return 80; }
 function gradeBadge(grade){ const R=rarByKey(grade); return `<span class="gbadge" style="color:${R.color};border-color:${R.color}66;background:${R.color}1a">${R.label}</span>`; }
 function gradeLegendHTML(){ return `<div class="grade-legend">${RARITY.map(r=>`<span class="gl" style="color:${r.color};border-color:${r.color}66;background:${r.color}14">${r.label}</span>`).join("")}</div>`; }
 /* OC overall grade (Phase 2b): a readout of build investment + socketed loot
@@ -925,6 +964,17 @@ function aggregateMods(oc){
   const M=freshM();
   for(const id of (oc.tree&&oc.tree.allocated||[])){ const n=TREE.byId[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
   for(const id of (oc.ascendancy&&oc.ascendancy.allocated||[])){ const n=ASC_NODE_BY_ID[id]; if(n&&n.effect) applyNodeEffect(M,n.effect); }
+  // jewels socketed into ALLOCATED jewel-socket nodes (grade-scaled)
+  const jmap=(oc.tree&&oc.tree.jewels)||{};
+  const allocSet=new Set((oc.tree&&oc.tree.allocated)||[]);
+  const nodeCount=((oc.tree&&oc.tree.allocated)||[]).length;
+  for(const nid in jmap){
+    if(!allocSet.has(nid)) continue;
+    const entry=jmap[nid]; const jk=(entry&&entry.key)?entry.key:entry; const j=JEWEL_BY_KEY[jk]; if(!j) continue;
+    const gm=rarByKey((entry&&entry.grade)?entry.grade:jewelGradeOf(jk)).mult;
+    applyNodeEffect(M,scaleEffect(j.mods,gm));
+    if(j.scalePerNodes) M.incGeneric += j.scalePerNodes.pct*Math.floor(nodeCount/j.scalePerNodes.per)*gm;
+  }
   return M;
 }
 function computeFinal(oc){
@@ -2032,7 +2082,7 @@ document.addEventListener("change",e=>{
 
 /* ===================== BOOT ===================== */
 async function boot(){
-  try{ await loadState(); }catch(e){ state.ownedAugments=normalizeOwned(state.ownedAugments||STARTER_AUGMENTS); }
+  try{ await loadState(); }catch(e){ state.ownedAugments=normalizeOwned(state.ownedAugments||STARTER_AUGMENTS); state.ownedJewels=normalizeOwnedJewels(state.ownedJewels||STARTER_JEWELS); }
   render();
 }
 boot();
