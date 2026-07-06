@@ -964,7 +964,7 @@ function drawBrick(g,b,t){
     g.translate(cx,cy); g.beginPath(); g.moveTo(0,-h/2); g.lineTo(w/2,0); g.lineTo(0,h/2); g.lineTo(-w/2,0); g.closePath();
     g.fillStyle=vgrad(g,-w/2,-h/2,h,col.c1,col.c2); g.fill(); g.strokeStyle=col.stroke; g.lineWidth=1.5; g.stroke();
     g.strokeStyle='rgba(255,255,255,0.6)'; g.lineWidth=1; g.beginPath(); g.moveTo(0,-h/2); g.lineTo(0,h/2); g.moveTo(-w/2,0); g.lineTo(w/2,0); g.stroke();
-    if(b.boss){ g.fillStyle=b===bossHeartRef()?'#fff':'#ffd0d0'; }
+    if(b.boss){ g.fillStyle=bossHeartVulnerable()?'#fff':'#ffd0d0'; }   // white = strikeable now, pink = shell up
     g.restore(); return;
   }
   if(b.type==='mover'){ // circle w/ chevrons
@@ -1220,13 +1220,15 @@ function releaseBall(ball){ if(!ball.stuck) return; ball.stuck=false; var sp=tar
 
 /* ---------------- boss controller ---------------- */
 function initBoss(){ S.boss={ phase:1, vulnerable:false, stunT:0, droneRow:90 }; }
-function bossHeartVulnerable(){ return !!(S.boss && S.boss.vulnerable); }
+function bossBombsLeft(){ if(!S.bricks) return 0; var n=0; for(var i=0;i<S.bricks.length;i++){ var b=S.bricks[i]; if(b && !b.dead && b.type==='bomb') n++; } return n; }
+function bossHeartVulnerable(){ return !!(S.boss && (S.boss.vulnerable || bossBombsLeft()===0)); }   // once every bomb is spent the shell stays open — the fight can't dead-end when bombs run out
 function bossHeartRef(){ return null; }
 var _bossPingMs=0;
 function bossHeartPing(b){ var R=brickRect(b); FX.ring(R.x+R.w/2,R.y+R.h/2,'#e0533a',26); sfxTick();
   if(nowMs()-_bossPingMs>2500){ _bossPingMs=nowMs(); toast('Sealed — detonate a weak point'); } }
 function bossStun(){ if(!S.boss) return; S.boss.stunT=4000; S.boss.vulnerable=true;
-  if(S.boss.phase===1){ S.boss.phase=2; spawnDrones(2); toast('BREACH! Strike the heart'); FX.shake(0.5); } }
+  if(S.boss.phase===1){ S.boss.phase=2; spawnDrones(2); toast('BREACH! Strike the heart'); FX.shake(0.5); }
+  else { toast('VULNERABLE! Strike the heart'); FX.shake(0.35); } }   // announce EVERY window, not just the first
 function spawnDrones(n){ for(var i=0;i<n;i++){ S.boss.droneRow++; S.bricks.push({ type:'mover', col:-5, row:S.boss.droneRow,
   bx:60+rng()*(VW-160), by:700+rng()*120, w:CW, h:CH, hp:1, maxhp:1, dead:false, flash:0, ox:0, mdir:(i%2?1:-1), regenAt:0, starved:false, boss:false }); } }
 function onBossHeartKilled(){ FX.shake(0.7); FX.ring(VW/2,FIELD_TOP+140,'#ffd0d0',180); sfxClear();
@@ -1236,7 +1238,7 @@ function onBossHeartKilled(){ FX.shake(0.7); FX.ring(VW/2,FIELD_TOP+140,'#ffd0d0
     for(i=0;i<S.bricks.length;i++){ var bk=S.bricks[i]; if(bk.type!=='steel'){ bk.dead=true; if(bk.type==='regen'){ bk.starved=true; bk.regenAt=0; } } }
     if(S.state==='PLAY') levelClear();
   } else { if(S.boss.phase<3){ S.boss.phase=3; spawnDrones(1); toast('ENRAGED'); } } }
-function updateBoss(dt){ if(!S.boss) return; if(S.boss.stunT>0){ S.boss.stunT-=dt*1000; if(S.boss.stunT<=0){ S.boss.vulnerable=false; } } }
+function updateBoss(dt){ if(!S.boss) return; if(S.state==='PLAY' && S.boss.stunT>0){ S.boss.stunT-=dt*1000; if(S.boss.stunT<=0){ S.boss.vulnerable=false; } } }   // don't burn a window while the ball is docked on the paddle (SERVE)
 
 /* ---------------- fx timer tick ---------------- */
 function tickFX(dt){ var f=S.fx, ms=dt*1000; var keys=['wideT','shrinkT','laserT','stickyT','slowT','fastT','curseT','fireT','gravT','portalT','timeFreezeT','chainT','surgeT','reverseT','blackoutT','bumperT','megaT','shockKick'];

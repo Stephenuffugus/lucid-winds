@@ -140,7 +140,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 /* settings rows */
 .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 2px; border-bottom:1px solid #1c2416; max-width:420px; margin:0 auto; width:100%}
 .seg{display:flex; border:1px solid var(--line); border-radius:11px; overflow:hidden}
-.seg button{min-height:42px; min-width:56px; background:#0f150c; color:var(--muted); border:0; font-size:13px; font-weight:700; cursor:pointer; padding:0 10px}
+.seg button{min-height:44px; min-width:56px; background:#0f150c; color:var(--muted); border:0; font-size:13px; font-weight:700; cursor:pointer; padding:0 10px}
 .seg button.sel{background:var(--sage); color:#0c1207}
 
 /* modal / toast */
@@ -361,7 +361,8 @@ function endTurn(cs){ if(cs.over) return; var block=cs.g.block;
     e.intentIdx++; });
   cs.g.block=0; if(cs.g.resolve<=0){ cs.over=true; cs.win=false; return; } newTurn(cs); }
 function rewardOptions(cs,rng){ var opts=[], dk=Object.keys(DICE);
-  opts.push({kind:'die',id:dk[Math.floor(rng()*dk.length)]});
+  if(cs.g.diceIds.length<6) opts.push({kind:'die',id:dk[Math.floor(rng()*dk.length)]});
+  else opts.push({kind:'maxhp',v:6});   // rack full (6/6) — offer a real upgrade instead of a die that would replace nothing
   var rk=Object.keys(RELICS).filter(function(k){ return cs.g.relics.indexOf(k)<0; });
   if(rk.length) opts.push({kind:'relic',id:rk[Math.floor(rng()*rk.length)]});
   opts.push({kind:'heal',v:8}); opts.push({kind:'maxhp',v:4});
@@ -530,7 +531,7 @@ function updateHint(){ var h=$('c-hint');
   else if(t==='root') h.textContent='Root '+ef.v+' — tap a pest to weaken its attack';
   else if(t==='heal') h.textContent='Heal '+ef.v+' — tap your garden';
   else if(t==='bark') h.textContent='Bark '+ef.v+' — tap your garden to block';
-  else if(t==='wild') h.textContent='Wild — tap a pest (strike) or your garden (heal/block)';
+  else if(t==='wild') h.textContent='Wild — tap a pest to strike, or your garden to block';
 }
 function updateTargets(){
   var d=(SEL>=0)?CS.dice[SEL]:null; var t=d?d.face.t:null;
@@ -558,9 +559,10 @@ function onTarget(target, el){
   if(CS.over){ renderCombat(); setTimeout(onWin,420); return; }
   renderCombat();
 }
-tap('c-reroll',function(){ if(SEL<0||CS.rerollsLeft<=0) return; var d=CS.dice[SEL]; if(d&&!d.assigned){ SD.reroll(CS,SEL); sfx('roll'); var el=document.querySelectorAll('#c-dice .die')[SEL]; if(el&&!reduced()){ el.classList.add('rolling'); } renderCombat(); } });
+tap('c-reroll',function(){ if(SEL<0||CS.rerollsLeft<=0) return; var i=SEL, d=CS.dice[SEL]; if(d&&!d.assigned){ SD.reroll(CS,SEL); sfx('roll'); renderCombat(); if(!reduced()){ var el=document.querySelectorAll('#c-dice .die')[i]; if(el) el.classList.add('rolling'); } } });   // add jiggle to the NEW die after re-render, else renderCombat wipes it before it paints
 tap('c-end',function(){ if(ANIM) return; endTurnFlow(); });
 function endTurnFlow(){
+  if(!CS||CS.over) return;   // encounter already decided (kill/loss already scheduled onWin/onLose) — block re-entry so End Turn can't double-fire the reward
   var before=G.resolve; ANIM=true;
   SD.endTurn(CS);
   var dmg=before-G.resolve;
@@ -573,7 +575,7 @@ function endTurnFlow(){
 
 /* ---------- WIN / REWARD / LOSE ---------- */
 function coinsForFloor(node){ var base = node.type==='boss'?60 : node.type==='elite'?30 : 12+node.floor*2; return Math.round(base*(1+0.4*(RUN&&RUN.cycle||0))); }
-function onWin(){ sfx('win');
+function onWin(){ if(!CS||CS._resolved) return; CS._resolved=true; sfx('win');   // idempotent: never grant a kill's coins/Sunbeams twice, never read RUN.nodes[POS] past the end on the boss
   var node=RUN.nodes[POS]; var earned=coinsForFloor(node); META.coins+=earned;
   if(MODE==='endless') META.endlessBest=Math.max(META.endlessBest||0,(RUN.cycle||0)*12+node.floor);
   else META.best=Math.max(META.best,node.floor);
@@ -669,7 +671,7 @@ function renderHow(){ $('how-body').innerHTML=
   '<p style="margin-top:12px"><b class="gold">Each turn</b> your plant dice roll. Tap a die, then tap a target:</p>'+
   '<p style="margin-top:6px"><span class="t-thorn" style="font-weight:800">⚔ Thorn</span> — strike one pest. &nbsp; <span class="t-spread" style="font-weight:800">✸ Spread</span> — hit ALL pests.</p>'+
   '<p><span class="t-heal" style="font-weight:800">♥ Heal</span> — restore Resolve. &nbsp; <span class="t-bark" style="font-weight:800">⛨ Bark</span> — block damage this turn.</p>'+
-  '<p><span class="t-root" style="font-weight:800">⊘ Root</span> — weaken a pest\'s attack. &nbsp; <span class="t-wild" style="font-weight:800">★ Wild</span> — acts as any of the above.</p>'+
+  '<p><span class="t-root" style="font-weight:800">⊘ Root</span> — weaken a pest\'s attack. &nbsp; <span class="t-wild" style="font-weight:800">★ Wild</span> — strikes a pest like Thorn, or blocks like Bark.</p>'+
   '<p style="margin-top:12px">Pests show their <b>intent</b> (top-right). Block or kill before they strike. You get a <b>reroll</b> each turn — select a die and hit Reroll.</p>'+
   '<p style="margin-top:12px"><b class="gold">After each win</b>, draft a new die, a relic, or healing. Build a wild synergy — then start again. Coins buy permanent unlocks in the Greenhouse.</p>'+
   '<p style="margin-top:12px" class="muted">Tip: turtling doesn\'t work — after turn 8 the pests grow furious and hit harder every turn. Push the pace.</p>'+

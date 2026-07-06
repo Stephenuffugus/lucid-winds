@@ -1928,6 +1928,7 @@ function runBattle(){
 }
 function battleStage(){
   const b=state.battle,A=state.roster.find(o=>o.id===b.aId),B=state.roster.find(o=>o.id===b.bId);
+  if(!A||!B){ state.battle=null; return screenBattle(); }   // self-heal if a duelist was deleted (mirrors gauntletStage)
   const rA=raceByKey(A.race)||{},rB=raceByKey(B.race)||{};
   const last=b.res.hpTimeline[b.res.hpTimeline.length-1]||{a:0,b:0};
   const winnerOC=b.res.winnerIsA?A:B;
@@ -1949,7 +1950,11 @@ function battleStage(){
 
 /* ===================== TOURNAMENT ===================== */
 function screenTourney(){
-  if(state.tourney) return tourneyStage();
+  if(state.tourney){                                        // self-heal if any bracket participant/champion was deleted
+    const t=state.tourney, has=id=>state.roster.some(o=>o.id===id);
+    if(has(t.champId) && t.rounds.every(r=>r.every(m=>has(m.aId)&&has(m.bId)))) return tourneyStage();
+    state.tourney=null;
+  }
   const n=state.roster.length;
   if(n<4) return `${topbar()}<div class="section-h"><span class="n">♛</span><h2>Tournament</h2></div><div class="empty"><div class="big">♛</div><div>You need at least four characters to run a tournament.</div><div style="margin-top:14px"><button class="btn primary" data-act="startCreate">✦ Create OC</button></div></div>`;
   const size=n>=8?8:4;
@@ -2160,7 +2165,7 @@ function handleAct(act,el,e){
     case "finalize": finalizeOC(); break;
     /* roster / sheet */
     case "openSheet": state.screen="sheet"; state.sheetId=el.dataset.id; state.sheetTab="overview"; state.treeSel=null; state.treeView={x:0,y:0,scale:1}; render(); break;
-    case "delOC": { const id=el.dataset.id,o=state.roster.find(x=>x.id===id); if(o&&(typeof confirm==="undefined"||confirm(`Delete ${o.name}? This can't be undone.`))){ state.roster=state.roster.filter(x=>x.id!==id); state.alliances.forEach(a=>a.members=a.members.filter(m=>m!==id)); state.battleSel=state.battleSel.map(s=>s===id?null:s); persist(); render(); toast("Character deleted."); } break; }
+    case "delOC": { const id=el.dataset.id,o=state.roster.find(x=>x.id===id); if(o&&(typeof confirm==="undefined"||confirm(`Delete ${o.name}? This can't be undone.`))){ state.roster=state.roster.filter(x=>x.id!==id); state.alliances.forEach(a=>a.members=a.members.filter(m=>m!==id)); state.battleSel=state.battleSel.map(s=>s===id?null:s); if(state.battle&&(state.battle.aId===id||state.battle.bId===id)) state.battle=null; if(state.tourney&&(state.tourney.champId===id||state.tourney.rounds.some(r=>r.some(m=>m.aId===id||m.bId===id)))) state.tourney=null; if(state.gauntletFight&&state.gauntletFight.championId===id) state.gauntletFight=null; persist(); render(); toast("Character deleted."); } break; }
     case "sheetTab": state.sheetTab=el.dataset.k; if(el.dataset.k==="web"&&!state.treeSel){/* keep */} render(); break;
     case "sendBattle": state.battle=null; state.battleSel=[el.dataset.id,null]; goto("battle"); break;
     /* skill web */
