@@ -1148,7 +1148,9 @@ function react(e, kind, depth){
 function reactFX(x,y,kind){
   var info=REACT_INFO[kind]||{t:'!',c:'#fff'};
   floatText(info.t, x, y-14, info.c);
-  if(!save.settings.reducedMotion){ ring(x,y,34,info.c); poof(x,y,info.c); } else G.fx.push({kind:'flash',x:x,y:y,col:info.c,life:0.2});
+  if(GGART.ready[kind]){ G.fx.push({kind:'react',x:x,y:y,rk:kind,life:0.5}); }        // art burst
+  else if(!save.settings.reducedMotion){ ring(x,y,34,info.c); poof(x,y,info.c); }      // canvas fallback
+  else G.fx.push({kind:'flash',x:x,y:y,col:info.c,life:0.2});
   tone('sine', 520, 760, 0.10, 0.10);
 }
 
@@ -1223,8 +1225,10 @@ function towerFire(t, dt){
       else if(t.tier===3 && rnd()<0.12) dmg*=2;
       applyDamage(tg,dmg,{by:t}); hitStatus(tg,t);
       if(st.hitSlow && !tg.dead){ tg.slowF=Math.min(tg.slowF,1-st.hitSlow); tg.slowT=Math.max(tg.slowT,1); }
+      var _tgp=posAt(G.geom,tg.d); G.fx.push({kind:'shot',x:t.x,y:t.y,tx:_tgp.x,ty:_tgp.y,key:(st.spread?'petal':'spike'),scale:(st.spread?0.5:0.6),dur:0.16,life:0.16});   // spike (base) / petal (spread) shot art
     }
-    tracer(t.x,t.y,tp.x,tp.y,'#e08a3a'); sfx.shoot();
+    if(!GGART.ready['spike']&&!GGART.ready['petal']) tracer(t.x,t.y,tp.x,tp.y,'#e08a3a');   // canvas tracer only when no shot art
+    sfx.shoot();
   } else if(t.id==='sunflower'){
     var dmgS=towerDmg(t); if(st.vsStrong && (t.targetMode||'first')==='strong')dmgS*=(1+st.vsStrong); else if(st.vsStrong)dmgS*=(1+st.vsStrong*0.5);
     if(st.pierce){ G.enemies.forEach(function(e){ if(e.dead)return; if(!canHit(t,e))return; var p=posAt(G.geom,e.d);
@@ -1461,8 +1465,8 @@ function aoe(x,y,r,fn){ for(var i=0;i<G.enemies.length;i++){ var e=G.enemies[i];
 function keeperCast(vx,vy){ var k=G.keeper; if(!k||!k.aim)return false; var kind=k.aim; k.aim=null;
   if(!(G.running||G.enemies.length))return false;   // nothing to hit yet
   k.castT=0.4; k.castKind=kind;
-  if(kind==='water'){ k.cdWater=12000; aoe(vx,vy,70,function(e){ applyStatus(e,'wet'); e.slowF=Math.min(e.slowF,0.6); e.slowT=Math.max(e.slowT,1); }); ring(vx,vy,70,'#8fd3ff'); }
-  else if(kind==='flare'){ k.cdFlare=18000; aoe(vx,vy,80,function(e){ applyDamage(e,40,{by:null}); if(!e.dead)applyStatus(e,'scorch'); }); ring(vx,vy,80,'#e08a3a'); poof(vx,vy,'#e08a3a'); }
+  if(kind==='water'){ k.cdWater=12000; aoe(vx,vy,70,function(e){ applyStatus(e,'wet'); e.slowF=Math.min(e.slowF,0.6); e.slowT=Math.max(e.slowT,1); }); ring(vx,vy,70,'#8fd3ff'); G.fx.push({kind:'decal',x:vx,y:vy,key:'water_puddle',scale:1.8,life:0.9}); }
+  else if(kind==='flare'){ k.cdFlare=18000; aoe(vx,vy,80,function(e){ applyDamage(e,40,{by:null}); if(!e.dead)applyStatus(e,'scorch'); }); ring(vx,vy,80,'#e08a3a'); poof(vx,vy,'#e08a3a'); G.fx.push({kind:'decal',x:vx,y:vy,key:'sun_burst',scale:3,life:0.6}); }
   else if(kind==='sig'){ k.cdSig=40000; G.teamRateT=6000; G.teamRateMult=1.4; banner('Rally!',true); }
   sfx.place(); return true; }
 function drawKeeper(){ if(!G.keeper)return; var kp=keeperPos();
@@ -1486,7 +1490,7 @@ function drawKeeper(){ if(!G.keeper)return; var kp=keeperPos();
 /* ===== DROP-IN ART LOADER (optional PNGs; canvas fallback if absent) =====
    Art lives in assets/gg/ per ART_ASSETS.md. manifest.json lists each key's
    path + frame metadata. Missing/empty manifest => 100% canvas fallback, no errors. */
-var ART_VER='1';
+var ART_VER='2';
 var GGART={ ready:{}, img:{}, meta:{} };
 function loadArt(){
   fetch('assets/gg/manifest.json?v='+ART_VER).then(function(r){ return r.ok?r.json():{}; }).then(function(m){
@@ -1664,7 +1668,7 @@ function drawEnemy(e,t){
   // reaction statuses (core info — always shown, shape-distinct emoji)
   var sg=''; if(e.wetT>0)sg+='💧'; if(e.scorchT>0)sg+='🔥'; if(e.sporeT>0)sg+='🍄'; if(e.rotT>0)sg+='🟣';
   if(sg){ ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText(sg, x, gy-9); }
-  if(e.nectar){ ctx.strokeStyle='rgba(200,168,75,0.8)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y+bob,r+4,0,6.283); ctx.stroke(); }
+  if(e.nectar){ if(!spr(ctx,'nectar_halo',x,y+bob-r*0.4,(r*2.6)/50,null)){ ctx.strokeStyle='rgba(200,168,75,0.8)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y+bob,r+4,0,6.283); ctx.stroke(); } }
   if(e.shield>0){ ctx.strokeStyle='rgba(140,200,255,0.7)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y+bob,r+3,Math.PI*1.1,Math.PI*1.9); ctx.stroke(); }
   // hp bar
   if(e.hp<e.hpMax){ var w=Math.max(14,r*1.8), hx=x-w/2, hy=y+bob-r-3;
@@ -1690,18 +1694,21 @@ function drawFX(t){
     if(f.kind==='p'){ ctx.globalAlpha=Math.max(0,f.life*2); ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,2.5,0,6.283); ctx.fill(); }
     else if(f.kind==='flash'){ ctx.globalAlpha=Math.max(0,f.life*4); ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x,f.y,10,0,6.283); ctx.fill(); }
     else if(f.kind==='tracer'){ ctx.globalAlpha=Math.max(0,f.life*8); ctx.strokeStyle=f.col; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(f.tx,f.ty); ctx.stroke(); }
-    else if(f.kind==='beam'){ ctx.globalAlpha=Math.max(0,f.life*6); ctx.strokeStyle=COL.gold2; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(f.tx,f.ty); ctx.stroke(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); }
-    else if(f.kind==='drip'){ ctx.globalAlpha=Math.max(0,f.life*3); ctx.fillStyle='#8fd06a'; var k=1-f.life/0.3; var dx=lerp(f.x,f.tx,k),dy=lerp(f.y,f.ty,k)-Math.sin(k*Math.PI)*10; ctx.beginPath(); ctx.arc(dx,dy,3,0,6.283); ctx.fill(); }
+    else if(f.kind==='beam'){ ctx.globalAlpha=Math.max(0,f.life*6); ctx.strokeStyle=COL.gold2; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(f.tx,f.ty); ctx.stroke(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); spr(ctx,'beam_cap',f.tx,f.ty,1,null); }   // beam_cap art at impact end
+    else if(f.kind==='drip'){ ctx.globalAlpha=Math.max(0,f.life*3); var k=1-f.life/0.3; var dx=lerp(f.x,f.tx,k),dy=lerp(f.y,f.ty,k)-Math.sin(k*Math.PI)*10; if(!spr(ctx,'acid',dx,dy,0.7,null)){ ctx.fillStyle='#8fd06a'; ctx.beginPath(); ctx.arc(dx,dy,3,0,6.283); ctx.fill(); } }   // acid glob art w/ canvas fallback
     else if(f.kind==='ring'){ var kk=1-f.life/0.28; ctx.globalAlpha=Math.max(0,f.life*3); ctx.strokeStyle=f.col; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(f.x,f.y,f.r*kk,0,6.283); ctx.stroke(); }
     else if(f.kind==='ringstatic'){ ctx.globalAlpha=Math.max(0,f.life*6); ctx.strokeStyle=f.col; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,6.283); ctx.stroke(); }
     else if(f.kind==='puff'){ var kp=1-f.life/0.35; ctx.globalAlpha=Math.max(0,f.life*2); ctx.fillStyle='#b3b8a4'; ctx.beginPath(); ctx.arc(f.x,f.y,f.r*(0.4+kp*0.7),0,6.283); ctx.fill(); }
     else if(f.kind==='spark'){ var ks=1-f.life/0.5; ctx.globalAlpha=Math.max(0,f.life*2); ctx.fillStyle=f.col; ctx.beginPath(); ctx.arc(f.x+Math.cos(f.a)*ks*20,f.y+Math.sin(f.a)*ks*20,2,0,6.283); ctx.fill(); }
+    else if(f.kind==='react'){ var kr=1-f.life/0.5; ctx.globalAlpha=Math.max(0,Math.min(1,f.life*3)); spr(ctx,f.rk,f.x,f.y,0.55+kr*0.35,null); ctx.globalAlpha=1; }
+    else if(f.kind==='shot'){ var kt=1-f.life/(f.dur||0.16); var sx=lerp(f.x,f.tx,kt),sy=lerp(f.y,f.ty,kt); ctx.globalAlpha=Math.max(0,Math.min(1,f.life*8)); spr(ctx,f.key,sx,sy,f.scale||0.6,null); ctx.globalAlpha=1; }   // spike/petal traveling shot
+    else if(f.kind==='decal'){ ctx.globalAlpha=Math.max(0,Math.min(1,f.life*1.6)); spr(ctx,f.key,f.x,f.y,f.scale||1,null); ctx.globalAlpha=1; }   // ground decal (keeper water_puddle / sun_burst)
     ctx.restore();
   });
   // projectiles
   G.projs.forEach(function(p){ ctx.save();
-    if(p.kind==='bee'){ ctx.fillStyle=COL.gold; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,6.283); ctx.fill(); ctx.fillStyle='#2b2620'; ctx.fillRect(p.x-2,p.y-0.5,4,1); }
-    else if(p.kind==='spore'){ ctx.globalAlpha=0.85; ctx.fillStyle='#8a9178'; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,6.283); ctx.fill(); }
+    if(p.kind==='bee'){ if(!spr(ctx,'bee',p.x,p.y,0.55,null)){ ctx.fillStyle=COL.gold; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,6.283); ctx.fill(); ctx.fillStyle='#2b2620'; ctx.fillRect(p.x-2,p.y-0.5,4,1); } }
+    else if(p.kind==='spore'){ if(!spr(ctx,'spore',p.x,p.y,0.7,null)){ ctx.globalAlpha=0.85; ctx.fillStyle='#8a9178'; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,6.283); ctx.fill(); } }
     ctx.restore();
   });
   // floats
