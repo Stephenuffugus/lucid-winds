@@ -386,7 +386,7 @@ function haptic(ms){ if(P.set.haptics&&navigator.vibrate){ try{navigator.vibrate
 var ART=(function(){
   var imgs={}, ready={};
   function load(key,src){ var im=new Image(); im.onload=function(){ready[key]=1;}; im.src=src; imgs[key]=im; }
-  function tryImg(key,g,size){ var im=imgs[key]; if(im&&ready[key]){ g.drawImage(im,-size/2,-size/2,size,size); return true; } return false; }
+  function tryImg(key,g,size){ var im=imgs[key]; if(im&&ready[key]){ var mx=Math.max(im.width,im.height)||1, dw=im.width/mx*size, dh=im.height/mx*size; g.drawImage(im,-dw/2,-dh/2,dw,dh); return true; } return false; }   // fit larger dim → preserves tall sleds/gnome
   // shape helpers
   function circle(g,x,y,r){ g.beginPath(); g.arc(x,y,r,0,TAU); g.fill(); }
   function ell(g,x,y,rx,ry,rot){ g.beginPath(); g.ellipse(x,y,rx,ry,rot||0,0,TAU); g.fill(); }
@@ -457,6 +457,15 @@ var ART=(function(){
     trailColors:function(id){ return TRAIL[id]||TRAIL.dew; },
     sky:function(id){ return SKY[id]; }
   };
+})();
+/* register the painted art (drops in behind the procedural draw via tryImg) */
+(function loadArt(){
+  var V='?v=2026-07-06';
+  ['rider_sprout','rider_acorn','rider_ladybug','rider_bee','rider_snail','rider_frog','rider_mouse','rider_robin','rider_foxkit','rider_firefly','rider_mantis','rider_lumin','rider_gnomelet',
+   'sled_leaf','sled_petal','sled_bark','sled_lily','sled_cap','sled_birch','sled_husk','sled_shell','sled_aurora',
+   'gnome','gnome_angry',
+   'obs_bush','obs_tree','obs_glowtree','obs_shroom','obs_bigshroom','obs_thorn','obs_log','obs_stump','obs_boulder','obs_stone','obs_glowstone','obs_daisyclump','obs_ramp'
+  ].forEach(function(k){ ART.load(k,'assets/'+k+'.png'+V); });
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -877,6 +886,7 @@ function drawObstacle(o){
   shadow(sx,sy+o.r*0.3,o.r);
   g.save(); g.translate(sx,sy);
   var b=biomeAt(o.y);
+  if(ART.tryImg('obs_'+o.kind, g, o.r*2.7)){ g.restore(); return; }   // painted obstacle
   switch(o.kind){
     case "bush": g.fillStyle="#3f6e2c"; ART.circle(g,-o.r*0.4,0,o.r*0.6); ART.circle(g,o.r*0.4,0,o.r*0.6); ART.circle(g,0,-o.r*0.3,o.r*0.7); g.fillStyle="#4e8636"; ART.circle(g,0,-o.r*0.3,o.r*0.45); break;
     case "tree": case "glowtree":
@@ -950,6 +960,7 @@ function drawGnome(){
   if(sy>VH+30) return;
   shadow(sx,sy+18,20);
   g.save(); g.translate(sx,sy-bob);
+  if(ART.tryImg(S.gnomeGap<200?'gnome_angry':'gnome', g, 66)){ g.restore(); return; }   // painted Gnome (angry frame as it closes in)
   // body
   g.fillStyle="#3a6a8a"; ART.ell(g,0,6,18,20);
   // beard
