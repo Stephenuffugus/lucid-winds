@@ -1101,12 +1101,20 @@ function finishCourse(){
 }
 function endRun(gobbled){
   if(S.over) return;
-  S.over=true; S.running=false;
   if(gobbled) SFX.gobble();
+  bankRun();
+  S._gobbled=gobbled;
+  setTimeout(function(){ buildOver(); show("scrOver"); }, gobbled? 700:280);
+}
+// Grant a run's Petals + Sunbeams + records EXACTLY ONCE. Called by endRun (death/finish)
+// and by a voluntary Quit/Restart, so an in-progress run is never silently forfeited.
+function bankRun(){
+  if(!S || S._banked) return; S._banked=true;
+  S.over=true; S.running=false;
   var depth=Math.floor(S.depth), mode=S.mode;
 
   // ---- Petals (game-local cosmetic currency) ----
-  var bonus=Math.floor(depth/25) + S.gates*2 + Math.floor(S.style/12) + S.gnomeEscapes*15;
+  var bonus=Math.round((Math.floor(depth/25) + S.gates*2 + Math.floor(S.style/12) + S.gnomeEscapes*15) * (S.scoreMult||1));   // Gnome-escape multiplier actually boosts the Petal payout now (was dead)
   var earnedCoins=S.coins + bonus;
   P.coins += earnedCoins;
 
@@ -1131,17 +1139,16 @@ function endRun(gobbled){
   saveProfile(true);
 
   // ---- Sunbeams (cross-game; capped 30/day via the fleet helper) ----
-  var sb=0;
+  var sb=0, sbGranted=0;
   if(depth>10){
     sb=clamp(1 + Math.floor(depth/500) + Math.floor(S.style/300) + Math.floor(S.gates/6) + S.gnomeEscapes, 1, 12);
-    if(window._sbCapEarn) window._sbCapEarn(sb, "petalplunge:"+mode);
+    if(window._sbCapEarn) sbGranted=window._sbCapEarn(sb, "petalplunge:"+mode)||0;
   }
-  S._earnedCoins=earnedCoins; S._earnedSb=sb; S._rec=rec; S._gobbled=gobbled;
-  setTimeout(function(){ buildOver(); show("scrOver"); }, gobbled? 700:280);
+  S._earnedCoins=earnedCoins; S._earnedSb=sbGranted; S._rec=rec;   // show what was actually credited (post 30/day cap), not the pre-cap request
 }
 function yesterdayKey(){ var d=new Date(Date.now()-864e5); return d.getUTCFullYear()+"-"+(d.getUTCMonth()+1)+"-"+d.getUTCDate(); }
 
-function quitRun(){ if(S){ S.running=false; S.over=true; } gotoModes(); }
+function quitRun(){ if(S && !S.over) bankRun(); if(S){ S.running=false; S.over=true; } gotoModes(); }   // bank the run before leaving — don't silently forfeit an endless run's earnings
 
 /* ---- pause ---- */
 function pauseGame(on){ if(!S||S.over)return; S.paused=on; if(on){ buildPause(); show("scrPause"); } else { hideAllScreens(); $("hud").classList.remove("hidden"); S.startMs+=0; lastT=0; } }
@@ -1346,7 +1353,7 @@ function buildPause(){
     '<button class="btn ghost wide" id="pQuit" style="margin-top:8px">Quit to menu</button>'+
     '<div class="spacer"></div>';
   $("pResume").onclick=function(){ SFX.ui(); pauseGame(false); };
-  $("pRestart").onclick=function(){ SFX.ui(); var m=S.mode; startRun(m); };
+  $("pRestart").onclick=function(){ SFX.ui(); if(S && !S.over) bankRun(); var m=S.mode; startRun(m); };   // bank the run before restarting
   $("pQuit").onclick=function(){ SFX.ui(); quitRun(); };
 }
 $("pauseBtn").onclick=function(){ if(S&&S.running&&!S.over) pauseGame(!S.paused); };
@@ -1399,9 +1406,10 @@ window._sbCapEarn=function(n,tag){
   var k='sw_sb_petalplunge';
   try{ var s=JSON.parse(localStorage.getItem(k)||'{}'); if(s.d===d)used=s.n||0; }
   catch(e){ if(window.__ppSb&&window.__ppSb.d===d)used=window.__ppSb.n||0; }
-  n=Math.min(n, Math.max(0, 30-used)); if(n<=0)return;
+  n=Math.min(n, Math.max(0, 30-used)); if(n<=0)return 0;
   try{ localStorage.setItem(k, JSON.stringify({d:d,n:used+n})); }catch(e){ window.__ppSb={d:d,n:used+n}; }
   if(window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(n,tag).catch(function(){});
+  return n;   // actual credited amount (post 30/day cap) so callers can show the truth
 };
 var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
 window.SWS_EMBED=SWS_EMBED;

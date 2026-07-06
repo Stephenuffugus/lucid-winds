@@ -1133,11 +1133,12 @@ const Economy=(function(){
     S.cur[cur]=(S.cur[cur]||0)+n; _pending[cur]=(_pending[cur]||0)+n; save();
     UI.flashWallet(cur);
     // sunbeam bridge: reward genuine play (30/day cap handled by _sbCapEarn)
-    if(reason==='point'||reason==='winmatch'){ bridgeSunbeam(reason==='winmatch'?4:1); }
+    if(reason==='point'||reason==='winmatch'||reason==='survival'){ bridgeSunbeam(reason==='winmatch'?4:reason==='survival'?4:1); }
   }
   function spend(cur,n){ if((S.cur[cur]||0)<n) return false; S.cur[cur]-=n; save(); return true; }
-  function bridgeSunbeam(n){ try{ if(window._sbCapEarn) window._sbCapEarn(n,'pong:play'); }catch(e){} }
-  return {earn,spend};
+  let _runSb=0;   // per-run Sunbeam counter — policy caps one run at 12 (30/day handled by _sbCapEarn)
+  function bridgeSunbeam(n){ n=Math.min(n,Math.max(0,12-_runSb)); if(n<=0)return; _runSb+=n; try{ if(window._sbCapEarn) window._sbCapEarn(n,'pong:play'); }catch(e){} }
+  return {earn,spend,resetRunSb:function(){_runSb=0;}};
 })();
 
 /* ═══════════════════════════ RENDER ═══════════════════════════ */
@@ -1261,7 +1262,7 @@ function startMatch(modeId,opts={}){
     powerups:opts.powerups!=null?opts.powerups:mode.powerups, obstacles:opts.obstacles!=null?opts.obstacles:mode.obstacles,
     mods:opts.mods||mode.mods||{}, players:mode.players||2,
     build:mode.build, serve:mode.serve, score:mode.score, ai:mode.ai, tick:mode.tick };
-  game=new Match(cfg); game.modeId=modeId; game.campaign=opts.campaign||null;
+  Economy.resetRunSb(); game=new Match(cfg); game.modeId=modeId; game.campaign=opts.campaign||null;
   UI.enterGame(mode);
   running=true; lastT=now(); acc=0;
 }
@@ -1389,7 +1390,7 @@ const UI=(function(){
       $('#resVerdict').textContent=r.newBest?'NEW BEST!':'GAME OVER'; $('#resVerdict').className='verdict '+(r.newBest?'win':'lose');
       $('#resScore').textContent=`${r.soloScore} returns · best ${S.stats.survivalBest||r.soloScore}`;
       const rew={rally:6+r.soloScore*2, gem:Math.floor(r.soloScore/12)};
-      for(const k in rew){ if(rew[k]>0){ Economy.earn(k,rew[k],'result'); const d=document.createElement('div'); d.className='reward'; d.innerHTML=`${icons[k]} +${rew[k]}`; rr.appendChild(d);} }
+      for(const k in rew){ if(rew[k]>0){ Economy.earn(k,rew[k], k==='rally'?'survival':'result'); const d=document.createElement('div'); d.className='reward'; d.innerHTML=`${icons[k]} +${rew[k]}`; rr.appendChild(d);} }
       $('#resExtra').textContent=r.newBest?'A new personal best. Go again?':'The wall wins eventually. Go again?';
       nextBtn.textContent='Play again'; nextBtn.onclick=()=>{ startMatch(m.modeId,{}); };
       saveNow(); return;
@@ -1400,7 +1401,6 @@ const UI=(function(){
     let rew={rally: r.win? 20:6, gem: r.win?2:0};
     if(r.win&&m.scores.ai===0){ rew.gem+=3; rew.rally+=10; }
     for(const k in rew){ if(rew[k]>0)Economy.earn(k,rew[k],k==='rally'&&r.win?'winmatch':'result'); }
-    if(r.win) Economy.earn('rally',0,'winmatch');
     for(const k in rew){ if(rew[k]>0){ const d=document.createElement('div'); d.className='reward'; d.innerHTML=`${icons[k]} +${rew[k]}`; rr.appendChild(d);} }
     // campaign advance
     if(m.campaign!=null){

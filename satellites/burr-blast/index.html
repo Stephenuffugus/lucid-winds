@@ -1901,7 +1901,11 @@ function loseLevel(){
   SFX.lose();
   if(_expedition){ expLoseFort(); return; }
   var progressed = G.blocksDestroyed>0 || (G.pestsTotal-G.pestsAlive)>0;
-  if(progressed){ try{ window._sbCapEarn(1, 'burr-blast:progress'); }catch(e){} }
+  if(progressed){                                   // consolation Sunbeam pays ONCE per level/depth — no farming a retry of an easy patch
+    SAVE.lossPaid = SAVE.lossPaid || {};
+    var _lk = _endless ? ('e'+_endlessN) : ('n'+G.level.n);
+    if(!SAVE.lossPaid[_lk]){ SAVE.lossPaid[_lk]=1; persist(); try{ window._sbCapEarn(1, 'burr-blast:progress'); }catch(e){} }
+  }
   showResult(false, 0, 0);
 }
 
@@ -2626,7 +2630,7 @@ function showResult(won, stars, coins){
   $('resReward').textContent = won ? ('+ '+coins+' 🪙  ·  next patch at '+fmt(G.star2)+' / '+fmt(G.star3)) : 'Give it another go.';
   $('btnNext').style.display = won ? 'block':'none';
   $('btnNext').textContent = (won && G.level.boss) ? 'The End →' : 'Next patch →';
-  if(_endless && won){ if(_endlessN>SAVE.endlessBest){ SAVE.endlessBest=_endlessN; persist(); } try{ window._sbCapEarn(2,'burr-blast:endless'); }catch(e){} }
+  if(_endless && won){ if(_endlessN>SAVE.endlessBest){ SAVE.endlessBest=_endlessN; persist(); try{ window._sbCapEarn(2,'burr-blast:endless'); }catch(e){} } }   // pay only for a NEW depth record, not every trivial win
   showScreen('scr-result');
 }
 

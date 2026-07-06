@@ -1639,6 +1639,7 @@ function onLevelClear(){
   if(!game.runCounted){ stats.runs=(stats.runs||0)+1; game.runCounted=true; }
   if(game.meters>(stats.maxAlt||0)) stats.maxAlt=game.meters; saveStats();
   checkAch();
+  var sunLc=earnSunbeams(Math.max(game.meters, L.targetM||0)); if(sunLc>0) toast('☀ +'+sunLc+' sunbeams');   // adventure clears earn too (was endless/daily-death only); once-per-run + 30/day capped
   $('le-title').textContent='World '+(L.world+1)+' · Level '+(L.lw+1);
   $('le-sub').textContent=WORLD_NAMES[L.world]||'';
   $('le-stars').innerHTML=starRow(stars);
