@@ -56,6 +56,29 @@ The plant hero, the two bosses, and every pest. Row-major, left→right:
   - `thrip` — a tiny thin dark sliver-bug, fast.
   - `vineborer` — a drill-headed grub, pointed boring snout, striped body.
 
+## SHEET 1B — THE OTHER FOUR BOSSES  ·  2×2 grid, 512×512 cells, flat magenta
+The multi-stage build adds four more bosses (one per new ground). Paint them BIGGER
+than pests, same menacing-cute storybook style. All wired to `boss_<id>` — drop them in
+`assets/` and they replace the procedural placeholder.
+
+| | 1 | 2 |
+|---|---|---|
+| 1 | `boss_tideshell` | `boss_broodmother` |
+| 2 | `boss_frostmaw` | `boss_wiltqueen` |
+
+- **boss_tideshell** *(The Sunken Beds)* — a huge bog "matron": a low, waxy domed
+  limpet/snail shield clamped over a soft green body, dripping slime, small wary eyes
+  peeking from under the rim. Teal-green (#4a8a76). Slow, armored, patient.
+- **boss_broodmother** *(The Hothouse Understory)* — a Cordyceps "Broodmother": a
+  bulbous fungal spore-sac body, violet (#9b7ad6), ringed by radiating pale spore
+  stalks/asters, faint glow, two dark eyes. Floating/rooted, eerie-regal.
+- **boss_frostmaw** *(The Long Dark Conservatory)* — a huge frost grub, pale
+  blue-grey (#5a7f92) armored plates rimed with frost, cold breath, blunt chewing
+  face. Same body plan as the Grubfather but frozen-over.
+- **boss_wiltqueen** *(the true final boss)* — The Wilt Queen: a regal wilted-flower
+  grub-queen, dusk purple (#6a5a7a), a crown of drooping petals, sharp sad eyes.
+  The end of the game — worth extra polish.
+
 ## SHEET 2 — COMPANIONS A  ·  4×3 grid, 512×512 cells, flat magenta
 Friendly familiars that orbit and help the plant. Big expressive faces, small readable silhouettes.
 
@@ -85,7 +108,20 @@ Friendly familiars that orbit and help the plant. Big expressive faces, small re
 ## SHEET 4 — WORLD & TITLE  ·  full-bleed (NO magenta)
 | asset | file | notes |
 |---|---|---|
-| Arena background | `assets/bg.jpg` (or a cell) | The greenhouse-at-midnight **floor**, seen top-down: dark mossy soil, faint botanical texture, gentle vignette, calm and readable so bright pests/companions pop over it. One image, roughly square/portrait. |
+| Arena background | `assets/bg.jpg` (or a cell) | The greenhouse-at-midnight **floor**, seen top-down: dark mossy soil, faint botanical texture, gentle vignette, calm and readable so bright pests/companions pop over it. One image, roughly square/portrait. Used as the fallback for any ground without its own bg. |
+
+### SHEET 4B — FIVE GROUND BACKGROUNDS *(optional — each ground has a procedural tint if absent)*  ·  full-bleed (NO magenta)
+One top-down **floor** image per ground, same readable-and-calm rule (bright
+sprites must pop over it). Each is optional; if missing, the game tints the floor
+with that ground's palette. Filenames wired exactly:
+
+| ground | file | mood / palette |
+|---|---|---|
+| Greenhouse Floor | `assets/bg_greenhouse.jpg` | dark mossy soil, sage flecks (the default look) |
+| The Sunken Beds | `assets/bg_sunkenbeds.jpg` | wet peat, still black water, teal sheen |
+| The Sundrift Meadow | `assets/bg_sundrift.jpg` | warm gold dust, sun-baked dry earth |
+| The Hothouse Understory | `assets/bg_understory.jpg` | violet gloom, glowing spores, fungal shelves |
+| The Long Dark Conservatory | `assets/bg_longdark.jpg` | icy blue-black, frost rime, cold starlight |
 | Logo / wordmark | `logo.png` (transparent) | **BRAMBLEWICK** as a chunky, living-vine storybook wordmark — gold + sage on transparent, a thorn/leaf flourish. No subtitle. |
 | Portal thumbnail | `portal-assets/thumbs/bramblewick.jpg` (~480×480, ≤150KB) | Hero shot: the little plant hero mid-fight, ringed by familiars, a wave of pests closing in, gold reaction sparks. Reads at 480px. |
 
@@ -101,9 +137,12 @@ botanical emblem. (Ask me for the exact `icon_<id>` filenames when you get here.
 
 ## Suggested order (biggest lift first)
 1. **Sheet 1** (creatures) — the whole battlefield transforms.
-2. **Sheets 2–3** (companions) — your orbiting menagerie.
-3. **Sheet 4** — background + logo + thumbnail (Bramblewick currently shows a 🌿 glyph in the portal).
-4. **Sheet 5** — draft icons, whenever.
+2. **Sheet 1B** (the four new bosses) — one boss per new ground; big visual payoff.
+3. **Sheets 2–3** (companions) — your orbiting menagerie.
+4. **Sheet 4 + 4B** — the arena background, five per-ground floors, logo + thumbnail
+   (Bramblewick currently shows a 🌿 glyph in the portal). The five ground floors are
+   optional — the game tints each ground procedurally until they land.
+5. **Sheet 5** — draft icons, whenever.
 
 Filenames are wired exactly as written → drop a batch in `satellites/bramblewick/assets/` (or hand me
 the magenta sheet and I'll cut it with `scripts/cut_burrblast.py`-style tooling), and it appears.
