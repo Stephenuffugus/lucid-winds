@@ -653,6 +653,20 @@ var BIOMES=[
   { nm:'Frost Fen',   pal:{ wash:'rgba(50,64,84,0.18)',  dab:'rgba(120,140,170,0.32)',acc:'rgba(170,200,230,0.34)',kind:'stone', path:'#5c6a7c', edge:'#39424e' } }
 ];
 function curPal(){ return (G && G.map && BIOMES[G.map.biome] && BIOMES[G.map.biome].pal) || BIOMES[0].pal; }
+/* biome MECHANICS: each biome twists how pests behave (mild — tune here after playtest).
+   Index matches BIOMES. Kitchen(0) is neutral so the L1 tutorial is unaffected. */
+var BIOME_FX=[
+  { hp:1.00, spd:1.00, armor:0, twist:'a gentle plot' },
+  { hp:1.00, spd:0.94, armor:1, twist:'pests come armored' },        // Stoneyard → armor-melt (Pitcher)
+  { hp:1.00, spd:1.10, armor:0, twist:'slick — pests move faster' }, // Lily Pond → slow (Sundew)
+  { hp:1.00, spd:1.14, armor:0, twist:'climbers — pests move faster' },// Trellis → slow (Sundew)
+  { hp:1.08, spd:1.00, armor:0, twist:'sun-hardened — sturdier pests' },// Sunny Dunes → damage
+  { hp:1.12, spd:0.92, armor:0, twist:'overgrown — slow but sturdy' }, // Moss Hollow → sustained damage
+  { hp:1.06, spd:1.06, armor:0, twist:'enraged — faster and tougher' },// Ember Ridge → all-round
+  { hp:1.12, spd:0.86, armor:1, twist:'frozen shells — slow, armored' }// Frost Fen → armor-melt + patience
+];
+function biomeFx(){ return BIOME_FX[(G&&G.map&&G.map.biome)||0]||BIOME_FX[0]; }
+function announceBiome(){ if(!G||!G.map)return; var b=G.map.biome||0; if(b===0)return; banner(BIOMES[b].nm+' — '+BIOME_FX[b].twist, false); }
 
 /* ===== procedural map generator: many varied, valid, buildable layouts (a snake from top
    gate to the compost bin). Seeded → the pool is stable so a level always draws the same map. ===== */
@@ -827,7 +841,7 @@ function saveSoon(){ if(_saveT)clearTimeout(_saveT); _saveT=setTimeout(saveGame,
    CANVAS / VIEW
    ===================================================================== */
 var canvas=el('game'), ctx=canvas.getContext('2d');
-var view={ cssW:0,cssH:0,dpr:1,scale:1,offX:0,offY:0 };
+var view={ cssW:0,cssH:0,dpr:1,scale:1,offX:0,offY:0,buyLift:0,buyLiftT:0 };
 function resize(){
   var cssW=window.innerWidth, cssH=window.innerHeight, dpr=Math.min(2,window.devicePixelRatio||1);
   canvas.width=Math.floor(cssW*dpr); canvas.height=Math.floor(cssH*dpr);
@@ -837,7 +851,7 @@ function resize(){
   view.offX=(cssW-VW*scale)/2; view.offY=(cssH-VH*scale)/2;
 }
 function toVX(cx){ return (cx-view.offX)/view.scale; }
-function toVY(cy){ return (cy-view.offY)/view.scale; }
+function toVY(cy){ return (cy-view.offY-view.buyLift)/view.scale; }
 window.addEventListener('resize',resize);
 
 /* =====================================================================
@@ -977,10 +991,11 @@ function spawnEnemy(typeId, boss){
   var hpS=(boss?bossHpScale(L):levelHpScale(L))*G.cfg.hpMult;
   if(G.endless) hpS*=Math.pow(1.06,G.endlessWave)*1.0;
   var spdS=levelSpeedScale(L)*G.cfg.speedMult;
+  var bfx=biomeFx();   // this map's biome twist (hp/speed/armor)
   var e={
     tid:typeId, boss:!!boss, name:base.name,
-    hpMax:Math.round(base.hp*hpS), hp:Math.round(base.hp*hpS),
-    baseSpd:base.spd*spdS, armor:base.armor||0, fly:base.fly, r:base.r, col:base.col,
+    hpMax:Math.round(base.hp*hpS*bfx.hp), hp:Math.round(base.hp*hpS*bfx.hp),
+    baseSpd:base.spd*spdS*bfx.spd, armor:(base.armor||0)+bfx.armor, fly:base.fly, r:base.r, col:base.col,
     bounty:Math.max(1,Math.round(base.bounty*bountyScale(L))), leak:base.leak, special:base.special,
     d:0, // dist along path (set below)
     dots:[], slowT:0, slowF:1, rootT:0, vuln:1, vulnT:0,
@@ -1849,7 +1864,9 @@ function render(){
   // letterbox black bars are default bg
   var sx=0,sy=0;
   if(G&&G.shake>0&&!save.settings.reducedMotion){ sx=(rnd()-0.5)*G.shake; sy=(rnd()-0.5)*G.shake; }
-  ctx.setTransform(view.dpr*view.scale,0,0,view.dpr*view.scale, view.dpr*(view.offX+sx), view.dpr*(view.offY+sy));
+  view.buyLift += (view.buyLiftT - view.buyLift)*0.25;   // ease the board up/down when the buy sheet opens over a low plot
+  if(Math.abs(view.buyLiftT-view.buyLift)<0.5) view.buyLift=view.buyLiftT;
+  ctx.setTransform(view.dpr*view.scale,0,0,view.dpr*view.scale, view.dpr*(view.offX+sx), view.dpr*(view.offY+view.buyLift+sy));
   // clip to field
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
   drawBackground(t);
@@ -1936,13 +1953,17 @@ function openBuy(plotIdx){
   el('buyDesc').innerHTML='Tap a plant to preview its range — tap again to plant it.';
   for(var i=0;i<kids.length;i++){ if(G.seeds>=kids[i]._cost){ selectBuy(kids[i]._id, kids[i]); break; } }   // auto-preview first affordable → range ring shows at once
   el('mngSheet').classList.remove('show'); el('buySheet').classList.add('show');
+  // lift the board so the selected plot + its range ring sit ABOVE the sheet (Stephen: menu was covering the plot)
+  var pl=G.geom.plots[plotIdx], sheetH=el('buySheet').offsetHeight||220;
+  var plotScreenY=view.offY + pl.y*view.scale, maxY=view.cssH - sheetH - 118*view.scale;
+  view.buyLiftT = (plotScreenY>maxY) ? (maxY-plotScreenY) : 0;
 }
-function closeBuy(){ el('buySheet').classList.remove('show'); if(G)G.selPlot=-1; previewTower=null; }
+function closeBuy(){ el('buySheet').classList.remove('show'); if(G)G.selPlot=-1; previewTower=null; view.buyLiftT=0; }
 
 /* manage sheet */
 var STAGE_NAME=['Sprout','Growing','Mature','Flowering','Ancient'];
 function openManage(t){
-  G.selTower=t; G.selPlot=-1; el('buySheet').classList.remove('show');
+  G.selTower=t; G.selPlot=-1; el('buySheet').classList.remove('show'); view.buyLiftT=0;
   var def=TOWERS[t.id];
   var name=(t.tier>=4&&t.path)?def.fork[t.path].name:def.name;
   el('mngTitle').textContent=name;
@@ -2038,6 +2059,7 @@ function highestUnlocked(diff){ var h=1; for(var L=1;L<=13;L++){ if(save.levels[
    ===================================================================== */
 function startLevel(diff,level){
   audioInit(); audioResume();
+  view.buyLift=0; view.buyLiftT=0;   // never carry a board-lift into a fresh level
   var d=DIFFS[diff], mapIdx=levelMap(level);
   var already=!!(save.levels[diff+'-'+level]&&save.levels[diff+'-'+level].cleared);
   // start Seeds scale with level (HP ramps ~2.4x by L13, so the opening budget must too)
@@ -2046,14 +2068,14 @@ function startLevel(diff,level){
   var cfg={ diff:diff, level:level, mapIdx:mapIdx, hpMult:d.hpMult, speedMult:d.speedMult,
     startLeaves:d.leaves, startSeeds:startSeeds, waves:buildWaves(level,false), endless:false, levelKey:diff+'-'+level,
     alreadyCleared:already };
-  G=newRun(cfg); UIState='GAME'; show(null); showHUD(true); updateHUD(); updateWaveBtn(); setSpeedBtn();
+  G=newRun(cfg); announceBiome(); UIState='GAME'; show(null); showHUD(true); updateHUD(); updateWaveBtn(); setSpeedBtn();
   if(!save.tut.done && level===1){ showTip('Pests are coming for your garden. Tap a dashed soil spot to plant a friend.'); }
 }
 function startEndless(diff){
   audioInit(); audioResume();
   var d=DIFFS[diff];
   var cfg={ diff:diff, level:12, mapIdx:randomMapIdx(), hpMult:d.hpMult, speedMult:d.speedMult, startLeaves:d.leaves, startSeeds:d.seeds+180, waves:[], endless:true, levelKey:'endless' };   // endless draws a random map each run for variety
-  G=newRun(cfg); UIState='GAME'; show(null); showHUD(true); updateHUD(); updateWaveBtn(); setSpeedBtn();
+  G=newRun(cfg); announceBiome(); UIState='GAME'; show(null); showHUD(true); updateHUD(); updateWaveBtn(); setSpeedBtn();
   banner('The Long Weed',true);
 }
 
@@ -2238,7 +2260,7 @@ function buildPlantShop(grid){
     var def=TOWERS[id], starter=TOWER_START.indexOf(id)>=0, have=towerUnlocked(id), pr=towerPrice(id);
     var card=document.createElement('div'); card.className='card';
     var cv=document.createElement('canvas'); cv.width=200; cv.height=140; card.appendChild(cv);
-    var c=cv.getContext('2d'); c.setTransform(2,0,0,2,100,112); drawTower(c,0,0,id,3,1.6,-Math.PI/2,0);
+    var c=cv.getContext('2d'); drawBuyIcon(c, id);   // fit-to-canvas (no crop/zoom) — same clean fit as the build tray
     var nm=document.createElement('div'); nm.className='nm'; nm.textContent=def.name; card.appendChild(nm);
     var rr=document.createElement('div'); rr.className='rar'; rr.style.color='var(--muted)'; rr.style.fontSize='10px'; rr.style.lineHeight='1.25';
     rr.textContent = starter?'Starter plant':(have?'✓ In your greenhouse':towerWhy(id)); card.appendChild(rr);
@@ -2253,7 +2275,7 @@ function buildPlantShop(grid){
 }
 function drawShopPreview(c,cat,id){
   c.setTransform(1,0,0,1,0,0);
-  if(cat==='skin'){ var prev=save.cosmetics.skin; save.cosmetics.skin=id; c.setTransform(2,0,0,2,50,74); drawTower(c,0,0,'marigold',3,1.6,-Math.PI/2,0); c.setTransform(2,0,0,2,150,74); drawTower(c,0,0,'beehive',3,1.6,-Math.PI/2,0); save.cosmetics.skin=prev; }
+  if(cat==='skin'){ var prev=save.cosmetics.skin; save.cosmetics.skin=id; c.setTransform(1.35,0,0,1.35,54,118); drawTower(c,0,0,'marigold',3,1.2,-Math.PI/2,0); c.setTransform(1.35,0,0,1.35,146,118); drawTower(c,0,0,'beehive',3,1.2,-Math.PI/2,0); save.cosmetics.skin=prev; }
   else if(cat==='map'){ var pm=save.cosmetics.map; save.cosmetics.map=id; c.save(); c.beginPath(); c.rect(0,0,200,140); c.clip(); c.scale(200/VW,140/VH);
     var g; if(id==='dawn'){g=c.createLinearGradient(0,0,0,VH);g.addColorStop(0,'#3a2a3a');g.addColorStop(1,'#2a2418');}
     else if(id==='rainy'){g=c.createLinearGradient(0,0,0,VH);g.addColorStop(0,'#0a0e14');g.addColorStop(1,'#05060a');}
