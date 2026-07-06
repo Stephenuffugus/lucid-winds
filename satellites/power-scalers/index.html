@@ -101,6 +101,7 @@
   .xpbar{height:5px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
   .xpbar .xpf{height:100%;background:linear-gradient(90deg,var(--aur-violet),var(--aur-magenta))}
   .card .kill{position:absolute;top:10px;right:10px;z-index:5;width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:var(--mist-dim);font-size:14px;display:grid;place-items:center}
+  .card .kill::before{content:'';position:absolute;inset:-10px}   /* hit-slop → 44px tap target, glyph stays small */
   .card .kill:hover{color:var(--hp);border-color:var(--hp)}
   .pts-flag{position:absolute;top:10px;left:10px;z-index:5;font-family:var(--font-mono);font-size:10px;padding:3px 7px;border-radius:999px;background:linear-gradient(100deg,var(--aur-teal),var(--aur-violet));color:#08110f;font-weight:700}
 
@@ -185,7 +186,8 @@
   .enhance h4{margin:0 0 8px;font-size:13px;font-family:var(--font-mono);letter-spacing:.08em;color:var(--mist);text-transform:uppercase}
   .enh-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .enh-pill{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-family:var(--font-mono);font-size:12px}
-  .enh-pill button{width:22px;height:22px;border-radius:6px;border:1px solid var(--line-2);background:var(--void-2);color:var(--ghost);font-size:14px;line-height:1}
+  .enh-pill button{position:relative;width:22px;height:22px;border-radius:6px;border:1px solid var(--line-2);background:var(--void-2);color:var(--ghost);font-size:14px;line-height:1}
+  .enh-pill button::before{content:'';position:absolute;inset:-11px}   /* hit-slop → 44px tap target */
 
   .name-stage{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
   @media(min-width:640px){.name-stage{grid-template-columns:300px 1fr}}
@@ -196,7 +198,7 @@
   .txt.small{font-family:var(--font-body);font-size:15px}
   .art-hint{font-size:12px;color:var(--mist-dim);line-height:1.5}
   .emoji-row{display:flex;gap:6px;flex-wrap:wrap}
-  .emoji-pick{width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font-size:20px;display:grid;place-items:center}
+  .emoji-pick{width:44px;height:44px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font-size:20px;display:grid;place-items:center}
   .emoji-pick.on{border-color:var(--aur-violet);box-shadow:0 0 0 2px rgba(139,108,240,.3)}
 
   /* character sheet */
@@ -236,7 +238,7 @@
   .tedge{stroke:rgba(160,150,210,.12);stroke-width:2}
   .tedge.on{stroke:rgba(139,108,240,.55);stroke-width:3}
   .zoombtns{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px;z-index:5}
-  .zoombtns button{width:36px;height:36px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ghost);font-size:20px;line-height:1;display:grid;place-items:center}
+  .zoombtns button{width:44px;height:44px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ghost);font-size:20px;line-height:1;display:grid;place-items:center}
   .legend{position:absolute;left:10px;top:10px;z-index:5;display:flex;gap:10px;font-family:var(--font-mono);font-size:9px;color:var(--mist);background:rgba(11,10,20,.6);padding:6px 9px;border-radius:8px;border:1px solid var(--line);flex-wrap:wrap;max-width:70%}
   .legend .dotm{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px;vertical-align:middle}
   .node-panel{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);padding:14px;margin-top:10px;min-height:96px}
@@ -1302,7 +1304,7 @@ function toast(msg,kind){
 }
 function topbar(){
   return `<div class="topbar"><div class="brand" data-act="home"><div class="k">LUCID WINDS</div><div class="s">OC ARENA</div></div>
-    <div class="spacer"></div><div class="wallet"><div class="coin"><span class="sym">✦</span><b>${state.glory}</b></div></div></div>`;
+    <div class="spacer"></div><div class="wallet"><div class="coin"><span class="sym">✦</span><b>${state.glory}</b></div></div><button data-act="exit" title="Back to portal" aria-label="Back to portal" style="width:44px;height:44px;min-width:44px;border-radius:10px;border:1px solid var(--line);background:var(--void-2);color:var(--ghost);font-size:16px;cursor:pointer;flex:0 0 auto;margin-left:8px;display:grid;place-items:center">✕</button></div>`;
 }
 const NAV=[{k:"home",ic:"◈",n:"Roster"},{k:"battle",ic:"⚔",n:"Battle"},{k:"gauntlet",ic:"🐉",n:"Gauntlet"},{k:"tourney",ic:"♛",n:"Tourney"},{k:"alliances",ic:"⛨",n:"Allies"}];
 function renderNav(){
@@ -2140,6 +2142,7 @@ function handleAct(act,el,e){
   const oc=currentOC();
   switch(act){
     case "home": goto("home"); break;
+    case "exit": SWS_EXIT(); break;
     case "nav": goto(el.dataset.k); break;
     case "startCreate": state.draft=newDraft(); state.screen="create"; render(); break;
     case "cancelCreate": state.draft=null; goto("home"); break;
@@ -2242,6 +2245,12 @@ async function boot(){
   try{ await loadState(); }catch(e){ state.ownedAugments=normalizeOwned(state.ownedAugments||STARTER_AUGMENTS); state.ownedJewels=normalizeOwnedJewels(state.ownedJewels||STARTER_JEWELS); }
   render();
 }
+/* portal exit (same-origin embed handshake — fleet standard) */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+function SWS_EXIT(){ if(SWS_EMBED&&parent!==window){ try{parent.postMessage({sws:'close'},'*');}catch(e){} return; } location.href='https://lucidwinds.com/portal/'; }
+window.SWS_EXIT=SWS_EXIT;
+if(SWS_EMBED&&parent!==window){ try{parent.postMessage({sws:'ready'},'*');}catch(e){} }
 boot();
 </script>
 </body>

@@ -299,7 +299,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
   <div class="sub">You can switch anytime. Harder modes pay more Sap.</div>
   <div class="diff-card sprout" data-diff="sprout"><h3>🌱 Sprout · Easy</h3><p>25 Leaves, 180 Seeds, gentler pests. Just relax and plant.</p></div>
   <div class="diff-card garden" data-diff="garden"><h3>🌿 Garden · Normal</h3><p>20 Leaves, 150 Seeds. The intended challenge.</p></div>
-  <div class="diff-card bramble locked" data-diff="bramble"><h3>🔒 Bramble · Hard</h3><p>15 Leaves, 130 Seeds, tougher and faster. Pays +50% Sap.<br><i id="brambleReq">Clear the World 1 boss on Garden to unlock.</i></p></div>
+  <div class="diff-card bramble locked" data-diff="bramble"><h3>🔒 Bramble · Hard</h3><p>15 Leaves, 130 Seeds, tougher and faster. Pays +50% Sap.<br><i id="brambleReq">Clear the finale (Level 13, the Aphid Queen) on Garden to unlock.</i></p></div>
   <button class="btn wide ghost sm" id="btnDiffBack" style="margin-top:16px">← Back</button>
 </div>
 
@@ -1972,7 +1972,7 @@ function openLevels(diff){ UIState='LEVELS'; pendingDiff=diff;
   var anyBoss=save.levels['sprout-13']&&save.levels['sprout-13'].cleared || save.levels['garden-13']&&save.levels['garden-13'].cleared || save.levels['bramble-13']&&save.levels['bramble-13'].cleared;
   var en=el('lsEndless');
   if(anyBoss){ en.classList.remove('locked'); el('lsEndlessSub').textContent='Best wave: '+save.endless.bestWave+' · infinite pests, one arena.'; en.onclick=function(){ startEndless(pendingDiff); }; }
-  else { en.classList.add('locked'); el('lsEndlessSub').textContent='Clear the World 1 boss to unlock.'; en.onclick=null; }
+  else { en.classList.add('locked'); el('lsEndlessSub').textContent='Clear the finale (Level 13) to unlock.'; en.onclick=null; }
   show('scr-levels');
 }
 function starStr(rec){ var n=rec&&rec.stars?rec.stars:0; return '★★★'.slice(0,n)+'☆☆☆'.slice(0,3-n); }
@@ -2112,7 +2112,7 @@ el('btnSettings').onclick=function(){ UIState='SETTINGS'; settingsFrom='menu'; r
 el('btnDiffBack').onclick=gotoMenu;
 el('btnShopBack').onclick=gotoMenu;
 el('btnLevelsBack').onclick=openDiff;
-Array.prototype.forEach.call(document.querySelectorAll('.diff-card'),function(c){ c.onclick=function(){ if(c.classList.contains('locked')){ toast('Clear the Garden boss to unlock Bramble.'); return; } openLevels(c.getAttribute('data-diff')); }; });
+Array.prototype.forEach.call(document.querySelectorAll('.diff-card'),function(c){ c.onclick=function(){ if(c.classList.contains('locked')){ toast('Clear the Garden finale (Level 13) to unlock Bramble.'); return; } openLevels(c.getAttribute('data-diff')); }; });
 
 el('hbPause').onclick=function(){ pauseGame(); };
 el('btnWave').onclick=function(){ if(!G)return; if(G.running)return; audioResume(); startWave(); };
