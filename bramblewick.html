@@ -797,8 +797,12 @@ function companionAction(c,pl){
   else if(k==='trail'){ gridQuery(pl.x,pl.y,26,function(o){ if(o.active) applyStatus(o,st,1); }); }
 }
 function drawCompanions(){ for(var i=0;i<G.companions.length;i++){ var c=G.companions[i]; var col=c.def.status?ST_META[c.def.status].col:'#9ccf6a';
-  ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.45)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(c.x,c.y,4.6,0,6.283); ctx.fill(); ctx.stroke();
-  if(c.def.rare){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(c.x,c.y,7.5,0,6.283); ctx.stroke(); } } }
+  ctx.save(); ctx.translate(c.x,c.y);
+  if(!ART.tryImg('companion_'+c.def.id, ctx, 18)){   // painted familiar (else the coloured dot)
+    ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.45)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(0,0,4.6,0,6.283); ctx.fill(); ctx.stroke();
+  }
+  if(c.def.rare){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,10,0,6.283); ctx.stroke(); }
+  ctx.restore(); } }
 
 /* ==================================================================
    UPDATE
@@ -1023,10 +1027,31 @@ function draw(){
   // level-up draft overlay
   if(G.state==='LEVELUP' && G.draft){ drawDraft(); }
 }
+/* ---------- ART: painted sprites drop in behind the procedural draw (magenta-cut PNGs in assets/) ---------- */
+var ART=(function(){
+  var imgs={}, ready={};
+  function load(key,src){ var im=new Image(); im.onload=function(){ready[key]=1;}; im.src=src; imgs[key]=im; }
+  function tryImg(key,cx,size){ var im=imgs[key]; if(im&&ready[key]){ var mx=Math.max(im.width,im.height)||1, dw=im.width/mx*size, dh=im.height/mx*size; cx.drawImage(im,-dw/2,-dh/2,dw,dh); return true; } return false; }
+  function get(key){ return (ready[key]&&imgs[key])?imgs[key]:null; }
+  return {load:load, tryImg:tryImg, get:get};
+})();
+(function loadArt(){
+  var V='?v=2026-07-06';
+  ['player',
+   'pest_aphid','pest_beetle','pest_locust','pest_slug','pest_wasp','pest_mite','pest_weevil','pest_scale','pest_mealybug','pest_cutworm','pest_thrip','pest_vineborer',
+   'boss_grubfather','boss_stormwing',
+   'companion_ladybug','companion_firefly','companion_bee','companion_butterfly','companion_hummingbird','companion_spider','companion_mantis','companion_seahorse','companion_toad','companion_mammoth','companion_scorpion','companion_pangolin','companion_hedgehog','companion_snail','companion_worm','companion_koi','companion_jellyfish','companion_koala','companion_sprite','companion_fawn','companion_raccoon','companion_owl','companion_cicada','companion_beholder'
+  ].forEach(function(k){ ART.load(k,'assets/'+k+'.png'+V); });
+  ART.load('bg','assets/bg.jpg'+V);
+})();
 function drawBackground(){
+  var _bg=ART.get('bg');
+  if(_bg){ var s2=Math.max(VW/_bg.width,VH/_bg.height),dw=_bg.width*s2,dh=_bg.height*s2; ctx.drawImage(_bg,(VW-dw)/2,(VH-dh)/2,dw,dh); }
+  else {
   // midnight greenhouse floor
   var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#0f150d'); g.addColorStop(1,'#070a06');
   ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  }
   if(!store.settings.reducedMotion){ ctx.fillStyle='rgba(122,179,86,0.06)';
     for(var i=0;i<18;i++){ var x=(i*97+31)%VW, y=(i*53+((G?G.time*6:0)))%VH; ctx.fillRect(x,y,2,2); } }
   // vignette
@@ -1036,6 +1061,7 @@ function drawPlant(){
   var pl=G.player; ctx.save(); ctx.translate(pl.x,pl.y);
   // hurt flash ring
   if(pl.iframe>0){ ctx.globalAlpha=0.4+0.3*Math.sin(G.time*40); }
+  if(ART.tryImg('player',ctx,38)){ ctx.globalAlpha=1; ctx.restore(); return; }   // painted plant hero
   // roots/base
   ctx.strokeStyle='#4e7d33'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(0,-14); ctx.stroke();
   // crown bulb
@@ -1052,6 +1078,7 @@ function drawPest(p){
   if(p.freezeT>0) col='#bfe6f2'; else if(p.rootT>0) col='#c9d67a';
   ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.5;
   var r=p.r, s=p.meta.shape;
+  if(!ART.tryImg((p.boss?'boss_':'pest_')+p.type, ctx, r*2.4)){   // painted pest/boss art (else the shape below)
   ctx.beginPath();
   if(p.boss){
     if(p.type==='stormwing'){ // winged locust queen
@@ -1080,6 +1107,7 @@ function drawPest(p){
   else if(s==='sliver'){ ctx.ellipse(0,0,r*0.34,r,0,0,6.283); ctx.fill(); ctx.stroke(); }
   else if(s==='drill'){ ctx.moveTo(0,-r); ctx.lineTo(r*0.5,-r*0.2); ctx.lineTo(r*0.38,r); ctx.lineTo(-r*0.38,r); ctx.lineTo(-r*0.5,-r*0.2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.strokeStyle='rgba(0,0,0,0.35)'; for(var d2=-1;d2<=1;d2++){ ctx.beginPath(); ctx.moveTo(-r*0.4,d2*r*0.35); ctx.lineTo(r*0.4,d2*r*0.35); ctx.stroke(); } }
   else { ctx.arc(0,0,r,0,6.283); ctx.fill(); ctx.stroke(); }
+  }
   ctx.restore();
   if(p.elite && !p.boss){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,p.r+4,0,6.283); ctx.stroke(); }
   // status glyph ring
