@@ -322,10 +322,11 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
     <span class="ls-meter">🍯 <span id="shopSap">0</span> Sap</span>
   </div>
   <h2 class="sh" style="margin-top:10px">The Potting Shed</h2>
-  <div class="sub">Spend Sap on looks. Cosmetics only, never power.</div>
+  <div class="sub">Grow your greenhouse — unlock new plants with Sap, then dress them up.</div>
   <div class="tabs">
-    <button class="tab on" data-cat="skin">Tower Skins</button>
-    <button class="tab" data-cat="map">Map Themes</button>
+    <button class="tab on" data-cat="plants">🌱 Plants</button>
+    <button class="tab" data-cat="skin">Skins</button>
+    <button class="tab" data-cat="map">Themes</button>
     <button class="tab" data-cat="mascot">Critters</button>
   </div>
   <div class="grid" id="shopGrid"></div>
@@ -581,6 +582,20 @@ var TOWERS={
         graft:[{id:'wide',label:'Wide Bloom',mods:{set:{splash:88}}},{id:'rapid',label:'Fast Bloom',mods:{rate:0.8}}]} } }
 };
 var TOWER_IDS=['marigold','cactus','puffball','sundew','beehive','pitcher','scarecrow','compost','sunflower'];
+/* --- tower unlock progression ("grow your greenhouse"): start with 3 plants, earn the rest with Sap.
+   Sap was cosmetic-only; now it also builds your actual arsenal, so there's a real meta-build. --- */
+var TOWER_START=['marigold','cactus','sundew'];   // damage + ground AoE + slow/control; marigold hits air at ★3 so no anti-air softlock
+var TOWER_UNLOCK=[
+  { id:'compost',   price:120, why:'Seed income — scale your economy.' },
+  { id:'beehive',   price:200, why:'Dedicated anti-air.' },
+  { id:'puffball',  price:320, why:'Splash + Spore for reactions.' },
+  { id:'pitcher',   price:460, why:'Acid melts armor and elites.' },
+  { id:'scarecrow', price:640, why:'Buffs the plants around it.' },
+  { id:'sunflower', price:900, why:'Charged sunbeam — the boss answer.' }
+];
+function towerPrice(id){ for(var i=0;i<TOWER_UNLOCK.length;i++) if(TOWER_UNLOCK[i].id===id) return TOWER_UNLOCK[i].price; return 0; }
+function towerWhy(id){ for(var i=0;i<TOWER_UNLOCK.length;i++) if(TOWER_UNLOCK[i].id===id) return TOWER_UNLOCK[i].why; return ''; }
+function towerUnlocked(id){ return TOWER_START.indexOf(id)>=0 || (save.towers && save.towers.indexOf(id)>=0); }
 
 /* =====================================================================
    ENEMY DATA
@@ -733,7 +748,7 @@ function skinTint(base){
 var SAVE_KEY='gg_save';
 function defaultSave(){
   var rm=false; try{ rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
-  return { ver:1, sap:0, levels:{}, endless:{bestWave:0,bestSap:0},
+  return { ver:1, sap:0, levels:{}, towers:[], endless:{bestWave:0,bestSap:0},
     cosmetics:{ skin:'greenhouse', map:'midnight', mascot:'ladybug', owned:['greenhouse','midnight','none','ladybug'] },
     settings:{ reducedMotion:!!rm, colorblindGlyphs:true, textScale:1, sfx:0.8, music:0.45, speedDefault:1 },
     brambleUnlocked:false, tut:{ done:false } };
@@ -745,6 +760,7 @@ function loadSave(){
   if(raw){ try{ var p=JSON.parse(raw); if(p&&typeof p==='object'){
     if(typeof p.sap==='number') d.sap=Math.max(0,Math.floor(p.sap));
     if(p.levels&&typeof p.levels==='object') d.levels=p.levels;
+    if(Array.isArray(p.towers)) d.towers=p.towers.filter(function(id){ return TOWER_IDS.indexOf(id)>=0 && TOWER_START.indexOf(id)<0; });
     if(p.endless){ d.endless.bestWave=Math.max(0,p.endless.bestWave|0); d.endless.bestSap=Math.max(0,p.endless.bestSap|0); }
     if(p.cosmetics){ for(var k in d.cosmetics){ if(k in p.cosmetics) d.cosmetics[k]=p.cosmetics[k]; }
       if(!Array.isArray(d.cosmetics.owned)) d.cosmetics.owned=defaultSave().cosmetics.owned;
@@ -1860,7 +1876,7 @@ function selectBuy(id, cell){
 }
 function buildBuyGrid(){
   var grid=el('buyGrid'); grid.innerHTML='';
-  TOWER_IDS.forEach(function(id){
+  TOWER_IDS.filter(towerUnlocked).forEach(function(id){   // only plants you've unlocked appear in the build tray
     var def=TOWERS[id];
     var cell=document.createElement('div'); cell.className='buy-cell';
     var cv=document.createElement('canvas'); cv.width=112; cv.height=112; cell.appendChild(cv);
@@ -2105,7 +2121,7 @@ drawPlots=function(){ _origDrawPlots(); if(G&&G.selPlot>=0&&previewTower){ var p
    ===================================================================== */
 el('exitBtn').onclick=function(){ window.SWS_EXIT(); };
 el('btnPlay').onclick=function(){ audioInit(); audioResume(); openDiff(); };
-el('btnShop').onclick=function(){ UIState='SHOP'; buildShop('skin'); show('scr-shop'); };
+el('btnShop').onclick=function(){ UIState='SHOP'; buildShop('plants'); show('scr-shop'); };
 el('btnHow').onclick=function(){ UIState='HOW'; show('scr-how'); };
 el('btnHowBack').onclick=gotoMenu;
 el('btnSettings').onclick=function(){ UIState='SETTINGS'; settingsFrom='menu'; refreshSettings(); show('scr-settings'); };
@@ -2159,6 +2175,7 @@ function buildShop(cat){ shopCat=cat||shopCat;
   Array.prototype.forEach.call(el('scr-shop').querySelectorAll('.tab'),function(t){ t.classList.toggle('on',t.getAttribute('data-cat')===shopCat); });
   el('shopSap').textContent=save.sap;
   var grid=el('shopGrid'); grid.innerHTML='';
+  if(shopCat==='plants'){ buildPlantShop(grid); return; }
   SKINS[shopCat].forEach(function(item){
     var owned=save.cosmetics.owned.indexOf(item.id)>=0;
     var equipped=save.cosmetics[shopCat]===item.id;
@@ -2173,6 +2190,24 @@ function buildShop(cat){ shopCat=cat||shopCat;
     else if(owned){ act.className+=' equip'; act.textContent='Equip'; act.onclick=function(){ save.cosmetics[shopCat]=item.id; saveGame(); buildShop(); }; }
     else { act.className+=' buy'+(save.sap<item.price?' cant':''); act.textContent='🍯 '+item.price;
       act.onclick=function(){ if(save.sap>=item.price){ save.sap-=item.price; save.cosmetics.owned.push(item.id); save.cosmetics[shopCat]=item.id; saveGame(); toast('Unlocked '+item.nm+'!'); tone('sine',700,1000,0.12,0.16); buildShop(); } else { toast('Not enough Sap. Keep playing!'); sfx.bad(); } }; }
+    card.appendChild(act);
+    grid.appendChild(card);
+  });
+}
+function buildPlantShop(grid){
+  TOWER_IDS.forEach(function(id){
+    var def=TOWERS[id], starter=TOWER_START.indexOf(id)>=0, have=towerUnlocked(id), pr=towerPrice(id);
+    var card=document.createElement('div'); card.className='card';
+    var cv=document.createElement('canvas'); cv.width=200; cv.height=140; card.appendChild(cv);
+    var c=cv.getContext('2d'); c.setTransform(2,0,0,2,100,112); drawTower(c,0,0,id,3,1.6,-Math.PI/2,0);
+    var nm=document.createElement('div'); nm.className='nm'; nm.textContent=def.name; card.appendChild(nm);
+    var rr=document.createElement('div'); rr.className='rar'; rr.style.color='var(--muted)'; rr.style.fontSize='10px'; rr.style.lineHeight='1.25';
+    rr.textContent = starter?'Starter plant':(have?'✓ In your greenhouse':towerWhy(id)); card.appendChild(rr);
+    var act=document.createElement('button'); act.className='act';
+    if(starter){ act.className+=' on'; act.textContent='Starter'; }
+    else if(have){ act.className+=' on'; act.textContent='✓ Grown'; }
+    else { act.className+=' buy'+(save.sap<pr?' cant':''); act.textContent='🍯 '+pr;
+      act.onclick=function(){ if(save.sap>=pr){ save.sap-=pr; if(!save.towers)save.towers=[]; if(save.towers.indexOf(id)<0)save.towers.push(id); saveGame(); toast('Grew '+def.name+'!'); tone('sine',700,1000,0.12,0.16); buildShop(); } else { toast('Not enough Sap. Keep playing!'); sfx.bad(); } }; }
     card.appendChild(act);
     grid.appendChild(card);
   });
