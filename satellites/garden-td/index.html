@@ -167,14 +167,19 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 .sheet-hd{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .sheet-hd .st{ font-weight:900; font-size:16px; }
 .sheet-hd .sx{ width:48px; height:48px; border-radius:10px; background:var(--coal); border:1px solid #3a4230; color:var(--cream); font-size:16px; cursor:pointer; }
-.buy-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.buy-cell{ background:var(--coal2); border:1px solid #3a4230; border-radius:12px; padding:6px 4px 8px; text-align:center;
-  display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; min-height:92px; }
+.buy-grid{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:2px 2px 6px; scroll-snap-type:x proximity; }
+.buy-cell{ background:var(--coal2); border:1px solid #3a4230; border-radius:12px; padding:6px 6px 8px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; flex:0 0 82px; min-height:108px; scroll-snap-align:start; }
 .buy-cell:active{ transform:scale(.96); }
-.buy-cell.cant{ opacity:.45; }
-.buy-cell canvas{ width:46px; height:46px; }
+.buy-cell.cant{ opacity:.5; }
+.buy-cell.sel{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.45); }
+.buy-cell canvas{ width:56px; height:56px; }
 .buy-cell .bn{ font-size:11px; font-weight:800; line-height:1.05; }
 .buy-cell .bc{ font-size:12px; font-weight:900; color:var(--gold); }
+.buy-desc{ margin-top:9px; font-size:12.5px; line-height:1.38; color:var(--cream); min-height:38px;
+  background:var(--coal); border:1px solid #3a4230; border-radius:11px; padding:9px 12px; }
+.buy-desc .bt{ color:var(--sage3); font-weight:900; }
+.buy-desc .tag{ display:block; margin-top:4px; font-size:10.8px; font-weight:800; color:var(--muted); letter-spacing:.2px; }
 .mng-top{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
 .mng-top canvas{ width:52px; height:52px; flex:0 0 auto; }
 .mng-info{ flex:1 1 auto; }
@@ -250,6 +255,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 <div class="sheet" id="buySheet">
   <div class="sheet-hd"><span class="st">Plant a friend</span><button class="sx" id="buyX">✕</button></div>
   <div class="buy-grid" id="buyGrid"></div>
+  <div class="buy-desc" id="buyDesc">Tap a plant to preview its range — tap again to plant it.</div>
 </div>
 <!-- manage sheet -->
 <div class="sheet" id="mngSheet">
@@ -593,17 +599,24 @@ var ENEMIES={
   caterpillar:{ name:'Loop Caterpillar', hp:90, spd:32, armor:0, fly:false, bounty:9, leak:2, r:13, col:'#7ab356', special:'noslow' },
   thornvine:{ name:'Creeping Weed', hp:150, spd:20, armor:2, fly:false, bounty:14, leak:3, r:15, col:'#4f6b34', special:'spawn' },
   glasswing:{ name:'Glass-wing Beetle', hp:75, spd:44, armor:0, fly:false, bounty:11, leak:1, r:13, col:'#bfe6f5', special:'glass' },
-  seedling:{ name:'Seedling', hp:6, spd:70, armor:0, fly:false, bounty:1, leak:1, r:6, col:'#dfeecb', special:null }
+  seedling:{ name:'Seedling', hp:6, spd:70, armor:0, fly:false, bounty:1, leak:1, r:6, col:'#dfeecb', special:null },
+  rootgrub:{ name:'Root Grub', hp:80, spd:28, armor:4, fly:false, bounty:9, leak:2, r:13, col:'#8a6a44', special:'regen' },
+  saptick:{ name:'Sap Tick', hp:16, spd:74, armor:0, fly:false, bounty:4, leak:1, r:8, col:'#b34a4a', special:null }
 };
 var BOSSES={
-  aphidqueen:{ name:'The Aphid Queen', hp:1200, spd:22, armor:0, fly:false, bounty:120, leak:6, r:40, col:'#a8d878', special:'queen', hitCap:60 }
+  aphidqueen:{ name:'The Aphid Queen', hp:1200, spd:22, armor:0, fly:false, bounty:120, leak:6, r:40, col:'#a8d878', special:'queen', hitCap:60 },
+  thornwarden:{ name:'The Thorn Warden', hp:400, spd:20, armor:2, fly:false, bounty:60, leak:5, r:34, col:'#4f6b34', special:'spawn', hitCap:40 },
+  slugking:{ name:'The Slug King', hp:900, spd:18, armor:2, fly:false, bounty:85, leak:6, r:38, col:'#8a7f6e', special:'noslow', hitCap:50 },
+  moonmoth:{ name:'The Moon Moth', hp:1050, spd:30, armor:0, fly:true, bounty:100, leak:6, r:36, col:'#e8dcc8', special:null, hitCap:55 }
 };
 
 /* pest introduction schedule (index = level) */
 var UNLOCK={
-  1:['aphid','ant'], 2:['grub'], 3:['slug'], 4:['moth'], 5:['beetle'], 6:['snail'],
-  7:['dandelion'], 8:['wasp'], 9:['ladybug','glasswing'], 10:['caterpillar'], 11:['thornvine'], 12:[], 13:[]
+  1:['aphid','ant'], 2:['grub'], 3:['slug'], 4:['moth'], 5:['beetle','rootgrub'], 6:['snail'],
+  7:['dandelion'], 8:['wasp','saptick'], 9:['ladybug','glasswing'], 10:['caterpillar'], 11:['thornvine'], 12:[], 13:[]
 };
+/* world-boss finales appended to L3/L7/L10 (L13 = Aphid Queen, built separately) */
+var BOSS_LEVEL={ 3:'thornwarden', 7:'slugking', 10:'moonmoth' };
 function poolFor(level){
   var p=[]; for(var L=1;L<=Math.min(level,12);L++){ (UNLOCK[L]||[]).forEach(function(id){ if(p.indexOf(id)<0)p.push(id); }); }
   if(p.length===0)p=['aphid','ant']; return p;
@@ -881,6 +894,7 @@ function buildWaves(level, endless){
     }
     waves.push(groups);
   }
+  if(BOSS_LEVEL[level]) waves.push([{t:BOSS_LEVEL[level],n:1,s:100,boss:true},{t:'ant',n:6,s:1600},{t:'aphid',n:8,s:1400}]);   // world-boss finale on L3/L7/L10
   return waves;
 }
 
@@ -950,8 +964,8 @@ function startWave(){
   });
   G.spawnT=0;
   banner((G.endless?'Wave '+(G.endlessWave+1):'Wave '+(G.waveIdx+1)+'/'+G.waveTotal), false);
-  var isBoss=groups.some(function(g){return g.boss;});
-  if(isBoss){ banner('The Aphid Queen approaches',true); sfx.horn(); G.slowmo=save.settings.reducedMotion?0:0.4; }
+  var bossG=null; for(var bi=0;bi<groups.length;bi++){ if(groups[bi].boss){ bossG=groups[bi]; break; } }
+  if(bossG){ var _bn=(BOSSES[bossG.t]&&BOSSES[bossG.t].name)||'A boss'; banner(_bn+' approaches',true); sfx.horn(); G.slowmo=save.settings.reducedMotion?0:0.4; }
   updateWaveBtn();
 }
 function waveSpawnTick(dt){
@@ -1096,7 +1110,7 @@ function killEnemy(e, by){
   G.combo++; G.comboT=1.2;
   poof(p.x,p.y,e.col);
   sfx.shoo();
-  if(e.boss){ addSap(25); banner('The Queen falls!',true); }
+  if(e.boss){ addSap(25); banner(e.name+' falls!',true); }
   if(e.special==='split' && e.tid!=='seedling'){
     for(var i=0;i<3;i++){ var s=spawnEnemy('seedling'); s.d=Math.max(0,e.d-6+i*4); }
   }
@@ -1508,6 +1522,41 @@ function spr(c,key,x,y,scale,ang,frame){
   c.drawImage(im, f*fw,0,fw,fh, -ax,-ay,fw,fh); c.restore(); return true;
 }
 var MAP_ARTKEY=['w1_kitchen','w1_herbspiral','w1_pond','w1_trellis'];
+/* per-map signature look (colour wash + off-path decor + path material) so each
+   map reads distinct without painted art — path is drawn by the game so it always lines up */
+var MAP_PAL=[
+  { wash:'rgba(74,50,28,0.16)',  dab:'rgba(58,42,24,0.55)',   acc:'rgba(122,179,86,0.45)', kind:'bed',   path:'#6b5334', edge:'#48381f' },
+  { wash:'rgba(72,80,58,0.15)',  dab:'rgba(150,150,138,0.34)',acc:'rgba(150,170,90,0.40)', kind:'stone', path:'#7c7a61', edge:'#54533e' },
+  { wash:'rgba(32,64,84,0.18)',  dab:'rgba(60,120,90,0.45)',  acc:'rgba(120,180,200,0.35)',kind:'lily',  path:'#5c6d6c', edge:'#39494a' },
+  { wash:'rgba(40,68,36,0.18)',  dab:'rgba(92,140,70,0.42)',  acc:'rgba(150,190,110,0.40)',kind:'leaf',  path:'#6b5a3a', edge:'#453a24' }
+];
+function mapDecorPoints(){
+  if(G._decor) return G._decor;
+  var pts=[], geom=G.geom;
+  for(var gy=84;gy<=VH-84;gy+=98){ for(var gx=48;gx<=VW-48;gx+=94){
+    if(geom.distToPath(gx,gy) > 96 && ((gx*7+gy*3)%10) < 7){ pts.push({ x:gx+((gx*7+gy*13)%22)-11, y:gy+((gx*11+gy*5)%22)-11, s:0.74+((gx+gy)%5)*0.12, r:((gx*3+gy)%628)/100 }); }
+  } }
+  G._decor=pts; return pts;
+}
+function drawMapDecor(t){
+  var pal=MAP_PAL[G.cfg.mapIdx]||MAP_PAL[0];
+  ctx.save();
+  ctx.fillStyle=pal.wash; ctx.fillRect(0,0,VW,VH);                 // signature colour wash
+  var pts=mapDecorPoints();
+  for(var i=0;i<pts.length;i++){ var p=pts[i];
+    ctx.save(); ctx.translate(p.x,p.y); ctx.scale(p.s,p.s);
+    if(pal.kind==='bed'){ ctx.fillStyle=pal.dab; roundRect(ctx,-20,-12,40,24,5); ctx.fill();
+      ctx.strokeStyle='rgba(40,30,18,0.5)'; ctx.lineWidth=2; roundRect(ctx,-20,-12,40,24,5); ctx.stroke();
+      ctx.strokeStyle=pal.acc; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(-13,0); ctx.lineTo(13,0); ctx.stroke(); }
+    else if(pal.kind==='stone'){ ctx.rotate(p.r); ctx.fillStyle=pal.dab; ctx.beginPath(); ctx.ellipse(0,0,13,9,0,0,6.283); ctx.fill();
+      ctx.strokeStyle='rgba(80,84,70,0.5)'; ctx.lineWidth=1.5; ctx.stroke(); }
+    else if(pal.kind==='lily'){ ctx.fillStyle=pal.dab; ctx.beginPath(); ctx.arc(0,0,11,p.r,p.r+5.35); ctx.lineTo(0,0); ctx.closePath(); ctx.fill(); }
+    else { ctx.rotate(p.r); ctx.fillStyle=pal.dab; ctx.beginPath(); ctx.ellipse(0,0,7,13,0,0,6.283); ctx.fill();
+      ctx.strokeStyle=pal.acc; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(0,12); ctx.stroke(); }
+    ctx.restore();
+  }
+  ctx.restore();
+}
 function bgTheme(){ return save.cosmetics.map; }
 function drawBackground(t){
   // art hook: full-map background painting (per map)
@@ -1520,6 +1569,7 @@ function drawBackground(t){
   else if(theme==='starfield'){ g=ctx.createRadialGradient(VW/2,VH*0.4,60,VW/2,VH*0.4,VH); g.addColorStop(0,'#141428'); g.addColorStop(1,'#05060a'); }
   else { g=ctx.createRadialGradient(VW/2,-60,80,VW/2,VH*0.4,VH); g.addColorStop(0,'#182013'); g.addColorStop(0.6,COL.bg); g.addColorStop(1,COL.bg2); }
   ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  if(G) drawMapDecor(t);   // per-map signature terrain (path-safe)
   // subtle motes / stars
   if(!save.settings.reducedMotion && (theme==='starfield'||theme==='midnight')){
     ctx.save(); for(var i=0;i<26;i++){ var x=(i*97+ (t*8))%VW, y=(i*53)%VH, a=0.12+0.1*Math.sin(t*2+i);
@@ -1527,13 +1577,13 @@ function drawBackground(t){
   }
 }
 function drawPath(){
-  var pts=G.map.path;
+  var pts=G.map.path, pal=MAP_PAL[G.cfg.mapIdx]||{};
   ctx.save();
   ctx.lineJoin='round'; ctx.lineCap='round';
-  // path bed
-  ctx.strokeStyle=COL.pathEdge; ctx.lineWidth=46;
+  // path bed (per-map material)
+  ctx.strokeStyle=pal.edge||COL.pathEdge; ctx.lineWidth=46;
   ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]); for(var i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]); ctx.stroke();
-  ctx.strokeStyle=(bgTheme()==='zen')?'#cabf9a':COL.path; ctx.lineWidth=38;
+  ctx.strokeStyle=(bgTheme()==='zen')?'#cabf9a':(pal.path||COL.path); ctx.lineWidth=38;
   ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]); for(var j=1;j<pts.length;j++)ctx.lineTo(pts[j][0],pts[j][1]); ctx.stroke();
   ctx.restore();
   // end marker (compost bin at the gate)
@@ -1786,27 +1836,50 @@ function refreshKeeperUI(){ if(!G||!G.keeper)return; var k=G.keeper;
 
 /* buy sheet */
 var buyBuilt=false, previewTower=null;
+function drawBuyIcon(c, id){
+  var W=c.canvas.width, H=c.canvas.height; c.clearRect(0,0,W,H);
+  var akey=id+'_body', d=GGART.meta[akey], im=GGART.img[akey];
+  if(GGART.ready[akey] && im){ var fw=d.fw||im.width, fh=d.fh||im.height, s=Math.min(W/fw,H/fh)*0.98, dw=fw*s, dh=fh*s;
+    c.drawImage(im,0,0,fw,fh,(W-dw)/2,(H-dh),dw,dh); }               // whole plant, bottom-aligned, fit-to-cell (no crop)
+  else { c.save(); c.setTransform(1,0,0,1,W/2,H*0.80); drawTower(c,0,0,id,1,W/46,-Math.PI/2,0); c.restore(); }   // canvas fallback
+}
+function towerTags(def){
+  var air=def.air==='no'?'ground only':def.air==='yes'?'hits ground + air':'hits air at ★3';
+  var s=['🎯 '+air]; if(def.status)s.push('✨ leaves '+def.status.charAt(0).toUpperCase()+def.status.slice(1));
+  return s.join('   ·   ');
+}
+function updateBuyDesc(id){
+  var def=TOWERS[id], can=G&&G.seeds>=def.cost;
+  el('buyDesc').innerHTML='<span class="bt">'+def.name+'</span> — '+def.blurb+
+    '<span class="tag">'+towerTags(def)+'   ·   '+(can?'tap again to plant 🌱'+def.cost:'<span style="color:var(--danger)">need 🌱'+def.cost+'</span>')+'</span>';
+}
+function selectBuy(id, cell){
+  if(previewTower===id){ placeTower(G.selPlot, id); previewTower=null; return; }   // 2nd tap on the same plant = plant it
+  previewTower=id; updateBuyDesc(id);                                              // 1st tap = preview range + show what it does
+  Array.prototype.forEach.call(el('buyGrid').children,function(x){ x.classList.toggle('sel', x===cell); });
+}
 function buildBuyGrid(){
   var grid=el('buyGrid'); grid.innerHTML='';
   TOWER_IDS.forEach(function(id){
     var def=TOWERS[id];
     var cell=document.createElement('div'); cell.className='buy-cell';
-    var cv=document.createElement('canvas'); cv.width=92; cv.height=92; cell.appendChild(cv);
-    var c=cv.getContext('2d'); c.setTransform(2,0,0,2,46,52); drawTower(c,0,0,id,3,1.5,-Math.PI/2,0);
+    var cv=document.createElement('canvas'); cv.width=112; cv.height=112; cell.appendChild(cv);
+    drawBuyIcon(cv.getContext('2d'), id);
     var nm=document.createElement('div'); nm.className='bn'; nm.textContent=def.name; cell.appendChild(nm);
     var cost=document.createElement('div'); cost.className='bc'; cost.textContent='🌱'+def.cost; cell.appendChild(cost);
     cell._id=id; cell._cost=def.cost;
-    cell.addEventListener('pointerdown',function(){ previewTower=id; });
-    cell.addEventListener('click',function(){ if(G.selPlot<0)return; placeTower(G.selPlot,id); previewTower=null; });
+    cell.addEventListener('click',function(){ if(!G||G.selPlot<0)return; selectBuy(id, cell); });
     grid.appendChild(cell);
   });
   buyBuilt=true;
 }
 function openBuy(plotIdx){
-  if(!buyBuilt)buildBuyGrid();
+  buildBuyGrid();   // rebuild each open so the sprite icons reflect currently-loaded art
   G.selPlot=plotIdx; G.selTower=null; previewTower=null;
-  // affordability
-  Array.prototype.forEach.call(el('buyGrid').children,function(cell){ cell.classList.toggle('cant', G.seeds<cell._cost); });
+  var kids=el('buyGrid').children;
+  Array.prototype.forEach.call(kids,function(cell){ cell.classList.toggle('cant', G.seeds<cell._cost); cell.classList.remove('sel'); });
+  el('buyDesc').innerHTML='Tap a plant to preview its range — tap again to plant it.';
+  for(var i=0;i<kids.length;i++){ if(G.seeds>=kids[i]._cost){ selectBuy(kids[i]._id, kids[i]); break; } }   // auto-preview first affordable → range ring shows at once
   el('mngSheet').classList.remove('show'); el('buySheet').classList.add('show');
 }
 function closeBuy(){ el('buySheet').classList.remove('show'); if(G)G.selPlot=-1; previewTower=null; }
@@ -1887,6 +1960,7 @@ function openLevels(diff){ UIState='LEVELS'; pendingDiff=diff;
     var key=diff+'-'+L, rec=save.levels[key];
     var cell=document.createElement('div');
     if(L===13){ cell.className='ls-cell boss'; cell.innerHTML='<span class="lnum">👑</span><span class="bnm">Level 13 · The Aphid Queen</span><span class="stars" style="margin-left:auto">'+starStr(rec)+'</span>'; }
+    else if(BOSS_LEVEL[L]){ cell.className='ls-cell boss'; cell.innerHTML='<span class="lnum">👑</span><span class="bnm">Level '+L+' · '+BOSSES[BOSS_LEVEL[L]].name+'</span><span class="stars" style="margin-left:auto">'+starStr(rec)+'</span>'; }
     else { cell.className='ls-cell'; cell.innerHTML='<span class="lnum">'+L+'</span><span class="stars">'+starStr(rec)+'</span>'; }
     if(rec&&rec.cleared)cell.classList.add('done');
     if(L>unlockedTo){ cell.classList.add('locked'); }
@@ -1955,7 +2029,7 @@ function winLevel(){
   var granted=(beams>0 && window._sbCapEarn)?window._sbCapEarn(beams,'garden-td:win'):0;
   sfx.levelClear();
   // fill win screen
-  el('winTitle').textContent=(G.cfg.level===13?'The Queen is defeated!':'Level Cleared!');
+  el('winTitle').textContent=(G.cfg.level===13?'The Queen is defeated!':(BOSS_LEVEL[G.cfg.level]?(BOSSES[BOSS_LEVEL[G.cfg.level]].name+' defeated!'):'Level Cleared!'));
   el('winStars').textContent='★★★'.slice(0,stars)+'☆☆☆'.slice(0,3-stars);
   el('winPests').textContent=G.pestsShooed;
   el('winLeaves').textContent=G.leaves+' / '+G.leavesMax;
