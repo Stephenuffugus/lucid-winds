@@ -456,7 +456,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 (function(){
 'use strict';
 
-var BUILD = '2026-07-05.1';
+var BUILD = '2026-07-06.art';
 
 /* ================================================================
    0. VECTOR MATH  (plain {x,y}; small allocation-light helpers)
@@ -1141,7 +1141,23 @@ var ART_FILES = {
   logo:'logo.png', bramble:'bramble.png', 'weevil-king':'weevil-king.png', aphid:'aphid.png',
   'bg-world1':'bg-world1.jpg', 'bg-world2':'bg-world2.jpg', 'bg-world3':'bg-world3.jpg', 'bg-world4':'bg-world4.jpg',
   'comic-1':'comic-1.jpg','comic-2':'comic-2.jpg','comic-3':'comic-3.jpg','comic-4':'comic-4.jpg',
-  'comic-5':'comic-5.jpg','comic-6':'comic-6.jpg','comic-end':'comic-end.jpg', 'menu-bg':'menu-bg.jpg'
+  'comic-5':'comic-5.jpg','comic-6':'comic-6.jpg','comic-end':'comic-end.jpg', 'menu-bg':'menu-bg.jpg',
+  // boss/lieutenant pests
+  'pest-nettle':'pest-nettle.png','pest-pebblejaw':'pest-pebblejaw.png','pest-glazier':'pest-glazier.png','pest-fuse':'pest-fuse.png',
+  // seed (ammo) icons + nutrients
+  'seed-burr':'seed-burr.png','seed-split':'seed-split.png','seed-acorn':'seed-acorn.png','seed-puffball':'seed-puffball.png',
+  'seed-thornpod':'seed-thornpod.png','seed-boomerang':'seed-boomerang.png','seed-gourd':'seed-gourd.png','seed-firethorn':'seed-firethorn.png','seed-dandelion':'seed-dandelion.png',
+  'nutrient-n':'nutrient-n.png','nutrient-p':'nutrient-p.png','nutrient-k':'nutrient-k.png',
+  // relics + currencies + star
+  'relic-secondwind':'relic-secondwind.png','relic-fatseeds':'relic-fatseeds.png','relic-splitter':'relic-splitter.png','relic-longfuse':'relic-longfuse.png',
+  'relic-featherfall':'relic-featherfall.png','relic-brittle':'relic-brittle.png','relic-prospector':'relic-prospector.png','relic-glasscannon':'relic-glasscannon.png',
+  fertilizer:'fertilizer.png',sap:'sap.png',vigor:'vigor.png',star:'star.png',
+  // companions
+  'companion-bee':'companion-bee.png','companion-mammoth':'companion-mammoth.png','companion-worm':'companion-worm.png','companion-koi':'companion-koi.png','companion-pangolin':'companion-pangolin.png',
+  'companion-firefly':'companion-firefly.png','companion-spider':'companion-spider.png','companion-raccoon':'companion-raccoon.png','companion-scarab':'companion-scarab.png','companion-beholder':'companion-beholder.png',
+  // expedition nodes + slingshot skins
+  'node-fort':'node-fort.png','node-elite':'node-elite.png','node-cache':'node-cache.png','node-shed':'node-shed.png','node-boss':'node-boss.png',
+  'sling-oak':'sling-oak.png','sling-willow':'sling-willow.png','sling-iron':'sling-iron.png','sling-gold':'sling-gold.png'
 };
 function loadArt(){
   for(var name in ART_FILES){ if(!ART_FILES.hasOwnProperty(name)) continue;
@@ -1152,6 +1168,8 @@ function loadArt(){
   }
 }
 function img(name){ var a=ART[name]; return (a&&a.ok)?a.img:null; }
+// inline <img> html for a loaded art key (else null → caller keeps its emoji)
+function artImg(key, px){ return img(key) ? '<img src="assets/'+ART_FILES[key]+'?v='+encodeURIComponent(BUILD)+'" alt="" style="width:'+px+'px;height:'+px+'px;object-fit:contain;display:inline-block;vertical-align:middle">' : null; }
 
 /* ================================================================
    SAVE  (localStorage lw_burrblast_v1 — LOCAL coins only)
@@ -2232,7 +2250,8 @@ function drawProj(ctx,b){
   ctx.restore();
 }
 function drawSeedShape(ctx,type,r,sk){
-  type = ({gourd:'acorn', firethorn:'thornpod', dandelion:'split'})[type] || type;   // new seeds reuse base shapes until art lands
+  var _si=img('seed-'+type); if(_si){ var s=r*2.8; ctx.drawImage(_si,-s/2,-s/2,s,s); return; }   // painted seed art (projectile + pouch)
+  type = ({gourd:'acorn', firethorn:'thornpod', dandelion:'split'})[type] || type;   // canvas fallback: new seeds reuse base shapes
   ctx.fillStyle=sk.c1; ctx.strokeStyle=sk.c2; ctx.lineWidth=2;
   if(type==='acorn'){
     ctx.beginPath(); ctx.arc(0,r*0.15,r*0.9,0,Math.PI); ctx.lineTo(-r*0.9,r*0.15); ctx.fill();
@@ -2467,7 +2486,7 @@ function renderGrove(){
   COMPANION_CATALOG.forEach(function(c){
     var owned=compOwned(c.id), eq=hasComp(c.id), bond=compBond(c.id);
     var card=document.createElement('div'); card.className='card'+(eq?' equipped':''); if(!owned)card.style.opacity='0.9';
-    var ico=document.createElement('div'); ico.style.cssText='font-size:38px;line-height:1.1'; ico.textContent=c.icon; card.appendChild(ico);
+    var ico=document.createElement('div'); ico.style.cssText='font-size:38px;line-height:1.1'; var _ci=artImg('companion-'+c.id,54); if(_ci)ico.innerHTML=_ci; else ico.textContent=c.icon; card.appendChild(ico);
     var nm=document.createElement('div'); nm.className='nm'; nm.textContent=c.name; card.appendChild(nm);
     var fam=document.createElement('div'); fam.style.cssText='font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#8a9178;font-weight:800'; fam.textContent=c.fam+(owned&&bond>0?(' · Bond '+bond):''); card.appendChild(fam);
     var ds=document.createElement('div'); ds.style.cssText='font-size:10.5px;color:#8a9178;line-height:1.3;min-height:28px;font-weight:600'; ds.textContent=c.desc; card.appendChild(ds);
@@ -2624,11 +2643,12 @@ var EXP_NODE_META={ fort:{n:'Fort',i:'🏯',d:'A pest fort. Clear it for Sap + a
 function renderExpMap(){
   $('expVigor').textContent=EXP.vigor; $('expSap').textContent=EXP.sap;
   $('expDepth').textContent='Depth '+(EXP.depth+1)+' of '+EXP.maxDepth+' · choose your path';
-  var rh=''; EXP.relics.forEach(function(id){ var r=relicCat(id); if(r) rh+='<span class="exp-relic" title="'+r.name+': '+r.desc+'">'+r.icon+'</span>'; }); $('expRelics').innerHTML=rh;
+  var rh=''; EXP.relics.forEach(function(id){ var r=relicCat(id); if(r){ var _ri=artImg('relic-'+id,26); rh+='<span class="exp-relic" title="'+r.name+': '+r.desc+'">'+(_ri||r.icon)+'</span>'; } }); $('expRelics').innerHTML=rh;
   var ch=$('expChoices'); ch.innerHTML='';
   EXP.offer.forEach(function(node,idx){ var m=EXP_NODE_META[node.type]||EXP_NODE_META.fort;
     var btn=document.createElement('button'); btn.className='exp-node';
-    btn.innerHTML='<div class="en-i">'+m.i+'</div><div><div class="en-n">'+m.n+'</div><div class="en-d">'+m.d+'</div></div>';
+    var _ni=artImg('node-'+(node.type==='shop'?'shed':node.type),46);
+    btn.innerHTML='<div class="en-i">'+(_ni||m.i)+'</div><div><div class="en-n">'+m.n+'</div><div class="en-d">'+m.d+'</div></div>';
     btn.onclick=function(){ chooseExpNode(idx); }; ch.appendChild(btn);
   });
 }
@@ -2638,6 +2658,8 @@ function draftCard(opt, cost, onPick){
   else if(opt.kind==='comp'){ var c=compCat(opt.id); icon=c.icon; label=c.name; desc=c.desc; }
   else if(opt.kind==='nut'){ icon={n:'🔥',p:'✨',k:'💧'}[opt.k]; label={n:'+2 Nitrogen',p:'+2 Phosphorus',k:'+2 Potassium'}[opt.k]; desc={n:'Heavier seeds — hit harder.',p:'Stronger tricks.',k:'Extra seeds + steadier aim.'}[opt.k]; }
   else { var r=relicCat(opt.id); icon=r.icon; label=r.name+' (relic)'; desc=r.desc; }
+  var _dk = opt.kind==='seed'?'seed-'+opt.id : opt.kind==='comp'?'companion-'+opt.id : opt.kind==='nut'?'nutrient-'+opt.k : 'relic-'+opt.id;
+  var _di = artImg(_dk,52); if(_di) icon=_di;   // painted icon when the art is loaded
   d.innerHTML='<div class="dc-i">'+icon+'</div><div><div class="dc-n">'+label+(cost?' · 🍯'+cost:'')+'</div><div class="dc-d">'+desc+'</div></div>';
   d.onclick=onPick; return d;
 }
@@ -2674,8 +2696,8 @@ function showResult(won, stars, coins){
   _playing=false;
   $('resNum').textContent = G.level.boss?'BOSS':(_endless?('DEPTH '+_endlessN):('LEVEL '+G.level.n));
   $('resTitle').textContent = won ? (G.level.boss?'The Weevil King falls!':'Patch cleared!') : 'Out of burrs';
-  var starsEl=$('resStars').children;
-  for(var i=0;i<3;i++){ if(won && i<stars) starsEl[i].classList.add('on'); else starsEl[i].classList.remove('on'); }
+  var starsEl=$('resStars').children, _star=artImg('star',44);
+  for(var i=0;i<3;i++){ if(_star) starsEl[i].innerHTML=_star; if(won && i<stars) starsEl[i].classList.add('on'); else starsEl[i].classList.remove('on'); }
   if(won){ for(var s=0;s<stars;s++){ (function(k){ setTimeout(function(){ starsEl[k].style.transform='scale(1.3)'; SFX.star(k); setTimeout(function(){ starsEl[k].style.transform='scale(1)'; },160); }, 260+k*220); })(s); } }
   $('resScore').textContent = fmt(G.score);
   $('resBest').textContent = _endless ? ('Best depth: '+SAVE.endlessBest) : ('Best: '+fmt(levelBest(G.level.n)));
