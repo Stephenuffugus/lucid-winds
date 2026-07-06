@@ -1261,6 +1261,36 @@ function plankOnPost(cx, mat){
   return { blocks:[ ground(mat,cx,26,postH), BK(mat,cx,GT-postH-12,190,20) ], pests:[] };
 }
 
+/* ---- richer forts: stable at rest, the PUZZLE is how to reach a sheltered pest ---- */
+/* multi-story keep — stacked floors (two columns + a slab), a pest tucked on each floor.
+   Direct hits can't reach the upper pests; you topple the tower or crush down through it. */
+function keep(cx, mat, floors){
+  floors=floors||2; var colW=24, fh=84, span=128, slabH=18, b=[], p=[];
+  var lx=cx-span/2+colW/2, rx=cx+span/2-colW/2, y=GT;
+  for(var f=0;f<floors;f++){
+    b.push(BK(mat,lx,y-fh/2,colW,fh)); b.push(BK(mat,rx,y-fh/2,colW,fh));   // two columns
+    b.push(BK(mat,cx,y-fh-slabH/2,span+colW,slabH));                        // floor/roof slab
+    p.push(P(cx,y-16,14));                                                  // pest sheltered on this floor
+    y -= fh+slabH;
+  }
+  return { blocks:b, pests:p };
+}
+/* sealed vault — two walls + a heavy roof with a pest underneath. Break a wall so the roof
+   drops on it, slam an Acorn through the roof, or blast in. You cannot hit it directly. */
+function vault(cx, mat){
+  var wH=74, wW=24, span=118, roofH=26;
+  return { blocks:[ ground(mat,cx-span/2,wW,wH), ground(mat,cx+span/2,wW,wH),
+    BK(mat,cx,GT-wH-roofH/2,span+wW+18,roofH) ], pests:[ pestGround(cx,15) ] };
+}
+/* rampart — a low thick wall shielding ground pests behind it. Arc a high shot over it,
+   break through, or bank a Boomerang around. */
+function rampart(cx, mat, behind){
+  behind = (behind==null)?2:behind;
+  var b=[ ground(mat,cx,34,100) ], p=[];
+  for(var i=0;i<behind;i++) p.push(pestGround(cx+72+i*56,15));
+  return { blocks:b, pests:p };
+}
+
 function merge(){ var b=[],p=[]; for(var i=0;i<arguments.length;i++){ var s=arguments[i]; if(!s)continue; if(s.blocks)b=b.concat(s.blocks); if(s.pests)p=p.concat(s.pests); } return {blocks:b,pests:p}; }
 
 /* build the whole campaign */
@@ -1280,15 +1310,16 @@ function buildLevels(){
   add(1,'Little Wall', ['burr','burr','burr'], merge(wall(720,'wood',3), {blocks:[],pests:[ pestGround(830,18) ]}));
   add(1,'Meadow Finale', ['burr','acorn','burr'], merge(hut(620), tower(820,'wood',3)));
 
-  /* ---------- WORLD 2 · Stoneyard (stone; heavier, use the Acorn) ---------- */
-  add(2,'Stone Roost', ['burr','acorn','burr'], tower(700,'stone',2));
-  add(2,'Heavy Table', ['acorn','burr','acorn'], table(700,'stone'));
-  add(2,'Two-Stone Wall', ['acorn','acorn','burr'], merge(wall(700,'stone',3), {blocks:[],pests:[ pestGround(800,18) ]}));
-  add(2,'Mixed Masonry', ['burr','acorn','burr','acorn'], merge(hut(600), wall(800,'stone',3), {blocks:[],pests:[P(800,GT-140,17)]}));
-  add(2,'The Overhang', ['acorn','burr','acorn'], merge(table(650,'stone'), tower(860,'wood',2)));
-  add(2,'Fortress Row', ['acorn','acorn','burr','burr'], merge(hut(600), hut(760), tower(920,'stone',2)));
-  add(2,'Balanced Beam', ['burr','acorn','burr'], merge(plankOnPost(720,'stone'), {blocks:[BK('stone',660,GT-113,40,40),BK('stone',780,GT-113,40,40)],pests:[P(720,GT-109,16)]}));
-  add(2,'Stoneyard Finale', ['acorn','acorn','burr','acorn'], merge(table(600,'stone'), wall(780,'stone',4), tower(920,'stone',3)));
+  /* ---------- WORLD 2 · Stoneyard (stone; heavier — learn the Acorn's mid-air slam
+     and how to COLLAPSE a fort instead of pecking at it. Every pest is sheltered.) ---------- */
+  add(2,'Stone Roost', ['acorn','burr','burr'], keep(720,'stone',2));                          // topple a 2-floor keep
+  add(2,'The Vault', ['acorn','acorn','burr'], vault(720,'stone'));                             // crack the sealed vault (slam the roof / break a wall)
+  add(2,'Behind the Wall', ['burr','acorn','burr'], rampart(660,'stone',2));                    // arc over / slam behind the rampart
+  add(2,'Twin Keeps', ['acorn','burr','acorn','burr','burr'], merge(keep(600,'stone',2), keep(880,'stone',2)));
+  add(2,'Roof and Room', ['acorn','acorn','burr','burr'], merge(vault(640,'stone'), keep(900,'stone',2)));
+  add(2,'Rampart Row', ['acorn','burr','acorn','burr','burr'], merge(rampart(600,'stone',2), keep(840,'stone',2), {blocks:[],pests:[pestGround(980,15)]}));
+  add(2,'Balancing Act', ['acorn','burr','acorn','burr'], merge(table(640,'stone'), keep(880,'stone',3)));
+  add(2,'Stoneyard Finale', ['acorn','acorn','burr','acorn','burr'], merge(keep(600,'stone',3), vault(820,'stone'), rampart(980,'stone',2)));
 
   /* ---------- WORLD 3 · Dewglass Hollow (glass shatters; Split + Puffball) ---------- */
   add(3,'Glass House', ['burr','split'], hutGlass(700));
