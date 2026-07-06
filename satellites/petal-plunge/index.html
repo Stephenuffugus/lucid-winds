@@ -451,7 +451,7 @@ var ART=(function(){
   /* ---------- SKY (menu/free theme) → returns [top,bottom] ---------- */
   var SKY={ dawn:["#f0b48a","#e0d0a0"], dusk:["#8a5a86","#e0a06a"], storm:["#6a7a86","#4a5a60"], aurora:["#1a3a4a","#2a6a5a"], starry:["#12163a","#0a0c1e"] };
 
-  return {load:load, tryImg:tryImg, circle:circle, ell:ell, leafShape:leafShape,
+  return {load:load, tryImg:tryImg, get:function(key){ return (ready[key]&&imgs[key])?imgs[key]:null; }, circle:circle, ell:ell, leafShape:leafShape,
     rider:function(g,id,s,t){ if(tryImg("rider_"+id,g,s*1.4))return; (RIDER[id]||RIDER.sprout)(g,s,t); },
     sled:function(g,id,s,t){ if(tryImg("sled_"+id,g,s*1.5))return; (SLED[id]||SLED.leaf)(g,s,t); },
     trailColors:function(id){ return TRAIL[id]||TRAIL.dew; },
@@ -466,6 +466,7 @@ var ART=(function(){
    'gnome','gnome_angry',
    'obs_bush','obs_tree','obs_glowtree','obs_shroom','obs_bigshroom','obs_thorn','obs_log','obs_stump','obs_boulder','obs_stone','obs_glowstone','obs_daisyclump','obs_ramp'
   ].forEach(function(k){ ART.load(k,'assets/'+k+'.png'+V); });
+  ['bg_meadow','bg_bramble','bg_mushroom','bg_thorn','bg_night'].forEach(function(k){ ART.load(k,'assets/'+k+'.jpg'+V); });
 })();
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -843,15 +844,21 @@ function hashCell(ix,iy){ var h=(ix*73856093 ^ iy*19349663)>>>0; h=(h^(h>>>13))*
 function drawBackground(depth){
   var b=biomeAt(depth), sky;
   var skyId=(S? P.equip.sky : "auto");
-  if(skyId&&skyId!=="auto"){ sky=ART.sky(skyId)||b.sky; } else { sky=b.sky; }
-  var gr=g.createLinearGradient(0,0,0,VH);
-  gr.addColorStop(0,sky[0]); gr.addColorStop(1,b.ground);
-  g.fillStyle=gr; g.fillRect(0,0,VW,VH);
-  // ground body (lower portion is the slope surface)
-  g.fillStyle=b.ground; g.fillRect(0,VH*0.16,VW,VH);
-  // corduroy grooves scrolling with camera
+  // painted biome backdrop (only when the player hasn't equipped a custom sky theme)
+  var bgIm = (skyId==="auto") ? ART.get('bg_'+b.id) : null;
+  if(bgIm){
+    var s2=Math.max(VW/bgIm.width, VH/bgIm.height), dw=bgIm.width*s2, dh=bgIm.height*s2;
+    g.drawImage(bgIm,(VW-dw)/2,(VH-dh)/2,dw,dh);   // cover-fit static backdrop; motion comes from the scrolling grooves/flora/obstacles over it
+  } else {
+    if(skyId&&skyId!=="auto"){ sky=ART.sky(skyId)||b.sky; } else { sky=b.sky; }
+    var gr=g.createLinearGradient(0,0,0,VH);
+    gr.addColorStop(0,sky[0]); gr.addColorStop(1,b.ground);
+    g.fillStyle=gr; g.fillRect(0,0,VW,VH);
+    g.fillStyle=b.ground; g.fillRect(0,VH*0.16,VW,VH);   // flat slope surface (procedural path only)
+  }
+  // corduroy grooves scrolling with camera (lighter over a painted ground)
   var scroll=(S?cam.y:menuScroll);
-  g.strokeStyle="rgba(0,0,0,0.05)"; g.lineWidth=2;
+  g.strokeStyle="rgba(0,0,0,"+(bgIm?0.04:0.05)+")"; g.lineWidth=2;
   var spacing=46, off=((scroll*0.9)%spacing+spacing)%spacing;
   for(var yy=VH*0.16-off; yy<VH; yy+=spacing){ g.beginPath(); g.moveTo(0,yy); g.lineTo(VW,yy+10); g.stroke(); }
   // subtle biome lighter band overlay
