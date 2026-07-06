@@ -16,6 +16,7 @@
   /* HTML overlays (menus) sit above canvas, sized in CSS px, centered on the letterboxed field */
   .layer{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; }
   .layer.on{ display:flex; }
+  #menu.on{ background:linear-gradient(rgba(6,9,5,0.72),rgba(6,9,5,0.9)), url('assets/menu.jpg?v=2026-07-06.art') center/cover no-repeat; }
   .panel{ pointer-events:auto; width:min(88vw,420px); max-height:92vh; overflow-y:auto;
     background:rgba(13,16,12,0.92); border:1px solid rgba(200,168,75,0.4); border-radius:16px;
     padding:22px 20px 26px; text-align:center; box-shadow:0 12px 48px rgba(0,0,0,0.6); }
@@ -56,7 +57,7 @@
 <!-- MENU -->
 <div class="layer on" id="menu">
   <div class="panel">
-    <h1 class="logo">🌿 BRAMBLEWICK</h1>
+    <h1 class="logo"><img src="assets/logo.png?v=2026-07-06.art" alt="BRAMBLEWICK" style="display:block;width:100%;max-width:360px;height:auto;margin:0 auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,0.55))" onerror="this.parentNode.textContent='🌿 BRAMBLEWICK'"></h1>
     <p class="tag">Wake the garden. Its chemistry does the killing.</p>
     <div class="lbl">Ground</div>
     <div class="seg stages" id="stageSeg"></div>
@@ -1080,11 +1081,14 @@ var ART=(function(){
   return {load:load, tryImg:tryImg, get:get};
 })();
 (function loadArt(){
-  var V='?v=2026-07-06';
+  var V='?v=2026-07-06.art';
   ['player',
    'pest_aphid','pest_beetle','pest_locust','pest_slug','pest_wasp','pest_mite','pest_weevil','pest_scale','pest_mealybug','pest_cutworm','pest_thrip','pest_vineborer',
    'boss_grubfather','boss_stormwing','boss_tideshell','boss_broodmother','boss_frostmaw','boss_wiltqueen',
-   'companion_ladybug','companion_firefly','companion_bee','companion_butterfly','companion_hummingbird','companion_spider','companion_mantis','companion_seahorse','companion_toad','companion_mammoth','companion_scorpion','companion_pangolin','companion_hedgehog','companion_snail','companion_worm','companion_koi','companion_jellyfish','companion_koala','companion_sprite','companion_fawn','companion_raccoon','companion_owl','companion_cicada','companion_beholder'
+   'companion_ladybug','companion_firefly','companion_bee','companion_butterfly','companion_hummingbird','companion_spider','companion_mantis','companion_seahorse','companion_toad','companion_mammoth','companion_scorpion','companion_pangolin','companion_hedgehog','companion_snail','companion_worm','companion_koi','companion_jellyfish','companion_koala','companion_sprite','companion_fawn','companion_raccoon','companion_owl','companion_cicada','companion_beholder',
+   // level-up draft icons: 10 weapons then 12 passives (keys match WEAPONS/PASSIVES)
+   'icon_dandelion','icon_nettle','icon_puffball','icon_sundew','icon_foxglove','icon_sunflower','icon_frostfern','icon_thornvine','icon_bloodroot','icon_witchhazel',
+   'icon_goldenhour','icon_phyllotaxis','icon_windspores','icon_taproot','icon_guttation','icon_heliotropism','icon_chillreservoir','icon_nectarguide','icon_thigmonasty','icon_mycorrhizae','icon_etiolation','icon_vernalization'
   ].forEach(function(k){ ART.load(k,'assets/'+k+'.png'+V); });
   ART.load('bg','assets/bg.jpg'+V);
   for(var s=0;s<STAGES.length;s++){ ART.load('bg_'+STAGES[s].id,'assets/bg_'+STAGES[s].id+'.jpg'+V); }
@@ -1256,10 +1260,19 @@ function drawDraft(){
     c._box={x:x,y:y,w:cw,h:ch};
     ctx.fillStyle='rgba(13,16,12,0.95)'; ctx.strokeStyle= c.graft?'#e8c24b':(c.t==='passive'?'#c8a84b':(c.status?ST_META[c.status].col:'#7ab356')); ctx.lineWidth=c.graft?3:2;
     roundRect(x,y,cw,ch,12); ctx.fill(); ctx.stroke();
-    // icon chip
-    ctx.fillStyle=c.status?ST_META[c.status].col:'#c8a84b'; ctx.beginPath(); ctx.arc(x+34,y+ch/2,18,0,6.283); ctx.fill();
-    ctx.fillStyle='#0d100c'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(c.graft?'◈':(c.t==='wup'?'+':(c.t==='passive'?'◆':(c.status||'?').slice(0,2))), x+34, y+ch/2);
+    // icon chip — painted art if present, else the flat glyph
+    var _ikey=(c.t==='companion')?('companion_'+c.id):(c.t==='graft'?('icon_'+c.base):('icon_'+c.id));
+    var _icol=c.status?ST_META[c.status].col:(c.graft?'#e8c24b':(c.t==='passive'?'#c8a84b':'#7ab356'));
+    ctx.save(); ctx.translate(x+34, y+ch/2);
+    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.arc(0,0,22,0,6.283); ctx.fill();
+    if(ART.tryImg(_ikey, ctx, 42)){
+      ctx.strokeStyle=_icol; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,22,0,6.283); ctx.stroke();
+    } else {
+      ctx.fillStyle=_icol; ctx.beginPath(); ctx.arc(0,0,18,0,6.283); ctx.fill();
+      ctx.fillStyle='#0d100c'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(c.graft?'◈':(c.t==='wup'?'+':(c.t==='passive'?'◆':(c.status||'?').slice(0,2))), 0, 0);
+    }
+    ctx.restore();
     // text
     ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='bold 15px sans-serif'; ctx.textBaseline='top'; ctx.fillText(c.name, x+62, y+16);
     ctx.fillStyle='#b9c1a8'; ctx.font='11px sans-serif'; wrapText(c.desc, x+62, y+38, cw-74, 13);
