@@ -55,8 +55,8 @@ strips, props, logo, 3 scene bgs). It's a **cut+repack-the-atlas job for me**, n
 ---
 
 ## OPTIONAL POLISH (files/hooks exist; not gaps — flag me if you want them)
-- **Petal Plunge** — 7 trail swooshes already on disk (`trail_dew/ember/frost/petals/pollen/rainbow/star.png`)
-  but unwired; the trail is procedural colour today. Wiring them is a small render tweak, not new art.
+- ~~**Petal Plunge** — 7 trail swooshes unwired~~ ✅ **WIRED 2026-07-07** (`37debfc`): the equipped trail
+  now streams its painted swoosh ribbon behind the sled (and shows in the shop).
 - **Garden Guard** — 4 painted map backdrops (540×960) would lift the boards, but each map already has
   a distinct procedural look, so they're polish, not a hole.
 - **Burr Blast** — currency HUD chips still use emoji; painted pips are a minor nicety.
