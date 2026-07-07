@@ -16,10 +16,11 @@ version. Paint any subset, in any order, and hand me batches whenever.
 All 4 boss sprites and all 5 ground backgrounds are painted, cut and wired. Bramblewick is
 art-complete. Only **Sprout Dice** art remains (below).
 
-### 2. Sprout Dice — full art pass (it's emoji + CSS today)  ·  the Director wants to build it out
-**→ Full list: `satellites/sprout-dice/ASSET_LIST.md`** — 7 face symbols (biggest bang), 12 pests +
-4 bosses, rarity die faces, board bg + logo. Thumbnail spec at `THUMBNAIL_SPEC.md`
-(`portal-assets/thumbs/sprout-dice.jpg`, ~480×480, ≤150 KB — last glyph-only card).
+### 2. ~~Sprout Dice — full art pass~~  ·  ✅ **DONE (e22fb34)**
+Stephen painted all 11 sheets; cut + wired: painted dice faces (4 rarities × 7 types), 12 pest
++ 4 boss sprites on the enemy cards, the SPROUT DICE logo, and the board-floor background.
+Was emoji + CSS, now fully painted. Only the **thumbnail** (`THUMBNAIL_SPEC.md`,
+`portal-assets/thumbs/sprout-dice.jpg`, ~480×480, ≤150 KB) is still a glyph card — optional polish.
 
 ### 3. The three retro remakes — all procedural today (each has a paste-ready PROMPTS.md)
 - **Bloomzap** (`satellites/bloomzap/PROMPTS.md`) — letter tile, 4 rival portraits, zap FX, logo, win/lose splash.
@@ -76,9 +77,11 @@ strips, props, logo, 3 scene bgs). It's a **cut+repack-the-atlas job for me**, n
 ---
 
 ## RECOMMENDED ORDER
-1. **Sprout Dice** — face symbols → pests/bosses → dice → board, + the thumbnail (the last art gap in the
-   drop-in fleet; `ASSET_LIST.md` + `THUMBNAIL_SPEC.md`). *(Bramblewick is now fully done.)*
-2. Dragon Philosophy's illustration set, whenever you want to pull that source repo.
+*(Bramblewick and Sprout Dice are both fully done — the drop-in fleet is now art-complete.)*
+1. **The three retro remakes** (Bloomzap · Rootbound · Petalvex) — each has a paste-ready `PROMPTS.md`.
+   All still procedural; painting them is the biggest remaining visual lift. Any batch, any order.
+2. **Sprout Dice thumbnail** — the last glyph-only portal card (`THUMBNAIL_SPEC.md`). Small, quick.
+3. Dragon Philosophy's illustration set, whenever you want to pull that source repo.
 
 Hand me any batch (magenta sheet or transparent PNGs) and I'll cut, quantize, cache-bust, wire and
 re-vendor it — one game at a time.
