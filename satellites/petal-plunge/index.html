@@ -204,7 +204,7 @@ var CFG={
   baseSpeed: 168,        // world units/sec at heading straight-down, biome 0
   speedRamp: 0.020,      // +fraction of baseSpeed per 1000 depth
   speedMax: 2.35,        // cap as a multiple of baseSpeed
-  maxAng: 78*Math.PI/180,// full-sideways heading angle
+  maxAng: 64*Math.PI/180,// full-sideways heading angle (was 78° — too steep, stalled descent + felt mushy)
   turnRate: 5.2,         // heading units eased per sec while holding a side
   tuckBoost: 1.28,       // downhill speed mult while tucking
   tuckSteerCap: 1.5,     // |head| clamp while tucking (can't hard-carve tucked)
@@ -583,11 +583,16 @@ function generateUntil(targetY){
         var type = (b.bounce&&kind===b.bounce)?"bounce":"solid";
         S.obs.push({x:ox,y:oy,r:r,kind:kind,type:type,spin:S.rng()*TAU});
       }
-      // ramps (launch pads) near-ish the lane so they're catchable
-      if(S.rng() < mc.ramp*SEG){
-        var rx=S.laneC + (S.rng()*2-1)*(laneHalf+40);
-        rx=clamp(rx,-hw,hw);
-        S.obs.push({x:rx,y:y0+S.rng()*SEG,r:24,kind:"ramp",type:"ramp",spin:0});
+      // ramps (launch pads) — SPACED + OFF the corridor so they're an optional trick line, not clutter.
+      // (was rng()<mc.ramp*SEG ≈ 1.3 for Free → a ramp every segment, often IN the lane → forced launches.)
+      if(mc.ramp>0){
+        var rampGap = Math.max(260, Math.min(1400, 12/mc.ramp));   // ~400 Free, ~260 Freestyle, ~1200 Slalom
+        if(y0 - (S.lastRampY==null?-99999:S.lastRampY) > rampGap*(0.8+S.rng()*0.5)){
+          var side=(S.rng()<0.5?-1:1);
+          var rx=clamp(S.laneC + side*(laneHalf+34+S.rng()*40), -hw+30, hw-30);  // just outside the lane — swing out to catch air
+          S.obs.push({x:rx,y:y0+SEG*0.5,r:26,kind:"ramp",type:"ramp",spin:0});
+          S.lastRampY=y0;
+        }
       }
       // gates
       if(S.rng() < mc.gate*SEG){
@@ -656,23 +661,23 @@ function update(dt){
     S.vy=spd*CFG.crashSpeed; S.vx*=0.86;
   } else if(S.airborne){
     S.airT+=dt;
-    // gentle air steering
-    if(S.steer!==0){ S.headTarget=clamp(S.headTarget+S.steer*CFG.turnRate*0.5*dt,-3,3); }
-    S.head+=(S.headTarget-S.head)*Math.min(1,dt*7);
+    // air steering: crisp target, auto-centers when you let go
+    var acap=2.4;
+    if(S.steer!==0){ S.headTarget=S.steer*acap; } else { S.headTarget+=(0-S.headTarget)*Math.min(1,dt*8); }
+    S.head+=(S.headTarget-S.head)*Math.min(1,dt*11);
     S.vy=S.launchVy;
-    S.vx=spd*Math.sin(S.head/3*CFG.maxAng)*0.7;
+    S.vx=spd*Math.sin(S.head/3*CFG.maxAng)*0.8;
     if(S.airT>=S.airDur){ landing(); }
   } else {
-    // steering
-    if(S.steer!==0){
-      var cap = S.tuck? CFG.tuckSteerCap : 3;
-      S.headTarget=clamp(S.headTarget+S.steer*CFG.turnRate*dt, -cap, cap);
-    }
-    if(S.tuck) S.headTarget=clamp(S.headTarget,-CFG.tuckSteerCap,CFG.tuckSteerCap);
-    S.head+=(S.headTarget-S.head)*Math.min(1,dt*10);
+    // ground steering — CRISP: hold = snap to a carve, release = auto-center to straight.
+    // (was a double-lagged accumulator with no recenter, so you drifted diagonally forever.)
+    var cap = S.tuck? CFG.tuckSteerCap : 3;
+    if(S.steer!==0){ S.headTarget = S.steer*cap; }                     // instant target heading
+    else { S.headTarget += (0 - S.headTarget)*Math.min(1,dt*11); }     // auto-recenter on release
+    S.head += (S.headTarget - S.head)*Math.min(1,dt*16);               // one fast smoother (was dt*10 on top of the accumulator)
     var a=S.head/3*CFG.maxAng;
     var boost=(S.boostT>0?1.35:1)*(S.tuck?CFG.tuckBoost:1);
-    S.vy=spd*Math.cos(a)*boost;
+    S.vy=spd*(0.6+0.4*Math.cos(a))*boost;                              // carving keeps ~60-100% descent (was cos(a) → near-stall at full carve)
     S.vx=spd*Math.sin(a)*(S.boostT>0?1.2:1);
   }
 
