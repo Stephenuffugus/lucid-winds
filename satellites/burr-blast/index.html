@@ -16,6 +16,14 @@ html,body{ width:100%; height:100%; overflow:hidden; background:#04050a;
   font-family:-apple-system,'Segoe UI',system-ui,Roboto,sans-serif; color:var(--cream);
   touch-action:none; overscroll-behavior:none; user-select:none; -webkit-user-select:none; }
 canvas#game{ position:fixed; inset:0; display:block; background:#04050a; z-index:1; }
+#rotate{ position:fixed; inset:0; z-index:66; display:none; align-items:center; justify-content:center; background:rgba(4,5,10,0.94); padding:24px; text-align:center; }
+#rotate.on{ display:flex; }
+.rot-card{ max-width:340px; color:#e8dcc8; }
+.rot-icon{ font-size:66px; margin-bottom:14px; display:inline-block; animation:rotwig 2s ease-in-out infinite; transform-origin:50% 50%; }
+.rot-title{ font-size:22px; font-weight:800; margin-bottom:10px; color:#f0c060; }
+.rot-sub{ font-size:15px; line-height:1.45; opacity:0.85; margin-bottom:24px; }
+.rot-dismiss{ background:#1a2230; color:#e8dcc8; border:1px solid #3a4656; border-radius:12px; padding:12px 22px; font-size:15px; min-height:48px; cursor:pointer; }
+@keyframes rotwig{ 0%,15%{transform:rotate(-8deg);} 55%,75%{transform:rotate(82deg);} 100%{transform:rotate(-8deg);} }
 
 /* ---------- overlays / screens ---------- */
 .screen{ position:fixed; inset:0; display:none; flex-direction:column; z-index:30;
@@ -227,6 +235,12 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="rotate"><div class="rot-card">
+  <div class="rot-icon">📱</div>
+  <div class="rot-title">Turn your device sideways</div>
+  <div class="rot-sub">Burr Blast is built for landscape — you'll see the whole fort and aim far better.</div>
+  <button class="rot-dismiss" onclick="dismissRotate()">Play in portrait anyway</button>
+</div></div>
 
 <!-- exit / cross-promo (only element that calls SWS_EXIT) -->
 <button class="exit-link" id="exitBtn" style="display:none;">← All Games</button>
@@ -456,7 +470,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 (function(){
 'use strict';
 
-var BUILD = '2026-07-07.mattiles';
+var BUILD = '2026-07-07.landscape';
 
 /* ================================================================
    0. VECTOR MATH  (plain {x,y}; small allocation-light helpers)
@@ -1929,11 +1943,13 @@ function fitCamera(){
   // Fit so at least TARGET_W world-units of WIDTH are visible (so you can see the
   // slingshot AND the fort while aiming). On tall/portrait screens this letterboxes
   // extra height as open sky above; the world is bottom-anchored via G.offY.
-  var TARGET_W=760;
-  G.scale = Math.min(vh/WORLD_H, vw/TARGET_W);
+  // Fit the actual PLAYFIELD (ground + forts + aim arc, ~PLAY_H tall) — not the full WORLD_H, whose
+  // upper region is dead sky. Fitting WORLD_H made everything ~30% too small (worst in landscape).
+  var TARGET_W=760, PLAY_H=700;
+  G.scale = Math.min(vh/PLAY_H, vw/TARGET_W);
   G.viewW = vw/G.scale;
   G.viewH = vh/G.scale;
-  G.offY = Math.max(0, G.viewH - WORLD_H);
+  G.offY = 0.86*G.viewH - GROUND_Y;   // anchor the soil ~86% down the screen, every orientation
 }
 var SURVEY_DUR = 2.2;   // length of the auto-pan that shows the whole fort at level start
 function updateCamera(dt){
@@ -2413,6 +2429,7 @@ function showScreen(id){
   if(id){ var el=$(id); if(el) el.classList.add('show'); }
   var hud=$('hud'); if(id===null) hud.classList.add('show'); else hud.classList.remove('show');
   $('exitBtn').style.display = (id==='scr-menu')?'flex':'none';
+  if(typeof updateRotateHint==='function') updateRotateHint();   // show/hide the landscape nudge with play state
 }
 function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },1500); }
 
@@ -2422,6 +2439,14 @@ function resize(){
   _canvas.height=Math.floor(window.innerHeight*dpr);
   _canvas.style.width=window.innerWidth+'px'; _canvas.style.height=window.innerHeight+'px';
   if(G){ fitCamera(); }
+  updateRotateHint();
+}
+var _rotateDismissed=false;
+function dismissRotate(){ _rotateDismissed=true; updateRotateHint(); }
+function updateRotateHint(){ var el=document.getElementById('rotate'); if(!el) return;
+  // Burr Blast is a landscape game (Angry-Birds framing): nudge to rotate, only while actually playing.
+  var portrait = window.innerHeight > window.innerWidth + 40;   // hysteresis so near-square doesn't flip
+  el.classList.toggle('on', !!(_playing && portrait && !_rotateDismissed));
 }
 
 /* ---- level flow ---- */
