@@ -1,3 +1,7 @@
+> **✅ DELIVERED 2026-07-07** — Stephen's `assets/structures1.png` (3×3 magenta sheet) supplied all 9
+> tiles; cut, quantized (9.3→0.48 MB), and wired. Wood/stone/brick/thatch/steel/glass/ice/crystal tile
+> seamlessly; TNT is drawn as a stretched crate face (single centered motif). This file is kept for reference.
+
 # BURR BLAST — Material Tile Art (optional, hand to ChatGPT)
 
 *Burr Blast now has **9 building materials** you smash through. Every block is drawn on

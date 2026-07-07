@@ -456,7 +456,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 (function(){
 'use strict';
 
-var BUILD = '2026-07-07.arch';
+var BUILD = '2026-07-07.mattiles';
 
 /* ================================================================
    0. VECTOR MATH  (plain {x,y}; small allocation-light helpers)
@@ -2220,10 +2220,13 @@ function drawBlock(ctx,b){
   var mat=MAT[b.game.mat]||MAT.wood, w=b.w,h=b.h;
   ctx.save(); ctx.translate(b.pos.x,b.pos.y); ctx.rotate(b.angle);
   var dmg = (mat.indestruct||b.game.hp==null)?0:clamp(1-b.game.hp/mat.hp,0,1);
-  var tile=matTile(b.game.mat, ctx);
-  ctx.fillStyle=tile||mat.fill; ctx.strokeStyle=mat.edge; ctx.lineWidth=3;
-  rr(ctx,-w/2,-h/2,w,h,Math.min(6,Math.min(w,h)/4)); ctx.fill(); ctx.stroke();
-  if(tile){ /* painted tile IS the texture; skip the canvas texture branches, keep cracks + flash below */ }
+  var faceImg=(b.game.mat==='tnt')?img('mat-tnt'):null;   // tnt is a single crate FACE (centered motif) → stretch, don't tile
+  var tile=faceImg?null:matTile(b.game.mat, ctx);
+  var rad=Math.min(6,Math.min(w,h)/4);
+  if(faceImg){ rr(ctx,-w/2,-h/2,w,h,rad); ctx.save(); ctx.clip(); ctx.drawImage(faceImg,-w/2,-h/2,w,h); ctx.restore();
+    ctx.strokeStyle=mat.edge; ctx.lineWidth=3; rr(ctx,-w/2,-h/2,w,h,rad); ctx.stroke(); }
+  else { ctx.fillStyle=tile||mat.fill; ctx.strokeStyle=mat.edge; ctx.lineWidth=3; rr(ctx,-w/2,-h/2,w,h,rad); ctx.fill(); ctx.stroke(); }
+  if(faceImg||tile){ /* painted tile IS the texture; skip the canvas texture branches, keep cracks + flash below */ }
   else if(b.game.mat==='wood'||b.game.mat==='thatch'){ ctx.strokeStyle=mat.grain; ctx.lineWidth=1.5; ctx.globalAlpha=0.6;
     var long=w>=h; var lines=Math.max(1,Math.floor((long?h:w)/12));
     for(var g=1;g<lines;g++){ ctx.beginPath(); if(long){ var yy=-h/2+g*(h/lines); ctx.moveTo(-w/2+4,yy); ctx.lineTo(w/2-4,yy);} else { var xx=-w/2+g*(w/lines); ctx.moveTo(xx,-h/2+4); ctx.lineTo(xx,h/2-4);} ctx.stroke(); } ctx.globalAlpha=1; }
