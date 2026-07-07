@@ -1139,13 +1139,14 @@ function updateStageHazard(dt){
   }
   else if(hz.type==='frostsnap'){
     G.hzT+=dt; var snap=hz.snap||20;
-    if(G.hzT>=snap){ G.hzT=0;                                            // FROST SNAP: frost the whole field (set up shatters) + chill the plant
-      for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(p.active && !p.boss) applyStatus(p,'frost',2); }
+    if(G.hzT>=snap){ G.hzT=0;                                            // FROST SNAP: frost pests NEAR the plant (sets up shatters where you fight — not a free field-wide clear) + chill the plant
+      var fzn=0; gridQuery(pl.x,pl.y,210,function(o){ if(fzn<8 && o.active && !o.boss){ applyStatus(o,'frost',2); fzn++; } });
       G.playerChill=Math.max(G.playerChill,1.4); G.snapFlash=0.55; if(!store.settings.reducedMotion) spawnFX(pl.x,pl.y,'ring','#bfe6f2',VW,0.6);
     }
-    G.hzT2+=dt; var wv=hz.wave||30;                                      // COLD WAVE: a sweeping band you must dodge
-    if(!G.coldWave && G.hzT2>=wv){ G.hzT2=0; var fromLeft=Math.random()<0.5; G.coldWave={x:(fromLeft?-50:VW+50), dir:(fromLeft?1:-1)}; }
-    if(G.coldWave){ G.coldWave.x += G.coldWave.dir*150*dt; var dxw=pl.x-G.coldWave.x; if(dxw*dxw < 32*32) G.playerChill=Math.max(G.playerChill,1.6);
+    G.hzT2+=dt; var wv=hz.wave||30;                                      // COLD WAVE: a sweeping band with a gap — slip through the gap or get chilled
+    if(!G.coldWave && G.hzT2>=wv){ G.hzT2=0; var fromLeft=Math.random()<0.5; G.coldWave={x:(fromLeft?-50:VW+50), dir:(fromLeft?1:-1), gapY:130+Math.random()*(VH-260)}; }
+    if(G.coldWave){ G.coldWave.x += G.coldWave.dir*135*dt; var dxw=pl.x-G.coldWave.x;
+      if(dxw*dxw < 32*32 && Math.abs(pl.y-G.coldWave.gapY) > 95) G.playerChill=Math.max(G.playerChill,1.6); // caught by the band (not the gap)
       if(G.coldWave.x<-70 || G.coldWave.x>VW+70) G.coldWave=null; }
   }
 }
@@ -1168,7 +1169,7 @@ function drawStageHazard(){
 }
 // atmospheric hazards (over sprites, under HUD) — drawn from draw()
 function drawStageHazardOver(){
-  if(!G) return; var hz=G.stage.hazard; if(!hz) return; var pl=G.player;
+  if(!G || G.over) return; var hz=G.stage.hazard; if(!hz) return; var pl=G.player;   // no live-hazard chrome frozen on the game-over screen
   if(hz.type==='heat' && G.heat>0.02){
     var a=G.heat*0.5; var g=ctx.createRadialGradient(VW/2,VH/2,VH*0.25,VW/2,VH/2,VH*0.75);
     g.addColorStop(0,'rgba(230,150,60,0)'); g.addColorStop(1,'rgba(210,90,30,'+a.toFixed(3)+')');
@@ -1187,11 +1188,12 @@ function drawStageHazardOver(){
       for(var f=0;f<14;f++){ var fx2=(f*127+G.time*14)%VW, fy2=(f*83+G.time*7)%VH; ctx.beginPath(); ctx.arc(fx2,fy2,10,0,6.283); ctx.fill(); } ctx.globalAlpha=1; }
   }
   if(hz.type==='frostsnap'){
-    if(G.snapFlash>0){ ctx.fillStyle='rgba(190,230,242,'+(G.snapFlash*0.6).toFixed(3)+')'; ctx.fillRect(0,0,VW,VH); }
-    if(G.coldWave){ var x=G.coldWave.x; var g2=ctx.createLinearGradient(x-30,0,x+30,0);
+    if(G.snapFlash>0 && !store.settings.reducedMotion){ ctx.fillStyle='rgba(190,230,242,'+(G.snapFlash*0.6).toFixed(3)+')'; ctx.fillRect(0,0,VW,VH); }
+    if(G.coldWave){ var x=G.coldWave.x, gy=G.coldWave.gapY, gap=95; var g2=ctx.createLinearGradient(x-30,0,x+30,0);
       g2.addColorStop(0,'rgba(180,224,242,0)'); g2.addColorStop(0.5,'rgba(180,224,242,0.5)'); g2.addColorStop(1,'rgba(180,224,242,0)');
-      ctx.fillStyle=g2; ctx.fillRect(x-30,0,60,VH);
-      ctx.strokeStyle='rgba(220,244,255,0.7)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,VH); ctx.stroke(); }
+      ctx.fillStyle=g2; ctx.fillRect(x-30,0,60,Math.max(0,gy-gap)); ctx.fillRect(x-30,gy+gap,60,Math.max(0,VH-(gy+gap)));   // band split by a dodge gap
+      ctx.strokeStyle='rgba(220,244,255,0.7)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,gy-gap); ctx.moveTo(x,gy+gap); ctx.lineTo(x,VH); ctx.stroke();
+      ctx.fillStyle='rgba(200,240,255,0.85)'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText('▶ gap ◀', x, gy); ctx.textAlign='left'; }
   }
 }
 function drawBackground(){
@@ -1507,7 +1509,7 @@ if(DEV){
     swarmAt:function(n,type){ n=n||30; var pl=G.player; for(var i=0;i<n;i++){ var a=Math.random()*6.283, rr=20+Math.random()*90; spawnPest(type||'aphid', pl.x+Math.cos(a)*rr, pl.y+Math.sin(a)*rr); } return pests.n; },
     paint:function(status,stacks){ var pl=G.player; var t=nearestPest(pl.x,pl.y); if(!t) return 'no pest'; applyStatus(t,status,stacks||1); return {hp:Math.round(t.hp),armor:t.armor}; },
     inspect:function(){ var pl=G.player; var t=nearestPest(pl.x,pl.y); return t?{type:t.type,hp:Math.round(t.hp),armor:t.armor,st:Array.from(t.st),root:Math.round(t.rootT*100)/100,freeze:Math.round(t.freezeT*100)/100}:'none'; },
-    haz:function(){ if(!G) return null; return {type:G.stage.hazard?G.stage.hazard.type:null, zones:(G.zones||[]).length, z:(G.zones||[]).map(function(o){return [Math.round(o.x),Math.round(o.y),o.r,o.kind];}), heat:Math.round(G.heat*100)/100, fog:Math.round(G.fog*100)/100, chill:Math.round(G.playerChill*100)/100, coldWave:!!G.coldWave, moveMul:Math.round(hazMoveMul(G.player.x,G.player.y)*100)/100}; },
+    haz:function(){ if(!G) return null; return {type:G.stage.hazard?G.stage.hazard.type:null, zones:(G.zones||[]).length, z:(G.zones||[]).map(function(o){return [Math.round(o.x),Math.round(o.y),o.r,o.kind];}), heat:Math.round(G.heat*100)/100, fog:Math.round(G.fog*100)/100, chill:Math.round(G.playerChill*100)/100, coldWave:!!G.coldWave, cw:(G.coldWave?{x:Math.round(G.coldWave.x),gapY:Math.round(G.coldWave.gapY)}:null), hzT:Math.round(G.hzT*10)/10, hzT2:Math.round(G.hzT2*10)/10, moveMul:Math.round(hazMoveMul(G.player.x,G.player.y)*100)/100}; },
     setPos:function(x,y){ if(G){ G.player.x=x; G.player.y=y; } return {x:G.player.x,y:G.player.y}; }
   };
   updateDev();
