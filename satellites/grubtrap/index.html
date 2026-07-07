@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Crect x='5' y='5' width='9' height='9' rx='2' fill='%236b4a2b'/%3E%3Crect x='18' y='5' width='9' height='9' rx='2' fill='%236b4a2b'/%3E%3Crect x='5' y='18' width='9' height='9' rx='2' fill='%236b4a2b'/%3E%3Ccircle cx='22.5' cy='22.5' r='4.6' fill='%23c8a84b'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23e8dcc8'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Grubtrap">
+<title>Grubtrap — Sky Wolf Studios</title>
+<!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/grubtrap/; harmless 404 at repo root, guarded) -->
+<script src="/sunbeam-sdk.js?v=2"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"grubtrap"}).catch(function(){});</script>
+<style>
+:root{
+  --bg:#0d100c; --bg2:#141a12; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b;
+  --cream:#e8dcc8; --muted:#8a9178; --bark:#6b4a2b; --pink:#e58fa0; --ink:#12160f;
+  --pan:#0a0d09ee; --line:#2a331f;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:54px; line-height:1; color:var(--sage); font-weight:800;
+  text-shadow:0 3px 0 #14200f, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.85; max-width:410px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px;
+  min-height:64px; width:100%; border:1px solid var(--line); border-radius:16px;
+  background:linear-gradient(180deg,#1a2415,#121a0f); color:var(--cream);
+  font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
+  transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a;
+  box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:24px; width:32px; text-align:center; flex:none}
+.win-stat{display:flex; justify-content:space-between; width:100%; max-width:320px; margin:6px auto;
+  font-size:16px; padding:8px 4px; border-bottom:1px solid var(--line)}
+.win-stat b{color:var(--gold)}
+.sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
+  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.recbar{font-size:13px;color:var(--muted);margin-top:8px}
+.recbar b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Grubtrap</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">You're a field mouse in an overrun bed. Shove the stone planters to box the garden grubs into a corner until they curl up for good. A cozy remake of Rodent's Revenge.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-play">🐭&nbsp; Play</button>
+      <div class="row">
+        <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-set">Settings</button>
+      </div>
+      <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
+    </div>
+    <div class="recbar" id="recbar"></div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">🐭</div><div>Steer the mouse with the pad. Walk into a <b>stone planter</b> to shove it, and a whole row of them if there is room behind.</div></div>
+    <div class="helprow"><div class="hi">🐛</div><div>Box a <b>grub</b> in on all four sides with planters or the bed wall and it curls into a harmless <b class="hl">seedball</b>. Curl up <b>every</b> grub to clear the ground.</div></div>
+    <div class="helprow"><div class="hi">⚠️</div><div>Don't let a grub reach you. If one crawls onto your square you lose a whisker. Lose them all and it is over.</div></div>
+    <div class="helprow"><div class="hi">🌰</div><div>Seedballs become solid, so use them to help pen the next grub. Later grounds add more grubs and quicker ones.</div></div>
+    <div class="helprow"><div class="hi">☀️</div><div>Clear grounds to earn Sunbeams for your garden.</div></div>
+    <div style="height:20px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:12px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div style="height:12px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+    <div class="foot">Grubtrap — a Sky Wolf remake of the classic Rodent's Revenge.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
+  </div></div>
+
+  <!-- GAME OVER -->
+  <div class="screen center" id="s-over"><div class="pad center">
+    <div style="flex:1"></div>
+    <div style="font-size:52px" id="over-emoji">🐛</div>
+    <h2 class="sc-h" style="font-size:28px;margin-top:6px" id="over-title">The grubs got you</h2>
+    <div style="width:100%;margin-top:14px">
+      <div class="win-stat"><span>Grounds cleared</span><b id="over-level">0</b></div>
+      <div class="win-stat"><span>Grubs penned</span><b id="over-pen">0</b></div>
+      <div class="win-stat"><span>Score</span><b id="over-score">0</b></div>
+      <div class="win-stat"><span>Best</span><b id="over-best">0</b></div>
+    </div>
+    <div class="sun-earn" id="over-sun">☀ +0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="over-again">↻ Try again</button>
+      <button class="btn sm" id="over-title2">Title</button>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+/* ============================ helpers ================================= */
+function $(id){ return document.getElementById(id); }
+var curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; updateCtrl(); }
+function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+var BUILD='v1.0';
+
+var LS=(function(){ var ok=true, mem={};
+  try{ var k='gt_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
+  return { get:function(k){ try{ return ok?localStorage.getItem(k):(k in mem?mem[k]:null); }catch(e){ return k in mem?mem[k]:null; } },
+    set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } } };
+})();
+var K={ set:'gt_set', best:'gt_best' };
+var SET={ sound:true };
+(function(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; }catch(e){} })();
+function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
+var BEST=parseInt(LS.get(K.best)||'0',10)||0;
+
+/* audio */
+var AC=null;
+function actx(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
+function beep(freq,dur,type,vol,slideTo){ if(!SET.sound) return; var c=actx(); if(!c) return;
+  try{ var o=c.createOscillator(), g=c.createGain(), t=c.currentTime; o.type=type||'sine'; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||0.12,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function sfx(kind){ switch(kind){
+  case 'ui': beep(420,0.05,'triangle',0.09); break;
+  case 'step': beep(300,0.035,'sine',0.05); break;
+  case 'push': beep(180,0.06,'square',0.07,140); break;
+  case 'trap': beep(523,0.09,'triangle',0.12,760); setTimeout(function(){ beep(784,0.10,'sine',0.11); },70); break;
+  case 'catch': beep(200,0.16,'sawtooth',0.11,90); break;
+  case 'clear': beep(523,0.10,'triangle',0.13); setTimeout(function(){ beep(659,0.10,'triangle',0.13); },100); setTimeout(function(){ beep(784,0.14,'triangle',0.14); },210); break;
+  case 'over': beep(392,0.16,'triangle',0.1,300); setTimeout(function(){ beep(262,0.24,'triangle',0.1,175); },170); break;
+} }
+
+/* ============================ state ================================= */
+var cv, ctx, VW=540, VH=960, DPR=Math.min(2, window.devicePixelRatio||1);
+var COLS=13, ROWS=16, CS=39, FX=15, FY=96;
+var HUD=96, DPAD=232;
+/* terrain grid: 0 empty, 1 block(planter), 2 wall, 3 seedball(trapped) */
+var grid=null;
+var hero=null;      // {c,r}
+var grubs=[];       // [{c,r,anim}]
+var G=null;         // {level, lives, score, penned, phase:'play'|'clear'|'dead', flash, invuln}
+var parts=[];
+var running=false, lastTs=0, grubTimer=0;
+var moveAcc=0;      // dpad hold repeat
+
+/* ============================ layout ================================= */
+function layout(){
+  COLS=13;
+  CS=Math.floor((VW-24)/COLS);
+  var availH=VH-HUD-DPAD;
+  ROWS=clamp(Math.floor(availH/CS), 12, 18);
+  FX=Math.floor((VW-COLS*CS)/2);
+  FY=HUD;
+}
+function idx(c,r){ return r*COLS+c; }
+function inBounds(c,r){ return c>=0&&r>=0&&c<COLS&&r<ROWS; }
+function solidT(c,r){ if(!inBounds(c,r)) return true; var v=grid[idx(c,r)]; return v===1||v===2||v===3; }
+function grubAt(c,r){ for(var i=0;i<grubs.length;i++) if(grubs[i].c===c&&grubs[i].r===r) return i; return -1; }
+
+/* ============================ generation ================================= */
+function newGame(){
+  layout();
+  G={ level:1, lives:3, score:0, penned:0, phase:'play', flash:0, invuln:0 };
+  buildLevel();
+  show(null);
+  running=true; lastTs=0; grubTimer=0; requestAnimationFrame(loop);
+}
+function buildLevel(){
+  layout();
+  grid=new Array(COLS*ROWS);
+  var c,r;
+  for(r=0;r<ROWS;r++) for(c=0;c<COLS;c++){
+    if(c===0||r===0||c===COLS-1||r===ROWS-1){ grid[idx(c,r)]=2; }
+    else grid[idx(c,r)] = (Math.random()<0.42)?1:0;
+  }
+  // hero start: an interior cell, carve a 3x3 clearing
+  var hc=Math.floor(COLS/2), hr=ROWS-3;
+  hero={ c:hc, r:hr };
+  for(r=hr-1;r<=hr+1;r++) for(c=hc-1;c<=hc+1;c++){ if(inBounds(c,r)&&grid[idx(c,r)]!==2) grid[idx(c,r)]=0; }
+  // grubs: place in empty cells far from hero, with an empty neighbour (not pre-trapped)
+  grubs=[];
+  var need=G.level+1, guard=0;
+  while(grubs.length<need && guard<600){ guard++;
+    c=1+Math.floor(Math.random()*(COLS-2)); r=1+Math.floor(Math.random()*(ROWS-2));
+    if(grid[idx(c,r)]!==0) continue;
+    if(grubAt(c,r)>=0) continue;
+    if(Math.abs(c-hero.c)+Math.abs(r-hero.r) < 6) continue;
+    // carve a little breathing room so it isn't instantly trapped
+    var freeN=0; if(!solidT(c-1,r))freeN++; if(!solidT(c+1,r))freeN++; if(!solidT(c,r-1))freeN++; if(!solidT(c,r+1))freeN++;
+    if(freeN<2){ if(inBounds(c+1,r)&&grid[idx(c+1,r)]===1) grid[idx(c+1,r)]=0; }
+    grubs.push({ c:c, r:r, ox:0, oy:0 });
+  }
+  G.phase='play'; G.flash=0; G.invuln=0;
+  updateCtrl();
+}
+
+/* ============================ hero movement ================================= */
+var DIRS={ up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+function moveHero(dir){
+  if(!G||G.phase!=='play') return false;
+  var d=DIRS[dir]; if(!d) return false;
+  var nc=hero.c+d[0], nr=hero.r+d[1];
+  if(!inBounds(nc,nr)) return false;
+  if(grid[idx(nc,nr)]===2 || grid[idx(nc,nr)]===3) return false; // wall/seedball
+  if(grubAt(nc,nr)>=0) return false; // can't walk into a grub
+  if(grid[idx(nc,nr)]===1){
+    // push a contiguous line of planters one cell: find the first non-block cell after the line
+    var cc=nc, cr=nr;
+    while(inBounds(cc,cr)&&grid[idx(cc,cr)]===1){ cc+=d[0]; cr+=d[1]; }
+    // that landing cell must be in-bounds, empty terrain, and free of a grub
+    if(!inBounds(cc,cr) || grid[idx(cc,cr)]!==0 || grubAt(cc,cr)>=0) return false;
+    // shifting a solid run by one = gain a block at the far end, free the near end
+    grid[idx(cc,cr)]=1;
+    grid[idx(nc,nr)]=0;
+    hero.c=nc; hero.r=nr; sfx('push');
+  } else {
+    hero.c=nc; hero.r=nr; sfx('step');
+  }
+  afterMoveChecks();
+  return true;
+}
+function afterMoveChecks(){
+  checkTraps();
+  // hero moving onto a grub is prevented; but a hero move can trap grubs
+  if(grubs.length===0 && G.phase==='play') levelClear();
+}
+
+/* ============================ grubs (pests) ================================= */
+function grubStep(){
+  if(!G||G.phase!=='play') return;
+  // move each grub toward hero
+  for(var i=0;i<grubs.length;i++){
+    var g=grubs[i];
+    var dc=hero.c-g.c, dr=hero.r-g.r;
+    var order=[];
+    if(Math.abs(dc)>=Math.abs(dr)){
+      if(dc!==0) order.push(dc>0?'right':'left'); if(dr!==0) order.push(dr>0?'down':'up');
+      if(dc!==0) order.push(dr>0?'down':'up'); // fallback other axis if perpendicular blocked
+    } else {
+      if(dr!==0) order.push(dr>0?'down':'up'); if(dc!==0) order.push(dc>0?'right':'left');
+    }
+    // add remaining dirs as last resort (small randomness)
+    var all=['up','down','left','right'];
+    if(Math.random()<0.15) all.sort(function(){ return Math.random()-0.5; });
+    for(var a=0;a<all.length;a++) if(order.indexOf(all[a])<0) order.push(all[a]);
+    var moved=false;
+    for(var o=0;o<order.length;o++){
+      var d=DIRS[order[o]], nc=g.c+d[0], nr=g.r+d[1];
+      if(!inBounds(nc,nr)) continue;
+      if(nc===hero.c && nr===hero.r){ // reach the mouse
+        if(G.invuln>0){ continue; }   // can't catch while the mouse is dazed; try another way
+        heroCaught(); return;         // caught — stop processing this tick (grubs got respawned)
+      }
+      if(solidT(nc,nr)) continue;
+      if(grubAt(nc,nr)>=0) continue;
+      g.c=nc; g.r=nr; moved=true; break;
+    }
+  }
+  if(G.phase!=='play') return;
+  checkTraps();
+  if(grubs.length===0) levelClear();
+}
+function checkTraps(){
+  var trapped=[];
+  for(var i=0;i<grubs.length;i++){ var g=grubs[i];
+    if(solidT(g.c-1,g.r)&&solidT(g.c+1,g.r)&&solidT(g.c,g.r-1)&&solidT(g.c,g.r+1)) trapped.push(i);
+  }
+  if(!trapped.length) return;
+  // trap from highest index so splice is safe
+  for(var t=trapped.length-1;t>=0;t--){ var g2=grubs[trapped[t]];
+    grid[idx(g2.c,g2.r)]=3; // seedball (solid)
+    G.penned++; G.score+=50*G.level;
+    burst(cellCX(g2.c), cellCY(g2.r), '#c8a84b', 12);
+    grubs.splice(trapped[t],1);
+  }
+  sfx('trap'); G.flash=0.3;
+  updateCtrl();
+}
+function heroCaught(){
+  G.lives--; G.flash=0.6; sfx('catch'); burst(cellCX(hero.c), cellCY(hero.r), '#e56a4d', 18);
+  if(G.lives<=0){ gameOver(); return; }
+  // respawn grubs away from hero, grant brief invulnerability
+  G.invuln=1.4;
+  for(var i=0;i<grubs.length;i++){ var g=grubs[i], guard=0;
+    while(guard<200){ guard++; var c=1+Math.floor(Math.random()*(COLS-2)), r=1+Math.floor(Math.random()*(ROWS-2));
+      if(grid[idx(c,r)]===0 && grubAt(c,r)<0 && (Math.abs(c-hero.c)+Math.abs(r-hero.r))>=6){ g.c=c; g.r=r; break; } }
+  }
+  updateCtrl();
+}
+
+/* ============================ level flow ================================= */
+function levelClear(){
+  if(G.phase!=='play') return;
+  G.phase='clear'; sfx('clear');
+  var bonus=100*G.level + G.lives*40; G.score+=bonus;
+  var amt=Math.max(1, 2+Math.floor(G.level/2)); var granted=0;
+  try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'grubtrap:clear')||0; }catch(e){}
+  G.lastSun=granted; G.clearT=1.5;
+  for(var i=0;i<20;i++) burst(FX+Math.random()*COLS*CS, FY+Math.random()*ROWS*CS, '#8fd06a', 1);
+  updateCtrl();
+}
+function gameOver(){
+  G.phase='dead'; running=false; sfx('over');
+  if(G.score>BEST){ BEST=G.score; LS.set(K.best, ''+BEST); }
+  $('over-level').textContent=''+(G.level-1);
+  $('over-pen').textContent=''+G.penned;
+  $('over-score').textContent=''+G.score;
+  $('over-best').textContent=''+BEST;
+  $('over-title').textContent=(G.level>1)?('You cleared '+(G.level-1)+' ground'+(G.level-1>1?'s':'')):'The grubs got you';
+  $('over-emoji').textContent=(G.level>3)?'🌿':'🐛';
+  var granted=0; if(G.level>=2){ try{ if(window._sbCapEarn) granted=window._sbCapEarn(1,'grubtrap:consolation')||0; }catch(e){} }
+  $('over-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'):'☀ better luck next bed';
+  setTimeout(function(){ show('s-over'); },700);
+}
+function advance(){ if(!G||G.phase!=='clear') return; G.level++; buildLevel(); running=true; lastTs=0; grubTimer=0; requestAnimationFrame(loop); }
+
+/* ============================ rendering ================================= */
+function cellX(c){ return FX+c*CS; }
+function cellY(r){ return FY+r*CS; }
+function cellCX(c){ return FX+c*CS+CS/2; }
+function cellCY(r){ return FY+r*CS+CS/2; }
+function render(){
+  ctx.clearRect(0,0,VW,VH);
+  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101610'); bg.addColorStop(1,'#0a0d09'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  if(!G) return;
+  // HUD
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle='#7ab356'; ctx.font='800 24px system-ui'; ctx.fillText('Ground '+G.level, 16, 30);
+  ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui'; ctx.fillText('grubs left '+grubs.length, 16, 54);
+  ctx.textAlign='right';
+  var lx=VW-16; for(var i=0;i<Math.max(G.lives,0);i++){ drawWhisker(ctx, lx-i*20, 26); }
+  ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui'; ctx.fillText('score '+G.score, VW-16, 54);
+  ctx.fillStyle='#8a9178'; ctx.textAlign='center'; ctx.fillText('penned '+G.penned, VW/2, 30);
+
+  // field bg
+  ctx.fillStyle='#171008'; ctx.fillRect(FX,FY,COLS*CS,ROWS*CS);
+  // cells
+  var c,r;
+  for(r=0;r<ROWS;r++) for(c=0;c<COLS;c++){ var v=grid[idx(c,r)]; var x=cellX(c), y=cellY(r);
+    if(v===0){ /* soil */ }
+    else if(v===1){ // planter
+      ctx.fillStyle='#3a2817'; ctx.fillRect(x+1,y+1,CS-2,CS-2);
+      ctx.fillStyle='#5a4127'; ctx.fillRect(x+3,y+3,CS-6,CS-6);
+      ctx.fillStyle='#6aa64c'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS*0.42,CS*0.14,0,6.2832); ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1; ctx.strokeRect(x+1.5,y+1.5,CS-3,CS-3);
+    }
+    else if(v===2){ // wall (hedge border)
+      ctx.fillStyle='#26301c'; ctx.fillRect(x,y,CS,CS);
+      ctx.fillStyle='#3f5a28'; ctx.fillRect(x+2,y+2,CS-4,CS-4);
+    }
+    else if(v===3){ // seedball (trapped grub)
+      ctx.fillStyle='#2a2410'; ctx.fillRect(x+1,y+1,CS-2,CS-2);
+      ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS/2,CS*0.32,0,6.2832); ctx.fill();
+      ctx.fillStyle='#8a6b1e'; ctx.beginPath(); ctx.arc(x+CS/2,y+CS/2,CS*0.18,0,6.2832); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(x+CS*0.4,y+CS*0.4,CS*0.09,0,6.2832); ctx.fill();
+    }
+  }
+  // field border
+  ctx.strokeStyle='#6b4a2b'; ctx.lineWidth=4; ctx.strokeRect(FX-2,FY-2,COLS*CS+4,ROWS*CS+4);
+
+  // grubs
+  for(i=0;i<grubs.length;i++) drawGrub(ctx, grubs[i]);
+  // hero
+  drawHero(ctx, hero);
+
+  // particles
+  for(var pi=0;pi<parts.length;pi++){ var p=parts[pi]; ctx.globalAlpha=clamp(p.life,0,1); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill(); }
+  ctx.globalAlpha=1;
+
+  if(G.flash>0){ ctx.fillStyle='rgba(229,106,77,'+(G.flash*0.35)+')'; ctx.fillRect(FX,FY,COLS*CS,ROWS*CS); }
+
+  if(G.phase==='clear'){
+    ctx.fillStyle='rgba(10,13,9,0.72)'; ctx.fillRect(0,FY,VW,ROWS*CS);
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#8fd06a'; ctx.font='800 38px system-ui'; ctx.fillText('Ground cleared!', VW/2, FY+ROWS*CS/2-30);
+    if(G.lastSun>0){ ctx.fillStyle='#c8a84b'; ctx.font='800 18px system-ui'; ctx.fillText('☀ +'+G.lastSun+' sunbeam'+(G.lastSun>1?'s':''), VW/2, FY+ROWS*CS/2+8); }
+    ctx.fillStyle='#8a9178'; ctx.font='600 15px system-ui'; ctx.fillText('tap to enter the next ground', VW/2, FY+ROWS*CS/2+44);
+  }
+}
+function drawWhisker(g,x,y){ g.save(); g.strokeStyle='#e8dcc8'; g.lineWidth=2; g.lineCap='round';
+  g.beginPath(); g.moveTo(x-8,y); g.lineTo(x,y-2); g.moveTo(x-8,y+3); g.lineTo(x,y+2); g.stroke();
+  g.fillStyle='#b8a488'; g.beginPath(); g.arc(x+3,y,2.5,0,6.2832); g.fill(); g.restore(); }
+function drawHero(g,h){ var x=cellCX(h.c), y=cellCY(h.r), s=CS*0.40;
+  g.save(); g.translate(x,y);
+  if(G && G.invuln>0){ g.globalAlpha=0.5+0.5*Math.abs(Math.sin(G.invuln*12)); }
+  g.globalAlpha=(g.globalAlpha||1)*0.3; g.fillStyle='#000'; g.beginPath(); g.ellipse(0,s*0.7,s*0.9,s*0.35,0,0,6.2832); g.fill(); g.globalAlpha=(G&&G.invuln>0)?(0.5+0.5*Math.abs(Math.sin(G.invuln*12))):1;
+  // body
+  g.fillStyle='#9a8b76'; g.beginPath(); g.arc(0,0,s,0,6.2832); g.fill();
+  // ears
+  g.fillStyle='#8a7b66'; g.beginPath(); g.arc(-s*0.6,-s*0.55,s*0.4,0,6.2832); g.fill(); g.beginPath(); g.arc(s*0.6,-s*0.55,s*0.4,0,6.2832); g.fill();
+  g.fillStyle='#e58fa0'; g.beginPath(); g.arc(-s*0.6,-s*0.55,s*0.2,0,6.2832); g.fill(); g.beginPath(); g.arc(s*0.6,-s*0.55,s*0.2,0,6.2832); g.fill();
+  // eyes + nose
+  g.fillStyle='#12160f'; g.beginPath(); g.arc(-s*0.28,-s*0.05,s*0.13,0,6.2832); g.fill(); g.beginPath(); g.arc(s*0.28,-s*0.05,s*0.13,0,6.2832); g.fill();
+  g.fillStyle='#e58fa0'; g.beginPath(); g.arc(0,s*0.28,s*0.14,0,6.2832); g.fill();
+  g.restore();
+}
+function drawGrub(g,gr){ var x=cellCX(gr.c), y=cellCY(gr.r), s=CS*0.38;
+  g.save(); g.translate(x,y);
+  g.globalAlpha=0.3; g.fillStyle='#000'; g.beginPath(); g.ellipse(0,s*0.7,s*0.9,s*0.3,0,0,6.2832); g.fill(); g.globalAlpha=1;
+  // segmented body
+  g.fillStyle='#a7c24a';
+  for(var i=2;i>=0;i--){ g.beginPath(); g.arc(-i*s*0.18+s*0.18, 0, s*(1-i*0.12), 0, 6.2832); g.fill(); }
+  g.fillStyle='#c3dd6a'; g.beginPath(); g.arc(s*0.36,0,s*0.9,0,6.2832); g.fill();
+  // face
+  g.fillStyle='#12160f'; g.beginPath(); g.arc(s*0.5,-s*0.25,s*0.14,0,6.2832); g.fill(); g.beginPath(); g.arc(s*0.5,s*0.25,s*0.14,0,6.2832); g.fill();
+  // segment lines
+  g.strokeStyle='rgba(0,0,0,0.2)'; g.lineWidth=1.5;
+  g.beginPath(); g.arc(0,0,s*0.9,-1,1); g.stroke(); g.beginPath(); g.arc(-s*0.2,0,s*0.85,-1,1); g.stroke();
+  g.restore();
+}
+function burst(x,y,col,count){ for(var i=0;i<(count||10);i++){ var a=Math.random()*6.2832, sp=40+Math.random()*160; parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-50,r:2+Math.random()*3,col:col,life:1}); } }
+
+/* ============================ loop ================================= */
+function grubInterval(){ var ms=720-(G.level-1)*45; if(ms<320) ms=320; return ms/1000; }
+function loop(ts){
+  if(!running) return;
+  var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts;
+  if(G && G.phase==='play' && curScreen===null){
+    if(G.invuln>0){ G.invuln-=dt; if(G.invuln<0) G.invuln=0; }
+    grubTimer+=dt;
+    var iv=grubInterval();
+    while(grubTimer>=iv){ grubTimer-=iv; grubStep(); if(!G||G.phase!=='play') break; }
+    // dpad hold-repeat
+    if(heldDir && moveAcc>0){ moveAcc-=dt; if(moveAcc<=0){ moveHero(heldDir); moveAcc=0.13; } }
+  }
+  if(G && G.flash>0){ G.flash-=dt; if(G.flash<0) G.flash=0; }
+  for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=380*dt; p.life-=dt*0.85; if(p.life<=0) parts.splice(i,1); }
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ============================ input ================================= */
+function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
+var heldDir=null;
+function onDown(e){
+  if(curScreen!==null||!G) return;
+  var p=evPos(e);
+  if(G.phase==='clear'){ e.preventDefault(); advance(); return; }
+  // swipe start recorded; also allow tap on field to advance clear (handled). movement via dpad.
+  swipeStart=p;
+}
+var swipeStart=null;
+function onUp(e){
+  if(!G||G.phase!=='play'||!swipeStart) { swipeStart=null; return; }
+  var p=evPos(e); var dx=p.x-swipeStart.x, dy=p.y-swipeStart.y; swipeStart=null;
+  if(Math.abs(dx)<18 && Math.abs(dy)<18) return; // not a swipe
+  if(Math.abs(dx)>Math.abs(dy)) moveHero(dx>0?'right':'left'); else moveHero(dy>0?'down':'up');
+}
+
+/* ============================ dpad ================================= */
+function buildCtrl(){
+  if($('ctrlbar')) return;
+  var bar=document.createElement('div'); bar.id='ctrlbar';
+  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:'+DPAD+'px;display:none;z-index:12;background:linear-gradient(0deg,#0a0d09 72%,#0a0d0900)';
+  // pause button top-left of the pad area
+  var pause=document.createElement('button'); pause.id='pause-btn'; pause.textContent='☰ Menu';
+  pause.style.cssText='position:absolute;left:14px;top:10px;min-height:48px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:15px;font-weight:700;cursor:pointer';
+  pause.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); pauseToTitle(); });
+  bar.appendChild(pause);
+  // cross dpad
+  var pad=document.createElement('div');
+  pad.style.cssText='position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:186px;height:186px';
+  function mk(dir,txt,x,y){ var b=document.createElement('button'); b.textContent=txt;
+    b.style.cssText='position:absolute;width:60px;height:60px;left:'+x+'px;top:'+y+'px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:26px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #0d1408';
+    var press=function(ev){ ev.preventDefault(); if(!G||G.phase!=='play'||curScreen!==null) return; moveHero(dir); heldDir=dir; moveAcc=0.28; };
+    var release=function(ev){ if(heldDir===dir){ heldDir=null; moveAcc=0; } };
+    b.addEventListener('pointerdown',press); b.addEventListener('pointerup',release); b.addEventListener('pointerleave',release); b.addEventListener('pointercancel',release);
+    return b; }
+  pad.appendChild(mk('up','▲',63,0));
+  pad.appendChild(mk('left','◀',0,63));
+  pad.appendChild(mk('right','▶',126,63));
+  pad.appendChild(mk('down','▼',63,126));
+  bar.appendChild(pad);
+  $('stage').appendChild(bar);
+}
+function updateCtrl(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&G&&(G.phase==='play'||G.phase==='clear'))?'block':'none'; }
+function pauseToTitle(){ running=false; if(G) G.phase='paused'; heldDir=null; show('s-title'); updateRec(); }
+
+/* ============================ toggles / rec ================================= */
+function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get()) el.classList.add('on'); else el.classList.remove('on'); }
+  paint(); var host=el.parentNode||el; host.style.cursor='pointer';
+  host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
+function updateRec(){ var r=$('recbar'); if(BEST>0) r.innerHTML='Best score <b>'+BEST+'</b>'; else r.textContent=''; }
+
+/* ============================ boot ================================= */
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+function boot(){
+  cv=$('game'); ctx=cv.getContext('2d');
+  cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+  fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+  cv.addEventListener('pointerdown',onDown,{passive:false});
+  window.addEventListener('pointerup',onUp,{passive:false});
+  window.addEventListener('keydown',function(e){ if(!G||G.phase!=='play'||curScreen!==null) return;
+    var k=e.key; if(k==='ArrowUp'||k==='w') moveHero('up'); else if(k==='ArrowDown'||k==='s') moveHero('down'); else if(k==='ArrowLeft'||k==='a') moveHero('left'); else if(k==='ArrowRight'||k==='d') moveHero('right'); else return; e.preventDefault(); });
+  document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+  document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden){ running=false; } else if(G&&(G.phase==='play'||G.phase==='clear')&&curScreen===null){ running=true; lastTs=0; requestAnimationFrame(loop); } });
+  buildCtrl();
+  tap('b-play', function(){ newGame(); });
+  tap('b-how', function(){ show('s-how'); });
+  tap('b-set', function(){ show('s-set'); });
+  tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
+  tap('how-back', function(){ show('s-title'); });
+  tap('set-back', function(){ show('s-title'); });
+  tap('over-again', function(){ newGame(); });
+  tap('over-title2', function(){ show('s-title'); updateRec(); });
+  wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
+  $('buildstamp').textContent='Grubtrap '+BUILD;
+  updateRec();
+}
+
+/* ===== Sky Wolf Studios embed protocol ===== */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* studio-standard 30/day/game sunbeam cap helper (see SUNBEAM_EARN_POLICY.md) */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{ var k='sw_sb_grubtrap';
+    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n;
+  }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
+  return granted;
+};
+
+/* headless-test hook (inert without ?gttest=1) */
+if(/[?&]gttest=1/.test(location.search)){
+  window.GT_DEV={
+    newGame:newGame, stop:function(){ running=false; }, render:render,
+    state:function(){ return G; }, grid:function(){ return grid; }, hero:function(){ return hero; }, grubs:function(){ return grubs; },
+    dims:function(){ return {COLS:COLS,ROWS:ROWS,CS:CS,FX:FX,FY:FY}; },
+    move:function(dir){ return moveHero(dir); }, grubStep:grubStep, checkTraps:checkTraps,
+    set:function(c,r,v){ grid[idx(c,r)]=v; }, get:function(c,r){ return grid[idx(c,r)]; },
+    setHero:function(c,r){ hero.c=c; hero.r=r; }, clearGrubs:function(){ grubs=[]; },
+    placeGrub:function(c,r){ grubs.push({c:c,r:r,ox:0,oy:0}); },
+    clearArea:function(){ for(var r=1;r<ROWS-1;r++)for(var c=1;c<COLS-1;c++) grid[idx(c,r)]=0; },
+    phase:function(){ return G?G.phase:null; }, level:function(){ return G?G.level:0; }, lives:function(){ return G?G.lives:0; }, penned:function(){ return G?G.penned:0; },
+    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_grubtrap')||'{}'); }catch(e){ return {}; } }
+  };
+}
+boot();
+})();
+</script>
+</body>
+</html>
