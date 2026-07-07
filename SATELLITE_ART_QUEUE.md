@@ -20,9 +20,9 @@ procedural blobs** sitting next to them and reading as unfinished:
 
 ### 2. Sprout Dice — portal thumbnail  ·  *tiny art, every visitor sees it*
 Sprout Dice is the last satellite card still showing only its 🎲 glyph.
-- **File:** `portal-assets/thumbs/sprout-dice.jpg`  ·  **~480×480, ≤150 KB**, full-bleed (no magenta).
-- **Hero shot:** a plant-faced die mid-roll landing on a glowing target, thorns lashing a garden
-  pest, a stack of dice and a floor of soil behind — midnight-greenhouse palette, warm gold glow.
+**→ Paste-ready spec: `satellites/sprout-dice/THUMBNAIL_SPEC.md`** (`portal-assets/thumbs/sprout-dice.jpg`,
+~480×480, ≤150 KB, full-bleed). Hero shot: a living-wooden garden die tumbling over a glowing gold
+target ring, a pest recoiling from a thorn strike — midnight-greenhouse palette.
 
 ### 3. Bramblewick — the 5 ground backgrounds  ·  *optional polish*
 Per-ground floors (`bg_greenhouse/sunkenbeds/sundrift/understory/longdark.jpg`). Optional — the
