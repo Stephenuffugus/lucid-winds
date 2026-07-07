@@ -18,11 +18,10 @@ procedural blobs** sitting next to them and reading as unfinished:
 `boss_tideshell`, `boss_broodmother`, `boss_frostmaw`, `boss_wiltqueen`.
 **→ Paste-ready spec: `satellites/bramblewick/BOSS_ART_LIST.md`** (Sheet A). One 2×2 magenta sheet.
 
-### 2. Sprout Dice — portal thumbnail  ·  *tiny art, every visitor sees it*
-Sprout Dice is the last satellite card still showing only its 🎲 glyph.
-**→ Paste-ready spec: `satellites/sprout-dice/THUMBNAIL_SPEC.md`** (`portal-assets/thumbs/sprout-dice.jpg`,
-~480×480, ≤150 KB, full-bleed). Hero shot: a living-wooden garden die tumbling over a glowing gold
-target ring, a pest recoiling from a thorn strike — midnight-greenhouse palette.
+### 2. Sprout Dice — full art pass (it's emoji + CSS today)  ·  the Director wants to build it out
+**→ Full list: `satellites/sprout-dice/ASSET_LIST.md`** — 7 face symbols (biggest bang), 12 pests +
+4 bosses, rarity die faces, board bg + logo. Thumbnail spec at `THUMBNAIL_SPEC.md`
+(`portal-assets/thumbs/sprout-dice.jpg`, ~480×480, ≤150 KB — last glyph-only card).
 
 ### 3. Bramblewick — the 5 ground backgrounds  ·  *optional polish*
 Per-ground floors (`bg_greenhouse/sunkenbeds/sundrift/understory/longdark.jpg`). Optional — the
