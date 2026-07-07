@@ -59,7 +59,9 @@ strips, props, logo, 3 scene bgs). It's a **cut+repack-the-atlas job for me**, n
   now streams its painted swoosh ribbon behind the sled (and shows in the shop).
 - **Garden Guard** — 4 painted map backdrops (540×960) would lift the boards, but each map already has
   a distinct procedural look, so they're polish, not a hole.
-- **Burr Blast** — currency HUD chips still use emoji; painted pips are a minor nicety.
+- **Burr Blast** — 9 building materials now have a wired **seamless-tile** hook (`mat-<name>.png`);
+  spec at `satellites/burr-blast/design/MATERIAL_ART_LIST.md`. Optional — the canvas materials already
+  look finished. Also: currency HUD chips still use emoji (minor).
 
 ---
 
