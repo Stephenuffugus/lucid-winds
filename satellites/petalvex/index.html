@@ -174,7 +174,7 @@ var LS=(function(){ var ok=true, mem={};
     set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } }
   };
 })();
-var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen' };
+var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen', dly:'pvx_dly' };
 
 /* ============================ audio ================================= */
 var AC=null, SET={ sound:true, color:true };
@@ -527,6 +527,12 @@ function nudge(){
   for(i=0;i<n*n;i++){ if(P.board[i] && P.board[i].sol===target){ want=P.board[i]; loc={type:'board',idx:i}; break; } }
   if(!want){ for(i=0;i<P.tray.length;i++){ if(P.tray[i].sol===target){ want=P.tray[i]; loc={type:'tray',idx:i}; break; } } }
   if(!want) return;
+  // ambiguous-bed guard: if the canonical tile is already sitting somewhere with NO bad seams
+  // (part of a valid alternative arrangement), lock it THERE instead of ripping it out to the
+  // canonical cell — don't tear down the player's valid partial.
+  if(loc.type==='board'){ var ws=seamFor(loc.idx);
+    if(ws && ws.top!=='bad' && ws.right!=='bad' && ws.bottom!=='bad' && ws.left!=='bad'){
+      P.board[loc.idx].locked=true; P.hints++; sfx('hint'); var Rw=cellRect(loc.idx); burst(Rw.x+Rw.s/2,Rw.y+Rw.s/2,'#c8a84b',10); render(); return; } }
   // remove target's current occupant (if any) to tray
   var occ=P.board[target];
   // remove want from its location
@@ -559,7 +565,11 @@ function winPuzzle(){
   var speed=secs<parSec?Math.round(clamp((parSec-secs)/parSec*4,0,4)):0;
   var hintPenalty=P.hints>0?0.5:1;
   var total=Math.max(1, Math.round((base+speed)*hintPenalty));
-  var granted=0; try{ if(window._sbCapEarn) granted=window._sbCapEarn(total,'petalvex:solve')||0; }catch(e){}
+  // daily bed rewards only the FIRST solve of the day — otherwise it can be re-solved for sunbeams
+  var dailyDone=false;
+  if(P.mode.daily){ var today=String(Math.floor(Date.now()/864e5));
+    if(LS.get(K.dly)===today){ dailyDone=true; total=0; } else { LS.set(K.dly, today); } }
+  var granted=0; if(total>0){ try{ if(window._sbCapEarn) granted=window._sbCapEarn(total,'petalvex:solve')||0; }catch(e){} }
   // fill win screen
   $('win-size').textContent=n+' × '+n;
   $('win-time').textContent=fmtTime(P.t);
@@ -567,7 +577,9 @@ function winPuzzle(){
   var bshow=best[bk]!=null?fmtTime(best[bk]):'—';
   $('win-best').textContent=bshow+(isBest?'  ★ new!':'');
   $('win-title').textContent=isBest?'New best time!':(P.mode.daily?'Daily bed solved!':'Bed in bloom!');
-  $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun already gathered';
+  $('win-sun').textContent = granted>0 ? ('☀ +'+granted+' sunbeam'+(granted>1?'s':''))
+    : dailyDone ? '☀ already gathered today — back tomorrow'
+    : '☀ daily sunbeam cap reached';
   setTimeout(function(){ show('s-win'); }, 620);
 }
 
@@ -649,7 +661,7 @@ function boot(){
   window.addEventListener('resize',fit);
   window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   cv.addEventListener('pointerdown',onDown,{passive:false});
-  cv.addEventListener('pointermove',onMove,{passive:false});
+  window.addEventListener('pointermove',onMove,{passive:false});   // on window (like pointerup) so dragging off the canvas doesn't freeze the tile
   window.addEventListener('pointerup',onUp,{passive:false});
   window.addEventListener('pointercancel',function(){ if(drag){ P.tray.push(drag.tile); drag=null; render(); } });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
@@ -670,7 +682,7 @@ function boot(){
 
   $('buildstamp').textContent='Petalvex '+BUILD;
   // first-run: bounce to how-to once
-  if(!LS.get(K.seen)){ LS.set(K.seen,'1'); }
+  if(!LS.get(K.seen)){ LS.set(K.seen,'1'); show('s-how'); }   // first run: actually show the how-to
   render();
 }
 
