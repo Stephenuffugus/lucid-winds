@@ -121,7 +121,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi">↔</div><div>Drag any planter into an empty space. Planters slide, they never lift or turn — clear a path.</div></div>
     <div class="helprow"><div class="hi">🚪</div><div>Get the golden bloom to the gate at the bottom-centre and it slips free. Bed solved!</div></div>
     <div class="helprow"><div class="hi">↶</div><div>Undo a slide, reset the bed, or take a <b>Nudge</b> hint if the roots get tangled.</div></div>
-    <div class="helprow"><div class="hi">⭐</div><div>Fewer slides earns more stars and more Sunbeams. Beat par for three stars.</div></div>
+    <div class="helprow"><div class="hi">⭐</div><div>Fewer slides earns more stars and more Sunbeams. Finish near par for three stars.</div></div>
     <div style="height:20px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -436,22 +436,26 @@ function finalizeWin(){
 
 /* ============================ hint ================================= */
 function doHint(){
-  if(!G||G.won||G.escaping) return;
+  if(!G||G.won||G.escaping||G.thinking) return;
   sfx('hint');
-  var mv=hintMove(G.pieces);
-  if(!mv){ return; }
-  // find piece by id, apply the move (as an auto-slide) — treat as a real move w/ undo
-  var pi=-1; for(var i=0;i<G.pieces.length;i++) if(G.pieces[i].id===mv.pieceId){ pi=i; break; }
-  if(pi<0) return;
-  pushUndo();
-  var pc=G.pieces[pi];
-  pc.r+=mv.dr*mv.dist; pc.c+=mv.dc*mv.dist;
-  G.moves++;
-  G.hintPiece=pi; G.hintT=1;
-  var R=pieceRect(pc); burst(R.x+R.w/2,R.y+R.h/2,'#c8a84b',12);
-  sfx('slide');
-  if(!checkWin()){ render(); }
+  G.thinking=true; render();                       // paint a "finding a nudge…" frame BEFORE the blocking BFS
+  setTimeout(function(){
+    if(!G) return;
+    var mv=hintMove(G.pieces);
+    G.thinking=false;
+    if(!mv){ toast('No nudge here — try Undo'); render(); return; }
+    var pi=-1; for(var i=0;i<G.pieces.length;i++) if(G.pieces[i].id===mv.pieceId){ pi=i; break; }
+    if(pi<0){ render(); return; }
+    // HIGHLIGHT ONLY: glow the planter to move + say which way. The PLAYER makes the slide, so
+    // Nudge no longer auto-solves the level (it used to walk the optimal path = free 3-star + max Sunbeams).
+    G.hintPiece=pi; G.hintT=1;
+    var dir = mv.dr<0?'up':mv.dr>0?'down':mv.dc<0?'left':'right';
+    toast('Slide the glowing planter '+dir);
+    var pc=G.pieces[pi], R=pieceRect(pc); burst(R.x+R.w/2,R.y+R.h/2,'#ffe58a',8);
+    render();
+  }, 24);
 }
+function toast(msg){ if(!G) return; G.toast={text:msg, t:2.4}; startAnim(); render(); }
 
 /* ============================ rendering ================================= */
 function pieceRect(pc){ var cs=LAY.cs, d=DIM[pc.t]; return { x:LAY.gx+pc.c*cs, y:LAY.gy+pc.r*cs, w:d[0]*cs, h:d[1]*cs }; }
@@ -555,15 +559,26 @@ function render(){
   // particles
   for(i=0;i<parts.length;i++){ var p=parts[i]; ctx.globalAlpha=clamp(p.life,0,1); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill(); }
   ctx.globalAlpha=1;
+  // "finding a nudge…" while the solver runs, + a toast banner
+  if(G && (G.thinking || (G.toast&&G.toast.t>0))){
+    var msg=G.thinking?'finding a nudge…':G.toast.text;
+    var a=G.thinking?1:clamp(G.toast.t,0,1);
+    ctx.globalAlpha=a; ctx.font='800 18px system-ui'; ctx.textAlign='center';
+    var tw=ctx.measureText(msg).width+34, ty=VH-70;
+    ctx.fillStyle='rgba(13,16,12,0.9)'; rrect(ctx,(VW-tw)/2,ty-24,tw,40,12); ctx.fill();
+    ctx.strokeStyle='rgba(200,168,75,0.5)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#e8dcc8'; ctx.fillText(msg, VW/2, ty+3); ctx.textAlign='left'; ctx.globalAlpha=1;
+  }
 }
 
 /* ============================ anim loop ================================= */
-function needAnim(){ return parts.length>0 || (G&&G.escaping) || (G&&G.hintT>0); }
+function needAnim(){ return parts.length>0 || (G&&G.escaping) || (G&&G.hintT>0) || (G&&G.toast&&G.toast.t>0); }
 function startAnim(){ if(!animating){ animating=true; lastTs=0; animId=requestAnimationFrame(tick); } }
 function tick(ts){
   var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts;
   for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=560*dt; p.life-=dt*0.9; if(p.life<=0) parts.splice(i,1); }
   if(G&&G.hintT>0){ G.hintT-=dt*0.7; if(G.hintT<0) G.hintT=0; }
+  if(G&&G.toast&&G.toast.t>0){ G.toast.t-=dt; if(G.toast.t<=0) G.toast=null; }
   if(G&&G.escaping){
     G.escT+=dt* (LAY.cs*4.5);
     if(G.escT> LAY.cs*3.4){ var cc=ccOf(G.pieces); if(cc){ var R=pieceRect(cc); for(var b=0;b<3;b++) burst(R.x+R.w*Math.random(), by2()+R.h, ['#e58fa0','#c8a84b','#8fd06a'][b%3], 6); } G.escaping=false; finalizeWin(); }
