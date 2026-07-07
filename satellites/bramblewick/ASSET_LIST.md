@@ -1,3 +1,11 @@
+> **STATUS (2026-07-07):** Sheets 1, 2, 3, 4, 5 are **DONE** — that art is cut, wired and live
+> (15 creatures, 24 companions, logo, arena bg, hero/thumbnail, 22 draft icons). The **only art
+> still open** is the 4 new bosses + 5 ground backgrounds, and those now live in a focused,
+> paste-ready file: **`BOSS_ART_LIST.md`** (in this folder). Hand that one to ChatGPT next.
+> This file below is kept as the full historical plan.
+
+---
+
 # BRAMBLEWICK — Sprite-Sheet Plan (hand this to ChatGPT)
 
 *A botanical survivor-like: you are a lone plant, swarmed by garden pests, defending with living

@@ -1,110 +1,85 @@
-# SATELLITE ART QUEUE — one game at a time
-*The master index of every art asset the new satellites still want, so you can hand
-ChatGPT one list at a time. Last built: 2026-07-06.*
+# SATELLITE ART QUEUE — the master hand-off list
+*Every art asset the satellites still want, so you can hand ChatGPT one list at a time.*
+*Rebuilt 2026-07-07 from a full, file-by-file audit of every satellite (ART keys vs. files
+on disk). The fleet is now **almost entirely art-complete** — the remaining list is short.*
 
-Every new satellite ships **100% playable with canvas-drawn (procedural) art** — so
-**nothing here is blocking**. Each asset is an optional drop-in upgrade: the moment a
-correctly-named PNG exists, the game uses it; if it's missing, the code keeps drawing
-its own version. So paint any subset, in any order, and hand me batches whenever.
-
----
-
-## THE FLEET CONVENTION (read once)
-- **Deliver a transparent PNG, OR paint on a flat magenta `#FF00FF` background** and I'll
-  chroma-key cut it to transparent (same as every other satellite). Full-bleed backdrops
-  don't need magenta — they fill the frame.
-- **Paint big, never pre-shrink.** Hi-res downscales clean; upscaling looks bad. Sizes are
-  listed per asset in each game's list.
-- **Host rule:** lucidwinds.com down-samples anything over **1600px** on its long side and
-  can serve stale copies. Keep every file **under 1600px** and reasonably small in KB. I
-  version-bust each asset on deploy.
-- **No text baked into the image** (except a logo/wordmark that's meant to be text).
-- **House style for all of them:** cozy children's-storybook, soft painterly/gouache, warm
-  rim light, big readable silhouettes, a little glow. **Midnight-greenhouse palette:** deep
-  near-black backgrounds, sage green, warm gold, cream, a touch of rose. Match the Lucid
-  Winds card art mood. (Each game's file repeats a tuned prompt seed you can paste.)
+Every satellite ships **100% playable with canvas-drawn art**, so **nothing here blocks**.
+Each asset is an optional drop-in upgrade: the moment a correctly-named file lands in the
+game's `assets/` folder, the game uses it; if it's missing, the code keeps drawing its own
+version. Paint any subset, in any order, and hand me batches whenever.
 
 ---
 
-## ⭐ START HERE — portal thumbnails (tiny art, biggest visibility)
-These are the game cards in the portal grid. Until a card lands, the game shows only its
-emoji glyph and reads as unfinished. **~480×480, ≤150 KB each**, a dynamic hero shot.
-Drop into `portal-assets/thumbs/`.
+## ⭐ THE ACTUAL REMAINING ART (short list, in priority order)
 
-| Game | file to make | glyph shown now | hero-shot idea |
-|---|---|---|---|
-| **Sprout Dice** | `portal-assets/thumbs/sprout-dice.jpg` | 🎲 | plant-face dice mid-roll over a target, thorns striking a pest |
-| **Petal Plunge** | `portal-assets/thumbs/petal-plunge.jpg` | 🛷 | leaf-sled carving downhill through dewdrop gates, the Gnome looming behind |
-| **Bramblewick** *(when it ships)* | `portal-assets/thumbs/bramblewick.jpg` | (not in portal yet) | a familiar-swarmed sprout in a bullet-hell bloom of status reactions |
+### 1. Bramblewick — the 4 new bosses  ·  **the one visible gap**
+The five grounds each have a boss; two are painted (Grubfather, Stormwing), **four are still
+procedural blobs** sitting next to them and reading as unfinished:
+`boss_tideshell`, `boss_broodmother`, `boss_frostmaw`, `boss_wiltqueen`.
+**→ Paste-ready spec: `satellites/bramblewick/BOSS_ART_LIST.md`** (Sheet A). One 2×2 magenta sheet.
 
-*(Garden Guard, Burr Blast, Sproing, Budburst, Bloom Breaker, Pong Arena, Power Scalers,
-Dragon Philosophy, Pit Bike Rally all already have cards.)*
+### 2. Sprout Dice — portal thumbnail  ·  *tiny art, every visitor sees it*
+Sprout Dice is the last satellite card still showing only its 🎲 glyph.
+- **File:** `portal-assets/thumbs/sprout-dice.jpg`  ·  **~480×480, ≤150 KB**, full-bleed (no magenta).
+- **Hero shot:** a plant-faced die mid-roll landing on a glowing target, thorns lashing a garden
+  pest, a stack of dice and a floor of soil behind — midnight-greenhouse palette, warm gold glow.
 
----
+### 3. Bramblewick — the 5 ground backgrounds  ·  *optional polish*
+Per-ground floors (`bg_greenhouse/sunkenbeds/sundrift/understory/longdark.jpg`). Optional — the
+game tints each ground procedurally and the generic floor already covers them.
+**→ Same file: `satellites/bramblewick/BOSS_ART_LIST.md`** (Sheet B).
 
-## THE FULL PER-GAME LISTS (hand ChatGPT one file at a time)
-
-### 1. Petal Plunge  → `satellites/petal-plunge/ASSET_LIST.md`
-Brand-new botanical SkiFree. The star is **the Gnome** (feral chaser — the money shot).
-- **Riders (13)** `rider_<id>` @512×512 — the critter on the sled, seen from behind/above
-- **Sleds (9)** `sled_<id>` @512×640 — the board you ride (leaf, petal, bark, lily pad…)
-- **The Gnome** `gnome` @512×640 — red hat, wild beard, glowing eyes, reaching, running
-- **Obstacles (13)** `obs_<kind>` @256×256 — bushes, trees, toadstools, thorns, logs, ramp
-- **Biome backdrops (5)** `bg_<id>` @1080×1920 — meadow, bramble, mushroom, thornfall, night
-- **Suggested order:** Gnome → default rider+sled (sprout, leaf) → portal thumb → the rest.
-
-### 2. Burr Blast  → `satellites/burr-blast/design/ASSET_LIST.md`
-Physics slingshot (Angry-Birds soul). Tiered, biggest lift first.
-- **TIER 1:** `logo.png`, 4 world backdrops (portrait, full-bleed), hero + boss + pests
-- **TIER 2:** the 6 seed icons (HUD + shop)
-- **TIER 3:** the 7-panel intro comic (Bramble vs the Weevil King)
-- **TIER 4 (nice-to-have):** 3 new seeds, N-P-K nutrient icons, 10 companion portraits,
-  8 relic icons, currency/run icons, expedition node art
-- Game is fully canvas-drawn today; every slot has a fallback.
-
-### 3. Garden Guard  → `satellites/garden-td/ART_ASSETS.md`
-Tower defense. **Note:** the 4 map backgrounds are now **optional** — I gave each map a
-distinct procedural look (colour wash + off-path decor + path material), so the "bare
-canvas maps" gap is closed. Painted maps would still lift it, but they're no longer a hole.
-- **Biggest win first:** 9 tower bodies (96×96) → the whole board changes
-- **13 pest walk-strips** (48×48) + **4 boss sprites** (160×160: aphidqueen, slugking,
-  moonmoth, thornwarden — the last three are the new world bosses I just wired)
-- **18 cultivar heads** (80×80) — the upgrade payoff
-- **FX + the 4 reaction bursts** (steam / wildfire / bloomrot / corrode) — the signature moment
-- **Keeper poses**, **UI icons + status badges** (readable by shape, colorblind-safe)
-- 4 map backdrops (540×960) — now optional polish
-
-### 4. Dragon Philosophy  → *(spec lives in its own source repo, not here)*
-This one is a **built React/Vite bundle** (`satellites/dragon-philosophy/`), so painted art
-is **not a drop-in** — it has to be added in the source project and rebuilt (`npm run build`
-base:'./'), then re-vendored. The illustration set it wants (all placeholders today):
-**8 dragon-patron portraits, 10 threat illos, 17 chase-card illustrations, ~640×512.**
-When you want to tackle it, we pull the source repo, add the art there, rebuild, re-vendor.
-Lower priority than the drop-in games above for that reason.
+### 4. Dragon Philosophy — illustration set  ·  *not a drop-in; separate repo*
+A built React/Vite bundle, so art must be added in its **source project** and rebuilt
+(`npm run build` base:'./'), then re-vendored — not a magenta-cut drop-in. Wants **8 dragon-patron
+portraits, 10 threat illos, 17 chase-card illustrations (~640×512)**, all placeholders today.
+Lower priority for that reason; flag me when you want to tackle it and we pull the source repo.
 
 ---
 
-## ALREADY-SUPPLIED ART (not a ChatGPT job — a cut+wire job for me)
-- **Pit Bike Rally** — the Jul-04 root zip *"In game art-20260704…zip"* IS its Wave 1–6 art
-  pack (bikes, terrain tiles, FX strips, props, logo, 3 scene bgs). It needs repacking into
-  the atlas + wiring, not generating. That's on me, not ChatGPT.
-- Loose root PNGs `file_…6ca471f6….png` (Garden Guard contact sheet) and
-  `file_…4eec722f….png` (Pit Bike Rally contact sheet) are manifest/reference sheets, not
-  final assets.
+## ✅ ALREADY ART-COMPLETE (audited 2026-07-07 — nothing to make)
+| Game | art model | state |
+|---|---|---|
+| **Burr Blast** | 63-entry `ART_FILES` map | 63/63 files present, thumb ✓ |
+| **Garden Guard** (`garden-td`) | `manifest.json` (90 keys) | 90/90 present (9 towers + tier heads + variants, 16 pests, 4 bosses, keeper, projectiles, FX), thumb ✓ |
+| **Petal Plunge** | `ART.load` key-list (42) | 42/42 present (13 riders, 9 sleds, gnome ×2, 13 obstacles, 5 biome bgs), thumb ✓ |
+| **Vine Runner** | `ART` object (13) + 2 skins | 23/23 present, thumb ✓ |
+| **Bramblewick** | `ART.load` key-list (71) | 62/71 present — only the 9 items above are open, thumb ✓ |
+| **Blooming Words** | procedural SVG | no art keys, thumb ✓ |
+| **Vinewinder** | procedural canvas | no art keys, thumb ✓ |
+| Bloom Breaker · Budburst · Pong Arena · Power Scalers · Sproing · Hues · Picnic Panic · Pollen Panic · Shell Shuffle | colour/canvas-driven | complete, all have portal thumbs |
 
-## NEEDS NOTHING (zero-asset, complete as-is)
-Sproing, Budburst, Bloom Breaker, Pong Arena, Power Scalers — all colour/canvas-driven and
-finished-looking. (They only ever want optional flourish art, never required art.)
+**Pit Bike Rally** — art was already supplied (the Jul-04 root zip: bikes, terrain tiles, FX
+strips, props, logo, 3 scene bgs). It's a **cut+repack-the-atlas job for me**, not a ChatGPT job.
 
 ---
 
-## RECOMMENDED WORK ORDER
-1. **Thumbnails** (Sprout Dice, Petal Plunge) — smallest art, every portal visitor sees it.
-2. **Petal Plunge — the Gnome + default rider/sled** — brand-new game, art has the most upside.
-3. **Garden Guard tower bodies** — 9 pieces, whole board transforms.
-4. **Burr Blast TIER 1** — logo + 4 backdrops + hero/boss.
-5. Everything else, in whatever order feels fun. Each finished piece just quietly makes a
-   game prettier — none of it blocks anything.
+## OPTIONAL POLISH (files/hooks exist; not gaps — flag me if you want them)
+- **Petal Plunge** — 7 trail swooshes already on disk (`trail_dew/ember/frost/petals/pollen/rainbow/star.png`)
+  but unwired; the trail is procedural colour today. Wiring them is a small render tweak, not new art.
+- **Garden Guard** — 4 painted map backdrops (540×960) would lift the boards, but each map already has
+  a distinct procedural look, so they're polish, not a hole.
+- **Burr Blast** — currency HUD chips still use emoji; painted pips are a minor nicety.
 
-Hand me any batch when it's ready (transparent or magenta-bg) and I'll cut, wire, cache-bust,
-and re-vendor it — one game at a time.
+---
+
+## THE FLEET CONVENTION (read once, paste the relevant bits into ChatGPT)
+- **Deliver a transparent PNG, OR paint on a flat magenta `#FF00FF` background** and I'll chroma-key
+  it to transparent. Full-bleed backdrops/thumbnails don't need magenta — they fill the frame.
+- **Paint big, never pre-shrink.** Sizes are listed per asset. **Keep every file under 1600px** on its
+  long side (the host down-samples larger) and reasonably small in KB. I version-bust on deploy.
+- **No text baked in** (except a logo/wordmark that's meant to be text).
+- **House style for all of them:** cozy children's-storybook, soft painterly/gouache, warm rim light,
+  big readable silhouettes, a little glow. **Midnight-greenhouse palette:** deep near-black grounds,
+  sage green, warm gold, cream, a touch of rose. Match the Lucid Winds card-art mood.
+
+---
+
+## RECOMMENDED ORDER
+1. **Bramblewick's 4 bosses** (`BOSS_ART_LIST.md` Sheet A) — the only art that currently reads as unfinished.
+2. **Sprout Dice thumbnail** — smallest possible art, every portal visitor sees it.
+3. **Bramblewick's 5 ground backgrounds** (Sheet B) — optional atmosphere.
+4. Dragon Philosophy's illustration set, whenever you want to pull that source repo.
+
+Hand me any batch (magenta sheet or transparent PNGs) and I'll cut, quantize, cache-bust, wire and
+re-vendor it — one game at a time.
