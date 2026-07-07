@@ -280,10 +280,15 @@ var DICE={
   clover:{name:'Clover',rarity:'uncommon',faces:[F('wild',1),F('wild',2),F('heal',1),F('bark',1),F('thorn',1),F('blank')]},
   vine:{name:'Vine',rarity:'uncommon',faces:[F('root',2),F('root',1),F('thorn',1),F('spread',1),F('bark',1),F('blank')]},
   venus:{name:'Venus Trap',rarity:'rare',faces:[F('thorn',4),F('thorn',5),F('thorn',3),F('spread',2),F('blank'),F('blank')]},
-  willow:{name:'Willow',rarity:'rare',faces:[F('heal',3),F('bark',3),F('heal',2),F('bark',2),F('root',1),F('wild',1)]}
+  willow:{name:'Willow',rarity:'rare',faces:[F('heal',3),F('bark',3),F('heal',2),F('bark',2),F('root',1),F('wild',1)]},
+  // --- new dice ---
+  moss:{name:'Moss',rarity:'common',faces:[F('bark',1),F('bark',2),F('heal',1),F('heal',2),F('thorn',1),F('blank')]},
+  thistle:{name:'Thistle',rarity:'uncommon',faces:[F('spread',2),F('spread',1),F('thorn',3),F('thorn',2),F('root',1),F('blank')]},
+  sundew:{name:'Sundew',rarity:'uncommon',faces:[F('root',2),F('root',2),F('thorn',2),F('heal',2),F('wild',1),F('blank')]},
+  holly:{name:'Holly',rarity:'rare',faces:[F('thorn',4),F('thorn',3),F('spread',2),F('bark',2),F('wild',2),F('blank')]}
 };
 var STARTERS=['bramble','fern','oak'];
-function I(type,v){ return {type:type,v:v||0}; }
+function I(type,v,n){ return {type:type,v:v||0,n:n||1}; }
 var ENEMIES={
   aphid:{name:'Aphid',emoji:'🐛',hp:6,pattern:[I('attack',2),I('attack',3)]},
   locust:{name:'Locust',emoji:'🦗',hp:8,pattern:[I('attack',3),I('buff',2),I('attack',5)]},
@@ -291,8 +296,20 @@ var ENEMIES={
   slug:{name:'Slug',emoji:'🐌',hp:15,pattern:[I('attack',3),I('heal',4),I('attack',5)]},
   wasp:{name:'Wasp',emoji:'🐝',hp:9,pattern:[I('attack',5),I('attack',6)]},
   weevil:{name:'Weevil',emoji:'🪳',hp:20,pattern:[I('shield',5),I('attack',6),I('attack',5)]},
-  blight:{name:'The Blight',emoji:'🍄',hp:72,boss:true,pattern:[I('attack',7),I('summon',0),I('attack',10),I('shield',6),I('attack',12)]}
+  // --- new pests (slotted between the originals; peers, not strictly stronger) ---
+  thrip:{name:'Thrip',emoji:'🦟',hp:7,pattern:[I('multi',2,2),I('attack',3),I('multi',2,2)]},             // fast multi-hitter, chews block
+  mantis:{name:'Mantis',emoji:'🦗',hp:13,pattern:[I('buff',2),I('attack',7),I('attack',4)]},              // telegraphs a swing
+  stinkbug:{name:'Stink Bug',emoji:'🪲',hp:12,spiky:1,pattern:[I('attack',3),I('shield',3),I('attack',5)]}, // hurts you a little when struck
+  borer:{name:'Root Borer',emoji:'🐛',hp:16,armored:5,pattern:[I('attack',4),I('shield',5),I('attack',6)]}, // starts armored
+  cutworm:{name:'Cutworm',emoji:'🐍',hp:14,pattern:[I('attack',3),I('heal',4),I('attack',6)]},             // regenerating bruiser
+  hornet:{name:'Hornet',emoji:'🐝',hp:15,pattern:[I('attack',5),I('summon',0),I('attack',7)]},             // summons help
+  blight:{name:'The Blight',emoji:'🍄',hp:72,boss:true,pattern:[I('attack',7),I('summon',0),I('attack',10),I('shield',6),I('attack',12)]},
+  // --- new bosses (climb ends on a random one; tuned to ~Blight level so the run stays winnable) ---
+  rootrot:{name:'Root Rot',emoji:'🦠',hp:74,boss:true,pattern:[I('shield',7),I('attack',8),I('heal',5),I('attack',12)]},
+  swarmqueen:{name:'The Swarm Queen',emoji:'🦗',hp:70,boss:true,pattern:[I('multi',2,3),I('summon',0),I('attack',10),I('multi',3,3)]},
+  thornwyrm:{name:'The Thornwyrm',emoji:'🐉',hp:78,boss:true,spiky:2,pattern:[I('attack',7),I('shield',6),I('attack',12),I('attack',10)]}
 };
+var BOSSES=['blight','rootrot','swarmqueen','thornwyrm'];
 var RELICS={
   regrowth:{name:'Regrowth',emoji:'🌿',desc:'+1 to every heal face',apply:function(s){s.mod.heal+=1;}},
   deeproots:{name:'Deep Roots',emoji:'🌳',desc:'+6 max Resolve',apply:function(s){s.maxResolve+=6;s.resolve+=6;}},
@@ -301,46 +318,64 @@ var RELICS={
   serration:{name:'Serration',emoji:'🗡️',desc:'+1 to every thorn face',apply:function(s){s.mod.thorn+=1;}},
   thornburst:{name:'Thornburst',emoji:'💥',desc:'thorns pierce pest shields',apply:function(s){s.mod.pierce=true;}},
   compost:{name:'Compost',emoji:'🍂',desc:'heal 2 when a pest dies',apply:function(s){s.mod.compost=2;}},
-  earlybloom:{name:'Early Bloom',emoji:'🌸',desc:'first die each turn is Wild',apply:function(s){s.mod.firstWild=true;}}
+  earlybloom:{name:'Early Bloom',emoji:'🌸',desc:'first die each turn is Wild',apply:function(s){s.mod.firstWild=true;}},
+  // --- new relics ---
+  barbedwire:{name:'Barbed Wire',emoji:'🪤',desc:'+1 to thorn AND spread faces',apply:function(s){s.mod.thorn+=1;s.mod.spread+=1;}},
+  overgrowth:{name:'Overgrowth',emoji:'🌱',desc:'+1 to heal AND bark faces',apply:function(s){s.mod.heal+=1;s.mod.bark+=1;}},
+  hardshell:{name:'Hardshell',emoji:'🐚',desc:'start every turn with 3 Bark',apply:function(s){s.mod.keepBlock=3;}},
+  venomsac:{name:'Venom Sac',emoji:'☠️',desc:'when a pest dies, all others take 2',apply:function(s){s.mod.venomKill=2;}},
+  taproot:{name:'Taproot',emoji:'🥕',desc:'+10 max Resolve',apply:function(s){s.maxResolve+=10;s.resolve+=10;}},
+  witchhazel:{name:'Witch Hazel',emoji:'🌼',desc:'+2 rerolls each turn',apply:function(s){s.rerolls+=2;}}
 };
 function poolFor(floor){
-  if(floor<=3) return ['aphid','locust'];
-  if(floor<=6) return ['aphid','locust','beetle'];
-  if(floor<=8) return ['locust','beetle','slug','wasp'];
-  return ['beetle','slug','wasp','weevil'];
+  if(floor<=3) return ['aphid','locust','thrip'];
+  if(floor<=6) return ['aphid','locust','beetle','thrip','cutworm'];
+  if(floor<=8) return ['locust','beetle','slug','wasp','mantis','stinkbug'];
+  return ['beetle','slug','wasp','weevil','borer','hornet','mantis','cutworm'];
 }
 function makeRun(seedStr){
   var rng=mulberry32(hashSeed(seedStr)), nodes=[], N=12;
+  var boss=BOSSES[Math.floor(rng()*BOSSES.length)];   // the climb ends on a random boss (variety per run)
+  var elitePool=['beetle','weevil','borer','mantis','stinkbug','cutworm'];
   for(var f=0;f<N;f++){ var floor=f+1, node;
-    if(floor===N) node={type:'boss',enemies:['blight']};
+    if(floor===N) node={type:'boss',enemies:[boss]};
     else if(floor===4||floor===8) node={type:'rest'};
-    else if(floor===5||floor===11){ node={type:'elite',enemies:[floor<=6?'beetle':'weevil']}; if(floor>=11) node.enemies=['weevil','wasp']; }
+    else if(floor===5||floor===11){ var e1=elitePool[Math.floor(rng()*elitePool.length)];
+      node={type:'elite',enemies:[e1]}; if(floor>=11){ var e2=elitePool[Math.floor(rng()*elitePool.length)]; node.enemies=[e1,e2]; } }
     else { var count=floor<=2?1:floor<=7?2:3, pool=poolFor(floor), ens=[];
       for(var c=0;c<count;c++) ens.push(pool[Math.floor(rng()*pool.length)]);
       node={type:'fight',enemies:ens}; }
     node.floor=floor; nodes.push(node);
   }
-  return {seed:seedStr,nodes:nodes};
+  return {seed:seedStr,nodes:nodes,boss:boss};
 }
+function defMod(){ return {thorn:0,heal:0,bark:0,spread:0,pierce:false,compost:0,firstWild:false,keepBlock:0,venomKill:0}; }
 function newGarden(diceIds){ return { maxResolve:18,resolve:18,block:0, diceIds:(diceIds||STARTERS).slice(),
-  rerolls:1, relics:[], mod:{thorn:0,heal:0,bark:0,pierce:false,compost:0,firstWild:false} }; }
+  rerolls:1, relics:[], mod:defMod() }; }
 function applyRelics(g){ /* idempotent: recompute only face-mods + rerolls (maxResolve is one-time at pickup) */
-  g.mod={thorn:0,heal:0,bark:0,pierce:false,compost:0,firstWild:false}; g.rerolls=1;
+  g.mod=defMod(); g.rerolls=1;
   for(var i=0;i<g.relics.length;i++){ var id=g.relics[i];
     if(id==='regrowth') g.mod.heal+=1; else if(id==='ironbark') g.mod.bark+=1; else if(id==='serration') g.mod.thorn+=1;
     else if(id==='thornburst') g.mod.pierce=true; else if(id==='compost') g.mod.compost=2; else if(id==='earlybloom') g.mod.firstWild=true;
-    else if(id==='photosyn') g.rerolls+=1; }
+    else if(id==='photosyn') g.rerolls+=1;
+    else if(id==='barbedwire'){ g.mod.thorn+=1; g.mod.spread+=1; } else if(id==='overgrowth'){ g.mod.heal+=1; g.mod.bark+=1; }
+    else if(id==='hardshell') g.mod.keepBlock=3; else if(id==='venomsac') g.mod.venomKill=2; else if(id==='witchhazel') g.rerolls+=2; }
   if(g.resolve>g.maxResolve) g.resolve=g.maxResolve; }
 function startEncounter(g,node,scale){ scale=scale||1; var eliteMul=(node.type==='elite'?1.4:1)*scale;
   var enemies=node.enemies.map(function(id,i){ var e=ENEMIES[id]; var hp=Math.round(e.hp*eliteMul);
-    return {id:id,name:e.name+(node.type==='elite'?' (Elite)':''),emoji:e.emoji,hp:hp,maxhp:hp,block:0,boss:!!e.boss,intentIdx:i%e.pattern.length,intent:null,buff:0,alive:true,pattern:e.pattern}; });
+    return {id:id,name:e.name+(node.type==='elite'?' (Elite)':''),emoji:e.emoji,hp:hp,maxhp:hp,block:e.armored||0,spiky:e.spiky||0,boss:!!e.boss,intentIdx:i%e.pattern.length,intent:null,buff:0,alive:true,pattern:e.pattern}; });
   return {g:g,enemies:enemies,node:node,turn:0,over:false,win:false}; }
-function faceValue(g,face){ var t=face.t,v=face.v; if(t==='thorn')v+=g.mod.thorn; else if(t==='heal')v+=g.mod.heal; else if(t==='bark')v+=g.mod.bark; return {t:t,v:v}; }
+function faceValue(g,face){ var t=face.t,v=face.v; if(t==='thorn')v+=g.mod.thorn; else if(t==='heal')v+=g.mod.heal; else if(t==='bark')v+=g.mod.bark; else if(t==='spread')v+=g.mod.spread; return {t:t,v:v}; }
 function rollDice(cs){ var g=cs.g; cs.dice=g.diceIds.map(function(id,i){ var d=DICE[id], fi=Math.floor(cs.rng()*6), face=d.faces[fi];
   if(g.mod.firstWild&&i===0) face=F('wild',Math.max(2,face.v||2)); return {id:id,name:d.name,faceIdx:fi,face:face,assigned:false}; }); cs.rerollsLeft=g.rerolls; }
-function newTurn(cs){ cs.turn++; cs.g.block=0; cs.enemies.forEach(function(e){ if(e.alive) e.intent=e.pattern[e.intentIdx%e.pattern.length]; }); rollDice(cs); }
+function newTurn(cs){ cs.turn++; cs.g.block=(cs.g.mod.keepBlock||0); cs.enemies.forEach(function(e){ if(e.alive) e.intent=e.pattern[e.intentIdx%e.pattern.length]; }); rollDice(cs); }
 function reroll(cs,i){ if(cs.rerollsLeft<=0) return false; var die=cs.dice[i]; if(!die||die.assigned) return false; var d=DICE[die.id], fi=Math.floor(cs.rng()*6); die.faceIdx=fi; die.face=d.faces[fi]; cs.rerollsLeft--; return true; }
-function dealTo(cs,e,v){ if(cs.g.mod.pierce){ e.hp-=v; } else { var ab=Math.min(e.block,v); e.block-=ab; e.hp-=(v-ab); } if(e.hp<=0&&e.alive){ e.alive=false; if(cs.g.mod.compost) cs.g.resolve=Math.min(cs.g.maxResolve,cs.g.resolve+cs.g.mod.compost); } }
+function dealTo(cs,e,v){ if(e.spiky>0) cs.g.resolve-=e.spiky;   // spiky pests retaliate when you strike them
+  if(cs.g.mod.pierce){ e.hp-=v; } else { var ab=Math.min(e.block,v); e.block-=ab; e.hp-=(v-ab); }
+  if(e.hp<=0&&e.alive){ e.alive=false;
+    if(cs.g.mod.compost) cs.g.resolve=Math.min(cs.g.maxResolve,cs.g.resolve+cs.g.mod.compost);
+    if(cs.g.mod.venomKill) cs.enemies.forEach(function(o){ if(o!==e&&o.alive){ var vk=Math.min(o.block,cs.g.mod.venomKill); o.block-=vk; o.hp-=(cs.g.mod.venomKill-vk); if(o.hp<=0){ o.alive=false; } } });
+  } }
 function checkDead(cs){ var any=false; cs.enemies.forEach(function(e){ if(e.alive) any=true; }); if(!any){ cs.over=true; cs.win=true; } }
 function assignDie(cs,i,target,wildAs){ var g=cs.g, die=cs.dice[i]; if(!die||die.assigned) return false;
   var ef=faceValue(g,die.face), t=ef.t, v=ef.v; if(t==='wild'){ t=wildAs||'thorn'; }
@@ -350,16 +385,18 @@ function assignDie(cs,i,target,wildAs){ var g=cs.g, die=cs.dice[i]; if(!die||die
   else if(t==='spread'){ cs.enemies.forEach(function(e){ if(e.alive) dealTo(cs,e,v); }); }
   else if(t==='thorn'){ if(target&&target.kind==='enemy'){ var e=cs.enemies[target.idx]; if(e&&e.alive) dealTo(cs,e,v); } }
   else if(t==='root'){ if(target&&target.kind==='enemy'){ var e2=cs.enemies[target.idx]; if(e2&&e2.alive&&e2.intent) e2.intent={type:e2.intent.type,v:Math.max(0,e2.intent.v-v)}; } }
-  die.assigned=true; checkDead(cs); return true; }
+  die.assigned=true; checkDead(cs); if(!cs.win && cs.g.resolve<=0){ cs.over=true; cs.win=false; } return true; }
 function endTurn(cs){ if(cs.over) return; var block=cs.g.block;
   cs.enemies.forEach(function(e){ if(!e.alive||!e.intent) return; var it=e.intent;
     if(it.type==='attack'){ var dmg=it.v+(e.buff||0)+Math.max(0,cs.turn-8)+(cs.dmgBonus||0); e.buff=0; var ab=Math.min(block,dmg); block-=ab; cs.g.resolve-=(dmg-ab); }
+    else if(it.type==='multi'){ var hits=it.n||1; for(var h=0;h<hits;h++){ var d1=it.v+Math.max(0,cs.turn-8)+(cs.dmgBonus||0); var ab1=Math.min(block,d1); block-=ab1; cs.g.resolve-=(d1-ab1); } }   // N separate hits — chews through Bark
     else if(it.type==='shield') e.block+=it.v;
     else if(it.type==='heal') e.hp=Math.min(e.maxhp,e.hp+it.v);
     else if(it.type==='buff') e.buff=(e.buff||0)+it.v;
-    else if(it.type==='summon'){ if(cs.enemies.filter(function(x){return x.alive;}).length<3){ var a=ENEMIES.aphid; cs.enemies.push({id:'aphid',name:a.name,emoji:a.emoji,hp:a.hp,maxhp:a.hp,block:0,intentIdx:0,intent:null,buff:0,alive:true,pattern:a.pattern}); } }
+    else if(it.type==='summon'){ if(cs.enemies.filter(function(x){return x.alive;}).length<3){ var a=ENEMIES.aphid; cs.enemies.push({id:'aphid',name:a.name,emoji:a.emoji,hp:a.hp,maxhp:a.hp,block:0,spiky:0,intentIdx:0,intent:null,buff:0,alive:true,pattern:a.pattern}); } }
     e.intentIdx++; });
-  cs.g.block=0; if(cs.g.resolve<=0){ cs.over=true; cs.win=false; return; } newTurn(cs); }
+  if(cs.g.resolve<=0){ cs.g.block=0; cs.over=true; cs.win=false; return; }
+  newTurn(cs); }
 function rewardOptions(cs,rng){ var opts=[], dk=Object.keys(DICE);
   if(cs.g.diceIds.length<6) opts.push({kind:'die',id:dk[Math.floor(rng()*dk.length)]});
   else opts.push({kind:'maxhp',v:6});   // rack full (6/6) — offer a real upgrade instead of a die that would replace nothing
@@ -369,7 +406,7 @@ function rewardOptions(cs,rng){ var opts=[], dk=Object.keys(DICE);
   for(var i=opts.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)), t=opts[i]; opts[i]=opts[j]; opts[j]=t; }
   return opts.slice(0,3); }
 function takeReward(g,opt){ if(opt.kind==='die'){ if(g.diceIds.length<6) g.diceIds.push(opt.id); }
-  else if(opt.kind==='relic'){ g.relics.push(opt.id); if(opt.id==='deeproots'){ g.maxResolve+=6; g.resolve+=6; } applyRelics(g); }
+  else if(opt.kind==='relic'){ g.relics.push(opt.id); if(opt.id==='deeproots'){ g.maxResolve+=6; g.resolve+=6; } else if(opt.id==='taproot'){ g.maxResolve+=10; g.resolve+=10; } applyRelics(g); }
   else if(opt.kind==='heal') g.resolve=Math.min(g.maxResolve,g.resolve+opt.v);
   else if(opt.kind==='maxhp'){ g.maxResolve+=opt.v; g.resolve+=opt.v; } }
 return {mulberry32:mulberry32,hashSeed:hashSeed,DICE:DICE,ENEMIES:ENEMIES,RELICS:RELICS,STARTERS:STARTERS,
@@ -454,7 +491,7 @@ function todayStr(){ try{ return new Date().toISOString().slice(0,10); }catch(e)
 
 /* ---------- MAP ---------- */
 function nodeInfo(node){ var t=node.type;
-  if(t==='boss') return {ico:'🍄',t:'The Blight',d:'Final boss'};
+  if(t==='boss'){ var be=SD.ENEMIES[node.enemies[0]]||SD.ENEMIES.blight; return {ico:be.emoji,t:be.name,d:'Final boss'}; }
   if(t==='rest') return {ico:'⛺',t:'Rest',d:'Heal + a gift'};
   if(t==='elite') return {ico:'💀',t:'Elite pest',d:node.enemies.map(function(e){return SD.ENEMIES[e].name;}).join(', ')};
   return {ico:'🐛',t:'Floor '+node.floor,d:node.enemies.map(function(e){return SD.ENEMIES[e].name;}).join(', ')};
@@ -493,7 +530,9 @@ function renderGardenBar(container, targetable){
   if(targetable){ container.onclick=function(){ onTarget({kind:'garden'}); }; } else { container.onclick=null; }
 }
 function intentText(e){ if(!e.intent) return ''; var it=e.intent;
-  if(it.type==='attack') return '⚔'+(it.v+(e.buff||0)+Math.max(0,(CS?CS.turn:1)-8)+((CS&&CS.dmgBonus)||0));
+  var ramp=Math.max(0,(CS?CS.turn:1)-8)+((CS&&CS.dmgBonus)||0);
+  if(it.type==='attack') return '⚔'+(it.v+(e.buff||0)+ramp);
+  if(it.type==='multi') return '⚔'+(it.v+ramp)+'×'+(it.n||1);   // N separate hits
   if(it.type==='shield') return '⛨'+it.v; if(it.type==='heal') return '♥'+it.v; if(it.type==='buff') return '↑'+it.v; if(it.type==='summon') return '✦'; return ''; }
 function renderCombat(){
   $('c-coins').textContent=META.coins;
@@ -503,6 +542,7 @@ function renderCombat(){
     var pct=Math.max(0,Math.round(e.hp/e.maxhp*100));
     var el=document.createElement('div'); el.className='enemy'; el.dataset.idx=i;
     el.innerHTML='<div class="intent">'+intentText(e)+'</div>'+(e.block>0?'<div class="en-shield">⛨'+e.block+'</div>':'')+
+      (e.spiky>0?'<div class="en-shield" style="left:auto;right:-6px;top:20px;background:#2a1215;border-color:var(--red);color:var(--red)" title="thorns: strike it and you take '+e.spiky+'">🌵'+e.spiky+'</div>':'')+
       '<div class="face">'+e.emoji+'</div><div class="en-name">'+esc(e.name)+'</div>'+
       '<div class="hpbar"><i style="width:'+pct+'%"></i><span>'+Math.max(0,e.hp)+'/'+e.maxhp+'</span></div>';
     box.appendChild(el);
@@ -629,7 +669,7 @@ function showOver(won, loseCoins){
   }
   $('over-title').textContent = won?'The garden blooms! 🌸':'The garden falls';
   $('over-floor').textContent = won?'Cleared!':'Floor '+(node.floor||POS);
-  $('over-sub').textContent = won?'You climbed the whole trellis and felled The Blight.':'Best climb: Floor '+META.best;
+  $('over-sub').textContent = won?('You climbed the whole trellis and felled '+((RUN&&SD.ENEMIES[RUN.boss])||SD.ENEMIES.blight).name+'.'):'Best climb: Floor '+META.best;
   $('over-earn').textContent = won?('🪙 +'+coinsForFloor({type:'boss'})+' coins banked'):('🪙 +'+(loseCoins||0)+' coins');
   $('besttag').textContent='Floor '+(META.best>=12?'12 (cleared!)':META.best);
   show('s-over');
@@ -667,7 +707,7 @@ function segRow(label, opts, cur, fn){ var row=document.createElement('div'); ro
 }
 function renderHow(){ $('how-body').innerHTML=
   '<div class="small" style="line-height:1.6;max-width:440px;margin:0 auto">'+
-  '<p><b class="gold">Goal:</b> climb 12 floors of the trellis and fell The Blight. Your garden\'s <b>Resolve</b> (🌱) is your life — if it hits 0, the run ends.</p>'+
+  '<p><b class="gold">Goal:</b> climb 12 floors of the trellis and fell the boss that waits at the top (a different one each run). Your garden\'s <b>Resolve</b> (🌱) is your life — if it hits 0, the run ends.</p>'+
   '<p style="margin-top:12px"><b class="gold">Each turn</b> your plant dice roll. Tap a die, then tap a target:</p>'+
   '<p style="margin-top:6px"><span class="t-thorn" style="font-weight:800">⚔ Thorn</span> — strike one pest. &nbsp; <span class="t-spread" style="font-weight:800">✸ Spread</span> — hit ALL pests.</p>'+
   '<p><span class="t-heal" style="font-weight:800">♥ Heal</span> — restore Resolve. &nbsp; <span class="t-bark" style="font-weight:800">⛨ Bark</span> — block damage this turn.</p>'+
