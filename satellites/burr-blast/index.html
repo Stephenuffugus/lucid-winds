@@ -456,7 +456,7 @@ h2.sh{ font-size:24px; font-weight:900; color:var(--cream); margin:6px 0 2px; te
 (function(){
 'use strict';
 
-var BUILD = '2026-07-06.art';
+var BUILD = '2026-07-07.arch';
 
 /* ================================================================
    0. VECTOR MATH  (plain {x,y}; small allocation-light helpers)
@@ -757,7 +757,9 @@ var PHYS = (function(){
       bd.angVel *= 1/(1+dt*0.4);
     }
 
-    // broadphase + narrowphase
+    // broadphase + narrowphase (O(n^2) with an AABB early-out; profiling showed the solver
+    // over actual contacts — not pair enumeration — is the real cost at fort densities, so a
+    // spatial hash gave no speedup. Keep forts to a few dozen dynamic blocks instead.)
     for(i=0;i<n;i++) bodies[i].updateAABB();
     var manifolds=[];
     for(i=0;i<n;i++){
@@ -955,12 +957,21 @@ var MAT = {
            fill:'#8a5a34', edge:'#5f3c20', grain:'#6d4527' },
   stone: { density:2.7,  rest:0.06, fric:0.74, hp:80,  tough:540, score:140, indestruct:false,
            fill:'#6f7566', edge:'#464b3e' },
-  glass: { density:0.4,  rest:0.05, fric:0.36, hp:12,  tough:130, score:340, indestruct:false,
+  glass: { density:0.4,  rest:0.05, fric:0.36, hp:12,  tough:130, score:340, indestruct:false, shatter:true,
            fill:'rgba(120,196,196,.5)', edge:'rgba(190,240,240,.85)' },
   tnt:   { density:1.05, rest:0.18, fric:0.5,  hp:20,  tough:230, score:260, indestruct:false, explosive:true,
            fill:'#2a2320', edge:'#c8482f' },
   steel: { density:7.5,  rest:0.08, fric:0.6,  hp:1e9, tough:1e12, score:0,  indestruct:true,
-           fill:'#3b4148', edge:'#20242a' }
+           fill:'#3b4148', edge:'#20242a' },
+  // --- new materials (distinct break feel) ---
+  ice:    { density:0.9,  rest:0.04, fric:0.14, hp:16, tough:150, score:300, indestruct:false, shatter:true,
+            fill:'rgba(176,222,240,.55)', edge:'rgba(228,246,255,.9)' },   // slippery, shatters
+  brick:  { density:1.9,  rest:0.05, fric:0.70, hp:64, tough:430, score:180, indestruct:false, chunks:3,
+            fill:'#a24b38', edge:'#5f2a1e', grain:'#7a3527' },              // tanky wall, chunky debris
+  crystal:{ density:0.7,  rest:0.12, fric:0.30, hp:22, tough:200, score:480, indestruct:false, shatter:true,
+            fill:'rgba(178,146,232,.55)', edge:'rgba(214,186,255,.92)' },  // jackpot, shatters into shards
+  thatch: { density:0.35, rest:0.06, fric:0.68, hp:14, tough:120, score:220, indestruct:false,
+            fill:'#b79448', edge:'#7c6026', grain:'#8f7433' }              // weak filler, flies apart
 };
 /* ================================================================
    AMMO / SEED TYPES  (the "birds")
@@ -1307,6 +1318,43 @@ function rampart(cx, mat, behind){
   var b=[ ground(mat,cx,34,100) ], p=[];
   for(var i=0;i<behind;i++) p.push(pestGround(cx+72+i*56,15));
   return { blocks:b, pests:p };
+}
+
+/* fortress — a dense castle: battlemented outer walls + gatehouse lintel + an inner keep.
+   Several pests to dig out. The showcase "lots to break" piece (~11 blocks). */
+function fortress(cx, wallMat, inMat){
+  inMat=inMat||wallMat; var b=[], p=[], owH=44;
+  for(var s=-1;s<=1;s+=2){ var wx=cx+s*150;
+    for(var r=0;r<3;r++) b.push(BK(wallMat,wx,GT-owH/2-r*(owH+0.5),34,owH));   // wall stack
+    b.push(BK(wallMat,wx, GT-3*(owH+0.5)-12, 34, 22));                          // battlement cap
+  }
+  b.push(BK(wallMat,cx, GT-3*(owH+0.5)-owH*0.5-6, 250, 22));                    // gatehouse lintel
+  p.push(pestGround(cx-58,15)); p.push(pestGround(cx+58,15));                   // pests behind the walls
+  b.push(BK(inMat,cx,GT-40,40,80)); b.push(BK(inMat,cx,GT-100,40,40));          // inner keep
+  p.push(P(cx,GT-138,14));
+  return {blocks:b,pests:p};
+}
+/* bridge — a long deck on two pillars; pests ON the deck and sheltered BENEATH. Collapse it. */
+function bridge(cx, mat){
+  var span=236, ph=90, pw=26, dH=20;
+  var b=[ ground(mat,cx-span/2,pw,ph), ground(mat,cx+span/2,pw,ph), BK(mat,cx,GT-ph-dH/2,span+pw,dH) ];
+  var p=[ P(cx-span/4,GT-ph-dH-14,14), P(cx+span/4,GT-ph-dH-14,14), pestGround(cx,15) ];
+  return {blocks:b,pests:p};
+}
+/* pillar hall — a colonnade under one long roof; a pest in each bay. Drop a pillar to bring it down. */
+function pillarHall(cx, mat, bays){
+  bays=bays||3; var pw=22, ph=88, gap=64, roofH=20, b=[], p=[], total=bays*gap, x0=cx-total/2;
+  for(var i=0;i<=bays;i++) b.push(ground(mat,x0+i*gap,pw,ph));
+  b.push(BK(mat,cx,GT-ph-roofH/2, total+pw, roofH));
+  for(var j=0;j<bays;j++) p.push(pestGround(x0+gap/2+j*gap,14));
+  return {blocks:b,pests:p};
+}
+/* pyramid — a wide stable stack tapering to a peak; pest on top, satisfying to topple. */
+function pyramid(cx, mat, rows){
+  rows=rows||4; var s=40, b=[];
+  for(var r=0;r<rows;r++){ var count=rows-r, y=GT-s/2-r*(s+0.5), x0=cx-(count-1)*s/2;
+    for(var c=0;c<count;c++) b.push(BK(mat,x0+c*s, y, s, s)); }
+  return {blocks:b,pests:[ P(cx, GT-rows*(s+0.5)-16, 14) ]};
 }
 
 function merge(){ var b=[],p=[]; for(var i=0;i<arguments.length;i++){ var s=arguments[i]; if(!s)continue; if(s.blocks)b=b.concat(s.blocks); if(s.pests)p=p.concat(s.pests); } return {blocks:b,pests:p}; }
@@ -1672,7 +1720,7 @@ function destroyBlock(bd,pt){
   var mat=MAT[bd.game.mat]||MAT.wood;
   G.score += mat.score; G.blocksDestroyed++;
   var big=clamp(Math.max(bd.w,bd.h)/60,0,1);
-  if(bd.game.mat==='glass'){ SFX.shatter(); shards(bd.pos.x,bd.pos.y,'rgba(190,240,240,.9)',14); }
+  if(mat.shatter){ SFX.shatter(); shards(bd.pos.x,bd.pos.y, mat.edge||'rgba(190,240,240,.9)', 14); addShake(1+big*3); }
   else {
     debris(bd.pos.x,bd.pos.y, mat.fill, 9);
     addShake(2+big*5); if(big>0.6) addHitstop(0.03);
@@ -1684,9 +1732,9 @@ function destroyBlock(bd,pt){
   updateHUD();
 }
 function spawnCrushChunks(bd, mat){
-  var cw=bd.w*0.5, ch=bd.h*0.5, n=(Math.max(bd.w,bd.h)>=80)?2:1;
+  var cw=bd.w*0.5, ch=bd.h*0.5, n=Math.min(3, mat.chunks||((Math.max(bd.w,bd.h)>=80)?2:1));
   for(var k=0;k<n;k++){
-    var ox=(n===1?0:(k===0?-1:1))*bd.w*0.22;
+    var ox=(n===1?0:(k/(n-1)-0.5)*bd.w*0.5);
     var chunk=new PHYS.Body({ shape:'poly', verts:PHYS.boxVerts(cw,ch), x:bd.pos.x+ox, y:bd.pos.y, angle:bd.angle,
       w:cw, h:ch, density:mat.density*0.9, restitution:0.08, friction:mat.fric, mat:bd.game.mat, canSleep:true,
       game:{ kind:'debris', mat:bd.game.mat, ttl:1.9 } });
@@ -2164,11 +2212,17 @@ function drawBlock(ctx,b){
   var dmg = (mat.indestruct||b.game.hp==null)?0:clamp(1-b.game.hp/mat.hp,0,1);
   ctx.fillStyle=mat.fill; ctx.strokeStyle=mat.edge; ctx.lineWidth=3;
   rr(ctx,-w/2,-h/2,w,h,Math.min(6,Math.min(w,h)/4)); ctx.fill(); ctx.stroke();
-  if(b.game.mat==='wood'){ ctx.strokeStyle=mat.grain; ctx.lineWidth=1.5; ctx.globalAlpha=0.6;
+  if(b.game.mat==='wood'||b.game.mat==='thatch'){ ctx.strokeStyle=mat.grain; ctx.lineWidth=1.5; ctx.globalAlpha=0.6;
     var long=w>=h; var lines=Math.max(1,Math.floor((long?h:w)/12));
     for(var g=1;g<lines;g++){ ctx.beginPath(); if(long){ var yy=-h/2+g*(h/lines); ctx.moveTo(-w/2+4,yy); ctx.lineTo(w/2-4,yy);} else { var xx=-w/2+g*(w/lines); ctx.moveTo(xx,-h/2+4); ctx.lineTo(xx,h/2-4);} ctx.stroke(); } ctx.globalAlpha=1; }
   else if(b.game.mat==='stone'){ ctx.fillStyle='rgba(255,255,255,0.06)'; for(var s=0;s<4;s++){ ctx.beginPath(); ctx.arc(-w/4+ (s%2)*w/2, -h/4+Math.floor(s/2)*h/2, 3,0,6.28); ctx.fill(); } }
-  else if(b.game.mat==='glass'){ ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-w/2+5,-h/2+5); ctx.lineTo(-w/2+w*0.4,-h/2+5); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-w/2+5,-h/2+5); ctx.lineTo(-w/2+5,-h/2+h*0.4); ctx.stroke(); }
+  else if(b.game.mat==='brick'){ ctx.strokeStyle=mat.grain; ctx.lineWidth=1.4; ctx.globalAlpha=0.7;
+    var courses=Math.max(2,Math.round(h/14)), ch2=h/courses;
+    for(var bc=1;bc<courses;bc++){ var cy=-h/2+bc*ch2; ctx.beginPath(); ctx.moveTo(-w/2+3,cy); ctx.lineTo(w/2-3,cy); ctx.stroke(); }   // mortar courses
+    for(var bc2=0;bc2<courses;bc2++){ var cyc=-h/2+bc2*ch2, vx=(bc2%2)? 0 : w*0.25;   // staggered head joints
+      if(vx>-w/2+3 && vx<w/2-3){ ctx.beginPath(); ctx.moveTo(vx,cyc+2); ctx.lineTo(vx,cyc+ch2-2); ctx.stroke(); } } ctx.globalAlpha=1; }
+  else if(b.game.mat==='glass'||b.game.mat==='ice'||b.game.mat==='crystal'){ ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-w/2+5,-h/2+5); ctx.lineTo(-w/2+w*0.4,-h/2+5); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-w/2+5,-h/2+5); ctx.lineTo(-w/2+5,-h/2+h*0.4); ctx.stroke();
+    if(b.game.mat==='crystal'){ ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(-w/2+4,h/2-4); ctx.lineTo(w/2-4,-h/2+4); ctx.stroke(); } }
   else if(b.game.mat==='tnt'){ ctx.fillStyle=mat.edge; rr(ctx,-w/2+4,-4,w-8,8,2); ctx.fill(); ctx.fillStyle='#e0c366'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('✸',0,0); }
   else if(b.game.mat==='steel'){ ctx.fillStyle='rgba(255,255,255,0.10)'; var rv=[[-1,-1],[1,-1],[1,1],[-1,1]]; for(var r2=0;r2<4;r2++){ ctx.beginPath(); ctx.arc(rv[r2][0]*(w/2-7), rv[r2][1]*(h/2-7),2.4,0,6.28); ctx.fill(); } }
   // progressive multi-stage cracks so you can read "one more hit"
@@ -2379,7 +2433,7 @@ function openLoadout(n){
 }
 function fortIntel(lv){
   var mats={}; (lv.blocks||[]).forEach(function(b){ mats[b.t]=1; });
-  var mn={wood:'twig',stone:'stone',glass:'dewglass',tnt:'blastpod',steel:'iron'}, ms=[];
+  var mn={wood:'twig',stone:'stone',glass:'dewglass',tnt:'blastpod',steel:'iron',ice:'frostpane',brick:'kiln-brick',crystal:'gemstone',thatch:'thatch'}, ms=[];
   for(var k in mats) if(mats.hasOwnProperty(k)) ms.push(mn[k]||k);
   var pc=(lv.pests||[]).length + (lv.bossPest?1:0);
   return (ms.length? ms.join(' + ')+' fort' : 'open ground')+' · '+pc+' pest'+(pc===1?'':'s');
@@ -2517,20 +2571,10 @@ function nextLevel(){
 /* ---- endless ---- */
 function startEndless(){ _endless=true; _endlessN=1; startEndlessLevel(1); _playing=true; _paused=false; showScreen(null); }
 function startEndlessLevel(d){
-  var mats=['wood','wood','stone','glass','tnt'];
-  var blocks=[], pests=[];
-  var cols=Math.min(2+Math.floor(d/2),6);
-  var baseX=620;
-  for(var c=0;c<cols;c++){
-    var cx=baseX + c*150 + (d*7%40);
-    var mat=mats[(c+d)%mats.length]; if(d<3&&mat==='tnt')mat='stone';
-    var floors=1+((c+d)%3);
-    for(var f=0;f<floors;f++) blocks.push(BK(mat,cx, GROUND_Y-24-f*49, 46,46));
-    pests.push(P(cx, GROUND_Y-24-floors*49-16, 16));
-    if((c+d)%4===0) blocks.push(BK('tnt',cx+50, GROUND_Y-22, 40,40));
-  }
+  var comp=composeFort(d+1);   // varied structures + materials, scaling with depth
+  var blocks=comp.blocks, pests=comp.pests;
   var ammoPool=['burr','burr','acorn','split','thornpod','puffball','boomerang'];
-  var ammoN=Math.max(3, cols+1);
+  var ammoN=Math.max(3, pests.length + 1);
   var ammo=[]; for(var a=0;a<ammoN;a++) ammo.push(ammoPool[(a*3+d)%ammoPool.length]);
   startLevel({ n:'E'+d, world:((d-1)%4)+1, worldName:'Endless', name:'Endless · Depth '+d, ammo:ammo, blocks:blocks, pests:pests, endless:true });
 }
@@ -2582,24 +2626,48 @@ function chooseExpNode(idx){
     startLevel(generateFort(EXP.depth, elite, boss)); _playing=true; _paused=false; showScreen(null);
     if(EXP.depth===0) toast('Expedition begins — Vigor '+EXP.vigor); }
 }
+/* pack varied structures left-to-right, themed + scaled by difficulty (used by Expedition + Endless).
+   Structures are placed around x=0 then shifted so their left edge meets a running cursor — so
+   pieces of any width tile without overlap. Body count capped (~38 dynamic blocks) for framerate. */
+function composeFort(diff){
+  function rmat(pool){ return pool[Math.floor(Math.random()*pool.length)]; }
+  var soft=['thatch','wood'], mid=['wood','stone','brick'], hard=['stone','brick','ice'], shiny=['glass','ice','crystal'];
+  var easy=[ function(x){return hut(x,rmat(soft));}, function(x){return tower(x,rmat(mid),2+((diff)%2));},
+             function(x){return merge(wall(x-40,rmat(mid),3),{pests:[pestGround(x+30,16)]});}, function(x){return pyramid(x,rmat(soft),3);} ];
+  var medium=[ function(x){return keep(x,rmat(mid),2);}, function(x){return vault(x,rmat(hard));},
+               function(x){return pillarHall(x,rmat(mid),3);}, function(x){return bridge(x,rmat(mid));},
+               function(x){return table(x,rmat(shiny));} ];
+  var tough=[ function(x){return fortress(x,rmat(hard),rmat(mid));}, function(x){return pyramid(x,rmat(hard),4);},
+              function(x){return keep(x,rmat(hard),3);}, function(x){return pillarHall(x,rmat(hard),4);},
+              function(x){return vault(x,rmat(shiny));} ];
+  var menu = diff<3 ? easy : diff<6 ? easy.concat(medium) : medium.concat(tough);
+  var count = Math.max(1, Math.min(diff<6?4:3, 1+Math.floor(diff/2)));
+  function extent(s){ var mn=1e9,mx=-1e9; s.blocks.forEach(function(b){mn=Math.min(mn,b.x-b.w/2);mx=Math.max(mx,b.x+b.w/2);});
+    s.pests.forEach(function(p){mn=Math.min(mn,p.x-p.r);mx=Math.max(mx,p.x+p.r);}); return {mn:mn,mx:mx}; }
+  function shift(s,dx){ s.blocks.forEach(function(b){b.x+=dx;}); s.pests.forEach(function(p){p.x+=dx;}); }
+  var blocks=[], pests=[], cursor=560;
+  for(var i=0;i<count && blocks.length<38;i++){
+    var s=menu[Math.floor(Math.random()*menu.length)](0);
+    var e=extent(s), dx=cursor-e.mn; shift(s,dx);
+    blocks=blocks.concat(s.blocks); pests=pests.concat(s.pests);
+    cursor = e.mx+dx+92;
+    if(diff>=4 && i<count-1 && Math.random()<0.5){ blocks.push(ground('tnt',cursor+18, 40,40)); cursor+=76; }  // a tnt crate between forts
+  }
+  if(diff>=5 && blocks.length){ blocks[(Math.random()*blocks.length)|0].t='crystal'; }  // one jackpot crystal block
+  if(!pests.length) pests.push(pestGround((560+cursor)/2, 16));   // safety: never an empty (auto-win) fort
+  return { blocks:blocks, pests:pests, cols:count, right:cursor };
+}
 function generateFort(depth, elite, boss){
   var diff=depth + (elite?2:0) + (boss?3:0);
-  var mats=['wood','wood','stone','glass','tnt','steel'];
-  var blocks=[], pests=[], cols=Math.min(2+Math.floor(diff/2), 6), baseX=600;
-  for(var c=0;c<cols;c++){
-    var cx=baseX + c*145;
-    var mat=mats[(c+diff)%(diff<3?3:mats.length)]; if(diff<3&&mat==='tnt')mat='stone';
-    var floors=1+((c+diff)%3);
-    for(var f=0;f<floors;f++) blocks.push(BK(mat,cx, GROUND_Y-24-f*49, 46,46));
-    pests.push(P(cx, GROUND_Y-24-floors*49-16, 16));
-  }
+  var comp=composeFort(diff);
+  var blocks=comp.blocks, pests=comp.pests;
   var ammoPool=['burr','burr','acorn','split','thornpod','puffball','boomerang'];
-  var ammoN=Math.max(3, cols+1 - (elite?1:0));
+  var ammoN=Math.max(3, pests.length + 1 - (elite?1:0));   // ~1 seed per pest + a cushion (abilities/collapses clear extras) → winnable, 3-star still asks for skill
   var ammo=[]; for(var a=0;a<ammoN;a++) ammo.push(ammoPool[(a*3+diff)%ammoPool.length]);
   var lv={ n:'X'+depth, world:(diff%4)+1, worldName:'Expedition',
     name:(boss?'The Deep Warden':(elite?'Elite Fort':'Fort'))+' · Depth '+(depth+1),
     ammo:ammo, blocks:blocks, pests:pests, expedition:true, elite:elite };
-  if(boss){ lv.boss=true; lv.bossPest={ x:baseX+cols*145+30, y:GROUND_Y-40, r:40, hp:5 }; lv.name='The Deep Warden'; }
+  if(boss){ lv.boss=true; lv.bossPest={ x:comp.right+40, y:GROUND_Y-40, r:40, hp:5 }; lv.name='The Deep Warden'; }
   return lv;
 }
 function expWinFort(){
