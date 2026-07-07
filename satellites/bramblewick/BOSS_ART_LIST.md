@@ -1,3 +1,6 @@
+> **✅ DELIVERED 2026-07-07 (commit d26314a)** — all 4 bosses + all 5 ground backgrounds cut & wired.
+> Bramblewick is now fully art-complete. This file is kept for reference.
+
 # BRAMBLEWICK — Boss & Ground Art (hand this straight to ChatGPT)
 
 *Bramblewick grew from one arena into **five grounds**, each with its own boss. Two bosses

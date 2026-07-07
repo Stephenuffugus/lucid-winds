@@ -12,23 +12,16 @@ version. Paint any subset, in any order, and hand me batches whenever.
 
 ## ⭐ THE ACTUAL REMAINING ART (short list, in priority order)
 
-### 1. Bramblewick — the 4 new bosses  ·  **the one visible gap**
-The five grounds each have a boss; two are painted (Grubfather, Stormwing), **four are still
-procedural blobs** sitting next to them and reading as unfinished:
-`boss_tideshell`, `boss_broodmother`, `boss_frostmaw`, `boss_wiltqueen`.
-**→ Paste-ready spec: `satellites/bramblewick/BOSS_ART_LIST.md`** (Sheet A). One 2×2 magenta sheet.
+### 1. ~~Bramblewick — 4 bosses + 5 grounds~~  ·  ✅ **DONE (d26314a)**
+All 4 boss sprites and all 5 ground backgrounds are painted, cut and wired. Bramblewick is
+art-complete. Only **Sprout Dice** art remains (below).
 
 ### 2. Sprout Dice — full art pass (it's emoji + CSS today)  ·  the Director wants to build it out
 **→ Full list: `satellites/sprout-dice/ASSET_LIST.md`** — 7 face symbols (biggest bang), 12 pests +
 4 bosses, rarity die faces, board bg + logo. Thumbnail spec at `THUMBNAIL_SPEC.md`
 (`portal-assets/thumbs/sprout-dice.jpg`, ~480×480, ≤150 KB — last glyph-only card).
 
-### 3. Bramblewick — the 5 ground backgrounds  ·  *optional polish*
-Per-ground floors (`bg_greenhouse/sunkenbeds/sundrift/understory/longdark.jpg`). Optional — the
-game tints each ground procedurally and the generic floor already covers them.
-**→ Same file: `satellites/bramblewick/BOSS_ART_LIST.md`** (Sheet B).
-
-### 4. Dragon Philosophy — illustration set  ·  *not a drop-in; separate repo*
+### 3. Dragon Philosophy — illustration set  ·  *not a drop-in; separate repo*
 A built React/Vite bundle, so art must be added in its **source project** and rebuilt
 (`npm run build` base:'./'), then re-vendored — not a magenta-cut drop-in. Wants **8 dragon-patron
 portraits, 10 threat illos, 17 chase-card illustrations (~640×512)**, all placeholders today.
@@ -43,7 +36,7 @@ Lower priority for that reason; flag me when you want to tackle it and we pull t
 | **Garden Guard** (`garden-td`) | `manifest.json` (90 keys) | 90/90 present (9 towers + tier heads + variants, 16 pests, 4 bosses, keeper, projectiles, FX), thumb ✓ |
 | **Petal Plunge** | `ART.load` key-list (42) | 42/42 present (13 riders, 9 sleds, gnome ×2, 13 obstacles, 5 biome bgs), thumb ✓ |
 | **Vine Runner** | `ART` object (13) + 2 skins | 23/23 present, thumb ✓ |
-| **Bramblewick** | `ART.load` key-list (71) | 62/71 present — only the 9 items above are open, thumb ✓ |
+| **Bramblewick** | `ART.load` key-list (71) | 71/71 present (all sprites + 6 bosses + 5 ground bgs), thumb ✓ |
 | **Blooming Words** | procedural SVG | no art keys, thumb ✓ |
 | **Vinewinder** | procedural canvas | no art keys, thumb ✓ |
 | Bloom Breaker · Budburst · Pong Arena · Power Scalers · Sproing · Hues · Picnic Panic · Pollen Panic · Shell Shuffle | colour/canvas-driven | complete, all have portal thumbs |
@@ -77,10 +70,9 @@ strips, props, logo, 3 scene bgs). It's a **cut+repack-the-atlas job for me**, n
 ---
 
 ## RECOMMENDED ORDER
-1. **Bramblewick's 4 bosses** (`BOSS_ART_LIST.md` Sheet A) — the only art that currently reads as unfinished.
-2. **Sprout Dice thumbnail** — smallest possible art, every portal visitor sees it.
-3. **Bramblewick's 5 ground backgrounds** (Sheet B) — optional atmosphere.
-4. Dragon Philosophy's illustration set, whenever you want to pull that source repo.
+1. **Sprout Dice** — face symbols → pests/bosses → dice → board, + the thumbnail (the last art gap in the
+   drop-in fleet; `ASSET_LIST.md` + `THUMBNAIL_SPEC.md`). *(Bramblewick is now fully done.)*
+2. Dragon Philosophy's illustration set, whenever you want to pull that source repo.
 
 Hand me any batch (magenta sheet or transparent PNGs) and I'll cut, quantize, cache-bust, wire and
 re-vendor it — one game at a time.
