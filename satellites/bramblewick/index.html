@@ -866,7 +866,7 @@ function update(dt){
 
   // movement via joystick
   if(joy.active){ var jx=joy.dx, jy=joy.dy; var mag=Math.hypot(jx,jy);
-    if(mag>4){ var nx=jx/mag, ny=jy/mag; var sp=pl.spd*(G.laneMul?G.laneMul.moveSpd:1)*Math.min(1,mag/60);
+    if(mag>4){ var nx=jx/mag, ny=jy/mag; var sp=pl.spd*(G.laneMul?G.laneMul.moveSpd:1)*Math.min(1,mag/60)*hazMoveMul(pl.x,pl.y);
       pl.x+=nx*sp*dt; pl.y+=ny*sp*dt; } }
   pl.x=Math.max(pl.r,Math.min(VW-pl.r,pl.x)); pl.y=Math.max(pl.r,Math.min(VH-pl.r,pl.y));
 
@@ -1063,6 +1063,7 @@ function draw(){
   // fx + enemy bullets
   drawFX();
   drawHazards();
+  drawStageHazardOver();
   // manual aim reticle
   if(store.settings.manualAim && G.state==='PLAY' && G.aim.active){ ctx.strokeStyle='rgba(232,220,200,0.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(G.aim.x,G.aim.y,16,0,6.283); ctx.moveTo(G.aim.x-22,G.aim.y); ctx.lineTo(G.aim.x+22,G.aim.y); ctx.moveTo(G.aim.x,G.aim.y-22); ctx.lineTo(G.aim.x,G.aim.y+22); ctx.stroke(); }
   // joystick
@@ -1093,10 +1094,106 @@ var ART=(function(){
   ART.load('bg','assets/bg.jpg'+V);
   for(var s=0;s<STAGES.length;s++){ ART.load('bg_'+STAGES[s].id,'assets/bg_'+STAGES[s].id+'.jpg'+V); }
 })();
-// ---- stage hazards (Phase 2 fills these; Phase 1 no-ops so the stage system ships first) ----
-function initStageHazard(){ /* per-stage hazard state seeded on newGame — Phase 2 */ }
-function updateStageHazard(dt){ /* bog pools / heat+shade / spore fog / frost snap — Phase 2 */ }
-function drawStageHazard(){ /* hazard visuals under the vignette — Phase 2 */ }
+// ---- stage hazards (Phase 2) : bog pools / heat+shade / spore fog / frost snap ----
+function initStageHazard(){
+  G.zones=[]; G.heat=0; G.fog=0; G.hzT=0; G.hzT2=0; G.playerChill=0; G.coldWave=null; G.snapFlash=0;
+  var hz=G.stage.hazard; if(!hz) return;
+  if(hz.type==='pools' || hz.type==='heat'){
+    // scatter static zones: pools (slow) for sunkenbeds, shade (cool) for sundrift
+    var n = hz.type==='pools' ? (hz.n||4) : 3;
+    var rad = hz.type==='pools' ? (hz.r||66) : 96;
+    var kind = hz.type==='pools' ? 'pool' : 'shade';
+    var tries=0;
+    while(G.zones.length<n && tries<300){ tries++;
+      var zx=70+Math.random()*(VW-140), zy=130+Math.random()*(VH-240);
+      if(dist2(zx,zy,VW/2,VH*0.62) < (rad+80)*(rad+80)) continue;         // keep clear of the plant's start
+      var ok=true; for(var z=0;z<G.zones.length;z++){ if(dist2(zx,zy,G.zones[z].x,G.zones[z].y) < (rad*1.7)*(rad*1.7)){ ok=false; break; } }
+      if(ok) G.zones.push({x:zx,y:zy,r:rad,kind:kind});
+    }
+    // guarantee at least 2 zones exist even on a tiny field — shade MUST be reachable or heat is an unescapable death
+    while(G.zones.length<Math.min(2,n)){ var ga=G.zones.length*2.2+1;
+      G.zones.push({x:VW/2+Math.cos(ga)*Math.min(VW,VH)*0.32, y:VH*0.4+Math.sin(ga)*Math.min(VW,VH)*0.28, r:rad, kind:kind}); }
+  }
+}
+function inZone(x,y,kind){ if(!G.zones) return false; for(var i=0;i<G.zones.length;i++){ var z=G.zones[i]; if(z.kind===kind && dist2(x,y,z.x,z.y)<z.r*z.r) return true; } return false; }
+// speed multiplier at a point — bog slow + cold chill (read from the movement block)
+function hazMoveMul(x,y){ var m=1; if(G && G.playerChill>0) m*=0.5; if(G && G.stage.hazard && G.stage.hazard.type==='pools' && inZone(x,y,'pool')) m*=0.58; return m; }
+function updateStageHazard(dt){
+  if(!G) return;
+  if(G.playerChill>0) G.playerChill-=dt;
+  if(G.snapFlash>0) G.snapFlash-=dt;
+  var hz=G.stage.hazard; if(!hz) return; var pl=G.player;
+  if(hz.type==='heat'){
+    if(inZone(pl.x,pl.y,'shade')) G.heat=Math.max(0, G.heat - dt/3.2);   // cool fast in dappled shade
+    else G.heat=Math.min(1, G.heat + dt/15);                             // bake slowly in the open sun
+    if(G.heat>=0.85){                                                    // heat stroke: gentle DoT (bypasses i-frames)
+      pl.hp -= 5*dt*((G.heat-0.85)/0.15); pl.hurtFlash=Math.max(pl.hurtFlash,0.12);
+      if(pl.hp<=0){ pl.hp=0; endRun(false); }
+    }
+  }
+  else if(hz.type==='sporefog'){
+    G.hzT+=dt; var cyc=hz.cycle||35, act=hz.active||8; var on=((G.hzT % cyc) < act);
+    G.fog += ((on?1:0) - G.fog) * Math.min(1, dt*1.6);                   // ramp the veil in/out
+    if(on){ G.hzT2-=dt; if(G.hzT2<=0){ G.hzT2=1.8;                       // fog seeds Spore on the crowd (feeds your chains)
+      var seeded=0; gridQuery(pl.x,pl.y,270,function(o){ if(seeded<6 && o.active && !o.boss){ applyStatus(o,'spore',1); seeded++; } }); } }
+  }
+  else if(hz.type==='frostsnap'){
+    G.hzT+=dt; var snap=hz.snap||20;
+    if(G.hzT>=snap){ G.hzT=0;                                            // FROST SNAP: frost the whole field (set up shatters) + chill the plant
+      for(var i=0;i<pests.n;i++){ var p=pests.a[i]; if(p.active && !p.boss) applyStatus(p,'frost',2); }
+      G.playerChill=Math.max(G.playerChill,1.4); G.snapFlash=0.55; if(!store.settings.reducedMotion) spawnFX(pl.x,pl.y,'ring','#bfe6f2',VW,0.6);
+    }
+    G.hzT2+=dt; var wv=hz.wave||30;                                      // COLD WAVE: a sweeping band you must dodge
+    if(!G.coldWave && G.hzT2>=wv){ G.hzT2=0; var fromLeft=Math.random()<0.5; G.coldWave={x:(fromLeft?-50:VW+50), dir:(fromLeft?1:-1)}; }
+    if(G.coldWave){ G.coldWave.x += G.coldWave.dir*150*dt; var dxw=pl.x-G.coldWave.x; if(dxw*dxw < 32*32) G.playerChill=Math.max(G.playerChill,1.6);
+      if(G.coldWave.x<-70 || G.coldWave.x>VW+70) G.coldWave=null; }
+  }
+}
+// ground-layer hazards (under sprites) — drawn from drawBackground
+function drawStageHazard(){
+  if(!G || !G.zones) return;
+  for(var i=0;i<G.zones.length;i++){ var z=G.zones[i];
+    if(z.kind==='pool'){
+      var g=ctx.createRadialGradient(z.x,z.y,z.r*0.15,z.x,z.y,z.r);
+      g.addColorStop(0,'rgba(30,74,64,0.62)'); g.addColorStop(0.7,'rgba(20,50,44,0.5)'); g.addColorStop(1,'rgba(20,50,44,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(z.x,z.y,z.r,z.r*0.72,0,0,6.283); ctx.fill();
+      ctx.strokeStyle='rgba(120,190,170,0.28)'; ctx.lineWidth=2; var wob=store.settings.reducedMotion?0:Math.sin(G.time*1.5+i)*3;
+      ctx.beginPath(); ctx.ellipse(z.x,z.y,z.r*0.7+wob,z.r*0.5+wob*0.7,0,0,6.283); ctx.stroke();
+    } else { // shade
+      var s=ctx.createRadialGradient(z.x,z.y,z.r*0.1,z.x,z.y,z.r);
+      s.addColorStop(0,'rgba(8,14,20,0.55)'); s.addColorStop(0.75,'rgba(8,14,20,0.4)'); s.addColorStop(1,'rgba(8,14,20,0)');
+      ctx.fillStyle=s; ctx.beginPath(); ctx.ellipse(z.x,z.y,z.r,z.r*0.82,0,0,6.283); ctx.fill();
+    }
+  }
+}
+// atmospheric hazards (over sprites, under HUD) — drawn from draw()
+function drawStageHazardOver(){
+  if(!G) return; var hz=G.stage.hazard; if(!hz) return; var pl=G.player;
+  if(hz.type==='heat' && G.heat>0.02){
+    var a=G.heat*0.5; var g=ctx.createRadialGradient(VW/2,VH/2,VH*0.25,VW/2,VH/2,VH*0.75);
+    g.addColorStop(0,'rgba(230,150,60,0)'); g.addColorStop(1,'rgba(210,90,30,'+a.toFixed(3)+')');
+    ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+    // heat gauge
+    var bw=VW*0.5, bx=(VW-bw)/2, by=VH-16; ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(bx,by,bw,5);
+    ctx.fillStyle=G.heat>=0.85?'#e5563b':(G.heat>=0.6?'#e79a3a':'#e8c24b'); ctx.fillRect(bx,by,bw*G.heat,5);
+  }
+  if(hz.type==='sporefog' && G.fog>0.02){
+    // single radial veil: clear around the plant, densest at the edges (no destination-out — that would
+    // erase the sprites/floor under it, punching a black hole)
+    var fg=ctx.createRadialGradient(pl.x,pl.y,40,pl.x,pl.y,Math.max(VW,VH)*0.72);
+    fg.addColorStop(0,'rgba(106,90,134,0)'); fg.addColorStop(0.4,'rgba(106,90,134,'+(G.fog*0.34).toFixed(3)+')'); fg.addColorStop(1,'rgba(106,90,134,'+(G.fog*0.62).toFixed(3)+')');
+    ctx.fillStyle=fg; ctx.fillRect(0,0,VW,VH);
+    if(!store.settings.reducedMotion){ ctx.globalAlpha=G.fog*0.5; ctx.fillStyle='#b9a8d6';
+      for(var f=0;f<14;f++){ var fx2=(f*127+G.time*14)%VW, fy2=(f*83+G.time*7)%VH; ctx.beginPath(); ctx.arc(fx2,fy2,10,0,6.283); ctx.fill(); } ctx.globalAlpha=1; }
+  }
+  if(hz.type==='frostsnap'){
+    if(G.snapFlash>0){ ctx.fillStyle='rgba(190,230,242,'+(G.snapFlash*0.6).toFixed(3)+')'; ctx.fillRect(0,0,VW,VH); }
+    if(G.coldWave){ var x=G.coldWave.x; var g2=ctx.createLinearGradient(x-30,0,x+30,0);
+      g2.addColorStop(0,'rgba(180,224,242,0)'); g2.addColorStop(0.5,'rgba(180,224,242,0.5)'); g2.addColorStop(1,'rgba(180,224,242,0)');
+      ctx.fillStyle=g2; ctx.fillRect(x-30,0,60,VH);
+      ctx.strokeStyle='rgba(220,244,255,0.7)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,VH); ctx.stroke(); }
+  }
+}
 function drawBackground(){
   var st=(G&&G.stage)?G.stage:STAGES[0], pal=st.pal;
   var _bg=ART.get('bg_'+st.id)||ART.get('bg');
@@ -1409,7 +1506,9 @@ if(DEV){
     stress:function(n){ n=n||280; for(var i=0;i<n;i++) spawnPest('aphid'); return pests.n; },
     swarmAt:function(n,type){ n=n||30; var pl=G.player; for(var i=0;i<n;i++){ var a=Math.random()*6.283, rr=20+Math.random()*90; spawnPest(type||'aphid', pl.x+Math.cos(a)*rr, pl.y+Math.sin(a)*rr); } return pests.n; },
     paint:function(status,stacks){ var pl=G.player; var t=nearestPest(pl.x,pl.y); if(!t) return 'no pest'; applyStatus(t,status,stacks||1); return {hp:Math.round(t.hp),armor:t.armor}; },
-    inspect:function(){ var pl=G.player; var t=nearestPest(pl.x,pl.y); return t?{type:t.type,hp:Math.round(t.hp),armor:t.armor,st:Array.from(t.st),root:Math.round(t.rootT*100)/100,freeze:Math.round(t.freezeT*100)/100}:'none'; }
+    inspect:function(){ var pl=G.player; var t=nearestPest(pl.x,pl.y); return t?{type:t.type,hp:Math.round(t.hp),armor:t.armor,st:Array.from(t.st),root:Math.round(t.rootT*100)/100,freeze:Math.round(t.freezeT*100)/100}:'none'; },
+    haz:function(){ if(!G) return null; return {type:G.stage.hazard?G.stage.hazard.type:null, zones:(G.zones||[]).length, z:(G.zones||[]).map(function(o){return [Math.round(o.x),Math.round(o.y),o.r,o.kind];}), heat:Math.round(G.heat*100)/100, fog:Math.round(G.fog*100)/100, chill:Math.round(G.playerChill*100)/100, coldWave:!!G.coldWave, moveMul:Math.round(hazMoveMul(G.player.x,G.player.y)*100)/100}; },
+    setPos:function(x,y){ if(G){ G.player.x=x; G.player.y=y; } return {x:G.player.x,y:G.player.y}; }
   };
   updateDev();
 }
