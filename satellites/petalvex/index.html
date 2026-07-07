@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M4 4H28V28Z' fill='%237ab356'/%3E%3Cpath d='M4 4H28L4 28Z' fill='%23c8a84b'/%3E%3Cpath d='M4 4L16 16L28 4Z' fill='%23e58fa0'/%3E%3Cpath d='M4 28L16 16L28 28Z' fill='%236fb3c4'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Petalvex">
+<title>Petalvex — Sky Wolf Studios</title>
+<!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/petalvex/; harmless 404 at repo root, guarded) -->
+<script src="/sunbeam-sdk.js?v=2"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"petalvex"}).catch(function(){});</script>
+<style>
+:root{
+  --bg:#0d100c; --bg2:#141a12; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b;
+  --cream:#e8dcc8; --muted:#8a9178; --bark:#6b4a2b; --pink:#e58fa0; --ink:#12160f;
+  --pan:#0a0d09ee; --line:#2a331f;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+
+.title-word{font-size:58px; line-height:1; color:var(--sage); font-weight:800;
+  text-shadow:0 3px 0 #14200f, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.85; max-width:400px; line-height:1.5}
+.ribbon b{color:var(--gold)}
+
+.btn{display:flex; align-items:center; justify-content:center; gap:10px;
+  min-height:64px; width:100%; border:1px solid var(--line); border-radius:16px;
+  background:linear-gradient(180deg,#1a2415,#121a0f); color:var(--cream);
+  font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
+  transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a;
+  box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
+.btn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a; box-shadow:0 4px 0 #7a5f1f}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.btn.sm{min-height:52px; font-size:16px}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:400px; margin:0 auto}
+
+.modecard{display:flex; align-items:center; gap:14px; text-align:left; padding:14px 18px}
+.modecard .mc-ico{font-size:30px; width:40px; text-align:center}
+.modecard .mc-main{flex:1}
+.modecard .mc-t{font-size:19px; font-weight:800; color:var(--cream)}
+.modecard .mc-d{font-size:12.5px; color:var(--muted); margin-top:2px}
+.modecard .mc-best{font-size:12px; color:var(--gold); font-weight:700; white-space:nowrap}
+
+h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.45; color:var(--cream)}
+.helprow .hi{font-size:26px; width:34px; text-align:center; flex:none}
+.win-stat{display:flex; justify-content:space-between; width:100%; max-width:320px; margin:6px auto;
+  font-size:16px; padding:8px 4px; border-bottom:1px solid var(--line)}
+.win-stat b{color:var(--gold)}
+.sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:400px;
+  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.settingline span{font-size:16px}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Petalvex</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Slot the leaf tiles so every touching edge shares a number. A quiet botanical logic puzzle.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-play">▦&nbsp; Play</button>
+      <div class="row">
+        <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-set">Settings</button>
+      </div>
+      <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- MODES -->
+  <div class="screen" id="s-modes"><div class="pad">
+    <h2 class="sc-h">Choose a bed</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Bigger beds, more petals to match.</div>
+    <div class="stack" id="mode-list" style="max-width:440px"></div>
+    <div style="height:16px"></div>
+    <button class="btn ghost sm" id="modes-back" style="max-width:440px;margin:0 auto">◄ Title</button>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">🍃</div><div>Each tile is split into four triangles, each holding a number 0–9 (also colour-coded).</div></div>
+    <div class="helprow"><div class="hi">↔</div><div>Drag tiles from the tray into the bed. Two tiles may sit side by side only if the numbers on their <b>touching edges match</b>.</div></div>
+    <div class="helprow"><div class="hi">🔴</div><div>A mismatched seam glows red. Fill every cell with no red seams to solve the bed.</div></div>
+    <div class="helprow"><div class="hi">💡</div><div>Stuck? A <b>Nudge</b> locks one correct tile in place — but a hint-free solve earns a little more sun.</div></div>
+    <div class="helprow"><div class="hi">☀️</div><div>Solve beds to earn Sunbeams for your garden. Faster, bigger, hint-free solves earn more.</div></div>
+    <div style="height:20px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:12px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Colour tint on tiles</span><div class="toggle on" id="tg-color"><b></b></div></div>
+    <div style="height:12px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+    <div class="foot">Petalvex — a Sky Wolf remake of the classic TetraVex.<br>Single self-contained file · Canvas2D + WebAudio + localStorage · zero assets.</div>
+  </div></div>
+
+  <!-- WIN -->
+  <div class="screen center" id="s-win"><div class="pad center">
+    <div style="flex:1"></div>
+    <div style="font-size:56px">🌼</div>
+    <h2 class="sc-h" style="font-size:30px;margin-top:6px" id="win-title">Bed in bloom!</h2>
+    <div style="width:100%;margin-top:14px">
+      <div class="win-stat"><span>Bed</span><b id="win-size">4 × 4</b></div>
+      <div class="win-stat"><span>Time</span><b id="win-time">0:00</b></div>
+      <div class="win-stat"><span>Nudges used</span><b id="win-hints">0</b></div>
+      <div class="win-stat" id="win-best-row"><span>Best time</span><b id="win-best">—</b></div>
+    </div>
+    <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="win-again">↻ New bed</button>
+      <button class="btn sm" id="win-modes">Choose bed</button>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+/* ============================ helpers ================================= */
+function $(id){ return document.getElementById(id); }
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; }
+function tap(id,fn){ var el=$(id); if(!el) return; el.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(e); }); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+var BUILD='v1.0';
+
+/* storage (private-mode safe) */
+var LS=(function(){ var ok=true, mem={};
+  try{ var k='pvx_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch(e){ ok=false; }
+  return {
+    get:function(k){ try{ return ok?localStorage.getItem(k):(k in mem?mem[k]:null); }catch(e){ return k in mem?mem[k]:null; } },
+    set:function(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } }
+  };
+})();
+var K={ set:'pvx_set', best:'pvx_best', seen:'pvx_seen' };
+
+/* ============================ audio ================================= */
+var AC=null, SET={ sound:true, color:true };
+(function loadSet(){ try{ var s=JSON.parse(LS.get(K.set)||'{}'); if(typeof s.sound==='boolean') SET.sound=s.sound; if(typeof s.color==='boolean') SET.color=s.color; }catch(e){} })();
+function saveSet(){ LS.set(K.set, JSON.stringify(SET)); }
+function actx(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
+function beep(freq,dur,type,vol,slideTo){
+  if(!SET.sound) return; var c=actx(); if(!c) return;
+  try{ var o=c.createOscillator(), g=c.createGain(), t=c.currentTime;
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||0.14,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function sfx(kind){
+  switch(kind){
+    case 'ui': beep(420,0.05,'triangle',0.10); break;
+    case 'pick': beep(560,0.05,'sine',0.10); break;
+    case 'place': beep(340,0.07,'sine',0.12); break;
+    case 'match': beep(660,0.09,'triangle',0.11,880); break;
+    case 'bad': beep(150,0.12,'sawtooth',0.09,110); break;
+    case 'hint': beep(720,0.10,'sine',0.11,960); break;
+    case 'win': beep(523,0.11,'triangle',0.14); setTimeout(function(){ beep(659,0.11,'triangle',0.14); },110); setTimeout(function(){ beep(784,0.14,'triangle',0.15); },230); setTimeout(function(){ beep(1046,0.2,'triangle',0.14); },370); break;
+  }
+}
+
+/* ============================ seeded rng ================================= */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+var RND=Math.random;
+
+/* ============================ value palette ================================= */
+/* 0..9 each get a distinct hue; number is drawn on top so it's colour-blind safe */
+var VCOL=['#7c5a34','#7ab356','#c8a84b','#e58fa0','#5fb0c6','#a878cf','#d4842a','#d5c9b0','#d24b4b','#8fd06a'];
+var VINK=['#f3e6cf','#0d1a06','#241c07','#2a0f14','#04181f','#160726','#231005','#241f16','#2a0606','#0d1a06'];
+
+/* ============================ game state ================================= */
+var cv, ctx, VW=540, VH=960, DPR=Math.min(2, window.devicePixelRatio||1);
+var curScreen='s-title';
+var P=null;          // current puzzle
+var drag=null;       // active drag {tile, ox, oy, x, y, from}
+var parts=[];        // win particles
+var animId=0, animating=false;
+var clockTimer=0;
+
+/* layout rects computed each render */
+var LAY={ cell:0, gx:0, gy:0, trayY:0, trayCell:0, trayCols:0, trayX:0 };
+
+var MODES=[
+  { key:'s3', ico:'🌱', t:'Sprout', d:'3 × 3 · numbers 0–5', n:3, maxv:6 },
+  { key:'s4', ico:'🌿', t:'Bud',    d:'4 × 4 · numbers 0–7', n:4, maxv:8 },
+  { key:'s5', ico:'🌷', t:'Bloom',  d:'5 × 5 · numbers 0–9', n:5, maxv:10 },
+  { key:'s6', ico:'🌻', t:'Thicket',d:'6 × 6 · expert',      n:6, maxv:10 },
+  { key:'dly',ico:'📅', t:'Daily Bed', d:'One shared 4 × 4 a day', n:4, maxv:8, daily:true }
+];
+function modeByKey(k){ for(var i=0;i<MODES.length;i++) if(MODES[i].key===k) return MODES[i]; return MODES[1]; }
+
+/* ============================ puzzle generation ================================= */
+/* Build a guaranteed-solvable N x N grid of tiles. Each tile edges=[top,right,bottom,left].
+   Shared seams are assigned once so a consistent solution exists; tiles are then shuffled
+   into the tray. Any arrangement with all seams matching wins (classic TetraVex). */
+function genPuzzle(mode, seed){
+  var n=mode.n, maxv=mode.maxv;
+  var rnd = (typeof seed==='number') ? mulberry32(seed) : RND;
+  function rv(){ return Math.floor(rnd()*maxv); }
+  // horizontal seams between row r and r+1 : hseam[r][c] for r in 0..n-2
+  // vertical seams between col c and c+1 : vseam[r][c] for c in 0..n-2
+  var r,c;
+  var hseam=[], vseam=[], topB=[], botB=[], leftB=[], rightB=[];
+  for(r=0;r<n-1;r++){ hseam[r]=[]; for(c=0;c<n;c++) hseam[r][c]=rv(); }
+  for(r=0;r<n;r++){ vseam[r]=[]; for(c=0;c<n-1;c++) vseam[r][c]=rv(); }
+  for(c=0;c<n;c++){ topB[c]=rv(); botB[c]=rv(); }
+  for(r=0;r<n;r++){ leftB[r]=rv(); rightB[r]=rv(); }
+  var solved=[]; // solved[cell] = edges  (cell = r*n+c)
+  for(r=0;r<n;r++) for(c=0;c<n;c++){
+    var top = (r===0)? topB[c] : hseam[r-1][c];
+    var bot = (r===n-1)? botB[c] : hseam[r][c];
+    var lef = (c===0)? leftB[r] : vseam[r][c-1];
+    var rig = (c===n-1)? rightB[r] : vseam[r][c];
+    solved[r*n+c]=[top,rig,bot,lef];
+  }
+  // build tile objects; sol = solved-cell index for hint use
+  var tiles=[];
+  for(var i=0;i<n*n;i++) tiles.push({ id:i, edges:solved[i].slice(), sol:i, locked:false });
+  // shuffle tray order
+  var order=tiles.slice();
+  for(i=order.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)); var tmp=order[i]; order[i]=order[j]; order[j]=tmp; }
+  // ensure the shuffle isn't already the solved layout (rare but tidy)
+  var same=true; for(i=0;i<order.length;i++){ if(order[i].sol!==i){ same=false; break; } }
+  if(same && order.length>1){ var t0=order[0]; order[0]=order[1]; order[1]=t0; }
+  return {
+    mode:mode, n:n, maxv:maxv,
+    board:new Array(n*n),   // board[cell]=tile or undefined
+    tray:order,             // tiles not yet placed (order matters for layout)
+    hints:0, moves:0,
+    startT:Date.now(), solved:false, t:0
+  };
+}
+
+/* ============================ layout math ================================= */
+function computeLayout(){
+  if(!P) return;
+  var n=P.n;
+  var pad=18;
+  var topHud=118;
+  // board area available height (leave room for tray)
+  var maxBoard=VW-pad*2;
+  var boardTop=topHud+8;
+  // reserve tray height depending on count
+  var trayRows=Math.ceil(n*n / n); // roughly n rows if n cols
+  var cell=Math.min(maxBoard/n, 360/n); // cap board so tray always has room
+  cell=Math.floor(cell);
+  var boardW=cell*n;
+  LAY.cell=cell;
+  LAY.gx=Math.round((VW-boardW)/2);
+  LAY.gy=boardTop;
+  // tray
+  var trayTop=LAY.gy+boardW+22;
+  LAY.trayY=trayTop;
+  var cols=n<=4?n:(n===5?6:6);
+  if(n===3) cols=3;
+  LAY.trayCols=cols;
+  var avail=VH-trayTop-78; /* reserve the 66px control bar + margin */
+  var tc=Math.min((VW-pad*2)/cols, avail/Math.ceil(n*n/cols));
+  tc=Math.floor(Math.min(tc, cell)); // tray tiles never bigger than board tiles
+  if(tc<34) tc=34;
+  LAY.trayCell=tc;
+  LAY.trayX=Math.round((VW-tc*cols)/2);
+}
+function cellRect(cellIdx){ var n=P.n; var r=Math.floor(cellIdx/n), c=cellIdx%n; return { x:LAY.gx+c*LAY.cell, y:LAY.gy+r*LAY.cell, s:LAY.cell }; }
+function traySlotRect(i){ var cols=LAY.trayCols, tc=LAY.trayCell; var r=Math.floor(i/cols), c=i%cols; return { x:LAY.trayX+c*tc, y:LAY.trayY+r*tc, s:tc }; }
+
+/* ============================ tile drawing ================================= */
+function drawTile(g, x, y, s, tile, alpha, seamState){
+  // seamState optional: {top,right,bottom,left} each 'match'|'bad'|null
+  g.save();
+  g.globalAlpha=alpha==null?1:alpha;
+  var cx=x+s/2, cy=y+s/2;
+  var quads=[
+    [ [x,y],[x+s,y],[cx,cy] ],       // top
+    [ [x+s,y],[x+s,y+s],[cx,cy] ],   // right
+    [ [x+s,y+s],[x,y+s],[cx,cy] ],   // bottom
+    [ [x,y+s],[x,y],[cx,cy] ]        // left
+  ];
+  var np=[ [cx, y+s*0.20], [x+s*0.80, cy], [cx, y+s*0.80], [x+s*0.20, cy] ];
+  for(var q=0;q<4;q++){
+    var v=tile.edges[q];
+    var col=SET.color?VCOL[v]:'#26301c';
+    g.beginPath(); g.moveTo(quads[q][0][0],quads[q][0][1]); g.lineTo(quads[q][1][0],quads[q][1][1]); g.lineTo(quads[q][2][0],quads[q][2][1]); g.closePath();
+    g.fillStyle=col; g.fill();
+  }
+  // subtle diagonals + border
+  g.strokeStyle='rgba(0,0,0,0.30)'; g.lineWidth=Math.max(1,s*0.012);
+  g.beginPath(); g.moveTo(x,y); g.lineTo(x+s,y+s); g.moveTo(x+s,y); g.lineTo(x,y+s); g.stroke();
+  // numbers
+  g.font='700 '+Math.round(s*0.20)+'px -apple-system,system-ui,sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  for(q=0;q<4;q++){
+    var vv=tile.edges[q];
+    g.fillStyle=SET.color?VINK[vv]:'#e8dcc8';
+    g.fillText(''+vv, np[q][0], np[q][1]);
+  }
+  // outer frame
+  g.lineWidth=Math.max(1.5,s*0.02);
+  g.strokeStyle=tile.locked?'#c8a84b':'rgba(232,220,200,0.55)';
+  g.strokeRect(x+g.lineWidth/2, y+g.lineWidth/2, s-g.lineWidth, s-g.lineWidth);
+  if(tile.locked){ g.fillStyle='#c8a84b'; g.font='700 '+Math.round(s*0.16)+'px system-ui'; g.textAlign='right'; g.textBaseline='top'; g.fillText('🔒', x+s-3, y+2); }
+  // seam overlays
+  if(seamState){
+    var lw=Math.max(3,s*0.06);
+    /* colour-blind safe: 'bad' seams are thick + dashed, 'match' seams thin + solid,
+       so they differ by pattern and width, not colour alone (numbers remain the ground truth). */
+    function seam(a,bx,by,ex,ey){ if(!a) return;
+      var bad=(a==='bad'); g.strokeStyle=bad?'#ff5a4d':'#8fd06a'; g.lineWidth=bad?lw*1.2:lw*0.65; g.lineCap='butt';
+      if(bad) g.setLineDash([Math.max(3,s*0.05), Math.max(2,s*0.045)]); else g.setLineDash([]);
+      g.beginPath(); g.moveTo(bx,by); g.lineTo(ex,ey); g.stroke(); g.setLineDash([]); }
+    seam(seamState.top,    x+lw, y+1,     x+s-lw, y+1);
+    seam(seamState.right,  x+s-1, y+lw,   x+s-1, y+s-lw);
+    seam(seamState.bottom, x+lw, y+s-1,   x+s-lw, y+s-1);
+    seam(seamState.left,   x+1, y+lw,     x+1, y+s-lw);
+  }
+  g.restore();
+}
+
+/* compute seam state for a board tile against placed neighbours */
+function seamFor(cellIdx){
+  var n=P.n, r=Math.floor(cellIdx/n), c=cellIdx%n;
+  var t=P.board[cellIdx]; if(!t) return null;
+  var st={top:null,right:null,bottom:null,left:null};
+  if(c<n-1){ var rt=P.board[cellIdx+1]; if(rt){ var m=t.edges[1]===rt.edges[3]; st.right=m?'match':'bad'; } }
+  if(c>0){ var lt=P.board[cellIdx-1]; if(lt){ var m2=t.edges[3]===lt.edges[1]; st.left=m2?'match':'bad'; } }
+  if(r<n-1){ var bt=P.board[cellIdx+n]; if(bt){ var m3=t.edges[2]===bt.edges[0]; st.bottom=m3?'match':'bad'; } }
+  if(r>0){ var ut=P.board[cellIdx-n]; if(ut){ var m4=t.edges[0]===ut.edges[2]; st.top=m4?'match':'bad'; } }
+  return st;
+}
+
+/* ============================ render ================================= */
+function fmtTime(ms){ var s=Math.floor(ms/1000); var m=Math.floor(s/60); s=s%60; return m+':'+(s<10?'0':'')+s; }
+function render(){
+  if(!ctx) return;
+  ctx.clearRect(0,0,VW,VH);
+  // background
+  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101610'); bg.addColorStop(1,'#0a0d09');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  if(!P) return;
+  computeLayout();
+  // ---- HUD ----
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle='#7ab356'; ctx.font='800 22px system-ui';
+  ctx.fillText(P.mode.t, 18, 34);
+  ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui';
+  ctx.fillText(P.n+' × '+P.n+' bed', 18, 58);
+  // timer + moves right
+  ctx.textAlign='right';
+  ctx.fillStyle='#e8dcc8'; ctx.font='800 22px system-ui';
+  ctx.fillText(P.solved?fmtTime(P.t):fmtTime(Date.now()-P.startT), VW-18, 34);
+  ctx.fillStyle='#8a9178'; ctx.font='600 13px system-ui';
+  ctx.fillText('nudges '+P.hints, VW-18, 58);
+
+  // ---- board slots ----
+  var i, n=P.n;
+  for(i=0;i<n*n;i++){
+    var R=cellRect(i);
+    ctx.fillStyle='#0e140d'; ctx.fillRect(R.x,R.y,R.s,R.s);
+    ctx.strokeStyle='#233019'; ctx.lineWidth=1; ctx.strokeRect(R.x+0.5,R.y+0.5,R.s-1,R.s-1);
+  }
+  // subtle bed frame
+  ctx.strokeStyle='rgba(120,90,52,0.55)'; ctx.lineWidth=3;
+  ctx.strokeRect(LAY.gx-4, LAY.gy-4, LAY.cell*n+8, LAY.cell*n+8);
+
+  // ---- placed board tiles ----
+  for(i=0;i<n*n;i++){ if(P.board[i]){ var Rr=cellRect(i); drawTile(ctx, Rr.x, Rr.y, Rr.s, P.board[i], 1, seamFor(i)); } }
+
+  // ---- tray label + tiles ----
+  ctx.textAlign='left'; ctx.fillStyle='#8a9178'; ctx.font='700 12px system-ui'; ctx.textBaseline='alphabetic';
+  ctx.fillText('TRAY', LAY.trayX, LAY.trayY-6);
+  for(i=0;i<P.tray.length;i++){ var Ts=traySlotRect(i); drawTile(ctx, Ts.x+2, Ts.y+2, Ts.s-4, P.tray[i], 1, null); }
+
+  // ---- dragged tile ----
+  if(drag){ var s=LAY.cell; drawTile(ctx, drag.x-s/2, drag.y-s/2, s, drag.tile, 0.94, null); }
+
+  // ---- particles ----
+  for(i=0;i<parts.length;i++){ var pt=parts[i]; ctx.globalAlpha=clamp(pt.life,0,1); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,6.2832); ctx.fill(); }
+  ctx.globalAlpha=1;
+}
+
+/* ============================ animation loop (runs only when needed) ================================= */
+function needAnim(){ return parts.length>0; }
+function startAnim(){ if(!animating){ animating=true; lastTs=0; animId=requestAnimationFrame(tick); } }
+var lastTs=0;
+function tick(ts){
+  var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts;
+  for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=520*dt; p.life-=dt*0.9; if(p.life<=0) parts.splice(i,1); }
+  render();
+  if(needAnim()) animId=requestAnimationFrame(tick); else animating=false;
+}
+function burst(x,y,col,count){ for(var i=0;i<(count||14);i++){ var a=Math.random()*6.2832, sp=60+Math.random()*220; parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-80,r:2+Math.random()*4,col:col,life:1}); } startAnim(); }
+
+/* ============================ input ================================= */
+function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
+function hitBoard(x,y){ var n=P.n; for(var i=0;i<n*n;i++){ var R=cellRect(i); if(x>=R.x&&x<R.x+R.s&&y>=R.y&&y<R.y+R.s) return i; } return -1; }
+function hitTray(x,y){ for(var i=0;i<P.tray.length;i++){ var R=traySlotRect(i); if(x>=R.x&&x<R.x+R.s&&y>=R.y&&y<R.y+R.s) return i; } return -1; }
+function inTrayArea(x,y){ return y>=LAY.trayY-14; }
+
+function onDown(e){
+  if(curScreen!==null || !P || P.solved) return;
+  e.preventDefault();
+  var p=evPos(e);
+  // pick from board?
+  var bi=hitBoard(p.x,p.y);
+  if(bi>=0 && P.board[bi] && !P.board[bi].locked){
+    drag={ tile:P.board[bi], from:{type:'board', idx:bi}, x:p.x, y:p.y };
+    P.board[bi]=undefined; sfx('pick'); render(); return;
+  }
+  // pick from tray?
+  var ti=hitTray(p.x,p.y);
+  if(ti>=0){
+    var t=P.tray[ti]; P.tray.splice(ti,1);
+    drag={ tile:t, from:{type:'tray', idx:ti}, x:p.x, y:p.y };
+    sfx('pick'); render(); return;
+  }
+}
+function onMove(e){ if(!drag) return; e.preventDefault(); var p=evPos(e); drag.x=p.x; drag.y=p.y; render(); }
+function onUp(e){
+  if(!drag) return; e.preventDefault();
+  var p=evPos(e); var placed=false;
+  var bi=hitBoard(p.x,p.y);
+  if(bi>=0){
+    var occ=P.board[bi];
+    if(!occ){ P.board[bi]=drag.tile; placed=true; }
+    else if(!occ.locked){
+      // swap: occupant goes back to drag origin
+      P.board[bi]=drag.tile;
+      returnTile(occ, drag.from);
+      placed=true;
+    }
+  }
+  if(!placed){
+    if(inTrayArea(p.x,p.y)){ P.tray.push(drag.tile); placed=true; }
+    else { returnTile(drag.tile, drag.from); placed=true; }
+  }
+  if(placed){ P.moves++; onPlaced(bi>=0?bi:-1); }
+  drag=null; render();
+}
+function returnTile(tile, from){
+  if(from.type==='board' && P.board[from.idx]===undefined){ P.board[from.idx]=tile; }
+  else { P.tray.push(tile); }
+}
+function onPlaced(cellIdx){
+  // feedback sound
+  if(cellIdx>=0){
+    var st=seamFor(cellIdx); var anyBad=false, anyMatch=false;
+    if(st){ if(st.top==='bad'||st.right==='bad'||st.bottom==='bad'||st.left==='bad') anyBad=true; if(st.top==='match'||st.right==='match'||st.bottom==='match'||st.left==='match') anyMatch=true; }
+    if(anyBad) sfx('bad'); else if(anyMatch) sfx('match'); else sfx('place');
+  } else sfx('place');
+  checkWin();
+}
+function checkWin(){
+  var n=P.n, i;
+  for(i=0;i<n*n;i++) if(!P.board[i]) return false;
+  // all filled — verify seams
+  for(i=0;i<n*n;i++){ var st=seamFor(i); if(st && (st.right==='bad'||st.bottom==='bad'||st.left==='bad'||st.top==='bad')) return false; }
+  winPuzzle(); return true;
+}
+
+/* ============================ nudge / hint ================================= */
+function nudge(){
+  if(!P || P.solved) return;
+  var n=P.n, i;
+  // find a target cell: empty OR currently-mismatched, whose solution tile can be moved in
+  var candidates=[];
+  for(i=0;i<n*n;i++){
+    var cur=P.board[i];
+    if(cur && cur.locked) continue;
+    if(!cur){ candidates.push(i); continue; }
+    var st=seamFor(i);
+    if(st && (st.top==='bad'||st.right==='bad'||st.bottom==='bad'||st.left==='bad')) candidates.push(i);
+  }
+  if(!candidates.length){ // nothing obviously wrong; lock any unlocked correct tile for reassurance
+    for(i=0;i<n*n;i++){ if(P.board[i] && !P.board[i].locked && P.board[i].sol===i){ P.board[i].locked=true; P.hints++; sfx('hint'); var Rr=cellRect(i); burst(Rr.x+Rr.s/2,Rr.y+Rr.s/2,'#c8a84b',10); render(); return; } }
+    return;
+  }
+  // pick the candidate cell with most placed neighbours (most constrained) -> nicest nudge
+  candidates.sort(function(a,b){ return placedNbrs(b)-placedNbrs(a); });
+  var target=candidates[0];
+  // the solution tile for this cell:
+  var want=null, loc=null;
+  // search board
+  for(i=0;i<n*n;i++){ if(P.board[i] && P.board[i].sol===target){ want=P.board[i]; loc={type:'board',idx:i}; break; } }
+  if(!want){ for(i=0;i<P.tray.length;i++){ if(P.tray[i].sol===target){ want=P.tray[i]; loc={type:'tray',idx:i}; break; } } }
+  if(!want) return;
+  // remove target's current occupant (if any) to tray
+  var occ=P.board[target];
+  // remove want from its location
+  if(loc.type==='board') P.board[loc.idx]=undefined; else P.tray.splice(loc.idx,1);
+  if(occ && occ!==want) P.tray.push(occ);
+  P.board[target]=want; want.locked=true; P.hints++;
+  sfx('hint'); var R=cellRect(target); burst(R.x+R.s/2,R.y+R.s/2,'#c8a84b',12);
+  render(); checkWin();
+}
+function placedNbrs(cellIdx){ var n=P.n,r=Math.floor(cellIdx/n),c=cellIdx%n,k=0; if(c<n-1&&P.board[cellIdx+1])k++; if(c>0&&P.board[cellIdx-1])k++; if(r<n-1&&P.board[cellIdx+n])k++; if(r>0&&P.board[cellIdx-n])k++; return k; }
+
+/* ============================ win + reward ================================= */
+function bestKey(mode){ return 'best_'+mode.key; }
+function loadBest(){ try{ return JSON.parse(LS.get(K.best)||'{}'); }catch(e){ return {}; } }
+function winPuzzle(){
+  if(P.solved) return;
+  P.solved=true; P.t=Date.now()-P.startT;
+  sfx('win');
+  // celebratory bursts across the board
+  var n=P.n;
+  for(var i=0;i<n*n;i++){ var R=cellRect(i); (function(R,i){ setTimeout(function(){ if(P&&P.solved) burst(R.x+R.s/2,R.y+R.s/2, VCOL[i%10], 8); },i*22); })(R,i);}
+  // best time (only for non-daily; daily tracked separately but we still record)
+  var best=loadBest(), bk=bestKey(P.mode), prev=best[bk], isBest=false;
+  if(P.hints===0){ if(prev==null || P.t<prev){ best[bk]=P.t; isBest=true; LS.set(K.best, JSON.stringify(best)); } }
+  // sunbeam reward
+  var base={3:3,4:5,5:8,6:12}[n]||3;
+  if(P.mode.daily) base+=4;
+  // speed bonus: quick solves get a touch more (up to +4)
+  var secs=P.t/1000, parSec=n*n*4;
+  var speed=secs<parSec?Math.round(clamp((parSec-secs)/parSec*4,0,4)):0;
+  var hintPenalty=P.hints>0?0.5:1;
+  var total=Math.max(1, Math.round((base+speed)*hintPenalty));
+  var granted=0; try{ if(window._sbCapEarn) granted=window._sbCapEarn(total,'petalvex:solve')||0; }catch(e){}
+  // fill win screen
+  $('win-size').textContent=n+' × '+n;
+  $('win-time').textContent=fmtTime(P.t);
+  $('win-hints').textContent=''+P.hints;
+  var bshow=best[bk]!=null?fmtTime(best[bk]):'—';
+  $('win-best').textContent=bshow+(isBest?'  ★ new!':'');
+  $('win-title').textContent=isBest?'New best time!':(P.mode.daily?'Daily bed solved!':'Bed in bloom!');
+  $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun already gathered';
+  setTimeout(function(){ show('s-win'); }, 620);
+}
+
+/* ============================ flow ================================= */
+function startMode(key){
+  var mode=modeByKey(key);
+  var seed=null;
+  if(mode.daily){ seed=Math.floor(Date.now()/864e5); }
+  P=genPuzzle(mode, seed);
+  parts=[]; drag=null;
+  show(null); // canvas gameplay (no DOM screen)
+  computeLayout(); render();
+  startClock();
+}
+function startClock(){ stopClock(); clockTimer=setInterval(function(){ if(P&&!P.solved&&curScreen===null) render(); },1000); }
+function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=0; } }
+function buildModeList(){
+  var host=$('mode-list'); host.innerHTML=''; var best=loadBest();
+  for(var i=0;i<MODES.length;i++){ (function(m){
+    var b=document.createElement('button'); b.className='btn modecard';
+    var bt=best[bestKey(m)]; var bstr=bt!=null?fmtTime(bt):'—';
+    b.innerHTML='<div class="mc-ico">'+m.ico+'</div><div class="mc-main"><div class="mc-t">'+m.t+'</div><div class="mc-d">'+m.d+'</div></div><div class="mc-best">'+(m.daily?'today':('best '+bstr))+'</div>';
+    b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startMode(m.key); });
+    host.appendChild(b);
+  })(MODES[i]); }
+}
+function toModes(){ buildModeList(); show('s-modes'); }
+
+/* on-canvas control buttons (bottom bar). We keep them as DOM overlay-free by drawing a slim
+   button row via HTML pinned over the canvas. Simplest: use fixed DOM buttons layer. */
+function buildControlBar(){
+  if($('ctrlbar')) return;
+  var bar=document.createElement('div'); bar.id='ctrlbar';
+  bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:66px;display:none;z-index:12;'+
+    'padding:9px 10px;gap:8px;align-items:stretch;justify-content:center;'+
+    'background:linear-gradient(0deg,#0a0d09 60%,#0a0d0900)';
+  function mk(txt,fn,cls){ var b=document.createElement('button'); b.textContent=txt;
+    b.style.cssText='flex:1;max-width:150px;min-height:48px;border-radius:12px;border:1px solid var(--line);'+
+      'background:'+(cls==='p'?'linear-gradient(180deg,#d8b84f,#b2913a);color:#241c07;border-color:#e6cd6a':'#12180e;color:#e8dcc8')+';'+
+      'font-size:15px;font-weight:700;cursor:pointer';
+    b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(); }); return b; }
+  bar.appendChild(mk('☰ Menu', function(){ stopClock(); toModes(); }));
+  bar.appendChild(mk('↺ Reset', resetBoard));
+  bar.appendChild(mk('💡 Nudge', nudge, 'p'));
+  $('stage').appendChild(bar);
+}
+function resetBoard(){
+  if(!P||P.solved) return;
+  var n=P.n, i;
+  // return all non-locked tiles to tray, keep locked ones
+  for(i=0;i<n*n;i++){ var t=P.board[i]; if(t && !t.locked){ P.tray.push(t); P.board[i]=undefined; } }
+  // reshuffle tray
+  for(i=P.tray.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var tm=P.tray[i]; P.tray[i]=P.tray[j]; P.tray[j]=tm; }
+  P.moves=0; render();
+}
+function updateCtrlVisibility(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&P&&!P.solved)?'flex':'none'; }
+
+/* wrap show() to toggle control bar */
+var _show=show;
+show=function(id){ _show(id); updateCtrlVisibility(); };
+
+/* ============================ toggles ================================= */
+function wireToggle(id, get, set){
+  var el=$(id); function paint(){ if(get()) el.classList.add('on'); else el.classList.remove('on'); }
+  paint(); var host=el.parentNode||el; host.style.cursor='pointer'; /* whole settingline row = 48px+ tap target */
+  host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); if(P) render(); });
+}
+
+/* ============================ boot ================================= */
+function fit(){
+  var iw=window.innerWidth||540, ih=window.innerHeight||960;
+  var s=Math.min(iw/VW, ih/VH);
+  var st=$('stage'); st.style.transform='translateZ(0) scale('+s+')';
+}
+function boot(){
+  cv=$('game'); ctx=cv.getContext('2d');
+  cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+  fit();
+  window.addEventListener('resize',fit);
+  window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+  cv.addEventListener('pointerdown',onDown,{passive:false});
+  cv.addEventListener('pointermove',onMove,{passive:false});
+  window.addEventListener('pointerup',onUp,{passive:false});
+  window.addEventListener('pointercancel',function(){ if(drag){ P.tray.push(drag.tile); drag=null; render(); } });
+  document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+  document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
+
+  buildControlBar();
+  tap('b-play', function(){ toModes(); });
+  tap('b-how', function(){ show('s-how'); });
+  tap('b-set', function(){ show('s-set'); });
+  tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
+  tap('modes-back', function(){ show('s-title'); });
+  tap('how-back', function(){ show(P?null:'s-title'); if(P) updateCtrlVisibility(); });
+  tap('set-back', function(){ show(P&&!P.solved?null:'s-title'); if(P&&!P.solved) updateCtrlVisibility(); });
+  tap('win-again', function(){ startMode(P?P.mode.key:'s4'); });
+  tap('win-modes', function(){ toModes(); });
+  wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; if(v) sfx('ui'); });
+  wireToggle('tg-color', function(){ return SET.color; }, function(v){ SET.color=v; });
+
+  $('buildstamp').textContent='Petalvex '+BUILD;
+  // first-run: bounce to how-to once
+  if(!LS.get(K.seen)){ LS.set(K.seen,'1'); }
+  render();
+}
+
+/* ===== Sky Wolf Studios embed protocol ===== */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* studio-standard 30/day/game sunbeam cap helper (see SUNBEAM_EARN_POLICY.md) */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{ var k='sw_sb_petalvex';
+    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n;
+  }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
+  return granted;
+};
+
+/* headless-test hook (inert without ?pvxtest=1) */
+if(/[?&]pvxtest=1/.test(location.search)){
+  window.PVX_DEV={
+    start:startMode, state:function(){ return P; }, modes:MODES,
+    render:render, nudge:nudge, checkWin:checkWin,
+    solveNow:function(){ // arrange tiles to their solution cells
+      if(!P) return; var n=P.n,i;
+      var byId={}; for(i=0;i<n*n;i++){ if(P.board[i]){ byId[P.board[i].sol]=P.board[i]; } }
+      for(i=0;i<P.tray.length;i++) byId[P.tray[i].sol]=P.tray[i];
+      P.tray=[]; P.board=new Array(n*n);
+      for(i=0;i<n*n;i++){ P.board[i]=byId[i]; }
+      render(); return checkWin();
+    },
+    seamBad:function(){ var n=P.n,bad=0; for(var i=0;i<n*n;i++){ var s=seamFor(i); if(s&&(s.right==='bad'||s.bottom==='bad'||s.left==='bad'||s.top==='bad')) bad++; } return bad; },
+    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_petalvex')||'{}'); }catch(e){ return {}; } }
+  };
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
