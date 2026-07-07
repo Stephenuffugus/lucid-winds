@@ -21,7 +21,13 @@ art-complete. Only **Sprout Dice** art remains (below).
 4 bosses, rarity die faces, board bg + logo. Thumbnail spec at `THUMBNAIL_SPEC.md`
 (`portal-assets/thumbs/sprout-dice.jpg`, ~480×480, ≤150 KB — last glyph-only card).
 
-### 3. Dragon Philosophy — illustration set  ·  *not a drop-in; separate repo*
+### 3. The three retro remakes — all procedural today (each has a paste-ready PROMPTS.md)
+- **Bloomzap** (`satellites/bloomzap/PROMPTS.md`) — letter tile, 4 rival portraits, zap FX, logo, win/lose splash.
+- **Rootbound** (`satellites/rootbound/PROMPTS.md`) — the golden bloom hero, 3 planter pots, gate, bed texture, logo.
+- **Petalvex** (`satellites/petalvex/PROMPTS.md`) — tile wedge texture, bed backdrop, logo, 5 mode badges, win art.
+*(All keep working with canvas/CSS art until painted — nothing blocking.)*
+
+### 4. Dragon Philosophy — illustration set  ·  *not a drop-in; separate repo*
 A built React/Vite bundle, so art must be added in its **source project** and rebuilt
 (`npm run build` base:'./'), then re-vendored — not a magenta-cut drop-in. Wants **8 dragon-patron
 portraits, 10 threat illos, 17 chase-card illustrations (~640×512)**, all placeholders today.
