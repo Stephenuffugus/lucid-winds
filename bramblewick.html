@@ -840,10 +840,10 @@ function companionAction(c,pl){
 }
 function drawCompanions(){ for(var i=0;i<G.companions.length;i++){ var c=G.companions[i]; var col=c.def.status?ST_META[c.def.status].col:'#9ccf6a';
   ctx.save(); ctx.translate(c.x,c.y);
-  if(!ART.tryImg('companion_'+c.def.id, ctx, 18)){   // painted familiar (else the coloured dot)
+  if(!ART.tryImg('companion_'+c.def.id, ctx, 32)){   // painted familiar, bigger so the art reads (else the coloured dot)
     ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.45)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(0,0,4.6,0,6.283); ctx.fill(); ctx.stroke();
   }
-  if(c.def.rare){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,10,0,6.283); ctx.stroke(); }
+  if(c.def.rare){ ctx.strokeStyle='#e8c24b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,18,0,6.283); ctx.stroke(); }
   ctx.restore(); } }
 
 /* ==================================================================
@@ -1215,7 +1215,7 @@ function drawPlant(){
   var pl=G.player; ctx.save(); ctx.translate(pl.x,pl.y);
   // hurt flash ring
   if(pl.iframe>0){ ctx.globalAlpha=0.4+0.3*Math.sin(G.time*40); }
-  if(ART.tryImg('player',ctx,38)){ ctx.globalAlpha=1; ctx.restore(); return; }   // painted plant hero
+  if(ART.tryImg('player',ctx,50)){ ctx.globalAlpha=1; ctx.restore(); return; }   // painted plant hero (bigger so the art reads)
   // roots/base
   ctx.strokeStyle='#4e7d33'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(0,-14); ctx.stroke();
   // crown bulb
@@ -1232,7 +1232,8 @@ function drawPest(p){
   if(p.freezeT>0) col='#bfe6f2'; else if(p.rootT>0) col='#c9d67a';
   ctx.fillStyle=col; ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.5;
   var r=p.r, s=p.meta.shape;
-  if(!ART.tryImg((p.boss?'boss_':'pest_')+p.type, ctx, r*2.4)){   // painted pest/boss art (else the shape below)
+  var _artSz=p.boss? r*2.7 : (p.elite? Math.max(r*3.4,44) : Math.max(r*3.6,36));   // show the painted art bigger than the (fair) hitbox so you can actually see it
+  if(!ART.tryImg((p.boss?'boss_':'pest_')+p.type, ctx, _artSz)){   // painted pest/boss art (else the shape below)
   ctx.beginPath();
   if(p.boss){
     var bshape=p.meta.shape;
