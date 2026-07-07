@@ -40,6 +40,8 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .logo .l2{display:block; font-size:min(15vw,58px); color:var(--gold); text-shadow:0 3px 0 #2a2007}
 .tag{color:var(--muted); font-size:14px; letter-spacing:2px; text-transform:uppercase; text-align:center; margin-top:10px}
 .dieicon{font-size:46px; margin:6px 0}
+.logo-img{ width:min(84%,340px); height:auto; display:block; margin:8px auto 4px; filter:drop-shadow(0 4px 12px #0008) }
+#s-combat{ background:linear-gradient(rgba(9,12,7,.55),rgba(9,12,7,.72)), url('assets/bg_board.jpg?v=20260707sda') center/cover no-repeat }
 
 /* buttons */
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
@@ -83,7 +85,9 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .enemy.targetable{border-color:var(--gold); cursor:pointer; box-shadow:0 0 0 2px #c8a84b33}
 .enemy.hitflash{animation:hitflash .28s}
 @keyframes hitflash{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
-.enemy .face{font-size:34px; text-align:center; line-height:1}
+.enemy .face{font-size:34px; text-align:center; line-height:1; min-height:56px; display:flex; align-items:center; justify-content:center}
+.pest-img{ width:58px; height:58px; object-fit:contain; display:block; filter:drop-shadow(0 2px 3px #0007) }
+.pest-img + .pest-emoji{ display:none }
 .enemy .en-name{font-size:12px; font-weight:800; text-align:center; margin:2px 0; color:var(--cream)}
 .enemy .intent{position:absolute; top:-9px; right:-6px; background:#1a1410; border:1px solid var(--line); border-radius:12px;
   padding:2px 8px; font-size:12px; font-weight:800; display:flex; gap:3px; align-items:center}
@@ -119,6 +123,13 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 .die .lbl{font-size:8px; color:#5a5238; letter-spacing:.3px; text-transform:uppercase; position:absolute; bottom:3px}
 .t-thorn{color:var(--red)} .t-spread{color:var(--coral)} .t-heal{color:#3f8f3a} .t-bark{color:#3a72a8}
 .t-root{color:#7a3fb0} .t-wild{color:#b8901f} .t-blank{color:#8a8268}
+/* painted dice (die_<rarity>_<face>.png fills the chassis; value is a corner badge) */
+.die.art{ background:#141009; border-color:transparent; overflow:hidden; box-shadow:0 3px 0 #0007,0 5px 8px #0006; }
+.die.art.sel{ box-shadow:0 0 0 3px var(--gold),0 3px 0 #0007; }
+.die-face{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.die-face + .sym.fb{ display:none; }
+.die.art .val{ position:absolute; top:2px; right:3px; margin:0; font-size:12px; line-height:1.2; color:#fff; background:rgba(18,14,10,.85); border-radius:7px; min-width:16px; padding:1px 4px; text-align:center; z-index:2; box-shadow:0 1px 2px #0008; }
+.die.art .lbl{ color:#f0e8d4; text-shadow:0 1px 2px #000,0 0 3px #000; z-index:2; }
 .tray-ctrl{display:flex; gap:9px; margin-top:9px}
 .tray-ctrl .btn{margin:0}
 .reroll{flex:0 0 auto; min-width:120px}
@@ -160,8 +171,7 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   <!-- TITLE -->
   <div class="screen on center" id="s-title">
     <div class="pad center" style="width:100%">
-      <div class="dieicon">🎲🌱</div>
-      <div class="logo"><span class="l1">SPROUT</span><span class="l2">DICE</span></div>
+      <img class="logo-img" src="assets/logo.png?v=20260707sda" alt="SPROUT DICE" onerror="this.outerHTML='&lt;div class=&quot;dieicon&quot;&gt;🎲🌱&lt;/div&gt;&lt;div class=&quot;logo&quot;&gt;&lt;span class=&quot;l1&quot;&gt;SPROUT&lt;/span&gt;&lt;span class=&quot;l2&quot;&gt;DICE&lt;/span&gt;&lt;/div&gt;'">
       <div class="tag">a botanical dice roguelike</div>
       <div style="margin:16px 0 2px" class="small muted">Best climb: <b class="gold" id="besttag">Floor 0</b></div>
       <div class="stack" style="margin-top:16px">
@@ -422,6 +432,7 @@ return {mulberry32:mulberry32,hashSeed:hashSeed,DICE:DICE,ENEMIES:ENEMIES,RELICS
 var $=function(id){ return document.getElementById(id); };
 var SYM={thorn:'⚔',spread:'✸',heal:'♥',bark:'⛨',root:'⊘',wild:'★',blank:'·'};
 var LBL={thorn:'Thorn',spread:'Spread',heal:'Heal',bark:'Bark',root:'Root',wild:'Wild',blank:'—'};
+var ARTV='?v=20260707sda';   // painted-art cache-bust
 
 /* ---------- persistence ---------- */
 var LS=(function(){ var mem={},ok=true; try{ localStorage.setItem('sd_t','1'); localStorage.removeItem('sd_t'); }catch(e){ ok=false; }
@@ -543,7 +554,7 @@ function renderCombat(){
     var el=document.createElement('div'); el.className='enemy'; el.dataset.idx=i;
     el.innerHTML='<div class="intent">'+intentText(e)+'</div>'+(e.block>0?'<div class="en-shield">⛨'+e.block+'</div>':'')+
       (e.spiky>0?'<div class="en-shield" style="left:auto;right:-6px;top:20px;background:#2a1215;border-color:var(--red);color:var(--red)" title="thorns: strike it and you take '+e.spiky+'">🌵'+e.spiky+'</div>':'')+
-      '<div class="face">'+e.emoji+'</div><div class="en-name">'+esc(e.name)+'</div>'+
+      '<div class="face"><img class="pest-img" src="assets/'+(e.boss?'boss_':'pest_')+e.id+'.png'+ARTV+'" alt="" onerror="this.remove();"><span class="pest-emoji">'+e.emoji+'</span></div><div class="en-name">'+esc(e.name)+'</div>'+
       '<div class="hpbar"><i style="width:'+pct+'%"></i><span>'+Math.max(0,e.hp)+'/'+e.maxhp+'</span></div>';
     box.appendChild(el);
   });
@@ -551,9 +562,13 @@ function renderCombat(){
   // dice
   var row=$('c-dice'); row.innerHTML='';
   CS.dice.forEach(function(d,i){ var ef=SD.faceValue(G,d.face), t=d.face.t;
-    var el=document.createElement('div'); el.className='die t-'+t+(d.assigned?' used':'')+(i===SEL?' sel':'');
+    var rar=(SD.DICE[d.id]||{}).rarity||'common';
+    var el=document.createElement('div'); el.className='die art t-'+t+(d.assigned?' used':'')+(i===SEL?' sel':'');
     var valTxt = (t==='blank')?'':(ef.v);
-    el.innerHTML='<span class="sym">'+SYM[t]+'</span>'+(valTxt!==''?'<span class="val">'+valTxt+'</span>':'')+'<span class="lbl">'+LBL[t]+'</span>';
+    // painted die face (rarity + face type); fallback glyph if the PNG is missing
+    el.innerHTML='<img class="die-face" src="assets/die_'+rar+'_'+t+'.png'+ARTV+'" alt="" onerror="this.remove();">'+
+      '<span class="sym fb">'+SYM[t]+'</span>'+
+      (valTxt!==''?'<span class="val">'+valTxt+'</span>':'')+'<span class="lbl">'+LBL[t]+'</span>';
     if(!d.assigned){ el.addEventListener('click',function(){ actx(); selectDie(i); }); }
     row.appendChild(el);
   });
