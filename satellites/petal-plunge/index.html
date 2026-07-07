@@ -464,7 +464,8 @@ var ART=(function(){
   ['rider_sprout','rider_acorn','rider_ladybug','rider_bee','rider_snail','rider_frog','rider_mouse','rider_robin','rider_foxkit','rider_firefly','rider_mantis','rider_lumin','rider_gnomelet',
    'sled_leaf','sled_petal','sled_bark','sled_lily','sled_cap','sled_birch','sled_husk','sled_shell','sled_aurora',
    'gnome','gnome_angry',
-   'obs_bush','obs_tree','obs_glowtree','obs_shroom','obs_bigshroom','obs_thorn','obs_log','obs_stump','obs_boulder','obs_stone','obs_glowstone','obs_daisyclump','obs_ramp'
+   'obs_bush','obs_tree','obs_glowtree','obs_shroom','obs_bigshroom','obs_thorn','obs_log','obs_stump','obs_boulder','obs_stone','obs_glowstone','obs_daisyclump','obs_ramp',
+   'trail_dew','trail_pollen','trail_petals','trail_frost','trail_rainbow','trail_ember','trail_star'
   ].forEach(function(k){ ART.load(k,'assets/'+k+'.png'+V); });
   ['bg_meadow','bg_bramble','bg_mushroom','bg_thorn','bg_night'].forEach(function(k){ ART.load(k,'assets/'+k+'.jpg'+V); });
 })();
@@ -686,10 +687,8 @@ function update(dt){
   generateUntil(cam.y+VH*1.5);
   pruneBehind();
 
-  // trail particles
-  if(!S.airborne && S.stun<=0 && (S.tHud*60|0)%1===0){
-    if(Math.abs(S.vx)>spd*0.3 || S.boostT>0){ spawnTrail(); }
-  }
+  // trail particles — painted swoosh streams the whole descent; the procedural circle spray only on a hard carve/boost
+  if(!S.airborne && S.stun<=0){ spawnTrail(Math.abs(S.vx)>spd*0.3 || S.boostT>0); }
   updateParticles(dt);
   updateFloats(dt);
 
@@ -817,12 +816,25 @@ function escapeGnome(){
 function gobbled(){ endRun(true); }
 
 /* ---------- particles & floaters ---------- */
-function spawnTrail(){
-  var cols=ART.trailColors(P.equip.trail); var c=cols[(Math.random()*cols.length)|0];
+function spawnTrail(spray){
+  var tid=P.equip.trail;
+  if(ART.get('trail_'+tid)){
+    // painted swoosh ribbon: leave a fading world-space stamp every ~16px of descent; successive
+    // stamps trace the carve and overlap into a continuous streak. Aligned to travel direction
+    // (art's long axis is a ~-45° diagonal, so +PI/4 makes a straight-down run render vertical).
+    if(S._lastStampY==null || S._lastStampY>S.depth) S._lastStampY=S.depth-999;
+    if(S.depth - S._lastStampY >= 16){
+      S._lastStampY=S.depth;
+      S.part.push({x:S.x, y:S.depth-16, vx:0, vy:0, life:0.62, max:0.62, rot:Math.atan2(S.vy,S.vx)+Math.PI/4, stamp:true, tk:tid});
+    }
+    return;
+  }
+  if(!spray) return;   // no painted trail → keep the original circle spray, gated on carve/boost
+  var cols=ART.trailColors(tid); var c=cols[(Math.random()*cols.length)|0];
   S.part.push({x:S.x-S.vx*0.02,y:S.depth-14,vx:-S.vx*0.15+(Math.random()*2-1)*20,vy:-30-Math.random()*30,life:0.5,max:0.5,c:c,r:2.5+Math.random()*2.5,trail:true});
 }
 function updateParticles(dt){
-  for(var i=S.part.length-1;i>=0;i--){ var p=S.part[i]; p.life-=dt; if(p.life<=0){ S.part.splice(i,1); continue; } p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=60*dt; }
+  for(var i=S.part.length-1;i>=0;i--){ var p=S.part[i]; p.life-=dt; if(p.life<=0){ S.part.splice(i,1); continue; } p.x+=p.vx*dt; p.y+=p.vy*dt; if(!p.stamp) p.vy+=60*dt; }
 }
 function floater(text,color,big){ floaterAt(S.x,S.depth-30,text,color,big); }
 function floaterAt(x,y,text,color,big){ S.floats.push({x:x,y:y,text:text,color:color,life:1.1,max:1.1,big:big}); }
@@ -989,7 +1001,17 @@ function drawGnome(){
   if(near>0.35){ var v=g.createRadialGradient(VW/2,VH/2,VH*0.3,VW/2,VH/2,VH*0.75); v.addColorStop(0,"rgba(0,0,0,0)"); v.addColorStop(1,"rgba(150,20,10,"+(near*0.35)+")"); g.fillStyle=v; g.fillRect(0,0,VW,VH); }
 }
 function drawParticles(){
-  for(var i=0;i<S.part.length;i++){ var p=S.part[i]; var sx=VW/2+p.x, sy=p.y-cam.y; if(sy<-10||sy>VH+10)continue;
+  for(var i=0;i<S.part.length;i++){ var p=S.part[i]; var sx=VW/2+p.x, sy=p.y-cam.y;
+    if(p.stamp){
+      if(sy<-90||sy>VH+90) continue;
+      var tim=ART.get('trail_'+(p.tk||P.equip.trail)); if(!tim) continue;
+      var sc=74/(Math.max(tim.width,tim.height)||1);
+      g.globalAlpha=clamp(p.life/p.max,0,1)*0.9;
+      g.save(); g.translate(sx,sy); g.rotate(p.rot||0);
+      g.drawImage(tim, -tim.width*sc/2, -tim.height*sc/2, tim.width*sc, tim.height*sc); g.restore();
+      continue;
+    }
+    if(sy<-10||sy>VH+10)continue;
     g.globalAlpha=clamp(p.life/p.max,0,1); g.fillStyle=p.c; ART.circle(g,sx,sy,p.r); }
   g.globalAlpha=1;
 }
@@ -1332,7 +1354,9 @@ function renderItemPreview(kind,id,c){
   var gg=c.getContext("2d"); gg.setTransform(2,0,0,2,0,0); gg.clearRect(0,0,64,64); gg.save(); gg.translate(32,32);
   if(kind==="rider"){ ART.rider(gg,id,44,0); }
   else if(kind==="sled"){ ART.sled(gg,id,40,0); }
-  else if(kind==="trail"){ var cols=ART.trailColors(id); for(var i=0;i<10;i++){ gg.globalAlpha=1-i/12; gg.fillStyle=cols[i%cols.length]; var a=i*0.5; ART.circle(gg,-i*2.2, Math.sin(a)*6, 4-i*0.25);} gg.globalAlpha=1; }
+  else if(kind==="trail"){ var tim=ART.get('trail_'+id);
+    if(tim){ var sc=54/(Math.max(tim.width,tim.height)||1); gg.drawImage(tim,-tim.width*sc/2,-tim.height*sc/2,tim.width*sc,tim.height*sc); }
+    else { var cols=ART.trailColors(id); for(var i=0;i<10;i++){ gg.globalAlpha=1-i/12; gg.fillStyle=cols[i%cols.length]; var a=i*0.5; ART.circle(gg,-i*2.2, Math.sin(a)*6, 4-i*0.25);} gg.globalAlpha=1; } }
   else if(kind==="sky"){ var sky=id==="auto"?BIOMES[0].sky:(ART.sky(id)||BIOMES[0].sky); var gr=gg.createLinearGradient(0,-24,0,24); gr.addColorStop(0,sky[0]); gr.addColorStop(1,sky[1]); gg.fillStyle=gr; gg.fillRect(-26,-26,52,52); gg.fillStyle="rgba(255,255,255,.5)"; ART.circle(gg,10,-10,5); }
   gg.restore();
 }
