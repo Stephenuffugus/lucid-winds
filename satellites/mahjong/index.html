@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Crect x='6' y='6' width='9' height='13' rx='2' fill='%23e8dcc8'/%3E%3Crect x='17' y='6' width='9' height='13' rx='2' fill='%23e8dcc8'/%3E%3Ccircle cx='10.5' cy='12.5' r='3' fill='%237ab356'/%3E%3Ccircle cx='21.5' cy='12.5' r='3' fill='%23c8a84b'/%3E%3Crect x='9' y='22' width='14' height='5' rx='2' fill='%236b4a2b'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jade Garden">
+<title>Jade Garden — Sky Wolf Studios</title>
+<!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/mahjong/; harmless 404 at repo root, guarded) -->
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"jadegarden"}).catch(function(){});</script>
+<style>
+:root{
+  --bg:#0d100c; --bg2:#141a12; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b;
+  --cream:#e8dcc8; --muted:#8a9178; --bark:#6b4a2b; --pink:#e58fa0; --ink:#12160f;
+  --pan:#0a0d09ee; --line:#2a331f;
+  --ivory:#efe6d2; --ivory2:#d9ccae; --ivory-lip:#a89868;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:52px; line-height:1; color:var(--sage); font-weight:800;
+  text-shadow:0 3px 0 #14200f, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.85; max-width:410px; line-height:1.5}
+.ribbon b{color:var(--gold)}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px;
+  min-height:64px; width:100%; border:1px solid var(--line); border-radius:16px;
+  background:linear-gradient(180deg,#1a2415,#121a0f); color:var(--cream);
+  font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer;
+  transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a;
+  box-shadow:0 4px 0 #3f6b34, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:24px; width:34px; text-align:center; flex:none}
+
+/* Layout picker cards */
+.laycard{display:flex; align-items:center; gap:14px; text-align:left; padding:12px 16px}
+.laycard .lc-ico{font-size:30px; width:42px; text-align:center; flex:none}
+.laycard .lc-main{flex:1; min-width:0}
+.laycard .lc-t{font-size:18px; font-weight:800; color:var(--cream)}
+.laycard .lc-d{font-size:12px; color:var(--muted); margin-top:2px}
+.laycard .lc-best{font-size:11px; color:var(--gold); font-weight:700; margin-top:2px}
+.badge{font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; padding:4px 8px;
+  border-radius:20px; flex:none; white-space:nowrap}
+.badge.easy{background:rgba(122,179,86,.18); color:#9fd06a; border:1px solid #4c6b34}
+.badge.med{background:rgba(200,168,75,.18); color:#e0c060; border:1px solid #7a5f1f}
+.badge.medhard{background:rgba(199,138,80,.2); color:#e0a060; border:1px solid #8a5a2a}
+.badge.hard{background:rgba(199,90,90,.2); color:#e08a8a; border:1px solid #8a3a3a}
+
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px;
+  margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.settingline span{font-size:16px}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+
+/* Play screen */
+#s-play{background:radial-gradient(130% 80% at 50% 12%, #12180f 0%, #090c08 72%, #05070a 100%)}
+.pbar{display:flex; align-items:center; justify-content:space-between; padding:10px 12px; gap:8px; z-index:3}
+.iconbtn{min-width:44px; min-height:44px; border-radius:12px; border:1px solid var(--line); background:#12180e;
+  color:var(--cream); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center}
+.pb-mid{flex:1; text-align:center; font-weight:800; color:var(--sage); font-size:16px}
+.pb-stat{font-size:12px; color:var(--muted); min-width:64px; text-align:center}
+.pb-stat b{color:var(--gold); font-variant-numeric:tabular-nums}
+#boardWrap{flex:1; position:relative; overflow:auto; -webkit-overflow-scrolling:touch; display:flex; align-items:center; justify-content:center}
+#board{position:relative; margin:auto}
+#fxcanvas{position:absolute; inset:0; pointer-events:none; z-index:60}
+
+/* Tile — ivory plate (CSS) + painted face img with emoji fallback */
+.tile{position:absolute; border-radius:6px;
+  background:linear-gradient(150deg,var(--ivory) 0%, var(--ivory) 58%, var(--ivory2) 100%);
+  box-shadow:0 0 0 1px #00000030 inset, 1.5px 1.5px 0 0 var(--ivory2), 3px 3px 0 0 var(--ivory-lip), 4px 5px 7px rgba(0,0,0,.5);
+  border:1px solid rgba(120,100,60,.35); cursor:pointer; overflow:hidden;
+  transition:filter .1s ease, transform .1s ease}
+.tile .face-fb{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1}
+.tile .face-fb .em{filter:saturate(1.1)}
+.tile .face-fb .num{font-weight:800; color:#3a2e12}
+.tile .face-img{position:absolute; inset:8%; width:84%; height:84%; object-fit:contain; display:none}
+.tile .pip{position:absolute; top:2px; right:3px; font-size:10px; font-weight:800; color:#8a6d28; opacity:.8}
+.tile.wildS{box-shadow:0 0 0 2px #c8a84b inset, 1.5px 1.5px 0 0 var(--ivory2), 3px 3px 0 0 var(--ivory-lip), 4px 5px 7px rgba(0,0,0,.5)}
+.tile.wildE{box-shadow:0 0 0 2px #b8c0c0 inset, 1.5px 1.5px 0 0 var(--ivory2), 3px 3px 0 0 var(--ivory-lip), 4px 5px 7px rgba(0,0,0,.5)}
+.tile.blocked{filter:brightness(.62) saturate(.7)}
+.tile.blocked:after{content:''; position:absolute; inset:0; background:rgba(10,14,8,.28)}
+.tile.free.hl{box-shadow:0 0 0 1px #00000030 inset, 0 0 8px 1px rgba(200,168,75,.35), 1.5px 1.5px 0 0 var(--ivory2), 3px 3px 0 0 var(--ivory-lip), 4px 5px 8px rgba(0,0,0,.5)}
+.tile.sel{transform:translateY(-3px) scale(1.02); box-shadow:0 0 0 3px var(--gold) inset, 0 0 14px 3px rgba(200,168,75,.6), 3px 3px 0 0 var(--ivory-lip), 5px 7px 10px rgba(0,0,0,.55); z-index:900!important}
+.tile.preview{box-shadow:0 0 0 2px #7ab356 inset, 0 0 10px 1px rgba(122,179,86,.45), 1.5px 1.5px 0 0 var(--ivory2), 3px 3px 0 0 var(--ivory-lip), 4px 5px 8px rgba(0,0,0,.5)}
+.tile.hint{animation:jgHint .8s ease-in-out infinite}
+@keyframes jgHint{0%,100%{box-shadow:0 0 0 2px var(--gold) inset, 0 0 6px rgba(200,168,75,.4), 3px 3px 0 0 var(--ivory-lip)} 50%{box-shadow:0 0 0 3px var(--gold) inset, 0 0 18px 4px rgba(200,168,75,.8), 3px 3px 0 0 var(--ivory-lip)}}
+.tile.removing{animation:jgPop .3s ease forwards; pointer-events:none}
+@keyframes jgPop{0%{transform:scale(1);opacity:1} 40%{transform:scale(1.15);opacity:1} 100%{transform:scale(.2) rotate(8deg);opacity:0}}
+
+/* controls */
+.ctrls{display:flex; gap:8px; padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px)); z-index:3}
+.cbtn{flex:1; min-height:52px; border-radius:13px; border:1px solid var(--line); background:#12180e; color:var(--cream);
+  font-size:13px; font-weight:700; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; gap:4px}
+.cbtn:active{filter:brightness(1.15)}
+.cbtn .cnt{font-size:10px; color:var(--gold); font-weight:800}
+.cbtn.gold{background:linear-gradient(180deg,#d8b84f,#b2913a); color:#241c07; border-color:#e6cd6a}
+
+/* stuck / win banner */
+.banner{position:absolute; left:0; right:0; bottom:78px; margin:auto; max-width:440px; z-index:40;
+  padding:14px 16px; text-align:center; background:rgba(13,16,12,.94); border:1px solid var(--gold); border-radius:14px;
+  animation:jgPulse 1.6s ease-in-out infinite; display:none}
+.banner.on{display:block}
+@keyframes jgPulse{0%,100%{box-shadow:0 0 0 rgba(200,168,75,0)} 50%{box-shadow:0 0 22px rgba(200,168,75,.5)}}
+
+/* win screen */
+.win-stat{display:flex; justify-content:space-between; width:100%; max-width:320px; margin:6px auto;
+  font-size:16px; padding:8px 4px; border-bottom:1px solid var(--line)}
+.win-stat b{color:var(--gold)}
+.sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+#msg{position:absolute; left:0; right:0; top:60px; text-align:center; z-index:50; pointer-events:none}
+#msg span{display:inline-block; background:rgba(13,16,12,.9); border:1px solid var(--line); color:var(--cream);
+  padding:8px 16px; border-radius:20px; font-size:13px; font-weight:700; opacity:0; transition:opacity .2s}
+#msg span.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Jade Garden</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Match free pairs of botanical tiles to clear the garden. A tile is free when nothing rests on it and one side is open. A calm, unhurried Mahjong solitaire.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-play">🀄&nbsp; Play</button>
+      <div class="row">
+        <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-set">Settings</button>
+      </div>
+      <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- LAYOUT PICKER -->
+  <div class="screen" id="s-modes"><div class="pad">
+    <h2 class="sc-h">Choose a garden</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Every garden is always solvable. Take a hint or reshuffle any time you snag.</div>
+    <div class="stack" id="lay-list" style="max-width:460px"></div>
+    <div style="height:16px"></div>
+    <button class="btn ghost sm" id="modes-back" style="max-width:440px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">🀄</div><div>Tap two <b>free</b> tiles that show the <b>same botanical</b> to match them away.</div></div>
+    <div class="helprow"><div class="hi">✋</div><div>A tile is <b class="hl">free</b> only if nothing rests on top of it <b>and</b> its left or right side is open. Free tiles sit bright; blocked ones dim. Turn on <b>Highlight free tiles</b> to see them glow.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div>The <b class="hl">Season</b> tiles (gold frame) all match each other, and the <b class="hl">Element</b> tiles (silver frame) all match each other — handy wilds.</div></div>
+    <div class="helprow"><div class="hi">🌿</div><div>Clear the whole garden to win. Snagged? Take a <b>hint</b>, <b>undo</b>, or <b>reshuffle</b> into a fresh solvable order.</div></div>
+    <div class="helprow"><div class="hi">☀️</div><div>Clear gardens to earn Sunbeams. Bigger gardens and faster clears earn a little more.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Highlight free tiles</span><div class="toggle on" id="tg-hl"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- PLAY -->
+  <div class="screen" id="s-play">
+    <div class="pbar">
+      <button class="iconbtn" id="p-quit">✕</button>
+      <div class="pb-stat">⏱ <b id="p-timer">0:00</b></div>
+      <div class="pb-mid" id="p-title">Jade Garden</div>
+      <div class="pb-stat"><b id="p-matched">0/0</b> pairs</div>
+      <button class="iconbtn" id="p-mute">🔊</button>
+    </div>
+    <div id="boardWrap"><div id="board"></div><canvas id="fxcanvas"></canvas></div>
+    <div id="banner" class="banner"></div>
+    <div class="ctrls">
+      <button class="cbtn" id="c-hint">💡 Hint</button>
+      <button class="cbtn" id="c-undo">↩ Undo</button>
+      <button class="cbtn" id="c-shuffle">♻ Shuffle</button>
+      <button class="cbtn" id="c-layouts">☰ Gardens</button>
+    </div>
+    <div id="msg"><span id="msgtext"></span></div>
+  </div>
+
+  <!-- WIN -->
+  <div class="screen center" id="s-win"><div class="pad center">
+    <div style="flex:1"></div>
+    <div style="font-size:54px" id="win-emoji">🏆</div>
+    <h2 class="sc-h" style="font-size:30px;margin-top:6px" id="win-title">Garden cleared!</h2>
+    <div style="font-size:15px;color:var(--muted);margin-top:4px" id="win-sub"></div>
+    <div style="width:100%;max-width:320px;margin-top:14px">
+      <div class="win-stat"><span>Time</span><b id="win-time">0:00</b></div>
+      <div class="win-stat"><span>Best</span><b id="win-best">—</b></div>
+    </div>
+    <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="win-again">↻ Play again</button>
+      <div class="row">
+        <button class="btn sm" id="win-modes">Change garden</button>
+        <button class="btn sm" id="win-title2">◄ Back</button>
+      </div>
+    </div>
+  </div></div>
+
+</div></div>
+
+<script>
+(function(){
+"use strict";
+/* ============================ helpers ============================= */
+function $(id){ return document.getElementById(id); }
+var curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); if(id) $(id).classList.add('on'); curScreen=id; if(id!=='s-play') stopTimer(); }
+function tap(id,fn){ var el=$(id); if(el) el.addEventListener('click',function(e){ e.preventDefault(); fn(); }); }
+var BUILD='v1.0';
+
+var LS={ get:function(k){ try{ return localStorage.getItem(k); }catch(e){ return LS._m&&LS._m[k]; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ LS._m=LS._m||{}; LS._m[k]=v; } }, _m:{} };
+var SET={ sound:true, highlight:true };
+(function(){ try{ var s=JSON.parse(LS.get('jg_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.highlight==='boolean')SET.highlight=s.highlight; }catch(e){} })();
+function saveSet(){ LS.set('jg_set', JSON.stringify(SET)); }
+var BEST={};
+(function(){ try{ var b=JSON.parse(LS.get('jg_best')||'{}'); if(b&&typeof b==='object') BEST=b; }catch(e){} })();
+function saveBest(){ try{ LS.set('jg_best', JSON.stringify(BEST)); }catch(e){} }
+function fmtTime(ms){ if(ms<0)ms=0; var s=Math.floor(ms/1000); return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60); }
+
+/* ============================ audio ============================= */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function beep(freq,dur,type,vol,to){ if(!SET.sound)return; var c=ac(); if(!c)return; try{ var o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; if(to)o.frequency.exponentialRampToValueAtTime(to,c.currentTime+dur); g.gain.value=vol||0.08; g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur); }catch(e){} }
+function sfx(k){ switch(k){
+  case 'tap': beep(520,0.05,'sine',0.06,640); break;
+  case 'match': beep(680,0.08,'triangle',0.1,880); setTimeout(function(){ beep(920,0.09,'sine',0.08); },60); break;
+  case 'bad': beep(180,0.12,'square',0.06,120); break;
+  case 'ui': beep(440,0.05,'sine',0.05); break;
+  case 'win': beep(523,0.11,'triangle',0.11); setTimeout(function(){beep(659,0.11,'triangle',0.11);},110); setTimeout(function(){beep(784,0.14,'triangle',0.12);},230); setTimeout(function(){beep(1046,0.2,'triangle',0.11);},370); break;
+} }
+
+/* ============================ faces (botanical 144-set) ============================= */
+function buildFaces(){
+  var f=[], i;
+  for(i=1;i<=9;i++) f.push({kind:'B',n:i,emoji:'🌸',color:'#c86b8a'});   // Bloom
+  for(i=1;i<=9;i++) f.push({kind:'L',n:i,emoji:'🍃',color:'#4a7c35'});   // Leaf
+  for(i=1;i<=9;i++) f.push({kind:'D',n:i,emoji:'🟤',color:'#b0842a'});   // Seed
+  var C=[['butterfly','🦋'],['honeybee','🐝'],['ladybird','🐞'],['dragonfly','🪰']];
+  for(i=0;i<4;i++) f.push({kind:'C',n:i,emoji:C[i][1],slug:C[i][0],color:'#a96bb8'});
+  var R=[['taproot','🥕'],['bulb','🧅'],['rhizome','🫚']];
+  for(i=0;i<3;i++) f.push({kind:'R',n:i,emoji:R[i][1],slug:R[i][0],color:'#8b6914'});
+  return f;
+}
+var FACES=buildFaces();
+var SEASONS=[['spring','🌸'],['summer','🌻'],['autumn','🍁'],['winter','❄️']];
+var ELEMENTS=[['rain','💧'],['sun','☀️'],['soil','⛰️'],['wind','🌬️']];
+var WILD_S=[]; for(var _i=0;_i<4;_i++) WILD_S.push({kind:'S',n:_i,emoji:SEASONS[_i][1],slug:SEASONS[_i][0],color:'#c8a84b'});
+var WILD_E=[]; for(_i=0;_i<4;_i++) WILD_E.push({kind:'E',n:_i,emoji:ELEMENTS[_i][1],slug:ELEMENTS[_i][0],color:'#b8c0c0'});
+function facesMatch(a,b){ if(a.kind==='S'&&b.kind==='S')return true; if(a.kind==='E'&&b.kind==='E')return true; return a.kind===b.kind && a.n===b.n; }
+function faceKey(f){ return (f.kind==='S'||f.kind==='E') ? f.kind+'-W' : f.kind+'-'+f.n; }
+// painted-art filename for a face (with emoji/number fallback until the PNG exists)
+function artSrc(f){
+  if(f.kind==='B')return 'assets/tiles/bloom-'+f.n+'.png';
+  if(f.kind==='L')return 'assets/tiles/leaf-'+f.n+'.png';
+  if(f.kind==='D')return 'assets/tiles/seed-'+f.n+'.png';
+  if(f.kind==='C')return 'assets/tiles/companion-'+f.slug+'.png';
+  if(f.kind==='R')return 'assets/tiles/root-'+f.slug+'.png';
+  if(f.kind==='S')return 'assets/tiles/season-'+f.slug+'.png';
+  if(f.kind==='E')return 'assets/tiles/element-'+f.slug+'.png';
+  return '';
+}
+
+/* ============================ layouts (portrait, half-tile units) ============================= */
+// Positions [layer,col,row] in HALF-tile units; a tile spans 2x2 units. Base tiles at
+// even coords; upper ridges may sit at odd (offset) coords to rest on junctions.
+function rect(p, layer, c0, c1, r0, r1){ for(var r=r0;r<=r1;r+=2) for(var c=c0;c<=c1;c+=2) p.push([layer,c,r]); }
+var LAYOUTS=[
+  { key:'gardenbed', ico:'🌱', name:'Garden Bed', diff:'easy', sub:'a wide open bed · easy start',
+    build:function(){ var p=[]; rect(p,0,0,14,0,12); rect(p,1,4,10,4,10); return p; } },       // 56+16=72
+  { key:'lilypond', ico:'🪷', name:'Lily Pond', diff:'easy', sub:'a calm low pool',
+    build:function(){ var p=[]; rect(p,0,0,16,0,10); rect(p,1,4,12,2,8); return p; } },          // 54+20=74
+  { key:'flowerpress', ico:'🌼', name:'Flower Press', diff:'easy', sub:'a stepped pyramid',
+    build:function(){ var p=[]; rect(p,0,0,18,0,10); rect(p,1,2,16,2,8); rect(p,2,4,14,4,6); return p; } }, // 60+32+12=104
+  { key:'bamboo', ico:'🎋', name:'Bamboo Grove', diff:'med', sub:'tall and narrow',
+    build:function(){ var p=[]; rect(p,0,0,10,0,22); rect(p,1,2,8,2,20); return p; } },           // 72+40=112
+  { key:'turtle', ico:'🐢', name:'Turtle Shell', diff:'med', sub:'the classic raised shell',
+    build:function(){ var p=[];
+      rect(p,0,6,20,0,0); rect(p,0,4,22,2,2); rect(p,0,2,24,4,4); rect(p,0,2,24,6,6);
+      rect(p,0,2,24,8,8); rect(p,0,2,24,10,10); rect(p,0,4,22,12,12); rect(p,0,6,20,14,14);
+      rect(p,1,8,18,2,12); rect(p,2,10,16,4,10); rect(p,3,10,16,6,8); rect(p,4,10,16,8,8);
+      return p; } },  // 8+10+12+12+12+12+10+8=84 ; L1 6x6=36 ; L2 4x4=16 ; L3 4x2=8 ; L4 4x1=4 -> wait recount below
+  { key:'terrarium', ico:'🫙', name:'Terrarium', diff:'medhard', sub:'walled dome + inner pillar',
+    build:function(){ var p=[]; rect(p,0,0,18,0,18); rect(p,1,4,14,4,14); rect(p,2,6,12,8,10); return p; } } // 100+36+8=144
+];
+function layoutByKey(k){ for(var i=0;i<LAYOUTS.length;i++) if(LAYOUTS[i].key===k) return LAYOUTS[i]; return LAYOUTS[0]; }
+
+/* ============================ generation (reverse-play, guaranteed solvable) ============================= */
+function shuf(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function buildBag(n){
+  var bag=[],i,k;
+  for(i=0;i<FACES.length;i++) for(k=0;k<4;k++) bag.push(FACES[i]);
+  for(i=0;i<WILD_S.length;i++) bag.push(WILD_S[i]);
+  for(i=0;i<WILD_E.length;i++) bag.push(WILD_E[i]);
+  shuf(bag);
+  // trim/pad to n (n is even). Pad by repeating whole matchable pairs of a base face.
+  while(bag.length>n) bag.pop();
+  while(bag.length<n) bag.push(FACES[bag.length%FACES.length]);
+  return bag;
+}
+function buildPairs(bag){
+  var groups={},i;
+  for(i=0;i<bag.length;i++){ var kk=faceKey(bag[i]); (groups[kk]=groups[kk]||[]).push(bag[i]); }
+  var pairs=[];
+  for(var g in groups){ var a=groups[g]; for(i=0;i+1<a.length;i+=2) pairs.push([a[i],a[i+1]]); }
+  return pairs;
+}
+// free positions among a remaining set (posList indexed; remaining: idx->true)
+function freeAmong(posList, remaining){
+  var key={}; for(var k in remaining){ var p=posList[k]; key[p[0]+','+p[1]+','+p[2]]=1; }
+  var free=[];
+  for(var kk in remaining){
+    var p2=posList[kk], L=p2[0], C=p2[1], R=p2[2], blocked=false;
+    for(var dc=-1;dc<=1&&!blocked;dc++) for(var dr=-1;dr<=1&&!blocked;dr++){ if(key[(L+1)+','+(C+dc)+','+(R+dr)]) blocked=true; }
+    if(blocked) continue;
+    var lB=false,rB=false;
+    for(dr=-1;dr<=1;dr++){ if(key[L+','+(C-2)+','+(R+dr)]) lB=true; if(key[L+','+(C+2)+','+(R+dr)]) rB=true; }
+    if(lB&&rB) continue;
+    free.push(parseInt(kk,10));
+  }
+  return free;
+}
+function tryGenerate(posList, pairs){
+  var remaining={},i; for(i=0;i<posList.length;i++) remaining[i]=true;
+  var placed=new Array(posList.length); pairs=pairs.slice(); shuf(pairs);
+  var pi=0, order=[];
+  while(pi<pairs.length){
+    var fl=freeAmong(posList, remaining); if(fl.length<2) return null; shuf(fl);
+    var a=fl[0], b=fl[1], pr=pairs[pi++]; placed[a]=pr[0]; placed[b]=pr[1];
+    delete remaining[a]; delete remaining[b];
+    order.push([a,b]);   // valid removal order (a,b were free when removed) — reverse-play solution
+  }
+  if(Object.keys(remaining).length!==0) return null;
+  var tiles=[]; for(i=0;i<posList.length;i++) tiles.push({id:i, layer:posList[i][0], col:posList[i][1], row:posList[i][2], face:placed[i], removed:false});
+  return { tiles:tiles, order:order };
+}
+function generate(positions){
+  if(positions.length%2!==0) positions=positions.slice(0,-1);
+  for(var attempt=0;attempt<40;attempt++){
+    var bag=buildBag(positions.length);
+    var pairs=buildPairs(bag);
+    while(pairs.length*2<positions.length) pairs.push([FACES[0],FACES[0]]);
+    while(pairs.length*2>positions.length) pairs.pop();
+    var g=tryGenerate(positions, pairs);
+    if(g && validateTiles(g.tiles)) return g;
+  }
+  return null;
+}
+function validateTiles(tiles){
+  if(tiles.length%2!==0) return false;
+  // every face must be in a matchable group (counts even within its match-key)
+  var cnt={}; for(var i=0;i<tiles.length;i++){ var k=faceKey(tiles[i].face); cnt[k]=(cnt[k]||0)+1; }
+  for(var g in cnt){ if(cnt[g]%2!==0) return false; }
+  return true;
+}
+
+/* ============================ game state + engine ============================= */
+var S=null, tileEls={}, TW=44, TH=60, LIFT=5;
+var boardEl, boardWrap, fxc, fxx, timerT=0;
+
+function isFree(id){
+  var t=S.tiles[id]; if(t.removed) return false;
+  var L=t.layer,C=t.col,R=t.row,i,o;
+  for(i=0;i<S.tiles.length;i++){ if(i===id)continue; o=S.tiles[i]; if(o.removed)continue;
+    if(o.layer===L+1 && Math.abs(o.col-C)<2 && Math.abs(o.row-R)<2) return false; }
+  var lB=false,rB=false;
+  for(i=0;i<S.tiles.length;i++){ if(i===id)continue; o=S.tiles[i]; if(o.removed)continue;
+    if(o.layer===L && Math.abs(o.row-R)<2){ if(o.col===C-2)lB=true; if(o.col===C+2)rB=true; } }
+  return !(lB&&rB);
+}
+function findAnyMatch(){
+  var free=[],i; for(i=0;i<S.tiles.length;i++) if(!S.tiles[i].removed && isFree(i)) free.push(i);
+  // prioritise plentiful (4-copy) faces first for safer suggestions
+  for(var a=0;a<free.length;a++) for(var b=a+1;b<free.length;b++)
+    if(facesMatch(S.tiles[free[a]].face, S.tiles[free[b]].face)) return [free[a],free[b]];
+  return null;
+}
+function countRemaining(){ var n=0; for(var i=0;i<S.tiles.length;i++) if(!S.tiles[i].removed) n++; return n; }
+
+/* ---- rendering ---- */
+function sizeForLayout(){
+  var maxC=0,maxR=0,i; for(i=0;i<S.tiles.length;i++){ if(S.tiles[i].col>maxC)maxC=S.tiles[i].col; if(S.tiles[i].row>maxR)maxR=S.tiles[i].row; }
+  var colSpan=maxC/2+1, rowSpan=maxR/2+1;              // in tile units
+  var availW=520, availH=960-70-70-24;                  // stage minus pbar/ctrls/margins
+  var byW=availW/colSpan, byH=availH/(rowSpan*1.36);
+  TW=Math.floor(Math.min(byW,byH)); if(TW<32)TW=32; if(TW>64)TW=64; TH=Math.round(TW*1.36); LIFT=Math.max(4,Math.round(TW*0.11));
+}
+function tilePos(t){ return { x: t.col*(TW/2) - t.layer*LIFT, y: t.row*(TH/2) - t.layer*LIFT }; }
+function buildBoard(){
+  sizeForLayout();
+  var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9,i;
+  for(i=0;i<S.tiles.length;i++){ var p=tilePos(S.tiles[i]); if(p.x<minX)minX=p.x; if(p.y<minY)minY=p.y; if(p.x+TW>maxX)maxX=p.x+TW; if(p.y+TH>maxY)maxY=p.y+TH; }
+  var W=maxX-minX+10, H=maxY-minY+10;
+  boardEl.style.width=W+'px'; boardEl.style.height=H+'px'; boardEl.innerHTML=''; tileEls={};
+  fxc.width=W; fxc.height=H; fxc.style.width=W+'px'; fxc.style.height=H+'px'; fxc.style.left='0'; fxc.style.top='0';
+  var order=[]; for(i=0;i<S.tiles.length;i++) order.push(i);
+  order.sort(function(a,b){ var A=S.tiles[a],B=S.tiles[b]; if(A.layer!==B.layer)return A.layer-B.layer; if(A.row!==B.row)return A.row-B.row; return A.col-B.col; });
+  for(var k=0;k<order.length;k++){
+    var id=order[k], t=S.tiles[id], pp=tilePos(t);
+    var el=document.createElement('div'); el.className='tile'; el.setAttribute('data-id',id);
+    el.style.left=(pp.x-minX+5)+'px'; el.style.top=(pp.y-minY+5)+'px'; el.style.width=TW+'px'; el.style.height=TH+'px';
+    el.style.zIndex=(t.layer*1000 + t.row*20 + t.col + 100);
+    if(t.face.kind==='S') el.className+=' wildS'; else if(t.face.kind==='E') el.className+=' wildE';
+    el.appendChild(faceNode(t.face));
+    tileEls[id]=el; boardEl.appendChild(el);
+  }
+  refreshStates();
+}
+function faceNode(f){
+  var frag=document.createDocumentFragment();
+  var fb=document.createElement('div'); fb.className='face-fb';
+  var em=document.createElement('div'); em.className='em'; em.textContent=f.emoji; em.style.fontSize=Math.round(TW*0.5)+'px';
+  fb.appendChild(em);
+  if(f.kind==='B'||f.kind==='L'||f.kind==='D'){ var num=document.createElement('div'); num.className='num'; num.textContent=f.n; num.style.fontSize=Math.round(TW*0.3)+'px'; num.style.marginTop='-2px'; fb.appendChild(num); }
+  frag.appendChild(fb);
+  var img=document.createElement('img'); img.className='face-img'; img.alt=''; img.src=artSrc(f);
+  img.onload=function(){ this.style.display='block'; if(this.previousSibling) this.previousSibling.style.display='none'; };
+  img.onerror=function(){ this.style.display='none'; };
+  frag.appendChild(img);
+  return frag;
+}
+function refreshStates(){
+  var selT=S.selected!==null?S.tiles[S.selected]:null,i;
+  for(i=0;i<S.tiles.length;i++){ var el=tileEls[i]; if(!el)continue; var t=S.tiles[i];
+    if(t.removed){ el.style.display='none'; continue; } el.style.display='';
+    var free=isFree(i), c='tile';
+    if(t.face.kind==='S')c+=' wildS'; else if(t.face.kind==='E')c+=' wildE';
+    if(free){ c+=' free'; if(SET.highlight) c+=' hl'; } else c+=' blocked';
+    if(S.selected===i) c+=' sel';
+    else if(free && selT && facesMatch(t.face,selT.face)) c+=' preview';
+    el.className=c;
+  }
+}
+
+/* ---- interaction ---- */
+function onBoardClick(e){ var el=e.target.closest?e.target.closest('[data-id]'):null; if(!el)return; var id=parseInt(el.getAttribute('data-id'),10); tapTile(id); }
+function tapTile(id){
+  if(!S||S.phase!=='play'||S.locked)return;
+  var t=S.tiles[id]; if(t.removed||!isFree(id))return;
+  if(S.selected===id){ S.selected=null; sfx('tap'); refreshStates(); return; }
+  if(S.selected===null){ S.selected=id; sfx('tap'); refreshStates(); return; }
+  var other=S.tiles[S.selected];
+  if(facesMatch(t.face,other.face)){
+    var first=S.selected; S.undo.push([first,id]); S.selected=null; S.locked=true;
+    S.tiles[first].removed=true; S.tiles[id].removed=true;
+    var e1=tileEls[first], e2=tileEls[id]; if(e1)e1.classList.add('removing'); if(e2)e2.classList.add('removing');
+    burst(e1); burst(e2); sfx('match'); try{navigator.vibrate&&navigator.vibrate(12);}catch(ev){}
+    setTimeout(function(){ S.locked=false; refreshStates(); updateHUD(); if(checkWin())return; checkStuck(); }, 300);
+  } else { S.selected=null; sfx('bad'); refreshStates(); }
+}
+
+/* ---- actions ---- */
+function useHint(){ if(!S)return; var m=findAnyMatch(); if(!m){ flash('No matches — reshuffle'); return; } S.hints++;
+  S.selected=null; refreshStates();
+  var a=tileEls[m[0]], b=tileEls[m[1]]; if(a)a.classList.add('hint'); if(b)b.classList.add('hint');
+  if(a&&a.scrollIntoView){ try{a.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});}catch(e){} }
+  setTimeout(function(){ if(a)a.classList.remove('hint'); if(b)b.classList.remove('hint'); },1700); sfx('ui'); }
+function undo(){ if(!S||!S.undo.length){ flash('Nothing to undo'); return; } var last=S.undo.pop();
+  S.tiles[last[0]].removed=false; S.tiles[last[1]].removed=false; S.selected=null; sfx('tap'); refreshStates(); updateHUD(); hideBanner(); }
+// reshuffle the REMAINING tiles into a guaranteed-solvable order (reverse-teardown)
+function shuffleRemaining(){ if(!S)return; hideBanner();
+  var remIds=[],i; for(i=0;i<S.tiles.length;i++) if(!S.tiles[i].removed) remIds.push(i);
+  if(remIds.length<2){ return; }
+  var posList=remIds.map(function(id){ return [S.tiles[id].layer,S.tiles[id].col,S.tiles[id].row]; });
+  var faces=remIds.map(function(id){ return S.tiles[id].face; });
+  // pair up the existing face multiset, then reverse-play onto the remaining positions
+  var pairs=buildPairs(faces);
+  var solved=null;
+  for(var attempt=0;attempt<40 && !solved;attempt++) solved=tryGenerate(posList, pairs.slice());
+  if(!solved){ flash('Could not reshuffle'); return; }
+  for(i=0;i<remIds.length;i++){ S.tiles[remIds[i]].face=solved.tiles[i].face; }
+  S.hints++; S.selected=null;
+  // rebuild remaining tiles' face nodes
+  remIds.forEach(function(id){ var el=tileEls[id]; if(!el)return; el.innerHTML=''; var t=S.tiles[id];
+    el.className='tile'+(t.face.kind==='S'?' wildS':(t.face.kind==='E'?' wildE':'')); el.appendChild(faceNode(t.face)); });
+  refreshStates(); sfx('ui');
+}
+function checkStuck(){ if(!S)return; if(findAnyMatch()){ hideBanner(); return; }
+  if(countRemaining()===0) return;
+  var b=$('banner'); b.innerHTML='<div style="font-weight:800;color:var(--gold);margin-bottom:8px">The garden has tangled</div><div style="font-size:13px;color:var(--cream);margin-bottom:10px">No moves left — reshuffle into a fresh solvable order?</div><button class="btn primary sm" id="banner-shuffle" style="max-width:220px;margin:0 auto">♻ Reshuffle</button>';
+  b.classList.add('on'); var bs=$('banner-shuffle'); if(bs) bs.addEventListener('click',function(e){ e.preventDefault(); shuffleRemaining(); });
+}
+function hideBanner(){ var b=$('banner'); if(b)b.classList.remove('on'); }
+function flash(txt){ var m=$('msgtext'); m.textContent=txt; m.classList.add('on'); setTimeout(function(){ m.classList.remove('on'); },1400); }
+
+/* ---- particles ---- */
+var parts=[];
+function burst(el){ if(!el||!fxx)return; var r=el.getBoundingClientRect(), br=boardEl.getBoundingClientRect();
+  var cx=r.left-br.left+r.width/2, cy=r.top-br.top+r.height/2;
+  for(var i=0;i<8;i++){ var ang=Math.PI*2*i/8+Math.random(), sp=1.2+Math.random()*2.2;
+    parts.push({x:cx,y:cy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-1,life:1,col:i%2?'#c8a84b':'#7ab356'}); }
+  if(!burst._raf) burst._raf=requestAnimationFrame(stepParts);
+}
+function stepParts(){ if(!fxx){ burst._raf=0; return; } fxx.clearRect(0,0,fxc.width,fxc.height);
+  for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.life-=0.03; if(p.life<=0){ parts.splice(i,1); continue; }
+    fxx.globalAlpha=p.life; fxx.fillStyle=p.col; fxx.beginPath(); fxx.arc(p.x,p.y,2.6,0,7); fxx.fill(); }
+  fxx.globalAlpha=1; if(parts.length) burst._raf=requestAnimationFrame(stepParts); else burst._raf=0;
+}
+
+/* ---- HUD / timer ---- */
+function updateHUD(){ if(!S)return; var rem=countRemaining(); var matched=Math.floor((S.tiles.length-rem)/2), total=Math.floor(S.tiles.length/2);
+  var m=$('p-matched'); if(m)m.textContent=matched+'/'+total; }
+function startTimer(){ stopTimer(); timerT=setInterval(function(){ if(!S||S.phase!=='play')return; var el=$('p-timer'); if(el) el.textContent=fmtTime(Date.now()-S.startT-(S.pausedMs||0)); },500); }
+function stopTimer(){ if(timerT){ clearInterval(timerT); timerT=0; } }
+
+/* ============================ game lifecycle ============================= */
+function startGame(layoutKey){
+  var lay=layoutByKey(layoutKey);
+  var positions=lay.build();
+  var g=generate(positions);
+  if(!g){ flash('Deal failed — retry'); return; }
+  S={ lay:lay, tiles:g.tiles, solveOrder:g.order, selected:null, undo:[], phase:'play', locked:false, hints:0, startT:Date.now(), pausedMs:0, _hidAt:0 };
+  show('s-play'); hideBanner();
+  $('p-title').textContent=lay.name;
+  boardEl=$('board'); boardWrap=$('boardWrap'); fxc=$('fxcanvas'); fxx=fxc.getContext('2d');
+  buildBoard(); updateHUD();
+  // center scroll
+  setTimeout(function(){ try{ boardWrap.scrollLeft=(boardEl.offsetWidth-boardWrap.clientWidth)/2; boardWrap.scrollTop=0; }catch(e){} },30);
+  startTimer();
+}
+function checkWin(){ if(countRemaining()!==0) return false; winGame(); return true; }
+function winGame(){
+  if(!S||S.phase!=='play') return; S.phase='over'; stopTimer();
+  var elapsed=Date.now()-S.startT-(S.pausedMs||0);
+  var bkey=S.lay.key; var prev=BEST[bkey]||0; var isBest=(!prev||elapsed<prev);
+  if(isBest){ BEST[bkey]=elapsed; saveBest(); }
+  // sunbeams: base by garden size (pairs) + a speed/first-clear touch, capped 12/run then 30/day
+  var pairs=Math.floor(S.tiles.length/2);
+  var base=3+Math.floor(pairs/14);                       // 72→~5, 144→~8
+  if(S.hints===0) base+=2;                                // no-assist bonus
+  if(isBest) base+=1;
+  var amt=Math.min(12, base);
+  var granted=0; try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'jadegarden:win')||0; }catch(e){}
+  $('win-emoji').textContent=isBest?'🏅':'🏆';
+  $('win-title').textContent=isBest?'New best time!':'Garden cleared!';
+  $('win-sub').textContent=S.lay.name+' · '+pairs+' pairs'+(S.hints?(' · '+S.hints+' assists'):' · no assists');
+  $('win-time').textContent=fmtTime(elapsed);
+  $('win-best').textContent=BEST[bkey]?fmtTime(BEST[bkey]):'—';
+  $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
+  sfx('win'); setTimeout(function(){ show('s-win'); },700);
+}
+
+/* ============================ layout picker ============================= */
+function buildPicker(){
+  var host=$('lay-list'); host.innerHTML='';
+  for(var i=0;i<LAYOUTS.length;i++){ (function(L){
+    var b=document.createElement('button'); b.className='btn laycard';
+    var badge=L.diff==='easy'?'easy':(L.diff==='med'?'med':(L.diff==='medhard'?'medhard':'hard'));
+    var badgeTxt=L.diff==='easy'?'Easy':(L.diff==='med'?'Medium':(L.diff==='medhard'?'Med-Hard':'Hard'));
+    var best=BEST[L.key]?('🏅 best '+fmtTime(BEST[L.key])):'';
+    var n=L.build().length; n=n-(n%2);
+    b.innerHTML='<div class="lc-ico">'+L.ico+'</div><div class="lc-main"><div class="lc-t">'+L.name+'</div><div class="lc-d">'+L.sub+' · '+n+' tiles</div>'+(best?'<div class="lc-best">'+best+'</div>':'')+'</div><div class="badge '+badge+'">'+badgeTxt+'</div>';
+    b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startGame(L.key); });
+    host.appendChild(b);
+  })(LAYOUTS[i]); }
+}
+
+/* ============================ toggles / boot ============================= */
+function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); }
+  paint(); var host=el.parentNode||el; host.style.cursor='pointer';
+  host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); if(S&&curScreen==='s-play') refreshStates(); }); }
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/540, ih/960); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+function boot(){
+  fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+  document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+  document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(S&&S.phase==='play'&&!S._hidAt)S._hidAt=Date.now(); } else if(S&&S.phase==='play'&&curScreen==='s-play'){ if(S._hidAt){ S.pausedMs=(S.pausedMs||0)+(Date.now()-S._hidAt); S._hidAt=0; } } });
+  $('board').addEventListener('click', onBoardClick);
+  tap('b-play', function(){ buildPicker(); show('s-modes'); });
+  tap('b-how', function(){ show('s-how'); });
+  tap('b-set', function(){ show('s-set'); });
+  tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
+  tap('modes-back', function(){ show('s-title'); });
+  tap('how-back', function(){ show('s-title'); });
+  tap('set-back', function(){ show('s-title'); });
+  tap('c-hint', useHint); tap('c-undo', undo); tap('c-shuffle', shuffleRemaining);
+  tap('c-layouts', function(){ buildPicker(); show('s-modes'); });
+  tap('p-quit', function(){ stopTimer(); if(S)S.phase='over'; show('s-title'); });
+  $('p-mute').addEventListener('click',function(e){ e.preventDefault(); SET.sound=!SET.sound; saveSet(); $('p-mute').textContent=SET.sound?'🔊':'🔇'; if(SET.sound)sfx('ui'); });
+  tap('win-again', function(){ if(S)startGame(S.lay.key); });
+  tap('win-modes', function(){ buildPicker(); show('s-modes'); });
+  tap('win-title2', function(){ show('s-title'); });
+  wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
+  wireToggle('tg-hl', function(){ return SET.highlight; }, function(v){ SET.highlight=v; });
+  $('p-mute').textContent=SET.sound?'🔊':'🔇';
+  $('buildstamp').textContent='Jade Garden '+BUILD+' · '+LAYOUTS.length+' gardens';
+}
+
+/* ===== Sky Wolf Studios embed protocol ===== */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+/* studio-standard 30/day/game sunbeam cap helper (see SUNBEAM_EARN_POLICY.md) */
+window._sbCapEarn=function(n,tag){
+  var granted=0;
+  try{ var k='sw_sb_jadegarden';
+    var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0};
+    n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0) return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n;
+  }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){});
+  return granted;
+};
+
+/* headless-test hook (inert without ?jgtest=1) */
+if(/[?&]jgtest=1/.test(location.search)){
+  window.JG_DEV={
+    start:startGame, state:function(){ return S; }, layouts:LAYOUTS,
+    isFree:isFree, findMatch:findAnyMatch, remaining:countRemaining,
+    validateLayouts:function(){ var out=[]; for(var i=0;i<LAYOUTS.length;i++){ var p=LAYOUTS[i].build(); var seen={},dup=0; for(var j=0;j<p.length;j++){ var kk=p[j][0]+','+p[j][1]+','+p[j][2]; if(seen[kk])dup++; seen[kk]=1; } out.push({key:LAYOUTS[i].key,tiles:p.length,even:(p.length%2===0),dups:dup}); } return out; },
+    // definitive: replay the generator's recorded removal order, asserting each
+    // pair is FREE + MATCHING at removal time — proves the deal is solvable.
+    replaySolve:function(){ if(!S||!S.solveOrder) return {ok:false,reason:'no order'};
+      for(var i=0;i<S.tiles.length;i++) S.tiles[i].removed=false;
+      for(i=0;i<S.solveOrder.length;i++){ var a=S.solveOrder[i][0], b=S.solveOrder[i][1];
+        if(!isFree(a)||!isFree(b)) return {ok:false, step:i, reason:'not free'};
+        if(!facesMatch(S.tiles[a].face,S.tiles[b].face)) return {ok:false, step:i, reason:'not matching'};
+        S.tiles[a].removed=true; S.tiles[b].removed=true; }
+      return {ok:countRemaining()===0, left:countRemaining()}; },
+    // greedy forward-play (weaker; greedy can dead-end even on solvable boards)
+    autoSolve:function(){ var guard=0; while(countRemaining()>0 && guard++<5000){ var m=findAnyMatch(); if(!m) return {solved:false, left:countRemaining()};
+        S.tiles[m[0]].removed=true; S.tiles[m[1]].removed=true; }
+      return {solved:countRemaining()===0, left:countRemaining()}; },
+    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_jadegarden')||'{}'); }catch(e){ return {}; } }
+  };
+}
+boot();
+})();
+</script>
+</body>
+</html>
