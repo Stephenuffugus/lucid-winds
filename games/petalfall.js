@@ -90,8 +90,8 @@ function seasonForLevel(lv){ return SEASONS[Math.floor((lv-1)/10)%SEASONS.length
     '.PFpvBox{background:rgba(13,16,12,0.55);border:1.5px solid rgba(122,179,86,0.22);border-radius:6px;padding:3px;display:inline-block}',
     '.PFpvBox canvas{display:block}',
     // Play zone
-    '.PFplayzone{display:flex;gap:clamp(4px,1.2vw,8px);align-items:stretch;justify-content:center;padding:2px 0}',
-    '.PFsideCtrl{flex:0 0 auto;width:56px;display:grid;grid-template-rows:1fr 2fr;gap:6px}',
+    '.PFplayzone{display:flex;gap:clamp(6px,2vw,14px);align-items:stretch;justify-content:center;padding:2px 0}',
+    '.PFsideCtrl{flex:0 0 auto;width:62px;display:grid;grid-template-rows:1fr 2fr;gap:14px}',
     '.PFbigBtn{background:rgba(26,36,22,0.85);border:1.5px solid rgba(122,179,86,0.3);border-radius:12px;color:#e8dcc8;font-size:1.7rem;font-family:Georgia,serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease,background .12s ease;display:flex;align-items:center;justify-content:center;min-height:48px;padding:0;line-height:1}',
     '.PFbigBtn:active,.PFbigBtn.pressed{background:rgba(122,179,86,0.3);transform:scale(0.96)}',
     '.PFbigBtn.arrow{font-size:2.1rem}',
@@ -105,7 +105,7 @@ function seasonForLevel(lv){ return SEASONS[Math.floor((lv-1)/10)%SEASONS.length
     '.PFsplashSmall{font-size:clamp(0.9rem,2.4vw,1.15rem);color:#c8a84b;margin-top:4px;animation:pfSplash 1.1s cubic-bezier(.2,1.2,.3,1) 80ms both}',
     '#PFcombo{position:absolute;bottom:12%;left:50%;transform:translate(-50%,0);pointer-events:none;font-family:Bebas Neue,sans-serif;font-size:clamp(1.1rem,3vw,1.5rem);color:#f5ebd0;text-shadow:0 1px 6px rgba(0,0,0,0.9),0 0 12px rgba(122,179,86,0.6);letter-spacing:0.14em;animation:pfComboPulse .42s ease-in-out}',
     // Bottom action row
-    '.PFactionRow{display:grid;grid-template-columns:1fr 1.8fr 1.3fr 1fr;gap:6px;padding:8px 2px 6px}',
+    '.PFactionRow{display:grid;grid-template-columns:1fr 1.8fr 1.3fr 1fr;gap:10px;padding:12px 4px 8px}',
     '.PFactBtn{min-height:54px;padding:0.35rem 0.2rem;font-family:Georgia,serif;border-radius:10px;background:rgba(26,31,23,0.75);border:1.5px solid rgba(220,180,120,0.3);color:#e8dcc8;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .08s ease,background .12s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}',
     '.PFactBtn:active,.PFactBtn.pressed{background:rgba(200,168,75,0.24);transform:scale(0.96)}',
     '.PFactBtn.gold{background:linear-gradient(180deg,rgba(200,168,75,0.28),rgba(160,130,50,0.32));border-color:#c8a84b;color:#ffdc70;font-weight:600}',
@@ -1022,9 +1022,9 @@ function buildLayout(a){
 
 function sizeCanvases(){
   dpr=window.devicePixelRatio||1;
-  // Available width = pan width minus 2 side columns (56px each) minus gaps + padding
+  // Available width = pan width minus 2 side columns (62px each) minus gaps + padding
   var panW=Math.min(window.innerWidth, 520) - 12;
-  var sideTotal=56*2 + 16; // 2 cols + 2 gaps of ~8px
+  var sideTotal=62*2 + 28; // 2 cols (62) + 2 rail-to-board gaps (~14 each)
   var availW=Math.max(200, panW - sideTotal);
   // Available height = viewport minus topBar (~42) + preview (~66) + actionRow (~64) + margins (~80)
   var availH=Math.max(320, window.innerHeight - 260);

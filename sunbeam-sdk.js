@@ -76,6 +76,14 @@
   var MAX_PER_CALL = 200;
   var MAX_PER_MINUTE_ANON = 100;
   var MAX_PER_DAY_ANON = 500;
+  // ── Fleet-wide daily earn cap (2026-07-08, Stephen) ──
+  // Every same-origin studio game shares THIS SDK + localStorage, so the
+  // dailyBucket below is a fleet-wide daily total. Per-game caps (30/day) don't
+  // bound the aggregate across ~20 games — a player hopping games could grind
+  // plants far faster than the 30-sunbeams-per-plant anchor intends. This caps
+  // total sunbeams earned/day across ALL same-origin games (≈3 plants/day) and
+  // applies to the signed-in AND anonymous paths.
+  var MAX_PER_DAY_GLOBAL = 90;
 
   // ── localStorage keys ──
   var KEY_PENDING = 'sws_pending_sunbeams';
@@ -406,6 +414,19 @@
       }
     } catch (e) {}
 
+    // ── FLEET-WIDE daily earn cap (shared dailyBucket across all same-origin
+    // games) — clamp BEFORE the signed-in/anon split so both paths are bound. ──
+    var _gp = _readPending();
+    var _gDayB = _dayBucket(_now());
+    if (_gp.dailyBucket.day !== _gDayB) { _gp.dailyBucket = { day: _gDayB, earned: 0 }; _writePending(_gp); }
+    var _allowedToday = Math.max(0, MAX_PER_DAY_GLOBAL - _gp.dailyBucket.earned);
+    if (_allowedToday <= 0) {
+      // Soft cap — shells surface this as "cap reached" (r.ok === false).
+      return Promise.resolve({ ok: false, capped: true, reason: 'daily-cap',
+        balance: (_readConfirmedCache().balance || 0), earned: 0, pending: _gp.amount });
+    }
+    if (amount > _allowedToday) amount = _allowedToday;
+
     if (_auth && _auth.currentUser) {
       // ── Signed-in path: server is the source of truth ──
       return _earnFn({ amount: amount, source: src }).then(function(res){
@@ -420,6 +441,11 @@
         // Mirror this earn into LW's localStorage queue so LW's
         // keeper-bar display stays in sync without a vault reload.
         _mirrorEarnToLwQueue(amount);
+        // Count this server earn toward the shared fleet-wide daily cap so the
+        // signed-in path is bound by MAX_PER_DAY_GLOBAL like the anon path.
+        var _ap = _readPending(); var _adB = _dayBucket(_now());
+        if (_ap.dailyBucket.day !== _adB) _ap.dailyBucket = { day: _adB, earned: 0 };
+        _ap.dailyBucket.earned += amount; _writePending(_ap);
         _emit('earn');
         return {
           ok: !!data.ok,

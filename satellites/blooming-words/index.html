@@ -17,7 +17,7 @@
 <!-- Sky Wolf Studios: shared sunbeam economy. VENDORED COPY on lucidwinds.com
      (canonical source: Stephenuffugus/Blooming_Words — re-vendor on updates,
      then re-apply the LW-vendored blocks marked "LW-vendored" below). -->
-<script src="/sunbeam-sdk.js?v=2"></script>
+<script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"blooming-words"}).catch(function(){});</script>
 
 <!-- installable / standalone -->
@@ -78,8 +78,13 @@
   /* ---- top bar ---- */
   .topbar{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:calc(env(safe-area-inset-top) + 10px) 14px 8px;flex:0 0 auto}
-  .lvlbtn{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:5px 8px;border-radius:var(--r-sm);text-align:left;min-width:0}
-  .lvlbtn:active{background:rgba(255,255,255,.05)}
+  .lvlbtn{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 11px;border-radius:var(--r-md);text-align:left;min-width:0;
+    border:1px solid rgba(58,126,160,.6);background:rgba(13,51,80,.42)}
+  .lvlbtn:active{background:rgba(58,126,160,.28)}
+  .topright{display:flex;align-items:center;gap:9px}
+  .menubtn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--r-md);
+    border:1px solid rgba(58,126,160,.6);background:rgba(13,51,80,.42);color:var(--print);font-size:19px;line-height:1}
+  .menubtn:active{background:rgba(58,126,160,.28)}
   .eyebrow{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--print-dim)}
   .lvl-name{font-family:var(--serif);font-size:20px;line-height:1.05;color:var(--print);display:flex;align-items:center;gap:6px}
   .grid-ico{opacity:.5;flex:0 0 auto}
@@ -225,10 +230,13 @@
       </span>
       <span class="latin" id="latin"></span>
     </button>
-    <div class="wallet" id="wallet" aria-label="Pollen">
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--sun)" stroke-width="1.5">
-        <circle cx="12" cy="12" r="2.6" fill="var(--sun)"/><ellipse cx="12" cy="5.4" rx="2.5" ry="3.4"/><ellipse cx="12" cy="18.6" rx="2.5" ry="3.4"/><ellipse cx="5.4" cy="12" rx="3.4" ry="2.5"/><ellipse cx="18.6" cy="12" rx="3.4" ry="2.5"/></g></svg>
-      <span class="amt" id="pollen">0</span>
+    <div class="topright">
+      <button class="menubtn" id="menuBtn" aria-label="Menu">☰</button>
+      <div class="wallet" id="wallet" aria-label="Pollen">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--sun)" stroke-width="1.5">
+          <circle cx="12" cy="12" r="2.6" fill="var(--sun)"/><ellipse cx="12" cy="5.4" rx="2.5" ry="3.4"/><ellipse cx="12" cy="18.6" rx="2.5" ry="3.4"/><ellipse cx="5.4" cy="12" rx="3.4" ry="2.5"/><ellipse cx="18.6" cy="12" rx="3.4" ry="2.5"/></g></svg>
+        <span class="amt" id="pollen">0</span>
+      </div>
     </div>
   </header>
 
@@ -441,9 +449,11 @@ const ui = {
 
   loadLevel(i){
     const L=LEVELS[i], p=levelProg(i), set=new Set(L.letters);
-    $("#eyebrow").textContent = "Garden "+String(i+1).padStart(2,"0")+" · "+L.bed;
-    $("#lvlName").textContent = L.name;
-    $("#latin").textContent = L.latin;
+    // Show the garden NUMBER, not L.name/L.latin — those are the anchor word (biggest
+    // answer) and would spoil the puzzle. Keep the chapter theme in the eyebrow.
+    $("#eyebrow").textContent = L.bed;
+    $("#lvlName").textContent = "Garden "+(i+1);
+    $("#latin").textContent = "";
 
     // open-ended pressings for THIS letter set
     const tset=new Set(L.targets);
@@ -766,6 +776,7 @@ $("#sunBtn").addEventListener("click",openSun);
 $("#sunOk").addEventListener("click",closeScrims);
 $("#introBtn").addEventListener("click",()=>{ game.seenIntro=true; save(); closeScrims(); });
 $("#gardensBtn").addEventListener("click",()=>{ buildGardens(); openScrim("gardensScrim"); });
+$("#menuBtn").addEventListener("click",()=>{ buildGardens(); openScrim("gardensScrim"); });
 $("#journalBtn").addEventListener("click",()=>{ buildJournal(); openScrim("journalScrim"); });
 $("#nextBtn").addEventListener("click",()=>{ closeScrims(); if(game.current+1<LEVELS.length) goLevel(game.current+1); else { buildGardens(); openScrim("gardensScrim"); } });
 $("#stayBtn").addEventListener("click",closeScrims);

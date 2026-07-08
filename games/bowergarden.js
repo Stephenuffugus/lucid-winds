@@ -48,7 +48,7 @@ window._gameFns.bowergarden = function BG(a){
   // after leaving the game entirely.
   var bwGen=0;
   function bwT(fn,ms){var g=bwGen;setTimeout(function(){if(g===bwGen)fn();},ms);}
-  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){bwGen++;var o=document.getElementById('BW-over');if(o)o.remove();});
+  if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){bwGen++;var o=document.getElementById('BW-over');if(o)o.remove();var b=document.getElementById('BW-bar');if(b)b.remove();});
   var SUITS=['hearts','diamonds','clubs','spades'];
   var SUIT_ICONS={hearts:'♥',diamonds:'♦',clubs:'♣',spades:'♠'};
   var RANKS=['9','10','J','Q','K','A'];
@@ -416,8 +416,11 @@ window._gameFns.bowergarden = function BG(a){
           +'<button id="BW-again" style="margin-top:22px;min-height:48px;padding:12px 28px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">\u21bb NEW MATCH</button>'
           +'<button id="BW-view" style="margin-top:10px;min-height:44px;padding:8px 20px;background:transparent;border:1px solid rgba(138,145,120,0.4);color:#8a9178;border-radius:10px;font-size:0.75rem;cursor:pointer;">view the last hand</button>';
         ov.querySelector('#BW-again').onclick=function(){ov.remove();window._BGN();};
-        ov.querySelector('#BW-view').onclick=function(){ov.remove();};
-        ov.onclick=function(ev){if(ev.target===ov)ov.remove();};
+        // "view the last hand" hides the result but leaves a persistent restart bar,
+        // so finishing a match can never strand the player on a frozen board.
+        ov.querySelector('#BW-view').onclick=function(){ ov.style.display='none'; _bgShowRestartBar(ov); };
+        // NOTE: no background-tap dismiss — the result stays modal until the player
+        // picks New Match or View, so a stray tap can't leave them stuck.
         document.body.appendChild(ov);
       },1000);
       return;
@@ -716,7 +719,19 @@ window._gameFns.bowergarden = function BG(a){
     phase='goalone';render();
   }
 
-  window._BGN=function(){bwGen++;var o=document.getElementById('BW-over');if(o)o.remove();teamScore=[0,0];roundNum=0;dealer=EAST;newHand();};
+  // Persistent restart bar shown after "view the last hand" — guarantees the player
+  // can always start a new match (or reopen the result) from a finished board.
+  function _bgShowRestartBar(ov){
+    var _b=document.getElementById('BW-bar'); if(_b)_b.remove();
+    var bar=document.createElement('div'); bar.id='BW-bar';
+    bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:10000;display:flex;gap:10px;justify-content:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,rgba(13,16,12,0.97),rgba(13,16,12,0));font-family:Georgia,serif;';
+    bar.innerHTML='<button id="BW-bar-again" style="min-height:48px;padding:12px 26px;font-family:Georgia,serif;font-weight:700;font-size:0.9rem;background:linear-gradient(180deg,rgba(122,179,86,0.35),rgba(74,124,53,0.45));border:2px solid #7ab356;color:#f5ebd0;border-radius:10px;cursor:pointer;">↻ New match</button>'
+      +'<button id="BW-bar-res" style="min-height:48px;padding:12px 20px;background:rgba(26,31,23,0.9);border:1px solid rgba(138,145,120,0.5);color:#e8dcc8;border-radius:10px;font-size:0.8rem;cursor:pointer;">Results</button>';
+    document.body.appendChild(bar);
+    bar.querySelector('#BW-bar-again').onclick=function(){ bar.remove(); if(ov&&ov.parentNode)ov.remove(); window._BGN(); };
+    bar.querySelector('#BW-bar-res').onclick=function(){ bar.remove(); if(ov){ov.style.display='flex';} };
+  }
+  window._BGN=function(){bwGen++;var o=document.getElementById('BW-over');if(o)o.remove();var b=document.getElementById('BW-bar');if(b)b.remove();teamScore=[0,0];roundNum=0;dealer=EAST;newHand();};
   window._BGCC=function(r,s){onCardClick({rank:r,suit:s});};
   window._BGORD=function(){
     if(phase!=='call1'||currentPlayer!==SOUTH)return;

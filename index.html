@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.05.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.08.01';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -47870,15 +47870,35 @@ document.addEventListener('keydown', function(e) {
   //   Expected mutations: 64 * 0.05 = 3.2 characters per bloom on average.
   //   Returns { hash, mutated (bool), count (int) }.
   // --------------------------------------------------------------------------
-  function applyMutationRNG(hash, fertCount) {
+  function applyMutationRNG(hash, fertCount, salt) {
     var chars = hash.split('');
     var mutated = false;
     var count = 0;
     // Base 5% mutation rate + 1% per fertilizer applied (max 25 = 30%)
     var mutRate = 0.05 + (Math.min(fertCount || 0, 25) * 0.01);
+    // DETERMINISTIC RNG (2026-07-08 duplicate-plant fix): seed a PRNG from the
+    // seed hash + fertilizer so a given seed ALWAYS blooms into the same plant.
+    // Was Math.random() → the greenhouse plant drifted off its seed (name/haiku
+    // changed at bloom) and two seeds/double-fires diverged only in a random
+    // byte (the "same plant except aura" bug). Uniform distribution is preserved
+    // (same ~5% rate), so bloom rarity is statistically unchanged — only
+    // reproducibility is added. `salt` lets World Seed Bowl re-roll (see 48328).
+    var _seedStr = String(hash) + '|' + (fertCount || 0) + '|' + (salt || 0);
+    var _h = 1779033703 ^ _seedStr.length;
+    for (var _si = 0; _si < _seedStr.length; _si++) {
+      _h = Math.imul(_h ^ _seedStr.charCodeAt(_si), 3432918353);
+      _h = (_h << 13) | (_h >>> 19);
+    }
+    var _state = (Math.imul(_h ^ (_h >>> 16), 2246822507)) >>> 0;
+    function _rng() {
+      _state = (_state + 0x6D2B79F5) | 0;
+      var t = Math.imul(_state ^ (_state >>> 15), 1 | _state);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
     for (var i = 0; i < chars.length; i++) {
-      if (Math.random() < mutRate) {
-        chars[i] = (Math.random() < 0.5) ? 'e' : 'f';
+      if (_rng() < mutRate) {
+        chars[i] = (_rng() < 0.5) ? 'e' : 'f';
         mutated = true;
         count++;
       }
@@ -48255,6 +48275,16 @@ document.addEventListener('keydown', function(e) {
   }
 
   async function _executeBloom(nur, seedIndex, seed) {
+    // RE-ENTRANCY GUARD (2026-07-08 duplicate-plant fix): _executeBloom is async
+    // (awaits _sealPlant etc.) and only splices the seed near the end, so a
+    // double-fire (button double-tap, or handleBloomBtn + an auto-bloom timer)
+    // could mint TWO plants from ONE seed. Mirror bsExecuteBreed's in-flight
+    // flag. Cleared right after the seed is spliced + committed (so rapid
+    // sequential blooms of DIFFERENT seeds are unaffected), with an 8s safety
+    // backstop in case an early-return path is missed or the chain throws.
+    if (window._lwIsBlooming) return;
+    window._lwIsBlooming = true;
+    var _bloomLockT = setTimeout(function(){ window._lwIsBlooming = false; }, 8000);
     // 2026-05-20: greenhouse-full gate AT THE BLOOM ENTRY POINT.
     // Stephen reported: bloomed a seed into a 49/49 greenhouse without
     // prompting. handleBloomBtn + confirmBloom DO have the gate, but
@@ -48275,6 +48305,7 @@ document.addEventListener('keydown', function(e) {
         } else if (typeof _setNurMsg === 'function') {
           _setNurMsg('Greenhouse full — compost or expand slots before blooming.');
         }
+        window._lwIsBlooming = false; if (_bloomLockT) clearTimeout(_bloomLockT);
         return;
       }
     } catch(_capErr) {}
@@ -48325,7 +48356,8 @@ document.addEventListener('keydown', function(e) {
         var _wsTraits = window.hashToTraits(newHash);
         var _wsGrade = window.getTerraGrade(_wsTraits);
         while (_wsGrade && _wsGrade.name === 'Common' && _wsAttempts < 8) {
-          var _wsMut = applyMutationRNG(spliced, _fertCount + 10);
+          // salt = attempt+1 so each reroll gets fresh (still-deterministic) entropy
+          var _wsMut = applyMutationRNG(spliced, _fertCount + 10, _wsAttempts + 1);
           newHash = _wsMut.hash;
           mut = _wsMut;
           _wsTraits = window.hashToTraits(newHash);
@@ -48480,6 +48512,9 @@ document.addEventListener('keydown', function(e) {
     } else {
       console.warn('[Bloom] Partial commit detected, staging key preserved for recovery.');
     }
+    // Bloom critical section done (seed spliced + both keys committed) — release
+    // the re-entrancy lock so the next seed can bloom immediately.
+    window._lwIsBlooming = false; if (_bloomLockT) { clearTimeout(_bloomLockT); _bloomLockT = null; }
 
     // Pity counter reset on rare/mutated
     if (mut.mutated) { try { localStorage.setItem('sws_pity', '0'); } catch(e) {} }
@@ -48552,6 +48587,10 @@ document.addEventListener('keydown', function(e) {
   // handleBloomBtn — BLOOM button on Day-3 seeds
   // --------------------------------------------------------------------------
   window.handleBloomBtn = function(seedId) {
+    // Ignore double-taps while a bloom is already committing (see _executeBloom
+    // re-entrancy guard) — belt-and-suspenders against the two-plants-from-one-
+    // seed duplicate bug.
+    if (window._lwIsBlooming) return;
     var nur;
     try { nur = JSON.parse(_secureGet('sws_nursery') || localStorage.getItem('sws_nursery') || '[]'); } catch(e) { nur = []; }
     var seedIndex = nur.findIndex(function(s) { return s.id === seedId; });

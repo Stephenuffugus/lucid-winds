@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Petalvex">
 <title>Petalvex — Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/petalvex/; harmless 404 at repo root, guarded) -->
-<script src="/sunbeam-sdk.js?v=2"></script>
+<script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"petalvex"}).catch(function(){});</script>
 <style>
 :root{
@@ -110,7 +110,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Bigger beds, more petals to match.</div>
     <div class="stack" id="mode-list" style="max-width:440px"></div>
     <div style="height:16px"></div>
-    <button class="btn ghost sm" id="modes-back" style="max-width:440px;margin:0 auto">◄ Title</button>
+    <button class="btn ghost sm" id="modes-back" style="max-width:440px;margin:0 auto">◄ Back</button>
   </div></div>
 
   <!-- HOW -->
@@ -266,10 +266,13 @@ function genPuzzle(mode, seed){
   // ensure the shuffle isn't already the solved layout (rare but tidy)
   var same=true; for(i=0;i<order.length;i++){ if(order[i].sol!==i){ same=false; break; } }
   if(same && order.length>1){ var t0=order[0]; order[0]=order[1]; order[1]=t0; }
+  // each tile owns a fixed tray slot ('home'); picking a tile leaves its slot EMPTY
+  // (no reflow) and returning it drops it right back home. Tidy button re-homes on demand.
+  for(i=0;i<order.length;i++) order[i].home=i;
   return {
     mode:mode, n:n, maxv:maxv,
     board:new Array(n*n),   // board[cell]=tile or undefined
-    tray:order,             // tiles not yet placed (order matters for layout)
+    tray:order,             // fixed-length slot array; entries may be null (picked-out)
     hints:0, moves:0,
     startT:Date.now(), solved:false, t:0
   };
@@ -412,7 +415,7 @@ function render(){
   // ---- tray label + tiles ----
   ctx.textAlign='left'; ctx.fillStyle='#8a9178'; ctx.font='700 12px system-ui'; ctx.textBaseline='alphabetic';
   ctx.fillText('TRAY', LAY.trayX, LAY.trayY-6);
-  for(i=0;i<P.tray.length;i++){ var Ts=traySlotRect(i); drawTile(ctx, Ts.x+2, Ts.y+2, Ts.s-4, P.tray[i], 1, null); }
+  for(i=0;i<P.tray.length;i++){ if(!P.tray[i]) continue; var Ts=traySlotRect(i); drawTile(ctx, Ts.x+2, Ts.y+2, Ts.s-4, P.tray[i], 1, null); }
 
   // ---- dragged tile ----
   if(drag){ var s=LAY.cell; drawTile(ctx, drag.x-s/2, drag.y-s/2, s, drag.tile, 0.94, null); }
@@ -437,7 +440,7 @@ function burst(x,y,col,count){ for(var i=0;i<(count||14);i++){ var a=Math.random
 /* ============================ input ================================= */
 function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
 function hitBoard(x,y){ var n=P.n; for(var i=0;i<n*n;i++){ var R=cellRect(i); if(x>=R.x&&x<R.x+R.s&&y>=R.y&&y<R.y+R.s) return i; } return -1; }
-function hitTray(x,y){ for(var i=0;i<P.tray.length;i++){ var R=traySlotRect(i); if(x>=R.x&&x<R.x+R.s&&y>=R.y&&y<R.y+R.s) return i; } return -1; }
+function hitTray(x,y){ for(var i=0;i<P.tray.length;i++){ if(!P.tray[i]) continue; var R=traySlotRect(i); if(x>=R.x&&x<R.x+R.s&&y>=R.y&&y<R.y+R.s) return i; } return -1; }
 function inTrayArea(x,y){ return y>=LAY.trayY-14; }
 
 function onDown(e){
@@ -453,7 +456,7 @@ function onDown(e){
   // pick from tray?
   var ti=hitTray(p.x,p.y);
   if(ti>=0){
-    var t=P.tray[ti]; P.tray.splice(ti,1);
+    var t=P.tray[ti]; P.tray[ti]=null;   // leave the slot empty — no reflow
     drag={ tile:t, from:{type:'tray', idx:ti}, x:p.x, y:p.y };
     sfx('pick'); render(); return;
   }
@@ -474,7 +477,7 @@ function onUp(e){
     }
   }
   if(!placed){
-    if(inTrayArea(p.x,p.y)){ P.tray.push(drag.tile); placed=true; }
+    if(inTrayArea(p.x,p.y)){ P.tray[drag.tile.home]=drag.tile; placed=true; }
     else { returnTile(drag.tile, drag.from); placed=true; }
   }
   if(placed){ P.moves++; onPlaced(bi>=0?bi:-1); }
@@ -482,7 +485,7 @@ function onUp(e){
 }
 function returnTile(tile, from){
   if(from.type==='board' && P.board[from.idx]===undefined){ P.board[from.idx]=tile; }
-  else { P.tray.push(tile); }
+  else { P.tray[tile.home]=tile; }   // always back to its own fixed slot
 }
 function onPlaced(cellIdx){
   // feedback sound
@@ -525,7 +528,7 @@ function nudge(){
   var want=null, loc=null;
   // search board
   for(i=0;i<n*n;i++){ if(P.board[i] && P.board[i].sol===target){ want=P.board[i]; loc={type:'board',idx:i}; break; } }
-  if(!want){ for(i=0;i<P.tray.length;i++){ if(P.tray[i].sol===target){ want=P.tray[i]; loc={type:'tray',idx:i}; break; } } }
+  if(!want){ for(i=0;i<P.tray.length;i++){ if(P.tray[i] && P.tray[i].sol===target){ want=P.tray[i]; loc={type:'tray',idx:i}; break; } } }
   if(!want) return;
   // ambiguous-bed guard: if the canonical tile is already sitting somewhere with NO bad seams
   // (part of a valid alternative arrangement), lock it THERE instead of ripping it out to the
@@ -536,8 +539,8 @@ function nudge(){
   // remove target's current occupant (if any) to tray
   var occ=P.board[target];
   // remove want from its location
-  if(loc.type==='board') P.board[loc.idx]=undefined; else P.tray.splice(loc.idx,1);
-  if(occ && occ!==want) P.tray.push(occ);
+  if(loc.type==='board') P.board[loc.idx]=undefined; else P.tray[loc.idx]=null;
+  if(occ && occ!==want) P.tray[occ.home]=occ;
   P.board[target]=want; want.locked=true; P.hints++;
   sfx('hint'); var R=cellRect(target); burst(R.x+R.s/2,R.y+R.s/2,'#c8a84b',12);
   render(); checkWin();
@@ -623,17 +626,26 @@ function buildControlBar(){
     b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); fn(); }); return b; }
   bar.appendChild(mk('☰ Menu', function(){ stopClock(); toModes(); }));
   bar.appendChild(mk('↺ Reset', resetBoard));
+  bar.appendChild(mk('🔀 Tidy', tidyTray));
   bar.appendChild(mk('💡 Nudge', nudge, 'p'));
   $('stage').appendChild(bar);
 }
 function resetBoard(){
   if(!P||P.solved) return;
   var n=P.n, i;
-  // return all non-locked tiles to tray, keep locked ones
-  for(i=0;i<n*n;i++){ var t=P.board[i]; if(t && !t.locked){ P.tray.push(t); P.board[i]=undefined; } }
-  // reshuffle tray
-  for(i=P.tray.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var tm=P.tray[i]; P.tray[i]=P.tray[j]; P.tray[j]=tm; }
+  // return all non-locked tiles to their fixed tray homes, keep locked ones on the board
+  for(i=0;i<n*n;i++){ var t=P.board[i]; if(t && !t.locked){ P.tray[t.home]=t; P.board[i]=undefined; } }
   P.moves=0; render();
+}
+/* Rearrange (Tidy): compact the tiles still in the tray into fresh front slots — for players who
+   want to reorganise the pool. Only touches the tray; tiles on the board are left alone. */
+function tidyTray(){
+  if(!P||P.solved) return;
+  var items=[], i; for(i=0;i<P.tray.length;i++){ if(P.tray[i]) items.push(P.tray[i]); }
+  for(i=items.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var tm=items[i]; items[i]=items[j]; items[j]=tm; }
+  P.tray=new Array(P.n*P.n);
+  for(i=0;i<items.length;i++){ items[i].home=i; P.tray[i]=items[i]; }
+  sfx('ui'); render();
 }
 function updateCtrlVisibility(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&P&&!P.solved)?'flex':'none'; }
 
@@ -663,7 +675,7 @@ function boot(){
   cv.addEventListener('pointerdown',onDown,{passive:false});
   window.addEventListener('pointermove',onMove,{passive:false});   // on window (like pointerup) so dragging off the canvas doesn't freeze the tile
   window.addEventListener('pointerup',onUp,{passive:false});
-  window.addEventListener('pointercancel',function(){ if(drag){ P.tray.push(drag.tile); drag=null; render(); } });
+  window.addEventListener('pointercancel',function(){ if(drag){ P.tray[drag.tile.home]=drag.tile; drag=null; render(); } });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
 
@@ -709,11 +721,12 @@ if(/[?&]pvxtest=1/.test(location.search)){
   window.PVX_DEV={
     start:startMode, state:function(){ return P; }, modes:MODES,
     render:render, nudge:nudge, checkWin:checkWin,
+    lay:function(){ return LAY; }, traySlot:traySlotRect, tidy:tidyTray,
     solveNow:function(){ // arrange tiles to their solution cells
       if(!P) return; var n=P.n,i;
       var byId={}; for(i=0;i<n*n;i++){ if(P.board[i]){ byId[P.board[i].sol]=P.board[i]; } }
-      for(i=0;i<P.tray.length;i++) byId[P.tray[i].sol]=P.tray[i];
-      P.tray=[]; P.board=new Array(n*n);
+      for(i=0;i<P.tray.length;i++){ if(P.tray[i]) byId[P.tray[i].sol]=P.tray[i]; }
+      P.tray=new Array(n*n); P.board=new Array(n*n);
       for(i=0;i<n*n;i++){ P.board[i]=byId[i]; }
       render(); return checkWin();
     },

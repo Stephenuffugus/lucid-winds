@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Grubtrap">
 <title>Grubtrap — Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/grubtrap/; harmless 404 at repo root, guarded) -->
-<script src="/sunbeam-sdk.js?v=2"></script>
+<script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"grubtrap"}).catch(function(){});</script>
 <style>
 :root{
@@ -130,7 +130,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="over-again">↻ Try again</button>
-      <button class="btn sm" id="over-title2">Title</button>
+      <button class="btn sm" id="over-title2">◄ Back</button>
     </div>
   </div></div>
 </div></div>
@@ -499,25 +499,23 @@ function buildCtrl(){
   if($('ctrlbar')) return;
   var bar=document.createElement('div'); bar.id='ctrlbar';
   bar.style.cssText='position:absolute;left:0;right:0;bottom:0;height:'+DPAD+'px;display:none;z-index:12;background:linear-gradient(0deg,#0a0d09 72%,#0a0d0900)';
-  // pause button top-left of the pad area
+  // pause button — top center, clear of both thumbs
   var pause=document.createElement('button'); pause.id='pause-btn'; pause.textContent='☰ Menu';
-  pause.style.cssText='position:absolute;left:14px;top:10px;min-height:48px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:15px;font-weight:700;cursor:pointer';
+  pause.style.cssText='position:absolute;left:50%;transform:translateX(-50%);top:12px;min-height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:#12180e;color:#e8dcc8;font-size:15px;font-weight:700;cursor:pointer';
   pause.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); pauseToTitle(); });
   bar.appendChild(pause);
-  // cross dpad
-  var pad=document.createElement('div');
-  pad.style.cssText='position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:186px;height:186px';
-  function mk(dir,txt,x,y){ var b=document.createElement('button'); b.textContent=txt;
-    b.style.cssText='position:absolute;width:60px;height:60px;left:'+x+'px;top:'+y+'px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:26px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #0d1408';
+  // split thumb controls: up/down on the LEFT, left/right on the RIGHT —
+  // bigger buttons + real gaps so adjacent taps don't collide
+  function mk(dir,txt,left,bottom){ var b=document.createElement('button'); b.textContent=txt;
+    b.style.cssText='position:absolute;width:68px;height:68px;left:'+left+'px;bottom:'+bottom+'px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,#233015,#18220f);color:#e8dcc8;font-size:28px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 #0d1408;touch-action:none;-webkit-tap-highlight-color:transparent';
     var press=function(ev){ ev.preventDefault(); if(!G||G.phase!=='play'||curScreen!==null) return; moveHero(dir); heldDir=dir; moveAcc=0.28; };
     var release=function(ev){ if(heldDir===dir){ heldDir=null; moveAcc=0; } };
     b.addEventListener('pointerdown',press); b.addEventListener('pointerup',release); b.addEventListener('pointerleave',release); b.addEventListener('pointercancel',release);
-    return b; }
-  pad.appendChild(mk('up','▲',63,0));
-  pad.appendChild(mk('left','◀',0,63));
-  pad.appendChild(mk('right','▶',126,63));
-  pad.appendChild(mk('down','▼',63,126));
-  bar.appendChild(pad);
+    bar.appendChild(b); return b; }
+  mk('up','▲',58,112);     // left cluster, upper
+  mk('down','▼',58,22);    // left cluster, lower
+  mk('left','◀',369,67);   // right cluster, left
+  mk('right','▶',459,67);  // right cluster, right
   $('stage').appendChild(bar);
 }
 function updateCtrl(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&G&&(G.phase==='play'||G.phase==='clear'))?'block':'none'; }
