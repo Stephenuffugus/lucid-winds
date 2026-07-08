@@ -74,6 +74,15 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .laycard.locked{opacity:.5}
 .gmaster{text-align:center; padding:12px; margin-bottom:4px; border-radius:14px; font-weight:800; color:#f2d98a;
   background:linear-gradient(180deg,rgba(200,168,75,.22),rgba(160,130,50,.16)); border:1px solid #c8a84b}
+.cbtn.spent{opacity:.42}
+.modeseg{display:flex; gap:8px; max-width:460px; margin:0 auto 14px}
+.mseg{flex:1; min-height:46px; border-radius:12px; border:1px solid var(--line); background:#0f150c; color:var(--muted); font-size:15px; font-weight:700; cursor:pointer}
+.mseg.on{background:linear-gradient(180deg,#7ab356,#5c8f3f); color:#0c1207; border-color:#8fd06a}
+.cal{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; max-width:440px; margin:0 auto}
+.calh{text-align:center; font-size:11px; color:var(--muted); font-weight:700; padding:2px 0}
+.cald{aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:10px; border:1px solid var(--line); background:#0f150c; font-size:13px; color:var(--cream)}
+.cald.done{background:linear-gradient(180deg,#2a3d1c,#1a2612); border-color:#4c6b34; color:#9fd06a; font-weight:800}
+.cald.today{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset}
 
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px;
   margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
@@ -157,6 +166,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="b-play">🀄&nbsp; Play</button>
+      <button class="btn sm" id="b-daily">📅&nbsp; Daily garden</button>
       <div class="row">
         <button class="btn sm" id="b-how">How to play</button>
         <button class="btn sm" id="b-set">Settings</button>
@@ -169,7 +179,11 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- LAYOUT PICKER -->
   <div class="screen" id="s-modes"><div class="pad">
     <h2 class="sc-h">Choose a garden</h2>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Every garden is always solvable. Take a hint or reshuffle any time you snag.</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:12px">Every garden is always solvable. Take a hint or reshuffle any time you snag.</div>
+    <div class="modeseg" id="modeseg">
+      <button class="mseg" data-m="zen">🧘 Zen</button>
+      <button class="mseg" data-m="challenge">🏆 Challenge</button>
+    </div>
     <div class="stack" id="lay-list" style="max-width:460px"></div>
     <div style="height:16px"></div>
     <button class="btn ghost sm" id="modes-back" style="max-width:440px;margin:0 auto">◄ Back</button>
@@ -197,13 +211,24 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
 
+  <!-- DAILY -->
+  <div class="screen" id="s-daily"><div class="pad">
+    <h2 class="sc-h">Daily Garden</h2>
+    <div id="daily-info" style="color:var(--muted);font-size:13px;margin-bottom:14px"></div>
+    <div class="cal" id="daily-cal"></div>
+    <div style="height:16px"></div>
+    <button class="btn primary" id="daily-play" style="max-width:440px;margin:0 auto">▶ Play today</button>
+    <div style="height:10px"></div>
+    <button class="btn ghost sm" id="daily-back" style="max-width:440px;margin:0 auto">◄ Back</button>
+  </div></div>
+
   <!-- PLAY -->
   <div class="screen" id="s-play">
     <div class="pbar">
       <button class="iconbtn" id="p-quit">✕</button>
       <div class="pb-stat">⏱ <b id="p-timer">0:00</b></div>
       <div class="pb-mid" id="p-title">Jade Garden</div>
-      <div class="pb-stat"><b id="p-matched">0/0</b> pairs</div>
+      <div class="pb-stat" id="p-stat"><b id="p-matched">0/0</b> pairs</div>
       <button class="iconbtn" id="p-mute">🔊</button>
     </div>
     <div id="boardWrap"><div id="board"></div><canvas id="fxcanvas"></canvas></div>
@@ -224,8 +249,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <h2 class="sc-h" style="font-size:30px;margin-top:6px" id="win-title">Garden cleared!</h2>
     <div style="font-size:15px;color:var(--muted);margin-top:4px" id="win-sub"></div>
     <div style="width:100%;max-width:320px;margin-top:14px">
-      <div class="win-stat"><span>Time</span><b id="win-time">0:00</b></div>
-      <div class="win-stat"><span>Best</span><b id="win-best">—</b></div>
+      <div class="win-stat"><span id="win-timelbl">Time</span><b id="win-time">0:00</b></div>
+      <div class="win-stat"><span id="win-bestlbl">Best</span><b id="win-best">—</b></div>
     </div>
     <div class="sun-earn" id="win-sun">☀ +0 sunbeams</div>
     <div style="flex:1"></div>
@@ -252,8 +277,22 @@ var BUILD='v1.0';
 
 var LS={ get:function(k){ try{ return localStorage.getItem(k); }catch(e){ return LS._m&&LS._m[k]; } },
   set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ LS._m=LS._m||{}; LS._m[k]=v; } }, _m:{} };
-var SET={ sound:true, highlight:true };
-(function(){ try{ var s=JSON.parse(LS.get('jg_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.highlight==='boolean')SET.highlight=s.highlight; }catch(e){} })();
+var SET={ sound:true, highlight:true, mode:'zen' };
+(function(){ try{ var s=JSON.parse(LS.get('jg_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.highlight==='boolean')SET.highlight=s.highlight; if(s.mode==='zen'||s.mode==='challenge')SET.mode=s.mode; }catch(e){} })();
+var CBEST={};   // best Challenge score per garden
+(function(){ try{ var c=JSON.parse(LS.get('jg_cbest')||'{}'); if(c&&typeof c==='object') CBEST=c; }catch(e){} })();
+function saveCbest(){ try{ LS.set('jg_cbest', JSON.stringify(CBEST)); }catch(e){} }
+// Challenge scoring: base points per suit
+function suitBase(f){ return ({B:2,L:4,D:6,C:8,R:10,S:12,E:14})[f.kind]||2; }
+// Daily challenge: date-seeded deal, month calendar, streak, weekday ramp
+var DAILY={ done:{}, streak:0, last:0 };
+(function(){ try{ var d=JSON.parse(LS.get('jg_daily')||'{}'); if(d.done)DAILY.done=d.done; DAILY.streak=d.streak||0; DAILY.last=d.last||0; }catch(e){} })();
+function saveDaily(){ try{ LS.set('jg_daily', JSON.stringify(DAILY)); }catch(e){} }
+var DAILY_RAMP=['lilypond','trellis','flowerpress','sunflower','turtle','terrarium','bramble']; // Sun..Sat, easy→hard
+function dailyLayout(d){ d=d||new Date(); return DAILY_RAMP[d.getDay()]; }
+function markDailyDone(){ var t=ymd(); if(DAILY.done[t]) return; DAILY.done[t]=1;
+  var yd=new Date(); yd.setDate(yd.getDate()-1); var yk=ymd(yd);
+  DAILY.streak=(DAILY.last===yk)?(DAILY.streak+1):1; DAILY.last=t; saveDaily(); }
 function saveSet(){ LS.set('jg_set', JSON.stringify(SET)); }
 var BEST={};
 (function(){ try{ var b=JSON.parse(LS.get('jg_best')||'{}'); if(b&&typeof b==='object') BEST=b; }catch(e){} })();
@@ -355,7 +394,13 @@ var LAYOUTS=[
 function layoutByKey(k){ for(var i=0;i<LAYOUTS.length;i++) if(LAYOUTS[i].key===k) return LAYOUTS[i]; return LAYOUTS[0]; }
 
 /* ============================ generation (reverse-play, guaranteed solvable) ============================= */
-function shuf(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+// RNG: normally Math.random; a Daily deal swaps in a date-seeded mulberry32 so
+// every player gets the identical board, then restores. All generator entropy
+// routes through shuf(), so seeding shuf() seeds the whole deal.
+var RNG=Math.random;
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function ymd(d){ d=d||new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function shuf(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(RNG()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function buildBag(n){
   var bag=[],i,k;
   for(i=0;i<FACES.length;i++) for(k=0;k<4;k++) bag.push(FACES[i]);
@@ -512,22 +557,36 @@ function tapTile(id){
   if(facesMatch(t.face,other.face)){
     var first=S.selected; S.undo.push([first,id]); S.selected=null; S.locked=true;
     S.tiles[first].removed=true; S.tiles[id].removed=true;
+    scoreMatch(t.face);
     var e1=tileEls[first], e2=tileEls[id]; if(e1)e1.classList.add('removing'); if(e2)e2.classList.add('removing');
     burst(e1); burst(e2); sfx('match'); try{navigator.vibrate&&navigator.vibrate(12);}catch(ev){}
     setTimeout(function(){ S.locked=false; refreshStates(); updateHUD(); if(checkWin())return; checkStuck(); }, 300);
-  } else { S.selected=null; sfx('bad'); refreshStates(); }
+  } else { S.selected=null; S.chain=0; S.chainKind=null; sfx('bad'); refreshStates(); }
+}
+// Challenge scoring: suit base × same-suit chain multiplier × ~2s speed combo
+function scoreMatch(face){
+  if(!S||S.mode!=='challenge') return;
+  var now=Date.now(), key=faceKey(face);
+  if(key===S.chainKind) S.chain++; else { S.chain=1; S.chainKind=key; }
+  var speed=(S.lastMatchT && now-S.lastMatchT<2000);
+  S.lastMatchT=now;
+  S.score+=Math.round(suitBase(face)*(1+(S.chain-1)*0.5)*(speed?1.6:1));
 }
 
 /* ---- actions ---- */
-function useHint(){ if(!S)return; var m=findAnyMatch(); if(!m){ flash('No matches — reshuffle'); return; } S.hints++;
-  S.selected=null; refreshStates();
+function useHint(){ if(!S)return; if(S.mode==='challenge'&&S.hints>=3){ flash('No hints left'); return; }
+  var m=findAnyMatch(); if(!m){ flash('No matches — reshuffle'); return; } S.hints++;
+  if(S.mode==='challenge'){ S.score=Math.max(0,S.score-30); updateHUD(); }
+  S.selected=null; refreshStates(); updateControls();
   var a=tileEls[m[0]], b=tileEls[m[1]]; if(a)a.classList.add('hint'); if(b)b.classList.add('hint');
   if(a&&a.scrollIntoView){ try{a.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});}catch(e){} }
   setTimeout(function(){ if(a)a.classList.remove('hint'); if(b)b.classList.remove('hint'); },1700); sfx('ui'); }
-function undo(){ if(!S||!S.undo.length){ flash('Nothing to undo'); return; } var last=S.undo.pop();
-  S.tiles[last[0]].removed=false; S.tiles[last[1]].removed=false; S.selected=null; sfx('tap'); refreshStates(); updateHUD(); hideBanner(); }
+function undo(){ if(!S||!S.undo.length){ flash('Nothing to undo'); return; } if(S.mode==='challenge'&&S.undos>=3){ flash('No undos left'); return; }
+  var last=S.undo.pop(); S.tiles[last[0]].removed=false; S.tiles[last[1]].removed=false; S.selected=null; S.undos++;
+  if(S.mode==='challenge')S.score=Math.max(0,S.score-5);
+  sfx('tap'); refreshStates(); updateHUD(); updateControls(); hideBanner(); }
 // reshuffle the REMAINING tiles into a guaranteed-solvable order (reverse-teardown)
-function shuffleRemaining(){ if(!S)return; hideBanner();
+function shuffleRemaining(){ if(!S)return; if(S.mode==='challenge'&&S.shuffles>=2){ flash('No shuffles left'); return; } hideBanner();
   var remIds=[],i; for(i=0;i<S.tiles.length;i++) if(!S.tiles[i].removed) remIds.push(i);
   if(remIds.length<2){ return; }
   var posList=remIds.map(function(id){ return [S.tiles[id].layer,S.tiles[id].col,S.tiles[id].row]; });
@@ -538,7 +597,8 @@ function shuffleRemaining(){ if(!S)return; hideBanner();
   for(var attempt=0;attempt<40 && !solved;attempt++) solved=tryGenerate(posList, pairs.slice());
   if(!solved){ flash('Could not reshuffle'); return; }
   for(i=0;i<remIds.length;i++){ S.tiles[remIds[i]].face=solved.tiles[i].face; }
-  S.hints++; S.selected=null;
+  S.shuffles++; if(S.mode==='challenge')S.score=Math.max(0,S.score-50); updateControls(); updateHUD();
+  S.selected=null;
   // rebuild remaining tiles' face nodes
   remIds.forEach(function(id){ var el=tileEls[id]; if(!el)return; el.innerHTML=''; var t=S.tiles[id];
     el.className='tile'+(t.face.kind==='S'?' wildS':(t.face.kind==='E'?' wildE':'')); el.appendChild(faceNode(t.face)); });
@@ -568,21 +628,30 @@ function stepParts(){ if(!fxx){ burst._raf=0; return; } fxx.clearRect(0,0,fxc.wi
 
 /* ---- HUD / timer ---- */
 function updateHUD(){ if(!S)return; var rem=countRemaining(); var matched=Math.floor((S.tiles.length-rem)/2), total=Math.floor(S.tiles.length/2);
-  var m=$('p-matched'); if(m)m.textContent=matched+'/'+total; }
+  var st=$('p-stat'); if(st){ if(S.mode==='challenge') st.innerHTML='<b>★ '+S.score+'</b>'+(S.chain>1?(' <span style="color:#7ab356;font-weight:800">×'+S.chain+'</span>'):''); else st.innerHTML='<b>'+matched+'/'+total+'</b> pairs'; } }
+function updateControls(){ if(!S)return; var ch=(S.mode==='challenge');
+  var defs=[['c-hint','💡 Hint',3-S.hints],['c-undo','↩ Undo',3-S.undos],['c-shuffle','♻ Shuffle',2-S.shuffles]];
+  for(var i=0;i<defs.length;i++){ var el=$(defs[i][0]); if(!el)continue;
+    if(ch){ var n=Math.max(0,defs[i][2]); el.innerHTML=defs[i][1]+' <span class="cnt">'+n+'</span>'; el.classList.toggle('spent',n<=0); }
+    else { el.innerHTML=defs[i][1]; el.classList.remove('spent'); } } }
 function startTimer(){ stopTimer(); timerT=setInterval(function(){ if(!S||S.phase!=='play')return; var el=$('p-timer'); if(el) el.textContent=fmtTime(Date.now()-S.startT-(S.pausedMs||0)); },500); }
 function stopTimer(){ if(timerT){ clearInterval(timerT); timerT=0; } }
 
 /* ============================ game lifecycle ============================= */
-function startGame(layoutKey){
+function startGame(layoutKey, daily){
   var lay=layoutByKey(layoutKey);
   var positions=lay.build();
+  if(daily) RNG=mulberry32(ymd());          // date-seeded deterministic deal for everyone
   var g=generate(positions);
+  RNG=Math.random;                           // restore
   if(!g){ flash('Deal failed — retry'); return; }
-  S={ lay:lay, tiles:g.tiles, solveOrder:g.order, selected:null, undo:[], phase:'play', locked:false, hints:0, startT:Date.now(), pausedMs:0, _hidAt:0 };
+  S={ lay:lay, tiles:g.tiles, solveOrder:g.order, selected:null, undo:[], phase:'play', locked:false,
+      mode:SET.mode, hints:0, undos:0, shuffles:0, score:0, chain:0, chainKind:null, lastMatchT:0, daily:!!daily,
+      startT:Date.now(), pausedMs:0, _hidAt:0 };
   show('s-play'); hideBanner();
-  $('p-title').textContent=lay.name;
+  $('p-title').textContent=(daily?'Daily · ':'')+lay.name;
   boardEl=$('board'); boardWrap=$('boardWrap'); fxc=$('fxcanvas'); fxx=fxc.getContext('2d');
-  buildBoard(); updateHUD();
+  buildBoard(); updateHUD(); updateControls();
   // center scroll
   setTimeout(function(){ try{ boardWrap.scrollLeft=(boardEl.offsetWidth-boardWrap.clientWidth)/2; boardWrap.scrollTop=0; }catch(e){} },30);
   startTimer();
@@ -596,26 +665,57 @@ function winGame(){
   if(isBest){ BEST[bkey]=elapsed; saveBest(); }
   WINS[bkey]=(WINS[bkey]||0)+1; saveWins();
   var allNow=clearedCount('')>=LAYOUTS.length;
-  // sunbeams: base by garden size (pairs) + a speed/first-clear touch, capped 12/run then 30/day
+  var assists=S.hints+S.undos+S.shuffles;
+  if(S.mode==='challenge'){
+    S.score+=1000;                                        // clear bonus
+    if(S.shuffles===0) S.score+=500;                      // no-shuffle bonus
+    S.score+=Math.max(0, 3000 - Math.floor(elapsed/1000)*8);  // faster = more
+    if(!CBEST[bkey] || S.score>CBEST[bkey]){ CBEST[bkey]=S.score; saveCbest(); }
+  }
+  if(S.daily) markDailyDone();
+  // sunbeams: base by garden size (pairs) + no-assist / best / challenge touches, capped 12/run then 30/day
   var pairs=Math.floor(S.tiles.length/2);
-  var base=3+Math.floor(pairs/14);                       // 72→~5, 144→~8
-  if(S.hints===0) base+=2;                                // no-assist bonus
+  var base=3+Math.floor(pairs/14);
+  if(assists===0) base+=2;
   if(isBest) base+=1;
+  if(S.mode==='challenge') base+=1;
   var amt=Math.min(12, base);
-  var granted=0; try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'jadegarden:win')||0; }catch(e){}
+  var granted=0; try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,(S.daily?'jadegarden:daily':'jadegarden:win'))||0; }catch(e){}
   $('win-emoji').textContent=allNow?'🏆':(isBest?'🏅':'🌸');
-  $('win-title').textContent=allNow?'Garden Master!':(isBest?'New best time!':'Garden cleared!');
-  $('win-sub').textContent=S.lay.name+(!wasCleared?' · ⭐ first clear':'')+' · '+pairs+' pairs · ⭐ '+clearedCount('')+'/'+LAYOUTS.length+' gardens';
-  $('win-time').textContent=fmtTime(elapsed);
-  $('win-best').textContent=BEST[bkey]?fmtTime(BEST[bkey]):'—';
+  $('win-title').textContent=allNow?'Garden Master!':(S.mode==='challenge'?'Challenge cleared!':(isBest?'New best time!':'Garden cleared!'));
+  $('win-sub').textContent=(S.daily?'Daily · ':'')+S.lay.name+(!wasCleared?' · ⭐ first clear':'')+' · '+pairs+' pairs · ⭐ '+clearedCount('')+'/'+LAYOUTS.length+' gardens';
+  if(S.mode==='challenge'){
+    $('win-timelbl').textContent='Score'; $('win-time').textContent=S.score;
+    $('win-bestlbl').textContent='Best score'; $('win-best').textContent=(CBEST[bkey]||S.score);
+  } else {
+    $('win-timelbl').textContent='Time'; $('win-time').textContent=fmtTime(elapsed);
+    $('win-bestlbl').textContent='Best'; $('win-best').textContent=BEST[bkey]?fmtTime(BEST[bkey]):'—';
+  }
   $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
   sfx('win'); setTimeout(function(){ show('s-win'); },700);
 }
 
 /* ============================ layout picker ============================= */
+function buildDaily(){
+  var now=new Date(), y=now.getFullYear(), mo=now.getMonth();
+  var first=new Date(y,mo,1).getDay(), days=new Date(y,mo+1,0).getDate();
+  var monthDone=0,dd; for(dd=1;dd<=days;dd++){ if(DAILY.done[y*10000+(mo+1)*100+dd]) monthDone++; }
+  var trophy=monthDone>=days?'🥇 Gold':(monthDone>=20?'🥈 Silver':(monthDone>=10?'🥉 Bronze':''));
+  var lay=layoutByKey(dailyLayout(now)), tk=ymd(), todayDone=!!DAILY.done[tk];
+  $('daily-info').innerHTML="Today's garden: <b style=\"color:var(--sage)\">"+lay.name+"</b> · 🔥 streak "+DAILY.streak+' · '+monthDone+'/'+days+' this month'+(trophy?(' · '+trophy):'');
+  $('daily-play').textContent=todayDone?'↻ Replay today':'▶ Play today';
+  var cal=$('daily-cal'); cal.innerHTML='';
+  var wd=['S','M','T','W','T','F','S'],i; for(i=0;i<7;i++){ var hh=document.createElement('div'); hh.className='calh'; hh.textContent=wd[i]; cal.appendChild(hh); }
+  for(i=0;i<first;i++){ cal.appendChild(document.createElement('div')); }
+  for(dd=1;dd<=days;dd++){ var c=document.createElement('div'); c.className='cald'; var k=y*10000+(mo+1)*100+dd;
+    if(DAILY.done[k]) c.className+=' done'; if(k===tk) c.className+=' today'; c.textContent=dd; cal.appendChild(c); }
+}
+function paintModeSeg(){ var segs=document.querySelectorAll('.mseg'); for(var i=0;i<segs.length;i++){ segs[i].classList.toggle('on', segs[i].getAttribute('data-m')===SET.mode); } }
 function buildPicker(){
+  paintModeSeg();
   var host=$('lay-list'); host.innerHTML='';
   var BADGE={easy:'Easy',med:'Medium',medhard:'Med-Hard',hard:'Hard',expert:'Expert'};
+  var chMode=(SET.mode==='challenge');
   if(clearedCount('')>=LAYOUTS.length){ var gm=document.createElement('div'); gm.className='gmaster'; gm.textContent='🏆 Garden Master — every garden cleared'; host.appendChild(gm); }
   for(var i=0;i<LAYOUTS.length;i++){ (function(L){
     var locked=(L.diff==='expert' && !expertUnlocked());
@@ -624,9 +724,11 @@ function buildPicker(){
       b.innerHTML='<div class="lc-ico">🔒</div><div class="lc-main"><div class="lc-t">'+L.name+'</div><div class="lc-d">Clear 3 Hard gardens to unlock ('+clearedCount('hard')+'/3)</div></div><div class="badge expert">Expert</div>';
       b.addEventListener('click',function(e){ e.preventDefault(); sfx('bad'); });
     } else {
-      var star=BEST[L.key]?'⭐ ':'';
-      var wins=WINS[L.key]?(' · won ×'+WINS[L.key]):'';
-      var best=BEST[L.key]?('🏅 '+fmtTime(BEST[L.key])+wins):'';
+      var star=(WINS[L.key]||BEST[L.key])?'⭐ ':'';
+      var winTxt=WINS[L.key]?('won ×'+WINS[L.key]):'';
+      var best;
+      if(chMode) best=CBEST[L.key]?('🏆 '+CBEST[L.key]+' pts'+(winTxt?(' · '+winTxt):'')):winTxt;
+      else best=BEST[L.key]?('🏅 '+fmtTime(BEST[L.key])+(winTxt?(' · '+winTxt):'')):winTxt;
       var n=L.build().length; n=n-(n%2);
       b.innerHTML='<div class="lc-ico">'+L.ico+'</div><div class="lc-main"><div class="lc-t">'+star+L.name+'</div><div class="lc-d">'+L.sub+' · '+n+' tiles</div>'+(best?'<div class="lc-best">'+best+'</div>':'')+'</div><div class="badge '+L.diff+'">'+(BADGE[L.diff]||'—')+'</div>';
       b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startGame(L.key); });
@@ -647,6 +749,10 @@ function boot(){
   document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(S&&S.phase==='play'&&!S._hidAt)S._hidAt=Date.now(); } else if(S&&S.phase==='play'&&curScreen==='s-play'){ if(S._hidAt){ S.pausedMs=(S.pausedMs||0)+(Date.now()-S._hidAt); S._hidAt=0; } } });
   $('board').addEventListener('click', onBoardClick);
   tap('b-play', function(){ buildPicker(); show('s-modes'); });
+  tap('b-daily', function(){ buildDaily(); show('s-daily'); });
+  tap('daily-play', function(){ startGame(dailyLayout(), true); });
+  tap('daily-back', function(){ show('s-title'); });
+  (function(){ var m=document.querySelectorAll('.mseg'); for(var i=0;i<m.length;i++){ m[i].addEventListener('click',function(e){ e.preventDefault(); SET.mode=this.getAttribute('data-m'); saveSet(); sfx('ui'); buildPicker(); }); } })();
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
@@ -657,7 +763,7 @@ function boot(){
   tap('c-layouts', function(){ buildPicker(); show('s-modes'); });
   tap('p-quit', function(){ stopTimer(); if(S)S.phase='over'; show('s-title'); });
   $('p-mute').addEventListener('click',function(e){ e.preventDefault(); SET.sound=!SET.sound; saveSet(); $('p-mute').textContent=SET.sound?'🔊':'🔇'; if(SET.sound)sfx('ui'); });
-  tap('win-again', function(){ if(S)startGame(S.lay.key); });
+  tap('win-again', function(){ if(S)startGame(S.lay.key, S.daily); });
   tap('win-modes', function(){ buildPicker(); show('s-modes'); });
   tap('win-title2', function(){ show('s-title'); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
@@ -689,6 +795,7 @@ if(/[?&]jgtest=1/.test(location.search)){
   window.JG_DEV={
     start:startGame, state:function(){ return S; }, layouts:LAYOUTS,
     isFree:isFree, findMatch:findAnyMatch, remaining:countRemaining,
+    hud:function(){ updateHUD(); }, ctrls:function(){ updateControls(); }, daily:function(){ buildDaily(); }, show:function(id){ show(id); },
     validateLayouts:function(){ var out=[]; for(var i=0;i<LAYOUTS.length;i++){ var p=LAYOUTS[i].build(); var seen={},dup=0; for(var j=0;j<p.length;j++){ var kk=p[j][0]+','+p[j][1]+','+p[j][2]; if(seen[kk])dup++; seen[kk]=1; } out.push({key:LAYOUTS[i].key,tiles:p.length,even:(p.length%2===0),dups:dup}); } return out; },
     // definitive: replay the generator's recorded removal order, asserting each
     // pair is FREE + MATCHING at removal time — proves the deal is solvable.
