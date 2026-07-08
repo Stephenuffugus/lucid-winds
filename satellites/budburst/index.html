@@ -1092,9 +1092,9 @@ function buildResultActions(won){
   else if(m==="blitz"){add("Play again","btn-fill",startBlitz);add("Menu","btn-ghost",backToMenu);}
   else {if(won)add("Share result","btn-gold",shareDaily);add("Menu","btn-fill",backToMenu);add("Replay","btn-ghost",startDaily);}
 }
-function shareDaily(){const txt=$("resSquares").textContent+"\nlucidwinds.com/portal";
-  if(navigator.share){navigator.share({text:txt}).catch(()=>{});return;}
-  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>toast("Copied!")).catch(()=>toast("Couldn't copy"));}
+function shareDaily(){const url="https://lucidwinds.com/satellites/budburst/";const txt="Budburst\n"+$("resSquares").textContent+"\n\nCan you beat my score?";
+  if(navigator.share){navigator.share({text:txt,url:url}).catch(()=>{});return;}
+  if(navigator.clipboard){navigator.clipboard.writeText(txt+"\n"+url).then(()=>toast("Copied!")).catch(()=>toast("Couldn't copy"));}
   else toast(txt);}
 
 /* ============================================================================

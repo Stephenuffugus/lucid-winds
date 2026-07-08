@@ -314,7 +314,9 @@ var PAL={ bg:'#0d100c', sage:'#7ab356', deep:'#3f6b34', gold:'#c8a84b', cream:'#
 var DRAW_PALETTE=[
   ['#12160f','Ink'],['#e8dcc8','Cream'],['#7ab356','Sage'],['#3f6b34','Deep leaf'],
   ['#c8a84b','Gold'],['#6b4a2b','Bark'],['#e58fa0','Petal'],['#e8823a','Coral'],
-  ['#f2d24b','Sunbeam'],['#7aa6d6','Sky'],['#9a6fc4','Berry'],['#ffffff','White']
+  ['#d6453f','Red'],['#9c1f2e','Crimson'],['#f2d24b','Sunbeam'],['#7aa6d6','Sky'],
+  ['#2e4374','Indigo'],['#9a6fc4','Berry'],['#b8618f','Orchid'],['#4aa89a','Teal'],
+  ['#9aa0a6','Ash'],['#ffffff','White']
 ];
 var BRUSH_SIZES=[2,6,12,20];
 
@@ -1778,7 +1780,7 @@ function shareCard(){
   g.fillStyle=PAL.cream; g.textAlign='center'; g.font='800 92px sans-serif'; g.fillText(m+' m',W/2,190);
   g.font='700 22px sans-serif'; g.fillStyle=PAL.gold; g.fillText('SPROING · Sky Wolf Studios',W/2,H-54);
   try{ c.toBlob(function(blob){ if(!blob) return; try{ var file=new File([blob],'sproing-'+m+'m.png',{type:'image/png'});
-      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file],title:'Sproing',text:'I climbed '+m+'m in Sproing!'}).catch(function(){}); return; } }catch(e){}
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file],title:'Sproing',text:'I climbed '+m+'m in Sproing! Can you beat me? https://lucidwinds.com/satellites/sproing/'}).catch(function(){}); return; } }catch(e){}
     var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download='sproing-'+m+'m.png'; a.click(); setTimeout(function(){ URL.revokeObjectURL(url); },3000);
   },'image/png'); }catch(e){}
 }

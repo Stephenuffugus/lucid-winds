@@ -621,8 +621,8 @@ function dailyResult(){const today=todayStr(),firstToday=Store.g(K.dDone)!==toda
   $("resSub").textContent=firstToday?"come back tomorrow for #"+(dailyNumber()+1):"already counted today";
   $("resCoins").textContent=firstToday?("+ "+(G.coinsRun+bonus)+" 🪙  (incl. "+bonus+" daily bonus)"):"practice — coins from rounds only";
   $("resSquares").textContent=sq;$("resVs").innerHTML="";$("resStreak").textContent=streak>0?("🔥 "+streak+" day streak"):"";renderRoundChips();
-  const shareText="HUE MATCH #"+dailyNumber()+"  "+G.score.toLocaleString()+"\n"+sq+(streak>1?"  🔥"+streak:"");
-  setActions([{label:"Share result",cls:"btn-fill",fn:()=>share(shareText)},{label:"Practice again",cls:"btn-ghost",fn:()=>startGame("daily")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
+  const shareText="HUE MATCH #"+dailyNumber()+"  "+G.score.toLocaleString()+"\n"+sq+(streak>1?"  🔥"+streak:"")+"\n\nCan you beat my score?";
+  setActions([{label:"Share result",cls:"btn-fill",fn:()=>share(shareText,"https://lucidwinds.com/satellites/hues/")},{label:"Practice again",cls:"btn-ghost",fn:()=>startGame("daily")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
 
 function versusHandoff(){G.versus.p1=G.score;
   $("resKicker").textContent="VERSUS";$("resTitle").className="";$("resTitle").textContent="Pass the phone";
@@ -636,8 +636,8 @@ function versusResult(){const p1=G.versus.p1,p2=G.score;
   setActions([{label:"Rematch",cls:"btn-fill",fn:()=>startGame("versus")},{label:"Menu",cls:"btn-ghost",fn:toMenu}]);show("result");}
 
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
-async function share(text){try{if(navigator.share){await navigator.share({text});return;}}catch(e){}
-  try{await navigator.clipboard.writeText(text);toast("Copied to clipboard");return;}catch(e){}toast("Couldn't copy — long-press to select");}
+async function share(text,url){try{if(navigator.share){await navigator.share(url?{text:text,url:url}:{text:text});return;}}catch(e){}
+  try{await navigator.clipboard.writeText(url?(text+"\n"+url):text);toast("Copied to clipboard");return;}catch(e){}toast("Couldn't copy — long-press to select");}
 
 function openShop(){renderShop();show("shop");}
 function buildPreview(id){return`<div class="prev"><div class="frame bd-${id}"><div class="swatch" style="background:linear-gradient(90deg,hsl(265,70%,55%) 0 50%,hsl(28,85%,55%) 50% 100%)"></div></div></div>`;}

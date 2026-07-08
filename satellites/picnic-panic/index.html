@@ -756,6 +756,7 @@ const jz=document.getElementById('joyzone'),jb=document.getElementById('joybase'
 let joyId=null,joyOX=0;
 jz.addEventListener('pointerdown',e=>{
   joyId=e.pointerId;try{jz.setPointerCapture(joyId)}catch(_){}
+  input.axis=0; // start neutral so a fresh press never inherits a stale tilt
   const r=jz.getBoundingClientRect();joyOX=e.clientX;
   jb.style.left=(e.clientX-r.left-48)+'px';jb.style.top=(e.clientY-r.top-48)+'px';
   jk.style.left=(e.clientX-r.left-22)+'px';jk.style.top=(e.clientY-r.top-22)+'px';
@@ -769,7 +770,7 @@ jz.addEventListener('pointermove',e=>{
   jk.style.left=(joyOX-r.left+dx-22)+'px';
 });
 function joyEnd(e){if(e.pointerId!==joyId)return;joyId=null;input.axis=0;jb.style.opacity=jk.style.opacity=0;}
-jz.addEventListener('pointerup',joyEnd);jz.addEventListener('pointercancel',joyEnd);
+jz.addEventListener('pointerup',joyEnd);jz.addEventListener('pointercancel',joyEnd);jz.addEventListener('lostpointercapture',joyEnd);
 
 function applyControlMode(){
   const s=SAVE.settings;

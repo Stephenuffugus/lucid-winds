@@ -1304,9 +1304,10 @@ function buildDaily(){
 }
 function dailySquares(){ var emo=["🌱","🌿","🍄","⛰️","🌙"]; var reached=biomeIndexAt(P.daily.best); var s=""; for(var i=0;i<=reached&&i<5;i++)s+=emo[i]; return s||"🌱"; }
 function shareDaily(){
-  var txt="Petal Plunge — Daily "+dailyKey()+"\n"+dailySquares()+"  "+P.daily.best+" deep\nlucidwinds.com/portal";
-  if(navigator.share){ navigator.share({text:txt}).catch(function(){}); }
-  else if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(function(){ toastMsg("Copied!"); },function(){}); }
+  var url="https://lucidwinds.com/satellites/petal-plunge/";
+  var txt="Petal Plunge — Daily "+dailyKey()+"\n"+dailySquares()+"  "+P.daily.best+" deep\n\nCan you beat my score?";
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toastMsg("Copied!"); },function(){}); }
   else toastMsg(txt);
 }
 function toastMsg(m){ var t=$("toast"); $("hud").classList.remove("hidden"); t.textContent=m; t.style.transition="none"; t.style.opacity="1";

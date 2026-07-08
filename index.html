@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.08.01';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.08.02';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -4614,9 +4614,6 @@
     body.game-active:has(#fg-ag[data-game="dailybloom"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="dailybloom"]) #fg-ag > .gu-bar,
     body.game-active:has(#fg-ag[data-game="dailybloom"]) #fg-ag > #_gm,
-    body.game-active:has(#fg-ag[data-game="jade"]) #fg-ag > .gr,
-    body.game-active:has(#fg-ag[data-game="jade"]) #fg-ag > .gu-bar,
-    body.game-active:has(#fg-ag[data-game="jade"]) #fg-ag > #_gm,
     body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > .gr,
     body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > .gu-bar,
     body.game-active:has(#fg-ag[data-game="livingstones"]) #fg-ag > #_gm{display:none!important;}
@@ -14342,11 +14339,6 @@ document.addEventListener('keydown', function(e) {
       '<p><strong>Token cap:</strong> 10 tokens max at end of turn. You <em>can</em> pick up or reserve even if it pushes you over 10 mid-turn, but before your turn ends you\'ll be prompted to return excess tokens of your choice to the supply until you\'re at 10.</p>'+
       '<p><strong>Pollinators</strong> are claimed automatically the first time a player\'s permanent production meets all the thresholds shown on the card, they grant their bonus GP on sight.</p>'+
       '<p><strong>Token pool scales with player count:</strong> 2p = 4 of each color · 3p = 5 · 4p = 7. Gold is always 5.</p>';
-    R.jade = ''+
-      '<p><strong>Goal:</strong> Clear all 144 tiles by matching pairs.</p>'+
-      '<p><strong>Free tile:</strong> A tile is free if (a) nothing is on top of it AND (b) at least one of its left or right sides is open.</p>'+
-      '<p><strong>Match:</strong> Tap two free tiles with the same face. Special: any two SEASONS match each other; any two ELEMENTS match each other (these are the wild groups).</p>'+
-      '<p><strong>Helpers:</strong> 5 hints (highlight a valid pair) and 3 shuffles (re-randomize remaining tiles). Game over when no matches AND no shuffles remain.</p>';
     R.livingstones = ''+
       '<p><strong>Tsumego:</strong> Life-and-death puzzles in the game of Go. You play <strong style="color:var(--cream);">Black</strong>. The hint tells you what to find.</p>'+
       '<p><strong>Captures:</strong> Surround all of an enemy group\'s liberties (empty adjacent points) to capture them.</p>'+
@@ -63227,7 +63219,6 @@ var G=[
 {id:'breathing',n:'Breathing Garden',i:'\ud83c\udf38',r:'Guided breathing with 4 patterns. Bloom with every breath.',cat:'creative',thumb:'assets/games/thumbs/meditation.jpg'},
 {id:'colorgarden',n:'Color Garden',i:'\ud83c\udfa8',r:'Tap to fill 50 hand-drawn botanical pages. Full color wheel, pinch to zoom.',cat:'creative',thumb:'assets/games/thumbs/colorgarden.jpg'},
 {id:'dailybloom',n:'Daily Bloom',i:'\ud83c\udf05',r:'Daily cognitive workout. 8 evidence-backed exercises across memory, attention, speed, and working memory. Adaptive difficulty, domain tracking, 4 min.',cat:'pattern',thumb:'assets/games/thumbs/dailybloom.png'},
-{id:'jade',n:'Jade Mahjong',i:'\ud83c\udc04',r:'Match free pairs to clear the turtle. Hint and shuffle if stuck.',cat:'puzzle',thumb:'assets/games/thumbs/jade.png'},
 {id:'pollen',n:'Master Pollinator',sub:'Engine builder',i:'\ud83d\udc1d',r:'Collect pollen, grow plants that produce more pollen. Attract pollinators. Race to 15 Growth!',cat:'board',thumb:'assets/games/thumbs/pollen.png'},
 {id:'stonegarden',n:'Stone Garden',i:'\ud83e\udea8',r:'Stack stones in zen balance. Reach the target height without collapsing!',cat:'creative',thumb:'assets/games/thumbs/stonegarden.webp',wip:true},
 {id:'livingstones',n:'Go (Living Stones)',i:'\u26ab',r:'Go, the 4000-year-old strategy game. 24 verified life-and-death puzzles plus full play vs. an MCTS opponent on 9\u00d79 or 13\u00d713 with ko rule, komi, undo, and handicap stones.',cat:'board',thumb:'assets/games/thumbs/livingstones.png'},
@@ -63260,6 +63251,7 @@ var G=[
 {id:'sixfold',n:'Sixfold',i:'\u2694\ufe0f',r:'A six-stance power-wheel duel. Read your foe, break the bind, win in under a minute.',cat:'studio',ext:'https://stephenuffugus.github.io/sixfold/',thumb:'portal-assets/thumbs/sixfold.png'},
 {id:'letterlaunch',n:'Letter Launch',i:'\ud83d\udd24',r:'Plink letter tiles through bumpers, then trace words to score.',cat:'studio',ext:'https://stephenuffugus.github.io/letter_launch/',thumb:'portal-assets/thumbs/letter-launch.png'},
 {id:'skitterlings',n:'Skitterlings',i:'🐾',r:'A one-button runner. Hop your critter through 100 worlds and collect hundreds of skitterlings.',cat:'studio',ext:'https://stephenuffugus.github.io/skitterlings/?embed=1&origin=https://lucidwinds.com',thumb:'portal-assets/thumbs/skitterlings.png'},
+{id:'tomatoman',n:'Tomato Man',i:'🍅',r:"The sun is death and the shade keeps moving. Dash the shadows, gather aloe, and don't get burned.",cat:'studio',ext:'https://stephenuffugus.github.io/Tomato_Man/',thumb:'portal-assets/thumbs/tomato-man.png'},
 // Same-origin satellites: ext starts with '/' so they're FIRST-PARTY content,
 // NOT external. They are NOT hidden in Pi Browser (no redirect), and they earn
 // via the shared-origin localStorage bucket (sws_pending_sunbeams) which
@@ -63286,6 +63278,20 @@ var G=[
 {id:'burrblast',n:'Burr Blast',i:'🌰',r:'Load the burr, bring the fort down — a physics slingshot. Arc six trick seeds into the pests’ rickety forts of twig, stone, dewglass and blastpod, chain the collapse, and earn your stars across 32 patches in four worlds plus an endless run and a shed full of skins.',cat:'studio',ext:'/satellites/burr-blast/',thumb:'portal-assets/thumbs/burr-blast.jpg'},
 {id:'gardenguard',n:'Garden Guard',i:'🛡️',r:'Plant a garden that fights back — a cozy tower defense. Grow defenders, spend Sap and Leaves in the potting shed, and hold the line season after season.',cat:'studio',ext:'/satellites/garden-td/',thumb:'portal-assets/thumbs/garden-guard.jpg'},
 {id:'sproutdice',n:'Sprout Dice',i:'🎲',r:'A botanical dice roguelike. Roll your plant dice, reroll, then place each on a target — thorns strike pests, heal and bark protect your garden. Climb 12 floors, draft a new build every run, then unlock Endless.',cat:'studio',ext:'/satellites/sprout-dice/'},
+// Batch 3 (Jul 05-08) — same-origin satellites: Doodle-Jump jumper, SkiFree, survivor-like,
+// the five revamped 1991 classics, the combined Mahjong, and the peg-bouncer. Glyph-only until
+// thumbnails land (add thumb:'portal-assets/thumbs/<id>.jpg' when the art drops).
+{id:'pitbikerally',n:'Pit Bike Rally',i:'🏍️',r:'Four pit bikes, one dirt arena — race, jump, grab nitro, then spend your winnings building the ultimate bike.',cat:'studio',ext:'/satellites/pitbike-rally/',thumb:'portal-assets/thumbs/pitbike-rally.png'},
+{id:'sproing',n:'Sproing',i:'🌱',r:'Draw your own critter, then bounce it up an endless beanstalk. Steer onto leaves, ride dandelion updrafts, dodge wasps and wilting leaves, grab coins, and unlock a shop full of hand-drawn skins as you chase your best altitude.',cat:'studio',ext:'/satellites/sproing/',thumb:'portal-assets/thumbs/sproing.jpg'},
+{id:'petalplunge',n:'Petal Plunge',i:'🛷',r:'Ride a leaf-sled down an endless wild-garden slope. Carve between trees and stones, thread dewdrop gates, launch off toadstools for style, and when you plunge deep enough, outrun the feral garden Gnome that never quite gives up the chase.',cat:'studio',ext:'/satellites/petal-plunge/',thumb:'portal-assets/thumbs/petal-plunge.jpg'},
+{id:'bramblewick',n:'Bramblewick',i:'🌿',r:"A botanical survivor-like: you're one small sprout in a rising tide of garden pests. Fight across five distinct grounds, each with its own swarm, palette and boss, and unlock the next by holding the night. Auto-loose your seeds, chain reactions of pollen, spore and rot through the swarm, gather companion familiars, and climb a mastery ladder run after run.",cat:'studio',ext:'/satellites/bramblewick/?v=20260707c',thumb:'portal-assets/thumbs/bramblewick.jpg'},
+{id:'bloomzap',n:'Bloomzap',i:'⚡',r:'A quiet botanical word garden. Grow a whole bed of words from one shared set of eight letters as fast as you can, then come back and beat your own best time. Three beds to fill, from a quick five-word bloom to a full ten-word thicket. A calm solo remake of the 1991 word game WordZap.',cat:'studio',ext:'/satellites/bloomzap/'},
+{id:'rootbound',n:'Rootbound',i:'🪴',r:'A botanical sliding puzzle. The golden bloom is boxed in by the other planters, so shuffle them aside and slide it free out the garden gate. 41 hand-graded beds, from a gentle opener to the fiendish old Huarong knot, each with a par to beat, three stars to earn, and a nudge for when the roots tangle. A remake of the classic Klotski.',cat:'studio',ext:'/satellites/rootbound/'},
+{id:'petalvex',n:'Petalvex',i:'🍃',r:'A quiet botanical logic puzzle. Slot the leaf tiles into the bed so every touching edge shares a number. Four bed sizes, one shared daily bed, a best-time chase, and a gentle nudge for when you get stuck. A remake of the classic edge matcher TetraVex.',cat:'studio',ext:'/satellites/petalvex/'},
+{id:'hedgerow',n:'Hedgerow',i:'🌳',r:'Grow hedge walls to fence the garden pests into a corner and win back the bed. Aim a wall across or up and down, close off a patch with no pests in it and it plants itself. A pest that bumps a hedge while it is still growing wilts it flat, so keep your nerve. Reclaim three quarters of each ground to move on. A cozy remake of the classic JezzBall.',cat:'studio',ext:'/satellites/hedgerow/'},
+{id:'grubtrap',n:'Grubtrap',i:'🐭',r:"You are a field mouse in an overrun bed. Shove the stone planters, a whole row at a time, to box the garden grubs into a corner until they curl into harmless seedballs. Pen every grub to clear the ground, and do not let one crawl onto you. Later grounds bring more grubs and quicker ones. A cozy remake of the classic Rodent's Revenge.",cat:'studio',ext:'/satellites/grubtrap/'},
+{id:'jadegarden',n:'Jade Garden',i:'🀄',r:'A calm botanical Mahjong solitaire. Match free pairs of painted tiles to clear the garden, reading the stack and working the open edges inward. Six gardens on an easy-to-hard ladder, from a wide open bed to the classic raised turtle shell, every deal guaranteed solvable, with a hint, an undo, and a reshuffle that can never strand you. A cozy combined remake of classic Mahjong.',cat:'studio',ext:'/satellites/mahjong/'},
+{id:'nectardrop',n:'Nectar Drop',i:'🌼',r:'A botanical peg-bouncer. Aim and drop a pollen ball to ricochet through a meadow of flowers, popping every red bloom to clear the level while the green blooms spark a bloom-burst and the purples pay bonus nectar. Eight geometric meadows, a moving basket that catches a ball for a free pollen, and an aim guide when you need it. Bright, bouncy, and quietly strategic.',cat:'studio',ext:'/satellites/nectar-drop/'},
 {id:'tally',n:'Tally',i:'\ud83e\uddee',r:'Combine numbers and operators to hit the target \u2014 every puzzle hides several solutions, and collectible pals cheer every one you find. Endless worlds, a daily board, cosmetic-only shop.',cat:'studio',ext:'https://stephenuffugus.github.io/Tally/',thumb:'portal-assets/thumbs/tally.png'},
 // Brawl: genuinely still in build (portal had soon:true) -- wip = visible SOON badge, non-tappable.
 {id:'brawl',n:'Brawl',i:'\ud83c\udf7a',r:'Multiplayer mayhem.',cat:'studio',ext:'https://stephenuffugus.github.io/BarBrawl/',thumb:'portal-assets/thumbs/brawl.png',wip:true}
@@ -63626,7 +63632,6 @@ var _afGameClass={
   breathing:'free',
   colorgarden:'free',
   dailybloom:'sprint',
-  jade:'marathon',
   pollen:'marathon',
   // stonegarden was 'free' (progCap 99) with milestone:2 PER SETTLED STONE —
   // ~198 sunbeams/session in zen mode, ~6.5 plants of value. 'standard'
@@ -63716,7 +63721,6 @@ var _aw={
   breathing:{milestone:1,game_win:2,default:0},
   colorgarden:{milestone:1,game_win:2,default:0},
   dailybloom:{milestone:1,game_win:4,default:0},
-  jade:{progress:1,milestone:1,game_win:5,default:0},
   pollen:{progress:1,milestone:1,game_win:6,game_loss:1,default:0},
   stonegarden:{milestone:2,game_win:3,default:0},
   livingstones:{progress:1,game_win:4,default:0},
