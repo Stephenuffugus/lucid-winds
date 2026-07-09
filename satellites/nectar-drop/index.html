@@ -231,6 +231,22 @@ function splitBall(x,y,parent){
 }
 function wildConvert(){ var blues=[],i; for(i=0;i<G.pegs.length;i++) if(G.pegs[i].type==='blue'&&!G.pegs[i].hit) blues.push(i);
   for(var n=0;n<3&&blues.length;n++){ var j=Math.floor(Math.random()*blues.length); G.pegs[blues[j]].type='green'; blues.splice(j,1); } }
+
+/* ===== drop-in ART hook =====
+   Drop a PNG at the path below and it REPLACES the procedural drawing; any missing
+   file silently falls back (onerror), so ANY subset ships in any order with zero
+   code change. Stephen's art (see the asset manifest) drops straight into /assets/.
+   Paths — bg: assets/bg.png (or assets/bg/world<N>.png later); blooms:
+   assets/blooms/{red,green,purple,blue}.png; assets/ball.png, launcher.png,
+   basket.png; gardeners: assets/gardeners/{burst,multi,float,fire,wild,freeze}.png */
+var ART={}, ART_VER='1';   // bump ART_VER when art files change (host caches images hard)
+function loadArt(key,src){ try{ var im=new Image(); im.onload=function(){ ART[key]=im; }; im.onerror=function(){}; im.src=src+(src.indexOf('?')>=0?'&':'?')+'v='+ART_VER; }catch(e){} }
+function initArt(){
+  loadArt('bg','assets/bg.png');
+  ['red','green','purple','blue'].forEach(function(t){ loadArt('bloom-'+t,'assets/blooms/'+t+'.png'); });
+  loadArt('ball','assets/ball.png'); loadArt('launcher','assets/launcher.png'); loadArt('basket','assets/basket.png');
+  try{ POWER_ORDER.forEach(function(k){ loadArt('gardener-'+k,'assets/gardeners/'+k+'.png'); }); }catch(e){}
+}
 function saveProg(){ LS.set('nd_prog', JSON.stringify(PROG)); }
 
 /* audio */
@@ -573,8 +589,8 @@ function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; lastTs=ts;
 function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
   // bg (screen space — fills the view even when the world is zoomed on the finish)
-  var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#12180f'); g.addColorStop(0.7,'#0a0e08'); g.addColorStop(1,'#05070a');
-  ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  if(ART.bg){ ctx.drawImage(ART.bg,0,0,VW,VH); }
+  else { var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#12180f'); g.addColorStop(0.7,'#0a0e08'); g.addColorStop(1,'#05070a'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH); }
 
   // ===== WORLD (screen shake + finale camera) =====
   ctx.save();
@@ -585,7 +601,9 @@ function render(){ if(!ctx||!G)return;
   for(i=0;i<G.pegs.length;i++){ pg=G.pegs[i]; drawPeg(pg); }
   drawBins();
   drawBucket();
-  for(i=0;i<G.balls.length;i++){ b=G.balls[i]; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1.5; ctx.stroke(); }
+  for(i=0;i<G.balls.length;i++){ b=G.balls[i];
+    if(ART.ball){ var _bs=b.r*2.8; ctx.drawImage(ART.ball,b.x-_bs/2,b.y-_bs/2,_bs,_bs); }
+    else { ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1.5; ctx.stroke(); } }
   // expanding rings (burst + finale shockwaves)
   for(i=0;i<G.rings.length;i++){ var rr=G.rings[i]; ctx.globalAlpha=Math.max(0,rr.life)*0.55; ctx.strokeStyle='#f5d38a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(rr.x,rr.y,rr.rad,0,7); ctx.stroke(); } ctx.globalAlpha=1;
   for(i=0;i<G.sparks.length;i++){ s=G.sparks[i]; ctx.globalAlpha=Math.max(0,s.life); ctx.fillStyle=s.col; ctx.beginPath(); ctx.arc(s.x,s.y,2.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
@@ -619,6 +637,8 @@ function drawPeg(pg){ var c=pegColour(pg.type);
     ctx.shadowBlur=0; ctx.fillStyle='#fffdf4'; ctx.beginPath(); ctx.arc(0,0,pg.r*0.5*s,0,7); ctx.fill();
     ctx.restore(); return;
   }
+  var _bart=ART['bloom-'+pg.type];
+  if(_bart){ var _sz=pg.r*2.9; ctx.drawImage(_bart,-_sz/2,-_sz/2,_sz,_sz); ctx.restore(); return; }
   if(pg.type==='red'){ ctx.shadowColor='rgba(229,96,77,.85)'; ctx.shadowBlur=13; }
   else if(pg.type==='green'){ ctx.shadowColor='rgba(122,179,86,.7)'; ctx.shadowBlur=8; }
   else if(pg.type==='purple'){ ctx.shadowColor='rgba(181,125,224,.6)'; ctx.shadowBlur=7; }
@@ -633,6 +653,7 @@ function drawPeg(pg){ var c=pegColour(pg.type);
   ctx.restore();
 }
 function drawBucket(){ ctx.save(); ctx.translate(G.bucketX,BUCKET_Y);
+  if(ART.basket){ var _bw=BUCKET_W*1.35, _bh=BUCKET_H*2.4; ctx.drawImage(ART.basket,-_bw/2,-6,_bw,_bh); ctx.restore(); return; }
   ctx.fillStyle='#6b4a2b'; ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(-BUCKET_W/2,0); ctx.lineTo(BUCKET_W/2,0); ctx.lineTo(BUCKET_W/2-8,BUCKET_H); ctx.lineTo(-BUCKET_W/2+8,BUCKET_H); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.fillStyle='rgba(122,179,86,.3)'; ctx.fillRect(-BUCKET_W/2+4,2,BUCKET_W-8,5);
@@ -677,6 +698,7 @@ function boot(){
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
+  initArt();
   tap('b-play', function(){ buildLevels(); show('s-levels'); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
@@ -724,7 +746,8 @@ if(/[?&]ndtest=1/.test(location.search)){
     winLevel:function(){ return winLevel(); }, winDom:function(){ return {fever:document.getElementById('win-fever').style.display, bonus:document.getElementById('win-bonus').innerHTML, title:document.getElementById('win-title').textContent, score:document.getElementById('win-score').textContent}; },
     equip:function(k){ if(POWERS[k]){ EQUIPPED=k; if(G)G.character=k; } return EQUIPPED; }, character:function(){ return G?G.character:EQUIPPED; }, powers:function(){ return Object.keys(POWERS); },
     renderChars:function(){ renderChars(); return document.getElementById('char-list').children.length; }, ballCount:function(){ return G?G.balls.length:0; }, pegTypes:function(){ var c={red:0,green:0,blue:0,purple:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; },
-    split:function(){ splitBall(270,300,{vx:1,vy:4}); return G.balls.length; }, launchNow:function(a){ aim.angle=a||0; launch(); return G.balls.length; }
+    split:function(){ splitBall(270,300,{vx:1,vy:4}); return G.balls.length; }, launchNow:function(a){ aim.angle=a||0; launch(); return G.balls.length; },
+    artKeys:function(){ return Object.keys(ART); }, setArt:function(k){ var c=document.createElement("canvas"); c.width=c.height=8; var g=c.getContext("2d"); g.fillStyle="#f0f"; g.fillRect(0,0,8,8); ART[k]=c; return Object.keys(ART).length; }
   };
 }
 boot();
