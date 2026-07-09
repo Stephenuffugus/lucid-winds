@@ -63,6 +63,12 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .win-stat{display:flex; justify-content:space-between; width:100%; max-width:320px; margin:6px auto; font-size:16px; padding:8px 4px; border-bottom:1px solid var(--line)}
 .win-stat b{color:var(--gold)}
 .sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+.win-fever{margin-top:10px; font-size:17px; font-weight:800; color:#0d100c; background:linear-gradient(90deg,#c8a84b,#f2d98a,#c8a84b); padding:7px 16px; border-radius:20px; letter-spacing:.02em; animation:feverPulse 1s ease-in-out infinite}
+@keyframes feverPulse{0%,100%{transform:scale(1); box-shadow:0 0 14px rgba(200,168,75,.5)}50%{transform:scale(1.05); box-shadow:0 0 26px rgba(242,217,138,.8)}}
+.win-bonus{margin-top:8px; width:100%; max-width:320px; display:flex; flex-direction:column; gap:2px}
+.win-bonus .wb{display:flex; justify-content:space-between; font-size:13.5px; color:var(--muted)}
+.win-bonus .wb b{color:var(--gold); font-variant-numeric:tabular-nums}
+.win-bonus .wb.fever b{color:#f2d98a}
 </style>
 </head>
 <body>
@@ -126,6 +132,8 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="font-size:54px" id="win-emoji">🏆</div>
     <h2 class="sc-h" style="font-size:30px;margin-top:6px" id="win-title">Meadow cleared!</h2>
     <div style="font-size:15px;color:var(--muted);margin-top:4px" id="win-sub"></div>
+    <div id="win-fever" class="win-fever" style="display:none">🌸 BLOOM FEVER — FULL BLOOM! 🌸</div>
+    <div id="win-bonus" class="win-bonus"></div>
     <div style="width:100%;max-width:320px;margin-top:14px">
       <div class="win-stat"><span>Score</span><b id="win-score">0</b></div>
       <div class="win-stat"><span>Best</span><b id="win-best">—</b></div>
@@ -420,17 +428,35 @@ function drawBins(){
   }
 }
 
-function winLevel(){ if(!G||G.phase==='over')return; G.phase='over'; running=false;
+function winLevel(){ if(!G||G.phase==='over')return; G.phase='over';
+  // ===== end-of-level bonuses =====
+  var fullClear = (G.pegs.length===0);                 // every peg popped, not just reds
+  var base=G.score, overflow=G.ballsLeft*1500, subtotal=base+overflow;
+  var fever = fullClear ? Math.round(subtotal*0.5) : 0;   // Bloom Fever = +50%
+  G.score = subtotal + fever;
   var key='L'+G.li; PROG.cleared[key]=1; var prev=PROG.best[key]||0; var isBest=false;
   if(G.score>prev){ PROG.best[key]=G.score; isBest=true; } saveProg();
-  var granted=0; var amt=Math.min(12, 4+Math.floor(G.li/1)); try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'nectardrop:win')||0; }catch(e){}
-  $('win-title').textContent=(G.ballsLeft>0?'Meadow cleared!':'Cleared!');
+  var granted=0; var amt=Math.min(12, 4+Math.floor(G.li/1)+(fullClear?2:0)); try{ if(window._sbCapEarn) granted=window._sbCapEarn(amt,'nectardrop:win')||0; }catch(e){}
+  // ===== populate the win card =====
+  $('win-title').textContent=(fullClear?'Full bloom!':(G.ballsLeft>0?'Meadow cleared!':'Cleared!'));
   $('win-sub').textContent=G.L.name+' · '+G.ballsLeft+' pollen to spare';
-  $('win-score').textContent=G.score;
-  $('win-best').textContent=(PROG.best[key]||G.score);
+  var fev=$('win-fever'); if(fev) fev.style.display=fullClear?'':'none';
+  var wb=$('win-bonus'); if(wb){ var hh='';
+    if(overflow>0) hh+='<div class="wb"><span>Pollen to spare ×'+G.ballsLeft+'</span><b>+'+overflow.toLocaleString()+'</b></div>';
+    if(fever>0) hh+='<div class="wb fever"><span>Bloom Fever +50%</span><b>+'+fever.toLocaleString()+'</b></div>';
+    wb.innerHTML=hh; }
+  $('win-score').textContent=G.score.toLocaleString?G.score.toLocaleString():G.score;
+  $('win-best').textContent=(PROG.best[key]||G.score).toLocaleString?(PROG.best[key]||G.score).toLocaleString():(PROG.best[key]||G.score);
   $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
-  $('win-emoji').textContent=isBest?'🏅':'🏆';
-  sfx('win'); setTimeout(function(){ show('s-win'); },700);
+  $('win-emoji').textContent=fullClear?'🌸':(isBest?'🏅':'🏆');
+  // ===== celebration: petal rain during the hold (loop keeps rendering) =====
+  if(fullClear){
+    G.flash=0.9; G.shake.t=20; G.shake.mag=16;
+    for(var i=0;i<64;i++){ G.sparks.push({x:Math.random()*VW, y:-10-Math.random()*90, vx:(Math.random()-0.5)*2, vy:1+Math.random()*3, life:1.6, col:i%2?'#e58fa0':'#c8a84b'}); }
+    floater(VW/2, VH*0.42, '★ FULL BLOOM ★');
+  }
+  sfx('win');
+  setTimeout(function(){ running=false; show('s-win'); }, fullClear?1500:700);
 }
 function loseLevel(){ if(!G||G.phase==='over')return; G.phase='over'; running=false;
   $('lose-sub').textContent=G.redsLeft+' red bloom'+(G.redsLeft>1?'s':'')+' left on '+G.L.name;
@@ -606,7 +632,8 @@ if(/[?&]ndtest=1/.test(location.search)){
     fx:function(){ return {flash:G.flash, freeze:G.freeze, shakeMag:G.shake?G.shake.mag:0, rings:G.rings?G.rings.length:0, finaleActive:G.finale?G.finale.active:false, camz:G.cam?G.cam.z:0}; },
     render:function(){ return render(); }, stepFx:function(){ return stepFx(); }, checkFinale:function(){ return checkFinale(); },
     bins:function(){ return G.bins.map(function(b){ return {pts:b.pts,mult:b.mult,x0:Math.round(b.x0),x1:Math.round(b.x1),flash:b.flash}; }); },
-    award:function(x){ return awardBin(x); }, BIN_Y:BIN_Y
+    award:function(x){ return awardBin(x); }, BIN_Y:BIN_Y,
+    winLevel:function(){ return winLevel(); }, winDom:function(){ return {fever:document.getElementById('win-fever').style.display, bonus:document.getElementById('win-bonus').innerHTML, title:document.getElementById('win-title').textContent, score:document.getElementById('win-score').textContent}; }
   };
 }
 boot();
