@@ -1,0 +1,21 @@
+<!-- Pollen Panic · Sheet 2: Sheet 2 — Pests, States, Drones, Sunberry -->
+<!-- Copy everything below into your image generator to make this ONE sheet. -->
+
+STYLE — LUMINOUS VECTOR NOCTURNE. Bright, clean modern-vector illustration for a midnight-garden arcade maze-chaser (Pac-Man energy). Crisp flat vector shapes with smooth cel-shaded gradients, subtle ambient occlusion under forms, glossy specular bead-shine catchlights on eyes and shells, and thin confident ink-line accents — polished mobile-arcade art, NOT paper-craft, felt, or collage. Every character carries a soft bioluminescent rim-glow: warm gold key-light on one side, cool moon-cyan glow on the other. Palette: near-black garden base #0e140d, electric sage #7ab356, luminous lime #b7e86f, antique gold #c8a84b, warm cream #e8dcc8, rose-glow accent #e58fa0, moon-cyan glow #7fd8ff. Bugs and garden pests are rounded, chunky, cute-but-sophisticated with big readable silhouettes and gentle inner glow. Cozy-menacing pests are mischievous and never scary; nothing grim, no gore, no fangs, no horror — kid-friendly throughout. Chunky arcade readability at tiny sizes, one clean central silhouette per cell first, generous padding. No photorealism, no 3D render, no visible pixels or dithering, no text labels, no captions, no borders or frames, no UI words unless a logo cell states exact text. Keep shapes bold and simple enough that each cropped asset compresses cleanly under 150KB.
+
+Create one sprite sheet. File: pollen_panic_pests.png. Grid: 3 columns x 3 rows (9 cells). Cell 512x512 px. Master 1536x1536 px.
+
+KNOCKOUT: cutout sprite sheet — flat magenta #FF00FF background filling every cell for clean knockout. Absolutely NO magenta anywhere inside the artwork or its glow. One subject per cell, centered with even padding.
+
+ORIENTATION: pests and drones face FORWARD (toward the viewer), single upright pose each — the engine gently bobs them in code, so one calm centered pose is correct. Keep them cozy-menacing: mischievous and cheeky, never frightening.
+
+CELLS (left-to-right, top row, middle row, bottom row):
+1. pest_aphid — Fat pear-shaped aphid with a coral-red body #E0533D and a soft lighter belly gradient, six slim curling legs, two little antennae, two big round white eyes with tiny pupils, and a cheeky smirk. Mischievous not scary, faint glow, facing forward.
+2. pest_wasp — Golden wasp #F2B233 with a charcoal-banded striped abdomen, two buzzing translucent cyan-tinted wings with thin venation, a tiny blunt stinger, slim legs, and grumpy-cute narrowed eyes with catchlights. Sassy attitude, facing forward.
+3. pest_mantis — Teal praying mantis #52B8C4 with an angular diamond body, raised curved sickle forearms held up, a triangular head with big glossy eyes, and slim jointed legs. Sleek and clever, cozy-menacing, facing forward.
+4. pest_snail — Mauve snail #C77CB0 with a glossy coiled spiral shell rendered in clean concentric gradient bands, a plump glossy foot, two eye-stalks with bead-eyes, and a smug little smile. Slow and cheeky, facing forward.
+5. pest_wilted — Universal FRIGHTENED / edible state (reused by any scared pest AND scared drones): a drooping grey-blue sprout #7C93C4 with two limp wilting leaves, a single big woeful dot-eye, hunched and soft. Sad-cute and vulnerable, faint cool glow, facing forward.
+6. pest_eaten_puff — Defeated pest drifting home: an airy white dandelion seed-puff sphere with fine radiating filament spokes and a tiny cream core, soft translucent glow, weightless and ghostly-gentle. No face, centered.
+7. drone_sleep — Dozing sprout seed-pod #7FA05B, bean-shaped with a soft central seam, eyes closed in a content curl, and a tiny glowing gold letter z floating just above it. Peaceful, gentle glow, upright.
+8. drone_awake — Awakened sprout seed-pod, brighter lime #9BC53D, rounder and perkier, with two shiny black bead-eyes wide and eager, the same central seam, and a faint energized rim-glow. Alert and cute, facing forward.
+9. sunberry_fruit — Bonus berry cluster: three plump glossy marigold-gold berries #F2B233 bunched together with rich specular catchlights, a small fresh green leaf sprig and a tiny stem on top, and a warm gold glow. Tempting and juicy, centered.
