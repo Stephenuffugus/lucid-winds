@@ -417,7 +417,7 @@ var LWHUB = "https://lucidwinds.com/";
 var SHELL_BASE = "https://lucidwinds.com/play/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
-var CATS = [["all","All"],["new","New"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"]];
+var CATS = [["all","All"],["new","New"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["word","Word"],["math","Math"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"],["indev","In Development"]];
 // External app (opens in a NEW TAB on its own origin, not a /play/ shell):
 // 6th element = external URL, 7th = custom thumbnail URL. card() detects the
 // 6th slot and switches to target=_blank + the custom thumb. Pom Pond uses
@@ -445,11 +445,11 @@ var GAMES = [
  ["bleedinghearts","Bleeding Hearts","card","Classic Hearts. Dodge hearts and the Queen of Spades."],
  ["gardenspades","Garden Spades","card","Classic Spades. Bid your tricks, spades is trump."],
  ["juniper","Garden Rummy","card","Rummy: draw, discard, build sets and runs. Go out first."],
- ["merge","2048","puzzle","Swipe to merge same-number tiles. Reach 2048."],
+ ["merge","2048","math","Swipe to merge same-number tiles. Reach 2048."],
  ["lights","Lights Out","puzzle","Tap a light to toggle it and its four neighbors."],
  ["mines","Minesweeper","puzzle","Dig safely. Numbers show adjacent mines."],
- ["sudoku","Sudoku","puzzle","Fill every row, column and box with 1-9."],
- ["wordsearch","Word Search","puzzle","Swipe across letters to spell words. Themed packs."],
+ ["sudoku","Sudoku","math","Fill every row, column and box with 1-9."],
+ ["wordsearch","Word Search","word","Swipe across letters to spell words. Themed packs."],
  ["rootrush","Root Rush","puzzle","Slide roots to free a sprouting seed. 65 levels."],
  ["hanoi","Tower of Hanoi","puzzle","Stack every disc on the far peg."],
  ["slider","15 Puzzle","puzzle","Slide tiles into the empty space. 3×3 to 5×5."],
@@ -460,13 +460,13 @@ var GAMES = [
  ["sokoban","Sokoban","puzzle","Push crates onto targets. Crates only push."],
  ["petalfall","Block Drop","puzzle","Arrange falling blocks to clear rows."],
  ["gardenlines","Garden Lines","puzzle","Place tiles to build matching lines."],
- ["kakuro","Kakuro","puzzle","Fill cells so each run adds to its clue."],
+ ["kakuro","Kakuro","math","Fill cells so each run adds to its clue."],
  ["mosaic","Mosaic Garden","puzzle","Pull colored tiles to fill mosaic rows."],
  ["rootflow","Root Flow","puzzle","Draw paths to connect matching roots."],
  ["rootmaze","Root Maze","puzzle","Navigate the shifting maze before the AI."],
  ["petalmatch","Petal Match","puzzle","Swap gems to make lines. Chain cascades."],
- ["sprout","Word Sprout","puzzle","Find the hidden 5-letter word in 6 guesses."],
- ["vinewords","Vine Words","puzzle","Connect adjacent letters to find words. 2-min timer."],
+ ["sprout","Word Sprout","word","Find the hidden 5-letter word in 6 guesses."],
+ ["vinewords","Vine Words","word","Connect adjacent letters to find words. 2-min timer."],
  ["chess","Chess","board","Classic chess vs AI."],
  ["c4","Four in a Row","board","Drop pieces to connect four in a row."],
  ["battleship","Sea Battle","board","Hunt hidden vessels on a 10×10 grid."],
@@ -477,14 +477,14 @@ var GAMES = [
  ["seedsow","Mancala","board","Mancala: sow seeds, capture into your store."],
  ["vinecross","Five in a Row","board","Get five in a row before the AI."],
  ["livingstones","Go (Living Stones)","board","Go: 24 puzzles + full MCTS play."],
- ["trellis","Word Trellis","board","Word-builder on a 15×15 grid vs AI."],
+ ["trellis","Word Trellis","word","Word-builder on a 15×15 grid vs AI."],
  ["pollen","Master Pollinator","board","Engine builder: collect pollen, race to 15 Growth."],
  ["set","Three Sisters","pattern","Tap 3 cards where each trait is all-same or all-different."],
  ["stopten","Stop at Ten","pattern","Start the clock. Stop it at exactly 10.00s."],
  ["memory","Memory","pattern","Flip two cards a turn. Match all pairs."],
  ["simon","Echo","pattern","Watch the pattern flash, then repeat it."],
  ["dailybloom","Daily Bloom","pattern","Daily cognitive workout. 8 exercises, 4 minutes."],
- ["numbergarden","Fast Math","pattern","60-second arithmetic drill. Add, subtract, multiply."],
+ ["numbergarden","Fast Math","math","60-second arithmetic drill. Add, subtract, multiply."],
  ["recall","Memory Meadow","pattern","Watch symbols, count back, tap the ones you saw."],
  ["pottingbench","Speed Sort","pattern","Speed card sorting. Match any attribute to a pile."],
  ["yahtzee","Yatzy","dice","Five-dice classic. Roll 3 times, fill 13 categories."],
@@ -568,8 +568,12 @@ function renderGarden(cat){
   // Studio satellites (non-hub FEATURED) are the "newest" games. They show
   // in the garden under the New tab (and All) instead of a separate strip at
   // the top, so the newest games mix in with the rest like the rest.
-  var sats = (cat==="all"||cat==="new") ? FEATURED.filter(function(g){return !g.hub;}) : [];
-  var list = (cat==="new") ? [] : GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
+  // In Development tab = the beta satellites (playable but unfinished), pulled
+  // out of All/New so they read as works-in-progress, mirroring the app.
+  var sats = (cat==="indev")
+    ? FEATURED.filter(function(g){return !g.hub && g.beta;})
+    : ((cat==="all"||cat==="new") ? FEATURED.filter(function(g){return !g.hub && !g.beta;}) : []);
+  var list = (cat==="new"||cat==="indev") ? [] : GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
   document.getElementById('garden').innerHTML =
     sats.map(function(g){return card(g,true);}).join('') +
     list.map(function(g){return card(g,false);}).join('');
