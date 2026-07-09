@@ -84,8 +84,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">🚀</div><div>Tap to <b>launch</b> the pollen bead up the lane onto the table.</div></div>
+    <div class="helprow"><div class="hi">🚀</div><div><b>Hold to charge</b> the plunger, release to fire the bead up the lane — more charge, harder shot. (Keyboard: hold <b>Space</b>.)</div></div>
+    <div class="helprow"><div class="hi">⭐</div><div>A flower lights up as you launch — strike that <b class="hl">lit bumper first</b> for a <b>Skill Shot</b> bonus.</div></div>
     <div class="helprow"><div class="hi">👆</div><div>Tap the <b>left half</b> of the screen for the left flipper, the <b>right half</b> for the right. (Keyboard: ← and → , or Z and /.)</div></div>
+    <div class="helprow"><div class="hi">🤚</div><div><b class="hl">Nudge</b> the table to save a doomed bead — two-finger tap, or keys <b>Q</b> / <b>E</b> / <b>W</b>. But nudge too much and the table <b>TILTS</b>: flippers freeze and the ball is lost.</div></div>
     <div class="helprow"><div class="hi">🌻</div><div>Hit the <b class="hl">flower bumpers</b> to score and grow the plant. The green <b>growth ribbon</b> on the right fills as you go.</div></div>
     <div class="helprow"><div class="hi">🌸</div><div>Fill the ribbon for <b class="hl">Bloom Multiball</b> — the table erupts with extra beads and huge score.</div></div>
     <div class="helprow"><div class="hi">🌿</div><div>The <b class="hl">moss net</b> glows across the drain and bounces a doomed bead back — once per ball, and always on your last ball.</div></div>
@@ -133,7 +135,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.0';
+var BUILD='v1.1';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
@@ -164,11 +166,18 @@ function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>1
 
 /* ===== table geometry ===== */
 var BALLR=11, GRAV=1500, DRAINY=902;
+// The bead waits upper-right and a CHARGED plunge fires it up-and-left into the
+// field — power scales launch strength. (A literal vertical shooter lane fights our
+// radial collision model — a ball rising dead-on bounces straight back; a true
+// habitrail lane is deferred to the P1 ramp system's detach-and-tween.)
+var LANE_X=412, LANE_Y0=700;
+var PLUNGE_VX=150, PLUNGE_VX_R=170;   // launch vx = -(VX + power*VX_R)  (up-and-LEFT)
+var PLUNGE_VY=1010, PLUNGE_VY_R=430;  // launch vy = -(VY + power*VY_R)
 var WALLS=[
   // clean field boundary — inlanes funnel straight onto the flipper pivots
   [60,150,60,700],[60,700,180,842],            // left wall + left inlane -> left pivot
   [470,150,470,700],[470,700,350,842],         // right wall + right inlane -> right pivot
-  [60,150,140,108],[140,108,400,108],[400,108,470,150]  // top arc (approx)
+  [60,150,140,108],[140,108,400,108],[400,108,470,150]  // top arc
 ];
 var BUMPERS=[
   {x:150,y:340,r:24,kick:150,sc:120,lit:0},
@@ -184,9 +193,12 @@ var GROWTH_MAX=22;
 
 /* ===== game state ===== */
 var G=null, cv, ctx, running=false, lastTs=0;
-function serveBall(){ // hold the bead upper-right, launched up-and-left into the field
-  G.balls.push({x:412,y:700,vx:0,vy:0,r:BALLR,inLane:true,trail:[]});
-  G.awaitLaunch=true; G.netTime=(G.ball>=G.maxBall||G.mode==='zen')?999:8; // net armed
+function serveBall(){ // rest the bead at the bottom of the shooter lane, ready to plunge
+  G.balls.push({x:LANE_X,y:LANE_Y0,vx:0,vy:0,r:BALLR,inLane:true,trail:[]});
+  G.awaitLaunch=true; G.plunge=0; G.plungeHold=false;
+  G.skillLit=-1; G.skillWin=0; G.skillDone=false;
+  G.tilt=0; G.tiltWarned=false; G.tiltOut=0;              // tilt meter resets each new ball
+  G.netTime=(G.ball>=G.maxBall||G.mode==='zen')?999:8;    // net armed
 }
 function newGame(mode){
   var rng;
@@ -196,7 +208,9 @@ function newGame(mode){
   LFLIP.a=LFLIP.pa=LFLIP.restA; LFLIP.up=false; RFLIP.a=RFLIP.pa=RFLIP.restA; RFLIP.up=false;
   for(var i=0;i<BUMPERS.length;i++)BUMPERS[i].lit=0; for(i=0;i<SLINGS.length;i++)SLINGS[i].lit=0;
   G={ mode:mode, rng:rng, balls:[], score:0, growth:0, blooms:0, combo:0, bestCombo:0, mult:1, ball:1, maxBall:mode==='classic'||mode==='daily'?3:99,
-      awaitLaunch:false, netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
+      awaitLaunch:false, plunge:0, plungeHold:false, skillLit:-1, skillWin:0, skillDone:false,
+      tilt:0, tiltOut:0, tiltWarned:false, nudgeCd:0, jolt:0, joltDir:0,
+      netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
   serveBall(); show('s-play');
 }
 function sway(){ return 0; }
@@ -247,7 +261,7 @@ function physics(dt){
       for(var w=0;w<WALLS.length;w++) segHit(b,WALLS[w],0.36);
       for(var m=0;m<BUMPERS.length;m++) circHit(b,BUMPERS[m],0.28,BUMPERS[m].kick,(function(mm){return function(){ onBump(mm,'bump'); };})(m));
       for(var g=0;g<SLINGS.length;g++) circHit(b,SLINGS[g],0.3,SLINGS[g].kick,(function(gg){return function(){ onBump(gg,'sling'); };})(g));
-      flipHit(b,LFLIP); flipHit(b,RFLIP);
+      if(G.tiltOut<=0){ flipHit(b,LFLIP); flipHit(b,RFLIP); }   // TILT kills the flippers
     }
   }
   // trails
@@ -263,6 +277,10 @@ function physics(dt){
 function onBump(idx,kind){ var arr=kind==='bump'?BUMPERS:SLINGS, o=arr[idx]; o.lit=1;
   G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo; G.comboT=1.4;
   var pts=Math.round(o.sc*G.mult*(G.multiball?2:1)); G.score+=pts;
+  // skill shot: first strike on the lit bumper inside the plunge window pays out
+  if(kind==='bump' && !G.skillDone && G.skillWin>0 && idx===G.skillLit){
+    G.skillDone=true; G.skillLit=-1; G.skillWin=0; var sb=2500; G.score+=sb;
+    float(o.x,o.y-o.r-30,'SKILL +'+sb); sfx('save'); G.flash=Math.max(G.flash,0.4); haptic(16); }
   if(kind==='bump'){ G.growth++; if(G.growth>=GROWTH_MAX) triggerBloom(); }
   burst(o.x,o.y,4+(kind==='bump'?4:2), kind==='bump'?'#e8c65a':'#7ab356');
   float(o.x,o.y-o.r-4,'+'+pts); sfx(kind==='sling'?'sling':'bump', G.combo); haptic(6);
@@ -284,7 +302,23 @@ function drainBall(i){ var b=G.balls[i]; burst(b.x,DRAINY,8,'#5a4632'); G.balls.
   }
 }
 function launch(){ if(!G||!G.awaitLaunch)return; var b=G.balls[0]; if(!b||!b.inLane)return;
-  b.inLane=false; b.vx=-200-Math.random()*90; b.vy=-1160-Math.random()*90; G.awaitLaunch=false; sfx('launch'); haptic(10); }
+  var power=Math.max(0.06,Math.min(1,G.plunge||0));
+  b.inLane=false; b.vx=-(PLUNGE_VX+power*PLUNGE_VX_R); b.vy=-(PLUNGE_VY+power*PLUNGE_VY_R);
+  G.awaitLaunch=false; G.plungeHold=false;
+  // arm the skill shot: one flower bumper lights — strike it FIRST within the window to score
+  G.skillLit=Math.floor(G.rng()*BUMPERS.length); G.skillWin=2.2; G.skillDone=false;
+  sfx('launch'); haptic(10); }
+// Nudge is the honest top-down stand-in for FX body-english: a one-shot impulse on
+// every live bead. Overuse spikes the tilt meter; 100 = TILT (dead flippers, no save).
+function nudge(dir){ if(!G||G.phase!=='play'||G.tiltOut>0||G.nudgeCd>0)return;
+  var dx=dir==='left'?-190:dir==='right'?190:0, dy=dir==='up'?-190:0, moved=false;
+  for(var i=0;i<G.balls.length;i++){ var b=G.balls[i]; if(b.inLane)continue; b.vx+=dx; b.vy+=dy; moved=true; }
+  G.nudgeCd=0.12; G.tilt=Math.min(120,G.tilt+40); G.jolt=6; G.joltDir=dir==='left'?-1:dir==='right'?1:0;
+  if(G.shake<4)G.shake=4; sfx('flip'); haptic(6);
+  if(G.tilt>=70 && !G.tiltWarned){ G.tiltWarned=true; float(VW/2,150,'⚠ DANGER'); }
+  if(G.tilt>=100 && G.tiltOut<=0){ G.tiltOut=3.0; G.tilt=100; float(VW/2,182,'TILT'); sfx('drain'); haptic(30);
+    LFLIP.up=false; RFLIP.up=false; G.netTime=0; }   // flippers die + net disarmed for the rest of this ball
+  return moved; }
 
 function burst(x,y,n,col){ for(var i=0;i<n;i++){ var a=Math.random()*6.28, sp=50+Math.random()*150; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:0.9,col:col}); } }
 function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.3}); }
@@ -292,6 +326,12 @@ function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.3}); }
 /* ===== update ===== */
 function step(dt){ if(!G)return; G.t+=dt;
   if(G.phase==='play') physics(dt);
+  if(G.awaitLaunch && G.plungeHold){ G.plunge=Math.min(1,(G.plunge||0)+dt/0.9); }   // hold ramps power 0->1 over 0.9s
+  if(G.nudgeCd>0){ G.nudgeCd-=dt; if(G.nudgeCd<0)G.nudgeCd=0; }
+  if(G.jolt>0){ G.jolt-=dt*40; if(G.jolt<0)G.jolt=0; }
+  if(G.tilt>0 && G.tiltOut<=0){ G.tilt-=22*dt; if(G.tilt<0)G.tilt=0; }
+  if(G.tiltOut>0){ G.tiltOut-=dt; if(G.tiltOut<0)G.tiltOut=0; }
+  if(G.skillWin>0){ G.skillWin-=dt; if(G.skillWin<=0){ G.skillWin=0; G.skillLit=-1; } }
   if(G.multiball){ G.mbTime-=dt; if(G.mbTime<=0 && G.balls.length<=1)G.multiball=false; }
   if(G.netTime>0 && G.netTime<900){ G.netTime-=dt; if(G.netTime<0)G.netTime=0; }
   if(G.comboT!=null){ G.comboT-=dt; if(G.comboT<=0){ G.combo=0; G.mult=1; G.comboT=null; } }
@@ -320,7 +360,9 @@ function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05)dt=0.05; if(G)step(dt); render(); requestAnimationFrame(loop); }
 function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
-  ctx.save(); if(SET.shake && G.shake>0.4){ ctx.translate((Math.random()*2-1)*G.shake,(Math.random()*2-1)*G.shake); }
+  ctx.save();
+  var jx=(G.jolt||0)*(G.joltDir||0), jy=-(G.jolt||0)*0.3;
+  if(SET.shake && (G.shake>0.4||G.jolt>0)){ ctx.translate((Math.random()*2-1)*G.shake+jx,(Math.random()*2-1)*G.shake+jy); }
   // playfield backdrop
   var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#12180f'); bg.addColorStop(0.5,'#0b100a'); bg.addColorStop(1,'#080b06'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
   var lamp=ctx.createRadialGradient(VW/2,260,20,VW/2,260,460); lamp.addColorStop(0,'rgba(200,168,75,0.13)'); lamp.addColorStop(1,'rgba(200,168,75,0)'); ctx.fillStyle=lamp; ctx.fillRect(0,0,VW,VH);
@@ -332,6 +374,13 @@ function render(){ if(!ctx||!G)return;
   // bumpers (flower heads)
   for(var m=0;m<BUMPERS.length;m++) drawBumper(BUMPERS[m],'#e8c65a','#8a6d1e');
   for(var g=0;g<SLINGS.length;g++) drawBumper(SLINGS[g],'#7ab356','#3f6b34');
+  // skill-shot ring on the lit bumper during the plunge window
+  if(G.skillLit>=0 && G.skillWin>0){ var sk=BUMPERS[G.skillLit]; ctx.save(); ctx.globalAlpha=0.45+0.45*Math.sin(G.t*8); ctx.strokeStyle='#f5ebd0'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(sk.x,sk.y,sk.r+9,0,7); ctx.stroke(); ctx.restore(); }
+  // charge meter beside the waiting bead
+  if(G.awaitLaunch){ var pw=Math.min(1,G.plunge||0);
+    ctx.save(); ctx.fillStyle='rgba(20,28,18,0.5)'; ctx.fillRect(452,640,8,80);
+    var cg=ctx.createLinearGradient(0,720,0,640); cg.addColorStop(0,'#7ab356'); cg.addColorStop(0.6,'#c8a84b'); cg.addColorStop(1,'#e5604d');
+    ctx.fillStyle=cg; ctx.fillRect(452,720-80*pw,8,80*pw); ctx.restore(); }
   // moss net
   drawNet();
   // flippers
@@ -354,7 +403,15 @@ function render(){ if(!ctx||!G)return;
   // growth ribbon (right rail)
   drawGrowth();
   // launch prompt
-  if(G.awaitLaunch){ ctx.textAlign='center'; ctx.globalAlpha=0.6+0.4*Math.sin(G.t*4); ctx.fillStyle='#c8a84b'; ctx.font='800 17px system-ui'; ctx.fillText('TAP TO LAUNCH', VW/2, 620); ctx.globalAlpha=1; }
+  if(G.awaitLaunch){ ctx.textAlign='center'; ctx.globalAlpha=0.55+0.35*Math.sin(G.t*4); ctx.fillStyle='#c8a84b'; ctx.font='800 16px system-ui';
+    ctx.fillText(G.plungeHold?'RELEASE TO LAUNCH':'HOLD TO CHARGE', VW/2, 640); ctx.globalAlpha=1; }
+  // tilt meter (bottom-left) — fills as you nudge; TILT freezes the flippers
+  if(G.tilt>0 || G.tiltOut>0){ var tw=90, tf=Math.min(1,G.tilt/100);
+    ctx.fillStyle='rgba(20,28,18,0.6)'; ctx.fillRect(16,VH-30,tw,8);
+    ctx.fillStyle=G.tiltOut>0?'#e5604d':(tf>0.7?'#e5604d':tf>0.4?'#c8a84b':'#7ab356'); ctx.fillRect(16,VH-30,tw*tf,8);
+    ctx.fillStyle='#8a9178'; ctx.font='700 10px system-ui'; ctx.textAlign='left'; ctx.fillText(G.tiltOut>0?'TILT':'TILT',16,VH-34); }
+  // red frame while tilted out
+  if(G.tiltOut>0){ ctx.save(); ctx.globalAlpha=0.4+0.3*Math.sin(G.t*18); ctx.strokeStyle='#e5604d'; ctx.lineWidth=8; ctx.strokeRect(4,4,VW-8,VH-8); ctx.restore(); }
 }
 function drawBumper(o,body,core){ var lit=Math.max(0,o.lit);
   ctx.save(); ctx.translate(o.x,o.y);
@@ -378,7 +435,7 @@ function drawNet(){ if(G.netTime<=0 && G.netFlash<=0)return; var y=DRAINY-6, a=(
   for(var i=0;i<5;i++){ var xx=244+i*10; ctx.beginPath(); ctx.arc(xx,y+3+Math.sin(i)*2,2,0,7); ctx.fillStyle='#a7d17a'; ctx.fill(); }
   ctx.restore();
 }
-function drawGrowth(){ var x=524, y0=120, y1=520, h=y1-y0, fill=G.growth/GROWTH_MAX;
+function drawGrowth(){ var x=30, y0=120, y1=520, h=y1-y0, fill=G.growth/GROWTH_MAX;
   ctx.save(); ctx.fillStyle='rgba(20,28,18,0.7)'; ctx.strokeStyle='#2a331f'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.rect(x-5,y0,10,h); ctx.fill(); ctx.stroke();
   var fg=ctx.createLinearGradient(0,y1,0,y0); fg.addColorStop(0,'#5c8f3f'); fg.addColorStop(1,'#a7d17a'); ctx.fillStyle=fg;
@@ -399,14 +456,20 @@ function shareIt(){ var url="https://lucidwinds.com/satellites/greenhouse-pinbal
 
 /* ===== input: left/right screen halves = flippers; tap launches ===== */
 function evX(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return (t.clientX-r.left)*VW/r.width; }
-function press(x){ if(!G||G.phase!=='play')return; if(G.awaitLaunch){ launch(); return; } if(x<VW/2)LFLIP.up=true; else RFLIP.up=true; }
-function releaseAll(){ LFLIP.up=false; RFLIP.up=false; }
-function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); press(evX(e)); }
-function onUp(e){ if(curScreen!=='s-play')return; e.preventDefault(); releaseAll(); }
+var _ptrs=0;
+function press(x){ if(!G||G.phase!=='play')return; if(G.awaitLaunch){ G.plungeHold=true; return; } if(x<VW/2)LFLIP.up=true; else RFLIP.up=true; }
+function releaseAll(){ LFLIP.up=false; RFLIP.up=false; if(G&&G.awaitLaunch&&G.plungeHold){ launch(); } }
+function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); _ptrs++;
+  if(_ptrs>=2){ nudge('up'); return; }              // second finger = nudge up (mobile body-english)
+  press(evX(e)); }
+function onUp(e){ if(curScreen!=='s-play')return; e.preventDefault(); if(_ptrs>0)_ptrs--; releaseAll(); }
 function onKey(e,down){ if(curScreen!=='s-play')return; var k=e.key;
-  if(k==='ArrowLeft'||k==='z'||k==='Z'){ if(down){ if(G.awaitLaunch)launch(); else LFLIP.up=true; } else LFLIP.up=false; e.preventDefault(); }
-  else if(k==='ArrowRight'||k==='/'||k==='.'){ if(down){ if(G.awaitLaunch)launch(); else RFLIP.up=true; } else RFLIP.up=false; e.preventDefault(); }
-  else if((k===' '||k==='ArrowUp') && down){ if(G.awaitLaunch)launch(); e.preventDefault(); }
+  if(k==='ArrowLeft'||k==='z'||k==='Z'){ if(!G.awaitLaunch)LFLIP.up=down; e.preventDefault(); }
+  else if(k==='ArrowRight'||k==='/'||k==='.'){ if(!G.awaitLaunch)RFLIP.up=down; e.preventDefault(); }
+  else if(k===' '||k==='ArrowUp'){ if(G.awaitLaunch){ if(down)G.plungeHold=true; else if(G.plungeHold)launch(); } e.preventDefault(); }
+  else if((k==='q'||k==='Q')&&down){ nudge('left'); e.preventDefault(); }
+  else if((k==='e'||k==='E')&&down){ nudge('right'); e.preventDefault(); }
+  else if((k==='w'||k==='W')&&down){ nudge('up'); e.preventDefault(); }
 }
 
 function boot(){
@@ -449,13 +512,32 @@ if(/[?&]gptest=1/.test(location.search)){
   window.PIN_DEV={ start:newGame, state:function(){return G;}, launch:launch,
     flip:function(side,up){ if(side==='l')LFLIP.up=up; else RFLIP.up=up; },
     step:function(dt){ step(dt||0.016); return {balls:G.balls.length,score:G.score,ball:G.ball,phase:G.phase,growth:G.growth,mb:G.multiball}; },
-    // auto: launch, then flip when a ball nears a flipper; run for N seconds
-    autoPlay:function(secs){ secs=secs||30; var t=0,launched=false;
-      while(G.phase==='play' && t<secs){ if(G.awaitLaunch){ launch(); }
-        // reactive flips
+    // ---- P0 plunger/skill probes ----
+    chargePlunge:function(p){ if(!G)return null; G.plunge=Math.max(0,Math.min(1,p==null?1:p)); G.plungeHold=false; launch(); var b=G.balls[0]; return b?{x:Math.round(b.x),y:Math.round(b.y),vy:Math.round(b.vy)}:null; },
+    apex:function(p){ if(!G)return null; G.plunge=Math.max(0,Math.min(1,p==null?1:p)); G.plungeHold=false; launch(); var mn=9999;
+      for(var i=0;i<500;i++){ step(0.008); var b=G.balls[0]; if(!b)break; if(b.y<mn)mn=b.y; if(b.vy>0 && i>4 && b.y>260)break; } return Math.round(mn); },
+    entrySpeed:function(p){ if(!G)return null; G.plunge=Math.max(0,Math.min(1,p==null?1:p)); G.plungeHold=false; launch();
+      for(var i=0;i<600;i++){ step(0.008); var b=G.balls[0]; if(!b)break; if(!b.inLane && b.x<478 && b.y<320) return Math.round(Math.sqrt(b.vx*b.vx+b.vy*b.vy)); } return null; },
+    skill:function(){ return G?{lit:G.skillLit,win:Math.round((G.skillWin||0)*100)/100,done:!!G.skillDone}:null; },
+    hitLitBumper:function(){ if(!G||G.skillLit<0)return null; onBump(G.skillLit,'bump'); return {score:G.score,done:!!G.skillDone}; },
+    // ---- P0 nudge/tilt probes ----
+    nudge:function(dir){ nudge(dir||'up'); return {tilt:Math.round(G.tilt),tiltOut:Math.round((G.tiltOut||0)*100)/100}; },
+    tiltState:function(){ return G?{tilt:Math.round(G.tilt),tiltOut:G.tiltOut,warned:!!G.tiltWarned}:null; },
+    // auto: charged launch, then flip when a ball nears a flipper; run for N seconds
+    autoPlay:function(secs){ secs=secs||30; var t=0;
+      while(G.phase==='play' && t<secs){ if(G.awaitLaunch){ G.plunge=0.75; G.plungeHold=false; launch(); }
         var lf=false,rf=false; for(var i=0;i<G.balls.length;i++){ var b=G.balls[i]; if(b.inLane)continue; if(b.y>770 && b.vy>0){ if(b.x<270)lf=true; else rf=true; } }
         LFLIP.up=lf; RFLIP.up=rf; step(0.02); t+=0.02; }
       return {phase:G.phase,score:G.score,ball:G.ball,blooms:G.blooms,balls:G.balls.length}; },
+    // regression baseline: NO-FLIP survivability — how long a bead lasts with zero
+    // intervention (stable yardstick; a perfect flipper bot never drains this table).
+    metrics:function(n){ n=n||6; newGame('zen'); var times=[];
+      for(var k=0;k<n;k++){ var g=0; while(!G.awaitLaunch && g++<200)step(0.02);   // wait for a served bead
+        if(G.awaitLaunch){ G.plunge=0.7; G.plungeHold=false; launch(); }
+        var t=0; while(G.balls.length>0 && !G.awaitLaunch && t<30){ step(0.02); t+=0.02; }
+        times.push(Math.round(t*100)/100); }
+      times.sort(function(a,b){return a-b;}); var md=times.length?times[Math.floor(times.length/2)]:0;
+      return {balls:times.length, median:md, min:times[0]||0, max:times[times.length-1]||0}; },
     ballPos:function(){ return G.balls.map(function(b){ return {x:Math.round(b.x),y:Math.round(b.y),lane:b.inLane}; }); },
     forceBloom:function(){ triggerBloom(); return G.blooms; }, render:render, mode:function(){return G?G.mode:null;} };
 }
