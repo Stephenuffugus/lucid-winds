@@ -240,7 +240,8 @@
       <button class="mode-btn" data-mode="versus"><span>Versus<small>pass &amp; play · 2 players</small></span><span class="meta">LOCAL</span></button>
     </div>
     <div class="seg-label">Endless difficulty</div>
-    <div class="seg" id="diffSeg"><button data-diff="casual">Casual</button><button data-diff="normal">Normal</button><button data-diff="hard">Hard</button></div>
+    <div class="seg" id="diffSeg"><button data-diff="easy">Easy</button><button data-diff="casual">Casual</button><button data-diff="normal">Normal</button><button data-diff="hard">Hard</button></div>
+    <div class="seg-hint" id="diffHint" style="font-size:11px;color:var(--ink-dim);margin-top:6px;text-align:center;line-height:1.4"></div>
     <div class="goals-card"><div class="goals-h"><span style="color:var(--ink);font-size:12px;letter-spacing:.04em">TODAY'S GOALS</span><span>resets daily</span></div><div id="missionList"></div></div>
     <button class="shop-link" id="shopLink">🎨 Border Shop</button>
     <button class="shop-link" id="exitLink" style="opacity:.8">← All Sky Wolf games</button>
@@ -323,6 +324,10 @@ const CONFIG={
   // per round at level L:  time = max(tmin, t0 - L*td)   seconds
   //                        tol  = max(cmin, c0 - L*cd)   dE pass threshold
   curves:{
+    // Easy (2026-07-08): an accessibility tier for kids, older players and
+    // anyone who wants a gentler pace — a much longer clock (16s start, never
+    // below 8s) and a forgiving match tolerance so "close" still counts.
+    easy:  {t0:16,td:0.10,tmin:8,  c0:44,cd:0.6,cmin:16},
     casual:{t0:11,td:0.16,tmin:4.5,c0:34,cd:0.9,cmin:11},
     normal:{t0:9, td:0.20,tmin:3.6,c0:30,cd:1.2,cmin:8 },
     hard:  {t0:7, td:0.28,tmin:2.7,c0:26,cd:1.6,cmin:6 }
@@ -657,7 +662,9 @@ $("shopBack").onclick=()=>{refreshMenu();show("menu");};$("shopLink").onclick=op
 function toMenu(){if(G)cancelAnimationFrame(G.raf);refreshMenu();show("menu");}
 document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>startGame(b.dataset.mode)));
 $("diffSeg").querySelectorAll("[data-diff]").forEach(b=>b.onclick=()=>{Store.s(K.diff,b.dataset.diff);renderDiff();});
-function renderDiff(){const d=Store.g(K.diff)||"normal";$("diffSeg").querySelectorAll("[data-diff]").forEach(b=>b.classList.toggle("on",b.dataset.diff===d));}
+function renderDiff(){const d=Store.g(K.diff)||"normal";$("diffSeg").querySelectorAll("[data-diff]").forEach(b=>b.classList.toggle("on",b.dataset.diff===d));
+  const hints={easy:"Easy · lots of time and gentle matching, great for kids, older players, or a relaxed round.",casual:"Casual · a comfortable clock.",normal:"Normal · the standard challenge.",hard:"Hard · tight clock, strict matching."};
+  const h=$("diffHint");if(h)h.textContent=hints[d]||"";}
 function setSoundIcon(){$("menuSound").textContent=soundOn?"🔊":"🔇";}
 $("menuSound").onclick=()=>{soundOn=!soundOn;Store.s(K.sound,soundOn?"1":"0");setSoundIcon();if(soundOn){ac();beep(660,0.08,0.06);}};
 
