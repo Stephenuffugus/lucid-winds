@@ -1713,7 +1713,16 @@ function attachTilt(){ if(tiltAttached) return; tiltAttached=true;
     var gg=e.gamma-tiltNeutral, dz=6, full=24, s=0; if(gg>dz) s=Math.min(1,(gg-dz)/full); else if(gg<-dz) s=Math.max(-1,(gg+dz)/full); INP.tiltAxis=s; }); }
 function enableTilt(silent){
   if(SET.steer==='drag') return;
-  if(typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission){ if(!silent) setSteer(SET.steer); }
+  if(typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission){
+    if(silent){
+      // iOS silent (re)launch: a Tilt player already granted permission when they
+      // chose Tilt, so requestPermission resolves 'granted' with no prompt (launch
+      // runs inside the mode-cell tap gesture). Without this, attachTilt() was
+      // never called on reload -> returning iOS tilt users had ZERO steering
+      // (drag is disabled in tilt mode). Non-iOS keeps the else-attachTilt below.
+      try{ DeviceOrientationEvent.requestPermission().then(function(r){ if(r==='granted'){ tiltNeutral=null; attachTilt(); } }).catch(function(){}); }catch(_){}
+    } else setSteer(SET.steer);
+  }
   else attachTilt();
 }
 function setSteer(v){
@@ -1900,7 +1909,8 @@ if(/[?&]sproingtest=1/.test(location.search)){
     buyAcc:function(id){ var a=accDef(id); if(a) buyAcc(a); }, equipAcc:equipAcc, accList:ACCESSORIES,
     buyTheme:function(id){ var t=themeDef(id); if(t) buyTheme(t); }, equipTheme:equipTheme, themeList:THEMES,
     skinCount:function(){ return SKIN_DEFS.length; },
-    getSteer:function(){ return SET.steer; }, setTiltAxis:function(v){ INP.tiltAxis=v; }, setDragX:function(v){ INP.dragX=v; }
+    getSteer:function(){ return SET.steer; }, setTiltAxis:function(v){ INP.tiltAxis=v; }, setDragX:function(v){ INP.dragX=v; },
+    enableTilt:enableTilt, tiltOn:function(){ return tiltAttached; }, setSteerRaw:function(v){ SET.steer=v; }
   };
 }
 
