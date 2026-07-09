@@ -264,7 +264,7 @@ function newGame(li){
       // Dramatic-finish state (2026-07-09): camera (current + target for easing),
       // finale slow-mo, hit-stop freeze, screen shake, expanding rings, screen flash.
       cam:{x:VW/2,y:VH/2,z:1,tx:VW/2,ty:VH/2,tz:1}, finale:{active:false,ts:1}, freeze:0,
-      shake:{t:0,mag:0}, rings:[], flash:0, _acc:0, bins:makeBins() };
+      shake:{t:0,mag:0}, rings:[], flash:0, _acc:0, bins:makeBins(), styleBonus:0 };
   for(var i=0;i<pegs.length;i++) if(pegs[i].type==='red') G.redsLeft++;
   aim.angle=0;
   show('s-play');
@@ -281,7 +281,8 @@ function onUp(e){ if(!G||!aim.dragging)return; e.preventDefault(); aim.dragging=
 function setAim(p){ var dx=p.x-LAUNCH_X, dy=Math.max(10,p.y-LAUNCH_Y); var a=Math.atan2(dx,dy); if(a>1.45)a=1.45; if(a<-1.45)a=-1.45; aim.angle=a; }
 function launch(){ if(!G||G.phase!=='aim'||G.ballsLeft<=0)return;
   G.phase='fire'; G.ballsLeft--; G.combo=0;
-  G.balls.push({x:LAUNCH_X,y:LAUNCH_Y+10,vx:Math.sin(aim.angle)*SPEED,vy:Math.cos(aim.angle)*SPEED,r:BALL_R,alive:true,free:false});
+  G.balls.push({x:LAUNCH_X,y:LAUNCH_Y+10,vx:Math.sin(aim.angle)*SPEED,vy:Math.cos(aim.angle)*SPEED,r:BALL_R,alive:true,free:false,
+    dist:0,wall:0,pegs:0,longDone:false,bankDone:false,trickDone:false});   // style-shot tracking
   sfx('launch');
 }
 
@@ -292,9 +293,10 @@ function physics(){
     for(i=G.balls.length-1;i>=0;i--){ var b=G.balls[i]; if(!b.alive)continue;
       b.vy+=GRAV/SUB;
       b.x+=b.vx/SUB; b.y+=b.vy/SUB;
+      b.dist=(b.dist||0)+Math.sqrt(b.vx*b.vx+b.vy*b.vy)/SUB;   // travelled distance → Long Shot
       // walls
-      if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx)*REST; sfx('wall'); }
-      else if(b.x>VW-b.r){ b.x=VW-b.r; b.vx=-Math.abs(b.vx)*REST; sfx('wall'); }
+      if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx)*REST; sfx('wall'); b.wall=(b.wall||0)+1; }
+      else if(b.x>VW-b.r){ b.x=VW-b.r; b.vx=-Math.abs(b.vx)*REST; sfx('wall'); b.wall=(b.wall||0)+1; }
       if(b.y<b.r){ b.y=b.r; b.vy=Math.abs(b.vy)*REST; }
       // pegs
       for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue;
@@ -323,7 +325,7 @@ function physics(){
   // bucket move
   G.bucketX+=G.bucketDir*2.2; if(G.bucketX>VW-BUCKET_W/2){ G.bucketX=VW-BUCKET_W/2; G.bucketDir=-1; } if(G.bucketX<BUCKET_W/2){ G.bucketX=BUCKET_W/2; G.bucketDir=1; }
   // remove dead balls, award free
-  for(i=G.balls.length-1;i>=0;i--){ if(!G.balls[i].alive){ if(G.balls[i].free){ G.ballsLeft++; sfx('free'); floater(G.bucketX,BUCKET_Y-20,'+ FREE'); } G.balls.splice(i,1); } }
+  for(i=G.balls.length-1;i>=0;i--){ if(!G.balls[i].alive){ if(G.balls[i].free){ G.ballsLeft++; sfx('free'); floater(G.bucketX,BUCKET_Y-20,'+ FREE'); G.styleBonus=(G.styleBonus||0)+2000; floater(G.bucketX,BUCKET_Y-38,'✦ FREE BALL +2000'); } G.balls.splice(i,1); } }
   // sparks + floaters
   for(i=G.sparks.length-1;i>=0;i--){ var sp2=G.sparks[i]; sp2.x+=sp2.vx; sp2.y+=sp2.vy; sp2.vy+=0.18; sp2.life-=0.03; if(sp2.life<=0)G.sparks.splice(i,1); }
   for(i=G.floaters.length-1;i>=0;i--){ G.floaters[i].y-=0.7; G.floaters[i].life-=0.02; if(G.floaters[i].life<=0)G.floaters.splice(i,1); }
@@ -332,14 +334,32 @@ function physics(){
 }
 function hitPeg(p, b){
   var pg=G.pegs[p]; pg.hit=true; pg.pop=1; G.combo++;
+  if(b) b.pegs=(b.pegs||0)+1;
   spark(pg.x,pg.y, pg.type);
-  var pts=0;
-  if(pg.type==='red'){ pts=100*(1+G.combo*0.1); G.redsLeft--; sfx('red'); if(G.redsLeft===0) triggerFinalePayoff(pg); }
-  else if(pg.type==='purple'){ pts=500; sfx('peg'); floater(pg.x,pg.y,'+500'); }
-  else if(pg.type==='green'){ pts=50; sfx('burst'); bloomBurst(pg.x,pg.y); }
-  else { pts=10; sfx('peg'); }
+  var mult=1+G.combo*0.1, pts=0;      // combo multiplier now applies to EVERY peg type
+  if(pg.type==='red'){ pts=100*mult; G.redsLeft--; sfx('red'); if(G.redsLeft===0) triggerFinalePayoff(pg); }
+  else if(pg.type==='purple'){ pts=500*mult; floater(pg.x,pg.y,'+'+Math.round(500*mult)); }
+  else if(pg.type==='green'){ pts=50*mult; sfx('burst'); bloomBurst(pg.x,pg.y); }
+  else { pts=10*mult; }
+  comboPop(pg.x,pg.y);
   G.score+=Math.round(pts);
+  if(b) styleShots(pg,b);
 }
+// Rising Peggle chime up the scale as a chain builds + combo-tier callouts.
+function comboPop(x,y){ var c=G.combo;
+  beep(400+Math.min(c,26)*46, 0.05, 'sine', 0.05, 900+Math.min(c,26)*60);
+  if(c===5) floater(x,y-14,'NICE! x5');
+  else if(c===10) floater(x,y-14,'SWEET! x10');
+  else if(c===15) floater(x,y-14,'WOW! x15');
+  else if(c>=20 && c%5===0) floater(x,y-14,'★ x'+c);
+}
+// Banked style bonuses (Peggle-style) — floater now, points cashed on the win card.
+function styleShots(pg,b){
+  if(!b.longDone && b.pegs===1 && b.dist>520 && (b.wall||0)===0){ b.longDone=true; addStyle(pg.x,pg.y,'LONG SHOT',5000); }
+  if(!b.trickDone && b.pegs>=3){ b.trickDone=true; addStyle(pg.x,pg.y,'TRICK SHOT',3000); }
+  if(!b.bankDone && pg.type==='red' && (b.wall||0)>=1){ b.bankDone=true; addStyle(pg.x,pg.y,'BANK SHOT',2500); }
+}
+function addStyle(x,y,label,amt){ G.styleBonus=(G.styleBonus||0)+amt; floater(x,y-30,'✦ '+label+' +'+amt); sfx('free'); }
 function bloomBurst(x,y){ // pop all pegs within radius
   var R=118; for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue; var dx=pg.x-x,dy=pg.y-y; if(dx*dx+dy*dy<R*R){ pg.hit=true; pg.pop=1; spark(pg.x,pg.y,pg.type); if(pg.type==='red'){G.redsLeft--; G.score+=100; if(G.redsLeft===0) triggerFinalePayoff(pg);} else if(pg.type==='purple'){G.score+=500;} else G.score+=10; } }
   floater(x,y,'BLOOM BURST');
@@ -431,7 +451,7 @@ function drawBins(){
 function winLevel(){ if(!G||G.phase==='over')return; G.phase='over';
   // ===== end-of-level bonuses =====
   var fullClear = (G.pegs.length===0);                 // every peg popped, not just reds
-  var base=G.score, overflow=G.ballsLeft*1500, subtotal=base+overflow;
+  var base=G.score, overflow=G.ballsLeft*1500, style=G.styleBonus||0, subtotal=base+overflow+style;
   var fever = fullClear ? Math.round(subtotal*0.5) : 0;   // Bloom Fever = +50%
   G.score = subtotal + fever;
   var key='L'+G.li; PROG.cleared[key]=1; var prev=PROG.best[key]||0; var isBest=false;
@@ -442,6 +462,7 @@ function winLevel(){ if(!G||G.phase==='over')return; G.phase='over';
   $('win-sub').textContent=G.L.name+' · '+G.ballsLeft+' pollen to spare';
   var fev=$('win-fever'); if(fev) fev.style.display=fullClear?'':'none';
   var wb=$('win-bonus'); if(wb){ var hh='';
+    if(style>0) hh+='<div class="wb"><span>Style shots</span><b>+'+style.toLocaleString()+'</b></div>';
     if(overflow>0) hh+='<div class="wb"><span>Pollen to spare ×'+G.ballsLeft+'</span><b>+'+overflow.toLocaleString()+'</b></div>';
     if(fever>0) hh+='<div class="wb fever"><span>Bloom Fever +50%</span><b>+'+fever.toLocaleString()+'</b></div>';
     wb.innerHTML=hh; }
