@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Sproing">
 <title>Sproing — Sky Wolf Studios</title>
 <!-- Same-origin Sunbeam SDK (resolves when vendored under /satellites/sproing/; harmless 404 at repo root, guarded) -->
-<script src="/sunbeam-sdk.js?v=2"></script>
+<script src="/sunbeam-sdk.js?v=4"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"sproing"}).catch(function(){});</script>
 <style>
 :root{
@@ -314,7 +314,9 @@ var PAL={ bg:'#0d100c', sage:'#7ab356', deep:'#3f6b34', gold:'#c8a84b', cream:'#
 var DRAW_PALETTE=[
   ['#12160f','Ink'],['#e8dcc8','Cream'],['#7ab356','Sage'],['#3f6b34','Deep leaf'],
   ['#c8a84b','Gold'],['#6b4a2b','Bark'],['#e58fa0','Petal'],['#e8823a','Coral'],
-  ['#f2d24b','Sunbeam'],['#7aa6d6','Sky'],['#9a6fc4','Berry'],['#ffffff','White']
+  ['#d6453f','Red'],['#9c1f2e','Crimson'],['#f2d24b','Sunbeam'],['#7aa6d6','Sky'],
+  ['#2e4374','Indigo'],['#9a6fc4','Berry'],['#b8618f','Orchid'],['#4aa89a','Teal'],
+  ['#9aa0a6','Ash'],['#ffffff','White']
 ];
 var BRUSH_SIZES=[2,6,12,20];
 
@@ -973,7 +975,7 @@ function renderHats(g){
   });
 }
 function equipAcc(id){ accEquip=id; LS.set(K.acc,id); applyEquip(); }
-function buyAcc(a){ if(coins<a.cost){ notEnough(a.cost,a.name); return; } if(spendCoins(a.cost)){ accOwned.push(a.id); LS.setJSON(K.accs,accOwned); equipAcc(a.id); sfx('best'); renderShop(); } }
+function buyAcc(a){ if(coins<a.cost){ notEnough(a.cost,a.name); return; } confirmBuy(a.name,a.cost,function(){ if(spendCoins(a.cost)){ accOwned.push(a.id); LS.setJSON(K.accs,accOwned); equipAcc(a.id); sfx('best'); renderShop(); } }); }
 function renderThemes(g){
   THEMES.forEach(function(t){
     var cell=document.createElement('div'); cell.className='cell'; var eq=themeEquip===t.id; if(eq) cell.classList.add('equipped');
@@ -991,8 +993,12 @@ function renderThemes(g){
   });
 }
 function equipTheme(id){ themeEquip=id; LS.set(K.theme,id); }
-function buyTheme(t){ if(coins<t.cost){ notEnough(t.cost,t.name); return; } if(spendCoins(t.cost)){ themesOwned.push(t.id); LS.setJSON(K.themes,themesOwned); equipTheme(t.id); sfx('best'); renderShop(); } }
+function buyTheme(t){ if(coins<t.cost){ notEnough(t.cost,t.name); return; } confirmBuy(t.name,t.cost,function(){ if(spendCoins(t.cost)){ themesOwned.push(t.id); LS.setJSON(K.themes,themesOwned); equipTheme(t.id); sfx('best'); renderShop(); } }); }
 function notEnough(cost,name){ modal('<h3>Not enough coins</h3><p>You need <b class="gold">'+cost+'</b> 🪙 for '+name+'. Keep climbing to earn more!</p><button class="btn sm primary" id="mx1">OK</button>'); tap('mx1',closeModal); }
+// "Are you sure?" gate before any coin purchase (Stephen 2026-07-08). Callers
+// pass the affordable branch as onYes; the coins<cost check stays upstream so
+// an unaffordable tap still shows notEnough with no confirm.
+function confirmBuy(name,cost,onYes){ modal('<h3>Buy '+name+'?</h3><p>This spends <b class="gold">'+cost+'</b> 🪙 from your wallet.</p><div class="row"><button class="btn sm ghost" id="mx1">Cancel</button><button class="btn sm" id="mx2">Buy</button></div>'); tap('mx1',closeModal); tap('mx2',function(){ closeModal(); onYes(); }); }
 function renderSkins(g){
   SKIN_DEFS.forEach(function(def){
     var cell=document.createElement('div'); cell.className='cell'; var eq=equip.type==='skin'&&equip.id===def.id; if(eq) cell.classList.add('equipped');
@@ -1010,7 +1016,7 @@ function renderSkins(g){
   });
 }
 function buySkin(def){ if(coins<def.priceCoins){ notEnough(def.priceCoins,'the '+def.name); return; }
-  if(spendCoins(def.priceCoins)){ owned.push(def.id); LS.setJSON(K.owned,owned); setEquip({type:'skin',id:def.id}); sfx('best'); renderShop(); } }
+  confirmBuy(def.name,def.priceCoins,function(){ if(spendCoins(def.priceCoins)){ owned.push(def.id); LS.setJSON(K.owned,owned); setEquip({type:'skin',id:def.id}); sfx('best'); renderShop(); } }); }
 function renderTrails(g){
   TRAILS.forEach(function(t){
     var cell=document.createElement('div'); cell.className='cell'; var eq=trailEquip===t.id; if(eq) cell.classList.add('equipped');
@@ -1027,7 +1033,7 @@ function renderTrails(g){
   });
 }
 function equipTrail(id){ trailEquip=id; LS.set(K.trail,id); }
-function buyTrail(t){ if(coins<t.cost){ notEnough(t.cost,t.name); return; } if(spendCoins(t.cost)){ trailsOwned.push(t.id); LS.setJSON(K.trails,trailsOwned); equipTrail(t.id); sfx('best'); renderShop(); } }
+function buyTrail(t){ if(coins<t.cost){ notEnough(t.cost,t.name); return; } confirmBuy(t.name,t.cost,function(){ if(spendCoins(t.cost)){ trailsOwned.push(t.id); LS.setJSON(K.trails,trailsOwned); equipTrail(t.id); sfx('best'); renderShop(); } }); }
 function renderUpgrades(g){
   UPGRADES.forEach(function(u){
     var lvl=upLvl(u.id), row=document.createElement('div'); row.className='uprow';
@@ -1041,7 +1047,7 @@ function renderUpgrades(g){
   });
 }
 function buyUpgrade(u){ var lvl=upLvl(u.id); if(lvl>=u.max) return; var cost=u.cost[lvl]; if(coins<cost){ notEnough(cost,u.name); return; }
-  if(spendCoins(cost)){ upgrades[u.id]=lvl+1; LS.setJSON(K.upgrades,upgrades); sfx('best'); renderShop(); } }
+  confirmBuy(u.name,cost,function(){ if(spendCoins(cost)){ upgrades[u.id]=lvl+1; LS.setJSON(K.upgrades,upgrades); sfx('best'); renderShop(); } }); }
 function renderGoals(g){
   var done=0; ACHS.forEach(function(a){ if(achDone[a.id]) done++; });
   var head=document.createElement('div'); head.style.cssText='text-align:center;color:var(--muted);font-size:13px;margin:2px 0 6px'; head.textContent=done+' / '+ACHS.length+' goals complete · each pays coins'; g.appendChild(head);
@@ -1778,7 +1784,7 @@ function shareCard(){
   g.fillStyle=PAL.cream; g.textAlign='center'; g.font='800 92px sans-serif'; g.fillText(m+' m',W/2,190);
   g.font='700 22px sans-serif'; g.fillStyle=PAL.gold; g.fillText('SPROING · Sky Wolf Studios',W/2,H-54);
   try{ c.toBlob(function(blob){ if(!blob) return; try{ var file=new File([blob],'sproing-'+m+'m.png',{type:'image/png'});
-      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file],title:'Sproing',text:'I climbed '+m+'m in Sproing!'}).catch(function(){}); return; } }catch(e){}
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){ navigator.share({files:[file],title:'Sproing',text:'I climbed '+m+'m in Sproing! Can you beat me? https://lucidwinds.com/satellites/sproing/'}).catch(function(){}); return; } }catch(e){}
     var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download='sproing-'+m+'m.png'; a.click(); setTimeout(function(){ URL.revokeObjectURL(url); },3000);
   },'image/png'); }catch(e){}
 }
