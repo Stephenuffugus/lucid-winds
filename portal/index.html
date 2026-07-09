@@ -90,10 +90,26 @@
   #mus-switch .ms-sw{color:var(--leaf)}
   #mus-switch.mini{padding:0;width:48px;height:48px;border-radius:50%;justify-content:center;opacity:.85}
   #mus-switch.mini .ms-label{display:none}
-  /* Floating exit REMOVED (Stephen 2026-07-02): it sat on top of games' own
-     top-right buttons. Every studio game now carries its own exit (posts
-     {sws:'close'}), browser back closes the overlay (popstate), and the
-     dead-frame auto-recovery below covers anything that goes blank. */
+  /* Floating exit history: a top-RIGHT exit was pulled 2026-07-02 because it
+     sat on games' own top-right buttons. REINSTATED 2026-07-08 (Stephen: every
+     framed game needs a reliable way back — Skitterlings & other satellites can
+     strand the player with no visible exit). This one lives TOP-LEFT (away from
+     the top-right game controls that caused the old conflict) and auto-collapses
+     to a small ‹ dot after a beat so it never sits on a game's controls, exactly
+     like the music pill. Shown only over framed satellites/external games;
+     internal srcdoc games already carry the shell header's "← All games" link. */
+  #sw-back{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));
+     top:calc(10px + env(safe-area-inset-top,0px));z-index:160;display:none;
+     align-items:center;gap:7px;background:rgba(13,20,16,.92);border:1px solid var(--line);
+     border-radius:999px;padding:9px 15px;color:var(--ink);font-size:13px;font-weight:700;
+     cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.55);line-height:1.2;white-space:nowrap;
+     -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+     transition:opacity .2s,padding .2s,width .2s}
+  #sw-back.on{display:flex}
+  #sw-back:hover{border-color:var(--leaf)}
+  #sw-back .sb-ic{font-size:16px;flex-shrink:0;color:var(--leaf);font-weight:800}
+  #sw-back.mini{padding:0;width:44px;height:44px;border-radius:50%;justify-content:center}
+  #sw-back.mini .sb-label{display:none}
   /* auth modal */
   .auth-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:center;justify-content:center;padding:18px}
   .auth-bg.on{display:flex}
@@ -229,6 +245,7 @@
      and the soundtrack plays gaplessly across game switches. -->
 <div id="game-overlay" aria-hidden="true">
   <iframe id="game-frame" title="Game" allow="autoplay; fullscreen; gamepad; accelerometer; gyroscope" allowfullscreen></iframe>
+  <button id="sw-back" type="button" aria-label="Back to Sky Wolf"><span class="sb-ic">‹</span><span class="sb-label">Sky Wolf</span></button>
 </div>
 
 <!-- Sign-in / sign-up modal. Hidden until the wallet button fires it. -->
@@ -254,7 +271,7 @@
 <script>
 /* ---- Featured satellites (separate standalone games, real live URLs) + the Lucid Winds hub ---- */
 var FEATURED = [
-  {nm:"Lucid Winds", ds:"66 games + grow living, unique plant art. The hub of the whole orchard.", url:"https://lucidwinds.com", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
+  {nm:"Lucid Winds", ds:"66 games + grow living, unique plant art. The hub of the whole orchard.", url:"https://lucidwinds.com/?from=portal", hub:true, ic:"🌱", thumb:"/assets/splash-seed-v2.png"},
   {nm:"Tomato Man", ds:"The sun is death and the shade keeps moving. Dash the shadows, gather aloe, and don't get burned.", url:"https://stephenuffugus.github.io/Tomato_Man/", ic:"🍅", thumb:"/portal-assets/thumbs/tomato-man.png"},
   {nm:"Glyph Forge", ds:"Forge glyphs, hunt combos, break everything.", url:"https://stephenuffugus.github.io/glyph_forge/", ic:"⚒️", thumb:"/portal-assets/thumbs/glyph-forge.png", beta:true},
   {nm:"Sweet Spot", ds:"One-thumb tennis timing. Nail the gold for an ACE.", url:"https://stephenuffugus.github.io/Sweet-Spot/", ic:"🎾", thumb:"/portal-assets/thumbs/sweet-spot.png", ownMusic:true},
@@ -746,6 +763,20 @@ renderGarden("all");
   if(!ov || !fr) return;
   var isOpen = false;
   var watchdog = null;
+  // ── Floating "‹ Sky Wolf" back button (2026-07-08). Guarantees a way out of
+  // every framed satellite/external game even when the game's own exit is
+  // missing or broken (Skitterlings). Auto-collapses to a dot; a tap on the dot
+  // re-reveals the label first (like the music pill) so it never exits by accident.
+  var swBack = document.getElementById('sw-back');
+  var swMiniT = null;
+  function swSchedMini(){ if(swMiniT) clearTimeout(swMiniT); swMiniT = setTimeout(function(){ if(swBack) swBack.classList.add('mini'); }, 3500); }
+  function swShow(){ if(!swBack) return; swBack.classList.add('on'); swBack.classList.remove('mini'); swSchedMini(); }
+  function swHide(){ if(!swBack) return; swBack.classList.remove('on'); swBack.classList.remove('mini'); if(swMiniT){ clearTimeout(swMiniT); swMiniT = null; } }
+  if(swBack) swBack.addEventListener('click', function(e){
+    e.preventDefault();
+    if(swBack.classList.contains('mini')){ swBack.classList.remove('mini'); swSchedMini(); return; }
+    requestClose();
+  });
   // Black-screen recovery for FRAMED (cross-origin) satellites: we can't see
   // inside the frame, but a game's broken back/X shows up as a SECOND load
   // event (the frame navigated somewhere). A healthy game announces every
@@ -919,6 +950,9 @@ renderGarden("all");
     } else {
       hidePill();
     }
+    // Floating back button: only over framed satellites/external games (src mode).
+    // Internal srcdoc games already show the shell header's "← All games" link.
+    if(satMode) swShow(); else swHide();
     if(opts.srcdoc != null){
       fr.removeAttribute('src');
       fr.srcdoc = opts.srcdoc;
@@ -978,6 +1012,7 @@ renderGarden("all");
     // bring it back on the way out — silence on the portal would feel broken.
     if(studioPausedByUs && studioWasPlaying) musResume();
     hidePill();
+    swHide();
     curOwnMusic = false; studioPausedByUs = false; studioWasPlaying = false; hostMusicOn = false;
     isOpen = false;
     closing = false;
