@@ -261,7 +261,10 @@ function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches
 function onDown(e){ if(!G||G.phase!=='aim')return; e.preventDefault(); aim.dragging=true; setAim(evPos(e)); }
 function onMove(e){ if(!G||!aim.dragging)return; e.preventDefault(); setAim(evPos(e)); }
 function onUp(e){ if(!G||!aim.dragging)return; e.preventDefault(); aim.dragging=false; launch(); }
-function setAim(p){ var dx=p.x-LAUNCH_X, dy=Math.max(10,p.y-LAUNCH_Y); var a=Math.atan2(dx,dy); if(a>1.32)a=1.32; if(a<-1.32)a=-1.32; aim.angle=a; }
+// Clamp widened 1.32->1.45 rad so the launcher can aim far enough sideways to
+// reach the top-corner blooms (Jessie couldn't rotate the gun that far). Still
+// ~12% downward, so shots aren't degenerately horizontal.
+function setAim(p){ var dx=p.x-LAUNCH_X, dy=Math.max(10,p.y-LAUNCH_Y); var a=Math.atan2(dx,dy); if(a>1.45)a=1.45; if(a<-1.45)a=-1.45; aim.angle=a; }
 function launch(){ if(!G||G.phase!=='aim'||G.ballsLeft<=0)return;
   G.phase='fire'; G.ballsLeft--; G.combo=0;
   G.balls.push({x:LAUNCH_X,y:LAUNCH_Y+10,vx:Math.sin(aim.angle)*SPEED,vy:Math.cos(aim.angle)*SPEED,r:BALL_R,alive:true,free:false});
@@ -401,13 +404,27 @@ function render(){ if(!ctx||!G)return;
 function pegColour(t){ return t==='red'?'#e5604d':t==='green'?'#7ab356':t==='purple'?'#b57de0':'#5b9bd5'; }
 function drawPeg(pg){ var c=pegColour(pg.type);
   ctx.save(); ctx.translate(pg.x,pg.y);
-  if(pg.type==='red'){ ctx.shadowColor='rgba(229,96,77,.7)'; ctx.shadowBlur=10; }
+  if(pg.hit){
+    // Struck bloom LIGHTS UP bright and stays lit until the shot settles and the
+    // field clears — Peggle-style hit feedback (Jessie 2026-07-09).
+    var s=1+0.24*(pg.pop||0);
+    ctx.shadowColor='rgba(255,246,210,.95)'; ctx.shadowBlur=22;
+    ctx.fillStyle='#fff4c8';
+    for(var h=0;h<6;h++){ ctx.beginPath(); var ah=Math.PI*2*h/6; ctx.ellipse(Math.cos(ah)*pg.r*0.5*s,Math.sin(ah)*pg.r*0.5*s,pg.r*0.6*s,pg.r*0.38*s,ah,0,7); ctx.fill(); }
+    ctx.shadowBlur=0; ctx.fillStyle='#fffdf4'; ctx.beginPath(); ctx.arc(0,0,pg.r*0.5*s,0,7); ctx.fill();
+    ctx.restore(); return;
+  }
+  if(pg.type==='red'){ ctx.shadowColor='rgba(229,96,77,.85)'; ctx.shadowBlur=13; }
   else if(pg.type==='green'){ ctx.shadowColor='rgba(122,179,86,.7)'; ctx.shadowBlur=8; }
   else if(pg.type==='purple'){ ctx.shadowColor='rgba(181,125,224,.6)'; ctx.shadowBlur=7; }
   // petal flower
   ctx.fillStyle=c;
   for(var k=0;k<6;k++){ ctx.beginPath(); var a=Math.PI*2*k/6; ctx.ellipse(Math.cos(a)*pg.r*0.5,Math.sin(a)*pg.r*0.5,pg.r*0.55,pg.r*0.35,a,0,7); ctx.fill(); }
-  ctx.shadowBlur=0; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(0,0,pg.r*0.42,0,7); ctx.fill();
+  ctx.shadowBlur=0;
+  // Red targets get a bullseye ring (shape cue, not colour alone) so colour-blind
+  // players can spot the goal blooms; other pegs keep the plain gold center.
+  if(pg.type==='red'){ ctx.strokeStyle='#fff0d0'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,pg.r*0.52,0,7); ctx.stroke(); ctx.fillStyle='#7a1f16'; ctx.beginPath(); ctx.arc(0,0,pg.r*0.24,0,7); ctx.fill(); }
+  else { ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(0,0,pg.r*0.42,0,7); ctx.fill(); }
   ctx.restore();
 }
 function drawBucket(){ ctx.save(); ctx.translate(G.bucketX,BUCKET_Y);
@@ -479,7 +496,8 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 if(/[?&]ndtest=1/.test(location.search)){
   window.ND_DEV={ start:newGame, state:function(){return G;}, levels:LEVELS, share:shareNectar,
     // fire a ball at a given angle and simulate until all balls settle
-    fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.32,Math.min(1.32,ang)); launch(); var guard=0; while(G.phase==='fire' && guard++<4000){ physics(); } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length}; },
+    fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.45,Math.min(1.45,ang)); launch(); var guard=0,minX=VW,maxX=0; while(G.phase==='fire' && guard++<4000){ physics(); for(var b=0;b<G.balls.length;b++){ if(G.balls[b].x<minX)minX=G.balls[b].x; if(G.balls[b].x>maxX)maxX=G.balls[b].x; } } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length, minX:Math.round(minX), maxX:Math.round(maxX)}; },
+    setAimRaw:function(x,y){ setAim({x:x,y:y}); return aim.angle; },
     autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<200){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) physics(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },
     pegCounts:function(){ var c={red:0,green:0,purple:0,blue:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; }
   };
