@@ -153,6 +153,15 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="foot" id="buildstamp"></div>
   </div></div>
 
+  <!-- MODE SELECT -->
+  <div class="screen" id="s-mode"><div class="pad">
+    <h2 class="sc-h">How do you want to play?</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Four ways to grow your word garden.</div>
+    <div class="stack" id="mode-list" style="max-width:440px"></div>
+    <div style="height:16px"></div>
+    <button class="btn ghost sm" id="mode-back" style="max-width:440px;margin:0 auto">◄ Back</button>
+  </div></div>
+
   <!-- DIFFICULTY -->
   <div class="screen" id="s-diff"><div class="pad">
     <h2 class="sc-h">Choose a bed</h2>
@@ -228,7 +237,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="stack">
       <button class="btn primary" id="res-again">↻ Play again</button>
       <div class="row">
-        <button class="btn sm" id="res-diff">Change bed</button>
+        <button class="btn sm" id="res-diff">Modes</button>
         <button class="btn sm" id="res-title2">◄ Back</button>
       </div>
     </div>
@@ -329,27 +338,59 @@ var DIFFS=[
 function diffByKey(k){ for(var i=0;i<DIFFS.length;i++) if(DIFFS[i].key===k) return DIFFS[i]; return DIFFS[1]; }
 
 /* ============================ game state ================================= */
-var G=null; var aiTimer=0;   // aiTimer now holds the solo game timer interval
-function stopAI(){ if(aiTimer){ clearInterval(aiTimer); aiTimer=0; } }   // stops the timer
-function tickTimer(){ if(!G||G.over) return; var el=$('p-diff'); if(el) el.textContent='⏱ '+fmtTime(Date.now()-G.startT-(G.pausedMs||0)); }
-function startTimer(){ stopAI(); aiTimer=setInterval(tickTimer,100); tickTimer(); }
+var G=null; var aiTimer=0;      // display-timer interval (100ms tick)
+var aiPlantIv=0;                // Vs-Garden rival planting interval
+var pendingMode='solo';         // mode chosen on the s-mode screen
+// Play modes (2026-07-08): Solo (beat your best time), Vs Garden (race a
+// rival), Timed (countdown), Free play (no clock, no rival).
+var MODES=[
+  {key:'solo', ico:'🌱', t:'Solo',      d:'Fill the bed at your own pace, then beat your best time.'},
+  {key:'ai',   ico:'🦔', t:'Vs Garden', d:'Race a rival to fill the bed first.'},
+  {key:'timed',ico:'⏱️', t:'Timed',     d:'Beat the clock — fill the bed before time runs out.'},
+  {key:'free', ico:'🍃', t:'Free play', d:'No clock, no rival. Just grow words.'}
+];
+function modeByKey(k){ for(var i=0;i<MODES.length;i++) if(MODES[i].key===k) return MODES[i]; return MODES[0]; }
+function bestKey(g){ return g.mode==='timed' ? ('timed:'+g.D.key) : g.D.key; }
+function stopAI(){ if(aiTimer){ clearInterval(aiTimer); aiTimer=0; } if(aiPlantIv){ clearInterval(aiPlantIv); aiPlantIv=0; } }
+function tickTimer(){
+  if(!G||G.over) return; var el=$('p-diff'); if(!el) return;
+  if(G.mode==='timed'){
+    var rem=G.budget-(Date.now()-G.startT-(G.pausedMs||0));
+    if(rem<=0){ el.textContent='⏱ 0:00.0'; endGame('timeout'); return; }
+    el.textContent='⏱ '+fmtTime(rem);
+  } else { el.textContent='⏱ '+fmtTime(Date.now()-G.startT-(G.pausedMs||0)); }
+}
+function startTimer(){ if(aiTimer){ clearInterval(aiTimer); aiTimer=0; } aiTimer=setInterval(tickTimer,100); tickTimer(); }
 
-function startGame(diffKey){
+function startGame(mode, diffKey){
   stopAI();
+  // back-compat: startGame('bud') style calls default to Solo
+  if(diffKey===undefined && (mode==='sprout'||mode==='bud'||mode==='bloom')){ diffKey=mode; mode='solo'; }
+  if(mode!=='solo'&&mode!=='ai'&&mode!=='timed'&&mode!=='free') mode='solo';
   var D=diffByKey(diffKey);
   var pool=genPool();
-  G={ D:D, letters:pool.letters, M:pool.M,
-      taken:{}, dead:{}, you:[], cur:[], over:false, startT:Date.now(), pausedMs:0, _hidAt:0,
-      counts:countsOf(pool.letters) };
+  G={ mode:mode, D:D, letters:pool.letters, M:pool.M,
+      taken:{}, dead:{}, you:[], ai:[], cur:[], over:false, startT:Date.now(), pausedMs:0, _hidAt:0,
+      counts:countsOf(pool.letters), budget: mode==='timed'?(D.target*10*1000):0 };
   show('s-play');
-  // Solo: no opponent. Hide the old rival rack; the top bar is the live timer.
-  var _ra=$('rack-ai'); if(_ra) _ra.style.display='none';
+  var _ra=$('rack-ai');
+  if(mode==='ai'){ if(_ra) _ra.style.display=''; $('ai-name').textContent='Rival'; $('ai-av').textContent='🦔'; $('ai-score').textContent='0 / '+D.target; $('ai-chips').innerHTML=''; }
+  else { if(_ra) _ra.style.display='none'; }
   $('you-score').textContent='0 / '+D.target;
-  var bt=BEST[D.key];
-  var _bi=$('bedinfo'); if(_bi) _bi.innerHTML='🌾 <b id="bedleft">–</b> words still in the bed'+(bt?('  ·  🏅 best '+fmtTime(bt)):'');
+  var _bi=$('bedinfo');
+  if(_bi){
+    var note;
+    if(mode==='ai') note='🌾 <b id="bedleft">–</b> words in the shared bed  ·  first to '+D.target+' wins';
+    else if(mode==='timed') note='🌾 <b id="bedleft">–</b> words left  ·  ⏱ '+Math.round(D.target*10)+'s on the clock';
+    else if(mode==='free') note='🌾 <b id="bedleft">–</b> words left  ·  🍃 no clock, take your time';
+    else { var bt=BEST[D.key]; note='🌾 <b id="bedleft">–</b> words still in the bed'+(bt?('  ·  🏅 best '+fmtTime(bt)):''); }
+    _bi.innerHTML=note;
+  }
   renderPlay();
+  if(mode==='ai') renderRack('ai');
   var _a=$('announce'); if(_a){ _a.textContent=''; _a.className='ann'; }
-  startTimer();
+  if(mode==='free'){ var el=$('p-diff'); if(el) el.textContent='🍃 Free play'; }
+  else { startTimer(); if(mode==='ai'){ aiPlantIv=setInterval(aiPlant,2800); } }
 }
 
 /* ============================ tile / word building ================================= */
@@ -379,7 +420,7 @@ function plant(){
   var w=curWord().toLowerCase();
   if(w.length<3){ sfx('bad'); flashMsg('need 3+ letters'); return; }
   if(!DICT.has(w)){ sfx('bad'); flashMsg('not in the seed book'); G.cur=[]; renderWord(); renderTiles(); return; }
-  if(G.taken[w]==='you'){ sfx('bad'); flashMsg('already on your trellis'); G.cur=[]; renderWord(); renderTiles(); return; }
+  if(G.taken[w]){ sfx('bad'); flashMsg(G.taken[w]==='you'?'already on your trellis':'the rival grew that one'); G.cur=[]; renderWord(); renderTiles(); return; }
   // claim
   G.taken[w]='you'; G.you.push(w);
   sfx('plant'); G.cur=[]; renderWord(); renderTiles(); renderRacks('you', w);
@@ -387,28 +428,64 @@ function plant(){
 }
 function removeWord(who, w){ var arr=G[who]; var i=arr.indexOf(w); if(i>=0) arr.splice(i,1); }
 
-/* AI opponent + zap removed 2026-07-08 — Bloomzap is now solo time-attack. */
+/* ============================ Vs-Garden rival ================================= */
+// Plants a random still-available word from the shared bed on an interval;
+// whoever fills the bed to target first wins. No zap (a clean, forgiving race).
+function aiPlant(){
+  if(!G||G.over||G.mode!=='ai') return;
+  var avail=[],i;
+  for(i=0;i<G.M.length;i++){ var w=G.M[i]; if(!G.taken[w]&&!G.dead[w]) avail.push(w); }
+  if(!avail.length) return;
+  avail.sort(function(a,b){ return a.length-b.length; });  // prefer shorter, natural picks
+  var pick=avail[Math.floor(Math.random()*Math.min(avail.length,6))];
+  G.taken[pick]='ai'; G.ai.push(pick);
+  sfx('aiplant'); renderRack('ai', pick); updateBed();
+  announce('🦔 grew "'+pick.toUpperCase()+'"', 'zapthem');
+  if(G.ai.length>=G.D.target){ endGame('ai'); return; }
+}
 
 /* ============================ end condition ================================= */
+// who: 'you' (you filled the bed), 'ai' (rival filled first), 'timeout' (clock ran out).
 function endGame(who){
-  if(G.over) return; G.over=true; stopAI(); G.cur=[]; G.winner='you';
+  if(G.over) return; G.over=true; stopAI(); G.cur=[];
+  var mode=G.mode, D=G.D, isWin=(who==='you');
   var elapsed=Date.now()-G.startT-(G.pausedMs||0);
-  var prev=BEST[G.D.key]||0;
-  var isBest=(!prev || elapsed<prev);
-  if(isBest){ BEST[G.D.key]=elapsed; saveBest(); }
-  // sunbeams: base for finishing the bed + a small bonus for a new best time
+  // best time only for the timed-against-yourself modes
+  var isBest=false, prevBest=0;
+  if(isWin && (mode==='solo'||mode==='timed')){
+    var bk=bestKey(G); prevBest=BEST[bk]||0;
+    isBest=(!prevBest||elapsed<prevBest);
+    if(isBest){ BEST[bk]=elapsed; saveBest(); }
+  }
+  // Vs Garden win/loss record
+  if(mode==='ai'){
+    if(isWin){ REC.w++; REC.streak=(REC.streak>0?REC.streak+1:1); }
+    else { REC.l++; REC.streak=(REC.streak<0?REC.streak-1:-1); }
+    saveRec();
+  }
+  // sunbeams
+  var beams;
+  if(who==='timeout'){ beams=Math.max(1,Math.round(D.base*(G.you.length/D.target))); }
+  else if(mode==='ai'){ beams=isWin?(D.base+2):Math.round(D.base*0.5); }
+  else if(mode==='free'){ beams=Math.round(D.base*0.6); }
+  else { beams=D.base+(isBest?2:0); }   // solo / timed win
   var granted=0;
-  try{ if(window._sbCapEarn) granted=window._sbCapEarn(G.D.base+(isBest?2:0),'bloomzap:win')||0; }catch(e){}
-  // fill result
-  $('res-emoji').textContent = isBest?'🏅':'🌸';
-  $('res-title').textContent = isBest?'New best time!':'Bed grown!';
-  $('res-sub').textContent = G.D.t+' · '+G.you.length+' words in '+fmtTime(elapsed)+(prev?('   ·   best '+fmtTime(BEST[G.D.key])):'');
+  try{ if(window._sbCapEarn) granted=window._sbCapEarn(beams,'bloomzap:'+mode)||0; }catch(e){}
+  // result copy
+  var emoji,title,sub;
+  if(who==='timeout'){ emoji='⏳'; title="Time's up"; sub=D.t+' · '+G.you.length+'/'+D.target+' words in '+fmtTime(G.budget); }
+  else if(mode==='ai'){ emoji=isWin?'🏆':'🥀'; title=isWin?'You beat the Rival!':'The Rival filled first'; sub=D.t+' · you '+G.you.length+' · rival '+G.ai.length+' · '+fmtTime(elapsed); }
+  else if(mode==='free'){ emoji='🌸'; title='Bed grown!'; sub=D.t+' · '+G.you.length+' words · free play'; }
+  else { emoji=isBest?'🏅':'🌸'; title=isBest?'New best time!':'Bed grown!'; sub=D.t+' · '+G.you.length+' words in '+fmtTime(elapsed)+(mode==='timed'?' · timed':'')+((!isBest&&prevBest)?('   ·   best '+fmtTime(prevBest)):''); }
+  $('res-emoji').textContent=emoji;
+  $('res-title').textContent=title;
+  $('res-sub').textContent=sub;
   fillResList('res-you', G.you, 'you');
-  // hide the old rival trellis section — solo has no opponent
-  var _al=$('res-ailbl'); if(_al) _al.style.display='none';
-  var _ai=$('res-ai'); if(_ai) _ai.style.display='none';
+  var _al=$('res-ailbl'), _ai=$('res-ai');
+  if(mode==='ai'){ if(_al){ _al.style.display=''; _al.textContent="Rival's trellis"; } if(_ai){ _ai.style.display=''; fillResList('res-ai', G.ai, 'ai'); } }
+  else { if(_al) _al.style.display='none'; if(_ai) _ai.style.display='none'; }
   $('res-sun').textContent = granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
-  sfx('win');
+  sfx((isWin||mode==='free')?'win':'lose');
   setTimeout(function(){ show('s-res'); },700);
 }
 function fillResList(id, arr, who){
@@ -471,13 +548,22 @@ function zapChip(who, word){
   setTimeout(function(){ renderRacks(); updateBed(); },480);
 }
 
-/* ============================ difficulty list ================================= */
+/* ============================ mode + difficulty lists ================================= */
+function buildModes(){
+  var host=$('mode-list'); if(!host) return; host.innerHTML='';
+  for(var i=0;i<MODES.length;i++){ (function(M){
+    var b=document.createElement('button'); b.className='btn diffcard';
+    b.innerHTML='<div class="dc-ico">'+M.ico+'</div><div class="dc-main"><div class="dc-t">'+M.t+'</div><div class="dc-d">'+M.d+'</div></div>';
+    b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); pendingMode=M.key; buildDiffs(); show('s-diff'); });
+    host.appendChild(b);
+  })(MODES[i]); }
+}
 function buildDiffs(){
   var host=$('diff-list'); host.innerHTML='';
   for(var i=0;i<DIFFS.length;i++){ (function(D){
     var b=document.createElement('button'); b.className='btn diffcard';
     b.innerHTML='<div class="dc-ico">'+D.ico+'</div><div class="dc-main"><div class="dc-t">'+D.t+'</div><div class="dc-d">'+D.d+'</div></div>';
-    b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startGame(D.key); });
+    b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startGame(pendingMode, D.key); });
     host.appendChild(b);
   })(DIFFS[i]); }
 }
@@ -494,18 +580,19 @@ function boot(){
   fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
-  document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(G&&!G.over&&!G._hidAt) G._hidAt=Date.now(); stopAI(); } else if(G&&!G.over&&curScreen==='s-play'){ if(G._hidAt){ G.pausedMs=(G.pausedMs||0)+(Date.now()-G._hidAt); G._hidAt=0; } startTimer(); } });
-  tap('b-play', function(){ buildDiffs(); show('s-diff'); });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(G&&!G.over&&!G._hidAt) G._hidAt=Date.now(); stopAI(); } else if(G&&!G.over&&curScreen==='s-play'){ if(G._hidAt){ G.pausedMs=(G.pausedMs||0)+(Date.now()-G._hidAt); G._hidAt=0; } if(G.mode!=='free') startTimer(); if(G.mode==='ai') aiPlantIv=setInterval(aiPlant,2800); } });
+  tap('b-play', function(){ buildModes(); show('s-mode'); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT) SWS_EXIT(); });
-  tap('diff-back', function(){ show('s-title'); updateRec(); });
+  tap('mode-back', function(){ show('s-title'); updateRec(); });
+  tap('diff-back', function(){ buildModes(); show('s-mode'); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('a-clear', clearWord);
   tap('a-plant', plant);
-  tap('res-again', function(){ startGame(G?G.D.key:'bud'); });
-  tap('res-diff', function(){ buildDiffs(); show('s-diff'); });
+  tap('res-again', function(){ startGame(G?G.mode:'solo', G?G.D.key:'bud'); });
+  tap('res-diff', function(){ buildModes(); show('s-mode'); });
   tap('res-title2', function(){ show('s-title'); updateRec(); });
   $('p-quit').addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); stopAI(); if(G) G.over=true; show('s-title'); updateRec(); });
   $('p-mute').addEventListener('click',function(e){ e.preventDefault(); SET.sound=!SET.sound; saveSet(); $('p-mute').textContent=SET.sound?'🔊':'🔇'; if(SET.sound) sfx('ui'); });
@@ -535,7 +622,7 @@ window._sbCapEarn=function(n,tag){
 /* headless-test hook (inert without ?bztest=1) */
 if(/[?&]bztest=1/.test(location.search)){
   window.BZ_DEV={
-    start:startGame, state:function(){ return G; }, diffs:DIFFS,
+    start:function(mode,diff){ return startGame(mode,diff); }, modes:MODES, state:function(){ return G; }, diffs:DIFFS,
     dictSize:function(){ return DICT.size; },
     poolWords:function(){ return G?G.M.slice():[]; },
     plantWord:function(w){ // programmatic plant: set cur to spell w if makeable, then plant
@@ -547,7 +634,7 @@ if(/[?&]bztest=1/.test(location.search)){
         if(found<0) return 'unmakeable'; used[found]=1; idxs.push(found); }
       G.cur=idxs; plant(); return 'ok';
     },
-    stopAI:stopAI, aiStep:function(){},
+    stopAI:stopAI, aiStep:aiPlant,
     forceEnd:function(who){ endGame(who); },
     best:function(){ return BEST; }, elapsed:function(){ return G?(Date.now()-G.startT-(G.pausedMs||0)):0; },
     granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_bloomzap')||'{}'); }catch(e){ return {}; } },
