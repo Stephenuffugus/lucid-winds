@@ -105,6 +105,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div class="helprow"><div class="hi"><span class="dot" style="background:var(--sage)"></span></div><div>Hit a <b class="hl">green bloom</b> to trigger a <b>Bloom Burst</b> — it pops every flower nearby.</div></div>
     <div class="helprow"><div class="hi"><span class="dot" style="background:var(--purple)"></span></div><div>Purple blooms pay big <b>bonus nectar</b>.</div></div>
     <div class="helprow"><div class="hi">🪣</div><div>The moving <b>basket</b> at the bottom catches a falling ball for a free pollen.</div></div>
+    <div class="helprow"><div class="hi">🏆</div><div>Miss the basket and your ball drops into a <b>bonus bin</b> — the middle bin pays most. Land the <b>last</b> bloom's ball in a bin for a huge <b class="hl">Nectar Rush</b>.</div></div>
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
@@ -196,6 +197,7 @@ var PLAY_TOP=150, PLAY_BOT=858;             // peg field vertical bounds (below 
 var LAUNCH_X=VW/2, LAUNCH_Y=96;
 var PEG_R=12, BALL_R=8, GRAV=0.30, REST=0.72, SPEED=8.4;
 var BUCKET_W=96, BUCKET_H=24, BUCKET_Y=VH-46;
+var BIN_Y=VH-14;   // fixed scoring bins live at the floor, below the moving basket
 
 /* ===== level generation (procedural geometric layouts) ===== */
 // pattern builders return array of {x,y}; colours are assigned after.
@@ -254,7 +256,7 @@ function newGame(li){
       // Dramatic-finish state (2026-07-09): camera (current + target for easing),
       // finale slow-mo, hit-stop freeze, screen shake, expanding rings, screen flash.
       cam:{x:VW/2,y:VH/2,z:1,tx:VW/2,ty:VH/2,tz:1}, finale:{active:false,ts:1}, freeze:0,
-      shake:{t:0,mag:0}, rings:[], flash:0, _acc:0 };
+      shake:{t:0,mag:0}, rings:[], flash:0, _acc:0, bins:makeBins() };
   for(var i=0;i<pegs.length;i++) if(pegs[i].type==='red') G.redsLeft++;
   aim.angle=0;
   show('s-play');
@@ -304,6 +306,10 @@ function physics(){
     // bucket catch
     for(i=0;i<G.balls.length;i++){ var bb=G.balls[i]; if(!bb.alive)continue;
       if(bb.y>BUCKET_Y-10 && bb.y<BUCKET_Y+BUCKET_H && Math.abs(bb.x-G.bucketX)<BUCKET_W/2 && bb.vy>0){ bb.alive=false; bb.free=true; }
+    }
+    // fixed floor bins — a ball not caught by the basket banks the bin under it
+    for(i=0;i<G.balls.length;i++){ var b4=G.balls[i]; if(!b4.alive)continue;
+      if(b4.y>=BIN_Y && b4.vy>0){ b4.alive=false; awardBin(b4.x); }
     }
   }
   // bucket move
@@ -380,6 +386,40 @@ function finaleSwell(){ if(!SET.sound) return;
   for(var i=0;i<notes.length;i++){ (function(f,delay){ setTimeout(function(){ try{ beep(f,0.16,'triangle',0.09); }catch(e){} }, delay); })(notes[i], i*70); }
 }
 
+/* ===== bonus buckets (fixed floor bins under the moving free-ball basket) ===== */
+function makeBins(){
+  // 5 fixed floor bins: edges cheap, center golden. pts = normal-play score; mult =
+  // the multiplier on a 10k "Nectar Rush" when the finishing shot lands here.
+  var vals=[[500,1],[2000,2],[10000,10],[2000,2],[500,1]], n=vals.length, w=VW/n, out=[];
+  var cols=['#4c6733','#6f9040','#c8a84b','#6f9040','#4c6733'];
+  for(var i=0;i<n;i++) out.push({x0:i*w, x1:(i+1)*w, pts:vals[i][0], mult:vals[i][1], col:cols[i], flash:0});
+  return out;
+}
+function awardBin(x){
+  var bin=null,i; for(i=0;i<G.bins.length;i++){ if(x>=G.bins[i].x0 && x<G.bins[i].x1){ bin=G.bins[i]; break; } }
+  if(!bin) bin=G.bins[x<VW/2?0:G.bins.length-1];
+  bin.flash=1; var cx=(bin.x0+bin.x1)/2;
+  if(G.finale.active){
+    G.score+=bin.mult*10000;
+    floater(cx, BIN_Y-30, 'NECTAR RUSH ×'+bin.mult);
+    G.rings.push({x:cx,y:BIN_Y-4,rad:6,max:130,life:1});
+    G.flash=Math.max(G.flash,0.55); G.shake.t=Math.max(G.shake.t,10); G.shake.mag=Math.max(G.shake.mag,12);
+    sfx('burst');
+  } else {
+    G.score+=bin.pts; floater(cx, BIN_Y-26, '+'+bin.pts); sfx('peg');
+  }
+}
+function drawBins(){
+  ctx.textAlign='center';
+  for(var i=0;i<G.bins.length;i++){ var bn=G.bins[i], cx=(bn.x0+bn.x1)/2;
+    ctx.globalAlpha=1; ctx.fillStyle=bn.col;
+    ctx.beginPath(); ctx.moveTo(bn.x0+5,BIN_Y-12); ctx.lineTo(bn.x1-5,BIN_Y-12); ctx.lineTo(bn.x1-11,BIN_Y+10); ctx.lineTo(bn.x0+11,BIN_Y+10); ctx.closePath(); ctx.fill();
+    if(bn.flash>0){ ctx.globalAlpha=Math.min(1,bn.flash)*0.75; ctx.fillStyle='#fff4c8'; ctx.fill(); ctx.globalAlpha=1; bn.flash-=0.06; if(bn.flash<0)bn.flash=0; }
+    ctx.fillStyle='#0d100c'; ctx.font='800 12px system-ui';
+    ctx.fillText(bn.pts>=1000?(bn.pts/1000)+'k':bn.pts, cx, BIN_Y+2);
+  }
+}
+
 function winLevel(){ if(!G||G.phase==='over')return; G.phase='over'; running=false;
   var key='L'+G.li; PROG.cleared[key]=1; var prev=PROG.best[key]||0; var isBest=false;
   if(G.score>prev){ PROG.best[key]=G.score; isBest=true; } saveProg();
@@ -441,6 +481,7 @@ function render(){ if(!ctx||!G)return;
   if(G.phase==='aim' && SET.guide) drawGuide();
   var i,pg,b,s,f;
   for(i=0;i<G.pegs.length;i++){ pg=G.pegs[i]; drawPeg(pg); }
+  drawBins();
   drawBucket();
   for(i=0;i<G.balls.length;i++){ b=G.balls[i]; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1.5; ctx.stroke(); }
   // expanding rings (burst + finale shockwaves)
@@ -563,7 +604,9 @@ if(/[?&]ndtest=1/.test(location.search)){
     autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<200){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) physics(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },
     pegCounts:function(){ var c={red:0,green:0,purple:0,blue:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; },
     fx:function(){ return {flash:G.flash, freeze:G.freeze, shakeMag:G.shake?G.shake.mag:0, rings:G.rings?G.rings.length:0, finaleActive:G.finale?G.finale.active:false, camz:G.cam?G.cam.z:0}; },
-    render:function(){ return render(); }, stepFx:function(){ return stepFx(); }, checkFinale:function(){ return checkFinale(); }
+    render:function(){ return render(); }, stepFx:function(){ return stepFx(); }, checkFinale:function(){ return checkFinale(); },
+    bins:function(){ return G.bins.map(function(b){ return {pts:b.pts,mult:b.mult,x0:Math.round(b.x0),x1:Math.round(b.x1),flash:b.flash}; }); },
+    award:function(x){ return awardBin(x); }, BIN_Y:BIN_Y
   };
 }
 boot();
