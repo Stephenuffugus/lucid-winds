@@ -645,6 +645,14 @@ function tidyTray(){
   for(i=items.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var tm=items[i]; items[i]=items[j]; items[j]=tm; }
   P.tray=new Array(P.n*P.n);
   for(i=0;i<items.length;i++){ items[i].home=i; P.tray[i]=items[i]; }
+  // CRITICAL: board tiles must keep a globally-unique home too. Tidy renumbers
+  // only the tray tiles; without re-homing the board tiles they keep stale homes
+  // that now collide with tidied tray tiles, so returning a board tile
+  // (P.tray[home]=tile) overwrites and DESTROYS a tray tile -> bed unsolvable.
+  // Give each board tile a reserved trailing slot (kept empty in the tray) so a
+  // returning tile can never clobber an occupant. Preserves the home bijection.
+  var k=items.length;
+  for(i=0;i<P.n*P.n;i++){ if(P.board[i]){ P.board[i].home=k++; } }
   sfx('ui'); render();
 }
 function updateCtrlVisibility(){ var bar=$('ctrlbar'); if(bar) bar.style.display=(curScreen===null&&P&&!P.solved)?'flex':'none'; }
