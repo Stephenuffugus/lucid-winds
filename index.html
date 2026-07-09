@@ -63169,25 +63169,33 @@ _setHexSelPlant:function(p){_hexSelPlant=p;},_dist:_dist,panTo:function(lat,lng,
 // Each game has: id, name, icon (fallback), rules, category, thumb (image path)
 // Categories: card, puzzle, board, pattern, creative
 // Thumbnails: assets/games/thumbs/{id}.png — source-resolution PNG/JPG (Midjourney-native), browser downscales. See assets/games/THUMBNAIL_ART_BRIEF.md.
+// Category banner art convention: assets/games/category-banners/{key}.png
+// (text fallback until the art lands). word/math/indev need new banners.
 var G_CATS=[
   {key:'creative',label:'CREATIVE',       icon:'\ud83c\udfb5'},
   {key:'card',    label:'CARD GAMES',     icon:'\ud83c\udca1'},
   {key:'puzzle',  label:'PUZZLES',        icon:'\ud83e\udde9'},
+  {key:'word',    label:'WORD GAMES',     icon:'\ud83d\udd24'},
+  {key:'math',    label:'MATH GAMES',     icon:'\ud83d\udd22'},
   {key:'board',   label:'BOARD GAMES',    icon:'\u265f'},
   {key:'pattern', label:'PATTERN & MEMORY',icon:'\ud83e\udde0'},
   {key:'dice',    label:'DICE GAMES',     icon:'\ud83c\udfb2'},
-  {key:'studio',  label:'SKY WOLF STUDIOS',icon:'\ud83d\udc3a'}
+  {key:'studio',  label:'SKY WOLF STUDIOS',icon:'\ud83d\udc3a'},
+  // In Development: playable-but-unfinished games (any entry with beta:true),
+  // shown last as a clearly-labelled row so Stephen/testers can reach them and
+  // players know they're works in progress. Set beta:true to add a game here.
+  {key:'indev',   label:'IN DEVELOPMENT', icon:'\ud83d\udea7'}
 ];
 var G=[
 {id:'set',n:'Three Sisters',i:'\ud83c\udccf',r:'Tap 3 cards where each trait is ALL same or ALL different.',cat:'pattern',thumb:'assets/games/thumbs/threesisters.png'},
 {id:'stopten',n:'Stop at Ten',i:'\u23f1\ufe0f',r:'Start the clock. Stop it at exactly 10.00 seconds. Closer = better.',cat:'pattern',thumb:'assets/games/thumbs/stopten-trimmed.png'},
 {id:'memory',n:'Memory',i:'\ud83e\udde0',r:'Flip 2 cards per turn. Match all pairs to clear the board.',cat:'pattern',thumb:'assets/games/thumbs/memory.png'},
-{id:'merge',n:'2048',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'puzzle',thumb:'assets/games/thumbs/merge.png'},
+{id:'merge',n:'2048',i:'\ud83c\udf3f',r:'Swipe or tap arrows to merge same-number tiles. Reach 2048!',cat:'math',thumb:'assets/games/thumbs/merge.png'},
 {id:'simon',n:'Echo',i:'\ud83d\udd04',r:'Watch the pattern flash, then repeat it in order. How far can you go?',cat:'pattern',thumb:'assets/games/thumbs/simon.png'},
 {id:'lights',n:'Lights Out',i:'\ud83c\udf44',r:'Tap a light to toggle it AND its 4 neighbors. Turn all dark!',cat:'puzzle',thumb:'assets/games/thumbs/lights.png'},
 {id:'mines',n:'Minesweeper',i:'\ud83e\udda0',r:'Tap to dig. Numbers show adjacent mines. Flag with \ud83d\udea9 mode.',cat:'puzzle',thumb:'assets/games/thumbs/mines.png'},
-{id:'sudoku',n:'Sudoku',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'puzzle',thumb:'assets/games/thumbs/sudoku.png'},
-{id:'wordsearch',n:'Word Search',i:'\ud83d\udd24',r:'Swipe across letters to spell a word. Any direction, forward or backward. Each puzzle draws from a themed word pack.',cat:'puzzle',thumb:'assets/games/thumbs/wordsearch.png'},
+{id:'sudoku',n:'Sudoku',i:'\ud83d\udd22',r:'Fill every row, column and 3\u00d73 box with digits 1-9.',cat:'math',thumb:'assets/games/thumbs/sudoku.png'},
+{id:'wordsearch',n:'Word Search',i:'\ud83d\udd24',r:'Swipe across letters to spell a word. Any direction, forward or backward. Each puzzle draws from a themed word pack.',cat:'word',thumb:'assets/games/thumbs/wordsearch.png'},
 {id:'rootrush',n:'Root Rush',i:'🌱',r:'A sprouting seed is tangled in a grid of roots. Slide each root along its grain to clear a path. Free the seed through the sunlit gap on the right. 65 solver-verified levels across easy, medium, hard, and expert tiers (up to 26 moves optimal). Tap 💡 Hint for the next optimal move. Hold ↻ Reset to reshuffle.',cat:'puzzle',thumb:'assets/games/thumbs/rootrush.png'},
 {id:'hanoi',n:'Tower of Hanoi',i:'\ud83d\uddfc',r:'Stack every disc on the far peg. Only one disc moves at a time, and a big disc cannot land on a small one. Drag or tap to move. 3 or 4 pegs, 3 to 8 discs. Earn 3 stars by solving in the minimum moves.',cat:'puzzle',thumb:'assets/games/thumbs/hanoi.png'},
 {id:'slider',n:'15 Puzzle',i:'\ud83e\udde9',r:'Slide tiles into the empty space. Arrange them in order. Tap any tile in the same row or column as the empty slot to slide a whole segment at once. 3×3, 4×4, or 5×5.',cat:'puzzle',thumb:'assets/games/thumbs/slider.png'},
@@ -63218,7 +63226,7 @@ var G=[
 {id:'cribbage',n:'Cribbage',i:'\ud83c\udccf',r:'Classic cribbage! Count to 15, peg to 121. Cards + math + strategy.',cat:'card',thumb:'assets/games/thumbs/cribbage.png'},
 {id:'bowergarden',n:'Euchre',i:'\ud83c\udccf',r:'4-player trick-taking with bowers. You + AI partner vs 2 AI opponents. First to 10.',cat:'card',thumb:'assets/games/thumbs/bowergarden.png'},
 {id:'gardenlines',n:'Garden Lines',i:'\ud83d\udd36',r:'Place tiles to build matching lines. Same shape or same color. Score big!',cat:'puzzle',thumb:'assets/games/thumbs/gardenlines.png'},
-{id:'kakuro',n:'Kakuro',i:'\u2795',r:'Fill cells with 1-9 so each run adds to its clue. No repeats!',cat:'puzzle',thumb:'assets/games/thumbs/kakuro.png'},
+{id:'kakuro',n:'Kakuro',i:'\u2795',r:'Fill cells with 1-9 so each run adds to its clue. No repeats!',cat:'math',thumb:'assets/games/thumbs/kakuro.png'},
 {id:'bleedinghearts',n:'Bleeding Hearts',i:'\u2665',r:'Classic Hearts. Avoid hearts (1pt) and the Queen of Spades (13pts). Shoot the moon to send all 26 to opponents!',cat:'card',thumb:'assets/games/thumbs/bleedinghearts.png'},
 {id:'mosaic',n:'Mosaic Garden',i:'\ud83e\udebb',r:'Pull colored tiles to fill your mosaic rows for points.',cat:'puzzle',thumb:'assets/games/thumbs/mosaic.png'},
 {id:'rootflow',n:'Root Flow',i:'\ud83d\udd17',r:'Draw paths to connect matching roots. Fill every cell!',cat:'puzzle',thumb:'assets/games/thumbs/rootflow.png'},
@@ -63232,12 +63240,12 @@ var G=[
 {id:'pollen',n:'Master Pollinator',sub:'Engine builder',i:'\ud83d\udc1d',r:'Collect pollen, grow plants that produce more pollen. Attract pollinators. Race to 15 Growth!',cat:'board',thumb:'assets/games/thumbs/pollen.png'},
 {id:'stonegarden',n:'Stone Garden',i:'\ud83e\udea8',r:'Stack stones in zen balance. Reach the target height without collapsing!',cat:'creative',thumb:'assets/games/thumbs/stonegarden.webp',wip:true},
 {id:'livingstones',n:'Go (Living Stones)',i:'\u26ab',r:'Go, the 4000-year-old strategy game. 24 verified life-and-death puzzles plus full play vs. an MCTS opponent on 9\u00d79 or 13\u00d713 with ko rule, komi, undo, and handicap stones.',cat:'board',thumb:'assets/games/thumbs/livingstones.png'},
-{id:'trellis',n:'Word Trellis',i:'\ud83d\udd24',r:'Word-builder on a 15x15 grid. Play words on premium squares for big scores. AI opponent.',cat:'board',thumb:'assets/games/thumbs/trellis.png'},
+{id:'trellis',n:'Word Trellis',i:'\ud83d\udd24',r:'Word-builder on a 15x15 grid. Play words on premium squares for big scores. AI opponent.',cat:'word',thumb:'assets/games/thumbs/trellis.png'},
 {id:'petalmatch',n:'Petal Match',i:'\ud83c\udf38',r:'Swap botanical gems to make lines. Chain cascades for combos!',cat:'puzzle',thumb:'assets/games/thumbs/petalmatch.png'},
 {id:'pixelgarden',n:'Pixel Garden',i:'\ud83c\udfa8',r:'Pixel art painter. Draw with 24 botanical colors. Save as PNG!',cat:'creative',thumb:'assets/games/thumbs/pixelgarden.jpg'},
-{id:'numbergarden',n:'Fast Math',i:'\ud83d\udd22',r:'60-second arithmetic drill. Add, subtract, multiply, build your streak!',cat:'pattern',thumb:'assets/games/thumbs/numbergarden.png'},
-{id:'sprout',n:'Word Sprout',i:'\ud83c\udf31',r:'Find the hidden 5-letter word in 6 guesses. Green = right spot, Gold = wrong spot.',cat:'puzzle',thumb:'assets/games/thumbs/sprout.png'},
-{id:'vinewords',n:'Vine Words',i:'\ud83d\udd24',r:'Find words by connecting adjacent letters. 2 minutes, longer = more points!',cat:'puzzle',thumb:'assets/games/thumbs/vinewords.png'},
+{id:'numbergarden',n:'Fast Math',i:'\ud83d\udd22',r:'60-second arithmetic drill. Add, subtract, multiply, build your streak!',cat:'math',thumb:'assets/games/thumbs/numbergarden.png'},
+{id:'sprout',n:'Word Sprout',i:'\ud83c\udf31',r:'Find the hidden 5-letter word in 6 guesses. Green = right spot, Gold = wrong spot.',cat:'word',thumb:'assets/games/thumbs/sprout.png'},
+{id:'vinewords',n:'Vine Words',i:'\ud83d\udd24',r:'Find words by connecting adjacent letters. 2 minutes, longer = more points!',cat:'word',thumb:'assets/games/thumbs/vinewords.png'},
 {id:'storyseeds',n:'Story Seeds',i:'\ud83d\udcdc',r:'Daily writing prompts. Plant a seed, watch the story grow. Save your entries!',cat:'creative',thumb:'assets/games/thumbs/storyseeds.jpg'},
 {id:'seedsow',n:'Mancala',i:'\ud83c\udf31',r:'Sow seeds around the board, capture into your store. First to empty wins.',cat:'board',thumb:'assets/games/thumbs/seedsow.png'},
 {id:'recall',n:'Memory Meadow',i:'\ud83e\udde0',r:'Memory recall: watch symbols, count backwards, tap the ones you saw.',cat:'pattern',thumb:'assets/games/thumbs/recall.png'},
@@ -63279,7 +63287,7 @@ var G=[
 // so first-party (not hidden in Pi Browser). Power Scalers / Dragon / Bloom Breaker
 // keep their own local economies (no Sunbeam bridge yet); Pong bridges via the SDK.
 {id:'powerscalers',n:'Power Scalers',i:'⚔️',r:'Forge original characters, grow them on a vast Path-of-Exile-style passive skill web, socket rarity-graded augments and jewels, pick an ascendancy, then send them into duels, tournaments and a solo gauntlet.',cat:'studio',ext:'/satellites/power-scalers/',thumb:'portal-assets/thumbs/power-scalers.jpg'},
-{id:'dragonphil',n:'Dragon Philosophy',i:'🐉',r:'You don’t build a deck, you shape an ideology. Swear to a dragon patron, draft five colors from a shared market, and win by breaking your rival’s Resolve, out-scoring them, or transcending into Enlightenment.',cat:'studio',ext:'/satellites/dragon-philosophy/',thumb:'portal-assets/thumbs/dragon-philosophy.png'},
+{id:'dragonphil',n:'Dragon Philosophy',i:'🐉',r:'You don’t build a deck, you shape an ideology. Swear to a dragon patron, draft five colors from a shared market, and win by breaking your rival’s Resolve, out-scoring them, or transcending into Enlightenment.',cat:'studio',ext:'/satellites/dragon-philosophy/',thumb:'portal-assets/thumbs/dragon-philosophy.png',beta:true},
 {id:'pong',n:'Pong Arena',i:'🏓',r:'Every pong that ever was — classic, vertical, radial, powerups, multiball and survival on one physics core. Grind a 12-stage career, then spend your winnings on 500+ paddles, balls, trails and arenas.',cat:'studio',ext:'/satellites/pong/',thumb:'portal-assets/thumbs/pong-arena.jpg'},
 {id:'bloombreaker',n:'Bloom Breaker',i:'🧱',r:'Break the bramble, bank the bloom — a botanical brick-breaker with paddle english, 24 powerups, 60 hand-built levels across 6 worlds, an endless mode, a boss, and a shop full of skins.',cat:'studio',ext:'/satellites/bloom-breaker/',thumb:'portal-assets/thumbs/bloom-breaker.jpg'},
 // Batch 2 (Jul 05) — same-origin satellites with the Sunbeam bridge. Glyph-only
@@ -64716,7 +64724,7 @@ function _bp(){var p=document.getElementById('fg-pk');if(!p)return;p.innerHTML='
   allBtn.addEventListener('click',_op);p.appendChild(allBtn);
   // Category chips — quick-filter by type
   G_CATS.forEach(function(cat){
-    var count=G.filter(function(g){return g.cat===cat.key&&!_gHiddenHere(g)}).length;
+    var count=G.filter(function(g){return !_gHiddenHere(g)&&(cat.key==='indev'?!!g.beta:(g.cat===cat.key&&!g.beta))}).length;
     if(!count)return;
     var c=document.createElement('div');c.className='fg-c';
     c.innerHTML='<span class="fi">'+(window._lwEmojiSprite?_lwEmojiSprite(cat.icon,28):cat.icon)+'</span><span class="fn">'+cat.label+'</span>';
@@ -64756,7 +64764,7 @@ function _op(){var o=document.getElementById('fg-ov'),rc=_gr();
   // Category accordions
   var gi=0;
   G_CATS.forEach(function(cat){
-    var games=G.filter(function(g){return g.cat===cat.key&&!_gHiddenHere(g)});
+    var games=G.filter(function(g){return !_gHiddenHere(g)&&(cat.key==='indev'?!!g.beta:(g.cat===cat.key&&!g.beta))});
     if(!games.length)return;
     h+='<div class="gp-cat" data-cat="'+cat.key+'">';
     h+='<button class="gp-cat-hdr" onclick="this.parentElement.classList.toggle(\'open\');this.querySelector(\'.gp-chev\').classList.toggle(\'open\')">';
