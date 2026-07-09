@@ -328,7 +328,7 @@ function saveProfile(now){
   if(now){ try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){} return; }
   if(_saveT) return; _saveT=setTimeout(function(){_saveT=0; try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){}},350);
 }
-function owns(kind,id){ var it=catItem(kind,id); if(it.cost===0&&!it.unlock) return true; return !!(P.owned[kind]&&P.owned[kind][id]); }
+function owns(kind,id){ var it=catItem(kind,id); if(it.cost===0&&!it.unlock) return true; if(it.unlock){ var mid=it.unlock.split(':')[1]; if(P.ms&&P.ms[mid]) return true; } return !!(P.owned[kind]&&P.owned[kind][id]); }
 function grant(kind,id){ if(!P.owned[kind])P.owned[kind]={}; P.owned[kind][id]=1; }
 function achieve(id){ if(P.ms[id])return false; P.ms[id]=1; saveProfile(); return true; }
 
@@ -1482,7 +1482,7 @@ window.PP={ startRun:startRun, get S(){return S;}, CFG:CFG, MODES:MODES, CATALOG
   step:function(dt){ if(S&&S.running&&!S.paused&&!S.over) update(dt); },
   setInput:function(steer,tuck){ if(S){ S.steer=steer; S.tuck=!!tuck; } },
   trick:function(){ doTrick(); },
-  cam:function(){return cam;}, halfW:halfW };
+  cam:function(){return cam;}, halfW:halfW, owns:function(k,i){return owns(k,i);} };
 
 /*__APPEND__*/
 })();
