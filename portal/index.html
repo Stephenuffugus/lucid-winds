@@ -574,9 +574,13 @@ function renderGarden(cat){
     ? FEATURED.filter(function(g){return !g.hub && g.beta;})
     : ((cat==="all"||cat==="new") ? FEATURED.filter(function(g){return !g.hub && !g.beta;}) : []);
   var list = (cat==="new"||cat==="indev") ? [] : GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
+  // Alphabetical by display name (Stephen 2026-07-09) — satellites + native games
+  // merged into ONE A-Z list per tab so every game is easy to find.
+  var items = sats.map(function(g){return {g:g,feat:true,nm:(g.nm||"")};})
+    .concat(list.map(function(g){return {g:g,feat:false,nm:(g[1]||"")};}));
+  items.sort(function(a,b){var x=a.nm.toLowerCase(),y=b.nm.toLowerCase();return x<y?-1:(x>y?1:0);});
   document.getElementById('garden').innerHTML =
-    sats.map(function(g){return card(g,true);}).join('') +
-    list.map(function(g){return card(g,false);}).join('');
+    items.map(function(it){return card(it.g,it.feat);}).join('');
 }
 document.getElementById('tabs').innerHTML = CATS.map(function(c,i){
   return '<button class="'+(i===0?'on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>';
