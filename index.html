@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.09.03';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.09.04';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -6933,17 +6933,12 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
     .ob-auth-err{font-size:0.65rem;color:#c07070;min-height:1.2rem;margin-bottom:0.3rem;text-align:center;font-family:'DM Mono',monospace;line-height:1.4;}
     .ob-skip{position:fixed;bottom:calc(1.8rem + env(safe-area-inset-bottom, 0px));right:1.2rem;font-family:'DM Mono',monospace;font-size:0.7rem;color:rgba(200,200,200,0.85);cursor:pointer;z-index:2147483647;opacity:0;transition:opacity 0.5s ease;padding:12px 18px;background:rgba(18,22,16,0.85);border:1.5px solid rgba(200,168,75,0.45);border-radius:10px;letter-spacing:0.12em;min-height:48px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.55);}
     .ob-skip.show{opacity:1;}
-    /* Portal escape hatch (2026-07-09) — GATED to arcade arrivals only. A
-       visitor who came from the Sky Wolf portal (?from=portal / portal referrer
-       / lw_from_portal), tapped into Lucid Winds, and hit the plant onboarding
-       can bail straight back to the arcade (instant play, no signup). Organic,
-       Pi Browser, PWA and direct new-user opens NEVER see it, so the signup
-       funnel is untouched (CLAUDE.md onboarding pitfall #5). Hidden by default;
-       revealed with .sw-show by the fromPortal detector (~line 104300).
+    /* Portal escape hatch (2026-07-09) — shown to ALL onboarding users (Director
+       call 2026-07-09: max reach; the funnel tradeoff was flagged + accepted).
+       "Just wanna play games?" → /portal/, the live no-signup Sky Wolf arcade.
        Bottom-LEFT so it never sits on the skip button (bottom-right); hidden on
        beat 4 so it doesn't clutter sign-up. */
-    #ob-portal-escape{position:fixed;left:1.2rem;bottom:calc(1.8rem + env(safe-area-inset-bottom,0px));z-index:2147483646;font-family:'DM Mono',monospace;font-size:0.62rem;color:rgba(232,220,200,0.72);background:rgba(18,22,16,0.85);border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;padding:11px 15px;text-decoration:none;white-space:nowrap;min-height:48px;display:none;align-items:center;letter-spacing:0.03em;box-shadow:0 4px 14px rgba(0,0,0,0.5);opacity:0;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
-    #ob-portal-escape.sw-show{display:inline-flex;animation:obEscFade 0.6s ease 1.6s forwards;}
+    #ob-portal-escape{position:fixed;left:1.2rem;bottom:calc(1.8rem + env(safe-area-inset-bottom,0px));z-index:2147483646;font-family:'DM Mono',monospace;font-size:0.62rem;color:rgba(232,220,200,0.72);background:rgba(18,22,16,0.85);border:1.5px solid rgba(122,179,86,0.4);border-radius:10px;padding:11px 15px;text-decoration:none;white-space:nowrap;min-height:48px;display:inline-flex;align-items:center;letter-spacing:0.03em;box-shadow:0 4px 14px rgba(0,0,0,0.5);opacity:0;animation:obEscFade 0.6s ease 1.6s forwards;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
     #ob-portal-escape .arc{color:var(--sage);font-weight:700;margin-left:6px;}
     @keyframes obEscFade{to{opacity:1;}}
     #pw-onboard:has(#ob-beat4.show) #ob-portal-escape{display:none;}
@@ -8320,8 +8315,8 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       <div class="splash-title">lucid <em>winds</em></div>
       <div style="position:absolute;bottom:0;right:0;width:120px;height:40px;background:linear-gradient(135deg,transparent 30%,#050505 70%);pointer-events:none;z-index:1;"></div>
     </div>
-    <!-- Portal escape hatch: shown ONLY to arcade arrivals (revealed via .sw-show
-         by the fromPortal detector). "just wanna play games?" → Sky Wolf arcade. -->
+    <!-- Portal escape hatch: shown to all onboarding users. "just wanna play
+         games?" → Sky Wolf arcade (/portal/, no signup). -->
     <a id="ob-portal-escape" href="/portal/">🎮 Just wanna play games?<span class="arc">→</span></a>
     <!-- Beat 1: Rain figure + "We lost something" -->
     <!-- Beat 1: Zoomed out, rain, figure -->
@@ -104303,15 +104298,6 @@ window.LW_Comp = (function(){
       else if (sessionStorage.getItem('lw_from_portal') === '1') fromPortal = true;
     } catch(e){}
     if (!fromPortal) return;
-    // Onboarding escape hatch (#ob-portal-escape) shares this same "arrived from
-    // the arcade" signal: a portal visitor who tapped into LW and hit the plant
-    // onboarding can bail back to games. Organic / Pi / PWA / direct new-user
-    // opens fail the gate above and never reveal it — signup funnel intact.
-    (function(){
-      function revealEsc(){ var e = document.getElementById('ob-portal-escape'); if (e) e.classList.add('sw-show'); }
-      if (document.getElementById('ob-portal-escape')) revealEsc();
-      else document.addEventListener('DOMContentLoaded', revealEsc);
-    })();
     function build(){
       if (document.getElementById('lw-swback')) return;
       var st = document.createElement('style');
