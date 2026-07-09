@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%23e58fa0'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23c8a84b'/%3E%3Cpath d='M4 26 L26 6' stroke='%237ab356' stroke-width='2.5' fill='none'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Petal Slice">
+<title>Petal Slice — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"petalslice"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --red:#e5604d; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--pink); font-weight:800; text-shadow:0 3px 0 #2a1418, 0 0 26px #e58fa044; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:410px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#e58fa0,#c96f82); color:#2a1016; border-color:#f0a7b6; box-shadow:0 4px 0 #8f4b58, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--pink); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.bladerow{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:440px; margin:0 auto}
+.bladecard{width:120px; padding:12px 8px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; text-align:center}
+.bladecard.on{border-color:var(--gold); background:rgba(200,168,75,0.10)}
+.bladecard.locked{opacity:.5; cursor:default}
+.bladecard canvas{width:104px; height:40px; display:block; margin:0 auto 6px}
+.bladecard .bn{font-size:13px; font-weight:800}
+.bladecard .bu{font-size:10px; color:var(--muted); margin-top:2px}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.go-score{font-size:64px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.go-stat{display:flex; justify-content:space-between; width:100%; max-width:300px; margin:6px auto; font-size:15px; padding:7px 4px; border-bottom:1px solid var(--line)}
+.go-stat b{color:var(--pink)}
+.sun-earn{margin-top:14px; font-size:20px; color:var(--gold); font-weight:800}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#221018; border:1px solid var(--line); color:var(--pink); font-weight:800; font-size:13px; margin-top:8px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Petal Slice</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Swipe to slice the tossed seed pods and blossoms in one stroke. Trace a glowing <b class="hl">graft line</b> through a cluster to weave a keepsake bloom — just don't slice the thorny burrs.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-grove">🌿&nbsp; Grove</button>
+      <div class="row">
+        <button class="btn sm" id="b-daily">📅 Daily Bloom</button>
+        <button class="btn sm" id="b-zen">🍃 Zen Garden</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-blades">🌱 Blades</button>
+        <button class="btn sm" id="b-how">How to play</button>
+        <button class="btn sm" id="b-set">⚙</button>
+      </div>
+      <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">✂️</div><div><b>Swipe</b> across the tossed pods, berries, and blossoms to slice them. One stroke can cut many for a <b class="hl">combo</b>.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div>A glowing <b class="hl">graft line</b> links a cluster. Trace the whole line in one unbroken swipe to <b>graft a keepsake bloom</b> — big bonus.</div></div>
+    <div class="helprow"><div class="hi">🌵</div><div>Don't slice the <b style="color:var(--red)">thorny burrs</b> (they pulse red). Each one you cut wilts a petal.</div></div>
+    <div class="helprow"><div class="hi">🌼</div><div><b>Grove:</b> you have 3 petals — lose them all and the run ends. <b>Zen:</b> no burrs, no fail, just slice. <b>Daily:</b> one seeded board a day.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Screen shake</span><div class="toggle on" id="tg-shake"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- BLADES -->
+  <div class="screen" id="s-blades"><div class="pad">
+    <h2 class="sc-h">Blades</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:18px">Your slicing vine. Reach the scores to grow new ones.</div>
+    <div class="bladerow" id="blade-row"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="blades-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- GAME OVER -->
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div style="flex:1"></div>
+    <div style="font-size:44px" id="go-emoji">🌸</div>
+    <div class="go-score" id="go-score">0</div>
+    <div class="go-lab" id="go-lab">nectar</div>
+    <div class="pill" id="go-best">Best 0</div>
+    <div style="width:100%;max-width:300px;margin-top:14px">
+      <div class="go-stat"><span>Grafts woven</span><b id="go-grafts">0</b></div>
+      <div class="go-stat"><span>Best combo</span><b id="go-combo">0</b></div>
+    </div>
+    <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="go-retry">↻ Slice again</button>
+      <div class="row">
+        <button class="btn sm" id="go-home">◄ Menu</button>
+        <button class="btn sm" id="go-share">↗ Share</button>
+      </div>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
+var BUILD='v1.0';
+var GRAV=1500;   // px/s^2
+var curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
+
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, shake:true };
+(function(){ try{ var s=JSON.parse(LS.get('ps_set')||'{}'); ['sound','shake'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+function saveSet(){ LS.set('ps_set', JSON.stringify(SET)); }
+var PROG={ best:{grove:0,daily:0,zen:0}, grafts:0, blade:'vine', unlocked:{vine:1} };
+(function(){ try{ var p=JSON.parse(LS.get('ps_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.grafts==='number')PROG.grafts=p.grafts; if(p.blade)PROG.blade=p.blade; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.vine)PROG.unlocked.vine=1; }catch(e){} })();
+function saveProg(){ LS.set('ps_prog', JSON.stringify(PROG)); }
+
+/* blade skins — cosmetic trail, unlock by best grove score */
+var BLADES=[
+  {id:'vine',   name:'Vine',       col:'#7ab356', glow:'#a7d17a', unlock:0,    leaf:1},
+  {id:'nectar', name:'Nectar',     col:'#e8c65a', glow:'#fff2c0', unlock:1500},
+  {id:'rose',   name:'Rose Thorn', col:'#e58fa0', glow:'#f5c4cf', unlock:4000},
+  {id:'frost',  name:'Frostvine',  col:'#8fd0e0', glow:'#d6f2fa', unlock:9000},
+  {id:'aurora', name:'Aurora',     col:'#b57de0', glow:'#e2c4f2', unlock:16000, rainbow:1}
+];
+function bladeById(id){ for(var i=0;i<BLADES.length;i++) if(BLADES[i].id===id)return BLADES[i]; return BLADES[0]; }
+
+/* ===== audio ===== */
+var AC=null; function ac(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} return AC; }
+function beep(f,d,t,v,to){ if(!SET.sound)return; var c=ac(); if(!c)return; try{ var o=c.createOscillator(),g=c.createGain(); o.type=t||'sine'; o.frequency.value=f; if(to)o.frequency.exponentialRampToValueAtTime(to,c.currentTime+d); g.gain.value=v||0.05; g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+d); }catch(e){} }
+var CHIME=[523,587,659,784,880,988,1175,1318,1568];
+function sfx(k,n){ switch(k){
+  case 'slice': beep(500+Math.random()*120,0.06,'triangle',0.05,900); break;
+  case 'combo': beep(CHIME[Math.min(n||0,CHIME.length-1)],0.09,'triangle',0.06); break;
+  case 'graft': beep(659,0.12,'triangle',0.09); setTimeout(function(){beep(988,0.12,'triangle',0.08);},90); setTimeout(function(){beep(1318,0.2,'sine',0.08);},200); break;
+  case 'burr': beep(200,0.18,'sawtooth',0.08,90); break;
+  case 'ui': beep(440,0.05,'sine',0.05); break;
+  case 'over': beep(392,0.14,'triangle',0.08,220); setTimeout(function(){beep(262,0.22,'sine',0.07,160);},150); break;
+  case 'unlock': beep(659,0.1,'triangle',0.09); setTimeout(function(){beep(988,0.14,'sine',0.08);},120); break;
+} }
+function haptic(ms){ try{ if(navigator.vibrate && SET.sound) navigator.vibrate(ms||8); }catch(e){} }
+
+/* ===== seeded RNG (Daily) ===== */
+function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
+
+/* ===== object palettes ===== */
+var PODS=[
+  {r:26, body:'#e5604d', core:'#7a1f16', kind:'berry'},
+  {r:24, body:'#b57de0', core:'#5a3d78', kind:'berry'},
+  {r:25, body:'#5b9bd5', core:'#274867', kind:'berry'},
+  {r:30, body:'#7ab356', core:'#3f6b34', kind:'pod'},
+  {r:30, body:'#e58fa0', core:'#c96f82', kind:'blossom'},
+  {r:27, body:'#e8c65a', core:'#8a6d1e', kind:'blossom'}
+];
+
+/* ===== game state ===== */
+var G=null, cv, ctx, running=false, lastTs=0;
+function newGame(mode){
+  var rng;
+  if(mode==='daily'){ var d=new Date(); rng=mkRng((d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())>>>0); }
+  else rng=mkRng((Date.now()>>>0)^(Math.floor(Math.random()*1e9)));
+  G={ mode:mode, rng:rng, objs:[], halves:[], parts:[], splats:[], floats:[], blade:[], blades:bladeById(PROG.blade),
+      score:0, combo:0, bestCombo:0, grafts:0, petals:3, t:0, spawnT:0.6, wave:0, slow:1, flash:0, shake:0,
+      strokeId:0, down:false, phase:'play', timeLeft: mode==='zen'?90: mode==='daily'?60:0, grafting:null };
+  show('s-play');
+}
+
+/* ===== spawning ===== */
+function diff(){ return Math.min(9, G.t/22); }
+function spawnWave(){
+  var rng=G.rng, d=diff();
+  var graftChance = 0.28 + d*0.02;
+  if(rng()<graftChance){ spawnGraft(); }
+  else {
+    var n=1+Math.floor(rng()* (1+Math.min(3,d*0.4)));
+    for(var i=0;i<n;i++) launchPod(pickPod(), rng);
+  }
+  // burrs (not in zen)
+  if(G.mode!=='zen' && G.t>4 && rng() < Math.min(0.5,0.14+d*0.04)) launchBurr(rng);
+}
+function pickPod(){ return PODS[Math.floor(G.rng()*PODS.length)]; }
+function launchPod(def,rng){
+  var x=60+rng()*(VW-120);
+  var vy=-(980+rng()*260 + diff()*20);
+  var vx=(rng()-0.5)*300 + (x<VW/2?60:-60);
+  G.objs.push({ x:x, y:VH+40, vx:vx, vy:vy, r:def.r, body:def.body, core:def.core, kind:def.kind, rot:rng()*6.28, vr:(rng()-0.5)*5, sliced:false, burr:false, graft:null });
+}
+function launchBurr(rng){
+  var x=60+rng()*(VW-120);
+  G.objs.push({ x:x, y:VH+40, vx:(rng()-0.5)*260, vy:-(980+rng()*220), r:24, body:'#8a221a', core:'#e5604d', kind:'burr', rot:0, vr:(rng()-0.5)*3, sliced:false, burr:true, graft:null });
+}
+function spawnGraft(){
+  var rng=G.rng, n=3+(rng()<0.4?1:0), members=[], gid=++G.strokeId+9000;
+  var baseX=90+rng()*(VW-180), baseVy=-(1000+rng()*160), spread=(VW-140);
+  for(var i=0;i<n;i++){
+    var t=n>1?i/(n-1):0.5, x=baseX + (t-0.5)*spread*0.7 + (rng()-0.5)*30;
+    x=Math.max(50,Math.min(VW-50,x));
+    var def=PODS[3+Math.floor(rng()*3)];
+    var o={ x:x, y:VH+40+i*10, vx:(x<VW/2?70:-70)+(rng()-0.5)*80, vy:baseVy-(i*30), r:def.r, body:def.body, core:def.core, kind:def.kind, rot:rng()*6.28, vr:(rng()-0.5)*4, sliced:false, burr:false, graft:gid };
+    members.push(o); G.objs.push(o);
+  }
+  // register the graft group
+  G.grafting=G.grafting||{}; G.grafting[gid]={ members:members, total:n, hits:0, stroke:-1, done:false };
+}
+
+/* ===== blade / slicing ===== */
+function segDist(px,py,ax,ay,bx,by){ var dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy; if(l2<0.001)return Math.hypot(px-ax,py-ay); var t=((px-ax)*dx+(py-ay)*dy)/l2; t=Math.max(0,Math.min(1,t)); return Math.hypot(px-(ax+t*dx),py-(ay+t*dy)); }
+function bladeSeg(ax,ay,bx,by){
+  if(!G||G.phase!=='play')return;
+  var len=Math.hypot(bx-ax,by-ay); if(len<7)return;
+  for(var i=G.objs.length-1;i>=0;i--){ var o=G.objs[i]; if(o.sliced)continue;
+    if(segDist(o.x,o.y,ax,ay,bx,by) < o.r+8){ sliceObj(o,i,bx-ax,by-ay); }
+  }
+}
+function sliceObj(o,idx,dirx,diry){
+  o.sliced=true; G.objs.splice(idx,1);
+  if(o.burr){ hitBurr(o); return; }
+  // halves fly apart perpendicular to the cut
+  var a=Math.atan2(diry,dirx), n1=a+Math.PI/2, n2=a-Math.PI/2, sp=140+Math.random()*80;
+  G.halves.push({x:o.x,y:o.y,vx:Math.cos(n1)*sp+o.vx*0.3,vy:Math.sin(n1)*sp+o.vy*0.3,rot:a,vr:4,r:o.r,body:o.body,core:o.core,side:1,life:1});
+  G.halves.push({x:o.x,y:o.y,vx:Math.cos(n2)*sp+o.vx*0.3,vy:Math.sin(n2)*sp+o.vy*0.3,rot:a,vr:-4,r:o.r,body:o.body,core:o.core,side:-1,life:1});
+  juice(o.x,o.y,o.body,o.core);
+  // score + combo
+  G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo; G.comboTimer=0.9;
+  var pts=Math.round(10*(1+G.combo*0.12));
+  G.score+=pts; sfx('slice'); sfx('combo',G.combo); haptic(6);
+  if(G.combo>=3){ float(o.x,o.y-20,'✦ '+G.combo+'x'); G.slow=Math.min(G.slow,0.55); }
+  // graft progress
+  if(o.graft && G.grafting && G.grafting[o.graft]){ var gr=G.grafting[o.graft];
+    if(gr.stroke===-1) gr.stroke=G.strokeId;
+    if(gr.stroke===G.strokeId){ gr.hits++; if(gr.hits>=gr.total && !gr.done){ graftDone(gr); } }
+    else { gr.stroke=G.strokeId; gr.hits=1; } // stroke broken → restart count
+  }
+}
+function graftDone(gr){ gr.done=true; G.grafts++;
+  var cx=0,cy=0; for(var i=0;i<gr.members.length;i++){ cx+=gr.members[i].x; cy+=gr.members[i].y; } cx/=gr.members.length; cy/=gr.members.length;
+  var bonus=200+gr.total*120+G.combo*20; G.score+=bonus;
+  G.slow=0.25; G.flash=Math.max(G.flash,0.6); G.shake=Math.max(G.shake,6);
+  float(cx,cy-10,'✿ GRAFT +'+bonus); float(cx,cy-34,gr.total>=4?'RARE CUTTING':'BLOOM WOVEN');
+  for(var k=0;k<20;k++){ var a=Math.PI*2*k/20; G.parts.push({x:cx,y:cy,vx:Math.cos(a)*(80+Math.random()*140),vy:Math.sin(a)*(80+Math.random()*140),life:1,col:k%2?'#f2d98a':'#e58fa0'}); }
+  sfx('graft'); haptic(24);
+  if(G.mode==='zen'){ if(G.score>(PROG.best.zen||0))PROG.best.zen=G.score; PROG.grafts=(PROG.grafts||0)+1; saveProg(); try{ if(window._sbCapEarn)_sbCapEarn(1,'petalslice:zen'); }catch(e){} }
+}
+function hitBurr(o){
+  juice(o.x,o.y,'#e5604d','#8a221a'); for(var k=0;k<14;k++){ var a=Math.PI*2*k/14; G.parts.push({x:o.x,y:o.y,vx:Math.cos(a)*160,vy:Math.sin(a)*160,life:1,col:'#e5604d'}); }
+  G.combo=0; G.shake=Math.max(G.shake,10); G.flash=Math.max(G.flash,0.4); sfx('burr'); haptic(30);
+  if(G.mode!=='zen'){ G.petals--; float(o.x,o.y-20,'petal wilted'); if(G.petals<=0){ endRun(); } }
+}
+function juice(x,y,body,core){ for(var i=0;i<9;i++){ var a=Math.random()*6.28, sp=60+Math.random()*160; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:0.9,col:Math.random()<0.5?body:core}); }
+  // nectar splatter sticks to the backdrop
+  for(var s=0;s<3;s++){ G.splats.push({x:x+(Math.random()-0.5)*40,y:y+(Math.random()-0.5)*40,r:6+Math.random()*10,col:body,life:1}); if(G.splats.length>80)G.splats.shift(); }
+}
+function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.2}); }
+
+/* ===== update ===== */
+function step(dt){
+  if(!G)return; var slow=G.slow, sdt=dt*slow;
+  G.t+=dt;
+  if((G.mode==='zen'||G.mode==='daily')){ G.timeLeft-=dt; if(G.timeLeft<=0){ G.timeLeft=0; if(G.phase==='play'){ endRun(); } } }
+  // spawns
+  if(G.phase==='play'){ G.spawnT-=dt; if(G.spawnT<=0){ spawnWave(); G.spawnT=Math.max(0.5, 1.5-diff()*0.11); } }
+  // objects
+  for(var i=G.objs.length-1;i>=0;i--){ var o=G.objs[i]; o.vy+=GRAV*sdt; o.x+=o.vx*sdt; o.y+=o.vy*sdt; o.rot+=o.vr*sdt;
+    if(o.y>VH+80 && o.vy>0){ G.objs.splice(i,1); if(o.graft && G.grafting && G.grafting[o.graft]){ /* missed graft member — group just fizzles */ } }
+  }
+  // halves
+  for(i=G.halves.length-1;i>=0;i--){ var h=G.halves[i]; h.vy+=GRAV*sdt; h.x+=h.vx*sdt; h.y+=h.vy*sdt; h.rot+=h.vr*sdt; h.life-=dt*0.9; if(h.life<=0||h.y>VH+80)G.halves.splice(i,1); }
+  // particles / splats / floats
+  for(i=G.parts.length-1;i>=0;i--){ var p=G.parts[i]; p.x+=p.vx*sdt; p.y+=p.vy*sdt; p.vy+=900*sdt; p.life-=dt*1.6; if(p.life<=0)G.parts.splice(i,1); }
+  for(i=G.splats.length-1;i>=0;i--){ G.splats[i].life-=dt*0.22; if(G.splats[i].life<=0)G.splats.splice(i,1); }
+  for(i=G.floats.length-1;i>=0;i--){ G.floats[i].y-=34*dt; G.floats[i].life-=dt*1.0; if(G.floats[i].life<=0)G.floats.splice(i,1); }
+  // combo timeout
+  if(G.comboTimer!=null){ G.comboTimer-=dt; if(G.comboTimer<=0){ G.combo=0; G.comboTimer=null; } }
+  // blade trail decay
+  for(i=G.blade.length-1;i>=0;i--){ G.blade[i].life-=dt*3.2; if(G.blade[i].life<=0)G.blade.splice(i,1); }
+  // fx
+  if(G.slow<1){ G.slow+=dt*2.0; if(G.slow>1)G.slow=1; }
+  if(G.flash>0){ G.flash-=dt*1.6; if(G.flash<0)G.flash=0; }
+  if(G.shake>0)G.shake*=Math.pow(0.0015,dt);
+}
+function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false;
+  var best=PROG.best[G.mode]||0, isBest=G.score>best; if(isBest)PROG.best[G.mode]=G.score;
+  PROG.grafts=(PROG.grafts||0)+G.grafts;
+  if(G.mode==='grove'){ BLADES.forEach(function(bl){ if(!PROG.unlocked[bl.id] && (PROG.best.grove||0)>=bl.unlock){ PROG.unlocked[bl.id]=1; setTimeout(function(){ toast('New blade: '+bl.name); sfx('unlock'); },300); } }); }
+  saveProg();
+  var granted=0; try{ if(window._sbCapEarn){ var amt=Math.min(12, G.grafts*2 + (isBest?2:0) + Math.floor(G.score/400)); if(amt>0)granted=window._sbCapEarn(amt,'petalslice:'+G.mode)||0; } }catch(e){}
+  $('go-score').textContent=G.score;
+  $('go-lab').textContent=(G.mode==='daily'?"today's board":G.mode==='zen'?'nectar (zen)':'nectar');
+  $('go-best').textContent='Best '+(PROG.best[G.mode]||G.score);
+  $('go-grafts').textContent=G.grafts; $('go-combo').textContent=G.bestCombo;
+  $('go-emoji').textContent=isBest?'🏅':'🌸';
+  $('go-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
+  sfx('over'); setTimeout(function(){ show('s-go'); }, 500);
+}
+function toast(txt){ if(G)float(VW/2,140,txt); }
+
+/* ===== render ===== */
+function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05)dt=0.05;
+  if(G && G.phase==='play') step(dt); else if(G) step(dt); render(); requestAnimationFrame(loop);
+}
+function render(){ if(!ctx||!G)return;
+  ctx.clearRect(0,0,VW,VH);
+  ctx.save(); if(SET.shake && G.shake>0.4){ ctx.translate((Math.random()*2-1)*G.shake,(Math.random()*2-1)*G.shake); }
+  // backdrop: moonlit potting bench
+  var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#12180f'); g.addColorStop(0.62,'#0c120b'); g.addColorStop(1,'#0a0d08'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  // bench plank hint
+  ctx.fillStyle='rgba(90,70,45,0.14)'; ctx.fillRect(0,VH-120,VW,120); ctx.strokeStyle='rgba(200,168,75,0.08)'; ctx.lineWidth=2;
+  for(var pl=1;pl<4;pl++){ ctx.beginPath(); ctx.moveTo(0,VH-120+pl*30); ctx.lineTo(VW,VH-120+pl*30); ctx.stroke(); }
+  // nectar splatter on backdrop
+  for(var s=0;s<G.splats.length;s++){ var sp=G.splats[s]; ctx.globalAlpha=Math.min(0.5,sp.life)*0.5; ctx.fillStyle=sp.col; ctx.beginPath(); ctx.arc(sp.x,sp.y,sp.r,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  // graft connector lines (glowing)
+  if(G.grafting)for(var gid in G.grafting){ var gr=G.grafting[gid]; if(gr.done)continue; var live=[]; for(var m=0;m<gr.members.length;m++){ if(!gr.members[m].sliced && G.objs.indexOf(gr.members[m])>=0)live.push(gr.members[m]); }
+    if(live.length>=2){ ctx.save(); ctx.strokeStyle='rgba(200,168,75,0.5)'; ctx.lineWidth=3; ctx.shadowColor='rgba(232,198,90,0.7)'; ctx.shadowBlur=10; ctx.beginPath(); ctx.moveTo(live[0].x,live[0].y); for(var q=1;q<live.length;q++)ctx.lineTo(live[q].x,live[q].y); ctx.stroke(); ctx.restore();
+      // pulsing nodes
+      for(q=0;q<live.length;q++){ ctx.globalAlpha=0.5+0.4*Math.sin(G.t*5+q); ctx.strokeStyle='#f2d98a'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(live[q].x,live[q].y,live[q].r+7,0,7); ctx.stroke(); } ctx.globalAlpha=1;
+    } }
+  // objects
+  for(var i=0;i<G.objs.length;i++) drawObj(G.objs[i]);
+  // halves
+  for(i=0;i<G.halves.length;i++) drawHalf(G.halves[i]);
+  // particles
+  for(i=0;i<G.parts.length;i++){ var pt=G.parts[i]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,2.8,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  // blade trail
+  drawBlade();
+  // floats
+  ctx.textAlign='center'; ctx.font='800 17px system-ui';
+  for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life)); ctx.fillStyle='#f5ebd0'; ctx.fillText(f.txt,f.x,f.y); } ctx.globalAlpha=1;
+  ctx.restore();
+  // flash
+  if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.55,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  // HUD
+  ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui'; ctx.fillText(''+G.score, 18, 46);
+  ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY BLOOM':G.mode==='zen'?'ZEN GARDEN':'GROVE', 20, 62);
+  ctx.textAlign='right';
+  if(G.mode==='grove'){ ctx.font='800 22px system-ui'; var pe=''; for(var pp=0;pp<3;pp++)pe+=(pp<G.petals?'🌸':'🥀'); ctx.fillStyle='#e58fa0'; ctx.fillText(pe,VW-16,44); }
+  else { ctx.fillStyle='#c8a84b'; ctx.font='800 24px system-ui'; ctx.fillText(Math.ceil(G.timeLeft)+'s',VW-18,46); }
+  if(G.combo>=2){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 26px system-ui'; ctx.fillText(G.combo+'x',VW/2,52); }
+}
+function drawObj(o){ ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.rot);
+  if(o.burr){ var pulse=0.5+0.5*Math.sin(G.t*8); ctx.shadowColor='rgba(229,96,77,'+(0.5+pulse*0.4)+')'; ctx.shadowBlur=14+pulse*8;
+    ctx.fillStyle='#5a1712'; ctx.beginPath(); ctx.arc(0,0,o.r,0,7); ctx.fill(); ctx.shadowBlur=0;
+    ctx.strokeStyle='#e5604d'; ctx.lineWidth=3; for(var t=0;t<12;t++){ var a=Math.PI*2*t/12; ctx.beginPath(); ctx.moveTo(Math.cos(a)*o.r*0.7,Math.sin(a)*o.r*0.7); ctx.lineTo(Math.cos(a)*(o.r+9),Math.sin(a)*(o.r+9)); ctx.stroke(); }
+    ctx.fillStyle='#e5604d'; ctx.beginPath(); ctx.arc(0,0,o.r*0.4,0,7); ctx.fill(); ctx.restore(); return; }
+  ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
+  if(o.kind==='blossom'){ ctx.fillStyle=o.body; for(var k=0;k<6;k++){ var pa=Math.PI*2*k/6; ctx.beginPath(); ctx.ellipse(Math.cos(pa)*o.r*0.5,Math.sin(pa)*o.r*0.5,o.r*0.55,o.r*0.34,pa,0,7); ctx.fill(); } ctx.shadowBlur=0; ctx.fillStyle=o.core; ctx.beginPath(); ctx.arc(0,0,o.r*0.42,0,7); ctx.fill(); }
+  else { ctx.fillStyle=o.body; ctx.beginPath(); ctx.arc(0,0,o.r,0,7); ctx.fill(); ctx.shadowBlur=0; ctx.fillStyle=o.core; ctx.beginPath(); ctx.arc(0,0,o.r*0.42,0,7); ctx.fill(); if(o.kind==='pod'){ ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.beginPath(); ctx.ellipse(-o.r*0.3,-o.r*0.3,o.r*0.3,o.r*0.18,-0.6,0,7); ctx.fill(); } }
+  // rim light
+  ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.beginPath(); ctx.arc(-o.r*0.35,-o.r*0.4,o.r*0.22,0,7); ctx.fill();
+  ctx.restore();
+}
+function drawHalf(h){ ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(h.rot); ctx.globalAlpha=Math.max(0,Math.min(1,h.life));
+  ctx.fillStyle=h.body; ctx.beginPath(); ctx.arc(0,0,h.r, h.side>0?0:Math.PI, h.side>0?Math.PI:Math.PI*2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=h.core; ctx.beginPath(); ctx.arc(0,0,h.r*0.42, h.side>0?0:Math.PI, h.side>0?Math.PI:Math.PI*2); ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=1; ctx.restore();
+}
+function drawBlade(){ if(G.blade.length<2)return; var bl=G.blades;
+  for(var i=1;i<G.blade.length;i++){ var a=G.blade[i-1], b=G.blade[i]; var lifeA=Math.max(0,a.life);
+    var col=bl.rainbow?('hsl('+((G.t*120+i*24)%360)+',70%,68%)'):bl.col;
+    ctx.strokeStyle=col; ctx.lineCap='round'; ctx.lineWidth=2+10*lifeA; ctx.globalAlpha=lifeA*0.9;
+    ctx.shadowColor=bl.glow; ctx.shadowBlur=12*lifeA; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    // leaves along a vine blade
+    if(bl.leaf && i%2===0){ ctx.globalAlpha=lifeA*0.7; ctx.fillStyle=bl.glow; var mx=(a.x+b.x)/2,my=(a.y+b.y)/2; ctx.beginPath(); ctx.ellipse(mx,my,4,2.2,Math.atan2(b.y-a.y,b.x-a.x)+1.2,0,7); ctx.fill(); }
+  }
+  ctx.globalAlpha=1; ctx.shadowBlur=0;
+}
+
+/* ===== blades UI ===== */
+function drawBladePreview(cvp,bl){ var c=cvp.getContext('2d'); c.clearRect(0,0,104,40); c.lineCap='round'; c.lineWidth=8; c.strokeStyle=bl.rainbow?'#b57de0':bl.col; c.shadowColor=bl.glow; c.shadowBlur=8; c.beginPath(); c.moveTo(10,30); c.quadraticCurveTo(52,4,94,26); c.stroke(); }
+function renderBlades(){ var host=$('blade-row'); host.innerHTML=''; var bestG=PROG.best.grove||0;
+  BLADES.forEach(function(bl){ var un=PROG.unlocked[bl.id]||bestG>=bl.unlock; if(un)PROG.unlocked[bl.id]=1;
+    var card=document.createElement('div'); card.className='bladecard'+(PROG.blade===bl.id?' on':'')+(un?'':' locked');
+    var cvp=document.createElement('canvas'); cvp.width=104; cvp.height=40; card.appendChild(cvp);
+    var nm=document.createElement('div'); nm.className='bn'; nm.textContent=un?bl.name:'Locked'; card.appendChild(nm);
+    var bu=document.createElement('div'); bu.className='bu'; bu.textContent=un?(PROG.blade===bl.id?'equipped':'tap to wield'):(bl.unlock+' nectar'); card.appendChild(bu);
+    host.appendChild(card); if(un)drawBladePreview(cvp,bl); else drawBladePreview(cvp,{col:'#2a331f',glow:'#20281a'});
+    if(un)card.addEventListener('click',function(){ PROG.blade=bl.id; saveProg(); sfx('ui'); renderBlades(); });
+  });
+}
+
+/* ===== input ===== */
+function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
+var last={x:0,y:0};
+function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); var p=evPos(e); G.down=true; G.strokeId++; last=p; G.blade.push({x:p.x,y:p.y,life:1}); }
+function onMove(e){ if(curScreen!=='s-play'||!G||!G.down)return; e.preventDefault(); var p=evPos(e); G.blade.push({x:p.x,y:p.y,life:1}); if(G.blade.length>16)G.blade.shift(); bladeSeg(last.x,last.y,p.x,p.y); last=p; }
+function onUp(e){ if(curScreen!=='s-play'||!G)return; e.preventDefault(); G.down=false; }
+
+function wireToggle(id,get,set){ var el=$(id); function paint(){ if(get())el.classList.add('on'); else el.classList.remove('on'); } paint();
+  var host=el.parentNode||el; host.style.cursor='pointer'; host.addEventListener('click',function(e){ e.preventDefault(); set(!get()); paint(); saveSet(); sfx('ui'); }); }
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+function shareIt(){ var url="https://lucidwinds.com/satellites/petal-slice/"; var sc=(G&&G.score)||0; var txt="Petal Slice — I harvested "+sc+" nectar slicing the midnight garden! Beat it?";
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); } }
+
+function boot(){
+  cv=$('game'); ctx=cv.getContext('2d'); cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+  fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
+  cv.addEventListener('pointerdown',onDown,{passive:false}); window.addEventListener('pointermove',onMove,{passive:false}); window.addEventListener('pointerup',onUp,{passive:false});
+  document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+  document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden)running=false; else if(curScreen==='s-play'){running=true;lastTs=0;requestAnimationFrame(loop);} });
+  tap('b-grove', function(){ newGame('grove'); });
+  tap('b-daily', function(){ newGame('daily'); });
+  tap('b-zen', function(){ newGame('zen'); });
+  tap('b-blades', function(){ renderBlades(); show('s-blades'); });
+  tap('b-how', function(){ show('s-how'); });
+  tap('b-set', function(){ show('s-set'); });
+  tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
+  tap('how-back', function(){ show('s-title'); });
+  tap('set-back', function(){ show('s-title'); });
+  tap('blades-back', function(){ show('s-title'); });
+  tap('go-retry', function(){ newGame(G?G.mode:'grove'); });
+  tap('go-home', function(){ show('s-title'); });
+  tap('go-share', shareIt);
+  wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
+  wireToggle('tg-shake', function(){ return SET.shake; }, function(v){ SET.shake=v; });
+  $('buildstamp').textContent='Petal Slice '+BUILD+' · best '+(PROG.best.grove||0)+' nectar';
+}
+
+/* ===== embed + sunbeam ===== */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_petalslice'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ===== headless test hook ===== */
+if(/[?&]pstest=1/.test(location.search)){
+  window.PS_DEV={ start:newGame, state:function(){return G;}, step:function(dt){ step(dt||0.016); return {objs:G.objs.length,score:G.score,combo:G.combo,petals:G.petals,phase:G.phase,grafts:G.grafts}; },
+    // simulate a horizontal slash across the middle
+    slash:function(y){ y=y||VH*0.5; G.strokeId++; for(var x=20;x<=VW-20;x+=22){ bladeSeg(x-22,y,x,y); } return G.objs.length; },
+    // bot: run N seconds, slashing the screen when objects are in the upper-mid band
+    autoPlay:function(secs){ secs=secs||20; var t=0; while(G.phase==='play' && t<secs){ step(0.03); t+=0.03;
+        var hit=false; for(var i=0;i<G.objs.length;i++){ var o=G.objs[i]; if(!o.burr && o.y<VH*0.7 && o.y>VH*0.25){ hit=true; break; } }
+        if(hit){ var yy=VH*0.45; G.strokeId++; for(var x=20;x<=VW-20;x+=20)bladeSeg(x-20,yy,x,yy); }
+      } return {phase:G.phase,score:G.score,grafts:G.grafts,bestCombo:G.bestCombo}; },
+    spawnGraft:spawnGraft, endNow:function(){ if(G){G.petals=0;endRun();} }, mode:function(){return G?G.mode:null;}, render:render
+  };
+}
+boot();
+})();
+</script>
+</body>
+</html>
