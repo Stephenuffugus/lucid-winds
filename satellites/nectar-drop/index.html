@@ -56,6 +56,13 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
 .toggle.on b{left:31px; background:#eafbd6}
 .lvlgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; width:100%; max-width:440px; margin:0 auto}
+.charlist{display:flex; flex-direction:column; gap:10px; max-width:440px; margin:0 auto; width:100%}
+.charcard{display:flex; align-items:center; gap:14px; text-align:left; padding:12px 14px; width:100%; border:1px solid var(--line); border-radius:14px; background:#0f150c; color:var(--cream); cursor:pointer}
+.charcard.on{border-color:var(--gold); background:rgba(200,168,75,0.10)}
+.charcard.locked{opacity:0.5; cursor:default}
+.charcard .cc-ico{font-size:30px; width:44px; text-align:center; flex:none}
+.charcard .cc-name{font-size:17px; font-weight:800}
+.charcard .cc-desc{font-size:12.5px; color:var(--muted); margin-top:2px}
 .lvlcell{aspect-ratio:1; border-radius:14px; border:1px solid var(--line); background:#12180e;
   display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:22px; font-weight:800; color:var(--cream)}
 .lvlcell.done{border-color:#4c6b34; background:#16220f; color:var(--sage)}
@@ -98,8 +105,19 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <h2 class="sc-h">Choose a meadow</h2>
     <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Clear every red bloom before you run out of pollen.</div>
     <div class="lvlgrid" id="lvl-grid"></div>
-    <div style="height:16px"></div>
+    <div style="height:12px"></div>
+    <button class="btn sm" id="lvl-chars" style="max-width:440px;margin:0 auto">🌼 Gardeners — <span id="lvl-char-cur" style="color:var(--gold)"></span></button>
+    <div style="height:8px"></div>
     <button class="btn ghost sm" id="lvl-back" style="max-width:440px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- GARDENERS (character select) -->
+  <div class="screen" id="s-chars"><div class="pad">
+    <h2 class="sc-h">Gardeners</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Each gardener's <b>power bloom</b> — the green one — works differently. Clear meadows to befriend more.</div>
+    <div class="charlist" id="char-list"></div>
+    <div style="height:16px"></div>
+    <button class="btn ghost sm" id="chars-back" style="max-width:440px;margin:0 auto">◄ Back</button>
   </div></div>
 
   <!-- HOW -->
@@ -183,6 +201,36 @@ var SET={ sound:true, guide:true };
 function saveSet(){ LS.set('nd_set', JSON.stringify(SET)); }
 var PROG={ best:{}, cleared:{} };
 (function(){ try{ var p=JSON.parse(LS.get('nd_prog')||'{}'); if(p.best)PROG.best=p.best; if(p.cleared)PROG.cleared=p.cleared; }catch(e){} })();
+
+/* ===== gardeners: the green power-bloom fires the equipped character's power =====
+   Each fire(pg,b) is a small branch off the green-bloom hit; bloomBurst is the
+   default so the base game is unchanged. unlock = meadows cleared to befriend. */
+var EQUIPPED = LS.get('nd_char') || 'burst';
+var POWERS = {
+  burst: { name:'Bloombee',   comp:'🐝', unlock:0, desc:'Green pops a radial bloom-burst.',
+    fire:function(pg,b){ bloomBurst(pg.x,pg.y); } },
+  multi: { name:'Bramble',    comp:'🍯', unlock:2, desc:'Green splits your pollen into three.',
+    fire:function(pg,b){ bloomBurst(pg.x,pg.y); splitBall(pg.x,pg.y,b); } },
+  float: { name:'Ripple',     comp:'🐟', unlock:3, desc:'Green makes your ball float — gentle, forgiving, long.',
+    fire:function(pg,b){ if(b)b.buoyant=true; floater(pg.x,pg.y,'BUOYANT'); } },
+  fire:  { name:'Ember',      comp:'🦂', unlock:4, desc:'Green ignites your ball to plow straight through blooms.',
+    fire:function(pg,b){ if(b)b.pierce=true; floater(pg.x,pg.y,'FIRETHORN'); sfx('red'); } },
+  wild:  { name:'Iris',       comp:'🦋', unlock:5, desc:'Turns filler blooms into power blooms every shot.',
+    onLaunch:function(){ wildConvert(); }, fire:function(pg,b){ bloomBurst(pg.x,pg.y); } },
+  freeze:{ name:'Tusk',       comp:'🦣', unlock:6, desc:'Green freezes the meadow for a long icy slide.',
+    fire:function(pg,b){ G._icy=true; floater(pg.x,pg.y,'DEEP FREEZE'); } }
+};
+var POWER_ORDER=['burst','multi','float','fire','wild','freeze'];
+function firePower(pg,b){ var P=POWERS[G.character]||POWERS.burst; try{ P.fire(pg,b); }catch(e){ bloomBurst(pg.x,pg.y); } }
+function splitBall(x,y,parent){
+  var base=parent?Math.atan2(parent.vy,parent.vx):(Math.PI/2), sp=parent?Math.sqrt(parent.vx*parent.vx+parent.vy*parent.vy):SPEED;
+  if(sp<3)sp=3;
+  for(var k=-1;k<=1;k+=2){ var a=base+k*0.35;
+    G.balls.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:BALL_R,alive:true,free:false,pierce:false,buoyant:false,dist:0,wall:0,pegs:0,longDone:false,bankDone:false,trickDone:false}); }
+  floater(x,y-16,'POLLEN SPLIT');
+}
+function wildConvert(){ var blues=[],i; for(i=0;i<G.pegs.length;i++) if(G.pegs[i].type==='blue'&&!G.pegs[i].hit) blues.push(i);
+  for(var n=0;n<3&&blues.length;n++){ var j=Math.floor(Math.random()*blues.length); G.pegs[blues[j]].type='green'; blues.splice(j,1); } }
 function saveProg(){ LS.set('nd_prog', JSON.stringify(PROG)); }
 
 /* audio */
@@ -264,7 +312,8 @@ function newGame(li){
       // Dramatic-finish state (2026-07-09): camera (current + target for easing),
       // finale slow-mo, hit-stop freeze, screen shake, expanding rings, screen flash.
       cam:{x:VW/2,y:VH/2,z:1,tx:VW/2,ty:VH/2,tz:1}, finale:{active:false,ts:1}, freeze:0,
-      shake:{t:0,mag:0}, rings:[], flash:0, _acc:0, bins:makeBins(), styleBonus:0 };
+      shake:{t:0,mag:0}, rings:[], flash:0, _acc:0, bins:makeBins(), styleBonus:0,
+      character:(POWERS[EQUIPPED]?EQUIPPED:'burst'), _icy:false };
   for(var i=0;i<pegs.length;i++) if(pegs[i].type==='red') G.redsLeft++;
   aim.angle=0;
   show('s-play');
@@ -281,8 +330,10 @@ function onUp(e){ if(!G||!aim.dragging)return; e.preventDefault(); aim.dragging=
 function setAim(p){ var dx=p.x-LAUNCH_X, dy=Math.max(10,p.y-LAUNCH_Y); var a=Math.atan2(dx,dy); if(a>1.45)a=1.45; if(a<-1.45)a=-1.45; aim.angle=a; }
 function launch(){ if(!G||G.phase!=='aim'||G.ballsLeft<=0)return;
   G.phase='fire'; G.ballsLeft--; G.combo=0;
+  G._icy=false;   // per-shot power state resets each launch
   G.balls.push({x:LAUNCH_X,y:LAUNCH_Y+10,vx:Math.sin(aim.angle)*SPEED,vy:Math.cos(aim.angle)*SPEED,r:BALL_R,alive:true,free:false,
-    dist:0,wall:0,pegs:0,longDone:false,bankDone:false,trickDone:false});   // style-shot tracking
+    pierce:false,buoyant:false,dist:0,wall:0,pegs:0,longDone:false,bankDone:false,trickDone:false});   // style-shot + power tracking
+  var P=POWERS[G.character]; if(P&&P.onLaunch){ try{ P.onLaunch(); }catch(e){} }   // e.g. Iris seeds power blooms
   sfx('launch');
 }
 
@@ -291,22 +342,26 @@ function physics(){
   var SUB=5, i, s;
   for(s=0;s<SUB;s++){
     for(i=G.balls.length-1;i>=0;i--){ var b=G.balls[i]; if(!b.alive)continue;
-      b.vy+=GRAV/SUB;
+      var rst=REST; if(G._icy)rst=0.90; if(b.buoyant)rst=Math.max(rst,0.88);   // Tusk icy / Ripple float
+      // Long-shot safety: a ball alive too long (bouncy icy/float slides) gets a
+      // growing downward pull so EVERY shot is guaranteed to drain, never soft-lock.
+      b.age=(b.age||0)+1; var ag=b.age>900?(b.age-900)*0.0009:0;
+      b.vy+=((b.buoyant?0.12:GRAV)+ag)/SUB;
       b.x+=b.vx/SUB; b.y+=b.vy/SUB;
       b.dist=(b.dist||0)+Math.sqrt(b.vx*b.vx+b.vy*b.vy)/SUB;   // travelled distance → Long Shot
       // walls
-      if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx)*REST; sfx('wall'); b.wall=(b.wall||0)+1; }
-      else if(b.x>VW-b.r){ b.x=VW-b.r; b.vx=-Math.abs(b.vx)*REST; sfx('wall'); b.wall=(b.wall||0)+1; }
-      if(b.y<b.r){ b.y=b.r; b.vy=Math.abs(b.vy)*REST; }
+      if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx)*rst; sfx('wall'); b.wall=(b.wall||0)+1; }
+      else if(b.x>VW-b.r){ b.x=VW-b.r; b.vx=-Math.abs(b.vx)*rst; sfx('wall'); b.wall=(b.wall||0)+1; }
+      if(b.y<b.r){ b.y=b.r; b.vy=Math.abs(b.vy)*rst; }
       // pegs
       for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue;
         var dx=b.x-pg.x, dy=b.y-pg.y, rr=b.r+pg.r, d2=dx*dx+dy*dy;
         if(d2 < rr*rr){ var d=Math.sqrt(d2)||0.01, nx=dx/d, ny=dy/d;
-          // push out + reflect
-          var overlap=rr-d; b.x+=nx*overlap; b.y+=ny*overlap;
-          var vn=b.vx*nx+b.vy*ny; b.vx-=(1+REST)*vn*nx; b.vy-=(1+REST)*vn*ny;
-          // slight speed cap so it stays lively but bounded
-          var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>14){ b.vx*=14/sp; b.vy*=14/sp; }
+          if(!b.pierce){   // Ember's Firethorn pops but does not reflect — plows straight through
+            var overlap=rr-d; b.x+=nx*overlap; b.y+=ny*overlap;
+            var vn=b.vx*nx+b.vy*ny; b.vx-=(1+rst)*vn*nx; b.vy-=(1+rst)*vn*ny;
+            var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>14){ b.vx*=14/sp; b.vy*=14/sp; }
+          }
           hitPeg(p, b);
         }
       }
@@ -339,7 +394,7 @@ function hitPeg(p, b){
   var mult=1+G.combo*0.1, pts=0;      // combo multiplier now applies to EVERY peg type
   if(pg.type==='red'){ pts=100*mult; G.redsLeft--; sfx('red'); if(G.redsLeft===0) triggerFinalePayoff(pg); }
   else if(pg.type==='purple'){ pts=500*mult; floater(pg.x,pg.y,'+'+Math.round(500*mult)); }
-  else if(pg.type==='green'){ pts=50*mult; sfx('burst'); bloomBurst(pg.x,pg.y); }
+  else if(pg.type==='green'){ pts=50*mult; sfx('burst'); firePower(pg,b); }
   else { pts=10*mult; }
   comboPop(pg.x,pg.y);
   G.score+=Math.round(pts);
@@ -599,6 +654,16 @@ function drawGuide(){ // simulate a few bounces for the aim preview
 function buildLevels(){ var host=$('lvl-grid'); host.innerHTML='';
   for(var i=0;i<LEVELS.length;i++){ (function(li){ var c=document.createElement('button'); c.className='lvlcell'+(PROG.cleared['L'+li]?' done':'');
     c.textContent=(li+1); c.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); newGame(li); }); host.appendChild(c); })(i); }
+  var lc=$('lvl-char-cur'); if(lc) lc.textContent=(POWERS[EQUIPPED]||POWERS.burst).name;
+}
+function renderChars(){ var host=$('char-list'); if(!host)return; host.innerHTML='';
+  var cleared=Object.keys(PROG.cleared).length;
+  POWER_ORDER.forEach(function(key){ var P=POWERS[key], unlocked=(cleared>=P.unlock), equipped=(EQUIPPED===key);
+    var c=document.createElement('button'); c.className='charcard'+(equipped?' on':'')+(unlocked?'':' locked');
+    c.innerHTML='<div class="cc-ico">'+(unlocked?P.comp:'🔒')+'</div><div style="flex:1"><div class="cc-name">'+(unlocked?P.name:'Locked')+(equipped?'  ✓':'')+'</div><div class="cc-desc">'+(unlocked?P.desc:'Clear '+P.unlock+' meadow'+(P.unlock>1?'s':'')+' to befriend.')+'</div></div>';
+    if(unlocked) c.addEventListener('click',function(e){ e.preventDefault(); EQUIPPED=key; LS.set('nd_char',key); if(G)G.character=key; sfx('free'); renderChars(); });
+    host.appendChild(c);
+  });
 }
 
 /* ===== toggles / boot ===== */
@@ -617,6 +682,8 @@ function boot(){
   tap('b-set', function(){ show('s-set'); });
   tap('b-exit', function(){ if(window.SWS_EXIT)SWS_EXIT(); });
   tap('lvl-back', function(){ show('s-title'); });
+  tap('lvl-chars', function(){ renderChars(); show('s-chars'); });
+  tap('chars-back', function(){ buildLevels(); show('s-levels'); });
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('win-next', function(){ var n=(G?G.li:0)+1; if(n>=LEVELS.length){ buildLevels(); show('s-levels'); } else newGame(n); });
@@ -654,7 +721,10 @@ if(/[?&]ndtest=1/.test(location.search)){
     render:function(){ return render(); }, stepFx:function(){ return stepFx(); }, checkFinale:function(){ return checkFinale(); },
     bins:function(){ return G.bins.map(function(b){ return {pts:b.pts,mult:b.mult,x0:Math.round(b.x0),x1:Math.round(b.x1),flash:b.flash}; }); },
     award:function(x){ return awardBin(x); }, BIN_Y:BIN_Y,
-    winLevel:function(){ return winLevel(); }, winDom:function(){ return {fever:document.getElementById('win-fever').style.display, bonus:document.getElementById('win-bonus').innerHTML, title:document.getElementById('win-title').textContent, score:document.getElementById('win-score').textContent}; }
+    winLevel:function(){ return winLevel(); }, winDom:function(){ return {fever:document.getElementById('win-fever').style.display, bonus:document.getElementById('win-bonus').innerHTML, title:document.getElementById('win-title').textContent, score:document.getElementById('win-score').textContent}; },
+    equip:function(k){ if(POWERS[k]){ EQUIPPED=k; if(G)G.character=k; } return EQUIPPED; }, character:function(){ return G?G.character:EQUIPPED; }, powers:function(){ return Object.keys(POWERS); },
+    renderChars:function(){ renderChars(); return document.getElementById('char-list').children.length; }, ballCount:function(){ return G?G.balls.length:0; }, pegTypes:function(){ var c={red:0,green:0,blue:0,purple:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; },
+    split:function(){ splitBall(270,300,{vx:1,vy:4}); return G.balls.length; }, launchNow:function(a){ aim.angle=a||0; launch(); return G.balls.length; }
   };
 }
 boot();
