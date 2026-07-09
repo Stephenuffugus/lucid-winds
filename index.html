@@ -900,7 +900,7 @@
     } catch(e){}
   })();
   // ═══ VERSION CHECK — force reload on deploy ═══
-  var LW_VERSION='2026.07.09.04';window.LW_VERSION=LW_VERSION;
+  var LW_VERSION='2026.07.09.05';window.LW_VERSION=LW_VERSION;
   // Stephen 2026-05-07: Pi Browser detection. Pi Browser does NOT
   // always include "PiBrowser" in its user-agent on Android — the
   // ONLY reliable signal is `typeof Pi !== 'undefined'` (SDK injected
@@ -1259,7 +1259,15 @@
     .lw-sw-banner img{display:block;width:100%;height:auto;}
     .lw-sw-banner .bb-stack{position:absolute;top:58%;left:8px;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
     .lw-sw-banner .bb-name{background:rgba(8,12,8,0.58);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:5px 13px;border-radius:11px;font-family:'Bebas Neue',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:0.2em;color:#fff;font-size:clamp(14px,4.2vw,22px);line-height:1.05;white-space:nowrap;}
-    body.game-active .lw-sw-banner{display:none;}
+    /* Banner shows ONLY when settled on the game tab with no active game
+       (body.tab-game is set by switchTab/_openGamePicker). Gating on tab-game —
+       not merely :not(.game-active) — kills the tab-switch flash: leaving the
+       game tab drops tab-game in the SAME synchronous frame the panel hides, so
+       the banner can never paint over another tab mid-transition. Fades in via
+       swBannerIn so its appearance is smooth, never a hard pop. */
+    .lw-sw-banner{display:none;}
+    body.tab-game:not(.game-active) .lw-sw-banner{display:block;animation:swBannerIn 0.3s ease-out;}
+    @keyframes swBannerIn{from{opacity:0;}to{opacity:1;}}
     .game-stats{display:flex;gap:1rem;align-items:center;}
     .stat{text-align:center;}
     .stat-val{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--cream);letter-spacing:0.04em;}
@@ -46461,6 +46469,10 @@ document.addEventListener('keydown', function(e) {
     // briefly stripped the class and let keeper-bar/bottomnav peek through
     // in Three Sisters during re-enter.)
     if (tab !== 'game') document.body.classList.remove('game-active');
+    // Stable "on the game tab" flag — set/cleared IN THE SAME frame as the panel
+    // swap so the Sky Wolf banner (gated on body.tab-game) can never flash over
+    // another tab during a transition. (Also feeds the tutorial watcher ~79364.)
+    document.body.classList.toggle('tab-game', tab === 'game');
     // Midnight backpack auto-deliver — check on every tab switch so it
     // fires reliably even if the player never visits Wild tab
     if(window.BP&&BP.checkMidnightDeliver)try{BP.checkMidnightDeliver();}catch(e){}
@@ -64485,6 +64497,10 @@ function _openGamePicker(){
   // that were inline-hidden when a game launched.
   document.body.classList.remove('game-active');
   document.body.classList.remove('game-set');
+  // We're showing the game picker → we're on the game tab. Guarantee tab-game
+  // here too (covers resume/deep-link paths that reach the picker without a
+  // fresh switchTab('game')), so the banner reveals correctly.
+  document.body.classList.add('tab-game');
   // sol-fs leaks across game switches without this; the rotate hint would
   // otherwise linger over the picker in portrait.
   try{if(window._solClearFS)window._solClearFS();}catch(e){}
