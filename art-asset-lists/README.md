@@ -9,6 +9,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Stream Hop](stream-hop/00-art-direction.md)** — *Lantern Ink* look · 7 sheets (💰 hopper-skins + trail/lane cosmetics). Lean on the 85 companions as hoppers.
 - **[Petal Slice](petal-slice/00-art-direction.md)** — 5 sheets (💰 blade skins + potting-bench backdrops + pod skin sets).
 - **[Seed Pot](seed-pot/00-art-direction.md)** — *Midnight Greenhouse* look · 7 sheets (💰 pot skins + seasonal bench backdrops + tier reskins). Companion Bloom uses the 85 companions.
+- **[Greenhouse Pinball](greenhouse-pinball/00-art-direction.md)** — *Moonlit Workbench* look · 4-season table backdrops + ball/flippers/bumpers + FX + 💰 table/flipper/ball skins & companion-host cameos.
 
 ## Generate order
 
