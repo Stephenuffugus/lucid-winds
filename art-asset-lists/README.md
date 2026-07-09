@@ -8,6 +8,7 @@ Art direction is now **per game** (no forced cozy-botanical): each ranges cozy �
 These are **built and live** and render procedurally; this art is an optional upgrade + the customization catalog for the in-game economy (unlocks are mastery/score-free + seasonal rotations, no loot boxes).
 - **[Stream Hop](stream-hop/00-art-direction.md)** — *Lantern Ink* look · 7 sheets (💰 hopper-skins + trail/lane cosmetics). Lean on the 85 companions as hoppers.
 - **[Petal Slice](petal-slice/00-art-direction.md)** — 5 sheets (💰 blade skins + potting-bench backdrops + pod skin sets).
+- **[Seed Pot](seed-pot/00-art-direction.md)** — *Midnight Greenhouse* look · 7 sheets (💰 pot skins + seasonal bench backdrops + tier reskins). Companion Bloom uses the 85 companions.
 
 ## Generate order
 
