@@ -87,6 +87,7 @@
     <p class="tag" id="overSub"></p>
     <div class="small" id="overStats" style="margin:8px 0 4px"></div>
     <div class="row"><button class="btn primary" id="againBtn">GROW AGAIN</button>
+    <button class="btn" id="shareBtn">SHARE</button>
     <button class="btn" id="menuBtn">MENU</button></div>
   </div>
 </div>
@@ -1041,9 +1042,21 @@ function endRun(win){
     (stageUnlocked?'<br><b style="color:#7ab356">New ground unlocked: '+STAGES[store.stagesUnlocked-1].name+'</b>':'')+
     (unlocked?'<br><b style="color:#c8a84b">New Verdancy unlocked: '+VERD[store.maxVerdancy].name+'</b>':'')+
     '<br><span class="small">Codex — Reactions '+rxDisc+'/25 · Grafts '+gfDisc+'/15 · Total Loam '+store.loam+'</span>';
+  _lastResult={ time:G.time, kills:G.kills, stage:(G.stage?G.stage.name:''), win:win };
   showLayer('over');
 }
 function fmtTime(t){ var m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+(s<10?'0':'')+s; }
+
+/* ---- fleet-standard Share ---- */
+var _lastResult=null;
+function shareBramblewick(){
+  var url="https://lucidwinds.com/satellites/bramblewick/";
+  var r=_lastResult||{ time:(G?G.time:0), kills:(G?G.kills:0), stage:(G&&G.stage?G.stage.name:''), win:(G?G.win:false) };
+  var verb=r.win?"held the night for ":"survived ";
+  var txt="Bramblewick — "+verb+fmtTime(r.time)+", "+r.kills+" pests cleared on "+r.stage+"! Can you beat it?";
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ if(typeof toast==='function') toast('Copied!'); }).catch(function(){}); }
+}
 
 /* ==================================================================
    RENDER
@@ -1482,6 +1495,7 @@ bindSw('swSound', function(){return store.settings.sound;}, function(v){store.se
 
 document.getElementById('playBtn').onclick=function(){ audio(); startGame(selVer, selStage); };
 document.getElementById('againBtn').onclick=function(){ startGame(G?G.verdancy:selVer, G?G.stageId:selStage); };
+document.getElementById('shareBtn').onclick=function(){ shareBramblewick(); };
 document.getElementById('menuBtn').onclick=function(){ G=null; showLayer('menu'); selStage=Math.min(selStage, store.stagesUnlocked-1); renderVerSeg(); renderStageSeg(); };
 function startGame(v,s){ hideLayers(); newGame(v, s||0); }
 

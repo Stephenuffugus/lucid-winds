@@ -258,6 +258,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="win-again">↻ Play again</button>
+      <button class="btn sm" id="win-share">↗ Share</button>
       <div class="row">
         <button class="btn sm" id="win-modes">Change garden</button>
         <button class="btn sm" id="win-title2">◄ Back</button>
@@ -694,7 +695,19 @@ function winGame(){
     $('win-bestlbl').textContent='Best'; $('win-best').textContent=BEST[bkey]?fmtTime(BEST[bkey]):'—';
   }
   $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
+  // fleet-standard share: build the line from the REAL run result
+  var _gn=S.lay.name+(S.daily?' (Daily)':'');
+  LAST_SHARE=(S.mode==='challenge')
+    ? ('Jade Garden — '+S.score+' pts clearing '+_gn+' ('+pairs+' pairs)! Can you beat it?')
+    : ('Jade Garden — cleared '+_gn+' in '+fmtTime(elapsed)+' ('+pairs+' pairs)! Can you beat it?');
   sfx('win'); setTimeout(function(){ show('s-win'); },700);
+}
+var LAST_SHARE='';
+function shareGame(){
+  var url='https://lucidwinds.com/satellites/mahjong/';
+  var txt=LAST_SHARE||'Jade Garden — a calm mahjong solitaire in a moonlit garden! Can you beat it?';
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+'\n'+url).then(function(){ flash('Copied — share your garden!'); }).catch(function(){}); }
 }
 
 /* ============================ layout picker ============================= */
@@ -766,6 +779,7 @@ function boot(){
   tap('p-quit', function(){ stopTimer(); if(S)S.phase='over'; show('s-title'); });
   $('p-mute').addEventListener('click',function(e){ e.preventDefault(); SET.sound=!SET.sound; saveSet(); $('p-mute').textContent=SET.sound?'🔊':'🔇'; if(SET.sound)sfx('ui'); });
   tap('win-again', function(){ if(S)startGame(S.lay.key, S.daily); });
+  tap('win-share', shareGame);
   tap('win-modes', function(){ buildPicker(); show('s-modes'); });
   tap('win-title2', function(){ show('s-title'); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
@@ -812,7 +826,8 @@ if(/[?&]jgtest=1/.test(location.search)){
     autoSolve:function(){ var guard=0; while(countRemaining()>0 && guard++<5000){ var m=findAnyMatch(); if(!m) return {solved:false, left:countRemaining()};
         S.tiles[m[0]].removed=true; S.tiles[m[1]].removed=true; }
       return {solved:countRemaining()===0, left:countRemaining()}; },
-    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_jadegarden')||'{}'); }catch(e){ return {}; } }
+    granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_jadegarden')||'{}'); }catch(e){ return {}; } },
+    win:function(){ return winGame(); }, share:function(){ return shareGame(); }, lastShare:function(){ return LAST_SHARE; }
   };
 }
 boot();

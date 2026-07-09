@@ -131,6 +131,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="over-again">↻ Plant again</button>
+      <button class="btn sm" id="over-share">📤 Share</button>
       <button class="btn sm" id="over-title2">◄ Back</button>
     </div>
   </div></div>
@@ -363,6 +364,14 @@ function gameOver(){
   setTimeout(function(){ show('s-over'); },700);
 }
 function advance(){ if(!G||G.phase!=='clear') return; G.level++; startLevel(); running=true; lastTs=0; requestAnimationFrame(loop); }
+/* fleet-standard share (built from the real run result) */
+function shareHedgerow(){
+  var g=G?Math.max(0,G.level-1):0, sc=G?G.score:0;
+  var url="https://lucidwinds.com/satellites/hedgerow/";
+  var txt="Hedgerow — I fenced off "+g+" ground"+(g===1?'':'s')+" for "+sc+" points! Can you beat it?";
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); }
+}
 
 /* ============================ rendering ================================= */
 function render(){
@@ -524,6 +533,7 @@ function boot(){
   tap('how-back', function(){ show('s-title'); });
   tap('set-back', function(){ show('s-title'); });
   tap('over-again', function(){ newGame(); });
+  tap('over-share', function(){ shareHedgerow(); });
   tap('over-title2', function(){ show('s-title'); updateRec(); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   $('buildstamp').textContent='Hedgerow '+BUILD;
@@ -566,7 +576,7 @@ if(/[?&]hgtest=1/.test(location.search)){
     placeBall:function(c,r){ balls.push({x:FX+c*CS+CS/2,y:FY+r*CS+CS/2,vx:0,vy:0,r:CS*0.4,col:'#e58fa0',sp:0}); },
     floodClaim:floodClaim, recompute:recomputePct, render:render,
     granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_hedgerow')||'{}'); }catch(e){ return {}; } },
-    phase:function(){ return G?G.phase:null; }, advance:advance, forceOver:gameOver
+    phase:function(){ return G?G.phase:null; }, advance:advance, forceOver:gameOver, share:shareHedgerow
   };
 }
 boot();

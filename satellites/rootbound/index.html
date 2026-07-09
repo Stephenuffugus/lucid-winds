@@ -153,6 +153,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="win-next">Next bed ▶</button>
+      <button class="btn gold sm" id="win-share">⤴ Share</button>
       <div class="row">
         <button class="btn sm" id="win-retry">↻ Replay</button>
         <button class="btn sm" id="win-menu">Beds</button>
@@ -328,6 +329,7 @@ function sfx(kind){ switch(kind){
 /* ============================ game state ================================= */
 var cv, ctx, VW=540, VH=960, DPR=Math.min(2, window.devicePixelRatio||1);
 var G=null; // {lvl, pieces, moves, undo:[], won, escaping, escT, hintPiece}
+var lastWin=null; // {moves, stars, name} captured at finalizeWin — drives Share
 var drag=null;
 var parts=[];
 var animating=false, animId=0, lastTs=0;
@@ -431,7 +433,17 @@ function finalizeWin(){
   $('win-title').textContent=st===3?'Perfect! Bloom freed':'Bloom set free!';
   $('win-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):(prevStars>0?'☀ already gathered here':'☀ daily sun gathered');
   var nb=$('win-next'); nb.style.display=(idx<LEVELS.length-1)?'flex':'none';
+  lastWin={ moves:moves, stars:st, name:NAMES[idx], idx:idx };
   setTimeout(function(){ _show('s-win'); updateCtrl(); },560);
+}
+
+/* ============================ share (fleet-standard) ================================= */
+function shareRootbound(){
+  var url="https://lucidwinds.com/satellites/rootbound/";
+  var w=lastWin||{ moves:(G?G.moves:0), stars:0, name:(G?NAMES[G.idx]:'the bed') };
+  var txt="Rootbound — freed the bloom in "+w.moves+" slides ("+w.stars+"★) on "+w.name+"! Can you beat it?";
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toast('Copied to clipboard'); }).catch(function(){}); }
 }
 
 /* ============================ hint ================================= */
@@ -656,6 +668,7 @@ function boot(){
   tap('set-back', function(){ show('s-title'); });
   tap('set-wipe', function(){ STARS={}; BEST={}; saveProg(); sfx('undo'); buildLevels(); });
   tap('win-next', function(){ startLevel(G.idx+1); });
+  tap('win-share', function(){ shareRootbound(); });
   tap('win-retry', function(){ startLevel(G.idx); });
   tap('win-menu', function(){ toLevels(); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; if(v) sfx('ui'); });
@@ -695,7 +708,8 @@ if(/[?&]rbtest=1/.test(location.search)){
       var done=isGoal(G.pieces); if(done){ finalizeWin(); } return {solved:done, steps:n, moves:G.moves};
     },
     granted:function(){ try{ return JSON.parse(localStorage.getItem('sw_sb_rootbound')||'{}'); }catch(e){ return {}; } },
-    stars:function(){ return STARS; }, best:function(){ return BEST; }
+    stars:function(){ return STARS; }, best:function(){ return BEST; },
+    share:shareRootbound, lastWin:function(){ return lastWin; }
   };
 }
 boot();

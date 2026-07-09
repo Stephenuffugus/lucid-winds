@@ -151,6 +151,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="win-again">↻ New bed</button>
+      <button class="btn sm gold" id="win-share">↗ Share</button>
       <button class="btn sm" id="win-modes">Choose bed</button>
     </div>
   </div></div>
@@ -586,6 +587,21 @@ function winPuzzle(){
   setTimeout(function(){ show('s-win'); }, 620);
 }
 
+/* fleet-standard share — builds text from the REAL solved run */
+function sharePetalvex(){
+  var url="https://lucidwinds.com/satellites/petalvex/";
+  var txt;
+  if(P && P.solved){
+    var nud = P.hints===0 ? "no nudges" : (P.hints+" nudge"+(P.hints>1?"s":""));
+    var what = (P.mode && P.mode.daily) ? "today's Daily bed" : ("a "+P.n+"×"+P.n+" bed");
+    txt="Petalvex — solved "+what+" in "+fmtTime(P.t)+" ("+nud+")! Can you beat it?";
+  } else {
+    txt="Petalvex — a botanical TetraVex. Can you solve the bed?";
+  }
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){}).catch(function(){}); }
+}
+
 /* ============================ flow ================================= */
 function startMode(key){
   var mode=modeByKey(key);
@@ -696,6 +712,7 @@ function boot(){
   tap('how-back', function(){ show(P?null:'s-title'); if(P) updateCtrlVisibility(); });
   tap('set-back', function(){ show(P&&!P.solved?null:'s-title'); if(P&&!P.solved) updateCtrlVisibility(); });
   tap('win-again', function(){ startMode(P?P.mode.key:'s4'); });
+  tap('win-share', function(){ sharePetalvex(); });
   tap('win-modes', function(){ toModes(); });
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; if(v) sfx('ui'); });
   wireToggle('tg-color', function(){ return SET.color; }, function(v){ SET.color=v; });

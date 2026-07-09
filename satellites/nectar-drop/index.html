@@ -136,6 +136,7 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
       <div class="row">
         <button class="btn sm" id="win-retry">↻ Replay</button>
         <button class="btn sm" id="win-levels">◄ Meadows</button>
+        <button class="btn sm" id="win-share">↗ Share</button>
       </div>
     </div>
   </div></div>
@@ -149,7 +150,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
     <div style="flex:1"></div>
     <div class="stack">
       <button class="btn primary" id="lose-retry">↻ Try again</button>
-      <button class="btn sm" id="lose-levels">◄ Meadows</button>
+      <div class="row">
+        <button class="btn sm" id="lose-levels">◄ Meadows</button>
+        <button class="btn sm" id="lose-share">↗ Share</button>
+      </div>
     </div>
   </div></div>
 </div></div>
@@ -346,6 +350,14 @@ function loseLevel(){ if(!G||G.phase==='over')return; G.phase='over'; running=fa
   $('lose-sub').textContent=G.redsLeft+' red bloom'+(G.redsLeft>1?'s':'')+' left on '+G.L.name;
   sfx('lose'); setTimeout(function(){ show('s-lose'); },600);
 }
+function shareNectar(){
+  var url="https://lucidwinds.com/satellites/nectar-drop/";
+  var lvl=(G&&G.L&&G.L.name)?G.L.name:'the meadow';
+  var sc=(G&&typeof G.score==='number')?G.score:0;
+  var txt="Nectar Drop — scored "+sc+" on "+lvl+"! Can you beat it?";
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt+"\n"+url).catch(function(){}); }
+}
 
 /* ===== render ===== */
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; lastTs=ts;
@@ -443,8 +455,10 @@ function boot(){
   tap('win-next', function(){ var n=(G?G.li:0)+1; if(n>=LEVELS.length){ buildLevels(); show('s-levels'); } else newGame(n); });
   tap('win-retry', function(){ if(G)newGame(G.li); });
   tap('win-levels', function(){ buildLevels(); show('s-levels'); });
+  tap('win-share', shareNectar);
   tap('lose-retry', function(){ if(G)newGame(G.li); });
   tap('lose-levels', function(){ buildLevels(); show('s-levels'); });
+  tap('lose-share', shareNectar);
   wireToggle('tg-sound', function(){ return SET.sound; }, function(v){ SET.sound=v; });
   wireToggle('tg-guide', function(){ return SET.guide; }, function(v){ SET.guide=v; });
   $('buildstamp').textContent='Nectar Drop '+BUILD+' · '+LEVELS.length+' meadows';
@@ -463,7 +477,7 @@ window._sbCapEarn=function(n,tag){ var granted=0;
 
 /* headless test hook */
 if(/[?&]ndtest=1/.test(location.search)){
-  window.ND_DEV={ start:newGame, state:function(){return G;}, levels:LEVELS,
+  window.ND_DEV={ start:newGame, state:function(){return G;}, levels:LEVELS, share:shareNectar,
     // fire a ball at a given angle and simulate until all balls settle
     fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.32,Math.min(1.32,ang)); launch(); var guard=0; while(G.phase==='fire' && guard++<4000){ physics(); } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length}; },
     autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<200){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) physics(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },

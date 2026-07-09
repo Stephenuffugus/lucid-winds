@@ -1302,12 +1302,31 @@ function buildDaily(){
   $("dPlay").onclick=function(){ SFX.ui(); startRun("daily"); };
   if($("dShare"))$("dShare").onclick=function(){ shareDaily(); };
 }
-function dailySquares(){ var emo=["🌱","🌿","🍄","⛰️","🌙"]; var reached=biomeIndexAt(P.daily.best); var s=""; for(var i=0;i<=reached&&i<5;i++)s+=emo[i]; return s||"🌱"; }
+function dailySquares(depth){ var emo=["🌱","🌿","🍄","⛰️","🌙"]; var reached=biomeIndexAt(depth==null?P.daily.best:depth); var s=""; for(var i=0;i<=reached&&i<5;i++)s+=emo[i]; return s||"🌱"; }
 function shareDaily(){
   var url="https://lucidwinds.com/satellites/petal-plunge/";
   var txt="Petal Plunge — Daily "+dailyKey()+"\n"+dailySquares()+"  "+P.daily.best+" deep\n\nCan you beat my score?";
-  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); }
-  else if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toastMsg("Copied!"); },function(){}); }
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toastMsg("Copied!"); },function(){}); }
+  else toastMsg(txt);
+}
+/* fleet-standard share — builds a one-liner from the REAL run result for every mode */
+function shareRun(){
+  var url="https://lucidwinds.com/satellites/petal-plunge/";
+  var mode=S?S.mode:"free", txt;
+  if(mode==="daily"){
+    var dep=Math.floor(S.depth);
+    txt="Petal Plunge — Daily "+dailyKey()+": "+dailySquares(dep)+" "+dep+" deep! Can you beat it?";
+  } else if(mode==="slalom"){
+    txt="Petal Plunge — Slalom "+(S.finished?("finished in "+fmtTime(S.timeMs)+" "+starStr(slalomStars(S.timeMs))):("crashed at "+S.gatesHit+"/"+S.gatesTotal+" gates"))+"! Can you beat it?";
+  } else if(mode==="freestyle"){
+    txt="Petal Plunge — Freestyle "+S.style+" style points"+(S.finished?(" "+starStr(freestyleStars(S.style))):"")+"! Can you beat it?";
+  } else {
+    var d=Math.floor(S.depth);
+    txt="Petal Plunge — plunged "+d+" deep "+dailySquares(d)+(S.gnomeEscapes>0?(" · "+S.gnomeEscapes+" gnome escape"+(S.gnomeEscapes>1?"s":"")):"")+"! Can you beat it?";
+  }
+  if(navigator.share){ navigator.share({text:txt,url:url}).catch(function(){}); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt+"\n"+url).then(function(){ toastMsg("Copied!"); },function(){}); }
   else toastMsg(txt);
 }
 function toastMsg(m){ var t=$("toast"); $("hud").classList.remove("hidden"); t.textContent=m; t.style.transition="none"; t.style.opacity="1";
@@ -1435,7 +1454,7 @@ function buildOver(){
   html+='<div class="spacer"></div>'+
     '<button class="btn primary wide" id="oRetry">↻ Again</button>'+
     '<div class="row" style="margin-top:8px">'+
-      (mode==="daily"?'<button class="btn ghost" id="oShare">Share</button>':'')+
+      '<button class="btn ghost" id="oShare">Share</button>'+
       '<button class="btn ghost" id="oShop">🛍️ Shop</button>'+
       '<button class="btn ghost" id="oModes">Modes</button>'+
     '</div><div class="spacer"></div>';
@@ -1444,7 +1463,7 @@ function buildOver(){
   $("oRetry").onclick=function(){ SFX.ui(); startRun(m); };
   $("oShop").onclick=function(){ SFX.ui(); openShop(); };
   $("oModes").onclick=function(){ SFX.ui(); gotoModes(); };
-  if($("oShare"))$("oShare").onclick=function(){ shareDaily(); };
+  if($("oShare"))$("oShare").onclick=function(){ SFX.ui(); shareRun(); };
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
