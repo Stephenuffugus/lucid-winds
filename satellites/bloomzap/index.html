@@ -333,10 +333,13 @@ function genPool(seed){
 /* ============================ difficulties ================================= */
 // Solo time-attack modes (2026-07-08 rework): grow N words from the shared
 // bed as fast as you can, then beat your best time. No rival, no zap.
+// aiMs = Vs-Garden rival plant interval; aiSkip = chance it dawdles a beat.
+// Scaled by tier so the smallest bed (Sprout) is a GENTLE rival a beginner can
+// beat, not the old fixed 2.8s pace that ran everyone over (Jessie 2026-07-09).
 var DIFFS=[
-  { key:'sprout', ico:'🌱', name:'Sprout',  t:'Sprout',  d:'Grow 5 words · a quick bloom', target:5,  base:4 },
-  { key:'bud',    ico:'🌿', name:'Garden',  t:'Garden',  d:'Grow 7 words · the classic bed', target:7,  base:6 },
-  { key:'bloom',  ico:'🌻', name:'Thicket', t:'Thicket', d:'Grow 10 words · a full thicket', target:10, base:9 }
+  { key:'sprout', ico:'🌱', name:'Sprout',  t:'Sprout',  d:'Grow 5 words · a quick bloom', target:5,  base:4, aiMs:5200, aiSkip:0.45 },
+  { key:'bud',    ico:'🌿', name:'Garden',  t:'Garden',  d:'Grow 7 words · the classic bed', target:7,  base:6, aiMs:3800, aiSkip:0.20 },
+  { key:'bloom',  ico:'🌻', name:'Thicket', t:'Thicket', d:'Grow 10 words · a full thicket', target:10, base:9, aiMs:2500, aiSkip:0.0 }
 ];
 function diffByKey(k){ for(var i=0;i<DIFFS.length;i++) if(DIFFS[i].key===k) return DIFFS[i]; return DIFFS[1]; }
 
@@ -393,7 +396,7 @@ function startGame(mode, diffKey){
   if(mode==='ai') renderRack('ai');
   var _a=$('announce'); if(_a){ _a.textContent=''; _a.className='ann'; }
   if(mode==='free'){ var el=$('p-diff'); if(el) el.textContent='🍃 Free play'; }
-  else { startTimer(); if(mode==='ai'){ aiPlantIv=setInterval(aiPlant,2800); } }
+  else { startTimer(); if(mode==='ai'){ aiPlantIv=setInterval(aiPlant,(D.aiMs||2800)); } }
 }
 
 /* ============================ tile / word building ================================= */
@@ -436,6 +439,8 @@ function removeWord(who, w){ var arr=G[who]; var i=arr.indexOf(w); if(i>=0) arr.
 // whoever fills the bed to target first wins. No zap (a clean, forgiving race).
 function aiPlant(){
   if(!G||G.over||G.mode!=='ai') return;
+  // Human-like dawdle on easier tiers so the rival isn't a metronome.
+  if(G.D&&G.D.aiSkip&&Math.random()<G.D.aiSkip) return;
   var avail=[],i;
   for(i=0;i<G.M.length;i++){ var w=G.M[i]; if(!G.taken[w]&&!G.dead[w]) avail.push(w); }
   if(!avail.length) return;
@@ -603,7 +608,7 @@ function boot(){
   fit(); window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   document.addEventListener('contextmenu',function(e){ e.preventDefault(); });
   document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
-  document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(G&&!G.over&&!G._hidAt) G._hidAt=Date.now(); stopAI(); } else if(G&&!G.over&&curScreen==='s-play'){ if(G._hidAt){ G.pausedMs=(G.pausedMs||0)+(Date.now()-G._hidAt); G._hidAt=0; } if(G.mode!=='free') startTimer(); if(G.mode==='ai') aiPlantIv=setInterval(aiPlant,2800); } });
+  document.addEventListener('visibilitychange',function(){ if(document.hidden){ if(G&&!G.over&&!G._hidAt) G._hidAt=Date.now(); stopAI(); } else if(G&&!G.over&&curScreen==='s-play'){ if(G._hidAt){ G.pausedMs=(G.pausedMs||0)+(Date.now()-G._hidAt); G._hidAt=0; } if(G.mode!=='free') startTimer(); if(G.mode==='ai') aiPlantIv=setInterval(aiPlant,(G.D.aiMs||2800)); } });
   tap('b-play', function(){ buildModes(); show('s-mode'); });
   tap('b-how', function(){ show('s-how'); });
   tap('b-set', function(){ show('s-set'); });
