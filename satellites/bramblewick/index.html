@@ -466,7 +466,7 @@ function newGame(verdancy, stageId){
     time:0, kills:0, loamRun:0, over:false, win:false,
     player:{ x:VW/2, y:VH*0.62, r:15, hp:100, maxhp:100, spd:150, iframe:0, hurtFlash:0 },
     weapons:[], passives:{}, weaponTimers:{}, weaponLevel:{},
-    bloom:0, bloomNext:6, level:1,
+    bloom:0, bloomNext:6, level:1, pendingLevels:0,
     aim:{x:VW/2,y:VH*0.4, active:false},
     boss:null, stageId:(stageId||0), stage:(STAGES[stageId||0]||STAGES[0]), bossIdx:0, bossTimes:[], bossDownIds:{}, zones:[], hzT:0, heat:0, shade:[], toast:null, bossesDown:0,
     shake:0, slow:0,
@@ -966,10 +966,18 @@ function tickStatuses(p,dt){
 
 /* ---------------- loam / level-up / draft ---------------- */
 function collectMote(m){ G.bloom+=m.xp; G.loamRun+=m.xp; sndPickup();
-  while(G.bloom>=G.bloomNext){ G.bloom-=G.bloomNext; levelUp(); } }
+  while(G.bloom>=G.bloomNext){ G.bloom-=G.bloomNext; levelUp(); }
+  presentDraftIfPending(); }
 function bloomReq(lv){ return Math.round((6 + lv*lv*0.9 + lv*2) * (G&&G.passives&&G.passives.mycorrhizae?0.82:1)); }
+// Each level gained QUEUES a draft; drafts are presented one at a time (see
+// presentDraftIfPending + chooseDraft). Previously levelUp() built G.draft
+// directly, so multiple level-ups in one frame (common on boss loam caches)
+// overwrote each other and the player silently lost every draft but the last.
 function levelUp(){ G.level++; G.bloomNext=bloomReq(G.level); sndLevel();
-  G.draft=buildDraft(); G.state='LEVELUP'; }
+  G.pendingLevels=(G.pendingLevels||0)+1; }
+// Show the next queued level-up draft only from PLAY — never stack a second
+// draft over an open one, so exactly one draft is on screen at a time.
+function presentDraftIfPending(){ if((G.pendingLevels||0)>0 && G.state==='PLAY'){ G.pendingLevels--; G.draft=buildDraft(); G.state='LEVELUP'; } }
 function buildDraft(){
   // pool: new weapons (not owned), weapon-ups (owned), passives (not owned)
   var opts=[];
@@ -1007,8 +1015,10 @@ function chooseDraft(idx){
   else if(c.t==='companion'){ addCompanion(c.id); if(c.rare) earn('beholder',{}); }
   else if(c.t==='graft'){ G.grafts[c.base]=c.id; earn('graft_discovered',{graft:c.id}); toast('Grafted: '+c.name); if(!store.codex['graft:'+c.id]){ store.codex['graft:'+c.id]=1; saveSoon(); } }
   recompute(); // build changed → refresh lanes / family tiers / maxhp
-  G.draft=null; G.state='PLAY'; G.slow=0.25;
   earn('draft',{level:G.level});
+  // present the next queued level-up draft, or return to play when none remain
+  if((G.pendingLevels||0)>0){ G.pendingLevels--; G.draft=buildDraft(); }
+  else { G.draft=null; G.state='PLAY'; G.slow=0.25; }
 }
 
 /* ---------------- end run ---------------- */
@@ -1484,7 +1494,7 @@ function updateDev(){ var d=document.getElementById('dev'); d.style.display='blo
 if(DEV){
   window.__bw={
     start:function(v,s){ startGame(v||0, s||0); return 'started stage '+(s||0); },
-    state:function(){ return G?{t:G.time,state:G.state,level:G.level,kills:G.kills,hp:G.player.hp,pests:pests.n,weapons:G.weapons.slice(),passives:Object.keys(G.passives),win:G.win,over:G.over,fps:fps}:null; },
+    state:function(){ return G?{t:G.time,state:G.state,level:G.level,pending:G.pendingLevels,kills:G.kills,hp:G.player.hp,pests:pests.n,weapons:G.weapons.slice(),passives:Object.keys(G.passives),win:G.win,over:G.over,fps:fps}:null; },
     spawn:function(type,n){ n=n||1; for(var i=0;i<n;i++) spawnPest(type||'aphid'); return pests.n; },
     grantStatus:function(status,stacks){ var p=pests.a[0]; if(p&&p.active){ for(var i=0;i<7;i++){} p.st[ST_I[status]]=stacks||3; p.stt[ST_I[status]]=5; return 'ok'; } return 'no pest'; },
     forceReaction:function(a,b){ var p=spawnPest('slug', G.player.x, G.player.y-80); if(!p) return 'no pest'; applyStatus(p,a,2); applyStatus(p,b,2); return REACT[rkey(a,b)]?REACT[rkey(a,b)].name:'?'; },
@@ -1493,7 +1503,7 @@ if(DEV){
     addCompanion:function(id){ if(COMPANIONS[id]){ addCompanion(id); recompute(); return G.companions.map(function(c){return c.def.id;}); } return 'bad'; },
     lanes:function(){ return {lanes:G.lanes, mul:G.laneMul, familyCount:G.familyCount, familyTier:G.familyTier, companions:G.companions.map(function(c){return c.def.id;})}; },
     companionCount:function(){ return Object.keys(COMPANIONS).length; },
-    levelUp:function(){ levelUp(); return G.draft.cards.map(function(c){return c.name;}); },
+    levelUp:function(){ levelUp(); presentDraftIfPending(); return G.draft?G.draft.cards.map(function(c){return c.name;}):[]; },
     pick:function(i){ chooseDraft(i); return G.weapons.slice(); },
     skipToBoss:function(){ if(G){ var e=G.stage.bosses[G.bossIdx]; if(e&&e.at!=null){ G.time=Math.max(G.time,e.at-1); } else if(e&&G.bossIdx>0){ G.bossTimes[G.bossIdx-1]=G.time-(e.afterPrev||0)-1; } return (e?e.id:'?')+' soon'; } return 'no game'; },
     skipToFinal:function(){ if(G){ var bs=G.stage.bosses; while(G.bossIdx<bs.length-1){ G.bossTimes[G.bossIdx]=G.time; G.bossDownIds[G.bossIdx]=1; G.bossIdx++; } if(G.boss){ G.boss.active=false; G.boss=null; } var fe=bs[bs.length-1]; (BOSS_SPAWN[fe.id]||spawnGrubfather)(fe); return fe.id; } return 'no game'; },
