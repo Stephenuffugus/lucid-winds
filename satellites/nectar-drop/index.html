@@ -250,7 +250,11 @@ function newGame(li){
   // ensure at least nReds pegs exist
   assignColours(pegs, Math.min(L.reds, Math.max(4,pegs.length-4)));
   G={ li:li, L:L, pegs:pegs, balls:[], ballsLeft:L.balls, score:0, redsLeft:0, phase:'aim',
-      bucketX:VW/2, bucketDir:1, power:false, combo:0, sparks:[], floaters:[] };
+      bucketX:VW/2, bucketDir:1, power:false, combo:0, sparks:[], floaters:[],
+      // Dramatic-finish state (2026-07-09): camera (current + target for easing),
+      // finale slow-mo, hit-stop freeze, screen shake, expanding rings, screen flash.
+      cam:{x:VW/2,y:VH/2,z:1,tx:VW/2,ty:VH/2,tz:1}, finale:{active:false,ts:1}, freeze:0,
+      shake:{t:0,mag:0}, rings:[], flash:0, _acc:0 };
   for(var i=0;i<pegs.length;i++) if(pegs[i].type==='red') G.redsLeft++;
   aim.angle=0;
   show('s-play');
@@ -316,19 +320,22 @@ function hitPeg(p, b){
   var pg=G.pegs[p]; pg.hit=true; pg.pop=1; G.combo++;
   spark(pg.x,pg.y, pg.type);
   var pts=0;
-  if(pg.type==='red'){ pts=100*(1+G.combo*0.1); G.redsLeft--; sfx('red'); }
+  if(pg.type==='red'){ pts=100*(1+G.combo*0.1); G.redsLeft--; sfx('red'); if(G.redsLeft===0) triggerFinalePayoff(pg); }
   else if(pg.type==='purple'){ pts=500; sfx('peg'); floater(pg.x,pg.y,'+500'); }
   else if(pg.type==='green'){ pts=50; sfx('burst'); bloomBurst(pg.x,pg.y); }
   else { pts=10; sfx('peg'); }
   G.score+=Math.round(pts);
 }
 function bloomBurst(x,y){ // pop all pegs within radius
-  var R=118; for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue; var dx=pg.x-x,dy=pg.y-y; if(dx*dx+dy*dy<R*R){ pg.hit=true; pg.pop=1; spark(pg.x,pg.y,pg.type); if(pg.type==='red'){G.redsLeft--; G.score+=100;} else if(pg.type==='purple'){G.score+=500;} else G.score+=10; } }
+  var R=118; for(var p=0;p<G.pegs.length;p++){ var pg=G.pegs[p]; if(pg.hit)continue; var dx=pg.x-x,dy=pg.y-y; if(dx*dx+dy*dy<R*R){ pg.hit=true; pg.pop=1; spark(pg.x,pg.y,pg.type); if(pg.type==='red'){G.redsLeft--; G.score+=100; if(G.redsLeft===0) triggerFinalePayoff(pg);} else if(pg.type==='purple'){G.score+=500;} else G.score+=10; } }
   floater(x,y,'BLOOM BURST');
 }
 function resolveShot(){
   // clear hit pegs after the shot settles
   for(var p=G.pegs.length-1;p>=0;p--){ if(G.pegs[p].hit) G.pegs.splice(p,1); }
+  // release the finale slow-mo/zoom (camera eases back via stepFx on a non-win;
+  // on a win the loop stops, so the dramatic zoom holds under the win card).
+  G.finale.active=false; G.finale.ts=1; G.cam.tx=VW/2; G.cam.ty=VH/2; G.cam.tz=1;
   if(G.redsLeft<=0){ winLevel(); return; }
   if(G.ballsLeft<=0){ loseLevel(); return; }
   G.phase='aim';
@@ -336,6 +343,42 @@ function resolveShot(){
 function spark(x,y,type){ var col=type==='red'?'#e5604d':type==='green'?'#7ab356':type==='purple'?'#b57de0':'#c8a84b';
   for(var i=0;i<7;i++){ var a=Math.PI*2*i/7+Math.random(); G.sparks.push({x:x,y:y,vx:Math.cos(a)*(1+Math.random()*2),vy:Math.sin(a)*(1+Math.random()*2)-1,life:1,col:col}); } }
 function floater(x,y,txt){ G.floaters.push({x:x,y:y,txt:txt,life:1}); }
+
+/* ===== dramatic finish (slow-mo + zoom + payoff) ===== */
+function stepFx(){ if(!G) return;
+  var c=G.cam, k=G.finale.active?0.14:0.10;
+  c.x+=(c.tx-c.x)*k; c.y+=(c.ty-c.y)*k; c.z+=(c.tz-c.z)*k;
+  if(G.finale.active) G.finale.ts += (0.30 - G.finale.ts)*0.18;   // ease into slow-mo
+  if(G.shake.t>0){ G.shake.t--; G.shake.mag*=0.85; }
+  if(G.flash>0){ G.flash-=0.045; if(G.flash<0)G.flash=0; }
+  for(var i=G.rings.length-1;i>=0;i--){ var r=G.rings[i]; r.rad+=(r.max-r.rad)*0.18; r.life-=0.04; if(r.life<=0)G.rings.splice(i,1); }
+}
+// Arm the slow-mo zoom when one red remains and a live ball is closing on it.
+function checkFinale(){ if(!G||G.finale.active||G.redsLeft!==1) return;
+  var last=null,p; for(p=0;p<G.pegs.length;p++){ if(G.pegs[p].type==='red'&&!G.pegs[p].hit){ last=G.pegs[p]; break; } }
+  if(!last) return;
+  for(var i=0;i<G.balls.length;i++){ var b=G.balls[i]; if(!b.alive)continue;
+    var dx=last.x-b.x, dy=last.y-b.y, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<170 && (b.vx*dx+b.vy*dy)>0){   // in range AND moving toward it
+      G.finale.active=true; G._lastRed=last;
+      G.cam.tx=last.x; G.cam.ty=last.y; G.cam.tz=1.9;
+      return;
+    }
+  }
+}
+// The last red just popped: hit-stop + burst + ring + flash + shake + swell.
+function triggerFinalePayoff(pg){ if(!G) return;
+  G.freeze=3; G.flash=0.85; G.shake.t=16; G.shake.mag=18;
+  G.cam.tx=pg.x; G.cam.ty=pg.y; G.cam.tz=2.0; G.finale.active=true;
+  G.rings.push({x:pg.x,y:pg.y,rad:8,max:160,life:1});
+  for(var i=0;i<22;i++){ var a=Math.PI*2*i/22; G.sparks.push({x:pg.x,y:pg.y,vx:Math.cos(a)*(2+Math.random()*4),vy:Math.sin(a)*(2+Math.random()*4)-1,life:1,col:i%2?'#f5d38a':'#e58fa0'}); }
+  floater(pg.x,pg.y-24,'★ LAST BLOOM ★');
+  finaleSwell();
+}
+function finaleSwell(){ if(!SET.sound) return;
+  var notes=[523,659,784,1046,1318,1568];
+  for(var i=0;i<notes.length;i++){ (function(f,delay){ setTimeout(function(){ try{ beep(f,0.16,'triangle',0.09); }catch(e){} }, delay); })(notes[i], i*70); }
+}
 
 function winLevel(){ if(!G||G.phase==='over')return; G.phase='over'; running=false;
   var key='L'+G.li; PROG.cleared[key]=1; var prev=PROG.best[key]||0; var isBest=false;
@@ -364,42 +407,61 @@ function shareNectar(){
 
 /* ===== render ===== */
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; lastTs=ts;
-  if(G&&G.phase==='fire') physics();
+  if(G&&G.phase==='fire'){
+    checkFinale();
+    if(G.freeze>0){ G.freeze--; }              // hit-stop: hold a few frames before the burst reads
+    else {
+      // Slow-mo without touching physics constants: step the fixed sim FEWER times
+      // per frame (accumulator). ts=1 is byte-identical to the old single physics().
+      // Kept in loop() (not physics()) so the ND_DEV.fireAt headless harness is unaffected.
+      var tstep = G.finale.active ? G.finale.ts : 1;
+      G._acc += tstep; var guard=0;
+      while(G._acc >= 1 && guard++ < 8){ physics(); G._acc -= 1; if(!G||G.phase!=='fire')break; }
+    }
+  }
   else if(G) { // idle: still animate bucket + sparks
     G.bucketX+=G.bucketDir*2.2; if(G.bucketX>VW-BUCKET_W/2){G.bucketX=VW-BUCKET_W/2;G.bucketDir=-1;} if(G.bucketX<BUCKET_W/2){G.bucketX=BUCKET_W/2;G.bucketDir=1;}
     for(var i=G.sparks.length-1;i>=0;i--){ var s=G.sparks[i]; s.x+=s.vx; s.y+=s.vy; s.vy+=0.18; s.life-=0.03; if(s.life<=0)G.sparks.splice(i,1); }
     for(i=G.floaters.length-1;i>=0;i--){ G.floaters[i].y-=0.7; G.floaters[i].life-=0.02; if(G.floaters[i].life<=0)G.floaters.splice(i,1); }
   }
+  if(G) stepFx();
   render();
   requestAnimationFrame(loop);
 }
 function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
-  // bg
+  // bg (screen space — fills the view even when the world is zoomed on the finish)
   var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#12180f'); g.addColorStop(0.7,'#0a0e08'); g.addColorStop(1,'#05070a');
   ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
-  // HUD
+
+  // ===== WORLD (screen shake + finale camera) =====
+  ctx.save();
+  if(G.shake && G.shake.t>0){ ctx.translate((Math.random()*2-1)*G.shake.mag,(Math.random()*2-1)*G.shake.mag); }
+  var cam=G.cam; ctx.translate(VW/2,VH/2); ctx.scale(cam.z,cam.z); ctx.translate(-cam.x,-cam.y);
+  if(G.phase==='aim' && SET.guide) drawGuide();
+  var i,pg,b,s,f;
+  for(i=0;i<G.pegs.length;i++){ pg=G.pegs[i]; drawPeg(pg); }
+  drawBucket();
+  for(i=0;i<G.balls.length;i++){ b=G.balls[i]; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1.5; ctx.stroke(); }
+  // expanding rings (burst + finale shockwaves)
+  for(i=0;i<G.rings.length;i++){ var rr=G.rings[i]; ctx.globalAlpha=Math.max(0,rr.life)*0.55; ctx.strokeStyle='#f5d38a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(rr.x,rr.y,rr.rad,0,7); ctx.stroke(); } ctx.globalAlpha=1;
+  for(i=0;i<G.sparks.length;i++){ s=G.sparks[i]; ctx.globalAlpha=Math.max(0,s.life); ctx.fillStyle=s.col; ctx.beginPath(); ctx.arc(s.x,s.y,2.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  ctx.textAlign='center'; ctx.font='800 15px system-ui';
+  for(i=0;i<G.floaters.length;i++){ f=G.floaters[i]; ctx.globalAlpha=Math.max(0,f.life); ctx.fillStyle='#f5ebd0'; ctx.fillText(f.txt,f.x,f.y); } ctx.globalAlpha=1;
+  ctx.restore();
+
+  // ===== SCREEN-SPACE OVERLAYS =====
+  // launcher (fixed at top-center)
+  ctx.save(); ctx.translate(LAUNCH_X,LAUNCH_Y);
+  ctx.fillStyle='#233015'; ctx.beginPath(); ctx.arc(0,0,18,0,7); ctx.fill(); ctx.strokeStyle='#7ab356'; ctx.lineWidth=2; ctx.stroke();
+  ctx.rotate(aim.angle); ctx.fillStyle='#c8a84b'; ctx.fillRect(-4,0,8,24); ctx.restore();
+  // finale flash (full-screen radial)
+  if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(1,G.flash); var fg=ctx.createRadialGradient(VW/2,VH*0.42,0,VW/2,VH*0.42,VH*0.75); fg.addColorStop(0,'#fff8e0'); fg.addColorStop(0.5,'rgba(255,240,200,0.5)'); fg.addColorStop(1,'rgba(255,240,200,0)'); ctx.fillStyle=fg; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  // HUD (on top so the score stays readable through the zoom)
   ctx.textAlign='left'; ctx.fillStyle='#7ab356'; ctx.font='800 22px system-ui'; ctx.fillText(G.L.name,16,34);
   ctx.textAlign='right'; ctx.fillStyle='#e8dcc8'; ctx.font='800 20px system-ui'; ctx.fillText(G.score.toLocaleString?G.score.toLocaleString():G.score,VW-16,34);
   ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='700 14px system-ui';
   ctx.fillText('🔴 '+G.redsLeft+'   ·   🟡 '+G.ballsLeft+' pollen',VW/2,58);
-  // launcher
-  ctx.save(); ctx.translate(LAUNCH_X,LAUNCH_Y);
-  ctx.fillStyle='#233015'; ctx.beginPath(); ctx.arc(0,0,18,0,7); ctx.fill(); ctx.strokeStyle='#7ab356'; ctx.lineWidth=2; ctx.stroke();
-  ctx.rotate(aim.angle); ctx.fillStyle='#c8a84b'; ctx.fillRect(-4,0,8,24); ctx.restore();
-  // aim guide
-  if(G.phase==='aim' && SET.guide) drawGuide();
-  // pegs
-  for(var i=0;i<G.pegs.length;i++){ var pg=G.pegs[i]; drawPeg(pg); }
-  // bucket
-  drawBucket();
-  // balls
-  for(i=0;i<G.balls.length;i++){ var b=G.balls[i]; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1.5; ctx.stroke(); }
-  // sparks
-  for(i=0;i<G.sparks.length;i++){ var s=G.sparks[i]; ctx.globalAlpha=Math.max(0,s.life); ctx.fillStyle=s.col; ctx.beginPath(); ctx.arc(s.x,s.y,2.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
-  // floaters
-  ctx.textAlign='center'; ctx.font='800 15px system-ui';
-  for(i=0;i<G.floaters.length;i++){ var f=G.floaters[i]; ctx.globalAlpha=Math.max(0,f.life); ctx.fillStyle='#f5ebd0'; ctx.fillText(f.txt,f.x,f.y); } ctx.globalAlpha=1;
 }
 function pegColour(t){ return t==='red'?'#e5604d':t==='green'?'#7ab356':t==='purple'?'#b57de0':'#5b9bd5'; }
 function drawPeg(pg){ var c=pegColour(pg.type);
@@ -499,7 +561,9 @@ if(/[?&]ndtest=1/.test(location.search)){
     fireAt:function(ang){ if(!G)return; aim.angle=Math.max(-1.45,Math.min(1.45,ang)); launch(); var guard=0,minX=VW,maxX=0; while(G.phase==='fire' && guard++<4000){ physics(); for(var b=0;b<G.balls.length;b++){ if(G.balls[b].x<minX)minX=G.balls[b].x; if(G.balls[b].x>maxX)maxX=G.balls[b].x; } } return {phase:G.phase, redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, score:G.score, balls:G.balls.length, minX:Math.round(minX), maxX:Math.round(maxX)}; },
     setAimRaw:function(x,y){ setAim({x:x,y:y}); return aim.angle; },
     autoPlay:function(){ if(!G)return; var guard=0; while(G.redsLeft>0 && G.ballsLeft>0 && G.phase!=='over' && guard++<200){ var ang=(Math.random()*2-1)*1.2; if(G.phase==='aim'){ aim.angle=ang; launch(); } var g2=0; while(G.phase==='fire'&&g2++<4000) physics(); } return {redsLeft:G.redsLeft, ballsLeft:G.ballsLeft, phase:G.phase, score:G.score}; },
-    pegCounts:function(){ var c={red:0,green:0,purple:0,blue:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; }
+    pegCounts:function(){ var c={red:0,green:0,purple:0,blue:0}; for(var i=0;i<G.pegs.length;i++)c[G.pegs[i].type]++; return c; },
+    fx:function(){ return {flash:G.flash, freeze:G.freeze, shakeMag:G.shake?G.shake.mag:0, rings:G.rings?G.rings.length:0, finaleActive:G.finale?G.finale.active:false, camz:G.cam?G.cam.z:0}; },
+    render:function(){ return render(); }, stepFx:function(){ return stepFx(); }, checkFinale:function(){ return checkFinale(); }
   };
 }
 boot();
