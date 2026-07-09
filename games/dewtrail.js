@@ -233,10 +233,10 @@ window._gameFns.dewtrail=function DT(a){
   }
   function shareText(){
     var s=streak();
-    return '💧 Dew Trail #'+dayNum()+' · '+fmt(elapsed)+(s.n>1?' · 🔥'+s.n:'')+'\n'+shareGrid()+'\nlucidwinds.com';
+    return '💧 Dew Trail #'+dayNum()+' · '+fmt(elapsed)+(s.n>1?' · 🔥'+s.n:'')+'\n'+shareGrid()+'\n\nCan you beat my time?\nhttps://lucidwinds.com/?game=dewtrail';
   }
   function doShare(txt){
-    if(navigator.share){navigator.share({text:txt}).catch(function(){});}
+    if(navigator.share){navigator.share({text:txt,url:'https://lucidwinds.com/?game=dewtrail'}).catch(function(){});}
     else{
       try{
         var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);

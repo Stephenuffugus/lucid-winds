@@ -526,8 +526,8 @@ window._gameFns.stopten=function ST(a){
   window._STshare=function(){
     var d=_dailyDone();
     if(!d)return;
-    var text='STOP AT TEN · Daily '+_todayKey()+'\n'+d.tier+' · ±'+d.best.toFixed(2)+'s\n\nlucidwinds.com';
-    if(navigator.share)navigator.share({text:text}).catch(function(){_copyToClip(text);});
+    var text='STOP AT TEN · Daily '+_todayKey()+'\n'+d.tier+' · ±'+d.best.toFixed(2)+'s\n\nCan you beat my time?\nhttps://lucidwinds.com/?game=stopten';
+    if(navigator.share)navigator.share({text:text,url:'https://lucidwinds.com/?game=stopten'}).catch(function(){_copyToClip(text);});
     else _copyToClip(text);
   };
   function _copyToClip(t){

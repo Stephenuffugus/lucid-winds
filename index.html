@@ -69931,9 +69931,9 @@ function GMM(a){
   window._MMShare=function(){
     var modeLbl=_mmGameMode==='daily'?('Daily · '+_mmTodayKey()):'Random';
     var result=guesses.length===0?'?':(guesses[guesses.length-1].exact===4?(''+guesses.length+'/'+_mmMaxG):('X/'+_mmMaxG));
-    var text='SEED CODE · '+modeLbl+' · '+result+'\n\n'+_mmEmojiGrid()+'\n\nlucidwinds.com/portal';
+    var text='SEED CODE · '+modeLbl+' · '+result+'\n\n'+_mmEmojiGrid()+'\n\nCan you beat my score?\nhttps://lucidwinds.com/?game=mastermind';
     if(navigator.share){
-      navigator.share({text:text}).catch(function(){_mmClipCopy(text);});
+      navigator.share({text:text,url:'https://lucidwinds.com/?game=mastermind'}).catch(function(){_mmClipCopy(text);});
     }else{
       _mmClipCopy(text);
     }
