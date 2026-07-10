@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Crect x='8' y='6' width='16' height='20' rx='2' fill='%23e8dcc8'/%3E%3Crect x='11' y='10' width='10' height='2' fill='%238a9178'/%3E%3Crect x='11' y='14' width='10' height='2' fill='%238a9178'/%3E%3Ccircle cx='16' cy='21' r='3' fill='%23c8a84b'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cipher Bloom">
+<title>Cipher Bloom — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"cipherbloom"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2;
+  --paper:#e8dcc8; --ink:#2a241a; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:48px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #3a2c10, 0 0 26px #c8a84b44; letter-spacing:1px}
+.title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#d9b85a,#b2913a); color:#241c08; border-color:#eed48a; box-shadow:0 4px 0 #6f5a23, 0 8px 20px #0006}
+.btn.sm{min-height:50px; font-size:15px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.wardwrap{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.wardcard{width:140px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:10px; cursor:pointer; text-align:center}
+.wardcard.locked{opacity:.5}
+.wardcard.on{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold)}
+.wardcard .sw{width:100%; height:52px; border-radius:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px}
+.wardcard .wn{font-size:13px; font-weight:700; color:var(--cream)}
+.wardcard .wt{font-size:11px; color:var(--muted); margin-top:2px}
+.grovewrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.gcard{width:130px; border:1px solid var(--line); border-radius:12px; background:#0f150c; padding:8px; text-align:center}
+.gcard canvas{width:74px; height:74px; display:block; margin:0 auto 4px}
+.gcard .gv{font-size:10px; color:var(--muted); line-height:1.3; font-style:italic}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.go-big{font-size:24px; font-weight:800; color:var(--gold); line-height:1.15}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
+.sun-earn{margin-top:10px; font-size:19px; color:var(--gold); font-weight:800}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin:6px 4px 0}
+.verse-poem{margin:8px 0; font-size:17px; line-height:1.6; color:var(--cream); font-style:italic}
+/* ===== play surface ===== */
+#s-play{background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+#pl-top{display:flex; align-items:center; justify-content:space-between; padding:12px 14px 6px; flex:none}
+#pl-top .pchip{font-size:13px; font-weight:800; color:var(--gold); background:#241d10; border:1px solid var(--line); padding:6px 12px; border-radius:20px}
+#pl-top .pmode{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--muted)}
+.iconbtn{min-width:46px; min-height:46px; border-radius:12px; border:1px solid var(--line); background:#0f150c; color:var(--cream); font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer}
+#paper{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; margin:6px 12px; border-radius:14px;
+  background:linear-gradient(180deg,#e8dcc8,#dccbb0); color:var(--ink); padding:18px 12px 14px;
+  box-shadow:inset 0 0 40px #0002, 0 4px 18px #0007}
+.vline{display:flex; flex-wrap:wrap; justify-content:center; gap:2px 3px; margin-bottom:14px}
+.cell{width:26px; display:flex; flex-direction:column; align-items:center; cursor:pointer; padding-top:2px}
+.cell .pl{font-size:20px; font-weight:800; height:26px; line-height:26px; color:#1b160e; letter-spacing:0}
+.cell .pl.empty{color:transparent}
+.cell .un{width:22px; height:2px; background:#9a8a6a; border-radius:2px; margin:1px 0 2px}
+.cell .cg{font-size:11px; font-weight:700; color:#8a744e; line-height:1}
+.cell .fq{width:16px; height:3px; background:#c9b892; border-radius:2px; margin-top:2px; overflow:hidden}
+.cell .fq b{display:block; height:100%; background:#b08a3a}
+.cell.sel .un{background:var(--gold); height:3px}
+.cell.sel .cg{color:#9a6b1a}
+.cell.same .un{background:#c8a84b}
+.cell.wrong .pl{color:#b04a3a}
+.cell.locked .pl{color:#3a6b28}
+.cell.locked{cursor:default}
+.cell.good .pl{color:#2f6b1e}
+.sp{width:12px}
+.punct{font-size:20px; font-weight:800; color:#1b160e; height:26px; line-height:26px; align-self:flex-start}
+#pl-bar{flex:none; padding:4px 12px 2px; display:flex; align-items:center; gap:8px; justify-content:center; font-size:12px; color:var(--muted)}
+#pl-bar .prog{flex:1; height:6px; background:#0f150c; border:1px solid var(--line); border-radius:4px; overflow:hidden; max-width:260px}
+#pl-bar .prog b{display:block; height:100%; background:linear-gradient(90deg,var(--sage),var(--gold)); width:0}
+#kbd{flex:none; padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:5px}
+.krow{display:flex; gap:4px; justify-content:center}
+.kbtn{flex:1; max-width:64px; min-height:44px; border-radius:9px; border:1px solid var(--line); background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:17px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.kbtn:active{filter:brightness(1.2)}
+.kbtn.used{opacity:.32}
+.kbtn.wide{font-size:15px; font-weight:700}
+.kbtn.hint{background:#241d10; color:var(--gold); border-color:#6f5a23}
+.kbtn.act{background:#12203a; color:var(--dew); border-color:#2b567c}
+.fade-in{animation:fadein .5s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.mode-note{font-size:12px; color:var(--muted); margin-top:2px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="margin-top:14px" class="title-word">Cipher Bloom</div>
+    <div class="title-sub">Decode the Garden</div>
+    <div class="ribbon">A hidden verse waits under scrambled letters. Crack the cipher, and the poem blooms into a keepsake.</div>
+    <div class="stack" style="margin-top:22px">
+      <button class="btn primary" onclick="startGame('daily')">Daily Cipher</button>
+      <button class="btn" onclick="startGame('garden')">Garden of Verses</button>
+      <div class="row">
+        <button class="btn sm" onclick="startGame('race')">Sun Race</button>
+        <button class="btn sm" onclick="startGame('zen')">Zen Reading</button>
+      </div>
+      <div class="row">
+        <button class="btn sm ghost" onclick="show('s-gallery');renderGallery()">Gallery</button>
+        <button class="btn sm ghost" onclick="show('s-ward');renderWard()">Wardrobe</button>
+      </div>
+      <div class="row">
+        <button class="btn sm ghost" onclick="show('s-how')">How to Play</button>
+        <button class="btn sm ghost" onclick="show('s-set')">Settings</button>
+      </div>
+    </div>
+    <div class="foot">Sky Wolf Studios &middot; Lucid Winds</div>
+  </div></div>
+
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to Play</h2>
+    <div class="helprow"><div class="hi">&#128269;</div><div>Each letter of a short verse was swapped for another. Tap a scrambled letter to select it everywhere.</div></div>
+    <div class="helprow"><div class="hi">&#9000;</div><div>Tap a letter on the keyboard to guess what it really is. Your guess fills every matching spot at once.</div></div>
+    <div class="helprow"><div class="hi">&#128200;</div><div>The little bar under a letter shows how often it appears. Common letters are usually E, T, A, O.</div></div>
+    <div class="helprow"><div class="hi">&#128161;</div><div>Stuck? Spend Dew to reveal one true letter. Tap Check to gently flag wrong guesses. There is no way to lose.</div></div>
+    <div class="helprow"><div class="hi">&#127800;</div><div>Crack the verse and its plant blooms into your Gallery, with a splash of Dew and Sunbeams.</div></div>
+    <div class="stack" style="margin-top:14px"><button class="btn" onclick="show('s-title')">Back</button></div>
+  </div></div>
+
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div class="settingline"><span>Sound</span><div class="toggle" id="tg-sound" onclick="tog('sound')"><b></b></div></div>
+    <div class="settingline"><span>Haptics</span><div class="toggle" id="tg-haptic" onclick="tog('haptic')"><b></b></div></div>
+    <div class="settingline"><span>Frequency bars</span><div class="toggle" id="tg-freq" onclick="tog('freq')"><b></b></div></div>
+    <div class="settingline"><span>Difficulty</span><span id="diff-lab" class="hl" onclick="cycleDiff()" style="cursor:pointer">Standard</span></div>
+    <div class="mode-note" style="text-align:center;max-width:430px;margin:0 auto">Tap difficulty to cycle: Gentle (vowels given) &middot; Standard &middot; Master (nothing given). Zen mode is always gentle with free hints.</div>
+    <div class="stack" style="margin-top:16px"><button class="btn" onclick="show('s-title')">Back</button></div>
+  </div></div>
+
+  <div class="screen" id="s-ward"><div class="pad">
+    <h2 class="sc-h">Wardrobe</h2>
+    <div class="mode-note" style="text-align:center;margin-bottom:10px">Paper and ink, earned by decoding. <span id="ward-dew" class="hl"></span></div>
+    <div class="wardwrap" id="ward-grid"></div>
+    <div class="stack" style="margin-top:16px"><button class="btn" onclick="show('s-title')">Back</button></div>
+  </div></div>
+
+  <div class="screen" id="s-gallery"><div class="pad">
+    <h2 class="sc-h">Decoded Gallery</h2>
+    <div class="mode-note" id="gal-sub" style="text-align:center;margin-bottom:10px"></div>
+    <div class="grovewrap" id="gal-grid"></div>
+    <div class="stack" style="margin-top:16px"><button class="btn" onclick="show('s-title')">Back</button></div>
+  </div></div>
+
+  <div class="screen" id="s-play">
+    <div id="pl-top">
+      <div class="iconbtn" onclick="quitPlay()">&#8249;</div>
+      <div style="text-align:center"><div class="pchip" id="pl-dew">&#128167; 0</div><div class="pmode" id="pl-mode"></div></div>
+      <div class="iconbtn" onclick="doCheck()">&#10003;</div>
+    </div>
+    <div id="paper"></div>
+    <div id="pl-bar"><span id="pl-count">0/0</span><div class="prog"><b id="pl-prog"></b></div><span id="pl-timer"></span></div>
+    <div id="kbd"></div>
+  </div>
+
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div class="go-lab" id="go-lab">Decoded</div>
+    <canvas id="go-plant" width="150" height="150" style="margin:8px auto"></canvas>
+    <div class="verse-poem" id="go-verse"></div>
+    <div class="sun-earn" id="go-earn"></div>
+    <div id="go-pills"></div>
+    <div class="stack" style="margin-top:20px">
+      <button class="btn primary" id="go-again" onclick="nextVerse()">Next Verse</button>
+      <button class="btn sm ghost" onclick="show('s-gallery');renderGallery()">Gallery</button>
+      <button class="btn sm ghost" onclick="show('s-title')">Menu</button>
+    </div>
+  </div></div>
+
+</div></div>
+<script>
+/* ================= Cipher Bloom — Cryptogram remake =================
+   Self-contained ES5 satellite. Decode a scrambled botanical verse.
+   NOTE: in the full Lucid Winds app these verses would come from the real
+   getHaiku engine and the reveal would render through the plant SVG engine
+   (aspirational cross-app). This satellite ships its own verse bank + a small
+   canvas keepsake so it is fully standalone. */
+var $=function(id){return document.getElementById(id);};
+var TEST=/[?&]cbtest=1/.test(location.search);
+var VW=540, VH=960;
+
+/* ---------- storage + settings ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, haptic:true, freq:true, diff:1 };
+(function(){ try{ var s=JSON.parse(LS.get('cb_set')||'{}'); ['sound','haptic','freq'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); if(typeof s.diff==='number')SET.diff=s.diff; }catch(e){} })();
+function saveSet(){ LS.set('cb_set', JSON.stringify(SET)); }
+
+/* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_cipherbloom'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- save / economy ---------- */
+var PROG={ solved:0, hintless:0, dew:0, streak:0, lastDaily:'', dailyDone:'', blooms:[], back:0, ink:0, owned:{} };
+(function(){ try{ var s=JSON.parse(LS.get('cipherbloom_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} if(!PROG.blooms)PROG.blooms=[]; if(!PROG.owned)PROG.owned={}; })();
+function save(){ try{ LS.set('cipherbloom_save', JSON.stringify(PROG)); }catch(e){} }
+
+/* cosmetics (no lootbox, KNOWN thresholds) */
+var PAPERS=[
+  {id:0, nm:'Linen', need:0, kind:'', bg:'linear-gradient(180deg,#e8dcc8,#dccbb0)', ink:'#2a241a', desc:'Starter'},
+  {id:1, nm:'Birch Bark', need:8, kind:'solved', bg:'linear-gradient(180deg,#efe6d2,#e2d3b6)', ink:'#4a3520', desc:'Solve 8 verses'},
+  {id:2, nm:'Pressed Petal', need:20, kind:'solved', bg:'linear-gradient(180deg,#f0d9de,#e6c3cc)', ink:'#5a2a3a', desc:'Solve 20 verses'},
+  {id:3, nm:'Vellum Gilt', need:5, kind:'hintless', bg:'linear-gradient(180deg,#f2e6c2,#e6d29a)', ink:'#4a3808', desc:'5 hintless solves'},
+  {id:4, nm:'Midnight Slate', need:7, kind:'streak', bg:'linear-gradient(180deg,#2a3140,#1a2030)', ink:'#cfd8e8', desc:'7-day streak'}
+];
+var INKS=[
+  {id:0, nm:'Ironwood', need:0, kind:'', col:'#2a241a', desc:'Starter'},
+  {id:1, nm:'Sage', need:12, kind:'solved', col:'#2f6b1e', desc:'Solve 12'},
+  {id:2, nm:'Dew Blue', need:30, kind:'solved', col:'#245a7c', desc:'Solve 30'},
+  {id:3, nm:'Rose', need:8, kind:'hintless', col:'#8a2f4a', desc:'8 hintless'}
+];
+function cosmVal(kind){ if(kind==='solved')return PROG.solved; if(kind==='hintless')return PROG.hintless; if(kind==='streak')return PROG.streak; return 0; }
+function cosmUnlocked(c){ return c.need===0 || cosmVal(c.kind)>=c.need; }
+
+/* ---------- verse bank (short botanical verses; NO apostrophes) ---------- */
+var VERSES=[
+"morning dew collects","along a silver leaf","the garden wakes",
+"a single honeybee","reads every open bloom","then drifts away",
+"cool rain on warm soil","the smell of green returning","roots drink in the dark",
+"pale moth at the window","tapping at the lantern glow","the night breathes slow",
+"first frost on the vine","each leaf outlined in silver","winter clears its throat",
+"the old oak drops a seed","a hundred years of patience","folded in one shell",
+"wind combs the tall grass","a wave of pale green motion","the meadow exhales",
+"a spider strings her web","between two bending reeds","dawn hangs there in gold",
+"petals fall like snow","the cherry tree lets go","spring keeps nothing back",
+"under the still pond","a koi turns slow circles","clouds drift on the water",
+"the sunflower leans","following the low warm sun","all day it listens",
+"moss climbs the north stone","soft and patient and green","the forest keeps time",
+"a fox crosses the field","leaving quiet in the snow","then the hush again",
+"lantern in the fern","a firefly answers back","two small lights agree",
+"the last apple hangs","red against the bare branches","autumn holds its breath",
+"seeds ride on the wind","tiny parachutes of silk","the field sends them off",
+"a heron stands still","reading the shallow water","then a sudden strike",
+"warm bread of the earth","turned over by the spring rain","the garden is fed",
+"crickets tune the dusk","a slow chorus in the reeds","the pond answers them",
+"green shoots split the seed","reaching up through the dark loam","toward a rumor of sun",
+"the willow bends low","brushing the moving water","writing on the stream",
+"a snail leaves a trail","of silver on the cool stone","patient as the moon",
+"mushrooms in a ring","overnight beneath the pine","the forest dreamed them",
+"clover in the lawn","a small green sea of luck","bees wade through it",
+"the maple turns gold","one leaf at a time it lets","the summer go by",
+"rain on the tin roof","the whole garden drinking deep","and the frogs rejoice",
+"a robin tilts its head","listening to the wet earth","then pulls up a worm",
+"the pumpkin swells slow","fed on rain and lazy heat","a small orange moon",
+"tomato on the vine","warm and heavy in the palm","summer in one bite",
+"the moon lifts the tide","of pale moths from the meadow","up toward the pale light",
+"quiet in the hive","ten thousand wings at rest now","the garden asleep",
+"a chestnut lets go","and lands with a small brown thud","autumn keeps arriving",
+"lavender at dusk","the bees go home slow and full","the whole row humming",
+"the pond wears the sky","clouds move across its still face","a fish reads the moon"
+];
+/* split into 3-line verses (each triple above is one poem) */
+var POEMS=[];
+(function(){ for(var i=0;i+2<VERSES.length;i+=3){ POEMS.push([VERSES[i],VERSES[i+1],VERSES[i+2]]); } })();
+
+/* ---------- seeded rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hashStr(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function todayNum(){ return Math.floor(Date.now()/864e5); }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+
+/* ---------- cipher: derangement of A-Z ---------- */
+var AL='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function makeCipher(rng){
+  var a=AL.split(''), i, j, t;
+  for(i=a.length-1;i>0;i--){ j=Math.floor(rng()*(i+1)); t=a[i]; a[i]=a[j]; a[j]=t; }
+  // repair any self-map (a[i]===AL[i]) by swapping with a neighbour
+  for(i=0;i<26;i++){ if(a[i]===AL[i]){ var k=(i+1)%26; t=a[i]; a[i]=a[k]; a[k]=t; } }
+  // final pass (in case the swap created one at k)
+  for(i=0;i<26;i++){ if(a[i]===AL[i]){ var k2=(i===0?25:i-1); t=a[i]; a[i]=a[k2]; a[k2]=t; } }
+  var enc={}, dec={};
+  for(i=0;i<26;i++){ enc[AL[i]]=a[i]; dec[a[i]]=AL[i]; }
+  return {enc:enc, dec:dec};
+}
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function beep(f,d,g,type){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), gn=c.createGain(); o.type=type||'sine'; o.frequency.value=f; gn.gain.value=g||0.05; o.connect(gn); gn.connect(c.destination); o.start(); gn.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+(d||0.12)); o.stop(c.currentTime+(d||0.12)+0.02); }catch(e){} }
+function haptic(ms){ if(SET.haptic&&navigator.vibrate){ try{ navigator.vibrate(ms||8); }catch(e){} } }
+
+/* ================= game state ================= */
+var G=null, curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; }
+
+var DIFFS=['Gentle','Standard','Master'];
+function cycleDiff(){ SET.diff=(SET.diff+1)%3; saveSet(); $('diff-lab').textContent=DIFFS[SET.diff]; }
+
+function pickPoem(mode){
+  var rng, idx;
+  if(mode==='daily'){ rng=mulberry32(todayNum()*2654435761>>>0); idx=Math.floor(rng()*POEMS.length); }
+  else { idx=Math.floor(Math.random()*POEMS.length); rng=mulberry32((hashStr(POEMS[idx].join('|'))^ (Math.random()*1e9|0))>>>0); }
+  return {poem:POEMS[idx], rng:rng, idx:idx};
+}
+
+function startGame(mode){
+  ac();
+  var diff = mode==='zen' ? 0 : (mode==='daily' ? 1 : (mode==='race' ? 1 : SET.diff));
+  if(mode==='daily'){
+    var ts=todayStr();
+    if(PROG.dailyDone===ts){ /* replay allowed but no extra streak/sunbeam */ }
+  }
+  buildPuzzle(mode, diff);
+  show('s-play');
+  renderPuzzle();
+  paintKbd();
+  updateBar();
+  $('pl-mode').textContent = mode==='daily'?'Daily Cipher':mode==='garden'?'Garden of Verses':mode==='race'?'Sun Race':'Zen Reading';
+  $('pl-dew').innerHTML='&#128167; '+PROG.dew;
+  if(mode==='race'){ G.t0=Date.now(); tickTimer(); } else { $('pl-timer').textContent=''; }
+}
+
+function buildPuzzle(mode, diff){
+  var p=pickPoem(mode);
+  var plain=p.poem.join('\n').toUpperCase();
+  var cph=makeCipher(p.rng);
+  // cipher text
+  var cipher='';
+  for(var i=0;i<plain.length;i++){ var ch=plain[i]; cipher += (ch>='A'&&ch<='Z') ? cph.enc[ch] : ch; }
+  // frequency of each cipher letter
+  var freq={}, maxf=1, present={};
+  for(i=0;i<cipher.length;i++){ var c=cipher[i]; if(c>='A'&&c<='Z'){ freq[c]=(freq[c]||0)+1; if(freq[c]>maxf)maxf=freq[c]; present[c]=1; } }
+  // difficulty prefill: reveal correct guesses for some PLAIN letters that appear
+  var guess={}, locked={};
+  var reveal=[];
+  if(diff===0){ reveal=['A','E','I','O','U','T','N']; }         // gentle: vowels + common
+  else if(diff===1){ reveal=pickCommon(cipher, cph, 2); }        // standard: 2 most-common
+  // master: none
+  for(i=0;i<reveal.length;i++){ var pl=reveal[i]; var cg=cph.enc[pl]; if(present[cg]){ guess[cg]=pl; locked[cg]=1; } }
+  G={ mode:mode, diff:diff, plain:plain, cipher:cipher, poem:p.poem, idx:p.idx,
+      enc:cph.enc, dec:cph.dec, freq:freq, maxf:maxf, present:present,
+      guess:guess, locked:locked, sel:null, solved:false, hintsUsed:0, phase:'play', t0:0, timerId:0 };
+}
+function pickCommon(cipher, cph, count){
+  var f={}; for(var i=0;i<cipher.length;i++){ var c=cipher[i]; if(c>='A'&&c<='Z')f[c]=(f[c]||0)+1; }
+  var arr=[]; for(var c2 in f){ if(f.hasOwnProperty(c2))arr.push([c2,f[c2]]); }
+  arr.sort(function(a,b){return b[1]-a[1];});
+  var out=[]; for(i=0;i<Math.min(count,arr.length);i++){ out.push(cph.dec[arr[i][0]]); }
+  return out;
+}
+
+/* ---------- render puzzle ---------- */
+function renderPuzzle(){
+  var paper=$('paper'); paper.innerHTML='';
+  var st=applyPaperTheme(paper);
+  var lines=G.cipher.split('\n');
+  for(var li=0; li<lines.length; li++){
+    var row=document.createElement('div'); row.className='vline';
+    var line=lines[li];
+    for(var i=0;i<line.length;i++){
+      var ch=line[i];
+      if(ch>='A'&&ch<='Z'){
+        var cell=document.createElement('div'); cell.className='cell'; cell.setAttribute('data-c',ch);
+        var g=G.guess[ch]||'';
+        var isGood = g && (G.dec[ch]===g);
+        var pl=document.createElement('div'); pl.className='pl'+(g?'':' empty'); pl.textContent=g||'.'; cell.appendChild(pl);
+        var un=document.createElement('div'); un.className='un'; cell.appendChild(un);
+        var cg=document.createElement('div'); cg.className='cg'; cg.textContent=ch; cell.appendChild(cg);
+        if(SET.freq){ var fq=document.createElement('div'); fq.className='fq'; var bb=document.createElement('b'); bb.style.width=Math.round((G.freq[ch]/G.maxf)*100)+'%'; fq.appendChild(bb); cell.appendChild(fq); }
+        if(G.locked[ch]){ cell.className+=' locked'; }
+        if(isGood && !G.locked[ch]){ cell.className+=' good'; }
+        (function(letter,node){ node.onclick=function(){ selectCipher(letter); }; })(ch, cell);
+        row.appendChild(cell);
+      } else if(ch===' '){ var sp=document.createElement('div'); sp.className='sp'; row.appendChild(sp); }
+      else { var pu=document.createElement('div'); pu.className='punct'; pu.textContent=ch; row.appendChild(pu); }
+    }
+    paper.appendChild(row);
+  }
+  markSelection();
+}
+function applyPaperTheme(paper){ var pp=PAPERS[PROG.back]||PAPERS[0]; paper.style.background=pp.bg; var ink=(INKS[PROG.ink]||INKS[0]).col; paper.style.color=ink;
+  // update css var used by .pl etc via inline on cells is heavy; set root vars
+  document.documentElement.style.setProperty('--ink', ink); return pp; }
+
+function selectCipher(c){ if(G.locked[c]){ G.sel=null; markSelection(); return; } G.sel=c; markSelection(); beep(320,0.05,0.03); }
+function markSelection(){
+  var cells=$('paper').querySelectorAll('.cell');
+  for(var i=0;i<cells.length;i++){ var c=cells[i].getAttribute('data-c'); cells[i].classList.remove('sel','same');
+    if(G.sel){ if(c===G.sel)cells[i].classList.add('sel'); }
+  }
+  paintKbd();
+}
+
+/* ---------- keyboard ---------- */
+function paintKbd(){
+  var kbd=$('kbd'); if(!kbd.hasChildNodes()){ buildKbd(); }
+  // mark used plain letters
+  var used={}; for(var c in G.guess){ if(G.guess.hasOwnProperty(c)&&G.guess[c])used[G.guess[c]]=1; }
+  var btns=kbd.querySelectorAll('.kbtn[data-l]');
+  for(var i=0;i<btns.length;i++){ var l=btns[i].getAttribute('data-l'); if(used[l])btns[i].classList.add('used'); else btns[i].classList.remove('used'); }
+}
+function buildKbd(){
+  var kbd=$('kbd'); kbd.innerHTML='';
+  var rows=['ABCDEFG','HIJKLMN','OPQRSTU','VWXYZ'];
+  for(var r=0;r<rows.length;r++){
+    var row=document.createElement('div'); row.className='krow';
+    for(var i=0;i<rows[r].length;i++){ (function(letter){ var b=document.createElement('div'); b.className='kbtn'; b.setAttribute('data-l',letter); b.textContent=letter; b.onclick=function(){ assign(letter); }; row.appendChild(b); })(rows[r][i]); }
+    if(r===3){
+      var del=document.createElement('div'); del.className='kbtn wide act'; del.innerHTML='&#9003;'; del.onclick=function(){ clearSel(); }; row.appendChild(del);
+      var hint=document.createElement('div'); hint.className='kbtn wide hint'; hint.innerHTML='&#128161;'; hint.onclick=function(){ buyHint(); }; row.appendChild(hint);
+    }
+    kbd.appendChild(row);
+  }
+}
+function assign(plain){
+  if(!G.sel || G.locked[G.sel])return;
+  // uniqueness: if this plain letter is used by another cipher, clear it there
+  for(var c in G.guess){ if(G.guess.hasOwnProperty(c) && G.guess[c]===plain && !G.locked[c]){ delete G.guess[c]; } }
+  G.guess[G.sel]=plain;
+  beep(G.dec[G.sel]===plain?520:300,0.06,0.04); haptic(6);
+  renderPuzzle(); updateBar(); checkSolved();
+}
+function clearSel(){ if(!G.sel||G.locked[G.sel])return; delete G.guess[G.sel]; renderPuzzle(); updateBar(); }
+function buyHint(){
+  if(G.solved)return;
+  var cost = (G.mode==='zen')?0:3;
+  if(PROG.dew<cost){ flashDew(); return; }
+  // find a present cipher letter not yet correctly guessed
+  var cands=[]; for(var c in G.present){ if(G.present.hasOwnProperty(c) && !G.locked[c] && G.guess[c]!==G.dec[c])cands.push(c); }
+  if(!cands.length)return;
+  var pick=cands[Math.floor(Math.random()*cands.length)];
+  // clear any other cipher holding this plain
+  for(var c2 in G.guess){ if(G.guess.hasOwnProperty(c2)&&G.guess[c2]===G.dec[pick]&&!G.locked[c2])delete G.guess[c2]; }
+  G.guess[pick]=G.dec[pick]; G.locked[pick]=1; G.hintsUsed++;
+  if(cost>0){ PROG.dew-=cost; save(); }
+  $('pl-dew').innerHTML='&#128167; '+PROG.dew;
+  beep(660,0.14,0.05); haptic(12);
+  G.sel=null; renderPuzzle(); updateBar(); checkSolved();
+}
+function flashDew(){ var d=$('pl-dew'); d.style.color='#e56b6b'; setTimeout(function(){ d.style.color=''; },400); }
+function doCheck(){
+  if(!G || G.solved)return;
+  var cells=$('paper').querySelectorAll('.cell'); var any=false;
+  for(var i=0;i<cells.length;i++){ var c=cells[i].getAttribute('data-c'); var g=G.guess[c];
+    if(g && g!==G.dec[c]){ cells[i].classList.add('wrong'); any=true; } }
+  beep(any?240:600,0.12,0.04);
+  if(any)setTimeout(function(){ var w=$('paper').querySelectorAll('.cell.wrong'); for(var j=0;j<w.length;j++)w[j].classList.remove('wrong'); },900);
+}
+
+/* ---------- progress + solve ---------- */
+function uniqueMapped(){ var need={}, got=0, tot=0; for(var c in G.present){ if(G.present.hasOwnProperty(c)){ tot++; if(G.guess[c])got++; } } return {got:got,tot:tot}; }
+function updateBar(){ var u=uniqueMapped(); $('pl-count').textContent=u.got+'/'+u.tot; $('pl-prog').style.width=(u.tot?Math.round(u.got/u.tot*100):0)+'%'; $('pl-dew').innerHTML='&#128167; '+PROG.dew; }
+function isSolved(){ for(var c in G.present){ if(G.present.hasOwnProperty(c)){ if(G.guess[c]!==G.dec[c])return false; } } return true; }
+function checkSolved(){ if(!G.solved && isSolved()){ onSolve(); } }
+
+function onSolve(){
+  G.solved=true; G.phase='done'; if(G.timerId){ clearInterval(G.timerId); G.timerId=0; }
+  // mark all good
+  var cells=$('paper').querySelectorAll('.cell'); for(var i=0;i<cells.length;i++)cells[i].classList.add('good');
+  beep(523,0.1,0.05); setTimeout(function(){beep(659,0.1,0.05);},90); setTimeout(function(){beep(784,0.16,0.06);},190); haptic(20);
+  // economy
+  var verse=G.poem.join(' / ');
+  var seed=hashStr(G.poem.join('|'));
+  var first = PROG.blooms.indexOf(seed)<0 && !seedInBlooms(seed);
+  PROG.solved++; if(G.hintsUsed===0 && G.diff>0)PROG.hintless++;
+  var dewGain = 4 + (G.diff*2) + (G.hintsUsed===0?3:0) + (G.mode==='race'?2:0);
+  if(G.mode==='zen')dewGain=2;
+  PROG.dew += dewGain;
+  // sunbeam
+  var amt=0;
+  if(G.mode==='zen'){ amt=0; }
+  else { amt = 3 + G.diff + (G.hintsUsed===0?2:0); if(G.mode==='race'){ var secs=(Date.now()-G.t0)/1000; if(secs<60)amt+=3; else if(secs<120)amt+=1; } amt=Math.min(12,amt); }
+  // daily bonus + streak
+  var dailyBonus=0;
+  if(G.mode==='daily'){ var ts=todayStr(); if(PROG.dailyDone!==ts){
+      var yd=yesterdayStr(); PROG.streak = (PROG.lastDaily===yd)?(PROG.streak+1):1; PROG.lastDaily=ts; PROG.dailyDone=ts;
+      dailyBonus=2+Math.min(4,Math.floor(PROG.streak/2)); amt=Math.min(12, amt+dailyBonus);
+    } }
+  var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'cipherbloom:'+G.mode)||0; }catch(e){} }
+  // store keepsake
+  if(first){ PROG.blooms.push({s:seed, v:verse}); }
+  save();
+  // result screen
+  setTimeout(function(){ showResult(verse, seed, dewGain, granted, first); }, 620);
+}
+function seedInBlooms(seed){ for(var i=0;i<PROG.blooms.length;i++){ if(PROG.blooms[i] && PROG.blooms[i].s===seed)return true; } return false; }
+function yesterdayStr(){ var d=new Date(Date.now()-864e5); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+
+function showResult(verse, seed, dewGain, granted, first){
+  show('s-go');
+  $('go-lab').textContent = first ? 'A New Bloom' : 'Decoded Again';
+  drawKeepsake($('go-plant').getContext('2d'), 75, 78, 1, seed);
+  $('go-verse').innerHTML = G.poem.join('<br>');
+  $('go-earn').innerHTML = granted>0 ? ('&#9728; +'+granted+' Sunbeams') : 'Zen &middot; no Sunbeams';
+  var pills='<span class="pill">&#128167; +'+dewGain+' Dew</span>';
+  if(G.mode==='daily' && PROG.streak>1)pills+='<span class="pill">&#128293; '+PROG.streak+'-day streak</span>';
+  if(G.hintsUsed===0 && G.diff>0)pills+='<span class="pill">&#10024; Hintless</span>';
+  $('go-pills').innerHTML=pills;
+  $('go-again').textContent = (G.mode==='daily') ? 'Play Free Verse' : 'Next Verse';
+}
+function nextVerse(){ if(G && G.mode==='daily'){ startGame('garden'); } else { startGame(G?G.mode:'garden'); } }
+function quitPlay(){ if(G&&G.timerId){clearInterval(G.timerId);G.timerId=0;} show('s-title'); }
+
+/* ---------- race timer ---------- */
+function tickTimer(){ if(G.timerId)clearInterval(G.timerId); G.timerId=setInterval(function(){ if(curScreen!=='s-play'||G.solved){clearInterval(G.timerId);G.timerId=0;return;} var s=Math.floor((Date.now()-G.t0)/1000); $('pl-timer').textContent=(s<60?s+'s':(Math.floor(s/60)+':'+('0'+(s%60)).slice(-2))); },500); }
+
+/* ---------- keepsake flower ---------- */
+function drawKeepsake(ctx,cx,cy,scale,seed){
+  ctx.clearRect(0,0,150,150); ctx.save(); ctx.translate(cx,cy); ctx.scale(scale,scale);
+  var r=mulberry32(seed>>>0);
+  var hueSets=[['#e58fa0','#c8546f'],['#c8a84b','#8a6f22'],['#b57de0','#7d4aa0'],['#6fb0e0','#3f78ad'],['#7ab356','#3f6b34'],['#e8a06a','#b06a2a']];
+  var pal=hueSets[Math.floor(r()*hueSets.length)];
+  var petals=5+Math.floor(r()*5), rot=r()*Math.PI, plen=30+r()*10, pw=10+r()*6;
+  // stem
+  ctx.strokeStyle='#3f6b34'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(0,52); ctx.stroke();
+  ctx.fillStyle='#5c8f3f'; ctx.beginPath(); ctx.ellipse(-9,36,9,4,-0.5,0,7); ctx.ellipse(9,44,9,4,0.5,0,7); ctx.fill();
+  // petals
+  for(var i=0;i<petals;i++){ var a=rot + i*Math.PI*2/petals; ctx.save(); ctx.rotate(a);
+    var grd=ctx.createLinearGradient(0,0,0,-plen); grd.addColorStop(0,pal[1]); grd.addColorStop(1,pal[0]);
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.ellipse(0,-plen*0.6,pw,plen*0.55,0,0,7); ctx.fill(); ctx.restore(); }
+  // center
+  ctx.fillStyle='#ffe9a8'; ctx.beginPath(); ctx.arc(0,-2,8,0,7); ctx.fill();
+  ctx.fillStyle='#c8a84b'; for(i=0;i<7;i++){ var aa=i*Math.PI*2/7; ctx.beginPath(); ctx.arc(Math.cos(aa)*4,-2+Math.sin(aa)*4,1.6,0,7); ctx.fill(); }
+  ctx.restore();
+}
+
+/* ---------- gallery + wardrobe ---------- */
+function renderGallery(){
+  var host=$('gal-grid'); host.innerHTML=''; var n=PROG.blooms.length;
+  $('gal-sub').innerHTML = n ? ('You have decoded <span class="hl">'+n+'</span> verse'+(n===1?'':'s')+'. &#128167; '+PROG.dew+' Dew.') : 'Decode a verse to press its bloom here.';
+  var start=Math.max(0,n-40);
+  for(var i=start;i<n;i++){ (function(b){ var card=document.createElement('div'); card.className='gcard';
+    var cv=document.createElement('canvas'); cv.width=74; cv.height=74; card.appendChild(cv); drawKeepsake(cv.getContext('2d'),37,40,0.5,b.s);
+    var v=document.createElement('div'); v.className='gv'; v.textContent=b.v; card.appendChild(v); host.appendChild(card); })(PROG.blooms[i]); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no blooms yet —'; host.appendChild(e); }
+}
+function renderWard(){
+  $('ward-dew').innerHTML='&#128167; '+PROG.dew+' Dew';
+  var host=$('ward-grid'); host.innerHTML='';
+  function addSection(list, kind){
+    for(var i=0;i<list.length;i++){ (function(c){ var un=cosmUnlocked(c); var eq=(kind==='back'?PROG.back:PROG.ink)===c.id;
+      var card=document.createElement('div'); card.className='wardcard'+(un?'':' locked')+(eq?' on':'');
+      var sw=document.createElement('div'); sw.className='sw';
+      if(kind==='back'){ sw.style.background=c.bg; sw.style.color=c.ink; sw.textContent='Aa'; } else { sw.style.background='#0f150c'; sw.style.color=c.col; sw.textContent='Aa'; }
+      card.appendChild(sw);
+      var nm=document.createElement('div'); nm.className='wn'; nm.textContent=c.nm; card.appendChild(nm);
+      var wt=document.createElement('div'); wt.className='wt'; wt.textContent=un?(eq?'Equipped':'Tap to wear'):c.desc; card.appendChild(wt);
+      if(un){ card.onclick=function(){ if(kind==='back')PROG.back=c.id; else PROG.ink=c.id; save(); renderWard(); beep(440,0.06,0.04); }; }
+      host.appendChild(card); })(list[i]); }
+  }
+  var h1=document.createElement('div'); h1.style.cssText='width:100%;text-align:center;color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:2px 0'; h1.textContent='Paper'; host.appendChild(h1);
+  addSection(PAPERS,'back');
+  var h2=document.createElement('div'); h2.style.cssText='width:100%;text-align:center;color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:8px 0 2px'; h2.textContent='Ink'; host.appendChild(h2);
+  addSection(INKS,'ink');
+}
+
+/* ---------- settings toggles ---------- */
+function tog(k){ SET[k]=!SET[k]; saveSet(); paintToggles(); if(k==='freq'&&G&&curScreen==='s-play')renderPuzzle(); }
+function paintToggles(){ ['sound','haptic','freq'].forEach(function(k){ var el=$('tg-'+k); if(el){ if(SET[k])el.classList.add('on'); else el.classList.remove('on'); } }); $('diff-lab').textContent=DIFFS[SET.diff]; }
+
+/* ---------- ambient bg (static, no loop) ---------- */
+(function(){ var cv=$('game'); if(!cv)return; var x=cv.getContext('2d'); var g=x.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#101610'); g.addColorStop(1,'#080b08'); x.fillStyle=g; x.fillRect(0,0,VW,VH);
+  var rr=mulberry32(12345); for(var i=0;i<26;i++){ x.globalAlpha=0.05+rr()*0.08; x.fillStyle='#cfe6b0'; x.beginPath(); x.arc(rr()*VW, rr()*VH, 1+rr()*1.5, 0, 7); x.fill(); } x.globalAlpha=1; })();
+
+paintToggles();
+
+/* ================= headless test hook ================= */
+if(TEST){
+  window.CB_DEV={
+    start:function(mode){ startGame(mode||'garden'); return window.CB_DEV.state(); },
+    state:function(){ if(!G)return {phase:curScreen}; var noSelf=true; for(var i=0;i<26;i++){ if(G.enc[AL[i]]===AL[i])noSelf=false; } return { phase:G.solved?'solved':(curScreen==='s-play'?'play':curScreen), cipher:G.cipher, plain:G.plain, solved:G.solved, guessCount:(function(){var n=0;for(var c in G.guess)if(G.guess.hasOwnProperty(c))n++;return n;})(), noSelfMap:noSelf, verseLen:G.plain.replace(/[^A-Z]/g,'').length }; },
+    setGuess:function(c,p){ if(G){ G.sel=c; assign(p); } },
+    autoSolve:function(){ if(!G)return false; for(var c in G.present){ if(G.present.hasOwnProperty(c)){ if(!G.locked[c])G.guess[c]=G.dec[c]; } } renderPuzzle(); updateBar(); checkSolved(); return G.solved; },
+    revealHint:function(){ if(G){ var before=0; for(var c in G.guess)if(G.guess.hasOwnProperty(c)&&G.guess[c]===G.dec[c])before++; PROG.dew=Math.max(PROG.dew,5); buyHint(); var after=0; for(var c2 in G.guess)if(G.guess.hasOwnProperty(c2)&&G.guess[c2]===G.dec[c2])after++; return after>before; } return false; },
+    solveCheck:function(){ try{ startGame('garden'); var before=PROG.blooms.length; var ok=window.CB_DEV.autoSolve(); return { solved:!!ok, verseLen:G.plain.replace(/[^A-Z]/g,'').length, mintedKeepsake:(PROG.blooms.length>=before), noSelfMap:window.CB_DEV.state().noSelfMap }; }catch(e){ return { err:String(e) }; } },
+    modes:function(){ var out={}; ['daily','garden','race','zen'].forEach(function(m){ try{ startGame(m); out[m]={phase:curScreen, letters:G.plain.replace(/[^A-Z]/g,'').length, noSelfMap:window.CB_DEV.state().noSelfMap}; }catch(e){ out[m]={err:String(e)}; } }); return out; }
+  };
+}
+</script>
+</body>
+</html>
