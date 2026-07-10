@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230a0e14'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%23bfe0f2'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%235b9bd5'/%3E%3Ccircle cx='24' cy='8' r='3' fill='%237ab356'/%3E%3Ccircle cx='7' cy='23' r='2' fill='%23e58fa0'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spore Drift">
+<title>Spore Drift — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"sporedrift"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0a0e14; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#22303a; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #0d1420 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#070b10; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; left:0; top:0; width:540px; height:960px; display:block; touch-action:none}
+#hud{position:absolute; left:0; top:0; width:540px; height:60px; display:none; z-index:12; pointer-events:none;
+  padding:10px 12px; align-items:flex-start; gap:10px}
+#hud.on{display:flex}
+#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid var(--line); border-radius:12px;
+  background:#0b1118dd; color:var(--cream); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center}
+#goalwrap{flex:1; pointer-events:none; padding-top:4px}
+#goallabel{font-size:12px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; display:flex; justify-content:space-between}
+#goallabel b{color:var(--gold); font-variant-numeric:tabular-nums}
+#goalbar{height:12px; border:1px solid var(--line); border-radius:7px; background:#0b1118dd; overflow:hidden; margin-top:3px}
+#goalfill{height:100%; width:0%; background:linear-gradient(90deg,#2b567c,#5b9bd5,#bfe0f2); border-radius:6px}
+#goalchip{position:absolute; left:50%; top:64px; transform:translateX(-50%); z-index:12; display:none; pointer-events:none;
+  background:#0b1118dd; border:1px solid var(--line); border-radius:20px; padding:8px 16px; font-size:13px; color:var(--cream); white-space:nowrap}
+#goalchip.on{display:block}
+#goalchip b{color:var(--gold)}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0c121c 0%, #070b10 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--dew); font-weight:800; text-shadow:0 3px 0 #14283a, 0 0 26px #5b9bd544; letter-spacing:3px}
+.title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#13202c,#0d1520);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#5b9bd5,#2b567c); color:#eaf6ff; border-color:#8fc3ea; box-shadow:0 4px 0 #1c3a55, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0b1118; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--dew); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0b1118}
+.toggle{width:64px; height:36px; border-radius:20px; background:#1a2733; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:#2b567c}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eaf6ff}
+.grid{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.lvlcard{width:100px; height:104px; border:1px solid var(--line); border-radius:16px; background:#0b1118; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:4px}
+.lvlcard.locked{opacity:.4; cursor:default}
+.lvlcard .ln{font-size:24px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums}
+.lvlcard .lt{font-size:.7rem; color:var(--muted); text-align:center; line-height:1.15}
+.lvlcard .ls{font-size:14px; letter-spacing:1px; color:var(--gold); height:16px}
+.lvlcard.done{border-color:#2b567c}
+.wardcard{display:flex; align-items:center; gap:12px; width:100%; max-width:420px; margin:0 auto 10px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#0b1118}
+.wardcard.locked{opacity:.55}
+.wardcard .wi{font-size:26px; width:40px; text-align:center; flex:none}
+.wardcard .wt{flex:1}
+.wardcard .wn{font-size:15px; font-weight:700}
+.wardcard .wd{font-size:.72rem; color:var(--muted); margin-top:2px; line-height:1.3}
+.wardcard .we{min-width:78px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#0d1520; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center}
+.wardcard .we.eq{border-color:var(--gold); color:var(--gold)}
+.grovewrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.grovecard{width:104px; border:1px solid var(--line); border-radius:14px; background:#0b1118; padding:8px; display:flex; flex-direction:column; align-items:center; gap:4px}
+.grovecard canvas{width:84px; height:84px; border-radius:8px; background:#070b10}
+.grovecard .gd{font-size:.7rem; color:var(--muted)}
+#toast{position:absolute; left:50%; bottom:120px; transform:translateX(-50%) translateY(16px); z-index:40; background:#13202cee;
+  border:1px solid var(--gold); border-radius:22px; padding:10px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <div id="hud">
+    <div class="hbtn" id="hud-back">⌂</div>
+    <div id="goalwrap">
+      <div id="goallabel"><span id="goalname">Spore mass</span><b id="goalval">0</b></div>
+      <div id="goalbar"><div id="goalfill"></div></div>
+    </div>
+    <div class="hbtn" id="hud-pause">❚❚</div>
+  </div>
+  <div id="goalchip"></div>
+
+  <div class="screen on" id="s-title">
+    <div class="pad center">
+      <div class="title-word">SPORE DRIFT</div>
+      <div class="title-sub">an ambient drift</div>
+      <div class="ribbon">You are a spore in deep still water. Tap to breathe out a puff and drift the other way. Absorb what is smaller. Slip past what is not.</div>
+      <div style="height:22px"></div>
+      <div class="stack">
+        <button class="btn primary" id="b-chambers">🫧 Chambers</button>
+        <div class="row">
+          <button class="btn sm" id="b-daily">📅 Daily Drift</button>
+          <button class="btn sm" id="b-bloom">✿ Bloom Hunt</button>
+        </div>
+        <div class="row">
+          <button class="btn sm" id="b-zen">🌙 Zen Drift</button>
+          <button class="btn sm ghost" id="b-how">How</button>
+        </div>
+        <div class="row">
+          <button class="btn sm ghost" id="b-ward">Wardrobe</button>
+          <button class="btn sm ghost" id="b-grove">Grove</button>
+          <button class="btn sm ghost" id="b-set">⚙</button>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div id="buildstamp" style="font-size:.7rem;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-chambers">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Chambers</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Ten still waters, each with one quiet problem.</div>
+      <div class="grid" id="chambergrid"></div>
+      <div style="height:16px"></div>
+      <div class="stack"><button class="btn sm ghost" id="chambers-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-how">
+    <div class="pad">
+      <h2 class="sc-h">How to drift</h2>
+      <div class="helprow"><div class="hi">👆</div><div><b>Tap anywhere</b> and your spore breathes a puff of itself toward the tap, drifting you the <b>opposite way</b>. Every puff costs a little of you. The puff floats free, and can be re-absorbed.</div></div>
+      <div class="helprow"><div class="hi">🫧</div><div>Touch a <b>smaller</b> mote and you slowly drink it in. Touch a <b class="hl">bigger</b> one and it drinks <b>you</b>. Size is everything and it is always changing.</div></div>
+      <div class="helprow"><div class="hi">⚠️</div><div>Anything bigger than you carries a <b>pulsing ring and a notch mark</b>, whatever its color. When you outgrow it, the ring fades. Watch the rings, not the hues.</div></div>
+      <div class="helprow"><div class="hi">🌊</div><div>The <b>Season Current</b> flows through every chamber and slowly turns through spring, summer, autumn and winter. Riding it is free travel. Masters drift more and tap less.</div></div>
+      <div class="helprow"><div class="hi">🎯</div><div>Each <b>Chamber</b> has one goal, written at the top. The bar shows how close you are. Losing too much of yourself ends the drift.</div></div>
+      <div class="helprow"><div class="hi">✿</div><div>Clearing a chamber for the first time <b>blossoms your spore</b> into a keepsake for the Grove.</div></div>
+      <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-ward">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Wardrobe</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Every piece is earned by drifting. No boxes, no dice.</div>
+      <div id="wardlist"></div>
+      <div class="stack"><button class="btn sm ghost" id="ward-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-grove">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Grove</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Blossomed spores from your clearest drifts.</div>
+      <div class="grovewrap" id="grovewrap"></div>
+      <div style="height:16px"></div>
+      <div class="stack"><button class="btn sm ghost" id="grove-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-set">
+    <div class="pad center">
+      <h2 class="sc-h">Settings</h2>
+      <div style="height:10px"></div>
+      <div class="settingline"><span>Sound</span><div class="toggle" id="tg-sound"><b></b></div></div>
+      <div class="settingline"><span>Current shimmer</span><div class="toggle" id="tg-fx"><b></b></div></div>
+      <div class="stack"><button class="btn sm ghost" id="set-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-over">
+    <div class="pad center">
+      <h2 class="sc-h" id="over-title">Chamber clear</h2>
+      <div class="ribbon" id="over-sub"></div>
+      <div style="height:18px"></div>
+      <div class="stack">
+        <button class="btn primary" id="over-next">Next chamber</button>
+        <button class="btn sm" id="over-retry">Drift again</button>
+        <button class="btn sm ghost" id="over-home">Back to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+ </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+/* ============================================================
+   SPORE DRIFT — ambient absorption (Sky Wolf Studios)
+   Campaign #23 (prototype-first). Osmos lineage.
+   ============================================================ */
+var BUILD="v1.0";
+var W=540, H=960, DT=1/60;
+var MIN_ALIVE=6, START_M=240;
+
+/* ---------- seeded rng ---------- */
+function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Math.imul(t^t>>>15,1|t);
+  r=(r+Math.imul(r^r>>>7,61|r))^r; return ((r^r>>>14)>>>0)/4294967296; }; }
+function dayCode(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+
+/* ---------- save ---------- */
+function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("sporedrift_save")||"{}"); }catch(e){}
+  s.chambers=s.chambers||{}; s.biomass=s.biomass||0; s.grove=s.grove||[]; s.bloomWins=s.bloomWins||0;
+  s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.membrane=s.membrane||"plain"; s.trail=s.trail||"dust";
+  s.backdrop=s.backdrop||"abyss"; s.sound=(s.sound!==false); s.fx=(s.fx!==false); return s; }
+var PROG=loadSave();
+function save(){ try{ localStorage.setItem("sporedrift_save",JSON.stringify(PROG)); }catch(e){} }
+function chambersDone(){ var n=0,k; for(k in PROG.chambers)if(PROG.chambers[k])n++; return n; }
+
+/* ---------- audio (tiny synth) ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended")AC.resume().catch(function(){}); return AC; }
+function blip(f,d,g,type){ if(!PROG.sound)return; var a=ac(); if(!a)return; var o=a.createOscillator(),v=a.createGain(),t=a.currentTime;
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t); v.gain.setValueAtTime(0.0001,t);
+  v.gain.exponentialRampToValueAtTime(g||0.06,t+0.015); v.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.18));
+  o.connect(v); v.connect(a.destination); o.start(t); o.stop(t+(d||0.18)+0.02); }
+function sndPuff(){ blip(220,0.12,0.04,"triangle"); }
+function sndSip(){ blip(520+Math.random()*60,0.1,0.03); }
+function sndWin(){ blip(523,0.25,0.07); setTimeout(function(){blip(659,0.25,0.07);},110); setTimeout(function(){blip(784,0.4,0.08);},220); }
+function sndLose(){ blip(196,0.5,0.06,"triangle"); }
+
+/* ---------- season palettes ---------- */
+var SEASONS=[
+ {name:"Spring", tint:[232,160,191], bgA:[13,20,17], bgB:[7,11,9],  mote:[122,179,86]},
+ {name:"Summer", tint:[212,168,67],  bgA:[22,18,10], bgB:[10,8,5],  mote:[200,168,75]},
+ {name:"Autumn", tint:[212,132,42],  bgA:[22,14,9],  bgB:[11,7,5],  mote:[196,120,60]},
+ {name:"Winter", tint:[160,196,232], bgA:[10,14,22], bgB:[5,7,12],  mote:[122,158,196]}
+];
+var SEASON_TICKS=2700; /* 45s per season */
+function lerp(a,b,u){ return a+(b-a)*u; }
+function mixc(a,b,u){ return [lerp(a[0],b[0],u),lerp(a[1],b[1],u),lerp(a[2],b[2],u)]; }
+function rgb(c,al){ return "rgba("+(c[0]|0)+","+(c[1]|0)+","+(c[2]|0)+","+(al===undefined?1:al)+")"; }
+function seasonBlend(tick){ var ph=(tick%(SEASON_TICKS*4))/SEASON_TICKS; var i=Math.floor(ph)%4, j=(i+1)%4, u=ph-Math.floor(ph);
+  u=u*u*(3-2*u); return { i:i, j:j, u:u, tint:mixc(SEASONS[i].tint,SEASONS[j].tint,u),
+    bgA:mixc(SEASONS[i].bgA,SEASONS[j].bgA,u), bgB:mixc(SEASONS[i].bgB,SEASONS[j].bgB,u),
+    mote:mixc(SEASONS[i].mote,SEASONS[j].mote,u), name:SEASONS[u<0.5?i:j].name }; }
+
+/* ---------- current field (the twist) ---------- */
+function flowAt(x,y,tick,strength){
+  var base=(tick/(SEASON_TICKS*4))*Math.PI*2; /* one full rotation per year */
+  var a=base + 0.7*Math.sin(x*0.012 + tick*0.0011) + 0.7*Math.cos(y*0.010 - tick*0.0009);
+  return { x:Math.cos(a)*strength, y:Math.sin(a)*strength };
+}
+
+/* ---------- world ---------- */
+var G=null;
+function mote(x,y,m,flags){ return { x:x, y:y, vx:0, vy:0, m:m, r:Math.sqrt(m), e:(flags&&flags.e)?1:0,
+  f:(flags&&flags.f)?1:0, birth:0, threat:false, dead:false }; }
+function newWorld(mode,seed,flowS){
+  return { mode:mode, seed:seed, rng:mkRng(seed), tick:0, phase:"play", paused:false,
+    P:{ x:W/2, y:H*0.64, vx:0, vy:0, m:START_M, r:Math.sqrt(START_M) },
+    motes:[], flowS:flowS||12, goal:null, goalStable:0, totalMass:0, chamber:-1,
+    elderDown:false, flowersLeft:0, earned:0, startM:START_M, trail:[], won:false,
+    absorbedFlowers:0 };
+}
+function sqDist(ax,ay,bx,by){ var dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; }
+
+/* ---------- chamber generation ---------- */
+/* spec rows: [count, loFrac, hiFrac] of START_M */
+function genMotes(g, spec, opts){
+  var r=g.rng, out=[], tries, i, k, placedOK;
+  for(i=0;i<spec.length;i++){
+    var row=spec[i];
+    for(k=0;k<row[0];k++){
+      var m=START_M*(row[1]+r()*(row[2]-row[1]));
+      var rad=Math.sqrt(m), mt=null;
+      for(tries=0;tries<160;tries++){
+        var x=30+rad+r()*(W-60-rad*2), y=70+rad+r()*(H-140-rad*2);
+        var minD=(m>g.P.m?110:44)+g.P.r+rad;
+        if(sqDist(x,y,g.P.x,g.P.y)<minD*minD)continue;
+        placedOK=true;
+        var q; for(q=0;q<out.length;q++){ var o=out[q], need=o.r+rad+8;
+          if(sqDist(x,y,o.x,o.y)<need*need){ placedOK=false; break; } }
+        if(!placedOK)continue;
+        mt=mote(x,y,m,null);
+        mt.vx=(r()-0.5)*16; mt.vy=(r()-0.5)*16;
+        break;
+      }
+      if(mt)out.push(mt);
+    }
+  }
+  if(opts&&opts.elder){ var em=START_M*opts.elder;
+    var ex=(g.rng()<0.5)?70:W-70, ey=120+g.rng()*160;
+    var el=mote(ex,ey,em,{e:1}); el.vx=(g.rng()-0.5)*8; el.vy=(g.rng()-0.5)*8; out.push(el); }
+  if(opts&&opts.flowers){ for(k=0;k<opts.flowers;k++){
+    var fm=START_M*(0.45+g.rng()*0.3);
+    var fr=Math.sqrt(fm), fx=40+fr+g.rng()*(W-80-fr*2), fy=90+fr+g.rng()*(H-180-fr*2);
+    var fl=mote(fx,fy,fm,{f:1}); fl.vx=(g.rng()-0.5)*14; fl.vy=(g.rng()-0.5)*14; out.push(fl); } }
+  g.motes=out;
+}
+var CHAMBERS=[
+ {name:"First Waters", goalTxt:"Grow to 30% of all life", flowS:8,  goal:{type:"frac",n:0.30},
+  spec:[[13,0.16,0.32],[3,0.4,0.6],[1,1.5,1.7]]},
+ {name:"Warm Shallows", goalTxt:"Grow to 35% of all life", flowS:10, goal:{type:"frac",n:0.35},
+  spec:[[11,0.18,0.36],[4,0.45,0.7],[2,1.4,1.8]]},
+ {name:"The Elder's Rest", goalTxt:"Absorb the Elder Spore", flowS:10, goal:{type:"elder"},
+  spec:[[9,0.2,0.42],[3,0.5,0.75]], elder:1.9},
+ {name:"Crosswinds", goalTxt:"Grow to 38% of all life", flowS:14, goal:{type:"frac",n:0.38},
+  spec:[[13,0.16,0.34],[4,0.45,0.68],[1,1.4,1.6]]},
+ {name:"Giants' Drift", goalTxt:"Grow to 35% of all life", flowS:12, goal:{type:"frac",n:0.35},
+  spec:[[13,0.14,0.3],[4,0.4,0.6],[2,2.0,2.5]]},
+ {name:"Bloom Reef", goalTxt:"Become the largest", flowS:13, goal:{type:"largest"},
+  spec:[[10,0.2,0.4],[4,0.55,0.85],[1,1.6,1.9]]},
+ {name:"Undertow", goalTxt:"Grow to 40% of all life", flowS:18, goal:{type:"frac",n:0.40},
+  spec:[[12,0.15,0.32],[4,0.45,0.75],[1,2.0,2.4]]},
+ {name:"The Deep Elder", goalTxt:"Absorb the Elder Spore", flowS:15, goal:{type:"elder"},
+  spec:[[10,0.18,0.36],[3,0.45,0.7]], elder:2.5},
+ {name:"Sparse Sky", goalTxt:"Become the largest", flowS:14, goal:{type:"largest"},
+  spec:[[6,0.25,0.5],[3,0.65,1.0],[2,1.7,2.2]]},
+ {name:"The Still Point", goalTxt:"Grow to 45% of all life", flowS:19, goal:{type:"frac",n:0.45},
+  spec:[[12,0.14,0.3],[5,0.45,0.8],[2,1.9,2.4]]}
+];
+function startMode(mode,idx){
+  var seed, flowS=12, goal=null, ch=CHAMBERS[idx||0], gopts=null;
+  if(mode==="chamber"){ seed=9000+idx; flowS=ch.flowS; goal=ch.goal;
+    gopts={ elder:ch.elder, flowers:0 }; }
+  else if(mode==="daily"){ seed=dayCode(); flowS=10+(dayCode()%13); goal={type:"frac",n:0.38}; }
+  else if(mode==="bloom"){ seed=(dayCode()^0xB100)+PROG.bloomWins*17; flowS=12; goal={type:"bloom"}; }
+  else { seed=(Date.now()&0xffffff)>>>0; flowS=10; goal=null; } /* zen */
+  G=newWorld(mode,seed,flowS);
+  G.chamber=(mode==="chamber")?idx:-1;
+  G.goal=goal;
+  if(mode==="chamber"){ genMotes(G, ch.spec, gopts); }
+  else if(mode==="daily"){ genMotes(G, [[9,0.16,0.36],[5,0.45,0.8],[2,1.7,2.6]], null); }
+  else if(mode==="bloom"){ genMotes(G, [[7,0.2,0.45],[4,0.6,1.0],[2,1.7,2.4]], {flowers:5}); G.flowersLeft=5; }
+  else { genMotes(G, [[10,0.18,0.4],[5,0.5,0.9],[3,1.6,2.8]], null); }
+  var i, tm=G.P.m; for(i=0;i<G.motes.length;i++)tm+=G.motes[i].m;
+  G.totalMass=tm;
+  var chipTxt="";
+  if(mode==="chamber")chipTxt="<b>"+ch.name+"</b> · "+ch.goalTxt;
+  else if(mode==="daily")chipTxt="📅 <b>Daily Drift</b> · grow to 38% of all life";
+  else if(mode==="bloom")chipTxt="✿ <b>Bloom Hunt</b> · absorb the 5 flowering motes";
+  else chipTxt="🌙 <b>Zen</b> · nothing here can take you";
+  var gc=$("goalchip"); gc.innerHTML=chipTxt; gc.classList.add("on");
+  $("goalname").textContent=(mode==="bloom")?"Flowers found":"Spore mass";
+  hideScreens(); $("hud").classList.add("on");
+  running=true;
+}
+function stopToMenu(){ running=false; G=null;
+  $("hud").classList.remove("on"); $("goalchip").classList.remove("on");
+  show("s-title"); stamp(); }
+
+/* ---------- physics ---------- */
+function eject(tx,ty){
+  if(!G||G.phase!=="play")return false;
+  var P=G.P, dx=tx-P.x, dy=ty-P.y, d=Math.sqrt(dx*dx+dy*dy);
+  if(d<1)return false;
+  var overlappedByThreat=false, oi;
+  for(oi=0;oi<G.motes.length;oi++){ var om=G.motes[oi];
+    if(om.m>P.m&&sqDist(P.x,P.y,om.x,om.y)<(P.r+om.r)*(P.r+om.r)){ overlappedByThreat=true; break; } }
+  var puffM=Math.max(1.0, P.m*(overlappedByThreat?0.06:0.035));
+  if(P.m-puffM<MIN_ALIVE+2)return false;
+  dx/=d; dy/=d;
+  var EJ=overlappedByThreat?430:330;
+  var pf=mote(P.x+dx*(P.r+Math.sqrt(puffM)+3), P.y+dy*(P.r+Math.sqrt(puffM)+3), puffM, null);
+  pf.vx=P.vx+dx*EJ; pf.vy=P.vy+dy*EJ; pf.birth=G.tick;
+  P.m-=puffM; P.r=Math.sqrt(P.m);
+  var dv=EJ*puffM/P.m;
+  P.vx-=dx*dv; P.vy-=dy*dv;
+  G.motes.push(pf);
+  sndPuff();
+  return true;
+}
+function drainPair(big,small,isPlayerBig,isPlayerSmall,rateMul){
+  var dx=big.x-small.x, dy=big.y-small.y, d=Math.sqrt(dx*dx+dy*dy);
+  var overlap=(big.r+small.r)-d;
+  if(overlap<=0)return;
+  var rate=0.09*(rateMul||1);
+  if(isPlayerSmall)rate*=0.5; /* mercy: the water drinks you slowly */
+  var dm=Math.min(small.m, overlap*rate*Math.sqrt(Math.max(4,small.m)));
+  big.m+=dm; small.m-=dm;
+  if(isPlayerBig){ PROG.biomass+=dm; }
+  if(small.m<1){ big.m+=small.m; if(isPlayerBig)PROG.biomass+=small.m; small.m=0; small.dead=true;
+    if(isPlayerBig){ if(small.e)G.elderDown=true;
+      if(small.f){ G.flowersLeft--; G.absorbedFlowers++; toast("✿ A flowering mote, "+ (5-G.flowersLeft)+" of 5"); }
+      sndSip(); } }
+  big.r=Math.sqrt(big.m); small.r=Math.sqrt(Math.max(0,small.m));
+}
+function tickSim(){
+  var P=G.P, i, j, ms=G.motes, tick=G.tick;
+  /* current */
+  var f=flowAt(P.x,P.y,tick,G.flowS);
+  P.vx+=(f.x-P.vx)*0.008; P.vy+=(f.y-P.vy)*0.008;
+  P.vx*=0.998; P.vy*=0.998;
+  P.x+=P.vx*DT*3.4; P.y+=P.vy*DT*3.4;
+  for(i=0;i<ms.length;i++){ var m=ms[i]; if(m.dead)continue;
+    var fm=flowAt(m.x,m.y,tick,G.flowS);
+    m.vx+=(fm.x-m.vx)*0.008; m.vy+=(fm.y-m.vy)*0.008;
+    m.vx*=0.998; m.vy*=0.998;
+    m.x+=m.vx*DT*3.4; m.y+=m.vy*DT*3.4;
+  }
+  /* soft walls */
+  function walls(o){
+    if(o.x<o.r)o.vx+=(o.r-o.x)*0.05;
+    if(o.x>W-o.r)o.vx-=(o.x-(W-o.r))*0.05;
+    if(o.y<o.r+62)o.vy+=((o.r+62)-o.y)*0.05;
+    if(o.y>H-o.r)o.vy-=(o.y-(H-o.r))*0.05;
+  }
+  walls(P);
+  for(i=0;i<ms.length;i++){ if(!ms[i].dead)walls(ms[i]); }
+  /* player vs motes */
+  for(i=0;i<ms.length;i++){ var a=ms[i]; if(a.dead)continue;
+    var d2=sqDist(P.x,P.y,a.x,a.y), rr=(P.r+a.r);
+    if(d2<rr*rr){
+      if(a.birth&&G.tick-a.birth<30&&a.m<=P.m){ /* fresh puff grace vs player only */ }
+      else if(P.m>=a.m){ drainPair(P,a,true,false); }
+      else if(G.mode==="zen"){ /* gentle bump, no drain */
+        var dd=Math.sqrt(d2)||1, push=(rr-dd)*0.06;
+        P.vx+=(P.x-a.x)/dd*push*8; P.vy+=(P.y-a.y)/dd*push*8;
+      }
+      else { drainPair(a,P,false,true); }
+    }
+  }
+  /* mote vs mote: the wild motes coexist (soft repulsion) so chambers stay
+     winnable as designed — but free-floating PUFFS are fair game for anyone */
+  for(i=0;i<ms.length;i++){ var b=ms[i]; if(b.dead)continue;
+    for(j=i+1;j<ms.length;j++){ var c=ms[j]; if(c.dead)continue;
+      var dd2=sqDist(b.x,b.y,c.x,c.y), rr2=(b.r+c.r);
+      if(dd2>=rr2*rr2)continue;
+      var bPuff=b.birth>0, cPuff=c.birth>0;
+      if((bPuff||cPuff)&&!(b.e||c.e||b.f||c.f)){
+        if(b.m>=c.m)drainPair(b,c,false,false,0.5); else drainPair(c,b,false,false,0.5);
+      } else {
+        var dd=Math.sqrt(dd2)||1, push=(rr2-dd)*0.012;
+        var px=(b.x-c.x)/dd*push, py=(b.y-c.y)/dd*push;
+        b.vx+=px*8; b.vy+=py*8; c.vx-=px*8; c.vy-=py*8;
+      }
+    }
+  }
+  /* threat markers (colorblind ground truth) */
+  for(i=0;i<ms.length;i++){ var t0=ms[i]; t0.threat=(!t0.dead&&t0.m>P.m); }
+  /* sweep dead */
+  for(i=ms.length-1;i>=0;i--)if(ms[i].dead)ms.splice(i,1);
+  /* trail */
+  G.trail.push({x:P.x,y:P.y}); if(G.trail.length>22)G.trail.shift();
+  /* player death */
+  if(P.m<MIN_ALIVE&&G.phase==="play"){ loseRun(); }
+  G.tick++;
+  if(G.goal&&G.phase==="play")checkGoal();
+}
+function goalProgress(){
+  var P=G.P, g=G.goal, i, big=0;
+  if(!g)return 0;
+  if(g.type==="frac")return Math.min(1, P.m/(g.n*G.totalMass));
+  if(g.type==="largest"){ for(i=0;i<G.motes.length;i++)if(G.motes[i].m>big)big=G.motes[i].m;
+    return big<=0?1:Math.min(1, P.m/(big*1.0001)); }
+  if(g.type==="elder"){ if(G.elderDown)return 1;
+    var em=0; for(i=0;i<G.motes.length;i++)if(G.motes[i].e)em=G.motes[i].m;
+    return em<=0?1:Math.min(1, P.m/em)*0.85; }
+  if(g.type==="bloom")return (5-G.flowersLeft)/5;
+  return 0;
+}
+function checkGoal(){
+  var g=G.goal, ok=false, P=G.P, i;
+  if(g.type==="frac")ok=P.m>=g.n*G.totalMass;
+  else if(g.type==="largest"){ ok=true; for(i=0;i<G.motes.length;i++)if(G.motes[i].m>=P.m){ok=false;break;} }
+  else if(g.type==="elder")ok=G.elderDown;
+  else if(g.type==="bloom")ok=G.flowersLeft<=0;
+  if(ok)G.goalStable++; else G.goalStable=0;
+  if(G.goalStable>=40)winRun();
+}
+function payRun(n,tag){ if(!G||G.mode==="zen")return 0;
+  if(G.earned>=12)return 0; n=Math.min(n,12-G.earned);
+  var got=window._sbCapEarn(n,tag); G.earned+=got;
+  if(got>0)toast("☀ +"+got+" sunbeam"+(got>1?"s":"")); return got; }
+function winRun(){
+  if(G.phase!=="play")return; G.phase="won"; G.won=true; running=false;
+  var first=false;
+  if(G.mode==="chamber"){ first=!PROG.chambers[G.chamber];
+    if(first){ PROG.chambers[G.chamber]=true; mintKeepsake(); payRun(2,"chamber"); }
+    else payRun(1,"chamber-replay");
+  } else if(G.mode==="daily"){ var today=new Date().toISOString().slice(0,10);
+    if(PROG.lastDaily!==today){ var y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+      PROG.streak=(PROG.lastDaily===y)?PROG.streak+1:1; PROG.lastDaily=today; payRun(3,"daily"); }
+  } else if(G.mode==="bloom"){ PROG.bloomWins++; if(PROG.bloomWins%3===1)mintKeepsake(); payRun(2,"bloom"); }
+  save(); sndWin();
+  $("over-title").textContent=G.mode==="daily"?"The daily water settles":(G.mode==="bloom"?"Every flower found":"Chamber clear");
+  $("over-sub").textContent=G.mode==="chamber"
+    ? "\""+CHAMBERS[G.chamber].name+"\" is quiet now."+(first?" Your spore blossomed into the Grove.":"")
+    : (G.mode==="daily"?"Streak "+PROG.streak+". A new current tomorrow.":"The reef remembers you.");
+  $("over-next").style.display=(G.mode==="chamber"&&G.chamber<CHAMBERS.length-1)?"":"none";
+  $("over-retry").style.display="none";
+  show("s-over"); $("hud").classList.remove("on"); $("goalchip").classList.remove("on");
+}
+function loseRun(){
+  if(G.phase!=="play")return; G.phase="lost"; running=false; sndLose();
+  $("over-title").textContent="The drift took you";
+  $("over-sub").textContent="Your spore thinned into the current. Every drop of it feeds the water somewhere.";
+  $("over-next").style.display="none";
+  $("over-retry").style.display="";
+  show("s-over"); $("hud").classList.remove("on"); $("goalchip").classList.remove("on");
+}
+
+/* ---------- keepsakes ---------- */
+function mintKeepsake(){
+  var seed=(G.seed^(G.tick*2654435761))>>>0;
+  PROG.grove.push({s:seed,d:new Date().toISOString().slice(0,10)});
+  if(PROG.grove.length>24)PROG.grove.shift();
+  save(); toast("✿ Your spore blossomed into the Grove");
+}
+function drawKeepsake(cv,ks){
+  var c=cv.getContext("2d"),rr=mkRng(ks.s),Wc=cv.width,Hc=cv.height;
+  c.fillStyle="#070b10"; c.fillRect(0,0,Wc,Hc);
+  var cx=Wc/2, cy=Hc/2, base=Wc*0.16+rr()*Wc*0.08;
+  var hue=["#e58fa0","#c8a84b","#bfe0f2","#a468d8","#7ab356"][Math.floor(rr()*5)];
+  var petals=6+Math.floor(rr()*5), k;
+  c.globalAlpha=0.9;
+  for(k=0;k<petals;k++){ var an=k/petals*6.283+rr()*0.1;
+    c.fillStyle=hue; c.beginPath();
+    c.ellipse(cx+Math.cos(an)*base*0.9, cy+Math.sin(an)*base*0.9, base*0.55, base*0.28, an, 0, 6.283); c.fill(); }
+  c.globalAlpha=1;
+  c.strokeStyle="#bfe0f2"; c.lineWidth=2;
+  c.beginPath(); c.arc(cx,cy,base*0.85,0,6.283); c.stroke();
+  c.fillStyle="#eaf6ff"; c.beginPath(); c.arc(cx,cy,base*0.45,0,6.283); c.fill();
+  c.fillStyle=hue; c.beginPath(); c.arc(cx,cy,base*0.22,0,6.283); c.fill();
+}
+
+/* ---------- render ---------- */
+var cvs=document.getElementById("game"), ctx=cvs.getContext("2d");
+var FLOWP=[], fpRng=mkRng(777);
+(function(){ var i; for(i=0;i<46;i++)FLOWP.push({x:fpRng()*W, y:fpRng()*H}); })();
+var BACKDROPS={
+ abyss:  {a:"#0c121c", b:"#070b10"},
+ kelp:   {a:"#0c1712", b:"#060b08"},
+ moonpool:{a:"#101322", b:"#080a14"},
+ starfield:{a:"#0d0f1a", b:"#050610"}
+};
+function render(){
+  if(!G){ return; }
+  var P=G.P, sb=seasonBlend(G.tick), i;
+  var bd=BACKDROPS[PROG.backdrop]||BACKDROPS.abyss;
+  var grd=ctx.createRadialGradient(W/2,H*0.3,60,W/2,H*0.65,H*0.75);
+  grd.addColorStop(0, rgb(mixc(hex(bd.a),sb.bgA,0.5)));
+  grd.addColorStop(1, rgb(mixc(hex(bd.b),sb.bgB,0.5)));
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+  if(PROG.backdrop==="starfield"){ ctx.fillStyle="rgba(232,220,200,0.5)";
+    var sr=mkRng(42); for(i=0;i<40;i++){ ctx.fillRect(sr()*W,(sr()*H)|0,1.5,1.5); } }
+  /* flow lines */
+  if(PROG.fx){
+    ctx.strokeStyle=rgb(sb.tint,0.13); ctx.lineWidth=1.4;
+    for(i=0;i<FLOWP.length;i++){ var p=FLOWP[i];
+      var fv=flowAt(p.x,p.y,G.tick,G.flowS*3+16);
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+fv.x*0.35,p.y+fv.y*0.35); ctx.stroke();
+      p.x+=fv.x*DT*2.2; p.y+=fv.y*DT*2.2;
+      if(p.x<0)p.x+=W; if(p.x>W)p.x-=W; if(p.y<0)p.y+=H; if(p.y>H)p.y-=H;
+    }
+  }
+  /* trail */
+  var trailC={dust:[138,145,120], petal:[229,143,160], ember:[212,132,42], aurora:[160,196,232]}[PROG.trail]||[138,145,120];
+  for(i=0;i<G.trail.length;i++){ var tr=G.trail[i], u=(i+1)/G.trail.length;
+    ctx.fillStyle=rgb(trailC,0.05+u*0.13);
+    ctx.beginPath(); ctx.arc(tr.x,tr.y,2+u*3.4,0,6.283); ctx.fill(); }
+  /* motes */
+  for(i=0;i<G.motes.length;i++){ var m=G.motes[i];
+    var col=m.f?[229,143,160]:(m.e?[200,168,75]:sb.mote);
+    ctx.fillStyle=rgb(col, m.f?0.85:0.62);
+    ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,6.283); ctx.fill();
+    ctx.fillStyle=rgb([234,246,255],0.10);
+    ctx.beginPath(); ctx.arc(m.x-m.r*0.3,m.y-m.r*0.32,m.r*0.55,0,6.283); ctx.fill();
+    if(m.f){ /* flower petal ring — shape marker */
+      var pk; ctx.fillStyle="rgba(229,143,160,0.9)";
+      for(pk=0;pk<6;pk++){ var fa=pk/6*6.283+G.tick*0.01;
+        ctx.beginPath(); ctx.ellipse(m.x+Math.cos(fa)*(m.r+5), m.y+Math.sin(fa)*(m.r+5), 4.5,2.6, fa, 0,6.283); ctx.fill(); } }
+    if(m.e){ /* elder crown notches */
+      var ek; ctx.strokeStyle="rgba(232,220,200,0.85)"; ctx.lineWidth=2;
+      for(ek=0;ek<3;ek++){ var ea=-Math.PI/2+(ek-1)*0.5;
+        ctx.beginPath(); ctx.moveTo(m.x+Math.cos(ea)*(m.r-3), m.y+Math.sin(ea)*(m.r-3));
+        ctx.lineTo(m.x+Math.cos(ea)*(m.r+7), m.y+Math.sin(ea)*(m.r+7)); ctx.stroke(); } }
+    if(m.threat){ /* THREAT: pulsing dashed ring + notch triangle (never color-only) */
+      var pu=1+0.08*Math.sin(G.tick*0.12);
+      ctx.strokeStyle="rgba(232,220,200,0.9)"; ctx.lineWidth=2;
+      ctx.setLineDash([6,5]);
+      ctx.beginPath(); ctx.arc(m.x,m.y,(m.r+6)*pu,0,6.283); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle="rgba(232,220,200,0.9)";
+      ctx.beginPath(); ctx.moveTo(m.x,m.y-m.r-14); ctx.lineTo(m.x-5,m.y-m.r-5); ctx.lineTo(m.x+5,m.y-m.r-5); ctx.fill();
+    } else if(!m.f&&!m.e){ ctx.strokeStyle=rgb(col,0.25); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(m.x,m.y,m.r+2.5,0,6.283); ctx.stroke(); }
+  }
+  /* player */
+  var mem=PROG.membrane;
+  ctx.fillStyle="rgba(191,224,242,0.9)";
+  ctx.beginPath(); ctx.arc(P.x,P.y,P.r,0,6.283); ctx.fill();
+  ctx.fillStyle="rgba(91,155,213,0.75)";
+  ctx.beginPath(); ctx.arc(P.x,P.y,P.r*0.72,0,6.283); ctx.fill();
+  ctx.fillStyle="rgba(234,246,255,0.85)";
+  ctx.beginPath(); ctx.arc(P.x-P.r*0.3,P.y-P.r*0.34,P.r*0.2,0,6.283); ctx.fill();
+  if(mem==="comet"){ ctx.strokeStyle="rgba(234,246,255,0.9)"; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(P.x,P.y,P.r+2,0,6.283); ctx.stroke(); }
+  else if(mem==="lichen"){ var lk; ctx.fillStyle="rgba(122,179,86,0.55)";
+    var lr0=mkRng(99); for(lk=0;lk<7;lk++){ var la=lr0()*6.283, ld=lr0()*P.r*0.7;
+      ctx.beginPath(); ctx.arc(P.x+Math.cos(la)*ld,P.y+Math.sin(la)*ld,2.4+lr0()*2,0,6.283); ctx.fill(); } }
+  else if(mem==="prism"){ var pk2; ctx.lineWidth=2;
+    var pcols=["#e58fa0","#c8a84b","#7ab356","#a0c4e8"];
+    for(pk2=0;pk2<4;pk2++){ ctx.strokeStyle=pcols[pk2];
+      ctx.beginPath(); ctx.arc(P.x,P.y,P.r+1+pk2*2,(pk2*1.57)+G.tick*0.02,(pk2*1.57)+G.tick*0.02+1.2); ctx.stroke(); } }
+  /* season vignette chip */
+  ctx.fillStyle=rgb(sb.tint,0.75);
+  ctx.font="11px sans-serif"; ctx.textAlign="right";
+  ctx.fillText(sb.name.toUpperCase()+" CURRENT", W-10, H-10);
+  /* hud values */
+  var gp=goalProgress();
+  $("goalfill").style.width=(gp*100).toFixed(0)+"%";
+  $("goalval").textContent=(G.goal&&G.goal.type==="bloom")?((5-G.flowersLeft)+" / 5"):(P.m.toFixed(0));
+}
+function hex(h){ var v=parseInt(h.slice(1),16); return [(v>>16)&255,(v>>8)&255,v&255]; }
+
+/* ---------- ui plumbing ---------- */
+function $(id){ return document.getElementById(id); }
+function hideScreens(){ var s=document.querySelectorAll(".screen"),i; for(i=0;i<s.length;i++)s[i].classList.remove("on"); }
+function show(id){ hideScreens(); $(id).classList.add("on"); }
+var toastT=null;
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2200); }
+function stamp(){ $("buildstamp").textContent="Spore Drift "+BUILD+" · "+chambersDone()+"/"+CHAMBERS.length+" chambers · "+PROG.biomass.toFixed(0)+" biomass drunk"; }
+
+function renderChambers(){
+  var g=$("chambergrid"); g.innerHTML="";
+  var i; for(i=0;i<CHAMBERS.length;i++)(function(i){
+    var unlocked=i===0||PROG.chambers[i-1]||PROG.chambers[i];
+    var c=document.createElement("div"); c.className="lvlcard"+(unlocked?"":" locked")+(PROG.chambers[i]?" done":"");
+    c.innerHTML='<div class="ln">'+(i+1)+'</div><div class="lt">'+CHAMBERS[i].name+'</div><div class="ls">'+(PROG.chambers[i]?"✿":"")+'</div>';
+    if(unlocked)c.onclick=function(){ startMode("chamber",i); };
+    g.appendChild(c);
+  })(i);
+}
+
+/* ---------- wardrobe ---------- */
+var WARD=[
+ {cat:"Membrane",key:"membrane",id:"plain",name:"Plain Spore",icon:"🫧",need:function(){return true;},needTxt:"Free"},
+ {cat:"Membrane",key:"membrane",id:"comet",name:"Comet Rim",icon:"☄️",need:function(){return chambersDone()>=3;},needTxt:"Clear 3 chambers"},
+ {cat:"Membrane",key:"membrane",id:"lichen",name:"Lichen Mottle",icon:"🌿",need:function(){return chambersDone()>=7;},needTxt:"Clear 7 chambers"},
+ {cat:"Membrane",key:"membrane",id:"prism",name:"Prism Veil",icon:"🌈",need:function(){return chambersDone()>=10;},needTxt:"Clear all 10 chambers"},
+ {cat:"Trail",key:"trail",id:"dust",name:"Dust",icon:"·",need:function(){return true;},needTxt:"Free"},
+ {cat:"Trail",key:"trail",id:"petal",name:"Petal Wake",icon:"✿",need:function(){return PROG.bloomWins>=3;},needTxt:"Win 3 Bloom Hunts"},
+ {cat:"Trail",key:"trail",id:"ember",name:"Ember Wake",icon:"🔥",need:function(){return PROG.streak>=3;},needTxt:"Daily streak of 3"},
+ {cat:"Trail",key:"trail",id:"aurora",name:"Aurora Wake",icon:"✨",need:function(){return PROG.biomass>=5000;},needTxt:"Drink 5000 biomass (lifetime)"},
+ {cat:"Backdrop",key:"backdrop",id:"abyss",name:"The Abyss",icon:"⬛",need:function(){return true;},needTxt:"Free"},
+ {cat:"Backdrop",key:"backdrop",id:"kelp",name:"Kelp Glade",icon:"🪸",need:function(){return chambersDone()>=5;},needTxt:"Clear 5 chambers"},
+ {cat:"Backdrop",key:"backdrop",id:"moonpool",name:"Moon Pool",icon:"🌕",need:function(){return PROG.bloomWins>=1;},needTxt:"Win a Bloom Hunt"},
+ {cat:"Backdrop",key:"backdrop",id:"starfield",name:"Starfield",icon:"🌌",need:function(){return PROG.streak>=7;},needTxt:"Daily streak of 7"}
+];
+function renderWard(){
+  var w=$("wardlist"); w.innerHTML="";
+  var i; for(i=0;i<WARD.length;i++)(function(it){
+    var owned=it.need(), eq=PROG[it.key]===it.id;
+    var c=document.createElement("div"); c.className="wardcard"+(owned?"":" locked");
+    c.innerHTML='<div class="wi">'+it.icon+'</div><div class="wt"><div class="wn">'+it.name+' <span style="color:var(--muted);font-size:.7rem">· '+it.cat+'</span></div>'+
+      '<div class="wd">'+(owned?"Unlocked.":it.needTxt)+'</div></div>'+
+      '<div class="we'+(eq?" eq":"")+'">'+(eq?"EQUIPPED":(owned?"EQUIP":"🔒"))+'</div>';
+    if(owned&&!eq)c.querySelector(".we").onclick=function(){ PROG[it.key]=it.id; save(); renderWard(); };
+    w.appendChild(c);
+  })(WARD[i]);
+}
+function renderGrove(){
+  var w=$("grovewrap"); w.innerHTML="";
+  if(!PROG.grove.length){ w.innerHTML='<div style="color:var(--muted);font-size:.8rem;padding:30px 10px">No keepsakes yet. Clear a chamber for the first time and your spore blossoms.</div>'; return; }
+  var i; for(i=PROG.grove.length-1;i>=0;i--){
+    var ks=PROG.grove[i], c=document.createElement("div"); c.className="grovecard";
+    var cv=document.createElement("canvas"); cv.width=84; cv.height=84;
+    drawKeepsake(cv,ks); c.appendChild(cv);
+    var d0=document.createElement("div"); d0.className="gd"; d0.textContent=ks.d; c.appendChild(d0);
+    w.appendChild(c);
+  }
+}
+
+/* ---------- input ---------- */
+cvs.addEventListener("pointerdown",function(ev){ ev.preventDefault(); ac();
+  if(!G||G.phase!=="play"||G.paused)return;
+  var r=cvs.getBoundingClientRect();
+  var x=(ev.clientX-r.left)/r.width*W, y=(ev.clientY-r.top)/r.height*H;
+  eject(x,y);
+});
+
+/* ---------- main loop ---------- */
+var running=false, raf=null;
+function loop(){
+  raf=requestAnimationFrame(loop);
+  if(!running||!G)return;
+  if(!G.paused&&G.phase==="play")tickSim();
+  render();
+}
+document.addEventListener("visibilitychange",function(){ if(document.hidden&&G&&!G.paused){ G.paused=true; } });
+
+/* ---------- fit stage ---------- */
+function fit(){ var st=document.getElementById("stage");
+  var s=Math.min(window.innerWidth/540, window.innerHeight/960);
+  st.style.transform="scale("+s+")"; }
+window.addEventListener("resize",fit); fit();
+
+/* ---------- wire buttons ---------- */
+function tap(id,fn){ $(id).addEventListener("click",fn); }
+tap("b-chambers",function(){ renderChambers(); show("s-chambers"); });
+tap("chambers-back",function(){ show("s-title"); stamp(); });
+tap("b-daily",function(){ startMode("daily"); });
+tap("b-zen",function(){ startMode("zen"); });
+tap("b-bloom",function(){ startMode("bloom"); });
+tap("b-how",function(){ show("s-how"); });
+tap("how-back",function(){ show("s-title"); });
+tap("b-ward",function(){ renderWard(); show("s-ward"); });
+tap("ward-back",function(){ show("s-title"); });
+tap("b-grove",function(){ renderGrove(); show("s-grove"); });
+tap("grove-back",function(){ show("s-title"); });
+tap("b-set",function(){ syncTg(); show("s-set"); });
+tap("set-back",function(){ show("s-title"); });
+tap("hud-back",function(){ stopToMenu(); });
+tap("hud-pause",function(){ if(G){ G.paused=!G.paused; $("hud-pause").textContent=G.paused?"▶":"❚❚"; } });
+tap("over-home",function(){ stopToMenu(); });
+tap("over-retry",function(){ if(G)startMode(G.mode, G.chamber>=0?G.chamber:0); });
+tap("over-next",function(){ if(G&&G.chamber>=0&&G.chamber<CHAMBERS.length-1)startMode("chamber",G.chamber+1); else stopToMenu(); });
+function syncTg(){
+  $("tg-sound").className="toggle"+(PROG.sound?" on":"");
+  $("tg-fx").className="toggle"+(PROG.fx?" on":"");
+}
+tap("tg-sound",function(){ PROG.sound=!PROG.sound; save(); syncTg(); });
+tap("tg-fx",function(){ PROG.fx=!PROG.fx; save(); syncTg(); });
+stamp();
+
+/* ---------- embed + exit ---------- */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_sporedrift'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ===== headless test hook ===== */
+if(/[?&]sptest=1/.test(location.search)){
+  window.SP_DEV={
+    start:function(mode,ch){ startMode(mode||"chamber", ch||0); running=false; return true; },
+    state:function(){ if(!G)return null;
+      var i, biggest=0, nan=!isFinite(G.P.m)||!isFinite(G.P.x)||!isFinite(G.P.y)||!isFinite(G.P.vx)||!isFinite(G.P.vy);
+      for(i=0;i<G.motes.length;i++){ var m=G.motes[i]; if(m.m>biggest)biggest=m.m;
+        if(!isFinite(m.m)||!isFinite(m.x)||!isFinite(m.y))nan=true; }
+      return { mode:G.mode, phase:G.phase, tick:G.tick, playerMass:+G.P.m.toFixed(2),
+        motes:G.motes.length, biggest:+biggest.toFixed(2), flowersLeft:G.flowersLeft,
+        goalProgress:+goalProgress().toFixed(3), totalMass:+G.totalMass.toFixed(1), nan:nan }; },
+    tap:function(x,y){ return eject(x,y); },
+    step:function(n){ var k; for(k=0;k<(n||1);k++){ if(!G||G.phase!=="play")break; tickSim(); } render(); return window.SP_DEV.state(); },
+    setPlayerMass:function(m){ if(G){ G.P.m=m; G.P.r=Math.sqrt(m); } },
+    stateHash:function(){ if(!G)return 0; var h=2166136261, i;
+      function mix(v){ h^=(Math.round(v*10)|0); h=Math.imul(h,16777619); }
+      mix(G.P.x); mix(G.P.y); mix(G.P.m);
+      for(i=0;i<G.motes.length;i++){ var m=G.motes[i]; mix(m.x); mix(m.y); mix(m.m); }
+      return h>>>0; },
+    totalMass:function(){ if(!G)return 0; var t=G.P.m, i; for(i=0;i<G.motes.length;i++)t+=G.motes[i].m; return t; },
+    massCheck:function(){
+      startMode("chamber",1); running=false;
+      var t0=window.SP_DEV.totalMass(), k;
+      for(k=0;k<500;k++){ if(G.phase!=="play")break;
+        if(k%20===0){ var corner=k%40===0; eject(corner?30:510, corner?90:930); }
+        tickSim(); }
+      var t1=window.SP_DEV.totalMass();
+      return { t0:+t0.toFixed(2), t1:+t1.toFixed(2), drift:+Math.abs(t1-t0).toFixed(4),
+        ok:Math.abs(t1-t0)/t0<0.005, ticks:k };
+    },
+    threatCheck:function(){
+      startMode("chamber",0); running=false;
+      var res=[], pass=true, phases=[1,3,0.2], pi, i;
+      for(pi=0;pi<phases.length;pi++){
+        G.P.m=START_M*phases[pi]; G.P.r=Math.sqrt(G.P.m);
+        tickSim();
+        var wrong=0;
+        for(i=0;i<G.motes.length;i++){ var m=G.motes[i];
+          if(m.threat!==(m.m>G.P.m))wrong++; }
+        res.push({scale:phases[pi], motes:G.motes.length, wrong:wrong});
+        if(wrong>0)pass=false;
+      }
+      return { ok:pass, phases:res };
+    },
+    autoplay:function(maxTicks){
+      maxTicks=maxTicks||14000;
+      var k, P, i, lastChase=-999, lastFlee=-999;
+      for(k=0;k<maxTicks;k++){
+        if(!G||G.phase!=="play")break;
+        if(G.tick%14===0){
+          P=G.P;
+          var threat=null, td=1e9, tAppr=0, prey=null, pscore=-1, pd=1e9;
+          for(i=0;i<G.motes.length;i++){ var m=G.motes[i];
+            var d=Math.sqrt(sqDist(P.x,P.y,m.x,m.y))-(P.r+m.r);
+            if(m.m>P.m*0.95){
+              if(d<td){ td=d; threat=m;
+                var rx=P.x-m.x, ry=P.y-m.y, rl=Math.sqrt(rx*rx+ry*ry)||1;
+                tAppr=((m.vx-P.vx)*rx+(m.vy-P.vy)*ry)/rl; }
+            }
+            else if(m.m<P.m*0.85){
+              var risky=false, q2;
+              for(q2=0;q2<G.motes.length;q2++){ var mq=G.motes[q2];
+                if(mq.m>P.m*0.95&&sqDist(m.x,m.y,mq.x,mq.y)<(90+mq.r)*(90+mq.r)){ risky=true; break; } }
+              if(!risky){ var sc=m.m/(40+Math.max(0,d)); if(sc>pscore){ pscore=sc; prey=m; pd=d; } }
+            }
+          }
+          /* elder endgame: once we out-grow the elder, it IS the goal — hunt it */
+          if(G.goal&&G.goal.type==="elder"){
+            for(i=0;i<G.motes.length;i++){ var elm=G.motes[i];
+              if(elm.e&&P.m>elm.m*1.05){ prey=elm;
+                pd=Math.sqrt(sqDist(P.x,P.y,elm.x,elm.y))-(P.r+elm.r); pscore=99; break; } }
+          }
+          var fleeMargin=40+G.flowS*2;
+          var fleeNow=threat&&((td<110&&tAppr>8)||td<fleeMargin);
+          if(fleeNow&&G.tick-lastFlee>=14){
+            /* wall-aware escape: away from threat, bent away from nearby walls */
+            var ex=P.x-threat.x, ey=P.y-threat.y, el=Math.sqrt(ex*ex+ey*ey)||1;
+            ex/=el; ey/=el;
+            if(P.x<110)ex+=0.9; if(P.x>W-110)ex-=0.9;
+            if(P.y<170)ey+=0.9; if(P.y>H-110)ey-=0.9;
+            var el2=Math.sqrt(ex*ex+ey*ey)||1;
+            eject(P.x-ex/el2*120, P.y-ey/el2*120); lastFlee=G.tick;
+          }
+          else if(prey&&G.tick-lastChase>=26&&pd>30){
+            /* intercept lead: aim at where the prey is drifting to */
+            var lead=Math.min(1.6, pd/70);
+            var ax=prey.x+prey.vx*lead*0.06*60, ay=prey.y+prey.vy*lead*0.06*60;
+            var toX=ax-P.x, toY=ay-P.y, dl=Math.sqrt(toX*toX+toY*toY)||1;
+            var closing=(P.vx*toX+P.vy*toY)/dl;
+            var hungry=P.m<G.startM*0.6;
+            var massOK=P.m>G.startM*0.45||pd<80||hungry;
+            if(closing<(hungry?18:12)&&massOK){ eject(P.x-toX, P.y-toY); lastChase=G.tick; }
+          }
+        }
+        tickSim();
+      }
+      return { phase:G?G.phase:"gone", ticks:G?G.tick:0, mass:G?+G.P.m.toFixed(1):0 };
+    },
+    earnTest:function(){ return window._sbCapEarn(2,"sptest"); },
+    prog:function(){ return PROG; },
+    chambers:CHAMBERS
+  };
+}
+
+loop();
+})();
+</script>
+</body>
+</html>
