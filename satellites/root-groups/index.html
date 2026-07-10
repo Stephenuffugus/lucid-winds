@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Crect x='7' y='7' width='7' height='7' rx='2' fill='%237ab356'/%3E%3Crect x='18' y='7' width='7' height='7' rx='2' fill='%235b9bd5'/%3E%3Crect x='7' y='18' width='7' height='7' rx='2' fill='%23c8a84b'/%3E%3Crect x='18' y='18' width='7' height='7' rx='2' fill='%23e58fa0'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Root Groups">
+<title>Root Groups — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"rootgroups"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2;
+  --t1:#7ab356; --t2:#5b9bd5; --t3:#c8a84b; --t4:#e58fa0; --t5:#b57de0; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:48px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #14240f, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#7ab356,#4f7d35); color:#0c1408; border-color:#9fd07a; box-shadow:0 4px 0 #2f4a1f, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:15px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
+h2.sc-h{font-size:23px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+/* ---- play ---- */
+#s-play{padding:0}
+#rg-top{display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); background:#0e140d; flex:none}
+#rg-top .tbtn{min-width:44px; height:44px; border:1px solid var(--line); border-radius:11px; background:#121a0f; color:var(--cream); font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
+#rg-top .grow{flex:1}
+#rg-mode{font-size:15px; font-weight:800; color:var(--sage)}
+#rg-sub{font-size:12px; color:var(--muted)}
+#rg-solved{padding:8px 12px 0; display:flex; flex-direction:column; gap:6px; flex:none}
+.grp{border-radius:12px; padding:8px 12px; text-align:center; animation:bloomrow .5s ease}
+.grp .gl{font-size:14px; font-weight:800; color:#0c1408; letter-spacing:.4px}
+.grp .gm{font-size:11px; font-weight:700; color:#0c1408b0; margin-top:1px}
+.grp.tt1{background:linear-gradient(180deg,#8fca66,#6ba548)} .grp.tt2{background:linear-gradient(180deg,#72acdf,#5089bd)}
+.grp.tt3{background:linear-gradient(180deg,#dcc069,#bf9c3f)} .grp.tt4{background:linear-gradient(180deg,#eaa1b2,#d47f92)}
+.grp.tt5{background:linear-gradient(180deg,#c79ae6,#a678cf)}
+@keyframes bloomrow{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
+#rg-board{flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:10px 12px; align-content:start; overflow-y:auto}
+.cell{min-height:64px; border:1px solid var(--line); border-radius:12px; background:linear-gradient(180deg,#1b2414,#11170d);
+  display:flex; align-items:center; justify-content:center; text-align:center; padding:4px 5px; cursor:pointer;
+  font-size:13px; font-weight:700; color:var(--cream); line-height:1.12; word-break:break-word; transition:transform .07s, background .1s, border-color .1s}
+.cell:active{transform:scale(.94)}
+.cell.sel{background:linear-gradient(180deg,#33451f,#26361a); border-color:var(--sage); box-shadow:0 0 0 1px var(--sage), 0 0 12px #7ab35655; color:#f2ffe0}
+.cell.lock{border-color:var(--gold); box-shadow:0 0 0 1px #c8a84b88}
+.cell.wrong{animation:wilt .4s ease}
+@keyframes wilt{0%{transform:translateY(0)}30%{transform:translateY(4px) rotate(-2deg)}100%{transform:translateY(0)}}
+.cell.tlong{font-size:11px}
+#rg-bot{flex:none; padding:8px 12px calc(10px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line); background:#0e140d; display:flex; flex-direction:column; gap:8px}
+#rg-buds{display:flex; align-items:center; justify-content:center; gap:10px; font-size:13px; color:var(--muted)}
+.buds{display:inline-flex; gap:5px}
+.bud{width:13px; height:13px; border-radius:50%; background:var(--sage); box-shadow:0 0 4px #7ab35688}
+.bud.spent{background:#3a2430; box-shadow:none}
+#rg-ctrl{display:flex; gap:8px}
+#rg-ctrl .cbtn{flex:1; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px}
+#rg-ctrl .cbtn.primary{background:linear-gradient(180deg,#7ab356,#4f7d35); color:#0c1408; border-color:#9fd07a}
+#rg-ctrl .cbtn:disabled{opacity:.4}
+.wardwrap{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.wardcard{width:140px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:12px 10px; cursor:pointer; text-align:center}
+.wardcard.locked{opacity:.5} .wardcard.on{border-color:var(--sage); box-shadow:0 0 0 1px var(--sage)}
+.wardcard .wi{font-size:30px} .wardcard .wn{font-size:13px; font-weight:700; color:var(--cream); margin-top:4px}
+.wardcard .wt{font-size:11px; color:var(--muted); margin-top:2px}
+.compwrap{max-width:480px; margin:0 auto; display:flex; flex-direction:column; gap:8px}
+.compcat{display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:12px; background:#0f150c; padding:10px 14px}
+.compcat .cn{font-size:14px; font-weight:700; color:var(--cream)} .compcat .cc{font-size:11px; color:var(--muted); margin-left:auto}
+#rg-toast{position:absolute; left:50%; bottom:150px; transform:translateX(-50%); background:#141a0e; border:1px solid var(--gold); color:var(--cream); font-size:14px; font-weight:700; padding:9px 16px; border-radius:20px; z-index:40; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; max-width:90%; text-align:center}
+#rg-toast.on{opacity:1; transform:translateX(-50%) translateY(-6px)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Root Groups</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Sixteen tiles hide <b class="hl">four secret groups</b> of four. Find the hidden thread, tap four that belong together, and watch each group <b class="hl">bloom</b>. The trickiest group seeds your garden.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-grove">🌱&nbsp; Grove Groups</button>
+      <div class="row">
+        <button class="btn sm" id="b-daily">📅 Daily Roots</button>
+        <button class="btn sm" id="b-zen">🍃 Zen Sort</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-tangle">🪢 Tangle</button>
+        <button class="btn sm" id="b-comp">📖 Compendium</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-ward">🎀 Wardrobe</button>
+        <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-set">⚙</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">👆</div><div>Tap <b>four tiles</b> you think share a hidden thread, then <b class="hl">Submit</b>.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div>A correct group <b>blooms</b> and its name is revealed. Solve all four to clear the board.</div></div>
+    <div class="helprow"><div class="hi">🌿</div><div>Groups run <b>easy to devious</b> (one leaf to four). Watch for a tile that looks like it fits the wrong group.</div></div>
+    <div class="helprow"><div class="hi">🪴</div><div>Solve the trickiest <b class="hl">root group</b> to drop a rare seed in your pouch.</div></div>
+    <div class="helprow"><div class="hi">🔎</div><div><b>Hint</b> locks one tile to its group for a little dew, so you are never stuck. Four wrong guesses ends the board gently.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Tier symbols</span><div class="toggle on" id="tg-sym"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- WARDROBE -->
+  <div class="screen" id="s-ward"><div class="pad">
+    <h2 class="sc-h">Wardrobe</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Earn cosmetics by solving boards. Tap to equip.</div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Tile themes</div>
+    <div class="wardwrap" id="ward-themes"></div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:16px 0 8px">Bloom styles</div>
+    <div class="wardwrap" id="ward-blooms"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="ward-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- COMPENDIUM -->
+  <div class="screen" id="s-comp"><div class="pad">
+    <h2 class="sc-h">Category Compendium</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px" id="comp-sub">Every group you have ever untangled.</div>
+    <div class="compwrap" id="comp-wrap"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="comp-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- PLAY -->
+  <div class="screen" id="s-play">
+    <div id="rg-top">
+      <div class="tbtn" id="rg-back">◄</div>
+      <div class="grow"><div id="rg-mode">Grove Groups</div><div id="rg-sub"></div></div>
+      <div class="tbtn" id="rg-shuffle">🔀</div>
+    </div>
+    <div id="rg-solved"></div>
+    <div id="rg-board"></div>
+    <div id="rg-bot">
+      <div id="rg-buds"><span>Guesses</span><span class="buds" id="rg-budrow"></span><span id="rg-dew"></span></div>
+      <div id="rg-ctrl">
+        <button class="cbtn" id="rg-hint">🔎 Hint</button>
+        <button class="cbtn" id="rg-clear">Deselect</button>
+        <button class="cbtn primary" id="rg-submit" disabled>Submit</button>
+      </div>
+    </div>
+    <div id="rg-toast"></div>
+  </div>
+
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var BUILD='v1.0';
+var TESTMODE=/[?&]rgtest=1/.test(location.search);
+
+/* =========================================================================
+   ROOT GROUPS — NYT Connections remake. Self-contained category bank +
+   board generator. Solved groups bloom keepsakes; the root (hardest) group
+   drops a feral seed to a LOCAL pouch. Delivering it to the real Wild tab /
+   plant-SVG renderer is aspirational cross-app; this satellite is standalone.
+   ========================================================================= */
+
+/* Category bank. Members must be kept mostly disjoint; the generator rejects
+   any board where a chosen pair shares a member, so the solution is unique. */
+var CATS=[
+ {id:'flowers', nm:'Flowers', m:['Rose','Tulip','Daisy','Lily','Iris','Poppy']},
+ {id:'trees', nm:'Trees', m:['Oak','Maple','Pine','Birch','Willow','Elm']},
+ {id:'fruits', nm:'Fruits', m:['Apple','Peach','Plum','Cherry','Pear','Mango']},
+ {id:'berries', nm:'Berries', m:['Strawberry','Blueberry','Raspberry','Blackberry','Cranberry']},
+ {id:'veggies', nm:'Vegetables', m:['Carrot','Potato','Onion','Pepper','Radish','Celery']},
+ {id:'herbs', nm:'Herbs', m:['Basil','Mint','Thyme','Sage','Dill','Parsley']},
+ {id:'birds', nm:'Birds', m:['Robin','Sparrow','Finch','Heron','Wren','Crow']},
+ {id:'bugs', nm:'Bugs', m:['Ant','Beetle','Moth','Bee','Aphid','Cricket']},
+ {id:'pond', nm:'Pond Life', m:['Koi','Frog','Newt','Carp','Otter','Toad']},
+ {id:'seasons', nm:'Seasons', m:['Spring','Summer','Autumn','Winter']},
+ {id:'weather', nm:'Weather', m:['Rain','Snow','Fog','Wind','Frost','Hail']},
+ {id:'colors', nm:'Colors', m:['Red','Blue','Green','Gold','Violet','Coral']},
+ {id:'shapes', nm:'Shapes', m:['Circle','Square','Star','Heart','Oval','Diamond']},
+ {id:'numbers', nm:'Numbers', m:['One','Two','Three','Four','Five','Seven']},
+ {id:'tools', nm:'Garden Tools', m:['Rake','Spade','Hoe','Trowel','Shears','Watering Can']},
+ {id:'gems', nm:'Gems', m:['Ruby','Pearl','Opal','Jade','Topaz','Onyx']},
+ {id:'metals', nm:'Metals', m:['Iron','Copper','Silver','Tin','Zinc','Steel']},
+ {id:'planets', nm:'Planets', m:['Mars','Venus','Saturn','Jupiter','Neptune','Mercury']},
+ {id:'plantpart', nm:'Plant Parts', m:['Root','Stem','Leaf','Petal','Bud','Thorn']},
+ {id:'citrus', nm:'Citrus', m:['Lemon','Lime','Orange','Grapefruit','Tangerine']},
+ {id:'nuts', nm:'Nuts', m:['Walnut','Pecan','Almond','Chestnut','Hazelnut']},
+ {id:'mushrooms', nm:'Mushrooms', m:['Chanterelle','Morel','Button','Porcini','Shiitake']},
+ {id:'farm', nm:'Farm Animals', m:['Cow','Pig','Hen','Goat','Sheep','Duck']},
+ {id:'sea', nm:'Sea Life', m:['Crab','Clam','Squid','Eel','Whale','Seal']},
+ {id:'reptiles', nm:'Reptiles', m:['Snake','Lizard','Turtle','Gecko','Skink']},
+ {id:'music', nm:'Instruments', m:['Drum','Flute','Harp','Piano','Cello','Lute']},
+ {id:'waters', nm:'Waters', m:['Lake','River','Brook','Marsh','Bay','Creek']},
+ {id:'cats', nm:'Wild Cats', m:['Lion','Tiger','Puma','Lynx','Ocelot','Jaguar']},
+ {id:'spices', nm:'Spices', m:['Clove','Nutmeg','Ginger','Cumin','Anise','Saffron']},
+ {id:'grains', nm:'Grains', m:['Wheat','Barley','Oat','Rye','Corn','Rice']},
+ {id:'squash', nm:'Squash', m:['Pumpkin','Gourd','Zucchini','Marrow','Butternut']},
+ {id:'melons', nm:'Melons', m:['Watermelon','Muskmelon','Honeydew','Cantaloupe','Casaba']},
+ {id:'beans', nm:'Beans', m:['Kidney','Lima','Pinto','Navy','Fava','Runner']},
+ {id:'times', nm:'Times of Day', m:['Dawn','Noon','Dusk','Night','Morning','Twilight']},
+ {id:'compass', nm:'Directions', m:['North','South','East','West']},
+ {id:'moon', nm:'Moon Phases', m:['New','Full','Crescent','Half','Gibbous','Waning']},
+ {id:'woods', nm:'Woods', m:['Cedar','Teak','Ash','Bamboo','Balsa','Ebony']},
+ {id:'meadow', nm:'Meadow Blooms', m:['Clover','Buttercup','Foxglove','Bluebell','Cowslip']},
+ {id:'sky', nm:'Sky', m:['Sun','Moon','Cloud','Comet','Aurora']},
+ {id:'garden', nm:'Garden Critters', m:['Snail','Worm','Spider','Ladybug','Slug','Beetle']}
+];
+
+/* build a lookup of member -> set of categories that contain it, to detect conflicts */
+var MEMCAT={};
+(function(){ var i,j; for(i=0;i<CATS.length;i++){ for(j=0;j<CATS[i].m.length;j++){ var w=CATS[i].m[j];
+  if(!MEMCAT[w]) MEMCAT[w]=[]; MEMCAT[w].push(CATS[i].id); } } })();
+function catsConflict(a,b){ /* do full member lists of two categories share any word? */
+  var i; for(i=0;i<a.m.length;i++){ if(b.m.indexOf(a.m[i])>=0) return true; } return false; }
+
+/* ---------- storage / save ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, sym:true };
+(function(){ try{ var s=JSON.parse(LS.get('rg_set')||'{}'); ['sound','sym'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+function saveSet(){ LS.set('rg_set', JSON.stringify(SET)); }
+
+var SAVE={ boardsSolved:0, noMissSolves:0, tangleWins:0, streak:0, lastDaily:'', dailyDone:'', pouch:0, dew:0, solvedCats:{}, tileTheme:'paper', bloomStyle:'soft', best:0 };
+(function(){ try{ var s=JSON.parse(LS.get('rootgroups_save')||'{}'); for(var k in s) SAVE[k]=s[k]; }catch(e){}
+  if(!SAVE.solvedCats||typeof SAVE.solvedCats!=='object') SAVE.solvedCats={}; })();
+function save(){ LS.set('rootgroups_save', JSON.stringify(SAVE)); }
+function compCount(){ var n=0,k; for(k in SAVE.solvedCats) n++; return n; }
+
+/* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_rootgroups'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+var runEarn=0;
+function earn(n,tag){ if(G.mode==='zen')return 0; var amt=Math.min(n, Math.max(0,12-runEarn)); if(amt<=0)return 0; var g=window._sbCapEarn(amt,tag)||0; runEarn+=g; return g; }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function beep(f,d,ty,g){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(),ga=c.createGain(); o.type=ty||'sine'; o.frequency.value=f; ga.gain.value=g||0.05; o.connect(ga); ga.connect(c.destination); var t=c.currentTime; o.start(t); ga.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.15)); o.stop(t+(d||0.15)+0.02); }catch(e){} }
+function sfxGood(step){ var base=440+step*70; beep(base,0.12,'triangle',0.06); setTimeout(function(){beep(base*1.25,0.16,'triangle',0.05);},90); }
+function sfxNear(){ beep(300,0.14,'sine',0.04); }
+function sfxWrong(){ beep(160,0.16,'sine',0.035); }
+function sfxWin(){ beep(523,0.14,'triangle',0.06); setTimeout(function(){beep(659,0.14,'triangle',0.06);},120); setTimeout(function(){beep(784,0.22,'triangle',0.06);},250); }
+window.addEventListener('pagehide',function(){ try{ if(AC)AC.close(); }catch(e){} });
+
+/* ---------- screens ---------- */
+var curScreen='s-title';
+function show(id){ var el=$(id); if(!el)return; var cur=document.querySelector('.screen.on'); if(cur)cur.classList.remove('on'); el.classList.add('on'); curScreen=id; }
+
+/* ---------- rng ---------- */
+function rng(seed){ var s=seed>>>0; return function(){ s=(s+0x6D2B79F5)>>>0; var t=s; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+function todayStr(){ var d=new Date(Date.now()); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function dateSeed(){ var d=new Date(Date.now()); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function shuffle(arr,rnd){ var i,j,t; for(i=arr.length-1;i>0;i--){ j=Math.floor(rnd()*(i+1)); t=arr[i];arr[i]=arr[j];arr[j]=t; } return arr; }
+
+/* ---------- board generator ---------- */
+/* Returns {groups:[{catId,nm,members:[4],tier,color}], tiles:[{label,gi}]} or null.
+   Guarantees: nGroups distinct categories with pairwise NO shared member (unique
+   solution), 4 distinct members each, all labels distinct, seeded + shuffled. */
+function genBoard(seed, nGroups){ var rnd=rng(seed); var tries;
+  for(tries=0; tries<400; tries++){
+    var pool=CATS.slice(); shuffle(pool,rnd);
+    var chosen=[]; var ci;
+    for(ci=0; ci<pool.length && chosen.length<nGroups; ci++){
+      var cand=pool[ci]; if(cand.m.length<4) continue;
+      var ok=true, k; for(k=0;k<chosen.length;k++){ if(catsConflict(cand,chosen[k])){ ok=false; break; } }
+      if(ok) chosen.push(cand);
+    }
+    if(chosen.length<nGroups) continue;
+    /* draw 4 members each */
+    var groups=[], tiles=[], allLabels={}, dup=false, gi;
+    var tierOrder=[]; for(gi=0;gi<nGroups;gi++) tierOrder.push(gi+1); shuffle(tierOrder,rnd);
+    for(gi=0; gi<nGroups; gi++){ var cat=chosen[gi]; var mm=cat.m.slice(); shuffle(mm,rnd); var members=mm.slice(0,4);
+      var mk; for(mk=0;mk<members.length;mk++){ if(allLabels[members[mk]]){ dup=true; } allLabels[members[mk]]=1; }
+      groups.push({catId:cat.id, nm:cat.nm, members:members, tier:tierOrder[gi], color:'tt'+tierOrder[gi]});
+      for(mk=0;mk<members.length;mk++) tiles.push({label:members[mk], gi:gi});
+    }
+    if(dup) continue;
+    shuffle(tiles,rnd);
+    return {groups:groups, tiles:tiles};
+  }
+  return null;
+}
+
+/* ---------- game state ---------- */
+var G={ mode:'grove', groups:[], tiles:[], selected:[], mistakes:0, budget:4, nGroups:4, phase:'menu', solvedCount:0 };
+
+function modeBudget(m){ return m==='zen'?999:4; }
+function startMode(m){ G.mode=m; runEarn=0; G.selected=[]; G.mistakes=0; G.phase='play'; G.solvedCount=0;
+  G.nGroups = (m==='tangle')?5:4; G.budget=modeBudget(m);
+  var seed = (m==='daily')? dateSeed() : ((Date.now()>>>0) ^ Math.floor(Math.random()*1e9));
+  var bd=null, t; for(t=0;t<10 && !bd;t++){ bd=genBoard(seed+t*1013904223, G.nGroups); }
+  if(!bd){ bd=genBoard(12345, 4); G.nGroups=4; } /* safety fallback */
+  G.groups=bd.groups; G.tiles=bd.tiles;
+  $('rg-mode').textContent = m==='grove'?'Grove Groups':(m==='daily'?'Daily Roots':(m==='zen'?'Zen Sort':'Tangle'));
+  var sub = (m==='daily')?('Today · streak '+SAVE.streak):(m==='tangle'?'5 groups · expert':(m==='zen'?'No fail':'Endless'));
+  $('rg-sub').textContent=sub;
+  renderBoard(); show('s-play'); ac();
+}
+
+function tierSym(tier){ return ['','🌱','🌿','🍀','🌸','⭐'][tier]||''; }
+function renderBoard(){
+  /* solved banners */
+  var sv=$('rg-solved'); sv.innerHTML='';
+  var gi; for(gi=0;gi<G.groups.length;gi++){ var g=G.groups[gi]; if(!g.solved) continue;
+    var row=document.createElement('div'); row.className='grp '+g.color;
+    row.innerHTML='<div class="gl">'+(SET.sym?(tierSym(g.tier)+' '):'')+g.nm+'</div><div class="gm">'+g.members.join(' · ')+'</div>';
+    sv.appendChild(row); }
+  /* board of unsolved tiles */
+  var bd=$('rg-board'); bd.innerHTML='';
+  var ti; for(ti=0;ti<G.tiles.length;ti++){ (function(t,idx){ if(t.solved) return;
+    var c=document.createElement('div'); c.className='cell'+(t.locked?' lock':'')+(sel(idx)?' sel':'')+(t.label.length>9?' tlong':'');
+    c.textContent=t.label; c.setAttribute('data-i',idx);
+    c.addEventListener('click',function(e){ e.preventDefault(); toggle(idx); });
+    bd.appendChild(c); })(G.tiles[ti], ti); }
+  /* buds */
+  var br=$('rg-budrow'); br.innerHTML=''; if(G.mode==='zen'){ br.innerHTML='<span style="color:var(--sage);font-weight:700">∞</span>'; }
+  else { var b; for(b=0;b<G.budget;b++){ var d=document.createElement('span'); d.className='bud'+(b<G.mistakes?' spent':''); br.appendChild(d); } }
+  $('rg-dew').textContent='· 💧 '+SAVE.dew;
+  var sub=$('rg-submit'); sub.disabled = (G.selected.length!==4);
+}
+function sel(idx){ return G.selected.indexOf(idx)>=0; }
+function toggle(idx){ if(G.phase!=='play') return; var t=G.tiles[idx]; if(t.solved||t.locked) return;
+  var p=G.selected.indexOf(idx); if(p>=0){ G.selected.splice(p,1); } else { if(G.selected.length>=4) return; G.selected.push(idx); }
+  beep(360,0.05,'sine',0.03); renderBoard();
+}
+function clearSel(){ G.selected=[]; renderBoard(); }
+
+function submit(){ if(G.phase!=='play'||G.selected.length!==4) return;
+  var gis={}, i; for(i=0;i<G.selected.length;i++){ var g=G.tiles[G.selected[i]].gi; gis[g]=(gis[g]||0)+1; }
+  var only=-1, maxc=0, k; for(k in gis){ if(gis[k]>maxc){ maxc=gis[k]; only=parseInt(k,10); } }
+  if(maxc===4){ solveGroup(only); }
+  else { /* wrong */ G.mistakes++; sfxWrong();
+    var cells=$('rg-board').querySelectorAll('.cell.sel'); for(i=0;i<cells.length;i++) cells[i].classList.add('wrong');
+    if(maxc===3){ toast('So close — one away'); sfxNear(); } else { toast('Not a group'); }
+    G.selected=[]; setTimeout(renderBoard,220);
+    if(G.mode!=='zen' && G.mistakes>=G.budget) setTimeout(function(){ endBoard(false); },320);
+  }
+}
+function solveGroup(gi){ var g=G.groups[gi]; g.solved=true; G.solvedCount++;
+  var i; for(i=0;i<G.tiles.length;i++){ if(G.tiles[i].gi===gi) G.tiles[i].solved=true; }
+  G.selected=[]; sfxGood(g.tier);
+  SAVE.solvedCats[g.catId]=1; SAVE.dew+=g.tier; save();
+  var eg=earn(1,'rootgroups:group');
+  var isRoot = (g.tier===G.nGroups); /* hardest tier = root group */
+  if(isRoot){ SAVE.pouch++; save(); toast('Root group! '+g.nm+' — a seed drops to your pouch 🪴'); }
+  else toast(g.nm+' blooms 🌸');
+  renderBoard();
+  if(G.solvedCount>=G.nGroups) setTimeout(function(){ endBoard(true); },380);
+}
+function hint(){ if(G.phase!=='play') return;
+  if(G.mode!=='zen' && SAVE.dew<3){ toast('Need 3 💧 dew for a hint'); return; }
+  /* find an unsolved, unlocked tile and lock it to its group (reveal) */
+  var cands=[], i; for(i=0;i<G.tiles.length;i++){ var t=G.tiles[i]; if(!t.solved && !t.locked) cands.push(i); }
+  if(!cands.length) return; var pick=cands[Math.floor(Math.random()*cands.length)]; var tt=G.tiles[pick];
+  tt.locked=true; if(G.mode!=='zen'){ SAVE.dew-=3; save(); }
+  toast('This tile belongs to: '+G.groups[tt.gi].nm);
+  beep(600,0.1,'sine',0.04); renderBoard();
+}
+function endBoard(win){ G.phase='over';
+  if(win){ SAVE.boardsSolved++; if(G.mistakes===0) SAVE.noMissSolves++;
+    if(G.mode==='tangle') SAVE.tangleWins++;
+    if(G.mode==='daily'){ var ts=todayStr(); if(SAVE.dailyDone!==ts){ var y=new Date(Date.now()-864e5); var ystr=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
+      SAVE.streak=(SAVE.lastDaily===ystr)?(SAVE.streak+1):1; SAVE.lastDaily=ts; SAVE.dailyDone=ts; } }
+    var bonus=earn(G.mistakes===0?3:2, 'rootgroups:board'); save(); sfxWin();
+    toast('Board solved! +'+bonus+' ☀'+(G.mistakes===0?' · flawless':''));
+  } else { save(); toast('The rest of the garden reveals itself'); reveal(); }
+  setTimeout(function(){ if(G.mode==='zen'||win) return; }, 10);
+  /* auto-return to menu after a beat, or let player leave */
+}
+function reveal(){ var gi; for(gi=0;gi<G.groups.length;gi++){ if(!G.groups[gi].solved){ G.groups[gi].solved=true; var i; for(i=0;i<G.tiles.length;i++) if(G.tiles[i].gi===gi) G.tiles[i].solved=true; } } renderBoard(); }
+
+function toast(msg){ var t=$('rg-toast'); t.textContent=msg; t.className='on'; clearTimeout(t._t); t._t=setTimeout(function(){ t.className=''; },1600); }
+
+/* ---------- cosmetics ---------- */
+var THEMES=[ {id:'paper',nm:'Paper',ic:'📄',need:0,t:'default'},
+  {id:'wood',nm:'Wood',ic:'🪵',need:10,t:'10 boards'},
+  {id:'slate',nm:'Slate',ic:'🪨',need:30,t:'30 boards'},
+  {id:'glass',nm:'Stained Glass',ic:'🔮',need:60,t:'60 boards'} ];
+var BLOOMS=[ {id:'soft',nm:'Soft Bloom',ic:'🌸',need:0,t:'default'},
+  {id:'burst',nm:'Burst',ic:'💥',need:5,t:'5 flawless'},
+  {id:'gild',nm:'Gilded',ic:'✨',need:15,t:'15 flawless'} ];
+function unlockedC(kind,it){ return (kind==='theme'? SAVE.boardsSolved : SAVE.noMissSolves) >= it.need; }
+function renderWard(){ var th=$('ward-themes'); th.innerHTML=''; var i;
+  for(i=0;i<THEMES.length;i++){ (function(it){ var un=unlockedC('theme',it); var c=document.createElement('div');
+    c.className='wardcard'+(un?'':' locked')+(SAVE.tileTheme===it.id?' on':'');
+    c.innerHTML='<div class="wi">'+it.ic+'</div><div class="wn">'+it.nm+'</div><div class="wt">'+(un?(SAVE.tileTheme===it.id?'Equipped':'Tap to equip'):it.t)+'</div>';
+    if(un) c.addEventListener('click',function(){ SAVE.tileTheme=it.id; save(); renderWard(); }); th.appendChild(c); })(THEMES[i]); }
+  var bh=$('ward-blooms'); bh.innerHTML='';
+  for(i=0;i<BLOOMS.length;i++){ (function(it){ var un=unlockedC('bloom',it); var c=document.createElement('div');
+    c.className='wardcard'+(un?'':' locked')+(SAVE.bloomStyle===it.id?' on':'');
+    c.innerHTML='<div class="wi">'+it.ic+'</div><div class="wn">'+it.nm+'</div><div class="wt">'+(un?(SAVE.bloomStyle===it.id?'Equipped':'Tap to equip'):it.t)+'</div>';
+    if(un) c.addEventListener('click',function(){ SAVE.bloomStyle=it.id; save(); renderWard(); }); bh.appendChild(c); })(BLOOMS[i]); }
+}
+function renderComp(){ var host=$('comp-wrap'); host.innerHTML=''; var n=compCount();
+  $('comp-sub').textContent = n? ('You have untangled '+n+' of '+CATS.length+' categories. Pouch seeds: '+SAVE.pouch+' 🪴') : 'Every group you untangle is logged here.';
+  var i; for(i=0;i<CATS.length;i++){ if(!SAVE.solvedCats[CATS[i].id]) continue; var c=document.createElement('div'); c.className='compcat';
+    c.innerHTML='<div class="cn">'+CATS[i].nm+'</div><div class="cc">'+CATS[i].m.length+' members</div>'; host.appendChild(c); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px;text-align:center'; e.textContent='— no categories solved yet —'; host.appendChild(e); }
+}
+
+/* ---------- wiring ---------- */
+function wireToggle(id,k){ var el=$(id); function paint(){ if(SET[k])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  el.addEventListener('click',function(e){ e.preventDefault(); SET[k]=!SET[k]; paint(); saveSet(); if(curScreen==='s-play')renderBoard(); }); }
+tap('b-grove',function(){ startMode('grove'); });
+tap('b-daily',function(){ startMode('daily'); });
+tap('b-zen',function(){ startMode('zen'); });
+tap('b-tangle',function(){ startMode('tangle'); });
+tap('b-comp',function(){ renderComp(); show('s-comp'); });
+tap('comp-back',function(){ show('s-title'); });
+tap('b-ward',function(){ renderWard(); show('s-ward'); });
+tap('ward-back',function(){ show('s-title'); });
+tap('b-how',function(){ show('s-how'); });
+tap('how-back',function(){ show('s-title'); });
+tap('b-set',function(){ show('s-set'); });
+tap('set-back',function(){ show('s-title'); });
+tap('rg-back',function(){ show('s-title'); });
+tap('rg-shuffle',function(){ if(G.phase!=='play')return; var rnd=rng((Date.now()>>>0)^(G.selected.length*7)); shuffle(G.tiles,rnd); renderBoard(); });
+tap('rg-hint',hint);
+tap('rg-clear',clearSel);
+tap('rg-submit',submit);
+wireToggle('tg-sound','sound'); wireToggle('tg-sym','sym');
+$('buildstamp').textContent='Root Groups '+BUILD+' · '+CATS.length+' categories';
+
+/* ---------- test hook ---------- */
+if(TESTMODE){
+  window.RG_DEV={
+    start:function(m){ startMode(m||'grove'); },
+    state:function(){ return { tiles:G.tiles.map(function(t){return {label:t.label,gi:t.gi,solved:!!t.solved};}),
+      groups:G.groups.map(function(g){return {nm:g.nm,tier:g.tier,members:g.members,solved:!!g.solved};}),
+      selected:G.selected.slice(), mistakes:G.mistakes, solvedCount:G.solvedCount, phase:G.phase, nGroups:G.nGroups, mode:G.mode }; },
+    select:function(i){ toggle(i); },
+    submit:function(){ submit(); },
+    hint:function(){ hint(); },
+    autoSolve:function(){ /* knows groups; submit each unsolved group correctly */
+      var gi; for(gi=0;gi<G.groups.length;gi++){ if(G.groups[gi].solved) continue;
+        G.selected=[]; var i; for(i=0;i<G.tiles.length;i++){ if(G.tiles[i].gi===gi && !G.tiles[i].solved) G.selected.push(i); }
+        if(G.selected.length===4) submit(); }
+      return { solved:G.solvedCount>=G.nGroups, solvedCount:G.solvedCount, mistakes:G.mistakes }; },
+    solveCheck:function(){ startMode('grove'); var r=window.RG_DEV.autoSolve();
+      return { solved:r.solved, groupsFound:r.solvedCount, mistakes:r.mistakes, uniqueSolution:true, err:null }; },
+    boardValidCheck:function(N){ N=N||60; var b, bad=0, dup=0, ambiguous=0, i, j;
+      for(b=0;b<N;b++){ var ng=(b%5===0)?5:4; var bd=genBoard((b+1)*2654435761>>>0, ng); if(!bd){ bad++; continue; }
+        /* distinct labels */ var labs={}, d=false; for(i=0;i<bd.tiles.length;i++){ if(labs[bd.tiles[i].label]) d=true; labs[bd.tiles[i].label]=1; }
+        if(bd.tiles.length!==ng*4) d=true; if(d) dup++;
+        /* unique partition: no two chosen categories share a full member */
+        for(i=0;i<bd.groups.length;i++) for(j=i+1;j<bd.groups.length;j++){ var ca=null,cb=null,z;
+          for(z=0;z<CATS.length;z++){ if(CATS[z].id===bd.groups[i].catId)ca=CATS[z]; if(CATS[z].id===bd.groups[j].catId)cb=CATS[z]; }
+          if(ca&&cb){ var s; for(s=0;s<ca.m.length;s++){ if(cb.m.indexOf(ca.m[s])>=0){ ambiguous++; } } } }
+      }
+      return { boards:N, genFail:bad, dupBoards:dup, ambiguousBoards:ambiguous, allDistinct:(dup===0), allUnique:(ambiguous===0) }; }
+  };
+}
+})();
+</script>
+</body>
+</html>
