@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2f3d34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flatulence Fighter">
+<title>Flatulence Fighter</title>
+<style>
+  /* ============================================================
+     FLATULENCE FIGHTER — an homage to "Try Not To Fart"
+     (Lucid Games / Sky Wolf) — built from the Draft handoff
+     ============================================================ */
+  :root{
+    --paper:#e7e0cb; --paper-2:#d8cfb2; --paper-3:#c7bd9c;
+    --sage:#37493d; --sage-2:#2b3a31; --sage-3:#1c2620;
+    --ink:#221f18; --amber:#e0902f; --crimson:#c0392b;
+    --mint:#5fd0b0; --mint-deep:#2c9d80; --shadow:rgba(20,16,10,.35);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{ font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    background:var(--sage-3); color:var(--ink); overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:none;}
+  #app{ position:relative; width:100%; height:100vh; height:100dvh; max-width:560px; margin:0 auto; overflow:hidden;
+    background:radial-gradient(120% 90% at 50% -10%, var(--paper) 0%, var(--paper-2) 55%, var(--paper-3) 100%);
+    box-shadow:0 0 60px rgba(0,0,0,.5);}
+  #app::before{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.5; z-index:0;
+    background-image:repeating-linear-gradient(90deg, transparent 0 26px, rgba(55,73,61,.06) 26px 27px),
+      radial-gradient(circle at 14px 14px, rgba(55,73,61,.08) 1.5px, transparent 2px); background-size:auto, 28px 28px;}
+  @keyframes shake{ 0%,100%{transform:translate(0,0)} 20%{transform:translate(-6px,3px)} 40%{transform:translate(6px,-3px)}
+    60%{transform:translate(-5px,-3px)} 80%{transform:translate(5px,3px)} }
+  #app.shake{ animation:shake .32s linear;}
+  @keyframes whiffflash{ 0%,100%{box-shadow:inset 0 0 0 0 transparent} 50%{box-shadow:inset 0 0 80px 10px rgba(224,144,47,.5)} }
+  #app.whiff{ animation:whiffflash .5s ease;}
+
+  #flood{ position:absolute; inset:0; pointer-events:none; z-index:5;
+    background:radial-gradient(120% 100% at 50% 60%, transparent 30%, var(--crimson) 130%);
+    opacity:calc(var(--p, 0) * .72); transition:opacity .08s linear; mix-blend-mode:multiply;}
+
+  .screen{ position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px 22px; gap:14px; overflow-y:auto;}
+  .hidden{ display:none !important;}
+
+  .card{ border:3px double var(--sage); background:linear-gradient(180deg, rgba(231,224,203,.94), rgba(216,207,178,.94));
+    padding:22px 20px; border-radius:6px; max-width:420px; width:100%;
+    box-shadow:0 10px 30px var(--shadow), inset 0 0 0 6px rgba(231,224,203,.6);}
+  .card .eyebrow{ font-size:.72rem; letter-spacing:.42em; text-transform:uppercase; color:var(--sage); margin-bottom:10px; padding-left:.42em;}
+  .card h1{ font-size:2.5rem; line-height:1; margin:0 0 6px; letter-spacing:.02em; color:var(--sage-2); font-weight:700;}
+  .card .sub{ font-style:italic; color:#5a5342; margin:0; font-size:1.02rem;}
+  .rule{ height:0; border-top:1px solid var(--sage); opacity:.5; width:60%; margin:14px auto;}
+  .kbd{ display:inline-block; background:var(--sage); color:var(--paper); padding:1px 8px; border-radius:4px; font-size:.8rem; letter-spacing:.05em; font-style:normal;}
+
+  .btn{ font-family:inherit; font-size:1.1rem; letter-spacing:.12em; text-transform:uppercase; color:var(--paper); background:var(--sage);
+    border:none; border-radius:8px; padding:15px 34px; cursor:pointer; box-shadow:0 6px 0 var(--sage-2), 0 10px 18px var(--shadow); transition:transform .06s ease, box-shadow .06s ease;}
+  .btn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--sage-2), 0 5px 10px var(--shadow);}
+  .btn:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:3px;}
+  .btn.ghost{ background:transparent; color:var(--sage-2); box-shadow:none; border:2px solid var(--sage); padding:9px 18px; font-size:.82rem;}
+  .btn.ghost:active{ transform:translateY(2px);}
+
+  .modes{ display:flex; gap:8px; width:100%; max-width:420px;}
+  .mode-btn{ flex:1; font-family:inherit; cursor:pointer; border:2px solid var(--sage); border-radius:8px; background:rgba(231,224,203,.5); color:var(--sage-2); padding:10px 6px; transition:.12s;}
+  .mode-btn .mt{ display:block; font-size:.95rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700;}
+  .mode-btn .md{ display:block; font-size:.7rem; opacity:.7; margin-top:2px;}
+  .mode-btn[aria-pressed="true"]{ background:var(--sage); color:var(--paper); box-shadow:0 4px 0 var(--sage-2);}
+  .mode-btn:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:2px;}
+
+  .menu-stats{ display:flex; gap:16px; font-size:.78rem; color:var(--sage-2); opacity:.85; letter-spacing:.05em;}
+  .menu-stats b{ font-variant-numeric:tabular-nums;}
+  .settings-row{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
+
+  /* ======================= HUD ======================= */
+  #hud{ position:absolute; inset:0; z-index:10; display:flex; flex-direction:column;}
+  .topbar{ display:flex; align-items:center; gap:8px; padding:12px 14px 4px;}
+  .icon-btn{ background:none; border:none; font-size:1.2rem; cursor:pointer; opacity:.75; padding:4px 6px; color:var(--sage-2); line-height:1;}
+  .icon-btn:focus-visible{ outline:2px solid var(--mint-deep); outline-offset:2px; border-radius:6px;}
+  .scene-chip{ flex:1; min-width:0; font-size:.72rem; letter-spacing:.24em; text-transform:uppercase; color:var(--sage-2);
+    border:1px solid var(--sage); border-radius:20px; padding:6px 10px; text-align:center; background:rgba(231,224,203,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .topright{ display:flex; align-items:center; gap:10px;}
+  .score{ font-variant-numeric:tabular-nums; font-size:1.1rem; font-weight:700; color:var(--sage-2); min-width:58px; text-align:right;}
+  .strikes{ display:flex; gap:4px;}
+  .pip{ width:14px; height:14px; border-radius:50%; border:2px solid var(--sage-2); background:var(--sage); transition:.2s;}
+  .pip.broke{ background:transparent; border-color:var(--crimson); position:relative;}
+  .pip.broke::after{ content:"✕"; position:absolute; inset:-4px 0 0; color:var(--crimson); font-size:12px; line-height:1; text-align:center; font-weight:900;}
+  .hud-tut .topright{ visibility:hidden;} .hud-tut #pauseBtn{ visibility:hidden;}
+
+  .stage{ flex:1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px 16px; min-height:0;}
+  .face-wrap{ width:min(50vw, 230px); aspect-ratio:1; position:relative; z-index:1;}
+  #face{ width:100%; height:100%; display:block; overflow:visible;}
+  @keyframes jitter{ 0%,100%{transform:translate(0,0) rotate(0)} 25%{transform:translate(1.5px,-1px) rotate(.4deg)}
+    50%{transform:translate(-1px,1.5px) rotate(-.5deg)} 75%{transform:translate(1px,1px) rotate(.3deg)} }
+  @keyframes quake{ 0%,100%{transform:translate(0,0) rotate(0)} 20%{transform:translate(-4px,2px) rotate(-1.4deg)}
+    40%{transform:translate(4px,-2px) rotate(1.6deg)} 60%{transform:translate(-3px,-2px) rotate(-1.2deg)} 80%{transform:translate(3px,2px) rotate(1deg)} }
+  #face[data-tier="strain"]{ animation:jitter .28s infinite linear;}
+  #face[data-tier="critical"]{ animation:quake .12s infinite linear;}
+  @keyframes drip{ 0%{transform:translateY(0); opacity:0} 15%{opacity:1} 85%{opacity:1} 100%{transform:translateY(22px); opacity:0} }
+  .sweat{ animation:drip 1.3s infinite ease-in;} .sweat.d2{ animation-delay:.5s;} .sweat.d3{ animation-delay:.9s;}
+
+  .gauge{ width:min(80vw,360px); margin-top:14px; position:relative; z-index:1;}
+  .gauge-label{ display:flex; justify-content:space-between; font-size:.7rem; letter-spacing:.24em; text-transform:uppercase; color:var(--sage-2); margin-bottom:5px; opacity:.85;}
+  .gauge-track{ position:relative; height:20px; border-radius:11px; background:rgba(43,58,49,.22); border:1.5px solid var(--sage-2); overflow:hidden;}
+  .gauge-fill{ position:absolute; inset:0 auto 0 0; width:0%; background:linear-gradient(90deg, var(--mint-deep), var(--amber) 60%, var(--crimson)); border-radius:11px 0 0 11px; transition:width .08s linear;}
+  .gauge-danger{ position:absolute; top:-2px; bottom:-2px; left:82%; width:2px; background:var(--crimson); opacity:.65;}
+  .combo{ position:absolute; right:0; top:-30px; font-weight:700; font-size:1.15rem; color:var(--mint-deep); letter-spacing:.03em; opacity:0; transform:scale(.7); transition:opacity .15s, transform .15s; font-variant-numeric:tabular-nums;}
+  .combo.on{ opacity:1; transform:scale(1);}
+  @keyframes cpop{ 0%{transform:scale(1)} 40%{transform:scale(1.35)} 100%{transform:scale(1)} }
+  .combo.bump{ animation:cpop .3s ease;}
+
+  #leaks{ position:absolute; inset:44px 8px 8px; z-index:6; pointer-events:none;}
+  .leak{ position:absolute; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%; pointer-events:auto; cursor:pointer; border:none; padding:0; background:transparent; display:flex; align-items:center; justify-content:center;}
+  .leak .ring{ position:absolute; inset:0; border-radius:50%; background:conic-gradient(var(--crimson) calc(var(--pp,0)*360deg), rgba(192,57,43,.16) 0);
+    -webkit-mask:radial-gradient(closest-side, transparent 66%, #000 68%); mask:radial-gradient(closest-side, transparent 66%, #000 68%);}
+  .leak .core{ width:34px; height:34px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #9fe6d2, var(--mint-deep)); box-shadow:0 2px 8px rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:18px;}
+  @keyframes leakin{ 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  .leak{ animation:leakin .2s ease;}
+  @keyframes pop{ 0%{transform:scale(1); opacity:1} 100%{transform:scale(1.8); opacity:0} }
+  .leak.plugged .core{ animation:pop .25s ease forwards;}
+
+  .cover-banner{ position:absolute; left:50%; top:calc(12px + env(safe-area-inset-top,0px)); transform:translate(-50%,-140%); z-index:14; background:var(--mint-deep); color:#062a22; padding:10px 18px; border-radius:30px; font-weight:700; letter-spacing:.05em; box-shadow:0 8px 22px rgba(0,0,0,.35); white-space:nowrap; display:flex; align-items:center; gap:8px; font-size:.98rem; transition:transform .28s cubic-bezier(.2,1.3,.4,1); pointer-events:none;}
+  .cover-banner.show{ transform:translate(-50%,0);}
+  .cover-banner .ico{ font-size:1.1rem;}
+  #react{ position:absolute; left:50%; top:38%; transform:translate(-50%,-50%) scale(.9); z-index:16; font-size:1.5rem; font-weight:700; color:var(--crimson); text-align:center; max-width:80%; pointer-events:none; opacity:0; transition:opacity .2s, transform .2s; text-shadow:0 2px 12px rgba(0,0,0,.3);}
+  #react.show{ opacity:1; transform:translate(-50%,-50%) scale(1);}
+  #fx{ position:absolute; inset:0; z-index:15; pointer-events:none; overflow:hidden;}
+  .float{ position:absolute; font-weight:700; font-size:1.05rem; letter-spacing:.02em; color:var(--mint-deep); transform:translate(-50%,0); white-space:nowrap; text-shadow:0 1px 6px rgba(0,0,0,.25);}
+  .float.warn{ color:var(--crimson);} .float.gold{ color:var(--amber);}
+  @keyframes floatup{ 0%{opacity:0; transform:translate(-50%,6px) scale(.9)} 15%{opacity:1} 100%{opacity:0; transform:translate(-50%,-42px) scale(1.05)} }
+  .float{ animation:floatup 1s ease forwards;}
+  .callout{ position:absolute; left:50%; top:30%; transform:translate(-50%,-50%) scale(.6); z-index:17; font-weight:800; font-size:2rem; letter-spacing:.06em; color:var(--amber); text-transform:uppercase; pointer-events:none; opacity:0; text-shadow:0 2px 14px rgba(0,0,0,.35);}
+  @keyframes cocall{ 0%{opacity:0; transform:translate(-50%,-50%) scale(.6)} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.1)} 80%{opacity:1} 100%{opacity:0; transform:translate(-50%,-70%) scale(1)} }
+  .callout.show{ animation:cocall 1.1s ease forwards;}
+
+  .controls{ display:flex; flex-direction:column; gap:10px; padding:0 16px calc(16px + env(safe-area-inset-bottom,0px));}
+  .pads{ display:flex; gap:12px; height:min(21vh,150px);}
+  .pad{ flex:1; border-radius:16px; position:relative; overflow:hidden; cursor:pointer; background:linear-gradient(180deg, var(--sage), var(--sage-2)); box-shadow:0 6px 0 var(--sage-3), inset 0 2px 0 rgba(255,255,255,.08); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--paper); transition:transform .05s, box-shadow .05s, filter .1s; touch-action:none;}
+  .pad .pad-label{ font-size:.74rem; letter-spacing:.28em; text-transform:uppercase; opacity:.8;}
+  .pad .pad-hint{ font-size:1.4rem; font-weight:700; letter-spacing:.14em; opacity:.5; transition:opacity .15s;}
+  .pad.down{ transform:translateY(6px); box-shadow:0 0 0 var(--sage-3), inset 0 0 40px rgba(95,208,176,.4), inset 0 2px 0 rgba(255,255,255,.08); filter:brightness(1.12);}
+  .pad.down .pad-hint{ opacity:1;}
+  .pad.slipped{ background:linear-gradient(180deg,#7a2f27,var(--crimson)); pointer-events:none; animation:slipflash .3s 2;}
+  .pad.benched{ opacity:.4; filter:grayscale(.7);}
+  .pad.benched .pad-hint{ opacity:.25;}
+  @keyframes slipflash{ 50%{filter:brightness(1.4)} }
+  .strainbar{ position:absolute; left:0; right:0; bottom:0; height:7px; background:rgba(0,0,0,.3);}
+  .strainbar > i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--mint),var(--amber),var(--crimson)); transition:width .08s linear;}
+  .vent{ height:62px; border-radius:14px; border:none; cursor:pointer; font-family:inherit; font-size:1.2rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#4a1512; background:linear-gradient(180deg,#e6b8b2,#cf7a70); box-shadow:0 6px 0 #8f473f; transition:.08s; position:relative; overflow:hidden; touch-action:none;}
+  .vent .vent-main{ position:relative; z-index:2;} .vent .vent-sub{ display:block; font-size:.7rem; letter-spacing:.2em; opacity:.72; margin-top:2px; font-weight:400; position:relative; z-index:2;}
+  .vent.armed{ color:#03251d; background:linear-gradient(180deg,#8ff0d3,var(--mint-deep)); box-shadow:0 6px 0 #1d7a63, 0 0 26px rgba(95,208,176,.7); animation:ventpulse .7s infinite ease-in-out;}
+  @keyframes ventpulse{ 50%{filter:brightness(1.12)} }
+  .vent:active{ transform:translateY(4px); box-shadow:0 2px 0 #8f473f;} .vent.armed:active{ box-shadow:0 2px 0 #1d7a63;}
+  .vent-timer{ position:absolute; left:0; bottom:0; height:6px; width:0%; z-index:1; background:var(--mint);}
+  .vent-perfect-mark{ position:absolute; bottom:0; height:6px; width:2px; background:#fff; opacity:.8; z-index:2; display:none;}
+
+  /* ======================= ABILITY BUTTONS ======================= */
+  .abilities{ display:flex; gap:10px;}
+  .ability{ flex:1; min-height:52px; border-radius:12px; border:2px solid var(--sage); cursor:pointer; font-family:inherit;
+    background:linear-gradient(180deg, rgba(231,224,203,.85), rgba(216,207,178,.85)); color:var(--sage-2);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:5px 4px;
+    box-shadow:0 4px 0 var(--sage-2); transition:transform .05s, box-shadow .05s, filter .1s; position:relative; overflow:hidden; touch-action:none;}
+  .ability:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--sage-2);}
+  .ability .ab-ico{ font-size:1.15rem; line-height:1; position:relative; z-index:2;}
+  .ability .ab-name{ font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; position:relative; z-index:2;}
+  .ability .ab-state{ font-size:.72rem; letter-spacing:.3em; line-height:1; position:relative; z-index:2; padding-left:.3em;}
+  .ability .ab-cd{ position:absolute; left:0; bottom:0; top:auto; height:100%; width:0%; background:rgba(95,208,176,.28); z-index:1; transition:width .12s linear;}
+  .ability.depleted{ border-style:dashed; opacity:.55; box-shadow:0 2px 0 var(--sage-2); filter:grayscale(.4);}
+  .ability.sipping{ background:linear-gradient(180deg,#bfe6f2,#8fc7de); border-color:#3a7a94; color:#0e3547; box-shadow:0 4px 0 #3a7a94;}
+  .ability.na{ visibility:hidden;}
+  @keyframes waftflash{ 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.45)} }
+  .ability.alert{ background:linear-gradient(180deg,#ffe9a8,var(--amber)); border-color:#8f5a1c; color:#4a2c08; box-shadow:0 4px 0 #8f5a1c, 0 0 22px rgba(224,144,47,.75); animation:waftflash .4s infinite;}
+
+  /* ======================= PLAY MODES / MENU ======================= */
+  .modes.playrow .mode-btn .mt{ font-size:.82rem;}
+  .modes.disabled{ opacity:.45; pointer-events:none;}
+  .daily-note{ font-size:.72rem; color:var(--sage-2); opacity:.85; letter-spacing:.06em; margin-top:-6px;}
+
+  /* ======================= WARDROBE ======================= */
+  .ward-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px;}
+  .ward-card{ width:calc(33.3% - 8px); min-width:96px; min-height:96px; border:1.5px solid var(--sage); border-radius:8px; padding:8px 4px;
+    background:rgba(231,224,203,.4); text-align:center; cursor:pointer; font-family:inherit; position:relative;}
+  .ward-card.locked{ opacity:.5; filter:grayscale(1); cursor:default;}
+  .ward-card.eq{ border-color:var(--amber); border-width:2.5px; box-shadow:0 0 0 2px rgba(224,144,47,.25);}
+  .ward-card .wi{ font-size:1.6rem; display:block; line-height:1.15;}
+  .ward-card .wn{ font-size:.7rem; font-weight:700; color:var(--sage-2); letter-spacing:.03em; margin-top:2px; display:block;}
+  .ward-card .wr{ font-size:.7rem; color:#5a5342; margin-top:2px; display:block; line-height:1.2;}
+  .ward-card .weq{ position:absolute; top:-8px; right:-4px; background:var(--amber); color:var(--paper); font-size:.6rem; letter-spacing:.1em; padding:2px 7px; border-radius:12px; text-transform:uppercase;}
+  .ward-sec{ font-size:.72rem; letter-spacing:.3em; text-transform:uppercase; color:var(--sage); margin:10px 0 2px; width:100%; text-align:center;}
+
+  /* ======================= THEATER PALETTES ======================= */
+  body.pal-midnight{ --paper:#c9d2d8; --paper-2:#aebbc4; --paper-3:#93a3ae; --sage:#22333c; --sage-2:#17262e; --sage-3:#0c161c; --ink:#141a1e;}
+  body.pal-technicolor{ --paper:#f6e7c4; --paper-2:#eed6a4; --paper-3:#e0bf86; --sage:#1f5f5b; --sage-2:#164743; --sage-3:#0d2c29; --amber:#e0592f; --crimson:#c22550; --mint:#5fd0b0;}
+  body.pal-silver{ --paper:#e9e9e4; --paper-2:#d6d6d0; --paper-3:#bdbdb6; --sage:#3d3d3a; --sage-2:#2b2b28; --sage-3:#191917; --ink:#1c1c1a; --amber:#a8905c; --crimson:#8a3a32;}
+
+  .stat-row{ display:flex; justify-content:space-between; font-size:1rem; margin:.3em 0; color:#463f31;}
+  .stat-row b{ color:var(--sage-2); font-variant-numeric:tabular-nums;}
+  .badge{ display:inline-block; margin-top:8px; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--paper); background:var(--amber); padding:4px 12px; border-radius:20px;}
+
+  .medal-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px;}
+  .medal{ width:calc(33.3% - 8px); min-width:92px; border:1.5px solid var(--sage); border-radius:8px; padding:8px 4px; background:rgba(231,224,203,.4); text-align:center;}
+  .medal.locked{ opacity:.42; filter:grayscale(1);}
+  .medal .mi{ font-size:1.5rem; display:block; line-height:1.1;}
+  .medal .mn{ font-size:.68rem; font-weight:700; color:var(--sage-2); letter-spacing:.03em; margin-top:2px; display:block;}
+  .medal .mdsc{ font-size:.7rem; color:#5a5342; margin-top:2px; display:block; line-height:1.2;}
+
+  #toasts{ position:absolute; left:0; right:0; bottom:calc(20px + env(safe-area-inset-bottom,0px)); z-index:40; display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none;}
+  .toast{ background:var(--sage-2); color:var(--paper); border:2px solid var(--amber); border-radius:24px; padding:8px 16px; display:flex; align-items:center; gap:8px; box-shadow:0 6px 18px rgba(0,0,0,.4); font-size:.85rem; transform:translateY(20px); opacity:0; transition:.28s;}
+  .toast.show{ transform:translateY(0); opacity:1;} .toast .ti{ font-size:1.15rem;}
+
+  #tutOverlay{ position:absolute; inset:0; z-index:25; pointer-events:none;}
+  #tutOverlay .tut-card{ position:absolute; left:50%; top:calc(54px + env(safe-area-inset-top,0px)); transform:translateX(-50%); width:min(88%,420px); background:var(--sage-2); color:var(--paper); border:2px solid var(--mint); border-radius:12px; padding:12px 16px; text-align:center; font-size:1rem; line-height:1.35; box-shadow:0 8px 22px rgba(0,0,0,.4);}
+  #tutOverlay .tut-card b{ color:var(--mint);}
+  #tutSkip{ position:absolute; right:12px; top:calc(10px + env(safe-area-inset-top,0px)); pointer-events:auto;}
+
+  #pauseScreen{ background:rgba(43,58,49,.65); backdrop-filter:blur(3px);}
+  .toggle-btn[aria-pressed="false"]{ opacity:.55;}
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important;} }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="flood"></div>
+
+  <!-- ============ START / MENU ============ -->
+  <div id="startScreen" class="screen">
+    <div class="card">
+      <div class="eyebrow">Lucid Games presents</div>
+      <h1 style="font-size:2.05rem;">FLATULENCE<br>FIGHTER</h1>
+      <p class="sub">an homage to “Try Not To Fart”</p>
+      <div class="rule"></div>
+      <p style="margin:0; color:#463f31; font-size:.98rem; line-height:1.4;">Keep your composure. Clench to hold it in, plug the leaks, and let it out only under cover of noise. Any sound the room hears is a strike.</p>
+    </div>
+    <div class="modes playrow" role="group" aria-label="Play mode">
+      <button class="mode-btn play-btn" data-play="stage" aria-pressed="true"><span class="mt">Stage</span><span class="md">the classic bill</span></button>
+      <button class="mode-btn play-btn" data-play="daily" aria-pressed="false"><span class="mt">Daily</span><span class="md">today's ordeal</span></button>
+      <button class="mode-btn play-btn" data-play="zen" aria-pressed="false"><span class="mt">Zen</span><span class="md">no strikes</span></button>
+      <button class="mode-btn play-btn" data-play="cheek" aria-pressed="false"><span class="mt">One Cheek</span><span class="md">half the grip</span></button>
+    </div>
+    <div class="modes" id="diffRow" role="group" aria-label="Difficulty">
+      <button class="mode-btn" data-mode="easy" aria-pressed="false"><span class="mt">Easy</span><span class="md">a gentle ordeal</span></button>
+      <button class="mode-btn" data-mode="normal" aria-pressed="true"><span class="mt">Normal</span><span class="md">the full sweat</span></button>
+      <button class="mode-btn" data-mode="panic" aria-pressed="false"><span class="mt">Panic</span><span class="md">no mercy</span></button>
+    </div>
+    <div class="daily-note hidden" id="dailyNote">Daily streak 0. Best today 0.</div>
+    <button class="btn" id="startBtn">Begin the ordeal</button>
+    <div class="settings-row">
+      <button class="btn ghost" id="howBtn">How to play</button>
+      <button class="btn ghost" id="medalsBtn">Medals</button>
+      <button class="btn ghost" id="wardBtn">Wardrobe</button>
+      <button class="btn ghost" id="statsBtn">Stats</button>
+    </div>
+    <div class="menu-stats">
+      <span>Best <b id="menuBest">0</b></span>
+      <span>Sunbeams ☀ <b id="menuSun">0</b></span>
+      <span>Ordeals <b id="menuPlays">0</b></span>
+    </div>
+    <div class="settings-row">
+      <button class="btn ghost toggle-btn" id="soundToggle" aria-pressed="true">🔊 Sound</button>
+      <button class="btn ghost toggle-btn" id="hapticToggle" aria-pressed="true">📳 Haptics</button>
+    </div>
+  </div>
+
+  <!-- ============ INTERTITLE ============ -->
+  <div id="introScreen" class="screen hidden" style="background:rgba(43,58,49,.55); backdrop-filter:blur(2px);">
+    <div class="card" style="max-width:380px;">
+      <div class="eyebrow" id="actLabel">Act I</div>
+      <h1 id="sceneTitle">The Funeral</h1>
+      <p class="sub" id="sceneSub">Do not make a sound.</p>
+    </div>
+  </div>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud" class="hidden">
+    <div class="topbar">
+      <button class="icon-btn" id="pauseBtn" aria-label="Pause">⏸</button>
+      <div class="scene-chip" id="sceneChip">The Funeral</div>
+      <div class="topright">
+        <div class="strikes" id="strikes"><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+        <div class="score" id="score">0</div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="face-wrap">
+        <svg id="face" viewBox="0 0 200 200" data-tier="calm">
+          <ellipse class="ff-skin" cx="100" cy="98" rx="72" ry="76" fill="#e8c9a0" stroke="#b98f61" stroke-width="3"/>
+          <ellipse class="ff-ear" cx="30" cy="100" rx="11" ry="16" fill="#e8c9a0" stroke="#b98f61" stroke-width="3"/>
+          <ellipse class="ff-ear" cx="170" cy="100" rx="11" ry="16" fill="#e8c9a0" stroke="#b98f61" stroke-width="3"/>
+          <g id="decorBack"></g>
+          <g style="mix-blend-mode:multiply; opacity:var(--flush,0);"><ellipse cx="100" cy="98" rx="72" ry="76" fill="#d84b3a"/></g>
+          <g style="opacity:calc(var(--flush,0)*1.15);">
+            <ellipse cx="60" cy="118" rx="16" ry="11" fill="#e8604f" opacity=".7"/><ellipse cx="140" cy="118" rx="16" ry="11" fill="#e8604f" opacity=".7"/>
+          </g>
+          <g stroke="#6b4a2a" stroke-width="5" stroke-linecap="round" fill="none">
+            <g class="v v-calm"><path d="M58 74 q14 -5 28 -1"/><path d="M114 73 q14 -6 28 -1"/></g>
+            <g class="v v-nervous"><path d="M58 66 q14 -8 28 -3"/><path d="M114 63 q14 -5 28 3"/></g>
+            <g class="v v-strain"><path d="M58 72 q14 6 28 0"/><path d="M114 72 q14 0 28 6"/></g>
+            <g class="v v-critical"><path d="M56 70 q15 10 30 1"/><path d="M114 71 q15 -1 30 9"/></g>
+          </g>
+          <g class="v v-calm"><circle cx="74" cy="92" r="6" fill="#2a2018"/><circle cx="126" cy="92" r="6" fill="#2a2018"/></g>
+          <g class="v v-nervous">
+            <circle cx="74" cy="92" r="10" fill="#fff" stroke="#6b4a2a" stroke-width="2"/><circle cx="76" cy="93" r="5" fill="#2a2018"/>
+            <circle cx="126" cy="92" r="10" fill="#fff" stroke="#6b4a2a" stroke-width="2"/><circle cx="124" cy="93" r="5" fill="#2a2018"/>
+          </g>
+          <g class="v v-strain">
+            <path d="M64 94 q10 -8 20 0" fill="none" stroke="#2a2018" stroke-width="5" stroke-linecap="round"/>
+            <path d="M116 94 q10 -8 20 0" fill="none" stroke="#2a2018" stroke-width="5" stroke-linecap="round"/>
+          </g>
+          <g class="v v-critical">
+            <circle cx="74" cy="92" r="14" fill="#fff" stroke="#6b4a2a" stroke-width="2"/><circle cx="77" cy="94" r="6" fill="#2a2018"/>
+            <circle cx="126" cy="92" r="14" fill="#fff" stroke="#6b4a2a" stroke-width="2"/><circle cx="123" cy="94" r="6" fill="#2a2018"/>
+            <path d="M60 78 l12 4 M140 78 l-12 4" stroke="#c0392b" stroke-width="2"/>
+          </g>
+          <g class="v v-blowout" stroke="#2a2018" stroke-width="5" stroke-linecap="round"><path d="M66 84 l16 16 M82 84 l-16 16"/><path d="M118 84 l16 16 M134 84 l-16 16"/></g>
+          <g class="v v-relief" stroke="#2a2018" stroke-width="5" stroke-linecap="round" fill="none"><path d="M64 90 q10 8 20 0"/><path d="M116 90 q10 8 20 0"/></g>
+          <g class="v v-calm"><path d="M82 132 q18 8 36 0" fill="none" stroke="#7a3b2e" stroke-width="4" stroke-linecap="round"/></g>
+          <g class="v v-nervous"><path d="M84 134 h32" fill="none" stroke="#7a3b2e" stroke-width="4" stroke-linecap="round"/></g>
+          <g class="v v-strain"><rect x="80" y="128" width="40" height="16" rx="4" fill="#fff" stroke="#7a3b2e" stroke-width="3"/><path d="M88 128 v16 M100 128 v16 M112 128 v16" stroke="#c9b8a0" stroke-width="2"/></g>
+          <g class="v v-critical"><ellipse cx="100" cy="138" rx="15" ry="10" fill="#7a2b22"/><path d="M88 134 q12 -6 24 0" fill="none" stroke="#fff" stroke-width="3"/></g>
+          <g class="v v-blowout"><ellipse cx="100" cy="140" rx="20" ry="16" fill="#5c1f18"/></g>
+          <g class="v v-relief"><path d="M80 132 q20 18 40 0" fill="#7a2b22" stroke="#7a3b2e" stroke-width="3"/></g>
+          <g id="decorFront"></g>
+          <g fill="#7fc7e8" stroke="#4a9bc4" stroke-width="1.5">
+            <path class="sweatdrop d1" d="M40 62 q-5 8 0 12 q5 -4 0 -12" opacity="0"/>
+            <path class="sweatdrop d2" d="M162 66 q-5 8 0 12 q5 -4 0 -12" opacity="0"/>
+            <path class="sweatdrop d3" d="M150 44 q-4 7 0 10 q4 -3 0 -10" opacity="0"/>
+          </g>
+        </svg>
+      </div>
+      <div class="gauge">
+        <div class="combo" id="combo">×1.0</div>
+        <div class="gauge-label"><span>Pressure</span><span id="pctText">0%</span></div>
+        <div class="gauge-track"><div class="gauge-fill" id="gaugeFill"></div><div class="gauge-danger"></div></div>
+      </div>
+      <div id="leaks"></div>
+    </div>
+
+    <div class="cover-banner" id="coverBanner"><span class="ico">🔊</span><span id="coverText">APPLAUSE, vent now!</span></div>
+    <div id="react"></div>
+    <div id="callout" class="callout"></div>
+    <div id="fx"></div>
+
+    <div class="controls">
+      <div class="abilities">
+        <button class="ability" id="coughBtn" aria-label="Fake cough — make your own cover noise">
+          <span class="ab-ico">😷</span><span class="ab-name">Cough</span><span class="ab-state" id="coughState">●●</span>
+        </button>
+        <button class="ability" id="sipBtn" aria-label="Sip water — hold to drain pressure, you cannot clench while sipping">
+          <span class="ab-cd" id="sipCd"></span>
+          <span class="ab-ico">🥤</span><span class="ab-name">Sip</span><span class="ab-state" id="sipState">READY</span>
+        </button>
+        <button class="ability" id="waftBtn" aria-label="Waft — fan away a fresh strike">
+          <span class="ab-ico">🪭</span><span class="ab-name">Waft</span><span class="ab-state" id="waftState">●</span>
+        </button>
+      </div>
+      <div class="pads">
+        <div class="pad" id="padL"><span class="pad-label">Left</span><span class="pad-hint">HOLD</span><div class="strainbar"><i id="strainL"></i></div></div>
+        <div class="pad" id="padR"><span class="pad-label">Right</span><span class="pad-hint">HOLD</span><div class="strainbar"><i id="strainR"></i></div></div>
+      </div>
+      <button class="vent" id="ventBtn">
+        <span class="vent-timer" id="ventTimer"></span>
+        <span class="vent-perfect-mark" id="ventMark"></span>
+        <span class="vent-main" id="ventMainText">DON’T VENT</span>
+        <span class="vent-sub" id="ventSub">wait for cover noise</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- tutorial overlay -->
+  <div id="tutOverlay" class="hidden">
+    <div class="tut-card" id="tutText">Hold <b>both pads</b> to clench it in.</div>
+    <button class="btn ghost" id="tutSkip">Skip</button>
+  </div>
+
+  <!-- toasts -->
+  <div id="toasts"></div>
+
+  <!-- ============ PAUSE ============ -->
+  <div id="pauseScreen" class="screen hidden">
+    <div class="card" style="max-width:340px;">
+      <div class="eyebrow">A moment’s composure</div>
+      <h1>Paused</h1>
+      <p class="sub">Breathe. Nobody heard anything.</p>
+    </div>
+    <button class="btn" id="resumeBtn">Resume</button>
+    <button class="btn ghost" id="quitBtn">Give up the act</button>
+  </div>
+
+  <!-- ============ MEDALS ============ -->
+  <div id="medalsScreen" class="screen hidden">
+    <div class="card" style="max-width:460px;">
+      <div class="eyebrow">Curtain calls</div>
+      <h1 style="font-size:2rem;">Medals</h1>
+      <div id="medalGrid" class="medal-grid"></div>
+    </div>
+    <button class="btn ghost" id="medalsClose">Back</button>
+  </div>
+
+  <!-- ============ WARDROBE ============ -->
+  <div id="wardScreen" class="screen hidden">
+    <div class="card" style="max-width:460px;">
+      <div class="eyebrow">The dressing room</div>
+      <h1 style="font-size:2rem;">Wardrobe</h1>
+      <div class="ward-sec">Characters</div>
+      <div id="wardChars" class="ward-grid"></div>
+      <div class="ward-sec">Theater palettes</div>
+      <div id="wardPals" class="ward-grid"></div>
+    </div>
+    <button class="btn ghost" id="wardClose">Back</button>
+  </div>
+
+  <!-- ============ STATS ============ -->
+  <div id="statsScreen" class="screen hidden">
+    <div class="card" style="max-width:400px;">
+      <div class="eyebrow">The record</div>
+      <h1 style="font-size:2rem;">Lifetime</h1>
+      <div class="rule"></div>
+      <div id="statsBody"></div>
+    </div>
+    <button class="btn ghost" id="statsClose">Back</button>
+  </div>
+
+  <!-- ============ GAME OVER ============ -->
+  <div id="overScreen" class="screen hidden" style="background:rgba(43,58,49,.6); backdrop-filter:blur(3px);">
+    <div class="card" style="max-width:380px;">
+      <div class="eyebrow">The room has spoken</div>
+      <h1 id="overTitle">Exposed</h1>
+      <p class="sub" id="overSub">Three sounds too many.</p>
+      <div class="rule"></div>
+      <div class="stat-row"><span>Composure held</span><b id="overTime">0s</b></div>
+      <div class="stat-row"><span>Best vent combo</span><b id="overCombo">×1.0</b></div>
+      <div class="stat-row"><span>Final score</span><b id="overScore">0</b></div>
+      <div class="stat-row"><span>Best (<span id="overModeName">normal</span>)</span><b id="overBest">0</b></div>
+      <div class="stat-row"><span>Sunbeams earned ☀</span><b id="overSun">0</b></div>
+      <div class="stat-row"><span>Medals</span><b id="overMedals">0/12</b></div>
+      <div id="bestBadgeWrap" class="hidden" style="text-align:center;"><span class="badge">New personal best</span></div>
+    </div>
+    <button class="btn" id="againBtn">Face it again</button>
+    <button class="btn ghost" id="menuBtn">Back to menu</button>
+  </div>
+</div>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>
+"use strict";
+(function(){
+  // ==================================================================
+  //  DATA
+  // ==================================================================
+  const ROMAN=["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
+
+  const COVER_TYPES={
+    APPLAUSE:{ico:"👏",label:"APPLAUSE",arch:"burstHi"},
+    THUNDER :{ico:"⛈️",label:"THUNDER",arch:"rumble"},
+    BUS     :{ico:"🚌",label:"PASSING BUS",arch:"rumble"},
+    SNEEZE  :{ico:"🤧",label:"A SNEEZE",arch:"burstMid"},
+    BELLS   :{ico:"🔔",label:"CHURCH BELLS",arch:"bell"},
+    TRAIN   :{ico:"🚂",label:"PASSING TRAIN",arch:"rumble"},
+    COUGH   :{ico:"😷",label:"COUGHING FIT",arch:"burstMid"},
+    BOOKS   :{ico:"📚",label:"DROPPED BOOKS",arch:"burstHi"},
+    SIREN   :{ico:"🚨",label:"PASSING SIREN",arch:"siren"},
+    ORGAN   :{ico:"🎹",label:"ORGAN SWELL",arch:"organ"},
+    BABY    :{ico:"👶",label:"A CRYING BABY",arch:"cry"},
+    FAKECOUGH:{ico:"😷",label:"YOUR FAKE COUGH",arch:"burstMid"}, // self-made cover, never rolled by scenes
+  };
+
+  const SCENES=[
+    {t:"The Funeral",       s:"Do not make a sound.",                 covers:["COUGH","BELLS","ORGAN"], coverMul:0.95,
+      reacts:["The widow turns to look.","A hush falls, then judgment.","Someone whispers your name."]},
+    {t:"The Job Interview", s:"They watch your every move.",          covers:["COUGH","SIREN","BUS"],   coverMul:1.0,
+      reacts:["The panel exchanges a glance.","“…shall we take a short break?”","Your references just evaporated."]},
+    {t:"The First Date",    s:"Be normal. Be so normal.",             covers:["BUS","SIREN","BABY"],    coverMul:1.0,
+      reacts:["They suddenly remember an early morning.","The waiter pretends not to hear.","There will be no second date."]},
+    {t:"Live On Air",       s:"Twelve million people are listening.", covers:["APPLAUSE","SIREN","APPLAUSE"], coverMul:1.25,
+      reacts:["The producer’s eyes go wide.","Twelve million people heard that.","It is already trending."]},
+    {t:"Silent Yoga",       s:"Find your center. Hold your center.",  covers:["SNEEZE","COUGH"],        coverMul:0.9,
+      reacts:["The instructor loses her center.","Namaste, ruined.","The whole studio exhales for you."]},
+    {t:"The Wedding Vows",  s:"…forever hold it in.",                 covers:["BELLS","ORGAN","COUGH"], coverMul:1.0,
+      reacts:["The officiant pauses, pained.","Grandma heard. Grandma always hears.","That was not what “speak now” meant."]},
+    {t:"The Library",       s:"A single squeak echoes forever.",      covers:["BOOKS","COUGH"],         coverMul:0.85,
+      reacts:["Every head lifts at once.","The librarian’s glare curdles milk.","“Shhh” echoes back at you."]},
+    {t:"The Elevator",      s:"Seven floors. Two strangers.",         covers:["BUS","SIREN"],           coverMul:0.8,
+      reacts:["Both strangers study the floor numbers.","Four more floors of this.","The doors cannot open fast enough."]},
+    {t:"The Recital",       s:"Third row. Your child is playing.",    covers:["APPLAUSE","COUGH","APPLAUSE"], coverMul:1.1,
+      reacts:["The pianist misses a note.","Other parents turn to stare.","You are no longer welcome at recitals."]},
+    {t:"The Confession",    s:"Forgive me, for I am about to.",       covers:["BELLS","ORGAN","COUGH"], coverMul:0.85,
+      reacts:["The priest goes very still.","Some sins cannot be absolved.","Even the saints look away."]},
+    {t:"Meditation Retreat",s:"Day nine. Total silence.",             covers:["SNEEZE","COUGH","BELLS"],coverMul:0.85,
+      reacts:["A dozen eyes snap open.","Enlightenment postponed.","The guru sighs, deeply."]},
+    {t:"The Baby’s Nap",    s:"She just, finally, fell asleep.",      covers:["BABY","TRAIN"],          coverMul:0.9,
+      reacts:["A tiny eyelid flutters.","Do not wake the baby.","…the baby is awake. The baby is awake."]},
+  ];
+
+  // Base tuning (Normal). Codespace: adjust freely.
+  const CFG={
+    riseBase:7.5, riseRamp:1.5, rampEvery:22, rampCap:6, rampSoftSlope:0.4,
+    oneHeldFactor:0.22, bothHeldDrop:7,
+    strainFill:23, strainRecover:33, slipDuration:1.3, slipSpike:13,
+    coverFirst:4.5, coverGapMin:6.5, coverGapRand:5, coverDurBase:2.4, coverDurMin:1.5, perfectFrac:0.40,
+    scoreIdle:6, ventFlat:40, ventScale:3.5, perfectMult:1.5, ventNoCoverRelief:42,
+    blowoutReset:30, blowoutStun:0.85,
+    leakFirst:12, leakGapMin:5.5, leakGapRand:4.5, leakLife:2.6, leakLifeMin:1.6, leakMax:3,
+    leakPlugScore:22, leakBurstPressure:10,
+    comboStep:0.1, comboMax:5, comboVent:1, comboPerfect:2, comboPlug:1,
+    comboCallouts:[[5,"COMPOSED"],[10,"ICE COLD"],[20,"UNTOUCHABLE"],[35,"INHUMAN"]],
+    whiffOn:true, whiffFirst:20, whiffGapMin:16, whiffGapRand:12, whiffWarn:1.1, whiffSurge:20,
+    // ability buttons
+    coughStartCharges:2, coughChargeCap:3, coughDurFrac:0.6, coughRegapFrac:0.5,
+    sipDrain:26, sipCooldown:20,
+    waftWindow:1.6, waftStartCharges:1, waftChargeCap:2, waftActsPer:2, waftScoreCost:150,
+    cheekSwapEvery:15,
+    sceneDur:22, introDur:1.9,
+  };
+  const MODES={
+    easy  :{riseMul:0.80, coverGapMul:0.80, coverDurMul:1.25, leakGapMul:1.6, strainFillMul:0.85, leakMul:0.7, sipCdMul:0.75},
+    normal:{riseMul:1.00, coverGapMul:1.00, coverDurMul:1.00, leakGapMul:1.0, strainFillMul:1.00, leakMul:1.0, sipCdMul:1.00},
+    panic :{riseMul:1.32, coverGapMul:1.28, coverDurMul:0.85, leakGapMul:0.6, strainFillMul:1.15, leakMul:1.4, sipCdMul:1.25},
+  };
+
+  const MEDALS=[
+    {id:"first",   ico:"🎬", name:"First Ordeal",  desc:"Face it once.",                 check:()=>true},
+    {id:"c30",     ico:"😐", name:"Composed",      desc:"Hold for 30s.",                 check:r=>r.time>=30},
+    {id:"c60",     ico:"😤", name:"Iron Cheeks",   desc:"Hold for 60s.",                 check:r=>r.time>=60},
+    {id:"c120",    ico:"🏅", name:"Marathon",      desc:"Hold for 2 minutes.",           check:r=>r.time>=120},
+    {id:"perf3",   ico:"✨", name:"Perfectionist", desc:"3 Perfect vents in one ordeal.",check:r=>r.perfects>=3},
+    {id:"plug10",  ico:"🩹", name:"Surgeon",       desc:"Plug 10 leaks in one ordeal.",  check:r=>r.plugs>=10},
+    {id:"combo3",  ico:"🧊", name:"Cool Customer", desc:"Reach a ×3 combo.",             check:r=>comboMultFrom(r.maxCombo)>=3},
+    {id:"combo5",  ico:"💎", name:"Untouchable",   desc:"Reach the ×5 combo.",           check:r=>comboMultFrom(r.maxCombo)>=5},
+    {id:"act5",    ico:"🎭", name:"Stagehand",     desc:"Reach Act V.",                  check:r=>r.scenes>=5},
+    {id:"act8",    ico:"⭐", name:"Leading Role",  desc:"Reach Act VIII.",               check:r=>r.scenes>=8},
+    {id:"panic45", ico:"🔥", name:"Panic Room",    desc:"Hold 45s on Panic.",            check:r=>r.mode==="panic"&&r.time>=45},
+    {id:"allmodes",ico:"🎨", name:"Method Actor",  desc:"Play all three modes.",         check:(r,L)=>L.modes.length>=3},
+    {id:"improv",  ico:"😷", name:"Improviser",    desc:"Vent under 3 fake coughs in one ordeal.", check:r=>r.coughVents>=3},
+    {id:"fan",     ico:"🪭", name:"Saved by the Fan", desc:"Waft away a strike.",        check:r=>r.wafts>=1},
+    {id:"hydrated",ico:"🥤", name:"Hydrated",      desc:"Sip 5 times in one ordeal.",    check:r=>r.sips>=5},
+    {id:"daily3",  ico:"📅", name:"A Regular",     desc:"Play 3 Daily Ordeals.",         check:(r,L)=>L.dailyPlays>=3},
+    {id:"bow90",   ico:"🧘", name:"Zen Master",    desc:"Bow out after 90s in Zen Theater.", check:r=>r.playMode==="zen"&&r.time>=90},
+    {id:"cheek45", ico:"🎪", name:"One Cheek Wonder", desc:"Hold 45s in One Cheek.",     check:r=>r.playMode==="cheek"&&r.time>=45},
+  ];
+
+  // ---- Cosmetics (earn by play, known thresholds, purely visual) ----
+  const CHARS=[
+    {id:"everyman", ico:"🙂", name:"The Everyman", req:"Free", skin:"#e8c9a0", line:"#b98f61", back:"", front:"", check:()=>true},
+    {id:"gentleman",ico:"🎩", name:"The Gentleman", req:"10 min lifetime composure", skin:"#e8c9a0", line:"#b98f61",
+      back:'<rect x="56" y="4" width="88" height="14" rx="4" fill="#2a2622"/><rect x="70" y="-24" width="60" height="30" rx="5" fill="#2a2622"/><rect x="70" y="-2" width="60" height="7" fill="#4a4238"/>',
+      front:'<circle cx="126" cy="92" r="17" fill="none" stroke="#c8a84b" stroke-width="3"/><path d="M141 104 q8 14 2 24" fill="none" stroke="#c8a84b" stroke-width="2"/><path d="M78 121 q10 -9 22 -1 q12 -8 22 1 q-8 9 -22 3 q-14 6 -22 -3" fill="#4a3826"/>',
+      check:Lc=>Lc.lifeTime>=600},
+    {id:"grandma",  ico:"👵", name:"Grandma", req:"Plug 50 lifetime leaks", skin:"#ecd2b4", line:"#b98f61",
+      back:'<circle cx="100" cy="14" r="24" fill="#cfd2d6"/><circle cx="74" cy="24" r="12" fill="#cfd2d6"/><circle cx="126" cy="24" r="12" fill="#cfd2d6"/>',
+      front:'<circle cx="74" cy="92" r="15" fill="none" stroke="#7a6a52" stroke-width="3"/><circle cx="126" cy="92" r="15" fill="none" stroke="#7a6a52" stroke-width="3"/><path d="M89 92 h22" stroke="#7a6a52" stroke-width="3"/><path d="M59 92 l-12 -4 M141 92 l12 -4" stroke="#7a6a52" stroke-width="3"/>',
+      check:Lc=>Lc.lifePlugs>=50},
+    {id:"mime",     ico:"🎭", name:"The Mime", req:"3 day Daily streak", skin:"#f4f0e6", line:"#8a8577",
+      back:'<path d="M52 34 q48 -30 96 0 q6 10 -4 12 q-44 -22 -88 0 q-10 -2 -4 -12" fill="#1e1c1a"/><circle cx="146" cy="34" r="7" fill="#1e1c1a"/>',
+      front:'<path d="M74 72 v8 M74 108 v8" stroke="#1e1c1a" stroke-width="3"/><path d="M126 110 q0 8 -5 12" stroke="#1e1c1a" stroke-width="3" fill="none"/>',
+      check:Lc=>Lc.bestStreak>=3},
+    {id:"bulldog",  ico:"🐶", name:"The Bulldog", req:"Earn 8 medals", skin:"#cfa26a", line:"#8a5a2b",
+      back:'<path d="M30 66 q-14 34 6 52 q14 8 18 -8 q-8 -26 -24 -44z" fill="#a97b46" stroke="#8a5a2b" stroke-width="3"/><path d="M170 66 q14 34 -6 52 q-14 8 -18 -8 q8 -26 24 -44z" fill="#a97b46" stroke="#8a5a2b" stroke-width="3"/><ellipse cx="100" cy="122" rx="27" ry="19" fill="#e5c99b"/>',
+      front:'<ellipse cx="100" cy="108" rx="10" ry="7" fill="#2a2018"/>',
+      check:Lc=>Lc.medalCount>=8},
+  ];
+  const PALS=[
+    {id:"matinee",     ico:"🎞️", name:"Matinee Sepia", req:"Free", check:()=>true},
+    {id:"midnight",    ico:"🌙", name:"Midnight Show", req:"Reach Act V", check:Lc=>Lc.bestAct>=5},
+    {id:"technicolor", ico:"🌈", name:"Technicolor",   req:"Score 5000 in one ordeal", check:Lc=>Lc.bestScore>=5000},
+    {id:"silver",      ico:"🎬", name:"Silver Screen", req:"Play Easy, Normal, Panic, Daily and Zen", check:Lc=>Lc.modes.length>=3&&Lc.playModes.indexOf("daily")>=0&&Lc.playModes.indexOf("zen")>=0},
+  ];
+
+  // ==================================================================
+  //  STORE (guarded — memory fallback in sandbox, real persistence live)
+  // ==================================================================
+  const mem={};
+  const store={
+    get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){ return (k in mem)?mem[k]:d; } },
+    set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){ mem[k]=v; } },
+  };
+  const K={best:m=>"ff.best."+m, sun:"ff.sun", plays:"ff.plays", snd:"ff.sound", hap:"ff.haptic"};
+  const L={ time:"ff.l.time", plugs:"ff.l.plugs", perfects:"ff.l.perfects", bestCombo:"ff.l.bestcombo",
+            bestTime:"ff.l.besttime", modes:"ff.l.modes", medals:"ff.medals", tut:"ff.tutseen",
+            daily:"ff.daily", bestStreak:"ff.l.beststreak", bestAct:"ff.l.bestact", bestScore:"ff.l.bestscore",
+            playModes:"ff.l.playmodes", dailyPlays:"ff.l.dailyplays", save:"ff_save" };
+  const get=(k,d)=>store.get(k,d), set=(k,v)=>store.set(k,v);
+
+  // ==================================================================
+  //  AUDIO (synthesised, no assets)
+  // ==================================================================
+  let actx=null, soundOn=get(K.snd,true), hapticOn=get(K.hap,true);
+  function unlockAudio(){ if(actx) return; try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ actx=null; }
+    if(actx&&actx.state==="suspended") actx.resume().catch(()=>{}); }
+  function noiseBuf(dur,brown){ const n=Math.max(1,Math.floor(actx.sampleRate*dur)), b=actx.createBuffer(1,n,actx.sampleRate), d=b.getChannelData(0);
+    let last=0; for(let i=0;i<n;i++){ const w=Math.random()*2-1; if(brown){ last=(last+0.02*w)/1.02; d[i]=last*3.2; } else d[i]=w; } return b; }
+  function env(g,t,a,peak,dur){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); }
+  function fart(bigness){ if(!actx||!soundOn) return; const t=actx.currentTime, dur=0.32+bigness*0.55+Math.random()*0.1;
+    const src=actx.createBufferSource(); src.buffer=noiseBuf(dur,true);
+    const lp=actx.createBiquadFilter(); lp.type="lowpass"; const hz=320+bigness*180+Math.random()*80;
+    lp.frequency.setValueAtTime(hz,t); lp.frequency.exponentialRampToValueAtTime(80,t+dur); lp.Q.value=6;
+    const lfo=actx.createOscillator(), lg=actx.createGain(); lfo.frequency.setValueAtTime(14+bigness*22+Math.random()*10,t);
+    lfo.frequency.linearRampToValueAtTime(6,t+dur); lg.gain.value=0.5; lfo.connect(lg).connect(lp.frequency); lfo.start(t); lfo.stop(t+dur);
+    const g=actx.createGain(); env(g,t,0.03,0.28+bigness*0.5,dur); src.connect(lp).connect(g).connect(actx.destination); src.start(t); src.stop(t+dur); }
+  function squeak(){ if(!actx||!soundOn) return; const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+    o.type="sawtooth"; o.frequency.setValueAtTime(560,t); o.frequency.exponentialRampToValueAtTime(1100,t+0.09);
+    o.frequency.exponentialRampToValueAtTime(300,t+0.2); env(g,t,0.02,0.12,0.24); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.25); }
+  function plugSfx(){ if(!actx||!soundOn) return; const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+    o.type="sine"; o.frequency.setValueAtTime(680,t); o.frequency.exponentialRampToValueAtTime(240,t+0.12); env(g,t,0.01,0.16,0.15);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.16); }
+  function chime(){ if(!actx||!soundOn) return; const t=actx.currentTime; [523,659,784].forEach((f,i)=>{ const o=actx.createOscillator(), g=actx.createGain();
+    o.type="sine"; o.frequency.value=f; const s=t+i*0.055; env(g,s,0.02,0.14,0.42); o.connect(g).connect(actx.destination); o.start(s); o.stop(s+0.44); }); }
+  function perfectSfx(){ if(!actx||!soundOn) return; const t=actx.currentTime; [784,1047,1319,1568].forEach((f,i)=>{ const o=actx.createOscillator(), g=actx.createGain();
+    o.type="triangle"; o.frequency.value=f; const s=t+i*0.04; env(g,s,0.01,0.11,0.3); o.connect(g).connect(actx.destination); o.start(s); o.stop(s+0.3); }); }
+  function comboSfx(mult){ if(!actx||!soundOn) return; const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+    o.type="square"; const base=440+Math.min(mult,5)*70; o.frequency.setValueAtTime(base,t); o.frequency.exponentialRampToValueAtTime(base*1.5,t+0.08);
+    env(g,t,0.01,0.07,0.14); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.14); }
+  function coverSfx(arch){ if(!actx||!soundOn) return; const t=actx.currentTime;
+    if(arch==="rumble"){ const src=actx.createBufferSource(); src.buffer=noiseBuf(1.7,true); src.loop=true; const lp=actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=240;
+      const g=actx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.18,t+0.3); g.gain.setValueAtTime(0.18,t+1.2); g.gain.exponentialRampToValueAtTime(0.0001,t+1.7);
+      src.connect(lp).connect(g).connect(actx.destination); src.start(t); src.stop(t+1.7); return; }
+    if(arch==="burstHi"||arch==="burstMid"){ const hz=arch==="burstHi"?2400:1200; const reps=arch==="burstHi"?3:1; for(let k=0;k<reps;k++){ const s=t+k*0.18;
+      const src=actx.createBufferSource(); src.buffer=noiseBuf(0.5,false); const bp=actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=hz; bp.Q.value=0.7;
+      const g=actx.createGain(); env(g,s,0.02,0.15,0.45); src.connect(bp).connect(g).connect(actx.destination); src.start(s); src.stop(s+0.5); } return; }
+    if(arch==="bell"){ [659,988,1319].forEach((f,i)=>{ const o=actx.createOscillator(), g=actx.createGain(); o.type="sine"; o.frequency.value=f; const s=t+i*0.28;
+      g.gain.setValueAtTime(0.0001,s); g.gain.exponentialRampToValueAtTime(0.14,s+0.01); g.gain.exponentialRampToValueAtTime(0.0001,s+0.9); o.connect(g).connect(actx.destination); o.start(s); o.stop(s+0.95); }); return; }
+    if(arch==="siren"){ const o=actx.createOscillator(), g=actx.createGain(), l=actx.createOscillator(), lg=actx.createGain(); o.type="sawtooth"; o.frequency.value=760;
+      l.frequency.value=3.5; lg.gain.value=180; l.connect(lg).connect(o.frequency); l.start(t); l.stop(t+1.6); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.08,t+0.2);
+      g.gain.setValueAtTime(0.08,t+1.2); g.gain.exponentialRampToValueAtTime(0.0001,t+1.6); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+1.6); return; }
+    if(arch==="organ"){ [131,196,262].forEach(f=>{ const o=actx.createOscillator(), g=actx.createGain(); o.type="sawtooth"; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.06,t+0.3); g.gain.setValueAtTime(0.06,t+1.2); g.gain.exponentialRampToValueAtTime(0.0001,t+1.7); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+1.7); }); return; }
+    if(arch==="cry"){ const o=actx.createOscillator(), g=actx.createGain(), l=actx.createOscillator(), lg=actx.createGain(); o.type="triangle"; o.frequency.value=520;
+      l.frequency.value=5; lg.gain.value=60; l.connect(lg).connect(o.frequency); l.start(t); l.stop(t+1.4); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.1,t+0.15);
+      g.gain.setValueAtTime(0.1,t+1.0); g.gain.exponentialRampToValueAtTime(0.0001,t+1.4); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+1.4); return; } }
+  function whoosh(){ if(!actx||!soundOn) return; const t=actx.currentTime; const src=actx.createBufferSource(); src.buffer=noiseBuf(0.5,false);
+    const bp=actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.setValueAtTime(400,t); bp.frequency.exponentialRampToValueAtTime(2200,t+0.35); bp.Q.value=1.2;
+    const g=actx.createGain(); env(g,t,0.04,0.18,0.5); src.connect(bp).connect(g).connect(actx.destination); src.start(t); src.stop(t+0.5); }
+  function sipSfx(){ if(!actx||!soundOn) return; const t=actx.currentTime; [300,260,220].forEach((f,i)=>{ const o=actx.createOscillator(), g=actx.createGain();
+    o.type="sine"; o.frequency.value=f; const s=t+i*0.09; env(g,s,0.02,0.08,0.1); o.connect(g).connect(actx.destination); o.start(s); o.stop(s+0.12); }); }
+  function haptic(p){ if(!hapticOn) return; try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+  // ==================================================================
+  //  ELEMENTS
+  // ==================================================================
+  const $=id=>document.getElementById(id);
+  const app=$("app"), face=$("face");
+  const startScreen=$("startScreen"), introScreen=$("introScreen"), hud=$("hud"), pauseScreen=$("pauseScreen"),
+        overScreen=$("overScreen"), medalsScreen=$("medalsScreen"), statsScreen=$("statsScreen");
+  const gaugeFill=$("gaugeFill"), pctText=$("pctText"), scoreEl=$("score"), sceneChip=$("sceneChip"), comboEl=$("combo");
+  const strainLbar=$("strainL"), strainRbar=$("strainR"), padL=$("padL"), padR=$("padR");
+  const ventBtn=$("ventBtn"), ventMainText=$("ventMainText"), ventSub=$("ventSub"), ventTimer=$("ventTimer"), ventMark=$("ventMark");
+  const coverBanner=$("coverBanner"), coverText=$("coverText"), strikesEl=$("strikes"), leaksEl=$("leaks"),
+        reactEl=$("react"), fxEl=$("fx"), calloutEl=$("callout"), toastsEl=$("toasts");
+  const actLabel=$("actLabel"), sceneTitle=$("sceneTitle"), sceneSub=$("sceneSub");
+  const tutOverlay=$("tutOverlay"), tutText=$("tutText");
+  const coughBtn=$("coughBtn"), sipBtn=$("sipBtn"), waftBtn=$("waftBtn");
+  const coughState=$("coughState"), sipState=$("sipState"), waftState=$("waftState"), sipCdEl=$("sipCd");
+  const wardScreen=$("wardScreen"), dailyNote=$("dailyNote"), diffRow=$("diffRow");
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ==================================================================
+  //  STATE
+  // ==================================================================
+  let S=null, raf=null, chosenMode="normal", chosenPlay="stage";
+  // rng indirection: Math.random live, mulberry32 in Daily so runs replay identically
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  let rngFn=Math.random; const rnd=()=>rngFn();
+  function dayKey(off){ const d=new Date(); if(off) d.setDate(d.getDate()+off); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+  function newState(modeKey, playKey){
+    return { phase:"playing", modeKey, M:MODES[modeKey], playMode:playKey||"stage",
+      pressure:0, strainL:0, strainR:0, padL:false, padR:false, slipL:0, slipR:0,
+      strikes:0, score:0, time:0, combo:0, bestCombo:0, calloutIdx:-1,
+      scene:0, sceneTime:0, inIntro:false, introTime:0, sceneOrder:null,
+      cover:false, coverSelf:false, coverType:"", coverStart:0, coverUntil:0, nextCover:CFG.coverFirst,
+      leaks:[], nextLeak:CFG.leakFirst,
+      nextWhiff:CFG.whiffFirst, whiffAt:0,
+      coughCharges:CFG.coughStartCharges, sipCd:0, sipping:false,
+      waftCharges:CFG.waftStartCharges, waftUntil:0, pendingExpose:0,
+      cheekSide:0, cheekSwapAt:CFG.cheekSwapEvery,
+      stun:0, reliefUntil:0, last:0,
+      rp:{perfects:0, plugs:0, cleanVents:0, coughVents:0, wafts:0, sips:0},
+      tut:null };
+  }
+  const rampCont=()=>S.time/CFG.rampEvery;
+  const rampLevel=()=>Math.floor(Math.min(rampCont(),CFG.rampCap));
+  const effRamp=()=>{ const r=rampCont(); return Math.min(r,CFG.rampCap)+Math.max(0,r-CFG.rampCap)*CFG.rampSoftSlope; };
+  const riseRate=()=>(CFG.riseBase+effRamp()*CFG.riseRamp)*S.M.riseMul;
+  const comboMult=()=>Math.min(CFG.comboMax, 1+S.combo*CFG.comboStep);
+  const comboMultFrom=c=>Math.min(CFG.comboMax, 1+c*CFG.comboStep);
+  const isLive=()=>S&&(S.phase==="playing"||S.phase==="tutorial");
+
+  // ==================================================================
+  //  FLOW
+  // ==================================================================
+  function begin(modeKey, playKey){
+    unlockAudio();
+    const pm=playKey||chosenPlay;
+    if(pm==="daily"){ rngFn=mulberry32(dayKey()); } else { rngFn=Math.random; }
+    S=newState(pm==="daily"?"normal":(modeKey||chosenMode), pm);
+    if(pm==="daily"){ const order=SCENES.map((_,i)=>i);
+      for(let i=order.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=order[i]; order[i]=order[j]; order[j]=t; }
+      S.sceneOrder=order; }
+    hideAllScreens(); hud.classList.remove("hidden"); hud.classList.remove("hud-tut"); tutOverlay.classList.add("hidden");
+    clearLeaks();
+    for(let i=0;i<strikesEl.children.length;i++) strikesEl.children[i].classList.remove("broke");
+    comboEl.classList.remove("on"); comboEl.textContent="×1.0";
+    padL.classList.remove("benched","slipped"); padR.classList.remove("benched","slipped");
+    sipBtn.classList.remove("sipping");
+    showIntro(0);
+    S.last=performance.now();
+    if(raf) cancelAnimationFrame(raf);
+    loop();
+  }
+  function hideAllScreens(){ [startScreen,introScreen,pauseScreen,overScreen,medalsScreen,statsScreen,wardScreen].forEach(s=>s.classList.add("hidden")); }
+
+  function sceneIdx(i){ return S.sceneOrder? S.sceneOrder[i%S.sceneOrder.length] : (i%SCENES.length); }
+  function showIntro(idx){
+    S.inIntro=true; S.introTime=CFG.introDur; S.scene=idx; S.sceneTime=CFG.sceneDur;
+    const sc=SCENES[sceneIdx(idx)];
+    actLabel.textContent="Act "+ROMAN[idx%ROMAN.length]; sceneTitle.textContent=sc.t; sceneSub.textContent=sc.s; sceneChip.textContent=sc.t;
+    introScreen.classList.remove("hidden");
+    if(idx>0 && S.phase==="playing"){ // surviving an act restocks the pocket
+      if(S.coughCharges<CFG.coughChargeCap) S.coughCharges++;
+      if(idx%CFG.waftActsPer===0 && S.waftCharges<CFG.waftChargeCap) S.waftCharges++;
+    }
+  }
+  function curScene(){ return SCENES[sceneIdx(S.scene)]; }
+
+  function openCover(self){
+    let key, c;
+    if(self){ key="FAKECOUGH"; c=COVER_TYPES[key]; }
+    else { const sc=curScene(); key=sc.covers[Math.floor(rnd()*sc.covers.length)]; c=COVER_TYPES[key]; }
+    S.cover=true; S.coverSelf=!!self; S.coverType=key; S.coverStart=S.time;
+    let dur=Math.max(CFG.coverDurMin, CFG.coverDurBase-rampLevel()*0.12)*S.M.coverDurMul;
+    if(self) dur*=CFG.coughDurFrac;
+    S.coverUntil=S.time+dur;
+    coverText.textContent=c.label+", vent now!"; coverBanner.querySelector(".ico").textContent=c.ico; coverBanner.classList.add("show");
+    ventMark.style.display=self?"none":"block"; ventMark.style.left=((1-CFG.perfectFrac)*100)+"%";
+    coverSfx(c.arch); haptic(8);
+  }
+  function closeCover(){ const wasSelf=S.coverSelf; S.cover=false; S.coverSelf=false;
+    let base=(CFG.coverGapMin+rnd()*CFG.coverGapRand)*S.M.coverGapMul/(curScene().coverMul||1);
+    if(wasSelf) base*=CFG.coughRegapFrac; // a fake cough only half-postpones the room's next real noise
+    S.nextCover=S.time+base; coverBanner.classList.remove("show"); ventMark.style.display="none"; }
+
+  // -- ability buttons --
+  function doCough(){
+    if(!S||!isLive()||S.inIntro||S.stun>0||S.cover) return;
+    if(S.phase==="tutorial"){ if(S.tut&&S.tut.step===5){ openCover(true); S.tut.coughed=true; } return; }
+    if(S.coughCharges<=0) return;
+    S.coughCharges--; openCover(true); haptic(12);
+  }
+  function sipStart(){
+    if(!S||!isLive()||S.inIntro) return;
+    if(S.phase==="tutorial"){ if(S.tut&&S.tut.step>=6){ S.sipping=true; sipBtn.classList.add("sipping"); sipSfx(); } return; }
+    if(S.sipCd>0||S.stun>0||S.sipping) return;
+    S.sipping=true; S.rp.sips++; sipBtn.classList.add("sipping"); sipSfx(); haptic(8);
+  }
+  function sipEnd(){
+    if(!S||!S.sipping) return;
+    S.sipping=false; sipBtn.classList.remove("sipping");
+    if(S.phase!=="tutorial") S.sipCd=CFG.sipCooldown*(S.M.sipCdMul||1);
+  }
+  function doWaft(){
+    if(!S||!isLive()) return;
+    if(S.phase==="tutorial"){ const T=S.tut;
+      if(T&&T.step===7&&T.waftWin&&S.time<=T.waftWin&&!T.waftOk){ T.waftOk=true; whoosh(); haptic([10,30]);
+        floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFTED AWAY", "gold"); }
+      return; }
+    if(S.playMode==="zen") return;
+    if(S.waftCharges<=0||S.strikes<=0||S.time>S.waftUntil) return;
+    S.waftCharges--; S.strikes--; S.waftUntil=0; S.pendingExpose=0; S.rp.wafts++;
+    const pips=strikesEl.children; for(let i=0;i<pips.length;i++) pips[i].classList.toggle("broke", i<S.strikes);
+    S.score=Math.max(0,S.score-CFG.waftScoreCost);
+    whoosh(); haptic([10,30]); floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFTED AWAY", "gold");
+  }
+
+  // -- whiff hazard --
+  function startWhiff(){ S.whiffAt=S.time+CFG.whiffWarn; floatText(app.clientWidth/2, app.clientHeight*0.30, "😖 a whiff, clench!", "gold"); haptic([12,70]); }
+
+  // -- leaks --
+  function spawnLeak(){
+    if(S.leaks.length>=CFG.leakMax) return;
+    const life=Math.max(CFG.leakLifeMin, CFG.leakLife-rampLevel()*0.12);
+    const el=document.createElement("button"); el.className="leak"; el.setAttribute("aria-label","Plug leak");
+    el.style.left=(14+rnd()*72)+"%"; el.style.top=(12+rnd()*70)+"%";
+    el.innerHTML='<span class="ring"></span><span class="core">💨</span>';
+    const leak={el,remaining:life,life};
+    el.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); plugLeak(leak); });
+    leaksEl.appendChild(el); S.leaks.push(leak);
+  }
+  function removeLeak(leak){ const i=S.leaks.indexOf(leak); if(i>=0) S.leaks.splice(i,1); }
+  function plugLeak(leak){
+    if(leak._done||!isLive()) return; leak._done=true; removeLeak(leak);
+    leak.el.classList.add("plugged"); setTimeout(()=>leak.el.remove(),260);
+    plugSfx(); haptic(10);
+    if(S.phase==="tutorial"){ if(S.tut) S.tut.plugOk=true; return; }
+    const mult=comboMult(); const pts=Math.round(CFG.leakPlugScore*mult); S.score+=pts; S.rp.plugs++;
+    S.combo+=CFG.comboPlug; if(S.combo>S.bestCombo) S.bestCombo=S.combo; bumpCombo();
+    const r=leak.el.getBoundingClientRect(), a=app.getBoundingClientRect();
+    floatText(r.left-a.left+r.width/2, r.top-a.top, "+"+pts, "");
+  }
+  function burstLeak(leak){
+    if(leak._done) return; leak._done=true; removeLeak(leak); leak.el.remove();
+    if(S && S.phase!=="tutorial"){ S.pressure=Math.min(100,S.pressure+CFG.leakBurstPressure); breakCombo(); }
+    squeak(); haptic(30);
+  }
+  function clearLeaks(){ leaksEl.innerHTML=""; if(S) S.leaks=[]; }
+
+  // -- combo --
+  function bumpCombo(){ const m=comboMult(); comboEl.textContent="×"+m.toFixed(1);
+    comboEl.classList.toggle("on", S.combo>0);
+    comboEl.classList.remove("bump"); void comboEl.offsetWidth; comboEl.classList.add("bump");
+    if(S.combo>0 && S.combo%3===0) comboSfx(m);
+    for(let i=0;i<CFG.comboCallouts.length;i++){ if(S.combo>=CFG.comboCallouts[i][0] && i>S.calloutIdx){ S.calloutIdx=i; callout(CFG.comboCallouts[i][1]); } } }
+  function breakCombo(){ if(S.combo>0){ S.combo=0; S.calloutIdx=-1; comboEl.classList.remove("on"); comboEl.textContent="×1.0"; } }
+
+  // -- strikes / vent / blowout --
+  function addStrike(){
+    if(S.playMode==="zen"){ roomReact(); shake(); return; } // Zen: the room reacts, nothing counts
+    S.strikes++; const pips=strikesEl.children;
+    for(let i=0;i<pips.length;i++) pips[i].classList.toggle("broke", i<S.strikes);
+    roomReact(); shake();
+    S.waftUntil=S.time+CFG.waftWindow;
+    if(S.strikes>=3){
+      S.strikes=3;
+      if(S.waftCharges>0 && !S.pendingExpose){ S.pendingExpose=S.time+CFG.waftWindow; // one breath of borrowed time
+        floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFT IT AWAY!", "warn"); haptic([20,40,20]); }
+      else gameOver();
+    } }
+
+  function doVent(){
+    if(!isLive()||S.inIntro||S.stun>0) return;
+    // tutorial: forgiving, no strikes, drives step flags
+    if(S.phase==="tutorial"){
+      const T=S.tut;
+      if(S.cover){
+        const perfect=(S.time-S.coverStart)<=(S.coverUntil-S.coverStart)*CFG.perfectFrac;
+        S.pressure=Math.max(0,S.pressure-60); S.strainL=0; S.strainR=0;
+        face.dataset.tier="relief"; S.reliefUntil=S.time+0.7;
+        if(perfect) perfectSfx(); else chime(); haptic([12,20]);
+        if(T&&T.step===2) T.ventOk=true;
+        if(T&&T.step===3){ if(perfect) T.perfOk=true; else T.ventTries=(T.ventTries||0)+1; }
+        if(T&&T.step===5&&S.coverSelf) T.coughVentOk=true;
+        closeCover();
+      } else { squeak(); }
+      return;
+    }
+    if(S.cover){
+      const perfect = !S.coverSelf && (S.time - S.coverStart) <= (S.coverUntil-S.coverStart)*CFG.perfectFrac;
+      S.combo += perfect?CFG.comboPerfect:CFG.comboVent; if(S.combo>S.bestCombo) S.bestCombo=S.combo;
+      S.rp.cleanVents++; if(perfect) S.rp.perfects++; if(S.coverSelf) S.rp.coughVents++;
+      const mult=comboMult();
+      const pts=Math.round((CFG.ventFlat+S.pressure*CFG.ventScale)*(perfect?CFG.perfectMult:1)*mult);
+      S.score+=pts; S.pressure=0; S.strainL=0; S.strainR=0;
+      face.dataset.tier="relief"; S.reliefUntil=S.time+0.7; bumpCombo();
+      if(perfect){ perfectSfx(); haptic([10,20,10,20]); floatText(app.clientWidth/2, app.clientHeight*0.62, "PERFECT +"+pts, "gold"); }
+      else { chime(); haptic([15,25,15]); floatText(app.clientWidth/2, app.clientHeight*0.62, "+"+pts, ""); }
+      closeCover();
+    } else {
+      fart(0.5+S.pressure/200); S.pressure=Math.max(0,S.pressure-CFG.ventNoCoverRelief);
+      face.dataset.tier="blowout"; S.reliefUntil=S.time+0.5; breakCombo(); addStrike();
+    }
+  }
+  function blowout(){ fart(1); S.pressure=CFG.blowoutReset; S.stun=CFG.blowoutStun;
+    face.dataset.tier="blowout"; S.reliefUntil=S.time+CFG.blowoutStun; breakCombo(); addStrike(); }
+
+  // -- medals / toasts --
+  function evalMedals(){
+    const earned=new Set(get(L.medals,[]));
+    const modes=new Set(get(L.modes,[])); modes.add(S.modeKey); set(L.modes,[...modes]);
+    const r={ time:S.time, perfects:S.rp.perfects, plugs:S.rp.plugs, maxCombo:S.bestCombo, scenes:S.scene+1, mode:S.modeKey,
+      playMode:S.playMode, coughVents:S.rp.coughVents, wafts:S.rp.wafts, sips:S.rp.sips };
+    const Lc={ modes:[...modes], dailyPlays:get(L.dailyPlays,0) };
+    const newly=[];
+    MEDALS.forEach(m=>{ if(!earned.has(m.id) && m.check(r,Lc)){ earned.add(m.id); newly.push(m); } });
+    set(L.medals,[...earned]);
+    return {newly, count:earned.size};
+  }
+  let toastQ=[], toastBusy=false;
+  function queueToasts(list){ list.forEach(m=>toastQ.push(m)); if(!toastBusy) nextToast(); }
+  function nextToast(){ if(toastQ.length===0){ toastBusy=false; return; } toastBusy=true;
+    const m=toastQ.shift(); const el=document.createElement("div"); el.className="toast";
+    el.innerHTML='<span class="ti">'+m.ico+'</span><span>'+(m.kind||"Medal earned")+': <b>'+m.name+'</b></span>';
+    toastsEl.appendChild(el); requestAnimationFrame(()=>el.classList.add("show"));
+    haptic([10,30,10]);
+    setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>{ el.remove(); nextToast(); },300); }, 1900); }
+
+  function gameOver(){
+    S.phase="over"; if(raf){ cancelAnimationFrame(raf); raf=null; }
+    sipEnd();
+    const finalScore=Math.round(S.score);
+    const bestKey=K.best(S.playMode==="stage"?S.modeKey:S.playMode);
+    const prevBest=get(bestKey,0); const isBest=finalScore>prevBest;
+    if(isBest) set(bestKey,finalScore);
+    // lifetime
+    set(K.plays, get(K.plays,0)+1);
+    set(L.time, get(L.time,0)+S.time);
+    set(L.plugs, get(L.plugs,0)+S.rp.plugs);
+    set(L.perfects, get(L.perfects,0)+S.rp.perfects);
+    if(S.bestCombo>get(L.bestCombo,0)) set(L.bestCombo,S.bestCombo);
+    if(S.time>get(L.bestTime,0)) set(L.bestTime,S.time);
+    if(S.scene+1>get(L.bestAct,0)) set(L.bestAct,S.scene+1);
+    if(finalScore>get(L.bestScore,0)) set(L.bestScore,finalScore);
+    const pms=new Set(get(L.playModes,[])); pms.add(S.playMode); set(L.playModes,[...pms]);
+    if(S.playMode==="daily"){
+      const dk=dayKey(), yk=dayKey(-1);
+      const D=get(L.daily,{streak:0,last:0,best:0});
+      if(D.last!==dk){ D.streak=(D.last===yk)?(D.streak+1):1; D.last=dk; D.best=0; }
+      if(finalScore>D.best) D.best=finalScore;
+      set(L.daily,D);
+      set(L.dailyPlays, get(L.dailyPlays,0)+1);
+      if(D.streak>get(L.bestStreak,0)) set(L.bestStreak,D.streak);
+    }
+    // Sunbeams: capped 12 per run at the source, 30 per day in the shared helper. Zen pays nothing.
+    let sun=0;
+    if(S.playMode!=="zen") sun=Math.min(12, Math.floor(finalScore/400));
+    let granted=0;
+    try{ if(sun>0 && typeof window._sbCapEarn==="function") granted=window._sbCapEarn(sun,"ff:"+S.playMode)||0; }catch(e){}
+    set(K.sun, get(K.sun,0)+granted);
+    awardSunbeams(granted);
+    const med=evalMedals();
+    const newWard=evalCosmetics();
+
+    $("overTime").textContent=fmtTime(S.time);
+    $("overCombo").textContent="×"+comboMultFrom(S.bestCombo).toFixed(1);
+    $("overScore").textContent=finalScore;
+    $("overModeName").textContent=S.playMode==="stage"?S.modeKey:S.playMode;
+    $("overBest").textContent=Math.max(prevBest,finalScore);
+    $("overSun").textContent=granted;
+    $("overMedals").textContent=med.count+"/"+MEDALS.length;
+    $("bestBadgeWrap").classList.toggle("hidden", !isBest);
+    if(S.playMode==="zen"){ $("overTitle").textContent="Curtain Call"; $("overSub").textContent="You bowed out with grace."; }
+    else if(S.time<12){ $("overTitle").textContent="Exposed"; $("overSub").textContent="You lasted no time at all."; }
+    else if(S.time<45){ $("overTitle").textContent="Mortified"; $("overSub").textContent="A valiant, doomed effort."; }
+    else { $("overTitle").textContent="Undone at last"; $("overSub").textContent="You held for "+S.time.toFixed(0)+" long seconds."; }
+    hud.classList.add("hidden"); pauseScreen.classList.add("hidden"); overScreen.classList.remove("hidden");
+    face.dataset.tier="calm"; setFlood(0);
+    if(med.newly.length||newWard.length) setTimeout(()=>queueToasts(med.newly.concat(newWard)), 500);
+  }
+  function awardSunbeams(n){ window.__FF_LAST_SUNBEAMS=n; }
+
+  // -- cosmetics --
+  function loadWard(){ const W=get(L.save,null);
+    return W&&W.chars? W : {chars:["everyman"],pals:["matinee"],eqChar:"everyman",eqPal:"matinee"}; }
+  function cosmeticCtx(){ const D=get(L.daily,{streak:0});
+    return { lifeTime:get(L.time,0), lifePlugs:get(L.plugs,0),
+      bestStreak:Math.max(get(L.bestStreak,0), D.streak||0),
+      medalCount:get(L.medals,[]).length, bestAct:get(L.bestAct,0), bestScore:get(L.bestScore,0),
+      modes:get(L.modes,[]), playModes:get(L.playModes,[]) }; }
+  function evalCosmetics(){
+    const W=loadWard(); const Lc=cosmeticCtx(); const newly=[];
+    CHARS.forEach(c=>{ if(W.chars.indexOf(c.id)<0 && c.check(Lc)){ W.chars.push(c.id); newly.push({ico:c.ico,name:c.name,kind:"Wardrobe unlocked"}); } });
+    PALS.forEach(p=>{ if(W.pals.indexOf(p.id)<0 && p.check(Lc)){ W.pals.push(p.id); newly.push({ico:p.ico,name:p.name,kind:"Wardrobe unlocked"}); } });
+    if(newly.length) set(L.save,W);
+    return newly;
+  }
+  function applyCharacter(id){
+    const c=CHARS.find(x=>x.id===id)||CHARS[0];
+    face.querySelectorAll(".ff-skin,.ff-ear").forEach(el=>{ el.setAttribute("fill",c.skin); el.setAttribute("stroke",c.line); });
+    $("decorBack").innerHTML=c.back; $("decorFront").innerHTML=c.front;
+  }
+  function applyPalette(id){
+    document.body.className=document.body.className.replace(/\bpal-\S+/g,"").trim();
+    if(id&&id!=="matinee") document.body.classList.add("pal-"+id);
+  }
+  function openWard(){ buildWard(); startScreen.classList.add("hidden"); wardScreen.classList.remove("hidden"); }
+  function buildWard(){
+    evalCosmetics(); // menu-time unlock sweep so thresholds crossed elsewhere show up
+    const W=loadWard();
+    const mk=(list,ownedArr,eqId,kind)=>list.map(item=>{
+      const owned=ownedArr.indexOf(item.id)>=0, eq=eqId===item.id;
+      return '<button class="ward-card'+(owned?"":" locked")+(eq?" eq":"")+'" data-kind="'+kind+'" data-id="'+item.id+'">'+
+        (eq?'<span class="weq">On</span>':"")+'<span class="wi">'+item.ico+'</span><span class="wn">'+item.name+
+        '</span><span class="wr">'+(owned?(eq?"Equipped":"Tap to wear"):item.req)+'</span></button>'; }).join("");
+    $("wardChars").innerHTML=mk(CHARS,W.chars,W.eqChar,"char");
+    $("wardPals").innerHTML=mk(PALS,W.pals,W.eqPal,"pal");
+    wardScreen.querySelectorAll(".ward-card:not(.locked)").forEach(b=>b.addEventListener("click",()=>{
+      const W2=loadWard();
+      if(b.dataset.kind==="char"){ W2.eqChar=b.dataset.id; applyCharacter(W2.eqChar); }
+      else { W2.eqPal=b.dataset.id; applyPalette(W2.eqPal); }
+      set(L.save,W2); buildWard(); haptic(10);
+    }));
+  }
+
+  // -- pause / nav --
+  function pauseGame(){ if(!S||S.phase!=="playing") return; S.phase="paused";
+    $("quitBtn").textContent = S.playMode==="zen" ? "Take a bow" : "Give up the act";
+    pauseScreen.classList.remove("hidden"); }
+  function resumeGame(){ if(!S||S.phase!=="paused") return; S.phase="playing"; pauseScreen.classList.add("hidden"); S.last=performance.now(); }
+  function toMenu(){ if(raf){ cancelAnimationFrame(raf); raf=null; } sipEnd(); S=null; hud.classList.add("hidden"); tutOverlay.classList.add("hidden");
+    padL.classList.remove("benched","slipped","down"); padR.classList.remove("benched","slipped","down");
+    hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
+
+  function openMedals(){ buildMedals(); startScreen.classList.add("hidden"); medalsScreen.classList.remove("hidden"); }
+  function openStats(){ buildStats(); startScreen.classList.add("hidden"); statsScreen.classList.remove("hidden"); }
+  function buildMedals(){ const earned=new Set(get(L.medals,[])); const g=$("medalGrid"); g.innerHTML="";
+    MEDALS.forEach(m=>{ const has=earned.has(m.id); const d=document.createElement("div"); d.className="medal"+(has?"":" locked");
+      d.innerHTML='<span class="mi">'+m.ico+'</span><span class="mn">'+m.name+'</span><span class="mdsc">'+(has?m.desc:m.desc)+'</span>'; g.appendChild(d); }); }
+  function buildStats(){ const rows=[
+      ["Ordeals faced", get(K.plays,0)],
+      ["Longest composure", fmtTime(get(L.bestTime,0))],
+      ["Total time held", fmtTime(get(L.time,0))],
+      ["Leaks plugged", get(L.plugs,0)],
+      ["Perfect vents", get(L.perfects,0)],
+      ["Best combo", "×"+comboMultFrom(get(L.bestCombo,0)).toFixed(1)],
+      ["Sunbeams ☀", get(K.sun,0)],
+      ["Medals", get(L.medals,[]).length+"/"+MEDALS.length],
+      ["Best, Easy", get(K.best("easy"),0)],
+      ["Best, Normal", get(K.best("normal"),0)],
+      ["Best, Panic", get(K.best("panic"),0)],
+      ["Best, Daily Ordeal", get(K.best("daily"),0)],
+      ["Best, Zen Theater", get(K.best("zen"),0)],
+      ["Best, One Cheek", get(K.best("cheek"),0)],
+      ["Daily streak record", get(L.bestStreak,0)],
+      ["Deepest act", get(L.bestAct,0)>0?"Act "+ROMAN[Math.min(get(L.bestAct,0)-1,ROMAN.length-1)]:"None yet"],
+    ];
+    $("statsBody").innerHTML = rows.map(r=>'<div class="stat-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join(""); }
+  function fmtTime(s){ s=Math.round(s); return s>=60 ? Math.floor(s/60)+"m "+(s%60)+"s" : s+"s"; }
+  // ==================================================================
+  //  TUTORIAL
+  // ==================================================================
+  const TUT_PROMPTS=[
+    "Hold <b>both pads</b> to clench it in.",
+    "Each hand tires, its bar fills. <b>Lift one hand</b> to rest it, then swap.",
+    "Pressure only drops under a <b>cover noise</b>. Here comes one, tap <b>VENT!</b>",
+    "Now vent the <b>instant</b> the noise starts. That is a <b>PERFECT</b>.",
+    "A <b>leak!</b> Tap it to plug before it squeaks.",
+    "No cover in sight? Tap <b>COUGH</b> to fake your own, then <b>VENT</b> under it.",
+    "Hold <b>SIP</b> to drink the pressure down. You cannot clench while sipping!",
+    "Slipped up? For a moment you can <b>WAFT</b> a strike away. Try it now!",
+    "You’re ready. Three strikes and you’re exposed. <b>Break a leg!</b>",
+  ];
+  function startTutorial(){
+    rngFn=Math.random;
+    S=newState(chosenMode,"stage"); S.phase="tutorial";
+    S.tut={ step:0, heldBoth:0, oneUp:0, ventOk:false, perfOk:false, ventTries:0, plugOk:false, lastOpen:-99, lastLeak:-99, stepT:0,
+            coughed:false, coughVentOk:false, sipHeld:0, waftWin:0, waftOk:false };
+    S.nextCover=Infinity; S.nextLeak=Infinity; S.nextWhiff=Infinity;
+    hideAllScreens(); clearLeaks();
+    hud.classList.remove("hidden"); hud.classList.add("hud-tut"); tutOverlay.classList.remove("hidden");
+    comboEl.classList.remove("on");
+    setupTutStep();
+    S.last=performance.now(); if(raf) cancelAnimationFrame(raf); loop();
+  }
+  function setupTutStep(){ const T=S.tut; T.stepT=0; T.heldBoth=0; T.oneUp=0; T.lastOpen=-99; T.lastLeak=-99;
+    if(T.step===2){ T.ventOk=false; } if(T.step===3){ T.perfOk=false; T.ventTries=0; }
+    if(T.step===4){ T.plugOk=false; clearLeaks(); }
+    if(T.step===5){ T.coughed=false; T.coughVentOk=false; }
+    if(T.step===6){ T.sipHeld=0; }
+    if(T.step===7){ T.waftWin=0; T.waftOk=false; }
+    if(S.cover) closeCover();
+    tutText.innerHTML=TUT_PROMPTS[T.step]; }
+  function nextTut(){ S.tut.step++; setupTutStep(); }
+  function endTutorial(){ set(L.tut,true); if(raf){ cancelAnimationFrame(raf); raf=null; } sipEnd(); S=null;
+    hud.classList.add("hidden"); hud.classList.remove("hud-tut"); tutOverlay.classList.add("hidden"); clearLeaks();
+    hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
+
+  function tutStep(dt, usableL, usableR){
+    const T=S.tut; T.stepT+=dt;
+    switch(T.step){
+      case 0:
+        if(usableL&&usableR) T.heldBoth+=dt; else T.heldBoth=0;
+        if(T.heldBoth>0.7) nextTut();
+        break;
+      case 1:
+        if(((usableL?1:0)+(usableR?1:0))===1) T.oneUp+=dt; else T.oneUp=0;
+        if(T.oneUp>0.7 || T.stepT>14) nextTut();
+        break;
+      case 2:
+        if(!S.cover && S.time-T.lastOpen>0.7){ openCover(); T.lastOpen=S.time; }
+        if(T.ventOk) nextTut();
+        break;
+      case 3:
+        if(!S.cover && S.time-T.lastOpen>0.7){ openCover(); T.lastOpen=S.time; }
+        if(T.perfOk || T.ventTries>=2) nextTut();
+        break;
+      case 4:
+        if(S.leaks.length===0 && S.time-T.lastLeak>1.2){ spawnLeak(); T.lastLeak=S.time; }
+        if(T.plugOk) nextTut();
+        break;
+      case 5: // fake cough then vent under it
+        if(!S.cover) T.coughed=false;
+        if(T.coughVentOk || T.stepT>18) nextTut();
+        break;
+      case 6: // hold sip
+        if(T.sipHeld>0.8 || T.stepT>14){ if(S.sipping) sipEnd(); nextTut(); }
+        break;
+      case 7: // waft a scripted squeak away
+        if(!T.waftOk && (!T.waftWin || S.time>T.waftWin+1.4)){
+          squeak(); shake(); T.waftWin=S.time+CFG.waftWindow;
+          floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFT IT!", "warn");
+        }
+        if(T.waftOk || T.stepT>16) nextTut();
+        break;
+      case 8:
+        if(T.stepT>2.6) endTutorial();
+        break;
+    }
+  }
+
+  function tickTutorial(dt){
+    if(S.cover && S.time>=S.coverUntil) closeCover();
+    for(let i=S.leaks.length-1;i>=0;i--){ const lk=S.leaks[i]; lk.remaining-=dt; const pp=1-lk.remaining/lk.life;
+      lk.el.style.setProperty("--pp", Math.max(0,Math.min(1,pp)).toFixed(3)); if(lk.remaining<=0) burstLeak(lk); }
+    if(S.slipL>0){ S.slipL-=dt; if(S.slipL<=0) padL.classList.remove("slipped"); }
+    if(S.slipR>0){ S.slipR-=dt; if(S.slipR<=0) padR.classList.remove("slipped"); }
+    const usableL=S.padL&&S.slipL<=0&&!S.sipping, usableR=S.padR&&S.slipR<=0&&!S.sipping;
+    const held=(usableL?1:0)+(usableR?1:0);
+    const sf=CFG.strainFill*S.M.strainFillMul;
+    if(S.sipping){ S.pressure-=CFG.sipDrain*dt; if(S.tut) S.tut.sipHeld=(S.tut.sipHeld||0)+dt; }
+    else if(held===2) S.pressure-=CFG.bothHeldDrop*dt;
+    else if(held===1) S.pressure+=riseRate()*CFG.oneHeldFactor*dt;
+    else S.pressure+=riseRate()*dt;
+    S.pressure=Math.max(0,Math.min(92,S.pressure)); // invincible in tutorial
+    if(usableL) S.strainL+=sf*dt; else if(S.slipL<=0) S.strainL-=CFG.strainRecover*dt;
+    if(usableR) S.strainR+=sf*dt; else if(S.slipR<=0) S.strainR-=CFG.strainRecover*dt;
+    S.strainL=Math.max(0,Math.min(100,S.strainL)); S.strainR=Math.max(0,Math.min(100,S.strainR));
+    if(usableL&&S.strainL>=100){ S.slipL=CFG.slipDuration; S.strainL=0; padL.classList.add("slipped"); squeak(); haptic(20); }
+    if(usableR&&S.strainR>=100){ S.slipR=CFG.slipDuration; S.strainR=0; padR.classList.add("slipped"); squeak(); haptic(20); }
+    S.time+=dt;
+    tutStep(dt, usableL, usableR);
+    if(S && S.phase==="tutorial") render();  // endTutorial() may have torn down S mid-frame
+  }
+
+  // ==================================================================
+  //  MAIN LOOP
+  // ==================================================================
+  function loop(){
+    raf=requestAnimationFrame(loop);
+    const now=performance.now(); let dt=(now-S.last)/1000; S.last=now; if(dt>0.1) dt=0.1;
+    if(S.phase==="tutorial"){ tickTutorial(dt); return; }
+    if(S.phase!=="playing") return;
+    tick(dt);
+  }
+  function tick(dt){
+    if(S.inIntro){ S.introTime-=dt; if(S.introTime<=0){ S.inIntro=false; introScreen.classList.add("hidden"); } render(); return; }
+    S.sceneTime-=dt; if(S.sceneTime<=0){ showIntro(S.scene+1); render(); return; }
+    if(S.stun>0) S.stun-=dt;
+    if(S.pendingExpose&&S.time>=S.pendingExpose){ S.pendingExpose=0; gameOver(); return; }
+
+    if(S.playMode==="cheek"&&S.time>=S.cheekSwapAt){ S.cheekSide=1-S.cheekSide; S.cheekSwapAt+=CFG.cheekSwapEvery;
+      floatText(app.clientWidth/2, app.clientHeight*0.5, S.cheekSide?"SWAP! LEFT ONLY":"SWAP! RIGHT ONLY", "gold"); haptic([10,40]); }
+
+    if(!S.cover && S.time>=S.nextCover) openCover();
+    if(S.cover && S.time>=S.coverUntil) closeCover();
+
+    if(S.time>=S.nextLeak){ if(rnd()<0.85*S.M.leakMul) spawnLeak(); S.nextLeak=S.time+(CFG.leakGapMin+rnd()*CFG.leakGapRand)*S.M.leakGapMul; }
+    for(let i=S.leaks.length-1;i>=0;i--){ const lk=S.leaks[i]; lk.remaining-=dt; const pp=1-lk.remaining/lk.life;
+      lk.el.style.setProperty("--pp", Math.max(0,Math.min(1,pp)).toFixed(3)); if(lk.remaining<=0) burstLeak(lk); }
+
+    if(S.slipL>0){ S.slipL-=dt; if(S.slipL<=0) padL.classList.remove("slipped"); }
+    if(S.slipR>0){ S.slipR-=dt; if(S.slipR<=0) padR.classList.remove("slipped"); }
+    if(S.sipCd>0) S.sipCd=Math.max(0,S.sipCd-dt);
+
+    const benchL=S.playMode==="cheek"&&S.cheekSide===0, benchR=S.playMode==="cheek"&&S.cheekSide===1;
+    const usableL=S.padL&&S.slipL<=0&&S.stun<=0&&!S.sipping&&!benchL,
+          usableR=S.padR&&S.slipR<=0&&S.stun<=0&&!S.sipping&&!benchR;
+    const held=(usableL?1:0)+(usableR?1:0);
+    const sf=CFG.strainFill*S.M.strainFillMul;
+
+    if(S.stun>0){ /* frozen */ }
+    else if(S.sipping){ S.pressure-=CFG.sipDrain*dt; if(S.pressure<=0){ S.pressure=0; sipEnd(); } }
+    else if(held===2) S.pressure-=CFG.bothHeldDrop*dt;
+    else if(held===1) S.pressure+=riseRate()*CFG.oneHeldFactor*dt;
+    else S.pressure+=riseRate()*dt;
+    if(S.pressure<0) S.pressure=0;
+
+    // whiff hazard (sipping leaves both hands off the pads, so a whiff lands at full surge)
+    if(CFG.whiffOn && S.stun<=0){
+      if(S.whiffAt>0){ if(S.time>=S.whiffAt){ const both=usableL&&usableR; S.pressure=Math.min(100,S.pressure+CFG.whiffSurge*(both?0.3:1));
+          if(!both){ squeak(); haptic(25); if(!reduceMotion){ app.classList.remove("whiff"); void app.offsetWidth; app.classList.add("whiff"); } } S.whiffAt=0; } }
+      else if(S.time>=S.nextWhiff){ startWhiff(); S.nextWhiff=S.time+(CFG.whiffGapMin+rnd()*CFG.whiffGapRand); }
+    }
+
+    if(usableL) S.strainL+=sf*dt; else if(S.slipL<=0) S.strainL-=CFG.strainRecover*dt;
+    if(usableR) S.strainR+=sf*dt; else if(S.slipR<=0) S.strainR-=CFG.strainRecover*dt;
+    S.strainL=Math.max(0,Math.min(100,S.strainL)); S.strainR=Math.max(0,Math.min(100,S.strainR));
+
+    if(usableL&&S.strainL>=100){ S.slipL=CFG.slipDuration; S.strainL=0; S.pressure=Math.min(100,S.pressure+CFG.slipSpike); padL.classList.add("slipped"); squeak(); haptic(20); }
+    if(usableR&&S.strainR>=100){ S.slipR=CFG.slipDuration; S.strainR=0; S.pressure=Math.min(100,S.pressure+CFG.slipSpike); padR.classList.add("slipped"); squeak(); haptic(20); }
+
+    if(S.pressure>=100) blowout();
+    if(S.phase!=="playing") return; // a blowout third strike may have ended the run mid-frame
+
+    S.score+=CFG.scoreIdle*dt*(1+rampLevel()*0.12);
+    S.time+=dt;
+    render();
+  }
+  // ==================================================================
+  //  RENDER
+  // ==================================================================
+  function setFlood(p){ app.style.setProperty("--p", p.toFixed(3)); }
+  function faceTier(p){ if(p<0.30) return "calm"; if(p<0.55) return "nervous"; if(p<0.80) return "strain"; return "critical"; }
+  function sweatCount(p){ if(p<0.30) return 0; if(p<0.55) return 1; if(p<0.80) return 2; return 3; }
+  function render(){
+    const p=S.pressure/100;
+    gaugeFill.style.width=Math.min(100,S.pressure).toFixed(1)+"%";
+    pctText.textContent=Math.round(S.pressure)+"%";
+    strainLbar.style.width=S.strainL.toFixed(0)+"%"; strainRbar.style.width=S.strainR.toFixed(0)+"%";
+    scoreEl.textContent=Math.round(S.score);
+    setFlood(Math.min(1,p));
+    face.style.setProperty("--flush", Math.min(1,Math.max(0,(p-0.25)/0.75)).toFixed(3));
+    if(!(S.reliefUntil && S.time<S.reliefUntil)){ S.reliefUntil=0; face.dataset.tier=faceTier(p); }
+    const sc=sweatCount(p);
+    setDrop("d1",sc>=1); setDrop("d2",sc>=2); setDrop("d3",sc>=3);
+    const armed=S.cover; ventBtn.classList.toggle("armed",armed);
+    ventMainText.textContent=armed?"VENT!":"DON’T VENT"; ventSub.textContent=armed?"release under the noise":"wait for cover noise";
+    if(armed){ const frac=Math.max(0,(S.coverUntil-S.time)/(S.coverUntil-S.coverStart)); ventTimer.style.width=(frac*100)+"%";
+      ventTimer.style.background = frac>(1-CFG.perfectFrac) ? "var(--mint)" : "var(--amber)"; }
+    else ventTimer.style.width="0%";
+    renderAbilities();
+  }
+  function dotRow(n,cap){ let s=""; for(let i=0;i<cap;i++) s+= i<n ? "●" : "○"; return s; }
+  function renderAbilities(){
+    const tut=S.phase==="tutorial", T=S.tut;
+    coughState.textContent=tut?"●●●":dotRow(S.coughCharges,CFG.coughChargeCap);
+    coughBtn.classList.toggle("depleted", !tut&&S.coughCharges<=0);
+    const cdMax=CFG.sipCooldown*(S.M.sipCdMul||1), cd=Math.max(0,S.sipCd);
+    sipCdEl.style.width= cd>0 ? ((1-cd/cdMax)*100).toFixed(1)+"%" : "0%";
+    sipState.textContent= S.sipping ? "GLUG" : (cd>0 ? Math.ceil(cd)+"s" : "READY");
+    sipBtn.classList.toggle("depleted", !tut&&cd>0&&!S.sipping);
+    waftState.textContent=tut?"●●":dotRow(S.waftCharges,CFG.waftChargeCap);
+    const waftLive=!tut&&S.playMode!=="zen"&&S.waftCharges>0&&S.strikes>0&&S.time<=S.waftUntil;
+    const tutWaft=tut&&T&&T.step===7&&T.waftWin&&S.time<=T.waftWin&&!T.waftOk;
+    waftBtn.classList.toggle("alert", !!(waftLive||tutWaft||(S.pendingExpose>0&&S.time<S.pendingExpose)));
+    waftBtn.classList.toggle("depleted", !tut&&S.waftCharges<=0);
+    waftBtn.classList.toggle("na", S.playMode==="zen");
+    if(S.playMode==="cheek"){ padL.classList.toggle("benched",S.cheekSide===0); padR.classList.toggle("benched",S.cheekSide===1); }
+  }
+  function setDrop(cls,on){ const el=face.querySelector("."+cls); el.classList.toggle("sweat",on); el.style.opacity=on?"":"0"; }
+
+  const st=document.createElement("style");
+  st.textContent='#face .v{display:none;}'+
+    '#face[data-tier="calm"] .v-calm,#face[data-tier="nervous"] .v-nervous,#face[data-tier="strain"] .v-strain,'+
+    '#face[data-tier="critical"] .v-critical,#face[data-tier="blowout"] .v-blowout,#face[data-tier="relief"] .v-relief{display:block;}';
+  document.head.appendChild(st);
+
+  // ==================================================================
+  //  FX
+  // ==================================================================
+  function floatText(x,y,text,cls){ const el=document.createElement("div"); el.className="float"+(cls?" "+cls:"");
+    el.textContent=text; el.style.left=x+"px"; el.style.top=y+"px"; fxEl.appendChild(el); setTimeout(()=>el.remove(),1000); }
+  function callout(text){ calloutEl.textContent=text; calloutEl.classList.remove("show"); void calloutEl.offsetWidth; calloutEl.classList.add("show"); }
+  function roomReact(){ const sc=curScene(); const line=sc.reacts[Math.min(S.strikes-1, sc.reacts.length-1)];
+    reactEl.textContent=line; reactEl.classList.add("show"); setTimeout(()=>reactEl.classList.remove("show"),1400); }
+  function shake(){ if(reduceMotion) return; app.classList.remove("shake"); void app.offsetWidth; app.classList.add("shake"); }
+
+  // ==================================================================
+  //  INPUT
+  // ==================================================================
+  function bindPad(el,key){ const set=new Set();
+    el.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); set.add(e.pointerId); el.classList.add("down"); if(S) S[key]=true; try{ el.setPointerCapture(e.pointerId);}catch(_){}});
+    const up=e=>{ if(!set.has(e.pointerId)) return; set.delete(e.pointerId); if(set.size===0){ el.classList.remove("down"); if(S) S[key]=false; } };
+    el.addEventListener("pointerup",up); el.addEventListener("pointercancel",up); el.addEventListener("lostpointercapture",up); }
+  bindPad(padL,"padL"); bindPad(padR,"padR");
+  ventBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doVent(); });
+  coughBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doCough(); });
+  waftBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doWaft(); });
+  (function(){ const set=new Set();
+    sipBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); set.add(e.pointerId); sipStart(); try{ sipBtn.setPointerCapture(e.pointerId);}catch(_){}});
+    const up=e=>{ if(!set.has(e.pointerId)) return; set.delete(e.pointerId); if(set.size===0) sipEnd(); };
+    sipBtn.addEventListener("pointerup",up); sipBtn.addEventListener("pointercancel",up); sipBtn.addEventListener("lostpointercapture",up); })();
+
+  const down={};
+  window.addEventListener("keydown",e=>{ if(down[e.code]) return; down[e.code]=true;
+    if(e.code==="KeyF"){ padL.classList.add("down"); if(S) S.padL=true; }
+    if(e.code==="KeyJ"){ padR.classList.add("down"); if(S) S.padR=true; }
+    if(e.code==="Space"){ e.preventDefault(); doVent(); }
+    if(e.code==="KeyC"){ doCough(); }
+    if(e.code==="KeyS"){ sipStart(); }
+    if(e.code==="KeyW"){ doWaft(); }
+    if(e.code==="Escape"){ if(S&&S.phase==="playing") pauseGame(); else if(S&&S.phase==="paused") resumeGame(); } });
+  window.addEventListener("keyup",e=>{ down[e.code]=false;
+    if(e.code==="KeyF"){ padL.classList.remove("down"); if(S) S.padL=false; }
+    if(e.code==="KeyJ"){ padR.classList.remove("down"); if(S) S.padR=false; }
+    if(e.code==="KeyS"){ sipEnd(); } });
+
+  document.addEventListener("visibilitychange",()=>{ if(document.hidden && S && S.phase==="playing") pauseGame(); });
+  window.addEventListener("blur",()=>{ if(S && S.phase==="playing") pauseGame(); });
+  document.addEventListener("gesturestart",e=>e.preventDefault());
+  document.addEventListener("dblclick",e=>e.preventDefault());
+
+  document.querySelectorAll("#diffRow .mode-btn").forEach(b=>b.addEventListener("click",()=>{
+    chosenMode=b.dataset.mode; document.querySelectorAll("#diffRow .mode-btn").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); refreshMenu(); }));
+  document.querySelectorAll(".play-btn").forEach(b=>b.addEventListener("click",()=>{
+    chosenPlay=b.dataset.play; document.querySelectorAll(".play-btn").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false"));
+    diffRow.classList.toggle("disabled", chosenPlay==="daily"); refreshMenu(); }));
+  $("startBtn").addEventListener("click",()=>begin(chosenMode,chosenPlay));
+  $("againBtn").addEventListener("click",()=>begin(S?S.modeKey:chosenMode, S?S.playMode:chosenPlay));
+  $("menuBtn").addEventListener("click",toMenu);
+  $("pauseBtn").addEventListener("click",pauseGame);
+  $("resumeBtn").addEventListener("click",resumeGame);
+  $("quitBtn").addEventListener("click",()=>{ if(S) gameOver(); });
+  $("howBtn").addEventListener("click",startTutorial);
+  $("tutSkip").addEventListener("click",endTutorial);
+  $("medalsBtn").addEventListener("click",openMedals);
+  $("statsBtn").addEventListener("click",openStats);
+  $("wardBtn").addEventListener("click",openWard);
+  $("medalsClose").addEventListener("click",toMenu);
+  $("statsClose").addEventListener("click",toMenu);
+  $("wardClose").addEventListener("click",toMenu);
+
+  const soundToggle=$("soundToggle"), hapticToggle=$("hapticToggle");
+  function syncToggles(){ soundToggle.setAttribute("aria-pressed", soundOn?"true":"false"); soundToggle.textContent=(soundOn?"🔊":"🔇")+" Sound";
+    hapticToggle.setAttribute("aria-pressed", hapticOn?"true":"false"); hapticToggle.textContent=(hapticOn?"📳":"📴")+" Haptics"; }
+  soundToggle.addEventListener("click",()=>{ soundOn=!soundOn; set(K.snd,soundOn); if(soundOn) unlockAudio(); syncToggles(); });
+  hapticToggle.addEventListener("click",()=>{ hapticOn=!hapticOn; set(K.hap,hapticOn); if(hapticOn) haptic(15); syncToggles(); });
+
+  function refreshMenu(){
+    const bk = chosenPlay==="stage" ? chosenMode : chosenPlay;
+    $("menuBest").textContent=get(K.best(bk),0); $("menuSun").textContent=get(K.sun,0); $("menuPlays").textContent=get(K.plays,0);
+    dailyNote.classList.toggle("hidden", chosenPlay!=="daily");
+    if(chosenPlay==="daily"){ const D=get(L.daily,{streak:0,last:0,best:0});
+      const live=D.last===dayKey()||D.last===dayKey(-1);
+      dailyNote.textContent="Daily streak "+(live?D.streak:0)+". Best today "+(D.last===dayKey()?D.best:0)+"."; }
+  }
+
+  // ==================================================================
+  //  PWA manifest (inline, self-contained — installable, no extra files)
+  // ==================================================================
+  try{
+    const ic=(sz)=>{ const c=document.createElement("canvas"); c.width=c.height=sz; const x=c.getContext("2d");
+      x.fillStyle="#2f3d34"; x.fillRect(0,0,sz,sz); const cx=sz/2, r=sz*0.30;
+      x.fillStyle="#e8c9a0"; x.beginPath(); x.arc(cx,cx,r,0,7); x.fill();
+      x.fillStyle="#2a2018"; x.beginPath(); x.arc(cx-r*0.35,cx-r*0.1,r*0.12,0,7); x.arc(cx+r*0.35,cx-r*0.1,r*0.12,0,7); x.fill();
+      x.strokeStyle="#7a3b2e"; x.lineWidth=sz*0.02; x.beginPath(); x.moveTo(cx-r*0.4,cx+r*0.35); x.lineTo(cx+r*0.4,cx+r*0.35); x.stroke();
+      x.fillStyle="#7fc7e8"; x.beginPath(); x.arc(cx+r*0.75,cx-r*0.5,sz*0.04,0,7); x.fill();
+      return c.toDataURL("image/png"); };
+    const manifest={ name:"Flatulence Fighter", short_name:"Flatulence", description:"Keep your composure. Vent only under cover of noise.",
+      display:"standalone", orientation:"portrait", background_color:"#2b3a31", theme_color:"#2f3d34", start_url:".",
+      icons:[{src:ic(192),sizes:"192x192",type:"image/png"},{src:ic(512),sizes:"512x512",type:"image/png"}] };
+    const blob=new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"});
+    const link=document.createElement("link"); link.rel="manifest"; link.href=URL.createObjectURL(blob); document.head.appendChild(link);
+    const al=document.createElement("link"); al.rel="apple-touch-icon"; al.href=ic(192); document.head.appendChild(al);
+  }catch(e){}
+
+  // ==================================================================
+  //  SKY WOLF SUNBEAMS (30/day shared cap; run amount capped at 12 upstream)
+  // ==================================================================
+  try{ if(window.Sunbeam&&Sunbeam.init) Sunbeam.init({gameId:"flatulence-fighter"}); }catch(e){}
+  window._sbCapEarn=function(n,tag){ var granted=0;
+    try{ var k='sw_sb_flatulencefighter'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+      var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+      s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+    if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+  window.SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  if(window.SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+
+  // init — first-timers get the tutorial automatically
+  const FFTEST=/[?&]fftest=1/.test(location.search);
+  const W0=loadWard(); applyCharacter(W0.eqChar); applyPalette(W0.eqPal);
+  syncToggles(); refreshMenu();
+  if(!get(L.tut,false) && !FFTEST){ startTutorial(); }
+
+  // ==================================================================
+  //  HEADLESS TEST HOOK (?fftest=1)
+  // ==================================================================
+  if(FFTEST){
+    window.FF_DEV={
+      start:function(play,diff){ chosenPlay=play||"stage"; chosenMode=diff||"normal";
+        begin(chosenMode,chosenPlay); if(raf){ cancelAnimationFrame(raf); raf=null; } return true; },
+      startTut:function(){ startTutorial(); if(raf){ cancelAnimationFrame(raf); raf=null; } return true; },
+      endTut:endTutorial,
+      state:function(){ if(!S) return null;
+        const o={ phase:S.phase, playMode:S.playMode, mode:S.modeKey, pressure:S.pressure, strikes:S.strikes,
+          score:S.score, time:S.time, combo:S.combo, cough:S.coughCharges, waft:S.waftCharges, sipCd:S.sipCd,
+          sipping:S.sipping, scene:S.scene, leaks:S.leaks.length, cover:S.cover, coverType:S.coverType,
+          coverSelf:S.coverSelf, strainL:S.strainL, strainR:S.strainR, pendingExpose:S.pendingExpose,
+          tutStep:S.tut?S.tut.step:-1 };
+        o.nan=Object.keys(o).some(k=>typeof o[k]==="number"&&!isFinite(o[k])); return o; },
+      setPads:function(l,r){ if(S){ S.padL=!!l; S.padR=!!r; } },
+      vent:doVent, cough:doCough, waft:doWaft,
+      sip:function(on){ if(on) sipStart(); else sipEnd(); },
+      forceCover:function(self){ if(S&&!S.cover) openCover(!!self); },
+      forceLeak:function(){ if(S) spawnLeak(); },
+      forceWhiff:function(){ if(S) startWhiff(); },
+      forceStrike:function(){ if(S) addStrike(); },
+      plugFirst:function(){ if(S&&S.leaks[0]) plugLeak(S.leaks[0]); },
+      step:function(sec){ const n=Math.round((sec||1)*60);
+        for(let i=0;i<n;i++){ if(!S) break;
+          if(S.phase==="tutorial") tickTutorial(1/60);
+          else if(S.phase==="playing") tick(1/60);
+          else break; }
+        return window.FF_DEV.state(); },
+      autoplay:function(sec){ const n=Math.round((sec||10)*60);
+        for(let i=0;i<n;i++){ if(!S||(S.phase!=="playing"&&S.phase!=="tutorial")) break;
+          if(i%6===0&&S.phase==="playing"&&!S.inIntro){
+            if(!S.sipping){
+              if(S.strainL>=80&&S.strainR<80){ S.padL=false; S.padR=true; }
+              else if(S.strainR>=80&&S.strainL<80){ S.padR=false; S.padL=true; }
+              else { S.padL=S.strainL<55; S.padR=S.strainR<55; }
+            }
+            if(S.cover) doVent();
+            if(S.leaks.length) plugLeak(S.leaks[0]);
+            if((S.pendingExpose>0||(S.strikes>0&&S.time<=S.waftUntil))&&S.waftCharges>0) doWaft();
+            if(!S.cover&&S.pressure>72&&S.coughCharges>0&&S.stun<=0) doCough();
+            if(S.pressure>85&&S.sipCd<=0&&!S.sipping&&S.stun<=0) sipStart();
+            if(S.sipping&&S.pressure<25) sipEnd();
+          }
+          if(S.phase==="tutorial") tickTutorial(1/60); else tick(1/60); }
+        return window.FF_DEV.state(); },
+      earnTest:function(){ return window._sbCapEarn(3,"ff:test"); },
+      medals:function(){ return get(L.medals,[]); },
+      ward:loadWard, evalCosmetics:evalCosmetics, buildWard:buildWard,
+      lset:set, lget:get, L:L, K:K, CFG:CFG,
+    };
+  }
+})();
+</script>
+</body>
+</html>
