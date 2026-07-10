@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Crect x='7' y='7' width='8' height='8' rx='2' fill='%237ab356'/%3E%3Crect x='17' y='7' width='8' height='8' rx='2' fill='%23c8a84b'/%3E%3Crect x='7' y='17' width='8' height='8' rx='2' fill='%23e58fa0'/%3E%3Crect x='17' y='17' width='8' height='8' rx='2' fill='%235b9bd5'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Leaf Fit">
+<title>Leaf Fit — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"leaffit"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:52px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #16250d, 0 0 26px #7ab35644; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#8ec462,#5f9a3c); color:#0c1608; border-color:#b6e28a; box-shadow:0 4px 0 #2f5323, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.wardwrap{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.wardcard{width:140px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:10px; cursor:pointer; text-align:center}
+.wardcard.locked{opacity:.5}
+.wardcard.on{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold)}
+.wardcard canvas{width:96px; height:64px; display:block; margin:0 auto 6px}
+.wardcard .wn{font-size:13px; font-weight:700; color:var(--cream)}
+.wardcard .wt{font-size:11px; color:var(--muted); margin-top:2px}
+.grovewrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.go-big{font-size:26px; font-weight:800; color:var(--sage); line-height:1.1}
+.go-stars{font-size:44px; letter-spacing:6px; margin:6px 0; height:52px}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
+.sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Leaf Fit</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Drag leaf sprigs onto the midnight trellis. Fill a whole <b class="hl">row</b>, <b class="hl">column</b>, or <b class="hl">3×3 patch</b> and it clears in a shower of pollen. Bank enough pollen and a <b class="hl">Bloom</b> saves you when the bed fills up — you only ever lose to your own play.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-run">🌿&nbsp; Bloom Run</button>
+      <div class="row">
+        <button class="btn sm" id="b-daily">📅 Daily Trellis</button>
+        <button class="btn sm" id="b-gaunt">🏵 Gauntlet</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-zen">🍃 Zen Trellis</button>
+        <button class="btn sm" id="b-grove">🌼 Grove</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-ward">🎀 Wardrobe</button>
+        <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-set">⚙</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">👆</div><div><b>Drag a sprig</b> from the tray onto the trellis. A ghost shows where it lands; green means a line will clear.</div></div>
+    <div class="helprow"><div class="hi">🟩</div><div>Fill any full <b>row</b>, <b>column</b>, or <b class="hl">3×3 patch</b> to clear it. Clear several at once for a bigger <b>combo</b>.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div>Cleared leaves drift into <b class="hl">Nectar</b>. When it's full, tap <b>Bloom</b> to deal three fresh sprigs — recovery you earned, never bought.</div></div>
+    <div class="helprow"><div class="hi">🍂</div><div>No timer, no ads. The bed fills up only when nothing fits and your Nectar is empty. Play smart and the run never has to end.</div></div>
+    <div class="helprow"><div class="hi">🌼</div><div>Good runs grow keepsake flowers into your <b class="hl">Grove</b> and pay sunbeams.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Comfort</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
+    <div class="settingline"><span>Colorblind symbols</span><div class="toggle" id="tg-cb"><b></b></div></div>
+    <div class="settingline"><span>Pre-clear glow</span><div class="toggle on" id="tg-glow"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- WARDROBE -->
+  <div class="screen" id="s-ward"><div class="pad">
+    <h2 class="sc-h">Wardrobe</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Earn cosmetics by playing. Tap to equip.</div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Leaf sets</div>
+    <div class="wardwrap" id="ward-leaves"></div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:16px 0 8px">Trellises</div>
+    <div class="wardwrap" id="ward-boards"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="ward-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- GROVE -->
+  <div class="screen" id="s-grove"><div class="pad">
+    <h2 class="sc-h">Your Grove</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px" id="grove-sub">Good runs grow keepsake flowers here.</div>
+    <div class="grovewrap" id="grove-wrap"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="grove-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- RESULTS -->
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="go-big" id="go-title">The bed is full</div>
+    <div class="go-stars" id="go-stars">✿✿✿</div>
+    <div class="go-lab" id="go-lab">score</div>
+    <div style="font-size:34px;font-weight:800;color:var(--cream)" id="go-score">0</div>
+    <div class="pill" id="go-best">best 0</div>
+    <div style="margin-top:8px;font-size:14px;color:var(--sage)" id="go-bloom">Best combo 0 · grew 0 flowers</div>
+    <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="go-retry">↻ Again</button>
+      <div class="row">
+        <button class="btn sm" id="go-grove">🌼 Grove</button>
+        <button class="btn sm" id="go-home">◄ Menu</button>
+        <button class="btn sm" id="go-share">↗ Share</button>
+      </div>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
+var BUILD='v1.0';
+var TESTMODE=/[?&]lftest=1/.test(location.search);
+
+/* board geometry (9x9 authentic Woodoku with 3x3 boxes) */
+var BN=9, BCELL=48, BW=BCELL*BN, BX=Math.round((VW-BW)/2), BY=128;
+var TRAY_Y=BY+BW+30, TRAY_H=132, TCELL=22;
+var NECT_MAX=100;
+
+/* ---------- storage + settings ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, haptic:true, cb:false, glow:true };
+(function(){ try{ var s=JSON.parse(LS.get('lf_set')||'{}'); ['sound','haptic','cb','glow'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+function saveSet(){ LS.set('lf_set', JSON.stringify(SET)); }
+
+/* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_leaffit'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- save / economy ---------- */
+var PROG={ best:0, bestDaily:0, streak:0, lastDaily:'', dailyDone:'', totalClears:0, blooms:[], grewTotal:0,
+  leaf:0, board:0, owned:{} };
+(function(){ try{ var s=JSON.parse(LS.get('leaffit_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} if(!PROG.blooms)PROG.blooms=[]; if(!PROG.owned)PROG.owned={}; })();
+function save(){ try{ LS.set('leaffit_save', JSON.stringify(PROG)); }catch(e){} }
+
+/* ---------- species (color + shape symbol for colorblind) ---------- */
+/* base leaf palette (leaf set 0). skins remap the palette. */
+var LEAFSETS=[
+  {id:0, nm:'Meadow', need:0, cols:['#7ab356','#c8a84b','#e58fa0','#5b9bd5','#b57de0','#D4842A'], desc:'Starter'},
+  {id:1, nm:'Ember', need:2500, kind:'best', cols:['#e0894a','#d9b85a','#e56b6b','#c8a84b','#b5623a','#f0c96b'], desc:'Score 2,500'},
+  {id:2, nm:'Frost', need:80, kind:'clears', cols:['#8fc3ea','#bfe0f2','#a0c4e8','#cfe6f2','#7fa8c8','#e8f2fa'], desc:'80 clears'},
+  {id:3, nm:'Orchid', need:5, kind:'streak', cols:['#b57de0','#e58fa0','#d9a0e8','#c8a84b','#9d6fd0','#f2c6d2'], desc:'5-day streak'}
+];
+var SYMS=['dot','star','heart','diamond','hex','plus'];
+var BOARDS=[
+  {id:0, nm:'Willow', need:0, cell:'#141d10', grid:'#2a331f', desc:'Starter'},
+  {id:1, nm:'Slate', need:1200, kind:'best', cell:'#16181c', grid:'#333844', desc:'Score 1,200'},
+  {id:2, nm:'Loam', need:40, kind:'clears', cell:'#1c150f', grid:'#3a2c1e', desc:'40 clears'}
+];
+function metric(kind){ return kind==='clears'?(PROG.totalClears||0):(kind==='streak'?(PROG.streak||0):(PROG.best||0)); }
+function ownedC(arr,it){ if(it.need===0)return true; if(PROG.owned[arr+it.id])return true; return metric(it.kind)>=it.need; }
+function curLeaf(){ var s=LEAFSETS[PROG.leaf]||LEAFSETS[0]; return ownedC('leaf',s)?s:LEAFSETS[0]; }
+function curBoard(){ var b=BOARDS[PROG.board]||BOARDS[0]; return ownedC('board',b)?b:BOARDS[0]; }
+
+/* ---------- pieces (normalized [r,c] offsets) + weights ---------- */
+var PIECES=[
+  {w:5, c:[[0,0]]},
+  {w:6, c:[[0,0],[0,1]]}, {w:6, c:[[0,0],[1,0]]},
+  {w:6, c:[[0,0],[0,1],[0,2]]}, {w:6, c:[[0,0],[1,0],[2,0]]},
+  {w:3, c:[[0,0],[0,1],[0,2],[0,3]]}, {w:3, c:[[0,0],[1,0],[2,0],[3,0]]},
+  {w:1, c:[[0,0],[0,1],[0,2],[0,3],[0,4]]}, {w:1, c:[[0,0],[1,0],[2,0],[3,0],[4,0]]},
+  {w:5, c:[[0,0],[0,1],[1,0],[1,1]]},
+  {w:2, c:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]]}, {w:2, c:[[0,0],[0,1],[1,0],[1,1],[2,0],[2,1]]},
+  {w:1, c:[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]]},
+  /* L trominoes (4 rot) */
+  {w:5, c:[[0,0],[1,0],[1,1]]}, {w:5, c:[[0,0],[0,1],[1,0]]}, {w:5, c:[[0,0],[0,1],[1,1]]}, {w:5, c:[[0,1],[1,0],[1,1]]},
+  /* corner pentominoes (4 rot) */
+  {w:3, c:[[0,0],[1,0],[2,0],[2,1],[2,2]]}, {w:3, c:[[0,0],[0,1],[0,2],[1,0],[2,0]]},
+  {w:3, c:[[0,0],[0,1],[0,2],[1,2],[2,2]]}, {w:3, c:[[0,2],[1,2],[2,0],[2,1],[2,2]]},
+  /* T tetromino (4 rot) */
+  {w:3, c:[[0,0],[0,1],[0,2],[1,1]]}, {w:3, c:[[0,0],[1,0],[2,0],[1,1]]},
+  {w:3, c:[[0,1],[1,0],[1,1],[1,2]]}, {w:3, c:[[0,1],[1,0],[1,1],[2,1]]},
+  /* S / Z */
+  {w:3, c:[[0,1],[0,2],[1,0],[1,1]]}, {w:3, c:[[0,0],[1,0],[1,1],[2,1]]},
+  {w:3, c:[[0,0],[0,1],[1,1],[1,2]]}, {w:3, c:[[0,1],[1,0],[1,1],[2,0]]}
+];
+var PW=0; for(var _i=0;_i<PIECES.length;_i++){ var p=PIECES[_i]; var mr=0,mc=0; for(var _j=0;_j<p.c.length;_j++){ if(p.c[_j][0]>mr)mr=p.c[_j][0]; if(p.c[_j][1]>mc)mc=p.c[_j][1]; } p.rows=mr+1; p.cols=mc+1; p.n=p.c.length; PW+=p.w; }
+function pickPiece(rng){ var r=rng()*PW; for(var i=0;i<PIECES.length;i++){ r-=PIECES[i].w; if(r<=0)return PIECES[i]; } return PIECES[0]; }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function blip(freq,dur,type,vol){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.value=(vol||0.14); o.connect(g); g.connect(c.destination); var t=c.currentTime; g.gain.setValueAtTime(vol||0.14,t); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.12)); o.start(t); o.stop(t+(dur||0.12)); }catch(e){} }
+function sfx(kind,n){ if(!SET.sound)return;
+  if(kind==='place')blip(220,0.06,'triangle',0.09);
+  else if(kind==='clear'){ var base=523*Math.pow(1.0595,Math.min(14,(n||1)*2)); blip(base,0.16,'sine',0.15); }
+  else if(kind==='bloom'){ blip(523,0.14,'triangle',0.16); setTimeout(function(){blip(784,0.22,'triangle',0.15);},120); }
+  else if(kind==='perfect'){ blip(659,0.2,'sine',0.17); setTimeout(function(){blip(988,0.3,'sine',0.16);},150); }
+  else if(kind==='full')blip(140,0.34,'sine',0.12);
+  else if(kind==='ui')blip(440,0.05,'sine',0.08);
+  else if(kind==='no')blip(180,0.08,'sawtooth',0.05);
+}
+function closeAC(){ try{ if(AC){AC.close();AC=null;} }catch(e){} }
+function haptic(ms){ if(SET.haptic&&navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
+
+/* ---------- rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function dateSeed(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function todayStr(){ return ''+dateSeed(); }
+
+/* ---------- canvas ---------- */
+var cv=$('game'), ctx=cv.getContext('2d');
+function fitCanvas(){ cv.width=VW*DPR; cv.height=VH*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
+fitCanvas();
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='scale('+s+')'; }
+window.addEventListener('resize',fit); fit();
+
+/* ---------- seasons (ambient particle bed) ---------- */
+var SEASONS=[
+  {nm:'Spring', tint:'#E8A0BF'}, {nm:'Summer', tint:'#D4A843'},
+  {nm:'Autumn', tint:'#D4842A'}, {nm:'Winter', tint:'#A0C4E8'}
+];
+
+/* ---------- game state ---------- */
+var G=null, running=false, lastTs=0, curScreen='s-title';
+function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=false; }
+function toPlay(){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); curScreen='s-play'; running=true; lastTs=0; requestAnimationFrame(loop); }
+
+function idx(r,c){ return r*BN+c; }
+function startGame(mode){
+  var rng = mode==='daily'?mulberry32(dateSeed()) : (mode==='gauntlet'?mulberry32(dateSeed()*7+91) : mulberry32(Math.floor(Math.random()*1e9)));
+  G={ mode:mode, rng:rng, grid:[], tray:[null,null,null], score:0, combo:0, bestCombo:0, clears:0, placed:0,
+    nectar:0, phase:'play', t:0, parts:[], floats:[], drag:null, ghost:null, season:(mode==='daily'?dateSeed()%4:Math.floor(Math.random()*4)),
+    grew:0, sunAmt:0, rescueGlow:0, glowT:0 };
+  for(var i=0;i<BN*BN;i++)G.grid[i]=0;
+  // gauntlet: pre-fill leaf-litter + start with less nectar headroom
+  if(mode==='gauntlet'){ var pre=10; var g=0; while(g<pre){ var rr=Math.floor(G.rng()*BN), cc=Math.floor(G.rng()*BN); if(!G.grid[idx(rr,cc)]){ G.grid[idx(rr,cc)]=1+Math.floor(G.rng()*6); g++; } } }
+  refillTray(true);
+  toPlay();
+}
+function newPiece(){ var base=pickPiece(G.rng); return { c:base.c, rows:base.rows, cols:base.cols, n:base.n, sp:1+Math.floor(G.rng()*6) }; }
+function refillTray(force){ // fill any empty slots when all empty (Woodoku deals 3 at a time)
+  var allEmpty=true; for(var i=0;i<3;i++){ if(G.tray[i])allEmpty=false; }
+  if(allEmpty||force){ for(var j=0;j<3;j++)G.tray[j]=newPiece(); }
+}
+
+/* ---------- placement logic ---------- */
+function fitsAt(piece,r0,c0){ for(var i=0;i<piece.c.length;i++){ var R=r0+piece.c[i][0], C=c0+piece.c[i][1];
+    if(R<0||R>=BN||C<0||C>=BN)return false; if(G.grid[idx(R,C)]!==0)return false; } return true; }
+function canFit(piece){ for(var r=0;r<BN;r++)for(var c=0;c<BN;c++){ if(fitsAt(piece,r,c))return true; } return false; }
+function canPlaceAny(){ for(var i=0;i<3;i++){ if(G.tray[i]&&canFit(G.tray[i]))return true; } return false; }
+function trayCount(){ var n=0; for(var i=0;i<3;i++)if(G.tray[i])n++; return n; }
+
+// which lines WILL clear if piece placed at r0,c0 (for ghost pre-glow). returns {rows,cols,boxes}
+function previewClears(piece,r0,c0){
+  var tmp={}; for(var i=0;i<piece.c.length;i++){ tmp[idx(r0+piece.c[i][0], c0+piece.c[i][1])]=1; }
+  function filled(k){ return G.grid[k]!==0 || tmp[k]; }
+  var rows=[],cols=[],boxes=[];
+  for(var r=0;r<BN;r++){ var full=true; for(var c=0;c<BN;c++){ if(!filled(idx(r,c))){full=false;break;} } if(full)rows.push(r); }
+  for(var c2=0;c2<BN;c2++){ var f2=true; for(var r2=0;r2<BN;r2++){ if(!filled(idx(r2,c2))){f2=false;break;} } if(f2)cols.push(c2); }
+  for(var br=0;br<3;br++)for(var bc=0;bc<3;bc++){ var f3=true; for(var rr=0;rr<3;rr++){ for(var cc=0;cc<3;cc++){ if(!filled(idx(br*3+rr,bc*3+cc))){f3=false;} } } if(f3)boxes.push(br*3+bc); }
+  return {rows:rows,cols:cols,boxes:boxes};
+}
+
+function placePiece(slot,r0,c0){
+  var piece=G.tray[slot]; if(!piece)return false; if(!fitsAt(piece,r0,c0)){ sfx('no'); return false; }
+  for(var i=0;i<piece.c.length;i++){ G.grid[idx(r0+piece.c[i][0], c0+piece.c[i][1])]=piece.sp; }
+  G.score += piece.n; G.placed++;
+  G.tray[slot]=null;
+  sfx('place'); haptic(8);
+  resolveClears(r0,c0,piece);
+  refillTray(false);
+  // stuck check
+  if(!canPlaceAny()) onStuck();
+  save();
+  return true;
+}
+
+function resolveClears(r0,c0,piece){
+  var rows=[],cols=[],boxes=[];
+  for(var r=0;r<BN;r++){ var full=true; for(var c=0;c<BN;c++){ if(!G.grid[idx(r,c)]){full=false;break;} } if(full)rows.push(r); }
+  for(var c2=0;c2<BN;c2++){ var f2=true; for(var r2=0;r2<BN;r2++){ if(!G.grid[idx(r2,c2)]){f2=false;break;} } if(f2)cols.push(c2); }
+  for(var br=0;br<3;br++)for(var bc=0;bc<3;bc++){ var f3=true; for(var rr=0;rr<3;rr++)for(var cc=0;cc<3;cc++){ if(!G.grid[idx(br*3+rr,bc*3+cc)])f3=false; } if(f3)boxes.push([br,bc]); }
+  var lines=rows.length+cols.length+boxes.length;
+  if(lines===0){ G.combo=0; return; }
+  // collect cells to clear
+  var mark={}; var cellCount=0; var ci;
+  for(ci=0;ci<rows.length;ci++){ for(var c=0;c<BN;c++)mark[idx(rows[ci],c)]=1; }
+  for(ci=0;ci<cols.length;ci++){ for(var r=0;r<BN;r++)mark[idx(r,cols[ci])]=1; }
+  for(ci=0;ci<boxes.length;ci++){ var b=boxes[ci]; for(var rr2=0;rr2<3;rr2++)for(var cc2=0;cc2<3;cc2++)mark[idx(b[0]*3+rr2,b[1]*3+cc2)]=1; }
+  for(var k in mark){ if(mark.hasOwnProperty(k)){ k=parseInt(k,10); var rr3=Math.floor(k/BN), cc3=k%BN;
+    var sp=G.grid[k]; G.grid[k]=0; cellCount++; spawnClearFx(BX+cc3*BCELL+BCELL/2, BY+rr3*BCELL+BCELL/2, sp); } }
+  G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo;
+  G.clears += lines; PROG.totalClears=(PROG.totalClears||0)+lines;
+  var multi = 1 + 0.5*(lines-1); var comboMul = 1 + 0.2*(G.combo-1);
+  var gained = Math.round(lines*18*multi*comboMul);
+  // perfect (empty board) bonus
+  var empty=true; for(var e=0;e<BN*BN;e++){ if(G.grid[e]){ empty=false; break; } }
+  if(empty){ gained+=150; sfx('perfect'); floatUp(VW/2, BY+BW/2, 'PERFECT +150'); petalBurst(VW/2,BY+BW/2); }
+  G.score += gained;
+  floatUp(BX+c0*BCELL, BY+r0*BCELL, '+'+gained + (G.combo>1?(' x'+G.combo):''));
+  // nectar
+  var gainN = cellCount*3 + (lines-1)*6; if(G.mode==='gauntlet')gainN=Math.round(gainN*0.7);
+  G.nectar=Math.min(NECT_MAX, G.nectar+gainN); if(G.nectar>=NECT_MAX)G.rescueGlow=1;
+  sfx('clear',lines); haptic(lines>1?[10,30,10]:14);
+}
+
+function bloomSwap(){ if(G.mode!=='zen' && G.nectar<NECT_MAX)return false;
+  if(G.mode!=='zen')G.nectar-=NECT_MAX; G.rescueGlow=0;
+  for(var i=0;i<3;i++)G.tray[i]=newPiece(); // fresh hand (no recursion — player/bot may bloom again)
+  sfx('bloom'); haptic([8,24,8]); floatUp(VW/2, TRAY_Y-6, 'Bloom!'); petalBurst(VW/2, TRAY_Y+40);
+  save(); return true;
+}
+function onStuck(){
+  if(G.mode==='zen'){ bloomSwap(); return; }        // free rescue (no recursion)
+  if(G.nectar>=NECT_MAX){ return; }                 // player can tap Bloom to rescue; not game over yet
+  endRun(false);
+}
+
+/* ---------- fx ---------- */
+function spawnClearFx(x,y,sp){ var col=curLeaf().cols[(sp-1)%6]; var n=3;
+  for(var i=0;i<n;i++){ G.parts.push({x:x,y:y,vx:(Math.random()*2-1)*40,vy:-30-Math.random()*40,life:1,col:col,r:2+Math.random()*2, toN:true}); }
+  if(G.parts.length>160)G.parts.splice(0,G.parts.length-160);
+}
+function petalBurst(x,y){ for(var i=0;i<14;i++){ var a=Math.random()*6.28,s=40+Math.random()*120; G.parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40,life:1.2,col:['#e58fa0','#c8a84b','#bfe0f2','#b57de0'][i%4],r:2+Math.random()*3}); } if(G.parts.length>180)G.parts.splice(0,G.parts.length-180); }
+function floatUp(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.1}); if(G.floats.length>10)G.floats.shift(); }
+
+/* ---------- run end ---------- */
+function endRun(win){ if(G.phase!=='play')return; G.phase='over'; sfx('full');
+  var grow = Math.floor(G.clears/6) + (G.bestCombo>=3?1:0); if(G.mode==='zen')grow=Math.min(grow,2);
+  G.grew=grow;
+  for(var i=0;i<grow;i++)PROG.blooms.push(((G.score*97+G.bestCombo*7+i*131+(PROG.grewTotal||0)*17)*2654435761)>>>0);
+  if(PROG.blooms.length>240)PROG.blooms=PROG.blooms.slice(-240);
+  PROG.grewTotal=(PROG.grewTotal||0)+grow;
+  if(G.mode!=='zen' && G.score>(PROG.best||0))PROG.best=G.score;
+  if(G.mode==='daily' && G.score>(PROG.bestDaily||0))PROG.bestDaily=G.score;
+  var amt=0;
+  if(G.mode==='run')amt=Math.min(12, Math.floor(G.score/400)+Math.floor(G.clears/4));
+  else if(G.mode==='daily'){ var first=(PROG.dailyDone!==todayStr());
+    if(first){ var yd=''+(dateSeed()-1); PROG.streak=(PROG.lastDaily===yd)?(PROG.streak||0)+1:1; PROG.lastDaily=todayStr(); PROG.dailyDone=todayStr();
+      amt=Math.min(12, 3+Math.floor(G.score/500)+Math.floor(G.clears/5)); }
+    else amt=0; }
+  else if(G.mode==='gauntlet')amt=Math.min(12, 2+Math.floor(G.score/350));
+  var granted=0; if(amt>0){ try{ if(window._sbCapEarn)granted=window._sbCapEarn(amt,'leaffit:'+G.mode)||0; }catch(e){} }
+  G.sunAmt=granted; save();
+  showResults();
+}
+function endZen(){ endRun(false); } // zen only ends by the player quitting to menu
+function showResults(){
+  $('go-title').textContent = (G.mode==='zen'?'A cozy trellis':'The bed is full');
+  var starN = Math.min(3, (G.bestCombo>=5?3:G.bestCombo>=3?2:G.clears>=3?1:0));
+  var s=''; for(var i=0;i<3;i++)s+=(i<starN?'✿':'·'); $('go-stars').textContent=s;
+  $('go-score').textContent=G.score;
+  $('go-lab').textContent='score · '+G.clears+' clears';
+  var best = G.mode==='daily'?('daily best '+(PROG.bestDaily||0)):('best '+(PROG.best||0));
+  $('go-best').textContent=best;
+  $('go-bloom').textContent='Best combo '+G.bestCombo+' · grew '+G.grew+' flower'+(G.grew===1?'':'s');
+  $('go-sun').textContent = G.sunAmt>0?('☀ +'+G.sunAmt+' sunbeams'):(G.mode==='zen'?'a cozy tend':(G.mode==='daily'?'daily already claimed':'☀ no sunbeams this run'));
+  running=false; show('s-go');
+}
+
+/* ---------- render ---------- */
+function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.06)dt=0.06;
+  step(dt); render(); if(running)requestAnimationFrame(loop); }
+function step(dt){ if(!G)return; G.t+=dt; if(G.rescueGlow>0)G.rescueGlow=1; G.glowT+=dt;
+  for(var i=G.parts.length-1;i>=0;i--){ var p=G.parts[i];
+    if(p.toN){ // drift toward nectar meter
+      var tx=VW-24, ty=TRAY_Y+TRAY_H-6 - (G.nectar/NECT_MAX)*(TRAY_H-12);
+      p.vx += (tx-p.x)*2.2*dt; p.vy += (ty-p.y)*2.2*dt; p.vx*=0.94; p.vy*=0.94;
+    } else { p.vy+=200*dt; }
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt*(p.toN?1.3:1.0); if(p.life<=0)G.parts.splice(i,1);
+  }
+  for(var f=G.floats.length-1;f>=0;f--){ G.floats[f].y-=24*dt; G.floats[f].life-=dt; if(G.floats[f].life<=0)G.floats.splice(f,1); }
+}
+function render(){ if(!ctx||!G)return;
+  var bd=curBoard(), lf=curLeaf(), sea=SEASONS[G.season];
+  ctx.clearRect(0,0,VW,VH);
+  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#0f160e'); bg.addColorStop(1,'#080c07'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  // ambient season bed
+  for(var a=0;a<10;a++){ var ax=(a*61+G.t*8)%VW, ay=(a*97+G.t*(G.season===2?26:14))%VH;
+    ctx.globalAlpha=0.08+0.07*Math.sin(G.t*1.2+a); ctx.fillStyle=sea.tint; ctx.beginPath(); ctx.arc(ax,ay,1.6,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
+
+  // board frame
+  ctx.fillStyle='#0b110a'; roundRectFill(BX-8,BY-8,BW+16,BW+16,14);
+  // cells
+  for(var r=0;r<BN;r++)for(var c=0;c<BN;c++){ var v=G.grid[idx(r,c)]; var x=BX+c*BCELL, y=BY+r*BCELL;
+    ctx.fillStyle=bd.cell; roundRectFill(x+2,y+2,BCELL-4,BCELL-4,7);
+    if(v)drawCell(x,y,v,1); }
+  // 3x3 box separators
+  ctx.strokeStyle=bd.grid; ctx.lineWidth=2;
+  for(var g=0;g<=3;g++){ ctx.beginPath(); ctx.moveTo(BX+g*3*BCELL,BY); ctx.lineTo(BX+g*3*BCELL,BY+BW); ctx.stroke(); ctx.beginPath(); ctx.moveTo(BX,BY+g*3*BCELL); ctx.lineTo(BX+BW,BY+g*3*BCELL); ctx.stroke(); }
+
+  // ghost preview while dragging
+  if(G.drag && G.ghost){ var gh=G.ghost, pc=G.drag.piece;
+    if(gh.valid){ var pv=SET.glow?previewClears(pc,gh.r,gh.c):{rows:[],cols:[],boxes:[]};
+      // pre-clear glow
+      ctx.globalAlpha=0.18+0.12*Math.sin(G.glowT*6); ctx.fillStyle='#8ec462';
+      for(var pi=0;pi<pv.rows.length;pi++){ ctx.fillRect(BX,BY+pv.rows[pi]*BCELL,BW,BCELL); }
+      for(var pj=0;pj<pv.cols.length;pj++){ ctx.fillRect(BX+pv.cols[pj]*BCELL,BY,BCELL,BW); }
+      for(var pk=0;pk<pv.boxes.length;pk++){ var bb=pv.boxes[pk]; ctx.fillRect(BX+(bb%3)*3*BCELL,BY+Math.floor(bb/3)*3*BCELL,3*BCELL,3*BCELL); }
+      ctx.globalAlpha=1;
+      // ghost cells
+      for(var gi=0;gi<pc.c.length;gi++){ var gr=gh.r+pc.c[gi][0], gc=gh.c+pc.c[gi][1]; drawCell(BX+gc*BCELL,BY+gr*BCELL,pc.sp,0.42); }
+    }
+  }
+
+  // tray
+  for(var t=0;t<3;t++){ drawTraySlot(t); }
+
+  // dragging piece follows pointer
+  if(G.drag && G.drag.px!=null){ var d=G.drag, p2=d.piece; var ox=d.px - p2.cols*BCELL/2, oy=d.py-60 - p2.rows*BCELL/2;
+    for(var di=0;di<p2.c.length;di++){ drawCell(ox+p2.c[di][1]*BCELL, oy+p2.c[di][0]*BCELL, p2.sp, 0.95); } }
+
+  // nectar meter (right edge)
+  drawNectar();
+  // particles
+  for(var pp=0;pp<G.parts.length;pp++){ var pt=G.parts[pp]; ctx.globalAlpha=Math.max(0,Math.min(1,pt.life)); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
+  // floats
+  ctx.textAlign='center'; ctx.font='800 16px system-ui';
+  for(var fl=0;fl<G.floats.length;fl++){ var ff=G.floats[fl]; ctx.globalAlpha=Math.max(0,Math.min(1,ff.life)); ctx.fillStyle='#ffe9a8'; ctx.fillText(ff.txt,ff.x,ff.y); } ctx.globalAlpha=1;
+
+  drawHUD();
+}
+function drawCell(x,y,sp,al){ var lf=curLeaf(); var col=lf.cols[(sp-1)%6]; ctx.globalAlpha=al;
+  ctx.fillStyle=col; roundRectFill(x+3,y+3,BCELL-6,BCELL-6,7);
+  ctx.fillStyle='rgba(255,255,255,0.16)'; roundRectFill(x+5,y+5,BCELL-10,6,4);
+  ctx.fillStyle='rgba(0,0,0,0.22)'; roundRectFill(x+5,y+BCELL-11,BCELL-10,5,3);
+  // colorblind symbol
+  if(SET.cb){ ctx.globalAlpha=al*0.9; drawSym(x+BCELL/2,y+BCELL/2,SYMS[(sp-1)%6]); }
+  ctx.globalAlpha=1;
+}
+function drawSym(cx,cy,kind){ ctx.fillStyle='rgba(20,25,15,0.85)'; ctx.strokeStyle='rgba(20,25,15,0.85)'; ctx.lineWidth=2;
+  var s=6; ctx.beginPath();
+  if(kind==='dot'){ ctx.arc(cx,cy,4,0,6.2832); ctx.fill(); }
+  else if(kind==='star'){ for(var i=0;i<4;i++){ var a=i/4*6.2832; ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*s,cy+Math.sin(a)*s);} ctx.stroke(); }
+  else if(kind==='heart'){ ctx.arc(cx-2.4,cy-1,2.4,0,6.2832); ctx.arc(cx+2.4,cy-1,2.4,0,6.2832); ctx.moveTo(cx-4.6,cy); ctx.lineTo(cx,cy+5); ctx.lineTo(cx+4.6,cy); ctx.fill(); }
+  else if(kind==='diamond'){ ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s); ctx.lineTo(cx-s,cy); ctx.closePath(); ctx.fill(); }
+  else if(kind==='hex'){ for(var h=0;h<6;h++){ var ha=h/6*6.2832; var px=cx+Math.cos(ha)*s,py=cy+Math.sin(ha)*s; if(h===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);} ctx.closePath(); ctx.fill(); }
+  else { ctx.fillRect(cx-1.6,cy-s,3.2,s*2); ctx.fillRect(cx-s,cy-1.6,s*2,3.2); }
+}
+function drawTraySlot(t){ var sw=VW/3, sx=t*sw, piece=G.tray[t];
+  ctx.fillStyle='rgba(255,255,255,0.02)'; roundRectFill(sx+8,TRAY_Y,sw-16,TRAY_H,12);
+  if(!piece){ return; }
+  if(G.drag && G.drag.slot===t)return; // being dragged, drawn at pointer
+  var pw=piece.cols*TCELL, ph=piece.rows*TCELL;
+  var ox=sx+sw/2-pw/2, oy=TRAY_Y+TRAY_H/2-ph/2;
+  var fits=canFit(piece);
+  for(var i=0;i<piece.c.length;i++){ var cx=ox+piece.c[i][1]*TCELL, cy=oy+piece.c[i][0]*TCELL;
+    var col=curLeaf().cols[(piece.sp-1)%6]; ctx.globalAlpha=fits?1:0.5;
+    ctx.fillStyle=col; roundRectFill(cx+1,cy+1,TCELL-2,TCELL-2,4);
+    if(SET.cb){ ctx.globalAlpha=fits?0.9:0.4; var pcx=cx+TCELL/2, pcy=cy+TCELL/2; ctx.save(); ctx.translate(pcx-0,pcy-0); ctx.translate(-pcx,-pcy); drawSymSmall(pcx,pcy,SYMS[(piece.sp-1)%6]); ctx.restore(); }
+    ctx.globalAlpha=1; }
+  if(!fits){ // gentle amber "no fit" outline
+    ctx.strokeStyle='rgba(224,170,80,0.55)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.strokeRect(sx+10,TRAY_Y+3,sw-20,TRAY_H-6); ctx.setLineDash([]); }
+}
+function drawSymSmall(cx,cy,kind){ ctx.fillStyle='rgba(20,25,15,0.8)'; ctx.beginPath(); if(kind==='dot'){ctx.arc(cx,cy,2,0,6.2832);ctx.fill();} else { ctx.fillRect(cx-1,cy-3,2,6); ctx.fillRect(cx-3,cy-1,6,2);} }
+function drawNectar(){ var x=VW-20, y0=TRAY_Y, h=TRAY_H;
+  ctx.fillStyle='#141d10'; roundRectFill(x-6,y0,12,h,6);
+  var fh=(G.nectar/NECT_MAX)*(h-4);
+  ctx.fillStyle=G.nectar>=NECT_MAX?'#ffe9a8':'#c8a84b'; roundRectFill(x-5,y0+h-2-fh,10,fh,5);
+  if(G.nectar>=NECT_MAX){ ctx.globalAlpha=0.4+0.4*Math.sin(G.glowT*6); ctx.fillStyle='#ffe9a8'; roundRectFill(x-6,y0,12,h,6); ctx.globalAlpha=1; }
+}
+var BLOOM_BTN={x:VW/2-70,y:TRAY_Y+TRAY_H+14,w:140,h:46};
+var HB_MENU={x:8,y:8,w:48,h:48}, HB_RETRY={x:VW-56,y:8,w:48,h:48};
+function drawHUD(){
+  ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 20px system-ui'; ctx.fillText(''+G.score, 64, 32);
+  ctx.textAlign='right'; ctx.fillStyle='#8a9178'; ctx.font='700 12px system-ui'; ctx.fillText((G.mode==='zen'?'Zen':G.mode==='daily'?'Daily':G.mode==='gauntlet'?'Gauntlet':'Bloom Run')+' · '+SEASONS[G.season].nm, VW-64, 22);
+  if(G.combo>1){ ctx.textAlign='center'; ctx.fillStyle='#ffe9a8'; ctx.font='800 16px system-ui'; ctx.fillText('combo x'+G.combo, VW/2, 30); }
+  hudBtn(HB_MENU,'‹'); hudBtn(HB_RETRY,'↻');
+  // bloom button (rescue) — visible when ready or when stuck
+  var ready=G.nectar>=NECT_MAX;
+  if(ready){ var b=BLOOM_BTN; ctx.fillStyle=ready?'rgba(200,168,75,0.9)':'rgba(30,36,20,0.8)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,14); ctx.fill();
+    if(G.rescueGlow){ ctx.globalAlpha=0.4+0.3*Math.sin(G.glowT*6); ctx.strokeStyle='#ffe9a8'; ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,14); ctx.stroke(); ctx.globalAlpha=1; }
+    ctx.fillStyle='#241c08'; ctx.font='800 17px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🌸 Bloom', b.x+b.w/2, b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+}
+function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.72)'; ctx.beginPath(); rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+function roundRectFill(x,y,w,h,r){ if(w<r*2)r=w/2; if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+function drawFlower(g, cx, cy, sc, seed){ var r=mulberry32(seed); var petals=5+Math.floor(r()*4);
+  var hue=['#e58fa0','#c8a84b','#b57de0','#8fc3ea','#e56b6b','#f0c96b'][Math.floor(r()*6)];
+  g.save(); g.translate(cx,cy); g.scale(sc,sc); g.fillStyle=hue;
+  for(var i=0;i<petals;i++){ var a=i/petals*6.2832; g.save(); g.rotate(a); g.beginPath(); g.ellipse(0,-10,5,10,0,0,6.2832); g.fill(); g.restore(); }
+  g.fillStyle='#ffe9a8'; g.beginPath(); g.arc(0,0,5,0,6.2832); g.fill(); g.restore(); }
+
+/* ---------- input (drag) ---------- */
+function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
+function inBtn(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+function slotAt(p){ if(p.y<TRAY_Y||p.y>TRAY_Y+TRAY_H)return -1; var sw=VW/3; var s=Math.floor(p.x/sw); return (s>=0&&s<3)?s:-1; }
+function computeGhost(){ if(!G.drag)return; var d=G.drag; var p=d.piece;
+  var ox=d.px - p.cols*BCELL/2, oy=d.py-60 - p.rows*BCELL/2;
+  var c0=Math.round((ox-BX)/BCELL), r0=Math.round((oy-BY)/BCELL);
+  G.ghost={ r:r0, c:c0, valid:fitsAt(p,r0,c0) };
+}
+function onDown(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); var p=evPos(e);
+  if(G.phase!=='play')return;
+  if(inBtn(p,HB_MENU)){ sfx('ui'); running=false; show('s-title'); return; }
+  if(inBtn(p,HB_RETRY)){ sfx('ui'); startGame(G.mode); return; }
+  if(G.nectar>=NECT_MAX && inBtn(p,BLOOM_BTN)){ bloomSwap(); return; }
+  var s=slotAt(p); if(s>=0 && G.tray[s]){ G.drag={ slot:s, piece:G.tray[s], px:p.x, py:p.y }; computeGhost(); }
+}
+function onMove(e){ if(curScreen!=='s-play'||!G.drag)return; e.preventDefault(); var p=evPos(e); G.drag.px=p.x; G.drag.py=p.y; computeGhost(); }
+function onUp(e){ if(curScreen!=='s-play'||!G.drag)return; e.preventDefault(); var d=G.drag, gh=G.ghost; G.drag=null; G.ghost=null;
+  if(gh && gh.valid){ placePiece(d.slot, gh.r, gh.c); } }
+cv.addEventListener('touchstart',onDown,{passive:false});
+cv.addEventListener('touchmove',onMove,{passive:false});
+cv.addEventListener('touchend',onUp,{passive:false});
+cv.addEventListener('mousedown',onDown);
+window.addEventListener('mousemove',onMove);
+window.addEventListener('mouseup',onUp);
+window.addEventListener('keydown',function(e){ if(curScreen!=='s-play')return; if(e.key==='Escape'){ running=false; show('s-title'); } else if(e.key==='r'||e.key==='R'){ startGame(G.mode); } });
+
+/* ---------- grove + wardrobe ---------- */
+function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=PROG.blooms.length;
+  $('grove-sub').textContent = n? ('You have grown '+n+' keepsake flower'+(n===1?'':'s')+'. Bigger combos grow more.') : 'Clear lines and build combos — good runs grow keepsake flowers here.';
+  var start=Math.max(0,n-60);
+  for(var i=start;i<n;i++){ var c=document.createElement('canvas'); c.width=70; c.height=70; var g=c.getContext('2d'); g.clearRect(0,0,70,70); drawFlower(g,35,36,1.3,PROG.blooms[i]>>>0); host.appendChild(c); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no flowers yet —'; host.appendChild(e); }
+}
+function wardCanvas(kind,it){ var c=document.createElement('canvas'); c.width=96; c.height=64; var g=c.getContext('2d');
+  if(kind==='leaf'){ for(var i=0;i<4;i++){ g.fillStyle=it.cols[i]; g.beginPath(); var x=16+i*18,y=32; g.moveTo(x,y-10); g.arcTo(x+8,y-10,x+8,y,4); g.arcTo(x+8,y+10,x,y+10,4); g.arcTo(x-8,y+10,x-8,y,4); g.arcTo(x-8,y-10,x,y-10,4); g.closePath(); g.fill(); } }
+  else { g.fillStyle=it.cell; g.fillRect(20,14,56,40); g.strokeStyle=it.grid; g.lineWidth=1.5; for(var k=1;k<3;k++){ g.beginPath(); g.moveTo(20+k*18.6,14); g.lineTo(20+k*18.6,54); g.stroke(); g.beginPath(); g.moveTo(20,14+k*13.3); g.lineTo(76,14+k*13.3); g.stroke(); } }
+  return c; }
+function renderWardList(hostId,kind,arr,cur,setter){ var host=$(hostId); host.innerHTML='';
+  for(var i=0;i<arr.length;i++){ (function(it){ var own=ownedC(kind,it);
+    var card=document.createElement('div'); card.className='wardcard'+(own?'':' locked')+(cur===it.id?' on':'');
+    card.appendChild(wardCanvas(kind,it));
+    var nn=document.createElement('div'); nn.className='wn'; nn.textContent=it.nm; card.appendChild(nn);
+    var tt=document.createElement('div'); tt.className='wt'; tt.textContent=own?(cur===it.id?'Equipped':'Tap to equip'):(it.desc||'locked'); card.appendChild(tt);
+    host.appendChild(card); if(own)card.addEventListener('click',function(){ setter(it.id); save(); sfx('ui'); renderWard(); });
+  })(arr[i]); } }
+function renderWard(){ renderWardList('ward-leaves','leaf',LEAFSETS,PROG.leaf,function(v){PROG.leaf=v;});
+  renderWardList('ward-boards','board',BOARDS,PROG.board,function(v){PROG.board=v;}); }
+
+/* ---------- share ---------- */
+function shareIt(){ var url='https://lucidwinds.com/satellites/leaf-fit/'; var txt='I scored '+(PROG.best||0)+' on Leaf Fit 🧩 and grew '+(PROG.grewTotal||0)+' flowers. Play at '+url;
+  if(navigator.share){ navigator.share({title:'Leaf Fit',text:txt,url:url}).catch(function(){}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(function(){}); } }
+
+/* ---------- wire ---------- */
+tap('b-run',function(){ sfx('ui'); startGame('run'); });
+tap('b-daily',function(){ sfx('ui'); startGame('daily'); });
+tap('b-gaunt',function(){ sfx('ui'); startGame('gauntlet'); });
+tap('b-zen',function(){ sfx('ui'); startGame('zen'); });
+tap('b-grove',function(){ sfx('ui'); renderGrove(); show('s-grove'); });
+tap('b-ward',function(){ sfx('ui'); renderWard(); show('s-ward'); });
+tap('b-how',function(){ sfx('ui'); show('s-how'); });
+tap('b-set',function(){ sfx('ui'); show('s-set'); });
+tap('how-back',function(){ sfx('ui'); show('s-title'); });
+tap('set-back',function(){ sfx('ui'); show('s-title'); });
+tap('ward-back',function(){ sfx('ui'); show('s-title'); });
+tap('grove-back',function(){ sfx('ui'); show('s-title'); });
+tap('go-retry',function(){ sfx('ui'); startGame(G?G.mode:'run'); });
+tap('go-grove',function(){ sfx('ui'); renderGrove(); show('s-grove'); });
+tap('go-home',function(){ sfx('ui'); show('s-title'); });
+tap('go-share',function(){ sfx('ui'); shareIt(); });
+function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
+wireToggle('tg-sound','sound'); wireToggle('tg-haptic','haptic'); wireToggle('tg-cb','cb'); wireToggle('tg-glow','glow');
+$('buildstamp').textContent='Leaf Fit '+BUILD;
+window.addEventListener('pagehide',closeAC); window.addEventListener('beforeunload',closeAC);
+
+/* ---------- test hook ---------- */
+if(TESTMODE){
+  window.LF_DEV={
+    start:function(mode){ startGame(mode||'run'); return snap(); },
+    state:function(){ return G; },
+    snap:snap,
+    step:function(dt){ step(dt||0.016); return snap(); },
+    canPlaceAny:function(){ return canPlaceAny(); },
+    place:function(slot,r,c){ return placePiece(slot,r,c); },
+    bloom:function(){ return bloomSwap(); },
+    // greedy bot: for each tray piece try every origin, prefer max clears then most filled cells
+    autoStep:function(){ if(!G||G.phase!=='play')return 'over';
+      var best=null, bestScore=-1;
+      for(var s=0;s<3;s++){ var pc=G.tray[s]; if(!pc)continue;
+        for(var r=0;r<BN;r++)for(var c=0;c<BN;c++){ if(!fitsAt(pc,r,c))continue;
+          var pv=previewClears(pc,r,c); var lines=pv.rows.length+pv.cols.length+pv.boxes.length;
+          var sc=lines*100 + pc.n; if(sc>bestScore){ bestScore=sc; best={s:s,r:r,c:c}; } } }
+      if(best){ placePiece(best.s,best.r,best.c); return 'placed'; }
+      // stuck: rescue if possible
+      if(G.nectar>=NECT_MAX||G.mode==='zen'){ bloomSwap(); return 'bloom'; }
+      return 'over'; },
+    autoplay:function(maxMoves){ maxMoves=maxMoves||400; var placements=0, blooms=0;
+      for(var i=0;i<maxMoves && G && G.phase==='play'; i++){ var r=window.LF_DEV.autoStep(); if(r==='placed')placements++; else if(r==='bloom')blooms++; else break; }
+      return { placements:placements, blooms:blooms, clears:G.clears, score:G.score, nectar:G.nectar, phase:G.phase, gameOver:(G.phase!=='play') }; },
+    fillCheck:function(){ startGame('run'); var r=window.LF_DEV.autoplay(500); return r; }
+  };
+}
+function snap(){ if(!G)return null; var filled=0; for(var i=0;i<BN*BN;i++)if(G.grid[i])filled++; return { phase:G.phase, score:G.score, clears:G.clears, combo:G.combo, nectar:G.nectar, filled:filled, tray:trayCount(), season:G.season }; }
+
+show('s-title');
+})();
+</script>
+</body>
+</html>
