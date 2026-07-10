@@ -29,6 +29,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Star Field](star-field/00-art-direction.md)** (Star Battle) — *Astrolabe Atlas* · 5 sheets
 - **[Flatulence Fighter](flatulence-fighter/00-art-direction.md)** (Try Not To Fart homage, Stephen's draft) — *Silent Reel* · 5 sheets
 - **[Line Loom](line-loom/00-art-direction.md)** (Mini Metro) — *Woven Atlas* · 6 sheets
+- **[Rule Root](rule-root/00-art-direction.md)** (Baba Is You) — *Illuminated Herbal* · 6 sheets (word tiles stay engine-rendered text; plates are text-free)
 
 ## Generate order
 
