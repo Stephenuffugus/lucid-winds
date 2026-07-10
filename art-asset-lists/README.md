@@ -34,6 +34,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Pollinator Paths](pollinator-paths/00-art-direction.md)** (Flight Control) — *Nocturne Flightchart* · 6 sheets
 - **[Tempo Grove](tempo-grove/00-art-direction.md)** (Lumines, plays Stephen's music) — *Moonlit Metronome* · 5 sheets
 - **[Root Weave](root-weave/00-art-direction.md)** (Untangle/Planarity) — *Inkwood Atlas* · 6 sheets
+- **[Sled Vine](sled-vine/00-art-direction.md)** (Line Rider) — *Moonlit Inkwash* · 5 sheets
 
 ## Generate order
 

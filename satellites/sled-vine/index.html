@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M5 20 Q14 8 27 16' stroke='%237ab356' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='13' r='4' fill='%23c8a84b'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sled Vine">
+<title>Sled Vine — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"sledvine"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; left:0; top:0; width:540px; height:784px; display:block; touch-action:none}
+#hud{position:absolute; left:0; top:0; width:540px; height:60px; display:none; z-index:12; pointer-events:none;
+  padding:10px 12px; align-items:flex-start; gap:10px}
+#hud.on{display:flex}
+#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid var(--line); border-radius:12px;
+  background:#0f150cdd; color:var(--cream); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center}
+#inkwrap{flex:1; pointer-events:none; padding-top:4px}
+#inklabel{font-size:12px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; display:flex; justify-content:space-between}
+#inklabel b{color:var(--gold); font-variant-numeric:tabular-nums}
+#inkbar{height:12px; border:1px solid var(--line); border-radius:7px; background:#0f150cdd; overflow:hidden; margin-top:3px}
+#inkfill{height:100%; width:100%; background:linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); border-radius:6px}
+#goalchip{position:absolute; left:50%; top:64px; transform:translateX(-50%); z-index:12; display:none; pointer-events:none;
+  background:#0f150cdd; border:1px solid var(--line); border-radius:20px; padding:8px 16px; font-size:13px; color:var(--cream)}
+#goalchip.on{display:block}
+#goalchip b{color:var(--gold)}
+#dock{position:absolute; left:0; bottom:0; width:540px; height:176px; z-index:12; background:linear-gradient(180deg,#0e140dee,#0b0f0b);
+  border-top:1px solid var(--line); padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px)); display:none; flex-direction:column; gap:6px}
+#dock.on{display:flex}
+.dockrow{display:flex; gap:6px; flex:1}
+.chip{flex:1; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; padding:2px 0; position:relative}
+.chip .ci{font-size:17px; line-height:1.15}
+.chip .cn{font-size:.7rem; letter-spacing:.4px; color:var(--muted); text-transform:uppercase}
+.chip.sel{border-color:var(--gold); background:#1a2415; box-shadow:0 0 0 1px var(--gold) inset}
+.chip.sel .cn{color:var(--cream)}
+.chip.off{opacity:.35; pointer-events:none}
+.chip.go{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a}
+.chip.go .cn{color:#3a2d10}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:52px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #302408, 0 0 26px #c8a84b44; letter-spacing:3px}
+.title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a; box-shadow:0 4px 0 #6b5620, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.grid{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.lvlcard{width:100px; height:104px; border:1px solid var(--line); border-radius:16px; background:#0f150c; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:4px}
+.lvlcard.locked{opacity:.4; cursor:default}
+.lvlcard .ln{font-size:24px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums}
+.lvlcard .lt{font-size:.7rem; color:var(--muted); text-align:center; line-height:1.15}
+.lvlcard .ls{font-size:14px; letter-spacing:1px; color:var(--gold); height:16px}
+.lvlcard.done{border-color:var(--deep)}
+.wardcard{display:flex; align-items:center; gap:12px; width:100%; max-width:420px; margin:0 auto 10px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.wardcard.locked{opacity:.55}
+.wardcard .wi{font-size:26px; width:40px; text-align:center; flex:none}
+.wardcard .wt{flex:1}
+.wardcard .wn{font-size:15px; font-weight:700}
+.wardcard .wd{font-size:.72rem; color:var(--muted); margin-top:2px; line-height:1.3}
+.wardcard .we{min-width:78px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center}
+.wardcard .we.eq{border-color:var(--gold); color:var(--gold)}
+.grovewrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.grovecard{width:104px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:8px; display:flex; flex-direction:column; align-items:center; gap:4px}
+.grovecard canvas{width:84px; height:84px; border-radius:8px; background:#0b0f0b}
+.grovecard .gd{font-size:.7rem; color:var(--muted)}
+#toast{position:absolute; left:50%; bottom:200px; transform:translateX(-50%) translateY(16px); z-index:40; background:#1a2415ee;
+  border:1px solid var(--gold); border-radius:22px; padding:10px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div id="stage">
+  <canvas id="game" width="540" height="784"></canvas>
+
+  <div id="hud">
+    <div class="hbtn" id="hud-back">⌂</div>
+    <div id="inkwrap">
+      <div id="inklabel"><span id="inkname">Ink</span><b id="inkval"></b></div>
+      <div id="inkbar"><div id="inkfill"></div></div>
+    </div>
+    <div class="hbtn" id="hud-retry">⟲</div>
+  </div>
+  <div id="goalchip"></div>
+
+  <div id="dock">
+    <div class="dockrow" id="dockrow1"></div>
+    <div class="dockrow" id="dockrow2"></div>
+  </div>
+
+  <div class="screen on" id="s-title">
+    <div class="pad center">
+      <div class="title-word">SLED VINE</div>
+      <div class="title-sub">draw the path · ride the bloom</div>
+      <div class="ribbon">Ink a trail with your finger and let the seed-sled ride it. Every line you draw comes alive beneath the runners.</div>
+      <div style="height:22px"></div>
+      <div class="stack">
+        <button class="btn primary" id="b-trials">🛷 Trail Trials</button>
+        <div class="row">
+          <button class="btn sm" id="b-daily">📅 Daily Ride</button>
+          <button class="btn sm" id="b-free">🌙 Free Ride</button>
+        </div>
+        <div class="row">
+          <button class="btn sm ghost" id="b-how">How</button>
+          <button class="btn sm ghost" id="b-ward">Wardrobe</button>
+          <button class="btn sm ghost" id="b-grove">Grove</button>
+          <button class="btn sm ghost" id="b-set">⚙</button>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div id="buildstamp" style="font-size:.7rem;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-trials">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Trail Trials</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">A fixed pot of ink, a few bloom gates, one clean ride.</div>
+      <div class="grid" id="trialgrid"></div>
+      <div style="height:16px"></div>
+      <div class="stack"><button class="btn sm ghost" id="trials-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-how">
+    <div class="pad">
+      <h2 class="sc-h">How Sled Vine works</h2>
+      <div class="helprow"><div class="hi">✏️</div><div><b>Draw lines</b> with your finger. The seed-sled drops from its perch and rides whatever you ink, picking up speed downhill and flying off the ends.</div></div>
+      <div class="helprow"><div class="hi">◯</div><div>Steer the ride through every <b>bloom gate</b> (ring, diamond and star shapes), then into the waiting <b class="hl">goal flower</b>.</div></div>
+      <div class="helprow"><div class="hi">🌿</div><div><b>Living Trail:</b> leaves sprout along your lines wherever the sled has ridden. Finish a trial and the whole trail blooms, pressing a keepsake into your Grove.</div></div>
+      <div class="helprow"><div class="hi">🌵</div><div><b>Thorns</b> end the run. So does falling off the world. Your ink stays where you drew it, so adjust and ride again.</div></div>
+      <div class="helprow"><div class="hi">🧽</div><div>The <b>eraser</b> removes a whole line and refunds its ink. Trials have a fixed pot of ink, so spend it kindly.</div></div>
+      <div class="helprow"><div class="hi">📅</div><div><b>Daily Ride</b> reshuffles one trail for everyone each day. <b>Free Ride</b> is a bottomless ink pot with nothing to lose.</div></div>
+      <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-ward">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Wardrobe</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Every piece is earned by riding. No boxes, no dice.</div>
+      <div id="wardlist"></div>
+      <div class="stack"><button class="btn sm ghost" id="ward-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-grove">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Grove</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Keepsakes pressed from trails that bloomed end to end.</div>
+      <div class="grovewrap" id="grovewrap"></div>
+      <div style="height:16px"></div>
+      <div class="stack"><button class="btn sm ghost" id="grove-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-set">
+    <div class="pad center">
+      <h2 class="sc-h">Settings</h2>
+      <div style="height:10px"></div>
+      <div class="settingline"><span>Sound</span><div class="toggle" id="tg-sound"><b></b></div></div>
+      <div class="settingline"><span>Leaf effects</span><div class="toggle" id="tg-fx"><b></b></div></div>
+      <div class="stack"><button class="btn sm ghost" id="set-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-over">
+    <div class="pad center">
+      <h2 class="sc-h" id="over-title">Trail bloomed</h2>
+      <div class="ribbon" id="over-sub"></div>
+      <div style="height:18px"></div>
+      <div class="stack">
+        <button class="btn primary" id="over-next">Next trail</button>
+        <button class="btn sm ghost" id="over-home">Back to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+ </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+/* ============================================================
+   SLED VINE — draw-the-line rider (Sky Wolf Studios)
+   Campaign #19 (prototype-first). Verlet-lite point sled on
+   player-inked polylines, 540x784 world, fixed-step sim.
+   ============================================================ */
+var BUILD="v1.0";
+var W=540, H=784;
+var GRAV=0.14, FRICT=0.996, RADIUS=7, MAXSP=9;
+var GATE_R=26, GOAL_R=34, KILL_Y=H+50;
+
+/* ---------- seeded rng ---------- */
+function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Math.imul(t^t>>>15,1|t);
+  r=(r+Math.imul(r^r>>>7,61|r))^r; return ((r^r>>>14)>>>0)/4294967296; }; }
+
+/* ---------- save ---------- */
+function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("sledvine_save")||"{}"); }catch(e){}
+  s.trials=s.trials||{}; s.gates=s.gates||0; s.blooms=s.blooms||0; s.grove=s.grove||[];
+  s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.sled=s.sled||"seed"; s.ink=s.ink||"plain";
+  s.sound=(s.sound!==false); s.fx=(s.fx!==false); return s; }
+var PROG=loadSave();
+function save(){ try{ localStorage.setItem("sledvine_save",JSON.stringify(PROG)); }catch(e){} }
+function trialsDone(){ var n=0,k; for(k in PROG.trials)if(PROG.trials[k])n++; return n; }
+
+/* ---------- audio (tiny synth) ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended")AC.resume().catch(function(){}); return AC; }
+function blip(f,d,g,type){ if(!PROG.sound)return; var a=ac(); if(!a)return; var o=a.createOscillator(),v=a.createGain(),t=a.currentTime;
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t); v.gain.setValueAtTime(0.0001,t);
+  v.gain.exponentialRampToValueAtTime(g||0.08,t+0.015); v.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.18));
+  o.connect(v); v.connect(a.destination); o.start(t); o.stop(t+(d||0.18)+0.02); }
+function sndGate(){ blip(660,0.22,0.07); }
+function sndWin(){ blip(523,0.25,0.08); setTimeout(function(){blip(659,0.25,0.08);},110); setTimeout(function(){blip(784,0.4,0.09);},220); }
+function sndCrash(){ blip(140,0.3,0.09,"square"); }
+
+/* ---------- trials ----------
+   Each: name, ink budget, spawn, gates [x,y,shape 0=ring 1=diamond 2=star],
+   goal [x,y], terrain (safe polylines), thorns (deadly polylines),
+   proof (player polylines that PROVE the trial winnable). */
+var TRIALS=[
+ { name:"First Glide", ink:900, spawn:[70,110], gates:[[250,307,0]], goal:[460,530],
+   terrain:[], thorns:[],
+   proof:[[36,150,250,314,460,537,520,556]] },
+ { name:"Two Steps", ink:1000, spawn:[60,90], gates:[[200,257,0],[380,427,1]], goal:[480,560],
+   terrain:[], thorns:[],
+   proof:[[30,130,200,264,380,434,480,567,528,584]] },
+ { name:"The Hop", ink:1000, spawn:[60,100], gates:[[260,300,0],[460,490,2]], goal:[490,520],
+   terrain:[], thorns:[[330,490,350,450,370,490,390,450,410,490]],
+   proof:[[30,140,260,307,320,350],[400,440,490,527,536,550]] },
+ { name:"Under the Bough", ink:1100, spawn:[70,90], gates:[[270,340,1],[420,470,0]], goal:[500,580],
+   terrain:[[180,240,420,300]], thorns:[],
+   proof:[[36,130,270,347,420,477,500,587,532,600]] },
+ { name:"Thorn Garden", ink:1200, spawn:[60,90], gates:[[200,300,0],[330,430,2]], goal:[480,560],
+   terrain:[], thorns:[[240,330,260,290,280,330],[420,500,440,460,460,500]],
+   proof:[[30,130,190,300,210,330,240,365,402,532,480,567,528,585]] },
+ { name:"Switchback", ink:1400, spawn:[440,80], gates:[[300,220,1],[180,380,0],[380,540,2]], goal:[490,620],
+   terrain:[], thorns:[],
+   proof:[[500,120,300,227,200,280],[60,300,180,387,300,450],[260,470,380,547,490,627,532,640]] },
+ { name:"The Long Jump", ink:1100, spawn:[60,90], gates:[[220,260,0],[400,330,2]], goal:[500,470],
+   terrain:[], thorns:[[280,470,305,420,330,470,355,420,380,470,405,420,430,470]],
+   proof:[[26,130,220,267,280,290],[420,350,500,477,532,492]] },
+ { name:"The Needle", ink:1200, spawn:[60,80], gates:[[280,360,1]], goal:[480,520],
+   terrain:[], thorns:[[240,300,255,265,270,300],[300,300,315,265,330,300],[180,470,205,430,230,470]],
+   proof:[[26,120,150,252,228,330,260,352,285,367,480,527,528,545]] },
+ { name:"The Cradle", ink:900, spawn:[280,80], gates:[[280,220,0],[280,340,1],[280,460,2]], goal:[470,600],
+   terrain:[], thorns:[],
+   proof:[[190,520,280,530,470,607,528,626]] },
+ { name:"Over the Hedge", ink:1300, spawn:[60,80], gates:[[210,250,0],[450,410,2]], goal:[510,455],
+   terrain:[[300,540,300,330]], thorns:[],
+   proof:[[26,120,120,180,210,257,290,286],[310,400,536,470]] },
+ { name:"Triple Weave", ink:1500, spawn:[460,70], gates:[[320,200,0],[200,330,1],[330,470,2],[450,560,0]], goal:[500,640],
+   terrain:[], thorns:[],
+   proof:[[510,110,320,207,240,255],[60,285,200,337,250,390],[280,430,330,477,450,567,500,647,536,662]] },
+ { name:"The Descent", ink:1700, spawn:[60,70], gates:[[240,220,0],[430,320,1],[240,463,2],[200,567,0]], goal:[370,670],
+   terrain:[[80,400,160,430]], thorns:[[300,400,320,360,340,400],[120,660,145,620,170,660]],
+   proof:[[26,110,240,227,300,262],[340,300,430,327],[536,330,500,390,240,470,150,500],[30,480,300,630]] }
+];
+
+/* ---------- world state ---------- */
+var G=null;
+function newWorld(mode,seed){
+  return { mode:mode, seed:seed, rng:mkRng(seed), trial:-1, phase:"draw",
+    lines:[], linesInk:0, inkMax:Infinity,
+    terrain:[], thorns:[], gates:[], goal:null, spawn:[80,100],
+    sled:{x:0,y:0,vx:0,vy:0}, tick:0, gatesHit:0, earned:0, won:false,
+    leaves:[], parts:[], crashT:0, ridden:false };
+}
+function polyLen(p){ var L=0,i; for(i=2;i<p.length;i+=2){ var dx=p[i]-p[i-2],dy=p[i+1]-p[i-1]; L+=Math.sqrt(dx*dx+dy*dy); } return L; }
+
+/* ---------- physics ---------- */
+function segClosest(px,py,x1,y1,x2,y2){
+  var dx=x2-x1, dy=y2-y1, L2=dx*dx+dy*dy;
+  var t=L2>0?((px-x1)*dx+(py-y1)*dy)/L2:0;
+  if(t<0)t=0; else if(t>1)t=1;
+  return [x1+dx*t, y1+dy*t];
+}
+function eachSeg(polys,fn){
+  var i,j; for(i=0;i<polys.length;i++){ var p=polys[i];
+    for(j=2;j<p.length;j+=2){ if(fn(p[j-2],p[j-1],p[j],p[j+1],i)===true)return true; } }
+  return false;
+}
+function tickSim(){
+  if(!G)return;
+  var s=G.sled;
+  if(G.phase==="riding"){
+    s.vy+=GRAV;
+    var sp=Math.sqrt(s.vx*s.vx+s.vy*s.vy);
+    if(sp>MAXSP){ s.vx*=MAXSP/sp; s.vy*=MAXSP/sp; sp=MAXSP; }
+    var sub=1+Math.floor(sp/4); if(sub>3)sub=3;
+    var k, touched=false, dead=false;
+    for(k=0;k<sub;k++){
+      s.x+=s.vx/sub; s.y+=s.vy/sub;
+      var it;
+      for(it=0;it<2;it++){
+        var moved=false;
+        var resolve=function(x1,y1,x2,y2){
+          var c=segClosest(s.x,s.y,x1,y1,x2,y2);
+          var ddx=s.x-c[0], ddy=s.y-c[1], d=Math.sqrt(ddx*ddx+ddy*ddy);
+          if(d<RADIUS&&d>0.0001){
+            var nx=ddx/d, ny=ddy/d;
+            s.x=c[0]+nx*RADIUS; s.y=c[1]+ny*RADIUS;
+            var vn=s.vx*nx+s.vy*ny;
+            if(vn<0){ s.vx-=nx*vn; s.vy-=ny*vn; }
+            touched=true; moved=true;
+          }
+          return false;
+        };
+        eachSeg(G.lines,resolve);
+        eachSeg(G.terrain,resolve);
+        if(!moved)break;
+      }
+      // deadly contact
+      eachSeg(G.thorns,function(x1,y1,x2,y2){
+        var c=segClosest(s.x,s.y,x1,y1,x2,y2);
+        var ddx=s.x-c[0], ddy=s.y-c[1];
+        if(ddx*ddx+ddy*ddy<(RADIUS+3)*(RADIUS+3)){ dead=true; return true; }
+        return false;
+      });
+      if(dead)break;
+    }
+    if(touched){ s.vx*=FRICT; s.vy*=FRICT; G.ridden=true;
+      if(PROG.fx&&(G.tick%3)===0&&G.leaves.length<420)G.leaves.push([s.x,s.y-RADIUS,((G.tick>>2)&1)?1:-1]);
+    }
+    // gates
+    var gi; for(gi=0;gi<G.gates.length;gi++){ var g=G.gates[gi];
+      if(!g[3]){ var gx=s.x-g[0], gy=s.y-g[1];
+        if(gx*gx+gy*gy<GATE_R*GATE_R){ g[3]=1; G.gatesHit++; PROG.gates++; sndGate(); burst(g[0],g[1],"#c8a84b"); } } }
+    // goal
+    if(G.goal&&G.gatesHit>=G.gates.length){
+      var ox=s.x-G.goal[0], oy=s.y-G.goal[1];
+      if(ox*ox+oy*oy<GOAL_R*GOAL_R)winRun();
+    }
+    if(dead){ crashRun(); }
+    else if(s.y>KILL_Y||s.x<-70||s.x>W+70){
+      if(G.mode==="free"){ resetSled(); } else crashRun();
+    }
+  } else if(G.phase==="crashed"){
+    G.crashT--;
+    if(G.crashT<=0){ G.phase="draw"; resetSled(); resetGates(); }
+  }
+  var pi; for(pi=G.parts.length-1;pi>=0;pi--){ var p=G.parts[pi];
+    p[0]+=p[2]; p[1]+=p[3]; p[3]+=0.05; p[4]--; if(p[4]<=0)G.parts.splice(pi,1); }
+  G.tick++;
+}
+function resetSled(){ G.sled.x=G.spawn[0]; G.sled.y=G.spawn[1]; G.sled.vx=0; G.sled.vy=0; }
+function resetGates(){ var i; for(i=0;i<G.gates.length;i++)G.gates[i][3]=0; G.gatesHit=0; }
+function spawnSled(){ if(!G||G.phase==="won")return; resetSled(); resetGates(); G.phase="riding"; }
+function stopRide(){ if(G.phase==="riding"){ G.phase="draw"; resetSled(); resetGates(); } }
+function crashRun(){ G.phase="crashed"; G.crashT=42; sndCrash(); burst(G.sled.x,Math.min(G.sled.y,H-10),"#e58fa0"); updGoalChip(); }
+function burst(x,y,col){ var i; for(i=0;i<14;i++){ var a=i/14*6.283;
+  G.parts.push([x,y,Math.cos(a)*(1.2+(i%3)*0.6),Math.sin(a)*(1.2+(i%3)*0.6)-0.6,30+(i%5)*4,col]); } }
+
+/* ---------- winning ---------- */
+function winRun(){
+  if(G.phase!=="riding")return; G.phase="won"; G.won=true;
+  PROG.blooms++;
+  // trail bloom particles along leaves
+  var i; for(i=0;i<G.leaves.length;i+=6)burst(G.leaves[i][0],G.leaves[i][1],"#e58fa0");
+  sndWin();
+  var first=false;
+  if(G.mode==="daily"){ var today=new Date().toISOString().slice(0,10);
+    if(PROG.lastDaily!==today){ var y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+      PROG.streak=(PROG.lastDaily===y)?PROG.streak+1:1; PROG.lastDaily=today; mintKeepsake(); }
+    payRun(3,"daily"); }
+  else if(G.mode==="trial"&&G.trial>=0){ first=!PROG.trials[G.trial];
+    if(first){ PROG.trials[G.trial]=true; mintKeepsake(); payRun(2,"trial"); } else payRun(1,"retrial"); }
+  save();
+  $("over-title").textContent=G.mode==="daily"?"Daily trail bloomed":"Trail bloomed";
+  $("over-sub").textContent=G.mode==="daily"
+    ? "Streak "+PROG.streak+". Come back tomorrow for a fresh trail."
+    : "\""+TRIALS[G.trial].name+"\" cleared."+(first?" First ride, well earned.":"");
+  $("over-next").style.display=(G.mode==="trial"&&G.trial<TRIALS.length-1)?"":"none";
+  setTimeout(function(){ show("s-over"); },900);
+}
+function payRun(n,tag){ if(!G||G.mode==="free")return 0;
+  if(G.earned>=12)return 0; n=Math.min(n,12-G.earned);
+  var got=window._sbCapEarn(n,tag); G.earned+=got;
+  if(got>0)toast("☀ +"+got+" sunbeam"+(got>1?"s":"")); return got; }
+
+/* ---------- keepsakes ---------- */
+function mintKeepsake(){
+  var seed=((G.seed^(G.tick*2654435761))>>>0)^(PROG.blooms*97);
+  PROG.grove.push({s:seed>>>0,d:new Date().toISOString().slice(0,10)});
+  if(PROG.grove.length>24)PROG.grove.shift();
+  save(); toast("🌼 Keepsake pressed into the Grove");
+}
+function drawKeepsake(cv,ks){
+  var c=cv.getContext("2d"),rr=mkRng(ks.s),Wk=cv.width,Hk=cv.height;
+  c.fillStyle="#0b0f0b"; c.fillRect(0,0,Wk,Hk);
+  // the trail motif: a winding inked line
+  c.strokeStyle="#3f6b34"; c.lineWidth=2; c.beginPath();
+  c.moveTo(Wk*0.1,Hk*0.85);
+  c.quadraticCurveTo(Wk*(0.3+rr()*0.2),Hk*(0.5+rr()*0.3),Wk*0.52,Hk*0.42); c.stroke();
+  var cx=Wk*0.52, cy=Hk*0.4, petals=5+Math.floor(rr()*4), pr=Wk*0.2+rr()*Wk*0.08;
+  var hue=["#e58fa0","#c8a84b","#bfe0f2","#a468d8","#e2b34d"][Math.floor(rr()*5)];
+  var k; for(k=0;k<petals;k++){ var an=k/petals*6.283+rr()*0.2;
+    c.fillStyle=hue; c.beginPath();
+    c.ellipse(cx+Math.cos(an)*pr*0.55, cy+Math.sin(an)*pr*0.55, pr*0.42, pr*0.2, an, 0, 6.283); c.fill(); }
+  c.fillStyle="#e8dcc8"; c.beginPath(); c.arc(cx,cy,pr*0.22,0,6.283); c.fill();
+  // little leaves on the stem
+  c.fillStyle="#7ab356";
+  c.beginPath(); c.ellipse(Wk*0.3,Hk*0.68,6,3,0.8,0,6.283); c.fill();
+  c.beginPath(); c.ellipse(Wk*0.4,Hk*0.56,6,3,-0.6,0,6.283); c.fill();
+}
+
+/* ---------- drawing input ---------- */
+var TOOL="draw", curLine=null;
+function addLine(pts){
+  if(!G)return false;
+  if(pts.length<4)return false;
+  var L=polyLen(pts);
+  if(G.linesInk+L>G.inkMax)return false;
+  G.lines.push(pts); G.linesInk+=L; renderInk(); return true;
+}
+function eraseAt(x,y){
+  var i,j,best=-1,bd=14*14;
+  for(i=0;i<G.lines.length;i++){ var p=G.lines[i];
+    for(j=2;j<p.length;j+=2){ var c=segClosest(x,y,p[j-2],p[j-1],p[j],p[j+1]);
+      var dx=x-c[0],dy=y-c[1],d=dx*dx+dy*dy; if(d<bd){ bd=d; best=i; } } }
+  if(best>=0){ G.linesInk-=polyLen(G.lines[best]); if(G.linesInk<0)G.linesInk=0;
+    G.lines.splice(best,1);
+    // drop leaves that belonged nowhere specific — cheap prune
+    G.leaves=[]; renderInk(); return true; }
+  return false;
+}
+
+/* ---------- modes ---------- */
+function dayCode(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function loadTrialInto(idx,seed,jitter){
+  var t=TRIALS[idx], r=jitter?mkRng(seed):null;
+  G.trial=idx;
+  G.spawn=[t.spawn[0],t.spawn[1]];
+  G.inkMax=t.ink; G.linesInk=0; G.lines=[]; G.leaves=[]; G.parts=[];
+  G.terrain=t.terrain.slice(); G.thorns=t.thorns.slice();
+  G.gates=[]; var i;
+  for(i=0;i<t.gates.length;i++){ var g=t.gates[i];
+    var jx=r?Math.round((r()-0.5)*24):0, jy=r?Math.round((r()-0.5)*16):0;
+    G.gates.push([g[0]+jx,g[1]+jy,g[2],0]); }
+  G.goal=[t.goal[0],t.goal[1]];
+  if(r)G.inkMax=Math.round(t.ink*(0.95+r()*0.25));
+  resetSled(); G.gatesHit=0; G.phase="draw";
+}
+function startMode(mode,trialIdx){
+  var seed;
+  if(mode==="trial")seed=9000+trialIdx;
+  else if(mode==="daily")seed=dayCode();
+  else seed=(Date.now()&0xffffff)>>>0;
+  G=newWorld(mode,seed);
+  if(mode==="trial"){ loadTrialInto(trialIdx,seed,false); }
+  else if(mode==="daily"){ loadTrialInto(dayCode()%TRIALS.length,seed,true); }
+  else { // free ride
+    G.trial=-1; G.inkMax=Infinity; G.spawn=[80,90]; G.goal=null; G.gates=[];
+    G.terrain=[[0,700,180,740],[360,740,540,700]]; G.thorns=[];
+    resetSled(); G.phase="draw";
+  }
+  TOOL="draw";
+  updGoalChip();
+  hideScreens(); $("hud").classList.add("on"); $("dock").classList.add("on");
+  renderDock(); renderInk();
+}
+function stopToMenu(){ G=null;
+  $("hud").classList.remove("on"); $("dock").classList.remove("on"); $("goalchip").classList.remove("on");
+  show("s-title"); stamp(); }
+function updGoalChip(){
+  if(!G){ $("goalchip").classList.remove("on"); return; }
+  if(G.mode==="free"){ $("goalchip").innerHTML="🌙 <b>Free Ride</b> · draw anything, ride everything"; }
+  else{ var t=TRIALS[G.trial];
+    $("goalchip").innerHTML=(G.mode==="daily"?"📅 ":"")+"<b>"+t.name+"</b> · gates "+G.gatesHit+"/"+G.gates.length; }
+  $("goalchip").classList.add("on");
+}
+
+/* ---------- render ---------- */
+var cvs=document.getElementById("game"), ctx=cvs.getContext("2d");
+function drawGateShape(x,y,shape,hit){
+  ctx.lineWidth=3;
+  ctx.strokeStyle=hit?"#c8a84b":"#8a9178";
+  ctx.shadowColor=hit?"#c8a84b":"transparent"; ctx.shadowBlur=hit?14:0;
+  ctx.beginPath();
+  if(shape===0){ ctx.arc(x,y,16,0,6.283); }
+  else if(shape===1){ ctx.moveTo(x,y-18); ctx.lineTo(x+15,y); ctx.lineTo(x,y+18); ctx.lineTo(x-15,y); ctx.closePath(); }
+  else { var i; for(i=0;i<10;i++){ var an=-1.5708+i*0.6283, rr2=(i%2)?7:18;
+      var px=x+Math.cos(an)*rr2, py=y+Math.sin(an)*rr2; if(i)ctx.lineTo(px,py); else ctx.moveTo(px,py); }
+    ctx.closePath(); }
+  ctx.stroke(); ctx.shadowBlur=0;
+  if(hit){ ctx.fillStyle="#c8a84b33"; ctx.fill(); }
+}
+function drawPoly(p,style,width,dash){
+  ctx.strokeStyle=style; ctx.lineWidth=width; ctx.lineCap="round"; ctx.lineJoin="round";
+  if(dash)ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(p[0],p[1]);
+  var j; for(j=2;j<p.length;j+=2)ctx.lineTo(p[j],p[j+1]);
+  ctx.stroke(); ctx.setLineDash([]);
+}
+function render(){
+  ctx.fillStyle="#0b0f0b"; ctx.fillRect(0,0,W,H);
+  // faint pollen field
+  ctx.fillStyle="#7ab35611";
+  var i; for(i=0;i<24;i++){ var sx=(i*137+((G?G.tick:0)>>3))%W, sy=(i*211)%H;
+    ctx.fillRect(sx,sy,2,2); }
+  if(!G)return;
+  // terrain
+  for(i=0;i<G.terrain.length;i++)drawPoly(G.terrain[i],"#6b5330",5);
+  // thorns
+  for(i=0;i<G.thorns.length;i++){ drawPoly(G.thorns[i],"#7d3450",4);
+    var p=G.thorns[i],j;
+    ctx.fillStyle="#e56b6b";
+    for(j=0;j<p.length;j+=2){ ctx.beginPath(); ctx.arc(p[j],p[j+1],2.4,0,6.283); ctx.fill(); } }
+  // player ink
+  var inkCol = PROG.ink==="golden"?"#c8a84b":"#7ab356";
+  var dash = PROG.ink==="vine"?[9,5]:null;
+  for(i=0;i<G.lines.length;i++)drawPoly(G.lines[i],inkCol,3.5,dash);
+  if(curLine&&curLine.length>=4)drawPoly(curLine,inkCol+"aa",3.5,dash);
+  // living leaves
+  if(PROG.fx){ ctx.fillStyle="#9ccf74";
+    for(i=0;i<G.leaves.length;i++){ var lf=G.leaves[i];
+      ctx.beginPath(); ctx.ellipse(lf[0]+lf[2]*4,lf[1]-2,4,2,lf[2]*0.7,0,6.283); ctx.fill(); } }
+  // gates
+  for(i=0;i<G.gates.length;i++)drawGateShape(G.gates[i][0],G.gates[i][1],G.gates[i][2],G.gates[i][3]);
+  // goal flower
+  if(G.goal){ var gx=G.goal[0], gy=G.goal[1];
+    ctx.strokeStyle="#3f6b34"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(gx,gy+26); ctx.quadraticCurveTo(gx-4,gy+12,gx,gy+4); ctx.stroke();
+    var pk; ctx.fillStyle=G.gatesHit>=G.gates.length?"#e58fa0":"#7d5560";
+    for(pk=0;pk<6;pk++){ var an=pk/6*6.283;
+      ctx.beginPath(); ctx.ellipse(gx+Math.cos(an)*10,gy+Math.sin(an)*10,8,4.5,an,0,6.283); ctx.fill(); }
+    ctx.fillStyle="#e8dcc8"; ctx.beginPath(); ctx.arc(gx,gy,5,0,6.283); ctx.fill();
+    if(G.gatesHit>=G.gates.length){ ctx.shadowColor="#e58fa0"; ctx.shadowBlur=16;
+      ctx.beginPath(); ctx.arc(gx,gy,5,0,6.283); ctx.fill(); ctx.shadowBlur=0; } }
+  // spawn perch
+  ctx.strokeStyle="#8a9178"; ctx.lineWidth=2;
+  ctx.strokeRect(G.spawn[0]-10,G.spawn[1]+RADIUS+2,20,3);
+  // sled
+  var s=G.sled, skin=PROG.sled;
+  if(G.phase!=="crashed"){
+    ctx.save(); ctx.translate(s.x,s.y);
+    var ang=Math.atan2(s.vy,s.vx); if(G.phase!=="riding")ang=0;
+    ctx.rotate(ang*0.35);
+    if(skin==="leafboard"){ ctx.fillStyle="#7ab356"; ctx.beginPath(); ctx.ellipse(0,3,10,3.5,0,0,6.283); ctx.fill();
+      ctx.fillStyle="#c8a84b"; ctx.beginPath(); ctx.arc(0,-3,5.5,0,6.283); ctx.fill(); }
+    else if(skin==="acorn"){ ctx.fillStyle="#8a5a2b"; ctx.beginPath(); ctx.arc(0,1,7,0,6.283); ctx.fill();
+      ctx.fillStyle="#5c3a1a"; ctx.beginPath(); ctx.arc(0,-4,6,3.34,6.1); ctx.fill(); }
+    else if(skin==="dragonfly"){ ctx.fillStyle="#5b9bd5"; ctx.beginPath(); ctx.ellipse(0,0,9,3,0,0,6.283); ctx.fill();
+      ctx.fillStyle="#bfe0f2aa"; ctx.beginPath(); ctx.ellipse(-2,-4,7,2.4,-0.5,0,6.283); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(2,-4,7,2.4,0.5,0,6.283); ctx.fill(); }
+    else { ctx.fillStyle="#c8a84b"; ctx.beginPath(); ctx.ellipse(0,0,7.5,6,0,0,6.283); ctx.fill();
+      ctx.fillStyle="#e8dcc8"; ctx.beginPath(); ctx.arc(2,-2,1.6,0,6.283); ctx.fill(); }
+    ctx.restore();
+  }
+  // particles
+  for(i=0;i<G.parts.length;i++){ var pp=G.parts[i];
+    ctx.globalAlpha=Math.max(0,pp[4]/34); ctx.fillStyle=pp[5];
+    ctx.beginPath(); ctx.arc(pp[0],pp[1],2.6,0,6.283); ctx.fill(); }
+  ctx.globalAlpha=1;
+}
+function renderInk(){
+  if(!G)return;
+  if(G.inkMax===Infinity){ $("inkname").textContent="Free ink"; $("inkval").textContent="∞";
+    $("inkfill").style.width="100%"; return; }
+  var left=Math.max(0,G.inkMax-G.linesInk);
+  $("inkname").textContent="Ink"; $("inkval").textContent=Math.round(left);
+  $("inkfill").style.width=Math.max(0,Math.min(100,left/G.inkMax*100))+"%";
+}
+
+/* ---------- dock ---------- */
+function chip(id,icon,name){ return '<div class="chip" id="'+id+'"><div class="ci">'+icon+'</div><div class="cn">'+name+'</div></div>'; }
+function renderDock(){
+  $("dockrow1").innerHTML=chip("c-draw","✏️","Draw")+chip("c-erase","🧽","Erase")+chip("c-clear","🗑","Clear");
+  $("dockrow2").innerHTML='<div class="chip go" id="c-ride"><div class="ci">▶</div><div class="cn">Ride</div></div>'+chip("c-stop","■","Stop");
+  tap("c-draw",function(){ TOOL="draw"; dockSel(); });
+  tap("c-erase",function(){ TOOL="erase"; dockSel(); });
+  tap("c-clear",function(){ if(!G)return; G.lines=[]; G.linesInk=0; G.leaves=[]; renderInk(); toast("Ink cleared"); });
+  tap("c-ride",function(){ if(!G)return; if(G.phase==="draw")spawnSled(); });
+  tap("c-stop",function(){ stopRide(); });
+  dockSel();
+}
+function dockSel(){
+  var el;
+  el=$("c-draw"); if(el)el.classList.toggle("sel",TOOL==="draw");
+  el=$("c-erase"); if(el)el.classList.toggle("sel",TOOL==="erase");
+}
+
+/* ---------- screens / UI ---------- */
+function $(id){ return document.getElementById(id); }
+function hideScreens(){ var s=document.querySelectorAll(".screen"),i; for(i=0;i<s.length;i++)s[i].classList.remove("on"); }
+function show(id){ hideScreens(); $(id).classList.add("on"); }
+var toastT=null;
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2200); }
+function stamp(){ $("buildstamp").textContent="Sled Vine "+BUILD+" · "+trialsDone()+"/"+TRIALS.length+" trails · "+PROG.gates+" gates threaded"; }
+
+function renderTrials(){
+  var g=$("trialgrid"); g.innerHTML="";
+  var i; for(i=0;i<TRIALS.length;i++)(function(i){
+    var unlocked=i===0||PROG.trials[i-1]||PROG.trials[i];
+    var c=document.createElement("div"); c.className="lvlcard"+(unlocked?"":" locked")+(PROG.trials[i]?" done":"");
+    c.innerHTML='<div class="ln">'+(i+1)+'</div><div class="lt">'+TRIALS[i].name+'</div><div class="ls">'+(PROG.trials[i]?"✿":"")+'</div>';
+    if(unlocked)c.onclick=function(){ startMode("trial",i); };
+    g.appendChild(c);
+  })(i);
+}
+
+/* ---------- wardrobe ---------- */
+var WARD=[
+ {cat:"Sled",key:"sled",id:"seed",name:"Seed",icon:"🌰",need:function(){return true;},needTxt:"Free"},
+ {cat:"Sled",key:"sled",id:"leafboard",name:"Leafboard",icon:"🍃",need:function(){return trialsDone()>=4;},needTxt:"Clear 4 trails"},
+ {cat:"Sled",key:"sled",id:"acorn",name:"Acorn",icon:"🌳",need:function(){return PROG.gates>=25;},needTxt:"Thread 25 gates (lifetime)"},
+ {cat:"Sled",key:"sled",id:"dragonfly",name:"Dragonfly",icon:"🪰",need:function(){return PROG.streak>=3;},needTxt:"Daily streak of 3"},
+ {cat:"Ink",key:"ink",id:"plain",name:"Fresh Sage",icon:"✏️",need:function(){return true;},needTxt:"Free"},
+ {cat:"Ink",key:"ink",id:"vine",name:"Woven Vine",icon:"🌿",need:function(){return trialsDone()>=8;},needTxt:"Clear 8 trails"},
+ {cat:"Ink",key:"ink",id:"golden",name:"Golden Thread",icon:"✨",need:function(){return trialsDone()>=12;},needTxt:"Clear every trail"}
+];
+function renderWard(){
+  var host=$("wardlist"); host.innerHTML="";
+  var i; for(i=0;i<WARD.length;i++)(function(w){
+    var owned=w.need(), eq=PROG[w.key]===w.id;
+    var d=document.createElement("div"); d.className="wardcard"+(owned?"":" locked");
+    d.innerHTML='<div class="wi">'+w.icon+'</div><div class="wt"><div class="wn">'+w.name+' <span style="font-size:.7rem;color:var(--muted)">'+w.cat+'</span></div><div class="wd">'+w.needTxt+'</div></div>'
+      +'<div class="we'+(eq?" eq":"")+'">'+(eq?"Worn":(owned?"Wear":"🔒"))+'</div>';
+    if(owned)d.onclick=function(){ PROG[w.key]=w.id; save(); renderWard(); };
+    host.appendChild(d);
+  })(WARD[i]);
+}
+function renderGrove(){
+  var host=$("grovewrap"); host.innerHTML="";
+  if(!PROG.grove.length){ host.innerHTML='<div style="color:var(--muted);font-size:13px;padding:30px 10px;text-align:center">No keepsakes yet. Bloom a trail end to end and one will be pressed here.</div>'; return; }
+  var i; for(i=PROG.grove.length-1;i>=0;i--){ var ks=PROG.grove[i];
+    var d=document.createElement("div"); d.className="grovecard";
+    var cv=document.createElement("canvas"); cv.width=84; cv.height=84;
+    drawKeepsake(cv,ks);
+    var dd=document.createElement("div"); dd.className="gd"; dd.textContent=ks.d;
+    d.appendChild(cv); d.appendChild(dd); host.appendChild(d); }
+}
+
+/* ---------- input wiring ---------- */
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener("click",function(e){ e.preventDefault(); fn(); }); }
+function canvasPos(e){
+  var r=cvs.getBoundingClientRect();
+  var t=e.touches&&e.touches.length?e.touches[0]:e;
+  return [ (t.clientX-r.left)*(W/r.width), (t.clientY-r.top)*(784/r.height) ];
+}
+var drawing=false;
+function inputDown(e){
+  if(!G||G.phase!=="draw")return;
+  var p=canvasPos(e);
+  if(TOOL==="erase"){ if(eraseAt(p[0],p[1]))blip(300,0.1,0.05); return; }
+  drawing=true; curLine=[p[0],p[1]];
+}
+function inputMove(e){
+  if(!G)return;
+  var p=canvasPos(e);
+  if(TOOL==="erase"&&(e.buttons===1||(e.touches&&e.touches.length))){ eraseAt(p[0],p[1]); return; }
+  if(!drawing||!curLine)return;
+  var lx=curLine[curLine.length-2], ly=curLine[curLine.length-1];
+  var dx=p[0]-lx, dy=p[1]-ly;
+  if(dx*dx+dy*dy>=49){ curLine.push(p[0],p[1]);
+    // live budget guard: stop the stroke at the ink limit
+    if(G.inkMax!==Infinity&&G.linesInk+polyLen(curLine)>G.inkMax){ inputUp(); toast("Out of ink"); } }
+}
+function inputUp(){
+  if(drawing&&curLine){ if(curLine.length>=4)addLine(curLine); }
+  drawing=false; curLine=null;
+}
+cvs.addEventListener("pointerdown",inputDown);
+cvs.addEventListener("pointermove",inputMove);
+window.addEventListener("pointerup",inputUp);
+cvs.addEventListener("touchstart",function(e){ e.preventDefault(); },{passive:false});
+
+tap("b-trials",function(){ renderTrials(); show("s-trials"); });
+tap("b-daily",function(){ startMode("daily"); });
+tap("b-free",function(){ startMode("free"); });
+tap("b-how",function(){ show("s-how"); });
+tap("b-ward",function(){ renderWard(); show("s-ward"); });
+tap("b-grove",function(){ renderGrove(); show("s-grove"); });
+tap("b-set",function(){ syncToggles(); show("s-set"); });
+tap("trials-back",function(){ show("s-title"); stamp(); });
+tap("how-back",function(){ show("s-title"); });
+tap("ward-back",function(){ show("s-title"); });
+tap("grove-back",function(){ show("s-title"); });
+tap("set-back",function(){ show("s-title"); });
+tap("hud-back",function(){ stopToMenu(); });
+tap("hud-retry",function(){ if(!G)return; if(G.phase==="riding")stopRide(); else if(G.phase==="draw")spawnSled(); });
+tap("over-next",function(){ if(G&&G.mode==="trial"&&G.trial<TRIALS.length-1)startMode("trial",G.trial+1); else stopToMenu(); });
+tap("over-home",function(){ stopToMenu(); });
+function syncToggles(){
+  $("tg-sound").classList.toggle("on",PROG.sound);
+  $("tg-fx").classList.toggle("on",PROG.fx);
+}
+tap("tg-sound",function(){ PROG.sound=!PROG.sound; save(); syncToggles(); });
+tap("tg-fx",function(){ PROG.fx=!PROG.fx; save(); syncToggles(); });
+
+/* ---------- stage scale ---------- */
+function fit(){
+  var st=$("stage"), vw=window.innerWidth, vh=window.innerHeight;
+  var sc=Math.min(vw/540,vh/960);
+  st.style.transform="scale("+sc+")";
+}
+window.addEventListener("resize",fit); fit();
+stamp();
+
+/* ---------- embed + sunbeams ---------- */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_sledvine'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- headless test hook ---------- */
+if(/[?&]svtest=1/.test(location.search)){
+  window.SV_DEV={
+    start:function(mode){ startMode(mode||"free"); return true; },
+    loadTrial:function(i){ startMode("trial",i); return true; },
+    drawLines:function(arr){ var i,ok=0; for(i=0;i<arr.length;i++){ if(addLine(arr[i].slice()))ok++; } return ok; },
+    spawn:function(){ spawnSled(); return true; },
+    step:function(n){ var k; for(k=0;k<(n||1);k++){ if(!G)break; tickSim(); if(G.phase==="won")break; }
+      render(); return window.SV_DEV.state(); },
+    state:function(){ if(!G)return null;
+      var s=G.sled;
+      return { mode:G.mode, trial:G.trial, phase:G.phase, x:+s.x.toFixed(2), y:+s.y.toFixed(2),
+        vx:+s.vx.toFixed(3), vy:+s.vy.toFixed(3), tick:G.tick,
+        gates:G.gatesHit, gatesTotal:G.gates.length, inkLeft:G.inkMax===Infinity?-1:Math.round(G.inkMax-G.linesInk),
+        nan:!isFinite(s.x+s.y+s.vx+s.vy) }; },
+    trace:function(n){ // spawn and record positions for tuning
+      spawnSled(); var out=[],k;
+      for(k=0;k<(n||600);k++){ tickSim(); out.push([+G.sled.x.toFixed(1),+G.sled.y.toFixed(1),G.phase]);
+        if(G.phase!=="riding")break; }
+      return out; },
+    gateDists:function(tr){ // min distance of a trace to each gate
+      var i,g,out=[];
+      for(g=0;g<G.gates.length;g++){ var best=1e9;
+        for(i=0;i<tr.length;i++){ var dx=tr[i][0]-G.gates[g][0],dy=tr[i][1]-G.gates[g][1];
+          var d=Math.sqrt(dx*dx+dy*dy); if(d<best)best=d; }
+        out.push(+best.toFixed(1)); }
+      return out; },
+    runTrialProof:function(i){
+      startMode("trial",i);
+      var placed=window.SV_DEV.drawLines(TRIALS[i].proof);
+      spawnSled();
+      var k; for(k=0;k<4000;k++){ tickSim(); if(G.phase==="won"||G.phase==="crashed")break;
+        if(G.phase==="draw")break; }
+      return { trial:i, name:TRIALS[i].name, won:G.phase==="won", placed:placed,
+        proofLines:TRIALS[i].proof.length, gates:G.gatesHit, gatesTotal:G.gates.length, ticks:G.tick };
+    },
+    trialCheck:function(){ var out=[],i,all=true;
+      for(i=0;i<TRIALS.length;i++){ var r0=window.SV_DEV.runTrialProof(i); out.push(r0);
+        if(!r0.won||r0.placed<r0.proofLines)all=false; }
+      return { all:all, results:out }; },
+    dailyInfo:function(){ startMode("daily");
+      var i,g=[]; for(i=0;i<G.gates.length;i++)g.push([G.gates[i][0],G.gates[i][1]]);
+      return { trial:G.trial, gates:g, ink:G.inkMax }; },
+    earnTest:function(){ return window._sbCapEarn(2,"svtest"); },
+    prog:function(){ return PROG; },
+    trials:TRIALS
+  };
+}
+
+/* ---------- main loop ---------- */
+function loop(){
+  if(G)tickSim();
+  if(G){ render(); if(G.phase==="riding"||G.phase==="crashed")updGoalChip(); if((G.tick&15)===0)renderInk(); }
+  requestAnimationFrame(loop);
+}
+loop();
+})();
+</script>
+</body>
+</html>
