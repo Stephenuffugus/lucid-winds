@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M16 5 L25 10.5 L25 21.5 L16 27 L7 21.5 L7 10.5 Z' fill='%235c8f3f' stroke='%23c8a84b' stroke-width='1.4'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meadow Weave">
+<title>Meadow Weave — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"meadowweave"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--sage); font-weight:800; text-shadow:0 3px 0 #1f3016, 0 0 26px #5c8f3f44; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#6ea34a,#4a7a2f); color:#0e1707; border-color:#8fc86a; box-shadow:0 4px 0 #2f5020, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:15px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.wardwrap{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.wardcard{width:140px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:10px; cursor:pointer; text-align:center}
+.wardcard.locked{opacity:.5}
+.wardcard.on{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold)}
+.wardcard .wn{font-size:13px; font-weight:700; color:var(--cream)}
+.wardcard .wt{font-size:11px; color:var(--muted); margin-top:2px}
+.grovewrap{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.fseed{width:60px; height:60px; border:1px solid var(--line); border-radius:12px; background:#0f150c; display:flex; align-items:center; justify-content:center; font-size:26px}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+.go-big{font-size:26px; font-weight:800; color:var(--sage); line-height:1.1}
+.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
+.sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241d10; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Meadow Weave</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Turn each hex tile and set it down so meadow meets meadow, pond meets pond. Close off a region and it comes <b class="hl">alive</b> and presses a <b class="hl">feral seed</b> into your pouch. No clock, no losing. Just weave.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-weave">🌾&nbsp; Endless Weave</button>
+      <div class="row">
+        <button class="btn sm" id="b-daily">📅 Daily Meadow</button>
+        <button class="btn sm" id="b-quest">🚩 Quest Weave</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-zen">🍃 Zen Grove</button>
+        <button class="btn sm" id="b-pouch">🌱 Pouch</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-ward">🎀 Wardrobe</button>
+        <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-set">⚙</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to weave</h2>
+    <div class="helprow"><div class="hi">🔄</div><div>Tap <b>Rotate</b> to turn the next tile. Each hex has six edges, each a kind of land.</div></div>
+    <div class="helprow"><div class="hi">👆</div><div>Tap a glowing empty slot to <b>place</b> it. Line up matching edges for points and a rising chime.</div></div>
+    <div class="helprow"><div class="hi">🌾</div><div>Close off a whole region of one land and it <b class="hl">comes alive</b> and drops a <b class="hl">feral seed</b> into your pouch.</div></div>
+    <div class="helprow"><div class="hi">🎋</div><div>Clean placements <b>refund tiles</b> to your bag. A tidy weave lasts longer.</div></div>
+    <div class="helprow"><div class="hi">🍃</div><div>You never lose, you just <b>finish</b> when the bag runs out. Keep the map you grew.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Haptics</span><div class="toggle on" id="tg-haptic"><b></b></div></div>
+    <div class="settingline"><span>Reduce motion</span><div class="toggle" id="tg-motion"><b></b></div></div>
+    <div class="settingline"><span>Edge symbols</span><div class="toggle on" id="tg-symbols"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- WARDROBE -->
+  <div class="screen" id="s-ward"><div class="pad">
+    <h2 class="sc-h">Wardrobe</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Earn cosmetics by weaving. Tap to equip.</div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Tile sets</div>
+    <div class="wardwrap" id="ward-tiles"></div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:16px 0 8px">Table backdrops</div>
+    <div class="wardwrap" id="ward-backs"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="ward-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- POUCH -->
+  <div class="screen" id="s-pouch"><div class="pad">
+    <h2 class="sc-h">Feral pouch</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px" id="pouch-sub">Every region you close presses a feral seed here.</div>
+    <div class="grovewrap" id="pouch-wrap"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="pouch-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- RESULTS -->
+  <div class="screen center" id="s-go"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="go-big" id="go-title">The meadow rests</div>
+    <div style="font-size:44px;font-weight:800;color:var(--cream);margin-top:6px" id="go-score">0</div>
+    <div class="go-lab">weave score</div>
+    <div class="pill" id="go-best">best 0</div>
+    <div style="margin-top:10px;font-size:14px;color:var(--sage)" id="go-reg">0 regions came alive · 0 feral seeds</div>
+    <div class="sun-earn" id="go-sun">☀ +0 sunbeams</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="go-retry">↻ Weave again</button>
+      <div class="row">
+        <button class="btn sm" id="go-pouch">🌱 Pouch</button>
+        <button class="btn sm" id="go-home">◄ Menu</button>
+        <button class="btn sm" id="go-share">↗ Share</button>
+      </div>
+    </div>
+  </div></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var VW=540, VH=960, DPR=Math.min(2, window.devicePixelRatio||1);
+var BUILD='v1.0';
+var TESTMODE=/[?&]mwtest=1/.test(location.search);
+
+/* ---------- storage + settings ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, haptic:true, motion:true, symbols:true };
+(function(){ try{ var s=JSON.parse(LS.get('mw_set')||'{}'); ['sound','haptic','motion','symbols'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+function saveSet(){ LS.set('mw_set', JSON.stringify(SET)); }
+
+/* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_meadowweave'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- save / economy ---------- */
+var PROG={ bestScore:0, totalRegions:0, ferals:0, streak:0, lastDaily:'', dailyDone:'', runs:0,
+  tileset:0, backdrop:0, owned:{}, pouch:[] };
+(function(){ try{ var s=JSON.parse(LS.get('meadowweave_save')||'{}'); for(var k in s){ if(s.hasOwnProperty(k))PROG[k]=s[k]; } }catch(e){} if(!PROG.pouch)PROG.pouch=[]; if(!PROG.owned)PROG.owned={}; })();
+function save(){ try{ LS.set('meadowweave_save', JSON.stringify(PROG)); }catch(e){} }
+
+/* cosmetics (no lootbox, KNOWN thresholds) */
+var TILESETS=[
+  {id:0, nm:'Papercut', need:0, desc:'Starter'},
+  {id:1, nm:'Stained Glass', need:20, kind:'reg', desc:'Close 20 regions'},
+  {id:2, nm:'Embroidered', need:1200, kind:'score', desc:'Score 1200'},
+  {id:3, nm:'Moonlit Ink', need:7, kind:'streak', desc:'7-day streak'}
+];
+var BACKDROPS=[
+  {id:0, nm:'Night Table', need:0, desc:'Starter'},
+  {id:1, nm:'Firefly Field', need:6, kind:'runs', desc:'Weave 6 maps'},
+  {id:2, nm:'Harvest Dusk', need:800, kind:'score', desc:'Score 800'},
+  {id:3, nm:'Frostglass', need:60, kind:'reg', desc:'Close 60 regions'}
+];
+function metric(kind){ if(kind==='reg')return PROG.totalRegions||0; if(kind==='score')return PROG.bestScore||0; if(kind==='runs')return PROG.runs||0; if(kind==='streak')return PROG.streak||0; return 0; }
+function ownedC(arr,it){ if(it.need===0)return true; if(PROG.owned[arr+it.id])return true; return metric(it.kind)>=it.need; }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function blip(freq,dur,type,vol){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.value=(vol||0.12); o.connect(g); g.connect(c.destination); var t=c.currentTime; g.gain.setValueAtTime(vol||0.12,t); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.12)); o.start(t); o.stop(t+(dur||0.12)); }catch(e){} }
+function sfx(kind,n){ if(!SET.sound)return;
+  if(kind==='place')blip(220,0.10,'triangle',0.10);
+  else if(kind==='match'){ var base=440*Math.pow(1.0595,Math.min(12,(n||1)*2)); blip(base,0.12,'sine',0.11); }
+  else if(kind==='region'){ blip(523,0.16,'sine',0.15); setTimeout(function(){blip(784,0.22,'sine',0.14);},120); }
+  else if(kind==='rotate')blip(330,0.05,'square',0.05);
+  else if(kind==='rest')blip(180,0.4,'sine',0.12);
+  else if(kind==='ui')blip(440,0.05,'sine',0.07);
+}
+function closeAC(){ try{ if(AC){AC.close();AC=null;} }catch(e){} }
+function haptic(ms){ if(SET.haptic&&navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} } }
+
+/* ---------- rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+var rng=Math.random;
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function daySeed(){ var d=new Date(); return (d.getFullYear()*1000+(d.getMonth()+1)*40+d.getDate())>>>0; }
+
+/* ---------- hex + biome model ---------- */
+var BIOMES=[
+  {id:0, nm:'Meadow',  col:'#4f8038', c2:'#7ab356', sym:'"'},
+  {id:1, nm:'Pond',    col:'#2b567c', c2:'#5b9bd5', sym:'~'},
+  {id:2, nm:'Forest',  col:'#24421f', c2:'#3f6b34', sym:'^'},
+  {id:3, nm:'Field',   col:'#9c7f2e', c2:'#d9b85a', sym:'|'},
+  {id:4, nm:'Orchard', col:'#7d3450', c2:'#e58fa0', sym:'*'}
+];
+var BSEED=['🌿','🐟','🌲','🌾','🌸'];
+var DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+var EDGE_ANG=[]; (function(){ var a=[0,-60,-120,180,120,60]; for(var i=0;i<6;i++)EDGE_ANG[i]=a[i]*Math.PI/180; })();
+function opp(i){ return (i+3)%6; }
+function key(q,r){ return q+','+r; }
+function pick(n){ return Math.floor(rng()*n); }
+
+function genTile(){
+  var e=[], i, roll=rng();
+  if(roll<0.42){ var b=pick(5); for(i=0;i<6;i++)e[i]=b; }
+  else if(roll<0.80){ var b1=pick(5), b2=pick(5); while(b2===b1)b2=pick(5); var start=pick(6), len=2+pick(3); for(i=0;i<6;i++)e[i]=b2; for(i=0;i<len;i++)e[(start+i)%6]=b1; }
+  else { var a=pick(5), bb=pick(5), c=pick(5); for(i=0;i<6;i++)e[i]=a; var s2=pick(6); e[s2]=bb; e[(s2+1)%6]=bb; e[(s2+3)%6]=c; e[(s2+4)%6]=c; }
+  return e;
+}
+function rotEdges(edges,rot){ var out=[], i; rot=((rot%6)+6)%6; for(i=0;i<6;i++)out[i]=edges[(i-rot+6)%6]; return out; }
+
+/* ---------- game state ---------- */
+var G=null;
+function startLevel(mode){
+  var infinite=(mode==='zen');
+  if(mode==='daily'){ rng=mulberry32(daySeed()); }
+  else if(mode==='quest'){ rng=mulberry32((daySeed()*7+13)>>>0); }
+  else { rng=Math.random; }
+  var stack= mode==='daily'?42 : mode==='quest'?46 : 52;
+  G={ mode:mode, infinite:infinite, board:{}, next:genTile(), rot:0, stack:stack, placed:0,
+      score:0, ferals:0, regions:0, awarded:{}, anims:[], seams:[], phase:'play',
+      panX:0, panY:0, view:{size:34,ox:270,oy:430}, lastPlaced:null, quests:[], t:0, floats:[] };
+  // first tile free at origin
+  G.board[key(0,0)]={ q:0, r:0, edges:rotEdges(G.next,0) };
+  G.next=genTile(); G.rot=0;
+  if(mode==='quest'){ // seed a couple of quest flags asking for region sizes
+    G.quests=[ {biome:pick(5), size:4, done:false}, {biome:pick(5), size:6, done:false} ];
+  }
+  computeView();
+  show('play');
+}
+
+/* ---------- geometry / camera ---------- */
+var BOARD_TOP=70, BOARD_BOT=VH-158;
+function computeView(){
+  var cells=[], k; for(k in G.board){ if(G.board.hasOwnProperty(k))cells.push(G.board[k]); }
+  // include legal frontier so it stays visible
+  var minU=1e9,maxU=-1e9,minV=1e9,maxV=-1e9, i, sq3=Math.sqrt(3);
+  for(i=0;i<cells.length;i++){ var c=cells[i]; var u=sq3*(c.q+c.r/2), v=1.5*c.r; if(u<minU)minU=u; if(u>maxU)maxU=u; if(v<minV)minV=v; if(v>maxV)maxV=v; }
+  if(cells.length===0){ minU=maxU=minV=maxV=0; }
+  var spanU=(maxU-minU)+2, spanV=(maxV-minV)+2;
+  var availW=VW-40, availH=BOARD_BOT-BOARD_TOP-20;
+  var size=Math.min(availW/spanU, availH/spanV);
+  size=Math.max(15, Math.min(40, size));
+  var cU=(minU+maxU)/2, cV=(minV+maxV)/2;
+  G.view={ size:size, ox:VW/2 - cU*size + G.panX, oy:(BOARD_TOP+BOARD_BOT)/2 - cV*size + G.panY };
+}
+function hexToPixel(q,r){ var s=G.view.size, sq3=Math.sqrt(3); return { x:G.view.ox + s*sq3*(q+r/2), y:G.view.oy + s*1.5*r }; }
+function pixelToHex(x,y){ var s=G.view.size, sq3=Math.sqrt(3); var px=(x-G.view.ox)/s, py=(y-G.view.oy)/s;
+  var r=py/1.5; var q=px/sq3 - r/2; return axialRound(q,r); }
+function axialRound(q,r){ var x=q, z=r, yy=-x-z; var rx=Math.round(x), rz=Math.round(z), ry=Math.round(yy);
+  var dx=Math.abs(rx-x), dz=Math.abs(rz-z), dy=Math.abs(ry-yy);
+  if(dx>dy&&dx>dz)rx=-ry-rz; else if(dz>dy)rz=-rx-ry; return { q:rx, r:rz }; }
+
+/* ---------- placement + scoring ---------- */
+function occupied(q,r){ return !!G.board[key(q,r)]; }
+function legalCells(){ var out=[], seen={}, k; for(k in G.board){ if(!G.board.hasOwnProperty(k))continue; var c=G.board[k]; for(var i=0;i<6;i++){ var nq=c.q+DIRS[i][0], nr=c.r+DIRS[i][1], kk=key(nq,nr); if(!G.board[kk]&&!seen[kk]){ seen[kk]=1; out.push({q:nq,r:nr}); } } } return out; }
+function scoreAt(q,r,edges){ var matched=0, filled=0, mism=0; for(var i=0;i<6;i++){ var nq=q+DIRS[i][0], nr=r+DIRS[i][1], nb=G.board[key(nq,nr)]; if(!nb)continue; filled++; if(nb.edges[opp(i)]===edges[i])matched++; else mism++; } return { matched:matched, filled:filled, mism:mism }; }
+function bestRotFor(q,r){ var best=-1, br=0; for(var rt=0;rt<6;rt++){ var e=rotEdges(G.next,rt); var s=scoreAt(q,r,e); var v=s.matched*3 - s.mism; if(v>best){ best=v; br=rt; } } return br; }
+
+function place(q,r,rot){
+  if(G.phase!=='play')return false;
+  if(occupied(q,r))return false;
+  // must be adjacent to a placed tile
+  var adj=false; for(var i=0;i<6;i++){ if(G.board[key(q+DIRS[i][0],r+DIRS[i][1])]){ adj=true; break; } }
+  if(!adj)return false;
+  if(typeof rot!=='number')rot=G.rot;
+  var edges=rotEdges(G.next,rot);
+  var sc=scoreAt(q,r,edges);
+  G.board[key(q,r)]={ q:q, r:r, edges:edges };
+  G.placed++;
+  // score: each matched edge +2, all-filled-matched perfect bonus
+  var pts=sc.matched*2;
+  var perfect=(sc.filled>=3 && sc.mism===0 && sc.matched>0);
+  if(perfect)pts+=sc.filled*3;
+  G.score+=pts;
+  // matched seams for visual
+  for(i=0;i<6;i++){ var nb=G.board[key(q+DIRS[i][0],r+DIRS[i][1])]; if(nb&&nb.edges[opp(i)]===edges[i])addSeam(q,r,i); }
+  if(sc.matched>0){ sfx('match', sc.matched); floatText(q,r,'+'+pts); }
+  else sfx('place');
+  // tile economy: consume 1, refund on clean play
+  if(!G.infinite){ G.stack--; if(perfect)G.stack+=1; } // drains slowly; closing REGIONS is the main refund (checkRegion)
+  G.lastPlaced={q:q,r:r};
+  // region reward: fires when the placed tile joins a same-biome matched cluster of size>=3
+  var bh={}; for(i=0;i<6;i++)bh[edges[i]]=1;
+  for(var b in bh){ if(bh.hasOwnProperty(b))checkRegion(q,r,parseInt(b,10)); }
+  // quests
+  updateQuests();
+  // advance
+  G.next=genTile(); G.rot=0;
+  computeView();
+  // end?
+  if(!G.infinite && G.stack<=0){ endRun(); }
+  else if(legalCells().length===0){ endRun(); }
+  return true;
+}
+
+/* region: connected tiles sharing MATCHED edges of `biome`; closed = no biome-edge faces EMPTY */
+function regionAt(q,r,biome){
+  var startK=key(q,r); if(!G.board[startK])return null;
+  // start tile must have a biome edge
+  var has=false, e=G.board[startK].edges, i; for(i=0;i<6;i++)if(e[i]===biome)has=true; if(!has)return null;
+  var stack=[startK], seen={}, cells=[], open=false, bEdges=0, mEdges=0;
+  seen[startK]=1;
+  while(stack.length){ var ck=stack.pop(); var c=G.board[ck]; cells.push(ck);
+    for(i=0;i<6;i++){ if(c.edges[i]!==biome)continue; bEdges++;
+      var nq=c.q+DIRS[i][0], nr=c.r+DIRS[i][1], nk=key(nq,nr), nb=G.board[nk];
+      if(!nb){ open=true; continue; }
+      if(nb.edges[opp(i)]===biome){ mEdges++; if(!seen[nk]){ seen[nk]=1; stack.push(nk); } }
+      // else: capped by a different biome (closed there, not open)
+    }
+  }
+  return { cells:cells, open:open, biome:biome, clean: bEdges>0?(mEdges/bEdges):0, size:cells.length };
+}
+function checkRegion(q,r,biome){
+  var reg=regionAt(q,r,biome); if(!reg || reg.size<3)return;
+  if(!((reg.size%3===0) || (!reg.open && reg.size>=4)))return; // fire on size milestones (3,6,9...) or an enclosed close — keeps it special/calm
+  var tile=G.board[key(q,r)]; if(!tile)return; if(!tile.aw)tile.aw={}; if(tile.aw[biome])return; tile.aw[biome]=1;
+  // award (feral + score + diorama fire on cluster growth; tile REFUND only for the rarer fully-enclosed close)
+  G.regions++; G.ferals++;
+  var rarity= reg.size>=7?3 : reg.size>=5?2 : 1;
+  if(!reg.open && reg.size>=4)rarity++;
+  G.score+= reg.size*4 + rarity*6;
+  if(!G.infinite && !reg.open && reg.size>=3)G.stack+=2; // enclosed regions refund -> runs stay finite but clean play lasts
+  // living diorama animation at region centroid
+  var cx=0, cy=0, i; for(i=0;i<reg.cells.length;i++){ var c=G.board[reg.cells[i]]; var p=hexToPixel(c.q,c.r); cx+=p.x; cy+=p.y; }
+  cx/=reg.cells.length; cy/=reg.cells.length;
+  spawnDiorama(cx,cy,biome,rarity);
+  // press a feral seed to pouch
+  PROG.pouch.push({ b:biome, size:reg.size, rarity:rarity, t:Date.now() });
+  if(PROG.pouch.length>200)PROG.pouch.shift();
+  PROG.totalRegions=(PROG.totalRegions||0)+1; PROG.ferals=(PROG.ferals||0)+1;
+  sfx('region'); haptic(18);
+}
+function updateQuests(){ if(G.mode!=='quest'||!G.lastPlaced)return; var lp=G.lastPlaced; var tile=G.board[key(lp.q,lp.r)]; if(!tile)return;
+  for(var i=0;i<G.quests.length;i++){ var qz=G.quests[i]; if(qz.done)continue; var has=false,j; for(j=0;j<6;j++)if(tile.edges[j]===qz.biome)has=true; if(!has)continue;
+    var reg=regionAt(lp.q,lp.r,qz.biome); if(reg&&reg.size>=qz.size){ qz.done=true; G.score+=60; if(!G.infinite)G.stack+=6; floatText(lp.q,lp.r,'Quest!'); } } }
+
+/* ---------- animations ---------- */
+function addSeam(q,r,i){ if(SET.motion===false)return; G.seams.push({q:q,r:r,i:i,life:0.6}); if(G.seams.length>40)G.seams.shift(); }
+function spawnDiorama(x,y,biome,rarity){ if(SET.motion===false){ return; } var n=Math.min(18, 8+rarity*3), i; for(i=0;i<n;i++){ var a=Math.PI*2*i/n+rng(); G.anims.push({ x:x,y:y, vx:Math.cos(a)*(20+rng()*40), vy:Math.sin(a)*(20+rng()*40)-30, life:1.1, col:BIOMES[biome].c2 }); } if(G.anims.length>160)G.anims.length=160; }
+function floatText(q,r,txt){ var p= (q===0&&r===0&&G.lastPlaced)?hexToPixel(G.lastPlaced.q,G.lastPlaced.r):hexToPixel(q,r); G.floats.push({x:p.x,y:p.y-G.view.size,txt:txt,life:1.0}); if(G.floats.length>16)G.floats.shift(); }
+
+/* ---------- end ---------- */
+function endRun(){ if(G.phase==='over')return; G.phase='over'; sfx('rest');
+  if(G.score>(PROG.bestScore||0))PROG.bestScore=G.score;
+  PROG.runs=(PROG.runs||0)+1;
+  var granted=0;
+  if(G.mode!=='zen'){
+    var amt=Math.min(12, Math.floor(G.score/500)+G.ferals);
+    if(G.mode==='daily'){ var ts=todayStr(); if(PROG.dailyDone!==ts){ if(PROG.lastDaily===yesterdayStr())PROG.streak=(PROG.streak||0)+1; else PROG.streak=1; PROG.lastDaily=ts; PROG.dailyDone=ts; amt+=2; } }
+    try{ if(amt>0&&window._sbCapEarn)granted=window._sbCapEarn(amt,'meadowweave:'+G.mode)||0; }catch(e){}
+  }
+  save();
+  $('go-title').textContent = G.mode==='zen'?'A calm grove':'The meadow rests';
+  $('go-score').textContent = G.score;
+  $('go-best').textContent = 'best '+(PROG.bestScore||0);
+  $('go-reg').textContent = G.regions+' region'+(G.regions===1?'':'s')+' came alive · '+G.ferals+' feral seed'+(G.ferals===1?'':'s');
+  $('go-sun').textContent = '☀ +'+granted+' sunbeams';
+  show('go');
+}
+function yesterdayStr(){ var d=new Date(Date.now()-864e5); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+
+/* ---------- rendering ---------- */
+var cv=$('game'), ctx=cv.getContext('2d');
+function fit(){ cv.width=VW*DPR; cv.height=VH*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='scale('+s+')'; }
+window.addEventListener('resize',fit); fit();
+
+function hexPath(cx,cy,s){ ctx.beginPath(); for(var k=0;k<6;k++){ var a=(30+60*k)*Math.PI/180; var x=cx+s*Math.cos(a), y=cy+s*Math.sin(a); if(k===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); }
+function drawTile(c){ var p=hexToPixel(c.q,c.r), s=G.view.size; var i;
+  // sectors per edge
+  for(i=0;i<6;i++){ var ang=EDGE_ANG[i]; var a1=ang-Math.PI/6, a2=ang+Math.PI/6; var b=BIOMES[c.edges[i]];
+    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+s*Math.cos(a1),p.y+s*Math.sin(a1)); ctx.lineTo(p.x+s*Math.cos(a2),p.y+s*Math.sin(a2)); ctx.closePath();
+    ctx.fillStyle=b.col; ctx.fill();
+  }
+  // inner shading blob
+  ctx.beginPath(); ctx.arc(p.x,p.y,s*0.34,0,7); ctx.fillStyle='rgba(232,220,200,0.05)'; ctx.fill();
+  // edge symbols
+  if(SET.symbols && s>=22){ ctx.font='bold '+Math.round(s*0.34)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(i=0;i<6;i++){ var an=EDGE_ANG[i]; var bx=p.x+Math.cos(an)*s*0.64, by=p.y+Math.sin(an)*s*0.64; ctx.fillStyle='rgba(232,220,200,0.55)'; ctx.fillText(BIOMES[c.edges[i]].sym, bx, by); } }
+  // outline
+  hexPath(p.x,p.y,s); ctx.strokeStyle='rgba(10,14,9,0.85)'; ctx.lineWidth=1.5; ctx.stroke();
+}
+function drawSeam(sm){ var c=G.board[key(sm.q,sm.r)]; if(!c)return; var p=hexToPixel(c.q,c.r), s=G.view.size; var ang=EDGE_ANG[sm.i]; var a1=ang-Math.PI/6, a2=ang+Math.PI/6;
+  ctx.beginPath(); ctx.moveTo(p.x+s*Math.cos(a1),p.y+s*Math.sin(a1)); ctx.lineTo(p.x+s*Math.cos(a2),p.y+s*Math.sin(a2));
+  ctx.strokeStyle='rgba(200,232,150,'+Math.max(0,sm.life)+')'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.stroke(); }
+function render(){
+  ctx.clearRect(0,0,VW,VH);
+  // backdrop
+  var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#111a12'); g.addColorStop(0.6,'#0c130e'); g.addColorStop(1,'#080d0a'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  if(!G){ return; }
+  // legal cells faint
+  var lc=legalCells(), i;
+  for(i=0;i<lc.length;i++){ var p=hexToPixel(lc[i].q,lc[i].r); hexPath(p.x,p.y,G.view.size*0.94); ctx.fillStyle='rgba(122,179,86,0.05)'; ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.22)'; ctx.lineWidth=1.2; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]); }
+  // tiles
+  for(var k in G.board){ if(G.board.hasOwnProperty(k))drawTile(G.board[k]); }
+  // seams
+  for(i=0;i<G.seams.length;i++)drawSeam(G.seams[i]);
+  // anims
+  for(i=0;i<G.anims.length;i++){ var an=G.anims[i]; ctx.globalAlpha=Math.max(0,an.life); ctx.fillStyle=an.col; ctx.beginPath(); ctx.arc(an.x,an.y,3,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  // floats
+  ctx.textAlign='center'; ctx.font='800 16px system-ui';
+  for(i=0;i<G.floats.length;i++){ var fl=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,fl.life)); ctx.fillStyle='#eafbd6'; ctx.fillText(fl.txt,fl.x,fl.y); } ctx.globalAlpha=1;
+  drawHUD();
+}
+function drawHUD(){
+  // top bar
+  ctx.fillStyle='rgba(12,18,12,0.82)'; ctx.fillRect(0,0,VW,64);
+  ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle='#e8dcc8'; ctx.font='800 22px system-ui';
+  ctx.fillText(''+G.score, 18, 32);
+  ctx.font='600 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText('SCORE', 18, 50);
+  // ferals + tiles
+  ctx.textAlign='center'; ctx.fillStyle='#7ab356'; ctx.font='800 18px system-ui'; ctx.fillText('🌱 '+G.ferals, VW/2, 26);
+  ctx.fillStyle='#8a9178'; ctx.font='600 11px system-ui'; ctx.fillText('SEEDS', VW/2, 46);
+  ctx.textAlign='right'; ctx.fillStyle= G.infinite?'#7ab356':(G.stack<=6?'#e58fa0':'#c8a84b'); ctx.font='800 20px system-ui';
+  ctx.fillText(G.infinite?'∞':(''+G.stack), VW-18, 26); ctx.fillStyle='#8a9178'; ctx.font='600 11px system-ui'; ctx.fillText('TILES', VW-18, 46);
+  // menu button (top-left corner overlay)
+  hudBtn(HB_MENU,'‹');
+  // next tile tray at bottom
+  var trayY=VH-150; ctx.fillStyle='rgba(12,18,12,0.9)'; ctx.fillRect(0,trayY,VW,150);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic'; ctx.fillStyle='#8a9178'; ctx.font='600 12px system-ui'; ctx.fillText('NEXT TILE', 24, trayY+24);
+  // preview hex
+  var pcx=88, pcy=trayY+86, ps=44; drawPreview(pcx,pcy,ps);
+  // rotate + place hint buttons
+  roundBtn(HB_ROT,'🔄 Rotate');
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic'; ctx.fillStyle='#8a9178'; ctx.font='600 12px system-ui';
+  ctx.fillText('Tap a glowing slot to place', 176, trayY+96);
+  if(G.mode==='quest')drawQuests(trayY);
+}
+function drawPreview(cx,cy,s){ var edges=rotEdges(G.next,G.rot), i;
+  for(i=0;i<6;i++){ var ang=EDGE_ANG[i]; var a1=ang-Math.PI/6, a2=ang+Math.PI/6; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+s*Math.cos(a1),cy+s*Math.sin(a1)); ctx.lineTo(cx+s*Math.cos(a2),cy+s*Math.sin(a2)); ctx.closePath(); ctx.fillStyle=BIOMES[edges[i]].col; ctx.fill(); }
+  if(SET.symbols){ ctx.font='bold 15px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; for(i=0;i<6;i++){ var an=EDGE_ANG[i]; ctx.fillStyle='rgba(232,220,200,0.6)'; ctx.fillText(BIOMES[edges[i]].sym, cx+Math.cos(an)*s*0.64, cy+Math.sin(an)*s*0.64); } }
+  hexPath(cx,cy,s); ctx.strokeStyle='rgba(200,180,120,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+}
+function drawQuests(trayY){ ctx.textAlign='right'; ctx.font='600 11px system-ui'; for(var i=0;i<G.quests.length;i++){ var qz=G.quests[i]; ctx.fillStyle= qz.done?'#7ab356':'#c8a84b'; ctx.fillText((qz.done?'✓ ':'')+BIOMES[qz.biome].nm+' x'+qz.size, VW-20, trayY+120+i*16); } }
+var HB_MENU={x:8,y:70,w:44,h:44}, HB_ROT={x:170,y:VH-118,w:150,h:52}, HB_PLACE={x:0,y:0,w:0,h:0};
+function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.7)'; rr(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+function roundBtn(b,label){ ctx.fillStyle='rgba(90,120,60,0.6)'; rr(b.x,b.y,b.w,b.h,14); ctx.fill(); ctx.strokeStyle='rgba(200,232,150,0.5)'; ctx.lineWidth=1.5; rr(b.x,b.y,b.w,b.h,14); ctx.stroke(); ctx.fillStyle='#eafbd6'; ctx.font='800 17px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,b.x+b.w/2,b.y+b.h/2); ctx.textBaseline='alphabetic'; }
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ---------- loop ---------- */
+var running=false, lastTs=0;
+function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts; step(dt); render(); requestAnimationFrame(loop); }
+function step(dt){ if(!G)return; G.t+=dt;
+  var i; for(i=G.anims.length-1;i>=0;i--){ var a=G.anims[i]; a.x+=a.vx*dt; a.y+=a.vy*dt; a.vy+=60*dt; a.life-=dt*0.9; if(a.life<=0)G.anims.splice(i,1); }
+  for(i=G.seams.length-1;i>=0;i--){ G.seams[i].life-=dt*0.7; if(G.seams[i].life<=0)G.seams.splice(i,1); }
+  for(i=G.floats.length-1;i>=0;i--){ var f=G.floats[i]; f.y-=22*dt; f.life-=dt*0.8; if(f.life<=0)G.floats.splice(i,1); }
+}
+function startLoop(){ if(running)return; running=true; lastTs=0; requestAnimationFrame(loop); }
+function stopLoop(){ running=false; }
+
+/* ---------- input ---------- */
+function evPos(e){ var rct=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e; return { x:(t.clientX-rct.left)*VW/rct.width, y:(t.clientY-rct.top)*VH/rct.height }; }
+function inBtn(p,b){ return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h; }
+var ptr={down:false, x:0,y:0, sx:0,sy:0, moved:0, panning:false};
+function onDown(e){ if(curScreen!=='play')return; e.preventDefault(); ac(); var p=evPos(e); ptr.down=true; ptr.x=p.x; ptr.y=p.y; ptr.sx=p.x; ptr.sy=p.y; ptr.moved=0; ptr.panning=false; }
+function onMove(e){ if(curScreen!=='play'||!ptr.down)return; e.preventDefault(); var p=evPos(e); var dx=p.x-ptr.x, dy=p.y-ptr.y; ptr.moved+=Math.abs(dx)+Math.abs(dy);
+  if(ptr.moved>14 && p.y>110 && p.y<VH-150){ ptr.panning=true; G.panX+=dx; G.panY+=dy; computeView(); }
+  ptr.x=p.x; ptr.y=p.y; }
+function onUp(e){ if(curScreen!=='play'||!ptr.down)return; e.preventDefault(); ptr.down=false; var p=evPos(e);
+  if(ptr.panning||ptr.moved>14)return;
+  if(inBtn(p,HB_MENU)){ sfx('ui'); toTitle(); return; }
+  if(inBtn(p,HB_ROT)){ G.rot=(G.rot+1)%6; sfx('rotate'); return; }
+  if(G.phase!=='play')return;
+  if(p.y<66 || p.y>VH-150)return; // ignore HUD zones
+  var h=pixelToHex(p.x,p.y); if(occupied(h.q,h.r))return;
+  // only if legal
+  var ok=false; for(var i=0;i<6;i++){ if(G.board[key(h.q+DIRS[i][0],h.r+DIRS[i][1])]){ ok=true; break; } }
+  if(ok){ place(h.q,h.r,G.rot); haptic(8); }
+}
+cv.addEventListener('mousedown',onDown); cv.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
+cv.addEventListener('touchstart',onDown,{passive:false}); cv.addEventListener('touchmove',onMove,{passive:false}); cv.addEventListener('touchend',onUp,{passive:false});
+window.addEventListener('keydown',function(e){ if(curScreen!=='play')return; if(e.key==='r'||e.key==='R'){ G.rot=(G.rot+1)%6; sfx('rotate'); } else if(e.key==='Escape'){ toTitle(); } });
+
+/* ---------- screens ---------- */
+var curScreen='title';
+function show(name){ var ids=['title','how','set','ward','pouch','go']; var isPlay=(name==='play');
+  for(var i=0;i<ids.length;i++){ var el=$('s-'+ids[i]); if(el)el.classList.toggle('on', ids[i]===name); }
+  curScreen=name;
+  if(isPlay){ startLoop(); }
+}
+function toTitle(){ stopLoop(); closeAC(); save(); show('title'); }
+tap('b-weave',function(){ sfx('ui'); startLevel('weave'); });
+tap('b-daily',function(){ sfx('ui'); startLevel('daily'); });
+tap('b-quest',function(){ sfx('ui'); startLevel('quest'); });
+tap('b-zen',function(){ sfx('ui'); startLevel('zen'); });
+tap('b-how',function(){ sfx('ui'); show('how'); }); tap('how-back',function(){ show('title'); });
+tap('b-set',function(){ sfx('ui'); show('set'); }); tap('set-back',function(){ saveSet(); show('title'); });
+tap('b-ward',function(){ sfx('ui'); renderWard(); show('ward'); }); tap('ward-back',function(){ show('title'); });
+tap('b-pouch',function(){ sfx('ui'); renderPouch(); show('pouch'); }); tap('pouch-back',function(){ show('title'); });
+tap('go-retry',function(){ sfx('ui'); startLevel(G?G.mode:'weave'); });
+tap('go-home',function(){ toTitle(); });
+tap('go-pouch',function(){ renderPouch(); show('pouch'); });
+tap('go-share',function(){ shareIt(); });
+function toggle(id,key){ var el=$(id); function paint(){ el.classList.toggle('on',!!SET[key]); } paint(); el.parentNode.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); sfx('ui'); }); }
+toggle('tg-sound','sound'); toggle('tg-haptic','haptic'); toggle('tg-motion','motion'); toggle('tg-symbols','symbols');
+
+function renderWard(){ wardList('ward-tiles','tileset',TILESETS); wardList('ward-backs','backdrop',BACKDROPS); }
+function wardList(host,field,arr){ var h=$(host); if(!h)return; h.innerHTML=''; for(var i=0;i<arr.length;i++){ (function(it){ var owned=ownedC(field,it); var card=document.createElement('div'); card.className='wardcard'+(owned?'':' locked')+(PROG[field]===it.id&&owned?' on':'');
+  card.innerHTML='<div class="wn">'+it.nm+'</div><div class="wt">'+(owned?(PROG[field]===it.id?'Equipped':'Tap to equip'):it.desc)+'</div>';
+  if(owned)card.addEventListener('click',function(){ PROG[field]=it.id; save(); sfx('ui'); renderWard(); });
+  h.appendChild(card); })(arr[i]); } }
+function renderPouch(){ var h=$('pouch-wrap'); if(!h)return; h.innerHTML=''; var n=(PROG.pouch||[]).length;
+  $('pouch-sub').textContent = n? ('You have pressed '+n+' feral seed'+(n===1?'':'s')+'. Close bigger regions for rarer ones.') : 'Every region you close presses a feral seed here.';
+  var start=Math.max(0,n-60);
+  for(var i=start;i<n;i++){ var s=PROG.pouch[i]; var d=document.createElement('div'); d.className='fseed'; d.title=BIOMES[s.b].nm+' x'+s.size; d.textContent=BSEED[s.b]||'🌱'; if(s.rarity>=3)d.style.borderColor='var(--gold)'; h.appendChild(d); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no seeds yet —'; h.appendChild(e); }
+}
+function shareIt(){ var url='https://lucidwinds.com/satellites/meadow-weave/'; var txt='I wove a living meadow in Meadow Weave and pressed '+(PROG.ferals||0)+' feral seeds. '+url;
+  if(navigator.share){ navigator.share({title:'Meadow Weave',text:txt,url:url}).catch(function(){}); } else { try{ navigator.clipboard.writeText(txt); }catch(e){} } }
+
+/* ---------- boot ---------- */
+$('buildstamp').textContent='Meadow Weave '+BUILD;
+
+/* ---------- test hook ---------- */
+if(TESTMODE){
+  window.MW_DEV={
+    start:startLevel,
+    state:function(){ if(!G)return null; var cells=0,k; for(k in G.board){ if(G.board.hasOwnProperty(k))cells++; } return { phase:G.phase, score:G.score, stack:G.stack, ferals:G.ferals, regions:G.regions, tiles:cells, mode:G.mode }; },
+    validSpots:function(){ return legalCells(); },
+    place:function(q,r,rot){ return place(q,r,rot); },
+    rotate:function(){ if(G)G.rot=(G.rot+1)%6; },
+    autoplay:function(maxN){ var n=maxN||1500, placed=0; while(G && G.phase==='play' && placed<n){ var lc=legalCells(); if(lc.length===0)break; var best=-1e9, bq=null, brot=0, i, rt; for(i=0;i<lc.length;i++){ for(rt=0;rt<6;rt++){ var e=rotEdges(G.next,rt); var s=scoreAt(lc[i].q,lc[i].r,e); var v=s.matched*3 - s.mism*1; if(v>best){ best=v; bq=lc[i]; brot=rt; } } } if(!bq)break; if(!place(bq.q,bq.r,brot))break; placed++; } return placed; },
+    runCheck:function(){ startLevel('weave'); var p=window.MW_DEV.autoplay(1500); var st=window.MW_DEV.state(); return { tiles:st.tiles, placed:p, score:st.score, regions:st.regions, ferals:st.ferals, phase:st.phase, gameOver:(st.phase==='over') }; }
+  };
+}
+})();
+</script>
+</body>
+</html>
