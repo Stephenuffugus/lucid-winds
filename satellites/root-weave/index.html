@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M7 25 L25 9 M7 9 L25 25' stroke='%233f6b34' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='25' r='3.4' fill='%237ab356'/%3E%3Ccircle cx='25' cy='9' r='3.4' fill='%23c8a84b'/%3E%3Ccircle cx='7' cy='9' r='3.4' fill='%23e58fa0'/%3E%3Ccircle cx='25' cy='25' r='3.4' fill='%235b9bd5'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Root Weave">
+<title>Root Weave — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"rootweave"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display:block; touch-action:none}
+#hud{position:absolute; left:0; top:0; width:540px; height:60px; display:none; z-index:12; pointer-events:none;
+  padding:10px 12px; align-items:center; gap:10px}
+#hud.on{display:flex}
+#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid var(--line); border-radius:12px;
+  background:#0f150cdd; color:var(--cream); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center}
+#hudmid{flex:1; text-align:center}
+#hudmode{font-size:12px; letter-spacing:2px; color:var(--muted); text-transform:uppercase}
+#hudcross{font-size:17px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums; margin-top:1px}
+#hudcross b{color:var(--pink)}
+#hudcross.clean b{color:var(--gold)}
+#dock{position:absolute; left:0; bottom:0; width:540px; height:140px; z-index:12; background:linear-gradient(180deg,#0e140dee,#0b0f0b);
+  border-top:1px solid var(--line); padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px)); display:none; flex-direction:column; gap:7px}
+#dock.on{display:flex}
+.dockrow{display:flex; gap:8px; flex:1}
+.chip{flex:1; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; padding:2px 0}
+.chip .ci{font-size:16px; line-height:1.1}
+.chip .cn{font-size:.7rem; letter-spacing:.4px; color:var(--muted); text-transform:uppercase}
+.chip.info{cursor:default; background:#0e140d}
+.chip.info .ci{font-size:15px; font-weight:800; font-variant-numeric:tabular-nums}
+.chip.off{opacity:.35; pointer-events:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #302408, 0 0 26px #c8a84b44; letter-spacing:2px}
+.title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a; box-shadow:0 4px 0 #6b5620, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.grid{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.lvlcard{width:100px; height:104px; border:1px solid var(--line); border-radius:16px; background:#0f150c; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:4px}
+.lvlcard.locked{opacity:.4; cursor:default}
+.lvlcard .ln{font-size:24px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums}
+.lvlcard .lt{font-size:.7rem; color:var(--muted); text-align:center; line-height:1.15}
+.lvlcard .ls{font-size:14px; letter-spacing:1px; color:var(--gold); height:16px}
+.lvlcard.done{border-color:var(--deep)}
+.wardcard{display:flex; align-items:center; gap:12px; width:100%; max-width:420px; margin:0 auto 10px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.wardcard.locked{opacity:.55}
+.wardcard .wi{font-size:26px; width:40px; text-align:center; flex:none}
+.wardcard .wt{flex:1}
+.wardcard .wn{font-size:15px; font-weight:700}
+.wardcard .wd{font-size:.72rem; color:var(--muted); margin-top:2px; line-height:1.3}
+.wardcard .we{min-width:78px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.wardcard .we.eq{border-color:var(--gold); color:var(--gold)}
+.grovewrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.grovecard{width:104px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:8px; display:flex; flex-direction:column; align-items:center; gap:4px}
+.grovecard canvas{width:84px; height:84px; border-radius:8px; background:#0b0f0b}
+.grovecard .gd{font-size:.7rem; color:var(--muted)}
+#toast{position:absolute; left:50%; bottom:164px; transform:translateX(-50%) translateY(16px); z-index:40; background:#1a2415ee;
+  border:1px solid var(--gold); border-radius:22px; padding:10px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div id="stage">
+  <canvas id="game" width="540" height="820"></canvas>
+
+  <div id="hud">
+    <div class="hbtn" id="hud-back">⌂</div>
+    <div id="hudmid">
+      <div id="hudmode">Root Grove</div>
+      <div id="hudcross"><b id="crossn">0</b> <span id="crosslabel">crossings</span></div>
+    </div>
+    <div class="hbtn" id="hud-help">?</div>
+  </div>
+
+  <div id="dock">
+    <div class="dockrow">
+      <div class="chip info"><span class="ci" id="inf-left">—</span><span class="cn" id="inf-left-l">Level</span></div>
+      <div class="chip info"><span class="ci" id="inf-mid">0</span><span class="cn">Moves</span></div>
+      <div class="chip info"><span class="ci" id="inf-right">—</span><span class="cn" id="inf-right-l">Par</span></div>
+    </div>
+    <div class="dockrow">
+      <button class="chip" id="d-scramble"><span class="ci">♻</span><span class="cn">Rescramble</span></button>
+      <button class="chip" id="d-nudge"><span class="ci">🕯</span><span class="cn">Nudge</span></button>
+      <button class="chip" id="d-menu"><span class="ci">⌂</span><span class="cn">Menu</span></button>
+    </div>
+  </div>
+
+  <div class="screen on" id="s-title">
+    <div class="pad center">
+      <div class="title-word">ROOT WEAVE</div>
+      <div class="title-sub">untangle the living roots</div>
+      <div class="ribbon">Drag the root bulbs until no two roots cross. Every root you free turns from gnarl to living vine, and a finished weave blooms.</div>
+      <div style="height:22px"></div>
+      <div class="stack">
+        <button class="btn primary" id="b-grove">🌿 Root Grove</button>
+        <div class="row">
+          <button class="btn sm" id="b-daily">📅 Daily Tangle</button>
+          <button class="btn sm" id="b-zen">🌙 Zen Weave</button>
+        </div>
+        <button class="btn sm" id="b-gnarl">🪢 Gnarl Trials</button>
+        <div class="row">
+          <button class="btn sm ghost" id="b-how">How</button>
+          <button class="btn sm ghost" id="b-ward">Wardrobe</button>
+          <button class="btn sm ghost" id="b-keeps">Keepsakes</button>
+          <button class="btn sm ghost" id="b-set">⚙</button>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div id="buildstamp" style="font-size:.7rem;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-levels">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Root Grove</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">The roots grow thicker as you go. Taproots appear from level 8 and hold their ground.</div>
+      <div class="grid" id="lvlgrid"></div>
+      <div style="height:16px"></div>
+      <div class="stack"><button class="btn sm ghost" id="levels-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-how">
+    <div class="pad">
+      <h2 class="sc-h">How Root Weave works</h2>
+      <div class="helprow"><div class="hi">👆</div><div><b>Drag a bulb</b> anywhere on the soil. Roots that cross render as dry gray gnarl with an <b class="hl">✗</b> at every crossing point. Roots that run clean turn to living green vine.</div></div>
+      <div class="helprow"><div class="hi">🧩</div><div>Every tangle is grown from a real flat weave first, then scrambled, so <b>a perfect untangling always exists</b>.</div></div>
+      <div class="helprow"><div class="hi">🪢</div><div><b>Taproots</b> are anchored bulbs with a knot. They cannot be moved. Weave everything else around them.</div></div>
+      <div class="helprow"><div class="hi">🌸</div><div>Hold the weave clean for a breath and it <b class="hl">blooms</b>. Each bloom presses a root mandala keepsake.</div></div>
+      <div class="helprow"><div class="hi">🕯</div><div>In <b>Zen Weave</b> the Nudge candle is free: it briefly shows one bulb the way home. Zen is for unwinding and pays no sunbeams.</div></div>
+      <div class="helprow"><div class="hi">📅</div><div>The <b>Daily Tangle</b> is one shared board per day. Keep the streak alive.</div></div>
+      <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-ward">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Wardrobe</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Every piece is earned by playing. No boxes, no dice.</div>
+      <div id="wardlist"></div>
+      <div class="stack"><button class="btn sm ghost" id="ward-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-keeps">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Keepsakes</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Root mandalas pressed from finished weaves.</div>
+      <div class="grovewrap" id="grovewrap"></div>
+      <div style="height:16px"></div>
+      <div class="stack"><button class="btn sm ghost" id="keeps-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-set">
+    <div class="pad center">
+      <h2 class="sc-h">Settings</h2>
+      <div style="height:10px"></div>
+      <div class="settingline"><span>Sound</span><div class="toggle" id="tg-sound"><b></b></div></div>
+      <div class="settingline"><span>Ambient drift</span><div class="toggle" id="tg-fx"><b></b></div></div>
+      <div class="stack"><button class="btn sm ghost" id="set-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-over">
+    <div class="pad center">
+      <h2 class="sc-h" id="over-title">The weave blooms</h2>
+      <div class="ribbon" id="over-sub"></div>
+      <div style="height:18px"></div>
+      <div class="stack">
+        <button class="btn primary" id="over-next">Next tangle</button>
+        <button class="btn sm ghost" id="over-home">Back to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+ </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+/* ============================================================
+   ROOT WEAVE — Untangle/Planarity (Sky Wolf Studios)
+   Campaign #22. Boards generated planar-first, so every
+   tangle is solvable by construction.
+   ============================================================ */
+var BUILD="v1.0";
+var W=540, H=820;
+var BX0=34, BX1=506, BY0=86, BY1=770; // playable board bounds
+
+/* ---------- seeded rng ---------- */
+function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Math.imul(t^t>>>15,1|t);
+  r=(r+Math.imul(r^r>>>7,61|r))^r; return ((r^r>>>14)>>>0)/4294967296; }; }
+function dayCode(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+
+/* ---------- save ---------- */
+function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("rootweave_save")||"{}"); }catch(e){}
+  s.level=s.level||1; s.solves=s.solves||0; s.clean=s.clean||0; s.gnarlPars=s.gnarlPars||0;
+  s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.grove=s.grove||[];
+  s.bulb=s.bulb||"pearl"; s.vine=s.vine||"classic"; s.backdrop=s.backdrop||"midnight";
+  s.zenRuns=s.zenRuns||0; s.gnarlRuns=s.gnarlRuns||0;
+  s.sound=(s.sound!==false); s.fx=(s.fx!==false); return s; }
+var PROG=loadSave();
+function save(){ try{ localStorage.setItem("rootweave_save",JSON.stringify(PROG)); }catch(e){} }
+
+/* ---------- audio (tiny synth) ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended")AC.resume().catch(function(){}); return AC; }
+function blip(f,d,g,type){ if(!PROG.sound)return; var a=ac(); if(!a)return; var o=a.createOscillator(),v=a.createGain(),t=a.currentTime;
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t); v.gain.setValueAtTime(0.0001,t);
+  v.gain.exponentialRampToValueAtTime(g||0.07,t+0.015); v.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.16));
+  o.connect(v); v.connect(a.destination); o.start(t); o.stop(t+(d||0.16)+0.02); }
+function sndPick(){ blip(392,0.09,0.05,"triangle"); }
+function sndClean(){ blip(587,0.16,0.05); }
+function sndWin(){ blip(523,0.25,0.08); setTimeout(function(){blip(659,0.25,0.08);},110); setTimeout(function(){blip(784,0.4,0.09);},220); }
+
+/* ---------- geometry ---------- */
+function orient(ax,ay,bx,by,cx,cy){ var v=(bx-ax)*(cy-ay)-(by-ay)*(cx-ax); return v>1e-9?1:(v<-1e-9?-1:0); }
+function segCross(a,b,c,d){ // strict proper crossing, no shared endpoints allowed by caller
+  var o1=orient(a.x,a.y,b.x,b.y,c.x,c.y), o2=orient(a.x,a.y,b.x,b.y,d.x,d.y);
+  if(o1===o2)return false;
+  var o3=orient(c.x,c.y,d.x,d.y,a.x,a.y), o4=orient(c.x,c.y,d.x,d.y,b.x,b.y);
+  if(o3===o4)return false;
+  return o1!==0&&o2!==0&&o3!==0&&o4!==0;
+}
+function crossPoint(a,b,c,d){
+  var d1x=b.x-a.x, d1y=b.y-a.y, d2x=d.x-c.x, d2y=d.y-c.y;
+  var den=d1x*d2y-d1y*d2x; if(Math.abs(den)<1e-9)return null;
+  var t=((c.x-a.x)*d2y-(c.y-a.y)*d2x)/den;
+  return {x:a.x+d1x*t, y:a.y+d1y*t};
+}
+/* count crossings for edge list over a position array; also collect points */
+function crossings(edges,pos,collect){
+  var n=0, pts=collect?[]:null, i, j;
+  for(i=0;i<edges.length;i++){ var e=edges[i];
+    for(j=i+1;j<edges.length;j++){ var f=edges[j];
+      if(e[0]===f[0]||e[0]===f[1]||e[1]===f[0]||e[1]===f[1])continue;
+      if(segCross(pos[e[0]],pos[e[1]],pos[f[0]],pos[f[1]])){ n++;
+        if(collect){ var p=crossPoint(pos[e[0]],pos[e[1]],pos[f[0]],pos[f[1]]); if(p)pts.push(p); } } } }
+  return collect?{n:n,pts:pts}:{n:n,pts:null};
+}
+
+/* ---------- board generator (planar-first => always solvable) ---------- */
+function genBoard(seed,n,tapN){
+  var att, i, j;
+  for(att=0;att<40;att++){
+    var r=mkRng((seed+att*7919)>>>0);
+    /* scatter solution points, min distance 56 */
+    var sol=[], guard=0;
+    while(sol.length<n&&guard<6000){ guard++;
+      var p={x:BX0+26+r()*(BX1-BX0-52), y:BY0+34+r()*(BY1-BY0-88)};
+      var ok=true;
+      for(i=0;i<sol.length;i++){ var dx=sol[i].x-p.x, dy=sol[i].y-p.y; if(dx*dx+dy*dy<56*56){ ok=false; break; } }
+      if(ok)sol.push(p);
+    }
+    if(sol.length<n)continue;
+    /* candidate edges shortest-first */
+    var cands=[];
+    for(i=0;i<n;i++)for(j=i+1;j<n;j++){ var ddx=sol[i].x-sol[j].x, ddy=sol[i].y-sol[j].y;
+      cands.push([i,j,ddx*ddx+ddy*ddy]); }
+    cands.sort(function(a,b){ return a[2]-b[2]; });
+    /* greedy planar accept; degree cap 5 unless the edge merges components */
+    var acc=[], deg=[], uf=[], k;
+    for(i=0;i<n;i++){ deg[i]=0; uf[i]=i; }
+    function find(x){ while(uf[x]!==x){ uf[x]=uf[uf[x]]; x=uf[x]; } return x; }
+    for(k=0;k<cands.length;k++){ var c=cands[k], a=c[0], b=c[1];
+      var merging=find(a)!==find(b);
+      if(!merging&&(deg[a]>=5||deg[b]>=5))continue;
+      var hit=false;
+      for(i=0;i<acc.length;i++){ var e=acc[i];
+        if(e[0]===a||e[0]===b||e[1]===a||e[1]===b)continue;
+        if(segCross(sol[a],sol[b],sol[e[0]],sol[e[1]])){ hit=true; break; } }
+      if(hit)continue;
+      acc.push([a,b]); deg[a]++; deg[b]++;
+      if(merging)uf[find(a)]=find(b);
+    }
+    /* connected? */
+    var root=find(0), conn=true;
+    for(i=1;i<n;i++)if(find(i)!==root){ conn=false; break; }
+    if(!conn)continue;
+    /* prune to ~1.65n edges keeping a spanning tree (accept order = shortest-first) */
+    var target=Math.max(n-1,Math.round(n*1.65));
+    var uf2=[], tree=[], extra=[];
+    for(i=0;i<n;i++)uf2[i]=i;
+    function find2(x){ while(uf2[x]!==x){ uf2[x]=uf2[uf2[x]]; x=uf2[x]; } return x; }
+    for(i=0;i<acc.length;i++){ var e2=acc[i];
+      if(find2(e2[0])!==find2(e2[1])){ uf2[find2(e2[0])]=find2(e2[1]); tree.push(e2); }
+      else extra.push(e2); }
+    var edges=tree.concat(extra.slice(0,Math.max(0,target-tree.length)));
+    /* taproots (anchored at solution) */
+    var idxs=[], taps=[];
+    for(i=0;i<n;i++)idxs.push(i);
+    for(i=idxs.length-1;i>0;i--){ var sw=Math.floor(r()*(i+1)); var tv=idxs[i]; idxs[i]=idxs[sw]; idxs[sw]=tv; }
+    for(i=0;i<tapN&&i<n;i++)taps.push(idxs[i]);
+    var isTap=[]; for(i=0;i<n;i++)isTap[i]=false;
+    for(i=0;i<taps.length;i++)isTap[taps[i]]=true;
+    /* scramble: circle placement (taproots stay put) => must start crossed */
+    var sc, start=null;
+    for(sc=0;sc<14;sc++){
+      var order=[], oi;
+      for(i=0;i<n;i++)if(!isTap[i])order.push(i);
+      for(i=order.length-1;i>0;i--){ var sw2=Math.floor(r()*(i+1)); var tv2=order[i]; order[i]=order[sw2]; order[sw2]=tv2; }
+      var pos=[], cx=W/2, cy=(BY0+BY1)/2+8, rad=Math.min(212,(BY1-BY0)/2-42);
+      for(i=0;i<n;i++)pos[i]=null;
+      var a0=r()*6.283;
+      for(oi=0;oi<order.length;oi++){ var an=a0+oi/order.length*6.283+(r()-0.5)*0.22;
+        var rr=rad*(0.86+r()*0.18);
+        var px=cx+Math.cos(an)*rr, py=cy+Math.sin(an)*rr*0.92;
+        pos[order[oi]]={x:Math.max(BX0,Math.min(BX1,px)), y:Math.max(BY0,Math.min(BY1,py))}; }
+      for(i=0;i<taps.length;i++)pos[taps[i]]={x:sol[taps[i]].x, y:sol[taps[i]].y};
+      if(crossings(edges,pos,false).n>0){ start=pos; break; }
+    }
+    if(!start)continue;
+    return { n:n, sol:sol, edges:edges, taps:taps, isTap:isTap, start:start };
+  }
+  return null;
+}
+
+/* ---------- mode configs ---------- */
+var GROVE_LEVELS=24;
+function cfgFor(mode,lvl,runIdx){
+  if(mode==="grove"){ var n=Math.min(24,6+Math.floor((lvl-1)*0.8));
+    return { n:n, tap:(lvl>=14?2:(lvl>=8?1:0)), seed:(9013+lvl*101)>>>0, par:null }; }
+  if(mode==="daily"){ var dc=dayCode();
+    return { n:12+(dc%7), tap:1, seed:dc>>>0, par:null }; }
+  if(mode==="gnarl"){ var g=18+(runIdx%7);
+    return { n:g, tap:2, seed:(71000+runIdx*13)>>>0, par:g+4 }; }
+  /* zen */
+  return { n:8+(runIdx%9), tap:0, seed:(42000+runIdx*17)>>>0, par:null };
+}
+
+/* ---------- game state ---------- */
+var G=null, SESS={earned:0};
+function startMode(mode,lvl){
+  var runIdx=(mode==="zen")?PROG.zenRuns:(mode==="gnarl"?PROG.gnarlRuns:0);
+  var cfg=cfgFor(mode,lvl||1,runIdx);
+  var board=genBoard(cfg.seed,cfg.n,cfg.tap);
+  if(!board){ toast("The roots refused. Try again."); return false; }
+  var pos=[], i;
+  for(i=0;i<board.n;i++)pos[i]={x:board.start[i].x, y:board.start[i].y};
+  G={ mode:mode, lvl:lvl||1, runIdx:runIdx, board:board, pos:pos,
+      phase:"play", moves:0, hintsUsed:0, zeroSince:0, winT:0, bloomT:0,
+      drag:-1, ghost:-1, ghostT:0, shake:0, shakeI:-1,
+      dailyRepeat:(mode==="daily"&&PROG.lastDaily===todayStr()) };
+  recross();
+  $("hudmode").textContent= mode==="grove"?("Root Grove · "+G.lvl):
+    mode==="daily"?"Daily Tangle": mode==="gnarl"?("Gnarl Trial "+(runIdx+1)):"Zen Weave";
+  $("inf-left").textContent= mode==="grove"?G.lvl:(mode==="daily"?"📅":(mode==="gnarl"?(runIdx+1):"∞"));
+  $("inf-left-l").textContent= mode==="grove"?"Level":(mode==="daily"?"Daily":(mode==="gnarl"?"Trial":"Zen"));
+  $("inf-right").textContent= cfg.par?cfg.par:"—";
+  $("inf-right-l").textContent= cfg.par?"Par":"Bulbs";
+  if(!cfg.par)$("inf-right").textContent=board.n;
+  G.par=cfg.par;
+  $("d-nudge").style.display=(mode==="zen")?"":"none";
+  hideScreens(); $("hud").classList.add("on"); $("dock").classList.add("on");
+  updateHud();
+  if(G.dailyRepeat)toast("Today's tangle is already kept. Replays pay nothing.");
+  return true;
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function stopToMenu(){ G=null;
+  $("hud").classList.remove("on"); $("dock").classList.remove("on");
+  show("s-title"); stamp(); }
+
+function recross(){
+  var c=crossings(G.board.edges,G.pos,true);
+  G.cross=c.n; G.xpts=c.pts;
+  /* per-edge crossing flag for render */
+  var flags=[], i, j, E=G.board.edges;
+  for(i=0;i<E.length;i++)flags[i]=false;
+  for(i=0;i<E.length;i++){ var e=E[i];
+    for(j=i+1;j<E.length;j++){ var f=E[j];
+      if(e[0]===f[0]||e[0]===f[1]||e[1]===f[0]||e[1]===f[1])continue;
+      if(segCross(G.pos[e[0]],G.pos[e[1]],G.pos[f[0]],G.pos[f[1]])){ flags[i]=true; flags[j]=true; } } }
+  G.eflags=flags;
+  if(G.cross===0){ if(!G.zeroSince){ G.zeroSince=now(); sndClean(); } }
+  else G.zeroSince=0;
+  updateHud();
+}
+function updateHud(){
+  if(!G)return;
+  $("crossn").textContent=G.cross;
+  $("crosslabel").textContent=G.cross===1?"crossing":(G.cross===0?"— hold still":"crossings");
+  var hc=$("hudcross"); if(G.cross===0)hc.classList.add("clean"); else hc.classList.remove("clean");
+  $("inf-mid").textContent=G.moves;
+}
+function now(){ return (window.performance&&performance.now)?performance.now():Date.now(); }
+
+/* ---------- win ---------- */
+function winWeave(){
+  if(!G||G.phase!=="play")return;
+  G.phase="won"; G.winT=now(); G.bloomT=0;
+  var first=true, payN=0, subtitle="";
+  if(G.mode==="grove"){
+    if(G.lvl>=PROG.level)PROG.level=Math.min(GROVE_LEVELS+1,G.lvl+1);
+    payN=2; subtitle="Level "+G.lvl+" woven in "+G.moves+" moves.";
+  } else if(G.mode==="daily"){
+    if(!G.dailyRepeat){
+      var today=todayStr(), y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+      PROG.streak=(PROG.lastDaily===y)?PROG.streak+1:1; PROG.lastDaily=today; payN=3;
+      subtitle="Daily kept. Streak "+PROG.streak+".";
+    } else { payN=0; subtitle="A quiet replay. The streak stands at "+PROG.streak+"."; }
+  } else if(G.mode==="gnarl"){
+    PROG.gnarlRuns++; payN=2;
+    if(G.par&&G.moves<=G.par){ PROG.gnarlPars++; subtitle="Under par: "+G.moves+" of "+G.par+" moves. The gnarl bows."; }
+    else subtitle=G.moves+" moves against a par of "+G.par+".";
+  } else { PROG.zenRuns++; payN=0; subtitle="Woven gently. Zen asks nothing back."; }
+  PROG.solves++;
+  if(G.hintsUsed===0&&G.mode!=="zen")PROG.clean++;
+  mintKeepsake();
+  save();
+  var got=payRun(payN, G.mode);
+  sndWin();
+  $("over-title").textContent= G.mode==="daily"?"The daily blooms":"The weave blooms";
+  $("over-sub").textContent=subtitle+(got>0?" ☀ +"+got+" sunbeam"+(got>1?"s":"")+".":"");
+  $("over-next").style.display=(G.mode==="grove"&&G.lvl>=GROVE_LEVELS)?"none":"";
+  $("over-next").textContent= G.mode==="grove"?"Next level":(G.mode==="daily"?"Back to menu":"Next tangle");
+  setTimeout(function(){ if(G&&G.phase==="won")show("s-over"); },1500);
+}
+function payRun(n,tag){ if(!n)return 0;
+  if(SESS.earned>=12)return 0; n=Math.min(n,12-SESS.earned);
+  var got=window._sbCapEarn(n,tag); SESS.earned+=got;
+  return got; }
+
+/* ---------- keepsakes ---------- */
+function mintKeepsake(){
+  var s=(G.board.n*2654435761 ^ (G.moves+1)*97 ^ (G.mode==="daily"?dayCode():G.lvl*7))>>>0;
+  PROG.grove.push({s:s, d:todayStr(), n:G.board.n});
+  if(PROG.grove.length>24)PROG.grove.shift();
+  toast("🌼 A root mandala is pressed");
+}
+function drawKeepsake(cv,ks){
+  var c=cv.getContext("2d"), rr=mkRng(ks.s), Wk=cv.width, Hk=cv.height;
+  c.fillStyle="#0b0f0b"; c.fillRect(0,0,Wk,Hk);
+  var cx=Wk/2, cy=Hk/2, n=ks.n||10, i, ring;
+  var hues=["#7ab356","#c8a84b","#e58fa0","#5b9bd5","#b57de0"];
+  for(ring=3;ring>=1;ring--){
+    var rad=Wk*0.42*ring/3, m=Math.max(5,Math.round(n*ring/3));
+    c.strokeStyle=hues[Math.floor(rr()*hues.length)]; c.lineWidth=1.4; c.globalAlpha=0.85;
+    for(i=0;i<m;i++){ var a=i/m*6.283+rr()*0.1;
+      var x1=cx+Math.cos(a)*rad*0.34, y1=cy+Math.sin(a)*rad*0.34;
+      var x2=cx+Math.cos(a)*rad, y2=cy+Math.sin(a)*rad;
+      c.beginPath(); c.moveTo(x1,y1);
+      c.quadraticCurveTo(cx+Math.cos(a+0.35)*rad*0.72, cy+Math.sin(a+0.35)*rad*0.72, x2,y2); c.stroke();
+      c.fillStyle=hues[Math.floor(rr()*hues.length)];
+      c.beginPath(); c.arc(x2,y2,2.4+rr()*1.6,0,6.283); c.fill(); }
+  }
+  c.globalAlpha=1;
+  c.fillStyle="#e8dcc8"; c.beginPath(); c.arc(cx,cy,4.2,0,6.283); c.fill();
+}
+
+/* ---------- backdrops + cosmetics ---------- */
+var BACKS={
+  midnight:{ top:"#101610", bot:"#05070a", speck:"#7ab35633" },
+  loam:{ top:"#171208", bot:"#070503", speck:"#c8a84b33" },
+  terrace:{ top:"#0d1614", bot:"#04080a", speck:"#5b9bd533" },
+  dawn:{ top:"#1a1210", bot:"#0a0608", speck:"#e58fa033" }
+};
+var WARD=[
+ {cat:"Bulb",key:"bulb",id:"pearl",name:"Pearl Bulbs",icon:"⚪",need:function(){return true;},needTxt:"Free"},
+ {cat:"Bulb",key:"bulb",id:"acorn",name:"Acorn Bulbs",icon:"🌰",need:function(){return PROG.solves>=10;},needTxt:"Weave 10 boards"},
+ {cat:"Bulb",key:"bulb",id:"dewdrop",name:"Dewdrop Bulbs",icon:"💧",need:function(){return PROG.solves>=25;},needTxt:"Weave 25 boards"},
+ {cat:"Bulb",key:"bulb",id:"firefly",name:"Firefly Bulbs",icon:"✨",need:function(){return PROG.streak>=3;},needTxt:"Daily streak of 3"},
+ {cat:"Bulb",key:"bulb",id:"star",name:"Star Bulbs",icon:"⭐",need:function(){return PROG.solves>=50;},needTxt:"Weave 50 boards"},
+ {cat:"Vine",key:"vine",id:"classic",name:"Classic Vine",icon:"🌿",need:function(){return true;},needTxt:"Free"},
+ {cat:"Vine",key:"vine",id:"braided",name:"Braided Vine",icon:"🪢",need:function(){return PROG.solves>=15;},needTxt:"Weave 15 boards"},
+ {cat:"Vine",key:"vine",id:"blossom",name:"Blossom Vine",icon:"🌸",need:function(){return PROG.clean>=5;},needTxt:"5 clean weaves (no nudges)"},
+ {cat:"Vine",key:"vine",id:"aurora",name:"Aurora Vine",icon:"🌈",need:function(){return PROG.gnarlPars>=5;},needTxt:"Beat par in 5 Gnarl Trials"},
+ {cat:"Soil",key:"backdrop",id:"midnight",name:"Midnight Soil",icon:"🌑",need:function(){return true;},needTxt:"Free"},
+ {cat:"Soil",key:"backdrop",id:"loam",name:"Warm Loam",icon:"🟤",need:function(){return PROG.streak>=7;},needTxt:"Daily streak of 7"},
+ {cat:"Soil",key:"backdrop",id:"terrace",name:"Moss Terrace",icon:"🪨",need:function(){return PROG.solves>=40;},needTxt:"Weave 40 boards"},
+ {cat:"Soil",key:"backdrop",id:"dawn",name:"First Dawn",icon:"🌄",need:function(){return PROG.solves>=60;},needTxt:"Weave 60 boards"}
+];
+
+/* ---------- render ---------- */
+var cvs=document.getElementById("game"), ctx=cvs.getContext("2d");
+var SPECKS=(function(){ var r=mkRng(777), a=[], i;
+  for(i=0;i<26;i++)a.push({x:r()*W, y:r()*H, s:0.6+r()*1.8, p:r()*6.283}); return a; })();
+function edgeStyle(flagged){
+  if(flagged)return { col:"#6b5d4a", w:3 };
+  var v=PROG.vine;
+  if(v==="braided")return { col:"#7ab356", w:4 };
+  if(v==="blossom")return { col:"#8fbf68", w:3.5 };
+  if(v==="aurora")return { col:"#78c0a8", w:3.5 };
+  return { col:"#7ab356", w:3.5 };
+}
+function render(t){
+  var bk=BACKS[PROG.backdrop]||BACKS.midnight;
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,bk.top); grd.addColorStop(1,bk.bot);
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+  var i;
+  if(PROG.fx){ ctx.save();
+    for(i=0;i<SPECKS.length;i++){ var sp=SPECKS[i];
+      var al=0.25+0.25*Math.sin(t/1400+sp.p);
+      ctx.globalAlpha=al; ctx.fillStyle=bk.speck;
+      ctx.beginPath(); ctx.arc(sp.x,(sp.y+t*0.006*sp.s)%H,sp.s,0,6.283); ctx.fill(); }
+    ctx.restore(); }
+  if(!G)return;
+  var E=G.board.edges, pos=G.pos, won=G.phase==="won";
+  var bloomK=won?Math.min(1,(now()-G.winT)/1200):0;
+  /* edges */
+  for(i=0;i<E.length;i++){
+    var e=E[i], a=pos[e[0]], b=pos[e[1]], fl=G.eflags[i]&&!won;
+    var st=edgeStyle(fl);
+    var mx=(a.x+b.x)/2, my=(a.y+b.y)/2+(fl?0:10);
+    ctx.strokeStyle=st.col; ctx.lineWidth=st.w; ctx.lineCap="round";
+    ctx.globalAlpha=won?0.9:0.85;
+    if(fl){ /* gnarled: kinked polyline (texture = colorblind cue) */
+      var kx1=a.x+(b.x-a.x)*0.33+(( (e[0]*7+e[1]*13)%9)-4)*2.2;
+      var ky1=a.y+(b.y-a.y)*0.33+(((e[0]*11+e[1]*5)%9)-4)*2.2;
+      var kx2=a.x+(b.x-a.x)*0.66-(((e[0]*5+e[1]*3)%9)-4)*2.2;
+      var ky2=a.y+(b.y-a.y)*0.66-(((e[0]*3+e[1]*17)%9)-4)*2.2;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(kx1,ky1); ctx.lineTo(kx2,ky2); ctx.lineTo(b.x,b.y); ctx.stroke();
+      /* dry knots */
+      ctx.fillStyle="#54483a";
+      ctx.beginPath(); ctx.arc(kx1,ky1,2.4,0,6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(kx2,ky2,2.4,0,6.283); ctx.fill();
+    } else {
+      if(won){ ctx.strokeStyle="#9ed07a"; ctx.lineWidth=st.w+bloomK; }
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.quadraticCurveTo(mx,my,b.x,b.y); ctx.stroke();
+      if(PROG.vine==="braided"&&!fl){ ctx.globalAlpha=0.5; ctx.lineWidth=1.4; ctx.strokeStyle="#3f6b34";
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.quadraticCurveTo(mx,my+5,b.x,b.y); ctx.stroke(); ctx.globalAlpha=0.85; }
+      if(PROG.vine==="blossom"&&!fl){ ctx.fillStyle="#e58fa0"; ctx.globalAlpha=0.8;
+        ctx.beginPath(); ctx.arc(mx,my+5,2,0,6.283); ctx.fill(); ctx.globalAlpha=0.85; }
+      if(PROG.vine==="aurora"&&!fl){ ctx.globalAlpha=0.45; ctx.lineWidth=1.2; ctx.strokeStyle="#b57de0";
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.quadraticCurveTo(mx,my+6,b.x,b.y); ctx.stroke(); ctx.globalAlpha=0.85; }
+    }
+  }
+  ctx.globalAlpha=1;
+  /* crossing markers (shape cue, not color-only) */
+  if(!won&&G.xpts){
+    for(i=0;i<G.xpts.length;i++){ var xp=G.xpts[i];
+      ctx.strokeStyle="#0b0f0b"; ctx.lineWidth=4.4; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(xp.x-5,xp.y-5); ctx.lineTo(xp.x+5,xp.y+5);
+      ctx.moveTo(xp.x+5,xp.y-5); ctx.lineTo(xp.x-5,xp.y+5); ctx.stroke();
+      ctx.strokeStyle="#e56b6b"; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.moveTo(xp.x-5,xp.y-5); ctx.lineTo(xp.x+5,xp.y+5);
+      ctx.moveTo(xp.x+5,xp.y-5); ctx.lineTo(xp.x-5,xp.y+5); ctx.stroke(); }
+  }
+  /* nudge ghost */
+  if(G.ghost>=0&&now()-G.ghostT<1600){
+    var gi=G.ghost, gp=G.board.sol[gi], cp=pos[gi];
+    ctx.setLineDash([5,5]); ctx.strokeStyle="#c8a84b"; ctx.lineWidth=1.6; ctx.globalAlpha=0.85;
+    ctx.beginPath(); ctx.moveTo(cp.x,cp.y); ctx.lineTo(gp.x,gp.y); ctx.stroke();
+    ctx.beginPath(); ctx.arc(gp.x,gp.y,20,0,6.283); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+  } else if(G.ghost>=0)G.ghost=-1;
+  /* nodes */
+  for(i=0;i<G.board.n;i++){
+    var p=pos[i], tap=G.board.isTap[i], rad=tap?19:16;
+    var shx=0;
+    if(G.shake>0&&G.shakeI===i){ shx=Math.sin(now()/24)*3*G.shake; G.shake-=0.02; }
+    var px=p.x+shx, py=p.y;
+    if(tap){ /* root strands into soil */
+      ctx.strokeStyle="#5c3a1a"; ctx.lineWidth=2.6; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(px-8,py+10); ctx.quadraticCurveTo(px-13,py+22,px-9,py+30);
+      ctx.moveTo(px,py+12); ctx.lineTo(px,py+32);
+      ctx.moveTo(px+8,py+10); ctx.quadraticCurveTo(px+13,py+22,px+9,py+30); ctx.stroke(); }
+    var gg=ctx.createRadialGradient(px-5,py-6,2,px,py,rad);
+    if(PROG.bulb==="acorn"){ gg.addColorStop(0,"#c99a5b"); gg.addColorStop(1,"#6a4620"); }
+    else if(PROG.bulb==="dewdrop"){ gg.addColorStop(0,"#dff2ff"); gg.addColorStop(1,"#3e6f96"); }
+    else if(PROG.bulb==="firefly"){ var pulse=0.5+0.5*Math.sin(t/300+i); gg.addColorStop(0,"#ffe9a8"); gg.addColorStop(1,pulse>0.5?"#a8842e":"#7a6222"); }
+    else if(PROG.bulb==="star"){ gg.addColorStop(0,"#fff6d8"); gg.addColorStop(1,"#8f7326"); }
+    else { gg.addColorStop(0,"#f2ead8"); gg.addColorStop(1,"#8f8672"); }
+    ctx.fillStyle=gg;
+    ctx.beginPath(); ctx.arc(px,py,rad,0,6.283); ctx.fill();
+    ctx.lineWidth=tap?3:2;
+    ctx.strokeStyle= tap?"#c8a84b":(G.drag===i?"#e8dcc8":"#2a331f");
+    ctx.stroke();
+    if(tap){ /* knot mark */
+      ctx.strokeStyle="#5c3a1a"; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.arc(px,py,7.5,0.6,5.2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px,py,3.4,3.6,8.4); ctx.stroke(); }
+    if(PROG.bulb==="star"&&!tap){ ctx.strokeStyle="#fff6d8"; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(px,py-9); ctx.lineTo(px,py+9); ctx.moveTo(px-9,py); ctx.lineTo(px+9,py); ctx.stroke(); }
+    /* win blooms */
+    if(won){ var bk2=bloomK, petals=6, pi;
+      ctx.save(); ctx.translate(px,py); ctx.globalAlpha=Math.min(1,bk2*1.4);
+      for(pi=0;pi<petals;pi++){ var an2=pi/petals*6.283+bk2*0.6;
+        ctx.fillStyle=(pi%2)?"#e58fa0":"#c8a84b";
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(an2)*10*bk2, Math.sin(an2)*10*bk2, 7*bk2, 3.4*bk2, an2, 0, 6.283); ctx.fill(); }
+      ctx.fillStyle="#ffe9a8"; ctx.beginPath(); ctx.arc(0,0,4*bk2,0,6.283); ctx.fill();
+      ctx.restore(); ctx.globalAlpha=1; }
+  }
+  /* solved-pending gold ring */
+  if(!won&&G.cross===0&&G.zeroSince){
+    var hold=Math.min(1,(now()-G.zeroSince)/1000);
+    ctx.strokeStyle="#c8a84b"; ctx.lineWidth=3; ctx.globalAlpha=0.7;
+    ctx.beginPath(); ctx.arc(W/2,BY0+((BY1-BY0)/2)+8, 236, -1.5708, -1.5708+hold*6.283); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+}
+
+/* ---------- input ---------- */
+function evPt(ev){
+  var r=cvs.getBoundingClientRect();
+  return { x:(ev.clientX-r.left)/r.width*W, y:(ev.clientY-r.top)/r.height*H };
+}
+var dragStart=null;
+cvs.addEventListener("pointerdown",function(ev){ ev.preventDefault(); ac();
+  if(!G||G.phase!=="play")return;
+  var p=evPt(ev), best=-1, bd=34*34, i;
+  for(i=0;i<G.board.n;i++){ var dx=G.pos[i].x-p.x, dy=G.pos[i].y-p.y, d=dx*dx+dy*dy;
+    if(d<bd){ bd=d; best=i; } }
+  if(best<0)return;
+  if(G.board.isTap[best]){ G.shake=1; G.shakeI=best; toast("🪢 A taproot holds its ground"); blip(160,0.12,0.05,"square"); return; }
+  G.drag=best; dragStart={x:G.pos[best].x, y:G.pos[best].y}; sndPick();
+  try{ cvs.setPointerCapture(ev.pointerId); }catch(e){} });
+cvs.addEventListener("pointermove",function(ev){ if(!G||G.drag<0)return; ev.preventDefault();
+  var p=evPt(ev);
+  G.pos[G.drag].x=Math.max(BX0,Math.min(BX1,p.x));
+  G.pos[G.drag].y=Math.max(BY0,Math.min(BY1,p.y));
+  recross(); });
+function pup(){ if(!G)return;
+  if(G.drag>=0&&dragStart){ var dp=G.pos[G.drag];
+    var dx=dp.x-dragStart.x, dy=dp.y-dragStart.y;
+    if(dx*dx+dy*dy>16){ G.moves++; updateHud(); } }
+  G.drag=-1; dragStart=null; }
+cvs.addEventListener("pointerup",pup); cvs.addEventListener("pointercancel",pup);
+
+/* ---------- nudge (zen) ---------- */
+function nudge(){
+  if(!G||G.phase!=="play"||G.mode!=="zen")return false;
+  var best=-1, bd=-1, i;
+  for(i=0;i<G.board.n;i++){ if(G.board.isTap[i])continue;
+    var dx=G.pos[i].x-G.board.sol[i].x, dy=G.pos[i].y-G.board.sol[i].y, d=dx*dx+dy*dy;
+    if(d>bd){ bd=d; best=i; } }
+  if(best<0)return false;
+  G.ghost=best; G.ghostT=now(); G.hintsUsed++;
+  blip(660,0.14,0.05,"triangle");
+  return true;
+}
+
+/* ---------- main loop ---------- */
+function loop(t){
+  requestAnimationFrame(loop);
+  render(t||0);
+  if(G&&G.phase==="play"&&G.cross===0&&G.zeroSince&&now()-G.zeroSince>=1000&&G.drag<0)winWeave();
+}
+
+/* ---------- screens/ui plumbing ---------- */
+function $(id){ return document.getElementById(id); }
+function hideScreens(){ var s=document.querySelectorAll(".screen"),i; for(i=0;i<s.length;i++)s[i].classList.remove("on"); }
+function show(id){ hideScreens(); $(id).classList.add("on"); }
+var toastT=null;
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2200); }
+function stamp(){ $("buildstamp").textContent="Root Weave "+BUILD+" · "+PROG.solves+" weaves · streak "+PROG.streak; }
+
+function renderLevels(){
+  var g=$("lvlgrid"); g.innerHTML="";
+  var i; for(i=1;i<=GROVE_LEVELS;i++)(function(i){
+    var unlocked=i<=PROG.level;
+    var done=i<PROG.level;
+    var c=document.createElement("div"); c.className="lvlcard"+(unlocked?"":" locked")+(done?" done":"");
+    var n=cfgFor("grove",i,0).n, tp=cfgFor("grove",i,0).tap;
+    c.innerHTML='<div class="ln">'+i+'</div><div class="lt">'+n+' bulbs'+(tp?(" · "+tp+"🪢"):"")+'</div><div class="ls">'+(done?"✿":"")+'</div>';
+    if(unlocked)c.onclick=function(){ startMode("grove",i); };
+    g.appendChild(c);
+  })(i);
+}
+function renderWard(){
+  var w=$("wardlist"); w.innerHTML="";
+  var i; for(i=0;i<WARD.length;i++)(function(it){
+    var owned=it.need(), eq=PROG[it.key]===it.id;
+    var c=document.createElement("div"); c.className="wardcard"+(owned?"":" locked");
+    c.innerHTML='<div class="wi">'+it.icon+'</div><div class="wt"><div class="wn">'+it.name+' <span style="color:var(--muted);font-size:.7rem">· '+it.cat+'</span></div>'+
+      '<div class="wd">'+(owned?"Unlocked.":it.needTxt)+'</div></div>'+
+      '<div class="we'+(eq?" eq":"")+'">'+(eq?"EQUIPPED":(owned?"EQUIP":"🔒"))+'</div>';
+    if(owned&&!eq)c.querySelector(".we").onclick=function(){ PROG[it.key]=it.id; save(); renderWard(); };
+    w.appendChild(c);
+  })(WARD[i]);
+}
+function renderGrove(){
+  var w=$("grovewrap"); w.innerHTML="";
+  if(!PROG.grove.length){ w.innerHTML='<div style="color:var(--muted);font-size:.8rem;padding:30px 10px">No keepsakes yet. Finish a weave and a root mandala is pressed.</div>'; return; }
+  var i; for(i=PROG.grove.length-1;i>=0;i--){
+    var ks=PROG.grove[i], c=document.createElement("div"); c.className="grovecard";
+    var cv=document.createElement("canvas"); cv.width=84; cv.height=84;
+    drawKeepsake(cv,ks); c.appendChild(cv);
+    var d0=document.createElement("div"); d0.className="gd"; d0.textContent=ks.d; c.appendChild(d0);
+    w.appendChild(c);
+  }
+}
+function syncTg(){
+  var s=$("tg-sound"), f=$("tg-fx");
+  if(PROG.sound)s.classList.add("on"); else s.classList.remove("on");
+  if(PROG.fx)f.classList.add("on"); else f.classList.remove("on");
+}
+
+/* ---------- fit stage ---------- */
+function fit(){ var st=document.getElementById("stage");
+  var s=Math.min(window.innerWidth/540, window.innerHeight/960);
+  st.style.transform="scale("+s+")"; }
+window.addEventListener("resize",fit); fit();
+
+/* ---------- wire buttons ---------- */
+function tap(id,fn){ $(id).addEventListener("click",fn); }
+tap("b-grove",function(){ renderLevels(); show("s-levels"); });
+tap("levels-back",function(){ show("s-title"); stamp(); });
+tap("b-daily",function(){ startMode("daily"); });
+tap("b-zen",function(){ startMode("zen"); });
+tap("b-gnarl",function(){ startMode("gnarl"); });
+tap("b-how",function(){ show("s-how"); });
+tap("how-back",function(){ if(G&&G.phase==="play"){ hideScreens(); } else { show("s-title"); } });
+tap("b-ward",function(){ renderWard(); show("s-ward"); });
+tap("ward-back",function(){ show("s-title"); });
+tap("b-keeps",function(){ renderGrove(); show("s-keeps"); });
+tap("keeps-back",function(){ show("s-title"); });
+tap("b-set",function(){ syncTg(); show("s-set"); });
+tap("set-back",function(){ show("s-title"); });
+tap("tg-sound",function(){ PROG.sound=!PROG.sound; save(); syncTg(); });
+tap("tg-fx",function(){ PROG.fx=!PROG.fx; save(); syncTg(); });
+tap("hud-back",function(){ stopToMenu(); });
+tap("hud-help",function(){ show("s-how"); });
+tap("d-menu",function(){ stopToMenu(); });
+tap("d-nudge",function(){ nudge(); });
+tap("d-scramble",function(){ if(!G||G.phase!=="play")return;
+  var i; for(i=0;i<G.board.n;i++){ G.pos[i].x=G.board.start[i].x; G.pos[i].y=G.board.start[i].y; }
+  G.moves=0; recross(); toast("♻ Rescrambled"); });
+tap("over-home",function(){ stopToMenu(); });
+tap("over-next",function(){
+  if(!G){ stopToMenu(); return; }
+  if(G.mode==="grove"){ if(G.lvl<GROVE_LEVELS)startMode("grove",G.lvl+1); else stopToMenu(); }
+  else if(G.mode==="daily")stopToMenu();
+  else startMode(G.mode);
+});
+stamp();
+
+/* ---------- SWS embed/exit + sunbeams ---------- */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_rootweave'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ===== headless test hook ===== */
+if(/[?&]rwtest=1/.test(location.search)){
+  window.RW_DEV={
+    start:function(mode,lvl){ return startMode(mode||"grove",lvl||1); },
+    state:function(){ if(!G)return null;
+      var i, nan=false;
+      for(i=0;i<G.board.n;i++){ if(!isFinite(G.pos[i].x)||!isFinite(G.pos[i].y)){ nan=true; break; } }
+      if(!isFinite(G.cross))nan=true;
+      return { mode:G.mode, lvl:G.lvl, n:G.board.n, crossings:G.cross, phase:G.phase,
+        moves:G.moves, taps:G.board.taps.slice(), nan:nan }; },
+    moveNode:function(i,x,y){ if(!G||G.phase!=="play")return false;
+      if(G.board.isTap[i])return false;
+      G.pos[i].x=Math.max(BX0,Math.min(BX1,x)); G.pos[i].y=Math.max(BY0,Math.min(BY1,y));
+      G.moves++; recross(); return true; },
+    crossingsOf:function(edges,pos){ return crossings(edges,pos,false).n; },
+    gen:function(seed,n,tapN){ return genBoard(seed,n,tapN); },
+    genValidCheck:function(k){
+      var sizes=[6,8,10,12,14,16,18,20,22,24], fails=[], i;
+      for(i=0;i<k;i++){
+        var n=sizes[i%sizes.length], tapN=(n>=8)?(i%3===2?2:(i%3)):0;
+        var g=genBoard((130001+i*997)>>>0,n,tapN);
+        if(!g){ fails.push({i:i,why:"null"}); continue; }
+        var cs=crossings(g.edges,g.sol,false).n;
+        var cst=crossings(g.edges,g.start,false).n;
+        var conn=(function(){ var adj=[], q=[0], seen=[], c=0, j;
+          for(j=0;j<g.n;j++){ adj.push([]); seen.push(false); }
+          for(j=0;j<g.edges.length;j++){ adj[g.edges[j][0]].push(g.edges[j][1]); adj[g.edges[j][1]].push(g.edges[j][0]); }
+          seen[0]=true;
+          while(q.length){ var u=q.pop(); c++;
+            for(j=0;j<adj[u].length;j++)if(!seen[adj[u][j]]){ seen[adj[u][j]]=true; q.push(adj[u][j]); } }
+          return c===g.n; })();
+        var tapOk=true, j2;
+        for(j2=0;j2<g.taps.length;j2++){ var ti=g.taps[j2];
+          if(g.start[ti].x!==g.sol[ti].x||g.start[ti].y!==g.sol[ti].y)tapOk=false; }
+        if(cs!==0)fails.push({i:i,why:"solution crossings "+cs});
+        else if(cst<=0)fails.push({i:i,why:"start already solved"});
+        else if(!conn)fails.push({i:i,why:"disconnected"});
+        else if(!tapOk)fails.push({i:i,why:"taproot moved by scramble"});
+      }
+      return { all:fails.length===0, k:k, fails:fails };
+    },
+    autoSolve:function(){ if(!G)return {solved:false};
+      var before=PROG.grove.length, i;
+      for(i=0;i<G.board.n;i++){ if(G.board.isTap[i])continue;
+        window.RW_DEV.moveNode(i,G.board.sol[i].x,G.board.sol[i].y); }
+      if(G.cross===0){ G.zeroSince=now()-1200; winWeave(); }
+      return { solved:G.phase==="won", crossings:G.cross, minted:PROG.grove.length>before }; },
+    nudgeTest:function(){ return nudge(); },
+    earnTest:function(){ return window._sbCapEarn(2,'rwtest'); },
+    boardJson:function(seed,n,tapN){ return JSON.stringify(genBoard(seed,n,tapN)); },
+    pos:function(){ if(!G)return null; var a=[],i; for(i=0;i<G.board.n;i++)a.push({x:G.pos[i].x,y:G.pos[i].y}); return a; },
+    prog:function(){ return PROG; }
+  };
+}
+
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
