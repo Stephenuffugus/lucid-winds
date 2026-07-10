@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M16 6 19 13 26 13 20 18 22 25 16 21 10 25 12 18 6 13 13 13 Z' fill='%23c8a84b'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Star Field">
+<title>Star Field — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"starfield"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+#s-play{background:transparent}
+.pad{padding:24px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:52px; line-height:1; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #1a1405, 0 0 26px #c8a84b44; letter-spacing:1px}
+.title-sub{color:var(--dew); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:14px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#d6b24e,#b3902f); color:#1a1405; border-color:#e8cd78; box-shadow:0 4px 0 #6d5410, 0 8px 20px #0006}
+.btn.sm{min-height:50px; font-size:15px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:22px; color:var(--gold); font-weight:800; margin-bottom:6px; text-align:center}
+.hl{color:var(--gold); font-weight:800}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c; font-size:15px}
+.toggle{width:60px; height:34px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:29px; background:#eafbd6}
+.grid{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.card{width:132px; border:1px solid var(--line); border-radius:14px; background:#0f150c; cursor:pointer; padding:12px; text-align:center}
+.card.locked{opacity:.45}
+.card.on{border-color:var(--gold)}
+.card .cn{font-size:15px; font-weight:700; color:var(--cream)}
+.card .cs{font-size:12px; color:var(--muted); margin-top:4px}
+.gallwrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.top{position:absolute; left:0; right:0; top:0; height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 10px; z-index:30}
+.tbtn{min-width:46px; height:46px; border-radius:12px; border:1px solid var(--line); background:rgba(15,21,12,.72); color:#cfe0c2; font-size:20px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
+.tbtn.on{background:var(--deep); color:#eafbd6}
+.tlabel{font-size:14px; color:var(--cream); font-weight:700; text-align:center; flex:1}
+.tlabel small{display:block; color:var(--gold); font-size:11px; letter-spacing:1px}
+.footnote{color:var(--muted); font-size:12px; text-align:center; margin-top:14px; line-height:1.5}
+.pill{display:inline-block; background:#0f150c; border:1px solid var(--line); border-radius:20px; padding:6px 14px; font-size:13px; color:var(--gold); margin:4px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <!-- TITLE -->
+  <div id="s-title" class="screen on"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">STAR FIELD</div>
+    <div class="title-sub">plant a star in every constellation</div>
+    <div class="ribbon">One star-flower per row, per column, and per constellation. No two may touch. Simple to learn, a quiet joy to solve.</div>
+    <div class="stack" style="margin-top:22px">
+      <button class="btn primary" onclick="SFUI.play('garden')">🌱 Star Garden</button>
+      <button class="btn" onclick="SFUI.play('daily')">🌙 Daily Sky</button>
+      <div class="row">
+        <button class="btn sm" onclick="SFUI.play('zen')">🍃 Zen</button>
+        <button class="btn sm" onclick="SFUI.play('deep')">✦ Deep Field</button>
+      </div>
+      <div class="row">
+        <button class="btn ghost sm" onclick="SFUI.show('s-gallery')">✿ Grove</button>
+        <button class="btn ghost sm" onclick="SFUI.show('s-wardrobe')">🎨 Skins</button>
+        <button class="btn ghost sm" onclick="SFUI.show('s-settings')">⚙</button>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="footnote">Sky Wolf Studios · a Lucid Winds game</div>
+  </div></div>
+
+  <!-- PLAY -->
+  <div id="s-play" class="screen">
+    <div class="top">
+      <div class="tbtn" onclick="SFUI.show('s-title')">‹</div>
+      <div class="tlabel" id="pl-label">Star Garden<small id="pl-sub">5 × 5</small></div>
+      <div style="display:flex; gap:6px">
+        <div class="tbtn" id="am-btn" onclick="SF.toggleAuto()" title="auto-mark">◈</div>
+        <div class="tbtn" onclick="SF.hint()" title="hint">💡</div>
+        <div class="tbtn" onclick="SF.newPuzzle()" title="new">↺</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WIN -->
+  <div id="s-win" class="screen"><div class="pad center">
+    <div style="flex:1"></div>
+    <h2 class="sc-h" id="win-title">Constellation bloomed!</h2>
+    <canvas id="win-cv" width="260" height="200" style="margin:8px auto"></canvas>
+    <div class="ribbon" id="win-sub"></div>
+    <div class="stack" style="margin-top:18px">
+      <button class="btn primary" onclick="SF.newPuzzle(); SFUI.show('s-play')">Next constellation</button>
+      <button class="btn ghost sm" onclick="SFUI.show('s-title')">Home</button>
+    </div>
+    <div style="flex:1"></div>
+  </div></div>
+
+  <!-- GALLERY -->
+  <div id="s-gallery" class="screen"><div class="pad">
+    <h2 class="sc-h">Your Grove</h2>
+    <div class="ribbon center" id="gall-sub" style="margin-bottom:14px"></div>
+    <div class="gallwrap" id="gall-wrap"></div>
+    <div class="stack" style="margin-top:20px"><button class="btn" onclick="SFUI.show('s-title')">Back</button></div>
+  </div></div>
+
+  <!-- WARDROBE -->
+  <div id="s-wardrobe" class="screen"><div class="pad">
+    <h2 class="sc-h">Star Skins</h2>
+    <div class="ribbon center" id="wd-sub" style="margin-bottom:14px"></div>
+    <div class="grid" id="wd-grid"></div>
+    <div class="stack" style="margin-top:20px"><button class="btn" onclick="SFUI.show('s-title')">Back</button></div>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div id="s-settings" class="screen"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div class="settingline"><span>Sound</span><div class="toggle" id="tg-sound" onclick="SF.tog('sound')"><b></b></div></div>
+    <div class="settingline"><span>High-contrast regions</span><div class="toggle" id="tg-cb" onclick="SF.tog('cb')"><b></b></div></div>
+    <div class="settingline"><span>Auto-mark by default</span><div class="toggle" id="tg-auto" onclick="SF.tog('auto')"><b></b></div></div>
+    <div class="ribbon center" style="margin-top:8px">Tap a cell: empty → dot → ⭐ star → empty. Auto-mark dots the cells a star rules out.</div>
+    <div class="stack" style="margin-top:18px"><button class="btn" onclick="SFUI.show('s-title')">Back</button></div>
+  </div></div>
+
+</div></div>
+
+<script>
+/* ===================== Star Field — Star Battle (K=1) ===================== */
+(function(){
+"use strict";
+var VW=540, VH=960;
+var cv=document.getElementById('game'), ctx=cv.getContext('2d');
+var $=function(id){ return document.getElementById(id); };
+
+/* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_starfield'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- save / cosmetics ---------- */
+var SAVE={ solves:0, cleanSolves:0, streak:0, lastDaily:'', dailyDoneOn:'', gallery:[], theme:0, glyph:0, sound:true, cb:false, auto:true };
+function load(){ try{ var s=JSON.parse(localStorage.getItem('starfield_save')||'{}'); for(var k in s)SAVE[k]=s[k]; }catch(e){} }
+function save(){ try{ localStorage.setItem('starfield_save',JSON.stringify(SAVE)); }catch(e){} }
+load();
+
+/* star glyph skins unlocked by solves; night-sky themes unlocked by clean solves */
+var GLYPHS=[ {id:0,name:'Marigold',need:0,fn:'flower'}, {id:1,name:'Classic Star',need:5,fn:'star'},
+             {id:2,name:'Firefly',need:15,fn:'firefly'}, {id:3,name:'Rose',need:40,fn:'rose'} ];
+var THEMES=[ {id:0,name:'Midnight',need:0,bg:'#0b0f0b'}, {id:1,name:'Dusk',need:6,bg:'#141018'},
+             {id:2,name:'Frost',need:20,bg:'#0a1016'}, {id:3,name:'Ember',need:45,bg:'#150e0a'} ];
+function glyphUnlocked(g){ return SAVE.solves>=g.need; }
+function themeUnlocked(t){ return SAVE.cleanSolves>=t.need; }
+
+/* ---------- rng ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+var _rk=(function(){ var s=0; for(var i=0;i<8;i++){ s=(s*131+ (Date.now()>>>(i*3)) + i*97)>>>0; } return s; })();
+function rnd(){ // non-deterministic default rng (seeded once per boot, advanced by a counter)
+  _rk=(_rk+0x9E3779B9)>>>0; var t=_rk; t^=t<<13; t>>>=0; t^=t>>17; t^=t<<5; t>>>=0; return (t>>>0)/4294967296; }
+
+/* ---------- GENERATOR + SOLVER (K=1) ---------- */
+function genPlacement(N, R){
+  var cols=[], used=[], res=null;
+  function bt(r, prev){
+    if(r===N){ res=cols.slice(); return true; }
+    var cand=[], c; for(c=0;c<N;c++)cand.push(c);
+    for(var i=cand.length-1;i>0;i--){ var j=Math.floor(R()*(i+1)); var t=cand[i];cand[i]=cand[j];cand[j]=t; }
+    for(var k=0;k<cand.length;k++){ c=cand[k];
+      if(used[c])continue;
+      if(r>0 && Math.abs(c-prev)<2)continue;
+      used[c]=true; cols[r]=c;
+      if(bt(r+1,c))return true;
+      used[c]=false;
+    }
+    return false;
+  }
+  if(bt(0,-99))return res; return null;
+}
+function genRegions(N, stars, R){
+  var region=[], i; for(i=0;i<N*N;i++)region.push(-1);
+  var frontier=[];
+  function pushFront(idx){ var r=Math.floor(idx/N), c=idx%N, reg=region[idx];
+    var nb=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for(var k=0;k<4;k++){ var nr=nb[k][0],nc=nb[k][1]; if(nr<0||nc<0||nr>=N||nc>=N)continue; var ni=nr*N+nc; if(region[ni]===-1) frontier.push({reg:reg,cell:ni}); }
+  }
+  for(i=0;i<N;i++){ var si=stars[i][0]*N+stars[i][1]; region[si]=i; }
+  for(i=0;i<N;i++){ pushFront(stars[i][0]*N+stars[i][1]); }
+  var remaining=N*N-N, guard=0;
+  while(remaining>0 && frontier.length>0 && guard++<N*N*40){
+    var pick=Math.floor(R()*frontier.length); var f=frontier[pick]; frontier.splice(pick,1);
+    if(region[f.cell]!==-1)continue;
+    region[f.cell]=f.reg; remaining--; pushFront(f.cell);
+  }
+  if(remaining>0){ var changed=true;
+    while(remaining>0 && changed){ changed=false;
+      for(var i2=0;i2<N*N;i2++){ if(region[i2]!==-1)continue; var r=Math.floor(i2/N),c=i2%N;
+        var nb=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+        for(var k=0;k<4;k++){ var nr=nb[k][0],nc=nb[k][1]; if(nr<0||nc<0||nr>=N||nc>=N)continue; var ni=nr*N+nc; if(region[ni]!==-1){ region[i2]=region[ni]; remaining--; changed=true; break; } } } } }
+  return region;
+}
+function solveCount(N, region, limit){
+  var count=0, usedCol=[], usedReg=[];
+  function bt(r, prevCol){
+    if(count>=limit)return;
+    if(r===N){ count++; return; }
+    for(var c=0;c<N;c++){
+      if(usedCol[c])continue;
+      var reg=region[r*N+c]; if(usedReg[reg])continue;
+      if(r>0 && Math.abs(c-prevCol)<2)continue;
+      usedCol[c]=true; usedReg[reg]=true;
+      bt(r+1,c);
+      usedCol[c]=false; usedReg[reg]=false;
+      if(count>=limit)return;
+    }
+  }
+  bt(0,-99); return count;
+}
+function solveOne(N, region){ // return the unique solution rows[] (col per row) or null
+  var sol=null, usedCol=[], usedReg=[], cols=[];
+  function bt(r, prevCol){
+    if(sol)return;
+    if(r===N){ sol=cols.slice(); return; }
+    for(var c=0;c<N;c++){
+      if(usedCol[c])continue; var reg=region[r*N+c]; if(usedReg[reg])continue;
+      if(r>0 && Math.abs(c-prevCol)<2)continue;
+      usedCol[c]=true; usedReg[reg]=true; cols[r]=c;
+      bt(r+1,c);
+      usedCol[c]=false; usedReg[reg]=false; if(sol)return;
+    }
+  }
+  bt(0,-99); return sol;
+}
+function validateRegions(N, region){
+  // exactly N regions, each contiguous, covering all cells
+  var seen={}, i; for(i=0;i<N*N;i++){ if(region[i]<0||region[i]>=N)return false; seen[region[i]]=(seen[region[i]]||0)+1; }
+  var count=0; for(var k in seen)count++; if(count!==N)return false;
+  // contiguity via BFS per region
+  var visited=[]; for(i=0;i<N*N;i++)visited.push(false);
+  for(var rg=0;rg<N;rg++){
+    var start=-1; for(i=0;i<N*N;i++){ if(region[i]===rg){ start=i; break; } } if(start<0)return false;
+    var q=[start], total=0, tot=seen[rg]; visited[start]=true;
+    while(q.length){ var cur=q.pop(); total++; var r=Math.floor(cur/N),c=cur%N;
+      var nb=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+      for(var m=0;m<4;m++){ var nr=nb[m][0],nc=nb[m][1]; if(nr<0||nc<0||nr>=N||nc>=N)continue; var ni=nr*N+nc; if(!visited[ni]&&region[ni]===rg){ visited[ni]=true; q.push(ni); } } }
+    if(total!==tot)return false;
+  }
+  return true;
+}
+function generate(N, R){
+  for(var attempt=0; attempt<700; attempt++){
+    var p=genPlacement(N, R); if(!p)continue;
+    var stars=[], r; for(r=0;r<N;r++)stars.push([r,p[r]]);
+    for(var rp=0; rp<24; rp++){
+      var region=genRegions(N, stars, R);
+      if(!validateRegions(N, region))continue;
+      if(solveCount(N, region, 2)===1){
+        return { N:N, region:region, solRows:p.slice() };
+      }
+    }
+  }
+  return null;
+}
+
+/* ---------- game state ---------- */
+var G=null; // {N, region, solRows, marks[] (0 empty,1 dot,2 star), mode, auto, hints, t0}
+function sizeFor(mode){
+  if(mode==='daily')return 7;
+  if(mode==='deep')return 8;
+  if(mode==='zen')return 6;
+  // garden ramps with solves (1-star Star Battle stays uniquely-solvable up to ~8)
+  var s=SAVE.solves; return s<4?5 : s<10?6 : 7;
+}
+function startPuzzle(mode){
+  var N=sizeFor(mode);
+  var R=rnd;
+  if(mode==='daily'){ var ds=todayStr(); var seed=0; for(var i=0;i<ds.length;i++)seed=(seed*31+ds.charCodeAt(i))>>>0; R=mulberry32(seed^0x51ed); }
+  var pz=generate(N, R);
+  while(!pz && N>5){ N--; pz=generate(N, R); }
+  if(!pz)pz=generate(5, rnd);
+  G={ N:pz.N, region:pz.region, solRows:pz.solRows, marks:[], mode:mode, auto:(mode==='zen'?true:SAVE.auto), hints:0, t0:Date.now(), solved:false };
+  for(var j=0;j<N*N;j++)G.marks.push(0);
+  layoutBoard();
+  $('pl-label').firstChild.nodeValue = (mode==='garden'?'Star Garden':mode==='daily'?'Daily Sky':mode==='deep'?'Deep Field':'Zen Stargazing');
+  $('pl-sub').textContent=N+' × '+N;
+  paintAutoBtn();
+}
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+
+/* ---------- board layout + render ---------- */
+var BX,BY,CELL;
+function layoutBoard(){ var N=G.N; var avail=Math.min(VW-40, VH-260); CELL=Math.floor(avail/N); BX=Math.floor((VW-CELL*N)/2); BY=110+Math.floor((VH-260-CELL*N)/2); }
+var TINTS=['#33402a','#2c3a3f','#3f3326','#2e3a2a','#3a2e3a','#26343f','#3f2e2e','#333f2a','#2a2f3f','#3f3a2a'];
+function draw(){
+  if(!G){ ctx.clearRect(0,0,VW,VH); return; }
+  var N=G.N;
+  ctx.clearRect(0,0,VW,VH);
+  // conflicts
+  var conf=conflicts();
+  // cells
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var x=BX+c*CELL, y=BY+r*CELL, reg=G.region[r*N+c];
+    ctx.fillStyle=TINTS[reg%TINTS.length]; ctx.fillRect(x,y,CELL,CELL);
+    // grid line
+    ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1; ctx.strokeRect(x+0.5,y+0.5,CELL-1,CELL-1);
+    var v=G.marks[r*N+c];
+    if(v===1){ ctx.fillStyle='rgba(200,196,180,0.5)'; dot(x+CELL/2,y+CELL/2,CELL*0.10); }
+    else if(v===2){ drawStar(x+CELL/2,y+CELL/2,CELL*0.34, conf[r*N+c]); }
+  }
+  // region borders (thick) — colorblind-safe separation
+  ctx.strokeStyle=SAVE.cb?'#f5ebd0':'#e8dcc8'; ctx.lineWidth=SAVE.cb?4:3; ctx.lineCap='round';
+  for(var r2=0;r2<N;r2++)for(var c2=0;c2<N;c2++){
+    var idx=r2*N+c2, x2=BX+c2*CELL, y2=BY+r2*CELL, rg=G.region[idx];
+    if(c2===N-1||G.region[idx+1]!==rg){ line(x2+CELL,y2,x2+CELL,y2+CELL); }
+    if(r2===N-1||G.region[idx+N]!==rg){ line(x2,y2+CELL,x2+CELL,y2+CELL); }
+    if(c2===0){ line(x2,y2,x2,y2+CELL); } if(r2===0){ line(x2,y2,x2+CELL,y2); }
+  }
+  // outer frame
+  ctx.strokeStyle='#e8dcc8'; ctx.lineWidth=SAVE.cb?5:4; ctx.strokeRect(BX,BY,CELL*N,CELL*N);
+  // per-row/col satisfied pips
+  ctx.fillStyle='rgba(200,168,75,0.9)'; ctx.font='700 '+Math.max(10,CELL*0.16)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  // status line
+  ctx.fillStyle='#8a9178'; ctx.font='600 15px system-ui'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  var placed=0; for(var q=0;q<N*N;q++)if(G.marks[q]===2)placed++;
+  ctx.fillText(placed+' / '+N+' stars planted', VW/2, BY+CELL*N+34);
+  if(anyConflict(conf)) { ctx.fillStyle='#e58fa0'; ctx.fillText('two stars are touching', VW/2, BY+CELL*N+56); }
+}
+function line(a,b,c,d){ ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.stroke(); }
+function dot(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); }
+function drawStar(x,y,r,bad){
+  ctx.save(); ctx.translate(x,y);
+  var col=bad?'#e58fa0':'#f2d98a', glow=bad?'#e58fa0':'#c8a84b';
+  var gl=ctx.createRadialGradient(0,0,1,0,0,r*1.5); gl.addColorStop(0,glow+'cc'); gl.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,r*1.5,0,7); ctx.fill();
+  var fn=GLYPHS[SAVE.glyph]&&GLYPHS[SAVE.glyph].fn||'flower';
+  ctx.fillStyle=col;
+  if(fn==='star'){ starPath(r,r*0.42,5); ctx.fill(); }
+  else if(fn==='firefly'){ ctx.beginPath(); ctx.arc(0,0,r*0.55,0,7); ctx.fill(); ctx.fillStyle='#fff6d0'; ctx.beginPath(); ctx.arc(-r*0.15,-r*0.15,r*0.22,0,7); ctx.fill(); }
+  else if(fn==='rose'){ for(var p=0;p<6;p++){ ctx.save(); ctx.rotate(p/6*Math.PI*2); ctx.beginPath(); ctx.ellipse(0,-r*0.5,r*0.32,r*0.52,0,0,7); ctx.fill(); ctx.restore(); } ctx.fillStyle='#c8a84b'; ctx.beginPath(); ctx.arc(0,0,r*0.3,0,7); ctx.fill(); }
+  else { for(var pp=0;pp<5;pp++){ ctx.save(); ctx.rotate(pp/5*Math.PI*2); ctx.beginPath(); ctx.ellipse(0,-r*0.55,r*0.3,r*0.55,0,0,7); ctx.fill(); ctx.restore(); } ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(0,0,r*0.28,0,7); ctx.fill(); }
+  ctx.restore();
+}
+function starPath(ro,ri,pts){ ctx.beginPath(); for(var i=0;i<pts*2;i++){ var ang=i*Math.PI/pts - Math.PI/2; var rr=(i%2===0)?ro:ri; var xx=Math.cos(ang)*rr, yy=Math.sin(ang)*rr; if(i===0)ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy); } ctx.closePath(); }
+
+/* ---------- rules ---------- */
+function conflicts(){ // per-cell bool: this star touches another star OR its row/col/region has >1 star
+  var N=G.N, conf=[], i; for(i=0;i<N*N;i++)conf.push(false);
+  var stars=[]; for(i=0;i<N*N;i++)if(G.marks[i]===2)stars.push(i);
+  for(var a=0;a<stars.length;a++)for(var b=a+1;b<stars.length;b++){
+    var ra=Math.floor(stars[a]/N),ca=stars[a]%N, rb=Math.floor(stars[b]/N),cb=stars[b]%N;
+    var touch=Math.abs(ra-rb)<=1&&Math.abs(ca-cb)<=1;
+    var same=(ra===rb)||(ca===cb)||(G.region[stars[a]]===G.region[stars[b]]);
+    if(touch||same){ conf[stars[a]]=true; conf[stars[b]]=true; }
+  }
+  return conf;
+}
+function anyConflict(conf){ for(var i=0;i<conf.length;i++)if(conf[i])return true; return false; }
+function isSolved(){
+  var N=G.N, i; var rowc=[],colc=[],regc=[]; for(i=0;i<N;i++){rowc.push(0);colc.push(0);regc.push(0);}
+  var stars=[]; for(i=0;i<N*N;i++)if(G.marks[i]===2)stars.push(i);
+  if(stars.length!==N)return false;
+  for(i=0;i<stars.length;i++){ var r=Math.floor(stars[i]/N),c=stars[i]%N; rowc[r]++; colc[c]++; regc[G.region[stars[i]]]++; }
+  for(i=0;i<N;i++){ if(rowc[i]!==1||colc[i]!==1||regc[i]!==1)return false; }
+  for(var a=0;a<stars.length;a++)for(var b=a+1;b<stars.length;b++){ var ra=Math.floor(stars[a]/N),ca=stars[a]%N,rb=Math.floor(stars[b]/N),cb=stars[b]%N; if(Math.abs(ra-rb)<=1&&Math.abs(ca-cb)<=1)return false; }
+  return true;
+}
+
+/* ---------- interaction ---------- */
+function cellAt(px,py){ if(!G)return -1; var c=Math.floor((px-BX)/CELL), r=Math.floor((py-BY)/CELL); if(r<0||c<0||r>=G.N||c>=G.N)return -1; return r*G.N+c; }
+function tapCell(idx){
+  if(!G||G.solved||idx<0)return;
+  var v=G.marks[idx]; v=(v+1)%3; G.marks[idx]=v;
+  if(v===2 && G.auto)autoMark(idx);
+  sfx(v===2?'star':'tap');
+  if(isSolved())win();
+  draw();
+}
+function autoMark(idx){
+  var N=G.N, r=Math.floor(idx/N), c=idx%N, reg=G.region[idx];
+  for(var i=0;i<N*N;i++){ if(G.marks[i]!==0)continue; var rr=Math.floor(i/N),cc=i%N;
+    if(rr===r||cc===c||G.region[i]===reg||(Math.abs(rr-r)<=1&&Math.abs(cc-c)<=1)) G.marks[i]=1; }
+}
+function paintAutoBtn(){ var b=$('am-btn'); if(!b)return; if(G&&G.auto)b.classList.add('on'); else b.classList.remove('on'); }
+
+/* ---------- win ---------- */
+function win(){
+  if(G.solved)return; G.solved=true; sfx('win');
+  var clean=(G.hints===0);
+  SAVE.solves++; if(clean)SAVE.cleanSolves++;
+  var earned=0;
+  if(G.mode==='daily'){ var ds=todayStr(); if(SAVE.dailyDoneOn!==ds){ SAVE.dailyDoneOn=ds;
+      if(SAVE.lastDaily && daysBetween(SAVE.lastDaily,ds)===1)SAVE.streak++; else SAVE.streak=1; SAVE.lastDaily=ds;
+      earned=window._sbCapEarn?(_sbCapEarn(Math.min(12,4+Math.floor(SAVE.streak/2)),'starfield:daily')||0):0; } }
+  else if(G.mode!=='zen'){ earned=window._sbCapEarn?(_sbCapEarn(G.N>=8?3:2,'starfield:'+G.mode)||0):0; }
+  // keepsake constellation seed
+  var ks={ N:G.N, rows:G.solRows.slice(), glyph:SAVE.glyph, t:Date.now() };
+  SAVE.gallery.push(ks); if(SAVE.gallery.length>60)SAVE.gallery=SAVE.gallery.slice(-60);
+  save();
+  $('win-title').textContent = clean?'A perfect constellation!':'Constellation bloomed!';
+  var sub='You planted '+G.N+' star-flowers, one per constellation.';
+  if(earned>0)sub+=' <span class="hl">+'+earned+' ☀ Sunbeams</span>.';
+  if(G.mode==='daily')sub+=' Daily streak: '+SAVE.streak+'.';
+  $('win-sub').innerHTML=sub;
+  drawKeepsake($('win-cv').getContext('2d'), 260, 200, ks);
+  setTimeout(function(){ SFUI.show('s-win'); }, 650);
+}
+function daysBetween(a,b){ function p(s){ var x=s.split('-'); return Date.UTC(+x[0],+x[1]-1,+x[2]); } return Math.round((p(b)-p(a))/864e5); }
+
+function drawKeepsake(c, w, h, ks){
+  c.clearRect(0,0,w,h); c.save(); c.translate(w/2,h/2);
+  var N=ks.N, rad=Math.min(w,h)*0.4;
+  var pts=[]; for(var r=0;r<N;r++){ var ang=r/N*Math.PI*2 - Math.PI/2; pts.push([Math.cos(ang)*rad*(0.5+0.5*(ks.rows[r]/(N-1||1))), Math.sin(ang)*rad]); }
+  // connect
+  c.strokeStyle='rgba(191,224,242,0.5)'; c.lineWidth=1.5; c.beginPath();
+  for(var i=0;i<pts.length;i++){ if(i===0)c.moveTo(pts[i][0],pts[i][1]); else c.lineTo(pts[i][0],pts[i][1]); } c.closePath(); c.stroke();
+  // stars
+  var oldg=SAVE.glyph; SAVE.glyph=ks.glyph||0;
+  var octx=ctx; ctx=c;
+  for(var j=0;j<pts.length;j++){ drawStar(pts[j][0],pts[j][1], 9, false); }
+  ctx=octx; SAVE.glyph=oldg;
+  c.restore();
+}
+
+/* ---------- hint ---------- */
+function hint(){
+  if(!G||G.solved)return;
+  var N=G.N, sol=G.solRows;
+  // find a solution star not yet placed; place it
+  for(var r=0;r<N;r++){ var idx=r*N+sol[r]; if(G.marks[idx]!==2){ G.marks[idx]=2; if(G.auto)autoMark(idx); G.hints++; sfx('star'); if(isSolved())win(); draw(); return; } }
+}
+
+/* ---------- audio ---------- */
+var AC=null; function ac(){ if(!SAVE.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function sfx(kind){ var a=ac(); if(!a)return; try{ var o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination);
+  var f=kind==='star'?660:kind==='win'?880:kind==='tap'?330:440; o.frequency.value=f; o.type='sine';
+  var t=a.currentTime; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(kind==='win'?0.18:0.09,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+(kind==='win'?0.4:0.14));
+  o.start(t); o.stop(t+(kind==='win'?0.42:0.16));
+  if(kind==='win'){ var o2=a.createOscillator(),g2=a.createGain(); o2.connect(g2); g2.connect(a.destination); o2.frequency.value=1320; o2.type='sine'; g2.gain.setValueAtTime(0.0001,t+0.08); g2.gain.exponentialRampToValueAtTime(0.12,t+0.1); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.5); o2.start(t+0.08); o2.stop(t+0.52); }
+}catch(e){} }
+
+/* ---------- input wiring ---------- */
+function evPos(e){ var rc=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-rc.left)*VW/rc.width, y:(t.clientY-rc.top)*VH/rc.height }; }
+cv.addEventListener('pointerdown', function(e){ if(curScreen!=='s-play')return; e.preventDefault(); ac(); var p=evPos(e); tapCell(cellAt(p.x,p.y)); }, {passive:false});
+
+/* ---------- screens / UI ---------- */
+var curScreen='s-title';
+window.SFUI={
+  show:function(id){ var ss=document.querySelectorAll('.screen'); for(var i=0;i<ss.length;i++)ss[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
+    if(id==='s-gallery')renderGallery(); if(id==='s-wardrobe')renderWardrobe(); if(id==='s-settings')syncToggles(); if(id==='s-play')draw(); },
+  play:function(mode){ if(mode==='daily' && SAVE.dailyDoneOn===todayStr()){ /* still allow replay but no reward */ } startPuzzle(mode); this.show('s-play'); }
+};
+window.SF={
+  toggleAuto:function(){ if(!G)return; G.auto=!G.auto; paintAutoBtn(); if(G.auto){ /* apply to existing stars */ for(var i=0;i<G.N*G.N;i++)if(G.marks[i]===2)autoMark(i); } draw(); },
+  hint:hint, newPuzzle:function(){ if(G)startPuzzle(G.mode); },
+  tog:function(k){ SAVE[k]=!SAVE[k]; save(); syncToggles(); if(k==='cb'&&G)draw(); }
+};
+function syncToggles(){ set('tg-sound',SAVE.sound); set('tg-cb',SAVE.cb); set('tg-auto',SAVE.auto); function set(id,v){ var e=$(id); if(e){ if(v)e.classList.add('on'); else e.classList.remove('on'); } } }
+function renderGallery(){ var host=$('gall-wrap'); host.innerHTML=''; var n=SAVE.gallery.length;
+  $('gall-sub').textContent = n? ('You have grown '+n+' constellation'+(n===1?'':'s')+'. Solve more skies to fill the Grove.') : 'Solve a sky and its stars bloom into a keepsake constellation here.';
+  var start=Math.max(0,n-24);
+  for(var i=start;i<n;i++){ var cvp=document.createElement('canvas'); cvp.width=96; cvp.height=84; cvp.style.background='#0f150c'; cvp.style.borderRadius='10px'; cvp.style.border='1px solid #2a331f'; drawKeepsake(cvp.getContext('2d'),96,84,SAVE.gallery[i]); host.appendChild(cvp); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:#8a9178;font-size:14px;padding:20px'; e.textContent='— no constellations yet —'; host.appendChild(e); }
+}
+function renderWardrobe(){ var host=$('wd-grid'); host.innerHTML='';
+  $('wd-sub').textContent='Solved '+SAVE.solves+' skies · '+SAVE.cleanSolves+' without a hint.';
+  var mk=function(kind,item,unlocked,equipped,onpick){ var d=document.createElement('div'); d.className='card'+(unlocked?'':' locked')+(equipped?' on':'');
+    d.innerHTML='<div class="cn">'+item.name+'</div><div class="cs">'+(unlocked?(equipped?'equipped':'tap to wear'):('unlock: '+item.need+' '+kind))+'</div>';
+    if(unlocked)d.onclick=onpick; host.appendChild(d); };
+  var head=document.createElement('div'); head.style.cssText='width:100%;text-align:center;color:#c8a84b;font-size:13px;margin:2px 0 6px'; head.textContent='STAR GLYPH (by solves)'; host.appendChild(head);
+  for(var i=0;i<GLYPHS.length;i++){ (function(g){ mk('solves',g,glyphUnlocked(g),SAVE.glyph===g.id,function(){ SAVE.glyph=g.id; save(); renderWardrobe(); }); })(GLYPHS[i]); }
+  var head2=document.createElement('div'); head2.style.cssText='width:100%;text-align:center;color:#c8a84b;font-size:13px;margin:12px 0 6px'; head2.textContent='NIGHT SKY (by hintless solves)'; host.appendChild(head2);
+  for(var j=0;j<THEMES.length;j++){ (function(t){ mk('clean',t,themeUnlocked(t),SAVE.theme===t.id,function(){ SAVE.theme=t.id; save(); applyTheme(); renderWardrobe(); }); })(THEMES[j]); }
+}
+function applyTheme(){ var t=THEMES[SAVE.theme]||THEMES[0]; $('stage').style.background=t.bg; }
+
+/* ---------- fit ---------- */
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+window.addEventListener('resize',fit); fit(); applyTheme(); syncToggles();
+
+/* ---------- headless test hook ---------- */
+if(/[?&]stftest=1/.test(location.search)){
+  window.STF_DEV={
+    start:function(mode){ startPuzzle(mode||'garden'); SFUI.show('s-play'); return G.N; },
+    state:function(){ return { N:G.N, K:1, region:G.region.slice(), marks:G.marks.slice(), solRows:G.solRows.slice(), mode:G.mode, phase:curScreen, solved:G.solved }; },
+    toggle:function(r,c){ tapCell(r*G.N+c); },
+    place:function(r,c,v){ G.marks[r*G.N+c]=v; if(v===2&&G.auto)autoMark(r*G.N+c); if(isSolved())win(); draw(); },
+    autoSolve:function(){ for(var i=0;i<G.N*G.N;i++)G.marks[i]=0; for(var r=0;r<G.N;r++)G.marks[r*G.N+G.solRows[r]]=2; var s=isSolved(); if(s)win(); draw(); return { solved:s }; },
+    solveCheck:function(){ startPuzzle('garden'); var uniq=solveCount(G.N,G.region,2)===1; for(var i=0;i<G.N*G.N;i++)G.marks[i]=0; for(var r=0;r<G.N;r++)G.marks[r*G.N+G.solRows[r]]=2; var solved=isSolved(); return { solved:solved, unique:uniq }; },
+    genValidCheck:function(n){ n=n||30; var uniqueOk=0, multiSol=0, noSol=0, badRegions=0, err=null;
+      try{ for(var i=0;i<n;i++){ var N=5+(i%4); var pz=generate(N, rnd); if(!pz){ noSol++; continue; }
+        if(!validateRegions(pz.N,pz.region)){ badRegions++; continue; }
+        var cnt=solveCount(pz.N,pz.region,3); if(cnt===1)uniqueOk++; else if(cnt===0)noSol++; else multiSol++; } }
+      catch(e){ err=String(e); }
+      return { puzzles:n, uniqueOk:uniqueOk, multiSol:multiSol, noSol:noSol, badRegions:badRegions, err:err }; }
+  };
+}
+
+/* boot */
+draw();
+})();
+</script>
+</body>
+</html>
