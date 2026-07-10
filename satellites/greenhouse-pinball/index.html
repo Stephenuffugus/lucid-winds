@@ -136,7 +136,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.3';
+var BUILD='v1.4';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
@@ -223,7 +223,11 @@ function buildShots(){ SHOTS=[
   {id:'rorbit',  type:'orbit', x:455,y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
     path:[[455,635],[462,320],[410,140],[230,125],[100,240],[78,560],[140,760]], exit:{x:140,y:760,vx:30,vy:300}},
   // Dandelion spinner — pass-through: crossing it spawns a decaying score rip
-  {id:'spinner', type:'spinner', x:265,y:250, r:16, value:800, cd:0}
+  {id:'spinner', type:'spinner', x:265,y:250, r:16, value:800, cd:0},
+  // S-U-N top rollover lanes — light all three to advance the bonus multiplier
+  {id:'sun0', type:'rollover', x:150,y:128, r:15, sunIdx:0, lamp:0, cd:0},
+  {id:'sun1', type:'rollover', x:265,y:128, r:15, sunIdx:1, lamp:0, cd:0},
+  {id:'sun2', type:'rollover', x:380,y:128, r:15, sunIdx:2, lamp:0, cd:0}
 ]; }
 // Six Garden Quests — started at the Compost scoop; complete a set of lit shots
 // before the timer. Completing ALL SIX in one game lights FULL BLOOM (the wizard).
@@ -258,6 +262,7 @@ function newGame(mode){
       tilt:0, tiltOut:0, tiltWarned:false, nudgeCd:0, jolt:0, joltDir:0,
       word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, scoopMode:'mystery', dropResetT:0,
       quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
+      bonusBase:0, bonusMult:1, pf2x:false, pf2xT:0,
       netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
   serveBall(); show('s-play');
 }
@@ -316,6 +321,7 @@ function physics(dt){
         else if(sh.type==='scoop'){ var sdx=b.x-sh.x,sdy=b.y-sh.y; if(sdx*sdx+sdy*sdy<sh.r*sh.r && !G.scoopBall) onScoop(b,sh); }
         else if(sh.type==='ramp'||sh.type==='orbit'){ if(!b.onRail){ var rdx=b.x-sh.x,rdy=b.y-sh.y; if(rdx*rdx+rdy*rdy<sh.er*sh.er){ var vd=b.vx*sh.tx+b.vy*sh.ty; if(vd>=sh.thr) enterRail(b,sh); } } }
         else if(sh.type==='spinner'){ var pdx=b.x-sh.x,pdy=b.y-sh.y; if(pdx*pdx+pdy*pdy<sh.r*sh.r && sh.cd<=0) onSpinner(sh,Math.sqrt(b.vx*b.vx+b.vy*b.vy)); }
+        else if(sh.type==='rollover'){ var odx=b.x-sh.x,ody=b.y-sh.y; if(odx*odx+ody*ody<sh.r*sh.r && sh.cd<=0) onRollover(sh); }
       }
       if(G.tiltOut<=0){ flipHit(b,LFLIP); flipHit(b,RFLIP); }   // TILT kills the flippers
     }
@@ -333,19 +339,19 @@ function physics(dt){
 }
 function onBump(idx,kind){ var arr=kind==='bump'?BUMPERS:SLINGS, o=arr[idx]; o.lit=1;
   G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo; G.comboT=1.4;
-  var pts=Math.round(o.sc*G.mult*(G.multiball?2:1)); G.score+=pts;
+  var pts=Math.round(o.sc*scoreMul()); G.score+=pts; G.bonusBase+=300;
   // skill shot: first strike on the lit bumper inside the plunge window pays out
   if(kind==='bump' && !G.skillDone && G.skillWin>0 && idx===G.skillLit){
     G.skillDone=true; G.skillLit=-1; G.skillWin=0; var sb=2500; G.score+=sb;
     float(o.x,o.y-o.r-30,'SKILL +'+sb); sfx('save'); G.flash=Math.max(G.flash,0.4); haptic(16); }
-  if(kind==='bump'){ G.growth++; if(G.growth>=GROWTH_MAX) triggerBloom(); }
+  if(kind==='bump'){ G.growth++; if(G.growth>=GROWTH_MAX && !G.multiball) triggerBloom(); }  // guard: no Bloom Rush stacking during multiball
   burst(o.x,o.y,4+(kind==='bump'?4:2), kind==='bump'?'#e8c65a':'#7ab356');
   float(o.x,o.y-o.r-4,'+'+pts); sfx(kind==='sling'?'sling':'bump', G.combo); haptic(6);
   if(G.combo>=5 && G.combo%3===0){ G.mult=Math.min(8,1+Math.floor(G.combo/3)); float(o.x,o.y-o.r-22,'×'+G.mult); }
 }
-function triggerBloom(){ G.growth=0; G.blooms++; G.multiball=true; G.mbTime=14;
+function triggerBloom(){ G.growth=0; G.blooms++; G.multiball=true; G.mbTime=8;
   G.score+=3000; G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,10); G.slow=0.3;
-  float(VW/2,300,'🌸 BLOOM MULTIBALL!'); float(VW/2,330,'+3000');
+  float(VW/2,300,'🌸 BLOOM RUSH!'); float(VW/2,330,'+3000');
   // spawn 2 extra beads from the top
   for(var k=0;k<2;k++){ G.balls.push({x:200+k*140,y:200,vx:(k?1:-1)*120,vy:80,r:BALLR,inLane:false,trail:[]}); }
   for(k=0;k<24;k++){ var a=Math.PI*2*k/24; G.parts.push({x:VW/2,y:300,vx:Math.cos(a)*(120+Math.random()*180),vy:Math.sin(a)*(120+Math.random()*180),life:1.3,col:k%2?'#e58fa0':'#f2d98a'}); }
@@ -354,6 +360,8 @@ function triggerBloom(){ G.growth=0; G.blooms++; G.multiball=true; G.mbTime=14;
 }
 function drainBall(i){ var b=G.balls[i]; burst(b.x,DRAINY,8,'#5a4632'); G.balls.splice(i,1); sfx('drain');
   if(G.balls.length===0){ G.multiball=false; G.mult=1; G.combo=0;
+    var eob=Math.round((G.bonusBase||0)*(G.bonusMult||1)); if(eob>0){ G.score+=eob; float(VW/2,520,'BONUS +'+eob); }  // end-of-ball tally
+    G.bonusBase=0; G.bonusMult=1; G.pf2x=false; G.pf2xT=0;
     if(G.mode==='zen'){ G.ball++; serveBall(); }
     else { if(G.ball>=G.maxBall){ endRun(); } else { G.ball++; serveBall(); float(VW/2,400,'Ball '+G.ball+' of '+G.maxBall); } }
   }
@@ -378,18 +386,20 @@ function nudge(dir){ if(!G||G.phase!=='play'||G.tiltOut>0||G.nudgeCd>0)return;
   return moved; }
 
 /* ===== shot handlers (P1 depth) ===== */
+// one scoring multiplier for the whole table: combo × multiball × Playfield-2X
+function scoreMul(){ return G.mult*(G.multiball?2:1)*(G.pf2x?2:1); }
 function comboHit(x,y){ G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo; G.comboT=2.2;
   if(G.combo>=5 && G.combo%3===0){ G.mult=Math.min(8,1+Math.floor(G.combo/3)); }
   if(G.combo>=3){ float(x,y-26,'COMBO x'+G.combo); } }
 function onStandup(sh){ if(sh.cd>0)return; sh.cd=0.3; sh.lamp=2;
-  var pts=Math.round(sh.value*G.mult*(G.multiball?2:1)); G.score+=pts;
+  var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=500;
   G.word|=(1<<sh.letter); comboHit(sh.x,sh.y); questShot(sh.id);
   burst(sh.x,sh.y,4,'#e58fa0'); float(sh.x,sh.y-sh.r-4,'+'+pts); sfx('bump',G.combo); haptic(5);
   if(G.word===0x1F){ G.score+=5000; G.lockLit=true; G.word=0;
     float(265,224,'B·L·O·O·M!'); float(265,250,'+5000 · LOCK LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20);
     for(var i=0;i<SHOTS.length;i++)if(SHOTS[i].type==='standup')SHOTS[i].lamp=1; } }
 function onDrop(sh){ if(sh.down||sh.cd>0)return; sh.cd=0.2; sh.down=true; sh.lamp=0;
-  var pts=Math.round(sh.value*G.mult*(G.multiball?2:1)); G.score+=pts;
+  var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=500;
   comboHit(sh.x,sh.y); questShot(sh.id); burst(sh.x,sh.y,3,'#b57de0'); float(sh.x,sh.y-sh.r-4,'+'+pts); sfx('sling'); haptic(4);
   var allDown=true, i; for(i=0;i<SHOTS.length;i++){ if(SHOTS[i].type==='drop' && !SHOTS[i].down)allDown=false; }
   if(allDown){ G.score+=10000; G.scoopLit=true; G.dropResetT=0.5;
@@ -412,7 +422,14 @@ function enterRail(b,sh){ b.onRail=sh.id; b.railPath=sh.path; b.railT=0; b.railD
 function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
   if(G.wizard){ var jp=1000000; G.score+=jp; G.wizJackpots++; float(sh.x,sh.y-20,'JACKPOT +1M'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); G.shake=Math.max(G.shake,7);
     if(G.wizJackpots>=12)endWizard(); return; }
-  var pts=Math.round(sh.value*G.mult*(G.multiball?2:1)); G.score+=pts; comboHit(sh.x,sh.y); float(sh.x,sh.y-20,'+'+pts); sfx('bump',G.combo); questShot(sh.id); }
+  var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=1000; comboHit(sh.x,sh.y); float(sh.x,sh.y-20,'+'+pts); sfx('bump',G.combo); questShot(sh.id); }
+function onRollover(sh){ if(sh.cd>0||sh.lamp)return; sh.cd=0.5; sh.lamp=1;
+  G.score+=Math.round(250*scoreMul()); G.bonusBase+=1000; sfx('bump',2); float(sh.x,sh.y+22,'✦');
+  var all=true,i; for(i=0;i<SHOTS.length;i++){ if(SHOTS[i].type==='rollover' && !SHOTS[i].lamp)all=false; }
+  if(all){ for(i=0;i<SHOTS.length;i++)if(SHOTS[i].type==='rollover')SHOTS[i].lamp=0;
+    if(G.bonusMult<5){ G.bonusMult++; float(265,170,'BONUS ×'+G.bonusMult+'!'); }
+    else { G.pf2x=true; G.pf2xT=20; float(265,170,'PLAYFIELD 2X!'); }
+    G.score+=Math.round(2500*scoreMul()); sfx('bloom'); G.flash=Math.max(G.flash,0.4); haptic(12); } }
 function onSpinner(sh,spd){ scoreShot(sh); var rot=Math.floor(spd/70); if(rot<1)rot=1;
   G.spin={ n:rot, done:0, x:sh.x, y:sh.y, val:800, ang:0, w:spd/60, tickT:0.05 }; }
 
@@ -467,12 +484,13 @@ function step(dt){ if(!G)return; G.t+=dt;
     else { var pp=pathPoint(rb.railPath,rb.railT); rb.x=pp[0]; rb.y=pp[1]; } }
   // spinner rip — decaying score ticks
   if(G.spin){ G.spin.ang+=G.spin.w*dt*6; G.spin.w*=Math.pow(0.5,dt); G.spin.tickT-=dt;
-    if(G.spin.tickT<=0 && G.spin.done<G.spin.n){ G.spin.done++; var spts=Math.round(G.spin.val*(G.spinnerMult||1)*G.mult); G.score+=spts; sfx('bump',G.spin.done); G.spin.tickT=0.045+0.012*G.spin.done;
+    if(G.spin.tickT<=0 && G.spin.done<G.spin.n){ G.spin.done++; var spts=Math.round(G.spin.val*(G.spinnerMult||1)*scoreMul()); G.score+=spts; sfx('bump',G.spin.done); G.spin.tickT=0.045+0.012*G.spin.done;
       if(G.spin.done>=G.spin.n){ float(G.spin.x,G.spin.y-22,'SPIN +'+(G.spin.n*G.spin.val)); G.spin=null; } } }
   // quest timer, mode-intro dim, wizard ball-save countdown
   if(G.quest){ G.quest.timer-=dt; if(G.quest.timer<=0){ float(265,300,G.quest.name+' timed out'); sfx('drain'); G.quest=null; } }
   if(G.introT>0){ G.introT-=dt; if(G.introT<0)G.introT=0; }
   if(G.wizard && G.wizSave>0){ G.wizSave-=dt; if(G.wizSave<0)G.wizSave=0; }
+  if(G.pf2xT>0){ G.pf2xT-=dt; if(G.pf2xT<=0){ G.pf2xT=0; G.pf2x=false; } }
   if(G.multiball){ G.mbTime-=dt; if(G.mbTime<=0 && G.balls.length<=1)G.multiball=false; }
   if(G.netTime>0 && G.netTime<900){ G.netTime-=dt; if(G.netTime<0)G.netTime=0; }
   if(G.comboT!=null){ G.comboT-=dt; if(G.comboT<=0){ G.combo=0; G.mult=1; G.comboT=null; } }
@@ -545,6 +563,8 @@ function render(){ if(!ctx||!G)return;
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 28px system-ui'; ctx.fillText(''+G.score, 16, 40);
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY BLOOM':G.mode==='zen'?'ZEN GREENHOUSE':('BALL '+G.ball+'/'+G.maxBall), 18, 56);
   if(G.mult>1){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 22px system-ui'; ctx.fillText('×'+G.mult,VW-16,40); }
+  if(G.bonusMult>1){ ctx.textAlign='left'; ctx.fillStyle='#7ab356'; ctx.font='800 12px system-ui'; ctx.fillText('BONUS ×'+G.bonusMult, 16, VH-48); }
+  if(G.pf2x){ ctx.save(); ctx.textAlign='center'; ctx.globalAlpha=0.65+0.35*Math.sin(G.t*6); ctx.fillStyle='#f2d98a'; ctx.font='800 19px system-ui'; ctx.fillText('PLAYFIELD 2X', VW/2, 112); ctx.restore(); }
   // quest / wizard banner
   if(G.wizard){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 17px system-ui'; ctx.fillText('🌸 FULL BLOOM · '+G.wizJackpots+'/12', VW/2, 80); }
   else if(G.quest){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 14px system-ui'; ctx.fillText(G.quest.name.toUpperCase(), VW/2, 72);
@@ -589,7 +609,10 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
       ctx.save(); ctx.translate(sh.x,sh.y);
       ctx.strokeStyle=qs?('rgba(200,168,75,'+(0.5+0.4*fl)+')'):'rgba(232,220,200,0.45)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(0,0,sh.r,0,7); ctx.stroke();
       ctx.strokeStyle=qs?'#f2d98a':'#e8dcc8'; ctx.lineWidth=3.5; var cw=Math.cos(ang)*sh.r*0.82, sw=Math.sin(ang)*sh.r*0.82;
-      ctx.beginPath(); ctx.moveTo(-cw,-sw); ctx.lineTo(cw,sw); ctx.stroke(); ctx.restore(); }
+      ctx.beginPath(); ctx.moveTo(-cw,-sw); ctx.lineTo(cw,sw); ctx.stroke(); ctx.restore();
+    } else if(sh.type==='rollover'){ var on=sh.lamp;
+      ctx.save(); ctx.strokeStyle=on?('rgba(200,168,75,'+(0.6+0.4*fl)+')'):'rgba(122,145,110,0.45)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.stroke();
+      ctx.fillStyle=on?'#f2d98a':'#5a6b4a'; ctx.font='800 12px system-ui'; ctx.textAlign='center'; ctx.fillText('SUN'.charAt(sh.sunIdx),sh.x,sh.y+4); ctx.restore(); }
   }
   ctx.restore(); }
 function drawBumper(o,body,core){ var lit=Math.max(0,o.lit);
@@ -720,6 +743,8 @@ if(/[?&]gptest=1/.test(location.search)){
     questState:function(){ if(!G)return null; return G.quest?{name:G.quest.name,timer:Math.round(G.quest.timer*10)/10,got:G.quest.got,questsDone:G.questsDone.slice()}:{quest:null,questsDone:G.questsDone.slice(),wizardReady:!!G.wizardReady}; },
     forceWizard:function(){ if(!G)return null; var i; for(i=0;i<QUESTS.length;i++)G.questsDone[i]=true; G.wizardReady=true; startWizard(); return this.wizardState(); },
     wizardState:function(){ if(!G)return null; return {ready:!!G.wizardReady,wizard:!!G.wizard,jackpots:G.wizJackpots,balls:G.balls.length,questsDone:G.questsDone.slice()}; },
+    hitRollover:function(idx){ if(!G)return null; for(var i=0;i<SHOTS.length;i++){ if(SHOTS[i].type==='rollover'&&SHOTS[i].sunIdx===idx){ SHOTS[i].cd=0; onRollover(SHOTS[i]); break; } } return {bonusMult:G.bonusMult,pf2x:!!G.pf2x}; },
+    bonusState:function(){ return G?{bonusBase:G.bonusBase,bonusMult:G.bonusMult,pf2x:!!G.pf2x,pf2xT:Math.round((G.pf2xT||0)*10)/10}:null; },
     setScoopLit:function(v){ if(G)G.scoopLit=!!v; return G?G.scoopLit:null; },
     wordState:function(){ return G?{word:G.word,lockLit:!!G.lockLit}:null; },
     dropState:function(){ var out=[],i; for(i=0;i<SHOTS.length;i++)if(SHOTS[i].type==='drop')out.push(!!SHOTS[i].down); return {down:out,scoopLit:!!G.scoopLit,resetT:Math.round((G.dropResetT||0)*100)/100}; },
