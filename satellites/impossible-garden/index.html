@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M16 5 L27 12 L16 19 L5 12 Z' fill='%237ab356'/%3E%3Cpath d='M16 19 L16 27' stroke='%23c8a84b' stroke-width='2'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Impossible Garden">
+<title>Impossible Garden — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"impossiblegarden"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --blue:#5b9bd5; --violet:#b57de0; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #171a24 0%, #0a0910 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:linear-gradient(180deg,#141526 0%, #0c0b14 60%, #08070d 100%); overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#141526 0%, #0b0a12 100%)}
+.screen.on{display:flex}
+#s-play{ background:transparent; pointer-events:none; }
+#s-play .badge{ pointer-events:auto; }
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:46px; line-height:1.05; color:var(--cream); font-weight:800; text-shadow:0 3px 0 #2a2540, 0 0 26px #b57de044; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#232037,#161425);
+  color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.14)}
+.btn.primary{background:linear-gradient(180deg,#7ab356,#4f7d38); color:#08120a; border-color:#a6d77f; box-shadow:0 4px 0 #33532a, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:15px}
+.btn.ghost{background:#12111c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:23px; color:var(--cream); font-weight:800; margin-bottom:6px}
+.hl{color:var(--gold); font-weight:800}
+.grid{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:12px auto}
+.lvlcard{width:92px; height:92px; border:1px solid var(--line); border-radius:16px; background:#15141f; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px}
+.lvlcard.locked{opacity:.38; cursor:default}
+.lvlcard .ln{font-size:24px; font-weight:800; color:var(--cream); font-variant-numeric:tabular-nums}
+.lvlcard .ls{font-size:13px; letter-spacing:1px; color:var(--gold); height:15px}
+.lvlcard.done{border-color:var(--sage)}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#15141f}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26243a; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.wr{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.wcard{width:104px; border:1px solid var(--line); border-radius:14px; background:#15141f; padding:10px; text-align:center; cursor:pointer}
+.wcard.on{border-color:var(--gold)}
+.wcard.lock{opacity:.5}
+.wcard .wn{font-size:12px; color:var(--cream); margin-top:6px}
+.wcard .wt{font-size:10px; color:var(--muted); margin-top:2px}
+.sw{width:100%; height:44px; border-radius:9px}
+.gal{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.badge{position:absolute; top:12px; left:12px; z-index:8; font-size:12px; color:var(--muted); background:rgba(10,9,16,.55); border:1px solid var(--line); border-radius:10px; padding:6px 10px}
+.hintline{color:var(--muted); font-size:12px; margin-top:6px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <div id="s-title" class="screen on"><div class="pad center">
+    <div class="title-word">Impossible<br>Garden</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Turn the vine arms until paths that could never meet line up, then walk the wanderer home to the bloom. A quiet garden of impossible angles. There is no way to lose.</div>
+    <div class="stack" style="margin-top:26px">
+      <div class="btn primary" onclick="IG.go('journey')">Journey</div>
+      <div class="row">
+        <div class="btn sm" onclick="IG.go('daily')">Daily Path</div>
+        <div class="btn sm" onclick="IG.openLevels('zen')">Zen Garden</div>
+      </div>
+      <div class="row">
+        <div class="btn sm ghost" onclick="IG.show('s-wardrobe')">Wardrobe</div>
+        <div class="btn sm ghost" onclick="IG.show('s-gallery')">Gallery</div>
+        <div class="btn sm ghost" onclick="IG.show('s-settings')">Settings</div>
+      </div>
+    </div>
+  </div></div>
+
+  <div id="s-levels" class="screen"><div class="pad">
+    <h2 class="sc-h">Choose a Garden</h2>
+    <div class="hintline" id="lv-sub">Solve each to open the next.</div>
+    <div class="grid" id="lvl-grid"></div>
+    <div class="btn ghost sm" style="max-width:420px;margin:8px auto 0" onclick="IG.show('s-title')">Back</div>
+  </div></div>
+
+  <div id="s-play" class="screen"><div class="badge" id="hud-badge">Garden 1</div></div>
+
+  <div id="s-win" class="screen"><div class="pad center">
+    <h2 class="sc-h" id="win-title">The garden blooms</h2>
+    <div class="ribbon" id="win-sub"></div>
+    <canvas id="win-bloom" width="150" height="150" style="margin:14px 0"></canvas>
+    <div id="win-earn" class="hl" style="min-height:20px"></div>
+    <div class="stack" style="margin-top:14px">
+      <div class="btn primary" id="win-next" onclick="IG.next()">Next Garden</div>
+      <div class="row">
+        <div class="btn sm ghost" onclick="IG.replay()">Again</div>
+        <div class="btn sm ghost" onclick="IG.openLevels(G.mode==='zen'?'zen':'journey')">Gardens</div>
+      </div>
+    </div>
+  </div></div>
+
+  <div id="s-wardrobe" class="screen"><div class="pad">
+    <h2 class="sc-h">Wardrobe</h2>
+    <div class="hintline" id="wr-sub"></div>
+    <div style="font-size:13px;color:var(--gold);margin:12px 0 6px">Wanderer</div>
+    <div class="wr" id="wr-skins"></div>
+    <div style="font-size:13px;color:var(--gold);margin:16px 0 6px">Palette</div>
+    <div class="wr" id="wr-pals"></div>
+    <div class="btn ghost sm" style="max-width:420px;margin:16px auto 0" onclick="IG.show('s-title')">Back</div>
+  </div></div>
+
+  <div id="s-gallery" class="screen"><div class="pad">
+    <h2 class="sc-h">Keepsake Gallery</h2>
+    <div class="hintline" id="gal-sub"></div>
+    <div class="gal" id="gal-wrap" style="margin-top:12px"></div>
+    <div class="btn ghost sm" style="max-width:420px;margin:16px auto 0" onclick="IG.show('s-title')">Back</div>
+  </div></div>
+
+  <div id="s-settings" class="screen"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div class="settingline"><span>Sound</span><div class="toggle" id="tg-sound" onclick="IG.tog('sound',this)"><b></b></div></div>
+    <div class="settingline"><span>Zen hints</span><div class="toggle" id="tg-hint" onclick="IG.tog('hint',this)"><b></b></div></div>
+    <div class="settingline"><span>High contrast</span><div class="toggle" id="tg-hc" onclick="IG.tog('hc',this)"><b></b></div></div>
+    <div class="btn ghost sm" style="max-width:420px;margin:8px auto 0" onclick="IG.show('s-title')">Back</div>
+  </div></div>
+
+</div></div>
+
+<script>
+(function(){
+"use strict";
+var VW=540, VH=960;
+var cv=document.getElementById('game'), ctx=cv.getContext('2d');
+var DPR=Math.min(2, window.devicePixelRatio||1);
+function fitCanvas(){ cv.width=VW*DPR; cv.height=VH*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
+fitCanvas();
+function $(id){ return document.getElementById(id); }
+
+/* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_impossiblegarden'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- save ---------- */
+var SAVE={ solved:{}, noHint:{}, skin:0, pal:0, gallery:[], daily:{date:'',streak:0,done:''}, sound:true, hint:true, hc:false, runEarn:0, runDate:'' };
+function load(){ try{ var s=JSON.parse(localStorage.getItem('impossiblegarden_save')||'{}'); for(var k in s) SAVE[k]=s[k]; }catch(e){} }
+function save(){ try{ localStorage.setItem('impossiblegarden_save', JSON.stringify(SAVE)); }catch(e){} }
+load();
+
+/* ---------- audio (tiny) ---------- */
+var AC=null;
+function ac(){ if(!SAVE.sound) return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function beep(f,d,g){ var a=ac(); if(!a)return; try{ var o=a.createOscillator(), gg=a.createGain(); o.frequency.value=f; o.type='sine'; gg.gain.value=g||0.05; o.connect(gg); gg.connect(a.destination); o.start(); gg.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+(d||0.15)); o.stop(a.currentTime+(d||0.15)); }catch(e){} }
+window.addEventListener('pagehide', function(){ try{ if(AC)AC.close(); }catch(e){} });
+
+/* ---------- palettes + skins ---------- */
+var PALS=[
+  {n:'Twilight', top:'#7ab356', l:'#4f7d38', r:'#3a5c2a', start:'#5b9bd5', goal:'#c8a84b', arm:'#a6d77f', unlock:0},
+  {n:'Amethyst', top:'#b57de0', l:'#7e56a0', r:'#5c3f76', start:'#e58fa0', goal:'#ffe9a8', arm:'#d3b0f0', unlock:2},
+  {n:'Ember',    top:'#d4842a', l:'#9c5f1e', r:'#6f4415', start:'#e56b6b', goal:'#ffe9a8', arm:'#f0b070', unlock:4}
+];
+var SKINS=[ {n:'Sprout', c:'#eafbd6', unlock:0}, {n:'Dewdrop', c:'#bfe0f2', unlock:1}, {n:'Rosewalk', c:'#e58fa0', unlock:3}, {n:'Lantern', c:'#ffe9a8', unlock:5} ];
+function pal(){ return PALS[SAVE.pal]||PALS[0]; }
+function solvedCount(){ var c=0; for(var k in SAVE.solved) if(SAVE.solved[k])c++; return c; }
+function noHintCount(){ var c=0; for(var k in SAVE.noHint) if(SAVE.noHint[k])c++; return c; }
+
+/* ---------- ISO ---------- */
+var HW=34, HH=17, ZH=30;
+function iso(x,y,z,cam){ return { sx: cam.ox + (x - y)*HW, sy: cam.oy + (x + y)*HH - z*ZH }; }
+
+/* ---------- LEVELS ----------
+Each level: tiles [x,y,z,kind]  kind: 'p' path, 's' start, 'g' goal
+mechs: each {seam:[i,j] tiles it visually bridges, states:[{on:bool}], sol:idx}
+  a mech in a state with on:true adds a portal edge between its seam tiles.
+Static edges: auto from world adjacency (|dx|+|dy|==1, dz==0).
+Solve = set every mech to sol, walk start->goal. */
+function L(name, tiles, mechs){ return {name:name, tiles:tiles, mechs:mechs}; }
+var LEVELS=[
+  // 1 — single seam
+  L('First Angle',
+    [[0,0,0,'s'],[0,1,0,'p'],[0,3,0,'p'],[0,4,0,'g']],
+    [ {seam:[1,2], states:[{on:false},{on:true}], sol:1} ]),
+  // 2 — an L, corner arm
+  L('The Turn',
+    [[0,0,0,'s'],[1,0,0,'p'],[2,0,0,'p'],[2,2,0,'p'],[2,3,0,'p'],[2,4,0,'g']],
+    [ {seam:[2,3], states:[{on:false},{on:true}], sol:1} ]),
+  // 3 — two seams in a line
+  L('Two Bridges',
+    [[0,0,0,'s'],[1,0,0,'p'],[3,0,0,'p'],[4,0,0,'p'],[6,0,0,'p'],[7,0,0,'g']],
+    [ {seam:[1,2], states:[{on:false},{on:true}], sol:1},
+      {seam:[3,4], states:[{on:false},{on:true}], sol:1} ]),
+  // 4 — three states, only the middle connects (distractor)
+  L('The Right Angle',
+    [[0,0,0,'s'],[0,1,0,'p'],[0,3,0,'p'],[1,3,0,'p'],[2,3,0,'g']],
+    [ {seam:[1,2], states:[{on:false},{on:false},{on:true}], sol:2} ]),
+  // 5 — impossible height seam (different z, screen-adjacent)
+  L('Higher Ground',
+    [[0,0,0,'s'],[1,0,0,'p'],[2,0,2,'p'],[3,0,2,'p'],[4,0,2,'g']],
+    [ {seam:[1,2], states:[{on:false},{on:true}], sol:1} ]),
+  // 6 — a fork: two mechs, both required, branching
+  L('The Weave',
+    [[0,0,0,'s'],[1,0,0,'p'],[3,0,0,'p'],[3,1,0,'p'],[3,3,0,'p'],[3,4,0,'g']],
+    [ {seam:[1,2], states:[{on:false},{on:true}], sol:1},
+      {seam:[3,4], states:[{on:false},{on:true}], sol:1} ]),
+  // 7 — three mechs, one distractor pair, winding
+  L('The Long Path',
+    [[0,0,0,'s'],[0,1,0,'p'],[0,3,0,'p'],[1,3,0,'p'],[3,3,0,'p'],[3,4,0,'p'],[3,6,0,'g']],
+    [ {seam:[1,2], states:[{on:false},{on:true}], sol:1},
+      {seam:[3,4], states:[{on:false},{on:true}], sol:1},
+      {seam:[5,6], states:[{on:false},{on:true}], sol:1} ]),
+  // 8 — grand: mixed heights + 3 seams (path 0-1 =(seam)= 2-3 =(seam)= 4-5 =(seam)= 6)
+  L('The Hanging Garden',
+    [[0,0,0,'s'],[1,0,0,'p'],[3,0,1,'p'],[4,0,1,'p'],[6,0,1,'p'],[6,1,1,'p'],[6,3,2,'g']],
+    [ {seam:[1,2], states:[{on:false},{on:true}], sol:1},
+      {seam:[3,4], states:[{on:false},{on:true}], sol:1},
+      {seam:[5,6], states:[{on:false},{on:true}], sol:1} ])
+];
+
+/* ---------- runtime level ---------- */
+var G=null;
+function buildLevel(def, idx){
+  var tiles=[]; var start=-1, goal=-1;
+  for(var i=0;i<def.tiles.length;i++){ var t=def.tiles[i];
+    tiles.push({x:t[0],y:t[1],z:t[2],k:t[3]});
+    if(t[3]==='s') start=i; if(t[3]==='g') goal=i;
+  }
+  // static adjacency
+  var stat=[]; for(i=0;i<tiles.length;i++) stat.push([]);
+  for(i=0;i<tiles.length;i++) for(var j=i+1;j<tiles.length;j++){
+    var a=tiles[i], b=tiles[j];
+    if(a.z===b.z && (Math.abs(a.x-b.x)+Math.abs(a.y-b.y))===1){ stat[i].push(j); stat[j].push(i); }
+  }
+  var mechs=[]; for(i=0;i<def.mechs.length;i++){ var m=def.mechs[i];
+    mechs.push({ seam:m.seam.slice(), states:m.states, sol:m.sol, cur:0, ang:0 }); }
+  // centering: compute screen bounds at a probe cam, then set ox/oy
+  var cam={ox:0, oy:0};
+  var minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  for(i=0;i<tiles.length;i++){ var p=iso(tiles[i].x,tiles[i].y,tiles[i].z,cam);
+    if(p.sx<minx)minx=p.sx; if(p.sx>maxx)maxx=p.sx; if(p.sy<miny)miny=p.sy; if(p.sy>maxy)maxy=p.sy; }
+  cam.ox = VW/2 - (minx+maxx)/2;
+  cam.oy = VH/2 - (miny+maxy)/2 + 30;
+  return { def:def, idx:idx, tiles:tiles, stat:stat, mechs:mechs, cam:cam,
+    start:start, goal:goal, walker:{tile:start, sx:0, sy:0, path:null, pi:0, t:0},
+    solved:false, phase:'play', particles:[], hintPulse:0, bloomT:0, mode:'journey' };
+}
+
+function activeEdges(g, i){
+  var out = g.stat[i].slice();
+  for(var m=0;m<g.mechs.length;m++){ var mc=g.mechs[m]; var st=mc.states[mc.cur];
+    if(st && st.on){ if(mc.seam[0]===i) out.push(mc.seam[1]); else if(mc.seam[1]===i) out.push(mc.seam[0]); }
+  }
+  return out;
+}
+function pathTo(g, target){
+  if(target===g.walker.tile) return [target];
+  var prev={}, seen={}; var q=[g.walker.tile]; seen[g.walker.tile]=1; prev[g.walker.tile]=-1;
+  while(q.length){ var cur=q.shift(); var e=activeEdges(g,cur);
+    for(var k=0;k<e.length;k++){ var nx=e[k]; if(seen[nx])continue; seen[nx]=1; prev[nx]=cur;
+      if(nx===target){ var path=[nx]; var c=cur; while(c!==-1){ path.unshift(c); c=prev[c]; } return path; }
+      q.push(nx); }
+  }
+  return null;
+}
+function reachable(g, target){ return !!pathTo(g, target); }
+
+function tileCenter(g, i){ var t=g.tiles[i]; var p=iso(t.x,t.y,t.z,g.cam); return {sx:p.sx, sy:p.sy}; }
+function moveTo(g, target, instant){
+  var path=pathTo(g, target); if(!path) return false;
+  g.walker.path=path; g.walker.pi=0; g.walker.t=0;
+  if(instant){ g.walker.tile=target; var c=tileCenter(g,target); g.walker.sx=c.sx; g.walker.sy=c.sy; g.walker.path=null; }
+  else { g.walker.tileTarget=target; }
+  if(target===g.goal){ onSolved(g); }
+  else if(!instant){ beep(420,0.08,0.04); }
+  return true;
+}
+function cycleMech(g, m){ var mc=g.mechs[m]; mc.cur=(mc.cur+1)%mc.states.length; beep(300+mc.cur*80,0.1,0.05);
+  // if walker was mid-nowhere, recheck: if current tile lost connection nothing bad (walker stays)
+}
+function onSolved(g){
+  if(g.solved) return; g.solved=true; g.phase='bloom'; g.bloomT=0;
+  beep(660,0.18,0.06); setTimeout(function(){ beep(880,0.25,0.06); },140);
+  // burst
+  for(var i=0;i<40;i++){ var a=Math.PI*2*i/40; g.particles.push({x:0,y:0,vx:Math.cos(a)*(40+Math.random()*80),vy:Math.sin(a)*(40+Math.random()*80)-30,life:1,c:Math.random()<0.5?pal().goal:pal().start}); }
+  var lid=g.mode==='daily' ? ('d'+G.dailyIdx) : ('L'+g.idx);
+  var firstSolve=!SAVE.solved[lid];
+  SAVE.solved[lid]=true;
+  if(!g.usedHint) SAVE.noHint[lid]=true;
+  // gallery keepsake (dedup by seed)
+  var seed=(g.idx*2654435761 ^ (g.mode==='daily'?7777:0))>>>0;
+  var have=false; for(var q=0;q<SAVE.gallery.length;q++) if(SAVE.gallery[q]===seed) have=true;
+  if(!have){ SAVE.gallery.push(seed); if(SAVE.gallery.length>60) SAVE.gallery.shift(); }
+  // sunbeams
+  if(SAVE.runDate!==todayStr()){ SAVE.runDate=todayStr(); SAVE.runEarn=0; }
+  var amt=0;
+  if(g.mode==='daily'){ if(SAVE.daily.done!==todayStr()){ SAVE.daily.streak=(SAVE.daily.date===yestStr()?SAVE.daily.streak+1:1); SAVE.daily.date=todayStr(); SAVE.daily.done=todayStr(); amt=4; } }
+  else if(firstSolve){ amt=2; }
+  amt=Math.min(amt, Math.max(0, 12-SAVE.runEarn));
+  var granted=0; try{ if(amt>0 && window._sbCapEarn){ granted=window._sbCapEarn(amt,'impossiblegarden:'+g.mode)||0; SAVE.runEarn+=granted; } }catch(e){}
+  g.grant=granted;
+  save();
+  setTimeout(function(){ showWin(g); }, 1100);
+}
+
+/* ---------- render ---------- */
+function drawTileTop(cx,cy,col,edge){
+  ctx.beginPath();
+  ctx.moveTo(cx, cy-HH);
+  ctx.lineTo(cx+HW, cy);
+  ctx.lineTo(cx, cy+HH);
+  ctx.lineTo(cx-HW, cy);
+  ctx.closePath();
+  ctx.fillStyle=col; ctx.fill();
+  if(edge){ ctx.strokeStyle=edge; ctx.lineWidth=1.5; ctx.stroke(); }
+}
+function drawTile(g, i){
+  var t=g.tiles[i]; var p=iso(t.x,t.y,t.z,g.cam); var P=pal();
+  var depth=6;
+  // pillar sides
+  ctx.fillStyle=P.l;
+  ctx.beginPath(); ctx.moveTo(p.sx-HW,p.sy); ctx.lineTo(p.sx,p.sy+HH); ctx.lineTo(p.sx,p.sy+HH+depth); ctx.lineTo(p.sx-HW,p.sy+depth); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=P.r;
+  ctx.beginPath(); ctx.moveTo(p.sx,p.sy+HH); ctx.lineTo(p.sx+HW,p.sy); ctx.lineTo(p.sx+HW,p.sy+depth); ctx.lineTo(p.sx,p.sy+HH+depth); ctx.closePath(); ctx.fill();
+  // top
+  var col = t.k==='s' ? P.start : (t.k==='g' ? '#2a331f' : P.top);
+  var edge = SAVE.hc ? '#f4ffe0' : 'rgba(255,255,255,0.14)';
+  drawTileTop(p.sx, p.sy, col, edge);
+  if(t.k==='g'){
+    // bloom marker
+    var bt = g.solved ? Math.min(1,g.bloomT) : (0.5+0.3*Math.sin(g.time*0.005));
+    drawBloomAt(p.sx, p.sy-6, 8+bt*10, P);
+  }
+}
+function drawBloomAt(x,y,r,P){
+  var n=6; for(var i=0;i<n;i++){ var a=Math.PI*2*i/n + 0.3; ctx.save(); ctx.translate(x+Math.cos(a)*r*0.5, y+Math.sin(a)*r*0.5); ctx.rotate(a);
+    ctx.fillStyle=P.goal; ctx.beginPath(); ctx.ellipse(0,0,r*0.5,r*0.28,0,0,7); ctx.fill(); ctx.restore(); }
+  ctx.fillStyle='#ffe9a8'; ctx.beginPath(); ctx.arc(x,y,r*0.32,0,7); ctx.fill();
+}
+function drawArm(g, m){
+  var mc=g.mechs[m]; var P=pal();
+  var a=tileCenter(g, mc.seam[0]), b=tileCenter(g, mc.seam[1]);
+  var st=mc.states[mc.cur];
+  var mx=(a.sx+b.sx)/2, my=(a.sy+b.sy)/2 - 6;
+  // arm: when active, a vine spanning the seam; when not, a retracted knob turned aside
+  var targetT = (st && st.on) ? 1 : 0;
+  mc.ang += (targetT - mc.ang)*0.2;
+  // draw connecting vine (fades in with ang)
+  if(mc.ang>0.02){
+    ctx.strokeStyle=P.arm; ctx.lineWidth=6*mc.ang+1; ctx.lineCap='round'; ctx.globalAlpha=Math.min(1,mc.ang+0.15);
+    ctx.beginPath(); ctx.moveTo(a.sx, a.sy-6);
+    var cxm=mx, cym=my-18*(1-mc.ang);
+    ctx.quadraticCurveTo(cxm, cym, b.sx, b.sy-6); ctx.stroke();
+    // little leaves
+    ctx.fillStyle=P.top; ctx.beginPath(); ctx.ellipse(mx-6,my-2,5,2.6,-0.5,0,7); ctx.ellipse(mx+6,my-4,5,2.6,0.5,0,7); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  // handle knob
+  var hp=mechHandle(g,m);
+  var pulse = (g.hintPulse>0 && g.hintMech===m) ? (0.5+0.5*Math.sin(g.time*0.02)) : 0;
+  ctx.beginPath(); ctx.arc(hp.sx, hp.sy, 15, 0, 7);
+  ctx.fillStyle = pulse>0 ? 'rgba(255,233,168,'+(0.35+pulse*0.5)+')' : 'rgba(30,26,45,0.85)'; ctx.fill();
+  ctx.strokeStyle=P.arm; ctx.lineWidth=2.5; ctx.stroke();
+  // rotation ticks
+  ctx.save(); ctx.translate(hp.sx,hp.sy); ctx.rotate(mc.cur/Math.max(1,mc.states.length)*Math.PI*2);
+  ctx.strokeStyle=P.arm; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-9); ctx.stroke(); ctx.restore();
+}
+function mechHandle(g,m){ var mc=g.mechs[m]; var a=tileCenter(g,mc.seam[0]), b=tileCenter(g,mc.seam[1]);
+  return { sx:(a.sx+b.sx)/2, sy:(a.sy+b.sy)/2 - 30 }; }
+
+function drawWalker(g){
+  var w=g.walker; var c=SKINS[SAVE.skin]?SKINS[SAVE.skin].c:'#eafbd6';
+  var x=w.sx, y=w.sy-14;
+  ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(w.sx, w.sy+2, 9,4,0,0,7); ctx.fill();
+  // body
+  ctx.fillStyle=c; ctx.beginPath(); ctx.ellipse(x, y, 6.5, 9, 0, 0, 7); ctx.fill();
+  // leaf sprout
+  ctx.fillStyle=pal().top; ctx.beginPath(); ctx.ellipse(x-3, y-10, 4,2.2,-0.6,0,7); ctx.ellipse(x+3, y-11, 4,2.2,0.6,0,7); ctx.fill();
+  // eyes
+  ctx.fillStyle='#20261a'; ctx.beginPath(); ctx.arc(x-2.2,y-1,1.1,0,7); ctx.arc(x+2.2,y-1,1.1,0,7); ctx.fill();
+}
+
+function depthKey(t){ return t.x + t.y + t.z*0.5; }
+function render(g){
+  ctx.clearRect(0,0,VW,VH);
+  g.time = g.time||0;
+  // order tiles back to front
+  var order=[]; for(var i=0;i<g.tiles.length;i++) order.push(i);
+  order.sort(function(a,b){ return depthKey(g.tiles[a]) - depthKey(g.tiles[b]); });
+  for(i=0;i<order.length;i++) drawTile(g, order[i]);
+  // arms above tiles
+  for(var m=0;m<g.mechs.length;m++) drawArm(g, m);
+  // walker
+  drawWalker(g);
+  // particles
+  for(i=0;i<g.particles.length;i++){ var pt=g.particles[i]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.c;
+    ctx.beginPath(); ctx.arc(g.cam.ox+pt.x, g.cam.oy+pt.y, 3, 0, 7); ctx.fill(); }
+  ctx.globalAlpha=1;
+  // solved banner handled by win screen
+}
+
+/* ---------- loop ---------- */
+var running=false, lastTs=0;
+function loop(ts){ if(!running) return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; if(dt>0.05)dt=0.05; lastTs=ts;
+  step(G, dt); render(G); requestAnimationFrame(loop);
+}
+function step(g, dt){
+  if(!g)return; g.time += dt*1000;
+  if(g.hintPulse>0) g.hintPulse-=dt;
+  if(g.solved) g.bloomT += dt*1.2;
+  // walker animation
+  var w=g.walker;
+  if(w.path){
+    w.t += dt* (2.6);
+    var seg=Math.floor(w.t);
+    if(seg>=w.path.length-1){ var last=tileCenter(g, w.path[w.path.length-1]); w.sx=last.sx; w.sy=last.sy; w.tile=w.path[w.path.length-1]; w.path=null; }
+    else {
+      var f=w.t-seg; var A=tileCenter(g,w.path[seg]), B=tileCenter(g,w.path[seg+1]);
+      w.sx=A.sx+(B.sx-A.sx)*f; w.sy=A.sy+(B.sy-A.sy)*f - Math.sin(f*Math.PI)*6;
+    }
+  } else if(w.sx===0 && w.sy===0){ var c=tileCenter(g, w.tile); w.sx=c.sx; w.sy=c.sy; }
+  // particles
+  for(var i=g.particles.length-1;i>=0;i--){ var p=g.particles[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=120*dt; p.life-=dt*0.7; if(p.life<=0) g.particles.splice(i,1); }
+}
+
+/* ---------- input ---------- */
+function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
+function onTap(e){ if(!G || curScreen!=='s-play' || G.solved) return; e.preventDefault(); ac();
+  var p=evPos(e);
+  // mech handles first
+  for(var m=0;m<G.mechs.length;m++){ var h=mechHandle(G,m); if(dist(p.x,p.y,h.sx,h.sy)<26){ cycleMech(G,m); if(G.mode==='zen') G.usedHint=G.usedHint; return; } }
+  // nearest tile top
+  var best=-1, bd=30;
+  for(var i=0;i<G.tiles.length;i++){ var c=tileCenter(G,i); var d=dist(p.x,p.y,c.sx,c.sy-4); if(d<bd){ bd=d; best=i; } }
+  if(best>=0){ if(!moveTo(G, best, false)){ beep(180,0.1,0.03); } }
+}
+function dist(a,b,c,d){ return Math.sqrt((a-c)*(a-c)+(b-d)*(b-d)); }
+cv.addEventListener('touchstart', onTap, {passive:false});
+cv.addEventListener('mousedown', onTap);
+
+/* ---------- hints ---------- */
+function giveHint(g){ if(!SAVE.hint) return; // find a mech that is not at sol and pulse it
+  for(var m=0;m<g.mechs.length;m++){ if(g.mechs[m].cur!==g.mechs[m].sol){ g.hintMech=m; g.hintPulse=3; g.usedHint=true; return; } }
+}
+
+/* ---------- screens ---------- */
+var curScreen='s-title';
+function show(id){ var s=document.getElementsByClassName('screen'); for(var i=0;i<s.length;i++) s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
+  if(id==='s-wardrobe') renderWardrobe();
+  if(id==='s-gallery') renderGallery();
+  if(id==='s-settings') paintToggles();
+}
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function yestStr(){ var d=new Date(Date.now()-864e5); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function dateSeed(){ var d=new Date(); return (d.getFullYear()*372+(d.getMonth()+1)*31+d.getDate()); }
+
+function startLevel(idx, mode){
+  G=buildLevel(LEVELS[idx], idx); G.mode=mode||'journey'; G.usedHint=false; G.time=0;
+  if(G.mode==='daily'){ G.dailyIdx=idx; }
+  $('hud-badge').textContent = (mode==='daily'?'Daily · ':'Garden ')+(mode==='daily'?LEVELS[idx].name:(idx+1));
+  show('s-play');
+  running=true; lastTs=0; requestAnimationFrame(loop);
+  // zen auto-hint after a while
+  if((mode==='zen') && SAVE.hint){ setTimeout(function(){ if(G && !G.solved && !G.usedHint) giveHint(G); }, 9000); }
+}
+function go(mode){
+  if(mode==='journey'){ openLevels('journey'); }
+  else if(mode==='daily'){ var idx=dateSeed()%LEVELS.length; startLevel(idx,'daily'); }
+}
+function openLevels(mode){ G && (G.mode=mode); pendingMode=mode; renderLevels(mode); show('s-levels'); }
+var pendingMode='journey';
+function renderLevels(mode){
+  var host=$('lvl-grid'); host.innerHTML='';
+  $('lv-sub').textContent = mode==='zen' ? 'Wander any garden freely, hints on.' : 'Solve each to open the next.';
+  var unlockedTo=0; for(var i=0;i<LEVELS.length;i++){ if(SAVE.solved['L'+i]) unlockedTo=i+1; }
+  for(i=0;i<LEVELS.length;i++){ (function(idx){
+    var open = mode==='zen' || idx<=unlockedTo;
+    var done = SAVE.solved['L'+idx];
+    var card=document.createElement('div'); card.className='lvlcard'+(open?'':' locked')+(done?' done':'');
+    var ln=document.createElement('div'); ln.className='ln'; ln.textContent=open?(idx+1):'🔒'; card.appendChild(ln);
+    var ls=document.createElement('div'); ls.className='ls'; ls.textContent=done?(SAVE.noHint['L'+idx]?'✿✿':'✿'):''; card.appendChild(ls);
+    host.appendChild(card);
+    if(open) card.addEventListener('click', function(){ startLevel(idx, mode==='zen'?'zen':'journey'); });
+  })(i); }
+}
+function showWin(g){
+  $('win-title').textContent = g.solved ? 'The garden blooms' : 'The garden rests';
+  var msgs=['A path that could not be, was.','The angle turned true.','Where nothing met, a flower grew.','The wanderer found the impossible way.'];
+  $('win-sub').textContent = msgs[g.idx % msgs.length];
+  $('win-earn').textContent = g.grant>0 ? ('+'+g.grant+' Sunbeams') : '';
+  // draw keepsake bloom
+  var bc=$('win-bloom'), bx=bc.getContext('2d'); bx.clearRect(0,0,150,150);
+  bx.save(); bx.translate(75,78); var P=pal();
+  var petals=6+ (g.idx%4); for(var i=0;i<petals;i++){ var a=Math.PI*2*i/petals; bx.save(); bx.rotate(a);
+    bx.fillStyle = i%2? P.goal : P.start; bx.beginPath(); bx.ellipse(0,-26,13,26,0,0,7); bx.fill(); bx.restore(); }
+  bx.fillStyle='#ffe9a8'; bx.beginPath(); bx.arc(0,0,15,0,7); bx.fill(); bx.restore();
+  // stem
+  bx.strokeStyle=P.top; bx.lineWidth=4; bx.beginPath(); bx.moveTo(75,104); bx.lineTo(75,145); bx.stroke();
+  var nb=$('win-next');
+  var nextIdx=g.idx+1;
+  if(g.mode==='daily' || g.mode==='zen' || nextIdx>=LEVELS.length){ nb.style.display='none'; } else { nb.style.display='flex'; }
+  running=false;
+  show('s-win');
+}
+function next(){ var ni=G.idx+1; if(ni<LEVELS.length) startLevel(ni,'journey'); else openLevels('journey'); }
+function replay(){ startLevel(G.idx, G.mode==='daily'?'daily':(G.mode==='zen'?'zen':'journey')); }
+
+function renderWardrobe(){
+  $('wr-sub').textContent='Solved '+solvedCount()+' gardens · '+noHintCount()+' with no hint.';
+  var host=$('wr-skins'); host.innerHTML='';
+  for(var i=0;i<SKINS.length;i++){ (function(idx){ var sk=SKINS[idx];
+    var owned=solvedCount()>=sk.unlock;
+    var c=document.createElement('div'); c.className='wcard'+(SAVE.skin===idx?' on':'')+(owned?'':' lock');
+    var sw=document.createElement('div'); sw.className='sw'; sw.style.background=sk.c; c.appendChild(sw);
+    var nm=document.createElement('div'); nm.className='wn'; nm.textContent=sk.n; c.appendChild(nm);
+    var tt=document.createElement('div'); tt.className='wt'; tt.textContent=owned?(SAVE.skin===idx?'Worn':'Tap to wear'):('Solve '+sk.unlock); c.appendChild(tt);
+    host.appendChild(c);
+    if(owned) c.addEventListener('click', function(){ SAVE.skin=idx; save(); renderWardrobe(); });
+  })(i); }
+  var ph=$('wr-pals'); ph.innerHTML='';
+  for(i=0;i<PALS.length;i++){ (function(idx){ var pp=PALS[idx];
+    var owned=solvedCount()>=pp.unlock;
+    var c=document.createElement('div'); c.className='wcard'+(SAVE.pal===idx?' on':'')+(owned?'':' lock');
+    var sw=document.createElement('div'); sw.className='sw'; sw.style.background='linear-gradient(90deg,'+pp.top+','+pp.start+','+pp.goal+')'; c.appendChild(sw);
+    var nm=document.createElement('div'); nm.className='wn'; nm.textContent=pp.n; c.appendChild(nm);
+    var tt=document.createElement('div'); tt.className='wt'; tt.textContent=owned?(SAVE.pal===idx?'Chosen':'Tap to use'):('Solve '+pp.unlock); c.appendChild(tt);
+    ph.appendChild(c);
+    if(owned) c.addEventListener('click', function(){ SAVE.pal=idx; save(); renderWardrobe(); });
+  })(i); }
+}
+function renderGallery(){
+  $('gal-sub').textContent = SAVE.gallery.length? ('You have pressed '+SAVE.gallery.length+' keepsake blooms.') : 'Solve a garden to press its keepsake here.';
+  var host=$('gal-wrap'); host.innerHTML='';
+  for(var i=0;i<SAVE.gallery.length;i++){ var seed=SAVE.gallery[i]>>>0;
+    var cvp=document.createElement('canvas'); cvp.width=64; cvp.height=64; var bx=cvp.getContext('2d');
+    bx.translate(32,34); var P=PALS[seed%PALS.length]; var petals=5+(seed%5);
+    for(var k=0;k<petals;k++){ var a=Math.PI*2*k/petals; bx.save(); bx.rotate(a); bx.fillStyle=k%2?P.goal:P.start; bx.beginPath(); bx.ellipse(0,-11,5,11,0,0,7); bx.fill(); bx.restore(); }
+    bx.fillStyle='#ffe9a8'; bx.beginPath(); bx.arc(0,0,6,0,7); bx.fill();
+    host.appendChild(cvp);
+  }
+}
+function paintToggles(){ $('tg-sound').classList.toggle('on',SAVE.sound); $('tg-hint').classList.toggle('on',SAVE.hint); $('tg-hc').classList.toggle('on',SAVE.hc); }
+function tog(key,el){ SAVE[key]=!SAVE[key]; el.classList.toggle('on',SAVE[key]); save(); beep(360,0.08,0.04); }
+
+function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='scale('+s+')'; }
+window.addEventListener('resize', fit); fit();
+
+/* ---------- public ---------- */
+window.IG={ go:go, openLevels:openLevels, show:show, tog:tog, next:next, replay:replay };
+
+/* ---------- headless test hook ---------- */
+if(/[?&]igtest=1/.test(location.search)){
+  window.IG_DEV={
+    start:function(mode){ if(mode==='daily'){ startLevel(dateSeed()%LEVELS.length,'daily'); } else if(mode==='zen'){ startLevel(0,'zen'); } else { startLevel(0,'journey'); } return snap(); },
+    loadLevel:function(idx){ startLevel(idx,'journey'); return snap(); },
+    state:function(){ return snap(); },
+    setMech:function(m,s){ if(G && G.mechs[m]){ G.mechs[m].cur=s; } return snap(); },
+    moveTo:function(t){ return G? moveTo(G,t,true) : false; },
+    reachable:function(t){ return G? reachable(G,t) : false; },
+    solveLevel:function(idx){ startLevel(idx,'journey'); for(var m=0;m<G.mechs.length;m++) G.mechs[m].cur=G.mechs[m].sol; var ok=moveTo(G, G.goal, true); return { idx:idx, solved:!!(ok && G.solved) }; },
+    solveAllCheck:function(){ var fails=[], solved=0; for(var i=0;i<LEVELS.length;i++){ var r=window.IG_DEV.solveLevel(i); if(r.solved) solved++; else fails.push(i); } return { levels:LEVELS.length, solved:solved, fails:fails }; },
+    crossProof:function(){ // level 0: goal unreachable at mech state 0, reachable at sol
+      startLevel(0,'journey'); G.mechs[0].cur=0; var before=reachable(G,G.goal);
+      G.mechs[0].cur=G.mechs[0].sol; var after=reachable(G,G.goal);
+      return { before:before, after:after, proof:(before===false && after===true) }; }
+  };
+  function snap(){ if(!G) return {phase:'none'}; return { phase:G.phase, mode:G.mode, walkerTile:G.walker.tile, goalTile:G.goal, mechs:G.mechs.map(function(m){return {cur:m.cur,sol:m.sol,states:m.states.length};}), solved:G.solved, tiles:G.tiles.length }; }
+}
+
+/* boot */
+setTimeout(function(){ /* start on title */ }, 0);
+})();
+</script>
+</body>
+</html>
