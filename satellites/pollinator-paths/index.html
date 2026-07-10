@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Cpath d='M6 24 Q16 6 26 24' fill='none' stroke='%23bfe0f2' stroke-width='2' stroke-dasharray='3 2'/%3E%3Ccircle cx='16' cy='13' r='4' fill='%23c8a84b'/%3E%3Cellipse cx='12' cy='10' rx='3' ry='2' fill='%23e8dcc8'/%3E%3Cellipse cx='20' cy='10' rx='3' ry='2' fill='%23e8dcc8'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pollinator Paths">
+<title>Pollinator Paths — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"pollinatorpaths"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; left:0; top:0; width:540px; height:960px; display:block; touch-action:none}
+#hud{position:absolute; left:0; top:0; width:540px; height:60px; display:none; z-index:12; pointer-events:none;
+  padding:6px 8px; align-items:center; gap:8px}
+#hud.on{display:flex}
+#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid var(--line); border-radius:12px;
+  background:#0f150cdd; color:var(--cream); font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center}
+#hudmid{flex:1; display:flex; align-items:center; justify-content:center; gap:14px; background:#0f150cbb;
+  border:1px solid var(--line); border-radius:12px; min-height:48px; padding:0 10px}
+.hstat{display:flex; align-items:center; gap:4px; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums}
+.hstat .hl2{color:var(--gold)}
+#hud-hearts{color:var(--pink); letter-spacing:2px}
+#hud-time{color:var(--dew)}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:44px; line-height:1.08; color:var(--gold); font-weight:800; text-shadow:0 3px 0 #302408, 0 0 26px #c8a84b44; letter-spacing:2px}
+.title-sub{color:var(--sage); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:420px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:19px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#c8a84b,#9a7d2e); color:#1a1408; border-color:#e8d08a; box-shadow:0 4px 0 #6b5620, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:16px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
+h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line)}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.wardcard{display:flex; align-items:center; gap:12px; width:100%; max-width:420px; margin:0 auto 10px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.wardcard.locked{opacity:.55}
+.wardcard .wi{font-size:26px; width:40px; text-align:center; flex:none}
+.wardcard .wt{flex:1}
+.wardcard .wn{font-size:15px; font-weight:700}
+.wardcard .wd{font-size:.72rem; color:var(--muted); margin-top:2px; line-height:1.3}
+.wardcard .we{min-width:78px; min-height:48px; border:1px solid var(--line); border-radius:12px; background:#121a0f; color:var(--cream); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center}
+.wardcard .we.eq{border-color:var(--gold); color:var(--gold)}
+.grovewrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:470px; margin:0 auto}
+.grovecard{width:104px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:8px; display:flex; flex-direction:column; align-items:center; gap:4px}
+.grovecard canvas{width:84px; height:84px; border-radius:8px; background:#0b0f0b}
+.grovecard .gd{font-size:.7rem; color:var(--muted)}
+#toast{position:absolute; left:50%; bottom:120px; transform:translateX(-50%) translateY(16px); z-index:40; background:#1a2415ee;
+  border:1px solid var(--gold); border-radius:22px; padding:10px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <div id="hud">
+    <div class="hbtn" id="hud-back">⌂</div>
+    <div id="hudmid">
+      <div class="hstat" id="hud-hearts">♥♥♥</div>
+      <div class="hstat"><span class="hl2" id="hud-score">0</span></div>
+      <div class="hstat" id="hud-bouquet">✿ 0/6</div>
+      <div class="hstat" id="hud-time"></div>
+    </div>
+    <div class="hbtn" id="hud-pause">❚❚</div>
+  </div>
+
+  <div class="screen on" id="s-title">
+    <div class="pad center">
+      <div class="title-word">POLLINATOR<br>PATHS</div>
+      <div class="title-sub">every wing needs a way home</div>
+      <div class="ribbon">Draw flight paths with your finger. Bees, butterflies and hummingbirds each want their own flower, and no two wings may ever meet.</div>
+      <div style="height:22px"></div>
+      <div class="stack">
+        <button class="btn primary" id="b-meadow">🐝 Meadow Shift</button>
+        <div class="row">
+          <button class="btn sm" id="b-daily">📅 Daily Shift</button>
+          <button class="btn sm" id="b-rush">⚡ Rush Hour</button>
+        </div>
+        <button class="btn sm" id="b-zen">🌙 Zen Meadow</button>
+        <div class="row">
+          <button class="btn sm ghost" id="b-how">How</button>
+          <button class="btn sm ghost" id="b-ward">Wardrobe</button>
+          <button class="btn sm ghost" id="b-grove">Grove</button>
+          <button class="btn sm ghost" id="b-set">⚙</button>
+        </div>
+      </div>
+      <div style="height:14px"></div>
+      <div id="buildstamp" style="font-size:.7rem;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-how">
+    <div class="pad">
+      <h2 class="sc-h">How the meadow works</h2>
+      <div class="helprow"><div class="hi">👆</div><div><b>Touch a pollinator and draw.</b> It follows your line. End the line on its matching flower pad and it glides home.</div></div>
+      <div class="helprow"><div class="hi">🐝</div><div>Three fliers, three pads. The <b>bee</b> flies a solid line, the <b>butterfly</b> a dashed one, the <b>hummingbird</b> a dotted one. Shapes match shapes, so the pads are silhouettes, never just colors.</div></div>
+      <div class="helprow"><div class="hi">💥</div><div>Two fliers touching is a <b>dazed puff</b> and a lost heart. Three hearts and the shift is over. Redraw a path any time, right up to the last second.</div></div>
+      <div class="helprow"><div class="hi">💮</div><div><b class="hl">Cross-Pollination:</b> glowing blossom rings drift across the meadow. Steer two DIFFERENT species through the same ring moments apart and it bursts into a bonus bloom.</div></div>
+      <div class="helprow"><div class="hi">✿</div><div>Six bonus blooms fill a <b>bouquet</b>, and a full bouquet presses a keepsake flower into your Grove.</div></div>
+      <div class="helprow"><div class="hi">🌙</div><div><b>Zen Meadow</b> never takes a heart, fliers just bounce apart. Practice the busy skies there.</div></div>
+      <div class="stack"><button class="btn sm ghost" id="how-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-ward">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Wardrobe</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Every piece is earned by playing. No boxes, no dice.</div>
+      <div id="wardlist"></div>
+      <div class="stack"><button class="btn sm ghost" id="ward-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-grove">
+    <div class="pad">
+      <h2 class="sc-h" style="text-align:center">Grove</h2>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:14px">Keepsakes pressed from full bouquets.</div>
+      <div class="grovewrap" id="grovewrap"></div>
+      <div style="height:16px"></div>
+      <div class="stack"><button class="btn sm ghost" id="grove-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-set">
+    <div class="pad center">
+      <h2 class="sc-h">Settings</h2>
+      <div style="height:10px"></div>
+      <div class="settingline"><span>Sound</span><div class="toggle" id="tg-sound"><b></b></div></div>
+      <div class="settingline"><span>Drift effects</span><div class="toggle" id="tg-fx"><b></b></div></div>
+      <div class="stack"><button class="btn sm ghost" id="set-back">Back</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-over">
+    <div class="pad center">
+      <h2 class="sc-h" id="over-title">Shift over</h2>
+      <div class="ribbon" id="over-sub"></div>
+      <div style="height:18px"></div>
+      <div class="stack">
+        <button class="btn primary" id="over-again">Fly again</button>
+        <button class="btn sm ghost" id="over-home">Back to menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+ </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+/* ============================================================
+   POLLINATOR PATHS — Flight Control in a night meadow
+   Campaign #20. Vector canvas 540x960, fixed-dt seeded sim.
+   ============================================================ */
+var BUILD="v1.0";
+var W=540, H=960, TOP=64, DT=1/60;
+
+/* ---------- seeded rng ---------- */
+function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Math.imul(t^t>>>15,1|t);
+  r=(r+Math.imul(r^r>>>7,61|r))^r; return ((r^r>>>14)>>>0)/4294967296; }; }
+function dayCode(){ var d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+
+/* ---------- save ---------- */
+function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("pollinatorpaths_save")||"{}"); }catch(e){}
+  s.landings=s.landings||0; s.cross=s.cross||0; s.blooms=s.blooms||0; s.grove=s.grove||[];
+  s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.best=s.best||{meadow:0,daily:0,rush:0};
+  s.ink=s.ink||"moonlight"; s.backdrop=s.backdrop||"midnight"; s.livery=s.livery||"classic";
+  s.sound=(s.sound!==false); s.fx=(s.fx!==false); return s; }
+var PROG=loadSave();
+function save(){ try{ localStorage.setItem("pollinatorpaths_save",JSON.stringify(PROG)); }catch(e){} }
+
+/* ---------- audio (tiny synth) ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended")AC.resume().catch(function(){}); return AC; }
+function blip(f,d,g,type){ if(!PROG.sound)return; var a=ac(); if(!a)return; var o=a.createOscillator(),v=a.createGain(),t=a.currentTime;
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t); v.gain.setValueAtTime(0.0001,t);
+  v.gain.exponentialRampToValueAtTime(g||0.08,t+0.015); v.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.18));
+  o.connect(v); v.connect(a.destination); o.start(t); o.stop(t+(d||0.18)+0.02); }
+function sndLand(){ blip(660,0.2,0.06); }
+function sndBloom(){ blip(660,0.3,0.07); blip(990,0.4,0.05); }
+function sndHit(){ blip(140,0.3,0.1,"square"); }
+function sndWin(){ blip(523,0.25,0.08); setTimeout(function(){blip(659,0.25,0.08);},110); setTimeout(function(){blip(784,0.4,0.09);},220); }
+
+/* ---------- species ---------- */
+var KINDS=["bee","butterfly","humm"];
+var SPEC={
+  bee:      { speed:56,  r:12, dash:null,   glyph:"bee",  wob:0.0 },
+  butterfly:{ speed:40,  r:13, dash:[10,8], glyph:"bfly", wob:1.0 },
+  humm:     { speed:96,  r:10, dash:[2,7],  glyph:"humm", wob:0.15 }
+};
+
+/* ---------- cosmetics ---------- */
+var INKS={ moonlight:{name:"Moonlight Ink",c:"#bfe0f2"}, gold:{name:"Gold Thread",c:"#c8a84b"},
+  rose:{name:"Rose Ribbon",c:"#e58fa0"}, prisma:{name:"Prisma Ink",c:"PRISMA"} };
+var BACKDROPS={ midnight:{name:"Midnight Meadow",a:"#101610",b:"#05070a",tint:"#7ab356"},
+  dawn:{name:"Dawn Haze",a:"#1a1512",b:"#070508",tint:"#d4a843"},
+  ember:{name:"Dusk Ember",a:"#170f10",b:"#080405",tint:"#d4842a"},
+  star:{name:"Star Meadow",a:"#0d1018",b:"#04050a",tint:"#a0c4e8"} };
+var LIVERIES={ classic:{name:"Classic",acc:"#c8a84b"}, ivory:{name:"Ivory Wing",acc:"#e8dcc8"}, aurora:{name:"Aurora",acc:"#b57de0"} };
+var WARD=[
+ {cat:"Ink",key:"ink",id:"moonlight",name:"Moonlight Ink",icon:"🖋",need:function(){return true;},needTxt:"Free"},
+ {cat:"Ink",key:"ink",id:"gold",name:"Gold Thread",icon:"🧵",need:function(){return PROG.landings>=25;},needTxt:"25 landings (lifetime)"},
+ {cat:"Ink",key:"ink",id:"rose",name:"Rose Ribbon",icon:"🎀",need:function(){return PROG.cross>=10;},needTxt:"10 cross-pollinations"},
+ {cat:"Ink",key:"ink",id:"prisma",name:"Prisma Ink",icon:"🌈",need:function(){return PROG.landings>=100;},needTxt:"100 landings (lifetime)"},
+ {cat:"Backdrop",key:"backdrop",id:"midnight",name:"Midnight Meadow",icon:"🌌",need:function(){return true;},needTxt:"Free"},
+ {cat:"Backdrop",key:"backdrop",id:"dawn",name:"Dawn Haze",icon:"🌅",need:function(){return PROG.streak>=3;},needTxt:"Daily streak of 3"},
+ {cat:"Backdrop",key:"backdrop",id:"ember",name:"Dusk Ember",icon:"🏮",need:function(){return PROG.landings>=300;},needTxt:"300 landings (lifetime)"},
+ {cat:"Backdrop",key:"backdrop",id:"star",name:"Star Meadow",icon:"✨",need:function(){return PROG.cross>=40;},needTxt:"40 cross-pollinations"},
+ {cat:"Livery",key:"livery",id:"classic",name:"Classic Livery",icon:"🐝",need:function(){return true;},needTxt:"Free"},
+ {cat:"Livery",key:"livery",id:"ivory",name:"Ivory Wing",icon:"🕊",need:function(){return PROG.landings>=50;},needTxt:"50 landings (lifetime)"},
+ {cat:"Livery",key:"livery",id:"aurora",name:"Aurora Livery",icon:"🌠",need:function(){return PROG.streak>=7;},needTxt:"Daily streak of 7"}
+];
+
+/* ---------- world ---------- */
+var G=null, running=false, paused=false;
+function newWorld(mode,seed){
+  return { mode:mode, seed:seed, rng:mkRng(seed), vrng:mkRng(seed^0xBEE5),
+    tick:0, time:0, phase:"play", hearts:(mode==="zen")?Infinity:3,
+    score:0, landings:0, cross:0, bouquet:0, collisions:0, earned:0,
+    polls:[], nextId:1, nextSpawn:2.2, spawnIv:(mode==="rush")?2.0:3.4,
+    pads:{}, rings:[], parts:[], shake:0, over:false };
+}
+function padZone(rng,x0,x1,y0,y1){ return { x:x0+rng()*(x1-x0), y:y0+rng()*(y1-y0), r:34 }; }
+function buildField(){
+  var r=G.rng;
+  G.pads.bee=padZone(r,86,180,590,740);
+  G.pads.butterfly=padZone(r,350,454,220,380);
+  G.pads.humm=padZone(r,220,320,760,880);
+  var nr=(G.mode==="zen")?1:2, k;
+  for(k=0;k<nr;k++){
+    G.rings.push({ x:120+r()*300, y:TOP+120+r()*500, rr:46,
+      vx:(r()<0.5?-1:1)*(12+r()*10), vy:(r()<0.5?-1:1)*(9+r()*8),
+      times:{}, cd:0, pulse:r()*6.28 });
+  }
+}
+
+/* ---------- spawning ---------- */
+function pickKind(r){
+  var t=G.time, x=r();
+  if(G.time<20){ return x<0.6?"bee":"butterfly"; }
+  return x<0.42?"bee":(x<0.76?"butterfly":"humm");
+}
+function spawnPoll(kind,x,y,ang){
+  var s=SPEC[kind];
+  var p={ id:G.nextId++, kind:kind, x:x, y:y, ang:ang, speed:s.speed, r:s.r,
+    path:null, willLand:false, state:"flying", air:0, wobPh:G.rng()*6.28, landT:0, dazeT:0, inRings:{} };
+  G.polls.push(p); return p;
+}
+function spawnEdge(){
+  var r=G.rng, kind=pickKind(r), e=r(), x,y;
+  var tx=120+r()*300, ty=TOP+160+r()*560;
+  if(e<0.3){ x=30+r()*480; y=TOP+6; }
+  else if(e<0.55){ x=4; y=TOP+40+r()*(H-TOP-120); }
+  else if(e<0.8){ x=W-4; y=TOP+40+r()*(H-TOP-120); }
+  else { x=30+r()*480; y=H-6; }
+  return spawnPoll(kind,x,y,Math.atan2(ty-y,tx-x));
+}
+
+/* ---------- movement ---------- */
+function steerBack(p){
+  var m=42, cx=W/2, cy=(TOP+H)/2, turn=1.9*DT;
+  if(p.x<m||p.x>W-m||p.y<TOP+m||p.y>H-m){
+    var want=Math.atan2(cy-p.y,cx-p.x), d=want-p.ang;
+    while(d>Math.PI)d-=6.28318; while(d<-Math.PI)d+=6.28318;
+    p.ang+=Math.max(-turn,Math.min(turn,d))*2.2;
+  }
+}
+function movePoll(p){
+  var s=SPEC[p.kind];
+  if(p.state==="landing"){ p.landT+=DT;
+    var pad=G.pads[p.kind], t=Math.min(1,p.landT/0.45);
+    p.x+= (pad.x-p.x)*0.2; p.y+=(pad.y-p.y)*0.2;
+    if(t>=1){ p.state="landed"; onLand(p); }
+    return; }
+  if(p.state==="dazed"){ p.dazeT+=DT; p.y-=14*DT; if(p.dazeT>0.7)p.state="gone"; return; }
+  p.air+=DT;
+  if(p.path&&p.path.length){
+    var q=p.path[0], dx=q.x-p.x, dy=q.y-p.y, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<5){ p.path.shift();
+      if(!p.path.length){ if(p.willLand){ p.state="landing"; p.landT=0; } else { /* resume free flight */ p.path=null; } }
+    } else { p.ang=Math.atan2(dy,dx); p.x+=dx/d*p.speed*DT; p.y+=dy/d*p.speed*DT; }
+  } else {
+    if(s.wob>0){ p.ang+=Math.sin(G.tick*0.05+p.wobPh)*s.wob*0.9*DT; }
+    steerBack(p);
+    p.x+=Math.cos(p.ang)*p.speed*DT; p.y+=Math.sin(p.ang)*p.speed*DT;
+    p.x=Math.max(3,Math.min(W-3,p.x)); p.y=Math.max(TOP+3,Math.min(H-3,p.y));
+  }
+}
+function onLand(p){
+  G.landings++; G.score+=10; PROG.landings++;
+  if(G.landings%5===0)payRun(1,"land");
+  sndLand(); addBurst(p.x,p.y,"#7ab356",8);
+  if(G.mode==="daily"||G.mode==="rush"){} // timers handle end
+  save();
+}
+
+/* ---------- collisions ---------- */
+function collide(){
+  var i,j,a,b;
+  for(i=0;i<G.polls.length;i++){ a=G.polls[i];
+    if(a.state!=="flying"||a.air<1.0)continue;
+    for(j=i+1;j<G.polls.length;j++){ b=G.polls[j];
+      if(b.state!=="flying"||b.air<1.0)continue;
+      var dx=a.x-b.x, dy=a.y-b.y, rr=a.r+b.r;
+      if(dx*dx+dy*dy<rr*rr){
+        if(G.mode==="zen"){
+          var an=Math.atan2(dy,dx);
+          a.ang=an; b.ang=an+Math.PI; a.path=null; b.path=null; a.willLand=false; b.willLand=false;
+          a.x+=Math.cos(an)*3; a.y+=Math.sin(an)*3; b.x-=Math.cos(an)*3; b.y-=Math.sin(an)*3;
+          addBurst((a.x+b.x)/2,(a.y+b.y)/2,"#bfe0f2",5);
+        } else {
+          a.state="dazed"; b.state="dazed"; a.dazeT=0; b.dazeT=0;
+          G.collisions++; G.hearts--; G.shake=0.4; sndHit();
+          addBurst((a.x+b.x)/2,(a.y+b.y)/2,"#e58fa0",14);
+          toast("💥 Dazed wings, a heart lost");
+          if(G.hearts<=0){ endRun(false); return; }
+        }
+      }
+    }
+  }
+}
+
+/* ---------- blossom rings ---------- */
+function tickRings(){
+  var k,i;
+  for(k=0;k<G.rings.length;k++){ var ring=G.rings[k];
+    ring.x+=ring.vx*DT; ring.y+=ring.vy*DT; ring.pulse+=DT*2;
+    if(ring.cd>0)ring.cd-=DT;
+    if(ring.x<70||ring.x>W-70)ring.vx=-ring.vx;
+    if(ring.y<TOP+80||ring.y>H-90)ring.vy=-ring.vy;
+    for(i=0;i<G.polls.length;i++){ var p=G.polls[i];
+      if(p.state!=="flying")continue;
+      var dx=p.x-ring.x, dy=p.y-ring.y, inside=(dx*dx+dy*dy<ring.rr*ring.rr);
+      var was=!!p.inRings[k];
+      if(inside&&!was){ p.inRings[k]=true; ringEnter(ring,p); }
+      else if(!inside&&was){ p.inRings[k]=false; }
+    }
+  }
+}
+function ringEnter(ring,p){
+  if(ring.cd>0){ ring.times[p.kind]=G.time; return; }
+  var k2, hit=null;
+  for(k2 in ring.times){ if(k2!==p.kind&&(G.time-ring.times[k2])<2.5){ hit=k2; break; } }
+  ring.times[p.kind]=G.time;
+  if(hit){ ring.cd=4; ring.times={};
+    G.cross++; PROG.cross++; G.score+=25; G.bouquet++;
+    payRun(1,"cross"); sndBloom();
+    addBurst(ring.x,ring.y,"#e58fa0",22);
+    toast("💮 Cross-pollination! +25");
+    if(G.bouquet>=6){ G.bouquet=0; PROG.blooms++; mintKeepsake(); }
+    save();
+  }
+}
+
+/* ---------- sunbeams ---------- */
+function payRun(n,tag){ if(!G||G.mode==="zen")return 0;
+  if(G.earned>=12)return 0; n=Math.min(n,12-G.earned);
+  var got=window._sbCapEarn(n,tag); G.earned+=got;
+  if(got>0)toast("☀ +"+got+" sunbeam"+(got>1?"s":"")); return got; }
+
+/* ---------- keepsakes ---------- */
+function mintKeepsake(){
+  var seed=(G.seed^(G.tick*2654435761))>>>0;
+  PROG.grove.push({s:seed,d:new Date().toISOString().slice(0,10)});
+  if(PROG.grove.length>24)PROG.grove.shift();
+  save(); toast("🌼 A bouquet keepsake joins the Grove");
+}
+function drawKeepsake(cv,ks){
+  var c=cv.getContext("2d"),rr=mkRng(ks.s),Wc=cv.width,Hc=cv.height;
+  c.fillStyle="#0b0f0b"; c.fillRect(0,0,Wc,Hc);
+  var cx=Wc/2, cy=Hc*0.44, petals=5+Math.floor(rr()*4), pr=Wc*0.2+rr()*Wc*0.08;
+  c.strokeStyle="#3f6b34"; c.lineWidth=3; c.beginPath(); c.moveTo(cx,Hc*0.9); c.quadraticCurveTo(cx+(rr()*16-8),Hc*0.65,cx,cy); c.stroke();
+  var hue=["#e58fa0","#c8a84b","#bfe0f2","#b57de0","#e2b34d"][Math.floor(rr()*5)];
+  var k; for(k=0;k<petals;k++){ var an=k/petals*6.283+rr()*0.2;
+    c.fillStyle=hue; c.beginPath();
+    c.ellipse(cx+Math.cos(an)*pr*0.55, cy+Math.sin(an)*pr*0.55, pr*0.42, pr*0.2, an, 0, 6.283); c.fill(); }
+  c.fillStyle="#e8dcc8"; c.beginPath(); c.arc(cx,cy,pr*0.22,0,6.283); c.fill();
+  // orbiting wing marks (bouquet motif)
+  c.strokeStyle=hue; c.lineWidth=1.5; c.setLineDash([3,4]);
+  c.beginPath(); c.arc(cx,cy,pr*1.05,0,6.283); c.stroke(); c.setLineDash([]);
+}
+
+/* ---------- particles ---------- */
+function addBurst(x,y,col,n){
+  var k; for(k=0;k<n;k++){ var a=G.vrng()*6.283, sp=30+G.vrng()*90;
+    G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,t:0,life:0.5+G.vrng()*0.4,c:col}); }
+}
+function tickParts(){
+  var i; for(i=G.parts.length-1;i>=0;i--){ var q=G.parts[i]; q.t+=DT;
+    q.x+=q.vx*DT; q.y+=q.vy*DT; q.vx*=0.96; q.vy*=0.96;
+    if(q.t>=q.life)G.parts.splice(i,1); }
+}
+
+/* ---------- sim tick ---------- */
+function tickSim(){
+  if(!G||G.phase!=="play")return;
+  G.tick++; G.time+=DT;
+  // spawning
+  if(G.mode==="daily"){ dailySpawns(); }
+  else if(G.time>=G.nextSpawn){
+    spawnEdge();
+    if(G.mode==="meadow"){ G.spawnIv=Math.max(1.15,G.spawnIv*0.982); }
+    else if(G.mode==="rush"){ G.spawnIv=Math.max(0.9,G.spawnIv*0.975); }
+    G.nextSpawn=G.time+G.spawnIv*(0.85+G.rng()*0.3);
+  }
+  var i;
+  for(i=0;i<G.polls.length;i++)movePoll(G.polls[i]);
+  collide(); if(!G||G.phase!=="play")return;
+  tickRings(); tickParts();
+  if(G.shake>0)G.shake-=DT;
+  for(i=G.polls.length-1;i>=0;i--){ var p=G.polls[i];
+    if(p.state==="gone"||p.state==="landed")G.polls.splice(i,1); }
+  // timers
+  if(G.mode==="daily"&&G.time>=180)endRun(true);
+  else if(G.mode==="rush"&&G.time>=120)endRun(true);
+  if(G.tick%15===0)updateHud();
+}
+function dailySpawns(){
+  while(G.script.length&&G.script[0].t<=G.time){
+    var s=G.script.shift();
+    spawnPoll(s.kind,s.x,s.y,s.ang);
+  }
+}
+function buildDailyScript(rng){
+  var script=[], t=2.5, n=0;
+  while(t<172){
+    var kind=(n<4)?(n%2?"butterfly":"bee"):(rng()<0.42?"bee":(rng()<0.63?"butterfly":"humm"));
+    var e=rng(), x,y;
+    var tx=120+rng()*300, ty=TOP+160+rng()*560;
+    if(e<0.3){ x=30+rng()*480; y=TOP+6; }
+    else if(e<0.55){ x=4; y=TOP+40+rng()*(H-TOP-120); }
+    else if(e<0.8){ x=W-4; y=TOP+40+rng()*(H-TOP-120); }
+    else { x=30+rng()*480; y=H-6; }
+    script.push({t:t,kind:kind,x:x,y:y,ang:Math.atan2(ty-y,tx-x)});
+    n++;
+    var iv=(t<60)?(3.2+rng()*1.2):(t<120)?(2.7+rng()*1.0):(2.2+rng()*0.9);
+    t+=iv;
+  }
+  return script;
+}
+
+/* ---------- run flow ---------- */
+function startMode(mode,forceSeed){
+  var seed;
+  if(mode==="daily")seed=(forceSeed!==undefined)?forceSeed:dayCode();
+  else seed=(forceSeed!==undefined)?forceSeed:((Date.now()&0xffffff)>>>0);
+  G=newWorld(mode,seed);
+  buildField();
+  if(mode==="daily"){ G.script=buildDailyScript(mkRng(seed^0x9E37)); }
+  hideScreens(); document.getElementById("hud").classList.add("on");
+  paused=false; document.getElementById("hud-pause").textContent="❚❚";
+  updateHud(); running=true;
+}
+function endRun(finished){
+  if(!G||G.phase!=="play")return; G.phase="over"; running=false;
+  var mode=G.mode, sc=G.score;
+  if(mode!=="zen"&&sc>((PROG.best[mode])||0)){ PROG.best[mode]=sc; }
+  if(mode==="daily"&&finished){
+    var today=new Date().toISOString().slice(0,10);
+    if(PROG.lastDaily!==today){ var y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+      PROG.streak=(PROG.lastDaily===y)?PROG.streak+1:1; PROG.lastDaily=today; }
+    payRun(3,"daily"); sndWin();
+  } else if(finished){ sndWin(); } else { sndHit(); }
+  save();
+  document.getElementById("over-title").textContent=
+    mode==="daily"?(finished?"Daily shift kept":"The daily shift slipped"):(finished?"Shift complete":"The meadow rests");
+  var sub=G.landings+" landings · "+G.cross+" cross-pollinations · score "+sc;
+  if(mode==="daily"&&finished)sub+=" · streak "+PROG.streak;
+  if(mode!=="zen")sub+=" · best "+(PROG.best[mode]||0);
+  document.getElementById("over-sub").textContent=sub;
+  show("s-over");
+}
+function stopToMenu(){ running=false; G=null;
+  document.getElementById("hud").classList.remove("on");
+  show("s-title"); stamp(); }
+
+/* ---------- input ---------- */
+var cvs=document.getElementById("game"), ctx=cvs.getContext("2d");
+var drawFor=null;
+function evPos(ev){
+  var r=cvs.getBoundingClientRect();
+  var cx=(ev.touches?ev.touches[0].clientX:ev.clientX), cy=(ev.touches?ev.touches[0].clientY:ev.clientY);
+  return { x:(cx-r.left)*(W/r.width), y:(cy-r.top)*(H/r.height) };
+}
+function onDown(ev){
+  if(!G||G.phase!=="play"||paused)return;
+  var p=evPos(ev), best=null, bd=48*48, i;
+  for(i=0;i<G.polls.length;i++){ var q=G.polls[i];
+    if(q.state!=="flying")continue;
+    var dx=q.x-p.x, dy=q.y-p.y, d=dx*dx+dy*dy;
+    if(d<bd){ bd=d; best=q; } }
+  if(best){ drawFor=best; best.path=[{x:best.x,y:best.y}]; best.willLand=false; ev.preventDefault(); }
+}
+function onMove(ev){
+  if(!drawFor||!G)return;
+  var p=evPos(ev), path=drawFor.path, last=path[path.length-1];
+  var dx=p.x-last.x, dy=p.y-last.y;
+  if(dx*dx+dy*dy>=49){ path.push({x:Math.max(3,Math.min(W-3,p.x)), y:Math.max(TOP+3,Math.min(H-3,p.y))}); }
+  ev.preventDefault();
+}
+function onUp(){
+  if(!drawFor)return;
+  var p=drawFor, path=p.path;
+  if(path&&path.length>1){
+    var end=path[path.length-1], pad=G.pads[p.kind];
+    var dx=end.x-pad.x, dy=end.y-pad.y;
+    if(dx*dx+dy*dy<44*44){ path.push({x:pad.x,y:pad.y}); p.willLand=true; blip(520,0.12,0.05); }
+    path.shift(); // drop the anchor point (current pos)
+    if(!path.length){ p.path=null; }
+  } else { p.path=null; }
+  drawFor=null;
+}
+cvs.addEventListener("mousedown",onDown); cvs.addEventListener("mousemove",onMove); window.addEventListener("mouseup",onUp);
+cvs.addEventListener("touchstart",onDown,{passive:false}); cvs.addEventListener("touchmove",onMove,{passive:false});
+window.addEventListener("touchend",onUp);
+
+/* ---------- render ---------- */
+function inkColor(){
+  var ink=INKS[PROG.ink]||INKS.moonlight;
+  if(ink.c==="PRISMA"){ return "hsl("+((G?G.tick:0)%360)+",70%,70%)"; }
+  return ink.c;
+}
+function render(){
+  var bd=BACKDROPS[PROG.backdrop]||BACKDROPS.midnight;
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,bd.a); g.addColorStop(1,bd.b);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  if(!G)return;
+  ctx.save();
+  if(G.shake>0){ ctx.translate((G.vrng()-0.5)*G.shake*14,(G.vrng()-0.5)*G.shake*14); }
+  var i,k;
+  // ambient meadow tufts (seeded, static per run)
+  ctx.globalAlpha=0.16; ctx.fillStyle=bd.tint;
+  var tr=mkRng(G.seed^0x77);
+  for(i=0;i<26;i++){ var tx=tr()*W, ty=TOP+60+tr()*(H-TOP-90), ts=2+tr()*3;
+    ctx.beginPath(); ctx.arc(tx,ty,ts,0,6.283); ctx.fill(); }
+  ctx.globalAlpha=1;
+  // rings
+  for(k=0;k<G.rings.length;k++){ var ring=G.rings[k];
+    var pu=0.75+Math.sin(ring.pulse)*0.12;
+    ctx.strokeStyle=ring.cd>0?"#5a4a5a":"#e58fa0"; ctx.lineWidth=2.5;
+    ctx.globalAlpha=0.75;
+    ctx.beginPath(); ctx.arc(ring.x,ring.y,ring.rr*pu,0,6.283); ctx.stroke();
+    ctx.globalAlpha=0.28;
+    ctx.beginPath(); ctx.arc(ring.x,ring.y,ring.rr,0,6.283); ctx.stroke();
+    var pk; for(pk=0;pk<6;pk++){ var pa=ring.pulse*0.5+pk/6*6.283;
+      ctx.beginPath(); ctx.arc(ring.x+Math.cos(pa)*ring.rr*pu,ring.y+Math.sin(pa)*ring.rr*pu,3,0,6.283);
+      ctx.fillStyle="#e58fa0"; ctx.fill(); }
+    ctx.globalAlpha=1;
+  }
+  // pads
+  for(k in G.pads){ drawPad(G.pads[k],k); }
+  // paths
+  var inkC=inkColor();
+  for(i=0;i<G.polls.length;i++){ var p=G.polls[i];
+    if(p.path&&p.path.length&&p.state==="flying"){
+      ctx.strokeStyle=inkC; ctx.lineWidth=3; ctx.lineCap="round"; ctx.lineJoin="round";
+      var dash=SPEC[p.kind].dash; ctx.setLineDash(dash||[]);
+      ctx.globalAlpha=0.85;
+      ctx.beginPath(); ctx.moveTo(p.x,p.y);
+      var j; for(j=0;j<p.path.length;j++)ctx.lineTo(p.path[j].x,p.path[j].y);
+      ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1;
+      if(p.willLand){ var e2=p.path[p.path.length-1];
+        ctx.strokeStyle=inkC; ctx.globalAlpha=0.9;
+        ctx.beginPath(); ctx.arc(e2.x,e2.y,10+Math.sin(G.tick*0.15)*3,0,6.283); ctx.stroke(); ctx.globalAlpha=1; }
+    }
+  }
+  // pollinators
+  for(i=0;i<G.polls.length;i++)drawPoll(G.polls[i]);
+  // particles
+  for(i=0;i<G.parts.length;i++){ var q=G.parts[i];
+    ctx.globalAlpha=Math.max(0,1-q.t/q.life); ctx.fillStyle=q.c;
+    ctx.beginPath(); ctx.arc(q.x,q.y,2.6,0,6.283); ctx.fill(); }
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+function drawPad(pad,kind){
+  ctx.fillStyle="#121a0f"; ctx.beginPath(); ctx.arc(pad.x,pad.y,pad.r,0,6.283); ctx.fill();
+  ctx.strokeStyle="#2a331f"; ctx.lineWidth=6; ctx.beginPath(); ctx.arc(pad.x,pad.y,pad.r,0,6.283); ctx.stroke();
+  var dash=SPEC[kind].dash;
+  ctx.strokeStyle="#c8a84b"; ctx.lineWidth=2.5; ctx.setLineDash(dash||[]);
+  ctx.beginPath(); ctx.arc(pad.x,pad.y,pad.r-5,0,6.283); ctx.stroke(); ctx.setLineDash([]);
+  // petals
+  var k; ctx.fillStyle="#3f6b34";
+  for(k=0;k<6;k++){ var a=k/6*6.283;
+    ctx.beginPath(); ctx.ellipse(pad.x+Math.cos(a)*(pad.r+7),pad.y+Math.sin(a)*(pad.r+7),7,3.5,a,0,6.283); ctx.fill(); }
+  ctx.save(); ctx.translate(pad.x,pad.y); ctx.globalAlpha=0.95;
+  drawGlyph(kind,0,0,1.35,"#e8dcc8",0);
+  ctx.restore(); ctx.globalAlpha=1;
+}
+function drawGlyph(kind,x,y,s,col,flap){
+  ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+  ctx.fillStyle=col; ctx.strokeStyle=col;
+  if(kind==="bee"){
+    ctx.beginPath(); ctx.ellipse(0,0,9,7,0,0,6.283); ctx.fill();
+    ctx.fillStyle="#0b0f0b";
+    ctx.fillRect(-3,-7,2.6,14); ctx.fillRect(2,-7,2.6,14);
+    ctx.fillStyle=col;
+    var wy=-7-Math.abs(Math.sin(flap))*3;
+    ctx.globalAlpha=0.8;
+    ctx.beginPath(); ctx.ellipse(-5,wy,6,3.6,-0.5,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(5,wy,6,3.6,0.5,0,6.283); ctx.fill();
+    ctx.globalAlpha=1;
+  } else if(kind==="bfly"||kind==="butterfly"){
+    var sp=0.55+Math.abs(Math.sin(flap))*0.45;
+    ctx.beginPath(); ctx.ellipse(-8*sp,-3,8,6,-0.7,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(8*sp,-3,8,6,0.7,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-6*sp,6,5.5,4.4,-0.5,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6*sp,6,5.5,4.4,0.5,0,6.283); ctx.fill();
+    ctx.fillStyle="#0b0f0b"; ctx.fillRect(-1.3,-8,2.6,16);
+  } else {
+    ctx.beginPath(); ctx.ellipse(0,0,10,5,0,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(9,0); ctx.lineTo(17,-1.4); ctx.lineTo(17,1.4); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=0.55;
+    var hw=Math.sin(flap*3)*5;
+    ctx.beginPath(); ctx.ellipse(-2,-6+hw*0.3,7,3,0.4,0,6.283); ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+function drawPoll(p){
+  var liv=LIVERIES[PROG.livery]||LIVERIES.classic;
+  var col=p.kind==="bee"?liv.acc:(p.kind==="butterfly"?"#e58fa0":"#bfe0f2");
+  if(PROG.livery==="ivory")col="#e8dcc8";
+  if(PROG.livery==="aurora")col=(p.kind==="bee")?"#b57de0":(p.kind==="butterfly"?"#e58fa0":"#8fd0e8");
+  ctx.save(); ctx.translate(p.x,p.y);
+  if(p.state==="dazed"){ ctx.globalAlpha=Math.max(0,1-p.dazeT/0.7);
+    ctx.rotate(p.dazeT*9); }
+  else if(p.state==="landing"){ ctx.globalAlpha=Math.max(0.15,1-p.landT/0.45);
+    ctx.scale(1-p.landT*1.4,1-p.landT*1.4); }
+  ctx.rotate((p.state==="flying")?p.ang+Math.PI/2:0);
+  drawGlyph(p.kind==="butterfly"?"bfly":p.kind,0,0,1,col,G.tick*0.3+p.wobPh);
+  ctx.restore(); ctx.globalAlpha=1;
+}
+
+/* ---------- hud ---------- */
+function updateHud(){
+  if(!G)return;
+  var hh=document.getElementById("hud-hearts");
+  hh.textContent=(G.mode==="zen")?"∞":new Array((G.hearts>0?G.hearts:0)+1).join("♥")||"—";
+  document.getElementById("hud-score").textContent=G.score;
+  document.getElementById("hud-bouquet").textContent="✿ "+G.bouquet+"/6";
+  var t=document.getElementById("hud-time");
+  if(G.mode==="daily")t.textContent=Math.max(0,Math.ceil(180-G.time))+"s";
+  else if(G.mode==="rush")t.textContent=Math.max(0,Math.ceil(120-G.time))+"s";
+  else t.textContent="";
+}
+
+/* ---------- screens ---------- */
+function hideScreens(){ var s=document.querySelectorAll(".screen"),i; for(i=0;i<s.length;i++)s[i].classList.remove("on"); }
+function show(id){ hideScreens(); document.getElementById(id).classList.add("on"); }
+var toastT=null;
+function toast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2200); }
+function stamp(){ document.getElementById("buildstamp").textContent=
+  "Pollinator Paths "+BUILD+" · "+PROG.landings+" landings · "+PROG.cross+" cross-pollinations"; }
+
+/* ---------- wardrobe / grove ---------- */
+function renderWard(){
+  var box=document.getElementById("wardlist"); box.innerHTML="";
+  var lastCat="", i;
+  for(i=0;i<WARD.length;i++)(function(w){
+    if(w.cat!==lastCat){ lastCat=w.cat;
+      var h=document.createElement("div");
+      h.style.cssText="font-size:.72rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:14px auto 8px;max-width:420px";
+      h.textContent=w.cat; box.appendChild(h); }
+    var ok=w.need(), eq=PROG[w.key]===w.id;
+    var c=document.createElement("div"); c.className="wardcard"+(ok?"":" locked");
+    c.innerHTML='<div class="wi">'+w.icon+'</div><div class="wt"><div class="wn">'+w.name+'</div>'+
+      '<div class="wd">'+(ok?"Unlocked":w.needTxt)+'</div></div>'+
+      '<div class="we'+(eq?" eq":"")+'">'+(eq?"WORN":(ok?"WEAR":"🔒"))+'</div>';
+    if(ok)c.onclick=function(){ PROG[w.key]=w.id; save(); renderWard(); };
+    box.appendChild(c);
+  })(WARD[i]);
+}
+function renderGrove(){
+  var box=document.getElementById("grovewrap"); box.innerHTML="";
+  if(!PROG.grove.length){ var d=document.createElement("div");
+    d.style.cssText="color:var(--muted);font-size:.8rem;padding:30px 10px;text-align:center";
+    d.textContent="Fill a six petal bouquet with cross-pollinations to press your first keepsake.";
+    box.appendChild(d); return; }
+  var i; for(i=PROG.grove.length-1;i>=0;i--)(function(ks){
+    var c=document.createElement("div"); c.className="grovecard";
+    var cv=document.createElement("canvas"); cv.width=84; cv.height=84;
+    drawKeepsake(cv,ks); c.appendChild(cv);
+    var d=document.createElement("div"); d.className="gd"; d.textContent=ks.d; c.appendChild(d);
+    box.appendChild(c);
+  })(PROG.grove[i]);
+}
+
+/* ---------- buttons ---------- */
+function tap(id,fn){ document.getElementById(id).addEventListener("click",fn); }
+tap("b-meadow",function(){ startMode("meadow"); });
+tap("b-daily",function(){ startMode("daily"); });
+tap("b-rush",function(){ startMode("rush"); });
+tap("b-zen",function(){ startMode("zen"); });
+tap("b-how",function(){ show("s-how"); });
+tap("b-ward",function(){ renderWard(); show("s-ward"); });
+tap("b-grove",function(){ renderGrove(); show("s-grove"); });
+tap("b-set",function(){ syncToggles(); show("s-set"); });
+tap("how-back",stopToMenu); tap("ward-back",stopToMenu); tap("grove-back",stopToMenu); tap("set-back",stopToMenu);
+tap("over-home",stopToMenu);
+tap("over-again",function(){ if(G)startMode(G.mode); else stopToMenu(); });
+tap("hud-back",function(){ endRunSilent(); stopToMenu(); });
+tap("hud-pause",function(){ if(!G||G.phase!=="play")return; paused=!paused;
+  document.getElementById("hud-pause").textContent=paused?"▶":"❚❚"; });
+function endRunSilent(){ if(G&&G.phase==="play"){ G.phase="over"; running=false; save(); } }
+function syncToggles(){
+  document.getElementById("tg-sound").className="toggle"+(PROG.sound?" on":"");
+  document.getElementById("tg-fx").className="toggle"+(PROG.fx?" on":"");
+}
+tap("tg-sound",function(){ PROG.sound=!PROG.sound; save(); syncToggles(); });
+tap("tg-fx",function(){ PROG.fx=!PROG.fx; save(); syncToggles(); });
+
+/* ---------- stage scale ---------- */
+function fit(){
+  var st=document.getElementById("stage");
+  var s=Math.min(window.innerWidth/540, window.innerHeight/960);
+  st.style.transform="scale("+s+")";
+}
+window.addEventListener("resize",fit); fit();
+stamp();
+
+/* ---------- portal embed plumbing ---------- */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_pollinatorpaths'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- headless test hook ---------- */
+if(/[?&]pltest=1/.test(location.search)){
+  window.PL_DEV={
+    start:function(mode,seed){ startMode(mode||"meadow",seed); running=false; return true; },
+    spawn:function(kind,x,y,ang){ if(!G)return null; var p=spawnPoll(kind,x,y,ang||0); return p.id; },
+    route:function(id,points,land){ if(!G)return false;
+      var i,p=null; for(i=0;i<G.polls.length;i++)if(G.polls[i].id===id)p=G.polls[i];
+      if(!p)return false;
+      var pts=[],j; for(j=0;j<points.length;j++)pts.push({x:points[j].x,y:points[j].y});
+      var pad=G.pads[p.kind], end=pts[pts.length-1];
+      var dx=end.x-pad.x, dy=end.y-pad.y;
+      if(land!==false&&dx*dx+dy*dy<44*44){ pts.push({x:pad.x,y:pad.y}); p.willLand=true; } else { p.willLand=false; }
+      p.path=pts; return true; },
+    step:function(n){ var k; for(k=0;k<(n||1);k++){ if(!G||G.phase!=="play")break; tickSim(); } render(); return window.PL_DEV.state(); },
+    state:function(){ if(!G)return null;
+      var act=[],i,nan=false;
+      for(i=0;i<G.polls.length;i++){ var p=G.polls[i];
+        if(!isFinite(p.x)||!isFinite(p.y))nan=true;
+        act.push({id:p.id,kind:p.kind,x:Math.round(p.x),y:Math.round(p.y),state:p.state,routed:!!p.path,willLand:p.willLand}); }
+      if(!isFinite(G.score)||!isFinite(G.time))nan=true;
+      return { mode:G.mode, tick:G.tick, time:+G.time.toFixed(2), hearts:(G.hearts===Infinity?-1:G.hearts),
+        score:G.score, landings:G.landings, cross:G.cross, bouquet:G.bouquet,
+        collisions:G.collisions, active:act, phase:G.phase, nan:nan }; },
+    autopilot:function(seconds,seed){
+      if(seed!==undefined||!G||G.mode!=="daily"){ startMode("daily",(seed!==undefined)?seed:4242); running=false; }
+      var arrivals={bee:-9,butterfly:-9,humm:-9};
+      var ticks=Math.floor((seconds||60)/DT),k;
+      for(k=0;k<ticks;k++){
+        if(!G||G.phase!=="play")break;
+        var i; for(i=0;i<G.polls.length;i++){ var p=G.polls[i];
+          if(p.state!=="flying"||p.path)continue;
+          var pad=G.pads[p.kind];
+          var dx=pad.x-p.x, dy=pad.y-p.y, dist=Math.sqrt(dx*dx+dy*dy);
+          var eta=G.time+dist/p.speed;
+          var pts;
+          if(eta-arrivals[p.kind]<1.6){
+            var mx=(p.x+pad.x)/2, my=(p.y+pad.y)/2;
+            var px=-dy/dist, py=dx/dist, off=110+(p.id%3)*40;
+            pts=[{x:Math.max(30,Math.min(W-30,mx+px*off))
+                 ,y:Math.max(TOP+30,Math.min(H-30,my+py*off))},{x:pad.x,y:pad.y}];
+            eta=G.time+(dist*1.5)/p.speed;
+          } else {
+            pts=[{x:pad.x,y:pad.y}];
+          }
+          arrivals[p.kind]=eta;
+          window.PL_DEV.route(p.id,pts);
+        }
+        // reactive separation: dodge the higher-index flier of any close pair
+        var m,n2;
+        for(m=0;m<G.polls.length;m++){ var pa=G.polls[m];
+          if(pa.state!=="flying"||pa.air<0.7)continue;
+          for(n2=m+1;n2<G.polls.length;n2++){ var pb=G.polls[n2];
+            if(pb.state!=="flying"||pb.air<0.7)continue;
+            var ddx=pb.x-pa.x, ddy=pb.y-pa.y, dd=Math.sqrt(ddx*ddx+ddy*ddy);
+            if(dd<62&&dd>0.001){
+              var px2=-ddy/dd, py2=ddx/dd;
+              var padB=G.pads[pb.kind], padA=G.pads[pa.kind];
+              var bx=Math.max(20,Math.min(W-20,pb.x+px2*95));
+              var by=Math.max(TOP+20,Math.min(H-20,pb.y+py2*95));
+              var ax=Math.max(20,Math.min(W-20,pa.x-px2*95));
+              var ay=Math.max(TOP+20,Math.min(H-20,pa.y-py2*95));
+              window.PL_DEV.route(pb.id,[{x:bx,y:by},{x:padB.x,y:padB.y}]);
+              window.PL_DEV.route(pa.id,[{x:ax,y:ay},{x:padA.x,y:padA.y}]);
+            }
+          }
+        }
+        tickSim();
+      }
+      render();
+      return { landings:G?G.landings:0, collisions:G?G.collisions:0,
+        hearts:G?(G.hearts===Infinity?-1:G.hearts):0, score:G?G.score:0, time:G?+G.time.toFixed(1):0 };
+    },
+    collisionCheck:function(){
+      // normal mode: two bees head-on must collide and cost a heart
+      startMode("meadow",1111); running=false;
+      G.nextSpawn=99999; // silence natural spawns
+      var a=window.PL_DEV.spawn("bee",100,500,0), b=window.PL_DEV.spawn("bee",440,500,Math.PI);
+      window.PL_DEV.route(a,[{x:440,y:500}],false); window.PL_DEV.route(b,[{x:100,y:500}],false);
+      var k; for(k=0;k<600;k++){ if(G.phase!=="play")break; tickSim(); }
+      var normalCollided=G.collisions>0, heartsAfter=(G.hearts===Infinity?-1:G.hearts);
+      // zen mode: same setup must NOT cost anything, both alive
+      startMode("zen",1111); running=false;
+      G.nextSpawn=99999;
+      var a2=window.PL_DEV.spawn("bee",100,500,0), b2=window.PL_DEV.spawn("bee",440,500,Math.PI);
+      window.PL_DEV.route(a2,[{x:440,y:500}],false); window.PL_DEV.route(b2,[{x:100,y:500}],false);
+      for(k=0;k<600;k++)tickSim();
+      var zenCollided=G.collisions>0;
+      var alive=0,i; for(i=0;i<G.polls.length;i++)if(G.polls[i].state==="flying")alive++;
+      return { normalCollided:normalCollided, heartsAfterNormal:heartsAfter,
+        zenCollided:zenCollided, zenAlive:alive, pass:(normalCollided&&heartsAfter===2&&!zenCollided&&alive===2) };
+    },
+    ringCheck:function(){
+      startMode("meadow",2222); running=false;
+      G.nextSpawn=99999;
+      var ring=G.rings[0]; ring.vx=0; ring.vy=0; ring.cd=0; ring.times={};
+      var a=window.PL_DEV.spawn("bee",ring.x-200,ring.y,0);
+      var b=window.PL_DEV.spawn("butterfly",ring.x+200,ring.y+30,Math.PI);
+      window.PL_DEV.route(a,[{x:ring.x+220,y:ring.y}],false);
+      window.PL_DEV.route(b,[{x:ring.x-220,y:ring.y+30}],false);
+      var k; for(k=0;k<900;k++){ if(G.phase!=="play")break; tickSim(); }
+      var crossGot=G.cross;
+      // same kind should NOT cross-pollinate
+      startMode("meadow",2222); running=false; G.nextSpawn=99999;
+      ring=G.rings[0]; ring.vx=0; ring.vy=0; ring.cd=0; ring.times={};
+      var c=window.PL_DEV.spawn("bee",ring.x-200,ring.y,0);
+      var d2=window.PL_DEV.spawn("bee",ring.x+200,ring.y+30,Math.PI);
+      window.PL_DEV.route(c,[{x:ring.x+220,y:ring.y}],false);
+      window.PL_DEV.route(d2,[{x:ring.x-220,y:ring.y+30}],false);
+      for(k=0;k<900;k++){ if(G.phase!=="play")break; tickSim(); }
+      return { differentKinds:crossGot, sameKind:G.cross, pass:(crossGot>=1&&G.cross===0) };
+    },
+    earnTest:function(){ return window._sbCapEarn(2,"pltest"); },
+    prog:function(){ return PROG; }
+  };
+}
+
+/* ---------- main loop ---------- */
+var last=0, acc=0;
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(!last)last=ts; var el=(ts-last)/1000; last=ts;
+  if(el>0.25)el=0.25;
+  if(running&&!paused){ acc+=el;
+    while(acc>=DT){ tickSim(); acc-=DT; } }
+  render();
+}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

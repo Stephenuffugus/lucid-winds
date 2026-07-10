@@ -31,6 +31,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Line Loom](line-loom/00-art-direction.md)** (Mini Metro) — *Woven Atlas* · 6 sheets
 - **[Rule Root](rule-root/00-art-direction.md)** (Baba Is You) — *Illuminated Herbal* · 6 sheets (word tiles stay engine-rendered text; plates are text-free)
 - **[Silt](silt/00-art-direction.md)** (falling sand) — *Terrarium Nocturne* · 5 sheets (sand grains stay procedural pixels; pack dresses backdrops/UI/dock icons/keepsake frames/FX around the sim)
+- **[Pollinator Paths](pollinator-paths/00-art-direction.md)** (Flight Control) — *Nocturne Flightchart* · 6 sheets
 
 ## Generate order
 
