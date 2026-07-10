@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%230e140d'/%3E%3Ccircle cx='11' cy='13' r='5' fill='%237ab356'/%3E%3Ccircle cx='21' cy='13' r='5' fill='%23c8a84b'/%3E%3Ccircle cx='16' cy='22' r='5.5' fill='%23e58fa0'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Petal Alchemy">
+<title>Petal Alchemy — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"petalalchemy"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d100c; --sage:#7ab356; --deep:#3f6b34; --gold:#c8a84b; --cream:#e8dcc8;
+  --muted:#8a9178; --line:#2a331f; --pink:#e58fa0; --blue:#5b9bd5; --dew:#bfe0f2; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #101610 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0b0f0b; overflow:hidden; box-shadow:0 0 60px #000a}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
+  background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
+.screen.on{display:flex}
+.pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
+.center{align-items:center; justify-content:center; text-align:center}
+.title-word{font-size:50px; line-height:1; color:var(--pink); font-weight:800; text-shadow:0 3px 0 #3a1622, 0 0 26px #e58fa044; letter-spacing:1px}
+.title-sub{color:var(--gold); font-size:14px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:16px; color:var(--cream); font-size:14px; opacity:.9; max-width:430px; line-height:1.5}
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; width:100%;
+  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1a2415,#121a0f);
+  color:var(--cream); font-size:18px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+.btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(180deg,#d98fa6,#b2657c); color:#241018; border-color:#eeb0c2; box-shadow:0 4px 0 #6f2f42, 0 8px 20px #0006}
+.btn.sm{min-height:52px; font-size:15px}
+.btn.ghost{background:#0f150c; color:var(--muted)}
+.row{display:flex; gap:12px; width:100%}
+.row>.btn{flex:1}
+.stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:430px; margin:0 auto}
+h2.sc-h{font-size:23px; color:var(--pink); font-weight:800; margin-bottom:4px}
+.hl{color:var(--gold); font-weight:800}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:11px 0; font-size:14px; line-height:1.45}
+.helprow .hi{font-size:22px; width:34px; text-align:center; flex:none}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:430px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#0f150c}
+.toggle{width:64px; height:36px; border-radius:20px; background:#26301c; position:relative; cursor:pointer; border:1px solid var(--line); flex:none}
+.toggle.on{background:var(--deep)}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--cream); transition:left .15s}
+.toggle.on b{left:31px; background:#eafbd6}
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
+/* ---- play ---- */
+#s-play{padding:0}
+#pa-top{display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); background:#0e140d; flex:none}
+#pa-top .tbtn{min-width:44px; height:44px; border:1px solid var(--line); border-radius:11px; background:#121a0f; color:var(--cream); font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer}
+#pa-top .grow{flex:1}
+#pa-mode{font-size:15px; font-weight:800; color:var(--pink)}
+#pa-count{font-size:12px; color:var(--muted)}
+#pa-goal{padding:8px 12px; font-size:13px; color:var(--gold); background:#141005; border-bottom:1px solid var(--line); display:none}
+#pa-goal.on{display:block}
+#pa-search{margin:8px 12px 4px; padding:10px 12px; border-radius:11px; border:1px solid var(--line); background:#0f150c; color:var(--cream); font-size:14px; outline:none; flex:none}
+.shelf{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:8px 10px 10px; display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start}
+.tile{min-width:82px; min-height:52px; flex:0 0 auto; border:1px solid var(--line); border-radius:12px; background:linear-gradient(180deg,#182013,#10160d); padding:6px 10px 5px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; transition:transform .07s}
+.tile:active{transform:scale(.94)}
+.tile .ic{font-size:22px; line-height:1}
+.tile .nm{font-size:11px; font-weight:700; color:var(--cream); white-space:nowrap}
+.tile.rar2{border-color:#4a6b30}
+.tile.rar3{border-color:var(--gold); box-shadow:0 0 0 1px #c8a84b55}
+.tile.tb{border-color:var(--pink); box-shadow:0 0 10px #e58fa055}
+.tile.newx{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.4);filter:brightness(2)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+#pa-tray{flex:none; display:flex; align-items:center; gap:6px; padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line); background:#0e140d}
+.slot{flex:1; min-height:60px; border:1px dashed var(--line); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; background:#0f150c; cursor:pointer}
+.slot.full{border-style:solid; background:linear-gradient(180deg,#182013,#10160d)}
+.slot .ic{font-size:22px}
+.slot .nm{font-size:10px; color:var(--cream); font-weight:700}
+.slot.res{border-color:var(--gold)}
+.op{font-size:20px; color:var(--muted); font-weight:800; flex:none}
+#pa-again{min-width:44px; height:44px; border:1px solid var(--line); border-radius:11px; background:#121a0f; color:var(--gold); font-size:16px; cursor:pointer; flex:none}
+.wardwrap{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.wardcard{width:140px; border:1px solid var(--line); border-radius:14px; background:#0f150c; padding:12px 10px; cursor:pointer; text-align:center}
+.wardcard.locked{opacity:.5}
+.wardcard.on{border-color:var(--pink); box-shadow:0 0 0 1px var(--pink)}
+.wardcard .wi{font-size:30px}
+.wardcard .wn{font-size:13px; font-weight:700; color:var(--cream); margin-top:4px}
+.wardcard .wt{font-size:11px; color:var(--muted); margin-top:2px}
+.grovewrap{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; max-width:480px; margin:0 auto}
+.gkeep{width:132px; border:1px solid var(--pink); border-radius:14px; background:#0f150c; padding:8px; text-align:center}
+.gkeep canvas{width:110px; height:90px; display:block; margin:0 auto}
+.gkeep .kn{font-size:12px; font-weight:700; color:var(--pink); margin-top:4px}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#241017; border:1px solid var(--line); color:var(--pink); font-weight:800; font-size:13px; margin-top:8px}
+#pa-toast{position:absolute; left:50%; bottom:96px; transform:translateX(-50%); background:#141a0e; border:1px solid var(--gold); color:var(--cream); font-size:14px; font-weight:700; padding:9px 16px; border-radius:20px; z-index:40; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; max-width:90%}
+#pa-toast.on{opacity:1; transform:translateX(-50%) translateY(-6px)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- TITLE -->
+  <div class="screen center on" id="s-title"><div class="pad center">
+    <div style="flex:1"></div>
+    <div class="title-word">Petal Alchemy</div>
+    <div class="title-sub">Sky Wolf Studios</div>
+    <div class="ribbon">Start with <b class="hl">Seed, Water, Sun, Soil, Air</b>. Tap two to combine them and discover something new. Chain your way up through the whole garden, and coax out the rare <b class="hl">True Blooms</b>.</div>
+    <div style="flex:1"></div>
+    <div class="stack">
+      <button class="btn primary" id="b-free">🌱&nbsp; Free Alchemy</button>
+      <div class="row">
+        <button class="btn sm" id="b-daily">📅 Daily Recipe</button>
+        <button class="btn sm" id="b-hunt">🎯 Bloom Hunt</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-zen">🍃 Zen Lab</button>
+        <button class="btn sm" id="b-grove">🌸 Keepsakes</button>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="b-ward">🎀 Wardrobe</button>
+        <button class="btn sm" id="b-how">How</button>
+        <button class="btn sm" id="b-set">⚙</button>
+      </div>
+    </div>
+    <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- HOW -->
+  <div class="screen" id="s-how"><div class="pad">
+    <h2 class="sc-h">How to play</h2>
+    <div class="helprow"><div class="hi">👆</div><div>Tap an element to load it, then tap a second one. If they <b>take</b>, a <b class="hl">new element</b> is born.</div></div>
+    <div class="helprow"><div class="hi">🔗</div><div>Tap the <b>result</b> to carry it straight into the next combine. Chain outward and the garden keeps growing.</div></div>
+    <div class="helprow"><div class="hi">🌸</div><div>A few deep, rare chains yield a <b class="hl">True Bloom</b> — a one-of-a-kind keepsake flower you keep.</div></div>
+    <div class="helprow"><div class="hi">📅</div><div><b>Daily Recipe</b> sets one shared target to build from the five seeds; <b>Bloom Hunt</b> gives gentle quests.</div></div>
+    <div class="helprow"><div class="hi">🌫️</div><div>Two things that don't take just <b>shimmer</b> and wilt. Never a wrong move, never a buzzer.</div></div>
+    <div style="height:18px"></div>
+    <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
+  </div></div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-set"><div class="pad">
+    <h2 class="sc-h">Settings</h2>
+    <div style="height:8px"></div>
+    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
+    <div class="settingline"><span>Big labels</span><div class="toggle on" id="tg-labels"><b></b></div></div>
+    <div style="height:8px"></div>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+  </div></div>
+
+  <!-- WARDROBE -->
+  <div class="screen" id="s-ward"><div class="pad">
+    <h2 class="sc-h">Wardrobe</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Earn cosmetics by discovering. Tap to equip.</div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:6px 0 8px">Node frames</div>
+    <div class="wardwrap" id="ward-frames"></div>
+    <div style="font-size:13px;color:var(--gold);font-weight:800;margin:16px 0 8px">Log parchment</div>
+    <div class="wardwrap" id="ward-logs"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="ward-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- KEEPSAKES -->
+  <div class="screen" id="s-grove"><div class="pad">
+    <h2 class="sc-h">True Bloom Keepsakes</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px" id="grove-sub">Alchemize the rare chains to grow keepsake blooms here.</div>
+    <div class="grovewrap" id="grove-wrap"></div>
+    <div style="height:18px"></div>
+    <button class="btn ghost sm" id="grove-back" style="max-width:400px;margin:0 auto">◄ Menu</button>
+  </div></div>
+
+  <!-- PLAY -->
+  <div class="screen" id="s-play">
+    <div id="pa-top">
+      <div class="tbtn" id="pa-back">◄</div>
+      <div class="grow"><div id="pa-mode">Free Alchemy</div><div id="pa-count">5 discovered</div></div>
+      <div class="tbtn" id="pa-log">📖</div>
+    </div>
+    <div id="pa-goal"></div>
+    <input id="pa-search" placeholder="search your shelf…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div class="shelf" id="pa-shelf"></div>
+    <div id="pa-tray">
+      <div class="slot" id="pa-a"></div>
+      <div class="op">+</div>
+      <div class="slot" id="pa-b"></div>
+      <div class="op">=</div>
+      <div class="slot res" id="pa-r"></div>
+      <div id="pa-again" title="combine again">▶</div>
+    </div>
+    <div id="pa-toast"></div>
+  </div>
+
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
+var BUILD='v1.0';
+var TESTMODE=/[?&]patest=1/.test(location.search);
+
+/* =========================================================================
+   PETAL ALCHEMY — deterministic recipe tree (NO LLM, NO randomness).
+   True Bloom nodes mint a self-contained keepsake here; feeding them to the
+   real Greenhouse plant-SVG renderer + hashToTraits + breeding is aspirational
+   cross-app — this satellite is self-contained.
+   ========================================================================= */
+/* EL[id] = [name, emoji, category, rarity(1-3), isTrueBloom] */
+var EL={
+ seed:['Seed','🌰','base',1], water:['Water','💧','base',1], sun:['Sun','☀️','base',1],
+ soil:['Soil','🟫','base',1], air:['Air','🌬️','base',1],
+ sprout:['Sprout','🌱','plant',1], root:['Root','🪱','plant',1], shoot:['Shoot','🌿','plant',1],
+ spore:['Spore','🍥','fungus',1], mud:['Mud','🟤','earth',1], steam:['Steam','♨️','weather',1],
+ mist:['Mist','🌫️','weather',1], clay:['Clay','🧱','earth',1], dust:['Dust','💨','earth',1], heat:['Heat','🔥','weather',1],
+ leaf:['Leaf','🍃','plant',1], stem:['Stem','🎋','plant',1], reed:['Reed','🪷','plant',1], tendril:['Tendril','🌀','plant',2],
+ plant:['Plant','🪴','plant',1], vine:['Vine','🌿','plant',1], dew:['Dew','💠','weather',1], fern:['Fern','🌿','plant',2],
+ mulch:['Mulch','🍂','earth',1], trunk:['Trunk','🪵','plant',2], rainbow:['Rainbow','🌈','weather',2], cloud:['Cloud','☁️','weather',1],
+ wind:['Wind','🌬️','weather',1], pot:['Pot','🏺','craft',1], mushroom:['Mushroom','🍄','fungus',1], mold:['Mold','🦠','fungus',2],
+ marsh:['Marsh','🥬','earth',2], sand:['Sand','🏖️','earth',1],
+ flower:['Flower','🌼','flower',1], herb:['Herb','🌿','plant',2], weed:['Weed','☘️','plant',1], bouquet:['Bouquet','💐','flower',2],
+ nectar:['Nectar','🍯','flower',2], sunflower:['Sunflower','🌻','flower',2], pollen:['Pollen','🟡','flower',1],
+ rose:['Rose','🌹','flower',2], hedge:['Hedge','🌳','plant',2], ivy:['Ivy','🍀','plant',2], tree:['Tree','🌳','plant',2],
+ moss:['Moss','🟩','plant',2], toadstool:['Toadstool','🍄','fungus',2], cold:['Cold','❄️','weather',2], storm:['Storm','⛈️','weather',2],
+ snow:['Snow','🌨️','weather',2], seedling:['Seedling','🪴','plant',2], houseplant:['Houseplant','🪴','plant',2],
+ glass:['Glass','🔮','craft',2], rain:['Rain','🌧️','weather',1], sky:['Sky','🌌','weather',2], pond:['Pond','🏞️','water',1], lily:['Lily','⚜️','flower',2],
+ bee:['Bee','🐝','critter',2], honey:['Honey','🍯','critter',2], forest:['Forest','🌲','plant',3], bog:['Bog','🪵','earth',2],
+ worm:['Worm','🪱','critter',1], koi:['Koi','🐟','critter',3], toad:['Toad','🐸','critter',3], star:['Star','⭐','sky',2],
+ moon:['Moon','🌙','sky',3], caterpillar:['Caterpillar','🐛','critter',2], butterfly:['Butterfly','🦋','critter',2],
+ moth:['Moth','🦟','critter',2], stone:['Stone','🪨','earth',1], pebble:['Pebble','⚪','earth',1], gold:['Gold','🥇','craft',3],
+ goldenrod:['Goldenrod','🟨','flower',2], spring:['Spring','🌷','season',2], summer:['Summer','🌞','season',2],
+ autumn:['Autumn','🍁','season',2], winter:['Winter','⛄','season',2], honeypot:['Honeypot','🍯','craft',2],
+ fairyring:['Fairy Ring','💫','fungus',3], thunderseed:['Thunderseed','⚡','plant',3], terrarium:['Terrarium','🔮','craft',3], frost:['Frost','🧊','weather',2],
+ acorn:['Acorn','🌰','plant',1], oak:['Oak','🌳','plant',2], apple:['Apple','🍎','fruit',2], orchard:['Orchard','🌳','plant',3],
+ cider:['Cider','🍺','craft',2], shrub:['Shrub','🌳','plant',1], berry:['Berry','🫐','fruit',2], jam:['Jam','🍓','craft',2],
+ pumpkin:['Pumpkin','🎃','fruit',2], hive:['Hive','🐝','critter',2], beeswax:['Beeswax','🕯️','craft',2], candle:['Candle','🕯️','craft',2],
+ firefly:['Firefly','✨','critter',3], dragonfly:['Dragonfly','🦋','critter',2], snail:['Snail','🐌','critter',2],
+ clam:['Clam','🐚','critter',2], pearl:['Pearl','🦪','craft',3], grass:['Grass','🌾','plant',1], meadow:['Meadow','🌼','plant',3],
+ /* --- True Blooms --- */
+ moonflower:['Moonflower','🌸','bloom',3,1], prismlily:['Prism Lily','🏵️','bloom',3,1], dewrose:['Dewrose','🌹','bloom',3,1],
+ worldbloom:['Worldbloom','🌺','bloom',3,1], starbloom:['Starbloom','💮','bloom',3,1], sunbloom:['Sunbloom','🌻','bloom',3,1]
+};
+
+var REC={};
+function key(a,b){ return a<b ? a+'|'+b : b+'|'+a; }
+function addR(a,b,c){ REC[key(a,b)]=c; }
+/* T1 — every primitive pair is productive */
+addR('seed','water','sprout'); addR('seed','soil','root'); addR('seed','sun','shoot'); addR('seed','air','spore');
+addR('water','soil','mud'); addR('water','sun','steam'); addR('water','air','mist');
+addR('soil','sun','clay'); addR('soil','air','dust'); addR('sun','air','heat');
+/* T2 */
+addR('sprout','sun','leaf'); addR('sprout','soil','stem'); addR('sprout','water','reed'); addR('sprout','air','tendril');
+addR('root','stem','plant'); addR('stem','leaf','plant'); addR('leaf','leaf','vine'); addR('leaf','water','dew');
+addR('leaf','air','fern'); addR('leaf','soil','mulch'); addR('stem','stem','trunk'); addR('mist','sun','rainbow');
+addR('steam','air','cloud'); addR('heat','air','wind'); addR('clay','heat','pot'); addR('clay','sun','pot');
+addR('spore','soil','mushroom'); addR('spore','water','mold'); addR('mud','root','marsh'); addR('dust','heat','sand');
+/* T3 */
+addR('plant','sun','flower'); addR('plant','water','herb'); addR('plant','air','weed'); addR('flower','flower','bouquet');
+addR('flower','water','nectar'); addR('flower','sun','sunflower'); addR('flower','air','pollen'); addR('vine','flower','rose');
+addR('vine','leaf','hedge'); addR('vine','stem','ivy'); addR('trunk','leaf','tree'); addR('fern','water','moss');
+addR('mushroom','mushroom','toadstool'); addR('mist','wind','cold'); addR('cloud','wind','storm'); addR('cloud','cold','snow');
+addR('pot','sprout','seedling'); addR('pot','plant','houseplant'); addR('sand','sun','glass'); addR('cloud','water','rain');
+addR('cloud','air','sky'); addR('water','mud','pond'); addR('pond','flower','lily');
+/* T4 */
+addR('nectar','air','bee'); addR('pollen','bee','honey'); addR('bee','flower','honey'); addR('tree','tree','forest');
+addR('moss','water','bog'); addR('soil','rain','worm'); addR('pond','lily','koi'); addR('pond','mushroom','toad');
+addR('sky','seed','star'); addR('star','star','moon'); addR('leaf','worm','caterpillar'); addR('caterpillar','flower','butterfly');
+addR('pollen','moon','moth'); addR('clay','wind','stone'); addR('stone','water','pebble'); addR('stone','sun','gold');
+addR('gold','flower','goldenrod'); addR('sprout','rain','spring'); addR('sun','bouquet','summer'); addR('leaf','wind','autumn');
+addR('snow','tree','winter'); addR('honey','pot','honeypot'); addR('mushroom','moon','fairyring'); addR('storm','seed','thunderseed');
+addR('glass','flower','terrarium'); addR('dew','cold','frost');
+addR('tree','seed','acorn'); addR('acorn','soil','oak'); addR('tree','flower','apple'); addR('apple','tree','orchard');
+addR('apple','water','cider'); addR('hedge','soil','shrub'); addR('shrub','sun','berry'); addR('berry','heat','jam');
+addR('vine','pot','pumpkin'); addR('bee','bee','hive'); addR('hive','heat','beeswax'); addR('beeswax','heat','candle');
+addR('star','bee','firefly'); addR('pond','wind','dragonfly'); addR('moss','dew','snail'); addR('pond','sand','clam');
+addR('clam','moon','pearl'); addR('sprout','mulch','grass'); addR('grass','flower','meadow');
+/* extra alt recipes (forgiving; multiple paths) */
+addR('water','water','pond'); addR('air','air','wind'); addR('sun','sun','heat'); addR('soil','soil','stone');
+addR('seed','seed','sprout'); addR('flower','leaf','bouquet'); addR('sun','cloud','rainbow'); addR('rain','sun','rainbow');
+addR('water','heat','steam'); addR('mud','heat','clay'); addR('tree','wind','autumn'); addR('flower','dew','nectar');
+addR('sprout','sprout','vine'); addR('leaf','flower','herb'); addR('pond','seed','lily'); addR('seed','rain','sprout');
+/* True Blooms */
+addR('moon','flower','moonflower'); addR('rainbow','lily','prismlily'); addR('rose','dew','dewrose');
+addR('forest','bouquet','worldbloom'); addR('star','flower','starbloom'); addR('sunflower','gold','sunbloom');
+
+var PRIMS=['seed','water','sun','soil','air'];
+function isTB(id){ return EL[id] && EL[id][4]===1; }
+
+/* ---------- storage / save ---------- */
+var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
+var SET={ sound:true, labels:true };
+(function(){ try{ var s=JSON.parse(LS.get('pa_set')||'{}'); ['sound','labels'].forEach(function(k){ if(typeof s[k]==='boolean')SET[k]=s[k]; }); }catch(e){} })();
+function saveSet(){ LS.set('pa_set', JSON.stringify(SET)); }
+
+var SAVE={ disc:{}, blooms:[], streak:0, lastDaily:'', dailyDone:'', hunts:{}, frame:'plain', log:'sage', bestRun:0 };
+(function(){ try{ var s=JSON.parse(LS.get('petalalchemy_save')||'{}'); for(var k in s) SAVE[k]=s[k]; }catch(e){}
+  if(!SAVE.disc || typeof SAVE.disc!=='object') SAVE.disc={};
+  var i; for(i=0;i<PRIMS.length;i++) SAVE.disc[PRIMS[i]]=1;
+  if(!SAVE.blooms) SAVE.blooms=[]; if(!SAVE.hunts) SAVE.hunts={};
+})();
+function save(){ LS.set('petalalchemy_save', JSON.stringify(SAVE)); }
+function discCount(){ var n=0,k; for(k in SAVE.disc) n++; return n; }
+function bloomCount(){ return SAVE.blooms.length; }
+
+/* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_petalalchemy'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+var runEarn=0;
+function earn(n,tag){ if(G.mode==='zen')return 0; var amt=Math.min(n, Math.max(0,12-runEarn)); if(amt<=0)return 0; var g=window._sbCapEarn(amt,tag)||0; runEarn+=g; return g; }
+
+/* ---------- audio (cheap) ---------- */
+var AC=null;
+function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
+function beep(f,d,ty,g){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(),ga=c.createGain(); o.type=ty||'sine'; o.frequency.value=f; ga.gain.value=g||0.05; o.connect(ga); ga.connect(c.destination); var t=c.currentTime; o.start(t); ga.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.15)); o.stop(t+(d||0.15)+0.02); }catch(e){} }
+function sfxNew(){ beep(520,0.09,'triangle',0.06); setTimeout(function(){beep(680,0.12,'triangle',0.06);},70); }
+function sfxDud(){ beep(180,0.12,'sine',0.03); }
+function sfxBloom(){ beep(523,0.14,'triangle',0.06); setTimeout(function(){beep(659,0.14,'triangle',0.06);},110); setTimeout(function(){beep(784,0.22,'triangle',0.06);},230); }
+window.addEventListener('pagehide',function(){ try{ if(AC)AC.close(); }catch(e){} });
+
+/* ---------- screens ---------- */
+var curScreen='s-title';
+function show(id){ var el=$(id); if(!el)return; var cur=document.querySelector('.screen.on'); if(cur)cur.classList.remove('on'); el.classList.add('on'); curScreen=id; }
+
+/* ---------- game state ---------- */
+var G={ mode:'free', a:null, b:null, r:null, target:null, steps:0 };
+
+function rng(seed){ var s=seed>>>0; return function(){ s=(s+0x6D2B79F5)>>>0; var t=s; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+function todayStr(){ var d=new Date(Date.now()); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function dateSeed(){ var d=new Date(Date.now()); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+
+/* pick a daily target: a non-primitive, non-trivial element (deterministic) */
+function dailyTarget(){ var ids=[],k; for(k in EL){ if(EL[k][3]>=2 && !isTB(k)) ids.push(k); } ids.sort();
+  var r=rng(dateSeed()); return ids[Math.floor(r()*ids.length)]; }
+
+var HUNTS=[
+  {id:'seasons', nm:'Turn the Wheel', desc:'Discover all four Seasons', need:['spring','summer','autumn','winter']},
+  {id:'critters', nm:'Small Wonders', desc:'Discover Bee, Koi and Butterfly', need:['bee','koi','butterfly']},
+  {id:'firsttb', nm:'First True Bloom', desc:'Alchemize any True Bloom', need:'anyTB'},
+  {id:'sky', nm:'Reach the Moon', desc:'Discover the Moon', need:['moon']}
+];
+
+function startMode(m){ G.mode=m; runEarn=0; G.a=G.b=G.r=null; G.steps=0; G.target=null;
+  $('pa-mode').textContent = m==='free'?'Free Alchemy':(m==='daily'?'Daily Recipe':(m==='hunt'?'Bloom Hunt':'Zen Lab'));
+  var goal=$('pa-goal');
+  if(m==='daily'){ G.target=dailyTarget(); goal.className='on';
+    if(SAVE.dailyDone===todayStr()) goal.innerHTML='Today’s recipe (<b>'+EL[G.target][0]+'</b>) already grown — streak '+SAVE.streak+' ⭐';
+    else goal.innerHTML='Build today’s recipe: <b>'+EL[G.target][0]+'</b> '+EL[G.target][1]+' &nbsp;·&nbsp; steps '+G.steps;
+  } else if(m==='hunt'){ goal.className='on'; renderHuntGoal();
+  } else { goal.className=''; goal.textContent=''; }
+  renderShelf(''); renderTray(); show('s-play'); ac();
+}
+function renderHuntGoal(){ var h=null,i; for(i=0;i<HUNTS.length;i++){ if(!SAVE.hunts[HUNTS[i].id]){ h=HUNTS[i]; break; } }
+  var goal=$('pa-goal'); if(!h){ goal.innerHTML='All quests complete — lovely. Keep alchemizing!'; G.target=null; return; }
+  G.hunt=h; goal.innerHTML='🎯 '+h.nm+': <b>'+h.desc+'</b>'; }
+
+/* ---------- shelf / tray ---------- */
+function tileEl(id,cls){ var e=document.createElement('div'); e.className='tile'+(EL[id][4]?' tb':(' rar'+EL[id][3]))+(cls||'');
+  var ic=document.createElement('div'); ic.className='ic'; ic.textContent=EL[id][1]; e.appendChild(ic);
+  var nm=document.createElement('div'); nm.className='nm'; nm.textContent=EL[id][0]; e.appendChild(nm);
+  e.setAttribute('data-id',id); return e; }
+function renderShelf(filter){ var host=$('pa-shelf'); host.innerHTML=''; var ids=[],k;
+  for(k in SAVE.disc){ if(!filter || EL[k][0].toLowerCase().indexOf(filter)>=0) ids.push(k); }
+  ids.sort(function(a,b){ return EL[a][0]<EL[b][0]?-1:1; });
+  for(var i=0;i<ids.length;i++){ (function(id){ var t=tileEl(id); t.addEventListener('click',function(e){e.preventDefault(); pickTile(id);}); host.appendChild(t); })(ids[i]); }
+  $('pa-count').textContent = discCount()+' discovered'+(bloomCount()?(' · '+bloomCount()+' blooms'):'');
+}
+function slotFill(sid,id){ var s=$(sid); s.innerHTML=''; if(!id){ s.className='slot'+(sid==='pa-r'?' res':''); return; }
+  s.className='slot full'+(sid==='pa-r'?' res':''); var ic=document.createElement('div'); ic.className='ic'; ic.textContent=EL[id][1];
+  var nm=document.createElement('div'); nm.className='nm'; nm.textContent=EL[id][0]; s.appendChild(ic); s.appendChild(nm); }
+function renderTray(){ slotFill('pa-a',G.a); slotFill('pa-b',G.b); slotFill('pa-r',G.r); }
+function pickTile(id){ if(!G.a){ G.a=id; G.r=null; } else if(!G.b){ G.b=id; renderTray(); doCombine(); return; } else { G.a=id; G.b=null; G.r=null; } renderTray(); }
+
+function toast(msg){ var t=$('pa-toast'); t.textContent=msg; t.className='on'; clearTimeout(t._t); t._t=setTimeout(function(){ t.className=''; },1400); }
+
+/* core deterministic combine; returns result id or null. Adds to discovery if new. */
+function combineIds(a,b){ if(!a||!b)return null; var r=REC[key(a,b)]; return r||null; }
+function discover(id){ if(SAVE.disc[id]) return false; SAVE.disc[id]=1;
+  if(isTB(id) && SAVE.blooms.indexOf(id)<0) SAVE.blooms.push(id); save(); return true; }
+
+function doCombine(){ G.steps++;
+  var r=combineIds(G.a,G.b);
+  if(!r){ sfxDud(); G.r=null; renderTray(); flashDud(); if(G.mode==='daily'&&G.target) updateDailyGoal(); return; }
+  var wasNew=!SAVE.disc[r]; discover(r); G.r=r; renderShelf($('pa-search').value.toLowerCase()); renderTray();
+  // highlight the new tile
+  if(wasNew){ var host=$('pa-shelf'); var tiles=host.querySelectorAll('.tile'); for(var i=0;i<tiles.length;i++){ if(tiles[i].getAttribute('data-id')===r){ tiles[i].classList.add('newx'); break; } } }
+  if(isTB(r) && wasNew){ sfxBloom(); toast('True Bloom! '+EL[r][0]+' 🌸'); earn(3,'petalalchemy:truebloom'); mintKeepsakeFx(r); }
+  else if(wasNew){ sfxNew(); toast('New: '+EL[r][0]+' '+EL[r][1]); earn(1,'petalalchemy:discover'); }
+  else { beep(400,0.08,'sine',0.03); }
+  if(G.mode==='daily' && G.target && r===G.target) completeDaily();
+  if(G.mode==='hunt') checkHunt();
+  if(G.mode==='daily') updateDailyGoal();
+  if(discCount()>SAVE.bestRun){ SAVE.bestRun=discCount(); }
+  refreshCosmeticUnlocks();
+}
+function flashDud(){ var s=$('pa-r'); s.className='slot res'; s.innerHTML='<div class="nm" style="color:var(--muted)">…no take</div>'; }
+function updateDailyGoal(){ var goal=$('pa-goal'); if(SAVE.dailyDone===todayStr()){ goal.innerHTML='Today’s recipe grown — streak '+SAVE.streak+' ⭐'; return; }
+  goal.innerHTML='Build today’s recipe: <b>'+EL[G.target][0]+'</b> '+EL[G.target][1]+' &nbsp;·&nbsp; steps '+G.steps; }
+function completeDaily(){ if(SAVE.dailyDone===todayStr()) return; var ts=todayStr();
+  // streak
+  var y=new Date(Date.now()-864e5); var ystr=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
+  SAVE.streak = (SAVE.lastDaily===ystr)? (SAVE.streak+1) : 1; SAVE.lastDaily=ts; SAVE.dailyDone=ts; save();
+  var g=earn(2,'petalalchemy:daily'); sfxBloom(); toast('Daily recipe grown! +'+g+' ☀ · streak '+SAVE.streak); }
+function checkHunt(){ var h=G.hunt; if(!h||SAVE.hunts[h.id])return; var done=false;
+  if(h.need==='anyTB'){ done=bloomCount()>0; }
+  else { done=true; for(var i=0;i<h.need.length;i++){ if(!SAVE.disc[h.need[i]]){ done=false; break; } } }
+  if(done){ SAVE.hunts[h.id]=1; save(); var g=earn(2,'petalalchemy:hunt'); sfxBloom(); toast('Quest complete: '+h.nm+' +'+g+' ☀'); renderHuntGoal(); }
+}
+
+/* ---------- keepsake canvas (self-contained procedural bloom) ---------- */
+function drawBloom(cv,id){ var g=cv.getContext('2d'); var W=cv.width,H=cv.height; g.clearRect(0,0,W,H);
+  var seed=0,i; for(i=0;i<id.length;i++) seed=(seed*31+id.charCodeAt(i))>>>0; var r=rng(seed);
+  var cx=W/2, cy=H*0.55; var petals=5+Math.floor(r()*5); var pr=Math.min(W,H)*0.30;
+  var hues=[[229,143,160],[200,168,75],[123,179,86],[91,155,213],[181,125,224]];
+  var col=hues[Math.floor(r()*hues.length)]; var col2=hues[Math.floor(r()*hues.length)];
+  // stem
+  g.strokeStyle='#5c8f3f'; g.lineWidth=3; g.beginPath(); g.moveTo(cx,cy); g.lineTo(cx,H-6); g.stroke();
+  g.fillStyle='#5c8f3f'; g.beginPath(); g.ellipse(cx-8,H-20,7,3,-0.5,0,7); g.ellipse(cx+8,H-26,7,3,0.5,0,7); g.fill();
+  // petals
+  for(i=0;i<petals;i++){ var a=Math.PI*2*i/petals - Math.PI/2; var px=cx+Math.cos(a)*pr*0.7, py=cy+Math.sin(a)*pr*0.7;
+    g.fillStyle='rgb('+col[0]+','+col[1]+','+col[2]+')'; g.beginPath(); g.ellipse(px,py,pr*0.5,pr*0.32,a,0,7); g.fill(); }
+  g.fillStyle='rgb('+col2[0]+','+col2[1]+','+col2[2]+')'; g.beginPath(); g.arc(cx,cy,pr*0.42,0,7); g.fill();
+  g.fillStyle='#ffe9a8'; g.beginPath(); g.arc(cx,cy,pr*0.2,0,7); g.fill();
+}
+function mintKeepsakeFx(id){ /* keepsake is stored in SAVE.blooms already; fx handled by toast */ }
+
+/* ---------- cosmetics ---------- */
+var FRAMES=[ {id:'plain',nm:'Sage',ic:'🟩',need:0,t:'default'},
+  {id:'brass',nm:'Brass',ic:'🟫',need:20,t:'20 discovered'},
+  {id:'pressed',nm:'Pressed Flower',ic:'🌼',need:50,t:'50 discovered'},
+  {id:'stained',nm:'Stained Glass',ic:'🔮',need:90,t:'90 discovered'} ];
+var LOGS=[ {id:'sage',nm:'Sage',ic:'📗',need:0,t:'default'},
+  {id:'parch',nm:'Parchment',ic:'📜',need:2,t:'2 True Blooms'},
+  {id:'gilt',nm:'Gilt',ic:'📖',need:4,t:'4 True Blooms'} ];
+function unlocked(kind,it){ if(kind==='frame') return discCount()>=it.need; return bloomCount()>=it.need; }
+function refreshCosmeticUnlocks(){ /* thresholds are checked live in wardrobe render */ }
+function renderWard(){ var fh=$('ward-frames'); fh.innerHTML=''; var i;
+  for(i=0;i<FRAMES.length;i++){ (function(it){ var un=unlocked('frame',it); var c=document.createElement('div');
+    c.className='wardcard'+(un?'':' locked')+(SAVE.frame===it.id?' on':'');
+    c.innerHTML='<div class="wi">'+it.ic+'</div><div class="wn">'+it.nm+'</div><div class="wt">'+(un?(SAVE.frame===it.id?'Equipped':'Tap to equip'):it.t)+'</div>';
+    if(un) c.addEventListener('click',function(){ SAVE.frame=it.id; save(); renderWard(); }); fh.appendChild(c); })(FRAMES[i]); }
+  var lh=$('ward-logs'); lh.innerHTML='';
+  for(i=0;i<LOGS.length;i++){ (function(it){ var un=unlocked('log',it); var c=document.createElement('div');
+    c.className='wardcard'+(un?'':' locked')+(SAVE.log===it.id?' on':'');
+    c.innerHTML='<div class="wi">'+it.ic+'</div><div class="wn">'+it.nm+'</div><div class="wt">'+(un?(SAVE.log===it.id?'Equipped':'Tap to equip'):it.t)+'</div>';
+    if(un) c.addEventListener('click',function(){ SAVE.log=it.id; save(); renderWard(); }); lh.appendChild(c); })(LOGS[i]); }
+}
+function renderGrove(){ var host=$('grove-wrap'); host.innerHTML=''; var n=SAVE.blooms.length;
+  $('grove-sub').textContent = n? ('You have grown '+n+' True Bloom keepsake'+(n===1?'':'s')+'.') : 'Alchemize the rare chains to grow keepsake blooms here.';
+  for(var i=0;i<n;i++){ (function(id){ var c=document.createElement('div'); c.className='gkeep';
+    var cv=document.createElement('canvas'); cv.width=110; cv.height=90; drawBloom(cv,id); c.appendChild(cv);
+    var nm=document.createElement('div'); nm.className='kn'; nm.textContent=EL[id]?EL[id][0]:id; c.appendChild(nm); host.appendChild(c); })(SAVE.blooms[i]); }
+  if(n===0){ var e=document.createElement('div'); e.style.cssText='color:var(--muted);font-size:14px;padding:20px'; e.textContent='— no keepsakes yet —'; host.appendChild(e); }
+}
+
+/* ---------- wiring ---------- */
+function wireToggle(id,k){ var el=$(id); function paint(){ if(SET[k])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  el.addEventListener('click',function(e){ e.preventDefault(); SET[k]=!SET[k]; paint(); saveSet(); }); }
+tap('b-free',function(){ startMode('free'); });
+tap('b-daily',function(){ startMode('daily'); });
+tap('b-hunt',function(){ startMode('hunt'); });
+tap('b-zen',function(){ startMode('zen'); });
+tap('b-grove',function(){ renderGrove(); show('s-grove'); });
+tap('grove-back',function(){ show('s-title'); });
+tap('b-ward',function(){ renderWard(); show('s-ward'); });
+tap('ward-back',function(){ show('s-title'); });
+tap('b-how',function(){ show('s-how'); });
+tap('how-back',function(){ show('s-title'); });
+tap('b-set',function(){ show('s-set'); });
+tap('set-back',function(){ show('s-title'); });
+tap('pa-back',function(){ show('s-title'); });
+tap('pa-log',function(){ renderGrove(); show('s-grove'); });
+tap('pa-a',function(){ G.a=null; renderTray(); });
+tap('pa-b',function(){ G.b=null; renderTray(); });
+tap('pa-r',function(){ if(G.r){ G.a=G.r; G.b=null; G.r=null; renderTray(); } });
+tap('pa-again',function(){ if(G.a&&G.b) doCombine(); });
+$('pa-search').addEventListener('input',function(){ renderShelf(this.value.toLowerCase()); });
+wireToggle('tg-sound','sound'); wireToggle('tg-labels','labels');
+$('buildstamp').textContent='Petal Alchemy '+BUILD+' · '+discCount()+' discovered';
+
+/* ---------- test hook ---------- */
+if(TESTMODE){
+  window.PA_DEV={
+    start:function(m){ startMode(m||'free'); },
+    state:function(){ var tb=0,k; for(k in SAVE.disc) if(isTB(k))tb++; return { discovered:Object.keys(SAVE.disc), count:discCount(), trueBlooms:tb, phase:curScreen, mode:G.mode, target:G.target }; },
+    combine:function(a,b){ var r=combineIds(a,b); if(r) discover(r); return r; },
+    autoplay:function(){ var ids=[],k; for(k in SAVE.disc) ids.push(k); var changed=true,guard=0;
+      while(changed && guard++<200){ changed=false; for(var i=0;i<ids.length;i++)for(var j=i;j<ids.length;j++){ var r=REC[key(ids[i],ids[j])]; if(r&&!SAVE.disc[r]){ discover(r); ids.push(r); changed=true; } } } return discCount(); },
+    discoverCheck:function(){ var have={},ids=[],i; for(i=0;i<PRIMS.length;i++){ have[PRIMS[i]]=1; ids.push(PRIMS[i]); }
+      var changed=true,guard=0; while(changed && guard++<300){ changed=false; for(i=0;i<ids.length;i++)for(var j=i;j<ids.length;j++){ var r=REC[key(ids[i],ids[j])]; if(r&&!have[r]){ have[r]=1; ids.push(r); changed=true; } } }
+      var tb=0,orphan=[],k; for(k in EL){ if(!have[k]) orphan.push(k); if(have[k]&&isTB(k))tb++; }
+      return { discovered:ids.length, totalElements:Object.keys(EL).length, totalRecipes:Object.keys(REC).length, trueBlooms:tb, orphans:orphan }; }
+  };
+}
+})();
+</script>
+</body>
+</html>
