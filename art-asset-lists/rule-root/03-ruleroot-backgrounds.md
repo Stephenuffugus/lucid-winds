@@ -1,0 +1,11 @@
+<!-- Rule Root · Sheet 3: Backgrounds — board gardens + title, full-bleed portrait -->
+<!-- Copy everything below into your image generator to make this ONE sheet. -->
+
+STYLE — "Illuminated Herbal" (Rule Root / Sky Wolf Studios manuscript puzzle-garden). A medieval herbal manuscript opened on a midnight writing desk; backgrounds are the desk and the page the garden grows on. Deep, calm, low-contrast so vellum tiles and inked objects pop on top. One soft candle-warm key from upper-left, parchment grain, faint marginalia flourishes at the edges ONLY (the center must stay quiet for the grid). Palette: midnight void #0d100c / #0b0f0b, night soil #11150e / #0a0d09, moss library #0e1a14 / #081009, dawn terrace #1d1512 / #0f0a08, grid line tints #1c2418 / #1b3324 / #33241c, ink #241c08, cream #e8dcc8, sage #7ab356, gold #c8a84b, gilt #ffe9a8. Soft cel + paper grain, NO photoreal, NO text/letters/numbers/logos/watermarks. Compress under 150KB per image.
+
+Create one sheet of FULL-BLEED PORTRAIT PANELS. File: rr_bg.png. Layout: 2 columns x 2 rows, each panel exactly 540x960 (master 1080x1920). NO magenta anywhere on this sheet — these are opaque full-bleed backgrounds, no knockout needed. Nothing important in the outer 24px of any panel (safe-area). The middle 70% of each board panel must stay quiet and even — the puzzle grid renders there.
+
+1. bg_night_soil (equipped default) — the midnight desk garden: near-black soil page #11150e fading to #0a0d09, the faintest candle warmth upper-left, one or two tiny inked moths at the very edges, whisper-faint marginalia vines in the outer margins only.
+2. bg_moss_library — a mossy reading-room deep green #0e1a14 to #081009, edge shelves of blurred herbal folios at top corners, a hint of hanging ivy in the outer margins, cool and hushed.
+3. bg_dawn_terrace — pre-dawn warmth #1d1512 to #0f0a08, a thin honey #c8a84b horizon glow along the very top edge, faint terracotta pots silhouetted in the bottom corners.
+4. bg_title — the game's title screen: the manuscript garden at full glory — an open vellum book at bottom center with a tiny inked sprout growing out of its gutter, gold-leaf root tendrils curling from the spine, midnight garden around it, candle-warm key light; leave the middle-upper third quiet for the engine-rendered title and menu buttons. NO lettering.
