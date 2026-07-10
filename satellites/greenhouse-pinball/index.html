@@ -136,7 +136,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v1.2';
+var BUILD='v1.3';
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
@@ -210,8 +210,31 @@ function buildShots(){ SHOTS=[
   {id:'d1', type:'drop', x:165, y:572, r:10, down:false, lamp:1, value:1000, cd:0},
   {id:'d2', type:'drop', x:200, y:578, r:10, down:false, lamp:1, value:1000, cd:0},
   // Compost Heap scoop (captures the bead, then ejects toward the left flipper)
-  {id:'scoop', type:'scoop', x:330, y:600, r:15, lamp:0, value:15000, cd:0}
+  {id:'scoop', type:'scoop', x:330, y:600, r:15, lamp:0, value:15000, cd:0},
+  // Ramps + orbits — RAISED lanes: the bead detaches from physics and tweens along a
+  // path (a top-down engine can't sim a Z incline), then re-injects at an inlane. thr
+  // = min throat speed to "make" it (generous — no FX phantom rejects); else it passes.
+  {id:'fern',    type:'ramp',  x:110,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5,
+    path:[[110,410],[92,300],[130,160],[300,145],[400,320],[360,760]], exit:{x:360,y:760,vx:-40,vy:280}},
+  {id:'trellis', type:'ramp',  x:440,y:410, er:17, tx:0,ty:-1, thr:520, value:2500, cd:0, dur:0.5,
+    path:[[440,410],[448,300],[410,160],[240,145],[140,320],[180,760]], exit:{x:180,y:760,vx:40,vy:280}},
+  {id:'lorbit',  type:'orbit', x:75, y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
+    path:[[75,635],[68,320],[120,140],[300,125],[430,240],[452,560],[400,760]], exit:{x:400,y:760,vx:-30,vy:300}},
+  {id:'rorbit',  type:'orbit', x:455,y:635, er:18, tx:0,ty:-1, thr:560, value:3000, cd:0, dur:0.6,
+    path:[[455,635],[462,320],[410,140],[230,125],[100,240],[78,560],[140,760]], exit:{x:140,y:760,vx:30,vy:300}},
+  // Dandelion spinner — pass-through: crossing it spawns a decaying score rip
+  {id:'spinner', type:'spinner', x:265,y:250, r:16, value:800, cd:0}
 ]; }
+// Six Garden Quests — started at the Compost scoop; complete a set of lit shots
+// before the timer. Completing ALL SIX in one game lights FULL BLOOM (the wizard).
+var QUESTS=[
+  {name:'Seedling Sprint', blurb:'Shoot both ramps',        need:{fern:1,trellis:1},                  timer:28, award:250000},
+  {name:'Pollen Trail',    blurb:'Rip the spinner x3',       need:{spinner:3},                         timer:26, award:300000},
+  {name:'Root Network',    blurb:'Loop both orbits',         need:{lorbit:1,rorbit:1},                 timer:30, award:400000},
+  {name:'Sun Chase',       blurb:'Hit all four flow shots',  need:{fern:1,trellis:1,lorbit:1,rorbit:1},timer:36, award:500000},
+  {name:'Thorn Guard',     blurb:'Collect B-L-O-O-M',        need:{sB:1,sL:1,sO1:1,sO2:1,sM:1},        timer:26, award:600000},
+  {name:'Nectar Flow',     blurb:'Hit six lit shots',        need:{any:6},                             timer:40, award:750000}
+];
 
 /* ===== game state ===== */
 var G=null, cv, ctx, running=false, lastTs=0;
@@ -233,7 +256,8 @@ function newGame(mode){
   G={ mode:mode, rng:rng, balls:[], score:0, growth:0, blooms:0, combo:0, bestCombo:0, mult:1, ball:1, maxBall:mode==='classic'||mode==='daily'?3:99,
       awaitLaunch:false, plunge:0, plungeHold:false, skillLit:-1, skillWin:0, skillDone:false,
       tilt:0, tiltOut:0, tiltWarned:false, nudgeCd:0, jolt:0, joltDir:0,
-      word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, dropResetT:0,
+      word:0, lockLit:false, scoopLit:false, scoopBall:null, scoopHold:0, scoopAward:0, scoopWasLit:false, scoopMode:'mystery', dropResetT:0,
+      quest:null, questsDone:[false,false,false,false,false,false], wizard:false, wizardReady:false, wizJackpots:0, wizSave:0, spin:null, introT:0, spinnerMult:1,
       netTime:0, netFlash:0, multiball:false, mbTime:0, parts:[], floats:[], t:0, slow:1, flash:0, shake:0, phase:'play', bg:sway() };
   serveBall(); show('s-play');
 }
@@ -280,7 +304,7 @@ function physics(dt){
   var SUB=8, h=(dt*G.slow)/SUB, i, s, b;
   stepFlipper(LFLIP,dt*G.slow); stepFlipper(RFLIP,dt*G.slow);
   for(s=0;s<SUB;s++){
-    for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(b.inLane||b.captured){ continue; } // held: pre-launch or scooped
+    for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail){ continue; } // held: pre-launch, scooped, or on a ramp
       b.vy+=GRAV*h; b.vx*=0.9992; b.vy*=0.9992; b.x+=b.vx*h; b.y+=b.vy*h;   // mild drag bleeds energy so the ball works down to the flippers
       var sp=Math.sqrt(b.vx*b.vx+b.vy*b.vy); if(sp>1600){ b.vx*=1600/sp; b.vy*=1600/sp; }
       for(var w=0;w<WALLS.length;w++) segHit(b,WALLS[w],0.36);
@@ -290,6 +314,8 @@ function physics(dt){
         if(sh.type==='standup'){ if(circHit(b,sh,0.7,0)) onStandup(sh); }
         else if(sh.type==='drop'){ if(!sh.down && circHit(b,sh,0.5,0)) onDrop(sh); }
         else if(sh.type==='scoop'){ var sdx=b.x-sh.x,sdy=b.y-sh.y; if(sdx*sdx+sdy*sdy<sh.r*sh.r && !G.scoopBall) onScoop(b,sh); }
+        else if(sh.type==='ramp'||sh.type==='orbit'){ if(!b.onRail){ var rdx=b.x-sh.x,rdy=b.y-sh.y; if(rdx*rdx+rdy*rdy<sh.er*sh.er){ var vd=b.vx*sh.tx+b.vy*sh.ty; if(vd>=sh.thr) enterRail(b,sh); } } }
+        else if(sh.type==='spinner'){ var pdx=b.x-sh.x,pdy=b.y-sh.y; if(pdx*pdx+pdy*pdy<sh.r*sh.r && sh.cd<=0) onSpinner(sh,Math.sqrt(b.vx*b.vx+b.vy*b.vy)); }
       }
       if(G.tiltOut<=0){ flipHit(b,LFLIP); flipHit(b,RFLIP); }   // TILT kills the flippers
     }
@@ -297,9 +323,10 @@ function physics(dt){
   // trails
   for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(!b.trail)b.trail=[]; b.trail.push({x:b.x,y:b.y}); if(b.trail.length>6)b.trail.shift(); }
   // drain check
-  for(i=G.balls.length-1;i>=0;i--){ b=G.balls[i]; if(b.inLane||b.captured)continue;
-    if(b.y>DRAINY){ // moss net save?
-      if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; b.y=DRAINY-30; b.vy=-620; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
+  for(i=G.balls.length-1;i>=0;i--){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
+    if(b.y>DRAINY){ // wizard ball-save > moss net save > drain
+      if(G.wizard && G.wizSave>0){ b.y=DRAINY-30; b.vy=-720; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'ball saved'); }
+      else if(G.netTime>0 && !G.multiball){ G.netTime=0; G.netFlash=1; b.y=DRAINY-30; b.vy=-620; b.vx*=0.4; sfx('save'); float(b.x,DRAINY-40,'moss save!'); haptic(14); }
       else { drainBall(i); }
     }
   }
@@ -356,20 +383,64 @@ function comboHit(x,y){ G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo; G
   if(G.combo>=3){ float(x,y-26,'COMBO x'+G.combo); } }
 function onStandup(sh){ if(sh.cd>0)return; sh.cd=0.3; sh.lamp=2;
   var pts=Math.round(sh.value*G.mult*(G.multiball?2:1)); G.score+=pts;
-  G.word|=(1<<sh.letter); comboHit(sh.x,sh.y);
+  G.word|=(1<<sh.letter); comboHit(sh.x,sh.y); questShot(sh.id);
   burst(sh.x,sh.y,4,'#e58fa0'); float(sh.x,sh.y-sh.r-4,'+'+pts); sfx('bump',G.combo); haptic(5);
   if(G.word===0x1F){ G.score+=5000; G.lockLit=true; G.word=0;
     float(265,224,'B·L·O·O·M!'); float(265,250,'+5000 · LOCK LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20);
     for(var i=0;i<SHOTS.length;i++)if(SHOTS[i].type==='standup')SHOTS[i].lamp=1; } }
 function onDrop(sh){ if(sh.down||sh.cd>0)return; sh.cd=0.2; sh.down=true; sh.lamp=0;
   var pts=Math.round(sh.value*G.mult*(G.multiball?2:1)); G.score+=pts;
-  comboHit(sh.x,sh.y); burst(sh.x,sh.y,3,'#b57de0'); float(sh.x,sh.y-sh.r-4,'+'+pts); sfx('sling'); haptic(4);
+  comboHit(sh.x,sh.y); questShot(sh.id); burst(sh.x,sh.y,3,'#b57de0'); float(sh.x,sh.y-sh.r-4,'+'+pts); sfx('sling'); haptic(4);
   var allDown=true, i; for(i=0;i<SHOTS.length;i++){ if(SHOTS[i].type==='drop' && !SHOTS[i].down)allDown=false; }
   if(allDown){ G.score+=10000; G.scoopLit=true; G.dropResetT=0.5;
     float(165,548,'THISTLE BANK!'); float(165,574,'+10000 · SCOOP LIT'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); haptic(20); } }
 function onScoop(b,sh){ b.captured=true; b.vx=0; b.vy=0; b.x=sh.x; b.y=sh.y;
-  G.scoopBall=b; G.scoopHold=1.0; G.scoopAward=G.scoopLit?25000:15000; G.scoopWasLit=!!G.scoopLit; G.scoopLit=false; sh.lamp=0;
+  G.scoopBall=b; G.scoopHold=1.0; G.scoopWasLit=!!G.scoopLit; G.scoopLit=false; sh.lamp=0;
+  var allDone=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])allDone=false;
+  if(G.wizardReady) G.scoopMode='wizard';
+  else if(G.scoopWasLit && !allDone && !G.quest) G.scoopMode='quest';
+  else { G.scoopMode='mystery'; G.scoopAward=G.scoopWasLit?25000:15000; }
   sfx('save'); haptic(18); }
+
+/* ===== ramps/orbits — detach-and-tween rail (P1 flow) ===== */
+function pathLen(path){ var t=0,i; for(i=0;i<path.length-1;i++){ var dx=path[i+1][0]-path[i][0],dy=path[i+1][1]-path[i][1]; t+=Math.sqrt(dx*dx+dy*dy); } return t; }
+function pathPoint(path,t){ var total=pathLen(path), d=t*total, acc=0,i;
+  for(i=0;i<path.length-1;i++){ var dx=path[i+1][0]-path[i][0],dy=path[i+1][1]-path[i][1],L=Math.sqrt(dx*dx+dy*dy);
+    if(acc+L>=d || i===path.length-2){ var f=L>0?(d-acc)/L:0; if(f<0)f=0; if(f>1)f=1; return [path[i][0]+dx*f, path[i][1]+dy*f]; } acc+=L; }
+  return [path[path.length-1][0], path[path.length-1][1]]; }
+function enterRail(b,sh){ b.onRail=sh.id; b.railPath=sh.path; b.railT=0; b.railDur=sh.dur; b.railExit=sh.exit; scoreShot(sh); sfx('launch'); }
+function scoreShot(sh){ if(sh.cd>0)return; sh.cd=0.15;
+  if(G.wizard){ var jp=1000000; G.score+=jp; G.wizJackpots++; float(sh.x,sh.y-20,'JACKPOT +1M'); sfx('bloom'); G.flash=Math.max(G.flash,0.5); G.shake=Math.max(G.shake,7);
+    if(G.wizJackpots>=12)endWizard(); return; }
+  var pts=Math.round(sh.value*G.mult*(G.multiball?2:1)); G.score+=pts; comboHit(sh.x,sh.y); float(sh.x,sh.y-20,'+'+pts); sfx('bump',G.combo); questShot(sh.id); }
+function onSpinner(sh,spd){ scoreShot(sh); var rot=Math.floor(spd/70); if(rot<1)rot=1;
+  G.spin={ n:rot, done:0, x:sh.x, y:sh.y, val:800, ang:0, w:spd/60, tickT:0.05 }; }
+
+/* ===== Garden Quests + FULL BLOOM wizard (P1 depth) ===== */
+function startQuest(i){ var q=QUESTS[i]; G.quest={ idx:i, name:q.name, blurb:q.blurb, need:q.need, got:{}, timer:q.timer, tmax:q.timer, award:q.award };
+  G.introT=1.4; G.slow=0.4; G.flash=Math.max(G.flash,0.4);
+  float(265,300,'QUEST: '+q.name); float(265,332,q.blurb); sfx('bloom'); haptic(20); }
+function questShot(id){ if(!G.quest)return; var q=G.quest, prog=false, k;
+  if(q.need[id]!=null){ q.got[id]=(q.got[id]||0)+1; prog=true; }
+  if(q.need.any!=null){ q.got.any=(q.got.any||0)+1; prog=true; }
+  if(!prog)return; var done=true; for(k in q.need){ if((q.got[k]||0)<q.need[k])done=false; }
+  if(done)completeQuest(); }
+function questLit(id){ if(G.wizard && (id==='fern'||id==='trellis'||id==='lorbit'||id==='rorbit'||id==='spinner'||id==='scoop'))return true;
+  if(!G.quest)return false; var q=G.quest;
+  if(q.need[id]!=null && (q.got[id]||0)<q.need[id])return true;
+  if(q.need.any!=null && (q.got.any||0)<q.need.any)return true; return false; }
+function completeQuest(){ var q=G.quest; G.score+=q.award; G.questsDone[q.idx]=true; G.quest=null;
+  float(265,300,q.name+' COMPLETE!'); float(265,332,'+'+q.award); sfx('bloom'); G.flash=Math.max(G.flash,0.7); G.shake=Math.max(G.shake,8); haptic(30);
+  var all=true,i; for(i=0;i<QUESTS.length;i++)if(!G.questsDone[i])all=false;
+  if(all){ G.wizardReady=true; G.scoopLit=true; float(265,362,'🌸 GREENHOUSE READY — SHOOT THE COMPOST HEAP'); } }
+function startWizard(){ G.wizard=true; G.wizJackpots=0; G.wizardReady=false; G.multiball=true; G.mbTime=999; G.slow=0.3; G.flash=1; G.shake=Math.max(G.shake,12);
+  G.awaitLaunch=false; G.plungeHold=false; G.scoopBall=null; G.quest=null;
+  G.balls=[]; for(var k=0;k<4;k++)G.balls.push({x:170+k*67,y:250,vx:(k-1.5)*90,vy:60,r:BALLR,inLane:false,trail:[]});
+  G.wizSave=12; float(265,300,'🌸 FULL BLOOM! 🌸'); float(265,334,'every shot = 1,000,000'); sfx('bloom'); haptic(40); }
+function endWizard(){ G.wizard=false; G.mbTime=5; var bonus=3000000; G.score+=bonus;
+  float(265,300,'FULL BLOOM COMPLETE'); float(265,334,'+'+bonus); sfx('bloom'); G.flash=1; G.shake=Math.max(G.shake,14); haptic(50);
+  for(var i=0;i<QUESTS.length;i++)G.questsDone[i]=false; G.wizardReady=false;
+  if(G.mode==='zen'){ try{ if(window._sbCapEarn)_sbCapEarn(4,'greenhousepinball:wizard'); }catch(e){} } }
 
 function burst(x,y,n,col){ for(var i=0;i<n;i++){ var a=Math.random()*6.28, sp=50+Math.random()*150; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,life:0.9,col:col}); } }
 function float(x,y,txt){ G.floats.push({x:x,y:y,txt:txt,life:1.3}); }
@@ -386,7 +457,22 @@ function step(dt){ if(!G)return; G.t+=dt;
   // shot cooldowns + drop-bank reset + scoop capture/eject
   for(var si=0;si<SHOTS.length;si++){ if(SHOTS[si].cd>0){ SHOTS[si].cd-=dt; if(SHOTS[si].cd<0)SHOTS[si].cd=0; } }
   if(G.dropResetT>0){ G.dropResetT-=dt; if(G.dropResetT<=0){ G.dropResetT=0; for(si=0;si<SHOTS.length;si++){ if(SHOTS[si].type==='drop'){ SHOTS[si].down=false; SHOTS[si].lamp=1; } } } }
-  if(G.scoopBall){ G.scoopHold-=dt; if(G.scoopHold<=0){ var sb=G.scoopBall; sb.captured=false; sb.vx=-260; sb.vy=-900; G.score+=G.scoopAward; float(sb.x,sb.y-24,'+'+G.scoopAward); sfx('launch'); haptic(12); G.scoopBall=null; } }
+  if(G.scoopBall){ G.scoopHold-=dt; if(G.scoopHold<=0){ var sb=G.scoopBall; sb.captured=false; sb.vx=-260; sb.vy=-900; sfx('launch'); haptic(12); G.scoopBall=null;
+    if(G.scoopMode==='wizard'){ startWizard(); }
+    else if(G.scoopMode==='quest'){ var qi=-1,qq; for(qq=0;qq<QUESTS.length;qq++){ if(!G.questsDone[qq]){ qi=qq; break; } } if(qi>=0)startQuest(qi); else { G.score+=15000; float(sb.x,sb.y-24,'+15000'); } }
+    else { G.score+=G.scoopAward; float(sb.x,sb.y-24,'+'+G.scoopAward); } } }
+  // rail (ramp/orbit) advance — tween the detached bead along its path, then inject at the exit
+  for(var ri=0;ri<G.balls.length;ri++){ var rb=G.balls[ri]; if(!rb.onRail)continue;
+    rb.railT+=dt/rb.railDur; if(rb.railT>=1){ rb.x=rb.railExit.x; rb.y=rb.railExit.y; rb.vx=rb.railExit.vx; rb.vy=rb.railExit.vy; rb.onRail=null; rb.railPath=null; sfx('save'); }
+    else { var pp=pathPoint(rb.railPath,rb.railT); rb.x=pp[0]; rb.y=pp[1]; } }
+  // spinner rip — decaying score ticks
+  if(G.spin){ G.spin.ang+=G.spin.w*dt*6; G.spin.w*=Math.pow(0.5,dt); G.spin.tickT-=dt;
+    if(G.spin.tickT<=0 && G.spin.done<G.spin.n){ G.spin.done++; var spts=Math.round(G.spin.val*(G.spinnerMult||1)*G.mult); G.score+=spts; sfx('bump',G.spin.done); G.spin.tickT=0.045+0.012*G.spin.done;
+      if(G.spin.done>=G.spin.n){ float(G.spin.x,G.spin.y-22,'SPIN +'+(G.spin.n*G.spin.val)); G.spin=null; } } }
+  // quest timer, mode-intro dim, wizard ball-save countdown
+  if(G.quest){ G.quest.timer-=dt; if(G.quest.timer<=0){ float(265,300,G.quest.name+' timed out'); sfx('drain'); G.quest=null; } }
+  if(G.introT>0){ G.introT-=dt; if(G.introT<0)G.introT=0; }
+  if(G.wizard && G.wizSave>0){ G.wizSave-=dt; if(G.wizSave<0)G.wizSave=0; }
   if(G.multiball){ G.mbTime-=dt; if(G.mbTime<=0 && G.balls.length<=1)G.multiball=false; }
   if(G.netTime>0 && G.netTime<900){ G.netTime-=dt; if(G.netTime<0)G.netTime=0; }
   if(G.comboT!=null){ G.comboT-=dt; if(G.comboT<=0){ G.combo=0; G.mult=1; G.comboT=null; } }
@@ -444,7 +530,9 @@ function render(){ if(!ctx||!G)return;
   // balls + trails
   for(var i=0;i<G.balls.length;i++){ var b=G.balls[i];
     if(b.trail)for(var tI=0;tI<b.trail.length;tI++){ var tp=b.trail[tI]; ctx.globalAlpha=(tI/b.trail.length)*0.4; ctx.fillStyle='#f2d98a'; ctx.beginPath(); ctx.arc(tp.x,tp.y,b.r*0.7,0,7); ctx.fill(); } ctx.globalAlpha=1;
-    var bg2=ctx.createRadialGradient(b.x-3,b.y-3,1,b.x,b.y,b.r); bg2.addColorStop(0,'#fff6d8'); bg2.addColorStop(0.6,'#e8c65a'); bg2.addColorStop(1,'#a5872f'); ctx.fillStyle=bg2; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); }
+    var br=b.onRail?b.r*1.2:b.r;
+    if(b.onRail){ ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.arc(b.x+5,b.y+9,br,0,7); ctx.fill(); }  // fake height shadow on a ramp
+    var bg2=ctx.createRadialGradient(b.x-3,b.y-3,1,b.x,b.y,br); bg2.addColorStop(0,'#fff6d8'); bg2.addColorStop(0.6,'#e8c65a'); bg2.addColorStop(1,'#a5872f'); ctx.fillStyle=bg2; ctx.beginPath(); ctx.arc(b.x,b.y,br,0,7); ctx.fill(); }
   // particles
   for(i=0;i<G.parts.length;i++){ var p=G.parts[i]; ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,2.8,0,7); ctx.fill(); } ctx.globalAlpha=1;
   // floats
@@ -452,11 +540,19 @@ function render(){ if(!ctx||!G)return;
   for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life)); ctx.fillStyle='#f5ebd0'; ctx.fillText(f.txt,f.x,f.y); } ctx.globalAlpha=1;
   ctx.restore();
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.6,G.flash); ctx.fillStyle='#fff4c8'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
+  if(G.wizard){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.035+0.03*Math.sin(G.t*3); ctx.fillStyle='#6b5a1e'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }  // FULL BLOOM golden GI
   // HUD
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 28px system-ui'; ctx.fillText(''+G.score, 16, 40);
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY BLOOM':G.mode==='zen'?'ZEN GREENHOUSE':('BALL '+G.ball+'/'+G.maxBall), 18, 56);
-  if(G.mult>1){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 24px system-ui'; ctx.fillText('×'+G.mult,VW/2,44); }
-  // growth ribbon (right rail)
+  if(G.mult>1){ ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 22px system-ui'; ctx.fillText('×'+G.mult,VW-16,40); }
+  // quest / wizard banner
+  if(G.wizard){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 17px system-ui'; ctx.fillText('🌸 FULL BLOOM · '+G.wizJackpots+'/12', VW/2, 80); }
+  else if(G.quest){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 14px system-ui'; ctx.fillText(G.quest.name.toUpperCase(), VW/2, 72);
+    ctx.fillStyle='#8a9178'; ctx.font='700 11px system-ui'; ctx.fillText(G.quest.blurb, VW/2, 88);
+    var qtw=200, qtf=Math.max(0,G.quest.timer/G.quest.tmax); ctx.fillStyle='rgba(20,28,18,0.6)'; ctx.fillRect(VW/2-qtw/2,94,qtw,6);
+    ctx.fillStyle=qtf<0.25?'#e5604d':'#7ab356'; ctx.fillRect(VW/2-qtw/2,94,qtw*qtf,6); }
+  else if(G.wizardReady){ ctx.textAlign='center'; ctx.fillStyle='#f2d98a'; ctx.font='800 13px system-ui'; ctx.fillText('GREENHOUSE READY — SHOOT THE SCOOP', VW/2, 78); }
+  // growth ribbon (left rail)
   drawGrowth();
   // launch prompt
   if(G.awaitLaunch){ ctx.textAlign='center'; ctx.globalAlpha=0.55+0.35*Math.sin(G.t*4); ctx.fillStyle='#c8a84b'; ctx.font='800 16px system-ui';
@@ -481,7 +577,19 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
     } else if(sh.type==='scoop'){ var slit=G.scoopLit;
       ctx.fillStyle='#080b06'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.fill();
       ctx.strokeStyle=slit?('rgba(200,168,75,'+(0.45+0.5*fl)+')'):'rgba(60,80,50,0.7)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.stroke();
-      if(slit){ ctx.shadowColor='rgba(200,168,75,0.7)'; ctx.shadowBlur=12*fl; ctx.fillStyle='rgba(200,168,75,'+(0.3+0.3*fl)+')'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.55,0,7); ctx.fill(); ctx.shadowBlur=0; } }
+      if(slit){ ctx.shadowColor='rgba(200,168,75,0.7)'; ctx.shadowBlur=12*fl; ctx.fillStyle='rgba(200,168,75,'+(0.3+0.3*fl)+')'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.55,0,7); ctx.fill(); ctx.shadowBlur=0; }
+    } else if(sh.type==='ramp'||sh.type==='orbit'){ var qlit=questLit(sh.id), isR=sh.type==='ramp';
+      ctx.lineJoin='round'; ctx.lineCap='round';
+      ctx.strokeStyle=isR?'rgba(122,179,86,0.20)':'rgba(143,208,224,0.18)'; ctx.lineWidth=13;
+      ctx.beginPath(); ctx.moveTo(sh.path[0][0],sh.path[0][1]); for(var pi=1;pi<sh.path.length;pi++)ctx.lineTo(sh.path[pi][0],sh.path[pi][1]); ctx.stroke();
+      if(qlit){ ctx.strokeStyle=isR?('rgba(200,168,75,'+(0.35+0.4*fl)+')'):('rgba(143,208,224,'+(0.4+0.45*fl)+')'); ctx.lineWidth=4; ctx.stroke(); }
+      ctx.save(); ctx.translate(sh.x,sh.y); ctx.fillStyle=qlit?('rgba(255,246,210,'+(0.6+0.4*fl)+')'):(isR?'rgba(122,179,86,0.75)':'rgba(143,208,224,0.75)');
+      ctx.beginPath(); ctx.moveTo(-8,7); ctx.lineTo(0,-8); ctx.lineTo(8,7); ctx.lineTo(0,2); ctx.closePath(); ctx.fill(); ctx.restore();
+    } else if(sh.type==='spinner'){ var qs=questLit('spinner'), ang=G.spin?G.spin.ang:G.t*0.7;
+      ctx.save(); ctx.translate(sh.x,sh.y);
+      ctx.strokeStyle=qs?('rgba(200,168,75,'+(0.5+0.4*fl)+')'):'rgba(232,220,200,0.45)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(0,0,sh.r,0,7); ctx.stroke();
+      ctx.strokeStyle=qs?'#f2d98a':'#e8dcc8'; ctx.lineWidth=3.5; var cw=Math.cos(ang)*sh.r*0.82, sw=Math.sin(ang)*sh.r*0.82;
+      ctx.beginPath(); ctx.moveTo(-cw,-sw); ctx.lineTo(cw,sw); ctx.stroke(); ctx.restore(); }
   }
   ctx.restore(); }
 function drawBumper(o,body,core){ var lit=Math.max(0,o.lit);
@@ -596,7 +704,22 @@ if(/[?&]gptest=1/.test(location.search)){
     tiltState:function(){ return G?{tilt:Math.round(G.tilt),tiltOut:G.tiltOut,warned:!!G.tiltWarned}:null; },
     // ---- P1 shot probes ----
     hitShot:function(id){ if(!G)return null; for(var i=0;i<SHOTS.length;i++){ if(SHOTS[i].id===id){ var sh=SHOTS[i]; sh.cd=0;
-      if(sh.type==='standup')onStandup(sh); else if(sh.type==='drop')onDrop(sh); return {score:G.score,word:G.word,lockLit:!!G.lockLit,lamp:sh.lamp,down:!!sh.down,scoopLit:!!G.scoopLit}; } } return null; },
+      if(sh.type==='standup')onStandup(sh); else if(sh.type==='drop')onDrop(sh);
+      else if(sh.type==='ramp'||sh.type==='orbit')scoreShot(sh);
+      else if(sh.type==='spinner'){ var s0=G.score; onSpinner(sh,1200); for(var z=0;z<300 && G.spin;z++)step(0.02); return {score:G.score,ripped:G.score-s0,wizard:!!G.wizard,jackpots:G.wizJackpots}; }
+      return {score:G.score,word:G.word,lockLit:!!G.lockLit,lamp:sh.lamp,down:!!sh.down,scoopLit:!!G.scoopLit,wizard:!!G.wizard,jackpots:G.wizJackpots}; } } return null; },
+    // ---- ramp entry via a live launched ball ----
+    railShot:function(id){ if(!G)return null; var sh=null,i; for(i=0;i<SHOTS.length;i++)if(SHOTS[i].id===id)sh=SHOTS[i]; if(!sh)return null;
+      var b=G.balls[0]||{r:BALLR,trail:[]}; if(!G.balls[0])G.balls.push(b);
+      b.inLane=false; b.captured=false; b.onRail=null; b.x=sh.x; b.y=sh.y; b.vx=sh.tx*(sh.thr+120); b.vy=sh.ty*(sh.thr+120);
+      var entered=false; for(i=0;i<6;i++){ step(0.016); if(G.balls[0]&&G.balls[0].onRail){ entered=true; break; } }
+      var exitOK=false; for(i=0;i<80 && G.balls[0];i++){ step(0.016); if(G.balls[0] && !G.balls[0].onRail){ exitOK=true; break; } }
+      var eb=G.balls[0]; return {entered:entered, exited:exitOK, exitX:eb?Math.round(eb.x):null, exitY:eb?Math.round(eb.y):null}; },
+    // ---- quests + wizard ----
+    startQuest:function(i){ if(!G)return null; startQuest(i||0); return this.questState(); },
+    questState:function(){ if(!G)return null; return G.quest?{name:G.quest.name,timer:Math.round(G.quest.timer*10)/10,got:G.quest.got,questsDone:G.questsDone.slice()}:{quest:null,questsDone:G.questsDone.slice(),wizardReady:!!G.wizardReady}; },
+    forceWizard:function(){ if(!G)return null; var i; for(i=0;i<QUESTS.length;i++)G.questsDone[i]=true; G.wizardReady=true; startWizard(); return this.wizardState(); },
+    wizardState:function(){ if(!G)return null; return {ready:!!G.wizardReady,wizard:!!G.wizard,jackpots:G.wizJackpots,balls:G.balls.length,questsDone:G.questsDone.slice()}; },
     setScoopLit:function(v){ if(G)G.scoopLit=!!v; return G?G.scoopLit:null; },
     wordState:function(){ return G?{word:G.word,lockLit:!!G.lockLit}:null; },
     dropState:function(){ var out=[],i; for(i=0;i<SHOTS.length;i++)if(SHOTS[i].type==='drop')out.push(!!SHOTS[i].down); return {down:out,scoopLit:!!G.scoopLit,resetT:Math.round((G.dropResetT||0)*100)/100}; },
