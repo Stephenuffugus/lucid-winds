@@ -1,0 +1,30 @@
+<!-- Plot Bloom · Sheet 1: Classic Piece Miniatures — the seven silhouette-distinct garden pieces + turf base + placement glows -->
+<!-- Copy everything below into your image generator to make this ONE sheet. -->
+
+STYLE — "Skyshard Isles" (Plot Bloom / Sky Wolf Studios cozy floating-garden placement puzzle). Chunky toy-like garden miniatures perched on small floating turf shards in a calm twilight sky — a pocket-Islanders diorama. Rounded, huggable, chunky silhouettes; each subject ONE soft warm rim-light from upper-left + gentle inner glow, restrained bloom; painterly gouache-over-cel, crisp edges, subtle paper grain, luminous but never neon-blown. Must read at 64px. The SEVEN piece types MUST be unmistakable by SILHOUETTE ALONE (colorblind requirement — the engine adds optional letter badges itself; NEVER bake letters into art). Consistent 3/4 top-down miniature camera, centered, upright. Palette: midnight #0d100c/#0b0f0b/#0e140d/#05070a; soil #141b0d/#12180e/#1e2a14, edges #1c2614/#2a3a1c, seam #2a331f; sage #7ab356, deep leaf #3f6b34, stem #5c8f3f, spring rim #9fd07a, good-glow #a8e06a; gold #c8a84b + bloom #ffe9a8; cream #e8dcc8, moss #8a9178, stone #6f7a5f; petal pink #e58fa0, warning rose #e08a8a; pond blue #5b9bd5, dew #bfe0f2. NO photoreal, NO harsh black outlines, NO text/letters/numbers/logos/watermarks. Compress under 150KB.
+
+Create one sprite sheet. File: pb_pieces.png. Grid: 4 columns x 4 rows (16 cells, left-to-right, top-to-bottom). Cell: 512x512. Master: 2048x2048.
+
+KNOCKOUT: Flat magenta #FF00FF fills the entire background of every cell. NO magenta / hot-pink / hot-purple ANYWHERE inside the art (keep petal pink #e58fa0 and warning rose #e08a8a clearly distinct from #FF00FF). Each subject centered, upright, fully inside its cell with margin, NO ground shadow (pieces composite onto board tiles that already carry their own soil face — a separate shadow puck is provided as its own cell). Keep every glow contained within its cell — never let glow tint the magenta field. The seven piece silhouettes MUST be unmistakable from one another at thumbnail size.
+
+THE SEVEN PIECES (cells 1-7) — the "Classic" style set. Each is a chunky miniature standing on a SMALL tuft of sage turf (a hint of floating shard: a little mossy top, a shallow rocky underside taper). One warm upper-left rim-light each. Same tuft scale across all seven so they sit uniformly in the board cells:
+
+1. piece_flower — CLASSIC FLOWER (engine glyph 🌷): one oversized tulip-like bloom in petal pink #e58fa0 with a cream #e8dcc8 inner glow, on a single stem #5c8f3f with two small leaves. Silhouette: one tall single-stemmed cup bloom — the only piece with a lone vertical stalk.
+2. piece_tree — CLASSIC TREE (🌳): a plump round-canopy tree, sage #7ab356 canopy shading to deep leaf #3f6b34, short sturdy trunk. Silhouette: big lollipop dome — the tallest, roundest mass on the sheet.
+3. piece_pond — CLASSIC POND (💧): a small kidney-shaped pond of pond blue #5b9bd5 with dew #bfe0f2 shimmer glints and a mossy stone rim. Silhouette: the ONLY flat, low, horizontal piece — a shining disc, nothing tall.
+4. piece_hive — CLASSIC HIVE (🐝): a golden woven skep beehive in gold #c8a84b with darker #2a331f coil seams, glowing gently from its little arch door, one tiny bee spark of #ffe9a8 hovering beside it. Silhouette: a ribbed dome with a hovering dot — unmistakable coiled beehive.
+5. piece_bench — CLASSIC BENCH (🪑): a small garden bench of warm timber (gold #c8a84b planks shaded toward #2a331f) with simple curled legs. Silhouette: the only piece with straight horizontal slats and legs — clearly furniture, not plant.
+6. piece_veg — CLASSIC VEG (🥕): a tiny raised vegetable bed — a low soil mound #1e2a14 with three leafy spring-green #9fd07a carrot tops in a row and one proud golden-amber #c8a84b heirloom carrot half-lifted from the soil. Silhouette: low row of three tufts on a mound — reads as crops, not flowers.
+7. piece_hedge — CLASSIC HEDGE (🌿): a low, long, box-trimmed hedge in deep leaf #3f6b34 with sage #7ab356 top highlights and a few tiny cream buds. Silhouette: one long low rounded rectangle — wider than tall, no trunk, no bloom.
+
+SUPPORT & STATES (cells 8-16):
+
+8. base_turf — the shared floating turf shard base ALONE: an oval mossy sage #7ab356 top with a shallow rocky #6f7a5f underside taper and one hanging root wisp. Rendered empty so the engine (or the cut script) can composite ANY piece onto a matching base; must match the tuft under cells 1-7 exactly.
+9. shadow_puck — a soft dark #0d100c elliptical contact shadow, semi-transparent, on transparent. The one sanctioned shadow asset: slid under any piece when it sits on a board tile so miniatures feel seated rather than pasted.
+10. glow_select — a warm gold #c8a84b under-halo ring with a faint #ffe9a8 core, transparent center. Backs the selected hand card (`.pcard.sel` lifts and gold-rims in code) — reads as "this piece is in your hand and chosen."
+11. puff_good — a soft round burst of good-glow #a8e06a sparkle motes, airy and rising. Fires over a placement that scored positive (the engine's 'good' chime moment). No numbers — the engine prints score text itself.
+12. puff_bad — a dim, drooping wisp of warning rose #e08a8a with two tiny falling motes. Fires over a negative placement ('bad' chime). Muted and gentle, never alarming — this is a cozy garden, not a punishment.
+13. seed_pebble — a tiny neutral seed pebble in moss #8a9178 with a cream glint, very small in the cell. Sits in an exhausted hand slot (the engine currently shows a "·" dot in used `.pcard` slots).
+14. bee_spark — a tiny pictographic bee: a plump gold #c8a84b and #2a331f striped body with dew #bfe0f2 wing blurs and a short dotted glow trail. Ambient friend for the hive and the Harmony Bloom moment; must stay cute at 24px.
+15. firefly_mote — a small dew-blue #bfe0f2 floating light mote with a soft halo; ambient twilight drift over the board and menus.
+16. wind_wisp — a thin curling cream #e8dcc8 wind-current wisp, semi-transparent, that trails new shards as they drift in on plot expansion. On transparent, elegant single curl.

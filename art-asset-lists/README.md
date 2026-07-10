@@ -12,6 +12,24 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Greenhouse Pinball](greenhouse-pinball/00-art-direction.md)** — *Moonlit Workbench* look · 4-season table backdrops + ball/flippers/bumpers + FX + 💰 table/flipper/ball skins & companion-host cameos.
 - **[Dew Snip](dew-snip/00-art-direction.md)** — *Paper Nocturne* look (layered papercut) · 5 sheets (sprites + 💰 keepsake-blooms/dew/vine/bellows skins + backgrounds + UI + FX). Built on `add-sproing-jumper` (not yet main); Nectar Lineage grows keepsake Grove blooms.
 
+### Jul 10 classics wave (all built + verified on `add-sproing-jumper`, render procedurally; every pack has a 💰 cosmetics/economy sheet)
+- **[Berry Vine](berry-vine/00-art-direction.md)** (Zuma) — *Starberry Cosmos* · 6 sheets
+- **[Seed Flutter](seed-flutter/00-art-direction.md)** (Flappy) — *Comet Cadets* · 5 sheets
+- **[Leaf Fit](leaf-fit/00-art-direction.md)** (Woodoku) — *Leadlight Conservatory* · 5 sheets
+- **[Seed Reel](seed-reel/00-art-direction.md)** (Luck be a Landlord) — *Brass Nightreel* · 6 sheets
+- **[Season Sway](season-sway/00-art-direction.md)** (Reigns) — *Gilded Almanac* · 6 sheets
+- **[Meadow Weave](meadow-weave/00-art-direction.md)** (Dorfromantik) — *Lantern Atlas* · 5 sheets
+- **[Petal Alchemy](petal-alchemy/00-art-direction.md)** (Infinite Craft) — *Midnight Apothecary* · 7 sheets
+- **[Cipher Bloom](cipher-bloom/00-art-direction.md)** (Cryptogram) — *Pressed Herbarium* · 5 sheets
+- **[Root Groups](root-groups/00-art-direction.md)** (Connections) — *Midnight Curio* · 5 sheets
+- **[First Sprout](first-sprout/00-art-direction.md)** (A Dark Room) — *Wick & Loam* · 5 sheets
+- **[Plot Bloom](plot-bloom/00-art-direction.md)** (Islanders) — *Skyshard Isles* · 6 sheets
+- **[Micro Meadow](micro-meadow/00-art-direction.md)** (WarioWare) — *Firefly Funfair* · 5 sheets
+- **[Impossible Garden](impossible-garden/00-art-direction.md)** (Monument Valley) — *Moonstone Monument* · 6 sheets
+- **[Star Field](star-field/00-art-direction.md)** (Star Battle) — *Astrolabe Atlas* · 5 sheets
+- **[Flatulence Fighter](flatulence-fighter/00-art-direction.md)** (Try Not To Fart homage, Stephen's draft) — *Silent Reel* · 5 sheets
+- **[Line Loom](line-loom/00-art-direction.md)** (Mini Metro) — *Woven Atlas* · 6 sheets
+
 ## Generate order
 
 | Do | Game | Src | Recommended look | Sheets | Ready |

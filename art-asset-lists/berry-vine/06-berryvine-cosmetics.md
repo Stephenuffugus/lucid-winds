@@ -25,6 +25,6 @@ WARDROBE FURNITURE (cells 9-16) — the pieces `renderWard()` and the wardrobe s
 11. ward_equipped_ring — the "equipped" highlight: a bright rose #e24d6a glow ring / frame overlay that hugs the currently-equipped card (matches the code's rose equipped border).
 12. unlock_badge — a small celebratory "unlocked!" star-burst badge in cream + gold, to pop on a card the moment its threshold is met.
 13. pod_exhaust_glow — a shared soft cream / gold thruster glow that sits under ANY pod skin at the base (reusable across all four pods). On transparent, no shadow.
-14. palette_swatch_chip — a compact six-dot palette swatch chip (six small orbs in a rounded row on a dark chip) for tight palette-picker display; render one generic version in the Orchard colors.
+14. palette_swatch_chip — a compact THREE-dot palette swatch chip (three small round berries in a row on a dark chip), matching the REAL wardrobe preview: miniBerry() (index.html ~617-618) draws exactly three circles (xs 24/48/72) from the palette's first three colors. Render one generic version in the first three Orchard hues (rose #e24d6a, sky-blue #4d7fe2, amber #e2b34d). WIRE NOTE: showing all SIX colors on the picker would need a miniBerry() code change — three is what ships.
 15. mastery_meter — a small pictographic progress token: a thin rounded arc/ring partly filled with gold, a tiny star at the goal end (shows "progress toward the next unlock" with NO numbers).
 16. lock_padlock — a standalone chunky warm-metal #5c3a1a / #8a5a2b padlock with a sage keyhole glint, for any locked cosmetic slot.

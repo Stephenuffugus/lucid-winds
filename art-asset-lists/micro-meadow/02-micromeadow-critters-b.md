@@ -1,0 +1,30 @@
+<!-- Micro Meadow · Sheet 2: Microgame Actors B — HOLD / FEED / AIM / MATCH / SORT / SHOO / TAP NOW (incl. boss props) -->
+<!-- Copy everything below into your image generator to make this ONE sheet. -->
+
+STYLE — "Firefly Funfair" (Micro Meadow / Sky Wolf Studios blink-fast microgame carnival). A moonlit meadow throwing a tiny nighttime funfair: chunky, huggable, circus-poster-rounded storybook critters and props lit like festival lanterns on a deep meadow-night field. Every subject is built to be read in HALF A SECOND — one fat silhouette, one soft cream rim-light, one gentle inner glow, big simple friendly faces, zero clutter; soft cel + a whisper of gouache grain, luminous but never neon-blown. Nothing sharp, nothing scary — pest critters are goofy, not gross. Reads SHAPE-first, color second (colorblind law: no two interactive states differ by hue alone — the sort pair carries heart vs star marks; the four match glyphs differ by silhouette). Flat front-on / slight-top arcade camera. Palette: meadow-night #0b0f0b #0d100c #141d12 #1a2415, hedge #2a331f, deep moss #3f6b34, stem #5c8f3f, sage #7ab356, unripe #6f9040, dry-straw #8a6a3a; festival gold #c8a84b #d9b85a #eed48a, lantern bloom #ffe9a8, bug-yellow #d9c25a; cream #e8dcc8, muted #8a9178; petal pink #e58fa0, ripe red #c83a4a, alarm #e56b6b, plum #7d3450; moon blue #5b9bd5, dew #bfe0f2, violet #b57de0; koi orange #e0894a, timber #8a5a2b #5c3a1a, crow-ink #22242a. NO photoreal, NO hard black keylines, NO text/letters/numbers/logos/watermarks. Compress under 150KB.
+
+Create one sprite sheet. File: mm_micro_b.png. Grid: 4 columns x 5 rows (20 cells, left-to-right, top-to-bottom). Cell: 512x512. Master: 2048x2560.
+
+KNOCKOUT: Flat magenta #FF00FF fills the entire background of every cell. NO magenta / hot-pink ANYWHERE inside the art (keep petal pink #e58fa0 and violet #b57de0 clearly distinct from #FF00FF). Each subject centered, upright, fully inside its cell with margin, glow contained so it never tints the magenta field, NO ground shadow (the engine composites these freely). State pairs (1/2, 7/8, 13/14, 15/16) and the four glyphs (9–12) MUST be distinguishable by silhouette or mark alone, never hue alone.
+
+CELLS — each maps to a real microgame draw:
+1. bud_closed — the HOLD! flower asleep: a night-bud on a #5c8f3f stem, six violet #b57de0 petals shut tight around a tiny lantern-gold #ffe9a8 core spark (the engine holds petals at ~14px radius until the press).
+2. bloom_open — the SAME flower fully woken: six petals swung wide (engine expands them to ~34px radius) and flushed petal pink #e58fa0, the #ffe9a8 core glowing bright. Same stem and framing as cell 1 so the hold reads as one blooming motion.
+3. koi_fish — the FEED! pond koi: a chunky festival koi in orange #e0894a (engine body ~48×26 with a triangle tail), one big dark eye, cheerful open-mouthed glide, drawn facing RIGHT — the engine mirror-flips it for the return lap.
+4. aim_blossom — the AIM! boss target: a wide petal-pink #e58fa0 blossom (engine radius 26) whose petals ring a bold lantern-gold #ffe9a8 bullseye core (engine radius 10); unmistakably a target.
+5. aim_seed — the launcher pip you drag from: a fat glossy festival-gold #c8a84b seed (engine radius 18) with an upward cream sheen, planted and ready to fling.
+6. aim_guide — the drag guide: a beaded/dashed cream #e8dcc8 aim line strip (the engine strokes a translucent line from seed to fingertip), TILEABLE along its length, soft lantern glow, transparent gaps.
+7. match_tile — the MATCH! boss card: a rounded dark #1a2415 fair-booth card plate (engine 84×84) with a sage #7ab356 rim and tiny gold corner pins. Face EMPTY — the engine stamps the glyph.
+8. match_tile_sel — the same card selected: face flushed deep moss #3f6b34, rim brightened toward #eed48a with a gentle glow. Selection also reads by the brightness jump + glow, not hue alone.
+9. glyph_clover — match glyph 1 (stands in for the code's 🍀): a fat four-leaf clover in sage #7ab356, rounded and symmetrical.
+10. glyph_sprig — match glyph 2 (🌿): a slender arcing two-leaf sprig in stem #5c8f3f, clearly asymmetric and slim.
+11. glyph_maple — match glyph 3 (🍁): a wide five-point maple leaf in warm koi-orange #e0894a shading to gold #c8a84b, star-like spread. 
+12. glyph_wheat — match glyph 4 (🌾): an upright wheat ear in straw-gold #d9c25a, stacked kernels on a straight stem. All four glyphs MUST be unmistakable from each other at 40px by silhouette alone (colorblind law).
+13. sort_flower_pink — the SORT! flower, kind A: a round-petaled petal-pink #e58fa0 flower disc (engine radius 22) with a tiny cream HEART mark at its core.
+14. sort_flower_gold — kind B: a pointed-petaled festival-gold #c8a84b flower disc with a tiny cream STAR mark at its core. Petal shape + core mark both differ from cell 13 — never hue alone.
+15. sort_pot_pink — the matching pot for kind A: a tapered timber #5c3a1a fair pot (engine trapezoid ~60 wide) with a petal-pink #e58fa0 rim band and a small heart tag on its belly.
+16. sort_pot_gold — the pot for kind B: the same pot silhouette with a festival-gold #c8a84b rim band and a small star tag. The heart/star tags carry the pairing for colorblind players.
+17. crow_shoo — the SHOO! visitor: a plump crow in crow-ink #22242a with a festival-gold #c8a84b beak and a folded wing (engine body ~56×36 with a tail wedge), caught mid startled hop, more cheeky than sinister.
+18. branch_track — the TAP NOW! boss track: a vertical branch segment in hedge-dark #2a331f, rounded ~40px wide (engine strokes a 40px round-cap line), whisper of bark texture, TILEABLE top-to-bottom.
+19. sweet_zone — the sweet-spot band: a deep-moss #3f6b34 glowing zone segment sized to overlay the branch (the engine highlights the 0.42–0.58 stretch of the track), soft sage #7ab356 edge glow so the safe window is obvious at speed.
+20. slider_bug — the sweeping marker: a festival-gold #c8a84b ladybug-bar (engine 60×12) with cream glints and two tiny happy eyes, the critter that races up and down the branch waiting for the perfectly timed tap.

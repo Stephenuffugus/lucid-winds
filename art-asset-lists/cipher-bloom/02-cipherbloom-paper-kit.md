@@ -1,0 +1,34 @@
+<!-- Cipher Bloom · Sheet 2: The Writing Desk — paper page, letterless key plates, cell furniture, state stamps, progress vine -->
+<!-- Copy everything below into your image generator to make this ONE sheet. -->
+
+STYLE — "Pressed Herbarium" (Cipher Bloom / Sky Wolf Studios botanical cryptogram). A keeper's midnight field-journal: sun-faded pressed-paper, hand-inked strokes, wax seals and warm lantern gold on a deep moss-black study. Papery and matte, soft deckled edges, gentle fiber grain, flat gouache-and-ink rendering, ONE warm lantern key light from upper-left; restrained, never glossy, never neon. Chunky rounded silhouettes, readable at thumbnail. Palette (the game's real colors): midnight #0d100c / #0e140d / #0b0f0b, moss line #2a331f, sage-grey #8a9178; sage #7ab356, deep leaf #3f6b34 / #5c8f3f; lantern gold #c8a84b, gilt #d9b85a / #eed48a, deep gilt #6f5a23, glow #ffe9a8; cream paper #e8dcc8 → #dccbb0; ink #2a241a / #1b160e; paper furniture tan #9a8a6a / #8a744e / #c9b892 / #b08a3a; dew blue #bfe0f2 / #5b9bd5, night-key blue #12203a / #2b567c; correct sage-ink #2f6b1e, given green #3a6b28, thorn red #b04a3a; button greens #1a2415 / #121a0f / #0f150c. ABSOLUTELY NO text, letters, letterforms, numbers, glyphs, logos or watermarks — the DOM draws every letter ON TOP of these plates, so all keys, papers and stamps are LETTERLESS. Compress under 150KB.
+
+Create one sprite sheet. File: cb_paper.png. Grid: 4 columns x 4 rows (16 cells, left-to-right, top-to-bottom). Cell: 512x512. Master: 2048x2048.
+
+KNOCKOUT: Flat magenta #FF00FF fills the entire background of every cell. NO magenta / hot-pink ANYWHERE inside the art (keep every rose or pink dusty and muted, clearly distinct from #FF00FF). Each item centered, upright, fully inside its cell with margin, glow contained within its cell, NO ground shadow (these composite as flat UI plates the DOM stretches and layers). Plates that will be stretched (keys, page, tracks) must have clean uniform edges and quiet centers so stretching never warps a focal detail.
+
+COLORBLIND RULE (freq + selection cues restated from the game; the stamps ADD the shape cues the DOM currently lacks): letter states must never rely on hue alone. Two non-hue cues already ship in code — frequency reads by bar LENGTH (cell 9; the engine sets `.fq b` width %) and selection reads by a THICKER underline (cell 8 vs 7; `.cell.sel .un` bumps 2px→3px) — but the wrong/given/correct letter states are today HUE-ONLY tints on `.pl` (#b04a3a / #3a6b28 / #2f6b1e), so the stamps in cells 11-13 (thorn cross = wrong, leaf check = correct, wax sprout seal = given) are NEW shape cues that need new render hooks in `renderPuzzle()` / `doCheck()` when wired. Keep those silhouettes unmistakable at 16-26px.
+
+THE PAGE + KEYS (cells 1-6):
+1. paper_page — the puzzle page: a portrait rounded-corner sheet of cream #e8dcc8 → #dccbb0 pressed paper nearly filling the cell, soft deckled edges, faint fiber grain, one or two ghost impressions of pressed leaves at 4-6% opacity near the corners, a whisper of warm shadow inside the edges. The DOM stretches this behind the whole letter grid — the center must be perfectly quiet and even so 20px ink letters stay readable on it.
+2. key_plate — a letterless keyboard key: a rounded-rectangle plate in the dark moss gradient #1a2415 → #121a0f with a thin #2a331f edge line, a soft top bevel catching lantern light, matte finish. The DOM prints a cream letter on it. Built to stretch to roughly 64×44.
+3. key_plate_pressed — the same key mid-press: slightly brighter face, bevel flattened, a soft warm inner glow, as if a fingertip just pushed it into the desk.
+4. key_plate_used — the same key exhausted: dimmed and slightly desaturated with a faint flat wash (the engine also drops opacity), plus a subtle recessed look — clearly "already assigned" even in grayscale.
+5. key_plate_hint — the hint key: a warm dark-amber plate #241d10 with a gilt #6f5a23 edge and a soft gold #c8a84b inner corona, like a tiny lantern set into the keyboard row. Letterless — the DOM draws the 💡 glyph on top.
+6. key_plate_action — the erase/action key: a deep night-blue plate #12203a with a #2b567c edge and a cool dew #bfe0f2 rim whisper. Letterless — the DOM draws the ⌫ glyph on top.
+
+CELL FURNITURE (cells 7-10) — the tiny pieces under every scrambled letter; each renders at 16-26px wide so they must be bold and simple:
+7. underline_stroke — a short hand-inked baseline stroke in tan #9a8a6a, slightly tapered at both ends like a quill pulled across paper; the resting underline beneath every letter cell.
+8. underline_selected — the same stroke but noticeably THICKER and in lantern gold #c8a84b with a tiny warm glow and a little quill-flick at one end — the shape-plus-color cue that this cipher letter is selected everywhere.
+9. freq_vial — the frequency bar: a tiny horizontal seed-pod trough in pale tan #c9b892 with rounded ends, plus (drawn inside, filling from the left about two-thirds) a deeper amber #b08a3a fill like packed seeds. Frequency is read by the LENGTH of the fill; the engine scales the fill width.
+10. cell_halo — a soft warm gold #ffe9a8 rounded-rectangle halo, feathered edges, transparent center; an UPGRADE, not a dressing of an existing draw — the game currently marks selection only with the thicker gold underline (`.cell.sel .un`) and the `.cg` tint, no halo exists, so this is NEW wiring (a background layer added on `.cell.sel`) behind the selected letter column. Very subtle — a candle-warmth, not a spotlight.
+
+STATE STAMPS (cells 11-13) — rubber-stamp style marks, inky and slightly imperfect like hand-stamping:
+11. stamp_wrong — a small thorn-cross stamp in thorn red #b04a3a: two crossed briar twigs with a couple of tiny thorns, clearly an X silhouette; flashed briefly on wrong guesses by Check.
+12. stamp_good — a small leaf-check stamp in sage-ink #2f6b1e: a single curved leaf whose midrib forms a checkmark sweep; marks correctly decoded letters.
+13. stamp_given — a small wax-seal stamp in deep green #3a6b28: a round pressed-wax blob with a tiny embossed sprout, marking prefilled/hint-revealed letters that cannot be changed.
+
+CHROME (cells 14-16):
+14. iconbtn_plate — a rounded-square dark plate #0f150c with a thin #2a331f edge and soft lantern bevel, letterless, for the back ‹ and check ✓ corner buttons the DOM draws glyphs onto. Built to stretch to 46×46.
+15. prog_vine — the solve-progress meter: a slim horizontal track like a dark trellis groove #0f150c with a #2a331f edge, and inside it a vine fill running left-to-right that shifts sage #7ab356 into gold #c8a84b at its growing tip, ending in a tiny leaf bud. Fill length is set by the engine; keep both ends clean for stretching.
+16. quill_accent — a small resting quill pen with an ironwood #2a241a nib and a cream #e8dcc8 feather catching gold rim-light, a single dot of wet ink at the nib; the decorative desk accent for headers and empty states.

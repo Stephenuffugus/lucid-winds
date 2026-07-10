@@ -16,7 +16,7 @@ KEEPSAKE STARS (cells 1-9) — the Sky-Map collection; each a distinct layered-p
 6. star_frostcrystal — an icy Frostnight #A0C4E8 crystalline 4-point star, pale cream facet-lines, crisp edges.
 7. star_twinsprite — a tiny two-point double-star (a pair of linked cream/dew glints joined by a faint line), a mini-constellation feel.
 8. star_cometwisp — a small star trailing a short cream-gold comet-wisp tail, dynamic silhouette.
-9. star_prismnova — the CAPSTONE keepsake: a radiant multi-hue papercut nova cycling rose→gold→dew→violet across its points with a bright #ffe9a8 core and a strong cream rim-glow; the rarest Sky-Map star.
+9. star_prismnova — the CAPSTONE keepsake: a radiant multi-hue papercut nova cycling rose→gold→dew→violet across its points with a bright #ffe9a8 core and a strong cream rim-glow; the showpiece of the roster. (Like every star here it is keyed at wire time from the bloom seed — rarity weighting to be added in the sprite-key mapping; the engine's `drawFlower` picks hue/petal-count uniformly via `mulberry32(seed)`, no rarity code exists to hunt for.)
 
 COMET SKINS (cells 10-13) — cosmetic reskins of the hero, SAME comet-head + ray-fan silhouette as sprite sheet cell 1 (drawn upright, rays leading up):
 10. comet_sparkler — cream #e8dcc8 head, hot #ffe9a8 core, gold rays, cream specular (the DEFAULT "Dandelion" skin, for the picker).
@@ -33,4 +33,4 @@ TAIL SKINS (cells 14-17) — the comet's trailing motes; draw as a short left-tr
 COMPANION SKY-BUDDIES (cells 18-20) — the floating companion that drifts beside the cadet (replaces the emoji glyph); each a small cute papercut creature, side-on drifting pose, soft self-glow (the None option needs no art):
 18. buddy_moonmoth — a pale cream/dew #bfe0f2 moon-moth with soft glowing wings and gold antennae dots (unlock: reach 25; passive: widens the Perfect band).
 19. buddy_sparklet — a tiny warm gold #c8a84b firefly-star sprite with a bright #ffe9a8 core and a cream halo (unlock: grow 10 keepsakes; passive: lights the haze).
-20. buddy_starpup — a cozy little star-pup: a rounded cream/gold constellation wolf-cub drawn from soft star-points and connecting lines, friendly and glowing (a wink at Sky Wolf Studios; unlock: reach 60; passive: one soft recovery).
+20. buddy_starpup — the STAR-PUP, a cozy little rounded cream/gold constellation wolf-cub drawn from soft star-points and connecting lines, friendly and glowing (a wink at Sky Wolf Studios; unlock: reach 60; passive: one soft recovery). This is the code's `COMPS[3]` slot — named 'Koi' in source, renamed Star-Pup by the reskin copy pass; the reach-60 / one-soft-recovery companion everywhere in this pack (see 05 cell 9 for its recovery FX).

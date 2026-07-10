@@ -5,9 +5,9 @@ STYLE — "Starberry Cosmos" (Berry Vine / Sky Wolf Studios cozy-cosmic marble-a
 
 Create one sprite sheet. File: bv_ui.png. Grid: 4 columns x 4 rows (16 cells). Cell: 512x512. Master: 2048x2048.
 
-KNOCKOUT: Flat magenta #FF00FF fills every cell's background. NO magenta / hot-pink inside the art. Each element centered, fully inside its cell with margin, NO ground shadow (UI composites flat). Buttons are wide rounded plates drawn centered (engine 9-slice-stretches them). Icons are simple bold glyphs that read at 44px.
+KNOCKOUT: Flat magenta #FF00FF fills every cell's background. NO magenta / hot-pink inside the art. Each element centered, fully inside its cell with margin, NO ground shadow (UI composites flat). Buttons are wide rounded plates drawn centered, to be 9-slice-stretched at wire time (NOTE: today's .btn is a plain CSS gradient, index.html ~36 — wiring these plates needs border-image / 9-slice code, they are not a straight swap). Icons are simple bold glyphs that read at 44px.
 
-1. btn_plate — the default wide rounded button plate: dark #121a0f / #1a2415 face with a thin sage #7ab356 rim-glow; the standard menu button.
+1. btn_plate — the default wide rounded button plate: dark #121a0f / #1a2415 face with a thin sage #7ab356 rim-glow; the standard menu button. NOTE: the sage rim is a deliberate RETHEME, not a match — the shipping .btn border is dusk-line #2a331f (index.html ~36); only the on-canvas hudBtn chips use sage rgba(122,179,86,0.4) today (~581).
 2. btn_plate_primary — the primary call-to-action plate: a rose #e24d6a → #b23350 face with a bright cream #ffe9a8 rim-glow and a soft lift shadow (matches the code's rose primary button).
 3. icon_journey — the Vine Journey glyph: a little constellation of three star-berry orbs joined by a faint dotted line, gold + cream (the 🫐 mode).
 4. icon_daily — the Daily Sprout glyph: a papercut crescent-moon over a calendar-pad / a single sprouting star, gold #c8a84b (pictographic, NO numbers).

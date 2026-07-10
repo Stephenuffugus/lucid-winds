@@ -17,9 +17,11 @@ KNOCKOUT: Flat magenta #FF00FF fills every cell's background. NO magenta / hot-p
 8. sparkle_small — a tiny four-point cream #e8dcc8 glint with a soft halo; ambient twinkle.
 9. glow_soft — a plain soft radial cream-to-transparent glow disc; a reusable light bloom placed under orbs / the pod / the loaded socket.
 10. star_drift — a single small ambient drifting STAR speck (cream core, faint dew-blue halo, gentle twinkle); replaces the code's drifting fireflies in the play field.
-11. trail_mote — a soft glowing comet-dew #bfe0f2 mote with a faint moon-blue halo, semi-transparent; the fading trail the fired orb / front of the chain can leave (engine spawns many, fading).
+11. trail_mote — a soft glowing comet-dew #bfe0f2 mote with a faint moon-blue halo, semi-transparent; a fading trail the fired orb / front of the chain COULD leave. NEW-JUICE: no trail spawner exists in code today — this only appears once a small emitter is added.
 12. launch_flash — the pod muzzle-flash: a small directional cream / gold #ffe9a8 puff-glint at the pod mouth the instant an orb fires; points UP (engine rotates). On transparent.
 13. swap_swirl — a little curved cream #e8dcc8 → dew swap swirl / two chasing arrow-glints, the Dew Swap feedback when the reserve and loaded orbs trade places. On transparent.
 14. charge_pop — the "Pollen Burst ready" glint: a bright #ffe9a8 star-flare that pops when the charge meter fills; a single radiant burst-star.
 15. star_pop — the results star-award pop: a single cream / gold flower-star bursting outward with a soft ring, for each earned ✿.
 16. vignette_edge — a soft dark #05070a inner-edge vignette frame on transparent (corners darker, center clear), to seat the play scene and deepen the cosmos toward the edges (the calm counterpart to vignette_dread).
+
+WIRE NOTE (engine reality check — drop-in vs new-juice): only FOUR cells replace draws that exist in code today — match_burst (the splat() particle circles, index.html ~536), flash_wash (the G.flash white overlay ~544), vignette_dread (the dread radial wash ~545) and star_drift (the drifting fireflies ~518). Every other cell keys to a REAL engine event (fire, swap, combo≥3 cascade, charge full, star award, win) but has NO existing draw: cascade_burst, float_glow, combo_ring, star_confetti, sparkle_small, glow_soft, trail_mote, launch_flash, swap_swirl, charge_pop, star_pop and vignette_edge are new-juice additions that each need a small code hookup before they render.
