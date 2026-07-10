@@ -37,6 +37,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Sled Vine](sled-vine/00-art-direction.md)** (Line Rider) — *Moonlit Inkwash* · 5 sheets
 - **[Spore Drift](spore-drift/00-art-direction.md)** (Osmos) — *Inkwater Bioluminance* · 6 sheets
 - **[Bridgevine](bridgevine/00-art-direction.md)** (World of Goo) — *Copperwood Atelier* · 6 sheets
+- **[Bramble Court](bramble-court/00-art-direction.md)** (Triple Triad/Queens Blood) — *Gilded Bestiary* · 6 sheets
 
 ## Generate order
 
