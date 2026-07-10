@@ -1,0 +1,14 @@
+<!-- Dew Snip · Sheet 3: Backgrounds & Screens — Full-Bleed Portrait -->
+<!-- Generate each of the images below SEPARATELY (they are full-bleed, not a knockout grid). -->
+
+STYLE — "Paper Nocturne" (Dew Snip / Lucid Winds midnight-garden papercraft). Layered cut-paper botanical scenery: stacked flat paper layers receding into depth, soft backlit rim-glow between layers (moonlight from behind), faint warm dew-light. FLAT fills, paper grain, atmospheric depth haze between layers, NO photoreal render, NO gloss, NO harsh keylines. Palette: void #0d100c/#05070a, sage #7ab356 / deep #3f6b34 / mid #5c8f3f, gold #c8a84b + bloom #ffe9a8 + cream #e8dcc8, moss #8a9178, dusk line #2a331f, dew #bfe0f2 / moon-blue #5b9bd5 / deep #2b567c, rose #e58fa0, bark #8a5a2b/#5c3a1a, seed-green #6f9040, violet #b57de0; season tints spring #E8A0BF summer #D4A843 autumn #D4842A winter #A0C4E8. Deeply nocturnal, low-key, moody. NO text, letters, numbers, logos, UI chrome, watermarks. Each PNG under 150KB (flat fills + tight palette keep it small).
+
+Portrait aspect 9:16. Master 1080x1920 each. KEEP THE VERTICAL CENTER BAND CALM AND UNCLUTTERED — gameplay (vines, dew, sprout) renders over the middle, so heavy detail belongs at the top and bottom edges, with the mid-field a quiet deep-night wash.
+
+1. dewsnip_bg_play.png — the gameplay bed. A deep-night garden interior: a big soft moon-glow high up, a faint layered-papercut canopy of leaves and hanging vines framing the TOP, a mossy soil ledge and pot-shelf silhouettes along the BOTTOM, and a huge calm #0d100c→#05070a wash through the middle with a scatter of tiny dew-blue and firefly-gold specks. Must tile/hold as a static backdrop behind the physics.
+2. dewsnip_bg_title.png — the title screen. Same night garden but composed for a menu: a beautiful hero vine arcing from top with a single luminous dew bead about to fall, generous calm space in the lower third for the menu buttons, soft firefly bokeh, a warm dew-glow focal point upper-center. Cozy and inviting.
+3. dewsnip_bg_results.png — the bloom/results panel backdrop. A softly spotlit little pedestal or open palm of moss centered slightly high, bathed in a warm cream-gold glow (where the earned keepsake bloom will be composited), the rest of the garden falling into gentle darkness; celebratory but serene.
+4. dewsnip_bg_season_spring.png — a spring-tinted overlay wash of the play bed: rose #E8A0BF blossom-fall and fresh sage, applied as a subtle atmospheric tint over the same composition.
+5. dewsnip_bg_season_summer.png — summer tint: warm gold #D4A843 firefly-thick haze, lush deep-green canopy.
+6. dewsnip_bg_season_autumn.png — autumn tint: copper #D4842A drifting leaves, amber moon.
+7. dewsnip_bg_season_winter.png — winter tint: ice-blue #A0C4E8 frost specks, pale moon, bare vine silhouettes.

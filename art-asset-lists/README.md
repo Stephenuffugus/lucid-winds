@@ -10,6 +10,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Petal Slice](petal-slice/00-art-direction.md)** — 5 sheets (💰 blade skins + potting-bench backdrops + pod skin sets).
 - **[Seed Pot](seed-pot/00-art-direction.md)** — *Midnight Greenhouse* look · 7 sheets (💰 pot skins + seasonal bench backdrops + tier reskins). Companion Bloom uses the 85 companions.
 - **[Greenhouse Pinball](greenhouse-pinball/00-art-direction.md)** — *Moonlit Workbench* look · 4-season table backdrops + ball/flippers/bumpers + FX + 💰 table/flipper/ball skins & companion-host cameos.
+- **[Dew Snip](dew-snip/00-art-direction.md)** — *Paper Nocturne* look (layered papercut) · 5 sheets (sprites + 💰 keepsake-blooms/dew/vine/bellows skins + backgrounds + UI + FX). Built on `add-sproing-jumper` (not yet main); Nectar Lineage grows keepsake Grove blooms.
 
 ## Generate order
 
