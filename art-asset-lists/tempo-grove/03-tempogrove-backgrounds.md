@@ -1,0 +1,12 @@
+<!-- Tempo Grove · Sheet 3: Era Backdrops & Screens — Full-Bleed Portrait -->
+<!-- Copy everything below into your image generator. Generate each backdrop as its OWN image (5 images), not a grid. -->
+
+STYLE — "Moonlit Metronome" (Tempo Grove / Lucid Winds deco music-hall marquetry). A night concert-hall garden: lacquered wood, brass fittings, deco arches, moonlit foliage. Painterly-flat (NO photoreal render, NO glossy 3D), low-key and moody so gameplay tiles pop in front. Palette: void #0d100c/#05070a, walnut #3a2a18/#241a10, sage #7ab356 / deep #3f6b34, brass #c8a84b + hot #ffe9a8 + cream #e8dcc8, indigo #3d478f/#5b6bd5, moss #8a9178, dusk #2a331f, dew #bfe0f2, rose #e58fa0, violet #b57de0. NO text, letters, numbers, logos, watermarks. Each PNG under 150KB.
+
+FORMAT: Full-bleed PORTRAIT 1080x1920 (the engine letterboxes to 540x960). NO magenta knockout on backgrounds — these are full paintings. CRITICAL COMPOSITION RULE: the middle band of the frame (from 25% to 65% of the height) must stay QUIET and DARK (subtle texture only, strongest value contrast kept near the top and bottom edges) because the 16x10 play field sits there; put all interest in the top fifth and bottom third.
+
+1. tempogrove_bg_era1 — "Overture" — the house lights dim: a deco music-hall conservatory at night, walnut panel walls with brass sconces glowing low along the bottom third, dark leafy plants in brass planters silhouetted at the edges, a high arched glass roof at the very top with a sliver of moon; middle band nearly black-green #0d100c.
+2. tempogrove_bg_era2 — "Nocturne" — deeper night, violet #b57de0 tinted moonbeams slanting through the glass roof, sconces down to embers, indigo shadows, a faint mist along the floor plants.
+3. tempogrove_bg_era3 — "Rainsong" — rain streaking the glass roof panels at top, cool dew #bfe0f2 highlights on the brass, reflections pooling warm at the sconce line, the garden leaves glossy-dark.
+4. tempogrove_bg_era4 — "Golden Coda" — the warm finale: sconces flared to full brass-gold, amber light washing the bottom third, tiny drifting motes of pollen-light, the top arch catching a warm dawn hint.
+5. tempogrove_bg_title — the TITLE screen painting: a wider view of the same hall centered on an empty brass music stand overgrown with a flowering sage vine, moon through the arch above, sconces framing it; composition may use the full height (no quiet-band rule) but keep a calm dark area in the lower half for menu buttons.
