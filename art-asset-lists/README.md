@@ -41,6 +41,15 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Nova Bloom](nova-bloom/00-art-direction.md)** (Geometry Wars) — *Vector Nova* (non-botanical lead) · 5 sheets
 - **[Orb Orchard](orb-orchard/00-art-direction.md)** (Blue Spheres) — *Chrome Horizon* (non-botanical lead) · 5 sheets
 
+### Jul 11 second-wave bench (built + verified on `add-sproing-jumper`, render procedurally, NOT yet portal-wired; every look is a non-botanical lead; each pack has a 💰 cosmetics/economy sheet)
+- **[Fence Off](fence-off/00-art-direction.md)** (Quoridor) — *Tin Yard* · 5 sheets
+- **[Frost Watch](frost-watch/00-art-direction.md)** (Missile Command) — *Midnight Vigil* · 5 sheets
+- **[Loop Warden](loop-warden/00-art-direction.md)** (Loop Hero) — *Ember Vigil* · 5 sheets
+- **[Mosaic Draft](mosaic-draft/00-art-direction.md)** (Azul) — *Kiln & Lacquer* · 5 sheets
+- **[Tinker Loft](tinker-loft/00-art-direction.md)** (Amazing Alex / Rube Goldberg) — *Brass & Chalk* · 6 sheets
+- **[Lamplighter](lamplighter/00-art-direction.md)** (Akari / Light Up) — *Lamplight Leadlight* · 6 sheets
+- **[Tonic Drop](tonic-drop/00-art-direction.md)** (Dr. Mario) — *Apothecary Fizz* · 7 sheets
+
 ## Generate order
 
 | Do | Game | Src | Recommended look | Sheets | Ready |
