@@ -14,6 +14,11 @@
 <script src="/music-tracks.js?v=2026.06.24.17"></script>
 <script src="/music-player.js"></script>
 <script src="/feedback.js"></script>
+<!-- GA4 (same property as the app, G-XE58S4X6RX) — portal analytics: which games
+     get opened and favorited, so we know where to focus energy (Stephen Jul 10 #10).
+     Guarded everywhere with window.gtag checks; ad-blockers just no-op it. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XE58S4X6RX"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XE58S4X6RX');</script>
 <style>
   :root{
     --bg:#0d1410; --panel:#15201a; --panel2:#1c2a22; --ink:#e8f1e9;
@@ -186,6 +191,15 @@
   .tabs button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
                border-radius:20px;padding:6px 14px;font-size:13px}
   .tabs button.on{background:var(--leaf);color:#08130c;border-color:var(--leaf);font-weight:600}
+  /* Favorites heart — 48px touch target, state carried by SHAPE (outline vs
+     filled), not color alone. Sits opposite the badge in the .shot corner. */
+  .fav-btn{position:absolute;top:0;right:0;z-index:3;width:48px;height:48px;display:flex;
+           align-items:center;justify-content:center;font-size:21px;line-height:1;cursor:pointer;
+           color:#f2f6f2;opacity:.85;text-shadow:0 1px 5px rgba(0,0,0,.85);
+           user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+  .fav-btn.on{color:var(--sun);opacity:1}
+  .fav-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px;line-height:1.6;
+             padding:38px 16px;background:var(--panel);border:1px dashed var(--line);border-radius:12px}
   footer{color:var(--muted);font-size:12px;text-align:center;padding:40px 0 30px}
   .note{background:#1a1206;border:1px solid #3a2a0a;color:#e8c878;font-size:12.5px;
         border-radius:10px;padding:9px 12px;margin-top:14px}
@@ -449,7 +463,7 @@ var LWHUB = "https://lucidwinds.com/";
 var SHELL_BASE = "https://lucidwinds.com/play/";
 var SHOT = "https://lucidwinds.com/portal-assets/screenshots/";
 var EXT = {breathing:"jpg",colorgarden:"jpg",pixelgarden:"jpg",stonegarden:"webp"};
-var CATS = [["all","All"],["new","New"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["word","Word"],["math","Math"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"],["indev","In Development"]];
+var CATS = [["all","All"],["fav","♥ Favorites"],["new","New"],["creative","Creative"],["card","Card"],["puzzle","Puzzle"],["word","Word"],["math","Math"],["board","Board"],["pattern","Pattern & Memory"],["dice","Dice"],["indev","In Development"]];
 // External app (opens in a NEW TAB on its own origin, not a /play/ shell):
 // 6th element = external URL, 7th = custom thumbnail URL. card() detects the
 // 6th slot and switches to target=_blank + the custom thumb. Pom Pond uses
@@ -526,6 +540,32 @@ var GAMES = [
 ];
 
 function _lwPh(el){ el.outerHTML = '<span class="ph">🌿</span>'; }
+
+/* ---- Favorites (Stephen Jul 10 note #10) ----
+   Hearted games live in localStorage sws_favs (keys: 's:<url>' for satellites,
+   'g:<id>' for garden games). The ♥ Favorites tab filters to them, and every
+   toggle fires a GA4 event so favorites double as tell-us-where-to-focus
+   analytics. Cached parse — card() runs per card per render. */
+var _favCache = null;
+function favMap(){ if(_favCache) return _favCache;
+  try{ _favCache = JSON.parse(localStorage.getItem('sws_favs')||'{}'); }catch(e){ _favCache = {}; }
+  return _favCache; }
+function favSave(m){ _favCache = m; try{ localStorage.setItem('sws_favs', JSON.stringify(m)); }catch(e){} }
+function favKey(g, isFeat){ return isFeat ? 's:'+(g.url||g.nm) : 'g:'+g[0]; }
+window.swsFavToggle = function(ev, el){
+  if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+  var k = el.getAttribute('data-fk'), m = favMap(), on = !m[k];
+  if(on) m[k] = 1; else delete m[k];
+  favSave(m);
+  el.className = 'fav-btn' + (on ? ' on' : '');
+  el.textContent = on ? '♥' : '♡';
+  el.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if(window.gtag){ try{ gtag('event','portal_favorite',{ game_key:k, fav_on:on?1:0, fav_total:Object.keys(m).length }); }catch(e){} }
+  // Un-hearting while ON the Favorites tab removes the card right away.
+  if(!on && window._swsCat === 'fav') renderGarden('fav');
+  return false;
+};
+
 function card(g, isFeat){
   // Garden games with a 6th array slot are EXTERNAL apps (own origin) that
   // open in a new tab, not /play/ shells. 7th slot is their custom thumb.
@@ -556,7 +596,10 @@ function card(g, isFeat){
   }
   else { var ext = EXT[g[0]] || "png";
          shot = '<img loading="lazy" alt="'+nm+'" src="'+_tv(SHOT+g[0]+'.'+ext)+'" onerror="_lwPh(this)">'; }
-  var inner = '<div class="shot">'+badge+shot+'</div>'+
+  var fk = favKey(g, isFeat), fon = !!favMap()[fk];
+  var favBtn = (hub || soon) ? '' :
+    '<span class="fav-btn'+(fon?' on':'')+'" role="button" tabindex="0" aria-label="Favorite" aria-pressed="'+(fon?'true':'false')+'" data-fk="'+fk+'" onclick="return swsFavToggle(event,this)">'+(fon?'♥':'♡')+'</span>';
+  var inner = '<div class="shot">'+badge+favBtn+shot+'</div>'+
     '<div class="body"><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div>'+
     (soon ? '<div class="soon-cta">COMING SOON</div>' : '')+'</div>';
   if (soon) {
@@ -597,20 +640,33 @@ window.swsComingSoon = swsComingSoon;
 })();
 
 function renderGarden(cat){
+  window._swsCat = cat;
   // Studio satellites (non-hub FEATURED) are the "newest" games. They show
   // in the garden under the New tab (and All) instead of a separate strip at
   // the top, so the newest games mix in with the rest like the rest.
   // In Development tab = the beta satellites (playable but unfinished), pulled
   // out of All/New so they read as works-in-progress, mirroring the app.
+  // ♥ Favorites tab = everything the player hearted (satellites incl beta +
+  // garden games), same merged A-Z list.
+  var FM = (cat==="fav") ? favMap() : null;
   var sats = (cat==="indev")
     ? FEATURED.filter(function(g){return !g.hub && g.beta;})
+    : (cat==="fav")
+    ? FEATURED.filter(function(g){return !g.hub && FM[favKey(g,true)];})
     : ((cat==="all"||cat==="new") ? FEATURED.filter(function(g){return !g.hub && !g.beta;}) : []);
-  var list = (cat==="new"||cat==="indev") ? [] : GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
+  var list = (cat==="new"||cat==="indev") ? []
+    : (cat==="fav") ? GAMES.filter(function(g){return FM[favKey(g,false)];})
+    : GAMES.filter(function(g){return cat==="all"||g[2]===cat;});
   // Alphabetical by display name (Stephen 2026-07-09) — satellites + native games
   // merged into ONE A-Z list per tab so every game is easy to find.
   var items = sats.map(function(g){return {g:g,feat:true,nm:(g.nm||"")};})
     .concat(list.map(function(g){return {g:g,feat:false,nm:(g[1]||"")};}));
   items.sort(function(a,b){var x=a.nm.toLowerCase(),y=b.nm.toLowerCase();return x<y?-1:(x>y?1:0);});
+  if(cat==="fav" && !items.length){
+    document.getElementById('garden').innerHTML =
+      '<div class="fav-empty">No favorites yet.<br>Tap the ♡ in a game\'s corner and it will wait for you here.</div>';
+    return;
+  }
   document.getElementById('garden').innerHTML =
     items.map(function(it){return card(it.g,it.feat);}).join('');
 }
@@ -623,6 +679,17 @@ document.getElementById('tabs').addEventListener('click',function(e){
   e.target.classList.add('on'); renderGarden(e.target.getAttribute('data-c'));
 });
 renderGarden("all");
+
+// Analytics: which games actually get opened from the portal (Stephen Jul 10
+// note #10 — favorites + opens = where to focus energy). Delegated so it
+// survives re-renders; fires for every card link (shell games, local
+// satellites, external apps) and never blocks navigation.
+document.addEventListener('click', function(e){
+  var a = e.target && e.target.closest ? e.target.closest('a.card') : null;
+  if(!a || !window.gtag) return;
+  var nmEl = a.querySelector('.nm');
+  try{ gtag('event','portal_game_open',{ game_name:(nmEl?nmEl.textContent:''), href:(a.getAttribute('href')||'') }); }catch(err){}
+});
 
 /* ---- Sunbeam wallet + auth widget ----
    Anonymous players earn sunbeams locally (handled by the SDK). When they
