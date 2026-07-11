@@ -169,6 +169,28 @@
   @keyframes waftflash{ 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.45)} }
   .ability.alert{ background:linear-gradient(180deg,#ffe9a8,var(--amber)); border-color:#8f5a1c; color:#4a2c08; box-shadow:0 4px 0 #8f5a1c, 0 0 22px rgba(224,144,47,.75); animation:waftflash .4s infinite;}
 
+  /* ======================= BREATH BAR (top-of-stage hold) ======================= */
+  .breath-bar{ position:absolute; top:4px; left:14px; right:14px; height:44px; z-index:8; border:2px solid var(--sage); border-radius:22px;
+    overflow:hidden; cursor:pointer; font-family:inherit; background:rgba(231,224,203,.5); color:var(--sage-2); touch-action:none;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 3px 0 var(--sage-2); transition:box-shadow .08s, border-color .08s, filter .1s;}
+  .breath-bar .bf{ position:absolute; left:0; top:0; bottom:0; width:100%; z-index:1; background:linear-gradient(90deg, rgba(95,208,176,.55), rgba(95,208,176,.22)); transition:width .08s linear;}
+  .breath-bar .bl{ position:relative; z-index:2; font-size:.74rem; letter-spacing:.2em; text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:6px;}
+  .breath-bar.held{ border-color:var(--mint-deep); color:#03251d; box-shadow:0 3px 0 #1d7a63, 0 0 20px rgba(95,208,176,.6);}
+  .breath-bar.locked{ border-style:dashed; opacity:.6; filter:grayscale(.4);}
+
+  /* ======================= WOBBLE / LEAN (posture balance) ======================= */
+  .wobble-row{ display:flex; align-items:stretch; gap:8px; height:48px;}
+  .lean{ width:54px; flex:none; border:2px solid var(--sage); border-radius:12px; font-family:inherit; font-size:1.15rem; font-weight:700; cursor:pointer;
+    touch-action:none; color:var(--sage-2); background:linear-gradient(180deg, rgba(231,224,203,.85), rgba(216,207,178,.85));
+    box-shadow:0 4px 0 var(--sage-2); display:flex; align-items:center; justify-content:center; transition:transform .05s, box-shadow .05s, background .08s, color .08s;}
+  .lean:active,.lean.held{ transform:translateY(3px); box-shadow:0 1px 0 #1d7a63; background:linear-gradient(180deg,#8ff0d3,var(--mint)); color:#03251d; border-color:var(--mint-deep);}
+  .wobble-track{ flex:1; align-self:center; position:relative; height:18px; border-radius:10px; background:rgba(43,58,49,.22); border:1.5px solid var(--sage-2); overflow:hidden;}
+  .wobble-track::before{ content:""; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:var(--sage-2); opacity:.45;}
+  .wobble-track .wlabel{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:.56rem; letter-spacing:.24em; text-transform:uppercase; color:var(--sage-2); opacity:.55; z-index:0; pointer-events:none;}
+  .wobble-track .wd{ position:absolute; top:50%; left:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; z-index:1;
+    background:radial-gradient(circle at 35% 30%, #9fe6d2, var(--mint-deep)); box-shadow:0 1px 6px rgba(0,0,0,.35); transition:left .06s linear, background .12s;}
+  .wobble-track.danger .wd{ background:radial-gradient(circle at 35% 30%, #f0a89f, var(--crimson));}
+
   /* ======================= PLAY MODES / MENU ======================= */
   .modes.playrow .mode-btn .mt{ font-size:.82rem;}
   .modes.disabled{ opacity:.45; pointer-events:none;}
@@ -280,6 +302,7 @@
     </div>
 
     <div class="stage">
+      <button class="breath-bar" id="breathBtn" aria-label="Hold your breath to slow the pressure — let go before you gasp"><span class="bf" id="breathFill"></span><span class="bl">🫁 <span>Hold Breath</span></span></button>
       <div class="face-wrap">
         <svg id="face" viewBox="0 0 200 200" data-tier="calm">
           <ellipse class="ff-skin" cx="100" cy="98" rx="72" ry="76" fill="#e8c9a0" stroke="#b98f61" stroke-width="3"/>
@@ -351,6 +374,11 @@
         <button class="ability" id="waftBtn" aria-label="Waft — fan away a fresh strike">
           <span class="ab-ico">🪭</span><span class="ab-name">Waft</span><span class="ab-state" id="waftState">●</span>
         </button>
+      </div>
+      <div class="wobble-row">
+        <button class="lean" id="leanLbtn" aria-label="Lean left to keep your balance">◀</button>
+        <div class="wobble-track" id="wobbleTrack"><span class="wlabel">sit still</span><span class="wd" id="wobbleDot"></span></div>
+        <button class="lean" id="leanRbtn" aria-label="Lean right to keep your balance">▶</button>
       </div>
       <div class="pads">
         <div class="pad" id="padL"><span class="pad-label">Left</span><span class="pad-hint">HOLD</span><div class="strainbar"><i id="strainL"></i></div></div>
@@ -507,12 +535,16 @@
     sipDrain:26, sipCooldown:20,
     waftWindow:1.6, waftStartCharges:1, waftChargeCap:2, waftActsPer:2, waftScoreCost:150,
     cheekSwapEvery:15,
+    // breath hold (top bar): hold to blunt the rise, but the meter drains and empty = a gasp
+    breathMax:100, breathDrain:30, breathRefill:16, breathRiseCut:0.30, gaspSpike:15, gaspLock:1.5,
+    // wobble / posture: a drift you fight with the lean pads; hit an edge and you shift (squeak + leak)
+    wobbleDrift:15, wobbleFlipMin:2.4, wobbleFlipRand:2.2, leanForce:40, wobbleShiftPressure:9, wobbleFirst:6,
     sceneDur:22, introDur:1.9,
   };
   const MODES={
-    easy  :{riseMul:0.80, coverGapMul:0.80, coverDurMul:1.25, leakGapMul:1.6, strainFillMul:0.85, leakMul:0.7, sipCdMul:0.75},
-    normal:{riseMul:1.00, coverGapMul:1.00, coverDurMul:1.00, leakGapMul:1.0, strainFillMul:1.00, leakMul:1.0, sipCdMul:1.00},
-    panic :{riseMul:1.32, coverGapMul:1.28, coverDurMul:0.85, leakGapMul:0.6, strainFillMul:1.15, leakMul:1.4, sipCdMul:1.25},
+    easy  :{riseMul:0.80, coverGapMul:0.80, coverDurMul:1.25, leakGapMul:1.6, strainFillMul:0.85, leakMul:0.7, sipCdMul:0.75, breathDrainMul:0.80, wobbleDriftMul:0.65},
+    normal:{riseMul:1.00, coverGapMul:1.00, coverDurMul:1.00, leakGapMul:1.0, strainFillMul:1.00, leakMul:1.0, sipCdMul:1.00, breathDrainMul:1.00, wobbleDriftMul:1.00},
+    panic :{riseMul:1.32, coverGapMul:1.28, coverDurMul:0.85, leakGapMul:0.6, strainFillMul:1.15, leakMul:1.4, sipCdMul:1.25, breathDrainMul:1.25, wobbleDriftMul:1.45},
   };
 
   const MEDALS=[
@@ -646,6 +678,7 @@
   const tutOverlay=$("tutOverlay"), tutText=$("tutText");
   const coughBtn=$("coughBtn"), sipBtn=$("sipBtn"), waftBtn=$("waftBtn");
   const coughState=$("coughState"), sipState=$("sipState"), waftState=$("waftState"), sipCdEl=$("sipCd");
+  const breathBtn=$("breathBtn"), breathFill=$("breathFill"), wobbleTrack=$("wobbleTrack"), wobbleDot=$("wobbleDot"), leanLbtn=$("leanLbtn"), leanRbtn=$("leanRbtn");
   const wardScreen=$("wardScreen"), dailyNote=$("dailyNote"), diffRow=$("diffRow");
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -660,6 +693,8 @@
   function newState(modeKey, playKey){
     return { phase:"playing", modeKey, M:MODES[modeKey], playMode:playKey||"stage",
       pressure:0, strainL:0, strainR:0, padL:false, padR:false, slipL:0, slipR:0,
+      breath:CFG.breathMax, breathHold:false, breathLock:0,
+      wobble:0, wobbleDir:1, wobbleFlipAt:CFG.wobbleFlipMin, leanL:false, leanR:false,
       strikes:0, score:0, time:0, combo:0, bestCombo:0, calloutIdx:-1,
       scene:0, sceneTime:0, inIntro:false, introTime:0, sceneOrder:null,
       cover:false, coverSelf:false, coverType:"", coverStart:0, coverUntil:0, nextCover:CFG.coverFirst,
@@ -697,6 +732,7 @@
     comboEl.classList.remove("on"); comboEl.textContent="×1.0";
     padL.classList.remove("benched","slipped"); padR.classList.remove("benched","slipped");
     sipBtn.classList.remove("sipping");
+    breathBtn.classList.remove("held","locked"); leanLbtn.classList.remove("held","down"); leanRbtn.classList.remove("held","down");
     showIntro(0);
     S.last=performance.now();
     if(raf) cancelAnimationFrame(raf);
@@ -856,6 +892,39 @@
   function blowout(){ fart(1); S.pressure=CFG.blowoutReset; S.stun=CFG.blowoutStun;
     face.dataset.tier="blowout"; S.reliefUntil=S.time+CFG.blowoutStun; breakCombo(); addStrike(); }
 
+  // -- breath / posture (the extra clench-juggle layer) --
+  function gasp(){ S.breathHold=false; breathBtn.classList.remove("held"); S.breathLock=CFG.gaspLock; squeak(); haptic([20,40]);
+    if(S.phase!=="tutorial") S.pressure=Math.min(100,S.pressure+CFG.gaspSpike);
+    floatText(app.clientWidth/2, app.clientHeight*0.22, "😮‍💨 GASP!", "warn"); }
+  function wobbleShift(){ const side=S.wobble>0?1:-1;
+    S.wobble=side*-42; S.wobbleDir=-side; S.wobbleFlipAt=CFG.wobbleFlipMin; squeak(); shake();
+    if(S.phase==="tutorial"){ if(S.tut) S.tut.wobbleShifted=true; return; }
+    S.pressure=Math.min(100,S.pressure+CFG.wobbleShiftPressure); spawnLeak(); haptic(24);
+    floatText(app.clientWidth/2, app.clientHeight*0.26, "😬 you shifted!", "warn"); }
+  function postureTick(dt){
+    const tut=S.phase==="tutorial";
+    if(S.breathLock>0) S.breathLock=Math.max(0,S.breathLock-dt);
+    if(S.breathHold && S.breath>0 && S.stun<=0){
+      S.breath-=CFG.breathDrain*(S.M.breathDrainMul||1)*dt;
+      if(S.breath<=0){ S.breath=0; gasp(); }
+    } else if(!S.breathHold){
+      S.breath=Math.min(CFG.breathMax, S.breath+CFG.breathRefill*dt);
+    }
+    const driftOn=(!tut) || (S.tut&&S.tut.step>=9);
+    const lean=(S.leanR?1:0)-(S.leanL?1:0);
+    if(driftOn && S.stun<=0){
+      S.wobbleFlipAt-=dt;
+      if(S.wobbleFlipAt<=0){ S.wobbleDir=(rnd()<0.5?-1:1); S.wobbleFlipAt=CFG.wobbleFlipMin+rnd()*CFG.wobbleFlipRand; }
+      const drift=S.wobbleDir*CFG.wobbleDrift*(S.M.wobbleDriftMul||1)*(1+rampLevel()*0.08);
+      S.wobble+=(drift+lean*CFG.leanForce)*dt;
+      if(S.wobble>=100 || S.wobble<=-100) wobbleShift();
+    } else if(lean){ // pre-drift: leaning still moves the dot so the control reads as live
+      S.wobble=Math.max(-100,Math.min(100,S.wobble+lean*CFG.leanForce*dt));
+    }
+  }
+  function startBreath(){ if(!S||!isLive()||S.inIntro||S.breathLock>0||S.breath<=1) return; S.breathHold=true; breathBtn.classList.add("held"); haptic(6); }
+  function endBreath(){ if(!S) return; S.breathHold=false; breathBtn.classList.remove("held"); }
+
   // -- medals / toasts --
   function evalMedals(){
     const earned=new Set(get(L.medals,[]));
@@ -981,6 +1050,7 @@
   function resumeGame(){ if(!S||S.phase!=="paused") return; S.phase="playing"; pauseScreen.classList.add("hidden"); S.last=performance.now(); }
   function toMenu(){ if(raf){ cancelAnimationFrame(raf); raf=null; } sipEnd(); S=null; hud.classList.add("hidden"); tutOverlay.classList.add("hidden");
     padL.classList.remove("benched","slipped","down"); padR.classList.remove("benched","slipped","down");
+    breathBtn.classList.remove("held","locked"); leanLbtn.classList.remove("held","down"); leanRbtn.classList.remove("held","down");
     hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
 
   function openMedals(){ buildMedals(); startScreen.classList.add("hidden"); medalsScreen.classList.remove("hidden"); }
@@ -1020,6 +1090,8 @@
     "No cover in sight? Tap <b>COUGH</b> to fake your own, then <b>VENT</b> under it.",
     "Hold <b>SIP</b> to drink the pressure down. You cannot clench while sipping!",
     "Slipped up? For a moment you can <b>WAFT</b> a strike away. Try it now!",
+    "Two thumbs, so many buttons. <b>HOLD BREATH</b> up top to blunt the rise, but let go before you <b>gasp</b>.",
+    "Sitting still is hard. A <b>wobble</b> creeps in, hold the <b>lean</b> pad against it to keep your balance.",
     "You’re ready. Three strikes and you’re exposed. <b>Break a leg!</b>",
   ];
   function startTutorial(){
@@ -1040,6 +1112,8 @@
     if(T.step===5){ T.coughed=false; T.coughVentOk=false; }
     if(T.step===6){ T.sipHeld=0; }
     if(T.step===7){ T.waftWin=0; T.waftOk=false; }
+    if(T.step===8){ T.breathHeld=0; S.breath=CFG.breathMax; S.breathLock=0; }
+    if(T.step===9){ T.leanHeld=0; T.wobbleShifted=false; S.wobble=0; S.wobbleDir=(rnd()<0.5?-1:1); S.wobbleFlipAt=CFG.wobbleFlipMin; }
     if(S.cover) closeCover();
     tutText.innerHTML=TUT_PROMPTS[T.step]; }
   function nextTut(){ S.tut.step++; setupTutStep(); }
@@ -1084,7 +1158,15 @@
         }
         if(T.waftOk || T.stepT>16) nextTut();
         break;
-      case 8:
+      case 8: // hold breath
+        if(S.breathHold) T.breathHeld=(T.breathHeld||0)+dt;
+        if((T.breathHeld||0)>0.8 || T.stepT>14) nextTut();
+        break;
+      case 9: // fight the wobble with a lean pad
+        if(S.leanL||S.leanR) T.leanHeld=(T.leanHeld||0)+dt;
+        if((T.leanHeld||0)>1.0 || T.wobbleShifted || T.stepT>16) nextTut();
+        break;
+      case 10:
         if(T.stepT>2.6) endTutorial();
         break;
     }
@@ -1109,6 +1191,7 @@
     S.strainL=Math.max(0,Math.min(100,S.strainL)); S.strainR=Math.max(0,Math.min(100,S.strainR));
     if(usableL&&S.strainL>=100){ S.slipL=CFG.slipDuration; S.strainL=0; padL.classList.add("slipped"); squeak(); haptic(20); }
     if(usableR&&S.strainR>=100){ S.slipR=CFG.slipDuration; S.strainR=0; padR.classList.add("slipped"); squeak(); haptic(20); }
+    postureTick(dt);
     S.time+=dt;
     tutStep(dt, usableL, usableR);
     if(S && S.phase==="tutorial") render();  // endTutorial() may have torn down S mid-frame
@@ -1149,17 +1232,20 @@
           usableR=S.padR&&S.slipR<=0&&S.stun<=0&&!S.sipping&&!benchR;
     const held=(usableL?1:0)+(usableR?1:0);
     const sf=CFG.strainFill*S.M.strainFillMul;
+    postureTick(dt);
+    const breathing=S.breathHold && S.breath>0 && S.stun<=0;
+    const rMul=breathing?CFG.breathRiseCut:1;
 
     if(S.stun>0){ /* frozen */ }
     else if(S.sipping){ S.pressure-=CFG.sipDrain*dt; if(S.pressure<=0){ S.pressure=0; sipEnd(); } }
     else if(held===2) S.pressure-=CFG.bothHeldDrop*dt;
-    else if(held===1) S.pressure+=riseRate()*CFG.oneHeldFactor*dt;
-    else S.pressure+=riseRate()*dt;
+    else if(held===1) S.pressure+=riseRate()*CFG.oneHeldFactor*rMul*dt;
+    else S.pressure+=riseRate()*rMul*dt;
     if(S.pressure<0) S.pressure=0;
 
     // whiff hazard (sipping leaves both hands off the pads, so a whiff lands at full surge)
     if(CFG.whiffOn && S.stun<=0){
-      if(S.whiffAt>0){ if(S.time>=S.whiffAt){ const both=usableL&&usableR; S.pressure=Math.min(100,S.pressure+CFG.whiffSurge*(both?0.3:1));
+      if(S.whiffAt>0){ if(S.time>=S.whiffAt){ const both=(usableL&&usableR)||breathing; S.pressure=Math.min(100,S.pressure+CFG.whiffSurge*(both?0.3:1));
           if(!both){ squeak(); haptic(25); if(!reduceMotion){ app.classList.remove("whiff"); void app.offsetWidth; app.classList.add("whiff"); } } S.whiffAt=0; } }
       else if(S.time>=S.nextWhiff){ startWhiff(); S.nextWhiff=S.time+(CFG.whiffGapMin+rnd()*CFG.whiffGapRand); }
     }
@@ -1200,6 +1286,16 @@
     if(armed){ const frac=Math.max(0,(S.coverUntil-S.time)/(S.coverUntil-S.coverStart)); ventTimer.style.width=(frac*100)+"%";
       ventTimer.style.background = frac>(1-CFG.perfectFrac) ? "var(--mint)" : "var(--amber)"; }
     else ventTimer.style.width="0%";
+    // breath meter + posture
+    breathFill.style.width=Math.max(0,Math.min(100,S.breath)).toFixed(1)+"%";
+    breathFill.style.background = S.breathLock>0 ? "rgba(192,57,43,.32)"
+      : (S.breath<25 ? "linear-gradient(90deg,rgba(192,57,43,.55),rgba(192,57,43,.22))" : "linear-gradient(90deg,rgba(95,208,176,.55),rgba(95,208,176,.22))");
+    breathBtn.classList.toggle("held", S.breathHold && S.breath>0);
+    breathBtn.classList.toggle("locked", S.breathLock>0);
+    wobbleDot.style.left=((S.wobble+100)/2).toFixed(1)+"%";
+    wobbleTrack.classList.toggle("danger", Math.abs(S.wobble)>68);
+    leanLbtn.classList.toggle("held", S.leanL);
+    leanRbtn.classList.toggle("held", S.leanR);
     renderAbilities();
   }
   function dotRow(n,cap){ let s=""; for(let i=0;i<cap;i++) s+= i<n ? "●" : "○"; return s; }
@@ -1252,6 +1348,11 @@
     sipBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); set.add(e.pointerId); sipStart(); try{ sipBtn.setPointerCapture(e.pointerId);}catch(_){}});
     const up=e=>{ if(!set.has(e.pointerId)) return; set.delete(e.pointerId); if(set.size===0) sipEnd(); };
     sipBtn.addEventListener("pointerup",up); sipBtn.addEventListener("pointercancel",up); sipBtn.addEventListener("lostpointercapture",up); })();
+  (function(){ const set=new Set();
+    breathBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); set.add(e.pointerId); startBreath(); try{ breathBtn.setPointerCapture(e.pointerId);}catch(_){}});
+    const up=e=>{ if(!set.has(e.pointerId)) return; set.delete(e.pointerId); if(set.size===0) endBreath(); };
+    breathBtn.addEventListener("pointerup",up); breathBtn.addEventListener("pointercancel",up); breathBtn.addEventListener("lostpointercapture",up); })();
+  bindPad(leanLbtn,"leanL"); bindPad(leanRbtn,"leanR");
 
   const down={};
   window.addEventListener("keydown",e=>{ if(down[e.code]) return; down[e.code]=true;
@@ -1261,11 +1362,17 @@
     if(e.code==="KeyC"){ doCough(); }
     if(e.code==="KeyS"){ sipStart(); }
     if(e.code==="KeyW"){ doWaft(); }
+    if(e.code==="KeyB"){ startBreath(); }
+    if(e.code==="KeyQ"){ if(S) S.leanL=true; leanLbtn.classList.add("held"); }
+    if(e.code==="KeyE"){ if(S) S.leanR=true; leanRbtn.classList.add("held"); }
     if(e.code==="Escape"){ if(S&&S.phase==="playing") pauseGame(); else if(S&&S.phase==="paused") resumeGame(); } });
   window.addEventListener("keyup",e=>{ down[e.code]=false;
     if(e.code==="KeyF"){ padL.classList.remove("down"); if(S) S.padL=false; }
     if(e.code==="KeyJ"){ padR.classList.remove("down"); if(S) S.padR=false; }
-    if(e.code==="KeyS"){ sipEnd(); } });
+    if(e.code==="KeyS"){ sipEnd(); }
+    if(e.code==="KeyB"){ endBreath(); }
+    if(e.code==="KeyQ"){ if(S) S.leanL=false; leanLbtn.classList.remove("held"); }
+    if(e.code==="KeyE"){ if(S) S.leanR=false; leanRbtn.classList.remove("held"); } });
 
   document.addEventListener("visibilitychange",()=>{ if(document.hidden && S && S.phase==="playing") pauseGame(); });
   window.addEventListener("blur",()=>{ if(S && S.phase==="playing") pauseGame(); });
@@ -1358,9 +1465,12 @@
           score:S.score, time:S.time, combo:S.combo, cough:S.coughCharges, waft:S.waftCharges, sipCd:S.sipCd,
           sipping:S.sipping, scene:S.scene, leaks:S.leaks.length, cover:S.cover, coverType:S.coverType,
           coverSelf:S.coverSelf, strainL:S.strainL, strainR:S.strainR, pendingExpose:S.pendingExpose,
+          breath:S.breath, breathHold:S.breathHold, wobble:S.wobble, breathLock:S.breathLock,
           tutStep:S.tut?S.tut.step:-1 };
         o.nan=Object.keys(o).some(k=>typeof o[k]==="number"&&!isFinite(o[k])); return o; },
       setPads:function(l,r){ if(S){ S.padL=!!l; S.padR=!!r; } },
+      setBreath:function(on){ if(S){ if(on) startBreath(); else endBreath(); } },
+      setLean:function(l,r){ if(S){ S.leanL=!!l; S.leanR=!!r; } },
       vent:doVent, cough:doCough, waft:doWaft,
       sip:function(on){ if(on) sipStart(); else sipEnd(); },
       forceCover:function(self){ if(S&&!S.cover) openCover(!!self); },
@@ -1382,6 +1492,9 @@
               else if(S.strainR>=80&&S.strainL<80){ S.padR=false; S.padL=true; }
               else { S.padL=S.strainL<55; S.padR=S.strainR<55; }
             }
+            // posture: counter the wobble, breathe when pinned and hands are busy
+            S.leanL = S.wobble>25; S.leanR = S.wobble<-25;
+            S.breathHold = (S.pressure>60 && S.breath>25 && S.breathLock<=0 && !(S.padL&&S.padR));
             if(S.cover) doVent();
             if(S.leaks.length) plugLeak(S.leaks[0]);
             if((S.pendingExpose>0||(S.strikes>0&&S.time<=S.waftUntil))&&S.waftCharges>0) doWaft();
