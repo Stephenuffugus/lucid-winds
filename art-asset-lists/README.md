@@ -39,12 +39,14 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Bridgevine](bridgevine/00-art-direction.md)** (World of Goo) — *Copperwood Atelier* · 6 sheets
 - **[Bramble Court](bramble-court/00-art-direction.md)** (Triple Triad/Queens Blood) — *Gilded Bestiary* · 6 sheets
 - **[Nova Bloom](nova-bloom/00-art-direction.md)** (Geometry Wars) — *Vector Nova* (non-botanical lead) · 5 sheets
+- **[Orb Orchard](orb-orchard/00-art-direction.md)** (Blue Spheres) — *Chrome Horizon* (non-botanical lead) · 5 sheets
 
 ## Generate order
 
 | Do | Game | Src | Recommended look | Sheets | Ready |
 |----|------|-----|------------------|--------|-------|
 | 1 | [Glyph Forge](glyph-forge/00-art-direction.md) | ext | Illuminated Arcana | 3 | drop-in |
+
 | 2 | [Picnic Panic](picnic-panic/00-art-direction.md) | sat | Bioluminescent Nocturne | 5 | drop-in |
 | 3 | [Sproing](sproing/00-art-direction.md) | sat | Sunlit Vector Garden | 4 | drop-in |
 | 4 | [Budburst](budburst/00-art-direction.md) | sat | Nocturne Glasshouse (polished) | 2 | drop-in |
