@@ -49,6 +49,7 @@ These are **built and live** and render procedurally; this art is an optional up
 - **[Tinker Loft](tinker-loft/00-art-direction.md)** (Amazing Alex / Rube Goldberg) — *Brass & Chalk* · 6 sheets
 - **[Lamplighter](lamplighter/00-art-direction.md)** (Akari / Light Up) — *Lamplight Leadlight* · 6 sheets
 - **[Tonic Drop](tonic-drop/00-art-direction.md)** (Dr. Mario) — *Apothecary Fizz* · 7 sheets
+- **[Mini Crossword](mini-crossword/00-art-direction.md)** (NYT mini 5x5) — *Sunday Inkwell* · 4 sheets
 
 ## Generate order
 
