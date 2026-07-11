@@ -389,7 +389,11 @@ window._gameFns.dewtrail=function DT(a){
     paint();
   }
 
-  window._DTN=function(){newBoard(mode==='practice');};
+  window._DTN=function(){
+    // Daily already solved today: NEW GAME must hand out a fresh board, not
+    // re-render the daily-done lock screen (the button read as dead — Jul 10 note #7).
+    newBoard(mode==='practice'||!!doneToday());
+  };
   window._DTR=function(){
     if(won)return;
     trail=[];nextWp=1;playing=false;
