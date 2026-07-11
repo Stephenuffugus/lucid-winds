@@ -71,3 +71,11 @@ feedback-config.php
 
 # Nectar Drop raw sprite sheets (source; cut assets ship instead)
 satellites/*/art-drop/
+
+# ── Session hygiene (2026-07-11) ──
+# Art-drop + handoff archives land in many dirs (root, satellites/*, satellites/*/assets).
+# Same rule as assets/*.zip above: extract, wire, delete — never commit. 0 zips tracked
+# repo-wide, so this global pattern is safe.
+*.zip
+# Scratch probe/debug scripts dropped at repo root during a session.
+scratchpad_*

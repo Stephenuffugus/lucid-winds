@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%23121722'/%3E%3Crect x='7' y='14' width='18' height='4' rx='2' fill='%23b07b3e'/%3E%3Ccircle cx='11' cy='24' r='4' fill='%23e0b64f'/%3E%3Cpath d='M21 12 L25 6 L17 6 Z' fill='%237f8cff'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fence Off">
+<title>Fence Off — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"fenceoff"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d0f14; --gold:#e0b64f; --indigo:#7f8cff; --cream:#e8dcc8;
+  --muted:#8a8f9e; --line:#242b3c; --wood:#b07b3e; --green:#6fd08a; --red:#e06a6a; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #12151d 0%, #05070a 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0c0e13; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; left:0; top:0; width:540px; height:960px; display:block; touch-action:none}
+#hud{position:absolute; left:0; top:0; width:540px; padding:10px 12px; display:none; z-index:12; pointer-events:none;
+  align-items:flex-start; gap:8px}
+#hud.on{display:flex}
+#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid #ffffff2e; border-radius:12px;
+  background:#0d0f14b8; color:var(--cream); font-size:1.05rem; display:flex; align-items:center; justify-content:center}
+#hud .chip{background:#0d0f14b8; border:1px solid #ffffff24; border-radius:12px; min-height:48px;
+  padding:6px 10px; display:flex; flex-direction:column; justify-content:center}
+#hud .chip b{font-size:.9rem; white-space:nowrap} #hud .chip span{font-size:.7rem; color:var(--muted); white-space:nowrap}
+#hud .grow{flex:1; align-items:center}
+#dock{position:absolute; left:0; bottom:0; width:540px; display:none; z-index:12;
+  padding:10px 12px calc(14px + env(safe-area-inset-bottom,0px)); align-items:center; gap:8px}
+#dock.on{display:flex}
+.dbtn{min-height:64px; border-radius:16px; border:1px solid #ffffff30; background:#141927c9;
+  color:var(--cream); font-size:.95rem; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:4px 8px}
+.dbtn small{font-size:.7rem; color:var(--muted); margin-top:2px}
+.dbtn:active{background:#202940}
+.dbtn.dis{opacity:.35; pointer-events:none}
+.dbtn.lit{border-color:#e0b64f88; background:#2a2410c9}
+#d-fence,#d-vault{flex:1.35}
+#d-orient,#d-ok,#d-cancel,#d-reset{flex:1; min-width:64px}
+#d-ok{border-color:#6fd08a77} #d-cancel{border-color:#e06a6a55}
+.screen{position:absolute; inset:0; background:linear-gradient(180deg,#0e1219f2 0%,#07090dfa 100%);
+  display:none; flex-direction:column; align-items:center; justify-content:flex-start; z-index:30;
+  padding:44px 26px calc(24px + env(safe-area-inset-bottom,0px)); overflow-y:auto}
+.screen.on{display:flex}
+h1{font-size:2.1rem; letter-spacing:.14em; margin:14px 0 2px; text-align:center}
+h1 .a{color:var(--gold)} h1 .b{color:var(--indigo)}
+.tag{color:var(--muted); font-size:.85rem; margin-bottom:20px; text-align:center}
+.btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; max-width:360px;
+  min-height:58px; margin:7px 0; border-radius:16px; border:1px solid #ffffff26;
+  background:linear-gradient(180deg,#1a2030,#101521); color:var(--cream); font-size:1.02rem; letter-spacing:.04em}
+.btn:active{transform:scale(.985)}
+.btn.gold{border-color:#e0b64f66; background:linear-gradient(180deg,#2a2410,#171307)}
+.btn.blue{border-color:#7f8cff4d; background:linear-gradient(180deg,#171b2e,#0c0f1c)}
+.btn.sm{min-height:48px; max-width:300px; font-size:.9rem}
+.btnrow{display:flex; gap:10px; width:100%; max-width:360px} .btnrow .btn{flex:1}
+#runglist{display:flex; flex-direction:column; gap:10px; width:100%; max-width:380px; margin-top:6px}
+.rungcard{border:1px solid #ffffff22; border-radius:14px; background:#121828; min-height:86px; padding:12px 14px;
+  display:flex; align-items:center; gap:14px; text-align:left}
+.rungcard .rn{font-size:1.6rem} .rungcard .rt{flex:1}
+.rungcard .rt b{display:block; font-size:1rem} .rungcard .rt span{font-size:.72rem; color:var(--muted)}
+.rungcard .rs{font-size:.8rem; color:var(--gold); min-width:56px; text-align:right}
+.rungcard.locked{opacity:.38} .rungcard.done{border-color:#e0b64f66}
+#toast{position:absolute; left:50%; bottom:170px; transform:translateX(-50%); background:#0d0f14e8; z-index:40;
+  border:1px solid #e0b64f55; color:var(--cream); padding:10px 18px; border-radius:14px; font-size:.85rem;
+  opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap; max-width:96%}
+#toast.on{opacity:1}
+#buildstamp{position:absolute; bottom:6px; left:0; width:100%; text-align:center; color:#8a8f9e66; font-size:.7rem; z-index:31; pointer-events:none}
+#overstats{display:flex; gap:12px; margin:8px 0 14px}
+#overstats .chip{border:1px solid #ffffff22; border-radius:12px; padding:8px 14px; background:#121828; text-align:center}
+#overstats .chip b{display:block; font-size:1.2rem; color:var(--gold)} #overstats .chip span{font-size:.7rem; color:var(--muted)}
+.wardrow{width:100%; max-width:380px}
+.wardrow h3{font-size:.8rem; color:var(--muted); letter-spacing:.12em; margin:14px 0 6px}
+.wcards{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.wcard{border:1px solid #ffffff22; border-radius:12px; background:#121828; min-height:74px; padding:8px 4px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px}
+.wcard .wi{font-size:1.3rem} .wcard .wn{font-size:.72rem} .wcard .wl{font-size:.62rem; color:var(--muted); text-align:center}
+.wcard.locked{opacity:.4} .wcard.sel{border-color:#e0b64f88; background:#1b1a10}
+.howp{max-width:360px; color:var(--cream); font-size:.85rem; line-height:1.55; margin:8px 0}
+.howp b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<canvas id="game" width="540" height="960"></canvas>
+
+<div id="hud">
+  <button class="hbtn" id="hud-back">⌂</button>
+  <div class="chip"><b id="h-you" style="color:var(--gold)">● 10 ↷1</b><span>you · fences · vault</span></div>
+  <div class="chip"><b id="h-ai" style="color:var(--indigo)">▲ 10 ↷1</b><span>rival · fences · vault</span></div>
+  <div class="chip grow"><b id="h-status">—</b><span id="h-mode">duel</span></div>
+</div>
+
+<div id="dock">
+  <button class="dbtn" id="d-fence">🧱 FENCE<small id="d-fence-n">10 left</small></button>
+  <button class="dbtn" id="d-orient">↔<small>flip</small></button>
+  <button class="dbtn" id="d-vault">↷ VAULT<small id="d-vault-n">ready</small></button>
+  <button class="dbtn" id="d-ok">✓<small>place</small></button>
+  <button class="dbtn" id="d-cancel">✕<small>cancel</small></button>
+  <button class="dbtn" id="d-reset">⟲<small>reset</small></button>
+</div>
+
+<div class="screen on" id="s-title">
+  <h1><span class="a">FENCE</span> <span class="b">OFF</span></h1>
+  <div class="tag">wall your rival out · race your pawn home · one vault to break any siege</div>
+  <button class="btn gold" id="b-duel">⚔ Duel Ladder</button>
+  <button class="btn blue" id="b-daily">📅 Daily Puzzle</button>
+  <button class="btn" id="b-blitz">⚡ Blitz</button>
+  <button class="btn" id="b-zen">🌙 Zen Sandbox</button>
+  <div class="btnrow">
+    <button class="btn sm" id="b-ward">🎽 Wardrobe</button>
+    <button class="btn sm" id="b-how">❓ How</button>
+  </div>
+</div>
+
+<div class="screen" id="s-rungs">
+  <h1 style="font-size:1.4rem">THE LADDER</h1>
+  <div class="tag">beat a warden to face the next</div>
+  <div id="runglist"></div>
+  <button class="btn sm" id="rungs-back" style="margin-top:16px">← back</button>
+</div>
+
+<div class="screen" id="s-over">
+  <h1 style="font-size:1.5rem" id="over-title">VICTORY</h1>
+  <div class="tag" id="over-sub">—</div>
+  <div id="overstats">
+    <div class="chip"><b id="ov-a">0</b><span id="ov-al">moves</span></div>
+    <div class="chip"><b id="ov-b">0</b><span id="ov-bl">fences</span></div>
+    <div class="chip"><b id="ov-c">—</b><span id="ov-cl">vault</span></div>
+  </div>
+  <button class="btn gold" id="over-next">NEXT RUNG →</button>
+  <button class="btn" id="over-retry">REMATCH</button>
+  <button class="btn sm" id="over-menu">menu</button>
+</div>
+
+<div class="screen" id="s-ward">
+  <h1 style="font-size:1.4rem">WARDROBE</h1>
+  <div class="tag">earned by playing · no purchases</div>
+  <div id="wardbox" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
+  <button class="btn sm" id="ward-back" style="margin-top:16px">← back</button>
+</div>
+
+<div class="screen" id="s-how">
+  <h1 style="font-size:1.4rem">HOW TO FENCE</h1>
+  <p class="howp">A 9×9 yard. Your <b>● gold pawn</b> starts at the bottom and wants any square on the <b>top row</b>. The rival <b>▲ pawn</b> wants the bottom row. First one home wins.</p>
+  <p class="howp">On your turn, <b>tap a glowing square</b> to step one space — or spend one of your <b>10 fences</b>: tap 🧱 FENCE, tap between squares to preview, tap ✓ to plant it. A fence can slow anyone but may <b>never seal off</b> someone's last path — the yard refuses it (shown in red).</p>
+  <p class="howp">Pawns nose to nose? You <b>jump straight over</b>. If a fence sits behind them, you slip <b>diagonally</b> past instead — the classic rules, exact.</p>
+  <p class="howp"><b>↷ The Vault (the twist):</b> once per game each pawn may climb straight over one adjacent fence. The climbed fence becomes a <b>gate</b> — open to BOTH pawns forever after. No wall-in is ever hopeless, but the door you open, your rival may use.</p>
+  <p class="howp"><b>Daily Puzzle</b> deals everyone the same trapped position — win in the stated moves (the vault is usually the key). <b>Blitz</b> gives you ten seconds a turn. <b>Zen Sandbox</b> is a free board for both pawns; it pays no sunbeams.</p>
+  <button class="btn sm" id="how-back" style="margin-top:10px">← back</button>
+</div>
+
+<div id="toast"></div>
+<div id="buildstamp"></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+var BUILD="1.0";
+
+/* ---------- fit stage ---------- */
+function fit(){ var w=window.innerWidth,h=window.innerHeight;
+  var s=Math.min(w/540,h/960);
+  $("stage").style.transform="scale("+s+")"; }
+window.addEventListener("resize",fit); fit();
+
+/* ---------- embed / exit ---------- */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+
+/* ---------- sunbeam earn ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_fenceoff'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- seeded rng ---------- */
+function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Math.imul(t^t>>>15,1|t);
+  r=(r+Math.imul(r^r>>>7,61|r))^r; return ((r^r>>>14)>>>0)/4294967296; }; }
+function utcCode(){ var d=new Date(); return d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate(); }
+function nowMs(){ return Date.now(); }
+
+/* ---------- save ---------- */
+function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("fenceoff_save")||"{}"); }catch(e){}
+  s.rungWins=s.rungWins||[0,0,0]; s.beaten=s.beaten||[false,false,false];
+  s.duelWins=s.duelWins||0; s.dailyWins=s.dailyWins||0; s.blitzWins=s.blitzWins||0;
+  s.streak=s.streak||0; s.lastDaily=s.lastDaily||""; s.fencesPlaced=s.fencesPlaced||0; s.vaultsUsed=s.vaultsUsed||0;
+  s.pawn=s.pawn||"sunmark"; s.fence=s.fence||"timber"; s.board=s.board||"slate"; s.sound=(s.sound!==false);
+  return s; }
+var PROG=loadSave();
+function save(){ try{ localStorage.setItem("fenceoff_save",JSON.stringify(PROG)); }catch(e){} }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended")AC.resume().catch(function(){}); return AC; }
+function blip(f,d,g,type){ if(!PROG.sound)return; var a=ac(); if(!a)return; var o=a.createOscillator(),v=a.createGain(),t=a.currentTime;
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t); v.gain.setValueAtTime(0.0001,t);
+  v.gain.exponentialRampToValueAtTime(g||0.07,t+0.012); v.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.15));
+  o.connect(v); v.connect(a.destination); o.start(t); o.stop(t+(d||0.15)+0.02); }
+function sndMove(){ blip(520,0.09,0.05); }
+function sndFence(){ blip(180,0.16,0.09,"triangle"); blip(120,0.2,0.06,"triangle"); }
+function sndVault(){ blip(330,0.12,0.06,"triangle"); setTimeout(function(){blip(660,0.16,0.06);},110); }
+function sndBad(){ blip(140,0.18,0.08,"sawtooth"); }
+function sndWin(){ blip(523,0.2,0.07); setTimeout(function(){blip(659,0.2,0.07);},100); setTimeout(function(){blip(784,0.2,0.07);},200); setTimeout(function(){blip(1046,0.34,0.08);},300); }
+function sndLose(){ blip(300,0.25,0.07); setTimeout(function(){blip(210,0.4,0.07);},160); }
+
+/* ---------- cosmetics ---------- */
+var BOARDS={
+  slate:{name:"Slate Yard", bgA:"#11141c", bgB:"#0a0c11", cellA:"#1b2231", cellB:"#171d2a", line:"#2b3448",
+    goalYou:"rgba(224,182,79,0.16)", goalAI:"rgba(127,140,255,0.15)", text:"#e8dcc8"},
+  midnight:{name:"Midnight Court", bgA:"#0a0a10", bgB:"#050507", cellA:"#141420", cellB:"#0f0f18", line:"#3a3050",
+    goalYou:"rgba(255,215,106,0.18)", goalAI:"rgba(150,160,255,0.17)", text:"#f0e6d0"},
+  parchment:{name:"Parchment Plan", bgA:"#3a3426", bgB:"#241f15", cellA:"#d8c9a8", cellB:"#cbbb97", line:"#8a7a55",
+    goalYou:"rgba(180,120,20,0.28)", goalAI:"rgba(70,80,200,0.22)", text:"#f4ead2"}
+};
+var FENCES={
+  timber:{name:"Timber", fill:"#b07b3e", edge:"#5f3d1c", grain:"lines"},
+  brass:{name:"Brass", fill:"#c9a34a", edge:"#6e5416", grain:"rivets"},
+  ivory:{name:"Ivory", fill:"#e3ddcf", edge:"#7d7767", grain:"plain"}
+};
+var PAWNS={
+  sunmark:{name:"Sunmark", fill:"#e0b64f", glyph:"sun"},
+  lantern:{name:"Lantern", fill:"#ff9d4d", glyph:"lantern"},
+  comet:{name:"Comet", fill:"#8fd7ff", glyph:"comet"},
+  crown:{name:"Crown", fill:"#ffd76a", glyph:"crown"}
+};
+function boardTheme(){ return BOARDS[PROG.board]||BOARDS.slate; }
+function fenceTheme(){ return FENCES[PROG.fence]||FENCES.timber; }
+function pawnTheme(){ return PAWNS[PROG.pawn]||PAWNS.sunmark; }
+
+/* ================= ENGINE ================= */
+var DX=[0,1,0,-1], DY=[-1,0,1,0]; /* N E S W */
+
+function newState(mode,rung){
+  return { mode:mode, rung:rung||1,
+    pawns:[{x:4,y:8},{x:4,y:0}], goals:[0,8],
+    H:new Uint8Array(64), V:new Uint8Array(64), GH:new Uint8Array(64), GV:new Uint8Array(64),
+    fences:[10,10], vaults:[1,1], turn:0, ply:0, phase:"play", winner:-1,
+    budget:-1, gateKey:"", lastMove:null };
+}
+function cloneState(S){ return { mode:S.mode, rung:S.rung,
+  pawns:[{x:S.pawns[0].x,y:S.pawns[0].y},{x:S.pawns[1].x,y:S.pawns[1].y}], goals:S.goals,
+  H:new Uint8Array(S.H), V:new Uint8Array(S.V), GH:new Uint8Array(S.GH), GV:new Uint8Array(S.GV),
+  fences:[S.fences[0],S.fences[1]], vaults:[S.vaults[0],S.vaults[1]],
+  turn:S.turn, ply:S.ply, phase:S.phase, winner:S.winner, budget:S.budget, gateKey:S.gateKey, lastMove:S.lastMove }; }
+
+function solidH(S,r,c){ return r>=0&&r<8&&c>=0&&c<8&&S.H[r*8+c]===1&&S.GH[r*8+c]===0; }
+function solidV(S,r,c){ return r>=0&&r<8&&c>=0&&c<8&&S.V[r*8+c]===1&&S.GV[r*8+c]===0; }
+function blockedStep(S,x,y,d){
+  var nx=x+DX[d], ny=y+DY[d];
+  if(nx<0||nx>8||ny<0||ny>8) return true;
+  if(d===0) return solidH(S,y-1,x-1)||solidH(S,y-1,x);
+  if(d===2) return solidH(S,y,x-1)||solidH(S,y,x);
+  if(d===1) return solidV(S,y-1,x)||solidV(S,y,x);
+  return solidV(S,y-1,x-1)||solidV(S,y,x-1);
+}
+function blockingFence(S,x,y,d){
+  var nx=x+DX[d], ny=y+DY[d];
+  if(nx<0||nx>8||ny<0||ny>8) return null;
+  if(d===0){ if(solidH(S,y-1,x-1))return{o:"H",r:y-1,c:x-1}; if(solidH(S,y-1,x))return{o:"H",r:y-1,c:x}; return null; }
+  if(d===2){ if(solidH(S,y,x-1))return{o:"H",r:y,c:x-1}; if(solidH(S,y,x))return{o:"H",r:y,c:x}; return null; }
+  if(d===1){ if(solidV(S,y-1,x))return{o:"V",r:y-1,c:x}; if(solidV(S,y,x))return{o:"V",r:y,c:x}; return null; }
+  if(solidV(S,y-1,x-1))return{o:"V",r:y-1,c:x-1}; if(solidV(S,y,x-1))return{o:"V",r:y,c:x-1}; return null;
+}
+
+function pawnMoves(S,side){
+  var me=S.pawns[side], op=S.pawns[1-side], out=[], d, pd;
+  for(d=0;d<4;d++){
+    if(blockedStep(S,me.x,me.y,d))continue;
+    var nx=me.x+DX[d], ny=me.y+DY[d];
+    if(!(nx===op.x&&ny===op.y)){ out.push({t:"pawn",x:nx,y:ny}); continue; }
+    if(!blockedStep(S,nx,ny,d)){ out.push({t:"pawn",x:nx+DX[d],y:ny+DY[d]}); }
+    else { for(pd=0;pd<4;pd++){ if(pd===d||pd===((d+2)%4))continue;
+      if(blockedStep(S,nx,ny,pd))continue;
+      out.push({t:"pawn",x:nx+DX[pd],y:ny+DY[pd]}); } }
+  }
+  return out;
+}
+function vaultMoves(S,side){
+  var out=[]; if(S.vaults[side]<=0)return out;
+  var me=S.pawns[side], op=S.pawns[1-side], d;
+  for(d=0;d<4;d++){
+    var f=blockingFence(S,me.x,me.y,d); if(!f)continue;
+    var nx=me.x+DX[d], ny=me.y+DY[d];
+    if(nx===op.x&&ny===op.y)continue;
+    out.push({t:"vault",x:nx,y:ny,o:f.o,r:f.r,c:f.c});
+  }
+  return out;
+}
+
+/* BFS distance / path (ignores pawns, gates count open) */
+var BQ=new Int16Array(81), BD=new Int16Array(81), BP=new Int16Array(81);
+function bfsDist(S,side){
+  var goal=S.goals[side], p=S.pawns[side], i;
+  for(i=0;i<81;i++)BD[i]=-1;
+  var head=0, tail=0, s0=p.y*9+p.x; BD[s0]=0; BQ[tail++]=s0;
+  if(p.y===goal)return 0;
+  while(head<tail){ var cur=BQ[head++], cx=cur%9, cy=(cur-cx)/9, d;
+    for(d=0;d<4;d++){ if(blockedStep(S,cx,cy,d))continue;
+      var nx=cx+DX[d], ny=cy+DY[d], ni=ny*9+nx;
+      if(BD[ni]>=0)continue; BD[ni]=BD[cur]+1;
+      if(ny===goal)return BD[ni];
+      BQ[tail++]=ni; } }
+  return -1;
+}
+function bfsPath(S,side){
+  var goal=S.goals[side], p=S.pawns[side], i;
+  for(i=0;i<81;i++){BD[i]=-1;BP[i]=-1;}
+  var head=0, tail=0, s0=p.y*9+p.x; BD[s0]=0; BQ[tail++]=s0;
+  var end=-1;
+  if(p.y===goal)end=s0;
+  while(head<tail&&end<0){ var cur=BQ[head++], cx=cur%9, cy=(cur-cx)/9, d;
+    for(d=0;d<4;d++){ if(blockedStep(S,cx,cy,d))continue;
+      var nx=cx+DX[d], ny=cy+DY[d], ni=ny*9+nx;
+      if(BD[ni]>=0)continue; BD[ni]=BD[cur]+1; BP[ni]=cur;
+      if(ny===goal){ end=ni; break; }
+      BQ[tail++]=ni; } }
+  if(end<0)return null;
+  var path=[], c2=end;
+  while(c2>=0){ path.push({x:c2%9,y:(c2-(c2%9))/9}); c2=BP[c2]; }
+  path.reverse(); return path;
+}
+function pathEdgeSet(path){ var es={}, i;
+  if(!path)return es;
+  for(i=0;i+1<path.length;i++){ var a=path[i], b=path[i+1];
+    if(a.x===b.x)es["v"+a.x+"_"+Math.min(a.y,b.y)]=1; else es["h"+Math.min(a.x,b.x)+"_"+a.y]=1; }
+  return es; }
+function wallCuts(o,r,c,es){ if(o==="H")return !!(es["v"+c+"_"+r]||es["v"+(c+1)+"_"+r]); return !!(es["h"+c+"_"+r]||es["h"+c+"_"+(r+1)]); }
+
+function wallAt(S,o,r,c){ if(r<0||r>7||c<0||c>7)return 0; return o==="H"?S.H[r*8+c]:S.V[r*8+c]; }
+function structLegal(S,o,r,c){
+  if(r<0||r>7||c<0||c>7)return "bounds";
+  if(o==="H"){ if(wallAt(S,"H",r,c))return "overlaps"; if(wallAt(S,"V",r,c))return "crosses";
+    if(wallAt(S,"H",r,c-1)||wallAt(S,"H",r,c+1))return "overlaps"; }
+  else { if(wallAt(S,"V",r,c))return "overlaps"; if(wallAt(S,"H",r,c))return "crosses";
+    if(wallAt(S,"V",r-1,c)||wallAt(S,"V",r+1,c))return "overlaps"; }
+  return null;
+}
+function legalWall(S,o,r,c,side){
+  if(side!==undefined&&side!==null&&S.fences[side]<=0)return {ok:false,reason:"nofence"};
+  var sr=structLegal(S,o,r,c); if(sr)return {ok:false,reason:sr};
+  var arr=o==="H"?S.H:S.V, i=r*8+c;
+  arr[i]=1; var ok=bfsDist(S,0)>=0&&bfsDist(S,1)>=0; arr[i]=0;
+  return ok?{ok:true}:{ok:false,reason:"seals"};
+}
+
+function applyMove(S,mv){
+  var side=S.turn;
+  if(mv.t==="pawn"||mv.t==="vault"){
+    if(mv.t==="vault"){
+      if(mv.o==="H")S.GH[mv.r*8+mv.c]=1; else S.GV[mv.r*8+mv.c]=1;
+      S.vaults[side]--; S.gateKey=S.gateKey+mv.o+mv.r+"_"+mv.c+";";
+    }
+    S.pawns[side].x=mv.x; S.pawns[side].y=mv.y;
+    if(S.mode!=="zen"&&mv.y===S.goals[side]){ S.phase="over"; S.winner=side; }
+  } else if(mv.t==="wall"){
+    if(mv.o==="H")S.H[mv.r*8+mv.c]=1; else S.V[mv.r*8+mv.c]=1;
+    S.fences[side]--;
+  }
+  S.lastMove={t:mv.t,x:mv.x,y:mv.y,o:mv.o,r:mv.r,c:mv.c,side:side};
+  S.ply++;
+  if(S.mode==="daily"&&side===0&&(mv.t==="pawn"||mv.t==="vault")&&S.phase==="play"){
+    S.budget--;
+    if(S.budget<=0){ S.phase="over"; S.winner=1; }
+  }
+  if(S.mode!=="zen")S.turn=1-side;
+  return S;
+}
+
+function stateHash(S){
+  var h=2166136261, i;
+  function mix(v){ h^=(v+1)&0xffff; h=Math.imul(h,16777619); }
+  mix(S.pawns[0].x); mix(S.pawns[0].y); mix(S.pawns[1].x); mix(S.pawns[1].y);
+  for(i=0;i<64;i++)mix(S.H[i]+2*S.V[i]+4*S.GH[i]+8*S.GV[i]);
+  mix(S.fences[0]); mix(S.fences[1]); mix(S.vaults[0]); mix(S.vaults[1]);
+  mix(S.turn); mix(S.ply); mix(S.winner+2); mix(S.budget+2);
+  return h>>>0;
+}
+function isFiniteState(S){
+  return isFinite(S.pawns[0].x)&&isFinite(S.pawns[0].y)&&isFinite(S.pawns[1].x)&&isFinite(S.pawns[1].y)&&
+    isFinite(S.ply)&&isFinite(S.fences[0])&&isFinite(S.fences[1])&&isFinite(S.budget);
+}
+
+/* ---------- AI ---------- */
+function evalState(S,side){
+  var dm=bfsDist(S,side), doo=bfsDist(S,1-side);
+  if(dm<0)dm=99; if(doo<0)doo=99;
+  return (doo-dm)*10 + (S.fences[side]-S.fences[1-side])*1.2 + (S.vaults[side]-S.vaults[1-side])*4;
+}
+function candidateWalls(S,side,cap){
+  if(S.fences[side]<=0)return [];
+  var opp=1-side;
+  var pO=bfsPath(S,opp), pM=bfsPath(S,side);
+  var eO=pathEdgeSet(pO), eM=pathEdgeSet(pM);
+  var seen={}, out=[];
+  function add(o,r,c){
+    if(r<0||r>7||c<0||c>7)return; var k=o+r+"_"+c; if(seen[k])return; seen[k]=1;
+    if(structLegal(S,o,r,c))return;
+    var okSeal=true;
+    if(wallCuts(o,r,c,eO)||wallCuts(o,r,c,eM)){
+      var arr=o==="H"?S.H:S.V, i=r*8+c;
+      arr[i]=1; okSeal=bfsDist(S,0)>=0&&bfsDist(S,1)>=0; arr[i]=0;
+    }
+    if(okSeal)out.push({t:"wall",o:o,r:r,c:c});
+  }
+  var lim=pO?Math.min(pO.length-1,10):0, i;
+  for(i=0;i<lim;i++){
+    var a=pO[i], b=pO[i+1];
+    if(a.x===b.x){ var rr=Math.min(a.y,b.y); add("H",rr,a.x-1); add("H",rr,a.x); }
+    else { var cc=Math.min(a.x,b.x); add("V",a.y-1,cc); add("V",a.y,cc); }
+  }
+  var me=S.pawns[side];
+  add("H",me.y-1,me.x-1); add("H",me.y-1,me.x); add("H",me.y,me.x-1); add("H",me.y,me.x);
+  add("V",me.y-1,me.x-1); add("V",me.y-1,me.x); add("V",me.y,me.x-1); add("V",me.y,me.x);
+  var op=S.pawns[opp];
+  out.sort(function(A,B2){ var da=Math.abs(A.c+0.5-op.x)+Math.abs(A.r+0.5-op.y), db=Math.abs(B2.c+0.5-op.x)+Math.abs(B2.r+0.5-op.y); return da-db; });
+  if(out.length>(cap||18))out.length=cap||18;
+  return out;
+}
+function candidates(S,wallCap){
+  var side=S.turn, pm=pawnMoves(S,side), i, out=[];
+  var me=S.pawns[side], scored=[];
+  for(i=0;i<pm.length;i++){
+    var mv=pm[i], ox=me.x, oy=me.y;
+    me.x=mv.x; me.y=mv.y; var dd=bfsDist(S,side); me.x=ox; me.y=oy;
+    scored.push({mv:mv,k:dd<0?99:dd});
+  }
+  scored.sort(function(a,b){return a.k-b.k;});
+  for(i=0;i<scored.length;i++)out.push(scored[i].mv);
+  var vm=vaultMoves(S,side);
+  for(i=0;i<vm.length;i++)out.push(vm[i]);
+  var walls=candidateWalls(S,side,wallCap);
+  for(i=0;i<walls.length;i++)out.push(walls[i]);
+  return out;
+}
+function search(S,depth,alpha,beta,wallCap){
+  if(S.phase!=="play")return -(50000+depth*100);
+  if(depth===0)return evalState(S,S.turn);
+  var mvs=candidates(S,wallCap);
+  if(!mvs.length){ var P=cloneState(S); P.turn=1-P.turn; P.ply++; return -search(P,depth-1,-beta,-alpha,wallCap); }
+  var best=-1e9, i;
+  for(i=0;i<mvs.length;i++){
+    var C=cloneState(S); applyMove(C,mvs[i]);
+    var v=-search(C,depth-1,-beta,-alpha,wallCap);
+    if(v>best)best=v;
+    if(v>alpha)alpha=v;
+    if(alpha>=beta)break;
+  }
+  return best;
+}
+function jitter(mv,ply){
+  var h=(((mv.x||0)+3)*73856093)^(((mv.y||0)+7)*19349663)^(((mv.r||0)+11)*83492791)^
+        (((mv.c||0)+13)*15485863)^((mv.t==="wall"?5:(mv.t==="vault"?9:1))*97)^Math.imul(ply+1,7919);
+  return ((h>>>0)%1000)/1000-0.5;
+}
+function aiMove(S,rung){
+  var depth=rung===1?1:(rung===2?2:3);
+  var wallCap=rung===1?6:(rung===2?16:12);
+  var mvs=candidates(S,wallCap);
+  if(!mvs.length)return {t:"pass"};
+  var best=null, bestV=-1e9, alpha=-1e9, i;
+  for(i=0;i<mvs.length;i++){
+    var C=cloneState(S); applyMove(C,mvs[i]);
+    var v=-search(C,depth-1,-1e9,-alpha,wallCap);
+    v+=jitter(mvs[i],S.ply)*(rung===1?6:0.35);
+    if(v>bestV){ bestV=v; best=mvs[i]; }
+    if(v>alpha)alpha=v;
+  }
+  return best;
+}
+function greedyPawn(S,side){
+  var pm=pawnMoves(S,side), me=S.pawns[side], best=null, bestD=1e9, i;
+  for(i=0;i<pm.length;i++){
+    var ox=me.x, oy=me.y;
+    me.x=pm[i].x; me.y=pm[i].y; var dd=bfsDist(S,side); me.x=ox; me.y=oy;
+    if(dd>=0&&dd<bestD){bestD=dd;best=pm[i];}
+  }
+  return best||pm[0]||null;
+}
+function randomMove(S,rng){
+  var side=S.turn, pm=pawnMoves(S,side), roll=rng();
+  if(roll<0.10&&S.vaults[side]>0){ var vm=vaultMoves(S,side); if(vm.length)return vm[Math.floor(rng()*vm.length)]; }
+  if(roll>=0.55&&S.fences[side]>0){ var t;
+    for(t=0;t<12;t++){ var o=rng()<0.5?"H":"V", r=Math.floor(rng()*8), c=Math.floor(rng()*8);
+      if(legalWall(S,o,r,c).ok)return {t:"wall",o:o,r:r,c:c}; } }
+  if(!pm.length)return {t:"pass"};
+  return pm[Math.floor(rng()*pm.length)];
+}
+function allLegalMoves(S){
+  var side=S.turn, out=pawnMoves(S,side).concat(vaultMoves(S,side)), r, c;
+  if(S.fences[side]>0){
+    var e0=pathEdgeSet(bfsPath(S,0)), e1=pathEdgeSet(bfsPath(S,1));
+    for(r=0;r<8;r++)for(c=0;c<8;c++){
+      var oo; for(oo=0;oo<2;oo++){ var o=oo?"V":"H";
+        if(structLegal(S,o,r,c))continue;
+        var okSeal=true;
+        if(wallCuts(o,r,c,e0)||wallCuts(o,r,c,e1)){
+          var arr=o==="H"?S.H:S.V, i=r*8+c;
+          arr[i]=1; okSeal=bfsDist(S,0)>=0&&bfsDist(S,1)>=0; arr[i]=0;
+        }
+        if(okSeal)out.push({t:"wall",o:o,r:r,c:c});
+      }
+    }
+  }
+  return out;
+}
+function mvKey(m){ return m.t+"|"+(m.x===undefined?"":m.x)+"|"+(m.y===undefined?"":m.y)+"|"+(m.o||"")+"|"+(m.r===undefined?"":m.r)+"|"+(m.c===undefined?"":m.c); }
+
+/* ---------- daily puzzle solver ---------- */
+function solveForced(S0,N){
+  var memo={};
+  function rec(S,left){
+    if(S.phase!=="play")return S.winner===0;
+    var k=S.pawns[0].x+","+S.pawns[0].y+","+S.pawns[1].x+","+S.pawns[1].y+","+S.turn+","+left+","+S.vaults[0]+","+S.gateKey;
+    if(memo.hasOwnProperty(k))return memo[k];
+    var res=false, i;
+    if(S.turn===0){
+      if(left<=0){ memo[k]=false; return false; }
+      var mvs=pawnMoves(S,0).concat(vaultMoves(S,0));
+      for(i=0;i<mvs.length;i++){ var C=cloneState(S); applyMove(C,mvs[i]); if(rec(C,left-1)){res=true;break;} }
+    } else {
+      var dm=pawnMoves(S,1);
+      if(!dm.length){ var P=cloneState(S); P.turn=0; P.ply++; res=rec(P,left); }
+      else { res=true;
+        for(i=0;i<dm.length;i++){ var C2=cloneState(S); applyMove(C2,dm[i]); if(!rec(C2,left)){res=false;break;} } }
+    }
+    memo[k]=res; return res;
+  }
+  return rec(cloneState(S0),N);
+}
+function forcedMove(S,left){
+  var mvs=pawnMoves(S,0).concat(vaultMoves(S,0)), i;
+  for(i=0;i<mvs.length;i++){
+    var C=cloneState(S); applyMove(C,mvs[i]);
+    if(C.phase!=="play"&&C.winner===0)return mvs[i];
+    if(C.phase==="play"&&left-1>0&&solveForced(C,left-1))return mvs[i];
+  }
+  return null;
+}
+function dailyDefend(S){
+  var left=S.budget;
+  var dm=pawnMoves(S,1), i, best=null, bestD=1e9;
+  for(i=0;i<dm.length;i++){
+    var C=cloneState(S); applyMove(C,dm[i]);
+    if(C.phase!=="play"&&C.winner===1)return dm[i];
+    if(C.phase!=="play")continue;
+    if(!solveForced(C,left))return dm[i];
+    var dd=bfsDist(C,1); if(dd>=0&&dd<bestD){bestD=dd;best=dm[i];}
+  }
+  return best||dm[0]||{t:"pass"};
+}
+function genPuzzle(seed){
+  var rng=mkRng((seed>>>0)||1), attempt;
+  for(attempt=0;attempt<260;attempt++){
+    var relax=attempt>=170;
+    var S=newState("daily",1);
+    S.fences=[0,0]; S.vaults=[1,0];
+    S.pawns[0].x=1+Math.floor(rng()*7); S.pawns[0].y=2+Math.floor(rng()*3);
+    S.pawns[1].x=1+Math.floor(rng()*7); S.pawns[1].y=3+Math.floor(rng()*4);
+    if(S.pawns[0].x===S.pawns[1].x&&S.pawns[0].y===S.pawns[1].y)continue;
+    var nw=5+Math.floor(rng()*4), placed=0, guard=0;
+    while(placed<nw&&guard++<90){
+      var o=rng()<0.55?"H":"V";
+      var r=Math.max(0,Math.min(7,S.pawns[0].y-3+Math.floor(rng()*5)));
+      var c=Math.max(0,Math.min(7,S.pawns[0].x-3+Math.floor(rng()*6)));
+      if(legalWall(S,o,r,c).ok){ if(o==="H")S.H[r*8+c]=1; else S.V[r*8+c]=1; placed++; }
+    }
+    var dd=bfsDist(S,1); if(dd<2)continue;
+    var dp=bfsDist(S,0); if(dp<0)continue;
+    var n, N=0;
+    for(n=2;n<=5;n++){ var T=cloneState(S); T.budget=n; if(solveForced(T,n)){N=n;break;} }
+    if(!N)continue;
+    if(dd>N+2)continue;
+    if(!relax){
+      var T2=cloneState(S); T2.vaults=[0,0]; T2.budget=N;
+      if(solveForced(T2,N))continue;
+    }
+    S.budget=N;
+    return {S:S,N:N,tries:attempt+1,vaultNeeded:!relax,seed:seed};
+  }
+  return null;
+}
+function getDailyPuzzle(code){
+  var k, p=null;
+  for(k=0;k<24&&!p;k++)p=genPuzzle((code+k*7777)>>>0);
+  if(!p){
+    var S=newState("daily",1); S.fences=[0,0]; S.vaults=[1,0];
+    S.pawns[0]={x:4,y:2}; S.pawns[1]={x:0,y:6}; S.budget=2;
+    p={S:S,N:2,tries:0,vaultNeeded:false,seed:code};
+  }
+  return p;
+}
+
+/* ================= UI ================= */
+var G=null;
+var cvs=$("game"), ctx=cvs.getContext("2d");
+var CELL=50, GAP=6, PITCH=56, X0=21, Y0=150;
+function cellX(c){ return X0+c*PITCH; }
+function cellY(r){ return Y0+r*PITCH; }
+
+function hideScreens(){ var s=document.querySelectorAll(".screen"), i; for(i=0;i<s.length;i++)s[i].classList.remove("on"); }
+function show(id){ hideScreens(); $(id).classList.add("on"); }
+var toastT=null;
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2300); }
+function stamp(){ $("buildstamp").textContent="Fence Off "+BUILD+" · "+PROG.duelWins+" duel wins · daily streak "+PROG.streak; }
+
+function newGameUI(mode,S,rung,label){
+  G={ S:S, mode:mode, aiRung:rung||1, label:label||mode,
+    fenceMode:false, vaultMode:false, orient:"H", preview:null,
+    anim:null, flash:null, aiAt:0, deadline:0, earned:0, zenSide:0,
+    devHold:false, puzzle:null };
+  hideScreens(); $("hud").classList.add("on"); $("dock").classList.add("on");
+  $("h-mode").textContent=label||mode;
+  updateHud(); updateDock();
+}
+function startDuel(rung){
+  newGameUI("duel", newState("duel",rung), rung, ["Picket Novice","Yard Warden","Master Fencer"][rung-1]);
+}
+function startBlitz(){
+  newGameUI("blitz", newState("blitz",2), 2, "Blitz · 10s turns");
+  G.deadline=nowMs()+10000;
+}
+function startZen(){
+  newGameUI("zen", newState("zen",1), 1, "Zen Sandbox");
+}
+function startDaily(seedOverride){
+  var code=seedOverride||utcCode();
+  var p=getDailyPuzzle(code);
+  var S=cloneState(p.S);
+  newGameUI("daily", S, 1, "Daily · win in "+p.N);
+  G.puzzle=p;
+  toast("Puzzle #"+code+" — force the win in "+p.N+" moves");
+}
+function stopToMenu(){ G=null;
+  $("hud").classList.remove("on"); $("dock").classList.remove("on");
+  show("s-title"); stamp(); }
+
+function updateHud(){
+  if(!G)return;
+  var S=G.S;
+  $("h-you").textContent="● "+S.fences[0]+" ↷"+S.vaults[0];
+  $("h-ai").textContent="▲ "+S.fences[1]+" ↷"+S.vaults[1];
+  var st="";
+  if(S.phase!=="play")st=S.winner===0?"● wins":"▲ wins";
+  else if(G.mode==="zen")st="free play";
+  else if(G.mode==="daily")st=S.turn===0?(S.budget+" moves left"):"▲ replies…";
+  else st=S.turn===0?"your move":"▲ thinking…";
+  $("h-status").textContent=st;
+}
+function updateDock(){
+  if(!G)return;
+  var S=G.S;
+  var canFence=(G.mode==="duel"||G.mode==="blitz"||G.mode==="zen")&&S.fences[G.mode==="zen"?G.zenSide:0]>0&&S.phase==="play";
+  var myTurn=G.mode==="zen"||(S.turn===0&&S.phase==="play");
+  setDis("d-fence",!(canFence&&myTurn));
+  $("d-fence-n").textContent=S.fences[G.mode==="zen"?G.zenSide:0]+" left";
+  $("d-fence").classList.toggle("lit",G.fenceMode);
+  $("d-orient").style.display=G.fenceMode?"flex":"none";
+  $("d-orient").firstChild.textContent=G.orient==="H"?"↔":"↕";
+  var vside=G.mode==="zen"?G.zenSide:0;
+  var canVault=S.vaults[vside]>0&&S.phase==="play"&&vaultMoves(S,vside).length>0&&myTurn;
+  setDis("d-vault",!canVault);
+  $("d-vault-n").textContent=S.vaults[vside]>0?"ready":"spent";
+  $("d-vault").classList.toggle("lit",G.vaultMode);
+  $("d-ok").style.display=(G.fenceMode&&G.preview&&G.preview.ok)?"flex":"none";
+  $("d-cancel").style.display=(G.fenceMode||G.vaultMode)?"flex":"none";
+  $("d-reset").style.display=G.mode==="zen"?"flex":"none";
+}
+function setDis(id,dis){ $(id).classList.toggle("dis",!!dis); }
+
+function payGame(g,n,tag){
+  if(!g||g.mode==="zen")return 0;
+  if(g.earned>=12)return 0;
+  n=Math.min(n,12-g.earned);
+  var got=window._sbCapEarn(n,tag);
+  g.earned+=got;
+  if(got>0)toast("☀ +"+got+" sunbeam"+(got>1?"s":""));
+  return got;
+}
+
+function finishGame(){
+  var S=G.S, won=S.winner===0;
+  var movesUsed=Math.ceil(S.ply/2), fUsed=10-S.fences[0], vUsed=S.vaults[0]===0?"used":"kept";
+  if(G.mode==="duel"){
+    if(won){
+      PROG.duelWins++; PROG.rungWins[S.rung-1]++;
+      var first=!PROG.beaten[S.rung-1];
+      if(first)PROG.beaten[S.rung-1]=true;
+      payGame(G,(S.rung===1?2:(S.rung===2?3:4))+(first?2:0),"duel");
+      if(won)sndWin();
+    } else sndLose();
+    $("over-title").textContent=won?"THE YARD IS YOURS":"WALLED OUT";
+    $("over-sub").textContent=won?("You out-fenced the "+G.label+".")
+      :("The "+G.label+" reached home first. Rematch?");
+    $("over-next").style.display=(won&&S.rung<3)?"":"none";
+  } else if(G.mode==="daily"){
+    if(won){
+      var today=new Date().toISOString().slice(0,10);
+      if(PROG.lastDaily!==today){
+        var y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+        PROG.streak=(PROG.lastDaily===y)?PROG.streak+1:1;
+        PROG.lastDaily=today; PROG.dailyWins++;
+      }
+      payGame(G,3,"daily"); sndWin();
+    } else sndLose();
+    $("over-title").textContent=won?"PUZZLE FORCED":"OUT OF MOVES";
+    $("over-sub").textContent=won?("Streak "+PROG.streak+". A new trap tomorrow.")
+      :("The forced win was there in "+(G.puzzle?G.puzzle.N:"?")+" moves. Try again.");
+    $("over-next").style.display="none";
+  } else if(G.mode==="blitz"){
+    if(won){ PROG.blitzWins++; payGame(G,3,"blitz"); sndWin(); } else sndLose();
+    $("over-title").textContent=won?"BLITZ VICTORY":"CLOCKED OUT";
+    $("over-sub").textContent=won?"Ten second turns and you still fenced them off.":"The rival raced home. Again?";
+    $("over-next").style.display="none";
+  }
+  save();
+  $("ov-a").textContent=movesUsed; $("ov-al").textContent="moves";
+  $("ov-b").textContent=fUsed; $("ov-bl").textContent="fences used";
+  $("ov-c").textContent=vUsed; $("ov-cl").textContent="vault";
+  setTimeout(function(){ if(G&&G.S.phase!=="play")show("s-over"); },750);
+}
+
+function applyUI(mv){
+  var S=G.S, side=S.turn;
+  var from={x:S.pawns[side].x,y:S.pawns[side].y};
+  applyMove(S,mv);
+  if(mv.t==="pawn"||mv.t==="vault"){
+    G.anim={side:side,fx:from.x,fy:from.y,tx:mv.x,ty:mv.y,start:nowMs(),dur:mv.t==="vault"?460:210,vault:mv.t==="vault"};
+    if(mv.t==="vault"){
+      G.flash={o:mv.o,r:mv.r,c:mv.c,t:nowMs()};
+      sndVault();
+      toast(side===0?"↷ You vault the fence — it is a gate now, open to both":"↷ The rival vaults — that fence is a gate now");
+      if(side===0){ PROG.vaultsUsed++; save(); }
+    } else sndMove();
+  } else if(mv.t==="wall"){
+    sndFence();
+    if(side===0&&G.mode!=="zen"){ PROG.fencesPlaced++; save(); }
+    if(G.mode==="zen"){ PROG.fencesPlaced++; save(); }
+  }
+  G.fenceMode=false; G.vaultMode=false; G.preview=null;
+  if(S.phase!=="play"){ finishGame(); }
+  else {
+    if(G.mode!=="zen"&&S.turn===1)G.aiAt=nowMs()+520;
+    if(G.mode==="blitz"&&S.turn===0)G.deadline=nowMs()+10000;
+  }
+  updateHud(); updateDock();
+}
+
+/* ---------- input ---------- */
+function canvasPoint(e){
+  var rect=cvs.getBoundingClientRect();
+  return { x:(e.clientX-rect.left)*(540/rect.width), y:(e.clientY-rect.top)*(960/rect.height) };
+}
+function nearestSlot(px,py){
+  var c=Math.round((px-X0-53)/PITCH), r=Math.round((py-Y0-53)/PITCH);
+  if(c<0)c=0; if(c>7)c=7; if(r<0)r=0; if(r>7)r=7;
+  return {r:r,c:c};
+}
+function tapCell(px,py){
+  var c=Math.floor((px-X0)/PITCH), r=Math.floor((py-Y0)/PITCH);
+  if(c<0||c>8||r<0||r>8)return null;
+  return {x:c,y:r};
+}
+cvs.addEventListener("pointerdown",function(e){
+  if(!G||G.S.phase!=="play")return;
+  var pt=canvasPoint(e), S=G.S;
+  var side=G.mode==="zen"?G.zenSide:0;
+  var myTurn=G.mode==="zen"||S.turn===0;
+  if(!myTurn)return;
+  if(G.fenceMode){
+    var slot=nearestSlot(pt.x,pt.y);
+    if(G.preview&&G.preview.r===slot.r&&G.preview.c===slot.c&&G.preview.o===G.orient&&G.preview.ok){
+      confirmFence(); return;
+    }
+    var lg=legalWall(S,G.orient,slot.r,slot.c,side);
+    G.preview={o:G.orient,r:slot.r,c:slot.c,ok:lg.ok,reason:lg.reason};
+    if(!lg.ok){
+      sndBad();
+      toast(lg.reason==="seals"?"✕ Refused — that would seal a pawn in completely":
+        (lg.reason==="crosses"?"✕ Fences cannot cross":
+        (lg.reason==="nofence"?"✕ No fences left":"✕ Fences cannot overlap")));
+    } else toast("Tap again or press ✓ to plant it");
+    updateDock(); return;
+  }
+  var cell=tapCell(pt.x,pt.y);
+  if(!cell)return;
+  if(G.vaultMode){
+    var vm=vaultMoves(S,side), i;
+    for(i=0;i<vm.length;i++)if(vm[i].x===cell.x&&vm[i].y===cell.y){
+      if(G.mode==="zen")S.turn=side;
+      applyUI(vm[i]); return;
+    }
+    toast("Tap an orange gate square to climb"); return;
+  }
+  if(G.mode==="zen"){
+    if(cell.x===S.pawns[0].x&&cell.y===S.pawns[0].y){ G.zenSide=0; toast("● selected"); updateDock(); return; }
+    if(cell.x===S.pawns[1].x&&cell.y===S.pawns[1].y){ G.zenSide=1; toast("▲ selected"); updateDock(); return; }
+  }
+  var pm=pawnMoves(S,side), j;
+  for(j=0;j<pm.length;j++)if(pm[j].x===cell.x&&pm[j].y===cell.y){
+    if(G.mode==="zen")S.turn=side;
+    applyUI(pm[j]); return;
+  }
+});
+function confirmFence(){
+  if(!G||!G.preview||!G.preview.ok)return;
+  var side=G.mode==="zen"?G.zenSide:0;
+  if(G.mode==="zen")G.S.turn=side;
+  applyUI({t:"wall",o:G.preview.o,r:G.preview.r,c:G.preview.c});
+}
+function tap(id,fn){ $(id).addEventListener("click",fn); }
+tap("d-fence",function(){ if(!G)return; G.fenceMode=!G.fenceMode; G.vaultMode=false; G.preview=null;
+  if(G.fenceMode)toast("Tap between squares to preview a fence"); updateDock(); });
+tap("d-orient",function(){ if(!G)return; G.orient=G.orient==="H"?"V":"H";
+  if(G.preview){ var side=G.mode==="zen"?G.zenSide:0; var lg=legalWall(G.S,G.orient,G.preview.r,G.preview.c,side);
+    G.preview={o:G.orient,r:G.preview.r,c:G.preview.c,ok:lg.ok,reason:lg.reason}; }
+  updateDock(); });
+tap("d-vault",function(){ if(!G)return; G.vaultMode=!G.vaultMode; G.fenceMode=false; G.preview=null;
+  if(G.vaultMode)toast("↷ Once per game — tap an orange square to climb the fence"); updateDock(); });
+tap("d-ok",confirmFence);
+tap("d-cancel",function(){ if(!G)return; G.fenceMode=false; G.vaultMode=false; G.preview=null; updateDock(); });
+tap("d-reset",function(){ if(!G||G.mode!=="zen")return; G.S=newState("zen",1); G.anim=null; G.flash=null; G.zenSide=0;
+  G.fenceMode=false; G.vaultMode=false; G.preview=null; toast("Sandbox reset"); updateHud(); updateDock(); });
+tap("hud-back",stopToMenu);
+tap("b-duel",function(){ renderRungs(); show("s-rungs"); });
+tap("b-daily",function(){ startDaily(); });
+tap("b-blitz",function(){ startBlitz(); });
+tap("b-zen",function(){ startZen(); });
+tap("b-ward",function(){ renderWard(); show("s-ward"); });
+tap("ward-back",function(){ show("s-title"); stamp(); });
+tap("b-how",function(){ show("s-how"); });
+tap("how-back",function(){ show("s-title"); stamp(); });
+tap("rungs-back",function(){ show("s-title"); stamp(); });
+tap("over-menu",stopToMenu);
+tap("over-retry",function(){ if(!G)return stopToMenu();
+  if(G.mode==="daily")startDaily(); else if(G.mode==="blitz")startBlitz(); else startDuel(G.S.rung); });
+tap("over-next",function(){ if(G&&G.mode==="duel"&&G.S.rung<3)startDuel(G.S.rung+1); else stopToMenu(); });
+
+var RUNGS=[
+  {n:1,icon:"🪵",name:"Picket Novice",desc:"Learns as it goes. A fair first duel."},
+  {n:2,icon:"🛡",name:"Yard Warden",desc:"Reads two moves deep and fences with intent."},
+  {n:3,icon:"👑",name:"Master Fencer",desc:"Three moves deep. Bring your vault."}
+];
+function renderRungs(){
+  var box=$("runglist"); box.innerHTML="";
+  var i;
+  for(i=0;i<RUNGS.length;i++)(function(R){
+    var locked=R.n>1&&!PROG.beaten[R.n-2];
+    var d=document.createElement("div");
+    d.className="rungcard"+(locked?" locked":"")+(PROG.beaten[R.n-1]?" done":"");
+    d.innerHTML='<div class="rn">'+R.icon+'</div><div class="rt"><b>'+R.name+'</b><span>'+R.desc+'</span></div>'+
+      '<div class="rs">'+(PROG.beaten[R.n-1]?"✦ ":"")+PROG.rungWins[R.n-1]+"W</div>";
+    if(!locked)d.onclick=function(){ startDuel(R.n); };
+    box.appendChild(d);
+  })(RUNGS[i]);
+}
+
+/* wardrobe */
+var WARD=[
+ {cat:"Pawn",key:"pawn",id:"sunmark",name:"Sunmark",icon:"🌞",need:function(){return true;},needTxt:"Free"},
+ {cat:"Pawn",key:"pawn",id:"lantern",name:"Lantern",icon:"🏮",need:function(){return PROG.duelWins>=3;},needTxt:"Win 3 duels"},
+ {cat:"Pawn",key:"pawn",id:"comet",name:"Comet",icon:"☄️",need:function(){return PROG.beaten[1];},needTxt:"Beat the Yard Warden"},
+ {cat:"Pawn",key:"pawn",id:"crown",name:"Crown",icon:"👑",need:function(){return PROG.beaten[2];},needTxt:"Beat the Master Fencer"},
+ {cat:"Fence style",key:"fence",id:"timber",name:"Timber",icon:"🪵",need:function(){return true;},needTxt:"Free"},
+ {cat:"Fence style",key:"fence",id:"brass",name:"Brass",icon:"🔩",need:function(){return PROG.fencesPlaced>=50;},needTxt:"Place 50 fences"},
+ {cat:"Fence style",key:"fence",id:"ivory",name:"Ivory",icon:"🦴",need:function(){return PROG.streak>=3;},needTxt:"Daily streak 3"},
+ {cat:"Board",key:"board",id:"slate",name:"Slate Yard",icon:"⬛",need:function(){return true;},needTxt:"Free"},
+ {cat:"Board",key:"board",id:"midnight",name:"Midnight Court",icon:"🌌",need:function(){return PROG.duelWins>=10;},needTxt:"Win 10 duels"},
+ {cat:"Board",key:"board",id:"parchment",name:"Parchment Plan",icon:"📜",need:function(){return PROG.dailyWins>=5;},needTxt:"Win 5 daily puzzles"}
+];
+function renderWard(){
+  var box=$("wardbox"); box.innerHTML="";
+  var cats=[], seen={}, i;
+  for(i=0;i<WARD.length;i++){ if(!seen[WARD[i].cat]){ seen[WARD[i].cat]=1; cats.push(WARD[i].cat); } }
+  var ci;
+  for(ci=0;ci<cats.length;ci++){
+    var row=document.createElement("div"); row.className="wardrow";
+    row.innerHTML="<h3>"+cats[ci].toUpperCase()+"</h3>";
+    var grid=document.createElement("div"); grid.className="wcards";
+    for(i=0;i<WARD.length;i++)(function(w){
+      if(w.cat!==cats[ci])return;
+      var ok=w.need(), sel=PROG[w.key]===w.id;
+      var c=document.createElement("div");
+      c.className="wcard"+(ok?"":" locked")+(sel?" sel":"");
+      c.innerHTML='<div class="wi">'+w.icon+'</div><div class="wn">'+w.name+'</div><div class="wl">'+(ok?(sel?"equipped":"tap to wear"):w.needTxt)+'</div>';
+      if(ok)c.onclick=function(){ PROG[w.key]=w.id; save(); renderWard(); };
+      grid.appendChild(c);
+    })(WARD[i]);
+    row.appendChild(grid); box.appendChild(row);
+  }
+}
+
+/* ---------- render ---------- */
+function rr(x,y,w,h,rad){
+  ctx.beginPath();
+  ctx.moveTo(x+rad,y); ctx.lineTo(x+w-rad,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rad);
+  ctx.lineTo(x+w,y+h-rad); ctx.quadraticCurveTo(x+w,y+h,x+w-rad,y+h);
+  ctx.lineTo(x+rad,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rad);
+  ctx.lineTo(x,y+rad); ctx.quadraticCurveTo(x,y,x+rad,y);
+  ctx.closePath();
+}
+function drawFenceBar(o,r,c,gated,ghost,bad){
+  var FT=fenceTheme();
+  var x,y,w,h;
+  if(o==="H"){ x=cellX(c)-2; y=cellY(r)+CELL-2; w=CELL*2+GAP+4; h=10; }
+  else { x=cellX(c)+CELL-2; y=cellY(r)-2; w=10; h=CELL*2+GAP+4; }
+  ctx.save();
+  if(ghost)ctx.globalAlpha=0.62;
+  var fill=ghost?(bad?"#e06a6a":"#6fd08a"):FT.fill;
+  var edge=ghost?(bad?"#7a2323":"#1f5a33"):FT.edge;
+  if(gated){
+    /* two stubs with an arch gap in the middle */
+    var midx=x+w/2, midy=y+h/2;
+    ctx.fillStyle=fill; ctx.strokeStyle=edge; ctx.lineWidth=1.6;
+    if(o==="H"){
+      rr(x,y,w*0.34,h,3); ctx.fill(); ctx.stroke();
+      rr(x+w*0.66,y,w*0.34,h,3); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle="#ffd76a"; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.arc(midx,y+h,w*0.155,Math.PI,0); ctx.stroke();
+      ctx.fillStyle="#ffd76a";
+      ctx.beginPath(); ctx.arc(midx,y-4,2.4,0,6.283); ctx.fill();
+    } else {
+      rr(x,y,w,h*0.34,3); ctx.fill(); ctx.stroke();
+      rr(x,y+h*0.66,w,h*0.34,3); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle="#ffd76a"; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.arc(x+w,midy,h*0.155,Math.PI*0.5,Math.PI*1.5); ctx.stroke();
+      ctx.fillStyle="#ffd76a";
+      ctx.beginPath(); ctx.arc(x-4,midy,2.4,0,6.283); ctx.fill();
+    }
+    ctx.restore(); return;
+  }
+  ctx.fillStyle=fill; ctx.strokeStyle=edge; ctx.lineWidth=1.6;
+  rr(x,y,w,h,3); ctx.fill(); ctx.stroke();
+  /* grain texture (shape cue for fence styles) */
+  if(!ghost){
+    ctx.strokeStyle=FT.edge; ctx.lineWidth=1;
+    var i;
+    if(FT.grain==="lines"){
+      for(i=1;i<4;i++){
+        ctx.beginPath();
+        if(o==="H"){ ctx.moveTo(x+w*i/4,y+2); ctx.lineTo(x+w*i/4,y+h-2); }
+        else { ctx.moveTo(x+2,y+h*i/4); ctx.lineTo(x+w-2,y+h*i/4); }
+        ctx.stroke();
+      }
+    } else if(FT.grain==="rivets"){
+      ctx.fillStyle=FT.edge;
+      for(i=0;i<3;i++){
+        var px2=o==="H"?x+w*(i+1)/4:x+w/2, py2=o==="H"?y+h/2:y+h*(i+1)/4;
+        ctx.beginPath(); ctx.arc(px2,py2,1.6,0,6.283); ctx.fill();
+      }
+    }
+  }
+  if(ghost){
+    ctx.globalAlpha=1;
+    ctx.fillStyle=bad?"#ffd6d6":"#0d2716";
+    ctx.font="bold 13px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(bad?"✕":"✓",x+w/2,y+h/2);
+    ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+  }
+  ctx.restore();
+}
+function drawPawn(side,px,py,lift){
+  var cx=px+CELL/2, cy=py+CELL/2-(lift||0);
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,0.35)";
+  ctx.beginPath();
+  if(ctx.ellipse)ctx.ellipse(px+CELL/2,py+CELL/2+13,13,4.5,0,0,6.283); else ctx.arc(px+CELL/2,py+CELL/2+13,8,0,6.283);
+  ctx.fill();
+  if(side===0){
+    var PT=pawnTheme();
+    ctx.fillStyle=PT.fill; ctx.strokeStyle="#4a3308"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(cx,cy,17,0,6.283); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#2b2010"; ctx.strokeStyle="#2b2010";
+    var g=PT.glyph, i;
+    if(g==="sun"){
+      ctx.beginPath(); ctx.arc(cx,cy,6,0,6.283); ctx.fill();
+      ctx.lineWidth=2;
+      for(i=0;i<8;i++){ var an=i/8*6.283;
+        ctx.beginPath(); ctx.moveTo(cx+Math.cos(an)*9,cy+Math.sin(an)*9);
+        ctx.lineTo(cx+Math.cos(an)*13,cy+Math.sin(an)*13); ctx.stroke(); }
+    } else if(g==="lantern"){
+      rr(cx-5,cy-7,10,14,3); ctx.fill();
+      ctx.fillStyle="#fff2c8"; ctx.beginPath(); ctx.arc(cx,cy,3,0,6.283); ctx.fill();
+    } else if(g==="comet"){
+      ctx.beginPath(); ctx.arc(cx+3,cy-3,5.5,0,6.283); ctx.fill();
+      ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx-10,cy+10); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+4,cy+3); ctx.lineTo(cx-4,cy+11); ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(cx-9,cy+6); ctx.lineTo(cx-9,cy-2); ctx.lineTo(cx-4.5,cy+2); ctx.lineTo(cx,cy-6);
+      ctx.lineTo(cx+4.5,cy+2); ctx.lineTo(cx+9,cy-2); ctx.lineTo(cx+9,cy+6);
+      ctx.closePath(); ctx.fill();
+    }
+  } else {
+    ctx.fillStyle="#7f8cff"; ctx.strokeStyle="#2a2f66"; ctx.lineWidth=2;
+    rr(cx-15,cy-15,30,30,6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.moveTo(cx,cy-8); ctx.lineTo(cx+8,cy+7); ctx.lineTo(cx-8,cy+7);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function pawnScreenPos(side){
+  var S=G.S, p=S.pawns[side];
+  var px=cellX(p.x), py=cellY(p.y), lift=0;
+  if(G.anim&&G.anim.side===side){
+    var k=(nowMs()-G.anim.start)/G.anim.dur;
+    if(k>=1){ G.anim=null; }
+    else {
+      var e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      px=cellX(G.anim.fx)+(cellX(G.anim.tx)-cellX(G.anim.fx))*e;
+      py=cellY(G.anim.fy)+(cellY(G.anim.ty)-cellY(G.anim.fy))*e;
+      lift=G.anim.vault?Math.sin(Math.PI*Math.min(1,k))*30:Math.sin(Math.PI*Math.min(1,k))*6;
+    }
+  }
+  return {x:px,y:py,lift:lift};
+}
+function draw(){
+  var BT=boardTheme();
+  var g=ctx.createLinearGradient(0,0,0,960);
+  g.addColorStop(0,BT.bgA); g.addColorStop(1,BT.bgB);
+  ctx.fillStyle=g; ctx.fillRect(0,0,540,960);
+  /* board frame */
+  ctx.strokeStyle=BT.line; ctx.lineWidth=3;
+  rr(X0-9,Y0-9,9*PITCH-GAP+18,9*PITCH-GAP+18,10); ctx.stroke();
+  var S=G?G.S:null;
+  var r,c;
+  for(r=0;r<9;r++)for(c=0;c<9;c++){
+    var x=cellX(c), y=cellY(r);
+    ctx.fillStyle=((r+c)&1)?BT.cellA:BT.cellB;
+    rr(x,y,CELL,CELL,5); ctx.fill();
+    if(r===0){ ctx.fillStyle=BT.goalYou; rr(x,y,CELL,CELL,5); ctx.fill();
+      ctx.fillStyle="rgba(224,182,79,0.8)";
+      ctx.beginPath(); ctx.arc(x+CELL/2,y+6,2.6,0,6.283); ctx.fill(); }
+    if(r===8){ ctx.fillStyle=BT.goalAI; rr(x,y,CELL,CELL,5); ctx.fill();
+      ctx.fillStyle="rgba(127,140,255,0.85)";
+      ctx.beginPath(); ctx.moveTo(x+CELL/2,y+CELL-9); ctx.lineTo(x+CELL/2+4,y+CELL-3); ctx.lineTo(x+CELL/2-4,y+CELL-3);
+      ctx.closePath(); ctx.fill(); }
+  }
+  if(!G){ drawTitleHint(); return; }
+  /* last wall highlight */
+  var lm=S.lastMove;
+  /* fences */
+  var i;
+  for(r=0;r<8;r++)for(c=0;c<8;c++){
+    i=r*8+c;
+    if(S.H[i])drawFenceBar("H",r,c,S.GH[i]===1,false,false);
+    if(S.V[i])drawFenceBar("V",r,c,S.GV[i]===1,false,false);
+  }
+  if(lm&&lm.t==="wall"){
+    ctx.save(); ctx.strokeStyle="rgba(255,255,255,0.55)"; ctx.lineWidth=1.5;
+    var lx,ly,lw,lh;
+    if(lm.o==="H"){ lx=cellX(lm.c)-4; ly=cellY(lm.r)+CELL-4; lw=CELL*2+GAP+8; lh=14; }
+    else { lx=cellX(lm.c)+CELL-4; ly=cellY(lm.r)-4; lw=14; lh=CELL*2+GAP+8; }
+    rr(lx,ly,lw,lh,5); ctx.stroke(); ctx.restore();
+  }
+  /* move hints */
+  var side=G.mode==="zen"?G.zenSide:0;
+  var myTurn=(G.mode==="zen"||S.turn===0)&&S.phase==="play";
+  if(myTurn&&!G.fenceMode&&!G.vaultMode){
+    var pm=pawnMoves(S,side);
+    ctx.save(); ctx.strokeStyle=side===0?"rgba(224,182,79,0.9)":"rgba(127,140,255,0.9)";
+    ctx.setLineDash([5,4]); ctx.lineWidth=2;
+    for(i=0;i<pm.length;i++){
+      ctx.beginPath(); ctx.arc(cellX(pm[i].x)+CELL/2,cellY(pm[i].y)+CELL/2,13,0,6.283); ctx.stroke();
+      ctx.fillStyle=side===0?"rgba(224,182,79,0.5)":"rgba(127,140,255,0.5)";
+      ctx.beginPath(); ctx.arc(cellX(pm[i].x)+CELL/2,cellY(pm[i].y)+CELL/2,3,0,6.283); ctx.fill();
+    }
+    ctx.restore();
+  }
+  if(myTurn&&G.vaultMode){
+    var vm=vaultMoves(S,side);
+    ctx.save(); ctx.strokeStyle="rgba(255,157,77,0.95)"; ctx.setLineDash([6,4]); ctx.lineWidth=2.5;
+    for(i=0;i<vm.length;i++){
+      var vx=cellX(vm[i].x), vy=cellY(vm[i].y);
+      rr(vx+7,vy+7,CELL-14,CELL-14,6); ctx.stroke();
+      /* little gate arch */
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(vx+CELL/2,vy+CELL/2+3,7,Math.PI,0);
+      ctx.moveTo(vx+CELL/2-7,vy+CELL/2+3); ctx.lineTo(vx+CELL/2-7,vy+CELL/2+9);
+      ctx.moveTo(vx+CELL/2+7,vy+CELL/2+3); ctx.lineTo(vx+CELL/2+7,vy+CELL/2+9);
+      ctx.stroke(); ctx.setLineDash([6,4]);
+    }
+    ctx.restore();
+  }
+  /* fence preview */
+  if(G.fenceMode&&G.preview)drawFenceBar(G.preview.o,G.preview.r,G.preview.c,false,true,!G.preview.ok);
+  /* gate flash */
+  if(G.flash){
+    var fk=(nowMs()-G.flash.t)/650;
+    if(fk>=1)G.flash=null;
+    else {
+      var gx=cellX(G.flash.c)+CELL+GAP/2, gy=cellY(G.flash.r)+CELL+GAP/2;
+      ctx.save(); ctx.strokeStyle="rgba(255,215,106,"+(1-fk)+")"; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(gx,gy,8+fk*46,0,6.283); ctx.stroke(); ctx.restore();
+    }
+  }
+  /* pawns (draw the moving one last) */
+  var p0=pawnScreenPos(0), p1=pawnScreenPos(1);
+  if(G.anim&&G.anim.side===0){ drawPawn(1,p1.x,p1.y,p1.lift); drawPawn(0,p0.x,p0.y,p0.lift); }
+  else { drawPawn(0,p0.x,p0.y,p0.lift); drawPawn(1,p1.x,p1.y,p1.lift); }
+  /* zen selected ring */
+  if(G.mode==="zen"){
+    var sp=G.zenSide===0?p0:p1;
+    ctx.save(); ctx.strokeStyle="#ffffff"; ctx.setLineDash([3,3]); ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.arc(sp.x+CELL/2,sp.y+CELL/2-sp.lift,22,0,6.283); ctx.stroke(); ctx.restore();
+  }
+  /* under-board status */
+  var by=Y0+9*PITCH-GAP+34;
+  ctx.fillStyle=BT.text; ctx.font="bold 22px sans-serif"; ctx.textAlign="center";
+  var st="";
+  if(S.phase!=="play")st=S.winner===0?"● HOME — YOU WIN":"▲ HOME — RIVAL WINS";
+  else if(G.mode==="zen")st="ZEN — move either pawn, plant fences, vault freely";
+  else if(G.mode==="daily")st=S.turn===0?("FORCE THE WIN — "+S.budget+" MOVE"+(S.budget>1?"S":"")+" LEFT"):"THE RIVAL REPLIES…";
+  else if(G.mode==="blitz"&&S.turn===0){
+    var tl=Math.max(0,Math.ceil((G.deadline-nowMs())/1000));
+    st="YOUR MOVE — "+tl+"s";
+  }
+  else st=S.turn===0?"YOUR MOVE":"THE RIVAL THINKS…";
+  ctx.fillText(st,270,by);
+  ctx.font="13px sans-serif"; ctx.fillStyle="rgba(200,200,210,0.75)";
+  ctx.fillText("● you race to the dotted top row · ▲ rival races to the marked bottom row",270,by+26);
+  if(G.mode!=="zen")
+    ctx.fillText("↷ vault: once per game, climb one fence — it becomes a gate for both",270,by+46);
+  ctx.textAlign="left";
+}
+function drawTitleHint(){
+  ctx.fillStyle="rgba(232,220,200,0.5)";
+  ctx.font="14px sans-serif"; ctx.textAlign="center";
+  ctx.fillText("two pawns · twenty fences · one vault each",270,Y0+9*PITCH+30);
+  ctx.textAlign="left";
+}
+
+/* ---------- main loop ---------- */
+function frame(){
+  requestAnimationFrame(frame);
+  draw();
+  if(!G||G.S.phase!=="play"||G.devHold)return;
+  var S=G.S, t=nowMs();
+  if(G.mode!=="zen"&&S.turn===1&&t>=G.aiAt&&!G.anim){
+    var mv=G.mode==="daily"?dailyDefend(S):aiMove(S,G.aiRung);
+    applyUI(mv);
+  }
+  if(G.mode==="blitz"&&S.turn===0&&G.deadline&&t>G.deadline&&!G.anim){
+    var gm=greedyPawn(S,0);
+    if(gm){ toast("⏱ Time! Your pawn steps ahead on its own"); applyUI(gm); }
+    else G.deadline=t+10000;
+  }
+  if(G.mode==="daily"&&S.turn===0)updateHud();
+  if(G.mode==="blitz"&&S.turn===0)updateHud();
+}
+requestAnimationFrame(frame);
+stamp();
+
+/* ================= CHECKS ================= */
+function ruleMoveCheck(){
+  function setEq(moves,expected){
+    var got={}, i, n=0;
+    for(i=0;i<moves.length;i++){ var k=moves[i].x+","+moves[i].y; if(!got[k]){got[k]=1;n++;} }
+    if(n!==expected.length)return false;
+    for(i=0;i<expected.length;i++)if(!got[expected[i][0]+","+expected[i][1]])return false;
+    return true;
+  }
+  var A=newState("duel",1); A.pawns[0]={x:4,y:4}; A.pawns[1]={x:4,y:3};
+  var caseA=setEq(pawnMoves(A,0),[[4,2],[3,4],[5,4],[4,5]]);
+  var B=newState("duel",1); B.pawns[0]={x:4,y:4}; B.pawns[1]={x:4,y:3}; B.H[2*8+4]=1;
+  var caseB=setEq(pawnMoves(B,0),[[3,4],[5,4],[4,5],[3,3],[5,3]]);
+  var C=newState("duel",1); C.pawns[0]={x:4,y:1}; C.pawns[1]={x:4,y:0};
+  var caseC=setEq(pawnMoves(C,0),[[3,1],[5,1],[4,2],[3,0],[5,0]]);
+  var D=newState("duel",1); D.pawns[0]={x:4,y:4}; D.pawns[1]={x:4,y:3}; D.H[2*8+4]=1; D.V[3*8+4]=1;
+  var caseD=setEq(pawnMoves(D,0),[[3,4],[4,5],[3,3]]);
+  return { pass:caseA&&caseB&&caseC&&caseD, straightJump:caseA, diagWhenWalled:caseB, diagAtEdge:caseC, diagOneSideBlocked:caseD };
+}
+function ruleWallCheck(){
+  var S=newState("duel",1);
+  S.pawns[0]={x:0,y:8};
+  S.H[7*8+0]=1;
+  var seal=legalWall(S,"V",7,1,0);
+  var open=legalWall(S,"V",6,1,0);
+  var ovl=legalWall(S,"H",7,1,0);
+  var crs=legalWall(S,"V",7,0,0);
+  var none=legalWall((function(){var T=newState("duel",1);T.fences=[0,10];return T;})(),"H",4,4,0);
+  return { pass: !seal.ok&&seal.reason==="seals"&&open.ok===true&&!ovl.ok&&ovl.reason==="overlaps"&&
+    !crs.ok&&crs.reason==="crosses"&&!none.ok&&none.reason==="nofence",
+    seal:seal, open:open, overlap:ovl, cross:crs, noFence:none };
+}
+function vaultCheck(){
+  var S=newState("duel",1);
+  S.pawns[0]={x:4,y:4}; S.pawns[1]={x:6,y:3};
+  S.H[3*8+4]=1;
+  var vm=vaultMoves(S,0), hasUp=false, i;
+  for(i=0;i<vm.length;i++)if(vm[i].x===4&&vm[i].y===3&&vm[i].o==="H"&&vm[i].r===3&&vm[i].c===4)hasUp=true;
+  S.turn=0; applyMove(S,{t:"vault",x:4,y:3,o:"H",r:3,c:4});
+  var used=S.vaults[0]===0, gated=S.GH[3*8+4]===1;
+  var onceOnly=vaultMoves(S,0).length===0;
+  S.pawns[1]={x:5,y:4};
+  var openForOpp=!blockedStep(S,5,4,0);
+  var oppMoves=pawnMoves(S,1), oppCan=false;
+  for(i=0;i<oppMoves.length;i++)if(oppMoves[i].x===5&&oppMoves[i].y===3)oppCan=true;
+  return { pass:hasUp&&used&&gated&&onceOnly&&openForOpp&&oppCan,
+    vaultOffered:hasUp, chargeSpent:used, gateMarked:gated, onceOnly:onceOnly, gateOpenToBoth:openForOpp&&oppCan };
+}
+function autoplayDuel(rungA,rungB,maxPlies){
+  var S=newState("duel",rungA), plies=0;
+  while(S.phase==="play"&&plies<(maxPlies||400)){
+    applyMove(S,aiMove(S,S.turn===0?rungA:rungB));
+    plies++;
+  }
+  return { plies:plies, finished:S.phase!=="play", winner:S.winner, nan:!isFiniteState(S), hash:stateHash(S) };
+}
+function detCheck(){
+  var a=autoplayDuel(2,1,400), b=autoplayDuel(2,1,400);
+  return { pass:a.finished&&b.finished&&a.hash===b.hash&&a.plies===b.plies&&!a.nan,
+    a:{plies:a.plies,winner:a.winner,hash:a.hash}, b:{plies:b.plies,winner:b.winner,hash:b.hash} };
+}
+function autoCheck(){
+  var a=autoplayDuel(2,1,400);
+  return { pass:a.finished&&!a.nan&&(a.winner===0||a.winner===1), plies:a.plies, winner:a.winner, nan:a.nan };
+}
+function aiCheck(){
+  var t0=nowMs();
+  var S=newState("duel",3), plies=0, illegal=0;
+  while(S.phase==="play"&&plies<400){
+    var rung=S.turn===0?3:2;
+    var mv=aiMove(S,rung), ok=false, all=allLegalMoves(S), i, k=mvKey(mv);
+    if(mv.t==="pass")ok=all.length===0;
+    else for(i=0;i<all.length;i++)if(mvKey(all[i])===k){ok=true;break;}
+    if(!ok){illegal++;break;}
+    applyMove(S,mv); plies++;
+  }
+  var selfplay={finished:S.phase!=="play",plies:plies,illegal:illegal,winner:S.winner};
+  var wins=0, games=[], g;
+  for(g=0;g<10;g++){
+    var aiSide=g%2, rng=mkRng(90210+g*1013);
+    var S2=newState("duel",2), p2=0, ill=0;
+    while(S2.phase==="play"&&p2<300){
+      var mv2=S2.turn===aiSide?aiMove(S2,2):randomMove(S2,rng);
+      if(S2.turn===aiSide){
+        var all2=allLegalMoves(S2), ok2=false, j, k2=mvKey(mv2);
+        if(mv2.t==="pass")ok2=all2.length===0;
+        else for(j=0;j<all2.length;j++)if(mvKey(all2[j])===k2){ok2=true;break;}
+        if(!ok2){ill++;break;}
+      }
+      applyMove(S2,mv2); p2++;
+    }
+    var w=S2.phase!=="play"&&S2.winner===aiSide;
+    if(w)wins++;
+    if(ill)illegal+=ill;
+    games.push({aiSide:aiSide,winner:S2.winner,plies:p2,illegal:ill});
+  }
+  return { pass:selfplay.finished&&illegal===0&&wins>=8, selfplay:selfplay, randWins:wins, games:games, ms:nowMs()-t0 };
+}
+function puzzleCheck(kk){
+  kk=kk||5; var out=[], all=true, i;
+  for(i=0;i<kk;i++){
+    var seed=(20260711+i*7919)>>>0;
+    var p=genPuzzle(seed), q=genPuzzle(seed);
+    if(!p||!q){ out.push({seed:seed,found:false}); all=false; continue; }
+    var det=stateHash(p.S)===stateHash(q.S)&&p.N===q.N;
+    var S=cloneState(p.S), moves=0, okLine=true;
+    while(S.phase==="play"&&moves<p.N+1){
+      var mv=forcedMove(S,S.budget);
+      if(!mv){okLine=false;break;}
+      applyMove(S,mv); moves++;
+      if(S.phase!=="play")break;
+      applyMove(S,dailyDefend(S));
+    }
+    var won=okLine&&S.phase!=="play"&&S.winner===0&&moves<=p.N;
+    var solved=solveForced(cloneState(p.S),p.N);
+    var rec={seed:seed,found:true,N:p.N,tries:p.tries,vaultNeeded:p.vaultNeeded,det:det,engineReplayWin:won,movesUsed:moves,resolved:solved};
+    if(!(det&&won&&solved))all=false;
+    out.push(rec);
+  }
+  return { pass:all, results:out };
+}
+function zenCheck(){
+  var S=newState("zen",1), i, okPhase=true;
+  for(i=0;i<8;i++){ S.turn=0; applyMove(S,{t:"pawn",x:4,y:7-i}); if(S.phase!=="play")okPhase=false; }
+  var reached=S.pawns[0].y===0;
+  var pay=payGame({mode:"zen",earned:0},5,"zt");
+  return { pass:okPhase&&reached&&pay===0, phase:S.phase, reachedFarRow:reached, zenPay:pay, nan:!isFiniteState(S) };
+}
+function checkAll(){
+  var t0=nowMs();
+  var moves=ruleMoveCheck(), walls=ruleWallCheck(), vault=vaultCheck(),
+      zen=zenCheck(), det=detCheck(), auto1=autoCheck(), ai=aiCheck(), puz=puzzleCheck(5);
+  var ok=moves.pass&&walls.pass&&vault.pass&&zen.pass&&det.pass&&auto1.pass&&ai.pass&&puz.pass;
+  return { ok:ok, ms:nowMs()-t0, twistVault:vault, moves:moves, walls:walls,
+    zen:zen, determinism:det, autoplay:auto1, ai:ai, puzzles:puz };
+}
+
+/* ---------- headless dev hook ---------- */
+if(/[?&]fotest=1/.test(location.search)){
+  window.FO_DEV={
+    start:function(mode,seed,opts){
+      opts=opts||{};
+      if(mode==="daily")startDaily(seed||utcCode());
+      else if(mode==="zen")startZen();
+      else if(mode==="blitz")startBlitz();
+      else startDuel(opts.rung||2);
+      G.devHold=true;
+      return this.state();
+    },
+    step:function(n){
+      var k;
+      for(k=0;k<(n||1);k++){
+        if(!G||G.S.phase!=="play")break;
+        var S=G.S, mv=null;
+        if(G.mode==="zen"){ S.turn=0; mv=greedyPawn(S,0); if(!mv)break; }
+        else if(G.mode==="daily")mv=S.turn===0?(forcedMove(S,S.budget)||greedyPawn(S,0)):dailyDefend(S);
+        else mv=aiMove(S,S.turn===1?G.aiRung:2);
+        if(!mv)break;
+        applyMove(S,mv);
+      }
+      draw(); updateHud();
+      return this.state();
+    },
+    state:function(){
+      if(!G)return null;
+      var S=G.S;
+      return { mode:G.mode, turn:S.turn, ply:S.ply, phase:S.phase, winner:S.winner,
+        pawns:[{x:S.pawns[0].x,y:S.pawns[0].y},{x:S.pawns[1].x,y:S.pawns[1].y}],
+        fences:[S.fences[0],S.fences[1]], vaults:[S.vaults[0],S.vaults[1]],
+        budget:S.budget, hash:stateHash(S),
+        nan:!isFiniteState(S)||(G.anim!==null&&G.anim!==undefined&&G.anim!==null&&!isFinite(G.anim?G.anim.start:0)) };
+    },
+    earnTest:function(){ return window._sbCapEarn(2,'test'); },
+    checkAll:checkAll,
+    ruleMoveCheck:ruleMoveCheck, ruleWallCheck:ruleWallCheck, vaultCheck:vaultCheck,
+    aiCheck:aiCheck, puzzleCheck:puzzleCheck, detCheck:detCheck, zenCheck:zenCheck, autoCheck:autoCheck,
+    genPuzzle:genPuzzle, solveForced:solveForced,
+    render:function(){ draw(); return true; },
+    game:function(){ return G; }, prog:function(){ return PROG; }
+  };
+}
+
+})();
+</script>
+</body>
+</html>

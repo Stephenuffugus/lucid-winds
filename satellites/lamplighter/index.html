@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%23140f24'/%3E%3Crect x='12' y='8' width='8' height='12' rx='3' fill='%23ffd76a'/%3E%3Crect x='14' y='5' width='4' height='3' fill='%23c8a84b'/%3E%3Ccircle cx='16' cy='14' r='2.4' fill='%23fff2c8'/%3E%3Crect x='13' y='20' width='6' height='2' fill='%23c8a84b'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lamplighter">
+<title>Lamplighter — Sky Wolf Studios</title>
+<script src="/sunbeam-sdk.js?v=4"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"lamplighter"}).catch(function(){});</script>
+<style>
+:root{ --bg:#0d0a14; --plum:#3c2a5e; --gold:#c8a84b; --warm:#ffd76a; --cream:#e8dcc8;
+  --muted:#94889f; --line:#2c2440; --blue:#5b9bd5; --rose:#e58fa0; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
+html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--cream); user-select:none; -webkit-user-select:none}
+#wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120% 80% at 50% 0%, #161022 0%, #070510 70%, #000 100%)}
+#stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center;
+  background:#0d0a14; overflow:hidden; box-shadow:0 0 60px #000a}
+canvas#game{position:absolute; left:0; top:0; width:540px; height:820px; display:block; touch-action:none}
+#hud{position:absolute; left:0; top:0; width:540px; padding:10px 12px; display:none; z-index:12; pointer-events:none;
+  align-items:flex-start; gap:10px}
+#hud.on{display:flex}
+#hud .hbtn{pointer-events:auto; min-width:52px; min-height:48px; border:1px solid #ffffff2e; border-radius:12px;
+  background:#140f24b8; color:var(--cream); font-size:1.05rem; display:flex; align-items:center; justify-content:center}
+#hud .chip{background:#140f24b8; border:1px solid #ffffff24; border-radius:12px; min-height:48px;
+  padding:6px 12px; display:flex; flex-direction:column; justify-content:center}
+#hud .chip b{font-size:.95rem} #hud .chip span{font-size:.7rem; color:var(--muted)}
+#hud .grow{flex:1}
+#dock{position:absolute; left:0; bottom:0; width:540px; height:140px; display:none; z-index:12;
+  padding:10px 14px calc(14px + env(safe-area-inset-bottom,0px)); align-items:center; gap:12px}
+#dock.on{display:flex}
+.padbtn{min-width:120px; min-height:88px; border-radius:20px; border:1px solid #ffffff30; background:#191330c9;
+  color:var(--cream); font-size:1.15rem; letter-spacing:.08em; display:flex; align-items:center; justify-content:center; flex-direction:column}
+.padbtn small{font-size:.7rem; color:var(--muted); margin-top:3px; letter-spacing:0}
+.padbtn:active{background:#241c44}
+#hintbtn{flex:1; background:#241c10c9; border-color:#c8a84b55}
+.screen{position:absolute; inset:0; background:linear-gradient(180deg,#150f26f2 0%,#0a0714fa 100%);
+  display:none; flex-direction:column; align-items:center; justify-content:flex-start; z-index:30;
+  padding:44px 26px calc(24px + env(safe-area-inset-bottom,0px)); overflow-y:auto}
+.screen.on{display:flex}
+h1{font-size:2.1rem; letter-spacing:.14em; margin:14px 0 2px; text-align:center}
+h1 .a{color:var(--warm)} h1 .b{color:var(--cream)}
+.tag{color:var(--muted); font-size:.85rem; margin-bottom:20px; text-align:center}
+.btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; max-width:360px;
+  min-height:58px; margin:7px 0; border-radius:16px; border:1px solid #ffffff26;
+  background:linear-gradient(180deg,#1e1836,#131024) ; color:var(--cream); font-size:1.02rem; letter-spacing:.04em}
+.btn:active{transform:scale(.985)}
+.btn.gold{border-color:#c8a84b66; background:linear-gradient(180deg,#2a2410,#171307)}
+.btn.blue{border-color:#5b9bd54d; background:linear-gradient(180deg,#14202b,#0b1219)}
+.btn.sm{min-height:48px; max-width:300px; font-size:.9rem}
+.btnrow{display:flex; gap:10px; width:100%; max-width:360px} .btnrow .btn{flex:1}
+#lvlgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; width:100%; max-width:400px; margin-top:6px}
+.lvlcard{border:1px solid #ffffff22; border-radius:14px; background:#161130; min-height:86px; padding:8px 4px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px}
+.lvlcard .ln{font-size:1.1rem; color:var(--gold)} .lvlcard .lt{font-size:.7rem; color:var(--muted); text-align:center}
+.lvlcard .ls{font-size:.85rem; min-height:1em}
+.lvlcard.locked{opacity:.38} .lvlcard.done{border-color:#7ab35655} .lvlcard.lantern{border-color:#c8a84b88}
+#toast{position:absolute; left:50%; bottom:170px; transform:translateX(-50%); background:#140f24e8; z-index:40;
+  border:1px solid #c8a84b55; color:var(--cream); padding:10px 18px; border-radius:14px; font-size:.85rem;
+  opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap}
+#toast.on{opacity:1}
+#buildstamp{position:absolute; bottom:6px; left:0; width:100%; text-align:center; color:#94889f66; font-size:.7rem; z-index:31; pointer-events:none}
+#overstats{display:flex; gap:12px; margin:8px 0 14px}
+#overstats .chip{border:1px solid #ffffff22; border-radius:12px; padding:8px 14px; background:#161130; text-align:center}
+#overstats .chip b{display:block; font-size:1.2rem; color:var(--gold)} #overstats .chip span{font-size:.7rem; color:var(--muted)}
+#rowgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:380px; margin-top:8px}
+#rowgrid canvas{width:100%; border-radius:12px; border:1px solid #ffffff22; background:#0d0a14}
+.wardrow{width:100%; max-width:380px}
+.wardrow h3{font-size:.8rem; color:var(--muted); letter-spacing:.12em; margin:14px 0 6px}
+.wcards{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.wcard{border:1px solid #ffffff22; border-radius:12px; background:#161130; min-height:74px; padding:8px 4px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px}
+.wcard .wi{font-size:1.3rem} .wcard .wn{font-size:.72rem} .wcard .wl{font-size:.7rem; color:var(--muted); text-align:center}
+.wcard.locked{opacity:.4} .wcard.sel{border-color:#c8a84b88; background:#1b1a10}
+.howp{max-width:360px; color:var(--cream); font-size:.85rem; line-height:1.55; margin:8px 0}
+.howp b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<canvas id="game" width="540" height="820"></canvas>
+
+<div id="hud">
+  <button class="hbtn" id="hud-back">⌂</button>
+  <div class="chip"><b id="h-unlit">▢ 0</b><span>dark cells</span></div>
+  <div class="chip"><b id="h-clue">✓ 0/0</b><span>houses</span></div>
+  <div class="chip grow"><b id="h-stage">—</b><span id="h-note">tap to place lamps</span></div>
+</div>
+
+<div id="dock">
+  <button class="padbtn" id="hintbtn">🔆 HINT<small id="hint-note">a hint hangs no lantern</small></button>
+  <button class="padbtn" id="resetbtn">↺<small>RESET</small></button>
+</div>
+
+<div class="screen on" id="s-title">
+  <h1><span class="a">LAMP</span><span class="b">LIGHTER</span></h1>
+  <div class="tag">dusk has settled on the town square · every window waits for your lamps</div>
+  <button class="btn gold" id="b-walk">🏮 Lantern Walk</button>
+  <button class="btn blue" id="b-daily">📅 Daily Lamps</button>
+  <button class="btn" id="b-deep">🌌 Deep Square</button>
+  <button class="btn" id="b-zen">🌙 Zen Dusk</button>
+  <div class="btnrow">
+    <button class="btn sm" id="b-row">🏮 Row</button>
+    <button class="btn sm" id="b-ward">🎽 Wardrobe</button>
+    <button class="btn sm" id="b-how">❓ How</button>
+  </div>
+</div>
+
+<div class="screen" id="s-select">
+  <h1 style="font-size:1.4rem">LANTERN WALK</h1>
+  <div class="tag">light a street to open the next · a hintless solve hangs a keepsake lantern</div>
+  <div id="lvlgrid"></div>
+  <button class="btn sm" id="sel-back" style="margin-top:16px">← back</button>
+</div>
+
+<div class="screen" id="s-over">
+  <h1 style="font-size:1.5rem" id="over-title">STREET AGLOW</h1>
+  <div class="tag" id="over-sub">—</div>
+  <div id="overstats">
+    <div class="chip"><b id="ov-time">0</b><span>seconds</span></div>
+    <div class="chip"><b id="ov-hints">0</b><span>hints</span></div>
+    <div class="chip"><b id="ov-lant">0</b><span>lanterns</span></div>
+  </div>
+  <button class="btn gold" id="over-next">NEXT STREET →</button>
+  <button class="btn" id="over-retry">PLAY AGAIN</button>
+  <button class="btn sm" id="over-menu">menu</button>
+</div>
+
+<div class="screen" id="s-row">
+  <h1 style="font-size:1.4rem">LANTERN ROW</h1>
+  <div class="tag" id="row-tag">keepsakes from hintless solves</div>
+  <div id="rowgrid"></div>
+  <button class="btn sm" id="row-back" style="margin-top:16px">← back</button>
+</div>
+
+<div class="screen" id="s-ward">
+  <h1 style="font-size:1.4rem">WARDROBE</h1>
+  <div class="tag">earned by playing · no purchases</div>
+  <div id="wardbox" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
+  <button class="btn sm" id="ward-back" style="margin-top:16px">← back</button>
+</div>
+
+<div class="screen" id="s-how">
+  <h1 style="font-size:1.4rem">HOW TO LIGHT A TOWN</h1>
+  <p class="howp">The square is a grid of <b>walkways</b> and dark <b>houses</b>. Tap a walkway to set a <b>lamp</b>. A lamp shines up, down, left and right until a house blocks the beam. Light <b>every walkway</b> to finish.</p>
+  <p class="howp">Two rules of the guild: <b>no lamp may shine on another lamp</b>, and a <b>numbered house</b> must have exactly that many lamps against its walls. Broken rules show at once, clashing lamps get a red ✕ and an overfed house shows !</p>
+  <p class="howp">Tap again for a gray ✕ <b>note</b> (a spot you believe holds no lamp), and a third tap clears. Watch the painted town behind the grid, its <b>windows kindle</b> as you light the square and fireflies come out near the end.</p>
+  <p class="howp">Solve without hints and a <b>keepsake lantern</b> is hung in your Lantern Row. Every puzzle has exactly one solution. <b>Zen Dusk</b> has free hints, a gentle shake for wrong lamps, and pays no sunbeams.</p>
+  <button class="btn sm" id="how-back" style="margin-top:10px">← back</button>
+</div>
+
+<div id="toast"></div>
+<div id="buildstamp"></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+var BUILD="1.0";
+
+/* ---------- fit stage ---------- */
+function fit(){ var w=window.innerWidth,h=window.innerHeight;
+  var s=Math.min(w/540,h/960); $("stage").parentNode.style.transform="";
+  $("stage").style.transform="scale("+s+")"; }
+window.addEventListener("resize",fit); fit();
+
+/* ---------- embed / exit ---------- */
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'close'},'*'); }catch(e){} return; } location.href='https://lucidwinds.com/portal/'; };
+if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
+
+/* ---------- sunbeam earn ---------- */
+window._sbCapEarn=function(n,tag){ var granted=0;
+  try{ var k='sw_sb_lamplighter'; var s={}; try{ s=JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){}
+    var d=Math.floor(Date.now()/864e5); if(s.d!==d) s={d:d,n:0}; n=Math.min(n,Math.max(0,30-(s.n||0))); if(n<=0)return 0;
+    s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
+  if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
+
+/* ---------- seeded rng ---------- */
+function mkRng(seed){ var t=seed>>>0; return function(){ t+=0x6D2B79F5; var r=Math.imul(t^t>>>15,1|t);
+  r=(r+Math.imul(r^r>>>7,61|r))^r; return ((r^r>>>14)>>>0)/4294967296; }; }
+function dayCodeUTC(){ var d=new Date(); return d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate(); }
+
+/* ---------- save ---------- */
+function loadSave(){ var s={}; try{ s=JSON.parse(localStorage.getItem("lamplighter_save")||"{}"); }catch(e){}
+  s.walk=s.walk||{}; s.hintless=s.hintless||{}; s.lanterns=s.lanterns||[]; s.streak=s.streak||0; s.lastDaily=s.lastDaily||"";
+  s.dailyWins=s.dailyWins||0; s.deepWins=s.deepWins||0; s.zenN=s.zenN||0;
+  s.lamp=s.lamp||"brass"; s.dusk=s.dusk||"plum"; s.fly=s.fly||"gold"; s.sound=(s.sound!==false); return s; }
+var PROG=loadSave();
+function save(){ try{ localStorage.setItem("lamplighter_save",JSON.stringify(PROG)); }catch(e){} }
+function walkClears(){ var n=0,k; for(k in PROG.walk)if(PROG.walk[k])n++; return n; }
+
+/* ---------- audio ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended")AC.resume().catch(function(){}); return AC; }
+function blip(f,d,g,type){ if(!PROG.sound)return; var a=ac(); if(!a)return; var o=a.createOscillator(),v=a.createGain(),t=a.currentTime;
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t); v.gain.setValueAtTime(0.0001,t);
+  v.gain.exponentialRampToValueAtTime(g||0.07,t+0.012); v.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.15));
+  o.connect(v); v.connect(a.destination); o.start(t); o.stop(t+(d||0.15)+0.02); }
+function sndLamp(){ blip(620,0.12,0.055); blip(930,0.16,0.03); }
+function sndMark(){ blip(340,0.07,0.04,"triangle"); }
+function sndClear(){ blip(260,0.07,0.035,"triangle"); }
+function sndBad(){ blip(140,0.22,0.08,"sawtooth"); }
+function sndSat(){ blip(1040,0.14,0.045); }
+function sndHint(){ blip(520,0.1,0.05); setTimeout(function(){blip(780,0.12,0.05);},70); }
+function sndWin(){ blip(523,0.2,0.07); setTimeout(function(){blip(659,0.2,0.07);},110); setTimeout(function(){blip(784,0.2,0.07);},220); setTimeout(function(){blip(1046,0.36,0.08);},330); }
+
+/* ---------- dusk palettes / lamp skins / firefly colors ---------- */
+var DUSKS={
+  plum:{ name:"Plum Dusk", top:[25,16,54], mid:[60,42,94], low:[122,84,84], house:[13,9,24], hill:[26,18,46], win:[255,215,122], moon:[240,232,210] },
+  ember:{ name:"Ember Dusk", top:[32,15,12], mid:[92,48,30], low:[168,96,52], house:[20,10,8], hill:[44,22,16], win:[255,206,110], moon:[255,224,180] },
+  tide:{ name:"Tide Dusk", top:[8,26,38], mid:[26,68,82], low:[80,130,130], house:[6,17,22], hill:[14,38,48], win:[255,226,150], moon:[220,240,240] }
+};
+var FLIES={ gold:{name:"Gold",c:[255,215,106]}, mint:{name:"Mint",c:[158,240,208]}, lilac:{name:"Lilac",c:[207,160,232]} };
+function dusk(){ return DUSKS[PROG.dusk]||DUSKS.plum; }
+function flyCol(){ return (FLIES[PROG.fly]||FLIES.gold).c; }
+function rgb(a){ return "rgb("+a[0]+","+a[1]+","+a[2]+")"; }
+function rgba(a,al){ return "rgba("+a[0]+","+a[1]+","+a[2]+","+al+")"; }
+function mix(a,b,t){ return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)]; }
+
+/* ============================================================
+   CORE PUZZLE ENGINE (Akari) — machine-proven by LP_DEV checks
+   walls: Int8Array n*n. -1 floor, 0..4 numbered house, 5 plain house
+   ============================================================ */
+function buildSegs(walls,n){
+  var N=n*n, segH=new Int16Array(N), segV=new Int16Array(N), i,x,y;
+  for(i=0;i<N;i++){ segH[i]=-1; segV[i]=-1; }
+  var hCells=[], vCells=[], id=-1;
+  for(y=0;y<n;y++){ var run=false;
+    for(x=0;x<n;x++){ i=y*n+x;
+      if(walls[i]>=0){ run=false; continue; }
+      if(!run){ id=hCells.length; hCells.push([]); run=true; }
+      segH[i]=id; hCells[id].push(i); } }
+  for(x=0;x<n;x++){ var run2=false;
+    for(y=0;y<n;y++){ i=y*n+x;
+      if(walls[i]>=0){ run2=false; continue; }
+      if(!run2){ id=vCells.length; vCells.push([]); run2=true; }
+      segV[i]=id; vCells[id].push(i); } }
+  var clues=[];
+  for(i=0;i<N;i++){ if(walls[i]>=0&&walls[i]<=4){
+    x=i%n; y=(i-x)/n; var adj=[];
+    if(x>0&&walls[i-1]<0)adj.push(i-1);
+    if(x<n-1&&walls[i+1]<0)adj.push(i+1);
+    if(y>0&&walls[i-n]<0)adj.push(i-n);
+    if(y<n-1&&walls[i+n]<0)adj.push(i+n);
+    clues.push({k:walls[i],adj:adj,cell:i}); } }
+  var floor=[]; for(i=0;i<N;i++)if(walls[i]<0)floor.push(i);
+  return {segH:segH,segV:segV,hCells:hCells,vCells:vCells,clues:clues,floor:floor};
+}
+/* st: 0 unknown, 1 lamp, 2 no-lamp. returns false on contradiction */
+function propagate(st,S){
+  var changed=true;
+  while(changed){ changed=false;
+    var ci,j;
+    for(ci=0;ci<S.clues.length;ci++){ var c=S.clues[ci], L=0,U=0;
+      for(j=0;j<c.adj.length;j++){ var v=st[c.adj[j]]; if(v===1)L++; else if(v===0)U++; }
+      if(L>c.k)return false;
+      if(L+U<c.k)return false;
+      if(U>0){
+        if(L===c.k){ for(j=0;j<c.adj.length;j++)if(st[c.adj[j]]===0){st[c.adj[j]]=2;changed=true;} }
+        else if(L+U===c.k){ for(j=0;j<c.adj.length;j++)if(st[c.adj[j]]===0){st[c.adj[j]]=1;changed=true;} }
+      }
+    }
+    var si, lampH=[], lampV=[];
+    for(si=0;si<S.hCells.length;si++)lampH.push(0);
+    for(si=0;si<S.vCells.length;si++)lampV.push(0);
+    var fi;
+    for(fi=0;fi<S.floor.length;fi++){ var i2=S.floor[fi];
+      if(st[i2]===1){ lampH[S.segH[i2]]++; lampV[S.segV[i2]]++; } }
+    for(si=0;si<S.hCells.length;si++)if(lampH[si]>1)return false;
+    for(si=0;si<S.vCells.length;si++)if(lampV[si]>1)return false;
+    for(fi=0;fi<S.floor.length;fi++){ var i3=S.floor[fi];
+      if(st[i3]===0){
+        if((lampH[S.segH[i3]]>0)||(lampV[S.segV[i3]]>0)){ st[i3]=2; changed=true; }
+      }
+    }
+    /* unlit cells: forced single candidates (lamp counts kept fresh when forcing) */
+    for(fi=0;fi<S.floor.length;fi++){ var i4=S.floor[fi];
+      if((lampH[S.segH[i4]]>0)||(lampV[S.segV[i4]]>0))continue;
+      var cand=-1, nc=0, hs=S.hCells[S.segH[i4]], vs=S.vCells[S.segV[i4]];
+      for(j=0;j<hs.length&&nc<2;j++)if(st[hs[j]]===0){ nc++; cand=hs[j]; }
+      for(j=0;j<vs.length&&nc<2;j++)if(st[vs[j]]===0&&vs[j]!==cand){ nc++; if(nc===1)cand=vs[j]; }
+      if(nc===0)return false;
+      if(nc===1){ st[cand]=1; changed=true;
+        lampH[S.segH[cand]]++; lampV[S.segV[cand]]++;
+        if(lampH[S.segH[cand]]>1||lampV[S.segV[cand]]>1)return false; }
+    }
+  }
+  return true;
+}
+function solveCount(walls,n,cap){
+  var S=buildSegs(walls,n), N=n*n;
+  var st=new Uint8Array(N), i;
+  for(i=0;i<N;i++)if(walls[i]>=0)st[i]=2;
+  var found={count:0,sol:null};
+  function pickBranch(st2){
+    var best=-1,bestN=1e9, fi,j;
+    var lampH=[],lampV=[],si;
+    for(si=0;si<S.hCells.length;si++)lampH.push(0);
+    for(si=0;si<S.vCells.length;si++)lampV.push(0);
+    for(fi=0;fi<S.floor.length;fi++){ var c=S.floor[fi]; if(st2[c]===1){lampH[S.segH[c]]++;lampV[S.segV[c]]++;} }
+    for(fi=0;fi<S.floor.length;fi++){ var i5=S.floor[fi];
+      if((lampH[S.segH[i5]]>0)||(lampV[S.segV[i5]]>0))continue;
+      var nc=0,cand=-1, hs=S.hCells[S.segH[i5]], vs=S.vCells[S.segV[i5]];
+      for(j=0;j<hs.length;j++)if(st2[hs[j]]===0){nc++;if(cand<0)cand=hs[j];}
+      for(j=0;j<vs.length;j++)if(st2[vs[j]]===0&&vs[j]!==cand){nc++;if(cand<0)cand=vs[j];}
+      if(nc>0&&cand>=0&&nc<bestN){bestN=nc;best=cand;}
+    }
+    if(best>=0)return best;
+    for(fi=0;fi<S.floor.length;fi++)if(st2[S.floor[fi]]===0)return S.floor[fi];
+    return -1;
+  }
+  function rec(st2){
+    if(found.count>=cap)return;
+    if(!propagate(st2,S))return;
+    var b=pickBranch(st2);
+    if(b<0){ found.count++; if(!found.sol)found.sol=new Uint8Array(st2); return; }
+    var a=new Uint8Array(st2); a[b]=1; rec(a);
+    if(found.count>=cap)return;
+    var e=new Uint8Array(st2); e[b]=2; rec(e);
+  }
+  rec(st);
+  return found;
+}
+/* independent ray-based validator (no shared code with the solver) */
+function validateRays(walls,lamps,n){
+  var N=n*n,i,x,y;
+  for(i=0;i<N;i++)if(lamps[i]&&walls[i]>=0)return "lamp-on-house";
+  var lit=new Uint8Array(N);
+  for(i=0;i<N;i++){ if(!lamps[i])continue;
+    x=i%n;y=(i-x)/n; lit[i]=1;
+    var d=[[1,0],[-1,0],[0,1],[0,-1]],k;
+    for(k=0;k<4;k++){ var cx=x+d[k][0],cy=y+d[k][1];
+      while(cx>=0&&cx<n&&cy>=0&&cy<n){ var c=cy*n+cx;
+        if(walls[c]>=0)break;
+        if(lamps[c])return "lamps-clash";
+        lit[c]=1; cx+=d[k][0]; cy+=d[k][1]; } } }
+  for(i=0;i<N;i++)if(walls[i]<0&&!lit[i])return "unlit-cell";
+  for(i=0;i<N;i++){ if(walls[i]>=0&&walls[i]<=4){
+    x=i%n;y=(i-x)/n; var cnt=0;
+    if(x>0&&lamps[i-1])cnt++; if(x<n-1&&lamps[i+1])cnt++;
+    if(y>0&&lamps[i-n])cnt++; if(y<n-1&&lamps[i+n])cnt++;
+    if(cnt!==walls[i])return "house-count"; } }
+  return "OK";
+}
+/* deterministic generator: seeded walls -> random valid solution -> clues ->
+   uniqueness solver gate -> clue removal keeping uniqueness */
+function genPuzzle(seed,size,density,removeTries){
+  var rng=mkRng(seed), n=size, N=n*n, attempt;
+  for(attempt=0;attempt<80;attempt++){
+    var walls=new Int8Array(N), i;
+    for(i=0;i<N;i++)walls[i]=-1;
+    var half=Math.floor(N/2);
+    for(i=0;i<half;i++){ if(rng()<density){ walls[i]=5; walls[N-1-i]=5; } }
+    if(N%2===1 && rng()<density)walls[half]=5;
+    var floorCount=0; for(i=0;i<N;i++)if(walls[i]<0)floorCount++;
+    if(floorCount<N*0.6)continue;
+    var S=buildSegs(walls,n);
+    var lamp=new Uint8Array(N), litH=[], litV=[], si;
+    for(si=0;si<S.hCells.length;si++)litH.push(0);
+    for(si=0;si<S.vCells.length;si++)litV.push(0);
+    var unlit=S.floor.slice(), guard=0;
+    while(unlit.length&&guard++<500){
+      var pick=unlit[Math.floor(rng()*unlit.length)];
+      lamp[pick]=1; litH[S.segH[pick]]=1; litV[S.segV[pick]]=1;
+      var nu=[],k;
+      for(k=0;k<unlit.length;k++){ var c=unlit[k];
+        if(litH[S.segH[c]]||litV[S.segV[c]])continue; nu.push(c); }
+      unlit=nu;
+    }
+    var wallIdx=[];
+    for(i=0;i<N;i++){ if(walls[i]<0)continue;
+      var x=i%n,y=(i-x)/n,cnt=0,touch=0;
+      if(x>0&&walls[i-1]<0){touch++;if(lamp[i-1])cnt++;}
+      if(x<n-1&&walls[i+1]<0){touch++;if(lamp[i+1])cnt++;}
+      if(y>0&&walls[i-n]<0){touch++;if(lamp[i-n])cnt++;}
+      if(y<n-1&&walls[i+n]<0){touch++;if(lamp[i+n])cnt++;}
+      if(touch>0){ walls[i]=cnt; wallIdx.push(i); } else walls[i]=5;
+    }
+    var r=solveCount(walls,n,2);
+    if(r.count!==1)continue;
+    var order=wallIdx.slice(), j2;
+    for(j2=order.length-1;j2>0;j2--){ var jj=Math.floor(rng()*(j2+1)); var tv=order[j2]; order[j2]=order[jj]; order[jj]=tv; }
+    var tries=Math.min(removeTries,order.length), t2;
+    for(t2=0;t2<tries;t2++){ var wi=order[t2], old=walls[wi];
+      walls[wi]=5;
+      var r2=solveCount(walls,n,2);
+      if(r2.count!==1)walls[wi]=old;
+    }
+    return {walls:walls,sol:lamp,n:n,attempts:attempt+1,seed:seed};
+  }
+  return null;
+}
+function genPuzzleSafe(seed,size,density,removeTries){
+  var p=null, bump=0;
+  while(!p&&bump<8){ p=genPuzzle((seed+bump*7919)>>>0,size,density,removeTries); bump++; }
+  return p;
+}
+
+/* ---------- campaign ---------- */
+var LEVELS=[
+ {name:"First Lane",size:6,rm:0},   {name:"Millers Row",size:6,rm:2},  {name:"Chapel Yard",size:6,rm:4},  {name:"Tinkers Bend",size:6,rm:6},
+ {name:"Wren Alley",size:7,rm:4},   {name:"Coopers Walk",size:7,rm:6}, {name:"Bell Street",size:7,rm:8},  {name:"Fen Corner",size:7,rm:10},
+ {name:"Harrow Cross",size:8,rm:8}, {name:"Candle Court",size:8,rm:10},{name:"Salters Gate",size:8,rm:12},{name:"Night Row",size:8,rm:999},
+ {name:"Vesper Lane",size:9,rm:10}, {name:"Colonnade",size:9,rm:12},   {name:"Widows Steps",size:9,rm:999},{name:"Clock Square",size:9,rm:999},
+ {name:"The Long Dark",size:10,rm:12},{name:"Owl Market",size:10,rm:999},{name:"Kings Shadow",size:10,rm:999},{name:"Town Entire",size:10,rm:999}
+];
+function walkSeed(i){ return (0x1A2B90 ^ Math.imul(i+1,2654435761))>>>0; }
+var DENSITY=0.2;
+
+/* ---------- current game ---------- */
+var CUR=null, running=false;
+function startFromPuzzle(puz,mode,level,synthetic){
+  var n=puz.n, N=n*n;
+  CUR={ mode:mode, level:level, n:n, seed:puz.seed>>>0, walls:puz.walls, sol:puz.sol,
+    S:buildSegs(puz.walls,n),
+    st:new Uint8Array(N), lit:new Uint8Array(N), conflict:new Uint8Array(N),
+    clueTotal:0, clueSat:0, clueBad:0, unlitCount:0, lampCount:0,
+    phase:"play", hintsUsed:0, taps:0, ticks:0, shake:0, winT:0,
+    kindle:0, kindleT:0, flies:[], wins:[], town:null,
+    synthetic:!!synthetic, result:null, earned:0 };
+  CUR.clueTotal=CUR.S.clues.length;
+  buildTown();
+  recompute();
+}
+function startPuzzle(mode,seed,opts){
+  opts=opts||{};
+  var size,rm,level=-1,puz;
+  if(mode==="walk"){ level=(seed|0); if(level<0)level=0; if(level>=LEVELS.length)level=LEVELS.length-1;
+    size=LEVELS[level].size; rm=LEVELS[level].rm; seed=walkSeed(level); }
+  else if(mode==="daily"){ size=8; rm=999;
+    seed=(opts.seedOverride!=null?opts.seedOverride:((Math.imul(dayCodeUTC(),2654435761)>>>0)^0x517CC1)); }
+  else if(mode==="deep"){ size=10; rm=999; if(seed==null)seed=(Date.now()&0x7fffffff); }
+  else { mode="zen"; size=opts.size||[6,7,8][PROG.zenN%3]; rm=6; if(seed==null)seed=(Date.now()&0x7fffffff);
+    if(!opts.synthetic){ PROG.zenN++; save(); } }
+  puz=genPuzzleSafe(seed>>>0,size,DENSITY,rm);
+  startFromPuzzle(puz,mode,level,opts.synthetic);
+  if(!opts.synthetic){
+    hideScreens(); $("hud").classList.add("on"); $("dock").classList.add("on");
+    $("h-stage").textContent = mode==="walk" ? LEVELS[level].name
+      : (mode==="daily"?"Daily Lamps":(mode==="deep"?"Deep Square":"Zen Dusk"));
+    $("h-note").textContent = mode==="zen" ? "free hints · no fail" : "tap to place lamps";
+    $("hint-note").textContent = mode==="zen" ? "free in zen dusk" : "a hint hangs no lantern";
+    updateHud(); running=true;
+  }
+  return true;
+}
+function stopToMenu(){ running=false; CUR=null;
+  $("hud").classList.remove("on"); $("dock").classList.remove("on");
+  show("s-title"); stamp(); }
+
+/* ---------- live rules / feedback (the ONLY win path) ---------- */
+function recompute(){
+  if(!CUR)return;
+  var S=CUR.S, n=CUR.n, N=n*n, i, si, j;
+  var lampH=[], lampV=[];
+  for(si=0;si<S.hCells.length;si++)lampH.push(0);
+  for(si=0;si<S.vCells.length;si++)lampV.push(0);
+  CUR.lampCount=0;
+  for(i=0;i<S.floor.length;i++){ var c=S.floor[i];
+    if(CUR.st[c]===1){ CUR.lampCount++; lampH[S.segH[c]]++; lampV[S.segV[c]]++; } }
+  var unlit=0, confl=0;
+  for(i=0;i<S.floor.length;i++){ var c2=S.floor[i];
+    var lit=(lampH[S.segH[c2]]>0)||(lampV[S.segV[c2]]>0);
+    CUR.lit[c2]=lit?1:0; if(!lit)unlit++;
+    var cf=(CUR.st[c2]===1)&&((lampH[S.segH[c2]]>1)||(lampV[S.segV[c2]]>1));
+    CUR.conflict[c2]=cf?1:0; if(cf)confl++;
+  }
+  var sat=0,bad=0;
+  CUR.clueState=[];
+  for(i=0;i<S.clues.length;i++){ var cl=S.clues[i], L=0;
+    for(j=0;j<cl.adj.length;j++)if(CUR.st[cl.adj[j]]===1)L++;
+    var stt=0;
+    if(L===cl.k){ stt=1; sat++; } else if(L>cl.k){ stt=2; bad++; }
+    CUR.clueState.push(stt);
+  }
+  CUR.unlitCount=unlit; CUR.conflictCount=confl; CUR.clueSat=sat; CUR.clueBad=bad;
+  CUR.kindleT=S.floor.length>0 ? (S.floor.length-unlit)/S.floor.length : 0;
+  if(CUR.phase==="play" && unlit===0 && confl===0 && bad===0 && sat===CUR.clueTotal) doWin();
+  if(!CUR.synthetic)updateHud();
+}
+function tapCell(cx,cy){
+  if(!CUR||CUR.phase!=="play")return false;
+  var n=CUR.n; if(cx<0||cy<0||cx>=n||cy>=n)return false;
+  var i=cy*n+cx;
+  if(CUR.walls[i]>=0)return false;
+  CUR.taps++;
+  var v=CUR.st[i];
+  CUR.st[i]=(v===0)?1:(v===1?2:0);
+  var wasBadFree=(CUR.conflictCount===0&&CUR.clueBad===0);
+  recompute();
+  if(!CUR.synthetic){
+    if(CUR.st[i]===1){ if(CUR.conflict[i]||CUR.clueBad>0){ sndBad(); if(CUR.mode==="zen")CUR.shake=12; } else sndLamp(); }
+    else if(CUR.st[i]===2)sndMark(); else sndClear();
+    if(wasBadFree&&CUR.clueSat===CUR.clueTotal&&CUR.clueTotal>0&&CUR.phase==="play")sndSat();
+  } else { if(CUR.st[i]===1&&(CUR.conflict[i]||CUR.clueBad>0)&&CUR.mode==="zen")CUR.shake=12; }
+  return true;
+}
+function useHint(){
+  if(!CUR||CUR.phase!=="play")return false;
+  var S=CUR.S, i, c;
+  /* remove a wrong lamp first, else fix a marked/empty solution cell */
+  for(i=0;i<S.floor.length;i++){ c=S.floor[i];
+    if(CUR.st[c]===1&&CUR.sol[c]!==1){ CUR.st[c]=0; CUR.hintsUsed++; recompute(); if(!CUR.synthetic)sndHint(); return true; } }
+  for(i=0;i<S.floor.length;i++){ c=S.floor[i];
+    if(CUR.sol[c]===1&&CUR.st[c]!==1){ CUR.st[c]=1; CUR.hintsUsed++; recompute(); if(!CUR.synthetic)sndHint(); return true; } }
+  return false;
+}
+function resetBoard(){
+  if(!CUR)return;
+  var i; for(i=0;i<CUR.st.length;i++)CUR.st[i]=0;
+  CUR.hintsUsed=0; CUR.phase="play"; CUR.winT=0;
+  recompute();
+}
+
+/* ---------- payouts + win ---------- */
+function payRun(nm,tag){ if(!CUR||CUR.mode==="zen")return 0;
+  if(CUR.earned>=12)return 0; nm=Math.min(nm,12-CUR.earned);
+  var got=window._sbCapEarn(nm,tag); CUR.earned+=got;
+  if(got>0)toast("☀ +"+got+" sunbeam"+(got>1?"s":"")); return got; }
+function doWin(){
+  if(CUR.phase!=="play")return; CUR.phase="won"; CUR.winT=0;
+  var hintless=(CUR.hintsUsed===0);
+  var lantEligible=hintless&&CUR.mode!=="zen";
+  if(CUR.synthetic){
+    CUR.result={cleared:true,hintless:hintless,lanternEligible:lantEligible,
+      wouldEarn:CUR.mode==="zen"?0:1};
+    return;
+  }
+  var secs=Math.round(CUR.ticks/60);
+  if(CUR.mode==="walk"){
+    var first=!PROG.walk[CUR.level];
+    if(first){ PROG.walk[CUR.level]=true; payRun(2,"street"); } else payRun(1,"replay");
+    if(hintless&&!PROG.hintless[CUR.level])PROG.hintless[CUR.level]=true;
+  } else if(CUR.mode==="daily"){
+    var today=new Date().toISOString().slice(0,10);
+    if(PROG.lastDaily!==today){ var y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+      PROG.streak=(PROG.lastDaily===y)?PROG.streak+1:1; PROG.lastDaily=today; PROG.dailyWins++;
+      payRun(hintless?4:3,"daily");
+    } else payRun(1,"daily-replay");
+  } else if(CUR.mode==="deep"){
+    PROG.deepWins++; payRun(hintless?3:2,"deep");
+  }
+  if(lantEligible){
+    PROG.lanterns.push({s:(CUR.seed^Math.imul(CUR.n,2654435761))>>>0, d:new Date().toISOString().slice(0,10), m:CUR.mode});
+    if(PROG.lanterns.length>24)PROG.lanterns.shift();
+    toast("🏮 A keepsake lantern hangs in your Row");
+  }
+  save(); sndWin();
+  $("over-title").textContent = CUR.mode==="daily"?"DAILY LAMPS LIT":(CUR.mode==="zen"?"A QUIET DUSK":"STREET AGLOW");
+  $("over-sub").textContent = CUR.mode==="daily" ? "Streak "+PROG.streak+". New lamps tomorrow."
+    : (CUR.mode==="walk" ? "\""+LEVELS[CUR.level].name+"\" "+(hintless?"lit without a single hint.":"is lit.")
+    : (CUR.mode==="deep" ? "The ten by ten square glows."+(hintless?" Hintless.":"") : "The town glows. Nothing was at stake."));
+  $("ov-time").textContent=secs;
+  $("ov-hints").textContent=CUR.hintsUsed;
+  $("ov-lant").textContent=PROG.lanterns.length;
+  $("over-next").style.display=(CUR.mode==="walk"&&CUR.level<LEVELS.length-1)?"":( (CUR.mode==="zen"||CUR.mode==="deep")?"":"none");
+  $("over-next").textContent = CUR.mode==="walk"?"NEXT STREET →":(CUR.mode==="zen"?"ANOTHER DUSK →":(CUR.mode==="deep"?"ANOTHER SQUARE →":"NEXT"));
+  if(CUR.mode==="daily")$("over-next").style.display="none";
+  running=false;
+  setTimeout(function(){ if(CUR&&CUR.phase!=="play")show("s-over"); }, 1100);
+}
+
+/* ---------- HUD ---------- */
+function updateHud(){ if(!CUR)return;
+  $("h-unlit").textContent="▢ "+CUR.unlitCount;
+  $("h-clue").textContent="✓ "+CUR.clueSat+"/"+CUR.clueTotal; }
+
+/* ---------- town painting (the Dusk Walk twist) ---------- */
+function buildTown(){
+  var D=dusk(), rng=mkRng((CUR.seed^0x70C0DE)||1), i;
+  CUR.town=document.createElement("canvas"); CUR.town.width=540; CUR.town.height=820;
+  var c=CUR.town.getContext("2d");
+  var gr=c.createLinearGradient(0,0,0,300);
+  gr.addColorStop(0,rgb(D.top)); gr.addColorStop(0.62,rgb(D.mid)); gr.addColorStop(1,rgb(D.low));
+  c.fillStyle=gr; c.fillRect(0,0,540,300);
+  c.fillStyle="#0d0a14"; c.fillRect(0,300,540,520);
+  /* stars */
+  c.fillStyle="rgba(255,255,255,0.5)";
+  for(i=0;i<34;i++){ c.fillRect(Math.floor(rng()*540), Math.floor(rng()*130), 1, 1); }
+  /* moon */
+  c.fillStyle=rgba(D.moon,0.92); c.beginPath(); c.arc(452,64,22,0,6.283); c.fill();
+  c.fillStyle=rgba(D.top,0.85); c.beginPath(); c.arc(444,58,19,0,6.283); c.fill();
+  /* hills */
+  c.fillStyle=rgb(D.hill); c.beginPath(); c.moveTo(0,190);
+  c.quadraticCurveTo(110,150,240,186); c.quadraticCurveTo(390,222,540,178);
+  c.lineTo(540,300); c.lineTo(0,300); c.closePath(); c.fill();
+  /* houses + windows */
+  CUR.wins=[];
+  var x=6;
+  while(x<520){
+    var w=34+Math.floor(rng()*40), h=52+Math.floor(rng()*66), top=252-h;
+    c.fillStyle=rgb(D.house); c.fillRect(x,top,w,h+48);
+    c.beginPath(); /* roof */
+    if(rng()<0.5){ c.moveTo(x-3,top); c.lineTo(x+w/2,top-12-rng()*14); c.lineTo(x+w+3,top); }
+    else { c.rect(x-2,top-7,w+4,7); }
+    c.fill();
+    if(rng()<0.35){ c.fillRect(x+w*0.6,top-24,5,24); } /* chimney */
+    var wy;
+    for(wy=top+10;wy<252-6;wy+=20){
+      var wx2;
+      for(wx2=x+6;wx2<x+w-9;wx2+=15){
+        if(rng()<0.62)CUR.wins.push({x:wx2,y:wy,w:7,h:10});
+      }
+    }
+    x+=w+4+Math.floor(rng()*12);
+  }
+  /* seeded shuffle: kindle order */
+  for(i=CUR.wins.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)); var t=CUR.wins[i]; CUR.wins[i]=CUR.wins[j]; CUR.wins[j]=t; }
+  /* street line */
+  c.fillStyle=rgba(D.low,0.25); c.fillRect(0,252,540,4);
+  /* cobble strip below grid */
+  c.fillStyle="#151021"; c.fillRect(0,754,540,66);
+  c.fillStyle="#1d1730";
+  for(i=0;i<30;i++){ c.fillRect((i*37)%540, 760+((i*13)%48), 22, 7); }
+}
+
+/* ---------- tick (sim: kindle easing, fireflies, shake) ---------- */
+function tick(){
+  if(!CUR)return;
+  CUR.ticks++;
+  CUR.kindle+=(CUR.kindleT-CUR.kindle)*0.045;
+  if(CUR.kindle>0.9995)CUR.kindle=1;
+  if(CUR.shake>0)CUR.shake--;
+  if(CUR.phase==="won"&&CUR.winT<120)CUR.winT++;
+  var want=Math.floor(Math.max(0,CUR.kindle-0.3)*22), i;
+  if(CUR.phase==="won")want=16;
+  while(CUR.flies.length<want){
+    var r=mkRng((CUR.seed+CUR.flies.length*131+CUR.ticks)>>>0);
+    CUR.flies.push({x:40+r()*460, y:80+r()*560, a:r()*6.283, ph:r()*6.283, sp:0.3+r()*0.5});
+  }
+  if(CUR.flies.length>want)CUR.flies.length=want;
+  for(i=0;i<CUR.flies.length;i++){ var f=CUR.flies[i];
+    f.a+=Math.sin(CUR.ticks*0.013+f.ph)*0.05;
+    f.x+=Math.cos(f.a)*f.sp; f.y+=Math.sin(f.a)*f.sp*0.7+Math.sin(CUR.ticks*0.05+f.ph)*0.2;
+    if(f.x<10)f.x=530; if(f.x>530)f.x=10; if(f.y<40)f.y=700; if(f.y>700)f.y=40;
+  }
+}
+
+/* ---------- render ---------- */
+var cvs=$("game"), ctx=cvs.getContext("2d");
+function gridGeom(){ var n=CUR.n, cell=Math.floor(480/n), bw=cell*n;
+  return {cell:cell, bw:bw, ox:Math.floor((540-bw)/2), oy:262+Math.floor((480-bw)/2)}; }
+function render(){
+  if(!CUR)return;
+  var D=dusk(), gm=gridGeom(), n=CUR.n, cell=gm.cell, i, x, y;
+  ctx.clearRect(0,0,540,820);
+  ctx.drawImage(CUR.town,0,0);
+  /* kindled windows */
+  var kindled=Math.round(CUR.kindle*CUR.wins.length);
+  if(CUR.phase==="won")kindled=CUR.wins.length;
+  for(i=0;i<CUR.wins.length;i++){ var wn=CUR.wins[i];
+    if(i<kindled){
+      ctx.fillStyle=rgba(D.win,0.28); ctx.fillRect(wn.x-2,wn.y-2,wn.w+4,wn.h+4);
+      ctx.fillStyle=rgba(D.win,0.95); ctx.fillRect(wn.x,wn.y,wn.w,wn.h);
+      ctx.fillStyle=rgba(D.house,0.8); ctx.fillRect(wn.x+wn.w/2-0.5,wn.y,1,wn.h);
+    } else {
+      ctx.fillStyle="rgba(0,0,0,0.4)"; ctx.fillRect(wn.x,wn.y,wn.w,wn.h);
+    }
+  }
+  /* fireflies */
+  var fc=flyCol();
+  for(i=0;i<CUR.flies.length;i++){ var f=CUR.flies[i];
+    var tw=0.4+0.6*Math.abs(Math.sin(CUR.ticks*0.06+f.ph));
+    ctx.fillStyle=rgba(fc,0.22*tw); ctx.beginPath(); ctx.arc(f.x,f.y,4.5,0,6.283); ctx.fill();
+    ctx.fillStyle=rgba(fc,0.9*tw); ctx.beginPath(); ctx.arc(f.x,f.y,1.6,0,6.283); ctx.fill();
+  }
+  /* grid (with zen shake) */
+  ctx.save();
+  if(CUR.shake>0)ctx.translate(Math.sin(CUR.ticks*1.9)*Math.min(4,CUR.shake*0.5),0);
+  ctx.translate(gm.ox,gm.oy);
+  var ci=0, cs;
+  for(y=0;y<n;y++)for(x=0;x<n;x++){
+    i=y*n+x; var px=x*cell, py=y*cell;
+    if(CUR.walls[i]>=0){
+      /* house cell */
+      ctx.fillStyle="#0b0816"; ctx.fillRect(px+1,py+1,cell-2,cell-2);
+      ctx.strokeStyle="#2c2440"; ctx.lineWidth=1; ctx.strokeRect(px+1.5,py+1.5,cell-3,cell-3);
+      ctx.fillStyle="#1c1530"; /* roof accent */
+      ctx.beginPath(); ctx.moveTo(px+2,py+Math.floor(cell*0.24)); ctx.lineTo(px+cell/2,py+3); ctx.lineTo(px+cell-2,py+Math.floor(cell*0.24)); ctx.closePath(); ctx.fill();
+      if(CUR.walls[i]<=4){
+        cs=CUR.clueState[clueIndexOf(i)];
+        var dim=(cs===1);
+        ctx.fillStyle=dim?"rgba(232,220,200,0.42)":(cs===2?"#ff8f7a":"#e8dcc8");
+        ctx.font="bold "+Math.floor(cell*0.46)+"px sans-serif";
+        ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(String(CUR.walls[i]),px+cell/2,py+cell*0.62);
+        if(cs===1){ ctx.strokeStyle="rgba(170,220,150,0.85)"; ctx.lineWidth=2;
+          ctx.beginPath(); ctx.moveTo(px+cell-13,py+8); ctx.lineTo(px+cell-9,py+12); ctx.lineTo(px+cell-4,py+4); ctx.stroke(); }
+        if(cs===2){ ctx.fillStyle="#ff8f7a"; ctx.font="bold "+Math.floor(cell*0.3)+"px sans-serif";
+          ctx.fillText("!",px+cell-8,py+10); }
+      }
+    } else {
+      /* walkway */
+      var lit=CUR.lit[i]===1;
+      ctx.fillStyle=lit?"#3a2f47":"#221c33"; ctx.fillRect(px+1,py+1,cell-2,cell-2);
+      if(lit){
+        ctx.fillStyle="rgba(255,205,110,0.22)"; ctx.fillRect(px+1,py+1,cell-2,cell-2);
+        /* colorblind-safe texture: diagonal light rays */
+        ctx.strokeStyle="rgba(255,220,150,0.20)"; ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.moveTo(px+2,py+cell*0.4); ctx.lineTo(px+cell*0.4,py+2);
+        ctx.moveTo(px+2,py+cell*0.85); ctx.lineTo(px+cell*0.85,py+2);
+        ctx.moveTo(px+cell*0.35,py+cell-2); ctx.lineTo(px+cell-2,py+cell*0.35);
+        ctx.moveTo(px+cell*0.8,py+cell-2); ctx.lineTo(px+cell-2,py+cell*0.8);
+        ctx.stroke();
+      }
+      ctx.strokeStyle=lit?"#584a63":"#332b4a"; ctx.lineWidth=1; ctx.strokeRect(px+1.5,py+1.5,cell-3,cell-3);
+      if(CUR.st[i]===1)drawLamp(ctx,px+cell/2,py+cell/2,cell,CUR.conflict[i]===1);
+      else if(CUR.st[i]===2){
+        ctx.strokeStyle="rgba(148,136,159,0.8)"; ctx.lineWidth=2;
+        var m=cell*0.3;
+        ctx.beginPath(); ctx.moveTo(px+m,py+m); ctx.lineTo(px+cell-m,py+cell-m);
+        ctx.moveTo(px+cell-m,py+m); ctx.lineTo(px+m,py+cell-m); ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+  /* win glow */
+  if(CUR.phase==="won"){
+    var a=Math.min(1,CUR.winT/50);
+    var g2=ctx.createRadialGradient(270,410,80,270,410,560);
+    g2.addColorStop(0,"rgba(255,215,130,"+(0.16*a)+")"); g2.addColorStop(1,"rgba(255,215,130,0)");
+    ctx.fillStyle=g2; ctx.fillRect(0,0,540,820);
+    ctx.fillStyle="rgba(255,225,150,"+(0.85*a)+")";
+    ctx.font="bold 26px sans-serif"; ctx.textAlign="center";
+    ctx.fillText("THE TOWN KINDLES",270,236+Math.sin(CUR.ticks*0.05)*3);
+  }
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+  /* footer helper */
+  ctx.fillStyle="rgba(232,220,200,0.5)"; ctx.font="12px sans-serif"; ctx.textAlign="center";
+  ctx.fillText("tap: lamp · tap again: note · once more: clear",270,792);
+  if(CUR.mode==="zen"){ ctx.fillStyle="rgba(191,224,242,0.55)"; ctx.font="12px sans-serif"; ctx.fillText("zen dusk · no fail · pays nothing",270,808); }
+  ctx.textAlign="left";
+}
+function clueIndexOf(cellIdx){ var i;
+  for(i=0;i<CUR.S.clues.length;i++)if(CUR.S.clues[i].cell===cellIdx)return i; return 0; }
+function drawLamp(c,x,y,cell,bad){
+  var r=cell*0.27, skin=PROG.lamp;
+  /* glow */
+  var g=c.createRadialGradient(x,y,r*0.3,x,y,cell*0.62);
+  g.addColorStop(0,bad?"rgba(255,130,110,0.5)":"rgba(255,214,122,0.55)");
+  g.addColorStop(1,"rgba(255,214,122,0)");
+  c.fillStyle=g; c.beginPath(); c.arc(x,y,cell*0.62,0,6.283); c.fill();
+  if(skin==="paper"){
+    c.fillStyle=bad?"#c96a54":"#e8875a"; c.beginPath();
+    if(c.ellipse)c.ellipse(x,y,r*0.92,r,0,0,6.283); else c.arc(x,y,r,0,6.283); c.fill();
+    c.strokeStyle="rgba(60,20,10,0.45)"; c.lineWidth=1;
+    c.beginPath(); if(c.ellipse){c.ellipse(x,y,r*0.55,r,0,0,6.283);}else{c.arc(x,y,r*0.7,0,6.283);} c.stroke();
+    c.fillStyle="#3a2418"; c.fillRect(x-r*0.3,y-r-3,r*0.6,3); c.fillRect(x-r*0.3,y+r,r*0.6,3);
+    c.fillStyle="#fff2c8"; c.beginPath(); c.arc(x,y,r*0.28,0,6.283); c.fill();
+  } else if(skin==="star"){
+    c.fillStyle=bad?"#d98a6a":"#ffd76a"; c.beginPath();
+    var k; for(k=0;k<10;k++){ var an=k/10*6.283-1.5708, rr=(k%2===0)?r*1.15:r*0.5;
+      var sx=x+Math.cos(an)*rr, sy=y+Math.sin(an)*rr;
+      if(k===0)c.moveTo(sx,sy); else c.lineTo(sx,sy); }
+    c.closePath(); c.fill();
+    c.fillStyle="#fff8dc"; c.beginPath(); c.arc(x,y,r*0.3,0,6.283); c.fill();
+  } else if(skin==="moth"){
+    c.fillStyle="rgba(232,220,200,0.85)";
+    c.beginPath(); if(c.ellipse){c.ellipse(x-r*0.72,y-r*0.1,r*0.62,r*0.34,-0.5,0,6.283);}else{c.arc(x-r*0.7,y,r*0.4,0,6.283);} c.fill();
+    c.beginPath(); if(c.ellipse){c.ellipse(x+r*0.72,y-r*0.1,r*0.62,r*0.34,0.5,0,6.283);}else{c.arc(x+r*0.7,y,r*0.4,0,6.283);} c.fill();
+    c.fillStyle=bad?"#d98a6a":"#ffd76a";
+    c.beginPath(); c.moveTo(x,y-r); c.quadraticCurveTo(x+r*0.75,y+r*0.15,x,y+r);
+    c.quadraticCurveTo(x-r*0.75,y+r*0.15,x,y-r); c.fill();
+    c.fillStyle="#fff8dc"; c.beginPath(); c.arc(x,y+r*0.15,r*0.24,0,6.283); c.fill();
+  } else { /* brass */
+    c.fillStyle="#8a6b30"; c.fillRect(x-1.5,y-r-4,3,4);
+    c.fillStyle=bad?"#c98a5a":"#c8a84b";
+    c.beginPath(); c.moveTo(x,y-r); c.lineTo(x+r*0.85,y); c.lineTo(x,y+r); c.lineTo(x-r*0.85,y); c.closePath(); c.fill();
+    c.fillStyle="#2a2010"; c.fillRect(x-r*0.4,y+r*0.72,r*0.8,2.4);
+    c.fillStyle="#fff2c8"; c.beginPath(); c.arc(x,y,r*0.32,0,6.283); c.fill();
+    c.fillStyle="#ffd76a"; c.beginPath(); c.arc(x,y-r*0.06,r*0.16,0,6.283); c.fill();
+  }
+  if(bad){ /* colorblind-safe clash marker: bold X + ring */
+    c.strokeStyle="#ff5a4a"; c.lineWidth=3;
+    c.beginPath(); c.arc(x,y,r*1.35,0,6.283); c.stroke();
+    c.lineWidth=3.4;
+    c.beginPath(); c.moveTo(x-r*1.05,y-r*1.05); c.lineTo(x+r*1.05,y+r*1.05);
+    c.moveTo(x+r*1.05,y-r*1.05); c.lineTo(x-r*1.05,y+r*1.05); c.stroke();
+  }
+}
+
+/* ---------- lantern keepsakes ---------- */
+function drawLanternArt(cv,ks){
+  var c=cv.getContext("2d"), W=cv.width, H=cv.height, rr=mkRng(ks.s>>>0);
+  c.fillStyle="#0d0a14"; c.fillRect(0,0,W,H);
+  var i; c.fillStyle="rgba(255,255,255,0.4)";
+  for(i=0;i<10;i++)c.fillRect(Math.floor(rr()*W),Math.floor(rr()*H*0.3),1,1);
+  var cx=W/2, cy=H*0.5, shape=Math.floor(rr()*4);
+  var hues=[[255,180,90],[232,135,90],[255,215,106],[158,200,232],[207,160,232]];
+  var col=hues[Math.floor(rr()*hues.length)];
+  c.strokeStyle="#4a3c28"; c.lineWidth=2;
+  c.beginPath(); c.moveTo(cx,4); c.lineTo(cx,cy-H*0.22); c.stroke();
+  var g=c.createRadialGradient(cx,cy,4,cx,cy,W*0.42);
+  g.addColorStop(0,rgba(col,0.5)); g.addColorStop(1,rgba(col,0));
+  c.fillStyle=g; c.fillRect(0,0,W,H);
+  var r=W*0.24+rr()*W*0.06;
+  c.fillStyle=rgba(col,0.95);
+  if(shape===0){ c.beginPath(); if(c.ellipse)c.ellipse(cx,cy,r*0.85,r,0,0,6.283); else c.arc(cx,cy,r,0,6.283); c.fill();
+    c.strokeStyle=rgba(mix(col,[0,0,0],0.5),0.7); c.lineWidth=1;
+    for(i=1;i<4;i++){ c.beginPath(); if(c.ellipse)c.ellipse(cx,cy,r*0.85*i/4,r,0,0,6.283); else c.arc(cx,cy,r*i/4,0,6.283); c.stroke(); } }
+  else if(shape===1){ c.beginPath(); c.moveTo(cx,cy-r); c.lineTo(cx+r*0.8,cy-r*0.3); c.lineTo(cx+r*0.8,cy+r*0.5); c.lineTo(cx,cy+r); c.lineTo(cx-r*0.8,cy+r*0.5); c.lineTo(cx-r*0.8,cy-r*0.3); c.closePath(); c.fill(); }
+  else if(shape===2){ c.beginPath(); c.moveTo(cx,cy-r); c.quadraticCurveTo(cx+r,cy+r*0.1,cx,cy+r); c.quadraticCurveTo(cx-r,cy+r*0.1,cx,cy-r); c.fill(); }
+  else { c.fillRect(cx-r*0.6,cy-r,r*1.2,r*2); c.fillStyle=rgba(mix(col,[0,0,0],0.4),0.8);
+    for(i=0;i<3;i++)c.fillRect(cx-r*0.6,cy-r+((i+1)*r*2/4)-1,r*1.2,2); }
+  c.fillStyle="#2a2010"; c.fillRect(cx-r*0.35,cy-r-4,r*0.7,4); c.fillRect(cx-r*0.35,cy+r,r*0.7,4);
+  c.fillStyle="#fff8dc"; c.beginPath(); c.arc(cx,cy,r*0.16,0,6.283); c.fill();
+}
+function renderRow(){
+  var g=$("rowgrid"); g.innerHTML="";
+  $("row-tag").textContent=PROG.lanterns.length+" lantern"+(PROG.lanterns.length===1?"":"s")+" hung · hintless solves only";
+  var i;
+  for(i=0;i<PROG.lanterns.length;i++){ var cv=document.createElement("canvas"); cv.width=90; cv.height=110;
+    drawLanternArt(cv,PROG.lanterns[i]); g.appendChild(cv); }
+  if(!g.childNodes.length){ var d=document.createElement("div");
+    d.style.cssText="color:#94889f;font-size:.8rem;grid-column:1/-1;text-align:center;padding:26px 0";
+    d.textContent="Solve a street without hints to hang a lantern here."; g.appendChild(d); }
+}
+
+/* ---------- screens / ui ---------- */
+function hideScreens(){ var s=document.querySelectorAll(".screen"),i; for(i=0;i<s.length;i++)s[i].classList.remove("on"); }
+function show(id){ hideScreens(); $(id).classList.add("on"); }
+var toastT=null;
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove("on");},2100); }
+function stamp(){ $("buildstamp").textContent="Lamplighter "+BUILD+" · "+walkClears()+"/"+LEVELS.length+" streets · "+PROG.lanterns.length+" lanterns"; }
+
+function renderSelect(){
+  var g=$("lvlgrid"); g.innerHTML="";
+  var i; for(i=0;i<LEVELS.length;i++)(function(i){
+    var unlocked=(i===0||PROG.walk[i-1]||PROG.walk[i]);
+    var c=document.createElement("div");
+    c.className="lvlcard"+(unlocked?"":" locked")+(PROG.walk[i]?" done":"")+(PROG.hintless[i]?" lantern":"");
+    var extra=PROG.hintless[i]?"🏮":(PROG.walk[i]?"✓":"");
+    c.innerHTML='<div class="ln">'+(i+1)+'</div><div class="lt">'+LEVELS[i].name+'<br>'+LEVELS[i].size+'×'+LEVELS[i].size+'</div><div class="ls">'+extra+'</div>';
+    if(unlocked)c.onclick=function(){ startPuzzle("walk",i,{}); };
+    g.appendChild(c);
+  })(i);
+}
+
+/* wardrobe */
+var WARD=[
+ {cat:"Lamp",key:"lamp",id:"brass",name:"Brass",icon:"🏮",need:function(){return true;},needTxt:"Free"},
+ {cat:"Lamp",key:"lamp",id:"paper",name:"Paper",icon:"🎐",need:function(){return walkClears()>=6;},needTxt:"Light 6 streets"},
+ {cat:"Lamp",key:"lamp",id:"star",name:"Star",icon:"⭐",need:function(){return PROG.lanterns.length>=5;},needTxt:"Hang 5 lanterns"},
+ {cat:"Lamp",key:"lamp",id:"moth",name:"Moth",icon:"🦋",need:function(){return PROG.streak>=3;},needTxt:"Daily streak 3"},
+ {cat:"Dusk",key:"dusk",id:"plum",name:"Plum",icon:"🟪",need:function(){return true;},needTxt:"Free"},
+ {cat:"Dusk",key:"dusk",id:"ember",name:"Ember",icon:"🟧",need:function(){return walkClears()>=12;},needTxt:"Light 12 streets"},
+ {cat:"Dusk",key:"dusk",id:"tide",name:"Tide",icon:"🟦",need:function(){return PROG.deepWins>=3;},needTxt:"3 Deep Squares"},
+ {cat:"Fireflies",key:"fly",id:"gold",name:"Gold",icon:"✨",need:function(){return true;},needTxt:"Free"},
+ {cat:"Fireflies",key:"fly",id:"mint",name:"Mint",icon:"🍃",need:function(){return walkClears()>=20;},needTxt:"Light all 20"},
+ {cat:"Fireflies",key:"fly",id:"lilac",name:"Lilac",icon:"🔮",need:function(){return PROG.streak>=7;},needTxt:"Daily streak 7"}
+];
+function renderWard(){
+  var box=$("wardbox"); box.innerHTML="";
+  var cats=[],seen={},i;
+  for(i=0;i<WARD.length;i++){ if(!seen[WARD[i].cat]){ seen[WARD[i].cat]=1; cats.push(WARD[i].cat); } }
+  var ci; for(ci=0;ci<cats.length;ci++){
+    var row=document.createElement("div"); row.className="wardrow";
+    row.innerHTML="<h3>"+cats[ci].toUpperCase()+"</h3>";
+    var grid=document.createElement("div"); grid.className="wcards";
+    for(i=0;i<WARD.length;i++)(function(w){
+      if(w.cat!==cats[ci])return;
+      var ok=w.need(), sel=PROG[w.key]===w.id;
+      var c=document.createElement("div");
+      c.className="wcard"+(ok?"":" locked")+(sel?" sel":"");
+      c.innerHTML='<div class="wi">'+w.icon+'</div><div class="wn">'+w.name+'</div><div class="wl">'+(ok?(sel?"equipped":"tap to wear"):w.needTxt)+'</div>';
+      if(ok)c.onclick=function(){ PROG[w.key]=w.id; save(); renderWard(); if(CUR)buildTown(); };
+      grid.appendChild(c);
+    })(WARD[i]);
+    row.appendChild(grid); box.appendChild(row);
+  }
+}
+
+/* ---------- input ---------- */
+function tap(id,fn){ $(id).addEventListener("click",fn); }
+(function(){
+  var sx=0,sy=0;
+  cvs.addEventListener("pointerdown",function(e){ sx=e.clientX; sy=e.clientY; });
+  cvs.addEventListener("pointerup",function(e){
+    if(!CUR||CUR.phase!=="play"||!running)return;
+    if(Math.abs(e.clientX-sx)>18||Math.abs(e.clientY-sy)>18)return;
+    var rect=cvs.getBoundingClientRect();
+    var lx=(e.clientX-rect.left)/rect.width*540;
+    var ly=(e.clientY-rect.top)/rect.height*820;
+    var gm=gridGeom();
+    var cx=Math.floor((lx-gm.ox)/gm.cell), cy=Math.floor((ly-gm.oy)/gm.cell);
+    tapCell(cx,cy);
+  });
+})();
+tap("hud-back",function(){ stopToMenu(); });
+tap("hintbtn",function(){ if(!CUR||CUR.phase!=="play")return;
+  if(CUR.mode!=="zen"&&CUR.hintsUsed===0)toast("Hint used · no lantern this solve");
+  useHint(); });
+tap("resetbtn",function(){ if(!CUR)return; resetBoard(); toast("Board cleared · lantern chance restored"); running=true; });
+tap("b-walk",function(){ renderSelect(); show("s-select"); });
+tap("b-daily",function(){ startPuzzle("daily",null,{}); });
+tap("b-deep",function(){ startPuzzle("deep",null,{}); });
+tap("b-zen",function(){ startPuzzle("zen",null,{}); });
+tap("sel-back",function(){ show("s-title"); stamp(); });
+tap("b-row",function(){ renderRow(); show("s-row"); });
+tap("row-back",function(){ show("s-title"); stamp(); });
+tap("b-ward",function(){ renderWard(); show("s-ward"); });
+tap("ward-back",function(){ show("s-title"); stamp(); });
+tap("b-how",function(){ show("s-how"); });
+tap("how-back",function(){ show("s-title"); stamp(); });
+tap("over-menu",function(){ stopToMenu(); });
+tap("over-retry",function(){ if(!CUR)return stopToMenu();
+  if(CUR.mode==="walk")startPuzzle("walk",CUR.level,{});
+  else if(CUR.mode==="daily")startPuzzle("daily",null,{});
+  else if(CUR.mode==="deep")startPuzzle("deep",null,{});
+  else startPuzzle("zen",null,{}); });
+tap("over-next",function(){ if(!CUR)return stopToMenu();
+  if(CUR.mode==="walk"&&CUR.level<LEVELS.length-1)startPuzzle("walk",CUR.level+1,{});
+  else if(CUR.mode==="zen")startPuzzle("zen",null,{});
+  else if(CUR.mode==="deep")startPuzzle("deep",null,{});
+  else stopToMenu(); });
+
+/* ---------- main loop ---------- */
+var last=0, acc=0;
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(!last)last=ts;
+  var el=Math.min(100,ts-last); last=ts;
+  if(CUR&&(running||CUR.phase==="won")&&!CUR.synthetic){
+    acc+=el;
+    while(acc>=16.6667){ tick(); acc-=16.6667; }
+    render();
+  }
+}
+stamp();
+
+/* ---------- headless dev hook ---------- */
+if(/[?&]lptest=1/.test(location.search)){
+  window.LP_DEV=(function(){
+    function boardHash(){ if(!CUR)return 0; var h=2166136261,i;
+      for(i=0;i<CUR.walls.length;i++){ h^=(CUR.walls[i]+2)+CUR.st[i]*7+CUR.lit[i]*31+CUR.conflict[i]*101; h=Math.imul(h,16777619); }
+      return h>>>0; }
+    function autoSolveOne(level){
+      startPuzzle("walk",level,{synthetic:true});
+      var S=CUR.S,i,taps=0;
+      for(i=0;i<S.floor.length&&CUR.phase==="play";i++){ var c=S.floor[i];
+        if(CUR.sol[c]===1){ tapCell(c%CUR.n,Math.floor(c/CUR.n)); taps++; } }
+      return { level:level, taps:taps, cleared:CUR.phase==="won"&&!!(CUR.result&&CUR.result.cleared),
+        hash:boardHash(), nan:D.state().nan };
+    }
+    var D={
+      start:function(mode,seed,opts){ return startPuzzle(mode,seed,opts||{}); },
+      tap:function(x,y){ return tapCell(x,y); },
+      hint:function(){ return useHint(); },
+      reset:function(){ resetBoard(); return true; },
+      step:function(n){ var k; for(k=0;k<(n||1);k++){ if(!CUR)break; tick(); } return D.state(); },
+      state:function(){ if(!CUR)return null;
+        var badf=false,i;
+        for(i=0;i<CUR.flies.length;i++){ if(!isFinite(CUR.flies[i].x)||!isFinite(CUR.flies[i].y)){badf=true;break;} }
+        return { mode:CUR.mode, n:CUR.n, phase:CUR.phase, lamps:CUR.lampCount,
+          unlit:CUR.unlitCount, conflicts:CUR.conflictCount,
+          clueSat:CUR.clueSat, clueBad:CUR.clueBad, clueTotal:CUR.clueTotal,
+          hintsUsed:CUR.hintsUsed, kindle:+CUR.kindle.toFixed(4), ticks:CUR.ticks,
+          nan: badf||!isFinite(CUR.kindle)||!isFinite(CUR.kindleT)||!isFinite(CUR.ticks)||!isFinite(CUR.shake) }; },
+      boardHash:boardHash,
+      render:function(){ render(); return true; },
+      gen:function(seed,size,rm){ var p=genPuzzleSafe(seed>>>0,size,DENSITY,rm==null?999:rm);
+        var r=solveCount(p.walls,p.n,2);
+        return { seed:p.seed, n:p.n, attempts:p.attempts, unique:r.count===1,
+          solValid:validateRays(p.walls,p.sol,p.n) }; },
+      genValidCheck:function(nB){
+        nB=nB||40; var out={ok:true,pass:0,total:nB,fails:[]}, i;
+        for(i=0;i<nB;i++){
+          var seed,size,rm;
+          if(i<LEVELS.length){ seed=walkSeed(i); size=LEVELS[i].size; rm=LEVELS[i].rm; }
+          else if(i<30){ seed=((Math.imul(20260000+i,2654435761)>>>0)^0x517CC1); size=8; rm=999; }
+          else { seed=(0x9E3779B9^Math.imul(i,40503))>>>0; size=10; rm=999; }
+          var p=genPuzzleSafe(seed,size,DENSITY,rm);
+          if(!p){ out.ok=false; out.fails.push({i:i,why:"gen-null"}); continue; }
+          var r=solveCount(p.walls,p.n,2);
+          var v=validateRays(p.walls,p.sol,p.n);
+          /* the solver's unique solution must BE the baked solution */
+          var same=true,j;
+          if(r.count===1){ for(j=0;j<p.walls.length;j++){ if(p.walls[j]<0){ var a=(r.sol[j]===1)?1:0; if(a!==p.sol[j]){same=false;break;} } } }
+          if(r.count===1&&v==="OK"&&same)out.pass++;
+          else { out.ok=false; out.fails.push({i:i,count:r.count,valid:v,solMatch:same}); }
+        }
+        out.ok=out.ok&&(out.pass===nB);
+        return out;
+      },
+      autoSolveCheck:function(k){
+        var lv=[0,9,18], out={ok:true,runs:[]}, i;
+        for(i=0;i<(k||3);i++){ var r=autoSolveOne(lv[i%lv.length]);
+          out.runs.push(r); if(!r.cleared||r.nan)out.ok=false; }
+        return out;
+      },
+      ruleCheck:function(){
+        var out={};
+        /* case A: lamp sees lamp on an open rig board */
+        var n=6,N=36,rig=new Int8Array(N),i;
+        for(i=0;i<N;i++)rig[i]=-1;
+        rig[3*6+3]=0; /* a numbered house: 0 lamps allowed beside it */
+        startFromPuzzle({walls:rig,sol:new Uint8Array(N),n:6,seed:42},"walk",-9,true);
+        tapCell(0,0); tapCell(5,0);
+        out.clash={ conflicts:CUR.conflictCount, both:CUR.conflict[0]===1&&CUR.conflict[5]===1,
+          phase:CUR.phase, pass:CUR.conflictCount===2&&CUR.conflict[0]===1&&CUR.conflict[5]===1&&CUR.phase==="play" };
+        /* case B: wrong house number (0-house given a lamp) */
+        resetBoard();
+        tapCell(3,2);
+        out.number={ clueBad:CUR.clueBad, phase:CUR.phase, pass:CUR.clueBad===1&&CUR.phase==="play" };
+        /* case C: unlit cell blocks the win; final lamp completes through real taps */
+        startPuzzle("walk",1,{synthetic:true});
+        var S=CUR.S, lampsAll=[],c;
+        for(i=0;i<S.floor.length;i++){ c=S.floor[i]; if(CUR.sol[c]===1)lampsAll.push(c); }
+        for(i=0;i<lampsAll.length-1;i++)tapCell(lampsAll[i]%CUR.n,Math.floor(lampsAll[i]/CUR.n));
+        var midUnlit=CUR.unlitCount, midPhase=CUR.phase;
+        var lastC=lampsAll[lampsAll.length-1];
+        tapCell(lastC%CUR.n,Math.floor(lastC/CUR.n));
+        out.unlit={ before:midUnlit, phaseBefore:midPhase, phaseAfter:CUR.phase,
+          pass:midUnlit>0&&midPhase==="play"&&CUR.phase==="won" };
+        out.ok=out.clash.pass&&out.number.pass&&out.unlit.pass;
+        return out;
+      },
+      detCheck:function(){
+        var g1=D.gen(777001,8,999), g2=D.gen(777001,8,999);
+        var p1=genPuzzleSafe(777001,8,DENSITY,999), p2=genPuzzleSafe(777001,8,DENSITY,999);
+        var h1=2166136261,h2=2166136261,i;
+        for(i=0;i<p1.walls.length;i++){ h1^=(p1.walls[i]+2); h1=Math.imul(h1,16777619); }
+        for(i=0;i<p2.walls.length;i++){ h2^=(p2.walls[i]+2); h2=Math.imul(h2,16777619); }
+        var r1=autoSolveOne(2), r2=autoSolveOne(2);
+        var out={ genSame:(h1>>>0)===(h2>>>0), solveSame:r1.hash===r2.hash&&r1.cleared===r2.cleared,
+          uniqueBoth:g1.unique&&g2.unique };
+        out.ok=out.genSame&&out.solveSame&&out.uniqueBoth;
+        return out;
+      },
+      zenCheck:function(){
+        startPuzzle("zen",9999,{synthetic:true,size:6});
+        /* wrong lamps: pick two floor cells in the same row segment */
+        var S=CUR.S,seg=null,i;
+        for(i=0;i<S.hCells.length;i++)if(S.hCells[i].length>=2){seg=S.hCells[i];break;}
+        var a=seg[0], b=seg[1];
+        tapCell(a%CUR.n,Math.floor(a/CUR.n)); tapCell(b%CUR.n,Math.floor(b/CUR.n));
+        var afterWrong={ conflicts:CUR.conflictCount, phase:CUR.phase, shook:CUR.shake>0 };
+        /* free hints all the way to a solve — hint() also removes the wrong lamps */
+        var guard=0;
+        while(CUR.phase==="play"&&guard++<300)useHint();
+        var out={ wrong:afterWrong, solved:CUR.phase==="won",
+          hintsUsed:CUR.hintsUsed, wouldEarn:CUR.result?CUR.result.wouldEarn:-1,
+          lantern:CUR.result?CUR.result.lanternEligible:true };
+        out.ok=afterWrong.phase==="play"&&afterWrong.conflicts===2&&afterWrong.shook&&
+          out.solved&&out.wouldEarn===0&&out.lantern===false;
+        return out;
+      },
+      twistCheck:function(){
+        /* Dusk Walk: town kindles with light; hintless solve = keepsake lantern */
+        startPuzzle("walk",0,{synthetic:true});
+        var k0=CUR.kindleT, w0=CUR.wins.length, S=CUR.S,i,c,first=-1;
+        for(i=0;i<S.floor.length;i++){ c=S.floor[i]; if(CUR.sol[c]===1){first=c;break;} }
+        tapCell(first%CUR.n,Math.floor(first/CUR.n));
+        var kMid=CUR.kindleT;
+        D.step(160);
+        var kEase=CUR.kindle;
+        for(i=0;i<S.floor.length&&CUR.phase==="play";i++){ c=S.floor[i];
+          if(CUR.sol[c]===1&&CUR.st[c]!==1)tapCell(c%CUR.n,Math.floor(c/CUR.n)); }
+        var hintlessRes=CUR.result?CUR.result.lanternEligible:false;
+        /* now the same board WITH a hint: no lantern */
+        startPuzzle("walk",0,{synthetic:true});
+        useHint();
+        for(i=0;i<S.floor.length&&CUR.phase==="play";i++){ c=CUR.S.floor[i];
+          if(CUR.sol[c]===1&&CUR.st[c]!==1)tapCell(c%CUR.n,Math.floor(c/CUR.n)); }
+        var hintedRes=CUR.result?CUR.result.lanternEligible:true;
+        /* lantern art smoke test */
+        var cv=document.createElement("canvas"); cv.width=90; cv.height=110;
+        var artOk=true; try{ drawLanternArt(cv,{s:123456}); }catch(e){ artOk=false; }
+        var out={ windows:w0, kindle0:k0, kindleAfterLamp:kMid, kindleEased:+kEase.toFixed(3),
+          hintlessLantern:hintlessRes, hintedLantern:hintedRes, artOk:artOk };
+        out.ok=(w0>6)&&(k0===0||k0<0.001)&&(kMid>0)&&(kEase>0)&&(hintlessRes===true)&&(hintedRes===false)&&artOk;
+        return out;
+      },
+      autoplayCheck:function(){
+        startPuzzle("deep",424242,{synthetic:true});
+        var S=CUR.S,i,c;
+        D.step(120);
+        for(i=0;i<S.floor.length&&CUR.phase==="play";i++){ c=S.floor[i];
+          if(CUR.sol[c]===1)tapCell(c%CUR.n,Math.floor(c/CUR.n)); }
+        D.step(400);
+        var st=D.state();
+        return { ok:st.phase==="won"&&!st.nan&&st.kindle>0.4, phase:st.phase, nan:st.nan, kindle:st.kindle };
+      },
+      earnTest:function(){ return window._sbCapEarn(2,'test'); },
+      checkAll:function(){
+        var t0=Date.now();
+        var gen=D.genValidCheck(40);
+        var solve=D.autoSolveCheck(3);
+        var rules=D.ruleCheck();
+        var det=D.detCheck();
+        var zen=D.zenCheck();
+        var twist=D.twistCheck();
+        var autoplay=D.autoplayCheck();
+        var ok=gen.ok&&solve.ok&&rules.ok&&det.ok&&zen.ok&&twist.ok&&autoplay.ok;
+        return { ok:ok, ms:Date.now()-t0, gen:gen, solve:solve, rules:rules,
+          det:det, zen:zen, twist:twist, autoplay:autoplay };
+      },
+      prog:function(){ return PROG; }
+    };
+    return D;
+  })();
+}
+
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
