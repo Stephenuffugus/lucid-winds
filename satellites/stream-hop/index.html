@@ -175,7 +175,10 @@ var SKINS=[
   {id:'newtling',  name:'Newtling',  body:'#5b9bd5', belly:'#a7cdea', unlock:40,  eye:'#0e1a26'},
   {id:'beetle',    name:'Button Bug', body:'#e5604d', belly:'#f2a394', unlock:90,  eye:'#2a0f0b'},
   {id:'firefly',   name:'Firefly',   body:'#e8c65a', belly:'#f5e6a8', unlock:160,  eye:'#2a2208', glow:1},
-  {id:'sprout',    name:'Sprout',    body:'#c8a84b', belly:'#e8dcc8', unlock:260,  eye:'#2a2208'}
+  {id:'sprout',    name:'Sprout',    body:'#c8a84b', belly:'#e8dcc8', unlock:260,  eye:'#2a2208'},
+  {id:'mossback',  name:'Mossback',  body:'#5c8f3f', belly:'#8fbf6a', unlock:380,  eye:'#0e1a0b'},
+  {id:'lantern',   name:'Lantern Snail', body:'#d98a4a', belly:'#f2c88a', unlock:520, eye:'#2a1608', glow:1},
+  {id:'skywolf',   name:'Sky Wolf Pup',  body:'#8a9db5', belly:'#d6e0ee', unlock:700, eye:'#12161f'}
 ];
 function skinById(id){ for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id)return SKINS[i]; return SKINS[0]; }
 
@@ -242,9 +245,11 @@ function makeLane(r){
   return L;
 }
 function buildRoad(L,d){
-  var rng=G.rng; L.dir=rng()<0.5?-1:1; L.speed=(58+d*15+rng()*34)*(G.mode==='zen'?0.58:1); // px/s
+  var rng=G.rng; L.dir=rng()<0.5?-1:1;
+  var express=d>4 && rng()<0.22; L.express=express;
+  L.speed=(58+d*15+rng()*34)*(express?1.45:1)*(G.mode==='zen'?0.58:1); // px/s
   var kinds=['acorn','pod','hog','bug']; L.kind=kinds[Math.floor(rng()*kinds.length)];
-  var w=(L.kind==='hog'?50:44); var gap=TILE*(1.7+rng()*1.5); var spacing=w+gap;
+  var w=(L.kind==='hog'?50:44); var gap=TILE*((express?2.4:1.7)+rng()*1.5); var spacing=w+gap;
   var span=VW+spacing*2, n=Math.ceil(span/spacing), ph=rng()*spacing;
   for(var i=0;i<n;i++) L.ents.push({ x:i*spacing+ph-spacing, w:w, kind:L.kind });
   L.spacing=spacing; L.span=n*spacing;
@@ -325,8 +330,8 @@ function step(dt){
   for(var r=rlo;r<=rhi;r++){ var L=G.lanes[r]; if(!L||!L.ents.length||(L.type!=='road'&&L.type!=='water'))continue;
     var v=L.dir*L.speed*dt*slow;
     for(var i=0;i<L.ents.length;i++){ var e=L.ents[i]; e.x+=v;
-      if(L.dir>0 && e.x> VW+L.span-e.w) e.x-=L.span;
-      else if(L.dir<0 && e.x< -L.span+e.w) e.x+=L.span; }
+      if(L.dir>0 && e.x> VW+e.w) e.x-=L.span;
+      else if(L.dir<0 && e.x< -e.w) e.x+=L.span; }
   }
   // hop animation
   if(G.hop){ G.hop.t+=dt*slow; if(G.hop.t>=G.hop.dur) finishHop(); }
