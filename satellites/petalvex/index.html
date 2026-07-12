@@ -89,7 +89,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- TITLE -->
   <div class="screen center on" id="s-title"><div class="pad center">
     <div style="flex:1"></div>
-    <div class="title-word">Petalvex</div>
+    <div class="title-word" id="title-word">
+      <img id="title-logo" alt="Petalvex" style="max-width:360px;width:90%;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 4px 18px #0009)" onerror="this.style.display='none';var f=document.getElementById('title-fallback');if(f)f.style.display='block'">
+      <span id="title-fallback" style="display:none">Petalvex</span>
+    </div>
     <div class="title-sub">Sky Wolf Studios</div>
     <div class="ribbon">Slot the leaf tiles so every touching edge shares a number. A quiet botanical logic puzzle.</div>
     <div style="flex:1"></div>
@@ -139,7 +142,10 @@ h2.sc-h{font-size:24px; color:var(--sage); font-weight:800; margin-bottom:4px}
   <!-- WIN -->
   <div class="screen center" id="s-win"><div class="pad center">
     <div style="flex:1"></div>
-    <div style="font-size:56px">🌼</div>
+    <div style="font-size:56px" id="win-hero">
+      <img id="win-bloom" alt="" style="width:168px;height:168px;object-fit:contain;display:block;margin:0 auto;filter:drop-shadow(0 6px 22px #0008)" onerror="this.style.display='none';var f=document.getElementById('win-fallback');if(f)f.style.display='block'">
+      <span id="win-fallback" style="display:none">🌼</span>
+    </div>
     <h2 class="sc-h" style="font-size:30px;margin-top:6px" id="win-title">Bed in bloom!</h2>
     <div style="width:100%;margin-top:14px">
       <div class="win-stat"><span>Bed</span><b id="win-size">4 × 4</b></div>
@@ -397,7 +403,7 @@ function seamFor(cellIdx){
 
 /* ============================ render ================================= */
 /* ---------- background art (DROP-IN; procedural fills stay as fallback) ---------- */
-var PV_ASSET_V='pvart1';
+var PV_ASSET_V='pvart2';
 function _pvImg(src){ var im=new Image(); try{ im.src=src+'?v='+PV_ASSET_V; }catch(e){} return im; }
 var PV_BED=_pvImg('assets/bg/bg_bed.jpg');
 function _pvReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
@@ -455,8 +461,20 @@ function render(){
   if(drag){ var s=LAY.cell; drawTile(ctx, drag.x-s/2, drag.y-s/2, s, drag.tile, 0.94, null); }
 
   // ---- particles ----
-  for(i=0;i<parts.length;i++){ var pt=parts[i]; ctx.globalAlpha=clamp(pt.life,0,1); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,6.2832); ctx.fill(); }
-  ctx.globalAlpha=1;
+  // enamel petal/pollen sprites when ready (additive glow); procedural dots stay as fallback
+  for(i=0;i<parts.length;i++){ var pt=parts[i]; var pa=clamp(pt.life,0,1);
+    var _fx=(pt.si!=null)?_pvSpr(PV_PARTS_SPR[pt.si]):null;
+    if(_fx && _pvReady(_fx)){
+      ctx.save(); ctx.globalAlpha=pa; ctx.globalCompositeOperation='lighter';
+      ctx.translate(pt.x,pt.y); ctx.rotate(pt.ang||0);
+      var _d=pt.r*(pt.si===2?2.4:3.6);
+      try{ ctx.drawImage(_fx,-_d/2,-_d/2,_d,_d); }catch(e){}
+      ctx.restore();
+    } else {
+      ctx.globalAlpha=pa; ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,6.2832); ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
 }
 
 /* ============================ animation loop (runs only when needed) ================================= */
@@ -465,11 +483,14 @@ function startAnim(){ if(!animating){ animating=true; lastTs=0; animId=requestAn
 var lastTs=0;
 function tick(ts){
   var dt=lastTs?Math.min(0.05,(ts-lastTs)/1000):0.016; lastTs=ts;
-  for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=520*dt; p.life-=dt*0.9; if(p.life<=0) parts.splice(i,1); }
+  for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=520*dt; p.ang=(p.ang||0)+(p.spin||0)*dt; p.life-=dt*0.9; if(p.life<=0) parts.splice(i,1); }
   render();
   if(needAnim()) animId=requestAnimationFrame(tick); else animating=false;
 }
-function burst(x,y,col,count){ for(var i=0;i<(count||14);i++){ var a=Math.random()*6.2832, sp=60+Math.random()*220; parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-80,r:2+Math.random()*4,col:col,life:1}); } startAnim(); }
+function burst(x,y,col,count){ for(var i=0;i<(count||14);i++){ var a=Math.random()*6.2832, sp=60+Math.random()*220;
+  // si: alternate petal_a/petal_b (0/1) with ~1/3 pollen motes (2); ang/spin drive sprite rotation
+  var si=(i%3===2)?2:(i%2);
+  parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-80,r:2+Math.random()*4,col:col,life:1, si:si, ang:Math.random()*6.2832, spin:(Math.random()-0.5)*7}); } startAnim(); }
 
 /* ============================ input ================================= */
 function evPos(e){ var r=cv.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:(t.clientX-r.left)*VW/r.width, y:(t.clientY-r.top)*VH/r.height }; }
@@ -648,12 +669,17 @@ function startMode(key){
 }
 function startClock(){ stopClock(); clockTimer=setInterval(function(){ if(P&&!P.solved&&curScreen===null) render(); },1000); }
 function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=0; } }
+var MODE_UI={ s3:'mode_sprout', s4:'mode_bud', s5:'mode_bloom', s6:'mode_thicket', dly:'mode_daily' };
 function buildModeList(){
   var host=$('mode-list'); host.innerHTML=''; var best=loadBest();
   for(var i=0;i<MODES.length;i++){ (function(m){
     var b=document.createElement('button'); b.className='btn modecard';
     var bt=best[bestKey(m)]; var bstr=bt!=null?fmtTime(bt):'—';
-    b.innerHTML='<div class="mc-ico">'+m.ico+'</div><div class="mc-main"><div class="mc-t">'+m.t+'</div><div class="mc-d">'+m.d+'</div></div><div class="mc-best">'+(m.daily?'today':('best '+bstr))+'</div>';
+    // illustrated mode plate art with emoji fallback (onerror restores the emoji into the ico div)
+    var ico=MODE_UI[m.key]
+      ? '<div class="mc-ico" style="width:56px;height:56px;font-size:30px;line-height:56px"><img src="assets/ui/'+MODE_UI[m.key]+'.png?v='+PV_ASSET_V+'" alt="" style="width:56px;height:56px;object-fit:contain;display:block;border-radius:12px" onerror="this.style.display=\'none\';this.parentNode.textContent=\''+m.ico+'\'"></div>'
+      : '<div class="mc-ico">'+m.ico+'</div>';
+    b.innerHTML=ico+'<div class="mc-main"><div class="mc-t">'+m.t+'</div><div class="mc-d">'+m.d+'</div></div><div class="mc-best">'+(m.daily?'today':('best '+bstr))+'</div>';
     b.addEventListener('click',function(e){ e.preventDefault(); sfx('ui'); startMode(m.key); });
     host.appendChild(b);
   })(MODES[i]); }
@@ -730,6 +756,9 @@ function boot(){
   /* dress the menu screens with the enamel bg_menu frame (CSS gradient fallback stays if art missing) */
   (function(){ try{ var css="linear-gradient(180deg,rgba(10,13,9,0.34) 0%,rgba(10,13,9,0.62) 100%), url('assets/bg/bg_menu.jpg?v="+PV_ASSET_V+"') center/cover no-repeat";
     ['s-title','s-modes','s-how','s-set','s-win'].forEach(function(id){ var el=$(id); if(el)el.style.background=css; }); }catch(e){} })();
+  /* point the menu logo + win bloom art at the shipped sprites (PV_ASSET_V cache-bust; onerror keeps text/emoji fallback) */
+  (function(){ var tl=$('title-logo'); if(tl) tl.src='assets/ui/logo_petalvex.png?v='+PV_ASSET_V;
+    var wb=$('win-bloom'); if(wb) wb.src='assets/ui/win_bloom.png?v='+PV_ASSET_V; })();
   window.addEventListener('resize',fit);
   window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   cv.addEventListener('pointerdown',onDown,{passive:false});
