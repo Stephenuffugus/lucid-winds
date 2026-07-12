@@ -101,9 +101,27 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   border:1px solid var(--gold); border-radius:22px; padding:10px 18px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap}
 #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
 /* Moonlit Inkwash backdrops (?v=svart1) — scrim over art keeps text legible */
-#s-title{ background:linear-gradient(180deg,#0b0f0bd0,#0b0f0b70 38%,#0b0f0bcc), url("assets/backgrounds/bg_title.jpg?v=svart1") center/cover no-repeat; }
-#s-trials{ background:linear-gradient(180deg,#0b0f0bcc,#0b0f0b9a 45%,#0b0f0bd8), url("assets/backgrounds/bg_trials.jpg?v=svart1") center/cover no-repeat; }
-#s-ward,#s-grove,#s-how,#s-set,#s-over{ background:linear-gradient(180deg,#0b0f0be0,#0b0f0bb0 40%,#0b0f0be6), url("assets/backgrounds/bg_grove.jpg?v=svart1") center/cover no-repeat; }
+#s-title{ background:linear-gradient(180deg,#0b0f0bd0,#0b0f0b70 38%,#0b0f0bcc), url("assets/backgrounds/bg_title.jpg?v=svart2") center/cover no-repeat; }
+#s-trials{ background:linear-gradient(180deg,#0b0f0bcc,#0b0f0b9a 45%,#0b0f0bd8), url("assets/backgrounds/bg_trials.jpg?v=svart2") center/cover no-repeat; }
+#s-ward,#s-grove,#s-how,#s-set,#s-over{ background:linear-gradient(180deg,#0b0f0be0,#0b0f0bb0 40%,#0b0f0be6), url("assets/backgrounds/bg_grove.jpg?v=svart2") center/cover no-repeat; }
+
+/* ---- UI plates (?v=svart2) — border-image frames, CSS bg stays as absent-asset fallback ---- */
+.btn{ background-image:url("assets/ui/btn_plate.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; border-color:transparent; }
+.btn.primary{ background-image:url("assets/ui/btn_plate_primary.png?v=svart2"); }
+.chip{ background-image:url("assets/ui/chip_frame_selected.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; border-color:transparent; }
+.chip.sel{ background-image:url("assets/ui/chip_frame.png?v=svart2"); }
+.chip.go{ background-image:url("assets/ui/btn_plate_primary.png?v=svart2"); }
+.hbtn{ background-image:url("assets/ui/btn_plate.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; border-color:transparent; }
+#goalchip{ background-image:url("assets/ui/goalchip_pill.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; }
+.lvlcard{ background-image:url("assets/ui/lvlcard_frame.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; background-position:center; }
+.lvlcard.done{ background-image:url("assets/ui/lvlcard_done.png?v=svart2"); }
+#inkbar{ background-image:url("assets/ui/inkmeter_frame.png?v=svart2"); background-size:100% 100%; background-repeat:no-repeat; }
+#inkfill{ background-image:url("assets/ui/inkmeter_fill.png?v=svart2"), linear-gradient(90deg,#3f6b34,#7ab356,#c8a84b); background-size:cover,100% 100%; background-repeat:no-repeat; background-position:left center; }
+/* glyph sprites replace fontless-emoji tool icons */
+.cg{ width:auto; max-width:34px; display:inline-block; vertical-align:middle; filter:drop-shadow(0 1px 1px #0008); }
+.chip .cg{ height:22px; }
+.hbtn .cg{ height:26px; }
+.cgf{ display:none; }
 @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
 </style>
 </head>
@@ -113,12 +131,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   <canvas id="game" width="540" height="784"></canvas>
 
   <div id="hud">
-    <div class="hbtn" id="hud-back">⌂</div>
+    <div class="hbtn" id="hud-back"><img class="cg" alt="" src="assets/ui/glyph_home.png?v=svart2" onerror="window._svGlyphErr&&_svGlyphErr(this)"><span class="cgf">⌂</span></div>
     <div id="inkwrap">
       <div id="inklabel"><span id="inkname">Ink</span><b id="inkval"></b></div>
       <div id="inkbar"><div id="inkfill"></div></div>
     </div>
-    <div class="hbtn" id="hud-retry">⟲</div>
+    <div class="hbtn" id="hud-retry"><img class="cg" alt="" src="assets/ui/glyph_retry.png?v=svart2" onerror="window._svGlyphErr&&_svGlyphErr(this)"><span class="cgf">⟲</span></div>
   </div>
   <div id="goalchip"></div>
 
@@ -233,9 +251,11 @@ var GRAV=0.14, FRICT=0.996, RADIUS=7, MAXSP=9;
 var GATE_R=26, GOAL_R=34, KILL_Y=H+50;
 
 /* ---------- art assets (Moonlit Inkwash pack, magenta-cut) ---------- */
-var _AV="svart1";
+var _AV="svart2";
 function _img(s){ var i=new Image(); i.src="assets/"+s+"?v="+_AV; return i; }
 function _rdy(i){ return !!(i&&i.complete&&i.naturalWidth>0); }
+/* fontless-emoji safety: on glyph <img> load failure, reveal the emoji fallback span */
+window._svGlyphErr=function(im){ try{ im.style.display="none"; var n=im.nextElementSibling; if(n)n.style.display="inline"; }catch(e){} };
 var ART={
   bgplay:_img("backgrounds/bg_play.jpg"),
   perch:_img("sleds/sled_spawn_perch.png"),
@@ -249,6 +269,17 @@ var ART={
          leafboard:[_img("sleds/sled_leafboard.png"),_img("sleds/sled_leafboard_ride.png")],
          acorn:[_img("sleds/sled_acorn.png"),_img("sleds/sled_acorn_ride.png")],
          dragonfly:[_img("sleds/sled_dragonfly.png"),_img("sleds/sled_dragonfly_ride.png")] }
+};
+/* FX sprites (additive billboards) + keepsake compose pieces — all ready-gated */
+ART.fx={
+  burst:_img("fx/fx_gate_burst.png"), mote:_img("fx/fx_gate_mote.png"),
+  crash:_img("fx/fx_crash_splash.png"), bloom:_img("fx/fx_bloom_wave.png"),
+  leaf:_img("fx/fx_leaf_flutter.png"), speed:_img("fx/fx_speed_lines.png"),
+  dust:_img("fx/fx_dust_ring.png"), laurel:_img("fx/fx_daily_laurel.png"),
+  flame:_img("fx/fx_streak_flame.png")
+};
+ART.keepsake={
+  petals:_img("fx/keepsake_petal_set.png"), core:_img("fx/keepsake_core.png"), stem:_img("fx/keepsake_stem.png")
 };
 /* draw sprite centred at (cx,cy) to pixel height h, keeping aspect; opt rotate/flip */
 function _spr(img,cx,cy,h,ang,flip){
@@ -335,7 +366,15 @@ function newWorld(mode,seed){
     lines:[], linesInk:0, inkMax:Infinity,
     terrain:[], thorns:[], gates:[], goal:null, spawn:[80,100],
     sled:{x:0,y:0,vx:0,vy:0}, tick:0, gatesHit:0, earned:0, won:false,
-    leaves:[], parts:[], crashT:0, ridden:false };
+    leaves:[], parts:[], fx:[], crashT:0, ridden:false, _touchPrev:false };
+}
+/* additive FX billboard: spawn only when fx on AND sprite decoded (procedural particles still play) */
+function fxSpawn(img,x,y,size,life,opt){
+  if(!PROG.fx||!G||!_rdy(img))return;
+  opt=opt||{};
+  G.fx.push({im:img,x:x,y:y,s:size,l:life,ml:life,vx:opt.vx||0,vy:opt.vy||0,gv:opt.gv||0,
+    rot:opt.rot||0,spin:opt.spin||0,grow:opt.grow||1,fade:opt.fade!==false});
+  if(G.fx.length>90)G.fx.shift();
 }
 function polyLen(p){ var L=0,i; for(i=2;i<p.length;i+=2){ var dx=p[i]-p[i-2],dy=p[i+1]-p[i-1]; L+=Math.sqrt(dx*dx+dy*dy); } return L; }
 
@@ -392,11 +431,19 @@ function tickSim(){
     }
     if(touched){ s.vx*=FRICT; s.vy*=FRICT; G.ridden=true;
       if(PROG.fx&&(G.tick%3)===0&&G.leaves.length<420)G.leaves.push([s.x,s.y-RADIUS,((G.tick>>2)&1)?1:-1]);
+      // fluttering leaf drifting off the runners
+      if((G.tick%18)===0)fxSpawn(ART.fx.leaf,s.x,s.y-8,20,60,{vx:(((G.tick*13)%7)-3)*0.12,vy:-0.4,spin:0.05,grow:0.994});
+      // dust ring on a hard landing (airborne -> touch at speed)
+      if(!G._touchPrev&&sp>4.2)fxSpawn(ART.fx.dust,s.x,s.y+RADIUS,42,24,{grow:1.06});
     }
+    G._touchPrev=touched;
     // gates
     var gi; for(gi=0;gi<G.gates.length;gi++){ var g=G.gates[gi];
       if(!g[3]){ var gx=s.x-g[0], gy=s.y-g[1];
-        if(gx*gx+gy*gy<GATE_R*GATE_R){ g[3]=1; G.gatesHit++; PROG.gates++; sndGate(); burst(g[0],g[1],"#c8a84b"); } } }
+        if(gx*gx+gy*gy<GATE_R*GATE_R){ g[3]=1; G.gatesHit++; PROG.gates++; sndGate(); burst(g[0],g[1],"#c8a84b");
+          fxSpawn(ART.fx.burst,g[0],g[1],74,26,{grow:1.05});
+          fxSpawn(ART.fx.mote,g[0],g[1],28,36,{vx:-0.55,vy:-1.05,spin:0.08});
+          fxSpawn(ART.fx.mote,g[0],g[1],24,36,{vx:0.7,vy:-0.85,spin:-0.07}); } } }
     // goal
     if(G.goal&&G.gatesHit>=G.gates.length){
       var ox=s.x-G.goal[0], oy=s.y-G.goal[1];
@@ -412,13 +459,19 @@ function tickSim(){
   }
   var pi; for(pi=G.parts.length-1;pi>=0;pi--){ var p=G.parts[pi];
     p[0]+=p[2]; p[1]+=p[3]; p[3]+=0.05; p[4]--; if(p[4]<=0)G.parts.splice(pi,1); }
+  var fi; for(fi=G.fx.length-1;fi>=0;fi--){ var fp=G.fx[fi];
+    fp.x+=fp.vx; fp.y+=fp.vy; fp.vy+=fp.gv; fp.rot+=fp.spin; fp.s*=fp.grow; fp.l--;
+    if(fp.l<=0)G.fx.splice(fi,1); }
   G.tick++;
 }
 function resetSled(){ G.sled.x=G.spawn[0]; G.sled.y=G.spawn[1]; G.sled.vx=0; G.sled.vy=0; }
 function resetGates(){ var i; for(i=0;i<G.gates.length;i++)G.gates[i][3]=0; G.gatesHit=0; }
 function spawnSled(){ if(!G||G.phase==="won")return; resetSled(); resetGates(); G.phase="riding"; }
 function stopRide(){ if(G.phase==="riding"){ G.phase="draw"; resetSled(); resetGates(); } }
-function crashRun(){ G.phase="crashed"; G.crashT=42; sndCrash(); burst(G.sled.x,Math.min(G.sled.y,H-10),"#e58fa0"); updGoalChip(); }
+function crashRun(){ G.phase="crashed"; G.crashT=42; sndCrash();
+  var cyy=Math.min(G.sled.y,H-10); burst(G.sled.x,cyy,"#e58fa0");
+  fxSpawn(ART.fx.crash,G.sled.x,cyy,92,30,{grow:1.04});
+  updGoalChip(); }
 function burst(x,y,col){ var i; for(i=0;i<14;i++){ var a=i/14*6.283;
   G.parts.push([x,y,Math.cos(a)*(1.2+(i%3)*0.6),Math.sin(a)*(1.2+(i%3)*0.6)-0.6,30+(i%5)*4,col]); } }
 
@@ -426,13 +479,18 @@ function burst(x,y,col){ var i; for(i=0;i<14;i++){ var a=i/14*6.283;
 function winRun(){
   if(G.phase!=="riding")return; G.phase="won"; G.won=true;
   PROG.blooms++;
-  // trail bloom particles along leaves
+  // trail bloom particles along leaves + bloom-wave sprites end to end
   var i; for(i=0;i<G.leaves.length;i+=6)burst(G.leaves[i][0],G.leaves[i][1],"#e58fa0");
+  var bstep=Math.max(1,Math.floor(G.leaves.length/8));
+  for(i=0;i<G.leaves.length;i+=bstep)fxSpawn(ART.fx.bloom,G.leaves[i][0],G.leaves[i][1],44,34,{grow:1.03,spin:(i&1)?0.02:-0.02});
+  if(G.goal)fxSpawn(ART.fx.bloom,G.goal[0],G.goal[1],82,42,{grow:1.05});
   sndWin();
   var first=false;
   if(G.mode==="daily"){ var today=new Date().toISOString().slice(0,10);
     if(PROG.lastDaily!==today){ var y=new Date(Date.now()-864e5).toISOString().slice(0,10);
       PROG.streak=(PROG.lastDaily===y)?PROG.streak+1:1; PROG.lastDaily=today; mintKeepsake(); }
+    if(G.goal){ fxSpawn(ART.fx.laurel,G.goal[0],G.goal[1],126,66,{fade:true});
+      if(PROG.streak>=2)fxSpawn(ART.fx.flame,G.goal[0],G.goal[1]-42,72,56,{vy:-0.28,grow:1.02}); }
     payRun(3,"daily"); }
   else if(G.mode==="trial"&&G.trial>=0){ first=!PROG.trials[G.trial];
     if(first){ PROG.trials[G.trial]=true; mintKeepsake(); payRun(2,"trial"); } else payRun(1,"retrial"); }
@@ -456,9 +514,20 @@ function mintKeepsake(){
   if(PROG.grove.length>24)PROG.grove.shift();
   save(); toast("🌼 Keepsake pressed into the Grove");
 }
+function _imgOn(c,img,cx,cy,h,ang){ var w=h*(img.naturalWidth/img.naturalHeight);
+  c.save(); c.translate(cx,cy); if(ang)c.rotate(ang); c.drawImage(img,-w/2,-h/2,w,h); c.restore(); }
 function drawKeepsake(cv,ks){
   var c=cv.getContext("2d"),rr=mkRng(ks.s),Wk=cv.width,Hk=cv.height;
   c.fillStyle="#0b0f0b"; c.fillRect(0,0,Wk,Hk);
+  // pressed-flower keepsake composed from sprite pieces (stem, petal set, core)
+  if(_rdy(ART.keepsake.stem)&&_rdy(ART.keepsake.petals)&&_rdy(ART.keepsake.core)){
+    var K=ART.keepsake, rot=(rr()-0.5)*0.5;
+    _imgOn(c,K.stem,Wk*0.5,Hk*0.66,Hk*0.52,(rr()-0.5)*0.25);
+    _imgOn(c,K.petals,Wk*0.52,Hk*0.4,Hk*0.5,rot);
+    _imgOn(c,K.core,Wk*0.52,Hk*0.4,Hk*0.15,rot);
+    return;
+  }
+  // ---- procedural fallback ----
   // the trail motif: a winding inked line
   c.strokeStyle="#3f6b34"; c.lineWidth=2; c.beginPath();
   c.moveTo(Wk*0.1,Hk*0.85);
@@ -612,6 +681,13 @@ function render(){
   if(_rdy(ART.perch)){ _spr(ART.perch, G.spawn[0], G.spawn[1]+RADIUS+6, 22, 0, false); }
   else { ctx.strokeStyle="#8a9178"; ctx.lineWidth=2;
     ctx.strokeRect(G.spawn[0]-10,G.spawn[1]+RADIUS+2,20,3); }
+  // speed lines when the sled is really moving
+  if(PROG.fx&&G.phase==="riding"&&_rdy(ART.fx.speed)){
+    var ss=G.sled, ssp=Math.sqrt(ss.vx*ss.vx+ss.vy*ss.vy);
+    if(ssp>5){ var sang=Math.atan2(ss.vy,ss.vx);
+      ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=Math.min(0.5,(ssp-5)/4*0.5);
+      _spr(ART.fx.speed, ss.x-Math.cos(sang)*16, ss.y-Math.sin(sang)*16, 26, sang, false);
+      ctx.globalAlpha=1; ctx.globalCompositeOperation="source-over"; } }
   // sled
   var s=G.sled, skin=PROG.sled;
   if(G.phase!=="crashed"){
@@ -640,6 +716,12 @@ function render(){
     ctx.globalAlpha=Math.max(0,pp[4]/34); ctx.fillStyle=pp[5];
     ctx.beginPath(); ctx.arc(pp[0],pp[1],2.6,0,6.283); ctx.fill(); }
   ctx.globalAlpha=1;
+  // additive FX billboards (gate burst/mote, crash splash, bloom wave, leaf flutter, dust, laurel, flame)
+  if(G.fx.length){ ctx.globalCompositeOperation="lighter";
+    for(i=0;i<G.fx.length;i++){ var fb=G.fx[i];
+      ctx.globalAlpha=fb.fade?Math.max(0,Math.min(1,fb.l/fb.ml)):1;
+      _spr(fb.im,fb.x,fb.y,fb.s,fb.rot,false); }
+    ctx.globalAlpha=1; ctx.globalCompositeOperation="source-over"; }
 }
 function renderInk(){
   if(!G)return;
@@ -651,10 +733,11 @@ function renderInk(){
 }
 
 /* ---------- dock ---------- */
-function chip(id,icon,name){ return '<div class="chip" id="'+id+'"><div class="ci">'+icon+'</div><div class="cn">'+name+'</div></div>'; }
+function _glyph(name,fb){ return '<img class="cg" alt="" src="assets/ui/'+name+'.png?v='+_AV+'" onerror="window._svGlyphErr&&_svGlyphErr(this)"><span class="cgf">'+fb+'</span>'; }
+function chip(id,glyph,fb,name){ return '<div class="chip" id="'+id+'"><div class="ci">'+_glyph(glyph,fb)+'</div><div class="cn">'+name+'</div></div>'; }
 function renderDock(){
-  $("dockrow1").innerHTML=chip("c-draw","✏️","Draw")+chip("c-erase","🧽","Erase")+chip("c-clear","🗑","Clear");
-  $("dockrow2").innerHTML='<div class="chip go" id="c-ride"><div class="ci">▶</div><div class="cn">Ride</div></div>'+chip("c-stop","■","Stop");
+  $("dockrow1").innerHTML=chip("c-draw","glyph_draw","✏️","Draw")+chip("c-erase","glyph_erase","🧽","Erase")+chip("c-clear","glyph_clear","🗑","Clear");
+  $("dockrow2").innerHTML='<div class="chip go" id="c-ride"><div class="ci">'+_glyph("glyph_ride","▶")+'</div><div class="cn">Ride</div></div>'+chip("c-stop","glyph_stop","■","Stop");
   tap("c-draw",function(){ TOOL="draw"; dockSel(); });
   tap("c-erase",function(){ TOOL="erase"; dockSel(); });
   tap("c-clear",function(){ if(!G)return; G.lines=[]; G.linesInk=0; G.leaves=[]; renderInk(); toast("Ink cleared"); });
