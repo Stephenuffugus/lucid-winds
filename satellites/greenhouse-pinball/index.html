@@ -328,6 +328,16 @@ function physics(dt){
   }
   // trails
   for(i=0;i<G.balls.length;i++){ b=G.balls[i]; if(!b.trail)b.trail=[]; b.trail.push({x:b.x,y:b.y}); if(b.trail.length>6)b.trail.shift(); }
+  // anti-stuck: no bead may be held forever in a dead pocket (e.g. wedged between a
+  // side standup and the wall). If a LIVE bead barely moves for >0.6s ABOVE the flipper
+  // cradle zone, shake it free toward centre + down. y<790 protects legit flipper cradles.
+  for(i=0;i<G.balls.length;i++){ b=G.balls[i];
+    if(b.inLane||b.captured||b.onRail){ b.still=0; continue; }
+    if(b.vx*b.vx+b.vy*b.vy<300 && b.y<790 && b.y>150){ b.still=(b.still||0)+dt;
+      if(b.still>0.6){ var ndir=(b.x<VW/2)?1:-1; b.vx=ndir*240+(Math.random()-0.5)*80; b.vy=300; b.still=0;
+        burst(b.x,b.y,5,'#7ab356'); float(b.x,b.y-16,'nudge'); sfx('bump',1); }
+    } else b.still=0;
+  }
   // drain check
   for(i=G.balls.length-1;i>=0;i--){ b=G.balls[i]; if(b.inLane||b.captured||b.onRail)continue;
     if(b.y>DRAINY){ // wizard ball-save > moss net save > drain
