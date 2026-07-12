@@ -178,6 +178,8 @@ function _psSpr(path){ if(!PS_SPR[path])PS_SPR[path]=_psImg('assets/'+path+'.png
 function psDraw(path,cx,cy,d,rot,alpha){ var im=_psSpr(path); if(!_psReady(im))return false;
   ctx.save(); ctx.translate(cx,cy); if(rot)ctx.rotate(rot); if(alpha!=null)ctx.globalAlpha=alpha;
   try{ ctx.drawImage(im,-d/2,-d/2,d,d); }catch(e){} ctx.restore(); return true; }
+var PS_SPLAT_BY_SEASON=['splat_pink','splat_red','splat_copper','splat_frost']; // spring/summer/autumn/winter
+function psSplatPath(){ return 'fx/'+PS_SPLAT_BY_SEASON[_psSeason()]; }
 /* dress the title + results screens with the season scene (CSS gradient stays as fallback) */
 (function(){ try{ var s=PS_SEASONS[_psSeason()];
   var css="linear-gradient(180deg,rgba(11,15,11,0.30) 0%,rgba(11,15,11,0.66) 100%), url('assets/bg/bg_"+s+".jpg?v="+PS_ASSET_V+"') center/cover no-repeat";
@@ -230,7 +232,7 @@ function newGame(mode){
   else rng=mkRng((Date.now()>>>0)^(Math.floor(Math.random()*1e9)));
   G={ mode:mode, rng:rng, objs:[], halves:[], parts:[], splats:[], floats:[], blade:[], blades:bladeById(PROG.blade),
       score:0, combo:0, bestCombo:0, grafts:0, petals:3, t:0, spawnT:0.6, wave:0, slow:1, flash:0, shake:0,
-      strokeId:0, down:false, phase:'play', timeLeft: mode==='zen'?90: mode==='daily'?60:0, grafting:null };
+      strokeId:0, down:false, phase:'play', timeLeft: mode==='zen'?90: mode==='daily'?60:0, grafting:null, bloomFx:null };
   show('s-play');
 }
 
@@ -305,7 +307,7 @@ function sliceObj(o,idx,dirx,diry){
 function graftDone(gr){ gr.done=true; G.grafts++;
   var cx=0,cy=0; for(var i=0;i<gr.members.length;i++){ cx+=gr.members[i].x; cy+=gr.members[i].y; } cx/=gr.members.length; cy/=gr.members.length;
   var bonus=200+gr.total*120+G.combo*20; G.score+=bonus;
-  G.slow=0.25; G.flash=Math.max(G.flash,0.6); G.shake=Math.max(G.shake,6);
+  G.slow=0.25; G.flash=Math.max(G.flash,0.6); G.shake=Math.max(G.shake,6); G.bloomFx={x:cx,y:cy,life:1};
   float(cx,cy-10,'✿ GRAFT +'+bonus); float(cx,cy-34,gr.total>=4?'RARE CUTTING':'BLOOM WOVEN');
   for(var k=0;k<20;k++){ var a=Math.PI*2*k/20; G.parts.push({x:cx,y:cy,vx:Math.cos(a)*(80+Math.random()*140),vy:Math.sin(a)*(80+Math.random()*140),life:1,col:k%2?'#f2d98a':'#e58fa0'}); }
   sfx('graft'); haptic(24);
@@ -346,6 +348,7 @@ function step(dt){
   // fx
   if(G.slow<1){ G.slow+=dt*2.0; if(G.slow>1)G.slow=1; }
   if(G.flash>0){ G.flash-=dt*1.6; if(G.flash<0)G.flash=0; }
+  if(G.bloomFx){ G.bloomFx.life-=dt*1.3; if(G.bloomFx.life<=0)G.bloomFx=null; }
   if(G.shake>0)G.shake*=Math.pow(0.0015,dt);
 }
 function endRun(){ if(!G||G.phase!=='play')return; G.phase='over'; running=false;
@@ -379,7 +382,11 @@ function render(){ if(!ctx||!G)return;
   ctx.fillStyle='rgba(90,70,45,0.14)'; ctx.fillRect(0,VH-120,VW,120); ctx.strokeStyle='rgba(200,168,75,0.08)'; ctx.lineWidth=2;
   for(var pl=1;pl<4;pl++){ ctx.beginPath(); ctx.moveTo(0,VH-120+pl*30); ctx.lineTo(VW,VH-120+pl*30); ctx.stroke(); }
   // nectar splatter on backdrop
-  for(var s=0;s<G.splats.length;s++){ var sp=G.splats[s]; ctx.globalAlpha=Math.min(0.5,sp.life)*0.5; ctx.fillStyle=sp.col; ctx.beginPath(); ctx.arc(sp.x,sp.y,sp.r,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  var _spImg=_psSpr(psSplatPath()), _spOk=_psReady(_spImg);
+  for(var s=0;s<G.splats.length;s++){ var sp=G.splats[s]; var sa=Math.min(0.5,sp.life)*0.6;
+    if(_spOk){ var sd=sp.r*3.4; ctx.save(); ctx.globalAlpha=sa; try{ ctx.drawImage(_spImg,sp.x-sd/2,sp.y-sd/2,sd,sd); }catch(e){} ctx.restore(); }
+    else { ctx.globalAlpha=sa*0.85; ctx.fillStyle=sp.col; ctx.beginPath(); ctx.arc(sp.x,sp.y,sp.r,0,7); ctx.fill(); }
+  } ctx.globalAlpha=1;
   // graft connector lines (glowing)
   if(G.grafting)for(var gid in G.grafting){ var gr=G.grafting[gid]; if(gr.done)continue; var live=[]; for(var m=0;m<gr.members.length;m++){ if(!gr.members[m].sliced && G.objs.indexOf(gr.members[m])>=0)live.push(gr.members[m]); }
     if(live.length>=2){ ctx.save(); ctx.strokeStyle='rgba(200,168,75,0.5)'; ctx.lineWidth=3; ctx.shadowColor='rgba(232,198,90,0.7)'; ctx.shadowBlur=10; ctx.beginPath(); ctx.moveTo(live[0].x,live[0].y); for(var q=1;q<live.length;q++)ctx.lineTo(live[q].x,live[q].y); ctx.stroke(); ctx.restore();
@@ -392,6 +399,9 @@ function render(){ if(!ctx||!G)return;
   for(i=0;i<G.halves.length;i++) drawHalf(G.halves[i]);
   // particles
   for(i=0;i<G.parts.length;i++){ var pt=G.parts[i]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,2.8,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  // graft bloom-finish burst (additive glow over the slice; procedural flash still fires too)
+  if(G.bloomFx && _psReady(_psSpr('fx/bloom_finish'))){ var bf=G.bloomFx, bfl=Math.max(0,bf.life), bd=90+(1-bfl)*170;
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=bfl*0.9; try{ ctx.drawImage(_psSpr('fx/bloom_finish'),bf.x-bd/2,bf.y-bd/2,bd,bd); }catch(e){} ctx.restore(); }
   // blade trail
   drawBlade();
   // floats
@@ -404,7 +414,10 @@ function render(){ if(!ctx||!G)return;
   ctx.textAlign='left'; ctx.fillStyle='#e8dcc8'; ctx.font='800 30px system-ui'; ctx.fillText(''+G.score, 18, 46);
   ctx.font='700 12px system-ui'; ctx.fillStyle='#8a9178'; ctx.fillText(G.mode==='daily'?'DAILY BLOOM':G.mode==='zen'?'ZEN GARDEN':'GROVE', 20, 62);
   ctx.textAlign='right';
-  if(G.mode==='grove'){ ctx.font='800 22px system-ui'; var pe=''; for(var pp=0;pp<3;pp++)pe+=(pp<G.petals?'🌸':'🥀'); ctx.fillStyle='#e58fa0'; ctx.fillText(pe,VW-16,44); }
+  if(G.mode==='grove'){
+    if(_psReady(_psSpr('ui/life_petal_full'))){ for(var pp=0;pp<3;pp++){ psDraw('ui/life_petal_'+(pp<G.petals?'full':'wilt'),VW-24-pp*32,30,30,0,1); } }
+    else { ctx.font='800 22px system-ui'; var pe=''; for(var pp2=0;pp2<3;pp2++)pe+=(pp2<G.petals?'🌸':'🥀'); ctx.fillStyle='#e58fa0'; ctx.fillText(pe,VW-16,44); }
+  }
   else { ctx.fillStyle='#c8a84b'; ctx.font='800 24px system-ui'; ctx.fillText(Math.ceil(G.timeLeft)+'s',VW-18,46); }
   if(G.combo>=2){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 26px system-ui'; ctx.fillText(G.combo+'x',VW/2,52); }
 }
@@ -447,7 +460,14 @@ function drawBlade(){ if(G.blade.length<2)return; var bl=G.blades;
 }
 
 /* ===== blades UI ===== */
-function drawBladePreview(cvp,bl){ var c=cvp.getContext('2d'); c.clearRect(0,0,104,40); c.lineCap='round'; c.lineWidth=8; c.strokeStyle=bl.rainbow?'#b57de0':bl.col; c.shadowColor=bl.glow; c.shadowBlur=8; c.beginPath(); c.moveTo(10,30); c.quadraticCurveTo(52,4,94,26); c.stroke(); }
+var PS_BLADE_SPR={vine:'blade_vine',nectar:'blade_nectar',rose:'blade_rose',frost:'blade_frostvine',aurora:'blade_aurora'};
+function drawBladePreview(cvp,bl){ var c=cvp.getContext('2d'); c.clearRect(0,0,104,40);
+  var spName=bl.id&&PS_BLADE_SPR[bl.id], im=spName?_psSpr('cosmetics/'+spName):null;
+  if(im&&_psReady(im)){ var iw=im.naturalWidth,ih=im.naturalHeight,s=Math.min(104/iw,40/ih),w=iw*s,h=ih*s;
+    try{ c.drawImage(im,(104-w)/2,(40-h)/2,w,h); }catch(e){} return; }
+  if(im && !im._psHook){ im._psHook=1; im.addEventListener('load',function(){ try{ drawBladePreview(cvp,bl); }catch(e){} }); }
+  // procedural fallback arc (also the locked/dark preview)
+  c.lineCap='round'; c.lineWidth=8; c.strokeStyle=bl.rainbow?'#b57de0':bl.col; c.shadowColor=bl.glow; c.shadowBlur=8; c.beginPath(); c.moveTo(10,30); c.quadraticCurveTo(52,4,94,26); c.stroke(); }
 function renderBlades(){ var host=$('blade-row'); host.innerHTML=''; var bestG=PROG.best.grove||0;
   BLADES.forEach(function(bl){ var un=PROG.unlocked[bl.id]||bestG>=bl.unlock; if(un)PROG.unlocked[bl.id]=1;
     var card=document.createElement('div'); card.className='bladecard'+(PROG.blade===bl.id?' on':'')+(un?'':' locked');
