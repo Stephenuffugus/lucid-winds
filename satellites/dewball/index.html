@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d100c">
+<title>Dewball — Lucid Winds</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body {
+    width:100%; height:100%; overflow:hidden;
+    background:#07090a;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:#e8dcc8; user-select:none; -webkit-user-select:none; touch-action:none;
+  }
+  #wrap {
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 40%, #14181300 0%, #07090a 100%);
+  }
+  #stage { position:relative; }
+  canvas#game { display:block; background:#0d100c; touch-action:none; }
+  .overlay {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:24px; gap:14px; z-index:10;
+    background:linear-gradient(180deg, rgba(7,9,10,.72), rgba(7,9,10,.92));
+    -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  }
+  .overlay.hidden { display:none; }
+  h1 { font-size:2.5rem; letter-spacing:.06em; color:#e8dcc8; font-weight:800;
+       text-shadow:0 2px 18px rgba(200,168,75,.35); }
+  h1 .sub { display:block; font-size:.78rem; letter-spacing:.42em; color:#7ab356;
+            font-weight:600; margin-top:8px; text-transform:uppercase; }
+  h2 { font-size:1.5rem; color:#c8a84b; letter-spacing:.04em; }
+  p.tag { color:#8a9178; font-size:.92rem; max-width:340px; line-height:1.5; }
+  .btn {
+    min-height:52px; min-width:200px; padding:14px 26px; border:none; border-radius:14px;
+    font-size:1.05rem; font-weight:700; letter-spacing:.03em; cursor:pointer;
+    color:#0d100c; background:linear-gradient(180deg,#8ec96a,#6ba048);
+    box-shadow:0 6px 20px rgba(122,179,86,.28); transition:transform .08s;
+  }
+  .btn:active { transform:scale(.96); }
+  .btn.alt { background:linear-gradient(180deg,#d8b96a,#b89438); box-shadow:0 6px 20px rgba(200,168,75,.28); }
+  .btn.ghost { background:transparent; color:#c8a84b; border:2px solid rgba(200,168,75,.4);
+               box-shadow:none; min-width:0; min-height:48px; padding:10px 20px; font-size:.9rem; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .card {
+    background:rgba(20,26,20,.7); border:1px solid rgba(122,179,86,.18);
+    border-radius:16px; padding:16px 18px; max-width:380px; width:100%;
+  }
+  .card h3 { color:#7ab356; font-size:.72rem; letter-spacing:.24em; text-transform:uppercase;
+             margin-bottom:12px; font-weight:700; }
+  .skinrow, .groverow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .skin {
+    width:60px; height:60px; border-radius:50%; cursor:pointer; position:relative;
+    border:2px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center;
+    font-size:.6rem; color:#e8dcc8;
+  }
+  .skin.sel { border-color:#c8a84b; box-shadow:0 0 0 3px rgba(200,168,75,.25); }
+  .skin.locked { filter:grayscale(1) brightness(.5); }
+  .skin .lk { position:absolute; font-size:1rem; }
+  .skin .nm { position:absolute; bottom:-16px; font-size:.55rem; color:#8a9178; white-space:nowrap; }
+  .grovechip {
+    background:rgba(200,168,75,.1); border:1px solid rgba(200,168,75,.25);
+    border-radius:10px; padding:6px 10px; font-size:.72rem; color:#e8dcc8;
+  }
+  .grovechip b { color:#c8a84b; }
+  #hint { color:#8a9178; font-size:.78rem; margin-top:4px; }
+  #joybase, #joystick { display:none; }
+  .close { position:absolute; top:14px; right:16px; font-size:1.6rem; color:#8a9178;
+           cursor:pointer; width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+  #toast { position:absolute; top:16px; left:50%; transform:translateX(-50%);
+           background:rgba(13,16,12,.9); border:1px solid rgba(200,168,75,.35);
+           color:#e8dcc8; padding:8px 16px; border-radius:20px; font-size:.82rem;
+           z-index:30; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="game" width="540" height="960"></canvas>
+
+  <!-- MENU -->
+  <div id="menu" class="overlay">
+    <h1>Dewball<span class="sub">Lucid Winds</span></h1>
+    <p class="tag">Roll a sticky bead of dew across the night garden. Everything smaller clings on. Grow big enough to swallow the whole grove.</p>
+    <div class="row">
+      <button class="btn" id="mPlay">Roll · Level <span id="mLvlNum">1</span></button>
+    </div>
+    <div class="row">
+      <button class="btn alt" id="mZen">Zen Roll</button>
+      <button class="btn ghost" id="mSkins">Skins</button>
+      <button class="btn ghost" id="mGrove">The Grove</button>
+    </div>
+    <div id="hint">Drag anywhere to steer · WASD / arrows also work</div>
+  </div>
+
+  <!-- SKINS -->
+  <div id="skins" class="overlay hidden">
+    <div class="close" id="skinsClose">×</div>
+    <h2>Dew Skins</h2>
+    <p class="tag" id="skinsTag">Cosmetic only. Earned by rolling — never bought.</p>
+    <div class="card"><h3>Collection</h3><div class="skinrow" id="skinList"></div></div>
+    <button class="btn ghost" id="skinsBack">Back</button>
+  </div>
+
+  <!-- GROVE -->
+  <div id="grove" class="overlay hidden">
+    <div class="close" id="groveClose">×</div>
+    <h2>The Grove</h2>
+    <p class="tag">Keepsakes you have pressed here — your biggest rolls.</p>
+    <div class="card"><h3>Best Balls</h3><div class="groverow" id="groveList"></div></div>
+    <button class="btn ghost" id="groveBack">Back</button>
+  </div>
+
+  <!-- WIN / LOSE -->
+  <div id="result" class="overlay hidden">
+    <h2 id="resTitle">Pressed a keepsake</h2>
+    <p class="tag" id="resBody"></p>
+    <div class="row" id="resBtns"></div>
+  </div>
+
+  <div id="toast"></div>
+</div></div>
+
+<script>
+"use strict";
+(function(){
+
+  // ---------- palette ----------
+  var COL = {
+    bg:"#0d100c", bgDark:"#080a08", sage:"#7ab356", gold:"#c8a84b",
+    cream:"#e8dcc8", muted:"#8a9178", ground:"#141a12", ground2:"#101509"
+  };
+
+  // ---------- optional art-pack loader (procedural now, images later) ----------
+  // Structure allows a future art pack: fill IMG_SRC with tier->url, gate on imgReady.
+  var IMG_SRC = {};            // e.g. { petal:"assets/petal.png" }
+  var IMG = {};                // loaded HTMLImageElements
+  var imgReady = false;        // becomes true only when ALL declared images decode
+  (function loadImgs(){
+    var keys = [], k;
+    for (k in IMG_SRC) if (IMG_SRC.hasOwnProperty(k)) keys.push(k);
+    if (!keys.length) { imgReady = false; return; }
+    var left = keys.length;
+    for (var i=0;i<keys.length;i++){ (function(key){
+      var im = new Image();
+      im.onload = function(){ IMG[key]=im; if(--left<=0) imgReady=true; };
+      im.onerror = function(){ if(--left<=0) imgReady = (function(){ for(var kk in IMG_SRC){ if(!IMG[kk]) return false; } return true; })(); };
+      im.src = IMG_SRC[key];
+    })(keys[i]); }
+  })();
+
+  // ---------- tiny WebAudio synth ----------
+  var AC = null, muted = false;
+  function actx(){
+    if (AC) return AC;
+    try { AC = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ AC=null; }
+    return AC;
+  }
+  function beep(freq, dur, type, vol){
+    if (muted) return;
+    var a = actx(); if (!a) return;
+    try {
+      if (a.state==="suspended") a.resume();
+      var o=a.createOscillator(), g=a.createGain();
+      o.type=type||"sine"; o.frequency.value=freq;
+      g.gain.value=0.0001;
+      o.connect(g); g.connect(a.destination);
+      var t=a.currentTime;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime((vol||0.14),t+0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.12));
+      o.start(t); o.stop(t+(dur||0.12)+0.02);
+    } catch(e){}
+  }
+  function thok(power){
+    // absorb sound: pitch rises with combo/power
+    var f = 220 + power*40;
+    beep(f, 0.10, "triangle", 0.16);
+    beep(f*1.5, 0.06, "sine", 0.08);
+  }
+  function sizeUpChime(){ beep(660,0.09,"sine",0.10); beep(990,0.12,"sine",0.08); }
+  function bumpSound(){ beep(90,0.10,"sawtooth",0.10); }
+  function winFanfare(){ beep(523,0.14,"sine",0.14); setTimeout(function(){beep(659,0.14,"sine",0.14);},120); setTimeout(function(){beep(784,0.22,"sine",0.14);},260); }
+
+  // ---------- object tiers (small -> large, botanical) ----------
+  // r = base radius (world units). draw = shape id. col = fill.
+  var TIERS = [
+    { id:"pollen",  name:"Pollen speck", r:3.2,  col:"#e6d98a", draw:"speck" },
+    { id:"dew",     name:"Dew droplet",  r:5.0,  col:"#bfe6e0", draw:"dew"   },
+    { id:"petal",   name:"Petal",        r:7.0,  col:"#e8a0bf", draw:"petal" },
+    { id:"clover",  name:"Clover",       r:10.0, col:"#6fae52", draw:"clover"},
+    { id:"pebble",  name:"Pebble",       r:13.0, col:"#8f8a7c", draw:"pebble"},
+    { id:"leaf",    name:"Leaf",         r:16.5, col:"#5c9e46", draw:"leaf"  },
+    { id:"acorn",   name:"Acorn",        r:20.5, col:"#9a6b3a", draw:"acorn" },
+    { id:"mushroom",name:"Mushroom",     r:26.0, col:"#c66b5e", draw:"mushroom"},
+    { id:"flower",  name:"Flower",       r:33.0, col:"#d99bd0", draw:"flower"},
+    { id:"stone",   name:"Stone",        r:42.0, col:"#7d7a70", draw:"pebble"},
+    { id:"twig",    name:"Twig",         r:52.0, col:"#7c5a34", draw:"twig"  },
+    { id:"sapling", name:"Sapling",      r:68.0, col:"#4f8a3e", draw:"sapling"},
+    { id:"pot",     name:"Garden pot",   r:88.0, col:"#b07044", draw:"pot"   }
+  ];
+  function tierByR(r){ // nearest tier index for a given radius
+    var best=0,bd=1e9; for(var i=0;i<TIERS.length;i++){var d=Math.abs(TIERS[i].r-r); if(d<bd){bd=d;best=i;}} return best;
+  }
+
+  // ---------- skins (cosmetic, unlocked by KNOWN mastery thresholds) ----------
+  var SKINS = [
+    { id:"dew",     name:"Dew",       need:0,   type:"absorbs", c1:"#cfeee6", c2:"#7fb8c8", rim:"#eafcff" },
+    { id:"moss",    name:"Moss",      need:150, type:"absorbs", c1:"#8fce6a", c2:"#3f6e2e", rim:"#c8f0a0" },
+    { id:"honey",   name:"Honey",     need:2,   type:"levels",  c1:"#f0cf72", c2:"#b8862c", rim:"#ffe9a0" },
+    { id:"rose",    name:"Rose",      need:600, type:"absorbs", c1:"#f0a8c8", c2:"#b04c78", rim:"#ffd0e6" },
+    { id:"ember",   name:"Ember",     need:5,   type:"levels",  c1:"#f0965a", c2:"#a83820", rim:"#ffc890" },
+    { id:"midnight",name:"Midnight",  need:8,   type:"levels",  c1:"#6a78c8", c2:"#20264f", rim:"#a8b8ff" },
+    { id:"amethyst",name:"Amethyst",  need:1600,type:"absorbs", c1:"#c89be6", c2:"#5e3a86", rim:"#e6d0ff" }
+  ];
+  function skinById(id){ for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i]; return SKINS[0]; }
+  function skinUnlocked(s){
+    if (s.type==="absorbs") return save.lifetimeAbsorbs >= s.need;
+    return save.levelsCleared >= s.need;
+  }
+
+  // ---------- levels ----------
+  var LEVELS = [
+    { fieldW:1500, fieldH:2000, goalR:40,  time:70,  maxTier:6  },
+    { fieldW:1700, fieldH:2300, goalR:55,  time:80,  maxTier:7  },
+    { fieldW:2000, fieldH:2600, goalR:72,  time:90,  maxTier:8  },
+    { fieldW:2300, fieldH:3000, goalR:92,  time:100, maxTier:9  },
+    { fieldW:2700, fieldH:3400, goalR:115, time:110, maxTier:10 },
+    { fieldW:3100, fieldH:3800, goalR:140, time:125, maxTier:11 },
+    { fieldW:3500, fieldH:4300, goalR:170, time:140, maxTier:12 },
+    { fieldW:4000, fieldH:4800, goalR:210, time:160, maxTier:12 }
+  ];
+  var START_R = 14;
+
+  // ---------- save ----------
+  var SAVE_KEY = "dewball_save";
+  var save = loadSave();
+  function defaultSave(){
+    return { levelsCleared:0, lifetimeAbsorbs:0, unlockedSkins:["dew"],
+             selectedSkin:"dew", grove:[], bestZen:0,
+             sbDate:"", sbToday:0 };
+  }
+  function loadSave(){
+    try {
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return defaultSave();
+      var s = JSON.parse(raw); var d = defaultSave();
+      for (var k in d) if (d.hasOwnProperty(k) && s[k]===undefined) s[k]=d[k];
+      if (!s.unlockedSkins || !s.unlockedSkins.length) s.unlockedSkins=["dew"];
+      return s;
+    } catch(e){ return defaultSave(); }
+  }
+  function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e){} }
+  function refreshSkinUnlocks(){
+    for (var i=0;i<SKINS.length;i++){
+      if (skinUnlocked(SKINS[i]) && !contains(save.unlockedSkins, SKINS[i].id)){
+        save.unlockedSkins.push(SKINS[i].id);
+        toast("Unlocked skin: " + SKINS[i].name);
+      }
+    }
+  }
+  function contains(a,v){ for(var i=0;i<a.length;i++) if(a[i]===v) return true; return false; }
+
+  // ---------- sunbeam earn (portal standard, guarded) ----------
+  function todayStr(){ var d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+  function earnSunbeams(amount, tag){
+    if (save.sbDate !== todayStr()){ save.sbDate=todayStr(); save.sbToday=0; }
+    var cap = 30, room = cap - save.sbToday;
+    if (room <= 0) return 0;
+    var give = Math.min(amount, room);
+    try {
+      if (window._sbCapEarn) window._sbCapEarn(give, tag||"dewball");
+    } catch(e){}
+    save.sbToday += give; persist();
+    return give;
+  }
+
+  // ---------- canvas / viewport ----------
+  var canvas = document.getElementById("game");
+  var ctx = canvas.getContext("2d");
+  var BASE_W = 540, BASE_H = 960;
+  var VW = BASE_W, VH = BASE_H, DPR = 1;
+  function fit(){
+    var maxW = window.innerWidth, maxH = window.innerHeight;
+    var scale = Math.min(maxW/BASE_W, maxH/BASE_H);
+    var cssW = Math.round(BASE_W*scale), cssH = Math.round(BASE_H*scale);
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    canvas.style.width = cssW+"px"; canvas.style.height = cssH+"px";
+    canvas.width = Math.round(BASE_W*DPR); canvas.height = Math.round(BASE_H*DPR);
+    VW = BASE_W; VH = BASE_H;
+    var st = document.getElementById("stage");
+    st.style.width = cssW+"px"; st.style.height = cssH+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener("resize", fit);
+
+  // ---------- GAME STATE ----------
+  var G = null;
+  function newState(mode, lvlIdx){
+    var lvl = (mode==="zen") ? zenConfig() : LEVELS[lvlIdx];
+    var st = {
+      mode: mode,               // "level" | "zen"
+      lvlIdx: lvlIdx,
+      fieldW: lvl.fieldW, fieldH: lvl.fieldH,
+      goalR: lvl.goalR, timeLeft: lvl.time, timed: (mode==="level"),
+      maxTier: lvl.maxTier,
+      ballX: lvl.fieldW/2, ballY: lvl.fieldH/2,
+      ballR: START_R, ballVX:0, ballVY:0,
+      cling: [],                // absorbed items orbiting ball
+      clingRot: 0,
+      objects: [],
+      particles: [],
+      pips: [],                 // floating "+" texts
+      camX: lvl.fieldW/2, camY: lvl.fieldH/2, camScale: 1,
+      shake: 0,
+      input: {x:0,y:0},         // steering vector (-1..1)
+      combo: 0, comboTimer: 0, comboBest:0,
+      absorbCount: 0,
+      won:false, lost:false, alive:true,
+      elapsed:0, spawnAcc:0
+    };
+    scatter(st);
+    st.camScale = targetScale(st.ballR);
+    return st;
+  }
+  function zenConfig(){ return { fieldW:5200, fieldH:5200, goalR:99999, time:0, maxTier:12 }; }
+
+  function targetScale(r){
+    var targetPx = Math.min(VW,VH)/8.5;   // desired on-screen ball radius
+    var s = targetPx / r;
+    if (s > 2.2) s = 2.2; if (s < 0.34) s = 0.34;
+    return s;
+  }
+
+  // scatter objects across the field with a spread of tiers
+  function scatter(st){
+    st.objects = [];
+    var area = st.fieldW * st.fieldH;
+    var maxT = st.maxTier;
+    // density weights: many small, fewer big; a few obstacles above goal
+    for (var t=0; t<=maxT && t<TIERS.length; t++){
+      var tr = TIERS[t];
+      // count scales with field area and inversely with tier size
+      var base = area / (14000 + tr.r*tr.r*90);
+      var count = Math.round(base * (t<3 ? 1.5 : 1.0));
+      count = Math.max(count, t<TIERS.length-2 ? 6 : 3);
+      count = Math.min(count, 260);
+      for (var i=0;i<count;i++){
+        var rr = tr.r * (0.82 + Math.random()*0.36);
+        st.objects.push(mkObj(st, tr, t, rr));
+      }
+    }
+    // guarantee a ring of tiny edibles near the start so first bites are easy
+    for (var j=0;j<40;j++){
+      var ang = Math.random()*Math.PI*2, dist = 40 + Math.random()*260;
+      var o = mkObj(st, TIERS[0], 0, TIERS[0].r*(0.8+Math.random()*0.4));
+      o.x = st.ballX + Math.cos(ang)*dist; o.y = st.ballY + Math.sin(ang)*dist;
+      clampToField(st,o); st.objects.push(o);
+    }
+    for (var j2=0;j2<26;j2++){
+      var ang2 = Math.random()*Math.PI*2, dist2 = 60 + Math.random()*320;
+      var ti = 1 + (j2%2);
+      var o2 = mkObj(st, TIERS[ti], ti, TIERS[ti].r*(0.85+Math.random()*0.3));
+      o2.x = st.ballX + Math.cos(ang2)*dist2; o2.y = st.ballY + Math.sin(ang2)*dist2;
+      clampToField(st,o2); st.objects.push(o2);
+    }
+  }
+  function mkObj(st, tr, ti, rr){
+    return { x: 30 + Math.random()*(st.fieldW-60),
+             y: 30 + Math.random()*(st.fieldH-60),
+             r: rr, tier: ti, col: tr.col, draw: tr.draw,
+             rot: Math.random()*Math.PI*2,
+             wob: Math.random()*Math.PI*2 };
+  }
+  function clampToField(st,o){
+    if (o.x<o.r) o.x=o.r; if (o.x>st.fieldW-o.r) o.x=st.fieldW-o.r;
+    if (o.y<o.r) o.y=o.r; if (o.y>st.fieldH-o.r) o.y=st.fieldH-o.r;
+  }
+  function spawnZenObjects(st, dt){
+    // keep zen field populated as ball eats
+    st.spawnAcc += dt;
+    if (st.spawnAcc < 0.25) return;
+    st.spawnAcc = 0;
+    if (st.objects.length > 900) return;
+    // spawn a batch just outside camera view, tiers scaled to current ball size
+    var minT = Math.max(0, tierByR(st.ballR*0.10));
+    var maxT = Math.min(TIERS.length-1, tierByR(st.ballR*1.6)+1);
+    for (var i=0;i<6;i++){
+      var t = minT + Math.floor(Math.random()*(maxT-minT+1));
+      var tr = TIERS[t];
+      var o = mkObj(st, tr, t, tr.r*(0.82+Math.random()*0.4));
+      clampToField(st,o);
+      st.objects.push(o);
+    }
+  }
+
+  // ---------- update ----------
+  function update(dt){
+    if (!G || !G.alive) return;
+    if (dt>0.05) dt=0.05;   // clamp for stability
+    G.elapsed += dt;
+
+    // timer
+    if (G.timed && !G.won && !G.lost){
+      G.timeLeft -= dt;
+      if (G.timeLeft <= 0){ G.timeLeft=0; loseLevel(); }
+    }
+
+    // ---- physics ----
+    var inX=G.input.x, inY=G.input.y;
+    var im = Math.sqrt(inX*inX+inY*inY);
+    if (im>1){ inX/=im; inY/=im; im=1; }
+
+    // bigger = slower + less responsive (growth is felt)
+    var sizeF = START_R / G.ballR;                 // <1 as it grows
+    var speedFactor = Math.pow(sizeF, 0.45); if (speedFactor<0.32) speedFactor=0.32; if(speedFactor>1) speedFactor=1;
+    var turnFactor  = Math.pow(sizeF, 0.55); if (turnFactor<0.28) turnFactor=0.28; if(turnFactor>1) turnFactor=1;
+    var maxSpeed = 340 * speedFactor;
+    var targetVX = inX * maxSpeed, targetVY = inY * maxSpeed;
+    var resp = (im>0.02 ? 4.2 : 3.0) * turnFactor;
+    var lerp = resp*dt; if (lerp>1) lerp=1;
+    G.ballVX += (targetVX - G.ballVX) * lerp;
+    G.ballVY += (targetVY - G.ballVY) * lerp;
+
+    var moveX = G.ballVX*dt, moveY = G.ballVY*dt;
+    G.ballX += moveX; G.ballY += moveY;
+    var moveDist = Math.sqrt(moveX*moveX+moveY*moveY);
+    G.clingRot += (moveDist / (G.ballR*1.4));    // clump spins as it rolls
+
+    // walls
+    if (G.ballX < G.ballR){ G.ballX=G.ballR; G.ballVX*=-0.35; }
+    if (G.ballX > G.fieldW-G.ballR){ G.ballX=G.fieldW-G.ballR; G.ballVX*=-0.35; }
+    if (G.ballY < G.ballR){ G.ballY=G.ballR; G.ballVY*=-0.35; }
+    if (G.ballY > G.fieldH-G.ballR){ G.ballY=G.fieldH-G.ballR; G.ballVY*=-0.35; }
+
+    // ---- collisions / accretion ----
+    var eatThresh = 0.85;
+    for (var i=G.objects.length-1;i>=0;i--){
+      var o=G.objects[i];
+      var dx=o.x-G.ballX, dy=o.y-G.ballY;
+      var d=Math.sqrt(dx*dx+dy*dy);
+      if (d > G.ballR + o.r + 4) continue;         // broad reject
+      if (o.r <= G.ballR*eatThresh){
+        // eat when we roll onto it
+        if (d <= G.ballR*0.92){
+          absorb(o, d, dx, dy);
+          G.objects.splice(i,1);
+        }
+      } else {
+        // too big: soft collision, gentle bounce (never trap)
+        var minD = G.ballR + o.r*0.55;
+        if (d < minD && d>0.001){
+          var push = (minD - d);
+          var nx=dx/d, ny=dy/d;
+          G.ballX -= nx*push; G.ballY -= ny*push;
+          var vn = G.ballVX*nx + G.ballVY*ny;
+          if (vn>0){ G.ballVX -= nx*vn*1.3; G.ballVY -= ny*vn*1.3; }
+          if (o.__bumpCd===undefined || G.elapsed-o.__bumpCd>0.4){
+            o.__bumpCd=G.elapsed; if (moveDist>0.6) bumpSound();
+          }
+        }
+      }
+    }
+
+    // ---- combo decay ----
+    if (G.comboTimer>0){ G.comboTimer-=dt; if (G.comboTimer<=0){ G.combo=0; } }
+
+    // ---- zen replenish ----
+    if (G.mode==="zen") spawnZenObjects(st_dt(dt));
+
+    // ---- particles / pips ----
+    for (var p=G.particles.length-1;p>=0;p--){
+      var pa=G.particles[p];
+      pa.life-=dt;
+      if (pa.life<=0){ G.particles.splice(p,1); continue; }
+      pa.x+=pa.vx*dt; pa.y+=pa.vy*dt; pa.vx*=0.92; pa.vy*=0.92;
+    }
+    for (var q=G.pips.length-1;q>=0;q--){
+      var pp=G.pips[q]; pp.life-=dt; pp.y-=26*dt;
+      if (pp.life<=0) G.pips.splice(q,1);
+    }
+
+    // ---- shake decay ----
+    if (G.shake>0){ G.shake-=dt*3.2; if(G.shake<0)G.shake=0; }
+
+    // ---- camera ----
+    var ts = targetScale(G.ballR);
+    G.camScale += (ts - G.camScale)*Math.min(1, dt*3);
+    G.camX += (G.ballX - G.camX)*Math.min(1, dt*7);
+    G.camY += (G.ballY - G.camY)*Math.min(1, dt*7);
+
+    // ---- win check ----
+    if (G.timed && !G.won && !G.lost && G.ballR >= G.goalR){
+      winLevel();
+    }
+    if (G.mode==="zen"){
+      if (G.ballR > save.bestZen){ /* live-track; store on exit */ }
+    }
+  }
+  function st_dt(dt){ return dt; } // helper kept for zen spawn signature clarity
+
+  function absorb(o, d, dx, dy){
+    // grow by area
+    var absorbFactor = 0.82;
+    var newR = Math.sqrt(G.ballR*G.ballR + o.r*o.r*absorbFactor);
+    var grew = newR - G.ballR;
+    G.ballR = newR;
+
+    // combo
+    G.combo++; G.comboTimer=1.25; if (G.combo>G.comboBest) G.comboBest=G.combo;
+    G.absorbCount++;
+    save.lifetimeAbsorbs++;
+
+    // store clinging item (relative angle so it stays put as clump spins)
+    var ang = Math.atan2(dy,dx) - G.clingRot;
+    var distRatio = d/G.ballR; if (distRatio>0.9) distRatio=0.9; if (distRatio<0.25) distRatio=0.25;
+    G.cling.push({ r:o.r, col:o.col, draw:o.draw, ang:ang, dr:distRatio, rot:o.rot });
+    // cap cling list — drop the smallest when it gets large
+    if (G.cling.length>420){
+      var mi=0,mr=1e9; for (var c=0;c<G.cling.length;c++){ if(G.cling[c].r<mr){mr=G.cling[c].r;mi=c;} }
+      G.cling.splice(mi,1);
+    }
+
+    // sound + juice
+    thok(Math.min(8, G.combo));
+    if (o.r > G.ballR*0.4){ G.shake = Math.min(1.0, G.shake + o.r/G.ballR*0.9); }
+    // size-up pip on notable growth
+    if (grew > 0.5 || G.combo%3===0){ sizeUpChime(); }
+    G.pips.push({ x:G.ballX, y:G.ballY-G.ballR, life:0.9,
+                  text:(G.combo>1?("x"+G.combo):"+"), col:(G.combo>3?COL.gold:COL.sage) });
+
+    // particle burst
+    var n = 5 + Math.floor(o.r/3); if (n>16) n=16;
+    for (var i=0;i<n;i++){
+      var a=Math.random()*Math.PI*2, sp=40+Math.random()*120;
+      G.particles.push({ x:o.x, y:o.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+                         life:0.35+Math.random()*0.35, col:o.col, r:1.4+Math.random()*2.2 });
+    }
+    if (G.timed && G.ballR>=G.goalR){ /* win handled in update */ }
+  }
+
+  // ---------- world <-> screen ----------
+  function w2sX(wx){ return VW/2 + (wx - G.camX)*G.camScale; }
+  function w2sY(wy){ return VH/2 + (wy - G.camY)*G.camScale; }
+
+  // ---------- draw object shape (world-space, translated/scaled by caller) ----------
+  function drawShape(cx, cy, r, kind, col, rot){
+    ctx.save();
+    ctx.translate(cx,cy);
+    if (rot) ctx.rotate(rot);
+    // art-pack hook: if a decoded image exists for this kind, draw it instead
+    if (imgReady && IMG[kind]){
+      ctx.drawImage(IMG[kind], -r, -r, r*2, r*2);
+      ctx.restore(); return;
+    }
+    ctx.fillStyle = col;
+    switch(kind){
+      case "speck":
+        ctx.beginPath(); ctx.arc(0,0,r,0,6.2832); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.5)"; ctx.beginPath(); ctx.arc(-r*0.3,-r*0.3,r*0.4,0,6.2832); ctx.fill();
+        break;
+      case "dew":
+        var g=ctx.createRadialGradient(-r*0.3,-r*0.3,r*0.1,0,0,r);
+        g.addColorStop(0,"#eafcff"); g.addColorStop(0.6,col); g.addColorStop(1,"#4f8ea0");
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,6.2832); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.85)"; ctx.beginPath(); ctx.arc(-r*0.35,-r*0.35,r*0.28,0,6.2832); ctx.fill();
+        break;
+      case "petal":
+        ctx.fillStyle=col;
+        ctx.beginPath(); ctx.ellipse(0,0,r*0.62,r,0,0,6.2832); ctx.fill();
+        ctx.strokeStyle="rgba(180,60,110,.4)"; ctx.lineWidth=r*0.08;
+        ctx.beginPath(); ctx.moveTo(0,-r*0.8); ctx.lineTo(0,r*0.8); ctx.stroke();
+        break;
+      case "clover":
+        ctx.fillStyle=col;
+        for (var k=0;k<3;k++){ var a=k*2.0944-1.5708;
+          ctx.beginPath(); ctx.arc(Math.cos(a)*r*0.5, Math.sin(a)*r*0.5, r*0.5,0,6.2832); ctx.fill(); }
+        ctx.strokeStyle="#3f6e2e"; ctx.lineWidth=r*0.12;
+        ctx.beginPath(); ctx.moveTo(0,r*0.2); ctx.lineTo(0,r); ctx.stroke();
+        break;
+      case "pebble":
+        var pg=ctx.createRadialGradient(-r*0.3,-r*0.3,r*0.2,0,0,r);
+        pg.addColorStop(0, lighten(col,30)); pg.addColorStop(1, col);
+        ctx.fillStyle=pg;
+        ctx.beginPath(); ctx.ellipse(0,0,r,r*0.82,0.3,0,6.2832); ctx.fill();
+        break;
+      case "leaf":
+        ctx.fillStyle=col;
+        ctx.beginPath();
+        ctx.moveTo(0,-r); ctx.quadraticCurveTo(r*0.9,-r*0.2, 0, r);
+        ctx.quadraticCurveTo(-r*0.9,-r*0.2, 0,-r); ctx.fill();
+        ctx.strokeStyle="rgba(20,50,20,.5)"; ctx.lineWidth=r*0.08;
+        ctx.beginPath(); ctx.moveTo(0,-r*0.85); ctx.lineTo(0,r*0.85); ctx.stroke();
+        break;
+      case "acorn":
+        ctx.fillStyle="#c79a5c";
+        ctx.beginPath(); ctx.ellipse(0,r*0.15,r*0.7,r*0.85,0,0,6.2832); ctx.fill();
+        ctx.fillStyle="#6b4623";
+        ctx.beginPath(); ctx.ellipse(0,-r*0.5,r*0.72,r*0.42,0,0,6.2832); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0,-r*0.9); ctx.lineTo(0,-r*1.15); ctx.lineWidth=r*0.12; ctx.strokeStyle="#6b4623"; ctx.stroke();
+        break;
+      case "mushroom":
+        ctx.fillStyle="#e8dcc8";
+        ctx.fillRect(-r*0.28,0,r*0.56,r*0.9);
+        ctx.fillStyle=col;
+        ctx.beginPath(); ctx.ellipse(0,0,r,r*0.7,0,Math.PI,0); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.7)";
+        ctx.beginPath(); ctx.arc(-r*0.4,-r*0.2,r*0.12,0,6.2832); ctx.fill();
+        ctx.beginPath(); ctx.arc(r*0.35,-r*0.1,r*0.1,0,6.2832); ctx.fill();
+        break;
+      case "flower":
+        ctx.fillStyle=col;
+        for (var f=0;f<6;f++){ var fa=f*1.0472;
+          ctx.beginPath(); ctx.ellipse(Math.cos(fa)*r*0.55,Math.sin(fa)*r*0.55, r*0.42,r*0.28,fa,0,6.2832); ctx.fill(); }
+        ctx.fillStyle="#f0d068"; ctx.beginPath(); ctx.arc(0,0,r*0.34,0,6.2832); ctx.fill();
+        break;
+      case "twig":
+        ctx.strokeStyle=col; ctx.lineWidth=r*0.34; ctx.lineCap="round";
+        ctx.beginPath(); ctx.moveTo(-r,r*0.4); ctx.quadraticCurveTo(0,-r*0.3,r,-r*0.2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(r*0.1,-r*0.05); ctx.lineTo(r*0.5,-r*0.7); ctx.lineWidth=r*0.18; ctx.stroke();
+        break;
+      case "sapling":
+        ctx.strokeStyle="#7c5a34"; ctx.lineWidth=r*0.22; ctx.lineCap="round";
+        ctx.beginPath(); ctx.moveTo(0,r); ctx.lineTo(0,-r*0.2); ctx.stroke();
+        ctx.fillStyle=col;
+        ctx.beginPath(); ctx.arc(0,-r*0.4,r*0.66,0,6.2832); ctx.fill();
+        ctx.beginPath(); ctx.arc(-r*0.5,0,r*0.44,0,6.2832); ctx.fill();
+        ctx.beginPath(); ctx.arc(r*0.5,-r*0.05,r*0.44,0,6.2832); ctx.fill();
+        break;
+      case "pot":
+        ctx.fillStyle="#5c9e46";
+        ctx.beginPath(); ctx.arc(0,-r*0.5,r*0.66,0,6.2832); ctx.fill();
+        ctx.fillStyle=col;
+        ctx.beginPath();
+        ctx.moveTo(-r*0.8,-r*0.1); ctx.lineTo(r*0.8,-r*0.1);
+        ctx.lineTo(r*0.55,r*0.9); ctx.lineTo(-r*0.55,r*0.9); ctx.closePath(); ctx.fill();
+        ctx.fillStyle=darken(col,20);
+        ctx.fillRect(-r*0.85,-r*0.22,r*1.7,r*0.16);
+        break;
+      default:
+        ctx.beginPath(); ctx.arc(0,0,r,0,6.2832); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function lighten(hex,amt){ return shade(hex,amt); }
+  function darken(hex,amt){ return shade(hex,-amt); }
+  function shade(hex,amt){
+    var h=hex.replace("#",""); if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    var r=parseInt(h.substr(0,2),16), g=parseInt(h.substr(2,2),16), b=parseInt(h.substr(4,2),16);
+    r=clamp255(r+amt); g=clamp255(g+amt); b=clamp255(b+amt);
+    return "rgb("+r+","+g+","+b+")";
+  }
+  function clamp255(v){ return v<0?0:v>255?255:Math.round(v); }
+
+  // ---------- render ----------
+  function render(){
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.clearRect(0,0,VW,VH);
+
+    if (!G){ return; }
+
+    // shake offset
+    var sx=0, sy=0;
+    if (G.shake>0){ sx=(Math.random()-0.5)*G.shake*16; sy=(Math.random()-0.5)*G.shake*16; }
+    ctx.save(); ctx.translate(sx,sy);
+
+    // background field
+    ctx.fillStyle=COL.bg; ctx.fillRect(-20,-20,VW+40,VH+40);
+    drawGround();
+
+    var s=G.camScale;
+
+    // objects (only those on screen)
+    var pad=80;
+    for (var i=0;i<G.objects.length;i++){
+      var o=G.objects[i];
+      var scx=w2sX(o.x), scy=w2sY(o.y), sr=o.r*s;
+      if (scx< -pad || scx>VW+pad || scy< -pad || scy>VH+pad) continue;
+      // subtle wobble on tiny bits
+      var rot=o.rot;
+      // shadow
+      ctx.fillStyle="rgba(0,0,0,.22)";
+      ctx.beginPath(); ctx.ellipse(scx, scy+sr*0.5, sr*0.9, sr*0.4,0,0,6.2832); ctx.fill();
+      drawShape(scx, scy, sr, o.draw, o.col, rot);
+    }
+
+    // particles
+    for (var p=0;p<G.particles.length;p++){
+      var pa=G.particles[p];
+      var a=Math.max(0,pa.life/0.7);
+      ctx.globalAlpha=a; ctx.fillStyle=pa.col;
+      ctx.beginPath(); ctx.arc(w2sX(pa.x), w2sY(pa.y), pa.r*s, 0, 6.2832); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+
+    // the ball
+    drawBall();
+
+    // pips
+    ctx.textAlign="center";
+    for (var q=0;q<G.pips.length;q++){
+      var pp=G.pips[q]; var pa2=Math.max(0,pp.life/0.9);
+      ctx.globalAlpha=pa2; ctx.fillStyle=pp.col;
+      ctx.font="bold "+(16+ (pp.text.charAt(0)==="x"?6:0))+"px sans-serif";
+      ctx.fillText(pp.text, w2sX(pp.x), w2sY(pp.y));
+      ctx.globalAlpha=1;
+    }
+
+    ctx.restore();
+
+    // vignette
+    drawVignette();
+    // HUD
+    drawHUD();
+  }
+
+  function drawGround(){
+    var s=G.camScale;
+    // field bounds shading
+    var x0=w2sX(0), y0=w2sY(0), x1=w2sX(G.fieldW), y1=w2sY(G.fieldH);
+    ctx.fillStyle=COL.ground;
+    ctx.fillRect(Math.max(0,x0), Math.max(0,y0),
+                 Math.min(VW,x1)-Math.max(0,x0), Math.min(VH,y1)-Math.max(0,y0));
+    // dotted grid texture
+    var grid=110;
+    ctx.fillStyle="rgba(122,179,86,.06)";
+    var startX = Math.floor(G.camX/grid)*grid, startY=Math.floor(G.camY/grid)*grid;
+    for (var gx=startX-grid*8; gx<startX+grid*8; gx+=grid){
+      for (var gy=startY-grid*8; gy<startY+grid*8; gy+=grid){
+        var scx=w2sX(gx), scy=w2sY(gy);
+        if (scx<-10||scx>VW+10||scy<-10||scy>VH+10) continue;
+        ctx.beginPath(); ctx.arc(scx,scy, 2*Math.max(0.5,s), 0, 6.2832); ctx.fill();
+      }
+    }
+    // walls
+    ctx.strokeStyle="rgba(200,168,75,.5)"; ctx.lineWidth=4;
+    ctx.strokeRect(x0,y0,(x1-x0),(y1-y0));
+  }
+
+  function drawBall(){
+    var s=G.camScale;
+    var cx=w2sX(G.ballX), cy=w2sY(G.ballY), R=G.ballR*s;
+    var skin=skinById(save.selectedSkin);
+
+    // ground shadow
+    ctx.fillStyle="rgba(0,0,0,.3)";
+    ctx.beginPath(); ctx.ellipse(cx, cy+R*0.55, R*0.95, R*0.45,0,0,6.2832); ctx.fill();
+
+    // clip to ball, draw base gel + cling inside
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,6.2832); ctx.clip();
+
+    var g=ctx.createRadialGradient(cx-R*0.35,cy-R*0.4,R*0.1, cx,cy,R);
+    g.addColorStop(0, skin.c1); g.addColorStop(0.7, skin.c2); g.addColorStop(1, darken2(skin.c2));
+    ctx.fillStyle=g; ctx.fillRect(cx-R,cy-R,R*2,R*2);
+
+    // cling items rotate as clump rolls
+    for (var i=0;i<G.cling.length;i++){
+      var c=G.cling[i];
+      var a=c.ang + G.clingRot;
+      var ix=cx + Math.cos(a)*c.dr*R;
+      var iy=cy + Math.sin(a)*c.dr*R;
+      var ir=c.r*s;
+      if (ir < 1.2) continue;
+      if (ir > R*0.9) ir=R*0.9;
+      drawShape(ix, iy, ir, c.draw, c.col, a + c.rot);
+    }
+    ctx.restore();
+
+    // gel rim + highlight
+    ctx.strokeStyle=skin.rim; ctx.globalAlpha=0.7; ctx.lineWidth=Math.max(1.5,R*0.04);
+    ctx.beginPath(); ctx.arc(cx,cy,R-ctx.lineWidth*0.5,0,6.2832); ctx.stroke();
+    ctx.globalAlpha=1;
+    // glossy highlight
+    ctx.fillStyle="rgba(255,255,255,.28)";
+    ctx.beginPath(); ctx.ellipse(cx-R*0.35,cy-R*0.4,R*0.28,R*0.18,-0.5,0,6.2832); ctx.fill();
+    // faint outer glow
+    ctx.strokeStyle="rgba(191,230,224,.16)"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(cx,cy,R+3,0,6.2832); ctx.stroke();
+  }
+  function darken2(rgbOrHex){
+    if (rgbOrHex.charAt(0)==="#") return darken(rgbOrHex,45);
+    return rgbOrHex;
+  }
+
+  function drawVignette(){
+    var vg=ctx.createRadialGradient(VW/2,VH/2, VH*0.35, VW/2,VH/2, VH*0.72);
+    vg.addColorStop(0,"rgba(0,0,0,0)"); vg.addColorStop(1,"rgba(0,0,0,.55)");
+    ctx.fillStyle=vg; ctx.fillRect(0,0,VW,VH);
+  }
+
+  function drawHUD(){
+    // top bar: goal / size meter + timer
+    ctx.textAlign="left";
+    ctx.font="bold 13px sans-serif";
+    ctx.fillStyle=COL.muted;
+    var modeLabel = G.mode==="zen" ? "ZEN" : ("LEVEL "+(G.lvlIdx+1));
+    ctx.fillText(modeLabel, 16, 26);
+
+    // size meter
+    var mx=16, my=38, mw=VW-32, mh=12;
+    ctx.fillStyle="rgba(0,0,0,.5)";
+    roundRect(mx,my,mw,mh,6); ctx.fill();
+    var frac;
+    if (G.mode==="zen"){
+      frac = Math.min(1, G.ballR / 260);
+    } else {
+      frac = Math.min(1, G.ballR / G.goalR);
+    }
+    var grad=ctx.createLinearGradient(mx,0,mx+mw,0);
+    grad.addColorStop(0,COL.sage); grad.addColorStop(1,COL.gold);
+    ctx.fillStyle=grad;
+    if (frac>0){ roundRect(mx,my,Math.max(mh,mw*frac),mh,6); ctx.fill(); }
+    // goal tick
+    if (G.mode!=="zen"){
+      ctx.fillStyle=COL.cream; ctx.font="11px sans-serif"; ctx.textAlign="right";
+      ctx.fillText("goal "+Math.round(G.goalR), VW-16, my+mh+16);
+      ctx.textAlign="left";
+      ctx.fillStyle=COL.cream;
+      ctx.fillText(Math.round(G.ballR)+" / "+Math.round(G.goalR), 16, my+mh+16);
+    } else {
+      ctx.fillStyle=COL.cream; ctx.font="11px sans-serif";
+      ctx.fillText("size "+Math.round(G.ballR)+"  ·  best "+Math.round(save.bestZen), 16, my+mh+16);
+    }
+
+    // timer (level)
+    if (G.timed){
+      var tsec=Math.ceil(G.timeLeft);
+      ctx.textAlign="center"; ctx.font="bold 22px sans-serif";
+      ctx.fillStyle = G.timeLeft<10 ? "#e06a5a" : COL.cream;
+      ctx.fillText(fmtTime(tsec), VW/2, 92);
+      ctx.textAlign="left";
+    }
+
+    // combo
+    if (G.combo>1){
+      ctx.textAlign="center";
+      ctx.font="bold "+(20+Math.min(18,G.combo))+"px sans-serif";
+      ctx.fillStyle=COL.gold; ctx.globalAlpha=Math.min(1,G.comboTimer/1.25 + 0.3);
+      ctx.fillText("Combo x"+G.combo, VW/2, G.timed?122:100);
+      ctx.globalAlpha=1; ctx.textAlign="left";
+    }
+
+    // pause / menu button
+    ctx.fillStyle="rgba(200,168,75,.75)";
+    ctx.font="20px sans-serif"; ctx.textAlign="right";
+    ctx.fillText("‖", VW-18, VH-18);
+    ctx.textAlign="left";
+  }
+  function roundRect(x,y,w,h,r){ ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function fmtTime(s){ var m=Math.floor(s/60), ss=s%60; return m+":"+(ss<10?"0":"")+ss; }
+
+  // ---------- win / lose ----------
+  function winLevel(){
+    if (G.won) return;
+    G.won=true; G.alive=false;
+    winFanfare();
+    save.levelsCleared = Math.max(save.levelsCleared, G.lvlIdx+1);
+    // grove keepsake
+    pushGrove(G.ballR, G.lvlIdx+1);
+    var earned = earnSunbeams(4 + Math.min(4, Math.floor(G.comboBest/4)), "dewball:level");
+    refreshSkinUnlocks(); persist();
+    showResult(true, earned);
+  }
+  function loseLevel(){
+    if (G.lost || G.won) return;
+    G.lost=true; G.alive=false;
+    beep(180,0.3,"sawtooth",0.12);
+    showResult(false, 0);
+  }
+  function endZen(){
+    if (!G) return;
+    if (G.ballR > save.bestZen){ save.bestZen = Math.round(G.ballR); }
+    pushGrove(G.ballR, 0);
+    var earned = earnSunbeams(3, "dewball:zen");
+    refreshSkinUnlocks(); persist();
+    G.alive=false;
+    showResult(true, earned, true);
+  }
+  function pushGrove(r, lvl){
+    save.grove.push({ r:Math.round(r), lvl:lvl, t:Date.now() });
+    save.grove.sort(function(a,b){ return b.r-a.r; });
+    if (save.grove.length>8) save.grove.length=8;
+  }
+
+  // ---------- overlays / DOM ----------
+  var elMenu=document.getElementById("menu"),
+      elSkins=document.getElementById("skins"),
+      elGrove=document.getElementById("grove"),
+      elResult=document.getElementById("result"),
+      elToast=document.getElementById("toast");
+  function hideAll(){ elMenu.classList.add("hidden"); elSkins.classList.add("hidden");
+    elGrove.classList.add("hidden"); elResult.classList.add("hidden"); }
+  function showMenu(){ hideAll(); G=null; elMenu.classList.remove("hidden");
+    document.getElementById("mLvlNum").textContent = Math.min(save.levelsCleared+1, LEVELS.length); }
+
+  var toastTimer=null;
+  function toast(msg){
+    elToast.textContent=msg; elToast.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ elToast.classList.remove("show"); }, 2200);
+  }
+
+  function showResult(win, earned, zen){
+    hideAll();
+    var title=document.getElementById("resTitle");
+    var body=document.getElementById("resBody");
+    var btns=document.getElementById("resBtns");
+    btns.innerHTML="";
+    if (win){
+      title.textContent = zen ? "Rolled into rest" : "Pressed a keepsake into the Grove";
+      body.innerHTML = "Final size <b style='color:#c8a84b'>"+Math.round(G.ballR)+"</b>"+
+        "  ·  "+G.absorbCount+" absorbed  ·  best combo x"+G.comboBest+
+        (earned>0 ? ("<br>+"+earned+" Sunbeams") : "");
+      if (!zen && G.lvlIdx+1 < LEVELS.length){
+        addBtn(btns,"Next Level","btn", function(){ startGame("level", G.lvlIdx+1); });
+      } else if (!zen){
+        addBtn(btns,"Zen Roll","btn alt", function(){ startGame("zen",0); });
+      }
+      addBtn(btns,"Menu","btn ghost", showMenu);
+    } else {
+      title.textContent = "Time ran out";
+      body.innerHTML = "Reached <b style='color:#c8a84b'>"+Math.round(G.ballR)+"</b> of "+Math.round(G.goalR)+
+        "  ·  "+G.absorbCount+" absorbed";
+      addBtn(btns,"Retry","btn", function(){ startGame("level", G.lvlIdx); });
+      addBtn(btns,"Menu","btn ghost", showMenu);
+    }
+    elResult.classList.remove("hidden");
+  }
+  function addBtn(parent,label,cls,fn){
+    var b=document.createElement("button"); b.className=cls; b.textContent=label;
+    b.addEventListener("click", fn); parent.appendChild(b);
+  }
+
+  function renderSkins(){
+    var list=document.getElementById("skinList"); list.innerHTML="";
+    for (var i=0;i<SKINS.length;i++){ (function(s){
+      var unlocked = contains(save.unlockedSkins, s.id) || skinUnlocked(s);
+      var d=document.createElement("div");
+      d.className="skin"+(save.selectedSkin===s.id?" sel":"")+(unlocked?"":" locked");
+      d.style.background="radial-gradient(circle at 35% 32%, "+s.c1+", "+s.c2+")";
+      var nm=document.createElement("div"); nm.className="nm"; nm.textContent=s.name; d.appendChild(nm);
+      if (!unlocked){
+        var lk=document.createElement("div"); lk.className="lk"; lk.textContent="🔒"; d.appendChild(lk);
+        d.title = s.type==="absorbs" ? (s.need+" lifetime absorbs") : (s.need+" levels cleared");
+      }
+      d.addEventListener("click", function(){
+        if (!unlocked){
+          toast(s.type==="absorbs" ? ("Absorb "+s.need+" (have "+save.lifetimeAbsorbs+")")
+                                   : ("Clear "+s.need+" levels (have "+save.levelsCleared+")"));
+          return;
+        }
+        save.selectedSkin=s.id; persist(); renderSkins();
+      });
+      list.appendChild(d);
+    })(SKINS[i]); }
+  }
+  function renderGrove(){
+    var list=document.getElementById("groveList"); list.innerHTML="";
+    if (!save.grove.length){ list.innerHTML="<span style='color:#8a9178'>No keepsakes yet. Go roll.</span>"; return; }
+    for (var i=0;i<save.grove.length;i++){
+      var gg=save.grove[i];
+      var c=document.createElement("div"); c.className="grovechip";
+      c.innerHTML="<b>"+gg.r+"</b> "+(gg.lvl? ("· L"+gg.lvl) : "· Zen");
+      list.appendChild(c);
+    }
+  }
+
+  // ---------- start ----------
+  function startGame(mode, lvlIdx){
+    if (mode==="level"){ if(lvlIdx<0)lvlIdx=0; if(lvlIdx>=LEVELS.length)lvlIdx=LEVELS.length-1; }
+    G = newState(mode, lvlIdx||0);
+    hideAll();
+    // resume audio on user gesture path
+    try { var a=actx(); if(a&&a.state==="suspended") a.resume(); } catch(e){}
+  }
+
+  // ---------- input ----------
+  var keys={};
+  window.addEventListener("keydown", function(e){
+    var k=e.key.toLowerCase();
+    if (k==="w"||k==="arrowup") keys.up=1;
+    else if (k==="s"||k==="arrowdown") keys.down=1;
+    else if (k==="a"||k==="arrowleft") keys.left=1;
+    else if (k==="d"||k==="arrowright") keys.right=1;
+    else if (k==="m"){ muted=!muted; toast(muted?"Muted":"Sound on"); }
+    else if (k==="escape"){ if(G){ if(G.mode==="zen") endZen(); else { G.alive=false; showMenu(); } } }
+    else return;
+    if (["arrowup","arrowdown","arrowleft","arrowright"," "].indexOf(k)>=0) e.preventDefault();
+  });
+  window.addEventListener("keyup", function(e){
+    var k=e.key.toLowerCase();
+    if (k==="w"||k==="arrowup") keys.up=0;
+    else if (k==="s"||k==="arrowdown") keys.down=0;
+    else if (k==="a"||k==="arrowleft") keys.left=0;
+    else if (k==="d"||k==="arrowright") keys.right=0;
+  });
+  function readKeys(){
+    if (!G) return;
+    var x=(keys.right?1:0)-(keys.left?1:0);
+    var y=(keys.down?1:0)-(keys.up?1:0);
+    if (x||y){ G.input.x=x; G.input.y=y; }
+  }
+
+  // pointer / touch: drag anywhere = joystick from press origin
+  var dragging=false, dragOX=0, dragOY=0;
+  function canvasPt(e){
+    var rect=canvas.getBoundingClientRect();
+    var cx = (e.touches?e.touches[0].clientX:e.clientX);
+    var cy = (e.touches?e.touches[0].clientY:e.clientY);
+    var sx = VW/rect.width, sy=VH/rect.height;
+    return { x:(cx-rect.left)*sx, y:(cy-rect.top)*sy };
+  }
+  function onDown(e){
+    try { var a=actx(); if(a&&a.state==="suspended") a.resume(); } catch(err){}
+    if (!G) return;
+    var p=canvasPt(e);
+    // pause button hit
+    if (p.x>VW-56 && p.y>VH-56){ if(G.mode==="zen") endZen(); else { G.alive=false; showMenu(); } return; }
+    dragging=true; dragOX=p.x; dragOY=p.y;
+    if (e.cancelable) e.preventDefault();
+  }
+  function onMove(e){
+    if (!dragging||!G) return;
+    var p=canvasPt(e);
+    var dx=p.x-dragOX, dy=p.y-dragOY;
+    var dead=6, maxR=70;
+    var m=Math.sqrt(dx*dx+dy*dy);
+    if (m<dead){ G.input.x=0; G.input.y=0; }
+    else {
+      var f=Math.min(1, (m-dead)/maxR);
+      G.input.x=(dx/m)*f; G.input.y=(dy/m)*f;
+    }
+    if (e.cancelable) e.preventDefault();
+  }
+  function onUp(e){ dragging=false; if(G){ G.input.x=0; G.input.y=0; } }
+  canvas.addEventListener("mousedown", onDown);
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+  canvas.addEventListener("touchstart", onDown, {passive:false});
+  canvas.addEventListener("touchmove", onMove, {passive:false});
+  canvas.addEventListener("touchend", onUp);
+  canvas.addEventListener("touchcancel", onUp);
+
+  // ---------- main loop ----------
+  var lastT=0, headless=false;
+  function frame(ts){
+    if (headless){ return; }
+    if (!lastT) lastT=ts;
+    var dt=(ts-lastT)/1000; lastT=ts;
+    if (dt>0.05) dt=0.05;
+    if (G && G.alive){ readKeys(); update(dt); }
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- DEV hook (headless testing) ----------
+  var params = (function(){ var o={}, s=location.search.replace(/^\?/,"").split("&");
+    for (var i=0;i<s.length;i++){ var kv=s[i].split("="); if(kv[0]) o[kv[0]]=decodeURIComponent(kv[1]||""); } return o; })();
+  window.DB_DEV = {
+    start: function(mode, lvl){ startGame(mode||"level", (lvl||1)-1 >=0 ? (lvl?lvl-1:0) : 0); return G; },
+    step: function(dt){ if(G&&G.alive){ readKeys(); update(dt||0.016); } return G; },
+    state: function(){ return G; },
+    roll: function(dx,dy){ if(G){ G.input.x=dx||0; G.input.y=dy||0; } },
+    absorbAll: function(){
+      if (!G) return;
+      // grow toward max by absorbing everything eatable, repeatedly
+      for (var pass=0; pass<40; pass++){
+        var ate=false;
+        for (var i=G.objects.length-1;i>=0;i--){
+          var o=G.objects[i];
+          if (o.r <= G.ballR*0.85){
+            var dx=o.x-G.ballX, dy=o.y-G.ballY, d=Math.sqrt(dx*dx+dy*dy)||1;
+            absorb(o,Math.min(d,G.ballR*0.8),dx,dy);
+            G.objects.splice(i,1); ate=true;
+          }
+        }
+        if (!ate) break;
+      }
+      return G.ballR;
+    },
+    size: function(){ return G ? G.ballR : 0; },
+    render: render
+  };
+
+  // ---------- wire menu buttons ----------
+  document.getElementById("mPlay").addEventListener("click", function(){
+    startGame("level", Math.min(save.levelsCleared, LEVELS.length-1));
+  });
+  document.getElementById("mZen").addEventListener("click", function(){ startGame("zen",0); });
+  document.getElementById("mSkins").addEventListener("click", function(){ hideAll(); renderSkins(); elSkins.classList.remove("hidden"); });
+  document.getElementById("mGrove").addEventListener("click", function(){ hideAll(); renderGrove(); elGrove.classList.remove("hidden"); });
+  document.getElementById("skinsClose").addEventListener("click", showMenu);
+  document.getElementById("skinsBack").addEventListener("click", showMenu);
+  document.getElementById("groveClose").addEventListener("click", showMenu);
+  document.getElementById("groveBack").addEventListener("click", showMenu);
+
+  // ---------- boot ----------
+  fit();
+  refreshSkinUnlocks(); persist();
+  showMenu();
+  if (params.dbtest==="1"){
+    headless = true;   // dev script drives frames manually via DB_DEV
+    // still render once so canvas isn't blank
+    render();
+  } else {
+    requestAnimationFrame(frame);
+  }
+
+})();
+</script>
+</body>
+</html>
