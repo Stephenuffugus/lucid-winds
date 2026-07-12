@@ -172,13 +172,26 @@ var GRAV=1500, DAMPSEC=0.9, BUOY=760, MAXV=27, DROP_R=13;
 var curScreen='s-title';
 
 /* ===== background art (drop-in over the procedural bed; canvas fallback kept) ===== */
-var ASSET_V='1';
+var ASSET_V='2';
 function loadImg(src){ var im=new Image(); im.src=src; return im; }
 var BG_PLAY=loadImg('assets/backgrounds/bg_play.jpg?v='+ASSET_V);
 var BG_SEASON=(function(){ var m=new Date().getMonth();
   var s=(m>=2&&m<=4)?'spring':(m>=5&&m<=7)?'summer':(m>=8&&m<=10)?'autumn':'winter';
   return loadImg('assets/backgrounds/bg_season_'+s+'.jpg?v='+ASSET_V); })();
 function imgReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+/* ===== Paper Nocturne object-sprite loader (cached; every draw site falls through to
+   the canvas primitive when its sprite is missing/undecoded — NEVER remove the fallback) ===== */
+var SPR={};
+function spr(sub,name){ var k=sub+'/'+name; var im=SPR[k]; if(!im){ im=loadImg('assets/'+sub+'/'+name+'.png?v='+ASSET_V); SPR[k]=im; } return im; }
+function sprReady(sub,name){ return imgReady(spr(sub,name)); }
+/* pre-warm the core object sprites so they've decoded by first play */
+(function(){ var core=[['sprites','dewdrop'],['sprites','dewdrop_bright'],['sprites','vine_anchor'],['sprites','vine_segment'],['sprites','vine_stub'],['sprites','nectar_mote'],['sprites','thorn'],['sprites','thorn_cluster'],['sprites','bellows_idle'],['sprites','bellows_fire'],['sprites','sprout_pot_open'],['sprites','sprout_pot_bloomed']];
+  for(var i=0;i<core.length;i++)spr(core[i][0],core[i][1]);
+  var blooms=['bloom_dawnrose','bloom_goldeye','bloom_moonbell','bloom_emberdaisy','bloom_violetstar','bloom_frostlily','bloom_sagethistle','bloom_prismbloom'];
+  for(var b=0;b<blooms.length;b++)spr('blooms',blooms[b]); })();
+/* keepsake-bloom species roster (keyed deterministically by seed; prismbloom kept rare) */
+var BLOOM_SPECIES=['bloom_dawnrose','bloom_goldeye','bloom_moonbell','bloom_emberdaisy','bloom_violetstar','bloom_frostlily','bloom_sagethistle'];
+function bloomSprite(seed){ seed=seed>>>0; if(seed%100<4)return spr('blooms','bloom_prismbloom'); return spr('blooms',BLOOM_SPECIES[(seed>>>3)%BLOOM_SPECIES.length]); }
 /* season art if decoded, else the base play bed, else signal caller to draw the gradient */
 function drawPlayBg(){ var im = imgReady(BG_SEASON)?BG_SEASON : (imgReady(BG_PLAY)?BG_PLAY:null);
   if(!im) return false; ctx.drawImage(im,0,0,VW,VH); return true; }
@@ -213,6 +226,10 @@ function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>1
 /* ===== procedural bloom drawer (Grove keepsakes + win celebration) ===== */
 var HUES=['#e58fa0','#c8a84b','#7ab356','#b57de0','#5b9bd5','#e0894a','#e8d24a','#e56b6b','#8fd0c0'];
 function drawBloom(c,cx,cy,scale,seed){
+  // Paper Nocturne keepsake-bloom sprite (flower-head anchored at cx,cy; stem hangs below); falls through to the procedural bloom below when the PNG hasn't decoded.
+  var bim=bloomSprite(seed);
+  if(imgReady(bim)){ var pr=18*scale, H=pr*4.4, W=H*bim.naturalWidth/bim.naturalHeight;
+    c.drawImage(bim, cx-W/2, cy-H*0.36, W, H); return; }
   var rng=mkRng((seed>>>0)||7);
   var petals=5+Math.floor(rng()*5), hue=HUES[Math.floor(rng()*HUES.length)], hue2=HUES[Math.floor(rng()*HUES.length)];
   var pr=18*scale, cr=7*scale, rot=rng()*Math.PI;
@@ -414,18 +431,23 @@ function render(){ if(!ctx||!G)return;
   // dew trail
   for(var i=0;i<G.trail.length;i++){ var tr=G.trail[i]; var al=Math.max(0,tr.life)*0.6; if(al<=0)continue; ctx.globalAlpha=al; var gl=ctx.createRadialGradient(tr.x,tr.y,0,tr.x,tr.y,10); gl.addColorStop(0,'#dff2ff'); gl.addColorStop(1,'rgba(120,180,220,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(tr.x,tr.y,10,0,7); ctx.fill(); } ctx.globalAlpha=1;
   // ropes (vines)
-  for(var r=0;r<G.ropes.length;r++){ var rp=G.ropes[r]; drawAnchor(rp.ax,rp.ay);
+  for(var r=0;r<G.ropes.length;r++){ var rp=G.ropes[r];
     if(!rp.cut){ drawVine(rp.ax,rp.ay,G.drop.x,G.drop.y); }
-    else { ctx.strokeStyle='#3a5a28'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(rp.ax,rp.ay+6); ctx.lineTo(rp.ax+Math.sin(G.t*3+r)*3,rp.ay+18); ctx.stroke(); }
+    else { drawStub(rp.ax,rp.ay,r); }
+    drawAnchor(rp.ax,rp.ay);
   }
   // puffers
   for(var pf=0;pf<G.puffs.length;pf++)drawPuff(G.puffs[pf]);
   // thorns
   for(var t=0;t<G.thorns.length;t++)drawThorn(G.thorns[t]);
   // motes
+  var nim=spr('sprites','nectar_mote'); var nRdy=imgReady(nim);
   for(var m=0;m<G.motes.length;m++){ var mo=G.motes[m]; if(mo.got)continue; var pulse=1+Math.sin(G.t*3+m)*0.12;
-    var g2=ctx.createRadialGradient(mo.x,mo.y,1,mo.x,mo.y,mo.r*1.6*pulse); g2.addColorStop(0,'#fff6d0'); g2.addColorStop(0.5,'#f2d98a'); g2.addColorStop(1,'rgba(240,217,138,0)'); ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(mo.x,mo.y,mo.r*1.6*pulse,0,7); ctx.fill();
-    ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(mo.x,mo.y,4,0,7); ctx.fill();
+    if(nRdy){ var nd=mo.r*3.4*pulse, nw=nd*nim.naturalWidth/nim.naturalHeight; ctx.drawImage(nim, mo.x-nw/2, mo.y-nd/2, nw, nd); }
+    else {
+      var g2=ctx.createRadialGradient(mo.x,mo.y,1,mo.x,mo.y,mo.r*1.6*pulse); g2.addColorStop(0,'#fff6d0'); g2.addColorStop(0.5,'#f2d98a'); g2.addColorStop(1,'rgba(240,217,138,0)'); ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(mo.x,mo.y,mo.r*1.6*pulse,0,7); ctx.fill();
+      ctx.fillStyle='#fff4cf'; ctx.beginPath(); ctx.arc(mo.x,mo.y,4,0,7); ctx.fill();
+    }
     if(SET.cb){ ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(mo.x,mo.y,mo.r+3,0,7); ctx.stroke(); }
   }
   // target sprout
@@ -459,10 +481,25 @@ function drawHUD(){
 function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.7)'; roundRect(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; roundRect(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function wrapText(txt,cx,cy,maxw,lh){ var words=txt.split(' '), line='', y=cy; for(var i=0;i<words.length;i++){ var test=line+words[i]+' '; if(ctx.measureText(test).width>maxw && line){ ctx.fillText(line,cx,y); line=words[i]+' '; y+=lh; } else line=test; } ctx.fillText(line,cx,y); }
-function drawAnchor(x,y){ ctx.fillStyle='#3a2c1e'; ctx.beginPath(); ctx.arc(x,y,7,0,7); ctx.fill(); ctx.fillStyle='#5c8f3f'; ctx.beginPath(); ctx.ellipse(x-6,y-3,7,4,-0.6,0,7); ctx.ellipse(x+6,y-2,6,3.5,0.6,0,7); ctx.fill(); }
-function drawVine(ax,ay,bx,by){ var mx=(ax+bx)/2+Math.sin(G.t*2)*2, my=(ay+by)/2; ctx.strokeStyle='#5c8f3f'; ctx.lineWidth=4; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(mx,my,bx,by); ctx.stroke(); ctx.strokeStyle='#7ab356'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(mx,my,bx,by); ctx.stroke(); }
-function drawThorn(th){ ctx.save(); ctx.translate(th.x,th.y); ctx.fillStyle='#3a2430'; ctx.beginPath(); ctx.arc(0,0,th.r*0.6,0,7); ctx.fill(); ctx.fillStyle='#7d3450'; ctx.strokeStyle='#e56b6b'; ctx.lineWidth=1.5; for(var s=0;s<9;s++){ var a=Math.PI*2*s/9+th.ph; ctx.beginPath(); ctx.moveTo(Math.cos(a)*th.r*0.5,Math.sin(a)*th.r*0.5); ctx.lineTo(Math.cos(a)*th.r,Math.sin(a)*th.r); ctx.lineTo(Math.cos(a+0.25)*th.r*0.5,Math.sin(a+0.25)*th.r*0.5); ctx.closePath(); ctx.fill(); } ctx.restore(); }
-function drawPuff(pf){ ctx.save(); ctx.translate(pf.x,pf.y); ctx.rotate(pf.a);
+function drawAnchor(x,y){ var im=spr('sprites','vine_anchor');
+  if(imgReady(im)){ var w=36, h=w*im.naturalHeight/im.naturalWidth; ctx.drawImage(im, x-w/2, y-h*0.5, w, h); return; }
+  ctx.fillStyle='#3a2c1e'; ctx.beginPath(); ctx.arc(x,y,7,0,7); ctx.fill(); ctx.fillStyle='#5c8f3f'; ctx.beginPath(); ctx.ellipse(x-6,y-3,7,4,-0.6,0,7); ctx.ellipse(x+6,y-2,6,3.5,0.6,0,7); ctx.fill(); }
+function drawVine(ax,ay,bx,by){ var im=spr('sprites','vine_segment');
+  if(imgReady(im)){ var len=dist(ax,ay,bx,by), ang=Math.atan2(by-ay,bx-ax), w=12;
+    ctx.save(); ctx.translate(ax,ay); ctx.rotate(ang-Math.PI/2); ctx.drawImage(im, -w/2, 0, w, len); ctx.restore(); return; }
+  var mx=(ax+bx)/2+Math.sin(G.t*2)*2, my=(ay+by)/2; ctx.strokeStyle='#5c8f3f'; ctx.lineWidth=4; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(mx,my,bx,by); ctx.stroke(); ctx.strokeStyle='#7ab356'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(mx,my,bx,by); ctx.stroke(); }
+function drawStub(ax,ay,r){ var im=spr('sprites','vine_stub');
+  if(imgReady(im)){ var w=15, h=w*im.naturalHeight/im.naturalWidth; if(h>48)h=48; ctx.save(); ctx.translate(ax,ay); ctx.rotate(Math.sin(G.t*3+r)*0.06); ctx.drawImage(im, -w/2, 0, w, h); ctx.restore(); return; }
+  ctx.strokeStyle='#3a5a28'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(ax,ay+6); ctx.lineTo(ax+Math.sin(G.t*3+r)*3,ay+18); ctx.stroke(); }
+function drawThorn(th){ var im=spr('sprites','thorn');
+  if(imgReady(im)){ var d=th.r*2.6, w=d, h=d*im.naturalHeight/im.naturalWidth; ctx.save(); ctx.translate(th.x,th.y); ctx.rotate(th.ph*0.15); ctx.drawImage(im, -w/2, -h/2, w, h); ctx.restore();
+    if(SET.cb){ ctx.strokeStyle='#e56b6b'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(th.x,th.y,th.r+3,0,7); ctx.stroke(); } return; }
+  ctx.save(); ctx.translate(th.x,th.y); ctx.fillStyle='#3a2430'; ctx.beginPath(); ctx.arc(0,0,th.r*0.6,0,7); ctx.fill(); ctx.fillStyle='#7d3450'; ctx.strokeStyle='#e56b6b'; ctx.lineWidth=1.5; for(var s=0;s<9;s++){ var a=Math.PI*2*s/9+th.ph; ctx.beginPath(); ctx.moveTo(Math.cos(a)*th.r*0.5,Math.sin(a)*th.r*0.5); ctx.lineTo(Math.cos(a)*th.r,Math.sin(a)*th.r); ctx.lineTo(Math.cos(a+0.25)*th.r*0.5,Math.sin(a+0.25)*th.r*0.5); ctx.closePath(); ctx.fill(); } ctx.restore(); }
+function drawPuff(pf){
+  var im=spr('sprites', pf.fire>0?'bellows_fire':'bellows_idle');
+  if(imgReady(im)){ var w=48, h=w*im.naturalHeight/im.naturalWidth; ctx.save(); ctx.translate(pf.x,pf.y); ctx.rotate(pf.a); ctx.drawImage(im, -w*0.42, -h/2, w, h); ctx.restore();
+    if(SET.cb){ ctx.strokeStyle='rgba(122,179,86,0.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(pf.x,pf.y,pf.rng,0,7); ctx.stroke(); } return; }
+  ctx.save(); ctx.translate(pf.x,pf.y); ctx.rotate(pf.a);
   var lit=pf.fire>0; ctx.fillStyle=lit?'#e0894a':'#8a5a2b'; ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(-14,-12); ctx.lineTo(6,-8); ctx.lineTo(14,0); ctx.lineTo(6,8); ctx.lineTo(-14,12); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.fillStyle='#5c8f3f'; ctx.beginPath(); ctx.arc(-14,0,6,0,7); ctx.fill();
@@ -470,7 +507,16 @@ function drawPuff(pf){ ctx.save(); ctx.translate(pf.x,pf.y); ctx.rotate(pf.a);
   ctx.restore();
   if(SET.cb){ ctx.strokeStyle='rgba(122,179,86,0.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(pf.x,pf.y,pf.rng,0,7); ctx.stroke(); }
 }
-function drawTarget(){ var t=G.target; ctx.save(); ctx.translate(t.x,t.y);
+function drawTarget(){ var t=G.target;
+  // Paper Nocturne sprout pot: bottom-anchored so the pot base stays planted and the
+  // open receptacle mouth sits at (t.x,t.y) — the catch point. Swaps to the bloomed pot on win.
+  var bloomed=G.target.bloom>0.5;
+  var tim=spr('sprites', bloomed?'sprout_pot_bloomed':'sprout_pot_open');
+  if(imgReady(tim)){ var W=92, H=W*tim.naturalHeight/tim.naturalWidth, BOT=86;
+    ctx.save(); ctx.translate(t.x,0); ctx.drawImage(tim, -W/2, t.y+BOT-H, W, H); ctx.restore();
+    if(SET.cb && !bloomed){ ctx.strokeStyle='#5b9bd5'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(t.x,t.y,t.r,0,7); ctx.stroke(); }
+    return; }
+  ctx.save(); ctx.translate(t.x,t.y);
   // pot
   ctx.fillStyle='#7a4a2a'; ctx.beginPath(); ctx.moveTo(-24,18); ctx.lineTo(24,18); ctx.lineTo(19,44); ctx.lineTo(-19,44); ctx.closePath(); ctx.fill();
   ctx.fillStyle='#8a5a34'; ctx.fillRect(-26,10,52,10);
@@ -487,6 +533,9 @@ function drawTarget(){ var t=G.target; ctx.save(); ctx.translate(t.x,t.y);
 }
 function drawDrop(){ var d=G.drop; if(d.dead && G.phase!=='dying')return; ctx.save(); ctx.translate(d.x,d.y);
   if(d.bub){ ctx.strokeStyle='rgba(191,224,242,0.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,DROP_R+9,0,7); ctx.stroke(); }
+  // Paper Nocturne dewdrop sprite (bright 'glint' variant once all nectar is gathered); falls through to the procedural teardrop below.
+  var dim=spr('sprites', G.got>=3?'dewdrop_bright':'dewdrop');
+  if(imgReady(dim)){ var h=(DROP_R+8)*2.3, w=h*dim.naturalWidth/dim.naturalHeight; ctx.drawImage(dim, -w/2, -h/2, w, h); ctx.restore(); return; }
   // glow
   var gl=ctx.createRadialGradient(0,0,1,0,0,DROP_R+8); gl.addColorStop(0,'rgba(191,224,242,0.55)'); gl.addColorStop(1,'rgba(120,180,220,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(0,0,DROP_R+8,0,7); ctx.fill();
   // teardrop body
