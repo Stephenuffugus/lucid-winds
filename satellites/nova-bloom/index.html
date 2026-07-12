@@ -49,7 +49,7 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:960px; display
   padding:26px; text-align:center}
 .screen.on{display:flex}
 /* drop-in title backdrop (image under the radial tint; radial-gradient stays as fallback if the JPG is missing) */
-#s-title{ background:radial-gradient(110% 90% at 50% 10%, #0f161066 0%, #060907e8 78%), url('assets/bg/bg_title.jpg?v=nbart1') center/cover no-repeat, #060907; }
+#s-title{ background:radial-gradient(110% 90% at 50% 10%, #0f161066 0%, #060907e8 78%), url('assets/bg/bg_title.jpg?v=nbart2') center/cover no-repeat, #060907; }
 h1.logo{font-size:2.1rem; letter-spacing:.14em; color:var(--cream); text-shadow:0 0 22px #7ab35688}
 h1.logo b{color:var(--pink); text-shadow:0 0 22px #e58fa088}
 .tag{color:var(--muted); font-size:.8rem; max-width:400px; line-height:1.5}
@@ -210,11 +210,24 @@ function fit(){ var vw=window.innerWidth, vh=window.innerHeight, s=Math.min(vw/W
 window.addEventListener("resize",fit); fit();
 
 /* ---------- background art (DROP-IN; procedural palette bg stays as fallback) ---------- */
-var NB_ASSET_V="nbart1";
+var NB_ASSET_V="nbart2";
 function _nbImg(src){ var im=new Image(); try{ im.src=src+"?v="+NB_ASSET_V; }catch(e){} return im; }
 var NB_BG={ meadow:_nbImg("assets/bg/bg_meadow.jpg"), violet:_nbImg("assets/bg/bg_violet.jpg"), dawn:_nbImg("assets/bg/bg_dawn.jpg") };
 function _nbReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
 function nbPlayBg(){ var im=NB_BG[PROG.pal]; if(_nbReady(im))return im; return null; }
+/* ---------- sprite art (DROP-IN; every draw site falls through to the procedural vector) ---------- */
+var NB_SHIP={ dandelion:_nbImg("assets/sprites/ship_dandelion.png"), maple:_nbImg("assets/sprites/ship_maple.png"),
+  firefly:_nbImg("assets/sprites/ship_firefly.png"), comet:_nbImg("assets/sprites/ship_comet.png") };
+var NB_ENEMY={ moth:_nbImg("assets/sprites/enemy_moth.png"), wasp:_nbImg("assets/sprites/enemy_wasp.png"),
+  dart:_nbImg("assets/sprites/enemy_dart.png"), mine:_nbImg("assets/sprites/enemy_mine.png"),
+  bulb:_nbImg("assets/sprites/enemy_bulb.png"), bulbOverfed:_nbImg("assets/sprites/enemy_bulb_overfed.png"),
+  serpentHead:_nbImg("assets/sprites/enemy_serpent_head.png"), serpentSeg:_nbImg("assets/sprites/enemy_serpent_segment.png") };
+var NB_FX={ flowerSprout:_nbImg("assets/fx/flower_sprout.png"), flowerBud:_nbImg("assets/fx/flower_bud.png"),
+  flowerMature:_nbImg("assets/fx/flower_mature.png"), gate:_nbImg("assets/fx/gate.png") };
+/* draw a sprite centered at (x,y), rotated ang (sprites face RIGHT), scaled to target WIDTH in px (aspect kept) */
+function drawSpr(c,im,x,y,ang,wide){ var w=im.naturalWidth, h=im.naturalHeight; if(!w||!h)return;
+  var dw=wide, dh=h*(wide/w);
+  c.save(); c.translate(x,y); if(ang)c.rotate(ang); c.drawImage(im,-dw/2,-dh/2,dw,dh); c.restore(); }
 
 /* ---------- warp grid ---------- */
 var GS=36, GC=Math.floor(W/GS)+1, GR=Math.floor(H/GS)+1, GPTS=[];
@@ -675,6 +688,7 @@ function updateHud(){
 
 /* ---------- render ---------- */
 function drawShip(c,x,y,ang,skin,col){
+  var _si=NB_SHIP[skin]; if(_nbReady(_si)){ drawSpr(c,_si,x,y,ang,34); return; }
   c.save(); c.translate(x,y); c.rotate(ang);
   var pass;
   for(pass=0;pass<2;pass++){
@@ -691,6 +705,24 @@ function drawShip(c,x,y,ang,skin,col){
 }
 function neonStroke(c,col,wide){ c.strokeStyle=col; c.lineWidth=wide?4:1.4; c.globalAlpha=wide?0.22:1; }
 function drawEnemy(c,e){
+  /* sprite path (returns early; falls through to procedural vectors below if art not ready) */
+  if(e.t==="serpent"){
+    var _sh=NB_ENEMY.serpentHead, _ss=NB_ENEMY.serpentSeg;
+    if(_nbReady(_sh)&&_nbReady(_ss)){ var _si2;
+      for(_si2=e.segs.length-1;_si2>=0;_si2--){ var _sg=e.segs[_si2];
+        var _ah=(_si2===0)?{x:e.x,y:e.y}:e.segs[_si2-1];
+        drawSpr(c,_ss,_sg.x,_sg.y,Math.atan2(_ah.y-_sg.y,_ah.x-_sg.x),20); }
+      drawSpr(c,_sh,e.x,e.y,(e.segs.length?Math.atan2(e.y-e.segs[0].y,e.x-e.segs[0].x):0),26);
+      return; }
+  } else {
+    var _es=null,_ea=0,_ez=26;
+    if(e.t==="moth"){ _es=NB_ENEMY.moth; _ez=28; }
+    else if(e.t==="wasp"){ _es=NB_ENEMY.wasp; _ea=Math.atan2(G.P.y-e.y,G.P.x-e.x); _ez=28; }
+    else if(e.t==="dart"){ _es=NB_ENEMY.dart; _ea=(e.st==="dash")?Math.atan2(e.dy,e.dx):G.tick*0.1; _ez=24; }
+    else if(e.t==="mine"){ _es=NB_ENEMY.mine; _ea=G.tick*0.01; _ez=32; }
+    else if(e.t==="bulb"){ _es=(e.feed>=12?NB_ENEMY.bulbOverfed:NB_ENEMY.bulb); _ez=e.r*2+8; }
+    if(_es&&_nbReady(_es)){ drawSpr(c,_es,e.x,e.y,_ea,_ez); return; }
+  }
   var pass;
   for(pass=0;pass<2;pass++){
     c.save(); c.translate(e.x,e.y);
@@ -750,6 +782,9 @@ function render(){
   var i,pass;
   /* flowers */
   for(i=0;i<G.flowers.length;i++){ var f=G.flowers[i];
+    var _fmat=(f.age>=480), _fim=_fmat?NB_FX.flowerMature:(f.age<160?NB_FX.flowerSprout:NB_FX.flowerBud);
+    if(_nbReady(_fim)){ var _fpu=_fmat?(1+Math.sin(G.tick*0.1+i)*0.12):1;
+      drawSpr(c,_fim,f.x,f.y,_fmat?G.tick*0.01:0,(_fmat?26:(10+f.age/480*10))*_fpu); continue; }
     if(f.age<480){ c.strokeStyle="#7ab356"; c.globalAlpha=0.8; c.lineWidth=1.4;
       var gr=3+f.age/480*7;
       c.beginPath(); c.arc(f.x,f.y,gr,0,TAU); c.stroke();
@@ -762,6 +797,7 @@ function render(){
       c.beginPath(); c.arc(f.x,f.y,3,0,TAU); c.fill(); } }
   /* gates */
   for(i=0;i<G.gates.length;i++){ var g=G.gates[i];
+    if(_nbReady(NB_FX.gate)){ drawSpr(c,NB_FX.gate,g.x,g.y,g.a,g.len*2+16); continue; }
     var gx1=g.x-Math.cos(g.a)*g.len, gy1=g.y-Math.sin(g.a)*g.len,
         gx2=g.x+Math.cos(g.a)*g.len, gy2=g.y+Math.sin(g.a)*g.len;
     for(pass=0;pass<2;pass++){ c.strokeStyle="#ffd76a"; c.lineWidth=pass?1.4:4; c.globalAlpha=pass?0.9:0.2;
