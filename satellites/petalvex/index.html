@@ -325,15 +325,29 @@ function drawTile(g, x, y, s, tile, alpha, seamState){
     [ [x,y+s],[x,y],[cx,cy] ]        // left
   ];
   var np=[ [cx, y+s*0.20], [x+s*0.80, cy], [cx, y+s*0.80], [x+s*0.20, cy] ];
+  var _useSpr=pvTilesReady();
   for(var q=0;q<4;q++){
     var v=tile.edges[q];
-    var col=SET.color?VCOL[v]:'#26301c';
-    g.beginPath(); g.moveTo(quads[q][0][0],quads[q][0][1]); g.lineTo(quads[q][1][0],quads[q][1][1]); g.lineTo(quads[q][2][0],quads[q][2][1]); g.closePath();
-    g.fillStyle=col; g.fill();
+    if(_useSpr){
+      // clip to this edge's wedge triangle, then draw the enamel sprite rotated so its
+      // authored base-at-top maps to top/right/bottom/left for q=0/1/2/3.
+      var wp=SET.color?('tiles/wedge_'+v):'tiles/wedge_plain';
+      g.save();
+      g.beginPath(); g.moveTo(quads[q][0][0],quads[q][0][1]); g.lineTo(quads[q][1][0],quads[q][1][1]); g.lineTo(quads[q][2][0],quads[q][2][1]); g.closePath(); g.clip();
+      g.translate(cx,cy); g.rotate(q*Math.PI/2);
+      try{ g.drawImage(_pvSpr(wp),-s/2,-s/2,s,s); }catch(e){}
+      g.restore();
+    } else {
+      var col=SET.color?VCOL[v]:'#26301c';
+      g.beginPath(); g.moveTo(quads[q][0][0],quads[q][0][1]); g.lineTo(quads[q][1][0],quads[q][1][1]); g.lineTo(quads[q][2][0],quads[q][2][1]); g.closePath();
+      g.fillStyle=col; g.fill();
+    }
   }
-  // subtle diagonals + border
-  g.strokeStyle='rgba(0,0,0,0.30)'; g.lineWidth=Math.max(1,s*0.012);
-  g.beginPath(); g.moveTo(x,y); g.lineTo(x+s,y+s); g.moveTo(x+s,y); g.lineTo(x,y+s); g.stroke();
+  if(!_useSpr){
+    // subtle diagonals + border (sprite wedges carry their own gold wire edges)
+    g.strokeStyle='rgba(0,0,0,0.30)'; g.lineWidth=Math.max(1,s*0.012);
+    g.beginPath(); g.moveTo(x,y); g.lineTo(x+s,y+s); g.moveTo(x+s,y); g.lineTo(x,y+s); g.stroke();
+  }
   // numbers
   g.font='700 '+Math.round(s*0.20)+'px -apple-system,system-ui,sans-serif';
   g.textAlign='center'; g.textBaseline='middle';
@@ -342,10 +356,15 @@ function drawTile(g, x, y, s, tile, alpha, seamState){
     g.fillStyle=SET.color?VINK[vv]:'#e8dcc8';
     g.fillText(''+vv, np[q][0], np[q][1]);
   }
-  // outer frame
-  g.lineWidth=Math.max(1.5,s*0.02);
-  g.strokeStyle=tile.locked?'#c8a84b':'rgba(232,220,200,0.55)';
-  g.strokeRect(x+g.lineWidth/2, y+g.lineWidth/2, s-g.lineWidth, s-g.lineWidth);
+  // outer frame — enamel tile_frame sprite when ready (locked tiles get a gold glow), else strokeRect
+  if(_useSpr && _pvReady(_pvSpr('tiles/tile_frame'))){
+    try{ g.drawImage(_pvSpr('tiles/tile_frame'), x, y, s, s); }catch(e){}
+    if(tile.locked){ g.save(); g.shadowColor='#f2d98a'; g.shadowBlur=Math.max(4,s*0.12); g.globalAlpha=0.9; try{ g.drawImage(_pvSpr('tiles/tile_frame'), x, y, s, s); }catch(e){} g.restore(); }
+  } else {
+    g.lineWidth=Math.max(1.5,s*0.02);
+    g.strokeStyle=tile.locked?'#c8a84b':'rgba(232,220,200,0.55)';
+    g.strokeRect(x+g.lineWidth/2, y+g.lineWidth/2, s-g.lineWidth, s-g.lineWidth);
+  }
   if(tile.locked){ g.fillStyle='#c8a84b'; g.font='700 '+Math.round(s*0.16)+'px system-ui'; g.textAlign='right'; g.textBaseline='top'; g.fillText('🔒', x+s-3, y+2); }
   // seam overlays
   if(seamState){
@@ -382,6 +401,13 @@ var PV_ASSET_V='pvart1';
 function _pvImg(src){ var im=new Image(); try{ im.src=src+'?v='+PV_ASSET_V; }catch(e){} return im; }
 var PV_BED=_pvImg('assets/bg/bg_bed.jpg');
 function _pvReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+/* sprite art map — enamel wedges / frame / fx motes, drawn over the procedural shapes when ready */
+var PV_SPR={};
+function _pvSpr(path){ if(!PV_SPR[path])PV_SPR[path]=_pvImg('assets/'+path+'.png'); return PV_SPR[path]; }
+function pvTilesReady(){ if(SET.color){ for(var v=0;v<10;v++){ if(!_pvReady(_pvSpr('tiles/wedge_'+v)))return false; } return true; } return _pvReady(_pvSpr('tiles/wedge_plain')); }
+var PV_PARTS_SPR=['fx/fx_petal_a','fx/fx_petal_b','fx/fx_pollen'];
+/* warm the tile / fx sprites so they're ready before the first draw (no procedural flash) */
+(function(){ var pre=['tiles/wedge_plain','tiles/tile_frame'].concat(PV_PARTS_SPR); for(var v=0;v<10;v++)pre.push('tiles/wedge_'+v); pre.forEach(function(p){ _pvSpr(p); }); })();
 function fmtTime(ms){ var s=Math.floor(ms/1000); var m=Math.floor(s/60); s=s%60; return m+':'+(s<10?'0':'')+s; }
 function render(){
   if(!ctx) return;
