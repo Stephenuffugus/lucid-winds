@@ -311,6 +311,48 @@ var DEATH_MARGIN=8;
 var PAL={ bg:'#0d100c', sage:'#7ab356', deep:'#3f6b34', gold:'#c8a84b', cream:'#e8dcc8',
   muted:'#8a9178', bark:'#6b4a2b', pink:'#e58fa0', ink:'#12160f', coral:'#e8823a', sky:'#7aa6d6' };
 
+/* ---------- drop-in ART loader (Sunlit Vector Garden pack) -----------------
+   Preloads each PNG/JPG once, keyed folder/name; every draw site tries the
+   sprite when ready and falls through to the original procedural draw when the
+   image is missing. Skins only the WORLD (bg / platforms / critters / pickups /
+   powerups) — the climber, beanstalk and studio cosmetics stay procedural. */
+var ART_VER='sproart1';
+var ART={};
+function _artExt(folder){ return folder==='bg'?'jpg':'png'; }
+function artLoad(folder,name){ var k=folder+'/'+name; if(ART[k]) return ART[k];
+  var o={img:new Image(),ready:false};
+  o.img.onload=function(){ o.ready=(o.img.naturalWidth>0); };
+  o.img.src='assets/'+folder+'/'+name+'.'+_artExt(folder)+'?v='+ART_VER;
+  ART[k]=o; return o; }
+function artOK(folder,name){ var o=ART[folder+'/'+name]; return !!(o&&o.ready&&o.img.complete&&o.img.naturalWidth>0); }
+/* draw sprite centred at (cx,cy) to a target WIDTH (height keeps aspect); optional h-flip. */
+function drawArt(g,folder,name,cx,cy,drawW,flip){ var o=ART[folder+'/'+name]; if(!o||!o.ready) return false;
+  var im=o.img, iw=im.naturalWidth, ih=im.naturalHeight; if(!iw||!ih) return false;
+  var h=drawW*ih/iw; g.save(); g.translate(cx,cy); if(flip) g.scale(-1,1);
+  g.drawImage(im,-drawW/2,-h/2,drawW,h); g.restore(); return true; }
+/* draw sprite bottom-anchored at (cx,by), width drawW*sc. */
+function drawArtBottom(g,folder,name,cx,by,drawW,sc){ var o=ART[folder+'/'+name]; if(!o||!o.ready) return false;
+  var im=o.img, iw=im.naturalWidth, ih=im.naturalHeight; if(!iw||!ih) return false;
+  var w=drawW*sc, h=w*ih/iw; g.drawImage(im,cx-w/2,by-h,w,h); return true; }
+/* cover-fit a background image over the full canvas. */
+function drawBgCover(g,im){ var iw=im.naturalWidth, ih=im.naturalHeight; if(!iw||!ih) return;
+  var s=Math.max(VW/iw,VH/ih), w=iw*s, h=ih*s; g.drawImage(im,(VW-w)/2,(VH-h)/2,w,h); }
+var BG_NAMES=['garden_bed','hedgerow','canopy','clouds','upper_air','starfield'];
+/* cross-fade the 6 biome skies by altitude; returns false if art not ready. */
+function drawBiomeBg(g,m){ var f=Math.min(Math.max(m,0),3000)/500, i=Math.min(5,Math.floor(f)), t=f-i;
+  var oa=ART['bg/bg_'+BG_NAMES[i]]; if(!oa||!oa.ready) return false; drawBgCover(g,oa.img);
+  if(t>0.001){ var ob=ART['bg/bg_'+BG_NAMES[Math.min(5,i+1)]]; if(ob&&ob.ready){ g.globalAlpha=t; drawBgCover(g,ob.img); g.globalAlpha=1; } }
+  return true; }
+function preloadArt(){ var i;
+  for(i=0;i<BG_NAMES.length;i++) artLoad('bg','bg_'+BG_NAMES[i]);
+  var plats=['broad','drifting','crumble','dewy','dandelion','mushroom','fiddlehead','thornleaf','thornleaf_armed','flytrap','flytrap_open'];
+  for(i=0;i<plats.length;i++) artLoad('platforms','platform_'+plats[i]);
+  var crit=['aphid','wasp','snail','beetle','spider']; for(i=0;i<crit.length;i++) artLoad('critters',crit[i]);
+  var pick=['coin_nectar','coin_gold','hazard_seed','hazard_bramble']; for(i=0;i<pick.length;i++) artLoad('pickups',pick[i]);
+  var pw=['dandelion_parachute','nectar_magnet','bubble_shield','propeller_seed','spring_roots','giant_leaf','shrink_bud','pollen_jetpack','slow_time_honey','ghost_spores'];
+  for(i=0;i<pw.length;i++) artLoad('powerups','powerup_'+pw[i]); }
+preloadArt();
+
 var DRAW_PALETTE=[
   ['#12160f','Ink'],['#e8dcc8','Cream'],['#7ab356','Sage'],['#3f6b34','Deep leaf'],
   ['#c8a84b','Gold'],['#6b4a2b','Bark'],['#e58fa0','Petal'],['#e8823a','Coral'],
@@ -1438,7 +1480,12 @@ function renderGame(){
   var g=GC; g.setTransform(DPR,0,0,DPR,0,0); g.clearRect(0,0,VW,VH);
   // sky
   if(SET.highContrast){ g.fillStyle='#0a0d0a'; g.fillRect(0,0,VW,VH); }
-  else { var pr=skyPair(game.meters), grd=g.createLinearGradient(0,0,0,VH); grd.addColorStop(0,pr[0]); grd.addColorStop(1,pr[1]); g.fillStyle=grd; g.fillRect(0,0,VW,VH); }
+  else {
+    // biome background art (skip when a cosmetic THEME_SKY is equipped); gradient fallback
+    var usedBg=false;
+    if(!(themeEquip&&themeEquip!=='default')) usedBg=drawBiomeBg(g,game.meters);
+    if(!usedBg){ var pr=skyPair(game.meters), grd=g.createLinearGradient(0,0,0,VH); grd.addColorStop(0,pr[0]); grd.addColorStop(1,pr[1]); g.fillStyle=grd; g.fillRect(0,0,VW,VH); }
+  }
   // stars (upper biomes)
   if(!SET.highContrast && game.meters>1800 && !reduceMotion()){ g.fillStyle='rgba(255,240,190,.8)'; for(var s=0;s<40;s++){ var sx=(s*137)%VW, sy=((s*89 - game.camY*0.25)%VH+VH)%VH; g.globalAlpha=0.4+0.4*Math.sin(game.t*2+s); g.fillRect(sx,sy,2,2); } g.globalAlpha=1; }
   // shake
@@ -1481,6 +1528,14 @@ function glyph(g,x,y,txt){ g.fillStyle='rgba(255,255,255,.85)'; g.font='bold '+(
 function leafBody(g,x,y,w,col){ g.fillStyle=col; g.strokeStyle='rgba(20,25,15,.6)'; g.lineWidth=2; g.beginPath(); g.ellipse(x,y+4,w/2,9,0,0,7); g.fill(); g.stroke(); }
 function drawPlatform(g,pl,sy){
   var x=pl.x,w=pl.w;
+  // ART: leaf-pad sprite keyed by type (+ armed/open danger states); fall through to procedural
+  var _an=pl.type;
+  if(pl.type==='thornleaf' && pl.thornUp) _an='thornleaf_armed';
+  else if(pl.type==='flytrap' && pl.trapOpen) _an='flytrap_open';
+  if(artOK('platforms','platform_'+_an)){
+    var _dw=w*1.16; if(pl.type==='dandelion'){ var _a=pl.fadeT!=null?Math.max(0.15,pl.fadeT/0.7):1; g.globalAlpha=_a; }
+    drawArt(g,'platforms','platform_'+_an,x,sy+2,_dw); g.globalAlpha=1; return;
+  }
   switch(pl.type){
     case 'broad': leafBody(g,x,sy,w,PAL.sage); g.strokeStyle='rgba(20,25,15,.4)'; g.lineWidth=1.5; g.beginPath(); g.moveTo(x-w/2+8,sy+4); g.lineTo(x+w/2-8,sy+4); g.stroke(); break;
     case 'drifting': leafBody(g,x,sy,w,PAL.sage); g.strokeStyle=PAL.deep; g.lineWidth=3; g.beginPath(); var tx=x+(pl.vx>=0?w/2:-w/2); g.moveTo(tx,sy+4); g.quadraticCurveTo(tx+(pl.vx>=0?14:-14),sy-2,tx+(pl.vx>=0?8:-8),sy-12); g.stroke(); break;
@@ -1498,6 +1553,11 @@ function dangerRing(g,x,y,r){ if(reduceMotion()){ g.strokeStyle='rgba(255,255,25
 function drawPest(g,pe,sy){
   var x=pe.x;
   dangerRing(g,x,sy,pe.r);
+  // ART: critter sprite (faces RIGHT; mirror on leftward travel). Keep the spider's gameplay thread.
+  if(artOK('critters',pe.type)){
+    if(pe.type==='spider'){ g.strokeStyle='rgba(255,255,255,.4)'; g.setLineDash([3,3]); g.beginPath(); g.moveTo(x,(pe.top-game.camY)); g.lineTo(x,sy); g.stroke(); g.setLineDash([]); }
+    drawArt(g,'critters',pe.type,x,sy,(pe.r||14)*2.7,(pe.vx||0)<0); return;
+  }
   g.strokeStyle=PAL.ink; g.lineWidth=2;
   if(pe.type==='aphid'){ g.fillStyle='#8fbf4a'; for(var a=0;a<4;a++){ g.beginPath(); g.arc(x+Math.cos(a*1.6)*7,sy+Math.sin(a*1.6)*7,5,0,7); g.fill(); g.stroke(); } }
   else if(pe.type==='wasp'){ g.fillStyle='#f2d24b'; g.beginPath(); g.ellipse(x,sy,13,7,0,0,7); g.fill(); g.stroke(); g.strokeStyle=PAL.ink; g.lineWidth=3; g.beginPath(); g.moveTo(x-6,sy-3); g.lineTo(x+6,sy-3); g.moveTo(x-2,sy+3); g.lineTo(x+6,sy+3); g.stroke(); g.fillStyle=PAL.ink; g.beginPath(); g.moveTo(x+13,sy); g.lineTo(x+20,sy-3); g.lineTo(x+20,sy+3); g.fill(); }
@@ -1505,17 +1565,25 @@ function drawPest(g,pe,sy){
   else if(pe.type==='beetle'){ g.fillStyle='#5a3a7a'; g.beginPath(); g.ellipse(x,sy,12,9,0,0,7); g.fill(); g.stroke(); g.beginPath(); g.moveTo(x,sy-9); g.lineTo(x,sy+9); g.stroke(); g.fillStyle=PAL.ink; g.beginPath(); g.moveTo(x+12,sy); g.lineTo(x+18,sy-2); g.lineTo(x+18,sy+2); g.fill(); }
   else if(pe.type==='spider'){ g.strokeStyle='rgba(255,255,255,.4)'; g.setLineDash([3,3]); g.beginPath(); g.moveTo(x,(pe.top-game.camY)); g.lineTo(x,sy); g.stroke(); g.setLineDash([]); g.fillStyle='#2a2a2a'; g.beginPath(); g.arc(x,sy,10,0,7); g.fill(); g.strokeStyle=PAL.ink; g.lineWidth=1.5; for(var l=0;l<4;l++){ g.beginPath(); g.moveTo(x-10,sy-4+l*3); g.lineTo(x-18,sy-6+l*4); g.moveTo(x+10,sy-4+l*3); g.lineTo(x+18,sy-6+l*4); g.stroke(); } g.fillStyle='#fff'; g.beginPath(); g.arc(x-3,sy-2,2,0,7); g.arc(x+3,sy-2,2,0,7); g.fill(); }
 }
-function drawCoin(g,x,y,r,gold){ g.save(); g.fillStyle=gold?'#ffe27a':PAL.gold; g.strokeStyle='#8a6a1f'; g.lineWidth=2; g.beginPath(); g.ellipse(x,y,r*0.7,r,0,0,7); g.fill(); g.stroke(); g.strokeStyle='rgba(255,255,255,.7)'; g.lineWidth=1.5; g.beginPath(); g.moveTo(x,y-r+3); g.lineTo(x,y+r-3); g.stroke(); if(gold){ g.fillStyle='#fff'; g.font='9px sans-serif'; g.textAlign='center'; g.fillText('★',x,y+3); g.textAlign='left'; } g.restore(); }
+function drawCoin(g,x,y,r,gold){ if(artOK('pickups',gold?'coin_gold':'coin_nectar')){ drawArt(g,'pickups',gold?'coin_gold':'coin_nectar',x,y,r*2.7); return; } g.save(); g.fillStyle=gold?'#ffe27a':PAL.gold; g.strokeStyle='#8a6a1f'; g.lineWidth=2; g.beginPath(); g.ellipse(x,y,r*0.7,r,0,0,7); g.fill(); g.stroke(); g.strokeStyle='rgba(255,255,255,.7)'; g.lineWidth=1.5; g.beginPath(); g.moveTo(x,y-r+3); g.lineTo(x,y+r-3); g.stroke(); if(gold){ g.fillStyle='#fff'; g.font='9px sans-serif'; g.textAlign='center'; g.fillText('★',x,y+3); g.textAlign='left'; } g.restore(); }
 function drawPowerup(g,x,y,id){
   g.save(); var pulse=reduceMotion()?1:(1+0.08*Math.sin(game.t*5));
+  // ART: draw the pod sprite (already carries its own gold glow ring) instead of ring + emoji glyph
+  if(artOK('powerups','powerup_'+id)){ drawArt(g,'powerups','powerup_'+id,x,y,42*pulse); g.restore(); return; }
   g.fillStyle='rgba(200,168,75,.18)'; g.beginPath(); g.arc(x,y,18*pulse,0,7); g.fill();
   g.fillStyle='#141c10'; g.strokeStyle=PAL.gold; g.lineWidth=2.5; g.beginPath(); g.arc(x,y,15,0,7); g.fill(); g.stroke();
   g.fillStyle=PAL.cream; g.font='bold 16px sans-serif'; g.textAlign='center'; g.fillText(POW_SYM[id]||'?',x,y+6); g.textAlign='left'; g.restore();
 }
 function drawHazard(g,hz,cam){
   if(hz.type==='wind'){ var y0=hz.y0-cam,y1=hz.y1-cam; g.strokeStyle='rgba(200,230,255,.25)'; g.lineWidth=2; for(var yy=Math.max(0,y1);yy<Math.min(VH,y0);yy+=22){ var off=(game.t*hz.dir*80)%40; g.beginPath(); g.moveTo(0,yy); g.lineTo(VW,yy); g.stroke(); } g.fillStyle='rgba(200,230,255,.5)'; g.font='20px sans-serif'; g.textAlign='center'; g.fillText(hz.dir>0?'➜':'⬅',VW/2,(y0+y1)/2); g.textAlign='left'; }
-  else if(hz.type==='seed'){ var sy=hz.y-cam; if(sy<-20||sy>VH+20) return; g.save(); g.translate(hz.x,sy); g.rotate(hz.phase); g.fillStyle='#c89a5a'; g.strokeStyle=PAL.ink; g.lineWidth=1.5; g.beginPath(); g.ellipse(8,0,10,4,0,0,7); g.fill(); g.stroke(); g.fillStyle='#6b4a2b'; g.beginPath(); g.arc(0,0,3,0,7); g.fill(); g.restore(); }
-  else if(hz.type==='bramble'){ var by=hz.y-cam; if(by<-20||by>VH+20) return; var e=hz.ext||0; g.fillStyle='#5a3a2a'; for(var bx=10;bx<VW;bx+=30){ g.beginPath(); g.moveTo(bx-8,by+8); g.lineTo(bx,by-14*e); g.lineTo(bx+8,by+8); g.fill(); } }
+  else if(hz.type==='seed'){ var sy=hz.y-cam; if(sy<-20||sy>VH+20) return; g.save(); g.translate(hz.x,sy); g.rotate(hz.phase);
+    // ART: spinning samara (supplied upright; engine rotates via hz.phase)
+    if(!drawArt(g,'pickups','hazard_seed',0,0,24)){ g.fillStyle='#c89a5a'; g.strokeStyle=PAL.ink; g.lineWidth=1.5; g.beginPath(); g.ellipse(8,0,10,4,0,0,7); g.fill(); g.stroke(); g.fillStyle='#6b4a2b'; g.beginPath(); g.arc(0,0,3,0,7); g.fill(); }
+    g.restore(); }
+  else if(hz.type==='bramble'){ var by=hz.y-cam; if(by<-20||by>VH+20) return; var e=hz.ext||0;
+    // ART: bramble sprigs across the row, height driven by extension e; procedural triangle fallback
+    var _bok=artOK('pickups','hazard_bramble');
+    g.fillStyle='#5a3a2a'; for(var bx=10;bx<VW;bx+=30){ if(_bok){ drawArtBottom(g,'pickups','hazard_bramble',bx,by+8,30,0.45+e*0.75); } else { g.beginPath(); g.moveTo(bx-8,by+8); g.lineTo(bx,by-14*e); g.lineTo(bx+8,by+8); g.fill(); } } }
 }
 function drawPlayer(g,cam,xoff){
   if(!curSprite) return; var p=game.player;
