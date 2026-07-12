@@ -219,7 +219,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
    BRIDGEVINE — living truss builder (Sky Wolf Studios)
    Campaign #24 (prototype-first). Verlet nodes + stick struts.
    ============================================================ */
-var BUILD="v1.0";
+var BUILD="v1.1";
 var W=540, H=784;
 var GRAV=0.16, DAMP=0.993, ITER=7, MAXV=6;
 var REACH=120, MINGAP=26, MAXLINK=3;
@@ -635,6 +635,19 @@ function drawSkyCover(img){ /* cover-fit the 540x784 canvas, centred */
   var iw=img.naturalWidth, ih=img.naturalHeight; if(!iw||!ih)return;
   var s=Math.max(W/iw, H/ih), dw=iw*s, dh=ih*s;
   ctx.drawImage(img,(W-dw)/2,(H-dh)/2,dw,dh); }
+/* ---- drop-in art sprites for pods + struts (procedural draw stays the fallback) ---- */
+var _artC={};
+function artImg(sub,name){ var key=sub+"/"+name, im=_artC[key];
+  if(im===undefined){ im=new Image(); im.onerror=function(){}; im.src="assets/"+key+".png?v="+BUILD; _artC[key]=im; }
+  return im; }
+function imgReady(im){ return !!(im&&im.complete&&im.naturalWidth>0); }
+/* aspect-preserving centred draw, max dimension = size */
+function drawSpriteFit(im,cx,cy,size){ var nw=im.naturalWidth, nh=im.naturalHeight; if(!nw||!nh)return;
+  var sc=size/Math.max(nw,nh), w=nw*sc, h=nh*sc; ctx.drawImage(im,cx-w/2,cy-h/2,w,h); }
+/* stretched + rotated draw along a segment (w=length, h=thickness) */
+function drawSpriteWH(im,cx,cy,w,h,ang){ if(!im.naturalWidth)return;
+  ctx.save(); ctx.translate(cx,cy); if(ang)ctx.rotate(ang); ctx.drawImage(im,-w/2,-h/2,w,h); ctx.restore(); }
+var POD_IMG={ sprout:"pod_sprout", acorn:"pod_acorn", lantern:"pod_lantern", berry:"pod_berry" };
 function render(){
   if(!G){ return; }
   var sky=SKIES[PROG.sky]||SKIES.meadow;
@@ -679,14 +692,25 @@ function render(){
     var lim=s.crystal?LIM_C:LIM_N, f=Math.min(1,s.stress/lim);
     var col; if(f<0.4)col= s.crystal?"#bfe0f2":"#7ab356";
     else if(f<0.7)col="#c8a84b"; else col="#e56b6b";
-    ctx.strokeStyle=col; ctx.lineWidth=s.crystal?5:3.5;
-    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-    if(s.crystal){ ctx.strokeStyle="rgba(232,246,255,0.7)"; ctx.lineWidth=1.5;
+    /* sprite strut: state by strain, crystal + wardrobe craft styles keyed off PROG */
+    var sState=f<0.4?"calm":(f<0.7?"worried":"critical");
+    var sName=s.crystal?("strut_crystal_"+sState)
+      :(PROG.craft==="braid"?"strut_braid":(PROG.craft==="gold"?"strut_goldthread":("strut_vine_"+sState)));
+    var sImg=artImg("struts",sName);
+    if(imgReady(sImg)){
+      var sdx=b.x-a.x, sdy=b.y-a.y, slen=Math.sqrt(sdx*sdx+sdy*sdy)||1;
+      var sth=Math.max(s.crystal?14:12, Math.min(s.crystal?24:22, slen*(s.crystal?0.34:0.30)));
+      drawSpriteWH(sImg,(a.x+b.x)/2,(a.y+b.y)/2,slen,sth,Math.atan2(sdy,sdx));
+    } else {
+      ctx.strokeStyle=col; ctx.lineWidth=s.crystal?5:3.5;
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-      var mm=3, mk; for(mk=1;mk<=mm;mk++){ var tt=mk/(mm+1), bx0=a.x+(b.x-a.x)*tt, by0=a.y+(b.y-a.y)*tt;
-        var nx0=-(b.y-a.y), ny0=(b.x-a.x), nl0=Math.sqrt(nx0*nx0+ny0*ny0)||1;
-        ctx.strokeStyle="rgba(191,224,242,0.9)"; ctx.lineWidth=1.5;
-        ctx.beginPath(); ctx.moveTo(bx0-nx0/nl0*4,by0-ny0/nl0*4); ctx.lineTo(bx0+nx0/nl0*4,by0+ny0/nl0*4); ctx.stroke(); } }
+      if(s.crystal){ ctx.strokeStyle="rgba(232,246,255,0.7)"; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        var mm=3, mk; for(mk=1;mk<=mm;mk++){ var tt=mk/(mm+1), bx0=a.x+(b.x-a.x)*tt, by0=a.y+(b.y-a.y)*tt;
+          var nx0=-(b.y-a.y), ny0=(b.x-a.x), nl0=Math.sqrt(nx0*nx0+ny0*ny0)||1;
+          ctx.strokeStyle="rgba(191,224,242,0.9)"; ctx.lineWidth=1.5;
+          ctx.beginPath(); ctx.moveTo(bx0-nx0/nl0*4,by0-ny0/nl0*4); ctx.lineTo(bx0+nx0/nl0*4,by0+ny0/nl0*4); ctx.stroke(); } }
+    }
     /* colorblind notches: 1 notch worried, 2 notches critical */
     var notches=f>=0.7?2:(f>=0.4?1:0);
     if(notches>0){ var mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
@@ -698,13 +722,19 @@ function render(){
   }
   /* nodes */
   var pc=PODCOLS[PROG.pod]||PODCOLS.sprout;
+  var _anchImg=artImg("pods","anchor_root");
+  var _podImg=artImg("pods",POD_IMG[PROG.pod]||"pod_sprout");
   for(i=0;i<G.nodes.length;i++){ var nd=G.nodes[i]; if(nd.dead)continue;
-    if(nd.pin){ ctx.fillStyle="#5c3a1a"; ctx.beginPath(); ctx.arc(nd.x,nd.y,10,0,6.283); ctx.fill();
-      ctx.strokeStyle="#8a5a2b"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(nd.x,nd.y,10,0,6.283); ctx.stroke();
-      ctx.fillStyle="#c8a84b"; ctx.beginPath(); ctx.arc(nd.x,nd.y,3.5,0,6.283); ctx.fill(); }
-    else { ctx.fillStyle=pc[1]; ctx.beginPath(); ctx.arc(nd.x,nd.y,11,0,6.283); ctx.fill();
-      ctx.fillStyle=pc[0]; ctx.beginPath(); ctx.arc(nd.x,nd.y,8,0,6.283); ctx.fill();
-      ctx.fillStyle="#eafbd6"; ctx.beginPath(); ctx.arc(nd.x-3,nd.y-3,2.4,0,6.283); ctx.fill(); } }
+    if(nd.pin){
+      if(imgReady(_anchImg)){ drawSpriteFit(_anchImg,nd.x,nd.y,34); }
+      else { ctx.fillStyle="#5c3a1a"; ctx.beginPath(); ctx.arc(nd.x,nd.y,10,0,6.283); ctx.fill();
+        ctx.strokeStyle="#8a5a2b"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(nd.x,nd.y,10,0,6.283); ctx.stroke();
+        ctx.fillStyle="#c8a84b"; ctx.beginPath(); ctx.arc(nd.x,nd.y,3.5,0,6.283); ctx.fill(); } }
+    else {
+      if(imgReady(_podImg)){ drawSpriteFit(_podImg,nd.x,nd.y,32); }
+      else { ctx.fillStyle=pc[1]; ctx.beginPath(); ctx.arc(nd.x,nd.y,11,0,6.283); ctx.fill();
+        ctx.fillStyle=pc[0]; ctx.beginPath(); ctx.arc(nd.x,nd.y,8,0,6.283); ctx.fill();
+        ctx.fillStyle="#eafbd6"; ctx.beginPath(); ctx.arc(nd.x-3,nd.y-3,2.4,0,6.283); ctx.fill(); } } }
   /* win blossoms */
   if(G.phase==="won"&&PROG.fx){ for(i=0;i<G.bloomPath.length;i++){ var bn=G.nodes[G.bloomPath[i]];
     var ba=(G.tick*0.05+i)%6.283, k2;
@@ -724,7 +754,9 @@ function render(){
       if(pv.cand&&pv.cand.length===1){ var cn1=G.nodes[pv.cand[0].i];
         ctx.strokeStyle="#e56b6b"; ctx.lineWidth=2; ctx.setLineDash([3,7]);
         ctx.beginPath(); ctx.moveTo(DRAG.wx,DRAG.wy); ctx.lineTo(cn1.x,cn1.y); ctx.stroke(); ctx.setLineDash([]); } }
-    ctx.beginPath(); ctx.arc(DRAG.wx,DRAG.wy,11,0,6.283); ctx.fill();
+    var _ghImg=artImg("pods",pv.ok?"pod_ghost_ok":"pod_ghost_bad");
+    if(imgReady(_ghImg)) drawSpriteFit(_ghImg,DRAG.wx,DRAG.wy,32);
+    else { ctx.beginPath(); ctx.arc(DRAG.wx,DRAG.wy,11,0,6.283); ctx.fill(); }
     ctx.globalAlpha=1; }
   ctx.restore();
 }
