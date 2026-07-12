@@ -65,6 +65,16 @@ h2.sc-h{font-size:24px; color:var(--blue); font-weight:800; margin-bottom:4px}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
 .sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#12202b; border:1px solid var(--line); color:var(--dew); font-weight:800; font-size:13px; margin-top:8px}
+/* ===== Paper Nocturne UI plates — image layer OVER the gradient/color fallback (a missing/failed PNG just reveals the base beneath). ===== */
+.btn{ background:url("assets/ui/btn_plate.png?v=3") center/100% 100% no-repeat, linear-gradient(180deg,#1a2415,#121a0f); }
+.btn.primary{ background:url("assets/ui/btn_plate_primary.png?v=3") center/100% 100% no-repeat, linear-gradient(180deg,#5b9bd5,#3f78ad); }
+.btn.ghost{ background:#0f150c; }
+.bi{ width:22px; height:22px; object-fit:contain; vertical-align:middle; flex:none; pointer-events:none; }
+.btn.primary .bi{ width:26px; height:26px; }
+.spet{ width:40px; height:40px; object-fit:contain; vertical-align:middle; margin:0 3px; }
+.lvlcard{ background:url("assets/ui/card_frame.png?v=3") center/100% 100% no-repeat, #0f150c; }
+.lvlcard.locked{ background:url("assets/ui/card_lock.png?v=3") center/100% 100% no-repeat, #0f150c; }
+.grovewrap canvas{ background:url("assets/ui/card_frame.png?v=3") center/100% 100% no-repeat, #0f150c; }
 /* Paper Nocturne art backdrops — image layer over the gradient fallback (a missing/failed image just reveals the gradient). */
 #s-title{ background:url("assets/backgrounds/bg_title.jpg?v=1") center/cover no-repeat, linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%) }
 #s-go{ background:url("assets/backgrounds/bg_results.jpg?v=1") center/cover no-repeat, linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%) }
@@ -82,15 +92,15 @@ h2.sc-h{font-size:24px; color:var(--blue); font-weight:800; margin-bottom:4px}
     <div class="ribbon">Snip the moonlit vines and let a bead of dew swing free — thread it through three glints of <b class="hl">nectar</b> and into the waiting sprout. Every drop you deliver blooms a keepsake flower in your <b class="hl">Grove</b>.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-garden">💧&nbsp; Garden</button>
+      <button class="btn primary" id="b-garden"><img class="bi" src="assets/ui/icon_garden.png?v=3" alt="" onerror="this.remove()">Garden</button>
       <div class="row">
-        <button class="btn sm" id="b-daily">📅 Daily Dew</button>
-        <button class="btn sm" id="b-free">🍃 Free Vine</button>
+        <button class="btn sm" id="b-daily"><img class="bi" src="assets/ui/icon_daily.png?v=3" alt="" onerror="this.remove()">Daily Dew</button>
+        <button class="btn sm" id="b-free"><img class="bi" src="assets/ui/icon_free.png?v=3" alt="" onerror="this.remove()">Free Vine</button>
       </div>
       <div class="row">
-        <button class="btn sm" id="b-grove">🌼 Grove</button>
+        <button class="btn sm" id="b-grove"><img class="bi" src="assets/ui/icon_grove.png?v=3" alt="" onerror="this.remove()">Grove</button>
         <button class="btn sm" id="b-how">How to play</button>
-        <button class="btn sm" id="b-set">⚙</button>
+        <button class="btn sm" id="b-set"><img class="bi" src="assets/ui/icon_gear.png?v=3" alt="Settings" onerror="this.replaceWith(document.createTextNode('Settings'))"></button>
       </div>
       <button class="btn ghost sm" id="b-exit">◄ Back to garden</button>
     </div>
@@ -152,9 +162,9 @@ h2.sc-h{font-size:24px; color:var(--blue); font-weight:800; margin-bottom:4px}
     <div class="stack">
       <button class="btn primary" id="go-next">Next bed ▸</button>
       <div class="row">
-        <button class="btn sm" id="go-retry">↻ Retry</button>
-        <button class="btn sm" id="go-home">◄ Menu</button>
-        <button class="btn sm" id="go-share">↗ Share</button>
+        <button class="btn sm" id="go-retry"><img class="bi" src="assets/ui/icon_retry.png?v=3" alt="" onerror="this.remove()">Retry</button>
+        <button class="btn sm" id="go-home"><img class="bi" src="assets/ui/icon_menu.png?v=3" alt="" onerror="this.remove()">Menu</button>
+        <button class="btn sm" id="go-share"><img class="bi" src="assets/ui/icon_share.png?v=3" alt="" onerror="this.remove()">Share</button>
       </div>
     </div>
   </div></div>
@@ -172,7 +182,7 @@ var GRAV=1500, DAMPSEC=0.9, BUOY=760, MAXV=27, DROP_R=13;
 var curScreen='s-title';
 
 /* ===== background art (drop-in over the procedural bed; canvas fallback kept) ===== */
-var ASSET_V='2';
+var ASSET_V='3';
 function loadImg(src){ var im=new Image(); im.src=src; return im; }
 var BG_PLAY=loadImg('assets/backgrounds/bg_play.jpg?v='+ASSET_V);
 var BG_SEASON=(function(){ var m=new Date().getMonth();
@@ -188,7 +198,11 @@ function sprReady(sub,name){ return imgReady(spr(sub,name)); }
 (function(){ var core=[['sprites','dewdrop'],['sprites','dewdrop_bright'],['sprites','vine_anchor'],['sprites','vine_segment'],['sprites','vine_stub'],['sprites','nectar_mote'],['sprites','thorn'],['sprites','thorn_cluster'],['sprites','bellows_idle'],['sprites','bellows_fire'],['sprites','sprout_pot_open'],['sprites','sprout_pot_bloomed']];
   for(var i=0;i<core.length;i++)spr(core[i][0],core[i][1]);
   var blooms=['bloom_dawnrose','bloom_goldeye','bloom_moonbell','bloom_emberdaisy','bloom_violetstar','bloom_frostlily','bloom_sagethistle','bloom_prismbloom'];
-  for(var b=0;b<blooms.length;b++)spr('blooms',blooms[b]); })();
+  for(var b=0;b<blooms.length;b++)spr('blooms',blooms[b]);
+  var uis=['nectar_dot_empty','nectar_dot_full','star_petal_empty','star_petal_full','icon_menu','icon_retry'];
+  for(var u=0;u<uis.length;u++)spr('ui',uis[u]);
+  var fxs=['snip_burst','dew_splash_burst','contact_ripple','nectar_burst','bloom_flash','grow_swirl','slice_swipe','petal_shower','pollen_gust','thorn_hit','star_pop','sparkle_small','glow_soft','firefly','dew_trail_mote','vignette_edge'];
+  for(var x=0;x<fxs.length;x++)spr('fx',fxs[x]); })();
 /* keepsake-bloom species roster (keyed deterministically by seed; prismbloom kept rare) */
 var BLOOM_SPECIES=['bloom_dawnrose','bloom_goldeye','bloom_moonbell','bloom_emberdaisy','bloom_violetstar','bloom_frostlily','bloom_sagethistle'];
 function bloomSprite(seed){ seed=seed>>>0; if(seed%100<4)return spr('blooms','bloom_prismbloom'); return spr('blooms',BLOOM_SPECIES[(seed>>>3)%BLOOM_SPECIES.length]); }
@@ -303,7 +317,7 @@ function buildLevel(def,mode,idx){
   G={ mode:mode, idx:(idx||0), def:def, ropes:ropes, motes:motes, thorns:thorns, puffs:puffs,
       target:{x:def.target.x, y:def.target.y, r:(def.target.r||34), bloom:0},
       drop:{x:def.drop.x, y:def.drop.y, px:def.drop.x, py:def.drop.y, bub:false, dead:false},
-      phase:'play', t:0, got:0, cuts:0, parts:[], floats:[], trail:[], slice:[], shake:0, flash:0, seed:0, started:false };
+      phase:'play', t:0, got:0, cuts:0, parts:[], floats:[], trail:[], slice:[], fx:[], shake:0, flash:0, seed:0, started:false };
   G.seed=(mode==='garden')?(idx*2654435761+1)>>>0:((Date.now()>>>0)^Math.floor(Math.random()*1e9))>>>0;
 }
 function startLevel(mode,idx){
@@ -336,7 +350,7 @@ function addImpulse(vx,vy){ G.drop.x+=vx; G.drop.y+=vy; } /* Verlet: positional 
 function collide(){
   var d=G.drop; if(d.dead||G.phase!=='play')return;
   // nectar
-  for(var i=0;i<G.motes.length;i++){ var m=G.motes[i]; if(!m.got && dist(d.x,d.y,m.x,m.y)<m.r+DROP_R){ m.got=true; G.got++; sfx('nectar',G.got); float(m.x,m.y-12,'✦'); burst(m.x,m.y,7,'#f2d98a'); G.flash=Math.max(G.flash,0.25); } }
+  for(var i=0;i<G.motes.length;i++){ var m=G.motes[i]; if(!m.got && dist(d.x,d.y,m.x,m.y)<m.r+DROP_R){ m.got=true; G.got++; sfx('nectar',G.got); float(m.x,m.y-12,'✦'); burst(m.x,m.y,7,'#f2d98a'); fxHit('nectar_burst',m.x,m.y,{size:66,life:0.42,grow:0.6}); fxHit('sparkle_small',m.x,m.y,{size:44,life:0.5,spin:5}); G.flash=Math.max(G.flash,0.25); } }
   // thorns
   for(var t=0;t<G.thorns.length;t++){ var th=G.thorns[t]; if(dist(d.x,d.y,th.x,th.y)<th.r+DROP_R*0.7){ die('thorn'); return; } }
   // target
@@ -360,24 +374,35 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
   for(var p=G.parts.length-1;p>=0;p--){ var pt=G.parts[p]; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=340*dt; pt.life-=dt*1.6; if(pt.life<=0)G.parts.splice(p,1); }
   for(var f=G.floats.length-1;f>=0;f--){ var fl=G.floats[f]; fl.y-=30*dt; fl.life-=dt*1.0; if(fl.life<=0)G.floats.splice(f,1); }
   for(var sl=G.slice.length-1;sl>=0;sl--){ G.slice[sl].life-=dt*4; if(G.slice[sl].life<=0)G.slice.splice(sl,1); }
+  for(var e=G.fx.length-1;e>=0;e--){ var fe=G.fx[e]; fe.t+=dt; fe.x+=fe.vx*dt; fe.y+=fe.vy*dt; fe.vy+=fe.grav*dt; fe.rot+=fe.spin*dt; if(fe.t>=fe.life)G.fx.splice(e,1); }
 }
 
 /* ===== actions ===== */
 function cutRope(i){ if(!G||i<0||i>=G.ropes.length)return false; var r=G.ropes[i]; if(r.cut)return false; r.cut=true; G.cuts++; G.started=true;
-  var mx=(r.ax+G.drop.x)/2, my=(r.ay+G.drop.y)/2; burst(mx,my,6,'#7ab356'); sfx('snip'); haptic(8); return true; }
+  var mx=(r.ax+G.drop.x)/2, my=(r.ay+G.drop.y)/2; burst(mx,my,6,'#7ab356'); fxHit('snip_burst',mx,my,{size:84,life:0.42,grow:0.7}); sfx('snip'); haptic(8); return true; }
 function firePuff(i){ if(!G||i<0||i>=G.puffs.length)return false; var pf=G.puffs[i]; var d=G.drop;
   pf.fire=1; sfx('puff'); G.started=true;
+  fxHit('pollen_gust', pf.x+Math.cos(pf.a)*34, pf.y+Math.sin(pf.a)*34, {rot:pf.a, size:96, life:0.5, grow:0.9});
   var dd=dist(d.x,d.y,pf.x,pf.y); if(dd<pf.rng){ var scale=(1-dd/pf.rng); var imp=pf.p*scale*0.016; addImpulse(Math.cos(pf.a)*imp, Math.sin(pf.a)*imp); burst(pf.x+Math.cos(pf.a)*20,pf.y+Math.sin(pf.a)*20,5,'#cfe6b0'); return true; }
   return false; }
 function die(cause){ if(!G||G.phase!=='play')return; if(G.drop.dead)return; G.drop.dead=true; G.phase='dying';
   G.shake=Math.max(G.shake,9); sfx(cause==='thorn'?'thorn':'slip'); haptic(24);
   burst(G.drop.x,G.drop.y,12,cause==='thorn'?'#e56b6b':'#8fb6cf');
+  if(cause==='thorn'){ fxHit('thorn_hit',G.drop.x,G.drop.y,{size:94,life:0.46,grow:0.4}); }
+  else { fxHit('dew_splash_burst',G.drop.x,G.drop.y,{size:104,life:0.5,grow:0.7}); fxHit('contact_ripple',G.drop.x,G.drop.y,{size:124,life:0.62,grow:1.4}); }
   float(G.drop.x,G.drop.y-16, cause==='thorn'?'ouch!':'slipped away');
   setTimeout(function(){ if(G && G.phase==='dying'){ startLevel(G.mode,G.idx); } }, 620);
 }
 function win(){ if(!G||G.phase!=='play')return; G.phase='won'; G.target.bloom=0.001;
   G.shake=Math.max(G.shake,5); G.flash=Math.max(G.flash,0.55); sfx('bloom'); haptic(20);
   for(var i=0;i<14;i++){ var a=Math.PI*2*i/14; G.parts.push({x:G.target.x,y:G.target.y,vx:Math.cos(a)*(70+Math.random()*80),vy:Math.sin(a)*(70+Math.random()*80)-40,life:1,col:i%2?'#e58fa0':'#f2d98a'}); }
+  var tx=G.target.x, ty=G.target.y;
+  fxHit('dew_splash_burst',tx,ty,{size:112,life:0.5,grow:0.7});
+  fxHit('contact_ripple',tx,ty,{size:150,life:0.7,grow:1.5});
+  fxHit('bloom_flash',tx,ty,{size:172,life:0.55,grow:0.7});
+  fxHit('grow_swirl',tx,ty,{size:152,life:0.8,spin:3.2,grow:0.9});
+  for(var pS=0;pS<5;pS++){ fxHit('petal_shower', tx+(Math.random()*160-80), ty-120-Math.random()*40, {size:88+Math.random()*44,life:1.1+Math.random()*0.4,vy:120+Math.random()*80,grav:70,spin:(Math.random()*2-1)*2,grow:0.2,add:false}); }
+  for(var sP=0;sP<4;sP++){ var sa=Math.PI*2*sP/4; fxHit('star_pop', tx+Math.cos(sa)*46, ty+Math.sin(sa)*46, {size:54,life:0.6,grow:0.8,spin:3}); }
   setTimeout(results, 720);
 }
 function results(){ if(!G)return; running=false;
@@ -397,8 +422,11 @@ function results(){ if(!G)return; running=false;
   // paint results
   var bc=$('go-bloom'); if(bc){ var bx=bc.getContext('2d'); bx.setTransform(1,0,0,1,0,0); bx.clearRect(0,0,140,140); drawBloom(bx,70,52,2.0,bloomSeed); }
   $('go-title').textContent = G.mode==='garden' ? CAMPAIGN[G.idx].name+' — bloom!' : (G.mode==='daily'?'Daily bloom!':'Bloom!');
-  var st=''; for(var i=0;i<3;i++)st+= (i<stars?'✿':'·');
-  $('go-stars').textContent=st;
+  var gs=$('go-stars'); gs.innerHTML='';
+  for(var i=0;i<3;i++){ var full=i<stars; var im=document.createElement('img'); im.className='spet'; im.alt='';
+    im.src='assets/ui/'+(full?'star_petal_full':'star_petal_empty')+'.png?v='+ASSET_V;
+    (function(f){ im.onerror=function(){ this.replaceWith(document.createTextNode(f?'✿':'·')); }; })(full);
+    gs.appendChild(im); }
   $('go-lab').textContent=G.got+' of 3 nectar gathered';
   $('go-best').textContent='Grove '+PROG.blooms.length+' bloom'+(PROG.blooms.length===1?'':'s');
   $('go-sun').textContent=granted>0?('☀ +'+granted+' sunbeam'+(granted>1?'s':'')):'☀ daily sun gathered';
@@ -411,6 +439,12 @@ function results(){ if(!G)return; running=false;
 /* particles + floats */
 function burst(x,y,n,col){ if(!G)return; for(var i=0;i<n;i++){ var a=Math.PI*2*i/n+Math.random(); var sp=50+Math.random()*130; G.parts.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-30,life:1,col:col||'#c8a84b'}); } }
 function float(x,y,txt){ if(!G)return; G.floats.push({x:x,y:y,txt:txt,life:1.2}); }
+/* ===== Paper Nocturne FX sprites (additive 'lighter' one-shots; ready-gated — a missing
+   PNG simply skips the overlay while the procedural burst/particles still play). ===== */
+function fxHit(name,x,y,o){ if(!G)return; o=o||{}; G.fx.push({n:name,x:x,y:y,t:0,life:(o.life||0.5),size:(o.size||70),rot:(o.rot||0),spin:(o.spin||0),vx:(o.vx||0),vy:(o.vy||0),grav:(o.grav||0),grow:(o.grow==null?0.3:o.grow),add:(o.add!==false)}); }
+function drawFx(){ if(!G.fx.length)return; for(var i=0;i<G.fx.length;i++){ var e=G.fx[i]; if(!sprReady('fx',e.n))continue; var im=spr('fx',e.n);
+    var p=e.t/e.life, a=Math.max(0,1-p*p), sz=e.size*(1+e.grow*p), w=sz, h=sz*im.naturalHeight/im.naturalWidth;
+    ctx.save(); if(e.add)ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=a; ctx.translate(e.x,e.y); if(e.rot)ctx.rotate(e.rot); ctx.drawImage(im,-w/2,-h/2,w,h); ctx.restore(); } }
 
 /* ===== render ===== */
 function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/1000; lastTs=ts;
@@ -424,12 +458,20 @@ function render(){ if(!ctx||!G)return;
   if(!drawPlayBg()){
     var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101a12'); bg.addColorStop(0.55,'#0c1410'); bg.addColorStop(1,'#0a0f0c'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
   }
-  // ambient fireflies
-  for(var a=0;a<9;a++){ var fx=(a*97+40)%VW, fy=(a*173+90)%VH; ctx.globalAlpha=0.10+0.10*Math.sin(G.t*1.4+a); ctx.fillStyle='#cfe6b0'; ctx.beginPath(); ctx.arc(fx,fy+Math.sin(G.t*0.6+a)*6,1.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  // ambient fireflies — Paper Nocturne firefly sprite (additive) else procedural motes
+  var ffRdy=sprReady('fx','firefly'); var ffim=ffRdy?spr('fx','firefly'):null;
+  for(var a=0;a<9;a++){ var ffx=(a*97+40)%VW, ffy=(a*173+90)%VH+Math.sin(G.t*0.6+a)*6; var fa=Math.max(0,0.14+0.12*Math.sin(G.t*1.4+a));
+    if(ffRdy){ var fs=10+3*Math.sin(G.t*2+a); ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=fa; ctx.drawImage(ffim, ffx-fs/2, ffy-fs/2, fs, fs); ctx.restore(); }
+    else { ctx.globalAlpha=fa; ctx.fillStyle='#cfe6b0'; ctx.beginPath(); ctx.arc(ffx,ffy,1.6,0,7); ctx.fill(); } }
+  ctx.globalAlpha=1;
   ctx.save();
   if(SET.shake && G.shake>0.4){ ctx.translate((Math.random()*2-1)*G.shake,(Math.random()*2-1)*G.shake); }
-  // dew trail
-  for(var i=0;i<G.trail.length;i++){ var tr=G.trail[i]; var al=Math.max(0,tr.life)*0.6; if(al<=0)continue; ctx.globalAlpha=al; var gl=ctx.createRadialGradient(tr.x,tr.y,0,tr.x,tr.y,10); gl.addColorStop(0,'#dff2ff'); gl.addColorStop(1,'rgba(120,180,220,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(tr.x,tr.y,10,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  // dew trail — Paper Nocturne trail-mote sprite (additive) else procedural radial glow
+  var trRdy=sprReady('fx','dew_trail_mote'); var trim=trRdy?spr('fx','dew_trail_mote'):null;
+  for(var i=0;i<G.trail.length;i++){ var tr=G.trail[i]; var al=Math.max(0,tr.life)*0.6; if(al<=0)continue;
+    if(trRdy){ var ts=8+12*tr.life; ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=al; ctx.drawImage(trim, tr.x-ts/2, tr.y-ts/2, ts, ts); ctx.restore(); }
+    else { ctx.globalAlpha=al; var gl=ctx.createRadialGradient(tr.x,tr.y,0,tr.x,tr.y,10); gl.addColorStop(0,'#dff2ff'); gl.addColorStop(1,'rgba(120,180,220,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(tr.x,tr.y,10,0,7); ctx.fill(); } }
+  ctx.globalAlpha=1;
   // ropes (vines)
   for(var r=0;r<G.ropes.length;r++){ var rp=G.ropes[r];
     if(!rp.cut){ drawVine(rp.ax,rp.ay,G.drop.x,G.drop.y); }
@@ -456,12 +498,21 @@ function render(){ if(!ctx||!G)return;
   drawDrop();
   // particles
   for(var p=0;p<G.parts.length;p++){ var ptt=G.parts[p]; ctx.globalAlpha=Math.max(0,ptt.life); ctx.fillStyle=ptt.col; ctx.beginPath(); ctx.arc(ptt.x,ptt.y,2.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
-  // slice trail
-  if(G.slice.length>1){ ctx.strokeStyle='rgba(191,224,242,0.7)'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(G.slice[0].x,G.slice[0].y); for(var s2=1;s2<G.slice.length;s2++)ctx.lineTo(G.slice[s2].x,G.slice[s2].y); ctx.stroke(); }
+  // slice trail — procedural line kept; Paper Nocturne blade-swipe sprite laid over it (additive)
+  if(G.slice.length>1){ ctx.strokeStyle='rgba(191,224,242,0.7)'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(G.slice[0].x,G.slice[0].y); for(var s2=1;s2<G.slice.length;s2++)ctx.lineTo(G.slice[s2].x,G.slice[s2].y); ctx.stroke();
+    if(sprReady('fx','slice_swipe')){ var ssim=spr('fx','slice_swipe'); var a0=G.slice[G.slice.length-2], a1=G.slice[G.slice.length-1];
+      var ln=0; for(var sq=1;sq<G.slice.length;sq++)ln+=dist(G.slice[sq].x,G.slice[sq].y,G.slice[sq-1].x,G.slice[sq-1].y); ln=Math.max(70,Math.min(280,ln));
+      var sang=Math.atan2(a1.y-a0.y,a1.x-a0.x), ssh=ssim.naturalHeight/ssim.naturalWidth*ln;
+      ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.85; ctx.translate(a1.x,a1.y); ctx.rotate(sang); ctx.drawImage(ssim,-ln,-ssh/2,ln,ssh); ctx.restore(); } }
+  // FX sprite one-shots (additive, ready-gated)
+  drawFx();
   // floats
   ctx.textAlign='center'; ctx.font='800 16px system-ui';
   for(var f=0;f<G.floats.length;f++){ var fl=G.floats[f]; ctx.globalAlpha=Math.max(0,Math.min(1,fl.life)); ctx.fillStyle='#f5ebd0'; ctx.fillText(fl.txt,fl.x,fl.y); } ctx.globalAlpha=1;
   ctx.restore();
+  // screen-edge vignette (Paper Nocturne; 'multiply' so the plum corners darken the scene
+  // into a natural frame instead of pasting flat purple over the green bed)
+  if(sprReady('fx','vignette_edge')){ ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.globalAlpha=0.9; ctx.drawImage(spr('fx','vignette_edge'),0,0,VW,VH); ctx.restore(); }
   // flash
   if(G.flash>0){ ctx.save(); ctx.globalAlpha=Math.min(0.55,G.flash); ctx.fillStyle='#eaf6ff'; ctx.fillRect(0,0,VW,VH); ctx.restore(); }
   // HUD
@@ -471,14 +522,19 @@ function drawHUD(){
   // level name
   ctx.textAlign='center'; ctx.fillStyle='#e8dcc8'; ctx.font='800 18px system-ui';
   ctx.fillText(G.mode==='garden'?('Bed '+(G.idx+1)+' · '+CAMPAIGN[G.idx].name):(G.def.name||''), VW/2, 32);
-  // nectar dots
-  var nx=VW/2-24; for(var i=0;i<3;i++){ ctx.beginPath(); ctx.arc(nx+i*24, 48, 6, 0,7); ctx.fillStyle=(i<G.got)?'#f2d98a':'rgba(232,220,200,0.22)'; ctx.fill(); }
+  // nectar dots — Paper Nocturne UI sprites, else procedural discs
+  var dFull=spr('ui','nectar_dot_full'), dEmpty=spr('ui','nectar_dot_empty'); var useDot=imgReady(dFull)&&imgReady(dEmpty);
+  var nx=VW/2-24; for(var i=0;i<3;i++){ var got=i<G.got;
+    if(useDot){ var dim=got?dFull:dEmpty; var dw=22, dh=dw*dim.naturalHeight/dim.naturalWidth; ctx.drawImage(dim, nx+i*24-dw/2, 48-dh/2, dw, dh); }
+    else { ctx.beginPath(); ctx.arc(nx+i*24, 48, 6, 0,7); ctx.fillStyle=got?'#f2d98a':'rgba(232,220,200,0.22)'; ctx.fill(); } }
   // menu + retry buttons
-  hudBtn(HB_MENU,'‹'); hudBtn(HB_RETRY,'↻');
+  hudBtn(HB_MENU,'‹','icon_menu'); hudBtn(HB_RETRY,'↻','icon_retry');
   // hint (first attempt only, garden)
   if(G.mode==='garden' && !G.started && CAMPAIGN[G.idx].hint){ ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,200,0.75)'; ctx.font='600 14px system-ui'; wrapText(CAMPAIGN[G.idx].hint, VW/2, 92, 460, 18); }
 }
-function hudBtn(b,glyph){ ctx.fillStyle='rgba(15,21,12,0.7)'; roundRect(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; roundRect(b.x,b.y,b.w,b.h,12); ctx.stroke(); ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
+function hudBtn(b,glyph,icon){ ctx.fillStyle='rgba(15,21,12,0.7)'; roundRect(b.x,b.y,b.w,b.h,12); ctx.fill(); ctx.strokeStyle='rgba(122,179,86,0.4)'; ctx.lineWidth=1.5; roundRect(b.x,b.y,b.w,b.h,12); ctx.stroke();
+  if(icon && sprReady('ui',icon)){ var im=spr('ui',icon); var s=b.w*0.6, h=s*im.naturalHeight/im.naturalWidth; ctx.drawImage(im, b.x+b.w/2-s/2, b.y+b.h/2-h/2, s, h); return; }
+  ctx.fillStyle='#cfe0c2'; ctx.font='800 24px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function wrapText(txt,cx,cy,maxw,lh){ var words=txt.split(' '), line='', y=cy; for(var i=0;i<words.length;i++){ var test=line+words[i]+' '; if(ctx.measureText(test).width>maxw && line){ ctx.fillText(line,cx,y); line=words[i]+' '; y+=lh; } else line=test; } ctx.fillText(line,cx,y); }
 function drawAnchor(x,y){ var im=spr('sprites','vine_anchor');
@@ -532,6 +588,8 @@ function drawTarget(){ var t=G.target;
   ctx.restore();
 }
 function drawDrop(){ var d=G.drop; if(d.dead && G.phase!=='dying')return; ctx.save(); ctx.translate(d.x,d.y);
+  // soft moon-glow aura under the dew (Paper Nocturne, additive; brighter once all nectar is gathered)
+  if(sprReady('fx','glow_soft')){ var gim=spr('fx','glow_soft'); var gsz=(DROP_R+8)*(G.got>=3?3.6:2.7); ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=G.got>=3?0.55:0.4; ctx.drawImage(gim,-gsz/2,-gsz/2,gsz,gsz); ctx.restore(); }
   if(d.bub){ ctx.strokeStyle='rgba(191,224,242,0.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,DROP_R+9,0,7); ctx.stroke(); }
   // Paper Nocturne dewdrop sprite (bright 'glint' variant once all nectar is gathered); falls through to the procedural teardrop below.
   var dim=spr('sprites', G.got>=3?'dewdrop_bright':'dewdrop');
