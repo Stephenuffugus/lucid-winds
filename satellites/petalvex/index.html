@@ -377,6 +377,11 @@ function seamFor(cellIdx){
 }
 
 /* ============================ render ================================= */
+/* ---------- background art (DROP-IN; procedural fills stay as fallback) ---------- */
+var PV_ASSET_V='pvart1';
+function _pvImg(src){ var im=new Image(); try{ im.src=src+'?v='+PV_ASSET_V; }catch(e){} return im; }
+var PV_BED=_pvImg('assets/bg/bg_bed.jpg');
+function _pvReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
 function fmtTime(ms){ var s=Math.floor(ms/1000); var m=Math.floor(s/60); s=s%60; return m+':'+(s<10?'0':'')+s; }
 function render(){
   if(!ctx) return;
@@ -384,6 +389,8 @@ function render(){
   // background
   var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101610'); bg.addColorStop(1,'#0a0d09');
   ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  // drop-in enamel puzzle-bed backdrop over the procedural fill (fallback stays if art unloaded/missing)
+  if(_pvReady(PV_BED)){ try{ ctx.drawImage(PV_BED,0,0,VW,VH); }catch(e){} }
   if(!P) return;
   computeLayout();
   // ---- HUD ----
@@ -694,6 +701,9 @@ function boot(){
   cv=$('game'); ctx=cv.getContext('2d');
   cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
   fit();
+  /* dress the menu screens with the enamel bg_menu frame (CSS gradient fallback stays if art missing) */
+  (function(){ try{ var css="linear-gradient(180deg,rgba(10,13,9,0.34) 0%,rgba(10,13,9,0.62) 100%), url('assets/bg/bg_menu.jpg?v="+PV_ASSET_V+"') center/cover no-repeat";
+    ['s-title','s-modes','s-how','s-set','s-win'].forEach(function(id){ var el=$(id); if(el)el.style.background=css; }); }catch(e){} })();
   window.addEventListener('resize',fit);
   window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
   cv.addEventListener('pointerdown',onDown,{passive:false});

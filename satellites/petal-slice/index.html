@@ -164,6 +164,20 @@ var PROG={ best:{grove:0,daily:0,zen:0}, grafts:0, blade:'vine', unlocked:{vine:
 (function(){ try{ var p=JSON.parse(LS.get('ps_prog')||'{}'); if(p.best)for(var k in p.best)PROG.best[k]=p.best[k]; if(typeof p.grafts==='number')PROG.grafts=p.grafts; if(p.blade)PROG.blade=p.blade; if(p.unlocked)PROG.unlocked=p.unlocked; if(!PROG.unlocked.vine)PROG.unlocked.vine=1; }catch(e){} })();
 function saveProg(){ LS.set('ps_prog', JSON.stringify(PROG)); }
 
+/* ---------- background art (DROP-IN; procedural bench stays as fallback) ---------- */
+var PS_ASSET_V='psart1';
+function _psImg(src){ var im=new Image(); try{ im.src=src+'?v='+PS_ASSET_V; }catch(e){} return im; }
+var PS_SEASONS=['spring','summer','autumn','winter'];
+function _psSeason(){ var m=new Date().getMonth(); return (m>=2&&m<=4)?0:(m>=5&&m<=7)?1:(m>=8&&m<=10)?2:3; }
+var PS_BG={}; PS_SEASONS.forEach(function(s){ PS_BG[s]=_psImg('assets/bg/bg_'+s+'.jpg'); });
+function _psReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+function psPlayBg(){ var im=PS_BG[PS_SEASONS[_psSeason()]]; return _psReady(im)?im:null; }
+/* dress the title + results screens with the season scene (CSS gradient stays as fallback) */
+(function(){ try{ var s=PS_SEASONS[_psSeason()];
+  var css="linear-gradient(180deg,rgba(11,15,11,0.30) 0%,rgba(11,15,11,0.66) 100%), url('assets/bg/bg_"+s+".jpg?v="+PS_ASSET_V+"') center/cover no-repeat";
+  ['s-title','s-go'].forEach(function(id){ var el=$(id); if(el)el.style.background=css; });
+}catch(e){} })();
+
 /* blade skins — cosmetic trail, unlock by best grove score */
 var BLADES=[
   {id:'vine',   name:'Vine',       col:'#7ab356', glow:'#a7d17a', unlock:0,    leaf:1},
@@ -352,6 +366,8 @@ function render(){ if(!ctx||!G)return;
   ctx.save(); if(SET.shake && G.shake>0.4){ ctx.translate((Math.random()*2-1)*G.shake,(Math.random()*2-1)*G.shake); }
   // backdrop: moonlit potting bench
   var g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#12180f'); g.addColorStop(0.62,'#0c120b'); g.addColorStop(1,'#0a0d08'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  // drop-in season potting-bench backdrop over the procedural fill (fallback stays if art unloaded/missing)
+  var _psb=psPlayBg(); if(_psb){ try{ ctx.drawImage(_psb,0,0,VW,VH); }catch(e){} }
   // bench plank hint
   ctx.fillStyle='rgba(90,70,45,0.14)'; ctx.fillRect(0,VH-120,VW,120); ctx.strokeStyle='rgba(200,168,75,0.08)'; ctx.lineWidth=2;
   for(var pl=1;pl<4;pl++){ ctx.beginPath(); ctx.moveTo(0,VH-120+pl*30); ctx.lineTo(VW,VH-120+pl*30); ctx.stroke(); }
