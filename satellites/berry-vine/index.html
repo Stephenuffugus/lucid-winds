@@ -28,8 +28,8 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
 /* drop-in cosmic screen backdrops (image under a light tint, solid-dark fallback if the JPG is missing) */
-#s-title{ background:linear-gradient(180deg,rgba(11,15,11,0) 42%,rgba(11,15,11,0.34) 100%), url('assets/bg/bg_title.jpg?v=bvart1') center/cover no-repeat, #0b0f0b; }
-#s-go{ background:linear-gradient(180deg,rgba(11,15,11,0.16) 0%,rgba(11,15,11,0.56) 100%), url('assets/bg/bg_results.jpg?v=bvart1') center/cover no-repeat, #0b0f0b; }
+#s-title{ background:linear-gradient(180deg,rgba(11,15,11,0) 42%,rgba(11,15,11,0.34) 100%), url('assets/bg/bg_title.jpg?v=bvart2') center/cover no-repeat, #0b0f0b; }
+#s-go{ background:linear-gradient(180deg,rgba(11,15,11,0.16) 0%,rgba(11,15,11,0.56) 100%), url('assets/bg/bg_results.jpg?v=bvart2') center/cover no-repeat, #0b0f0b; }
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:56px; line-height:1; color:var(--rose); font-weight:800; text-shadow:0 3px 0 #3a1420, 0 0 26px #e24d6a44; letter-spacing:1px}
@@ -244,7 +244,7 @@ function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s
 window.addEventListener('resize',fit); fit();
 
 /* ---------- background art (DROP-IN; procedural gradient stays as fallback) ---------- */
-var BV_ASSET_V='bvart1';
+var BV_ASSET_V='bvart2';
 function _bvImg(src){ var im=new Image(); try{ im.src=src+'?v='+BV_ASSET_V; }catch(e){} return im; }
 var BG_PLAY=_bvImg('assets/bg/bg_play.jpg');
 var BG_NEB=[ _bvImg('assets/bg/bg_nebula_serpentine.jpg'), _bvImg('assets/bg/bg_nebula_loops.jpg'), _bvImg('assets/bg/bg_nebula_spiral.jpg') ];
@@ -310,8 +310,15 @@ function berryColor(ci){ var c=curPal(); return c[ci%c.length]; }
 function shade(hex,amt){ var n=parseInt(hex.slice(1),16); var r=(n>>16)&255,g=(n>>8)&255,b=n&255;
   r=Math.max(0,Math.min(255,Math.round(r*amt))); g=Math.max(0,Math.min(255,Math.round(g*amt))); b=Math.max(0,Math.min(255,Math.round(b*amt)));
   return 'rgb('+r+','+g+','+b+')'; }
+var _BV_ORB={}, _BV_SPR={};
+function _bvOrb(sh){ var im=_BV_ORB[sh]; if(!im){ im=new Image(); try{ im.src='assets/orbs/orb_'+sh+'.png?v='+BV_ASSET_V; }catch(e){} _BV_ORB[sh]=im; } return im; }
+function _bvSprite(p){ var im=_BV_SPR[p]; if(!im){ im=new Image(); try{ im.src='assets/'+p+'?v='+BV_ASSET_V; }catch(e){} _BV_SPR[p]=im; } return im; }
 function drawShape(x,y,r,ci,alpha){ var col=berryColor(ci), sh=SHAPES[ci%SHAPES.length];
   ctx.save(); ctx.globalAlpha=alpha==null?1:alpha; ctx.translate(x,y);
+  var _sp=_bvOrb(sh);
+  if(_bvReady(_sp)){ var d=r*2.35; ctx.drawImage(_sp,-d/2,-d/2,d,d);
+    if(SET.cb){ ctx.globalAlpha=(alpha==null?1:alpha); ctx.fillStyle='rgba(0,0,0,0.62)'; ctx.font='800 '+Math.round(r*0.95)+'px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(''+((ci%6)+1),0,1); ctx.textBaseline='alphabetic'; }
+    ctx.restore(); return; }
   ctx.fillStyle=col; ctx.strokeStyle=shade(col,0.6); ctx.lineWidth=2;
   ctx.beginPath();
   if(sh==='circle'){ ctx.arc(0,0,r,0,6.2832); }
@@ -568,9 +575,16 @@ function drawShooter(){ var x=G.podX, y=G.podY;
     ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+Math.cos(G.aim)*260, y+Math.sin(G.aim)*260); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
   // pod body
   ctx.save(); ctx.translate(x,y);
-  ctx.fillStyle=PROG.pod===1?'#c8a84b':(PROG.pod===2?'#e58fa0':(PROG.pod===3?'#7d3450':'#5c3a1a'));
-  ctx.beginPath(); ctx.moveTo(-26,20); ctx.quadraticCurveTo(-30,-10,0,-14); ctx.quadraticCurveTo(30,-10,26,20); ctx.quadraticCurveTo(0,30,-26,20); ctx.fill();
-  ctx.fillStyle='#3f6b34'; ctx.beginPath(); ctx.ellipse(-20,20,10,5,-0.5,0,6.2832); ctx.ellipse(20,20,10,5,0.5,0,6.2832); ctx.fill();
+  var _podSkin=PROG.pod===1?'pod_amber':(PROG.pod===2?'pod_blossom':(PROG.pod===3?'pod_thorn':'pod_seedpod'));
+  var _pod=_bvSprite('cosmetics/'+_podSkin+'.png'), _psh=_bvSprite('world/pod_shadow.png');
+  if(_bvReady(_pod)){
+    if(_bvReady(_psh)){ ctx.save(); ctx.globalAlpha=0.6; ctx.drawImage(_psh,-32,14,64,26); ctx.restore(); }
+    var pw=72, ph=84; ctx.drawImage(_pod,-pw/2,-ph/2+8,pw,ph);
+  } else {
+    ctx.fillStyle=PROG.pod===1?'#c8a84b':(PROG.pod===2?'#e58fa0':(PROG.pod===3?'#7d3450':'#5c3a1a'));
+    ctx.beginPath(); ctx.moveTo(-26,20); ctx.quadraticCurveTo(-30,-10,0,-14); ctx.quadraticCurveTo(30,-10,26,20); ctx.quadraticCurveTo(0,30,-26,20); ctx.fill();
+    ctx.fillStyle='#3f6b34'; ctx.beginPath(); ctx.ellipse(-20,20,10,5,-0.5,0,6.2832); ctx.ellipse(20,20,10,5,0.5,0,6.2832); ctx.fill();
+  }
   ctx.restore();
   // loaded berry at mouth
   drawShape(x, y-2, BALL_R, G.loaded, 1);
