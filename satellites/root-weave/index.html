@@ -517,6 +517,22 @@ var WARD=[
 var cvs=document.getElementById("game"), ctx=cvs.getContext("2d");
 var SPECKS=(function(){ var r=mkRng(777), a=[], i;
   for(i=0;i<26;i++)a.push({x:r()*W, y:r()*H, s:0.6+r()*1.8, p:r()*6.283}); return a; })();
+/* ---------- drop-in art (Inkwood Atlas pack); procedural draws stay as fallback ---------- */
+var RWVER="rwart1", RWART={};
+function rwImg(p){ var im=RWART[p]; if(im)return im; im=new Image(); im.src="assets/"+p+"?v="+RWVER; RWART[p]=im; return im; }
+function rwOK(im){ return im&&im.complete&&im.naturalWidth>0; }
+var RW_BULB={ pearl:"bulbs/bulb_pearl.png", acorn:"bulbs/bulb_acorn.png", dewdrop:"bulbs/bulb_dewdrop.png", firefly:"bulbs/bulb_firefly.png", star:"bulbs/bulb_star.png" };
+var RW_VINE={ classic:"vines/vine_classic.png", braided:"vines/vine_braided.png", blossom:"vines/vine_blossom.png", aurora:"vines/vine_aurora.png" };
+var RW_BG={ midnight:"backgrounds/bg_midnight.jpg", loam:"backgrounds/bg_loam.jpg", terrace:"backgrounds/bg_terrace.jpg", dawn:"backgrounds/bg_dawn.jpg" };
+/* stretch a horizontal vine/gnarl tile along an arbitrary a->b segment at fixed thickness */
+function rwStroke(im,ax,ay,bx,by,th){ var dx=bx-ax,dy=by-ay,len=Math.sqrt(dx*dx+dy*dy); if(len<1)return;
+  ctx.save(); ctx.translate(ax,ay); ctx.rotate(Math.atan2(dy,dx)); ctx.drawImage(im,0,-th/2,len,th); ctx.restore(); }
+/* draw a sprite centred at cx,cy fitting a d-px box (aspect preserved) */
+function rwCenter(im,cx,cy,d){ var w=im.naturalWidth,h=im.naturalHeight,s=d/Math.max(w,h); if(!(s>0))return;
+  ctx.drawImage(im,cx-w*s/2,cy-h*s/2,w*s,h*s); }
+(function(){ var k; for(k in RW_BULB)rwImg(RW_BULB[k]); for(k in RW_VINE)rwImg(RW_VINE[k]); for(k in RW_BG)rwImg(RW_BG[k]);
+  rwImg("bulbs/taproot_bulb.png"); rwImg("bulbs/taproot_roots.png"); rwImg("bulbs/bulb_ring_select.png");
+  rwImg("vines/gnarl_segment.png"); rwImg("vines/gnarl_segment_alt.png"); rwImg("bulbs/crossing_x.png"); rwImg("blooms/bloom_full.png"); })();
 function edgeStyle(flagged){
   if(flagged)return { col:"#6b5d4a", w:3 };
   var v=PROG.vine;
@@ -530,6 +546,8 @@ function render(t){
   var grd=ctx.createLinearGradient(0,0,0,H);
   grd.addColorStop(0,bk.top); grd.addColorStop(1,bk.bot);
   ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+  var bgim=rwImg(RW_BG[PROG.backdrop]||RW_BG.midnight);
+  if(rwOK(bgim))ctx.drawImage(bgim,0,0,W,H);
   var i;
   if(PROG.fx){ ctx.save();
     for(i=0;i<SPECKS.length;i++){ var sp=SPECKS[i];
@@ -547,6 +565,9 @@ function render(t){
     var mx=(a.x+b.x)/2, my=(a.y+b.y)/2+(fl?0:10);
     ctx.strokeStyle=st.col; ctx.lineWidth=st.w; ctx.lineCap="round";
     ctx.globalAlpha=won?0.9:0.85;
+    var vspr = fl ? rwImg((i%2)?"vines/gnarl_segment_alt.png":"vines/gnarl_segment.png")
+                  : rwImg(RW_VINE[PROG.vine]||RW_VINE.classic);
+    if(rwOK(vspr)){ ctx.globalAlpha=won?1:0.94; rwStroke(vspr,a.x,a.y,b.x,b.y, fl?19:16); ctx.globalAlpha=1; continue; }
     if(fl){ /* gnarled: kinked polyline (texture = colorblind cue) */
       var kx1=a.x+(b.x-a.x)*0.33+(( (e[0]*7+e[1]*13)%9)-4)*2.2;
       var ky1=a.y+(b.y-a.y)*0.33+(((e[0]*11+e[1]*5)%9)-4)*2.2;
@@ -571,7 +592,9 @@ function render(t){
   ctx.globalAlpha=1;
   /* crossing markers (shape cue, not color-only) */
   if(!won&&G.xpts){
+    var xim=rwImg("bulbs/crossing_x.png"), xok=rwOK(xim);
     for(i=0;i<G.xpts.length;i++){ var xp=G.xpts[i];
+      if(xok){ rwCenter(xim,xp.x,xp.y,26); continue; }
       ctx.strokeStyle="#0b0f0b"; ctx.lineWidth=4.4; ctx.lineCap="round";
       ctx.beginPath(); ctx.moveTo(xp.x-5,xp.y-5); ctx.lineTo(xp.x+5,xp.y+5);
       ctx.moveTo(xp.x+5,xp.y-5); ctx.lineTo(xp.x-5,xp.y+5); ctx.stroke();
@@ -593,6 +616,15 @@ function render(t){
     var shx=0;
     if(G.shake>0&&G.shakeI===i){ shx=Math.sin(now()/24)*3*G.shake; G.shake-=0.02; }
     var px=p.x+shx, py=p.y;
+    var bspr = tap ? rwImg("bulbs/taproot_bulb.png") : rwImg(RW_BULB[PROG.bulb]||RW_BULB.pearl);
+    if(rwOK(bspr)){
+      if(tap){ var rim=rwImg("bulbs/taproot_roots.png");
+        if(rwOK(rim)){ var rw=rim.naturalWidth, rh=rim.naturalHeight, rs=44/Math.max(rw,rh);
+          ctx.drawImage(rim, px-rw*rs/2, py-4, rw*rs, rh*rs); } }
+      rwCenter(bspr, px, py, tap?58:47);
+      if(!tap&&G.drag===i){ var sel=rwImg("bulbs/bulb_ring_select.png");
+        if(rwOK(sel))rwCenter(sel,px,py,64); }
+    } else {
     if(tap){ /* root strands into soil */
       ctx.strokeStyle="#5c3a1a"; ctx.lineWidth=2.6; ctx.lineCap="round";
       ctx.beginPath(); ctx.moveTo(px-8,py+10); ctx.quadraticCurveTo(px-13,py+22,px-9,py+30);
@@ -615,15 +647,19 @@ function render(t){
       ctx.beginPath(); ctx.arc(px,py,3.4,3.6,8.4); ctx.stroke(); }
     if(PROG.bulb==="star"&&!tap){ ctx.strokeStyle="#fff6d8"; ctx.lineWidth=1.4;
       ctx.beginPath(); ctx.moveTo(px,py-9); ctx.lineTo(px,py+9); ctx.moveTo(px-9,py); ctx.lineTo(px+9,py); ctx.stroke(); }
+    }
     /* win blooms */
     if(won){ var bk2=bloomK, petals=6, pi;
+      var flim=rwImg("blooms/bloom_full.png");
+      if(rwOK(flim)){ ctx.save(); ctx.globalAlpha=Math.min(1,bk2*1.4); rwCenter(flim,px,py,40*bk2); ctx.restore(); ctx.globalAlpha=1; }
+      else {
       ctx.save(); ctx.translate(px,py); ctx.globalAlpha=Math.min(1,bk2*1.4);
       for(pi=0;pi<petals;pi++){ var an2=pi/petals*6.283+bk2*0.6;
         ctx.fillStyle=(pi%2)?"#e58fa0":"#c8a84b";
         ctx.beginPath();
         ctx.ellipse(Math.cos(an2)*10*bk2, Math.sin(an2)*10*bk2, 7*bk2, 3.4*bk2, an2, 0, 6.283); ctx.fill(); }
       ctx.fillStyle="#ffe9a8"; ctx.beginPath(); ctx.arc(0,0,4*bk2,0,6.283); ctx.fill();
-      ctx.restore(); ctx.globalAlpha=1; }
+      ctx.restore(); ctx.globalAlpha=1; } }
   }
   /* solved-pending gold ring */
   if(!won&&G.cross===0&&G.zeroSince){
