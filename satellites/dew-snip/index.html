@@ -65,6 +65,9 @@ h2.sc-h{font-size:24px; color:var(--blue); font-weight:800; margin-bottom:4px}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:2px}
 .sun-earn{margin-top:12px; font-size:20px; color:var(--gold); font-weight:800}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#12202b; border:1px solid var(--line); color:var(--dew); font-weight:800; font-size:13px; margin-top:8px}
+/* Paper Nocturne art backdrops — image layer over the gradient fallback (a missing/failed image just reveals the gradient). */
+#s-title{ background:url("assets/backgrounds/bg_title.jpg?v=1") center/cover no-repeat, linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%) }
+#s-go{ background:url("assets/backgrounds/bg_results.jpg?v=1") center/cover no-repeat, linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%) }
 </style>
 </head>
 <body>
@@ -167,6 +170,18 @@ var BUILD='v1.0';
 /* physics constants (tuned; device feel-test pending) */
 var GRAV=1500, DAMPSEC=0.9, BUOY=760, MAXV=27, DROP_R=13;
 var curScreen='s-title';
+
+/* ===== background art (drop-in over the procedural bed; canvas fallback kept) ===== */
+var ASSET_V='1';
+function loadImg(src){ var im=new Image(); im.src=src; return im; }
+var BG_PLAY=loadImg('assets/backgrounds/bg_play.jpg?v='+ASSET_V);
+var BG_SEASON=(function(){ var m=new Date().getMonth();
+  var s=(m>=2&&m<=4)?'spring':(m>=5&&m<=7)?'summer':(m>=8&&m<=10)?'autumn':'winter';
+  return loadImg('assets/backgrounds/bg_season_'+s+'.jpg?v='+ASSET_V); })();
+function imgReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+/* season art if decoded, else the base play bed, else signal caller to draw the gradient */
+function drawPlayBg(){ var im = imgReady(BG_SEASON)?BG_SEASON : (imgReady(BG_PLAY)?BG_PLAY:null);
+  if(!im) return false; ctx.drawImage(im,0,0,VW,VH); return true; }
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id; running=(id==='s-play'); if(running){ lastTs=0; requestAnimationFrame(loop); } }
 
 var LS={ get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
@@ -388,8 +403,10 @@ function loop(ts){ if(!running)return; if(!lastTs)lastTs=ts; var dt=(ts-lastTs)/
 var HB_MENU={x:8,y:8,w:46,h:46}, HB_RETRY={x:VW-54,y:8,w:46,h:46};
 function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
-  // bg
-  var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101a12'); bg.addColorStop(0.55,'#0c1410'); bg.addColorStop(1,'#0a0f0c'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  // bg — Paper Nocturne art if the image has decoded, else the procedural gradient fallback
+  if(!drawPlayBg()){
+    var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#101a12'); bg.addColorStop(0.55,'#0c1410'); bg.addColorStop(1,'#0a0f0c'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  }
   // ambient fireflies
   for(var a=0;a<9;a++){ var fx=(a*97+40)%VW, fy=(a*173+90)%VH; ctx.globalAlpha=0.10+0.10*Math.sin(G.t*1.4+a); ctx.fillStyle='#cfe6b0'; ctx.beginPath(); ctx.arc(fx,fy+Math.sin(G.t*0.6+a)*6,1.6,0,7); ctx.fill(); } ctx.globalAlpha=1;
   ctx.save();

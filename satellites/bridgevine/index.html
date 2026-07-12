@@ -625,12 +625,25 @@ var SKIES={
   night:["#0a0a14","#080810","#020204"]
 };
 var PODCOLS={ sprout:["#7ab356","#3f6b34"], acorn:["#c89a5a","#7a5a2b"], lantern:["#e2c46a","#9a7d2e"], berry:["#e58fa0","#9a4a64"] };
+/* ---- optional painted sky backdrops (drop-in; gradient stays the fallback) ---- */
+var SKY_SRC={ meadow:"assets/backgrounds/bg_meadow_dusk.jpg", cirrus:"assets/backgrounds/bg_high_cirrus.jpg",
+  aurora:"assets/backgrounds/bg_aurora_loft.jpg", night:"assets/backgrounds/bg_deep_night.jpg" };
+var SKY_IMG={};
+(function(){ var k; for(k in SKY_SRC){ (function(id){ var im=new Image();
+  im.onerror=function(){ SKY_IMG[id]=null; }; im.src=SKY_SRC[id]+"?v="+BUILD; SKY_IMG[id]=im; })(k); } })();
+function drawSkyCover(img){ /* cover-fit the 540x784 canvas, centred */
+  var iw=img.naturalWidth, ih=img.naturalHeight; if(!iw||!ih)return;
+  var s=Math.max(W/iw, H/ih), dw=iw*s, dh=ih*s;
+  ctx.drawImage(img,(W-dw)/2,(H-dh)/2,dw,dh); }
 function render(){
   if(!G){ return; }
   var sky=SKIES[PROG.sky]||SKIES.meadow;
   var gr=ctx.createLinearGradient(0,0,0,H);
   gr.addColorStop(0,sky[0]); gr.addColorStop(0.55,sky[1]); gr.addColorStop(1,sky[2]);
   ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+  /* painted backdrop over the gradient base, only when the image is ready */
+  var skimg=SKY_IMG[PROG.sky];
+  if(skimg&&skimg.complete&&skimg.naturalWidth)drawSkyCover(skimg);
   ctx.save(); ctx.translate(0,-G.camY);
   var i,j;
   /* terrain */

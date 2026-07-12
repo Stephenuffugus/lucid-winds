@@ -48,6 +48,8 @@ canvas#game{position:absolute; left:0; top:0; width:540px; height:960px; display
   justify-content:center; gap:14px; background:radial-gradient(110% 90% at 50% 10%, #0f1610ee 0%, #060907f5 75%);
   padding:26px; text-align:center}
 .screen.on{display:flex}
+/* drop-in title backdrop (image under the radial tint; radial-gradient stays as fallback if the JPG is missing) */
+#s-title{ background:radial-gradient(110% 90% at 50% 10%, #0f161066 0%, #060907e8 78%), url('assets/bg/bg_title.jpg?v=nbart1') center/cover no-repeat, #060907; }
 h1.logo{font-size:2.1rem; letter-spacing:.14em; color:var(--cream); text-shadow:0 0 22px #7ab35688}
 h1.logo b{color:var(--pink); text-shadow:0 0 22px #e58fa088}
 .tag{color:var(--muted); font-size:.8rem; max-width:400px; line-height:1.5}
@@ -206,6 +208,13 @@ var ENEMY_COL={ moth:"#e58fa0", wasp:"#ffb84d", dart:"#9ee6ff", serpent:"#7ab356
 function fit(){ var vw=window.innerWidth, vh=window.innerHeight, s=Math.min(vw/W, vh/H);
   $("stage").style.transform="scale("+s+")"; }
 window.addEventListener("resize",fit); fit();
+
+/* ---------- background art (DROP-IN; procedural palette bg stays as fallback) ---------- */
+var NB_ASSET_V="nbart1";
+function _nbImg(src){ var im=new Image(); try{ im.src=src+"?v="+NB_ASSET_V; }catch(e){} return im; }
+var NB_BG={ meadow:_nbImg("assets/bg/bg_meadow.jpg"), violet:_nbImg("assets/bg/bg_violet.jpg"), dawn:_nbImg("assets/bg/bg_dawn.jpg") };
+function _nbReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+function nbPlayBg(){ var im=NB_BG[PROG.pal]; if(_nbReady(im))return im; return null; }
 
 /* ---------- warp grid ---------- */
 var GS=36, GC=Math.floor(W/GS)+1, GR=Math.floor(H/GS)+1, GPTS=[];
@@ -722,6 +731,8 @@ function drawEnemy(c,e){
 function render(){
   var P=pal(), c=ctx;
   c.fillStyle=P.bg; c.fillRect(0,0,W,H);
+  /* drop-in palette backdrop over the solid fill (fallback stays if art unloaded/missing) */
+  var _nbg=nbPlayBg(); if(_nbg){ try{ c.drawImage(_nbg,0,0,W,H); }catch(e){} }
   /* grid */
   var r,cc,p0,p1,idx0;
   c.strokeStyle="rgba("+P.grid+",0.20)"; c.lineWidth=1;

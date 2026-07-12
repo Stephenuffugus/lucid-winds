@@ -27,6 +27,9 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20;
   background:linear-gradient(180deg,#0e140d 0%, #0b0f0b 100%)}
 .screen.on{display:flex}
+/* drop-in cosmic screen backdrops (image under a light tint, solid-dark fallback if the JPG is missing) */
+#s-title{ background:linear-gradient(180deg,rgba(11,15,11,0) 42%,rgba(11,15,11,0.34) 100%), url('assets/bg/bg_title.jpg?v=bvart1') center/cover no-repeat, #0b0f0b; }
+#s-go{ background:linear-gradient(180deg,rgba(11,15,11,0.16) 0%,rgba(11,15,11,0.56) 100%), url('assets/bg/bg_results.jpg?v=bvart1') center/cover no-repeat, #0b0f0b; }
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:56px; line-height:1; color:var(--rose); font-weight:800; text-shadow:0 3px 0 #3a1420, 0 0 26px #e24d6a44; letter-spacing:1px}
@@ -239,6 +242,18 @@ function fitCanvas(){ cv.width=VW*DPR; cv.height=VH*DPR; ctx.setTransform(DPR,0,
 fitCanvas();
 function fit(){ var iw=window.innerWidth||540, ih=window.innerHeight||960; var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='scale('+s+')'; }
 window.addEventListener('resize',fit); fit();
+
+/* ---------- background art (DROP-IN; procedural gradient stays as fallback) ---------- */
+var BV_ASSET_V='bvart1';
+function _bvImg(src){ var im=new Image(); try{ im.src=src+'?v='+BV_ASSET_V; }catch(e){} return im; }
+var BG_PLAY=_bvImg('assets/bg/bg_play.jpg');
+var BG_NEB=[ _bvImg('assets/bg/bg_nebula_serpentine.jpg'), _bvImg('assets/bg/bg_nebula_loops.jpg'), _bvImg('assets/bg/bg_nebula_spiral.jpg') ];
+function _bvReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
+function bvPlayBg(){ // pick path-variant nebula mood, else the neutral play cosmos, else null->procedural
+  if(G && G.def){ var v=BG_NEB[G.def.variant % BG_NEB.length]; if(_bvReady(v))return v; }
+  if(_bvReady(BG_PLAY))return BG_PLAY;
+  return null;
+}
 
 /* ---------- sunbeam earn (30/day cap; 12/run enforced at call site) ---------- */
 window._sbCapEarn=function(n,tag){ var granted=0;
@@ -514,6 +529,8 @@ function render(){ if(!ctx||!G)return;
   ctx.clearRect(0,0,VW,VH);
   // bg
   var bg=ctx.createLinearGradient(0,0,0,VH); bg.addColorStop(0,'#111a13'); bg.addColorStop(0.6,'#0c130e'); bg.addColorStop(1,'#0a0f0c'); ctx.fillStyle=bg; ctx.fillRect(0,0,VW,VH);
+  // drop-in cosmic backdrop over the procedural gradient (fallback stays if art unloaded/missing)
+  var _bgi=bvPlayBg(); if(_bgi){ try{ ctx.drawImage(_bgi,0,0,VW,VH); }catch(e){} }
   // fireflies
   for(var a=0;a<10;a++){ var fx=(a*103+40)%VW, fy=(a*167+70)%700; ctx.globalAlpha=0.08+0.08*Math.sin(G.t*1.3+a); ctx.fillStyle='#cfe6b0'; ctx.beginPath(); ctx.arc(fx,fy+Math.sin(G.t*0.6+a)*6,1.6,0,6.2832); ctx.fill(); } ctx.globalAlpha=1;
   ctx.save();
