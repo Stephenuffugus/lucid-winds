@@ -172,6 +172,12 @@ function _psSeason(){ var m=new Date().getMonth(); return (m>=2&&m<=4)?0:(m>=5&&
 var PS_BG={}; PS_SEASONS.forEach(function(s){ PS_BG[s]=_psImg('assets/bg/bg_'+s+'.jpg'); });
 function _psReady(im){ return !!(im && im.complete && im.naturalWidth>0); }
 function psPlayBg(){ var im=PS_BG[PS_SEASONS[_psSeason()]]; return _psReady(im)?im:null; }
+/* sprite art map — lazy-loaded, drawn over the procedural shapes when ready (else fallback) */
+var PS_SPR={};
+function _psSpr(path){ if(!PS_SPR[path])PS_SPR[path]=_psImg('assets/'+path+'.png'); return PS_SPR[path]; }
+function psDraw(path,cx,cy,d,rot,alpha){ var im=_psSpr(path); if(!_psReady(im))return false;
+  ctx.save(); ctx.translate(cx,cy); if(rot)ctx.rotate(rot); if(alpha!=null)ctx.globalAlpha=alpha;
+  try{ ctx.drawImage(im,-d/2,-d/2,d,d); }catch(e){} ctx.restore(); return true; }
 /* dress the title + results screens with the season scene (CSS gradient stays as fallback) */
 (function(){ try{ var s=PS_SEASONS[_psSeason()];
   var css="linear-gradient(180deg,rgba(11,15,11,0.30) 0%,rgba(11,15,11,0.66) 100%), url('assets/bg/bg_"+s+".jpg?v="+PS_ASSET_V+"') center/cover no-repeat";
@@ -208,12 +214,12 @@ function mkRng(seed){ var s=(seed>>>0)||1; return function(){ s^=s<<13; s^=s>>>1
 
 /* ===== object palettes ===== */
 var PODS=[
-  {r:26, body:'#e5604d', core:'#7a1f16', kind:'berry'},
-  {r:24, body:'#b57de0', core:'#5a3d78', kind:'berry'},
-  {r:25, body:'#5b9bd5', core:'#274867', kind:'berry'},
-  {r:30, body:'#7ab356', core:'#3f6b34', kind:'pod'},
-  {r:30, body:'#e58fa0', core:'#c96f82', kind:'blossom'},
-  {r:27, body:'#e8c65a', core:'#8a6d1e', kind:'blossom'}
+  {r:26, body:'#e5604d', core:'#7a1f16', kind:'berry',   sp:'berry_red',     half:'red'},
+  {r:24, body:'#b57de0', core:'#5a3d78', kind:'berry',   sp:'berry_violet',  half:'violet'},
+  {r:25, body:'#5b9bd5', core:'#274867', kind:'berry',   sp:'berry_blue',    half:'blue'},
+  {r:30, body:'#7ab356', core:'#3f6b34', kind:'pod',     sp:'pod_green',     half:'pod'},
+  {r:30, body:'#e58fa0', core:'#c96f82', kind:'blossom', sp:'blossom_pink',  half:'blossom_pink'},
+  {r:27, body:'#e8c65a', core:'#8a6d1e', kind:'blossom', sp:'blossom_gold',  half:'blossom_gold'}
 ];
 
 /* ===== game state ===== */
@@ -246,11 +252,11 @@ function launchPod(def,rng){
   var x=60+rng()*(VW-120);
   var vy=-(980+rng()*260 + diff()*20);
   var vx=(rng()-0.5)*300 + (x<VW/2?60:-60);
-  G.objs.push({ x:x, y:VH+40, vx:vx, vy:vy, r:def.r, body:def.body, core:def.core, kind:def.kind, rot:rng()*6.28, vr:(rng()-0.5)*5, sliced:false, burr:false, graft:null });
+  G.objs.push({ x:x, y:VH+40, vx:vx, vy:vy, r:def.r, body:def.body, core:def.core, kind:def.kind, sp:def.sp, half:def.half, rot:rng()*6.28, vr:(rng()-0.5)*5, sliced:false, burr:false, graft:null });
 }
 function launchBurr(rng){
   var x=60+rng()*(VW-120);
-  G.objs.push({ x:x, y:VH+40, vx:(rng()-0.5)*260, vy:-(980+rng()*220), r:24, body:'#8a221a', core:'#e5604d', kind:'burr', rot:0, vr:(rng()-0.5)*3, sliced:false, burr:true, graft:null });
+  G.objs.push({ x:x, y:VH+40, vx:(rng()-0.5)*260, vy:-(980+rng()*220), r:24, body:'#8a221a', core:'#e5604d', kind:'burr', sp:'burr', rot:0, vr:(rng()-0.5)*3, sliced:false, burr:true, graft:null });
 }
 function spawnGraft(){
   var rng=G.rng, n=3+(rng()<0.4?1:0), members=[], gid=++G.strokeId+9000;
@@ -259,7 +265,7 @@ function spawnGraft(){
     var t=n>1?i/(n-1):0.5, x=baseX + (t-0.5)*spread*0.7 + (rng()-0.5)*30;
     x=Math.max(50,Math.min(VW-50,x));
     var def=PODS[3+Math.floor(rng()*3)];
-    var o={ x:x, y:VH+40+i*10, vx:(x<VW/2?70:-70)+(rng()-0.5)*80, vy:baseVy-(i*30), r:def.r, body:def.body, core:def.core, kind:def.kind, rot:rng()*6.28, vr:(rng()-0.5)*4, sliced:false, burr:false, graft:gid };
+    var o={ x:x, y:VH+40+i*10, vx:(x<VW/2?70:-70)+(rng()-0.5)*80, vy:baseVy-(i*30), r:def.r, body:def.body, core:def.core, kind:def.kind, sp:def.sp, half:def.half, rot:rng()*6.28, vr:(rng()-0.5)*4, sliced:false, burr:false, graft:gid };
     members.push(o); G.objs.push(o);
   }
   // register the graft group
@@ -280,8 +286,9 @@ function sliceObj(o,idx,dirx,diry){
   if(o.burr){ hitBurr(o); return; }
   // halves fly apart perpendicular to the cut
   var a=Math.atan2(diry,dirx), n1=a+Math.PI/2, n2=a-Math.PI/2, sp=140+Math.random()*80;
-  G.halves.push({x:o.x,y:o.y,vx:Math.cos(n1)*sp+o.vx*0.3,vy:Math.sin(n1)*sp+o.vy*0.3,rot:a,vr:4,r:o.r,body:o.body,core:o.core,side:1,life:1});
-  G.halves.push({x:o.x,y:o.y,vx:Math.cos(n2)*sp+o.vx*0.3,vy:Math.sin(n2)*sp+o.vy*0.3,rot:a,vr:-4,r:o.r,body:o.body,core:o.core,side:-1,life:1});
+  var hb=o.half||'red';
+  G.halves.push({x:o.x,y:o.y,vx:Math.cos(n1)*sp+o.vx*0.3,vy:Math.sin(n1)*sp+o.vy*0.3,rot:a,vr:4,r:o.r,body:o.body,core:o.core,side:1,sp:'half_'+hb+'_L',life:1});
+  G.halves.push({x:o.x,y:o.y,vx:Math.cos(n2)*sp+o.vx*0.3,vy:Math.sin(n2)*sp+o.vy*0.3,rot:a,vr:-4,r:o.r,body:o.body,core:o.core,side:-1,sp:'half_'+hb+'_R',life:1});
   juice(o.x,o.y,o.body,o.core);
   // score + combo
   G.combo++; if(G.combo>G.bestCombo)G.bestCombo=G.combo; G.comboTimer=0.9;
@@ -402,6 +409,13 @@ function render(){ if(!ctx||!G)return;
   if(G.combo>=2){ ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 26px system-ui'; ctx.fillText(G.combo+'x',VW/2,52); }
 }
 function drawObj(o){ ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.rot);
+  // drop-in sprite over the procedural shape (fallback stays if art unloaded/missing)
+  if(o.sp && _psReady(_psSpr('objects/'+o.sp))){
+    if(o.burr){ var bpl=0.5+0.5*Math.sin(G.t*8); ctx.shadowColor='rgba(229,96,77,'+(0.4+bpl*0.4)+')'; ctx.shadowBlur=12+bpl*8; }
+    else { ctx.shadowColor='rgba(0,0,0,0.30)'; ctx.shadowBlur=6; ctx.shadowOffsetY=3; }
+    var ds=o.r*2.6; try{ ctx.drawImage(_psSpr('objects/'+o.sp),-ds/2,-ds/2,ds,ds); }catch(e){}
+    ctx.restore(); return;
+  }
   if(o.burr){ var pulse=0.5+0.5*Math.sin(G.t*8); ctx.shadowColor='rgba(229,96,77,'+(0.5+pulse*0.4)+')'; ctx.shadowBlur=14+pulse*8;
     ctx.fillStyle='#5a1712'; ctx.beginPath(); ctx.arc(0,0,o.r,0,7); ctx.fill(); ctx.shadowBlur=0;
     ctx.strokeStyle='#e5604d'; ctx.lineWidth=3; for(var t=0;t<12;t++){ var a=Math.PI*2*t/12; ctx.beginPath(); ctx.moveTo(Math.cos(a)*o.r*0.7,Math.sin(a)*o.r*0.7); ctx.lineTo(Math.cos(a)*(o.r+9),Math.sin(a)*(o.r+9)); ctx.stroke(); }
@@ -413,7 +427,10 @@ function drawObj(o){ ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.rot);
   ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.beginPath(); ctx.arc(-o.r*0.35,-o.r*0.4,o.r*0.22,0,7); ctx.fill();
   ctx.restore();
 }
-function drawHalf(h){ ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(h.rot); ctx.globalAlpha=Math.max(0,Math.min(1,h.life));
+function drawHalf(h){ var al=Math.max(0,Math.min(1,h.life));
+  // drop-in sliced-half sprite (fallback stays if art unloaded/missing)
+  if(h.sp && _psReady(_psSpr('objects/'+h.sp))){ var dh=h.r*2.6; psDraw('objects/'+h.sp,h.x,h.y,dh,h.rot,al); return; }
+  ctx.save(); ctx.translate(h.x,h.y); ctx.rotate(h.rot); ctx.globalAlpha=al;
   ctx.fillStyle=h.body; ctx.beginPath(); ctx.arc(0,0,h.r, h.side>0?0:Math.PI, h.side>0?Math.PI:Math.PI*2); ctx.closePath(); ctx.fill();
   ctx.fillStyle=h.core; ctx.beginPath(); ctx.arc(0,0,h.r*0.42, h.side>0?0:Math.PI, h.side>0?Math.PI:Math.PI*2); ctx.closePath(); ctx.fill();
   ctx.globalAlpha=1; ctx.restore();
