@@ -200,11 +200,11 @@ var GROWTH_MAX=22;
 var SHOTS=[];
 function buildShots(){ SHOTS=[
   // B-L-O-O-M standups (spell the word → light the ball-lock)
-  {id:'sB', type:'standup', x:80,  y:322, r:12, letter:0, lamp:1, value:500, cd:0},
-  {id:'sL', type:'standup', x:80,  y:446, r:12, letter:1, lamp:1, value:500, cd:0},
+  {id:'sB', type:'standup', x:102, y:322, r:12, letter:0, lamp:1, value:500, cd:0},
+  {id:'sL', type:'standup', x:102, y:446, r:12, letter:1, lamp:1, value:500, cd:0},
   {id:'sO1',type:'standup', x:265, y:176, r:12, letter:2, lamp:1, value:500, cd:0},
-  {id:'sO2',type:'standup', x:450, y:322, r:12, letter:3, lamp:1, value:500, cd:0},
-  {id:'sM', type:'standup', x:450, y:446, r:12, letter:4, lamp:1, value:500, cd:0},
+  {id:'sO2',type:'standup', x:428, y:322, r:12, letter:3, lamp:1, value:500, cd:0},
+  {id:'sM', type:'standup', x:428, y:446, r:12, letter:4, lamp:1, value:500, cd:0},
   // Thistle drop-target bank (knock all 3 down → bank bonus + light the scoop)
   {id:'d0', type:'drop', x:130, y:566, r:10, down:false, lamp:1, value:1000, cd:0},
   {id:'d1', type:'drop', x:165, y:572, r:10, down:false, lamp:1, value:1000, cd:0},
@@ -227,7 +227,14 @@ function buildShots(){ SHOTS=[
   // S-U-N top rollover lanes — light all three to advance the bonus multiplier
   {id:'sun0', type:'rollover', x:150,y:128, r:15, sunIdx:0, lamp:0, cd:0},
   {id:'sun1', type:'rollover', x:265,y:128, r:15, sunIdx:1, lamp:0, cd:0},
-  {id:'sun2', type:'rollover', x:380,y:128, r:15, sunIdx:2, lamp:0, cd:0}
+  {id:'sun2', type:'rollover', x:380,y:128, r:15, sunIdx:2, lamp:0, cd:0},
+  // Center Greenhouse ramp — a fast straight-up shot loops the glasshouse crown and
+  // returns down the right inlane (a big, repeatable flow shot).
+  {id:'green', type:'ramp', x:300,y:405, er:19, tx:0,ty:-1, thr:560, value:4000, cd:0, dur:0.62,
+    path:[[300,405],[290,235],[318,158],[406,182],[436,430],[410,600],[392,782]], exit:{x:392,y:782,vx:-24,vy:300}},
+  // Inlane RETURN gates — light + reward the bead as it feeds back to a flipper.
+  {id:'retL', type:'return', x:150,y:792, r:14, lamp:0, value:900, cd:0},
+  {id:'retR', type:'return', x:392,y:792, r:14, lamp:0, value:900, cd:0}
 ]; }
 // Six Garden Quests — started at the Compost scoop; complete a set of lit shots
 // before the timer. Completing ALL SIX in one game lights FULL BLOOM (the wizard).
@@ -322,6 +329,7 @@ function physics(dt){
         else if(sh.type==='ramp'||sh.type==='orbit'){ if(!b.onRail){ var rdx=b.x-sh.x,rdy=b.y-sh.y; if(rdx*rdx+rdy*rdy<sh.er*sh.er){ var vd=b.vx*sh.tx+b.vy*sh.ty; if(vd>=sh.thr) enterRail(b,sh); } } }
         else if(sh.type==='spinner'){ var pdx=b.x-sh.x,pdy=b.y-sh.y; if(pdx*pdx+pdy*pdy<sh.r*sh.r && sh.cd<=0) onSpinner(sh,Math.sqrt(b.vx*b.vx+b.vy*b.vy)); }
         else if(sh.type==='rollover'){ var odx=b.x-sh.x,ody=b.y-sh.y; if(odx*odx+ody*ody<sh.r*sh.r && sh.cd<=0) onRollover(sh); }
+        else if(sh.type==='return'){ var tdx=b.x-sh.x,tdy=b.y-sh.y; if(tdx*tdx+tdy*tdy<sh.r*sh.r && sh.cd<=0) onReturn(sh); }
       }
       if(G.tiltOut<=0){ flipHit(b,LFLIP); flipHit(b,RFLIP); }   // TILT kills the flippers
     }
@@ -442,6 +450,9 @@ function onRollover(sh){ if(sh.cd>0||sh.lamp)return; sh.cd=0.5; sh.lamp=1;
     G.score+=Math.round(2500*scoreMul()); sfx('bloom'); G.flash=Math.max(G.flash,0.4); haptic(12); } }
 function onSpinner(sh,spd){ scoreShot(sh); var rot=Math.floor(spd/70); if(rot<1)rot=1;
   G.spin={ n:rot, done:0, x:sh.x, y:sh.y, val:800, ang:0, w:spd/60, tickT:0.05 }; }
+function onReturn(sh){ sh.cd=0.7; sh.lamp=1;
+  var pts=Math.round(sh.value*scoreMul()); G.score+=pts; G.bonusBase+=400; comboHit(sh.x,sh.y);
+  float(sh.x,sh.y-18,'+'+pts); sfx('bump',G.combo); haptic(5); }
 
 /* ===== Garden Quests + FULL BLOOM wizard (P1 depth) ===== */
 function startQuest(i){ var q=QUESTS[i]; G.quest={ idx:i, name:q.name, blurb:q.blurb, need:q.need, got:{}, timer:q.timer, tmax:q.timer, award:q.award };
@@ -622,7 +633,11 @@ function drawShots(){ ctx.save(); ctx.textAlign='center';
       ctx.beginPath(); ctx.moveTo(-cw,-sw); ctx.lineTo(cw,sw); ctx.stroke(); ctx.restore();
     } else if(sh.type==='rollover'){ var on=sh.lamp;
       ctx.save(); ctx.strokeStyle=on?('rgba(200,168,75,'+(0.6+0.4*fl)+')'):'rgba(122,145,110,0.45)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r,0,7); ctx.stroke();
-      ctx.fillStyle=on?'#f2d98a':'#5a6b4a'; ctx.font='800 12px system-ui'; ctx.textAlign='center'; ctx.fillText('SUN'.charAt(sh.sunIdx),sh.x,sh.y+4); ctx.restore(); }
+      ctx.fillStyle=on?'#f2d98a':'#5a6b4a'; ctx.font='800 12px system-ui'; ctx.textAlign='center'; ctx.fillText('SUN'.charAt(sh.sunIdx),sh.x,sh.y+4); ctx.restore();
+    } else if(sh.type==='return'){ var rg=sh.cd>0?(sh.cd/0.7):0;
+      ctx.save(); ctx.strokeStyle='rgba(122,179,86,'+(0.32+0.5*rg+0.14*fl)+')'; ctx.lineWidth=3; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(sh.x-9,sh.y-12); ctx.lineTo(sh.x-9,sh.y+12); ctx.moveTo(sh.x+9,sh.y-12); ctx.lineTo(sh.x+9,sh.y+12); ctx.stroke();
+      if(rg>0.05){ ctx.fillStyle='rgba(242,217,138,'+(0.5*rg)+')'; ctx.beginPath(); ctx.arc(sh.x,sh.y,sh.r*0.5,0,7); ctx.fill(); } ctx.restore(); }
   }
   ctx.restore(); }
 function drawBumper(o,body,core){ var lit=Math.max(0,o.lit);
